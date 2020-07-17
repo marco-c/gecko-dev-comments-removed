@@ -633,7 +633,13 @@ BOOL ExecuteServiceCommand(int argc, LPWSTR* argv) {
 
     
     
-    if (argc < 5 || !IsValidFullPath(argv[5])) {
+    if (argc < 5 || !IsValidFullPath(argv[5])
+    
+    
+#ifndef DISABLE_UPDATER_AUTHENTICODE_CHECK
+        || !IsProgramFilesPath(argv[5])
+#endif
+    ) {
       LOG_WARN(
           ("The install directory path is not valid for this application."));
       if (!WriteStatusFailure(argv[4],

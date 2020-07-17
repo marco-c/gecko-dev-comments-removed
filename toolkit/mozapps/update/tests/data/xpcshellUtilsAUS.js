@@ -1431,7 +1431,15 @@ function getAppVersion() {
 
 
 
+
+
 function getApplyDirPath() {
+  if (gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED) {
+    let dir = getMaintSvcDir();
+    dir.append(gTestID);
+    dir.append("dir.app");
+    return dir.path;
+  }
   return gTestID + "/dir.app/";
 }
 
@@ -1452,6 +1460,21 @@ function getApplyDirPath() {
 
 
 function getApplyDirFile(aRelPath) {
+  
+  
+  if (gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED) {
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    file.initWithPath(getApplyDirPath());
+    if (aRelPath) {
+      if (aRelPath == "..") {
+        file = file.parent;
+      } else {
+        aRelPath = aRelPath.replace(/\//g, "\\");
+        file.appendRelativePath(aRelPath);
+      }
+    }
+    return file;
+  }
   let relpath = getApplyDirPath() + (aRelPath ? aRelPath : "");
   return do_get_file(relpath, true);
 }
@@ -1635,17 +1658,17 @@ XPCOMUtils.defineLazyGetter(this, "gInstallDirPathHash", function test_gIDPH() {
     return gTestID;
   } catch (e) {
     logTestInfo(
-      "failed to create registry key. Registry Path: " +
+      "failed to create registry value. Registry Path: " +
         REG_PATH +
-        ", Key Name: " +
+        ", Value Name: " +
         appDir.path +
-        ", Key Value: " +
+        ", Value Data: " +
         gTestID +
         ", Exception " +
         e
     );
     do_throw(
-      "Unable to write HKLM or HKCU TaskBarIDs registry key, key path: " +
+      "Unable to write HKLM or HKCU TaskBarIDs registry value, key path: " +
         REG_PATH
     );
   }
@@ -3063,8 +3086,14 @@ async function setupUpdaterTest(
     debugDump("start - setup test file: " + aTestFile.fileName);
     if (aTestFile.originalFile || aTestFile.originalContents) {
       let testDir = getApplyDirFile(aTestFile.relPathDir);
-      if (!testDir.exists()) {
+      
+      
+      try {
         testDir.create(Ci.nsIFile.DIRECTORY_TYPE, PERMS_DIRECTORY);
+      } catch (e) {
+        if (e.result != Cr.NS_ERROR_FILE_ALREADY_EXISTS) {
+          throw e;
+        }
       }
 
       let testFile;
@@ -3100,8 +3129,14 @@ async function setupUpdaterTest(
   gTestDirs.forEach(function SUT_TD_FE(aTestDir) {
     debugDump("start - setup test directory: " + aTestDir.relPathDir);
     let testDir = getApplyDirFile(aTestDir.relPathDir);
-    if (!testDir.exists()) {
+    
+    
+    try {
       testDir.create(Ci.nsIFile.DIRECTORY_TYPE, PERMS_DIRECTORY);
+    } catch (e) {
+      if (e.result != Cr.NS_ERROR_FILE_ALREADY_EXISTS) {
+        throw e;
+      }
     }
 
     if (aTestDir.files) {
@@ -3236,7 +3271,7 @@ function replaceLogPaths(aLogContents) {
   let logContents = aLogContents;
   
   
-  let testDirPath = do_get_file(gTestID, false).path;
+  let testDirPath = getApplyDirFile().parent.path;
   if (AppConstants.platform == "win") {
     
     testDirPath = testDirPath.replace(/\\/g, "\\\\");
@@ -4216,18 +4251,21 @@ function getProcessArgs(aExtraArgs) {
   let appBin = getApplyDirFile(DIR_MACOS + FILE_APP_BIN);
   Assert.ok(appBin.exists(), MSG_SHOULD_EXIST + ", path: " + appBin.path);
   let appBinPath = appBin.path;
-  if (/ /.test(appBinPath)) {
-    appBinPath = '"' + appBinPath + '"';
-  }
 
   
   
+  
+  
+  
+  
+  
+  
   let profileDir = appBin.parent.parent;
+  if (gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED) {
+    profileDir = do_get_tempdir();
+  }
   profileDir.append("profile");
   let profilePath = profileDir.path;
-  if (/ /.test(profilePath)) {
-    profilePath = '"' + profilePath + '"';
-  }
 
   let args;
   if (AppConstants.platform == "macosx" || AppConstants.platform == "linux") {

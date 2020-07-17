@@ -3180,6 +3180,15 @@ int NS_main(int argc, NS_tchar** argv) {
       }
 
 #  ifdef MOZ_MAINTENANCE_SERVICE
+
+
+
+#    ifndef TEST_UPDATER
+      if (useService) {
+        useService = IsProgramFilesPath(gInstallDirPath);
+      }
+#    endif
+
       
       
       
