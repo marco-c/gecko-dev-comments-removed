@@ -64,6 +64,13 @@ class nsHTTPSOnlyUtils {
                                  bool aFromPrivateWindow,
                                  nsIURI* aURI = nullptr);
 
+  
+
+
+
+
+  static bool TestHttpsOnlySitePermission(nsIPrincipal* aPrincipal);
+
  private:
   
 
