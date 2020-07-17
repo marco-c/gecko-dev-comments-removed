@@ -3,6 +3,12 @@
 
 
 
+
+
+
+
+Services.prefs.setBoolPref("extensions.blocklist.useMLBF", false);
+
 const Cm = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 
 var ADDONS = [

@@ -3,6 +3,9 @@
 
 
 
+
+Services.prefs.setBoolPref("extensions.blocklist.useMLBF", false);
+
 const profileDir = gProfD.clone();
 profileDir.append("extensions");
 
