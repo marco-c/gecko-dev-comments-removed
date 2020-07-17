@@ -9062,6 +9062,33 @@ class MGuardProto : public MUnaryInstruction, public SingleObjectPolicy::Data {
 };
 
 
+
+class MNurseryObject : public MNullaryInstruction {
+  
+  uint32_t nurseryIndex_;
+
+  explicit MNurseryObject(uint32_t nurseryIndex)
+      : MNullaryInstruction(classOpcode), nurseryIndex_(nurseryIndex) {
+    setMovable();
+    setResultType(MIRType::Object);
+  }
+
+ public:
+  INSTRUCTION_HEADER(NurseryObject)
+  TRIVIAL_NEW_WRAPPERS
+
+  uint32_t nurseryIndex() const { return nurseryIndex_; }
+
+  bool congruentTo(const MDefinition* ins) const override {
+    if (!ins->isNurseryObject()) {
+      return false;
+    }
+    return nurseryIndex() == ins->toNurseryObject()->nurseryIndex();
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+};
+
+
 class MGuardValue : public MUnaryInstruction, public BoxInputsPolicy::Data {
   Value expected_;
 
