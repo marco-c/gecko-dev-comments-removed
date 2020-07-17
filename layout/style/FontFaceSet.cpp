@@ -1357,7 +1357,7 @@ nsresult FontFaceSet::SyncLoadFontData(gfxUserFontEntry* aFontToLoad,
   rv = NS_NewChannelWithTriggeringPrincipal(
       getter_AddRefs(channel), aFontFaceSrc->mURI->get(), mDocument,
       principal ? principal->NodePrincipal() : nullptr,
-      nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS,
+      nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT,
       nsIContentPolicy::TYPE_FONT);
 
   NS_ENSURE_SUCCESS(rv, rv);

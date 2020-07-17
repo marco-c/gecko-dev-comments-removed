@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsSound.h"
 #include "nsContentUtils.h"
@@ -53,9 +53,9 @@ nsSound::Play(nsIURL* aURL) {
   nsCOMPtr<nsIURI> uri(aURL);
   nsCOMPtr<nsIStreamLoader> loader;
   return NS_NewStreamLoader(getter_AddRefs(loader), uri,
-                            this,  // aObserver
+                            this,  
                             nsContentUtils::GetSystemPrincipal(),
-                            nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                            nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
                             nsIContentPolicy::TYPE_OTHER);
 }
 
@@ -64,6 +64,6 @@ nsSound::Init() { return NS_OK; }
 
 NS_IMETHODIMP
 nsSound::PlayEventSound(uint32_t aEventId) {
-  // Mac doesn't have system sound settings for each user actions.
+  
   return NS_OK;
 }

@@ -234,11 +234,13 @@ static nsresult ValidateSecurityFlags(nsILoadInfo* aLoadInfo) {
   
   
   
-  if (securityMode != nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS &&
+  if (securityMode !=
+          nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT &&
       securityMode != nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED &&
-      securityMode != nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS &&
-      securityMode != nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL &&
-      securityMode != nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
+      securityMode !=
+          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT &&
+      securityMode != nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL &&
+      securityMode != nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT) {
     MOZ_ASSERT(
         false,
         "need one securityflag from nsILoadInfo to perform security checks");
@@ -651,16 +653,16 @@ static void LogSecurityFlags(nsSecurityFlags securityFlags) {
   static const DebugSecFlagType secTypes[] = {
       {nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
        "SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK"},
-      {nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS,
-       "SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS"},
+      {nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT,
+       "SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT"},
       {nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
        "SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED"},
-      {nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS,
-       "SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS"},
-      {nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-       "SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL"},
-      {nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS,
-       "SEC_REQUIRE_CORS_DATA_INHERITS"},
+      {nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT,
+       "SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT"},
+      {nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+       "SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL"},
+      {nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT,
+       "SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT"},
       {nsILoadInfo::SEC_COOKIES_DEFAULT, "SEC_COOKIES_DEFAULT"},
       {nsILoadInfo::SEC_COOKIES_INCLUDE, "SEC_COOKIES_INCLUDE"},
       {nsILoadInfo::SEC_COOKIES_SAME_ORIGIN, "SEC_COOKIES_SAME_ORIGIN"},
@@ -1040,7 +1042,7 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (loadInfo->GetSecurityMode() ==
-      nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
+      nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT) {
     rv = DoCORSChecks(aChannel, loadInfo, aInAndOutListener);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -1152,7 +1154,7 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
   nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
 
   
-  if (securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
+  if (securityMode == nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT) {
     if (NS_HasBeenCrossOrigin(aChannel)) {
       loadInfo->MaybeIncreaseTainting(LoadTainting::CORS);
     }
@@ -1169,14 +1171,17 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
   }
 
   
-  if ((securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS) ||
+  if ((securityMode ==
+       nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT) ||
       (securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED)) {
     rv = DoSOPChecks(uri, loadInfo, aChannel);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if ((securityMode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS) ||
-      (securityMode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL)) {
+  if ((securityMode ==
+       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT) ||
+      (securityMode ==
+       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL)) {
     if (NS_HasBeenCrossOrigin(aChannel)) {
       NS_ENSURE_FALSE(loadInfo->GetDontFollowRedirects(), NS_ERROR_DOM_BAD_URI);
       loadInfo->MaybeIncreaseTainting(LoadTainting::Opaque);

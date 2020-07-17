@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsStringBundle.h"
 #include "nsID.h"
@@ -32,7 +32,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ipc/SharedStringMap.h"
 
-// for async loading
+
 #ifdef ASYNC_LOADING
 #  include "nsIBinaryInputStream.h"
 #  include "nsIStringStream.h"
@@ -46,21 +46,21 @@ using mozilla::dom::ipc::SharedStringMap;
 using mozilla::dom::ipc::SharedStringMapBuilder;
 using mozilla::ipc::FileDescriptor;
 
-/**
- * A set of string bundle URLs which are loaded by content processes, and
- * should be allocated in a shared memory region, and then sent to content
- * processes.
- *
- * Note: This layout is chosen to avoid having to create a separate char*
- * array pointing to the string constant values, which would require
- * per-process relocations. The second array size is the length of the longest
- * URL plus its null terminator. Shorter strings are null padded to this
- * length.
- *
- * This should be kept in sync with the similar array in nsContentUtils.cpp,
- * and updated with any other property files which need to be loaded in all
- * content processes.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const char kContentBundles[][52] = {
     "chrome://branding/locale/brand.properties",
     "chrome://global/locale/commonDialogs.properties",
@@ -94,19 +94,19 @@ namespace {
     }                                                \
   }
 
-/**
- * A simple proxy class for a string bundle instance which will be replaced by
- * a different implementation later in the session.
- *
- * This is used when creating string bundles which should use shared memory,
- * but the content process has not yet received their shared memory buffer.
- * When the shared memory variant becomes available, this proxy is retarged to
- * that instance, and the original non-shared instance is destroyed.
- *
- * At that point, the cache entry for the proxy is replaced with the shared
- * memory instance, and callers which already have an instance of the proxy
- * are redirected to the new instance.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 class StringBundleProxy : public nsIStringBundle {
   NS_DECL_THREADSAFE_ISUPPORTS
 
@@ -139,9 +139,9 @@ class StringBundleProxy : public nsIStringBundle {
   Mutex mMutex;
   nsCOMPtr<nsIStringBundle> mTarget;
 
-  // Atomically reads mTarget and returns a strong reference to it. This
-  // allows for safe multi-threaded use when the proxy may be retargetted by
-  // the main thread during access.
+  
+  
+  
   nsCOMPtr<nsIStringBundle> Target() {
     MutexAutoLock automon(mMutex);
     return mTarget;
@@ -159,22 +159,22 @@ NS_IMPL_ISUPPORTS(StringBundleProxy, nsIStringBundle, StringBundleProxy)
     }                                                \
   }
 
-/**
- * A string bundle backed by a read-only, shared memory buffer. This should
- * only be used for string bundles which are used in child processes.
- *
- * Important: The memory allocated by these string bundles will never be freed
- * before process shutdown, per the restrictions in SharedStringMap.h, so they
- * should never be used for short-lived bundles.
- */
+
+
+
+
+
+
+
+
 class SharedStringBundle final : public nsStringBundleBase {
  public:
-  /**
-   * Initialize the string bundle with a file descriptor pointing to a
-   * pre-populated key-value store for this string bundle. This should only be
-   * called in child processes, for bundles initially created in the parent
-   * process.
-   */
+  
+
+
+
+
+
   void SetMapFile(const FileDescriptor& aFile, size_t aSize);
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -182,12 +182,12 @@ class SharedStringBundle final : public nsStringBundleBase {
 
   nsresult LoadProperties() override;
 
-  /**
-   * Returns a copy of the file descriptor pointing to the shared memory
-   * key-values tore for this string bundle. This should only be called in the
-   * parent process, and may be used to send shared string bundles to child
-   * processes.
-   */
+  
+
+
+
+
+
   FileDescriptor CloneFileDescriptor() const {
     MOZ_ASSERT(XRE_IsParentProcess());
     if (mMapFile.isSome()) {
@@ -276,7 +276,7 @@ RefPtr<T> MakeBundleRefPtr(Args... args) {
   return nsStringBundleBase::Create<T>(args...);
 }
 
-}  // anonymous namespace
+}  
 
 NS_IMPL_ISUPPORTS(nsStringBundleBase, nsIStringBundle, nsIMemoryReporter)
 
@@ -299,7 +299,7 @@ void nsStringBundleBase::RegisterMemoryReporter() {
 }
 
 template <typename T, typename... Args>
-/* static */
+
 already_AddRefed<T> nsStringBundleBase::Create(Args... args) {
   RefPtr<T> bundle = new T(args...);
   bundle->RegisterMemoryReporter();
@@ -349,8 +349,8 @@ size_t SharedStringBundle::SizeOfIncludingThis(
 NS_IMETHODIMP
 nsStringBundleBase::CollectReports(nsIHandleReportCallback* aHandleReport,
                                    nsISupports* aData, bool aAnonymize) {
-  // String bundle URLs are always local, and part of the distribution.
-  // There's no need to anonymize.
+  
+  
   nsAutoCStringN<64> escapedURL(mPropertiesURL);
   escapedURL.ReplaceChar('/', '\\');
 
@@ -370,8 +370,8 @@ nsStringBundleBase::CollectReports(nsIHandleReportCallback* aHandleReport,
   path.AppendLiteral("(url=\"");
   path.Append(escapedURL);
 
-  // Note: The memory reporter service holds a strong reference to reporters
-  // while collecting reports, so we want to ignore the extra ref in reports.
+  
+  
   path.AppendLiteral("\", shared=");
   path.AppendASCII(mRefCnt > 2 ? "true" : "false");
   path.AppendLiteral(", refCount=");
@@ -403,10 +403,10 @@ nsStringBundleBase::CollectReports(nsIHandleReportCallback* aHandleReport,
 }
 
 nsresult nsStringBundleBase::ParseProperties(nsIPersistentProperties** aProps) {
-  // this is different than mLoaded, because we only want to attempt
-  // to load once
-  // we only want to load once, but if we've tried once and failed,
-  // continue to throw an error!
+  
+  
+  
+  
   if (mAttemptedLoad) {
     if (mLoaded) return NS_OK;
 
@@ -421,12 +421,12 @@ nsresult nsStringBundleBase::ParseProperties(nsIPersistentProperties** aProps) {
 
   nsresult rv;
 
-  // do it synchronously
+  
   nsCOMPtr<nsIURI> uri;
   rv = NS_NewURI(getter_AddRefs(uri), mPropertiesURL);
   if (NS_FAILED(rv)) return rv;
 
-  // whitelist check for local schemes
+  
   nsCString scheme;
   uri->GetScheme(scheme);
   if (!scheme.EqualsLiteral("chrome") && !scheme.EqualsLiteral("jar") &&
@@ -444,12 +444,12 @@ nsresult nsStringBundleBase::ParseProperties(nsIPersistentProperties** aProps) {
     nsCOMPtr<nsIChannel> channel;
     rv = NS_NewChannel(getter_AddRefs(channel), uri,
                        nsContentUtils::GetSystemPrincipal(),
-                       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
                        nsIContentPolicy::TYPE_OTHER);
 
     if (NS_FAILED(rv)) return rv;
 
-    // It's a string bundle.  We expect a text/plain type, so set that as hint
+    
     channel->SetContentType("text/plain"_ns);
 
     rv = channel->Open(getter_AddRefs(in));
@@ -483,9 +483,9 @@ nsresult SharedStringBundle::LoadProperties() {
     return NS_OK;
   }
 
-  // We should only populate shared memory string bundles in the parent
-  // process. Instances in the child process should always be instantiated
-  // with a shared memory file descriptor sent from the parent.
+  
+  
+  
   MOZ_ASSERT(XRE_IsParentProcess());
 
   nsCOMPtr<nsIPersistentProperties> props;
@@ -574,7 +574,7 @@ nsStringBundleBase::FormatStringFromID(int32_t aID,
   return FormatStringFromName(idStr.get(), aParams, aResult);
 }
 
-// this function supports at most 10 parameters.. see below for why
+
 NS_IMETHODIMP
 nsStringBundleBase::FormatStringFromAUTF8Name(const nsACString& aName,
                                               const nsTArray<nsString>& aParams,
@@ -583,7 +583,7 @@ nsStringBundleBase::FormatStringFromAUTF8Name(const nsACString& aName,
                               aResult);
 }
 
-// this function supports at most 10 parameters.. see below for why
+
 NS_IMETHODIMP
 nsStringBundleBase::FormatStringFromName(const char* aName,
                                          const nsTArray<nsString>& aParams,
@@ -647,14 +647,14 @@ nsresult nsStringBundleBase::FormatString(const char16_t* aFormatStr,
                                           const nsTArray<nsString>& aParams,
                                           nsAString& aResult) {
   auto length = aParams.Length();
-  NS_ENSURE_ARG(length <= 10);  // enforce 10-parameter limit
+  NS_ENSURE_ARG(length <= 10);  
 
-  // implementation note: you would think you could use vsmprintf
-  // to build up an arbitrary length array.. except that there
-  // is no way to build up a va_list at runtime!
-  // Don't believe me? See:
-  //   http://www.eskimo.com/~scs/C-faq/q15.13.html
-  // -alecf
+  
+  
+  
+  
+  
+  
   nsTextFormatter::ssprintf(aResult, aFormatStr,
                             length >= 1 ? aParams[0].get() : nullptr,
                             length >= 2 ? aParams[1].get() : nullptr,
@@ -670,7 +670,7 @@ nsresult nsStringBundleBase::FormatString(const char16_t* aFormatStr,
   return NS_OK;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
+
 
 #define MAX_CACHED_BUNDLES 16
 
@@ -694,7 +694,7 @@ NS_IMPL_ISUPPORTS(nsStringBundleService, nsIStringBundleService, nsIObserver,
 
 nsStringBundleService::~nsStringBundleService() {
   UnregisterWeakMemoryReporter(this);
-  flushBundleCache(/* ignoreShared = */ false);
+  flushBundleCache( false);
 }
 
 nsresult nsStringBundleService::Init() {
@@ -727,9 +727,9 @@ nsStringBundleService::Observe(nsISupports* aSubject, const char* aTopic,
   if (strcmp("profile-do-change", aTopic) == 0 ||
       strcmp("chrome-flush-caches", aTopic) == 0 ||
       strcmp("intl:app-locales-changed", aTopic) == 0) {
-    flushBundleCache(/* ignoreShared = */ false);
+    flushBundleCache( false);
   } else if (strcmp("memory-pressure", aTopic) == 0) {
-    flushBundleCache(/* ignoreShared = */ true);
+    flushBundleCache( true);
   }
 
   return NS_OK;
@@ -754,7 +754,7 @@ void nsStringBundleService::flushBundleCache(bool ignoreShared) {
 
 NS_IMETHODIMP
 nsStringBundleService::FlushBundles() {
-  flushBundleCache(/* ignoreShared = */ false);
+  flushBundleCache( false);
   return NS_OK;
 }
 
@@ -810,7 +810,7 @@ void nsStringBundleService::getStringBundle(const char* aURLSpec,
   RefPtr<SharedStringBundle> shared;
 
   if (cacheEntry) {
-    // Remove the entry from the list so it can be re-inserted at the back.
+    
     cacheEntry->remove();
 
     shared = do_QueryObject(cacheEntry->mBundle);
@@ -821,19 +821,19 @@ void nsStringBundleService::getStringBundle(const char* aURLSpec,
       bundle = MakeBundle<nsStringBundle>(aURLSpec);
     }
 
-    // If this is a bundle which is used by the content processes, we want to
-    // load it into a shared memory region.
-    //
-    // If we're in the parent process, just create a new SharedStringBundle,
-    // and populate it from the properties file.
-    //
-    // If we're in a child process, the fact that the bundle is not already in
-    // the cache means that we haven't received its shared memory descriptor
-    // from the parent yet. There's not much we can do about that besides
-    // wait, but we need to return a bundle now. So instead of a shared memory
-    // bundle, we create a temporary proxy, which points to a non-shared
-    // bundle initially, and is retarged to a shared memory bundle when it
-    // becomes available.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (isContent) {
       if (XRE_IsParentProcess()) {
         shared = MakeBundle<SharedStringBundle>(aURLSpec);
@@ -852,7 +852,7 @@ void nsStringBundleService::getStringBundle(const char* aURLSpec,
     mBundleCache.insertBack(cacheEntry);
   }
 
-  // finally, return the value
+  
   *aResult = cacheEntry->mBundle;
   NS_ADDREF(*aResult);
 }
@@ -903,12 +903,12 @@ nsresult nsStringBundleService::FormatWithBundle(
     const nsTArray<nsString>& argArray, nsAString& result) {
   nsresult rv;
 
-  // try looking up the error message with the int key:
+  
   uint16_t code = NS_ERROR_GET_CODE(aStatus);
   rv = bundle->FormatStringFromID(code, argArray, result);
 
-  // If the int key fails, try looking up the default error message. E.g. print:
-  //   An unknown error has occurred (0x804B0003).
+  
+  
   if (NS_FAILED(rv)) {
     AutoTArray<nsString, 1> otherArgArray;
     otherArgArray.AppendElement()->AppendInt(static_cast<uint32_t>(aStatus),
@@ -929,23 +929,23 @@ nsStringBundleService::FormatStatusMessage(nsresult aStatus,
   nsCOMPtr<nsIStringBundle> bundle;
   nsCString stringBundleURL;
 
-  // XXX hack for mailnews who has already formatted their messages:
+  
   if (aStatus == NS_OK && aStatusArg) {
     result.Assign(aStatusArg);
     return NS_OK;
   }
 
   if (aStatus == NS_OK) {
-    return NS_ERROR_FAILURE;  // no message to format
+    return NS_ERROR_FAILURE;  
   }
 
-  // format the arguments:
+  
   const nsDependentString args(aStatusArg);
   argCount = args.CountChar(char16_t('\n')) + 1;
-  NS_ENSURE_ARG(argCount <= 10);  // enforce 10-parameter limit
+  NS_ENSURE_ARG(argCount <= 10);  
   AutoTArray<nsString, 10> argArray;
 
-  // convert the aStatusArg into an nsString array
+  
   if (argCount == 1) {
     argArray.AppendElement(aStatusArg);
   } else if (argCount > 1) {
@@ -958,7 +958,7 @@ nsStringBundleService::FormatStatusMessage(nsresult aStatus,
     }
   }
 
-  // find the string bundle for the error's module:
+  
   rv = mErrorService->GetErrorStringBundle(NS_ERROR_GET_MODULE(aStatus),
                                            getter_Copies(stringBundleURL));
   if (NS_SUCCEEDED(rv)) {

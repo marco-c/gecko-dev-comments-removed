@@ -196,14 +196,15 @@ nsresult TRR::CreateChannelHelper(nsIURI* aUri, nsIChannel** aResult) {
     nsCOMPtr<nsIIOService> ios(do_GetIOService(&rv));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    return NS_NewChannel(aResult, aUri, nsContentUtils::GetSystemPrincipal(),
-                         nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                         nsIContentPolicy::TYPE_OTHER,
-                         nullptr,  
-                         nullptr,  
-                         nullptr,  
-                         nullptr,  
-                         nsIRequest::LOAD_NORMAL, ios);
+    return NS_NewChannel(
+        aResult, aUri, nsContentUtils::GetSystemPrincipal(),
+        nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+        nsIContentPolicy::TYPE_OTHER,
+        nullptr,  
+        nullptr,  
+        nullptr,  
+        nullptr,  
+        nsIRequest::LOAD_NORMAL, ios);
   }
 
   

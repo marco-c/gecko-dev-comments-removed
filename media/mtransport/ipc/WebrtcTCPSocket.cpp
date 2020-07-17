@@ -206,7 +206,7 @@ nsresult WebrtcTCPSocket::DoProxyConfigLookup() {
   nsCOMPtr<nsIChannel> channel;
   rv = NS_NewChannel(getter_AddRefs(channel), mURI,
                      nsContentUtils::GetSystemPrincipal(),
-                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
                      nsIContentPolicy::TYPE_OTHER);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -390,7 +390,7 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
       nsILoadInfo::SEC_DONT_FOLLOW_REDIRECTS | nsILoadInfo::SEC_COOKIES_OMIT |
           
           
-          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
       nsIContentPolicy::TYPE_OTHER, getter_AddRefs(localChannel));
   if (NS_FAILED(rv)) {
     LOG(("WebrtcTCPSocket %p: bad open channel\n", this));

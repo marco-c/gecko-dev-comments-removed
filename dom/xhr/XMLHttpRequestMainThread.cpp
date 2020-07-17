@@ -2377,19 +2377,19 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
   if (mPrincipal->IsSystemPrincipal()) {
     
     
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
+    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
     sandboxFlags = SANDBOXED_ORIGIN;
   } else if (IsSystemXHR()) {
     
     
     
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
+    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT |
                nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
     loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
   } else {
     
     
-    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS |
+    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT |
                nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
 

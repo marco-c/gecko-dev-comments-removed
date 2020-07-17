@@ -733,11 +733,12 @@ nsresult PrototypeDocumentContentSink::LoadScript(
 
     
     nsCOMPtr<nsIStreamLoader> loader;
-    rv = NS_NewStreamLoader(getter_AddRefs(loader), aScriptProto->mSrcURI,
-                            this,       
-                            mDocument,  
-                            nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS,
-                            nsIContentPolicy::TYPE_INTERNAL_SCRIPT, group);
+    rv = NS_NewStreamLoader(
+        getter_AddRefs(loader), aScriptProto->mSrcURI,
+        this,       
+        mDocument,  
+        nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT,
+        nsIContentPolicy::TYPE_INTERNAL_SCRIPT, group);
 
     if (NS_FAILED(rv)) {
       mCurrentScriptProto = nullptr;
