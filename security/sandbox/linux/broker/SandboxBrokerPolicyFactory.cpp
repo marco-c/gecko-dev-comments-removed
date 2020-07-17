@@ -277,6 +277,19 @@ static void AddSharedMemoryPaths(SandboxBroker::Policy* aPolicy, pid_t aPid) {
   }
 }
 
+static void AddDynamicPathList(SandboxBroker::Policy* policy,
+                               const char* aPathListPref, int perms) {
+  nsAutoCString pathList;
+  nsresult rv = Preferences::GetCString(aPathListPref, pathList);
+  if (NS_SUCCEEDED(rv)) {
+    for (const nsACString& path : pathList.Split(',')) {
+      nsCString trimPath(path);
+      trimPath.Trim(" ", true, true);
+      policy->AddDynamic(perms, trimPath.get());
+    }
+  }
+}
+
 SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
   
   
@@ -650,19 +663,6 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
   
   policy->FixRecursivePermissions();
   return policy;
-}
-
-void SandboxBrokerPolicyFactory::AddDynamicPathList(
-    SandboxBroker::Policy* policy, const char* aPathListPref, int perms) {
-  nsAutoCString pathList;
-  nsresult rv = Preferences::GetCString(aPathListPref, pathList);
-  if (NS_SUCCEEDED(rv)) {
-    for (const nsACString& path : pathList.Split(',')) {
-      nsCString trimPath(path);
-      trimPath.Trim(" ", true, true);
-      policy->AddDynamic(perms, trimPath.get());
-    }
-  }
 }
 
  UniquePtr<SandboxBroker::Policy>
