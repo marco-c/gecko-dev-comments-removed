@@ -341,14 +341,18 @@ nsresult WSRunObject::InsertText(Document& aDocument,
   TextFragmentData textFragmentDataAtStart(mStart, mEnd, mNBSPData, mPRE);
   const bool insertionPointEqualsOrIsBeforeStartOfText =
       mScanStartPoint.EqualsOrIsBefore(textFragmentDataAtStart.StartRef());
-  
-  
-  
-  
-  WSRunObject afterRunObject(MOZ_KnownLive(mHTMLEditor), mScanEndPoint);
-  TextFragmentData textFragmentDataAtEnd(
-      afterRunObject.mStart, afterRunObject.mEnd, afterRunObject.mNBSPData,
-      afterRunObject.mPRE);
+  TextFragmentData textFragmentDataAtEnd(textFragmentDataAtStart);
+  if (mScanStartPoint != mScanEndPoint) {
+    
+    
+    
+    
+    
+    WSRunObject afterRunObject(MOZ_KnownLive(mHTMLEditor), mScanEndPoint);
+    textFragmentDataAtEnd =
+        TextFragmentData(afterRunObject.mStart, afterRunObject.mEnd,
+                         afterRunObject.mNBSPData, afterRunObject.mPRE);
+  }
   const bool insertionPointAfterEndOfText =
       textFragmentDataAtEnd.EndRef().EqualsOrIsBefore(mScanEndPoint);
 
