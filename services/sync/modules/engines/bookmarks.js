@@ -379,10 +379,6 @@ BaseBookmarksEngine.prototype = {
         { newSyncID }
       );
       await this._ensureCurrentSyncID(newSyncID);
-      
-      
-      
-      await super.ensureCurrentSyncID(newSyncID);
       return newSyncID;
     }
     
@@ -411,7 +407,6 @@ BaseBookmarksEngine.prototype = {
   async resetLocalSyncID() {
     let newSyncID = await PlacesSyncUtils.bookmarks.resetSyncId();
     this._log.debug("Assigned new sync ID ${newSyncID}", { newSyncID });
-    await super.ensureCurrentSyncID(newSyncID); 
     return newSyncID;
   },
 
@@ -563,7 +558,6 @@ BookmarksEngine.prototype = {
 
   async setLastSync(lastSync) {
     await PlacesSyncUtils.bookmarks.setLastSync(lastSync);
-    await super.setLastSync(lastSync); 
   },
 
   emptyChangeset() {
@@ -873,7 +867,6 @@ BufferedBookmarksEngine.prototype = {
     
     
     await PlacesSyncUtils.bookmarks.setLastSync(lastSync);
-    await super.setLastSync(lastSync); 
   },
 
   emptyChangeset() {
