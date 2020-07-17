@@ -1,0 +1,2421 @@
+
+
+
+
+const ENGINE_NAME = "engine-suggestions.xml";
+const HEURISTIC_FALLBACK_PROVIDERNAME = "HeuristicFallback";
+const UNIFIEDCOMPLETE_PROVIDERNAME = "UnifiedComplete";
+
+
+
+
+
+
+
+
+
+
+
+async function cleanup() {
+  let suggestPrefs = ["history", "bookmark", "openpage"];
+  for (let type of suggestPrefs) {
+    Services.prefs.clearUserPref("browser.urlbar.suggest." + type);
+  }
+  await cleanupPlaces();
+}
+
+testEngine_setup();
+
+let path;
+let search;
+let searchCase;
+let title;
+let url;
+const host = "example.com";
+let origins;
+
+function add_autofill_task(callback) {
+  add_task(async () => {
+    info("Running subtest with origins disabled.");
+    origins = false;
+    path = "/foo";
+    search = "example.com/f";
+    searchCase = "EXAMPLE.COM/f";
+    title = "example.com/foo";
+    url = host + path;
+    await callback();
+
+    info("Running subtest with origins enabled.");
+    origins = true;
+    path = "/";
+    search = "ex";
+    searchCase = "EX";
+    title = "example.com";
+    url = host + path;
+    await callback();
+  });
+}
+
+
+add_autofill_task(async function basic() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://" + url,
+    },
+  ]);
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function basicCase() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://" + url,
+    },
+  ]);
+  let context = createContext(searchCase, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: searchCase + url.substr(searchCase.length),
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function noWWWShouldMatchWWW() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://www." + url,
+    },
+  ]);
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://www." + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://www." + url,
+        title: "www." + title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function noWWWShouldMatchWWWCase() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://www." + url,
+    },
+  ]);
+  let context = createContext(searchCase, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: searchCase + url.substr(searchCase.length),
+    completed: "http://www." + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://www." + url,
+        title: "www." + title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function wwwShouldNotMatchNoWWW() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://" + url,
+    },
+  ]);
+  let context = createContext("www." + search, { isPrivate: false });
+  if (origins) {
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: ENGINE_NAME,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  } else {
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: "http://www." + search,
+          title: "http://www." + search,
+          iconUri: `page-icon:http://www.${host}/`,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  }
+  await cleanup();
+});
+
+
+add_autofill_task(async function prefix() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://" + url,
+    },
+  ]);
+  let context = createContext("http://" + search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "http://" + url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function prefixCase() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://" + url,
+    },
+  ]);
+  let context = createContext("HTTP://" + searchCase, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "HTTP://" + searchCase + url.substr(searchCase.length),
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function prefixNoWWWShouldMatchWWW() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://www." + url,
+    },
+  ]);
+  let context = createContext("http://" + search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "http://" + url,
+    completed: "http://www." + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://www." + url,
+        title: "www." + title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function prefixNoWWWShouldMatchWWWCase() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://www." + url,
+    },
+  ]);
+  let context = createContext("HTTP://" + searchCase, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "HTTP://" + searchCase + url.substr(searchCase.length),
+    completed: "http://www." + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://www." + url,
+        title: "www." + title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function prefixWWWShouldNotMatchNoWWW() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://" + url,
+    },
+  ]);
+  let context = createContext("http://www." + search, { isPrivate: false });
+  let prefixedUrl = origins ? `http://www.${search}/` : `http://www.${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:http://www.${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function httpPrefixShouldNotMatchHTTPS() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://" + url,
+    },
+  ]);
+  let context = createContext("http://" + search, { isPrivate: false });
+  let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:http://${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "test visit for https://" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function httpsBasic() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://" + url,
+    },
+  ]);
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "https://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "https://" + title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function httpsNoWWWShouldMatchWWW() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://www." + url,
+    },
+  ]);
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "https://www." + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://www." + url,
+        title: "https://www." + title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function httpsWWWShouldNotMatchNoWWW() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://" + url,
+    },
+  ]);
+  let context = createContext("www." + search, { isPrivate: false });
+  if (origins) {
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: ENGINE_NAME,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  } else {
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: "http://www." + search,
+          title: "http://www." + search,
+          iconUri: `page-icon:http://www.${host}/`,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  }
+  await cleanup();
+});
+
+
+add_autofill_task(async function httpsPrefix() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://" + url,
+    },
+  ]);
+  let context = createContext("https://" + search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "https://" + url,
+    completed: "https://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "https://" + title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function httpsPrefixNoWWWShouldMatchWWW() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://www." + url,
+    },
+  ]);
+  let context = createContext("https://" + search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "https://" + url,
+    completed: "https://www." + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://www." + url,
+        title: "https://www." + title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function httpsPrefixWWWShouldNotMatchNoWWW() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://" + url,
+    },
+  ]);
+  let context = createContext("https://www." + search, { isPrivate: false });
+  let prefixedUrl = origins
+    ? `https://www.${search}/`
+    : `https://www.${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:https://www.${host}/`,
+        providerame: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function httpsPrefixShouldNotMatchHTTP() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://" + url,
+    },
+  ]);
+  let context = createContext("https://" + search, { isPrivate: false });
+  let prefixedUrl = origins ? `https://${search}/` : `https://${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:https://${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title: "test visit for http://" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+add_autofill_task(async function httpsPrefixShouldNotMatchMoreFrecentHTTP() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://" + url,
+      transition: PlacesUtils.history.TRANSITIONS.TYPED,
+    },
+    {
+      uri: "http://" + url,
+    },
+    {
+      uri: "https://" + url,
+      transition: PlacesUtils.history.TRANSITIONS.TYPED,
+    },
+    {
+      uri: "http://otherpage",
+    },
+  ]);
+  let context = createContext("https://" + search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "https://" + url,
+    completed: "https://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "https://" + title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+add_autofill_task(async function frecency() {
+  
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://" + url,
+    },
+  ]);
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+
+  
+  for (let i = 0; i < 2; i++) {
+    await PlacesTestUtils.addVisits([{ uri: "https://" + url }]);
+  }
+  context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "https://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "https://" + title,
+        heuristic: true,
+      }),
+    ],
+  });
+
+  
+  
+  for (let i = 0; i < 2; i++) {
+    await PlacesTestUtils.addVisits([{ uri: "http://" + url }]);
+  }
+  context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "test visit for https://" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+
+  
+  for (let i = 0; i < 4; i++) {
+    await PlacesTestUtils.addVisits([{ uri: "https://www." + url }]);
+  }
+  context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "https://www." + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://www." + url,
+        title: "https://www." + title,
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "test visit for https://" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+
+  
+  await PlacesUtils.history.remove(["https://www." + url]);
+
+  
+  context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "test visit for https://" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+
+  
+  await PlacesUtils.history.remove(["http://" + url]);
+
+  
+  context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "https://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "https://" + title,
+        heuristic: true,
+      }),
+    ],
+  });
+
+  
+  
+  
+  await PlacesTestUtils.addVisits([{ uri: "https://not-" + url }]);
+  context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "https://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "https://" + title,
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "https://not-" + url,
+        title: "test visit for https://not-" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+
+  
+  
+  
+  for (let i = 0; i < 10; i++) {
+    await PlacesTestUtils.addVisits([{ uri: "https://not-" + url }]);
+  }
+
+  
+  
+  
+  
+  context = createContext(search, { isPrivate: false });
+  if (origins) {
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: ENGINE_NAME,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "https://not-" + url,
+          title: "test visit for https://not-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "https://" + url,
+          title: "test visit for https://" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+  } else {
+    await check_results({
+      context,
+      autofilled: url,
+      completed: "https://" + url,
+      matches: [
+        makeVisitResult(context, {
+          uri: "https://" + url,
+          title: "https://" + title,
+          heuristic: true,
+        }),
+        makeVisitResult(context, {
+          uri: "https://not-" + url,
+          title: "test visit for https://not-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+  }
+
+  
+  await PlacesUtils.history.remove(["https://not-" + url]);
+
+  
+  context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "https://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://" + url,
+        title: "https://" + title,
+        heuristic: true,
+      }),
+    ],
+  });
+
+  
+  await PlacesUtils.history.remove(["https://" + url]);
+
+  
+  context = createContext(search, { isPrivate: false });
+  if (origins) {
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: ENGINE_NAME,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  } else {
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: "http://" + search,
+          title: "http://" + search,
+          iconUri: `page-icon:http://${host}/`,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  }
+
+  await cleanup();
+});
+
+
+
+add_autofill_task(async function bookmarkBelowThreshold() {
+  
+  for (let i = 0; i < 3; i++) {
+    await PlacesTestUtils.addVisits([
+      {
+        uri: "http://not-" + url,
+      },
+    ]);
+  }
+
+  
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://" + url,
+  });
+
+  
+  
+  let placeFrecency = await PlacesTestUtils.fieldInDB(
+    "http://" + url,
+    "frecency"
+  );
+  let originFrecency = await getOriginFrecency("http://", host);
+  let threshold = await getOriginAutofillThreshold();
+  Assert.ok(
+    placeFrecency < threshold,
+    `Place frecency should be below the threshold: ` +
+      `placeFrecency=${placeFrecency} threshold=${threshold}`
+  );
+  Assert.ok(
+    originFrecency < threshold,
+    `Origin frecency should be below the threshold: ` +
+      `originFrecency=${originFrecency} threshold=${threshold}`
+  );
+
+  
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "http://not-" + url,
+        title: "test visit for http://not-" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+
+  await cleanup();
+});
+
+
+add_autofill_task(async function bookmarkAboveThreshold() {
+  
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://" + url,
+  });
+
+  
+  
+  
+  let placeFrecency = await PlacesTestUtils.fieldInDB(
+    "http://" + url,
+    "frecency"
+  );
+  let originFrecency = await getOriginFrecency("http://", host);
+  let threshold = await getOriginAutofillThreshold();
+  Assert.equal(placeFrecency, threshold);
+  Assert.equal(originFrecency, threshold);
+
+  
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+
+  await cleanup();
+});
+
+
+
+
+add_autofill_task(async function zeroThreshold() {
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://" + url,
+  });
+
+  await PlacesUtils.history.clear();
+
+  
+  
+  
+  
+  
+  let placeFrecency = await PlacesTestUtils.fieldInDB(
+    "http://" + url,
+    "frecency"
+  );
+  Assert.ok(placeFrecency <= 0);
+
+  
+  let originFrecency = await getOriginFrecency("http://", host);
+  Assert.equal(originFrecency, 0);
+
+  
+  let threshold = await getOriginAutofillThreshold();
+  Assert.equal(threshold, 0);
+
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestHistoryFalse_visit() {
+  await PlacesTestUtils.addVisits("http://" + url);
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+  context = createContext(search, { isPrivate: false });
+  if (origins) {
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: ENGINE_NAME,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  } else {
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: "http://" + search,
+          title: "http://" + search,
+          iconUri: `page-icon:http://${host}/`,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  }
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestHistoryFalse_visit_prefix() {
+  await PlacesTestUtils.addVisits("http://" + url);
+  let context = createContext("http://" + search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "http://" + url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+  context = createContext(search, { isPrivate: false });
+  if (origins) {
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: ENGINE_NAME,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  } else {
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: "http://" + search,
+          title: "http://" + search,
+          iconUri: `page-icon:http://${host}/`,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  }
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestHistoryFalse_bookmark_0() {
+  
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://" + url,
+  });
+
+  
+  
+  
+  let meetsThreshold = true;
+  while (meetsThreshold) {
+    
+    await PlacesTestUtils.addVisits("http://foo-" + url);
+    let originFrecency = await getOriginFrecency("http://", host);
+    let threshold = await getOriginAutofillThreshold();
+    meetsThreshold = threshold <= originFrecency;
+  }
+
+  
+  
+  let originFrecency = await getOriginFrecency("http://", host);
+  let threshold = await getOriginAutofillThreshold();
+  Assert.ok(originFrecency < threshold);
+
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestHistoryFalse_bookmark_1() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://non-matching-" + url,
+  });
+  let context = createContext(search, { isPrivate: false });
+  let matches = [
+    makeBookmarkResult(context, {
+      uri: "http://non-matching-" + url,
+      title: "A bookmark",
+    }),
+  ];
+  if (origins) {
+    matches.unshift(
+      makeSearchResult(context, {
+        engineName: ENGINE_NAME,
+        heuristic: true,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      })
+    );
+  } else {
+    matches.unshift(
+      makeVisitResult(context, {
+        uri: "http://" + search,
+        title: "http://" + search,
+        iconUri: `page-icon:http://${host}/`,
+        heuristic: true,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      })
+    );
+  }
+  await check_results({
+    context,
+    matches,
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestHistoryFalse_bookmark_prefix_0() {
+  
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://" + url,
+  });
+
+  
+  
+  
+  let meetsThreshold = true;
+  while (meetsThreshold) {
+    
+    await PlacesTestUtils.addVisits("http://foo-" + url);
+    let originFrecency = await getOriginFrecency("http://", host);
+    let threshold = await getOriginAutofillThreshold();
+    meetsThreshold = threshold <= originFrecency;
+  }
+
+  
+  
+  let originFrecency = await getOriginFrecency("http://", host);
+  let threshold = await getOriginAutofillThreshold();
+  Assert.ok(originFrecency < threshold);
+
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://" + url,
+  });
+  let context = createContext("http://" + search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "http://" + url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestHistoryFalse_bookmark_prefix_1() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "ftp://" + url,
+  });
+  let context = createContext("http://" + search, { isPrivate: false });
+  let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:http://${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeBookmarkResult(context, {
+        uri: "ftp://" + url,
+        title: "A bookmark",
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestHistoryFalse_bookmark_prefix_2() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://non-matching-" + url,
+  });
+  let context = createContext("http://" + search, { isPrivate: false });
+  let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:http://${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeBookmarkResult(context, {
+        uri: "http://non-matching-" + url,
+        title: "A bookmark",
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestHistoryFalse_bookmark_prefix_3() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "ftp://non-matching-" + url,
+  });
+  let context = createContext("http://" + search, { isPrivate: false });
+  let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:http://${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeBookmarkResult(context, {
+        uri: "ftp://non-matching-" + url,
+        title: "A bookmark",
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestBookmarkFalse_visit_0() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+  await PlacesTestUtils.addVisits("http://" + url);
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestBookmarkFalse_visit_1() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+  await PlacesTestUtils.addVisits("http://non-matching-" + url);
+  let context = createContext(search, { isPrivate: false });
+  let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+  let matches = [
+    makeVisitResult(context, {
+      uri: "http://non-matching-" + url,
+      title: "test visit for http://non-matching-" + url,
+      providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+    }),
+  ];
+  if (origins) {
+    matches.unshift(
+      makeSearchResult(context, {
+        engineName: ENGINE_NAME,
+        heuristic: true,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      })
+    );
+  } else {
+    matches.unshift(
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:http://${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      })
+    );
+  }
+  await check_results({
+    context,
+    matches,
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestBookmarkFalse_visit_prefix_0() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+  await PlacesTestUtils.addVisits("http://" + url);
+  let context = createContext("http://" + search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "http://" + url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestBookmarkFalse_visit_prefix_1() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+  await PlacesTestUtils.addVisits("ftp://" + url);
+  let context = createContext("http://" + search, { isPrivate: false });
+  let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:http://${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeVisitResult(context, {
+        uri: "ftp://" + url,
+        title: "test visit for ftp://" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestBookmarkFalse_visit_prefix_2() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+  await PlacesTestUtils.addVisits("http://non-matching-" + url);
+  let context = createContext("http://" + search, { isPrivate: false });
+  let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:http://${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeVisitResult(context, {
+        uri: "http://non-matching-" + url,
+        title: "test visit for http://non-matching-" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestBookmarkFalse_visit_prefix_3() {
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+  await PlacesTestUtils.addVisits("ftp://non-matching-" + url);
+  let context = createContext("http://" + search, { isPrivate: false });
+  let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        uri: prefixedUrl,
+        title: prefixedUrl,
+        heuristic: true,
+        iconUri: origins ? "" : `page-icon:http://${host}/`,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeVisitResult(context, {
+        uri: "ftp://non-matching-" + url,
+        title: "test visit for ftp://non-matching-" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestBookmarkFalse_unvisitedBookmark() {
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://" + url,
+  });
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+  context = createContext(search, { isPrivate: false });
+  if (origins) {
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: ENGINE_NAME,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  } else {
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: "http://" + search,
+          title: "http://" + search,
+          iconUri: `page-icon:http://${host}/`,
+          heuristic: true,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+  }
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_unvisitedBookmark_prefix_0() {
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "http://" + url,
+    });
+    let context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      autofilled: "http://" + url,
+      completed: "http://" + url,
+      matches: [
+        makeVisitResult(context, {
+          uri: "http://" + url,
+          title,
+          heuristic: true,
+        }),
+      ],
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    context = createContext("http://" + search, { isPrivate: false });
+    let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: prefixedUrl,
+          title: prefixedUrl,
+          heuristic: true,
+          iconUri: origins ? "" : `page-icon:http://${host}/`,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_unvisitedBookmark_prefix_1() {
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "ftp://" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    let context = createContext("http://" + search, { isPrivate: false });
+    let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: prefixedUrl,
+          title: prefixedUrl,
+          heuristic: true,
+          iconUri: origins ? "" : `page-icon:http://${host}/`,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_unvisitedBookmark_prefix_2() {
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "http://non-matching-" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    let context = createContext("http://" + search, { isPrivate: false });
+    let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: prefixedUrl,
+          title: prefixedUrl,
+          heuristic: true,
+          iconUri: origins ? "" : `page-icon:http://${host}/`,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_unvisitedBookmark_prefix_3() {
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "ftp://non-matching-" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    let context = createContext("http://" + search, { isPrivate: false });
+    let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: prefixedUrl,
+          title: prefixedUrl,
+          heuristic: true,
+          iconUri: origins ? "" : `page-icon:http://${host}/`,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestBookmarkFalse_visitedBookmark_above() {
+  await PlacesTestUtils.addVisits("http://" + url);
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://" + url,
+  });
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: url,
+    completed: "http://" + url,
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title,
+        heuristic: true,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_visitedBookmarkAbove_prefix_0() {
+    await PlacesTestUtils.addVisits("http://" + url);
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "http://" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    let context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      autofilled: "http://" + url,
+      completed: "http://" + url,
+      matches: [
+        makeVisitResult(context, {
+          uri: "http://" + url,
+          title,
+          heuristic: true,
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_visitedBookmarkAbove_prefix_1() {
+    await PlacesTestUtils.addVisits("ftp://" + url);
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "ftp://" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    let context = createContext("http://" + search, { isPrivate: false });
+    let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: prefixedUrl,
+          title: prefixedUrl,
+          heuristic: true,
+          iconUri: origins ? "" : `page-icon:http://${host}/`,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeBookmarkResult(context, {
+          uri: "ftp://" + url,
+          title: "A bookmark",
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_visitedBookmarkAbove_prefix_2() {
+    await PlacesTestUtils.addVisits("http://non-matching-" + url);
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "http://non-matching-" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    let context = createContext("http://" + search, { isPrivate: false });
+    let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: prefixedUrl,
+          title: prefixedUrl,
+          heuristic: true,
+          iconUri: origins ? "" : `page-icon:http://${host}/`,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeBookmarkResult(context, {
+          uri: "http://non-matching-" + url,
+          title: "A bookmark",
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_visitedBookmarkAbove_prefix_3() {
+    await PlacesTestUtils.addVisits("ftp://non-matching-" + url);
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "ftp://non-matching-" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    let context = createContext("http://" + search, { isPrivate: false });
+    let prefixedUrl = origins ? `http://${search}/` : `http://${search}`;
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: prefixedUrl,
+          title: prefixedUrl,
+          heuristic: true,
+          iconUri: origins ? "" : `page-icon:http://${host}/`,
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeBookmarkResult(context, {
+          uri: "ftp://non-matching-" + url,
+          title: "A bookmark",
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(async function suggestBookmarkFalse_visitedBookmarkBelow() {
+  if (!origins) {
+    
+    return;
+  }
+  
+  await PlacesTestUtils.addVisits("http://" + url);
+  for (let i = 0; i < 3; i++) {
+    await PlacesTestUtils.addVisits("http://some-other-" + url);
+  }
+  let context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: ENGINE_NAME,
+        heuristic: true,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeVisitResult(context, {
+        uri: "http://some-other-" + url,
+        title: "test visit for http://some-other-" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title: "test visit for http://" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+  
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: "http://" + url,
+  });
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+  context = createContext(search, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: ENGINE_NAME,
+        heuristic: true,
+        providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+      }),
+      makeVisitResult(context, {
+        uri: "http://some-other-" + url,
+        title: "test visit for http://some-other-" + url,
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+      makeVisitResult(context, {
+        uri: "http://" + url,
+        title: "A bookmark",
+        providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+      }),
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_visitedBookmarkBelow_prefix_0() {
+    if (!origins) {
+      
+      return;
+    }
+    
+    await PlacesTestUtils.addVisits("http://" + url);
+    for (let i = 0; i < 3; i++) {
+      await PlacesTestUtils.addVisits("http://some-other-" + url);
+    }
+    let context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: `http://${search}/`,
+          title: `http://${search}/`,
+          heuristic: true,
+          iconUri: "",
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "http://some-other-" + url,
+          title: "test visit for http://some-other-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "http://" + url,
+          title: "test visit for http://" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+    
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "http://" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: `http://${search}/`,
+          title: `http://${search}/`,
+          heuristic: true,
+          iconUri: "",
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "http://some-other-" + url,
+          title: "test visit for http://some-other-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "http://" + url,
+          title: "A bookmark",
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_visitedBookmarkBelow_prefix_1() {
+    if (!origins) {
+      
+      return;
+    }
+    
+    await PlacesTestUtils.addVisits("ftp://" + url);
+    for (let i = 0; i < 3; i++) {
+      await PlacesTestUtils.addVisits("ftp://some-other-" + url);
+    }
+    let context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: `http://${search}/`,
+          title: `http://${search}/`,
+          heuristic: true,
+          iconUri: "",
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "ftp://some-other-" + url,
+          title: "test visit for ftp://some-other-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "ftp://" + url,
+          title: "test visit for ftp://" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+    
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "ftp://" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: `http://${search}/`,
+          title: `http://${search}/`,
+          heuristic: true,
+          iconUri: "",
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "ftp://some-other-" + url,
+          title: "test visit for ftp://some-other-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "ftp://" + url,
+          title: "A bookmark",
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_visitedBookmarkBelow_prefix_2() {
+    if (!origins) {
+      
+      return;
+    }
+    
+    await PlacesTestUtils.addVisits("http://non-matching-" + url);
+    for (let i = 0; i < 3; i++) {
+      await PlacesTestUtils.addVisits("http://some-other-" + url);
+    }
+    let context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: `http://${search}/`,
+          title: `http://${search}/`,
+          heuristic: true,
+          iconUri: "",
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "http://some-other-" + url,
+          title: "test visit for http://some-other-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "http://non-matching-" + url,
+          title: "test visit for http://non-matching-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+    
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "http://non-matching-" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: `http://${search}/`,
+          title: `http://${search}/`,
+          heuristic: true,
+          iconUri: "",
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "http://some-other-" + url,
+          title: "test visit for http://some-other-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "http://non-matching-" + url,
+          title: "A bookmark",
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_autofill_task(
+  async function suggestBookmarkFalse_visitedBookmarkBelow_prefix_3() {
+    if (!origins) {
+      
+      return;
+    }
+    
+    await PlacesTestUtils.addVisits("ftp://non-matching-" + url);
+    for (let i = 0; i < 3; i++) {
+      await PlacesTestUtils.addVisits("ftp://some-other-" + url);
+    }
+    let context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: `http://${search}/`,
+          title: `http://${search}/`,
+          heuristic: true,
+          iconUri: "",
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "ftp://some-other-" + url,
+          title: "test visit for ftp://some-other-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "ftp://non-matching-" + url,
+          title: "test visit for ftp://non-matching-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+    
+    await PlacesTestUtils.addBookmarkWithDetails({
+      uri: "ftp://non-matching-" + url,
+    });
+    Services.prefs.setBoolPref("browser.urlbar.suggest.bookmark", false);
+    context = createContext("http://" + search, { isPrivate: false });
+    await check_results({
+      context,
+      matches: [
+        makeVisitResult(context, {
+          uri: `http://${search}/`,
+          title: `http://${search}/`,
+          heuristic: true,
+          iconUri: "",
+          providerName: HEURISTIC_FALLBACK_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "ftp://some-other-" + url,
+          title: "test visit for ftp://some-other-" + url,
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+        makeVisitResult(context, {
+          uri: "ftp://non-matching-" + url,
+          title: "A bookmark",
+          providerName: UNIFIEDCOMPLETE_PROVIDERNAME,
+        }),
+      ],
+    });
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+async function getOriginFrecency(prefix, aHost) {
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.execute(
+    `
+    SELECT frecency
+    FROM moz_origins
+    WHERE prefix = :prefix AND host = :host
+  `,
+    { prefix, host: aHost }
+  );
+  Assert.equal(rows.length, 1);
+  return rows[0].getResultByIndex(0);
+}
+
+
+
+
+
+
+
+async function getOriginFrecencyStats() {
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.execute(`
+    SELECT
+      IFNULL((SELECT value FROM moz_meta WHERE key = 'origin_frecency_count'), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = 'origin_frecency_sum'), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = 'origin_frecency_sum_of_squares'), 0)
+  `);
+  let count = rows[0].getResultByIndex(0);
+  let sum = rows[0].getResultByIndex(1);
+  let squares = rows[0].getResultByIndex(2);
+  return { count, sum, squares };
+}
+
+
+
+
+
+
+
+async function getOriginAutofillThreshold() {
+  let { count, sum, squares } = await getOriginFrecencyStats();
+  if (!count) {
+    return 0;
+  }
+  if (count == 1) {
+    return sum;
+  }
+  let stddevMultiplier = UrlbarPrefs.get("autoFill.stddevMultiplier");
+  return (
+    sum / count +
+    stddevMultiplier * Math.sqrt((squares - (sum * sum) / count) / count)
+  );
+}
