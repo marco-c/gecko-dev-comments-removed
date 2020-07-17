@@ -20,6 +20,7 @@ const blockedAddon = {
   
   
   signedDate: new Date(1588098908496), 
+  signedState: AddonManager.SIGNEDSTATE_SIGNED,
 };
 
 
@@ -28,6 +29,7 @@ const nonBlockedAddon = {
   id: "disable-ctrl-q-and-cmd-q@robwu.nl",
   version: "1",
   signedDate: new Date(1482430349000), 
+  signedState: AddonManager.SIGNEDSTATE_SIGNED,
 };
 
 async function sha256(arrayBuffer) {

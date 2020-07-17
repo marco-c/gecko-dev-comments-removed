@@ -1637,6 +1637,27 @@ this.ExtensionBlocklistMLBF = {
     }
     
 
+    let { signedState } = addon;
+    if (
+      signedState !== AddonManager.SIGNEDSTATE_PRELIMINARY &&
+      signedState !== AddonManager.SIGNEDSTATE_SIGNED
+    ) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return null;
+    }
+
     if (signedDate.getTime() > generationTime) {
       
       
