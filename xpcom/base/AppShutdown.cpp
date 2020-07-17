@@ -36,7 +36,7 @@ namespace mozilla {
 static ShutdownPhase sFastShutdownPhase = ShutdownPhase::NotInShutdown;
 static ShutdownPhase sLateWriteChecksPhase = ShutdownPhase::NotInShutdown;
 static AppShutdownMode sShutdownMode = AppShutdownMode::Normal;
-static bool sIsShuttingDown = false;
+static Atomic<bool, MemoryOrdering::Relaxed> sIsShuttingDown;
 
 
 
