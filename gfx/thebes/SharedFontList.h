@@ -49,6 +49,14 @@ struct Pointer {
 
   Pointer(Pointer&& aOther) { mBlockAndOffset.store(aOther.mBlockAndOffset); }
 
+  
+
+
+
+
+
+
+
   bool IsNull() const { return mBlockAndOffset == kNullValue; }
 
   uint32_t Block() const { return mBlockAndOffset >> kBlockShift; }
@@ -56,6 +64,10 @@ struct Pointer {
   uint32_t Offset() const { return mBlockAndOffset & kOffsetMask; }
 
   
+
+
+
+
 
 
 
@@ -104,10 +116,20 @@ struct String {
 
   const char* BeginReading(FontList* aList) const {
     MOZ_ASSERT(!mPointer.IsNull());
-    return static_cast<const char*>(mPointer.ToPtr(aList));
+    auto str = static_cast<const char*>(mPointer.ToPtr(aList));
+    return str ? str : "";
   }
 
   uint32_t Length() const { return mLength; }
+
+  
+
+
+
+
+
+
+
 
   bool IsNull() const { return mPointer.IsNull(); }
 
