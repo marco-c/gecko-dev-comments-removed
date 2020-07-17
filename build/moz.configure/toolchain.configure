@@ -1996,7 +1996,8 @@ imply_option('--enable-linker', 'gold', when='--enable-gold')
 def enable_linker_default(target, developer_options):
     
     
-    if target.os == 'Android' and target.cpu == 'x86_64':
+    
+    if target.os == 'Android' and target.cpu in ('x86', 'x86_64'):
         return 'lld' if developer_options else 'bfd'
 
 
