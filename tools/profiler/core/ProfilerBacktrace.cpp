@@ -41,7 +41,7 @@ void ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
   
   
   StreamSamplesAndMarkers(mName.get(), mThreadId, *mProfileBuffer, aWriter,
-                          ""_ns, aProcessStartTime,
+                          ""_ns, ""_ns, aProcessStartTime,
                            mozilla::TimeStamp(),
                            mozilla::TimeStamp(),
                            0, aUniqueStacks);

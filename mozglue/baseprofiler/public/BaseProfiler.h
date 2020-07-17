@@ -894,7 +894,8 @@ class MOZ_RAII AutoProfilerTextMarker {
 
 
 
-MFBT_API void profiler_set_process_name(const std::string& aProcessName);
+MFBT_API void profiler_set_process_name(const std::string& aProcessName,
+                                        const std::string* aETLDplus1);
 
 
 

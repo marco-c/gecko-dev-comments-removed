@@ -1042,7 +1042,9 @@ class MOZ_RAII AutoProfilerTextMarker {
 
 
 
-void profiler_set_process_name(const nsACString& aProcessName);
+
+void profiler_set_process_name(const nsACString& aProcessName,
+                               const nsACString* aETLDplus1 = nullptr);
 
 
 

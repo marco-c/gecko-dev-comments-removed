@@ -44,7 +44,7 @@ void ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
   
   
   StreamSamplesAndMarkers(mName.get(), mThreadId, *mProfileBuffer, aWriter, "",
-                          aProcessStartTime,
+                          "", aProcessStartTime,
                            TimeStamp(),
                            TimeStamp(),
                            0, aUniqueStacks);
