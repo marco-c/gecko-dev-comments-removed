@@ -1216,14 +1216,7 @@ ContentPrefService2.prototype = {
     
     
     
-    
-    
-    
-    
-    
-    if (!Services.prefs.prefHasUserValue("toolkit.storage.synchronous")) {
-      await conn.execute("PRAGMA synchronous = OFF");
-    }
+    await conn.execute("PRAGMA synchronous = OFF");
 
     return conn;
   },

@@ -6,7 +6,6 @@
 
 #include <string.h>
 #include "mozilla/Telemetry.h"
-#include "mozilla/Preferences.h"
 #include "sqlite3.h"
 #include "nsThreadUtils.h"
 #include "mozilla/dom/quota/PersistenceType.h"
@@ -15,6 +14,7 @@
 #include "mozilla/net/IOActivityMonitor.h"
 #include "mozilla/IOInterposer.h"
 #include "nsEscape.h"
+#include "mozilla/StaticPrefs_storage.h"
 
 #ifdef XP_WIN
 #  include "mozilla/StaticPrefs_dom.h"
@@ -25,23 +25,6 @@
 
 
 #define LAST_KNOWN_IOMETHODS_VERSION 3
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define PREF_MULTI_PROCESS_ACCESS "storage.multiProcessAccess.enabled"
 
 namespace {
 
@@ -681,9 +664,11 @@ static const char* xNextSystemCall(sqlite3_vfs* vfs, const char* zName) {
 namespace mozilla {
 namespace storage {
 
-const char* GetVFSName() { return "telemetry-vfs"; }
+const char* GetVFSName(bool exclusive) {
+  return exclusive ? "telemetry-vfs-excl" : "telemetry-vfs";
+}
 
-sqlite3_vfs* ConstructTelemetryVFS() {
+sqlite3_vfs* ConstructTelemetryVFS(bool exclusive) {
 #if defined(XP_WIN)
 #  define EXPECTED_VFS "win32"
 #  define EXPECTED_VFS_EXCL "win32"
@@ -694,7 +679,7 @@ sqlite3_vfs* ConstructTelemetryVFS() {
 
   bool expected_vfs;
   sqlite3_vfs* vfs;
-  if (Preferences::GetBool(PREF_MULTI_PROCESS_ACCESS, false)) {
+  if (!exclusive) {
     
     vfs = sqlite3_vfs_find(nullptr);
     expected_vfs = vfs->zName && !strcmp(vfs->zName, EXPECTED_VFS);
@@ -716,7 +701,7 @@ sqlite3_vfs* ConstructTelemetryVFS() {
   tvfs->szOsFile =
       sizeof(telemetry_file) - sizeof(sqlite3_file) + vfs->szOsFile;
   tvfs->mxPathname = vfs->mxPathname;
-  tvfs->zName = GetVFSName();
+  tvfs->zName = GetVFSName(exclusive);
   tvfs->pAppData = vfs;
   tvfs->xOpen = xOpen;
   tvfs->xDelete = xDelete;

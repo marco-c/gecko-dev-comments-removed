@@ -18,7 +18,6 @@
 #include "nsIObserverService.h"
 #include "nsIPropertyBag2.h"
 #include "mozilla/Services.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/LateWriteChecks.h"
 #include "mozIStorageCompletionCallback.h"
 #include "mozIStoragePendingStatement.h"
@@ -30,18 +29,6 @@
 
 #  undef CompareString
 #endif
-
-
-
-
-#define PREF_TS_SYNCHRONOUS "toolkit.storage.synchronous"
-#define PREF_TS_SYNCHRONOUS_DEFAULT 1
-
-#define PREF_TS_PAGESIZE "toolkit.storage.pageSize"
-
-
-
-#define PREF_TS_PAGESIZE_DEFAULT 32768
 
 namespace mozilla {
 namespace storage {
@@ -188,15 +175,9 @@ already_AddRefed<Service> Service::getSingleton() {
   return nullptr;
 }
 
-int32_t Service::sSynchronousPref;
-
-
-int32_t Service::getSynchronousPref() { return sSynchronousPref; }
-
-int32_t Service::sDefaultPageSize = PREF_TS_PAGESIZE_DEFAULT;
-
 Service::Service()
     : mMutex("Service::mMutex"),
+      mSqliteExclVFS(nullptr),
       mSqliteVFS(nullptr),
       mRegistrationMutex("Service::mRegistrationMutex"),
       mConnections() {}
@@ -205,12 +186,16 @@ Service::~Service() {
   mozilla::UnregisterWeakMemoryReporter(this);
   mozilla::UnregisterStorageSQLiteDistinguishedAmount();
 
-  int rc = sqlite3_vfs_unregister(mSqliteVFS);
-  if (rc != SQLITE_OK) NS_WARNING("Failed to unregister sqlite vfs wrapper.");
+  int srv = sqlite3_vfs_unregister(mSqliteVFS);
+  if (srv != SQLITE_OK) NS_WARNING("Failed to unregister sqlite vfs wrapper.");
+  srv = sqlite3_vfs_unregister(mSqliteExclVFS);
+  if (srv != SQLITE_OK) NS_WARNING("Failed to unregister sqlite vfs wrapper.");
 
   gService = nullptr;
   delete mSqliteVFS;
   mSqliteVFS = nullptr;
+  delete mSqliteExclVFS;
+  mSqliteExclVFS = nullptr;
 }
 
 void Service::registerConnection(Connection* aConnection) {
@@ -309,8 +294,8 @@ void Service::minimizeMemory() {
   }
 }
 
-sqlite3_vfs* ConstructTelemetryVFS();
-const char* GetVFSName();
+sqlite3_vfs* ConstructTelemetryVFS(bool);
+const char* GetVFSName(bool);
 
 static const char* sObserverTopics[] = {"memory-pressure",
                                         "xpcom-shutdown-threads"};
@@ -321,12 +306,17 @@ nsresult Service::initialize() {
   int rc = AutoSQLiteLifetime::getInitResult();
   if (rc != SQLITE_OK) return convertResultCode(rc);
 
-  mSqliteVFS = ConstructTelemetryVFS();
+  mSqliteVFS = ConstructTelemetryVFS(false);
+  MOZ_ASSERT(mSqliteVFS, "Non-exclusive VFS should be created");
   if (mSqliteVFS) {
     rc = sqlite3_vfs_register(mSqliteVFS, 0);
     if (rc != SQLITE_OK) return convertResultCode(rc);
-  } else {
-    NS_WARNING("Failed to register telemetry VFS");
+  }
+  mSqliteExclVFS = ConstructTelemetryVFS(true);
+  MOZ_ASSERT(mSqliteExclVFS, "Exclusive VFS should be created");
+  if (mSqliteExclVFS) {
+    rc = sqlite3_vfs_register(mSqliteExclVFS, 0);
+    if (rc != SQLITE_OK) return convertResultCode(rc);
   }
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
@@ -338,18 +328,6 @@ nsresult Service::initialize() {
       return rv;
     }
   }
-
-  
-  
-  
-  sSynchronousPref =
-      Preferences::GetInt(PREF_TS_SYNCHRONOUS, PREF_TS_SYNCHRONOUS_DEFAULT);
-
-  
-  
-  
-  sDefaultPageSize =
-      Preferences::GetInt(PREF_TS_PAGESIZE, PREF_TS_PAGESIZE_DEFAULT);
 
   mozilla::RegisterWeakMemoryReporter(this);
   mozilla::RegisterStorageSQLiteDistinguishedAmount(
