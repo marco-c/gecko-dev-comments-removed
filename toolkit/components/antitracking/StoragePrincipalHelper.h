@@ -268,10 +268,6 @@ class StoragePrincipalHelper final {
                                                  OriginAttributes& aAttributes);
   static void UpdateOriginAttributesForNetworkState(
       nsIURI* aFirstPartyURI, OriginAttributes& aAttributes);
-
-  
-  static bool GetOriginAttributesForHSTS(nsIChannel* aChannel,
-                                         OriginAttributes& aAttributes);
 };
 
 }  
