@@ -3169,21 +3169,26 @@ void GCRuntime::triggerFullGCForAtoms(JSContext* cx) {
   MOZ_RELEASE_ASSERT(triggerGC(JS::GCReason::DELAYED_ATOMS_GC));
 }
 
-
-
-void GCRuntime::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
-  MOZ_ASSERT(emptyChunks(lock).count() == 0);
-  for (ChunkPool::Iter chunk(availableChunks(lock)); !chunk.done();
-       chunk.next()) {
-    chunk->decommitFreeArenasWithoutUnlocking(lock);
-  }
-  MOZ_ASSERT(availableChunks(lock).verify());
-}
-
 void GCRuntime::startDecommit() {
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::DECOMMIT);
+
+#ifdef DEBUG
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
   MOZ_ASSERT(decommitTask.isIdle());
+
+  {
+    AutoLockGC lock(this);
+    MOZ_ASSERT(fullChunks(lock).verify());
+    MOZ_ASSERT(availableChunks(lock).verify());
+    MOZ_ASSERT(emptyChunks(lock).verify());
+
+    
+    for (ChunkPool::Iter chunk(emptyChunks(lock)); !chunk.done();
+         chunk.next()) {
+      MOZ_ASSERT(chunk->info.numArenasFreeCommitted == 0);
+    }
+  }
+#endif
 
   
   
@@ -3193,36 +3198,12 @@ void GCRuntime::startDecommit() {
     return;
   }
 
-  BackgroundDecommitTask::ChunkVector toDecommit;
   {
     AutoLockGC lock(this);
-
-    
-    for (ChunkPool::Iter chunk(emptyChunks(lock)); !chunk.done();
-         chunk.next()) {
-      MOZ_ASSERT(!chunk->info.numArenasFreeCommitted);
-    }
-
-    
-    
-    
-    
-    MOZ_ASSERT(availableChunks(lock).verify());
-    availableChunks(lock).sort();
-    for (ChunkPool::Iter chunk(availableChunks(lock)); !chunk.done();
-         chunk.next()) {
-      if (chunk->info.numArenasFreeCommitted && !toDecommit.append(chunk)) {
-        
-        return onOutOfMallocMemory(lock);
-      }
-    }
-
-    if (toDecommit.empty() && !tooManyEmptyChunks(lock)) {
-      return;
+    if (availableChunks(lock).empty() && !tooManyEmptyChunks(lock)) {
+      return;  
     }
   }
-
-  decommitTask.setChunksToScan(toDecommit);
 
 #ifdef DEBUG
   {
@@ -3239,41 +3220,68 @@ void GCRuntime::startDecommit() {
   decommitTask.runFromMainThread();
 }
 
-void js::gc::BackgroundDecommitTask::setChunksToScan(ChunkVector& chunks) {
-  MOZ_ASSERT(CurrentThreadCanAccessRuntime(gc->rt));
-  MOZ_ASSERT(isIdle());
-  MOZ_ASSERT(toDecommit.ref().empty());
-  std::swap(toDecommit.ref(), chunks);
-}
-
 void js::gc::BackgroundDecommitTask::run() {
-  ChunkPool toFree;
+  ChunkPool emptyChunksToFree;
 
   {
     AutoLockGC lock(gc);
 
-    for (Chunk* chunk : toDecommit.ref()) {
-      
-      
+    
+    
+    gc->availableChunks(lock).sort();
 
-      while (chunk->info.numArenasFreeCommitted && !cancel_) {
-        if (!chunk->decommitOneFreeArena(gc, lock)) {
-          
-          
-          break;
-        }
-      }
-    }
+    gc->decommitFreeArenas(cancel_, lock);
 
-    toDecommit.ref().clearAndFree();
-    toFree = gc->expireEmptyChunkPool(lock);
+    emptyChunksToFree = gc->expireEmptyChunkPool(lock);
   }
 
-  FreeChunkPool(toFree);
+  FreeChunkPool(emptyChunksToFree);
 
   AutoLockHelperThreadState lock;
   setFinishing(lock);
   gc->maybeRequestGCAfterBackgroundTask(lock);
+}
+
+
+
+void GCRuntime::decommitFreeArenas(const bool& cancel, AutoLockGC& lock) {
+  
+  
+  
+  
+  Vector<Chunk*, 0, SystemAllocPolicy> chunksToDecommit;
+  for (ChunkPool::Iter chunk(availableChunks(lock)); !chunk.done();
+       chunk.next()) {
+    if (chunk->info.numArenasFreeCommitted != 0 &&
+        !chunksToDecommit.append(chunk)) {
+      decommitFreeArenasWithoutUnlocking(lock);
+      return;
+    }
+  }
+
+  for (Chunk* chunk : chunksToDecommit) {
+    
+    
+
+    while (chunk->info.numArenasFreeCommitted && !cancel) {
+      if (!chunk->decommitOneFreeArena(this, lock)) {
+        
+        
+        break;
+      }
+    }
+  }
+}
+
+
+
+void GCRuntime::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
+  MOZ_ASSERT(emptyChunks(lock).count() == 0);
+  for (ChunkPool::Iter chunk(availableChunks(lock)); !chunk.done();
+       chunk.next()) {
+    chunk->decommitFreeArenasWithoutUnlocking(lock);
+  }
+  MOZ_ASSERT(availableChunks(lock).verify());
 }
 
 void GCRuntime::maybeRequestGCAfterBackgroundTask(
