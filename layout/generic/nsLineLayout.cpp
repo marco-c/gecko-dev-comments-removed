@@ -3186,6 +3186,14 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
                                    lineWM, mContainerSize,
                                    psd->mIStart + mTextIndent + dx);
     if (dx) {
+      if (startFrame->mFrame->IsLineFrame()) {
+        
+        
+        
+        startFrame->mBounds.IStart(lineWM) += dx;
+        startFrame->mFrame->SetRect(lineWM, startFrame->mBounds,
+                                    ContainerSizeForSpan(psd));
+      }
       aLine->IndentBy(dx, ContainerSize());
     }
   } else if (dx) {
