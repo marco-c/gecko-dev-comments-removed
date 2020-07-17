@@ -39,15 +39,7 @@ Connection::Close() {
 
   
   
-  nsresult rv = db::IncrementalVacuum(this);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    
-#if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
-    MOZ_CRASH_UNSAFE_PRINTF("db::IncrementalVacuum failed with result 0x%08x",
-                            static_cast<uint32_t>(rv));
-#endif
-  }
+  Unused << NS_WARN_IF(NS_FAILED(db::IncrementalVacuum(this)));
 
   return mBase->Close();
 }
