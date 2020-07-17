@@ -51,6 +51,7 @@
 #include "mozilla/scache/StartupCacheUtils.h"
 #include "mozilla/MacroForEach.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Omnijar.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/ScriptPreloader.h"
 #include "mozilla/ScopeExit.h"
@@ -670,6 +671,10 @@ JSObject* mozJSComponentLoader::PrepareObjectForLocation(
 
 static mozilla::Result<nsCString, nsresult> ReadScript(
     ComponentLoaderInfo& aInfo) {
+  
+  
+  AutoSuspendStartupCacheWrites suspendScache;
+
   MOZ_TRY(aInfo.EnsureScriptChannel());
 
   nsCOMPtr<nsIInputStream> scriptStream;
