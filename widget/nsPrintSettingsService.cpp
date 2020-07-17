@@ -921,11 +921,7 @@ nsPrintSettingsService::GetLastUsedPrinterName(
 
   
   
-  RefPtr<nsIPrinter> defaultPrinter;
-  printerList->GetSystemDefaultPrinter(getter_AddRefs(defaultPrinter));
-  if (defaultPrinter) {
-    defaultPrinter->GetName(aLastUsedPrinterName);
-  }
+  printerList->GetSystemDefaultPrinterName(aLastUsedPrinterName);
   return NS_OK;
 }
 

@@ -136,14 +136,11 @@ static nsReturnRef<nsHGLOBAL> CreateGlobalDevModeAndInit(
 
 
 static void GetDefaultPrinterNameFromGlobalPrinters(nsAString& aPrinterName) {
+  aPrinterName.Truncate();
   nsCOMPtr<nsIPrinterList> printerList =
       do_GetService("@mozilla.org/gfx/printerlist;1");
   if (printerList) {
-    nsIPrinter* printer = nullptr;
-    printerList->GetSystemDefaultPrinter(&printer);
-    if (printer) {
-      printer->GetName(aPrinterName);
-    }
+    printerList->GetSystemDefaultPrinterName(aPrinterName);
   }
 }
 

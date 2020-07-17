@@ -27,8 +27,7 @@ interface nsIPrinterList : nsISupports
 
 
 
-
-  readonly attribute nsIPrinter systemDefaultPrinter;
+  readonly attribute AString systemDefaultPrinterName;
 
   
 
