@@ -34,30 +34,20 @@ namespace jit {
 
 
 
-
-
-
 class CacheIRHealth {
-  Sprinter output_;
-
  public:
-  explicit CacheIRHealth(JSContext* cx) : output_(cx) {}
-  ~CacheIRHealth() { output_.flush(); }
-
-  MOZ_MUST_USE bool init() { return output_.init(); }
-
-  void formatForNewStub();
-  void spewCacheIREntryState(ICEntry* entry);
   
-  bool spewStubHealth(ICStub* stub);
+  bool spewStubHealth(AutoStructuredSpewer& spew, ICStub* stub);
   
-  bool spewHealthForStubsInCacheIREntry(ICEntry* entry);
+  bool spewHealthForStubsInCacheIREntry(AutoStructuredSpewer& spew,
+                                        ICEntry* entry);
   
   
-  uint32_t spewJSOpForCacheIRHealth(unsigned pcOffset, jsbytecode next);
+  uint32_t spewJSOpForCacheIRHealth(AutoStructuredSpewer& spew,
+                                    unsigned pcOffset, jsbytecode next);
   
   
-  bool rateMyCacheIR(HandleScript script);
+  bool rateMyCacheIR(JSContext* cx, HandleScript script);
 };
 
 }  
