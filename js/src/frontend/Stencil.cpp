@@ -340,6 +340,35 @@ static JSFunction* CreateFunction(JSContext* cx,
   return fun;
 }
 
+static bool InstantiateScriptSourceObject(JSContext* cx,
+                                          CompilationInfo& compilationInfo) {
+  MOZ_ASSERT(compilationInfo.source());
+
+  compilationInfo.sourceObject =
+      ScriptSourceObject::create(cx, compilationInfo.source());
+  if (!compilationInfo.sourceObject) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!cx->isHelperThreadContext()) {
+    if (!ScriptSourceObject::initFromOptions(cx, compilationInfo.sourceObject,
+                                             compilationInfo.options)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 
 static bool MaybeInstantiateModule(JSContext* cx,
                                    CompilationInfo& compilationInfo) {
@@ -606,6 +635,10 @@ bool CompilationInfo::instantiateStencils() {
   if (lazy) {
     FunctionsFromExistingLazy(*this);
   } else {
+    if (!InstantiateScriptSourceObject(cx, *this)) {
+      return false;
+    }
+
     if (!MaybeInstantiateModule(cx, *this)) {
       return false;
     }
