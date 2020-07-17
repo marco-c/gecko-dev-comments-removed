@@ -27,10 +27,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.Surface;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Stack;
 
 public class TestRunnerActivity extends Activity {
     private static final String LOGTAG = "TestRunnerActivity";
@@ -40,7 +42,6 @@ public class TestRunnerActivity extends Activity {
     static GeckoRuntime sRuntime;
 
     private GeckoSession mPopupSession;
-    private GeckoSession mActiveSession;
     private GeckoSession mSession;
     private GeckoView mView;
     private boolean mKillProcessOnDestroy;
@@ -79,7 +80,9 @@ public class TestRunnerActivity extends Activity {
         return sRuntime.getWebExtensionController();
     }
 
-    private HashSet<GeckoSession> mOwnedSessions = new HashSet<>();
+    
+    
+    private ArrayDeque<GeckoSession> mOwnedSessions = new ArrayDeque<>();
 
     private GeckoSession.PermissionDelegate mPermissionDelegate = new GeckoSession.PermissionDelegate() {
         @Override
@@ -108,10 +111,11 @@ public class TestRunnerActivity extends Activity {
 
         @Override
         public GeckoResult<GeckoSession> onNewSession(GeckoSession session, String uri) {
-            webExtensionController().setTabActive(mActiveSession, false);
-            mActiveSession = createBackgroundSession(session.getSettings());
-            webExtensionController().setTabActive(mActiveSession, true);
-            return GeckoResult.fromValue(mActiveSession);
+            webExtensionController().setTabActive(mOwnedSessions.peek(), false);
+            GeckoSession newSession = createBackgroundSession(session.getSettings(),
+                                                               true);
+            webExtensionController().setTabActive(newSession, true);
+            return GeckoResult.fromValue(newSession);
         }
 
         @Override
@@ -144,10 +148,6 @@ public class TestRunnerActivity extends Activity {
         }
     };
 
-    private GeckoSession createSession() {
-        return createSession(null);
-    }
-
     private WebExtension.ActionDelegate mActionDelegate = new WebExtension.ActionDelegate() {
         @Nullable
         @Override
@@ -157,7 +157,7 @@ public class TestRunnerActivity extends Activity {
                 mPopupSession.close();
             }
 
-            mPopupSession = createBackgroundSession(null);
+            mPopupSession = createBackgroundSession(null,  false);
             mPopupSession.open(sRuntime);
 
             return GeckoResult.fromValue(mPopupSession);
@@ -176,13 +176,37 @@ public class TestRunnerActivity extends Activity {
         public GeckoResult<AllowOrDeny> onUpdateTab(@NonNull WebExtension source,
                                                     @NonNull GeckoSession session,
                                                     @NonNull WebExtension.UpdateTabDetails updateDetails) {
-            webExtensionController().setTabActive(mActiveSession, false);
-            mActiveSession = session;
+            if (updateDetails.active == Boolean.TRUE) {
+                
+                mOwnedSessions.remove(session);
+                mOwnedSessions.addFirst(session);
+            }
+
             return GeckoResult.fromValue(AllowOrDeny.ALLOW);
         }
     };
 
-    private GeckoSession createSession(GeckoSessionSettings settings) {
+    
+
+
+
+
+
+
+    private GeckoSession createSession(boolean active) {
+        return createSession(null, active);
+    }
+
+    
+
+
+
+
+
+
+
+
+    private GeckoSession createSession(GeckoSessionSettings settings, boolean active) {
         if (settings == null) {
             settings = new GeckoSessionSettings();
         }
@@ -199,12 +223,25 @@ public class TestRunnerActivity extends Activity {
             sessionController.setTabDelegate(extension, mSessionTabDelegate);
         }
 
-        mOwnedSessions.add(session);
+        if (active) {
+            mOwnedSessions.addFirst(session);
+        } else {
+            mOwnedSessions.addLast(session);
+        }
         return session;
     }
 
-    private GeckoSession createBackgroundSession(final GeckoSessionSettings settings) {
-        final GeckoSession session = createSession(settings);
+    
+
+
+
+
+
+
+
+
+    private GeckoSession createBackgroundSession(final GeckoSessionSettings settings, boolean active) {
+        final GeckoSession session = createSession(settings, active);
 
         final Display display = new Display(mView.getWidth(), mView.getHeight());
         display.attach(session);
@@ -215,9 +252,8 @@ public class TestRunnerActivity extends Activity {
     }
 
     private void closeSession(GeckoSession session) {
-        if (session == mActiveSession) {
-            webExtensionController().setTabActive(mActiveSession, false);
-            mActiveSession = null;
+        if (session == mOwnedSessions.peek()) {
+            webExtensionController().setTabActive(session, false);
         }
         if (mDisplays.containsKey(session)) {
             final Display display = mDisplays.remove(session);
@@ -227,8 +263,7 @@ public class TestRunnerActivity extends Activity {
         session.close();
         if (!mOwnedSessions.isEmpty()) {
             
-            mActiveSession = mOwnedSessions.iterator().next();
-            webExtensionController().setTabActive(mActiveSession, true);
+            webExtensionController().setTabActive(mOwnedSessions.peek(), true);
         }
     }
 
@@ -274,9 +309,8 @@ public class TestRunnerActivity extends Activity {
             });
         }
 
-        mSession = createSession();
-        mActiveSession = mSession;
-        webExtensionController().setTabActive(mActiveSession, true);
+        mSession = createSession( true);
+        webExtensionController().setTabActive(mOwnedSessions.peek(), true);
         mSession.open(sRuntime);
 
         
@@ -306,11 +340,12 @@ public class TestRunnerActivity extends Activity {
                                     .build();
                         }
 
-                        GeckoSession newSession = createSession(settings);
                         if (details.active == Boolean.TRUE) {
-                            webExtensionController().setTabActive(mActiveSession, false);
-                            mActiveSession = newSession;
+                            webExtensionController().setTabActive(mOwnedSessions.peek(), false);
                         }
+                        GeckoSession newSession = createSession(
+                                settings,
+                                details.active == Boolean.TRUE);
                         return GeckoResult.fromValue(newSession);
                     }
                 });
