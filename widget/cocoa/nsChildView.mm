@@ -2522,14 +2522,6 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
 - (void)scrollbarSystemMetricChanged {
   [self systemMetricsChanged];
-
-  if (mGeckoChild) {
-    if (nsIWidgetListener* listener = mGeckoChild->GetWidgetListener()) {
-      if (RefPtr<PresShell> presShell = listener->GetPresShell()) {
-        presShell->ReconstructFrames();
-      }
-    }
-  }
 }
 
 - (NSString*)description {
