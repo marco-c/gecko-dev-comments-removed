@@ -48,68 +48,67 @@ class WindowsDllPatcherBase {
 
   ReadOnlyTargetFunction<MMPolicyT> ResolveRedirectedAddress(
       FARPROC aOriginalFunction) {
-    ReadOnlyTargetFunction<MMPolicyT> origFn(mVMPolicy, aOriginalFunction);
-#if defined(_M_IX86) || defined(_M_X64)
-    uintptr_t abstarget = 0;
+    uintptr_t currAddr = reinterpret_cast<uintptr_t>(aOriginalFunction);
 
-    
-    
-    if (origFn.IsRelativeShortJump(&abstarget)) {
-      int8_t offset = abstarget - origFn.GetAddress() - 2;
+#if defined(_M_IX86) || defined(_M_X64)
+    uintptr_t prevAddr = 0;
+    while (prevAddr != currAddr) {
+      ReadOnlyTargetFunction<MMPolicyT> currFunc(mVMPolicy, currAddr);
+      prevAddr = currAddr;
+
+      
+      
+      uintptr_t nextAddr = 0;
+      if (currFunc.IsRelativeShortJump(&nextAddr)) {
+        int8_t offset = nextAddr - currFunc.GetAddress() - 2;
 
 #  if defined(_M_X64)
-      
-      
-      
-      if ((offset < 0) && (origFn.IsValidAtOffset(2 + offset))) {
-        ReadOnlyTargetFunction<MMPolicyT> redirectFn(mVMPolicy, abstarget);
-        if (redirectFn.IsIndirectNearJump(&abstarget)) {
-          return redirectFn;
+        
+        
+        
+        if ((offset < 0) && (currFunc.IsValidAtOffset(2 + offset))) {
+          ReadOnlyTargetFunction<MMPolicyT> redirectFn(mVMPolicy, nextAddr);
+          if (redirectFn.IsIndirectNearJump(&nextAddr)) {
+            return redirectFn;
+          }
         }
-      }
 #  endif
 
-      if (offset <= 0) {
         
         
-        return origFn;
-      }
+        
+        if (offset > 0) {
+          bool isNopSpace = true;
+          for (int8_t i = 0; i < offset; i++) {
+            if (currFunc[2 + i] != 0x90) {
+              isNopSpace = false;
+              break;
+            }
+          }
 
-      for (int8_t i = 0; i < offset; i++) {
-        if (origFn[2 + i] != 0x90) {
-          
-          return origFn;
+          if (isNopSpace) {
+            currAddr = nextAddr;
+          }
         }
-      }
-
-      return EnsureTargetIsAccessible(std::move(origFn), abstarget);
-    }
-
-    
-    
-    if (origFn.IsIndirectNearJump(&abstarget)) {
-      return EnsureTargetIsAccessible(std::move(origFn), abstarget);
-    }
-
 #  if defined(_M_X64)
-    if (origFn.IsRelativeNearJump(&abstarget)) {
-      
-      return EnsureTargetIsAccessible(std::move(origFn), abstarget);
+      } else if (currFunc.IsIndirectNearJump(&nextAddr) ||
+                 currFunc.IsRelativeNearJump(&nextAddr)) {
+#  else
+      } else if (currFunc.IsIndirectNearJump(&nextAddr)) {
+#  endif
+
+
+
+        currAddr = nextAddr;
+      }
     }
-#  endif  
-#endif    
+#endif  
 
-    return origFn;
-  }
-
- private:
-  ReadOnlyTargetFunction<MMPolicyT> EnsureTargetIsAccessible(
-      ReadOnlyTargetFunction<MMPolicyT> aOrigFn, uintptr_t aRedirAddress) {
-    if (!mVMPolicy.IsPageAccessible(aRedirAddress)) {
-      return aOrigFn;
+    if (currAddr != reinterpret_cast<uintptr_t>(aOriginalFunction) &&
+        !mVMPolicy.IsPageAccessible(currAddr)) {
+      currAddr = reinterpret_cast<uintptr_t>(aOriginalFunction);
     }
-
-    return ReadOnlyTargetFunction<MMPolicyT>(mVMPolicy, aRedirAddress);
+    return ReadOnlyTargetFunction<MMPolicyT>(mVMPolicy, currAddr);
   }
 
  public:
