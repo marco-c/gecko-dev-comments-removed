@@ -614,9 +614,6 @@ class SearchEngine {
   
   __searchForm = null;
   
-  
-  _useNow = null;
-  
   _updateInterval = null;
   
   _updateURL = null;

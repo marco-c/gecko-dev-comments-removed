@@ -1141,10 +1141,9 @@ class SearchOneOffs {
       
       
       Services.search
-        .addEngine(
+        .addOpenSearchEngine(
           target.getAttribute("uri"),
-          target.getAttribute("image"),
-          false
+          target.getAttribute("image")
         )
         .then(engine => {
           this._rebuild();

@@ -440,7 +440,7 @@ async function waitForNewEngine(browser, basename) {
 
   
   let url = getRootDirectory(gTestPath) + basename;
-  let engine = await Services.search.addEngine(url, "", false);
+  let engine = await Services.search.addOpenSearchEngine(url, "");
   let results = await statePromise.donePromise;
   return [engine, ...results];
 }

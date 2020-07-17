@@ -82,9 +82,6 @@ function ENSURE_WARN(assertion, message, resultCode) {
 
 class OpenSearchEngine extends SearchEngine {
   
-  
-  _confirm = null;
-  
   _data = null;
   
   
@@ -333,34 +330,9 @@ class OpenSearchEngine extends SearchEngine {
       
       
       if (Services.search.getEngineByName(engine.name)) {
-        
-        
-        if (engine._confirm) {
-          promptError(
-            {
-              error: "error_duplicate_engine_msg",
-              title: "error_invalid_engine_title",
-            },
-            Ci.nsISearchService.ERROR_DUPLICATE_ENGINE
-          );
-        } else {
-          onError(Ci.nsISearchService.ERROR_DUPLICATE_ENGINE);
-        }
+        onError(Ci.nsISearchService.ERROR_DUPLICATE_ENGINE);
         logConsole.debug("_onLoad: duplicate engine found, bailing");
         return;
-      }
-
-      
-      
-      
-      if (engine._confirm) {
-        var confirmation = engine._confirmAddEngine();
-        logConsole.debug("_onLoad: confirm", confirmation);
-        if (!confirmation.confirmed) {
-          onError();
-          return;
-        }
-        engine._useNow = confirmation.useNow;
       }
 
       engine._shortName = SearchUtils.sanitizeName(engine.name);
@@ -615,55 +587,6 @@ class OpenSearchEngine extends SearchEngine {
     
     let selfURL = this._getURLOfType(SearchUtils.URL_TYPE.OPENSEARCH, "self");
     return !!(this._updateURL || this._iconUpdateURL || selfURL);
-  }
-
-  _confirmAddEngine() {
-    var stringBundle = Services.strings.createBundle(SEARCH_BUNDLE);
-    var titleMessage = stringBundle.GetStringFromName("addEngineConfirmTitle");
-
-    
-    var dialogMessage = stringBundle.formatStringFromName(
-      "addEngineConfirmation",
-      [this._name, this._uri.host]
-    );
-    var checkboxMessage = null;
-    if (
-      !Services.prefs.getBoolPref(
-        SearchUtils.BROWSER_SEARCH_PREF + "noCurrentEngine",
-        false
-      )
-    ) {
-      checkboxMessage = stringBundle.GetStringFromName(
-        "addEngineAsCurrentText"
-      );
-    }
-
-    var addButtonLabel = stringBundle.GetStringFromName(
-      "addEngineAddButtonLabel"
-    );
-
-    var ps = Services.prompt;
-    var buttonFlags =
-      ps.BUTTON_TITLE_IS_STRING * ps.BUTTON_POS_0 +
-      ps.BUTTON_TITLE_CANCEL * ps.BUTTON_POS_1 +
-      ps.BUTTON_POS_0_DEFAULT;
-
-    var checked = { value: false };
-    
-    
-    var confirm = !ps.confirmEx(
-      null,
-      titleMessage,
-      dialogMessage,
-      buttonFlags,
-      addButtonLabel,
-      null,
-      null, 
-      checkboxMessage,
-      checked
-    );
-
-    return { confirmed: confirm, useNow: checked.value };
   }
 
   
