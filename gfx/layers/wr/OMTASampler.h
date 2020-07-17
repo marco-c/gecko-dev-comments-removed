@@ -8,10 +8,13 @@
 #define mozilla_layers_OMTASampler_h
 
 #include <unordered_map>
+#include <queue>
 
 #include "base/platform_thread.h"  
+#include "mozilla/Maybe.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/webrender/WebRenderTypes.h"  
 
 namespace mozilla {
 
@@ -20,13 +23,14 @@ class TimeStamp;
 namespace wr {
 struct Transaction;
 class TransactionWrapper;
-struct WrWindowId;
 }  
 
 namespace layers {
 class Animation;
 class CompositorAnimationStorage;
+class OMTAValue;
 struct CompositorAnimationIdsForEpoch;
+struct LayersId;
 struct WrAnimations;
 
 
@@ -44,7 +48,7 @@ class OMTASampler final {
   
   void Destroy();
 
-  void SetWebRenderWindowId(const wr::WindowId& aWindowId);
+  void SetWebRenderWindowId(const wr::WrWindowId& aWindowId);
 
   
 
