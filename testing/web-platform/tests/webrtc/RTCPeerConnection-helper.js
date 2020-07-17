@@ -232,6 +232,12 @@ async function waitForConnectionStateChange(pc, wantedStates) {
   }
 }
 
+async function waitForIceGatheringState(pc, wantedStates) {
+  while (!wantedStates.includes(pc.iceGatheringState)) {
+    await waitUntilEvent(pc, 'icegatheringstatechange');
+  }
+}
+
 
 async function listenForSSRCs(t, receiver) {
   while (true) {
