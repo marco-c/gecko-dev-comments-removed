@@ -62,10 +62,14 @@ namespace jit {
   _(DelName)                             \
   _(GetRval)                             \
   _(SetIntrinsic)                        \
-  _(ThrowMsg)
-
-
-
+  _(ThrowMsg)                            \
+  /* Private Fields */                   \
+  _(InitPrivateElem)                     \
+  _(GetPrivateElem)                      \
+  _(SetPrivateElem)                      \
+  // === !! WARNING WARNING WARNING !! ===
+  
+  
 
 class MIRGenerator;
 class MIRGraph;

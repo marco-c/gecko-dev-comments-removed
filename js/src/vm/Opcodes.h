@@ -944,6 +944,18 @@
 
 
 
+ \
+    MACRO(InitPrivateElem, init_private_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1047,6 +1059,17 @@
 
 
 
+ \
+    MACRO(GetPrivateElem, get_private_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
 
  \
     MACRO(Length, length, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
@@ -1102,6 +1125,14 @@
 
  \
     MACRO(StrictSetElem, strict_set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
+    
+
+
+
+
+
+ \
+    MACRO(SetPrivateElem, set_private_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
     
 
 
@@ -3656,9 +3687,6 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(237)                                   \
-  MACRO(238)                                   \
-  MACRO(239)                                   \
   MACRO(240)                                   \
   MACRO(241)                                   \
   MACRO(242)                                   \
