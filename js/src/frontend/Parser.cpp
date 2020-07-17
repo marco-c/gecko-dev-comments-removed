@@ -1622,17 +1622,13 @@ ModuleNode* Parser<FullParseHandler, Unit>::moduleBody(
     return null();
   }
 
-  
-  if (!modulesc->builder.buildTables(
-          this->compilationInfo_.moduleMetadata.get())) {
+  if (!modulesc->builder.buildTables()) {
     return null();
   }
 
   
-  StencilModuleMetadata& moduleMetadata =
-      this->compilationInfo_.moduleMetadata.get();
-  for (auto entry : moduleMetadata.localExportEntries) {
-    JSAtom* name = entry.localName;
+  for (auto entry : modulesc->builder.localExportEntries()) {
+    JSAtom* name = entry->localName();
     MOZ_ASSERT(name);
 
     DeclaredNamePtr p = modulepc.varScope().lookupDeclaredName(name);

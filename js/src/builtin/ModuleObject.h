@@ -12,7 +12,6 @@
 #include "jsapi.h"
 
 #include "builtin/SelfHostingDefines.h"
-#include "frontend/Stencil.h"
 #include "gc/ZoneAllocator.h"
 #include "js/GCVector.h"
 #include "js/Id.h"
@@ -225,6 +224,19 @@ class ModuleNamespaceObject : public ProxyObject {
 using RootedModuleNamespaceObject = Rooted<ModuleNamespaceObject*>;
 using HandleModuleNamespaceObject = Handle<ModuleNamespaceObject*>;
 
+struct FunctionDeclaration {
+  FunctionDeclaration(HandleAtom name, uint32_t funIndex);
+  void trace(JSTracer* trc);
+
+  const HeapPtr<JSAtom*> name;
+  const uint32_t funIndex;
+};
+
+
+
+using FunctionDeclarationVector =
+    GCVector<FunctionDeclaration, 0, SystemAllocPolicy>;
+
 
 using ModuleStatus = int32_t;
 
@@ -312,6 +324,10 @@ class ModuleObject : public NativeObject {
   void setMetaObject(JSObject* obj);
 
   
+  bool noteFunctionDeclaration(JSContext* cx, HandleAtom name,
+                               uint32_t funIndex);
+
+  
   static bool instantiateFunctionDeclarations(JSContext* cx,
                                               HandleModuleObject self);
 
@@ -326,8 +342,7 @@ class ModuleObject : public NativeObject {
 
   static bool createEnvironment(JSContext* cx, HandleModuleObject self);
 
-  frontend::FunctionDeclarationVector* functionDeclarations();
-  void initFunctionDeclarations(frontend::FunctionDeclarationVector&& decls);
+  FunctionDeclarationVector* functionDeclarations();
 
  private:
   static const JSClassOps classOps_;
