@@ -925,22 +925,6 @@ bool XPCConvert::NativeInterface2JSObject(JSContext* cx, MutableHandleValue d,
   }
 
   
-  if (iid->Equals(NS_GET_IID(nsISupports))) {
-    
-    
-    
-    RefPtr<Promise> promise = do_QueryObject(aHelper.Object());
-    if (promise) {
-      flat = promise->PromiseObj();
-      if (!JS_WrapObject(cx, &flat)) {
-        return false;
-      }
-      d.setObjectOrNull(flat);
-      return true;
-    }
-  }
-
-  
   RefPtr<XPCNativeInterface> iface = XPCNativeInterface::GetNewOrUsed(cx, iid);
   if (!iface) {
     return false;
@@ -1057,18 +1041,6 @@ bool XPCConvert::JSObject2NativeInterface(JSContext* cx, void** dest,
       }
 
       return false;
-    }
-
-    
-    
-    
-    if (iid->Equals(NS_GET_IID(nsISupports))) {
-      RootedObject innerObj(RootingCx(), inner);
-      if (IsPromiseObject(innerObj)) {
-        nsIGlobalObject* glob = NativeGlobal(innerObj);
-        RefPtr<Promise> p = Promise::CreateFromExisting(glob, innerObj);
-        return p && NS_SUCCEEDED(p->QueryInterface(*iid, dest));
-      }
     }
   }
 
