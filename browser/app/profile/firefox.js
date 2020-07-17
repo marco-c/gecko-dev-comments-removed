@@ -1334,7 +1334,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config",
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-spocs-config", "US,CA");
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-layout-config", "US,CA,GB");
+pref("browser.newtabpage.activity-stream.discoverystream.region-layout-config", "US,CA,GB,DE");
 
 pref("browser.newtabpage.activity-stream.discoverystream.isCollectionDismissible", true);
 pref("browser.newtabpage.activity-stream.discoverystream.personalization.version", 2);
