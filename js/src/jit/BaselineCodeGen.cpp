@@ -1279,11 +1279,19 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   Register scriptReg = R2.scratchReg();
   Register countReg = R0.scratchReg();
 
-  
-  masm.movePtr(ImmPtr(script->jitScript()), scriptReg);
+  uint32_t warmUpCountOffset;
+  if (JitOptions.warpBuilder) {
+    
+    masm.loadPtr(frame.addressOfICScript(), scriptReg);
+    warmUpCountOffset = ICScript::offsetOfWarmUpCount();
+  } else {
+    
+    masm.movePtr(ImmPtr(script->jitScript()), scriptReg);
+    warmUpCountOffset = JitScript::offsetOfWarmUpCount();
+  }
 
   
-  Address warmUpCounterAddr(scriptReg, JitScript::offsetOfWarmUpCount());
+  Address warmUpCounterAddr(scriptReg, warmUpCountOffset);
   masm.load32(warmUpCounterAddr, countReg);
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
@@ -1303,6 +1311,11 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
       IonOptimizations.get(IonOptimizations.firstLevel());
   uint32_t warmUpThreshold = info->compilerWarmUpThreshold(script, pc);
   masm.branch32(Assembler::LessThan, countReg, Imm32(warmUpThreshold), &done);
+
+  if (JitOptions.warpBuilder) {
+    
+    masm.movePtr(ImmPtr(script->jitScript()), scriptReg);
+  }
 
   
   
