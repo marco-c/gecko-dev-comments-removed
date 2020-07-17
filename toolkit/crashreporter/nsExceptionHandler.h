@@ -97,6 +97,23 @@ nsresult AnnotateCrashReport(Annotation key, const nsACString& data);
 nsresult RemoveCrashReportAnnotation(Annotation key);
 nsresult AppendAppNotesToCrashReport(const nsACString& data);
 
+
+
+
+
+class MOZ_RAII AutoAnnotateCrashReport final {
+ public:
+  AutoAnnotateCrashReport(Annotation key, bool data);
+  AutoAnnotateCrashReport(Annotation key, int data);
+  AutoAnnotateCrashReport(Annotation key, unsigned int data);
+  AutoAnnotateCrashReport(Annotation key, const nsACString& data);
+  ~AutoAnnotateCrashReport();
+
+ private:
+  Annotation mKey;
+  nsCString mPrevious;
+};
+
 void AnnotateOOMAllocationSize(size_t size);
 void AnnotateTexturesSize(size_t size);
 nsresult SetGarbageCollecting(bool collecting);
