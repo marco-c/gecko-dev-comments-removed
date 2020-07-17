@@ -2215,6 +2215,7 @@ ICStub* js::jit::AttachBaselineCacheIRStub(
     
     
     if (updated) {
+      stub->maybeInvalidateWarp(cx, outerScript);
       *attached = true;
     } else {
       JitSpew(JitSpew_BaselineICFallback,
@@ -2239,6 +2240,8 @@ ICStub* js::jit::AttachBaselineCacheIRStub(
   
   
   ResetEnteredCounts(stub);
+
+  stub->maybeInvalidateWarp(cx, outerScript);
 
   switch (stubKind) {
     case BaselineCacheIRStubKind::Regular: {
