@@ -1195,10 +1195,12 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
       EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
 
   
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT nsresult DeleteWSBackward();
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult DeletePreviousWhiteSpace(
+      HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint);
 
   
   
