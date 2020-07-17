@@ -40,7 +40,7 @@
 
 
 
-#include "nsSTSPreloadList.h"
+#include "nsSTSPreloadListGenerated.inc"
 
 using namespace mozilla;
 using namespace mozilla::psm;
