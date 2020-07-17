@@ -199,7 +199,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
     
     
-    if (queryContext.fixupInfo?.href && !queryContext.fixupInfo?.isSearch) {
+    if (
+      queryContext.fixupInfo.fixedURI &&
+      !queryContext.fixupInfo.keywordAsSent
+    ) {
       return false;
     }
 

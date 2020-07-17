@@ -599,6 +599,7 @@ function addAutofillTasks(origins) {
         search,
         searchParam: "enable-actions",
         matches: [
+          makeSearchMatch(search, { style: ["heuristic"] }),
           {
             value: "https://not-" + url,
             comment: "test visit for https://not-" + url,
