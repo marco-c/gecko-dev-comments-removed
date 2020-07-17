@@ -3503,6 +3503,10 @@ nsresult nsWindow::MakeFullScreen(bool aFullScreen, nsIScreen* aTargetScreen) {
   
   nsCOMPtr<nsIWinTaskbar> taskbarInfo = do_GetService(NS_TASKBAR_CONTRACTID);
 
+  if (mWidgetListener) {
+    mWidgetListener->FullscreenWillChange(aFullScreen);
+  }
+
   mFullscreenMode = aFullScreen;
   if (aFullScreen) {
     if (mSizeMode == nsSizeMode_Fullscreen) return NS_OK;
