@@ -280,6 +280,7 @@ class AccessibleHandler final : public mscom::Handler,
   IAccessibleTableCell* mIATableCellPassThru;   
   IAccessibleHypertext2* mIAHypertextPassThru;  
   IA2Payload mCachedData;
+  bool mCachedDynamicDataMarshaledByCom;
   UniquePtr<mscom::StructToStream> mSerializer;
   uint32_t mCacheGen;
   IAccessibleHyperlink** mCachedHyperlinks;

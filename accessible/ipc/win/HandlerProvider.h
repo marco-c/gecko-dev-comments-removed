@@ -75,7 +75,16 @@ class HandlerProvider final : public IGeckoBackChannel,
                               NotNull<mscom::IInterceptor*> aInterceptor);
   void BuildStaticIA2Data(NotNull<mscom::IInterceptor*> aInterceptor,
                           StaticIA2Data* aOutData);
-  void BuildDynamicIA2Data(DynamicIA2Data* aOutIA2Data);
+  
+
+
+
+
+
+
+
+  void BuildDynamicIA2Data(DynamicIA2Data* aOutIA2Data,
+                           bool aMarshaledByCom = false);
   void BuildInitialIA2Data(NotNull<mscom::IInterceptor*> aInterceptor,
                            StaticIA2Data* aOutStaticData,
                            DynamicIA2Data* aOutDynamicData);
