@@ -630,8 +630,17 @@ pub fn update_primitive_visibility(
 
         
         
-        let pic_local_rect = surface_rect * Scale::new(1.0);
-        if pic.precise_local_rect != pic_local_rect {
+        pic.precise_local_rect = surface_rect * Scale::new(1.0);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        if pic.precise_local_rect != pic.prev_precise_local_rect {
             match rc.composite_mode {
                 PictureCompositeMode::Filter(Filter::DropShadows(..)) => {
                     for handle in &pic.extra_gpu_data_handles {
@@ -643,7 +652,7 @@ pub fn update_primitive_visibility(
             
             
             pic.segments_are_valid = false;
-            pic.precise_local_rect = pic_local_rect;
+            pic.prev_precise_local_rect = pic.precise_local_rect;
         }
 
         if let PictureCompositeMode::TileCache { .. } = rc.composite_mode {

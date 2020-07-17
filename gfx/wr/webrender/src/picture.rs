@@ -4556,6 +4556,11 @@ pub struct PicturePrimitive {
     
     
     
+    pub prev_precise_local_rect: LayoutRect,
+
+    
+    
+    
     
     pub segments_are_valid: bool,
 
@@ -4673,6 +4678,7 @@ impl PicturePrimitive {
             spatial_node_index,
             estimated_local_rect: LayoutRect::zero(),
             precise_local_rect: LayoutRect::zero(),
+            prev_precise_local_rect: LayoutRect::zero(),
             options,
             segments_are_valid: false,
             num_render_tasks: 0,
