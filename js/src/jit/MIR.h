@@ -5187,6 +5187,7 @@ class MPow : public MBinaryInstruction, public PowPolicy::Data {
   bool powerIsInt32_ : 1;
 
   
+  
   bool canBeNegativeZero_ : 1;
 
   MPow(MDefinition* input, MDefinition* power, MIRType specialization)
@@ -5204,6 +5205,8 @@ class MPow : public MBinaryInstruction, public PowPolicy::Data {
   
   MDefinition* foldsConstant(TempAllocator& alloc);
   MDefinition* foldsConstantPower(TempAllocator& alloc);
+
+  bool canBeNegativeZero() const { return canBeNegativeZero_; }
 
  public:
   INSTRUCTION_HEADER(Pow)
@@ -5224,7 +5227,6 @@ class MPow : public MBinaryInstruction, public PowPolicy::Data {
   MOZ_MUST_USE bool writeRecoverData(
       CompactBufferWriter& writer) const override;
   bool canRecoverOnBailout() const override { return true; }
-  bool canBeNegativeZero() const { return canBeNegativeZero_; }
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
 
