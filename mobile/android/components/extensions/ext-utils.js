@@ -134,6 +134,16 @@ class WindowTracker extends WindowTrackerBase {
     this.progressListeners = new DefaultWeakMap(() => new WeakMap());
   }
 
+  getCurrentWindow(context) {
+    
+    
+    
+    if (context?.currentWindow?.moduleManager.settings.isPopup) {
+      return this.topWindow;
+    }
+    return super.getCurrentWindow(context);
+  }
+
   get topWindow() {
     return mobileWindowTracker.topWindow;
   }
@@ -459,6 +469,16 @@ class TabContext extends EventEmitter {
 class Window extends WindowBase {
   get focused() {
     return this.window.document.hasFocus();
+  }
+
+  isCurrentFor(context) {
+    
+    
+    
+    if (context?.currentWindow?.moduleManager.settings.isPopup) {
+      return mobileWindowTracker.topWindow == this.window;
+    }
+    return super.isCurrentFor(context);
   }
 
   get top() {
