@@ -2863,6 +2863,10 @@ nsresult nsPrintJob::StartPagePrintTimer(const UniquePtr<nsPrintObject>& aPO) {
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsPrintJob::Observe(
     nsISupports* aSubject, const char* aTopic, const char16_t* aData) {
   
+  
+  
+  
+
   if (aTopic) {
     return NS_OK;
   }
