@@ -3901,6 +3901,17 @@ void AsyncPanZoomController::RequestContentRepaint(
   }
   if (!controller->IsRepaintThread()) {
     
+    
+    
+    
+    
+    
+    {  
+      RecursiveMutexAutoLock lock(mRecursiveMutex);
+      mExpectedGeckoMetrics.UpdateFrom(Metrics());
+    }
+
+    
     auto func =
         static_cast<void (AsyncPanZoomController::*)(RepaintUpdateType)>(
             &AsyncPanZoomController::RequestContentRepaint);
@@ -5012,6 +5023,9 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
       RequestContentRepaint(endZoomToMetrics, velocity,
                             RepaintUpdateType::eUserAction);
     } else {
+      
+      mExpectedGeckoMetrics.UpdateFrom(endZoomToMetrics);
+
       
       auto func = static_cast<void (AsyncPanZoomController::*)(
           const FrameMetrics&, const ParentLayerPoint&, RepaintUpdateType)>(
