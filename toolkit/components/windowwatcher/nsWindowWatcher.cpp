@@ -62,6 +62,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
+#include "mozilla/Telemetry.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Storage.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -515,7 +516,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   features.Tokenize(aFeatures);
 
   SizeSpec sizeSpec;
-  CalcSizeSpec(features, false, sizeSpec);
+  CalcSizeSpec(features, sizeSpec);
 
   uint32_t chromeFlags = CalculateChromeFlagsForContent(features, sizeSpec);
 
@@ -685,8 +686,15 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   bool isCallerChrome = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
 
+  if (!hasChromeParent) {
+    bool outerSizeUsed =
+        features.Exists("outerwidth") || features.Exists("outerheight");
+    mozilla::Telemetry::Accumulate(mozilla::Telemetry::WINDOW_OPEN_OUTER_SIZE,
+                                   outerSizeUsed);
+  }
+
   SizeSpec sizeSpec;
-  CalcSizeSpec(features, hasChromeParent, sizeSpec);
+  CalcSizeSpec(features, sizeSpec);
 
   
   
@@ -2009,7 +2017,7 @@ already_AddRefed<BrowsingContext> nsWindowWatcher::GetBrowsingContextByName(
 
 
 void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
-                                   bool aHasChromeParent, SizeSpec& aResult) {
+                                   SizeSpec& aResult) {
   
   
   
@@ -2068,7 +2076,7 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
 
   
   
-  if (aHasChromeParent && aFeatures.Exists("outerwidth")) {
+  if (aFeatures.Exists("outerwidth")) {
     int32_t width = aFeatures.GetInt("outerwidth");
     if (width) {
       aResult.mOuterWidth = width;
@@ -2108,7 +2116,7 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
 
   
   
-  if (aHasChromeParent && aFeatures.Exists("outerheight")) {
+  if (aFeatures.Exists("outerheight")) {
     int32_t height = aFeatures.GetInt("outerheight");
     if (height) {
       aResult.mOuterHeight = height;
