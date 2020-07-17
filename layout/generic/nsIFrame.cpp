@@ -7563,11 +7563,6 @@ int32_t nsIFrame::ContentIndexInContainer(const nsIFrame* aFrame) {
   return result;
 }
 
-
-
-
-void DebugListFrameTree(nsIFrame* aFrame) { ((nsIFrame*)aFrame)->List(stderr); }
-
 nsAutoCString nsIFrame::ListTag() const {
   nsAutoString tmp;
   GetFrameName(tmp);
