@@ -533,6 +533,10 @@ class HTMLEditUtils final {
 
 
   static Element* GetClosestAncestorTableElement(const nsIContent& aContent) {
+    
+    
+    
+    
     if (!aContent.GetParent()) {
       return nullptr;
     }
@@ -543,6 +547,8 @@ class HTMLEditUtils final {
     }
     return nullptr;
   }
+
+  static Element* GetClosestAncestorAnyListElement(const nsIContent& aContent);
 
   
 

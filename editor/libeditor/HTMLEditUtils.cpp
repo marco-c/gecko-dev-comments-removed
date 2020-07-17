@@ -654,6 +654,18 @@ bool HTMLEditUtils::IsSingleLineContainer(nsINode& aNode) {
          aNode.IsAnyOfHTMLElements(nsGkAtoms::li, nsGkAtoms::dt, nsGkAtoms::dd);
 }
 
+
+Element* HTMLEditUtils::GetClosestAncestorAnyListElement(
+    const nsIContent& aContent) {
+  for (Element* element : aContent.AncestorsOfType<Element>()) {
+    if (HTMLEditUtils::IsAnyListElement(element)) {
+      return element;
+    }
+  }
+
+  return nullptr;
+}
+
 EditAction HTMLEditUtils::GetEditActionForInsert(const nsAtom& aTagName) {
   
   
