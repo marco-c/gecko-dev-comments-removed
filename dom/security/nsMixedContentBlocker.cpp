@@ -213,8 +213,9 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
   
   
   
-  nsresult rv = ShouldLoad(false,  
-                           aContentLocation, aLoadInfo, aMimeGuess, aDecision);
+  nsresult rv =
+      ShouldLoad(false,  
+                 aContentLocation, aLoadInfo, aMimeGuess, true, aDecision);
 
   if (*aDecision == nsIContentPolicy::REJECT_REQUEST) {
     NS_SetRequestBlockingReason(aLoadInfo,
@@ -380,6 +381,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
                                            nsIURI* aContentLocation,
                                            nsILoadInfo* aLoadInfo,
                                            const nsACString& aMimeGuess,
+                                           bool aReportError,
                                            int16_t* aDecision) {
   
   
@@ -771,10 +773,11 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
 
   
-  if (contentType == TYPE_OBJECT_SUBREQUEST) {
+  if (contentType == TYPE_OBJECT_SUBREQUEST && aReportError) {
     if (!StaticPrefs::security_mixed_content_block_object_subrequest()) {
       nsAutoCString messageLookUpKey(
           "LoadingMixedDisplayObjectSubrequestDeprecation");
+
       LogMixedContentMessage(classification, aContentLocation, topWC->Id(),
                              eUserOverride, requestingLocation,
                              messageLookUpKey);
@@ -817,7 +820,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
   
   
-  if (!isPreload) {
+  if (!isPreload && aReportError) {
     LogMixedContentMessage(classification, aContentLocation, topWC->Id(),
                            (*aDecision == nsIContentPolicy::REJECT_REQUEST)
                                ? eBlocked
