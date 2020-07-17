@@ -1,8 +1,8 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
+const { ComponentUtils } = ChromeUtils.import(
+  "resource://gre/modules/ComponentUtils.jsm"
 );
 
 function TestProcessDirective() {}
@@ -16,4 +16,4 @@ TestProcessDirective.prototype = {
   value: "some value",
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([TestProcessDirective]);
+this.NSGetFactory = ComponentUtils.generateNSGetFactory([TestProcessDirective]);

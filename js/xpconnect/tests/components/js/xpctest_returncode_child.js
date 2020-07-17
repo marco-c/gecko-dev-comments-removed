@@ -1,7 +1,7 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 
 function TestReturnCodeChild() {}
 TestReturnCodeChild.prototype = {
@@ -45,4 +45,4 @@ TestReturnCodeChild.prototype = {
   }
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([TestReturnCodeChild]);
+this.NSGetFactory = ComponentUtils.generateNSGetFactory([TestReturnCodeChild]);

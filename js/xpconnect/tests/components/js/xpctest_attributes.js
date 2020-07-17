@@ -1,7 +1,7 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 
 function TestObjectReadWrite() {}
 TestObjectReadWrite.prototype = {
@@ -45,4 +45,4 @@ TestObjectReadOnly.prototype = {
 };
 
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([TestObjectReadWrite, TestObjectReadOnly]);
+this.NSGetFactory = ComponentUtils.generateNSGetFactory([TestObjectReadWrite, TestObjectReadOnly]);

@@ -1,7 +1,7 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 
 function TestParams() {
 }
@@ -101,4 +101,4 @@ TestParams.prototype = {
   }
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([TestParams]);
+this.NSGetFactory = ComponentUtils.generateNSGetFactory([TestParams]);

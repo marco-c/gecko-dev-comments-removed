@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 UNIFIED_SOURCES += [
     'AutoMemMap.cpp',
@@ -15,8 +15,8 @@ UNIFIED_SOURCES += [
     'URLPreloader.cpp',
 ]
 
-# mozJSComponentLoader.cpp cannot be built in unified mode because it uses
-# windows.h
+
+
 SOURCES += [
     'mozJSComponentLoader.cpp',
 ]
@@ -46,6 +46,7 @@ EXPORTS.mozilla.loader += [
 ]
 
 EXTRA_JS_MODULES += [
+    'ComponentUtils.jsm',
     'XPCOMUtils.jsm',
 ]
 

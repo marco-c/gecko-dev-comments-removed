@@ -2,7 +2,7 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 Cu.importGlobalProperties(['File']);
 
 
@@ -83,6 +83,7 @@ FileComponent.prototype =
   },
 
   
+  
   classDescription: "File in components scope code",
   classID: Components.ID("{da332370-91d4-464f-a730-018e14769cab}"),
   contractID: "@mozilla.org/tests/component-file;1",
@@ -101,4 +102,4 @@ FileComponent.prototype =
 };
 
 var gComponentsArray = [FileComponent];
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory(gComponentsArray);
+this.NSGetFactory = ComponentUtils.generateNSGetFactory(gComponentsArray);

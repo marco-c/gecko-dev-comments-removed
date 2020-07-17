@@ -2,6 +2,9 @@
 
 
 
+const { ComponentUtils } = ChromeUtils.import(
+  "resource://gre/modules/ComponentUtils.jsm"
+);
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -641,7 +644,7 @@ inputProto.classID = Components.ID("{77441d17-f29c-49d7-982f-f20a5ab5a900}");
 inputProto.contractID = "@mozilla.org/widget/touchbarinput;1";
 inputProto.QueryInterface = ChromeUtils.generateQI(["nsITouchBarInput"]);
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([
+this.NSGetFactory = ComponentUtils.generateNSGetFactory([
   TouchBarHelper,
   TouchBarInput,
 ]);

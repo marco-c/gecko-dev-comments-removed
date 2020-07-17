@@ -1,6 +1,10 @@
 
 
 
+const { ComponentUtils } = ChromeUtils.import(
+  "resource://gre/modules/ComponentUtils.jsm"
+);
+
 const MLBF_RECORD = {
   id: "A blocklist entry that refers to a MLBF file",
   last_modified: 1,

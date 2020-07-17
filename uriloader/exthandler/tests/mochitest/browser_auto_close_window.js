@@ -1,6 +1,10 @@
 
 
 
+const { ComponentUtils } = ChromeUtils.import(
+  "resource://gre/modules/ComponentUtils.jsm"
+);
+
 const ROOT = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   "https://example.com"
@@ -42,7 +46,7 @@ let mockHelperAppService;
 
 add_task(async function setup() {
   
-  mockHelperAppService = XPCOMUtils._getFactory(HelperAppLauncherDialog);
+  mockHelperAppService = ComponentUtils._getFactory(HelperAppLauncherDialog);
   registrar.registerFactory(
     MOCK_HELPERAPP_DIALOG_CID,
     "",

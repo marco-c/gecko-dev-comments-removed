@@ -1,7 +1,7 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 
 function TestBug809674() {}
 TestBug809674.prototype = {
@@ -39,4 +39,4 @@ TestBug809674.prototype = {
 };
 
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([TestBug809674]);
+this.NSGetFactory = ComponentUtils.generateNSGetFactory([TestBug809674]);

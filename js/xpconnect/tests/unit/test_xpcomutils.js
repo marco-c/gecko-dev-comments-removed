@@ -8,6 +8,8 @@
 
 
 
+
+const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -195,10 +197,10 @@ add_test(function test_generateSingletonFactory()
   function XPCComponent() {}
   XPCComponent.prototype = {
     classID: XPCCOMPONENT_CID,
-    _xpcom_factory: XPCOMUtils.generateSingletonFactory(XPCComponent),
+    _xpcom_factory: ComponentUtils.generateSingletonFactory(XPCComponent),
     QueryInterface: ChromeUtils.generateQI([])
   };
-  let NSGetFactory = XPCOMUtils.generateNSGetFactory([XPCComponent]);
+  let NSGetFactory = ComponentUtils.generateNSGetFactory([XPCComponent]);
   let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
   registrar.registerFactory(
     XPCCOMPONENT_CID,

@@ -1,7 +1,7 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 
 function TestInterfaceA() {}
 TestInterfaceA.prototype = {
@@ -44,5 +44,5 @@ TestInterfaceAll.prototype = {
   someInteger: 42
 };
 
-var NSGetFactory = XPCOMUtils.generateNSGetFactory([TestInterfaceA, TestInterfaceB, TestInterfaceAll]);
+var NSGetFactory = ComponentUtils.generateNSGetFactory([TestInterfaceA, TestInterfaceB, TestInterfaceAll]);
 

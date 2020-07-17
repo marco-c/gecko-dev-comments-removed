@@ -2,7 +2,7 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 
 function TestUtils() {}
 TestUtils.prototype = {
@@ -14,4 +14,4 @@ TestUtils.prototype = {
   doubleWrapFunction(fun) { return fun }
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([TestUtils]);
+this.NSGetFactory = ComponentUtils.generateNSGetFactory([TestUtils]);

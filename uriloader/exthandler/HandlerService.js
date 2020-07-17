@@ -2,6 +2,9 @@
 
 
 
+const { ComponentUtils } = ChromeUtils.import(
+  "resource://gre/modules/ComponentUtils.jsm"
+);
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -664,4 +667,4 @@ HandlerService.prototype = {
   },
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([HandlerService]);
+this.NSGetFactory = ComponentUtils.generateNSGetFactory([HandlerService]);
