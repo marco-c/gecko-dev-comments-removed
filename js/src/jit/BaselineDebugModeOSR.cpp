@@ -178,8 +178,6 @@ static const char* RetAddrEntryKindToString(RetAddrEntry::Kind kind) {
       return "prologue IC";
     case RetAddrEntry::Kind::CallVM:
       return "callVM";
-    case RetAddrEntry::Kind::WarmupCounter:
-      return "warmup counter";
     case RetAddrEntry::Kind::StackCheck:
       return "stack check";
     case RetAddrEntry::Kind::InterruptCheck:
@@ -214,7 +212,6 @@ static void PatchBaselineFramesForDebugMode(
     JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
     const ActivationIterator& activation, DebugModeOSREntryVector& entries,
     size_t* start) {
-  
   
   
   
@@ -287,7 +284,6 @@ static void PatchBaselineFramesForDebugMode(
           case RetAddrEntry::Kind::IC:
           case RetAddrEntry::Kind::CallVM:
           case RetAddrEntry::Kind::InterruptCheck:
-          case RetAddrEntry::Kind::WarmupCounter:
           case RetAddrEntry::Kind::StackCheck: {
             
             
@@ -304,7 +300,6 @@ static void PatchBaselineFramesForDebugMode(
               case RetAddrEntry::Kind::InterruptCheck:
                 retAddrEntry = &bl->retAddrEntryFromPCOffset(pcOffset, kind);
                 break;
-              case RetAddrEntry::Kind::WarmupCounter:
               case RetAddrEntry::Kind::StackCheck:
                 retAddrEntry = &bl->prologueRetAddrEntry(kind);
                 break;
