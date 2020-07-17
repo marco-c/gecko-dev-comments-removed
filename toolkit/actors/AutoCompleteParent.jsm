@@ -283,6 +283,17 @@ class AutoCompleteParent extends JSWindowActorParent {
     );
     this.openedPopup.invalidate();
     this._maybeRecordTelemetryEvents(results);
+
+    
+    
+    
+    let isCreditCard = results.some(result =>
+      result?.comment?.includes("cc-number")
+    );
+
+    if (isCreditCard) {
+      this.delayPopupInput();
+    }
   }
 
   
@@ -421,7 +432,6 @@ class AutoCompleteParent extends JSWindowActorParent {
           this.showPopupWithResults({ results, rect, dir });
           this.notifyListeners();
         }
-        this.delayPopupInput();
         break;
       }
 
