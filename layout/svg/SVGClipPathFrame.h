@@ -13,9 +13,9 @@
 #include "nsSVGUtils.h"
 
 class gfxContext;
-class nsSVGDisplayableFrame;
 
 namespace mozilla {
+class ISVGDisplayableFrame;
 class PresShell;
 }  
 
@@ -114,7 +114,7 @@ class SVGClipPathFrame final : public SVGContainerFrame {
   
   
   
-  bool IsTrivial(nsSVGDisplayableFrame** aSingleChild = nullptr);
+  bool IsTrivial(ISVGDisplayableFrame** aSingleChild = nullptr);
 
   bool IsValid();
 

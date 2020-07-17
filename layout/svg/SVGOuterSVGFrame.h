@@ -10,7 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/SVGContainerFrame.h"
 #include "mozilla/UniquePtr.h"
-#include "nsISVGSVGFrame.h"
+#include "ISVGSVGFrame.h"
 #include "nsRegion.h"
 
 class gfxContext;
@@ -31,7 +31,7 @@ namespace mozilla {
 
 
 class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
-                               public nsISVGSVGFrame {
+                               public ISVGSVGFrame {
   typedef image::imgDrawingParams imgDrawingParams;
 
   friend nsContainerFrame* ::NS_NewSVGOuterSVGFrame(

@@ -11,8 +11,8 @@
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "nsIFrame.h"
+#include "mozilla/ISVGDisplayableFrame.h"
 #include "mozilla/SVGContainerFrame.h"
-#include "nsSVGDisplayableFrame.h"
 #include "nsSVGIntegrationUtils.h"
 #include "mozilla/dom/SVGViewportElement.h"
 

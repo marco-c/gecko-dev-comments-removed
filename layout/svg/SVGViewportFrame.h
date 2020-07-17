@@ -9,7 +9,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SVGContainerFrame.h"
-#include "nsISVGSVGFrame.h"
+#include "ISVGSVGFrame.h"
 
 class gfxContext;
 
@@ -18,8 +18,7 @@ namespace mozilla {
 
 
 
-class SVGViewportFrame : public SVGDisplayContainerFrame,
-                         public nsISVGSVGFrame {
+class SVGViewportFrame : public SVGDisplayContainerFrame, public ISVGSVGFrame {
  protected:
   SVGViewportFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                    nsIFrame::ClassID aID)

@@ -8,15 +8,15 @@
 #define __NS_ISVGCHILDFRAME_H__
 
 #include "gfxMatrix.h"
+#include "gfxPoint.h"
 #include "gfxRect.h"
 #include "nsQueryFrame.h"
+#include "nsRect.h"
 #include "mozilla/gfx/MatrixFwd.h"
 
 class gfxContext;
 class nsIFrame;
 class SVGBBox;
-
-struct nsRect;
 
 namespace mozilla {
 class SVGAnimatedLengthList;
@@ -25,6 +25,8 @@ class SVGLengthList;
 class SVGNumberList;
 class SVGUserUnitList;
 
+namespace image {
+struct imgDrawingParams;
 }  
 
 
@@ -42,16 +44,11 @@ class SVGUserUnitList;
 
 
 
-class nsSVGDisplayableFrame : public nsQueryFrame {
+class ISVGDisplayableFrame : public nsQueryFrame {
  public:
-  typedef mozilla::SVGAnimatedNumberList SVGAnimatedNumberList;
-  typedef mozilla::SVGNumberList SVGNumberList;
-  typedef mozilla::SVGAnimatedLengthList SVGAnimatedLengthList;
-  typedef mozilla::SVGLengthList SVGLengthList;
-  typedef mozilla::SVGUserUnitList SVGUserUnitList;
-  typedef mozilla::image::imgDrawingParams imgDrawingParams;
+  typedef image::imgDrawingParams imgDrawingParams;
 
-  NS_DECL_QUERYFRAME_TARGET(nsSVGDisplayableFrame)
+  NS_DECL_QUERYFRAME_TARGET(ISVGDisplayableFrame)
 
   
 
@@ -111,9 +108,6 @@ class nsSVGDisplayableFrame : public nsQueryFrame {
   
   
   
-  
-  
-  
   enum SVGChangedFlags {
     TRANSFORM_CHANGED = 0x01,
     COORD_CONTEXT_CHANGED = 0x02,
@@ -151,11 +145,13 @@ class nsSVGDisplayableFrame : public nsQueryFrame {
 
 
 
-  virtual SVGBBox GetBBoxContribution(
-      const mozilla::gfx::Matrix& aToBBoxUserspace, uint32_t aFlags) = 0;
+  virtual SVGBBox GetBBoxContribution(const gfx::Matrix& aToBBoxUserspace,
+                                      uint32_t aFlags) = 0;
 
   
   virtual bool IsDisplayContainer() = 0;
 };
+
+}  
 
 #endif  

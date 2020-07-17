@@ -9,9 +9,11 @@
 
 #include "nsQueryFrame.h"
 
-class nsISVGSVGFrame {
+namespace mozilla {
+
+class ISVGSVGFrame {
  public:
-  NS_DECL_QUERYFRAME_TARGET(nsISVGSVGFrame)
+  NS_DECL_QUERYFRAME_TARGET(ISVGSVGFrame)
 
   
 
@@ -22,5 +24,7 @@ class nsISVGSVGFrame {
 
   virtual void NotifyViewportOrTransformChanged(uint32_t aFlags) = 0;
 };
+
+}  
 
 #endif  

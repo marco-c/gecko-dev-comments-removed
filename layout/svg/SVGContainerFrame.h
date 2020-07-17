@@ -8,10 +8,10 @@
 #define NS_SVGCONTAINERFRAME_H
 
 #include "mozilla/Attributes.h"
+#include "mozilla/ISVGDisplayableFrame.h"
 #include "mozilla/UniquePtr.h"
 #include "nsContainerFrame.h"
 #include "nsIFrame.h"
-#include "nsSVGDisplayableFrame.h"
 #include "nsQueryFrame.h"
 #include "nsRect.h"
 #include "nsSVGUtils.h"
@@ -114,7 +114,7 @@ class SVGContainerFrame : public nsContainerFrame {
 
 
 class SVGDisplayContainerFrame : public SVGContainerFrame,
-                                 public nsSVGDisplayableFrame {
+                                 public ISVGDisplayableFrame {
  protected:
   SVGDisplayContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                            nsIFrame::ClassID aID)

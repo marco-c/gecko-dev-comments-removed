@@ -8,11 +8,11 @@
 #define __SVGGEOMETRYFRAME_H__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/ISVGDisplayableFrame.h"
 #include "gfxMatrix.h"
 #include "gfxRect.h"
 #include "nsDisplayList.h"
 #include "nsIFrame.h"
-#include "nsSVGDisplayableFrame.h"
 #include "nsLiteralString.h"
 #include "nsQueryFrame.h"
 #include "nsSVGUtils.h"
@@ -46,7 +46,7 @@ nsIFrame* NS_NewSVGGeometryFrame(mozilla::PresShell* aPresShell,
 
 namespace mozilla {
 
-class SVGGeometryFrame : public nsIFrame, public nsSVGDisplayableFrame {
+class SVGGeometryFrame : public nsIFrame, public ISVGDisplayableFrame {
   typedef gfx::DrawTarget DrawTarget;
 
   friend nsIFrame* ::NS_NewSVGGeometryFrame(mozilla::PresShell* aPresShell,

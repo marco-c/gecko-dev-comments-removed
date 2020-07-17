@@ -168,7 +168,7 @@ void SVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 
 NS_QUERYFRAME_HEAD(SVGOuterSVGFrame)
-  NS_QUERYFRAME_ENTRY(nsISVGSVGFrame)
+  NS_QUERYFRAME_ENTRY(ISVGSVGFrame)
 NS_QUERYFRAME_TAIL_INHERITING(SVGDisplayContainerFrame)
 
 

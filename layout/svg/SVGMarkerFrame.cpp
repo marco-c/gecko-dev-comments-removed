@@ -129,9 +129,9 @@ void SVGMarkerFrame::PaintMark(gfxContext& aContext,
   }
 
   nsIFrame* kid = GetAnonymousChildFrame(this);
-  nsSVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
+  ISVGDisplayableFrame* SVGFrame = do_QueryFrame(kid);
   
-  SVGFrame->NotifySVGChanged(nsSVGDisplayableFrame::TRANSFORM_CHANGED);
+  SVGFrame->NotifySVGChanged(ISVGDisplayableFrame::TRANSFORM_CHANGED);
   nsSVGUtils::PaintFrameWithEffects(kid, aContext, markTM, aImgParams);
 
   if (StyleDisplay()->IsScrollableOverflow()) aContext.Restore();
@@ -169,7 +169,7 @@ SVGBBox SVGMarkerFrame::GetMarkBBoxContribution(const Matrix& aToBBoxUserspace,
 
   Matrix tm = viewBoxTM * mMarkerTM * aToBBoxUserspace;
 
-  nsSVGDisplayableFrame* child = do_QueryFrame(GetAnonymousChildFrame(this));
+  ISVGDisplayableFrame* child = do_QueryFrame(GetAnonymousChildFrame(this));
   
   
   
