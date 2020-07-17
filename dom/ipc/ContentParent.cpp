@@ -1558,7 +1558,7 @@ void ContentParent::MaybeAsyncSendShutDownMessage() {
 
   
   
-  MessageLoop::current()->PostTask(NewRunnableMethod<ShutDownMethod>(
+  GetCurrentSerialEventTarget()->Dispatch(NewRunnableMethod<ShutDownMethod>(
       "dom::ContentParent::ShutDownProcess", this,
       &ContentParent::ShutDownProcess, SEND_SHUTDOWN_MESSAGE));
 }
@@ -1899,7 +1899,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
            this, mSubprocess,
            mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
   
-  MessageLoop::current()->PostTask(NS_NewRunnableFunction(
+  GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
       "DelayedDeleteSubprocessRunnable", [subprocess = mSubprocess] {
         MOZ_LOG(
             ContentParent::GetLog(), LogLevel::Debug,

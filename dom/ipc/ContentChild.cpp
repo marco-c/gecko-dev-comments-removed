@@ -2858,7 +2858,7 @@ void ContentChild::ShutdownInternal() {
     
     
     
-    MessageLoop::current()->PostDelayedTask(
+    GetCurrentSerialEventTarget()->DelayedDispatch(
         NewRunnableMethod("dom::ContentChild::RecvShutdown", this,
                           &ContentChild::ShutdownInternal),
         100);

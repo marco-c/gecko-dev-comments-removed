@@ -10,9 +10,6 @@
 
 #include "LayerTransactionParent.h"   
 #include "apz/src/APZCTreeManager.h"  
-#include "base/message_loop.h"        
-#include "base/task.h"                
-#include "base/thread.h"              
 #include "gfxUtils.h"
 #ifdef XP_WIN
 #  include "mozilla/gfx/DeviceManagerDx.h"  
@@ -68,7 +65,7 @@ void ContentCompositorBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
 
   
   
-  MessageLoop::current()->PostTask(NewRunnableMethod(
+  GetCurrentSerialEventTarget()->Dispatch(NewRunnableMethod(
       "layers::ContentCompositorBridgeParent::DeferredDestroy", this,
       &ContentCompositorBridgeParent::DeferredDestroy));
 }
