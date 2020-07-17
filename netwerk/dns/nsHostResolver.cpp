@@ -1309,6 +1309,7 @@ nsresult nsHostResolver::TrrLookup(nsHostRecord* aRec, TRR* pushedTRR) {
   if (addrRec) {
     addrRec->mTRRSuccess = 0;  
     addrRec->mTrrStart = TimeStamp::Now();
+    addrRec->mTRRUsed = true;  
     addrRec->mTrrAUsed = AddrHostRecord::INIT;
     addrRec->mTrrAAAAUsed = AddrHostRecord::INIT;
 
@@ -1567,15 +1568,6 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec) {
     if (!rec->IsAddrRecord()) {
       return rv;
     }
-
-#ifdef DEBUG
-    
-    
-    
-    RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
-    MOZ_ASSERT(addrRec && !addrRec->mTRRUsed);
-#endif
-
     rv = NativeLookup(rec);
   }
 
