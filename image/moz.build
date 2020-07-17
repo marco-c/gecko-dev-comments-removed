@@ -118,8 +118,6 @@ LOCAL_INCLUDES += [
     
     '/image/decoders',
     
-    '/layout/svg',
-    
     '/netwerk/base',
     
     '/xpcom/threads',

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/ShapeUtils.h"
 
@@ -11,7 +11,7 @@
 #include "nsCSSRendering.h"
 #include "nsMargin.h"
 #include "nsStyleStruct.h"
-#include "SVGContentUtils.h"
+#include "mozilla/SVGContentUtils.h"
 
 namespace mozilla {
 
@@ -54,8 +54,8 @@ nscoord ShapeUtils::ComputeCircleRadius(const StyleBasicShape& aBasicShape,
   const auto& radius = aBasicShape.AsCircle().radius;
   if (radius.IsLength()) {
     return radius.AsLength().Resolve([&] {
-      // We resolve percent <shape-radius> value for circle() as defined here:
-      // https://drafts.csswg.org/css-shapes/#funcdef-circle
+      
+      
       double referenceLength = SVGContentUtils::ComputeNormalizedHypotenuse(
           aRefBox.width, aRefBox.height);
       return NSToCoordRound(referenceLength);
@@ -93,7 +93,7 @@ nsSize ShapeUtils::ComputeEllipseRadii(const StyleBasicShape& aBasicShape,
   return radii;
 }
 
-/* static */
+
 nsRect ShapeUtils::ComputeInsetRect(const StyleBasicShape& aBasicShape,
                                     const nsRect& aRefBox) {
   MOZ_ASSERT(aBasicShape.IsInset(), "The basic shape must be inset()!");
@@ -107,13 +107,13 @@ nsRect ShapeUtils::ComputeInsetRect(const StyleBasicShape& aBasicShape,
   nscoord y = aRefBox.Y() + inset.top;
   nscoord height = aRefBox.Height() - inset.TopBottom();
 
-  // Invert left and right, if necessary.
+  
   if (width < 0) {
     width *= -1;
     x -= width;
   }
 
-  // Invert top and bottom, if necessary.
+  
   if (height < 0) {
     height *= -1;
     y -= height;
@@ -122,7 +122,7 @@ nsRect ShapeUtils::ComputeInsetRect(const StyleBasicShape& aBasicShape,
   return nsRect(x, y, width, height);
 }
 
-/* static */
+
 bool ShapeUtils::ComputeInsetRadii(const StyleBasicShape& aBasicShape,
                                    const nsRect& aInsetRect,
                                    const nsRect& aRefBox, nscoord aRadii[8]) {
@@ -131,7 +131,7 @@ bool ShapeUtils::ComputeInsetRadii(const StyleBasicShape& aBasicShape,
                                       Sides(), aRadii);
 }
 
-/* static */
+
 nsTArray<nsPoint> ShapeUtils::ComputePolygonVertices(
     const StyleBasicShape& aBasicShape, const nsRect& aRefBox) {
   MOZ_ASSERT(aBasicShape.IsPolygon(), "The basic shape must be polygon()!");
@@ -146,4 +146,4 @@ nsTArray<nsPoint> ShapeUtils::ComputePolygonVertices(
   return vertices;
 }
 
-}  // namespace mozilla
+}  
