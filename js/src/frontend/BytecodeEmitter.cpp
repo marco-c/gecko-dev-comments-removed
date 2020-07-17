@@ -10924,7 +10924,7 @@ bool BytecodeEmitter::intoScriptStencil(ScriptStencil* stencil) {
   
   if (sc->isFunctionBox()) {
     FunctionBox* funbox = sc->asFunctionBox();
-    stencil->functionIndex.emplace(funbox->index());
+    MOZ_ASSERT(stencil->functionIndex.isSome());
     stencil->fieldInitializers = funbox->fieldInitializers;
 
     
