@@ -106,7 +106,7 @@ def lint(paths, config, **lintargs):
     
     cmd_args += ["-fjson",
                  "--disable=all",
-                 "--enable=F,E,unreachable,duplicate-key,unnecessary-semicolon,global-variable-not-assigned,unused-variable,binary-op-exception,bad-format-string,anomalous-backslash-in-string,bad-open-mode",  
+                 "--enable=F,E,unreachable,duplicate-key,unnecessary-semicolon,global-variable-not-assigned,unused-variable,binary-op-exception,bad-format-string,anomalous-backslash-in-string,bad-open-mode,no-else-return",  
                  "--disable=import-error,no-member"]
 
     base_command = cmd_args + paths
