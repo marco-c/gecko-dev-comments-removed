@@ -651,22 +651,17 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
     this.parentActor = targetActor;
 
+    this._onApplicableStateChanged = this._onApplicableStateChanged.bind(this);
     this._onNewStyleSheetActor = this._onNewStyleSheetActor.bind(this);
-    this._onSheetAdded = this._onSheetAdded.bind(this);
     this._onWindowReady = this._onWindowReady.bind(this);
     this._transitionSheetLoaded = false;
 
     this.parentActor.on("stylesheet-added", this._onNewStyleSheetActor);
     this.parentActor.on("window-ready", this._onWindowReady);
 
-    
-    
-    
-    
-    
     this.parentActor.chromeEventHandler.addEventListener(
       "StyleSheetApplicableStateChanged",
-      this._onSheetAdded,
+      this._onApplicableStateChanged,
       true
     );
 
@@ -688,7 +683,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
     this.parentActor.chromeEventHandler.removeEventListener(
       "StyleSheetApplicableStateChanged",
-      this._onSheetAdded,
+      this._onApplicableStateChanged,
       true
     );
 
@@ -745,10 +740,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     
     
     
-    if (
-      sheet.href &&
-      sheet.href.toLowerCase() == "about:preferencestylesheet"
-    ) {
+    if (sheet.href?.toLowerCase() === "about:preferencestylesheet") {
       return false;
     }
 
@@ -764,10 +756,24 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _onSheetAdded: function(evt) {
-    const sheet = evt.stylesheet;
-    if (this._shouldListSheet(sheet) && !this._haveAncestorWithSameURL(sheet)) {
-      this.parentActor.createStyleSheetActor(sheet);
+
+
+
+
+
+
+
+
+  _onApplicableStateChanged: function({ applicable, stylesheet }) {
+    if (
+      
+      applicable &&
+      
+      stylesheet.ownerNode &&
+      this._shouldListSheet(stylesheet) &&
+      !this._haveAncestorWithSameURL(stylesheet)
+    ) {
+      this.parentActor.createStyleSheetActor(stylesheet);
     }
   },
 
