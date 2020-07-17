@@ -183,6 +183,11 @@ void Animation::SetEffectNoUpdate(AnimationEffect* aEffect) {
     
     RefPtr<AnimationEffect> oldEffect = mEffect;
     mEffect = nullptr;
+    if (IsPartialPrerendered()) {
+      if (KeyframeEffect* oldKeyframeEffect = oldEffect->AsKeyframeEffect()) {
+        oldKeyframeEffect->ResetPartialPrerendered();
+      }
+    }
     oldEffect->SetAnimation(nullptr);
 
     
