@@ -16,11 +16,6 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
     private ImageDecoder() {}
 
-    
-
-
-
-
     public static ImageDecoder instance() {
         if (instance == null) {
             instance = new ImageDecoder();
@@ -30,7 +25,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
     }
 
     @WrapForJNI(dispatchTo = "gecko", stubName = "Decode")
-    private static native void nativeDecode(final String uri, final int maxSize,
+    private static native void nativeDecode(final String uri, final int desiredLength,
                                             GeckoResult<Bitmap> result);
 
     
@@ -65,8 +60,9 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
+
     @NonNull
-    public GeckoResult<Bitmap> decode(final @NonNull String uri, final int maxSize) {
+    public GeckoResult<Bitmap> decode(final @NonNull String uri, final int desiredLength) {
         if (uri == null) {
             throw new IllegalArgumentException("Uri cannot be null");
         }
@@ -74,10 +70,10 @@ import org.mozilla.gecko.annotation.WrapForJNI;
         final GeckoResult<Bitmap> result = new GeckoResult<>();
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            nativeDecode(uri, maxSize, result);
+            nativeDecode(uri, desiredLength, result);
         } else {
             GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY, this,
-                    "nativeDecode", String.class, uri, int.class, maxSize,
+                    "nativeDecode", String.class, uri, int.class, desiredLength,
                     GeckoResult.class, result);
         }
 
