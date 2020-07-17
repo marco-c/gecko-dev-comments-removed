@@ -18,6 +18,13 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/LoginHelper.jsm"
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "usernameAutocompleteSearch",
+  "@mozilla.org/autocomplete/search;1?name=login-doorhanger-username",
+  "nsIAutoCompleteSimpleSearch"
+);
+
 XPCOMUtils.defineLazyGetter(this, "strBundle", () => {
   return Services.strings.createBundle(
     "chrome://passwordmgr/locale/passwordmgr.properties"
@@ -99,10 +106,7 @@ class LoginManagerPrompter {
     dismissed = false,
     notifySaved = false,
     autoFilledLoginGuid = "",
-    possibleValues = {
-      usernames: new Set(),
-      passwords: new Set(),
-    }
+    possibleValues = undefined
   ) {
     log.debug("promptToSavePassword");
     let inPrivateBrowsing = PrivateBrowsingUtils.isBrowserPrivate(aBrowser);
@@ -114,6 +118,7 @@ class LoginManagerPrompter {
         dismissed: inPrivateBrowsing || dismissed,
         extraAttr: notifySaved ? "attention" : "",
       },
+      possibleValues,
       {
         notifySaved,
         autoFilledLoginGuid,
@@ -145,11 +150,17 @@ class LoginManagerPrompter {
 
 
 
+
+
+
+
+
   static _showLoginCaptureDoorhanger(
     browser,
     login,
     type,
     showOptions = {},
+    possibleValues = undefined,
     {
       notifySaved = false,
       messageStringID,
@@ -162,6 +173,11 @@ class LoginManagerPrompter {
     );
     log.debug(
       `_showLoginCaptureDoorhanger, got autoFilledLoginGuid: ${autoFilledLoginGuid}`
+    );
+
+    LoginManagerPrompter._setUsernameAutocomplete(
+      login,
+      possibleValues?.usernames
     );
 
     let saveMsgNames = {
@@ -578,6 +594,22 @@ class LoginManagerPrompter {
               chromeDoc
                 .getElementById("password-notification-username-dropmarker")
                 .addEventListener("click", togglePopup);
+
+              let usernameSuggestions = LoginManagerPrompter._getUsernameSuggestions(
+                login,
+                possibleValues?.usernames
+              );
+              chromeDoc.getElementById(
+                "password-notification-username-dropmarker"
+              ).hidden = !usernameSuggestions.length;
+
+              chromeDoc
+                .getElementById("password-notification-username")
+                .classList.toggle(
+                  "ac-has-end-icon",
+                  !!usernameSuggestions.length
+                );
+
               let toggleBtn = chromeDoc.getElementById(
                 "password-notification-visibilityToggle"
               );
@@ -700,10 +732,7 @@ class LoginManagerPrompter {
     notifySaved = false,
     autoSavedLoginGuid = "",
     autoFilledLoginGuid = "",
-    possibleValues = {
-      usernames: new Set(),
-      passwords: new Set(),
-    }
+    possibleValues = undefined
   ) {
     let login = aOldLogin.clone();
     login.origin = aNewLogin.origin;
@@ -731,6 +760,7 @@ class LoginManagerPrompter {
         dismissed,
         extraAttr: notifySaved ? "attention" : "",
       },
+      possibleValues,
       {
         notifySaved,
         messageStringID,
@@ -896,6 +926,72 @@ class LoginManagerPrompter {
         (l.password == aLogin.password && !l.username) ||
         (includeGUID && includeGUID == l.guid)
     );
+  }
+
+  
+
+
+
+
+
+  static _setUsernameAutocomplete(login, possibleUsernames = new Set()) {
+    let result = Cc["@mozilla.org/autocomplete/simple-result;1"].createInstance(
+      Ci.nsIAutoCompleteSimpleResult
+    );
+    result.setDefaultIndex(0);
+
+    let usernames = this._getUsernameSuggestions(login, possibleUsernames);
+    for (let { text, style } of usernames) {
+      let value = text;
+      let comment = "";
+      let image = "";
+      let _style = style;
+      result.appendMatch(value, comment, image, _style);
+    }
+
+    if (usernames.length) {
+      result.setSearchResult(Ci.nsIAutoCompleteResult.RESULT_SUCCESS);
+    } else {
+      result.setSearchResult(Ci.nsIAutoCompleteResult.RESULT_NOMATCH);
+    }
+
+    usernameAutocompleteSearch.overrideNextResult(result);
+  }
+
+  
+
+
+
+
+
+  static _getUsernameSuggestions(login, possibleUsernames = new Set()) {
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    let possible = [...possibleUsernames].map(username => {
+      
+      return { text: username, style: "" };
+    });
+
+    
+    return possible.reduce((acc, next) => {
+      let alreadyInAcc = acc.findIndex(entry => entry.text == next.text) != -1;
+      if (!alreadyInAcc) {
+        acc.push(next);
+      } else if (next.style == "possible-username") {
+        let existingIndex = acc.findIndex(entry => entry.text == next.text);
+        acc[existingIndex] = next;
+      }
+      return acc;
+    }, []);
   }
 }
 

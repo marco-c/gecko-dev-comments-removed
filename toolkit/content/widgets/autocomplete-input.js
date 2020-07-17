@@ -113,12 +113,6 @@
 
       this._popup = null;
 
-      
-
-
-
-      this.maxDropMarkerRows = 14;
-
       this.nsIAutocompleteInput = this.getCustomInterfaceCallback(
         Ci.nsIAutoCompleteInput
       );
@@ -312,6 +306,7 @@
     
 
 
+
     set maxRows(val) {
       this.setAttribute("maxrows", val);
       return val;
@@ -319,6 +314,18 @@
 
     get maxRows() {
       return parseInt(this.getAttribute("maxrows")) || 0;
+    }
+    
+
+
+
+    set maxdropmarkerrows(val) {
+      this.setAttribute("maxdropmarkerrows", val);
+      return val;
+    }
+
+    get maxdropmarkerrows() {
+      return parseInt(this.getAttribute("maxdropmarkerrows"), 10) || 14;
     }
     
 
@@ -458,7 +465,7 @@
       
       
       
-      this.maxRows = this.maxDropMarkerRows;
+      this.maxRows = this.maxdropmarkerrows;
 
       
       if (!this.focused) {
