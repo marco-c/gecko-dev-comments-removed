@@ -2410,14 +2410,6 @@ pref("bidi.numeral", 0);
 pref("bidi.browser.ui", false);
 
 
-pref("layout.word_select.eat_space_to_next_word", false);
-pref("layout.word_select.stop_at_punctuation", true);
-
-
-
-pref("layout.word_select.stop_at_underscore", false);
-
-
 
 
 
@@ -2943,9 +2935,6 @@ pref("font.size.monospace.x-math", 13);
   
   
   pref("gfx.font_rendering.cleartype_params.force_gdi_classic_max_size", 15);
-
-  
-  pref("layout.word_select.eat_space_to_next_word", true);
 
   
   

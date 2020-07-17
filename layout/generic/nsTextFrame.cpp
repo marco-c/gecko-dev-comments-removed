@@ -7857,16 +7857,13 @@ bool ClusterIterator::IsWhitespace() const {
 bool ClusterIterator::IsPunctuation() const {
   NS_ASSERTION(mCharIndex >= 0, "No cluster selected");
   
-  static bool sStopAtUnderscore =
-      Preferences::GetBool("layout.word_select.stop_at_underscore", false);
-  
   
   
   uint32_t ch = mFrag->CharAt(mCharIndex);
   uint8_t cat = unicode::GetGeneralCategory(ch);
   switch (cat) {
     case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
-      if (ch == '_' && !sStopAtUnderscore) {
+      if (ch == '_' && !StaticPrefs::layout_word_select_stop_at_underscore()) {
         return false;
       }
       [[fallthrough]];

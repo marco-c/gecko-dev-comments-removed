@@ -4,7 +4,7 @@
 
 
 #include "mozilla/intl/WordBreaker.h"
-#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "nsComplexBreaker.h"
 #include "nsUnicodeProperties.h"
 
@@ -75,10 +75,6 @@ static bool IsScriptioContinua(char16_t aChar) {
 
 WordBreakClass WordBreaker::GetClass(char16_t c) {
   
-  static bool sStopAtUnderscore =
-      Preferences::GetBool("layout.word_select.stop_at_underscore", false);
-
-  
 
   if (IS_ALPHABETICAL_SCRIPT(c)) {
     if (IS_ASCII(c)) {
@@ -86,7 +82,7 @@ WordBreakClass WordBreaker::GetClass(char16_t c) {
         return kWbClassSpace;
       }
       if (ASCII_IS_ALPHA(c) || ASCII_IS_DIGIT(c) ||
-          (c == '_' && !sStopAtUnderscore)) {
+          (c == '_' && !StaticPrefs::layout_word_select_stop_at_underscore())) {
         return kWbClassAlphaLetter;
       }
       return kWbClassPunct;

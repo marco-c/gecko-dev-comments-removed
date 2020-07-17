@@ -8303,6 +8303,27 @@ static bool IsMovingInFrameDirection(nsIFrame* frame, nsDirection aDirection,
   return aDirection == (isReverseDirection ? eDirPrevious : eDirNext);
 }
 
+
+
+
+
+static bool ShouldWordSelectionEatSpace(const nsPeekOffsetStruct& aPos) {
+  if (aPos.mWordMovementType != eDefaultBehavior) {
+    
+    
+    
+    return (aPos.mWordMovementType == eEndWord) ==
+           (aPos.mDirection == eDirPrevious);
+  }
+  
+  
+  
+  
+  
+  return aPos.mDirection == eDirNext &&
+         StaticPrefs::layout_word_select_eat_space_to_next_word();
+}
+
 nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
   if (!aPos) return NS_ERROR_NULL_POINTER;
   nsresult result = NS_ERROR_FAILURE;
@@ -8394,27 +8415,7 @@ nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
       
       [[fallthrough]];
     case eSelectWord: {
-      
-      
-      
-      
-      bool wordSelectEatSpace;
-      if (aPos->mWordMovementType != eDefaultBehavior) {
-        
-        
-        
-        wordSelectEatSpace = ((aPos->mWordMovementType == eEndWord) ==
-                              (aPos->mDirection == eDirPrevious));
-      } else {
-        
-        
-        
-        
-        
-        wordSelectEatSpace =
-            aPos->mDirection == eDirNext &&
-            Preferences::GetBool("layout.word_select.eat_space_to_next_word");
-      }
+      bool wordSelectEatSpace = ShouldWordSelectionEatSpace(*aPos);
 
       
       
@@ -8724,7 +8725,7 @@ bool nsIFrame::BreakWordBetweenPunctuation(const PeekWordState* aState,
     
     return true;
   }
-  if (!Preferences::GetBool("layout.word_select.stop_at_punctuation")) {
+  if (!StaticPrefs::layout_word_select_stop_at_punctuation()) {
     
     
     return aWhitespaceAfter;
