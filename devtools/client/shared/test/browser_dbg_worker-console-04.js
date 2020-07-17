@@ -19,7 +19,7 @@ Services.scriptloader.loadSubScript(
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/connection just closed/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/connection just closed/);
 
 const TAB_URL = EXAMPLE_URL + "doc_WorkerTargetActor.attachThread-tab.html";
 const WORKER_URL = "code_WorkerTargetActor.attachThread-worker.js";

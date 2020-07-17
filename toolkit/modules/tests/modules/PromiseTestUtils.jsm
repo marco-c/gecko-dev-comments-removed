@@ -220,7 +220,7 @@ var PromiseTestUtils = {
 
 
 
-  whitelistRejectionsGlobally(regExp) {
+  allowMatchingRejectionsGlobally(regExp) {
     this._globalRejectionIgnoreFns.push(rejection =>
       regExp.test(rejection.message)
     );

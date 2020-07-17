@@ -84,7 +84,7 @@ add_task(async function testWithRange() {
   
   
   
-  PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_ABORT/);
+  PromiseTestUtils.allowMatchingRejectionsGlobally(/NS_ERROR_ABORT/);
 
   await SpecialPowers.pushPrefEnv({
     set: [

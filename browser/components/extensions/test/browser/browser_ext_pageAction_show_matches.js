@@ -2,7 +2,7 @@
 
 "use strict";
 
-PromiseTestUtils.whitelistRejectionsGlobally(/packaging errors/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/packaging errors/);
 
 function getExtension(page_action) {
   return ExtensionTestUtils.loadExtension({

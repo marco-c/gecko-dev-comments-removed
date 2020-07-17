@@ -2016,9 +2016,9 @@ const { PromiseTestUtils } = ChromeUtils.import(
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/Page has navigated/);
-PromiseTestUtils.whitelistRejectionsGlobally(/Current thread has changed/);
-PromiseTestUtils.whitelistRejectionsGlobally(
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Page has navigated/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Current thread has changed/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(
   /Current thread has paused or resumed/
 );
-PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);

@@ -8,7 +8,7 @@
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/this\.worker is null/);
 
 requestLongerTimeout(2);
 

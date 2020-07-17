@@ -8,7 +8,7 @@ const { PromiseTestUtils } = ChromeUtils.import(
 );
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
 
 function waitForDispatch(store, type) {
   return new Promise(resolve => {

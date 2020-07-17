@@ -9,8 +9,8 @@
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
-PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_FAILURE/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/File closed/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/NS_ERROR_FAILURE/);
 
 requestLongerTimeout(5);
 

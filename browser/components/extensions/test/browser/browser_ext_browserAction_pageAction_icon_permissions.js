@@ -2,7 +2,7 @@
 
 "use strict";
 
-PromiseTestUtils.whitelistRejectionsGlobally(/packaging errors/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/packaging errors/);
 
 
 add_task(async function testInvalidIconSizes() {

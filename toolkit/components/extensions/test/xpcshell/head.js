@@ -37,10 +37,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Schemas: "resource://gre/modules/Schemas.jsm",
 });
 
-PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Message manager disconnected/
+);
 
 
 
+Services.prefs.setBoolPref("browser.tabs.remote.autostart", false);
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
 const testEnv = {
   expectRemote: false,

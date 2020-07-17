@@ -9,7 +9,7 @@
 
 
 ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
-PromiseTestUtils.whitelistRejectionsGlobally(/aborted by the user agent/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/aborted by the user agent/);
 ChromeUtils.import("resource:///modules/BrowserWindowTracker.jsm", this);
 
 const permissionError =

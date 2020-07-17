@@ -3,8 +3,8 @@
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/No such actor/);
-PromiseTestUtils.whitelistRejectionsGlobally(/connection just closed/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/No such actor/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/connection just closed/);
 
 const MAXIMUM_ITEMS = 10;
 

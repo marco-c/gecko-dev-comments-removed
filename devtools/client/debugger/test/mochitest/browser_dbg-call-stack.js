@@ -3,7 +3,7 @@
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/No such actor/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/No such actor/);
 
 add_task(async function() {
   const dbg = await initDebugger("doc-script-switching.html");

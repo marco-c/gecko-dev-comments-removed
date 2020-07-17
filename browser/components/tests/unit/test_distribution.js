@@ -40,8 +40,8 @@ add_task(async function setup() {
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/A request was aborted/);
-PromiseTestUtils.whitelistRejectionsGlobally(
+PromiseTestUtils.allowMatchingRejectionsGlobally(/A request was aborted/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(
   /The operation failed for reasons unrelated/
 );
 

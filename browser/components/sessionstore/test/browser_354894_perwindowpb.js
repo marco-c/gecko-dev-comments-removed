@@ -32,7 +32,7 @@ ChromeUtils.import("resource:///modules/sessionstore/SessionStartup.jsm", this);
 
 
 ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
-PromiseTestUtils.whitelistRejectionsGlobally(/getTopWindow/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/getTopWindow/);
 
 
 

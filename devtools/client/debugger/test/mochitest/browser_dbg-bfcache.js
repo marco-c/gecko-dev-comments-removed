@@ -2,7 +2,7 @@
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
 
 
 add_task(async function() {

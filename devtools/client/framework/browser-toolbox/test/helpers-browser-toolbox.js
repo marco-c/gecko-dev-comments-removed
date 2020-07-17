@@ -50,7 +50,7 @@ async function initBrowserToolboxTask({
   
   ChromeUtils.import(
     "resource://testing-common/PromiseTestUtils.jsm"
-  ).PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
+  ).PromiseTestUtils.allowMatchingRejectionsGlobally(/File closed/);
 
   const process = await new Promise(onRun => {
     BrowserToolboxLauncher.init(null, onRun,  true);

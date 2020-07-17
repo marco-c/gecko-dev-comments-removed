@@ -14,7 +14,7 @@ const { PromiseTestUtils } = ChromeUtils.import(
 );
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/Page has navigated/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Page has navigated/);
 
 const TEST_URL =
   "data:text/html;charset=utf-8," +

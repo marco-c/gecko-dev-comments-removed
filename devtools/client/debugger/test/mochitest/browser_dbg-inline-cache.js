@@ -12,7 +12,7 @@
 
 
 
-PromiseTestUtils.whitelistRejectionsGlobally(/Resource .*? does not exist/);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Resource .*? does not exist/);
 
 const server = createTestHTTPServer();
 
