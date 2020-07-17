@@ -488,7 +488,7 @@ class WebrtcVideoConduit
 
   bool RequiresNewSendStream(const VideoCodecConfig& newConfig) const;
 
-  mozilla::ReentrantMonitor mTransportMonitor;
+  mutable mozilla::ReentrantMonitor mTransportMonitor;
 
   
   RefPtr<TransportInterface> mTransmitterTransport;
