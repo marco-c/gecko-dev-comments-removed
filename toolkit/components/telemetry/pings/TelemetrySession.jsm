@@ -324,6 +324,7 @@ var Impl = {
   
   
   
+  
   _fogUserActive: false,
   _startupIO: {},
   
@@ -1159,12 +1160,25 @@ var Impl = {
       error = !TelemetryStopwatch.start("FOG_EVAL_WINDOW_RAISED_S", aWindow, {
         inSeconds: true,
       });
+    } else if (
+      this._fogFirstWindowChange !== false &&
+      !TelemetryStopwatch.running("FOG_EVAL_WINDOW_RAISED_S", aWindow)
+    ) {
+      
+      
+      let histogram = Telemetry.getHistogramById("FOG_EVAL_WINDOW_RAISED_S");
+      histogram.add(
+        Math.floor(
+          (Policy.monotonicNow() - this._subsessionStartTimeMonotonic) / 1000
+        )
+      );
     } else {
       error = !TelemetryStopwatch.finish("FOG_EVAL_WINDOW_RAISED_S", aWindow);
     }
     if (error) {
       Telemetry.scalarAdd("fog.eval.window_raised_error", 1);
     }
+    this._fogFirstWindowChange = false;
   },
 
   
