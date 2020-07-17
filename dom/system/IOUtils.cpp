@@ -13,6 +13,7 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/Span.h"
+#include "mozilla/TextUtils.h"
 #include "nspr/prio.h"
 #include "nspr/private/pprio.h"
 #include "nspr/prtypes.h"
@@ -106,6 +107,37 @@ static nsCString FormatErrorMessage(nsresult aError,
                          static_cast<uint32_t>(aError));
 }
 
+#ifdef XP_WIN
+constexpr char PathSeparator = u'\\';
+#else
+constexpr char PathSeparator = u'/';
+#endif
+
+
+bool IOUtils::IsAbsolutePath(const nsAString& aPath) {
+  
+  const size_t length = aPath.Length();
+
+#ifdef XP_WIN
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (length > 3 && mozilla::IsAsciiAlpha(aPath.CharAt(0)) &&
+      aPath.CharAt(1) == u':' && aPath.CharAt(2) == u'\\') {
+    return true;
+  }
+#endif
+  return length > 0 && aPath.CharAt(0) == PathSeparator;
+}
+
 
 
 
@@ -128,6 +160,12 @@ already_AddRefed<Promise> IOUtils::Read(GlobalObject& aGlobal,
   REJECT_IF_NULL_EVENT_TARGET(bg, promise);
 
   
+  if (!IsAbsolutePath(aPath)) {
+    promise->MaybeRejectWithOperationError(
+        "Only absolute file paths are permitted");
+    return promise.forget();
+  }
+
   uint32_t toRead = 0;
   if (aMaxBytes.WasPassed()) {
     toRead = aMaxBytes.Value();
@@ -223,6 +261,11 @@ already_AddRefed<Promise> IOUtils::WriteAtomic(
   REJECT_IF_NULL_EVENT_TARGET(bg, promise);
 
   
+  if (!IsAbsolutePath(aPath)) {
+    promise->MaybeRejectWithOperationError(
+        "Only absolute file paths are permitted");
+    return promise.forget();
+  }
   aData.ComputeState();
   FallibleTArray<uint8_t> toWrite;
   if (!toWrite.InsertElementsAt(0, aData.Data(), aData.Length(), fallible)) {
