@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/HTMLLegendElement.h"
+#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/HTMLLegendElementBinding.h"
 #include "nsFocusManager.h"
 #include "nsIFrame.h"

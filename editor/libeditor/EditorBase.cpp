@@ -62,6 +62,7 @@
 #include "mozilla/TransactionManager.h"  
 #include "mozilla/Tuple.h"
 #include "mozilla/dom/AbstractRange.h"  
+#include "mozilla/dom/Attr.h"           
 #include "mozilla/dom/CharacterData.h"  
 #include "mozilla/dom/DataTransfer.h"   
 #include "mozilla/dom/Element.h"        

@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/HTMLDialogElement.h"
+#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/HTMLDialogElementBinding.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/StaticPrefs_dom.h"
