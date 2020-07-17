@@ -445,6 +445,16 @@ var UrlbarUtils = {
   },
 
   
+  
+  
+  
+  getPrefixRank(prefix) {
+    return ["http://www.", "http://", "https://www.", "https://"].indexOf(
+      prefix
+    );
+  },
+
+  
 
 
 
