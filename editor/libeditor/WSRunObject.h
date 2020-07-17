@@ -33,13 +33,6 @@ namespace mozilla {
 
 
 
-
-
-
-
-
-
-
 class WSRunScanner;
 
 
@@ -427,16 +420,14 @@ class MOZ_STACK_CLASS WSRunScanner {
   class TextFragmentData;
 
   
-  
-  
-  struct MOZ_STACK_CLASS WSFragment final {
+  struct MOZ_STACK_CLASS VisibleWhiteSpacesData final {
     nsCOMPtr<nsINode> mStartNode;  
     nsCOMPtr<nsINode> mEndNode;    
     int32_t mStartOffset;          
     int32_t mEndOffset;            
 
    private:
-    WSFragment()
+    VisibleWhiteSpacesData()
         : mStartOffset(0),
           mEndOffset(0),
           mLeftWSType(WSType::NotInitialized),
@@ -540,7 +531,7 @@ class MOZ_STACK_CLASS WSRunScanner {
     friend class WSRunScanner::TextFragmentData;
   };
 
-  using PointPosition = WSFragment::PointPosition;
+  using PointPosition = VisibleWhiteSpacesData::PointPosition;
 
   
 
@@ -873,10 +864,8 @@ class MOZ_STACK_CLASS WSRunScanner {
 
       
       
-      
-      
-      Maybe<WSFragment> visibleWhiteSpaces =
-          CreateWSFragmentForVisibleWhiteSpaces();
+      Maybe<VisibleWhiteSpacesData> visibleWhiteSpaces =
+          CreateVisibleWhiteSpacesData();
       if (visibleWhiteSpaces.isNothing()) {
         return false;
       }
@@ -904,8 +893,7 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
-
-    Maybe<WSFragment> CreateWSFragmentForVisibleWhiteSpaces() const;
+    Maybe<VisibleWhiteSpacesData> CreateVisibleWhiteSpacesData() const;
 
    private:
     
@@ -1137,8 +1125,8 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
       const EditorDOMPointInText& aAtFirstASCIIWhiteSpace,
       const EditorDOMPointInText& aEndOfCollapsibleASCIIWhiteSpaces);
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  NormalizeWhiteSpacesAtEndOf(const WSFragment& aRun);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult NormalizeWhiteSpacesAtEndOf(
+      const VisibleWhiteSpacesData& aVisibleWhiteSpacesData);
 
   
 
@@ -1148,9 +1136,11 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MaybeReplacePreviousNBSPWithASCIIWhiteSpace(const WSFragment& aRun,
-                                              const EditorDOMPoint& aPoint);
+  MaybeReplacePreviousNBSPWithASCIIWhiteSpace(
+      const VisibleWhiteSpacesData& aVisibleWhiteSpacesData,
+      const EditorDOMPoint& aPoint);
 
   
 
@@ -1163,7 +1153,8 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   MaybeReplaceInclusiveNextNBSPWithASCIIWhiteSpace(
-      const WSFragment& aRun, const EditorDOMPoint& aPoint);
+      const VisibleWhiteSpacesData& aVisibleWhiteSpacesData,
+      const EditorDOMPoint& aPoint);
 
   
 
