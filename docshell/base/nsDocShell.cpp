@@ -10654,8 +10654,7 @@ nsresult nsDocShell::AddToSessionHistory(
 
   
   if (!entry) {
-    RefPtr<ChildSHistory> shistory = GetRootSessionHistory();
-    entry = new nsSHEntry(shistory ? shistory->LegacySHistory() : nullptr);
+    entry = new nsSHEntry();
   }
 
   
