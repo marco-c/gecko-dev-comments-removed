@@ -1397,9 +1397,15 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
   }
 
   TextFragmentData textFragmentDataAtStart(mStart, mEnd, mNBSPData, mPRE);
+  const EditorDOMRange invisibleLeadingWhiteSpaceRangeAtStart =
+      beforeRun ? textFragmentDataAtStart
+                      .GetNewInvisibleLeadingWhiteSpaceRangeIfSplittingAt(
+                          mScanStartPoint)
+                : EditorDOMRange();
   const Maybe<const WSFragment>
       nonPreformattedVisibleWSFragmentInMiddleOfLineAtStart =
-          beforeRun && !textFragmentDataAtStart.IsPreformatted()
+          beforeRun && !textFragmentDataAtStart.IsPreformatted() &&
+                  !invisibleLeadingWhiteSpaceRangeAtStart.IsPositioned()
               ? textFragmentDataAtStart
                     .CreateWSFragmentForVisibleAndMiddleOfLine()
               : Nothing();
@@ -1412,9 +1418,15 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
   TextFragmentData textFragmentDataAtEnd(aEndObject->mStart, aEndObject->mEnd,
                                          aEndObject->mNBSPData,
                                          aEndObject->mPRE);
+  const EditorDOMRange invisibleTrailingWhiteSpaceRangeAtEnd =
+      afterRun ? textFragmentDataAtEnd
+                     .GetNewInvisibleTrailingWhiteSpaceRangeIfSplittingAt(
+                         aEndObject->mScanEndPoint)
+               : EditorDOMRange();
   const Maybe<const WSFragment>
       nonPreformattedVisibleWSFragmentInMiddleOfLineAtEnd =
-          afterRun && !textFragmentDataAtEnd.IsPreformatted()
+          afterRun && !textFragmentDataAtEnd.IsPreformatted() &&
+                  !invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned()
               ? textFragmentDataAtEnd
                     .CreateWSFragmentForVisibleAndMiddleOfLine()
               : Nothing();
@@ -1426,17 +1438,24 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
 
   if (afterRun) {
     
-    if (afterRun->IsStartOfHardLine()) {
-      
-      
-      AutoEditorDOMPointChildInvalidator forgetChild(mScanStartPoint);
-      nsresult rv = MOZ_KnownLive(mHTMLEditor)
-                        .DeleteTextAndTextNodesWithTransaction(
-                            aEndObject->mScanStartPoint, afterRun->EndPoint());
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-        return rv;
+    
+    if (invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned()) {
+      if (!invisibleTrailingWhiteSpaceRangeAtEnd.Collapsed()) {
+        
+        MOZ_ASSERT(invisibleTrailingWhiteSpaceRangeAtEnd.StartRef() ==
+                   aEndObject->mScanStartPoint);
+        
+        
+        AutoEditorDOMPointChildInvalidator forgetChild(mScanStartPoint);
+        nsresult rv = MOZ_KnownLive(mHTMLEditor)
+                          .DeleteTextAndTextNodesWithTransaction(
+                              invisibleTrailingWhiteSpaceRangeAtEnd.StartRef(),
+                              invisibleTrailingWhiteSpaceRangeAtEnd.EndRef());
+        if (NS_FAILED(rv)) {
+          NS_WARNING(
+              "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+          return rv;
+        }
       }
     }
     
@@ -1483,10 +1502,19 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
   }
 
   
-  if (beforeRun->IsEndOfHardLine()) {
+  
+  if (invisibleLeadingWhiteSpaceRangeAtStart.IsPositioned()) {
+    if (invisibleLeadingWhiteSpaceRangeAtStart.Collapsed()) {
+      return NS_OK;
+    }
+
+    
+    
+    
     nsresult rv = MOZ_KnownLive(mHTMLEditor)
                       .DeleteTextAndTextNodesWithTransaction(
-                          beforeRun->StartPoint(), mScanStartPoint);
+                          invisibleLeadingWhiteSpaceRangeAtStart.StartRef(),
+                          mScanStartPoint);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rv),
         "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
