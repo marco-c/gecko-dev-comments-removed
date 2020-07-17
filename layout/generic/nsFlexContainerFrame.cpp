@@ -2394,7 +2394,7 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
   
   
   
-  if (NS_SUBTREE_DIRTY(mFrame)) {
+  if (mFrame->IsSubtreeDirty()) {
     FLEX_LOG(
         "[perf] Flex item %p needed a final reflow due to its subtree"
         "being dirty",

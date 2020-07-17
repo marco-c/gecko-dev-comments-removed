@@ -572,9 +572,9 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     
     
     bool skipIncremental =
-        !aReflowInput.ShouldReflowAllKids() && !NS_SUBTREE_DIRTY(child) &&
+        !aReflowInput.ShouldReflowAllKids() && !child->IsSubtreeDirty() &&
         child->GetNextSibling() && !isMeasuringFeasibleContentBSize &&
-        !NS_SUBTREE_DIRTY(child->GetNextSibling());
+        !child->GetNextSibling()->IsSubtreeDirty();
 
     
     

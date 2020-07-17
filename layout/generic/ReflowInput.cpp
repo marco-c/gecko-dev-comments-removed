@@ -187,7 +187,7 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   MOZ_ASSERT(aPresContext, "no pres context");
   MOZ_ASSERT(aFrame, "no frame");
   MOZ_ASSERT(aPresContext == aFrame->PresContext(), "wrong pres context");
-  MOZ_ASSERT(!mFlags.mSpecialBSizeReflow || !NS_SUBTREE_DIRTY(aFrame),
+  MOZ_ASSERT(!mFlags.mSpecialBSizeReflow || !aFrame->IsSubtreeDirty(),
              "frame should be clean when getting special bsize reflow");
 
   AvailableISize() = aAvailableSpace.ISize(mWritingMode);
@@ -672,7 +672,7 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     } else {
       SetBResize(IsIResize());
     }
-    SetBResize(IsBResize() || NS_SUBTREE_DIRTY(mFrame));
+    SetBResize(IsBResize() || mFrame->IsSubtreeDirty());
   } else {
     
     

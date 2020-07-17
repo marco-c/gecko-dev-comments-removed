@@ -2139,7 +2139,7 @@ void nsBlockFrame::LazyMarkLinesDirty() {
       int32_t n = line->GetChildCount();
       for (nsIFrame* lineFrame = line->mFirstChild; n > 0;
            lineFrame = lineFrame->GetNextSibling(), --n) {
-        if (NS_SUBTREE_DIRTY(lineFrame)) {
+        if (lineFrame->IsSubtreeDirty()) {
           
           MarkLineDirty(line, &mLines);
           break;

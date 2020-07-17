@@ -2703,7 +2703,7 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
 
     
     
-    bool wasDirty = NS_SUBTREE_DIRTY(subtreeRoot);
+    bool wasDirty = subtreeRoot->IsSubtreeDirty();
     subtreeRoot->AddStateBits(aBitToAdd);
 
     
@@ -2811,7 +2811,7 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
 
       nsIFrame* child = f;
       f = f->GetParent();
-      wasDirty = NS_SUBTREE_DIRTY(f);
+      wasDirty = f->IsSubtreeDirty();
       f->ChildIsDirty(child);
       NS_ASSERTION(f->HasAnyStateBits(NS_FRAME_HAS_DIRTY_CHILDREN),
                    "ChildIsDirty didn't do its job");
@@ -9663,7 +9663,7 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
     for (auto iter = mFramesToDirty.Iter(); !iter.Done(); iter.Next()) {
       
       nsPtrHashKey<nsIFrame>* p = iter.Get();
-      for (nsIFrame* f = p->GetKey(); f && !NS_SUBTREE_DIRTY(f);
+      for (nsIFrame* f = p->GetKey(); f && !f->IsSubtreeDirty();
            f = f->GetParent()) {
         f->AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
         if (f->IsFlexItem()) {
@@ -9676,7 +9676,7 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
       }
     }
 
-    NS_ASSERTION(NS_SUBTREE_DIRTY(target), "Why is the target not dirty?");
+    NS_ASSERTION(target->IsSubtreeDirty(), "Why is the target not dirty?");
     mDirtyRoots.Add(target);
     SetNeedLayoutFlush();
 
@@ -9771,7 +9771,7 @@ bool PresShell::ProcessReflowCommands(bool aInterruptible) {
         
         nsIFrame* target = mDirtyRoots.PopShallowestRoot();
 
-        if (!NS_SUBTREE_DIRTY(target)) {
+        if (!target->IsSubtreeDirty()) {
           
           
           

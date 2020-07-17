@@ -516,7 +516,7 @@ void nsContainerFrame::DisplaySelectionOverlay(nsDisplayListBuilder* aBuilder,
 
 
 void nsContainerFrame::ChildIsDirty(nsIFrame* aChild) {
-  NS_ASSERTION(NS_SUBTREE_DIRTY(aChild), "child isn't actually dirty");
+  NS_ASSERTION(aChild->IsSubtreeDirty(), "child isn't actually dirty");
 
   AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
 }
@@ -1303,7 +1303,7 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
     }
     
     
-    if (shouldReflowAllKids || NS_SUBTREE_DIRTY(frame)) {
+    if (shouldReflowAllKids || frame->IsSubtreeDirty()) {
       
       nsIFrame* prevInFlow = frame->GetPrevInFlow();
       NS_ASSERTION(prevInFlow,

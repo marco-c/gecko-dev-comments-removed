@@ -346,7 +346,7 @@ static void TruncateTo(nsTArray<T>& aArrayToTruncate,
 static SVGTextFrame* FrameIfAnonymousChildReflowed(SVGTextFrame* aFrame) {
   MOZ_ASSERT(aFrame, "aFrame must not be null");
   nsIFrame* kid = aFrame->PrincipalChildList().FirstChild();
-  if (NS_SUBTREE_DIRTY(kid)) {
+  if (kid->IsSubtreeDirty()) {
     MOZ_ASSERT(false, "should have already reflowed the anonymous block child");
     return nullptr;
   }
@@ -2796,7 +2796,7 @@ void SVGTextFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 void SVGTextFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                     const nsDisplayListSet& aLists) {
-  if (NS_SUBTREE_DIRTY(this)) {
+  if (IsSubtreeDirty()) {
     
     
     
@@ -2882,7 +2882,7 @@ void SVGTextFrame::ScheduleReflowSVGNonDisplayText(IntrinsicDirty aReason) {
   nsIFrame* f = this;
   while (f) {
     if (!f->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
-      if (NS_SUBTREE_DIRTY(f)) {
+      if (f->IsSubtreeDirty()) {
         
         
         return;
@@ -3119,13 +3119,13 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
     
     
     if (presContext->PresShell()->InDrawWindowNotFlushing() &&
-        NS_SUBTREE_DIRTY(this)) {
+        IsSubtreeDirty()) {
       return;
     }
     
     
     UpdateGlyphPositioning();
-  } else if (NS_SUBTREE_DIRTY(this)) {
+  } else if (IsSubtreeDirty()) {
     
     
     
@@ -3249,7 +3249,7 @@ nsIFrame* SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint) {
     
     UpdateGlyphPositioning();
   } else {
-    NS_ASSERTION(!NS_SUBTREE_DIRTY(this), "reflow should have happened");
+    NS_ASSERTION(!IsSubtreeDirty(), "reflow should have happened");
   }
 
   
@@ -3411,7 +3411,7 @@ SVGBBox SVGTextFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
   }
 
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (kid && NS_SUBTREE_DIRTY(kid)) {
+  if (kid && kid->IsSubtreeDirty()) {
     
     
     
@@ -3501,7 +3501,7 @@ int32_t SVGTextFrame::ConvertTextElementCharIndexToAddressableIndex(
 
 uint32_t SVGTextFrame::GetNumberOfChars(nsIContent* aContent) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (NS_SUBTREE_DIRTY(kid)) {
+  if (kid->IsSubtreeDirty()) {
     
     
     return 0;
@@ -3526,7 +3526,7 @@ uint32_t SVGTextFrame::GetNumberOfChars(nsIContent* aContent) {
 
 float SVGTextFrame::GetComputedTextLength(nsIContent* aContent) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (NS_SUBTREE_DIRTY(kid)) {
+  if (kid->IsSubtreeDirty()) {
     
     
     
@@ -3558,7 +3558,7 @@ float SVGTextFrame::GetComputedTextLength(nsIContent* aContent) {
 void SVGTextFrame::SelectSubString(nsIContent* aContent, uint32_t charnum,
                                    uint32_t nchars, ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (NS_SUBTREE_DIRTY(kid)) {
+  if (kid->IsSubtreeDirty()) {
     
     
     
@@ -3795,7 +3795,7 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
 int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
                                            const DOMPointInit& aPoint) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (NS_SUBTREE_DIRTY(kid)) {
+  if (kid->IsSubtreeDirty()) {
     
     
     return -1;
@@ -3833,7 +3833,7 @@ int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
 already_AddRefed<nsISVGPoint> SVGTextFrame::GetStartPositionOfChar(
     nsIContent* aContent, uint32_t aCharNum, ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (NS_SUBTREE_DIRTY(kid)) {
+  if (kid->IsSubtreeDirty()) {
     
     
     aRv.ThrowInvalidStateError("No layout information available for SVG text");
@@ -3917,7 +3917,7 @@ static gfxFloat GetGlyphAdvance(SVGTextFrame* aFrame, nsIContent* aContent,
 already_AddRefed<nsISVGPoint> SVGTextFrame::GetEndPositionOfChar(
     nsIContent* aContent, uint32_t aCharNum, ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (NS_SUBTREE_DIRTY(kid)) {
+  if (kid->IsSubtreeDirty()) {
     
     
     aRv.ThrowInvalidStateError("No layout information available for SVG text");
@@ -3961,7 +3961,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
                                                         uint32_t aCharNum,
                                                         ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (NS_SUBTREE_DIRTY(kid)) {
+  if (kid->IsSubtreeDirty()) {
     
     
     aRv.ThrowInvalidStateError("No layout information available for SVG text");
@@ -4029,7 +4029,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
 float SVGTextFrame::GetRotationOfChar(nsIContent* aContent, uint32_t aCharNum,
                                       ErrorResult& aRv) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (NS_SUBTREE_DIRTY(kid)) {
+  if (kid->IsSubtreeDirty()) {
     
     
     aRv.ThrowInvalidStateError("No layout information available for SVG text");
@@ -4807,7 +4807,7 @@ void SVGTextFrame::DoGlyphPositioning() {
   RemoveStateBits(NS_STATE_SVG_POSITIONING_DIRTY);
 
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (kid && NS_SUBTREE_DIRTY(kid)) {
+  if (kid && kid->IsSubtreeDirty()) {
     MOZ_ASSERT(false, "should have already reflowed the kid");
     return;
   }
@@ -5047,7 +5047,7 @@ void SVGTextFrame::MaybeReflowAnonymousBlockChild() {
   NS_ASSERTION(!kid->HasAnyStateBits(NS_FRAME_IN_REFLOW),
                "should not be in reflow when about to reflow again");
 
-  if (NS_SUBTREE_DIRTY(this)) {
+  if (IsSubtreeDirty()) {
     if (mState & NS_FRAME_IS_DIRTY) {
       
       

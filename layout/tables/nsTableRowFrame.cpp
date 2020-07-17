@@ -729,7 +729,7 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
     
     bool doReflowChild = true;
     if (!aReflowInput.ShouldReflowAllKids() && !aTableFrame.IsGeometryDirty() &&
-        !NS_SUBTREE_DIRTY(kidFrame)) {
+        !kidFrame->IsSubtreeDirty()) {
       if (!aReflowInput.mFlags.mSpecialBSizeReflow) doReflowChild = false;
     } else if ((NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize())) {
       
@@ -795,7 +795,7 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
       if ((availCellISize != cellFrame->GetPriorAvailISize()) ||
           (cellDesiredSize.ISize(wm) > cellFrame->GetPriorAvailISize()) ||
           HasAnyStateBits(NS_FRAME_IS_DIRTY) || isPaginated ||
-          NS_SUBTREE_DIRTY(cellFrame) ||
+          cellFrame->IsSubtreeDirty() ||
           
           
           cellFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE) ||

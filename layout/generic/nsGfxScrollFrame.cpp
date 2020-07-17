@@ -1164,7 +1164,7 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
   bool reflowVScrollbar = true;
   bool reflowScrollCorner = true;
   if (!aReflowInput.ShouldReflowAllKids()) {
-#define NEEDS_REFLOW(frame_) ((frame_) && NS_SUBTREE_DIRTY(frame_))
+#define NEEDS_REFLOW(frame_) ((frame_) && (frame_)->IsSubtreeDirty())
 
     reflowHScrollbar = NEEDS_REFLOW(mHelper.mHScrollbarBox);
     reflowVScrollbar = NEEDS_REFLOW(mHelper.mVScrollbarBox);
@@ -4748,7 +4748,7 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
     if (mRestorePos != mLastPos  ||
         layoutRestorePos != logicalLayoutScrollPos) {
       LoadingState state = GetPageLoadingState();
-      if (state == LoadingState::Stopped && !NS_SUBTREE_DIRTY(mOuter)) {
+      if (state == LoadingState::Stopped && !mOuter->IsSubtreeDirty()) {
         return;
       }
       nsPoint visualScrollToPos = visualRestorePos;
@@ -4772,7 +4772,7 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
         mOuter->PresShell()->ScrollToVisual(
             visualScrollToPos, FrameMetrics::eRestore, ScrollMode::Instant);
       }
-      if (state == LoadingState::Loading || NS_SUBTREE_DIRTY(mOuter)) {
+      if (state == LoadingState::Loading || mOuter->IsSubtreeDirty()) {
         
         
         
@@ -6049,7 +6049,7 @@ bool ScrollFrameHelper::ReflowFinished() {
   }
 
   bool doScroll = true;
-  if (NS_SUBTREE_DIRTY(mOuter)) {
+  if (mOuter->IsSubtreeDirty()) {
     
     
     doScroll = false;

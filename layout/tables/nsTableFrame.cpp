@@ -1765,7 +1765,7 @@ void nsTableFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  if (NS_SUBTREE_DIRTY(this) || aReflowInput.ShouldReflowAllKids() ||
+  if (IsSubtreeDirty() || aReflowInput.ShouldReflowAllKids() ||
       IsGeometryDirty() || isPaginated || aReflowInput.IsBResize() ||
       NeedToCollapse()) {
     if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE ||
@@ -2900,7 +2900,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
                                          rowGroupFrame->GetRowCount());
     
     
-    if (reflowAllKids || NS_SUBTREE_DIRTY(kidFrame) ||
+    if (reflowAllKids || kidFrame->IsSubtreeDirty() ||
         (aReflowInput.reflowInput.mFlags.mSpecialBSizeReflow &&
          (isPaginated ||
           kidFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)))) {
@@ -3132,7 +3132,7 @@ void nsTableFrame::ReflowColGroups(gfxContext* aRenderingContext) {
     ReflowOutput kidMet(GetWritingMode());
     nsPresContext* presContext = PresContext();
     for (nsIFrame* kidFrame : mColGroups) {
-      if (NS_SUBTREE_DIRTY(kidFrame)) {
+      if (kidFrame->IsSubtreeDirty()) {
         
         ReflowInput kidReflowInput(presContext, kidFrame, aRenderingContext,
                                    LogicalSize(kidFrame->GetWritingMode()));

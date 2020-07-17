@@ -161,9 +161,6 @@ class Selection;
 
 
 
-#define NS_SUBTREE_DIRTY(_frame) \
-  (_frame)->HasAnyStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN)
-
 
 
 
@@ -4564,6 +4561,13 @@ class nsIFrame : public nsQueryFrame {
 
   bool IsContainerForFontSizeInflation() const {
     return HasAnyStateBits(NS_FRAME_FONT_INFLATION_CONTAINER);
+  }
+
+  
+
+
+  bool IsSubtreeDirty() const {
+    return HasAnyStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
   }
 
   

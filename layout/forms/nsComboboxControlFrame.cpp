@@ -403,7 +403,7 @@ void nsComboboxControlFrame::ReflowDropdown(nsPresContext* aPresContext,
   
   
   if (!aReflowInput.ShouldReflowAllKids() &&
-      !NS_SUBTREE_DIRTY(mDropdownFrame)) {
+      !mDropdownFrame->IsSubtreeDirty()) {
     return;
   }
 

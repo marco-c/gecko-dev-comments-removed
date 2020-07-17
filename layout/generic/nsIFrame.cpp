@@ -2160,7 +2160,7 @@ void nsIFrame::SetAdditionalComputedStyle(int32_t aIndex,
 }
 
 nscoord nsIFrame::GetLogicalBaseline(WritingMode aWritingMode) const {
-  NS_ASSERTION(!NS_SUBTREE_DIRTY(this), "frame must not be dirty");
+  NS_ASSERTION(!IsSubtreeDirty(), "frame must not be dirty");
   
   
   if (aWritingMode.IsLineInverted()) {
@@ -10253,7 +10253,7 @@ void nsIFrame::BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
   nsReflowStatus status;
   WritingMode wm = aDesiredSize.GetWritingMode();
 
-  bool needsReflow = NS_SUBTREE_DIRTY(this);
+  bool needsReflow = IsSubtreeDirty();
 
   
   
