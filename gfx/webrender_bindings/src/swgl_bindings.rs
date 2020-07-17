@@ -2,13 +2,19 @@
 
 
 
-use bindings::WrCompositor;
+use bindings::{GeckoProfilerThreadListener, WrCompositor};
 use gleam::{gl, gl::Gl};
+use std::cell::Cell;
 use std::collections::hash_map::HashMap;
 use std::os::raw::c_void;
 use std::ptr;
 use std::rc::Rc;
-use webrender::{api::units::*, Compositor, CompositorCapabilities, NativeSurfaceId, NativeSurfaceInfo, NativeTileId};
+use std::sync::{mpsc, Arc, Mutex, Condvar};
+use std::thread;
+use webrender::{
+    api::units::*, Compositor, CompositorCapabilities, NativeSurfaceId, NativeSurfaceInfo, NativeTileId,
+    ThreadListener,
+};
 
 #[no_mangle]
 pub extern "C" fn wr_swgl_create_context() -> *mut c_void {
@@ -46,6 +52,69 @@ pub struct SwTile {
     pbo_id: u32,
     dirty_rect: DeviceIntRect,
     valid_rect: DeviceIntRect,
+    
+    
+    
+    
+    
+    
+    overlaps: Cell<u32>,
+    
+    invalid: Cell<bool>,
+}
+
+impl SwTile {
+    fn origin(&self, surface: &SwSurface, position: &DeviceIntPoint) -> DeviceIntPoint {
+        DeviceIntPoint::new(self.x * surface.tile_size.width, self.y * surface.tile_size.height)
+            + position.to_vector()
+    }
+
+    
+    
+    
+    
+    fn overlap_rect(
+        &self,
+        surface: &SwSurface,
+        position: &DeviceIntPoint,
+        clip_rect: &DeviceIntRect,
+    ) -> Option<DeviceIntRect> {
+        let origin = self.origin(surface, position);
+        
+        
+        let bounds = if self.invalid.get() {
+            DeviceIntRect::new(origin, surface.tile_size)
+        } else {
+            self.valid_rect.translate(origin.to_vector())
+        };
+        bounds.intersection(clip_rect)
+    }
+
+    
+    
+    fn may_overlap(
+        &self,
+        surface: &SwSurface,
+        position: &DeviceIntPoint,
+        clip_rect: &DeviceIntRect,
+        dep_rect: &DeviceIntRect,
+    ) -> bool {
+        self.overlap_rect(surface, position, clip_rect)
+            .map_or(false, |r| r.intersects(dep_rect))
+    }
+
+    
+    
+    
+    fn composite_rects(
+        &self,
+        surface: &SwSurface,
+        position: &DeviceIntPoint,
+        clip_rect: &DeviceIntRect,
+    ) -> Option<(DeviceIntRect, DeviceIntRect)> {
+        let valid = self.valid_rect.translate(self.origin(surface, position).to_vector());
+        valid.intersection(clip_rect).map(|r| (r.translate(-valid.origin.to_vector()), r))
+    }
 }
 
 pub struct SwSurface {
@@ -212,6 +281,102 @@ impl DrawTileHelper {
     }
 }
 
+
+
+#[derive(Debug)]
+struct SwCompositeJob {
+    tex_id: gl::GLuint,
+    src: DeviceIntRect,
+    dst: DeviceIntPoint,
+    opaque: bool,
+}
+
+
+
+
+struct SwCompositeThread {
+    
+    job_queue: mpsc::Sender<SwCompositeJob>,
+    
+    job_count: Mutex<usize>,
+    
+    done_cond: Condvar,
+}
+
+
+
+unsafe impl Sync for SwCompositeThread {}
+
+impl SwCompositeThread {
+    
+    
+    fn new(gl: swgl::Context) -> Arc<SwCompositeThread> {
+        let (job_queue, job_rx) = mpsc::channel();
+        let info = Arc::new(SwCompositeThread {
+            job_queue,
+            job_count: Mutex::new(0),
+            done_cond: Condvar::new(),
+        });
+        let result = info.clone();
+        let thread_name = "SwComposite";
+        thread::Builder::new().name(thread_name.into()).spawn(move || {
+            let thread_listener = GeckoProfilerThreadListener::new();
+            thread_listener.thread_started(thread_name);
+            
+            
+            
+            while let Ok(job) = job_rx.recv() {
+                gl.composite(
+                    job.tex_id,
+                    job.src.origin.x,
+                    job.src.origin.y,
+                    job.src.size.width,
+                    job.src.size.height,
+                    job.dst.x,
+                    job.dst.y,
+                    job.opaque,
+                    false,
+                );
+                
+                
+                let mut count = info.job_count.lock().unwrap();
+                *count -= 1;
+                if *count <= 0 {
+                    info.done_cond.notify_all();
+                }
+            }
+            thread_listener.thread_stopped(thread_name);
+        }).expect("Failed creating SwComposite thread");
+        result
+    }
+
+    
+    fn queue_composite(
+        &self,
+        surface: &SwSurface,
+        tile: &SwTile,
+        src_rect: &DeviceIntRect,
+        dst_rect: &DeviceIntRect,
+    ) {
+        
+        *self.job_count.lock().unwrap() += 1;
+        self.job_queue.send(SwCompositeJob {
+            tex_id: tile.color_id,
+            src: *src_rect,
+            dst: dst_rect.origin,
+            opaque: surface.is_opaque,
+        }).expect("Failing queuing SwComposite job");
+    }
+
+    
+    fn wait_for_composites(&self) {
+        let mut jobs = self.job_count.lock().unwrap();
+        while *jobs > 0 {
+            jobs = self.done_cond.wait(jobs).unwrap();
+        }
+    }
+}
+
 pub struct SwCompositor {
     gl: swgl::Context,
     native_gl: Option<Rc<dyn gl::Gl>>,
@@ -227,11 +392,22 @@ pub struct SwCompositor {
     
     
     depth_id: u32,
+    
+    
+    composite_thread: Option<Arc<SwCompositeThread>>,
 }
 
 impl SwCompositor {
     pub fn new(gl: swgl::Context, native_gl: Option<Rc<dyn gl::Gl>>, compositor: Option<WrCompositor>) -> Self {
         let depth_id = gl.gen_textures(1)[0];
+        
+        
+        
+        let composite_thread = if native_gl.is_none() && compositor.is_none() {
+            Some(SwCompositeThread::new(gl.clone()))
+        } else {
+            None
+        };
         SwCompositor {
             gl,
             compositor,
@@ -246,6 +422,7 @@ impl SwCompositor {
             native_gl,
             max_tile_size: DeviceIntSize::zero(),
             depth_id,
+            composite_thread,
         }
     }
 
@@ -268,6 +445,139 @@ impl SwCompositor {
     fn deinit_surface(&self, surface: &SwSurface) {
         for tile in &surface.tiles {
             self.deinit_tile(tile);
+        }
+    }
+
+    
+    fn reset_overlaps(&mut self) {
+        for surface in self.surfaces.values_mut() {
+            for tile in &mut surface.tiles {
+                tile.overlaps.set(0);
+                tile.invalid.set(false);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_overlaps(&self, overlap_rect: &DeviceIntRect) -> u32 {
+        let mut overlaps = 0;
+        for &(ref id, ref position, ref clip_rect) in &self.frame_surfaces {
+            
+            
+            if !overlap_rect.intersects(clip_rect) {
+                continue;
+            }
+            if let Some(surface) = self.surfaces.get(id) {
+                for tile in &surface.tiles {
+                    
+                    
+                    if tile.invalid.get() &&
+                       tile.may_overlap(surface, position, clip_rect, overlap_rect) {
+                        overlaps += 1;
+                    }
+                }
+            }
+        }
+        overlaps
+    }
+
+    
+    
+    
+    
+    fn init_composites(&self, id: &NativeSurfaceId, position: &DeviceIntPoint, clip_rect: &DeviceIntRect) {
+        let composite_thread = match self.composite_thread {
+            Some(ref composite_thread) => composite_thread,
+            None => return,
+        };
+        if let Some(surface) = self.surfaces.get(&id) {
+            for tile in &surface.tiles {
+                if let Some(overlap_rect) = tile.overlap_rect(surface, position, clip_rect) {
+                    let mut overlaps = self.get_overlaps(&overlap_rect);
+                    
+                    
+                    if tile.invalid.get() {
+                        overlaps += 1;
+                    }
+                    if overlaps == 0 {
+                        
+                        if let Some((src_rect, dst_rect)) = tile.composite_rects(surface, position, clip_rect) {
+                            composite_thread.queue_composite(surface, tile, &src_rect, &dst_rect);
+                        }
+                    } else {
+                        
+                        tile.overlaps.set(overlaps);
+                    }
+                }
+            }
+        }
+    }
+
+    
+    
+    fn flush_composites(&self, tile_id: &NativeTileId, surface: &SwSurface, tile: &SwTile) {
+        let composite_thread = match self.composite_thread {
+            Some(ref composite_thread) => composite_thread,
+            None => return,
+        };
+
+        
+        let mut frame_surfaces = self.frame_surfaces.iter().skip_while(|&(ref id, _, _)| *id != tile_id.surface_id);
+        let overlap_rect = match frame_surfaces.next() {
+            Some(&(_, ref position, ref clip_rect)) => {
+                
+                if tile.invalid.get() {
+                    tile.overlaps.set(tile.overlaps.get() - 1);
+                }
+                
+                if tile.overlaps.get() == 0 {
+                    if let Some((src_rect, dst_rect)) = tile.composite_rects(surface, position, clip_rect) {
+                        composite_thread.queue_composite(surface, tile, &src_rect, &dst_rect);
+                    }
+                }
+                
+                match tile.overlap_rect(surface, position, clip_rect) {
+                    Some(overlap_rect) => overlap_rect,
+                    None => return,
+                }
+            }
+            None => return,
+        };
+
+        
+        for &(ref id, ref position, ref clip_rect) in frame_surfaces {
+            
+            if !overlap_rect.intersects(clip_rect) {
+                continue;
+            }
+            if let Some(surface) = self.surfaces.get(&id) {
+                
+                for tile in &surface.tiles {
+                    let overlaps = tile.overlaps.get();
+                    if overlaps > 0 &&
+                       tile.may_overlap(surface, position, clip_rect, &overlap_rect) {
+                        
+                        
+                        tile.overlaps.set(overlaps - 1);
+                        if overlaps == 1 {
+                            if let Some((src_rect, dst_rect)) = tile.composite_rects(surface, position, clip_rect) {
+                                composite_thread.queue_composite(surface, tile, &src_rect, &dst_rect);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -381,6 +691,8 @@ impl Compositor for SwCompositor {
                 pbo_id,
                 dirty_rect: DeviceIntRect::zero(),
                 valid_rect: DeviceIntRect::zero(),
+                overlaps: Cell::new(0),
+                invalid: Cell::new(false),
             });
         }
     }
@@ -394,6 +706,17 @@ impl Compositor for SwCompositor {
         }
         if let Some(compositor) = &mut self.compositor {
             compositor.destroy_tile(id);
+        }
+    }
+
+    fn invalidate_tile(&mut self, id: NativeTileId) {
+        if let Some(compositor) = &mut self.compositor {
+            compositor.invalidate_tile(id);
+        }
+        if let Some(surface) = self.surfaces.get_mut(&id.surface_id) {
+            if let Some(tile) = surface.tiles.iter_mut().find(|t| t.x == id.x && t.y == id.y) {
+                tile.invalid.set(true);
+            }
         }
     }
 
@@ -477,9 +800,10 @@ impl Compositor for SwCompositor {
 
     fn unbind(&mut self) {
         let id = self.cur_tile;
-        if let Some(surface) = self.surfaces.get_mut(&id.surface_id) {
+        if let Some(surface) = self.surfaces.get(&id.surface_id) {
             if let Some(tile) = surface.tiles.iter().find(|t| t.x == id.x && t.y == id.y) {
                 if tile.valid_rect.is_empty() {
+                    self.flush_composites(&id, surface, tile);
                     return;
                 }
 
@@ -490,7 +814,13 @@ impl Compositor for SwCompositor {
 
                 let native_gl = match &self.native_gl {
                     Some(native_gl) => native_gl,
-                    None => return,
+                    None => {
+                        
+                        
+                        
+                        self.flush_composites(&id, surface, tile);
+                        return;
+                    }
                 };
 
                 let (swbuf, _, _, stride) = self.gl.get_color_buffer(tile.fbo_id, true);
@@ -534,7 +864,7 @@ impl Compositor for SwCompositor {
                     let viewport = dirty.translate(info.origin.to_vector());
                     let draw_tile = self.draw_tile.as_ref().unwrap();
                     draw_tile.enable(&viewport);
-                    draw_tile.draw(&viewport, &viewport, &dirty, surface, tile);
+                    draw_tile.draw(&viewport, &viewport, &dirty, &surface, &tile);
                     draw_tile.disable();
 
                     native_gl.bind_framebuffer(gl::DRAW_FRAMEBUFFER, 0);
@@ -552,12 +882,17 @@ impl Compositor for SwCompositor {
             compositor.begin_frame();
         }
         self.frame_surfaces.clear();
+        self.reset_overlaps();
     }
 
     fn add_surface(&mut self, id: NativeSurfaceId, position: DeviceIntPoint, clip_rect: DeviceIntRect) {
         if let Some(compositor) = &mut self.compositor {
             compositor.add_surface(id, position, clip_rect);
         }
+
+        
+        self.init_composites(&id, &position, &clip_rect);
+
         self.frame_surfaces.push((id, position, clip_rect));
     }
 
@@ -571,7 +906,7 @@ impl Compositor for SwCompositor {
             draw_tile.enable(&viewport);
             let mut blend = false;
             native_gl.blend_func(gl::ONE, gl::ONE_MINUS_SRC_ALPHA);
-            for &(ref id, position, ref clip_rect) in &self.frame_surfaces {
+            for &(ref id, ref position, ref clip_rect) in &self.frame_surfaces {
                 if let Some(surface) = self.surfaces.get(id) {
                     if surface.is_opaque {
                         if blend {
@@ -583,11 +918,8 @@ impl Compositor for SwCompositor {
                         blend = true;
                     }
                     for tile in &surface.tiles {
-                        let tile_pos =
-                            DeviceIntPoint::new(tile.x * surface.tile_size.width, tile.y * surface.tile_size.height)
-                                + position.to_vector();
-                        if let Some(rect) = tile.valid_rect.translate(tile_pos.to_vector()).intersection(clip_rect) {
-                            draw_tile.draw(&viewport, &rect, &rect.translate(-tile_pos.to_vector()), surface, tile);
+                        if let Some((src_rect, dst_rect)) = tile.composite_rects(surface, position, clip_rect) {
+                            draw_tile.draw(&viewport, &dst_rect, &src_rect, surface, tile);
                         }
                     }
                 }
@@ -596,30 +928,9 @@ impl Compositor for SwCompositor {
                 native_gl.disable(gl::BLEND);
             }
             draw_tile.disable();
-        } else {
-            for &(ref id, position, ref clip_rect) in &self.frame_surfaces {
-                if let Some(surface) = self.surfaces.get(id) {
-                    for tile in &surface.tiles {
-                        let tile_pos =
-                            DeviceIntPoint::new(tile.x * surface.tile_size.width, tile.y * surface.tile_size.height)
-                                + position.to_vector();
-                        let valid = tile.valid_rect.translate(tile_pos.to_vector());
-                        if let Some(rect) = valid.intersection(clip_rect) {
-                            self.gl.composite(
-                                tile.color_id,
-                                rect.min_x() - valid.origin.x,
-                                rect.min_y() - valid.origin.y,
-                                rect.size.width,
-                                rect.size.height,
-                                rect.min_x(),
-                                rect.min_y(),
-                                surface.is_opaque,
-                                false,
-                            );
-                        }
-                    }
-                }
-            }
+        } else if let Some(ref composite_thread) = self.composite_thread {
+            
+            composite_thread.wait_for_composites();
         }
     }
 
