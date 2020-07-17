@@ -216,6 +216,9 @@ with only_when(depends(target)(lambda t: t.kernel == 'WINNT')):
 check_and_add_gcc_warning('-Wno-gnu-zero-variadic-macro-arguments')
 
 
+check_and_add_gcc_warning('-Werror=implicit-function-declaration')
+
+
 
 
 
