@@ -14,7 +14,6 @@
 
 
 
-
 "use strict";
 
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -29,6 +28,39 @@ ChromeUtils.defineModuleGetter(
   "formAutofillParent",
   "resource://formautofill/FormAutofillParent.jsm"
 );
+
+XPCOMUtils.defineLazyGetter(this, "gSubDialog", function() {
+  const { SubDialogManager } = ChromeUtils.import(
+    "resource://gre/modules/SubDialog.jsm"
+  );
+  return new SubDialogManager({
+    dialogStack: document.getElementById("dialogStack"),
+    dialogTemplate: document.getElementById("dialogTemplate"),
+    dialogOptions: {
+      styleSheets: ["chrome://browser/skin/preferences/preferences.css"],
+      resizeCallback: ({ title, frame }) => {
+        
+        gSearchResultsPane.searchWithinNode(title, gSearchResultsPane.query);
+
+        
+        gSearchResultsPane.searchWithinNode(
+          frame.contentDocument.firstElementChild,
+          gSearchResultsPane.query
+        );
+
+        
+        for (let node of gSearchResultsPane.listSearchTooltips) {
+          if (!node.tooltipNode) {
+            gSearchResultsPane.createSearchTooltip(
+              node,
+              gSearchResultsPane.query
+            );
+          }
+        }
+      },
+    },
+  });
+});
 
 var gLastCategory = { category: undefined, subcategory: undefined };
 const gXULDOMParser = new DOMParser();
@@ -78,7 +110,6 @@ document.addEventListener("DOMContentLoaded", init_all, { once: true });
 function init_all() {
   Preferences.forceEnableInstantApply();
 
-  gSubDialog.init();
   register_module("paneGeneral", gMainPane);
   register_module("paneHome", gHomePane);
   register_module("paneSearch", gSearchPane);
