@@ -509,10 +509,12 @@ struct KerxSubTableFormat4
 	  case 0: 
 	  {
 	    
-	    const HBUINT16 *data = &ankrData[entry.data.ankrActionIndex];
+	    
+
+	    const HBUINT16 *data = &ankrData[entry.data.ankrActionIndex * 2];
 	    if (!c->sanitizer.check_array (data, 2)) return;
-	    HB_UNUSED unsigned int markControlPoint = *data++;
-	    HB_UNUSED unsigned int currControlPoint = *data++;
+	    unsigned int markControlPoint = *data++;
+	    unsigned int currControlPoint = *data++;
 	    hb_position_t markX = 0;
 	    hb_position_t markY = 0;
 	    hb_position_t currX = 0;
@@ -534,8 +536,10 @@ struct KerxSubTableFormat4
 
 	  case 1: 
 	  {
-	   
-	    const HBUINT16 *data = &ankrData[entry.data.ankrActionIndex];
+	    
+	    
+
+	    const HBUINT16 *data = &ankrData[entry.data.ankrActionIndex * 2];
 	    if (!c->sanitizer.check_array (data, 2)) return;
 	    unsigned int markAnchorPoint = *data++;
 	    unsigned int currAnchorPoint = *data++;
@@ -553,7 +557,9 @@ struct KerxSubTableFormat4
 
 	  case 2: 
 	  {
-	    const FWORD *data = (const FWORD *) &ankrData[entry.data.ankrActionIndex];
+	    
+
+	    const FWORD *data = (const FWORD *) &ankrData[entry.data.ankrActionIndex * 4];
 	    if (!c->sanitizer.check_array (data, 4)) return;
 	    int markX = *data++;
 	    int markY = *data++;
