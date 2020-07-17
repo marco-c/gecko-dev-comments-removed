@@ -368,7 +368,8 @@ class BrowserInstance(object):
 
     def stop(self, force=False, skip_marionette=False):
         """Stop Firefox"""
-        if self.runner is not None and self.runner.is_running():
+        is_running = self.runner is not None and self.runner.is_running()
+        if is_running:
             self.logger.debug("Stopping Firefox %s" % self.pid())
             shutdown_methods = [(True, lambda: self.runner.wait(self.shutdown_timeout)),
                                 (False, lambda: self.runner.stop(signal.SIGTERM)),
@@ -387,8 +388,12 @@ class BrowserInstance(object):
             except OSError:
                 
                 pass
+        elif self.runner:
+            
+            
+            clean = False
         if not skip_marionette:
-            self.output_handler.after_stop()
+            self.output_handler.after_stop(clean_shutdown=clean)
 
     def pid(self):
         if self.runner.process_handler is None:
@@ -472,22 +477,26 @@ class OutputHandler(object):
             self.__call__(line)
         self.line_buffer = []
 
-    def after_stop(self):
+    def after_stop(self, clean_shutdown=True):
         self.logger.info("PROCESS LEAKS %s" % self.instance.leak_report_file)
         if self.lsan_handler:
             self.lsan_handler.process()
         if self.instance.leak_report_file is not None:
-            
-            
-            
-            mozleak.process_leak_log(
-                self.instance.leak_report_file,
-                leak_thresholds=self.mozleak_thresholds,
-                ignore_missing_leaks=["tab", "gmplugin"],
-                log=self.logger,
-                stack_fixer=self.stack_fixer,
-                scope=self.group_metadata.get("scope"),
-                allowed=self.mozleak_allowed)
+            if not clean_shutdown:
+                
+                self.logger.warning("Firefox didn't exit cleanly, not processing leak logs")
+            else:
+                
+                
+                
+                mozleak.process_leak_log(
+                    self.instance.leak_report_file,
+                    leak_thresholds=self.mozleak_thresholds,
+                    ignore_missing_leaks=["tab", "gmplugin"],
+                    log=self.logger,
+                    stack_fixer=self.stack_fixer,
+                    scope=self.group_metadata.get("scope"),
+                    allowed=self.mozleak_allowed)
 
     def __call__(self, line):
         """Write a line of output from the firefox process to the log"""
