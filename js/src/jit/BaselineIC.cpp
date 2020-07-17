@@ -166,7 +166,7 @@ class MOZ_RAII FallbackStubAllocator {
 
 
 
-static bool AddICImpl(JSContext* cx, JitScript* jitScript, uint32_t offset,
+static bool AddICImpl(JSContext* cx, ICScript* icScript, uint32_t offset,
                       ICStub* stub, uint32_t& icEntryIndex) {
   if (!stub) {
     MOZ_ASSERT(cx->isExceptionPending());
@@ -175,7 +175,7 @@ static bool AddICImpl(JSContext* cx, JitScript* jitScript, uint32_t offset,
   }
 
   
-  ICEntry& entryRef = jitScript->icEntry(icEntryIndex);
+  ICEntry& entryRef = icScript->icEntry(icEntryIndex);
   icEntryIndex++;
   new (&entryRef) ICEntry(stub, offset);
 
@@ -189,14 +189,13 @@ static bool AddICImpl(JSContext* cx, JitScript* jitScript, uint32_t offset,
   return true;
 }
 
-bool JitScript::initICEntriesAndBytecodeTypeMap(JSContext* cx,
-                                                JSScript* script) {
+bool ICScript::initICEntries(JSContext* cx, JSScript* script) {
   MOZ_ASSERT(cx->realm()->jitRealm());
   MOZ_ASSERT(jit::IsBaselineInterpreterEnabled());
 
   MOZ_ASSERT(numICEntries() == script->numICEntries());
 
-  FallbackStubAllocator alloc(cx, fallbackStubSpace_);
+  FallbackStubAllocator alloc(cx, *fallbackStubSpace());
 
   
   uint32_t icEntryIndex = 0;
@@ -236,21 +235,8 @@ bool JitScript::initICEntriesAndBytecodeTypeMap(JSContext* cx,
   }
 
   
-  uint32_t typeMapIndex = 0;
-  uint32_t* const typeMap =
-      IsTypeInferenceEnabled() ? bytecodeTypeMap() : nullptr;
-
-  
-  
   for (BytecodeLocation loc : js::AllBytecodesIterable(script)) {
     JSOp op = loc.getOp();
-    
-    
-    if (BytecodeOpHasTypeSet(op) && typeMap &&
-        typeMapIndex < JSScript::MaxBytecodeTypeSets) {
-      typeMap[typeMapIndex] = loc.bytecodeToOffset(script);
-      typeMapIndex++;
-    }
 
     
     MOZ_ASSERT_IF(BytecodeIsJumpTarget(op), loc.icIndex() == icEntryIndex);
@@ -534,9 +520,6 @@ bool JitScript::initICEntriesAndBytecodeTypeMap(JSContext* cx,
 
   
   MOZ_ASSERT(icEntryIndex == numICEntries());
-  MOZ_ASSERT_IF(IsTypeInferenceEnabled(),
-                typeMapIndex == script->numBytecodeTypeSets());
-
   return true;
 }
 
