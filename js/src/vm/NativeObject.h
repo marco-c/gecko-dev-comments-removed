@@ -1246,14 +1246,14 @@ class NativeObject : public JSObject {
                                            uint32_t extra);
 
   void setDenseElement(uint32_t index, const Value& val) {
-    MOZ_ASSERT(index < getDenseInitializedLength());
-    MOZ_ASSERT(!denseElementsAreCopyOnWrite());
-    MOZ_ASSERT(!denseElementsAreFrozen());
-    checkStoredValue(val);
-    elements_[index].set(this, HeapSlot::Element, unshiftedIndex(index), val);
+    
+    
+    MOZ_ASSERT_IF(val.isMagic(), val.whyMagic() != JS_ELEMENTS_HOLE);
+    setDenseElementUnchecked(index, val);
   }
 
   void initDenseElement(uint32_t index, const Value& val) {
+    MOZ_ASSERT(!val.isMagic(JS_ELEMENTS_HOLE));
     MOZ_ASSERT(index < getDenseInitializedLength());
     MOZ_ASSERT(!denseElementsAreCopyOnWrite());
     MOZ_ASSERT(isExtensible());
@@ -1262,6 +1262,16 @@ class NativeObject : public JSObject {
   }
 
  private:
+  
+  
+  void setDenseElementUnchecked(uint32_t index, const Value& val) {
+    MOZ_ASSERT(index < getDenseInitializedLength());
+    MOZ_ASSERT(!denseElementsAreCopyOnWrite());
+    MOZ_ASSERT(!denseElementsAreFrozen());
+    checkStoredValue(val);
+    elements_[index].set(this, HeapSlot::Element, unshiftedIndex(index), val);
+  }
+
   inline void addDenseElementType(JSContext* cx, uint32_t index,
                                   const Value& val);
 
