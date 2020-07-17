@@ -9,6 +9,7 @@
 #include "base/compiler_specific.h"
 #include "base/sequence_token.h"
 #include "base/synchronization/lock.h"
+#include "base/thread_annotations.h"
 #include "base/threading/platform_thread.h"
 
 namespace base {
@@ -19,10 +20,21 @@ namespace base {
 
 
 
-class BASE_EXPORT ThreadCheckerImpl {
+
+
+class LOCKABLE BASE_EXPORT ThreadCheckerImpl {
  public:
   ThreadCheckerImpl();
   ~ThreadCheckerImpl();
+
+  
+  
+  
+  
+  
+  
+  ThreadCheckerImpl(ThreadCheckerImpl&& other);
+  ThreadCheckerImpl& operator=(ThreadCheckerImpl&& other);
 
   bool CalledOnValidThread() const WARN_UNUSED_RESULT;
 
@@ -32,7 +44,7 @@ class BASE_EXPORT ThreadCheckerImpl {
   void DetachFromThread();
 
  private:
-  void EnsureAssigned() const;
+  void EnsureAssignedLockRequired() const EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
   
 
@@ -40,7 +52,7 @@ class BASE_EXPORT ThreadCheckerImpl {
   mutable base::Lock lock_;
 
   
-  mutable PlatformThreadRef thread_id_;
+  mutable PlatformThreadRef thread_id_ GUARDED_BY(lock_);
 
   
   
@@ -48,13 +60,13 @@ class BASE_EXPORT ThreadCheckerImpl {
   
   
   
-  mutable TaskToken task_token_;
+  mutable TaskToken task_token_ GUARDED_BY(lock_);
 
   
   
   
   
-  mutable SequenceToken sequence_token_;
+  mutable SequenceToken sequence_token_ GUARDED_BY(lock_);
 };
 
 }  

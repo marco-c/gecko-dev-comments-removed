@@ -51,6 +51,14 @@ bool AddKnownSidToObject(HANDLE object,
                          ACCESS_MODE access_mode,
                          ACCESS_MASK access);
 
+
+
+
+bool ReplacePackageSidInDacl(HANDLE object,
+                             SE_OBJECT_TYPE object_type,
+                             const Sid& package_sid,
+                             ACCESS_MASK access);
+
 }  
 
 #endif  

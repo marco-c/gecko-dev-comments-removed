@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#include "base/process/memory.h"
+
+#include "mozilla/Assertions.h"
+
+namespace base {
+
+void TerminateBecauseOutOfMemory(size_t size) {
+  MOZ_CRASH("Hit base::TerminateBecauseOutOfMemory");
+}
+
+}  

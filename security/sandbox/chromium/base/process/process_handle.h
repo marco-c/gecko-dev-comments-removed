@@ -53,6 +53,46 @@ const ProcessId kNullProcessId = 0;
 #define CrPRIdPid "d"
 #endif
 
+class UniqueProcId {
+ public:
+  explicit UniqueProcId(ProcessId value) : value_(value) {}
+  UniqueProcId(const UniqueProcId& other) = default;
+  UniqueProcId& operator=(const UniqueProcId& other) = default;
+
+  
+  
+  ProcessId GetUnsafeValue() const { return value_; }
+
+  bool operator==(const UniqueProcId& other) const {
+    return value_ == other.value_;
+  }
+
+  bool operator!=(const UniqueProcId& other) const {
+    return value_ != other.value_;
+  }
+
+  bool operator<(const UniqueProcId& other) const {
+    return value_ < other.value_;
+  }
+
+  bool operator<=(const UniqueProcId& other) const {
+    return value_ <= other.value_;
+  }
+
+  bool operator>(const UniqueProcId& other) const {
+    return value_ > other.value_;
+  }
+
+  bool operator>=(const UniqueProcId& other) const {
+    return value_ >= other.value_;
+  }
+
+ private:
+  ProcessId value_;
+};
+
+std::ostream& operator<<(std::ostream& os, const UniqueProcId& obj);
+
 
 
 
@@ -61,8 +101,7 @@ BASE_EXPORT ProcessId GetCurrentProcId();
 
 
 
-
-BASE_EXPORT uint32_t GetUniqueIdForProcess();
+BASE_EXPORT UniqueProcId GetUniqueIdForProcess();
 
 #if defined(OS_LINUX)
 

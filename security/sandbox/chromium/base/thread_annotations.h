@@ -32,6 +32,7 @@
 #ifndef BASE_THREAD_ANNOTATIONS_H_
 #define BASE_THREAD_ANNOTATIONS_H_
 
+#include "base/logging.h"
 #include "build/build_config.h"
 
 #if defined(__clang__)
@@ -236,5 +237,28 @@ inline T& ts_unchecked_read(T& v) NO_THREAD_SAFETY_ANALYSIS {
 }
 
 }  
+
+
+
+#if DCHECK_IS_ON()
+
+
+
+
+
+#define GUARDED_BY_CONTEXT(name) GUARDED_BY(name)
+
+
+
+
+
+#define VALID_CONTEXT_REQUIRED(name) EXCLUSIVE_LOCKS_REQUIRED(name)
+
+#else  
+
+#define GUARDED_BY_CONTEXT(name)
+#define VALID_CONTEXT_REQUIRED(name)
+
+#endif  
 
 #endif  

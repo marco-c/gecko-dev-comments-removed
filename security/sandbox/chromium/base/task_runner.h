@@ -86,24 +86,6 @@ class BASE_EXPORT TaskRunner
   
   
   
-  virtual bool RunsTasksInCurrentSequence() const = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   

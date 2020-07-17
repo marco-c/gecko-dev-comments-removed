@@ -8,7 +8,16 @@
 #ifndef BASE_WIN_WINDOWS_TYPES_H
 #define BASE_WIN_WINDOWS_TYPES_H
 
+
+#if defined(__MINGW32__)
+
+
+#define _Releases_exclusive_lock_(lock)
+
+#define _Post_equals_last_error_
+#else
 #include <concurrencysal.h>
+#endif
 #include <sal.h>
 #include <specstrings.h>
 
@@ -68,6 +77,11 @@ typedef DWORD ACCESS_MASK;
 typedef ACCESS_MASK REGSAM;
 
 
+#ifndef _REFGUID_DEFINED
+#define _REFGUID_DEFINED
+#define REFGUID const GUID&
+#endif
+
 
 
 #define CHROME_DECLARE_HANDLE(name) \
@@ -122,6 +136,7 @@ struct CHROME_SRWLOCK {
 struct CHROME_CONDITION_VARIABLE {
   PVOID Ptr;
 };
+
 
 
 
@@ -195,6 +210,8 @@ struct CHROME_CONDITION_VARIABLE {
 
 
 
+
+
 #define DECLSPEC_IMPORT __declspec(dllimport)
 #define WINBASEAPI DECLSPEC_IMPORT
 #define WINUSERAPI DECLSPEC_IMPORT
@@ -238,6 +255,8 @@ WINBASEAPI VOID WINAPI SetLastError(_In_ DWORD dwErrCode);
 #define DeleteFile DeleteFileW
 #define DispatchMessage DispatchMessageW
 #define DrawText DrawTextW
+#define FindFirstFile FindFirstFileW
+#define FindNextFile FindNextFileW
 #define GetComputerName GetComputerNameW
 #define GetCurrentDirectory GetCurrentDirectoryW
 #define GetCurrentTime() GetTickCount()
@@ -247,6 +266,7 @@ WINBASEAPI VOID WINAPI SetLastError(_In_ DWORD dwErrCode);
 #define LoadIcon LoadIconW
 #define LoadImage LoadImageW
 #define PostMessage PostMessageW
+#define RemoveDirectory RemoveDirectoryW
 #define ReplaceFile ReplaceFileW
 #define ReportEvent ReportEventW
 #define SendMessage SendMessageW
@@ -255,4 +275,4 @@ WINBASEAPI VOID WINAPI SetLastError(_In_ DWORD dwErrCode);
 #define StartService StartServiceW
 #define UpdateResource UpdateResourceW
 
-#endif  
+#endif
