@@ -547,6 +547,15 @@ class UrlbarView {
       });
     }
 
+    
+    
+    if (this.selectedElement && !this.oneOffSearchButtons.selectedButton) {
+      let aadID = this.input.inputField.getAttribute("aria-activedescendant");
+      if (aadID && !this.document.getElementById(aadID)) {
+        this._setAccessibleFocus(this.selectedElement);
+      }
+    }
+
     this._openPanel();
 
     if (firstResult.heuristic) {
