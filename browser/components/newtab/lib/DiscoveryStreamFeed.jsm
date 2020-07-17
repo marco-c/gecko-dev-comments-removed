@@ -214,12 +214,15 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     return this._providerSwitcher;
   }
 
-  setupPrefs() {
+  setupPrefs(isStartup = false) {
     
     this.store.dispatch(
       ac.BroadcastToContent({
         type: at.DISCOVERY_STREAM_CONFIG_SETUP,
         data: this.config,
+        meta: {
+          isStartup,
+        },
       })
     );
     this.store.dispatch(
@@ -229,6 +232,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
           value: this.store.getState().Prefs.values[
             PREF_COLLECTION_DISMISSIBLE
           ],
+        },
+        meta: {
+          isStartup,
         },
       })
     );
@@ -378,7 +384,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     return layout;
   }
 
-  updatePlacements(sendUpdate, layout) {
+  updatePlacements(sendUpdate, layout, isStartup = false) {
     const placements = [];
     const placementsMap = {};
     for (const row of layout.filter(r => r.components && r.components.length)) {
@@ -396,6 +402,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       sendUpdate({
         type: at.DISCOVERY_STREAM_SPOCS_PLACEMENTS,
         data: { placements },
+        meta: {
+          isStartup,
+        },
       });
     }
   }
@@ -421,6 +430,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     sendUpdate({
       type: at.DISCOVERY_STREAM_LAYOUT_UPDATE,
       data: layoutResp,
+      meta: {
+        isStartup,
+      },
     });
 
     if (layoutResp.spocs) {
@@ -439,8 +451,11 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
             url,
             spocs_per_domain: layoutResp.spocs.spocs_per_domain,
           },
+          meta: {
+            isStartup,
+          },
         });
-        this.updatePlacements(sendUpdate, layoutResp.layout);
+        this.updatePlacements(sendUpdate, layoutResp.layout, isStartup);
       }
     }
   }
@@ -454,7 +469,11 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
-  buildFeedPromise({ newFeedsPromises, newFeeds }, isStartup, sendUpdate) {
+  buildFeedPromise(
+    { newFeedsPromises, newFeeds },
+    isStartup = false,
+    sendUpdate
+  ) {
     return component => {
       const { url } = component.feed;
 
@@ -475,6 +494,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
               data: {
                 feed: newFeeds[url],
                 url,
+              },
+              meta: {
+                isStartup,
               },
             });
 
@@ -560,7 +582,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       .reduce(this.reduceFeedComponents(isStartup, sendUpdate), initialData);
   }
 
-  async loadComponentFeeds(sendUpdate, isStartup) {
+  async loadComponentFeeds(sendUpdate, isStartup = false) {
     const { DiscoveryStream } = this.store.getState();
 
     if (!DiscoveryStream || !DiscoveryStream.layout) {
@@ -587,6 +609,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     await this.cache.set("feeds", newFeeds);
     sendUpdate({
       type: at.DISCOVERY_STREAM_FEEDS_UPDATE,
+      meta: {
+        isStartup,
+      },
     });
   }
 
@@ -827,6 +852,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         lastUpdated: spocsState.lastUpdated,
         spocs: spocsState.spocs,
       },
+      meta: {
+        isStartup,
+      },
     });
   }
 
@@ -854,7 +882,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
-  async loadAffinityScoresCache() {
+  async loadAffinityScoresCache(isStartup = false) {
     const cachedData = (await this.cache.get()) || {};
     const { affinities } = cachedData;
     if (this.personalized && affinities && affinities.scores) {
@@ -873,6 +901,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
           type: at.DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED,
           data: {
             lastUpdated: this.domainAffinitiesLastUpdated,
+          },
+          meta: {
+            isStartup,
           },
         })
       );
@@ -1212,7 +1243,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
   async refreshAll(options = {}) {
-    const affinityCacheLoadPromise = this.loadAffinityScoresCache();
+    const affinityCacheLoadPromise = this.loadAffinityScoresCache(
+      options.isStartup
+    );
 
     const spocsPersonalized = this.store.getState().Prefs.values[
       PREF_SPOCS_PERSONALIZED
@@ -1699,7 +1732,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       case at.INIT:
         
         
-        this.setupPrefs();
+        this.setupPrefs(true );
         
         if (this.config.enabled) {
           await this.enable();

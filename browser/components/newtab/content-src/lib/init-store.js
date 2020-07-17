@@ -62,6 +62,15 @@ export const rehydrationMiddleware = ({ getState }) => {
   getState.didRequestInitialState = false;
   return next => action => {
     if (getState.didRehydrate || window.__FROM_STARTUP_CACHE__) {
+      
+      
+      if (
+        window.__FROM_STARTUP_CACHE__ &&
+        action.meta &&
+        action.meta.isStartup
+      ) {
+        return null;
+      }
       return next(action);
     }
 
