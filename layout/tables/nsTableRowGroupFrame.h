@@ -203,19 +203,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
   virtual bool GetDirection() override;
 
   
-
-
-
-
-
-
-
-
-
-
-  NS_IMETHOD GetLine(int32_t aLineNumber, nsIFrame** aFirstFrameOnLine,
-                     int32_t* aNumFramesOnLine,
-                     nsRect& aLineBounds) const override;
+  Result<LineInfo, nsresult> GetLine(int32_t aLineNumber) const override;
 
   
 

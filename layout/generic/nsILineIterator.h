@@ -9,6 +9,7 @@
 #include "nscore.h"
 #include "nsPoint.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/Result.h"
 
 class nsIFrame;
 struct nsRect;
@@ -45,18 +46,22 @@ class nsILineIterator {
 
   virtual bool GetDirection() = 0;
 
+  struct LineInfo {
+    
+    nsIFrame* mFirstFrameOnLine = nullptr;
+    
+    int32_t mNumFramesOnLine = 0;
+    
+
+
+
+
+    nsRect mLineBounds;
+  };
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  NS_IMETHOD GetLine(int32_t aLineNumber, nsIFrame** aFirstFrameOnLine,
-                     int32_t* aNumFramesOnLine, nsRect& aLineBounds) const = 0;
+  virtual mozilla::Result<LineInfo, nsresult> GetLine(
+      int32_t aLineNumber) const = 0;
 
   
 
