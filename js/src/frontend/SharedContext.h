@@ -16,7 +16,7 @@
 #include "frontend/AbstractScopePtr.h"    
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
-#include "frontend/Stencil.h"
+#include "frontend/Stencil.h"          
 #include "js/WasmModule.h"             
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
@@ -350,9 +350,7 @@ class FunctionBox : public SharedContext {
   JSAtom* atom_ = nullptr;
 
   
-  
-  
-  size_t funcDataIndex_ = (size_t)(-1);
+  FunctionIndex funcDataIndex_ = FunctionIndex(-1);
 
   
   
@@ -429,7 +427,7 @@ class FunctionBox : public SharedContext {
   FunctionBox(JSContext* cx, FunctionBox* traceListHead, SourceExtent extent,
               CompilationInfo& compilationInfo, Directives directives,
               GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
-              JSAtom* explicitName, FunctionFlags flags, size_t index,
+              JSAtom* explicitName, FunctionFlags flags, FunctionIndex index,
               TopLevelFunction isTopLevel);
 
   MutableHandle<ScriptStencil> functionStencil() const;
@@ -711,7 +709,7 @@ class FunctionBox : public SharedContext {
     }
   }
 
-  size_t index() { return funcDataIndex_; }
+  FunctionIndex index() { return funcDataIndex_; }
 
   void trace(JSTracer* trc);
 

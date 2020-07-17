@@ -141,7 +141,7 @@ class ScriptStencilIterable {
 
 
 struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
-  static const size_t TopLevelFunctionIndex = 0;
+  static constexpr FunctionIndex TopLevelFunctionIndex = FunctionIndex(0);
 
   JSContext* cx;
   const JS::ReadOnlyCompileOptions& options;

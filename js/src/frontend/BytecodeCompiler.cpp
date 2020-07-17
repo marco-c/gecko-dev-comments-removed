@@ -645,7 +645,7 @@ JSFunction* frontend::StandaloneFunctionCompiler<Unit>::compile(
     
     
     MOZ_ASSERT(funbox->isAsmJSModule());
-    MOZ_ASSERT(compilationInfo.asmJS.has(FunctionIndex(funbox->index())));
+    MOZ_ASSERT(compilationInfo.asmJS.has(funbox->index()));
 
     compilationInfo.topLevel.get().isAsmJSModule = true;
     funbox->copyScriptFields(compilationInfo.topLevel.get());

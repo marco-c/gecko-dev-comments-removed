@@ -25,10 +25,7 @@ bool GCThingList::append(FunctionBox* funbox, uint32_t* index) {
   
   *index = vector.length();
 
-  
-  
-  
-  return vector.append(mozilla::AsVariant(FunctionIndex(funbox->index())));
+  return vector.append(mozilla::AsVariant(funbox->index()));
 }
 
 AbstractScopePtr GCThingList::getScope(size_t index) const {
