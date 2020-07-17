@@ -52,27 +52,18 @@ var Fingerprinting = {
       false,
       this.updateCategoryItem.bind(this)
     );
+    this.updateCategoryItem();
   },
 
   get categoryItem() {
-    let item = document.getElementById(
+    delete this.categoryItem;
+    return (this.categoryItem = document.getElementById(
       "protections-popup-category-fingerprinters"
-    );
-    if (item) {
-      delete this.categoryItem;
-      this.categoryItem = item;
-    }
-    return item;
+    ));
   },
 
   updateCategoryItem() {
-    
-    
-    
-    
-    if (gProtectionsHandler._protectionsPopup) {
-      this.categoryItem.classList.toggle("blocked", this.enabled);
-    }
+    this.categoryItem.classList.toggle("blocked", this.enabled);
   },
 
   get subView() {
@@ -191,27 +182,18 @@ var Cryptomining = {
       false,
       this.updateCategoryItem.bind(this)
     );
+    this.updateCategoryItem();
   },
 
   get categoryItem() {
-    let item = document.getElementById(
+    delete this.categoryItem;
+    return (this.categoryItem = document.getElementById(
       "protections-popup-category-cryptominers"
-    );
-    if (item) {
-      delete this.categoryItem;
-      this.categoryItem = item;
-    }
-    return item;
+    ));
   },
 
   updateCategoryItem() {
-    
-    
-    
-    
-    if (gProtectionsHandler._protectionsPopup) {
-      this.categoryItem.classList.toggle("blocked", this.enabled);
-    }
+    this.categoryItem.classList.toggle("blocked", this.enabled);
   },
 
   get subView() {
@@ -305,14 +287,10 @@ var TrackingProtection = {
   enabledInPrivateWindows: false,
 
   get categoryItem() {
-    let item = document.getElementById(
+    delete this.categoryItem;
+    return (this.categoryItem = document.getElementById(
       "protections-popup-category-tracking-protection"
-    );
-    if (item) {
-      delete this.categoryItem;
-      this.categoryItem = item;
-    }
-    return item;
+    ));
   },
 
   get subView() {
@@ -407,9 +385,7 @@ var TrackingProtection = {
     this.enabledInPrivateWindows = Services.prefs.getBoolPref(
       this.PREF_ENABLED_IN_PRIVATE_WINDOWS
     );
-    if (this.categoryItem) {
-      this.categoryItem.classList.toggle("blocked", this.enabled);
-    }
+    this.categoryItem.classList.toggle("blocked", this.enabled);
   },
 
   isBlocking(state) {
@@ -555,12 +531,10 @@ var ThirdPartyCookies = {
   ],
 
   get categoryItem() {
-    let item = document.getElementById("protections-popup-category-cookies");
-    if (item) {
-      delete this.categoryItem;
-      this.categoryItem = item;
-    }
-    return item;
+    delete this.categoryItem;
+    return (this.categoryItem = document.getElementById(
+      "protections-popup-category-cookies"
+    ));
   },
 
   get subView() {
@@ -637,6 +611,7 @@ var ThirdPartyCookies = {
       Ci.nsICookieService.BEHAVIOR_ACCEPT,
       this.updateCategoryItem.bind(this)
     );
+    this.updateCategoryItem();
   },
 
   get categoryLabel() {
@@ -647,13 +622,6 @@ var ThirdPartyCookies = {
   },
 
   updateCategoryItem() {
-    
-    
-    
-    
-    if (!gProtectionsHandler._protectionsPopup) {
-      return;
-    }
     this.categoryItem.classList.toggle("blocked", this.enabled);
 
     let label;
@@ -1046,6 +1014,7 @@ var SocialTracking = {
       false,
       this.updateCategoryItem.bind(this)
     );
+    this.updateCategoryItem();
   },
 
   get blockingEnabled() {
@@ -1056,13 +1025,6 @@ var SocialTracking = {
   },
 
   updateCategoryItem() {
-    
-    
-    
-    
-    if (!gProtectionsHandler._protectionsPopup) {
-      return;
-    }
     if (this.enabled) {
       this.categoryItem.removeAttribute("uidisabled");
     } else {
@@ -1102,14 +1064,10 @@ var SocialTracking = {
   },
 
   get categoryItem() {
-    let item = document.getElementById(
+    delete this.categoryItem;
+    return (this.categoryItem = document.getElementById(
       "protections-popup-category-socialblock"
-    );
-    if (item) {
-      delete this.categoryItem;
-      this.categoryItem = item;
-    }
-    return item;
+    ));
   },
 
   get subView() {
@@ -1181,35 +1139,13 @@ var gProtectionsHandler = {
   PREF_REPORT_BREAKAGE_URL: "browser.contentblocking.reportBreakage.url",
   PREF_CB_CATEGORY: "browser.contentblocking.category",
 
-  _protectionsPopup: null,
-  _initializePopup() {
-    if (!this._protectionsPopup) {
-      let wrapper = document.getElementById("template-protections-popup");
-      this._protectionsPopup = wrapper.content.firstElementChild;
-      wrapper.replaceWith(wrapper.content);
-
-      this.maybeSetMilestoneCounterText();
-
-      for (let blocker of this.blockers) {
-        if (blocker.updateCategoryItem) {
-          blocker.updateCategoryItem();
-        }
-      }
-
-      let baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
-      document.getElementById(
-        "protections-popup-sendReportView-learn-more"
-      ).href = baseURL + "blocking-breakage";
-    }
-  },
-
-  _hidePopup() {
-    if (this._protectionsPopup) {
-      PanelMultiView.hidePopup(this._protectionsPopup);
-    }
-  },
-
   
+  get _protectionsPopup() {
+    delete this._protectionsPopup;
+    return (this._protectionsPopup = document.getElementById(
+      "protections-popup"
+    ));
+  },
   get iconBox() {
     delete this.iconBox;
     return (this.iconBox = document.getElementById(
@@ -1465,11 +1401,18 @@ var gProtectionsHandler = {
       () => this.maybeSetMilestoneCounterText()
     );
 
+    this.maybeSetMilestoneCounterText();
+
     for (let blocker of this.blockers) {
       if (blocker.init) {
         blocker.init();
       }
     }
+
+    let baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
+    document.getElementById(
+      "protections-popup-sendReportView-learn-more"
+    ).href = baseURL + "blocking-breakage";
 
     
     Services.obs.addObserver(this, "browser:purge-session-history");
@@ -1645,9 +1588,6 @@ var gProtectionsHandler = {
     this._updatingFooter = true;
 
     
-    this._initializePopup();
-
-    
     const trackerCount = await TrackingDBService.sumAllEvents();
     this.setTrackersBlockedCounter(trackerCount);
 
@@ -1697,9 +1637,7 @@ var gProtectionsHandler = {
       gBrowser.selectedBrowser
     );
 
-    if (this._protectionsPopup) {
-      this._protectionsPopup.toggleAttribute("hasException", this.hasException);
-    }
+    this._protectionsPopup.toggleAttribute("hasException", this.hasException);
     this.iconBox.toggleAttribute("hasException", this.hasException);
 
     
@@ -1745,34 +1683,72 @@ var gProtectionsHandler = {
     );
   },
 
-  
-
-
-
-  updatePanelForBlockingEvent(event, isShown) {
+  onContentBlockingEvent(event, webProgress, isSimulated, previousState) {
     
+    if (!ContentBlockingAllowList.canHandle(gBrowser.selectedBrowser)) {
+      this.iconBox.removeAttribute("animate");
+      this.iconBox.removeAttribute("active");
+      this.iconBox.removeAttribute("hasException");
+      return;
+    }
+
+    this.anyDetected = false;
+    this.anyBlocking = false;
+
+    this.noTrackersDetectedDescription.hidden = false;
+
     for (let blocker of this.blockers) {
       if (blocker.categoryItem.hasAttribute("uidisabled")) {
         continue;
       }
-      blocker.categoryItem.classList.toggle(
-        "notFound",
-        !blocker.isDetected(event)
-      );
+      
+      
+      
+      
+      blocker.activated = blocker.isBlocking(event);
+      let detected = blocker.isDetected(event);
+      blocker.categoryItem.classList.toggle("notFound", !detected);
+      this.anyDetected = this.anyDetected || detected;
+      this.anyBlocking = this.anyBlocking || blocker.activated;
     }
 
     
-    this._protectionsPopup.toggleAttribute("detected", this.anyDetected);
-    this._protectionsPopup.toggleAttribute("blocking", this.anyBlocking);
-    this._protectionsPopup.toggleAttribute("hasException", this.hasException);
+    this.hasException = ContentBlockingAllowList.includes(
+      gBrowser.selectedBrowser
+    );
 
-    this.noTrackersDetectedDescription.hidden = this.anyDetected;
+    
+    
+    
+    if (isSimulated || !this.anyBlocking) {
+      this.iconBox.removeAttribute("animate");
+      
+      
+    } else if (this.anyBlocking && !this.iconBox.hasAttribute("active")) {
+      this.iconBox.setAttribute("animate", "true");
+    }
+
+    
+    
+    
+    
+    let isPanelOpen = ["showing", "open"].includes(
+      this._protectionsPopup.state
+    );
+    if (isPanelOpen) {
+      this._protectionsPopup.toggleAttribute("detected", this.anyDetected);
+      this._protectionsPopup.toggleAttribute("blocking", this.anyBlocking);
+      this._protectionsPopup.toggleAttribute("hasException", this.hasException);
+    }
+
+    this._categoryItemOrderInvalidated = true;
 
     if (this.anyDetected) {
-      
-      this.reorderCategoryItems();
+      this.noTrackersDetectedDescription.hidden = true;
 
-      if (isShown) {
+      if (isPanelOpen) {
+        this.reorderCategoryItems();
+
         
         
         
@@ -1782,21 +1758,31 @@ var gProtectionsHandler = {
         ).descriptionHeightWorkaround();
       }
     }
-  },
 
-  reportBlockingEventTelemetry(event, isSimulated, previousState) {
-    if (!isSimulated) {
-      if (this.hasException && !this.hadShieldState) {
+    this.iconBox.toggleAttribute("active", this.anyBlocking);
+    this.iconBox.toggleAttribute("hasException", this.hasException);
+
+    if (this.hasException) {
+      this.showDisabledTooltipForTPIcon();
+      if (!this.hadShieldState && !isSimulated) {
         this.hadShieldState = true;
         this.shieldHistogramAdd(1);
-      } else if (
-        !this.hasException &&
-        this.anyBlocking &&
-        !this.hadShieldState
-      ) {
+      }
+    } else if (this.anyBlocking) {
+      this.showActiveTooltipForTPIcon();
+      if (!this.hadShieldState && !isSimulated) {
         this.hadShieldState = true;
         this.shieldHistogramAdd(2);
       }
+    } else {
+      this.showNoTrackerTooltipForTPIcon();
+    }
+
+    
+    
+    
+    if (!isSimulated) {
+      this.notifyContentBlockingEvent(event);
     }
 
     
@@ -1824,94 +1810,6 @@ var gProtectionsHandler = {
       this.cryptominersHistogramAdd("allowed");
     }
   },
-
-  onContentBlockingEvent(event, webProgress, isSimulated, previousState) {
-    
-    if (!ContentBlockingAllowList.canHandle(gBrowser.selectedBrowser)) {
-      this.iconBox.removeAttribute("animate");
-      this.iconBox.removeAttribute("active");
-      this.iconBox.removeAttribute("hasException");
-      return;
-    }
-
-    
-    
-    this.anyDetected = false;
-    this.anyBlocking = false;
-    this._lastEvent = event;
-
-    
-    this.hasException = ContentBlockingAllowList.includes(
-      gBrowser.selectedBrowser
-    );
-
-    
-    for (let blocker of this.blockers) {
-      if (blocker.categoryItem?.hasAttribute("uidisabled")) {
-        continue;
-      }
-      
-      
-      
-      
-      
-      blocker.activated = blocker.isBlocking(event);
-      this.anyDetected = this.anyDetected || blocker.isDetected(event);
-      this.anyBlocking = this.anyBlocking || blocker.activated;
-    }
-
-    this._categoryItemOrderInvalidated = true;
-
-    
-
-    
-    
-    
-    if (isSimulated || !this.anyBlocking) {
-      this.iconBox.removeAttribute("animate");
-      
-      
-    } else if (this.anyBlocking && !this.iconBox.hasAttribute("active")) {
-      this.iconBox.setAttribute("animate", "true");
-    }
-
-    
-    
-    
-    
-    this.iconBox.toggleAttribute("active", this.anyBlocking);
-    this.iconBox.toggleAttribute("hasException", this.hasException);
-
-    
-    if (this.hasException) {
-      this.showDisabledTooltipForTPIcon();
-    } else if (this.anyBlocking) {
-      this.showActiveTooltipForTPIcon();
-    } else {
-      this.showNoTrackerTooltipForTPIcon();
-    }
-
-    
-    let isPanelOpen = ["showing", "open"].includes(
-      this._protectionsPopup?.state
-    );
-    if (isPanelOpen) {
-      this.updatePanelForBlockingEvent(event, true);
-    }
-
-    
-    
-    
-    
-    if (!isSimulated) {
-      this.notifyContentBlockingEvent(event);
-    }
-
-    
-    this.reportBlockingEventTelemetry(event, isSimulated, previousState);
-  },
-
-  
   handleEvent(event) {
     let elem = document.activeElement;
     let position = elem.compareDocumentPosition(this._protectionsPopup);
@@ -1940,10 +1838,6 @@ var gProtectionsHandler = {
         break;
     }
   },
-
-  
-
-
 
   refreshProtectionsPopup() {
     let host = gIdentityHandler.getHostForDisplay();
@@ -2083,7 +1977,7 @@ var gProtectionsHandler = {
   disableForCurrentPage(shouldReload = true) {
     ContentBlockingAllowList.add(gBrowser.selectedBrowser);
     if (shouldReload) {
-      this._hidePopup();
+      PanelMultiView.hidePopup(this._protectionsPopup);
       BrowserReload();
     }
   },
@@ -2091,7 +1985,7 @@ var gProtectionsHandler = {
   enableForCurrentPage(shouldReload = true) {
     ContentBlockingAllowList.remove(gBrowser.selectedBrowser);
     if (shouldReload) {
-      this._hidePopup();
+      PanelMultiView.hidePopup(this._protectionsPopup);
       BrowserReload();
     }
   },
@@ -2192,9 +2086,6 @@ var gProtectionsHandler = {
   
   _milestoneTextSet: false,
   async maybeSetMilestoneCounterText() {
-    if (!this._protectionsPopup) {
-      return;
-    }
     let trackerCount = this.milestonePref;
     if (
       !this.milestonesEnabledPref ||
@@ -2266,20 +2157,16 @@ var gProtectionsHandler = {
   showProtectionsPopup(options = {}) {
     const { event, toast } = options;
 
-    this._initializePopup();
-
-    
-    if (this.hasOwnProperty("_lastEvent")) {
-      this.updatePanelForBlockingEvent(this._lastEvent);
-      delete this._lastEvent;
-    }
-
     
     
     if (this._toastPanelTimer) {
       clearTimeout(this._toastPanelTimer);
       delete this._toastPanelTimer;
     }
+
+    
+    
+    this._protectionsPopup.hidden = false;
 
     this._protectionsPopup.toggleAttribute("toast", !!toast);
     if (!toast) {
@@ -2466,9 +2353,7 @@ var gProtectionsHandler = {
   },
 
   async maybeUpdateEarliestRecordedDateTooltip() {
-    
-    
-    if (this._hasEarliestRecord || !this._protectionsPopup) {
+    if (this._hasEarliestRecord) {
       return;
     }
 
