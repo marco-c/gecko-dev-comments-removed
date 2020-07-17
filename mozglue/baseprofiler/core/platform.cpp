@@ -57,6 +57,7 @@
 #include "prtime.h"
 
 #include "BaseProfiler.h"
+#include "BaseProfilingCategory.h"
 #include "PageInformation.h"
 #include "ProfiledThreadData.h"
 #include "ProfilerBacktrace.h"
@@ -2474,7 +2475,7 @@ static ProfilingStack* locked_register_thread(PSLockRef aLock,
                                               void* aStackTop) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  MOZ_RELEASE_ASSERT(!FindCurrentThreadRegisteredThread(aLock));
+  MOZ_ASSERT(!FindCurrentThreadRegisteredThread(aLock));
 
   VTUNE_REGISTER_THREAD(aName);
 
@@ -2561,7 +2562,7 @@ void profiler_init(void* aStackTop) {
     
     CorePS::Create(lock);
 
-    locked_register_thread(lock, kMainThreadName, aStackTop);
+    Unused << locked_register_thread(lock, kMainThreadName, aStackTop);
 
     
     PlatformInit(lock);
@@ -3307,6 +3308,10 @@ void profiler_remove_sampled_counter(BaseProfilerCount* aCounter) {
   CorePS::RemoveCounter(lock, aCounter);
 }
 
+static void maybelocked_profiler_add_marker_for_thread(
+    int aThreadId, ProfilingCategoryPair aCategoryPair, const char* aMarkerName,
+    const ProfilerMarkerPayload& aPayload, const PSAutoLock* aLockOrNull);
+
 ProfilingStack* profiler_register_thread(const char* aName,
                                          void* aGuessStackTop) {
   DEBUG_LOG("profiler_register_thread(%s)", aName);
@@ -3314,6 +3319,28 @@ ProfilingStack* profiler_register_thread(const char* aName,
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock;
+
+  if (RegisteredThread* thread = FindCurrentThreadRegisteredThread(lock);
+      thread) {
+    LOG("profiler_register_thread(%s) - thread %d already registered as %s",
+        aName, profiler_current_thread_id(), thread->Info()->Name());
+    
+    
+    
+    std::string text("Thread ");
+    text += std::to_string(profiler_current_thread_id());
+    text += " \"";
+    text += thread->Info()->Name();
+    text += "\" attempted to re-register as \"";
+    text += aName;
+    text += "\"";
+    maybelocked_profiler_add_marker_for_thread(
+        CorePS::MainThreadId(), ProfilingCategoryPair::OTHER_Profiling,
+        "profiler_register_thread again",
+        TextMarkerPayload(text, TimeStamp::NowUnfuzzed()), &lock);
+
+    return &thread->RacyRegisteredThread().ProfilingStack();
+  }
 
   void* stackTop = GetStackTop(aGuessStackTop);
   return locked_register_thread(lock, aName, stackTop);
@@ -3347,6 +3374,20 @@ void profiler_unregister_thread() {
     
     CorePS::RemoveRegisteredThread(lock, registeredThread);
   } else {
+    LOG("profiler_unregister_thread() - thread %d already unregistered",
+        profiler_current_thread_id());
+    
+    
+    
+    
+    if (int tid = profiler_current_thread_id(); tid != CorePS::MainThreadId()) {
+      maybelocked_profiler_add_marker_for_thread(
+          CorePS::MainThreadId(), ProfilingCategoryPair::OTHER_Profiling,
+          "profiler_unregister_thread again",
+          TextMarkerPayload(std::to_string(profiler_current_thread_id()),
+                            TimeStamp::NowUnfuzzed()),
+          &lock);
+    }
     
     
     
