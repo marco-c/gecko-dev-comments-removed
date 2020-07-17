@@ -4,7 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const {
   createFactory,
   PureComponent,
@@ -149,20 +148,7 @@ class DeviceSelector extends PureComponent {
     
     
     
-    let toolboxDoc = null;
-    if (Services.prefs.getBoolPref("devtools.responsive.browserUI.enabled")) {
-      toolboxDoc = window.document;
-    } else if (window.parent) {
-      toolboxDoc = window.parent.document;
-    } else {
-      
-      
-      
-      console.error(
-        "Unable to find a proper document to create the device-selector MenuButton for RDM"
-      );
-      return null;
-    }
+    const toolboxDoc = window.document;
 
     return MenuButton(
       {
