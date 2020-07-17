@@ -154,6 +154,20 @@ nsMapRuleToAttributesFunc HTMLIFrameElement::GetAttributeMappingFunction()
   return &MapAttributesIntoRule;
 }
 
+bool HTMLIFrameElement::HasAllowFullscreenAttribute() const {
+  return GetBoolAttr(nsGkAtoms::allowfullscreen) ||
+         GetBoolAttr(nsGkAtoms::mozallowfullscreen);
+}
+
+bool HTMLIFrameElement::AllowFullscreen() const {
+  if (StaticPrefs::dom_security_featurePolicy_enabled()) {
+    
+    
+    return true;
+  }
+  return HasAllowFullscreenAttribute();
+}
+
 nsresult HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                          const nsAttrValue* aValue,
                                          const nsAttrValue* aOldValue,
@@ -173,7 +187,6 @@ nsresult HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                aName == nsGkAtoms::mozallowfullscreen) {
       if (mFrameLoader) {
         if (auto* bc = mFrameLoader->GetExtantBrowsingContext()) {
-          
           
           bc->SetFullscreenAllowedByOwner(AllowFullscreen());
         }
@@ -316,7 +329,7 @@ void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
     mFeaturePolicy->MaybeSetAllowedPolicy(u"payment"_ns);
   }
 
-  if (AllowFullscreen()) {
+  if (HasAllowFullscreenAttribute()) {
     mFeaturePolicy->MaybeSetAllowedPolicy(u"fullscreen"_ns);
   }
 
