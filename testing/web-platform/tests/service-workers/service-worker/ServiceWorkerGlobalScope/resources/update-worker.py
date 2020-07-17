@@ -1,14 +1,16 @@
 import os
 import time
 
+from wptserve.utils import isomorphic_decode
+
 def main(request, response):
     
     
-    headers = [('Cache-Control', 'max-age: 0'),
-               ('Content-Type', 'application/javascript')]
-    with open(os.path.join(os.path.dirname(__file__),
-                           'update-worker.js'), 'r') as file:
+    headers = [(b'Cache-Control', b'max-age: 0'),
+               (b'Content-Type', b'application/javascript')]
+    with open(os.path.join(os.path.dirname(isomorphic_decode(__file__)),
+                           u'update-worker.js'), u'r') as file:
         script = file.read()
     
-    return headers, '// %s\n%s' % (time.time(), script)
+    return headers, u'// %s\n%s' % (time.time(), script)
 

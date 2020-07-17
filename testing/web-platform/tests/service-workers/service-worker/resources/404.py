@@ -2,4 +2,4 @@
 
 
 def main(req, res):
-    return 404, [('Content-Type', 'text/plain')], "Page not found"
+    return 404, [(b'Content-Type', b'text/plain')], b"Page not found"
