@@ -9833,12 +9833,7 @@ bool BytecodeEmitter::emitClass(
     }
   }
 
-  
-  
-  
-  
   bool isDerived = !!heritageExpression;
-  bool hasNameOnStack = nameKind == ClassNameKind::ComputedName;
   if (isDerived) {
     if (!updateSourceCoordNotes(classNode->pn_pos.begin)) {
       return false;
@@ -9850,6 +9845,20 @@ bool BytecodeEmitter::emitClass(
       
       return false;
     }
+  }
+
+  
+  
+  
+  if (LexicalScopeNode* bodyScopeBindings = classNode->bodyScopeBindings()) {
+    if (!ce.emitBodyScope(bodyScopeBindings->scopeBindings())) {
+      
+      return false;
+    }
+  }
+
+  bool hasNameOnStack = nameKind == ClassNameKind::ComputedName;
+  if (isDerived) {
     if (!ce.emitDerivedClass(innerName, nameForAnonymousClass,
                              hasNameOnStack)) {
       
