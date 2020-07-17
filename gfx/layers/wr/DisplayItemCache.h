@@ -95,7 +95,22 @@ class DisplayItemCache final {
   
 
 
-  bool IsEnabled() const { return mMaximumSize > 0; }
+  bool IsEnabled() const { return !mSuppressed && mMaximumSize > 0; }
+
+  
+
+
+
+
+
+
+  bool SetSuppressed(bool aSuppressed) {
+    if (aSuppressed == mSuppressed) {
+      return mSuppressed;
+    }
+    mSuppressed = aSuppressed;
+    return !mSuppressed;
+  }
 
   
 
@@ -164,8 +179,29 @@ class DisplayItemCache final {
   wr::PipelineId mPipelineId;
   bool mCaching;
   bool mInvalid;
+  bool mSuppressed;
 
   CacheStats mCacheStats;
+};
+
+class MOZ_RAII AutoDisplayItemCacheSuppressor {
+ public:
+  explicit AutoDisplayItemCacheSuppressor(DisplayItemCache* aCache)
+      : mCache(aCache) {
+    mWasSuppressed = mCache->SetSuppressed(true);
+  }
+
+  
+  
+  
+  
+  
+  
+  ~AutoDisplayItemCacheSuppressor() { mCache->SetSuppressed(mWasSuppressed); }
+
+ private:
+  DisplayItemCache* mCache;
+  bool mWasSuppressed;
 };
 
 }  
