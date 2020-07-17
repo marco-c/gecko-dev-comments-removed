@@ -53,32 +53,11 @@ typedef nsTArray<nsCOMPtr<nsIRedirectHistoryEntry>> RedirectHistoryArray;
 
 
 class LoadInfo final : public nsILoadInfo {
-  template <typename T, typename... Args>
-  friend already_AddRefed<T> mozilla::MakeAndAddRef(Args&&... aArgs);
-
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSILOADINFO
 
   
-  static already_AddRefed<LoadInfo> CreateForDocument(
-      dom::CanonicalBrowsingContext* aBrowsingContext,
-      nsIPrincipal* aTriggeringPrincipal,
-      const OriginAttributes& aOriginAttributes, uint64_t aOuterWindowID,
-      nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
-
-  
-  static already_AddRefed<LoadInfo> CreateForFrame(
-      dom::CanonicalBrowsingContext* aBrowsingContext,
-      nsIPrincipal* aTriggeringPrincipal, uint64_t aFrameOuterWindowID,
-      nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
-
-  
-  static already_AddRefed<LoadInfo> CreateForNonDocument(
-      dom::WindowGlobalParent* aParentWGP, nsIPrincipal* aTriggeringPrincipal,
-      uint64_t aFrameOuterWindowID, nsContentPolicyType aContentPolicyType,
-      nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
-
   
   LoadInfo(nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
            nsINode* aLoadingContext, nsSecurityFlags aSecurityFlags,
@@ -88,6 +67,10 @@ class LoadInfo final : public nsILoadInfo {
            const Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController =
                Maybe<mozilla::dom::ServiceWorkerDescriptor>(),
            uint32_t aSandboxFlags = 0);
+  
+  LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
+           nsIPrincipal* aTriggeringPrincipal, uint64_t aFrameOuterWindowID,
+           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
   
@@ -95,29 +78,17 @@ class LoadInfo final : public nsILoadInfo {
   LoadInfo(nsPIDOMWindowOuter* aOuterWindow, nsIPrincipal* aTriggeringPrincipal,
            nsISupports* aContextForTopLevelLoad, nsSecurityFlags aSecurityFlags,
            uint32_t aSandboxFlags);
-
- private:
-  
-  
   LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
            nsIPrincipal* aTriggeringPrincipal,
            const OriginAttributes& aOriginAttributes, uint64_t aOuterWindowID,
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
-  
-  LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
-           nsIPrincipal* aTriggeringPrincipal, uint64_t aFrameOuterWindowID,
-           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
-
-  
-  
   LoadInfo(dom::WindowGlobalParent* aParentWGP,
            nsIPrincipal* aTriggeringPrincipal, uint64_t aFrameOuterWindowID,
            nsContentPolicyType aContentPolicyType,
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
- public:
   
   
   
@@ -138,12 +109,6 @@ class LoadInfo final : public nsILoadInfo {
   
   
   already_AddRefed<nsILoadInfo> CloneForNewRequest() const;
-
-  
-  
-  
-  
-  using nsILoadInfo::GetExternalContentPolicyType;
 
   void SetIsPreflight();
   void SetUpgradeInsecureRequests(bool aValue);
@@ -281,65 +246,62 @@ class LoadInfo final : public nsILoadInfo {
   nsSecurityFlags mSecurityFlags;
   uint32_t mSandboxFlags;
   nsContentPolicyType mInternalContentPolicyType;
-
-  LoadTainting mTainting = LoadTainting::Basic;
-  bool mBlockAllMixedContent = false;
-  bool mUpgradeInsecureRequests = false;
-  bool mBrowserUpgradeInsecureRequests = false;
-  bool mBrowserWouldUpgradeInsecureRequests = false;
-  bool mForceAllowDataURI = false;
-  bool mAllowInsecureRedirectToDataURI = false;
-  bool mBypassCORSChecks = false;
-  bool mSkipContentPolicyCheckForWebRequest = false;
-  bool mOriginalFrameSrcLoad = false;
-  bool mForceInheritPrincipalDropped = false;
-  uint64_t mInnerWindowID = 0;
-  uint64_t mOuterWindowID = 0;
-  uint64_t mParentOuterWindowID = 0;
-  uint64_t mTopOuterWindowID = 0;
-  uint64_t mFrameOuterWindowID = 0;
-  uint64_t mBrowsingContextID = 0;
-  uint64_t mFrameBrowsingContextID = 0;
-  bool mInitialSecurityCheckDone = false;
-  
-  bool mIsThirdPartyContext = false;
-  bool mIsThirdPartyContextToTopWindow = true;
-  bool mIsFormSubmission = false;
-  bool mSendCSPViolationEvents = true;
+  LoadTainting mTainting;
+  bool mBlockAllMixedContent;
+  bool mUpgradeInsecureRequests;
+  bool mBrowserUpgradeInsecureRequests;
+  bool mBrowserWouldUpgradeInsecureRequests;
+  bool mForceAllowDataURI;
+  bool mAllowInsecureRedirectToDataURI;
+  bool mBypassCORSChecks;
+  bool mSkipContentPolicyCheckForWebRequest;
+  bool mOriginalFrameSrcLoad;
+  bool mForceInheritPrincipalDropped;
+  uint64_t mInnerWindowID;
+  uint64_t mOuterWindowID;
+  uint64_t mParentOuterWindowID;
+  uint64_t mTopOuterWindowID;
+  uint64_t mFrameOuterWindowID;
+  uint64_t mBrowsingContextID;
+  uint64_t mFrameBrowsingContextID;
+  bool mInitialSecurityCheckDone;
+  bool mIsThirdPartyContext;
+  bool mIsThirdPartyContextToTopWindow;
+  bool mIsFormSubmission;
+  bool mSendCSPViolationEvents;
   OriginAttributes mOriginAttributes;
   RedirectHistoryArray mRedirectChainIncludingInternalRedirects;
   RedirectHistoryArray mRedirectChain;
   nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
   nsTArray<uint64_t> mAncestorBrowsingContextIDs;
   nsTArray<nsCString> mCorsUnsafeHeaders;
-  uint32_t mRequestBlockingReason = BLOCKING_REASON_NONE;
-  bool mForcePreflight = false;
-  bool mIsPreflight = false;
-  bool mLoadTriggeredFromExternal = false;
-  bool mServiceWorkerTaintingSynthesized = false;
-  bool mDocumentHasUserInteracted = false;
-  bool mDocumentHasLoaded = false;
-  bool mAllowListFutureDocumentsCreatedFromThisRedirectChain = false;
+  uint32_t mRequestBlockingReason;
+  bool mForcePreflight;
+  bool mIsPreflight;
+  bool mLoadTriggeredFromExternal;
+  bool mServiceWorkerTaintingSynthesized;
+  bool mDocumentHasUserInteracted;
+  bool mDocumentHasLoaded;
+  bool mAllowListFutureDocumentsCreatedFromThisRedirectChain;
   nsString mCspNonce;
-  bool mSkipContentSniffing = false;
-  uint32_t mHttpsOnlyStatus = nsILoadInfo::HTTPS_ONLY_UNINITIALIZED;
-  bool mHasValidUserGestureActivation = false;
-  bool mAllowDeprecatedSystemRequests = false;
-  bool mIsInDevToolsContext = false;
-  bool mParserCreatedScript = false;
-  bool mHasStoragePermission = false;
+  bool mSkipContentSniffing;
+  uint32_t mHttpsOnlyStatus;
+  bool mHasValidUserGestureActivation;
+  bool mAllowDeprecatedSystemRequests;
+  bool mIsInDevToolsContext;
+  bool mParserCreatedScript;
+  bool mHasStoragePermission;
 
   
   
   
-  bool mIsFromProcessingFrameAttributes = false;
+  bool mIsFromProcessingFrameAttributes;
 
   
   
   
   
-  nsILoadInfo::CrossOriginEmbedderPolicy mLoadingEmbedderPolicy =
-      nsILoadInfo::EMBEDDER_POLICY_NULL;
+  nsILoadInfo::CrossOriginEmbedderPolicy mLoadingEmbedderPolicy;
 };
 
 }  

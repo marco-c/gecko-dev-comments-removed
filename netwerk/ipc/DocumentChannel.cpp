@@ -97,22 +97,16 @@ void DocumentChannel::ShutdownListeners(nsresult aStatusCode) {
   mIsPending = false;
 
   listener = mListener;  
-  nsCOMPtr<nsILoadGroup> loadGroup = mLoadGroup;
-
+  if (listener) {
+    listener->OnStopRequest(this, aStatusCode);
+  }
   mListener = nullptr;
-  mLoadGroup = nullptr;
   mCallbacks = nullptr;
 
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "DocumentChannel::ShutdownListeners", [=, self = RefPtr{this}] {
-        if (listener) {
-          listener->OnStopRequest(self, aStatusCode);
-        }
-
-        if (loadGroup) {
-          loadGroup->RemoveRequest(self, nullptr, aStatusCode);
-        }
-      }));
+  if (mLoadGroup) {
+    mLoadGroup->RemoveRequest(this, nullptr, aStatusCode);
+    mLoadGroup = nullptr;
+  }
 
   DeleteIPDL();
 }
@@ -160,7 +154,9 @@ static bool URIUsesDocChannel(nsIURI* aURI) {
          !spec.EqualsLiteral("about:crashcontent");
 }
 
-bool DocumentChannel::CanUseDocumentChannel(nsIURI* aURI, uint32_t aLoadFlags) {
+bool DocumentChannel::CanUseDocumentChannel(nsDocShellLoadState* aLoadState) {
+  MOZ_ASSERT(aLoadState);
+
   if (XRE_IsParentProcess() &&
       !StaticPrefs::browser_tabs_documentchannel_ppdc()) {
     return false;
@@ -172,12 +168,12 @@ bool DocumentChannel::CanUseDocumentChannel(nsIURI* aURI, uint32_t aLoadFlags) {
   
   
   return StaticPrefs::browser_tabs_documentchannel() &&
-         !(aLoadFlags & nsDocShell::INTERNAL_LOAD_FLAGS_IS_SRCDOC) &&
-         URIUsesDocChannel(aURI);
+         !aLoadState->HasLoadFlags(nsDocShell::INTERNAL_LOAD_FLAGS_IS_SRCDOC) &&
+         URIUsesDocChannel(aLoadState->URI());
 }
 
 
-already_AddRefed<DocumentChannel> DocumentChannel::CreateForDocument(
+already_AddRefed<DocumentChannel> DocumentChannel::CreateDocumentChannel(
     nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
     nsLoadFlags aLoadFlags, nsIInterfaceRequestor* aNotificationCallbacks,
     uint32_t aCacheKey, bool aUriModified, bool aIsXFOError) {
@@ -192,14 +188,6 @@ already_AddRefed<DocumentChannel> DocumentChannel::CreateForDocument(
   }
   channel->SetNotificationCallbacks(aNotificationCallbacks);
   return channel.forget();
-}
-
-
-already_AddRefed<DocumentChannel> DocumentChannel::CreateForObject(
-    nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
-    nsLoadFlags aLoadFlags, nsIInterfaceRequestor* aNotificationCallbacks) {
-  return CreateForDocument(aLoadState, aLoadInfo, aLoadFlags,
-                           aNotificationCallbacks, 0, false, false);
 }
 
 
@@ -304,17 +292,9 @@ DocumentChannel::SetTRRMode(nsIRequest::TRRMode aTRRMode) {
 }
 
 NS_IMETHODIMP DocumentChannel::SetLoadFlags(nsLoadFlags aLoadFlags) {
-  auto contentPolicy = mLoadInfo->GetExternalContentPolicyType();
-  
-  
-  if (contentPolicy != nsIContentPolicy::TYPE_OBJECT || mWasOpened) {
-    MOZ_CRASH("DocumentChannel::SetLoadFlags: Don't set flags after creation");
-    NS_ERROR(
-        "DocumentChannel::SetLoadFlags: "
-        "Don't set flags after creation");
-  } else {
-    mLoadFlags = aLoadFlags;
-  }
+  NS_ERROR(
+      "DocumentChannel::SetLoadFlags: "
+      "Don't set flags after creation");
   return NS_OK;
 }
 
@@ -452,23 +432,6 @@ NS_IMETHODIMP
 DocumentChannel::SetChannelId(uint64_t aChannelId) {
   mChannelId = aChannelId;
   return NS_OK;
-}
-
-
-
-
-
-uint64_t InnerWindowIDForExtantDoc(nsDocShell* docShell) {
-  if (!docShell) {
-    return 0;
-  }
-
-  Document* doc = docShell->GetExtantDocument();
-  if (!doc) {
-    return 0;
-  }
-
-  return doc->InnerWindowID();
 }
 
 }  
