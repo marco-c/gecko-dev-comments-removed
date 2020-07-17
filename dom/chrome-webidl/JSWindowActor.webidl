@@ -97,7 +97,7 @@ dictionary WindowActorOptions {
 
 
 
-  sequence<DOMString> remoteTypes;
+  sequence<UTF8String> remoteTypes;
 
   
 

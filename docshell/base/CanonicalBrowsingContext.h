@@ -59,7 +59,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   uint64_t EmbedderProcessId() const { return mEmbedderProcessId; }
   ContentParent* GetContentParent() const;
 
-  void GetCurrentRemoteType(nsAString& aRemoteType, ErrorResult& aRv) const;
+  void GetCurrentRemoteType(nsACString& aRemoteType, ErrorResult& aRv) const;
 
   void SetOwnerProcessId(uint64_t aProcessId);
 
@@ -153,7 +153,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   using RemotenessPromise = MozPromise<RefPtr<BrowserParent>, nsresult, false>;
-  RefPtr<RemotenessPromise> ChangeRemoteness(const nsAString& aRemoteType,
+  RefPtr<RemotenessPromise> ChangeRemoteness(const nsACString& aRemoteType,
                                              uint64_t aPendingSwitchId,
                                              bool aReplaceBrowsingContext,
                                              uint64_t aSpecificGroupId);
