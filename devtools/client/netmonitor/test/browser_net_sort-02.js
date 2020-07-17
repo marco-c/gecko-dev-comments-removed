@@ -29,7 +29,6 @@ add_task(async function() {
 
   
   
-  loadFrameScriptUtils();
   const requests = [
     {
       url: "sjs_sorting-test-server.sjs?index=1&" + Math.random(),

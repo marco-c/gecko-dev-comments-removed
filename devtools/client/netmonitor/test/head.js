@@ -856,10 +856,6 @@ function testFilterButtonsCustom(monitor, isChecked) {
 
 
 
-function performRequestsInContent(requests) {
-  info("Performing requests in the context of the content.");
-  return executeInContent("devtools:test:xhr", requests);
-}
 
 
 
@@ -868,42 +864,110 @@ function performRequestsInContent(requests) {
 
 
 
+function promiseXHR(data) {
+  return new Promise((resolve, reject) => {
+    const xhr = new content.XMLHttpRequest();
 
+    const method = data.method || "GET";
+    let url = data.url || content.location.href;
+    const body = data.body || "";
 
+    if (data.nocache) {
+      url += "?devtools-cachebust=" + Math.random();
+    }
 
+    xhr.addEventListener(
+      "loadend",
+      function(event) {
+        resolve({ status: xhr.status, response: xhr.response });
+      },
+      { once: true }
+    );
 
+    xhr.open(method, url);
 
+    
+    if (data.requestHeaders) {
+      data.requestHeaders.forEach(header => {
+        xhr.setRequestHeader(header.name, header.value);
+      });
+    }
 
-
-
-
-
-function executeInContent(name, data = {}, expectResponse = true) {
-  const mm = gBrowser.selectedBrowser.messageManager;
-
-  mm.sendAsyncMessage(name, data);
-  if (expectResponse) {
-    return waitForContentMessage(name);
-  }
-  return promise.resolve();
-}
-
-
-
-
-
-
-
-
-function waitForContentMessage(name) {
-  const mm = gBrowser.selectedBrowser.messageManager;
-
-  return new Promise(resolve => {
-    mm.addMessageListener(name, function onMessage(msg) {
-      mm.removeMessageListener(name, onMessage);
-      resolve(msg);
-    });
+    xhr.send(body);
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function promiseWS(data) {
+  return new Promise((resolve, reject) => {
+    let url = data.url;
+
+    if (data.nocache) {
+      url += "?devtools-cachebust=" + Math.random();
+    }
+
+    
+    const socket = new content.WebSocket(url);
+
+    
+    socket.onclose = e => {
+      socket.close();
+      resolve({
+        status: 101,
+        response: "",
+      });
+    };
+
+    socket.onerror = e => {
+      socket.close();
+      resolve({
+        status: 101,
+        response: "",
+      });
+    };
+  });
+}
+
+
+
+
+
+
+
+
+
+
+async function performRequestsInContent(requests) {
+  if (!Array.isArray(requests)) {
+    requests = [requests];
+  }
+
+  const responses = [];
+
+  info("Performing requests in the context of the content.");
+
+  for (const request of requests) {
+    const requestFn = request.ws ? promiseWS : promiseXHR;
+    const response = await SpecialPowers.spawn(
+      gBrowser.selectedBrowser,
+      [request],
+      requestFn
+    );
+    responses.push(response);
+  }
 }
 
 function testColumnsAlignment(headers, requestList) {
