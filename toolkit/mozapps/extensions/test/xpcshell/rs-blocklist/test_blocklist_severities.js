@@ -3,10 +3,6 @@
 
 
 
-
-
-Services.prefs.setBoolPref("extensions.blocklist.useMLBF", false);
-
 const URI_EXTENSION_BLOCKLIST_DIALOG =
   "chrome://mozapps/content/extensions/blocklist.xhtml";
 

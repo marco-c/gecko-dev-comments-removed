@@ -3,9 +3,6 @@
 
 
 
-Services.prefs.setBoolPref("extensions.blocklist.useMLBF", false);
-
-
 
 add_task(async function test_softblock() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
