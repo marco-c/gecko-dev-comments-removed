@@ -5418,26 +5418,6 @@
         true
       );
 
-      
-      
-      this.addEventListener(
-        "DOMModalDialogClosed",
-        event => {
-          if (
-            !event.detail.wasPermitUnload ||
-            event.detail.areLeaving ||
-            event.target.nodeName != "browser"
-          ) {
-            return;
-          }
-          event.target.userTypedValue = null;
-          if (event.target == this.selectedBrowser) {
-            gURLBar.setURI();
-          }
-        },
-        true
-      );
-
       let onTabCrashed = event => {
         if (!event.isTrusted || !event.isTopFrame) {
           return;
