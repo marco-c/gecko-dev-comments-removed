@@ -165,6 +165,7 @@ enum class RecordEventResult {
   StorageLimitReached,
   ExpiredEvent,
   WrongProcess,
+  CannotRecord,
 };
 
 typedef CopyableTArray<EventExtraEntry> ExtraArray;
@@ -456,7 +457,7 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
 
   
   if (!CanRecordEvent(lock, *eventKey, processType)) {
-    return RecordEventResult::Ok;
+    return RecordEventResult::CannotRecord;
   }
 
   
