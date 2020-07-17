@@ -1379,15 +1379,25 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
   
   
   
+  
+  Maybe<WSFragment> visibleWSFragmentInMiddleOfLine =
+      TextFragmentData(mStart, mEnd, mNBSPData, mPRE)
+          .CreateWSFragmentForVisibleAndMiddleOfLine();
+  if (visibleWSFragmentInMiddleOfLine.isNothing()) {
+    return NS_OK;  
+  }
+
+  PointPosition pointPositionWithVisibleWhiteSpaces =
+      visibleWSFragmentInMiddleOfLine.ref().ComparePoint(mScanStartPoint);
 
   
-  const WSFragment* beforeRun = FindNearestFragment(mScanStartPoint, false);
-  const WSFragment* afterRun = FindNearestFragment(mScanStartPoint, true);
+  
+  
 
   
-  if (afterRun && afterRun->IsVisibleAndMiddleOfHardLine()) {
-    
-    
+  
+  if (pointPositionWithVisibleWhiteSpaces == PointPosition::StartOfFragment ||
+      pointPositionWithVisibleWhiteSpaces == PointPosition::MiddleOfFragment) {
     EditorDOMPointInText atNextCharOfStart =
         GetInclusiveNextEditableCharPoint(mScanStartPoint);
     if (atNextCharOfStart.IsSet() && !atNextCharOfStart.IsEndOfContainer() &&
@@ -1412,9 +1422,10 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
   }
 
   
-  if (beforeRun && beforeRun->IsVisibleAndMiddleOfHardLine()) {
-    
-    
+  
+  
+  if (pointPositionWithVisibleWhiteSpaces == PointPosition::MiddleOfFragment ||
+      pointPositionWithVisibleWhiteSpaces == PointPosition::EndOfFragment) {
     EditorDOMPointInText atPreviousCharOfStart =
         GetPreviousEditableCharPoint(mScanStartPoint);
     if (atPreviousCharOfStart.IsSet() &&
