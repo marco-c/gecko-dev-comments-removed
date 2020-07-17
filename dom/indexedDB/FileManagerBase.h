@@ -28,22 +28,47 @@ class FileManagerBase {
   using AutoLock = mozilla::detail::BaseAutoLock<MutexType&>;
 
   [[nodiscard]] SafeRefPtr<FileInfo> GetFileInfo(int64_t aId) const {
-    return AcquireFileInfo([this, aId] { return mFileInfos.Get(aId); });
+    if (!AssertValid()) {
+      
+      return nullptr;
+    }
+
+    
+    
+    
+    FileInfo* fileInfo;
+    {
+      AutoLock lock(FileManager::Mutex());
+      fileInfo = mFileInfos.Get(aId);
+    }
+
+    return {fileInfo, AcquireStrongRefFromRawPtr{}};
   }
 
   [[nodiscard]] SafeRefPtr<FileInfo> CreateFileInfo() {
-    return AcquireFileInfo([this] {
+    if (!AssertValid()) {
+      
+      return nullptr;
+    }
+
+    
+    
+    
+    FileInfo* fileInfo;
+    {
+      AutoLock lock(FileManager::Mutex());
+
       const int64_t id = ++mLastFileId;
 
-      FileInfo* fileInfo =
-          new FileInfo(FileManagerGuard{},
-                       SafeRefPtr{static_cast<FileManager*>(this),
-                                  AcquireStrongRefFromRawPtr{}},
-                       id);
+      fileInfo = new FileInfo(FileManagerGuard{},
+                              SafeRefPtr{static_cast<FileManager*>(this),
+                                         AcquireStrongRefFromRawPtr{}},
+                              id);
 
       mFileInfos.Put(id, fileInfo);
-      return fileInfo;
-    });
+    }
+
+    return {fileInfo, AcquireStrongRefFromRawPtr{}};
   }
 
   void RemoveFileInfo(const int64_t aId, const AutoLock& aFileMutexLock) {
@@ -73,30 +98,6 @@ class FileManagerBase {
   class FileManagerGuard {
     FileManagerGuard() = default;
   };
-
- private:
-  
-  
-  
-  template <typename FileInfoTableOp>
-  [[nodiscard]] SafeRefPtr<FileInfo> AcquireFileInfo(
-      const FileInfoTableOp& aFileInfoTableOp) const {
-    if (!AssertValid()) {
-      
-      return nullptr;
-    }
-
-    
-    
-    already_AddRefed<FileInfo> fileInfo = [&aFileInfoTableOp] {
-      AutoLock lock(FileManager::Mutex());
-      FileInfo* fileInfo = aFileInfoTableOp();
-      fileInfo->LockedAddRef();
-      return dont_AddRef(fileInfo);
-    }();
-
-    return SafeRefPtr{RefPtr<FileInfo>{fileInfo}};
-  }
 
  protected:
   bool AssertValid() const {
