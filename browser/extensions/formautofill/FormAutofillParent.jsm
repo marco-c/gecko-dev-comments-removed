@@ -593,13 +593,6 @@ class FormAutofillParent extends JSWindowActorParent {
       creditCard.record["cc-type"] = "";
     }
 
-    let existingGuid = await gFormAutofillStorage.creditCards.getDuplicateGuid(
-      creditCard.record
-    );
-    if (existingGuid) {
-      creditCard.guid = existingGuid;
-    }
-
     
     
     
@@ -661,6 +654,15 @@ class FormAutofillParent extends JSWindowActorParent {
         1
       );
       this._recordFormFillingTime("creditCard", "manual", timeStartedFillingMS);
+    }
+
+    
+    let dupGuid = await gFormAutofillStorage.creditCards.getDuplicateGuid(
+      creditCard.record
+    );
+    if (dupGuid) {
+      gFormAutofillStorage.creditCards.notifyUsed(dupGuid);
+      return false;
     }
 
     
