@@ -199,6 +199,17 @@ function unwrapPrivileged(x) {
   return wrappedObjects.get(x);
 }
 
+function wrapExceptions(global, fn) {
+  try {
+    return fn();
+  } catch (e) {
+    if (!Cu.getObjectPrincipal(global).subsumes(Cu.getObjectPrincipal(e))) {
+      throw wrapPrivileged(e, global);
+    }
+    throw e;
+  }
+}
+
 function specialPowersHasInstance(value) {
   
   
@@ -215,52 +226,40 @@ let SpecialPowersHandler = {
 
     
     
-    try {
-      return wrapIfUnwrapped(
+    let global = Cu.getGlobalForObject(this);
+    return wrapExceptions(global, () =>
+      wrapIfUnwrapped(
         Reflect.construct(this.wrapped.get(target).obj, unwrappedArgs),
-        Cu.getGlobalForObject(this)
-      );
-    } catch (e) {
-      throw wrapIfUnwrapped(e, Cu.getGlobalForObject(this));
-    }
+        global
+      )
+    );
   },
 
   apply(target, thisValue, args) {
     let wrappedObject = this.wrapped.get(target).obj;
-    let contentWindow = Cu.getGlobalForObject(this);
+    let global = Cu.getGlobalForObject(this);
     
     
     var invocant = unwrapIfWrapped(thisValue);
 
-    if (noAutoWrap.has(wrappedObject)) {
-      args = Array.from(Cu.waiveXrays(args), x => Cu.unwaiveXrays(x));
-      try {
+    return wrapExceptions(global, () => {
+      if (noAutoWrap.has(wrappedObject)) {
+        args = Array.from(Cu.waiveXrays(args), x => Cu.unwaiveXrays(x));
         return doApply(wrappedObject, invocant, args);
-      } catch (e) {
-        
-        throw wrapIfUnwrapped(e, contentWindow);
       }
-    }
 
-    if (wrappedObject.name == "then") {
-      args = Array.from(Cu.waiveXrays(args), x =>
-        wrapCallback(Cu.unwaiveXrays(x), contentWindow)
-      );
-    } else {
-      args = Array.from(Cu.waiveXrays(args), x =>
-        unwrapIfWrapped(Cu.unwaiveXrays(x))
-      );
-    }
+      if (wrappedObject.name == "then") {
+        args = Array.from(Cu.waiveXrays(args), x =>
+          wrapCallback(Cu.unwaiveXrays(x), global)
+        );
+      } else {
+        args = Array.from(Cu.waiveXrays(args), x =>
+          unwrapIfWrapped(Cu.unwaiveXrays(x))
+        );
+      }
 
-    try {
-      return wrapIfUnwrapped(
-        doApply(wrappedObject, invocant, args),
-        contentWindow
-      );
-    } catch (e) {
-      
-      throw wrapIfUnwrapped(e, contentWindow);
-    }
+      return wrapIfUnwrapped(doApply(wrappedObject, invocant, args), global);
+    });
   },
 
   has(target, prop) {
@@ -268,29 +267,33 @@ let SpecialPowersHandler = {
   },
 
   get(target, prop, receiver) {
-    let obj = waiveXraysIfAppropriate(this.wrapped.get(target).obj, prop);
-    let val = Reflect.get(obj, prop);
-    if (val === undefined && prop == Symbol.hasInstance) {
-      
-      
-      
-      
-      
-      return wrapPrivileged(
-        specialPowersHasInstance,
-        Cu.getGlobalForObject(this)
-      );
-    }
-    return wrapIfUnwrapped(val, Cu.getGlobalForObject(this));
+    let global = Cu.getGlobalForObject(this);
+    return wrapExceptions(global, () => {
+      let obj = waiveXraysIfAppropriate(this.wrapped.get(target).obj, prop);
+      let val = Reflect.get(obj, prop);
+      if (val === undefined && prop == Symbol.hasInstance) {
+        
+        
+        
+        
+        
+        return wrapPrivileged(specialPowersHasInstance, global);
+      }
+      return wrapIfUnwrapped(val, global);
+    });
   },
 
   set(target, prop, val, receiver) {
-    let obj = waiveXraysIfAppropriate(this.wrapped.get(target).obj, prop);
-    return Reflect.set(obj, prop, unwrapIfWrapped(val));
+    return wrapExceptions(Cu.getGlobalForObject(this), () => {
+      let obj = waiveXraysIfAppropriate(this.wrapped.get(target).obj, prop);
+      return Reflect.set(obj, prop, unwrapIfWrapped(val));
+    });
   },
 
   delete(target, prop) {
-    return Reflect.deleteProperty(this.wrapped.get(target).obj, prop);
+    return wrapExceptions(Cu.getGlobalForObject(this), () => {
+      return Reflect.deleteProperty(this.wrapped.get(target).obj, prop);
+    });
   },
 
   defineProperty(target, prop, descriptor) {
@@ -300,46 +303,46 @@ let SpecialPowersHandler = {
   },
 
   getOwnPropertyDescriptor(target, prop) {
-    let obj = waiveXraysIfAppropriate(this.wrapped.get(target).obj, prop);
-    let desc = Reflect.getOwnPropertyDescriptor(obj, prop);
+    let global = Cu.getGlobalForObject(this);
+    return wrapExceptions(global, () => {
+      let obj = waiveXraysIfAppropriate(this.wrapped.get(target).obj, prop);
+      let desc = Reflect.getOwnPropertyDescriptor(obj, prop);
 
-    if (desc === undefined) {
-      if (prop == Symbol.hasInstance) {
-        
-        
-        
-        
-        
-        return {
-          value: wrapPrivileged(
-            specialPowersHasInstance,
-            Cu.getGlobalForObject(this)
-          ),
-          writeable: true,
-          configurable: true,
-          enumerable: false,
-        };
+      if (desc === undefined) {
+        if (prop == Symbol.hasInstance) {
+          
+          
+          
+          
+          
+          return {
+            value: wrapPrivileged(specialPowersHasInstance, global),
+            writeable: true,
+            configurable: true,
+            enumerable: false,
+          };
+        }
+
+        return undefined;
       }
 
-      return undefined;
-    }
+      
+      let wrapIfExists = key => {
+        if (key in desc) {
+          desc[key] = wrapIfUnwrapped(desc[key], global);
+        }
+      };
 
-    
-    let wrapIfExists = key => {
-      if (key in desc) {
-        desc[key] = wrapIfUnwrapped(desc[key], Cu.getGlobalForObject(this));
-      }
-    };
+      wrapIfExists("value");
+      wrapIfExists("get");
+      wrapIfExists("set");
 
-    wrapIfExists("value");
-    wrapIfExists("get");
-    wrapIfExists("set");
+      
+      
+      desc.configurable = true;
 
-    
-    
-    desc.configurable = true;
-
-    return wrapIfUnwrapped(desc, Cu.getGlobalForObject(this));
+      return wrapIfUnwrapped(desc, global);
+    });
   },
 
   ownKeys(target) {
