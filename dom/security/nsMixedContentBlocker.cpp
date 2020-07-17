@@ -393,6 +393,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   RefPtr<WindowContext> requestingWindow =
       WindowContext::GetById(aLoadInfo->GetInnerWindowID());
 
+  bool isPreload = nsContentUtils::IsPreloadType(contentType);
+
   
   
   
@@ -813,11 +815,15 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     }
   }
 
-  LogMixedContentMessage(classification, aContentLocation, topWC->Id(),
-                         (*aDecision == nsIContentPolicy::REJECT_REQUEST)
-                             ? eBlocked
-                             : eUserOverride,
-                         requestingLocation);
+  
+  
+  if (!isPreload) {
+    LogMixedContentMessage(classification, aContentLocation, topWC->Id(),
+                           (*aDecision == nsIContentPolicy::REJECT_REQUEST)
+                               ? eBlocked
+                               : eUserOverride,
+                           requestingLocation);
+  }
 
   
   
