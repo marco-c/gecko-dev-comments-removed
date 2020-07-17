@@ -57,6 +57,10 @@ class IOUtils final {
                                         const nsAString& aDestPath,
                                         const MoveOptions& aOptions);
 
+  static already_AddRefed<Promise> Remove(GlobalObject& aGlobal,
+                                          const nsAString& aPath,
+                                          const RemoveOptions& aOptions);
+
   static bool IsAbsolutePath(const nsAString& aPath);
 
  private:
@@ -107,6 +111,9 @@ class IOUtils final {
   static nsresult MoveSync(const nsAString& aSource, const nsAString& aDest,
                            bool noOverwrite);
 
+  static nsresult RemoveSync(const nsAString& aPath, bool aIgnoreAbsent = true,
+                             bool aRecursive = false);
+
   using IOReadMozPromise =
       mozilla::MozPromise<nsTArray<uint8_t>, const nsCString,
                            true>;
@@ -115,6 +122,10 @@ class IOUtils final {
       mozilla::MozPromise<uint32_t, const nsCString,  true>;
 
   using IOMoveMozPromise =
+      mozilla::MozPromise<bool , const nsresult,
+                           true>;
+
+  using IORemoveMozPromise =
       mozilla::MozPromise<bool , const nsresult,
                            true>;
 };
