@@ -95,6 +95,9 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 
 - (BOOL)moxBlockSelector:(SEL)selector;
 
+
+- (id<MOXTextMarkerSupport>)moxTextMarkerDelegate;
+
 #pragma mark -
 
 - (BOOL)isExpired;

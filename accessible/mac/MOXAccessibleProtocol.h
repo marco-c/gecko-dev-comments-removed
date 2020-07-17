@@ -3,6 +3,8 @@
 
 
 
+@protocol MOXTextMarkerSupport;
+
 
 
 
@@ -28,6 +30,9 @@
 
 
 - (BOOL)moxBlockSelector:(SEL _Nonnull)selector;
+
+
+- (id<MOXTextMarkerSupport> _Nullable)moxTextMarkerDelegate;
 
 @optional
 
@@ -295,5 +300,30 @@
 
 
 - (NSAttributedString* _Nullable)moxAttributedStringForRange:(NSValue* _Nonnull)range;
+
+@end
+
+
+
+@protocol MOXTextMarkerSupport
+
+#pragma mark - TextAttributeGetters
+
+
+- (id _Nullable)moxStartTextMarker;
+
+
+- (id _Nullable)moxEndTextMarker;
+
+#pragma mark - ParameterizedTextAttributeGetters
+
+
+- (NSNumber* _Nullable)moxLengthForTextMarkerRange:(id _Nonnull)textMarkerRange;
+
+
+- (NSString* _Nullable)moxStringForTextMarkerRange:(id _Nonnull)textMarkerRange;
+
+
+- (id _Nullable)moxTextMarkerRangeForUnorderedTextMarkers:(NSArray* _Nonnull)textMarkers;
 
 @end

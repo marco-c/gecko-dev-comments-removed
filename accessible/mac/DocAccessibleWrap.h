@@ -3,6 +3,8 @@
 
 
 
+
+
 #ifndef mozilla_a11y_DocAccessibleWrap_h__
 #define mozilla_a11y_DocAccessibleWrap_h__
 
@@ -17,6 +19,9 @@ namespace a11y {
 class DocAccessibleWrap : public DocAccessible {
  public:
   DocAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
+
+  virtual void Shutdown() override;
+
   virtual ~DocAccessibleWrap();
 };
 
