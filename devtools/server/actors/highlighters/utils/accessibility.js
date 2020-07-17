@@ -5,10 +5,7 @@
 "use strict";
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const {
-  getCurrentZoom,
-  getViewportDimensions,
-} = require("devtools/shared/layout/utils");
+const { getCurrentZoom } = require("devtools/shared/layout/utils");
 const {
   moveInfobar,
   createNode,
@@ -275,148 +272,6 @@ class Infobar {
 
   updateRole(role, el) {
     this.setTextContent(el, role);
-  }
-}
-
-
-
-
-
-class XULWindowInfobar extends Infobar {
-  
-
-
-
-
-
-  _moveInfobar(container) {
-    const arrow = this.getElement("arrow");
-
-    
-    container.removeAttribute("hidden");
-    arrow.removeAttribute("hidden");
-
-    
-    
-    const {
-      left: boundsLeft,
-      right: boundsRight,
-      top: boundsTop,
-      bottom: boundsBottom,
-    } = this.bounds;
-    const boundsMidPoint = (boundsLeft + boundsRight) / 2;
-    container.style.left = `${boundsMidPoint}px`;
-
-    const zoom = getCurrentZoom(this.win);
-    let {
-      width: viewportWidth,
-      height: viewportHeight,
-    } = getViewportDimensions(this.win);
-
-    const { width, height, left } = container.getBoundingClientRect();
-
-    const containerHalfWidth = width / 2;
-    const containerHeight = height;
-    const margin = 100 * zoom;
-
-    viewportHeight *= zoom;
-    viewportWidth *= zoom;
-
-    
-    const topBoundary = margin;
-    const bottomBoundary = viewportHeight - containerHeight;
-    const leftBoundary = containerHalfWidth;
-    const rightBoundary = viewportWidth - containerHalfWidth;
-
-    
-    const isOffScreenOnTop = boundsBottom < topBoundary;
-    const isOffScreenOnBottom = boundsBottom > bottomBoundary;
-    const isOffScreenOnLeft = left < leftBoundary;
-    const isOffScreenOnRight = left > rightBoundary;
-
-    
-    if (isOffScreenOnLeft) {
-      container.style.left = `${leftBoundary + boundsLeft}px`;
-      arrow.setAttribute("hidden", "true");
-    } else if (isOffScreenOnRight) {
-      const leftOffset = rightBoundary - boundsRight;
-      container.style.left = `${rightBoundary -
-        leftOffset -
-        containerHalfWidth}px`;
-      arrow.setAttribute("hidden", "true");
-    }
-
-    
-    const bubbleArrowSize = "var(--highlighter-bubble-arrow-size)";
-
-    if (isOffScreenOnTop) {
-      if (boundsTop < 0) {
-        container.style.top = bubbleArrowSize;
-      } else {
-        container.style.top = `calc(${boundsBottom}px + ${bubbleArrowSize})`;
-      }
-      arrow.setAttribute("class", "accessible-arrow top");
-    } else if (isOffScreenOnBottom) {
-      container.style.top = `calc(${bottomBoundary}px - ${bubbleArrowSize})`;
-      arrow.setAttribute("hidden", "true");
-    } else {
-      container.style.top = `calc(${boundsTop}px -
-        (${containerHeight}px + ${bubbleArrowSize}))`;
-      arrow.setAttribute("class", "accessible-arrow bottom");
-    }
-  }
-
-  
-
-
-
-
-
-  buildMarkup(root) {
-    super.buildMarkup(root, createNode);
-
-    createNode(this.win, {
-      parent: this.getElement("infobar"),
-      attributes: {
-        class: "arrow",
-        id: "arrow",
-      },
-      prefix: this.prefix,
-    });
-  }
-
-  
-
-
-
-
-
-
-  getTextContent(id) {
-    return this.getElement(id).textContent;
-  }
-
-  
-
-
-
-
-
-
-  getElement(id) {
-    return this.win.document.getElementById(`${this.prefix}${id}`);
-  }
-
-  
-
-
-
-
-
-
-
-  setTextContent(el, text) {
-    el.textContent = text;
   }
 }
 
@@ -837,35 +692,67 @@ class TextLabel extends AuditReport {
 
 
 
-
-
-function getBounds(win, { x, y, w, h, zoom }) {
-  let { mozInnerScreenX, mozInnerScreenY, scrollX, scrollY } = win;
-  let zoomFactor = getCurrentZoom(win);
+function getBounds(win, { x, y, w, h }) {
+  const { mozInnerScreenX, mozInnerScreenY, scrollX, scrollY } = win;
+  const zoom = getCurrentZoom(win);
   let left = x;
   let right = x + w;
   let top = y;
   let bottom = y + h;
-
-  
-  
-  if (zoom) {
-    zoomFactor = zoom;
-    mozInnerScreenX /= zoomFactor;
-    mozInnerScreenY /= zoomFactor;
-    scrollX /= zoomFactor;
-    scrollY /= zoomFactor;
-  }
 
   left -= mozInnerScreenX - scrollX;
   right -= mozInnerScreenX - scrollX;
   top -= mozInnerScreenY - scrollY;
   bottom -= mozInnerScreenY - scrollY;
 
-  left *= zoomFactor;
-  right *= zoomFactor;
-  top *= zoomFactor;
-  bottom *= zoomFactor;
+  left *= zoom;
+  right *= zoom;
+  top *= zoom;
+  bottom *= zoom;
+
+  const width = right - left;
+  const height = bottom - top;
+
+  return { left, right, top, bottom, width, height };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getBoundsXUL(win, { x, y, w, h, zoom }) {
+  const { mozInnerScreenX, mozInnerScreenY } = win;
+  let left = x;
+  let right = x + w;
+  let top = y;
+  let bottom = y + h;
+
+  left *= zoom;
+  right *= zoom;
+  top *= zoom;
+  bottom *= zoom;
+
+  left -= mozInnerScreenX;
+  right -= mozInnerScreenX;
+  top -= mozInnerScreenY;
+  bottom -= mozInnerScreenY;
 
   const width = right - left;
   const height = bottom - top;
@@ -875,5 +762,5 @@ function getBounds(win, { x, y, w, h, zoom }) {
 
 exports.MAX_STRING_LENGTH = MAX_STRING_LENGTH;
 exports.getBounds = getBounds;
+exports.getBoundsXUL = getBoundsXUL;
 exports.Infobar = Infobar;
-exports.XULWindowInfobar = XULWindowInfobar;

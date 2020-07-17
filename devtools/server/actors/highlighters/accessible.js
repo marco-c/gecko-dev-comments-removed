@@ -17,11 +17,20 @@ const {
   TEXT_NODE,
   DOCUMENT_NODE,
 } = require("devtools/shared/dom-node-constants");
-const { setIgnoreLayoutChanges } = require("devtools/shared/layout/utils");
+const {
+  getCurrentZoom,
+  setIgnoreLayoutChanges,
+} = require("devtools/shared/layout/utils");
 
 loader.lazyRequireGetter(
   this,
   "getBounds",
+  "devtools/server/actors/highlighters/utils/accessibility",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "getBoundsXUL",
   "devtools/server/actors/highlighters/utils/accessibility",
   true
 );
@@ -92,6 +101,14 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
 
     this.pageListenerTarget = highlighterEnv.pageListenerTarget;
     this.pageListenerTarget.addEventListener("pagehide", this.onPageHide);
+  }
+
+  
+
+
+
+  static get XULSupported() {
+    return true;
   }
 
   
@@ -318,7 +335,20 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
 
 
   get _bounds() {
-    return getBounds(this.win, this.options);
+    let { win, options } = this;
+    let getBoundsFn = getBounds;
+    if (this.options.isXUL) {
+      
+      
+      
+      let zoom = getCurrentZoom(this.currentNode);
+      zoom *= zoom;
+      options = { ...options, zoom };
+      getBoundsFn = getBoundsXUL;
+      win = this.win.parent.ownerGlobal;
+    }
+
+    return getBoundsFn(win, options);
   }
 
   
