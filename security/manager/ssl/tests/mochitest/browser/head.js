@@ -63,3 +63,21 @@ function readCertificate(filename, trustString) {
     }
   );
 }
+
+
+
+
+
+
+async function openCertManager() {
+  let win = window.openDialog("chrome://pippki/content/certManager.xhtml");
+  return new Promise((resolve, reject) => {
+    win.addEventListener(
+      "load",
+      function() {
+        executeSoon(() => resolve(win));
+      },
+      { once: true }
+    );
+  });
+}

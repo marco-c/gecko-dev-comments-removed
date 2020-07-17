@@ -404,33 +404,8 @@ nsresult nsCertTree::GetCertsByTypeFromCertList(
       
       
       
-      
-      
-      
-
-      if (aWantedType == nsIX509Cert::SERVER_CERT &&
-          thisCertType == nsIX509Cert::UNKNOWN_CERT) {
-        
-        
-        
-        addOverrides = true;
-      } else if (aWantedType == nsIX509Cert::SERVER_CERT &&
-                 thisCertType == nsIX509Cert::SERVER_CERT) {
-        
-        
-        wantThisCert = true;
-        
-        
-        addOverrides = true;
-      } else if (aWantedType == nsIX509Cert::SERVER_CERT &&
-                 thisCertType == nsIX509Cert::EMAIL_CERT) {
-        
-        
-        
-        
-        
-        
-        addOverrides = true;
+      if (aWantedType == nsIX509Cert::SERVER_CERT) {
+        wantThisCertIfHaveOverrides = true;
       } else if (aWantedType == nsIX509Cert::EMAIL_CERT &&
                  thisCertType == nsIX509Cert::EMAIL_CERT) {
         
@@ -462,7 +437,7 @@ nsresult nsCertTree::GetCertsByTypeFromCertList(
       if (wantThisCertIfHaveOverrides) {
         if (NS_SUCCEEDED(rv) && ocount > 0) {
           
-          wantThisCert = true;
+          addOverrides = true;
         }
       }
     }
