@@ -66,28 +66,6 @@ function makeRemoteTabMatch(url, deviceName, extra = {}) {
   };
 }
 
-
-add_task(async function test_nomatch() {
-  
-  configureEngine({
-    guid_desktop: {
-      id: "desktop",
-      tabs: [
-        {
-          urlHistory: ["http://foo.com/"],
-        },
-      ],
-    },
-  });
-
-  
-  await check_autocomplete({
-    search: "ex",
-    searchParam: "enable-actions",
-    matches: [makeSearchMatch("ex", { heuristic: true })],
-  });
-});
-
 add_task(async function test_minimal() {
   
   configureEngine({
@@ -104,10 +82,7 @@ add_task(async function test_minimal() {
   await check_autocomplete({
     search: "ex",
     searchParam: "enable-actions",
-    matches: [
-      makeSearchMatch("ex", { heuristic: true }),
-      makeRemoteTabMatch("http://example.com/", "My Desktop"),
-    ],
+    matches: [makeRemoteTabMatch("http://example.com/", "My Desktop")],
   });
 });
 
@@ -130,7 +105,6 @@ add_task(async function test_maximal() {
     search: "ex",
     searchParam: "enable-actions",
     matches: [
-      makeSearchMatch("ex", { heuristic: true }),
       makeRemoteTabMatch("http://example.com/", "My Phone", {
         title: "An Example",
         icon: "moz-anno:favicon:http://favicon/",
@@ -158,7 +132,6 @@ add_task(async function test_noShowIcons() {
     search: "ex",
     searchParam: "enable-actions",
     matches: [
-      makeSearchMatch("ex", { heuristic: true }),
       makeRemoteTabMatch("http://example.com/", "My Phone", {
         title: "An Example",
         
@@ -187,7 +160,7 @@ add_task(async function test_dontMatchSyncedTabs() {
   await check_autocomplete({
     search: "ex",
     searchParam: "enable-actions",
-    matches: [makeSearchMatch("ex", { heuristic: true })],
+    matches: [],
   });
   Services.prefs.clearUserPref("services.sync.syncedTabs.showRemoteTabs");
 });
@@ -210,7 +183,6 @@ add_task(async function test_matches_title() {
     search: "ex",
     searchParam: "enable-actions",
     matches: [
-      makeSearchMatch("ex", { heuristic: true }),
       makeRemoteTabMatch("http://foo.com/", "My Phone", {
         title: "An Example",
       }),
@@ -243,10 +215,7 @@ add_task(async function test_localtab_matches_override() {
   await check_autocomplete({
     search: "ex",
     searchParam: "enable-actions",
-    matches: [
-      makeSearchMatch("ex", { heuristic: true }),
-      makeSwitchToTabMatch("http://foo.com/", { title: "An Example" }),
-    ],
+    matches: [makeSwitchToTabMatch("http://foo.com/", { title: "An Example" })],
   });
   await removeOpenPages(uri, 1);
 });
@@ -275,7 +244,6 @@ add_task(async function test_remotetab_matches_override() {
     search: "rem",
     searchParam: "enable-actions",
     matches: [
-      makeSearchMatch("rem", { heuristic: true }),
       makeRemoteTabMatch("http://foo.remote.com/", "My Phone", {
         title: "An Example",
       }),
@@ -312,7 +280,6 @@ add_task(async function test_many_remotetab_matches() {
     searchParam: "enable-actions",
     checkSorting: true,
     matches: [
-      makeSearchMatch("rem", { heuristic: true }),
       makeRemoteTabMatch("http://foo.remote.com/0", "My Phone", {
         title: "A title",
       }),
@@ -362,14 +329,11 @@ add_task(async function test_maxResults() {
   });
 
   
-  
-  
   await check_autocomplete({
     search: "rem",
-    searchParam: "enable-actions max-results:5",
+    searchParam: "enable-actions max-results:4",
     checkSorting: true,
     matches: [
-      makeSearchMatch("rem", { heuristic: true }),
       makeRemoteTabMatch("http://foo.remote.com/0", "My Phone", {
         title: "A title",
       }),
@@ -414,10 +378,9 @@ add_task(async function test_restrictionCharacter() {
   
   await check_autocomplete({
     search: UrlbarTokenizer.RESTRICT.OPENPAGE,
-    searchParam: "enable-actions max-results:8",
+    searchParam: "enable-actions max-results:7",
     checkSorting: true,
     matches: [
-      makeSearchMatch(UrlbarTokenizer.RESTRICT.OPENPAGE, { heuristic: true }),
       makeRemoteTabMatch("http://foo.remote.com/0", "My Phone", {
         title: "A title",
       }),
