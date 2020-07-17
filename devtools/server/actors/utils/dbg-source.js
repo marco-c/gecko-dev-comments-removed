@@ -78,3 +78,20 @@ function getSourceLineOffsets(source) {
   SOURCE_OFFSETS.set(source, offsets);
   return offsets;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+function getActorIdForInternalSourceId(targetActor, id) {
+  const actor = targetActor.sources.getSourceActorByInternalSourceId(id);
+  return actor ? actor.actorID : null;
+}
+exports.getActorIdForInternalSourceId = getActorIdForInternalSourceId;

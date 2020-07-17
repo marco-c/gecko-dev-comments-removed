@@ -4,27 +4,23 @@
 
 "use strict";
 
-const { Cu } = require("chrome");
 const {
   TYPES: { CONSOLE_MESSAGE },
 } = require("devtools/server/actors/resources/index");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { WebConsoleUtils } = require("devtools/server/actors/webconsole/utils");
 const {
   ConsoleAPIListener,
 } = require("devtools/server/actors/webconsole/listeners/console-api");
+const { isArray } = require("devtools/server/actors/object/utils");
+
 const {
-  createValueGrip,
-  isArray,
+  makeDebuggeeValue,
+  createValueGripForTarget,
 } = require("devtools/server/actors/object/utils");
 
-const { ObjectActor } = require("devtools/server/actors/object");
-loader.lazyRequireGetter(
-  this,
-  "EnvironmentActor",
-  "devtools/server/actors/environment",
-  true
-);
+const {
+  getActorIdForInternalSourceId,
+} = require("devtools/server/actors/utils/dbg-source");
 
 
 
@@ -116,140 +112,6 @@ class ConsoleMessageWatcher {
 }
 
 module.exports = ConsoleMessageWatcher;
-
-
-
-
-
-
-
-
-
-
-
-
-function getActorIdForInternalSourceId(targetActor, id) {
-  const actor = targetActor.sources.getSourceActorByInternalSourceId(id);
-  return actor ? actor.actorID : null;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createValueGripForTarget(targetActor, value, depth = 0) {
-  return createValueGrip(
-    value,
-    targetActor,
-    createObjectGrip.bind(null, targetActor, depth)
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createEnvironmentActor(environment, targetActor) {
-  if (!environment) {
-    return undefined;
-  }
-
-  if (environment.actor) {
-    return environment.actor;
-  }
-
-  const actor = new EnvironmentActor(environment, targetActor);
-  targetActor.manage(actor);
-  environment.actor = actor;
-
-  return actor;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createObjectGrip(targetActor, depth, object, pool) {
-  let gripDepth = depth;
-  const actor = new ObjectActor(
-    object,
-    {
-      thread: targetActor.threadActor,
-      getGripDepth: () => gripDepth,
-      incrementGripDepth: () => gripDepth++,
-      decrementGripDepth: () => gripDepth--,
-      createValueGrip: v => createValueGripForTarget(targetActor, v, gripDepth),
-      createEnvironmentActor: env => createEnvironmentActor(env, targetActor),
-      sources: () =>
-        DevToolsUtils.reportException(
-          "WebConsoleActor",
-          Error("sources not yet implemented")
-        ),
-    },
-    targetActor.conn
-  );
-  pool.manage(actor);
-  return actor.form();
-}
-
-function isObject(value) {
-  return Object(value) === value;
-}
-
-
-
-
-
-
-
-
-
-
-
-function makeDebuggeeValue(targetActor, value) {
-  if (isObject(value)) {
-    try {
-      const global = Cu.getGlobalForObject(value);
-      const dbgGlobal = targetActor.dbg.makeGlobalObjectReference(global);
-      return dbgGlobal.makeDebuggeeValue(value);
-    } catch (ex) {
-      
-      
-    }
-  }
-  const dbgGlobal = targetActor.dbg.makeGlobalObjectReference(
-    targetActor.window
-  );
-  return dbgGlobal.makeDebuggeeValue(value);
-}
 
 
 
