@@ -462,7 +462,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "HTMLDetailsElement", insecureContext: true },
   
-  { name: "HTMLDialogElement", insecureContext: true, nightly: true },
+  { name: "HTMLDialogElement", insecureContext: true, disabled: true },
   
   { name: "HTMLDirectoryElement", insecureContext: true },
   
