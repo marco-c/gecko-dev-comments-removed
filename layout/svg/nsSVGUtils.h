@@ -34,8 +34,6 @@ class nsIContent;
 
 class nsIFrame;
 class nsPresContext;
-class nsSVGDisplayContainerFrame;
-class nsSVGOuterSVGFrame;
 class nsTextFrame;
 
 struct nsStyleSVG;
@@ -46,7 +44,9 @@ class SVGAnimatedEnumeration;
 class SVGAnimatedLength;
 class SVGContextPaint;
 struct SVGContextPaintImpl;
+class SVGDisplayContainerFrame;
 class SVGGeometryFrame;
+class SVGOuterSVGFrame;
 namespace dom {
 class Element;
 class SVGElement;
@@ -162,7 +162,9 @@ class nsSVGUtils {
   typedef mozilla::SVGAnimatedLength SVGAnimatedLength;
   typedef mozilla::SVGContextPaint SVGContextPaint;
   typedef mozilla::SVGContextPaintImpl SVGContextPaintImpl;
+  typedef mozilla::SVGDisplayContainerFrame SVGDisplayContainerFrame;
   typedef mozilla::SVGGeometryFrame SVGGeometryFrame;
+  typedef mozilla::SVGOuterSVGFrame SVGOuterSVGFrame;
   typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(ObjectBoundingBoxProperty, gfxRect)
@@ -238,7 +240,7 @@ class nsSVGUtils {
                          const SVGAnimatedLength* aLength);
 
   
-  static nsSVGOuterSVGFrame* GetOuterSVGFrame(nsIFrame* aFrame);
+  static SVGOuterSVGFrame* GetOuterSVGFrame(nsIFrame* aFrame);
 
   
 
@@ -264,7 +266,7 @@ class nsSVGUtils {
 
 
 
-  static nsIFrame* HitTestChildren(nsSVGDisplayContainerFrame* aFrame,
+  static nsIFrame* HitTestChildren(SVGDisplayContainerFrame* aFrame,
                                    const gfxPoint& aPoint);
 
   

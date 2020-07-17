@@ -8,12 +8,12 @@
 #define __NS_SVGMARKERFRAME_H__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/SVGContainerFrame.h"
 #include "gfxMatrix.h"
 #include "gfxRect.h"
 #include "nsIFrame.h"
 #include "nsLiteralString.h"
 #include "nsQueryFrame.h"
-#include "nsSVGContainerFrame.h"
 #include "nsSVGUtils.h"
 
 class gfxContext;
@@ -37,7 +37,7 @@ nsContainerFrame* NS_NewSVGMarkerAnonChildFrame(mozilla::PresShell* aPresShell,
 
 namespace mozilla {
 
-class SVGMarkerFrame final : public nsSVGContainerFrame {
+class SVGMarkerFrame final : public SVGContainerFrame {
   typedef image::imgDrawingParams imgDrawingParams;
 
   friend class SVGMarkerAnonChildFrame;
@@ -46,7 +46,7 @@ class SVGMarkerFrame final : public nsSVGContainerFrame {
 
  protected:
   explicit SVGMarkerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
-      : nsSVGContainerFrame(aStyle, aPresContext, kClassID),
+      : SVGContainerFrame(aStyle, aPresContext, kClassID),
         mMarkedFrame(nullptr),
         mInUse(false),
         mInUse2(false) {
@@ -134,13 +134,13 @@ class SVGMarkerFrame final : public nsSVGContainerFrame {
 
 
 
-class SVGMarkerAnonChildFrame final : public nsSVGDisplayContainerFrame {
+class SVGMarkerAnonChildFrame final : public SVGDisplayContainerFrame {
   friend nsContainerFrame* ::NS_NewSVGMarkerAnonChildFrame(
       mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
 
   explicit SVGMarkerAnonChildFrame(ComputedStyle* aStyle,
                                    nsPresContext* aPresContext)
-      : nsSVGDisplayContainerFrame(aStyle, aPresContext, kClassID) {}
+      : SVGDisplayContainerFrame(aStyle, aPresContext, kClassID) {}
 
  public:
   NS_DECL_FRAMEARENA_HELPERS(SVGMarkerAnonChildFrame)

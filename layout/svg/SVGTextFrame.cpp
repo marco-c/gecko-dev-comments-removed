@@ -23,8 +23,6 @@
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 #include "nsQuickSort.h"
-#include "SVGObserverUtils.h"
-#include "nsSVGOuterSVGFrame.h"
 #include "SVGPaintServerFrame.h"
 #include "nsSVGIntegrationUtils.h"
 #include "nsSVGUtils.h"
@@ -35,17 +33,19 @@
 #include "SVGContextPaint.h"
 #include "SVGLengthList.h"
 #include "SVGNumberList.h"
-#include "SVGGeometryElement.h"
-#include "SVGTextPathElement.h"
 #include "nsLayoutUtils.h"
 #include "nsFrameSelection.h"
 #include "nsStyleStructInlines.h"
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/dom/DOMPointBinding.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
+#include "mozilla/dom/SVGTextPathElement.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PatternHelpers.h"
@@ -2756,7 +2756,7 @@ void DisplaySVGText::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
 
 NS_QUERYFRAME_HEAD(SVGTextFrame)
   NS_QUERYFRAME_ENTRY(SVGTextFrame)
-NS_QUERYFRAME_TAIL_INHERITING(nsSVGDisplayContainerFrame)
+NS_QUERYFRAME_TAIL_INHERITING(SVGDisplayContainerFrame)
 
 }  
 
@@ -2781,7 +2781,7 @@ void SVGTextFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::text),
                "Content is not an SVG text");
 
-  nsSVGDisplayContainerFrame::Init(aContent, aParent, aPrevInFlow);
+  SVGDisplayContainerFrame::Init(aContent, aParent, aPrevInFlow);
   AddStateBits((aParent->GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) |
                NS_FRAME_SVG_LAYOUT | NS_FRAME_IS_SVG_TEXT);
 
@@ -3374,7 +3374,7 @@ void SVGTextFrame::ReflowSVG() {
   
   
   
-  nsSVGDisplayContainerFrame::ReflowSVG();
+  SVGDisplayContainerFrame::ReflowSVG();
 }
 
 

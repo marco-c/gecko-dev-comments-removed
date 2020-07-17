@@ -12,17 +12,17 @@
 #include "gfxContext.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/SVGContainerFrame.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/dom/SVGForeignObjectElement.h"
 #include "nsDisplayList.h"
 #include "nsGkAtoms.h"
 #include "nsNameSpaceManager.h"
 #include "nsLayoutUtils.h"
 #include "nsRegion.h"
-#include "nsSVGContainerFrame.h"
 #include "SVGGeometryProperty.h"
-#include "SVGObserverUtils.h"
 #include "nsSVGIntegrationUtils.h"
-#include "nsSVGOuterSVGFrame.h"
 #include "nsSVGUtils.h"
 
 using namespace mozilla::dom;
@@ -172,7 +172,7 @@ bool SVGForeignObjectFrame::IsSVGTransformed(
   if (parent &&
       parent->IsFrameOfType(nsIFrame::eSVG | nsIFrame::eSVGContainer)) {
     foundTransform =
-        static_cast<nsSVGContainerFrame*>(parent)->HasChildrenOnlyTransform(
+        static_cast<SVGContainerFrame*>(parent)->HasChildrenOnlyTransform(
             aFromParentTransform);
   }
 
@@ -465,10 +465,8 @@ gfxMatrix SVGForeignObjectFrame::GetCanvasTM() {
   if (!mCanvasTM) {
     NS_ASSERTION(GetParent(), "null parent");
 
-    nsSVGContainerFrame* parent =
-        static_cast<nsSVGContainerFrame*>(GetParent());
-    SVGForeignObjectElement* content =
-        static_cast<SVGForeignObjectElement*>(GetContent());
+    auto* parent = static_cast<SVGContainerFrame*>(GetParent());
+    auto* content = static_cast<SVGForeignObjectElement*>(GetContent());
 
     gfxMatrix tm = content->PrependLocalTransformsTo(parent->GetCanvasTM());
 

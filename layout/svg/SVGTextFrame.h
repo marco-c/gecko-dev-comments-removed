@@ -10,13 +10,13 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/PresShellForwards.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/SVGContainerFrame.h"
 #include "mozilla/gfx/2D.h"
 #include "gfxMatrix.h"
 #include "gfxRect.h"
 #include "gfxTextRun.h"
 #include "nsIContent.h"  
 #include "nsStubMutationObserver.h"
-#include "nsSVGContainerFrame.h"
 #include "nsTextFrame.h"
 
 class gfxContext;
@@ -162,7 +162,7 @@ class GlyphMetricsUpdater : public Runnable {
 
 
 
-class SVGTextFrame final : public nsSVGDisplayContainerFrame {
+class SVGTextFrame final : public SVGDisplayContainerFrame {
   friend nsIFrame* ::NS_NewSVGTextFrame(mozilla::PresShell* aPresShell,
                                         ComputedStyle* aStyle);
 
@@ -182,7 +182,7 @@ class SVGTextFrame final : public nsSVGDisplayContainerFrame {
 
  protected:
   explicit SVGTextFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
-      : nsSVGDisplayContainerFrame(aStyle, aPresContext, kClassID),
+      : SVGDisplayContainerFrame(aStyle, aPresContext, kClassID),
         mTrailingUndisplayedCharacters(0),
         mFontSizeScaleFactor(1.0f),
         mLastContextScale(1.0f),

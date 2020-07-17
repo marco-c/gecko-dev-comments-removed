@@ -11,7 +11,6 @@
 #include "mozilla/UniquePtr.h"
 #include "nsContainerFrame.h"
 #include "nsIFrame.h"
-#include "nsIFrame.h"
 #include "nsSVGDisplayableFrame.h"
 #include "nsQueryFrame.h"
 #include "nsRect.h"
@@ -27,6 +26,10 @@ namespace mozilla {
 class PresShell;
 }  
 
+nsIFrame* NS_NewSVGContainerFrame(mozilla::PresShell* aPresShell,
+                                  mozilla::ComputedStyle* aStyle);
+
+namespace mozilla {
 
 
 
@@ -39,20 +42,21 @@ class PresShell;
 
 
 
-class nsSVGContainerFrame : public nsContainerFrame {
-  friend nsIFrame* NS_NewSVGContainerFrame(mozilla::PresShell* aPresShell,
-                                           ComputedStyle* aStyle);
+
+class SVGContainerFrame : public nsContainerFrame {
+  friend nsIFrame* ::NS_NewSVGContainerFrame(mozilla::PresShell* aPresShell,
+                                             ComputedStyle* aStyle);
 
  protected:
-  nsSVGContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
-                      ClassID aID)
+  SVGContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
+                    ClassID aID)
       : nsContainerFrame(aStyle, aPresContext, aID) {
     AddStateBits(NS_FRAME_SVG_LAYOUT);
   }
 
  public:
   NS_DECL_QUERYFRAME
-  NS_DECL_FRAMEARENA_HELPERS(nsSVGContainerFrame)
+  NS_DECL_FRAMEARENA_HELPERS(SVGContainerFrame)
 
   
   virtual gfxMatrix GetCanvasTM() { return gfxMatrix(); }
@@ -109,19 +113,19 @@ class nsSVGContainerFrame : public nsContainerFrame {
 
 
 
-class nsSVGDisplayContainerFrame : public nsSVGContainerFrame,
-                                   public nsSVGDisplayableFrame {
+class SVGDisplayContainerFrame : public SVGContainerFrame,
+                                 public nsSVGDisplayableFrame {
  protected:
-  nsSVGDisplayContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
-                             nsIFrame::ClassID aID)
-      : nsSVGContainerFrame(aStyle, aPresContext, aID) {
+  SVGDisplayContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
+                           nsIFrame::ClassID aID)
+      : SVGContainerFrame(aStyle, aPresContext, aID) {
     AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
   }
 
  public:
   NS_DECL_QUERYFRAME
-  NS_DECL_QUERYFRAME_TARGET(nsSVGDisplayContainerFrame)
-  NS_DECL_ABSTRACT_FRAME(nsSVGDisplayContainerFrame)
+  NS_DECL_QUERYFRAME_TARGET(SVGDisplayContainerFrame)
+  NS_DECL_ABSTRACT_FRAME(SVGDisplayContainerFrame)
 
   
   virtual void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
@@ -154,7 +158,9 @@ class nsSVGDisplayContainerFrame : public nsSVGContainerFrame,
   
 
 
-  mozilla::UniquePtr<gfxMatrix> mCanvasTM;
+  UniquePtr<gfxMatrix> mCanvasTM;
 };
+
+}  
 
 #endif

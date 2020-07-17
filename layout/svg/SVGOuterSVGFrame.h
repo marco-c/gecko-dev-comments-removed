@@ -8,9 +8,9 @@
 #define __NS_SVGOUTERSVGFRAME_H__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/SVGContainerFrame.h"
 #include "mozilla/UniquePtr.h"
 #include "nsISVGSVGFrame.h"
-#include "nsSVGContainerFrame.h"
 #include "nsRegion.h"
 
 class gfxContext;
@@ -20,26 +20,32 @@ class SVGForeignObjectFrame;
 class PresShell;
 }  
 
+nsContainerFrame* NS_NewSVGOuterSVGFrame(mozilla::PresShell* aPresShell,
+                                         mozilla::ComputedStyle* aStyle);
+nsContainerFrame* NS_NewSVGOuterSVGAnonChildFrame(
+    mozilla::PresShell* aPresShell, mozilla::ComputedStyle* aStyle);
+
+namespace mozilla {
 
 
 
-class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
-                                 public nsISVGSVGFrame {
-  typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
-  friend nsContainerFrame* NS_NewSVGOuterSVGFrame(
+class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
+                               public nsISVGSVGFrame {
+  typedef image::imgDrawingParams imgDrawingParams;
+
+  friend nsContainerFrame* ::NS_NewSVGOuterSVGFrame(
       mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
 
  protected:
-  explicit nsSVGOuterSVGFrame(ComputedStyle* aStyle,
-                              nsPresContext* aPresContext);
+  explicit SVGOuterSVGFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
 
  public:
   NS_DECL_QUERYFRAME
-  NS_DECL_FRAMEARENA_HELPERS(nsSVGOuterSVGFrame)
+  NS_DECL_FRAMEARENA_HELPERS(SVGOuterSVGFrame)
 
 #ifdef DEBUG
-  ~nsSVGOuterSVGFrame() {
+  ~SVGOuterSVGFrame() {
     NS_ASSERTION(!mForeignObjectHash || mForeignObjectHash->Count() == 0,
                  "foreignObject(s) still registered!");
   }
@@ -49,14 +55,14 @@ class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
   virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
   virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
-  virtual mozilla::IntrinsicSize GetIntrinsicSize() override;
-  virtual mozilla::AspectRatio GetIntrinsicRatio() override;
+  virtual IntrinsicSize GetIntrinsicSize() override;
+  virtual AspectRatio GetIntrinsicRatio() override;
 
-  virtual mozilla::LogicalSize ComputeSize(
-      gfxContext* aRenderingContext, mozilla::WritingMode aWritingMode,
-      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
-      const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
-      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags) override;
+  virtual LogicalSize ComputeSize(
+      gfxContext* aRenderingContext, WritingMode aWritingMode,
+      const LogicalSize& aCBSize, nscoord aAvailableISize,
+      const LogicalSize& aMargin, const LogicalSize& aBorder,
+      const LogicalSize& aPadding, ComputeSizeFlags aFlags) override;
 
   virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
@@ -74,7 +80,7 @@ class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
                     nsIFrame* aPrevInFlow) override;
 
   bool IsFrameOfType(uint32_t aFlags) const override {
-    return nsSVGDisplayContainerFrame::IsFrameOfType(
+    return SVGDisplayContainerFrame::IsFrameOfType(
         aFlags &
         ~(eSupportsContainLayoutAndPaint | eReplaced | eReplacedSizing));
   }
@@ -125,8 +131,8 @@ class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
 
 
 
-  void RegisterForeignObject(mozilla::SVGForeignObjectFrame* aFrame);
-  void UnregisterForeignObject(mozilla::SVGForeignObjectFrame* aFrame);
+  void RegisterForeignObject(SVGForeignObjectFrame* aFrame);
+  void UnregisterForeignObject(SVGForeignObjectFrame* aFrame);
 
   virtual bool HasChildrenOnlyTransform(Matrix* aTransform) const override {
     
@@ -182,7 +188,7 @@ class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
   
   
   
-  mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<mozilla::SVGForeignObjectFrame>>>
+  UniquePtr<nsTHashtable<nsPtrHashKey<SVGForeignObjectFrame>>>
       mForeignObjectHash;
 
   nsRegion mInvalidRegion;
@@ -224,16 +230,16 @@ class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
 
 
 
-class nsSVGOuterSVGAnonChildFrame final : public nsSVGDisplayContainerFrame {
-  friend nsContainerFrame* NS_NewSVGOuterSVGAnonChildFrame(
+class SVGOuterSVGAnonChildFrame final : public SVGDisplayContainerFrame {
+  friend nsContainerFrame* ::NS_NewSVGOuterSVGAnonChildFrame(
       mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
 
-  explicit nsSVGOuterSVGAnonChildFrame(ComputedStyle* aStyle,
-                                       nsPresContext* aPresContext)
-      : nsSVGDisplayContainerFrame(aStyle, aPresContext, kClassID) {}
+  explicit SVGOuterSVGAnonChildFrame(ComputedStyle* aStyle,
+                                     nsPresContext* aPresContext)
+      : SVGDisplayContainerFrame(aStyle, aPresContext, kClassID) {}
 
  public:
-  NS_DECL_FRAMEARENA_HELPERS(nsSVGOuterSVGAnonChildFrame)
+  NS_DECL_FRAMEARENA_HELPERS(SVGOuterSVGAnonChildFrame)
 
 #ifdef DEBUG
   virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -257,7 +263,7 @@ class nsSVGOuterSVGAnonChildFrame final : public nsSVGDisplayContainerFrame {
     
     
     
-    return static_cast<nsSVGOuterSVGFrame*>(GetParent())->GetCanvasTM();
+    return static_cast<SVGOuterSVGFrame*>(GetParent())->GetCanvasTM();
   }
 };
 
@@ -267,5 +273,7 @@ class nsSVGOuterSVGAnonChildFrame final : public nsSVGDisplayContainerFrame {
 template <typename... Atoms>
 bool IsAnyAtomEqual(const nsAString& aString, nsAtom* aFirst, Atoms... aArgs);
 bool IsAnyAtomEqual(const nsAString& aString);
+
+}  
 
 #endif
