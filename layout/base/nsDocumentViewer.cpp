@@ -149,6 +149,9 @@ static mozilla::LazyLogModule gPrintingLog("printing");
 
 
 class nsDocumentViewer;
+namespace mozilla {
+class AutoPrintEventDispatcher;
+}
 
 
 
@@ -464,6 +467,7 @@ class nsDocumentViewer final : public nsIContentViewer,
   nsCOMPtr<nsIWebProgressListener> mCachedPrintWebProgressListner;
 
   RefPtr<nsPrintJob> mPrintJob;
+  UniquePtr<AutoPrintEventDispatcher> mAutoBeforeAndAfterPrint;
 #  endif  
 
 #endif  
@@ -476,6 +480,50 @@ class nsDocumentViewer final : public nsIContentViewer,
   bool mInitializedForPrintPreview;
   bool mHidden;
 };
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+class AutoPrintEventDispatcher {
+ public:
+  explicit AutoPrintEventDispatcher(Document* aTop) : mTop(aTop) {
+    DispatchEventToWindowTree(u"beforeprint"_ns);
+  }
+  ~AutoPrintEventDispatcher() { DispatchEventToWindowTree(u"afterprint"_ns); }
+
+ private:
+  static CallState CollectDocuments(Document& aDoc,
+                                    nsTArray<nsCOMPtr<Document>>& aDocs) {
+    aDocs.AppendElement(&aDoc);
+    auto recurse = [&aDocs](Document& aSubDoc) {
+      return CollectDocuments(aSubDoc, aDocs);
+    };
+    aDoc.EnumerateSubDocuments(recurse);
+    return CallState::Continue;
+  }
+
+  void DispatchEventToWindowTree(const nsAString& aEvent) {
+    nsTArray<nsCOMPtr<Document>> targets;
+    if (mTop) {
+      CollectDocuments(*mTop, targets);
+    }
+    for (nsCOMPtr<Document>& doc : targets) {
+      nsContentUtils::DispatchTrustedEvent(doc, doc->GetWindow(), aEvent,
+                                           CanBubble::eNo, Cancelable::eNo,
+                                           nullptr);
+    }
+  }
+
+  nsCOMPtr<Document> mTop;
+};
+
+}  
 
 class nsDocumentShownDispatcher : public Runnable {
  public:
@@ -1612,6 +1660,8 @@ nsDocumentViewer::Destroy() {
       return NS_OK;
     }
   }
+  
+  mAutoBeforeAndAfterPrint = nullptr;
 #endif
 
   
@@ -3155,6 +3205,11 @@ nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
     return rv;
   }
 
+  
+  MOZ_ASSERT(!mAutoBeforeAndAfterPrint,
+             "We don't want to dispatch nested beforeprint/afterprint");
+  auto autoBeforeAndAfterPrint =
+      MakeUnique<AutoPrintEventDispatcher>(mDocument);
   NS_ENSURE_STATE(!GetIsPrinting());
   
   
@@ -3177,6 +3232,11 @@ nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
       return rv;
     }
     mPrintJob = printJob;
+  }
+  if (printJob->HasPrintCallbackCanvas()) {
+    
+    
+    mAutoBeforeAndAfterPrint = std::move(autoBeforeAndAfterPrint);
   }
   rv = printJob->Print(mDocument, aPrintSettings, aWebProgressListener);
   if (NS_FAILED(rv)) {
@@ -3213,6 +3273,18 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
   nsCOMPtr<Document> doc = window->GetDoc();
   NS_ENSURE_STATE(doc);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  UniquePtr<AutoPrintEventDispatcher> autoBeforeAndAfterPrint;
+  if (!mAutoBeforeAndAfterPrint) {
+    autoBeforeAndAfterPrint = MakeUnique<AutoPrintEventDispatcher>(doc);
+  }
   NS_ENSURE_STATE(!GetIsPrinting());
   
   NS_ENSURE_STATE(mContainer);
@@ -3235,6 +3307,11 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
     mPrintJob = printJob;
 
     Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_PREVIEW_OPENED, 1);
+  }
+  if (autoBeforeAndAfterPrint && printJob->HasPrintCallbackCanvas()) {
+    
+    
+    mAutoBeforeAndAfterPrint = std::move(autoBeforeAndAfterPrint);
   }
   rv = printJob->PrintPreview(doc, aPrintSettings, aWebProgressListener);
   if (NS_FAILED(rv)) {
@@ -3570,6 +3647,11 @@ void nsDocumentViewer::SetIsPrinting(bool aIsPrinting) {
   } else {
     NS_WARNING("Did you close a window before printing?");
   }
+
+  if (!aIsPrinting) {
+    
+    mAutoBeforeAndAfterPrint = nullptr;
+  }
 #endif
 }
 
@@ -3595,6 +3677,10 @@ void nsDocumentViewer::SetIsPrintPreview(bool aIsPrintPreview) {
   nsCOMPtr<nsIDocShell> docShell(mContainer);
   if (docShell || !aIsPrintPreview) {
     SetIsPrintingInDocShellTree(docShell, aIsPrintPreview, true);
+  }
+  if (!aIsPrintPreview) {
+    
+    mAutoBeforeAndAfterPrint = nullptr;
   }
 #endif
 
