@@ -2383,6 +2383,7 @@ STATIC_ATOMS = [
     Atom("onboundary", "onboundary"),
 
     
+    Atom("onpositionstatechange", "onpositionstatechange"),
     Atom("onsupportedkeyschange", "onsupportedkeyschange"),
 
     
