@@ -174,6 +174,10 @@ class RenderCompositorNativeSWGL : public RenderCompositorNative {
 
   void CancelFrame() override;
 
+  
+  
+  
+  
   bool MapTile(wr::NativeTileId aId, wr::DeviceIntRect aDirtyRect,
                wr::DeviceIntRect aValidRect, void** aData,
                int32_t* aStride) override;
@@ -191,6 +195,7 @@ class RenderCompositorNativeSWGL : public RenderCompositorNative {
   void* mContext = nullptr;
   RefPtr<gfx::DrawTarget> mLayerTarget;
   uint8_t* mLayerData = nullptr;
+  uint8_t* mLayerValidRectData = nullptr;
   int32_t mLayerStride = 0;
 };
 
