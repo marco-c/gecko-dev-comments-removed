@@ -642,11 +642,7 @@ static void GuardGroupProto(CacheIRWriter& writer, JSObject* obj,
   ObjectGroup* group = obj->groupRaw();
 
   if (group->hasUncacheableProto()) {
-    if (JSObject* proto = obj->staticPrototype()) {
-      writer.guardProto(objId, proto);
-    } else {
-      writer.guardNullProto(objId);
-    }
+    writer.guardProto(objId, obj->staticPrototype());
   } else {
     writer.guardGroupForProto(objId, group);
   }
@@ -805,11 +801,9 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   
   while (pobj != holder) {
     pobj = pobj->staticPrototype();
-
-    
-    
-    writer.guardProto(protoId, pobj);
     protoId = writer.loadProto(protoId);
+
+    writer.guardSpecificObject(protoId, pobj);
   }
 }
 
@@ -870,23 +864,23 @@ static bool UncacheableProtoOnChain(JSObject* obj) {
 static void ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj,
                                  ObjOperandId objId) {
   while (true) {
-    JSObject* proto = obj->staticPrototype();
-
     
-    if (obj->hasUncacheableProto()) {
-      if (proto) {
-        writer.guardProto(objId, proto);
-      } else {
-        writer.guardNullProto(objId);
-      }
-    }
+    bool guardProto = obj->hasUncacheableProto();
 
-    if (!proto) {
+    obj = obj->staticPrototype();
+    if (!obj && !guardProto) {
       return;
     }
 
-    obj = proto;
     objId = writer.loadProto(objId);
+
+    if (guardProto) {
+      writer.guardSpecificObject(objId, obj);
+    }
+
+    if (!obj) {
+      return;
+    }
 
     writer.guardShape(objId, obj->as<NativeObject>().shape());
   }
