@@ -159,7 +159,7 @@ void RemoteDecoderManagerChild::OpenForRDDProcess(
   
   
   if (sRemoteDecoderManagerChildForRDDProcess &&
-      sRemoteDecoderManagerChildForRDDProcess->mCanSend) {
+      sRemoteDecoderManagerChildForRDDProcess->CanSend()) {
     return;
   }
   sRemoteDecoderManagerChildForRDDProcess = nullptr;
@@ -193,20 +193,10 @@ void RemoteDecoderManagerChild::OpenForGPUProcess(
 }
 
 void RemoteDecoderManagerChild::InitIPDL() {
-  mCanSend = true;
   mIPDLSelfRef = this;
 }
 
-void RemoteDecoderManagerChild::ActorDestroy(ActorDestroyReason aWhy) {
-  mCanSend = false;
-}
-
 void RemoteDecoderManagerChild::ActorDealloc() { mIPDLSelfRef = nullptr; }
-
-bool RemoteDecoderManagerChild::CanSend() {
-  MOZ_ASSERT(NS_GetCurrentThread() == GetManagerThread());
-  return mCanSend;
-}
 
 bool RemoteDecoderManagerChild::DeallocShmem(mozilla::ipc::Shmem& aShmem) {
   if (NS_GetCurrentThread() != sRemoteDecoderManagerChildThread) {
