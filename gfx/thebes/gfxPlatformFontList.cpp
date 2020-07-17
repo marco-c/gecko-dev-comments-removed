@@ -2402,6 +2402,7 @@ void gfxPlatformFontList::SetCharacterMap(uint32_t aGeneration,
 
 void gfxPlatformFontList::SetupFamilyCharMap(
     uint32_t aGeneration, const fontlist::Pointer& aFamilyPtr) {
+  MOZ_ASSERT(XRE_IsParentProcess());
   auto list = SharedFontList();
   MOZ_ASSERT(list);
   if (!list) {
@@ -2410,26 +2411,46 @@ void gfxPlatformFontList::SetupFamilyCharMap(
   if (list->GetGeneration() != aGeneration) {
     return;
   }
-  auto family = static_cast<fontlist::Family*>(aFamilyPtr.ToPtr(list));
+
+  
+  
+  
+  
+  
+  
+
+  auto* family = static_cast<fontlist::Family*>(aFamilyPtr.ToPtr(list));
+  if (!family) {
+    
+    NS_WARNING("unexpected null Family pointer");
+    return;
+  }
+
+  
+  
+  
+  
+  
   
   if (family >= list->Families() &&
       family < list->Families() + list->NumFamilies()) {
     size_t offset = (char*)family - (char*)list->Families();
     if (offset % sizeof(fontlist::Family) != 0) {
-      MOZ_DIAGNOSTIC_ASSERT(false, "misaligned Family pointer");
+      MOZ_ASSERT(false, "misaligned Family pointer");
       return;
     }
   } else if (family >= list->AliasFamilies() &&
              family < list->AliasFamilies() + list->NumAliases()) {
     size_t offset = (char*)family - (char*)list->AliasFamilies();
     if (offset % sizeof(fontlist::Family) != 0) {
-      MOZ_DIAGNOSTIC_ASSERT(false, "misaligned Family pointer");
+      MOZ_ASSERT(false, "misaligned Family pointer");
       return;
     }
   } else {
-    MOZ_DIAGNOSTIC_ASSERT(false, "not a valid Family or AliasFamily pointer");
+    MOZ_ASSERT(false, "not a valid Family or AliasFamily pointer");
     return;
   }
+
   family->SetupFamilyCharMap(list);
 }
 
