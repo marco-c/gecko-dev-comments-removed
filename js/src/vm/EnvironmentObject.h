@@ -1207,6 +1207,9 @@ void GetSuspendedGeneratorEnvironmentAndScope(AbstractGeneratorObject& genObj,
 bool AnalyzeEntrainedVariables(JSContext* cx, HandleScript script);
 #endif
 
+extern JSObject* MaybeOptimizeBindGlobalName(JSContext* cx,
+                                             Handle<GlobalObject*> global,
+                                             HandlePropertyName name);
 }  
 
 #endif 

@@ -3356,32 +3356,12 @@ bool BaselineCompilerCodeGen::tryOptimizeBindGlobalName() {
     return false;
   }
 
-  
-  
-  
+  RootedGlobalObject global(cx, &script->global());
   RootedPropertyName name(cx, script->getName(handler.pc()));
-  Rooted<LexicalEnvironmentObject*> env(cx,
-                                        &script->global().lexicalEnvironment());
-  if (Shape* shape = env->lookup(cx, name)) {
-    if (shape->writable() &&
-        !env->getSlot(shape->slot()).isMagic(JS_UNINITIALIZED_LEXICAL)) {
-      frame.push(ObjectValue(*env));
-      return true;
-    }
-    return false;
+  if (JSObject* binding = MaybeOptimizeBindGlobalName(cx, global, name)) {
+    frame.push(ObjectValue(*binding));
+    return true;
   }
-
-  if (Shape* shape = script->global().lookup(cx, name)) {
-    
-    
-    
-    
-    if (!shape->configurable()) {
-      frame.push(ObjectValue(script->global()));
-      return true;
-    }
-  }
-
   return false;
 }
 
