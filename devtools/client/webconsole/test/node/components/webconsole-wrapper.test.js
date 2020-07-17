@@ -68,8 +68,8 @@ describe("WebConsoleWrapper", () => {
       getPrivatePacket("XHR POST request")
     );
 
-    const postId = "pid1";
-    const getId = "gid1";
+    const postId = Symbol();
+    const getId = Symbol();
 
     
     
@@ -94,11 +94,11 @@ describe("WebConsoleWrapper", () => {
       publicNetworkUpdate,
       {
         ...getPrivatePacket("XHR GET request update"),
-        actor: getId,
+        networkInfo: { actor: getId },
       },
       {
         ...getPrivatePacket("XHR POST request update"),
-        actor: postId,
+        networkInfo: { actor: postId },
       }
     );
 

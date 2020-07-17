@@ -34,8 +34,11 @@ class WebConsoleConnectionProxy {
     this.webConsoleUI = webConsoleUI;
     this.target = target;
     this.needContentProcessMessagesListener = needContentProcessMessagesListener;
+
     this._connecter = null;
 
+    this._onNetworkEvent = this._onNetworkEvent.bind(this);
+    this._onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
     this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onTabWillNavigate = this._onTabWillNavigate.bind(this);
     this._onLastPrivateContextExited = this._onLastPrivateContextExited.bind(
@@ -78,6 +81,9 @@ class WebConsoleConnectionProxy {
         );
       await this.webConsoleUI.setSaveRequestAndResponseBodies(saveBodies);
 
+      const networkMessages = this._getNetworkMessages();
+      this.dispatchMessagesAdd(networkMessages);
+
       this._addWebConsoleFrontEventListeners();
 
       if (this.webConsoleFront && !this.webConsoleFront.hasNativeConsoleAPI) {
@@ -116,15 +122,19 @@ class WebConsoleConnectionProxy {
 
 
   _attachConsole() {
-    if (!this.webConsoleFront || !this.needContentProcessMessagesListener) {
+    if (!this.webConsoleFront) {
       return null;
     }
 
+    const listeners = ["NetworkActivity"];
     
     
     
     
-    return this.webConsoleFront.startListeners(["ContentProcessMessages"]);
+    if (this.needContentProcessMessagesListener) {
+      listeners.push("ContentProcessMessages");
+    }
+    return this.webConsoleFront.startListeners(listeners);
   }
 
   
@@ -137,6 +147,8 @@ class WebConsoleConnectionProxy {
       return;
     }
 
+    this.webConsoleFront.on("networkEvent", this._onNetworkEvent);
+    this.webConsoleFront.on("networkEventUpdate", this._onNetworkEventUpdate);
     this.webConsoleFront.on(
       "lastPrivateContextExited",
       this._onLastPrivateContextExited
@@ -153,6 +165,8 @@ class WebConsoleConnectionProxy {
 
 
   _removeWebConsoleFrontEventListeners() {
+    this.webConsoleFront.off("networkEvent", this._onNetworkEvent);
+    this.webConsoleFront.off("networkEventUpdate", this._onNetworkEventUpdate);
     this.webConsoleFront.off(
       "lastPrivateContextExited",
       this._onLastPrivateContextExited
@@ -163,11 +177,51 @@ class WebConsoleConnectionProxy {
     );
   }
 
+  
+
+
+
+
+
+  _getNetworkMessages() {
+    if (!this.webConsoleFront) {
+      return [];
+    }
+
+    return Array.from(this.webConsoleFront.getNetworkEvents());
+  }
+
   _clearLogpointMessages(logpointId) {
     
-    if (this.webConsoleUI?.wrapper) {
-      this.webConsoleUI.wrapper.dispatchClearLogpointMessages(logpointId);
+    if (!this.webConsoleUI?.wrapper) {
+      return;
     }
+
+    this.webConsoleUI.wrapper.dispatchClearLogpointMessages(logpointId);
+  }
+
+  
+
+
+
+
+
+
+
+  _onNetworkEvent(networkInfo) {
+    this.dispatchMessageAdd(networkInfo);
+  }
+
+  
+
+
+
+
+
+
+
+  _onNetworkEventUpdate(response) {
+    this.dispatchMessageUpdate(response.networkInfo, response);
   }
 
   
@@ -214,6 +268,39 @@ class WebConsoleConnectionProxy {
       return;
     }
     this.webConsoleUI.handleTabWillNavigate(packet);
+  }
+
+  
+
+
+  dispatchMessageAdd(packet) {
+    
+    if (!this.webConsoleUI?.wrapper) {
+      return;
+    }
+    this.webConsoleUI.wrapper.dispatchMessageAdd(packet);
+  }
+
+  
+
+
+  dispatchMessagesAdd(packets) {
+    
+    if (!this.webConsoleUI?.wrapper) {
+      return;
+    }
+    this.webConsoleUI.wrapper.dispatchMessagesAdd(packets);
+  }
+
+  
+
+
+  dispatchMessageUpdate(networkInfo, response) {
+    
+    if (!this.webConsoleUI?.wrapper) {
+      return;
+    }
+    this.webConsoleUI.wrapper.dispatchMessageUpdate(networkInfo, response);
   }
 
   

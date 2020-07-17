@@ -48,10 +48,8 @@ class FirefoxDataProvider {
     this.getLongString = this.getLongString.bind(this);
 
     
-    this.onNetworkResourceAvailable = this.onNetworkResourceAvailable.bind(
-      this
-    );
-    this.onNetworkResourceUpdated = this.onNetworkResourceUpdated.bind(this);
+    this.onNetworkEvent = this.onNetworkEvent.bind(this);
+    this.onNetworkEventUpdate = this.onNetworkEventUpdate.bind(this);
 
     this.onWebSocketOpened = this.onWebSocketOpened.bind(this);
     this.onWebSocketClosed = this.onWebSocketClosed.bind(this);
@@ -81,26 +79,50 @@ class FirefoxDataProvider {
 
 
   async addRequest(id, data) {
-    const { startedDateTime, ...payload } = data;
+    const {
+      method,
+      url,
+      isXHR,
+      cause,
+      startedDateTime,
+      fromCache,
+      fromServiceWorker,
+      isThirdPartyTrackingResource,
+      referrerPolicy,
+      blockedReason,
+      blockingExtension,
+      channelId,
+    } = data;
 
     
     
     this.pushRequestToQueue(id, {
-      blockedReason: payload.blockedReason,
+      blockedReason,
     });
 
     if (this.actionsEnabled && this.actions.addRequest) {
       await this.actions.addRequest(
         id,
         {
-          ...payload,
           
           startedMs: Date.parse(startedDateTime),
+          method,
+          url,
+          isXHR,
+          cause,
 
           
           
           
-          stacktrace: payload.cause.stacktrace,
+          stacktrace: cause.stacktrace,
+
+          fromCache,
+          fromServiceWorker,
+          isThirdPartyTrackingResource,
+          referrerPolicy,
+          blockedReason,
+          blockingExtension,
+          channelId,
         },
         true
       );
@@ -308,6 +330,16 @@ class FirefoxDataProvider {
 
 
 
+  getNetworkRequest(id) {
+    return this.webConsoleFront.getNetworkRequest(id);
+  }
+
+  
+
+
+
+
+
 
 
 
@@ -325,7 +357,7 @@ class FirefoxDataProvider {
 
 
 
-  async onNetworkResourceAvailable(resource) {
+  async onNetworkEvent(networkInfo) {
     const {
       actor,
       cause,
@@ -333,34 +365,13 @@ class FirefoxDataProvider {
       fromServiceWorker,
       isXHR,
       request: { method, url },
-      response: { bodySize, ...responseProps },
       startedDateTime,
       isThirdPartyTrackingResource,
       referrerPolicy,
       blockedReason,
       blockingExtension,
       channelId,
-    } = resource;
-
-    
-    
-    
-    const available = {};
-    [
-      "eventTimings",
-      "requestHeaders",
-      "requestPostData",
-      "responseHeaders",
-      "responseStart",
-      "responseContent",
-      "securityInfo",
-      "responseCache",
-      "responseCookies",
-    ].forEach(updateType => {
-      if (resource.updates.includes(updateType)) {
-        available[`${updateType}Available`] = true;
-      }
-    });
+    } = networkInfo;
 
     await this.addRequest(actor, {
       cause,
@@ -375,12 +386,9 @@ class FirefoxDataProvider {
       blockedReason,
       blockingExtension,
       channelId,
-      mimeType: resource?.content?.mimeType,
-      contentSize: bodySize,
-      ...responseProps,
-      ...available,
     });
-    this.emitForTests(TEST_EVENTS.NETWORK_EVENT, resource);
+
+    this.emitForTests(TEST_EVENTS.NETWORK_EVENT, actor);
   }
 
   
@@ -388,42 +396,46 @@ class FirefoxDataProvider {
 
 
 
-  async onNetworkResourceUpdated(resource) {
-    switch (resource.updateType) {
+
+  async onNetworkEventUpdate(data) {
+    const { packet, networkInfo } = data;
+    const { actor } = networkInfo;
+    const { updateType } = packet;
+
+    switch (updateType) {
       case "securityInfo":
-        this.pushRequestToQueue(resource.actor, {
-          securityState: resource.securityState,
-          isRacing: resource.isRacing,
+        this.pushRequestToQueue(actor, {
+          securityState: networkInfo.securityState,
+          isRacing: packet.isRacing,
         });
         break;
       case "responseStart":
-        this.pushRequestToQueue(resource.actor, {
-          httpVersion: resource.response.httpVersion,
-          remoteAddress: resource.response.remoteAddress,
-          remotePort: resource.response.remotePort,
-          status: resource.response.status,
-          statusText: resource.response.statusText,
-          headersSize: resource.response.headersSize,
-          waitingTime: resource.response.waitingTime,
+        this.pushRequestToQueue(actor, {
+          httpVersion: networkInfo.response.httpVersion,
+          remoteAddress: networkInfo.response.remoteAddress,
+          remotePort: networkInfo.response.remotePort,
+          status: networkInfo.response.status,
+          statusText: networkInfo.response.statusText,
+          headersSize: networkInfo.response.headersSize,
+          waitingTime: networkInfo.response.waitingTime,
         });
 
         
-        if (resource.response.content.mimeType?.includes("text/event-stream")) {
-          await this.setEventStreamFlag(resource.actor);
+        if (
+          networkInfo.response.content.mimeType?.includes("text/event-stream")
+        ) {
+          await this.setEventStreamFlag(actor);
         }
 
-        this.emitForTests(
-          TEST_EVENTS.STARTED_RECEIVING_RESPONSE,
-          resource.actor
-        );
+        this.emitForTests(TEST_EVENTS.STARTED_RECEIVING_RESPONSE, actor);
         break;
       case "responseContent":
-        this.pushRequestToQueue(resource.actor, {
-          contentSize: resource.response.bodySize,
-          transferredSize: resource.response.transferredSize,
-          mimeType: resource.response.content.mimeType,
-          blockingExtension: resource.blockingExtension,
-          blockedReason: resource.blockedReason,
+        this.pushRequestToQueue(actor, {
+          contentSize: networkInfo.response.bodySize,
+          transferredSize: networkInfo.response.transferredSize,
+          mimeType: networkInfo.response.content.mimeType,
+          blockingExtension: packet.blockingExtension,
+          blockedReason: packet.blockedReason,
         });
         break;
       case "eventTimings":
@@ -431,23 +443,19 @@ class FirefoxDataProvider {
         
         
         
-        if (typeof resource.totalTime !== "undefined") {
-          this.pushRequestToQueue(resource.actor, {
-            totalTime: resource.totalTime,
-          });
+        if (typeof networkInfo.totalTime !== "undefined") {
+          this.pushRequestToQueue(actor, { totalTime: networkInfo.totalTime });
         }
         break;
     }
 
     
     
-    this.pushRequestToQueue(resource.actor, {
-      [`${resource.updateType}Available`]: true,
-    });
+    this.pushRequestToQueue(actor, { [`${updateType}Available`]: true });
 
-    await this.onPayloadDataReceived(resource);
+    await this.onPayloadDataReceived(actor);
 
-    this.emitForTests(TEST_EVENTS.NETWORK_EVENT_UPDATED, resource.actor);
+    this.emitForTests(TEST_EVENTS.NETWORK_EVENT_UPDATED, actor);
   }
 
   
@@ -514,8 +522,8 @@ class FirefoxDataProvider {
 
 
 
-  async onPayloadDataReceived(resource) {
-    const payload = this.payloadQueue.get(resource.actor) || {};
+  async onPayloadDataReceived(actor) {
+    const payload = this.payloadQueue.get(actor) || {};
 
     
     
@@ -530,17 +538,17 @@ class FirefoxDataProvider {
       return;
     }
 
-    this.payloadQueue.delete(resource.actor);
+    this.payloadQueue.delete(actor);
 
     if (this.actionsEnabled && this.actions.updateRequest) {
-      await this.actions.updateRequest(resource.actor, payload, true);
+      await this.actions.updateRequest(actor, payload, true);
     }
 
     
     
     
     
-    this.emit(EVENTS.PAYLOAD_READY, resource);
+    this.emit(EVENTS.PAYLOAD_READY, actor);
   }
 
   
@@ -666,7 +674,7 @@ class FirefoxDataProvider {
     const payload = await this.updateRequest(response.from, {
       requestHeaders: response,
     });
-    this.emitForTests(TEST_EVENTS.RECEIVED_REQUEST_HEADERS, response);
+    this.emitForTests(TEST_EVENTS.RECEIVED_REQUEST_HEADERS, response.from);
     return payload.requestHeaders;
   }
 
@@ -679,7 +687,7 @@ class FirefoxDataProvider {
     const payload = await this.updateRequest(response.from, {
       responseHeaders: response,
     });
-    this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_HEADERS, response);
+    this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_HEADERS, response.from);
     return payload.responseHeaders;
   }
 
@@ -692,7 +700,7 @@ class FirefoxDataProvider {
     const payload = await this.updateRequest(response.from, {
       requestCookies: response,
     });
-    this.emitForTests(TEST_EVENTS.RECEIVED_REQUEST_COOKIES, response);
+    this.emitForTests(TEST_EVENTS.RECEIVED_REQUEST_COOKIES, response.from);
     return payload.requestCookies;
   }
 
@@ -705,7 +713,7 @@ class FirefoxDataProvider {
     const payload = await this.updateRequest(response.from, {
       requestPostData: response,
     });
-    this.emitForTests(TEST_EVENTS.RECEIVED_REQUEST_POST_DATA, response);
+    this.emitForTests(TEST_EVENTS.RECEIVED_REQUEST_POST_DATA, response.from);
     return payload.requestPostData;
   }
 
@@ -718,7 +726,7 @@ class FirefoxDataProvider {
     const payload = await this.updateRequest(response.from, {
       securityInfo: response.securityInfo,
     });
-    this.emitForTests(TEST_EVENTS.RECEIVED_SECURITY_INFO, response);
+    this.emitForTests(TEST_EVENTS.RECEIVED_SECURITY_INFO, response.from);
     return payload.securityInfo;
   }
 
@@ -731,7 +739,7 @@ class FirefoxDataProvider {
     const payload = await this.updateRequest(response.from, {
       responseCookies: response,
     });
-    this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_COOKIES, response);
+    this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_COOKIES, response.from);
     return payload.responseCookies;
   }
 
@@ -743,7 +751,7 @@ class FirefoxDataProvider {
     const payload = await this.updateRequest(response.from, {
       responseCache: response,
     });
-    this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_CACHE, response);
+    this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_CACHE, response.from);
     return payload.responseCache;
   }
 
@@ -760,7 +768,7 @@ class FirefoxDataProvider {
       mimeType: response.content.mimeType,
       responseContent: response,
     });
-    this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_CONTENT, response);
+    this.emitForTests(TEST_EVENTS.RECEIVED_RESPONSE_CONTENT, response.from);
     return payload.responseContent;
   }
 
@@ -778,7 +786,7 @@ class FirefoxDataProvider {
     
     
     
-    this.emit(EVENTS.RECEIVED_EVENT_TIMINGS, response);
+    this.emit(EVENTS.RECEIVED_EVENT_TIMINGS, response.from);
     return payload.eventTimings;
   }
 
@@ -791,7 +799,7 @@ class FirefoxDataProvider {
     const payload = await this.updateRequest(response.from, {
       stacktrace: response.stacktrace,
     });
-    this.emitForTests(TEST_EVENTS.RECEIVED_EVENT_STACKTRACE, response);
+    this.emitForTests(TEST_EVENTS.RECEIVED_EVENT_STACKTRACE, response.from);
     return payload.stacktrace;
   }
 

@@ -32,16 +32,33 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
 
     
     this.formAttributeName = "consoleActor";
+    
+
+
+
+
+
+    this._networkRequests = new Map();
 
     this.pendingEvaluationResults = new Map();
     this.onEvaluationResult = this.onEvaluationResult.bind(this);
-    this._onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
+    this.onNetworkEvent = this._onNetworkEvent.bind(this);
+    this.onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
 
     this.on("evaluationResult", this.onEvaluationResult);
+    this.on("serverNetworkEvent", this.onNetworkEvent);
     this.before("consoleAPICall", this.beforeConsoleAPICall);
     this.before("pageError", this.beforePageError);
 
-    this._client.on("networkEventUpdate", this._onNetworkEventUpdate);
+    this._client.on("networkEventUpdate", this.onNetworkEventUpdate);
+  }
+
+  getNetworkRequest(actorId) {
+    return this._networkRequests.get(actorId);
+  }
+
+  getNetworkEvents() {
+    return this._networkRequests.values();
   }
 
   get actor() {
@@ -56,8 +73,104 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
+
+
+  _onNetworkEvent(packet) {
+    const actor = packet.eventActor;
+    const networkInfo = {
+      type: "networkEvent",
+      timeStamp: actor.timeStamp,
+      node: null,
+      actor: actor.actor,
+      discardRequestBody: true,
+      discardResponseBody: true,
+      startedDateTime: actor.startedDateTime,
+      request: {
+        url: actor.url,
+        method: actor.method,
+      },
+      isXHR: actor.isXHR,
+      cause: actor.cause,
+      response: {},
+      timings: {},
+      
+      updates: [],
+      private: actor.private,
+      fromCache: actor.fromCache,
+      fromServiceWorker: actor.fromServiceWorker,
+      isThirdPartyTrackingResource: actor.isThirdPartyTrackingResource,
+      referrerPolicy: actor.referrerPolicy,
+      blockedReason: actor.blockedReason,
+      blockingExtension: actor.blockingExtension,
+      channelId: actor.channelId,
+    };
+    this._networkRequests.set(actor.actor, networkInfo);
+
+    this.emit("networkEvent", networkInfo);
+  }
+
+  
+
+
+
+
+
+
+
+
+
   _onNetworkEventUpdate(packet) {
-    this.emit("serverNetworkUpdateEvent", packet);
+    const networkInfo = this.getNetworkRequest(packet.from);
+    if (!networkInfo) {
+      return;
+    }
+
+    networkInfo.updates.push(packet.updateType);
+
+    switch (packet.updateType) {
+      case "requestHeaders":
+        networkInfo.request.headersSize = packet.headersSize;
+        break;
+      case "requestPostData":
+        networkInfo.discardRequestBody = packet.discardRequestBody;
+        networkInfo.request.bodySize = packet.dataSize;
+        break;
+      case "responseStart":
+        networkInfo.response.httpVersion = packet.response.httpVersion;
+        networkInfo.response.status = packet.response.status;
+        networkInfo.response.statusText = packet.response.statusText;
+        networkInfo.response.headersSize = packet.response.headersSize;
+        networkInfo.response.remoteAddress = packet.response.remoteAddress;
+        networkInfo.response.remotePort = packet.response.remotePort;
+        networkInfo.discardResponseBody = packet.response.discardResponseBody;
+        networkInfo.response.waitingTime = packet.response.waitingTime;
+        networkInfo.response.content = {
+          mimeType: packet.response.mimeType,
+        };
+        break;
+      case "responseContent":
+        networkInfo.response.content = {
+          mimeType: packet.mimeType,
+        };
+        networkInfo.response.bodySize = packet.contentSize;
+        networkInfo.response.transferredSize = packet.transferredSize;
+        networkInfo.discardResponseBody = packet.discardResponseBody;
+        break;
+      case "eventTimings":
+        networkInfo.totalTime = packet.totalTime;
+        break;
+      case "securityInfo":
+        networkInfo.securityState = packet.state;
+        break;
+      case "responseCache":
+        networkInfo.response.responseCache = packet.responseCache;
+        break;
+    }
+
+    this.emit("networkEventUpdate", {
+      packet: packet,
+      networkInfo,
+    });
   }
 
   
@@ -474,6 +587,13 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
     }
   }
 
+  clearNetworkRequests() {
+    
+    if (this._networkRequests) {
+      this._networkRequests.clear();
+    }
+  }
+
   
 
 
@@ -483,15 +603,18 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
       return null;
     }
 
-    this._client.off("networkEventUpdate", this._onNetworkEventUpdate);
+    this._client.off("networkEventUpdate", this.onNetworkEventUpdate);
     
     
     this._client = null;
 
     this.off("evaluationResult", this.onEvaluationResult);
+    this.off("serverNetworkEvent", this.onNetworkEvent);
     this._longStrings = null;
     this.pendingEvaluationResults.clear();
     this.pendingEvaluationResults = null;
+    this.clearNetworkRequests();
+    this._networkRequests = null;
     return super.destroy();
   }
 }
