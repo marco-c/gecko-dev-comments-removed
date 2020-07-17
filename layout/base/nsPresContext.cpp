@@ -1567,6 +1567,11 @@ void nsPresContext::FlushPendingMediaFeatureValuesChanged() {
   
   
   
+  
+  
+  
+  
+  
 
   if (mDocument->MediaQueryLists().isEmpty()) {
     return;
@@ -1574,22 +1579,20 @@ void nsPresContext::FlushPendingMediaFeatureValuesChanged() {
 
   
   
-
-  
-  
-  nsTArray<RefPtr<mozilla::dom::MediaQueryList>> localMediaQueryLists;
+  nsTArray<RefPtr<mozilla::dom::MediaQueryList>> listsToNotify;
   for (MediaQueryList* mql = mDocument->MediaQueryLists().getFirst(); mql;
        mql = static_cast<LinkedListElement<MediaQueryList>*>(mql)->getNext()) {
-    localMediaQueryLists.AppendElement(mql);
+    if (mql->MediaFeatureValuesChanged()) {
+      listsToNotify.AppendElement(mql);
+    }
   }
 
   nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
       "nsPresContext::FlushPendingMediaFeatureValuesChanged",
-      [list = std::move(localMediaQueryLists)] {
-        
+      [list = std::move(listsToNotify)] {
         for (const auto& mql : list) {
           nsAutoMicroTask mt;
-          mql->MaybeNotify();
+          mql->FireChangeEvent();
         }
       }));
 }

@@ -41,7 +41,10 @@ class MediaQueryList final : public DOMEventTargetHelper,
 
   nsISupports* GetParentObject() const;
 
-  void MaybeNotify();
+  
+  
+  [[nodiscard]] bool MediaFeatureValuesChanged();
+  void FireChangeEvent();
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
