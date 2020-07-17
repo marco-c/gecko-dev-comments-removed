@@ -38,6 +38,9 @@ class TransformConfig(object):
     
     graph_config = attr.ib(type=GraphConfig)
 
+    
+    write_artifacts = attr.ib(type=bool)
+
 
 @attr.s()
 class TransformSequence(object):
