@@ -45,7 +45,8 @@ def configure_python_test(config, job, taskdesc):
             run['python-version'] = '/usr/local/bin/python3'
 
     
-    run['mach'] = 'python-test --python {python-version} --subsuite {subsuite}'.format(**run)
+    run['mach'] = ("python-test --python {python-version} --subsuite {subsuite} "
+                   "--run-slow").format(**run)
     run['using'] = 'mach'
     del run['python-version']
     del run['subsuite']
