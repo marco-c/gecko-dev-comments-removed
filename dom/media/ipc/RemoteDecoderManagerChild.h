@@ -25,7 +25,7 @@ class RemoteDecoderManagerChild final
   static RemoteDecoderManagerChild* GetGPUProcessSingleton();
 
   
-  static nsIThread* GetManagerThread();
+  static nsISerialEventTarget* GetManagerThread();
 
   
   
