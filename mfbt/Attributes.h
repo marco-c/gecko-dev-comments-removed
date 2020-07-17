@@ -736,6 +736,9 @@
 
 
 
+
+
+
 #  ifdef XGILL_PLUGIN
 #    pragma GCC diagnostic ignored "-Wignored-attributes"
 #    pragma GCC diagnostic ignored "-Wattributes"
@@ -803,6 +806,8 @@
       __attribute__((annotate("moz_must_return_from_caller_if_this_is_arg")))
 #    define MOZ_MAY_CALL_AFTER_MUST_RETURN \
       __attribute__((annotate("moz_may_call_after_must_return")))
+#    define MOZ_LIFETIME_BOUND __attribute__((annotate("moz_lifetime_bound")))
+
 
 
 
@@ -854,6 +859,7 @@
 #    define MOZ_REQUIRED_BASE_METHOD
 #    define MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG
 #    define MOZ_MAY_CALL_AFTER_MUST_RETURN
+#    define MOZ_LIFETIME_BOUND
 #  endif 
 
 #  define MOZ_RAII MOZ_NON_TEMPORARY_CLASS MOZ_STACK_CLASS
