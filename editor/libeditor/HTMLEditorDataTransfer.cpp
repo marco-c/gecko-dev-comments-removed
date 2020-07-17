@@ -246,6 +246,12 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
       const EditorDOMPoint& aLastInsertedPoint) const;
 
   
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertContents(
+      EditorDOMPoint& pointToInsert,
+      nsTArray<OwningNonNull<nsIContent>>& arrayOfTopMostChildContents,
+      const nsINode* fragmentAsNode, EditorDOMPoint& lastInsertedPoint);
+
+  
 
 
 
@@ -636,13 +642,61 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
   MOZ_ASSERT(pointToInsert.GetContainer()->GetChildAt_Deprecated(
                  pointToInsert.Offset()) == pointToInsert.GetChild());
 
+  EditorDOMPoint lastInsertedPoint;
+  rv = InsertContents(pointToInsert, arrayOfTopMostChildContents,
+                      fragmentAsNode, lastInsertedPoint);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("HTMLWithContextInserter::InsertContents() failed.");
+    return rv;
+  }
+
+  if (!lastInsertedPoint.IsSet()) {
+    return NS_OK;
+  }
+
+  const EditorDOMPoint pointToPutCaret =
+      GetNewCaretPointAfterInsertingHTML(lastInsertedPoint);
+  
+  rv = MOZ_KnownLive(mHTMLEditor).CollapseSelectionTo(pointToPutCaret);
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+
+  
+  
+  if (insertionPointWasInLink) {
+    return NS_OK;
+  }
+  RefPtr<Element> linkElement = GetLinkElement(pointToPutCaret.GetContainer());
+
+  if (!linkElement) {
+    return NS_OK;
+  }
+
+  rv = MoveCaretOutsideOfLink(*linkElement, pointToPutCaret);
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        "HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink "
+        "failed.");
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+nsresult HTMLEditor::HTMLWithContextInserter::InsertContents(
+    EditorDOMPoint& pointToInsert,
+    nsTArray<OwningNonNull<nsIContent>>& arrayOfTopMostChildContents,
+    const nsINode* fragmentAsNode, EditorDOMPoint& lastInsertedPoint) {
   
   RefPtr<Element> blockElement =
       pointToInsert.IsInContentNode()
           ? HTMLEditUtils::GetInclusiveAncestorBlockElement(
                 *pointToInsert.ContainerAsContent())
           : nullptr;
-  EditorDOMPoint lastInsertedPoint;
+
   nsCOMPtr<nsIContent> insertedContextParentContent;
   for (OwningNonNull<nsIContent>& content : arrayOfTopMostChildContents) {
     if (NS_WARN_IF(content == fragmentAsNode) ||
@@ -859,36 +913,6 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
     }
   }
 
-  if (!lastInsertedPoint.IsSet()) {
-    return NS_OK;
-  }
-
-  const EditorDOMPoint pointToPutCaret =
-      GetNewCaretPointAfterInsertingHTML(lastInsertedPoint);
-  
-  rv = MOZ_KnownLive(mHTMLEditor).CollapseSelectionTo(pointToPutCaret);
-  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditor::CollapseSelectionTo() failed, but ignored");
-
-  
-  
-  if (insertionPointWasInLink) {
-    return NS_OK;
-  }
-  RefPtr<Element> linkElement = GetLinkElement(pointToPutCaret.GetContainer());
-  if (!linkElement) {
-    return NS_OK;
-  }
-  rv = MoveCaretOutsideOfLink(*linkElement, pointToPutCaret);
-  if (NS_FAILED(rv)) {
-    NS_WARNING(
-        "HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink "
-        "failed.");
-    return rv;
-  }
 
   return NS_OK;
 }
