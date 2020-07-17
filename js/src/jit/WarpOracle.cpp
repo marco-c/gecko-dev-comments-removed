@@ -727,16 +727,10 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   const ICEntry& entry = getICEntry(loc);
   ICStub* stub = entry.firstStub();
-  ICFallbackStub* fallbackStub = entry.fallbackStub();
 
   uint32_t offset = loc.bytecodeToOffset(script_);
 
-  
-  
-  
-  fallbackStub->clearUsedByTranspiler();
-
-  if (stub == fallbackStub) {
+  if (stub->isFallback()) {
     [[maybe_unused]] unsigned line, column;
     LineNumberAndColumn(script_, loc, &line, &column);
 
@@ -744,11 +738,11 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     JitSpew(JitSpew_WarpTranspiler,
             "fallback stub (entered-count: %" PRIu32
             ") for JSOp::%s @ %s:%u:%u",
-            fallbackStub->enteredCount(), CodeName(loc.getOp()),
+            stub->toFallbackStub()->enteredCount(), CodeName(loc.getOp()),
             script_->filename(), line, column);
 
     
-    if (fallbackStub->enteredCount() != 0) {
+    if (stub->toFallbackStub()->enteredCount() != 0) {
       return Ok();
     }
 
@@ -859,8 +853,6 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
                                   stubDataCopy)) {
     return abort(AbortReason::Alloc);
   }
-
-  fallbackStub->setUsedByTranspiler();
 
   return Ok();
 }
