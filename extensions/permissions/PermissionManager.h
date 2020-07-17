@@ -607,6 +607,8 @@ class PermissionManager final : public nsIPermissionManager,
 
   bool mMemoryOnlyDB;
 
+  bool mBlockerAdded;
+
   nsTHashtable<PermissionHashKey> mPermissionTable;
   
   int64_t mLargestID;
