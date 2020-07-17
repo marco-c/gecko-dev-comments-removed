@@ -1,0 +1,23 @@
+
+
+
+'use strict';
+
+
+
+idl_test(
+  ['webhid'],
+  ['html', 'dom'],
+  idl_array => {
+    idl_array.add_objects({
+      HID: ['navigator.hid'],
+      Navigator: ['navigator'],
+      
+      
+      
+      
+      
+      
+    });
+  }
+);
