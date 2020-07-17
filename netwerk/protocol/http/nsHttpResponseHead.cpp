@@ -39,6 +39,7 @@ nsHttpResponseHead::nsHttpResponseHead(const nsHttpResponseHead& aOther)
   mContentLength = other.mContentLength;
   mContentType = other.mContentType;
   mContentCharset = other.mContentCharset;
+  mHasCacheControl = other.mHasCacheControl;
   mCacheControlPublic = other.mCacheControlPublic;
   mCacheControlPrivate = other.mCacheControlPrivate;
   mCacheControlNoStore = other.mCacheControlNoStore;
@@ -127,7 +128,7 @@ bool nsHttpResponseHead::NoStore() {
 
 bool nsHttpResponseHead::NoCache() {
   RecursiveMutexAutoLock monitor(mRecursiveMutex);
-  return (mCacheControlNoCache || mPragmaNoCache);
+  return NoCache_locked();
 }
 
 bool nsHttpResponseHead::Immutable() {
@@ -755,7 +756,7 @@ bool nsHttpResponseHead::MustValidate() {
 
   
   
-  if (mCacheControlNoCache || mPragmaNoCache) {
+  if (NoCache_locked()) {
     LOG(("Must validate since response contains 'no-cache' header\n"));
     return true;
   }
@@ -902,6 +903,7 @@ void nsHttpResponseHead::Reset() {
   mVersion = HttpVersion::v1_1;
   mStatus = 200;
   mContentLength = -1;
+  mHasCacheControl = false;
   mCacheControlPublic = false;
   mCacheControlPrivate = false;
   mCacheControlNoStore = false;
@@ -1005,6 +1007,7 @@ bool nsHttpResponseHead::operator==(const nsHttpResponseHead& aOther) const {
          mContentLength == aOther.mContentLength &&
          mContentType == aOther.mContentType &&
          mContentCharset == aOther.mContentCharset &&
+         mHasCacheControl == aOther.mHasCacheControl &&
          mCacheControlPublic == aOther.mCacheControlPublic &&
          mCacheControlPrivate == aOther.mCacheControlPrivate &&
          mCacheControlNoCache == aOther.mCacheControlNoCache &&
@@ -1116,6 +1119,7 @@ void nsHttpResponseHead::ParseVersion(const char* str) {
 void nsHttpResponseHead::ParseCacheControl(const char* val) {
   if (!(val && *val)) {
     
+    mHasCacheControl = false;
     mCacheControlPublic = false;
     mCacheControlPrivate = false;
     mCacheControlNoCache = false;
@@ -1131,6 +1135,7 @@ void nsHttpResponseHead::ParseCacheControl(const char* val) {
   nsDependentCString cacheControlRequestHeader(val);
   CacheControlParser cacheControlRequest(cacheControlRequestHeader);
 
+  mHasCacheControl = true;
   mCacheControlPublic = cacheControlRequest.Public();
   mCacheControlPrivate = cacheControlRequest.Private();
   mCacheControlNoCache = cacheControlRequest.NoCache();
@@ -1154,8 +1159,7 @@ void nsHttpResponseHead::ParsePragma(const char* val) {
   
   
   
-  if (nsHttp::FindToken(val, "no-cache", HTTP_HEADER_VALUE_SEPS))
-    mPragmaNoCache = true;
+  mPragmaNoCache = nsHttp::FindToken(val, "no-cache", HTTP_HEADER_VALUE_SEPS);
 }
 
 nsresult nsHttpResponseHead::VisitHeaders(
