@@ -1,6 +1,6 @@
 def main(request, response):
     
     
-    response.headers.set("X-XSS-Protection", "0")
-    response.headers.set("Content-Type", "text/html")
-    response.content = request.GET.first("content")
+    response.headers.set(b"X-XSS-Protection", b"0")
+    response.headers.set(b"Content-Type", b"text/html")
+    response.content = request.GET.first(b"content")
