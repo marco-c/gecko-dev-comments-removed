@@ -75,7 +75,6 @@ add_task(async function test_context_menu_iframe_fill() {
       info("Clicking on the firstLoginItem");
       
       await EventUtils.synthesizeMouseAtCenter(firstLoginItem, {});
-      await EventUtils.synthesizeKey("KEY_Tab");
 
       let passwordValue = await TestUtils.waitForCondition(async () => {
         let value = await promiseFrameInputValue("form-basic-password");
