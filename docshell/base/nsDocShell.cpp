@@ -9057,7 +9057,8 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
   
   
   
-  if (mozilla::StaticPrefs::dom_security_https_only_mode()) {
+  bool isPrivateWin = attrs.mPrivateBrowsingId > 0;
+  if (nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin)) {
     
     
     nsCOMPtr<nsIPrincipal> permissionPrincipal =

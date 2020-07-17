@@ -13,12 +13,27 @@
 #include "prnetdb.h"
 
 
+bool nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(bool aFromPrivateWindow) {
+  
+  if (mozilla::StaticPrefs::dom_security_https_only_mode()) {
+    return true;
+  }
+
+  
+  
+  if (aFromPrivateWindow &&
+      mozilla::StaticPrefs::dom_security_https_only_mode_pbm()) {
+    return true;
+  }
+  return false;
+}
 
 
 bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
                                             nsILoadInfo* aLoadInfo) {
   
-  if (!mozilla::StaticPrefs::dom_security_https_only_mode()) {
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
     return false;
   }
 
@@ -34,10 +49,9 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
     uint32_t innerWindowId = aLoadInfo->GetInnerWindowID();
     AutoTArray<nsString, 1> params = {
         NS_ConvertUTF8toUTF16(aURI->GetSpecOrDefault())};
-    nsHTTPSOnlyUtils::LogLocalizedString(
-        "HTTPSOnlyNoUpgradeException", params, nsIScriptError::infoFlag,
-        innerWindowId, !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId,
-        aURI);
+    nsHTTPSOnlyUtils::LogLocalizedString("HTTPSOnlyNoUpgradeException", params,
+                                         nsIScriptError::infoFlag,
+                                         innerWindowId, isPrivateWin, aURI);
     return false;
   }
 
@@ -72,7 +86,7 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
                                               bool aFromPrivateWindow,
                                               uint32_t aHttpsOnlyStatus) {
   
-  if (!mozilla::StaticPrefs::dom_security_https_only_mode()) {
+  if (!IsHttpsOnlyModeEnabled(aFromPrivateWindow)) {
     return false;
   }
 

@@ -16,6 +16,13 @@ class nsHTTPSOnlyUtils {
 
 
 
+  static bool IsHttpsOnlyModeEnabled(bool aFromPrivateWindow);
+
+  
+
+
+
+
 
 
 
