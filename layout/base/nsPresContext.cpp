@@ -863,7 +863,7 @@ nsPresContext* nsPresContext::GetParentPresContext() const {
   return nullptr;
 }
 
-nsPresContext* nsPresContext::GetToplevelContentDocumentPresContext() {
+nsPresContext* nsPresContext::GetInProcessRootContentDocumentPresContext() {
   if (IsChrome()) return nullptr;
   nsPresContext* pc = this;
   for (;;) {
@@ -1270,7 +1270,7 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
   
   
   nsPresContext* topContentPresContext =
-      GetToplevelContentDocumentPresContext();
+      GetInProcessRootContentDocumentPresContext();
 
   if (!topContentPresContext) {
     

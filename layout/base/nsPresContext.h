@@ -187,7 +187,7 @@ class nsPresContext : public nsISupports,
 
 
 
-  nsPresContext* GetToplevelContentDocumentPresContext();
+  nsPresContext* GetInProcessRootContentDocumentPresContext();
 
   
 
