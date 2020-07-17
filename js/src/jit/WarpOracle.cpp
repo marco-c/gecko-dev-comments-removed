@@ -14,6 +14,7 @@
 #include "jit/CacheIR.h"
 #include "jit/CacheIRCompiler.h"
 #include "jit/CacheIROpsGenerated.h"
+#include "jit/CompileInfo.h"
 #include "jit/JitScript.h"
 #include "jit/JitSpewer.h"
 #include "jit/MIRGenerator.h"
@@ -31,6 +32,8 @@
 
 using namespace js;
 using namespace js::jit;
+
+using mozilla::Maybe;
 
 
 
@@ -743,6 +746,9 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   
   
   
+  
+  
+  
 
   MOZ_ASSERT(loc.opHasIC());
 
@@ -873,6 +879,56 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   }
 
   JitCode* jitCode = stub->jitCode();
+
+  Maybe<InlinableCallData> callData;
+  if (loc.isInvokeOp()) {
+    callData = FindInlinableCallData(stub);
+  }
+  if (callData.isSome() && callData->icScript) {
+    RootedFunction targetFunction(cx_, callData->target);
+    RootedScript targetScript(cx_, targetFunction->nonLazyScript());
+    ICScript* icScript = callData->icScript;
+    MOZ_ASSERT(targetScript->jitScript() == icScript->jitScript());
+
+    
+    LifoAlloc* lifoAlloc = alloc_.lifoAlloc();
+    InlineScriptTree* inlineScriptTree = info_->inlineScriptTree()->addCallee(
+        &alloc_, loc.toRawBytecode(), targetScript);
+    if (!inlineScriptTree) {
+      return abort(AbortReason::Alloc);
+    }
+
+    
+    jsbytecode* osrPc = nullptr;
+    bool needsArgsObj = false;
+    CompileInfo* info = lifoAlloc->new_<CompileInfo>(
+        mirGen_.runtime, targetScript, targetFunction, osrPc,
+        info_->analysisMode(), needsArgsObj, inlineScriptTree);
+    if (!info) {
+      return abort(AbortReason::Alloc);
+    }
+
+    
+    WarpCacheIR* cacheIRSnapshot = new (alloc_.fallible())
+        WarpCacheIR(offset, jitCode, stubInfo, stubDataCopy);
+    if (!cacheIRSnapshot) {
+      return abort(AbortReason::Alloc);
+    }
+
+    
+    
+    WarpScriptOracle scriptOracle(cx_, oracle_, targetScript, info, icScript);
+
+    WarpScriptSnapshot* scriptSnapshot;
+    MOZ_TRY_VAR(scriptSnapshot, scriptOracle.createScriptSnapshot());
+    oracle_->addScriptSnapshot(scriptSnapshot);
+
+    if (!AddOpSnapshot<WarpInlinedCall>(
+            alloc_, snapshots, offset, cacheIRSnapshot, scriptSnapshot, info)) {
+      return abort(AbortReason::Alloc);
+    }
+    return Ok();
+  }
 
   if (!AddOpSnapshot<WarpCacheIR>(alloc_, snapshots, offset, jitCode, stubInfo,
                                   stubDataCopy)) {

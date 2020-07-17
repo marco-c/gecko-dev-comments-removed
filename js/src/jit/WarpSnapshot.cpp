@@ -182,6 +182,12 @@ void WarpCacheIR::dumpData(GenericPrinter& out) const {
   out.printf("(CacheIR spew unavailable)\n");
 #  endif
 }
+
+void WarpInlinedCall::dumpData(GenericPrinter& out) const {
+  out.printf("    scriptSnapshot: 0x%p\n", scriptSnapshot_);
+  cacheIRSnapshot_->dumpData(out);
+  
+}
 #endif  
 
 template <typename T>
@@ -294,4 +300,9 @@ void WarpCacheIR::traceData(JSTracer* trc) {
 
   
   
+}
+
+void WarpInlinedCall::traceData(JSTracer* trc) {
+  
+  cacheIRSnapshot_->trace(trc);
 }
