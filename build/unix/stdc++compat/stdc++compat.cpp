@@ -146,13 +146,13 @@ namespace std {
 template basic_ios<char, char_traits<char>>::operator bool() const;
 }  
 
-#if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
+#  if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
 
 
 void operator delete(void* ptr, size_t size) noexcept(true) {
   ::operator delete(ptr);
 }
-#endif
+#  endif
 #endif
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 23)

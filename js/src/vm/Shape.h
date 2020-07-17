@@ -711,8 +711,8 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   
   const JSClass* clasp() const { return headerPtr(); }
 
-  uint32_t flags;                    
-  uint32_t slotSpan_;                
+  uint32_t flags;     
+  uint32_t slotSpan_; 
 
 
   
@@ -731,7 +731,6 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   
   ~BaseShape();
-
 
   bool isOwned() const { return !!(flags & OWNED_SHAPE); }
 

@@ -804,6 +804,7 @@ void gfxPlatformFontList::GetFontList(nsAtom* aLangGroup,
           continue;
         }
         
+        
         aListOfFonts.AppendElement(
             NS_ConvertUTF8toUTF16(f.DisplayName().AsString(list)));
       }

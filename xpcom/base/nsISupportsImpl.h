@@ -619,8 +619,7 @@ class ThreadSafeAutoRefCnt {
                                                                                \
  protected:                                                                    \
   nsAutoRefCnt mRefCnt;                                                        \
-  _owning                                                                      \
- public:
+  _owning public:
 
 
 

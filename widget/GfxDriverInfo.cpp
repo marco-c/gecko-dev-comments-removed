@@ -680,7 +680,6 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       
       APPEND_DEVICE(0x1636);
 
-
 #ifdef EARLY_BETA_OR_EARLIER
       
       APPEND_DEVICE(0x98e4);

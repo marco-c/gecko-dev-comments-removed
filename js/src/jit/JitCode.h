@@ -14,8 +14,8 @@
 
 #include "jstypes.h"
 
-#include "gc/Allocator.h"  
-#include "gc/Cell.h"       
+#include "gc/Allocator.h"             
+#include "gc/Cell.h"                  
 #include "jit/ExecutableAllocator.h"  
 #include "js/TraceKind.h"             
 #include "js/UbiNode.h"               

@@ -23,7 +23,7 @@ enum {
   kCharsetFromIrreversibleAutoDetection,
   kCharsetFromChannel,
   kCharsetFromOtherComponent,
-  kCharsetFromUserForced,    
+  kCharsetFromUserForced,  
   kCharsetFromUserForcedAutoDetection,
   kCharsetFromByteOrderMark,
   kCharsetFromUtf8OnlyMime,  

@@ -7,12 +7,12 @@
 #include "CompositorAnimationStorage.h"
 
 #include "AnimationHelper.h"
-#include "mozilla/layers/CompositorThread.h"  
+#include "mozilla/layers/CompositorThread.h"       
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/webrender/WebRenderTypes.h"  
-#include "nsDeviceContext.h"  
-#include "nsDisplayList.h"    
+#include "nsDeviceContext.h"                   
+#include "nsDisplayList.h"                     
 #include "TreeTraversal.h"  
 
 namespace mozilla {

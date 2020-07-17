@@ -59,8 +59,10 @@ class SwapChain final {
  private:
   std::queue<std::shared_ptr<SharedSurface>> mPool;
   std::shared_ptr<SharedSurface> mFrontBuffer;
+
  public:
-  std::shared_ptr<SharedSurface> mPrevFrontBuffer; 
+  std::shared_ptr<SharedSurface>
+      mPrevFrontBuffer;  
  private:
   SwapChainPresenter* mPresenter = nullptr;
 

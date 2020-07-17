@@ -144,9 +144,10 @@ ScopedResolveTexturesForDraw::ScopedResolveTexturesForDraw(
   const auto& gl = mWebGL->gl;
   for (const auto& itr : mRebindRequests) {
     gl->fActiveTexture(LOCAL_GL_TEXTURE0 + itr.texUnit);
-    GLuint incompleteTex = 0; 
+    GLuint incompleteTex = 0;  
     const auto& overrideTex = webgl->mIncompleteTexOverride;
     if (overrideTex) {
+      
       
       
       incompleteTex = overrideTex->name;
