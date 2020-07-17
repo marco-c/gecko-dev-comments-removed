@@ -122,15 +122,6 @@ assertErrorMessage(() => new WebAssembly.Module(
 
 
 
-assertErrorMessage(() => new WebAssembly.Module(
-    moduleWithSections([generalElemSection([{ flag: DeclaredElemExpr,
-                                              typeCode: AnyrefCode,
-                                              elems: [] }])])),
-                   WebAssembly.CompileError,
-                   /declared segment's element type must be subtype of funcref/);
-
-
-
 
 
 var ins = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`
