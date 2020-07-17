@@ -25,6 +25,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "FormAutofillParent",
+  "resource://formautofill/FormAutofillParent.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "AutoCompleteParent",
   "resource://gre/actors/AutoCompleteParent.jsm"
 );
@@ -55,7 +60,7 @@ function insertStyleSheet(domWindow, url) {
   }
 }
 
-function onMaybeOpenPopup(domWindow) {
+function ensureCssLoaded(domWindow) {
   if (CACHED_STYLESHEETS.has(domWindow)) {
     
     return;
@@ -168,7 +173,12 @@ this.formautofill = class extends ExtensionAPI {
     }
 
     
-    AutoCompleteParent.addPopupStateListener(onMaybeOpenPopup);
+    
+    
+    
+    AutoCompleteParent.addPopupStateListener(ensureCssLoaded);
+    FormAutofillParent.addMessageObserver(this);
+    this.onFormSubmitted = (data, window) => ensureCssLoaded(window);
 
     FormAutofillStatus.init();
 
@@ -205,7 +215,8 @@ this.formautofill = class extends ExtensionAPI {
 
     ChromeUtils.unregisterWindowActor("FormAutofill");
 
-    AutoCompleteParent.removePopupStateListener(onMaybeOpenPopup);
+    AutoCompleteParent.removePopupStateListener(ensureCssLoaded);
+    FormAutofillParent.removeMessageObserver(this);
 
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
       let cachedStyleSheets = CACHED_STYLESHEETS.get(win);
