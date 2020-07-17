@@ -174,21 +174,15 @@ function openMessageDetails(state, action) {
 
 function clearMessages(state) {
   const nextState = { ...state };
-  nextState.messages = new Map(nextState.messages);
+  const defaultState = Messages();
+  nextState.messages = new Map(state.messages);
   nextState.messages.delete(nextState.currentChannelId);
 
-  return {
-    ...Messages(),
-    
-    messages: nextState.messages,
-    
-    currentChannelId: nextState.currentChannelId,
-    
-    columns: nextState.columns,
-    messageFilterType: nextState.messageFilterType,
-    messageFilterText: nextState.messageFilterText,
-    showControlFrames: nextState.showControlFrames,
-  };
+  
+  nextState.selectedMessage = defaultState.selectedMessage;
+  nextState.messageDetailsOpen = defaultState.messageDetailsOpen;
+
+  return nextState;
 }
 
 
