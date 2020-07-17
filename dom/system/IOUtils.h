@@ -82,7 +82,7 @@ class IOUtils final {
 
 
   static UniquePtr<PRFileDesc, PR_CloseDelete> OpenExistingSync(
-      const char* aPath, int32_t aFlags);
+      const nsAString& aPath, int32_t aFlags);
 
   
 
@@ -94,7 +94,7 @@ class IOUtils final {
 
 
   static UniquePtr<PRFileDesc, PR_CloseDelete> CreateFileSync(
-      const char* aPath, int32_t aFlags, int32_t aMode = 0666);
+      const nsAString& aPath, int32_t aFlags, int32_t aMode = 0666);
 
   static nsresult ReadSync(PRFileDesc* aFd, const uint32_t aBufSize,
                            nsTArray<uint8_t>& aResult);
