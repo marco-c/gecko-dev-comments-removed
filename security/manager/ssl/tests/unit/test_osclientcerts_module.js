@@ -6,6 +6,7 @@
 
 
 
+Services.prefs.setBoolPref("security.osclientcerts.autoload", false);
 do_get_profile();
 
 const { TestUtils } = ChromeUtils.import(
