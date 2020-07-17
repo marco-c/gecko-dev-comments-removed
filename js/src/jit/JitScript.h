@@ -11,6 +11,7 @@
 
 #include "jstypes.h"
 #include "jit/BaselineIC.h"
+#include "jit/TrialInlining.h"
 #include "js/UniquePtr.h"
 #include "util/TrailingArray.h"
 #include "vm/TypeInference.h"
@@ -55,11 +56,14 @@ static IonScript* const IonCompilingScriptPtr =
     reinterpret_cast<IonScript*>(IonCompilingScript);
 
 class JitScript;
+class InliningRoot;
 
 class alignas(uintptr_t) ICScript final : public TrailingArray {
  public:
-  ICScript(JitScript* jitScript, uint32_t warmUpCount, Offset endOffset)
+  ICScript(JitScript* jitScript, uint32_t warmUpCount, Offset endOffset,
+           InliningRoot* inliningRoot = nullptr)
       : jitScript_(jitScript),
+        inliningRoot_(inliningRoot),
         warmUpCount_(warmUpCount),
         endOffset_(endOffset) {}
 
@@ -71,6 +75,8 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
     MOZ_ASSERT(index < numICEntries());
     return icEntries()[index];
   }
+
+  InliningRoot* inliningRoot() const { return inliningRoot_; }
 
   static constexpr size_t offsetOfFirstStub(uint32_t entryIndex) {
     return sizeof(ICScript) + entryIndex * sizeof(ICEntry) +
@@ -96,6 +102,7 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   ICEntry& icEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry);
 
   FallbackICStubSpace* fallbackStubSpace();
+  void purgeOptimizedStubs(Zone* zone);
 
   void trace(JSTracer* trc);
 
@@ -104,6 +111,10 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   
   
   JitScript* jitScript_;
+
+  
+  
+  InliningRoot* inliningRoot_ = nullptr;
 
   
   
@@ -281,6 +292,8 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     bool ionCompiledOrInlined : 1;
   };
   Flags flags_ = {};  
+
+  js::UniquePtr<InliningRoot> inliningRoot_;
 
   ICScript icScript_;
   
@@ -658,6 +671,11 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     setIonScriptImpl(script, nullptr);
   }
   ICScript* icScript() { return &icScript_; }
+
+  bool hasInliningRoot() const { return !!inliningRoot_; }
+  InliningRoot* inliningRoot() const { return inliningRoot_.get(); }
+  InliningRoot* getOrCreateInliningRoot(JSContext* cx);
+  void clearInliningRoot() { inliningRoot_.reset(); }
 };
 
 
