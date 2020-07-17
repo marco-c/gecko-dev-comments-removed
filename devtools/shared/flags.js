@@ -54,16 +54,6 @@ function makePrefTrackedFlag(exports, name, pref) {
 
 
 
-makePrefTrackedFlag(
-  exports,
-  "wantAllNetworkRequests",
-  "devtools.testing.netmonitor.want-all-requests"
-);
-
-
-
-
-
 makePrefTrackedFlag(exports, "wantLogging", "devtools.debugger.log");
 
 
