@@ -1409,6 +1409,18 @@ IdlInterface.prototype.get_interface_object_owner = function()
     return legacyNamespace ? self[legacyNamespace] : self;
 };
 
+IdlInterface.prototype.should_have_interface_object = function()
+{
+    
+    
+    
+    
+    
+    
+
+    return this.is_callback() ? this.has_constants() : !this.has_extended_attribute("NoInterfaceObject");
+};
+
 IdlInterface.prototype.assert_interface_object_exists = function()
 {
     var owner = this.get_legacy_namespace() || "self";
@@ -1416,8 +1428,9 @@ IdlInterface.prototype.assert_interface_object_exists = function()
 };
 
 IdlInterface.prototype.get_interface_object = function() {
-    if (this.has_extended_attribute("NoInterfaceObject")) {
-        throw new IdlHarnessError(this.name + " has no interface object due to NoInterfaceObject");
+    if (!this.should_have_interface_object()) {
+        var reason = this.is_callback() ? "lack of declared constants" : "declared [NoInterfaceObject] attribute";
+        throw new IdlHarnessError(this.name + " has no interface object due to " + reason);
     }
 
     return this.get_interface_object_owner()[this.name];
@@ -1607,20 +1620,14 @@ IdlInterface.prototype.test_self = function()
     {
         
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (this.is_callback() && !this.has_constants()) {
+        if (!this.should_have_interface_object()) {
             return;
         }
 
+        
+        
+        
+        
         
         
         this.assert_interface_object_exists();
@@ -1704,7 +1711,7 @@ IdlInterface.prototype.test_self = function()
         }
     }.bind(this), this.name + " interface: existence and properties of interface object");
 
-    if (!this.is_callback()) {
+    if (this.should_have_interface_object() && !this.is_callback()) {
         subsetTestByKey(this.name, test, function() {
             
             
@@ -1729,7 +1736,7 @@ IdlInterface.prototype.test_self = function()
         }.bind(this), this.name + " interface object length");
     }
 
-    if (!this.is_callback() || this.has_constants()) {
+    if (this.should_have_interface_object()) {
         subsetTestByKey(this.name, test, function() {
             
             
@@ -1926,7 +1933,7 @@ IdlInterface.prototype.test_self = function()
         
         
 
-        if (this.is_callback() && !this.has_constants()) {
+        if (!this.should_have_interface_object()) {
             return;
         }
 
@@ -2050,7 +2057,7 @@ IdlInterface.prototype.test_self = function()
 
     subsetTestByKey(this.name, test, function()
     {
-        if (this.is_callback() && !this.has_constants()) {
+        if (!this.should_have_interface_object()) {
             return;
         }
 
@@ -2085,7 +2092,7 @@ IdlInterface.prototype.test_self = function()
 
     subsetTestByKey(this.name, test, function()
     {
-        if (this.is_callback() && !this.has_constants()) {
+        if (!this.should_have_interface_object()) {
             return;
         }
 
@@ -2326,8 +2333,8 @@ IdlInterface.prototype.test_member_attribute = function(member)
     var a_test = subsetTestByKey(this.name, async_test, this.name + " interface: attribute " + member.name);
     a_test.step(function()
     {
-        if (this.is_callback() && !this.has_constants()) {
-            a_test.done()
+        if (!this.should_have_interface_object()) {
+            a_test.done();
             return;
         }
 
@@ -2422,7 +2429,7 @@ IdlInterface.prototype.test_member_operation = function(member)
         
         
 
-        if (this.is_callback() && !this.has_constants()) {
+        if (!this.should_have_interface_object()) {
             a_test.done();
             return;
         }
@@ -2665,7 +2672,7 @@ IdlInterface.prototype.test_member_stringifier = function(member)
 {
     subsetTestByKey(this.name, test, function()
     {
-        if (this.is_callback() && !this.has_constants()) {
+        if (!this.should_have_interface_object()) {
             return;
         }
 
@@ -2859,7 +2866,7 @@ IdlInterface.prototype.test_primary_interface_of = function(desc, obj, exception
     
     
     
-    if (!this.has_extended_attribute("NoInterfaceObject")
+    if (this.should_have_interface_object()
     && (typeof obj != expected_typeof || obj instanceof Object))
     {
         subsetTestByKey(this.name, test, function()
