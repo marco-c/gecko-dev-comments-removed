@@ -218,10 +218,19 @@ class Browsertime(Perftest):
             
             
             browsertime_options.extend([
-                "--video", "true",
-                
-                "--firefox.windowRecorder", "false",
+                "--video", "true"
             ])
+
+            if self.browsertime_no_ffwindowrecorder:
+                browsertime_options.extend([
+                    "--firefox.windowRecorder", "false",
+                ])
+                LOG.info("Using adb screenrecord for mobile, or ffmpeg on desktop for videos")
+            else:
+                browsertime_options.extend([
+                    "--firefox.windowRecorder", "true",
+                ])
+                LOG.info("Using Firefox Window Recorder for videos")
         else:
             browsertime_options.extend([
                 "--video", "false",
