@@ -1086,10 +1086,25 @@ class SearchEngine {
 
 
 
-  _updateFromManifest(extensionID, extensionBaseURI, manifest, locale) {
+
+
+
+  _updateFromManifest(
+    extensionID,
+    extensionBaseURI,
+    manifest,
+    locale,
+    configuration = {}
+  ) {
     this._urls = [];
     this._iconMapObj = null;
-    this._initFromManifest(extensionID, extensionBaseURI, manifest, locale);
+    this._initFromManifest(
+      extensionID,
+      extensionBaseURI,
+      manifest,
+      locale,
+      configuration
+    );
     SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
   }
 
