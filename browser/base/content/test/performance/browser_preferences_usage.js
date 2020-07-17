@@ -217,14 +217,6 @@ add_task(async function navigate_around() {
     if (AppConstants.platform == "linux") {
       
       
-      knownProblematicPrefs["security.sandbox.content.write_path_whitelist"] = {
-        min: 49,
-        max: 55,
-      };
-      knownProblematicPrefs["security.sandbox.content.read_path_whitelist"] = {
-        min: 49,
-        max: 55,
-      };
       knownProblematicPrefs["security.sandbox.content.force-namespace"] = {
         min: 49,
         max: 55,
