@@ -6,7 +6,7 @@
 #ifndef TRRService_h_
 #define TRRService_h_
 
-#include "mozilla/DataStorage.h"
+#include "mozilla/DataMutex.h"
 #include "nsHostResolver.h"
 #include "nsIObserver.h"
 #include "nsWeakReference.h"
@@ -110,10 +110,9 @@ class TRRService : public TRRServiceBase,
   
   bool MaybeSetPrivateURI(const nsACString& aURI) override;
   void ClearEntireCache();
-  void InitTRRBLStorage(DataStorage* aInitedStorage);
 
   bool mInitialized;
-  Atomic<uint32_t, Relaxed> mTRRBlocklistExpireTime;
+  Atomic<uint32_t, Relaxed> mBlocklistDurationSeconds;
 
   Mutex mLock;
 
@@ -142,8 +141,7 @@ class TRRService : public TRRServiceBase,
   
   
   
-  RefPtr<DataStorage> mTRRBLStorage;
-  Atomic<bool, Relaxed> mClearTRRBLStorage;
+  DataMutex<nsDataHashtable<nsCStringHashKey, int32_t>> mTRRBLStorage;
 
   
   nsTHashtable<nsCStringHashKey> mExcludedDomains;
