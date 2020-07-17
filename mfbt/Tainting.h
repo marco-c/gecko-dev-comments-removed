@@ -172,6 +172,8 @@ class Tainted {
 
 
 
+#define MOZ_NO_VALIDATE(tainted_value, justification) tainted_value.Coerce()
+
 
 
 
