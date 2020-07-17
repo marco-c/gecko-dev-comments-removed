@@ -14,7 +14,7 @@
 #include "nsID.h"
 #include "nsISupportsImpl.h"
 
-class nsIEventTarget;
+class nsISerialEventTarget;
 
 namespace mozilla {
 namespace net {
@@ -86,6 +86,8 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   bool OnSetClassifierMatchedTrackingInfo(const nsACString& aLists,
                                           const nsACString& aFullHashes);
 
+  nsISerialEventTarget* GetBackgroundTarget();
+
  protected:
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -97,7 +99,7 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   
   Mutex mBgThreadMutex;
 
-  nsCOMPtr<nsIEventTarget> mBackgroundThread;
+  nsCOMPtr<nsISerialEventTarget> mBackgroundThread;
 
   
   RefPtr<HttpChannelParent> mChannelParent;
