@@ -108,9 +108,7 @@ void ContentPlaybackController::NextTrack() {
 }
 
 void ContentPlaybackController::SkipAd() {
-  
-  
-  return;
+  NotifyMediaSessionWhenActionIsSupported(MediaSessionAction::Skipad);
 }
 
 void ContentPlaybackController::Stop() {
@@ -155,6 +153,9 @@ void ContentMediaControlKeyHandler::HandleMediaControlKey(
       return;
     case MediaControlKey::Seekforward:
       controller.SeekForward();
+      return;
+    case MediaControlKey::Skipad:
+      controller.SkipAd();
       return;
     default:
       MOZ_ASSERT_UNREACHABLE("Invalid event.");
