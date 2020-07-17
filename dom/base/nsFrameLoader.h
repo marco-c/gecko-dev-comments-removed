@@ -398,7 +398,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   
-  void ConfigRemoteProcess(const nsACString& aRemoteType,
+  void ConfigRemoteProcess(const nsAString& aRemoteType,
                            mozilla::dom::ContentParent* aContentParent);
 
   void MaybeNotifyCrashed(mozilla::dom::BrowsingContext* aBrowsingContext,
@@ -515,7 +515,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   RefPtr<mozilla::dom::TabListener> mSessionStoreListener;
 
-  nsCString mRemoteType;
+  nsString mRemoteType;
 
   bool mDepthTooGreat : 1;
   bool mIsTopLevelContent : 1;

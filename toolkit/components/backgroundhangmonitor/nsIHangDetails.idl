@@ -50,7 +50,7 @@ interface nsIHangDetails : nsISupports
   
 
 
-  readonly attribute AUTF8String remoteType;
+  readonly attribute AString remoteType;
 
   
 

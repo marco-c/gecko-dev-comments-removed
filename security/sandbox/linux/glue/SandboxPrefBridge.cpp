@@ -30,7 +30,7 @@ ContentProcessSandboxParams::ForThisProcess(
   
 
   auto* cc = dom::ContentChild::GetSingleton();
-  params.mFileProcess = cc->GetRemoteType() == FILE_REMOTE_TYPE;
+  params.mFileProcess = cc->GetRemoteType().EqualsLiteral(FILE_REMOTE_TYPE);
 
   nsAutoCString extraSyscalls;
   nsresult rv = Preferences::GetCString(

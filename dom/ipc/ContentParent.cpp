@@ -492,7 +492,7 @@ ContentParentsMemoryReporter::CollectReports(
 
 
 
-nsClassHashtable<nsCStringHashKey, nsTArray<ContentParent*>>*
+nsClassHashtable<nsStringHashKey, nsTArray<ContentParent*>>*
     ContentParent::sBrowserContentParents;
 
 namespace {
@@ -570,13 +570,13 @@ ScriptableCPInfo::GetMessageManager(nsISupports** aMessenger) {
   return NS_OK;
 }
 
-ProcessID GetTelemetryProcessID(const nsACString& remoteType) {
+ProcessID GetTelemetryProcessID(const nsAString& remoteType) {
   
   
   
   
-  return remoteType == EXTENSION_REMOTE_TYPE ? ProcessID::Extension
-                                             : ProcessID::Content;
+  return remoteType.EqualsLiteral(EXTENSION_REMOTE_TYPE) ? ProcessID::Extension
+                                                         : ProcessID::Content;
 }
 
 }  
@@ -638,10 +638,11 @@ static const char* sObserverTopics[] = {
 
  RefPtr<ContentParent::LaunchPromise>
 ContentParent::PreallocateProcess() {
-  RefPtr<ContentParent> process = new ContentParent(PREALLOC_REMOTE_TYPE);
+  RefPtr<ContentParent> process =
+      new ContentParent(NS_LITERAL_STRING_FROM_CSTRING(PREALLOC_REMOTE_TYPE));
 
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("Preallocating process of type prealloc"));
+          ("Preallocating process of type " PREALLOC_REMOTE_TYPE));
   return process->LaunchSubprocessAsync(PROCESS_PRIORITY_PREALLOC);
 }
 
@@ -687,7 +688,7 @@ void ContentParent::ShutDown() {
 }
 
 
-uint32_t ContentParent::GetPoolSize(const nsACString& aContentProcessType) {
+uint32_t ContentParent::GetPoolSize(const nsAString& aContentProcessType) {
   if (!sBrowserContentParents) {
     return 0;
   }
@@ -699,17 +700,17 @@ uint32_t ContentParent::GetPoolSize(const nsACString& aContentProcessType) {
 }
 
  nsTArray<ContentParent*>& ContentParent::GetOrCreatePool(
-    const nsACString& aContentProcessType) {
+    const nsAString& aContentProcessType) {
   if (!sBrowserContentParents) {
     sBrowserContentParents =
-        new nsClassHashtable<nsCStringHashKey, nsTArray<ContentParent*>>;
+        new nsClassHashtable<nsStringHashKey, nsTArray<ContentParent*>>;
   }
 
   return *sBrowserContentParents->LookupOrAdd(aContentProcessType);
 }
 
-const nsDependentCSubstring RemoteTypePrefix(
-    const nsACString& aContentProcessType) {
+const nsDependentSubstring RemoteTypePrefix(
+    const nsAString& aContentProcessType) {
   
   
   int32_t equalIdx = aContentProcessType.FindChar(L'=');
@@ -719,26 +720,28 @@ const nsDependentCSubstring RemoteTypePrefix(
   return StringHead(aContentProcessType, equalIdx);
 }
 
-bool IsWebRemoteType(const nsACString& aContentProcessType) {
+bool IsWebRemoteType(const nsAString& aContentProcessType) {
   
   
-  return StringBeginsWith(aContentProcessType, DEFAULT_REMOTE_TYPE);
+  return StringBeginsWith(aContentProcessType,
+                          NS_LITERAL_STRING_FROM_CSTRING(DEFAULT_REMOTE_TYPE));
 }
 
-bool IsWebCoopCoepRemoteType(const nsACString& aContentProcessType) {
-  return StringBeginsWith(aContentProcessType,
-                          WITH_COOP_COEP_REMOTE_TYPE_PREFIX);
+bool IsWebCoopCoepRemoteType(const nsAString& aContentProcessType) {
+  return StringBeginsWith(
+      aContentProcessType,
+      NS_LITERAL_STRING_FROM_CSTRING(WITH_COOP_COEP_REMOTE_TYPE_PREFIX));
 }
 
 
 uint32_t ContentParent::GetMaxProcessCount(
-    const nsACString& aContentProcessType) {
+    const nsAString& aContentProcessType) {
   
-  const nsDependentCSubstring processTypePrefix =
+  const nsDependentSubstring processTypePrefix =
       RemoteTypePrefix(aContentProcessType);
 
   
-  if (processTypePrefix == DEFAULT_REMOTE_TYPE) {
+  if (processTypePrefix.EqualsLiteral(DEFAULT_REMOTE_TYPE)) {
     return GetMaxWebProcessCount();
   }
 
@@ -746,7 +749,7 @@ uint32_t ContentParent::GetMaxProcessCount(
   
   
   nsAutoCString processCountPref("dom.ipc.processCount.");
-  processCountPref.Append(processTypePrefix);
+  AppendUTF16toUTF8(processTypePrefix, processCountPref);
 
   int32_t maxContentParents = Preferences::GetInt(processCountPref.get(), 1);
   if (maxContentParents < 1) {
@@ -758,7 +761,7 @@ uint32_t ContentParent::GetMaxProcessCount(
 
 
 bool ContentParent::IsMaxProcessCountReached(
-    const nsACString& aContentProcessType) {
+    const nsAString& aContentProcessType) {
   return GetPoolSize(aContentProcessType) >=
          GetMaxProcessCount(aContentProcessType);
 }
@@ -778,9 +781,10 @@ void ContentParent::ReleaseCachedProcesses() {
     nsTArray<ContentParent*>* contentParents = iter.Data().get();
     num += contentParents->Length();
     for (auto* cp : *contentParents) {
-      MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-              ("%s: %zu processes", cp->mRemoteType.get(),
-               contentParents->Length()));
+      MOZ_LOG(
+          ContentParent::GetLog(), LogLevel::Debug,
+          ("%s: %zu processes", NS_ConvertUTF16toUTF8(cp->mRemoteType).get(),
+           contentParents->Length()));
       break;
     }
   }
@@ -796,12 +800,13 @@ void ContentParent::ReleaseCachedProcesses() {
     for (auto* cp : *contentParents) {
       if (cp->ManagedPBrowserParent().Count() == 0 &&
           !cp->HasActiveWorkerOrJSPlugin() &&
-          cp->mRemoteType == DEFAULT_REMOTE_TYPE) {
+          cp->mRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE)) {
         toRelease.AppendElement(cp);
       } else {
         MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
                 ("  Skipping %p (%s), count %d, HasActiveWorkerOrJSPlugin %d",
-                 cp, cp->mRemoteType.get(), cp->ManagedPBrowserParent().Count(),
+                 cp, NS_ConvertUTF16toUTF8(cp->mRemoteType).get(),
+                 cp->ManagedPBrowserParent().Count(),
                  cp->HasActiveWorkerOrJSPlugin()));
       }
     }
@@ -809,7 +814,8 @@ void ContentParent::ReleaseCachedProcesses() {
 
   for (auto* cp : toRelease) {
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("  Shutdown %p (%s)", cp, cp->mRemoteType.get()));
+            ("  Shutdown %p (%s)", cp,
+             NS_ConvertUTF16toUTF8(cp->mRemoteType).get()));
     PreallocatedProcessManager::Erase(cp);
     
     cp->ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
@@ -857,7 +863,7 @@ already_AddRefed<ContentParent> ContentParent::MinTabSelect(
 
 
 already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
-    const nsACString& aRemoteType, nsTArray<ContentParent*>& aContentParents,
+    const nsAString& aRemoteType, nsTArray<ContentParent*>& aContentParents,
     uint32_t aMaxContentParents, bool aPreferUsed) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   AutoRestore ar(sInProcessSelector);
@@ -896,7 +902,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
       MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
               ("GetUsedProcess: Reused process %p (%u) for %s", retval.get(),
                (unsigned int)retval->ChildID(),
-               PromiseFlatCString(aRemoteType).get()));
+               NS_ConvertUTF16toUTF8(aRemoteType).get()));
       retval->AssertAlive();
       return retval.forget();
     }
@@ -909,7 +915,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
       MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
               ("GetUsedProcess: Reused random process %p (%d) for %s",
                random.get(), (unsigned int)random->ChildID(),
-               PromiseFlatCString(aRemoteType).get()));
+               NS_ConvertUTF16toUTF8(aRemoteType).get()));
       random->AssertAlive();
       return random.forget();
     }
@@ -921,8 +927,8 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
   
   RefPtr<ContentParent> p;
   bool preallocated = false;
-  if (aRemoteType != FILE_REMOTE_TYPE &&
-      aRemoteType != EXTENSION_REMOTE_TYPE &&  
+  if (!aRemoteType.EqualsLiteral(FILE_REMOTE_TYPE) &&
+      !aRemoteType.EqualsLiteral(EXTENSION_REMOTE_TYPE) &&  
       (p = PreallocatedProcessManager::Take(aRemoteType)) &&
       !p->mShutdownPending) {
     p->AssertAlive();
@@ -930,7 +936,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     
     
     
-    preallocated = p->mRemoteType == PREALLOC_REMOTE_TYPE;
+    preallocated = p->mRemoteType.EqualsLiteral(PREALLOC_REMOTE_TYPE);
     
 #ifdef MOZ_GECKO_PROFILER
     if (profiler_thread_is_being_profiled()) {
@@ -945,7 +951,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("Adopted %s process %p for type %s",
              preallocated ? "preallocated" : "reused web", p.get(),
-             PromiseFlatCString(aRemoteType).get()));
+             NS_ConvertUTF16toUTF8(aRemoteType).get()));
     p->mActivateTS = TimeStamp::Now();
     p->AddToPool(aContentParents);
     if (preallocated) {
@@ -965,8 +971,8 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
       }
     } else {
       
-      MOZ_RELEASE_ASSERT(p->mRemoteType == DEFAULT_REMOTE_TYPE &&
-                         aRemoteType == DEFAULT_REMOTE_TYPE);
+      MOZ_RELEASE_ASSERT(p->mRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE) &&
+                         aRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE));
     }
     return p.forget();
   }
@@ -976,22 +982,25 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
 
 
 already_AddRefed<ContentParent>
-ContentParent::GetNewOrUsedLaunchingBrowserProcess(
-    Element* aFrameElement, const nsACString& aRemoteType,
-    ProcessPriority aPriority, bool aPreferUsed) {
+ContentParent::GetNewOrUsedLaunchingBrowserProcess(Element* aFrameElement,
+                                                   const nsAString& aRemoteType,
+                                                   ProcessPriority aPriority,
+                                                   bool aPreferUsed) {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("GetNewOrUsedProcess for type %s",
-           PromiseFlatCString(aRemoteType).get()));
+           NS_ConvertUTF16toUTF8(aRemoteType).get()));
   nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
   uint32_t maxContentParents = GetMaxProcessCount(aRemoteType);
-  
-  if (aRemoteType == LARGE_ALLOCATION_REMOTE_TYPE &&
-      contentParents.Length() >= maxContentParents) {
+  if (aRemoteType.EqualsLiteral(
+          LARGE_ALLOCATION_REMOTE_TYPE)  
+                                         
+      && contentParents.Length() >= maxContentParents) {
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("GetNewOrUsedProcess: returning Large Used process"));
-    return GetNewOrUsedLaunchingBrowserProcess(aFrameElement,
-                                               DEFAULT_REMOTE_TYPE, aPriority,
-                                               false);
+    return GetNewOrUsedLaunchingBrowserProcess(
+        aFrameElement, NS_LITERAL_STRING_FROM_CSTRING(DEFAULT_REMOTE_TYPE),
+        aPriority,
+        false);
   }
 
   
@@ -1012,7 +1021,7 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
   
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("Launching new process immediately for type %s",
-           PromiseFlatCString(aRemoteType).get()));
+           NS_ConvertUTF16toUTF8(aRemoteType).get()));
 
   contentParent = new ContentParent(aRemoteType);
   if (!contentParent->BeginSubprocessLaunch(aPriority)) {
@@ -1039,7 +1048,7 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
 
 RefPtr<ContentParent::LaunchPromise>
 ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
-                                               const nsACString& aRemoteType,
+                                               const nsAString& aRemoteType,
                                                ProcessPriority aPriority,
                                                bool aPreferUsed) {
   
@@ -1054,7 +1063,7 @@ ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
 
 
 already_AddRefed<ContentParent> ContentParent::GetNewOrUsedBrowserProcess(
-    Element* aFrameElement, const nsACString& aRemoteType,
+    Element* aFrameElement, const nsAString& aRemoteType,
     ProcessPriority aPriority, bool aPreferUsed) {
   RefPtr<ContentParent> contentParent = GetNewOrUsedLaunchingBrowserProcess(
       aFrameElement, aRemoteType, aPriority, aPreferUsed);
@@ -1303,7 +1312,7 @@ mozilla::ipc::IPCResult ContentParent::RecvLaunchRDDProcess(
 
 already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
     const TabContext& aContext, Element* aFrameElement,
-    const nsACString& aRemoteType, BrowsingContext* aBrowsingContext,
+    const nsAString& aRemoteType, BrowsingContext* aBrowsingContext,
     ContentParent* aOpenerContentParent) {
   AUTO_PROFILER_LABEL("ContentParent::CreateBrowser", OTHER);
 
@@ -1311,9 +1320,9 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
     return nullptr;
   }
 
-  nsAutoCString remoteType(aRemoteType);
+  nsAutoString remoteType(aRemoteType);
   if (remoteType.IsEmpty()) {
-    remoteType = DEFAULT_REMOTE_TYPE;
+    remoteType.AssignLiteral(DEFAULT_REMOTE_TYPE);
   }
 
   ProcessPriority initialPriority = GetInitialProcessPriority(aFrameElement);
@@ -1471,7 +1480,7 @@ void ContentParent::BroadcastFontListChanged() {
   }
 }
 
-const nsACString& ContentParent::GetRemoteType() const { return mRemoteType; }
+const nsAString& ContentParent::GetRemoteType() const { return mRemoteType; }
 
 void ContentParent::Init() {
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -1931,7 +1940,7 @@ void ContentParent::ActorDealloc() { mSelfRef = nullptr; }
 bool ContentParent::TryToRecycle() {
   
   
-  if (mRemoteType != DEFAULT_REMOTE_TYPE) {
+  if (!mRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE)) {
     return false;
   }
   
@@ -2017,12 +2026,13 @@ bool ContentParent::ShouldKeepProcessAlive() {
 
   nsAutoCString keepAlivePref("dom.ipc.keepProcessesAlive.");
 
-  if (StringBeginsWith(mRemoteType, FISSION_WEB_REMOTE_TYPE) &&
+  if (StringBeginsWith(mRemoteType, NS_LITERAL_STRING_FROM_CSTRING(
+                                        FISSION_WEB_REMOTE_TYPE)) &&
       xpc::IsInAutomation()) {
     keepAlivePref.Append(FISSION_WEB_REMOTE_TYPE);
     keepAlivePref.AppendLiteral(".perOrigin");
   } else {
-    keepAlivePref.Append(mRemoteType);
+    keepAlivePref.Append(NS_ConvertUTF16toUTF8(mRemoteType));
   }
   if (NS_FAILED(
           Preferences::GetInt(keepAlivePref.get(), &processesToKeepAlive))) {
@@ -2143,7 +2153,7 @@ TestShellParent* ContentParent::GetTestShellSingleton() {
 void ContentParent::AppendDynamicSandboxParams(
     std::vector<std::string>& aArgs) {
   
-  if (GetRemoteType() == FILE_REMOTE_TYPE) {
+  if (GetRemoteType().EqualsLiteral(FILE_REMOTE_TYPE)) {
     MacSandboxInfo::AppendFileAccessParam(aArgs, true);
   }
 }
@@ -2451,7 +2461,7 @@ RefPtr<ContentParent::LaunchPromise> ContentParent::LaunchSubprocessAsync(
       });
 }
 
-ContentParent::ContentParent(const nsACString& aRemoteType, int32_t aJSPluginID)
+ContentParent::ContentParent(const nsAString& aRemoteType, int32_t aJSPluginID)
     : mSelfRef(nullptr),
       mSubprocess(nullptr),
       mLaunchTS(TimeStamp::Now()),
@@ -2500,7 +2510,7 @@ ContentParent::ContentParent(const nsACString& aRemoteType, int32_t aJSPluginID)
 #endif
 
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-  bool isFile = mRemoteType == FILE_REMOTE_TYPE;
+  bool isFile = mRemoteType.EqualsLiteral(FILE_REMOTE_TYPE);
   mSubprocess = new GeckoChildProcessHost(GeckoProcessType_Content, isFile);
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("CreateSubprocess: ContentParent %p mSubprocess %p handle %" PRIuPTR,
@@ -2807,7 +2817,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 #  ifdef XP_LINUX
   if (shouldSandbox) {
     MOZ_ASSERT(!mSandboxBroker);
-    bool isFileProcess = mRemoteType == FILE_REMOTE_TYPE;
+    bool isFileProcess = mRemoteType.EqualsLiteral(FILE_REMOTE_TYPE);
     UniquePtr<SandboxBroker::Policy> policy =
         sSandboxBrokerPolicyFactory->GetContentPolicy(Pid(), isFileProcess);
     if (policy) {
@@ -3191,8 +3201,8 @@ ContentParent::GetName(nsAString& aName) {
 NS_IMETHODIMP
 ContentParent::GetState(nsIPropertyBag** aResult) {
   auto props = MakeRefPtr<nsHashPropertyBag>();
-  props->SetPropertyAsACString(u"remoteTypePrefix"_ns,
-                               RemoteTypePrefix(mRemoteType));
+  props->SetPropertyAsAString(u"remoteTypePrefix"_ns,
+                              RemoteTypePrefix(mRemoteType));
   *aResult = props.forget().downcast<nsIWritablePropertyBag>().take();
   return NS_OK;
 }
@@ -5228,7 +5238,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
   
   
   if (aURIToLoad && aURIToLoad->SchemeIs("file") &&
-      GetRemoteType() != FILE_REMOTE_TYPE &&
+      !GetRemoteType().EqualsLiteral(FILE_REMOTE_TYPE) &&
       Preferences::GetBool("browser.tabs.remote.enforceRemoteTypeRestrictions",
                            false)) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED

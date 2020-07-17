@@ -1653,7 +1653,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
   
   auto remoteTypePrefix = RemoteTypePrefix(GetRemoteType());
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RemoteType,
-                                     remoteTypePrefix);
+                                     NS_ConvertUTF16toUTF8(remoteTypePrefix));
 #endif 
 
   return IPC_OK();
@@ -2568,36 +2568,38 @@ mozilla::ipc::IPCResult ContentChild::RecvAppInfo(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
-    const nsCString& aRemoteType) {
-  if (!mRemoteType.IsVoid()) {
+    const nsString& aRemoteType) {
+  if (!DOMStringIsNull(mRemoteType)) {
     
     
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("Changing remoteType of process %d from %s to %s", getpid(),
-             mRemoteType.get(), aRemoteType.get()));
+             NS_ConvertUTF16toUTF8(mRemoteType).get(),
+             NS_ConvertUTF16toUTF8(aRemoteType).get()));
     
-    MOZ_RELEASE_ASSERT(aRemoteType != FILE_REMOTE_TYPE &&
-                       (mRemoteType == PREALLOC_REMOTE_TYPE ||
-                        (mRemoteType == DEFAULT_REMOTE_TYPE &&
-                         aRemoteType == DEFAULT_REMOTE_TYPE)));
+    MOZ_RELEASE_ASSERT(!aRemoteType.EqualsLiteral(FILE_REMOTE_TYPE) &&
+                       (mRemoteType.EqualsLiteral(PREALLOC_REMOTE_TYPE) ||
+                        (mRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE) &&
+                         aRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE))));
   } else {
     
     
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("Setting remoteType of process %d to %s", getpid(),
-             aRemoteType.get()));
+             NS_ConvertUTF16toUTF8(aRemoteType).get()));
   }
 
   
-  if (aRemoteType == FILE_REMOTE_TYPE) {
+  if (aRemoteType.EqualsLiteral(FILE_REMOTE_TYPE)) {
     SetProcessName(u"file:// Content"_ns);
-  } else if (aRemoteType == EXTENSION_REMOTE_TYPE) {
+  } else if (aRemoteType.EqualsLiteral(EXTENSION_REMOTE_TYPE)) {
     SetProcessName(u"WebExtensions"_ns);
-  } else if (aRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE) {
+  } else if (aRemoteType.EqualsLiteral(PRIVILEGEDABOUT_REMOTE_TYPE)) {
     SetProcessName(u"Privileged Content"_ns);
-  } else if (aRemoteType == LARGE_ALLOCATION_REMOTE_TYPE) {
+  } else if (aRemoteType.EqualsLiteral(LARGE_ALLOCATION_REMOTE_TYPE)) {
     SetProcessName(u"Large Allocation Web Content"_ns);
-  } else if (RemoteTypePrefix(aRemoteType) == FISSION_WEB_REMOTE_TYPE) {
+  } else if (RemoteTypePrefix(aRemoteType)
+                 .EqualsLiteral(FISSION_WEB_REMOTE_TYPE)) {
     SetProcessName(u"Isolated Web Content"_ns);
   }
   
@@ -2609,7 +2611,7 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
 
 
 
-const nsACString& ContentChild::GetRemoteType() const { return mRemoteType; }
+const nsAString& ContentChild::GetRemoteType() const { return mRemoteType; }
 
 mozilla::ipc::IPCResult ContentChild::RecvInitServiceWorkers(
     const ServiceWorkerConfiguration& aConfig) {

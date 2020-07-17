@@ -899,8 +899,8 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetPageThumbStream(
   
   
   
-  if (static_cast<ContentParent*>(Manager())->GetRemoteType() !=
-      PRIVILEGEDABOUT_REMOTE_TYPE) {
+  if (!static_cast<ContentParent*>(Manager())->GetRemoteType().EqualsLiteral(
+          PRIVILEGEDABOUT_REMOTE_TYPE)) {
     return IPC_FAIL(this, "Wrong process type");
   }
 

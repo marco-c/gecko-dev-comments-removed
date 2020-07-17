@@ -46,7 +46,7 @@ dictionary ProcessActorOptions {
 
 
 
-  sequence<UTF8String> remoteTypes;
+  sequence<DOMString> remoteTypes;
 
   
   ProcessActorSidedOptions parent;
