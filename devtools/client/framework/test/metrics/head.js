@@ -142,7 +142,7 @@ function getDuplicatedModules(loaders) {
 
 
 
-function runDuplicatedModulesTest(loaders, whitelist) {
+function runDuplicatedModulesTest(loaders, allowedDupes) {
   const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
   if (AppConstants.DEBUG_JS_MODULES) {
     
@@ -161,14 +161,14 @@ function runDuplicatedModulesTest(loaders, whitelist) {
   const duplicatedModules = getDuplicatedModules(loaders);
 
   
-  for (const whitelistedModule of whitelist) {
-    const deleted = duplicatedModules.delete(whitelistedModule);
+  for (const mod of allowedDupes) {
+    const deleted = duplicatedModules.delete(mod);
     if (!deleted) {
       ok(
         false,
-        "Whitelisted module not found in the duplicated modules: [" +
-          whitelistedModule +
-          "]. Whitelist of allowed duplicated modules should be updated to remove it."
+        "module not found in the duplicated modules: [" +
+          mod +
+          "]. The allowedDupes array should be updated to remove it."
       );
     }
   }

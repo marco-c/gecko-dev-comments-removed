@@ -41,13 +41,13 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "eagerEcmaWhitelist",
-  "devtools/server/actors/webconsole/eager-ecma-whitelist"
+  "eagerEcmaAllowlist",
+  "devtools/server/actors/webconsole/eager-ecma-allowlist"
 );
 loader.lazyRequireGetter(
   this,
-  "eagerFunctionWhitelist",
-  "devtools/server/actors/webconsole/eager-function-whitelist"
+  "eagerFunctionAllowlist",
+  "devtools/server/actors/webconsole/eager-function-allowlist"
 );
 
 function isObject(value) {
@@ -400,7 +400,7 @@ function makeSideeffectFreeDebugger() {
     } catch (err) {
       DevToolsUtils.reportException(
         "evalWithDebugger onNativeCall",
-        new Error("Unable to validate native function against whitelist")
+        new Error("Unable to validate native function against allowlist")
       );
     }
     
@@ -419,11 +419,11 @@ function ensureSideEffectFreeNatives() {
   }
 
   const natives = [
-    ...eagerEcmaWhitelist,
+    ...eagerEcmaAllowlist,
 
     
     
-    ...eagerFunctionWhitelist,
+    ...eagerFunctionAllowlist,
   ];
 
   const map = new Map();
