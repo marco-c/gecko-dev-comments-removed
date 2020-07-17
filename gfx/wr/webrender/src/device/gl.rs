@@ -18,6 +18,7 @@ use std::{
     cell::{Cell, RefCell},
     cmp,
     collections::hash_map::Entry,
+    fmt::Write,
     marker::PhantomData,
     mem,
     num::NonZeroUsize,
@@ -31,6 +32,7 @@ use std::{
     thread,
     time::Duration,
 };
+use uuid::Uuid;
 use webrender_build::shader::{
     ProgramSourceDigest, ShaderKind, ShaderVersion, build_shader_main_string,
     build_shader_prefix_string, do_build_shader_string, shader_source_from_file,
@@ -1089,6 +1091,10 @@ pub struct Device {
 
     
     
+    requires_unique_shader_source: bool,
+
+    
+    
     requires_texture_external_unbind: bool,
 
     
@@ -1528,6 +1534,12 @@ impl Device {
 
         
         
+        
+        
+        let requires_unique_shader_source = renderer_name == "Adreno (TM) 505" || renderer_name == "Adreno (TM) 506";
+
+        
+        
         let requires_texture_external_unbind = is_emulator;
 
         let is_macos = cfg!(target_os = "macos");
@@ -1604,6 +1616,7 @@ impl Device {
             extensions,
             texture_storage_usage,
             requires_null_terminated_shader_source,
+            requires_unique_shader_source,
             requires_texture_external_unbind,
             optimal_pbo_stride,
             dump_shader_source,
@@ -1722,28 +1735,34 @@ impl Device {
     }
 
     pub fn compile_shader(
-        gl: &dyn gl::Gl,
+        &self,
         name: &str,
         shader_type: gl::GLenum,
         source: &String,
-        requires_null_terminated_shader_source: bool,
     ) -> Result<gl::GLuint, ShaderError> {
         debug!("compile {}", name);
-        let id = gl.create_shader(shader_type);
-        if requires_null_terminated_shader_source {
-            
-            
-            use std::ffi::CString;
-            let terminated_source = CString::new(source.as_bytes()).unwrap();
-            gl.shader_source(id, &[terminated_source.as_bytes_with_nul()]);
-        } else {
-            gl.shader_source(id, &[source.as_bytes()]);
+        let id = self.gl.create_shader(shader_type);
+
+        let mut new_source = Cow::from(source.as_str());
+        
+        
+        
+        if self.requires_unique_shader_source {
+            let uuid = Uuid::new_v4().to_hyphenated();
+            write!(new_source.to_mut(), "\n//{}\n", uuid).unwrap();
         }
-        gl.compile_shader(id);
-        let log = gl.get_shader_info_log(id);
+        
+        
+        if self.requires_null_terminated_shader_source {
+            new_source.to_mut().push('\0');
+        }
+
+        self.gl.shader_source(id, &[new_source.as_bytes()]);
+        self.gl.compile_shader(id);
+        let log = self.gl.get_shader_info_log(id);
         let mut status = [0];
         unsafe {
-            gl.get_shader_iv(id, gl::COMPILE_STATUS, &mut status);
+            self.gl.get_shader_iv(id, gl::COMPILE_STATUS, &mut status);
         }
         if status[0] == 0 {
             error!("Failed to compile shader: {}\n{}", name, log);
@@ -2039,7 +2058,7 @@ impl Device {
         if build_program {
             
             let vs_source = info.compute_source(self, ShaderKind::Vertex);
-            let vs_id = match Device::compile_shader(&*self.gl, &info.base_filename, gl::VERTEX_SHADER, &vs_source, self.requires_null_terminated_shader_source) {
+            let vs_id = match self.compile_shader(&info.base_filename, gl::VERTEX_SHADER, &vs_source) {
                     Ok(vs_id) => vs_id,
                     Err(err) => return Err(err),
                 };
@@ -2047,7 +2066,7 @@ impl Device {
             
             let fs_source = info.compute_source(self, ShaderKind::Fragment);
             let fs_id =
-                match Device::compile_shader(&*self.gl, &info.base_filename, gl::FRAGMENT_SHADER, &fs_source, self.requires_null_terminated_shader_source) {
+                match self.compile_shader(&info.base_filename, gl::FRAGMENT_SHADER, &fs_source) {
                     Ok(fs_id) => fs_id,
                     Err(err) => {
                         self.gl.delete_shader(vs_id);
