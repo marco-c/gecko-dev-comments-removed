@@ -12,7 +12,7 @@
 const CodeMirror = require("codemirror");
 
 
-require("codemirror/lib/codemirror.css");
+require("raw!chrome://devtools/content/shared/sourceeditor/codemirror/lib/codemirror.css");
 require("codemirror/mode/javascript/javascript");
 require("codemirror/mode/htmlmixed/htmlmixed");
 require("codemirror/mode/coffeescript/coffeescript");
@@ -32,7 +32,8 @@ require("codemirror/addon/display/placeholder");
 require("codemirror/mode/clike/clike");
 require("codemirror/mode/rust/rust");
 
-require("./source-editor.css");
+
+require("raw!chrome://devtools/content/debugger/src/utils/editor/source-editor.css");
 
 
 type Mode = string | Object;
