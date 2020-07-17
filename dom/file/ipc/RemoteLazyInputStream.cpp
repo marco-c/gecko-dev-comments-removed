@@ -141,11 +141,13 @@ RemoteLazyInputStream::RemoteLazyInputStream(RemoteLazyInputStreamChild* aActor)
 
   if (XRE_IsParentProcess()) {
     nsCOMPtr<nsIInputStream> stream;
-    RemoteLazyInputStreamStorage::Get()->GetStream(mActor->ID(), 0, mLength,
-                                                   getter_AddRefs(stream));
-    if (stream) {
-      mState = eRunning;
-      mRemoteStream = stream;
+    auto storage = RemoteLazyInputStreamStorage::Get().unwrapOr(nullptr);
+    if (storage) {
+      storage->GetStream(mActor->ID(), 0, mLength, getter_AddRefs(stream));
+      if (stream) {
+        mState = eRunning;
+        mRemoteStream = stream;
+      }
     }
   }
 }
@@ -660,6 +662,7 @@ RemoteLazyInputStream::AsyncFileMetadataWait(nsIFileMetadataCallback* aCallback,
     return NS_ERROR_FAILURE;
   }
 
+  
   
 
   {
