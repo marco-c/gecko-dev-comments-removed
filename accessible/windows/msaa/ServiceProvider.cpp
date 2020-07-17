@@ -63,14 +63,16 @@ ServiceProvider::QueryService(REFGUID aGuidService, REFIID aIID,
     
     if (XRE_IsContentProcess()) {
       RootAccessible* root = mAccessible->RootAccessible();
-      MOZ_ASSERT(root);
-      DocAccessibleChild* ipcDoc = root->IPCDoc();
-      if (ipcDoc) {
-        RefPtr<IAccessible> topDoc = ipcDoc->GetTopLevelDocIAccessible();
-        
-        if (topDoc) {
-          topDoc.forget(aInstancePtr);
-          return S_OK;
+      
+      if (root) {
+        DocAccessibleChild* ipcDoc = root->IPCDoc();
+        if (ipcDoc) {
+          RefPtr<IAccessible> topDoc = ipcDoc->GetTopLevelDocIAccessible();
+          
+          if (topDoc) {
+            topDoc.forget(aInstancePtr);
+            return S_OK;
+          }
         }
       }
     }
