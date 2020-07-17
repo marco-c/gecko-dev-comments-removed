@@ -4386,25 +4386,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  static void CollectTopMostChildContentsCompletelyInRange(
-      const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
-      nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents);
-
-  
-
-
-
   class MOZ_STACK_CLASS AutoHTMLFragmentBoundariesFixer final {
    public:
     

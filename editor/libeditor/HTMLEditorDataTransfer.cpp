@@ -220,6 +220,25 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+  static void CollectTopMostChildContentsCompletelyInRange(
+      const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
+      nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents);
+
+  
+
+
   HTMLBRElement* GetInvisibleBRElementAtPoint(
       const EditorDOMPoint& aPointToInsert) const;
 
@@ -435,7 +454,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
   Unused << streamStartPoint;
   Unused << streamEndPoint;
 
-  HTMLEditor::CollectTopMostChildContentsCompletelyInRange(
+  HTMLWithContextInserter::CollectTopMostChildContentsCompletelyInRange(
       EditorRawDOMPoint(streamStartParent, streamStartOffset),
       EditorRawDOMPoint(streamEndParent, streamEndOffset),
       arrayOfTopMostChildContents);
@@ -3205,9 +3224,11 @@ nsresult HTMLEditor::HTMLWithContextInserter::ParseFragment(
 }
 
 
-void HTMLEditor::CollectTopMostChildContentsCompletelyInRange(
-    const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
-    nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents) {
+void HTMLEditor::HTMLWithContextInserter::
+    CollectTopMostChildContentsCompletelyInRange(
+        const EditorRawDOMPoint& aStartPoint,
+        const EditorRawDOMPoint& aEndPoint,
+        nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents) {
   MOZ_ASSERT(aStartPoint.IsSetAndValid());
   MOZ_ASSERT(aEndPoint.IsSetAndValid());
 
