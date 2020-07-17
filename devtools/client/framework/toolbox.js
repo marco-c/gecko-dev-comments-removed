@@ -742,6 +742,9 @@ Toolbox.prototype = {
     }
   },
 
+  _onResourceAvailable() {},
+  _onResourceUpdated() {},
+
   
 
 
@@ -751,10 +754,6 @@ Toolbox.prototype = {
 
   async _attachTarget(targetFront) {
     await targetFront.attach();
-
-    
-    const webConsoleFront = await targetFront.getFront("console");
-    await webConsoleFront.startListeners(["NetworkActivity"]);
 
     
     
@@ -841,6 +840,19 @@ Toolbox.prototype = {
         TargetList.ALL_TYPES,
         this._onTargetAvailable,
         this._onTargetDestroyed
+      );
+
+      
+      
+      
+      
+      
+      await this.resourceWatcher.watchResources(
+        [this.resourceWatcher.TYPES.NETWORK_EVENT],
+        {
+          onAvailable: this._onResourceAvailable,
+          onUpdated: this._onResourceUpdated,
+        }
       );
 
       await domReady;
@@ -3701,6 +3713,14 @@ Toolbox.prototype = {
 
     
     outstanding.push(this.resetPreference());
+
+    await this.resourceWatcher.unwatchResources(
+      [this.resourceWatcher.TYPES.NETWORK_EVENT],
+      {
+        onAvailable: this._onResourceAvailable,
+        onUpdated: this._onResourceUpdated,
+      }
+    );
 
     this.targetList.unwatchTargets(
       TargetList.ALL_TYPES,
