@@ -1948,6 +1948,7 @@ class LogTaskBase {
 };
 
 class MicroTaskRunnable;
+class Task;  
 
 
 template <>
@@ -1964,6 +1965,7 @@ typedef LogTaskBase<nsIRunnable> LogRunnable;
 typedef LogTaskBase<MicroTaskRunnable> LogMicroTaskRunnable;
 typedef LogTaskBase<IPC::Message> LogIPCMessage;
 typedef LogTaskBase<nsTimerImpl> LogTimerEvent;
+typedef LogTaskBase<Task> LogTask;
 
 
 
