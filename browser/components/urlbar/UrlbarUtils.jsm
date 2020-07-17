@@ -23,7 +23,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
-  Log: "resource://gre/modules/Log.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
@@ -614,28 +613,6 @@ var UrlbarUtils = {
 
 
 
-
-
-
-  stripURLPrefix(str) {
-    const REGEXP_STRIP_PREFIX = /^[a-z]+:(?:\/){0,2}/i;
-    let match = REGEXP_STRIP_PREFIX.exec(str);
-    if (!match) {
-      return ["", str];
-    }
-    let prefix = match[0];
-    if (prefix.length < str.length && str[prefix.length] == " ") {
-      return ["", str];
-    }
-    return [prefix, str.substr(prefix.length)];
-  },
-
-  
-
-
-
-
-
   async getHeuristicResultFor(
     searchString,
     window = BrowserWindowTracker.getTopWindow()
@@ -652,37 +629,13 @@ var UrlbarUtils = {
         "usercontextid"
       ),
       allowSearchSuggestions: false,
-      providers: ["UnifiedComplete", "HeuristicFallback"],
+      providers: ["UnifiedComplete"],
     });
     await UrlbarProvidersManager.startQuery(context);
     if (!context.heuristicResult) {
       throw new Error("There should always be an heuristic result");
     }
     return context.heuristicResult;
-  },
-
-  
-
-
-
-
-
-
-  getLogger({ prefix = "" } = {}) {
-    if (!this._logger) {
-      this._logger = Log.repository.getLogger("urlbar");
-      this._logger.manageLevelFromPref("browser.urlbar.loglevel");
-      this._logger.addAppender(
-        new Log.ConsoleAppender(new Log.BasicFormatter())
-      );
-    }
-    if (prefix) {
-      
-      
-      
-      return Log.repository.getLoggerWithMessagePrefix("urlbar", prefix + "::");
-    }
-    return this._logger;
   },
 };
 
@@ -1025,8 +978,6 @@ class UrlbarQueryContext {
     }
 
     this.lastResultCount = 0;
-    this.allHeuristicResults = [];
-    this.pendingHeuristicProviders = new Set();
     this.userContextId =
       options.userContextId ||
       Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
@@ -1057,7 +1008,7 @@ class UrlbarQueryContext {
 
 
   get fixupInfo() {
-    if (this.searchString.trim() && !this._fixupInfo) {
+    if (this.searchString && !this._fixupInfo) {
       let flags =
         Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
         Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
@@ -1065,34 +1016,17 @@ class UrlbarQueryContext {
         flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
       }
 
-      try {
-        let info = Services.uriFixup.getFixupURIInfo(
-          this.searchString.trim(),
-          flags
-        );
-        this._fixupInfo = {
-          href: info.fixedURI.spec,
-          isSearch: !!info.keywordAsSent,
-        };
-      } catch (ex) {
-        this._fixupError = ex.result;
-      }
+      let info = Services.uriFixup.getFixupURIInfo(
+        this.searchString.trim(),
+        flags
+      );
+      this._fixupInfo = {
+        href: info.fixedURI.spec,
+        isSearch: !!info.keywordAsSent,
+      };
     }
 
     return this._fixupInfo || null;
-  }
-
-  
-
-
-
-
-  get fixupError() {
-    if (!this.fixupInfo) {
-      return this._fixupError;
-    }
-
-    return null;
   }
 }
 
@@ -1125,12 +1059,6 @@ class UrlbarMuxer {
 
 
 class UrlbarProvider {
-  constructor() {
-    XPCOMUtils.defineLazyGetter(this, "logger", () =>
-      UrlbarUtils.getLogger({ prefix: `Provider.${this.name}` })
-    );
-  }
-
   
 
 

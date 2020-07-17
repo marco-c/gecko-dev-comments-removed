@@ -14,6 +14,7 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Log: "resource://gre/modules/Log.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarMuxer: "resource:///modules/UrlbarUtils.jsm",
@@ -21,7 +22,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () =>
-  UrlbarUtils.getLogger({ prefix: "MuxerUnifiedComplete" })
+  Log.repository.getLogger("Urlbar.Muxer.UnifiedComplete")
 );
 
 function groupFromResult(result) {
@@ -42,16 +43,6 @@ function groupFromResult(result) {
 
 
 
-const heuristicOrder = [
-  
-  
-  "UrlbarProviderSearchTips",
-  "Omnibox",
-  "UnifiedComplete",
-  "HeuristicFallback",
-];
-
-
 
 
 class MuxerUnifiedComplete extends UrlbarMuxer {
@@ -64,14 +55,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
   }
 
   
-  
-
-
-
-
-
-
-
 
 
 
@@ -87,42 +70,19 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     
-    let topHeuristicRank = Infinity;
-    for (let result of context.allHeuristicResults) {
-      
-      if (!result.heuristic) {
-        continue;
-      }
-
-      
-      
-      let heuristicRank = heuristicOrder.indexOf(result.providerName) + 2;
-      
-      
-      if (result.providerType == UrlbarUtils.PROVIDER_TYPE.EXTENSION) {
-        heuristicRank = 1;
-      } else if (result.providerName.startsWith("TestProvider")) {
-        heuristicRank = 0;
-      } else if (heuristicRank - 2 == -1) {
-        throw new Error(
-          `Heuristic result returned by unexpected provider: ${result.providerName}`
-        );
-      }
-      
-      
-      if (heuristicRank <= topHeuristicRank) {
-        topHeuristicRank = heuristicRank;
-        context.heuristicResult = result;
-      }
-    }
-
     let heuristicResultQuery;
+    let heuristicResultOmniboxContent;
     if (context.heuristicResult) {
       if (
         context.heuristicResult.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
         context.heuristicResult.payload.query
       ) {
         heuristicResultQuery = context.heuristicResult.payload.query.toLocaleLowerCase();
+      } else if (
+        context.heuristicResult.type == UrlbarUtils.RESULT_TYPE.OMNIBOX &&
+        context.heuristicResult.payload.content
+      ) {
+        heuristicResultOmniboxContent = context.heuristicResult.payload.content.toLocaleLowerCase();
       }
     }
 
@@ -135,17 +95,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
       context.maxResults
     );
-    let hasUnifiedComplete = false;
 
     
     
     for (let result of context.results) {
-      
-      
-      if (result.providerName == "UnifiedComplete") {
-        hasUnifiedComplete = true;
-      }
-
       
       
       
@@ -187,23 +140,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     
-    
-    
-    if (
-      !hasUnifiedComplete &&
-      context.pendingHeuristicProviders.has("UnifiedComplete")
-    ) {
-      return false;
-    }
-
-    
     let unsortedResults = [];
     for (let result of context.results) {
-      
-      if (result.heuristic && result != context.heuristicResult) {
-        continue;
-      }
-
       
       if (
         result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
@@ -277,6 +215,15 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       }
 
       
+      if (
+        !result.heuristic &&
+        result.type == UrlbarUtils.RESULT_TYPE.OMNIBOX &&
+        result.payload.content == heuristicResultOmniboxContent
+      ) {
+        continue;
+      }
+
+      
       unsortedResults.push(result);
     }
 
@@ -325,7 +272,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     context.results = sortedResults;
-    return true;
   }
 
   
