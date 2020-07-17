@@ -725,6 +725,28 @@ class MOZ_STACK_CLASS WSRunScanner {
     bool EndsByBRElement() const { return mEnd.IsBRElement(); }
     bool EndsByBlockBoundary() const { return mEnd.IsBlockBoundary(); }
 
+    
+
+
+
+
+
+
+
+    template <typename EditorDOMRangeType>
+    EditorDOMRangeType GetInvisibleLeadingWhiteSpaceRange() const;
+
+    
+
+
+
+
+
+
+
+    template <typename EditorDOMRangeType>
+    EditorDOMRangeType GetInvisibleTrailingWhiteSpaceRange() const;
+
    private:
     BoundaryData mStart;
     BoundaryData mEnd;

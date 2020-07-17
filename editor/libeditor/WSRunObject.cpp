@@ -964,6 +964,54 @@ void WSRunScanner::EnsureWSFragments() {
   textFragmentData.InitializeWSFragmentArray(mFragments);
 }
 
+template <typename EditorDOMRangeType>
+EditorDOMRangeType
+WSRunScanner::TextFragmentData::GetInvisibleLeadingWhiteSpaceRange() const {
+  
+  
+  
+  
+  if (mIsPreformatted || !StartsFromHardLineBreak()) {
+    return EditorDOMRangeType();
+  }
+
+  
+  
+  if (!mNBSPData.FoundNBSP()) {
+    MOZ_ASSERT(mStart.PointRef().IsSet() || mEnd.PointRef().IsSet());
+    return EditorDOMRangeType(mStart.PointRef(), mEnd.PointRef());
+  }
+
+  
+  MOZ_ASSERT(mNBSPData.LastPointRef().IsSetAndValid());
+  return EditorDOMRangeType();
+}
+
+template <typename EditorDOMRangeType>
+EditorDOMRangeType
+WSRunScanner::TextFragmentData::GetInvisibleTrailingWhiteSpaceRange() const {
+  
+  
+  
+  
+  
+  if (mIsPreformatted || !EndsByBlockBoundary()) {
+    return EditorDOMRangeType();
+  }
+
+  
+  
+  
+  if (!mNBSPData.FoundNBSP()) {
+    MOZ_ASSERT(mStart.PointRef().IsSet() || mEnd.PointRef().IsSet());
+    return EditorDOMRangeType(mStart.PointRef(), mEnd.PointRef());
+  }
+
+  
+  MOZ_ASSERT(mNBSPData.LastPointRef().IsSetAndValid());
+  return EditorDOMRangeType();
+}
+
 void WSRunScanner::TextFragmentData::InitializeWSFragmentArray(
     WSFragmentArray& aFragments) const {
   MOZ_ASSERT(aFragments.IsEmpty());
@@ -993,25 +1041,61 @@ void WSRunScanner::TextFragmentData::InitializeWSFragmentArray(
     return;
   }
 
+  const auto leadingWhiteSpaceRange =
+      GetInvisibleLeadingWhiteSpaceRange<EditorRawDOMRange>();
+  const auto trailingWhiteSpaceRange =
+      GetInvisibleTrailingWhiteSpaceRange<EditorRawDOMRange>();
   
   
-  if (!mNBSPData.FoundNBSP() &&
-      (StartsFromHardLineBreak() || EndsByBlockBoundary())) {
+  const bool maybeHaveLeadingWhiteSpaces =
+      leadingWhiteSpaceRange.StartRef().IsSet() ||
+      leadingWhiteSpaceRange.EndRef().IsSet();
+  const bool maybeHaveTrailingWhiteSpaces =
+      trailingWhiteSpaceRange.StartRef().IsSet() ||
+      trailingWhiteSpaceRange.EndRef().IsSet();
+
+  
+  
+  if (maybeHaveLeadingWhiteSpaces &&
+      leadingWhiteSpaceRange.StartRef() == mStart.PointRef() &&
+      leadingWhiteSpaceRange.EndRef() == mEnd.PointRef()) {
+    MOZ_ASSERT(StartsFromHardLineBreak());
     WSFragment* startRun = aFragments.AppendElement();
-    if (StartsFromHardLineBreak()) {
-      startRun->MarkAsStartOfHardLine();
-    }
+    startRun->MarkAsStartOfHardLine();
     if (EndsByBlockBoundary()) {
+      MOZ_ASSERT(leadingWhiteSpaceRange == trailingWhiteSpaceRange);
       startRun->MarkAsEndOfHardLine();
     }
-    if (mStart.PointRef().IsSet()) {
-      startRun->mStartNode = mStart.PointRef().GetContainer();
-      startRun->mStartOffset = mStart.PointRef().Offset();
+    if (leadingWhiteSpaceRange.StartRef().IsSet()) {
+      startRun->mStartNode = leadingWhiteSpaceRange.StartRef().GetContainer();
+      startRun->mStartOffset = leadingWhiteSpaceRange.StartRef().Offset();
     }
     startRun->SetStartFrom(mStart.RawReason());
-    if (mEnd.PointRef().IsSet()) {
-      startRun->mEndNode = mEnd.PointRef().GetContainer();
-      startRun->mEndOffset = mEnd.PointRef().Offset();
+    if (leadingWhiteSpaceRange.EndRef().IsSet()) {
+      startRun->mEndNode = leadingWhiteSpaceRange.EndRef().GetContainer();
+      startRun->mEndOffset = leadingWhiteSpaceRange.EndRef().Offset();
+    }
+    startRun->SetEndBy(mEnd.RawReason());
+    return;
+  }
+
+  
+  
+  if (maybeHaveTrailingWhiteSpaces &&
+      trailingWhiteSpaceRange.StartRef() == mStart.PointRef() &&
+      trailingWhiteSpaceRange.EndRef() == mEnd.PointRef()) {
+    MOZ_ASSERT(!StartsFromHardLineBreak());
+    MOZ_ASSERT(EndsByBlockBoundary());
+    WSFragment* startRun = aFragments.AppendElement();
+    startRun->MarkAsEndOfHardLine();
+    if (trailingWhiteSpaceRange.StartRef().IsSet()) {
+      startRun->mStartNode = trailingWhiteSpaceRange.StartRef().GetContainer();
+      startRun->mStartOffset = trailingWhiteSpaceRange.StartRef().Offset();
+    }
+    startRun->SetStartFrom(mStart.RawReason());
+    if (trailingWhiteSpaceRange.EndRef().IsSet()) {
+      startRun->mEndNode = trailingWhiteSpaceRange.EndRef().GetContainer();
+      startRun->mEndOffset = trailingWhiteSpaceRange.EndRef().Offset();
     }
     startRun->SetEndBy(mEnd.RawReason());
     return;
