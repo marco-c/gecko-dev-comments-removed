@@ -1424,7 +1424,7 @@ bool PerHandlerParser<ParseHandler>::checkForUndefinedPrivateFields(
   
   
   auto verifyPrivateName = [](JSContext* cx, auto* parser,
-                              js::Scope* enclosingScope,
+                              HandleScope enclosingScope,
                               UnboundPrivateName unboundName) {
     
     for (ScopeIter si(enclosingScope); si; si++) {
@@ -1452,7 +1452,7 @@ bool PerHandlerParser<ParseHandler>::checkForUndefinedPrivateFields(
     return false;
   };
 
-  js::Scope* enclosingScope = evalSc->compilationEnclosingScope();
+  RootedScope enclosingScope(cx_, evalSc->compilationEnclosingScope());
   
   
   for (UnboundPrivateName unboundName : unboundPrivateNames) {
