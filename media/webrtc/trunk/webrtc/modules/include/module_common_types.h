@@ -179,47 +179,40 @@ class RTPFragmentationHeader {
     const uint16_t size16 = static_cast<uint16_t>(size);
     if (fragmentationVectorSize < size16) {
       uint16_t oldVectorSize = fragmentationVectorSize;
-      {
-        
-        size_t* oldOffsets = fragmentationOffset;
-        fragmentationOffset = new size_t[size16];
-        memset(fragmentationOffset + oldVectorSize, 0,
-               sizeof(size_t) * (size16 - oldVectorSize));
-        
+
+      size_t* oldOffsets = fragmentationOffset;
+      fragmentationOffset = new size_t[size16];
+      memset(fragmentationOffset + oldVectorSize, 0,
+             sizeof(size_t) * (size16 - oldVectorSize));
+      size_t* oldLengths = fragmentationLength;
+      fragmentationLength = new size_t[size16];
+      memset(fragmentationLength + oldVectorSize, 0,
+             sizeof(size_t) * (size16 - oldVectorSize));
+      uint16_t* oldTimeDiffs = fragmentationTimeDiff;
+      fragmentationTimeDiff = new uint16_t[size16];
+      memset(fragmentationTimeDiff + oldVectorSize, 0,
+             sizeof(uint16_t) * (size16 - oldVectorSize));
+      uint8_t* oldTimePlTypes = fragmentationPlType;
+      fragmentationPlType = new uint8_t[size16];
+      memset(fragmentationPlType + oldVectorSize, 0,
+             sizeof(uint8_t) * (size16 - oldVectorSize));
+
+      
+      if (oldVectorSize > 0) {
         memcpy(fragmentationOffset, oldOffsets,
                sizeof(size_t) * oldVectorSize);
         delete[] oldOffsets;
-      }
-      
-      {
-        size_t* oldLengths = fragmentationLength;
-        fragmentationLength = new size_t[size16];
-        memset(fragmentationLength + oldVectorSize, 0,
-               sizeof(size_t) * (size16 - oldVectorSize));
         memcpy(fragmentationLength, oldLengths,
                sizeof(size_t) * oldVectorSize);
         delete[] oldLengths;
-      }
-      
-      {
-        uint16_t* oldTimeDiffs = fragmentationTimeDiff;
-        fragmentationTimeDiff = new uint16_t[size16];
-        memset(fragmentationTimeDiff + oldVectorSize, 0,
-               sizeof(uint16_t) * (size16 - oldVectorSize));
         memcpy(fragmentationTimeDiff, oldTimeDiffs,
                sizeof(uint16_t) * oldVectorSize);
         delete[] oldTimeDiffs;
-      }
-      
-      {
-        uint8_t* oldTimePlTypes = fragmentationPlType;
-        fragmentationPlType = new uint8_t[size16];
-        memset(fragmentationPlType + oldVectorSize, 0,
-               sizeof(uint8_t) * (size16 - oldVectorSize));
         memcpy(fragmentationPlType, oldTimePlTypes,
                sizeof(uint8_t) * oldVectorSize);
         delete[] oldTimePlTypes;
       }
+
       fragmentationVectorSize = size16;
     }
   }
