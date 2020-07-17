@@ -40,6 +40,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       
       this.browsingContextID = this._browser.browsingContext.id;
     }
+    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
   },
 
   destroy: function() {
@@ -181,9 +182,32 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
+  notifyResourceAvailable(resources) {
+    this.emit("resource-available-form", resources);
+  },
+
+  
+
+
+
+
+
+
 
   async watchResources(resourceTypes) {
-    WatcherRegistry.watchResources(this, resourceTypes);
+    
+    
+    const contentProcessResourceTypes = Resources.watchParentProcessResources(
+      this,
+      resourceTypes
+    );
+
+    
+    if (contentProcessResourceTypes.length == 0) {
+      return;
+    }
+
+    WatcherRegistry.watchResources(this, contentProcessResourceTypes);
 
     
     for (const targetType in TARGET_HELPERS) {
@@ -198,7 +222,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       const targetHelperModule = TARGET_HELPERS[targetType];
       await targetHelperModule.watchResources({
         watcher: this,
-        resourceTypes,
+        resourceTypes: contentProcessResourceTypes,
       });
     }
 
@@ -236,6 +260,23 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   unwatchResources(resourceTypes) {
+    
+    
+    const resourcesUnwatchedInParentProcess = Resources.unwatchParentProcessResources(
+      this,
+      resourceTypes
+    );
+    
+    
+    resourceTypes = resourceTypes.filter(
+      resource => !resourcesUnwatchedInParentProcess.includes(resource)
+    );
+
+    
+    if (resourceTypes.length == 0) {
+      return;
+    }
+
     const isWatchingResources = WatcherRegistry.unwatchResources(
       this,
       resourceTypes
