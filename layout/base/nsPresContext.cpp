@@ -1554,18 +1554,12 @@ void nsPresContext::FlushPendingMediaFeatureValuesChanged() {
     RebuildAllStyleData(change.mChangeHint, change.mRestyleHint);
   }
 
-  if (!mPresShell || !mPresShell->DidInitialize()) {
-    return;
-  }
-
   if (mDocument->IsBeingUsedAsImage()) {
     MOZ_ASSERT(mDocument->MediaQueryLists().isEmpty());
     return;
   }
 
   mDocument->NotifyMediaFeatureValuesChanged();
-
-  MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript());
 
   
   
@@ -1589,11 +1583,15 @@ void nsPresContext::FlushPendingMediaFeatureValuesChanged() {
     localMediaQueryLists.AppendElement(mql);
   }
 
-  
-  for (const auto& mql : localMediaQueryLists) {
-    nsAutoMicroTask mt;
-    mql->MaybeNotify();
-  }
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "nsPresContext::FlushPendingMediaFeatureValuesChanged",
+      [list = std::move(localMediaQueryLists)] {
+        
+        for (const auto& mql : list) {
+          nsAutoMicroTask mt;
+          mql->MaybeNotify();
+        }
+      }));
 }
 
 void nsPresContext::SizeModeChanged(nsSizeMode aSizeMode) {

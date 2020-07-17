@@ -6177,24 +6177,15 @@ already_AddRefed<PresShell> Document::CreatePresShell(
   
   mPresShell = presShell;
 
-  bool hadStyleSheets = mStyleSetFilled;
-  if (!hadStyleSheets) {
+  if (!mStyleSetFilled) {
     FillStyleSet();
   }
 
   presShell->Init(aContext, aViewManager);
 
-  if (hadStyleSheets) {
-    
-    
-    aContext->MediaFeatureValuesChanged({MediaFeatureChange::kAllChanges});
-  } else {
-    
-    
-    
-    
-    mStyleSet->ClearCachedStyleData();
-  }
+  
+  
+  aContext->MediaFeatureValuesChanged({MediaFeatureChange::kAllChanges});
 
   
   nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
