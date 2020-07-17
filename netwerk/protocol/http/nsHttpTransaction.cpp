@@ -317,43 +317,17 @@ nsresult nsHttpTransaction::Init(
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if ((requestHead->IsPost() || requestHead->IsPut()) && !requestBody &&
-      !requestHead->HasHeader(nsHttp::Transfer_Encoding)) {
-    rv = requestHead->SetHeader(nsHttp::Content_Length, "0"_ns);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
-
-  
   mRequestHead = requestHead;
 
-  
-  
-  bool pruneProxyHeaders = cinfo->UsingConnect();
-
-  mReqHeaderBuf.Truncate();
-  requestHead->Flatten(mReqHeaderBuf, pruneProxyHeaders);
+  mReqHeaderBuf = nsHttp::ConvertRequestHeadToString(
+      *requestHead, !!requestBody, requestBodyHasHeaders,
+      cinfo->UsingConnect());
 
   if (LOG1_ENABLED()) {
     LOG1(("http request [\n"));
     LogHeaders(mReqHeaderBuf.get());
     LOG1(("]\n"));
   }
-
-  
-  
-  if (!requestBodyHasHeaders || !requestBody)
-    mReqHeaderBuf.AppendLiteral("\r\n");
 
   
   if (mActivityDistributor) {
