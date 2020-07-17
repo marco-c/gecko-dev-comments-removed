@@ -17,7 +17,6 @@
 #include "nspr/prio.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISerialEventTarget.h"
-#include "nsLocalFile.h"
 
 namespace mozilla {
 
@@ -52,13 +51,6 @@ class IOUtils final {
       GlobalObject& aGlobal, const nsAString& aPath, const Uint8Array& aData,
       const WriteAtomicOptions& aOptions);
 
-  static already_AddRefed<Promise> Move(GlobalObject& aGlobal,
-                                        const nsAString& aSourcePath,
-                                        const nsAString& aDestPath,
-                                        const MoveOptions& aOptions);
-
-  static bool IsAbsolutePath(const nsAString& aPath);
-
  private:
   ~IOUtils() = default;
 
@@ -84,7 +76,7 @@ class IOUtils final {
 
 
   static UniquePtr<PRFileDesc, PR_CloseDelete> OpenExistingSync(
-      const nsAString& aPath, int32_t aFlags);
+      const char* aPath, int32_t aFlags);
 
   
 
@@ -96,7 +88,7 @@ class IOUtils final {
 
 
   static UniquePtr<PRFileDesc, PR_CloseDelete> CreateFileSync(
-      const nsAString& aPath, int32_t aFlags, int32_t aMode = 0666);
+      const char* aPath, int32_t aFlags, int32_t aMode = 0666);
 
   static nsresult ReadSync(PRFileDesc* aFd, const uint32_t aBufSize,
                            nsTArray<uint8_t>& aResult);
@@ -104,19 +96,12 @@ class IOUtils final {
   static nsresult WriteSync(PRFileDesc* aFd, const nsTArray<uint8_t>& aBytes,
                             uint32_t& aResult);
 
-  static nsresult MoveSync(const nsAString& aSource, const nsAString& aDest,
-                           bool noOverwrite);
-
   using IOReadMozPromise =
       mozilla::MozPromise<nsTArray<uint8_t>, const nsCString,
                            true>;
 
   using IOWriteMozPromise =
       mozilla::MozPromise<uint32_t, const nsCString,  true>;
-
-  using IOMoveMozPromise =
-      mozilla::MozPromise<bool , const nsresult,
-                           true>;
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
