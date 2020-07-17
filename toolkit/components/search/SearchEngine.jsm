@@ -10,6 +10,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
+  ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   Region: "resource://gre/modules/Region.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -938,77 +939,71 @@ class SearchEngine {
 
 
 
+  _initFromManifest(
+    extensionID,
+    extensionBaseURI,
+    manifest,
+    locale,
+    configuration = {}
+  ) {
+    let { IconDetails } = ExtensionParent;
 
+    let searchProvider = manifest.chrome_settings_overrides.search_provider;
 
+    let iconURL = manifest.iconURL || searchProvider.favicon_url;
 
-  _initFromMetadata(engineName, params) {
-    this._extensionID = params.extensionID;
-    this._locale = params.locale;
-    this._orderHint = params.orderHint;
-    this._telemetryId = params.telemetryId;
-    this._name = engineName;
-    this._regionParams = params.regionParams;
-
-    if (params.shortName) {
-      this._shortName = params.shortName;
-    }
-    this._definedAlias = params.alias?.trim() || null;
-    this._description = params.description;
-    if (params.iconURL) {
-      this._setIcon(params.iconURL, true);
-    }
     
-    if (params.icons) {
-      for (let icon of params.icons) {
-        this._addIconToMap(icon.size, icon.size, icon.url);
-      }
-    }
-    this._setUrls(params);
-  }
-
-  
-
-
-
-
-
-
-
-  _setUrls(params) {
-    this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SEARCH, {
-      method: (params.searchPostParams && "POST") || params.method || "GET",
-      template: params.template,
-      getParams: params.searchGetParams,
-      postParams: params.searchPostParams,
-      mozParams: params.mozParams,
-    });
-
-    if (params.suggestURL) {
-      this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SUGGEST_JSON, {
-        method: (params.suggestPostParams && "POST") || params.method || "GET",
-        template: params.suggestURL,
-        getParams: params.suggestGetParams,
-        postParams: params.suggestPostParams,
+    let icons = manifest.icons;
+    let iconList = [];
+    if (icons) {
+      iconList = Object.entries(icons).map(icon => {
+        return {
+          width: icon[0],
+          height: icon[0],
+          url: extensionBaseURI.resolve(icon[1]),
+        };
       });
     }
 
-    this._queryCharset = params.queryCharset || null;
-    if (params.postData) {
-      let queries = new URLSearchParams(params.postData);
-      for (let [name, value] of queries) {
-        let url = this._getURLOfType(SearchUtils.URL_TYPE.SEARCH);
-        if (!url) {
-          throw Components.Exception(
-            `Engine has no URL for response type ${SearchUtils.URL_TYPE.SEARCH}`,
-            Cr.NS_ERROR_FAILURE
-          );
-        }
-
-        url.addParam(name, value);
-      }
+    if (!iconURL) {
+      iconURL =
+        icons &&
+        extensionBaseURI.resolve(IconDetails.getPreferredIcon(icons).icon);
     }
 
-    this.__searchForm = params.searchForm;
+    let shortName = extensionID.split("@")[0];
+    if (locale != SearchUtils.DEFAULT_TAG) {
+      shortName += "-" + locale;
+    }
+    
+    
+    
+    if ("telemetryId" in configuration && configuration.telemetryId) {
+      shortName = configuration.telemetryId;
+    }
+
+    this._extensionID = extensionID;
+    this._locale = locale;
+    this._orderHint = configuration.orderHint;
+    this._telemetryId = configuration.telemetryId;
+    this._name = searchProvider.name.trim();
+    this._regionParams = configuration.regionParams;
+
+    if (shortName) {
+      this._shortName = shortName;
+    }
+    this._definedAlias = searchProvider.keyword?.trim() || null;
+    this._description = manifest.description;
+    if (iconURL) {
+      this._setIcon(iconURL, true);
+    }
+    
+    if (iconList) {
+      for (let icon of iconList) {
+        this._addIconToMap(icon.size, icon.size, icon.url);
+      }
+    }
+    this._setUrls(searchProvider, configuration);
   }
 
   
@@ -1018,10 +1013,74 @@ class SearchEngine {
 
 
 
-  _updateFromMetadata(params) {
+
+
+
+
+  _setUrls(searchProvider, configuration = {}) {
+    
+    
+    
+    if (searchProvider.params) {
+      searchProvider.params = searchProvider.params.filter(param => {
+        return !(param.value && param.value.startsWith("__MSG_"));
+      });
+    }
+    let postParams =
+      configuration.searchUrlPostParams ||
+      searchProvider.search_url_post_params ||
+      "";
+    this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SEARCH, {
+      method: (postParams && "POST") || "GET",
+      
+      
+      template: decodeURI(searchProvider.search_url),
+      getParams:
+        configuration.searchUrlGetParams ||
+        searchProvider.search_url_get_params ||
+        "",
+      postParams,
+      mozParams: configuration.extraParams || searchProvider.params || [],
+    });
+
+    if (searchProvider.suggest_url) {
+      let suggestPostParams =
+        configuration.suggestUrlPostParams ||
+        searchProvider.suggest_url_post_params ||
+        "";
+      this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SUGGEST_JSON, {
+        method: (suggestPostParams && "POST") || "GET",
+        
+        template: searchProvider.suggest_url,
+        getParams:
+          configuration.suggestUrlGetParams ||
+          searchProvider.suggest_url_get_params ||
+          "",
+        postParams: suggestPostParams,
+      });
+    }
+
+    this._queryCharset = searchProvider.encoding || "UTF-8";
+    this.__searchForm = searchProvider.search_form;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  _updateFromManifest(extensionID, extensionBaseURI, manifest, locale) {
     this._urls = [];
     this._iconMapObj = null;
-    this._initFromMetadata(params.name, params);
+    this._initFromManifest(extensionID, extensionBaseURI, manifest, locale);
     SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
   }
 
@@ -1035,15 +1094,17 @@ class SearchEngine {
 
 
 
-  overrideWithExtension(params) {
+
+
+  overrideWithExtension(extensionID, manifest) {
     this._overriddenData = {
       urls: this._urls,
       queryCharset: this._queryCharset,
       searchForm: this.__searchForm,
     };
     this._urls = [];
-    this.setAttr("overriddenBy", params.extensionID);
-    this._setUrls(params);
+    this.setAttr("overriddenBy", extensionID);
+    this._setUrls(manifest.chrome_settings_overrides.search_provider);
     SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
   }
 
