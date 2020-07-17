@@ -788,12 +788,12 @@ add_task(async function test_getDuplicateGuid() {
   
   let record = Object.assign({}, TEST_CREDIT_CARD_3);
   delete record["cc-exp-month"];
-  Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), null);
+  Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), guid);
 
   
   record = Object.assign({}, TEST_CREDIT_CARD_3);
   record["cc-name"] = "John Doe";
-  Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), null);
+  Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), guid);
 
   
   record = Object.assign({}, TEST_CREDIT_CARD_3);
@@ -803,12 +803,43 @@ add_task(async function test_getDuplicateGuid() {
   record["cc-number"] = "358999378390" + last4Digits;
 
   
+  Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), null);
+});
+
+add_task(async function test_getDuplicateGuidMatch() {
+  let profileStorage = await initProfileStorage(
+    TEST_STORE_FILE_NAME,
+    [TEST_CREDIT_CARD_2],
+    "creditCards"
+  );
+  let guid = profileStorage.creditCards._data[0].guid;
+
+  
+  Assert.equal(
+    await profileStorage.creditCards.getDuplicateGuid(TEST_CREDIT_CARD_2),
+    guid
+  );
+
+  
+  Assert.equal(
+    await profileStorage.creditCards.getDuplicateGuid(TEST_CREDIT_CARD_1),
+    null
+  );
+
+  
+  record = Object.assign({}, TEST_CREDIT_CARD_2);
+
+  
+  record["cc-exp-month"] = 2;
   Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), guid);
 
   
+  record["cc-exp-year"] = 2001;
+  Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), guid);
+
   
-  record["cc-number"] = "************" + last4Digits;
-  Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), null);
+  record["cc-name"] = "John Doe";
+  Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), guid);
 });
 
 add_task(async function test_creditCardFillDisabled() {
