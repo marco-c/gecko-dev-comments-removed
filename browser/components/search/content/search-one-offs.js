@@ -7,10 +7,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
-});
-
 
 
 
@@ -553,17 +549,7 @@ class SearchOneOffs {
       }
       button.setAttribute("image", uri);
       button.setAttribute("class", "searchbar-engine-one-off-item");
-      if (this.compact) {
-        let tooltip = engine.name;
-        let aliases = UrlbarSearchUtils.aliasesForEngine(engine);
-        if (aliases.length) {
-          tooltip = tooltip + ` (${aliases[0]})`;
-        }
-
-        button.setAttribute("tooltiptext", tooltip);
-      } else {
-        button.setAttribute("tooltiptext", engine.name);
-      }
+      button.setAttribute("tooltiptext", engine.name);
       button.engine = engine;
 
       this.buttons.appendChild(button);
