@@ -917,16 +917,6 @@ interface nsILoadInfo : nsISupports
 
 
 
-  [noscript, notxpcom, nostdcall]
-  Uint64ArrayRef AncestorOuterWindowIDs();
-
-  
-
-
-
-
-
-
 
   [noscript, notxpcom, nostdcall]
   void setCorsPreflightInfo(in CStringArrayRef unsafeHeaders,
