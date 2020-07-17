@@ -800,30 +800,6 @@ nsresult WSRunObject::NormalizeWhiteSpacesAround(
 
 
 
-nsIContent* WSRunScanner::GetEditableBlockParentOrTopmotEditableInlineContent(
-    nsIContent* aContent) const {
-  if (NS_WARN_IF(!aContent)) {
-    return nullptr;
-  }
-  NS_ASSERTION(EditorUtils::IsEditableContent(*aContent, EditorType::HTML),
-               "Given content is not editable");
-  
-  
-  
-  nsIContent* editableBlockParentOrTopmotEditableInlineContent = nullptr;
-  for (nsIContent* content : aContent->InclusiveAncestorsOfType<nsIContent>()) {
-    if (!EditorUtils::IsEditableContent(*content, EditorType::HTML)) {
-      break;
-    }
-    editableBlockParentOrTopmotEditableInlineContent = content;
-    if (HTMLEditUtils::IsBlockElement(
-            *editableBlockParentOrTopmotEditableInlineContent)) {
-      break;
-    }
-  }
-  return editableBlockParentOrTopmotEditableInlineContent;
-}
-
 nsresult WSRunScanner::GetWSNodes() {
   
   
@@ -837,9 +813,21 @@ nsresult WSRunScanner::GetWSNodes() {
     
     return NS_ERROR_FAILURE;
   }
+  
+  
+  
+  NS_ASSERTION(
+      EditorUtils::IsEditableContent(*scanStartContent, EditorType::HTML),
+      "Given content is not editable");
+  NS_ASSERTION(scanStartContent->GetAsElementOrParentElement(),
+               "Given content is not an element and an orphan node");
   nsIContent* editableBlockParentOrTopmotEditableInlineContent =
-      GetEditableBlockParentOrTopmotEditableInlineContent(scanStartContent);
-  if (NS_WARN_IF(!editableBlockParentOrTopmotEditableInlineContent)) {
+      EditorUtils::IsEditableContent(*scanStartContent, EditorType::HTML)
+          ? HTMLEditUtils::
+                GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
+                    *scanStartContent)
+          : nullptr;
+  if (!editableBlockParentOrTopmotEditableInlineContent) {
     
     editableBlockParentOrTopmotEditableInlineContent = scanStartContent;
   }
@@ -1548,9 +1536,20 @@ EditorDOMPointInText WSRunScanner::GetInclusiveNextEditableCharPoint(
     return EditorDOMPointInText();
   }
 
+  NS_ASSERTION(EditorUtils::IsEditableContent(
+                   *mScanStartPoint.ContainerAsContent(), EditorType::HTML),
+               "Given content is not editable");
+  NS_ASSERTION(
+      mScanStartPoint.ContainerAsContent()->GetAsElementOrParentElement(),
+      "Given content is not an element and an orphan node");
   nsIContent* editableBlockParentOrTopmotEditableInlineContent =
-      GetEditableBlockParentOrTopmotEditableInlineContent(
-          mScanStartPoint.ContainerAsContent());
+      mScanStartPoint.ContainerAsContent() &&
+              EditorUtils::IsEditableContent(
+                  *mScanStartPoint.ContainerAsContent(), EditorType::HTML)
+          ? HTMLEditUtils::
+                GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
+                    *mScanStartPoint.ContainerAsContent())
+          : nullptr;
   if (NS_WARN_IF(!editableBlockParentOrTopmotEditableInlineContent)) {
     
     editableBlockParentOrTopmotEditableInlineContent =
@@ -1616,9 +1615,20 @@ EditorDOMPointInText WSRunScanner::GetPreviousEditableCharPoint(
     return EditorDOMPointInText();
   }
 
+  NS_ASSERTION(EditorUtils::IsEditableContent(
+                   *mScanStartPoint.ContainerAsContent(), EditorType::HTML),
+               "Given content is not editable");
+  NS_ASSERTION(
+      mScanStartPoint.ContainerAsContent()->GetAsElementOrParentElement(),
+      "Given content is not an element and an orphan node");
   nsIContent* editableBlockParentOrTopmotEditableInlineContent =
-      GetEditableBlockParentOrTopmotEditableInlineContent(
-          mScanStartPoint.ContainerAsContent());
+      mScanStartPoint.ContainerAsContent() &&
+              EditorUtils::IsEditableContent(
+                  *mScanStartPoint.ContainerAsContent(), EditorType::HTML)
+          ? HTMLEditUtils::
+                GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
+                    *mScanStartPoint.ContainerAsContent())
+          : nullptr;
   if (NS_WARN_IF(!editableBlockParentOrTopmotEditableInlineContent)) {
     
     editableBlockParentOrTopmotEditableInlineContent =
@@ -1874,9 +1884,20 @@ nsresult WSRunObject::NormalizeWhiteSpacesAtEndOf(
         bool insertBRElement = HTMLEditUtils::IsBlockElement(
             *mScanStartPoint.ContainerAsContent());
         if (!insertBRElement) {
+          NS_ASSERTION(
+              EditorUtils::IsEditableContent(
+                  *mScanStartPoint.ContainerAsContent(), EditorType::HTML),
+              "Given content is not editable");
+          NS_ASSERTION(mScanStartPoint.ContainerAsContent()
+                           ->GetAsElementOrParentElement(),
+                       "Given content is not an element and an orphan node");
           nsIContent* blockParentOrTopmostEditableInlineContent =
-              GetEditableBlockParentOrTopmotEditableInlineContent(
-                  mScanStartPoint.ContainerAsContent());
+              EditorUtils::IsEditableContent(
+                  *mScanStartPoint.ContainerAsContent(), EditorType::HTML)
+                  ? HTMLEditUtils::
+                        GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
+                            *mScanStartPoint.ContainerAsContent())
+                  : nullptr;
           insertBRElement = blockParentOrTopmostEditableInlineContent &&
                             HTMLEditUtils::IsBlockElement(
                                 *blockParentOrTopmostEditableInlineContent);

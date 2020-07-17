@@ -5,11 +5,12 @@
 
 #include "HTMLEditUtils.h"
 
-#include "CSSEditUtils.h"        
-#include "mozilla/ArrayUtils.h"  
-#include "mozilla/Assertions.h"  
-#include "mozilla/EditAction.h"  
-#include "mozilla/EditorBase.h"  
+#include "CSSEditUtils.h"         
+#include "mozilla/ArrayUtils.h"   
+#include "mozilla/Assertions.h"   
+#include "mozilla/EditAction.h"   
+#include "mozilla/EditorBase.h"   
+#include "mozilla/EditorUtils.h"  
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/Element.h"  
 #include "nsAString.h"            
@@ -26,6 +27,8 @@
 #include "nsString.h"            
 
 namespace mozilla {
+
+using EditorType = EditorBase::EditorType;
 
 bool HTMLEditUtils::CanContentsBeJoined(const nsIContent& aLeftContent,
                                         const nsIContent& aRightContent,
@@ -652,6 +655,24 @@ bool HTMLEditUtils::IsNonListSingleLineContainer(nsINode& aNode) {
 bool HTMLEditUtils::IsSingleLineContainer(nsINode& aNode) {
   return IsNonListSingleLineContainer(aNode) ||
          aNode.IsAnyOfHTMLElements(nsGkAtoms::li, nsGkAtoms::dt, nsGkAtoms::dd);
+}
+
+
+Element*
+HTMLEditUtils::GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
+    nsIContent& aContent) {
+  MOZ_ASSERT(EditorUtils::IsEditableContent(aContent, EditorType::HTML));
+  Element* maybeInlineEditingHost = nullptr;
+  for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
+    if (!EditorUtils::IsEditableContent(*element, EditorType::HTML)) {
+      return maybeInlineEditingHost;
+    }
+    if (HTMLEditUtils::IsBlockElement(*element)) {
+      return element;
+    }
+    maybeInlineEditingHost = element;
+  }
+  return maybeInlineEditingHost;
 }
 
 

@@ -532,6 +532,13 @@ class HTMLEditUtils final {
 
 
 
+
+  static Element* GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
+      nsIContent& aContent);
+  
+
+
+
   static Element* GetClosestAncestorTableElement(const nsIContent& aContent) {
     
     

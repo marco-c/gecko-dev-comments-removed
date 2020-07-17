@@ -577,13 +577,6 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   nsresult GetWSNodes();
 
-  
-
-
-
-  nsIContent* GetEditableBlockParentOrTopmotEditableInlineContent(
-      nsIContent* aContent) const;
-
   EditorDOMPointInText GetPreviousCharPointFromPointInText(
       const EditorDOMPointInText& aPoint) const;
 
