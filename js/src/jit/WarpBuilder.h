@@ -76,8 +76,31 @@ class MIRGraph;
 class WarpSnapshot;
 
 
+class MOZ_STACK_CLASS WarpCompilation {
+  
+  
+  uint32_t loopDepth_ = 0;
+
+  
+  PhiVector iterators_;
+
+ public:
+  explicit WarpCompilation(TempAllocator& alloc) : iterators_(alloc) {}
+
+  uint32_t loopDepth() const { return loopDepth_; }
+  void incLoopDepth() { loopDepth_++; }
+  void decLoopDepth() {
+    MOZ_ASSERT(loopDepth() > 0);
+    loopDepth_--;
+  }
+
+  PhiVector* iterators() { return &iterators_; }
+};
+
+
 
 class MOZ_STACK_CLASS WarpBuilder : public WarpBuilderShared {
+  WarpCompilation* warpCompilation_;
   MIRGraph& graph_;
   const CompileInfo& info_;
   JSScript* script_;
@@ -90,18 +113,16 @@ class MOZ_STACK_CLASS WarpBuilder : public WarpBuilderShared {
   
   
   
-  
-  uint32_t loopDepth_ = 0;
   LoopStateStack loopStack_;
   PendingEdgesMap pendingEdges_;
 
-  
-  
-  
-  PhiVector iterators_;
-
   MIRGraph& graph() { return graph_; }
   const CompileInfo& info() const { return info_; }
+
+  uint32_t loopDepth() const { return warpCompilation_->loopDepth(); }
+  void incLoopDepth() { warpCompilation_->incLoopDepth(); }
+  void decLoopDepth() { warpCompilation_->decLoopDepth(); }
+  PhiVector* iterators() { return warpCompilation_->iterators(); }
 
   BytecodeSite* newBytecodeSite(BytecodeLocation loc);
 
@@ -172,7 +193,8 @@ class MOZ_STACK_CLASS WarpBuilder : public WarpBuilderShared {
 #undef BUILD_OP
 
  public:
-  WarpBuilder(WarpSnapshot& snapshot, MIRGenerator& mirGen);
+  WarpBuilder(WarpSnapshot& snapshot, MIRGenerator& mirGen,
+              WarpCompilation* warpCompilation);
 
   MOZ_MUST_USE bool build();
 };
