@@ -315,6 +315,9 @@
 
 - (id _Nullable)moxEndTextMarker;
 
+
+- (id _Nullable)moxSelectedTextMarkerRange;
+
 #pragma mark - ParameterizedTextAttributeGetters
 
 
