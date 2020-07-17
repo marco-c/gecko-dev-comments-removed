@@ -3876,6 +3876,9 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElement(
   }
 
   
+  MOZ_ASSERT(!rhsVal_.isMagic(JS_ELEMENTS_HOLE));
+
+  
   
   
   
@@ -3946,7 +3949,12 @@ static bool CanAttachAddElement(NativeObject* obj, bool isInit) {
 AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
     HandleObject obj, ObjOperandId objId, uint32_t index,
     Int32OperandId indexId, ValOperandId rhsId) {
-  if (!obj->isNative() || rhsVal_.isMagic(JS_ELEMENTS_HOLE)) {
+  if (!obj->isNative()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (rhsVal_.isMagic(JS_ELEMENTS_HOLE)) {
     return AttachDecision::NoAction;
   }
 

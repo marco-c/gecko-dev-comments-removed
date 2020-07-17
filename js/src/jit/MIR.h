@@ -7757,6 +7757,7 @@ class MStoreElement : public MTernaryInstruction,
     needsHoleCheck_ = needsHoleCheck;
     MOZ_ASSERT(elements->type() == MIRType::Elements);
     MOZ_ASSERT(index->type() == MIRType::Int32);
+    MOZ_ASSERT(value->type() != MIRType::MagicHole);
   }
 
  public:
@@ -7774,6 +7775,27 @@ class MStoreElement : public MTernaryInstruction,
 };
 
 
+class MStoreHoleValueElement : public MBinaryInstruction,
+                               public NoTypePolicy::Data {
+  MStoreHoleValueElement(MDefinition* elements, MDefinition* index)
+      : MBinaryInstruction(classOpcode, elements, index) {
+    MOZ_ASSERT(elements->type() == MIRType::Elements);
+    MOZ_ASSERT(index->type() == MIRType::Int32);
+  }
+
+ public:
+  INSTRUCTION_HEADER(StoreHoleValueElement)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, elements), (1, index))
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Store(AliasSet::Element | AliasSet::ObjectFields);
+  }
+
+  ALLOW_CLONE(MStoreHoleValueElement)
+};
+
+
 
 
 
@@ -7786,6 +7808,7 @@ class MStoreElementHole
       : MQuaternaryInstruction(classOpcode, object, elements, index, value) {
     MOZ_ASSERT(elements->type() == MIRType::Elements);
     MOZ_ASSERT(index->type() == MIRType::Int32);
+    MOZ_ASSERT(value->type() != MIRType::MagicHole);
   }
 
  public:
@@ -7812,6 +7835,7 @@ class MFallibleStoreElement
         needsHoleCheck_(needsHoleCheck) {
     MOZ_ASSERT(elements->type() == MIRType::Elements);
     MOZ_ASSERT(index->type() == MIRType::Int32);
+    MOZ_ASSERT(value->type() != MIRType::MagicHole);
   }
 
  public:

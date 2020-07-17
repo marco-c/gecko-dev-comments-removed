@@ -755,41 +755,39 @@ static bool IsElementEscaped(MDefinition* def, uint32_t arraySize) {
       }
 
       case MDefinition::Opcode::StoreElement: {
-        MOZ_ASSERT(access->toStoreElement()->elements() == def);
+        MStoreElement* storeElem = access->toStoreElement();
+        MOZ_ASSERT(storeElem->elements() == def);
 
         
         
         
         
         
-        if (access->toStoreElement()->needsHoleCheck()) {
+        if (storeElem->needsHoleCheck()) {
           JitSpewDef(JitSpew_Escape, "has a store element with a hole check\n",
-                     access);
+                     storeElem);
           return true;
         }
 
         
         
         int32_t index;
-        if (!IndexOf(access, &index)) {
+        if (!IndexOf(storeElem, &index)) {
           JitSpewDef(JitSpew_Escape,
-                     "has a store element with a non-trivial index\n", access);
+                     "has a store element with a non-trivial index\n",
+                     storeElem);
           return true;
         }
         if (index < 0 || arraySize <= uint32_t(index)) {
           JitSpewDef(JitSpew_Escape,
                      "has a store element with an out-of-bound index\n",
-                     access);
+                     storeElem);
           return true;
         }
 
         
-        if (access->toStoreElement()->value()->type() == MIRType::MagicHole) {
-          JitSpewDef(JitSpew_Escape,
-                     "has a store element with an magic-hole constant\n",
-                     access);
-          return true;
-        }
+        
+        MOZ_ASSERT(storeElem->value()->type() != MIRType::MagicHole);
         break;
       }
 

@@ -212,6 +212,10 @@ class ObjectElements {
     
     
     FROZEN = 0x20,
+
+    
+    
+    NON_PACKED = 0x40,
   };
 
   
@@ -309,6 +313,8 @@ class ObjectElements {
     MOZ_ASSERT(numShiftedElements() == 0);
   }
 
+  void markNonPacked() { flags |= NON_PACKED; }
+
   void seal() {
     MOZ_ASSERT(!isSealed());
     MOZ_ASSERT(!isFrozen());
@@ -380,6 +386,8 @@ class ObjectElements {
                                         IntegrityLevel level);
 
   bool isSealed() const { return flags & SEALED; }
+
+  bool isPacked() const { return !(flags & NON_PACKED); }
 
   uint8_t elementAttributes() const {
     if (isFrozen()) {
@@ -1310,7 +1318,7 @@ class NativeObject : public JSObject {
   inline void setShouldConvertDoubleElements();
   inline void clearShouldConvertDoubleElements();
 
-  bool denseElementsAreCopyOnWrite() {
+  bool denseElementsAreCopyOnWrite() const {
     return getElementsHeader()->isCopyOnWrite();
   }
 
@@ -1319,6 +1327,10 @@ class NativeObject : public JSObject {
   }
   bool denseElementsAreFrozen() const {
     return hasAllFlags(js::BaseShape::FROZEN_ELEMENTS);
+  }
+
+  bool denseElementsArePacked() const {
+    return getElementsHeader()->isPacked();
   }
 
   
