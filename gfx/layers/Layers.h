@@ -28,6 +28,7 @@
 #include "mozilla/RefPtr.h"                
 #include "mozilla/TimeStamp.h"             
 #include "mozilla/UniquePtr.h"             
+#include "mozilla/dom/Animation.h"         
 #include "mozilla/gfx/BaseMargin.h"        
 #include "mozilla/gfx/BasePoint.h"         
 #include "mozilla/gfx/Point.h"             
@@ -46,6 +47,7 @@
 #include "nsDebug.h"                 
 #include "nsISupportsImpl.h"         
 #include "nsRect.h"                  
+#include "nsRefPtrHashtable.h"       
 #include "nsRegion.h"                
 #include "nsString.h"                
 #include "nsTArray.h"                
@@ -256,6 +258,7 @@ class LayerManager : public FrameRecorder {
     mDestroyed = true;
     mUserData.Destroy();
     mRoot = nullptr;
+    mPartialPrerenderedAnimations.Clear();
   }
   bool IsDestroyed() { return mDestroyed; }
 
@@ -753,6 +756,13 @@ class LayerManager : public FrameRecorder {
 
   void SetContainsSVG(bool aContainsSVG) { mContainsSVG = aContainsSVG; }
 
+  void AddPartialPrerenderedAnimation(uint64_t aCompositorAnimationId,
+                                      dom::Animation* aAnimation);
+  void RemovePartialPrerenderedAnimation(uint64_t aCompositorAnimationId,
+                                         dom::Animation* aAnimation);
+  void UpdatePartialPrerenderedAnimations(
+      const nsTArray<uint64_t>& aJankedAnimations);
+
  protected:
   RefPtr<Layer> mRoot;
   gfx::UserData mUserData;
@@ -790,6 +800,12 @@ class LayerManager : public FrameRecorder {
   
   
   nsTArray<CompositionPayload> mPayload;
+  
+  
+  
+  
+  nsRefPtrHashtable<nsUint64HashKey, dom::Animation>
+      mPartialPrerenderedAnimations;
 
  public:
   
@@ -816,7 +832,7 @@ class LayerManager : public FrameRecorder {
 class Layer {
   NS_INLINE_DECL_REFCOUNTING(Layer)
 
-  typedef nsTArray<Animation> AnimationArray;
+  using AnimationArray = nsTArray<layers::Animation>;
 
  public:
   
