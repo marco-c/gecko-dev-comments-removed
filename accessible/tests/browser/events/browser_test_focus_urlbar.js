@@ -337,6 +337,9 @@ async function runTipTests() {
     ),
   ];
 
+  
+  matches[1].suggestedIndex = 2;
+
   let provider = new TipTestProvider(matches);
   UrlbarProvidersManager.registerProvider(provider);
 
