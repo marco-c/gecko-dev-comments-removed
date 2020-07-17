@@ -509,7 +509,6 @@ bool nsHTMLScrollFrame::TryLayout(ScrollReflowInput* aState,
   
   if (mHelper.UsesOverlayScrollbars() && mHelper.mIsUsingMinimumScaleSize &&
       mHelper.mMinimumScaleSize.height > overflowRect.YMost()) {
-    MOZ_ASSERT(StaticPrefs::layout_viewport_contains_no_contents_area());
     overflowRect.height +=
         mHelper.mMinimumScaleSize.height - overflowRect.YMost();
   }
@@ -6006,14 +6005,6 @@ void ScrollFrameHelper::UpdateMinimumScaleSize(
   
   
   mMinimumScaleSize = CSSSize::ToAppUnits(ScreenSize(displaySize) / minScale);
-
-  
-  
-  if (!StaticPrefs::layout_viewport_contains_no_contents_area()) {
-    mMinimumScaleSize =
-        Min(mMinimumScaleSize,
-            nsSize(aScrollableOverflow.XMost(), aScrollableOverflow.YMost()));
-  }
 
   
   
