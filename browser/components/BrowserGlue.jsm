@@ -453,7 +453,7 @@ let JSWINDOWACTORS = {
 
     
     
-    matches: ["*://*/*"],
+    matches: ["*://*/*", "file:///*"],
     messageManagerGroups: ["browsers"],
     allFrames: true,
   },
