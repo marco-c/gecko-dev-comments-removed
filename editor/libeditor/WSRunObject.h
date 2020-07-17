@@ -1219,13 +1219,36 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
 
+  template <typename EditorDOMPointType>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult InsertText(
+      HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
+      const EditorDOMPointType& aPointToInsert,
+      EditorRawDOMPoint* aPointAfterInsertedString = nullptr) {
+    return WSRunObject::ReplaceText(aHTMLEditor, aStringToInsert,
+                                    EditorDOMRange(aPointToInsert),
+                                    aPointAfterInsertedString);
+  }
+
+  
 
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult
-  InsertText(dom::Document& aDocument, const nsAString& aStringToInsert,
-             EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult ReplaceText(
+      HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
+      const EditorDOMRange& aRangeToBeReplaced,
+      EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
 
   
   
