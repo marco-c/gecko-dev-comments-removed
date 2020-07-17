@@ -52,6 +52,7 @@ describe('JSHandle', function () {
       const aHandle = await page.evaluateHandle(() => document.body);
       let error = null;
       await page
+        
         .evaluateHandle((opts) => opts.elem.querySelector('p'), {
           elem: aHandle,
         })

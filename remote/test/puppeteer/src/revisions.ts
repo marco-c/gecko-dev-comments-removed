@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+type Revisions = Readonly<{
+  readonly chromium: string;
+  readonly firefox: string;
+}>;
+
+export const PUPPETEER_REVISIONS: Revisions = {
+  chromium: '756035',
+  firefox: 'latest',
+};

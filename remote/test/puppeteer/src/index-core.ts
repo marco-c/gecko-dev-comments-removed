@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import { initializePuppeteer } from './initialize';
+
+const puppeteer = initializePuppeteer('puppeteer-core');
+export default puppeteer;

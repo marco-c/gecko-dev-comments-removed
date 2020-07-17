@@ -24,12 +24,13 @@ import * as http from 'http';
 
 import extractZip from 'extract-zip';
 import { debug } from '../common/Debug';
+import { promisify } from 'util';
 import removeRecursive from 'rimraf';
 import * as URL from 'url';
 import ProxyAgent from 'https-proxy-agent';
 import { getProxyForUrl } from 'proxy-from-env';
 import { assert } from '../common/assert';
-import { helper } from '../common/helper';
+
 const debugFetcher = debug(`puppeteer:fetcher`);
 
 const downloadURLs = {
@@ -62,11 +63,13 @@ const browserConfig = {
 
 
 
-type Platform = 'linux' | 'mac' | 'win32' | 'win64';
+
+export type Platform = 'linux' | 'mac' | 'win32' | 'win64';
 
 
 
-type Product = 'chrome' | 'firefox';
+
+export type Product = 'chrome' | 'firefox';
 
 function archiveName(
   product: Product,
@@ -116,16 +119,19 @@ function handleArm64(): void {
     }
   });
 }
-const readdirAsync = helper.promisify(fs.readdir.bind(fs));
-const mkdirAsync = helper.promisify(fs.mkdir.bind(fs));
-const unlinkAsync = helper.promisify(fs.unlink.bind(fs));
-const chmodAsync = helper.promisify(fs.chmod.bind(fs));
+const readdirAsync = promisify(fs.readdir.bind(fs));
+const mkdirAsync = promisify(fs.mkdir.bind(fs));
+const unlinkAsync = promisify(fs.unlink.bind(fs));
+const chmodAsync = promisify(fs.chmod.bind(fs));
 
 function existsAsync(filePath: string): Promise<boolean> {
   return new Promise((resolve) => {
     fs.access(filePath, (err) => resolve(!err));
   });
 }
+
+
+
 
 export interface BrowserFetcherOptions {
   platform?: Platform;
@@ -134,7 +140,10 @@ export interface BrowserFetcherOptions {
   host?: string;
 }
 
-interface BrowserFetcherRevisionInfo {
+
+
+
+export interface BrowserFetcherRevisionInfo {
   folderPath: string;
   executablePath: string;
   url: string;

@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const puppeteerExport = require('./lib/cjs/index-core');
+module.exports = puppeteerExport.default;

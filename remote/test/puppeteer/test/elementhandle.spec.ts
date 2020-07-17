@@ -182,17 +182,11 @@ describe('ElementHandle specs', function () {
       const { page, server } = getTestState();
 
       await page.goto(server.PREFIX + '/shadow.html');
-      const buttonHandle = await page.evaluateHandle(
+      const buttonHandle = await page.evaluateHandle<ElementHandle>(
         
         () => button
       );
-      
-      
-      
-      
-      
-      
-      await (buttonHandle as ElementHandle).click();
+      await buttonHandle.click();
       expect(
         await page.evaluate(
           

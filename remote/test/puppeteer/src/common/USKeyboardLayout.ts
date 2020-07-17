@@ -14,6 +14,9 @@
 
 
 
+
+
+
 export interface KeyDefinition {
   keyCode?: number;
   shiftKeyCode?: number;
@@ -24,6 +27,12 @@ export interface KeyDefinition {
   shiftText?: string;
   location?: number;
 }
+
+
+
+
+
+
 
 export type KeyInput =
   | '0'
@@ -281,6 +290,9 @@ export type KeyInput =
   | 'EndCall'
   | 'VolumeDown'
   | 'VolumeUp';
+
+
+
 
 export const keyDefinitions: Readonly<Record<KeyInput, KeyDefinition>> = {
   '0': { keyCode: 48, key: '0', code: 'Digit0' },

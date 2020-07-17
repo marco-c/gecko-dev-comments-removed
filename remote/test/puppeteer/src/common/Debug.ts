@@ -14,7 +14,7 @@
 
 
 
-const isNodeEnv = typeof document === 'undefined';
+import { isNode } from '../environment';
 
 
 
@@ -35,7 +35,7 @@ const isNodeEnv = typeof document === 'undefined';
 
 
 export const debug = (prefix: string): ((...args: unknown[]) => void) => {
-  if (isNodeEnv) {
+  if (isNode) {
     
     return require('debug')(prefix);
   }

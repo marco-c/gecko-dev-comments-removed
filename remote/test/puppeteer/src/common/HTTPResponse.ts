@@ -19,10 +19,19 @@ import { HTTPRequest } from './HTTPRequest';
 import { SecurityDetails } from './SecurityDetails';
 import Protocol from '../protocol';
 
-interface RemoteAddress {
+
+
+
+export interface RemoteAddress {
   ip: string;
   port: number;
 }
+
+
+
+
+
+
 
 export class HTTPResponse {
   private _client: CDPSession;
@@ -38,6 +47,9 @@ export class HTTPResponse {
   private _fromServiceWorker: boolean;
   private _headers: Record<string, string> = {};
   private _securityDetails: SecurityDetails | null;
+
+  
+
 
   constructor(
     client: CDPSession,
@@ -67,37 +79,69 @@ export class HTTPResponse {
       : null;
   }
 
+  
+
+
   _resolveBody(err: Error | null): void {
     return this._bodyLoadedPromiseFulfill(err);
   }
+
+  
+
+
 
   remoteAddress(): RemoteAddress {
     return this._remoteAddress;
   }
 
+  
+
+
   url(): string {
     return this._url;
   }
 
+  
+
+
   ok(): boolean {
+    
     return this._status === 0 || (this._status >= 200 && this._status <= 299);
   }
+
+  
+
 
   status(): number {
     return this._status;
   }
 
+  
+
+
+
   statusText(): string {
     return this._statusText;
   }
+
+  
+
+
 
   headers(): Record<string, string> {
     return this._headers;
   }
 
+  
+
+
+
   securityDetails(): SecurityDetails | null {
     return this._securityDetails;
   }
+
+  
+
 
   buffer(): Promise<Buffer> {
     if (!this._contentPromise) {
@@ -115,27 +159,53 @@ export class HTTPResponse {
     return this._contentPromise;
   }
 
+  
+
+
   async text(): Promise<string> {
     const content = await this.buffer();
     return content.toString('utf8');
   }
+
+  
+
+
+
+
+
+
+
 
   async json(): Promise<any> {
     const content = await this.text();
     return JSON.parse(content);
   }
 
+  
+
+
   request(): HTTPRequest {
     return this._request;
   }
+
+  
+
+
 
   fromCache(): boolean {
     return this._fromDiskCache || this._request._fromMemoryCache;
   }
 
+  
+
+
   fromServiceWorker(): boolean {
     return this._fromServiceWorker;
   }
+
+  
+
+
 
   frame(): Frame | null {
     return this._request.frame();

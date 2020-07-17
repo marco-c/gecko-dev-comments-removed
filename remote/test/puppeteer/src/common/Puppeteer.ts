@@ -23,9 +23,7 @@ import { ProductLauncher } from '../node/Launcher';
 import { BrowserFetcher, BrowserFetcherOptions } from '../node/BrowserFetcher';
 import { puppeteerErrors, PuppeteerErrors } from './Errors';
 import { ConnectionTransport } from './ConnectionTransport';
-
-import { devicesMap } from './DeviceDescriptors';
-import { DevicesMap } from './DeviceDescriptors';
+import { devicesMap, DevicesMap } from './DeviceDescriptors';
 import { Browser } from './Browser';
 import {
   registerCustomQueryHandler,
@@ -34,18 +32,39 @@ import {
   clearQueryHandlers,
   QueryHandler,
 } from './QueryHandler';
+import { PUPPETEER_REVISIONS } from '../revisions';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 
 export class Puppeteer {
-  _projectRoot: string;
+  private _projectRoot: string;
   _preferredRevision: string;
   _isPuppeteerCore: boolean;
   _changedProduct = false;
   __productName: string;
   _lazyLauncher: ProductLauncher;
+
+  
+
 
   constructor(
     projectRoot: string,
@@ -60,6 +79,31 @@ export class Puppeteer {
     this.__productName = productName;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   launch(
     options: LaunchOptions &
       ChromeArgOptions &
@@ -68,6 +112,14 @@ export class Puppeteer {
     if (options.product) this._productName = options.product;
     return this._launcher.launch(options);
   }
+
+  
+
+
+
+
+
+
 
   connect(
     options: BrowserOptions & {
@@ -81,18 +133,35 @@ export class Puppeteer {
     return this._launcher.connect(options);
   }
 
-  set _productName(name: string) {
-    if (this.__productName !== name) this._changedProduct = true;
-    this.__productName = name;
-  }
+  
+
 
   get _productName(): string {
     return this.__productName;
   }
 
+  
+  set _productName(name: string) {
+    if (this.__productName !== name) this._changedProduct = true;
+    this.__productName = name;
+  }
+
+  
+
+
+
+
+
+
+
+
+
   executablePath(): string {
     return this._launcher.executablePath();
   }
+
+  
+
 
   get _launcher(): ProductLauncher {
     if (
@@ -100,16 +169,13 @@ export class Puppeteer {
       this._lazyLauncher.product !== this._productName ||
       this._changedProduct
     ) {
-      
-      
-      const packageJson = require('../../package.json');
       switch (this._productName) {
         case 'firefox':
-          this._preferredRevision = packageJson.puppeteer.firefox_revision;
+          this._preferredRevision = PUPPETEER_REVISIONS.firefox;
           break;
         case 'chrome':
         default:
-          this._preferredRevision = packageJson.puppeteer.chromium_revision;
+          this._preferredRevision = PUPPETEER_REVISIONS.chromium;
       }
       this._changedProduct = false;
       this._lazyLauncher = Launcher(
@@ -122,25 +188,88 @@ export class Puppeteer {
     return this._lazyLauncher;
   }
 
+  
+
+
+
+
+
+
+
   get product(): string {
     return this._launcher.product;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   get devices(): DevicesMap {
     return devicesMap;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   get errors(): PuppeteerErrors {
     return puppeteerErrors;
   }
+
+  
+
+
+
 
   defaultArgs(options: ChromeArgOptions = {}): string[] {
     return this._launcher.defaultArgs(options);
   }
 
+  
+
+
+
+
+
   createBrowserFetcher(options: BrowserFetcherOptions): BrowserFetcher {
     return new BrowserFetcher(this._projectRoot, options);
   }
+
+  
+
 
   
   __experimental_registerCustomQueryHandler(
@@ -151,14 +280,23 @@ export class Puppeteer {
   }
 
   
+
+
+  
   __experimental_unregisterCustomQueryHandler(name: string): void {
     unregisterCustomQueryHandler(name);
   }
 
   
+
+
+  
   __experimental_customQueryHandlers(): Map<string, QueryHandler> {
     return customQueryHandlers();
   }
+
+  
+
 
   
   __experimental_clearQueryHandlers(): void {

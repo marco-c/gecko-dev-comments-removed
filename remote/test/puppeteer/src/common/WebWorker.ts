@@ -19,12 +19,20 @@ import { ExecutionContext } from './ExecutionContext';
 import { JSHandle } from './JSHandle';
 import { CDPSession } from './Connection';
 import Protocol from '../protocol';
+import { EvaluateHandleFn, SerializableOrJSHandle } from './EvalTypes';
+
+
+
 
 type ConsoleAPICalledCallback = (
   eventType: string,
   handles: JSHandle[],
   trace: Protocol.Runtime.StackTrace
 ) => void;
+
+
+
+
 type ExceptionThrownCallback = (
   details: Protocol.Runtime.ExceptionDetails
 ) => void;
@@ -152,11 +160,11 @@ export class WebWorker extends EventEmitter {
 
 
 
-  async evaluateHandle(
-    pageFunction: Function | string,
-    ...args: any[]
+  async evaluateHandle<HandlerType extends JSHandle = JSHandle>(
+    pageFunction: EvaluateHandleFn,
+    ...args: SerializableOrJSHandle[]
   ): Promise<JSHandle> {
-    return (await this._executionContextPromise).evaluateHandle(
+    return (await this._executionContextPromise).evaluateHandle<HandlerType>(
       pageFunction,
       ...args
     );

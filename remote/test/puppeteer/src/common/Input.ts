@@ -22,14 +22,80 @@ type KeyDescription = Required<
   Pick<KeyDefinition, 'keyCode' | 'key' | 'text' | 'code' | 'location'>
 >;
 
-export class Keyboard {
-  _client: CDPSession;
-  _modifiers = 0;
-  _pressedKeys = new Set<string>();
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export class Keyboard {
+  private _client: CDPSession;
+  
+  _modifiers = 0;
+  private _pressedKeys = new Set<string>();
+
+  
   constructor(client: CDPSession) {
     this._client = client;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async down(
     key: KeyInput,
@@ -99,6 +165,13 @@ export class Keyboard {
     return description;
   }
 
+  
+
+
+
+
+
+
   async up(key: KeyInput): Promise<void> {
     const description = this._keyDescriptionForString(key);
 
@@ -114,6 +187,21 @@ export class Keyboard {
     });
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async sendCharacter(char: string): Promise<void> {
     await this._client.send('Input.insertText', { text: char });
   }
@@ -122,8 +210,30 @@ export class Keyboard {
     return !!keyDefinitions[char];
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async type(text: string, options: { delay?: number } = {}): Promise<void> {
-    const delay = (options && options.delay) || null;
+    const delay = options.delay || null;
     for (const char of text) {
       if (this.charIsKey(char)) {
         await this.press(char, { delay });
@@ -133,6 +243,26 @@ export class Keyboard {
       }
     }
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async press(
     key: KeyInput,
@@ -145,11 +275,16 @@ export class Keyboard {
   }
 }
 
-type MouseButton = 'none' | 'left' | 'right' | 'middle';
-export type MouseButtonInput = Exclude<MouseButton, 'none'>;
 
-interface MouseOptions {
-  button?: MouseButtonInput;
+
+
+export type MouseButton = 'left' | 'right' | 'middle';
+
+
+
+
+export interface MouseOptions {
+  button?: MouseButton;
   clickCount?: number;
 }
 
@@ -211,11 +346,12 @@ interface MouseOptions {
 
 
 export class Mouse {
-  _client: CDPSession;
-  _keyboard: Keyboard;
-  _x = 0;
-  _y = 0;
-  _button: MouseButton = 'none';
+  private _client: CDPSession;
+  private _keyboard: Keyboard;
+  private _x = 0;
+  private _y = 0;
+  private _button: MouseButton | 'none' = 'none';
+
   
 
 
@@ -315,9 +451,10 @@ export class Mouse {
 
 
 
+
 export class Touchscreen {
-  _client: CDPSession;
-  _keyboard: Keyboard;
+  private _client: CDPSession;
+  private _keyboard: Keyboard;
 
   
 

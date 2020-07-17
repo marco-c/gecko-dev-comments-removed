@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const isNode = typeof document === 'undefined';

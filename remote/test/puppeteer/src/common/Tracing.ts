@@ -17,11 +17,16 @@ import { assert } from './assert';
 import { helper } from './helper';
 import { CDPSession } from './Connection';
 
-interface TracingOptions {
+
+
+
+export interface TracingOptions {
   path?: string;
   screenshots?: boolean;
   categories?: string[];
 }
+
+
 
 
 

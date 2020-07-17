@@ -14,7 +14,6 @@
 
 
 
-import * as fs from 'fs';
 import { assert } from './assert';
 import { helper } from './helper';
 import { LifecycleWatcher, PuppeteerLifeCycleEvent } from './LifecycleWatcher';
@@ -22,15 +21,20 @@ import { TimeoutError } from './Errors';
 import { JSHandle, ElementHandle } from './JSHandle';
 import { ExecutionContext } from './ExecutionContext';
 import { TimeoutSettings } from './TimeoutSettings';
-import { MouseButtonInput } from './Input';
+import { MouseButton } from './Input';
 import { FrameManager, Frame } from './FrameManager';
 import { getQueryHandlerAndSelector, QueryHandler } from './QueryHandler';
+import {
+  EvaluateFn,
+  SerializableOrJSHandle,
+  EvaluateHandleFn,
+  WrapElementHandle,
+} from './EvalTypes';
+import { isNode } from '../environment';
 
 
 
 declare const predicateQueryHandler: QueryHandler;
-
-const readFileAsync = helper.promisify(fs.readFile);
 
 export interface WaitForSelectorOptions {
   visible?: boolean;
@@ -104,15 +108,10 @@ export class DOMWorld {
     return this._contextPromise;
   }
 
-  
-
-
-
-
-  async evaluateHandle(
-    pageFunction: Function | string,
-    ...args: unknown[]
-  ): Promise<JSHandle> {
+  async evaluateHandle<HandlerType extends JSHandle = JSHandle>(
+    pageFunction: EvaluateHandleFn,
+    ...args: SerializableOrJSHandle[]
+  ): Promise<HandlerType> {
     const context = await this.executionContext();
     return context.evaluateHandle(pageFunction, ...args);
   }
@@ -155,19 +154,22 @@ export class DOMWorld {
     return value;
   }
 
-  async $eval<ReturnType extends any>(
+  async $eval<ReturnType>(
     selector: string,
-    pageFunction: Function | string,
-    ...args: unknown[]
-  ): Promise<ReturnType> {
+    pageFunction: (
+      element: Element,
+      ...args: unknown[]
+    ) => ReturnType | Promise<ReturnType>,
+    ...args: SerializableOrJSHandle[]
+  ): Promise<WrapElementHandle<ReturnType>> {
     const document = await this._document();
     return document.$eval<ReturnType>(selector, pageFunction, ...args);
   }
 
   async $$eval<ReturnType extends any>(
     selector: string,
-    pageFunction: Function | string,
-    ...args: unknown[]
+    pageFunction: EvaluateFn | string,
+    ...args: SerializableOrJSHandle[]
   ): Promise<ReturnType> {
     const document = await this._document();
     const value = await document.$$eval<ReturnType>(
@@ -235,6 +237,13 @@ export class DOMWorld {
 
 
 
+
+
+
+
+
+
+
   async addScriptTag(options: {
     url?: string;
     path?: string;
@@ -254,6 +263,16 @@ export class DOMWorld {
     }
 
     if (path !== null) {
+      if (!isNode) {
+        throw new Error(
+          'Cannot pass a filepath to addScriptTag in the browser environment.'
+        );
+      }
+      
+      const fs = require('fs');
+      
+      const { promisify } = require('util');
+      const readFileAsync = promisify(fs.readFile);
       let contents = await readFileAsync(path, 'utf8');
       contents += '//# sourceURL=' + path.replace(/\n/g, '');
       const context = await this.executionContext();
@@ -304,6 +323,17 @@ export class DOMWorld {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
   async addStyleTag(options: {
     url?: string;
     path?: string;
@@ -320,6 +350,16 @@ export class DOMWorld {
     }
 
     if (path !== null) {
+      if (!isNode) {
+        throw new Error(
+          'Cannot pass a filepath to addStyleTag in the browser environment.'
+        );
+      }
+      
+      const fs = require('fs');
+      
+      const { promisify } = require('util');
+      const readFileAsync = promisify(fs.readFile);
       let contents = await readFileAsync(path, 'utf8');
       contents += '/*# sourceURL=' + path.replace(/\n/g, '') + '*/';
       const context = await this.executionContext();
@@ -368,7 +408,7 @@ export class DOMWorld {
 
   async click(
     selector: string,
-    options: { delay?: number; button?: MouseButtonInput; clickCount?: number }
+    options: { delay?: number; button?: MouseButton; clickCount?: number }
   ): Promise<void> {
     const handle = await this.$(selector);
     assert(handle, 'No node found for selector: ' + selector);
@@ -433,7 +473,7 @@ export class DOMWorld {
   waitForFunction(
     pageFunction: Function | string,
     options: { polling?: string | number; timeout?: number } = {},
-    ...args: unknown[]
+    ...args: SerializableOrJSHandle[]
   ): Promise<JSHandle> {
     const {
       polling = 'raf',
@@ -544,7 +584,7 @@ class WaitTask {
   _polling: string | number;
   _timeout: number;
   _predicateBody: string;
-  _args: unknown[];
+  _args: SerializableOrJSHandle[];
   _runCount = 0;
   promise: Promise<JSHandle>;
   _resolve: (x: JSHandle) => void;
@@ -559,7 +599,7 @@ class WaitTask {
     title: string,
     polling: string | number,
     timeout: number,
-    ...args: unknown[]
+    ...args: SerializableOrJSHandle[]
   ) {
     if (helper.isString(polling))
       assert(

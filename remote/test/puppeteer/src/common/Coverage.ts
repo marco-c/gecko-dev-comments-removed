@@ -21,14 +21,95 @@ import { CDPSession } from './Connection';
 
 import { EVALUATION_SCRIPT_URL } from './ExecutionContext';
 
-interface CoverageEntry {
+
+
+
+
+export interface CoverageEntry {
+  
+
+
   url: string;
+  
+
+
   text: string;
+  
+
+
   ranges: Array<{ start: number; end: number }>;
 }
 
+
+
+
+
+export interface JSCoverageOptions {
+  
+
+
+  resetOnNavigation?: boolean;
+  
+
+
+  reportAnonymousScripts?: boolean;
+}
+
+
+
+
+
+export interface CSSCoverageOptions {
+  
+
+
+  resetOnNavigation?: boolean;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export class Coverage {
+  
+
+
   _jsCoverage: JSCoverage;
+  
+
+
   _cssCoverage: CSSCoverage;
 
   constructor(client: CDPSession) {
@@ -36,26 +117,47 @@ export class Coverage {
     this._cssCoverage = new CSSCoverage(client);
   }
 
-  async startJSCoverage(
-    options: {
-      resetOnNavigation?: boolean;
-      reportAnonymousScripts?: boolean;
-    } = {}
-  ): Promise<void> {
+  
+
+
+
+
+
+
+
+
+
+
+  async startJSCoverage(options: JSCoverageOptions = {}): Promise<void> {
     return await this._jsCoverage.start(options);
   }
+
+  
+
+
+
+
+
+
 
   async stopJSCoverage(): Promise<CoverageEntry[]> {
     return await this._jsCoverage.stop();
   }
 
-  async startCSSCoverage(
-    options: {
-      resetOnNavigation?: boolean;
-    } = {}
-  ): Promise<void> {
+  
+
+
+
+  async startCSSCoverage(options: CSSCoverageOptions = {}): Promise<void> {
     return await this._cssCoverage.start(options);
   }
+
+  
+
+
+
+
+
 
   async stopCSSCoverage(): Promise<CoverageEntry[]> {
     return await this._cssCoverage.stop();

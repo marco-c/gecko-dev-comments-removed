@@ -21,14 +21,41 @@ import { CDPSession } from './Connection';
 import { DOMWorld } from './DOMWorld';
 import { Frame } from './FrameManager';
 import Protocol from '../protocol';
+import { EvaluateHandleFn, SerializableOrJSHandle } from './EvalTypes';
 
 export const EVALUATION_SCRIPT_URL = '__puppeteer_evaluation_script__';
 const SOURCE_URL_REGEX = /^[\040\t]*\/\/[@#] sourceURL=\s*(\S*?)\s*$/m;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export class ExecutionContext {
+  
+
+
   _client: CDPSession;
+  
+
+
   _world: DOMWorld;
-  _contextId: number;
+  private _contextId: number;
+
+  
+
 
   constructor(
     client: CDPSession,
@@ -40,9 +67,61 @@ export class ExecutionContext {
     this._contextId = contextPayload.id;
   }
 
+  
+
+
+
+
+
+
+
+
   frame(): Frame | null {
     return this._world ? this._world.frame() : null;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async evaluate<ReturnType extends any>(
     pageFunction: Function | string,
@@ -55,15 +134,57 @@ export class ExecutionContext {
     );
   }
 
-  async evaluateHandle(
-    pageFunction: Function | string,
-    ...args: unknown[]
-  ): Promise<JSHandle> {
-    return this._evaluateInternal<JSHandle>(false, pageFunction, ...args);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async evaluateHandle<HandleType extends JSHandle | ElementHandle = JSHandle>(
+    pageFunction: EvaluateHandleFn,
+    ...args: SerializableOrJSHandle[]
+  ): Promise<HandleType> {
+    return this._evaluateInternal<HandleType>(false, pageFunction, ...args);
   }
 
   private async _evaluateInternal<ReturnType>(
-    returnByValue,
+    returnByValue: boolean,
     pageFunction: Function | string,
     ...args: unknown[]
   ): Promise<ReturnType> {
@@ -197,6 +318,28 @@ export class ExecutionContext {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async queryObjects(prototypeHandle: JSHandle): Promise<JSHandle> {
     assert(!prototypeHandle._disposed, 'Prototype JSHandle is disposed!');
     assert(
@@ -209,6 +352,9 @@ export class ExecutionContext {
     return createJSHandle(this, response.objects);
   }
 
+  
+
+
   async _adoptBackendNodeId(
     backendNodeId: Protocol.DOM.BackendNodeId
   ): Promise<ElementHandle> {
@@ -218,6 +364,9 @@ export class ExecutionContext {
     });
     return createJSHandle(this, object) as ElementHandle;
   }
+
+  
+
 
   async _adoptElementHandle(
     elementHandle: ElementHandle

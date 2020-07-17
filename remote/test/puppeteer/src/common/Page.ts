@@ -15,6 +15,7 @@
 
 
 import * as fs from 'fs';
+import { promisify } from 'util';
 import { EventEmitter } from './EventEmitter';
 import * as mime from 'mime';
 import { Events } from './Events';
@@ -22,7 +23,7 @@ import { Connection, CDPSession } from './Connection';
 import { Dialog } from './Dialog';
 import { EmulationManager } from './EmulationManager';
 import { Frame, FrameManager } from './FrameManager';
-import { Keyboard, Mouse, Touchscreen, MouseButtonInput } from './Input';
+import { Keyboard, Mouse, Touchscreen, MouseButton } from './Input';
 import { Tracing } from './Tracing';
 import { assert } from './assert';
 import { helper, debugError } from './helper';
@@ -41,8 +42,17 @@ import { FileChooser } from './FileChooser';
 import { ConsoleMessage, ConsoleMessageType } from './ConsoleMessage';
 import { PuppeteerLifeCycleEvent } from './LifecycleWatcher';
 import Protocol from '../protocol';
+import {
+  EvaluateFn,
+  SerializableOrJSHandle,
+  EvaluateHandleFn,
+  WrapElementHandle,
+} from './EvalTypes';
 
-const writeFileAsync = helper.promisify(fs.writeFile);
+const writeFileAsync = promisify(fs.writeFile);
+
+
+
 
 export interface Metrics {
   Timestamp?: number;
@@ -60,9 +70,54 @@ export interface Metrics {
   JSHeapTotalSize?: number;
 }
 
-interface WaitForOptions {
+
+
+
+export interface WaitTimeoutOptions {
+  
+
+
+
+
+
+
+
+  timeout?: number;
+}
+
+
+
+
+export interface WaitForOptions {
+  
+
+
+
+
+
+
+
+
   timeout?: number;
   waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
+}
+
+
+
+
+export interface GeolocationOptions {
+  
+
+
+  longitude: number;
+  
+
+
+  latitude: number;
+  
+
+
+  accuracy?: number;
 }
 
 interface MediaFeature {
@@ -136,6 +191,8 @@ type VisionDeficiency =
   | 'deuteranopia'
   | 'protanopia'
   | 'tritanopia';
+
+
 
 
 
@@ -241,6 +298,7 @@ export class Page extends EventEmitter {
   private _viewport: Viewport | null;
   private _screenshotTaskQueue: ScreenshotTaskQueue;
   private _workers = new Map<string, WebWorker>();
+  
   
   private _fileChooserInterceptors = new Set<Function>();
 
@@ -367,12 +425,19 @@ export class Page extends EventEmitter {
     for (const interceptor of interceptors) interceptor.call(null, fileChooser);
   }
 
+  
+
+
   public isJavaScriptEnabled(): boolean {
     return this._javascriptEnabled;
   }
 
+  
+
+
+
   async waitForFileChooser(
-    options: { timeout?: number } = {}
+    options: WaitTimeoutOptions = {}
   ): Promise<FileChooser> {
     if (!this._fileChooserInterceptors.size)
       await this._client.send('Page.setInterceptFileChooserDialog', {
@@ -395,11 +460,19 @@ export class Page extends EventEmitter {
       });
   }
 
-  async setGeolocation(options: {
-    longitude: number;
-    latitude: number;
-    accuracy?: number;
-  }): Promise<void> {
+  
+
+
+
+
+
+
+
+
+
+
+
+  async setGeolocation(options: GeolocationOptions): Promise<void> {
     const { longitude, latitude, accuracy = 0 } = options;
     if (longitude < -180 || longitude > 180)
       throw new Error(
@@ -420,13 +493,22 @@ export class Page extends EventEmitter {
     });
   }
 
+  
+
+
   target(): Target {
     return this._target;
   }
 
+  
+
+
   browser(): Browser {
     return this._target.browser();
   }
+
+  
+
 
   browserContext(): BrowserContext {
     return this._target.browserContext();
@@ -445,6 +527,9 @@ export class Page extends EventEmitter {
         new ConsoleMessage(level, text, [], { url, lineNumber })
       );
   }
+
+  
+
 
   mainFrame(): Frame {
     return this._frameManager.mainFrame();
@@ -470,40 +555,150 @@ export class Page extends EventEmitter {
     return this._accessibility;
   }
 
+  
+
+
   frames(): Frame[] {
     return this._frameManager.frames();
   }
+
+  
+
+
+
 
   workers(): WebWorker[] {
     return Array.from(this._workers.values());
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async setRequestInterception(value: boolean): Promise<void> {
     return this._frameManager.networkManager().setRequestInterception(value);
   }
+
+  
+
 
   setOfflineMode(enabled: boolean): Promise<void> {
     return this._frameManager.networkManager().setOfflineMode(enabled);
   }
 
+  
+
+
   setDefaultNavigationTimeout(timeout: number): void {
     this._timeoutSettings.setDefaultNavigationTimeout(timeout);
   }
+
+  
+
 
   setDefaultTimeout(timeout: number): void {
     this._timeoutSettings.setDefaultTimeout(timeout);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
   async $(selector: string): Promise<ElementHandle | null> {
     return this.mainFrame().$(selector);
   }
 
-  async evaluateHandle(
-    pageFunction: Function | string,
-    ...args: unknown[]
-  ): Promise<JSHandle> {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async evaluateHandle<HandlerType extends JSHandle = JSHandle>(
+    pageFunction: EvaluateHandleFn,
+    ...args: SerializableOrJSHandle[]
+  ): Promise<HandlerType> {
     const context = await this.mainFrame().executionContext();
-    return context.evaluateHandle(pageFunction, ...args);
+    return context.evaluateHandle<HandlerType>(pageFunction, ...args);
   }
 
   async queryObjects(prototypeHandle: JSHandle): Promise<JSHandle> {
@@ -511,18 +706,89 @@ export class Page extends EventEmitter {
     return context.queryObjects(prototypeHandle);
   }
 
-  async $eval<ReturnType extends any>(
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async $eval<ReturnType>(
     selector: string,
-    pageFunction: Function | string,
-    ...args: unknown[]
-  ): Promise<ReturnType> {
+    pageFunction: (
+      element: Element,
+      
+
+
+
+
+
+
+
+
+
+      ...args: unknown[]
+    ) => ReturnType | Promise<ReturnType>,
+    ...args: SerializableOrJSHandle[]
+  ): Promise<WrapElementHandle<ReturnType>> {
     return this.mainFrame().$eval<ReturnType>(selector, pageFunction, ...args);
   }
 
   async $$eval<ReturnType extends any>(
     selector: string,
-    pageFunction: Function | string,
-    ...args: unknown[]
+    pageFunction: EvaluateFn | string,
+    ...args: SerializableOrJSHandle[]
   ): Promise<ReturnType> {
     return this.mainFrame().$$eval<ReturnType>(selector, pageFunction, ...args);
   }
@@ -1291,7 +1557,7 @@ export class Page extends EventEmitter {
     selector: string,
     options: {
       delay?: number;
-      button?: MouseButtonInput;
+      button?: MouseButton;
       clickCount?: number;
     } = {}
   ): Promise<void> {
@@ -1330,7 +1596,7 @@ export class Page extends EventEmitter {
       timeout?: number;
       polling?: string | number;
     } = {},
-    ...args: unknown[]
+    ...args: SerializableOrJSHandle[]
   ): Promise<JSHandle> {
     return this.mainFrame().waitFor(
       selectorOrFunctionOrTimeout,
@@ -1367,7 +1633,7 @@ export class Page extends EventEmitter {
       timeout?: number;
       polling?: string | number;
     } = {},
-    ...args: unknown[]
+    ...args: SerializableOrJSHandle[]
   ): Promise<JSHandle> {
     return this.mainFrame().waitForFunction(pageFunction, options, ...args);
   }

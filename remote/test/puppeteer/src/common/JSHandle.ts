@@ -23,9 +23,13 @@ import { KeyInput } from './USKeyboardLayout';
 import { FrameManager, Frame } from './FrameManager';
 import { getQueryHandlerAndSelector } from './QueryHandler';
 import Protocol from '../protocol';
-
-
-
+import {
+  EvaluateFn,
+  SerializableOrJSHandle,
+  EvaluateFnReturnType,
+  EvaluateHandleFn,
+  WrapElementHandle,
+} from './EvalTypes';
 
 export interface BoxModel {
   content: Array<{ x: number; y: number }>;
@@ -82,11 +86,41 @@ export function createJSHandle(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export class JSHandle {
+  
+
+
   _context: ExecutionContext;
+  
+
+
   _client: CDPSession;
+  
+
+
   _remoteObject: Protocol.Runtime.RemoteObject;
+  
+
+
   _disposed = false;
+
+  
+
 
   constructor(
     context: ExecutionContext,
@@ -97,6 +131,8 @@ export class JSHandle {
     this._client = client;
     this._remoteObject = remoteObject;
   }
+
+  
 
   executionContext(): ExecutionContext {
     return this._context;
@@ -113,11 +149,12 @@ export class JSHandle {
 
 
 
-  async evaluate<ReturnType extends any>(
-    pageFunction: Function | string,
-    ...args: unknown[]
-  ): Promise<ReturnType> {
-    return await this.executionContext().evaluate<ReturnType>(
+
+  async evaluate<T extends EvaluateFn>(
+    pageFunction: T | string,
+    ...args: SerializableOrJSHandle[]
+  ): Promise<EvaluateFnReturnType<T>> {
+    return await this.executionContext().evaluate<EvaluateFnReturnType<T>>(
       pageFunction,
       this,
       ...args
@@ -139,16 +176,18 @@ export class JSHandle {
 
 
 
-  async evaluateHandle(
-    pageFunction: Function | string,
-    ...args: unknown[]
-  ): Promise<JSHandle> {
+  async evaluateHandle<HandleType extends JSHandle = JSHandle>(
+    pageFunction: EvaluateHandleFn,
+    ...args: SerializableOrJSHandle[]
+  ): Promise<HandleType> {
     return await this.executionContext().evaluateHandle(
       pageFunction,
       this,
       ...args
     );
   }
+
+  
 
   async getProperty(propertyName: string): Promise<JSHandle | undefined> {
     const objectHandle = await this.evaluateHandle(
@@ -218,11 +257,17 @@ export class JSHandle {
   }
 
   
+
+
+
   asElement(): ElementHandle | null {
+    
+    
     return null;
   }
 
   
+
 
 
   async dispose(): Promise<void> {
@@ -230,6 +275,11 @@ export class JSHandle {
     this._disposed = true;
     await helper.releaseObject(this._client, this._remoteObject);
   }
+
+  
+
+
+
 
   toString(): string {
     if (this._remoteObject.objectId) {
@@ -269,7 +319,14 @@ export class JSHandle {
 
 
 
-export class ElementHandle extends JSHandle {
+
+
+
+
+
+export class ElementHandle<
+  ElementType extends Element = Element
+> extends JSHandle {
   private _page: Page;
   private _frameManager: FrameManager;
 
@@ -290,7 +347,7 @@ export class ElementHandle extends JSHandle {
     this._frameManager = frameManager;
   }
 
-  asElement(): ElementHandle | null {
+  asElement(): ElementHandle<ElementType> | null {
     return this;
   }
 
@@ -307,46 +364,48 @@ export class ElementHandle extends JSHandle {
   }
 
   private async _scrollIntoViewIfNeeded(): Promise<void> {
-    const error = await this.evaluate<Promise<string | false>>(
-      async (element: HTMLElement, pageJavascriptEnabled: boolean) => {
-        if (!element.isConnected) return 'Node is detached from document';
-        if (element.nodeType !== Node.ELEMENT_NODE)
-          return 'Node is not of type HTMLElement';
-        
-        if (!pageJavascriptEnabled) {
-          element.scrollIntoView({
-            block: 'center',
-            inline: 'center',
-            
-            
-            
-            
-            behavior: 'instant',
-          });
-          return false;
-        }
-        const visibleRatio = await new Promise((resolve) => {
-          const observer = new IntersectionObserver((entries) => {
-            resolve(entries[0].intersectionRatio);
-            observer.disconnect();
-          });
-          observer.observe(element);
+    const error = await this.evaluate<
+      (
+        element: Element,
+        pageJavascriptEnabled: boolean
+      ) => Promise<string | false>
+    >(async (element, pageJavascriptEnabled) => {
+      if (!element.isConnected) return 'Node is detached from document';
+      if (element.nodeType !== Node.ELEMENT_NODE)
+        return 'Node is not of type HTMLElement';
+      
+      if (!pageJavascriptEnabled) {
+        element.scrollIntoView({
+          block: 'center',
+          inline: 'center',
+          
+          
+          
+          
+          behavior: 'instant',
         });
-        if (visibleRatio !== 1.0) {
-          element.scrollIntoView({
-            block: 'center',
-            inline: 'center',
-            
-            
-            
-            
-            behavior: 'instant',
-          });
-        }
         return false;
-      },
-      this._page.isJavaScriptEnabled()
-    );
+      }
+      const visibleRatio = await new Promise((resolve) => {
+        const observer = new IntersectionObserver((entries) => {
+          resolve(entries[0].intersectionRatio);
+          observer.disconnect();
+        });
+        observer.observe(element);
+      });
+      if (visibleRatio !== 1.0) {
+        element.scrollIntoView({
+          block: 'center',
+          inline: 'center',
+          
+          
+          
+          
+          behavior: 'instant',
+        });
+      }
+      return false;
+    }, this._page.isJavaScriptEnabled());
 
     if (error) throw new Error(error);
   }
@@ -461,11 +520,9 @@ export class ElementHandle extends JSHandle {
           '"'
       );
 
-    
-
-
-
-    return this.evaluate((element: HTMLSelectElement, values: string[]) => {
+    return this.evaluate<
+      (element: HTMLSelectElement, values: string[]) => string[]
+    >((element, values) => {
       if (element.nodeName.toLowerCase() !== 'select')
         throw new Error('Element is not a <select> element.');
 
@@ -491,9 +548,9 @@ export class ElementHandle extends JSHandle {
 
 
   async uploadFile(...filePaths: string[]): Promise<void> {
-    const isMultiple = await this.evaluate<boolean>(
-      (element: HTMLInputElement) => element.multiple
-    );
+    const isMultiple = await this.evaluate<
+      (element: HTMLInputElement) => boolean
+    >((element) => element.multiple);
     assert(
       filePaths.length <= 1 || isMultiple,
       'Multiple file uploads only work with <input type=file multiple>'
@@ -531,7 +588,7 @@ export class ElementHandle extends JSHandle {
     
     
     if (files.length === 0) {
-      await this.evaluate((element: HTMLInputElement) => {
+      await this.evaluate<(element: HTMLInputElement) => void>((element) => {
         element.files = new DataTransfer().files;
 
         
@@ -770,22 +827,36 @@ export class ElementHandle extends JSHandle {
 
 
 
-  async $eval<ReturnType extends any>(
+  async $eval<ReturnType>(
     selector: string,
-    pageFunction: Function | string,
-    ...args: unknown[]
-  ): Promise<ReturnType> {
+    pageFunction: (
+      element: Element,
+      ...args: unknown[]
+    ) => ReturnType | Promise<ReturnType>,
+    ...args: SerializableOrJSHandle[]
+  ): Promise<WrapElementHandle<ReturnType>> {
     const elementHandle = await this.$(selector);
     if (!elementHandle)
       throw new Error(
         `Error: failed to find element matching selector "${selector}"`
       );
-    const result = await elementHandle.evaluate<ReturnType>(
-      pageFunction,
-      ...args
-    );
+    const result = await elementHandle.evaluate<
+      (
+        element: Element,
+        ...args: SerializableOrJSHandle[]
+      ) => ReturnType | Promise<ReturnType>
+    >(pageFunction, ...args);
     await elementHandle.dispose();
-    return result;
+
+    
+
+
+
+
+
+
+
+    return result as WrapElementHandle<ReturnType>;
   }
 
   
@@ -813,8 +884,8 @@ export class ElementHandle extends JSHandle {
 
   async $$eval<ReturnType extends any>(
     selector: string,
-    pageFunction: Function | string,
-    ...args: unknown[]
+    pageFunction: EvaluateFn | string,
+    ...args: SerializableOrJSHandle[]
   ): Promise<ReturnType> {
     const defaultHandler = (element: Element, selector: string) =>
       Array.from(element.querySelectorAll(selector));
@@ -827,7 +898,7 @@ export class ElementHandle extends JSHandle {
       queryHandler,
       updatedSelector
     );
-    const result = await arrayHandle.evaluate<ReturnType>(
+    const result = await arrayHandle.evaluate<(...args: any[]) => ReturnType>(
       pageFunction,
       ...args
     );
@@ -841,19 +912,22 @@ export class ElementHandle extends JSHandle {
 
 
   async $x(expression: string): Promise<ElementHandle[]> {
-    const arrayHandle = await this.evaluateHandle((element, expression) => {
-      const document = element.ownerDocument || element;
-      const iterator = document.evaluate(
-        expression,
-        element,
-        null,
-        XPathResult.ORDERED_NODE_ITERATOR_TYPE
-      );
-      const array = [];
-      let item;
-      while ((item = iterator.iterateNext())) array.push(item);
-      return array;
-    }, expression);
+    const arrayHandle = await this.evaluateHandle(
+      (element: Document, expression: string) => {
+        const document = element.ownerDocument || element;
+        const iterator = document.evaluate(
+          expression,
+          element,
+          null,
+          XPathResult.ORDERED_NODE_ITERATOR_TYPE
+        );
+        const array = [];
+        let item;
+        while ((item = iterator.iterateNext())) array.push(item);
+        return array;
+      },
+      expression
+    );
     const properties = await arrayHandle.getProperties();
     await arrayHandle.dispose();
     const result = [];
@@ -868,16 +942,18 @@ export class ElementHandle extends JSHandle {
 
 
   async isIntersectingViewport(): Promise<boolean> {
-    return await this.evaluate<Promise<boolean>>(async (element) => {
-      const visibleRatio = await new Promise((resolve) => {
-        const observer = new IntersectionObserver((entries) => {
-          resolve(entries[0].intersectionRatio);
-          observer.disconnect();
+    return await this.evaluate<(element: Element) => Promise<boolean>>(
+      async (element) => {
+        const visibleRatio = await new Promise((resolve) => {
+          const observer = new IntersectionObserver((entries) => {
+            resolve(entries[0].intersectionRatio);
+            observer.disconnect();
+          });
+          observer.observe(element);
         });
-        observer.observe(element);
-      });
-      return visibleRatio > 0;
-    });
+        return visibleRatio > 0;
+      }
+    );
   }
 }
 

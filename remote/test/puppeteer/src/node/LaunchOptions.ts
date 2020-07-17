@@ -16,12 +16,21 @@
 
 import { Viewport } from '../common/PuppeteerViewport';
 
+
+
+
+
+
 export interface ChromeArgOptions {
   headless?: boolean;
   args?: string[];
   userDataDir?: string;
   devtools?: boolean;
 }
+
+
+
+
 
 export interface LaunchOptions {
   executablePath?: string;
@@ -34,6 +43,10 @@ export interface LaunchOptions {
   env?: Record<string, string | undefined>;
   pipe?: boolean;
 }
+
+
+
+
 
 export interface BrowserOptions {
   ignoreHTTPSErrors?: boolean;

@@ -22,7 +22,7 @@ import expect from 'expect';
 import {
   getTestState,
   describeChromeOnly,
-  itFailsWindowsUntilDate,
+  itFailsWindows,
 } from './mocha-utils';
 import rimraf from 'rimraf';
 
@@ -91,15 +91,10 @@ describeChromeOnly('headful tests', function () {
       expect(pages).toEqual(['about:blank']);
       await browser.close();
     });
-    itFailsWindowsUntilDate(
-      
-
-
-
-
-      new Date('2020-07-01'),
+    itFailsWindows(
       'headless should be able to read cookies written by headful',
       async () => {
+        
         const { server, puppeteer } = getTestState();
 
         const userDataDir = await mkdtempAsync(TMP_FOLDER);
