@@ -4385,14 +4385,6 @@ class HTMLEditor final : public TextEditor,
   static nsresult StripFormattingNodes(nsIContent& aNode,
                                        bool aOnlyList = false);
 
-
-  
-
-
-  [[nodiscard]] static nsresult MoveStartAndEndAccordingToHTMLInfo(
-      const nsAString& aInfoStr, nsCOMPtr<nsINode>* aOutStartNode,
-      nsCOMPtr<nsINode>* aOutEndNode);
-
   
 
 
