@@ -86,8 +86,6 @@ using namespace dom;
 static bool FindIntegerAfterString(const char* aLeadingString, nsCString& aCStr,
                                    int32_t& foundNumber);
 static void RemoveFragComments(nsCString& aStr);
-static void RemoveBodyAndHead(nsINode& aNode);
-static bool FindTargetNode(nsINode& aStart, nsCOMPtr<nsINode>& aResult);
 
 nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
   MOZ_ASSERT(IsEditActionDataAvailable());
@@ -237,6 +235,8 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
       const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents);
 
+  static bool FindTargetNode(nsINode& aStart, nsCOMPtr<nsINode>& aResult);
+
   
 
 
@@ -281,6 +281,8 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
                                 nsAtom* aContextLocalName, Document* aTargetDoc,
                                 dom::DocumentFragment** aFragment,
                                 bool aTrustedInput);
+
+  static void RemoveBodyAndHead(nsINode& aNode);
 
   static nsresult StripFormattingNodes(nsIContent& aNode,
                                        bool aOnlyList = false);
@@ -3009,7 +3011,7 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
   return NS_OK;
 }
 
-void RemoveBodyAndHead(nsINode& aNode) {
+void HTMLEditor::HTMLWithContextInserter::RemoveBodyAndHead(nsINode& aNode) {
   nsCOMPtr<nsIContent> body, head;
   
   
@@ -3047,7 +3049,8 @@ void RemoveBodyAndHead(nsINode& aNode) {
 
 
 
-bool FindTargetNode(nsINode& aStart, nsCOMPtr<nsINode>& aResult) {
+bool HTMLEditor::HTMLWithContextInserter::FindTargetNode(
+    nsINode& aStart, nsCOMPtr<nsINode>& aResult) {
   nsIContent* firstChild = aStart.GetFirstChild();
   if (!firstChild) {
     
@@ -3105,9 +3108,9 @@ nsresult HTMLEditor::HTMLWithContextInserter::CreateDOMFragmentFromPaste(
   nsCOMPtr<nsINode> targetNode;
   RefPtr<DocumentFragment> documentFragmentForContext;
   if (!aContextStr.IsEmpty()) {
-    nsresult rv = ParseFragment(aContextStr, nullptr, document,
-                                getter_AddRefs(documentFragmentForContext),
-                                aTrustedInput);
+    nsresult rv = HTMLWithContextInserter::ParseFragment(
+        aContextStr, nullptr, document,
+        getter_AddRefs(documentFragmentForContext), aTrustedInput);
     if (NS_FAILED(rv)) {
       NS_WARNING(
           "HTMLEditor::HTMLWithContextInserter::ParseFragment(aContextStr) "
@@ -3129,9 +3132,10 @@ nsresult HTMLEditor::HTMLWithContextInserter::CreateDOMFragmentFromPaste(
       return rv;
     }
 
-    RemoveBodyAndHead(*documentFragmentForContext);
+    HTMLWithContextInserter::RemoveBodyAndHead(*documentFragmentForContext);
 
-    FindTargetNode(*documentFragmentForContext, targetNode);
+    HTMLWithContextInserter::FindTargetNode(*documentFragmentForContext,
+                                            targetNode);
   }
 
   nsCOMPtr<nsIContent> targetContent = nsIContent::FromNodeOrNull(targetNode);
@@ -3148,9 +3152,9 @@ nsresult HTMLEditor::HTMLWithContextInserter::CreateDOMFragmentFromPaste(
     contextLocalNameAtom = nsGkAtoms::body;
   }
   RefPtr<DocumentFragment> documentFragmentToInsert;
-  nsresult rv =
-      ParseFragment(aInputString, contextLocalNameAtom, document,
-                    getter_AddRefs(documentFragmentToInsert), aTrustedInput);
+  nsresult rv = HTMLWithContextInserter::ParseFragment(
+      aInputString, contextLocalNameAtom, document,
+      getter_AddRefs(documentFragmentToInsert), aTrustedInput);
   if (NS_FAILED(rv)) {
     NS_WARNING(
         "HTMLEditor::HTMLWithContextInserter::ParseFragment(aInputString) "
@@ -3164,7 +3168,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::CreateDOMFragmentFromPaste(
     return NS_ERROR_FAILURE;
   }
 
-  RemoveBodyAndHead(*documentFragmentToInsert);
+  HTMLWithContextInserter::RemoveBodyAndHead(*documentFragmentToInsert);
 
   if (targetNode) {
     
