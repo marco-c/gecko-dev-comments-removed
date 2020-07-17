@@ -201,19 +201,19 @@ nsresult HTMLEditor::InsertHTMLAsAction(const nsAString& aInString,
 }
 
 EditorDOMPoint HTMLEditor::GetNewCaretPointAfterInsertingHTML(
-    const EditorDOMPoint& lastInsertedPoint) const {
+    const EditorDOMPoint& aLastInsertedPoint) const {
   EditorDOMPoint pointToPutCaret;
 
   
   nsIContent* containerContent = nullptr;
-  if (!HTMLEditUtils::IsTable(lastInsertedPoint.GetChild())) {
-    containerContent = GetLastEditableLeaf(*lastInsertedPoint.GetChild());
+  if (!HTMLEditUtils::IsTable(aLastInsertedPoint.GetChild())) {
+    containerContent = GetLastEditableLeaf(*aLastInsertedPoint.GetChild());
     if (containerContent) {
       Element* mostDistantInclusiveAncestorTableElement = nullptr;
       for (Element* maybeTableElement =
                containerContent->GetAsElementOrParentElement();
            maybeTableElement &&
-           maybeTableElement != lastInsertedPoint.GetChild();
+           maybeTableElement != aLastInsertedPoint.GetChild();
            maybeTableElement = maybeTableElement->GetParentElement()) {
         if (HTMLEditUtils::IsTable(maybeTableElement)) {
           mostDistantInclusiveAncestorTableElement = maybeTableElement;
@@ -229,7 +229,7 @@ EditorDOMPoint HTMLEditor::GetNewCaretPointAfterInsertingHTML(
   
   
   if (!containerContent) {
-    containerContent = lastInsertedPoint.GetChild();
+    containerContent = aLastInsertedPoint.GetChild();
   }
 
   
