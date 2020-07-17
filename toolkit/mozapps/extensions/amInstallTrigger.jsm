@@ -151,25 +151,14 @@ InstallTrigger.prototype = {
       }
     }
 
-    let sourceHost;
-    let sourceURL;
-
-    try {
-      sourceHost = this._principal.URI.host;
-      sourceURL = this._principal.URI.spec;
-    } catch (err) {
-      
-      
-    }
-
     let installData = {
       uri: url.spec,
       hash: item.Hash || null,
       name: item.name,
       icon: iconUrl ? iconUrl.spec : null,
       method: "installTrigger",
-      sourceHost,
-      sourceURL,
+      sourceHost: this._window.location?.host,
+      sourceURL: this._window.location?.href,
     };
 
     return this._mediator.install(
