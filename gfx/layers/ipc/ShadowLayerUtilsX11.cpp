@@ -22,6 +22,7 @@
 #include "mozilla/layers/CompositorTypes.h"    
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayerManagerComposite.h"
+#include "mozilla/layers/LayersMessageUtils.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/ShadowLayers.h"    
 #include "mozilla/mozalloc.h"               
@@ -129,4 +130,24 @@ void LayerManagerComposite::PlatformSyncBeforeReplyUpdate() {
 bool LayerManagerComposite::SupportsDirectTexturing() { return false; }
 
 }  
+}  
+
+namespace IPC {
+
+void ParamTraits<mozilla::layers::SurfaceDescriptorX11>::Write(
+    Message* aMsg, const paramType& aParam) {
+  WriteParam(aMsg, aParam.mId);
+  WriteParam(aMsg, aParam.mSize);
+  WriteParam(aMsg, aParam.mFormat);
+  WriteParam(aMsg, aParam.mGLXPixmap);
+}
+
+bool ParamTraits<mozilla::layers::SurfaceDescriptorX11>::Read(
+    const Message* aMsg, PickleIterator* aIter, paramType* aResult) {
+  return (ReadParam(aMsg, aIter, &aResult->mId) &&
+          ReadParam(aMsg, aIter, &aResult->mSize) &&
+          ReadParam(aMsg, aIter, &aResult->mFormat) &&
+          ReadParam(aMsg, aIter, &aResult->mGLXPixmap));
+}
+
 }  
