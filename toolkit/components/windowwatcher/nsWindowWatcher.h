@@ -99,7 +99,7 @@ class nsWindowWatcher : public nsIWindowWatcher,
 
   
   static void CalcSizeSpec(const mozilla::dom::WindowFeatures& aFeatures,
-                           SizeSpec& aResult);
+                           bool aHasChromeParent, SizeSpec& aResult);
   static void SizeOpenedWindow(
       nsIDocShellTreeOwner* aTreeOwner, mozIDOMWindowProxy* aParent,
       bool aIsCallerChrome, const SizeSpec& aSizeSpec,

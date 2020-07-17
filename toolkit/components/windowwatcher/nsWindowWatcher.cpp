@@ -515,7 +515,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   features.Tokenize(aFeatures);
 
   SizeSpec sizeSpec;
-  CalcSizeSpec(features, sizeSpec);
+  CalcSizeSpec(features, false, sizeSpec);
 
   uint32_t chromeFlags = CalculateChromeFlagsForContent(features, sizeSpec);
 
@@ -686,7 +686,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   bool isCallerChrome = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
 
   SizeSpec sizeSpec;
-  CalcSizeSpec(features, sizeSpec);
+  CalcSizeSpec(features, hasChromeParent, sizeSpec);
 
   
   
@@ -2009,7 +2009,7 @@ already_AddRefed<BrowsingContext> nsWindowWatcher::GetBrowsingContextByName(
 
 
 void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
-                                   SizeSpec& aResult) {
+                                   bool aHasChromeParent, SizeSpec& aResult) {
   
   
   
@@ -2068,7 +2068,7 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
 
   
   
-  if (aFeatures.Exists("outerwidth")) {
+  if (aHasChromeParent && aFeatures.Exists("outerwidth")) {
     int32_t width = aFeatures.GetInt("outerwidth");
     if (width) {
       aResult.mOuterWidth = width;
@@ -2108,7 +2108,7 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
 
   
   
-  if (aFeatures.Exists("outerheight")) {
+  if (aHasChromeParent && aFeatures.Exists("outerheight")) {
     int32_t height = aFeatures.GetInt("outerheight");
     if (height) {
       aResult.mOuterHeight = height;
