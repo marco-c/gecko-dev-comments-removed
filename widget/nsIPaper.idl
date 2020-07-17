@@ -22,4 +22,24 @@ interface nsIPaper : nsISupports
 
 
   readonly attribute double height;
+
+  
+
+
+  readonly attribute double unwriteableMarginTop;
+
+  
+
+
+  readonly attribute double unwriteableMarginBottom;
+
+  
+
+
+  readonly attribute double unwriteableMarginLeft;
+
+  
+
+
+  readonly attribute double unwriteableMarginRight;
 };
