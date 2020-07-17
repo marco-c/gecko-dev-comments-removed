@@ -1269,10 +1269,12 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
 
   
   
-  nsPresContext* topContentPresContext =
+  nsPresContext* inProcessRootPresContext =
       GetInProcessRootContentDocumentPresContext();
 
-  if (!topContentPresContext) {
+  if (!inProcessRootPresContext ||
+      !inProcessRootPresContext->IsRootContentDocumentCrossProcess()) {
+    
     
     
     
@@ -1280,8 +1282,8 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
     return;
   }
 
-  if (topContentPresContext->mFirstNonBlankPaintTime.IsNull() ||
-      topContentPresContext->mFirstNonBlankPaintTime > aTimeStamp) {
+  if (inProcessRootPresContext->mFirstNonBlankPaintTime.IsNull() ||
+      inProcessRootPresContext->mFirstNonBlankPaintTime > aTimeStamp) {
     
     
     
@@ -1301,7 +1303,7 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
   interactionTime = TimeStamp::Now();
   
   
-  if (this == topContentPresContext) {
+  if (this == inProcessRootPresContext) {
     if (Telemetry::CanRecordExtended()) {
       double millis =
           (interactionTime - mFirstNonBlankPaintTime).ToMilliseconds();
@@ -1312,7 +1314,7 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
       }
     }
   } else {
-    topContentPresContext->RecordInteractionTime(aType, aTimeStamp);
+    inProcessRootPresContext->RecordInteractionTime(aType, aTimeStamp);
   }
 }
 
