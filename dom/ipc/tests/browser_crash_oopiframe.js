@@ -69,7 +69,10 @@ add_task(async function() {
       
       
       await BrowserTestUtils.waitForCondition(() => {
-        return iframeBC.currentWindowGlobal;
+        return (
+          iframeBC.currentWindowGlobal &&
+          iframeBC.currentWindowGlobal.documentURI != "about:blank"
+        );
       });
 
       let newIframeURI = await SpecialPowers.spawn(iframeBC, [], async () => {
