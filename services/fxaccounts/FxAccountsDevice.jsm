@@ -218,7 +218,9 @@ class FxAccountsDevice {
             const devices = await this._fxai.fxAccountsClient.getDeviceList(
               accountData.sessionToken
             );
-            log.info("got new device list", devices);
+            log.info(
+              `Got new device list: ${devices.map(d => d.id).join(", ")}`
+            );
             
             
             
