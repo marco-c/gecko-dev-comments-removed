@@ -111,7 +111,6 @@ class imgRequestProxy : public mozilla::PreloaderBase,
   void MarkValidating();
   void ClearValidating();
 
-  bool IsOnEventTarget() const;
   already_AddRefed<nsIEventTarget> GetEventTarget() const override;
 
   
@@ -203,7 +202,6 @@ class imgRequestProxy : public mozilla::PreloaderBase,
   void RemoveFromOwner(nsresult aStatus);
 
   nsresult DispatchWithTargetIfAvailable(already_AddRefed<nsIRunnable> aEvent);
-  void DispatchWithTarget(already_AddRefed<nsIRunnable> aEvent);
 
   
   nsCOMPtr<nsIURI> mURI;
