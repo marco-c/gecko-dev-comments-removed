@@ -161,6 +161,23 @@ async function clearCache() {
 
 
 
+function assertCacheResultScalar(cacheResultScalar) {
+  let parentScalars = Services.telemetry.getSnapshotForScalars("main").parent;
+  Assert.equal(
+    parentScalars["browser.startup.abouthome_cache_result"],
+    cacheResultScalar,
+    "Expected the right value set to browser.startup.abouthome_cache_result " +
+      "scalar."
+  );
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -194,6 +211,9 @@ async function ensureCachedAboutHome(browser) {
       "Should have found the Discovery Stream top sites."
     );
   });
+  assertCacheResultScalar(
+    AboutHomeStartupCache.CACHE_RESULT_SCALARS.VALID_AND_USED
+  );
 }
 
 
