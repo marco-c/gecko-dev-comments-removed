@@ -712,7 +712,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       const AncestorTransform& aAncestorTransform, HitTestingTreeNode* aParent,
       HitTestingTreeNode* aNextSibling, TreeBuildingState& aState);
   template <class ScrollNode>
-  Maybe<ParentLayerIntRegion> ComputeClipRegion(const ScrollNode& aLayer);
+  Maybe<ParentLayerIntRegion> ComputeClipRegion(const LayersId& aLayersId,
+                                                const ScrollNode& aLayer);
 
   template <class ScrollNode>
   void PrintAPZCInfo(const ScrollNode& aLayer,
@@ -799,7 +800,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
 
-  bool mUsingAsyncZoomContainer;
+  Maybe<LayersId> mAsyncZoomContainerSubtree;
 
   
 
