@@ -42,9 +42,9 @@ class nsPageFrame final : public nsContainerFrame {
   
 
   
-  virtual void SetPageNumInfo(int32_t aPageNumber, int32_t aTotalPages);
+  void SetPageNumInfo(int32_t aPageNumber, int32_t aTotalPages);
 
-  virtual void SetSharedPageData(nsSharedPageData* aPD);
+  void SetSharedPageData(nsSharedPageData* aPD);
 
   
   
