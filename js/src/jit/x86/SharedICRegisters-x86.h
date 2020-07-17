@@ -31,6 +31,8 @@ static constexpr Register ExtractTemp1 = InvalidReg;
 
 static constexpr FloatRegister FloatReg0 = xmm0;
 static constexpr FloatRegister FloatReg1 = xmm1;
+static constexpr FloatRegister FloatReg2 = xmm2;
+static constexpr FloatRegister FloatReg3 = xmm3;
 
 }  
 }  
