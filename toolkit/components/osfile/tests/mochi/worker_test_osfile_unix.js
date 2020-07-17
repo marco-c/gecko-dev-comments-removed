@@ -3,8 +3,7 @@
 
 
 
-
-importScripts("chrome://mochikit/content/tests/SimpleTest/WorkerSimpleTest.js");
+importScripts("worker_test_osfile_shared.js");
 
 self.onmessage = function(msg) {
   log("received message " + JSON.stringify(msg.data));

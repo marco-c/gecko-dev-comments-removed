@@ -3,10 +3,9 @@
 
 
 
-
 "use strict";
 
-importScripts("chrome://mochikit/content/tests/SimpleTest/WorkerSimpleTest.js");
+importScripts("worker_test_osfile_shared.js");
 
 
 
