@@ -7,6 +7,8 @@
 const { shallow } = require("enzyme");
 const { createFactory } = require("react");
 
+const { setupStore } = require("devtools/client/application/test/node/helpers");
+
 const {
   WORKER_RUNNING,
   WORKER_STOPPED,
@@ -19,12 +21,15 @@ const Worker = createFactory(
 
 describe("Worker", () => {
   it("Renders the expected snapshot for a running worker", () => {
+    const store = setupStore({});
+
     const wrapper = shallow(
       Worker({
         isDebugEnabled: true,
         worker: WORKER_RUNNING,
+        store,
       })
-    );
+    ).dive();
 
     
     expect(wrapper.find(".js-worker-status").text()).toBe(
@@ -37,12 +42,15 @@ describe("Worker", () => {
   });
 
   it("Renders the expected snapshot for a stopped worker", () => {
+    const store = setupStore({});
+
     const wrapper = shallow(
       Worker({
         isDebugEnabled: true,
         worker: WORKER_STOPPED,
+        store,
       })
-    );
+    ).dive();
 
     
     expect(wrapper.find(".js-worker-status").text()).toBe(
@@ -55,12 +63,15 @@ describe("Worker", () => {
   });
 
   it("Renders the expected snapshot for a non-active worker", () => {
+    const store = setupStore({});
+
     const wrapper = shallow(
       Worker({
         isDebugEnabled: true,
         worker: WORKER_WAITING,
+        store,
       })
-    );
+    ).dive();
 
     
     
@@ -73,13 +84,17 @@ describe("Worker", () => {
   });
 
   it("Enables/disabled the debug button depending of debugging being available", () => {
+    const store = setupStore({});
+
     
     let wrapper = shallow(
       Worker({
         isDebugEnabled: false,
         worker: WORKER_RUNNING,
+        store,
       })
-    );
+    ).dive();
+
     expect(wrapper.find(".js-debug-button[disabled=true]")).toHaveLength(1);
 
     
@@ -87,8 +102,10 @@ describe("Worker", () => {
       Worker({
         isDebugEnabled: true,
         worker: WORKER_RUNNING,
+        store,
       })
-    );
+    ).dive();
+
     expect(wrapper.find(".js-debug-button[disabled=false]")).toHaveLength(1);
   });
 });
