@@ -26,6 +26,10 @@ const lazy = createLazyLoaders({
     ChromeUtils.import(
       "resource://devtools/client/performance-new/popup/panel.jsm.js"
     ),
+  Background: () =>
+    ChromeUtils.import(
+      "resource://devtools/client/performance-new/popup/background.jsm.js"
+    ),
 });
 
 const WIDGET_ID = "profiler-button";
@@ -75,7 +79,13 @@ function openPopup(document) {
   if (!button) {
     throw new Error("Could not find the profiler button.");
   }
-  button.click();
+
+  
+  
+  
+  const cmdEvent = document.createEvent("xulcommandevent");
+  cmdEvent.initCommandEvent("command", true, true, button.ownerGlobal);
+  button.dispatchEvent(cmdEvent);
 }
 
 
@@ -233,6 +243,17 @@ function initialize(toggleProfilerKeyShortcuts) {
       
       buttonElement.classList.add("subviewbutton-nav");
 
+      
+      
+      
+      buttonElement.setAttribute("wantdropmarker", "true");
+      
+      
+      buttonElement.addEventListener("click", item);
+      
+      
+      buttonElement.addEventListener("keydown", item);
+
       function setButtonActive() {
         buttonElement.setAttribute(
           "tooltiptext",
@@ -273,7 +294,79 @@ function initialize(toggleProfilerKeyShortcuts) {
         Services.obs.removeObserver(setButtonActive, "profiler-started");
         Services.obs.removeObserver(setButtonInactive, "profiler-stopped");
         Services.obs.removeObserver(setButtonPaused, "profiler-paused");
+        buttonElement.removeEventListener("click", item);
+        buttonElement.removeEventListener("keydown", item);
       });
+    },
+
+    handleEvent: event => {
+      function startOrCapture() {
+        if (Services.profiler.IsPaused()) {
+          
+          return;
+        }
+        const { startProfiler, captureProfile } = lazy.Background();
+        if (Services.profiler.IsActive()) {
+          captureProfile("aboutprofiling");
+        } else {
+          startProfiler("aboutprofiling");
+        }
+      }
+
+      if (event.type == "click") {
+        
+        if (event.button != 0) {
+          return;
+        }
+
+        const button = event.target;
+
+        
+        if (button.getAttribute("cui-anchorid") == "nav-bar-overflow-button") {
+          return;
+        }
+
+        
+        
+        
+        const win = button.ownerGlobal;
+        const iconBounds = win.windowUtils.getBoundsWithoutFlushing(
+          button.icon
+        );
+        if (
+          win.RTL_UI ? event.x >= iconBounds.left : event.x <= iconBounds.right
+        ) {
+          startOrCapture();
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      } else if (event.type == "keydown") {
+        if (event.key == " " || event.key == "Enter") {
+          startOrCapture();
+          event.stopPropagation();
+          event.preventDefault();
+          return;
+        }
+        if (event.key == "ArrowDown") {
+          
+          const button = event.target;
+          const cmdEvent = button.ownerDocument.createEvent("xulcommandevent");
+          cmdEvent.initCommandEvent(
+            "command",
+            true,
+            true,
+            button.ownerGlobal,
+            0,
+            event.ctrlKey,
+            event.altKey,
+            event.shiftKey,
+            event.metaKey,
+            null,
+            event.mozInputSource
+          );
+          event.currentTarget.dispatchEvent(cmdEvent);
+        }
+      }
     },
   };
 
