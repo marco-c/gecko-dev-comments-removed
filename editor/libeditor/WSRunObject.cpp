@@ -79,16 +79,11 @@ WSRunScanner::WSRunScanner(const HTMLEditor* aHTMLEditor,
     : mScanStartPoint(aScanStartPoint),
       mScanEndPoint(aScanEndPoint),
       mEditingHost(aHTMLEditor->GetActiveEditingHost()),
-      mPRE(mScanStartPoint.IsInContentNode() &&
-           EditorUtils::IsContentPreformatted(
-               *mScanStartPoint.ContainerAsContent())),
-      mHTMLEditor(aHTMLEditor) {
+      mHTMLEditor(aHTMLEditor),
+      mTextFragmentDataAtStart(mScanStartPoint, mEditingHost) {
   MOZ_ASSERT(
       *nsContentUtils::ComparePoints(aScanStartPoint.ToRawRangeBoundary(),
                                      aScanEndPoint.ToRawRangeBoundary()) <= 0);
-  DebugOnly<nsresult> rvIgnored = GetWSNodes();
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                       "WSRunScanner::GetWSNodes() failed, but ignored");
 }
 
 template <typename PT, typename CT>
@@ -202,7 +197,7 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
   
   
 
-  TextFragmentData textFragmentData(mStart, mEnd, mNBSPData, mPRE);
+  TextFragmentData textFragmentData(TextFragmentDataAtStart());
   const EditorDOMRange invisibleLeadingWhiteSpaceRangeOfNewLine =
       textFragmentData.GetNewInvisibleLeadingWhiteSpaceRangeIfSplittingAt(
           aPointToInsert);
@@ -338,7 +333,7 @@ nsresult WSRunObject::InsertText(Document& aDocument,
     return NS_OK;
   }
 
-  TextFragmentData textFragmentDataAtStart(mStart, mEnd, mNBSPData, mPRE);
+  TextFragmentData textFragmentDataAtStart(TextFragmentDataAtStart());
   const bool insertionPointEqualsOrIsBeforeStartOfText =
       mScanStartPoint.EqualsOrIsBefore(textFragmentDataAtStart.StartRef());
   TextFragmentData textFragmentDataAtEnd(textFragmentDataAtStart);
@@ -350,8 +345,7 @@ nsresult WSRunObject::InsertText(Document& aDocument,
     
     WSRunObject afterRunObject(MOZ_KnownLive(mHTMLEditor), mScanEndPoint);
     textFragmentDataAtEnd =
-        TextFragmentData(afterRunObject.mStart, afterRunObject.mEnd,
-                         afterRunObject.mNBSPData, afterRunObject.mPRE);
+        TextFragmentData(afterRunObject.TextFragmentDataAtStart());
   }
   const bool insertionPointAfterEndOfText =
       textFragmentDataAtEnd.EndRef().EqualsOrIsBefore(mScanEndPoint);
@@ -580,7 +574,7 @@ nsresult WSRunObject::DeleteWSBackward() {
   }
 
   
-  if (mPRE) {
+  if (TextFragmentDataAtStart().IsPreformatted()) {
     if (!atPreviousCharOfStart.IsCharASCIISpace() &&
         !atPreviousCharOfStart.IsCharNBSP()) {
       return NS_OK;
@@ -648,7 +642,7 @@ nsresult WSRunObject::DeleteWSForward() {
   }
 
   
-  if (mPRE) {
+  if (TextFragmentDataAtStart().IsPreformatted()) {
     if (!atNextCharOfStart.IsCharASCIISpace() &&
         !atNextCharOfStart.IsCharNBSP()) {
       return NS_OK;
@@ -715,8 +709,7 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
   
   
   Maybe<VisibleWhiteSpacesData> visibleWhiteSpaces =
-      TextFragmentData(mStart, mEnd, mNBSPData, mPRE)
-          .CreateVisibleWhiteSpacesData();
+      TextFragmentDataAtStart().CreateVisibleWhiteSpacesData();
   if (visibleWhiteSpaces.isSome() &&
       visibleWhiteSpaces.ref().RawStartPoint().IsBefore(aPoint)) {
     EditorDOMPointInText atPreviousChar = GetPreviousEditableCharPoint(aPoint);
@@ -731,11 +724,15 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
   }
 
   
-  if (mStart.GetReasonContent() != mStart.PointRef().GetContainer()) {
+  if (TextFragmentDataAtStart().GetStartReasonContent() !=
+      TextFragmentDataAtStart().StartRef().GetContainer()) {
     
-    return WSScanResult(mStart.GetReasonContent(), mStart.RawReason());
+    
+    return WSScanResult(TextFragmentDataAtStart().GetStartReasonContent(),
+                        TextFragmentDataAtStart().StartRawReason());
   }
-  return WSScanResult(mStart.PointRef(), mStart.RawReason());
+  return WSScanResult(TextFragmentDataAtStart().StartRef(),
+                      TextFragmentDataAtStart().StartRawReason());
 }
 
 template <typename PT, typename CT>
@@ -746,8 +743,7 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
   
   
   Maybe<VisibleWhiteSpacesData> visibleWhiteSpaces =
-      TextFragmentData(mStart, mEnd, mNBSPData, mPRE)
-          .CreateVisibleWhiteSpacesData();
+      TextFragmentDataAtStart().CreateVisibleWhiteSpacesData();
   if (visibleWhiteSpaces.isSome() &&
       aPoint.EqualsOrIsBefore(visibleWhiteSpaces.ref().RawEndPoint())) {
     EditorDOMPointInText atNextChar = GetInclusiveNextEditableCharPoint(aPoint);
@@ -762,11 +758,15 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
   }
 
   
-  if (mEnd.GetReasonContent() != mEnd.PointRef().GetContainer()) {
+  if (TextFragmentDataAtStart().GetEndReasonContent() !=
+      TextFragmentDataAtStart().EndRef().GetContainer()) {
     
-    return WSScanResult(mEnd.GetReasonContent(), mEnd.RawReason());
+    
+    return WSScanResult(TextFragmentDataAtStart().GetEndReasonContent(),
+                        TextFragmentDataAtStart().EndRawReason());
   }
-  return WSScanResult(mEnd.PointRef(), mEnd.RawReason());
+  return WSScanResult(TextFragmentDataAtStart().EndRef(),
+                      TextFragmentDataAtStart().EndRawReason());
 }
 
 
@@ -777,14 +777,14 @@ nsresult WSRunObject::NormalizeWhiteSpacesAround(
   
   
   
-  if (!wsRunObject.mNBSPData.FoundNBSP()) {
+  if (!wsRunObject.TextFragmentDataAtStart()
+           .NoBreakingSpaceDataRef()
+           .FoundNBSP()) {
     
     return NS_OK;
   }
   Maybe<VisibleWhiteSpacesData> visibleWhiteSpaces =
-      TextFragmentData(wsRunObject.mStart, wsRunObject.mEnd,
-                       wsRunObject.mNBSPData, wsRunObject.mPRE)
-          .CreateVisibleWhiteSpacesData();
+      wsRunObject.TextFragmentDataAtStart().CreateVisibleWhiteSpacesData();
   if (visibleWhiteSpaces.isNothing()) {
     return NS_OK;
   }
@@ -796,49 +796,48 @@ nsresult WSRunObject::NormalizeWhiteSpacesAround(
   return rv;
 }
 
-
-
-
-
-nsresult WSRunScanner::GetWSNodes() {
-  
-  
-  
-  EditorDOMPoint start(mScanStartPoint), end(mScanStartPoint);
-  nsIContent* scanStartContent = mScanStartPoint.GetContainerAsContent();
-  if (NS_WARN_IF(!scanStartContent)) {
-    
-    
-    
-    
-    return NS_ERROR_FAILURE;
+template <typename EditorDOMPointType>
+WSRunScanner::TextFragmentData::TextFragmentData(
+    const EditorDOMPointType& aPoint, const Element* aEditingHost)
+    : mIsPreformatted(
+          aPoint.IsInContentNode() &&
+          EditorUtils::IsContentPreformatted(*aPoint.ContainerAsContent())) {
+  if (!aPoint.IsSetAndValid()) {
+    NS_WARNING("aPoint was invalid");
+    return;
   }
-  
-  
-  
-  NS_ASSERTION(
-      EditorUtils::IsEditableContent(*scanStartContent, EditorType::HTML),
-      "Given content is not editable");
-  NS_ASSERTION(scanStartContent->GetAsElementOrParentElement(),
+  if (!aPoint.IsInContentNode()) {
+    NS_WARNING("aPoint was in Document or DocumentFragment");
+    
+    
+    
+    return;
+  }
+
+  NS_ASSERTION(EditorUtils::IsEditableContent(*aPoint.ContainerAsContent(),
+                                              EditorType::HTML),
+               "Given content is not editable");
+  NS_ASSERTION(aPoint.ContainerAsContent()->GetAsElementOrParentElement(),
                "Given content is not an element and an orphan node");
   nsIContent* editableBlockParentOrTopmotEditableInlineContent =
-      EditorUtils::IsEditableContent(*scanStartContent, EditorType::HTML)
+      EditorUtils::IsEditableContent(*aPoint.ContainerAsContent(),
+                                     EditorType::HTML)
           ? HTMLEditUtils::
                 GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
-                    *scanStartContent)
+                    *aPoint.ContainerAsContent())
           : nullptr;
   if (!editableBlockParentOrTopmotEditableInlineContent) {
     
-    editableBlockParentOrTopmotEditableInlineContent = scanStartContent;
+    editableBlockParentOrTopmotEditableInlineContent =
+        aPoint.ContainerAsContent();
   }
 
   mStart = BoundaryData::ScanWhiteSpaceStartFrom(
-      mScanStartPoint, *editableBlockParentOrTopmotEditableInlineContent,
-      mEditingHost, &mNBSPData);
+      aPoint, *editableBlockParentOrTopmotEditableInlineContent, aEditingHost,
+      &mNBSPData);
   mEnd = BoundaryData::ScanWhiteSpaceEndFrom(
-      mScanStartPoint, *editableBlockParentOrTopmotEditableInlineContent,
-      mEditingHost, &mNBSPData);
-  return NS_OK;
+      aPoint, *editableBlockParentOrTopmotEditableInlineContent, aEditingHost,
+      &mNBSPData);
 }
 
 
@@ -1247,12 +1246,10 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  TextFragmentData textFragmentDataAtStart(mStart, mEnd, mNBSPData, mPRE);
+  TextFragmentData textFragmentDataAtStart(TextFragmentDataAtStart());
   const bool deleteStartEqualsOrIsBeforeTextStart =
       mScanStartPoint.EqualsOrIsBefore(textFragmentDataAtStart.StartRef());
-  TextFragmentData textFragmentDataAtEnd(aEndObject->mStart, aEndObject->mEnd,
-                                         aEndObject->mNBSPData,
-                                         aEndObject->mPRE);
+  TextFragmentData textFragmentDataAtEnd(aEndObject->TextFragmentDataAtStart());
   const bool deleteEndIsAfterTextEnd =
       textFragmentDataAtEnd.EndRef().EqualsOrIsBefore(
           aEndObject->mScanStartPoint);
@@ -1431,8 +1428,7 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
   
   
   Maybe<VisibleWhiteSpacesData> visibleWhiteSpaces =
-      TextFragmentData(mStart, mEnd, mNBSPData, mPRE)
-          .CreateVisibleWhiteSpacesData();
+      TextFragmentDataAtStart().CreateVisibleWhiteSpacesData();
   if (visibleWhiteSpaces.isNothing()) {
     return NS_OK;  
   }
@@ -1532,7 +1528,7 @@ EditorDOMPointInText WSRunScanner::GetInclusiveNextEditableCharPoint(
     return EditorDOMPointInText(point.ContainerAsText(), point.Offset());
   }
 
-  if (point.GetContainer() == mEnd.GetReasonContent()) {
+  if (point.GetContainer() == TextFragmentDataAtStart().GetEndReasonContent()) {
     return EditorDOMPointInText();
   }
 
@@ -1565,7 +1561,7 @@ EditorDOMPointInText WSRunScanner::GetInclusiveNextEditableCharPoint(
            *nextContent, *editableBlockParentOrTopmotEditableInlineContent,
            mEditingHost)) {
     if (!nextContent->IsText() || !nextContent->IsEditable()) {
-      if (nextContent == mEnd.GetReasonContent()) {
+      if (nextContent == TextFragmentDataAtStart().GetEndReasonContent()) {
         break;  
       }
       continue;
@@ -1611,7 +1607,8 @@ EditorDOMPointInText WSRunScanner::GetPreviousEditableCharPoint(
     return EditorDOMPointInText(point.ContainerAsText(), point.Offset() - 1);
   }
 
-  if (point.GetContainer() == mStart.GetReasonContent()) {
+  if (point.GetContainer() ==
+      TextFragmentDataAtStart().GetStartReasonContent()) {
     return EditorDOMPointInText();
   }
 
@@ -1646,7 +1643,8 @@ EditorDOMPointInText WSRunScanner::GetPreviousEditableCharPoint(
                *editableBlockParentOrTopmotEditableInlineContent,
                mEditingHost)) {
     if (!previousContent->IsText() || !previousContent->IsEditable()) {
-      if (previousContent == mStart.GetReasonContent()) {
+      if (previousContent ==
+          TextFragmentDataAtStart().GetStartReasonContent()) {
         break;  
       }
       continue;
@@ -1975,8 +1973,8 @@ nsresult WSRunObject::NormalizeWhiteSpacesAtEndOf(
     
     
     
-    if (mPRE || maybeNBSPFollowingVisibleContent ||
-        !isPreviousCharASCIIWhiteSpace ||
+    if (TextFragmentDataAtStart().IsPreformatted() ||
+        maybeNBSPFollowingVisibleContent || !isPreviousCharASCIIWhiteSpace ||
         !followedByVisibleContentOrBRElement) {
       return NS_OK;
     }
@@ -2173,7 +2171,7 @@ nsresult WSRunObject::MaybeReplaceInclusiveNextNBSPWithASCIIWhiteSpace(
 }
 
 nsresult WSRunObject::DeleteInvisibleASCIIWhiteSpacesInternal() {
-  TextFragmentData textFragment(mStart, mEnd, mNBSPData, mPRE);
+  TextFragmentData textFragment(TextFragmentDataAtStart());
   EditorDOMRange leadingWhiteSpaceRange =
       textFragment.GetInvisibleLeadingWhiteSpaceRange();
   
