@@ -6100,8 +6100,6 @@ impl PicturePrimitive {
 
             
             
-            
-            
             cluster.flags.insert(ClusterFlags::IS_VISIBLE);
             if let Some(cluster_rect) = surface.map_local_to_surface.map(&cluster.bounding_rect) {
                 surface.rect = surface.rect.union(&cluster_rect);
