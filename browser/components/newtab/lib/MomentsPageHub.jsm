@@ -17,6 +17,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 const SYSTEM_TICK_INTERVAL = 5 * 60 * 1000;
 const HOMEPAGE_OVERRIDE_PREF = "browser.startup.homepage_override.once";
 
+
+const REACH_EVENT_CATEGORY = "messaging_experiments";
+const REACH_EVENT_METHOD = "reach";
+
+
+const REACH_EVENT_OBJECT = "moments_page";
+
 class _MomentsPageHub {
   constructor() {
     this.id = "moments-page-hub";
@@ -97,16 +104,42 @@ class _MomentsPageHub {
     }
   }
 
+  _recordReachEvent(message) {
+    const extra = { branches: message.branchSlug };
+    Services.telemetry.recordEvent(
+      REACH_EVENT_CATEGORY,
+      REACH_EVENT_METHOD,
+      REACH_EVENT_OBJECT,
+      message.experimentSlug,
+      extra
+    );
+  }
+
   async messageRequest({ triggerId, template }) {
     const telemetryObject = { triggerId };
     TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
-    const message = await this._handleMessageRequest({
+    const messages = await this._handleMessageRequest({
       triggerId,
       template,
+      returnAll: true,
     });
     TelemetryStopwatch.finish("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
-    if (message) {
-      this.executeAction(message);
+
+    
+    
+    const nonReachMessages = [];
+    for (const message of messages) {
+      if (message.forReachEvent) {
+        if (!message.forReachEvent.sent) {
+          this._recordReachEvent(message);
+          message.forReachEvent.sent = true;
+        }
+      } else {
+        nonReachMessages.push(message);
+      }
+    }
+    if (nonReachMessages.length) {
+      this.executeAction(nonReachMessages[0]);
     }
   }
 
