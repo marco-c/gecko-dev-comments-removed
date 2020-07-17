@@ -347,6 +347,24 @@ nsresult WSRunObject::InsertText(Document& aDocument,
   const WSFragment* afterRun =
       afterRunObject.FindNearestFragment(mScanEndPoint, true);
 
+  const Maybe<const WSFragment> visibleWSFragmentInMiddleOfLineAtStart =
+      TextFragmentData(mStart, mEnd, mNBSPData, mPRE)
+          .CreateWSFragmentForVisibleAndMiddleOfLine();
+  const PointPosition pointPositionWithVisibleWhiteSpacesAtStart =
+      visibleWSFragmentInMiddleOfLineAtStart.isSome()
+          ? visibleWSFragmentInMiddleOfLineAtStart.ref().ComparePoint(
+                mScanStartPoint)
+          : PointPosition::NotInSameDOMTree;
+  const Maybe<const WSFragment> visibleWSFragmentInMiddleOfLineAtEnd =
+      TextFragmentData(afterRunObject.mStart, afterRunObject.mEnd,
+                       afterRunObject.mNBSPData, afterRunObject.mPRE)
+          .CreateWSFragmentForVisibleAndMiddleOfLine();
+  const PointPosition pointPositionWithVisibleWhiteSpacesAtEnd =
+      visibleWSFragmentInMiddleOfLineAtEnd.isSome()
+          ? visibleWSFragmentInMiddleOfLineAtEnd.ref().ComparePoint(
+                mScanEndPoint)
+          : PointPosition::NotInSameDOMTree;
+
   EditorDOMPoint pointToInsert(mScanStartPoint);
   nsAutoString theString(aStringToInsert);
   {
@@ -368,11 +386,19 @@ nsresult WSRunObject::InsertText(Document& aDocument,
             "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
         return rv;
       }
-    } else if (afterRun->IsVisibleAndMiddleOfHardLine()) {
-      
-      
+    }
+    
+    
+    
+    
+    
+    
+    else if (pointPositionWithVisibleWhiteSpacesAtEnd ==
+                 PointPosition::StartOfFragment ||
+             pointPositionWithVisibleWhiteSpacesAtEnd ==
+                 PointPosition::MiddleOfFragment) {
       nsresult rv = MaybeReplaceInclusiveNextNBSPWithASCIIWhiteSpace(
-          *afterRun, pointToInsert);
+          visibleWSFragmentInMiddleOfLineAtEnd.ref(), pointToInsert);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "WSRunObject::MaybeReplaceInclusiveNextNBSPWithASCIIWhiteSpace() "
@@ -395,11 +421,22 @@ nsresult WSRunObject::InsertText(Document& aDocument,
             "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
         return rv;
       }
-    } else if (beforeRun->IsVisibleAndMiddleOfHardLine()) {
+    }
+    
+    
+    
+    
+    
+    
+    else if (pointPositionWithVisibleWhiteSpacesAtStart ==
+                 PointPosition::MiddleOfFragment ||
+             pointPositionWithVisibleWhiteSpacesAtStart ==
+                 PointPosition::EndOfFragment) {
       
       
-      nsresult rv = MaybeReplacePreviousNBSPWithASCIIWhiteSpace(*beforeRun,
-                                                                pointToInsert);
+      
+      nsresult rv = MaybeReplacePreviousNBSPWithASCIIWhiteSpace(
+          visibleWSFragmentInMiddleOfLineAtStart.ref(), pointToInsert);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "WSRunObject::MaybeReplacePreviousNBSPWithASCIIWhiteSpace() "
