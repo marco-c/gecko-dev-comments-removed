@@ -323,15 +323,6 @@ bool UnsetRemoteExceptionHandler();
 
 void SetNotificationPipeForChild(int childCrashFd);
 void SetCrashAnnotationPipeForChild(int childCrashAnnotationFd);
-
-
-
-
-
-
-void AddLibraryMapping(const char* library_name, uintptr_t start_address,
-                       size_t mapping_length, size_t file_offset);
-
 #endif
 
 
