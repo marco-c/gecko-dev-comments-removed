@@ -578,22 +578,14 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     nsCOMPtr<nsIPrintingPromptService> pps(
         do_QueryInterface(aWebProgressListener));
     mProgressDialogIsShown = pps != nullptr;
-
-    mIsCreatingPrintPreview = true;
-
-    
-    SetIsPrintPreview(true);
   } else {
     mProgressDialogIsShown = false;
-
-    
-    SetIsPrinting(true);
   }
 
   
   
-  mPrt = new nsPrintData(mIsCreatingPrintPreview ? nsPrintData::eIsPrintPreview
-                                                 : nsPrintData::eIsPrinting);
+  mPrt = new nsPrintData(aIsPrintPreview ? nsPrintData::eIsPrintPreview
+                                         : nsPrintData::eIsPrinting);
   RefPtr<nsPrintData> printData = mPrt;
 
   
@@ -609,11 +601,14 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   printData->mPrintSettings->SetIsCancelled(false);
   printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
 
-  if (mIsCreatingPrintPreview) {
+  if (aIsPrintPreview) {
     
     
     
     mPrtPreview = nullptr;
+
+    mIsCreatingPrintPreview = true;
+    SetIsPrintPreview(true);
   }
 
   
@@ -623,7 +618,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   nsCOMPtr<nsIPrintSession> printSession;
   bool remotePrintJobListening = false;
-  if (!mIsCreatingPrintPreview) {
+  if (!aIsPrintPreview) {
     rv = printData->mPrintSettings->GetPrintSession(
         getter_AddRefs(printSession));
     if (NS_FAILED(rv) || !printSession) {
@@ -667,7 +662,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     nsAutoScriptBlocker scriptBlocker;
     printData->mPrintObject = MakeUnique<nsPrintObject>();
     rv = printData->mPrintObject->InitAsRootObject(docShell, aSourceDoc,
-                                                   mIsCreatingPrintPreview);
+                                                   aIsPrintPreview);
     NS_ENSURE_SUCCESS(rv, rv);
 
     printData->mPrintDocList.AppendElement(printData->mPrintObject.get());
@@ -688,8 +683,12 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   
   
-  if (mIsDestroying || (mIsCreatingPrintPreview && !mIsCreatingPrintPreview)) {
+  if (mIsDestroying || (aIsPrintPreview && !mIsCreatingPrintPreview)) {
     return NS_ERROR_FAILURE;
+  }
+
+  if (!aIsPrintPreview) {
+    SetIsPrinting(true);
   }
 
   
@@ -719,7 +718,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   
   
-  if (!mIsCreatingPrintPreview || printingViaParent) {
+  if (!aIsPrintPreview || printingViaParent) {
     scriptSuppressor.Suppress();
     bool printSilently = false;
     printData->mPrintSettings->GetPrintSilent(&printSilently);
@@ -738,7 +737,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
       if (printPromptService) {
         nsPIDOMWindowOuter* domWin = nullptr;
         
-        if (!mIsCreatingPrintPreview) {
+        if (!aIsPrintPreview) {
           domWin = mOriginalDoc->GetWindow();
           NS_ENSURE_TRUE(domWin, NS_ERROR_FAILURE);
 
@@ -765,7 +764,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         rv = printPromptService->ShowPrintDialog(domWin,
                                                  printData->mPrintSettings);
 
-        if (!mIsCreatingPrintPreview) {
+        if (!aIsPrintPreview) {
           if (rv == NS_ERROR_ABORT) {
             
             
@@ -795,7 +794,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
           
           printSilently = true;
 
-          if (printData->mPrintSettings && !mIsCreatingPrintPreview) {
+          if (printData->mPrintSettings && !aIsPrintPreview) {
             
             
             printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
@@ -831,8 +830,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  rv = devspec->Init(nullptr, printData->mPrintSettings,
-                     mIsCreatingPrintPreview);
+  rv = devspec->Init(nullptr, printData->mPrintSettings, aIsPrintPreview);
   NS_ENSURE_SUCCESS(rv, rv);
 
   printData->mPrintDC = new nsDeviceContext();
@@ -845,7 +843,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         [self](nsresult aResult) { self->PageDone(aResult); });
   }
 
-  if (mIsCreatingPrintPreview) {
+  if (aIsPrintPreview) {
     
     
     printData->mPrintSettings->SetPrintRange(nsIPrintSettings::kRangeAllPages);
@@ -864,7 +862,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   mLoadCounter = 0;
   mDidLoadDataForPrinting = false;
 
-  if (mIsCreatingPrintPreview) {
+  if (aIsPrintPreview) {
     bool notifyOnInit = false;
     ShowPrintProgress(false, notifyOnInit);
 
