@@ -64,6 +64,9 @@ void nsAutoOwningEventTarget ::AssertCurrentThreadOwnsMe(
 }
 
 bool nsAutoOwningEventTarget::IsCurrentThread() const {
+  
+  
+  JS::AutoSuppressGCAnalysis suppress;
   return mTarget->IsOnCurrentThread();
 }
 
