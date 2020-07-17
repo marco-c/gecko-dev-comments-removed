@@ -70,6 +70,14 @@ class JSActorManager : public nsISupports {
   virtual mozilla::ipc::IProtocol* AsNativeActor() = 0;
 
  private:
+  friend class JSActorService;
+
+  
+
+
+
+  void JSActorUnregister(const nsACString& aName);
+
   nsRefPtrHashtable<nsCStringHashKey, JSActor> mJSActors;
 };
 
