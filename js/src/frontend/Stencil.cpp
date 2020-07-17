@@ -341,6 +341,24 @@ static JSFunction* CreateFunction(JSContext* cx,
 }
 
 
+static bool MaybeInstantiateModule(JSContext* cx,
+                                   CompilationInfo& compilationInfo) {
+  if (compilationInfo.topLevel.get().isModule()) {
+    compilationInfo.module = ModuleObject::create(cx);
+    if (!compilationInfo.module) {
+      return false;
+    }
+
+    if (!compilationInfo.moduleMetadata.get().initModule(
+            cx, compilationInfo.module)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
 static bool InstantiateFunctions(JSContext* cx,
                                  CompilationInfo& compilationInfo) {
   for (auto item : compilationInfo.functionScriptStencils()) {
@@ -473,7 +491,21 @@ static bool InstantiateTopLevel(JSContext* cx,
 
   compilationInfo.script =
       JSScript::fromStencil(cx, compilationInfo, stencil, fun);
-  return !!compilationInfo.script;
+  if (!compilationInfo.script) {
+    return false;
+  }
+
+  
+  if (stencil.isModule()) {
+    compilationInfo.module->initScriptSlots(compilationInfo.script);
+    compilationInfo.module->initStatusSlot();
+
+    if (!ModuleObject::createEnvironment(cx, compilationInfo.module)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 
@@ -574,6 +606,10 @@ bool CompilationInfo::instantiateStencils() {
   if (lazy) {
     FunctionsFromExistingLazy(*this);
   } else {
+    if (!MaybeInstantiateModule(cx, *this)) {
+      return false;
+    }
+
     if (!InstantiateFunctions(cx, *this)) {
       return false;
     }
