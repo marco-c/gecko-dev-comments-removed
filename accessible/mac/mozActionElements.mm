@@ -75,7 +75,7 @@ enum CheckboxValue {
   }
 }
 
-- (BOOL)moxIgnoreWithParent:(mozAccessible*)parent {
+- (BOOL)ignoreWithParent:(mozAccessible*)parent {
   if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
     if (acc->IsContent() && acc->GetContent()->IsXULElement(nsGkAtoms::menulist)) {
       
@@ -87,7 +87,7 @@ enum CheckboxValue {
     }
   }
 
-  return [super moxIgnoreWithParent:parent];
+  return [super ignoreWithParent:parent];
 }
 
 @end
