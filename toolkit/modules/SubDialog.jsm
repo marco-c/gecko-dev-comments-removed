@@ -2,11 +2,11 @@
 
 
 
-
-
-
 "use strict";
 
+var EXPORTED_SYMBOLS = ["SubDialog", "SubDialogManager"];
+
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -14,9 +14,36 @@
 
 
 
-function SubDialog({ template, parentElement, id }) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SubDialog({
+  template,
+  parentElement,
+  id,
+  dialogOptions: {
+    styleSheets = [],
+    consumeOutsideClicks = true,
+    resizeCallback,
+  } = {},
+}) {
   this._id = id;
 
+  this._injectedStyleSheets = this._injectedStyleSheets.concat(styleSheets);
+  this._consumeOutsideClicks = consumeOutsideClicks;
+  this._resizeCallback = resizeCallback;
   this._overlay = template.cloneNode(true);
   this._box = this._overlay.querySelector(".dialogBox");
   this._titleBar = this._overlay.querySelector(".dialogTitleBar");
@@ -27,7 +54,10 @@ function SubDialog({ template, parentElement, id }) {
   this._overlay.id = `dialogOverlay-${id}`;
   this._frame.setAttribute("name", `dialogFrame-${id}`);
   this._frameCreated = new Promise(resolve => {
-    this._frame.addEventListener("load", resolve, { once: true });
+    this._frame.addEventListener("load", resolve, {
+      once: true,
+      capture: true,
+    });
   });
 
   parentElement.appendChild(this._overlay);
@@ -43,16 +73,26 @@ SubDialog.prototype = {
   _overlay: null,
   _box: null,
   _openedURL: null,
-  _injectedStyleSheets: [
-    "chrome://global/skin/in-content/common.css",
-    "chrome://browser/skin/preferences/preferences.css",
-    "chrome://browser/skin/preferences/dialog.css",
-  ],
+  _injectedStyleSheets: ["chrome://global/skin/in-content/common.css"],
   _resizeObserver: null,
   _template: null,
   _id: null,
   _titleElement: null,
   _closeButton: null,
+
+  get _window() {
+    return this._overlay?.ownerGlobal;
+  },
+
+  get _chromeEventHandler() {
+    if (!this._window) {
+      return null;
+    }
+    if (this._window.isChromeWindow) {
+      return this._frame;
+    }
+    return this._window.docShell.chromeEventHandler;
+  },
 
   updateTitle(aEvent) {
     if (aEvent.target != this._frame.contentDocument) {
@@ -99,10 +139,16 @@ SubDialog.prototype = {
     }
     this._addDialogEventListeners();
 
-    let features =
-      (aFeatures ? aFeatures + "," : "") +
-      "resizable,dialog=no,centerscreen,chrome=no";
-    let dialog = window.openDialog(
+    
+    
+    let features = `resizable,dialog=no,centerscreen,chrome=${
+      this._window?.isChromeWindow ? "yes" : "no"
+    }`;
+    if (aFeatures) {
+      features = `${aFeatures},${features}`;
+    }
+
+    let dialog = this._window.openDialog(
       aURL,
       `dialogFrame-${this._id}`,
       features,
@@ -162,7 +208,7 @@ SubDialog.prototype = {
       })
     );
 
-    setTimeout(() => {
+    this._window.setTimeout(() => {
       
       
       let onBlankLoad = e => {
@@ -174,11 +220,21 @@ SubDialog.prototype = {
           this._resolveClosePromise();
         }
       };
-      this._frame.addEventListener("load", onBlankLoad);
-      this._frame.loadURI("about:blank", {
-        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
+
+      
+      
+      let triggeringPrincipal;
+      if (this._window.isChromeWindow) {
+        triggeringPrincipal = this._window.document.nodePrincipal;
+      } else {
+        triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal(
           {}
-        ),
+        );
+      }
+
+      this._frame.addEventListener("load", onBlankLoad, { capture: true });
+      this._frame.loadURI("about:blank", {
+        triggeringPrincipal,
       });
     }, 0);
   },
@@ -188,7 +244,7 @@ SubDialog.prototype = {
       case "click":
         
         
-        if (aEvent.target === this._overlay) {
+        if (this._consumeOutsideClicks && aEvent.target === this._overlay) {
           this._frame.contentWindow.close();
         }
         break;
@@ -250,7 +306,10 @@ SubDialog.prototype = {
     this._frame.contentWindow.resizeBy = (resizeByWidth, resizeByHeight) => {
       
       let frameHeight = this._frame.clientHeight;
-      let boxMinHeight = parseFloat(getComputedStyle(this._box).minHeight, 10);
+      let boxMinHeight = parseFloat(
+        this._window.getComputedStyle(this._box).minHeight,
+        10
+      );
 
       this._frame.style.height = frameHeight + resizeByHeight + "px";
       this._box.style.minHeight = boxMinHeight + resizeByHeight + "px";
@@ -287,22 +346,23 @@ SubDialog.prototype = {
   },
 
   async _onLoad(aEvent) {
-    if (aEvent.target.contentWindow.location == "about:blank") {
+    let target = aEvent.currentTarget;
+    if (target.contentWindow.location == "about:blank") {
       return;
     }
 
     
     
-    if (aEvent.target.contentDocument.l10n) {
-      await aEvent.target.contentDocument.l10n.ready;
+    if (target.contentDocument.l10n) {
+      await target.contentDocument.l10n.ready;
     }
 
     
     
     
     
-    if (aEvent.target.contentDocument.mozSubdialogReady) {
-      await aEvent.target.contentDocument.mozSubdialogReady;
+    if (target.contentDocument.mozSubdialogReady) {
+      await target.contentDocument.mozSubdialogReady;
     }
 
     await this.resizeDialog();
@@ -314,9 +374,9 @@ SubDialog.prototype = {
 
     
     let boxHorizontalBorder =
-      2 * parseFloat(getComputedStyle(this._box).borderLeftWidth);
+      2 * parseFloat(this._window.getComputedStyle(this._box).borderLeftWidth);
     let frameHorizontalMargin =
-      2 * parseFloat(getComputedStyle(this._frame).marginLeft);
+      2 * parseFloat(this._window.getComputedStyle(this._frame).marginLeft);
 
     
     let { scrollWidth } = docEl.ownerDocument.body || docEl;
@@ -345,42 +405,36 @@ SubDialog.prototype = {
 
     if (this._box.getAttribute("resizable") == "true") {
       this._onResize = this._onResize.bind(this);
-      this._resizeObserver = new MutationObserver(this._onResize);
+      this._resizeObserver = new this._window.MutationObserver(this._onResize);
       this._resizeObserver.observe(this._box, { attributes: true });
     }
 
     this._trapFocus();
 
-    
-    gSearchResultsPane.searchWithinNode(
-      this._titleElement,
-      gSearchResultsPane.query
-    );
-
-    
-    gSearchResultsPane.searchWithinNode(
-      this._frame.contentDocument.firstElementChild,
-      gSearchResultsPane.query
-    );
-
-    
-    for (let node of gSearchResultsPane.listSearchTooltips) {
-      if (!node.tooltipNode) {
-        gSearchResultsPane.createSearchTooltip(node, gSearchResultsPane.query);
-      }
-    }
+    this._resizeCallback?.({
+      title: this._titleElement,
+      frame: this._frame,
+    });
   },
 
   resizeVertically() {
     let docEl = this._frame.contentDocument.documentElement;
 
-    let titleBarHeight =
-      this._titleBar.clientHeight +
-      parseFloat(getComputedStyle(this._titleBar).borderBottomWidth);
+    
+    
+    let titleBarHeight = 0;
+    if (this._titleBar) {
+      titleBarHeight =
+        this._titleBar.clientHeight +
+        parseFloat(
+          this._window.getComputedStyle(this._titleBar).borderBottomWidth
+        );
+    }
+
     let boxVerticalBorder =
-      2 * parseFloat(getComputedStyle(this._box).borderTopWidth);
+      2 * parseFloat(this._window.getComputedStyle(this._box).borderTopWidth);
     let frameVerticalMargin =
-      2 * parseFloat(getComputedStyle(this._frame).marginTop);
+      2 * parseFloat(this._window.getComputedStyle(this._frame).marginTop);
 
     
     let boxRect = this._box.getBoundingClientRect();
@@ -399,11 +453,13 @@ SubDialog.prototype = {
 
     
     
-    let maxHeight = window.innerHeight - frameSizeDifference - 30;
+    let maxHeight = this._window.innerHeight - frameSizeDifference - 30;
     
     let comparisonFrameHeight;
     if (frameHeight.endsWith("em")) {
-      let fontSize = parseFloat(getComputedStyle(this._frame).fontSize);
+      let fontSize = parseFloat(
+        this._window.getComputedStyle(this._frame).fontSize
+      );
       comparisonFrameHeight = parseFloat(frameHeight, 10) * fontSize;
     } else if (frameHeight.endsWith("px")) {
       comparisonFrameHeight = parseFloat(frameHeight, 10);
@@ -484,7 +540,7 @@ SubDialog.prototype = {
 
   _onKeyDown(aEvent) {
     if (
-      aEvent.currentTarget == window &&
+      aEvent.currentTarget == this._window &&
       aEvent.keyCode == aEvent.DOM_VK_ESCAPE &&
       !aEvent.defaultPrevented
     ) {
@@ -520,12 +576,12 @@ SubDialog.prototype = {
     ) {
       aEvent.preventDefault();
       aEvent.stopImmediatePropagation();
-      let parentWin = this._getBrowser().ownerGlobal;
+      let parentWin = this._chromeEventHandler.ownerGlobal;
       if (forward) {
         fm.moveFocus(parentWin, null, fm.MOVEFOCUS_FIRST, fm.FLAG_BYKEY);
       } else {
         
-        fm.moveFocus(window, null, fm.MOVEFOCUS_ROOT, fm.FLAG_BYKEY);
+        fm.moveFocus(this._window, null, fm.MOVEFOCUS_ROOT, fm.FLAG_BYKEY);
         fm.moveFocus(parentWin, null, fm.MOVEFOCUS_BACKWARD, fm.FLAG_BYKEY);
       }
     }
@@ -534,47 +590,54 @@ SubDialog.prototype = {
   _onParentWinFocus(aEvent) {
     
     
-    if (aEvent.target != this._closeButton && aEvent.target != window) {
+    if (
+      this._closeButton &&
+      aEvent.target != this._closeButton &&
+      aEvent.target != this._window
+    ) {
       this._closeButton.focus();
     }
   },
 
   _addDialogEventListeners() {
     
-    this._closeButton.addEventListener("command", this);
+    this._closeButton?.addEventListener("command", this);
+
+    let chromeEventHandler = this._chromeEventHandler;
 
     
-    let chromeBrowser = this._getBrowser();
-    chromeBrowser.addEventListener("DOMTitleChanged", this, true);
+    if (this._titleBar) {
+      chromeEventHandler.addEventListener("DOMTitleChanged", this, true);
+    }
 
     
-    window.addEventListener("DOMFrameContentLoaded", this, true);
-
-    
-    
-    this._frame.addEventListener("load", this);
-
-    chromeBrowser.addEventListener("unload", this, true);
+    this._window.addEventListener("DOMFrameContentLoaded", this, true);
 
     
     
+    this._frame.addEventListener("load", this, { capture: true });
+
+    chromeEventHandler.addEventListener("unload", this, true);
+
     
-    window.addEventListener("keydown", this, true);
+    
+    
+    this._window.addEventListener("keydown", this, true);
 
     this._overlay.addEventListener("click", this, true);
   },
 
   _removeDialogEventListeners() {
-    let chromeBrowser = this._getBrowser();
-    chromeBrowser.removeEventListener("DOMTitleChanged", this, true);
-    chromeBrowser.removeEventListener("unload", this, true);
+    let chromeEventHandler = this._chromeEventHandler;
+    chromeEventHandler.removeEventListener("DOMTitleChanged", this, true);
+    chromeEventHandler.removeEventListener("unload", this, true);
 
-    this._closeButton.removeEventListener("command", this);
+    this._closeButton?.removeEventListener("command", this);
 
-    window.removeEventListener("DOMFrameContentLoaded", this, true);
+    this._window.removeEventListener("DOMFrameContentLoaded", this, true);
     this._frame.removeEventListener("load", this);
     this._frame.contentWindow.removeEventListener("dialogclosing", this);
-    window.removeEventListener("keydown", this, true);
+    this._window.removeEventListener("keydown", this, true);
 
     this._overlay.removeEventListener("click", this, true);
 
@@ -589,63 +652,66 @@ SubDialog.prototype = {
     let fm = Services.focus;
     fm.moveFocus(this._frame.contentWindow, null, fm.MOVEFOCUS_FIRST, 0);
     this._frame.contentDocument.addEventListener("keydown", this, true);
-    this._closeButton.addEventListener("keydown", this);
+    this._closeButton?.addEventListener("keydown", this);
 
-    window.addEventListener("focus", this, true);
+    this._window.addEventListener("focus", this, true);
   },
 
   _untrapFocus() {
     this._frame.contentDocument.removeEventListener("keydown", this, true);
-    this._closeButton.removeEventListener("keydown", this);
-    window.removeEventListener("focus", this);
-  },
-
-  _getBrowser() {
-    return window.docShell.chromeEventHandler;
+    this._closeButton?.removeEventListener("keydown", this);
+    this._window.removeEventListener("focus", this);
   },
 };
 
-var gSubDialog = {
-  
+class SubDialogManager {
+  constructor({
+    dialogStack,
+    dialogTemplate,
+    allowDuplicateDialogs = false,
+    dialogOptions,
+  }) {
+    
 
 
 
 
-  _dialogs: [],
-  _dialogStack: null,
-  _dialogTemplate: null,
-  _nextDialogID: 0,
-  _preloadDialog: null,
-  _topLevelPrevActiveElement: null,
-  get _topDialog() {
-    return this._dialogs.length
-      ? this._dialogs[this._dialogs.length - 1]
-      : undefined;
-  },
+    this._dialogs = [];
+    this._dialogStack = dialogStack;
+    this._dialogTemplate = dialogTemplate;
+    this._nextDialogID = 0;
+    this._topLevelPrevActiveElement = null;
+    this._allowDuplicateDialogs = allowDuplicateDialogs;
+    this._dialogOptions = dialogOptions;
 
-  init() {
-    this._dialogStack = document.getElementById("dialogStack");
-    this._dialogTemplate = document.getElementById("dialogTemplate");
     this._preloadDialog = new SubDialog({
       template: this._dialogTemplate,
       parentElement: this._dialogStack,
       id: this._nextDialogID++,
+      dialogOptions: this._dialogOptions,
     });
-  },
+  }
+
+  get _topDialog() {
+    return this._dialogs.length
+      ? this._dialogs[this._dialogs.length - 1]
+      : undefined;
+  }
 
   open(aURL, aFeatures = null, aParams = null, aClosingCallback = null) {
     
-    if (this._topDialog && this._topDialog._openedURL == aURL) {
+    if (!this._allowDuplicateDialogs && this._topDialog?._openedURL == aURL) {
       return;
     }
 
+    let doc = this._dialogStack.ownerDocument;
+
     if (this._dialogs.length) {
-      this._topDialog._prevActiveElement = document.activeElement;
+      this._topDialog._prevActiveElement = doc.activeElement;
     } else {
       
-      
       this._dialogStack.hidden = false;
-      this._topLevelPrevActiveElement = document.activeElement;
+      this._topLevelPrevActiveElement = doc.activeElement;
     }
 
     this._preloadDialog.open(aURL, aFeatures, aParams, aClosingCallback);
@@ -654,16 +720,17 @@ var gSubDialog = {
       template: this._dialogTemplate,
       parentElement: this._dialogStack,
       id: this._nextDialogID++,
+      dialogOptions: this._dialogOptions,
     });
 
     if (this._dialogs.length == 1) {
       this._ensureStackEventListeners();
     }
-  },
+  }
 
   close() {
     this._topDialog.close();
-  },
+  }
 
   handleEvent(aEvent) {
     switch (aEvent.type) {
@@ -676,7 +743,7 @@ var gSubDialog = {
         break;
       }
     }
-  },
+  }
 
   _onDialogOpen() {
     let lowerDialog =
@@ -687,7 +754,7 @@ var gSubDialog = {
       lowerDialog._overlay.removeAttribute("topmost");
       lowerDialog._removeDialogEventListeners();
     }
-  },
+  }
 
   _onDialogClose(dialog) {
     if (this._topDialog == dialog) {
@@ -706,19 +773,20 @@ var gSubDialog = {
       this._topDialog._overlay.setAttribute("topmost", true);
       this._topDialog._addDialogEventListeners();
     } else {
+      
       this._topLevelPrevActiveElement.focus();
       this._dialogStack.hidden = true;
       this._removeStackEventListeners();
     }
-  },
+  }
 
   _ensureStackEventListeners() {
     this._dialogStack.addEventListener("dialogopen", this);
     this._dialogStack.addEventListener("dialogclose", this);
-  },
+  }
 
   _removeStackEventListeners() {
     this._dialogStack.removeEventListener("dialogopen", this);
     this._dialogStack.removeEventListener("dialogclose", this);
-  },
-};
+  }
+}

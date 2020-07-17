@@ -65,7 +65,7 @@ var gSanitizePromptDialog = {
     }
 
     
-    if (!window.opener || !("gSubDialog" in window.opener)) {
+    if (!this._dialog.hasAttribute("subdialog")) {
       
       
       document.l10n.translateElements([document.documentElement]).then(() => {
