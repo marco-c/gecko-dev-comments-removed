@@ -203,15 +203,7 @@ loader.lazyServiceGetter(
 
 const MUTATIONS_THROTTLING_DELAY = 100;
 
-const IMMEDIATE_MUTATIONS = [
-  "documentUnload",
-  "frameLoad",
-  "pseudoClassLock",
-
-  
-  
-  "mutationBreakpoints",
-];
+const IMMEDIATE_MUTATIONS = ["documentUnload", "frameLoad", "pseudoClassLock"];
 
 const HIDDEN_CLASS = "__fx-devtools-hide-shortcut__";
 
