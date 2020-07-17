@@ -206,10 +206,9 @@ class AddrHostRecord final : public nsHostRecord {
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const override;
 
-  bool IsTRR() { return mTRRUsed; }
-
  private:
   friend class nsHostResolver;
+  friend class mozilla::net::TRR;
 
   explicit AddrHostRecord(const nsHostKey& key);
   ~AddrHostRecord();
@@ -240,13 +239,13 @@ class AddrHostRecord final : public nsHostRecord {
   RefPtr<mozilla::net::AddrInfo> mFirstTRR;  
   nsresult mFirstTRRresult;
 
-  uint8_t mTRRSuccess;     
-  uint8_t mNativeSuccess;  
+  mozilla::Atomic<bool> mTRRUsed;  
+  uint8_t mTRRSuccess;             
+  uint8_t mNativeSuccess;          
 
-  uint16_t mNative : 1;   
-                          
-                          
-  uint16_t mTRRUsed : 1;  
+  uint16_t mNative : 1;  
+                         
+                         
   uint16_t mNativeUsed : 1;
   uint16_t onQueue : 1;         
                                 
