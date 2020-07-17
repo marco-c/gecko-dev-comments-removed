@@ -18,6 +18,9 @@ class EventSourceFront extends FrontClassWithSpec(eventSourceSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
 
+    this._onEventSourceConnectionOpened = this._onEventSourceConnectionOpened.bind(
+      this
+    );
     this._onEventSourceConnectionClosed = this._onEventSourceConnectionClosed.bind(
       this
     );
@@ -27,6 +30,10 @@ class EventSourceFront extends FrontClassWithSpec(eventSourceSpec) {
     
     this.formAttributeName = "eventSourceActor";
 
+    this.on(
+      "serverEventSourceConnectionOpened",
+      this._onEventSourceConnectionOpened
+    );
     this.on(
       "serverEventSourceConnectionClosed",
       this._onEventSourceConnectionClosed
@@ -38,9 +45,22 @@ class EventSourceFront extends FrontClassWithSpec(eventSourceSpec) {
 
 
   destroy() {
+    this.off("serverEventSourceConnectionOpened");
     this.off("serverEventSourceConnectionClosed");
     this.off("serverEventReceived");
     return super.destroy();
+  }
+
+  
+
+
+
+
+
+
+
+  async _onEventSourceConnectionOpened(httpChannelId) {
+    this.emit("eventSourceConnectionOpened", httpChannelId);
   }
 
   
