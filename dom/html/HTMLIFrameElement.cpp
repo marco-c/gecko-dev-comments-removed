@@ -154,12 +154,35 @@ nsMapRuleToAttributesFunc HTMLIFrameElement::GetAttributeMappingFunction()
   return &MapAttributesIntoRule;
 }
 
+bool HTMLIFrameElement::HasAllowFullscreenAttribute() const {
+  return GetBoolAttr(nsGkAtoms::allowfullscreen) ||
+         GetBoolAttr(nsGkAtoms::mozallowfullscreen);
+}
+
+bool HTMLIFrameElement::AllowFullscreen() const {
+  if (StaticPrefs::dom_security_featurePolicy_enabled()) {
+    
+    return FeaturePolicy()->AllowsFeature(u"fullscreen"_ns, {});
+  }
+  return HasAllowFullscreenAttribute();
+}
+
 nsresult HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                          const nsAttrValue* aValue,
                                          const nsAttrValue* aOldValue,
                                          nsIPrincipal* aMaybeScriptedPrincipal,
                                          bool aNotify) {
   AfterMaybeChangeAttr(aNameSpaceID, aName, aNotify);
+
+  auto UpdateFullscreenAllowed = [&] {
+    
+    
+    if (mFrameLoader) {
+      if (auto* bc = mFrameLoader->GetExtantBrowsingContext()) {
+        bc->SetFullscreenAllowedByOwner(AllowFullscreen());
+      }
+    }
+  };
 
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::sandbox) {
@@ -171,22 +194,18 @@ nsresult HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       }
     } else if (aName == nsGkAtoms::allowfullscreen ||
                aName == nsGkAtoms::mozallowfullscreen) {
-      if (mFrameLoader) {
-        if (auto* bc = mFrameLoader->GetExtantBrowsingContext()) {
-          
-          
-          bc->SetFullscreenAllowedByOwner(AllowFullscreen());
-        }
+      if (StaticPrefs::dom_security_featurePolicy_enabled()) {
+        RefreshFeaturePolicy(false );
       }
+      UpdateFullscreenAllowed();
     }
 
     if (StaticPrefs::dom_security_featurePolicy_enabled()) {
       if (aName == nsGkAtoms::allow || aName == nsGkAtoms::src ||
           aName == nsGkAtoms::srcdoc || aName == nsGkAtoms::sandbox) {
         RefreshFeaturePolicy(true );
-      } else if (aName == nsGkAtoms::allowfullscreen ||
-                 aName == nsGkAtoms::mozallowfullscreen ||
-                 aName == nsGkAtoms::allowpaymentrequest) {
+        UpdateFullscreenAllowed();
+      } else if (aName == nsGkAtoms::allowpaymentrequest) {
         RefreshFeaturePolicy(false );
       }
     }
@@ -316,7 +335,7 @@ void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
     mFeaturePolicy->MaybeSetAllowedPolicy(u"payment"_ns);
   }
 
-  if (AllowFullscreen()) {
+  if (HasAllowFullscreenAttribute()) {
     mFeaturePolicy->MaybeSetAllowedPolicy(u"fullscreen"_ns);
   }
 
