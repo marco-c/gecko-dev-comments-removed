@@ -86,9 +86,11 @@ already_AddRefed<ContentClient> ContentClient::CreateContentClient(
 #endif
   {
 #ifdef MOZ_WIDGET_GTK
+#  ifdef MOZ_WAYLAND
     if (gfxPlatformGtk::GetPlatform()->UseDMABufTextures()) {
       useDoubleBuffering = true;
     } else
+#  endif
         
         
         
