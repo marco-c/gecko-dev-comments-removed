@@ -276,48 +276,9 @@ class FakeXRAnchorController {
   }
 }
 
-class FakeXRAnchorCreationEvent extends Event {
-  constructor(type, eventInitDict) {
-    super(type, eventInitDict);
-
-    this.success_ = false;
-    this.requestedAnchorOrigin_ = {};
-    this.isAttachedToEntity_ = false;
-    this.anchorController_ = new FakeXRAnchorController();
-
-    if(eventInitDict.requestedAnchorOrigin != null) {
-      this.requestedAnchorOrigin_ = eventInitDict.requestedAnchorOrigin;
-    }
-
-    if(eventInitDict.isAttachedToEntity != null) {
-      this.isAttachedToEntity_ = eventInitDict.isAttachedToEntity;
-    }
-  }
-
-  get requestedAnchorOrigin() {
-    return this.requestedAnchorOrigin_;
-  }
-
-  get isAttachedToEntity() {
-    return this.isAttachedToEntity_;
-  }
-
-  get success() {
-    return this.success_;
-  }
-
-  set success(value) {
-    this.success_ = value;
-  }
-
-  get anchorController() {
-    return this.anchorController_;
-  }
-}
 
 
-
-class MockRuntime extends EventTarget {
+class MockRuntime {
   
   
   static featureToMojoMap = {
@@ -339,8 +300,6 @@ class MockRuntime extends EventTarget {
   };
 
   constructor(fakeDeviceInit, service) {
-    super();
-
     this.sessionClient_ = new device.mojom.XRSessionClientPtr();
     this.presentation_provider_ = new MockXRPresentationProvider();
 
@@ -368,6 +327,8 @@ class MockRuntime extends EventTarget {
     this.anchor_controllers_ = new Map();
     
     this.next_anchor_id_ = 1;
+    
+    this.anchor_creation_callback_ = null;
 
     let supportedModes = [];
     if (fakeDeviceInit.supportedModes) {
@@ -568,6 +529,10 @@ class MockRuntime extends EventTarget {
     return source;
   }
 
+  setAnchorCreationCallback(callback) {
+    this.anchor_creation_callback_ = callback;
+  }
+
   
   getNonImmersiveDisplayInfo() {
     const displayInfo = this.getImmersiveDisplayInfo();
@@ -706,50 +671,67 @@ class MockRuntime extends EventTarget {
 
   
   getFrameData(options) {
-    const mojo_space_reset = this.send_mojo_space_reset_;
-    this.send_mojo_space_reset_ = false;
+    return new Promise((resolve) => {
 
-    const stage_parameters_updated = this.stageParametersUpdated_;
-    this.stageParametersUpdated_ = false;
-    if (this.pose_) {
-      this.pose_.poseIndex++;
-    }
+      const populatePose = () => {
+        const mojo_space_reset = this.send_mojo_space_reset_;
+        this.send_mojo_space_reset_ = false;
 
-    
-    
-    
-    
-    let input_state = null;
-    if (this.input_sources_.size > 0) {
-      input_state = [];
-      for (const input_source of this.input_sources_.values()) {
-        input_state.push(input_source.getInputSourceState());
-      }
-    }
+        const stage_parameters_updated = this.stageParametersUpdated_;
+        this.stageParametersUpdated_ = false;
+        if (this.pose_) {
+          this.pose_.poseIndex++;
+        }
 
-    const frameData = {
-      pose: this.pose_,
-      mojoSpaceReset: mojo_space_reset,
-      inputState: input_state,
-      timeDelta: {
         
-        microseconds: window.performance.now() * 1000,
-      },
-      frameId: this.next_frame_id_++,
-      bufferHolder: null,
-      bufferSize: {},
-      stageParameters: this.stageParameters_,
-      stageParametersUpdated: stage_parameters_updated,
-    };
+        
+        
+        
+        let input_state = null;
+        if (this.input_sources_.size > 0) {
+          input_state = [];
+          for (const input_source of this.input_sources_.values()) {
+            input_state.push(input_source.getInputSourceState());
+          }
+        }
 
-    this._calculateHitTestResults(frameData);
+        const frameData = {
+          pose: this.pose_,
+          mojoSpaceReset: mojo_space_reset,
+          inputState: input_state,
+          timeDelta: {
+            
+            microseconds: window.performance.now() * 1000,
+          },
+          frameId: this.next_frame_id_,
+          bufferHolder: null,
+          bufferSize: {},
+          stageParameters: this.stageParameters_,
+          stageParametersUpdated: stage_parameters_updated,
+        };
 
-    this._calculateAnchorInformation(frameData);
+        this.next_frame_id_++;
 
-    this._injectAdditionalFrameData(options, frameData);
+        this._calculateHitTestResults(frameData);
 
-    return Promise.resolve({
-      frameData: frameData,
+        this._calculateAnchorInformation(frameData);
+
+        this._injectAdditionalFrameData(options, frameData);
+
+        resolve({frameData});
+      };
+
+      if(this.sessionOptions_.mode == device.mojom.XRSessionMode.kInline) {
+        
+        
+        
+        
+        populatePose();
+      } else {
+        
+        
+        setTimeout(populatePose, 3);  
+      }
     });
   }
 
@@ -768,6 +750,7 @@ class MockRuntime extends EventTarget {
 
   closeDataProvider() {
     this.dataProviderBinding_.close();
+    this.sessionOptions_ = null;
   }
 
   
@@ -818,6 +801,15 @@ class MockRuntime extends EventTarget {
 
   createAnchor(nativeOriginInformation, nativeOriginFromAnchor) {
     return new Promise((resolve) => {
+      if(this.anchor_creation_callback_ == null) {
+        resolve({
+          result : device.mojom.CreateAnchorResult.FAILURE,
+          anchorId : 0
+        });
+
+        return;
+      }
+
       const mojoFromNativeOrigin = this._getMojoFromNativeOrigin(nativeOriginInformation);
       if(mojoFromNativeOrigin == null) {
         resolve({
@@ -830,36 +822,45 @@ class MockRuntime extends EventTarget {
 
       const mojoFromAnchor = XRMathHelper.mul4x4(mojoFromNativeOrigin, nativeOriginFromAnchor);
 
-      const createAnchorEvent = new FakeXRAnchorCreationEvent("anchorcreate", {
+      const anchorCreationParameters = {
         requestedAnchorOrigin: mojoFromAnchor,
         isAttachedToEntity: false,
-      });
+      };
 
-      this.dispatchEvent(createAnchorEvent);
+      const anchorController = new FakeXRAnchorController();
 
-      if(createAnchorEvent.success) {
-        let anchor_controller = createAnchorEvent.anchorController;
-        const anchor_id = this.next_anchor_id_;
-        this.next_anchor_id_++;
+      this.anchor_creation_callback_(anchorCreationParameters, anchorController)
+            .then((result) => {
+              if(result) {
+                
+                
 
-        
-        
-        this.anchor_controllers_.set(anchor_id, anchor_controller);
-        anchor_controller.device = this;
-        anchor_controller.id = anchor_id;
+                const anchor_id = this.next_anchor_id_;
+                this.next_anchor_id_++;
 
-        resolve({
-          result : device.mojom.CreateAnchorResult.SUCCESS,
-          anchorId : anchor_id
-        });
+                this.anchor_controllers_.set(anchor_id, anchorController);
+                anchorController.device = this;
+                anchorController.id = anchor_id;
 
-        return;
-      }
-
-      resolve({
-        result : device.mojom.CreateAnchorResult.FAILURE,
-        anchorId : 0
-      });
+                resolve({
+                  result : device.mojom.CreateAnchorResult.SUCCESS,
+                  anchorId : anchor_id
+                });
+              } else {
+                
+                resolve({
+                  result : device.mojom.CreateAnchorResult.FAILURE,
+                  anchorId : 0
+                });
+              }
+            })
+            .catch(() => {
+              
+              resolve({
+                result : device.mojom.CreateAnchorResult.FAILURE,
+                anchorId : 0
+              });
+            });
     });
   }
 
@@ -897,6 +898,7 @@ class MockRuntime extends EventTarget {
         const dataProviderRequest = mojo.makeRequest(dataProviderPtr);
         this.dataProviderBinding_ = new mojo.Binding(
             device.mojom.XRFrameDataProvider, this, dataProviderRequest);
+        this.sessionOptions_ = sessionOptions;
 
         const clientReceiver = mojo.makeRequest(this.sessionClient_);
 
