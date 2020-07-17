@@ -323,66 +323,67 @@ void Sampler::SuspendAndSampleAndResumeThread(
 
   
   
+  
   int r = tgkill(mMyPid, sampleeTid, SIGPROF);
-  MOZ_ASSERT(r == 0);
-
-  
-  
-  while (true) {
-    r = sem_wait(&sSigHandlerCoordinator->mMessage2);
-    if (r == -1 && errno == EINTR) {
-      
-      continue;
-    }
+  if (r == 0) {
     
-    MOZ_ASSERT(r == 0);
-    break;
-  }
-
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-
-  
-  Registers regs;
-  PopulateRegsFromContext(regs, &sSigHandlerCoordinator->mUContext);
-  aProcessRegs(regs, aNow);
-
-  
-  
-
-  
-  r = sem_post(&sSigHandlerCoordinator->mMessage3);
-  MOZ_ASSERT(r == 0);
-
-  
-  
-  while (true) {
-    r = sem_wait(&sSigHandlerCoordinator->mMessage4);
-    if (r == -1 && errno == EINTR) {
-      continue;
+    
+    while (true) {
+      r = sem_wait(&sSigHandlerCoordinator->mMessage2);
+      if (r == -1 && errno == EINTR) {
+        
+        continue;
+      }
+      
+      MOZ_ASSERT(r == 0);
+      break;
     }
-    MOZ_ASSERT(r == 0);
-    break;
-  }
 
-  
-  
-  
-  
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    
+    Registers regs;
+    PopulateRegsFromContext(regs, &sSigHandlerCoordinator->mUContext);
+    aProcessRegs(regs, aNow);
+
+    
+    
+
+    
+    r = sem_post(&sSigHandlerCoordinator->mMessage3);
+    MOZ_ASSERT(r == 0);
+
+    
+    
+    while (true) {
+      r = sem_wait(&sSigHandlerCoordinator->mMessage4);
+      if (r == -1 && errno == EINTR) {
+        continue;
+      }
+      MOZ_ASSERT(r == 0);
+      break;
+    }
+
+    
+    
+    
+    
+  }
 
   
   
