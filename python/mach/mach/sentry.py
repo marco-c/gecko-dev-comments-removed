@@ -18,7 +18,7 @@ from six.moves.configparser import SafeConfigParser, NoOptionError
 
 
 _DEVELOPER_BLOCKLIST = [
-    'ahalberstadt@mozilla.com'
+    'ahalberstadt@mozilla.com',
     'mhentges@mozilla.com',
     'rstewart@mozilla.com',
     'sledru@mozilla.com'
