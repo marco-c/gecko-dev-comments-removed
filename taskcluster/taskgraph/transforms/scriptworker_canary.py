@@ -18,7 +18,7 @@ transforms = TransformSequence()
 
 @transforms.add
 def build_command(config, jobs):
-    scriptworkers = config.params["try_task_config"].get("scriptworker-canary-workers")
+    scriptworkers = config.params["try_task_config"].get("scriptworker-canary-workers", [])
     
     
     scriptworkers = [
