@@ -284,8 +284,14 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
 
   static void RemoveBodyAndHead(nsINode& aNode);
 
-  static nsresult StripFormattingNodes(nsIContent& aNode,
-                                       bool aOnlyList = false);
+  enum class NodesToRemove {
+    eAll,
+    eOnlyListItems 
+
+  };
+  static nsresult
+  RemoveNonPreWhiteSpaceOnlyTextNodesForIgnoringInvisibleWhiteSpaces(
+      nsIContent& aNode, NodesToRemove aNodesToRemove);
 
   HTMLEditor& mHTMLEditor;
 };
@@ -975,12 +981,16 @@ Element* HTMLEditor::GetLinkElement(nsINode* aNode) {
 }
 
 
-nsresult HTMLEditor::HTMLWithContextInserter::StripFormattingNodes(
-    nsIContent& aNode, bool aListOnly) {
+nsresult HTMLEditor::HTMLWithContextInserter::
+    RemoveNonPreWhiteSpaceOnlyTextNodesForIgnoringInvisibleWhiteSpaces(
+        nsIContent& aNode, NodesToRemove aNodesToRemove) {
   if (aNode.TextIsOnlyWhitespace()) {
     nsCOMPtr<nsINode> parent = aNode.GetParentNode();
+    
+    
     if (parent) {
-      if (!aListOnly || HTMLEditUtils::IsAnyListElement(parent)) {
+      if (aNodesToRemove == NodesToRemove::eAll ||
+          HTMLEditUtils::IsAnyListElement(parent)) {
         ErrorResult error;
         parent->RemoveChild(aNode, error);
         NS_WARNING_ASSERTION(!error.Failed(), "nsINode::RemoveChild() failed");
@@ -994,11 +1004,14 @@ nsresult HTMLEditor::HTMLWithContextInserter::StripFormattingNodes(
     nsCOMPtr<nsIContent> child = aNode.GetLastChild();
     while (child) {
       nsCOMPtr<nsIContent> previous = child->GetPreviousSibling();
-      nsresult rv =
-          HTMLWithContextInserter::StripFormattingNodes(*child, aListOnly);
+      nsresult rv = HTMLWithContextInserter::
+          RemoveNonPreWhiteSpaceOnlyTextNodesForIgnoringInvisibleWhiteSpaces(
+              *child, aNodesToRemove);
       if (NS_FAILED(rv)) {
         NS_WARNING(
-            "HTMLEditor::HTMLWithContextInserter::StripFormattingNodes() "
+            "HTMLEditor::HTMLWithContextInserter::"
+            "RemoveNonPreWhiteSpaceOnlyTextNodesForIgnoringInvisibleWhiteSpaces"
+            "() "
             "failed");
         return rv;
       }
@@ -3124,11 +3137,16 @@ nsresult HTMLEditor::HTMLWithContextInserter::CreateDOMFragmentFromPaste(
       return NS_ERROR_FAILURE;
     }
 
-    rv = HTMLWithContextInserter::StripFormattingNodes(
-        *documentFragmentForContext);
+    
+    
+    rv = HTMLWithContextInserter::
+        RemoveNonPreWhiteSpaceOnlyTextNodesForIgnoringInvisibleWhiteSpaces(
+            *documentFragmentForContext, NodesToRemove::eAll);
     if (NS_FAILED(rv)) {
       NS_WARNING(
-          "HTMLEditor::HTMLWithContextInserter::StripFormattingNodes() failed");
+          "HTMLEditor::HTMLWithContextInserter::"
+          "RemoveNonPreWhiteSpaceOnlyTextNodesForIgnoringInvisibleWhiteSpaces()"
+          " failed");
       return rv;
     }
 
@@ -3179,11 +3197,14 @@ nsresult HTMLEditor::HTMLWithContextInserter::CreateDOMFragmentFromPaste(
     documentFragmentToInsert = documentFragmentForContext;
   }
 
-  rv = HTMLWithContextInserter::StripFormattingNodes(*documentFragmentToInsert,
-                                                     true);
+  rv = HTMLWithContextInserter::
+      RemoveNonPreWhiteSpaceOnlyTextNodesForIgnoringInvisibleWhiteSpaces(
+          *documentFragmentToInsert, NodesToRemove::eOnlyListItems);
   if (NS_FAILED(rv)) {
     NS_WARNING(
-        "HTMLEditor::HTMLWithContextInserter::StripFormattingNodes() failed");
+        "HTMLEditor::HTMLWithContextInserter::"
+        "RemoveNonPreWhiteSpaceOnlyTextNodesForIgnoringInvisibleWhiteSpaces() "
+        "failed");
     return rv;
   }
 
