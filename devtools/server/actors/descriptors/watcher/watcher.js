@@ -40,6 +40,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       
       this.browsingContextID = this._browser.browsingContext.id;
     }
+    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
   },
 
   destroy: function() {
@@ -181,9 +182,32 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
+  notifyResourceAvailable(resources) {
+    this.emit("resource-available-form", resources);
+  },
+
+  
+
+
+
+
+
+
 
   async watchResources(resourceTypes) {
-    WatcherRegistry.watchResources(this, resourceTypes);
+    
+    
+    const contentProcessResourceTypes = Resources.watchParentProcessResources(
+      this,
+      resourceTypes
+    );
+
+    
+    if (contentProcessResourceTypes.length == 0) {
+      return;
+    }
+
+    WatcherRegistry.watchResources(this, contentProcessResourceTypes);
 
     
     for (const targetType in TARGET_HELPERS) {
@@ -198,7 +222,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       const targetHelperModule = TARGET_HELPERS[targetType];
       await targetHelperModule.watchResources({
         watcher: this,
-        resourceTypes,
+        resourceTypes: contentProcessResourceTypes,
       });
     }
 
@@ -236,9 +260,23 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   unwatchResources(resourceTypes) {
-    const isWatchingResources = WatcherRegistry.unwatchResources(
+    
+    
+    const contentProcessResourceTypes = Resources.unwatchParentProcessResources(
       this,
       resourceTypes
+    );
+
+    
+    
+    
+    if (contentProcessResourceTypes.length == 0) {
+      return;
+    }
+
+    const isWatchingResources = WatcherRegistry.unwatchResources(
+      this,
+      contentProcessResourceTypes
     );
     if (!isWatchingResources) {
       return;
@@ -259,7 +297,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         const targetHelperModule = TARGET_HELPERS[targetType];
         targetHelperModule.unwatchResources({
           watcher: this,
-          resourceTypes,
+          resourceTypes: contentProcessResourceTypes,
         });
       }
     }
@@ -269,7 +307,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       ? TargetActorRegistry.getTargetActor(this.browsingContextID)
       : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
-      targetActor.unwatchTargetResources(resourceTypes);
+      targetActor.unwatchTargetResources(contentProcessResourceTypes);
     }
 
     

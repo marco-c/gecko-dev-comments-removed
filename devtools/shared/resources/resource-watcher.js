@@ -68,6 +68,12 @@ class ResourceWatcher {
       const supportsWatcher = this.descriptorFront?.traits?.watcher;
       if (supportsWatcher) {
         this.watcher = await this.descriptorFront.getWatcher();
+        
+        
+        this.watcher.on(
+          "resource-available-form",
+          this._onResourceAvailable.bind(this, { watcherFront: this.watcher })
+        );
       }
     }
 
@@ -192,11 +198,11 @@ class ResourceWatcher {
     
     targetFront.on(
       "resource-available-form",
-      this._onResourceAvailable.bind(this, targetFront)
+      this._onResourceAvailable.bind(this, { targetFront })
     );
     targetFront.on(
       "resource-destroyed-form",
-      this._onResourceDestroyed.bind(this, targetFront)
+      this._onResourceDestroyed.bind(this, { targetFront })
     );
   }
 
@@ -224,13 +230,34 @@ class ResourceWatcher {
 
 
 
-  _onResourceAvailable(targetFront, resources) {
+
+
+  async _onResourceAvailable({ targetFront, watcherFront }, resources) {
     for (let resource of resources) {
+      const { resourceType } = resource;
+
+      
+      
+      
+      if (watcherFront) {
+        
+        const { browsingContextID } = resource;
+        if (!browsingContextID) {
+          console.error(
+            `Resource of ${resourceType} is missing a browsingContextID attribute`
+          );
+          continue;
+        }
+        targetFront = await this.watcher.getBrowsingContextTarget(
+          browsingContextID
+        );
+      }
+
+      
       
       if (!resource.targetFront) {
         resource.targetFront = targetFront;
       }
-      const { resourceType } = resource;
 
       if (ResourceTransformers[resourceType]) {
         resource = ResourceTransformers[resourceType]({
@@ -340,7 +367,7 @@ class ResourceWatcher {
 
 
   _watchResourcesForTarget(targetFront, resourceType) {
-    const onAvailable = this._onResourceAvailable.bind(this, targetFront);
+    const onAvailable = this._onResourceAvailable.bind(this, { targetFront });
     return LegacyListeners[resourceType]({
       targetList: this.targetList,
       targetFront,
