@@ -67,12 +67,10 @@ add_task(async function() {
   testVal("http:// invalid url");
 
   testVal("http://someotherhostwithnodots");
-  if (Services.prefs.getBoolPref("browser.fixup.defaultToSearch", true)) {
-    
-    testVal("http://localhost/ foo bar baz", "localhost/ foo bar baz");
-  } else {
-    testVal("http://localhost/ foo bar baz");
-  }
+
+  
+  testVal("http://localhost/ foo bar baz", "localhost/ foo bar baz");
+
   
   testVal(
     "http://localhost.localdomain/ foo bar baz",

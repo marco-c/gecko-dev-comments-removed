@@ -68,16 +68,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true
 );
 
-
-
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "defaultToSearch",
-  "browser.fixup.defaultToSearch",
-  true
-);
-
 const {
   FIXUP_FLAG_NONE,
   FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP,
@@ -96,9 +86,6 @@ XPCOMUtils.defineLazyGetter(
   "userPasswordRegex",
   () => /^([a-z+.-]+:\/{0,3})*[^\/@]+@.+/i
 );
-
-
-XPCOMUtils.defineLazyGetter(this, "asciiAlphaRegex", () => /[a-z]/i);
 
 
 XPCOMUtils.defineLazyGetter(
@@ -431,9 +418,7 @@ URIFixup.prototype = {
       keywordEnabled &&
       fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP &&
       !inputHadDuffProtocol &&
-      
-      
-      (!defaultToSearch || !checkSuffix(info).suffix) &&
+      !checkSuffix(info).suffix &&
       keywordURIFixup(uriString, info, isPrivateContext, postData)
     ) {
       return info;
@@ -907,14 +892,6 @@ function fixupURIProtocol(uriString) {
 
 
 function keywordURIFixup(uriString, fixupInfo, isPrivateContext, postData) {
-  if (!defaultToSearch) {
-    return keywordURIFixupLegacy(
-      uriString,
-      fixupInfo,
-      isPrivateContext,
-      postData
-    );
-  }
   
   
   
@@ -970,117 +947,6 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext, postData) {
   if (
     !uriLikeRegex.test(uriString) &&
     !(userPass && /^[^\s@]+@/.test(uriString))
-  ) {
-    return tryKeywordFixupForURIInfo(
-      fixupInfo.originalInput,
-      fixupInfo,
-      isPrivateContext,
-      postData
-    );
-  }
-
-  return false;
-}
-
-
-
-
-
-function keywordURIFixupLegacy(
-  uriString,
-  fixupInfo,
-  isPrivateContext,
-  postData
-) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  if (IPv4LikeRegex.test(uriString) || IPv6LikeRegex.test(uriString)) {
-    return false;
-  }
-
-  
-  
-  
-  if (uriString.startsWith("?") || /^[^.:?]*[\s"']/.test(uriString)) {
-    return tryKeywordFixupForURIInfo(
-      fixupInfo.originalInput,
-      fixupInfo,
-      isPrivateContext,
-      postData
-    );
-  }
-
-  
-  
-  
-  let asciiHost = fixupInfo.fixedURI?.asciiHost;
-  if (asciiHost && isDomainKnown(asciiHost)) {
-    return false;
-  }
-
-  
-  
-  let displayHost = fixupInfo.fixedURI && fixupInfo.fixedURI.displayHost;
-  let hasAsciiAlpha = asciiAlphaRegex.test(uriString);
-  if (
-    asciiHost &&
-    displayHost &&
-    !hasAsciiAlpha &&
-    asciiHost.toLowerCase() == displayHost.toLowerCase()
-  ) {
-    return tryKeywordFixupForURIInfo(
-      fixupInfo.originalInput,
-      fixupInfo,
-      isPrivateContext,
-      postData
-    );
-  }
-
-  
-  if (uriString.includes(":") || uriString.includes("?")) {
-    return false;
-  }
-
-  
-  
-  let firstDotIndex = uriString.indexOf(".");
-  if (
-    firstDotIndex == uriString.length - 1 ||
-    (firstDotIndex == 0 && firstDotIndex == uriString.lastIndexOf("."))
-  ) {
-    return tryKeywordFixupForURIInfo(
-      fixupInfo.originalInput,
-      fixupInfo,
-      isPrivateContext,
-      postData
-    );
-  }
-
-  
-  
-  if (
-    firstDotIndex == -1 &&
-    (!uriString.includes("/") || !hasAsciiAlpha || !asciiHost)
   ) {
     return tryKeywordFixupForURIInfo(
       fixupInfo.originalInput,
