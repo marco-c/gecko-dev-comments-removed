@@ -234,12 +234,17 @@ Channel::ChannelImpl::ChannelImpl(int fd, Mode mode, Listener* listener)
 }
 
 void Channel::ChannelImpl::Init(Mode mode, Listener* listener) {
-  DCHECK(kControlBufferSlopBytes >= CMSG_SPACE(0));
+  
+  static_assert(sizeof(*this) <= 512, "Exceeded expected size class");
+
+  DCHECK(kControlBufferHeaderSize >= CMSG_SPACE(0));
 
   mode_ = mode;
   is_blocked_on_write_ = false;
   partial_write_iter_.reset();
   input_buf_offset_ = 0;
+  input_buf_ = mozilla::MakeUnique<char[]>(Channel::kReadBufferSize);
+  input_cmsg_buf_ = mozilla::MakeUnique<char[]>(kControlBufferSize);
   server_listen_pipe_ = -1;
   pipe_ = -1;
   client_pipe_ = -1;
@@ -339,16 +344,16 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
 
   msg.msg_iov = &iov;
   msg.msg_iovlen = 1;
-  msg.msg_control = input_cmsg_buf_;
+  msg.msg_control = input_cmsg_buf_.get();
 
   for (;;) {
-    msg.msg_controllen = sizeof(input_cmsg_buf_);
+    msg.msg_controllen = kControlBufferSize;
 
     if (pipe_ == -1) return false;
 
     
     
-    iov.iov_base = input_buf_ + input_buf_offset_;
+    iov.iov_base = input_buf_.get() + input_buf_offset_;
     iov.iov_len = Channel::kReadBufferSize - input_buf_offset_;
 
     
@@ -416,8 +421,8 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
     }
 
     
-    const char* p = input_buf_;
-    const char* end = input_buf_ + input_buf_offset_ + bytes_read;
+    const char* p = input_buf_.get();
+    const char* end = input_buf_.get() + input_buf_offset_ + bytes_read;
 
     
     
@@ -475,7 +480,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
         
         
         
-        memmove(input_buf_, p, end - p);
+        memmove(input_buf_.get(), p, end - p);
         input_buf_offset_ = end - p;
 
         break;

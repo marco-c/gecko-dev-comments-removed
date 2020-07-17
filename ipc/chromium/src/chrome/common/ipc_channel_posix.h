@@ -102,8 +102,9 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   std::queue<mozilla::UniquePtr<Message>> output_queue_;
 
   
-  char input_buf_[Channel::kReadBufferSize];
   size_t input_buf_offset_;
+  mozilla::UniquePtr<char[]> input_buf_;
+  mozilla::UniquePtr<char[]> input_cmsg_buf_;
 
   
   
@@ -111,17 +112,15 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   
   
-  enum { kControlBufferSlopBytes = 32 };
-
   
   
   
   
   
-  
-  char input_cmsg_buf_[FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE *
-                           sizeof(int) +
-                       kControlBufferSlopBytes];
+  static constexpr size_t kControlBufferHeaderSize = 32;
+  static constexpr size_t kControlBufferSize =
+      FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE * sizeof(int) +
+      kControlBufferHeaderSize;
 
   
   

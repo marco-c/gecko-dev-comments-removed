@@ -92,7 +92,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   mozilla::Maybe<Pickle::BufferList::IterImpl> partial_write_iter_;
 
   
-  char input_buf_[Channel::kReadBufferSize];
+  mozilla::UniquePtr<char[]> input_buf_;
   size_t input_buf_offset_;
 
   
