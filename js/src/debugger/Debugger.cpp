@@ -542,8 +542,14 @@ Debugger::~Debugger() {
   if (onNewGlobalObjectWatchersLink.mPrev ||
       onNewGlobalObjectWatchersLink.mNext ||
       cx->runtime()->onNewGlobalObjectWatchers().begin() ==
-          JSRuntime::WatchersList::Iterator(this)) {
+          JSRuntime::OnNewGlobalWatchersList::Iterator(this)) {
     cx->runtime()->onNewGlobalObjectWatchers().remove(this);
+  }
+  if (onGarbageCollectionWatchersLink.mPrev ||
+      onGarbageCollectionWatchersLink.mNext ||
+      cx->runtime()->onGarbageCollectionWatchers().begin() ==
+          JSRuntime::OnGarbageCollectionWatchersList::Iterator(this)) {
+    cx->runtime()->onGarbageCollectionWatchers().remove(this);
   }
 }
 
@@ -4146,6 +4152,38 @@ bool Debugger::setHookImpl(JSContext* cx, const CallArgs& args, Debugger& dbg,
   return true;
 }
 
+
+bool Debugger::getGarbageCollectionHook(JSContext* cx, const CallArgs& args,
+                                        Debugger& dbg) {
+  return getHookImpl(cx, args, dbg, OnGarbageCollection);
+}
+
+
+bool Debugger::setGarbageCollectionHook(JSContext* cx, const CallArgs& args,
+                                        Debugger& dbg) {
+  JSObject* oldHook = dbg.getHook(OnGarbageCollection);
+
+  if (!setHookImpl(cx, args, dbg, OnGarbageCollection)) {
+    
+    
+    
+    
+    MOZ_ASSERT(dbg.getHook(OnGarbageCollection) == oldHook);
+    return false;
+  }
+
+  
+  
+  JSObject* newHook = dbg.getHook(OnGarbageCollection);
+  if (!oldHook && newHook) {
+    cx->runtime()->onGarbageCollectionWatchers().pushBack(&dbg);
+  } else if (oldHook && !newHook) {
+    cx->runtime()->onGarbageCollectionWatchers().remove(&dbg);
+  }
+
+  return true;
+}
+
 bool Debugger::CallData::getOnDebuggerStatement() {
   return getHookImpl(cx, args, *dbg, OnDebuggerStatement);
 }
@@ -6810,9 +6848,9 @@ JSObject* GarbageCollectionEvent::toJSObject(JSContext* cx) const {
 JS_PUBLIC_API bool FireOnGarbageCollectionHookRequired(JSContext* cx) {
   AutoCheckCannotGC noGC;
 
-  for (Debugger* dbg : cx->runtime()->debuggerList()) {
-    if (dbg->observedGC(cx->runtime()->gc.majorGCCount()) &&
-        dbg->getHook(Debugger::OnGarbageCollection)) {
+  for (auto& dbg : cx->runtime()->onGarbageCollectionWatchers()) {
+    MOZ_ASSERT(dbg.getHook(Debugger::OnGarbageCollection));
+    if (dbg.observedGC(cx->runtime()->gc.majorGCCount())) {
       return true;
     }
   }
@@ -6830,10 +6868,10 @@ JS_PUBLIC_API bool FireOnGarbageCollectionHook(
     
     AutoCheckCannotGC noGC;
 
-    for (Debugger* dbg : cx->runtime()->debuggerList()) {
-      if (dbg->observedGC(data->majorGCNumber()) &&
-          dbg->getHook(Debugger::OnGarbageCollection)) {
-        if (!triggered.append(dbg->object)) {
+    for (auto& dbg : cx->runtime()->onGarbageCollectionWatchers()) {
+      MOZ_ASSERT(dbg.getHook(Debugger::OnGarbageCollection));
+      if (dbg.observedGC(data->majorGCNumber())) {
+        if (!triggered.append(dbg.object)) {
           JS_ReportOutOfMemory(cx);
           return false;
         }
@@ -6844,10 +6882,12 @@ JS_PUBLIC_API bool FireOnGarbageCollectionHook(
   for (; !triggered.empty(); triggered.popBack()) {
     Debugger* dbg = Debugger::fromJSObject(triggered.back());
 
-    mozilla::Unused << dbg->enterDebuggerHook(cx, [&]() -> bool {
-      return dbg->fireOnGarbageCollectionHook(cx, data);
-    });
-    MOZ_ASSERT(!cx->isExceptionPending());
+    if (dbg->getHook(Debugger::OnGarbageCollection)) {
+      mozilla::Unused << dbg->enterDebuggerHook(cx, [&]() -> bool {
+        return dbg->fireOnGarbageCollectionHook(cx, data);
+      });
+      MOZ_ASSERT(!cx->isExceptionPending());
+    }
   }
 
   return true;
