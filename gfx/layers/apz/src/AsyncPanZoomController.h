@@ -955,7 +955,7 @@ class AsyncPanZoomController {
   
   
   
-  FrameMetrics mExpectedGeckoMetrics;
+  ExpectedGeckoMetrics mExpectedGeckoMetrics;
 
   
   

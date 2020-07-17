@@ -3973,7 +3973,7 @@ void AsyncPanZoomController::RequestContentRepaint(
   }
 
   controller->RequestContentRepaint(request);
-  mExpectedGeckoMetrics = aFrameMetrics;
+  mExpectedGeckoMetrics.UpdateFrom(aFrameMetrics);
   mLastPaintRequestMetrics = request;
 
   
@@ -4559,7 +4559,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     CancelAnimation();
 
     mScrollMetadata = aScrollMetadata;
-    mExpectedGeckoMetrics = aLayerMetrics;
+    mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
     ShareCompositorFrameMetrics();
 
     for (auto& sampledState : mSampledState) {
@@ -4702,7 +4702,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       for (auto& sampledState : mSampledState) {
         sampledState.UpdateScrollProperties(Metrics());
       }
-      mExpectedGeckoMetrics = aLayerMetrics;
+      mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
 
       
       
@@ -4754,7 +4754,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       Metrics().ApplySmoothScrollUpdateFrom(aLayerMetrics);
     }
     needContentRepaint = true;
-    mExpectedGeckoMetrics = aLayerMetrics;
+    mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
 
     SmoothScrollTo(Metrics().GetSmoothScrollOffset());
   }
@@ -4771,7 +4771,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     for (auto& sampledState : mSampledState) {
       sampledState.UpdateScrollProperties(Metrics());
     }
-    mExpectedGeckoMetrics = aLayerMetrics;
+    mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
     if (ShouldCancelAnimationForScrollUpdate(Nothing())) {
       CancelAnimation();
     }
