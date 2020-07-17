@@ -46,7 +46,6 @@ const PanelUI = {
       overflowFixedList: "widget-overflow-fixed-list",
       overflowPanel: "widget-overflow",
       navbar: "nav-bar",
-      whatsNewPanel: "PanelUI-whatsNew",
     };
   },
 
@@ -198,7 +197,9 @@ const PanelUI = {
     if (this.libraryView) {
       this.libraryView.removeEventListener("ViewShowing", this);
     }
-    this.whatsNewPanel.removeEventListener("ViewShowing", this);
+    if (this.whatsNewPanel) {
+      this.whatsNewPanel.removeEventListener("ViewShowing", this);
+    }
   },
 
   
@@ -454,6 +455,7 @@ const PanelUI = {
 
     this.ensureLibraryInitialized(viewNode);
     this.ensureWhatsNewInitialized(viewNode);
+    this.ensurePanicViewInitialized(viewNode);
 
     let container = aAnchor.closest("panelmultiview");
     if (container) {
@@ -683,12 +685,34 @@ const PanelUI = {
 
 
   ensureWhatsNewInitialized(panelView) {
-    if (panelView != this.whatsNewPanel || panelView._initialized) {
+    if (panelView.id != "PanelUI-whatsNew" || panelView._initialized) {
       return;
+    }
+
+    if (!this.whatsNewPanel) {
+      this.whatsNewPanel = panelView;
     }
 
     panelView._initialized = true;
     panelView.addEventListener("ViewShowing", this);
+  },
+
+  
+
+
+
+
+  ensurePanicViewInitialized(panelView) {
+    if (panelView.id != "PanelUI-panicView" || panelView._initialized) {
+      return;
+    }
+
+    if (!this.panic) {
+      this.panic = panelView;
+    }
+
+    MozXULElement.insertFTLIfNeeded("browser/panicButton.ftl");
+    panelView._initialized = true;
   },
 
   
