@@ -34,32 +34,15 @@
 
 - (id<MOXTextMarkerSupport> _Nullable)moxTextMarkerDelegate;
 
-
-- (NSArray* _Nullable)moxChildren;
-
-
-- (id<mozAccessible> _Nullable)moxParent;
-
-
-
-
-- (BOOL)moxIgnoreWithParent:(id<MOXAccessible> _Nullable)parent;
-
-
-
-
-
-- (BOOL)moxIgnoreChild:(id<MOXAccessible> _Nullable)child;
-
 @optional
 
 #pragma mark - AttributeGetters
 
 
-- (NSArray* _Nullable)moxUnignoredChildren;
+- (NSArray* _Nullable)moxChildren;
 
 
-- (id _Nullable)moxUnignoredParent;
+- (id _Nullable)moxParent;
 
 
 - (NSString* _Nullable)moxRole;

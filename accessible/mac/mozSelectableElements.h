@@ -54,7 +54,7 @@
 @interface mozListboxAccessible : mozSelectableAccessible
 
 
-- (BOOL)moxIgnoreChild:(mozAccessible*)child;
+- (BOOL)ignoreChild:(mozAccessible*)child;
 
 
 - (BOOL)disableChild:(mozAccessible*)child;

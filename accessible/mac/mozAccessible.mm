@@ -77,7 +77,26 @@ using namespace mozilla::a11y;
 
 #pragma mark -
 
-- (BOOL)moxIgnoreWithParent:(mozAccessible*)parent {
+- (BOOL)isAccessibilityElement {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+
+  if ([self isExpired]) {
+    return ![self ignoreWithParent:nil];
+  }
+
+  mozAccessible* parent = nil;
+  AccessibleOrProxy p = mGeckoAccessible.Parent();
+
+  if (!p.IsNull()) {
+    parent = GetNativeFromGeckoAccessible(p);
+  }
+
+  return ![self ignoreWithParent:parent];
+
+  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NO);
+}
+
+- (BOOL)ignoreWithParent:(mozAccessible*)parent {
   if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
     if (acc->IsContent() && acc->GetContent()->IsXULElement()) {
       if (acc->VisibilityState() & states::INVISIBLE) {
@@ -86,10 +105,10 @@ using namespace mozilla::a11y;
     }
   }
 
-  return [parent moxIgnoreChild:self];
+  return [parent ignoreChild:self];
 }
 
-- (BOOL)moxIgnoreChild:(mozAccessible*)child {
+- (BOOL)ignoreChild:(mozAccessible*)child {
   return NO;
 }
 
@@ -247,7 +266,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
 
   if (!child.IsNull()) {
     mozAccessible* nativeChild = GetNativeFromGeckoAccessible(child);
-    return [nativeChild isAccessibilityElement] ? nativeChild : [nativeChild moxUnignoredParent];
+    return [nativeChild isAccessibilityElement] ? nativeChild : [nativeChild moxParent];
   }
 
   
@@ -273,6 +292,10 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
     nativeParent = GetNativeFromGeckoAccessible(mGeckoAccessible.AsAccessible()->RootAccessible());
   }
 
+  if (![nativeParent isAccessibilityElement]) {
+    nativeParent = [nativeParent moxParent];
+  }
+
   return GetObjectOrRepresentedView(nativeParent);
 
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
@@ -292,7 +315,14 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
       continue;
     }
 
-    [children addObject:nativeChild];
+    if ([nativeChild ignoreWithParent:self]) {
+      
+      
+      
+      [children addObjectsFromArray:[nativeChild moxChildren]];
+    } else {
+      [children addObject:nativeChild];
+    }
   }
 
   return children;
@@ -624,7 +654,7 @@ struct RoleDescrComparator {
   }
 
   if (![self isRoot]) {
-    mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
+    mozAccessible* parent = (mozAccessible*)[self moxParent];
     if (![parent isRoot]) {
       return @(![parent disableChild:self]);
     }
