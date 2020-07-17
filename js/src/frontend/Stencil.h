@@ -330,6 +330,10 @@ class ScopeCreationData {
 class EmptyGlobalScopeType {};
 
 
+using FunctionDeclaration = uint32_t;
+using FunctionDeclarationVector = Vector<FunctionDeclaration>;
+
+
 
 
 
