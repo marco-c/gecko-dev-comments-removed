@@ -6,19 +6,12 @@
 #ifndef nsIContent_h___
 #define nsIContent_h___
 
-#include "mozilla/Attributes.h"
 #include "mozilla/FlushType.h"
-#include "mozilla/dom/BorrowedAttrInfo.h"
-#include "nsCaseTreatment.h"  
 #include "nsINode.h"
 #include "nsStringFwd.h"
-#include "nsISupportsImpl.h"
 
 
-class nsAtom;
 class nsIURI;
-class nsAttrValue;
-class nsAttrName;
 class nsTextFragment;
 class nsIFrame;
 
