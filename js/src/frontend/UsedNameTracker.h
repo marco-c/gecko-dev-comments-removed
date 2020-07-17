@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"
 
+#include "frontend/Token.h"
 #include "js/AllocPolicy.h"
 #include "js/HashTable.h"
 #include "js/Vector.h"
@@ -93,6 +94,15 @@ namespace frontend {
 
 
 
+
+struct UnboundPrivateName {
+  JSAtom* atom;
+  TokenPos position;
+
+  UnboundPrivateName(JSAtom* atom, TokenPos position)
+      : atom(atom), position(position) {}
+};
+
 class UsedNameTracker {
  public:
   struct Use {
@@ -107,10 +117,19 @@ class UsedNameTracker {
 
     void resetToScope(uint32_t scriptId, uint32_t scopeId);
 
-   public:
-    explicit UsedNameInfo(JSContext* cx) : uses_(cx) {}
+    NameVisibility visibility_ = NameVisibility::Public;
 
-    UsedNameInfo(UsedNameInfo&& other) : uses_(std::move(other.uses_)) {}
+    
+    
+    
+    mozilla::Maybe<TokenPos> firstUsePos_;
+
+   public:
+    explicit UsedNameInfo(JSContext* cx, NameVisibility visibility,
+                          mozilla::Maybe<TokenPos> position)
+        : uses_(cx), visibility_(visibility), firstUsePos_(position) {}
+
+    UsedNameInfo(UsedNameInfo&& other) = default;
 
     bool noteUsedInScope(uint32_t scriptId, uint32_t scopeId) {
       if (uses_.empty() || uses_.back().scopeId < scopeId) {
@@ -137,6 +156,13 @@ class UsedNameTracker {
     bool isUsedInScript(uint32_t scriptId) const {
       return !uses_.empty() && uses_.back().scriptId >= scriptId;
     }
+
+    
+    bool isPublic() { return visibility_ == NameVisibility::Public; }
+
+    bool empty() { return uses_.empty(); }
+
+    mozilla::Maybe<TokenPos> pos() { return firstUsePos_; }
   };
 
   using UsedNameMap = HashMap<JSAtom*, UsedNameInfo, DefaultHasher<JSAtom*>>;
@@ -168,8 +194,20 @@ class UsedNameTracker {
 
   UsedNameMap::Ptr lookup(JSAtom* name) const { return map_.lookup(name); }
 
-  MOZ_MUST_USE bool noteUse(JSContext* cx, JSAtom* name, uint32_t scriptId,
-                            uint32_t scopeId);
+  MOZ_MUST_USE bool noteUse(
+      JSContext* cx, JSAtom* name, NameVisibility visbility, uint32_t scriptId,
+      uint32_t scopeId,
+      mozilla::Maybe<TokenPos> tokenPosition = mozilla::Nothing());
+
+  
+  
+  MOZ_MUST_USE bool hasUnboundPrivateNames(
+      JSContext* cx, mozilla::Maybe<UnboundPrivateName>& maybeUnboundName);
+
+  
+  
+  MOZ_MUST_USE bool getUnboundPrivateNames(
+      Vector<UnboundPrivateName, 8>& unboundPrivateNames);
 
   struct RewindToken {
    private:

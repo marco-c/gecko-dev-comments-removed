@@ -783,7 +783,9 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
   return true;
 }
 
-bool ParserBase::noteUsedNameInternal(HandlePropertyName name) {
+bool ParserBase::noteUsedNameInternal(HandlePropertyName name,
+                                      NameVisibility visibility,
+                                      mozilla::Maybe<TokenPos> tokenPosition) {
   
   
   if (pc_->useAsmOrInsideUseAsm()) {
@@ -794,12 +796,18 @@ bool ParserBase::noteUsedNameInternal(HandlePropertyName name) {
   
   
   
+  
+  
+  
+  
   ParseContext::Scope* scope = pc_->innermostScope();
-  if (pc_->sc()->isGlobalContext() && scope == &pc_->varScope()) {
+  if (pc_->sc()->isGlobalContext() && scope == &pc_->varScope() &&
+      visibility == NameVisibility::Public) {
     return true;
   }
 
-  return usedNames_.noteUse(cx_, name, pc_->scriptId(), scope->id());
+  return usedNames_.noteUse(cx_, name, visibility, pc_->scriptId(), scope->id(),
+                            tokenPosition);
 }
 
 template <class ParseHandler>
@@ -1378,6 +1386,84 @@ LexicalScopeNode* PerHandlerParser<FullParseHandler>::finishLexicalScope(
   return handler_.newLexicalScope(*bindings, body, kind);
 }
 
+template <class ParseHandler>
+bool PerHandlerParser<ParseHandler>::checkForUndefinedPrivateFields(
+    EvalSharedContext* evalSc) {
+  if (handler_.canSkipLazyClosedOverBindings()) {
+    
+    
+    return true;
+  }
+
+  Vector<UnboundPrivateName, 8> unboundPrivateNames(cx_);
+  if (!this->getCompilationInfo().usedNames.getUnboundPrivateNames(
+          unboundPrivateNames)) {
+    return false;
+  }
+
+  
+  if (unboundPrivateNames.empty()) {
+    return true;
+  }
+
+  
+  
+  
+  if (!evalSc) {
+    
+    UnboundPrivateName minimum = unboundPrivateNames[0];
+    UniqueChars str = AtomToPrintableString(cx_, minimum.atom);
+    if (!str) {
+      return false;
+    }
+
+    errorAt(minimum.position.begin, JSMSG_MISSING_PRIVATE_DECL, str.get());
+    return false;
+  }
+
+  
+  
+  auto verifyPrivateName = [](JSContext* cx, auto* parser,
+                              js::Scope* enclosingScope,
+                              UnboundPrivateName unboundName) {
+    
+    for (ScopeIter si(enclosingScope); si; si++) {
+      
+      if (si.scope()->kind() != ScopeKind::ClassBody) {
+        continue;
+      }
+
+      
+      for (js::BindingIter bi(si.scope()); bi; bi++) {
+        if (bi.name() == unboundName.atom) {
+          
+          return true;
+        }
+      }
+    }
+
+    
+    UniqueChars str = AtomToPrintableString(cx, unboundName.atom);
+    if (!str) {
+      return false;
+    }
+    parser->errorAt(unboundName.position.begin, JSMSG_MISSING_PRIVATE_DECL,
+                    str.get());
+    return false;
+  };
+
+  js::Scope* enclosingScope = evalSc->compilationEnclosingScope();
+  
+  
+  for (UnboundPrivateName unboundName : unboundPrivateNames) {
+    if (!verifyPrivateName(cx_, this, enclosingScope, unboundName)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 template <typename Unit>
 LexicalScopeNode* Parser<FullParseHandler, Unit>::evalBody(
     EvalSharedContext* evalsc) {
@@ -1405,6 +1491,11 @@ LexicalScopeNode* Parser<FullParseHandler, Unit>::evalBody(
     }
 
     if (!checkStatementsEOF()) {
+      return nullptr;
+    }
+
+    
+    if (!checkForUndefinedPrivateFields(evalsc)) {
       return nullptr;
     }
 
@@ -1496,6 +1587,10 @@ ListNode* Parser<FullParseHandler, Unit>::globalBody(
   }
 
   if (!CheckParseTree(cx_, alloc_, body)) {
+    return null();
+  }
+
+  if (!checkForUndefinedPrivateFields()) {
     return null();
   }
 
@@ -1606,6 +1701,11 @@ ModuleNode* Parser<FullParseHandler, Unit>::moduleBody(
   stmtList = &node->as<ListNode>();
 
   if (!this->setSourceMapInfo()) {
+    return null();
+  }
+
+  
+  if (!checkForUndefinedPrivateFields()) {
     return null();
   }
 
@@ -2189,6 +2289,10 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
     }
   }
   funNode = &node->as<FunctionNode>();
+
+  if (!checkForUndefinedPrivateFields(nullptr)) {
+    return null();
+  }
 
   if (!this->setSourceMapInfo()) {
     return null();
@@ -7381,6 +7485,8 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
   
   TokenPos namePos = pos();
 
+  bool isInClass = pc_->sc()->inClass();
+
   
   
   ParseContext::ClassStatement classStmt(pc_);
@@ -7519,8 +7625,25 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
       return null();
     }
   }
-
   MOZ_ALWAYS_TRUE(setLocalStrictMode(savedStrictness));
+  
+  if (!isInClass) {
+    mozilla::Maybe<UnboundPrivateName> maybeUnboundName;
+    if (!this->getCompilationInfo().usedNames.hasUnboundPrivateNames(
+            cx_, maybeUnboundName)) {
+      return null();
+    }
+    if (maybeUnboundName) {
+      UniqueChars str = AtomToPrintableString(cx_, maybeUnboundName->atom);
+      if (!str) {
+        return null();
+      }
+
+      errorAt(maybeUnboundName->position.begin, JSMSG_MISSING_PRIVATE_DECL,
+              str.get());
+      return null();
+    }
+  }
 
   return handler_.newClass(nameNode, classHeritage, classBlock,
                            TokenPos(classStartOffset, classEndOffset));
@@ -7842,13 +7965,15 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
     
     
     
+
     RootedPropertyName privateName(cx_, propAtom->asPropertyName());
-    if (!noteUsedName(privateName)) {
+    NameNodeType privateNameNode = privateNameReference(privateName);
+    if (!privateNameNode) {
       return null();
     }
 
     propAssignFieldAccess = handler_.newPropertyByValue(
-        propAssignThis, propName, wholeInitializerPos.end);
+        propAssignThis, privateNameNode, wholeInitializerPos.end);
     if (!propAssignFieldAccess) {
       return null();
     }
@@ -9982,7 +10107,7 @@ PerHandlerParser<ParseHandler>::privateNameReference(
     return null();
   }
 
-  if (!noteUsedName(name)) {
+  if (!noteUsedName(name, NameVisibility::Private, Some(pos()))) {
     return null();
   }
 
@@ -10429,7 +10554,8 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::propertyName(
       }
 
       propAtom.set(anyChars.currentName());
-      return handler_.newPrivateName(propAtom, pos());
+      RootedPropertyName propName(cx_, propAtom->asPropertyName());
+      return privateNameReference(propName);
     }
 
     default: {
