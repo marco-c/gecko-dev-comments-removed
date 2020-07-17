@@ -1967,14 +1967,10 @@ static JSFunction* CreateFunction(JSContext* cx,
 
 
 static bool InstantiateFunctions(JSContext* cx,
-                                 CompilationInfo& compilationInfo,
-                                 FunctionBox* listHead) {
-  for (FunctionBox* funbox = listHead; funbox; funbox = funbox->traceLink()) {
-    ScriptStencil& stencil = funbox->functionStencil().get();
-
-    auto functionIndex = *stencil.functionIndex;
-
-    if (compilationInfo.functions[functionIndex]) {
+                                 CompilationInfo& compilationInfo) {
+  for (auto item : compilationInfo.functionScriptStencils()) {
+    auto& stencil = item.stencil;
+    if (item.function) {
       continue;
     }
 
@@ -1982,7 +1978,7 @@ static bool InstantiateFunctions(JSContext* cx,
     if (!fun) {
       return false;
     }
-    compilationInfo.functions[functionIndex].set(fun);
+    compilationInfo.functions[*stencil.functionIndex].set(fun);
   }
 
   return true;
@@ -1993,10 +1989,10 @@ static bool InstantiateFunctions(JSContext* cx,
 
 
 static bool SetTypeForExposedFunctions(JSContext* cx,
-                                       CompilationInfo& compilationInfo,
-                                       FunctionBox* listHead) {
-  for (FunctionBox* funbox = listHead; funbox; funbox = funbox->traceLink()) {
-    ScriptStencil& stencil = funbox->functionStencil().get();
+                                       CompilationInfo& compilationInfo) {
+  for (auto item : compilationInfo.functionScriptStencils()) {
+    auto& stencil = item.stencil;
+    auto& fun = item.function;
     if (!stencil.functionFlags.hasBaseScript()) {
       continue;
     }
@@ -2007,7 +2003,6 @@ static bool SetTypeForExposedFunctions(JSContext* cx,
       continue;
     }
 
-    HandleFunction fun = compilationInfo.functions[*stencil.functionIndex];
     if (!JSFunction::setTypeForScriptedFunction(cx, fun,
                                                 stencil.isSingletonFunction)) {
       return false;
@@ -2021,12 +2016,10 @@ static bool SetTypeForExposedFunctions(JSContext* cx,
 
 
 static bool InstantiateScriptStencils(JSContext* cx,
-                                      CompilationInfo& compilationInfo,
-                                      FunctionBox* listHead) {
-  for (FunctionBox* funbox = listHead; funbox; funbox = funbox->traceLink()) {
-    ScriptStencil& stencil = funbox->functionStencil().get();
-    HandleFunction fun = compilationInfo.functions[*stencil.functionIndex];
-
+                                      CompilationInfo& compilationInfo) {
+  for (auto item : compilationInfo.functionScriptStencils()) {
+    auto& stencil = item.stencil;
+    auto& fun = item.function;
     if (stencil.immutableScriptData) {
       
       
@@ -2081,17 +2074,15 @@ static bool InstantiateTopLevel(JSContext* cx,
 
 
 
-static void UpdateEmittedInnerFunctions(CompilationInfo& compilationInfo,
-                                        FunctionBox* listHead) {
-  for (FunctionBox* funbox = listHead; funbox; funbox = funbox->traceLink()) {
-    ScriptStencil& stencil = funbox->functionStencil().get();
-    HandleFunction fun = compilationInfo.functions[*stencil.functionIndex];
-
+static void UpdateEmittedInnerFunctions(CompilationInfo& compilationInfo) {
+  for (auto item : compilationInfo.functionScriptStencils()) {
+    auto& stencil = item.stencil;
+    auto& fun = item.function;
     if (!stencil.wasFunctionEmitted) {
       continue;
     }
 
-    if (fun->baseScript()->hasBytecode() || stencil.isAsmJSModule) {
+    if (stencil.isAsmJSModule || fun->baseScript()->hasBytecode()) {
       
       MOZ_ASSERT(stencil.lazyFunctionEnclosingScopeIndex_.isNothing());
     } else {
@@ -2125,12 +2116,10 @@ static void UpdateEmittedInnerFunctions(CompilationInfo& compilationInfo,
 
 
 
-static void LinkEnclosingLazyScript(CompilationInfo& compilationInfo,
-                                    FunctionBox* listHead) {
-  for (FunctionBox* funbox = listHead; funbox; funbox = funbox->traceLink()) {
-    ScriptStencil& stencil = funbox->functionStencil().get();
-    HandleFunction fun = compilationInfo.functions[*stencil.functionIndex];
-
+static void LinkEnclosingLazyScript(CompilationInfo& compilationInfo) {
+  for (auto item : compilationInfo.functionScriptStencils()) {
+    auto& stencil = item.stencil;
+    auto& fun = item.function;
     if (!stencil.functionFlags.hasBaseScript()) {
       continue;
     }
@@ -2152,15 +2141,15 @@ static void LinkEnclosingLazyScript(CompilationInfo& compilationInfo,
 }
 
 bool CompilationInfo::instantiateStencils() {
-  if (!InstantiateFunctions(cx, *this, traceListHead)) {
+  if (!InstantiateFunctions(cx, *this)) {
     return false;
   }
 
-  if (!SetTypeForExposedFunctions(cx, *this, traceListHead)) {
+  if (!SetTypeForExposedFunctions(cx, *this)) {
     return false;
   }
 
-  if (!InstantiateScriptStencils(cx, *this, traceListHead)) {
+  if (!InstantiateScriptStencils(cx, *this)) {
     return false;
   }
 
@@ -2170,10 +2159,10 @@ bool CompilationInfo::instantiateStencils() {
 
   
 
-  UpdateEmittedInnerFunctions(*this, traceListHead);
+  UpdateEmittedInnerFunctions(*this);
 
   if (lazy == nullptr) {
-    LinkEnclosingLazyScript(*this, traceListHead);
+    LinkEnclosingLazyScript(*this);
   }
 
   return true;
