@@ -9855,6 +9855,54 @@ bool BytecodeEmitter::emitClass(
       
       return false;
     }
+
+    for (ParseNode* classElement : classNode->memberList()->contents()) {
+      if (!classElement->is<ClassField>()) {
+        continue;
+      }
+
+      ParseNode* fieldName = &classElement->as<ClassField>().name();
+      if (!fieldName->isKind(ParseNodeKind::PrivateName)) {
+        continue;
+      }
+
+      RootedAtom privateName(cx, fieldName->as<NameNode>().name());
+
+      
+      if (!emitAtomOp(JSOp::GetIntrinsic, cx->names().NewPrivateName)) {
+        
+        return false;
+      }
+
+      
+      if (!emit1(JSOp::Undefined)) {
+        
+        return false;
+      }
+
+      if (!emitAtomOp(JSOp::String, privateName)) {
+        
+        return false;
+      }
+
+      int argc = 1;
+      if (!emitCall(JSOp::Call, argc)) {
+        
+        return false;
+      }
+
+      
+      if (!emitLexicalInitialization(privateName)) {
+        
+        return false;
+      }
+
+      
+      if (!emit1(JSOp::Pop)) {
+        
+        return false;
+      }
+    }
   }
 
   bool hasNameOnStack = nameKind == ClassNameKind::ComputedName;
