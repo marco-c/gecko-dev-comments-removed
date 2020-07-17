@@ -13517,10 +13517,12 @@ Element* Document::TopLayerPop(FunctionRef<bool(Element*)> aPredicateFunc) {
   
   
   
+  
+  
+  
   while (!mTopLayer.IsEmpty()) {
     Element* element = GetTopLayerTop();
-    if (!element || !element->IsInUncomposedDoc() ||
-        element->OwnerDoc() != this) {
+    if (!element || element->GetComposedDoc() != this) {
       mTopLayer.RemoveLastElement();
     } else {
       
