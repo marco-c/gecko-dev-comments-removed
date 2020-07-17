@@ -25,8 +25,8 @@
 
 #include "jstypes.h"  
 
-#include "ds/Nestable.h"  
-#include "frontend/AbstractScopePtr.h"
+#include "ds/Nestable.h"                         
+#include "frontend/AbstractScopePtr.h"           
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/CallOrNewEmitter.h"           
 #include "frontend/CForEmitter.h"                
@@ -858,6 +858,10 @@ bool BytecodeEmitter::emitGoto(NestableControl* target, JumpList* jumplist,
 
 AbstractScopePtr BytecodeEmitter::innermostScope() const {
   return innermostEmitterScope()->scope(this);
+}
+
+ScopeIndex BytecodeEmitter::innermostScopeIndex() const {
+  return innermostEmitterScope()->scopeIndex(this);
 }
 
 bool BytecodeEmitter::emitIndexOp(JSOp op, uint32_t index) {

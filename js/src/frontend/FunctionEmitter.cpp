@@ -84,7 +84,7 @@ bool FunctionEmitter::emitLazy() {
 
   
   
-  funbox_->setEnclosingScopeForInnerLazyFunction(bce_->innermostScope());
+  funbox_->setEnclosingScopeForInnerLazyFunction(bce_->innermostScopeIndex());
 
   if (!emitFunction()) {
     

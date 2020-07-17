@@ -24,6 +24,8 @@
 #include "js/Vector.h"
 #include "js/WasmModule.h"
 #include "vm/JSContext.h"
+#include "vm/JSFunction.h"  
+#include "vm/JSScript.h"    
 #include "vm/Realm.h"
 
 namespace js {
@@ -112,6 +114,10 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
 
   
   
+  JS::Rooted<Scope*> topLevelFunctionEnclosingScope;
+
+  
+  
   JS::Rooted<ScriptStencil> topLevel;
 
   
@@ -161,6 +167,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
         bigIntData(cx),
         functions(cx),
         funcData(cx),
+        topLevelFunctionEnclosingScope(cx),
         topLevel(cx),
         scopeCreationData(cx),
         asmJS(cx),
@@ -168,9 +175,22 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
 
   bool init(JSContext* cx);
 
+  bool initForStandaloneFunction(JSContext* cx, HandleScope enclosingScope) {
+    if (!init(cx)) {
+      return false;
+    }
+    this->topLevelFunctionEnclosingScope = enclosingScope;
+    return true;
+  }
+
   void initFromLazy(BaseScript* lazy) {
     this->lazy = lazy;
     this->sourceObject = lazy->sourceObject();
+    this->topLevelFunctionEnclosingScope = lazy->function()->enclosingScope();
+  }
+
+  void setTopLevelFunctionEnclosingScope(Scope* scope) {
+    topLevelFunctionEnclosingScope = scope;
   }
 
   template <typename Unit>

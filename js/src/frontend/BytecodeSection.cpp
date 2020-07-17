@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"       
 #include "mozilla/ReverseIterator.h"  
 
+#include "frontend/AbstractScopePtr.h"  
 #include "frontend/CompilationInfo.h"
 #include "frontend/SharedContext.h"  
 #include "frontend/Stencil.h"        
@@ -36,6 +37,10 @@ AbstractScopePtr GCThingList::getScope(size_t index) const {
     return AbstractScopePtr(&compilationInfo.cx->global()->emptyGlobalScope());
   }
   return AbstractScopePtr(compilationInfo, elem.as<ScopeIndex>());
+}
+
+ScopeIndex GCThingList::getScopeIndex(size_t index) const {
+  return vector[index].as<ScopeIndex>();
 }
 
 bool js::frontend::EmitScriptThingsVector(JSContext* cx,

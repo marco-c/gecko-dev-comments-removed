@@ -13,7 +13,7 @@
 
 #include "jstypes.h"
 
-#include "frontend/AbstractScopePtr.h"
+#include "frontend/AbstractScopePtr.h"    
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
 #include "frontend/Stencil.h"
@@ -324,10 +324,7 @@ class FunctionBox : public SharedContext {
   
   
   
-  
-  
-  
-  AbstractScopePtr enclosingScope_ = {};
+  mozilla::Maybe<ScopeIndex> enclosingScopeIndex_;
 
   
   LexicalScope::Data* namedLambdaBindings_ = nullptr;
@@ -456,33 +453,24 @@ class FunctionBox : public SharedContext {
 
   void initFromLazyFunction(JSFunction* fun);
 
-  void initWithEnclosingScope(ScopeContext& scopeContext, Scope* enclosingScope,
-                              FunctionFlags flags, FunctionSyntaxKind kind);
+  void initStandalone(ScopeContext& scopeContext, FunctionFlags flags,
+                      FunctionSyntaxKind kind);
 
   void initWithEnclosingParseContext(ParseContext* enclosing,
                                      FunctionFlags flags,
                                      FunctionSyntaxKind kind);
 
-  void setEnclosingScopeForInnerLazyFunction(
-      const AbstractScopePtr& enclosingScope);
+  void setEnclosingScopeForInnerLazyFunction(ScopeIndex scopeIndex);
 
   JSFunction* function() const;
 
   MOZ_MUST_USE bool setAsmJSModule(const JS::WasmModule* module);
   bool isAsmJSModule() { return isAsmJSModule_; }
 
-  Scope* compilationEnclosingScope() const override {
-    
-    
+  Scope* compilationEnclosingScope() const override;
 
-    MOZ_ASSERT(enclosingScope_);
-    return enclosingScope_.scope();
-  }
-
-  bool hasEnclosingScope() const { return !!enclosingScope_; }
-  Scope* getExistingEnclosingScope() const {
-    return enclosingScope_.getExistingScope();
-  }
+  bool hasEnclosingScopeIndex() const { return enclosingScopeIndex_.isSome(); }
+  ScopeIndex getEnclosingScopeIndex() const { return *enclosingScopeIndex_; }
 
   IMMUTABLE_FLAG_GETTER_SETTER(isAsync, IsAsync)
   IMMUTABLE_FLAG_GETTER_SETTER(isGenerator, IsGenerator)

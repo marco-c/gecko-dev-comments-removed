@@ -100,6 +100,7 @@ struct MOZ_STACK_CLASS GCThingList {
   const ScriptThingsVector& objects() { return vector; }
 
   AbstractScopePtr getScope(size_t index) const;
+  ScopeIndex getScopeIndex(size_t index) const;
 
   AbstractScopePtr firstScope() const {
     MOZ_ASSERT(firstScopeIndex.isSome());
