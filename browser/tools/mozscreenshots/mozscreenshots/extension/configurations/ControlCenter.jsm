@@ -318,6 +318,8 @@ async function openProtectionsPopup() {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   let gBrowser = browserWindow.gBrowser;
   let { gProtectionsHandler } = gBrowser.ownerGlobal;
+  
+  gProtectionsHandler._initializePopup();
   gProtectionsHandler._protectionsPopup.hidePopup();
   
   if (AppConstants.platform == "macosx") {
