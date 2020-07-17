@@ -248,8 +248,8 @@ already_AddRefed<gfxPattern> SVGGradientFrame::GetPaintServerPattern(
   }
 
   if (nStops == 1 || GradientVectorLengthIsZero()) {
-    auto lastStopFrame = stopFrames[nStops - 1];
-    auto svgReset = lastStopFrame->StyleSVGReset();
+    auto* lastStopFrame = stopFrames[nStops - 1];
+    const auto* svgReset = lastStopFrame->StyleSVGReset();
     
     
     float stopOpacity = svgReset->mStopOpacity;

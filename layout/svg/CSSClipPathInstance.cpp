@@ -28,7 +28,7 @@ namespace mozilla {
 
 void CSSClipPathInstance::ApplyBasicShapeOrPathClip(
     gfxContext& aContext, nsIFrame* aFrame, const gfxMatrix& aTransform) {
-  auto& clipPathStyle = aFrame->StyleSVGReset()->mClipPath;
+  const auto& clipPathStyle = aFrame->StyleSVGReset()->mClipPath;
   MOZ_ASSERT(clipPathStyle.IsShape() || clipPathStyle.IsBox() ||
                  clipPathStyle.IsPath(),
              "This is used with basic-shape, geometry-box, and path() only");
@@ -48,7 +48,7 @@ void CSSClipPathInstance::ApplyBasicShapeOrPathClip(
 
 bool CSSClipPathInstance::HitTestBasicShapeOrPathClip(nsIFrame* aFrame,
                                                       const gfxPoint& aPoint) {
-  auto& clipPathStyle = aFrame->StyleSVGReset()->mClipPath;
+  const auto& clipPathStyle = aFrame->StyleSVGReset()->mClipPath;
   MOZ_ASSERT(!clipPathStyle.IsNone(), "unexpected none value");
   
   
