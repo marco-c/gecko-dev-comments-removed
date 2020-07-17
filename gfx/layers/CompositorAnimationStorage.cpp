@@ -143,6 +143,13 @@ void CompositorAnimationStorage::SetAnimations(uint64_t aId,
 
   mAnimations[aId] = std::make_unique<AnimationStorageData>(
       AnimationHelper::ExtractAnimations(aValue));
+
+  
+  
+  
+  if (mAnimatedValues.Contains(aId)) {
+    mNewAnimations.insert(aId);
+  }
 }
 
 bool CompositorAnimationStorage::SampleAnimations(TimeStamp aPreviousFrameTime,
@@ -150,6 +157,7 @@ bool CompositorAnimationStorage::SampleAnimations(TimeStamp aPreviousFrameTime,
   MutexAutoLock lock(mLock);
 
   bool isAnimating = false;
+  auto cleanup = MakeScopeExit([&] { mNewAnimations.clear(); });
 
   
   if (mAnimations.empty()) {
@@ -171,6 +179,9 @@ bool CompositorAnimationStorage::SampleAnimations(TimeStamp aPreviousFrameTime,
             animationStorageData->mAnimation, animationValues);
 
     if (sampleResult != AnimationHelper::SampleResult::Sampled) {
+      if (mNewAnimations.find(iter.first) != mNewAnimations.end()) {
+        mAnimatedValues.Remove(iter.first);
+      }
       continue;
     }
 
