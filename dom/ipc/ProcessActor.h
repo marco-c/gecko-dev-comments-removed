@@ -14,22 +14,21 @@
 #include "nsIURI.h"
 #include "nsString.h"
 #include "mozilla/dom/JSActor.h"
+#include "mozilla/dom/JSActorManager.h"
 
 namespace mozilla {
 namespace dom {
 
 
-class ProcessActor : public nsISupports {
+class ProcessActor : public JSActorManager {
  protected:
   virtual ~ProcessActor() = default;
 
-  
-  
-  
-  void ConstructActor(const nsACString& aName, JS::MutableHandleObject aActor,
-                      ErrorResult& aRv);
+  already_AddRefed<JSActorProtocol> MatchingJSActorProtocol(
+      JSActorService* aActorSvc, const nsACString& aName,
+      ErrorResult& aRv) final;
+
   virtual const nsAString& GetRemoteType() const = 0;
-  virtual JSActor::Type GetSide() = 0;
 };
 
 }  

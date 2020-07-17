@@ -179,16 +179,9 @@ NS_IMETHODIMP JSWindowActorProtocol::HandleEvent(Event* aEvent) {
   }
 
   
-  ErrorResult error;
-  RefPtr<JSWindowActorChild> actor = wgc->GetActor(mName, error);
-  if (error.Failed()) {
-    nsresult rv = error.StealNSResult();
-
-    
-    if (rv == NS_ERROR_NOT_AVAILABLE) {
-      return NS_OK;
-    }
-    return rv;
+  RefPtr<JSActor> actor = wgc->GetActor(mName, IgnoreErrors());
+  if (!actor) {
+    return NS_OK;
   }
 
   
@@ -223,16 +216,9 @@ NS_IMETHODIMP JSWindowActorProtocol::Observe(nsISupports* aSubject,
   }
 
   
-  ErrorResult error;
-  RefPtr<JSWindowActorChild> actor = wgc->GetActor(mName, error);
-  if (NS_WARN_IF(error.Failed())) {
-    nsresult rv = error.StealNSResult();
-
-    
-    if (rv == NS_ERROR_NOT_AVAILABLE) {
-      return NS_OK;
-    }
-    return rv;
+  RefPtr<JSActor> actor = wgc->GetActor(mName, IgnoreErrors());
+  if (!actor) {
+    return NS_OK;
   }
 
   
