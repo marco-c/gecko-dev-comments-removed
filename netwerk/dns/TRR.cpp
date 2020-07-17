@@ -249,7 +249,7 @@ nsresult TRR::SendHTTPRequest() {
     MOZ_ASSERT(mRec);
 
     if (UseDefaultServer() &&
-        gTRRService->IsTRRBlacklisted(mHost, mOriginSuffix, mPB, true)) {
+        gTRRService->IsTemporarilyBlocked(mHost, mOriginSuffix, mPB, true)) {
       if (mType == TRRTYPE_A) {
         
         Telemetry::Accumulate(Telemetry::DNS_TRR_BLACKLISTED2,
