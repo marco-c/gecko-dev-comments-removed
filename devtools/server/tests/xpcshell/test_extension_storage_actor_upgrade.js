@@ -108,6 +108,15 @@ add_task(async function test_panel_live_reload() {
 
   await extension.awaitMessage("extension-origin");
 
+  
+  
+  
+  
+  await asyncWaitUntil(async () => {
+    const { data } = await extensionStorage.getStoreObjects(host);
+    return data?.length > 0;
+  });
+
   const { data } = await extensionStorage.getStoreObjects(host);
   Assert.deepEqual(
     data,
@@ -124,3 +133,18 @@ add_task(async function test_panel_live_reload() {
 
   await shutdown(extension, target);
 });
+
+
+
+
+async function asyncWaitUntil(predicate, interval = 100) {
+  let success = await predicate();
+  const { setTimeout } = require("resource://gre/modules/Timer.jsm");
+  while (!success) {
+    
+    
+    await new Promise(resolve => setTimeout(resolve, interval));
+    
+    success = await predicate();
+  }
+}
