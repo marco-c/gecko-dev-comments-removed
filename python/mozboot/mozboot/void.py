@@ -22,6 +22,7 @@ class VoidBootstrapper(
         'make',
         'mercurial',
         'nodejs',
+        'python3-pip',
         'unzip',
         'zip',
     ]
@@ -53,12 +54,6 @@ class VoidBootstrapper(
         self.packages = self.PACKAGES
         self.browser_packages = self.BROWSER_PACKAGES
         self.mobile_android_packages = self.MOBILE_ANDROID_PACKAGES
-
-        
-        if sys.version_info[0] == 3:
-            self.packages.append('python3-pip')
-        else:
-            self.packages.append('python-pip')
 
     def run_as_root(self, command):
         
