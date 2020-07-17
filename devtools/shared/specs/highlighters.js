@@ -27,6 +27,8 @@ const highlighterSpec = generateActorSpec({
     hideBoxModel: {
       request: {},
     },
+    
+    
     pick: {},
     pickAndFocus: {},
     cancelPick: {},

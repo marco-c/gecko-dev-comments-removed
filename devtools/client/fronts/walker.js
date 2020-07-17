@@ -23,6 +23,7 @@ loader.lazyRequireGetter(
 class WalkerFront extends FrontClassWithSpec(walkerSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
+    this._isPicking = false;
     this._orphaned = new Set();
     this._retainedOrphans = new Set();
 
@@ -586,6 +587,46 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
       
       await onRootNodeAvailable(this.rootNode);
     }
+  }
+
+  
+
+
+
+
+  pick(doFocus) {
+    if (this._isPicking) {
+      return Promise.resolve();
+    }
+    this._isPicking = true;
+
+    
+    if (!this.traits.supportsNodePicker) {
+      
+      return doFocus
+        ? this.parentFront.highlighter.pickAndFocus()
+        : this.parentFront.highlighter.pick();
+    }
+
+    return super.pick(doFocus);
+  }
+
+  
+
+
+  cancelPick() {
+    if (!this._isPicking) {
+      return Promise.resolve();
+    }
+    this._isPicking = false;
+
+    
+    if (!this.traits.supportsNodePicker) {
+      
+      return this.parentFront.highlighter.cancelPick();
+    }
+
+    return super.cancelPick();
   }
 
   unwatchRootNode(onRootNodeAvailable) {
