@@ -1755,11 +1755,13 @@ GeckoDriver.prototype.switchToParentFrame = async function() {
 
 
 
+
+
 GeckoDriver.prototype.switchToFrame = async function(cmd) {
   assert.open(this.getCurrentWindow());
   await this._handleUserPrompts();
 
-  let { id, focus } = cmd.parameters;
+  let { focus = false, id } = cmd.parameters;
 
   if (typeof id == "number") {
     assert.unsignedShort(id, `Expected id to be unsigned short, got ${id}`);
@@ -1860,49 +1862,23 @@ GeckoDriver.prototype.switchToFrame = async function(cmd) {
       }
     }
 
-    switch (typeof id) {
-      case "string":
-        let foundById = null;
-        let frames = curWindow.document.getElementsByTagName("iframe");
-        let numFrames = frames.length;
-        for (let i = 0; i < numFrames; i++) {
-          
-          let frame = frames[i];
-          if (frame.getAttribute("name") == id) {
-            foundFrame = i;
-            curWindow = frame.contentWindow;
-            break;
-          } else if (foundById === null && frame.id == id) {
-            foundById = i;
-          }
+    if (typeof id == "number") {
+      if (curWindow.frames[id]) {
+        foundFrame = id;
+        let frameEl = curWindow.frames[foundFrame].frameElement;
+        curWindow = frameEl.contentWindow;
+        this.curFrame = curWindow;
+        if (focus) {
+          this.curFrame.focus();
         }
-        if (foundFrame === null && foundById !== null) {
-          foundFrame = foundById;
-          curWindow = frames[foundById].contentWindow;
-        }
-        break;
-
-      case "number":
-        if (typeof curWindow.frames[id] != "undefined") {
-          foundFrame = id;
-          let frameEl = curWindow.frames[foundFrame].frameElement;
-          curWindow = frameEl.contentWindow;
-        }
-        break;
-    }
-
-    if (foundFrame !== null) {
-      this.curFrame = curWindow;
-      if (focus) {
-        this.curFrame.focus();
+        checkTimer.initWithCallback(
+          checkLoad.bind(this),
+          100,
+          Ci.nsITimer.TYPE_ONE_SHOT
+        );
+      } else {
+        throw new NoSuchFrameError(`Unable to locate frame: ${id}`);
       }
-      checkTimer.initWithCallback(
-        checkLoad.bind(this),
-        100,
-        Ci.nsITimer.TYPE_ONE_SHOT
-      );
-    } else {
-      throw new NoSuchFrameError(`Unable to locate frame: ${id}`);
     }
   } else if (this.context == Context.Content) {
     cmd.commandID = cmd.id;
