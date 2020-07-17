@@ -6890,10 +6890,8 @@ void Document::SetScriptGlobalObject(
       }
     }
 
-    ErrorResult error;
     if (GetController().isSome()) {
-      imgLoader* loader = nsContentUtils::GetImgLoaderForDocument(this);
-      if (loader) {
+      if (imgLoader* loader = nsContentUtils::GetImgLoaderForDocument(this)) {
         loader->ClearCacheForControlledDocument(this);
       }
 
@@ -6941,9 +6939,7 @@ void Document::SetScriptGlobalObject(
 
     
     
-    IgnoredErrorResult ignored;
-    bool focused = HasFocus(ignored);
-    if (focused) {
+    if (HasFocus(IgnoreErrors())) {
       SetLastFocusTime(TimeStamp::Now());
     }
   }
