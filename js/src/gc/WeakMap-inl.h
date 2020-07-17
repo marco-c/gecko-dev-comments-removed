@@ -350,33 +350,6 @@ void WeakMap<K, V>::traceMappings(WeakMapTracer* tracer) {
   }
 }
 
-template <class K, class V>
-bool WeakMap<K, V>::findSweepGroupEdges() {
-  
-  
-  JS::AutoSuppressGCAnalysis nogc;
-  for (Range r = all(); !r.empty(); r.popFront()) {
-    const K& key = r.front().key();
-
-    
-    
-    JSObject* delegate = gc::detail::GetDelegate(key);
-    if (!delegate) {
-      continue;
-    }
-
-    
-    
-    Zone* delegateZone = delegate->zone();
-    if (delegateZone != zone() && delegateZone->isGCMarking()) {
-      if (!delegateZone->addSweepGroupEdgeTo(key->asTenured().zone())) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 #if DEBUG
 template <class K, class V>
 void WeakMap<K, V>::assertEntriesNotAboutToBeFinalized() {
