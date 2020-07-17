@@ -48,16 +48,6 @@ class DebuggerSource : public NativeObject {
 
   struct CallData;
 
-  
-  
-  
-  bool isInstance() const { return !getReservedSlot(OWNER_SLOT).isUndefined(); }
-  Debugger* owner() const {
-    MOZ_ASSERT(isInstance());
-    JSObject* dbgobj = &getReservedSlot(OWNER_SLOT).toObject();
-    return Debugger::fromJSObject(dbgobj);
-  }
-
  private:
   static const JSClassOps classOps_;
 
