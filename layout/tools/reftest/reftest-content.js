@@ -443,6 +443,14 @@ function shouldSnapshotWholePage(contentRootElement) {
                              .includes("reftest-snapshot-all");
 }
 
+function shouldNotFlush(contentRootElement) {
+    
+    return contentRootElement &&
+           contentRootElement.hasAttribute('class') &&
+           contentRootElement.getAttribute('class').split(/\s+/)
+                             .includes("reftest-no-flush");
+}
+
 function getNoPaintElements(contentRootElement) {
     return contentRootElement.getElementsByClassName('reftest-no-paint');
 }
@@ -854,6 +862,16 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
                 return;
             }
 
+            if (shouldNotFlush(contentRootElement)) {
+              
+              
+              
+              
+              
+              
+              
+              updateCanvasPending = true;
+            }
             
             state = STATE_WAITING_FOR_SPELL_CHECKS;
             MakeProgress();
@@ -886,9 +904,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
 
             var willSnapshot = IsSnapshottableTestType();
             CheckForLivenessOfContentRootElement();
-            var noFlush =
-                !(contentRootElement &&
-                  contentRootElement.classList.contains("reftest-no-flush"));
+            var noFlush = !shouldNotFlush(contentRootElement);
             if (noFlush && willSnapshot && windowUtils().flushApzRepaints()) {
                 LogInfo("MakeProgress: done requesting APZ flush");
             } else {
@@ -1375,7 +1391,7 @@ function SynchronizeForSnapshot(flags)
         var docElt = content.document.documentElement;
         if (docElt &&
             (docElt.hasAttribute("reftest-no-sync-layers") ||
-             docElt.classList.contains("reftest-no-flush"))) {
+             shouldNotFlush(docElt))) {
             LogInfo("Test file chose to skip SynchronizeForSnapshot");
             return Promise.resolve(undefined);
         }
@@ -1644,7 +1660,10 @@ function SendUpdateCanvasForEvent(forURL, rectList, contentRootElement)
     }
 
     var message;
-    if (gIsWebRenderEnabled && !windowUtils().isMozAfterPaintPending) {
+
+    if ((gIsWebRenderEnabled || shouldNotFlush(contentRootElement)) &&
+        !windowUtils().isMozAfterPaintPending) {
+        
         
         
         
