@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 add_task(setup);
@@ -53,7 +57,7 @@ add_task(async function testTrrSelectionDisable() {
   BrowserTestUtils.removeTab(tab);
 
   
-  await restartAddon();
+  await restartDoHController();
   ensureNoTRRSelectionTelemetry();
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF),

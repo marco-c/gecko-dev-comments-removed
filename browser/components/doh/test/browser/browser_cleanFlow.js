@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 add_task(setup);
@@ -60,7 +64,7 @@ add_task(async function testCleanFlow() {
   await checkHeuristicsTelemetry("disable_doh", "netchange");
 
   
-  await restartAddon();
+  await restartDoHController();
   ensureNoTRRSelectionTelemetry();
   await ensureNoTRRModeChange(0);
   await checkHeuristicsTelemetry("disable_doh", "startup");

@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 add_task(setup);
@@ -58,7 +62,7 @@ add_task(async function testDoorhangerUserReject() {
   ensureNoHeuristicsTelemetry();
 
   
-  await restartAddon();
+  await restartDoHController();
   ensureNoTRRSelectionTelemetry();
   await ensureNoTRRModeChange(undefined);
   ensureNoHeuristicsTelemetry();

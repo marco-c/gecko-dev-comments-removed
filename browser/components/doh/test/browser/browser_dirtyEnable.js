@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 add_task(setup);
@@ -37,7 +41,7 @@ add_task(async function testDirtyEnable() {
   is(Preferences.get(prefs.NETWORK_TRR_MODE_PREF), 2, "TRR mode preserved.");
 
   
-  await restartAddon();
+  await restartDoHController();
   await ensureNoTRRModeChange(undefined);
   ensureNoTRRSelectionTelemetry();
   ensureNoHeuristicsTelemetry();

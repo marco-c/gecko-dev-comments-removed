@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 add_task(setup);
@@ -38,7 +42,7 @@ add_task(async function testTRRSelect() {
   Preferences.reset(prefs.DOH_TRR_SELECT_URI_PREF);
 
   prefPromise = TestUtils.waitForPrefChange(prefs.DOH_TRR_SELECT_URI_PREF);
-  await restartAddon();
+  await restartDoHController();
   await prefPromise;
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
@@ -54,7 +58,7 @@ add_task(async function testTRRSelect() {
   
   Preferences.set(prefs.DOH_TRR_SELECT_COMMIT_PREF, false);
   prefPromise = TestUtils.waitForPrefChange(prefs.DOH_TRR_SELECT_URI_PREF);
-  await restartAddon();
+  await restartDoHController();
   await prefPromise;
   ok(
     !Preferences.isSet(prefs.DOH_TRR_SELECT_URI_PREF),
@@ -82,7 +86,7 @@ add_task(async function testTRRSelect() {
   
   Preferences.reset(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF);
   Preferences.reset(prefs.DOH_TRR_SELECT_URI_PREF);
-  await restartAddon();
+  await restartDoHController();
   try {
     await BrowserTestUtils.waitForCondition(() => {
       return Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF);
@@ -110,7 +114,7 @@ add_task(async function testTRRSelect() {
     "https://dummytrr2.com/query"
   );
   prefPromise = TestUtils.waitForPrefChange(prefs.DOH_TRR_SELECT_URI_PREF);
-  await restartAddon();
+  await restartDoHController();
   await prefPromise;
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
@@ -130,7 +134,7 @@ add_task(async function testTRRSelect() {
     "https://dummytrr3.com/query"
   );
   prefPromise = TestUtils.waitForPrefChange(prefs.DOH_TRR_SELECT_URI_PREF);
-  await restartAddon();
+  await restartDoHController();
   await prefPromise;
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),

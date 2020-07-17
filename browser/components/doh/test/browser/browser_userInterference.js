@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 add_task(setup);
@@ -69,7 +73,7 @@ add_task(async function testUserInterference() {
   ensureNoHeuristicsTelemetry();
 
   
-  await restartAddon();
+  await restartDoHController();
   await ensureNoTRRModeChange(undefined);
   ensureNoTRRSelectionTelemetry();
   ensureNoHeuristicsTelemetry();

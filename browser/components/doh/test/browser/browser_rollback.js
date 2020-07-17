@@ -1,3 +1,7 @@
+
+
+
+
 "use strict";
 
 requestLongerTimeout(2);
@@ -64,7 +68,7 @@ add_task(async function testRollback() {
   
   setPassingHeuristics();
   Preferences.reset(prefs.DOH_ENABLED_PREF);
-  await waitForStateTelemetry();
+  await waitForStateTelemetry(["rollback", "shutdown"]);
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
@@ -87,7 +91,7 @@ add_task(async function testRollback() {
 
   
   Preferences.reset(prefs.DOH_ENABLED_PREF);
-  await waitForStateTelemetry();
+  await waitForStateTelemetry(["rollback", "shutdown"]);
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
@@ -110,7 +114,7 @@ add_task(async function testRollback() {
 
   
   Preferences.reset(prefs.DOH_ENABLED_PREF);
-  await waitForStateTelemetry();
+  await waitForStateTelemetry(["rollback", "shutdown"]);
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
@@ -130,12 +134,14 @@ add_task(async function testRollback() {
 
   
   
-  await disableAddon();
+  await DoHController._uninit();
+  await waitForStateTelemetry(["shutdown"]);
   Preferences.reset(prefs.DOH_ENABLED_PREF);
-  await enableAddon();
+  await DoHController.init();
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
+  await waitForStateTelemetry(["rollback"]);
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
   await ensureNoHeuristicsTelemetry();
