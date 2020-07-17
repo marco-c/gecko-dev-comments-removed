@@ -734,6 +734,11 @@ nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow) {
     
     BrowserParent::UnsetTopLevelWebFocusAll();
     ActivateOrDeactivate(window, true);
+
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->NotifyObservers(aWindow, "window-raised", nullptr);
+    }
   }
 
   
@@ -816,6 +821,11 @@ nsFocusManager::WindowLowered(mozIDOMWindowProxy* aWindow) {
   
   if (XRE_IsParentProcess()) {
     ActivateOrDeactivate(window, false);
+
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->NotifyObservers(aWindow, "window-lowered", nullptr);
+    }
   }
 
   

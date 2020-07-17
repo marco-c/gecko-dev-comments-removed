@@ -856,6 +856,9 @@ var Impl = {
     
     this.addObserver("user-interaction-active");
     this.addObserver("user-interaction-inactive");
+    
+    this.addObserver("window-raised");
+    this.addObserver("window-lowered");
   },
 
   
@@ -1149,6 +1152,24 @@ var Impl = {
   
 
 
+  _onWindowChange(aWindow, aRaised) {
+    Telemetry.scalarSet("fog.eval.window_raised", aRaised);
+    let error = false;
+    if (aRaised) {
+      error = !TelemetryStopwatch.start("FOG_EVAL_WINDOW_RAISED_S", aWindow, {
+        inSeconds: true,
+      });
+    } else {
+      error = !TelemetryStopwatch.finish("FOG_EVAL_WINDOW_RAISED_S", aWindow);
+    }
+    if (error) {
+      Telemetry.scalarAdd("fog.eval.window_raised_error", 1);
+    }
+  },
+
+  
+
+
   _onActiveTick(aUserActive) {
     const needsUpdate = aUserActive && this._isUserActive;
     const userActivityChanged =
@@ -1254,6 +1275,12 @@ var Impl = {
         break;
       case "user-interaction-inactive":
         this._onActiveTick(false);
+        break;
+      case "window-raised":
+        this._onWindowChange(aSubject, true);
+        break;
+      case "window-lowered":
+        this._onWindowChange(aSubject, false);
         break;
     }
     return undefined;
