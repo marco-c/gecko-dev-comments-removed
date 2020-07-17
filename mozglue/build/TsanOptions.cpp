@@ -179,6 +179,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsSocketTransport::OnSocketDetached\n"
 
          
+         "race:CacheEntry::InvokeCallback\n"
+
+         
          "race:gXPCOMThreadsShutDown\n"
 
          
@@ -233,6 +236,10 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:_dl_deallocate_tls\n"
          "race:__libc_memalign\n"
+
+         
+         "race:CacheEntry::Purge\n"
+         "race:CacheEntry::MetaDataReady\n"
 
          
          "race:ScriptPreloader::OffThreadDecodeCallback\n"
