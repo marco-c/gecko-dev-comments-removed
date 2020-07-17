@@ -13,6 +13,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  OS: "resource://gre/modules/osfile.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -24,6 +25,81 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
 });
 
 const BROWSER_SEARCH_PREF = "browser.search.";
+
+
+
+
+class LoadListener {
+  _bytes = [];
+  _callback = null;
+  _channel = null;
+  _countRead = 0;
+  _engine = null;
+  _stream = null;
+  QueryInterface = ChromeUtils.generateQI([
+    Ci.nsIRequestObserver,
+    Ci.nsIStreamListener,
+    Ci.nsIChannelEventSink,
+    Ci.nsIInterfaceRequestor,
+    Ci.nsIProgressEventSink,
+  ]);
+
+  constructor(channel, engine, callback) {
+    this._channel = channel;
+    this._engine = engine;
+    this._callback = callback;
+  }
+
+  
+  onStartRequest(request) {
+    logConsole.debug("loadListener: Starting request:", request.name);
+    this._stream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+      Ci.nsIBinaryInputStream
+    );
+  }
+
+  onStopRequest(request, statusCode) {
+    logConsole.debug("loadListener: Stopping request:", request.name);
+
+    var requestFailed = !Components.isSuccessCode(statusCode);
+    if (!requestFailed && request instanceof Ci.nsIHttpChannel) {
+      requestFailed = !request.requestSucceeded;
+    }
+
+    if (requestFailed || this._countRead == 0) {
+      logConsole.warn("loadListener: request failed!");
+      
+      this._bytes = null;
+    }
+    this._callback(this._bytes, this._engine);
+    this._channel = null;
+    this._engine = null;
+  }
+
+  
+  onDataAvailable(request, inputStream, offset, count) {
+    this._stream.setInputStream(inputStream);
+
+    
+    this._bytes = this._bytes.concat(this._stream.readByteArray(count));
+    this._countRead += count;
+  }
+
+  
+  asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
+    this._channel = newChannel;
+    callback.onRedirectVerifyCallback(Cr.NS_OK);
+  }
+
+  
+  getInterface(iid) {
+    return this.QueryInterface(iid);
+  }
+
+  
+  onProgress(request, progress, progressMax) {}
+  onStatus(request, status, statusArg) {}
+}
 
 var SearchUtils = {
   BROWSER_SEARCH_PREF,
@@ -89,6 +165,8 @@ var SearchUtils = {
 
   
   DEFAULT_TAG: "default",
+
+  LoadListener,
 
   
 
@@ -165,6 +243,63 @@ var SearchUtils = {
 
   get CACHE_VERSION() {
     return this.gModernConfig ? 5 : 3;
+  },
+
+  
+
+
+
+
+
+
+
+
+  sanitizeName(name) {
+    const maxLength = 60;
+    const minLength = 1;
+    var result = name.toLowerCase();
+    result = result.replace(/\s+/g, "-");
+    result = result.replace(/[^-a-z0-9]/g, "");
+
+    
+    if (result.length < minLength) {
+      result = Math.random()
+        .toString(36)
+        .replace(/^.*\./, "");
+    }
+
+    
+    return result.substring(0, maxLength);
+  },
+
+  getVerificationHash(name) {
+    let disclaimer =
+      "By modifying this file, I agree that I am doing so " +
+      "only within $appName itself, using official, user-driven search " +
+      "engine selection processes, and in a way which does not circumvent " +
+      "user consent. I acknowledge that any attempt to change this file " +
+      "from outside of $appName is a malicious act, and will be responded " +
+      "to accordingly.";
+
+    let salt =
+      OS.Path.basename(OS.Constants.Path.profileDir) +
+      name +
+      disclaimer.replace(/\$appName/g, Services.appinfo.name);
+
+    let converter = Cc[
+      "@mozilla.org/intl/scriptableunicodeconverter"
+    ].createInstance(Ci.nsIScriptableUnicodeConverter);
+    converter.charset = "UTF-8";
+
+    
+    let data = converter.convertToByteArray(salt, {});
+    let hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
+      Ci.nsICryptoHash
+    );
+    hasher.init(hasher.SHA256);
+    hasher.update(data, data.length);
+
+    return hasher.finish(true);
   },
 };
 

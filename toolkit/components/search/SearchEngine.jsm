@@ -10,15 +10,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
-  OS: "resource://gre/modules/osfile.jsm",
   Region: "resource://gre/modules/Region.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
-});
-
-XPCOMUtils.defineLazyServiceGetters(this, {
-  gEnvironment: ["@mozilla.org/process/environment;1", "nsIEnvironment"],
-  gChromeReg: ["@mozilla.org/chrome/chrome-registry;1", "nsIChromeRegistry"],
 });
 
 const BinaryInputStream = Components.Constructor(
@@ -41,27 +35,6 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
   });
 });
 
-const SEARCH_BUNDLE = "chrome://global/locale/search/search.properties";
-const BRAND_BUNDLE = "chrome://branding/locale/brand.properties";
-
-const OPENSEARCH_NS_10 = "http://a9.com/-/spec/opensearch/1.0/";
-const OPENSEARCH_NS_11 = "http://a9.com/-/spec/opensearch/1.1/";
-
-
-
-
-const OPENSEARCH_NAMESPACES = [
-  OPENSEARCH_NS_11,
-  OPENSEARCH_NS_10,
-  "http://a9.com/-/spec/opensearchdescription/1.1/",
-  "http://a9.com/-/spec/opensearchdescription/1.0/",
-];
-
-const OPENSEARCH_LOCALNAME = "OpenSearchDescription";
-
-const MOZSEARCH_NS_10 = "http://www.mozilla.org/2006/browser/search/";
-const MOZSEARCH_LOCALNAME = "SearchPlugin";
-
 const USER_DEFINED = "searchTerms";
 
 
@@ -78,7 +51,6 @@ const OS_PARAM_OUTPUT_ENCODING = "outputEncoding";
 
 const OS_PARAM_LANGUAGE_DEF = "*";
 const OS_PARAM_OUTPUT_ENCODING_DEF = "UTF-8";
-const OS_PARAM_INPUT_ENCODING_DEF = "UTF-8";
 
 
 
@@ -131,99 +103,6 @@ function limitURILength(str, len) {
 
 
 
-function ENSURE_WARN(assertion, message, resultCode) {
-  if (!assertion) {
-    throw Components.Exception(message, resultCode);
-  }
-}
-
-
-
-
-class loadListener {
-  _bytes = [];
-  _callback = null;
-  _channel = null;
-  _countRead = 0;
-  _engine = null;
-  _stream = null;
-  QueryInterface = ChromeUtils.generateQI([
-    Ci.nsIRequestObserver,
-    Ci.nsIStreamListener,
-    Ci.nsIChannelEventSink,
-    Ci.nsIInterfaceRequestor,
-    Ci.nsIProgressEventSink,
-  ]);
-
-  constructor(channel, engine, callback) {
-    this._channel = channel;
-    this._engine = engine;
-    this._callback = callback;
-  }
-
-  
-  onStartRequest(request) {
-    logConsole.debug("loadListener: Starting request:", request.name);
-    this._stream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
-      Ci.nsIBinaryInputStream
-    );
-  }
-
-  onStopRequest(request, statusCode) {
-    logConsole.debug("loadListener: Stopping request:", request.name);
-
-    var requestFailed = !Components.isSuccessCode(statusCode);
-    if (!requestFailed && request instanceof Ci.nsIHttpChannel) {
-      requestFailed = !request.requestSucceeded;
-    }
-
-    if (requestFailed || this._countRead == 0) {
-      logConsole.warn("loadListener: request failed!");
-      
-      this._bytes = null;
-    }
-    this._callback(this._bytes, this._engine);
-    this._channel = null;
-    this._engine = null;
-  }
-
-  
-  onDataAvailable(request, inputStream, offset, count) {
-    this._stream.setInputStream(inputStream);
-
-    
-    this._bytes = this._bytes.concat(this._stream.readByteArray(count));
-    this._countRead += count;
-  }
-
-  
-  asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
-    this._channel = newChannel;
-    callback.onRedirectVerifyCallback(Cr.NS_OK);
-  }
-
-  
-  getInterface(iid) {
-    return this.QueryInterface(iid);
-  }
-
-  
-  onProgress(request, progress, progressMax) {}
-  onStatus(request, status, statusArg) {}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function rescaleIcon(byteArray, contentType, size = 32) {
@@ -241,75 +120,6 @@ function rescaleIcon(byteArray, contentType, size = 32) {
   }
   let bis = new BinaryInputStream(stream);
   return [bis.readByteArray(streamSize), "image/png"];
-}
-
-function getVerificationHash(name) {
-  let disclaimer =
-    "By modifying this file, I agree that I am doing so " +
-    "only within $appName itself, using official, user-driven search " +
-    "engine selection processes, and in a way which does not circumvent " +
-    "user consent. I acknowledge that any attempt to change this file " +
-    "from outside of $appName is a malicious act, and will be responded " +
-    "to accordingly.";
-
-  let salt =
-    OS.Path.basename(OS.Constants.Path.profileDir) +
-    name +
-    disclaimer.replace(/\$appName/g, Services.appinfo.name);
-
-  let converter = Cc[
-    "@mozilla.org/intl/scriptableunicodeconverter"
-  ].createInstance(Ci.nsIScriptableUnicodeConverter);
-  converter.charset = "UTF-8";
-
-  
-  let data = converter.convertToByteArray(salt, {});
-  let hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
-    Ci.nsICryptoHash
-  );
-  hasher.init(hasher.SHA256);
-  hasher.update(data, data.length);
-
-  return hasher.finish(true);
-}
-
-
-
-
-
-
-
-
-
-function getDir(key, iface) {
-  return Services.dirsvc.get(key, iface || Ci.nsIFile);
-}
-
-
-
-
-
-
-
-
-
-
-function sanitizeName(name) {
-  const maxLength = 60;
-  const minLength = 1;
-  var result = name.toLowerCase();
-  result = result.replace(/\s+/g, "-");
-  result = result.replace(/[^-a-z0-9]/g, "");
-
-  
-  if (result.length < minLength) {
-    result = Math.random()
-      .toString(36)
-      .replace(/^.*\./, "");
-  }
-
-  
-  return result.substring(0, maxLength);
 }
 
 
@@ -785,8 +595,6 @@ class SearchEngine {
   
   _metaData = {};
   
-  _data = null;
-  
   
   
   _loadPath = null;
@@ -806,13 +614,7 @@ class SearchEngine {
   __searchForm = null;
   
   
-  _confirm = null;
-  
-  
   _useNow = null;
-  
-  
-  _installCallback = null;
   
   _updateInterval = null;
   
@@ -859,79 +661,21 @@ class SearchEngine {
 
 
 
-
-
-
-
   constructor(options = {}) {
     if (!("isAppProvided" in options)) {
       throw new Error("isAppProvided missing from options.");
     }
     this._isAppProvided = options.isAppProvided;
 
-    let file, uri;
     if ("name" in options) {
-      this._shortName = sanitizeName(options.name);
+      this._shortName = SearchUtils.sanitizeName(options.name);
     } else if ("shortName" in options) {
       this._shortName = options.shortName;
-    } else if ("fileURI" in options && options.fileURI instanceof Ci.nsIFile) {
-      file = options.fileURI;
-    } else if ("uri" in options) {
-      let optionsURI = options.uri;
-      if (typeof optionsURI == "string") {
-        optionsURI = SearchUtils.makeURI(optionsURI);
-      }
-      
-      if (!optionsURI || !(optionsURI instanceof Ci.nsIURI)) {
-        throw new Components.Exception(
-          "options.uri isn't a string nor an nsIURI",
-          Cr.NS_ERROR_INVALID_ARG
-        );
-      }
-      switch (optionsURI.scheme) {
-        case "https":
-        case "http":
-        case "ftp":
-        case "data":
-        case "file":
-        case "resource":
-        case "chrome":
-          uri = optionsURI;
-          break;
-        default:
-          throw Components.Exception(
-            "Invalid URI passed to SearchEngine constructor",
-            Cr.NS_ERROR_INVALID_ARG
-          );
-      }
     } else {
-      throw Components.Exception(
-        "Invalid name/fileURI/uri options passed to SearchEngine",
-        Cr.NS_ERROR_INVALID_ARG
-      );
-    }
-
-    if (!this._shortName) {
-      
-      
-      let shortName;
-      if (file) {
-        shortName = file.leafName;
-      } else if (uri && uri instanceof Ci.nsIURL) {
-        if (
-          this._isAppProvided ||
-          (gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR") &&
-            uri.scheme == "resource")
-        ) {
-          shortName = uri.fileName;
-        }
-      }
-      if (shortName && shortName.endsWith(".xml")) {
-        this._shortName = shortName.slice(0, -4);
-      }
-      this._loadPath = this.getAnonymizedLoadPath(file, uri);
+      throw new Error("'name' or 'shortName' missing from options.");
     }
   }
+
   get _searchForm() {
     return this.__searchForm;
   }
@@ -944,99 +688,6 @@ class SearchEngine {
         this._name || "the current engine"
       );
     }
-  }
-
-  
-
-
-
-
-
-
-  async _initFromFile(file) {
-    if (!file || !(await OS.File.exists(file.path))) {
-      throw Components.Exception(
-        "File must exist before calling initFromFile!",
-        Cr.NS_ERROR_UNEXPECTED
-      );
-    }
-
-    let fileURI = Services.io.newFileURI(file);
-    await this._retrieveSearchXMLData(fileURI.spec);
-
-    
-    this._initFromData();
-  }
-
-  
-
-
-
-
-
-  _initFromURIAndLoad(uri) {
-    let loadURI = uri instanceof Ci.nsIURI ? uri : SearchUtils.makeURI(uri);
-    ENSURE_WARN(
-      loadURI,
-      "Must have URI when calling _initFromURIAndLoad!",
-      Cr.NS_ERROR_UNEXPECTED
-    );
-
-    logConsole.debug(
-      "_initFromURIAndLoad: Downloading engine from:",
-      loadURI.spec
-    );
-
-    var chan = SearchUtils.makeChannel(loadURI);
-
-    if (this._engineToUpdate && chan instanceof Ci.nsIHttpChannel) {
-      var lastModified = this._engineToUpdate.getAttr("updatelastmodified");
-      if (lastModified) {
-        chan.setRequestHeader("If-Modified-Since", lastModified, false);
-      }
-    }
-    this._uri = loadURI;
-    var listener = new loadListener(chan, this, this._onLoad);
-    chan.notificationCallbacks = listener;
-    chan.asyncOpen(listener);
-  }
-
-  
-
-
-
-
-
-  async _initFromURI(uri) {
-    logConsole.debug("_initFromURI: Loading engine from:", uri.spec);
-    await this._retrieveSearchXMLData(uri.spec);
-    
-    this._initFromData();
-  }
-
-  
-
-
-
-
-
-
-
-  _retrieveSearchXMLData(url) {
-    return new Promise(resolve => {
-      let request = new XMLHttpRequest();
-      request.overrideMimeType("text/xml");
-      request.onload = event => {
-        let responseXML = event.target.responseXML;
-        this._data = responseXML.documentElement;
-        resolve();
-      };
-      request.onerror = function(event) {
-        resolve();
-      };
-      request.open("GET", url, true);
-      request.send();
-    });
   }
 
   
@@ -1059,200 +710,6 @@ class SearchEngine {
     }
 
     return null;
-  }
-
-  _confirmAddEngine() {
-    var stringBundle = Services.strings.createBundle(SEARCH_BUNDLE);
-    var titleMessage = stringBundle.GetStringFromName("addEngineConfirmTitle");
-
-    
-    var dialogMessage = stringBundle.formatStringFromName(
-      "addEngineConfirmation",
-      [this._name, this._uri.host]
-    );
-    var checkboxMessage = null;
-    if (
-      !Services.prefs.getBoolPref(
-        SearchUtils.BROWSER_SEARCH_PREF + "noCurrentEngine",
-        false
-      )
-    ) {
-      checkboxMessage = stringBundle.GetStringFromName(
-        "addEngineAsCurrentText"
-      );
-    }
-
-    var addButtonLabel = stringBundle.GetStringFromName(
-      "addEngineAddButtonLabel"
-    );
-
-    var ps = Services.prompt;
-    var buttonFlags =
-      ps.BUTTON_TITLE_IS_STRING * ps.BUTTON_POS_0 +
-      ps.BUTTON_TITLE_CANCEL * ps.BUTTON_POS_1 +
-      ps.BUTTON_POS_0_DEFAULT;
-
-    var checked = { value: false };
-    
-    
-    var confirm = !ps.confirmEx(
-      null,
-      titleMessage,
-      dialogMessage,
-      buttonFlags,
-      addButtonLabel,
-      null,
-      null, 
-      checkboxMessage,
-      checked
-    );
-
-    return { confirmed: confirm, useNow: checked.value };
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  _onLoad(bytes, engine) {
-    
-
-
-
-
-
-
-    function onError(errorCode = Ci.nsISearchService.ERROR_UNKNOWN_FAILURE) {
-      
-      if (engine._installCallback) {
-        engine._installCallback(errorCode);
-      }
-    }
-
-    function promptError(strings = {}, error = undefined) {
-      onError(error);
-
-      if (engine._engineToUpdate) {
-        
-        logConsole.warn("Failed to update", engine._engineToUpdate.name);
-        return;
-      }
-      var brandBundle = Services.strings.createBundle(BRAND_BUNDLE);
-      var brandName = brandBundle.GetStringFromName("brandShortName");
-
-      var searchBundle = Services.strings.createBundle(SEARCH_BUNDLE);
-      var msgStringName = strings.error || "error_loading_engine_msg2";
-      var titleStringName = strings.title || "error_loading_engine_title";
-      var title = searchBundle.GetStringFromName(titleStringName);
-      var text = searchBundle.formatStringFromName(msgStringName, [
-        brandName,
-        engine._location,
-      ]);
-
-      Services.ww.getNewPrompter(null).alert(title, text);
-    }
-
-    if (!bytes) {
-      promptError();
-      return;
-    }
-
-    var parser = new DOMParser();
-    var doc = parser.parseFromBuffer(bytes, "text/xml");
-    engine._data = doc.documentElement;
-
-    try {
-      
-      engine._initFromData();
-    } catch (ex) {
-      logConsole.error("_onLoad: Failed to init engine!", ex);
-      
-      if (ex.result == Cr.NS_ERROR_FILE_CORRUPTED) {
-        promptError({
-          error: "error_invalid_engine_msg2",
-          title: "error_invalid_format_title",
-        });
-      } else {
-        promptError();
-      }
-      return;
-    }
-
-    if (engine._engineToUpdate) {
-      let engineToUpdate = engine._engineToUpdate.wrappedJSObject;
-
-      
-      
-      engine._shortName = engineToUpdate._shortName;
-      Object.keys(engineToUpdate._metaData).forEach(key => {
-        engine.setAttr(key, engineToUpdate.getAttr(key));
-      });
-      engine._loadPath = engineToUpdate._loadPath;
-
-      
-      
-      engine.setAttr("updatelastmodified", new Date().toUTCString());
-
-      
-      if (!engine._iconURI && engineToUpdate._iconURI) {
-        engine._iconURI = engineToUpdate._iconURI;
-      }
-    } else {
-      
-      
-      if (Services.search.getEngineByName(engine.name)) {
-        
-        
-        if (engine._confirm) {
-          promptError(
-            {
-              error: "error_duplicate_engine_msg",
-              title: "error_invalid_engine_title",
-            },
-            Ci.nsISearchService.ERROR_DUPLICATE_ENGINE
-          );
-        } else {
-          onError(Ci.nsISearchService.ERROR_DUPLICATE_ENGINE);
-        }
-        logConsole.debug("_onLoad: duplicate engine found, bailing");
-        return;
-      }
-
-      
-      
-      
-      if (engine._confirm) {
-        var confirmation = engine._confirmAddEngine();
-        logConsole.debug("_onLoad: confirm", confirmation);
-        if (!confirmation.confirmed) {
-          onError();
-          return;
-        }
-        engine._useNow = confirmation.useNow;
-      }
-
-      engine._shortName = sanitizeName(engine.name);
-      engine._loadPath = engine.getAnonymizedLoadPath(null, engine._uri);
-      if (engine._extensionID) {
-        engine._loadPath += ":" + engine._extensionID;
-      }
-      engine.setAttr("loadPathHash", getVerificationHash(engine._loadPath));
-    }
-
-    
-    
-    SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.LOADED);
-
-    
-    if (engine._installCallback) {
-      engine._installCallback();
-    }
   }
 
   
@@ -1400,44 +857,15 @@ class SearchEngine {
         
         var engineToSet = this._engineToUpdate || this;
 
-        var listener = new loadListener(chan, engineToSet, iconLoadCallback);
+        var listener = new SearchUtils.LoadListener(
+          chan,
+          engineToSet,
+          iconLoadCallback
+        );
         chan.notificationCallbacks = listener;
         chan.asyncOpen(listener);
         break;
     }
-  }
-
-  
-
-
-  _initFromData() {
-    ENSURE_WARN(
-      this._data,
-      "Can't init an engine with no data!",
-      Cr.NS_ERROR_UNEXPECTED
-    );
-
-    
-    let element = this._data;
-    if (
-      (element.localName == MOZSEARCH_LOCALNAME &&
-        element.namespaceURI == MOZSEARCH_NS_10) ||
-      (element.localName == OPENSEARCH_LOCALNAME &&
-        OPENSEARCH_NAMESPACES.includes(element.namespaceURI))
-    ) {
-      logConsole.debug("Initing search plugin from", this._location);
-
-      this._parse();
-    } else {
-      Cu.reportError("Invalid search plugin due to namespace not matching.");
-      throw Components.Exception(
-        this._location + " is not a valid search plugin.",
-        Cr.NS_ERROR_FILE_CORRUPTED
-      );
-    }
-    
-    
-    this._data = null;
   }
 
   
@@ -1624,196 +1052,6 @@ class SearchEngine {
       delete this._overriddenData;
       this.clearAttr("overriddenBy");
       SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  _parseURL(element) {
-    var type = element.getAttribute("type");
-    
-    
-    var method = element.getAttribute("method") || "GET";
-    var template = element.getAttribute("template");
-    var resultDomain = element.getAttribute("resultdomain");
-
-    let rels = [];
-    if (element.hasAttribute("rel")) {
-      rels = element
-        .getAttribute("rel")
-        .toLowerCase()
-        .split(/\s+/);
-    }
-
-    
-    if (type == "application/json" && rels.includes("suggestions")) {
-      type = SearchUtils.URL_TYPE.SUGGEST_JSON;
-    }
-
-    try {
-      var url = new EngineURL(type, method, template, resultDomain);
-    } catch (ex) {
-      throw Components.Exception(
-        "_parseURL: failed to add " + template + " as a URL",
-        Cr.NS_ERROR_FAILURE
-      );
-    }
-
-    if (rels.length) {
-      url.rels = rels;
-    }
-
-    for (var i = 0; i < element.children.length; ++i) {
-      var param = element.children[i];
-      if (param.localName == "Param") {
-        try {
-          url.addParam(param.getAttribute("name"), param.getAttribute("value"));
-        } catch (ex) {
-          
-          logConsole.error("_parseURL: Url element has an invalid param");
-        }
-      } else if (
-        param.localName == "MozParam" &&
-        
-        this.isAppProvided
-      ) {
-        let condition = param.getAttribute("condition");
-
-        if (!condition) {
-          continue;
-        }
-
-        
-        
-        
-        
-        switch (condition) {
-          case "purpose":
-            url.addParam(
-              param.getAttribute("name"),
-              param.getAttribute("value"),
-              param.getAttribute("purpose")
-            );
-            break;
-          case "pref":
-            url._addMozParam({
-              pref: param.getAttribute("pref"),
-              name: param.getAttribute("name"),
-              condition: "pref",
-            });
-            break;
-          default:
-            
-            logConsole.error(
-              "Parsing engine:",
-              this._location,
-              "MozParam:",
-              param.getAttribute("name"),
-              "has an unknown condition:",
-              condition
-            );
-            break;
-        }
-      }
-    }
-
-    this._urls.push(url);
-  }
-
-  
-
-
-
-
-
-
-  _parseImage(element) {
-    let width = parseInt(element.getAttribute("width"), 10);
-    let height = parseInt(element.getAttribute("height"), 10);
-    let isPrefered = width == 16 && height == 16;
-
-    if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
-      logConsole.warn(
-        "OpenSearch image element must have positive width and height."
-      );
-      return;
-    }
-
-    this._setIcon(element.textContent, isPrefered, width, height);
-  }
-
-  
-
-
-
-  _parse() {
-    var doc = this._data;
-
-    
-    this._queryCharset = OS_PARAM_INPUT_ENCODING_DEF;
-
-    for (var i = 0; i < doc.children.length; ++i) {
-      var child = doc.children[i];
-      switch (child.localName) {
-        case "ShortName":
-          this._name = child.textContent;
-          break;
-        case "Description":
-          this._description = child.textContent;
-          break;
-        case "Url":
-          try {
-            this._parseURL(child);
-          } catch (ex) {
-            
-            logConsole.error("Failed to parse URL child:", ex);
-          }
-          break;
-        case "Image":
-          this._parseImage(child);
-          break;
-        case "InputEncoding":
-          this._queryCharset = child.textContent.toUpperCase();
-          break;
-
-        
-        case "SearchForm":
-          this._searchForm = child.textContent;
-          break;
-        case "UpdateUrl":
-          this._updateURL = child.textContent;
-          break;
-        case "UpdateInterval":
-          this._updateInterval = parseInt(child.textContent);
-          break;
-        case "IconUpdateUrl":
-          this._iconUpdateURL = child.textContent;
-          break;
-        case "ExtensionID":
-          this._extensionID = child.textContent;
-          break;
-      }
-    }
-    if (!this.name || !this._urls.length) {
-      throw Components.Exception(
-        "_parse: No name, or missing URL!",
-        Cr.NS_ERROR_FAILURE
-      );
-    }
-    if (!this.supportsResponseType(SearchUtils.URL_TYPE.SEARCH)) {
-      throw Components.Exception(
-        "_parse: No text/html result type!",
-        Cr.NS_ERROR_FAILURE
-      );
     }
   }
 
@@ -2015,113 +1253,6 @@ class SearchEngine {
     return this._loadPath;
   }
 
-  
-  
-  getAnonymizedLoadPath(file, uri) {
-    
-
-
-
-
-
-
-
-    const NS_XPCOM_CURRENT_PROCESS_DIR = "XCurProcD";
-    const NS_APP_USER_PROFILE_50_DIR = "ProfD";
-    const XRE_APP_DISTRIBUTION_DIR = "XREAppDist";
-
-    const knownDirs = {
-      app: NS_XPCOM_CURRENT_PROCESS_DIR,
-      profile: NS_APP_USER_PROFILE_50_DIR,
-      distribution: XRE_APP_DISTRIBUTION_DIR,
-    };
-
-    let leafName = this._shortName;
-    if (!leafName) {
-      return "null";
-    }
-    leafName += ".xml";
-
-    let prefix = "",
-      suffix = "";
-    if (!file) {
-      if (uri.schemeIs("resource")) {
-        uri = SearchUtils.makeURI(
-          Services.io
-            .getProtocolHandler("resource")
-            .QueryInterface(Ci.nsISubstitutingProtocolHandler)
-            .resolveURI(uri)
-        );
-      }
-      let scheme = uri.scheme;
-      let packageName = "";
-      if (scheme == "chrome") {
-        packageName = uri.hostPort;
-        uri = gChromeReg.convertChromeURL(uri);
-      }
-
-      if (AppConstants.platform == "android") {
-        
-        
-        
-        
-        let appPath = Services.io
-          .getProtocolHandler("resource")
-          .QueryInterface(Ci.nsIResProtocolHandler)
-          .getSubstitution("android");
-        if (appPath) {
-          appPath = appPath.spec;
-          let spec = uri.spec;
-          if (spec.includes(appPath)) {
-            let appURI = Services.io.newFileURI(getDir(knownDirs.app));
-            uri = Services.io.newURI(spec.replace(appPath, appURI.spec));
-          }
-        }
-      }
-
-      if (uri instanceof Ci.nsINestedURI) {
-        prefix = "jar:";
-        suffix = "!" + packageName + "/" + leafName;
-        uri = uri.innermostURI;
-      }
-      if (uri instanceof Ci.nsIFileURL) {
-        file = uri.file;
-      } else {
-        let path = "[" + scheme + "]";
-        if (/^(?:https?|ftp)$/.test(scheme)) {
-          path += uri.host;
-        }
-        return path + "/" + leafName;
-      }
-    }
-
-    let id;
-    let enginePath = file.path;
-
-    for (let key in knownDirs) {
-      let path;
-      try {
-        path = getDir(knownDirs[key]).path;
-      } catch (e) {
-        
-        continue;
-      }
-      if (enginePath.startsWith(path)) {
-        id =
-          "[" + key + "]" + enginePath.slice(path.length).replace(/\\/g, "/");
-        break;
-      }
-    }
-
-    
-    
-    if (!id) {
-      id = "[other]/" + file.leafName;
-    }
-
-    return prefix + id + suffix;
-  }
-
   get _isDistribution() {
     return !!(
       this._extensionID &&
@@ -2159,9 +1290,7 @@ class SearchEngine {
   }
 
   get _hasUpdates() {
-    
-    let selfURL = this._getURLOfType(SearchUtils.URL_TYPE.OPENSEARCH, "self");
-    return !!(this._updateURL || this._iconUpdateURL || selfURL);
+    return false;
   }
 
   get name() {
@@ -2199,7 +1328,12 @@ class SearchEngine {
       
       
       var htmlUrl = this._getURLOfType(SearchUtils.URL_TYPE.SEARCH);
-      ENSURE_WARN(htmlUrl, "Engine has no HTML URL!", Cr.NS_ERROR_UNEXPECTED);
+      if (!htmlUrl) {
+        throw Components.Exception(
+          "Engine has no HTML URL!",
+          Cr.NS_ERROR_UNEXPECTED
+        );
+      }
       this._searchForm = SearchUtils.makeURI(htmlUrl.template).prePath;
     }
 
@@ -2471,4 +1605,4 @@ class Submission {
   }
 }
 
-var EXPORTED_SYMBOLS = ["SearchEngine", "getVerificationHash"];
+var EXPORTED_SYMBOLS = ["EngineURL", "SearchEngine"];
