@@ -31,6 +31,7 @@ add_task(async function() {
   simulateItemDrag(btn, palette);
   CustomizableUI.removeWidgetFromArea("cui-panel-item-to-drag-to");
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
+  await endCustomizing();
 });
 
 
@@ -55,6 +56,7 @@ add_task(async function() {
   simulateItemDrag(btn, palette);
   CustomizableUI.removeWidgetFromArea("cui-panel-item-to-drag-to");
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
+  await endCustomizing();
 });
 
 
@@ -79,10 +81,10 @@ add_task(async function() {
   let palette = document.getElementById("customization-palette");
   simulateItemDrag(btn, palette);
   assertAreaPlacements(panel.id, []);
+  await endCustomizing();
 });
 
 registerCleanupFunction(async function asyncCleanup() {
   CustomizableUI.destroyWidget("cui-panel-item-to-drag-to");
-  await endCustomizing();
   await resetCustomization();
 });
