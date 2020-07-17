@@ -667,14 +667,34 @@ SubDialog.prototype = {
   },
 };
 
+
+
+
 class SubDialogManager {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   constructor({
     dialogStack,
     dialogTemplate,
+    orderType = SubDialogManager.ORDER_STACK,
     allowDuplicateDialogs = false,
     dialogOptions,
   }) {
     
+
 
 
 
@@ -684,6 +704,7 @@ class SubDialogManager {
     this._dialogTemplate = dialogTemplate;
     this._nextDialogID = 0;
     this._topLevelPrevActiveElement = null;
+    this._orderType = orderType;
     this._allowDuplicateDialogs = allowDuplicateDialogs;
     this._dialogOptions = dialogOptions;
 
@@ -695,10 +716,18 @@ class SubDialogManager {
     });
   }
 
+  
+
+
+
   get _topDialog() {
-    return this._dialogs.length
-      ? this._dialogs[this._dialogs.length - 1]
-      : undefined;
+    if (!this._dialogs.length) {
+      return undefined;
+    }
+    if (this._orderType === SubDialogManager.ORDER_STACK) {
+      return this._dialogs[this._dialogs.length - 1];
+    }
+    return this._dialogs[0];
   }
 
   open(aURL, aFeatures = null, aParams = null, aClosingCallback = null) {
@@ -709,9 +738,16 @@ class SubDialogManager {
 
     let doc = this._dialogStack.ownerDocument;
 
-    if (this._dialogs.length) {
+    
+    
+    if (
+      this._orderType === SubDialogManager.ORDER_STACK &&
+      this._dialogs.length
+    ) {
       this._topDialog._prevActiveElement = doc.activeElement;
-    } else {
+    }
+
+    if (!this._dialogs.length) {
       
       this._dialogStack.hidden = false;
       this._topLevelPrevActiveElement = doc.activeElement;
@@ -749,14 +785,24 @@ class SubDialogManager {
   }
 
   _onDialogOpen() {
-    let lowerDialog =
-      this._dialogs.length > 1
-        ? this._dialogs[this._dialogs.length - 2]
-        : undefined;
-    if (lowerDialog) {
-      lowerDialog._overlay.removeAttribute("topmost");
-      lowerDialog._removeDialogEventListeners();
+    
+    
+    
+    if (this._dialogs.length === 1) {
+      return;
     }
+
+    let lowerDialog;
+    if (this._orderType === SubDialogManager.ORDER_STACK) {
+      
+      lowerDialog = this._dialogs[this._dialogs.length - 2];
+    } else {
+      
+      lowerDialog = this._dialogs[this._dialogs.length - 1];
+    }
+
+    lowerDialog._overlay.removeAttribute("topmost");
+    lowerDialog._removeDialogEventListeners();
   }
 
   _onDialogClose(dialog) {
@@ -765,14 +811,19 @@ class SubDialogManager {
       
       
       this._preloadDialog._overlay.remove();
-      this._preloadDialog = this._dialogs.pop();
+      if (this._orderType === SubDialogManager.ORDER_STACK) {
+        this._preloadDialog = this._dialogs.pop();
+      } else {
+        this._preloadDialog = this._dialogs.shift();
+      }
     } else {
       dialog._overlay.remove();
       this._dialogs.splice(this._dialogs.indexOf(dialog), 1);
     }
 
     if (this._topDialog) {
-      this._topDialog._prevActiveElement.focus();
+      
+      this._topDialog._prevActiveElement?.focus();
       this._topDialog._overlay.setAttribute("topmost", true);
       this._topDialog._addDialogEventListeners();
     } else {
@@ -793,3 +844,7 @@ class SubDialogManager {
     this._dialogStack.removeEventListener("dialogclose", this);
   }
 }
+
+
+SubDialogManager.ORDER_STACK = 0;
+SubDialogManager.ORDER_QUEUE = 1;
