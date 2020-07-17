@@ -7732,15 +7732,6 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
   uint32_t absoluteLimitY =
       StaticPrefs::layout_animation_prerender_absolute_limit_y();
   nsSize refSize = aBuilder->RootReferenceFrame()->GetSize();
-
-  float resolution = aFrame->PresShell()->GetCumulativeResolution();
-  if (resolution < 1.0f) {
-    refSize.SizeTo(
-        NSCoordSaturatingNonnegativeMultiply(refSize.width, 1.0f / resolution),
-        NSCoordSaturatingNonnegativeMultiply(refSize.height,
-                                             1.0f / resolution));
-  }
-
   
   
   
