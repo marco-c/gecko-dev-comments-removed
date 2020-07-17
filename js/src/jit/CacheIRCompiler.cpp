@@ -2611,39 +2611,6 @@ bool CacheIRCompiler::emitInt32ModResult(Int32OperandId lhsId,
   return true;
 }
 
-
-
-
-
-
-
-class MOZ_RAII AutoScratchRegisterMaybeOutputType {
-  mozilla::Maybe<AutoScratchRegister> scratch_;
-  Register scratchReg_;
-
- public:
-  AutoScratchRegisterMaybeOutputType(CacheRegisterAllocator& alloc,
-                                     MacroAssembler& masm,
-                                     const AutoOutputRegister& output) {
-#if defined(JS_NUNBOX32)
-    scratchReg_ = output.hasValue() ? output.valueReg().typeReg() : InvalidReg;
-#else
-    scratchReg_ = InvalidReg;
-#endif
-    if (scratchReg_ == InvalidReg) {
-      scratch_.emplace(alloc, masm);
-      scratchReg_ = scratch_.ref();
-    }
-  }
-
-  AutoScratchRegisterMaybeOutputType(
-      const AutoScratchRegisterMaybeOutputType&) = delete;
-
-  void operator=(const AutoScratchRegisterMaybeOutputType&) = delete;
-
-  operator Register() const { return scratchReg_; }
-};
-
 bool CacheIRCompiler::emitInt32PowResult(Int32OperandId lhsId,
                                          Int32OperandId rhsId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
