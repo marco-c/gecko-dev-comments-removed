@@ -134,6 +134,15 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   void OverrideReferrerInfoDuringBeginConnect(nsIReferrerInfo* aReferrerInfo);
 
+  
+  
+  
+  
+  
+  
+  
+  void SetCookie(nsCString&& aCookie);
+
   using ChildEndpointPromise =
       MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
   [[nodiscard]] RefPtr<ChildEndpointPromise> AttachStreamFilter(
@@ -325,6 +334,10 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   nsCOMPtr<nsIReferrerInfo> mOverrideReferrerInfo;
+
+  
+  
+  nsCString mCookie;
 
   
   
