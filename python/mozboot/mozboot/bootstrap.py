@@ -11,6 +11,7 @@ import platform
 import sys
 import subprocess
 import time
+from distutils.version import LooseVersion
 
 
 
@@ -43,9 +44,7 @@ from mozboot.void import VoidBootstrapper
 from mozboot.windows import WindowsBootstrapper
 from mozboot.mozillabuild import MozillaBuildBootstrapper
 from mozboot.mozconfig import find_mozconfig
-from mozboot.util import (
-    get_state_dir,
-)
+from mozboot.util import get_state_dir
 
 
 import distro
@@ -231,6 +230,15 @@ build the latest version of tree. Running bootstrap on old revisions may fail
 and is not guaranteed to bring your machine to any working state in particular.
 Proceed at your own peril.
 '''
+
+
+
+MINIMUM_RECOMMENDED_GIT_VERSION = LooseVersion('2.24')
+OLD_GIT_WARNING = '''
+You are running an older version of git ("{old_version}").
+We recommend upgrading to at least version "{minimum_recommended_version}" to improve
+performance.
+'''.strip()
 
 
 def update_or_create_build_telemetry_config(path):
@@ -799,6 +807,20 @@ def update_git_repo(git, url, dest):
 
 def configure_git(git, cinnabar, root_state_dir, top_src_dir):
     """Run the Git configuration steps."""
+    from mozversioncontrol import GitRepository
+
+    repository = GitRepository(top_src_dir)
+    git_version = LooseVersion(repository.tool_version)
+
+    if git_version < MINIMUM_RECOMMENDED_GIT_VERSION:
+        print(OLD_GIT_WARNING.format(
+            old_version=git_version,
+            minimum_recommended_version=MINIMUM_RECOMMENDED_GIT_VERSION))
+
+    if git_version >= LooseVersion('2.17'):
+        
+        repository.set_config('core.untrackedCache', 'true')
+
     cinnabar_dir = update_git_tools(git, root_state_dir, top_src_dir)
 
     if not cinnabar:
