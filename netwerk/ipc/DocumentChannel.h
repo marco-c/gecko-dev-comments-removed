@@ -15,6 +15,8 @@
 #include "nsIChildChannel.h"
 #include "nsITraceableChannel.h"
 
+class nsDocShell;
+
 #define DOCUMENT_CHANNEL_IID                         \
   {                                                  \
     0x6977bc44, 0xb1db, 0x41b7, {                    \
@@ -24,6 +26,8 @@
 
 namespace mozilla {
 namespace net {
+
+uint64_t InnerWindowIDForExtantDoc(nsDocShell* docShell);
 
 
 
@@ -59,10 +63,13 @@ class DocumentChannel : public nsIIdentChannel, public nsITraceableChannel {
 
 
 
-  static already_AddRefed<DocumentChannel> CreateDocumentChannel(
+  static already_AddRefed<DocumentChannel> CreateForDocument(
       nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
       nsLoadFlags aLoadFlags, nsIInterfaceRequestor* aNotificationCallbacks,
       uint32_t aCacheKey, bool aUriModified, bool aIsXFOError);
+  static already_AddRefed<DocumentChannel> CreateForObject(
+      nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
+      nsLoadFlags aLoadFlags, nsIInterfaceRequestor* aNotificationCallbacks);
 
   static bool CanUseDocumentChannel(nsIURI* aURI, uint32_t aLoadFlags);
 
