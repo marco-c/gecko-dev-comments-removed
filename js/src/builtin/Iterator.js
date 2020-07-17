@@ -7,6 +7,20 @@ function IteratorIdentity() {
 }
 
 
+function IteratorNext(iteratorRecord, value) {
+  
+  const result = (arguments.length < 2
+      ? callContentFunction(iteratorRecord.nextMethod, iteratorRecord.iterator)
+      : callContentFunction(iteratorRecord.nextMethod, iteratorRecord.iterator, value));
+  
+  if (!IsObject(result)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, result);
+  }
+  
+  return result;
+}
+
+
 function IteratorClose(iteratorRecord, value) {
   
   const iterator = iteratorRecord.iterator;
