@@ -146,6 +146,12 @@ static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
   return 0;
 }
 
+SizeComputationInput::SizeComputationInput(nsIFrame* aFrame,
+                                           gfxContext* aRenderingContext)
+    : mFrame(aFrame),
+      mRenderingContext(aRenderingContext),
+      mWritingMode(aFrame->GetWritingMode()) {}
+
 SizeComputationInput::SizeComputationInput(
     nsIFrame* aFrame, gfxContext* aRenderingContext,
     WritingMode aContainingBlockWritingMode, nscoord aContainingBlockISize)
@@ -262,6 +268,18 @@ nscoord SizeComputationInput::ComputeBSizeValue(
     inside = ComputedLogicalBorderPadding().BStartEnd(wm);
   }
   return nsLayoutUtils::ComputeBSizeValue(aContainingBlockBSize, inside, aSize);
+}
+
+bool ReflowInput::ShouldReflowAllKids() const {
+  
+  
+  
+  
+  
+  
+  return mFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY) || IsIResize() ||
+         (IsBResize() &&
+          mFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE));
 }
 
 void ReflowInput::SetComputedWidth(nscoord aComputedWidth) {
@@ -984,6 +1002,24 @@ void ReflowInput::ApplyRelativePositioning(nsIFrame* aFrame,
       *aPosition = ssc->ComputePosition(aFrame);
     }
   }
+}
+
+void ReflowInput::ApplyRelativePositioning(
+    nsIFrame* aFrame, mozilla::WritingMode aWritingMode,
+    const mozilla::LogicalMargin& aComputedOffsets,
+    mozilla::LogicalPoint* aPosition, const nsSize& aContainerSize) {
+  
+  
+  
+  
+  
+  nsSize frameSize = aFrame->GetSize();
+  nsPoint pos =
+      aPosition->GetPhysicalPoint(aWritingMode, aContainerSize - frameSize);
+  ApplyRelativePositioning(
+      aFrame, aComputedOffsets.GetPhysicalMargin(aWritingMode), &pos);
+  *aPosition =
+      mozilla::LogicalPoint(aWritingMode, pos, aContainerSize - frameSize);
 }
 
 

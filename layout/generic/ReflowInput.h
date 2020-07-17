@@ -11,9 +11,11 @@
 
 #include "nsMargin.h"
 #include "nsStyleConsts.h"
-#include "nsIFrame.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/WritingModes.h"
+#include "LayoutConstants.h"
+#include "ReflowOutput.h"
 #include <algorithm>
 
 class gfxContext;
@@ -23,6 +25,11 @@ class nsIPercentBSizeObserver;
 class nsLineLayout;
 class nsPlaceholderFrame;
 class nsPresContext;
+class nsReflowStatus;
+
+namespace mozilla {
+enum class LayoutFrameType : uint8_t;
+}
 
 
 
@@ -175,10 +182,7 @@ struct SizeComputationInput {
 
  public:
   
-  SizeComputationInput(nsIFrame* aFrame, gfxContext* aRenderingContext)
-      : mFrame(aFrame),
-        mRenderingContext(aRenderingContext),
-        mWritingMode(aFrame->GetWritingMode()) {}
+  SizeComputationInput(nsIFrame* aFrame, gfxContext* aRenderingContext);
 
   SizeComputationInput(nsIFrame* aFrame, gfxContext* aRenderingContext,
                        mozilla::WritingMode aContainingBlockWritingMode,
@@ -937,17 +941,7 @@ struct ReflowInput : public SizeComputationInput {
     return aBSize - aConsumed;
   }
 
-  bool ShouldReflowAllKids() const {
-    
-    
-    
-    
-    
-    
-    return mFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY) || IsIResize() ||
-           (IsBResize() &&
-            mFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE));
-  }
+  bool ShouldReflowAllKids() const;
 
   
   void SetComputedWidth(nscoord aComputedWidth);
@@ -1003,20 +997,7 @@ struct ReflowInput : public SizeComputationInput {
   static void ApplyRelativePositioning(
       nsIFrame* aFrame, mozilla::WritingMode aWritingMode,
       const mozilla::LogicalMargin& aComputedOffsets,
-      mozilla::LogicalPoint* aPosition, const nsSize& aContainerSize) {
-    
-    
-    
-    
-    
-    nsSize frameSize = aFrame->GetSize();
-    nsPoint pos =
-        aPosition->GetPhysicalPoint(aWritingMode, aContainerSize - frameSize);
-    ApplyRelativePositioning(
-        aFrame, aComputedOffsets.GetPhysicalMargin(aWritingMode), &pos);
-    *aPosition =
-        mozilla::LogicalPoint(aWritingMode, pos, aContainerSize - frameSize);
-  }
+      mozilla::LogicalPoint* aPosition, const nsSize& aContainerSize);
 
   void ApplyRelativePositioning(mozilla::LogicalPoint* aPosition,
                                 const nsSize& aContainerSize) const {
