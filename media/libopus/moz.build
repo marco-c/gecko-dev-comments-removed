@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files('*'):
     BUG_COMPONENT = ('Core', 'Audio/Video')
@@ -14,7 +14,7 @@ EXPORTS.opus += [
     'include/opus_types.h',
 ]
 
-# We allow warnings for third-party code that can be updated from upstream.
+
 AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'gkmedias'
@@ -24,7 +24,7 @@ DEFINES['OPUS_VERSION'] = '"v1.3-rc-19-g5cbd7d5f-mozilla"'
 DEFINES['USE_ALLOCA'] = True
 DEFINES['ENABLE_HARDENING'] = True
 
-# Don't export symbols
+
 DEFINES['OPUS_EXPORT'] = ''
 
 if CONFIG['CPU_ARCH'] == 'arm' and CONFIG['GNU_AS']:
@@ -68,8 +68,8 @@ LOCAL_INCLUDES += [
     'src',
 ]
 
-# sources.mozbuild is generated from gen-sources.py when a new libopus is
-# imported.
+
+
 include('sources.mozbuild')
 
 UNIFIED_SOURCES += celt_sources
@@ -110,7 +110,7 @@ if CONFIG['CPU_ARCH'] == 'arm' and CONFIG['GNU_AS']:
     SOURCES += [
         '!celt_pitch_xcorr_arm-gnu.s'
     ]
-    # -Os is significantly slower, enable -O3 unless optimization is disabled
+    
     if CONFIG['MOZ_OPTIMIZE']:
         CFLAGS += [
             '-O3',
@@ -118,8 +118,8 @@ if CONFIG['CPU_ARCH'] == 'arm' and CONFIG['GNU_AS']:
         CXXFLAGS += [
             '-O3',
         ]
-    # These flags are a lie; they're just used to enable the requisite
-    # opcodes; actual arch detection is done at runtime.
+    
+    
     ASFLAGS += [
         '-march=armv7-a',
     ]
@@ -131,13 +131,16 @@ if CONFIG['CPU_ARCH'] == 'aarch64' and CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     DEFINES['OPUS_ARM_PRESUME_NEON_INTR'] = True
     SOURCES += celt_sources_arm_neon_intr
     SOURCES += silk_sources_arm_neon_intr
-    if not CONFIG['MOZ_SAMPLE_TYPE_FLOAT32']:
+    if CONFIG['MOZ_SAMPLE_TYPE_FLOAT32']:
+        DEFINES['OPUS_ARM_MAY_HAVE_NEON'] = True
+        DEFINES['OPUS_ARM_MAY_HAVE_NEON_INTR'] = True
+    else:
         SOURCES += silk_sources_fixed_arm_neon_intr
 
-# Suppress warnings in third-party code.
+
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     if CONFIG['CC_TYPE'] == 'clang':
         CFLAGS += ['-Wno-#pragma-messages']
 
-# Add libFuzzer configuration directives
+
 include('/tools/fuzzing/libfuzzer-config.mozbuild')
