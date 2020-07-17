@@ -131,12 +131,6 @@ class nsPrintJob final : public nsIObserver,
 
   void TurnScriptingOn(bool aDoTurnOn);
 
-  
-
-
-
-
-  bool HasPrintCallbackCanvas() { return mHasMozPrintCallback; }
   bool PrePrintPage();
   bool PrintPage(nsPrintObject* aPOect, bool& aInRange);
   bool DonePrintingPages(nsPrintObject* aPO, nsresult aResult);
