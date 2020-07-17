@@ -544,9 +544,9 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
             return NS_ERROR_FAILURE;
           }
         }
-        rv = WSRunObject::NormalizeWhiteSpacesAround(*this, pointToAdjust);
+        rv = WSRunObject::NormalizeVisibleWhiteSpacesAt(*this, pointToAdjust);
         if (NS_FAILED(rv)) {
-          NS_WARNING("WSRunObject::NormalizeWhiteSpacesAround() failed");
+          NS_WARNING("WSRunObject::NormalizeVisibleWhiteSpacesAt() failed");
           return rv;
         }
 
@@ -558,7 +558,7 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
                 !TopLevelEditSubActionDataRef().mSelectedRange->IsSet())) {
           return NS_ERROR_FAILURE;
         }
-        rv = WSRunObject::NormalizeWhiteSpacesAround(
+        rv = WSRunObject::NormalizeVisibleWhiteSpacesAt(
             *this,
             TopLevelEditSubActionDataRef().mSelectedRange->StartRawPoint());
         if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
@@ -566,19 +566,19 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
         }
         NS_WARNING_ASSERTION(
             NS_SUCCEEDED(rv),
-            "WSRunObject::NormalizeWhiteSpacesAround() failed, but ignored");
+            "WSRunObject::NormalizeVisibleWhiteSpacesAt() failed, but ignored");
         
         
         if (TopLevelEditSubActionDataRef().mSelectedRange->IsCollapsed()) {
-          nsresult rv = WSRunObject::NormalizeWhiteSpacesAround(
+          nsresult rv = WSRunObject::NormalizeVisibleWhiteSpacesAt(
               *this,
               TopLevelEditSubActionDataRef().mSelectedRange->EndRawPoint());
           if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
             return NS_ERROR_EDITOR_DESTROYED;
           }
-          NS_WARNING_ASSERTION(
-              NS_SUCCEEDED(rv),
-              "WSRunObject::NormalizeWhiteSpacesAround() failed, but ignored");
+          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                               "WSRunObject::NormalizeVisibleWhiteSpacesAt() "
+                               "failed, but ignored");
         }
         break;
       }
