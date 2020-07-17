@@ -830,7 +830,7 @@ nsresult HTMLFormSubmission::GetFromForm(HTMLFormElement* aForm,
     
     
     if (!dialog || !dialog->Open()) {
-      return NS_OK;
+      return NS_ERROR_FAILURE;
     }
 
     nsAutoString result;
