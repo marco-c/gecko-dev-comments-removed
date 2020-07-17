@@ -4944,7 +4944,12 @@ var SessionStoreInternal = {
     });
 
     
-    if (aTab.selected && !window.isBlankPageURL(uri)) {
+    
+    if (
+      aTab.selected &&
+      !window.isBlankPageURL(uri) &&
+      !aOptions.isRemotenessUpdate
+    ) {
       browser.focus();
     }
   },

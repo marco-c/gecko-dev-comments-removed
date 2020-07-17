@@ -188,6 +188,15 @@ add_task(async function test_user_defined_commands() {
   await BrowserTestUtils.loadURI(win1.gBrowser.selectedBrowser, "about:robots");
   await BrowserTestUtils.browserLoaded(win1.gBrowser.selectedBrowser);
 
+  
+  
+  
+  
+  
+  
+  
+  win1.gBrowser.selectedBrowser.focus();
+
   let commands = {};
   let isMac = AppConstants.platform == "macosx";
   let totalMacOnlyCommands = 0;
@@ -263,6 +272,9 @@ add_task(async function test_user_defined_commands() {
   await BrowserTestUtils.loadURI(win2.gBrowser.selectedBrowser, "about:robots");
   await BrowserTestUtils.browserLoaded(win2.gBrowser.selectedBrowser);
 
+  
+  win2.gBrowser.selectedBrowser.focus();
+
   let totalTestCommands =
     Object.keys(testCommands).length + numberNumericCommands;
   let expectedCommandsRegistered = isMac
@@ -302,6 +314,10 @@ add_task(async function test_user_defined_commands() {
     "about:robots"
   );
   await BrowserTestUtils.browserLoaded(privateWin.gBrowser.selectedBrowser);
+
+  
+  privateWin.gBrowser.selectedBrowser.focus();
+
   keyset = privateWin.document.getElementById(keysetID);
   is(keyset, null, "Expected keyset is not added to private windows");
 
