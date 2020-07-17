@@ -173,9 +173,7 @@ bool FunctionEmitter::emitAsmJSModule() {
 
   
 
-  ScriptStencil& stencil = funbox_->functionStencil().get();
   funbox_->setWasEmitted(true);
-  funbox_->copyScriptFields(stencil);
 
   if (!emitFunction()) {
     
