@@ -2630,21 +2630,7 @@ bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
   bool hasCaption = (mBorderStyle & (eBorderStyle_all | eBorderStyle_title |
                                      eBorderStyle_menu | eBorderStyle_default));
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mCaptionHeight = GetSystemMetrics(SM_CYFRAME) +
-                   (hasCaption ? GetSystemMetrics(SM_CYCAPTION) +
-                                     GetSystemMetrics(SM_CXPADDEDBORDER)
-                               : 0);
+  float dpi = GetDPI();
 
   
   
@@ -2655,8 +2641,13 @@ bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
   
   
   
-  mHorResizeMargin = GetSystemMetrics(SM_CXFRAME) +
-                     (hasCaption ? GetSystemMetrics(SM_CXPADDEDBORDER) : 0);
+  
+  
+  mCaptionHeight =
+      WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CYCAPTION, dpi) +
+                        WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                  : 0);
 
   
   
@@ -2666,8 +2657,24 @@ bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
   
   
   
-  mVertResizeMargin = GetSystemMetrics(SM_CYFRAME) +
-                      (hasCaption ? GetSystemMetrics(SM_CXPADDEDBORDER) : 0);
+  
+  mHorResizeMargin =
+      WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
+      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                  : 0);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  mVertResizeMargin =
+      WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                  : 0);
 
   if (aSizeMode == nsSizeMode_Minimized) {
     
@@ -5325,18 +5332,10 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         RECT* clientRect =
             wParam ? &(reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam))->rgrc[0]
                    : (reinterpret_cast<RECT*>(lParam));
-        double scale = WinUtils::IsPerMonitorDPIAware()
-                           ? WinUtils::LogToPhysFactor(mWnd) /
-                                 WinUtils::SystemScaleFactor()
-                           : 1.0;
-        clientRect->top +=
-            NSToIntRound((mCaptionHeight - mNonClientOffset.top) * scale);
-        clientRect->left +=
-            NSToIntRound((mHorResizeMargin - mNonClientOffset.left) * scale);
-        clientRect->right -=
-            NSToIntRound((mHorResizeMargin - mNonClientOffset.right) * scale);
-        clientRect->bottom -=
-            NSToIntRound((mVertResizeMargin - mNonClientOffset.bottom) * scale);
+        clientRect->top += mCaptionHeight - mNonClientOffset.top;
+        clientRect->left += mHorResizeMargin - mNonClientOffset.left;
+        clientRect->right -= mHorResizeMargin - mNonClientOffset.right;
+        clientRect->bottom -= mVertResizeMargin - mNonClientOffset.bottom;
         
         
         clientRect->right = std::max(clientRect->right, clientRect->left + 1);
