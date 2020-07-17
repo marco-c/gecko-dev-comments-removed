@@ -15,23 +15,19 @@ add_task(async function() {
   });
 });
 
-addRDMTask(
-  TEST_URL,
-  async function({ ui }) {
-    const { store, document } = ui.toolWindow;
-    const button = document.getElementById("device-selector");
+addRDMTask(TEST_URL, async function({ ui }) {
+  const { store, document } = ui.toolWindow;
+  const button = document.getElementById("device-selector");
 
-    
-    
-    await waitUntilState(
-      store,
-      state =>
-        state.viewports.length == 1 &&
-        state.devices.listState == Types.loadableState.ERROR
-    );
+  
+  
+  await waitUntilState(
+    store,
+    state =>
+      state.viewports.length == 1 &&
+      state.devices.listState == Types.loadableState.ERROR
+  );
 
-    
-    ok(button.disabled, "Device selector is disabled");
-  },
-  { usingBrowserUI: true }
-);
+  
+  ok(button.disabled, "Device selector is disabled");
+});

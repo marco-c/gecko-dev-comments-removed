@@ -13,83 +13,79 @@ const TEST_URL =
   '<div style="width:100%;height:1100px;background-color:lightblue"></div>' +
   "</body>";
 
-addRDMTask(
-  TEST_URL,
-  async function({ ui, manager }) {
-    info("--- Starting viewport test output ---");
+addRDMTask(TEST_URL, async function({ ui, manager }) {
+  info("--- Starting viewport test output ---");
+
+  
+  
+  
+  
+  const expected = [
+    {
+      metaSupport: false,
+      before: [1.0, 300, 600],
+      after: [1.0, 600, 300],
+    },
+    {
+      metaSupport: true,
+      before: [0.5, 300, 600],
+      after: [1.0, 600, 300],
+    },
+  ];
+
+  for (const e of expected) {
+    const b = e.before;
+    const a = e.after;
+
+    const message = "Meta Viewport " + (e.metaSupport ? "ON" : "OFF");
 
     
+    info(message + " setting meta viewport support.");
+    await setTouchAndMetaViewportSupport(ui, e.metaSupport);
+
     
+    await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
+    await testViewportZoomWidthAndHeight(
+      message + " before resize",
+      ui,
+      b[0],
+      b[1],
+      b[2]
+    );
+
     
+    const reload = waitForViewportLoad(ui);
+    const browser = ui.getViewportBrowser();
+    browser.reload();
+    await reload;
+
     
-    const expected = [
-      {
-        metaSupport: false,
-        before: [1.0, 300, 600],
-        after: [1.0, 600, 300],
-      },
-      {
-        metaSupport: true,
-        before: [0.5, 300, 600],
-        after: [1.0, 600, 300],
-      },
-    ];
+    await testViewportZoomWidthAndHeight(
+      message + " after reload",
+      ui,
+      b[0],
+      b[1],
+      b[2]
+    );
 
-    for (const e of expected) {
-      const b = e.before;
-      const a = e.after;
+    
+    await setViewportSizeAndAwaitReflow(ui, manager, 600, 300);
+    await testViewportZoomWidthAndHeight(
+      message + " after resize",
+      ui,
+      a[0],
+      a[1],
+      a[2]
+    );
 
-      const message = "Meta Viewport " + (e.metaSupport ? "ON" : "OFF");
-
-      
-      info(message + " setting meta viewport support.");
-      await setTouchAndMetaViewportSupport(ui, e.metaSupport);
-
-      
-      await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
-      await testViewportZoomWidthAndHeight(
-        message + " before resize",
-        ui,
-        b[0],
-        b[1],
-        b[2]
-      );
-
-      
-      const reload = waitForViewportLoad(ui);
-      const browser = ui.getViewportBrowser();
-      browser.reload();
-      await reload;
-
-      
-      await testViewportZoomWidthAndHeight(
-        message + " after reload",
-        ui,
-        b[0],
-        b[1],
-        b[2]
-      );
-
-      
-      await setViewportSizeAndAwaitReflow(ui, manager, 600, 300);
-      await testViewportZoomWidthAndHeight(
-        message + " after resize",
-        ui,
-        a[0],
-        a[1],
-        a[2]
-      );
-
-      
-      await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
-      await testViewportZoomWidthAndHeight(
-        message + " return to initial size",
-        ui,
-        b[0],
-        b[1],
-        b[2]
-      );
-    }
-  },
-  { usingBrowserUI: true }
-);
+    
+    await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
+    await testViewportZoomWidthAndHeight(
+      message + " return to initial size",
+      ui,
+      b[0],
+      b[1],
+      b[2]
+    );
+  }
+});

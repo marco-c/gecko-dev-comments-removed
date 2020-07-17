@@ -48,49 +48,45 @@ const TEST_URL =
   "</head>" +
   '<body><div style="background:orange; width:1000px; height:1000px"></div></body>';
 
-addRDMTask(
-  TEST_URL,
-  async function({ ui, manager }) {
+addRDMTask(TEST_URL, async function({ ui, manager }) {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["layout.testing.overlay-scrollbars.always-visible", true],
+      ["security.data_uri.unique_opaque_origin", false],
+    ],
+  });
+
+  info("--- Starting viewport test output ---");
+
+  const browser = ui.getViewportBrowser();
+
+  const expected = [false, true];
+  for (const e of expected) {
+    const message = "Meta Viewport " + (e ? "ON" : "OFF");
+
     
+    info(message + " setting meta viewport support.");
+    await setTouchAndMetaViewportSupport(ui, e.metaSupport);
+
     
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["layout.testing.overlay-scrollbars.always-visible", true],
-        ["security.data_uri.unique_opaque_origin", false],
-      ],
-    });
+    await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
+    const initialSnapshot = await snapshotWindow(browser);
 
-    info("--- Starting viewport test output ---");
+    
+    await setViewportSizeAndAwaitReflow(ui, manager, 600, 300);
 
-    const browser = ui.getViewportBrowser();
+    
+    const reload = waitForViewportLoad(ui);
+    browser.reload();
+    await reload;
 
-    const expected = [false, true];
-    for (const e of expected) {
-      const message = "Meta Viewport " + (e ? "ON" : "OFF");
+    
+    await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
+    const finalSnapshot = await snapshotWindow(browser);
 
-      
-      info(message + " setting meta viewport support.");
-      await setTouchAndMetaViewportSupport(ui, e.metaSupport);
-
-      
-      await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
-      const initialSnapshot = await snapshotWindow(browser);
-
-      
-      await setViewportSizeAndAwaitReflow(ui, manager, 600, 300);
-
-      
-      const reload = waitForViewportLoad(ui);
-      browser.reload();
-      await reload;
-
-      
-      await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
-      const finalSnapshot = await snapshotWindow(browser);
-
-      const result = compareSnapshots(initialSnapshot, finalSnapshot, true);
-      is(result[2], result[1], "Window snapshots should match.");
-    }
-  },
-  { usingBrowserUI: true }
-);
+    const result = compareSnapshots(initialSnapshot, finalSnapshot, true);
+    is(result[2], result[1], "Window snapshots should match.");
+  }
+});

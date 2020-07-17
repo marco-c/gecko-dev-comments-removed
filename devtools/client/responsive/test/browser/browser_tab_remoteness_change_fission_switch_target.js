@@ -12,9 +12,6 @@ const TEST_DPPX = 2;
 
 add_task(async function() {
   
-  await pushPref("devtools.responsive.browserUI.enabled", true);
-
-  
   await pushPref("devtools.responsive.viewport.pixelRatio", TEST_DPPX);
 
   info("Open a page which runs on the child process");

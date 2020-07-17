@@ -157,26 +157,15 @@ var closeRDM = async function(tab, options) {
 
 
 
-
-
-
-
 function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
-  
-  let usingBrowserUI = false;
   let onlyPrefAndTask = false;
   let waitForDeviceList = false;
   if (typeof options == "object") {
-    usingBrowserUI = !!options.usingBrowserUI;
     onlyPrefAndTask = !!options.onlyPrefAndTask;
     waitForDeviceList = !!options.waitForDeviceList;
   }
 
   add_task(async function() {
-    await SpecialPowers.pushPrefEnv({
-      set: [["devtools.responsive.browserUI.enabled", usingBrowserUI]],
-    });
-
     let tab;
     let browser;
     let preTaskValue = null;
@@ -189,7 +178,7 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
       browser = tab.linkedBrowser;
 
       if (preTask) {
-        preTaskValue = await preTask({ message, browser, usingBrowserUI });
+        preTaskValue = await preTask({ message, browser });
       }
 
       const rdmValues = await openRDM(tab);
@@ -218,17 +207,10 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
         manager,
         message,
         browser,
-        usingBrowserUI,
         preTaskValue,
       });
     } catch (err) {
-      ok(
-        false,
-        "Got an error with usingBrowserUI " +
-          usingBrowserUI +
-          ": " +
-          DevToolsUtils.safeErrorString(err)
-      );
+      ok(false, "Got an error: " + DevToolsUtils.safeErrorString(err));
     }
 
     if (!onlyPrefAndTask) {
@@ -237,7 +219,6 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
         await postTask({
           message,
           browser,
-          usingBrowserUI,
           preTaskValue,
           taskValue,
         });
@@ -250,8 +231,6 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
     await SpecialPowers.flushPrefEnv();
   });
 }
-
-
 
 
 

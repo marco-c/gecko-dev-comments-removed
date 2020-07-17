@@ -8,26 +8,22 @@ const throttlingProfiles = require("devtools/client/shared/components/throttling
 
 const TEST_URL = "data:text/html;charset=utf-8,Network throttling test";
 
-addRDMTask(
-  TEST_URL,
-  async function({ ui, manager }) {
-    
-    testNetworkThrottlingSelectorLabel(ui, "No Throttling");
-    await testNetworkThrottlingState(ui, null);
+addRDMTask(TEST_URL, async function({ ui, manager }) {
+  
+  testNetworkThrottlingSelectorLabel(ui, "No Throttling");
+  await testNetworkThrottlingState(ui, null);
 
-    
-    await testThrottlingProfile(ui, "Wi-Fi");
+  
+  await testThrottlingProfile(ui, "Wi-Fi");
 
-    
-    await testThrottlingProfile(ui, "Regular 3G");
+  
+  await testThrottlingProfile(ui, "Regular 3G");
 
-    
-    await selectNetworkThrottling(ui, "No Throttling");
-    testNetworkThrottlingSelectorLabel(ui, "No Throttling");
-    await testNetworkThrottlingState(ui, null);
-  },
-  { usingBrowserUI: true }
-);
+  
+  await selectNetworkThrottling(ui, "No Throttling");
+  testNetworkThrottlingSelectorLabel(ui, "No Throttling");
+  await testNetworkThrottlingState(ui, null);
+});
 
 function testNetworkThrottlingSelectorLabel(ui, expected) {
   const title = ui.toolWindow.document.querySelector(

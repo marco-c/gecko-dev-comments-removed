@@ -140,7 +140,7 @@ addRDMTask(
     
     addDeviceForTest(addedDevice);
   },
-  { usingBrowserUI: true, waitForDeviceList: true }
+  { waitForDeviceList: true }
 );
 
 addRDMTask(
@@ -188,5 +188,5 @@ addRDMTask(
       }
     });
   },
-  { usingBrowserUI: true, waitForDeviceList: true }
+  { waitForDeviceList: true }
 );

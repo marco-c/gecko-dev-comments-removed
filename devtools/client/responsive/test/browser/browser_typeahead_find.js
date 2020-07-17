@@ -17,58 +17,54 @@ const TEST_URL =
   "data:text/html;charset=utf-8," +
   '<body id="body"><input id="input" type="text"/><p>text</body>';
 
-addRDMTask(
-  TEST_URL,
-  async function({ ui, manager }) {
-    
-    await pushPref("accessibility.typeaheadfind", true);
+addRDMTask(TEST_URL, async function({ ui, manager }) {
+  
+  await pushPref("accessibility.typeaheadfind", true);
 
-    const browser = ui.getViewportBrowser();
+  const browser = ui.getViewportBrowser();
 
-    info("--- Starting test output ---");
+  info("--- Starting test output ---");
 
-    const expected = [
-      {
-        id: "body",
-        findTriggered: true,
-      },
-      {
-        id: "input",
-        findTriggered: false,
-      },
-    ];
+  const expected = [
+    {
+      id: "body",
+      findTriggered: true,
+    },
+    {
+      id: "input",
+      findTriggered: false,
+    },
+  ];
 
-    for (const e of expected) {
-      await SpecialPowers.spawn(browser, [{ e }], async function(args) {
-        const { e: values } = args;
-        const element = content.document.getElementById(values.id);
-
-        
-        element.focus();
-      });
+  for (const e of expected) {
+    await SpecialPowers.spawn(browser, [{ e }], async function(args) {
+      const { e: values } = args;
+      const element = content.document.getElementById(values.id);
 
       
-      await BrowserTestUtils.synthesizeKey("t", {}, browser);
+      element.focus();
+    });
 
-      const findBar = await gBrowser.getFindBar();
+    
+    await BrowserTestUtils.synthesizeKey("t", {}, browser);
 
-      const findIsTriggered = findBar._findField.value == "t";
-      is(
-        findIsTriggered,
-        e.findTriggered,
-        "Text input with focused element " +
-          e.id +
-          " should " +
-          (e.findTriggered ? "" : "not ") +
-          "trigger find."
-      );
-      findBar._findField.value = "";
+    const findBar = await gBrowser.getFindBar();
 
-      await SpecialPowers.spawn(browser, [], async function() {
-        
-        content.document.activeElement.blur();
-      });
-    }
-  },
-  { usingBrowserUI: true }
-);
+    const findIsTriggered = findBar._findField.value == "t";
+    is(
+      findIsTriggered,
+      e.findTriggered,
+      "Text input with focused element " +
+        e.id +
+        " should " +
+        (e.findTriggered ? "" : "not ") +
+        "trigger find."
+    );
+    findBar._findField.value = "";
+
+    await SpecialPowers.spawn(browser, [], async function() {
+      
+      content.document.activeElement.blur();
+    });
+  }
+});
