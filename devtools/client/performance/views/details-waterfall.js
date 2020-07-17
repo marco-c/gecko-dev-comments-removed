@@ -165,7 +165,7 @@ const WaterfallView = extend(DetailsSubview, {
 
 
   _onViewSource: function(data) {
-    PerformanceController.toolbox.viewSourceInDebugger(
+    PerformanceController.viewSourceInDebugger(
       data.url,
       data.line,
       data.column

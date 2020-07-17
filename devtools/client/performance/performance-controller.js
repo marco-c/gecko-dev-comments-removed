@@ -435,6 +435,12 @@ const PerformanceController = {
     return this.front.traits;
   },
 
+  viewSourceInDebugger(url, line, column) {
+    
+    
+    return this.toolbox.viewSourceInDebugger(url, +line, +column);
+  },
+
   
 
 
