@@ -321,6 +321,10 @@ var Impl = {
   
   
   _isUserActive: true,
+  
+  
+  
+  _fogUserActive: false,
   _startupIO: {},
   
   
@@ -1147,6 +1151,10 @@ var Impl = {
 
   _onActiveTick(aUserActive) {
     const needsUpdate = aUserActive && this._isUserActive;
+    const userActivityChanged =
+      (aUserActive && !this._fogUserActive) ||
+      (!aUserActive && this._fogUserActive);
+    this._fogUserActive = aUserActive;
     this._isUserActive = aUserActive;
 
     
@@ -1154,6 +1162,22 @@ var Impl = {
     if (needsUpdate) {
       this._sessionActiveTicks++;
       Telemetry.scalarAdd("browser.engagement.active_ticks", 1);
+    }
+
+    if (userActivityChanged) {
+      
+      Telemetry.scalarSet("fog.eval.user_active", aUserActive);
+      let error = false;
+      if (aUserActive) {
+        error = !TelemetryStopwatch.start("FOG_EVAL_USER_ACTIVE_S", null, {
+          inSeconds: true,
+        });
+      } else {
+        error = !TelemetryStopwatch.finish("FOG_EVAL_USER_ACTIVE_S");
+      }
+      if (error) {
+        Telemetry.scalarAdd("fog.eval.user_active_error", 1);
+      }
     }
   },
 
