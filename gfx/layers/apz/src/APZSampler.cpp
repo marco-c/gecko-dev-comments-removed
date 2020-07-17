@@ -212,6 +212,28 @@ ScreenMargin APZSampler::GetGeckoFixedLayerMargins() const {
   return mApz->GetGeckoFixedLayerMargins();
 }
 
+ParentLayerRect APZSampler::GetCompositionBounds(
+    const LayersId& aLayersId,
+    const ScrollableLayerGuid::ViewID& aScrollId) const {
+  
+  
+  AssertOnSamplerThread();
+
+  RefPtr<AsyncPanZoomController> apzc =
+      mApz->GetTargetAPZC(aLayersId, aScrollId);
+  if (!apzc) {
+    
+    
+    
+    
+    
+    
+    return ParentLayerRect();
+  }
+
+  return apzc->GetCompositionBounds();
+}
+
 void APZSampler::AssertOnSamplerThread() const {
   if (APZThreadUtils::GetThreadAssertionsEnabled()) {
     MOZ_ASSERT(IsSamplerThread());
