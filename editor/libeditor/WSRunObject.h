@@ -900,37 +900,37 @@ class MOZ_STACK_CLASS WSRunScanner {
       
       
       
-      Maybe<WSFragment> visibleWSFragmentInMiddleOfLine =
-          CreateWSFragmentForVisibleAndMiddleOfLine();
-      if (visibleWSFragmentInMiddleOfLine.isNothing()) {
+      Maybe<WSFragment> visibleWhiteSpaces =
+          CreateWSFragmentForVisibleWhiteSpaces();
+      if (visibleWhiteSpaces.isNothing()) {
         return false;
       }
       
-      if (!visibleWSFragmentInMiddleOfLine.ref().StartPoint().IsSet()) {
+      if (!visibleWhiteSpaces.ref().StartPoint().IsSet()) {
         return true;
       }
-      if (!visibleWSFragmentInMiddleOfLine.ref().StartPoint().EqualsOrIsBefore(
-              aPoint)) {
+      if (!visibleWhiteSpaces.ref().StartPoint().EqualsOrIsBefore(aPoint)) {
         return false;
       }
       
-      if (visibleWSFragmentInMiddleOfLine.ref().EndsByTrailingWhiteSpaces()) {
+      if (visibleWhiteSpaces.ref().EndsByTrailingWhiteSpaces()) {
         return true;
       }
       
       
-      if (visibleWSFragmentInMiddleOfLine.ref().StartPoint() ==
-          visibleWSFragmentInMiddleOfLine.ref().EndPoint()) {
+      if (visibleWhiteSpaces.ref().StartPoint() ==
+          visibleWhiteSpaces.ref().EndPoint()) {
         return true;
       }
-      return aPoint.IsBefore(visibleWSFragmentInMiddleOfLine.ref().EndPoint());
+      return aPoint.IsBefore(visibleWhiteSpaces.ref().EndPoint());
     }
 
     
 
 
 
-    Maybe<WSFragment> CreateWSFragmentForVisibleAndMiddleOfLine() const;
+
+    Maybe<WSFragment> CreateWSFragmentForVisibleWhiteSpaces() const;
 
    private:
     
