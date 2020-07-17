@@ -257,10 +257,6 @@ BROWSER_PROCESS += [
 
     
     
-    DllBlocklistEntry("asepkcs.dll", (6, 5, 0, 5)),
-
-    
-    
     DllBlocklistEntry("hncshellext64.dll", (1, 0, 0 ,3)),
 
     
