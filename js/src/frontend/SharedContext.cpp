@@ -203,10 +203,8 @@ void ScopeContext::computeExternalInitializers(Scope* scope) {
 
 EvalSharedContext::EvalSharedContext(JSContext* cx,
                                      CompilationInfo& compilationInfo,
-                                     Scope* enclosingScope,
                                      Directives directives, SourceExtent extent)
     : SharedContext(cx, Kind::Eval, compilationInfo, directives, extent),
-      enclosingScope_(cx, enclosingScope),
       bindings(cx) {
   
   allowNewTarget_ = compilationInfo.scopeContext.allowNewTarget;
@@ -400,23 +398,13 @@ JSFunction* FunctionBox::function() const {
   return compilationInfo_.functions[funcDataIndex_];
 }
 
-Scope* FunctionBox::compilationEnclosingScope() const {
-  
-  
-  
-  MOZ_ASSERT(compilationInfo_.topLevelFunctionEnclosingScope);
-  return compilationInfo_.topLevelFunctionEnclosingScope;
-}
-
 ModuleSharedContext::ModuleSharedContext(JSContext* cx, ModuleObject* module,
                                          CompilationInfo& compilationInfo,
-                                         Scope* enclosingScope,
                                          ModuleBuilder& builder,
                                          SourceExtent extent)
     : SharedContext(cx, Kind::Module, compilationInfo, Directives(true),
                     extent),
       module_(cx, module),
-      enclosingScope_(cx, enclosingScope),
       bindings(cx),
       builder(builder) {
   thisBinding_ = ThisBinding::Module;

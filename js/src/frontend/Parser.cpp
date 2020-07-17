@@ -1435,7 +1435,7 @@ bool PerHandlerParser<ParseHandler>::checkForUndefinedPrivateFields(
     return false;
   };
 
-  RootedScope enclosingScope(cx_, evalSc->compilationEnclosingScope());
+  RootedScope enclosingScope(cx_, this->getCompilationInfo().enclosingScope);
   
   
   for (UnboundPrivateName unboundName : unboundPrivateNames) {
@@ -1490,12 +1490,12 @@ LexicalScopeNode* Parser<FullParseHandler, Unit>::evalBody(
 
 #ifdef DEBUG
   if (evalpc.superScopeNeedsHomeObject() &&
-      evalsc->compilationEnclosingScope()) {
+      this->getCompilationInfo().enclosingScope) {
     
     
     
     
-    ScopeIter si(evalsc->compilationEnclosingScope());
+    ScopeIter si(this->getCompilationInfo().enclosingScope);
     for (; si; si++) {
       if (si.kind() == ScopeKind::Function) {
         JSFunction* fun = si.scope()->as<FunctionScope>().canonicalFunction();
