@@ -25,7 +25,7 @@ class FileDescriptorSet {
 
   
   
-  enum { MAX_DESCRIPTORS_PER_MESSAGE = 250 };
+  enum { MAX_DESCRIPTORS_PER_MESSAGE = 200 };
 
   void CopyFrom(const FileDescriptorSet& other);
 

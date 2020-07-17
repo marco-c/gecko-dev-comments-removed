@@ -111,7 +111,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   
   
-  
   enum { kControlBufferSlopBytes = 32 };
 
   
@@ -120,10 +119,9 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   
   
-  
-  
-  
-  char input_cmsg_buf_[Channel::kReadBufferSize + kControlBufferSlopBytes];
+  char input_cmsg_buf_[FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE *
+                           sizeof(int) +
+                       kControlBufferSlopBytes];
 
   
   
