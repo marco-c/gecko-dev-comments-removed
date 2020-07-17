@@ -39,7 +39,19 @@ TextureHost* GPUVideoTextureHost::EnsureWrappedTextureHost() {
   mWrappedTextureHost =
       VideoBridgeParent::GetSingleton(sd.source())->LookupTexture(sd.handle());
 
-  if (mWrappedTextureHost && mExternalImageId.isSome()) {
+  if (!mWrappedTextureHost) {
+    return nullptr;
+  }
+
+  if (mWrappedTextureHost->AsBufferTextureHost()) {
+    
+    
+    
+    
+    mWrappedTextureHost->AsBufferTextureHost()->DisableExternalTextures();
+  }
+
+  if (mExternalImageId.isSome()) {
     
     mWrappedTextureHost->EnsureRenderTexture(Nothing());
     MOZ_ASSERT(mWrappedTextureHost->mExternalImageId.isSome());
