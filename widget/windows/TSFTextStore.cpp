@@ -4821,11 +4821,12 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
       break;
     
     
-    case TextInputProcessorID::eMicrosoftChangJie:
     case TextInputProcessorID::eMicrosoftQuick:
       if (sAlllowToStopHackingIfFine) {
-        return false;
+        return false;  
       }
+      [[fallthrough]];
+    case TextInputProcessorID::eMicrosoftChangJie:
       if (!IsWin8OrLater() ||
           !TSFPrefs::DoNotReturnNoLayoutErrorToMSTraditionalTIP()) {
         return false;
