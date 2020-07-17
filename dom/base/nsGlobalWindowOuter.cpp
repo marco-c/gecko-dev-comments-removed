@@ -5191,10 +5191,41 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
     nsCOMPtr<nsIPrintSettingsService> printSettingsService =
         do_GetService("@mozilla.org/gfx/printsettings-service;1");
 
+    nsCOMPtr<nsIPrintSettings> printSettings;
     if (printSettingsService) {
+      printSettingsService->GetGlobalPrintSettings(
+          getter_AddRefs(printSettings));
+
+      nsAutoString printerName;
+      printSettings->GetPrinterName(printerName);
+
+      bool shouldGetLastUsedPrinterName = printerName.IsEmpty();
+#  ifdef MOZ_X11
+      
+      
+      
+      
+      
+      
+      if (!XRE_IsParentProcess()) {
+        shouldGetLastUsedPrinterName = false;
+      }
+#  endif
+      if (shouldGetLastUsedPrinterName) {
+        printSettingsService->GetLastUsedPrinterName(printerName);
+        printSettings->SetPrinterName(printerName);
+      }
+      printSettingsService->InitPrintSettingsFromPrinter(printerName,
+                                                         printSettings);
+      printSettingsService->InitPrintSettingsFromPrefs(
+          printSettings, true, nsIPrintSettings::kInitSaveAll);
+
       EnterModalState();
-      webBrowserPrint->Print(nullptr, nullptr);
+      webBrowserPrint->Print(printSettings, nullptr);
       LeaveModalState();
+    } else {
+      webBrowserPrint->GetGlobalPrintSettings(getter_AddRefs(printSettings));
+      webBrowserPrint->Print(printSettings, nullptr);
     }
   }
 #endif  

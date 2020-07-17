@@ -401,51 +401,6 @@ static nsresult EnsureSettingsHasPrinterNameSet(
 #endif
 }
 
-static nsresult GetGlobalPrintSettings(
-    nsIPrintSettings** aGlobalPrintSettings) {
-  *aGlobalPrintSettings = nullptr;
-
-  nsresult rv = NS_ERROR_FAILURE;
-  nsCOMPtr<nsIPrintSettingsService> printSettingsService =
-      do_GetService(sPrintSettingsServiceContractID, &rv);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsCOMPtr<nsIPrintSettings> settings;
-  rv = printSettingsService->GetGlobalPrintSettings(getter_AddRefs(settings));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsAutoString printerName;
-  settings->GetPrinterName(printerName);
-
-  bool shouldGetLastUsedPrinterName = printerName.IsEmpty();
-#ifdef MOZ_X11
-  
-  
-  
-  
-  
-  
-  if (!XRE_IsParentProcess()) {
-    shouldGetLastUsedPrinterName = false;
-  }
-#endif
-  if (shouldGetLastUsedPrinterName) {
-    printSettingsService->GetLastUsedPrinterName(printerName);
-    settings->SetPrinterName(printerName);
-  }
-  printSettingsService->InitPrintSettingsFromPrinter(printerName, settings);
-  printSettingsService->InitPrintSettingsFromPrefs(
-      settings, true, nsIPrintSettings::kInitSaveAll);
-
-  *aGlobalPrintSettings = settings.forget().take();
-
-  return NS_OK;
-}
-
 
 
 NS_IMPL_ISUPPORTS(nsPrintJob, nsIWebProgressListener, nsISupportsWeakReference,
@@ -952,11 +907,6 @@ nsresult nsPrintJob::Print(Document* aSourceDoc,
 
   nsresult rv = CommonPrint(false, aPrintSettings, aWebProgressListener, doc);
 
-  if (!aPrintSettings) {
-    
-    return rv;
-  }
-
   
   
   
@@ -1038,6 +988,20 @@ int32_t nsPrintJob::GetPrintPreviewNumPages() {
     return 0;
   }
   return numPages;
+}
+
+
+nsresult nsPrintJob::GetGlobalPrintSettings(
+    nsIPrintSettings** aGlobalPrintSettings) {
+  NS_ENSURE_ARG_POINTER(aGlobalPrintSettings);
+
+  nsresult rv = NS_ERROR_FAILURE;
+  nsCOMPtr<nsIPrintSettingsService> printSettingsService =
+      do_GetService(sPrintSettingsServiceContractID, &rv);
+  if (NS_SUCCEEDED(rv)) {
+    rv = printSettingsService->GetGlobalPrintSettings(aGlobalPrintSettings);
+  }
+  return rv;
 }
 
 
