@@ -262,13 +262,34 @@ class FormAutofillSection {
       if (
         maxLength === undefined ||
         maxLength < 0 ||
-        profile[key].length <= maxLength
+        profile[key].toString().length <= maxLength
       ) {
         continue;
       }
 
       if (maxLength) {
-        profile[key] = profile[key].substr(0, maxLength);
+        switch (typeof profile[key]) {
+          case "string":
+            profile[key] = profile[key].substr(0, maxLength);
+            break;
+          case "number":
+            
+            
+            if (maxLength < 1) {
+              maxLength = 1;
+            }
+            
+            
+            
+            profile[key] = profile[key] % Math.pow(10, maxLength);
+            break;
+          default:
+            log.warn(
+              "adaptFieldMaxLength: Don't know how to truncate",
+              typeof profile[key],
+              profile[key]
+            );
+        }
       } else {
         delete profile[key];
       }
