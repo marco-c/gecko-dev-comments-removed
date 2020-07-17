@@ -1,3 +1,4 @@
+setup({"hide_test_state": true});
 async_test(t => {
   assert_implements(window.PerformancePaintTiming, "Paint Timing isn't supported.");
   
