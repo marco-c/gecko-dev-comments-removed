@@ -46,7 +46,6 @@ class JS_PUBLIC_API JSTracer;
 namespace js::frontend {
 
 struct CompilationInfo;
-class FunctionBox;
 
 
 
@@ -214,7 +213,10 @@ class ScopeCreationData {
   HeapPtr<Scope*> scope_ = {};
 
   
-  frontend::FunctionBox* funbox_ = nullptr;
+  mozilla::Maybe<FunctionIndex> functionIndex_;
+
+  
+  bool isArrow_;
 
   UniquePtr<BaseScopeData> data_;
 
@@ -223,11 +225,13 @@ class ScopeCreationData {
       JSContext* cx, ScopeKind kind, Handle<AbstractScopePtr> enclosing,
       Handle<frontend::EnvironmentShapeCreationData> environmentShape,
       UniquePtr<BaseScopeData> data = {},
-      frontend::FunctionBox* funbox = nullptr)
+      mozilla::Maybe<FunctionIndex> functionIndex = mozilla::Nothing(),
+      bool isArrow = false)
       : enclosing_(enclosing),
         kind_(kind),
         environmentShape_(environmentShape),  
-        funbox_(funbox),
+        functionIndex_(functionIndex),
+        isArrow_(isArrow),
         data_(std::move(data)) {}
 
   ScopeKind kind() const { return kind_; }
@@ -240,7 +244,7 @@ class ScopeCreationData {
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      Handle<FunctionScope::Data*> dataArg,
                      bool hasParameterExprs, bool needsEnvironment,
-                     frontend::FunctionBox* funbox,
+                     FunctionIndex functionIndex, bool isArrow,
                      Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
 
   
@@ -281,7 +285,9 @@ class ScopeCreationData {
   }
 
   
-  bool isArrow() const;
+  JSFunction* function(frontend::CompilationInfo& compilationInfo);
+
+  bool isArrow() const { return isArrow_; }
 
   bool hasScope() const { return scope_ != nullptr; }
 
@@ -290,7 +296,7 @@ class ScopeCreationData {
     return scope_;
   }
 
-  Scope* createScope(JSContext* cx);
+  Scope* createScope(JSContext* cx, CompilationInfo& compilationInfo);
 
   void trace(JSTracer* trc);
 
@@ -306,10 +312,11 @@ class ScopeCreationData {
 
   
   template <typename SpecificScopeType>
-  UniquePtr<typename SpecificScopeType::Data> releaseData();
+  UniquePtr<typename SpecificScopeType::Data> releaseData(
+      CompilationInfo& compilationInfo);
 
   template <typename SpecificScopeType>
-  Scope* createSpecificScope(JSContext* cx);
+  Scope* createSpecificScope(JSContext* cx, CompilationInfo& compilationInfo);
 
   template <typename SpecificScopeType>
   uint32_t nextFrameSlot() const {
