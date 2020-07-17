@@ -80,9 +80,13 @@ var testCases = [
     behavior: BEHAVIOR_REJECT_FOREIGN, 
     hasStorageAccess: [
       false ,
-      true ,
+      SpecialPowers.Services.prefs.getBoolPref(
+        "network.cookie.rejectForeignWithExceptions.enabled"
+      ) ,
       false ,
-      true ,
+      SpecialPowers.Services.prefs.getBoolPref(
+        "network.cookie.rejectForeignWithExceptions.enabled"
+      ) ,
       true ,
       true ,
     ],
@@ -142,10 +146,6 @@ var testCases = [
     }
 
     testCases.forEach(test => {
-      
-      
-      
-
       let callback = test.hasStorageAccess[settings.indexOf(setting)]
         ? async _ => {
             
