@@ -7,12 +7,15 @@
 #ifndef MOZILLA_GFX_BUFFERCLIENT_H
 #define MOZILLA_GFX_BUFFERCLIENT_H
 
-#include <stdint.h>              
-#include <vector>                
-#include <map>                   
+#include <stdint.h>  
+
+#include <map>     
+#include <vector>  
+
 #include "mozilla/Assertions.h"  
-#include "mozilla/RefPtr.h"      
-#include "mozilla/gfx/Types.h"   
+#include "mozilla/DataMutex.h"
+#include "mozilla/RefPtr.h"     
+#include "mozilla/gfx/Types.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/LayersTypes.h"    
 #include "mozilla/layers/TextureClient.h"  
@@ -165,7 +168,10 @@ class CompositableClient {
 
   TextureClientRecycleAllocator* GetTextureClientRecycler();
 
-  bool HasTextureClientRecycler() { return !!mTextureClientRecycler; }
+  bool HasTextureClientRecycler() {
+    auto lock = mTextureClientRecycler.Lock();
+    return !!(*lock);
+  }
 
   static void DumpTextureClient(std::stringstream& aStream,
                                 TextureClient* aTexture,
@@ -175,9 +181,10 @@ class CompositableClient {
   RefPtr<CompositableForwarder> mForwarder;
   
   
-  TextureFlags mTextureFlags;
-  RefPtr<TextureClientRecycleAllocator> mTextureClientRecycler;
+  Atomic<TextureFlags> mTextureFlags;
+  DataMutex<RefPtr<TextureClientRecycleAllocator>> mTextureClientRecycler;
 
+  
   CompositableHandle mHandle;
   bool mIsAsync;
 
