@@ -34,7 +34,6 @@
 #include "vm/BigIntType.h"             
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/JSFunction.h"             
 #include "vm/JSScript.h"  
 #include "vm/Runtime.h"   
 #include "vm/Scope.h"  
@@ -356,8 +355,17 @@ class ScriptStencil {
   js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
 
   
+  FunctionFlags functionFlags = {};
 
-  explicit ScriptStencil(JSContext* cx) : gcThings(cx) {}
+  
+  uint16_t nargs = 0;
+
+  
+  bool isAsmJSModule : 1;
+
+  
+
+  explicit ScriptStencil(JSContext* cx) : gcThings(cx), isAsmJSModule(false) {}
 
   
   

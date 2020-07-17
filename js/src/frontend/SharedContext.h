@@ -29,6 +29,7 @@ namespace js {
 namespace frontend {
 
 class ParseContext;
+class ScriptStencil;
 struct ScopeContext;
 
 enum class StatementKind : uint8_t {
@@ -155,6 +156,15 @@ class SharedContext {
   bool hasExplicitUseStrict_ : 1;
 
   
+  
+  
+  
+  
+  
+  
+  bool isScriptFieldCopiedToStencil : 1;
+
+  
 
   enum class Kind : uint8_t { FunctionBox, Global, Eval, Module };
 
@@ -242,6 +252,8 @@ class SharedContext {
     localStrict = strict;
     return retVal;
   }
+
+  void copyScriptFields(ScriptStencil& stencil) const;
 };
 
 class MOZ_STACK_CLASS GlobalSharedContext : public SharedContext {
@@ -330,16 +342,27 @@ class FunctionBox : public SharedContext {
   
   size_t funcDataIndex_ = (size_t)(-1);
 
+  
+  
+  
+  FunctionFlags flags_ = {};
+
+  
+  uint16_t length_ = 0;
+
+  
+  
+  
+  uint16_t nargs_ = 0;
+
+  
+  
+  
+  mozilla::Maybe<FieldInitializers> fieldInitializers_ = {};
+
  public:
   
   FunctionNode* functionNode = nullptr;
-
-  
-  mozilla::Maybe<FieldInitializers> fieldInitializers = {};
-
-  FunctionFlags flags_ = {};  
-  uint16_t length = 0;        
-  uint16_t nargs_ = 0;        
 
   TopLevelFunction isTopLevel_ = TopLevelFunction::No;
 
@@ -365,6 +388,10 @@ class FunctionBox : public SharedContext {
 
   
   bool useAsm : 1;
+
+  
+  
+  
   bool isAsmJSModule_ : 1;
 
   
@@ -381,14 +408,17 @@ class FunctionBox : public SharedContext {
   bool usesReturn : 1;  
 
   
+  
+  
+  bool isFunctionFieldCopiedToStencil : 1;
+
+  
 
   FunctionBox(JSContext* cx, FunctionBox* traceListHead, SourceExtent extent,
               CompilationInfo& compilationInfo, Directives directives,
               GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
               JSAtom* explicitName, FunctionFlags flags, size_t index,
               TopLevelFunction isTopLevel);
-
-  JSFunction* createFunction(JSContext* cx);
 
   MutableHandle<ScriptStencil> functionStencil() const;
 
@@ -431,13 +461,8 @@ class FunctionBox : public SharedContext {
 
   JSFunction* function() const;
 
-  
-  void initializeFunction(JSFunction* fun) { clobberFunction(fun); }
-
   MOZ_MUST_USE bool setAsmJSModule(const JS::WasmModule* module);
   bool isAsmJSModule() { return isAsmJSModule_; }
-
-  void clobberFunction(JSFunction* function);
 
   Scope* compilationEnclosingScope() const override {
     
@@ -516,9 +541,6 @@ class FunctionBox : public SharedContext {
   bool isClassConstructor() const { return flags_.isClassConstructor(); }
 
   bool isInterpreted() const { return flags_.hasBaseScript(); }
-  void setIsInterpreted(bool interpreted) {
-    flags_.setFlags(FunctionFlags::BASESCRIPT, interpreted);
-  }
 
   FunctionFlags::FunctionKind kind() { return flags_.kind(); }
 
@@ -536,10 +558,16 @@ class FunctionBox : public SharedContext {
   void setInferredName(JSAtom* atom) {
     atom_ = atom;
     flags_.setInferredName();
+    if (isFunctionFieldCopiedToStencil) {
+      copyUpdatedFlags();
+    }
   }
   void setGuessedAtom(JSAtom* atom) {
     atom_ = atom;
     flags_.setGuessedAtom();
+    if (isFunctionFieldCopiedToStencil) {
+      copyUpdatedFlags();
+    }
   }
 
   void setAlwaysNeedsArgsObj() {
@@ -609,9 +637,27 @@ class FunctionBox : public SharedContext {
     extent.toStringEnd = end;
   }
 
-  void setArgCount(uint16_t args) { nargs_ = args; }
+  uint16_t length() { return length_; }
+  void setLength(uint16_t length) { length_ = length; }
+
+  void setArgCount(uint16_t args) {
+    MOZ_ASSERT(!isFunctionFieldCopiedToStencil);
+    nargs_ = args;
+  }
 
   size_t nargs() { return nargs_; }
+
+  bool hasFieldInitializers() const { return fieldInitializers_.isSome(); }
+  const FieldInitializers& fieldInitializers() const {
+    return *fieldInitializers_;
+  }
+  void setFieldInitializers(FieldInitializers fieldInitializers) {
+    MOZ_ASSERT(fieldInitializers_.isNothing());
+    fieldInitializers_ = mozilla::Some(fieldInitializers);
+    if (isScriptFieldCopiedToStencil) {
+      copyUpdatedFieldInitializers();
+    }
+  }
 
   size_t index() { return funcDataIndex_; }
 
@@ -620,6 +666,20 @@ class FunctionBox : public SharedContext {
   static void TraceList(JSTracer* trc, FunctionBox* listHead);
 
   FunctionBox* traceLink() { return traceLink_; }
+
+  void finishScriptFlags();
+  void copyScriptFields(ScriptStencil& stencil);
+  void copyFunctionFields(ScriptStencil& stencil);
+
+  
+  
+  void copyUpdatedFieldInitializers();
+
+  
+  
+  
+  
+  void copyUpdatedFlags();
 };
 
 #undef FLAG_GETTER_SETTER
