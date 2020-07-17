@@ -521,6 +521,11 @@ mozilla::ipc::IPCResult HttpTransactionParent::RecvOnDataAvailable(
        " aCount=%" PRIu32,
        this, aOffset, aCount));
 
+  
+  
+  
+  mTransferSize += aCount;
+
   if (mCanceled) {
     return IPC_OK();
   }
