@@ -34,6 +34,15 @@ const { DefaultMap } = ExtensionUtils;
 
 
 let JSPROCESSACTORS = {
+  AsyncPrefs: {
+    parent: {
+      moduleURI: "resource://gre/modules/AsyncPrefs.jsm",
+    },
+    child: {
+      moduleURI: "resource://gre/modules/AsyncPrefs.jsm",
+    },
+  },
+
   ContentPrefs: {
     parent: {
       moduleURI: "resource://gre/modules/ContentPrefServiceParent.jsm",
