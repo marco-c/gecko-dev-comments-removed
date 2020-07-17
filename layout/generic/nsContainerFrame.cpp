@@ -3244,37 +3244,21 @@ void nsContainerFrame::List(FILE* out, const char* aPrefix,
   ExtraContainerFrameInfo(str);
 
   
-  bool outputOneList = false;
-  for (const auto& [list, listID] : ChildLists()) {
-    if (outputOneList) {
-      str += aPrefix;
-    }
-    if (listID != kPrincipalList) {
-      if (!outputOneList) {
-        str += "\n";
-        str += aPrefix;
-      }
-      str += nsPrintfCString("%s %p ", mozilla::layout::ChildListName(listID),
-                             &GetChildList(listID));
-    }
-    fprintf_stderr(out, "%s<\n", str.get());
-    str = "";
-    for (nsIFrame* kid : list) {
-      
-      NS_ASSERTION(kid->GetParent() == this, "bad parent frame pointer");
+  fprintf_stderr(out, "%s <\n", str.get());
 
-      
-      nsCString pfx(aPrefix);
-      pfx += "  ";
-      kid->List(out, pfx.get(), aFlags);
-    }
-    fprintf_stderr(out, "%s>\n", aPrefix);
-    outputOneList = true;
+  const nsCString pfx = nsCString(aPrefix) + "  "_ns;
+
+  
+  
+  for (nsIFrame* kid : PrincipalChildList()) {
+    kid->List(out, pfx.get(), aFlags);
   }
 
-  if (!outputOneList) {
-    fprintf_stderr(out, "%s<>\n", str.get());
-  }
+  
+  const ChildListIDs skippedListIDs = {kPrincipalList};
+  ListChildLists(out, pfx.get(), aFlags, skippedListIDs);
+
+  fprintf_stderr(out, "%s>\n", aPrefix);
 }
 
 void nsContainerFrame::ListWithMatchedRules(FILE* out,
@@ -3314,6 +3298,8 @@ void nsContainerFrame::ListChildLists(FILE* aOut, const char* aPrefix,
     fprintf_stderr(aOut, "%s", str.get());
 
     for (nsIFrame* kid : list) {
+      
+      NS_ASSERTION(kid->GetParent() == this, "Bad parent frame pointer!");
       kid->List(aOut, nestedPfx.get(), aFlags);
     }
     fprintf_stderr(aOut, "%s>\n", aPrefix);
