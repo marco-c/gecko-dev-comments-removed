@@ -608,7 +608,7 @@ StreamFilterParent::OnDataAvailable(nsIRequest* aRequest,
                                     uint64_t aOffset, uint32_t aCount) {
   AssertIsIOThread();
 
-  if (mState == State::Disconnected || mDisconnectedByOnStartRequest) {
+  if (mDisconnectedByOnStartRequest || mState == State::Disconnected) {
     
     
     
