@@ -11,11 +11,7 @@ AntiTracking.runTest(
   
   async _ => {
     
-    if (allowListed) {
-      await hasStorageAccessInitially();
-    } else {
-      await noStorageAccessInitially();
-    }
+    await hasStorageAccessInitially();
 
     
     let [threw, rejected] = await callRequestStorageAccess();
