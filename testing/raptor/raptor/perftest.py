@@ -577,8 +577,8 @@ class PerftestAndroid(Perftest):
             
             
             
-            from mozdevice import ADBDevice
-            device = ADBDevice(verbose=True)
+            from mozdevice import ADBDeviceFactory
+            device = ADBDeviceFactory(verbose=True)
             binary = "com.android.chrome"
 
             pkg_info = device.shell_output("dumpsys package %s" % binary)
@@ -656,12 +656,9 @@ class PerftestAndroid(Perftest):
 
         try:
             LOG.info("copying profile to device: %s" % self.remote_profile)
-            
-            
-            
-            self.device.rm(self.remote_profile, force=True, recursive=True, root=True)
+            self.device.rm(self.remote_profile, force=True, recursive=True)
             self.device.push(self.profile.profile, self.remote_profile)
-            self.device.chmod(self.remote_profile, recursive=True, root=True)
+            self.device.chmod(self.remote_profile, recursive=True)
 
         except Exception:
             LOG.error("Unable to copy profile to device.")
