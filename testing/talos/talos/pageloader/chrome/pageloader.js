@@ -4,7 +4,6 @@
 
 
 
-
 var { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
@@ -409,7 +408,7 @@ function startAndLoadURI(pageName) {
     TalosParentProfiler.resume("Starting to load URI " + pageName);
   }
 
-  start_time = Date.now();
+  start_time = window.performance.now();
   if (loadNoCache) {
     content.loadURI(pageName, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
@@ -532,9 +531,9 @@ var plNextPage = async function() {
 
   if (doNextPage) {
     if (forceCC) {
-      var tccstart = new Date();
+      var tccstart = window.performance.now();
       window.windowUtils.garbageCollect();
-      var tccend = new Date();
+      var tccend = window.performance.now();
       report.recordCCTime(tccend - tccstart);
 
       
@@ -733,7 +732,7 @@ function _loadHandlerCapturing() {
 
   if (useMozAfterPaint) {
     if (gStartTime != null && gStartTime >= 0) {
-      gTime = new Date() - gStartTime;
+      gTime = window.performance.now() - gStartTime;
       gStartTime = -1;
     }
   }
@@ -786,9 +785,18 @@ function _loadHandler(paint_time = 0) {
   if (paint_time !== 0) {
     
     
-    end_time = paint_time;
+
+    let minDate = new Date("2001");
+
+    if (paint_time < minDate) {
+      
+      end_time = paint_time;
+    } else {
+      
+      end_time = paint_time - window.performance.timing.navigationStart;
+    }
   } else {
-    end_time = Date.now();
+    end_time = window.performance.now();
   }
 
   var duration;
@@ -843,7 +851,7 @@ function plLoadHandlerMessage(message) {
     }
     if (gTime !== -1) {
       if (useMozAfterPaint && gStartTime >= 0) {
-        time = Date.now() - gStartTime;
+        time = window.performance.now() - gStartTime;
         gStartTime = -1;
       } else if (!useMozAfterPaint) {
         time = gTime;
