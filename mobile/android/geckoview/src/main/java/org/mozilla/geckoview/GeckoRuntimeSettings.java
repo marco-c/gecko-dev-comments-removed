@@ -49,6 +49,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+
+        @Deprecated 
         public @NonNull Builder useMultiprocess(final boolean use) {
             getSettings().mUseMultiprocess.set(use);
             return this;
@@ -575,6 +579,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+
+    @Deprecated 
     public boolean getUseMultiprocess() {
         return mUseMultiprocess.get();
     }
