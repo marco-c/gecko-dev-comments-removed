@@ -70,6 +70,9 @@ using namespace sandbox::bpf_dsl;
 
 #define O_LARGEFILE_REAL 00100000
 
+
+#define FMODE_NONOTIFY 0x4000000
+
 #ifndef F_LINUX_SPECIFIC_BASE
 #  define F_LINUX_SPECIFIC_BASE 1024
 #else
@@ -541,7 +544,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
         
         static const int ignored_flags =
-            O_ACCMODE | O_LARGEFILE_REAL | O_CLOEXEC;
+            O_ACCMODE | O_LARGEFILE_REAL | O_CLOEXEC | FMODE_NONOTIFY;
         static const int allowed_flags = ignored_flags | O_APPEND | O_NONBLOCK;
         return Switch(cmd)
             
