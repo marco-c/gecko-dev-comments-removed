@@ -814,16 +814,14 @@ Search.prototype = {
       
       
       
-      let tokenAliasQuery =
-        this._searchEngineAliasMatch &&
-        this._searchEngineAliasMatch.isTokenAlias;
       let emptySearchRestriction =
         this._trimmedOriginalSearchString.length <= 3 &&
         this._leadingRestrictionToken == UrlbarTokenizer.RESTRICT.SEARCH &&
         /\s*\S?$/.test(this._trimmedOriginalSearchString);
       if (
         emptySearchRestriction ||
-        tokenAliasQuery ||
+        (tokenAliasEngines &&
+          this._trimmedOriginalSearchString.startsWith("@")) ||
         (this.hasBehavior("search") && this.hasBehavior("restrict"))
       ) {
         this._autocompleteSearch.finishSearch(true);
@@ -1000,60 +998,6 @@ Search.prototype = {
     return true;
   },
 
-  async _matchSearchEngineTokenAliasForAutofill() {
-    
-    let token = this._heuristicToken;
-    if (!token || token.length == 1 || !token.startsWith("@")) {
-      return false;
-    }
-
-    
-    let engines = await UrlbarSearchUtils.tokenAliasEngines();
-    for (let { engine, tokenAliases } of engines) {
-      for (let alias of tokenAliases) {
-        if (alias.startsWith(token.toLocaleLowerCase())) {
-          
-          
-          
-          
-          
-          
-          
-          let aliasPreservingUserCase = token + alias.substr(token.length);
-          let value = aliasPreservingUserCase + " ";
-          this._result.setDefaultIndex(0);
-          this._addMatch({
-            value,
-            finalCompleteValue: makeActionUrl("searchengine", {
-              engineName: engine.name,
-              alias: aliasPreservingUserCase,
-              input: value,
-              searchQuery: "",
-            }),
-            comment: engine.name,
-            frecency: FRECENCY_DEFAULT,
-            style: "autofill action searchengine",
-            icon: engine.iconURI ? engine.iconURI.spec : null,
-          });
-
-          
-          
-          
-          this._searchEngineAliasMatch = {
-            engine,
-            alias: aliasPreservingUserCase,
-            query: "",
-            isTokenAlias: true,
-          };
-
-          return true;
-        }
-      }
-    }
-
-    return false;
-  },
-
   async _matchFirstHeuristicResult(conn) {
     
     
@@ -1078,13 +1022,6 @@ Search.prototype = {
 
     if (this.pending && shouldAutofill) {
       let matched = this._matchPreloadedSiteForAutofill();
-      if (matched) {
-        return true;
-      }
-    }
-
-    if (this.pending && shouldAutofill) {
-      let matched = await this._matchSearchEngineTokenAliasForAutofill();
       if (matched) {
         return true;
       }
