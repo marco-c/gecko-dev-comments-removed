@@ -195,6 +195,10 @@ void AppendKeyPrefix(nsILoadContextInfo* aInfo, nsACString& _retval) {
 
 
 
+  if (!aInfo) {
+    return;
+  }
+
   OriginAttributes const* oa = aInfo->OriginAttributesPtr();
   nsAutoCString suffix;
   oa->CreateSuffix(suffix);

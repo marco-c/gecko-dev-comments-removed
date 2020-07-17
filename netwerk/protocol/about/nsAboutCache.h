@@ -169,10 +169,6 @@ class nsAboutCache final : public nsIAboutModule {
     bool mCancel;
 
     
-    nsCOMPtr<nsILoadContextInfo> mLoadInfo;
-    nsCString mContextString;
-
-    
     nsTArray<nsCString> mStorageList;
     nsCString mStorageName;
     nsCOMPtr<nsICacheStorage> mStorage;
