@@ -34,7 +34,7 @@ enum RotateType {
 
 
 class SVGMotionSMILType : public SMILType {
-  typedef mozilla::gfx::Path Path;
+  using Path = mozilla::gfx::Path;
 
  public:
   

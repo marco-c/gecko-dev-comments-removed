@@ -27,7 +27,7 @@ namespace mozilla {
 
 
 struct SVGPathTraversalState {
-  typedef gfx::Point Point;
+  using Point = gfx::Point;
 
   enum TraversalMode { eUpdateAll, eUpdateOnlyStartAndCurrentPos };
 

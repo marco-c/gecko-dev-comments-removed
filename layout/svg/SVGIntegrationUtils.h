@@ -47,9 +47,9 @@ class LayerManager;
 
 
 class SVGIntegrationUtils final {
-  typedef gfx::DrawTarget DrawTarget;
-  typedef gfx::IntRect IntRect;
-  typedef image::imgDrawingParams imgDrawingParams;
+  using DrawTarget = gfx::DrawTarget;
+  using IntRect = gfx::IntRect;
+  using imgDrawingParams = image::imgDrawingParams;
 
  public:
   

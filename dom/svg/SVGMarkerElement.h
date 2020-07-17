@@ -32,7 +32,7 @@ namespace dom {
 
 static const uint16_t SVG_MARKER_ORIENT_AUTO_START_REVERSE = 3;
 
-typedef SVGElement SVGMarkerElementBase;
+using SVGMarkerElementBase = SVGElement;
 
 class SVGMarkerElement : public SVGMarkerElementBase {
   friend class mozilla::SVGMarkerFrame;

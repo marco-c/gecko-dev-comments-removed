@@ -20,7 +20,7 @@ namespace mozilla {
 
 
 class SVGPoint {
-  typedef mozilla::gfx::Point Point;
+  using Point = mozilla::gfx::Point;
 
  public:
   SVGPoint() : mX(0.0f), mY(0.0f) {}

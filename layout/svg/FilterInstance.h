@@ -49,13 +49,13 @@ class UserSpaceMetrics;
 
 
 class FilterInstance {
-  typedef gfx::IntRect IntRect;
-  typedef gfx::SourceSurface SourceSurface;
-  typedef gfx::DrawTarget DrawTarget;
-  typedef gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
-  typedef gfx::FilterDescription FilterDescription;
-  typedef dom::UserSpaceMetrics UserSpaceMetrics;
-  typedef image::imgDrawingParams imgDrawingParams;
+  using IntRect = gfx::IntRect;
+  using SourceSurface = gfx::SourceSurface;
+  using DrawTarget = gfx::DrawTarget;
+  using FilterPrimitiveDescription = gfx::FilterPrimitiveDescription;
+  using FilterDescription = gfx::FilterDescription;
+  using UserSpaceMetrics = dom::UserSpaceMetrics;
+  using imgDrawingParams = image::imgDrawingParams;
 
  public:
   

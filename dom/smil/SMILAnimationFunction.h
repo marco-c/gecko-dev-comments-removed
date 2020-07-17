@@ -258,7 +258,7 @@ class SMILAnimationFunction {
 
  protected:
   
-  typedef FallibleTArray<SMILValue> SMILValueArray;
+  using SMILValueArray = FallibleTArray<SMILValue>;
 
   
   enum SMILCalcMode : uint8_t {

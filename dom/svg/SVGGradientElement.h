@@ -30,7 +30,7 @@ class DOMSVGAnimatedTransformList;
 
 
 
-typedef SVGElement SVGGradientElementBase;
+using SVGGradientElementBase = SVGElement;
 
 class SVGGradientElement : public SVGGradientElementBase {
   friend class mozilla::SVGGradientFrame;
@@ -78,7 +78,7 @@ class SVGGradientElement : public SVGGradientElementBase {
 
 
 
-typedef SVGGradientElement SVGLinearGradientElementBase;
+using SVGLinearGradientElementBase = SVGGradientElement;
 
 class SVGLinearGradientElement : public SVGLinearGradientElementBase {
   friend class mozilla::SVGLinearGradientFrame;
@@ -111,7 +111,7 @@ class SVGLinearGradientElement : public SVGLinearGradientElementBase {
 
 
 
-typedef SVGGradientElement SVGRadialGradientElementBase;
+using SVGRadialGradientElementBase = SVGGradientElement;
 
 class SVGRadialGradientElement : public SVGRadialGradientElementBase {
   friend class mozilla::SVGRadialGradientFrame;

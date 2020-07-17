@@ -107,7 +107,7 @@ class SVGAnimatedTransformList {
     return mCreatedOrRemovedOnLastChange;
   }
 
-  mozilla::UniquePtr<SMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement);
+  UniquePtr<SMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement);
 
  private:
   
