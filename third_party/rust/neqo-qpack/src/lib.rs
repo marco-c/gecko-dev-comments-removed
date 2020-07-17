@@ -43,6 +43,7 @@ pub enum Error {
     EncoderStream,
     DecoderStream,
     ClosedCriticalStream,
+    InternalError,
 
     
     NeedMoreData, 

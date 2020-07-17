@@ -53,8 +53,6 @@ pub struct Aead {
     ctx: AeadContext,
 }
 
-
-#[allow(clippy::unused_self)]
 impl Aead {
     
     
@@ -66,6 +64,7 @@ impl Aead {
     }
 
     #[must_use]
+    #[allow(clippy::unused_self)]
     pub fn expansion(&self) -> usize {
         16
     }

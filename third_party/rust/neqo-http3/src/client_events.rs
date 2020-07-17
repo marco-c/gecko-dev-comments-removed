@@ -7,9 +7,9 @@
 #![allow(clippy::module_name_repetitions)]
 
 use crate::connection::Http3State;
-use crate::recv_message::RecvMessageEvents;
 use crate::send_message::SendMessageEvents;
 use crate::Header;
+use crate::RecvMessageEvents;
 use neqo_common::matches;
 use neqo_transport::{AppError, StreamType};
 
@@ -34,7 +34,21 @@ pub enum Http3ClientEvent {
     
     StopSending { stream_id: u64, error: AppError },
     
-    NewPushStream { stream_id: u64 },
+    PushPromise {
+        push_id: u64,
+        request_stream_id: u64,
+        headers: Vec<Header>,
+    },
+    
+    PushHeaderReady {
+        push_id: u64,
+        headers: Option<Vec<Header>>,
+        fin: bool,
+    },
+    
+    PushDataReadable { push_id: u64 },
+    
+    PushCanceled { push_id: u64 },
     
     RequestsCreatable,
     
@@ -66,6 +80,18 @@ impl RecvMessageEvents for Http3ClientEvents {
     fn data_readable(&self, stream_id: u64) {
         self.insert(Http3ClientEvent::DataReadable { stream_id });
     }
+
+    
+    fn reset(&self, stream_id: u64, error: AppError) {
+        self.remove(|evt| {
+            matches!(evt,
+                Http3ClientEvent::HeaderReady { stream_id: x, .. }
+                | Http3ClientEvent::DataReadable { stream_id: x }
+                | Http3ClientEvent::PushPromise { request_stream_id: x, .. }
+                | Http3ClientEvent::Reset { stream_id: x, .. } if *x == stream_id)
+        });
+        self.insert(Http3ClientEvent::Reset { stream_id, error });
+    }
 }
 
 impl SendMessageEvents for Http3ClientEvents {
@@ -73,23 +99,36 @@ impl SendMessageEvents for Http3ClientEvents {
     fn data_writable(&self, stream_id: u64) {
         self.insert(Http3ClientEvent::DataWritable { stream_id });
     }
-}
 
-impl Http3ClientEvents {
-    
-    pub(crate) fn stop_sending(&self, stream_id: u64, error: AppError) {
-        
+    fn remove_send_side_event(&self, stream_id: u64) {
         self.remove(|evt| {
-            matches!(evt, Http3ClientEvent::DataWritable {
-                    stream_id: x } if *x == stream_id)
+            matches!(evt,
+                Http3ClientEvent::DataWritable { stream_id: x }
+                | Http3ClientEvent::StopSending { stream_id: x, .. } if *x == stream_id)
         });
-        self.insert(Http3ClientEvent::StopSending { stream_id, error });
     }
 
     
-    
-    
-    
+    fn stop_sending(&self, stream_id: u64, error: AppError) {
+        
+        self.remove_send_side_event(stream_id);
+        self.insert(Http3ClientEvent::StopSending { stream_id, error });
+    }
+}
+
+impl Http3ClientEvents {
+    pub fn push_promise(&self, push_id: u64, request_stream_id: u64, headers: Vec<Header>) {
+        self.insert(Http3ClientEvent::PushPromise {
+            push_id,
+            request_stream_id,
+            headers,
+        });
+    }
+
+    pub fn push_canceled(&self, push_id: u64) {
+        self.remove_events_for_push_id(push_id);
+        self.insert(Http3ClientEvent::PushCanceled { push_id });
+    }
 
     
     pub(crate) fn new_requests_creatable(&self, stream_type: StreamType) {
@@ -129,7 +168,7 @@ impl Http3ClientEvents {
         self.events.borrow_mut().pop_front()
     }
 
-    fn insert(&self, event: Http3ClientEvent) {
+    pub fn insert(&self, event: Http3ClientEvent) {
         self.events.borrow_mut().push_back(event);
     }
 
@@ -138,12 +177,6 @@ impl Http3ClientEvents {
         F: Fn(&Http3ClientEvent) -> bool,
     {
         self.events.borrow_mut().retain(|evt| !f(evt))
-    }
-
-    
-    pub(crate) fn reset(&self, stream_id: u64, error: AppError) {
-        self.remove_events_for_stream_id(stream_id);
-        self.insert(Http3ClientEvent::Reset { stream_id, error });
     }
 
     
@@ -163,9 +196,28 @@ impl Http3ClientEvents {
                 Http3ClientEvent::HeaderReady { stream_id: x, .. }
                 | Http3ClientEvent::DataWritable { stream_id: x }
                 | Http3ClientEvent::DataReadable { stream_id: x }
-                | Http3ClientEvent::NewPushStream { stream_id: x }
+                | Http3ClientEvent::PushPromise { request_stream_id: x, .. }
                 | Http3ClientEvent::Reset { stream_id: x, .. }
                 | Http3ClientEvent::StopSending { stream_id: x, .. } if *x == stream_id)
+        });
+    }
+
+    pub fn has_push(&self, push_id: u64) -> bool {
+        for iter in self.events.borrow().iter() {
+            if matches!(iter, Http3ClientEvent::PushPromise{push_id:x, ..} if *x == push_id) {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn remove_events_for_push_id(&self, push_id: u64) {
+        self.remove(|evt| {
+            matches!(evt,
+                Http3ClientEvent::PushPromise{ push_id: x, .. }
+                | Http3ClientEvent::PushHeaderReady{ push_id: x, .. }
+                | Http3ClientEvent::PushDataReadable{ push_id: x, .. }
+                | Http3ClientEvent::PushCanceled{ push_id: x, .. } if *x == push_id)
         });
     }
 }

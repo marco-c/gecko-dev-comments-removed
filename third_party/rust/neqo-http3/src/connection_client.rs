@@ -7,11 +7,13 @@
 use crate::client_events::{Http3ClientEvent, Http3ClientEvents};
 use crate::connection::{HandleReadableOutput, Http3Connection, Http3State};
 use crate::hframe::HFrame;
-use crate::hsettings_frame::HSettings;
 use crate::push_controller::PushController;
+use crate::push_stream::PushStream;
 use crate::recv_message::RecvMessage;
 use crate::send_message::{SendMessage, SendMessageEvents};
+use crate::settings::HSettings;
 use crate::Header;
+use crate::RecvMessageEvents;
 use neqo_common::{
     hex, hex_with_len, matches, qdebug, qinfo, qlog::NeqoQlog, qtrace, Datagram, Decoder, Encoder,
     Role,
@@ -31,18 +33,33 @@ use std::time::Instant;
 use crate::{Error, Res};
 
 
-fn id_gte<T, U>(base: T) -> impl FnMut((&T, &U)) -> Option<T> + 'static
+
+fn id_gte<U>(base: StreamId) -> impl FnMut((&u64, &U)) -> Option<u64> + 'static
 where
-    T: PartialOrd + Copy + 'static,
     U: ?Sized,
 {
     move |(id, _)| {
-        if *id >= base {
+        if *id >= base.as_u64() && !(StreamId::from(*id).is_bidi() ^ base.is_bidi()) {
             Some(*id)
         } else {
             None
         }
     }
+}
+
+
+
+fn id_lt<U>(base: StreamId) -> impl FnMut(&u64, &mut U) -> bool
+where
+    U: ?Sized,
+{
+    let mut f = id_gte(base);
+    move |id, v| f((id, v)).is_none()
+}
+
+pub struct Http3Parameters {
+    pub qpack_settings: QpackSettings,
+    pub max_concurrent_push_streams: u64,
 }
 
 pub struct Http3Client {
@@ -68,8 +85,8 @@ impl Http3Client {
         cid_manager: Rc<RefCell<dyn ConnectionIdManager>>,
         local_addr: SocketAddr,
         remote_addr: SocketAddr,
-        qpack_settings: QpackSettings,
         quic_version: QuicVersion,
+        http3_parameters: &Http3Parameters,
     ) -> Res<Self> {
         Ok(Self::new_with_conn(
             Connection::new_client(
@@ -80,17 +97,21 @@ impl Http3Client {
                 remote_addr,
                 quic_version,
             )?,
-            qpack_settings,
+            http3_parameters,
         ))
     }
 
     #[must_use]
-    pub fn new_with_conn(c: Connection, qpack_settings: QpackSettings) -> Self {
+    pub fn new_with_conn(c: Connection, http3_parameters: &Http3Parameters) -> Self {
+        let events = Http3ClientEvents::default();
         Self {
             conn: c,
-            base_handler: Http3Connection::new(qpack_settings),
-            events: Http3ClientEvents::default(),
-            push_handler: Rc::new(RefCell::new(PushController::new())),
+            base_handler: Http3Connection::new(http3_parameters.qpack_settings),
+            events: events.clone(),
+            push_handler: Rc::new(RefCell::new(PushController::new(
+                http3_parameters.max_concurrent_push_streams,
+                events,
+            ))),
         }
     }
 
@@ -120,7 +141,7 @@ impl Http3Client {
         self.conn.authenticated(status, now);
     }
 
-    pub fn set_qlog(&mut self, qlog: Option<NeqoQlog>) {
+    pub fn set_qlog(&mut self, qlog: NeqoQlog) {
         self.conn.set_qlog(qlog);
     }
 
@@ -166,6 +187,9 @@ impl Http3Client {
         if *self.conn.zero_rtt_state() == ZeroRttState::Sending {
             self.base_handler
                 .set_0rtt_settings(&mut self.conn, settings)?;
+            self.push_handler
+                .borrow_mut()
+                .maybe_send_max_push_id_frame(&mut self.base_handler);
         }
         Ok(())
     }
@@ -177,12 +201,15 @@ impl Http3Client {
     {
         qinfo!([self], "Close the connection error={} msg={}.", error, msg);
         if !matches!(self.base_handler.state, Http3State::Closing(_)| Http3State::Closed(_)) {
+            self.push_handler.borrow_mut().clear();
             self.conn.close(now, error, msg);
             self.base_handler.close(error);
             self.events
                 .connection_state_change(self.base_handler.state());
         }
     }
+
+    
 
     
     
@@ -226,15 +253,16 @@ impl Http3Client {
         self.base_handler.add_streams(
             id,
             SendMessage::new_with_headers(id, final_headers, Box::new(self.events.clone())),
-            RecvMessage::new(
+            Box::new(RecvMessage::new(
                 id,
                 Box::new(self.events.clone()),
                 Some(self.push_handler.clone()),
-            ),
+            )),
         );
         Ok(id)
     }
 
+    
     
     
     
@@ -299,13 +327,45 @@ impl Http3Client {
                 Ok((amount, fin))
             }
             Err(e) => {
-                if e == Error::HttpFrame {
+                if e.connection_error() {
                     self.close(now, e.code(), "");
                 }
                 Err(e)
             }
         }
     }
+
+    
+
+    
+    
+    
+    pub fn cancel_push(&mut self, push_id: u64) -> Res<()> {
+        self.push_handler
+            .borrow_mut()
+            .cancel(push_id, &mut self.conn, &mut self.base_handler)
+    }
+
+    
+    
+    
+    
+    
+    pub fn push_read_data(
+        &mut self,
+        now: Instant,
+        push_id: u64,
+        buf: &mut [u8],
+    ) -> Res<(usize, bool)> {
+        let stream_id = self.push_handler.borrow_mut().get_active_stream_id(push_id);
+        if let Some(id) = stream_id {
+            self.read_response_data(now, id, buf)
+        } else {
+            Err(Error::InvalidStreamId)
+        }
+    }
+
+    
 
     
     
@@ -355,6 +415,9 @@ impl Http3Client {
                 if self.check_result(now, &res) {
                     return;
                 }
+                self.push_handler
+                    .borrow_mut()
+                    .maybe_send_max_push_id_frame(&mut self.base_handler);
                 let res = self.base_handler.process_sending(&mut self.conn);
                 self.check_result(now, &res);
             }
@@ -417,15 +480,15 @@ impl Http3Client {
                             .base_handler
                             .handle_new_unidi_stream(&mut self.conn, stream_id.as_u64())?
                         {
-                            return Err(Error::HttpId);
+                            
+                            
+                            self.handle_new_push_stream(stream_id.as_u64(), false)?;
                         }
                     }
                 },
                 ConnectionEvent::SendStreamWritable { stream_id } => {
                     if let Some(s) = self.base_handler.send_streams.get_mut(&stream_id.as_u64()) {
-                        if s.is_state_sending_data() {
-                            self.events.data_writable(stream_id.as_u64());
-                        }
+                        s.stream_writable();
                     }
                 }
                 ConnectionEvent::RecvStreamReadable { stream_id } => {
@@ -434,20 +497,15 @@ impl Http3Client {
                 ConnectionEvent::RecvStreamReset {
                     stream_id,
                     app_error,
-                } => {
-                    if self.base_handler.handle_stream_reset(
-                        &mut self.conn,
-                        stream_id,
-                        app_error,
-                    )? {
-                        
-                        self.events.reset(stream_id, app_error);
-                    }
-                }
+                } => self
+                    .base_handler
+                    .handle_stream_reset(stream_id, app_error)?,
                 ConnectionEvent::SendStreamStopSending {
                     stream_id,
                     app_error,
-                } => self.handle_stream_stop_sending(stream_id, app_error)?,
+                } => self
+                    .base_handler
+                    .handle_stream_stop_sending(stream_id, app_error)?,
                 ConnectionEvent::SendStreamComplete { .. } => {}
                 ConnectionEvent::SendStreamCreatable { stream_type } => {
                     self.events.new_requests_creatable(stream_type)
@@ -465,6 +523,7 @@ impl Http3Client {
                 ConnectionEvent::ZeroRttRejected => {
                     self.base_handler.handle_zero_rtt_rejected()?;
                     self.events.zero_rtt_rejected();
+                    self.push_handler.borrow_mut().handle_zero_rtt_rejected();
                 }
             }
         }
@@ -476,10 +535,14 @@ impl Http3Client {
             .base_handler
             .handle_stream_readable(&mut self.conn, stream_id)?
         {
-            HandleReadableOutput::PushStream => Err(Error::HttpId),
+            HandleReadableOutput::PushStream => self.handle_new_push_stream(stream_id, true),
             HandleReadableOutput::ControlFrames(control_frames) => {
                 for f in control_frames {
                     match f {
+                        HFrame::CancelPush { push_id } => self
+                            .push_handler
+                            .borrow_mut()
+                            .handle_cancel_push(push_id, &mut self.conn, &mut self.base_handler),
                         HFrame::MaxPushId { .. } => Err(Error::HttpFrameUnexpected),
                         HFrame::Goaway { stream_id } => self.handle_goaway(stream_id),
                         _ => {
@@ -495,44 +558,26 @@ impl Http3Client {
         }
     }
 
-    fn handle_stream_stop_sending(&mut self, stop_stream_id: u64, app_err: AppError) -> Res<()> {
-        qinfo!(
-            [self],
-            "Handle stream_stop_sending stream_id={} app_err={}",
-            stop_stream_id,
-            app_err
-        );
-
-        let mut found = false;
-        if let Some(s) = self.base_handler.send_streams.remove(&stop_stream_id) {
-            
-            
-            if app_err == Error::HttpNoError.code() && !s.is_sending_closed() {
-                self.events.stop_sending(stop_stream_id, app_err);
+    fn handle_new_push_stream(&mut self, stream_id: u64, force_read: bool) -> Res<()> {
+        if self.push_handler.borrow().can_receive_push() {
+            self.base_handler.add_recv_stream(
+                stream_id,
+                Box::new(PushStream::new(
+                    stream_id,
+                    self.push_handler.clone(),
+                    self.events.clone(),
+                )),
+            );
+            if force_read {
+                let res2 = self
+                    .base_handler
+                    .handle_stream_readable(&mut self.conn, stream_id)?;
+                debug_assert!(matches!(res2, HandleReadableOutput::NoOutput));
             }
-            found = true;
+            Ok(())
+        } else {
+            Err(Error::HttpId)
         }
-
-        
-        if app_err != Error::HttpNoError.code() {
-            found |= self
-                .base_handler
-                .recv_streams
-                .remove(&stop_stream_id)
-                .is_some();
-            if found {
-                self.events.reset(stop_stream_id, app_err);
-            }
-
-            
-            
-            let _ = self.conn.stream_stop_sending(stop_stream_id, app_err);
-        }
-
-        if !found && self.base_handler.is_critical_stream(stop_stream_id) {
-            return Err(Error::HttpClosedCriticalStream);
-        }
-        Ok(())
     }
 
     fn handle_goaway(&mut self, goaway_stream_id: u64) -> Res<()> {
@@ -557,6 +602,7 @@ impl Http3Client {
             _ => unreachable!("Should not receive Goaway frame in this state."),
         }
 
+        let goaway_stream_id = StreamId::from(goaway_stream_id);
         
         for id in self
             .base_handler
@@ -573,7 +619,8 @@ impl Http3Client {
             .iter()
             .filter_map(id_gte(goaway_stream_id))
         {
-            self.events.reset(id, Error::HttpRequestRejected.code());
+            self.events
+                .stop_sending(id, Error::HttpRequestRejected.code());
         }
 
         self.events.goaway_received();
@@ -581,11 +628,11 @@ impl Http3Client {
         
         self.base_handler
             .send_streams
-            .retain(|id, _| *id < goaway_stream_id);
+            .retain(id_lt(goaway_stream_id));
 
         self.base_handler
             .recv_streams
-            .retain(|id, _| *id < goaway_stream_id);
+            .retain(id_lt(goaway_stream_id));
 
         Ok(())
     }
@@ -605,12 +652,12 @@ impl Http3Client {
 mod tests {
     use super::{
         AuthenticationStatus, Connection, Error, HSettings, Header, Http3Client, Http3ClientEvent,
-        Http3State, QpackSettings, Rc, RefCell, StreamType,
+        Http3Parameters, Http3State, QpackSettings, Rc, RefCell, StreamType,
     };
     use crate::hframe::HFrame;
-    use crate::hsettings_frame::{HSetting, HSettingType};
-    use neqo_common::{matches, Encoder};
-    use neqo_crypto::AntiReplay;
+    use crate::settings::{HSetting, HSettingType};
+    use neqo_common::{matches, Datagram, Encoder};
+    use neqo_crypto::{AllowZeroRtt, AntiReplay};
     use neqo_qpack::encoder::QPackEncoder;
     use neqo_transport::{
         CloseError, ConnectionEvent, FixedConnectionIdManager, QuicVersion, State,
@@ -637,12 +684,15 @@ mod tests {
             Rc::new(RefCell::new(FixedConnectionIdManager::new(3))),
             loopback(),
             loopback(),
-            QpackSettings {
-                max_table_size_encoder: 100,
-                max_table_size_decoder: 100,
-                max_blocked_streams: 100,
-            },
             QuicVersion::default(),
+            &Http3Parameters {
+                qpack_settings: QpackSettings {
+                    max_table_size_encoder: 100,
+                    max_table_size_decoder: 100,
+                    max_blocked_streams: 100,
+                },
+                max_concurrent_push_streams: 5,
+            },
         )
         .expect("create a default client")
     }
@@ -654,7 +704,9 @@ mod tests {
     
     
     
-    const CONTROL_STREAM_DATA: &[u8] = &[0x0, 0x4, 0x6, 0x1, 0x40, 0x64, 0x7, 0x40, 0x64];
+    const CONTROL_STREAM_DATA: &[u8] = &[
+        0x0, 0x4, 0x6, 0x1, 0x40, 0x64, 0x7, 0x40, 0x64, 0xd, 0x1, 0x5,
+    ];
 
     const CONTROL_STREAM_TYPE: &[u8] = &[0x0];
 
@@ -669,7 +721,7 @@ mod tests {
     
     const DECODER_STREAM_DATA: &[u8] = &[0x3];
 
-    const PUSH_STREAM_DATA: &[u8] = &[0x1];
+    const PUSH_STREAM_TYPE: &[u8] = &[0x1];
 
     const CLIENT_SIDE_CONTROL_STREAM_ID: u64 = 2;
     const CLIENT_SIDE_ENCODER_STREAM_ID: u64 = 6;
@@ -970,6 +1022,14 @@ mod tests {
         0x0, 0x4, 0x64, 0x65, 0x66, 0x67,
     ];
 
+    const HTTP_RESPONSE_HEADER_ONLY_1: &[u8] = &[
+        
+        0x01, 0x06, 0x00, 0x00, 0xd9, 0x54, 0x01, 0x37,
+    ];
+    const HTTP_RESPONSE_DATA_FRAME_1_ONLY_1: &[u8] = &[0x0, 0x3, 0x61, 0x62, 0x63];
+
+    const HTTP_RESPONSE_DATA_FRAME_2_ONLY_1: &[u8] = &[0x0, 0x4, 0x64, 0x65, 0x66, 0x67];
+
     
     
     fn check_response_header_1(header: &[Header]) {
@@ -991,6 +1051,11 @@ mod tests {
     const HTTP_RESPONSE_HEADER_ONLY_2: &[u8] = &[
         
         0x01, 0x06, 0x00, 0x00, 0xd9, 0x54, 0x01, 0x33,
+    ];
+
+    const HTTP_RESPONSE_DATA_FRAME_ONLY_2: &[u8] = &[
+        
+        0x0, 0x3, 0x61, 0x62, 0x63,
     ];
 
     
@@ -1036,6 +1101,210 @@ mod tests {
         client.process(out.dgram(), now());
 
         (client, server, request_stream_id)
+    }
+
+    fn server_send_response_and_exchange_packet(
+        client: &mut Http3Client,
+        server: &mut TestServer,
+        stream_id: u64,
+        response: &[u8],
+        close_stream: bool,
+    ) {
+        let _ = server.conn.stream_send(stream_id, response).unwrap();
+        if close_stream {
+            server.conn.stream_close_send(stream_id).unwrap();
+        }
+        let out = server.conn.process(None, now());
+        let out = client.process(out.dgram(), now());
+        let _ = server.conn.process(out.dgram(), now());
+    }
+
+    const PUSH_PROMISE_DATA: &[u8] = &[
+        0x00, 0x00, 0xd1, 0xd7, 0x50, 0x89, 0x41, 0xe9, 0x2a, 0x67, 0x35, 0x53, 0x2e, 0x43, 0xd3,
+        0xc1,
+    ];
+
+    fn check_pushpromise_header(header: &[Header]) {
+        let expected_response_header_1 = &[
+            (String::from(":method"), String::from("GET")),
+            (String::from(":scheme"), String::from("https")),
+            (String::from(":authority"), String::from("something.com")),
+            (String::from(":path"), String::from("/")),
+        ];
+        assert_eq!(header, expected_response_header_1);
+    }
+
+    
+    fn send_push_promise(conn: &mut Connection, stream_id: u64, push_id: u64) {
+        let frame = HFrame::PushPromise {
+            push_id,
+            header_block: PUSH_PROMISE_DATA.to_vec(),
+        };
+        let mut d = Encoder::default();
+        frame.encode(&mut d);
+        let _ = conn.stream_send(stream_id, &d).unwrap();
+    }
+
+    fn send_push_data_and_exchange_packets(
+        client: &mut Http3Client,
+        server: &mut TestServer,
+        push_id: u8,
+        close_push_stream: bool,
+    ) -> u64 {
+        let push_stream_id = send_push_data(&mut server.conn, push_id, close_push_stream);
+
+        let out = server.conn.process(None, now());
+        let out = client.process(out.dgram(), now());
+        let _ = server.conn.process(out.dgram(), now());
+
+        push_stream_id
+    }
+
+    fn send_push_promise_and_exchange_packets(
+        client: &mut Http3Client,
+        server: &mut TestServer,
+        stream_id: u64,
+        push_id: u64,
+    ) {
+        send_push_promise(&mut server.conn, stream_id, push_id);
+
+        let out = server.conn.process(None, now());
+        let out = client.process(out.dgram(), now());
+        let _ = server.conn.process(out.dgram(), now());
+    }
+
+    fn send_cancel_push_and_exchange_packets(
+        client: &mut Http3Client,
+        server: &mut TestServer,
+        push_id: u64,
+    ) {
+        let frame = HFrame::CancelPush { push_id };
+        let mut d = Encoder::default();
+        frame.encode(&mut d);
+        server
+            .conn
+            .stream_send(server.control_stream_id.unwrap(), &d)
+            .unwrap();
+
+        let out = server.conn.process(None, now());
+        let out = client.process(out.dgram(), now());
+        let _ = server.conn.process(out.dgram(), now());
+    }
+
+    const PUSH_DATA: &[u8] = &[
+        
+        0x01, 0x06, 0x00, 0x00, 0xd9, 0x54, 0x01, 0x34, 
+        0x0, 0x4, 0x61, 0x62, 0x63, 0x64,
+    ];
+
+    
+    
+    fn check_push_response_header(header: &[Header]) {
+        let expected_push_response_header = vec![
+            (String::from(":status"), String::from("200")),
+            (String::from("content-length"), String::from("4")),
+        ];
+        assert_eq!(header, &expected_push_response_header[..]);
+    }
+
+    
+    const EXPECTED_PUSH_RESPONSE_DATA_FRAME: &[u8] = &[0x61, 0x62, 0x63, 0x64];
+
+    
+    
+    
+    
+    
+    fn send_push_data(conn: &mut Connection, push_id: u8, close_push_stream: bool) -> u64 {
+        
+        let push_stream_id = conn.stream_create(StreamType::UniDi).unwrap();
+        
+        let _ = conn.stream_send(push_stream_id, PUSH_STREAM_TYPE).unwrap();
+        let _ = conn.stream_send(push_stream_id, &[push_id]).unwrap();
+        let _ = conn.stream_send(push_stream_id, PUSH_DATA).unwrap();
+        if close_push_stream {
+            conn.stream_close_send(push_stream_id).unwrap();
+        }
+        push_stream_id
+    }
+
+    struct PushPromiseInfo {
+        pub push_id: u64,
+        pub ref_stream_id: u64,
+    }
+
+    
+    
+    
+    
+    
+    
+    fn read_response_and_push_events(
+        client: &mut Http3Client,
+        push_promises: &[PushPromiseInfo],
+        push_streams: &[u64],
+        response_stream_id: u64,
+    ) {
+        let mut num_push_promises = 0;
+        let mut num_push_stream_headers = 0;
+        let mut num_push_stream_data = 0;
+        while let Some(e) = client.next_event() {
+            match e {
+                Http3ClientEvent::PushPromise {
+                    push_id,
+                    request_stream_id,
+                    headers,
+                } => {
+                    assert!(push_promises
+                        .iter()
+                        .any(|p| p.push_id == push_id && p.ref_stream_id == request_stream_id));
+                    check_pushpromise_header(&headers[..]);
+                    num_push_promises += 1;
+                }
+                Http3ClientEvent::PushHeaderReady {
+                    push_id,
+                    headers,
+                    fin,
+                } => {
+                    assert!(push_streams.contains(&push_id));
+                    check_push_response_header(&headers.unwrap());
+                    num_push_stream_headers += 1;
+                    assert_eq!(fin, false);
+                }
+                Http3ClientEvent::PushDataReadable { push_id } => {
+                    assert!(push_streams.contains(&push_id));
+                    let mut buf = [0_u8; 100];
+                    let (amount, fin) = client.push_read_data(now(), push_id, &mut buf).unwrap();
+                    assert_eq!(fin, true);
+                    assert_eq!(amount, EXPECTED_PUSH_RESPONSE_DATA_FRAME.len());
+                    assert_eq!(&buf[..amount], EXPECTED_PUSH_RESPONSE_DATA_FRAME);
+                    num_push_stream_data += 1;
+                }
+                Http3ClientEvent::HeaderReady {
+                    stream_id,
+                    headers,
+                    fin,
+                } => {
+                    assert_eq!(stream_id, response_stream_id);
+                    check_response_header_2(&headers.unwrap());
+                    assert_eq!(fin, false);
+                }
+                Http3ClientEvent::DataReadable { stream_id } => {
+                    assert_eq!(stream_id, response_stream_id);
+                    let mut buf = [0_u8; 100];
+                    let (amount, _) = client
+                        .read_response_data(now(), stream_id, &mut buf)
+                        .unwrap();
+                    assert_eq!(amount, EXPECTED_RESPONSE_DATA_2_FRAME_1.len());
+                    assert_eq!(&buf[..amount], EXPECTED_RESPONSE_DATA_2_FRAME_1);
+                }
+                _ => {}
+            }
+        }
+
+        assert_eq!(num_push_promises, push_promises.len());
+        assert_eq!(num_push_stream_headers, push_streams.len());
+        assert_eq!(num_push_stream_data, push_streams.len());
     }
 
     
@@ -1207,6 +1476,58 @@ mod tests {
         test_wrong_frame_on_control_stream(&[0x5, 0x2, 0x1, 0x2]);
     }
 
+    fn test_wrong_frame_on_push_stream(v: &[u8]) {
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(false);
+
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+        
+        let push_stream_id = server.conn.stream_create(StreamType::UniDi).unwrap();
+
+        
+        let _ = server
+            .conn
+            .stream_send(push_stream_id, &[0x01, 0x0])
+            .unwrap();
+        let _ = server.conn.stream_send(push_stream_id, v).unwrap();
+
+        let out = server.conn.process(None, now());
+        let out = client.process(out.dgram(), now());
+        let _ = server.conn.process(out.dgram(), now());
+
+        assert_closed(&client, &Error::HttpFrameUnexpected);
+    }
+
+    #[test]
+    fn test_cancel_push_frame_on_push_stream() {
+        test_wrong_frame_on_push_stream(&[0x3, 0x1, 0x5]);
+    }
+
+    #[test]
+    fn test_settings_frame_on_push_stream() {
+        test_wrong_frame_on_push_stream(&[0x4, 0x4, 0x6, 0x4, 0x8, 0x4]);
+    }
+
+    #[test]
+    fn test_push_promise_frame_on_push_stream() {
+        test_wrong_frame_on_push_stream(&[0x5, 0x2, 0x1, 0x2]);
+    }
+
+    #[test]
+    fn test_goaway_frame_on_push_stream() {
+        test_wrong_frame_on_push_stream(&[0x7, 0x1, 0x5]);
+    }
+
+    #[test]
+    fn test_max_push_id_frame_on_push_stream() {
+        test_wrong_frame_on_push_stream(&[0xd, 0x1, 0x5]);
+    }
+
+    
+    #[test]
+    fn test_data_frame_on_push_stream() {
+        test_wrong_frame_on_push_stream(&[0x0, 0x2, 0x1, 0x2]);
+    }
+
     
     
     #[test]
@@ -1237,21 +1558,6 @@ mod tests {
         }
         assert!(stop_sending_event_found);
         assert_eq!(client.state(), Http3State::Connected);
-    }
-
-    
-    #[test]
-    fn test_client_received_push_stream() {
-        let (mut client, mut server) = connect();
-
-        
-        let push_stream_id = server.conn.stream_create(StreamType::UniDi).unwrap();
-        let _ = server.conn.stream_send(push_stream_id, PUSH_STREAM_DATA);
-        let out = server.conn.process(None, now());
-        let out = client.process(out.dgram(), now());
-        let _ = server.conn.process(out.dgram(), now());
-
-        assert_closed(&client, &Error::HttpId);
     }
 
     
@@ -1383,11 +1689,13 @@ mod tests {
         
         
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_1);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_1,
+            true,
+        );
 
         let http_events = client.events().collect::<Vec<_>>();
         assert_eq!(http_events.len(), 2);
@@ -1777,11 +2085,13 @@ mod tests {
 
         
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_2);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_2,
+            true,
+        );
 
         let mut stop_sending = false;
         let mut response_headers = false;
@@ -1861,10 +2171,13 @@ mod tests {
         client.process(out.dgram(), now());
 
         let mut reset = false;
+        let mut stop_sending = false;
         while let Some(e) = client.next_event() {
             match e {
-                Http3ClientEvent::StopSending { .. } => {
-                    panic!("We should not get StopSending.");
+                Http3ClientEvent::StopSending { stream_id, error } => {
+                    assert_eq!(stream_id, request_stream_id);
+                    assert_eq!(error, Error::HttpRequestRejected.code());
+                    stop_sending = true;
                 }
                 Http3ClientEvent::Reset { stream_id, error } => {
                     assert_eq!(stream_id, request_stream_id);
@@ -1879,6 +2192,7 @@ mod tests {
         }
 
         assert!(reset);
+        assert!(stop_sending);
 
         
         
@@ -1890,7 +2204,6 @@ mod tests {
         client.close(now(), 0, "");
     }
 
-    
     
     #[test]
     fn test_stop_sending_other_error_wo_reset() {
@@ -1908,17 +2221,17 @@ mod tests {
         let out = server.conn.process(None, now());
         client.process(out.dgram(), now());
 
-        let mut reset = false;
+        let mut stop_sending = false;
 
         while let Some(e) = client.next_event() {
             match e {
-                Http3ClientEvent::StopSending { .. } => {
-                    panic!("We should not get StopSending.");
-                }
-                Http3ClientEvent::Reset { stream_id, error } => {
+                Http3ClientEvent::StopSending { stream_id, error } => {
                     assert_eq!(stream_id, request_stream_id);
                     assert_eq!(error, Error::HttpRequestRejected.code());
-                    reset = true;
+                    stop_sending = true;
+                }
+                Http3ClientEvent::Reset { .. } => {
+                    panic!("We should not get StopSending.");
                 }
                 Http3ClientEvent::HeaderReady { .. } | Http3ClientEvent::DataReadable { .. } => {
                     panic!("We should not get any headers or data");
@@ -1927,14 +2240,12 @@ mod tests {
             }
         }
 
-        assert!(reset);
+        assert!(stop_sending);
 
-        
         
         let mut buf = [0_u8; 100];
         let res = client.read_response_data(now(), request_stream_id, &mut buf);
-        assert!(res.is_err());
-        assert_eq!(res.unwrap_err(), Error::InvalidStreamId);
+        assert!(res.is_ok());
 
         client.close(now(), 0, "");
     }
@@ -1948,10 +2259,13 @@ mod tests {
 
         
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_2);
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_2,
+            false,
+        );
         
 
         
@@ -1975,8 +2289,9 @@ mod tests {
 
         while let Some(e) = client.next_event() {
             match e {
-                Http3ClientEvent::StopSending { .. } => {
-                    panic!("We should not get StopSending.");
+                Http3ClientEvent::StopSending { stream_id, error } => {
+                    assert_eq!(stream_id, request_stream_id);
+                    assert_eq!(error, Error::HttpRequestCancelled.code());
                 }
                 Http3ClientEvent::Reset { stream_id, error } => {
                     assert_eq!(stream_id, request_stream_id);
@@ -2012,10 +2327,13 @@ mod tests {
 
         
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_2);
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_2,
+            false,
+        );
         
 
         
@@ -2029,33 +2347,37 @@ mod tests {
         let out = server.conn.process(None, now());
         client.process(out.dgram(), now());
 
-        let mut reset = false;
+        let mut stop_sending = false;
+        let mut header_ready = false;
 
         while let Some(e) = client.next_event() {
             match e {
-                Http3ClientEvent::StopSending { .. } => {
-                    panic!("We should not get StopSending.");
-                }
-                Http3ClientEvent::Reset { stream_id, error } => {
+                Http3ClientEvent::StopSending { stream_id, error } => {
                     assert_eq!(stream_id, request_stream_id);
                     assert_eq!(error, Error::HttpRequestCancelled.code());
-                    reset = true;
+                    stop_sending = true;
+                }
+                Http3ClientEvent::Reset { .. } => {
+                    panic!("We should not get StopSending.");
                 }
                 Http3ClientEvent::HeaderReady { .. } | Http3ClientEvent::DataReadable { .. } => {
-                    panic!("We should not get any headers or data");
+                    header_ready = true;
                 }
                 _ => {}
             }
         }
 
-        assert!(reset);
+        assert!(stop_sending);
+        assert!(header_ready);
 
         
-        
         let mut buf = [0_u8; 100];
-        let res = client.read_response_data(now(), request_stream_id, &mut buf);
-        assert!(res.is_err());
-        assert_eq!(res.unwrap_err(), Error::InvalidStreamId);
+        let (amount, fin) = client
+            .read_response_data(now(), request_stream_id, &mut buf)
+            .unwrap();
+        assert_eq!(fin, false);
+        assert_eq!(amount, EXPECTED_RESPONSE_DATA_2_FRAME_1.len());
+        assert_eq!(&buf[..amount], EXPECTED_RESPONSE_DATA_2_FRAME_1);
 
         client.close(now(), 0, "");
     }
@@ -2111,11 +2433,13 @@ mod tests {
     fn test_incomplet_frame(buf: &[u8], error: &Error) {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
 
-        let _ = server.conn.stream_send(request_stream_id, buf);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            buf,
+            true,
+        );
 
         while let Some(e) = client.next_event() {
             if let Http3ClientEvent::DataReadable { stream_id } = e {
@@ -2261,13 +2585,13 @@ mod tests {
             .stream_send(server.control_stream_id.unwrap(), &[0x7, 0x1, 0x4]);
 
         
-        let _ = server
-            .conn
-            .stream_send(request_stream_id_1, HTTP_RESPONSE_1);
-        server.conn.stream_close_send(request_stream_id_1).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id_1,
+            HTTP_RESPONSE_1,
+            true,
+        );
 
         let mut stream_reset_2 = 0;
         while let Some(e) = client.next_event() {
@@ -2382,14 +2706,13 @@ mod tests {
     fn test_stream_fin_after_headers() {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
 
-        let _ = server
-            .conn
-            .stream_send(request_stream_id, HTTP_RESPONSE_HEADER_ONLY_2);
-        
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_HEADER_ONLY_2,
+            true,
+        );
 
         
         let e = client.events().next().unwrap();
@@ -2420,12 +2743,13 @@ mod tests {
     fn test_stream_fin_after_headers_are_read_wo_data_frame() {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
         
-        let _ = server
-            .conn
-            .stream_send(request_stream_id, HTTP_RESPONSE_HEADER_ONLY_2);
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_HEADER_ONLY_2,
+            false,
+        );
 
         
         while let Some(e) = client.next_event() {
@@ -2598,10 +2922,13 @@ mod tests {
     fn test_stream_fin_after_a_data_frame() {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_2);
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_2,
+            false,
+        );
 
         
         while let Some(e) = client.next_event() {
@@ -2659,11 +2986,13 @@ mod tests {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
 
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_1);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_1,
+            true,
+        );
 
         
         match client.events().nth(1).unwrap() {
@@ -2706,12 +3035,13 @@ mod tests {
         let _ = server.conn.stream_send(request_stream_id, &buf).unwrap();
 
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_2);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
-        client.process(None, now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_2,
+            true,
+        );
 
         
         match client.events().nth(1).unwrap() {
@@ -2768,11 +3098,13 @@ mod tests {
         let d_frame = HFrame::Data { len: 3 };
         d_frame.encode(&mut d);
         d.encode(&[0x61, 0x62, 0x63]);
-        let _ = server.conn.stream_send(request_stream_id, &d[..]);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        let _out = client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            &d,
+            true,
+        );
 
         let header_ready_event = |e| matches!(e, Http3ClientEvent::HeaderReady { .. });
         assert!(!client.events().any(header_ready_event));
@@ -2833,10 +3165,13 @@ mod tests {
         let mut d = Encoder::default();
         hframe.encode(&mut d);
 
-        let _ = server.conn.stream_send(request_stream_id, &d[..]);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-        let out = server.conn.process(None, now());
-        let _out = hconn.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut hconn,
+            &mut server,
+            request_stream_id,
+            &d,
+            true,
+        );
 
         let header_ready_event = |e| matches!(e, Http3ClientEvent::HeaderReady { .. });
         assert!(!hconn.events().any(header_ready_event));
@@ -2976,20 +3311,20 @@ mod tests {
         let token = exchange_token(&mut client, &mut server.conn);
 
         let mut client = default_http3_client();
-
-        
-        
-        let ar = AntiReplay::new(now(), test_fixture::ANTI_REPLAY_WINDOW, 1, 3)
-            .expect("setup anti-replay");
-
         let mut server = Connection::new_server(
             test_fixture::DEFAULT_KEYS,
             test_fixture::DEFAULT_ALPN,
-            &ar,
             Rc::new(RefCell::new(FixedConnectionIdManager::new(10))),
             QuicVersion::default(),
         )
         .unwrap();
+        
+        
+        let ar = AntiReplay::new(now(), test_fixture::ANTI_REPLAY_WINDOW, 1, 3)
+            .expect("setup anti-replay");
+        server
+            .server_enable_0rtt(&ar, AllowZeroRtt {})
+            .expect("enable 0-RTT");
 
         assert_eq!(client.state(), Http3State::Initializing);
         client
@@ -3342,12 +3677,13 @@ mod tests {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
 
         
-        let _ = server
-            .conn
-            .stream_send(request_stream_id, HTTP_HEADER_FRAME_0);
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_HEADER_FRAME_0,
+            false,
+        );
 
         
         let mut response_headers = false;
@@ -3367,13 +3703,13 @@ mod tests {
         assert!(response_headers);
 
         
-        let _ = server
-            .conn
-            .stream_send(request_stream_id, HTTP_HEADER_FRAME_0);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_HEADER_FRAME_0,
+            true,
+        );
 
         let events: Vec<Http3ClientEvent> = client.events().collect();
 
@@ -3400,12 +3736,13 @@ mod tests {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
 
         
-        let _ = server
-            .conn
-            .stream_send(request_stream_id, HTTP_HEADER_FRAME_0);
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_HEADER_FRAME_0,
+            false,
+        );
 
         
         let mut response_headers = false;
@@ -3425,12 +3762,13 @@ mod tests {
         assert!(response_headers);
 
         
-        let _ = server
-            .conn
-            .stream_send(request_stream_id, HTTP_HEADER_FRAME_0);
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_HEADER_FRAME_0,
+            false,
+        );
 
         
         let data_readable = |e| matches!(e, Http3ClientEvent::DataReadable { .. });
@@ -3466,12 +3804,13 @@ mod tests {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
 
         
-        let _ = server
-            .conn
-            .stream_send(request_stream_id, HTTP_HEADER_FRAME_0);
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_HEADER_FRAME_0,
+            false,
+        );
 
         
         let mut response_headers = false;
@@ -3491,27 +3830,27 @@ mod tests {
         assert!(response_headers);
 
         
-        let _ = server
-            .conn
-            .stream_send(request_stream_id, HTTP_HEADER_FRAME_0);
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_HEADER_FRAME_0,
+            false,
+        );
 
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
         
         let data_readable = |e| matches!(e, Http3ClientEvent::DataReadable { .. });
         assert!(!client.events().any(data_readable));
 
         
-        let _ = server.conn.stream_send(
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
             request_stream_id,
-            &[
-                
-                0x0, 0x3, 0x61, 0x62, 0x63,
-            ],
+            &[0x0, 0x3, 0x61, 0x62, 0x63], 
+            false,
         );
 
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
         assert_closed(&client, &Error::HttpFrameUnexpected);
     }
 
@@ -3520,18 +3859,22 @@ mod tests {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(false);
 
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_2);
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_2,
+            false,
+        );
 
         
-        let _ = server.conn.stream_send(request_stream_id, &[0x00, 0x00]);
-        
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process_input(out.dgram().unwrap(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            &[0x0, 0x0],
+            true,
+        );
 
         let mut buf = [0_u8; 100];
         assert_eq!(client.read_response_data(now(), 0, &mut buf), Ok((3, true)));
@@ -3547,11 +3890,13 @@ mod tests {
         
         
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_1);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_1,
+            true,
+        );
 
         let data_readable_event = |e| matches!(e, Http3ClientEvent::DataReadable { stream_id } if stream_id == request_stream_id);
         assert!(client.events().any(data_readable_event));
@@ -3574,10 +3919,13 @@ mod tests {
         
         
         
-        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_1);
-        server.conn.stream_close_send(request_stream_id).unwrap();
-        let out = server.conn.process(None, now());
-        client.process(out.dgram(), now());
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_1,
+            true,
+        );
 
         let data_readable_event = |e| matches!(e, Http3ClientEvent::DataReadable { stream_id } if stream_id == request_stream_id);
         assert!(client.events().any(data_readable_event));
@@ -3680,5 +4028,1058 @@ mod tests {
         let _out = client.process(qpack_pkt1.dgram(), now());
 
         assert!(client.events().any(header_ready_event));
+    }
+
+    
+    #[test]
+    fn push_single() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+
+        
+        let _ = send_push_data(&mut server.conn, 0, true);
+
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_2,
+            true,
+        );
+
+        read_response_and_push_events(
+            &mut client,
+            &[PushPromiseInfo {
+                push_id: 0,
+                ref_stream_id: request_stream_id,
+            }],
+            &[0],
+            request_stream_id,
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+    }
+
+    #[test]
+    fn push_multiple() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+        send_push_promise(&mut server.conn, request_stream_id, 1);
+
+        
+        let _ = send_push_data(&mut server.conn, 0, true);
+
+        
+        let _ = send_push_data(&mut server.conn, 1, true);
+
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_2,
+            true,
+        );
+
+        read_response_and_push_events(
+            &mut client,
+            &[
+                PushPromiseInfo {
+                    push_id: 0,
+                    ref_stream_id: request_stream_id,
+                },
+                PushPromiseInfo {
+                    push_id: 1,
+                    ref_stream_id: request_stream_id,
+                },
+            ],
+            &[0, 1],
+            request_stream_id,
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+        assert_eq!(client.cancel_push(1), Err(Error::InvalidStreamId));
+    }
+
+    #[test]
+    fn push_after_headers() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        
+        let _ = server
+            .conn
+            .stream_send(request_stream_id, HTTP_RESPONSE_HEADER_ONLY_2);
+
+        
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+
+        
+        let _ = send_push_data(&mut server.conn, 0, true);
+
+        
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_DATA_FRAME_ONLY_2,
+            true,
+        );
+
+        read_response_and_push_events(
+            &mut client,
+            &[PushPromiseInfo {
+                push_id: 0,
+                ref_stream_id: request_stream_id,
+            }],
+            &[0],
+            request_stream_id,
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    #[test]
+    fn push_after_response() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        
+        let _ = server.conn.stream_send(request_stream_id, HTTP_RESPONSE_2);
+
+        
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+        
+        send_push_data_and_exchange_packets(&mut client, &mut server, 0, true);
+
+        read_response_and_push_events(
+            &mut client,
+            &[PushPromiseInfo {
+                push_id: 0,
+                ref_stream_id: request_stream_id,
+            }],
+            &[0],
+            request_stream_id,
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    fn check_push_events(client: &mut Http3Client) -> bool {
+        let any_push_event = |e| {
+            matches!(
+                e,
+                Http3ClientEvent::PushPromise{..}
+                | Http3ClientEvent::PushHeaderReady{..}
+                | Http3ClientEvent::PushDataReadable{..})
+        };
+        client.events().any(any_push_event)
+    }
+
+    fn check_data_readable(client: &mut Http3Client) -> bool {
+        let any_data_event = |e| {
+            matches!(
+                e,
+                Http3ClientEvent::DataReadable{..})
+        };
+        client.events().any(any_data_event)
+    }
+
+    fn check_header_ready(client: &mut Http3Client) -> bool {
+        let any_event = |e| {
+            matches!(
+                e,
+                Http3ClientEvent::HeaderReady{..})
+        };
+        client.events().any(any_event)
+    }
+
+    fn check_header_ready_and_push_promise(client: &mut Http3Client) -> bool {
+        let any_event = |e| {
+            matches!(
+                e,
+                Http3ClientEvent::HeaderReady{..}
+                | Http3ClientEvent::PushPromise{..})
+        };
+        client.events().any(any_event)
+    }
+
+    #[test]
+    fn push_stream_before_promise() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        
+        send_push_data_and_exchange_packets(&mut client, &mut server, 0, true);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 0);
+
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_2,
+            true,
+        );
+
+        read_response_and_push_events(
+            &mut client,
+            &[PushPromiseInfo {
+                push_id: 0,
+                ref_stream_id: request_stream_id,
+            }],
+            &[0],
+            request_stream_id,
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    
+    
+    #[test]
+    fn push_out_of_order_1() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 5);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 3);
+        
+        send_push_data_and_exchange_packets(&mut client, &mut server, 3, true);
+
+        assert_eq!(client.state(), Http3State::Connected);
+
+        read_response_and_push_events(
+            &mut client,
+            &[
+                PushPromiseInfo {
+                    push_id: 5,
+                    ref_stream_id: request_stream_id,
+                },
+                PushPromiseInfo {
+                    push_id: 3,
+                    ref_stream_id: request_stream_id,
+                },
+            ],
+            &[3],
+            request_stream_id,
+        );
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    
+    
+    #[test]
+    fn push_out_of_order_2() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 5);
+
+        send_push_data_and_exchange_packets(&mut client, &mut server, 3, true);
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 3);
+
+        read_response_and_push_events(
+            &mut client,
+            &[
+                PushPromiseInfo {
+                    push_id: 5,
+                    ref_stream_id: request_stream_id,
+                },
+                PushPromiseInfo {
+                    push_id: 3,
+                    ref_stream_id: request_stream_id,
+                },
+            ],
+            &[3],
+            request_stream_id,
+        );
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    
+    
+    
+    #[test]
+    fn push_out_of_order_3() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 5);
+        send_push_data_and_exchange_packets(&mut client, &mut server, 5, true);
+        assert_eq!(client.state(), Http3State::Connected);
+
+        
+        read_response_and_push_events(
+            &mut client,
+            &[PushPromiseInfo {
+                push_id: 5,
+                ref_stream_id: request_stream_id,
+            }],
+            &[5],
+            request_stream_id,
+        );
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 3);
+        send_push_data_and_exchange_packets(&mut client, &mut server, 3, true);
+
+        read_response_and_push_events(
+            &mut client,
+            &[PushPromiseInfo {
+                push_id: 3,
+                ref_stream_id: request_stream_id,
+            }],
+            &[3],
+            request_stream_id,
+        );
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    #[test]
+    fn multiple_push_promise() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 5);
+
+        
+        let request_stream_id_2 = make_request(&mut client, false);
+        assert_eq!(request_stream_id_2, 4);
+
+        let out = client.process(None, now());
+        let _ = server.conn.process(out.dgram(), now());
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id_2, 5);
+
+        read_response_and_push_events(
+            &mut client,
+            &[
+                PushPromiseInfo {
+                    push_id: 5,
+                    ref_stream_id: request_stream_id,
+                },
+                PushPromiseInfo {
+                    push_id: 5,
+                    ref_stream_id: request_stream_id_2,
+                },
+            ],
+            &[],
+            request_stream_id,
+        );
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    #[test]
+    fn multiple_push_promise_active() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 5);
+        send_push_data_and_exchange_packets(&mut client, &mut server, 5, true);
+
+        
+        let request_stream_id_2 = make_request(&mut client, false);
+        assert_eq!(request_stream_id_2, 4);
+
+        let out = client.process(None, now());
+        let _ = server.conn.process(out.dgram(), now());
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id_2, 5);
+
+        read_response_and_push_events(
+            &mut client,
+            &[
+                PushPromiseInfo {
+                    push_id: 5,
+                    ref_stream_id: request_stream_id,
+                },
+                PushPromiseInfo {
+                    push_id: 5,
+                    ref_stream_id: request_stream_id_2,
+                },
+            ],
+            &[5],
+            request_stream_id,
+        );
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    
+    #[test]
+    fn multiple_push_promise_closed() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 5);
+        
+        send_push_data_and_exchange_packets(&mut client, &mut server, 5, true);
+
+        read_response_and_push_events(
+            &mut client,
+            &[PushPromiseInfo {
+                push_id: 5,
+                ref_stream_id: request_stream_id,
+            }],
+            &[5],
+            request_stream_id,
+        );
+
+        
+        let request_stream_id_2 = make_request(&mut client, false);
+        assert_eq!(request_stream_id_2, 4);
+
+        let out = client.process(None, now());
+        let _ = server.conn.process(out.dgram(), now());
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id_2, 5);
+
+        
+        let push_event = |e| matches!(e, Http3ClientEvent::PushPromise{ .. });
+        assert!(!client.events().any(push_event));
+    }
+
+    
+    #[test]
+    fn exceed_max_push_id_promise() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 6);
+
+        assert_closed(&client, &Error::HttpId);
+    }
+
+    
+    #[test]
+    fn exceed_max_push_id_push_stream() {
+        
+        let (mut client, mut server) = connect();
+
+        
+        send_push_data_and_exchange_packets(&mut client, &mut server, 6, true);
+
+        assert_closed(&client, &Error::HttpId);
+    }
+
+    
+    #[test]
+    fn exceed_max_push_id_cancel_push() {
+        
+        let (mut client, mut server, _request_stream_id) = connect_and_send_request(true);
+
+        
+        send_cancel_push_and_exchange_packets(&mut client, &mut server, 6);
+
+        assert_closed(&client, &Error::HttpId);
+    }
+
+    
+    #[test]
+    fn exceed_max_push_id_cancel_api() {
+        
+        let (mut client, _, _) = connect_and_send_request(true);
+
+        assert_eq!(client.cancel_push(6), Err(Error::InvalidStreamId));
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    #[test]
+    fn test_max_push_id_frame_update_is_sent() {
+        const MAX_PUSH_ID_FRAME: &[u8] = &[0xd, 0x1, 0x8];
+
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+        send_push_promise(&mut server.conn, request_stream_id, 1);
+        send_push_promise(&mut server.conn, request_stream_id, 2);
+
+        
+        send_push_data(&mut server.conn, 0, true);
+        send_push_data(&mut server.conn, 1, true);
+        send_push_data_and_exchange_packets(&mut client, &mut server, 2, true);
+
+        read_response_and_push_events(
+            &mut client,
+            &[
+                PushPromiseInfo {
+                    push_id: 0,
+                    ref_stream_id: request_stream_id,
+                },
+                PushPromiseInfo {
+                    push_id: 1,
+                    ref_stream_id: request_stream_id,
+                },
+                PushPromiseInfo {
+                    push_id: 2,
+                    ref_stream_id: request_stream_id,
+                },
+            ],
+            &[0, 1, 2],
+            request_stream_id,
+        );
+
+        let out = client.process(None, now());
+        let _ = server.conn.process(out.dgram(), now());
+
+        
+        let control_stream_readable =
+            |e| matches!(e, ConnectionEvent::RecvStreamReadable{stream_id: x} if x == 2);
+        assert!(server.conn.events().any(control_stream_readable));
+        let mut buf = [0_u8; 100];
+        let (amount, fin) = server.conn.stream_recv(2, &mut buf).unwrap();
+        assert_eq!(fin, false);
+
+        assert_eq!(amount, MAX_PUSH_ID_FRAME.len());
+        assert_eq!(&buf[..3], MAX_PUSH_ID_FRAME);
+
+        
+        send_push_promise(&mut server.conn, request_stream_id, 8);
+        send_push_data(&mut server.conn, 8, true);
+
+        let out = server.conn.process(None, now());
+        let out = client.process(out.dgram(), now());
+        let _ = server.conn.process(out.dgram(), now());
+
+        assert_eq!(client.state(), Http3State::Connected);
+
+        read_response_and_push_events(
+            &mut client,
+            &[PushPromiseInfo {
+                push_id: 8,
+                ref_stream_id: request_stream_id,
+            }],
+            &[8],
+            request_stream_id,
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    #[test]
+    fn duplicate_push_stream() {
+        
+        let (mut client, mut server, _request_stream_id) = connect_and_send_request(true);
+
+        
+        send_push_data_and_exchange_packets(&mut client, &mut server, 0, true);
+
+        
+        send_push_data_and_exchange_packets(&mut client, &mut server, 0, true);
+
+        assert_closed(&client, &Error::HttpId);
+    }
+
+    
+    #[test]
+    fn duplicate_push_stream_active() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+        send_push_data_and_exchange_packets(&mut client, &mut server, 0, true);
+        
+
+        send_push_data_and_exchange_packets(&mut client, &mut server, 0, true);
+
+        assert_closed(&client, &Error::HttpId);
+    }
+
+    fn assert_stop_sending_event(
+        server: &mut TestServer,
+        push_stream_id: u64,
+        expected_error: u64,
+    ) {
+        assert!(server.conn.events().any(|e| matches!(
+            e,
+            ConnectionEvent::SendStreamStopSending {
+                stream_id,
+                app_error,
+            } if stream_id == push_stream_id && app_error == expected_error
+        )));
+    }
+
+    
+    #[test]
+    fn cancel_push_ignore_promise() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_cancel_push_and_exchange_packets(&mut client, &mut server, 0);
+
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+        
+        let push_stream_id =
+            send_push_data_and_exchange_packets(&mut client, &mut server, 0, false);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+
+        
+        assert_stop_sending_event(
+            &mut server,
+            push_stream_id,
+            Error::HttpRequestCancelled.code(),
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    
+    #[test]
+    fn cancel_push_removes_push_events() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+        let push_stream_id =
+            send_push_data_and_exchange_packets(&mut client, &mut server, 0, false);
+
+        send_cancel_push_and_exchange_packets(&mut client, &mut server, 0);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+
+        
+        assert_stop_sending_event(
+            &mut server,
+            push_stream_id,
+            Error::HttpRequestCancelled.code(),
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    #[test]
+    fn cancel_push_frame_after_push_stream() {
+        
+        let (mut client, mut server, _) = connect_and_send_request(true);
+
+        
+        let push_stream_id =
+            send_push_data_and_exchange_packets(&mut client, &mut server, 0, false);
+
+        send_cancel_push_and_exchange_packets(&mut client, &mut server, 0);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+
+        
+        assert_stop_sending_event(
+            &mut server,
+            push_stream_id,
+            Error::HttpRequestCancelled.code(),
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    #[test]
+    fn cancel_push_stream_after_push_promise_and_push_stream() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise(&mut server.conn, request_stream_id, 0);
+        
+        let push_stream_id =
+            send_push_data_and_exchange_packets(&mut client, &mut server, 0, false);
+
+        server
+            .conn
+            .stream_reset_send(push_stream_id, Error::HttpRequestCancelled.code())
+            .unwrap();
+        let out = server.conn.process(None, now()).dgram();
+        client.process(out, now());
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    #[test]
+    fn cancel_push_stream_before_push_promise() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        
+        let push_stream_id =
+            send_push_data_and_exchange_packets(&mut client, &mut server, 0, false);
+
+        server
+            .conn
+            .stream_reset_send(push_stream_id, Error::HttpRequestCancelled.code())
+            .unwrap();
+        let out = server.conn.process(None, now()).dgram();
+        client.process(out, now());
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 0);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    #[test]
+    fn app_cancel_push_after_push_promise() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 0);
+
+        assert!(client.cancel_push(0).is_ok());
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    #[test]
+    fn app_cancel_push_after_push_promise_and_push_stream() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 0);
+        let push_stream_id =
+            send_push_data_and_exchange_packets(&mut client, &mut server, 0, false);
+
+        assert!(client.cancel_push(0).is_ok());
+        let out = client.process(None, now()).dgram();
+        let _ = server.conn.process(out, now());
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+
+        
+        assert_stop_sending_event(
+            &mut server,
+            push_stream_id,
+            Error::HttpRequestCancelled.code(),
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    
+    #[test]
+    fn app_cancel_push_before_push_promise() {
+        
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 0);
+        let push_stream_id =
+            send_push_data_and_exchange_packets(&mut client, &mut server, 0, false);
+
+        assert!(client.cancel_push(0).is_ok());
+        let out = client.process(None, now()).dgram();
+        let _ = server.conn.process(out, now());
+
+        send_push_promise_and_exchange_packets(&mut client, &mut server, request_stream_id, 0);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        assert_eq!(client.cancel_push(0), Err(Error::InvalidStreamId));
+
+        
+        assert_stop_sending_event(
+            &mut server,
+            push_stream_id,
+            Error::HttpRequestCancelled.code(),
+        );
+
+        assert_eq!(client.state(), Http3State::Connected);
+    }
+
+    fn setup_server_side_encoder(client: &mut Http3Client, server: &mut TestServer) {
+        server.encoder.set_max_capacity(100).unwrap();
+        server.encoder.set_max_blocked_streams(100).unwrap();
+        server.encoder.send(&mut server.conn).unwrap();
+        let out = server.conn.process(None, now());
+        let _ = client.process(out.dgram(), now());
+    }
+
+    fn send_push_promise_using_encoder(
+        client: &mut Http3Client,
+        server: &mut TestServer,
+        stream_id: u64,
+        push_id: u64,
+    ) -> Option<Datagram> {
+        let headers = vec![
+            (String::from(":method"), String::from("GET")),
+            (String::from(":scheme"), String::from("https")),
+            (String::from(":authority"), String::from("something.com")),
+            (String::from(":path"), String::from("/")),
+            (String::from("my-header"), String::from("my-header")),
+            (String::from("content-length"), String::from("3")),
+        ];
+        let encoded_headers = server
+            .encoder
+            .encode_header_block(&mut server.conn, &headers, stream_id)
+            .unwrap();
+        let push_promise_frame = HFrame::PushPromise {
+            push_id,
+            header_block: encoded_headers.to_vec(),
+        };
+
+        
+        let encoder_inst_pkt = server.conn.process(None, now()).dgram();
+        assert!(encoder_inst_pkt.is_some());
+
+        let mut d = Encoder::default();
+        push_promise_frame.encode(&mut d);
+        server_send_response_and_exchange_packet(client, server, stream_id, &d, false);
+
+        encoder_inst_pkt
+    }
+
+    #[test]
+    fn push_promise_header_decoder_block() {
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        setup_server_side_encoder(&mut client, &mut server);
+
+        let encoder_inst_pkt =
+            send_push_promise_using_encoder(&mut client, &mut server, request_stream_id, 0);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        let _out = client.process(encoder_inst_pkt, now());
+
+        
+        assert!(check_push_events(&mut client));
+    }
+
+    
+    #[test]
+    fn push_promise_blocked_but_stream_is_not_blocked() {
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        setup_server_side_encoder(&mut client, &mut server);
+
+        
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_HEADER_ONLY_1,
+            false,
+        );
+
+        let encoder_inst_pkt =
+            send_push_promise_using_encoder(&mut client, &mut server, request_stream_id, 0);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_DATA_FRAME_1_ONLY_1,
+            false,
+        );
+
+        assert!(check_data_readable(&mut client));
+
+        
+        let _out = client.process(encoder_inst_pkt, now());
+
+        
+        assert!(check_push_events(&mut client));
+
+        
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_DATA_FRAME_2_ONLY_1,
+            false,
+        );
+
+        assert!(check_data_readable(&mut client));
+    }
+
+    
+    #[test]
+    fn push_promise_does_not_block_headers() {
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        setup_server_side_encoder(&mut client, &mut server);
+
+        let encoder_inst_pkt =
+            send_push_promise_using_encoder(&mut client, &mut server, request_stream_id, 0);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_HEADER_ONLY_1,
+            false,
+        );
+
+        assert!(check_header_ready(&mut client));
+
+        
+        let _out = client.process(encoder_inst_pkt, now());
+
+        
+        assert!(check_push_events(&mut client));
+    }
+
+    
+    #[test]
+    fn push_promise_block_headers() {
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        setup_server_side_encoder(&mut client, &mut server);
+
+        
+        
+        server
+            .encoder
+            .send_and_insert(&mut server.conn, b"content-length", b"1234")
+            .unwrap();
+        let encoder_inst_pkt1 = server.conn.process(None, now()).dgram();
+        let _out = client.process(encoder_inst_pkt1, now());
+
+        
+        let encoder_inst_pkt2 =
+            send_push_promise_using_encoder(&mut client, &mut server, request_stream_id, 0);
+
+        
+        assert!(!check_push_events(&mut client));
+
+        let response_headers = vec![
+            (String::from(":status"), String::from("200")),
+            (String::from("content-length"), String::from("1234")),
+        ];
+        let encoded_headers = server
+            .encoder
+            .encode_header_block(&mut server.conn, &response_headers, request_stream_id)
+            .unwrap();
+        let header_hframe = HFrame::Headers {
+            header_block: encoded_headers.to_vec(),
+        };
+        let mut d = Encoder::default();
+        header_hframe.encode(&mut d);
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            &d,
+            false,
+        );
+
+        
+        assert!(!check_header_ready(&mut client));
+
+        
+        let _out = client.process(encoder_inst_pkt2, now());
+
+        
+        assert!(check_header_ready_and_push_promise(&mut client));
+    }
+
+    
+    #[test]
+    fn blocked_push_promises_canceled() {
+        const STREAM_CANCELED_ID_0: &[u8] = &[0x40];
+
+        let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
+
+        setup_server_side_encoder(&mut client, &mut server);
+
+        let _encoder_inst_pkt =
+            send_push_promise_using_encoder(&mut client, &mut server, request_stream_id, 0);
+
+        server_send_response_and_exchange_packet(
+            &mut client,
+            &mut server,
+            request_stream_id,
+            HTTP_RESPONSE_1,
+            true,
+        );
+
+        
+        assert!(check_header_ready(&mut client));
+        let mut buf = [0_u8; 100];
+        let _ = client
+            .read_response_data(now(), request_stream_id, &mut buf)
+            .unwrap();
+
+        let out = client.process(None, now());
+        let _out = server.conn.process(out.dgram(), now());
+        
+        let mut inst = [0_u8; 100];
+        let (amount, fin) = server
+            .conn
+            .stream_recv(CLIENT_SIDE_DECODER_STREAM_ID, &mut inst)
+            .unwrap();
+        assert_eq!(fin, false);
+        assert_eq!(amount, STREAM_CANCELED_ID_0.len());
+        assert_eq!(&inst[..amount], STREAM_CANCELED_ID_0);
     }
 }

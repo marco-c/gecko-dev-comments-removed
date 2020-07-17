@@ -175,6 +175,12 @@ impl QPackDecoder {
 
     
     
+    pub fn refers_dynamic_table(&self, buf: &[u8]) -> Res<bool> {
+        HeaderDecoder::new(buf).refers_dynamic_table(self.max_entries, self.table.base())
+    }
+
+    
+    
     
     
     pub fn decode_header_block(&mut self, buf: &[u8], stream_id: u64) -> Res<Option<Vec<Header>>> {

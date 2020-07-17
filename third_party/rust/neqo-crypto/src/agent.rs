@@ -795,6 +795,18 @@ pub trait ZeroRttChecker: std::fmt::Debug + std::marker::Unpin {
     fn check(&self, token: &[u8]) -> ZeroRttCheckResult;
 }
 
+
+
+
+#[derive(Debug)]
+pub struct AllowZeroRtt {}
+impl ZeroRttChecker for AllowZeroRtt {
+    fn check(&self, _token: &[u8]) -> ZeroRttCheckResult {
+        qwarn!("AllowZeroRtt accepting 0-RTT");
+        ZeroRttCheckResult::Accept
+    }
+}
+
 #[derive(Debug)]
 struct ZeroRttCheckState {
     fd: *mut ssl::PRFileDesc,
