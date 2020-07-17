@@ -70,7 +70,11 @@ class ResourceWatcher {
 
 
   async watchResources(resources, options) {
-    const { onAvailable, ignoreExistingResources = false } = options;
+    const {
+      onAvailable,
+      onDestroyed,
+      ignoreExistingResources = false,
+    } = options;
 
     
     
@@ -95,8 +99,16 @@ class ResourceWatcher {
     await this._watchAllTargets();
 
     for (const resource of resources) {
-      await this._startListening(resource);
-      this._registerListeners(resource, options);
+      
+      
+      if (this._availableListeners.count(resource) === 0) {
+        await this._startListening(resource);
+      }
+      this._availableListeners.on(resource, onAvailable);
+
+      if (onDestroyed) {
+        this._destroyedListeners.on(resource, onDestroyed);
+      }
     }
 
     if (!ignoreExistingResources) {
@@ -112,34 +124,28 @@ class ResourceWatcher {
     const { onAvailable, onDestroyed } = options;
 
     for (const resource of resources) {
-      this._availableListeners.off(resource, onAvailable);
       if (onDestroyed) {
         this._destroyedListeners.off(resource, onDestroyed);
       }
-      this._stopListening(resource);
+
+      const hadAtLeastOneListener =
+        this._availableListeners.count(resource) > 0;
+      this._availableListeners.off(resource, onAvailable);
+      if (
+        hadAtLeastOneListener &&
+        this._availableListeners.count(resource) === 0
+      ) {
+        this._stopListening(resource);
+      }
     }
 
     
     let listeners = 0;
-    for (const count of this._listenerCount) {
+    for (const count of this._listenerCount.values()) {
       listeners += count;
     }
     if (listeners <= 0) {
       this._unwatchAllTargets();
-    }
-  }
-
-  
-
-
-
-
-
-
-  _registerListeners(resource, { onAvailable, onDestroyed }) {
-    this._availableListeners.on(resource, onAvailable);
-    if (onDestroyed) {
-      this._destroyedListeners.on(resource, onDestroyed);
     }
   }
 
