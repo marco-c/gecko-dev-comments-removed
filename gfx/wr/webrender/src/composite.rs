@@ -884,6 +884,15 @@ pub trait Compositor {
     
     
     
+    fn invalidate_tile(
+        &mut self,
+        _id: NativeTileId,
+    ) {}
+
+    
+    
+    
+    
     
     
     

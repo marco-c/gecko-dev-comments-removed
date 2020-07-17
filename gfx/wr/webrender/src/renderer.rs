@@ -1822,7 +1822,7 @@ impl<T> VertexDataTexture<T> {
             data.len() * texels_per_item
         } else {
             MAX_VERTEX_TEXTURE_WIDTH - (MAX_VERTEX_TEXTURE_WIDTH % texels_per_item)
-        }; 
+        };
 
         let rect = DeviceIntRect::new(
             DeviceIntPoint::zero(),
@@ -5937,6 +5937,44 @@ impl Renderer {
 
         self.bind_frame_data(frame);
 
+        
+        
+        
+        
+        
+        
+        
+        
+        if let CompositorKind::Native { .. } = self.current_compositor_kind {
+            assert!(frame.composite_state.picture_caching_is_enabled);
+            let compositor = self.compositor_config.compositor().unwrap();
+            
+            if !frame.has_been_rendered {
+                for tile in frame.composite_state.opaque_tiles.iter().chain(frame.composite_state.alpha_tiles.iter()) {
+                    if !tile.dirty_rect.is_empty() {
+                        if let CompositeTileSurface::Texture { surface: ResolvedSurfaceTexture::Native { id, .. } } =
+                            tile.surface {
+                            compositor.invalidate_tile(id);
+                        }
+                    }
+                }
+            }
+            
+            
+            
+            
+            for surface in &frame.composite_state.external_surfaces {
+                if let Some((native_surface_id, _)) = surface.update_params {
+                    compositor.invalidate_tile(NativeTileId { surface_id: native_surface_id, x: 0, y: 0 });
+                }
+            }
+            
+            
+            
+            
+            frame.composite_state.composite_native(&mut **compositor);
+        }
+
         for (_pass_index, pass) in frame.passes.iter_mut().enumerate() {
             #[cfg(not(target_os = "android"))]
             let _gm = self.gpu_profile.start_marker(&format!("pass {}", _pass_index));
@@ -5998,12 +6036,13 @@ impl Renderer {
                             
                             match self.current_compositor_kind {
                                 CompositorKind::Native { .. } => {
+                                    
+                                    
+                                    
                                     self.update_external_native_surfaces(
                                         &frame.composite_state.external_surfaces,
                                         results,
                                     );
-                                    let compositor = self.compositor_config.compositor().unwrap();
-                                    frame.composite_state.composite_native(&mut **compositor);
                                 }
                                 CompositorKind::Draw { max_partial_present_rects, draw_previous_partial_present_regions, .. } => {
                                     self.composite_simple(
