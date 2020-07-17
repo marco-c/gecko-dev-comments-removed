@@ -103,7 +103,7 @@
 
 #  define MOZ_WEAKPTR_DECLARE_THREAD_SAFETY_CHECK
          \
-    Maybe<nsAutoOwningThread> _owningThread;
+    Maybe<nsAutoOwningEventTarget> _owningThread;
 #  define MOZ_WEAKPTR_INIT_THREAD_SAFETY_CHECK() \
     do {                                         \
       if (p) {                                   \
