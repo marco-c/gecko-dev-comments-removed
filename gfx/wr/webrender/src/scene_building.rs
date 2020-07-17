@@ -450,10 +450,6 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         main_prim_list: &mut PrimitiveList,
     ) {
-        if !self.config.global_enable_picture_caching {
-            return;
-        }
-
         
         debug_assert!(self.picture_caching_initialized);
 
