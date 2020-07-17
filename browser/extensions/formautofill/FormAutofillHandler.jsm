@@ -885,6 +885,18 @@ class FormAutofillAddressSection extends FormAutofillSection {
 }
 
 class FormAutofillCreditCardSection extends FormAutofillSection {
+  
+
+
+
+
+
+
+
+
+
+
+
   constructor(fieldDetails, winUtils, handler) {
     super(fieldDetails, winUtils);
 
