@@ -151,10 +151,9 @@ class OpenSearchEngine extends SearchEngine {
     super({
       
       isAppProvided: gModernConfig ? false : options.isAppProvided,
+      loadPath: OpenSearchEngine.getAnonymizedLoadPath(shortName, file, uri),
       shortName,
     });
-
-    this._loadPath = this.getAnonymizedLoadPath(file, uri);
   }
 
   
@@ -365,7 +364,11 @@ class OpenSearchEngine extends SearchEngine {
       }
 
       engine._shortName = SearchUtils.sanitizeName(engine.name);
-      engine._loadPath = engine.getAnonymizedLoadPath(null, engine._uri);
+      engine._loadPath = OpenSearchEngine.getAnonymizedLoadPath(
+        engine._shortName,
+        null,
+        engine._uri
+      );
       if (engine._extensionID) {
         engine._loadPath += ":" + engine._extensionID;
       }
@@ -671,13 +674,13 @@ class OpenSearchEngine extends SearchEngine {
 
 
 
-  getDir(key, iface) {
+  static getDir(key, iface) {
     return Services.dirsvc.get(key, iface || Ci.nsIFile);
   }
 
   
   
-  getAnonymizedLoadPath(file, uri) {
+  static getAnonymizedLoadPath(shortName, file, uri) {
     
 
 
@@ -696,7 +699,7 @@ class OpenSearchEngine extends SearchEngine {
       distribution: XRE_APP_DISTRIBUTION_DIR,
     };
 
-    let leafName = this._shortName;
+    let leafName = shortName;
     if (!leafName) {
       return "null";
     }
@@ -733,7 +736,9 @@ class OpenSearchEngine extends SearchEngine {
           appPath = appPath.spec;
           let spec = uri.spec;
           if (spec.includes(appPath)) {
-            let appURI = Services.io.newFileURI(this.getDir(knownDirs.app));
+            let appURI = Services.io.newFileURI(
+              OpenSearchEngine.getDir(knownDirs.app)
+            );
             uri = Services.io.newURI(spec.replace(appPath, appURI.spec));
           }
         }

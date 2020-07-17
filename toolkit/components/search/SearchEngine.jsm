@@ -661,11 +661,17 @@ class SearchEngine {
 
 
 
+
+
   constructor(options = {}) {
     if (!("isAppProvided" in options)) {
       throw new Error("isAppProvided missing from options.");
     }
+    if (!("loadPath" in options)) {
+      throw new Error("loadPath missing from options.");
+    }
     this._isAppProvided = options.isAppProvided;
+    this._loadPath = options.loadPath;
 
     if ("name" in options) {
       this._shortName = SearchUtils.sanitizeName(options.name);
@@ -1064,7 +1070,6 @@ class SearchEngine {
   _initWithJSON(json) {
     this._name = json._name;
     this._shortName = json._shortName;
-    this._loadPath = json._loadPath;
     this._description = json.description;
     this._hasPreferredIcon = json._hasPreferredIcon == undefined;
     this._queryCharset = json.queryCharset || SearchUtils.DEFAULT_QUERY_CHARSET;
