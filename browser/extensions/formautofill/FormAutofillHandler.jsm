@@ -885,8 +885,36 @@ class FormAutofillAddressSection extends FormAutofillSection {
 }
 
 class FormAutofillCreditCardSection extends FormAutofillSection {
-  constructor(fieldDetails, winUtils) {
+  constructor(fieldDetails, winUtils, handler) {
     super(fieldDetails, winUtils);
+
+    this.handler = handler;
+
+    
+    
+    
+    
+    if (this.fieldDetails.length) {
+      if (handler.window.location != handler.window.parent.location) {
+        log.debug(
+          "Credit card form is in an iframe -- watching for pagehide",
+          fieldDetails
+        );
+        handler.window.addEventListener(
+          "pagehide",
+          this._handlePageHide.bind(this)
+        );
+      }
+    }
+  }
+
+  _handlePageHide(event) {
+    this.handler.window.removeEventListener(
+      "pagehide",
+      this._handlePageHide.bind(this)
+    );
+    log.debug("Credit card subframe is pagehideing", this.handler.form);
+    this.handler.onFormSubmitted();
   }
 
   isValidSection() {
@@ -1088,18 +1116,36 @@ class FormAutofillHandler {
 
 
 
-  constructor(form) {
+
+
+
+
+
+  constructor(form, onFormSubmitted = () => {}) {
     this._updateForm(form);
 
     
 
 
-    this.winUtils = this.form.rootElement.ownerGlobal.windowUtils;
+    this.window = this.form.rootElement.ownerGlobal;
+
+    
+
+
+    this.winUtils = this.window.windowUtils;
 
     
 
 
     this.timeStartedFillingMS = null;
+
+    
+
+
+
+    this.onFormSubmitted = () => {
+      onFormSubmitted(this.form, this.window, this);
+    };
   }
 
   set focusedInput(element) {
@@ -1214,7 +1260,8 @@ class FormAutofillHandler {
       } else if (type == FormAutofillUtils.SECTION_TYPES.CREDIT_CARD) {
         section = new FormAutofillCreditCardSection(
           fieldDetails,
-          this.winUtils
+          this.winUtils,
+          this
         );
       } else {
         throw new Error("Unknown field type.");

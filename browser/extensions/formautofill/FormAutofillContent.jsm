@@ -516,7 +516,13 @@ var FormAutofillContent = {
 
 
 
-  formSubmitted(formElement, domWin = formElement.ownerGlobal) {
+
+
+  formSubmitted(
+    formElement,
+    domWin = formElement.ownerGlobal,
+    handler = undefined
+  ) {
     this.debug("Handling form submission");
 
     if (!FormAutofill.isAutofillEnabled) {
@@ -530,7 +536,7 @@ var FormAutofillContent = {
       return;
     }
 
-    let handler = this._formsDetails.get(formElement);
+    handler = handler ?? this._formsDetails.get(formElement);
     if (!handler) {
       this.debug("Form element could not map to an existing handler");
       return;
@@ -719,7 +725,10 @@ var FormAutofillContent = {
     let formHandler = this._getFormHandler(element);
     if (!formHandler) {
       let formLike = FormLikeFactory.createFromField(element);
-      formHandler = new FormAutofillHandler(formLike);
+      formHandler = new FormAutofillHandler(
+        formLike,
+        this.formSubmitted.bind(this)
+      );
     } else if (!formHandler.updateFormIfNeeded(element)) {
       this.debug("No control is removed or inserted since last collection.");
       return;
