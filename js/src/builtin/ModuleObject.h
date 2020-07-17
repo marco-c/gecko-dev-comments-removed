@@ -312,9 +312,6 @@ class ModuleObject : public NativeObject {
   void setMetaObject(JSObject* obj);
 
   
-  bool noteFunctionDeclaration(JSContext* cx, uint32_t funIndex);
-
-  
   static bool instantiateFunctionDeclarations(JSContext* cx,
                                               HandleModuleObject self);
 
@@ -330,6 +327,7 @@ class ModuleObject : public NativeObject {
   static bool createEnvironment(JSContext* cx, HandleModuleObject self);
 
   frontend::FunctionDeclarationVector* functionDeclarations();
+  void initFunctionDeclarations(frontend::FunctionDeclarationVector&& decls);
 
  private:
   static const JSClassOps classOps_;
