@@ -4616,6 +4616,8 @@ class HTMLEditor final : public TextEditor,
   EditorDOMPoint GetNewCaretPointAfterInsertingHTML(
       const EditorDOMPoint& lastInsertedPoint) const;
 
+  class HTMLWithContextInserter;
+
   
 
 
