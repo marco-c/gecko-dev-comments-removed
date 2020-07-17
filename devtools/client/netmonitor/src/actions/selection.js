@@ -27,7 +27,7 @@ function selectRequest(id, request) {
 
 
 function selectRequestByIndex(index) {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     const requests = getSortedRequests(getState());
     let itemId;
     if (index >= 0 && index < requests.length) {
@@ -44,7 +44,7 @@ function selectRequestByIndex(index) {
 
 
 function selectDelta(delta) {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     const state = getState();
     const requests = getDisplayedRequests(state);
 

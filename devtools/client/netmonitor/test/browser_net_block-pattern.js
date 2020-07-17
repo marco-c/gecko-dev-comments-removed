@@ -34,6 +34,13 @@ add_task(async function() {
   };
 
   
+  await waitUntil(() => {
+    return document.querySelector(
+      "#network-action-bar-blocked-panel .request-blocking-add-form input.devtools-searchinput:focus"
+    );
+  });
+
+  
   type("test1");
   EventUtils.synthesizeKey("KEY_Enter");
   type("test/*/test3");

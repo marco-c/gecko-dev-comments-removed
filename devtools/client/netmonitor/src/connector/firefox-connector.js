@@ -378,6 +378,16 @@ class FirefoxConnector {
   
 
 
+  getBlockedUrls() {
+    if (!this.webConsoleFront.traits.blockedUrls) {
+      return [];
+    }
+    return this.webConsoleFront.getBlockedUrls();
+  }
+
+  
+
+
 
 
   setBlockedUrls(urls) {

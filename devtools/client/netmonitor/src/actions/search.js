@@ -50,7 +50,7 @@ function search(connector, query) {
   
   
   
-  const newOngoingSearch = async (dispatch, getState) => {
+  const newOngoingSearch = async ({ dispatch, getState }) => {
     const state = getState();
 
     dispatch(stopOngoingSearch());
@@ -121,7 +121,7 @@ async function loadResource(connector, resource) {
 
 
 function searchResource(resource, query) {
-  return async (dispatch, getState) => {
+  return async ({ dispatch, getState }) => {
     const state = getState();
     const ongoingSearch = getOngoingSearch(state);
 
@@ -176,7 +176,7 @@ function clearSearchResults() {
 
 
 function clearSearchResultAndCancel() {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     dispatch(stopOngoingSearch());
     dispatch(clearSearchResults());
   };
@@ -196,7 +196,7 @@ function updateSearchStatus(status) {
 
 
 function closeSearch() {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     dispatch(stopOngoingSearch());
     dispatch({ type: OPEN_ACTION_BAR, open: false });
   };
@@ -207,7 +207,7 @@ function closeSearch() {
 
 
 function openSearch() {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     dispatch({ type: OPEN_ACTION_BAR, open: true });
   };
 }
@@ -217,7 +217,7 @@ function openSearch() {
 
 
 function toggleCaseSensitiveSearch() {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     dispatch({ type: TOGGLE_SEARCH_CASE_SENSITIVE_SEARCH });
   };
 }
@@ -226,7 +226,7 @@ function toggleCaseSensitiveSearch() {
 
 
 function toggleSearchPanel() {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     const state = getState();
 
     state.ui.networkActionOpen &&
@@ -256,7 +256,7 @@ function addOngoingSearch(ongoingSearch) {
 
 
 function stopOngoingSearch() {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     const state = getState();
     const ongoingSearch = getOngoingSearch(state);
     const status = getSearchStatus(state);
@@ -275,7 +275,7 @@ function stopOngoingSearch() {
 
 
 function navigate(searchResult) {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     
     
     dispatch(setTargetSearchResult(searchResult));

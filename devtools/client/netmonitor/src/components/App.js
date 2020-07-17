@@ -54,9 +54,10 @@ class App extends Component {
       statisticsOpen: PropTypes.bool.isRequired,
       
       toolboxDoc: PropTypes.object.isRequired,
+      
+      addBlockedUrl: PropTypes.func,
     };
   }
-
   
 
   render() {

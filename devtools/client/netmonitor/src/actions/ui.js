@@ -33,7 +33,7 @@ const DEVTOOLS_DISABLE_CACHE_PREF = "devtools.cache.disabled";
 
 
 function openNetworkDetails(open) {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     const visibleRequestItems = getDisplayedRequests(getState());
     const defaultSelectedId = visibleRequestItems.length
       ? visibleRequestItems[0].id
@@ -193,7 +193,7 @@ function setColumnsWidth(widths) {
 
 
 function toggleNetworkDetails() {
-  return (dispatch, getState) =>
+  return ({ dispatch, getState }) =>
     dispatch(openNetworkDetails(!getState().ui.networkDetailsOpen));
 }
 
@@ -201,7 +201,7 @@ function toggleNetworkDetails() {
 
 
 function toggleNetworkActionBar() {
-  return (dispatch, getState) =>
+  return ({ dispatch, getState }) =>
     dispatch(openNetworkActionBar(!getState().ui.networkActionOpen));
 }
 
@@ -209,7 +209,7 @@ function toggleNetworkActionBar() {
 
 
 function togglePersistentLogs() {
-  return (dispatch, getState) =>
+  return ({ dispatch, getState }) =>
     dispatch(enablePersistentLogs(!getState().ui.persistentLogsEnabled));
 }
 
@@ -217,7 +217,7 @@ function togglePersistentLogs() {
 
 
 function toggleBrowserCache() {
-  return (dispatch, getState) =>
+  return ({ dispatch, getState }) =>
     dispatch(disableBrowserCache(!getState().ui.browserCacheDisabled));
 }
 
@@ -225,7 +225,7 @@ function toggleBrowserCache() {
 
 
 function toggleStatistics(connector) {
-  return (dispatch, getState) =>
+  return ({ dispatch, getState }) =>
     dispatch(openStatistics(connector, !getState().ui.statisticsOpen));
 }
 

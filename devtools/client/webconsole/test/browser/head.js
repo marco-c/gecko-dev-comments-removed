@@ -859,6 +859,25 @@ async function openInspector(options = {}) {
 
 
 
+async function openNetMonitor(tab) {
+  const target = await TargetFactory.forTab(tab || gBrowser.selectedTab);
+  let toolbox = await gDevTools.getToolbox(target);
+  if (!toolbox) {
+    toolbox = await gDevTools.showToolbox(target);
+  }
+  await toolbox.selectTool("netmonitor");
+  return toolbox.getCurrentPanel();
+}
+
+
+
+
+
+
+
+
+
+
 async function openConsole(tab) {
   const target = await TargetFactory.forTab(tab || gBrowser.selectedTab);
   const toolbox = await gDevTools.showToolbox(target, "webconsole");

@@ -83,7 +83,7 @@ function cloneSelectedRequest() {
 
 
 function sendCustomRequest(connector, requestId = null) {
-  return async (dispatch, getState) => {
+  return async ({ dispatch, getState }) => {
     let request;
     if (requestId) {
       request = getRequestById(getState(), requestId);
