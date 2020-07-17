@@ -105,11 +105,11 @@ class FxAccountsCommands {
 
 
 
-  async pollDeviceCommands(receivedIndex = 0) {
+  async pollDeviceCommands(notifiedIndex = 0) {
     
     
     
-    const scheduledFetch = receivedIndex == 0;
+    const scheduledFetch = notifiedIndex == 0;
     if (
       !Services.prefs.getBoolPref("identity.fxaccounts.commands.enabled", true)
     ) {
@@ -123,9 +123,9 @@ class FxAccountsCommands {
       }
       
       
-      const lastCommandIndex = device.lastCommandIndex + 1 || receivedIndex;
+      const lastCommandIndex = device.lastCommandIndex + 1 || notifiedIndex;
       
-      if (receivedIndex > 0 && receivedIndex < lastCommandIndex) {
+      if (notifiedIndex > 0 && notifiedIndex < lastCommandIndex) {
         return;
       }
       const { index, messages } = await this._fetchDeviceCommands(
@@ -142,7 +142,7 @@ class FxAccountsCommands {
             messages.length
           );
         }
-        await this._handleCommands(messages);
+        await this._handleCommands(messages, notifiedIndex);
       }
     });
     return true;
@@ -165,7 +165,24 @@ class FxAccountsCommands {
     return client.getCommands(sessionToken, opts);
   }
 
-  async _handleCommands(messages) {
+  _getReason(notifiedIndex, messageIndex) {
+    
+    
+    
+    
+    
+    if (notifiedIndex == 0) {
+      return "poll";
+    } else if (notifiedIndex > messageIndex) {
+      return "push-missed";
+    }
+    
+    
+    
+    return "push";
+  }
+
+  async _handleCommands(messages, notifiedIndex) {
     try {
       await this._fxai.device.refreshDeviceList();
     } catch (e) {
@@ -173,8 +190,9 @@ class FxAccountsCommands {
     }
     
     const tabsReceived = [];
-    for (const { data } of messages) {
+    for (const { index, data } of messages) {
       const { command, payload, sender: senderId } = data;
+      const reason = this._getReason(notifiedIndex, index);
       const sender =
         senderId && this._fxai.device.recentDeviceList
           ? this._fxai.device.recentDeviceList.find(d => d.id == senderId)
@@ -187,7 +205,11 @@ class FxAccountsCommands {
       switch (command) {
         case COMMAND_SENDTAB:
           try {
-            const { title, uri } = await this.sendTab.handle(senderId, payload);
+            const { title, uri } = await this.sendTab.handle(
+              senderId,
+              payload,
+              reason
+            );
             log.info(
               `Tab received with FxA commands: ${title} from ${
                 sender ? sender.name : "Unknown device"
@@ -276,7 +298,7 @@ class SendTab {
   }
 
   
-  async handle(senderID, { encrypted }) {
+  async handle(senderID, { encrypted }, reason) {
     const bytes = await this._decrypt(encrypted);
     const decoder = new TextDecoder("utf8");
     const data = JSON.parse(decoder.decode(bytes));
@@ -292,7 +314,7 @@ class SendTab {
       "command-received",
       COMMAND_SENDTAB_TAIL,
       this._fxai.telemetry.sanitizeDeviceId(senderID),
-      { flowID, streamID }
+      { flowID, streamID, reason }
     );
 
     return {
