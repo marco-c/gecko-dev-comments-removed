@@ -2128,6 +2128,11 @@ bool FallbackICCodeCompiler::emitGetElem(bool hasReceiver) {
 
   leaveStubFrame(masm, true);
 
+  if (!IsTypeInferenceEnabled()) {
+    EmitReturnFromIC(masm);
+    return true;
+  }
+
   
   
   
@@ -2771,6 +2776,11 @@ bool FallbackICCodeCompiler::emitGetProp(bool hasReceiver) {
 
   leaveStubFrame(masm, true);
 
+  if (!IsTypeInferenceEnabled()) {
+    EmitReturnFromIC(masm);
+    return true;
+  }
+
   
   
   
@@ -3376,6 +3386,11 @@ bool FallbackICCodeCompiler::emitCall(bool isSpread, bool isConstructing) {
     masm.assumeUnreachable("Failed to return object in constructing call.");
 #endif
     masm.bind(&skipThisReplace);
+  }
+
+  if (!IsTypeInferenceEnabled()) {
+    EmitReturnFromIC(masm);
+    return true;
   }
 
   

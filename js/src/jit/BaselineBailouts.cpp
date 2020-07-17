@@ -1293,7 +1293,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
 
   
   
-  if (BytecodeOpHasTypeSet(JSOp(*pc))) {
+  if (BytecodeOpHasTypeSet(JSOp(*pc)) && IsTypeInferenceEnabled()) {
     ICFallbackStub* fallbackStub = icEntry.fallbackStub();
     if (!fallbackStub->toMonitoredFallbackStub()->getFallbackMonitorStub(
             cx, script)) {
