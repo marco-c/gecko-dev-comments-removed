@@ -89,17 +89,6 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 
 - (void)invalidateState;
 
-
-
-
-- (BOOL)ignoreWithParent:(mozAccessible*)parent;
-
-
-
-
-
-- (BOOL)ignoreChild:(mozAccessible*)child;
-
 #pragma mark - mozAccessible protocol / widget
 
 
@@ -195,6 +184,12 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 
 - (void)moxPerformPress;
 
+
+- (BOOL)moxIgnoreWithParent:(mozAccessible*)parent;
+
+
+- (BOOL)moxIgnoreChild:(mozAccessible*)child;
+
 #pragma mark -
 
 
@@ -205,10 +200,6 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 - (BOOL)isExpired;
 
 
-
-
-
-- (BOOL)isAccessibilityElement;
 
 
 - (NSString*)description;
