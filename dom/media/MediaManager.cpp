@@ -9,27 +9,15 @@
 #include "AudioCaptureTrack.h"
 #include "AudioDeviceInfo.h"
 #include "AudioStreamTrack.h"
+#include "CubebDeviceEnumerator.h"
 #include "MediaTimer.h"
 #include "MediaTrackConstraints.h"
 #include "MediaTrackGraphImpl.h"
 #include "MediaTrackListener.h"
+#include "ThreadSafeRefcountingWithMainThreadDestruction.h"
+#include "VideoStreamTrack.h"
+#include "VideoUtils.h"
 #include "mozilla/Base64.h"
-#include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
-#include "mozilla/dom/File.h"
-#include "mozilla/dom/MediaDeviceInfo.h"
-#include "mozilla/dom/MediaDevices.h"
-#include "mozilla/dom/MediaStreamBinding.h"
-#include "mozilla/dom/MediaStreamTrackBinding.h"
-#include "mozilla/dom/GetUserMediaRequestBinding.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/UserActivation.h"
-#include "mozilla/dom/WindowContext.h"
-#include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/media/MediaChild.h"
-#include "mozilla/media/MediaTaskUtils.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/PeerIdentity.h"
@@ -38,6 +26,22 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Types.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/FeaturePolicyUtils.h"
+#include "mozilla/dom/File.h"
+#include "mozilla/dom/GetUserMediaRequestBinding.h"
+#include "mozilla/dom/MediaDeviceInfo.h"
+#include "mozilla/dom/MediaDevices.h"
+#include "mozilla/dom/MediaStreamBinding.h"
+#include "mozilla/dom/MediaStreamTrackBinding.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/UserActivation.h"
+#include "mozilla/dom/WindowContext.h"
+#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/media/MediaChild.h"
+#include "mozilla/media/MediaTaskUtils.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsArray.h"
 #include "nsContentUtils.h"
@@ -53,15 +57,11 @@
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
-#include "nspr.h"
 #include "nsProxyRelease.h"
-#include "nss.h"
 #include "nsVariant.h"
+#include "nspr.h"
+#include "nss.h"
 #include "pk11pub.h"
-#include "ThreadSafeRefcountingWithMainThreadDestruction.h"
-#include "VideoStreamTrack.h"
-#include "VideoUtils.h"
-#include "CubebDeviceEnumerator.h"
 
 
 #include "MediaEngineDefault.h"
@@ -72,11 +72,12 @@
 #endif
 
 #if defined(XP_WIN)
-#  include "mozilla/WindowsVersion.h"
-#  include <objbase.h>
-#  include <winsock2.h>
 #  include <iphlpapi.h>
+#  include <objbase.h>
 #  include <tchar.h>
+#  include <winsock2.h>
+
+#  include "mozilla/WindowsVersion.h"
 #endif
 
 
@@ -1412,9 +1413,9 @@ RefPtr<MediaManager::BadConstraintsPromise> MediaManager::SelectSettings(
   
   
 
-  return MediaManager::PostTask<BadConstraintsPromise>(
-      __func__, [aConstraints, aSources, aIsChrome](
-                    MozPromiseHolder<BadConstraintsPromise>& holder) mutable {
+  return MediaManager::Dispatch<BadConstraintsPromise>(
+      __func__, [aConstraints, aSources,
+                 aIsChrome](MozPromiseHolder<BadConstraintsPromise>& holder) {
         auto& sources = *aSources;
 
         
@@ -1894,14 +1895,14 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateRawDevices(
   } else {
     
     
-    MediaManager::PostTask(task.forget());
+    MediaManager::Dispatch(task.forget());
   }
 
   return promise;
 }
 
-MediaManager::MediaManager(UniquePtr<base::Thread> aMediaThread)
-    : mMediaThread(std::move(aMediaThread)), mBackend(nullptr) {
+MediaManager::MediaManager(already_AddRefed<TaskQueue> aMediaThread)
+    : mMediaThread(aMediaThread), mBackend(nullptr) {
   mPrefs.mFreq = 1000;  
   mPrefs.mWidth = 0;    
   mPrefs.mHeight = 0;   
@@ -1963,9 +1964,7 @@ StaticMutex MediaManager::sSingletonMutex;
 
 bool MediaManager::IsInMediaThread() {
   StaticMutexAutoLock lock(sSingletonMutex);
-  return sSingleton ? (sSingleton->mMediaThread->thread_id() ==
-                       PlatformThread::CurrentId())
-                    : false;
+  return sSingleton && sSingleton->mMediaThread->IsOnCurrentThread();
 }
 #endif
 
@@ -1984,20 +1983,11 @@ MediaManager* MediaManager::Get() {
     timesCreated++;
     MOZ_RELEASE_ASSERT(timesCreated == 1);
 
-    {
-      UniquePtr<base::Thread> mediaThread =
-          MakeUnique<base::Thread>("MediaManager");
+    RefPtr<TaskQueue> mediaThread = new TaskQueue(
+        GetMediaThreadPool(MediaThreadType::PLAYBACK), "MediaManager");
+    LOG("New Media thread for gum");
 
-      base::Thread::Options options;
-      options.message_loop_type = MessageLoop::TYPE_MOZILLA_NONMAINTHREAD;
-      if (!mediaThread->StartWithOptions(options)) {
-        MOZ_CRASH();
-      }
-
-      LOG("New Media thread for gum");
-
-      sSingleton = new MediaManager(std::move(mediaThread));
-    }
+    sSingleton = new MediaManager(mediaThread.forget());
 
     nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
     if (obs) {
@@ -2103,7 +2093,7 @@ void MediaManager::StartupInit() {
 }
 
 
-void MediaManager::PostTask(already_AddRefed<Runnable> task) {
+void MediaManager::Dispatch(already_AddRefed<Runnable> task) {
   if (sHasShutdown) {
     
     
@@ -2114,16 +2104,16 @@ void MediaManager::PostTask(already_AddRefed<Runnable> task) {
   }
   NS_ASSERTION(Get(), "MediaManager singleton?");
   NS_ASSERTION(Get()->mMediaThread, "No thread yet");
-  Get()->mMediaThread->message_loop()->PostTask(std::move(task));
+  MOZ_ALWAYS_SUCCEEDS(Get()->mMediaThread->Dispatch(std::move(task)));
 }
 
 template <typename MozPromiseType, typename FunctionType>
 
-RefPtr<MozPromiseType> MediaManager::PostTask(const char* aName,
+RefPtr<MozPromiseType> MediaManager::Dispatch(const char* aName,
                                               FunctionType&& aFunction) {
   MozPromiseHolder<MozPromiseType> holder;
   RefPtr<MozPromiseType> promise = holder.Ensure(aName);
-  MediaManager::PostTask(NS_NewRunnableFunction(
+  MediaManager::Dispatch(NS_NewRunnableFunction(
       aName, [h = std::move(holder), func = std::forward<FunctionType>(
                                          aFunction)]() mutable { func(h); }));
   return promise;
@@ -3512,13 +3502,13 @@ void MediaManager::GetPrefs(nsIPrefBranch* aBranch, const char* aData) {
     
     
     MOZ_DIAGNOSTIC_ASSERT(!sHasShutdown);
-    mMediaThread->message_loop()->PostTask(NS_NewRunnableFunction(
+    MOZ_ALWAYS_SUCCEEDS(mMediaThread->Dispatch(NS_NewRunnableFunction(
         "MediaManager::SetFakeDeviceChangeEventsEnabled",
         [enable = mPrefs.mFakeDeviceChangeEventOn] {
           if (MediaManager* mm = MediaManager::GetIfExists()) {
             mm->GetBackend()->SetFakeDeviceChangeEventsEnabled(enable);
           }
-        }));
+        })));
   }
 #endif
 }
@@ -3615,7 +3605,6 @@ void MediaManager::Shutdown() {
           mManager->mDeviceListChangeListener.DisconnectIfExists();
         }
       }
-      mozilla::ipc::BackgroundChild::CloseForCurrentThread();
       
       
       mManager->mBackend =
@@ -3651,22 +3640,20 @@ void MediaManager::Shutdown() {
   
   
   auto shutdown = MakeRefPtr<ShutdownTask>(
-      this, media::NewRunnableFrom([this, self = RefPtr<MediaManager>(this)]() {
+      this, media::NewRunnableFrom([]() {
         LOG("MediaManager shutdown lambda running, releasing MediaManager "
             "singleton and thread");
-        if (mMediaThread) {
-          mMediaThread->Stop();
-        }
         StaticMutexAutoLock lock(sSingletonMutex);
         
         media::GetShutdownBarrier()->RemoveBlocker(
             sSingleton->mShutdownBlocker);
 
-        
         sSingleton = nullptr;
         return NS_OK;
       }));
-  mMediaThread->message_loop()->PostTask(shutdown.forget());
+  MOZ_ALWAYS_SUCCEEDS(mMediaThread->Dispatch(shutdown.forget()));
+  mMediaThread->BeginShutdown();
+  mMediaThread->AwaitShutdownAndIdle();
 }
 
 void MediaManager::SendPendingGUMRequest() {
@@ -3713,7 +3700,7 @@ nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
   } else if (!strcmp(aTopic, "getUserMedia:got-device-permission")) {
     MOZ_ASSERT(aSubject);
     nsCOMPtr<nsIRunnable> task = do_QueryInterface(aSubject);
-    MediaManager::PostTask(NewTaskFrom([task] { task->Run(); }));
+    MediaManager::Dispatch(NewTaskFrom([task] { task->Run(); }));
     return NS_OK;
   } else if (!strcmp(aTopic, "getUserMedia:privileged:allow") ||
              !strcmp(aTopic, "getUserMedia:response:allow")) {
@@ -3778,7 +3765,7 @@ nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
       return task->Denied(MediaMgrError::Name::AbortError, u"In shutdown"_ns);
     }
     
-    MediaManager::PostTask(task.forget());
+    MediaManager::Dispatch(task.forget());
     return NS_OK;
 
   } else if (IsGUMResponseNoAccess(aTopic, gumNoAccessError)) {
@@ -4103,7 +4090,7 @@ SourceListener::InitializeAsync() {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
   MOZ_DIAGNOSTIC_ASSERT(!mStopped);
 
-  return MediaManager::PostTask<SourceListenerPromise>(
+  return MediaManager::Dispatch<SourceListenerPromise>(
              __func__,
              [principal = GetPrincipalHandle(),
               audioDevice =
@@ -4262,7 +4249,7 @@ void SourceListener::StopTrack(MediaTrack* aTrack) {
 
   state.mDisableTimer->Cancel();
 
-  MediaManager::PostTask(NewTaskFrom([device = state.mDevice]() {
+  MediaManager::Dispatch(NewTaskFrom([device = state.mDevice]() {
     device->Stop();
     device->Deallocate();
   }));
@@ -4391,7 +4378,7 @@ void SourceListener::SetEnabledFor(MediaTrack* aTrack, bool aEnable) {
             nsString inputDeviceGroupId;
             state.mDevice->GetRawGroupId(inputDeviceGroupId);
 
-            return MediaManager::PostTask<DeviceOperationPromise>(
+            return MediaManager::Dispatch<DeviceOperationPromise>(
                 __func__,
                 [self, device = state.mDevice, aEnable, inputDeviceGroupId](
                     MozPromiseHolder<DeviceOperationPromise>& h) {
@@ -4591,7 +4578,7 @@ SourceListener::ApplyConstraintsToTrack(
     return SourceListenerPromise::CreateAndResolve(false, __func__);
   }
 
-  return MediaManager::PostTask<SourceListenerPromise>(
+  return MediaManager::Dispatch<SourceListenerPromise>(
       __func__, [device = state.mDevice, aConstraints,
                  isChrome = aCallerType == CallerType::System](
                     MozPromiseHolder<SourceListenerPromise>& aHolder) mutable {
