@@ -270,13 +270,6 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
     return;
   }
 
-  if (eventType.EqualsLiteral("popupshown") &&
-      aTarget->IsXULElement(nsGkAtoms::tooltip)) {
-    targetDocument->ContentInserted(aTarget->AsContent(),
-                                    aTarget->GetNextSibling()->AsContent());
-    return;
-  }
-
   Accessible* accessible = targetDocument->GetAccessibleOrContainer(aTarget);
   if (!accessible) return;
 
@@ -499,6 +492,15 @@ void RootAccessible::HandlePopupShownEvent(Accessible* aAccessible) {
     return;
   }
 
+  if (role == roles::TOOLTIP) {
+    
+    
+    
+    
+    nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_SHOW, aAccessible);
+    return;
+  }
+
   if (role == roles::COMBOBOX_LIST) {
     
     Accessible* combobox = aAccessible->Parent();
@@ -532,17 +534,12 @@ void RootAccessible::HandlePopupShownEvent(Accessible* aAccessible) {
 }
 
 void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
+  
+  
+  
   DocAccessible* document = nsAccUtils::GetDocAccessibleFor(aPopupNode);
   if (!document) return;
 
-  if (aPopupNode->IsXULElement(nsGkAtoms::tooltip)) {
-    document->ContentRemoved(aPopupNode->AsContent());
-    return;
-  }
-
-  
-  
-  
   Accessible* popup = document->GetAccessible(aPopupNode);
   if (!popup) {
     Accessible* popupContainer = document->GetContainerAccessible(aPopupNode);
