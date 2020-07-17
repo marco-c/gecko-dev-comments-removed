@@ -63,13 +63,11 @@ class RemoteDecoderManagerChild final
   
   void RunWhenGPUProcessRecreated(already_AddRefed<Runnable> aTask);
 
-  bool CanSend();
   layers::VideoBridgeSource GetSource() const { return mSource; }
 
  protected:
   void InitIPDL();
 
-  void ActorDestroy(ActorDestroyReason aWhy) override;
   void ActorDealloc() override;
 
   void HandleFatalError(const char* aMsg) const override;
@@ -97,9 +95,6 @@ class RemoteDecoderManagerChild final
 
   
   layers::VideoBridgeSource mSource;
-
-  
-  bool mCanSend = false;
 };
 
 }  
