@@ -1650,7 +1650,11 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
       CrashReporter::Annotation::ContentSandboxCapabilities,
       static_cast<int>(SandboxInfo::Get().AsInteger()));
 #  endif 
-#endif   
+  
+  auto remoteTypePrefix = RemoteTypePrefix(GetRemoteType());
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RemoteType,
+                                     remoteTypePrefix);
+#endif 
 
   return IPC_OK();
 }
@@ -2584,8 +2588,6 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
              aRemoteType.get()));
   }
 
-  auto remoteTypePrefix = RemoteTypePrefix(aRemoteType);
-
   
   if (aRemoteType == FILE_REMOTE_TYPE) {
     SetProcessName(u"file:// Content"_ns);
@@ -2595,16 +2597,12 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
     SetProcessName(u"Privileged Content"_ns);
   } else if (aRemoteType == LARGE_ALLOCATION_REMOTE_TYPE) {
     SetProcessName(u"Large Allocation Web Content"_ns);
-  } else if (remoteTypePrefix.EqualsLiteral(FISSION_WEB_REMOTE_TYPE)) {
+  } else if (RemoteTypePrefix(aRemoteType) == FISSION_WEB_REMOTE_TYPE) {
     SetProcessName(u"Isolated Web Content"_ns);
   }
   
 
   mRemoteType.Assign(aRemoteType);
-
-  
-  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RemoteType,
-                                     remoteTypePrefix);
 
   return IPC_OK();
 }
