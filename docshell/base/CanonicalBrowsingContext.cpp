@@ -268,9 +268,6 @@ nsISHistory* CanonicalBrowsingContext::GetSessionHistory() {
 UniquePtr<SessionHistoryInfo>
 CanonicalBrowsingContext::CreateSessionHistoryEntryForLoad(
     nsDocShellLoadState* aLoadState, nsIChannel* aChannel) {
-  MOZ_ASSERT(GetSessionHistory(),
-             "Creating an entry but session history is not enabled for this "
-             "browsing context!");
   RefPtr<SessionHistoryEntry> entry =
       new SessionHistoryEntry(aLoadState, aChannel);
   mLoadingEntries.AppendElement(entry);
@@ -282,12 +279,18 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
     uint64_t aSessionHistoryEntryId) {
   for (size_t i = 0; i < mLoadingEntries.Length(); ++i) {
     if (mLoadingEntries[i]->Info().Id() == aSessionHistoryEntryId) {
+      nsISHistory* shistory = GetSessionHistory();
+      if (!shistory) {
+        mLoadingEntries.RemoveElementAt(i);
+        return;
+      }
+
       RefPtr<SessionHistoryEntry> oldActiveEntry = mActiveEntry.forget();
       mActiveEntry = mLoadingEntries[i];
       mLoadingEntries.RemoveElementAt(i);
       if (IsTop()) {
-        GetSessionHistory()->AddEntry(mActiveEntry,
-                                       true);
+        shistory->AddEntry(mActiveEntry,
+                            true);
       } else {
         
         
@@ -295,8 +298,8 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
         
         if (oldActiveEntry) {
           
-          GetSessionHistory()->AddChildSHEntryHelper(oldActiveEntry,
-                                                     mActiveEntry, Top(), true);
+          shistory->AddChildSHEntryHelper(oldActiveEntry, mActiveEntry, Top(),
+                                          true);
         } else {
           SessionHistoryEntry* parentEntry =
               static_cast<CanonicalBrowsingContext*>(GetParent())->mActiveEntry;
@@ -312,8 +315,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
       Group()->EachParent([&](ContentParent* aParent) {
         
         
-        Unused << aParent->SendHistoryCommitLength(
-            Top(), GetSessionHistory()->GetCount());
+        Unused << aParent->SendHistoryCommitLength(Top(), shistory->GetCount());
       });
       return;
     }
