@@ -860,7 +860,11 @@ this.downloads = class extends ExtensionAPI {
               
               
               
-              download.start().catch(() => {});
+              download.start().catch(e => {
+                if (e.name !== "DownloadError") {
+                  Cu.reportError(e);
+                }
+              });
 
               return item.id;
             });
