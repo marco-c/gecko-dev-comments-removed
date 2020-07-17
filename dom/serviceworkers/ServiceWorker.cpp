@@ -204,10 +204,35 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  JS::CloneDataPolicy clonePolicy;
+  if (nsGlobalWindowInner::Cast(window)->IsSharedMemoryAllowed()) {
+    clonePolicy.allowSharedMemoryObjects();
+  }
+
   RefPtr<ServiceWorkerCloneData> data = new ServiceWorkerCloneData();
-  data->Write(aCx, aMessage, transferable, JS::CloneDataPolicy(), aRv);
+  data->Write(aCx, aMessage, transferable, clonePolicy, aRv);
   if (aRv.Failed()) {
     return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (data->CloneScope() ==
+      StructuredCloneHolder::StructuredCloneScope::SameProcess) {
+    data->SetAsErrorMessageData();
   }
 
   mInner->PostMessage(std::move(data), clientInfo.ref(), clientState.ref());
