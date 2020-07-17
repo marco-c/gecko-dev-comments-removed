@@ -24,6 +24,7 @@ class MOZ_STACK_CLASS WarpOracle {
   TempAllocator& alloc_;
   HandleScript outerScript_;
   WarpBailoutInfo bailoutInfo_;
+  WarpScriptSnapshotList scriptSnapshots_;
 
   
   
@@ -36,6 +37,7 @@ class MOZ_STACK_CLASS WarpOracle {
 
  public:
   WarpOracle(JSContext* cx, MIRGenerator& mirGen, HandleScript outerScript);
+  ~WarpOracle() { scriptSnapshots_.clear(); }
 
   MIRGenerator& mirGen() { return mirGen_; }
   WarpBailoutInfo& bailoutInfo() { return bailoutInfo_; }
@@ -50,6 +52,7 @@ class MOZ_STACK_CLASS WarpOracle {
   mozilla::GenericErrorResult<AbortReason> abort(HandleScript script,
                                                  AbortReason r,
                                                  const char* message, ...);
+  void addScriptSnapshot(WarpScriptSnapshot* scriptSnapshot);
 };
 
 }  

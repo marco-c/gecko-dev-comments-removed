@@ -428,7 +428,8 @@ using WarpEnvironment =
                      FunctionEnvironment>;
 
 
-class WarpScriptSnapshot : public TempObject {
+class WarpScriptSnapshot : public TempObject,
+                           public mozilla::LinkedListElement<WarpScriptSnapshot> {
   WarpGCPtr<JSScript*> script_;
   WarpEnvironment environment_;
   WarpOpSnapshotList opSnapshots_;
@@ -495,11 +496,13 @@ class WarpBailoutInfo {
   void setFailedLexicalCheck() { failedLexicalCheck_ = true; }
 };
 
+using WarpScriptSnapshotList = mozilla::LinkedList<WarpScriptSnapshot>;
+
 
 
 class WarpSnapshot : public TempObject {
   
-  WarpScriptSnapshot* script_;
+  WarpScriptSnapshotList scriptSnapshots_;
 
   
   
@@ -515,10 +518,10 @@ class WarpSnapshot : public TempObject {
 
  public:
   explicit WarpSnapshot(JSContext* cx, TempAllocator& alloc,
-                        WarpScriptSnapshot* script,
+                        WarpScriptSnapshotList&& scriptSnapshots,
                         const WarpBailoutInfo& bailoutInfo);
 
-  WarpScriptSnapshot* script() const { return script_; }
+  WarpScriptSnapshot* rootScript() { return scriptSnapshots_.getFirst(); }
 
   LexicalEnvironmentObject* globalLexicalEnv() const {
     return globalLexicalEnv_;
