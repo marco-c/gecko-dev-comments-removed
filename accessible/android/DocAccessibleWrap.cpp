@@ -165,9 +165,16 @@ void DocAccessibleWrap::CacheViewportCallback(nsITimer* aTimer,
     
     if (IPCAccessibilityActive()) {
       DocAccessibleChild* ipcDoc = docAcc->IPCDoc();
-      ipcDoc->GetPlatformExtension()->SendSetPivotBoundaries(
-          first ? first->Document()->IPCDoc() : ipcDoc, UNIQUE_ID(first),
-          last ? last->Document()->IPCDoc() : ipcDoc, UNIQUE_ID(last));
+      DocAccessibleChild* firstDoc =
+          first ? first->Document()->IPCDoc() : ipcDoc;
+      DocAccessibleChild* lastDoc = last ? last->Document()->IPCDoc() : ipcDoc;
+      if (ipcDoc && firstDoc && lastDoc) {
+        
+        
+        
+        ipcDoc->GetPlatformExtension()->SendSetPivotBoundaries(
+            firstDoc, UNIQUE_ID(first), lastDoc, UNIQUE_ID(last));
+      }
     } else if (SessionAccessibility* sessionAcc =
                    SessionAccessibility::GetInstanceFor(docAcc)) {
       sessionAcc->UpdateAccessibleFocusBoundaries(
