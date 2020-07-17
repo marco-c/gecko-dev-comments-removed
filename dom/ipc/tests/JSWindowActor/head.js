@@ -30,10 +30,10 @@ function declTest(name, cfg) {
     matches,
     remoteTypes,
     messageManagerGroups,
-    fission,
     test,
   } = cfg;
 
+  
   
   let actorOptions = {
     parent: Object.assign({}, windowActorOptions.parent),
@@ -56,25 +56,15 @@ function declTest(name, cfg) {
     info("Entering test: " + name);
 
     
-    let win = await BrowserTestUtils.openNewBrowserWindow({
-      remote: true,
-      fission,
-    });
     ChromeUtils.registerWindowActor("TestWindow", actorOptions);
-
-    
-    let browser = win.gBrowser.selectedBrowser;
-    BrowserTestUtils.loadURI(browser, url);
-    await BrowserTestUtils.browserLoaded(browser, false, url);
-
-    
-    info("browser ready");
     try {
-      await Promise.resolve(test(browser, win));
+      await BrowserTestUtils.withNewTab(url, async browser => {
+        info("browser ready");
+        await Promise.resolve(test(browser, window));
+      });
     } finally {
       
       ChromeUtils.unregisterWindowActor("TestWindow");
-      await BrowserTestUtils.closeWindow(win);
       info("Exiting test: " + name);
     }
   });

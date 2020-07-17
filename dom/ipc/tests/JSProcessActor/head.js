@@ -33,14 +33,9 @@ function promiseNotification(aNotification) {
 }
 
 function declTest(name, cfg) {
-  let {
-    url = "about:blank",
-    includeParent = false,
-    remoteTypes,
-    fission,
-    test,
-  } = cfg;
+  let { url = "about:blank", includeParent = false, remoteTypes, test } = cfg;
 
+  
   
   let actorOptions = {
     parent: Object.assign({}, processActorOptions.parent),
@@ -56,25 +51,15 @@ function declTest(name, cfg) {
     info("Entering test: " + name);
 
     
-    let win = await BrowserTestUtils.openNewBrowserWindow({
-      remote: true,
-      fission,
-    });
     ChromeUtils.registerProcessActor("TestProcessActor", actorOptions);
-
-    
-    let browser = win.gBrowser.selectedBrowser;
-    BrowserTestUtils.loadURI(browser, url);
-    await BrowserTestUtils.browserLoaded(browser, false, url);
-
-    
-    info("browser ready");
     try {
-      await Promise.resolve(test(browser, win));
+      await BrowserTestUtils.withNewTab(url, async browser => {
+        info("browser ready");
+        await Promise.resolve(test(browser, window));
+      });
     } finally {
       
       ChromeUtils.unregisterProcessActor("TestProcessActor");
-      await BrowserTestUtils.closeWindow(win);
       info("Exiting test: " + name);
     }
   });
