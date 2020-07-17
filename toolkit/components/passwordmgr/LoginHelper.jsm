@@ -14,8 +14,6 @@
 
 const EXPORTED_SYMBOLS = ["LoginHelper"];
 
-
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -183,6 +181,7 @@ this.LoginHelper = {
 
 
 
+
   checkLoginValues(aLogin) {
     function badCharacterPresent(l, c) {
       return (
@@ -198,6 +197,10 @@ this.LoginHelper = {
     
     if (badCharacterPresent(aLogin, "\0")) {
       throw new Error("login values can't contain nulls");
+    }
+
+    if (!aLogin.password || typeof aLogin.password != "string") {
+      throw new Error("passwords must be non-empty strings");
     }
 
     
@@ -285,7 +288,7 @@ this.LoginHelper = {
 
 
 
-  getLoginOrigin(uriString, allowJS) {
+  getLoginOrigin(uriString, allowJS = false) {
     let realm = "";
     try {
       let uri = Services.io.newURI(uriString);
@@ -963,16 +966,55 @@ this.LoginHelper = {
   async maybeImportLogins(loginDatas) {
     let loginsToAdd = [];
     let loginMap = new Map();
-    for (let loginData of loginDatas) {
+    for (let rawLoginData of loginDatas) {
+      
+      let loginData = ChromeUtils.shallowClone(rawLoginData);
+      loginData.origin = this.getLoginOrigin(loginData.origin);
+      if (!loginData.origin) {
+        continue;
+      }
+
+      loginData.formActionOrigin =
+        this.getLoginOrigin(loginData.formActionOrigin, true) ||
+        (typeof loginData.httpRealm == "string" ? null : "");
+
+      loginData.httpRealm =
+        typeof loginData.httpRealm == "string" ? loginData.httpRealm : null;
+
+      if (loginData.guid) {
+        
+        
+        
+        
+        let existingLogins = await Services.logins.searchLoginsAsync({
+          guid: loginData.guid,
+          origin: loginData.origin, 
+        });
+
+        if (existingLogins.length) {
+          log.debug("maybeImportLogins: Found existing login with GUID");
+          
+          let existingLogin = existingLogins[0].QueryInterface(
+            Ci.nsILoginMetaInfo
+          );
+
+          
+          
+          let propBag = this.newPropertyBag(loginData);
+          Services.logins.modifyLogin(existingLogin, propBag);
+          
+          continue;
+        }
+      }
+
       
       let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
         Ci.nsILoginInfo
       );
       login.init(
         loginData.origin,
-        loginData.formActionOrigin ||
-          (typeof loginData.httpRealm == "string" ? null : ""),
-        typeof loginData.httpRealm == "string" ? loginData.httpRealm : null,
+        loginData.formActionOrigin,
+        loginData.httpRealm,
         loginData.username,
         loginData.password,
         loginData.usernameElement || "",
@@ -985,6 +1027,7 @@ this.LoginHelper = {
       login.timePasswordChanged =
         loginData.timePasswordChanged || loginData.timeCreated;
       login.timesUsed = loginData.timesUsed || 1;
+      login.guid = loginData.guid || null;
 
       try {
         
