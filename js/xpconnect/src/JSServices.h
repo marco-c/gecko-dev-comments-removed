@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef JSServices_h
+#define JSServices_h
+
+#include "jstypes.h"
+
+namespace xpc {
+
+JSObject* NewJSServices(JSContext* cx);
+
+}
+
+#endif  
