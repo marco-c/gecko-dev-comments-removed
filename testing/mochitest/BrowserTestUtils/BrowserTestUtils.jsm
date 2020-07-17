@@ -537,7 +537,7 @@ var BrowserTestUtils = {
 
 
 
-  browserStopped(browser, expectedURI, checkAborts = false) {
+  waitForBrowserStateChange(browser, expectedURI, checkFn) {
     return new Promise(resolve => {
       let wpl = {
         onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
@@ -548,14 +548,13 @@ var BrowserTestUtils = {
               aStatus.toString(16) +
               "\n"
           );
-          if (
-            aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK &&
-            aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
-            (checkAborts || aStatus != Cr.NS_BINDING_ABORTED) &&
-            aWebProgress.isTopLevel
-          ) {
+          if (checkFn(aStateFlags, aStatus) && aWebProgress.isTopLevel) {
             let chan = aRequest.QueryInterface(Ci.nsIChannel);
-            dump("Browser loaded " + chan.originalURI.spec + "\n");
+            dump(
+              "Browser got expected state change " +
+                chan.originalURI.spec +
+                "\n"
+            );
             if (!expectedURI || chan.originalURI.spec == expectedURI) {
               browser.removeProgressListener(wpl);
               BrowserTestUtils._webProgressListeners.delete(wpl);
@@ -576,11 +575,77 @@ var BrowserTestUtils = {
       browser.addProgressListener(wpl);
       this._webProgressListeners.add(wpl);
       dump(
-        "Waiting for browser load" +
+        "Waiting for browser state change" +
           (expectedURI ? " of " + expectedURI : "") +
           "\n"
       );
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  browserStopped(browser, expectedURI, checkAborts = false) {
+    let testFn = function(aStateFlags, aStatus) {
+      return (
+        aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK &&
+        aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
+        (checkAborts || aStatus != Cr.NS_BINDING_ABORTED)
+      );
+    };
+    dump(
+      "Waiting for browser load" +
+        (expectedURI ? " of " + expectedURI : "") +
+        "\n"
+    );
+    return BrowserTestUtils.waitForBrowserStateChange(
+      browser,
+      expectedURI,
+      testFn
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  browserStarted(browser, expectedURI) {
+    let testFn = function(aStateFlags, aStatus) {
+      return (
+        aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK &&
+        aStateFlags & Ci.nsIWebProgressListener.STATE_START
+      );
+    };
+    dump(
+      "Waiting for browser to start load" +
+        (expectedURI ? " of " + expectedURI : "") +
+        "\n"
+    );
+    return BrowserTestUtils.waitForBrowserStateChange(
+      browser,
+      expectedURI,
+      testFn
+    );
   },
 
   
