@@ -270,7 +270,21 @@ class FormAutofillSection {
       if (maxLength) {
         switch (typeof profile[key]) {
           case "string":
-            profile[key] = profile[key].substr(0, maxLength);
+            
+            
+            
+            
+            
+            
+            if (key == "cc-exp" && maxLength == 5) {
+              const month2Digits = (
+                "0" + profile["cc-exp-month"].toString()
+              ).slice(-2);
+              const year2Digits = profile["cc-exp-year"].toString().slice(-2);
+              profile[key] = `${month2Digits}/${year2Digits}`;
+            } else {
+              profile[key] = profile[key].substr(0, maxLength);
+            }
             break;
           case "number":
             
