@@ -37,13 +37,10 @@ class CacheObserver : public nsIObserver, public nsSupportsWeakReference {
   {
     return StaticPrefs::browser_cache_disk_metadata_memory_limit();
   }
-  static uint32_t MemoryCacheCapacity();  
-  static uint32_t DiskCacheCapacity()     
-  {
-    return sDiskCacheCapacity;
-  }
-  static void SetDiskCacheCapacity(uint32_t);  
-  static uint32_t DiskFreeSpaceSoftLimit()     
+  static uint32_t MemoryCacheCapacity();            
+  static uint32_t DiskCacheCapacity();              
+  static void SetSmartDiskCacheCapacity(uint32_t);  
+  static uint32_t DiskFreeSpaceSoftLimit()          
   {
     return StaticPrefs::browser_cache_disk_free_space_soft_limit();
   }
@@ -103,14 +100,13 @@ class CacheObserver : public nsIObserver, public nsSupportsWeakReference {
  private:
   static StaticRefPtr<CacheObserver> sSelf;
 
-  void StoreDiskCacheCapacity();
   void StoreCacheFSReported();
   void StoreHashStatsReported();
   void StoreCacheAmountWritten();
   void AttachToPreferences();
 
   static int32_t sAutoMemoryCacheCapacity;
-  static Atomic<uint32_t, Relaxed> sDiskCacheCapacity;
+  static Atomic<uint32_t, Relaxed> sSmartDiskCacheCapacity;
   static float sHalfLifeHours;
   static bool sCacheFSReported;
   static bool sHashStatsReported;

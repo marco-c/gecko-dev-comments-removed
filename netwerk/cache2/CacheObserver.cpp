@@ -29,9 +29,11 @@ float CacheObserver::sHalfLifeHours = kDefaultHalfLifeHours;
 
 int32_t CacheObserver::sAutoMemoryCacheCapacity = -1;
 
-static uint32_t const kDefaultDiskCacheCapacity = 250 * 1024;  
-Atomic<uint32_t, Relaxed> CacheObserver::sDiskCacheCapacity(
-    kDefaultDiskCacheCapacity);
+
+
+
+
+Atomic<uint32_t, Relaxed> CacheObserver::sSmartDiskCacheCapacity(1024 * 1024);
 
 static bool kDefaultCacheFSReported = false;
 bool CacheObserver::sCacheFSReported = kDefaultCacheFSReported;
@@ -87,10 +89,6 @@ nsresult CacheObserver::Shutdown() {
 }
 
 void CacheObserver::AttachToPreferences() {
-  mozilla::Preferences::AddAtomicUintVarCache(&sDiskCacheCapacity,
-                                              "browser.cache.disk.capacity",
-                                              kDefaultDiskCacheCapacity);
-
   mozilla::Preferences::GetComplex(
       "browser.cache.disk.parent_directory", NS_GET_IID(nsIFile),
       getter_AddRefs(mCacheParentDirectoryOverride));
@@ -140,26 +138,14 @@ uint32_t CacheObserver::MemoryCacheCapacity() {
 }
 
 
-void CacheObserver::SetDiskCacheCapacity(uint32_t aCapacity) {
-  sDiskCacheCapacity = aCapacity;
-
-  if (!sSelf) {
-    return;
-  }
-
-  if (NS_IsMainThread()) {
-    sSelf->StoreDiskCacheCapacity();
-  } else {
-    nsCOMPtr<nsIRunnable> event =
-        NewRunnableMethod("net::CacheObserver::StoreDiskCacheCapacity",
-                          sSelf.get(), &CacheObserver::StoreDiskCacheCapacity);
-    NS_DispatchToMainThread(event);
-  }
+void CacheObserver::SetSmartDiskCacheCapacity(uint32_t aCapacity) {
+  sSmartDiskCacheCapacity = aCapacity;
 }
 
-void CacheObserver::StoreDiskCacheCapacity() {
-  mozilla::Preferences::SetInt("browser.cache.disk.capacity",
-                               sDiskCacheCapacity);
+
+uint32_t CacheObserver::DiskCacheCapacity() {
+  return SmartCacheSizeEnabled() ? sSmartDiskCacheCapacity
+                                 : StaticPrefs::browser_cache_disk_capacity();
 }
 
 
