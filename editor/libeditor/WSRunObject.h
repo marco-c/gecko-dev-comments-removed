@@ -269,37 +269,14 @@ class MOZ_STACK_CLASS WSScanResult final {
 class MOZ_STACK_CLASS WSRunScanner {
  public:
   using WSType = WSScanResult::WSType;
-  
 
-
-
-
-
-
-
-
-
-
-
-  template <typename PT, typename CT>
-  WSRunScanner(const HTMLEditor* aHTMLEditor,
-               const EditorDOMPointBase<PT, CT>& aScanStartPoint,
-               const EditorDOMPointBase<PT, CT>& aScanEndPoint);
-  template <typename PT, typename CT>
-  WSRunScanner(const HTMLEditor* aHTMLEditor,
-               const EditorDOMPointBase<PT, CT>& aScanStartPoint)
-      : WSRunScanner(aHTMLEditor, aScanStartPoint, aScanStartPoint) {}
-  WSRunScanner(const HTMLEditor* aHTMLEditor, nsINode* aScanStartNode,
-               int32_t aScanStartOffset, nsINode* aScanEndNode,
-               int32_t aScanEndOffset)
-      : WSRunScanner(aHTMLEditor,
-                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
-                     EditorRawDOMPoint(aScanEndNode, aScanEndOffset)) {}
-  WSRunScanner(const HTMLEditor* aHTMLEditor, nsINode* aScanStartNode,
-               int32_t aScanStartOffset)
-      : WSRunScanner(aHTMLEditor,
-                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
-                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset)) {}
+  template <typename EditorDOMPointType>
+  WSRunScanner(const HTMLEditor& aHTMLEditor,
+               const EditorDOMPointType& aScanStartPoint)
+      : mScanStartPoint(aScanStartPoint),
+        mEditingHost(aHTMLEditor.GetActiveEditingHost()),
+        mHTMLEditor(&aHTMLEditor),
+        mTextFragmentDataAtStart(mScanStartPoint, mEditingHost) {}
 
   
   
@@ -311,7 +288,7 @@ class MOZ_STACK_CLASS WSRunScanner {
   template <typename PT, typename CT>
   static WSScanResult ScanNextVisibleNodeOrBlockBoundary(
       const HTMLEditor& aHTMLEditor, const EditorDOMPointBase<PT, CT>& aPoint) {
-    return WSRunScanner(&aHTMLEditor, aPoint)
+    return WSRunScanner(aHTMLEditor, aPoint)
         .ScanNextVisibleNodeOrBlockBoundaryFrom(aPoint);
   }
 
@@ -325,7 +302,7 @@ class MOZ_STACK_CLASS WSRunScanner {
   template <typename PT, typename CT>
   static WSScanResult ScanPreviousVisibleNodeOrBlockBoundary(
       const HTMLEditor& aHTMLEditor, const EditorDOMPointBase<PT, CT>& aPoint) {
-    return WSRunScanner(&aHTMLEditor, aPoint)
+    return WSRunScanner(aHTMLEditor, aPoint)
         .ScanPreviousVisibleNodeOrBlockBoundaryFrom(aPoint);
   }
 
@@ -341,7 +318,7 @@ class MOZ_STACK_CLASS WSRunScanner {
         HTMLEditUtils::IsSimplyEditableNode(*aPoint.ContainerAsText())) {
       return EditorDOMPointInText(aPoint.ContainerAsText(), aPoint.Offset());
     }
-    WSRunScanner scanner(&aHTMLEditor, aPoint);
+    WSRunScanner scanner(aHTMLEditor, aPoint);
     return scanner.GetInclusiveNextEditableCharPoint(aPoint);
   }
 
@@ -357,7 +334,7 @@ class MOZ_STACK_CLASS WSRunScanner {
       return EditorDOMPointInText(aPoint.ContainerAsText(),
                                   aPoint.Offset() - 1);
     }
-    WSRunScanner scanner(&aHTMLEditor, aPoint);
+    WSRunScanner scanner(aHTMLEditor, aPoint);
     return scanner.GetPreviousEditableCharPoint(aPoint);
   }
 
@@ -1083,7 +1060,6 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   
   EditorDOMPoint mScanStartPoint;
-  EditorDOMPoint mScanEndPoint;
   
   
 
@@ -1105,39 +1081,10 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
  public:
   enum BlockBoundary { kBeforeBlock, kBlockStart, kBlockEnd, kAfterBlock };
 
-  
-
-
-
-
-
-
-
-
-
-  template <typename PT, typename CT>
-  MOZ_CAN_RUN_SCRIPT WSRunObject(
-      HTMLEditor& aHTMLEditor,
-      const EditorDOMPointBase<PT, CT>& aScanStartPoint,
-      const EditorDOMPointBase<PT, CT>& aScanEndPoint);
-  template <typename PT, typename CT>
-  MOZ_CAN_RUN_SCRIPT WSRunObject(
-      HTMLEditor& aHTMLEditor,
-      const EditorDOMPointBase<PT, CT>& aScanStartPoint)
-      : WSRunObject(aHTMLEditor, aScanStartPoint, aScanStartPoint) {}
+  template <typename EditorDOMPointType>
   MOZ_CAN_RUN_SCRIPT WSRunObject(HTMLEditor& aHTMLEditor,
-                                 nsINode* aScanStartNode,
-                                 int32_t aScanStartOffset,
-                                 nsINode* aScanEndNode, int32_t aScanEndOffset)
-      : WSRunObject(aHTMLEditor,
-                    EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
-                    EditorRawDOMPoint(aScanEndNode, aScanEndOffset)) {}
-  MOZ_CAN_RUN_SCRIPT WSRunObject(HTMLEditor& aHTMLEditor,
-                                 nsINode* aScanStartNode,
-                                 int32_t aScanStartOffset)
-      : WSRunObject(aHTMLEditor,
-                    EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
-                    EditorRawDOMPoint(aScanStartNode, aScanStartOffset)) {}
+                                 const EditorDOMPointType& aScanStartPoint)
+      : WSRunScanner(aHTMLEditor, aScanStartPoint), mHTMLEditor(aHTMLEditor) {}
 
   
 

@@ -296,7 +296,7 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
 HTMLBRElement*
 HTMLEditor::HTMLWithContextInserter::GetInvisibleBRElementAtPoint(
     const EditorDOMPoint& aPointToInsert) const {
-  WSRunScanner wsRunScannerAtInsertionPoint(&mHTMLEditor, aPointToInsert);
+  WSRunScanner wsRunScannerAtInsertionPoint(mHTMLEditor, aPointToInsert);
   if (wsRunScannerAtInsertionPoint.GetEndReasonContent() &&
       wsRunScannerAtInsertionPoint.GetEndReasonContent()->IsHTMLElement(
           nsGkAtoms::br) &&
@@ -358,14 +358,14 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
 
   
   
-  WSRunScanner wsRunScannerAtCaret(&mHTMLEditor, pointToPutCaret);
+  WSRunScanner wsRunScannerAtCaret(mHTMLEditor, pointToPutCaret);
   if (wsRunScannerAtCaret
           .ScanPreviousVisibleNodeOrBlockBoundaryFrom(pointToPutCaret)
           .ReachedBRElement() &&
       !mHTMLEditor.IsVisibleBRElement(
           wsRunScannerAtCaret.GetStartReasonContent())) {
     WSRunScanner wsRunScannerAtStartReason(
-        &mHTMLEditor,
+        mHTMLEditor,
         EditorDOMPoint(wsRunScannerAtCaret.GetStartReasonContent()));
     WSScanResult backwardScanFromPointToCaretResult =
         wsRunScannerAtStartReason.ScanPreviousVisibleNodeOrBlockBoundaryFrom(

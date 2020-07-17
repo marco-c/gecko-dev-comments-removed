@@ -1547,7 +1547,7 @@ EditorRawDOMPoint HTMLEditor::GetBetterInsertionPointFor(
     return pointToInsert;
   }
 
-  WSRunScanner wsScannerForPointToInsert(this, pointToInsert);
+  WSRunScanner wsScannerForPointToInsert(*this, pointToInsert);
 
   
   
@@ -3143,7 +3143,7 @@ nsresult HTMLEditor::DeleteParentBlocksWithTransactionIfEmpty(
   MOZ_ASSERT(mPlaceholderBatch);
 
   
-  WSRunScanner wsScannerForPoint(this, aPoint);
+  WSRunScanner wsScannerForPoint(*this, aPoint);
   if (!wsScannerForPoint.StartsFromCurrentBlockBoundary()) {
     
     
