@@ -26,17 +26,17 @@ add_task(async function() {
   
   const SPAM_COUNT = 2;
   for (let i = 0; i < SPAM_COUNT; ++i) {
-    ui._onNewDocument();
+    ui._onOrigSourcesPrefChanged();
   }
 
   
   
   await new Promise(resolve => {
     let loadCount = 0;
-    ui.on("stylesheets-reset", function onReset() {
+    ui.on("stylesheets-refreshed", function onReset() {
       ++loadCount;
       if (loadCount == SPAM_COUNT) {
-        ui.off("stylesheets-reset", onReset);
+        ui.off("stylesheets-refreshed", onReset);
         
         
         

@@ -47,6 +47,16 @@ class ResourceWatcher {
 
 
 
+  getAllResources(resourceType) {
+    return this._cache.filter(r => r.resourceType === resourceType);
+  }
+
+  
+
+
+
+
+
 
 
 
