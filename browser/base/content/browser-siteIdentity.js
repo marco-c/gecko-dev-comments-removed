@@ -148,6 +148,14 @@ var gIdentityHandler = {
     );
   },
 
+  get _isAboutBlockedPage() {
+    return (
+      gBrowser.selectedBrowser.documentURI &&
+      gBrowser.selectedBrowser.documentURI.scheme == "about" &&
+      gBrowser.selectedBrowser.documentURI.pathQueryRef.startsWith("blocked")
+    );
+  },
+
   _popupInitialized: false,
   _initializePopup() {
     if (!this._popupInitialized) {
@@ -748,7 +756,7 @@ var gIdentityHandler = {
     } else if (this._isAboutCertErrorPage) {
       
       this._identityBox.className = "certErrorPage";
-    } else if (this._isAboutNetErrorPage) {
+    } else if (this._isAboutNetErrorPage || this._isAboutBlockedPage) {
       
       this._identityBox.className = "unknownIdentity";
     } else if (this._isPotentiallyTrustworthy) {
@@ -932,7 +940,7 @@ var gIdentityHandler = {
       customRoot = this._hasCustomRoot();
     } else if (this._isAboutCertErrorPage) {
       connection = "cert-error-page";
-    } else if (this._isAboutNetErrorPage) {
+    } else if (this._isAboutNetErrorPage || this._isAboutBlockedPage) {
       connection = "not-secure";
     } else if (this._isPotentiallyTrustworthy) {
       connection = "file";
