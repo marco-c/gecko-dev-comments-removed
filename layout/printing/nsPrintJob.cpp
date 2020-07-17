@@ -578,8 +578,16 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     nsCOMPtr<nsIPrintingPromptService> pps(
         do_QueryInterface(aWebProgressListener));
     mProgressDialogIsShown = pps != nullptr;
+
+    mIsCreatingPrintPreview = true;
+
+    
+    SetIsPrintPreview(true);
   } else {
     mProgressDialogIsShown = false;
+
+    
+    SetIsPrinting(true);
   }
 
   
@@ -606,9 +614,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     
     
     mPrtPreview = nullptr;
-
-    mIsCreatingPrintPreview = true;
-    SetIsPrintPreview(true);
   }
 
   
@@ -685,10 +690,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   if (mIsDestroying || (aIsPrintPreview && !mIsCreatingPrintPreview)) {
     return NS_ERROR_FAILURE;
-  }
-
-  if (!aIsPrintPreview) {
-    SetIsPrinting(true);
   }
 
   
