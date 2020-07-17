@@ -99,6 +99,21 @@ public class ContentBlocking {
                 getSettings().setEnhancedTrackingProtectionLevel(level);
                 return this;
             }
+
+            
+
+
+
+
+
+
+
+
+
+            public @NonNull Builder strictSocialTrackingProtection(final boolean enabled) {
+                getSettings().setStrictSocialTrackingProtection(enabled);
+                return this;
+            }
         }
 
          final Pref<String> mAt = new Pref<String>(
@@ -263,6 +278,16 @@ public class ContentBlocking {
                 return ContentBlocking.EtpLevel.DEFAULT;
             }
             return ContentBlocking.EtpLevel.NONE;
+        }
+
+        
+
+
+
+
+
+        public boolean getStrictSocialTrackingProtection() {
+            return mStStrict.get();
         }
 
         
