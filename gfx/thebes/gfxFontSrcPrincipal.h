@@ -22,11 +22,16 @@ class nsSimpleURI;
 
 class gfxFontSrcPrincipal {
  public:
-  explicit gfxFontSrcPrincipal(nsIPrincipal* aPrincipal);
+  explicit gfxFontSrcPrincipal(nsIPrincipal* aNodePrincipal,
+                               nsIPrincipal* aStoragePrincipal);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontSrcPrincipal)
 
-  nsIPrincipal* get() { return mPrincipal; }
+  nsIPrincipal* get() const { return NodePrincipal(); }
+
+  nsIPrincipal* NodePrincipal() const { return mNodePrincipal; }
+
+  nsIPrincipal* StoragePrincipal() const { return mStoragePrincipal; }
 
   bool Equals(gfxFontSrcPrincipal* aOther);
 
@@ -36,7 +41,10 @@ class gfxFontSrcPrincipal {
   ~gfxFontSrcPrincipal();
 
   
-  nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsCOMPtr<nsIPrincipal> mNodePrincipal;
+
+  
+  nsCOMPtr<nsIPrincipal> mStoragePrincipal;
 
   
   PLDHashNumber mHash;

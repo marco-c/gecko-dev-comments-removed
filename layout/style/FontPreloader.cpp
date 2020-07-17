@@ -42,11 +42,11 @@ nsresult FontPreloader::BuildChannel(
     nsIInterfaceRequestor* aCallbacks, bool aIsPreload) {
   nsresult rv;
 
-  nsIPrincipal* principal = aUserFontEntry
-                                ? (aUserFontEntry->GetPrincipal()
-                                       ? aUserFontEntry->GetPrincipal()->get()
-                                       : nullptr)
-                                : aDocument->NodePrincipal();
+  nsIPrincipal* principal =
+      aUserFontEntry ? (aUserFontEntry->GetPrincipal()
+                            ? aUserFontEntry->GetPrincipal()->NodePrincipal()
+                            : nullptr)
+                     : aDocument->NodePrincipal();
 
   
   
