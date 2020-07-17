@@ -888,7 +888,26 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     );
   },
 
+  
+
+
+
+  _ignoreEventWhenPicking(event) {
+    return (
+      !this._isPicking ||
+      
+      
+      
+      
+      isRemoteFrame(event.originalTarget || event.target)
+    );
+  },
+
   _preventContentEvent(event) {
+    if (this._ignoreEventWhenPicking(event)) {
+      return;
+    }
+
     event.stopPropagation();
     event.preventDefault();
 
@@ -918,14 +937,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   onPick(event) {
-    if (
-      !this._isPicking ||
-      
-      
-      
-      
-      isRemoteFrame(event.originalTarget || event.target)
-    ) {
+    if (this._ignoreEventWhenPicking(event)) {
       return;
     }
 
@@ -959,14 +971,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   async onHovered(event) {
-    if (
-      !this._isPicking ||
-      
-      
-      
-      
-      isRemoteFrame(event.originalTarget || event.target)
-    ) {
+    if (this._ignoreEventWhenPicking(event)) {
       return;
     }
 
@@ -997,15 +1002,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   onKey(event) {
-    if (
-      !this._currentAccessible ||
-      !this._isPicking ||
-      
-      
-      
-      
-      isRemoteFrame(event.originalTarget || event.target)
-    ) {
+    if (!this._currentAccessible || this._ignoreEventWhenPicking(event)) {
       return;
     }
 
