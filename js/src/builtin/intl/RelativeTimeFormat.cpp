@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* Implementation of the Intl.RelativeTimeFormat proposal. */
 
 #include "builtin/intl/RelativeTimeFormat.h"
 
@@ -24,7 +24,7 @@
 #include "unicode/utypes.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
-#include "vm/PlainObject.h"  
+#include "vm/PlainObject.h"  // js::PlainObject
 #include "vm/Printer.h"
 #include "vm/StringType.h"
 
@@ -35,24 +35,24 @@ using namespace js;
 using js::intl::CallICU;
 using js::intl::IcuLocale;
 
-
+/**************** RelativeTimeFormat *****************/
 
 const JSClassOps RelativeTimeFormatObject::classOps_ = {
-    nullptr,                             
-    nullptr,                             
-    nullptr,                             
-    nullptr,                             
-    nullptr,                             
-    nullptr,                             
-    RelativeTimeFormatObject::finalize,  
-    nullptr,                             
-    nullptr,                             
-    nullptr,                             
-    nullptr,                             
+    nullptr,                             // addProperty
+    nullptr,                             // delProperty
+    nullptr,                             // enumerate
+    nullptr,                             // newEnumerate
+    nullptr,                             // resolve
+    nullptr,                             // mayResolve
+    RelativeTimeFormatObject::finalize,  // finalize
+    nullptr,                             // call
+    nullptr,                             // hasInstance
+    nullptr,                             // construct
+    nullptr,                             // trace
 };
 
 const JSClass RelativeTimeFormatObject::class_ = {
-    js_Object_str,
+    "Intl.RelativeTimeFormat",
     JSCLASS_HAS_RESERVED_SLOTS(RelativeTimeFormatObject::SLOT_COUNT) |
         JSCLASS_HAS_CACHED_PROTO(JSProto_RelativeTimeFormat) |
         JSCLASS_FOREGROUND_FINALIZE,
@@ -97,19 +97,19 @@ const ClassSpec RelativeTimeFormatObject::classSpec_ = {
     nullptr,
     ClassSpec::DontDefineConstructor};
 
-
-
-
-
+/**
+ * RelativeTimeFormat constructor.
+ * Spec: ECMAScript 402 API, RelativeTimeFormat, 1.1
+ */
 static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  
+  // Step 1.
   if (!ThrowIfNotConstructing(cx, args, "Intl.RelativeTimeFormat")) {
     return false;
   }
 
-  
+  // Step 2 (Inlined 9.1.14, OrdinaryCreateFromConstructor).
   RootedObject proto(cx);
   if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_RelativeTimeFormat,
                                           &proto)) {
@@ -126,7 +126,7 @@ static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
   HandleValue locales = args.get(0);
   HandleValue options = args.get(1);
 
-  
+  // Step 3.
   if (!intl::InitializeObject(cx, relativeTimeFormat,
                               cx->names().InitializeRelativeTimeFormat, locales,
                               options)) {
@@ -149,10 +149,10 @@ void js::RelativeTimeFormatObject::finalize(JSFreeOp* fop, JSObject* obj) {
   }
 }
 
-
-
-
-
+/**
+ * Returns a new URelativeDateTimeFormatter with the locale and options of the
+ * given RelativeTimeFormatObject.
+ */
 static URelativeDateTimeFormatter* NewURelativeDateTimeFormatter(
     JSContext* cx, Handle<RelativeTimeFormatObject*> relativeTimeFormat) {
   RootedObject internals(cx, intl::GetInternalsObject(cx, relativeTimeFormat));
@@ -166,7 +166,7 @@ static URelativeDateTimeFormatter* NewURelativeDateTimeFormatter(
     return nullptr;
   }
 
-  
+  // ICU expects numberingSystem as a Unicode locale extensions on locale.
 
   intl::LanguageTag tag(cx);
   {
@@ -198,10 +198,10 @@ static URelativeDateTimeFormatter* NewURelativeDateTimeFormatter(
     }
   }
 
-  
-  
-  
-  
+  // |ApplyUnicodeExtensionToTag| applies the new keywords to the front of the
+  // Unicode extension subtag. We're then relying on ICU to follow RFC 6067,
+  // which states that any trailing keywords using the same key should be
+  // ignored.
   if (!intl::ApplyUnicodeExtensionToTag(cx, tag, keywords)) {
     return nullptr;
   }
@@ -241,18 +241,18 @@ static URelativeDateTimeFormatter* NewURelativeDateTimeFormatter(
   }
   ScopedICUObject<UNumberFormat, unum_close> toClose(nf);
 
-  
+  // Use the default values as if a new Intl.NumberFormat had been constructed.
   unum_setAttribute(nf, UNUM_MIN_INTEGER_DIGITS, 1);
   unum_setAttribute(nf, UNUM_MIN_FRACTION_DIGITS, 0);
   unum_setAttribute(nf, UNUM_MAX_FRACTION_DIGITS, 3);
   unum_setAttribute(nf, UNUM_GROUPING_USED, true);
 
-  
-  
-  
-  
-  
-  
+  // The undocumented magic value -2 is needed to request locale-specific data.
+  // See |icu::number::impl::Grouper::{fGrouping1, fGrouping2, fMinGrouping}|.
+  //
+  // Future ICU versions (> ICU 67) will expose it as a proper constant:
+  // https://unicode-org.atlassian.net/browse/ICU-21109
+  // https://github.com/unicode-org/icu/pull/1152
   constexpr int32_t useLocaleData = -2;
 
   unum_setAttribute(nf, UNUM_GROUPING_SIZE, useLocaleData);
@@ -267,20 +267,20 @@ static URelativeDateTimeFormatter* NewURelativeDateTimeFormatter(
     return nullptr;
   }
 
-  
+  // Ownership was transferred to the URelativeDateTimeFormatter.
   toClose.forget();
   return rtf;
 }
 
 enum class RelativeTimeNumeric {
-  
-
-
+  /**
+   * Only strings with numeric components like `1 day ago`.
+   */
   Always,
-  
-
-
-
+  /**
+   * Natural-language strings like `yesterday` when possible,
+   * otherwise strings with numeric components as in `7 months ago`.
+   */
   Auto,
 };
 
@@ -379,7 +379,7 @@ bool js::intl_FormatRelativeTime(JSContext* cx, unsigned argc, Value* vp) {
 
   bool formatToParts = args[4].toBoolean();
 
-  
+  // PartitionRelativeTimePattern, step 4.
   double t = args[1].toNumber();
   if (!mozilla::IsFinite(t)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -388,7 +388,7 @@ bool js::intl_FormatRelativeTime(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  
+  // Obtain a cached URelativeDateTimeFormatter object.
   URelativeDateTimeFormatter* rtf =
       relativeTimeFormat->getRelativeDateTimeFormatter();
   if (!rtf) {
@@ -409,7 +409,7 @@ bool js::intl_FormatRelativeTime(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
-    
+    // PartitionRelativeTimePattern, step 5.
     if (StringEqualsLiteral(unit, "second") ||
         StringEqualsLiteral(unit, "seconds")) {
       relDateTimeUnit = UDAT_REL_UNIT_SECOND;

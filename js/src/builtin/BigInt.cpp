@@ -207,9 +207,8 @@ const ClassSpec BigIntObject::classSpec_ = {
     BigIntObject::methods,
     BigIntObject::properties};
 
-
 const JSClass BigIntObject::class_ = {
-    "Object",
+    "BigInt",
     JSCLASS_HAS_CACHED_PROTO(JSProto_BigInt) |
         JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS),
     JS_NULL_CLASS_OPS, &BigIntObject::classSpec_};
