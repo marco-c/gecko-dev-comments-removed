@@ -1551,6 +1551,7 @@ class UrlbarInput {
       }
     }
     uri = this.makeURIReadable(uri);
+    let displaySpec = uri.displaySpec;
 
     
     
@@ -1561,19 +1562,17 @@ class UrlbarInput {
       !uri.schemeIs("data") &&
       !UrlbarPrefs.get("decodeURLsOnCopy")
     ) {
-      return uri.displaySpec;
+      return displaySpec;
     }
 
     
     
-    let spec = uri.displaySpec;
-    let trimmedSpec = this._trimValue(spec);
-    if (spec != trimmedSpec) {
-      
-      
-      
-      let trimmedSegments = spec.split(trimmedSpec);
-      selectedVal = trimmedSegments[0] + selectedVal;
+
+    if (
+      !selectedVal.startsWith(BrowserUtils.trimURLProtocol) &&
+      displaySpec != this._trimValue(displaySpec)
+    ) {
+      selectedVal = BrowserUtils.trimURLProtocol + selectedVal;
     }
 
     return selectedVal;
