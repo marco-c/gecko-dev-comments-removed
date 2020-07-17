@@ -41,55 +41,37 @@ class AndroidMixin(object):
     @property
     def adb_path(self):
         '''Get the path to the adb executable.
-
-        Defer the use of query_exe() since it is defined by the
-        BaseScript Mixin which hasn't finished initialing by the
-        time the AndroidMixin is first initialized.
         '''
+        self.activate_virtualenv()
         if not self._adb_path:
-            try:
-                self._adb_path = self.query_exe('adb')
-            except AttributeError:
-                
-                
-                
-                
-                
-                pass
+            self._adb_path = self.query_exe('adb')
         return self._adb_path
 
     @property
     def device(self):
-        if not self._device and self.adb_path:
-            try:
-                import mozdevice
-                self._device = mozdevice.ADBDevice(adb=self.adb_path,
-                                                   device=self.device_serial,
-                                                   verbose=True)
-                self.info("New mozdevice with adb=%s, device=%s" %
-                          (self.adb_path, self.device_serial))
-            except AttributeError:
-                
-                pass
+        if not self._device:
+            
+            
+            
+            
+            adb = self.adb_path
+            import mozdevice
+            self._device = mozdevice.ADBDevice(adb=adb,
+                                               device=self.device_serial,
+                                               verbose=True)
         return self._device
 
     @property
     def is_android(self):
-        try:
-            c = self.config
-            installer_url = c.get('installer_url', None)
-            return self.device_serial is not None or self.is_emulator or \
-                (installer_url is not None and installer_url.endswith(".apk"))
-        except AttributeError:
-            return False
+        c = self.config
+        installer_url = c.get('installer_url', None)
+        return self.device_serial is not None or self.is_emulator or \
+            (installer_url is not None and installer_url.endswith(".apk"))
 
     @property
     def is_emulator(self):
-        try:
-            c = self.config
-            return True if c.get('emulator_avd_name') else False
-        except AttributeError:
-            return False
+        c = self.config
+        return True if c.get('emulator_avd_name') else False
 
     def _get_repo_url(self, path):
         """
