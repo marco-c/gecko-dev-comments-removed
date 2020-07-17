@@ -899,9 +899,18 @@ interface nsILoadInfo : nsISupports
   [noscript, notxpcom, nostdcall]
   PrincipalArrayRef AncestorPrincipals();
 
-
   
 
+
+
+
+
+
+
+  [noscript, notxpcom, nostdcall]
+  Uint64ArrayRef AncestorBrowsingContextIDs();
+
+  
 
 
 
