@@ -15886,10 +15886,6 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
 
   
   if (NodePrincipal()->GetIsNullPrincipal()) {
-    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                    nsLiteralCString("requestStorageAccess"),
-                                    this, nsContentUtils::eDOM_PROPERTIES,
-                                    "RequestStorageAccessNullPrincipal");
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
@@ -15939,9 +15935,6 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   if (StorageAccessSandboxed()) {
-    nsContentUtils::ReportToConsole(
-        nsIScriptError::errorFlag, nsLiteralCString("requestStorageAccess"),
-        this, nsContentUtils::eDOM_PROPERTIES, "RequestStorageAccessSandboxed");
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
@@ -15949,19 +15942,12 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   RefPtr<BrowsingContext> parentBC = bc->GetParent();
   if (parentBC && !parentBC->IsTopContent()) {
-    nsContentUtils::ReportToConsole(
-        nsIScriptError::errorFlag, nsLiteralCString("requestStorageAccess"),
-        this, nsContentUtils::eDOM_PROPERTIES, "RequestStorageAccessNested");
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
 
   
   if (!UserActivation::IsHandlingUserInput()) {
-    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                    nsLiteralCString("requestStorageAccess"),
-                                    this, nsContentUtils::eDOM_PROPERTIES,
-                                    "RequestStorageAccessUserGesture");
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
