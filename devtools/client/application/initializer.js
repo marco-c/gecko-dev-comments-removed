@@ -38,6 +38,8 @@ const App = createFactory(
   require("devtools/client/application/src/components/App")
 );
 
+const { safeAsyncMethod } = require("devtools/shared/async-utils");
+
 
 
 
@@ -46,11 +48,16 @@ window.Application = {
   async bootstrap({ toolbox, panel }) {
     
     this.handleOnNavigate = this.handleOnNavigate.bind(this);
-    this.updateWorkers = this.updateWorkers.bind(this);
     this.updateDomain = this.updateDomain.bind(this);
     this.updateCanDebugWorkers = this.updateCanDebugWorkers.bind(this);
     this.onTargetAvailable = this.onTargetAvailable.bind(this);
     this.onTargetDestroyed = this.onTargetDestroyed.bind(this);
+
+    
+    this.safeUpdateWorkers = safeAsyncMethod(
+      () => this.updateWorkers(),
+      () => this._destroyed
+    );
 
     this.toolbox = toolbox;
     
@@ -65,7 +72,7 @@ window.Application = {
 
     await this.updateWorkers();
     this.workersListener = new WorkersListener(this.client.mainRoot);
-    this.workersListener.addListener(this.updateWorkers);
+    this.workersListener.addListener(this.safeUpdateWorkers);
 
     this.deviceFront = await this.client.mainRoot.getFront("device");
     await this.updateCanDebugWorkers();
@@ -99,19 +106,8 @@ window.Application = {
   },
 
   async updateWorkers() {
-    try {
-      const registrationsWithWorkers = await this.client.mainRoot.listAllServiceWorkers();
-      this.actions.updateWorkers(registrationsWithWorkers);
-    } catch (e) {
-      if (this._destroyed) {
-        
-        
-        console.error("updateWorkers resolved after panel destruction", e);
-      } else {
-        
-        throw e;
-      }
-    }
+    const registrationsWithWorkers = await this.client.mainRoot.listAllServiceWorkers();
+    this.actions.updateWorkers(registrationsWithWorkers);
   },
 
   updateDomain() {
