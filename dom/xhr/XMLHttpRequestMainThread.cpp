@@ -252,6 +252,22 @@ XMLHttpRequestMainThread::~XMLHttpRequestMainThread() {
   mozilla::DropJSObjects(this);
 }
 
+void XMLHttpRequestMainThread::Construct(
+    nsIPrincipal* aPrincipal, nsICookieJarSettings* aCookieJarSettings,
+    bool aForWorker, nsIURI* aBaseURI ,
+    nsILoadGroup* aLoadGroup ,
+    PerformanceStorage* aPerformanceStorage ,
+    nsICSPEventListener* aCSPEventListener ) {
+  MOZ_ASSERT(aPrincipal);
+  mPrincipal = aPrincipal;
+  mBaseURI = aBaseURI;
+  mLoadGroup = aLoadGroup;
+  mCookieJarSettings = aCookieJarSettings;
+  mForWorker = aForWorker;
+  mPerformanceStorage = aPerformanceStorage;
+  mCSPEventListener = aCSPEventListener;
+}
+
 void XMLHttpRequestMainThread::InitParameters(bool aAnon, bool aSystem) {
   if (!aAnon && !aSystem) {
     return;
