@@ -14,11 +14,14 @@ importScripts("resource://gre/modules/ObjectUtils.jsm");
 importScripts("resource://gre/modules/osfile.jsm");
 
 self.onmessage = async function(msg) {
+  const tmpDir = OS.Constants.Path.tmpDir;
+
   
   
   
   await test_api_is_available_on_worker();
   await test_full_read_and_write();
+  await test_move_file();
 
   finish();
   info("test_ioutils_worker.xhtml: Test finished");
@@ -28,6 +31,7 @@ self.onmessage = async function(msg) {
   }
 
   async function test_full_read_and_write() {
+    
     
     const tmpFileName = "test_ioutils_numbers.tmp";
     const bytes = Uint8Array.of(...new Array(50).keys());
@@ -55,6 +59,21 @@ self.onmessage = async function(msg) {
     );
 
     cleanup(tmpFileName);
+  }
+
+  async function test_move_file() {
+    const src = OS.Path.join(tmpDir, "test_move_file_src.tmp");
+    const dest = OS.Path.join(tmpDir, "test_move_file_dest.tmp");
+    const bytes = Uint8Array.of(...new Array(50).keys());
+    await self.IOUtils.writeAtomic(src, bytes);
+
+    await self.IOUtils.move(src, dest);
+    ok(
+      !OS.File.exists(src) && OS.File.exists(dest),
+      "IOUtils::move can move files from a worker"
+    );
+
+    cleanup(dest);
   }
 };
 

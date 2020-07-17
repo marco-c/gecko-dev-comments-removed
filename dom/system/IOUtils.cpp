@@ -8,15 +8,21 @@
 
 #include "mozilla/dom/IOUtils.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/ErrorNames.h"
+#include "mozilla/Result.h"
+#include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/Span.h"
 #include "nspr/prio.h"
 #include "nspr/private/pprio.h"
 #include "nspr/prtypes.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsIFile.h"
 #include "nsIGlobalObject.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsThreadManager.h"
+#include "SpecialSystemDirectory.h"
 
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #  include <fcntl.h>
@@ -46,6 +52,42 @@ namespace mozilla {
 namespace dom {
 
 
+
+
+
+
+
+
+
+
+
+
+static bool IsFileNotFound(nsresult aResult) {
+  switch (aResult) {
+    case NS_ERROR_FILE_NOT_FOUND:
+    case NS_ERROR_FILE_TARGET_DOES_NOT_EXIST:
+      return true;
+    default:
+      return false;
+  }
+}
+
+static nsCString FormatErrorMessage(nsresult aError,
+                                    const char* const aMessage) {
+  const char* errName = GetStaticErrorName(aError);
+  if (errName) {
+    return nsPrintfCString("%s: %s", aMessage, errName);
+  }
+  
+  
+  
+  return nsPrintfCString("%s: 0x%" PRIX32, aMessage,
+                         static_cast<uint32_t>(aError));
+}
+
+
+
+
 StaticDataMutex<StaticRefPtr<nsISerialEventTarget>>
     IOUtils::sBackgroundEventTarget("sBackgroundEventTarget");
 
@@ -61,6 +103,9 @@ already_AddRefed<Promise> IOUtils::Read(GlobalObject& aGlobal,
   NS_ENSURE_TRUE(!!promise, nullptr);
   REJECT_IF_SHUTTING_DOWN(promise);
 
+  RefPtr<nsISerialEventTarget> bg = GetBackgroundEventTarget();
+  REJECT_IF_NULL_EVENT_TARGET(bg, promise);
+
   
   uint32_t toRead = 0;
   if (aMaxBytes.WasPassed()) {
@@ -75,10 +120,6 @@ already_AddRefed<Promise> IOUtils::Read(GlobalObject& aGlobal,
   }
 
   NS_ConvertUTF16toUTF8 path(aPath);
-
-  
-  RefPtr<nsISerialEventTarget> bg = GetBackgroundEventTarget();
-  REJECT_IF_NULL_EVENT_TARGET(bg, promise);
 
   InvokeAsync(
       bg, __func__,
@@ -151,6 +192,9 @@ already_AddRefed<Promise> IOUtils::WriteAtomic(
   NS_ENSURE_TRUE(!!promise, nullptr);
   REJECT_IF_SHUTTING_DOWN(promise);
 
+  RefPtr<nsISerialEventTarget> bg = GetBackgroundEventTarget();
+  REJECT_IF_NULL_EVENT_TARGET(bg, promise);
+
   
   aData.ComputeState();
   FallibleTArray<uint8_t> toWrite;
@@ -178,10 +222,6 @@ already_AddRefed<Promise> IOUtils::WriteAtomic(
   }
 
   NS_ConvertUTF16toUTF8 path(aPath);
-
-  
-  RefPtr<nsISerialEventTarget> bg = GetBackgroundEventTarget();
-  REJECT_IF_NULL_EVENT_TARGET(bg, promise);
 
   InvokeAsync(bg, __func__,
               [path, flags, noOverwrite, toWrite = std::move(toWrite)]() {
@@ -222,6 +262,80 @@ already_AddRefed<Promise> IOUtils::WriteAtomic(
           },
           [promise = RefPtr(promise)](const nsACString& aMsg) {
             promise->MaybeRejectWithOperationError(aMsg);
+          });
+
+  return promise.forget();
+}
+
+
+already_AddRefed<Promise> IOUtils::Move(GlobalObject& aGlobal,
+                                        const nsAString& aSourcePath,
+                                        const nsAString& aDestPath,
+                                        const MoveOptions& aOptions) {
+  RefPtr<Promise> promise = CreateJSPromise(aGlobal);
+  NS_ENSURE_TRUE(!!promise, nullptr);
+  REJECT_IF_SHUTTING_DOWN(promise);
+
+  RefPtr<nsISerialEventTarget> bg = GetBackgroundEventTarget();
+  REJECT_IF_NULL_EVENT_TARGET(bg, promise);
+
+  
+  bool noOverwrite = false;
+  if (aOptions.IsAnyMemberPresent()) {
+    noOverwrite = aOptions.mNoOverwrite;
+  }
+
+  InvokeAsync(bg, __func__,
+              [srcPathString = nsAutoString(aSourcePath),
+               destPathString = nsAutoString(aDestPath), noOverwrite]() {
+                nsresult rv =
+                    MoveSync(srcPathString, destPathString, noOverwrite);
+                if (NS_FAILED(rv)) {
+                  return IOMoveMozPromise::CreateAndReject(rv, __func__);
+                }
+                return IOMoveMozPromise::CreateAndResolve(true, __func__);
+              })
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [promise = RefPtr(promise)](const bool&) {
+            AutoJSAPI jsapi;
+            if (NS_WARN_IF(!jsapi.Init(promise->GetGlobalObject()))) {
+              promise->MaybeReject(NS_ERROR_UNEXPECTED);
+              return;
+            }
+            promise->MaybeResolveWithUndefined();
+          },
+          [promise = RefPtr(promise)](const nsresult& aError) {
+            switch (aError) {
+              case NS_ERROR_FILE_ACCESS_DENIED:
+                promise->MaybeRejectWithInvalidAccessError("Access denied");
+                break;
+              case NS_ERROR_FILE_TARGET_DOES_NOT_EXIST:
+              case NS_ERROR_FILE_NOT_FOUND:
+                promise->MaybeRejectWithNotFoundError(
+                    "Source file does not exist");
+                break;
+              case NS_ERROR_FILE_ALREADY_EXISTS:
+                promise->MaybeRejectWithNoModificationAllowedError(
+                    "Destination file exists and overwrites are not allowed");
+                break;
+              case NS_ERROR_FILE_READ_ONLY:
+                promise->MaybeRejectWithNoModificationAllowedError(
+                    "Destination is read only");
+                break;
+              case NS_ERROR_FILE_DESTINATION_NOT_DIR:
+                promise->MaybeRejectWithInvalidAccessError(
+                    "Source is a directory but destination is not");
+                break;
+              case NS_ERROR_FILE_UNRECOGNIZED_PATH:
+                promise->MaybeRejectWithOperationError(
+                    "Only absolute file paths are permitted");
+                break;
+              default: {
+                promise->MaybeRejectWithUnknownError(
+                    FormatErrorMessage(aError, "Unexpected error moving file"));
+              }
+            }
           });
 
   return promise.forget();
@@ -385,6 +499,68 @@ nsresult IOUtils::WriteSync(PRFileDesc* aFd, const nsTArray<uint8_t>& aBytes,
 
   aResult = bytesWritten;
   return NS_OK;
+}
+
+
+nsresult IOUtils::MoveSync(const nsAString& aSourcePath,
+                           const nsAString& aDestPath, bool noOverwrite) {
+  MOZ_ASSERT(!NS_IsMainThread());
+  nsresult rv = NS_OK;
+
+  nsCOMPtr<nsIFile> srcFile = new nsLocalFile();
+  MOZ_TRY(srcFile->InitWithPath(aSourcePath));  
+  MOZ_TRY(srcFile->Normalize());                
+
+  nsCOMPtr<nsIFile> destFile = new nsLocalFile();
+  MOZ_TRY(destFile->InitWithPath(aDestPath));
+  rv = destFile->Normalize();
+  
+  
+  
+  if (!IsFileNotFound(rv)) {  
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  bool destIsDir = false;
+  bool destExists = true;
+
+  rv = destFile->IsDirectory(&destIsDir);
+  if (NS_SUCCEEDED(rv) && destIsDir) {
+    return srcFile->MoveTo(destFile, EmptyString());
+  }
+  if (IsFileNotFound(rv)) {
+    
+    destExists = false;
+  } else {
+    
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  
+  
+  if (noOverwrite && destExists) {
+    return NS_ERROR_FILE_ALREADY_EXISTS;
+  }
+  if (destExists && !destIsDir) {
+    
+    
+    
+    bool srcIsDir = false;
+    MOZ_TRY(srcFile->IsDirectory(&srcIsDir));
+    if (srcIsDir) {
+      return NS_ERROR_FILE_DESTINATION_NOT_DIR;
+    }
+  }
+
+  nsCOMPtr<nsIFile> destDir;
+  nsAutoString destName;
+  MOZ_TRY(destFile->GetLeafName(destName));
+  MOZ_TRY(destFile->GetParent(getter_AddRefs(destDir)));
+
+  
+  return srcFile->MoveTo(destDir, destName);
 }
 
 NS_IMPL_ISUPPORTS(IOUtilsShutdownBlocker, nsIAsyncShutdownBlocker);
