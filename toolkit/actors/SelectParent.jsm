@@ -739,7 +739,9 @@ class SelectParent extends JSWindowActorParent {
           data.options.options,
           data.options.uniqueStyles,
           data.selectedIndex,
-          ZoomManager.getZoomForBrowser(browser),
+          
+          
+          ZoomManager.getFullZoomForBrowser(browser),
           data.defaultStyle,
           data.style
         );
