@@ -331,12 +331,18 @@ nsresult nsHttpTransaction::Init(
 
   
   if (mActivityDistributor) {
-    rv = mActivityDistributor->ObserveActivityWithArgs(
-        HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
-        NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_HEADER, PR_Now(), 0, mReqHeaderBuf);
-    if (NS_FAILED(rv)) {
-      LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
-    }
+    RefPtr<nsHttpTransaction> self = this;
+    nsCString requestBuf(mReqHeaderBuf);
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("ObserveActivityWithArgs", [self, requestBuf]() {
+          nsresult rv = self->mActivityDistributor->ObserveActivityWithArgs(
+              HttpActivityArgs(self->mChannelId),
+              NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
+              NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_HEADER, PR_Now(), 0, requestBuf);
+          if (NS_FAILED(rv)) {
+            LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+          }
+        }));
   }
 
   
