@@ -11,13 +11,11 @@
 
 #include "jstypes.h"               
 #include "builtin/ModuleObject.h"  
-#include "frontend/CompilationInfo.h"  
-#include "frontend/EitherParser.h"     
-#include "frontend/Stencil.h"          
-#include "js/GCHashTable.h"            
-#include "js/GCVector.h"               
-#include "js/RootingAPI.h"             
-#include "vm/AtomsTable.h"             
+#include "frontend/EitherParser.h"  
+#include "js/GCHashTable.h"         
+#include "js/GCVector.h"            
+#include "js/RootingAPI.h"          
+#include "vm/AtomsTable.h"          
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSAtom;
@@ -49,18 +47,18 @@ class MOZ_STACK_CLASS ModuleBuilder {
 
   bool hasExportedName(JSAtom* name) const;
 
-  bool buildTables(frontend::StencilModuleMetadata& metadata);
+  using ExportEntryVector = GCVector<ExportEntryObject*>;
+  const ExportEntryVector& localExportEntries() const {
+    return localExportEntries_;
+  }
 
-  
-  
-  bool noteFunctionDeclaration(JSContext* cx, uint32_t funIndex);
-  void finishFunctionDecls(frontend::StencilModuleMetadata& metadata);
+  bool buildTables();
+  bool initModule(JS::Handle<ModuleObject*> module);
 
  private:
-  using RequestedModuleVector = JS::GCVector<frontend::StencilModuleEntry>;
+  using RequestedModuleVector = JS::GCVector<RequestedModuleObject*>;
   using AtomSet = JS::GCHashSet<JSAtom*>;
-  using ExportEntryVector = GCVector<frontend::StencilModuleEntry>;
-  using ImportEntryMap = JS::GCHashMap<JSAtom*, frontend::StencilModuleEntry>;
+  using ImportEntryMap = JS::GCHashMap<JSAtom*, ImportEntryObject*>;
   using RootedExportEntryVector = JS::Rooted<ExportEntryVector>;
   using RootedRequestedModuleVector = JS::Rooted<RequestedModuleVector>;
   using RootedAtomSet = JS::Rooted<AtomSet>;
@@ -68,22 +66,22 @@ class MOZ_STACK_CLASS ModuleBuilder {
 
   JSContext* cx_;
   frontend::EitherParser eitherParser_;
-
-  
   RootedAtomSet requestedModuleSpecifiers_;
   RootedRequestedModuleVector requestedModules_;
   RootedImportEntryMap importEntries_;
   RootedExportEntryVector exportEntries_;
   RootedAtomSet exportNames_;
+  RootedExportEntryVector localExportEntries_;
+  RootedExportEntryVector indirectExportEntries_;
+  RootedExportEntryVector starExportEntries_;
 
-  
-  frontend::FunctionDeclarationVector functionDecls_;
-
-  frontend::StencilModuleEntry* importEntryFor(JSAtom* localName) const;
+  ImportEntryObject* importEntryFor(JSAtom* localName) const;
 
   bool processExportBinding(frontend::ParseNode* pn);
   bool processExportArrayBinding(frontend::ListNode* array);
   bool processExportObjectBinding(frontend::ListNode* obj);
+
+  bool appendImportEntryObject(JS::Handle<ImportEntryObject*> importEntry);
 
   bool appendExportEntry(JS::Handle<JSAtom*> exportName,
                          JS::Handle<JSAtom*> localName,
@@ -94,8 +92,14 @@ class MOZ_STACK_CLASS ModuleBuilder {
                              JS::Handle<JSAtom*> importName,
                              frontend::ParseNode* node);
 
+  bool appendExportEntryObject(JS::Handle<ExportEntryObject*> exportEntry);
+
   bool maybeAppendRequestedModule(JS::Handle<JSAtom*> specifier,
                                   frontend::ParseNode* node);
+
+  template <typename K, typename V>
+  ArrayObject* createArrayFromHashMap(
+      const JS::Rooted<JS::GCHashMap<K, V>>& map);
 };
 
 template <typename T>

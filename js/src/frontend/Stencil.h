@@ -270,6 +270,7 @@ class ScopeCreationData {
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      Handle<ModuleScope::Data*> dataArg,
+                     HandleModuleObject module,
                      Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
 
   
@@ -328,114 +329,6 @@ class ScopeCreationData {
 };
 
 class EmptyGlobalScopeType {};
-
-
-using FunctionDeclaration = uint32_t;
-using FunctionDeclarationVector = Vector<FunctionDeclaration>;
-
-
-
-
-
-
-
-
-
-class StencilModuleEntry {
- public:
-  
-  
-  
-  
-  
-  
-  JSAtom* specifier = nullptr;
-  JSAtom* localName = nullptr;
-  JSAtom* importName = nullptr;
-  JSAtom* exportName = nullptr;
-
-  
-  
-  
-  
-  uint32_t lineno = 0;
-  uint32_t column = 0;
-
- private:
-  StencilModuleEntry(uint32_t lineno, uint32_t column)
-      : lineno(lineno), column(column) {}
-
- public:
-  static StencilModuleEntry moduleRequest(JSAtom* specifier, uint32_t lineno,
-                                          uint32_t column) {
-    MOZ_ASSERT(specifier);
-    StencilModuleEntry entry(lineno, column);
-    entry.specifier = specifier;
-    return entry;
-  }
-
-  static StencilModuleEntry importEntry(JSAtom* specifier, JSAtom* localName,
-                                        JSAtom* importName, uint32_t lineno,
-                                        uint32_t column) {
-    MOZ_ASSERT(specifier && localName && importName);
-    StencilModuleEntry entry(lineno, column);
-    entry.specifier = specifier;
-    entry.localName = localName;
-    entry.importName = importName;
-    return entry;
-  }
-
-  static StencilModuleEntry exportAsEntry(JSAtom* localName, JSAtom* exportName,
-                                          uint32_t lineno, uint32_t column) {
-    MOZ_ASSERT(localName && exportName);
-    StencilModuleEntry entry(lineno, column);
-    entry.localName = localName;
-    entry.exportName = exportName;
-    return entry;
-  }
-
-  static StencilModuleEntry exportFromEntry(JSAtom* specifier,
-                                            JSAtom* importName,
-                                            JSAtom* exportName, uint32_t lineno,
-                                            uint32_t column) {
-    
-    MOZ_ASSERT(specifier && importName);
-    StencilModuleEntry entry(lineno, column);
-    entry.specifier = specifier;
-    entry.importName = importName;
-    entry.exportName = exportName;
-    return entry;
-  }
-
-  
-  
-  void trace(JSTracer* trc);
-};
-
-
-class StencilModuleMetadata {
- public:
-  using EntryVector = JS::GCVector<StencilModuleEntry>;
-
-  EntryVector requestedModules;
-  EntryVector importEntries;
-  EntryVector localExportEntries;
-  EntryVector indirectExportEntries;
-  EntryVector starExportEntries;
-  FunctionDeclarationVector functionDecls;
-
-  explicit StencilModuleMetadata(JSContext* cx)
-      : requestedModules(cx),
-        importEntries(cx),
-        localExportEntries(cx),
-        indirectExportEntries(cx),
-        starExportEntries(cx),
-        functionDecls(cx) {}
-
-  bool initModule(JSContext* cx, JS::Handle<ModuleObject*> module);
-
-  void trace(JSTracer* trc);
-};
 
 
 
@@ -526,16 +419,9 @@ class ScriptStencil {
   void trace(JSTracer* trc);
 
   bool isFunction() const {
-    bool result = functionFlags.toRaw() != 0x0000;
-    MOZ_ASSERT_IF(
-        result, functionFlags.isAsmJSNative() || functionFlags.hasBaseScript());
-    return result;
-  }
-
-  bool isModule() const {
-    bool result = immutableFlags.hasFlag(ImmutableScriptFlagsEnum::IsModule);
-    MOZ_ASSERT_IF(result, !isFunction());
-    return result;
+    MOZ_ASSERT_IF(!!functionFlags.toRaw(), functionFlags.isAsmJSNative() ||
+                                               functionFlags.hasBaseScript());
+    return !!functionFlags.toRaw();
   }
 };
 
