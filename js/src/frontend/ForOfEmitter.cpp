@@ -120,7 +120,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     
     return false;
   }
-  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->names().done)) {
+  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->parserNames().done)) {
     
     return false;
   }
@@ -137,7 +137,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
   
   
   
-  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->names().value)) {
+  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->parserNames().value)) {
     
     return false;
   }

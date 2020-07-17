@@ -551,7 +551,7 @@ bool ClassEmitter::emitDerivedClass(JS::Handle<JSAtom*> name,
     
     return false;
   }
-  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->names().prototype)) {
+  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->parserNames().prototype)) {
     
     return false;
   }
@@ -632,7 +632,7 @@ bool ClassEmitter::emitInitDefaultConstructor(uint32_t classStart,
     if (nameForAnonymousClass_) {
       className = nameForAnonymousClass_;
     } else {
-      className = bce_->cx->names().empty;
+      className = bce_->cx->parserNames().empty;
     }
   }
 
@@ -695,11 +695,13 @@ bool ClassEmitter::initProtoAndCtor() {
     
     return false;
   }
-  if (!bce_->emitAtomOp(JSOp::InitLockedProp, bce_->cx->names().prototype)) {
+  if (!bce_->emitAtomOp(JSOp::InitLockedProp,
+                        bce_->cx->parserNames().prototype)) {
     
     return false;
   }
-  if (!bce_->emitAtomOp(JSOp::InitHiddenProp, bce_->cx->names().constructor)) {
+  if (!bce_->emitAtomOp(JSOp::InitHiddenProp,
+                        bce_->cx->parserNames().constructor)) {
     
     return false;
   }
@@ -718,7 +720,7 @@ bool ClassEmitter::prepareForFieldInitializers(size_t numFields,
   
   auto initializersName = isStatic ? &JSAtomState::dotStaticInitializers
                                    : &JSAtomState::dotInitializers;
-  HandlePropertyName initializers = bce_->cx->names().*initializersName;
+  HandlePropertyName initializers = bce_->cx->parserNames().*initializersName;
   initializersAssignment_.emplace(bce_, initializers,
                                   NameOpEmitter::Kind::Initialize);
   if (!initializersAssignment_->prepareForRhs()) {

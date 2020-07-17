@@ -532,8 +532,8 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
     
     
     
-    MOZ_ASSERT(name != bce_->cx->names().dotThis &&
-               name != bce_->cx->names().dotGenerator);
+    MOZ_ASSERT(name != bce_->cx->parserNames().dotThis &&
+               name != bce_->cx->parserNames().dotGenerator);
 
     NameOpEmitter noe(bce_, name, NameOpEmitter::Kind::Initialize);
     if (!noe.prepareForRhs()) {

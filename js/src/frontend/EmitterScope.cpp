@@ -124,7 +124,7 @@ AbstractScopePtr EmitterScope::enclosingScope(BytecodeEmitter* bce) const {
 
 bool EmitterScope::nameCanBeFree(BytecodeEmitter* bce, JSAtom* name) {
   
-  return name != bce->cx->names().dotGenerator;
+  return name != bce->cx->parserNames().dotGenerator;
 }
 
 #ifdef DEBUG
