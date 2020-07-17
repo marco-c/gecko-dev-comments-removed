@@ -248,12 +248,9 @@ template <class K, class V>
   }
 }
 
-template <class K, class V>
- void WeakMap<K, V>::addWeakEntry(
+ inline void WeakMapBase::addWeakEntry(
     GCMarker* marker, gc::Cell* key, const gc::WeakMarkable& markable) {
-  Zone* zone = key->asTenured().zone();
-  auto& weakKeys =
-      gc::IsInsideNursery(key) ? zone->gcNurseryWeakKeys() : zone->gcWeakKeys();
+  auto& weakKeys = key->zone()->gcWeakKeys(key);
   auto p = weakKeys.get(key);
   if (p) {
     gc::WeakEntryVector& weakEntries = p->value;
@@ -348,6 +345,35 @@ void WeakMap<K, V>::traceMappings(WeakMapTracer* tracer) {
                     JS::GCCellPtr(r.front().value().get()));
     }
   }
+}
+
+template <class K, class V>
+bool WeakMap<K, V>::findSweepGroupEdges() {
+  
+  
+  JS::AutoSuppressGCAnalysis nogc;
+  for (Range r = all(); !r.empty(); r.popFront()) {
+    const K& key = r.front().key();
+
+    
+    
+    JSObject* delegate = gc::detail::GetDelegate(key);
+    if (!delegate) {
+      continue;
+    }
+
+    
+    
+    Zone* delegateZone = delegate->zone();
+    Zone* keyZone = key->zone();
+    if (delegateZone != keyZone && delegateZone->isGCMarking() &&
+        keyZone->isGCMarking()) {
+      if (!delegateZone->addSweepGroupEdgeTo(keyZone)) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 #if DEBUG
