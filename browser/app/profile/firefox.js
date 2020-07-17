@@ -333,7 +333,19 @@ pref("browser.urlbar.richSuggestions.tail", false);
 
 
 
-pref("browser.urlbar.update2.expandTextOnFocus", false);
+pref("browser.urlbar.update2", false);
+
+
+
+pref("browser.urlbar.update2.localOneOffs", false);
+
+
+
+pref("browser.urlbar.update2.oneOffsRefresh", false);
+
+
+
+pref("browser.urlbar.update2.tabToComplete", false);
 
 pref("browser.urlbar.eventTelemetry.enabled", false);
 

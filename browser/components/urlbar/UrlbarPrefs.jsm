@@ -71,6 +71,13 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["eventTelemetry.enabled", false],
 
   
+  
+  ["experimental.expandTextOnFocus", false],
+
+  
+  ["experimental.searchButton", false],
+
+  
   ["filter.javascript", true],
 
   
@@ -150,7 +157,20 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["usepreloadedtopurls.expire_days", 14],
 
   
-  ["update2.searchButton", false],
+  
+  ["update2", false],
+
+  
+  
+  ["update2.localOneOffs", false],
+
+  
+  
+  ["update2.oneOffsRefresh", false],
+
+  
+  
+  ["update2.tabToComplete", false],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
   ["keyword.enabled", true],
