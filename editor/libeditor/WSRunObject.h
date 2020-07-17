@@ -567,47 +567,6 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   using PointPosition = WSFragment::PointPosition;
 
-  using WSFragmentArray = AutoTArray<WSFragment, 3>;
-  const WSFragmentArray& WSFragmentArrayRef() const {
-    const_cast<WSRunScanner*>(this)->EnsureWSFragments();
-    return mFragments;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  template <typename PT, typename CT>
-  const WSFragment* FindNearestFragment(
-      const EditorDOMPointBase<PT, CT>& aPoint, bool aForward) const {
-    WSFragmentArray::index_type index =
-        FindNearestFragmentIndex(aPoint, aForward);
-    if (index == WSFragmentArray::NoIndex) {
-      return nullptr;
-    }
-    return &mFragments[index];
-  }
-  template <typename PT, typename CT>
-  WSFragmentArray::index_type FindNearestFragmentIndex(
-      const EditorDOMPointBase<PT, CT>& aPoint, bool aForward) const;
-
   
 
 
@@ -755,8 +714,6 @@ class MOZ_STACK_CLASS WSRunScanner {
           mEnd(aEndBoundaryData),
           mNBSPData(aNBSPData),
           mIsPreformatted(aIsPreformatted) {}
-
-    void InitializeWSFragmentArray(WSFragmentArray& aFragments) const;
 
     bool StartsFromNormalText() const { return mStart.IsNormalText(); }
     bool StartsFromSpecialContent() const { return mStart.IsSpecialContent(); }
@@ -1000,7 +957,6 @@ class MOZ_STACK_CLASS WSRunScanner {
     bool mIsPreformatted;
   };
 
-  void EnsureWSFragments();
   template <typename EditorDOMPointType>
   void InitializeRangeStart(
       const EditorDOMPointType& aPoint,
@@ -1033,12 +989,6 @@ class MOZ_STACK_CLASS WSRunScanner {
   BoundaryData mStart;
   BoundaryData mEnd;
   NoBreakingSpaceData mNBSPData;
-
- private:
-  
-  
-  
-  WSFragmentArray mFragments;
 };
 
 class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
