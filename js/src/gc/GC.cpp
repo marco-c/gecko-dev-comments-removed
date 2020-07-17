@@ -3276,7 +3276,6 @@ void GCRuntime::decommitFreeArenas(const bool& cancel, AutoLockGC& lock) {
 
 
 void GCRuntime::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
-  MOZ_ASSERT(emptyChunks(lock).count() == 0);
   for (ChunkPool::Iter chunk(availableChunks(lock)); !chunk.done();
        chunk.next()) {
     chunk->decommitFreeArenasWithoutUnlocking(lock);
