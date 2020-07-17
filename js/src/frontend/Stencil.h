@@ -404,7 +404,6 @@ class ScriptStencil {
 
   
   
-  
   bool wasFunctionEmitted : 1;
 
   
