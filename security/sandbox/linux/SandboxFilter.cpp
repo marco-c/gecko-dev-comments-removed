@@ -711,6 +711,13 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         return Error(EPERM);
 #endif
 
+        
+        
+        
+        
+      case __NR_rseq:
+        return Allow();
+
 #ifdef MOZ_ASAN
         
       case __NR_ioctl: {
