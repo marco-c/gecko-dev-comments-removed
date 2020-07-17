@@ -6727,7 +6727,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
   using TransformReferenceBox = nsStyleTransformMatrix::TransformReferenceBox;
 
  public:
-  enum class PrerenderDecision { No, Full, Partial };
+  enum class PrerenderDecision : uint8_t { No, Full, Partial };
 
   
 
@@ -6747,7 +6747,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList, const nsRect& aChildrenBuildingRect,
-                     bool aAllowAsyncAnimation);
+                     PrerenderDecision aPrerenderDecision);
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList, const nsRect& aChildrenBuildingRect,
@@ -7006,6 +7006,9 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
       float aAppUnitsPerPixel);
 
   struct PrerenderInfo {
+    bool CanUseAsyncAnimations() const {
+      return mDecision != PrerenderDecision::No && mHasAnimations;
+    }
     PrerenderDecision mDecision = PrerenderDecision::No;
     bool mHasAnimations = true;
   };
@@ -7082,6 +7085,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
   nsRect mChildBounds;
   
   nsRect mBounds;
+  PrerenderDecision mPrerenderDecision : 2;
   
   
   
@@ -7089,11 +7093,9 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
   
   
   
-  bool mIsTransformSeparator;
+  bool mIsTransformSeparator : 1;
   
-  bool mAllowAsyncAnimation;
-  
-  bool mShouldFlatten;
+  bool mShouldFlatten : 1;
 };
 
 
