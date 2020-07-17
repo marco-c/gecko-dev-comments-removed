@@ -844,8 +844,10 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
   
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult Scrub(
-      HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  DeleteInvisibleASCIIWhiteSpaces(HTMLEditor& aHTMLEditor,
+                                  const EditorDOMPoint& aPoint);
 
   
 
@@ -992,7 +994,11 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
   MaybeReplaceInclusiveNextNBSPWithASCIIWhiteSpace(
       const WSFragment& aRun, const EditorDOMPoint& aPoint);
 
-  MOZ_CAN_RUN_SCRIPT nsresult Scrub();
+  
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteInvisibleASCIIWhiteSpacesInternal();
 
   
   
