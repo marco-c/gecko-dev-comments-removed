@@ -3,6 +3,7 @@ from __future__ import print_function, unicode_literals
 import abc
 import argparse
 import ast
+import io
 import json
 import logging
 import os
@@ -21,7 +22,7 @@ from ..wpt import testfiles
 from ..manifest.vcs import walk
 
 from ..manifest.sourcefile import SourceFile, js_meta_re, python_meta_re, space_chars, get_any_variants
-from six import binary_type, iteritems, itervalues, with_metaclass
+from six import binary_type, ensure_binary, ensure_text, iteritems, itervalues, with_metaclass
 from six.moves import range
 from six.moves.urllib.parse import urlsplit, urljoin
 
@@ -39,7 +40,6 @@ if MYPY:
     from typing import Text
     from typing import Tuple
     from typing import Type
-    from typing import Union
 
     
     
@@ -50,6 +50,7 @@ if MYPY:
 
 
 logger = None  
+
 
 def setup_logging(prefix=False):
     
@@ -89,20 +90,23 @@ you could add the following line to the lint.ignore file.
 
 %s: %s"""
 
+
 def all_filesystem_paths(repo_root, subdir=None):
     
-    path_filter = PathFilter(repo_root, extras=[str(".git/")])
+    path_filter = PathFilter(repo_root.encode("utf8"),
+                             extras=[ensure_binary(".git/")])
     if subdir:
-        expanded_path = subdir
+        expanded_path = subdir.encode("utf8")
+        subdir_str = expanded_path
     else:
-        expanded_path = repo_root
+        expanded_path = repo_root.encode("utf8")
     for dirpath, dirnames, filenames in path_filter(walk(expanded_path)):
         for filename, _ in filenames:
             path = os.path.join(dirpath, filename)
             if subdir:
-                path = os.path.join(subdir, path)
+                path = os.path.join(subdir_str, path)
             assert not os.path.isabs(path), path
-            yield path
+            yield ensure_text(path)
 
 
 def _all_files_equal(paths):
@@ -206,12 +210,13 @@ def check_git_ignore(repo_root, paths):
         try:
             matches = subprocess.check_output(
                 ["git", "check-ignore", "--verbose", "--no-index", "--stdin"], stdin=f)
-            for match in matches.strip().split('\n'):
-                match_filter, path = match.split()
-                _, _, filter_string = match_filter.split(':')
+            for match in matches.strip().split(b'\n'):
+                match_filter, path_bytes = match.split()
+                _, _, filter_string = match_filter.split(b':')
                 
                 
-                if filter_string[0] != '!':
+                if filter_string[0:1] != b'!':
+                    path = path_bytes.decode("utf8")
                     errors.append(rules.IgnoredPath.error(path, (path,)))
         except subprocess.CalledProcessError:
             
@@ -249,26 +254,23 @@ def check_css_globally_unique(repo_root, paths):
 
     for path in paths:
         if os.name == "nt":
-            if isinstance(path, binary_type):
-                path = path.replace(b"\\", b"/")
-            else:
-                path = path.replace(u"\\", u"/")
+            path = path.replace(u"\\", u"/")
 
-        if not path.startswith("css/"):
+        if not path.startswith(u"css/"):
             continue
 
-        source_file = SourceFile(repo_root, path, "/")
+        source_file = SourceFile(repo_root, path, u"/")
         if source_file.name_is_non_test:
             
             
             
-            offset = path.find("/support/")
+            offset = path.find(u"/support/")
             if offset == -1:
                 continue
 
             parts = source_file.dir_path.split(os.path.sep)
             if (parts[0] in source_file.root_dir_non_test or
-                any(item in source_file.dir_non_test - {"support"} for item in parts) or
+                any(item in source_file.dir_non_test - {u"support"} for item in parts) or
                 any(parts[:len(non_test_path)] == list(non_test_path) for non_test_path in source_file.dir_path_non_test)):
                 continue
 
@@ -278,10 +280,7 @@ def check_css_globally_unique(repo_root, paths):
             ref_files[source_file.name].add(path)
         else:
             test_name = source_file.name  
-            if isinstance(test_name, bytes):
-                test_name = test_name.replace(b'-manual', b'')
-            else:
-                test_name = test_name.replace(u'-manual', u'')
+            test_name = test_name.replace(u'-manual', u'')
             test_files[test_name].add(path)
 
     errors = []
@@ -292,7 +291,7 @@ def check_css_globally_unique(repo_root, paths):
                 
                 by_spec = defaultdict(set)  
                 for path in colliding:
-                    source_file = SourceFile(repo_root, path, "/")
+                    source_file = SourceFile(repo_root, path, u"/")
                     for link in source_file.spec_links:
                         for r in (drafts_csswg_re, w3c_tr_re, w3c_dev_re):
                             m = r.match(link)
@@ -832,17 +831,15 @@ def changed_files(wpt_root):
 
 def lint_paths(kwargs, wpt_root):
     
-    if kwargs.get(str("paths")):
+    if kwargs.get("paths"):
         paths = []
-        for path in kwargs.get(str("paths"), []):
+        for path in kwargs.get("paths", []):
             if os.path.isdir(path):
                 path_dir = list(all_filesystem_paths(wpt_root, path))
                 paths.extend(path_dir)
             elif os.path.isfile(path):
                 paths.append(os.path.relpath(os.path.abspath(path), wpt_root))
-
-
-    elif kwargs[str("all")]:
+    elif kwargs["all"]:
         paths = list(all_filesystem_paths(wpt_root))
     else:
         changed_paths = changed_files(wpt_root)
@@ -852,7 +849,7 @@ def lint_paths(kwargs, wpt_root):
             if path == "lint.ignore" or path.startswith("tools/lint/"):
                 force_all = True
                 break
-        paths = (list(changed_paths) if not force_all  
+        paths = (list(changed_paths) if not force_all
                  else list(all_filesystem_paths(wpt_root)))
 
     return paths
@@ -867,43 +864,47 @@ def create_parser():
                         help="Output machine-readable JSON format")
     parser.add_argument("--markdown", action="store_true",
                         help="Output markdown")
-    parser.add_argument("--repo-root", help="The WPT directory. Use this "
+    parser.add_argument("--repo-root", type=ensure_text,
+                        help="The WPT directory. Use this "
                         "option if the lint script exists outside the repository")
-    parser.add_argument("--ignore-glob", help="Additional file glob to ignore.")
+    parser.add_argument("--ignore-glob", type=ensure_text,
+                        help="Additional file glob to ignore.")
     parser.add_argument("--all", action="store_true", help="If no paths are passed, try to lint the whole "
                         "working directory, not just files that changed")
     return parser
 
 
-def main(**kwargs):
+def main(**kwargs_str):
     
+    kwargs = {ensure_text(key): value for key, value in iteritems(kwargs_str)}
+
     assert logger is not None
-    if kwargs.get(str("json")) and kwargs.get(str("markdown")):
+    if kwargs.get("json") and kwargs.get("markdown"):
         logger.critical("Cannot specify --json and --markdown")
         sys.exit(2)
 
-    repo_root = kwargs.get(str('repo_root')) or localpaths.repo_root
-    output_format = {(True, False): str("json"),
-                     (False, True): str("markdown"),
-                     (False, False): str("normal")}[(kwargs.get(str("json"), False),
-                                                     kwargs.get(str("markdown"), False))]
+    repo_root = kwargs.get('repo_root') or localpaths.repo_root
+    output_format = {(True, False): "json",
+                     (False, True): "markdown",
+                     (False, False): "normal"}[(kwargs.get("json", False),
+                                                kwargs.get("markdown", False))]
 
     if output_format == "markdown":
         setup_logging(True)
 
     paths = lint_paths(kwargs, repo_root)
 
-    ignore_glob = kwargs.get(str("ignore_glob")) or str()
+    ignore_glob = kwargs.get("ignore_glob") or ""
 
-    return lint(repo_root, paths, output_format, str(ignore_glob))
+    return lint(repo_root, paths, output_format, ignore_glob)
 
 
-def lint(repo_root, paths, output_format, ignore_glob=str()):
+def lint(repo_root, paths, output_format, ignore_glob=""):
     
     error_count = defaultdict(int)  
     last = None
 
-    with open(os.path.join(repo_root, "lint.ignore")) as f:
+    with io.open(os.path.join(repo_root, "lint.ignore"), "r") as f:
         ignorelist, skipped_files = parse_ignorelist(f)
 
     if ignore_glob:
@@ -948,8 +949,8 @@ def lint(repo_root, paths, output_format, ignore_glob=str()):
         last = process_errors(errors) or last
 
         if not os.path.isdir(abs_path):
-            with open(abs_path, 'rb') as f:
-                errors = check_file_contents(repo_root, path, f)
+            with io.open(abs_path, 'rb') as test_file:
+                errors = check_file_contents(repo_root, path, test_file)
                 last = process_errors(errors) or last
 
     errors = check_all_paths(repo_root, paths)

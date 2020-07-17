@@ -2,16 +2,12 @@ import os
 import platform
 import subprocess
 
-from six import BytesIO
-
 MYPY = False
 if MYPY:
     
     from typing import Text
     from typing import Callable
-    from typing import AnyStr
     from typing import Any
-    from typing import BinaryIO
     from typing import Generic
     from typing import TypeVar
     from typing import Optional
@@ -22,70 +18,60 @@ else:
     T = object()
     Generic[T] = object
 
+
 def rel_path_to_url(rel_path, url_base="/"):
     
     assert not os.path.isabs(rel_path), rel_path
-    if url_base[0] != "/":
-        url_base = "/" + url_base
-    if url_base[-1] != "/":
-        url_base += "/"
-    return url_base + rel_path.replace(os.sep, "/")
+    if url_base[0] != u"/":
+        url_base = u"/" + url_base
+    if url_base[-1] != u"/":
+        url_base += u"/"
+    return url_base + rel_path.replace(os.sep, u"/")
 
 
 def from_os_path(path):
     
-    assert os.path.sep == "/" or platform.system() == "Windows"
-    if "/" == os.path.sep:
+    assert os.path.sep == u"/" or platform.system() == "Windows"
+    if u"/" == os.path.sep:
         rv = path
     else:
-        rv = path.replace(os.path.sep, "/")
-    if "\\" in rv:
+        rv = path.replace(os.path.sep, u"/")
+    if u"\\" in rv:
         raise ValueError("path contains \\ when separator is %s" % os.path.sep)
     return rv
 
 
 def to_os_path(path):
     
-    assert os.path.sep == "/" or platform.system() == "Windows"
-    if "\\" in path:
+    assert os.path.sep == u"/" or platform.system() == "Windows"
+    if u"\\" in path:
         raise ValueError("normalised path contains \\")
-    if "/" == os.path.sep:
+    if u"/" == os.path.sep:
         return path
-    return path.replace("/", os.path.sep)
+    return path.replace(u"/", os.path.sep)
 
 
 def git(path):
     
     def gitfunc(cmd, *args):
         
-        full_cmd = ["git", cmd] + list(args)
+        full_cmd = [u"git", cmd] + list(args)
         try:
             return subprocess.check_output(full_cmd, cwd=path, stderr=subprocess.STDOUT).decode('utf8')
         except Exception as e:
             if platform.uname()[0] == "Windows" and isinstance(e, WindowsError):
-                full_cmd[0] = "git.bat"
+                full_cmd[0] = u"git.bat"
                 return subprocess.check_output(full_cmd, cwd=path, stderr=subprocess.STDOUT).decode('utf8')
             else:
                 raise
 
     try:
         
-        gitfunc("rev-parse", "--show-toplevel")
+        gitfunc(u"rev-parse", u"--show-toplevel")
     except (subprocess.CalledProcessError, OSError):
         return None
     else:
         return gitfunc
-
-
-class ContextManagerBytesIO(BytesIO):  
-    def __enter__(self):
-        
-        return self  
-
-    def __exit__(self, *args, **kwargs):
-        
-        self.close()
-        return True
 
 
 class cached_property(Generic[T]):

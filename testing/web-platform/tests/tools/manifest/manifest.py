@@ -7,12 +7,10 @@ from copy import deepcopy
 from multiprocessing import Pool, cpu_count
 from six import (
     PY3,
-    binary_type,
     ensure_text,
     iteritems,
     itervalues,
     string_types,
-    text_type,
 )
 
 from . import vcs
@@ -64,15 +62,19 @@ class ManifestVersionMismatch(ManifestError):
     pass
 
 
-item_classes = {"testharness": TestharnessTest,
-                "reftest": RefTest,
-                "print-reftest": PrintRefTest,
-                "crashtest": CrashTest,
-                "manual": ManualTest,
-                "wdspec": WebDriverSpecTest,
-                "conformancechecker": ConformanceCheckerTest,
-                "visual": VisualTest,
-                "support": SupportFile}  
+class InvalidCacheError(Exception):
+    pass
+
+
+item_classes = {u"testharness": TestharnessTest,
+                u"reftest": RefTest,
+                u"print-reftest": PrintRefTest,
+                u"crashtest": CrashTest,
+                u"manual": ManualTest,
+                u"wdspec": WebDriverSpecTest,
+                u"conformancechecker": ConformanceCheckerTest,
+                u"visual": VisualTest,
+                u"support": SupportFile}  
 
 
 def compute_manifest_items(source_file):
@@ -82,10 +84,12 @@ def compute_manifest_items(source_file):
     file_hash = source_file.hash
     return rel_path_parts, new_type, set(manifest_items), file_hash
 
+
 if MYPY:
     ManifestDataType = Dict[Any, TypeData]
 else:
     ManifestDataType = dict
+
 
 class ManifestData(ManifestDataType):
     def __init__(self, manifest):
@@ -123,9 +127,8 @@ class ManifestData(ManifestDataType):
         return rv
 
 
-
 class Manifest(object):
-    def __init__(self, tests_root=None, url_base="/"):
+    def __init__(self, tests_root, url_base="/"):
         
         assert url_base is not None
         self._data = ManifestData(self)  
@@ -140,9 +143,9 @@ class Manifest(object):
         
         for item_type in (types or sorted(self._data.keys())):
             for path in self._data[item_type]:
-                str_path = os.sep.join(path)
+                rel_path = os.sep.join(path)
                 tests = self._data[item_type][path]
-                yield item_type, str_path, tests
+                yield item_type, rel_path, tests
 
     def iterpath(self, path):
         
@@ -182,32 +185,42 @@ class Manifest(object):
         data = self._data
 
         types = data.type_by_path()
-        deleted = set(types)
+        remaining_manifest_paths = set(types)
 
         to_update = []
 
-        for source_file_or_path, update in tree:
-            if not update:
-                assert isinstance(source_file_or_path, (binary_type, text_type))
-                path = ensure_text(source_file_or_path)
-                deleted.remove(tuple(path.split(os.path.sep)))
-            else:
-                assert not isinstance(source_file_or_path, (binary_type, text_type))
-                source_file = source_file_or_path
-                rel_path_parts = source_file.rel_path_parts
-                assert isinstance(rel_path_parts, tuple)
+        for path, file_hash, updated in tree:
+            path_parts = tuple(path.split(os.path.sep))
+            is_new = path_parts not in remaining_manifest_paths
 
-                is_new = rel_path_parts not in deleted  
+            if not updated and is_new:
+                
+                
+                
+                
+                
+                raise InvalidCacheError
+
+            if not updated:
+                remaining_manifest_paths.remove(path_parts)
+            else:
+                assert self.tests_root is not None
+                source_file = SourceFile(self.tests_root,
+                                         path,
+                                         self.url_base,
+                                         file_hash)
+
                 hash_changed = False  
 
                 if not is_new:
-                    deleted.remove(rel_path_parts)
-                    old_type = types[rel_path_parts]
-                    old_hash = data[old_type].hashes[rel_path_parts]
-                    file_hash = source_file.hash  
+                    if file_hash is None:
+                        file_hash = source_file.hash
+                    remaining_manifest_paths.remove(path_parts)
+                    old_type = types[path_parts]
+                    old_hash = data[old_type].hashes[path_parts]
                     if old_hash != file_hash:
                         hash_changed = True
-                        del data[old_type][rel_path_parts]
+                        del data[old_type][path_parts]
 
                 if is_new or hash_changed:
                     to_update.append(source_file)
@@ -238,9 +251,9 @@ class Manifest(object):
             data[new_type][rel_path_parts] = manifest_items
             data[new_type].hashes[rel_path_parts] = file_hash
 
-        if deleted:
+        if remaining_manifest_paths:
             changed = True
-            for rel_path_parts in deleted:
+            for rel_path_parts in remaining_manifest_paths:
                 for test_data in itervalues(data):
                     if rel_path_parts in test_data:
                         del test_data[rel_path_parts]
@@ -374,6 +387,43 @@ def load_and_update(tests_root,
                     parallel=True  
                     ):
     
+
+    
+    
+    
+
+    metadata_path_text = ensure_text(metadata_path) if metadata_path is not None else None
+    cache_root_text = ensure_text(cache_root) if cache_root is not None else None
+
+    return _load_and_update(ensure_text(tests_root),
+                            ensure_text(manifest_path),
+                            url_base,
+                            update=update,
+                            rebuild=rebuild,
+                            metadata_path=metadata_path_text,
+                            cache_root=cache_root_text,
+                            working_copy=working_copy,
+                            types=types,
+                            write_manifest=write_manifest,
+                            allow_cached=allow_cached,
+                            parallel=parallel)
+
+
+def _load_and_update(tests_root,  
+                     manifest_path,  
+                     url_base,  
+                     update=True,  
+                     rebuild=False,  
+                     metadata_path=None,  
+                     cache_root=None,  
+                     working_copy=True,  
+                     types=None,  
+                     write_manifest=True,  
+                     allow_cached=True,  
+                     parallel=True  
+                     ):
+    
+
     logger = get_logger()
 
     manifest = None
@@ -399,9 +449,18 @@ def load_and_update(tests_root,
         update = True
 
     if rebuild or update:
-        tree = vcs.get_tree(tests_root, manifest, manifest_path, cache_root,
-                            working_copy, rebuild)
-        changed = manifest.update(tree, parallel)
+        for retry in range(2):
+            try:
+                tree = vcs.get_tree(tests_root, manifest, manifest_path, cache_root,
+                                    working_copy, rebuild)
+                changed = manifest.update(tree, parallel)
+                break
+            except InvalidCacheError:
+                logger.warning("Manifest cache was invalid, doing a complete rebuild")
+                rebuild = True
+        else:
+            
+            raise
         if write_manifest and changed:
             write(manifest, manifest_path)
         tree.dump_caches()

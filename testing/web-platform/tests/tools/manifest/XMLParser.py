@@ -6,6 +6,8 @@ from collections import OrderedDict
 from xml.parsers import expat
 import xml.etree.ElementTree as etree  
 
+from six import text_type
+
 MYPY = False
 if MYPY:
     
@@ -63,6 +65,9 @@ class XMLParser(object):
         self._parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE)
         
         self._parser.XmlDeclHandler = self._xml_decl
+        
+        
+        
         self._parser.StartElementHandler = self._start
         self._parser.EndElementHandler = self._end
         self._parser.CharacterDataHandler = self._data
@@ -78,6 +83,7 @@ class XMLParser(object):
 
     def _start(self, tag, attrib_in):
         
+        assert isinstance(tag, text_type)
         self._fed_data = None
         tag = _fixname(tag)
         attrib = OrderedDict()  

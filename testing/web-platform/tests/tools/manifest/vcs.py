@@ -7,7 +7,6 @@ from collections import MutableMapping
 
 from six import with_metaclass, PY2
 
-from .sourcefile import SourceFile
 from .utils import git
 
 try:
@@ -20,7 +19,7 @@ except ValueError:
 MYPY = False
 if MYPY:
     
-    from typing import Dict, Optional, List, Set, Text, Iterable, Any, Tuple, Union, Iterator
+    from typing import Dict, Optional, List, Set, Text, Iterable, Any, Tuple, Iterator
     from .manifest import Manifest  
     if PY2:
         stat_result = Any
@@ -33,7 +32,7 @@ def get_tree(tests_root, manifest, manifest_path, cache_root,
     
     tree = None
     if cache_root is None:
-        cache_root = os.path.join(tests_root, ".wptcache")
+        cache_root = os.path.join(tests_root, u".wptcache")
     if not os.path.exists(cache_root):
         try:
             os.makedirs(cache_root)
@@ -90,21 +89,22 @@ class GitHasher(object):
 
 
 class FileSystem(object):
-    def __init__(self, root, url_base, cache_path, manifest_path=None, rebuild=False):
+    def __init__(self, tests_root, url_base, cache_path, manifest_path=None, rebuild=False):
         
-        self.root = os.path.abspath(root)
+        self.tests_root = tests_root
         self.url_base = url_base
         self.ignore_cache = None
         self.mtime_cache = None
+        tests_root_bytes = tests_root.encode("utf8")
         if cache_path is not None:
             if manifest_path is not None:
-                self.mtime_cache = MtimeCache(cache_path, root, manifest_path, rebuild)
-            if gitignore.has_ignore(root):
-                self.ignore_cache = GitIgnoreCache(cache_path, root, rebuild)
-        self.path_filter = gitignore.PathFilter(self.root,
-                                                extras=[".git/"],
+                self.mtime_cache = MtimeCache(cache_path, tests_root, manifest_path, rebuild)
+            if gitignore.has_ignore(tests_root_bytes):
+                self.ignore_cache = GitIgnoreCache(cache_path, tests_root, rebuild)
+        self.path_filter = gitignore.PathFilter(tests_root_bytes,
+                                                extras=[b".git/"],
                                                 cache=self.ignore_cache)
-        git = GitHasher(root)
+        git = GitHasher(tests_root)
         if git is not None:
             self.hash_cache = git.hash_cache()
         else:
@@ -113,14 +113,15 @@ class FileSystem(object):
     def __iter__(self):
         
         mtime_cache = self.mtime_cache
-        for dirpath, dirnames, filenames in self.path_filter(walk(self.root)):
+        for dirpath, dirnames, filenames in self.path_filter(
+                walk(self.tests_root.encode("utf8"))):
             for filename, path_stat in filenames:
-                path = os.path.join(dirpath, filename)
+                path = os.path.join(dirpath, filename).decode("utf8")
                 if mtime_cache is None or mtime_cache.updated(path, path_stat):
-                    hash = self.hash_cache.get(path, None)
-                    yield SourceFile(self.root, path, self.url_base, hash), True
+                    file_hash = self.hash_cache.get(path, None)
+                    yield path, file_hash, True
                 else:
-                    yield path, False
+                    yield path, None, False
 
     def dump_caches(self):
         
@@ -174,7 +175,7 @@ class CacheFile(with_metaclass(abc.ABCMeta)):
 
 
 class MtimeCache(CacheFile):
-    file_name = "mtime.json"
+    file_name = u"mtime.json"
 
     def __init__(self, cache_root, tests_root, manifest_path, rebuild=False):
         
@@ -195,12 +196,12 @@ class MtimeCache(CacheFile):
 
     def check_valid(self, data):
         
-        if data.get("/tests_root") != self.tests_root:
+        if data.get(u"/tests_root") != self.tests_root:
             self.modified = True
         else:
             if self.manifest_path is not None and os.path.exists(self.manifest_path):
                 mtime = os.path.getmtime(self.manifest_path)
-                if data.get("/manifest_path") != [self.manifest_path, mtime]:
+                if data.get(u"/manifest_path") != [self.manifest_path, mtime]:
                     self.modified = True
             else:
                 self.modified = True
@@ -228,10 +229,10 @@ class GitIgnoreCache(CacheFile, MutableMapping):
         
         ignore_path = os.path.join(self.tests_root, ".gitignore")
         mtime = os.path.getmtime(ignore_path)
-        if data.get("/gitignore_file") != [ignore_path, mtime]:
+        if data.get(u"/gitignore_file") != [ignore_path, mtime]:
             self.modified = True
             data = {}
-            data["/gitignore_file"] = [ignore_path, mtime]
+            data[u"/gitignore_file"] = [ignore_path, mtime]
         return data
 
     def __contains__(self, key):
@@ -286,7 +287,7 @@ def walk(root):
     relpath = os.path.relpath
 
     root = os.path.abspath(root)
-    stack = deque([(root, "")])
+    stack = deque([(root, b"")])
 
     while stack:
         dir_path, rel_path = stack.popleft()

@@ -2,15 +2,14 @@ import argparse
 import logging
 import os
 import re
-import subprocess
 import sys
 
-import six
 from collections import OrderedDict
-from six import iteritems
+from six import ensure_text, ensure_str, iteritems
 
 try:
     from ..manifest import manifest
+    from ..manifest.utils import git as get_git_cmd
 except ValueError:
     
     
@@ -20,12 +19,12 @@ except ValueError:
     
     
     from manifest import manifest  
+    from manifest.utils import git as get_git_cmd  
 
 MYPY = False
 if MYPY:
     
     from typing import Any
-    from typing import Callable
     from typing import Dict
     from typing import Iterable
     from typing import List
@@ -35,28 +34,11 @@ if MYPY:
     from typing import Set
     from typing import Text
     from typing import Tuple
-    from typing import Union
 
-here = os.path.dirname(__file__)
+here = ensure_text(os.path.dirname(__file__))
 wpt_root = os.path.abspath(os.path.join(here, os.pardir, os.pardir))
 
 logger = logging.getLogger()
-
-
-def get_git_cmd(repo_path):
-    
-    """Create a function for invoking git commands as a subprocess."""
-    def git(cmd, *args):
-        
-        full_cmd = [u"git", cmd] + list(item.decode("utf8") if isinstance(item, bytes) else item for item in args)  
-        try:
-            logger.debug(" ".join(full_cmd))
-            return subprocess.check_output(full_cmd, cwd=repo_path).decode("utf8").strip()
-        except subprocess.CalledProcessError as e:
-            logger.critical("Git command exited with status %i" % e.returncode)
-            logger.critical(e.output)
-            sys.exit(1)
-    return git
 
 
 def display_branch_point():
@@ -67,6 +49,9 @@ def display_branch_point():
 def branch_point():
     
     git = get_git_cmd(wpt_root)
+    if git is None:
+        raise Exception("git not found")
+
     if (os.environ.get("GITHUB_PULL_REQUEST", "false") == "false" and
         os.environ.get("GITHUB_BRANCH") == "master"):
         
@@ -86,7 +71,7 @@ def branch_point():
 
         
         not_heads = [item for item in git("rev-parse", "--not", "--branches", "--remotes").split("\n")
-                     if item != "^%s" % head]
+                     if item and item != "^%s" % head]
 
         
         commits = git("rev-list", "--topo-order", "--parents", "HEAD", *not_heads)
@@ -130,28 +115,33 @@ def branch_point():
             logger.debug("Using first commit on another branch as the branch point")
 
     logger.debug("Branch point from master: %s" % branch_point)
+    if branch_point:
+        branch_point = branch_point.strip()
     return branch_point
 
 
 def compile_ignore_rule(rule):
     
-    rule = rule.replace(os.path.sep, "/")
-    parts = rule.split("/")
+    rule = rule.replace(ensure_text(os.path.sep), u"/")
+    parts = rule.split(u"/")
     re_parts = []
     for part in parts:
-        if part.endswith("**"):
-            re_parts.append(re.escape(part[:-2]) + ".*")
-        elif part.endswith("*"):
-            re_parts.append(re.escape(part[:-1]) + "[^/]*")
+        if part.endswith(u"**"):
+            re_parts.append(re.escape(part[:-2]) + u".*")
+        elif part.endswith(u"*"):
+            re_parts.append(re.escape(part[:-1]) + u"[^/]*")
         else:
             re_parts.append(re.escape(part))
-    return re.compile("^%s$" % "/".join(re_parts))
+    return re.compile(u"^%s$" % u"/".join(re_parts))
 
 
 def repo_files_changed(revish, include_uncommitted=False, include_new=False):
     
     git = get_git_cmd(wpt_root)
-    files_list = git("diff", "--name-only", "-z", revish).split("\0")
+    if git is None:
+        raise Exception("git not found")
+
+    files_list = git("diff", "--name-only", "-z", revish).split(u"\0")
     assert not files_list[-1]
     files = set(files_list[:-1])
 
@@ -226,7 +216,7 @@ def _in_repo_root(full_path):
 def load_manifest(manifest_path=None, manifest_update=True):
     
     if manifest_path is None:
-        manifest_path = os.path.join(wpt_root, "MANIFEST.json")
+        manifest_path = os.path.join(wpt_root, u"MANIFEST.json")
     return manifest.load_and_update(wpt_root, manifest_path, "/",
                                     update=manifest_update)
 
@@ -239,7 +229,7 @@ def affected_testfiles(files_changed,
     
     """Determine and return list of test files that reference changed files."""
     if skip_dirs is None:
-        skip_dirs = {"conformance-checkers", "docs", "tools"}
+        skip_dirs = {u"conformance-checkers", u"docs", u"tools"}
     affected_testfiles = set()
     
     
@@ -379,24 +369,23 @@ def get_revish(**kwargs):
     
     revish = kwargs.get("revish")
     if revish is None:
-        revish = "%s..HEAD" % branch_point()
-    if isinstance(revish, six.text_type):
-        revish = revish.encode("utf8")
-    assert isinstance(revish, six.binary_type)
-    return revish
+        revish = u"%s..HEAD" % branch_point()
+    return ensure_text(revish).strip()
 
 
 def run_changed_files(**kwargs):
     
     revish = get_revish(**kwargs)
-    changed, _ = files_changed(revish, kwargs["ignore_rules"],
+    changed, _ = files_changed(revish,
+                               kwargs["ignore_rules"],
                                include_uncommitted=kwargs["modified"],
                                include_new=kwargs["new"])
 
-    separator = "\0" if kwargs["null"] else "\n"
+    separator = u"\0" if kwargs["null"] else u"\n"
 
     for item in sorted(changed):
-        sys.stdout.write(os.path.relpath(six.ensure_str(item), wpt_root) + separator)
+        line = os.path.relpath(item, wpt_root) + separator
+        sys.stdout.write(ensure_str(line))
 
 
 def run_tests_affected(**kwargs):

@@ -2,7 +2,8 @@ import hashlib
 import re
 import os
 from collections import deque
-from six import binary_type, ensure_text, iteritems, text_type
+from io import BytesIO
+from six import binary_type, iteritems, text_type
 from six.moves.urllib.parse import urljoin
 from fnmatch import fnmatch
 
@@ -10,7 +11,6 @@ MYPY = False
 if MYPY:
     
     from typing import Any
-    from typing import AnyStr
     from typing import BinaryIO
     from typing import Callable
     from typing import Deque
@@ -43,7 +43,7 @@ from .item import (ConformanceCheckerTest,
                    TestharnessTest,
                    VisualTest,
                    WebDriverSpecTest)
-from .utils import ContextManagerBytesIO, cached_property
+from .utils import cached_property
 
 wd_pattern = "*.py"
 js_meta_re = re.compile(br"//\s*META:\s*(\w*)=(.*)$")
@@ -185,21 +185,21 @@ def _parse_xml(f):
 
 
 class SourceFile(object):
-    parsers = {"html":_parse_html,
-               "xhtml":_parse_xml,
-               "svg":_parse_xml}  
+    parsers = {u"html":_parse_html,
+               u"xhtml":_parse_xml,
+               u"svg":_parse_xml}  
 
-    root_dir_non_test = {"common"}
+    root_dir_non_test = {u"common"}
 
-    dir_non_test = {"resources",
-                    "support",
-                    "tools"}
+    dir_non_test = {u"resources",
+                    u"support",
+                    u"tools"}
 
-    dir_path_non_test = {("css21", "archive"),
-                         ("css", "CSS2", "archive"),
-                         ("css", "common")}  
+    dir_path_non_test = {(u"css21", u"archive"),
+                         (u"css", u"CSS2", u"archive"),
+                         (u"css", u"common")}  
 
-    def __init__(self, tests_root, rel_path_str, url_base, hash=None, contents=None):
+    def __init__(self, tests_root, rel_path, url_base, hash=None, contents=None):
         
         """Object representing a file in a source tree.
 
@@ -209,7 +209,6 @@ class SourceFile(object):
         :param contents: Byte array of the contents of the file or ``None``.
         """
 
-        rel_path = ensure_text(rel_path_str)
         assert not os.path.isabs(rel_path), rel_path
         if os.name == "nt":
             
@@ -224,7 +223,7 @@ class SourceFile(object):
 
         meta_flags = name.split(".")[1:]
 
-        self.tests_root = ensure_text(tests_root)  
+        self.tests_root = tests_root  
         self.rel_path = rel_path  
         self.dir_path = dir_path  
         self.filename = filename  
@@ -270,13 +269,8 @@ class SourceFile(object):
         * the contents specified in the constructor, if any;
         * a File object opened for reading the file contents.
         """
-
         if self.contents is not None:
-            wrapped = ContextManagerBytesIO(self.contents)
-            if MYPY:
-                file_obj = cast(BinaryIO, wrapped)
-            else:
-                file_obj = wrapped
+            file_obj = BytesIO(self.contents)  
         else:
             file_obj = open(self.path, 'rb')
         return file_obj
@@ -337,11 +331,11 @@ class SourceFile(object):
         """Check if the file name matches the conditions for the file to
         be a non-test file"""
         return (self.is_dir() or
-                self.name_prefix("MANIFEST") or
-                self.filename == "META.yml" or
-                self.filename.startswith(".") or
-                self.filename.endswith(".headers") or
-                self.filename.endswith(".ini") or
+                self.name_prefix(u"MANIFEST") or
+                self.filename == u"META.yml" or
+                self.filename.startswith(u".") or
+                self.filename.endswith(u".headers") or
+                self.filename.endswith(u".ini") or
                 self.in_non_test_dir())
 
     @property
@@ -441,14 +435,14 @@ class SourceFile(object):
 
         if not ext:
             return None
-        if ext[0] == ".":
+        if ext[0] == u".":
             ext = ext[1:]
-        if ext in ["html", "htm"]:
-            return "html"
-        if ext in ["xhtml", "xht", "xml"]:
-            return "xhtml"
-        if ext == "svg":
-            return "svg"
+        if ext in [u"html", u"htm"]:
+            return u"html"
+        if ext in [u"xhtml", u"xht", u"xml"]:
+            return u"xhtml"
+        if ext == u"svg":
+            return u"svg"
         return None
 
     @cached_property

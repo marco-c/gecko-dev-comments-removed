@@ -159,7 +159,8 @@ def download_manifest(
             fileobj = io.BytesIO(resp.read())
             try:
                 with gzip.GzipFile(fileobj=fileobj) as gzf:
-                    decompressed = gzf.read()  
+                    data = read_gzf(gzf)  
+                    decompressed = data
             except IOError:
                 logger.warning("Failed to decompress downloaded file")
                 continue
@@ -178,6 +179,12 @@ def download_manifest(
         return False
     logger.info("Manifest downloaded")
     return True
+
+
+def read_gzf(gzf):  
+    
+    
+    return gzf.read()
 
 
 def create_parser():
