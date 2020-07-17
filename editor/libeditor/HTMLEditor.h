@@ -2629,12 +2629,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   HandleDeleteCollapsedSelectionAtWhiteSpaces(
       nsIEditor::EDirection aDirectionAndAmount,
-      const EditorDOMPoint& aPointToDelete, WSRunObject& aWSRunObjectAtCaret);
+      const EditorDOMPoint& aPointToDelete);
 
   
 

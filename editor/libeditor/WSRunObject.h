@@ -1203,9 +1203,13 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
       HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint);
 
   
-  
-  
-  MOZ_CAN_RUN_SCRIPT nsresult DeleteWSForward();
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  DeleteInclusiveNextWhiteSpace(HTMLEditor& aHTMLEditor,
+                                const EditorDOMPoint& aPoint);
 
   
 
