@@ -97,3 +97,7 @@ function testBorderColor(element, expected) {
     "Element bottom border color should be set."
   );
 }
+
+function loadTestSubscript(filePath) {
+  Services.scriptloader.loadSubScript(new URL(filePath, gTestPath).href, this);
+}
