@@ -141,10 +141,7 @@ exports.menuitems = [
 
       
       
-      if (
-        ResponsiveUIManager.isActiveForTab(target.localTab) &&
-        target.actorHasMethod("responsive", "setElementPickerState")
-      ) {
+      if (ResponsiveUIManager.isActiveForTab(target.localTab)) {
         const ui = ResponsiveUIManager.getResponsiveUIForTab(target.localTab);
         await ui.responsiveFront.setElementPickerState(
           true,
