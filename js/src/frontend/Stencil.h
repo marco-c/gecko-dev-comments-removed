@@ -378,6 +378,8 @@ class ScriptStencil {
   
   
   void trace(JSTracer* trc);
+
+  bool isFunction() const { return functionIndex.isSome(); }
 };
 
 } 

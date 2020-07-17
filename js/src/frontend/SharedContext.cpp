@@ -396,35 +396,6 @@ bool FunctionBox::setAsmJSModule(const JS::WasmModule* module) {
   return compilationInfo_.asmJS.putNew(FunctionIndex(index()), module);
 }
 
-void FunctionBox::finish() {
-  if (emitBytecode || isAsmJSModule()) {
-    
-    MOZ_ASSERT(!enclosingScope_);
-  } else {
-    
-    BaseScript* script = function()->baseScript();
-
-    script->setEnclosingScope(enclosingScope_.getExistingScope());
-    script->initTreatAsRunOnce(treatAsRunOnce());
-
-    if (fieldInitializers_) {
-      script->setFieldInitializers(*fieldInitializers_);
-    }
-  }
-
-  
-  
-  if (function()->displayAtom() == nullptr) {
-    if (hasInferredName()) {
-      function()->setInferredName(atom_);
-    }
-
-    if (hasGuessedAtom()) {
-      function()->setGuessedAtom(atom_);
-    }
-  }
-}
-
 
 void FunctionBox::TraceList(JSTracer* trc, FunctionBox* listHead) {
   for (FunctionBox* node = listHead; node; node = node->traceLink_) {
