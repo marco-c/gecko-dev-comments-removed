@@ -410,7 +410,8 @@ xpcAccessible::GetNativeInterface(nsISupports** aNativeInterface) {
   
   
   
-  nsCOMPtr<nsISupports> macIface = new xpcAccessibleMacInterface(IntlGeneric());
+  nsCOMPtr<nsISupports> macIface = static_cast<nsIAccessibleMacInterface*>(
+      new xpcAccessibleMacInterface(IntlGeneric()));
   macIface.swap(*aNativeInterface);
 
   return NS_OK;

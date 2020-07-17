@@ -16,21 +16,36 @@ class nsIAccessibleMacInterface;
 namespace mozilla {
 namespace a11y {
 
-class xpcAccessibleMacInterface : public nsIAccessibleMacInterface {
+class xpcAccessibleMacNSObjectWrapper : public nsIAccessibleMacNSObjectWrapper {
  public:
+  explicit xpcAccessibleMacNSObjectWrapper(id aTextMarker);
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIACCESSIBLEMACNSOBJECTWRAPPER;
+
+  
+  id GetNativeObject() const final;
+
+ protected:
+  virtual ~xpcAccessibleMacNSObjectWrapper();
+
+  id mNativeObject;
+};
+
+class xpcAccessibleMacInterface : public xpcAccessibleMacNSObjectWrapper,
+                                  public nsIAccessibleMacInterface {
+ public:
+  
+  
+  explicit xpcAccessibleMacInterface(id aNativeObj)
+      : xpcAccessibleMacNSObjectWrapper(aNativeObj) {}
+
   
   
   explicit xpcAccessibleMacInterface(AccessibleOrProxy aObj);
 
-  
-  
-  explicit xpcAccessibleMacInterface(id aNativeObj);
-
-  NS_DECL_ISUPPORTS
+  NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIACCESSIBLEMACINTERFACE
-
-  
-  id GetNativeMacAccessible() const final;
 
   
   
@@ -38,7 +53,7 @@ class xpcAccessibleMacInterface : public nsIAccessibleMacInterface {
   static void FireEvent(id aNativeObj, id aNotification);
 
  protected:
-  virtual ~xpcAccessibleMacInterface();
+  virtual ~xpcAccessibleMacInterface() {}
 
   
   
@@ -60,8 +75,6 @@ class xpcAccessibleMacInterface : public nsIAccessibleMacInterface {
   
   id JsValueToNSValue(JS::HandleObject aObject, JSContext* aCx,
                       nsresult* aResult);
-
-  id mNativeObject;
 
  private:
   xpcAccessibleMacInterface(const xpcAccessibleMacInterface&) = delete;
