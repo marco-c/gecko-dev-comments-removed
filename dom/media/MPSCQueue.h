@@ -17,11 +17,6 @@ namespace mozilla {
 
 
 
-
-
-
-
-
 const size_t MPSC_MSG_RESERVERD = sizeof(std::atomic<void*>);
 
 template <typename T>
@@ -35,19 +30,6 @@ class MPSCQueue {
     std::atomic<Message*> mNext;
     T data;
   };
-
-  
-  
-  
-  
-  
-  
-  
-#if !(defined(ANDROID) && defined(__i386__))
-  static_assert(IsPowerOfTwo(sizeof(MPSCQueue<T>::Message)),
-                "MPSCQueue internal allocations must have a size that is a "
-                "power of two ");
-#endif
 
   
   

@@ -84,6 +84,15 @@ class AsyncLogger {
     TracingPhase mPhase;
   };
 #undef PADDING
+
+  
+  
+  
+#if !(defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID) && \
+      (defined(__arm__) || defined(__aarch64__)))
+  static_assert(sizeof(MPSCQueue<TracePayload>::Message) <= PAYLOAD_TOTAL_SIZE,
+                "MPSCQueue internal allocations too big.");
+#endif
   
   explicit AsyncLogger(const char* aLogModuleName,
                        AsyncLogger::AsyncLoggerOutputMode aMode =
