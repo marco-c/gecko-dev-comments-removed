@@ -123,8 +123,15 @@ IPCResult DocumentChannelChild::RecvFailedAsyncOpen(
 }
 
 IPCResult DocumentChannelChild::RecvDisconnectChildListeners(
-    const nsresult& aStatus, const nsresult& aLoadGroupStatus) {
-  DisconnectChildListeners(aStatus, aLoadGroupStatus);
+    const nsresult& aStatus, const nsresult& aLoadGroupStatus,
+    bool aSwitchedProcess) {
+  
+  
+  
+  
+  if (!aSwitchedProcess) {
+    DisconnectChildListeners(aStatus, aLoadGroupStatus);
+  }
   return IPC_OK();
 }
 
