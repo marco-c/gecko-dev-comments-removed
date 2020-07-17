@@ -501,7 +501,7 @@ function openLinkIn(url, where, params) {
 
     const sourceWindow = w || window;
     let win;
-    if (params.frameOuterWindowID != undefined && sourceWindow) {
+    if (params.frameID != undefined && sourceWindow) {
       
       
       
@@ -519,7 +519,7 @@ function openLinkIn(url, where, params) {
                 url,
                 createdTabBrowser: win.gBrowser.selectedBrowser,
                 sourceTabBrowser,
-                sourceFrameOuterWindowID: params.frameOuterWindowID,
+                sourceFrameID: params.frameID,
               },
             },
             "webNavigation-createdNavigationTarget"
@@ -676,7 +676,7 @@ function openLinkIn(url, where, params) {
         aResolveOnNewTabCreated(targetBrowser);
       }
 
-      if (params.frameOuterWindowID != undefined && w) {
+      if (params.frameID != undefined && w) {
         
         
         
@@ -687,7 +687,7 @@ function openLinkIn(url, where, params) {
               url,
               createdTabBrowser: targetBrowser,
               sourceTabBrowser: w.gBrowser.selectedBrowser,
-              sourceFrameOuterWindowID: params.frameOuterWindowID,
+              sourceFrameID: params.frameID,
             },
           },
           "webNavigation-createdNavigationTarget"
