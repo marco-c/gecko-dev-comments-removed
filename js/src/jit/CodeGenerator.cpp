@@ -48,6 +48,7 @@
 #include "jit/SharedICHelpers.h"
 #include "jit/StackSlotAllocator.h"
 #include "jit/VMFunctions.h"
+#include "jit/WarpSnapshot.h"
 #include "js/RegExpFlags.h"  
 #include "util/CheckedArithmetic.h"
 #include "util/Unicode.h"
@@ -11025,7 +11026,8 @@ bool CodeGenerator::generate() {
   return !masm.oom();
 }
 
-bool CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints) {
+bool CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints,
+                         const WarpSnapshot* snapshot) {
   
   
   
@@ -11094,6 +11096,9 @@ bool CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints) {
   }
 
   size_t numNurseryObjects = 0;
+  if (JitOptions.warpBuilder) {
+    numNurseryObjects = snapshot->nurseryObjects().length();
+  }
 
   IonScript* ionScript = IonScript::New(
       cx, compilationId, graph.totalSlotCount(), argumentSlots, scriptFrameSize,
@@ -11302,6 +11307,18 @@ bool CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints) {
   
   if (IonScriptCounts* counts = extractScriptCounts()) {
     script->addIonCounts(counts);
+  }
+
+  
+
+  
+  
+  
+  if (JitOptions.warpBuilder) {
+    const auto& nurseryObjects = snapshot->nurseryObjects();
+    for (size_t i = 0; i < nurseryObjects.length(); i++) {
+      ionScript->nurseryObjects()[i].init(nurseryObjects[i]);
+    }
   }
 
   
