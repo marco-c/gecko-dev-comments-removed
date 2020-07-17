@@ -97,6 +97,9 @@ class SyntaxParseHandler {
     NodeOptionalDottedProperty,
     NodeElement,
     NodeOptionalElement,
+    
+    
+    NodePrivateElement,
 
     
     
@@ -149,7 +152,8 @@ class SyntaxParseHandler {
   }
 
   bool isPropertyAccess(Node node) {
-    return node == NodeDottedProperty || node == NodeElement;
+    return node == NodeDottedProperty || node == NodeElement ||
+           node == NodePrivateElement;
   }
 
   bool isOptionalPropertyAccess(Node node) {
@@ -498,6 +502,9 @@ class SyntaxParseHandler {
   }
 
   PropertyByValueType newPropertyByValue(Node lhs, Node index, uint32_t end) {
+    if (isPrivateName(index)) {
+      return NodePrivateElement;
+    }
     return NodeElement;
   }
 
@@ -688,6 +695,7 @@ class SyntaxParseHandler {
   }
 
   bool isPrivateName(Node node) { return node == NodePrivateName; }
+  bool isPrivateField(Node node) { return node == NodePrivateElement; }
 
   PropertyName* maybeDottedProperty(Node node) {
     

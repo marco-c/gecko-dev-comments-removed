@@ -7985,6 +7985,7 @@ bool BytecodeEmitter::emitOptionalTree(
       
       bool isPrimaryExpression =
           kind == ParseNodeKind::ThisExpr || kind == ParseNodeKind::Name ||
+          kind == ParseNodeKind::PrivateName ||
           kind == ParseNodeKind::NullExpr || kind == ParseNodeKind::TrueExpr ||
           kind == ParseNodeKind::FalseExpr ||
           kind == ParseNodeKind::NumberExpr ||

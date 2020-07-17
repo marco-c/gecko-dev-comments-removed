@@ -9246,12 +9246,20 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::unaryExpr(
 
       
       
+      
+      
       if (handler_.isName(expr)) {
         if (!strictModeErrorAt(exprOffset, JSMSG_DEPRECATED_DELETE_OPERAND)) {
           return null();
         }
 
         pc_->sc()->setBindingsAccessedDynamically();
+      }
+
+      if (handler_.isPrivateField(expr)) {
+        
+        MOZ_ALWAYS_FALSE(strictModeErrorAt(exprOffset, JSMSG_PRIVATE_DELETE));
+        return null();
       }
 
       return handler_.newDelete(begin, expr);
