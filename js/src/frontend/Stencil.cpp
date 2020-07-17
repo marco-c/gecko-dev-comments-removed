@@ -74,30 +74,13 @@ bool frontend::EnvironmentShapeCreationData::createShape(
   return data_.match(m);
 }
 
-
-
-
-
-
-
-
-
-
-bool ScopeCreationData::getOrCreateEnclosingScope(JSContext* cx,
-                                                  MutableHandleScope scope) {
+Scope* ScopeCreationData::getEnclosingScope(JSContext* cx) {
   if (enclosing_.isScopeCreationData()) {
     ScopeCreationData& enclosingData = enclosing_.scopeCreationData().get();
-    if (enclosingData.hasScope()) {
-      scope.set(enclosingData.getScope());
-      return true;
-    }
-
-    scope.set(enclosingData.createScope(cx, enclosing_.compilationInfo()));
-    return !!scope;
+    return enclosingData.getScope();
   }
 
-  scope.set(enclosing_.scope());
-  return true;
+  return enclosing_.scope();
 }
 
 JSFunction* ScopeCreationData::function(
@@ -359,6 +342,31 @@ static bool InstantiateFunctions(JSContext* cx,
 
 
 
+
+static bool InstantiateScopes(JSContext* cx, CompilationInfo& compilationInfo) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (auto& scd : compilationInfo.scopeCreationData) {
+    if (!scd.createScope(cx, compilationInfo)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
+
 static bool SetTypeForExposedFunctions(JSContext* cx,
                                        CompilationInfo& compilationInfo) {
   for (auto item : compilationInfo.functionScriptStencils()) {
@@ -519,6 +527,10 @@ static void LinkEnclosingLazyScript(CompilationInfo& compilationInfo) {
 
 bool CompilationInfo::instantiateStencils() {
   if (!InstantiateFunctions(cx, *this)) {
+    return false;
+  }
+
+  if (!InstantiateScopes(cx, *this)) {
     return false;
   }
 

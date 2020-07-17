@@ -56,13 +56,6 @@ class AbstractScopePtr {
  private:
   ScopeType scope_ = ScopeType(HeapPtrScope());
 
-  
-  
-  
-  
-  
-  Scope* getExistingScope() const;
-
  public:
   friend class js::Scope;
 

@@ -26,18 +26,6 @@ CompilationInfo& AbstractScopePtr::compilationInfo() const {
   return data.compilationInfo;
 }
 
-Scope* AbstractScopePtr::getExistingScope() const {
-  if (scope_.is<HeapPtrScope>()) {
-    return scope_.as<HeapPtrScope>();
-  }
-  MOZ_ASSERT(isScopeCreationData());
-  
-  
-  
-  MOZ_ASSERT(scopeCreationData().get().getScope());
-  return scopeCreationData().get().getScope();
-}
-
 ScopeKind AbstractScopePtr::kind() const {
   MOZ_ASSERT(!isNullptr());
   if (isScopeCreationData()) {

@@ -237,11 +237,7 @@ class ScopeCreationData {
   ScopeKind kind() const { return kind_; }
   AbstractScopePtr enclosing() { return enclosing_; }
 
-  
-  
-  
-  
-  bool getOrCreateEnclosingScope(JSContext* cx, MutableHandleScope scope);
+  Scope* getEnclosingScope(JSContext* cx);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
