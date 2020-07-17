@@ -274,7 +274,7 @@ class Documentation(MachCommandBase):
         
 
         files = list(distribution_files(root))
-        key_prefixes = [unique_id]
+        key_prefixes = []
         if version:
             key_prefixes.append('%s/%s' % (project, version))
 
@@ -282,6 +282,8 @@ class Documentation(MachCommandBase):
         
         if project == 'main':
             key_prefixes.append('')
+
+        key_prefixes.append(unique_id)
 
         with open(os.path.join(DOC_ROOT, 'config.yml'), 'r') as fh:
             redirects = yaml.safe_load(fh)['redirects']
