@@ -353,6 +353,14 @@ using ScriptThingsVector = Vector<ScriptThingVariant>;
 class ScriptStencil {
  public:
   
+  
+  
+  
+  
+  
+  
+
+  
   ImmutableScriptFlags immutableFlags;
 
   
@@ -364,6 +372,12 @@ class ScriptStencil {
 
   
   SourceExtent extent = {};
+
+  
+  
+  
+  
+  
 
   
   
