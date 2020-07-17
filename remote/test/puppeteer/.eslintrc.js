@@ -37,6 +37,22 @@ module.exports = {
         "func-call-spacing": 2,
         "prefer-const": 2,
 
+        "max-len": [2, {
+           
+
+
+
+
+
+
+
+            "code": 200,
+            "comments": 90,
+            "ignoreTemplateLiterals": true,
+            "ignoreUrls": true,
+            "ignoreStrings": true,
+            "ignoreRegExpLiterals": true
+        }],
         
         "no-var": 2,
         "no-with": 2,
@@ -84,6 +100,11 @@ module.exports = {
                 "@typescript-eslint/semi": 2,
                 "@typescript-eslint/no-empty-function": 0,
                 "@typescript-eslint/no-use-before-define": 0,
+                
+                "@typescript-eslint/no-explicit-any": 0,
+                
+                
+                "@typescript-eslint/explicit-function-return-type": 0,
                 
                 "@typescript-eslint/ban-ts-ignore": 0,
                 "@typescript-eslint/array-type": [2, {

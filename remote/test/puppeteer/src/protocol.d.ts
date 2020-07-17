@@ -1,7 +1,7 @@
 
   type binary = string;
-declare global {
-  module Protocol {
+
+declare module Protocol {
     export module Accessibility {
         
 
@@ -15499,6 +15499,5 @@ declare global {
       "Schema.getDomains": Schema.getDomainsReturnValue;
     }
   }
-}
 
 export default Protocol;

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const assert = (value: unknown, message?: string): void => {
+  if (!value) throw new Error(message);
+};

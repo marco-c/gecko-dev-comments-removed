@@ -18,9 +18,11 @@ const base = require('./base');
 
 module.exports = {
   ...base,
-  file: ['./test/mocha-utils.js'],
-  spec: 'test/*.spec.js',
+  require: ['ts-node/register', './test/mocha-utils.ts'],
+  spec: 'test/*.spec.ts',
+  extension: ['ts'],
+  parallel: process.env.CI && !process.env.COVERAGE,
   
-  retries: 2,
+  retries: process.env.CI ? 2 : 0,
   timeout: 25 * 1000,
 };

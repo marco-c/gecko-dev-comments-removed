@@ -172,13 +172,27 @@ function checkDuplicates(doc) {
   return errors;
 }
 
-const expectedNonExistingMethods = new Map([
-  
 
-
-
-  ['Page', new Set(['emulateMedia'])],
+const EVENT_LISTENER_METHODS = new Set([
+  'emit',
+  'listenerCount',
+  'off',
+  'on',
+  'once',
+  'removeListener',
+  'addListener',
+  'removeAllListeners',
 ]);
+
+
+const expectedNotFoundMethods = new Map([
+  ['Browser', EVENT_LISTENER_METHODS],
+  ['BrowserContext', EVENT_LISTENER_METHODS],
+  ['CDPSession', EVENT_LISTENER_METHODS],
+  ['Page', EVENT_LISTENER_METHODS],
+  ['WebWorker', EVENT_LISTENER_METHODS],
+]);
+
 
 
 
@@ -204,14 +218,15 @@ function compareDocumentations(actual, expected) {
     const methodDiff = diff(actualMethods, expectedMethods);
 
     for (const methodName of methodDiff.extra) {
-      const missingMethodsForClass = expectedNonExistingMethods.get(className);
-      if (missingMethodsForClass && missingMethodsForClass.has(methodName))
-        continue;
-
       errors.push(`Non-existing method found: ${className}.${methodName}()`);
     }
-    for (const methodName of methodDiff.missing)
+
+    for (const methodName of methodDiff.missing) {
+      const missingMethodsForClass = expectedNotFoundMethods.get(className);
+      if (missingMethodsForClass && missingMethodsForClass.has(methodName))
+        continue;
       errors.push(`Method not found: ${className}.${methodName}()`);
+    }
 
     for (const methodName of methodDiff.equal) {
       const actualMethod = actualClass.methods.get(methodName);
@@ -314,6 +329,20 @@ function compareDocumentations(actual, expected) {
         },
       ],
       [
+        'Method ElementHandle.click() options',
+        {
+          actualName: 'Object',
+          expectedName: 'ClickOptions',
+        },
+      ],
+      [
+        'Method ElementHandle.press() options',
+        {
+          actualName: 'Object',
+          expectedName: 'PressOptions',
+        },
+      ],
+      [
         'Method ElementHandle.press() key',
         {
           actualName: 'string',
@@ -377,7 +406,7 @@ function compareDocumentations(actual, expected) {
         },
       ],
       [
-        'Method Request.abort() errorCode',
+        'Method HTTPRequest.abort() errorCode',
         {
           actualName: 'string',
           expectedName: 'ErrorCode',
@@ -602,6 +631,83 @@ function compareDocumentations(actual, expected) {
         {
           actualName: '...Object',
           expectedName: '...CookieParam',
+        },
+      ],
+      [
+        'Method Page.emulateVisionDeficiency() type',
+        {
+          actualName: 'string',
+          expectedName: 'VisionDeficiency',
+        },
+      ],
+      [
+        'Method Accessibility.snapshot() options',
+        {
+          actualName: 'Object',
+          expectedName: 'SnapshotOptions',
+        },
+      ],
+      [
+        'Method Browser.waitForTarget() options',
+        {
+          actualName: 'Object',
+          expectedName: 'WaitForTargetOptions',
+        },
+      ],
+      [
+        'Method EventEmitter.emit() event',
+        {
+          actualName: 'string|symbol',
+          expectedName: 'Object',
+        },
+      ],
+      [
+        'Method EventEmitter.listenerCount() event',
+        {
+          actualName: 'string|symbol',
+          expectedName: 'Object',
+        },
+      ],
+      [
+        'Method EventEmitter.off() event',
+        {
+          actualName: 'string|symbol',
+          expectedName: 'Object',
+        },
+      ],
+      [
+        'Method EventEmitter.on() event',
+        {
+          actualName: 'string|symbol',
+          expectedName: 'Object',
+        },
+      ],
+      [
+        'Method EventEmitter.once() event',
+        {
+          actualName: 'string|symbol',
+          expectedName: 'Object',
+        },
+      ],
+      [
+        'Method EventEmitter.removeListener() event',
+        {
+          actualName: 'string|symbol',
+          expectedName: 'Object',
+        },
+      ],
+      [
+        'Method EventEmitter.addListener() event',
+        {
+          actualName: 'string|symbol',
+          expectedName: 'Object',
+        },
+      ],
+      [
+        'Method EventEmitter.removeAllListeners() event',
+        {
+          actualName: 'string|symbol',
+          expectedName: 'Object',
         },
       ],
     ]);

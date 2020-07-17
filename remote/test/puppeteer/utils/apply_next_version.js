@@ -6,7 +6,7 @@ const execSync = require('child_process').execSync;
 
 
 const upstream_sha = execSync(
-  `git ls-remote https://github.com/puppeteer/puppeteer --tags master | cut -f1`
+  `git ls-remote https://github.com/puppeteer/puppeteer --tags main | cut -f1`
 ).toString('utf8');
 const current_sha = execSync(`git rev-parse HEAD`).toString('utf8');
 if (upstream_sha.trim() !== current_sha.trim()) {

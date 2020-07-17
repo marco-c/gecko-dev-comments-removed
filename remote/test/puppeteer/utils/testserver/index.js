@@ -14,6 +14,8 @@
 
 
 
+
+
 const http = require('http');
 const https = require('https');
 const url = require('url');
@@ -26,6 +28,11 @@ const fulfillSymbol = Symbol('fullfil callback');
 const rejectSymbol = Symbol('reject callback');
 
 class TestServer {
+  PORT = undefined;
+  PREFIX = undefined;
+  CROSS_PROCESS_PREFIX = undefined;
+  EMPTY_PAGE = undefined;
+
   
 
 
