@@ -513,7 +513,7 @@ class FirefoxLauncher implements ProductLauncher {
       
       'browser.dom.window.dump.enabled': true,
       
-      'browser.newtabpage.activity-stream.feeds.section.topstories': false,
+      'browser.newtabpage.activity-stream.feeds.system.topstories': false,
       
       'browser.newtabpage.enabled': false,
       
