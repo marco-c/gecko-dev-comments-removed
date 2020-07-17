@@ -19,12 +19,14 @@ namespace mozilla {
 
 nsDataHashtable<nsUint32HashKey, TouchManager::TouchInfo>*
     TouchManager::sCaptureTouchList;
+layers::LayersId TouchManager::sCaptureTouchLayersId;
 
 
 void TouchManager::InitializeStatics() {
   NS_ASSERTION(!sCaptureTouchList, "InitializeStatics called multiple times!");
   sCaptureTouchList =
       new nsDataHashtable<nsUint32HashKey, TouchManager::TouchInfo>;
+  sCaptureTouchLayersId = layers::LayersId{0};
 }
 
 
@@ -98,6 +100,7 @@ void TouchManager::EvictTouches(Document* aLimitToDocument) {
   for (uint32_t i = 0; i < touches.Length(); ++i) {
     EvictTouchPoint(touches[i], aLimitToDocument);
   }
+  sCaptureTouchLayersId = layers::LayersId{0};
 }
 
 
@@ -225,6 +228,14 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
       
       if (touchEvent->mTouches.Length() == 1) {
         EvictTouches();
+        
+        
+        
+        
+        
+        sCaptureTouchLayersId = aEvent->mLayersId;
+      } else {
+        touchEvent->mLayersId = sCaptureTouchLayersId;
       }
       
       WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
@@ -253,6 +264,7 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
       
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
       WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
+      touchEvent->mLayersId = sCaptureTouchLayersId;
       bool haveChanged = false;
       for (int32_t i = touches.Length(); i;) {
         --i;
@@ -326,6 +338,7 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
       
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
       WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
+      touchEvent->mLayersId = sCaptureTouchLayersId;
       for (int32_t i = touches.Length(); i;) {
         --i;
         Touch* touch = touches[i];
@@ -363,6 +376,7 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
       
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
       WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
+      touchEvent->mLayersId = sCaptureTouchLayersId;
       for (uint32_t i = 0; i < touches.Length(); ++i) {
         Touch* touch = touches[i];
         if (!touch) {
