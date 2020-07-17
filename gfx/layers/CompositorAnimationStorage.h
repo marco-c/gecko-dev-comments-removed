@@ -50,23 +50,32 @@ struct AnimatedValue final {
     return mValue.is<T>();
   }
 
-  AnimatedValue(gfx::Matrix4x4&& aTransformInDevSpace,
-                gfx::Matrix4x4&& aFrameTransform, const TransformData& aData)
-      : mValue(
-            AsVariant(AnimationTransform{std::move(aTransformInDevSpace),
-                                         std::move(aFrameTransform), aData})) {}
+  AnimatedValue(const gfx::Matrix4x4& aTransformInDevSpace,
+                const gfx::Matrix4x4& aFrameTransform,
+                const TransformData& aData)
+      : mValue(AsVariant(AnimationTransform{aTransformInDevSpace,
+                                            aFrameTransform, aData})) {}
 
   explicit AnimatedValue(const float& aValue) : mValue(AsVariant(aValue)) {}
 
   explicit AnimatedValue(nscolor aValue) : mValue(AsVariant(aValue)) {}
 
-  void SetTransform(gfx::Matrix4x4&& aTransformInDevSpace,
-                    gfx::Matrix4x4&& aFrameTransform,
+  void SetTransformForWebRender(const gfx::Matrix4x4& aFrameTransform,
+                                const TransformData& aData) {
+    MOZ_ASSERT(mValue.is<AnimationTransform>());
+    AnimationTransform& previous = mValue.as<AnimationTransform>();
+    previous.mFrameTransform = aFrameTransform;
+    if (previous.mData != aData) {
+      previous.mData = aData;
+    }
+  }
+  void SetTransform(const gfx::Matrix4x4& aTransformInDevSpace,
+                    const gfx::Matrix4x4& aFrameTransform,
                     const TransformData& aData) {
     MOZ_ASSERT(mValue.is<AnimationTransform>());
     AnimationTransform& previous = mValue.as<AnimationTransform>();
-    previous.mTransformInDevSpace = std::move(aTransformInDevSpace);
-    previous.mFrameTransform = std::move(aFrameTransform);
+    previous.mTransformInDevSpace = aTransformInDevSpace;
+    previous.mFrameTransform = aFrameTransform;
     if (previous.mData != aData) {
       previous.mData = aData;
     }
@@ -173,9 +182,18 @@ class CompositorAnimationStorage final {
 
 
   void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
-                        gfx::Matrix4x4&& aTransformInDevSpace,
-                        gfx::Matrix4x4&& aFrameTransform,
+                        const gfx::Matrix4x4& aTransformInDevSpace,
+                        const gfx::Matrix4x4& aFrameTransform,
                         const TransformData& aData);
+
+  
+
+
+
+
+  void SetAnimatedValueForWebRender(uint64_t aId, AnimatedValue* aPreviousValue,
+                                    const gfx::Matrix4x4& aFrameTransform,
+                                    const TransformData& aData);
 
   
 
