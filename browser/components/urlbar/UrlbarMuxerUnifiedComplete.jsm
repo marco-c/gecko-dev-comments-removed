@@ -47,6 +47,7 @@ const heuristicOrder = [
   
   
   "UrlbarProviderSearchTips",
+  "Omnibox",
   "UnifiedComplete",
   "HeuristicFallback",
 ];
