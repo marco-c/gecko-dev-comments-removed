@@ -48,6 +48,8 @@ class nsAutoRefTraits<FcConfig> : public nsPointerRefTraits<FcConfig> {
 
 
 class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
+  friend class gfxFcPlatformFontList;
+
  public:
   
   explicit gfxFontconfigFontEntry(const nsACString& aFaceName,

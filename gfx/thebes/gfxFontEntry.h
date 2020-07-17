@@ -572,6 +572,11 @@ class gfxFontEntry {
 
   
   
+  void InitializeFrom(mozilla::fontlist::Face* aFace,
+                      const mozilla::fontlist::Family* aFamily);
+
+  
+  
   
   
 
