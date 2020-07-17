@@ -75,7 +75,7 @@ class ScriptPreloader : public nsIObserver,
   static ScriptPreloader& GetSingleton();
   static ScriptPreloader& GetChildSingleton();
 
-  static ProcessType GetChildProcessType(const nsAString& remoteType);
+  static ProcessType GetChildProcessType(const nsACString& remoteType);
 
   
   
