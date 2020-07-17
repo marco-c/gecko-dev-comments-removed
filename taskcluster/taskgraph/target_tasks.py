@@ -649,17 +649,26 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
         
         if 'android' not in platform:
             
-            if '-chrome' in try_name:
-                return True
-            if '-chromium' in try_name:
-                return True
-            
             if 'browsertime' in try_name:
+                if 'chrome' in try_name:
+                    return False
+                if 'chromium' in try_name:
+                    return False
+                if '-fis' in try_name:
+                    return False
+                if '-wr' in try_name:
+                    return False
                 if 'linux' in platform:
                     if 'speedometer' in try_name:
                         return True
-                    if 'tp6' in try_name:
+                    if 'tp6' in try_name and 'amazon' in try_name:
                         return True
+            else:
+                
+                if '-chrome' in try_name:
+                    return True
+                if '-chromium' in try_name:
+                    return True
         
         elif accept_raptor_android_build(platform):
             

@@ -292,8 +292,8 @@ class MachBrowsertime(MachCommandBase):
         
         
         if AUTOMATION:
-            os.environ[b"CHROMEDRIVER_SKIP_DOWNLOAD"] = b"true"
-            os.environ[b"GECKODRIVER_SKIP_DOWNLOAD"] = b"true"
+            os.environ["CHROMEDRIVER_SKIP_DOWNLOAD"] = "true"
+            os.environ["GECKODRIVER_SKIP_DOWNLOAD"] = "true"
 
         self.log(
             logging.INFO,
