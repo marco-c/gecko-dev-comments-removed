@@ -287,8 +287,6 @@ function Toolbox(
   this._webExtensions = new Map();
 
   this._toolPanels = new Map();
-  
-  this._toolStartups = new Map();
   this._inspectorExtensionSidebars = new Map();
 
   this._netMonitorAPI = null;
@@ -2263,10 +2261,6 @@ Toolbox.prototype = {
     }
 
     deck.appendChild(panel);
-
-    if (toolDefinition.buildToolStartup && !this._toolStartups.has(id)) {
-      this._toolStartups.set(id, toolDefinition.buildToolStartup(this));
-    }
   },
 
   
@@ -2973,19 +2967,6 @@ Toolbox.prototype = {
 
 
 
-  async isToolHighlighted(id) {
-    if (!this.component) {
-      await this.isOpen;
-    }
-    return this.component.isToolHighlighted(id);
-  },
-
-  
-
-
-
-
-
   async highlightTool(id) {
     if (!this.component) {
       await this.isOpen;
@@ -3432,25 +3413,6 @@ Toolbox.prototype = {
 
 
 
-  getToolStartup: function(toolId) {
-    return this._toolStartups.get(toolId);
-  },
-
-  _unloadToolStartup: async function(toolId) {
-    const startup = this.getToolStartup(toolId);
-    if (!startup) {
-      return;
-    }
-
-    this._toolStartups.delete(toolId);
-    await startup.destroy();
-  },
-
-  
-
-
-
-
   _toolRegistered: function(toolId) {
     
     
@@ -3483,7 +3445,6 @@ Toolbox.prototype = {
 
   _toolUnregistered: function(toolId) {
     this.unloadTool(toolId);
-    this._unloadToolStartup(toolId);
 
     
     
@@ -3733,10 +3694,6 @@ Toolbox.prototype = {
         
         console.error("Panel " + id + ":", e);
       }
-    }
-
-    for (const id of this._toolStartups.keys()) {
-      outstanding.push(this._unloadToolStartup(id));
     }
 
     this.browserRequire = null;
