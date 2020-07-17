@@ -213,13 +213,6 @@ const startupPhases = {
       close: 1,
     },
     {
-      path: "*ld.so.conf*",
-      condition: LINUX,
-      ignoreIfUnused: true,
-      read: 22,
-      close: 11,
-    },
-    {
       
       path: "ProfD:xulstore/data.mdb",
       condition: WIN,
@@ -265,9 +258,10 @@ const startupPhases = {
       write: 1,
     },
     {
+      
+      
       path: "*ld.so.conf*",
       condition: LINUX,
-      ignoreIfUnused: true,
       read: 22,
       close: 11,
     },
@@ -338,6 +332,13 @@ const startupPhases = {
       path: "SysD:spool/drivers/color/*",
       condition: WIN,
       read: 1,
+    },
+    {
+      
+      path: "*ld.so.conf*",
+      condition: LINUX,
+      read: 22,
+      close: 11,
     },
     {
       
