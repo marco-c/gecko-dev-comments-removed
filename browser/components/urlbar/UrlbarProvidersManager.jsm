@@ -34,6 +34,7 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
 var localProviderModules = {
   UrlbarProviderUnifiedComplete:
     "resource:///modules/UrlbarProviderUnifiedComplete.jsm",
+  UrlbarProviderAutofill: "resource:///modules/UrlbarProviderAutofill.jsm",
   UrlbarProviderHeuristicFallback:
     "resource:///modules/UrlbarProviderHeuristicFallback.jsm",
   UrlbarProviderInterventions:
@@ -453,16 +454,9 @@ class Query {
       return;
     }
 
-    let addResult = true;
-
-    if (!result) {
-      addResult = false;
-    }
-
     
     
     if (
-      addResult &&
       !this.acceptableSources.includes(result.source) &&
       !result.heuristic &&
       
@@ -470,33 +464,21 @@ class Query {
         result.source != UrlbarUtils.RESULT_SOURCE.HISTORY ||
         !this.acceptableSources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH))
     ) {
-      addResult = false;
+      return;
     }
 
     
     
     if (
-      addResult &&
       result.type != UrlbarUtils.RESULT_TYPE.KEYWORD &&
       result.payload.url &&
       result.payload.url.startsWith("javascript:") &&
       !this.context.searchString.startsWith("javascript:") &&
       UrlbarPrefs.get("filter.javascript")
     ) {
-      addResult = false;
-    }
-
-    
-    
-    
-    
-    
-    if (!addResult) {
-      if (provider.name == "UnifiedComplete") {
-        this._notifyResultsFromProvider(provider);
-      }
       return;
     }
+
     result.providerName = provider.name;
     result.providerType = provider.type;
     this.context.results.push(result);
@@ -543,7 +525,7 @@ class Query {
   }
 
   _notifyResults() {
-    let sorted = this.muxer.sort(this.context);
+    this.muxer.sort(this.context);
 
     if (this._heuristicProviderTimer) {
       this._heuristicProviderTimer.cancel().catch(Cu.reportError);
@@ -553,10 +535,6 @@ class Query {
     if (this._chunkTimer) {
       this._chunkTimer.cancel().catch(Cu.reportError);
       this._chunkTimer = null;
-    }
-
-    if (!sorted) {
-      return;
     }
 
     
