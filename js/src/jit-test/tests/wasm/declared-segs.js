@@ -12,24 +12,21 @@ wasmFullPass(`
 `);
 
 
-wasmFullPass(`
-	(module
-		(elem declare externref (ref.null extern))
-		(func $run)
-		(export "run" (func $run))
-	)
-`);
-
-
-wasmEvalText(`
-	(module
-		(func $f1)
-		(table 1 1 funcref)
-		(elem declare $f1)
-		(func $start (table.init 0 (i32.const 0) (i32.const 0) (i32.const 1)))
-		(start $start)
-	)
-`);
+function test(ins) {
+	assertErrorMessage(
+		() => wasmEvalText(`
+			(module
+				(func $f1)
+				(table 1 1 funcref)
+				(elem declare $f1)
+				(func $start ${ins})
+				(start $start)
+			)
+		`),
+		WebAssembly.RuntimeError,
+		'index out of bounds');
+}
+test('(table.init 0 (i32.const 0) (i32.const 0) (i32.const 1))');
 
 
 wasmAssert(`
