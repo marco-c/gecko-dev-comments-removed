@@ -1486,9 +1486,6 @@ nscoord nsBidiPresUtils::ReorderFrames(nsIFrame* aFirstFrameOnLine,
     
     
     aNumFramesOnLine = -1;
-    
-    
-    aStart = 0;
   }
 
   BidiLineData bld(aFirstFrameOnLine, aNumFramesOnLine);
