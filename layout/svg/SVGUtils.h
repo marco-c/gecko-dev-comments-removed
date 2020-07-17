@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SVGUTILS_H
-#define NS_SVGUTILS_H
+#ifndef LAYOUT_SVG_SVGUTILS_H_
+#define LAYOUT_SVG_SVGUTILS_H_
 
 
 #include <math.h>
@@ -598,4 +598,4 @@ class SVGUtils final {
 
 }  
 
-#endif
+#endif  

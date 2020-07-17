@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGSVGElement_h
-#define mozilla_dom_SVGSVGElement_h
+#ifndef DOM_SVG_SVGSVGELEMENT_H_
+#define DOM_SVG_SVGSVGELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGViewportElement.h"

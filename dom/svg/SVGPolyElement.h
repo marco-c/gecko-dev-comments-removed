@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SVGPOLYELEMENT_H_
-#define NS_SVGPOLYELEMENT_H_
+#ifndef DOM_SVG_SVGPOLYELEMENT_H_
+#define DOM_SVG_SVGPOLYELEMENT_H_
 
 #include "mozilla/Attributes.h"
 #include "SVGAnimatedPointList.h"

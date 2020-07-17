@@ -4,8 +4,8 @@
 
 
 
-#ifndef NSSVGINTEGRATIONUTILS_H_
-#define NSSVGINTEGRATIONUTILS_H_
+#ifndef LAYOUT_SVG_SVGINTEGRATIONUTILS_H_
+#define LAYOUT_SVG_SVGINTEGRATIONUTILS_H_
 
 #include "ImgDrawResult.h"
 #include "gfxMatrix.h"
@@ -272,4 +272,4 @@ class SVGIntegrationUtils final {
 
 }  
 
-#endif 
+#endif  

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGMASKFRAME_H__
-#define __NS_SVGMASKFRAME_H__
+#ifndef LAYOUT_SVG_SVGMASKFRAME_H_
+#define LAYOUT_SVG_SVGMASKFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
@@ -108,4 +108,4 @@ class SVGMaskFrame final : public SVGContainerFrame {
 
 }  
 
-#endif
+#endif  

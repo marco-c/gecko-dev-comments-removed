@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFECompositeElement_h
-#define mozilla_dom_SVGFECompositeElement_h
+#ifndef DOM_SVG_SVGFECOMPOSITEELEMENT_H_
+#define DOM_SVG_SVGFECOMPOSITEELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedNumber.h"

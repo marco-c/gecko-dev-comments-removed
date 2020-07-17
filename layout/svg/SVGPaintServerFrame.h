@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGPAINTSERVERFRAME_H__
-#define __NS_SVGPAINTSERVERFRAME_H__
+#ifndef LAYOUT_SVG_SVGPAINTSERVERFRAME_H_
+#define LAYOUT_SVG_SVGPAINTSERVERFRAME_H_
 
 #include "gfxRect.h"
 #include "mozilla/Attributes.h"

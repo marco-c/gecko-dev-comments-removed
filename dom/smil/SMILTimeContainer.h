@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILTimeContainer_h
-#define mozilla_SMILTimeContainer_h
+#ifndef DOM_SMIL_SMILTIMECONTAINER_H_
+#define DOM_SMIL_SMILTIMECONTAINER_H_
 
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "mozilla/SMILMilestone.h"

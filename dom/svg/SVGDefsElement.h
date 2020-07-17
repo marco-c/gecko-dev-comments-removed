@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGDefsElement_h
-#define mozilla_dom_SVGDefsElement_h
+#ifndef DOM_SVG_SVGDEFSELEMENT_H_
+#define DOM_SVG_SVGDEFSELEMENT_H_
 
 #include "SVGGraphicsElement.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILInterval_h
-#define mozilla_SMILInterval_h
+#ifndef DOM_SMIL_SMILINTERVAL_H_
+#define DOM_SMIL_SMILINTERVAL_H_
 
 #include "mozilla/SMILInstanceTime.h"
 #include "nsTArray.h"

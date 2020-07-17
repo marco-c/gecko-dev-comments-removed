@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGFILTERSELEMENT_H__
-#define __NS_SVGFILTERSELEMENT_H__
+#ifndef DOM_SVG_SVGFILTERS_H_
+#define DOM_SVG_SVGFILTERS_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/SVGElement.h"
@@ -251,4 +251,4 @@ class SVGFELightElement : public SVGFELightElementBase {
 }  
 }  
 
-#endif
+#endif  

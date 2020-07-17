@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEColorMatrixElement_h
-#define mozilla_dom_SVGFEColorMatrixElement_h
+#ifndef DOM_SVG_SVGFECOLORMATRIXELEMENT_H_
+#define DOM_SVG_SVGFECOLORMATRIXELEMENT_H_
 
 #include "SVGAnimatedNumberList.h"
 #include "SVGAnimatedEnumeration.h"

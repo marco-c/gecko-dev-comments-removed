@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGEllipseElement_h
-#define mozilla_dom_SVGEllipseElement_h
+#ifndef DOM_SVG_SVGELLIPSEELEMENT_H_
+#define DOM_SVG_SVGELLIPSEELEMENT_H_
 
 #include "nsCSSPropertyID.h"
 #include "SVGAnimatedLength.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEDisplacementMapElement_h
-#define mozilla_dom_SVGFEDisplacementMapElement_h
+#ifndef DOM_SVG_SVGFEDISPLACEMENTMAPELEMENT_H_
+#define DOM_SVG_SVGFEDISPLACEMENTMAPELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGFilters.h"

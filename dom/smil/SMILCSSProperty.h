@@ -6,8 +6,8 @@
 
 
 
-#ifndef mozilla_SMILCSSProperty_h
-#define mozilla_SMILCSSProperty_h
+#ifndef DOM_SMIL_SMILCSSPROPERTY_H_
+#define DOM_SMIL_SMILCSSPROPERTY_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"

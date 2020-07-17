@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGDATAPARSER_H__
-#define __NS_SVGDATAPARSER_H__
+#ifndef DOM_SVG_SVGDATAPARSER_H_
+#define DOM_SVG_SVGDATAPARSER_H_
 
 #include <cctype>
 #include "mozilla/RangedPtr.h"

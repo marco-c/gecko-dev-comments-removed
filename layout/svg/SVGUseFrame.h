@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGUSEFRAME_H__
-#define __NS_SVGUSEFRAME_H__
+#ifndef LAYOUT_SVG_SVGUSEFRAME_H_
+#define LAYOUT_SVG_SVGUSEFRAME_H_
 
 
 #include "SVGGFrame.h"

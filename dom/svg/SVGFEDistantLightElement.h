@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEDistantLightElement_h
-#define mozilla_dom_SVGFEDistantLightElement_h
+#ifndef DOM_SVG_SVGFEDISTANTLIGHTELEMENT_H_
+#define DOM_SVG_SVGFEDISTANTLIGHTELEMENT_H_
 
 #include "SVGAnimatedNumber.h"
 #include "SVGFilters.h"

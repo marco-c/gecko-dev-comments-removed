@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFilterElement_h
-#define mozilla_dom_SVGFilterElement_h
+#ifndef DOM_SVG_SVGFILTERELEMENT_H_
+#define DOM_SVG_SVGFILTERELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedLength.h"

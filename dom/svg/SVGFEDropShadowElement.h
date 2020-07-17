@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEDropShadowElement_h
-#define mozilla_dom_SVGFEDropShadowElement_h
+#ifndef DOM_SVG_SVGFEDROPSHADOWELEMENT_H_
+#define DOM_SVG_SVGFEDROPSHADOWELEMENT_H_
 
 #include "SVGAnimatedNumber.h"
 #include "SVGAnimatedNumberPair.h"

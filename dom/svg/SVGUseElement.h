@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGUseElement_h
-#define mozilla_dom_SVGUseElement_h
+#ifndef DOM_SVG_SVGUSEELEMENT_H_
+#define DOM_SVG_SVGUSEELEMENT_H_
 
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/IDTracker.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGVIEWPORTFRAME_H__
-#define __NS_SVGVIEWPORTFRAME_H__
+#ifndef LAYOUT_SVG_SVGVIEWPORTFRAME_H_
+#define LAYOUT_SVG_SVGVIEWPORTFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ISVGSVGFrame.h"

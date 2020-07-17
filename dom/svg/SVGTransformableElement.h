@@ -4,8 +4,8 @@
 
 
 
-#ifndef SVGTransformableElement_h
-#define SVGTransformableElement_h
+#ifndef DOM_SVG_SVGTRANSFORMABLEELEMENT_H_
+#define DOM_SVG_SVGTRANSFORMABLEELEMENT_H_
 
 #include "SVGAnimatedTransformList.h"
 #include "gfxMatrix.h"

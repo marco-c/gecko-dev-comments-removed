@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGMaskElement_h
-#define mozilla_dom_SVGMaskElement_h
+#ifndef DOM_SVG_SVGMASKELEMENT_H_
+#define DOM_SVG_SVGMASKELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedLength.h"

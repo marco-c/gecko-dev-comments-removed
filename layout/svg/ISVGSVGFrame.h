@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_ISVGSVGFRAME_H__
-#define __NS_ISVGSVGFRAME_H__
+#ifndef LAYOUT_SVG_ISVGSVGFRAME_H_
+#define LAYOUT_SVG_ISVGSVGFRAME_H_
 
 #include "nsQueryFrame.h"
 

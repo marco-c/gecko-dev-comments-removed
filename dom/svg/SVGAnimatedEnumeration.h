@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGENUM_H__
-#define __NS_SVGENUM_H__
+#ifndef DOM_SVG_SVGANIMATEDENUMERATION_H_
+#define DOM_SVG_SVGANIMATEDENUMERATION_H_
 
 #include "DOMSVGAnimatedEnumeration.h"
 #include "nsCycleCollectionParticipant.h"

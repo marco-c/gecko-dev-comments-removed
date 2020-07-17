@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGSTRINGLIST_H__
-#define MOZILLA_SVGSTRINGLIST_H__
+#ifndef DOM_SVG_SVGSTRINGLIST_H_
+#define DOM_SVG_SVGSTRINGLIST_H_
 
 #include "nsDebug.h"
 #include "nsTArray.h"

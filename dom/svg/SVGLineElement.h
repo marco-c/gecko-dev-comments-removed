@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGLineElement_h
-#define mozilla_dom_SVGLineElement_h
+#ifndef DOM_SVG_SVGLINEELEMENT_H_
+#define DOM_SVG_SVGLINEELEMENT_H_
 
 #include "SVGAnimatedLength.h"
 #include "SVGGeometryElement.h"

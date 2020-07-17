@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGORIENT_H__
-#define __NS_SVGORIENT_H__
+#ifndef DOM_SVG_SVGANIMATEDORIENT_H_
+#define DOM_SVG_SVGANIMATEDORIENT_H_
 
 #include "DOMSVGAnimatedEnumeration.h"
 #include "nsError.h"

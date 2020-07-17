@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGANIMATEDPOINTLIST_H__
-#define MOZILLA_SVGANIMATEDPOINTLIST_H__
+#ifndef DOM_SVG_SVGANIMATEDPOINTLIST_H_
+#define DOM_SVG_SVGANIMATEDPOINTLIST_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"

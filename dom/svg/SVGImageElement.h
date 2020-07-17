@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGImageElement_h
-#define mozilla_dom_SVGImageElement_h
+#ifndef DOM_SVG_SVGIMAGEELEMENT_H_
+#define DOM_SVG_SVGIMAGEELEMENT_H_
 
 #include "nsImageLoadingContent.h"
 #include "SVGAnimatedLength.h"

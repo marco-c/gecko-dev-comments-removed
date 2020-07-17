@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_ISVGCHILDFRAME_H__
-#define __NS_ISVGCHILDFRAME_H__
+#ifndef LAYOUT_SVG_ISVGDISPLAYABLEFRAME_H_
+#define LAYOUT_SVG_ISVGDISPLAYABLEFRAME_H_
 
 #include "gfxMatrix.h"
 #include "gfxPoint.h"

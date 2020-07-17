@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEMorphologyElement_h
-#define mozilla_dom_SVGFEMorphologyElement_h
+#ifndef DOM_SVG_SVGFEMORPHOLOGYELEMENT_H_
+#define DOM_SVG_SVGFEMORPHOLOGYELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedNumberPair.h"

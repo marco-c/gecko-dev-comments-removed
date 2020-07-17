@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEFloodElement_h
-#define mozilla_dom_SVGFEFloodElement_h
+#ifndef DOM_SVG_SVGFEFLOODELEMENT_H_
+#define DOM_SVG_SVGFEFLOODELEMENT_H_
 
 #include "SVGFilters.h"
 

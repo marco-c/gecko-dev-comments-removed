@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGANIMATEDPATHSEGLIST_H__
-#define MOZILLA_SVGANIMATEDPATHSEGLIST_H__
+#ifndef DOM_SVG_SVGANIMATEDPATHSEGLIST_H_
+#define DOM_SVG_SVGANIMATEDPATHSEGLIST_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"

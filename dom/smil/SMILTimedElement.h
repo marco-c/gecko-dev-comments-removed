@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILTimedElement_h
-#define mozilla_SMILTimedElement_h
+#ifndef DOM_SMIL_SMILTIMEDELEMENT_H_
+#define DOM_SMIL_SMILTIMEDELEMENT_H_
 
 #include <utility>
 

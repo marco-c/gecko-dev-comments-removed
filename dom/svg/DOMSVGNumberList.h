@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_DOMSVGNUMBERLIST_H__
-#define MOZILLA_DOMSVGNUMBERLIST_H__
+#ifndef DOM_SVG_DOMSVGNUMBERLIST_H_
+#define DOM_SVG_DOMSVGNUMBERLIST_H_
 
 #include "DOMSVGAnimatedNumberList.h"
 #include "nsCycleCollectionParticipant.h"

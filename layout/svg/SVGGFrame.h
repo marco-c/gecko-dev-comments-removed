@@ -4,8 +4,8 @@
 
 
 
-#ifndef NSSVGGFRAME_H
-#define NSSVGGFRAME_H
+#ifndef LAYOUT_SVG_SVGGFRAME_H_
+#define LAYOUT_SVG_SVGGFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SVGContainerFrame.h"
@@ -52,4 +52,4 @@ class SVGGFrame : public SVGDisplayContainerFrame {
 
 }  
 
-#endif
+#endif  

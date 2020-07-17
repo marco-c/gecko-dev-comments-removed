@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGRect_h
-#define mozilla_dom_SVGRect_h
+#ifndef DOM_SVG_SVGRECT_H_
+#define DOM_SVG_SVGRECT_H_
 
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/gfx/Rect.h"

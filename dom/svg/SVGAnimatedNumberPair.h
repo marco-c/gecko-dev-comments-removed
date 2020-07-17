@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGNUMBERPAIR_H__
-#define __NS_SVGNUMBERPAIR_H__
+#ifndef DOM_SVG_SVGANIMATEDNUMBERPAIR_H_
+#define DOM_SVG_SVGANIMATEDNUMBERPAIR_H_
 
 #include "DOMSVGAnimatedNumber.h"
 #include "nsCycleCollectionParticipant.h"

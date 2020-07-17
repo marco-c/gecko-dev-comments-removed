@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGCONTEXT_H_
-#define MOZILLA_SVGCONTEXT_H_
+#ifndef LAYOUT_SVG_SVGIMAGECONTEXT_H_
+#define LAYOUT_SVG_SVGIMAGECONTEXT_H_
 
 #include "mozilla/Maybe.h"
 #include "mozilla/SVGContextPaint.h"

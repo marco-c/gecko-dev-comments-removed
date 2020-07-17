@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_CSSFILTERINSTANCE_H__
-#define __NS_CSSFILTERINSTANCE_H__
+#ifndef LAYOUT_SVG_CSSFILTERINSTANCE_H_
+#define LAYOUT_SVG_CSSFILTERINSTANCE_H_
 
 #include "FilterSupport.h"
 #include "gfxMatrix.h"
@@ -143,4 +143,4 @@ class CSSFilterInstance {
 
 }  
 
-#endif
+#endif  

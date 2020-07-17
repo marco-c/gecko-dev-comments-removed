@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGElementFactory_h
-#define mozilla_dom_SVGElementFactory_h
+#ifndef DOM_SVG_SVGELEMENTFACTORY_H_
+#define DOM_SVG_SVGELEMENTFACTORY_H_
 
 #include "nsError.h"
 #include "mozilla/AlreadyAddRefed.h"
@@ -50,4 +50,4 @@ nsresult NS_NewSVGUnknownElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
     mozilla::dom::FromParser aFromParser);
 
-#endif 
+#endif  

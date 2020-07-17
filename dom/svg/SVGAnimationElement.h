@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGAnimationElement_h
-#define mozilla_dom_SVGAnimationElement_h
+#ifndef DOM_SVG_SVGANIMATIONELEMENT_H_
+#define DOM_SVG_SVGANIMATIONELEMENT_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILTimedElement.h"

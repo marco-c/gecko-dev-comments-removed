@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGDescElement_h
-#define mozilla_dom_SVGDescElement_h
+#ifndef DOM_SVG_SVGDESCELEMENT_H_
+#define DOM_SVG_SVGDESCELEMENT_H_
 
 #include "mozilla/Attributes.h"
 #include "SVGElement.h"

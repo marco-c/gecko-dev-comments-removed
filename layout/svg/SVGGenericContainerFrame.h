@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGGENERICCONTAINERFRAME_H__
-#define __NS_SVGGENERICCONTAINERFRAME_H__
+#ifndef LAYOUT_SVG_SVGGENERICCONTAINERFRAME_H_
+#define LAYOUT_SVG_SVGGENERICCONTAINERFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SVGContainerFrame.h"

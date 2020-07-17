@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_DOMSVGLENGTHLIST_H__
-#define MOZILLA_DOMSVGLENGTHLIST_H__
+#ifndef DOM_SVG_DOMSVGLENGTHLIST_H_
+#define DOM_SVG_DOMSVGLENGTHLIST_H_
 
 #include "DOMSVGAnimatedLengthList.h"
 #include "nsCycleCollectionParticipant.h"

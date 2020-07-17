@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILFloatType_h
-#define mozilla_SMILFloatType_h
+#ifndef DOM_SMIL_SMILFLOATTYPE_H_
+#define DOM_SMIL_SMILFLOATTYPE_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILType.h"

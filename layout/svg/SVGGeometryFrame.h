@@ -4,8 +4,8 @@
 
 
 
-#ifndef __SVGGEOMETRYFRAME_H__
-#define __SVGGEOMETRYFRAME_H__
+#ifndef LAYOUT_SVG_SVGGEOMETRYFRAME_H_
+#define LAYOUT_SVG_SVGGEOMETRYFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ISVGDisplayableFrame.h"

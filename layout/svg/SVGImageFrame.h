@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGIMAGEFRAME_H__
-#define __NS_SVGIMAGEFRAME_H__
+#ifndef LAYOUT_SVG_SVGIMAGEFRAME_H_
+#define LAYOUT_SVG_SVGIMAGEFRAME_H_
 
 
 #include "gfxContext.h"

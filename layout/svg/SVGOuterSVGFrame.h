@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGOUTERSVGFRAME_H__
-#define __NS_SVGOUTERSVGFRAME_H__
+#ifndef LAYOUT_SVG_SVGOUTERSVGFRAME_H_
+#define LAYOUT_SVG_SVGOUTERSVGFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ISVGSVGFrame.h"
@@ -269,4 +269,4 @@ class SVGOuterSVGAnonChildFrame final : public SVGDisplayContainerFrame {
 
 }  
 
-#endif
+#endif  

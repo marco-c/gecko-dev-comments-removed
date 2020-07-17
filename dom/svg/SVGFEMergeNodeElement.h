@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEMergeNodeElement_h
-#define mozilla_dom_SVGFEMergeNodeElement_h
+#ifndef DOM_SVG_SVGFEMERGENODEELEMENT_H_
+#define DOM_SVG_SVGFEMERGENODEELEMENT_H_
 
 #include "SVGFilters.h"
 

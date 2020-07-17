@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILMilestone_h
-#define mozilla_SMILMilestone_h
+#ifndef DOM_SMIL_SMILMILESTONE_H_
+#define DOM_SMIL_SMILMILESTONE_H_
 
 #include "mozilla/SMILTypes.h"
 

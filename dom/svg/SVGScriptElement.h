@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGScriptElement_h
-#define mozilla_dom_SVGScriptElement_h
+#ifndef DOM_SVG_SVGSCRIPTELEMENT_H_
+#define DOM_SVG_SVGSCRIPTELEMENT_H_
 
 #include "SVGAnimatedString.h"
 #include "mozilla/AlreadyAddRefed.h"

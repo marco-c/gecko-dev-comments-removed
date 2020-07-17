@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGMarkerElement_h
-#define mozilla_dom_SVGMarkerElement_h
+#ifndef DOM_SVG_SVGMARKERELEMENT_H_
+#define DOM_SVG_SVGMARKERELEMENT_H_
 
 #include "DOMSVGAnimatedAngle.h"
 #include "DOMSVGAnimatedEnumeration.h"

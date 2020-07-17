@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGTextPathElement_h
-#define mozilla_dom_SVGTextPathElement_h
+#ifndef DOM_SVG_SVGTEXTPATHELEMENT_H_
+#define DOM_SVG_SVGTEXTPATHELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedLength.h"

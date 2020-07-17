@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFESpotLightElement_h
-#define mozilla_dom_SVGFESpotLightElement_h
+#ifndef DOM_SVG_SVGFESPOTLIGHTELEMENT_H_
+#define DOM_SVG_SVGFESPOTLIGHTELEMENT_H_
 
 #include "SVGAnimatedNumber.h"
 #include "SVGFilters.h"

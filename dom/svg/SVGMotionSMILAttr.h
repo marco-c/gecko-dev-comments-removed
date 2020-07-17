@@ -6,8 +6,8 @@
 
 
 
-#ifndef MOZILLA_SVGMOTIONSMILATTR_H_
-#define MOZILLA_SVGMOTIONSMILATTR_H_
+#ifndef DOM_SVG_SVGMOTIONSMILATTR_H_
+#define DOM_SVG_SVGMOTIONSMILATTR_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"

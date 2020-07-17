@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGComponentTransferFunctionElement_h
-#define mozilla_dom_SVGComponentTransferFunctionElement_h
+#ifndef DOM_SVG_SVGCOMPONENTTRANSFERFUNCTIONELEMENT_H_
+#define DOM_SVG_SVGCOMPONENTTRANSFERFUNCTIONELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedNumber.h"

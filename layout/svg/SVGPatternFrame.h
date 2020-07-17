@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGPATTERNFRAME_H__
-#define __NS_SVGPATTERNFRAME_H__
+#ifndef LAYOUT_SVG_SVGPATTERNFRAME_H_
+#define LAYOUT_SVG_SVGPATTERNFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "gfxMatrix.h"
@@ -132,4 +132,4 @@ class SVGPatternFrame final : public SVGPaintServerFrame {
 
 }  
 
-#endif
+#endif  

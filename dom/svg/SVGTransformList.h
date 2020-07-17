@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGTRANSFORMLIST_H__
-#define MOZILLA_SVGTRANSFORMLIST_H__
+#ifndef DOM_SVG_SVGTRANSFORMLIST_H_
+#define DOM_SVG_SVGTRANSFORMLIST_H_
 
 #include "gfxMatrix.h"
 #include "SVGTransform.h"

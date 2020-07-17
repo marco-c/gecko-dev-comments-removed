@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGFILTERFRAME_H__
-#define __NS_SVGFILTERFRAME_H__
+#ifndef LAYOUT_SVG_SVGFILTERFRAME_H_
+#define LAYOUT_SVG_SVGFILTERFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SVGContainerFrame.h"
@@ -91,4 +91,4 @@ class SVGFilterFrame final : public SVGContainerFrame {
 
 }  
 
-#endif
+#endif  

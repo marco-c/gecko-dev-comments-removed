@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGViewElement_h
-#define mozilla_dom_SVGViewElement_h
+#ifndef DOM_SVG_SVGVIEWELEMENT_H_
+#define DOM_SVG_SVGVIEWELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedPreserveAspectRatio.h"

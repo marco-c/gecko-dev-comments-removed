@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEComponentTransferElement_h
-#define mozilla_dom_SVGFEComponentTransferElement_h
+#ifndef DOM_SVG_SVGFECOMPONENTTRANSFERELEMENT_H_
+#define DOM_SVG_SVGFECOMPONENTTRANSFERELEMENT_H_
 
 #include "SVGFilters.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGGeometryProperty_SVGGeometryProperty_h
-#define mozilla_dom_SVGGeometryProperty_SVGGeometryProperty_h
+#ifndef DOM_SVG_SVGGEOMETRYPROPERTY_H_
+#define DOM_SVG_SVGGEOMETRYPROPERTY_H_
 
 #include "mozilla/SVGImageFrame.h"
 #include "mozilla/dom/SVGElement.h"
@@ -289,4 +289,4 @@ bool ElementMapsLengthsToStyle(SVGElement const* aElement);
 }  
 }  
 
-#endif
+#endif  

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGINNERSVGFRAME_H__
-#define __NS_SVGINNERSVGFRAME_H__
+#ifndef LAYOUT_SVG_SVGINNERSVGFRAME_H_
+#define LAYOUT_SVG_SVGINNERSVGFRAME_H_
 
 #include "SVGViewportFrame.h"
 
@@ -44,4 +44,4 @@ class SVGInnerSVGFrame final : public SVGViewportFrame {
 
 }  
 
-#endif
+#endif  

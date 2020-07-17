@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEGaussianBlurElement_h
-#define mozilla_dom_SVGFEGaussianBlurElement_h
+#ifndef DOM_SVG_SVGFEGAUSSIANBLURELEMENT_H_
+#define DOM_SVG_SVGFEGAUSSIANBLURELEMENT_H_
 
 #include "SVGAnimatedNumberPair.h"
 #include "SVGAnimatedString.h"

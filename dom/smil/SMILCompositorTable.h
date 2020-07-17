@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILCompositorTable_h
-#define mozilla_SMILCompositorTable_h
+#ifndef DOM_SMIL_SMILCOMPOSITORTABLE_H_
+#define DOM_SMIL_SMILCOMPOSITORTABLE_H_
 
 #include "nsTHashtable.h"
 

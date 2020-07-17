@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGAnimatedTransformList_h
-#define mozilla_dom_SVGAnimatedTransformList_h
+#ifndef DOM_SVG_DOMSVGANIMATEDTRANSFORMLIST_H_
+#define DOM_SVG_DOMSVGANIMATEDTRANSFORMLIST_H_
 
 #include "nsCycleCollectionParticipant.h"
 #include "SVGElement.h"

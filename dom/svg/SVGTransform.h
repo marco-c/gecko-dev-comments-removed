@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGTRANSFORM_H__
-#define MOZILLA_SVGTRANSFORM_H__
+#ifndef DOM_SVG_SVGTRANSFORM_H_
+#define DOM_SVG_SVGTRANSFORM_H_
 
 #include "gfxMatrix.h"
 #include "mozilla/dom/SVGTransformBinding.h"

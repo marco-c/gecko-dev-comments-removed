@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGGeometryElement_h
-#define mozilla_dom_SVGGeometryElement_h
+#ifndef DOM_SVG_SVGGEOMETRYELEMENT_H_
+#define DOM_SVG_SVGGEOMETRYELEMENT_H_
 
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "mozilla/gfx/2D.h"

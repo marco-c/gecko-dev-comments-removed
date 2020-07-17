@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGVIEWBOX_H__
-#define __NS_SVGVIEWBOX_H__
+#ifndef DOM_SVG_SVGANIMATEDVIEWBOX_H_
+#define DOM_SVG_SVGANIMATEDVIEWBOX_H_
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGSTRING_H__
-#define __NS_SVGSTRING_H__
+#ifndef DOM_SVG_SVGANIMATEDSTRING_H_
+#define DOM_SVG_SVGANIMATEDSTRING_H_
 
 #include "DOMSVGAnimatedString.h"
 #include "nsError.h"

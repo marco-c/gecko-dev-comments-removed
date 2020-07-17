@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGPATHSEGUTILS_H__
-#define MOZILLA_SVGPATHSEGUTILS_H__
+#ifndef DOM_SVG_SVGPATHSEGUTILS_H_
+#define DOM_SVG_SVGPATHSEGUTILS_H_
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGPathSegBinding.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGCircleElement_h
-#define mozilla_dom_SVGCircleElement_h
+#ifndef DOM_SVG_SVGCIRCLEELEMENT_H_
+#define DOM_SVG_SVGCIRCLEELEMENT_H_
 
 #include "nsCSSPropertyID.h"
 #include "SVGGeometryElement.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGCLIPPATHFRAME_H__
-#define __NS_SVGCLIPPATHFRAME_H__
+#ifndef LAYOUT_SVG_SVGCLIPPATHFRAME_H_
+#define LAYOUT_SVG_SVGCLIPPATHFRAME_H_
 
 #include "gfxMatrix.h"
 #include "mozilla/Attributes.h"
@@ -173,4 +173,4 @@ class SVGClipPathFrame final : public SVGContainerFrame {
 
 }  
 
-#endif
+#endif  

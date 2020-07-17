@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SVGAnimatedNumber_h
-#define mozilla_SVGAnimatedNumber_h
+#ifndef DOM_SVG_SVGANIMATEDNUMBER_H_
+#define DOM_SVG_SVGANIMATEDNUMBER_H_
 
 #include "DOMSVGAnimatedNumber.h"
 #include "nsCycleCollectionParticipant.h"

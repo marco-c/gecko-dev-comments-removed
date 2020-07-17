@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGLENGTHLIST_H__
-#define MOZILLA_SVGLENGTHLIST_H__
+#ifndef DOM_SVG_SVGLENGTHLIST_H_
+#define DOM_SVG_SVGLENGTHLIST_H_
 
 #include "nsCOMPtr.h"
 #include "nsDebug.h"

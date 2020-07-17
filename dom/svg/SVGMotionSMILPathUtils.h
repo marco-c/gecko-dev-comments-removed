@@ -7,8 +7,8 @@
 
 
 
-#ifndef MOZILLA_SVGMOTIONSMILPATHUTILS_H_
-#define MOZILLA_SVGMOTIONSMILPATHUTILS_H_
+#ifndef DOM_SVG_SVGMOTIONSMILPATHUTILS_H_
+#define DOM_SVG_SVGMOTIONSMILPATHUTILS_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"

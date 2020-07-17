@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_DOMSVGSTRINGLIST_H__
-#define MOZILLA_DOMSVGSTRINGLIST_H__
+#ifndef DOM_SVG_DOMSVGSTRINGLIST_H_
+#define DOM_SVG_DOMSVGSTRINGLIST_H_
 
 #include "nsCycleCollectionParticipant.h"
 #include "SVGElement.h"

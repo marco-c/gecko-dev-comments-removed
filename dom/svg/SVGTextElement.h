@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGTextElement_h
-#define mozilla_dom_SVGTextElement_h
+#ifndef DOM_SVG_SVGTEXTELEMENT_H_
+#define DOM_SVG_SVGTEXTELEMENT_H_
 
 #include "mozilla/dom/SVGTextPositioningElement.h"
 

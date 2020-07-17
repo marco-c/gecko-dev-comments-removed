@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_DOMSVGTRANSFORMLIST_H__
-#define MOZILLA_DOMSVGTRANSFORMLIST_H__
+#ifndef DOM_SVG_DOMSVGTRANSFORMLIST_H_
+#define DOM_SVG_DOMSVGTRANSFORMLIST_H_
 
 #include "DOMSVGAnimatedTransformList.h"
 #include "nsCycleCollectionParticipant.h"

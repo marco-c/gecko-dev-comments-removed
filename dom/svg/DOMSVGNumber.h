@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_DOMSVGNUMBER_H__
-#define MOZILLA_DOMSVGNUMBER_H__
+#ifndef DOM_SVG_DOMSVGNUMBER_H_
+#define DOM_SVG_DOMSVGNUMBER_H_
 
 #include "DOMSVGNumberList.h"
 #include "nsCOMPtr.h"

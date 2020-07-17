@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGPolygonElement_h
-#define mozilla_dom_SVGPolygonElement_h
+#ifndef DOM_SVG_SVGPOLYGONELEMENT_H_
+#define DOM_SVG_SVGPOLYGONELEMENT_H_
 
 #include "mozilla/Attributes.h"
 #include "SVGPolyElement.h"

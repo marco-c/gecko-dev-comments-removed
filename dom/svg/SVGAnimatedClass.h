@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGCLASS_H__
-#define __NS_SVGCLASS_H__
+#ifndef DOM_SVG_SVGANIMATEDCLASS_H_
+#define DOM_SVG_SVGANIMATEDCLASS_H_
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"

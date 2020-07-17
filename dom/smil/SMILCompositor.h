@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILCompositor_h
-#define mozilla_SMILCompositor_h
+#ifndef DOM_SMIL_SMILCOMPOSITOR_H_
+#define DOM_SMIL_SMILCOMPOSITOR_H_
 
 #include <utility>
 

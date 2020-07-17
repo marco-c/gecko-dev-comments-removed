@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEImageElement_h
-#define mozilla_dom_SVGFEImageElement_h
+#ifndef DOM_SVG_SVGFEIMAGEELEMENT_H_
+#define DOM_SVG_SVGFEIMAGEELEMENT_H_
 
 #include "SVGFilters.h"
 #include "SVGAnimatedPreserveAspectRatio.h"
@@ -105,4 +105,4 @@ class SVGFEImageElement final : public SVGFEImageElementBase,
 }  
 }  
 
-#endif
+#endif  

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DOMSVGAnimatedAngle_h
-#define mozilla_dom_DOMSVGAnimatedAngle_h
+#ifndef DOM_SVG_DOMSVGANIMATEDANGLE_H_
+#define DOM_SVG_DOMSVGANIMATEDANGLE_H_
 
 #include "nsWrapperCache.h"
 #include "SVGElement.h"

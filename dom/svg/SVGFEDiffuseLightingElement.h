@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEDiffuseLightingElement_h
-#define mozilla_dom_SVGFEDiffuseLightingElement_h
+#ifndef DOM_SVG_SVGFEDIFFUSELIGHTINGELEMENT_H_
+#define DOM_SVG_SVGFEDIFFUSELIGHTINGELEMENT_H_
 
 #include "SVGFilters.h"
 

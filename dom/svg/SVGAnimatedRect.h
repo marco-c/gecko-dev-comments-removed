@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGAnimatedRect_h
-#define mozilla_dom_SVGAnimatedRect_h
+#ifndef DOM_SVG_SVGANIMATEDRECT_H_
+#define DOM_SVG_SVGANIMATEDRECT_H_
 
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/dom/SVGElement.h"

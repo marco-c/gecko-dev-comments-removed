@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DOMSVGAnimatedEnumeration_h
-#define mozilla_dom_DOMSVGAnimatedEnumeration_h
+#ifndef DOM_SVG_DOMSVGANIMATEDENUMERATION_H_
+#define DOM_SVG_DOMSVGANIMATEDENUMERATION_H_
 
 #include "nsWrapperCache.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGFILTERPAINTCALLBACK_H__
-#define __NS_SVGFILTERPAINTCALLBACK_H__
+#ifndef LAYOUT_SVG_SVGFILTERPAINTCALLBACK_H_
+#define LAYOUT_SVG_SVGFILTERPAINTCALLBACK_H_
 
 #include "nsRect.h"
 
@@ -37,4 +37,4 @@ class SVGFilterPaintCallback {
 
 }  
 
-#endif
+#endif  

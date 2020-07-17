@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGPOINTLIST_H__
-#define MOZILLA_SVGPOINTLIST_H__
+#ifndef DOM_SVG_SVGPOINTLIST_H_
+#define DOM_SVG_SVGPOINTLIST_H_
 
 #include "nsCOMPtr.h"
 #include "nsDebug.h"

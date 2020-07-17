@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEConvolveMatrixElement_h
-#define mozilla_dom_SVGFEConvolveMatrixElement_h
+#ifndef DOM_SVG_SVGFECONVOLVEMATRIXELEMENT_H_
+#define DOM_SVG_SVGFECONVOLVEMATRIXELEMENT_H_
 
 #include "DOMSVGAnimatedNumberList.h"
 #include "SVGAnimatedBoolean.h"

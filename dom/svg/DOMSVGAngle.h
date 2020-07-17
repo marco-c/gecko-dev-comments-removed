@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGAngle_h
-#define mozilla_dom_SVGAngle_h
+#ifndef DOM_SVG_DOMSVGANGLE_H_
+#define DOM_SVG_DOMSVGANGLE_H_
 
 #include "nsWrapperCache.h"
 #include "SVGElement.h"

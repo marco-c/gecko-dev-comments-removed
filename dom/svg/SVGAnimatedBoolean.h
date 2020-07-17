@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGBOOLEAN_H__
-#define __NS_SVGBOOLEAN_H__
+#ifndef DOM_SVG_SVGANIMATEDBOOLEAN_H_
+#define DOM_SVG_SVGANIMATEDBOOLEAN_H_
 
 #include "nsError.h"
 #include "mozilla/SMILAttr.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_CSSCLIPPATHINSTANCE_H__
-#define __NS_CSSCLIPPATHINSTANCE_H__
+#ifndef LAYOUT_SVG_CSSCLIPPATHINSTANCE_H_
+#define LAYOUT_SVG_CSSCLIPPATHINSTANCE_H_
 
 #include "gfxMatrix.h"
 #include "gfxPoint.h"
@@ -63,4 +63,4 @@ class MOZ_STACK_CLASS CSSClipPathInstance {
 
 }  
 
-#endif
+#endif  

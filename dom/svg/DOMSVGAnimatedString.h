@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DOMSVGAnimatedString_h
-#define mozilla_dom_DOMSVGAnimatedString_h
+#ifndef DOM_SVG_DOMSVGANIMATEDSTRING_H_
+#define DOM_SVG_DOMSVGANIMATEDSTRING_H_
 
 #include "SVGElement.h"
 

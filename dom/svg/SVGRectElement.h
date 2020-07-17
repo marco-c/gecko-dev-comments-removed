@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGRectElement_h
-#define mozilla_dom_SVGRectElement_h
+#ifndef DOM_SVG_SVGRECTELEMENT_H_
+#define DOM_SVG_SVGRECTELEMENT_H_
 
 #include "nsCSSPropertyID.h"
 #include "SVGAnimatedLength.h"

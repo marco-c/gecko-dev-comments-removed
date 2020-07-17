@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILTimeValueSpecParams_h
-#define mozilla_SMILTimeValueSpecParams_h
+#ifndef DOM_SMIL_SMILTIMEVALUESPECPARAMS_H_
+#define DOM_SMIL_SMILTIMEVALUESPECPARAMS_H_
 
 #include "mozilla/SMILTimeValue.h"
 #include "nsAtom.h"

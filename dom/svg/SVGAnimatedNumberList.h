@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGANIMATEDNUMBERLIST_H__
-#define MOZILLA_SVGANIMATEDNUMBERLIST_H__
+#ifndef DOM_SVG_SVGANIMATEDNUMBERLIST_H_
+#define DOM_SVG_SVGANIMATEDNUMBERLIST_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"

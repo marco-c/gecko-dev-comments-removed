@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILTargetIdentifier_h
-#define mozilla_SMILTargetIdentifier_h
+#ifndef DOM_SMIL_SMILTARGETIDENTIFIER_H_
+#define DOM_SMIL_SMILTARGETIDENTIFIER_H_
 
 #include "mozilla/dom/Element.h"
 

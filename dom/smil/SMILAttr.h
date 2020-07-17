@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILAttr_h
-#define mozilla_SMILAttr_h
+#ifndef DOM_SMIL_SMILATTR_H_
+#define DOM_SMIL_SMILATTR_H_
 
 #include "nscore.h"
 #include "nsStringFwd.h"

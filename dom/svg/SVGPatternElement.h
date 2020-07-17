@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGPatternElement_h
-#define mozilla_dom_SVGPatternElement_h
+#ifndef DOM_SVG_SVGPATTERNELEMENT_H_
+#define DOM_SVG_SVGPATTERNELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedLength.h"

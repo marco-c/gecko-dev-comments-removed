@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGPathElement_h
-#define mozilla_dom_SVGPathElement_h
+#ifndef DOM_SVG_SVGPATHELEMENT_H_
+#define DOM_SVG_SVGPATHELEMENT_H_
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"

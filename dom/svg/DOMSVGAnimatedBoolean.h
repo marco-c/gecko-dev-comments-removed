@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DOMSVGAnimatedBoolean_h
-#define mozilla_dom_DOMSVGAnimatedBoolean_h
+#ifndef DOM_SVG_DOMSVGANIMATEDBOOLEAN_H_
+#define DOM_SVG_DOMSVGANIMATEDBOOLEAN_H_
 
 #include "SVGAnimatedBoolean.h"
 #include "nsWrapperCache.h"

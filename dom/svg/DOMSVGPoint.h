@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_DOMSVGPOINT_H__
-#define MOZILLA_DOMSVGPOINT_H__
+#ifndef DOM_SVG_DOMSVGPOINT_H_
+#define DOM_SVG_DOMSVGPOINT_H_
 
 #include "DOMSVGPointList.h"
 #include "mozilla/gfx/2D.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGCONTENTUTILS_H
-#define MOZILLA_SVGCONTENTUTILS_H
+#ifndef DOM_SVG_SVGCONTENTUTILS_H_
+#define DOM_SVG_SVGCONTENTUTILS_H_
 
 
 #include <math.h>
@@ -347,4 +347,4 @@ class SVGContentUtils {
 
 }  
 
-#endif
+#endif  

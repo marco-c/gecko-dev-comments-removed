@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGTEXTFRAME_H
-#define MOZILLA_SVGTEXTFRAME_H
+#ifndef LAYOUT_SVG_SVGTEXTFRAME_H_
+#define LAYOUT_SVG_SVGTEXTFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/PresShellForwards.h"
@@ -574,4 +574,4 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 }  
 
-#endif
+#endif  

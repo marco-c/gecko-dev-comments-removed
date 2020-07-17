@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_CONTENT_SVGPRESERVEASPECTRATIO_H_
-#define MOZILLA_CONTENT_SVGPRESERVEASPECTRATIO_H_
+#ifndef DOM_SVG_SVGPRESERVEASPECTRATIO_H_
+#define DOM_SVG_SVGPRESERVEASPECTRATIO_H_
 
 #include "mozilla/dom/SVGPreserveAspectRatioBinding.h"
 #include "mozilla/HashFunctions.h"  

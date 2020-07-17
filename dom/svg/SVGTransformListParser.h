@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGTRANSFORMLISTPARSER_H__
-#define MOZILLA_SVGTRANSFORMLISTPARSER_H__
+#ifndef DOM_SVG_SVGTRANSFORMLISTPARSER_H_
+#define DOM_SVG_SVGTRANSFORMLISTPARSER_H_
 
 #include "mozilla/Attributes.h"
 #include "SVGDataParser.h"

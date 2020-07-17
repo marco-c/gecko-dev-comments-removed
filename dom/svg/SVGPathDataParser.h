@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGPATHDATAPARSER_H__
-#define __NS_SVGPATHDATAPARSER_H__
+#ifndef DOM_SVG_SVGPATHDATAPARSER_H_
+#define DOM_SVG_SVGPATHDATAPARSER_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/gfx/Point.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGAnimateMotionElement_h
-#define mozilla_dom_SVGAnimateMotionElement_h
+#ifndef DOM_SVG_SVGANIMATEMOTIONELEMENT_H_
+#define DOM_SVG_SVGANIMATEMOTIONELEMENT_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/SVGAnimationElement.h"

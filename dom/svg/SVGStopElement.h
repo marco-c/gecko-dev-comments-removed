@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGStopElement_h
-#define mozilla_dom_SVGStopElement_h
+#ifndef DOM_SVG_SVGSTOPELEMENT_H_
+#define DOM_SVG_SVGSTOPELEMENT_H_
 
 #include "mozilla/dom/SVGElement.h"
 #include "SVGAnimatedNumber.h"

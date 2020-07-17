@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGGRADIENTFRAME_H__
-#define __NS_SVGGRADIENTFRAME_H__
+#ifndef LAYOUT_SVG_SVGGRADIENTFRAME_H_
+#define LAYOUT_SVG_SVGGRADIENTFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "gfxMatrix.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFEOffsetElement_h
-#define mozilla_dom_SVGFEOffsetElement_h
+#ifndef DOM_SVG_SVGFEOFFSETELEMENT_H_
+#define DOM_SVG_SVGFEOFFSETELEMENT_H_
 
 #include "SVGAnimatedNumber.h"
 #include "SVGAnimatedString.h"

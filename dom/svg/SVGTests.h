@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGTests_h
-#define mozilla_dom_SVGTests_h
+#ifndef DOM_SVG_SVGTESTS_H_
+#define DOM_SVG_SVGTESTS_H_
 
 #include "nsStringFwd.h"
 #include "mozilla/AlreadyAddRefed.h"

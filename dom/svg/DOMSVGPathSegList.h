@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_DOMSVGPATHSEGLIST_H__
-#define MOZILLA_DOMSVGPATHSEGLIST_H__
+#ifndef DOM_SVG_DOMSVGPATHSEGLIST_H_
+#define DOM_SVG_DOMSVGPATHSEGLIST_H_
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"

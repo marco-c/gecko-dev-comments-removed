@@ -4,8 +4,8 @@
 
 
 
-#ifndef SVGTRANSFORMLISTSMILTYPE_H_
-#define SVGTRANSFORMLISTSMILTYPE_H_
+#ifndef DOM_SVG_SVGTRANSFORMLISTSMILTYPE_H_
+#define DOM_SVG_SVGTRANSFORMLISTSMILTYPE_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILType.h"

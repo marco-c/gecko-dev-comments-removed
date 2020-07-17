@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGPATHSEGLISTSMILTYPE_H_
-#define MOZILLA_SVGPATHSEGLISTSMILTYPE_H_
+#ifndef DOM_SVG_SVGPATHSEGLISTSMILTYPE_H_
+#define DOM_SVG_SVGPATHSEGLISTSMILTYPE_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILType.h"

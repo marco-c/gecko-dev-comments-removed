@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGViewportElement_h
-#define mozilla_dom_SVGViewportElement_h
+#ifndef DOM_SVG_SVGVIEWPORTELEMENT_H_
+#define DOM_SVG_SVGVIEWPORTELEMENT_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SVGImageContext.h"

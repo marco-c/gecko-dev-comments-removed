@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SVGAnimatedLength_h
-#define mozilla_SVGAnimatedLength_h
+#ifndef DOM_SVG_SVGANIMATEDLENGTH_H_
+#define DOM_SVG_SVGANIMATEDLENGTH_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SMILTimeValueSpec_h
-#define mozilla_SMILTimeValueSpec_h
+#ifndef DOM_SMIL_SMILTIMEVALUESPEC_H_
+#define DOM_SMIL_SMILTIMEVALUESPEC_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILTimeValueSpecParams.h"

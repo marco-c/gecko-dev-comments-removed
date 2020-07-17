@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGFETileElement_h
-#define mozilla_dom_SVGFETileElement_h
+#ifndef DOM_SVG_SVGFETILEELEMENT_H_
+#define DOM_SVG_SVGFETILEELEMENT_H_
 
 #include "SVGFilters.h"
 

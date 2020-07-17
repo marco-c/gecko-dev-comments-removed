@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_AUTOREFERENCELIMITER_H
-#define NS_AUTOREFERENCELIMITER_H
+#ifndef LAYOUT_SVG_AUTOREFERENCECHAINGUARD_H_
+#define LAYOUT_SVG_AUTOREFERENCECHAINGUARD_H_
 
 #include "Element.h"
 #include "mozilla/Assertions.h"

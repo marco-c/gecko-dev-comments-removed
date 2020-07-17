@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGPOINT_H__
-#define MOZILLA_SVGPOINT_H__
+#ifndef DOM_SVG_SVGPOINT_H_
+#define DOM_SVG_SVGPOINT_H_
 
 #include "nsDebug.h"
 #include "gfxPoint.h"

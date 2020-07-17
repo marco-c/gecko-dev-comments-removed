@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGISYMBOLFRAME_H__
-#define __NS_SVGISYMBOLFRAME_H__
+#ifndef LAYOUT_SVG_SVGSYMBOLFRAME_H_
+#define LAYOUT_SVG_SVGSYMBOLFRAME_H_
 
 #include "SVGViewportFrame.h"
 
@@ -44,4 +44,4 @@ class SVGSymbolFrame final : public SVGViewportFrame {
 
 }  
 
-#endif
+#endif  

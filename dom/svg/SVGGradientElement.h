@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGGRADIENTELEMENT_H__
-#define __NS_SVGGRADIENTELEMENT_H__
+#ifndef DOM_SVG_SVGGRADIENTELEMENT_H_
+#define DOM_SVG_SVGGRADIENTELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedLength.h"
@@ -147,4 +147,4 @@ class SVGRadialGradientElement : public SVGRadialGradientElementBase {
 }  
 }  
 
-#endif
+#endif  

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGMetadataElement_h
-#define mozilla_dom_SVGMetadataElement_h
+#ifndef DOM_SVG_SVGMETADATAELEMENT_H_
+#define DOM_SVG_SVGMETADATAELEMENT_H_
 
 #include "mozilla/Attributes.h"
 #include "SVGElement.h"

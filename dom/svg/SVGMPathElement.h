@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGMPathElement_h
-#define mozilla_dom_SVGMPathElement_h
+#ifndef DOM_SVG_SVGMPATHELEMENT_H_
+#define DOM_SVG_SVGMPATHELEMENT_H_
 
 #include "mozilla/dom/IDTracker.h"
 #include "mozilla/dom/SVGElement.h"

@@ -34,8 +34,8 @@
 
 
 
-#ifndef mozilla_dom_SVGMatrix_h
-#define mozilla_dom_SVGMatrix_h
+#ifndef DOM_SVG_SVGMATRIX_H_
+#define DOM_SVG_SVGMATRIX_H_
 
 #include "DOMSVGTransform.h"
 #include "gfxMatrix.h"

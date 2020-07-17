@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGCONTEXTPAINT_H_
-#define MOZILLA_SVGCONTEXTPAINT_H_
+#ifndef LAYOUT_SVG_SVGCONTEXTPAINT_H_
+#define LAYOUT_SVG_SVGCONTEXTPAINT_H_
 
 #include "DrawMode.h"
 #include "gfxMatrix.h"

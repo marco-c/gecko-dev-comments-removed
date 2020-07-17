@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGClipPathElement_h
-#define mozilla_dom_SVGClipPathElement_h
+#ifndef DOM_SVG_SVGCLIPPATHELEMENT_H_
+#define DOM_SVG_SVGCLIPPATHELEMENT_H_
 
 #include "SVGAnimatedEnumeration.h"
 #include "mozilla/dom/SVGTransformableElement.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGDocument_h
-#define mozilla_dom_SVGDocument_h
+#ifndef DOM_SVG_SVGDOCUMENT_H_
+#define DOM_SVG_SVGDOCUMENT_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/XMLDocument.h"

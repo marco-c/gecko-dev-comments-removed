@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGForeignObjectElement_h
-#define mozilla_dom_SVGForeignObjectElement_h
+#ifndef DOM_SVG_SVGFOREIGNOBJECTELEMENT_H_
+#define DOM_SVG_SVGFOREIGNOBJECTELEMENT_H_
 
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "nsCSSPropertyID.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGANIMATEDLENGTHLIST_H__
-#define MOZILLA_SVGANIMATEDLENGTHLIST_H__
+#ifndef DOM_SVG_SVGANIMATEDLENGTHLIST_H_
+#define DOM_SVG_SVGANIMATEDLENGTHLIST_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"

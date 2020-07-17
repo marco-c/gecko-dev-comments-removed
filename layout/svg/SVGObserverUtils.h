@@ -4,8 +4,8 @@
 
 
 
-#ifndef NSSVGEFFECTS_H_
-#define NSSVGEFFECTS_H_
+#ifndef LAYOUT_SVG_SVGOBSERVERUTILS_H_
+#define LAYOUT_SVG_SVGOBSERVERUTILS_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/IDTracker.h"
@@ -415,4 +415,4 @@ class SVGObserverUtils {
 
 }  
 
-#endif 
+#endif  

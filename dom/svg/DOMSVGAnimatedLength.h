@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DOMSVGAnimatedLength_h
-#define mozilla_dom_DOMSVGAnimatedLength_h
+#ifndef DOM_SVG_DOMSVGANIMATEDLENGTH_H_
+#define DOM_SVG_DOMSVGANIMATEDLENGTH_H_
 
 #include "mozilla/Attributes.h"
 #include "SVGElement.h"

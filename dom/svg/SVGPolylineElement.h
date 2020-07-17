@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGPolylineElement_h
-#define mozilla_dom_SVGPolylineElement_h
+#ifndef DOM_SVG_SVGPOLYLINEELEMENT_H_
+#define DOM_SVG_SVGPOLYLINEELEMENT_H_
 
 #include "SVGPolyElement.h"
 

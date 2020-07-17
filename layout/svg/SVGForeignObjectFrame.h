@@ -4,8 +4,8 @@
 
 
 
-#ifndef NSSVGFOREIGNOBJECTFRAME_H__
-#define NSSVGFOREIGNOBJECTFRAME_H__
+#ifndef LAYOUT_SVG_SVGFOREIGNOBJECTFRAME_H_
+#define LAYOUT_SVG_SVGFOREIGNOBJECTFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ISVGDisplayableFrame.h"
@@ -105,4 +105,4 @@ class SVGForeignObjectFrame final : public nsContainerFrame,
 
 }  
 
-#endif
+#endif  

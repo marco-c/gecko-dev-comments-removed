@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGTransform_h
-#define mozilla_dom_SVGTransform_h
+#ifndef DOM_SVG_DOMSVGTRANSFORM_H_
+#define DOM_SVG_DOMSVGTRANSFORM_H_
 
 #include "DOMSVGTransformList.h"
 #include "gfxMatrix.h"

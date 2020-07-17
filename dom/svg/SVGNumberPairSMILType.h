@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SVGNUMBERPAIRSMILTYPE_H_
-#define MOZILLA_SVGNUMBERPAIRSMILTYPE_H_
+#ifndef DOM_SVG_SVGNUMBERPAIRSMILTYPE_H_
+#define DOM_SVG_SVGNUMBERPAIRSMILTYPE_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILType.h"

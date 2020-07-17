@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGSwitchElement_h
-#define mozilla_dom_SVGSwitchElement_h
+#ifndef DOM_SVG_SVGSWITCHELEMENT_H_
+#define DOM_SVG_SVGSWITCHELEMENT_H_
 
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "nsCOMPtr.h"

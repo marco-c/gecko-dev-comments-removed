@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGSymbolElement_h
-#define mozilla_dom_SVGSymbolElement_h
+#ifndef DOM_SVG_SVGSYMBOLELEMENT_H_
+#define DOM_SVG_SVGSYMBOLELEMENT_H_
 
 #include "SVGViewportElement.h"
 

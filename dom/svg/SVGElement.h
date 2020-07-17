@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGELEMENT_H__
-#define __NS_SVGELEMENT_H__
+#ifndef DOM_SVG_SVGELEMENT_H_
+#define DOM_SVG_SVGELEMENT_H_
 
 
 

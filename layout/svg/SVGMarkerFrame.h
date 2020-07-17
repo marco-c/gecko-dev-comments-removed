@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGMARKERFRAME_H__
-#define __NS_SVGMARKERFRAME_H__
+#ifndef LAYOUT_SVG_SVGMARKERFRAME_H_
+#define LAYOUT_SVG_SVGMARKERFRAME_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SVGContainerFrame.h"
@@ -162,4 +162,5 @@ class SVGMarkerAnonChildFrame final : public SVGDisplayContainerFrame {
 };
 
 }  
-#endif
+
+#endif  

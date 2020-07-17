@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGGraphicsElement_h
-#define mozilla_dom_SVGGraphicsElement_h
+#ifndef DOM_SVG_SVGGRAPHICSELEMENT_H_
+#define DOM_SVG_SVGGRAPHICSELEMENT_H_
 
 #include "mozilla/dom/SVGTests.h"
 #include "mozilla/dom/SVGTransformableElement.h"

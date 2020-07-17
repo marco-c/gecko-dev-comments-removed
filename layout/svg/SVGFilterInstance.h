@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGFILTERINSTANCE_H__
-#define __NS_SVGFILTERINSTANCE_H__
+#ifndef LAYOUT_SVG_SVGFILTERINSTANCE_H_
+#define LAYOUT_SVG_SVGFILTERINSTANCE_H_
 
 #include "gfxMatrix.h"
 #include "gfxRect.h"
@@ -264,4 +264,4 @@ class SVGFilterInstance {
 
 }  
 
-#endif
+#endif  

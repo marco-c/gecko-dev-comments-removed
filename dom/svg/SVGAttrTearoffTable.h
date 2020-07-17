@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SVGATTRTEAROFFTABLE_H_
-#define NS_SVGATTRTEAROFFTABLE_H_
+#ifndef DOM_SVG_SVGATTRTEAROFFTABLE_H_
+#define DOM_SVG_SVGATTRTEAROFFTABLE_H_
 
 #include "nsDataHashtable.h"
 #include "nsDebug.h"

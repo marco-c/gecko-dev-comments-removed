@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_DOMSVGAnimatedInteger_h
-#define mozilla_dom_DOMSVGAnimatedInteger_h
+#ifndef DOM_SVG_DOMSVGANIMATEDINTEGER_H_
+#define DOM_SVG_DOMSVGANIMATEDINTEGER_H_
 
 #include "nsWrapperCache.h"
 

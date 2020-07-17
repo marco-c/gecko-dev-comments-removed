@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGTextContentElement_h
-#define mozilla_dom_SVGTextContentElement_h
+#ifndef DOM_SVG_SVGTEXTCONTENTELEMENT_H_
+#define DOM_SVG_SVGTEXTCONTENTELEMENT_H_
 
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "DOMSVGAnimatedEnumeration.h"
