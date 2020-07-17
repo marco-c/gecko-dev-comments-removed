@@ -1848,14 +1848,6 @@ pub enum Appearance {
     Count,
 }
 
-impl Appearance {
-    
-    #[inline]
-    pub fn is_none(self) -> bool {
-        self == Appearance::None
-    }
-}
-
 
 
 
