@@ -175,6 +175,12 @@ class StreamFilterParent final : public PStreamFilterParent,
   bool mSentStop;
   bool mDisconnected = false;
 
+  
+  
+  
+  
+  bool mDisconnectedByOnStartRequest = false;
+
   nsCOMPtr<nsISupports> mContext;
   uint64_t mOffset;
 
