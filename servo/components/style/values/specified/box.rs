@@ -1538,15 +1538,8 @@ pub enum Appearance {
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ButtonArrowUp,
     
-    
-    #[css(skip)]
-    ButtonBevel,
-    
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ButtonFocus,
-    
-    #[css(skip)]
-    Caret,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Dualbutton,
@@ -1557,9 +1550,6 @@ pub enum Appearance {
     InnerSpinButton,
     
     Listbox,
-    
-    #[css(skip)]
-    Listitem,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menubar,
@@ -1580,9 +1570,6 @@ pub enum Appearance {
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MenulistText,
-    
-    #[css(skip)]
-    MenulistTextfield,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menupopup,
