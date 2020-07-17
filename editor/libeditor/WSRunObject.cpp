@@ -202,12 +202,18 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
   
   
 
-  const WSFragment* beforeRun = FindNearestFragment(aPointToInsert, false);
-  const WSFragment* afterRun = FindNearestFragment(aPointToInsert, true);
-
+  TextFragmentData textFragmentData(mStart, mEnd, mNBSPData, mPRE);
+  const EditorDOMRange invisibleLeadingWhiteSpaceRangeOfNewLine =
+      textFragmentData.GetNewInvisibleLeadingWhiteSpaceRangeIfSplittingAt(
+          aPointToInsert);
+  const EditorDOMRange invisibleTrailingWhiteSpaceRangeOfCurrentLine =
+      textFragmentData.GetNewInvisibleTrailingWhiteSpaceRangeIfSplittingAt(
+          aPointToInsert);
   const Maybe<const WSFragment> visibleWSFragmentInMiddleOfLine =
-      TextFragmentData(mStart, mEnd, mNBSPData, mPRE)
-          .CreateWSFragmentForVisibleAndMiddleOfLine();
+      !invisibleLeadingWhiteSpaceRangeOfNewLine.IsPositioned() ||
+              !invisibleTrailingWhiteSpaceRangeOfCurrentLine.IsPositioned()
+          ? textFragmentData.CreateWSFragmentForVisibleAndMiddleOfLine()
+          : Nothing();
   const PointPosition pointPositionWithVisibleWhiteSpaces =
       visibleWSFragmentInMiddleOfLine.isSome()
           ? visibleWSFragmentInMiddleOfLine.ref().ComparePoint(aPointToInsert)
@@ -219,20 +225,21 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
     
     AutoTrackDOMPoint tracker(mHTMLEditor.RangeUpdaterRef(), &pointToInsert);
 
-    
-    if (!afterRun || afterRun->IsEndOfHardLine()) {
-      
-    } else if (afterRun->IsStartOfHardLine()) {
-      
-      
-      
-      nsresult rv = MOZ_KnownLive(mHTMLEditor)
-                        .DeleteTextAndTextNodesWithTransaction(
-                            pointToInsert, afterRun->EndPoint());
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-        return nullptr;
+    if (invisibleTrailingWhiteSpaceRangeOfCurrentLine.IsPositioned()) {
+      if (!invisibleTrailingWhiteSpaceRangeOfCurrentLine.Collapsed()) {
+        
+        MOZ_ASSERT(invisibleTrailingWhiteSpaceRangeOfCurrentLine.StartRef() ==
+                   pointToInsert);
+        nsresult rv =
+            MOZ_KnownLive(mHTMLEditor)
+                .DeleteTextAndTextNodesWithTransaction(
+                    invisibleTrailingWhiteSpaceRangeOfCurrentLine.StartRef(),
+                    invisibleTrailingWhiteSpaceRangeOfCurrentLine.EndRef());
+        if (NS_FAILED(rv)) {
+          NS_WARNING(
+              "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+          return nullptr;
+        }
       }
     }
     
@@ -265,19 +272,24 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
       }
     }
 
-    
-    if (!beforeRun || beforeRun->IsStartOfHardLine()) {
-      
-    } else if (beforeRun->IsEndOfHardLine()) {
-      
-      
-      nsresult rv = MOZ_KnownLive(mHTMLEditor)
-                        .DeleteTextAndTextNodesWithTransaction(
-                            beforeRun->StartPoint(), pointToInsert);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WSRunObject::DeleteTextAndTextNodesWithTransaction() failed");
-        return nullptr;
+    if (invisibleLeadingWhiteSpaceRangeOfNewLine.IsPositioned()) {
+      if (!invisibleLeadingWhiteSpaceRangeOfNewLine.Collapsed()) {
+        
+        MOZ_ASSERT(invisibleLeadingWhiteSpaceRangeOfNewLine.EndRef() ==
+                   pointToInsert);
+        
+        
+        
+        nsresult rv =
+            MOZ_KnownLive(mHTMLEditor)
+                .DeleteTextAndTextNodesWithTransaction(
+                    invisibleLeadingWhiteSpaceRangeOfNewLine.StartRef(),
+                    invisibleLeadingWhiteSpaceRangeOfNewLine.EndRef());
+        if (NS_FAILED(rv)) {
+          NS_WARNING(
+              "WSRunObject::DeleteTextAndTextNodesWithTransaction() failed");
+          return nullptr;
+        }
       }
     }
     
@@ -982,41 +994,51 @@ void WSRunScanner::EnsureWSFragments() {
   textFragmentData.InitializeWSFragmentArray(mFragments);
 }
 
-template <typename EditorDOMRangeType>
-EditorDOMRangeType
+EditorDOMRange
 WSRunScanner::TextFragmentData::GetInvisibleLeadingWhiteSpaceRange() const {
+  if (mLeadingWhiteSpaceRange.isSome()) {
+    return mLeadingWhiteSpaceRange.ref();
+  }
+
   
   
   
   
   if (mIsPreformatted || !StartsFromHardLineBreak()) {
-    return EditorDOMRangeType();
+    mLeadingWhiteSpaceRange.emplace();
+    return mLeadingWhiteSpaceRange.ref();
   }
 
   
   
   if (!mNBSPData.FoundNBSP()) {
     MOZ_ASSERT(mStart.PointRef().IsSet() || mEnd.PointRef().IsSet());
-    return EditorDOMRangeType(mStart.PointRef(), mEnd.PointRef());
+    mLeadingWhiteSpaceRange.emplace(mStart.PointRef(), mEnd.PointRef());
+    return mLeadingWhiteSpaceRange.ref();
   }
 
   MOZ_ASSERT(mNBSPData.LastPointRef().IsSetAndValid());
 
   
   
-  return EditorDOMRangeType(mStart.PointRef(), mNBSPData.FirstPointRef());
+  mLeadingWhiteSpaceRange.emplace(mStart.PointRef(), mNBSPData.FirstPointRef());
+  return mLeadingWhiteSpaceRange.ref();
 }
 
-template <typename EditorDOMRangeType>
-EditorDOMRangeType
+EditorDOMRange
 WSRunScanner::TextFragmentData::GetInvisibleTrailingWhiteSpaceRange() const {
+  if (mTrailingWhiteSpaceRange.isSome()) {
+    return mTrailingWhiteSpaceRange.ref();
+  }
+
   
   
   
   
   
   if (mIsPreformatted || !EndsByBlockBoundary()) {
-    return EditorDOMRangeType();
+    mTrailingWhiteSpaceRange.emplace();
+    return mTrailingWhiteSpaceRange.ref();
   }
 
   
@@ -1024,7 +1046,8 @@ WSRunScanner::TextFragmentData::GetInvisibleTrailingWhiteSpaceRange() const {
   
   if (!mNBSPData.FoundNBSP()) {
     MOZ_ASSERT(mStart.PointRef().IsSet() || mEnd.PointRef().IsSet());
-    return EditorDOMRangeType(mStart.PointRef(), mEnd.PointRef());
+    mTrailingWhiteSpaceRange.emplace(mStart.PointRef(), mEnd.PointRef());
+    return mTrailingWhiteSpaceRange.ref();
   }
 
   MOZ_ASSERT(mNBSPData.LastPointRef().IsSetAndValid());
@@ -1035,13 +1058,15 @@ WSRunScanner::TextFragmentData::GetInvisibleTrailingWhiteSpaceRange() const {
       mNBSPData.LastPointRef().GetContainer() ==
           mEnd.PointRef().GetContainer() &&
       mNBSPData.LastPointRef().Offset() == mEnd.PointRef().Offset() - 1) {
-    return EditorDOMRangeType();
+    mTrailingWhiteSpaceRange.emplace();
+    return mTrailingWhiteSpaceRange.ref();
   }
 
   
   MOZ_ASSERT(!mNBSPData.LastPointRef().IsEndOfContainer());
-  return EditorDOMRangeType(mNBSPData.LastPointRef().NextPoint(),
-                            mEnd.PointRef());
+  mTrailingWhiteSpaceRange.emplace(mNBSPData.LastPointRef().NextPoint(),
+                                   mEnd.PointRef());
+  return mTrailingWhiteSpaceRange.ref();
 }
 
 Maybe<WSRunScanner::WSFragment>
@@ -1067,8 +1092,8 @@ WSRunScanner::TextFragmentData::CreateWSFragmentForVisibleAndMiddleOfLine()
 
   
   
-  const auto leadingWhiteSpaceRange =
-      GetInvisibleLeadingWhiteSpaceRange<EditorRawDOMRange>();
+  const EditorDOMRange leadingWhiteSpaceRange =
+      GetInvisibleLeadingWhiteSpaceRange();
   const bool maybeHaveLeadingWhiteSpaces =
       leadingWhiteSpaceRange.StartRef().IsSet() ||
       leadingWhiteSpaceRange.EndRef().IsSet();
@@ -1077,8 +1102,8 @@ WSRunScanner::TextFragmentData::CreateWSFragmentForVisibleAndMiddleOfLine()
       leadingWhiteSpaceRange.EndRef() == mEnd.PointRef()) {
     return Nothing();
   }
-  const auto trailingWhiteSpaceRange =
-      GetInvisibleTrailingWhiteSpaceRange<EditorRawDOMRange>();
+  const EditorDOMRange trailingWhiteSpaceRange =
+      GetInvisibleTrailingWhiteSpaceRange();
   const bool maybeHaveTrailingWhiteSpaces =
       trailingWhiteSpaceRange.StartRef().IsSet() ||
       trailingWhiteSpaceRange.EndRef().IsSet();
@@ -1168,10 +1193,10 @@ void WSRunScanner::TextFragmentData::InitializeWSFragmentArray(
     return;
   }
 
-  const auto leadingWhiteSpaceRange =
-      GetInvisibleLeadingWhiteSpaceRange<EditorRawDOMRange>();
-  const auto trailingWhiteSpaceRange =
-      GetInvisibleTrailingWhiteSpaceRange<EditorRawDOMRange>();
+  const EditorDOMRange leadingWhiteSpaceRange =
+      GetInvisibleLeadingWhiteSpaceRange();
+  const EditorDOMRange trailingWhiteSpaceRange =
+      GetInvisibleTrailingWhiteSpaceRange();
   
   
   const bool maybeHaveLeadingWhiteSpaces =
@@ -2142,12 +2167,12 @@ nsresult WSRunObject::MaybeReplaceInclusiveNextNBSPWithASCIIWhiteSpace(
 
 nsresult WSRunObject::DeleteInvisibleASCIIWhiteSpacesInternal() {
   TextFragmentData textFragment(mStart, mEnd, mNBSPData, mPRE);
-  auto leadingWhiteSpaceRange =
-      textFragment.GetInvisibleLeadingWhiteSpaceRange<EditorDOMRange>();
+  EditorDOMRange leadingWhiteSpaceRange =
+      textFragment.GetInvisibleLeadingWhiteSpaceRange();
   
   
-  auto trailingWhiteSpaceRange =
-      textFragment.GetInvisibleTrailingWhiteSpaceRange<EditorDOMRange>();
+  EditorDOMRange trailingWhiteSpaceRange =
+      textFragment.GetInvisibleTrailingWhiteSpaceRange();
   DebugOnly<bool> leadingWhiteSpacesDeleted = false;
   if (leadingWhiteSpaceRange.IsPositioned() &&
       !leadingWhiteSpaceRange.Collapsed()) {

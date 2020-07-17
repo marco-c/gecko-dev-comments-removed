@@ -774,8 +774,7 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
-    template <typename EditorDOMRangeType>
-    EditorDOMRangeType GetInvisibleLeadingWhiteSpaceRange() const;
+    EditorDOMRange GetInvisibleLeadingWhiteSpaceRange() const;
 
     
 
@@ -785,8 +784,105 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
-    template <typename EditorDOMRangeType>
-    EditorDOMRangeType GetInvisibleTrailingWhiteSpaceRange() const;
+    EditorDOMRange GetInvisibleTrailingWhiteSpaceRange() const;
+
+    
+
+
+
+
+
+
+
+    template <typename EditorDOMPointType>
+    EditorDOMRange GetNewInvisibleLeadingWhiteSpaceRangeIfSplittingAt(
+        const EditorDOMPointType& aPointToSplit) const {
+      
+      
+      
+      
+      EditorDOMRange trailingWhiteSpaceRange =
+          GetInvisibleTrailingWhiteSpaceRange();
+      
+      if (!trailingWhiteSpaceRange.IsPositioned()) {
+        return trailingWhiteSpaceRange;
+      }
+      
+      
+      
+      if (trailingWhiteSpaceRange != GetInvisibleLeadingWhiteSpaceRange()) {
+        return EditorDOMRange();
+      }
+      
+      
+      if (aPointToSplit.IsBefore(trailingWhiteSpaceRange.StartRef())) {
+        return EditorDOMRange();
+      }
+      
+      
+      
+      
+      if (aPointToSplit.EqualsOrIsBefore(trailingWhiteSpaceRange.EndRef())) {
+        return EditorDOMRange(trailingWhiteSpaceRange.StartRef(),
+                              aPointToSplit);
+      }
+      
+      
+      
+      
+      
+      
+      
+      return EditorDOMRange(trailingWhiteSpaceRange.EndRef());
+    }
+
+    
+
+
+
+
+
+
+
+    template <typename EditorDOMPointType>
+    EditorDOMRange GetNewInvisibleTrailingWhiteSpaceRangeIfSplittingAt(
+        const EditorDOMPointType& aPointToSplit) const {
+      
+      
+      
+      
+      EditorDOMRange leadingWhiteSpaceRange =
+          GetInvisibleLeadingWhiteSpaceRange();
+      if (!leadingWhiteSpaceRange.IsPositioned()) {
+        return leadingWhiteSpaceRange;
+      }
+      
+      
+      
+      if (leadingWhiteSpaceRange != GetInvisibleTrailingWhiteSpaceRange()) {
+        return EditorDOMRange();
+      }
+      
+      
+      if (leadingWhiteSpaceRange.EndRef().IsBefore(aPointToSplit)) {
+        return EditorDOMRange();
+      }
+      
+      
+      
+      
+      if (leadingWhiteSpaceRange.StartRef().EqualsOrIsBefore(aPointToSplit)) {
+        return EditorDOMRange(aPointToSplit, leadingWhiteSpaceRange.EndRef());
+      }
+      
+      
+      
+      
+      
+      
+      
+      return EditorDOMRange(leadingWhiteSpaceRange.StartRef());
+    }
 
     
 
@@ -798,6 +894,8 @@ class MOZ_STACK_CLASS WSRunScanner {
     BoundaryData mStart;
     BoundaryData mEnd;
     NoBreakingSpaceData mNBSPData;
+    mutable Maybe<EditorDOMRange> mLeadingWhiteSpaceRange;
+    mutable Maybe<EditorDOMRange> mTrailingWhiteSpaceRange;
     
     
     
