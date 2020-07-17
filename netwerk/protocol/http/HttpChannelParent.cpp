@@ -1491,10 +1491,8 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   bool useResponseHead = !!responseHead;
   nsHttpResponseHead cleanedUpResponseHead;
 
-  bool hasSetCookie =
-      responseHead && responseHead->HasHeader(nsHttp::Set_Cookie);
-
-  if (hasSetCookie || multiPartID) {
+  if (responseHead &&
+      (responseHead->HasHeader(nsHttp::Set_Cookie) || multiPartID)) {
     cleanedUpResponseHead = *responseHead;
     cleanedUpResponseHead.ClearHeader(nsHttp::Set_Cookie);
     if (multiPartID) {
@@ -1545,10 +1543,11 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
-  
-  
-  args.shouldWaitForOnStartRequestSent() = isDocument || hasSetCookie;
+  nsLoadFlags loadflags;
+  chan->GetLoadFlags(&loadflags);
+  bool documentNeedsCookie = loadflags & nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
+
+  args.shouldWaitForOnStartRequestSent() = isDocument || documentNeedsCookie;
 
   rv = NS_OK;
 
