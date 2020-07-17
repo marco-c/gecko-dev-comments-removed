@@ -758,9 +758,9 @@ static bool PathConflictsWithLeaf(const SimpleAutoString& path,
 
 
 
-nsresult GetInstallHash(const char16_t* installPath, const char* vendor,
-                        mozilla::UniquePtr<NS_tchar[]>& result,
-                        bool useCompatibilityMode ) {
+bool GetInstallHash(const char16_t* installPath, const char* vendor,
+                    mozilla::UniquePtr<NS_tchar[]>& result,
+                    bool useCompatibilityMode ) {
   MOZ_ASSERT(installPath != nullptr,
              "Install path must not be null in GetInstallHash");
 
@@ -785,10 +785,8 @@ nsresult GetInstallHash(const char16_t* installPath, const char* vendor,
     charsWritten =
         NS_tsnprintf(result.get(), hashStrSize, NS_T("%") NS_T(PRIX64), hash);
   }
-  if (charsWritten < 1 || static_cast<size_t>(charsWritten) > hashStrSize - 1) {
-    return NS_ERROR_FAILURE;
-  }
-  return NS_OK;
+  return !(charsWritten < 1 ||
+           static_cast<size_t>(charsWritten) > hashStrSize - 1);
 }
 
 #ifdef XP_WIN
@@ -983,13 +981,13 @@ static HRESULT GetUpdateDirectory(const wchar_t* installPath,
                                 HKEY_CURRENT_USER, regPath, hash);
       }
     }
-    nsresult rv = NS_OK;
+    bool success = true;
     if (!gotHash) {
       bool useCompatibilityMode = (whichDir == WhichUpdateDir::UserAppData);
-      rv = GetInstallHash(reinterpret_cast<const char16_t*>(installPath),
-                          vendor, hash, useCompatibilityMode);
+      success = GetInstallHash(reinterpret_cast<const char16_t*>(installPath),
+                               vendor, hash, useCompatibilityMode);
     }
-    if (NS_SUCCEEDED(rv)) {
+    if (success) {
       const wchar_t midPathDirName[] = NS_T(UPDATE_PATH_MID_DIR_NAME);
       size_t updatePathLen = basePath.Length() + 1  +
                              wcslen(midPathDirName) + 1  +

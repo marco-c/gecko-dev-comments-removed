@@ -1130,9 +1130,11 @@ static nsresult HashInstallPath(nsAString& aInstallPath, nsAString& aPathHash) {
   }
 
   mozilla::UniquePtr<NS_tchar[]> hash;
-  nsresult rv =
+  bool success =
       ::GetInstallHash(PromiseFlatString(aInstallPath).get(), vendor, hash);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (!success) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   

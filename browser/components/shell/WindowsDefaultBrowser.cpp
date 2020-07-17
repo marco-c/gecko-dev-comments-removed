@@ -14,8 +14,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
-#include "nsDebug.h"
-#include "nsError.h"
 
 
 
@@ -68,24 +66,22 @@ static bool SettingsAppBelievesConnected() {
 }
 
 
-nsresult GetInstallDirectory(mozilla::UniquePtr<wchar_t[]>& installPath) {
+bool GetInstallDirectory(mozilla::UniquePtr<wchar_t[]>& installPath) {
   installPath = mozilla::GetFullBinaryPath();
   
   
   if (wcslen(installPath.get()) >= MAX_PATH) {
-    return NS_ERROR_FAILURE;
+    return false;
   }
   PathRemoveFileSpecW(installPath.get());
-  return NS_OK;
+  return true;
 }
 
-nsresult GetAppRegName(mozilla::UniquePtr<wchar_t[]>& aAppRegName) {
+bool GetAppRegName(mozilla::UniquePtr<wchar_t[]>& aAppRegName) {
   mozilla::UniquePtr<wchar_t[]> appDirStr;
-  nsresult rv = GetInstallDirectory(appDirStr);
-  
-  
-  if (NS_FAILED(rv)) {
-    return rv;
+  bool success = GetInstallDirectory(appDirStr);
+  if (!success) {
+    return success;
   }
 
   uint64_t hash = CityHash64(reinterpret_cast<char*>(appDirStr.get()),
@@ -99,21 +95,21 @@ nsresult GetAppRegName(mozilla::UniquePtr<wchar_t[]>& aAppRegName) {
   _snwprintf_s(aAppRegName.get(), bufferSize, _TRUNCATE, format,
                APP_REG_NAME_BASE, hash);
 
-  return rv;
+  return success;
 }
 
-nsresult LaunchControlPanelDefaultPrograms() {
+bool LaunchControlPanelDefaultPrograms() {
   
   WCHAR controlEXEPath[MAX_PATH + 1] = {'\0'};
   if (!GetSystemDirectoryW(controlEXEPath, MAX_PATH)) {
-    return NS_ERROR_FAILURE;
+    return false;
   }
   LPCWSTR controlEXE = L"control.exe";
   if (wcslen(controlEXEPath) + wcslen(controlEXE) >= MAX_PATH) {
-    return NS_ERROR_FAILURE;
+    return false;
   }
   if (!PathAppendW(controlEXEPath, controlEXE)) {
-    return NS_ERROR_FAILURE;
+    return false;
   }
 
   const wchar_t* paramFormat =
@@ -134,15 +130,15 @@ nsresult LaunchControlPanelDefaultPrograms() {
   PROCESS_INFORMATION pi = {0};
   if (!CreateProcessW(controlEXEPath, params.get(), nullptr, nullptr, FALSE, 0,
                       nullptr, nullptr, &si, &pi)) {
-    return NS_ERROR_FAILURE;
+    return false;
   }
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
 
-  return NS_OK;
+  return true;
 }
 
-nsresult LaunchModernSettingsDialogDefaultApps() {
+bool LaunchModernSettingsDialogDefaultApps() {
   if (!mozilla::IsWindowsBuildOrLater(14965) && !IsWindowsLogonConnected() &&
       SettingsAppBelievesConnected()) {
     
@@ -172,7 +168,7 @@ nsresult LaunchModernSettingsDialogDefaultApps() {
           AO_NONE, &pid);
     }
     pActivator->Release();
-    return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+    return SUCCEEDED(hr);
   }
-  return NS_OK;
+  return true;
 }
