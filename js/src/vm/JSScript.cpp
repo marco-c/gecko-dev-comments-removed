@@ -2275,6 +2275,12 @@ bool ScriptSource::tryCompressOffThread(JSContext* cx) {
   
   
 
+  
+  
+  
+  MOZ_ASSERT(!cx->isHelperThreadContext());
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
+
   if (!hasUncompressedSource()) {
     
     return true;
@@ -2293,19 +2299,6 @@ bool ScriptSource::tryCompressOffThread(JSContext* cx) {
                               CanUseExtraThreads();
   if (length() < ScriptSource::MinimumCompressibleLength ||
       !canCompressOffThread) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!CurrentThreadCanAccessRuntime(cx->runtime())) {
     return true;
   }
 
