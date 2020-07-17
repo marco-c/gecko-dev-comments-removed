@@ -451,7 +451,7 @@ def target_tasks_push_desktop(full_task_graph, parameters, graph_config):
             return True
         
         
-        if is_geckoview(task, parameters):
+        if 'mozilla-esr' not in parameters['project'] and is_geckoview(task, parameters):
             return True
 
         if task.attributes.get('shipping_product') == parameters['release_product'] and \
