@@ -91,8 +91,8 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
           resolve();
         });
 
-        
-        imported.src = "../../scripts/talos-debug.js?dummy=" + Date.now(); 
+        imported.src =
+          "../../scripts/talos-debug.js?dummy=" + win.performance.now(); 
         document.head.appendChild(imported);
         return;
       }
@@ -123,12 +123,6 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
     return new Promise(function(resolve) {
       win.addEventListener("MozAfterPaint", () => resolve(), { once: true });
     });
-  }
-
-  function myNow() {
-    return win.performance && win.performance.now
-      ? win.performance.now()
-      : Date.now(); 
   }
 
   var isWindow = target.self === target;
@@ -191,13 +185,13 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
   function P_syncScrollTest() {
     return new Promise(function(resolve) {
       
-      var start = myNow();
+      var start = win.performance.now();
       var lastScrollPos = getPos();
       var lastScrollTime = start;
       var durations = [];
 
       function tick() {
-        var now = myNow();
+        var now = win.performance.now();
         var duration = now - lastScrollTime;
         lastScrollTime = now;
 

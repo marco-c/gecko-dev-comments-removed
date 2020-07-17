@@ -122,13 +122,13 @@ this.sessionrestore = class extends ExtensionAPI {
         ? StartupPerformance.latestRestoredTimeStamp
         : startup_info.sessionRestored;
       let duration = restoreTime - startup_info.process;
+      let win = BrowserWindowTracker.getTopWindow();
 
       
       dump("__start_report" + duration + "__end_report\n\n");
 
       
-      
-      dump("__startTimestamp" + Date.now() + "__endTimestamp\n\n");
+      dump("__startTimestamp" + win.performance.now() + "__endTimestamp\n\n");
     } catch (ex) {
       dump(`SessionRestoreTalosTest: error ${ex}\n`);
       dump(ex.stack);
