@@ -1281,6 +1281,9 @@ class CGHeaders(CGWrapper):
                     headerSet.add(typeDesc.headerFile)
             elif unrolled.isDictionary():
                 headerSet.add(self.getDeclarationFilename(unrolled.inner))
+                
+                if typeNeedsRooting(unrolled):
+                    headerSet.add("mozilla/dom/RootedDictionary.h")
             elif unrolled.isCallback():
                 headerSet.add(self.getDeclarationFilename(unrolled.callback))
             elif unrolled.isFloat() and not unrolled.isUnrestricted():
