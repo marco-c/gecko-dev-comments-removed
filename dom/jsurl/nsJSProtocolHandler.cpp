@@ -127,7 +127,8 @@ static nsIScriptGlobalObject* GetGlobalObject(nsIChannel* aChannel) {
   return global;
 }
 
-static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP) {
+static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP,
+                         const nsAString& aContentOfPseudoScript) {
   if (!aCSP) {
     return true;
   }
@@ -138,9 +139,9 @@ static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP) {
                                       true,           
                                       nullptr,        
                                       nullptr,        
-                                      EmptyString(),  
-                                      0,              
-                                      0,              
+                                      aContentOfPseudoScript,  
+                                      0,                       
+                                      0,                       
                                       &allowsInlineScript);
 
   return (NS_SUCCEEDED(rv) && allowsInlineScript);
@@ -201,7 +202,12 @@ nsresult nsJSThunk::EvaluateScript(
   
   
   nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCspToInherit();
-  if (!AllowedByCSP(csp)) {
+
+  nsAutoCString script(mScript);
+  
+  NS_UnescapeURL(script);
+
+  if (!AllowedByCSP(csp, NS_ConvertASCIItoUTF16(script))) {
     return NS_ERROR_DOM_RETVAL_UNDEFINED;
   }
 
@@ -245,7 +251,7 @@ nsresult nsJSThunk::EvaluateScript(
     
     if (targetDoc->NodePrincipal()->Subsumes(loadInfo->TriggeringPrincipal())) {
       nsCOMPtr<nsIContentSecurityPolicy> targetCSP = targetDoc->GetCsp();
-      if (!AllowedByCSP(targetCSP)) {
+      if (!AllowedByCSP(targetCSP, NS_ConvertASCIItoUTF16(script))) {
         return NS_ERROR_DOM_RETVAL_UNDEFINED;
       }
     }
@@ -259,10 +265,6 @@ nsresult nsJSThunk::EvaluateScript(
   
   nsCOMPtr<nsIScriptContext> scriptContext = global->GetContext();
   if (!scriptContext) return NS_ERROR_FAILURE;
-
-  nsAutoCString script(mScript);
-  
-  NS_UnescapeURL(script);
 
   
   
