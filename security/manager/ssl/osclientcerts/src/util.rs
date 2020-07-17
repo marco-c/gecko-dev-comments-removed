@@ -62,6 +62,31 @@ pub fn read_rsa_modulus(public_key: &[u8]) -> Result<Vec<u8>, ()> {
 
 
 
+
+
+
+
+
+
+
+
+#[cfg(target_os = "windows")]
+pub fn read_digest<'a>(digest_info: &'a [u8]) -> Result<&'a [u8], ()> {
+    let mut sequence = Sequence::new(digest_info)?;
+    let _ = sequence.read_sequence()?;
+    let digest = sequence.read_octet_string()?;
+    if !sequence.at_end() {
+        error!("read_digest: extra input");
+        return Err(());
+    }
+    Ok(digest)
+}
+
+
+
+
+
+
 #[cfg(target_os = "macos")]
 pub fn read_ec_sig_point<'a>(signature: &'a [u8]) -> Result<(&'a [u8], &'a [u8]), ()> {
     let mut sequence = Sequence::new(signature)?;
@@ -109,6 +134,9 @@ macro_rules! try_read_bytes {
 
 const INTEGER: u8 = 0x02;
 
+#[cfg(target_os = "windows")]
+const OCTET_STRING: u8 = 0x04;
+
 const SEQUENCE: u8 = 0x10;
 
 const CONSTRUCTED: u8 = 0x20;
@@ -149,6 +177,12 @@ impl<'a> Sequence<'a> {
         } else {
             Ok(bytes)
         }
+    }
+
+    #[cfg(target_os = "windows")]
+    fn read_octet_string(&mut self) -> Result<&'a [u8], ()> {
+        let (_, _, bytes) = self.contents.read_tlv(OCTET_STRING)?;
+        Ok(bytes)
     }
 
     fn read_sequence(&mut self) -> Result<Sequence<'a>, ()> {
@@ -362,6 +396,7 @@ mod tests {
     fn empty_input_fails() {
         let empty = Vec::new();
         assert!(read_rsa_modulus(&empty).is_err());
+        #[cfg(target_os = "macos")]
         assert!(read_ec_sig_point(&empty).is_err());
         assert!(read_encoded_serial_number(&empty).is_err());
     }
@@ -370,6 +405,7 @@ mod tests {
     fn empty_sequence_fails() {
         let empty = vec![SEQUENCE | CONSTRUCTED];
         assert!(read_rsa_modulus(&empty).is_err());
+        #[cfg(target_os = "macos")]
         assert!(read_ec_sig_point(&empty).is_err());
         assert!(read_encoded_serial_number(&empty).is_err());
     }
@@ -394,6 +430,33 @@ mod tests {
             &[
                 0x02, 0x14, 0x3f, 0xed, 0x7b, 0x43, 0x47, 0x8a, 0x53, 0x42, 0x5b, 0x0d, 0x50, 0xe1,
                 0x37, 0x88, 0x2a, 0x20, 0x3f, 0x31, 0x17, 0x20
+            ]
+        );
+    }
+
+    #[test]
+    #[cfg(target_os = "windows")]
+    fn test_read_digest() {
+        
+        
+        
+        
+        
+        let digest_info = [
+            0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x1, 0x65, 0x03, 0x04, 0x02,
+            0x01, 0x05, 0x00, 0x04, 0x20, 0x1a, 0x7f, 0xcd, 0xb9, 0xa5, 0xf6, 0x49, 0xf9, 0x54,
+            0x88, 0x5c, 0xfe, 0x14, 0x5f, 0x3e, 0x93, 0xf0, 0xd1, 0xfa, 0x72, 0xbe, 0x98, 0x0c,
+            0xc6, 0xec, 0x82, 0xc7, 0x0e, 0x14, 0x07, 0xc7, 0xd2,
+        ];
+        let result = read_digest(&digest_info);
+        assert!(result.is_ok());
+        let digest = result.unwrap();
+        assert_eq!(
+            digest,
+            &[
+                0x1a, 0x7f, 0xcd, 0xb9, 0xa5, 0xf6, 0x49, 0xf9, 0x54, 0x88, 0x5c, 0xfe, 0x14, 0x5f,
+                0x3e, 0x93, 0xf0, 0xd1, 0xfa, 0x72, 0xbe, 0x98, 0x0c, 0xc6, 0xec, 0x82, 0xc7, 0x0e,
+                0x14, 0x07, 0xc7, 0xd2
             ]
         );
     }
