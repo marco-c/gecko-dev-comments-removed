@@ -29,6 +29,7 @@
 #include "mozilla/EditorUtils.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Result.h"
 #include "mozilla/SelectionState.h"
 #include "nsAString.h"
 #include "nsCOMPtr.h"
@@ -246,10 +247,14 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
       const EditorDOMPoint& aLastInsertedPoint) const;
 
   
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertContents(
-      EditorDOMPoint& pointToInsert,
-      nsTArray<OwningNonNull<nsIContent>>& arrayOfTopMostChildContents,
-      const nsINode* fragmentAsNode, EditorDOMPoint& lastInsertedPoint);
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  InsertContents(
+      const EditorDOMPoint& aPointToInsert,
+      nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents,
+      const nsINode* aFragmentAsNode);
 
   
 
@@ -642,20 +647,19 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
   MOZ_ASSERT(pointToInsert.GetContainer()->GetChildAt_Deprecated(
                  pointToInsert.Offset()) == pointToInsert.GetChild());
 
-  EditorDOMPoint lastInsertedPoint;
-  rv = InsertContents(pointToInsert, arrayOfTopMostChildContents,
-                      fragmentAsNode, lastInsertedPoint);
-  if (NS_FAILED(rv)) {
+  const Result<EditorDOMPoint, nsresult> lastInsertedPoint = InsertContents(
+      pointToInsert, arrayOfTopMostChildContents, fragmentAsNode);
+  if (lastInsertedPoint.isErr()) {
     NS_WARNING("HTMLWithContextInserter::InsertContents() failed.");
-    return rv;
+    return lastInsertedPoint.inspectErr();
   }
 
-  if (!lastInsertedPoint.IsSet()) {
+  if (!lastInsertedPoint.inspect().IsSet()) {
     return NS_OK;
   }
 
   const EditorDOMPoint pointToPutCaret =
-      GetNewCaretPointAfterInsertingHTML(lastInsertedPoint);
+      GetNewCaretPointAfterInsertingHTML(lastInsertedPoint.inspect());
   
   rv = MOZ_KnownLive(mHTMLEditor).CollapseSelectionTo(pointToPutCaret);
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
@@ -686,10 +690,13 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
   return NS_OK;
 }
 
-nsresult HTMLEditor::HTMLWithContextInserter::InsertContents(
-    EditorDOMPoint& pointToInsert,
-    nsTArray<OwningNonNull<nsIContent>>& arrayOfTopMostChildContents,
-    const nsINode* fragmentAsNode, EditorDOMPoint& lastInsertedPoint) {
+Result<EditorDOMPoint, nsresult>
+HTMLEditor::HTMLWithContextInserter::InsertContents(
+    const EditorDOMPoint& aPointToInsert,
+    nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents,
+    const nsINode* aFragmentAsNode) {
+  EditorDOMPoint pointToInsert{aPointToInsert};
+
   
   RefPtr<Element> blockElement =
       pointToInsert.IsInContentNode()
@@ -697,11 +704,12 @@ nsresult HTMLEditor::HTMLWithContextInserter::InsertContents(
                 *pointToInsert.ContainerAsContent())
           : nullptr;
 
+  EditorDOMPoint lastInsertedPoint;
   nsCOMPtr<nsIContent> insertedContextParentContent;
-  for (OwningNonNull<nsIContent>& content : arrayOfTopMostChildContents) {
-    if (NS_WARN_IF(content == fragmentAsNode) ||
+  for (OwningNonNull<nsIContent>& content : aArrayOfTopMostChildContents) {
+    if (NS_WARN_IF(content == aFragmentAsNode) ||
         NS_WARN_IF(content->IsHTMLElement(nsGkAtoms::body))) {
-      return NS_ERROR_FAILURE;
+      return Err(NS_ERROR_FAILURE);
     }
 
     if (insertedContextParentContent) {
@@ -906,15 +914,14 @@ nsresult HTMLEditor::HTMLWithContextInserter::InsertContents(
           lastInsertedPoint.GetChild()->GetParentNode()) {
         NS_WARNING(
             "HTMLEditor::DoInsertHTMLWithContext() got lost insertion point");
-        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
       }
       pointToInsert = lastInsertedPoint.NextPoint();
       MOZ_ASSERT(pointToInsert.IsSet());
     }
   }
 
-
-  return NS_OK;
+  return lastInsertedPoint;
 }
 
 nsresult HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink(
