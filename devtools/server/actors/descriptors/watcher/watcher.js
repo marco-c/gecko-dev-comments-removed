@@ -88,6 +88,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       false
     );
 
+    const hasBrowserElement = !!this.browserElement;
+
     return {
       actor: this.actorID,
       traits: {
@@ -101,8 +103,11 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           
           
           
+          
           [Resources.TYPES.CONSOLE_MESSAGE]:
-            enableServerWatcher && !!this.browserElement,
+            enableServerWatcher && hasBrowserElement,
+          [Resources.TYPES.ERROR_MESSAGE]:
+            enableServerWatcher && hasBrowserElement,
           [Resources.TYPES.PLATFORM_MESSAGE]: enableServerWatcher,
         },
       },
