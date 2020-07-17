@@ -30,11 +30,6 @@ ChromeUtils.defineModuleGetter(
   "TalosParentProfiler",
   "resource://talos-powers/TalosParentProfiler.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "BrowserWindowTracker",
-  "resource:///modules/BrowserWindowTracker.jsm"
-);
 
 const REDUCE_MOTION_PREF = "ui.prefersReducedMotion";
 const MULTI_OPT_OUT_PREF = "dom.ipc.multiOptOut";
@@ -133,17 +128,12 @@ this.tabpaint = class extends ExtensionAPI {
 
 
   async openTabFromParent(gBrowser, target) {
-    let win = BrowserWindowTracker.getTopWindow();
     TalosParentProfiler.resume("tabpaint parent start");
 
-    gBrowser.selectedTab = gBrowser.addTab(
-      
-      `${target}?${win.performance.now() +
-        win.performance.timing.navigationStart}`,
-      {
-        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      }
-    );
+    
+    gBrowser.selectedTab = gBrowser.addTab(`${target}?${Date.now()}`, {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
 
     let { tab, delta } = await this.whenTabShown();
     TalosParentProfiler.pause("tabpaint parent end");

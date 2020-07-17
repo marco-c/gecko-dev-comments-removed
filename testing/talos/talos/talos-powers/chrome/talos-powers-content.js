@@ -166,7 +166,8 @@ addEventListener(
     let uniqueMessageId =
       "TalosPowers:ParentExec:" +
       content.document.documentURI +
-      content.window.performance.now() +
+      
+      Date.now() +
       Math.random();
 
     
