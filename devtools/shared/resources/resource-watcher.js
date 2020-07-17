@@ -9,14 +9,6 @@ const EventEmitter = require("devtools/shared/event-emitter");
 
 const { gDevTools } = require("devtools/client/framework/devtools");
 
-
-loader.lazyRequireGetter(
-  this,
-  "getAdHocFrontOrPrimitiveGrip",
-  "devtools/client/fronts/object",
-  true
-);
-
 class ResourceWatcher {
   
 
@@ -233,19 +225,20 @@ class ResourceWatcher {
 
 
   _onResourceAvailable(targetFront, resources) {
-    for (const resource of resources) {
+    for (let resource of resources) {
       
       if (!resource.targetFront) {
         resource.targetFront = targetFront;
       }
       const { resourceType } = resource;
-      if (resourceType == ResourceWatcher.TYPES.CONSOLE_MESSAGE) {
-        if (Array.isArray(resource.message.arguments)) {
-          
-          resource.message.arguments = resource.message.arguments.map(arg =>
-            getAdHocFrontOrPrimitiveGrip(arg, targetFront)
-          );
-        }
+
+      if (ResourceTransformers[resourceType]) {
+        resource = ResourceTransformers[resourceType]({
+          resource,
+          targetList: this.targetList,
+          targetFront,
+          isFissionEnabledOnContentToolbox: gDevTools.isFissionContentToolboxEnabled(),
+        });
       }
 
       this._availableListeners.emit(resourceType, {
@@ -455,4 +448,13 @@ const LegacyListeners = {
   },
   [ResourceWatcher.TYPES
     .ROOT_NODE]: require("devtools/shared/resources/legacy-listeners/root-node"),
+};
+
+
+
+
+
+const ResourceTransformers = {
+  [ResourceWatcher.TYPES
+    .CONSOLE_MESSAGE]: require("devtools/shared/resources/transformers/console-messages"),
 };
