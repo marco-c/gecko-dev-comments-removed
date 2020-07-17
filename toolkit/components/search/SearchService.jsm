@@ -689,7 +689,8 @@ SearchService.prototype = {
       };
     }
     let params = await this.getEngineParams(
-      extension,
+      extension.id,
+      extension.baseURI,
       extension.manifest,
       SearchUtils.DEFAULT_TAG
     );
@@ -2246,29 +2247,96 @@ SearchService.prototype = {
     return null;
   },
 
-  async addEngineWithDetails(
-    name,
-    details,
+  
+
+
+
+
+
+
+  async addPolicyEngine(details) {
+    await this._createAndAddEngine({
+      extensionID: "set-via-policy",
+      extensionBaseURI: "",
+      isAppProvided: false,
+      manifest: details,
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+  async addEngineWithDetails(name, details) {
+    let manifest = {
+      description: details.description,
+      iconURL: details.iconURL,
+      chrome_settings_overrides: {
+        search_provider: {
+          name,
+          encoding: `windows-1252`,
+          search_url: encodeURI(details.template),
+          keyword: details.alias,
+          search_url_get_params: details.searchGetParams,
+          search_url_post_params: details.postData || details.searchPostParams,
+          suggest_url: details.suggestURL,
+        },
+      },
+    };
+    return this._createAndAddEngine({
+      extensionID: details.extensionID ?? `${name}@test.engine`,
+      extensionBaseURI: "",
+      isAppProvided: false,
+      manifest,
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _createAndAddEngine({
+    extensionID,
+    extensionBaseURI,
+    isAppProvided,
+    manifest,
+    locale = SearchUtils.DEFAULT_TAG,
     initEngine = false,
-    isReload = false
-  ) {
-    if (!name) {
+    isReload = false,
+  }) {
+    if (!extensionID) {
       throw Components.Exception(
-        "Empty name passed to addEngineWithDetails!",
+        "Empty extensionID passed to _createAndAddEngine!",
         Cr.NS_ERROR_INVALID_ARG
       );
     }
-    let params = details;
-    if (!params.template) {
-      throw Components.Exception(
-        "Empty template passed to addEngineWithDetails!",
-        Cr.NS_ERROR_INVALID_ARG
-      );
-    }
-    logConsole.debug("addEngineWithDetails: Adding", name);
+    let searchProvider = manifest.chrome_settings_overrides.search_provider;
+    let name = searchProvider.name.trim();
+    logConsole.debug("_createAndAddEngine: Adding", name);
     let isCurrent = false;
 
-    let isAppProvided = !!params.isAppProvided;
     
     
     
@@ -2290,9 +2358,9 @@ SearchService.prototype = {
     }
     if (!isReload && existingEngine) {
       if (
-        params.extensionID &&
+        extensionID &&
         existingEngine._loadPath.startsWith(
-          `jar:[profile]/extensions/${params.extensionID}`
+          `jar:[profile]/extensions/${extensionID}`
         )
       ) {
         
@@ -2306,15 +2374,17 @@ SearchService.prototype = {
       }
     }
 
-    let loadPath = "[other]addEngineWithDetails";
-    if (params.extensionID) {
-      loadPath += ":" + params.extensionID;
-    }
+    let params = this.getEngineParams(
+      extensionID,
+      extensionBaseURI,
+      manifest,
+      locale
+    );
 
     let newEngine = new SearchEngine({
       name,
       isAppProvided,
-      loadPath,
+      loadPath: `[other]addEngineWithDetails:${extensionID}`,
     });
     newEngine._initFromMetadata(name, params);
     if (isReload && this._engines.has(newEngine.name)) {
@@ -2378,7 +2448,12 @@ SearchService.prototype = {
       if (locale != SearchUtils.DEFAULT_TAG) {
         manifest = await extension.getLocalizedManifest(locale);
       }
-      let params = this.getEngineParams(extension, manifest, locale);
+      let params = this.getEngineParams(
+        extension.id,
+        extension.baseURI,
+        manifest,
+        locale
+      );
       engine._updateFromMetadata(params);
     }
     return engines;
@@ -2444,23 +2519,19 @@ SearchService.prototype = {
     }
 
     let engineParams = this.getEngineParams(
-      policy.extension,
+      policy.extension.id,
+      policy.extension.baseURI,
       manifest,
       locale,
       params
     );
 
-    let loadPath = "[other]addEngineWithDetails";
-    if (engineParams.extensionID) {
-      loadPath += ":" + engineParams.extensionID;
-    }
-
     let engine = new SearchEngine({
       
       
       shortName: engineParams.shortName,
-      isAppProvided: engineParams.isAppProvided,
-      loadPath,
+      isAppProvided: policy.extension.isAppProvided,
+      loadPath: `[other]addEngineWithDetails:${policy.extension.id}`,
     });
     engine._initFromMetadata(engineParams.name, engineParams);
     if (isReload && this._engines.has(engine.name)) {
@@ -2527,12 +2598,30 @@ SearchService.prototype = {
         return engine;
       }
     }
-    let params = this.getEngineParams(extension, manifest, locale);
-    return this.addEngineWithDetails(params.name, params, initEngine, isReload);
+
+    return this._createAndAddEngine({
+      extensionID: extension.id,
+      extensionBaseURI: extension.baseURI,
+      isAppProvided: extension.isAppProvided,
+      manifest,
+      locale,
+      initEngine,
+      isReload,
+    });
   },
 
-  getEngineParams(extension, manifest, locale, engineParams = {}) {
+  getEngineParams(
+    extensionID,
+    extensionBaseURI,
+    manifest,
+    locale,
+    engineParams = {}
+  ) {
     let { IconDetails } = ExtensionParent;
+
+    let searchProvider = manifest.chrome_settings_overrides.search_provider;
+
+    let iconURL = manifest.iconURL || searchProvider.favicon_url;
 
     
     let icons = manifest.icons;
@@ -2542,14 +2631,16 @@ SearchService.prototype = {
         return {
           width: icon[0],
           height: icon[0],
-          url: extension.baseURI.resolve(icon[1]),
+          url: extensionBaseURI.resolve(icon[1]),
         };
       });
     }
-    let preferredIconUrl =
-      icons &&
-      extension.baseURI.resolve(IconDetails.getPreferredIcon(icons).icon);
-    let searchProvider = manifest.chrome_settings_overrides.search_provider;
+
+    if (!iconURL) {
+      iconURL =
+        icons &&
+        extensionBaseURI.resolve(IconDetails.getPreferredIcon(icons).icon);
+    }
 
     
     
@@ -2560,7 +2651,7 @@ SearchService.prototype = {
       });
     }
 
-    let shortName = extension.id.split("@")[0];
+    let shortName = extensionID.split("@")[0];
     if (locale != SearchUtils.DEFAULT_TAG) {
       shortName += "-" + locale;
     }
@@ -2600,12 +2691,11 @@ SearchService.prototype = {
       searchGetParams: searchUrlGetParams,
       searchPostParams: searchUrlPostParams,
       regionParams: engineParams.regionParams,
-      iconURL: searchProvider.favicon_url || preferredIconUrl,
+      iconURL,
       icons: iconList,
       alias: searchProvider.keyword,
-      extensionID: extension.id,
+      extensionID,
       locale,
-      isAppProvided: extension.isAppProvided,
       orderHint: engineParams.orderHint,
       
       suggestURL: searchProvider.suggest_url,
