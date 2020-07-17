@@ -8,10 +8,9 @@ import platform
 from mozlint import result
 from mozlint.pathutils import expand_exclusions
 
-results = []
-
 
 def lint(paths, config, fix=None, **lintargs):
+    results = []
 
     if platform.system() == "Windows":
         
@@ -21,13 +20,14 @@ def lint(paths, config, fix=None, **lintargs):
     files = list(expand_exclusions(paths, config, lintargs["root"]))
     for f in files:
         if os.access(f, os.X_OK):
-            with open(f, "r+") as content:
-                
-                line = content.readline()
-                if line.startswith("#!"):
+            if config.get("allow-shebang"):
+                with open(f, "r+") as content:
                     
-                    
-                    continue
+                    line = content.readline()
+                    if line.startswith("#!"):
+                        
+                        
+                        continue
 
             if fix:
                 
