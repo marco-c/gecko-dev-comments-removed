@@ -35,3 +35,33 @@ exports.listenOnce = function listenOnce(element, event, useCapture) {
     element.addEventListener(event, onEvent, useCapture);
   });
 };
+
+
+const SWALLOWED_RET = Symbol("swallowed");
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.safeAsyncMethod = function(asyncFn, shouldSwallow) {
+  return async function(...args) {
+    try {
+      const ret = await asyncFn(...args);
+      return ret;
+    } catch (e) {
+      if (shouldSwallow()) {
+        console.warn("Async method failed in safeAsyncMethod", e);
+        return SWALLOWED_RET;
+      }
+      throw e;
+    }
+  };
+};
