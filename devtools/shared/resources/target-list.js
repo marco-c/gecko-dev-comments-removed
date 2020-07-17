@@ -33,7 +33,7 @@ loader.lazyRequireGetter(
   true
 );
 
-class TargetList extends EventEmitter {
+class TargetList {
   
 
 
@@ -53,8 +53,6 @@ class TargetList extends EventEmitter {
 
 
   constructor(rootFront, targetFront) {
-    super();
-
     this.rootFront = rootFront;
 
     
@@ -508,8 +506,6 @@ class TargetList extends EventEmitter {
 
     
     await this._onTargetAvailable(newTarget, true);
-
-    this.emit("switched-target", newTarget);
   }
 
   isTargetRegistered(targetFront) {

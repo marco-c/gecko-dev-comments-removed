@@ -31,7 +31,7 @@ add_task(async function() {
   const onPropertiesFetched = waitForDispatch(panel, "FETCH_PROPERTIES");
   
   
-  const onTargetSwitched = toolbox.targetList.once("switched-target");
+  const onTargetSwitched = toolbox.once("switched-target");
 
   await toolbox.target.navigateTo({ url: CONTENT_PROCESS_URI });
 

@@ -727,6 +727,8 @@ Toolbox.prototype = {
       
       await this._listFrames();
       await this.initPerformance();
+
+      this.emit("switched-target", targetFront);
     }
   },
 
