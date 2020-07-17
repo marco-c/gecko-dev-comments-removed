@@ -143,29 +143,27 @@ static bool IsVisibleNode(const nsINode* aNode) {
   return frame->StyleVisibility()->IsVisible();
 }
 
-static bool IsTextFormControl(nsIContent& aContent) {
-  if (!aContent.IsNodeOfType(nsINode::eHTML_FORM_CONTROL)) {
-    return false;
-  }
-
-  nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(&aContent);
-  return formControl->IsTextControl(true);
-}
-
 static bool ShouldFindAnonymousContent(const nsIContent& aContent) {
   MOZ_ASSERT(aContent.IsInNativeAnonymousSubtree());
 
   nsIContent& parent = AnonymousSubtreeRootParent(aContent);
-  if (IsTextFormControl(parent)) {
+  if (nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(&parent)) {
+    if (formControl->IsTextControl( true)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      return aContent.IsEditable();
+    }
+
     
-    
-    
-    
-    
-    
-    
-    
-    return aContent.IsEditable();
+    if (formControl->ControlType() == NS_FORM_INPUT_PASSWORD) {
+      return false;
+    }
   }
 
   return true;
