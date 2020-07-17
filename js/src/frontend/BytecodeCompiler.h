@@ -164,9 +164,6 @@ MOZ_MUST_USE JSFunction* CompileStandaloneAsyncGenerator(
     const mozilla::Maybe<uint32_t>& parameterListEnd,
     frontend::FunctionSyntaxKind syntaxKind);
 
-ScriptSourceObject* CreateScriptSourceObject(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options);
-
 
 
 
