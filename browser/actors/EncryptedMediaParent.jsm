@@ -105,8 +105,18 @@ class EncryptedMediaParent extends JSWindowActorParent {
       return;
     }
     let { status, keySystem } = parsedData;
+
     
-    if (!this.isUiEnabled() || !this.isKeySystemVisible(keySystem)) {
+    
+    if (!this.isKeySystemVisible(keySystem)) {
+      return;
+    }
+    if (status == "cdm-not-installed") {
+      Services.obs.notifyObservers(browser, "EMEVideo:CDMMissing");
+    }
+
+    
+    if (!this.isUiEnabled()) {
       return;
     }
 
