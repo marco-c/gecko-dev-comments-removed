@@ -32,10 +32,10 @@ add_task(async function test_swap_protocol() {
   ]);
 
   
+  
   let allMatches = [
     { uri: uri3, title: "title" },
     { uri: uri4, title: "title" },
-    { uri: uri5, title: "title" },
     { uri: uri6, title: "title" },
   ];
 
