@@ -108,15 +108,6 @@ class PrintingChild extends ActorChild {
         );
         break;
       }
-
-      case "Printing:Print": {
-        this.print(
-          Services.wm.getOuterWindowWithId(data.windowID),
-          data.simplifiedMode,
-          data.lastUsedPrinterName
-        );
-        break;
-      }
     }
   }
 
@@ -377,37 +368,6 @@ class PrintingChild extends ActorChild {
   exitPrintPreview(glo) {
     this.printPreviewInitializingInfo = null;
     this.docShell.initOrReusePrintPreviewViewer().exitPrintPreview();
-  }
-
-  print(contentWindow, simplifiedMode, lastUsedPrinterName) {
-    let printSettings = this.getPrintSettings(lastUsedPrinterName);
-    
-    
-    printSettings.title = contentWindow.document.title;
-
-    
-    
-    
-    if (printSettings && simplifiedMode) {
-      printSettings.docURL = contentWindow.document.baseURI;
-    }
-
-    try {
-      contentWindow
-        .getInterface(Ci.nsIWebBrowserPrint)
-        .print(printSettings, null);
-    } catch (e) {
-      
-      
-      if (e.result != Cr.NS_ERROR_ABORT) {
-        Cu.reportError(`In Printing:Print:Done handler, got unexpected rv
-                        ${e.result}.`);
-        this.mm.sendAsyncMessage("Printing:Error", {
-          isPrinting: true,
-          nsresult: e.result,
-        });
-      }
-    }
   }
 
   updatePageCount() {

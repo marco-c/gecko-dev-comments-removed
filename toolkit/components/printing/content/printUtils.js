@@ -58,10 +58,6 @@
 
 
 
-
-
-
-
 var gFocusedElement = null;
 
 var PrintUtils = {
@@ -130,11 +126,20 @@ var PrintUtils = {
       this._logKeyedTelemetry("PRINT_DIALOG_OPENED_COUNT", "FROM_PAGE");
     }
 
-    topBrowser.messageManager.sendAsyncMessage("Printing:Print", {
-      windowID,
-      simplifiedMode: this._shouldSimplify,
-      lastUsedPrinterName: this._getLastUsedPrinterName(),
-    });
+    let printSettings = this.getPrintSettings();
+
+    
+    
+    printSettings.title = this._originalTitle;
+
+    if (this._shouldSimplify) {
+      
+      
+      
+      printSettings.docURL = this._originalURL;
+    }
+
+    topBrowser.print(windowID, printSettings);
 
     if (printPreviewIsOpen) {
       if (this._shouldSimplify) {
@@ -329,6 +334,12 @@ var PrintUtils = {
     );
 
     Services.prompt.alert(window, title, msg);
+
+    Services.telemetry.keyedScalarAdd(
+      "printing.error",
+      this._getErrorCodeForNSResult(nsresult),
+      1
+    );
   },
 
   receiveMessage(aMessage) {
@@ -336,11 +347,6 @@ var PrintUtils = {
       this._displayPrintingError(
         aMessage.data.nsresult,
         aMessage.data.isPrinting
-      );
-      Services.telemetry.keyedScalarAdd(
-        "printing.error",
-        this._getErrorCodeForNSResult(aMessage.data.nsresult),
-        1
       );
       return undefined;
     }
