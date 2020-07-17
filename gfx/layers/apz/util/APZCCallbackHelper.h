@@ -190,6 +190,7 @@ class APZCCallbackHelper {
 
 
   static void NotifyPinchGesture(PinchGestureInput::PinchGestureType aType,
+                                 const LayoutDevicePoint& aFocusPoint,
                                  LayoutDeviceCoord aSpanChange,
                                  Modifiers aModifiers,
                                  const nsCOMPtr<nsIWidget>& aWidget);

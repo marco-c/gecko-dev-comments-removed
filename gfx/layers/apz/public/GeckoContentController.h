@@ -79,8 +79,10 @@ class GeckoContentController {
 
 
 
+
   virtual void NotifyPinchGesture(PinchGestureInput::PinchGestureType aType,
                                   const ScrollableLayerGuid& aGuid,
+                                  const LayoutDevicePoint& aFocusPoint,
                                   LayoutDeviceCoord aSpanChange,
                                   Modifiers aModifiers) = 0;
 
