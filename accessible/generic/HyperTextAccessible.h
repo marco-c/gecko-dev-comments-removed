@@ -9,6 +9,7 @@
 #include "AccessibleWrap.h"
 #include "nsIAccessibleText.h"
 #include "nsIAccessibleTypes.h"
+#include "nsIFrame.h"  
 #include "nsDirection.h"
 #include "WordMovementType.h"
 
