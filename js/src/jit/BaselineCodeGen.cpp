@@ -538,8 +538,10 @@ bool BaselineCompilerCodeGen::emitNextIC() {
   
   
   const ICEntry* entry;
+  uint32_t entryIndex;
   do {
     entry = &script->jitScript()->icEntry(handler.icEntryIndex());
+    entryIndex = handler.icEntryIndex();
     handler.moveToNextICEntry();
   } while (entry->pcOffset() < pcOffset);
 
@@ -547,8 +549,14 @@ bool BaselineCompilerCodeGen::emitNextIC() {
   MOZ_ASSERT_IF(!entry->isForPrologue(), BytecodeOpHasIC(JSOp(*handler.pc())));
 
   
-  masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
-               ICStubReg);
+  if (JitOptions.warpBuilder) {
+    masm.loadPtr(frame.addressOfICScript(), ICStubReg);
+    size_t firstStubOffset = ICScript::offsetOfFirstStub(entryIndex);
+    masm.loadPtr(Address(ICStubReg, firstStubOffset), ICStubReg);
+  } else {
+    masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
+                 ICStubReg);
+  }
 
   CodeOffset returnOffset;
   EmitCallIC(masm, &returnOffset);
