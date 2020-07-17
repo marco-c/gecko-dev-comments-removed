@@ -341,6 +341,8 @@ class FunctionBox : public SharedContext {
   uint16_t length = 0;        
   uint16_t nargs_ = 0;        
 
+  TopLevelFunction isTopLevel_ = TopLevelFunction::No;
+
   
   
   bool emitBytecode : 1;
@@ -383,7 +385,8 @@ class FunctionBox : public SharedContext {
   FunctionBox(JSContext* cx, FunctionBox* traceListHead, SourceExtent extent,
               CompilationInfo& compilationInfo, Directives directives,
               GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
-              JSAtom* explicitName, FunctionFlags flags, size_t index);
+              JSAtom* explicitName, FunctionFlags flags, size_t index,
+              TopLevelFunction isTopLevel);
 
   JSFunction* createFunction(JSContext* cx);
 

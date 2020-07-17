@@ -247,7 +247,7 @@ template <class ParseHandler>
 FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
     FunctionNodeType funNode, JSFunction* fun, uint32_t toStringStart,
     Directives inheritedDirectives, GeneratorKind generatorKind,
-    FunctionAsyncKind asyncKind) {
+    FunctionAsyncKind asyncKind, TopLevelFunction isTopLevel) {
   MOZ_ASSERT(funNode);
   MOZ_ASSERT(fun);
 
@@ -255,6 +255,8 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
   if (!this->getCompilationInfo().functions.emplaceBack(fun)) {
     return nullptr;
   }
+  
+  
   if (!this->getCompilationInfo().funcData.emplaceBack(cx_)) {
     return nullptr;
   }
@@ -273,7 +275,7 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
   FunctionBox* funbox = alloc_.new_<FunctionBox>(
       cx_, compilationInfo_.traceListHead, extent, this->getCompilationInfo(),
       inheritedDirectives, generatorKind, asyncKind, fun->displayAtom(),
-      fun->flags(), index);
+      fun->flags(), index, isTopLevel);
   if (!funbox) {
     ReportOutOfMemory(cx_);
     return nullptr;
@@ -289,7 +291,8 @@ template <class ParseHandler>
 FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
     FunctionNodeType funNode, HandleAtom explicitName, FunctionFlags flags,
     uint32_t toStringStart, Directives inheritedDirectives,
-    GeneratorKind generatorKind, FunctionAsyncKind asyncKind) {
+    GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
+    TopLevelFunction isTopLevel) {
   MOZ_ASSERT(funNode);
 
   CompilationInfo& compilationInfo = this->getCompilationInfo();
@@ -298,6 +301,8 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
   if (!compilationInfo.functions.emplaceBack(nullptr)) {
     return nullptr;
   }
+  
+  
   if (!compilationInfo.funcData.emplaceBack(cx_)) {
     return nullptr;
   }
@@ -315,8 +320,8 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
 
   FunctionBox* funbox = alloc_.new_<FunctionBox>(
       cx_, compilationInfo.traceListHead, extent, compilationInfo,
-      inheritedDirectives, generatorKind, asyncKind, explicitName, flags,
-      index);
+      inheritedDirectives, generatorKind, asyncKind, explicitName, flags, index,
+      isTopLevel);
 
   if (!funbox) {
     ReportOutOfMemory(cx_);
@@ -2235,9 +2240,9 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
   bool isSelfHosting = options().selfHostingMode;
   FunctionFlags flags =
       InitialFunctionFlags(syntaxKind, generatorKind, asyncKind, isSelfHosting);
-  FunctionBox* funbox =
-      newFunctionBox(funNode, explicitName, flags,  0,
-                     inheritedDirectives, generatorKind, asyncKind);
+  FunctionBox* funbox = newFunctionBox(
+      funNode, explicitName, flags,  0,
+      inheritedDirectives, generatorKind, asyncKind, TopLevelFunction::Yes);
   if (!funbox) {
     return null();
   }
@@ -2827,9 +2832,9 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
   
 
   RootedFunction fun(cx_, handler_.nextLazyInnerFunction());
-  FunctionBox* funbox = newFunctionBox(funNode, fun, toStringStart,
-                                       Directives( false),
-                                       fun->generatorKind(), fun->asyncKind());
+  FunctionBox* funbox = newFunctionBox(
+      funNode, fun, toStringStart, Directives( false),
+      fun->generatorKind(), fun->asyncKind(), TopLevelFunction::No);
   if (!funbox) {
     return false;
   }
@@ -3096,9 +3101,9 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
     
     
     
-    FunctionBox* funbox =
-        newFunctionBox(*funNode, explicitName, flags, toStringStart,
-                       inheritedDirectives, generatorKind, asyncKind);
+    FunctionBox* funbox = newFunctionBox(
+        *funNode, explicitName, flags, toStringStart, inheritedDirectives,
+        generatorKind, asyncKind, TopLevelFunction::No);
     if (!funbox) {
       return false;
     }
@@ -3230,9 +3235,9 @@ GeneralParser<ParseHandler, Unit>::innerFunction(
   
   
 
-  FunctionBox* funbox =
-      newFunctionBox(funNode, explicitName, flags, toStringStart,
-                     inheritedDirectives, generatorKind, asyncKind);
+  FunctionBox* funbox = newFunctionBox(
+      funNode, explicitName, flags, toStringStart, inheritedDirectives,
+      generatorKind, asyncKind, TopLevelFunction::No);
   if (!funbox) {
     return null();
   }
@@ -3308,8 +3313,9 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
   }
 
   Directives directives(strict);
-  FunctionBox* funbox = newFunctionBox(funNode, fun, toStringStart, directives,
-                                       generatorKind, asyncKind);
+  FunctionBox* funbox =
+      newFunctionBox(funNode, fun, toStringStart, directives, generatorKind,
+                     asyncKind, TopLevelFunction::Yes);
   if (!funbox) {
     return null();
   }
@@ -7671,9 +7677,10 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
 
   
   Directives directives(true);
-  FunctionBox* funbox = newFunctionBox(
-      funNode, className, flags, classNameOffset, directives,
-      GeneratorKind::NotGenerator, FunctionAsyncKind::SyncFunction);
+  FunctionBox* funbox =
+      newFunctionBox(funNode, className, flags, classNameOffset, directives,
+                     GeneratorKind::NotGenerator,
+                     FunctionAsyncKind::SyncFunction, TopLevelFunction::No);
   if (!funbox) {
     return null();
   }
@@ -7843,7 +7850,7 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
   Directives directives(true);
   FunctionBox* funbox =
       newFunctionBox(funNode, nullptr, flags, firstTokenPos.begin, directives,
-                     generatorKind, asyncKind);
+                     generatorKind, asyncKind, TopLevelFunction::No);
   if (!funbox) {
     return null();
   }

@@ -699,16 +699,10 @@ bool FunctionScriptEmitter::emitEndBody() {
   return true;
 }
 
-bool FunctionScriptEmitter::intoStencil(TopLevelFunction isTopLevel) {
+bool FunctionScriptEmitter::intoStencil() {
   MOZ_ASSERT(state_ == State::EndBody);
 
-  
-  
-  ScriptStencil* stencilPtr = isTopLevel == TopLevelFunction::Yes
-                                  ? bce_->compilationInfo.topLevel.address()
-                                  : funbox_->functionStencil().address();
-
-  if (!bce_->intoScriptStencil(stencilPtr)) {
+  if (!bce_->intoScriptStencil(funbox_->functionStencil().address())) {
     return false;
   }
 

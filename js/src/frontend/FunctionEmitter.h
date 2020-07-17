@@ -249,7 +249,7 @@ class MOZ_STACK_CLASS FunctionScriptEmitter {
   MOZ_MUST_USE bool emitEndBody();
 
   
-  MOZ_MUST_USE bool intoStencil(TopLevelFunction isTopLevel);
+  MOZ_MUST_USE bool intoStencil();
 
  private:
   MOZ_MUST_USE bool emitExtraBodyVarScope();
