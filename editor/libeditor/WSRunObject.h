@@ -747,6 +747,12 @@ class MOZ_STACK_CLASS WSRunScanner {
     template <typename EditorDOMRangeType>
     EditorDOMRangeType GetInvisibleTrailingWhiteSpaceRange() const;
 
+    
+
+
+
+    Maybe<WSFragment> CreateWSFragmentForVisibleAndMiddleOfLine() const;
+
    private:
     BoundaryData mStart;
     BoundaryData mEnd;
