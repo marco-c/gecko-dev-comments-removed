@@ -18,18 +18,6 @@ using namespace Elf;
 
 
 
-
-
-#ifdef ANDROID
-extern "C" {
-void report_mapping(char* name, void* base, uint32_t len, uint32_t offset);
-void delete_mapping(const char* name);
-}
-#else
-#  define report_mapping(...)
-#  define delete_mapping(...)
-#endif
-
 const Ehdr* Ehdr::validate(const void* buf) {
   if (!buf || buf == MAP_FAILED) return nullptr;
 
@@ -207,9 +195,6 @@ already_AddRefed<LibHandle> CustomElf::Load(Mappable* mappable,
   
   mappable->finalize();
 
-  report_mapping(const_cast<char*>(elf->GetName()), elf->base,
-                 (max_vaddr + PAGE_SIZE - 1) & PAGE_MASK, 0);
-
   elf->l_addr = elf->base;
   elf->l_name = elf->GetPath();
   elf->l_ld = elf->GetPtr<Dyn>(dyn->p_vaddr);
@@ -257,7 +242,6 @@ CustomElf::~CustomElf() {
 
   ElfLoader::__wrap_cxa_finalize(this);
   ElfLoader::Singleton.Forget(this);
-  delete_mapping(GetName());
 }
 
 void* CustomElf::GetSymbolPtrInDeps(const char* symbol) const {
