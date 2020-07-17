@@ -2419,9 +2419,8 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   auto* parentFrame = GetParent();
   const bool isGridItem = IsGridItem();
   const bool isFlexItem =
-      parentFrame && parentFrame->IsFlexContainerFrame() &&
-      !parentFrame->HasAnyStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_BOX) &&
-      !HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
+      IsFlexItem() &&
+      !parentFrame->HasAnyStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_BOX);
   
   
   

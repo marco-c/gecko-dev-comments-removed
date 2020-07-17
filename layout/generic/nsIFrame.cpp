@@ -5722,8 +5722,7 @@ void nsIFrame::MarkIntrinsicISizesDirty() {
 
   
   
-  auto* parentFrame = GetParent();
-  if (parentFrame && parentFrame->IsFlexContainerFrame()) {
+  if (IsFlexItem()) {
     nsFlexContainerFrame::MarkCachedFlexMeasurementsDirty(this);
   }
 
@@ -6074,10 +6073,9 @@ LogicalSize nsIFrame::ComputeSize(gfxContext* aRenderingContext,
       alignCB = grandParent;
     }
   }
-  bool isFlexItem =
-      parentFrame && parentFrame->IsFlexContainerFrame() &&
-      !parentFrame->HasAnyStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_BOX) &&
-      !HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
+  const bool isFlexItem =
+      IsFlexItem() &&
+      !parentFrame->HasAnyStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_BOX);
   
   
   
