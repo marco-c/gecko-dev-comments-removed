@@ -16,18 +16,11 @@ async function spawnNewAndTest(recur, pids) {
       if (recur) {
         await spawnNewAndTest(recur - 1, pids);
       } else {
-        let observer = () => {
-          ok(false, "shouldn't have created a new process");
-        };
-        Services.obs.addObserver(observer, CONTENT_CREATED);
-
         await BrowserTestUtils.withNewTab(
           { gBrowser, url: "about:blank" },
-          function() {
-            
-            
-            
-            Services.obs.removeObserver(observer, CONTENT_CREATED);
+          function(lastBrowser) {
+            let lastPid = lastBrowser.frameLoader.remoteTab.osPid;
+            ok(pids.has(lastPid), "final tab cannot be in its own process");
           }
         );
       }
