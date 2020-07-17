@@ -772,7 +772,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
         
         RootedId id(cx);
         if (item.isNumber() || item.isString()) {
-          if (!ValueToId<CanGC>(cx, item, &id)) {
+          if (!PrimitiveValueToId<CanGC>(cx, item, &id)) {
             return false;
           }
         } else {

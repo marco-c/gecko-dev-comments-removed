@@ -223,7 +223,8 @@ inline bool HasOwnProperty(JSContext* cx, HandleValue val, HandleValue idValue,
   
   
   jsid id;
-  if (val.isObject() && ValueToId<NoGC>(cx, idValue, &id)) {
+  if (val.isObject() && idValue.isPrimitive() &&
+      PrimitiveValueToId<NoGC>(cx, idValue, &id)) {
     JSObject* obj = &val.toObject();
     PropertyResult prop;
     if (obj->isNative() && NativeLookupOwnProperty<NoGC>(
