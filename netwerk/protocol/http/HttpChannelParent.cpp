@@ -829,6 +829,10 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvCancel(
       Unused << mChannel->Resume();
       mSuspendedForFlowControl = false;
     }
+  } else if (!mIPCClosed) {
+    
+    
+    Unused << SendFailedAsyncOpen(status);
   }
 
   
