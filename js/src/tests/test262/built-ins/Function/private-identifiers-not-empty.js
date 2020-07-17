@@ -13,7 +13,6 @@
 
 
 
-
 assert.throws(SyntaxError, function() {
   let o = {};
   new Function("o.#f");

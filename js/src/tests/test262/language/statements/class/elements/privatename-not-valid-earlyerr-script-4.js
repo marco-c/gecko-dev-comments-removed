@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+class C {
+  f() {
+    this.#x;
+    class D extends C {
+      #x;
+    }
+  }
+}

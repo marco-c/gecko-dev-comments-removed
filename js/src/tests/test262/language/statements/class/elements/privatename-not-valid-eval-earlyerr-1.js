@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var executed = false;
+
+class C {
+  constructor() {
+    eval("executed = true; this.#x;");
+  }
+}
+
+assert.throws(SyntaxError, function() {
+  new C();
+});
+
+assert.sameValue(executed, false);
+
+reportCompare(0, 0);

@@ -20,7 +20,6 @@
 
 
 
-
 var executed = false;
 class A {}
 class C extends A {

@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+class C {
+  #x;
+
+  f() {
+    return this;
+  }
+
+  m() {
+    this.f().# x;
+  }
+}

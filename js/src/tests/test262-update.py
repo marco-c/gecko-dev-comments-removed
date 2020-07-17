@@ -21,8 +21,6 @@ from operator import itemgetter
 
 UNSUPPORTED_FEATURES = set([
     "tail-call-optimization",
-    "class-fields-private",
-    "class-static-fields-private",
     "class-methods-private",
     "class-static-methods-private",
     "regexp-match-indices",

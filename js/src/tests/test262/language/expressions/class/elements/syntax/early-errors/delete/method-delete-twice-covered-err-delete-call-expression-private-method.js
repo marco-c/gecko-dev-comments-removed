@@ -1,0 +1,49 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+var C = class {
+  #x;
+
+  x() {
+    var g = this.f;
+    delete ((g().#m));
+  }
+
+  f() {
+  return this;
+  }
+}

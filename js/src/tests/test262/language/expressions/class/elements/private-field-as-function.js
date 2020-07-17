@@ -21,7 +21,6 @@
 
 
 
-
 var C = class {
   #m = function () { return 'test262'; };
 

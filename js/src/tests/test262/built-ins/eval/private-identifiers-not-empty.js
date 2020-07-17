@@ -17,7 +17,6 @@
 
 
 
-
 assert.throws(SyntaxError, function() {
   let o = {};
   eval("o.#f");

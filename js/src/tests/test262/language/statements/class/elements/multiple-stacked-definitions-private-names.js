@@ -24,7 +24,6 @@
 
 
 
-
 class C {
   #x; #y
   foo = "foobar"

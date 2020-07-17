@@ -22,7 +22,6 @@
 
 
 
-
 class C {
   #m = 'test262';
   m() { return 42; }

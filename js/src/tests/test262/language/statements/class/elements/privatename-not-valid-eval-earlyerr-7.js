@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var executed = false;
+var obj = {};
+
+assert.throws(SyntaxError, function() {
+  eval("executed = true; obj.#x;");
+});
+
+assert.sameValue(executed, false);
+
+reportCompare(0, 0);

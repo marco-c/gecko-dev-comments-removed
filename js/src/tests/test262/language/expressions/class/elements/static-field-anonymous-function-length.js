@@ -47,7 +47,6 @@
 
 
 
-
 var C = class {
   static #field = (a, b) => undefined;
   static field = function() {};

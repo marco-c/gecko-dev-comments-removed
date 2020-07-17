@@ -24,7 +24,6 @@
 
 
 
-
 var C = class {
   #x; #y
   foo = "foobar"

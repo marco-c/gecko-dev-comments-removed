@@ -22,7 +22,6 @@
 
 
 
-
 var C = class {
   static *m() { return 42; } #m = 'test262';;
   method() {

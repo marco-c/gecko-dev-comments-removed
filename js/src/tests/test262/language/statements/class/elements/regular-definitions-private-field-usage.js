@@ -21,7 +21,6 @@
 
 
 
-
 class C {
   #m = 'test262';
   method() {
