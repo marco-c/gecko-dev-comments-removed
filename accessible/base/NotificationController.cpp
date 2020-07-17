@@ -111,15 +111,24 @@ EventTree* NotificationController::QueueMutation(Accessible* aContainer) {
 }
 
 bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
-  
-  
-  
-  if (aEvent->GetEventType() == nsIAccessibleEvent::EVENT_HIDE &&
-      aEvent->GetAccessible()->ShowEventTarget()) {
-    AccTreeMutationEvent* showEvent =
-        mMutationMap.GetEvent(aEvent->GetAccessible(), EventMap::ShowEvent);
-    DropMutationEvent(showEvent);
-    return false;
+  if (aEvent->GetEventType() == nsIAccessibleEvent::EVENT_HIDE) {
+    
+    
+    
+    if (aEvent->GetAccessible()->ShowEventTarget()) {
+      AccTreeMutationEvent* showEvent =
+          mMutationMap.GetEvent(aEvent->GetAccessible(), EventMap::ShowEvent);
+      DropMutationEvent(showEvent);
+      return false;
+    }
+
+    
+    
+    
+    
+    if (aEvent->GetAccessible()->HideEventTarget()) {
+      return false;
+    }
   }
 
   AccMutationEvent* mutEvent = downcast_accEvent(aEvent);
