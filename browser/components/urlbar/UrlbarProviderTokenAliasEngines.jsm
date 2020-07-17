@@ -27,8 +27,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 class ProviderTokenAliasEngines extends UrlbarProvider {
   constructor() {
     super();
-    
-    this.queries = new Map();
     this._engines = [];
   }
 
@@ -61,6 +59,7 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
 
   async isActive(queryContext) {
+    let instance = this.queryInstance;
     
     
     if (
@@ -72,6 +71,11 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
     this._engines = await UrlbarSearchUtils.tokenAliasEngines();
     if (!this._engines.length) {
+      return false;
+    }
+
+    
+    if (instance != this.queryInstance) {
       return false;
     }
 
@@ -98,17 +102,7 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
 
   async startQuery(queryContext, addCallback) {
-    let instance = {};
-    this.queries.set(queryContext, instance);
-
-    
-    
-    
-    if (
-      !this._engines ||
-      !this._engines.length ||
-      !this.queries.has(queryContext)
-    ) {
+    if (!this._engines || !this._engines.length) {
       return;
     }
 
@@ -129,11 +123,7 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
       }
     } else if (this._autofillResult) {
       addCallback(this, this._autofillResult);
-      this.queries.delete(queryContext);
-      return;
     }
-
-    this.queries.delete(queryContext);
   }
 
   
@@ -151,7 +141,6 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
   cancelQuery(queryContext) {
     delete this._autofillResult;
-    this.queries.delete(queryContext);
   }
 
   _getAutofillResult(queryContext) {

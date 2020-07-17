@@ -273,8 +273,6 @@ function iconHelper(url) {
 class ProviderAutofill extends UrlbarProvider {
   constructor() {
     super();
-    
-    this.queries = new Map();
   }
 
   
@@ -301,6 +299,8 @@ class ProviderAutofill extends UrlbarProvider {
 
 
   async isActive(queryContext) {
+    let instance = this.queryInstance;
+
     
     if (!UrlbarPrefs.get("autoFill")) {
       return false;
@@ -359,6 +359,11 @@ class ProviderAutofill extends UrlbarProvider {
       return false;
     }
 
+    
+    if (instance != this.queryInstance) {
+      return false;
+    }
+
     return true;
   }
 
@@ -388,9 +393,8 @@ class ProviderAutofill extends UrlbarProvider {
 
   async startQuery(queryContext, addCallback) {
     
-    
-    
     if (!this._autofillResult) {
+      this.logger.error("startQuery invoked without an _autofillResult");
       return;
     }
 

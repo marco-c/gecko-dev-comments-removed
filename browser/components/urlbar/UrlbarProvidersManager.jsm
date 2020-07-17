@@ -327,6 +327,15 @@ class Query {
     let activePromises = [];
     let maxPriority = -1;
     for (let provider of this.providers) {
+      
+      
+      
+      
+      
+      
+      
+      
+      provider.queryInstance = this;
       activePromises.push(
         
         
@@ -422,6 +431,8 @@ class Query {
       provider.logger.info(
         `Canceling query for "${this.context.searchString}"`
       );
+      
+      provider.queryInstance = null;
       provider.tryMethod("cancelQuery", this.context);
     }
     if (this._chunkTimer) {

@@ -92,8 +92,6 @@ const LAST_UPDATE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 class ProviderSearchTips extends UrlbarProvider {
   constructor() {
     super();
-    
-    this.queries = new Map();
 
     
     
@@ -169,8 +167,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
   async startQuery(queryContext, addCallback) {
-    let instance = {};
-    this.queries.set(queryContext, instance);
+    let instance = this.queryInstance;
 
     let tip = this.currentTip;
     this.showedTipTypeInCurrentEngagement = this.currentTip;
@@ -209,14 +206,13 @@ class ProviderSearchTips extends UrlbarProvider {
         break;
     }
 
-    if (!this.queries.has(queryContext)) {
+    if (instance != this.queryInstance) {
       return;
     }
 
     Services.telemetry.keyedScalarAdd("urlbar.tips", `${tip}-shown`, 1);
 
     addCallback(this, result);
-    this.queries.delete(queryContext);
   }
 
   
@@ -224,9 +220,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
 
-  cancelQuery(queryContext) {
-    this.queries.delete(queryContext);
-  }
+  cancelQuery(queryContext) {}
 
   
 

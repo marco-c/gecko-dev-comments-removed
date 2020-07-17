@@ -434,8 +434,6 @@ class ProviderInterventions extends UrlbarProvider {
   constructor() {
     super();
     
-    this.queries = new Map();
-    
     this.currentTip = TIPS.NONE;
 
     this.tipsShownInCurrentEngagement = new Set();
@@ -586,8 +584,7 @@ class ProviderInterventions extends UrlbarProvider {
 
 
   async startQuery(queryContext, addCallback) {
-    let instance = {};
-    this.queries.set(queryContext, instance);
+    let instance = this.queryInstance;
 
     
     
@@ -616,7 +613,7 @@ class ProviderInterventions extends UrlbarProvider {
           };
           appUpdater.addListener(this._appUpdaterListener);
         });
-        if (!this.queries.has(queryContext)) {
+        if (instance != this.queryInstance) {
           
           return;
         }
@@ -625,7 +622,6 @@ class ProviderInterventions extends UrlbarProvider {
         
         this._setCurrentTipFromAppUpdaterStatus();
         if (this.currentTip == TIPS.UPDATE_CHECKING) {
-          this.queries.delete(queryContext);
           return;
         }
       }
@@ -645,14 +641,13 @@ class ProviderInterventions extends UrlbarProvider {
 
     Object.assign(result.payload, getL10nPropertiesForTip(this.currentTip));
 
-    if (!this.queries.has(queryContext)) {
+    if (instance != this.queryInstance) {
       return;
     }
 
     this.tipsShownInCurrentEngagement.add(this.currentTip);
 
     addCallback(this, result);
-    this.queries.delete(queryContext);
   }
 
   
@@ -661,8 +656,6 @@ class ProviderInterventions extends UrlbarProvider {
 
 
   cancelQuery(queryContext) {
-    this.queries.delete(queryContext);
-
     
     
     if (this._appUpdaterListener) {

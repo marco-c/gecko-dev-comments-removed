@@ -28,8 +28,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 class UrlbarProviderOpenTabs extends UrlbarProvider {
   constructor() {
     super();
-    
-    this.queries = new Map();
   }
 
   
@@ -132,8 +130,7 @@ class UrlbarProviderOpenTabs extends UrlbarProvider {
     
     
     
-    let instance = {};
-    this.queries.set(queryContext, instance);
+    let instance = this.queryInstance;
     let conn = await PlacesUtils.promiseLargeCacheDBConnection();
     await UrlbarProviderOpenTabs.promiseDBPopulated;
     await conn.executeCached(
@@ -143,7 +140,7 @@ class UrlbarProviderOpenTabs extends UrlbarProvider {
     `,
       {},
       (row, cancel) => {
-        if (!this.queries.has(queryContext)) {
+        if (instance != this.queryInstance) {
           cancel();
           return;
         }
@@ -160,17 +157,13 @@ class UrlbarProviderOpenTabs extends UrlbarProvider {
         );
       }
     );
-    
-    this.queries.delete(queryContext);
   }
 
   
 
 
 
-  cancelQuery(queryContext) {
-    this.queries.delete(queryContext);
-  }
+  cancelQuery(queryContext) {}
 }
 
 
