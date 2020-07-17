@@ -42,7 +42,6 @@ pub extern "C" fn wr_swgl_init_default_framebuffer(
     swgl::Context::from(ctx).init_default_framebuffer(width, height, stride, buf);
 }
 
-#[derive(Debug)]
 pub struct SwTile {
     x: i32,
     y: i32,
@@ -283,11 +282,13 @@ impl DrawTileHelper {
 
 
 
-#[derive(Debug)]
 struct SwCompositeJob {
-    tex_id: gl::GLuint,
-    src: DeviceIntRect,
-    dst: DeviceIntPoint,
+    
+    locked_src: swgl::LockedResource,
+    
+    locked_dst: swgl::LockedResource,
+    src_rect: DeviceIntRect,
+    dst_offset: DeviceIntPoint,
     opaque: bool,
 }
 
@@ -310,7 +311,7 @@ unsafe impl Sync for SwCompositeThread {}
 impl SwCompositeThread {
     
     
-    fn new(gl: swgl::Context) -> Arc<SwCompositeThread> {
+    fn new() -> Arc<SwCompositeThread> {
         let (job_queue, job_rx) = mpsc::channel();
         let info = Arc::new(SwCompositeThread {
             job_queue,
@@ -326,17 +327,19 @@ impl SwCompositeThread {
             
             
             while let Ok(job) = job_rx.recv() {
-                gl.composite(
-                    job.tex_id,
-                    job.src.origin.x,
-                    job.src.origin.y,
-                    job.src.size.width,
-                    job.src.size.height,
-                    job.dst.x,
-                    job.dst.y,
+                job.locked_dst.composite(
+                    &job.locked_src,
+                    job.src_rect.origin.x,
+                    job.src_rect.origin.y,
+                    job.src_rect.size.width,
+                    job.src_rect.size.height,
+                    job.dst_offset.x,
+                    job.dst_offset.y,
                     job.opaque,
                     false,
                 );
+                
+                drop(job);
                 
                 
                 let mut count = info.job_count.lock().unwrap();
@@ -353,18 +356,20 @@ impl SwCompositeThread {
     
     fn queue_composite(
         &self,
-        surface: &SwSurface,
-        tile: &SwTile,
-        src_rect: &DeviceIntRect,
-        dst_rect: &DeviceIntRect,
+        locked_src: swgl::LockedResource,
+        locked_dst: swgl::LockedResource,
+        src_rect: DeviceIntRect,
+        dst_rect: DeviceIntRect,
+        opaque: bool,
     ) {
         
         *self.job_count.lock().unwrap() += 1;
         self.job_queue.send(SwCompositeJob {
-            tex_id: tile.color_id,
-            src: *src_rect,
-            dst: dst_rect.origin,
-            opaque: surface.is_opaque,
+            locked_src,
+            locked_dst,
+            src_rect,
+            dst_offset: dst_rect.origin,
+            opaque,
         }).expect("Failing queuing SwComposite job");
     }
 
@@ -395,6 +400,8 @@ pub struct SwCompositor {
     
     
     composite_thread: Option<Arc<SwCompositeThread>>,
+    
+    locked_framebuffer: Option<swgl::LockedResource>,
 }
 
 impl SwCompositor {
@@ -404,7 +411,7 @@ impl SwCompositor {
         
         
         let composite_thread = if native_gl.is_none() && compositor.is_none() {
-            Some(SwCompositeThread::new(gl.clone()))
+            Some(SwCompositeThread::new())
         } else {
             None
         };
@@ -423,6 +430,7 @@ impl SwCompositor {
             max_tile_size: DeviceIntSize::zero(),
             depth_id,
             composite_thread,
+            locked_framebuffer: None,
         }
     }
 
@@ -493,14 +501,32 @@ impl SwCompositor {
     }
 
     
+    fn queue_composite(
+        &self,
+        surface: &SwSurface,
+        position: &DeviceIntPoint,
+        clip_rect: &DeviceIntRect,
+        tile: &SwTile,
+    ) {
+        if let Some(ref composite_thread) = self.composite_thread {
+            if let Some((src_rect, dst_rect)) = tile.composite_rects(surface, position, clip_rect) {
+                if let Some(texture) = self.gl.lock_texture(tile.color_id) {
+                    let framebuffer = self.locked_framebuffer.clone().unwrap();
+                    composite_thread.queue_composite(texture, framebuffer, src_rect, dst_rect, surface.is_opaque);
+                }
+            }
+        }
+    }
+
     
     
     
-    fn init_composites(&self, id: &NativeSurfaceId, position: &DeviceIntPoint, clip_rect: &DeviceIntRect) {
-        let composite_thread = match self.composite_thread {
-            Some(ref composite_thread) => composite_thread,
-            None => return,
-        };
+    
+    fn init_composites(&mut self, id: &NativeSurfaceId, position: &DeviceIntPoint, clip_rect: &DeviceIntRect) {
+        if self.composite_thread.is_none() {
+            return;
+        }
+
         if let Some(surface) = self.surfaces.get(&id) {
             for tile in &surface.tiles {
                 if let Some(overlap_rect) = tile.overlap_rect(surface, position, clip_rect) {
@@ -512,9 +538,7 @@ impl SwCompositor {
                     }
                     if overlaps == 0 {
                         
-                        if let Some((src_rect, dst_rect)) = tile.composite_rects(surface, position, clip_rect) {
-                            composite_thread.queue_composite(surface, tile, &src_rect, &dst_rect);
-                        }
+                        self.queue_composite(surface, position, clip_rect, tile);
                     } else {
                         
                         tile.overlaps.set(overlaps);
@@ -527,10 +551,9 @@ impl SwCompositor {
     
     
     fn flush_composites(&self, tile_id: &NativeTileId, surface: &SwSurface, tile: &SwTile) {
-        let composite_thread = match self.composite_thread {
-            Some(ref composite_thread) => composite_thread,
-            None => return,
-        };
+        if self.composite_thread.is_none() {
+            return;
+        }
 
         
         let mut frame_surfaces = self.frame_surfaces.iter().skip_while(|&(ref id, _, _)| *id != tile_id.surface_id);
@@ -542,9 +565,7 @@ impl SwCompositor {
                 }
                 
                 if tile.overlaps.get() == 0 {
-                    if let Some((src_rect, dst_rect)) = tile.composite_rects(surface, position, clip_rect) {
-                        composite_thread.queue_composite(surface, tile, &src_rect, &dst_rect);
-                    }
+                    self.queue_composite(surface, position, clip_rect, tile);
                 }
                 
                 match tile.overlap_rect(surface, position, clip_rect) {
@@ -571,9 +592,7 @@ impl SwCompositor {
                         
                         tile.overlaps.set(overlaps - 1);
                         if overlaps == 1 {
-                            if let Some((src_rect, dst_rect)) = tile.composite_rects(surface, position, clip_rect) {
-                                composite_thread.queue_composite(surface, tile, &src_rect, &dst_rect);
-                            }
+                            self.queue_composite(surface, position, clip_rect, tile);
                         }
                     }
                 }
@@ -882,7 +901,11 @@ impl Compositor for SwCompositor {
             compositor.begin_frame();
         }
         self.frame_surfaces.clear();
+
         self.reset_overlaps();
+        if self.composite_thread.is_some() {
+            self.locked_framebuffer = self.gl.lock_framebuffer(0);
+        }
     }
 
     fn add_surface(&mut self, id: NativeSurfaceId, position: DeviceIntPoint, clip_rect: DeviceIntRect) {
@@ -931,6 +954,7 @@ impl Compositor for SwCompositor {
         } else if let Some(ref composite_thread) = self.composite_thread {
             
             composite_thread.wait_for_composites();
+            self.locked_framebuffer = None;
         }
     }
 
