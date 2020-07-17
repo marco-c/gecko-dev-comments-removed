@@ -410,8 +410,8 @@ typedef void (*JSWeakPointerCompartmentCallback)(JSContext* cx,
 
 
 
-using JSHostCleanupFinalizationRegistryCallback =
-    void (*)(JSFunction* doCleanup, JSObject* incumbentGlobal, void* data);
+using JSHostCleanupFinalizationRegistryCallback = void (*)(JSObject* registry,
+                                                           void* data);
 
 
 
