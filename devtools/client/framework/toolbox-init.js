@@ -14,7 +14,7 @@ const href = window.location.href.replace("about:", "http://");
 const url = new window.URL(href);
 
 
-let host = window.windowUtils.containerElement;
+let host = window.browsingContext.embedderElement;
 
 
 

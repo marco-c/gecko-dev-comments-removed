@@ -709,7 +709,7 @@ FinderHighlighter.prototype = {
 
       
       
-      let el = this._getDWU(currWin).containerElement;
+      let el = currWin.browsingContext.embedderElement;
       currWin = currWin.parent;
       dwu = this._getDWU(currWin);
       let parentRect = Rect.fromRect(dwu.getBoundsWithoutFlushing(el));
