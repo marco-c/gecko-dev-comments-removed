@@ -58,6 +58,7 @@ function EyeDropper(highlighterEnv) {
     this.highlighterEnv,
     this._buildMarkup.bind(this)
   );
+  this.isReady = this.markup.initialize();
 
   
   this.format = Services.prefs.getCharPref(FORMAT_PREF);

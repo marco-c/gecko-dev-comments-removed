@@ -119,6 +119,13 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     return this._inspector && this._inspector.conn;
   },
 
+  
+
+
+  get instance() {
+    return this._highlighter;
+  },
+
   form: function() {
     return {
       actor: this.actorID,

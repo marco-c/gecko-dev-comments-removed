@@ -237,16 +237,7 @@ function CanvasFrameAnonymousContentHelper(highlighterEnv, nodeBuilder) {
   this.highlighterEnv = highlighterEnv;
   this.nodeBuilder = nodeBuilder;
 
-  this._insert = this._insert.bind(this);
   this._onWindowReady = this._onWindowReady.bind(this);
-
-  
-  
-  const doc = this.highlighterEnv.document;
-  if (doc.documentElement && doc.readyState != "uninitialized") {
-    this._insert();
-  }
-
   this.highlighterEnv.on("window-ready", this._onWindowReady);
 
   this.listeners = new Map();
@@ -254,6 +245,21 @@ function CanvasFrameAnonymousContentHelper(highlighterEnv, nodeBuilder) {
 }
 
 CanvasFrameAnonymousContentHelper.prototype = {
+  initialize() {
+    
+    const onInitialized = new Promise(resolve => {
+      this._initialized = resolve;
+    });
+    
+    
+    const doc = this.highlighterEnv.document;
+    if (doc.documentElement && doc.readyState != "uninitialized") {
+      this._insert();
+    }
+
+    return onInitialized;
+  },
+
   destroy() {
     this._remove();
     if (this._iframe) {
@@ -353,6 +359,8 @@ CanvasFrameAnonymousContentHelper.prototype = {
         throw e;
       }
     }
+
+    this._initialized();
   },
 
   _remove() {
