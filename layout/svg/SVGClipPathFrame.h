@@ -19,24 +19,28 @@ namespace mozilla {
 class PresShell;
 }  
 
-class nsSVGClipPathFrame final : public nsSVGContainerFrame {
-  friend nsIFrame* NS_NewSVGClipPathFrame(mozilla::PresShell* aPresShell,
-                                          ComputedStyle* aStyle);
+nsIFrame* NS_NewSVGClipPathFrame(mozilla::PresShell* aPresShell,
+                                 mozilla::ComputedStyle* aStyle);
 
-  typedef mozilla::gfx::Matrix Matrix;
-  typedef mozilla::gfx::SourceSurface SourceSurface;
-  typedef mozilla::image::imgDrawingParams imgDrawingParams;
+namespace mozilla {
+
+class SVGClipPathFrame final : public nsSVGContainerFrame {
+  friend nsIFrame* ::NS_NewSVGClipPathFrame(mozilla::PresShell* aPresShell,
+                                            ComputedStyle* aStyle);
+
+  typedef gfx::Matrix Matrix;
+  typedef gfx::SourceSurface SourceSurface;
+  typedef image::imgDrawingParams imgDrawingParams;
 
  protected:
-  explicit nsSVGClipPathFrame(ComputedStyle* aStyle,
-                              nsPresContext* aPresContext)
+  explicit SVGClipPathFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsSVGContainerFrame(aStyle, aPresContext, kClassID),
         mIsBeingProcessed(false) {
     AddStateBits(NS_FRAME_IS_NONDISPLAY);
   }
 
  public:
-  NS_DECL_FRAMEARENA_HELPERS(nsSVGClipPathFrame)
+  NS_DECL_FRAMEARENA_HELPERS(SVGClipPathFrame)
 
   
   virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
@@ -143,7 +147,7 @@ class nsSVGClipPathFrame final : public nsSVGContainerFrame {
   virtual gfxMatrix GetCanvasTM() override;
 
   already_AddRefed<DrawTarget> CreateClipMask(gfxContext& aReferenceContext,
-                                              mozilla::gfx::IntPoint& aOffset);
+                                              gfx::IntPoint& aOffset);
 
   void PaintFrameIntoMask(nsIFrame* aFrame, nsIFrame* aClippedFrame,
                           gfxContext& aTarget);
@@ -167,5 +171,7 @@ class nsSVGClipPathFrame final : public nsSVGContainerFrame {
   
   bool mIsBeingProcessed;
 };
+
+}  
 
 #endif

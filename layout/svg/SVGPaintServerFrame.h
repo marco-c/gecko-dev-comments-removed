@@ -16,14 +16,13 @@
 #include "nsSVGContainerFrame.h"
 #include "nsSVGUtils.h"
 
+class gfxContext;
+class gfxPattern;
+
 namespace mozilla {
 namespace gfx {
 class DrawTarget;
 }  
-}  
-
-class gfxContext;
-class gfxPattern;
 
 
 
@@ -47,20 +46,20 @@ class MOZ_RAII AutoSetRestorePaintServerState {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-class nsSVGPaintServerFrame : public nsSVGContainerFrame {
+class SVGPaintServerFrame : public nsSVGContainerFrame {
  protected:
-  typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef gfx::DrawTarget DrawTarget;
 
-  nsSVGPaintServerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
-                        ClassID aID)
+  SVGPaintServerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
+                      ClassID aID)
       : nsSVGContainerFrame(aStyle, aPresContext, aID) {
     AddStateBits(NS_FRAME_IS_NONDISPLAY);
   }
 
  public:
-  typedef mozilla::image::imgDrawingParams imgDrawingParams;
+  typedef image::imgDrawingParams imgDrawingParams;
 
-  NS_DECL_ABSTRACT_FRAME(nsSVGPaintServerFrame)
+  NS_DECL_ABSTRACT_FRAME(SVGPaintServerFrame)
 
   
 
@@ -72,9 +71,8 @@ class nsSVGPaintServerFrame : public nsSVGContainerFrame {
 
   virtual already_AddRefed<gfxPattern> GetPaintServerPattern(
       nsIFrame* aSource, const DrawTarget* aDrawTarget,
-      const gfxMatrix& aContextMatrix,
-      mozilla::StyleSVGPaint nsStyleSVG::*aFillOrStroke, float aOpacity,
-      imgDrawingParams& aImgParams,
+      const gfxMatrix& aContextMatrix, StyleSVGPaint nsStyleSVG::*aFillOrStroke,
+      float aOpacity, imgDrawingParams& aImgParams,
       const gfxRect* aOverrideBounds = nullptr) = 0;
 
   
@@ -86,5 +84,7 @@ class nsSVGPaintServerFrame : public nsSVGContainerFrame {
                                               ~nsIFrame::eSVGPaintServer);
   }
 };
+
+}  
 
 #endif  
