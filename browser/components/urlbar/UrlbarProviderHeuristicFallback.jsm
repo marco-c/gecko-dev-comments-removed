@@ -63,7 +63,7 @@ class ProviderHeuristicFallback extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return false; 
+    return true;
   }
 
   
