@@ -317,11 +317,32 @@ nsresult nsHttpTransaction::Init(
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if ((requestHead->IsPost() || requestHead->IsPut()) && !requestBody &&
+      !requestHead->HasHeader(nsHttp::Transfer_Encoding)) {
+    rv = requestHead->SetHeader(nsHttp::Content_Length, "0"_ns);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
+
+  
   mRequestHead = requestHead;
 
-  mReqHeaderBuf = nsHttp::ConvertRequestHeadToString(
-      *requestHead, !!requestBody, requestBodyHasHeaders,
-      cinfo->UsingConnect());
+  
+  
+  bool pruneProxyHeaders = cinfo->UsingConnect();
+
+  mReqHeaderBuf.Truncate();
+  requestHead->Flatten(mReqHeaderBuf, pruneProxyHeaders);
 
   if (LOG1_ENABLED()) {
     LOG1(("http request [\n"));
@@ -330,19 +351,18 @@ nsresult nsHttpTransaction::Init(
   }
 
   
+  
+  if (!requestBodyHasHeaders || !requestBody)
+    mReqHeaderBuf.AppendLiteral("\r\n");
+
+  
   if (mActivityDistributor) {
-    RefPtr<nsHttpTransaction> self = this;
-    NS_DispatchToMainThread(
-        NS_NewRunnableFunction("ObserveActivityWithArgs", [self]() {
-          nsresult rv = self->mActivityDistributor->ObserveActivityWithArgs(
-              HttpActivityArgs(self->mChannelId),
-              NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
-              NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_HEADER, PR_Now(), 0,
-              self->mReqHeaderBuf);
-          if (NS_FAILED(rv)) {
-            LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
-          }
-        }));
+    rv = mActivityDistributor->ObserveActivityWithArgs(
+        HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
+        NS_HTTP_ACTIVITY_SUBTYPE_REQUEST_HEADER, PR_Now(), 0, mReqHeaderBuf);
+    if (NS_FAILED(rv)) {
+      LOG3(("ObserveActivity failed (%08x)", static_cast<uint32_t>(rv)));
+    }
   }
 
   
