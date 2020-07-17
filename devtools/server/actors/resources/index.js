@@ -60,7 +60,7 @@ function watchTargetResources(targetActor, resourceTypes) {
     }
 
     const watcher = new WatcherClass(targetActor, {
-      onAvailable: targetActor.onResourceAvailable,
+      onAvailable: targetActor.notifyResourceAvailable,
     });
     watchers.set(targetActor, watcher);
   }

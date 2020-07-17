@@ -310,7 +310,7 @@ const browsingContextTargetPrototype = {
     this._onWorkerTargetActorListChanged = this._onWorkerTargetActorListChanged.bind(
       this
     );
-    this.onResourceAvailable = this.onResourceAvailable.bind(this);
+    this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
 
     TargetActorRegistry.registerTargetActor(this);
   },
@@ -338,12 +338,11 @@ const browsingContextTargetPrototype = {
 
 
 
-  onResourceAvailable(resources) {
+  notifyResourceAvailable(resources) {
     if (!this.actorID) {
       
       return;
     }
-
     this.emit("resource-available-form", resources);
   },
 
