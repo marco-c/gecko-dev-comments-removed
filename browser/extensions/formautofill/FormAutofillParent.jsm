@@ -588,7 +588,9 @@ class FormAutofillParent extends JSWindowActorParent {
       creditCard.record["cc-type"] &&
       !CreditCard.isValidNetwork(creditCard.record["cc-type"])
     ) {
-      delete creditCard.record["cc-type"];
+      
+      
+      creditCard.record["cc-type"] = "";
     }
 
     

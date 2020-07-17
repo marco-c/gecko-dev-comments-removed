@@ -23,6 +23,14 @@ const SUPPORTED_NETWORKS = Object.freeze([
 
 
 
+const NETWORK_NAMES = {
+  "american express": "amex",
+  "master card": "mastercard",
+  "union pay": "unionpay",
+};
+
+
+
 
 
 
@@ -226,6 +234,33 @@ class CreditCard {
         if (prefix >= range.start && prefix <= range.end) {
           return range.type;
         }
+      }
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+  static getNetworkFromName(name) {
+    if (!name) {
+      return null;
+    }
+    let lcName = name
+      .trim()
+      .toLowerCase()
+      .normalize("NFKC");
+    if (SUPPORTED_NETWORKS.includes(lcName)) {
+      return lcName;
+    }
+    for (let term in NETWORK_NAMES) {
+      if (lcName.includes(term)) {
+        return NETWORK_NAMES[term];
       }
     }
     return null;

@@ -130,7 +130,12 @@ runHeuristicsTest(
             },
           ],
           [
-            
+            {
+              section: "",
+              addressType: "",
+              contactType: "",
+              fieldName: "cc-type",
+            }, 
             {
               section: "",
               addressType: "",

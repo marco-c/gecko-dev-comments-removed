@@ -21,7 +21,12 @@ runHeuristicsTest(
             
           ],
           [
-            
+            {
+              section: "",
+              addressType: "",
+              contactType: "",
+              fieldName: "cc-type",
+            },
             {
               section: "",
               addressType: "",
@@ -74,7 +79,12 @@ runHeuristicsTest(
             
           ],
           [
-            
+            {
+              section: "",
+              addressType: "",
+              contactType: "",
+              fieldName: "cc-type",
+            }, 
             {
               section: "",
               addressType: "",
