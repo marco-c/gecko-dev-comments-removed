@@ -102,32 +102,53 @@ template <typename T>
 nsresult EncodeInputStream_Encoder(nsIInputStream* aStream, void* aClosure,
                                    const char* aFromSegment, uint32_t aToOffset,
                                    uint32_t aCount, uint32_t* aWriteCount) {
-  NS_ASSERTION(aCount > 0, "Er, what?");
+  MOZ_ASSERT(aCount > 0, "Er, what?");
 
   EncodeInputStream_State<T>* state =
       static_cast<EncodeInputStream_State<T>*>(aClosure);
 
   
+  *aWriteCount = aCount;
+
+  
   uint32_t countRemaining = aCount;
   const unsigned char* src = (const unsigned char*)aFromSegment;
   if (state->charsOnStack) {
+    MOZ_ASSERT(state->charsOnStack == 1 || state->charsOnStack == 2);
+
+    
+    if (state->charsOnStack == 1 && countRemaining == 1) {
+      state->charsOnStack = 2;
+      state->c[1] = src[0];
+      return NS_OK;
+    }
+
+    uint32_t consumed = 0;
     unsigned char firstSet[4];
     if (state->charsOnStack == 1) {
       firstSet[0] = state->c[0];
       firstSet[1] = src[0];
-      firstSet[2] = (countRemaining > 1) ? src[1] : '\0';
+      firstSet[2] = src[1];
       firstSet[3] = '\0';
+      consumed = 2;
     } else  {
       firstSet[0] = state->c[0];
       firstSet[1] = state->c[1];
       firstSet[2] = src[0];
       firstSet[3] = '\0';
+      consumed = 1;
     }
+
     Encode(firstSet, 3, state->buffer);
     state->buffer += 4;
-    countRemaining -= (3 - state->charsOnStack);
-    src += (3 - state->charsOnStack);
+    countRemaining -= consumed;
+    src += consumed;
     state->charsOnStack = 0;
+
+    
+    if (!countRemaining) {
+      return NS_OK;
+    }
   }
 
   
@@ -137,9 +158,6 @@ nsresult EncodeInputStream_Encoder(nsIInputStream* aStream, void* aClosure,
   state->buffer += (encodeLength / 3) * 4;
   src += encodeLength;
   countRemaining -= encodeLength;
-
-  
-  *aWriteCount = aCount;
 
   if (countRemaining) {
     
