@@ -340,6 +340,7 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 XPCOMUtils.defineLazyModuleGetters(this, {
   AboutPagesUtils: "resource://gre/modules/AboutPagesUtils.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
+  ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PlacesRemoteTabsAutocompleteProvider:
     "resource://gre/modules/PlacesRemoteTabsAutocompleteProvider.jsm",
@@ -1271,6 +1272,16 @@ Search.prototype = {
     
     
 
+    if (this._heuristicToken) {
+      
+      let matched = await this._matchExtensionHeuristicResult(
+        this._heuristicToken
+      );
+      if (matched) {
+        return true;
+      }
+    }
+
     if (this.pending && this._enableActions && this._heuristicToken) {
       
       let matched = await this._matchSearchEngineAlias(this._heuristicToken);
@@ -1327,7 +1338,50 @@ Search.prototype = {
       }
     }
 
-    
+    if (this.pending && this._searchTokens.length && this._enableActions) {
+      
+      
+
+      
+      
+      
+      
+      
+      let matched = await this._matchUnknownUrl();
+      if (matched) {
+        
+        
+        
+        let str = this._originalSearchString;
+        try {
+          new URL(str);
+        } catch (ex) {
+          if (
+            UrlbarPrefs.get("keyword.enabled") &&
+            (UrlbarTokenizer.looksLikeOrigin(str, {
+              noIp: true,
+              noPort: true,
+            }) ||
+              UrlbarTokenizer.REGEXP_COMMON_EMAIL.test(str))
+          ) {
+            this._addingHeuristicResult = false;
+            await this._matchCurrentSearchEngine();
+            this._addingHeuristicResult = true;
+          }
+        }
+        return true;
+      }
+    }
+
+    if (this.pending && this._enableActions && this._originalSearchString) {
+      
+      
+      let matched = await this._matchCurrentSearchEngine();
+      if (matched) {
+        return true;
+      }
+    }
+
     return false;
   },
 
@@ -1356,6 +1410,18 @@ Search.prototype = {
       });
     }
     return gotResult;
+  },
+
+  _matchExtensionHeuristicResult(keyword) {
+    if (
+      ExtensionSearchHandler.isKeywordRegistered(keyword) &&
+      substringAfter(this._originalSearchString, keyword)
+    ) {
+      let description = ExtensionSearchHandler.getDescription(keyword);
+      this._addExtensionMatch(this._originalSearchString, description);
+      return true;
+    }
+    return false;
   },
 
   async _matchPlacesKeyword(keyword) {
@@ -1498,6 +1564,46 @@ Search.prototype = {
     return true;
   },
 
+  async _matchCurrentSearchEngine() {
+    let engine;
+    if (this._engineName) {
+      engine = Services.search.getEngineByName(this._engineName);
+    } else if (this._inPrivateWindow) {
+      engine = Services.search.defaultPrivateEngine;
+    } else {
+      engine = Services.search.defaultEngine;
+    }
+
+    if (!engine || !this.pending) {
+      return false;
+    }
+
+    
+    
+    
+    
+    let query = this._trimmedOriginalSearchString;
+    if (this._leadingRestrictionToken === UrlbarTokenizer.RESTRICT.SEARCH) {
+      query = substringAfter(query, this._leadingRestrictionToken).trim();
+    }
+    this._addSearchEngineMatch({ engine, query });
+    return true;
+  },
+
+  _addExtensionMatch(content, comment) {
+    this._addMatch({
+      value: makeActionUrl("extension", {
+        content,
+        keyword: this._heuristicToken,
+      }),
+      comment,
+      icon: "chrome://browser/content/extension.svg",
+      style: "action extension",
+      frecency: Infinity,
+      type: UrlbarUtils.RESULT_GROUP.EXTENSION,
+    });
+  },
+
   
 
 
@@ -1595,6 +1701,106 @@ Search.prototype = {
         this._extraRemoteTabRows.push(match);
       }
     }
+  },
+
+  
+  
+  _matchUnknownUrl() {
+    if (!this._searchString && this._strippedPrefix) {
+      
+      
+      return false;
+    }
+    
+    
+    if (this.hasBehavior("search") && this.hasBehavior("restrict")) {
+      return false;
+    }
+    let flags =
+      Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
+      Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+    if (this._inPrivateWindow) {
+      flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
+    }
+    let fixupInfo = null;
+    let searchUrl = this._trimmedOriginalSearchString;
+    try {
+      fixupInfo = Services.uriFixup.getFixupURIInfo(searchUrl, flags);
+    } catch (e) {
+      if (
+        e.result == Cr.NS_ERROR_MALFORMED_URI &&
+        !UrlbarPrefs.get("keyword.enabled")
+      ) {
+        let value = makeActionUrl("visiturl", {
+          url: searchUrl,
+          input: searchUrl,
+        });
+        this._addMatch({
+          value,
+          comment: searchUrl,
+          style: "action visiturl",
+          frecency: Infinity,
+        });
+
+        return true;
+      }
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    if (!fixupInfo.fixedURI || fixupInfo.keywordAsSent) {
+      return false;
+    }
+
+    let uri = fixupInfo.fixedURI;
+    
+    
+    
+    
+    let hostExpected = ["http", "https", "ftp", "chrome"].includes(uri.scheme);
+    if (hostExpected && !uri.host) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    let escapedURL = uri.displaySpec;
+    let displayURL = Services.textToSubURI.unEscapeURIForUI(escapedURL);
+
+    let value = makeActionUrl("visiturl", {
+      url: escapedURL,
+      input: searchUrl,
+    });
+
+    let match = {
+      value,
+      comment: displayURL,
+      style: "action visiturl",
+      frecency: Infinity,
+    };
+
+    
+    
+    
+    
+    
+    
+    if (
+      hostExpected &&
+      (searchUrl.endsWith("/") || uri.pathQueryRef.length > 1)
+    ) {
+      match.icon = `page-icon:${uri.prePath}/`;
+    }
+
+    this._addMatch(match);
+    return true;
   },
 
   _onResultRow(row, cancel) {

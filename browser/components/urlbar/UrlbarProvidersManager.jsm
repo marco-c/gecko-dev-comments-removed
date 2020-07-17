@@ -15,6 +15,7 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Log: "resource://gre/modules/Log.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   SkippableTimer: "resource:///modules/UrlbarUtils.jsm",
   UrlbarMuxer: "resource:///modules/UrlbarUtils.jsm",
@@ -26,7 +27,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () =>
-  UrlbarUtils.getLogger({ prefix: "ProvidersManager" })
+  Log.repository.getLogger("Urlbar.ProvidersManager")
 );
 
 
@@ -34,8 +35,6 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
 var localProviderModules = {
   UrlbarProviderUnifiedComplete:
     "resource:///modules/UrlbarProviderUnifiedComplete.jsm",
-  UrlbarProviderHeuristicFallback:
-    "resource:///modules/UrlbarProviderHeuristicFallback.jsm",
   UrlbarProviderInterventions:
     "resource:///modules/UrlbarProviderInterventions.jsm",
   UrlbarProviderOmnibox: "resource:///modules/UrlbarProviderOmnibox.jsm",
@@ -233,7 +232,7 @@ class ProvidersManager {
 
 
   cancelQuery(queryContext) {
-    logger.info(`Query cancel "${queryContext.searchString}"`);
+    logger.info(`Query cancel ${queryContext.searchString}`);
     let query = this.queries.get(queryContext);
     if (!query) {
       throw new Error("Couldn't find a matching query for the given context");
@@ -362,21 +361,12 @@ class Query {
     }
 
     
-
     let queryPromises = [];
-    let startQuery = provider => {
-      provider.logger.info(`Starting query for "${this.context.searchString}"`);
-      return provider.tryMethod(
-        "startQuery",
-        this.context,
-        this.add.bind(this)
-      );
-    };
-
     for (let provider of activeProviders) {
       if (provider.type == UrlbarUtils.PROVIDER_TYPE.HEURISTIC) {
-        this.context.pendingHeuristicProviders.add(provider.name);
-        queryPromises.push(startQuery(provider));
+        queryPromises.push(
+          provider.tryMethod("startQuery", this.context, this.add.bind(this))
+        );
         continue;
       }
       if (!this._sleepTimer) {
@@ -386,13 +376,20 @@ class Query {
         this._sleepTimer = new SkippableTimer({
           name: "Query provider timer",
           time: UrlbarPrefs.get("delay"),
-          logger: provider.logger,
+          logger,
         });
       }
       queryPromises.push(
-        this._sleepTimer.promise.then(() =>
-          this.canceled ? undefined : startQuery(provider)
-        )
+        this._sleepTimer.promise.then(() => {
+          if (this.canceled) {
+            return undefined;
+          }
+          return provider.tryMethod(
+            "startQuery",
+            this.context,
+            this.add.bind(this)
+          );
+        })
       );
     }
 
@@ -418,9 +415,6 @@ class Query {
     }
     this.canceled = true;
     for (let provider of this.providers) {
-      provider.logger.info(
-        `Canceling query for "${this.context.searchString}"`
-      );
       provider.tryMethod("cancelQuery", this.context);
     }
     if (this._chunkTimer) {
@@ -440,29 +434,13 @@ class Query {
     if (!(provider instanceof UrlbarProvider)) {
       throw new Error("Invalid provider passed to the add callback");
     }
-
-    
-    
-    
-    
-    
-    this.context.pendingHeuristicProviders.delete(provider.name);
-
     
     if (this.canceled) {
       return;
     }
-
-    let addResult = true;
-
-    if (!result) {
-      addResult = false;
-    }
-
     
     
     if (
-      addResult &&
       !this.acceptableSources.includes(result.source) &&
       !result.heuristic &&
       
@@ -470,38 +448,25 @@ class Query {
         result.source != UrlbarUtils.RESULT_SOURCE.HISTORY ||
         !this.acceptableSources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH))
     ) {
-      addResult = false;
+      return;
     }
 
     
     
     if (
-      addResult &&
       result.type != UrlbarUtils.RESULT_TYPE.KEYWORD &&
       result.payload.url &&
       result.payload.url.startsWith("javascript:") &&
       !this.context.searchString.startsWith("javascript:") &&
       UrlbarPrefs.get("filter.javascript")
     ) {
-      addResult = false;
-    }
-
-    
-    
-    
-    
-    
-    if (!addResult) {
-      if (provider.name == "UnifiedComplete") {
-        this._notifyResultsFromProvider(provider);
-      }
       return;
     }
+
     result.providerName = provider.name;
-    result.providerType = provider.type;
     this.context.results.push(result);
     if (result.heuristic) {
-      this.context.allHeuristicResults.push(result);
+      this.context.heuristicResult = result;
     }
 
     this._notifyResultsFromProvider(provider);
@@ -510,53 +475,24 @@ class Query {
   _notifyResultsFromProvider(provider) {
     
     
-    
-    
-    
-    
-    
     if (provider.type == UrlbarUtils.PROVIDER_TYPE.HEURISTIC) {
-      if (!this._heuristicProviderTimer) {
-        this._heuristicProviderTimer = new SkippableTimer({
-          name: "Heuristic provider timer",
-          callback: () => this._notifyResults(),
-          time: CHUNK_RESULTS_DELAY_MS,
-          logger: provider.logger,
-        });
-      }
+      this._notifyResults();
     } else if (!this._chunkTimer) {
       this._chunkTimer = new SkippableTimer({
         name: "Query chunk timer",
         callback: () => this._notifyResults(),
         time: CHUNK_RESULTS_DELAY_MS,
-        logger: provider.logger,
+        logger,
       });
-    }
-    
-    
-    if (
-      this._heuristicProviderTimer &&
-      !this.context.pendingHeuristicProviders.size
-    ) {
-      this._heuristicProviderTimer.fire().catch(Cu.reportError);
     }
   }
 
   _notifyResults() {
-    let sorted = this.muxer.sort(this.context);
-
-    if (this._heuristicProviderTimer) {
-      this._heuristicProviderTimer.cancel().catch(Cu.reportError);
-      this._heuristicProviderTimer = null;
-    }
+    this.muxer.sort(this.context);
 
     if (this._chunkTimer) {
       this._chunkTimer.cancel().catch(Cu.reportError);
       this._chunkTimer = null;
-    }
-
-    if (!sorted) {
-      return;
     }
 
     
@@ -573,13 +509,13 @@ class Query {
 
     
     
+    logger.debug(
+      `Cropping ${this.context.results.length} results to ${this.context.maxResults}`
+    );
     let resultCount = this.context.maxResults;
     for (let i = 0; i < this.context.results.length; i++) {
       resultCount -= UrlbarUtils.getSpanForResult(this.context.results[i]);
       if (resultCount < 0) {
-        logger.debug(
-          `Splicing results from ${i} to crop results to ${this.context.maxResults}`
-        );
         this.context.results.splice(i, this.context.results.length - i);
         break;
       }
