@@ -3364,25 +3364,6 @@ class GLContext : public GenericAtomicRefCounted,
 
 
 
-  virtual void CopySubBuffer(int x, int y, int w, int h) {
-    MOZ_CRASH("Unsupported CopySubBuffer");
-  }
-
-  
-
-
-
-
-  virtual bool HasCopySubBuffer() const { return false; }
-
-  
-
-
-
-
-
-
-
   virtual void SetDamage(const nsIntRegion& aDamageRegion) {}
 
   
