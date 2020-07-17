@@ -627,7 +627,7 @@ class WindowsDllDetourPatcher final
   }
 
 #  if defined(_M_X64)
-  enum class JumpType{Je, Jne, Jmp, Call};
+  enum class JumpType{Je, Jne, Jae, Jmp, Call};
 
   static bool GenerateJump(Trampoline<MMPolicyT>& aTramp,
                            uintptr_t aAbsTargetAddress, const JumpType aType) {
@@ -651,6 +651,10 @@ class WindowsDllDetourPatcher final
     } else if (aType == JumpType::Jne) {
       
       aTramp.WriteByte(0x74);
+      aTramp.WriteByte(14);
+    } else if (aType == JumpType::Jae) {
+      
+      aTramp.WriteByte(0x73);
       aTramp.WriteByte(14);
     }
 
@@ -967,12 +971,12 @@ class WindowsDllDetourPatcher final
         
         origBytes += 1;
       } else if (*origBytes == 0x83) {
-        uint8_t mod = static_cast<uint8_t>(origBytes[1]) >> 6;
-        uint8_t rm = static_cast<uint8_t>(origBytes[1]) & 7;
-        if (mod == 3) {
+        uint8_t mod = static_cast<uint8_t>(origBytes[1]) & kMaskMod;
+        uint8_t rm = static_cast<uint8_t>(origBytes[1]) & kMaskRm;
+        if (mod == kModReg) {
           
           origBytes += 3;
-        } else if (mod == 1 && rm != 4) {
+        } else if (mod == kModDisp8 && rm != kRmNeedSib) {
           
           origBytes += 4;
         } else {
@@ -1382,6 +1386,9 @@ class WindowsDllDetourPatcher final
         
         
         COPY_CODES(2);
+      } else if (*origBytes == 0x83 && (origBytes[1] & kMaskMod) == kModReg) {
+        
+        COPY_CODES(3);
       } else if (*origBytes == 0xc3) {
         
         COPY_CODES(1);
@@ -1397,13 +1404,14 @@ class WindowsDllDetourPatcher final
                           foundJmp ? JumpType::Jmp : JumpType::Call)) {
           return;
         }
-      } else if (*origBytes == 0x74 ||  
-                 *origBytes == 0x75) {  
+      } else if (*origBytes >= 0x73 && *origBytes <= 0x75) {
+        
+        
+        
+        const JumpType kJumpTypes[] = {JumpType::Jae, JumpType::Je,
+                                       JumpType::Jne};
+        auto jumpType = kJumpTypes[*origBytes - 0x73];
         uint8_t offset = origBytes[1];
-        auto jumpType = JumpType::Je;
-        if (*origBytes == 0x75) {
-          jumpType = JumpType::Jne;
-        }
 
         origBytes += 2;
 
