@@ -563,7 +563,9 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   template <typename PT, typename CT>
   EditorDOMPointInText GetInclusiveNextEditableCharPoint(
-      const EditorDOMPointBase<PT, CT>& aPoint) const;
+      const EditorDOMPointBase<PT, CT>& aPoint) const {
+    return TextFragmentDataAtStart().GetInclusiveNextEditableCharPoint(aPoint);
+  }
 
   
 
@@ -574,7 +576,9 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   template <typename PT, typename CT>
   EditorDOMPointInText GetPreviousEditableCharPoint(
-      const EditorDOMPointBase<PT, CT>& aPoint) const;
+      const EditorDOMPointBase<PT, CT>& aPoint) const {
+    return TextFragmentDataAtStart().GetPreviousEditableCharPoint(aPoint);
+  }
 
   
 
@@ -794,6 +798,13 @@ class MOZ_STACK_CLASS WSRunScanner {
 
     bool IsPreformatted() const { return mIsPreformatted; }
 
+    template <typename PT, typename CT>
+    EditorDOMPointInText GetInclusiveNextEditableCharPoint(
+        const EditorDOMPointBase<PT, CT>& aPoint) const;
+    template <typename PT, typename CT>
+    EditorDOMPointInText GetPreviousEditableCharPoint(
+        const EditorDOMPointBase<PT, CT>& aPoint) const;
+
     
 
 
@@ -1008,9 +1019,11 @@ class MOZ_STACK_CLASS WSRunScanner {
                EndsByBRElement()));
     }
 
+    EditorDOMPoint mScanStartPoint;
     BoundaryData mStart;
     BoundaryData mEnd;
     NoBreakingSpaceData mNBSPData;
+    RefPtr<const Element> mEditingHost;
     mutable Maybe<EditorDOMRange> mLeadingWhiteSpaceRange;
     mutable Maybe<EditorDOMRange> mTrailingWhiteSpaceRange;
     
