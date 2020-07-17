@@ -295,6 +295,10 @@ var ignoreFunctions = {
 
     
     "uint8 v8::internal::RegExpDisjunction::SortConsecutiveAtoms(v8::internal::RegExpCompiler*)": true,
+
+    
+    
+    "uint8 nsAutoOwningEventTarget::IsCurrentThread() const": true,
 };
 
 function extraGCFunctions() {
