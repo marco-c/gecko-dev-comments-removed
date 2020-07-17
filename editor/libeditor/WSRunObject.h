@@ -13,6 +13,7 @@
 #include "mozilla/EditorDOMPoint.h"  
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Text.h"
@@ -1141,15 +1142,9 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
 
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<dom::Element> InsertBreak(
-      dom::Selection& aSelection, const EditorDOMPoint& aPointToInsert,
-      nsIEditor::EDirection aSelect);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<RefPtr<Element>, nsresult>
+  InsertBRElement(HTMLEditor& aHTMLEditor,
+                  const EditorDOMPoint& aPointToInsert);
 
   
 
