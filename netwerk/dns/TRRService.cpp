@@ -984,6 +984,9 @@ AHostResolver::LookupStatus TRRService::CompleteLookup(
         mRetryConfirmInterval *= 2;
       }
     } else {
+      
+      
+      mClearTRRBLStorage = true;
       if (mMode != MODE_TRRONLY) {
         
         
