@@ -10,7 +10,7 @@ var EXPORTED_SYMBOLS = ["SharedUtils"];
 
 
 if (typeof crypto == "undefined") {
-  Cu.importGlobalProperties(["crypto"]);
+  Cu.importGlobalProperties(["fetch", "crypto"]);
 }
 
 var SharedUtils = {
@@ -33,5 +33,26 @@ var SharedUtils = {
     const toHex = b => b.toString(16).padStart(2, "0");
     const hashStr = Array.from(hashBytes, toHex).join("");
     return hashStr == hash;
+  },
+
+  
+
+
+
+
+  async loadJSONDump(bucket, collection) {
+    
+    
+    const jsonBucket = bucket.replace("-preview", "");
+    const fileURI = `resource://app/defaults/settings/${jsonBucket}/${collection}.json`;
+    let response;
+    try {
+      response = await fetch(fileURI);
+    } catch (e) {
+      
+      return { data: null };
+    }
+    
+    return response.json();
   },
 };

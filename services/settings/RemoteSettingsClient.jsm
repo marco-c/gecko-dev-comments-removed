@@ -21,6 +21,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PerformanceCounters: "resource://gre/modules/PerformanceCounters.jsm",
   RemoteSettingsWorker: "resource://services-settings/RemoteSettingsWorker.jsm",
+  SharedUtils: "resource://services-settings/SharedUtils.jsm",
   UptakeTelemetry: "resource://services-common/uptake-telemetry.js",
   Utils: "resource://services-settings/Utils.jsm",
 });
@@ -337,15 +338,49 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
+
   async get(options = {}) {
     const {
       filters = {},
       order = "", 
+      dumpFallback = true,
       syncIfEmpty = true,
     } = options;
     let { verifySignature = false } = options;
 
-    if (syncIfEmpty && !(await Utils.hasLocalData(this))) {
+    let hasLocalData;
+    try {
+      hasLocalData = await Utils.hasLocalData(this);
+    } catch (e) {
+      
+      
+      if (!dumpFallback) {
+        throw e;
+      }
+      Cu.reportError(e);
+      let { data } = await SharedUtils.loadJSONDump(
+        this.bucketName,
+        this.collectionName
+      );
+      if (data !== null) {
+        console.info(`${this.identifier} falling back to JSON dump`);
+      } else {
+        console.info(`${this.identifier} no dump fallback, return empty list`);
+        data = [];
+      }
+      if (!ObjectUtils.isEmpty(filters)) {
+        data = data.filter(r => Utils.filterObject(filters, r));
+      }
+      if (order) {
+        data = Utils.sortObjects(order, data);
+      }
+      
+      
+      
+      return this._filterEntries(data);
+    }
+
+    if (syncIfEmpty && !hasLocalData) {
       
       
       if (!this._importingPromise) {

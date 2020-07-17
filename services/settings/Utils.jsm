@@ -49,6 +49,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "services.settings.server"
 );
 
+function _isUndefined(value) {
+  return typeof value === "undefined";
+}
+
 var Utils = {
   get SERVER_URL() {
     const env = Cc["@mozilla.org/process/environment;1"].getService(
@@ -234,5 +238,51 @@ var Utils = {
       backoffSeconds,
       ageSeconds,
     };
+  },
+
+  
+
+
+
+
+
+
+  filterObject(filters, entry) {
+    return Object.entries(filters).every(([filter, value]) => {
+      if (Array.isArray(value)) {
+        return value.some(candidate => candidate === entry[filter]);
+      } else if (typeof value === "object") {
+        return Utils.filterObject(value, entry[filter]);
+      } else if (!Object.prototype.hasOwnProperty.call(entry, filter)) {
+        console.error(`The property ${filter} does not exist`);
+        return false;
+      }
+      return entry[filter] === value;
+    });
+  },
+
+  
+
+
+
+
+
+
+  sortObjects(order, list) {
+    const hasDash = order[0] === "-";
+    const field = hasDash ? order.slice(1) : order;
+    const direction = hasDash ? -1 : 1;
+    return list.slice().sort((a, b) => {
+      if (a[field] && _isUndefined(b[field])) {
+        return direction;
+      }
+      if (b[field] && _isUndefined(a[field])) {
+        return -direction;
+      }
+      if (_isUndefined(a[field]) && _isUndefined(b[field])) {
+        return 0;
+      }
+      return a[field] > b[field] ? direction : -direction;
+    });
   },
 };

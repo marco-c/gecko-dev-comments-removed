@@ -67,11 +67,10 @@ const Agent = {
 
 
   async importJSONDump(bucket, collection) {
-    
-    
-    const jsonBucket = bucket.replace("-preview", "");
-
-    const { data: records } = await loadJSONDump(jsonBucket, collection);
+    const { data: records } = await SharedUtils.loadJSONDump(
+      bucket,
+      collection
+    );
     if (records === null) {
       
       return -1;
@@ -138,27 +137,6 @@ self.onmessage = event => {
       self.postMessage({ callbackId, error: "" + error });
     });
 };
-
-
-
-
-
-
-async function loadJSONDump(bucket, collection) {
-  const fileURI = `resource://app/defaults/settings/${bucket}/${collection}.json`;
-  let response;
-  try {
-    response = await fetch(fileURI);
-  } catch (e) {
-    
-    return { data: null };
-  }
-  if (gShutdown) {
-    throw new Error("Can't import when we've started shutting down.");
-  }
-  
-  return response.json();
-}
 
 let gPendingTransactions = new Set();
 
