@@ -75,6 +75,7 @@ function Messages(initialState = {}) {
     messageDetailsOpen: false,
     currentChannelId: null,
     currentChannelType: null,
+    currentRequestId: null,
     closedConnections: new Map(),
     columns: getMessageDefaultColumnsState(),
     ...initialState,
@@ -90,15 +91,21 @@ function setCurrentChannel(state, action) {
     return state;
   }
 
-  const { channelId, isEventStream } = action.request;
+  const { id, cause, channelId, isEventStream } = action.request;
   const { EVENT_STREAM, WEB_SOCKET } = CHANNEL_TYPE;
-  const currentChannelType = isEventStream ? EVENT_STREAM : WEB_SOCKET;
+  let currentChannelType = null;
+  if (cause.type === "websocket") {
+    currentChannelType = WEB_SOCKET;
+  } else if (isEventStream) {
+    currentChannelType = EVENT_STREAM;
+  }
 
   return {
     ...state,
     columns: getMessageDefaultColumnsState(currentChannelType),
     currentChannelId: channelId,
     currentChannelType,
+    currentRequestId: id,
     
     messageFilterText: "",
   };
@@ -108,14 +115,14 @@ function setCurrentChannel(state, action) {
 
 
 
-function setEventStreamFlag(state, action) {
-  if (state.currentChannelId === action.channelId) {
-    return setCurrentChannel(state, {
-      request: {
-        channelId: action.channelId,
-        isEventStream: true,
-      },
-    });
+function updateCurrentChannel(state, action) {
+  if (state.currentRequestId === action.id) {
+    const currentChannelType = CHANNEL_TYPE.EVENT_STREAM;
+    return {
+      ...state,
+      columns: getMessageDefaultColumnsState(currentChannelType),
+      currentChannelType,
+    };
   }
   return state;
 }
@@ -274,7 +281,7 @@ function messages(state = Messages(), action) {
     case SELECT_REQUEST:
       return setCurrentChannel(state, action);
     case SET_EVENT_STREAM_FLAG:
-      return setEventStreamFlag(state, action);
+      return updateCurrentChannel(state, action);
     case MSG_ADD:
       return addMessage(state, action);
     case MSG_SELECT:

@@ -13,10 +13,6 @@ const eventSourceSpec = generateActorSpec({
 
   events: {
     
-    serverEventSourceConnectionOpened: {
-      type: "eventSourceConnectionOpened",
-      httpChannelId: Arg(0, "number"),
-    },
     serverEventSourceConnectionClosed: {
       type: "eventSourceConnectionClosed",
       httpChannelId: Arg(0, "number"),
