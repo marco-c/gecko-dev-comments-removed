@@ -1,0 +1,14 @@
+
+
+
+
+
+#include "nsPrinter.h"
+
+NS_IMPL_ISUPPORTS(nsPrinter, nsIPrinter);
+
+NS_IMETHODIMP
+nsPrinter::GetName(nsAString& aName) {
+  aName = mName;
+  return NS_OK;
+}

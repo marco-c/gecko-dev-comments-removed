@@ -13,6 +13,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Telemetry.h"
 
+#include <wchar.h>
 #include <winspool.h>
 
 #include "nsIWidget.h"
@@ -20,9 +21,9 @@
 #include "nsTArray.h"
 #include "nsIPrintSettingsWin.h"
 
-#include "nsString.h"
+#include "nsPrinter.h"
 #include "nsReadableUtils.h"
-#include "nsStringEnumerator.h"
+#include "nsString.h"
 
 #include "gfxWindowsSurface.h"
 
@@ -418,7 +419,7 @@ nsresult nsDeviceContextSpecWin::GetDataFromPrinter(const nsAString& aName,
     if (NS_FAILED(rv)) {
       PR_PL(
           ("***** nsDeviceContextSpecWin::GetDataFromPrinter - Couldn't "
-           "enumerate printers!\n"));
+           "retrieve printers!\n"));
       DISPLAY_LAST_ERROR
     }
     NS_ENSURE_SUCCESS(rv, rv);
@@ -509,25 +510,22 @@ nsresult nsDeviceContextSpecWin::GetDataFromPrinter(const nsAString& aName,
 
 
 
-nsPrinterEnumeratorWin::nsPrinterEnumeratorWin() {}
 
-nsPrinterEnumeratorWin::~nsPrinterEnumeratorWin() {
-  
-  
-}
-
-NS_IMPL_ISUPPORTS(nsPrinterEnumeratorWin, nsIPrinterEnumerator)
-
-
+NS_IMPL_ISUPPORTS(nsPrinterListWin, nsIPrinterList)
 
 NS_IMETHODIMP
-nsPrinterEnumeratorWin::GetDefaultPrinterName(nsAString& aDefaultPrinterName) {
-  GlobalPrinters::GetInstance()->GetDefaultPrinterName(aDefaultPrinterName);
+nsPrinterListWin::GetSystemDefaultPrinter(nsIPrinter** aDefaultPrinter) {
+  NS_ENSURE_ARG_POINTER(aDefaultPrinter);
+  *aDefaultPrinter = nullptr;
+  nsAutoString printerName;
+  GlobalPrinters::GetInstance()->GetDefaultPrinterName(printerName);
+  *aDefaultPrinter = new nsPrinter(printerName);
+  NS_ADDREF(*aDefaultPrinter);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsPrinterEnumeratorWin::InitPrintSettingsFromPrinter(
+nsPrinterListWin::InitPrintSettingsFromPrinter(
     const nsAString& aPrinterName, nsIPrintSettings* aPrintSettings) {
   NS_ENSURE_ARG_POINTER(aPrintSettings);
 
@@ -591,20 +589,13 @@ nsPrinterEnumeratorWin::InitPrintSettingsFromPrinter(
   return NS_OK;
 }
 
-
-
-
 NS_IMETHODIMP
-nsPrinterEnumeratorWin::GetPrinterNameList(
-    nsIStringEnumerator** aPrinterNameList) {
-  NS_ENSURE_ARG_POINTER(aPrinterNameList);
-  *aPrinterNameList = nullptr;
-
+nsPrinterListWin::GetPrinters(nsTArray<RefPtr<nsIPrinter>>& aPrinters) {
   nsresult rv = GlobalPrinters::GetInstance()->EnumeratePrinterList();
   if (NS_FAILED(rv)) {
     PR_PL(
-        ("***** nsDeviceContextSpecWin::GetPrinterNameList - Couldn't "
-         "enumerate printers!\n"));
+        ("***** nsDeviceContextSpecWin::GetPrinters - Couldn't "
+         "retrieve printers!\n"));
     return rv;
   }
 
@@ -612,13 +603,17 @@ nsPrinterEnumeratorWin::GetPrinterNameList(
   nsTArray<nsString>* printers = new nsTArray<nsString>(numPrinters);
   if (!printers) return NS_ERROR_OUT_OF_MEMORY;
 
-  nsString* names = printers->AppendElements(numPrinters);
   for (uint32_t printerInx = 0; printerInx < numPrinters; ++printerInx) {
     LPWSTR name = GlobalPrinters::GetInstance()->GetItemFromList(printerInx);
-    names[printerInx].Assign(name);
+    
+    
+    nsAutoString printerName;
+    printerName.Assign(name);
+    RefPtr<nsIPrinter> printer = new nsPrinter(printerName);
+    aPrinters.AppendElement(std::move(printer));
   }
 
-  return NS_NewAdoptingStringEnumerator(aPrinterNameList, printers);
+  return NS_OK;
 }
 
 
