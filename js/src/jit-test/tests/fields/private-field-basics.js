@@ -84,7 +84,9 @@ assertThrows(
 assertThrows(
     () => eval('class C { #x = 10; static #x = 14; }'),
     SyntaxError);  
-
+assertThrows(
+    () => eval('delete this.#x'),
+    SyntaxError);  
 
 class B extends class {
   constructor(o) {

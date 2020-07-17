@@ -9165,8 +9165,7 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::unaryExpr(
       }
 
       if (handler_.isPrivateField(expr)) {
-        
-        MOZ_ALWAYS_FALSE(strictModeErrorAt(exprOffset, JSMSG_PRIVATE_DELETE));
+        errorAt(exprOffset, JSMSG_PRIVATE_DELETE);
         return null();
       }
 
