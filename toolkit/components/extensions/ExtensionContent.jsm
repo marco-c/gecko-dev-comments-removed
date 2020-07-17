@@ -427,8 +427,8 @@ class Script {
     }
   }
 
-  matchesWindow(window) {
-    return this.matcher.matchesWindow(window);
+  matchesWindowGlobal(windowGlobal) {
+    return this.matcher.matchesWindowGlobal(windowGlobal);
   }
 
   async injectInto(window) {
@@ -1189,10 +1189,8 @@ var ExtensionContent = {
 
     const executeInWin = innerId => {
       let wg = WindowGlobalChild.getByInnerWindowId(innerId);
-      let bc = wg && !wg.isClosed && wg.isCurrentGlobal && wg.browsingContext;
-
-      if (bc && bc.docShell && script.matchesWindow(bc.window)) {
-        return script.injectInto(bc.window);
+      if (wg?.isCurrentGlobal && script.matchesWindowGlobal(wg)) {
+        return script.injectInto(wg.browsingContext.window);
       }
     };
 
