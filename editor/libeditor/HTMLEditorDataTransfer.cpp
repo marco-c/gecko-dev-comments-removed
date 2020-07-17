@@ -3122,11 +3122,11 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
 }
 
 
-Element*
-HTMLEditor::AutoHTMLFragmentBoundariesFixer::GetMostAncestorListOrTableElement(
-    const nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents,
-    const nsTArray<OwningNonNull<Element>>&
-        aArrayOfListAndTableRelatedElements) {
+Element* HTMLEditor::AutoHTMLFragmentBoundariesFixer::
+    GetMostDistantAncestorListOrTableElement(
+        const nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents,
+        const nsTArray<OwningNonNull<Element>>&
+            aInclusiveAncestorsTableOrListElements) {
   Element* lastFoundAncestorListOrTableElement = nullptr;
   for (auto& content : aArrayOfTopMostChildContents) {
     if (HTMLEditUtils::IsAnyTableElementButNotTable(content)) {
@@ -3140,12 +3140,12 @@ HTMLEditor::AutoHTMLFragmentBoundariesFixer::GetMostAncestorListOrTableElement(
       
       
       
-      if (!aArrayOfListAndTableRelatedElements.Contains(tableElement)) {
+      if (!aInclusiveAncestorsTableOrListElements.Contains(tableElement)) {
         return lastFoundAncestorListOrTableElement;
       }
       
       
-      if (aArrayOfListAndTableRelatedElements.LastElement().get() ==
+      if (aInclusiveAncestorsTableOrListElements.LastElement().get() ==
           tableElement) {
         return tableElement;
       }
@@ -3168,12 +3168,12 @@ HTMLEditor::AutoHTMLFragmentBoundariesFixer::GetMostAncestorListOrTableElement(
     
     
     
-    if (!aArrayOfListAndTableRelatedElements.Contains(listElement)) {
+    if (!aInclusiveAncestorsTableOrListElements.Contains(listElement)) {
       return lastFoundAncestorListOrTableElement;
     }
     
     
-    if (aArrayOfListAndTableRelatedElements.LastElement().get() ==
+    if (aInclusiveAncestorsTableOrListElements.LastElement().get() ==
         listElement) {
       return listElement;
     }
@@ -3267,14 +3267,13 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
 
   
   
-  AutoTArray<OwningNonNull<Element>, 4>
-      arrayOfListAndTableRelatedElementsAtEdge;
+  AutoTArray<OwningNonNull<Element>, 4> inclusiveAncestorsListOrTableElements;
   CollectTableAndAnyListElementsOfInclusiveAncestorsAt(
       aStartOrEnd == StartOrEnd::end
           ? aArrayOfTopMostChildContents.LastElement()
           : aArrayOfTopMostChildContents[0],
-      arrayOfListAndTableRelatedElementsAtEdge);
-  if (arrayOfListAndTableRelatedElementsAtEdge.IsEmpty()) {
+      inclusiveAncestorsListOrTableElements);
+  if (inclusiveAncestorsListOrTableElements.IsEmpty()) {
     return;
   }
 
@@ -3289,8 +3288,8 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
   
   
   
-  Element* listOrTableElement = GetMostAncestorListOrTableElement(
-      aArrayOfTopMostChildContents, arrayOfListAndTableRelatedElementsAtEdge);
+  Element* listOrTableElement = GetMostDistantAncestorListOrTableElement(
+      aArrayOfTopMostChildContents, inclusiveAncestorsListOrTableElements);
   if (!listOrTableElement) {
     return;
   }
