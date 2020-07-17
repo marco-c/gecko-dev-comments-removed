@@ -113,7 +113,6 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   
   
   JS::Rooted<ScriptStencil> topLevel;
-  SourceExtent topLevelExtent = {};
   bool topLevelAsmJS = false;
 
   

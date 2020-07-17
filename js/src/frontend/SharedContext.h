@@ -131,10 +131,11 @@ class SharedContext {
   
   ImmutableScriptFlags immutableFlags_ = {};
 
- public:
   
   
-  SourceExtent extent = {};
+  
+  
+  SourceExtent extent_ = {};
 
  protected:
   
@@ -175,6 +176,9 @@ class SharedContext {
     return immutableFlags_.hasFlag(flag);
   }
   void setFlag(ImmutableFlags flag, bool b = true) {
+    
+    
+
     immutableFlags_.setFlag(flag, b);
   }
 
@@ -201,6 +205,8 @@ class SharedContext {
   IMMUTABLE_FLAG_GETTER_SETTER(bindingsAccessedDynamically,
                                BindingsAccessedDynamically)
   IMMUTABLE_FLAG_GETTER_SETTER(hasCallSiteObj, HasCallSiteObj)
+
+  const SourceExtent& extent() const { return extent_; }
 
   bool isFunctionBox() const { return isFunction(); }
   inline FunctionBox* asFunctionBox();
@@ -253,7 +259,7 @@ class SharedContext {
     return retVal;
   }
 
-  void copyScriptFields(ScriptStencil& stencil) const;
+  void copyScriptFields(ScriptStencil& stencil);
 };
 
 class MOZ_STACK_CLASS GlobalSharedContext : public SharedContext {
@@ -624,17 +630,33 @@ class FunctionBox : public SharedContext {
   bool useAsmOrInsideUseAsm() const { return useAsm; }
 
   void setStart(uint32_t offset, uint32_t line, uint32_t column) {
-    extent.sourceStart = offset;
-    extent.lineno = line;
-    extent.column = column;
+    MOZ_ASSERT(!isScriptFieldCopiedToStencil);
+    extent_.sourceStart = offset;
+    extent_.lineno = line;
+    extent_.column = column;
   }
 
   void setEnd(uint32_t end) {
+    MOZ_ASSERT(!isScriptFieldCopiedToStencil);
     
     
     
-    extent.sourceEnd = end;
-    extent.toStringEnd = end;
+    extent_.sourceEnd = end;
+    extent_.toStringEnd = end;
+  }
+
+  void setCtorToStringEnd(uint32_t end) {
+    extent_.toStringEnd = end;
+    if (isScriptFieldCopiedToStencil) {
+      copyUpdatedExtent();
+    }
+  }
+
+  void setCtorFunctionHasThisBinding() {
+    immutableFlags_.setFlag(ImmutableFlags::FunctionHasThisBinding, true);
+    if (isScriptFieldCopiedToStencil) {
+      copyUpdatedImmutableFlags();
+    }
   }
 
   uint16_t length() { return length_; }
@@ -670,6 +692,14 @@ class FunctionBox : public SharedContext {
   void finishScriptFlags();
   void copyScriptFields(ScriptStencil& stencil);
   void copyFunctionFields(ScriptStencil& stencil);
+
+  
+  
+  void copyUpdatedImmutableFlags();
+
+  
+  
+  void copyUpdatedExtent();
 
   
   

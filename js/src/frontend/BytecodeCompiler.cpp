@@ -340,7 +340,7 @@ AutoFrontendTraceLog::AutoFrontendTraceLog(JSContext* cx,
   }
 
   frontendEvent_.emplace(TraceLogger_Frontend, errorReporter.getFilename(),
-                         funbox->extent.lineno, funbox->extent.column);
+                         funbox->extent().lineno, funbox->extent().column);
   frontendLog_.emplace(logger_, *frontendEvent_);
   typeLog_.emplace(logger_, id);
 }
@@ -621,18 +621,6 @@ JSFunction* frontend::StandaloneFunctionCompiler<Unit>::compile(
   if (funbox->isInterpreted()) {
     MOZ_ASSERT(funbox->function() == nullptr);
 
-    
-    
-    
-    
-    compilationInfo.topLevelExtent =
-        SourceExtent{ 0,
-                     sourceBuffer_.length(),
-                     funbox->extent.toStringStart,
-                     funbox->extent.toStringEnd,
-                     compilationInfo.options.lineno,
-                     compilationInfo.options.column};
-
     Maybe<BytecodeEmitter> emitter;
     if (!emplaceEmitter(compilationInfo, emitter, funbox)) {
       return nullptr;
@@ -641,6 +629,18 @@ JSFunction* frontend::StandaloneFunctionCompiler<Unit>::compile(
     if (!emitter->emitFunctionScript(parsedFunction, TopLevelFunction::Yes)) {
       return nullptr;
     }
+
+    
+    
+    
+    
+    compilationInfo.topLevel.get().extent =
+        SourceExtent{ 0,
+                     sourceBuffer_.length(),
+                     funbox->extent().toStringStart,
+                     funbox->extent().toStringEnd,
+                     compilationInfo.options.lineno,
+                     compilationInfo.options.column};
   } else {
     
     
