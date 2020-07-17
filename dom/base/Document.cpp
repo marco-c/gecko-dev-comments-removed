@@ -9778,23 +9778,10 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
             
             
 
-            BrowsingContext* bc = GetBrowsingContext();
-            if (GetDocShell()->GetTouchEventsOverride() ==
-                    nsIDocShell::TOUCHEVENTS_OVERRIDE_ENABLED &&
-                bc && bc->InRDMPane()) {
-              
-              
-              
-              width = nsViewportInfo::Max(
-                  displaySize.width,
-                  StaticPrefs::browser_viewport_desktopWidth());
-            } else {
-              width = StaticPrefs::browser_viewport_desktopWidth();
-            }
             
             
             
-            width /= fullZoom;
+            width = StaticPrefs::browser_viewport_desktopWidth() / fullZoom;
           } else {
             
             width = displaySize.width;
