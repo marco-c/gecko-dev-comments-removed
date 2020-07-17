@@ -1010,7 +1010,6 @@ add_task(async function test24k() {
 
 add_task(async function test25() {
   dns.clearCache(true);
-  Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true); 
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref("network.trr.excluded-domains", "");
   Services.prefs.setCharPref("network.trr.builtin-excluded-domains", "");
@@ -1020,7 +1019,6 @@ add_task(async function test25() {
   );
 
   await new DNSListener("localhost", "192.192.192.192", true);
-  Services.prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
 });
 
 
