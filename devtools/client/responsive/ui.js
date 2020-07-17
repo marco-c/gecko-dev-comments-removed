@@ -32,12 +32,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "swapToInnerBrowser",
-  "devtools/client/responsive/browser/swap",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "message",
   "devtools/client/responsive/utils/message"
 );
@@ -54,8 +48,6 @@ loader.lazyRequireGetter(
   "saveScreenshot",
   "devtools/shared/screenshot/save"
 );
-
-const TOOL_URL = "chrome://devtools/content/responsive/index.xhtml";
 
 const RELOAD_CONDITION_PREF_PREFIX = "devtools.responsive.reloadConditions.";
 const RELOAD_NOTIFICATION_PREF =
@@ -92,16 +84,6 @@ class ResponsiveUI {
     
     this.destroyed = false;
     
-
-
-
-
-
-
-
-
-    this._toolWindow = null;
-    
     this.rdmFrame = null;
 
     
@@ -117,20 +99,8 @@ class ResponsiveUI {
     EventEmitter.decorate(this);
   }
 
-  get isBrowserUIEnabled() {
-    if (!this._isBrowserUIEnabled) {
-      this._isBrowserUIEnabled = Services.prefs.getBoolPref(
-        "devtools.responsive.browserUI.enabled"
-      );
-    }
-
-    return this._isBrowserUIEnabled;
-  }
-
   get toolWindow() {
-    return this.isBrowserUIEnabled
-      ? this.rdmFrame.contentWindow
-      : this._toolWindow;
+    return this.rdmFrame.contentWindow;
   }
 
   get docShell() {
@@ -138,9 +108,7 @@ class ResponsiveUI {
   }
 
   get viewportElement() {
-    return this.isBrowserUIEnabled
-      ? this.browserStackEl.querySelector("browser")
-      : this._toolWindow.document.querySelector(".viewport-content");
+    return this.browserStackEl.querySelector("browser");
   }
 
   get currentTarget() {
@@ -150,74 +118,27 @@ class ResponsiveUI {
   
 
 
-
-
-
-
   async init() {
     debug("Init start");
 
-    const ui = this;
+    this.initRDMFrame();
 
-    if (this.isBrowserUIEnabled) {
-      this.initRDMFrame();
-
-      
-      
-      this.hideBrowserUI();
-    }
+    
+    
+    this.hideBrowserUI();
 
     
     this.tab.addEventListener("TabClose", this);
     this.browserWindow.addEventListener("unload", this);
-
-    if (!this.isBrowserUIEnabled) {
-      
-      debug("Create browser swapper");
-      this.swap = swapToInnerBrowser({
-        tab: this.tab,
-        containerURL: TOOL_URL,
-        async getInnerBrowser(containerBrowser) {
-          const toolWindow = (ui._toolWindow = containerBrowser.contentWindow);
-          toolWindow.addEventListener("message", ui);
-          debug("Wait until init from inner");
-          await message.request(toolWindow, "init");
-          toolWindow.addInitialViewport({
-            uri: "about:blank",
-            userContextId: ui.tab.userContextId,
-          });
-          debug("Wait until browser mounted");
-          await message.wait(toolWindow, "browser-mounted");
-          return ui.getViewportBrowser();
-        },
-      });
-      debug("Wait until swap start");
-      await this.swap.start();
-    } else {
-      this.rdmFrame.contentWindow.addEventListener("message", this);
-    }
+    this.rdmFrame.contentWindow.addEventListener("message", this);
 
     this.tab.linkedBrowser.enterResponsiveMode();
 
     
     
-    if (this.isBrowserUIEnabled) {
-      this.browserWindow.addEventListener("FullZoomChange", this);
-    } else {
-      const bc = BrowsingContext.getFromWindow(this._toolWindow);
-      bc.fullZoom = 1;
-      bc.textZoom = 1;
-
-      this.tab.linkedBrowser.addEventListener("FullZoomChange", this);
-    }
+    this.browserWindow.addEventListener("FullZoomChange", this);
 
     this.tab.addEventListener("BeforeTabRemotenessChange", this);
-
-    if (!this.isBrowserUIEnabled) {
-      
-      debug("Wait until start frame script");
-      await message.request(this._toolWindow, "start-frame-script");
-    }
 
     
     debug("Wait until RDP server connect");
@@ -359,13 +280,10 @@ class ResponsiveUI {
       
       await this.updateScreenOrientation("landscape-primary", 0);
       await this.updateMaxTouchPointsEnabled(false);
+      await this.responsiveFront.setFloatingScrollbars(false);
 
-      if (this.isBrowserUIEnabled) {
-        await this.responsiveFront.setFloatingScrollbars(false);
-
-        
-        this.hideBrowserUI();
-      }
+      
+      this.hideBrowserUI();
 
       
       
@@ -383,33 +301,23 @@ class ResponsiveUI {
     this.browserWindow.removeEventListener("unload", this);
     this.tab.linkedBrowser.leaveResponsiveMode();
 
-    if (!this.isBrowserUIEnabled) {
-      this.tab.linkedBrowser.removeEventListener("FullZoomChange", this);
-      this._toolWindow.removeEventListener("message", this);
-    } else {
-      this.browserWindow.removeEventListener("FullZoomChange", this);
-      this.rdmFrame.contentWindow.removeEventListener("message", this);
+    this.browserWindow.removeEventListener("FullZoomChange", this);
+    this.rdmFrame.contentWindow.removeEventListener("message", this);
 
-      
-      this.resizeToolbarObserver.unobserve(this.browserStackEl);
+    
+    this.resizeToolbarObserver.unobserve(this.browserStackEl);
 
-      this.rdmFrame.remove();
+    this.rdmFrame.remove();
 
-      
-      this.resizeHandle.remove();
-      this.resizeHandleX.remove();
-      this.resizeHandleY.remove();
+    
+    this.resizeHandle.remove();
+    this.resizeHandleX.remove();
+    this.resizeHandleY.remove();
 
-      this.browserContainerEl.classList.remove("responsive-mode");
-      this.browserStackEl.style.removeProperty("--rdm-width");
-      this.browserStackEl.style.removeProperty("--rdm-height");
-      this.browserStackEl.style.removeProperty("--rdm-zoom");
-    }
-
-    if (!this.isBrowserUIEnabled && !isTabContentDestroying) {
-      
-      await message.request(this._toolWindow, "stop-frame-script");
-    }
+    this.browserContainerEl.classList.remove("responsive-mode");
+    this.browserStackEl.style.removeProperty("--rdm-width");
+    this.browserStackEl.style.removeProperty("--rdm-height");
+    this.browserStackEl.style.removeProperty("--rdm-zoom");
 
     
     
@@ -431,7 +339,6 @@ class ResponsiveUI {
     this.showBrowserUI();
 
     
-    const swap = this.swap;
     this.browserContainerEl = null;
     this.browserStackEl = null;
     this.browserWindow = null;
@@ -441,8 +348,6 @@ class ResponsiveUI {
     this.resizeHandle = null;
     this.resizeHandleX = null;
     this.resizeHandleY = null;
-    this._toolWindow = null;
-    this.swap = null;
     this.resizeToolbarObserver = null;
 
     
@@ -453,12 +358,6 @@ class ResponsiveUI {
       await clientClosed;
     }
     this.client = this.responsiveFront = null;
-
-    if (!this.isBrowserUIEnabled && !isWindowClosing) {
-      
-      swap.stop();
-    }
-
     this.destroyed = true;
 
     return true;
@@ -501,36 +400,27 @@ class ResponsiveUI {
   }
 
   hideBrowserUI() {
-    if (this.isBrowserUIEnabled) {
-      this.tab.linkedBrowser.style.visibility = "hidden";
-      this.resizeHandle.style.visibility = "hidden";
-    }
+    this.tab.linkedBrowser.style.visibility = "hidden";
+    this.resizeHandle.style.visibility = "hidden";
   }
 
   showBrowserUI() {
-    if (this.isBrowserUIEnabled) {
-      this.tab.linkedBrowser.style.removeProperty("visibility");
-      this.resizeHandle.style.removeProperty("visibility");
-    }
+    this.tab.linkedBrowser.style.removeProperty("visibility");
+    this.resizeHandle.style.removeProperty("visibility");
   }
 
   handleEvent(event) {
-    const { browserWindow, tab, toolWindow } = this;
+    const { browserWindow, tab } = this;
 
     switch (event.type) {
       case "message":
         this.handleMessage(event);
         break;
       case "FullZoomChange":
-        if (this.isBrowserUIEnabled) {
-          
-          
-          const { width, height } = this.getViewportSize();
-          this.updateViewportSize(width, height);
-        } else {
-          const zoom = tab.linkedBrowser.fullZoom;
-          toolWindow.setViewportZoom(zoom);
-        }
+        
+        
+        const { width, height } = this.getViewportSize();
+        this.updateViewportSize(width, height);
         break;
       case "BeforeTabRemotenessChange":
         this.onRemotenessChange(event);
@@ -829,15 +719,12 @@ class ResponsiveUI {
 
 
   async restoreUIState() {
-    
-    if (this.isBrowserUIEnabled) {
-      const leftAlignmentEnabled = Services.prefs.getBoolPref(
-        "devtools.responsive.leftAlignViewport.enabled",
-        false
-      );
+    const leftAlignmentEnabled = Services.prefs.getBoolPref(
+      "devtools.responsive.leftAlignViewport.enabled",
+      false
+    );
 
-      this.updateUIAlignment(leftAlignmentEnabled);
-    }
+    this.updateUIAlignment(leftAlignmentEnabled);
 
     const height = Services.prefs.getIntPref(
       "devtools.responsive.viewport.height",
@@ -854,19 +741,17 @@ class ResponsiveUI {
 
 
   async restoreActorState() {
-    if (this.isBrowserUIEnabled) {
-      
-      
-      
-      
-      this.tab.linkedBrowser.enterResponsiveMode();
+    
+    
+    
+    
+    this.tab.linkedBrowser.enterResponsiveMode();
 
-      
-      await this.responsiveFront.setFloatingScrollbars(true);
+    
+    await this.responsiveFront.setFloatingScrollbars(true);
 
-      
-      await this.currentTarget.attach();
-    }
+    
+    await this.currentTarget.attach();
 
     const hasDeviceState = await this.hasDeviceState();
     if (hasDeviceState) {
@@ -1080,10 +965,6 @@ class ResponsiveUI {
 
 
   updateViewportSize(width, height) {
-    if (!this.isBrowserUIEnabled) {
-      return;
-    }
-
     const zoom = this.tab.linkedBrowser.fullZoom;
 
     
@@ -1122,10 +1003,6 @@ class ResponsiveUI {
 
   async setViewportSize(size) {
     await this.inited;
-    if (!this.isBrowserUIEnabled) {
-      this._toolWindow.setViewportSize(size);
-      return;
-    }
 
     
     let { width, height } = size;
@@ -1145,10 +1022,6 @@ class ResponsiveUI {
 
 
   getViewportBrowser() {
-    if (!this.isBrowserUIEnabled) {
-      return this._toolWindow.getViewportBrowser();
-    }
-
     return this.tab.linkedBrowser;
   }
 
@@ -1170,10 +1043,6 @@ class ResponsiveUI {
 
 
   getBrowserWindow() {
-    if (!this.isBrowserUIEnabled) {
-      return this._toolWindow;
-    }
-
     return this.browserWindow;
   }
 
@@ -1187,21 +1056,12 @@ class ResponsiveUI {
   async onRemotenessChange(event) {
     
     
-    if (this.isBrowserUIEnabled) {
-      
-      
-      
-      
-      await this.targetList.targetFront.once("target-destroyed");
-      const descriptor = await this.client.mainRoot.getTab();
-      const newTarget = await descriptor.getTarget();
-      await this.targetList.switchToTarget(newTarget);
-    } else {
-      const { browserWindow, tab } = this;
-      this.manager.closeIfNeeded(browserWindow, tab, {
-        reason: event.type,
-      });
-    }
+    
+    
+    await this.targetList.targetFront.once("target-destroyed");
+    const descriptor = await this.client.mainRoot.getTab();
+    const newTarget = await descriptor.getTarget();
+    await this.targetList.switchToTarget(newTarget);
   }
 
   

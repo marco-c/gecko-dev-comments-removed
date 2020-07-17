@@ -13,7 +13,6 @@ const { require } = BrowserLoader({
   baseURI: "resource://devtools/client/responsive/",
   window,
 });
-const Services = require("Services");
 const Telemetry = require("devtools/client/shared/telemetry");
 
 const {
@@ -46,10 +45,8 @@ const {
 
 window.require = require;
 
-if (Services.prefs.getBoolPref("devtools.responsive.browserUI.enabled")) {
-  
-  message.post(window, "script-init");
-}
+
+message.post(window, "script-init");
 
 const bootstrap = {
   telemetry: new Telemetry(),
