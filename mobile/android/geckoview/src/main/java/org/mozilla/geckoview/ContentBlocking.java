@@ -612,8 +612,9 @@ public class ContentBlocking {
             final String matchedList =
                 blockedList != null ? blockedList : loadedList;
 
+            
+            
             final boolean blocking =
-                loadedList.isEmpty() &&
                 (blockedList != null ||
                  error != 0L ||
                  ContentBlocking.isBlockingGeckoCbCat(category));
