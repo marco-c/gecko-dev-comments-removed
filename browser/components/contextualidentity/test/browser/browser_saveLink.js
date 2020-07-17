@@ -19,6 +19,9 @@ add_task(async function setup() {
       
       
       ["network.cookie.sameSite.schemeful", false],
+      
+      
+      ["dom.block_download_insecure", false],
     ],
   });
 });
