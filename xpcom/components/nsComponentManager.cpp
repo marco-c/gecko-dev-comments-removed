@@ -1440,10 +1440,6 @@ nsresult nsComponentManagerImpl::GetService(ModuleID aId, const nsIID& aIID,
 
   MutexLock lock(mLock);
 
-  if (!entry.Active()) {
-    return NS_ERROR_FACTORY_NOT_REGISTERED;
-  }
-
   Maybe<EntryWrapper> wrapper;
   if (entry.Overridable()) {
     
@@ -1452,6 +1448,8 @@ nsresult nsComponentManagerImpl::GetService(ModuleID aId, const nsIID& aIID,
     if (!wrapper) {
       return NS_ERROR_FACTORY_NOT_REGISTERED;
     }
+  } else if (!entry.Active()) {
+    return NS_ERROR_FACTORY_NOT_REGISTERED;
   } else {
     wrapper.emplace(&entry);
   }
