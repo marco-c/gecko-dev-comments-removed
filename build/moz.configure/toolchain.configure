@@ -1786,19 +1786,6 @@ add_old_configure_assignment('YASM', have_yasm)
 
 
 
-@depends(target)
-def clangcl_asflags(target):
-    asflags = None
-    if target.os == 'WINNT' and target.cpu == 'aarch64':
-        asflags = ['--target=aarch64-windows-msvc']
-    return asflags
-
-
-set_config('CLANGCL_ASFLAGS', clangcl_asflags)
-
-
-
-
 
 js_option('--enable-coverage', env='MOZ_CODE_COVERAGE',
           help='Enable code coverage')
