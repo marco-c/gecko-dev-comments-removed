@@ -2003,12 +2003,13 @@ static bool SetTypeForExposedFunctions(JSContext* cx,
 
     
     
-    if (!funbox->wasEmitted && !funbox->isStandalone) {
+    if (!stencil.wasFunctionEmitted && !stencil.isStandaloneFunction) {
       continue;
     }
 
     HandleFunction fun = compilationInfo.functions[*stencil.functionIndex];
-    if (!JSFunction::setTypeForScriptedFunction(cx, fun, funbox->isSingleton)) {
+    if (!JSFunction::setTypeForScriptedFunction(cx, fun,
+                                                stencil.isSingletonFunction)) {
       return false;
     }
   }
@@ -2026,10 +2027,10 @@ static bool InstantiateScriptStencils(JSContext* cx,
     ScriptStencil& stencil = funbox->functionStencil().get();
     HandleFunction fun = compilationInfo.functions[*stencil.functionIndex];
 
-    if (funbox->emitBytecode) {
+    if (stencil.immutableScriptData) {
       
       
-      if (!funbox->wasEmitted) {
+      if (!stencil.wasFunctionEmitted) {
         continue;
       }
 
@@ -2086,25 +2087,25 @@ static void UpdateEmittedInnerFunctions(CompilationInfo& compilationInfo,
     ScriptStencil& stencil = funbox->functionStencil().get();
     HandleFunction fun = compilationInfo.functions[*stencil.functionIndex];
 
-    if (!funbox->wasEmitted) {
+    if (!stencil.wasFunctionEmitted) {
       continue;
     }
 
-    if (funbox->emitBytecode || stencil.isAsmJSModule) {
+    if (fun->baseScript()->hasBytecode() || stencil.isAsmJSModule) {
       
-      MOZ_ASSERT(!funbox->hasEnclosingScopeIndex());
+      MOZ_ASSERT(stencil.lazyFunctionEnclosingScopeIndex_.isNothing());
     } else {
       
       BaseScript* script = fun->baseScript();
 
-      ScopeIndex index = funbox->getEnclosingScopeIndex();
+      ScopeIndex index = *stencil.lazyFunctionEnclosingScopeIndex_;
       Scope* scope = compilationInfo.scopeCreationData[index].get().getScope();
       script->setEnclosingScope(scope);
       script->initTreatAsRunOnce(stencil.immutableFlags.hasFlag(
           ImmutableScriptFlagsEnum::TreatAsRunOnce));
 
-      if (funbox->hasFieldInitializers()) {
-        script->setFieldInitializers(funbox->fieldInitializers());
+      if (stencil.fieldInitializers) {
+        script->setFieldInitializers(*stencil.fieldInitializers);
       }
     }
 
@@ -2134,7 +2135,7 @@ static void LinkEnclosingLazyScript(CompilationInfo& compilationInfo,
       continue;
     }
 
-    if (funbox->emitBytecode) {
+    if (fun->baseScript()->hasBytecode()) {
       continue;
     }
 
@@ -2312,7 +2313,7 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
   }
 
   
-  funbox->isStandalone = true;
+  funbox->setIsStandalone(true);
 
   funbox->initStandalone(this->compilationInfo_.scopeContext, flags,
                          syntaxKind);

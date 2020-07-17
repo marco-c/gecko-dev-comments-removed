@@ -369,11 +369,38 @@ class ScriptStencil {
   uint16_t nargs = 0;
 
   
+  
+  
+  
+  
+  
+  
+  mozilla::Maybe<ScopeIndex> lazyFunctionEnclosingScopeIndex_;
+
+  
   bool isAsmJSModule : 1;
 
   
+  
+  bool isStandaloneFunction : 1;
 
-  explicit ScriptStencil(JSContext* cx) : gcThings(cx), isAsmJSModule(false) {}
+  
+  
+  
+  bool wasFunctionEmitted : 1;
+
+  
+  
+  bool isSingletonFunction : 1;
+
+  
+
+  explicit ScriptStencil(JSContext* cx)
+      : gcThings(cx),
+        isAsmJSModule(false),
+        isStandaloneFunction(false),
+        wasFunctionEmitted(false),
+        isSingletonFunction(false) {}
 
   
   

@@ -324,6 +324,8 @@ class FunctionBox : public SharedContext {
   
   
   
+  
+  
   mozilla::Maybe<ScopeIndex> enclosingScopeIndex_;
 
   
@@ -377,16 +379,16 @@ class FunctionBox : public SharedContext {
 
   
   
-  bool isStandalone : 1;
+  bool isStandalone_ : 1;
 
   
   
   
-  bool wasEmitted : 1;
+  bool wasEmitted_ : 1;
 
   
   
-  bool isSingleton : 1;
+  bool isSingleton_ : 1;
 
   
   bool isAnnexB : 1;
@@ -464,8 +466,30 @@ class FunctionBox : public SharedContext {
 
   JSFunction* function() const;
 
+  bool isStandalone() const { return isStandalone_; }
+  void setIsStandalone(bool isStandalone) {
+    MOZ_ASSERT(!isFunctionFieldCopiedToStencil);
+    isStandalone_ = isStandalone;
+  }
+
+  bool wasEmitted() const { return wasEmitted_; }
+  void setWasEmitted(bool wasEmitted) {
+    wasEmitted_ = wasEmitted;
+    if (isFunctionFieldCopiedToStencil) {
+      copyUpdatedWasEmitted();
+    }
+  }
+
+  bool isSingleton() const { return isSingleton_; }
+  void setIsSingleton(bool isSingleton) {
+    isSingleton_ = isSingleton;
+    if (isFunctionFieldCopiedToStencil) {
+      copyUpdatedIsSingleton();
+    }
+  }
+
   MOZ_MUST_USE bool setAsmJSModule(const JS::WasmModule* module);
-  bool isAsmJSModule() { return isAsmJSModule_; }
+  bool isAsmJSModule() const { return isAsmJSModule_; }
 
   Scope* compilationEnclosingScope() const override;
 
@@ -701,9 +725,21 @@ class FunctionBox : public SharedContext {
 
   
   
+  void copyUpdatedEnclosingScopeIndex();
+
+  
+  
   
   
   void copyUpdatedAtomAndFlags();
+
+  
+  
+  void copyUpdatedWasEmitted();
+
+  
+  
+  void copyUpdatedIsSingleton();
 };
 
 #undef FLAG_GETTER_SETTER
