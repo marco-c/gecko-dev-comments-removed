@@ -132,19 +132,7 @@ class XPCShellRunner(MozbuildObject):
                 raise
         kwargs['tempDir'] = temp_dir
 
-        
-        
-        filtered_args = {}
-        for k, v in kwargs.iteritems():
-            if isinstance(v, unicode_type):
-                v = v.encode('utf-8')
-
-            if isinstance(k, unicode_type):
-                k = k.encode('utf-8')
-
-            filtered_args[k] = v
-
-        result = xpcshell.runTests(filtered_args)
+        result = xpcshell.runTests(kwargs)
 
         self.log_manager.disable_unstructured()
 
