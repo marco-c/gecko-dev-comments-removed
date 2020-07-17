@@ -1015,6 +1015,18 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
+
+
+
+
+
+    EditorDOMPointInText GetPreviousNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
+        const EditorDOMPoint& aPointToInsert) const;
+
+    
+
+
+
     Maybe<VisibleWhiteSpacesData> CreateVisibleWhiteSpacesData() const;
 
    private:
@@ -1237,20 +1249,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult NormalizeWhiteSpacesAtEndOf(
       const VisibleWhiteSpacesData& aVisibleWhiteSpacesData);
-
-  
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MaybeReplacePreviousNBSPWithASCIIWhiteSpace(
-      const VisibleWhiteSpacesData& aVisibleWhiteSpacesData,
-      const EditorDOMPoint& aPoint);
 
   
 

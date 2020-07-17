@@ -296,13 +296,22 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
       
       
       
-      nsresult rv = MaybeReplacePreviousNBSPWithASCIIWhiteSpace(
-          visibleWhiteSpaces.ref(), pointToInsert);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WSRunObject::MaybeReplacePreviousNBSPWithASCIIWhiteSpace() "
-            "failed");
-        return nullptr;
+      EditorDOMPointInText atNBSPReplacedWithASCIIWhiteSpace =
+          textFragmentData
+              .GetPreviousNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
+                  pointToInsert);
+      if (atNBSPReplacedWithASCIIWhiteSpace.IsSet()) {
+        AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+        nsresult rv =
+            MOZ_KnownLive(mHTMLEditor)
+                .ReplaceTextWithTransaction(
+                    MOZ_KnownLive(
+                        *atNBSPReplacedWithASCIIWhiteSpace.ContainerAsText()),
+                    atNBSPReplacedWithASCIIWhiteSpace.Offset(), 1, u" "_ns);
+        if (NS_FAILED(rv)) {
+          NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed failed");
+          return nullptr;
+        }
       }
     }
   }
@@ -448,13 +457,22 @@ nsresult WSRunObject::InsertText(Document& aDocument,
       
       
       
-      nsresult rv = MaybeReplacePreviousNBSPWithASCIIWhiteSpace(
-          visibleWhiteSpacesAtStart.ref(), pointToInsert);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WSRunObject::MaybeReplacePreviousNBSPWithASCIIWhiteSpace() "
-            "failed");
-        return rv;
+      EditorDOMPointInText atNBSPReplacedWithASCIIWhiteSpace =
+          textFragmentDataAtStart
+              .GetPreviousNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
+                  pointToInsert);
+      if (atNBSPReplacedWithASCIIWhiteSpace.IsSet()) {
+        AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+        nsresult rv =
+            MOZ_KnownLive(mHTMLEditor)
+                .ReplaceTextWithTransaction(
+                    MOZ_KnownLive(
+                        *atNBSPReplacedWithASCIIWhiteSpace.ContainerAsText()),
+                    atNBSPReplacedWithASCIIWhiteSpace.Offset(), 1, u" "_ns);
+        if (NS_FAILED(rv)) {
+          NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed failed");
+          return rv;
+        }
       }
     }
 
@@ -2089,20 +2107,28 @@ nsresult WSRunObject::NormalizeWhiteSpacesAtEndOf(
   return rv;
 }
 
-nsresult WSRunObject::MaybeReplacePreviousNBSPWithASCIIWhiteSpace(
-    const VisibleWhiteSpacesData& aVisibleWhiteSpacesData,
-    const EditorDOMPoint& aPoint) {
-  MOZ_ASSERT(aPoint.IsSetAndValid());
+EditorDOMPointInText WSRunScanner::TextFragmentData::
+    GetPreviousNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
+        const EditorDOMPoint& aPointToInsert) const {
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
+  MOZ_ASSERT(CreateVisibleWhiteSpacesData().isSome());
+  NS_ASSERTION(
+      CreateVisibleWhiteSpacesData().ref().ComparePoint(aPointToInsert) ==
+              PointPosition::MiddleOfFragment ||
+          CreateVisibleWhiteSpacesData().ref().ComparePoint(aPointToInsert) ==
+              PointPosition::EndOfFragment,
+      "Previous char of aPoint should be in the visible white-spaces");
 
   
   
   
   
   
-  EditorDOMPointInText atPreviousChar = GetPreviousEditableCharPoint(aPoint);
+  EditorDOMPointInText atPreviousChar =
+      GetPreviousEditableCharPoint(aPointToInsert);
   if (!atPreviousChar.IsSet() || atPreviousChar.IsEndOfContainer() ||
       !atPreviousChar.IsCharNBSP()) {
-    return NS_OK;
+    return EditorDOMPointInText();
   }
 
   EditorDOMPointInText atPreviousCharOfPreviousChar =
@@ -2112,24 +2138,20 @@ nsresult WSRunObject::MaybeReplacePreviousNBSPWithASCIIWhiteSpace(
     
     if (!atPreviousCharOfPreviousChar.IsEndOfContainer() &&
         atPreviousCharOfPreviousChar.IsCharASCIISpace()) {
-      return NS_OK;
+      return EditorDOMPointInText();
     }
-  }
-  
-  
-  else if (!aVisibleWhiteSpacesData.StartsFromNormalText() &&
-           !aVisibleWhiteSpacesData.StartsFromSpecialContent()) {
-    return NS_OK;
+    return atPreviousChar;
   }
 
-  AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
-  nsresult rv = MOZ_KnownLive(mHTMLEditor)
-                    .ReplaceTextWithTransaction(
-                        MOZ_KnownLive(*atPreviousChar.ContainerAsText()),
-                        atPreviousChar.Offset(), 1, u" "_ns);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditor::ReplaceTextWithTransaction() failed");
-  return rv;
+  
+  
+  Maybe<VisibleWhiteSpacesData> visibleWhiteSpaces =
+      CreateVisibleWhiteSpacesData();
+  if (!visibleWhiteSpaces.ref().StartsFromNormalText() &&
+      !visibleWhiteSpaces.ref().StartsFromSpecialContent()) {
+    return EditorDOMPointInText();
+  }
+  return atPreviousChar;
 }
 
 nsresult WSRunObject::MaybeReplaceInclusiveNextNBSPWithASCIIWhiteSpace(
