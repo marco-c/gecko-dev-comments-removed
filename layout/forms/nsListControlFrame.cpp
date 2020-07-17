@@ -2061,11 +2061,20 @@ nsresult nsListControlFrame::KeyDown(dom::Event* aKeyEvent) {
         return NS_OK;
       }
 
+      
+      
+      
+      
+      bool doPreventDefault =
+          !mComboboxFrame || mComboboxFrame->IsDroppedDownOrHasParentPopup();
+
       AboutToRollup();
       
       
       
-      aKeyEvent->PreventDefault();
+      if (doPreventDefault) {
+        aKeyEvent->PreventDefault();
+      }
       return NS_OK;
     }
     case NS_VK_PAGE_UP: {
