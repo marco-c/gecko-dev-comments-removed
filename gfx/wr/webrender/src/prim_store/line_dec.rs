@@ -6,7 +6,7 @@ use api::{
     ColorF, ColorU,
     LineOrientation, LineStyle, PremultipliedColorF, Shadow,
 };
-use api::units::{Au, LayoutSizeAu, LayoutVector2D};
+use api::units::*;
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::{FrameBuildingState};
 use crate::gpu_cache::GpuDataRequest;
@@ -165,6 +165,74 @@ impl IsVisible for LineDecoration {
     fn is_visible(&self) -> bool {
         self.color.a > 0
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn get_line_decoration_size(
+    rect_size: &LayoutSize,
+    orientation: LineOrientation,
+    style: LineStyle,
+    wavy_line_thickness: f32,
+) -> Option<LayoutSize> {
+    let h = match orientation {
+        LineOrientation::Horizontal => rect_size.height,
+        LineOrientation::Vertical => rect_size.width,
+    };
+
+    
+    
+    
+    
+    
+
+    let (parallel, perpendicular) = match style {
+        LineStyle::Solid => {
+            return None;
+        }
+        LineStyle::Dashed => {
+            let dash_length = (3.0 * h).min(64.0).max(1.0);
+
+            (2.0 * dash_length, 4.0)
+        }
+        LineStyle::Dotted => {
+            let diameter = h.min(64.0).max(1.0);
+            let period = 2.0 * diameter;
+
+            (period, diameter)
+        }
+        LineStyle::Wavy => {
+            let line_thickness = wavy_line_thickness.max(1.0);
+            let slope_length = h - line_thickness;
+            let flat_length = ((line_thickness - 1.0) * 2.0).max(1.0);
+            let approx_period = 2.0 * (slope_length + flat_length);
+
+            (approx_period, h)
+        }
+    };
+
+    Some(match orientation {
+        LineOrientation::Horizontal => LayoutSize::new(parallel, perpendicular),
+        LineOrientation::Vertical => LayoutSize::new(perpendicular, parallel),
+    })
 }
 
 #[test]
