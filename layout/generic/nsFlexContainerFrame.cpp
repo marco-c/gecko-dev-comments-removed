@@ -819,7 +819,11 @@ class nsFlexContainerFrame::FlexItem final {
 
   
   
-  mutable nscoord mAscent = 0;
+  
+  
+  
+  
+  mutable nscoord mAscent = ReflowOutput::ASK_FOR_BASELINE;
 
   
   
@@ -1799,9 +1803,9 @@ enum class FlexItemReflowType {
 
   
   
-  
   Final,
 };
+
 
 
 
@@ -1815,13 +1819,70 @@ class nsFlexContainerFrame::CachedFlexItemData {
                      FlexItemReflowType aType) {
     if (aType == FlexItemReflowType::Measuring) {
       mBAxisMeasurement.emplace(aReflowInput, aReflowOutput);
+    } else {
+      UpdateFinalReflowSize(aReflowInput, aReflowOutput);
     }
+  }
+
+  
+  
+  void UpdateFinalReflowSize(const ReflowInput& aReflowInput,
+                             const ReflowOutput& aReflowOutput) {
+    auto wm = aReflowInput.GetWritingMode();
+
+    
+    mFinalReflowSize.reset();
+    mFinalReflowSize.emplace(
+        aReflowOutput.Size(wm) -
+        aReflowInput.ComputedLogicalBorderPadding().Size(wm));
+    
+    
+    
+    
+    
+    
+    
+    mLastReflowTreatedBSizeAsIndefinite =
+        aReflowInput.mFlags.mTreatBSizeAsIndefinite;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  void UpdateFinalReflowSize(const FlexItem& aItem, const LogicalSize& aSize) {
+    MOZ_ASSERT(!mFinalReflowSize,
+               "This version of the method is only intended to be called when "
+               "the most recent reflow was a 'measuring reflow'; and that "
+               "should have cleared out mFinalReflowSize");
+
+    mFinalReflowSize.reset();  
+    mFinalReflowSize.emplace(aSize);
+
+    mLastReflowTreatedBSizeAsIndefinite = aItem.TreatBSizeAsIndefinite();
   }
 
   
   
   
   Maybe<CachedBAxisMeasurement> mBAxisMeasurement;
+
+  
+  
+  
+  
+  
+  
+  Maybe<LogicalSize> mFinalReflowSize;
+
+  
+  
+  
+  
+  bool mLastReflowTreatedBSizeAsIndefinite = false;
 
   
   
@@ -1832,6 +1893,7 @@ void nsFlexContainerFrame::MarkCachedFlexMeasurementsDirty(
     nsIFrame* aItemFrame) {
   if (auto* cache = aItemFrame->GetProperty(CachedFlexItemData::Prop())) {
     cache->mBAxisMeasurement.reset();
+    cache->mFinalReflowSize.reset();
   }
 }
 
@@ -1883,6 +1945,9 @@ nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
   if (cachedData) {
     cachedData->mBAxisMeasurement.reset();
     cachedData->mBAxisMeasurement.emplace(aChildReflowInput, childReflowOutput);
+    
+    
+    cachedData->mFinalReflowSize.reset();
   } else {
     cachedData = new CachedFlexItemData(aChildReflowInput, childReflowOutput,
                                         FlexItemReflowType::Measuring);
@@ -2310,16 +2375,80 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
     
     
     
+    
+    
+    
+    
+    
+    
+    if (auto* cache = mFrame->GetProperty(CachedFlexItemData::Prop())) {
+      cache->UpdateFinalReflowSize(*this, finalSize);
+    }
+
     return false;
   }
 
   
   
+  
+  
+  
+  
+  if (NS_SUBTREE_DIRTY(mFrame)) {
+    FLEX_LOG(
+        "[perf] Flex item %p needed a final reflow due to its subtree"
+        "being dirty",
+        mFrame);
+    return true;
+  }
 
   
   
   
-  return true;
+  
+  
+  
+  
+  
+  
+  
+
+  
+  auto* cache = mFrame->GetProperty(CachedFlexItemData::Prop());
+  if (!cache || !cache->mFinalReflowSize) {
+    FLEX_LOG(
+        "[perf] Flex item %p needed a final reflow due to lacking a "
+        "cached mFinalReflowSize (maybe cache was cleared)",
+        mFrame);
+    return true;
+  }
+
+  
+  if (*cache->mFinalReflowSize != finalSize) {
+    FLEX_LOG(
+        "[perf] Flex item %p needed a final reflow due to having a "
+        "different content box size vs. its most recent final reflow",
+        mFrame);
+    return true;
+  }
+
+  
+  
+  
+  if (cache->mLastReflowTreatedBSizeAsIndefinite != mTreatBSizeAsIndefinite &&
+      FrameHasRelativeBSizeDependency(mFrame)) {
+    FLEX_LOG(
+        "[perf] Flex item %p needed a final reflow due to having "
+        "its BSize change definiteness & having a rel-BSize child",
+        mFrame);
+    return true;
+  }
+
+  
+  
+  
+  
+  return false;
 }
 
 
@@ -5391,6 +5520,15 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
                     ReflowChildFlags::ApplyRelativePositioning);
 
   aItem.SetAscent(childReflowOutput.BlockStartAscent());
+
+  
+  if (auto* cached = aItem.Frame()->GetProperty(CachedFlexItemData::Prop())) {
+    cached->UpdateFinalReflowSize(childReflowInput, childReflowOutput);
+  } else {
+    cached = new CachedFlexItemData(childReflowInput, childReflowOutput,
+                                    FlexItemReflowType::Final);
+    aItem.Frame()->SetProperty(CachedFlexItemData::Prop(), cached);
+  }
 
   return childReflowStatus;
 }
