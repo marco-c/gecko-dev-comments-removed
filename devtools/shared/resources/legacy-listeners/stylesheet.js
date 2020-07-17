@@ -14,12 +14,20 @@ module.exports = async function({ targetFront, onAvailable }) {
   }
 
   const styleSheetsFront = await targetFront.getFront("stylesheets");
-  const styleSheets = await styleSheetsFront.getStyleSheets();
-  onAvailable(styleSheets.map(styleSheet => toResource(styleSheet, false)));
+  try {
+    const styleSheets = await styleSheetsFront.getStyleSheets();
+    onAvailable(styleSheets.map(styleSheet => toResource(styleSheet, false)));
 
-  styleSheetsFront.on("stylesheet-added", (styleSheet, isNew) => {
-    onAvailable([toResource(styleSheet, isNew)]);
-  });
+    styleSheetsFront.on("stylesheet-added", (styleSheet, isNew) => {
+      onAvailable([toResource(styleSheet, isNew)]);
+    });
+  } catch (e) {
+    
+    
+    
+    
+    console.warn("fetching stylesheets failed", e);
+  }
 };
 
 function toResource(styleSheet, isNew) {
