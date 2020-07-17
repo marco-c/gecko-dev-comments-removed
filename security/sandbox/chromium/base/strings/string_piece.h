@@ -47,6 +47,9 @@ namespace base {
 
 namespace internal {
 
+BASE_EXPORT void CopyToString(const StringPiece& self, std::string* target);
+BASE_EXPORT void CopyToString(const StringPiece16& self, string16* target);
+
 BASE_EXPORT void AppendToString(const StringPiece& self, std::string* target);
 BASE_EXPORT void AppendToString(const StringPiece16& self, string16* target);
 
@@ -138,7 +141,16 @@ BASE_EXPORT StringPiece16 substr(const StringPiece16& self,
                                  size_t pos,
                                  size_t n);
 
+#if DCHECK_IS_ON()
+
+BASE_EXPORT void AssertIteratorsInOrder(std::string::const_iterator begin,
+                                        std::string::const_iterator end);
+BASE_EXPORT void AssertIteratorsInOrder(string16::const_iterator begin,
+                                        string16::const_iterator end);
+#endif
+
 }  
+
 
 
 
@@ -178,7 +190,11 @@ template <typename STRING_TYPE> class BasicStringPiece {
       : ptr_(offset), length_(len) {}
   BasicStringPiece(const typename STRING_TYPE::const_iterator& begin,
                    const typename STRING_TYPE::const_iterator& end) {
-    DCHECK(begin <= end) << "StringPiece iterators swapped or invalid.";
+#if DCHECK_IS_ON()
+    
+    
+    internal::AssertIteratorsInOrder(begin, end);
+#endif
     length_ = static_cast<size_t>(std::distance(begin, end));
 
     
@@ -194,6 +210,19 @@ template <typename STRING_TYPE> class BasicStringPiece {
   constexpr size_type size() const noexcept { return length_; }
   constexpr size_type length() const noexcept { return length_; }
   bool empty() const { return length_ == 0; }
+
+  void clear() {
+    ptr_ = NULL;
+    length_ = 0;
+  }
+  void set(const value_type* data, size_type len) {
+    ptr_ = data;
+    length_ = len;
+  }
+  void set(const value_type* str) {
+    ptr_ = str;
+    length_ = str ? STRING_TYPE::traits_type::length(str) : 0;
+  }
 
   constexpr value_type operator[](size_type i) const {
     CHECK(i < length_);
@@ -250,6 +279,12 @@ template <typename STRING_TYPE> class BasicStringPiece {
 
   size_type max_size() const { return length_; }
   size_type capacity() const { return length_; }
+
+  
+  
+  void CopyToString(STRING_TYPE* target) const {
+    internal::CopyToString(*this, target);
+  }
 
   void AppendToString(STRING_TYPE* target) const {
     internal::AppendToString(*this, target);

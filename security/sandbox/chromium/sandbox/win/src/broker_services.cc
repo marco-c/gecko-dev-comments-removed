@@ -22,7 +22,6 @@
 #include "sandbox/win/src/process_mitigations.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/sandbox_policy_base.h"
-#include "sandbox/win/src/sandbox_policy_diagnostic.h"
 #include "sandbox/win/src/target_process.h"
 #include "sandbox/win/src/win2k_threadpool.h"
 #include "sandbox/win/src/win_utils.h"
@@ -51,10 +50,7 @@ sandbox::ResultCode SpawnCleanup(sandbox::TargetProcess* target) {
 
 enum {
   THREAD_CTRL_NONE,
-  THREAD_CTRL_NEW_JOB_TRACKER,
-  THREAD_CTRL_NEW_PROCESS_TRACKER,
-  THREAD_CTRL_PROCESS_SIGNALLED,
-  THREAD_CTRL_GET_POLICY_INFO,
+  THREAD_CTRL_REMOVE_PEER,
   THREAD_CTRL_QUIT,
   THREAD_CTRL_LAST,
 };
@@ -63,9 +59,8 @@ enum {
 
 struct JobTracker {
   JobTracker(base::win::ScopedHandle job,
-             scoped_refptr<sandbox::PolicyBase> policy,
-             DWORD process_id)
-      : job(std::move(job)), policy(policy), process_id(process_id) {}
+             scoped_refptr<sandbox::PolicyBase> policy)
+      : job(std::move(job)), policy(policy) {}
   ~JobTracker() { FreeResources(); }
 
   
@@ -74,7 +69,6 @@ struct JobTracker {
 
   base::win::ScopedHandle job;
   scoped_refptr<sandbox::PolicyBase> policy;
-  DWORD process_id;
 };
 
 void JobTracker::FreeResources() {
@@ -91,61 +85,27 @@ void JobTracker::FreeResources() {
     policy = nullptr;
   }
 }
+ 
 
+struct PeerTracker {
+  PeerTracker(DWORD process_id, HANDLE broker_job_port)
+      : wait_object(NULL), id(process_id), job_port(broker_job_port) {
+  }
 
-struct ProcessTracker {
-  ProcessTracker(scoped_refptr<sandbox::PolicyBase> policy,
-                 DWORD process_id,
-                 base::win::ScopedHandle process)
-      : policy(policy), process_id(process_id), process(std::move(process)) {}
-  ~ProcessTracker() { FreeResources(); }
-
-  void FreeResources();
-
-  scoped_refptr<sandbox::PolicyBase> policy;
-  DWORD process_id;
+  HANDLE wait_object;
   base::win::ScopedHandle process;
-  
-  HANDLE wait_handle;
-  
-  HANDLE iocp;
+  DWORD id;
+  HANDLE job_port;
 };
 
-void ProcessTracker::FreeResources() {
-  if (policy) {
-    policy->OnJobEmpty(nullptr);
-    policy = nullptr;
+void DeregisterPeerTracker(PeerTracker* peer) {
+  
+  if (::UnregisterWaitEx(peer->wait_object, INVALID_HANDLE_VALUE)) {
+    delete peer;
+  } else {
+    NOTREACHED();
   }
 }
-
-
-void WINAPI ProcessEventCallback(PVOID param, BOOLEAN ignored) {
-  
-  ProcessTracker* tracker = reinterpret_cast<ProcessTracker*>(param);
-  
-  ::PostQueuedCompletionStatus(tracker->iocp, 0, THREAD_CTRL_PROCESS_SIGNALLED,
-                               reinterpret_cast<LPOVERLAPPED>(tracker));
-}
-
-
-class PolicyDiagnosticList final : public sandbox::PolicyList {
- public:
-  PolicyDiagnosticList() {}
-  ~PolicyDiagnosticList() override {}
-  void push_back(std::unique_ptr<sandbox::PolicyInfo> info) {
-    internal_list_.push_back(std::move(info));
-  }
-  std::vector<std::unique_ptr<sandbox::PolicyInfo>>::iterator begin() override {
-    return internal_list_.begin();
-  }
-  std::vector<std::unique_ptr<sandbox::PolicyInfo>>::iterator end() override {
-    return internal_list_.end();
-  }
-  size_t size() const override { return internal_list_.size(); }
-
- private:
-  std::vector<std::unique_ptr<sandbox::PolicyInfo>> internal_list_;
-};
 
 }  
 
@@ -163,14 +123,14 @@ ResultCode BrokerServicesBase::Init() {
 
   job_port_.Set(::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0));
   if (!job_port_.IsValid())
-    return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
+    return SBOX_ERROR_GENERIC;
 
   no_targets_.Set(::CreateEventW(nullptr, true, false, nullptr));
 
   job_thread_.Set(::CreateThread(nullptr, 0,  
                                  TargetEventsThread, this, 0, nullptr));
   if (!job_thread_.IsValid())
-    return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
+    return SBOX_ERROR_GENERIC;
 
   return SBOX_ALL_OK;
 }
@@ -197,7 +157,16 @@ BrokerServicesBase::~BrokerServicesBase() {
     NOTREACHED();
     return;
   }
+
+  tracker_list_.clear();
   thread_pool_.reset();
+
+  
+  for (PeerTrackerMap::iterator it = peer_map_.begin();
+       it != peer_map_.end(); ++it) {
+    DeregisterPeerTracker(it->second);
+  }
+
   ::DeleteCriticalSection(&lock_);
 }
 
@@ -224,9 +193,6 @@ DWORD WINAPI BrokerServicesBase::TargetEventsThread(PVOID param) {
   HANDLE port = broker->job_port_.Get();
   HANDLE no_targets = broker->no_targets_.Get();
 
-  std::set<DWORD> child_process_ids;
-  std::list<std::unique_ptr<JobTracker>> jobs;
-  std::list<std::unique_ptr<ProcessTracker>> processes;
   int target_counter = 0;
   int untracked_target_counter = 0;
   ::ResetEvent(no_targets);
@@ -248,40 +214,26 @@ DWORD WINAPI BrokerServicesBase::TargetEventsThread(PVOID param) {
       
       JobTracker* tracker = reinterpret_cast<JobTracker*>(key);
 
-      
-      
-      
-      
-      if (std::find_if(jobs.begin(), jobs.end(), [&](auto&& p) -> bool {
-            return p.get() == tracker;
-          }) == jobs.end()) {
-        CHECK(false);
-      }
-
       switch (events) {
         case JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO: {
           
           
           
           
-          HANDLE job_handle = tracker->job.Get();
-
           
-          jobs.erase(std::remove_if(jobs.begin(), jobs.end(),
-                                    [&](auto&& p) -> bool {
-                                      return p->job.Get() == job_handle;
-                                    }),
-                     jobs.end());
+          tracker->FreeResources();
           break;
         }
 
         case JOB_OBJECT_MSG_NEW_PROCESS: {
-          
-          DWORD process_id =
-              static_cast<DWORD>(reinterpret_cast<uintptr_t>(ovl));
-          size_t count = child_process_ids.count(process_id);
-          if (count == 0)
-            untracked_target_counter++;
+          DWORD handle = static_cast<DWORD>(reinterpret_cast<uintptr_t>(ovl));
+          {
+            AutoLock lock(&broker->lock_);
+            size_t count = broker->child_process_ids_.count(handle);
+            
+            if (count == 0)
+              untracked_target_counter++;
+          }
           ++target_counter;
           if (1 == target_counter) {
             ::ResetEvent(no_targets);
@@ -291,13 +243,12 @@ DWORD WINAPI BrokerServicesBase::TargetEventsThread(PVOID param) {
 
         case JOB_OBJECT_MSG_EXIT_PROCESS:
         case JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS: {
+          size_t erase_result = 0;
           {
             AutoLock lock(&broker->lock_);
-            broker->active_targets_.erase(
+            erase_result = broker->child_process_ids_.erase(
                 static_cast<DWORD>(reinterpret_cast<uintptr_t>(ovl)));
           }
-          size_t erase_result = child_process_ids.erase(
-              static_cast<DWORD>(reinterpret_cast<uintptr_t>(ovl)));
           if (erase_result != 1U) {
             
             --untracked_target_counter;
@@ -331,80 +282,14 @@ DWORD WINAPI BrokerServicesBase::TargetEventsThread(PVOID param) {
           break;
         }
       }
-    } else if (THREAD_CTRL_NEW_JOB_TRACKER == key) {
-      std::unique_ptr<JobTracker> tracker;
-      tracker.reset(reinterpret_cast<JobTracker*>(ovl));
-      DCHECK(tracker->job.IsValid());
-
-      child_process_ids.insert(tracker->process_id);
-      jobs.push_back(std::move(tracker));
-
-    } else if (THREAD_CTRL_NEW_PROCESS_TRACKER == key) {
-      std::unique_ptr<ProcessTracker> tracker;
-      tracker.reset(reinterpret_cast<ProcessTracker*>(ovl));
-
-      if (child_process_ids.empty()) {
-        ::SetEvent(broker->no_targets_.Get());
-      }
-
-      tracker->iocp = port;
-      if (!::RegisterWaitForSingleObject(&(tracker->wait_handle),
-                                         tracker->process.Get(),
-                                         ProcessEventCallback, tracker.get(),
-                                         INFINITE, WT_EXECUTEONLYONCE)) {
-        
-        tracker->wait_handle = INVALID_HANDLE_VALUE;
-      }
-      processes.push_back(std::move(tracker));
-
-    } else if (THREAD_CTRL_PROCESS_SIGNALLED == key) {
-      ProcessTracker* tracker =
-          static_cast<ProcessTracker*>(reinterpret_cast<void*>(ovl));
-
-      {
-        AutoLock lock(&broker->lock_);
-        broker->active_targets_.erase(tracker->process_id);
-      }
-
-      ::UnregisterWait(tracker->wait_handle);
-      tracker->wait_handle = INVALID_HANDLE_VALUE;
-
+    } else if (THREAD_CTRL_REMOVE_PEER == key) {
       
-      processes.erase(std::remove_if(processes.begin(), processes.end(),
-                                     [&](auto&& p) -> bool {
-                                       return p->process_id ==
-                                              tracker->process_id;
-                                     }),
-                      processes.end());
-    } else if (THREAD_CTRL_GET_POLICY_INFO == key) {
-      
-      std::unique_ptr<PolicyDiagnosticsReceiver> receiver;
-      receiver.reset(static_cast<PolicyDiagnosticsReceiver*>(
-          reinterpret_cast<void*>(ovl)));
-      
-      auto policy_list = std::make_unique<PolicyDiagnosticList>();
-      for (auto&& process_tracker : processes) {
-        if (process_tracker->policy) {
-          policy_list->push_back(std::make_unique<PolicyDiagnostic>(
-              process_tracker->policy.get()));
-        }
-      }
-      for (auto&& job_tracker : jobs) {
-        if (job_tracker->policy) {
-          policy_list->push_back(
-              std::make_unique<PolicyDiagnostic>(job_tracker->policy.get()));
-        }
-      }
-      
-      receiver->ReceiveDiagnostics(std::move(policy_list));
-
+      AutoLock lock(&broker->lock_);
+      PeerTrackerMap::iterator it = broker->peer_map_.find(
+          static_cast<DWORD>(reinterpret_cast<uintptr_t>(ovl)));
+      DeregisterPeerTracker(it->second);
+      broker->peer_map_.erase(it);
     } else if (THREAD_CTRL_QUIT == key) {
-      
-      for (auto&& tracker : processes) {
-        ::UnregisterWait(tracker->wait_handle);
-        tracker->wait_handle = INVALID_HANDLE_VALUE;
-      }
-      
       
       return 0;
     } else {
@@ -436,21 +321,11 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
   
   
   
-  
   static DWORD thread_id = ::GetCurrentThreadId();
   DCHECK(thread_id == ::GetCurrentThreadId());
   *last_warning = SBOX_ALL_OK;
 
-  
-  
-  static bool launcher_thread_opted_out = false;
-
-  if (!launcher_thread_opted_out) {
-    
-    sandbox::ApplyMitigationsToCurrentThread(
-        sandbox::MITIGATION_DYNAMIC_CODE_OPT_OUT_THIS_THREAD);
-    launcher_thread_opted_out = true;
-  }
+  AutoLock lock(&lock_);
 
   
   scoped_refptr<PolicyBase> policy_base(static_cast<PolicyBase*>(policy.get()));
@@ -467,7 +342,7 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
   if (SBOX_ALL_OK != result)
     return result;
   if (lowbox_token.IsValid() &&
-      base::win::GetVersion() < base::win::Version::WIN8) {
+      base::win::GetVersion() < base::win::VERSION_WIN8) {
     
     return SBOX_ERROR_BAD_PARAMS;
   }
@@ -492,7 +367,7 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
   std::vector<HANDLE> inherited_handle_list;
   DWORD child_process_creation = PROCESS_CREATION_CHILD_PROCESS_RESTRICTED;
 
-  std::wstring desktop = policy_base->GetAlternateDesktop();
+  base::string16 desktop = policy_base->GetAlternateDesktop();
   if (!desktop.empty()) {
     startup_info.startup_info()->lpDesktop =
         const_cast<wchar_t*>(desktop.c_str());
@@ -509,7 +384,7 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
     ++attribute_count;
 
   bool restrict_child_process_creation = false;
-  if (base::win::GetVersion() >= base::win::Version::WIN10_TH2 &&
+  if (base::win::GetVersion() >= base::win::VERSION_WIN10_TH2 &&
       policy_base->GetJobLevel() <= JOB_LIMITED_USER) {
     restrict_child_process_creation = true;
     ++attribute_count;
@@ -536,12 +411,12 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
   scoped_refptr<AppContainerProfileBase> profile =
       policy_base->GetAppContainerProfileBase();
   if (profile) {
-    if (base::win::GetVersion() < base::win::Version::WIN8)
+    if (base::win::GetVersion() < base::win::VERSION_WIN8)
       return SBOX_ERROR_BAD_PARAMS;
     ++attribute_count;
     if (profile->GetEnableLowPrivilegeAppContainer()) {
       
-      if (base::win::GetVersion() < base::win::Version::WIN10_RS1)
+      if (base::win::GetVersion() < base::win::VERSION_WIN10_RS1)
         return SBOX_ERROR_BAD_PARAMS;
       ++attribute_count;
     }
@@ -642,32 +517,38 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
     return result;
   }
 
+  
+  
   if (job.IsValid()) {
-    JobTracker* tracker =
-        new JobTracker(std::move(job), policy_base, process_info.process_id());
+    std::unique_ptr<JobTracker> tracker =
+        std::make_unique<JobTracker>(std::move(job), policy_base);
 
     
     
-    CHECK(::PostQueuedCompletionStatus(
-        job_port_.Get(), 0, THREAD_CTRL_NEW_JOB_TRACKER,
-        reinterpret_cast<LPOVERLAPPED>(tracker)));
-    
-    
-    CHECK(
-        AssociateCompletionPort(tracker->job.Get(), job_port_.Get(), tracker));
+    CHECK(AssociateCompletionPort(tracker->job.Get(), job_port_.Get(),
+                                  tracker.get()));
 
-    AutoLock lock(&lock_);
-    active_targets_.insert(process_info.process_id());
+    
+    
+    tracker_list_.push_back(std::move(tracker));
+    child_process_ids_.insert(process_info.process_id());
   } else {
-    result = AddTargetPeerInternal(process_info.process_handle(),
-                                   process_info.process_id(),
-                                   policy_base, last_error);
-    if (result != SBOX_ALL_OK) {
-      
-      
-      SpawnCleanup(target);
-      return result;
-    }
+    
+    
+    
+    policy_base->AddRef();
+
+    
+    
+    
+    if (child_process_ids_.empty())
+      ::SetEvent(no_targets_.Get());
+    
+    
+    
+    
+    
+    AddTargetPeer(process_info.process_handle());
   }
 
   *target_info = process_info.Take();
@@ -679,58 +560,47 @@ ResultCode BrokerServicesBase::WaitForAllTargets() {
   return SBOX_ALL_OK;
 }
 
-bool BrokerServicesBase::IsSafeDuplicationTarget(DWORD process_id) {
+bool BrokerServicesBase::IsActiveTarget(DWORD process_id) {
   AutoLock lock(&lock_);
-  return active_targets_.find(process_id) != active_targets_.end();
+  return child_process_ids_.find(process_id) != child_process_ids_.end() ||
+         peer_map_.find(process_id) != peer_map_.end();
 }
 
-ResultCode BrokerServicesBase::AddTargetPeerInternal(
-    HANDLE peer_process_handle,
-    DWORD peer_process_id,
-    scoped_refptr<PolicyBase> policy_base,
-    DWORD* last_error) {
+VOID CALLBACK BrokerServicesBase::RemovePeer(PVOID parameter, BOOLEAN timeout) {
+  PeerTracker* peer = reinterpret_cast<PeerTracker*>(parameter);
   
-  
-  HANDLE tmp_process_handle = INVALID_HANDLE_VALUE;
-  if (!::DuplicateHandle(::GetCurrentProcess(), peer_process_handle,
-                         ::GetCurrentProcess(), &tmp_process_handle,
-                         SYNCHRONIZE, false, 0 )) {
-    *last_error = ::GetLastError();
-    return SBOX_ERROR_CANNOT_DUPLICATE_PROCESS_HANDLE;
-  }
-  base::win::ScopedHandle dup_process_handle(tmp_process_handle);
-  ProcessTracker* tracker = new ProcessTracker(
-      policy_base, peer_process_id, std::move(dup_process_handle));
-  
-  ::PostQueuedCompletionStatus(job_port_.Get(), 0,
-                               THREAD_CTRL_NEW_PROCESS_TRACKER,
-                               reinterpret_cast<LPOVERLAPPED>(tracker));
-
-  AutoLock lock(&lock_);
-  active_targets_.insert(peer_process_id);
-
-  return SBOX_ALL_OK;
+  ::PostQueuedCompletionStatus(
+      peer->job_port, 0, THREAD_CTRL_REMOVE_PEER,
+      reinterpret_cast<LPOVERLAPPED>(static_cast<uintptr_t>(peer->id)));
 }
 
 ResultCode BrokerServicesBase::AddTargetPeer(HANDLE peer_process) {
-  DWORD last_error;
-  return AddTargetPeerInternal(peer_process, ::GetProcessId(peer_process),
-                               nullptr, &last_error);
-}
+  std::unique_ptr<PeerTracker> peer(
+      new PeerTracker(::GetProcessId(peer_process), job_port_.Get()));
+  if (!peer->id)
+    return SBOX_ERROR_GENERIC;
 
-ResultCode BrokerServicesBase::GetPolicyDiagnostics(
-    std::unique_ptr<PolicyDiagnosticsReceiver> receiver) {
-  CHECK(job_thread_.IsValid());
-  
-  if (!::PostQueuedCompletionStatus(
-          job_port_.Get(), 0, THREAD_CTRL_GET_POLICY_INFO,
-          reinterpret_cast<LPOVERLAPPED>(receiver.get()))) {
-    receiver->OnError(SBOX_ERROR_GENERIC);
+  HANDLE process_handle;
+  if (!::DuplicateHandle(::GetCurrentProcess(), peer_process,
+                         ::GetCurrentProcess(), &process_handle,
+                         SYNCHRONIZE, FALSE, 0)) {
+    return SBOX_ERROR_GENERIC;
+  }
+  peer->process.Set(process_handle);
+
+  AutoLock lock(&lock_);
+  if (!peer_map_.insert(std::make_pair(peer->id, peer.get())).second)
+    return SBOX_ERROR_BAD_PARAMS;
+
+  if (!::RegisterWaitForSingleObject(
+          &peer->wait_object, peer->process.Get(), RemovePeer, peer.get(),
+          INFINITE, WT_EXECUTEONLYONCE | WT_EXECUTEINWAITTHREAD)) {
+    peer_map_.erase(peer->id);
     return SBOX_ERROR_GENERIC;
   }
 
   
-  receiver.release();
+  ignore_result(peer.release());
   return SBOX_ALL_OK;
 }
 

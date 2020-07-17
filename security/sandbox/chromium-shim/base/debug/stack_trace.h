@@ -10,18 +10,12 @@
 #ifndef BASE_DEBUG_STACK_TRACE_H_
 #define BASE_DEBUG_STACK_TRACE_H_
 
-#include <iosfwd>
-
 namespace base {
 namespace debug {
 
 class BASE_EXPORT StackTrace {
  public:
   StackTrace() {};
-
-#if !defined(__UCLIBC__) & !defined(_AIX)
-  void OutputToStream(std::ostream*) const {}
-#endif
 };
 
 }  

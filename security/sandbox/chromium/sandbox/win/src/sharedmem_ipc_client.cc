@@ -11,49 +11,8 @@
 #include "sandbox/win/src/crosscall_client.h"
 #include "sandbox/win/src/crosscall_params.h"
 #include "sandbox/win/src/sandbox.h"
-#include "sandbox/win/src/sandbox_nt_types.h"
-#include "sandbox/win/src/sandbox_nt_util.h"
 
 namespace sandbox {
-
-SANDBOX_INTERCEPT NtExports g_nt;
-
-namespace {
-
-DWORD SignalObjectAndWaitWrapper(HANDLE object_to_signal,
-                                 HANDLE object_to_wait_on,
-                                 DWORD millis,
-                                 BOOL alertable) {
-  
-  if (!g_nt.SignalAndWaitForSingleObject)
-    return SignalObjectAndWait(object_to_signal, object_to_wait_on, millis,
-                               alertable);
-  
-  CHECK_NT(!alertable);
-  LARGE_INTEGER timeout;
-  timeout.QuadPart = millis * -10000LL;
-  NTSTATUS status = g_nt.SignalAndWaitForSingleObject(
-      object_to_signal, object_to_wait_on, alertable,
-      millis == INFINITE ? nullptr : &timeout);
-  if (!NT_SUCCESS(status))
-    return WAIT_FAILED;
-  return status;
-}
-
-DWORD WaitForSingleObjectWrapper(HANDLE handle, DWORD millis) {
-  
-  if (!g_nt.WaitForSingleObject)
-    return WaitForSingleObject(handle, millis);
-  LARGE_INTEGER timeout;
-  timeout.QuadPart = millis * -10000LL;
-  NTSTATUS status = g_nt.WaitForSingleObject(
-      handle, FALSE, millis == INFINITE ? nullptr : &timeout);
-  if (!NT_SUCCESS(status))
-    return WAIT_FAILED;
-  return status;
-}
-
-}  
 
 
 
@@ -109,19 +68,18 @@ ResultCode SharedMemIPCClient::DoCall(CrossCallParams* params,
 
   
   
-  DWORD wait = SignalObjectAndWaitWrapper(channel[num].ping_event,
-                                          channel[num].pong_event,
-                                          kIPCWaitTimeOut1, false);
+  DWORD wait =
+      ::SignalObjectAndWait(channel[num].ping_event, channel[num].pong_event,
+                            kIPCWaitTimeOut1, false);
   if (WAIT_TIMEOUT == wait) {
     
     
     
     while (true) {
-      wait = WaitForSingleObjectWrapper(control_->server_alive, 0);
+      wait = ::WaitForSingleObject(control_->server_alive, 0);
       if (WAIT_TIMEOUT == wait) {
         
-        wait = WaitForSingleObjectWrapper(channel[num].pong_event,
-                                          kIPCWaitTimeOut1);
+        wait = ::WaitForSingleObject(channel[num].pong_event, kIPCWaitTimeOut1);
         if (WAIT_OBJECT_0 == wait) {
           
           break;
@@ -144,7 +102,7 @@ ResultCode SharedMemIPCClient::DoCall(CrossCallParams* params,
   }
 
   
-  memcpy_wrapper(answer, params->GetCallReturn(), sizeof(CrossCallReturn));
+  memcpy(answer, params->GetCallReturn(), sizeof(CrossCallReturn));
 
   
   
@@ -173,7 +131,7 @@ size_t SharedMemIPCClient::LockFreeChannel(bool* severe_failure) {
     }
     
     DWORD wait =
-        WaitForSingleObjectWrapper(control_->server_alive, kIPCWaitTimeOut2);
+        ::WaitForSingleObject(control_->server_alive, kIPCWaitTimeOut2);
     if (WAIT_TIMEOUT != wait) {
       
       *severe_failure = true;

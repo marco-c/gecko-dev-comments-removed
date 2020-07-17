@@ -14,7 +14,7 @@
 #include "base/macros.h"
 #include "base/version.h"
 
-using HANDLE = void*;
+typedef void* HANDLE;
 struct _OSVERSIONINFOEXW;
 struct _SYSTEM_INFO;
 
@@ -34,25 +34,24 @@ namespace win {
 
 
 
-enum class Version {
-  PRE_XP = 0,  
-  XP = 1,
-  SERVER_2003 = 2,  
-  VISTA = 3,        
-  WIN7 = 4,         
-  WIN8 = 5,         
-  WIN8_1 = 6,       
-  WIN10 = 7,        
-  WIN10_TH2 = 8,    
-  WIN10_RS1 = 9,    
-  WIN10_RS2 = 10,   
-  WIN10_RS3 = 11,   
-  WIN10_RS4 = 12,   
-  WIN10_RS5 = 13,   
-  WIN10_19H1 = 14,  
+enum Version {
+  VERSION_PRE_XP = 0,  
+  VERSION_XP = 1,
+  VERSION_SERVER_2003 = 2,  
+  VERSION_VISTA = 3,        
+  VERSION_WIN7 = 4,         
+  VERSION_WIN8 = 5,         
+  VERSION_WIN8_1 = 6,       
+  VERSION_WIN10 = 7,        
+  VERSION_WIN10_TH2 = 8,    
+  VERSION_WIN10_RS1 = 9,    
+  VERSION_WIN10_RS2 = 10,   
+  VERSION_WIN10_RS3 = 11,   
+  VERSION_WIN10_RS4 = 12,   
+  VERSION_WIN10_RS5 = 13,   
   
   
-  WIN_LAST,  
+  VERSION_WIN_LAST,  
 };
 
 
@@ -119,22 +118,20 @@ class BASE_EXPORT OSInfo {
   
   static WOW64Status GetWOW64StatusForProcess(HANDLE process_handle);
 
-  const Version& version() const { return version_; }
+  Version version() const { return version_; }
   Version Kernel32Version() const;
-  Version UcrtVersion() const;
   base::Version Kernel32BaseVersion() const;
   
-  const VersionNumber& version_number() const { return version_number_; }
-  const VersionType& version_type() const { return version_type_; }
-  const ServicePack& service_pack() const { return service_pack_; }
-  const std::string& service_pack_str() const { return service_pack_str_; }
-  const int& processors() const { return processors_; }
-  const size_t& allocation_granularity() const {
-    return allocation_granularity_;
-  }
-  const WOW64Status& wow64_status() const { return wow64_status_; }
+  VersionNumber version_number() const { return version_number_; }
+  VersionType version_type() const { return version_type_; }
+  ServicePack service_pack() const { return service_pack_; }
+  std::string service_pack_str() const { return service_pack_str_; }
+  
+  WindowsArchitecture architecture() const { return GetArchitecture(); }
+  int processors() const { return processors_; }
+  size_t allocation_granularity() const { return allocation_granularity_; }
+  WOW64Status wow64_status() const { return wow64_status_; }
   std::string processor_model_name();
-  const std::string& release_id() const { return release_id_; }
 
  private:
   friend class base::test::ScopedOSInfoOverride;
@@ -153,16 +150,6 @@ class BASE_EXPORT OSInfo {
   VersionNumber version_number_;
   VersionType version_type_;
   ServicePack service_pack_;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  std::string release_id_;
 
   
   

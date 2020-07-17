@@ -11,9 +11,9 @@
 #ifndef BASE_WIN_PE_IMAGE_H_
 #define BASE_WIN_PE_IMAGE_H_
 
-#include <windows.h>
-
 #include <stdint.h>
+
+#include <windows.h>
 
 #if defined(_WIN32_WINNT_WIN8)
 
@@ -32,61 +32,59 @@ class PEImage {
   
   
   
-  using EnumSectionsFunction =
-      bool (*)(const PEImage&, PIMAGE_SECTION_HEADER, PVOID, DWORD, PVOID);
+  typedef bool (*EnumSectionsFunction)(const PEImage &image,
+                                       PIMAGE_SECTION_HEADER header,
+                                       PVOID section_start, DWORD section_size,
+                                       PVOID cookie);
 
   
   
   
   
   
-  using EnumExportsFunction =
-      bool (*)(const PEImage&, DWORD, DWORD, LPCSTR, PVOID, LPCSTR, PVOID);
+  typedef bool (*EnumExportsFunction)(const PEImage &image, DWORD ordinal,
+                                      DWORD hint, LPCSTR name, PVOID function,
+                                      LPCSTR forward, PVOID cookie);
 
   
   
   
   
-  using EnumImportChunksFunction = bool (*)(const PEImage&,
-                                            LPCSTR,
-                                            PIMAGE_THUNK_DATA,
-                                            PIMAGE_THUNK_DATA,
-                                            PVOID);
+  typedef bool (*EnumImportChunksFunction)(const PEImage &image, LPCSTR module,
+                                           PIMAGE_THUNK_DATA name_table,
+                                           PIMAGE_THUNK_DATA iat, PVOID cookie);
 
   
   
   
   
-  using EnumImportsFunction = bool (*)(const PEImage&,
-                                       LPCSTR,
-                                       DWORD,
-                                       LPCSTR,
-                                       DWORD,
-                                       PIMAGE_THUNK_DATA,
-                                       PVOID);
+  typedef bool (*EnumImportsFunction)(const PEImage &image, LPCSTR module,
+                                      DWORD ordinal, LPCSTR name, DWORD hint,
+                                      PIMAGE_THUNK_DATA iat, PVOID cookie);
 
   
   
   
   
-  using EnumDelayImportChunksFunction = bool (*)(const PEImage&,
-                                                 PImgDelayDescr,
-                                                 LPCSTR,
-                                                 PIMAGE_THUNK_DATA,
-                                                 PIMAGE_THUNK_DATA,
-                                                 PVOID);
+  typedef bool (*EnumDelayImportChunksFunction)(const PEImage &image,
+                                                PImgDelayDescr delay_descriptor,
+                                                LPCSTR module,
+                                                PIMAGE_THUNK_DATA name_table,
+                                                PIMAGE_THUNK_DATA iat,
+                                                PVOID cookie);
 
   
   
   
-  using EnumRelocsFunction = bool (*)(const PEImage&, WORD, PVOID, PVOID);
+  typedef bool (*EnumRelocsFunction)(const PEImage &image, WORD type,
+                                     PVOID address, PVOID cookie);
 
   explicit PEImage(HMODULE module) : module_(module) {}
   explicit PEImage(const void* module) {
     module_ = reinterpret_cast<HMODULE>(const_cast<void*>(module));
   }
 
-  virtual ~PEImage() = default;
+  virtual ~PEImage() {}
 
   
   HMODULE module() const;
@@ -174,7 +172,7 @@ class PEImage {
 
   
   
-  bool GetProcOrdinal(LPCSTR function_name, WORD* ordinal) const;
+  bool GetProcOrdinal(LPCSTR function_name, WORD *ordinal) const;
 
   
   
@@ -189,49 +187,31 @@ class PEImage {
   
   
   
-  
-  
-  bool EnumAllImports(EnumImportsFunction callback,
-                      PVOID cookie,
-                      LPCSTR target_module_name) const;
+  bool EnumAllImports(EnumImportsFunction callback, PVOID cookie) const;
 
   
   
   
-  
-  
-  bool EnumImportChunks(EnumImportChunksFunction callback,
-                        PVOID cookie,
-                        LPCSTR target_module_name) const;
+  bool EnumImportChunks(EnumImportChunksFunction callback, PVOID cookie) const;
 
   
   
   
-  bool EnumOneImportChunk(EnumImportsFunction callback,
-                          LPCSTR module_name,
-                          PIMAGE_THUNK_DATA name_table,
-                          PIMAGE_THUNK_DATA iat,
+  bool EnumOneImportChunk(EnumImportsFunction callback, LPCSTR module_name,
+                          PIMAGE_THUNK_DATA name_table, PIMAGE_THUNK_DATA iat,
                           PVOID cookie) const;
 
-  
-  
-  
-  
-  
-  
-  bool EnumAllDelayImports(EnumImportsFunction callback,
-                           PVOID cookie,
-                           LPCSTR target_module_name) const;
 
   
   
   
+  bool EnumAllDelayImports(EnumImportsFunction callback, PVOID cookie) const;
+
   
   
   
   bool EnumDelayImportChunks(EnumDelayImportChunksFunction callback,
-                             PVOID cookie,
-                             LPCSTR target_module_name) const;
+                             PVOID cookie) const;
 
   
   
@@ -261,7 +241,7 @@ class PEImage {
 
   
   
-  bool ImageAddrToOnDiskOffset(LPVOID address, DWORD* on_disk_offset) const;
+  bool ImageAddrToOnDiskOffset(LPVOID address, DWORD *on_disk_offset) const;
 
  private:
   
@@ -294,12 +274,12 @@ inline HMODULE PEImage::module() const {
 
 inline PIMAGE_IMPORT_DESCRIPTOR PEImage::GetFirstImportChunk() const {
   return reinterpret_cast<PIMAGE_IMPORT_DESCRIPTOR>(
-      GetImageDirectoryEntryAddr(IMAGE_DIRECTORY_ENTRY_IMPORT));
+             GetImageDirectoryEntryAddr(IMAGE_DIRECTORY_ENTRY_IMPORT));
 }
 
 inline PIMAGE_EXPORT_DIRECTORY PEImage::GetExportDirectory() const {
   return reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(
-      GetImageDirectoryEntryAddr(IMAGE_DIRECTORY_ENTRY_EXPORT));
+             GetImageDirectoryEntryAddr(IMAGE_DIRECTORY_ENTRY_EXPORT));
 }
 
 }  

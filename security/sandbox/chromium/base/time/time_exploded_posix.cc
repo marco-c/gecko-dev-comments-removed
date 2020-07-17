@@ -24,7 +24,7 @@
 #include "base/os_compat_nacl.h"
 #endif
 
-#if defined(OS_MACOSX) || defined(OS_IOS)
+#if defined(OS_MACOSX)
 static_assert(sizeof(time_t) >= 8, "Y2038 problem!");
 #endif
 
@@ -58,7 +58,9 @@ void SysTimeToTimeStruct(SysTime t, struct tm* timestruct, bool is_local) {
   else
     gmtime64_r(&t, timestruct);
 }
+
 #elif defined(OS_AIX)
+
 
 time_t aix_timegm(struct tm* tm) {
   time_t ret;
@@ -99,7 +101,7 @@ void SysTimeToTimeStruct(SysTime t, struct tm* timestruct, bool is_local) {
     gmtime_r(&t, timestruct);
 }
 
-#else
+#else   
 typedef time_t SysTime;
 
 SysTime SysTimeFromTimeStruct(struct tm* timestruct, bool is_local) {
@@ -122,18 +124,22 @@ namespace base {
 
 void Time::Explode(bool is_local, Exploded* exploded) const {
   
-  int64_t milliseconds = ToRoundedDownMillisecondsSinceUnixEpoch();
+  
+  
+  int64_t microseconds = us_ - kTimeTToMicrosecondsOffset;
+  
+  int64_t milliseconds;  
   SysTime seconds;       
   int millisecond;       
-
-  
-  
-  if (milliseconds >= 0) {
+  if (microseconds >= 0) {
     
+    milliseconds = microseconds / kMicrosecondsPerMillisecond;
     seconds = milliseconds / kMillisecondsPerSecond;
     millisecond = milliseconds % kMillisecondsPerSecond;
   } else {
     
+    milliseconds = (microseconds - kMicrosecondsPerMillisecond + 1) /
+                   kMicrosecondsPerMillisecond;
     seconds =
         (milliseconds - kMillisecondsPerSecond + 1) / kMillisecondsPerSecond;
     
@@ -250,26 +256,30 @@ bool Time::FromExploded(bool is_local, const Exploded& exploded, Time* time) {
       milliseconds += (kMillisecondsPerSecond - 1);
     }
   } else {
-    CheckedNumeric<int64_t> checked_millis = seconds;
+    base::CheckedNumeric<int64_t> checked_millis = seconds;
     checked_millis *= kMillisecondsPerSecond;
     checked_millis += exploded.millisecond;
     if (!checked_millis.IsValid()) {
-      *time = Time(0);
+      *time = base::Time(0);
       return false;
     }
     milliseconds = checked_millis.ValueOrDie();
   }
 
-  Time converted_time;
-  if (!FromMillisecondsSinceUnixEpoch(milliseconds, &converted_time)) {
+  
+  base::CheckedNumeric<int64_t> checked_microseconds_win_epoch = milliseconds;
+  checked_microseconds_win_epoch *= kMicrosecondsPerMillisecond;
+  checked_microseconds_win_epoch += kTimeTToMicrosecondsOffset;
+  if (!checked_microseconds_win_epoch.IsValid()) {
     *time = base::Time(0);
     return false;
   }
+  base::Time converted_time(checked_microseconds_win_epoch.ValueOrDie());
 
   
   
   
-  Time::Exploded to_exploded;
+  base::Time::Exploded to_exploded;
   if (!is_local)
     converted_time.UTCExplode(&to_exploded);
   else

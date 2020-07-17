@@ -13,14 +13,11 @@
 
 typedef LONG NTSTATUS;
 #define NT_SUCCESS(st) (st >= 0)
-#define NT_ERROR(st) ((((ULONG)(st)) >> 30) == 3)
-
 
 #define STATUS_SUCCESS                ((NTSTATUS)0x00000000L)
 #define STATUS_BUFFER_OVERFLOW        ((NTSTATUS)0x80000005L)
 #define STATUS_UNSUCCESSFUL           ((NTSTATUS)0xC0000001L)
 #define STATUS_NOT_IMPLEMENTED        ((NTSTATUS)0xC0000002L)
-#define STATUS_INVALID_INFO_CLASS     ((NTSTATUS)0xC0000003L)
 #define STATUS_INFO_LENGTH_MISMATCH   ((NTSTATUS)0xC0000004L)
 #ifndef STATUS_INVALID_PARAMETER
 
@@ -35,8 +32,6 @@ typedef LONG NTSTATUS;
 #define STATUS_INVALID_IMAGE_FORMAT   ((NTSTATUS)0xC000007BL)
 #define STATUS_NO_TOKEN               ((NTSTATUS)0xC000007CL)
 #define STATUS_NOT_SUPPORTED          ((NTSTATUS)0xC00000BBL)
-#define STATUS_INVALID_IMAGE_HASH     ((NTSTATUS)0xC0000428L)
-
 
 #define CURRENT_PROCESS ((HANDLE)-1)
 #define CURRENT_THREAD ((HANDLE)-2)
@@ -317,16 +312,6 @@ typedef enum _PROCESSINFOCLASS {
 } PROCESSINFOCLASS;
 
 
-
-typedef struct _RTL_USER_PROCESS_PARAMETERS {
-  BYTE Reserved1[16];
-  PVOID Reserved2[10];
-  UNICODE_STRING ImagePathName;
-  UNICODE_STRING CommandLine;
-} RTL_USER_PROCESS_PARAMETERS, *PRTL_USER_PROCESS_PARAMETERS;
-
-
-
 typedef struct _PEB {
   BYTE InheritedAddressSpace;
   BYTE ReadImageFileExecOptions;
@@ -335,7 +320,7 @@ typedef struct _PEB {
   PVOID Mutant;
   PVOID ImageBaseAddress;
   PVOID Ldr;
-  PRTL_USER_PROCESS_PARAMETERS ProcessParameters;
+  PVOID ProcessParameters;
 } PEB, *PPEB;
 
 typedef LONG KPRIORITY;
@@ -711,11 +696,6 @@ typedef NTSTATUS(WINAPI* NtSignalAndWaitForSingleObjectFunction)(
     IN HANDLE HandleToWait,
     IN BOOLEAN Alertable,
     IN PLARGE_INTEGER Timeout OPTIONAL);
-
-typedef NTSTATUS(WINAPI* NtWaitForSingleObjectFunction)(
-    IN HANDLE ObjectHandle,
-    IN BOOLEAN Alertable,
-    IN PLARGE_INTEGER TimeOut OPTIONAL);
 
 typedef NTSTATUS(WINAPI* NtQuerySystemInformation)(
     IN SYSTEM_INFORMATION_CLASS SystemInformationClass,
