@@ -51,7 +51,12 @@ class LoginExport {
 
 
 
-  static async exportAsCSV(path) {
+
+
+  static async exportAsCSV(path, logins = null) {
+    if (!logins) {
+      logins = await Services.logins.getAllLoginsAsync();
+    }
     let columns = [
       "origin",
       "username",
@@ -72,7 +77,6 @@ class LoginExport {
 
     let rows = [];
     rows.push(csvHeader);
-    let logins = await Services.logins.getAllLoginsAsync();
     for (let login of logins) {
       rows.push(LoginExport._buildCSVRow(login, columns));
     }

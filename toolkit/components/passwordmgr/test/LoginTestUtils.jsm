@@ -20,6 +20,12 @@ const { TestUtils } = ChromeUtils.import(
   "resource://testing-common/TestUtils.jsm"
 );
 
+const { FileTestUtils } = ChromeUtils.import(
+  "resource://testing-common/FileTestUtils.jsm"
+);
+
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
 const LoginInfo = Components.Constructor(
   "@mozilla.org/login-manager/loginInfo;1",
   "nsILoginInfo",
@@ -86,8 +92,13 @@ this.LoginTestUtils = {
 
 
 
-  checkLogins(expectedLogins) {
-    this.assertLoginListsEqual(Services.logins.getAllLogins(), expectedLogins);
+  checkLogins(expectedLogins, msg = "checkLogins", checkFn = undefined) {
+    this.assertLoginListsEqual(
+      Services.logins.getAllLogins(),
+      expectedLogins,
+      msg,
+      checkFn
+    );
   },
 
   
@@ -96,9 +107,21 @@ this.LoginTestUtils = {
 
 
 
-  assertLoginListsEqual(actual, expected) {
-    Assert.equal(expected.length, actual.length);
-    Assert.ok(expected.every(e => actual.some(a => a.equals(e))));
+  assertLoginListsEqual(
+    actual,
+    expected,
+    msg = "assertLoginListsEqual",
+    checkFn = undefined
+  ) {
+    Assert.equal(expected.length, actual.length, msg);
+    Assert.ok(
+      expected.every(e =>
+        actual.some(a => {
+          return checkFn ? checkFn(a, e) : a.equals(e);
+        })
+      ),
+      msg
+    );
   },
 
   
@@ -435,8 +458,8 @@ LoginTestUtils.testData = {
       
 
       new LoginInfo(
-        "file:///",
-        "file:///",
+        "file://",
+        "file://",
         null,
         "file: username",
         "file: password"
@@ -540,7 +563,12 @@ LoginTestUtils.generation = {
 };
 
 LoginTestUtils.telemetry = {
-  async waitForEventCount(count, process = "content", category = "pwmgr") {
+  async waitForEventCount(
+    count,
+    process = "content",
+    category = "pwmgr",
+    method = undefined
+  ) {
     let events = await TestUtils.waitForCondition(() => {
       let events = Services.telemetry.snapshotEvents(
         Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
@@ -551,11 +579,31 @@ LoginTestUtils.telemetry = {
         return null;
       }
 
-      events = events.filter(e => e[1] == category);
+      events = events.filter(
+        e => e[1] == category && (!method || e[2] == method)
+      );
       dump(`Waiting for ${count} events, got ${events.length}\n`);
       return events.length == count ? events : null;
     }, "waiting for telemetry event count of: " + count);
     Assert.equal(events.length, count, "waiting for telemetry event count");
     return events;
+  },
+};
+
+LoginTestUtils.file = {
+  
+
+
+
+
+
+
+  async setupCsvFileWithLines(csvLines) {
+    let tmpFile = FileTestUtils.getTempFile("firefox_logins.csv");
+    await OS.File.writeAtomic(
+      tmpFile.path,
+      new TextEncoder().encode(csvLines.join("\r\n"))
+    );
+    return tmpFile;
   },
 };
