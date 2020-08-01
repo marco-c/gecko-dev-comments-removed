@@ -18,4 +18,9 @@ interface nsIPrinter : nsISupports
 
 
   readonly attribute Array<nsIPaper> paperList;
+
+  
+
+
+  readonly attribute boolean supportsDuplex;
 };
