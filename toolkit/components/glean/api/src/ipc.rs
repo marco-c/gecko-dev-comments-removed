@@ -4,7 +4,7 @@
 
 
 
-use crate::metrics::CommonMetricData;
+use crate::private::CommonMetricData;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
