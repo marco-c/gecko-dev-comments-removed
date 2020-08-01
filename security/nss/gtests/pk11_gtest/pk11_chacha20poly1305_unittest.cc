@@ -54,9 +54,16 @@ class Pkcs11ChaCha20Poly1305Test
                      &encrypted_len, encrypted.size(), data, data_len);
     EXPECT_EQ(SECFailure, rv);
     EXPECT_EQ(0U, encrypted_len);
-    aead_params.ulTagLen = 16;
 
     
+    aead_params.ulTagLen = 2;
+    rv = PK11_Encrypt(key.get(), kMech, &params, encrypted.data(),
+                      &encrypted_len, encrypted.size(), data, data_len);
+    EXPECT_EQ(SECFailure, rv);
+    EXPECT_EQ(0U, encrypted_len);
+
+    
+    aead_params.ulTagLen = 16;
     rv = PK11_Encrypt(key.get(), kMech, &params, encrypted.data(),
                       &encrypted_len, encrypted.size(), data, data_len);
 
