@@ -1291,8 +1291,6 @@ pref("prompts.tab_modal.enabled", true);
 
 pref("prompts.defaultModalType", 3);
 
-pref("browser.topsites.useRemoteSetting", false);
-
 
 pref("browser.newtab.preload", true);
 
