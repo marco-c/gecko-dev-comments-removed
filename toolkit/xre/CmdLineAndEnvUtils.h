@@ -375,9 +375,9 @@ inline wchar_t* ArgToString(wchar_t* d, const wchar_t* s) {
 
 
 
-inline UniquePtr<wchar_t[]> MakeCommandLine(int argc, wchar_t** argv,
-                                            int aArgcExtra = 0,
-                                            wchar_t** aArgvExtra = nullptr) {
+inline UniquePtr<wchar_t[]> MakeCommandLine(
+    int argc, const wchar_t* const* argv, int aArgcExtra = 0,
+    const wchar_t* const* aArgvExtra = nullptr) {
   int i;
   int len = 0;
 
@@ -440,6 +440,172 @@ inline bool SetArgv0ToFullBinaryPath(wchar_t* aArgv[]) {
   MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(aArgv[0]);
   return true;
 }
+
+
+
+
+
+template <typename T>
+class CommandLineParserWin final {
+  int mArgc;
+  T** mArgv;
+
+  void Release() {
+    if (mArgv) {
+      while (mArgc) {
+        delete[] mArgv[--mArgc];
+      }
+      delete[] mArgv;
+      mArgv = nullptr;
+    }
+  }
+
+ public:
+  CommandLineParserWin() : mArgc(0), mArgv(nullptr) {}
+  ~CommandLineParserWin() { Release(); }
+
+  CommandLineParserWin(const CommandLineParserWin&) = delete;
+  CommandLineParserWin(CommandLineParserWin&&) = delete;
+  CommandLineParserWin& operator=(const CommandLineParserWin&) = delete;
+  CommandLineParserWin& operator=(CommandLineParserWin&&) = delete;
+
+  int Argc() const { return mArgc; }
+  const T* const* Argv() const { return mArgv; }
+
+  void HandleCommandLine(const T* aCmdLineString) {
+    Release();
+
+    int justCounting = 1;
+    
+    int init = 1;
+    int between, quoted, bSlashCount;
+    const T* p;
+    nsTAutoString<T> arg;
+
+    
+    
+    
+    
+    while (1) {
+      
+      if (init) {
+        p = aCmdLineString;
+        between = 1;
+        mArgc = quoted = bSlashCount = 0;
+
+        init = 0;
+      }
+      if (between) {
+        
+        
+        if (*p != 0 && !isspace(*p)) {
+          
+          between = 0;
+          arg.Truncate();
+          switch (*p) {
+            case '\\':
+              
+              bSlashCount = 1;
+              break;
+            case '"':
+              
+              quoted = 1;
+              break;
+            default:
+              
+              arg += *p;
+              break;
+          }
+        } else {
+          
+        }
+      } else {
+        
+        
+        if (*p == 0 || (!quoted && isspace(*p))) {
+          
+          
+          while (bSlashCount) {
+            arg += '\\';
+            bSlashCount--;
+          }
+          
+          if (!justCounting) {
+            mArgv[mArgc] = new T[arg.Length() + 1];
+            memcpy(mArgv[mArgc], arg.get(), (arg.Length() + 1) * sizeof(T));
+          }
+          mArgc++;
+          
+          between = 1;
+        } else {
+          
+          switch (*p) {
+            case '"':
+              
+              while (bSlashCount > 1) {
+                
+                arg += '\\';
+                bSlashCount -= 2;
+              }
+              if (bSlashCount) {
+                
+                arg += '"';
+                bSlashCount = 0;
+              } else {
+                
+                if (quoted) {
+                  
+                  
+                  if (*(p + 1) == '"') {
+                    
+                    
+                    
+                    bSlashCount = 1;
+                  } else {
+                    quoted = 0;
+                  }
+                } else {
+                  quoted = 1;
+                }
+              }
+              break;
+            case '\\':
+              
+              bSlashCount++;
+              break;
+            default:
+              
+              while (bSlashCount) {
+                arg += '\\';
+                bSlashCount--;
+              }
+              
+              arg += *p;
+              break;
+          }
+        }
+      }
+      
+      if (*p) {
+        
+        p++;
+      } else {
+        
+        if (justCounting) {
+          
+          mArgv = new T*[mArgc];
+
+          
+          justCounting = 0;
+          init = 1;
+        } else {
+          
+          break;
+        }
+      }
+    }
+  }
+};
 
 #endif  
 
