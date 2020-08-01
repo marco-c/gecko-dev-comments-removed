@@ -6,12 +6,12 @@ extern crate xpcom;
 
 use crossbeam_utils::atomic::AtomicCell;
 use error::KeyValueError;
-use manager::Manager;
 use moz_task::Task;
 use nserror::{nsresult, NS_ERROR_FAILURE};
 use nsstring::nsCString;
 use owned_value::owned_to_variant;
-use rkv::{OwnedValue, Rkv, SingleStore, StoreError, StoreOptions, Value};
+use rkv::backend::{BackendInfo, SafeMode, SafeModeDatabase, SafeModeEnvironment};
+use rkv::{Migrator, OwnedValue, StoreError, StoreOptions, Value};
 use std::{
     path::Path,
     str,
@@ -28,6 +28,10 @@ use xpcom::{
 use KeyValueDatabase;
 use KeyValueEnumerator;
 use KeyValuePairResult;
+
+type Manager = rkv::Manager<SafeModeEnvironment>;
+type Rkv = rkv::Rkv<SafeModeEnvironment>;
+type SingleStore = rkv::SingleStore<SafeModeDatabase>;
 
 
 
@@ -190,11 +194,15 @@ impl Task for GetOrCreateTask {
         self.result
             .store(Some(|| -> Result<RkvStoreTuple, KeyValueError> {
                 let store;
-                let mut writer = Manager::singleton().write()?;
-                let rkv = writer.get_or_create(Path::new(str::from_utf8(&self.path)?), Rkv::new)?;
+                let mut manager = Manager::singleton().write()?;
+                
+                
+                let path = Path::new(str::from_utf8(&self.path)?);
+                let rkv = manager.get_or_create(path, Rkv::new::<SafeMode>)?;
+                Migrator::easy_migrate_lmdb_to_safe_mode(path, rkv.read()?)?;
                 {
                     let env = rkv.read()?;
-                    let load_ratio = env.load_ratio()?;
+                    let load_ratio = env.load_ratio()?.unwrap_or(0.0);
                     if load_ratio > RESIZE_RATIO {
                         active_resize(&env)?;
                     }
@@ -255,7 +263,7 @@ impl Task for PutTask {
 
                     
                     
-                    Err(StoreError::LmdbError(lmdb::Error::MapFull)) if !resized => {
+                    Err(StoreError::MapFull) if !resized => {
                         
                         writer.abort();
 
@@ -345,7 +353,7 @@ impl Task for WriteManyTask {
 
                                 
                                 
-                                Err(StoreError::LmdbError(lmdb::Error::MapFull)) if !resized => {
+                                Err(StoreError::MapFull) if !resized => {
                                     
                                     writer.abort();
 
@@ -368,7 +376,7 @@ impl Task for WriteManyTask {
                                 
                                 
                                 
-                                Err(StoreError::LmdbError(lmdb::Error::NotFound)) => (),
+                                Err(StoreError::KeyValuePairNotFound) => (),
 
                                 Err(err) => return Err(KeyValueError::StoreError(err)),
                             };
@@ -531,7 +539,7 @@ impl Task for DeleteTask {
                 
                 
                 
-                Err(StoreError::LmdbError(lmdb::Error::NotFound)) => (),
+                Err(StoreError::KeyValuePairNotFound) => (),
 
                 Err(err) => return Err(KeyValueError::StoreError(err)),
             };
@@ -672,9 +680,8 @@ impl Task for EnumerateTask {
                     
                     .map(|result| match result {
                         Ok((key, val)) => match (key, val) {
-                            (Ok(key), Some(val)) => Ok((key.to_owned(), OwnedValue::from(&val))),
+                            (Ok(key), val) => Ok((key.to_owned(), OwnedValue::from(&val))),
                             (Err(err), _) => Err(err.into()),
-                            (_, None) => Err(KeyValueError::UnexpectedValue),
                         },
                         Err(err) => Err(KeyValueError::StoreError(err)),
                     })
