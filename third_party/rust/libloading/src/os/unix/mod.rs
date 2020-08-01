@@ -1,44 +1,39 @@
 use util::{ensure_compatible_types, cstr_cow_from_bytes};
 
 use std::ffi::{CStr, OsStr};
-use std::{fmt, io, marker, mem, ptr};
+use std::{fmt, marker, mem, ptr};
 use std::os::raw;
 use std::os::unix::ffi::OsStrExt;
 
-extern "C" {
-    fn rust_libloading_dlerror_mutex_lock();
-    fn rust_libloading_dlerror_mutex_unlock();
-}
-
-struct DlerrorMutexGuard(());
-
-impl DlerrorMutexGuard {
-    fn new() -> DlerrorMutexGuard {
-        unsafe {
-            rust_libloading_dlerror_mutex_lock();
-        }
-        DlerrorMutexGuard(())
-    }
-}
-
-impl Drop for DlerrorMutexGuard {
-    fn drop(&mut self) {
-        unsafe {
-            rust_libloading_dlerror_mutex_unlock();
-        }
-    }
-}
 
 
 
 
 
 
-fn with_dlerror<T, F>(closure: F) -> Result<T, Option<io::Error>>
+
+
+
+fn with_dlerror<T, F>(wrap: fn(crate::error::DlDescription) -> crate::Error, closure: F)
+-> Result<T, Option<crate::Error>>
 where F: FnOnce() -> Option<T> {
     
     
-    let _lock = DlerrorMutexGuard::new();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     
     
     
@@ -58,8 +53,8 @@ where F: FnOnce() -> Option<T> {
             
             
             
-            let message = CStr::from_ptr(error).to_string_lossy().into_owned();
-            Some(io::Error::new(io::ErrorKind::Other, message))
+            let message = CStr::from_ptr(error).into();
+            Some(wrap(crate::error::DlDescription(message)))
             
             
         }
@@ -97,7 +92,7 @@ impl Library {
     
     
     #[inline]
-    pub fn new<P: AsRef<OsStr>>(filename: P) -> ::Result<Library> {
+    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, crate::Error> {
         Library::open(Some(filename), RTLD_NOW)
     }
 
@@ -109,7 +104,7 @@ impl Library {
     
     #[inline]
     pub fn this() -> Library {
-        Library::open(None::<&OsStr>, RTLD_NOW).unwrap()
+        Library::open(None::<&OsStr>, RTLD_NOW).expect("this should never fail")
     }
 
     
@@ -120,13 +115,13 @@ impl Library {
     
     
     
-    pub fn open<P>(filename: Option<P>, flags: raw::c_int) -> ::Result<Library>
+    pub fn open<P>(filename: Option<P>, flags: raw::c_int) -> Result<Library, crate::Error>
     where P: AsRef<OsStr> {
         let filename = match filename {
             None => None,
-            Some(ref f) => Some(try!(cstr_cow_from_bytes(f.as_ref().as_bytes()))),
+            Some(ref f) => Some(cstr_cow_from_bytes(f.as_ref().as_bytes())?),
         };
-        with_dlerror(move || {
+        with_dlerror(|desc| crate::Error::DlOpen { desc }, move || {
             let result = unsafe {
                 let r = dlopen(match filename {
                     None => ptr::null(),
@@ -143,9 +138,37 @@ impl Library {
                     handle: result
                 })
             }
-        }).map_err(|e| e.unwrap_or_else(||
-            panic!("dlopen failed but dlerror did not report anything")
-        ))
+        }).map_err(|e| e.unwrap_or(crate::Error::DlOpenUnknown))
+    }
+
+    unsafe fn get_impl<T, F>(&self, symbol: &[u8], on_null: F) -> Result<Symbol<T>, crate::Error>
+    where F: FnOnce() -> Result<Symbol<T>, crate::Error>
+    {
+        ensure_compatible_types::<T, *mut raw::c_void>()?;
+        let symbol = cstr_cow_from_bytes(symbol)?;
+        
+        
+        
+        
+        
+        
+        match with_dlerror(|desc| crate::Error::DlSym { desc }, || {
+            dlerror();
+            let symbol = dlsym(self.handle, symbol.as_ptr());
+            if symbol.is_null() {
+                None
+            } else {
+                Some(Symbol {
+                    pointer: symbol,
+                    pd: marker::PhantomData
+                })
+            }
+        }) {
+            Err(None) => on_null(),
+            Err(Some(e)) => Err(e),
+            Ok(x) => Ok(x)
+        }
+
     }
 
     
@@ -165,34 +188,53 @@ impl Library {
     
     
     
-    pub unsafe fn get<T>(&self, symbol: &[u8]) -> ::Result<Symbol<T>> {
-        ensure_compatible_types::<T, *mut raw::c_void>();
-        let symbol = try!(cstr_cow_from_bytes(symbol));
-        
-        
-        
-        
-        
-        
-        match with_dlerror(|| {
-            dlerror();
-            let symbol = dlsym(self.handle, symbol.as_ptr());
-            if symbol.is_null() {
-                None
-            } else {
-                Some(Symbol {
-                    pointer: symbol,
-                    pd: marker::PhantomData
-                })
-            }
-        }) {
-            Err(None) => Ok(Symbol {
-                pointer: ptr::null_mut(),
-                pd: marker::PhantomData
-            }),
-            Err(Some(e)) => Err(e),
-            Ok(x) => Ok(x)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub unsafe fn get<T>(&self, symbol: &[u8]) -> Result<Symbol<T>, crate::Error> {
+        #[cfg(mtsafe_dlerror)]
+        { return self.get_singlethreaded(symbol); }
+        #[cfg(not(mtsafe_dlerror))]
+        {
+            return self.get_impl(symbol, || Err(crate::Error::DlSymUnknown));
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub unsafe fn get_singlethreaded<T>(&self, symbol: &[u8]) -> Result<Symbol<T>, crate::Error> {
+        self.get_impl(symbol, || Ok(Symbol {
+            pointer: ptr::null_mut(),
+            pd: marker::PhantomData
+        }))
     }
 
     
@@ -217,15 +259,33 @@ impl Library {
             handle: handle
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn close(self) -> Result<(), crate::Error> {
+        let result = with_dlerror(|desc| crate::Error::DlClose { desc }, || {
+            if unsafe { dlclose(self.handle) } == 0 {
+                Some(())
+            } else {
+                None
+            }
+        }).map_err(|e| e.unwrap_or(crate::Error::DlCloseUnknown));
+        std::mem::forget(self);
+        result
+    }
 }
 
 impl Drop for Library {
     fn drop(&mut self) {
-        with_dlerror(|| if unsafe { dlclose(self.handle) } == 0 {
-            Some(())
-        } else {
-            None
-        }).unwrap();
+        unsafe {
+            dlclose(self.handle);
+        }
     }
 }
 
@@ -289,8 +349,9 @@ impl<T> ::std::ops::Deref for Symbol<T> {
 impl<T> fmt::Debug for Symbol<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         unsafe {
-            let mut info: DlInfo = mem::uninitialized();
-            if dladdr(self.pointer, &mut info) != 0 {
+            let mut info = mem::MaybeUninit::<DlInfo>::uninit();
+            if dladdr(self.pointer, info.as_mut_ptr()) != 0 {
+                let info = info.assume_init();
                 if info.dli_sname.is_null() {
                     f.write_str(&format!("Symbol@{:p} from {:?}",
                                          self.pointer,
@@ -330,7 +391,10 @@ struct DlInfo {
   dli_saddr: *mut raw::c_void
 }
 
-#[test]
-fn this() {
-    Library::this();
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn this() {
+        super::Library::this();
+    }
 }
