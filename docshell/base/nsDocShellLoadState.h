@@ -102,6 +102,10 @@ class nsDocShellLoadState final {
 
   void SetTriggeringPrincipal(nsIPrincipal* aTriggeringPrincipal);
 
+  uint32_t TriggeringSandboxFlags() const;
+
+  void SetTriggeringSandboxFlags(uint32_t aTriggeringSandboxFlags);
+
   nsIContentSecurityPolicy* Csp() const;
 
   void SetCsp(nsIContentSecurityPolicy* aCsp);
@@ -306,6 +310,11 @@ class nsDocShellLoadState final {
   
   
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+
+  
+  
+  
+  uint32_t mTriggeringSandboxFlags;
 
   
   

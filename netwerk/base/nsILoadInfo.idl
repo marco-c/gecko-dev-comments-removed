@@ -413,6 +413,12 @@ interface nsILoadInfo : nsISupports
   
 
 
+
+  [infallible] attribute unsigned long triggeringSandboxFlags;
+
+  
+
+
   [infallible] readonly attribute unsigned long securityMode;
 
   

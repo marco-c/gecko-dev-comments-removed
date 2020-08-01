@@ -83,6 +83,7 @@ struct LoadInfoArgs
   URIParams?                  resultPrincipalURI;
   uint32_t                    securityFlags;
   uint32_t                    sandboxFlags;
+  uint32_t                    triggeringSandboxFlags;
   uint32_t                    contentPolicyType;
   uint32_t                    tainting;
   bool                        blockAllMixedContent;
@@ -202,6 +203,9 @@ struct ParentLoadInfoForwarderArgs
   
   
   bool parserCreatedScript;
+
+  
+  uint32_t triggeringSandboxFlags;
 
   
   
