@@ -85,13 +85,15 @@ class ImageComposite {
   void SetImages(nsTArray<TimedImage>&& aNewImages);
 
  protected:
-  void UpdateCompositedFrame(int aImageIndex, const TimedImage* aImage,
-                             base::ProcessId aProcessId,
-                             const CompositableHandle& aHandle);
+  
+  void OnFinishRendering(int aImageIndex, const TimedImage* aImage,
+                         base::ProcessId aProcessId,
+                         const CompositableHandle& aHandle);
 
   int32_t mLastFrameID = -1;
   int32_t mLastProducerID = -1;
-  CompositionOpportunityId mLastCompositionOpportunityId;
+  CompositionOpportunityId mLastChooseImageIndexComposition;
+  CompositionOpportunityId mLastFrameUpdateComposition;
 
  private:
   nsTArray<TimedImage> mImages;
@@ -102,6 +104,10 @@ class ImageComposite {
   
   
   void CountSkippedFrames(const TimedImage* aImage);
+
+  
+  void UpdateCompositedFrame(const TimedImage* aImage,
+                             bool aWasVisibleAtPreviousComposition);
 
   
   void DetectTimeStampJitter(const TimedImage* aNewImage);
