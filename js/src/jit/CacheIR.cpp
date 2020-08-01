@@ -6519,6 +6519,30 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachTypedArrayByteOffset(
+    HandleFunction callee) {
+  
+  MOZ_ASSERT(argc_ == 1);
+  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(args_[0].toObject().is<TypedArrayObject>());
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objArgId = writer.guardToObject(argId);
+  writer.typedArrayByteOffsetResult(objArgId);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("TypedArrayByteOffset");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachTypedArrayElementShift(
     HandleFunction callee) {
   
@@ -6854,6 +6878,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachGuardToClass(callee, native);
 
     
+    case InlinableNative::IntrinsicTypedArrayByteOffset:
+      return tryAttachTypedArrayByteOffset(callee);
     case InlinableNative::IntrinsicTypedArrayElementShift:
       return tryAttachTypedArrayElementShift(callee);
 
