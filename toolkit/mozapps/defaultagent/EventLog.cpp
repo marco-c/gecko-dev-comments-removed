@@ -10,9 +10,12 @@
 
 #include "mozilla/UniquePtr.h"
 
+
+const wchar_t* gWinEventLogSourceName =
+    L"" MOZ_APP_DISPLAYNAME " Default Browser Agent";
+
 static void WriteEventLogErrorBuffer(const wchar_t* buffer, DWORD eventId) {
-  HANDLE source = RegisterEventSourceW(
-      nullptr, L"" MOZ_APP_DISPLAYNAME " Default Browser Agent");
+  HANDLE source = RegisterEventSourceW(nullptr, gWinEventLogSourceName);
   if (!source) {
     
     return;
