@@ -56,14 +56,6 @@ PurgeTrackerService.prototype = {
   
   
   _trackingState: new Map(),
-  
-
-
-
-  collator: new Intl.Collator(undefined, {
-    numeric: true,
-    sensitivity: "base",
-  }),
 
   observe(aSubject, aTopic, aData) {
     switch (aTopic) {
@@ -354,22 +346,7 @@ PurgeTrackerService.prototype = {
     let maybeClearPrincipals = new Map();
 
     
-    let cookies = Services.cookies.cookies;
-
-    
-    
-    cookies = cookies.filter(cookie => {
-      return (
-        cookie.creationTime &&
-        this.collator.compare(cookie.creationTime, saved_date) > 0
-      );
-    });
-
-    
-    
-    cookies.sort((a, b) =>
-      this.collator.compare(a.creationTime, b.creationTime)
-    );
+    let cookies = Services.cookies.getCookiesSince(saved_date);
     cookies = cookies.slice(0, MAX_PURGE_COUNT);
 
     for (let cookie of cookies) {
