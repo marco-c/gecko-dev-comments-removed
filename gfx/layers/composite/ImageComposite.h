@@ -91,6 +91,7 @@ class ImageComposite {
 
   int32_t mLastFrameID = -1;
   int32_t mLastProducerID = -1;
+  CompositionOpportunityId mLastCompositionOpportunityId;
 
  private:
   nsTArray<TimedImage> mImages;
@@ -111,6 +112,9 @@ class ImageComposite {
   
   int32_t mSkippedFramesSinceLastComposite = 0;
 
+  
+  
+  
   
   
   uint32_t mDroppedFrames = 0;
