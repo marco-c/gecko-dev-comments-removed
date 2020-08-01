@@ -8,19 +8,16 @@
 #define mozilla_dom_IOUtils__
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Buffer.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/IOUtilsBinding.h"
 #include "mozilla/dom/TypedArray.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/Result.h"
 #include "nspr/prio.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISerialEventTarget.h"
 #include "nsLocalFile.h"
-#include "nsPrintfCString.h"
-#include "nsString.h"
 
 namespace mozilla {
 
@@ -47,8 +44,6 @@ namespace dom {
 
 class IOUtils final {
  public:
-  class IOError;
-
   static already_AddRefed<Promise> Read(GlobalObject& aGlobal,
                                         const nsAString& aPath,
                                         const Optional<uint32_t>& aMaxBytes);
@@ -80,7 +75,6 @@ class IOUtils final {
 
   friend class IOUtilsShutdownBlocker;
   struct InternalFileInfo;
-  struct InternalWriteAtomicOpts;
 
   static StaticDataMutex<StaticRefPtr<nsISerialEventTarget>>
       sBackgroundEventTarget;
@@ -93,31 +87,9 @@ class IOUtils final {
 
   static void SetShutdownHooks();
 
-  template <typename OkT, typename Fn, typename... Args>
-  static already_AddRefed<Promise> RunOnBackgroundThread(
-      RefPtr<Promise>& aPromise, Fn aFunc, Args... aArgs);
-
-  
-
-
-
-
   static already_AddRefed<Promise> CreateJSPromise(GlobalObject& aGlobal);
 
   
-  friend MOZ_MUST_USE bool ToJSValue(JSContext* aCx,
-                                     const InternalFileInfo& aInternalFileInfo,
-                                     JS::MutableHandle<JS::Value> aValue);
-
-  
-
-
-  static void RejectJSPromise(const RefPtr<Promise>& aPromise,
-                              const IOError& aError);
-
-  
-
-
 
 
 
@@ -135,81 +107,20 @@ class IOUtils final {
 
 
 
-
-
   static UniquePtr<PRFileDesc, PR_CloseDelete> CreateFileSync(
       const nsAString& aPath, int32_t aFlags, int32_t aMode = 0666);
 
-  
+  static nsresult ReadSync(PRFileDesc* aFd, const uint32_t aBufSize,
+                           nsTArray<uint8_t>& aResult);
 
+  static nsresult WriteSync(PRFileDesc* aFd, const nsTArray<uint8_t>& aBytes,
+                            uint32_t& aResult);
 
+  static nsresult MoveSync(const nsAString& aSource, const nsAString& aDest,
+                           bool noOverwrite);
 
-
-
-
-
-
-  static Result<nsTArray<uint8_t>, IOError> ReadSync(
-      const nsAString& aPath, const Maybe<uint32_t>& aMaxBytes);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static Result<uint32_t, IOError> WriteAtomicSync(
-      const nsAString& aDestPath, const Buffer<uint8_t>& aByteArray,
-      const InternalWriteAtomicOpts& aOptions);
-
-  
-
-
-
-
-
-
-
-
-
-  static Result<uint32_t, IOError> WriteSync(PRFileDesc* aFd,
-                                             const nsACString& aPath,
-                                             const Buffer<uint8_t>& aBytes);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static Result<Ok, IOError> MoveSync(const nsAString& aSource,
-                                      const nsAString& aDest, bool noOverwrite);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static Result<Ok, IOError> RemoveSync(const nsAString& aPath,
-                                        bool aIgnoreAbsent, bool aRecursive);
+  static nsresult RemoveSync(const nsAString& aPath, bool aIgnoreAbsent,
+                             bool aRecursive);
 
   
 
@@ -226,65 +137,27 @@ class IOUtils final {
 
 
 
+  static nsresult CreateDirectorySync(const nsAString& aPath,
+                                      bool aCreateAncestors,
+                                      bool aIgnoreExisting,
+                                      int32_t aMode = 0777);
 
-
-  static Result<Ok, IOError> CreateDirectorySync(const nsAString& aPath,
-                                                 bool aCreateAncestors,
-                                                 bool aIgnoreExisting,
-                                                 int32_t aMode = 0777);
-
-  
-
-
-
-
-
-
-  static Result<IOUtils::InternalFileInfo, IOError> StatSync(
+  static Result<IOUtils::InternalFileInfo, nsresult> StatSync(
       const nsAString& aPath);
 
+  using IOReadMozPromise =
+      mozilla::MozPromise<nsTArray<uint8_t>, const nsCString,
+                           true>;
+
   using IOWriteMozPromise =
-      mozilla::MozPromise<uint32_t, const IOError,  true>;
-};
+      mozilla::MozPromise<uint32_t, const nsCString,  true>;
 
+  using IOStatMozPromise =
+      mozilla::MozPromise<struct InternalFileInfo, const nsresult,
+                           true>;
 
-
-
-
-class IOUtils::IOError {
- public:
-  MOZ_IMPLICIT IOError(nsresult aCode) : mCode(aCode), mMessage(Nothing()) {}
-
-  
-
-
-  template <typename... Args>
-  IOError WithMessage(const char* const aMessage, Args... aArgs) {
-    mMessage.emplace(nsPrintfCString(aMessage, aArgs...));
-    return *this;
-  }
-  IOError WithMessage(const char* const aMessage) {
-    mMessage.emplace(nsCString(aMessage));
-    return *this;
-  }
-  IOError WithMessage(nsCString aMessage) {
-    mMessage.emplace(aMessage);
-    return *this;
-  }
-
-  
-
-
-  nsresult Code() const { return mCode; }
-
-  
-
-
-  const Maybe<nsCString>& Message() const { return mMessage; }
-
- private:
-  nsresult mCode;
-  Maybe<nsCString> mMessage;
+  using IOMozPromise = mozilla::MozPromise<bool , const nsresult,
+                                            true>;
 };
 
 
@@ -300,21 +173,6 @@ struct IOUtils::InternalFileInfo {
   FileType mType;
   uint64_t mSize;
   uint64_t mLastModified;
-};
-
-
-
-
-
-
-
-
-
-struct IOUtils::InternalWriteAtomicOpts {
-  Maybe<nsString> mBackupFile;
-  bool mFlush;
-  bool mNoOverwrite;
-  Maybe<nsString> mTmpPath;
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
