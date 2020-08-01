@@ -114,6 +114,21 @@ public class ContentBlocking {
                 getSettings().setStrictSocialTrackingProtection(enabled);
                 return this;
             }
+
+            
+
+
+
+
+
+
+
+
+
+            public @NonNull Builder cookiePurging(final boolean enabled) {
+                getSettings().setCookiePurging(enabled);
+                return this;
+            }
         }
 
          final Pref<String> mAt = new Pref<String>(
@@ -145,6 +160,8 @@ public class ContentBlocking {
             "network.cookie.cookieBehavior", CookieBehavior.ACCEPT_NON_TRACKERS);
          final Pref<Integer> mCookieLifetime = new Pref<Integer>(
             "network.cookie.lifetimePolicy", CookieLifetime.NORMAL);
+         final Pref<Boolean> mCookiePurging = new Pref<Boolean>(
+            "privacy.purge_trackers.enabled", false);
 
          final Pref<Boolean> mEtpEnabled = new Pref<Boolean>(
             "privacy.trackingprotection.annotate_channels", false);
@@ -341,6 +358,30 @@ public class ContentBlocking {
         public @NonNull Settings setCookieLifetime(
                 final @CBCookieLifetime int lifetime) {
             mCookieLifetime.commit(lifetime);
+            return this;
+        }
+
+        
+
+
+
+
+        public boolean getCookiePurging() {
+            return mCookiePurging.get();
+        }
+
+        
+
+
+
+
+
+
+
+
+
+        public @NonNull Settings setCookiePurging(final boolean enabled) {
+            mCookiePurging.commit(enabled);
             return this;
         }
 
