@@ -20,24 +20,12 @@ namespace ipc {
 
 static const char* kBrowserThreadNames[BrowserProcessSubThread::ID_COUNT] = {
     "Gecko_IOThread",  
-
-
-
-#if defined(OS_LINUX) || defined(OS_SOLARIS)
-    "Gecko_Background_X11Thread",  
-#endif
 };
 
 
 StaticMutex BrowserProcessSubThread::sLock;
 BrowserProcessSubThread* BrowserProcessSubThread::sBrowserThreads[ID_COUNT] = {
     nullptr,  
-
-
-
-#if defined(OS_LINUX) || defined(OS_SOLARIS)
-    nullptr,  
-#endif
 };
 
 BrowserProcessSubThread::BrowserProcessSubThread(ID aId)
