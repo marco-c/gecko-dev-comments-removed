@@ -2809,7 +2809,7 @@ class Document : public nsINode,
 
 
 
-  Document* GetOriginalDocument() {
+  Document* GetOriginalDocument() const {
     MOZ_ASSERT(!mOriginalDocument || !mOriginalDocument->GetOriginalDocument());
     return mOriginalDocument;
   }
