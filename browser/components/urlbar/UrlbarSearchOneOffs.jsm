@@ -135,13 +135,19 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
-
-  tooltipForEngine(engine) {
-    let tooltip = engine.name;
-    let aliases = UrlbarSearchUtils.aliasesForEngine(engine);
-    if (aliases.length) {
-      tooltip += ` (${aliases[0]})`;
+  setTooltipForEngineButton(button) {
+    let aliases = UrlbarSearchUtils.aliasesForEngine(button.engine);
+    if (!aliases.length) {
+      super.setTooltipForEngineButton(button);
+      return;
     }
-    return tooltip;
+    this.document.l10n.setAttributes(
+      button,
+      "search-one-offs-engine-with-alias",
+      {
+        engineName: button.engine.name,
+        alias: aliases[0],
+      }
+    );
   }
 }
