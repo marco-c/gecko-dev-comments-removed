@@ -572,6 +572,28 @@ void CanonicalBrowsingContext::Stop(uint32_t aStopFlags) {
   }
 }
 
+
+
+
+static bool AncestorsAreCurrent(CanonicalBrowsingContext* aContext) {
+  if (aContext->IsDiscarded()) {
+    return false;
+  }
+
+  RefPtr<WindowGlobalParent> ancestorWindow(aContext->GetParentWindowContext());
+  while (ancestorWindow) {
+    
+    
+    
+    if (ancestorWindow->IsCached() || ancestorWindow->IsDiscarded() ||
+        ancestorWindow->GetBrowsingContext()->IsDiscarded()) {
+      return false;
+    }
+    ancestorWindow = ancestorWindow->GetParentWindowContext();
+  }
+  return true;
+}
+
 void CanonicalBrowsingContext::PendingRemotenessChange::ProcessReady() {
   if (!mPromise) {
     return;
@@ -596,6 +618,12 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Finish() {
 
   RefPtr<CanonicalBrowsingContext> target(mTarget);
   if (target->IsDiscarded()) {
+    Cancel(NS_ERROR_FAILURE);
+    return;
+  }
+
+  if (!AncestorsAreCurrent(target)) {
+    NS_WARNING("Ancestor context is no longer current");
     Cancel(NS_ERROR_FAILURE);
     return;
   }
@@ -849,6 +877,11 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsACString& aRemoteType,
                         "Cannot replace BrowsingContext for subframes");
   MOZ_DIAGNOSTIC_ASSERT(aSpecificGroupId == 0 || aReplaceBrowsingContext,
                         "Cannot specify group ID unless replacing BC");
+
+  if (!AncestorsAreCurrent(this)) {
+    NS_WARNING("An ancestor context is no longer current");
+    return RemotenessPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
 
   
   RefPtr<WindowGlobalParent> embedderWindowGlobal = GetEmbedderWindowGlobal();
