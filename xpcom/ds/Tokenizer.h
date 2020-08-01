@@ -168,6 +168,12 @@ class TokenizerBase {
                              typename TAString::const_char_iterator begin,
                              typename TAString::const_char_iterator end);
 
+#ifdef DEBUG
+  
+  
+  void Validate(Token const& aToken);
+#endif
+
   
   bool mPastEof;
   
@@ -328,6 +334,16 @@ class TTokenizer : public TokenizerBase<TChar> {
   [[nodiscard]] bool CheckWord(const TChar (&aWord)[N]) {
     return Check(
         base::Token::Word(typename base::TDependentString(aWord, N - 1)));
+  }
+  
+
+
+
+
+  [[nodiscard]] bool CheckPhrase(const typename base::TAString& aPhrase);
+  template <uint32_t N>
+  [[nodiscard]] bool CheckPhrase(const TChar (&aPhrase)[N]) {
+    return CheckPhrase(typename base::TDependentString(aPhrase, N - 1));
   }
   
 
