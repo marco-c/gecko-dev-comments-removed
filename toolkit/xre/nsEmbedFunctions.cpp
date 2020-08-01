@@ -948,7 +948,7 @@ TestShellParent* GetOrCreateTestShellParent() {
     
     
     RefPtr<ContentParent> parent =
-        ContentParent::GetNewOrUsedBrowserProcess(nullptr, DEFAULT_REMOTE_TYPE);
+        ContentParent::GetNewOrUsedBrowserProcess(DEFAULT_REMOTE_TYPE);
     parent.forget(&gContentParent);
   } else if (!gContentParent->IsAlive()) {
     return nullptr;
