@@ -5,88 +5,60 @@
 "use strict";
 
 const ClassList = require("devtools/client/inspector/rules/models/class-list");
-
 const { LocalizationHelper } = require("devtools/shared/l10n");
+
 const L10N = new LocalizationHelper(
   "devtools/client/locales/inspector.properties"
 );
-const AutocompletePopup = require("devtools/client/shared/autocomplete-popup");
-const { debounce } = require("devtools/shared/debounce");
 
 
 
 
 
-class ClassListPreviewer {
+
+
+
+
+
+function ClassListPreviewer(inspector, containerEl) {
+  this.inspector = inspector;
+  this.containerEl = containerEl;
+  this.model = new ClassList(inspector);
+
+  this.onNewSelection = this.onNewSelection.bind(this);
+  this.onCheckBoxChanged = this.onCheckBoxChanged.bind(this);
+  this.onKeyPress = this.onKeyPress.bind(this);
+  this.onCurrentNodeClassChanged = this.onCurrentNodeClassChanged.bind(this);
+
   
+  this.addEl = this.doc.createElement("input");
+  this.addEl.classList.add("devtools-textinput");
+  this.addEl.classList.add("add-class");
+  this.addEl.setAttribute(
+    "placeholder",
+    L10N.getStr("inspector.classPanel.newClass.placeholder")
+  );
+  this.addEl.addEventListener("keypress", this.onKeyPress);
+  this.containerEl.appendChild(this.addEl);
 
+  
+  this.classesEl = this.doc.createElement("div");
+  this.classesEl.classList.add("classes");
+  this.containerEl.appendChild(this.classesEl);
 
+  
+  this.inspector.selection.on("new-node-front", this.onNewSelection);
+  this.containerEl.addEventListener("input", this.onCheckBoxChanged);
+  this.model.on("current-node-class-changed", this.onCurrentNodeClassChanged);
 
+  this.onNewSelection();
+}
 
-
-  constructor(inspector, containerEl) {
-    this.inspector = inspector;
-    this.containerEl = containerEl;
-    this.model = new ClassList(inspector);
-
-    this.onNewSelection = this.onNewSelection.bind(this);
-    this.onCheckBoxChanged = this.onCheckBoxChanged.bind(this);
-    this.onKeyPress = this.onKeyPress.bind(this);
-    this.onAddElementInputModified = debounce(
-      this.onAddElementInputModified,
-      75,
-      this
-    );
-    this.onCurrentNodeClassChanged = this.onCurrentNodeClassChanged.bind(this);
-
-    
-    this.addEl = this.doc.createElement("input");
-    this.addEl.classList.add("devtools-textinput");
-    this.addEl.classList.add("add-class");
-    this.addEl.setAttribute(
-      "placeholder",
-      L10N.getStr("inspector.classPanel.newClass.placeholder")
-    );
-    this.addEl.addEventListener("keypress", this.onKeyPress);
-    this.addEl.addEventListener("input", this.onAddElementInputModified);
-    this.containerEl.appendChild(this.addEl);
-
-    
-    this.classesEl = this.doc.createElement("div");
-    this.classesEl.classList.add("classes");
-    this.containerEl.appendChild(this.classesEl);
-
-    
-    this.autocompletePopup = new AutocompletePopup(this.inspector.toolbox.doc, {
-      listId: "inspector_classListPreviewer_autocompletePopupListBox",
-      position: "bottom",
-      autoSelect: false,
-      useXulWrapper: true,
-      input: this.addEl,
-      onClick: (e, item) => {
-        if (item) {
-          this.addEl.value = item.label;
-          this.autocompletePopup.hidePopup();
-          this.autocompletePopup.clearItems();
-        }
-      },
-    });
-
-    
-    this.inspector.selection.on("new-node-front", this.onNewSelection);
-    this.containerEl.addEventListener("input", this.onCheckBoxChanged);
-    this.model.on("current-node-class-changed", this.onCurrentNodeClassChanged);
-
-    this.onNewSelection();
-  }
-
+ClassListPreviewer.prototype = {
   destroy() {
     this.inspector.selection.off("new-node-front", this.onNewSelection);
     this.addEl.removeEventListener("keypress", this.onKeyPress);
-    this.addEl.removeEventListener("input", this.onAddElementInputModified);
     this.containerEl.removeEventListener("input", this.onCheckBoxChanged);
-
-    this.autocompletePopup.destroy();
 
     this.containerEl.innerHTML = "";
 
@@ -95,11 +67,11 @@ class ClassListPreviewer {
     this.inspector = null;
     this.addEl = null;
     this.classesEl = null;
-  }
+  },
 
   get doc() {
     return this.containerEl.ownerDocument;
-  }
+  },
 
   
 
@@ -116,7 +88,7 @@ class ClassListPreviewer {
     if (!this.model.currentClasses.length) {
       this.classesEl.appendChild(this.renderNoClassesMessage());
     }
-  }
+  },
 
   
 
@@ -145,7 +117,7 @@ class ClassListPreviewer {
     labelWrapper.appendChild(label);
 
     return labelWrapper;
-  }
+  },
 
   
 
@@ -157,7 +129,7 @@ class ClassListPreviewer {
     msg.classList.add("no-classes");
     msg.textContent = L10N.getStr("inspector.classPanel.noClasses");
     return msg;
-  }
+  },
 
   
 
@@ -166,7 +138,7 @@ class ClassListPreviewer {
     if (this.addEl) {
       this.addEl.focus();
     }
-  }
+  },
 
   onCheckBoxChanged({ target }) {
     if (!target.dataset.name) {
@@ -179,88 +151,34 @@ class ClassListPreviewer {
         console.error(e);
       }
     });
-  }
+  },
 
   onKeyPress(event) {
-    
-    
-    if (this.autocompletePopup.isOpen) {
+    if (event.key !== "Enter" || this.addEl.value === "") {
       return;
     }
 
-    
-    if (
-      (this.addEl.value && event.key === " " && event.ctrlKey) ||
-      event.key === "ArrowDown"
-    ) {
-      this.onAddElementInputModified();
-      return;
-    }
-
-    if (this.addEl.value !== "" && event.key === "Enter") {
-      this.addClassName(this.addEl.value);
-    }
-  }
-
-  async onAddElementInputModified() {
-    const newValue = this.addEl.value;
-
-    
-    if (newValue === "") {
-      if (this.autocompletePopup.isOpen) {
-        this.autocompletePopup.hidePopup();
-        this.autocompletePopup.clearItems();
-      }
-      return;
-    }
-
-    
-    let items = [];
-    try {
-      const classNames = await this.model.getClassNames(newValue);
-      items = classNames.map(className => {
-        return {
-          preLabel: className.substring(0, newValue.length),
-          label: className,
-        };
+    this.model
+      .addClassName(this.addEl.value)
+      .then(() => {
+        this.render();
+        this.addEl.value = "";
+      })
+      .catch(e => {
+        
+        if (this.containerEl) {
+          console.error(e);
+        }
       });
-    } catch (e) {
-      
-      
-    }
-
-    if (
-      items.length == 0 ||
-      (items.length == 1 && items[0].label === newValue)
-    ) {
-      this.autocompletePopup.clearItems();
-      this.autocompletePopup.hidePopup();
-    } else {
-      this.autocompletePopup.setItems(items);
-      this.autocompletePopup.openPopup();
-    }
-  }
-
-  async addClassName(className) {
-    try {
-      await this.model.addClassName(className);
-      this.render();
-      this.addEl.value = "";
-    } catch (e) {
-      
-      if (this.containerEl) {
-        console.error(e);
-      }
-    }
-  }
+  },
 
   onNewSelection() {
     this.render();
-  }
+  },
 
   onCurrentNodeClassChanged() {
     this.render();
-  }
-}
+  },
+};
 
 module.exports = ClassListPreviewer;

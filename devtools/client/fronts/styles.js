@@ -24,15 +24,9 @@ loader.lazyRequireGetter(
 
 
 class PageStyleFront extends FrontClassWithSpec(pageStyleSpec) {
-  _attributesCache = new Map();
-
   constructor(conn, targetFront, parentFront) {
     super(conn, targetFront, parentFront);
     this.inspector = this.getParent();
-
-    this._clearAttributesCache = this._clearAttributesCache.bind(this);
-    this.on("stylesheet-updated", this._clearAttributesCache);
-    this.walker.on("new-mutations", this._clearAttributesCache);
   }
 
   form(form) {
@@ -81,56 +75,6 @@ class PageStyleFront extends FrontClassWithSpec(pageStyleSpec) {
     return super.addNewRule(node, pseudoClasses).then(ret => {
       return ret.entries[0];
     });
-  }
-
-  
-
-
-
-
-
-
-
-
-  async getAttributesInOwnerDocument(search, attributeType, node) {
-    if (!attributeType) {
-      throw new Error("`type` should not be empty");
-    }
-
-    if (!this._form.traits.getAttributesInOwnerDocument || !search) {
-      return [];
-    }
-
-    const lcFilter = search.toLowerCase();
-
-    
-    
-    if (
-      this._attributesCache &&
-      this._attributesCache.has(attributeType) &&
-      search.startsWith(this._attributesCache.get(attributeType).search)
-    ) {
-      const cachedResults = this._attributesCache
-        .get(attributeType)
-        .results.filter(item => item.toLowerCase().startsWith(lcFilter));
-      this.emitForTests(
-        "getAttributesInOwnerDocument-cache-hit",
-        cachedResults
-      );
-      return cachedResults;
-    }
-
-    const results = await super.getAttributesInOwnerDocument(
-      search,
-      attributeType,
-      node
-    );
-    this._attributesCache.set(attributeType, { search, results });
-    return results;
-  }
-
-  _clearAttributesCache() {
-    this._attributesCache.clear();
   }
 }
 

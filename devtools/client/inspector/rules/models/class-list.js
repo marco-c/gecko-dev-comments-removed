@@ -193,24 +193,6 @@ class ClassList {
       }
     }
   }
-
-  
-
-
-
-
-
-
-
-
-
-  getClassNames(filter) {
-    return this.currentNode.inspectorFront.pageStyle.getAttributesInOwnerDocument(
-      filter,
-      "class",
-      this.currentNode
-    );
-  }
 }
 
 module.exports = ClassList;

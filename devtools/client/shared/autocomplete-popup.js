@@ -35,9 +35,6 @@ let itemIdCounter = 0;
 
 
 
-
-
-
 function AutocompletePopup(toolboxDoc, options = {}) {
   EventEmitter.decorate(this);
 
@@ -58,14 +55,6 @@ function AutocompletePopup(toolboxDoc, options = {}) {
   this.selectedIndex = -1;
 
   this.onClick = this.onClick.bind(this);
-  this.onInputKeyDown = this.onInputKeyDown.bind(this);
-  this.onInputBlur = this.onInputBlur.bind(this);
-
-  if (options.input) {
-    this.input = options.input;
-    options.input.addEventListener("keydown", this.onInputKeyDown);
-    options.input.addEventListener("blur", this.onInputBlur);
-  }
 }
 
 AutocompletePopup.prototype = {
@@ -126,66 +115,6 @@ AutocompletePopup.prototype = {
     return this._tooltip;
   },
 
-  onInputKeyDown: function(event) {
-    
-    if (!this.isOpen) {
-      return;
-    }
-
-    if (
-      this.selectedItem &&
-      this.onClickCallback &&
-      (event.key === "Enter" ||
-        (event.key === "ArrowRight" && !event.shiftKey) ||
-        (event.key === "Tab" && !event.shiftKey))
-    ) {
-      this.onClickCallback(event, this.selectedItem);
-
-      
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
-
-    
-    
-    if (event.key === "ArrowLeft" && !event.shiftKey) {
-      this.clearItems();
-      this.hidePopup();
-      return;
-    }
-
-    
-    if (event.key === "Escape") {
-      this.clearItems();
-      this.hidePopup();
-      
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
-
-    if (event.key === "ArrowDown") {
-      this.selectNextItem();
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
-
-    if (event.key === "ArrowUp") {
-      this.selectPreviousItem();
-      event.preventDefault();
-      event.stopPropagation();
-    }
-  },
-
-  onInputBlur: function(event) {
-    if (this.isOpen) {
-      this.clearItems();
-      this.hidePopup();
-    }
-  },
-
   onSelect: function(e) {
     if (this.onSelectCallback) {
       this.onSelectCallback(e);
@@ -193,22 +122,14 @@ AutocompletePopup.prototype = {
   },
 
   onClick: function(e) {
-    const itemEl = e.target.closest(".autocomplete-item");
-    const index = itemEl?.dataset?.index;
-
-    if (typeof index !== "undefined") {
-      this.selectItemAtIndex(index);
+    const item = e.target.closest(".autocomplete-item");
+    if (item && typeof item.dataset.index !== "undefined") {
+      this.selectItemAtIndex(parseInt(item.dataset.index, 10));
     }
 
     this.emit("popup-click");
-
-    const item =
-      typeof index !== "undefined"
-        ? this.items[parseInt(itemEl.dataset.index, 10)]
-        : null;
-
     if (this.onClickCallback) {
-      this.onClickCallback(e, item);
+      this.onClickCallback(e);
     }
   },
 
@@ -228,10 +149,6 @@ AutocompletePopup.prototype = {
 
 
   openPopup: async function(anchor, xOffset = 0, yOffset = 0, index, options) {
-    if (!anchor && this.input) {
-      anchor = this.input;
-    }
-
     
     this._activeElement = anchor.ownerDocument.activeElement;
 
@@ -353,12 +270,6 @@ AutocompletePopup.prototype = {
     if (this._tooltip) {
       this._tooltip.destroy();
       this._tooltip = null;
-    }
-
-    if (this.input) {
-      this.input.addEventListener("keydown", this.onInputKeyDown);
-      this.input.addEventListener("blur", this.onInputBlur);
-      this.input = null;
     }
 
     this._document = null;
