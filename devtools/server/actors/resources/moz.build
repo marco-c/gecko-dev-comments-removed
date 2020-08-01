@@ -4,6 +4,10 @@
 
 
 
+DIRS += [
+    'utils',
+]
+
 DevToolsModules(
     'console-messages.js',
     'error-messages.js',
@@ -11,5 +15,5 @@ DevToolsModules(
     'platform-messages.js',
 )
 
-with Files('console-messages.js'):
+with Files('*-messages.js'):
     BUG_COMPONENT = ('DevTools', 'Console')

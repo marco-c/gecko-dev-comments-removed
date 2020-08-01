@@ -4,118 +4,49 @@
 
 "use strict";
 
+const nsIConsoleListenerWatcher = require("devtools/server/actors/resources/utils/nsi-console-listener-watcher");
 const { Ci } = require("chrome");
-const Services = require("Services");
-const ChromeUtils = require("ChromeUtils");
 
 const {
   TYPES: { PLATFORM_MESSAGE },
 } = require("devtools/server/actors/resources/index");
 
-const { stringIsLong } = require("devtools/server/actors/object/utils");
-const { LongStringActor } = require("devtools/server/actors/string");
+const { createStringGrip } = require("devtools/server/actors/object/utils");
 
-class PlatformMessageWatcher {
-  
-
-
-
-
-
-
-
-
-
-
-  constructor(targetActor, { onAvailable }) {
-    
-    if (!targetActor.isRootActor) {
-      return;
-    }
-
-    
-    const listener = {
-      QueryInterface: ChromeUtils.generateQI(["nsIConsoleListener"]),
-      observe(message) {
-        if (!shouldHandleMessage(message)) {
-          return;
-        }
-
-        onAvailable([buildResourceFromMessage(targetActor, message)]);
-      },
-    };
-
-    
-    
-    const cachedMessages = Services.console.getMessageArray();
-    Services.console.registerListener(listener);
-    this.listener = listener;
-
-    
-    const messages = [];
-    for (const message of cachedMessages) {
-      if (!shouldHandleMessage(message)) {
-        continue;
-      }
-
-      messages.push(buildResourceFromMessage(targetActor, message));
-    }
-    onAvailable(messages);
+class PlatformMessageWatcher extends nsIConsoleListenerWatcher {
+  shouldHandleTarget(targetActor) {
+    return this.isProcessTarget(targetActor);
   }
 
   
 
 
-  destroy() {
-    if (this.listener) {
-      Services.console.unregisterListener(this.listener);
+
+
+
+  shouldHandleMessage(message) {
+    
+    
+    
+    if (message instanceof Ci.nsIScriptError) {
+      return false;
     }
+
+    return true;
+  }
+
+  
+
+
+
+
+
+  buildResource(targetActor, message) {
+    return {
+      message: createStringGrip(targetActor, message.message),
+      timeStamp: message.timeStamp,
+      resourceType: PLATFORM_MESSAGE,
+    };
   }
 }
 module.exports = PlatformMessageWatcher;
-
-
-
-
-
-
-
-function shouldHandleMessage(message) {
-  
-  
-  
-  if (message instanceof Ci.nsIScriptError) {
-    return false;
-  }
-
-  return true;
-}
-
-
-
-
-
-
-
-function buildResourceFromMessage(targetActor, message) {
-  return {
-    message: createStringGrip(targetActor, message.message),
-    timeStamp: message.timeStamp,
-    resourceType: PLATFORM_MESSAGE,
-  };
-}
-
-
-
-
-
-
-
-function createStringGrip(targetActor, string) {
-  if (string && stringIsLong(string)) {
-    const actor = new LongStringActor(targetActor.conn, string);
-    targetActor.manage(actor);
-    return actor.form();
-  }
-  return string;
-}
