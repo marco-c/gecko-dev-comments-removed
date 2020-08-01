@@ -404,6 +404,14 @@ interface nsIContentPolicy : nsISupports
 
 
 
+  const nsContentPolicyType TYPE_INTERNAL_CHROMEUTILS_COMPILED_SCRIPT = 52;
+
+  
+
+
+
+
+
 
   
 
