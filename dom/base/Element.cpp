@@ -860,10 +860,8 @@ nsRect Element::GetClientAreaRect() {
     MOZ_ASSERT(frame);
     nsRect scrollPort = sf->GetScrollPortRect();
     nsIFrame* scrollableAsFrame = do_QueryFrame(sf);
-    
-    
-    
-    if (frame != scrollableAsFrame && !sf->IsRootScrollFrameOfDocument()) {
+    if (frame != scrollableAsFrame) {
+      
       scrollPort.MoveBy(scrollableAsFrame->GetOffsetTo(frame));
     }
     
