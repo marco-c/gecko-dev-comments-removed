@@ -13,8 +13,8 @@ import signal
 import sys
 
 if __name__ == '__main__':
-    sys.path = ['pywebsocket'] + sys.path
-    import standalone
+    sys.path = ['pywebsocket3'] + sys.path
+    from mod_pywebsocket import standalone
 
     
     

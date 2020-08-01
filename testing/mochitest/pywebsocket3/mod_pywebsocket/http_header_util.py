@@ -26,15 +26,12 @@
 
 
 
-
-
 """Utilities for parsing and formatting headers that follow the grammar defined
 in HTTP RFC http://www.ietf.org/rfc/rfc2616.txt.
 """
 
-
-import urlparse
-
+from __future__ import absolute_import
+import six.moves.urllib.parse
 
 _SEPARATORS = '()<>@,;:\\"/[]?={} \t'
 
@@ -52,7 +49,6 @@ def _is_ctl(c):
 
 
 class ParsingState(object):
-
     def __init__(self, data):
         self.data = data
         self.head = 0
@@ -218,7 +214,7 @@ def quote_if_necessary(s):
 def parse_uri(uri):
     """Parse absolute URI then return host, port and resource."""
 
-    parsed = urlparse.urlsplit(uri)
+    parsed = six.moves.urllib.parse.urlsplit(uri)
     if parsed.scheme != 'wss' and parsed.scheme != 'ws':
         
         
@@ -230,7 +226,10 @@ def parse_uri(uri):
     port = None
     try:
         port = parsed.port
-    except ValueError, e:
+    except ValueError:
+        
+        
+        
         
         
         return None, None, None
@@ -250,14 +249,6 @@ def parse_uri(uri):
         path += '#' + parsed.fragment
 
     return parsed.hostname, port, path
-
-
-try:
-    urlparse.uses_netloc.index('ws')
-except ValueError, e:
-    
-    urlparse.uses_netloc.append('ws')
-    urlparse.uses_netloc.append('wss')
 
 
 
