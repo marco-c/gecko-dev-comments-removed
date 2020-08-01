@@ -11,9 +11,11 @@ if __package__ == '':
     
     
     path = os.path.dirname(os.path.dirname(__file__))
+    pipenv = os.path.dirname(os.path.dirname(path))
     sys.path.insert(0, path)
+    sys.path.insert(0, pipenv)
 
-import pip9  
+from pipenv.patched.notpip._internal.cli.main import main as _main  
 
 if __name__ == '__main__':
-    sys.exit(pip9.main())
+    sys.exit(_main())

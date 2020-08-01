@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from collections import Mapping
+try:
+    from collections.abc import Mapping
+except ImportError:  
+    from collections import Mapping
 
 
 class Trie(Mapping):
@@ -13,8 +16,7 @@ class Trie(Mapping):
         if prefix is None:
             return set(keys)
 
-        
-        return set([x for x in keys if x.startswith(prefix)])
+        return {x for x in keys if x.startswith(prefix)}
 
     def has_keys_with_prefix(self, prefix):
         for key in self.keys():

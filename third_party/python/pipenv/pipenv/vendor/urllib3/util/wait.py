@@ -1,40 +1,153 @@
-from .selectors import (
-    HAS_SELECT,
-    DefaultSelector,
-    EVENT_READ,
-    EVENT_WRITE
-)
+import errno
+from functools import partial
+import select
+import sys
+
+try:
+    from time import monotonic
+except ImportError:
+    from time import time as monotonic
+
+__all__ = ["NoWayToWaitForSocketError", "wait_for_read", "wait_for_write"]
 
 
-def _wait_for_io_events(socks, events, timeout=None):
-    """ Waits for IO events to be available from a list of sockets
-    or optionally a single socket if passed in. Returns a list of
-    sockets that can be interacted with immediately. """
-    if not HAS_SELECT:
-        raise ValueError('Platform does not have a selector')
-    if not isinstance(socks, list):
-        
-        if hasattr(socks, "fileno"):
-            socks = [socks]
-        
+class NoWayToWaitForSocketError(Exception):
+    pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if sys.version_info >= (3, 5):
+    
+    def _retry_on_intr(fn, timeout):
+        return fn(timeout)
+
+
+else:
+    
+    def _retry_on_intr(fn, timeout):
+        if timeout is None:
+            deadline = float("inf")
         else:
-            socks = list(socks)
-    with DefaultSelector() as selector:
-        for sock in socks:
-            selector.register(sock, events)
-        return [key[0].fileobj for key in
-                selector.select(timeout) if key[1] & events]
+            deadline = monotonic() + timeout
+
+        while True:
+            try:
+                return fn(timeout)
+            
+            except (OSError, select.error) as e:
+                
+                if e.args[0] != errno.EINTR:
+                    raise
+                else:
+                    timeout = deadline - monotonic()
+                    if timeout < 0:
+                        timeout = 0
+                    if timeout == float("inf"):
+                        timeout = None
+                    continue
 
 
-def wait_for_read(socks, timeout=None):
-    """ Waits for reading to be available from a list of sockets
-    or optionally a single socket if passed in. Returns a list of
-    sockets that can be read from immediately. """
-    return _wait_for_io_events(socks, EVENT_READ, timeout)
+def select_wait_for_socket(sock, read=False, write=False, timeout=None):
+    if not read and not write:
+        raise RuntimeError("must specify at least one of read=True, write=True")
+    rcheck = []
+    wcheck = []
+    if read:
+        rcheck.append(sock)
+    if write:
+        wcheck.append(sock)
+    
+    
+    
+    
+    
+    fn = partial(select.select, rcheck, wcheck, wcheck)
+    rready, wready, xready = _retry_on_intr(fn, timeout)
+    return bool(rready or wready or xready)
 
 
-def wait_for_write(socks, timeout=None):
-    """ Waits for writing to be available from a list of sockets
-    or optionally a single socket if passed in. Returns a list of
-    sockets that can be written to immediately. """
-    return _wait_for_io_events(socks, EVENT_WRITE, timeout)
+def poll_wait_for_socket(sock, read=False, write=False, timeout=None):
+    if not read and not write:
+        raise RuntimeError("must specify at least one of read=True, write=True")
+    mask = 0
+    if read:
+        mask |= select.POLLIN
+    if write:
+        mask |= select.POLLOUT
+    poll_obj = select.poll()
+    poll_obj.register(sock, mask)
+
+    
+    def do_poll(t):
+        if t is not None:
+            t *= 1000
+        return poll_obj.poll(t)
+
+    return bool(_retry_on_intr(do_poll, timeout))
+
+
+def null_wait_for_socket(*args, **kwargs):
+    raise NoWayToWaitForSocketError("no select-equivalent available")
+
+
+def _have_working_poll():
+    
+    
+    
+    try:
+        poll_obj = select.poll()
+        _retry_on_intr(poll_obj.poll, 0)
+    except (AttributeError, OSError):
+        return False
+    else:
+        return True
+
+
+def wait_for_socket(*args, **kwargs):
+    
+    
+    
+    
+    global wait_for_socket
+    if _have_working_poll():
+        wait_for_socket = poll_wait_for_socket
+    elif hasattr(select, "select"):
+        wait_for_socket = select_wait_for_socket
+    else:  
+        wait_for_socket = null_wait_for_socket
+    return wait_for_socket(*args, **kwargs)
+
+
+def wait_for_read(sock, timeout=None):
+    """ Waits for reading to be available on a given socket.
+    Returns True if the socket is readable, or False if the timeout expired.
+    """
+    return wait_for_socket(sock, read=True, timeout=timeout)
+
+
+def wait_for_write(sock, timeout=None):
+    """ Waits for writing to be available on a given socket.
+    Returns True if the socket is readable, or False if the timeout expired.
+    """
+    return wait_for_socket(sock, write=True, timeout=timeout)

@@ -1,6 +1,11 @@
-import os
-import sys
+import locale
+
+from piptools.click import secho
 
 
-v_path = os.path.abspath(os.path.sep.join([os.path.dirname(os.path.realpath(__file__)), '_vendored']))
-sys.path.insert(0, v_path)
+
+try:
+    locale.setlocale(locale.LC_ALL, "")
+except locale.Error as e:  
+    
+    secho("Ignoring error when setting locale: {}".format(e), fg="red")

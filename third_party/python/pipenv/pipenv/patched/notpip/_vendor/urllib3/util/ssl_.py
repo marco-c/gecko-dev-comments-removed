@@ -2,11 +2,14 @@ from __future__ import absolute_import
 import errno
 import warnings
 import hmac
+import sys
 
 from binascii import hexlify, unhexlify
 from hashlib import md5, sha1, sha256
 
+from .url import IPV4_RE, BRACELESS_IPV6_ADDRZ_RE
 from ..exceptions import SSLError, InsecurePlatformWarning, SNIMissingWarning
+from ..packages import six
 
 
 SSLContext = None
@@ -15,11 +18,7 @@ IS_PYOPENSSL = False
 IS_SECURETRANSPORT = False
 
 
-HASHFUNC_MAP = {
-    32: md5,
-    40: sha1,
-    64: sha256,
-}
+HASHFUNC_MAP = {32: md5, 40: sha1, 64: sha256}
 
 
 def _const_compare_digest_backport(a, b):
@@ -35,16 +34,26 @@ def _const_compare_digest_backport(a, b):
     return result == 0
 
 
-_const_compare_digest = getattr(hmac, 'compare_digest',
-                                _const_compare_digest_backport)
-
+_const_compare_digest = getattr(hmac, "compare_digest", _const_compare_digest_backport)
 
 try:  
     import ssl
-    from ssl import wrap_socket, CERT_NONE, PROTOCOL_SSLv23
+    from ssl import wrap_socket, CERT_REQUIRED
     from ssl import HAS_SNI  
 except ImportError:
     pass
+
+try:  
+    from ssl import PROTOCOL_TLS
+
+    PROTOCOL_SSLv23 = PROTOCOL_TLS
+except ImportError:
+    try:
+        from ssl import PROTOCOL_SSLv23 as PROTOCOL_TLS
+
+        PROTOCOL_SSLv23 = PROTOCOL_TLS
+    except ImportError:
+        PROTOCOL_SSLv23 = PROTOCOL_TLS = 2
 
 
 try:
@@ -68,34 +77,33 @@ except ImportError:
 
 
 
-DEFAULT_CIPHERS = ':'.join([
-    'TLS13-AES-256-GCM-SHA384',
-    'TLS13-CHACHA20-POLY1305-SHA256',
-    'TLS13-AES-128-GCM-SHA256',
-    'ECDH+AESGCM',
-    'ECDH+CHACHA20',
-    'DH+AESGCM',
-    'DH+CHACHA20',
-    'ECDH+AES256',
-    'DH+AES256',
-    'ECDH+AES128',
-    'DH+AES',
-    'RSA+AESGCM',
-    'RSA+AES',
-    '!aNULL',
-    '!eNULL',
-    '!MD5',
-])
+
+
+
+DEFAULT_CIPHERS = ":".join(
+    [
+        "ECDHE+AESGCM",
+        "ECDHE+CHACHA20",
+        "DHE+AESGCM",
+        "DHE+CHACHA20",
+        "ECDH+AESGCM",
+        "DH+AESGCM",
+        "ECDH+AES",
+        "DH+AES",
+        "RSA+AESGCM",
+        "RSA+AES",
+        "!aNULL",
+        "!eNULL",
+        "!MD5",
+        "!DSS",
+    ]
+)
 
 try:
     from ssl import SSLContext  
 except ImportError:
-    import sys
 
     class SSLContext(object):  
-        supports_set_ciphers = ((2, 7) <= sys.version_info < (3,) or
-                                (3, 2) <= sys.version_info)
-
         def __init__(self, protocol_version):
             self.protocol = protocol_version
             
@@ -118,36 +126,27 @@ except ImportError:
                 raise SSLError("CA directories not supported in older Pythons")
 
         def set_ciphers(self, cipher_suite):
-            if not self.supports_set_ciphers:
-                raise TypeError(
-                    'Your version of Python does not support setting '
-                    'a custom cipher suite. Please upgrade to Python '
-                    '2.7, 3.2, or later if you need this functionality.'
-                )
             self.ciphers = cipher_suite
 
         def wrap_socket(self, socket, server_hostname=None, server_side=False):
             warnings.warn(
-                'A true SSLContext object is not available. This prevents '
-                'urllib3 from configuring SSL appropriately and may cause '
-                'certain SSL connections to fail. You can upgrade to a newer '
-                'version of Python to solve this. For more information, see '
-                'https://urllib3.readthedocs.io/en/latest/advanced-usage.html'
-                '#ssl-warnings',
-                InsecurePlatformWarning
+                "A true SSLContext object is not available. This prevents "
+                "urllib3 from configuring SSL appropriately and may cause "
+                "certain SSL connections to fail. You can upgrade to a newer "
+                "version of Python to solve this. For more information, see "
+                "https://urllib3.readthedocs.io/en/latest/advanced-usage.html"
+                "#ssl-warnings",
+                InsecurePlatformWarning,
             )
             kwargs = {
-                'keyfile': self.keyfile,
-                'certfile': self.certfile,
-                'ca_certs': self.ca_certs,
-                'cert_reqs': self.verify_mode,
-                'ssl_version': self.protocol,
-                'server_side': server_side,
+                "keyfile": self.keyfile,
+                "certfile": self.certfile,
+                "ca_certs": self.ca_certs,
+                "cert_reqs": self.verify_mode,
+                "ssl_version": self.protocol,
+                "server_side": server_side,
             }
-            if self.supports_set_ciphers:  
-                return wrap_socket(socket, ciphers=self.ciphers, **kwargs)
-            else:  
-                return wrap_socket(socket, **kwargs)
+            return wrap_socket(socket, ciphers=self.ciphers, **kwargs)
 
 
 def assert_fingerprint(cert, fingerprint):
@@ -160,12 +159,11 @@ def assert_fingerprint(cert, fingerprint):
         Fingerprint as string of hexdigits, can be interspersed by colons.
     """
 
-    fingerprint = fingerprint.replace(':', '').lower()
+    fingerprint = fingerprint.replace(":", "").lower()
     digest_length = len(fingerprint)
     hashfunc = HASHFUNC_MAP.get(digest_length)
     if not hashfunc:
-        raise SSLError(
-            'Fingerprint of invalid length: {0}'.format(fingerprint))
+        raise SSLError("Fingerprint of invalid length: {0}".format(fingerprint))
 
     
     fingerprint_bytes = unhexlify(fingerprint.encode())
@@ -173,8 +171,11 @@ def assert_fingerprint(cert, fingerprint):
     cert_digest = hashfunc(cert).digest()
 
     if not _const_compare_digest(cert_digest, fingerprint_bytes):
-        raise SSLError('Fingerprints did not match. Expected "{0}", got "{1}".'
-                       .format(fingerprint, hexlify(cert_digest)))
+        raise SSLError(
+            'Fingerprints did not match. Expected "{0}", got "{1}".'.format(
+                fingerprint, hexlify(cert_digest)
+            )
+        )
 
 
 def resolve_cert_reqs(candidate):
@@ -183,18 +184,18 @@ def resolve_cert_reqs(candidate):
     the wrap_socket function/method from the ssl module.
     Defaults to :data:`ssl.CERT_NONE`.
     If given a string it is assumed to be the name of the constant in the
-    :mod:`ssl` module or its abbrevation.
+    :mod:`ssl` module or its abbreviation.
     (So you can specify `REQUIRED` instead of `CERT_REQUIRED`.
     If it's neither `None` nor a string we assume it is already the numeric
     constant which can directly be passed to wrap_socket.
     """
     if candidate is None:
-        return CERT_NONE
+        return CERT_REQUIRED
 
     if isinstance(candidate, str):
         res = getattr(ssl, candidate, None)
         if res is None:
-            res = getattr(ssl, 'CERT_' + candidate)
+            res = getattr(ssl, "CERT_" + candidate)
         return res
 
     return candidate
@@ -205,19 +206,20 @@ def resolve_ssl_version(candidate):
     like resolve_cert_reqs
     """
     if candidate is None:
-        return PROTOCOL_SSLv23
+        return PROTOCOL_TLS
 
     if isinstance(candidate, str):
         res = getattr(ssl, candidate, None)
         if res is None:
-            res = getattr(ssl, 'PROTOCOL_' + candidate)
+            res = getattr(ssl, "PROTOCOL_" + candidate)
         return res
 
     return candidate
 
 
-def create_urllib3_context(ssl_version=None, cert_reqs=None,
-                           options=None, ciphers=None):
+def create_urllib3_context(
+    ssl_version=None, cert_reqs=None, options=None, ciphers=None
+):
     """All arguments have the same meaning as ``ssl_wrap_socket``.
 
     By default, this function does a lot of the same work that
@@ -228,7 +230,7 @@ def create_urllib3_context(ssl_version=None, cert_reqs=None,
 
     If you wish to enable SSLv3, you can do::
 
-        from urllib3.util import ssl_
+        from pipenv.patched.notpip._vendor.urllib3.util import ssl_
         context = ssl_.create_urllib3_context()
         context.options &= ~ssl_.OP_NO_SSLv3
 
@@ -251,7 +253,9 @@ def create_urllib3_context(ssl_version=None, cert_reqs=None,
         Constructed SSLContext object with specified options
     :rtype: SSLContext
     """
-    context = SSLContext(ssl_version or ssl.PROTOCOL_SSLv23)
+    context = SSLContext(ssl_version or PROTOCOL_TLS)
+
+    context.set_ciphers(ciphers or DEFAULT_CIPHERS)
 
     
     cert_reqs = ssl.CERT_REQUIRED if cert_reqs is None else cert_reqs
@@ -268,21 +272,40 @@ def create_urllib3_context(ssl_version=None, cert_reqs=None,
 
     context.options |= options
 
-    if getattr(context, 'supports_set_ciphers', True):  
-        context.set_ciphers(ciphers or DEFAULT_CIPHERS)
+    
+    
+    
+    
+    
+    
+    if (cert_reqs == ssl.CERT_REQUIRED or sys.version_info >= (3, 7, 4)) and getattr(
+        context, "post_handshake_auth", None
+    ) is not None:
+        context.post_handshake_auth = True
 
     context.verify_mode = cert_reqs
-    if getattr(context, 'check_hostname', None) is not None:  
+    if (
+        getattr(context, "check_hostname", None) is not None
+    ):  
         
         
         context.check_hostname = False
     return context
 
 
-def ssl_wrap_socket(sock, keyfile=None, certfile=None, cert_reqs=None,
-                    ca_certs=None, server_hostname=None,
-                    ssl_version=None, ciphers=None, ssl_context=None,
-                    ca_cert_dir=None):
+def ssl_wrap_socket(
+    sock,
+    keyfile=None,
+    certfile=None,
+    cert_reqs=None,
+    ca_certs=None,
+    server_hostname=None,
+    ssl_version=None,
+    ciphers=None,
+    ssl_context=None,
+    ca_cert_dir=None,
+    key_password=None,
+):
     """
     All arguments except for server_hostname, ssl_context, and ca_cert_dir have
     the same meaning as they do when using :func:`ssl.wrap_socket`.
@@ -293,20 +316,20 @@ def ssl_wrap_socket(sock, keyfile=None, certfile=None, cert_reqs=None,
         A pre-made :class:`SSLContext` object. If none is provided, one will
         be created using :func:`create_urllib3_context`.
     :param ciphers:
-        A string of ciphers we wish the client to support. This is not
-        supported on Python 2.6 as the ssl module does not support it.
+        A string of ciphers we wish the client to support.
     :param ca_cert_dir:
         A directory containing CA certificates in multiple separate files, as
         supported by OpenSSL's -CApath flag or the capath argument to
         SSLContext.load_verify_locations().
+    :param key_password:
+        Optional password if the keyfile is encrypted.
     """
     context = ssl_context
     if context is None:
         
         
         
-        context = create_urllib3_context(ssl_version, cert_reqs,
-                                         ciphers=ciphers)
+        context = create_urllib3_context(ssl_version, cert_reqs, ciphers=ciphers)
 
     if ca_certs or ca_cert_dir:
         try:
@@ -319,23 +342,66 @@ def ssl_wrap_socket(sock, keyfile=None, certfile=None, cert_reqs=None,
             if e.errno == errno.ENOENT:
                 raise SSLError(e)
             raise
-    elif getattr(context, 'load_default_certs', None) is not None:
+
+    elif ssl_context is None and hasattr(context, "load_default_certs"):
         
         context.load_default_certs()
 
-    if certfile:
-        context.load_cert_chain(certfile, keyfile)
-    if HAS_SNI:  
-        return context.wrap_socket(sock, server_hostname=server_hostname)
+    
+    
+    
+    if keyfile and key_password is None and _is_key_file_encrypted(keyfile):
+        raise SSLError("Client private key is encrypted, password is required")
 
-    warnings.warn(
-        'An HTTPS request has been made, but the SNI (Subject Name '
-        'Indication) extension to TLS is not available on this platform. '
-        'This may cause the server to present an incorrect TLS '
-        'certificate, which can cause validation failures. You can upgrade to '
-        'a newer version of Python to solve this. For more information, see '
-        'https://urllib3.readthedocs.io/en/latest/advanced-usage.html'
-        '#ssl-warnings',
-        SNIMissingWarning
-    )
+    if certfile:
+        if key_password is None:
+            context.load_cert_chain(certfile, keyfile)
+        else:
+            context.load_cert_chain(certfile, keyfile, key_password)
+
+    
+    
+    
+    
+    if (
+        server_hostname is not None and not is_ipaddress(server_hostname)
+    ) or IS_SECURETRANSPORT:
+        if HAS_SNI and server_hostname is not None:
+            return context.wrap_socket(sock, server_hostname=server_hostname)
+
+        warnings.warn(
+            "An HTTPS request has been made, but the SNI (Server Name "
+            "Indication) extension to TLS is not available on this platform. "
+            "This may cause the server to present an incorrect TLS "
+            "certificate, which can cause validation failures. You can upgrade to "
+            "a newer version of Python to solve this. For more information, see "
+            "https://urllib3.readthedocs.io/en/latest/advanced-usage.html"
+            "#ssl-warnings",
+            SNIMissingWarning,
+        )
+
     return context.wrap_socket(sock)
+
+
+def is_ipaddress(hostname):
+    """Detects whether the hostname given is an IPv4 or IPv6 address.
+    Also detects IPv6 addresses with Zone IDs.
+
+    :param str hostname: Hostname to examine.
+    :return: True if the hostname is an IP address, False otherwise.
+    """
+    if not six.PY2 and isinstance(hostname, bytes):
+        
+        hostname = hostname.decode("ascii")
+    return bool(IPV4_RE.match(hostname) or BRACELESS_IPV6_ADDRZ_RE.match(hostname))
+
+
+def _is_key_file_encrypted(key_file):
+    """Detects if a key file is encrypted or not."""
+    with open(key_file, "r") as f:
+        for line in f:
+            
+            if "ENCRYPTED" in line:
+                return True
+
+    return False

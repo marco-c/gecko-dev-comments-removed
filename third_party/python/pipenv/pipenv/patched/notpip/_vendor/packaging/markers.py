@@ -8,19 +8,26 @@ import os
 import platform
 import sys
 
-from pip9._vendor.pyparsing import (
-    ParseException, ParseResults, stringStart, stringEnd,
-)
-from pip9._vendor.pyparsing import ZeroOrMore, Group, Forward, QuotedString
-from pip9._vendor.pyparsing import Literal as L  
+from pipenv.patched.notpip._vendor.pyparsing import ParseException, ParseResults, stringStart, stringEnd
+from pipenv.patched.notpip._vendor.pyparsing import ZeroOrMore, Group, Forward, QuotedString
+from pipenv.patched.notpip._vendor.pyparsing import Literal as L  
 
 from ._compat import string_types
+from ._typing import MYPY_CHECK_RUNNING
 from .specifiers import Specifier, InvalidSpecifier
+
+if MYPY_CHECK_RUNNING:  
+    from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+    Operator = Callable[[str, str], bool]
 
 
 __all__ = [
-    "InvalidMarker", "UndefinedComparison", "UndefinedEnvironmentName",
-    "Marker", "default_environment",
+    "InvalidMarker",
+    "UndefinedComparison",
+    "UndefinedEnvironmentName",
+    "Marker",
+    "default_environment",
 ]
 
 
@@ -44,77 +51,73 @@ class UndefinedEnvironmentName(ValueError):
 
 
 class Node(object):
-
     def __init__(self, value):
+        
         self.value = value
 
     def __str__(self):
+        
         return str(self.value)
 
     def __repr__(self):
+        
         return "<{0}({1!r})>".format(self.__class__.__name__, str(self))
 
     def serialize(self):
+        
         raise NotImplementedError
 
 
 class Variable(Node):
-
     def serialize(self):
+        
         return str(self)
 
 
 class Value(Node):
-
     def serialize(self):
+        
         return '"{0}"'.format(self)
 
 
 class Op(Node):
-
     def serialize(self):
+        
         return str(self)
 
 
 VARIABLE = (
-    L("implementation_version") |
-    L("platform_python_implementation") |
-    L("implementation_name") |
-    L("python_full_version") |
-    L("platform_release") |
-    L("platform_version") |
-    L("platform_machine") |
-    L("platform_system") |
-    L("python_version") |
-    L("sys_platform") |
-    L("os_name") |
-    L("os.name") |  
-    L("sys.platform") |  
-    L("platform.version") |  
-    L("platform.machine") |  
-    L("platform.python_implementation") |  
-    L("python_implementation") |  
-    L("extra")
+    L("implementation_version")
+    | L("platform_python_implementation")
+    | L("implementation_name")
+    | L("python_full_version")
+    | L("platform_release")
+    | L("platform_version")
+    | L("platform_machine")
+    | L("platform_system")
+    | L("python_version")
+    | L("sys_platform")
+    | L("os_name")
+    | L("os.name")  
+    | L("sys.platform")  
+    | L("platform.version")  
+    | L("platform.machine")  
+    | L("platform.python_implementation")  
+    | L("python_implementation")  
+    | L("extra")  
 )
 ALIASES = {
-    'os.name': 'os_name',
-    'sys.platform': 'sys_platform',
-    'platform.version': 'platform_version',
-    'platform.machine': 'platform_machine',
-    'platform.python_implementation': 'platform_python_implementation',
-    'python_implementation': 'platform_python_implementation'
+    "os.name": "os_name",
+    "sys.platform": "sys_platform",
+    "platform.version": "platform_version",
+    "platform.machine": "platform_machine",
+    "platform.python_implementation": "platform_python_implementation",
+    "python_implementation": "platform_python_implementation",
 }
 VARIABLE.setParseAction(lambda s, l, t: Variable(ALIASES.get(t[0], t[0])))
 
 VERSION_CMP = (
-    L("===") |
-    L("==") |
-    L(">=") |
-    L("<=") |
-    L("!=") |
-    L("~=") |
-    L(">") |
-    L("<")
+    L("===") | L("==") | L(">=") | L("<=") | L("!=") | L("~=") | L(">") | L("<")
 )
 
 MARKER_OP = VERSION_CMP | L("not in") | L("in")
@@ -141,6 +144,7 @@ MARKER = stringStart + MARKER_EXPR + stringEnd
 
 
 def _coerce_parse_result(results):
+    
     if isinstance(results, ParseResults):
         return [_coerce_parse_result(i) for i in results]
     else:
@@ -148,14 +152,19 @@ def _coerce_parse_result(results):
 
 
 def _format_marker(marker, first=True):
+    
+
     assert isinstance(marker, (list, tuple, string_types))
 
     
     
     
     
-    if (isinstance(marker, list) and len(marker) == 1 and
-            isinstance(marker[0], (list, tuple))):
+    if (
+        isinstance(marker, list)
+        and len(marker) == 1
+        and isinstance(marker[0], (list, tuple))
+    ):
         return _format_marker(marker[0])
 
     if isinstance(marker, list):
@@ -179,10 +188,11 @@ _operators = {
     "!=": operator.ne,
     ">=": operator.ge,
     ">": operator.gt,
-}
+}  
 
 
 def _eval_op(lhs, op, rhs):
+    
     try:
         spec = Specifier("".join([op.serialize(), rhs]))
     except InvalidSpecifier:
@@ -190,7 +200,7 @@ def _eval_op(lhs, op, rhs):
     else:
         return spec.contains(lhs)
 
-    oper = _operators.get(op.serialize())
+    oper = _operators.get(op.serialize())  
     if oper is None:
         raise UndefinedComparison(
             "Undefined {0!r} on {1!r} and {2!r}.".format(op, lhs, rhs)
@@ -199,13 +209,18 @@ def _eval_op(lhs, op, rhs):
     return oper(lhs, rhs)
 
 
-_undefined = object()
+class Undefined(object):
+    pass
+
+
+_undefined = Undefined()
 
 
 def _get_env(environment, name):
-    value = environment.get(name, _undefined)
+    
+    value = environment.get(name, _undefined)  
 
-    if value is _undefined:
+    if isinstance(value, Undefined):
         raise UndefinedEnvironmentName(
             "{0!r} does not exist in evaluation environment.".format(name)
         )
@@ -214,7 +229,8 @@ def _get_env(environment, name):
 
 
 def _evaluate_markers(markers, environment):
-    groups = [[]]
+    
+    groups = [[]]  
 
     for marker in markers:
         assert isinstance(marker, (list, tuple, string_types))
@@ -241,20 +257,25 @@ def _evaluate_markers(markers, environment):
 
 
 def format_full_version(info):
-    version = '{0.major}.{0.minor}.{0.micro}'.format(info)
+    
+    version = "{0.major}.{0.minor}.{0.micro}".format(info)
     kind = info.releaselevel
-    if kind != 'final':
+    if kind != "final":
         version += kind[0] + str(info.serial)
     return version
 
 
 def default_environment():
-    if hasattr(sys, 'implementation'):
-        iver = format_full_version(sys.implementation.version)
-        implementation_name = sys.implementation.name
+    
+    if hasattr(sys, "implementation"):
+        
+        
+        
+        iver = format_full_version(sys.implementation.version)  
+        implementation_name = sys.implementation.name  
     else:
-        iver = '0'
-        implementation_name = ''
+        iver = "0"
+        implementation_name = ""
 
     return {
         "implementation_name": implementation_name,
@@ -266,28 +287,32 @@ def default_environment():
         "platform_version": platform.version(),
         "python_full_version": platform.python_version(),
         "platform_python_implementation": platform.python_implementation(),
-        "python_version": platform.python_version()[:3],
+        "python_version": ".".join(platform.python_version_tuple()[:2]),
         "sys_platform": sys.platform,
     }
 
 
 class Marker(object):
-
     def __init__(self, marker):
+        
         try:
             self._markers = _coerce_parse_result(MARKER.parseString(marker))
         except ParseException as e:
             err_str = "Invalid marker: {0!r}, parse error at {1!r}".format(
-                marker, marker[e.loc:e.loc + 8])
+                marker, marker[e.loc : e.loc + 8]
+            )
             raise InvalidMarker(err_str)
 
     def __str__(self):
+        
         return _format_marker(self._markers)
 
     def __repr__(self):
+        
         return "<Marker({0!r})>".format(str(self))
 
     def evaluate(self, environment=None):
+        
         """Evaluate a marker.
 
         Return the boolean from evaluating the given marker against the

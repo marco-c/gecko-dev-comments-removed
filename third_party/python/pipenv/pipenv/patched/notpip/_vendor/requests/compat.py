@@ -8,7 +8,7 @@ This module handles import compatibility issues between Python 2 and
 Python 3.
 """
 
-from pip9._vendor import chardet
+from pipenv.patched.notpip._vendor import chardet
 
 import sys
 
@@ -28,6 +28,10 @@ is_py3 = (_ver[0] == 3)
 
 
 
+
+
+
+
 import json
 
 
@@ -43,8 +47,8 @@ if is_py2:
     import cookielib
     from Cookie import Morsel
     from StringIO import StringIO
+    from collections import Callable, Mapping, MutableMapping, OrderedDict
 
-    from pip9._vendor.urllib3.packages.ordered_dict import OrderedDict
 
     builtin_str = str
     bytes = str
@@ -60,6 +64,7 @@ elif is_py3:
     from http.cookies import Morsel
     from io import StringIO
     from collections import OrderedDict
+    from collections.abc import Callable, Mapping, MutableMapping
 
     builtin_str = str
     str = str

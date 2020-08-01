@@ -1,15 +1,10 @@
 """
 urllib3 - Thread-safe connection pooling and re-using.
 """
-
 from __future__ import absolute_import
 import warnings
 
-from .connectionpool import (
-    HTTPConnectionPool,
-    HTTPSConnectionPool,
-    connection_from_url
-)
+from .connectionpool import HTTPConnectionPool, HTTPSConnectionPool, connection_from_url
 
 from . import exceptions
 from .filepost import encode_multipart_formdata
@@ -23,32 +18,27 @@ from .util.retry import Retry
 
 
 import logging
-try:  
-    from logging import NullHandler
-except ImportError:
-    class NullHandler(logging.Handler):
-        def emit(self, record):
-            pass
+from logging import NullHandler
 
-__author__ = 'Andrey Petrov (andrey.petrov@shazow.net)'
-__license__ = 'MIT'
-__version__ = '1.22'
+__author__ = "Andrey Petrov (andrey.petrov@shazow.net)"
+__license__ = "MIT"
+__version__ = "1.25.7"
 
 __all__ = (
-    'HTTPConnectionPool',
-    'HTTPSConnectionPool',
-    'PoolManager',
-    'ProxyManager',
-    'HTTPResponse',
-    'Retry',
-    'Timeout',
-    'add_stderr_logger',
-    'connection_from_url',
-    'disable_warnings',
-    'encode_multipart_formdata',
-    'get_host',
-    'make_headers',
-    'proxy_from_url',
+    "HTTPConnectionPool",
+    "HTTPSConnectionPool",
+    "PoolManager",
+    "ProxyManager",
+    "HTTPResponse",
+    "Retry",
+    "Timeout",
+    "add_stderr_logger",
+    "connection_from_url",
+    "disable_warnings",
+    "encode_multipart_formdata",
+    "get_host",
+    "make_headers",
+    "proxy_from_url",
 )
 
 logging.getLogger(__name__).addHandler(NullHandler())
@@ -65,10 +55,10 @@ def add_stderr_logger(level=logging.DEBUG):
     
     logger = logging.getLogger(__name__)
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logger.addHandler(handler)
     logger.setLevel(level)
-    logger.debug('Added a stderr logging handler to logger: %s', __name__)
+    logger.debug("Added a stderr logging handler to logger: %s", __name__)
     return handler
 
 
@@ -80,18 +70,17 @@ del NullHandler
 
 
 
-warnings.simplefilter('always', exceptions.SecurityWarning, append=True)
+warnings.simplefilter("always", exceptions.SecurityWarning, append=True)
 
-warnings.simplefilter('default', exceptions.SubjectAltNameWarning, append=True)
+warnings.simplefilter("default", exceptions.SubjectAltNameWarning, append=True)
 
-warnings.simplefilter('default', exceptions.InsecurePlatformWarning,
-                      append=True)
+warnings.simplefilter("default", exceptions.InsecurePlatformWarning, append=True)
 
-warnings.simplefilter('default', exceptions.SNIMissingWarning, append=True)
+warnings.simplefilter("default", exceptions.SNIMissingWarning, append=True)
 
 
 def disable_warnings(category=exceptions.HTTPWarning):
     """
     Helper for quickly disabling all urllib3 warnings.
     """
-    warnings.simplefilter('ignore', category)
+    warnings.simplefilter("ignore", category)

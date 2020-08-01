@@ -10,11 +10,20 @@ except ImportError:
     import pickle
 
 
-from pip9._vendor.urllib3.response import HTTPResponse
-from pip9._vendor.urllib3.util import is_fp_closed
 
 
 try:
-    text_type = (unicode,)
+    from pipenv.patched.notpip._vendor.requests.packages.urllib3.response import HTTPResponse
+except ImportError:
+    from pipenv.patched.notpip._vendor.urllib3.response import HTTPResponse
+
+try:
+    from pipenv.patched.notpip._vendor.requests.packages.urllib3.util import is_fp_closed
+except ImportError:
+    from pipenv.patched.notpip._vendor.urllib3.util import is_fp_closed
+
+
+try:
+    text_type = unicode
 except NameError:
-    text_type = (str,)
+    text_type = str

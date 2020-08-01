@@ -19,7 +19,7 @@ except ImportError:
 
 from pty import (STDIN_FILENO, CHILD)
 
-from .util import which
+from .util import which, PtyProcessError
 
 _platform = sys.platform.lower()
 
@@ -60,11 +60,18 @@ def _make_eof_intr():
     
     try:
         from termios import VEOF, VINTR
-        try:
-            fd = sys.__stdin__.fileno()
-        except ValueError:
+        fd = None
+        for name in 'stdin', 'stdout':
+            stream = getattr(sys, '__%s__' % name, None)
+            if stream is None or not hasattr(stream, 'fileno'):
+                continue
+            try:
+                fd = stream.fileno()
+            except ValueError:
+                continue
+        if fd is None:
             
-            fd = sys.__stdout__.fileno()
+            raise ValueError("No stream has a fileno")
         intr = ord(termios.tcgetattr(fd)[6][VINTR])
         eof = ord(termios.tcgetattr(fd)[6][VEOF])
     except (ImportError, OSError, IOError, ValueError, termios.error):
@@ -81,14 +88,11 @@ def _make_eof_intr():
     _INTR = _byte(intr)
     _EOF = _byte(eof)
 
-class PtyProcessError(Exception):
-    """Generic error class for this package."""
-
 
 
     
 def _setecho(fd, state):
-    errmsg = 'setecho() may not be called on this platform'
+    errmsg = 'setecho() may not be called on this platform (it may still be possible to enable/disable echo when spawning the child process)'
 
     try:
         attr = termios.tcgetattr(fd)
@@ -251,7 +255,10 @@ class PtyProcess(object):
 
             
             
-            max_fd = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+            
+            
+            
+            max_fd = min(1048576, resource.getrlimit(resource.RLIMIT_NOFILE)[0])
             os.closerange(3, exec_err_pipe_write)
             os.closerange(exec_err_pipe_write+1, max_fd)
 

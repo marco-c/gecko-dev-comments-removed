@@ -309,7 +309,6 @@ class TreeBuilder(base.TreeBuilder):
         super(TreeBuilder, self).insertComment(data, parent)
 
     def insertRoot(self, token):
-        """Create the document root"""
         
         
         

@@ -120,6 +120,9 @@ class SpawnBase(object):
         self.async_pw_transport = None
         
         self._buffer = self.buffer_type()
+        
+        
+        self._before = self.buffer_type()
 
     def _log(self, s, direction):
         if self.logfile is not None:

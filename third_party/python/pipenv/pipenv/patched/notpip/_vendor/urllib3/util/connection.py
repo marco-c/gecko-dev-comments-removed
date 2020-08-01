@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import socket
-from .wait import wait_for_read
-from .selectors import HAS_SELECT, SelectorError
+from .wait import NoWayToWaitForSocketError, wait_for_read
+from ..contrib import _appengine_environ
 
 
 def is_connection_dropped(conn):  
@@ -14,27 +14,28 @@ def is_connection_dropped(conn):
     Note: For platforms like AppEngine, this will always return ``False`` to
     let the platform handle connection recycling transparently for us.
     """
-    sock = getattr(conn, 'sock', False)
+    sock = getattr(conn, "sock", False)
     if sock is False:  
         return False
     if sock is None:  
         return True
-
-    if not HAS_SELECT:
+    try:
+        
+        return wait_for_read(sock, timeout=0.0)
+    except NoWayToWaitForSocketError:  
         return False
 
-    try:
-        return bool(wait_for_read(sock, timeout=0.0))
-    except SelectorError:
-        return True
 
 
 
 
 
-
-def create_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                      source_address=None, socket_options=None):
+def create_connection(
+    address,
+    timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+    source_address=None,
+    socket_options=None,
+):
     """Connect to *address* and return the socket object.
 
     Convenience function.  Connect to *address* (a 2-tuple ``(host,
@@ -48,8 +49,8 @@ def create_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     """
 
     host, port = address
-    if host.startswith('['):
-        host = host.strip('[]')
+    if host.startswith("["):
+        host = host.strip("[]")
     err = None
 
     
@@ -109,6 +110,13 @@ def _has_ipv6(host):
     sock = None
     has_ipv6 = False
 
+    
+    
+    
+    
+    if _appengine_environ.is_appengine_sandbox():
+        return False
+
     if socket.has_ipv6:
         
         
@@ -127,4 +135,4 @@ def _has_ipv6(host):
     return has_ipv6
 
 
-HAS_IPV6 = _has_ipv6('::1')
+HAS_IPV6 = _has_ipv6("::1")

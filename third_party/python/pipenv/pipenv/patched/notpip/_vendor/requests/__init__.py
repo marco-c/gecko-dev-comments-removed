@@ -22,7 +22,7 @@ usage:
 ... or POST:
 
    >>> payload = dict(key1='value1', key2='value2')
-   >>> r = requests.post('http://httpbin.org/post', data=payload)
+   >>> r = requests.post('https://httpbin.org/post', data=payload)
    >>> print(r.text)
    {
      ...
@@ -40,8 +40,8 @@ is at <http://python-requests.org>.
 :license: Apache 2.0, see LICENSE for more details.
 """
 
-from pip9._vendor import urllib3
-from pip9._vendor import chardet
+from pipenv.patched.notpip._vendor import urllib3
+from pipenv.patched.notpip._vendor import chardet
 import warnings
 from .exceptions import RequestsDependencyWarning
 
@@ -60,7 +60,7 @@ def check_compatibility(urllib3_version, chardet_version):
     
     assert major == 1
     assert minor >= 21
-    assert minor <= 22
+    assert minor <= 25
 
     
     major, minor, patch = chardet_version.split('.')[:3]
@@ -71,23 +71,40 @@ def check_compatibility(urllib3_version, chardet_version):
     assert patch >= 2
 
 
+def _check_cryptography(cryptography_version):
+    
+    try:
+        cryptography_version = list(map(int, cryptography_version.split('.')))
+    except ValueError:
+        return
+
+    if cryptography_version < [1, 3, 4]:
+        warning = 'Old version of cryptography ({}) may cause slowdown.'.format(cryptography_version)
+        warnings.warn(warning, RequestsDependencyWarning)
+
 
 try:
     check_compatibility(urllib3.__version__, chardet.__version__)
 except (AssertionError, ValueError):
-    warnings.warn("urllib3 ({0}) or chardet ({1}) doesn't match a supported "
+    warnings.warn("urllib3 ({}) or chardet ({}) doesn't match a supported "
                   "version!".format(urllib3.__version__, chardet.__version__),
                   RequestsDependencyWarning)
 
 
+from pipenv.patched.notpip._internal.utils.compat import WINDOWS
+if not WINDOWS:
+    try:
+        from pipenv.patched.notpip._vendor.urllib3.contrib import pyopenssl
+        pyopenssl.inject_into_urllib3()
+
+        
+        from cryptography import __version__ as cryptography_version
+        _check_cryptography(cryptography_version)
+    except ImportError:
+        pass
 
 
-
-
-
-
-
-from pip9._vendor.urllib3.exceptions import DependencyWarning
+from pipenv.patched.notpip._vendor.urllib3.exceptions import DependencyWarning
 warnings.simplefilter('ignore', DependencyWarning)
 
 from .__version__ import __title__, __description__, __url__, __version__
@@ -108,12 +125,7 @@ from .exceptions import (
 
 
 import logging
-try:  
-    from logging import NullHandler
-except ImportError:
-    class NullHandler(logging.Handler):
-        def emit(self, record):
-            pass
+from logging import NullHandler
 
 logging.getLogger(__name__).addHandler(NullHandler())
 

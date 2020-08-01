@@ -10,13 +10,12 @@ import sys
 
 
 
-
 try:
-    import ipaddress
+    from pipenv.patched.notpip._vendor import ipaddress
 except ImportError:
     ipaddress = None
 
-__version__ = '3.5.0.1'
+__version__ = "3.5.0.1"
 
 
 class CertificateError(ValueError):
@@ -34,18 +33,19 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
 
     
     
-    parts = dn.split(r'.')
+    parts = dn.split(r".")
     leftmost = parts[0]
     remainder = parts[1:]
 
-    wildcards = leftmost.count('*')
+    wildcards = leftmost.count("*")
     if wildcards > max_wildcards:
         
         
         
         
         raise CertificateError(
-            "too many wildcards in certificate DNS name: " + repr(dn))
+            "too many wildcards in certificate DNS name: " + repr(dn)
+        )
 
     
     if not wildcards:
@@ -54,11 +54,11 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
     
     
     
-    if leftmost == '*':
+    if leftmost == "*":
         
         
-        pats.append('[^.]+')
-    elif leftmost.startswith('xn--') or hostname.startswith('xn--'):
+        pats.append("[^.]+")
+    elif leftmost.startswith("xn--") or hostname.startswith("xn--"):
         
         
         
@@ -66,20 +66,21 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
         pats.append(re.escape(leftmost))
     else:
         
-        pats.append(re.escape(leftmost).replace(r'\*', '[^.]*'))
+        pats.append(re.escape(leftmost).replace(r"\*", "[^.]*"))
 
     
     for frag in remainder:
         pats.append(re.escape(frag))
 
-    pat = re.compile(r'\A' + r'\.'.join(pats) + r'\Z', re.IGNORECASE)
+    pat = re.compile(r"\A" + r"\.".join(pats) + r"\Z", re.IGNORECASE)
     return pat.match(hostname)
 
 
 def _to_unicode(obj):
     if isinstance(obj, str) and sys.version_info < (3,):
-        obj = unicode(obj, encoding='ascii', errors='strict')
+        obj = unicode(obj, encoding="ascii", errors="strict")
     return obj
+
 
 def _ipaddress_match(ipname, host_ip):
     """Exact matching of IP addresses.
@@ -102,9 +103,11 @@ def match_hostname(cert, hostname):
     returns nothing.
     """
     if not cert:
-        raise ValueError("empty or no certificate, match_hostname needs a "
-                         "SSL socket or SSL context with either "
-                         "CERT_OPTIONAL or CERT_REQUIRED")
+        raise ValueError(
+            "empty or no certificate, match_hostname needs a "
+            "SSL socket or SSL context with either "
+            "CERT_OPTIONAL or CERT_REQUIRED"
+        )
     try:
         
         host_ip = ipaddress.ip_address(_to_unicode(hostname))
@@ -123,35 +126,35 @@ def match_hostname(cert, hostname):
         else:
             raise
     dnsnames = []
-    san = cert.get('subjectAltName', ())
+    san = cert.get("subjectAltName", ())
     for key, value in san:
-        if key == 'DNS':
+        if key == "DNS":
             if host_ip is None and _dnsname_match(value, hostname):
                 return
             dnsnames.append(value)
-        elif key == 'IP Address':
+        elif key == "IP Address":
             if host_ip is not None and _ipaddress_match(value, host_ip):
                 return
             dnsnames.append(value)
     if not dnsnames:
         
         
-        for sub in cert.get('subject', ()):
+        for sub in cert.get("subject", ()):
             for key, value in sub:
                 
                 
-                if key == 'commonName':
+                if key == "commonName":
                     if _dnsname_match(value, hostname):
                         return
                     dnsnames.append(value)
     if len(dnsnames) > 1:
-        raise CertificateError("hostname %r "
-            "doesn't match either of %s"
-            % (hostname, ', '.join(map(repr, dnsnames))))
+        raise CertificateError(
+            "hostname %r "
+            "doesn't match either of %s" % (hostname, ", ".join(map(repr, dnsnames)))
+        )
     elif len(dnsnames) == 1:
-        raise CertificateError("hostname %r "
-            "doesn't match %r"
-            % (hostname, dnsnames[0]))
+        raise CertificateError("hostname %r doesn't match %r" % (hostname, dnsnames[0]))
     else:
-        raise CertificateError("no appropriate commonName or "
-            "subjectAltName fields were found")
+        raise CertificateError(
+            "no appropriate commonName or subjectAltName fields were found"
+        )

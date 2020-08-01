@@ -1,22 +1,28 @@
 import os
 from shutil import rmtree
 
+from ._compat import user_cache_dir
+
 from .click import secho
 
 
-from pipenv.environments import PIPENV_CACHE_DIR
+try:
+    from pipenv.environments import PIPENV_CACHE_DIR as CACHE_DIR
+except ImportError:
+    CACHE_DIR = user_cache_dir("pipenv")
 
 
 
-CACHE_DIR = PIPENV_CACHE_DIR
 
 
 
-
-
-
-LEGACY_CACHE_DIR = os.path.expanduser('~/.pip-tools')
+LEGACY_CACHE_DIR = os.path.expanduser("~/.pip-tools")
 
 if os.path.exists(LEGACY_CACHE_DIR):
-    secho('Removing old cache dir {} (new cache dir is {})'.format(LEGACY_CACHE_DIR, CACHE_DIR), fg='yellow')
+    secho(
+        "Removing old cache dir {} (new cache dir is {})".format(
+            LEGACY_CACHE_DIR, CACHE_DIR
+        ),
+        fg="yellow",
+    )
     rmtree(LEGACY_CACHE_DIR)
