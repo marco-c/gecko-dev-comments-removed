@@ -37,7 +37,7 @@
           },
           "feed": {
             "embed_reference": null,
-            "url": "https://example.com/browser/browser/components/newtab/test/browser/topstories.json"
+            "url": "http://fakedomain/tests/about-newtab/topstories.json"
           },
           "spocs": {
             "probability": 1,
