@@ -481,46 +481,6 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     );
 
     
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn draw_indirect_count(
-        &mut self,
-        _buffer: &B::Buffer,
-        _offset: buffer::Offset,
-        _count_buffer: &B::Buffer,
-        _count_buffer_offset: buffer::Offset,
-        _max_draw_count: u32,
-        _stride: u32
-    ) {
-        unimplemented!("Backend doesn't support draw_indirect_count");
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn draw_indexed_indirect_count(
-        &mut self,
-        _buffer: &B::Buffer,
-        _offset: buffer::Offset,
-        _count_buffer: &B::Buffer,
-        _count_buffer_offset: buffer::Offset,
-        _max_draw_count: u32,
-        _stride: u32
-    ) {
-        unimplemented!("Backend doesn't support draw_indexed_indirect_count");
-    }
-
-    
     unsafe fn set_event(&mut self, event: &B::Event, stages: pso::PipelineStage);
 
     

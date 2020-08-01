@@ -5,7 +5,7 @@
 
 
 
-use cocoa_foundation::foundation::NSUInteger;
+use cocoa::foundation::NSUInteger;
 
 use crate::depthstencil::MTLCompareFunction;
 
