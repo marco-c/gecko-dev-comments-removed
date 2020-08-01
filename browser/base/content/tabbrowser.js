@@ -2613,7 +2613,8 @@
               preferredRemoteType
             );
         if (sameProcessAsFrameLoader) {
-          remoteType = sameProcessAsFrameLoader.messageManager.remoteType;
+          remoteType =
+            sameProcessAsFrameLoader.browsingContext.currentRemoteType;
         }
 
         
