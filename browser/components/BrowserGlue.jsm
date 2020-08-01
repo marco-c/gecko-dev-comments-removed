@@ -2249,7 +2249,7 @@ BrowserGlue.prototype = {
           LATE_TASKS_IDLE_TIME_SEC
         );
         delete this._lateTasksIdleObserver;
-        this._scheduleArbitrarilyLateIdleTasks();
+        this._scheduleBestEffortUserIdleTasks();
       }
     };
     this._userIdleService.addIdleObserver(
@@ -2275,6 +2275,7 @@ BrowserGlue.prototype = {
   },
 
   
+
 
 
 
@@ -2555,7 +2556,9 @@ BrowserGlue.prototype = {
 
 
 
-  _scheduleArbitrarilyLateIdleTasks() {
+
+
+  _scheduleBestEffortUserIdleTasks() {
     const idleTasks = [
       () => {
         this._sendMediaTelemetry();
