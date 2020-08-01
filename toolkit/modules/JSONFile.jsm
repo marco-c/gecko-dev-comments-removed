@@ -275,7 +275,9 @@ JSONFile.prototype = {
         try {
           await OS.File.copy(this._options.backupTo, this.path);
         } catch (e) {
-          Cu.reportError(e);
+          if (!(e instanceof OS.File.Error && ex.becauseNoSuchFile)) {
+            Cu.reportError(e);
+          }
         }
 
         try {
@@ -291,7 +293,9 @@ JSONFile.prototype = {
           data = JSON.parse(gTextDecoder.decode(bytes));
           this._recordTelemetry("load", cleansedBasename, "used_backup");
         } catch (e3) {
-          Cu.reportError(e3);
+          if (!(e3 instanceof OS.File.Error && ex.becauseNoSuchFile)) {
+            Cu.reportError(e3);
+          }
         }
       }
 
@@ -378,7 +382,12 @@ JSONFile.prototype = {
           let backupFile = new FileUtils.File(this._options.backupTo);
           backupFile.copyTo(null, basename);
         } catch (e) {
-          Cu.reportError(e);
+          if (
+            e.result != Cr.NS_ERROR_FILE_TARGET_DOES_NOT_EXIST &&
+            e.result != Cr.NS_ERROR_FILE_NOT_FOUND
+          ) {
+            Cu.reportError(e);
+          }
         }
 
         try {
@@ -402,7 +411,12 @@ JSONFile.prototype = {
             inputStream.close();
           }
         } catch (e3) {
-          Cu.reportError(e3);
+          if (
+            e3.result != Cr.NS_ERROR_FILE_TARGET_DOES_NOT_EXIST &&
+            e3.result != Cr.NS_ERROR_FILE_NOT_FOUND
+          ) {
+            Cu.reportError(e3);
+          }
         }
       }
     }
