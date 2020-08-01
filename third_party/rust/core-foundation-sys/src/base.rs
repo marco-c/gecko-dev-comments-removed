@@ -107,6 +107,9 @@ impl<T> TCFTypeRef for *mut T {
     }
 }
 
+
+pub static kCFNotFound: CFIndex = -1;
+
 extern {
     
 

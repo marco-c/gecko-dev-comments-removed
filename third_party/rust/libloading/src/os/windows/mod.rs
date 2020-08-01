@@ -9,8 +9,7 @@ use util::{ensure_compatible_types, cstr_cow_from_bytes};
 use std::ffi::{OsStr, OsString};
 use std::{fmt, io, marker, mem, ptr};
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
-use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT, Ordering};
-
+use std::sync::atomic::{AtomicBool, Ordering};
 
 
 pub struct Library(HMODULE);
@@ -36,23 +35,30 @@ impl Library {
     
     
     #[inline]
-    pub fn new<P: AsRef<OsStr>>(filename: P) -> ::Result<Library> {
+    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, crate::Error> {
+        Library::load_with_flags(filename, 0)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn load_with_flags<P: AsRef<OsStr>>(filename: P, flags: DWORD) -> Result<Library, crate::Error> {
         let wide_filename: Vec<u16> = filename.as_ref().encode_wide().chain(Some(0)).collect();
         let _guard = ErrorModeGuard::new();
 
-        let ret = with_get_last_error(|| {
+        let ret = with_get_last_error(|source| crate::Error::LoadLibraryW { source }, || {
             
             
-            let handle = unsafe { libloaderapi::LoadLibraryW(wide_filename.as_ptr()) };
+            let handle = unsafe { libloaderapi::LoadLibraryExW(wide_filename.as_ptr(), std::ptr::null_mut(), flags) };
             if handle.is_null()  {
                 None
             } else {
                 Some(Library(handle))
             }
-        }).map_err(|e| e.unwrap_or_else(||
-            panic!("LoadLibraryW failed but GetLastError did not report the error")
-        ));
-
+        }).map_err(|e| e.unwrap_or(crate::Error::LoadLibraryWUnknown));
         drop(wide_filename); 
                              
         ret
@@ -70,10 +76,11 @@ impl Library {
     
     
     
-    pub unsafe fn get<T>(&self, symbol: &[u8]) -> ::Result<Symbol<T>> {
-        ensure_compatible_types::<T, FARPROC>();
-        let symbol = try!(cstr_cow_from_bytes(symbol));
-        with_get_last_error(|| {
+    
+    pub unsafe fn get<T>(&self, symbol: &[u8]) -> Result<Symbol<T>, crate::Error> {
+        ensure_compatible_types::<T, FARPROC>()?;
+        let symbol = cstr_cow_from_bytes(symbol)?;
+        with_get_last_error(|source| crate::Error::GetProcAddress { source }, || {
             let symbol = libloaderapi::GetProcAddress(self.0, symbol.as_ptr());
             if symbol.is_null() {
                 None
@@ -83,9 +90,7 @@ impl Library {
                     pd: marker::PhantomData
                 })
             }
-        }).map_err(|e| e.unwrap_or_else(||
-            panic!("GetProcAddress failed but GetLastError did not report the error")
-        ))
+        }).map_err(|e| e.unwrap_or(crate::Error::GetProcAddressUnknown))
     }
 
     
@@ -94,9 +99,9 @@ impl Library {
     
     
     
-    pub unsafe fn get_ordinal<T>(&self, ordinal: WORD) -> ::Result<Symbol<T>> {
-        ensure_compatible_types::<T, FARPROC>();
-        with_get_last_error(|| {
+    pub unsafe fn get_ordinal<T>(&self, ordinal: WORD) -> Result<Symbol<T>, crate::Error> {
+        ensure_compatible_types::<T, FARPROC>()?;
+        with_get_last_error(|source| crate::Error::GetProcAddress { source }, || {
             let ordinal = ordinal as usize as *mut _;
             let symbol = libloaderapi::GetProcAddress(self.0, ordinal);
             if symbol.is_null() {
@@ -107,9 +112,7 @@ impl Library {
                     pd: marker::PhantomData
                 })
             }
-        }).map_err(|e| e.unwrap_or_else(||
-            panic!("GetProcAddress failed but GetLastError did not report the error")
-        ))
+        }).map_err(|e| e.unwrap_or(crate::Error::GetProcAddressUnknown))
     }
 
     
@@ -128,30 +131,40 @@ impl Library {
     pub unsafe fn from_raw(handle: HMODULE) -> Library {
         Library(handle)
     }
-}
 
-impl Drop for Library {
-    fn drop(&mut self) {
-        with_get_last_error(|| {
+    
+    pub fn close(self) -> Result<(), crate::Error> {
+        with_get_last_error(|source| crate::Error::FreeLibrary { source }, || {
             if unsafe { libloaderapi::FreeLibrary(self.0) == 0 } {
                 None
             } else {
                 Some(())
             }
-        }).unwrap()
+        }).map_err(|e| e.unwrap_or(crate::Error::FreeLibraryUnknown))
+    }
+}
+
+impl Drop for Library {
+    fn drop(&mut self) {
+        unsafe { libloaderapi::FreeLibrary(self.0); }
     }
 }
 
 impl fmt::Debug for Library {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         unsafe {
-            let mut buf: [WCHAR; 1024] = mem::uninitialized();
+            
+            let mut buf =
+                mem::MaybeUninit::<[mem::MaybeUninit::<WCHAR>; 1024]>::uninit().assume_init();
             let len = libloaderapi::GetModuleFileNameW(self.0,
-                                                   (&mut buf[..]).as_mut_ptr(), 1024) as usize;
+                (&mut buf[..]).as_mut_ptr().cast(), 1024) as usize;
             if len == 0 {
                 f.write_str(&format!("Library@{:p}", self.0))
             } else {
-                let string: OsString = OsString::from_wide(&buf[..len]);
+                let string: OsString = OsString::from_wide(
+                    
+                    &*(&buf[..len] as *const [_] as *const [WCHAR])
+                );
                 f.write_str(&format!("Library@{:p} from {:?}", self.0, string))
             }
         }
@@ -216,7 +229,7 @@ impl<T> fmt::Debug for Symbol<T> {
 }
 
 
-static USE_ERRORMODE: AtomicBool = ATOMIC_BOOL_INIT;
+static USE_ERRORMODE: AtomicBool = AtomicBool::new(false);
 struct ErrorModeGuard(DWORD);
 
 impl ErrorModeGuard {
@@ -276,38 +289,44 @@ impl Drop for ErrorModeGuard {
     }
 }
 
-fn with_get_last_error<T, F>(closure: F) -> Result<T, Option<io::Error>>
+fn with_get_last_error<T, F>(wrap: fn(crate::error::WindowsError) -> crate::Error, closure: F)
+-> Result<T, Option<crate::Error>>
 where F: FnOnce() -> Option<T> {
     closure().ok_or_else(|| {
         let error = unsafe { errhandlingapi::GetLastError() };
         if error == 0 {
             None
         } else {
-            Some(io::Error::from_raw_os_error(error as i32))
+            Some(wrap(crate::error::WindowsError(io::Error::from_raw_os_error(error as i32))))
         }
     })
 }
 
-#[test]
-fn works_getlasterror() {
-    let lib = Library::new("kernel32.dll").unwrap();
-    let gle: Symbol<unsafe extern "system" fn() -> DWORD> = unsafe {
-        lib.get(b"GetLastError").unwrap()
-    };
-    unsafe {
-        errhandlingapi::SetLastError(42);
-        assert_eq!(errhandlingapi::GetLastError(), gle())
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn works_getlasterror0() {
-    let lib = Library::new("kernel32.dll").unwrap();
-    let gle: Symbol<unsafe extern "system" fn() -> DWORD> = unsafe {
-        lib.get(b"GetLastError\0").unwrap()
-    };
-    unsafe {
-        errhandlingapi::SetLastError(42);
-        assert_eq!(errhandlingapi::GetLastError(), gle())
+    #[test]
+    fn works_getlasterror() {
+        let lib = Library::new("kernel32.dll").unwrap();
+        let gle: Symbol<unsafe extern "system" fn() -> DWORD> = unsafe {
+            lib.get(b"GetLastError").unwrap()
+        };
+        unsafe {
+            errhandlingapi::SetLastError(42);
+            assert_eq!(errhandlingapi::GetLastError(), gle())
+        }
+    }
+
+    #[test]
+    fn works_getlasterror0() {
+        let lib = Library::new("kernel32.dll").unwrap();
+        let gle: Symbol<unsafe extern "system" fn() -> DWORD> = unsafe {
+            lib.get(b"GetLastError\0").unwrap()
+        };
+        unsafe {
+            errhandlingapi::SetLastError(42);
+            assert_eq!(errhandlingapi::GetLastError(), gle())
+        }
     }
 }
