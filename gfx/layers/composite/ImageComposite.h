@@ -101,6 +101,9 @@ class ImageComposite {
       const TimedImage& aNewImage, const TimedImage& aOldImage) const;
 
   
+  void DetectTimeStampJitter(const TimedImage* aNewImage);
+
+  
 
 
   Bias mBias;
