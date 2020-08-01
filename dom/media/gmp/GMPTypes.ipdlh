@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 include "GMPMessageUtils.h";
 
 using GMPBufferType from "gmp-video-codec.h";
-using GMPEncryptionScheme from "gmp-video-codec.h";
+using cdm::EncryptionScheme from "content_decryption_module.h";
 
 namespace mozilla {
 namespace gmp {
@@ -21,8 +21,8 @@ struct GMPVideoEncodedFrameData
 {
   uint32_t mEncodedWidth;
   uint32_t mEncodedHeight;
-  uint64_t mTimestamp; // microseconds
-  uint64_t mDuration; // microseconds
+  uint64_t mTimestamp; 
+  uint64_t mDuration; 
   uint32_t mFrameType;
   uint32_t mSize;
   GMPBufferType mBufferType;
@@ -44,8 +44,8 @@ struct GMPVideoi420FrameData
   GMPPlaneData mVPlane;
   int32_t mWidth;
   int32_t mHeight;
-  uint64_t mTimestamp; // microseconds
-  uint64_t mDuration; // microseconds
+  uint64_t mTimestamp; 
+  uint64_t mDuration; 
 };
 
 struct CDMInputBuffer {
@@ -58,7 +58,7 @@ struct CDMInputBuffer {
   uint32_t[] mCipherBytes;
   uint8_t mCryptByteBlock;
   uint8_t mSkipByteBlock;
-  GMPEncryptionScheme mEncryptionScheme;
+  EncryptionScheme mEncryptionScheme;
 };
 
 struct CDMVideoDecoderConfig {
@@ -68,7 +68,7 @@ struct CDMVideoDecoderConfig {
   int32_t mImageWidth;
   int32_t mImageHeight;
   uint8_t[] mExtraData;
-  GMPEncryptionScheme mEncryptionScheme;
+  EncryptionScheme mEncryptionScheme;
 };
 
 struct CDMKeyInformation {
