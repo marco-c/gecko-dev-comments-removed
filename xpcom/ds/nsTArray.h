@@ -173,6 +173,17 @@ class JSStructuredCloneData;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 struct nsTArrayFallibleResult {
   
   MOZ_IMPLICIT constexpr nsTArrayFallibleResult(bool aResult)
@@ -762,10 +773,10 @@ struct MOZ_NEEDS_MEMMOVABLE_TYPE nsTArray_RelocationStrategy {
 
 
 
-#define MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(T)     \
+#define MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(E)     \
   template <>                                              \
-  struct nsTArray_RelocationStrategy<T> {                  \
-    using Type = nsTArray_RelocateUsingMoveConstructor<T>; \
+  struct nsTArray_RelocationStrategy<E> {                  \
+    using Type = nsTArray_RelocateUsingMoveConstructor<E>; \
   };
 
 #define MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR_FOR_TEMPLATE(T) \
@@ -3073,7 +3084,7 @@ Span<const ElementType> MakeSpan(
   return aTArray;
 }
 
-template <typename T, typename ArrayT>
+template <typename E, typename ArrayT>
 class nsTArrayBackInserter
     : public std::iterator<std::output_iterator_tag, void, void, void, void> {
   ArrayT* mArray;
@@ -3081,12 +3092,12 @@ class nsTArrayBackInserter
  public:
   explicit nsTArrayBackInserter(ArrayT& aArray) : mArray{&aArray} {}
 
-  nsTArrayBackInserter& operator=(const T& aValue) {
+  nsTArrayBackInserter& operator=(const E& aValue) {
     mArray->AppendElement(aValue);
     return *this;
   }
 
-  nsTArrayBackInserter& operator=(T&& aValue) {
+  nsTArrayBackInserter& operator=(E&& aValue) {
     mArray->AppendElement(std::move(aValue));
     return *this;
   }
@@ -3097,9 +3108,9 @@ class nsTArrayBackInserter
   nsTArrayBackInserter& operator++(int) { return *this; }
 };
 
-template <typename T>
-auto MakeBackInserter(nsTArray<T>& aArray) {
-  return nsTArrayBackInserter<T, nsTArray<T>>{aArray};
+template <typename E>
+auto MakeBackInserter(nsTArray<E>& aArray) {
+  return nsTArrayBackInserter<E, nsTArray<E>>{aArray};
 }
 
 template <typename E, class Alloc>
@@ -3111,21 +3122,23 @@ Span(const nsTArray_Impl<E, Alloc>&) -> Span<const E>;
 
 
 
-template <typename T>
+template <typename E>
 class nsTArrayView {
  public:
-  using element_type = T;
+  using element_type = E;
   using pointer = element_type*;
   using reference = element_type&;
-  using index_type = typename Span<T>::index_type;
-  using size_type = typename Span<T>::index_type;
+  using index_type = typename Span<element_type>::index_type;
+  using size_type = typename Span<element_type>::index_type;
 
-  explicit nsTArrayView(nsTArray<T> aArray)
+  explicit nsTArrayView(nsTArray<element_type> aArray)
       : mArray(std::move(aArray)), mSpan(mArray) {}
 
-  T& operator[](index_type aIndex) { return mSpan[aIndex]; }
+  element_type& operator[](index_type aIndex) { return mSpan[aIndex]; }
 
-  const T& operator[](index_type aIndex) const { return mSpan[aIndex]; }
+  const element_type& operator[](index_type aIndex) const {
+    return mSpan[aIndex];
+  }
 
   size_type Length() const { return mSpan.Length(); }
 
@@ -3136,12 +3149,12 @@ class nsTArrayView {
   auto cbegin() const { return mSpan.cbegin(); }
   auto cend() const { return mSpan.cend(); }
 
-  Span<T> AsSpan() { return mSpan; }
-  Span<const T> AsSpan() const { return mSpan; }
+  Span<element_type> AsSpan() { return mSpan; }
+  Span<const element_type> AsSpan() const { return mSpan; }
 
  private:
-  nsTArray<T> mArray;
-  const Span<T> mSpan;
+  nsTArray<element_type> mArray;
+  const Span<element_type> mSpan;
 };
 
 }  
