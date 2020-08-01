@@ -226,6 +226,9 @@ class HostLayerManager : public LayerManager {
   TimeStamp mCompositionTime;
 
   
+  CompositionOpportunityId mCompositionOpportunityId;
+
+  
   
   
   TimeStamp mCompositeUntilTime;
