@@ -817,7 +817,11 @@ void CacheEntry::InvokeAvailableCallback(Callback const& aCallback) {
 
   nsresult rv;
 
-  uint32_t const state = mState;
+  uint32_t state;
+  {
+    mozilla::MutexAutoLock lock(mLock);
+    state = mState;
+  }
 
   
   MOZ_ASSERT(state > LOADING || mIsDoomed);
