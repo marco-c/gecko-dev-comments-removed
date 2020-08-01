@@ -507,6 +507,9 @@ def get_tool(config, key):
 
 
 
+
+
+
 def prune_final_dir_for_clang_tidy(final_dir, osx_cross_compile):
     
     dirs = ["bin", "include", "lib", "lib32", "libexec", "msbuild-bin", "share", "tools"]
@@ -518,10 +521,8 @@ def prune_final_dir_for_clang_tidy(final_dir, osx_cross_compile):
         if not os.path.isdir(f):
             raise Exception("Expected %s to be a directory" % f)
 
-    
-    
-    re_clang_tidy = re.compile(
-        r"^clang-(apply-replacements|format|tidy)(\.exe)?$", re.I)
+    kept_binaries = ['clang-apply-replacements', 'clang-format', 'clang-tidy', 'clangd']
+    re_clang_tidy = re.compile(r"^(" + "|".join(kept_binaries) + r")(\.exe)?$", re.I)
     for f in glob.glob("%s/bin/*" % final_dir):
         if re_clang_tidy.search(os.path.basename(f)) is None:
             delete(f)
