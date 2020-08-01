@@ -298,6 +298,9 @@ void ProxyObject::nuke() {
   setSameCompartmentPrivate(DeadProxyTargetValue(this));
 
   
+  setExpando(nullptr);
+
+  
   setHandler(&DeadObjectProxy::singleton);
 
   
