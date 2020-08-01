@@ -19,6 +19,8 @@ ChromeUtils.defineModuleGetter(
 
 var PageThumbUtils = {
   
+  THUMBNAIL_DEFAULT_SIZE: 448,
+  
   THUMBNAIL_BG_COLOR: "#fff",
   
   HTML_NAMESPACE: "http://www.w3.org/1999/xhtml",
@@ -175,7 +177,12 @@ var PageThumbUtils = {
     context.fillStyle = backgroundColor;
     context.fillRect(0, 0, width, canvasHeight);
     context.drawImage(image, 0, 0, width, height);
-    return canvas;
+
+    return {
+      width,
+      height: canvasHeight,
+      imageData: canvas.toDataURL(),
+    };
   },
 
   
@@ -200,6 +207,9 @@ var PageThumbUtils = {
 
 
   createSnapshotThumbnail(aWindow, aDestCanvas, aArgs) {
+    let backgroundColor = aArgs
+      ? aArgs.backgroundColor
+      : PageThumbUtils.THUMBNAIL_BG_COLOR;
     let fullScale = aArgs ? aArgs.fullScale : false;
     let [contentWidth, contentHeight] = this.getContentSize(aWindow);
     let [thumbnailWidth, thumbnailHeight] = aDestCanvas
@@ -264,7 +274,7 @@ var PageThumbUtils = {
       0,
       contentWidth,
       contentHeight,
-      PageThumbUtils.THUMBNAIL_BG_COLOR,
+      backgroundColor,
       snapshotCtx.DRAWWINDOW_DO_NOT_FLUSH
     );
     snapshotCtx.restore();

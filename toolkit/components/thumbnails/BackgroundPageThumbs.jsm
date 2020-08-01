@@ -9,15 +9,18 @@ const DEFAULT_CAPTURE_TIMEOUT = 30000;
 const TESTING_CAPTURE_TIMEOUT = 5000; 
 
 const DESTROY_BROWSER_TIMEOUT = 60000; 
-const FRAME_SCRIPT_URL =
-  "chrome://global/content/backgroundPageThumbsContent.js";
+
+
+
+const SETTLE_WAIT_TIME = 2500;
+
+const TESTING_SETTLE_WAIT_TIME = 0;
 
 const TELEMETRY_HISTOGRAM_ID_PREFIX = "FX_THUMBNAILS_BG_";
 
 const ABOUT_NEWTAB_SEGREGATION_PREF =
   "privacy.usercontext.about_newtab_segregation.enabled";
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 const { PageThumbs, PageThumbsStorage } = ChromeUtils.import(
   "resource://gre/modules/PageThumbs.jsm"
 );
@@ -32,40 +35,11 @@ const TEL_CAPTURE_DONE_BAD_URI = 5;
 const TEL_CAPTURE_DONE_LOAD_FAILED = 6;
 const TEL_CAPTURE_DONE_IMAGE_ZERO_DIMENSION = 7;
 
-
-XPCOMUtils.defineConstant(this, "TEL_CAPTURE_DONE_OK", TEL_CAPTURE_DONE_OK);
-XPCOMUtils.defineConstant(
-  this,
-  "TEL_CAPTURE_DONE_TIMEOUT",
-  TEL_CAPTURE_DONE_TIMEOUT
-);
-XPCOMUtils.defineConstant(
-  this,
-  "TEL_CAPTURE_DONE_CRASHED",
-  TEL_CAPTURE_DONE_CRASHED
-);
-XPCOMUtils.defineConstant(
-  this,
-  "TEL_CAPTURE_DONE_BAD_URI",
-  TEL_CAPTURE_DONE_BAD_URI
-);
-XPCOMUtils.defineConstant(
-  this,
-  "TEL_CAPTURE_DONE_LOAD_FAILED",
-  TEL_CAPTURE_DONE_LOAD_FAILED
-);
-XPCOMUtils.defineConstant(
-  this,
-  "TEL_CAPTURE_DONE_IMAGE_ZERO_DIMENSION",
-  TEL_CAPTURE_DONE_IMAGE_ZERO_DIMENSION
-);
-
 ChromeUtils.defineModuleGetter(
   this,
   "ContextualIdentityService",
   "resource://gre/modules/ContextualIdentityService.jsm"
 );
-const global = this;
 
 const BackgroundPageThumbs = {
   
@@ -197,6 +171,10 @@ const BackgroundPageThumbs = {
     this._renewThumbBrowser = true;
   },
 
+  get useFissionBrowser() {
+    return Services.prefs.getBoolPref("fission.autostart");
+  },
+
   
 
 
@@ -218,7 +196,11 @@ const BackgroundPageThumbs = {
 
     
     
-    let wlBrowser = Services.appShell.createWindowlessBrowser(true);
+    const flags = this.useFissionBrowser
+      ? Ci.nsIWebBrowserChrome.CHROME_REMOTE_WINDOW |
+        Ci.nsIWebBrowserChrome.CHROME_FISSION_WINDOW
+      : 0;
+    let wlBrowser = Services.appShell.createWindowlessBrowser(true, flags);
     wlBrowser.QueryInterface(Ci.nsIInterfaceRequestor);
     let webProgress = wlBrowser.getInterface(Ci.nsIWebProgress);
     this._listener = {
@@ -294,6 +276,60 @@ const BackgroundPageThumbs = {
     delete this._listener;
   },
 
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIWebProgressListener,
+    Ci.nsIWebProgressListener2,
+    Ci.nsISupportsWeakReference,
+  ]),
+
+  onStateChange(wbp, request, stateFlags, status) {
+    if (!request || !wbp.isTopLevel) {
+      return;
+    }
+
+    if (
+      stateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
+      stateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK
+    ) {
+      
+      
+      if (
+        request instanceof Ci.nsIChannel &&
+        request.URI.spec == "about:blank"
+      ) {
+        if (this._expectingAboutBlank) {
+          this._expectingAboutBlank = false;
+          if (this._captureQueue.length) {
+            this._processCaptureQueue();
+          }
+        }
+        return;
+      }
+
+      if (!this._captureQueue.length) {
+        return;
+      }
+
+      let currentCapture = this._captureQueue[0];
+      if (
+        Components.isSuccessCode(status) ||
+        status === Cr.NS_BINDING_ABORTED
+      ) {
+        this._thumbBrowser.ownerGlobal.requestIdleCallback(() => {
+          currentCapture.pageLoaded(this._thumbBrowser);
+        });
+      } else {
+        currentCapture._done(
+          this._thumbBrowser,
+          null,
+          currentCapture.timedOut
+            ? TEL_CAPTURE_DONE_TIMEOUT
+            : TEL_CAPTURE_DONE_LOAD_FAILED
+        );
+      }
+    }
+  },
+
   
 
 
@@ -308,6 +344,9 @@ const BackgroundPageThumbs = {
     let browser = this._parentWin.document.createXULElement("browser");
     browser.setAttribute("type", "content");
     browser.setAttribute("remote", "true");
+    if (this.useFissionBrowser) {
+      browser.setAttribute("maychangeremoteness", "true");
+    }
     browser.setAttribute("disableglobalhistory", "true");
     browser.setAttribute("messagemanagergroup", "thumbnails");
 
@@ -334,6 +373,8 @@ const BackgroundPageThumbs = {
 
     this._parentWin.document.documentElement.appendChild(browser);
 
+    browser.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_WINDOW);
+
     
     
     browser.addEventListener("oop-browser-crashed", event => {
@@ -352,7 +393,7 @@ const BackgroundPageThumbs = {
       
       
       
-      if (curCapture && curCapture.pending) {
+      if (curCapture) {
         
         
         
@@ -361,7 +402,7 @@ const BackgroundPageThumbs = {
         
         
         Services.tm.dispatchToMainThread(() => {
-          curCapture._done(null, TEL_CAPTURE_DONE_CRASHED);
+          curCapture._done(browser, null, TEL_CAPTURE_DONE_CRASHED);
         });
       }
       
@@ -369,8 +410,6 @@ const BackgroundPageThumbs = {
       
     });
 
-    browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
-    browser.docShellIsActive = false;
     this._thumbBrowser = browser;
   },
 
@@ -378,8 +417,23 @@ const BackgroundPageThumbs = {
     if (!this._thumbBrowser) {
       return;
     }
+    this._expectingAboutBlank = false;
     this._thumbBrowser.remove();
     delete this._thumbBrowser;
+  },
+
+  async _loadAboutBlank() {
+    if (this._expectingAboutBlank) {
+      return;
+    }
+
+    this._expectingAboutBlank = true;
+
+    let loadURIOptions = {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_STOP_CONTENT,
+    };
+    this._thumbBrowser.loadURI("about:blank", loadURIOptions);
   },
 
   
@@ -387,17 +441,24 @@ const BackgroundPageThumbs = {
 
 
   _processCaptureQueue() {
+    if (!this._captureQueue.length) {
+      if (this._thumbBrowser) {
+        BackgroundPageThumbs._loadAboutBlank();
+      }
+      return;
+    }
+
     if (
-      !this._captureQueue.length ||
       this._captureQueue[0].pending ||
-      !this._ensureParentWindowReady()
+      !this._ensureParentWindowReady() ||
+      this._expectingAboutBlank
     ) {
       return;
     }
 
     
     this._ensureBrowser();
-    this._captureQueue[0].start(this._thumbBrowser.messageManager);
+    this._captureQueue[0].start(this._thumbBrowser);
     if (this._destroyBrowserTimer) {
       this._destroyBrowserTimer.cancel();
       delete this._destroyBrowserTimer;
@@ -408,15 +469,16 @@ const BackgroundPageThumbs = {
 
 
 
-  _onCaptureOrTimeout(capture) {
+  _onCaptureOrTimeout(capture, reason) {
     
     
     if (capture !== this._captureQueue[0]) {
       throw new Error("The capture should be at the head of the queue.");
     }
+
     this._captureQueue.shift();
     this._capturesByURL.delete(capture.url);
-    if (capture.doneReason != TEL_CAPTURE_DONE_OK) {
+    if (reason != TEL_CAPTURE_DONE_OK) {
       Services.obs.notifyObservers(null, "page-thumbnail:error", capture.url);
     }
 
@@ -453,11 +515,12 @@ Object.defineProperty(this, "BackgroundPageThumbs", {
 function Capture(url, captureCallback, options) {
   this.url = url;
   this.captureCallback = captureCallback;
+  this.redirectTimer = null;
+  this.timedOut = false;
   this.options = options;
   this.id = Capture.nextID++;
   this.creationDate = new Date();
   this.doneCallbacks = [];
-  this.doneReason = -1;
   if (options.onDone) {
     this.doneCallbacks.push(options.onDone);
   }
@@ -465,7 +528,7 @@ function Capture(url, captureCallback, options) {
 
 Capture.prototype = {
   get pending() {
-    return !!this._msgMan;
+    return !!this._timeoutTimer;
   },
 
   
@@ -473,7 +536,7 @@ Capture.prototype = {
 
 
 
-  start(messageManager) {
+  start(browser) {
     this.startDate = new Date();
     tel("CAPTURE_QUEUE_TIME_MS", this.startDate - this.creationDate);
 
@@ -493,16 +556,120 @@ Capture.prototype = {
       Ci.nsITimer.TYPE_ONE_SHOT
     );
 
-    
-    this._msgMan = messageManager;
-    this._msgMan.sendAsyncMessage("BackgroundPageThumbs:capture", {
-      id: this.id,
-      url: this.url,
-      isImage: this.options.isImage,
-      targetWidth: this.options.targetWidth,
-      backgroundColor: this.options.backgroundColor,
+    this._browser = browser;
+
+    if (!browser.browsingContext) {
+      return;
+    }
+
+    this._pageLoadStartTime = new Date();
+
+    BackgroundPageThumbs._expectingAboutBlank = false;
+
+    let thumbnailsActor = browser.browsingContext.currentWindowGlobal.getActor(
+      "BackgroundThumbnails"
+    );
+    thumbnailsActor
+      .sendQuery("Browser:Thumbnail:LoadURL", {
+        url: this.url,
+      })
+      .then(
+        success => {
+          
+          
+          
+          if (!success) {
+            this._done(browser, null, TEL_CAPTURE_DONE_BAD_URI);
+          }
+        },
+        failure => {
+          
+          
+        }
+      );
+  },
+
+  readBlob: function readBlob(blob) {
+    return new Promise((resolve, reject) => {
+      let reader = new FileReader();
+      reader.onloadend = function onloadend() {
+        if (reader.readyState != FileReader.DONE) {
+          reject(reader.error);
+        } else {
+          resolve(reader.result);
+        }
+      };
+      reader.readAsArrayBuffer(blob);
     });
-    this._msgMan.addMessageListener("BackgroundPageThumbs:didCapture", this);
+  },
+
+  async pageLoaded(aBrowser) {
+    if (this.timedOut) {
+      this._done(aBrowser, null, TEL_CAPTURE_DONE_TIMEOUT);
+      return;
+    }
+
+    let waitTime = Cu.isInAutomation
+      ? TESTING_SETTLE_WAIT_TIME
+      : SETTLE_WAIT_TIME;
+
+    
+    if (this.redirectTimer) {
+      this.redirectTimer.delay = waitTime;
+      return;
+    }
+
+    
+    
+    await new Promise(resolve => {
+      this.redirectTimer = Cc["@mozilla.org/timer;1"].createInstance(
+        Ci.nsITimer
+      );
+      this.redirectTimer.init(resolve, waitTime, Ci.nsITimer.TYPE_ONE_SHOT);
+    });
+
+    this.redirectTimer = null;
+
+    let pageLoadTime = new Date() - this._pageLoadStartTime;
+    let canvasDrawStartTime = new Date();
+
+    let canvas = PageThumbs.createCanvas(aBrowser.ownerGlobal, 1, 1);
+    try {
+      await PageThumbs.captureToCanvas(
+        aBrowser,
+        canvas,
+        {
+          isBackgroundThumb: true,
+          isImage: this.options.isImage,
+          backgroundColor: this.options.backgroundColor,
+        },
+        true
+      );
+      aBrowser.docShellIsActive = false;
+    } catch (ex) {
+      aBrowser.docShellIsActive = false;
+      this._done(
+        aBrowser,
+        null,
+        ex == "IMAGE_ZERO_DIMENSION"
+          ? TEL_CAPTURE_DONE_IMAGE_ZERO_DIMENSION
+          : TEL_CAPTURE_DONE_LOAD_FAILED
+      );
+      return;
+    }
+
+    let canvasDrawTime = new Date() - canvasDrawStartTime;
+
+    let imageData = await new Promise(resolve => {
+      canvas.toBlob(blob => {
+        resolve(blob, this.contentType);
+      });
+    });
+
+    this._done(aBrowser, imageData, TEL_CAPTURE_DONE_OK, {
+      CAPTURE_PAGE_LOAD_TIME_MS: pageLoadTime,
+      CAPTURE_CANVAS_DRAW_TIME_MS: canvasDrawTime,
+    });
   },
 
   
@@ -517,68 +684,42 @@ Capture.prototype = {
       this._timeoutTimer.cancel();
       delete this._timeoutTimer;
     }
-    if (this._msgMan) {
-      this._msgMan.removeMessageListener(
-        "BackgroundPageThumbs:didCapture",
-        this
-      );
-      delete this._msgMan;
-    }
     delete this.captureCallback;
     delete this.doneCallbacks;
     delete this.options;
   },
 
   
-  receiveMessage(msg) {
-    if (msg.data.imageData) {
-      tel("CAPTURE_SERVICE_TIME_MS", new Date() - this.startDate);
-    }
-
-    
-    
-    if (msg.data.id != this.id) {
-      return;
-    }
-
-    if (msg.data.failReason) {
-      let reason = global["TEL_CAPTURE_DONE_" + msg.data.failReason];
-      this._done(null, reason);
-      return;
-    }
-
-    this._done(msg.data, TEL_CAPTURE_DONE_OK);
-  },
-
-  
   notify() {
-    this._done(null, TEL_CAPTURE_DONE_TIMEOUT);
+    this.timedOut = true;
+    this._browser.stop();
   },
 
-  _done(data, reason) {
+  _done(browser, imageData, reason, telemetry) {
     
     
     
     let { captureCallback, doneCallbacks, options } = this;
     this.destroy();
-    this.doneReason = reason;
 
     if (typeof reason != "number") {
       throw new Error("A done reason must be given.");
     }
+
     tel("CAPTURE_DONE_REASON_2", reason);
-    if (data && data.telemetry) {
+
+    if (telemetry) {
       
-      for (let id in data.telemetry) {
-        tel(id, data.telemetry[id]);
+      for (let id in telemetry) {
+        tel(id, telemetry[id]);
       }
     }
 
     let done = () => {
-      captureCallback(this);
+      captureCallback(this, reason);
       for (let callback of doneCallbacks) {
         try {
-          callback.call(options, this.url, this.doneReason);
+          callback.call(options, this.url, reason);
         } catch (err) {
           Cu.reportError(err);
         }
@@ -597,15 +738,17 @@ Capture.prototype = {
       }
     };
 
-    if (!data) {
+    if (!imageData) {
       done();
       return;
     }
 
-    PageThumbs._store(this.url, data.finalURL, data.imageData, true).then(
-      done,
-      done
-    );
+    this.readBlob(imageData).then(buffer => {
+      PageThumbs._store(this.url, browser.currentURI.spec, buffer, true).then(
+        done,
+        done
+      );
+    });
   },
 };
 
