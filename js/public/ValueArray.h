@@ -11,7 +11,6 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-#include "mozilla/GuardObjects.h"  
 
 #include <stdint.h>  
 

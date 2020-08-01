@@ -79,12 +79,10 @@ namespace mozilla {
 
 static gfx::UserDataKey sSVGAutoRenderStateKey;
 
-SVGAutoRenderState::SVGAutoRenderState(
-    DrawTarget* aDrawTarget MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
+SVGAutoRenderState::SVGAutoRenderState(DrawTarget* aDrawTarget)
     : mDrawTarget(aDrawTarget),
       mOriginalRenderState(nullptr),
       mPaintingToWindow(false) {
-  MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   mOriginalRenderState = aDrawTarget->RemoveUserData(&sSVGAutoRenderStateKey);
   
   
