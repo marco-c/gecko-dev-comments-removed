@@ -2025,11 +2025,25 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
+  enum class TreatEmptyTextNodes {
+    
+    
+    
+    KeepIfContainerOfRangeBoundaries,
+    
+    
+    Remove,
+    
+    
+    
+    RemoveAllEmptyInlineAncestors,
+  };
   template <typename EditorDOMPointType>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  DeleteTextAndTextNodesWithTransaction(const EditorDOMPointType& aStartPoint,
-                                        const EditorDOMPointType& aEndPoint);
+  DeleteTextAndTextNodesWithTransaction(
+      const EditorDOMPointType& aStartPoint,
+      const EditorDOMPointType& aEndPoint,
+      TreatEmptyTextNodes aTreatEmptyTextNodes);
 
   
 
