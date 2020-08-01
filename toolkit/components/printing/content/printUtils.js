@@ -173,13 +173,13 @@ var PrintUtils = {
 
     
     
-    printSettings.title = this._originalTitle;
+    printSettings.title = this._originalTitle || topBrowser.contentTitle;
 
     if (this._shouldSimplify) {
       
       
       
-      printSettings.docURL = this._originalURL;
+      printSettings.docURL = this._originalURL || topBrowser.currentURI.spec;
     }
 
     
@@ -734,6 +734,9 @@ var PrintUtils = {
     this.ensureProgressDialogClosed();
 
     this._listener.onExit();
+
+    this._originalTitle = "";
+    this._originalURL = "";
   },
 
   logTelemetry(ID) {
