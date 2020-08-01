@@ -6717,6 +6717,26 @@ AttachDecision CallIRGenerator::tryAttachTypedArrayLength(
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachIsConstructing(HandleFunction callee) {
+  
+  MOZ_ASSERT(argc_ == 0);
+  MOZ_ASSERT(script_->isFunction());
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+
+  writer.frameIsConstructingResult();
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("IsConstructing");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
   MOZ_ASSERT(calleeFunc->isNativeWithoutJitEntry());
   if (calleeFunc->native() != fun_apply) {
@@ -6912,6 +6932,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachGuardToClass(callee, native);
     case InlinableNative::IntrinsicSubstringKernel:
       return tryAttachSubstringKernel(callee);
+    case InlinableNative::IntrinsicIsConstructing:
+      return tryAttachIsConstructing(callee);
 
     
     case InlinableNative::IsRegExpObject:

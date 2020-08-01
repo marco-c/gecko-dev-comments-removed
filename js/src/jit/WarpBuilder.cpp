@@ -1788,8 +1788,7 @@ bool WarpBuilder::buildCallOp(BytecodeLocation loc) {
 
   
   if (auto* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc)) {
-    return TranspileCacheIRToMIR(snapshot(), mirGen(), loc, current,
-                                 cacheIRSnapshot, callInfo);
+    return TranspileCacheIRToMIR(this, loc, cacheIRSnapshot, callInfo);
   }
 
   if (getOpSnapshot<WarpBailout>(loc)) {
@@ -2916,8 +2915,7 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
     if (!inputs_.append(inputs.begin(), inputs.end())) {
       return false;
     }
-    return TranspileCacheIRToMIR(snapshot(), mirGen(), loc, current,
-                                 cacheIRSnapshot, inputs_);
+    return TranspileCacheIRToMIR(this, loc, cacheIRSnapshot, inputs_);
   }
 
   if (getOpSnapshot<WarpBailout>(loc)) {
@@ -3143,8 +3141,8 @@ bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,
   
   
   
-  if (!TranspileCacheIRToMIR(snapshot(), mirGen(), loc, current,
-                             inlineSnapshot->cacheIRSnapshot(), callInfo)) {
+  if (!TranspileCacheIRToMIR(this, loc, inlineSnapshot->cacheIRSnapshot(),
+                             callInfo)) {
     return false;
   }
 
