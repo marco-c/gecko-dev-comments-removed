@@ -857,15 +857,19 @@ nsRect Element::GetClientAreaRect() {
 
   nsIFrame* frame;
   if (nsIScrollableFrame* sf = GetScrollFrame(&frame)) {
-    MOZ_ASSERT(frame);
     nsRect scrollPort = sf->GetScrollPortRect();
-    nsIFrame* scrollableAsFrame = do_QueryFrame(sf);
-    
-    
-    
-    if (frame != scrollableAsFrame && !sf->IsRootScrollFrameOfDocument()) {
-      scrollPort.MoveBy(scrollableAsFrame->GetOffsetTo(frame));
+
+    if (!sf->IsRootScrollFrameOfDocument()) {
+      MOZ_ASSERT(frame);
+      nsIFrame* scrollableAsFrame = do_QueryFrame(sf);
+      
+      
+      
+      if (frame != scrollableAsFrame) {
+        scrollPort.MoveBy(scrollableAsFrame->GetOffsetTo(frame));
+      }
     }
+
     
     
     scrollPort.SizeTo(sf->GetLayoutSize());
