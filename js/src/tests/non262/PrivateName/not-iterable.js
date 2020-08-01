@@ -1,12 +1,16 @@
 
 
-var privateName = newPrivateName('');
 
-var o = {
-  [privateName]: 123,
-};
 
-assertEq(o[privateName], 123);
+class O {
+  #x = 123;
+  gx() {
+    return this.#x;
+  }
+}
+var o = new O;
+
+assertEq(o.gx(), 123);
 
 assertEq(Object.keys(o).length, 0);
 assertEq(Object.getOwnPropertyNames(o).length, 0);
