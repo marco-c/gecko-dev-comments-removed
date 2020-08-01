@@ -212,7 +212,7 @@ var FxAccountsConfig = {
   async ensureConfigured() {
     let isSignedIn = !!(await this.getSignedInUser());
     if (!isSignedIn) {
-      await this.fetchConfigURLs();
+      await this.updateConfigURLs();
     }
   },
 
@@ -221,36 +221,14 @@ var FxAccountsConfig = {
   
   
   
-  async fetchConfigURLs() {
+  async updateConfigURLs() {
     let rootURL = this.getAutoConfigURL();
     if (!rootURL) {
       return;
     }
-    let configURL = rootURL + "/.well-known/fxa-client-configuration";
-    let request = new RESTRequest(configURL);
-    request.setHeader("Accept", "application/json");
-
-    
-    let resp = await request.get().catch(e => {
-      log.error(`Failed to get configuration object from "${configURL}"`, e);
-      throw e;
-    });
-    if (!resp.success) {
-      log.error(
-        `Received HTTP response code ${resp.status} from configuration object request`
-      );
-      if (resp.body) {
-        log.debug("Got error response", resp.body);
-      }
-      throw new Error(
-        `HTTP status ${resp.status} from configuration object request`
-      );
-    }
-
-    log.debug("Got successful configuration response", resp.body);
+    const config = await this.fetchConfigDocument(rootURL);
     try {
       
-      let config = JSON.parse(resp.body);
       let authServerBase = config.auth_server_base_url;
       if (!authServerBase.endsWith("/v1")) {
         authServerBase += "/v1";
@@ -286,6 +264,44 @@ var FxAccountsConfig = {
     } catch (e) {
       log.error(
         "Failed to initialize configuration preferences from autoconfig object",
+        e
+      );
+      throw e;
+    }
+  },
+
+  
+  
+  async fetchConfigDocument(rootURL = null) {
+    if (!rootURL) {
+      rootURL = ROOT_URL;
+    }
+    let configURL = rootURL + "/.well-known/fxa-client-configuration";
+    let request = new RESTRequest(configURL);
+    request.setHeader("Accept", "application/json");
+
+    
+    let resp = await request.get().catch(e => {
+      log.error(`Failed to get configuration object from "${configURL}"`, e);
+      throw e;
+    });
+    if (!resp.success) {
+      
+      
+      log.error(
+        `Received HTTP response code ${resp.status} from configuration object request:
+        ${resp.body}`
+      );
+      throw new Error(
+        `HTTP status ${resp.status} from configuration object request`
+      );
+    }
+    log.debug("Got successful configuration response", resp.body);
+    try {
+      return JSON.parse(resp.body);
+    } catch (e) {
+      log.error(
+        `Failed to parse configuration preferences from ${configURL}`,
         e
       );
       throw e;

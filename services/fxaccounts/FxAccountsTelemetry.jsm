@@ -18,7 +18,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   
   Observers: "resource://services-common/observers.js",
   Services: "resource://gre/modules/Services.jsm",
+  CommonUtils: "resource://services-common/utils.js",
   CryptoUtils: "resource://services-crypto/utils.js",
+  FxAccountsConfig: "resource://gre/modules/FxAccountsConfig.jsm",
+  jwcrypto: "resource://services-crypto/jwcrypto.jsm",
 });
 
 const { PREF_ACCOUNT_ROOT, log } = ChromeUtils.import(
@@ -47,13 +50,17 @@ class FxAccountsTelemetry {
     Observers.notify("fxa:telemetry:event", { object, method, value, extra });
   }
 
-  
-  generateFlowID() {
+  generateUUID() {
     return Cc["@mozilla.org/uuid-generator;1"]
       .getService(Ci.nsIUUIDGenerator)
       .generateUUID()
       .toString()
       .slice(1, -1);
+  }
+
+  
+  generateFlowID() {
+    return this.generateUUID();
   }
 
   
@@ -95,14 +102,55 @@ class FxAccountsTelemetry {
   
   
   
-  async ensureEcosystemAnonId() {
-    const profile = await this._internal.profile.ensureProfile();
-    if (!profile.hasOwnProperty("ecosystemAnonId")) {
+  async ensureEcosystemAnonId(generatePlaceholder = true) {
+    const telemetry = this;
+    return this._fxai.withCurrentAccountState(async function(state) {
+      const profile = await telemetry._fxai.profile.ensureProfile();
+      if (profile.hasOwnProperty("ecosystemAnonId")) {
+        return profile.ecosystemAnonId;
+      }
+      if (!generatePlaceholder) {
+        throw new Error("Profile data does not contain an 'ecosystemAnonId'");
+      }
       
       
-      throw new Error("Profile data does not contain an 'ecosystemAnonId'");
-    }
-    return profile.ecosystemAnonId;
+      let ecosystemUserId = CommonUtils.bufferToHex(
+        CryptoUtils.generateRandomBytes(32)
+      );
+      
+      const serverConfig = await FxAccountsConfig.fetchConfigDocument();
+      const ecosystemKeys = serverConfig.ecosystem_anon_id_keys;
+      if (!ecosystemKeys || !ecosystemKeys.length) {
+        throw new Error(
+          "Unable to fetch ecosystem_anon_id_keys from FxA server"
+        );
+      }
+      const randomKey = Math.floor(
+        Math.random() * Math.floor(ecosystemKeys.length)
+      );
+      const ecosystemAnonId = await jwcrypto.generateJWE(
+        ecosystemKeys[randomKey],
+        new TextEncoder().encode(ecosystemUserId)
+      );
+      
+      try {
+        await telemetry._fxai.profile.client.setEcosystemAnonId(
+          ecosystemAnonId
+        );
+      } catch (err) {
+        if (err && err.code && err.code === 412) {
+          
+          return telemetry.ensureEcosystemAnonId(false);
+        }
+        throw err;
+      }
+      
+      ecosystemUserId = state.ecosystemUserId;
+      await state.updateUserAccountData({
+        ecosystemUserId,
+      });
+      return ecosystemAnonId;
+    });
   }
 
   

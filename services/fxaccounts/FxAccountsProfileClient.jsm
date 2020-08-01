@@ -23,6 +23,7 @@ const {
   ERROR_UNKNOWN,
   log,
   SCOPE_PROFILE,
+  SCOPE_PROFILE_WRITE,
 } = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 const { fxAccounts } = ChromeUtils.import(
   "resource://gre/modules/FxAccounts.jsm"
@@ -59,9 +60,6 @@ var FxAccountsProfileClient = function(options) {
   } catch (e) {
     throw new Error("Invalid 'serverURL'");
   }
-  this.oauthOptions = {
-    scope: SCOPE_PROFILE,
-  };
   log.debug("FxAccountsProfileClient: Initialized");
 };
 
@@ -91,11 +89,13 @@ FxAccountsProfileClient.prototype = {
 
 
 
-  async _createRequest(path, method = "GET", etag = null) {
-    
-    let token = await this.fxai.getOAuthToken(this.oauthOptions);
+
+
+  async _createRequest(path, method = "GET", etag = null, body = null) {
+    method = method.toUpperCase();
+    let token = await this._getTokenForRequest(method);
     try {
-      return await this._rawRequest(path, method, token, etag);
+      return await this._rawRequest(path, method, token, etag, body);
     } catch (ex) {
       if (!(ex instanceof FxAccountsProfileClientError) || ex.code != 401) {
         throw ex;
@@ -105,11 +105,11 @@ FxAccountsProfileClient.prototype = {
         "Fetching the profile returned a 401 - revoking our token and retrying"
       );
       await this.fxai.removeCachedOAuthToken({ token });
-      token = await this.fxai.getOAuthToken(this.oauthOptions);
+      token = await this._getTokenForRequest(method);
       
       
       try {
-        return await this._rawRequest(path, method, token, etag);
+        return await this._rawRequest(path, method, token, etag, body);
       } catch (ex) {
         if (!(ex instanceof FxAccountsProfileClientError) || ex.code != 401) {
           throw ex;
@@ -135,13 +135,34 @@ FxAccountsProfileClient.prototype = {
 
 
 
+  async _getTokenForRequest(method) {
+    let scope = SCOPE_PROFILE;
+    if (method === "POST") {
+      scope = SCOPE_PROFILE_WRITE;
+    }
+    return this.fxai.getOAuthToken({ scope });
+  },
+
+  
 
 
 
-  async _rawRequest(path, method, token, etag) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _rawRequest(path, method, token, etag = null, payload = null) {
     let profileDataUrl = this.serverURL + path;
     let request = new this._Request(profileDataUrl);
-    method = method.toUpperCase();
 
     request.setHeader("Authorization", "Bearer " + token);
     request.setHeader("Accept", "application/json");
@@ -149,7 +170,7 @@ FxAccountsProfileClient.prototype = {
       request.setHeader("If-None-Match", etag);
     }
 
-    if (method != "GET") {
+    if (method != "GET" && method != "POST") {
       
       throw new FxAccountsProfileClientError({
         error: ERROR_NETWORK,
@@ -158,9 +179,8 @@ FxAccountsProfileClient.prototype = {
         message: ERROR_MSG_METHOD_NOT_ALLOWED,
       });
     }
-
     try {
-      await request.get();
+      await request.dispatch(method, payload);
     } catch (error) {
       throw new FxAccountsProfileClientError({
         error: ERROR_NETWORK,
@@ -211,6 +231,27 @@ FxAccountsProfileClient.prototype = {
   fetchProfile(etag) {
     log.debug("FxAccountsProfileClient: Requested profile");
     return this._createRequest("/profile", "GET", etag);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  setEcosystemAnonId(ecosystemAnonId) {
+    log.debug("FxAccountsProfileClient: Setting ecosystemAnonId");
+    
+    return this._createRequest("/ecosystem_anon_id", "POST", "*", {
+      ecosystemAnonId,
+    });
   },
 };
 
