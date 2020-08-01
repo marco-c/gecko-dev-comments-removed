@@ -29,6 +29,16 @@ from .router import Router
 from .utils import HTTPException
 from .constants import h2_headers
 
+
+
+
+
+
+
+from six.moves import http_client
+assert isinstance(getattr(http_client, '_MAXHEADERS'), int)
+setattr(http_client, '_MAXHEADERS', 512)
+
 """
 HTTP server designed for testing purposes.
 
