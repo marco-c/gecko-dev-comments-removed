@@ -983,6 +983,7 @@ bool ContentBlocking::ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow,
   
   if (doc && (doc->StorageAccessSandboxed())) {
     LOG(("Our document is sandboxed"));
+    *aRejectedReason = blockedReason;
     return false;
   }
 
@@ -1193,6 +1194,7 @@ bool ContentBlocking::ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
 
   if (Document::StorageAccessSandboxed(targetBC->GetSandboxFlags())) {
     LOG(("Our document is sandboxed"));
+    *aRejectedReason = blockedReason;
     return false;
   }
 
