@@ -6,6 +6,8 @@
 
 
 
+
+
 const map = Reflect.getOwnPropertyDescriptor(Iterator.prototype, 'map');
 
 assertEq(
