@@ -62,7 +62,7 @@ class RemoteAutomation(object):
         for |timeout| seconds.
         """
         if self.device.is_file(self.remoteLog):
-            self.device.rm(self.remoteLog, root=True)
+            self.device.rm(self.remoteLog)
             self.log.info("remoteautomation.py | runApp deleted %s" % self.remoteLog)
 
         if timeout == -1:
@@ -209,7 +209,7 @@ class RemoteAutomation(object):
 
         if self.appName and self.device.process_exist(self.appName):
             print("remoteautomation.py %s is already running. Stopping..." % self.appName)
-            self.device.stop_application(self.appName, root=True)
+            self.device.stop_application(self.appName)
 
         self.counts = counts
         if self.counts is not None:
@@ -268,7 +268,7 @@ class RemoteAutomation(object):
         except ADBTimeoutError:
             raise
         except Exception as e:
-            self.log.info("remoteautomation.py | exception reading log: %s" % str(e))
+            self.log.exception("remoteautomation.py | exception reading log: %s" % str(e))
             return False
         if not newLogContent:
             return False
@@ -354,12 +354,12 @@ class RemoteAutomation(object):
         endTime = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
         
         retries = 0
-        while retries < 20 and not self.device.is_file(self.remoteLog, root=True):
+        while retries < 20 and not self.device.is_file(self.remoteLog):
             retries += 1
             time.sleep(1)
-        if self.device.is_file(self.remoteLog, root=True):
+        if self.device.is_file(self.remoteLog):
             
-            self.device.chmod(self.remoteLog, mask="666", root=True)
+            self.device.chmod(self.remoteLog, mask="666")
         else:
             print("Failed wait for remote log: %s missing?" % self.remoteLog)
         while top == self.procName:
@@ -408,7 +408,7 @@ class RemoteAutomation(object):
         if stagedShutdown:
             
             try:
-                self.device.pkill(self.procName, sig=3, attempts=1, root=True)
+                self.device.pkill(self.procName, sig=3, attempts=1)
             except ADBTimeoutError:
                 raise
             except:  
@@ -416,7 +416,7 @@ class RemoteAutomation(object):
             time.sleep(3)
             
             try:
-                self.device.pkill(self.procName, sig=6, attempts=1, root=True)
+                self.device.pkill(self.procName, sig=6, attempts=1)
             except ADBTimeoutError:
                 raise
             except:  
@@ -432,7 +432,7 @@ class RemoteAutomation(object):
                 retries += 1
             if self.device.process_exist(self.procName):
                 try:
-                    self.device.pkill(self.procName, sig=9, attempts=1, root=True)
+                    self.device.pkill(self.procName, sig=9, attempts=1)
                 except ADBTimeoutError:
                     raise
                 except:  
@@ -448,7 +448,7 @@ class RemoteAutomation(object):
         if self.device.process_exist(crashreporter):
             print("Warning: %s unexpectedly found running. Killing..." % crashreporter)
             try:
-                self.device.pkill(crashreporter, root=True)
+                self.device.pkill(crashreporter)
             except ADBTimeoutError:
                 raise
             except:  
