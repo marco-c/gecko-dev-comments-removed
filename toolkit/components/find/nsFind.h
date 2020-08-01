@@ -64,7 +64,7 @@ class nsFind : public nsIFind {
   
   
   
-  char32_t PeekNextChar(State&, bool aAlreadyMatching) const;
+  char32_t PeekNextChar(State&) const;
 };
 
 #endif  

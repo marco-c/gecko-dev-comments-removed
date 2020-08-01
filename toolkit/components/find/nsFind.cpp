@@ -226,6 +226,12 @@ static bool NodeForcesBreak(const nsIContent& aContent) {
 }
 
 static bool ForceBreakBetweenText(const Text& aPrevious, const Text& aNext) {
+  if (!nsContentUtils::IsInSameAnonymousTree(&aPrevious, &aNext)) {
+    
+    
+    return true;
+  }
+
   return GetBlockParent(aPrevious) != GetBlockParent(aNext);
 }
 
@@ -251,12 +257,11 @@ struct nsFind::State final {
     return node ? node->GetAsText() : nullptr;
   }
 
-  Text* GetNextNode(bool aAlreadyMatching) {
+  Text* GetNextNode() {
     if (MOZ_UNLIKELY(!mInitialized)) {
-      MOZ_ASSERT(!aAlreadyMatching);
       Initialize();
     } else {
-      Advance(Initializing::No, aAlreadyMatching);
+      Advance(Initializing::No);
       mIterOffset = -1;  
     }
     return GetCurrentNode();
@@ -266,26 +271,12 @@ struct nsFind::State final {
   enum class Initializing { No, Yes };
 
   
-  void Advance(Initializing, bool aAlreadyMatching);
+  void Advance(Initializing);
   
   void Initialize();
 
-  static bool ValidTextNode(const nsINode& aNode, const Text* aPrev,
-                            bool aAlreadyMatching) {
-    if (!aNode.IsText()) {
-      return false;
-    }
-    if (SkipNode(aNode.AsText())) {
-      return false;
-    }
-    
-    
-    
-    if (aAlreadyMatching && aPrev &&
-        !nsContentUtils::IsInSameAnonymousTree(&aNode, aPrev)) {
-      return false;
-    }
-    return true;
+  static bool ValidTextNode(const nsINode& aNode) {
+    return aNode.IsText() && !SkipNode(aNode.AsText());
   }
 
   const bool mFindBackward;
@@ -304,7 +295,7 @@ struct nsFind::State final {
   const nsRange& mStartPoint;
 };
 
-void nsFind::State::Advance(Initializing aInitializing, bool aAlreadyMatching) {
+void nsFind::State::Advance(Initializing aInitializing) {
   MOZ_ASSERT(mInitialized);
 
   
@@ -320,7 +311,7 @@ void nsFind::State::Advance(Initializing aInitializing, bool aAlreadyMatching) {
     if (!current) {
       return;
     }
-    if (ValidTextNode(*current, prev, aAlreadyMatching)) {
+    if (ValidTextNode(*current)) {
       mFoundBreak = mFoundBreak ||
                     (prev && ForceBreakBetweenText(*prev, *current->AsText()));
       return;
@@ -358,9 +349,8 @@ void nsFind::State::Initialize() {
     return;
   }
 
-  const bool kAlreadyMatching = false;
-  if (!ValidTextNode(*current, nullptr, kAlreadyMatching)) {
-    Advance(Initializing::Yes, kAlreadyMatching);
+  if (!ValidTextNode(*current)) {
+    Advance(Initializing::Yes);
     current = mIterator.GetCurrent();
     if (!current) {
       return;
@@ -512,12 +502,12 @@ bool nsFind::BreakInBetween(char32_t x, char32_t y) const {
   return mWordBreaker->BreakInBetween(x16, x16len, y16, y16len);
 }
 
-char32_t nsFind::PeekNextChar(State& aState, bool aAlreadyMatching) const {
+char32_t nsFind::PeekNextChar(State& aState) const {
   
   StateRestorer restorer(aState);
 
   while (true) {
-    const Text* text = aState.GetNextNode(aAlreadyMatching);
+    const Text* text = aState.GetNextNode();
     if (!text || aState.ForcedBreak()) {
       return L'\0';
     }
@@ -636,7 +626,7 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
 
     
     if (!frag) {
-      current = state.GetNextNode(!!matchAnchorNode);
+      current = state.GetNextNode();
       if (!current) {
         return NS_OK;
       }
@@ -858,7 +848,7 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
               nextChar = CHAR_TO_UNICHAR(t1b[nextfindex]);
           } else {
             
-            nextChar = PeekNextChar(state, !!matchAnchorNode);
+            nextChar = PeekNextChar(state);
           }
 
           if (nextChar == NBSP_CHARCODE) nextChar = CHAR_TO_UNICHAR(' ');
