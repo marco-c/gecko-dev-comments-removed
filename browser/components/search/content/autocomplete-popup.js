@@ -6,6 +6,10 @@
 
 
 {
+  XPCOMUtils.defineLazyModuleGetters(this, {
+    SearchOneOffs: "resource:///modules/SearchOneOffs.jsm",
+  });
+
   
 
 
