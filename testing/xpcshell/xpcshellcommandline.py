@@ -112,6 +112,10 @@ def add_common_arguments(parser):
                         action="store", dest="xpcshell",
                         default=None,
                         help="Path to xpcshell binary")
+    parser.add_argument("--http3server",
+                        action="store", dest="http3server",
+                        default=None,
+                        help="Path to http3server binary")
     
     
     
