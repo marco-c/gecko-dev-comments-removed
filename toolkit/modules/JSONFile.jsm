@@ -268,7 +268,10 @@ JSONFile.prototype = {
         }
       }
 
-      if (this._options.backupTo) {
+      if (
+        this._options.backupTo &&
+        new FileUtils.File(this._options.backupTo).exists()
+      ) {
         
         
         
@@ -369,7 +372,10 @@ JSONFile.prototype = {
         }
       }
 
-      if (this._options.backupTo) {
+      if (
+        this._options.backupTo &&
+        new FileUtils.File(this._options.backupTo).exists()
+      ) {
         
         
         
