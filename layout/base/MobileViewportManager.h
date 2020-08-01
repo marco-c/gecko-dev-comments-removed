@@ -126,6 +126,12 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   void UpdateVisualViewportSizeForPotentialScrollbarChange();
 
+  
+
+
+
+  mozilla::CSSSize GetIntrinsicCompositionSize() const;
+
  private:
   ~MobileViewportManager();
 

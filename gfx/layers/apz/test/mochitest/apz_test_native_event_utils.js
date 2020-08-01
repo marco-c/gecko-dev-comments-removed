@@ -786,6 +786,42 @@ function* pinchZoomInTouchSequence(focusX, focusY) {
 
 
 
+function* pinchZoomOutTouchSequenceAtCenter() {
+  
+  
+  const deltaX = window.visualViewport.width / 16;
+  const deltaY = window.visualViewport.height / 16;
+  const centerX =
+    window.visualViewport.pageLeft + window.visualViewport.width / 2;
+  const centerY =
+    window.visualViewport.pageTop + window.visualViewport.height / 2;
+  
+  var zoom_out = [
+      [ { x: centerX - (deltaX * 6), y: centerY - (deltaY * 6) },
+        { x: centerX + (deltaX * 6), y: centerY + (deltaY * 6) } ],
+      [ { x: centerX - (deltaX * 5), y: centerY - (deltaY * 5) },
+        { x: centerX + (deltaX * 5), y: centerY + (deltaY * 5) } ],
+      [ { x: centerX - (deltaX * 4), y: centerY - (deltaY * 4) },
+        { x: centerX + (deltaX * 4), y: centerY + (deltaY * 4) } ],
+      [ { x: centerX - (deltaX * 3), y: centerY - (deltaY * 3) },
+        { x: centerX + (deltaX * 3), y: centerY + (deltaY * 3) } ],
+      [ { x: centerX - (deltaX * 2), y: centerY - (deltaY * 2) },
+        { x: centerX + (deltaX * 2), y: centerY + (deltaY * 2) } ],
+      [ { x: centerX - (deltaX * 1), y: centerY - (deltaY * 1) },
+        { x: centerX + (deltaX * 1), y: centerY + (deltaY * 1) } ],
+  ];
+
+  var touchIds = [0, 1];
+  yield* synthesizeNativeTouchSequences(
+    document.body,
+    zoom_out,
+    null,
+    touchIds
+  );
+}
+
+
+
 function promiseTopic(aTopic) {
   return new Promise((resolve, reject) => {
     SpecialPowers.Services.obs.addObserver(function observer(
@@ -814,6 +850,26 @@ async function pinchZoomInWithTouch(focusX, focusY) {
 
   
   let generator = pinchZoomInTouchSequence(focusX, focusY);
+  while (true) {
+    let yieldResult = generator.next();
+    if (yieldResult.done) {
+      break;
+    }
+  }
+
+  
+  await transformEndPromise;
+}
+
+
+
+
+async function pinchZoomOutWithTouchAtCenter() {
+  
+  let transformEndPromise = promiseTopic("APZ:TransformEnd");
+
+  
+  let generator = pinchZoomOutTouchSequenceAtCenter();
   while (true) {
     let yieldResult = generator.next();
     if (yieldResult.done) {
