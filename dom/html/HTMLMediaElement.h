@@ -1929,7 +1929,14 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  void StartListeningMediaControlKeyIfNeeded();
+  bool ShouldStartMediaControlKeyListener() const;
+
+  
+  
+  void StartMediaControlKeyListenerIfNeeded();
+
+  
+  
   RefPtr<MediaControlKeyListener> mMediaControlKeyListener;
 
   

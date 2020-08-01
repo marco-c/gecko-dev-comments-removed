@@ -402,18 +402,21 @@ class HTMLMediaElement::MediaControlKeyListener final
   }
 
   
-  bool Start() {
+
+
+
+  void Start() {
     MOZ_ASSERT(NS_IsMainThread());
     if (IsStarted()) {
       
-      return true;
+      return;
     }
 
     
     
     if (!InitMediaAgent()) {
-      MEDIACONTROL_LOG("Fail to init content media agent!");
-      return false;
+      MEDIACONTROL_LOG("Failed to start due to not able to init media agent!");
+      return;
     }
 
     NotifyPlaybackStateChanged(MediaPlaybackState::eStarted);
@@ -423,7 +426,6 @@ class HTMLMediaElement::MediaControlKeyListener final
     if (!Owner()->Paused()) {
       NotifyMediaStartedPlaying();
     }
-    return true;
   }
 
   
@@ -545,7 +547,7 @@ class HTMLMediaElement::MediaControlKeyListener final
     
     bool wasInPlayingState = mState == MediaPlaybackState::ePlayed;
     StopIfNeeded();
-    Unused << Start();
+    Start();
     if (wasInPlayingState) {
       NotifyMediaStartedPlaying();
     }
@@ -5535,8 +5537,6 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
     mDefaultPlaybackStartPosition = 0.0;
   }
 
-  StartListeningMediaControlKeyIfNeeded();
-
   mWatchManager.ManualNotify(&HTMLMediaElement::UpdateReadyStateInternal);
 }
 
@@ -6555,7 +6555,7 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
         !AutoplayPolicy::IsAllowedToPlay(*this)) {
       MaybeNotifyAutoplayBlocked();
     }
-    StartListeningMediaControlKeyIfNeeded();
+    StartMediaControlKeyListenerIfNeeded();
   }
   if (StaticPrefs::media_testing_only_events()) {
     auto dispatcher = MakeRefPtr<AsyncEventDispatcher>(
@@ -7402,7 +7402,12 @@ void HTMLMediaElement::NotifyAudioPlaybackChanged(
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->NotifyAudioPlaybackChanged(aReason);
   }
-  mMediaControlKeyListener->UpdateMediaAudibleState(IsAudible());
+  
+  const bool isAudible = IsAudible();
+  if (isAudible && !mMediaControlKeyListener->IsStarted()) {
+    StartMediaControlKeyListenerIfNeeded();
+  }
+  mMediaControlKeyListener->UpdateMediaAudibleState(isAudible);
   
   UpdateWakeLock();
 }
@@ -7863,7 +7868,7 @@ void HTMLMediaElement::NotifyMediaControlPlaybackStateChanged() {
   }
 }
 
-void HTMLMediaElement::StartListeningMediaControlKeyIfNeeded() {
+bool HTMLMediaElement::ShouldStartMediaControlKeyListener() const {
   
   
   
@@ -7871,13 +7876,27 @@ void HTMLMediaElement::StartListeningMediaControlKeyIfNeeded() {
       StaticPrefs::media_mediacontrol_eligible_media_duration_s()) {
     MEDIACONTROL_LOG("Not listening because media's duration %f is too short.",
                      Duration());
-    return;
+    return false;
   }
 
-  if (mMediaControlKeyListener->IsStarted() ||
-      !mMediaControlKeyListener->Start()) {
+  
+  
+  
+  
+  
+  
+  if (!IsAudible() || ComputedVolume() == 0.0f) {
+    MEDIACONTROL_LOG("Not listening because media is inaudible");
+    return false;
+  }
+  return true;
+}
+
+void HTMLMediaElement::StartMediaControlKeyListenerIfNeeded() {
+  if (!ShouldStartMediaControlKeyListener()) {
     return;
   }
+  mMediaControlKeyListener->Start();
 }
 
 void HTMLMediaElement::UpdateMediaControlAfterPictureInPictureModeChanged() {
