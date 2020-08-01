@@ -9731,6 +9731,39 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       CSSSize displaySize = ScreenSize(aDisplaySize) / defaultScale;
 
       
+      
+      
+      
+      
+      
+      
+      
+      if (maxWidth == nsViewportInfo::Auto && !mValidScaleFloat) {
+        BrowsingContext* bc = GetBrowsingContext();
+        nsIDocShell* docShell = GetDocShell();
+        if (docShell &&
+            docShell->GetTouchEventsOverride() ==
+                nsIDocShell::TOUCHEVENTS_OVERRIDE_ENABLED &&
+            bc && bc->InRDMPane()) {
+          
+          
+          
+          maxWidth = nsViewportInfo::Max(
+              displaySize.width, StaticPrefs::browser_viewport_desktopWidth());
+        } else {
+          maxWidth = StaticPrefs::browser_viewport_desktopWidth();
+        }
+        
+        
+        
+        maxWidth /= fullZoom;
+
+        
+        
+        minWidth = nsViewportInfo::ExtendToZoom;
+      }
+
+      
       if (maxWidth == nsViewportInfo::DeviceSize) {
         maxWidth = displaySize.width;
       }
@@ -9784,43 +9817,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       if (width == nsViewportInfo::Auto) {
         if (height == nsViewportInfo::Auto || aDisplaySize.height == 0) {
-          
-          
-          
-          
-          
-          if (mViewportType == NoValidContent) {
-            
-            
-            
-            
-            
-            
-            
-
-            BrowsingContext* bc = GetBrowsingContext();
-            nsIDocShell* docShell = GetDocShell();
-            if (docShell &&
-                docShell->GetTouchEventsOverride() ==
-                    nsIDocShell::TOUCHEVENTS_OVERRIDE_ENABLED &&
-                bc && bc->InRDMPane()) {
-              
-              
-              
-              width = nsViewportInfo::Max(
-                  displaySize.width,
-                  StaticPrefs::browser_viewport_desktopWidth());
-            } else {
-              width = StaticPrefs::browser_viewport_desktopWidth();
-            }
-            
-            
-            
-            width /= fullZoom;
-          } else {
-            
-            width = displaySize.width;
-          }
+          width = displaySize.width;
         } else {
           width = height * aDisplaySize.width / aDisplaySize.height;
         }
