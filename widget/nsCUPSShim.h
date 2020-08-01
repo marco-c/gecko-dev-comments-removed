@@ -57,7 +57,7 @@ class nsCUPSShim {
 
 
 
-  bool IsInitialized() { return nullptr != mCupsLib; }
+  bool IsInitialized() const { return mInited; }
 
   
 
@@ -70,6 +70,7 @@ class nsCUPSShim {
   CupsTempFdType mCupsTempFd;
 
  private:
+  bool mInited = false;
   PRLibrary* mCupsLib;
 };
 
