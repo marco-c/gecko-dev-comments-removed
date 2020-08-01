@@ -1911,9 +1911,13 @@ HttpBaseChannel::RedirectTo(nsIURI* targetURI) {
   
   
   
-  
-  mLoadInfo->SetBypassCORSChecks(false);
   mLoadInfo->SetAllowInsecureRedirectToDataURI(false);
+
+  
+  
+  if (!mResponseHead) {
+    mResponseHead.reset(new nsHttpResponseHead());
+  }
   return NS_OK;
 }
 

@@ -996,6 +996,12 @@ HttpObserverManager = {
             }
             channel.resume(text);
             channel.redirectTo(Services.io.newURI(result.redirectUrl));
+
+            
+            
+            
+            
+            
             
             
             
@@ -1003,17 +1009,32 @@ HttpObserverManager = {
 
             
             
-            
-            
-            
-            
-            channel.loadInfo.bypassCORSChecks = true;
+            let origin = channel.getRequestHeader("Origin");
+            if (origin) {
+              channel.setResponseHeader("Access-Control-Allow-Origin", origin);
+              channel.setResponseHeader(
+                "Access-Control-Allow-Credentials",
+                "true"
+              );
 
-            
-            
-            
-            
-            
+              
+              
+
+              let allowHeaders = channel
+                .getRequestHeaders()
+                .map(header => header.name)
+                .join();
+              channel.setResponseHeader(
+                "Access-Control-Allow-Headers",
+                allowHeaders
+              );
+
+              channel.setResponseHeader(
+                "Access-Control-Allow-Methods",
+                channel.method
+              );
+            }
+
             return;
           } catch (e) {
             Cu.reportError(e);
