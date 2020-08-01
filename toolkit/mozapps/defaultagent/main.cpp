@@ -18,6 +18,7 @@
 #include "EventLog.h"
 #include "Notification.h"
 #include "Registry.h"
+#include "RemoteSettings.h"
 #include "ScheduledTask.h"
 #include "Telemetry.h"
 
@@ -244,6 +245,7 @@ int wmain(int argc, wchar_t** argv) {
 
   
   
+  
   if (!wcscmp(argv[1], L"uninstall") || !wcscmp(argv[1], L"unregister-task")) {
     if (argc < 3 || !argv[2]) {
       return E_INVALIDARG;
@@ -269,8 +271,17 @@ int wmain(int argc, wchar_t** argv) {
       RemoveAllRegistryEntries();
     }
     return RemoveTask(argv[2]);
+  } else if (!wcscmp(argv[1], L"debug-remote-disabled")) {
+    int disabled = IsAgentRemoteDisabled();
+    std::cerr << "default-browser-agent: IsAgentRemoteDisabled: " << disabled
+              << std::endl;
+    return S_OK;
   }
 
+  
+  
+  
+  
   if (IsAgentDisabled()) {
     return HRESULT_FROM_WIN32(ERROR_ACCESS_DISABLED_BY_POLICY);
   }
@@ -322,6 +333,12 @@ int wmain(int argc, wchar_t** argv) {
     
     if (!regMutex.Acquire()) {
       return HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION);
+    }
+
+    
+    
+    if (IsAgentRemoteDisabled()) {
+      return S_OK;
     }
 
     DefaultBrowserResult defaultBrowserResult = GetDefaultBrowserInfo();
