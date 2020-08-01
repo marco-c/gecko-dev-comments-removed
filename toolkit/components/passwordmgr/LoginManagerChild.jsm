@@ -887,9 +887,11 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       
       
       LoginFormFactory.setForRootElement(formLike.rootElement, formLike);
-    } else if (window.document.readyState == "complete") {
+    } else if (
+      ["interactive", "complete"].includes(window.document.readyState)
+    ) {
       log(
-        "Arming the DeferredTask we just created since document.readyState == 'complete'"
+        "Arming the DeferredTask we just created since document.readyState == 'interactive' or 'complete'"
       );
       deferredTask.arm();
     } else {

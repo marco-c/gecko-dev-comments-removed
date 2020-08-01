@@ -368,7 +368,6 @@ function registerRunTests() {
     
     if (
       document.readyState == "complete" ||
-      document.readyState == "loaded" ||
       document.readyState == "interactive"
     ) {
       onDOMContentLoaded();
