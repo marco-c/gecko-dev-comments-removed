@@ -45,12 +45,12 @@ use std::marker;
 use self::os::unix as imp;
 #[cfg(windows)]
 use self::os::windows as imp;
+pub use self::error::Error;
 
 pub mod os;
 pub mod changelog;
 mod util;
-
-pub type Result<T> = ::std::io::Result<T>;
+mod error;
 
 
 pub struct Library(imp::Library);
@@ -114,7 +114,7 @@ impl Library {
     
     
     
-    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library> {
+    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, Error> {
         imp::Library::new(filename).map(From::from)
     }
 
@@ -168,8 +168,26 @@ impl Library {
     
     
     
-    pub unsafe fn get<'lib, T>(&'lib self, symbol: &[u8]) -> Result<Symbol<'lib, T>> {
+    
+    
+    
+    
+    
+    
+    pub unsafe fn get<'lib, T>(&'lib self, symbol: &[u8]) -> Result<Symbol<'lib, T>, Error> {
         self.0.get(symbol).map(|from| Symbol::from_raw(from, self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn close(self) -> Result<(), Error> {
+        self.0.close()
     }
 }
 
