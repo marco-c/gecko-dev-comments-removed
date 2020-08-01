@@ -92,8 +92,6 @@ class ImageComposite {
 
   int32_t mLastFrameID = -1;
   int32_t mLastProducerID = -1;
-  CompositionOpportunityId mLastChooseImageIndexComposition;
-  CompositionOpportunityId mLastFrameUpdateComposition;
 
  private:
   nsTArray<TimedImage> mImages;
@@ -127,6 +125,11 @@ class ImageComposite {
   
   
   uint32_t mDroppedFrames = 0;
+
+  
+  
+  CompositionOpportunityId mLastChooseImageIndexComposition;
+  CompositionOpportunityId mLastFrameUpdateComposition;
 };
 
 }  
