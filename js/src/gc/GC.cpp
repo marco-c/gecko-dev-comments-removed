@@ -6504,10 +6504,11 @@ namespace {
 
 
 
-class AutoDisableBarriers {
+
+class AutoUpdateBarriers {
  public:
-  explicit AutoDisableBarriers(GCRuntime* gc);
-  ~AutoDisableBarriers();
+  explicit AutoUpdateBarriers(GCRuntime* gc);
+  ~AutoUpdateBarriers();
 
  private:
   GCRuntime* gc;
@@ -6515,7 +6516,7 @@ class AutoDisableBarriers {
 
 } 
 
-AutoDisableBarriers::AutoDisableBarriers(GCRuntime* gc) : gc(gc) {
+AutoUpdateBarriers::AutoUpdateBarriers(GCRuntime* gc) : gc(gc) {
   for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
     
 
@@ -6531,7 +6532,7 @@ AutoDisableBarriers::AutoDisableBarriers(GCRuntime* gc) : gc(gc) {
   }
 }
 
-AutoDisableBarriers::~AutoDisableBarriers() {
+AutoUpdateBarriers::~AutoUpdateBarriers() {
   
   for (ZonesIter zone(gc, WithAtoms); !zone.done(); zone.next()) {
     MOZ_ASSERT(!zone->needsIncrementalBarrier());
@@ -6556,7 +6557,7 @@ static bool ShouldSweepOnBackgroundThread(JS::GCReason reason) {
 void GCRuntime::incrementalSlice(SliceBudget& budget,
                                  const MaybeInvocationKind& gckind,
                                  JS::GCReason reason, AutoGCSession& session) {
-  AutoDisableBarriers disableBarriers(this);
+  AutoUpdateBarriers updateBarriers(this);
   AutoSetThreadIsPerformingGC performingGC;
 
   bool destroyingRuntime = (reason == JS::GCReason::DESTROY_RUNTIME);
