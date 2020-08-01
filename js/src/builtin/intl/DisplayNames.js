@@ -145,10 +145,7 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
     lazyDisplayNamesData.requestedLocales = requestedLocales;
 
     
-    if (options === undefined)
-        options = std_Object_create(null);
-    else
-        options = ToObject(options);
+    options = ToObject(options);
 
     
     var opt = new Record();
@@ -180,10 +177,15 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
     if (mozExtensions) {
         type = GetOption(options, "type", "string",
                          ["language", "region", "script", "currency", "weekday", "month",
-                          "quarter", "dayPeriod", "dateTimeField"], "language");
+                          "quarter", "dayPeriod", "dateTimeField"], undefined);
     } else {
         type = GetOption(options, "type", "string",
-                         ["language", "region", "script", "currency"], "language");
+                         ["language", "region", "script", "currency"], undefined);
+    }
+
+    
+    if (type === undefined) {
+        ThrowTypeError(JSMSG_UNDEFINED_TYPE);
     }
 
     
