@@ -76,3 +76,7 @@ def add_optimization(config, taskdesc, cache_type, cache_name, digest=None, dige
         'name': cache_name,
         'digest': digest,
     }
+
+    
+    
+    taskdesc['attributes']['eager_indexes'] = [TARGET_CACHE_INDEX.format(**subs)]
