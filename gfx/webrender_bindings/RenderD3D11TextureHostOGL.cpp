@@ -209,7 +209,14 @@ wr::WrExternalImage RenderDXGITextureHostOGL::Lock(
     
     DeleteTextureHandle();
     mGL = aGL;
-    mGL->MakeCurrent();
+  }
+
+  if (!mGL) {
+    
+    
+    gfxCriticalNoteOnce
+        << "Software WebRender is not suppored by RenderDXGITextureHostOGL.";
+    return InvalidToWrExternalImage();
   }
 
   if (!EnsureLockable(aRendering)) {
@@ -437,7 +444,14 @@ wr::WrExternalImage RenderDXGIYCbCrTextureHostOGL::Lock(
     
     DeleteTextureHandle();
     mGL = aGL;
-    mGL->MakeCurrent();
+  }
+
+  if (!mGL) {
+    
+    
+    gfxCriticalNoteOnce << "Software WebRender is not suppored by "
+                           "RenderDXGIYCbCrTextureHostOGL.";
+    return InvalidToWrExternalImage();
   }
 
   if (!EnsureLockable(aRendering)) {
