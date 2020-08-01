@@ -218,9 +218,9 @@ class nsFontMetrics final {
 
   
   
-  nsBoundingMetrics GetInkBoundsForVisualOverflow(const char16_t* aString,
-                                                  uint32_t aLength,
-                                                  DrawTarget* aDrawTarget);
+  nsBoundingMetrics GetInkBoundsForInkOverflow(const char16_t* aString,
+                                               uint32_t aLength,
+                                               DrawTarget* aDrawTarget);
 
   void SetTextRunRTL(bool aIsRTL) { mTextRunRTL = aIsRTL; }
   bool GetTextRunRTL() const { return mTextRunRTL; }

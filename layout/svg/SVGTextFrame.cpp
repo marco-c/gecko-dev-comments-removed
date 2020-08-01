@@ -808,7 +808,7 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   
   
   
-  nsRect self = mFrame->GetVisualOverflowRectRelativeToSelf();
+  nsRect self = mFrame->InkOverflowRectRelativeToSelf();
   nsRect rect = mFrame->GetRect();
   bool vertical = IsVertical();
   nscoord above = vertical ? -self.x : -self.y;
@@ -3210,8 +3210,8 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
       bool paintSVGGlyphs;
       nsTextFrame::PaintTextParams params(&aContext);
       params.framePt = Point();
-      params.dirtyRect = LayoutDevicePixel::FromAppUnits(
-          frame->GetVisualOverflowRect(), auPerDevPx);
+      params.dirtyRect =
+          LayoutDevicePixel::FromAppUnits(frame->InkOverflowRect(), auPerDevPx);
       params.contextPaint = contextPaint;
 
       const bool isSelected = frame->IsSelected();

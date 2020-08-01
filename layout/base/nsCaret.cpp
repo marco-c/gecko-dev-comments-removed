@@ -335,13 +335,13 @@ nsRect nsCaret::GetGeometryForFrame(nsIFrame* aFrame, int32_t aFrameOffset,
     
     if (vertical) {
       nscoord overflow = caretInScroll.YMost() -
-                         scrolled->GetVisualOverflowRectRelativeToSelf().height;
+                         scrolled->InkOverflowRectRelativeToSelf().height;
       if (overflow > 0) {
         rect.y -= overflow;
       }
     } else {
       nscoord overflow = caretInScroll.XMost() -
-                         scrolled->GetVisualOverflowRectRelativeToSelf().width;
+                         scrolled->InkOverflowRectRelativeToSelf().width;
       if (overflow > 0) {
         rect.x -= overflow;
       }

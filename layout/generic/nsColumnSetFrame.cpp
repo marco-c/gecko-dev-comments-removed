@@ -601,14 +601,12 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     if (skipIncremental && shrinkingBSize) {
       switch (wm.GetBlockDir()) {
         case WritingMode::eBlockTB:
-          if (child->GetScrollableOverflowRect().YMost() >
-              aConfig.mColMaxBSize) {
+          if (child->ScrollableOverflowRect().YMost() > aConfig.mColMaxBSize) {
             skipIncremental = false;
           }
           break;
         case WritingMode::eBlockLR:
-          if (child->GetScrollableOverflowRect().XMost() >
-              aConfig.mColMaxBSize) {
+          if (child->ScrollableOverflowRect().XMost() > aConfig.mColMaxBSize) {
             skipIncremental = false;
           }
           break;

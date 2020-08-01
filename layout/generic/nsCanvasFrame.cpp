@@ -298,7 +298,7 @@ void nsCanvasFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
 nsRect nsCanvasFrame::CanvasArea() const {
   
   
-  nsRect result(GetVisualOverflowRect());
+  nsRect result(InkOverflowRect());
 
   nsIScrollableFrame* scrollableFrame = do_QueryFrame(GetParent());
   if (scrollableFrame) {

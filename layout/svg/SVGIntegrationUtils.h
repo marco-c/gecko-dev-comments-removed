@@ -116,7 +116,7 @@ class SVGIntegrationUtils final {
 
 
 
-  static nsRect ComputePostEffectsVisualOverflowRect(
+  static nsRect ComputePostEffectsInkOverflowRect(
       nsIFrame* aFrame, const nsRect& aPreEffectsOverflowRect);
 
   

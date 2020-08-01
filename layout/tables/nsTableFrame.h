@@ -550,7 +550,7 @@ class nsTableFrame : public nsContainerFrame {
 
 
   static void InvalidateTableFrame(nsIFrame* aFrame, const nsRect& aOrigRect,
-                                   const nsRect& aOrigVisualOverflow,
+                                   const nsRect& aOrigInkOverflow,
                                    bool aIsFirstReflow);
 
   virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override;
@@ -664,7 +664,7 @@ class nsTableFrame : public nsContainerFrame {
                   const mozilla::LogicalPoint& aKidPosition,
                   const nsSize& aContainerSize, ReflowOutput& aKidDesiredSize,
                   const nsRect& aOriginalKidRect,
-                  const nsRect& aOriginalKidVisualOverflow);
+                  const nsRect& aOriginalKidInkOverflow);
   void PlaceRepeatedFooter(TableReflowInput& aReflowInput,
                            nsTableRowGroupFrame* aTfoot, nscoord aFooterHeight);
 

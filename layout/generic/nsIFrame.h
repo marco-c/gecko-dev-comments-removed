@@ -3535,9 +3535,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsRect GetVisualOverflowRect() const {
-    return GetOverflowRect(eVisualOverflow);
-  }
+  nsRect InkOverflowRect() const { return GetOverflowRect(eInkOverflow); }
 
   
 
@@ -3559,7 +3557,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsRect GetScrollableOverflowRect() const {
+  nsRect ScrollableOverflowRect() const {
     return GetOverflowRect(eScrollableOverflow);
   }
 
@@ -3583,7 +3581,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsRect GetScrollableOverflowRectRelativeToParent() const;
+  nsRect ScrollableOverflowRectRelativeToParent() const;
 
   
 
@@ -3592,7 +3590,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsRect GetScrollableOverflowRectRelativeToSelf() const;
+  nsRect ScrollableOverflowRectRelativeToSelf() const;
 
   
 
@@ -3601,7 +3599,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsRect GetVisualOverflowRectRelativeToSelf() const;
+  nsRect InkOverflowRectRelativeToSelf() const;
 
   
 
@@ -3610,14 +3608,14 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsRect GetVisualOverflowRectRelativeToParent() const;
+  nsRect InkOverflowRectRelativeToParent() const;
 
   
 
 
 
 
-  nsRect GetPreEffectsVisualOverflowRect() const;
+  nsRect PreEffectsInkOverflowRect() const;
 
   
 
@@ -5223,7 +5221,7 @@ class nsIFrame : public nsQueryFrame {
     return overflow;
   }
 
-  nsRect GetVisualOverflowFromDeltas() const {
+  nsRect InkOverflowFromDeltas() const {
     MOZ_ASSERT(mOverflow.mType != NS_FRAME_OVERFLOW_LARGE,
                "should not be called when overflow is in a property");
     

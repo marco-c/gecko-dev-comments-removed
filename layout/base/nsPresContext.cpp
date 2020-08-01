@@ -2624,7 +2624,7 @@ void nsRootPresContext::ComputePluginGeometryUpdates(
       
       
       aBuilder->SetAllowMergingAndFlattening(false);
-      nsRegion region = rootFrame->GetVisualOverflowRectRelativeToSelf();
+      nsRegion region = rootFrame->InkOverflowRectRelativeToSelf();
       
       
       aList->ComputeVisibilityForRoot(aBuilder, &region);

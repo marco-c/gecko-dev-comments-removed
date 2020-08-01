@@ -112,8 +112,8 @@ bool SVGAutoRenderState::IsPaintingToWindow(DrawTarget* aDrawTarget) {
   return false;
 }
 
-nsRect SVGUtils::GetPostFilterVisualOverflowRect(nsIFrame* aFrame,
-                                                 const nsRect& aPreFilterRect) {
+nsRect SVGUtils::GetPostFilterInkOverflowRect(nsIFrame* aFrame,
+                                              const nsRect& aPreFilterRect) {
   MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT),
              "Called on invalid frame type");
 
@@ -543,7 +543,7 @@ class MixModeBlender {
       
       gfxContextMatrixAutoSaveRestore matrixAutoSaveRestore(mSourceCtx);
       mSourceCtx->Multiply(aTransform);
-      nsRect overflowRect = mFrame->GetVisualOverflowRectRelativeToSelf();
+      nsRect overflowRect = mFrame->InkOverflowRectRelativeToSelf();
       if (mFrame->IsSVGGeometryFrameOrSubclass() ||
           SVGUtils::IsInSVGTextSubtree(mFrame)) {
         
@@ -604,7 +604,7 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     
     
     
-    nsRect overflowRect = aFrame->GetVisualOverflowRectRelativeToSelf();
+    nsRect overflowRect = aFrame->InkOverflowRectRelativeToSelf();
     if (aFrame->IsSVGGeometryFrameOrSubclass() ||
         SVGUtils::IsInSVGTextSubtree(aFrame)) {
       

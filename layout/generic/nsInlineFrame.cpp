@@ -255,7 +255,7 @@ LogicalSize nsInlineFrame::ComputeSize(
 nsRect nsInlineFrame::ComputeTightBounds(DrawTarget* aDrawTarget) const {
   
   if (Style()->HasTextDecorationLines()) {
-    return GetVisualOverflowRect();
+    return InkOverflowRect();
   }
   return ComputeSimpleTightBounds(aDrawTarget);
 }

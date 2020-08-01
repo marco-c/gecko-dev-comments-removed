@@ -157,7 +157,7 @@ nsRect nsDisplayFieldSetBorder::GetBounds(nsDisplayListBuilder* aBuilder,
   
   
   *aSnap = false;
-  return Frame()->GetVisualOverflowRectRelativeToSelf() + ToReferenceFrame();
+  return Frame()->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
 }
 
 bool nsDisplayFieldSetBorder::CreateWebRenderCommands(
@@ -187,7 +187,7 @@ bool nsDisplayFieldSetBorder::CreateWebRenderCommands(
       
       auto appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
       auto layoutRect = wr::ToLayoutRect(LayoutDeviceRect::FromAppUnits(
-          frame->GetVisualOverflowRectRelativeToSelf() + offset,
+          frame->InkOverflowRectRelativeToSelf() + offset,
           appUnitsPerDevPixel));
 
       wr::ComplexClipRegion region;
@@ -315,11 +315,10 @@ image::ImgDrawResult nsFieldSetFrame::PaintBorder(
     RefPtr<PathBuilder> pathBuilder =
         drawTarget->CreatePathBuilder(FillRule::FILL_WINDING);
     int32_t appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
-    AppendRectToPath(
-        pathBuilder,
-        NSRectToSnappedRect(GetVisualOverflowRectRelativeToSelf() + aPt,
-                            appUnitsPerDevPixel, *drawTarget),
-        true);
+    AppendRectToPath(pathBuilder,
+                     NSRectToSnappedRect(InkOverflowRectRelativeToSelf() + aPt,
+                                         appUnitsPerDevPixel, *drawTarget),
+                     true);
     AppendRectToPath(
         pathBuilder,
         NSRectToSnappedRect(legendRect, appUnitsPerDevPixel, *drawTarget),

@@ -45,7 +45,7 @@ namespace mozilla {
 
 
 
-class PreEffectsVisualOverflowCollector : public nsLayoutUtils::BoxCallback {
+class PreEffectsInkOverflowCollector : public nsLayoutUtils::BoxCallback {
  public:
   
 
@@ -54,10 +54,10 @@ class PreEffectsVisualOverflowCollector : public nsLayoutUtils::BoxCallback {
 
 
 
-  PreEffectsVisualOverflowCollector(nsIFrame* aFirstContinuation,
-                                    nsIFrame* aCurrentFrame,
-                                    const nsRect& aCurrentFrameOverflowArea,
-                                    bool aInReflow)
+  PreEffectsInkOverflowCollector(nsIFrame* aFirstContinuation,
+                                 nsIFrame* aCurrentFrame,
+                                 const nsRect& aCurrentFrameOverflowArea,
+                                 bool aInReflow)
       : mFirstContinuation(aFirstContinuation),
         mCurrentFrame(aCurrentFrame),
         mCurrentFrameOverflowArea(aCurrentFrameOverflowArea),
@@ -69,7 +69,7 @@ class PreEffectsVisualOverflowCollector : public nsLayoutUtils::BoxCallback {
   virtual void AddBox(nsIFrame* aFrame) override {
     nsRect overflow = (aFrame == mCurrentFrame)
                           ? mCurrentFrameOverflowArea
-                          : GetPreEffectsVisualOverflowRect(aFrame, mInReflow);
+                          : PreEffectsInkOverflowRect(aFrame, mInReflow);
     mResult.UnionRect(mResult,
                       overflow + aFrame->GetOffsetTo(mFirstContinuation));
   }
@@ -77,8 +77,7 @@ class PreEffectsVisualOverflowCollector : public nsLayoutUtils::BoxCallback {
   nsRect GetResult() const { return mResult; }
 
  private:
-  static nsRect GetPreEffectsVisualOverflowRect(nsIFrame* aFrame,
-                                                bool aInReflow) {
+  static nsRect PreEffectsInkOverflowRect(nsIFrame* aFrame, bool aInReflow) {
     nsRect* r = aFrame->GetProperty(nsIFrame::PreEffectsBBoxProperty());
     if (r) {
       return *r;
@@ -100,10 +99,10 @@ class PreEffectsVisualOverflowCollector : public nsLayoutUtils::BoxCallback {
           aFrame->GetProperty(nsIFrame::PreTransformOverflowAreasProperty());
 
       MOZ_ASSERT(!preTransformOverflows,
-                 "GetVisualOverflowRect() won't return the pre-effects rect!");
+                 "InkOverflowRect() won't return the pre-effects rect!");
     }
 #endif
-    return aFrame->GetVisualOverflowRectRelativeToSelf();
+    return aFrame->InkOverflowRectRelativeToSelf();
   }
 
   nsIFrame* mFirstContinuation;
@@ -117,15 +116,15 @@ class PreEffectsVisualOverflowCollector : public nsLayoutUtils::BoxCallback {
 
 
 
-static nsRect GetPreEffectsVisualOverflowUnion(
+static nsRect GetPreEffectsInkOverflowUnion(
     nsIFrame* aFirstContinuation, nsIFrame* aCurrentFrame,
     const nsRect& aCurrentFramePreEffectsOverflow,
     const nsPoint& aFirstContinuationToUserSpace, bool aInReflow) {
   NS_ASSERTION(!aFirstContinuation->GetPrevContinuation(),
                "Need first continuation here");
-  PreEffectsVisualOverflowCollector collector(aFirstContinuation, aCurrentFrame,
-                                              aCurrentFramePreEffectsOverflow,
-                                              aInReflow);
+  PreEffectsInkOverflowCollector collector(aFirstContinuation, aCurrentFrame,
+                                           aCurrentFramePreEffectsOverflow,
+                                           aInReflow);
   
   nsLayoutUtils::GetAllInFlowBoxes(aFirstContinuation, &collector);
   
@@ -135,13 +134,13 @@ static nsRect GetPreEffectsVisualOverflowUnion(
 
 
 
-static nsRect GetPreEffectsVisualOverflow(
+static nsRect GetPreEffectsInkOverflow(
     nsIFrame* aFirstContinuation, nsIFrame* aCurrentFrame,
     const nsPoint& aFirstContinuationToUserSpace) {
   NS_ASSERTION(!aFirstContinuation->GetPrevContinuation(),
                "Need first continuation here");
-  PreEffectsVisualOverflowCollector collector(aFirstContinuation, nullptr,
-                                              nsRect(), false);
+  PreEffectsInkOverflowCollector collector(aFirstContinuation, nullptr,
+                                           nsRect(), false);
   
   nsLayoutUtils::AddBoxesForFrame(aCurrentFrame, &collector);
   
@@ -235,13 +234,12 @@ gfxRect SVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(
   nsIFrame* firstFrame =
       nsLayoutUtils::FirstContinuationOrIBSplitSibling(aNonSVGFrame);
   
-  nsRect r =
-      (aUnionContinuations)
-          ? GetPreEffectsVisualOverflowUnion(firstFrame, nullptr, nsRect(),
-                                             GetOffsetToBoundingBox(firstFrame),
-                                             false)
-          : GetPreEffectsVisualOverflow(firstFrame, aNonSVGFrame,
-                                        GetOffsetToBoundingBox(firstFrame));
+  nsRect r = (aUnionContinuations)
+                 ? GetPreEffectsInkOverflowUnion(
+                       firstFrame, nullptr, nsRect(),
+                       GetOffsetToBoundingBox(firstFrame), false)
+                 : GetPreEffectsInkOverflow(firstFrame, aNonSVGFrame,
+                                            GetOffsetToBoundingBox(firstFrame));
 
   return nsLayoutUtils::RectToGfxRect(r, AppUnitsPerCSSPixel());
 }
@@ -278,7 +276,7 @@ gfxRect SVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(
 
 
 
-nsRect SVGIntegrationUtils::ComputePostEffectsVisualOverflowRect(
+nsRect SVGIntegrationUtils::ComputePostEffectsInkOverflowRect(
     nsIFrame* aFrame, const nsRect& aPreEffectsOverflowRect) {
   MOZ_ASSERT(!aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT),
              "Don't call this on SVG child frames");
@@ -307,9 +305,8 @@ nsRect SVGIntegrationUtils::ComputePostEffectsVisualOverflowRect(
   
   
   gfxRect overrideBBox = nsLayoutUtils::RectToGfxRect(
-      GetPreEffectsVisualOverflowUnion(firstFrame, aFrame,
-                                       aPreEffectsOverflowRect,
-                                       firstFrameToBoundingBox, true),
+      GetPreEffectsInkOverflowUnion(firstFrame, aFrame, aPreEffectsOverflowRect,
+                                    firstFrameToBoundingBox, true),
       AppUnitsPerCSSPixel());
   overrideBBox.RoundOut();
 

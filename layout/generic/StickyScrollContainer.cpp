@@ -190,7 +190,7 @@ void StickyScrollContainer::ComputeStickyLimits(nsIFrame* aFrame,
     
     
     
-    *aContain = cbFrame->GetScrollableOverflowRectRelativeToSelf();
+    *aContain = cbFrame->ScrollableOverflowRectRelativeToSelf();
     nsLayoutUtils::TransformRect(cbFrame, aFrame->GetParent(), *aContain);
   } else {
     *aContain = nsLayoutUtils::GetAllInFlowRectsUnion(

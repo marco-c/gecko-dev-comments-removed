@@ -160,7 +160,7 @@ class FilterInstance {
                  const gfxMatrix& aPaintTransform,
                  const nsRegion* aPostFilterDirtyRegion = nullptr,
                  const nsRegion* aPreFilterDirtyRegion = nullptr,
-                 const nsRect* aPreFilterVisualOverflowRectOverride = nullptr,
+                 const nsRect* aPreFilterInkOverflowRectOverride = nullptr,
                  const gfxRect* aOverrideBBox = nullptr);
 
   

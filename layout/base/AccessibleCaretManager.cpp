@@ -1275,7 +1275,7 @@ nsRect AccessibleCaretManager::GetAllChildFrameRectsUnion(
     for (const auto& childList : frame->ChildLists()) {
       
       for (nsIFrame* child : childList.mList) {
-        nsRect childRect = child->GetScrollableOverflowRectRelativeToSelf();
+        nsRect childRect = child->ScrollableOverflowRectRelativeToSelf();
         nsLayoutUtils::TransformRect(child, frame, childRect);
 
         

@@ -169,8 +169,8 @@ class SVGUtils final {
 
 
 
-  static nsRect GetPostFilterVisualOverflowRect(nsIFrame* aFrame,
-                                                const nsRect& aPreFilterRect);
+  static nsRect GetPostFilterInkOverflowRect(nsIFrame* aFrame,
+                                             const nsRect& aPreFilterRect);
 
   
 

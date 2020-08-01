@@ -512,9 +512,9 @@ void SVGOuterSVGFrame::Reflow(nsPresContext* aPresContext,
   
   if (!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     if (!mIsRootContent) {
-      aDesiredSize.mOverflowAreas.VisualOverflow().UnionRect(
-          aDesiredSize.mOverflowAreas.VisualOverflow(),
-          anonKid->GetVisualOverflowRect() + anonKid->GetPosition());
+      aDesiredSize.mOverflowAreas.InkOverflow().UnionRect(
+          aDesiredSize.mOverflowAreas.InkOverflow(),
+          anonKid->InkOverflowRect() + anonKid->GetPosition());
     }
     FinishAndStoreOverflow(&aDesiredSize);
   }
@@ -542,9 +542,9 @@ void SVGOuterSVGFrame::UnionChildOverflow(nsOverflowAreas& aOverflowAreas) {
 
   if (!mIsRootContent) {
     nsIFrame* anonKid = PrincipalChildList().FirstChild();
-    aOverflowAreas.VisualOverflow().UnionRect(
-        aOverflowAreas.VisualOverflow(),
-        anonKid->GetVisualOverflowRect() + anonKid->GetPosition());
+    aOverflowAreas.InkOverflow().UnionRect(
+        aOverflowAreas.InkOverflow(),
+        anonKid->InkOverflowRect() + anonKid->GetPosition());
   }
 }
 

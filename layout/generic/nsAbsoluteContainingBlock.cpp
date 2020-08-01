@@ -195,7 +195,7 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
         nscoord kidOverflowBEnd =
             LogicalRect(containerWM,
                         
-                        kidFrame->GetScrollableOverflowRectRelativeToSelf() +
+                        kidFrame->ScrollableOverflowRectRelativeToSelf() +
                             kidFrame->GetPosition(),
                         aContainingBlock.Size())
                 .BEnd(containerWM);
@@ -790,7 +790,7 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
     
     
     nsContainerFrame::SyncFrameViewAfterReflow(aPresContext, aKidFrame, view,
-                                               kidDesiredSize.VisualOverflow());
+                                               kidDesiredSize.InkOverflow());
   } else {
     nsContainerFrame::PositionChildViews(aKidFrame);
   }
