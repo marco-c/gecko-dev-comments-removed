@@ -428,30 +428,6 @@ void EnteringShutdownStage();
 const uint32_t kSlowSQLThresholdForMainThread = 50;
 const uint32_t kSlowSQLThresholdForHelperThreads = 100;
 
-class ProcessedStack;
-
-
-
-
-
-
-
-
-
-
-#if defined(MOZ_GECKO_PROFILER)
-
-
-
-
-
-
-
-
-
-void CaptureStack(const nsCString& aKey);
-#endif
-
 
 
 
