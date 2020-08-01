@@ -417,6 +417,12 @@ class HTMLMediaElement::MediaControlKeyListener final
     }
 
     NotifyPlaybackStateChanged(MediaPlaybackState::eStarted);
+    
+    
+    
+    if (!Owner()->Paused()) {
+      NotifyMediaStartedPlaying();
+    }
     return true;
   }
 
@@ -7876,12 +7882,6 @@ void HTMLMediaElement::StartListeningMediaControlKeyIfNeeded() {
       !mMediaControlKeyListener->Start()) {
     return;
   }
-
-  
-  
-  
-  
-  NotifyMediaControlPlaybackStateChanged();
 }
 
 void HTMLMediaElement::StopListeningMediaControlKeyIfNeeded() {
