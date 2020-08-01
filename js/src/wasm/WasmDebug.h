@@ -101,7 +101,6 @@ class DebugState {
                              uint32_t offset);
   void clearBreakpointsIn(JSFreeOp* fp, WasmInstanceObject* instance,
                           js::Debugger* dbg, JSObject* handler);
-  void clearAllBreakpoints(JSFreeOp* fp, WasmInstanceObject* instance);
 
   
   
