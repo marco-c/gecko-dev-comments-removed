@@ -14,10 +14,10 @@ use std::os::raw::c_void;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::u32;
-use std::sync::mpsc::{Sender, Receiver, channel};
 use time::precise_time_ns;
 
 use crate::{display_item as di, font};
+use crate::channel::{Sender, Receiver, single_msg_channel, unbounded_channel};
 use crate::color::{ColorU, ColorF};
 use crate::display_list::BuiltDisplayList;
 use crate::font::SharedFontInstanceMap;
@@ -1290,7 +1290,7 @@ impl RenderApiSender {
 
     
     pub fn create_api(&self) -> RenderApi {
-        let (sync_tx, sync_rx) = channel();
+        let (sync_tx, sync_rx) = single_msg_channel();
         let msg = ApiMsg::CloneApi(sync_tx);
         self.api_sender.send(msg).expect("Failed to send CloneApi message");
         let namespace_id = match sync_rx.recv() {
@@ -1494,7 +1494,7 @@ impl RenderApi {
         key: font::FontInstanceKey,
         glyph_indices: Vec<font::GlyphIndex>,
     ) -> Vec<Option<font::GlyphDimensions>> {
-        let (sender, rx) = channel();
+        let (sender, rx) = single_msg_channel();
         let msg = ApiMsg::GetGlyphDimensions(font::GlyphDimensionRequest {
             key,
             glyph_indices,
@@ -1507,7 +1507,7 @@ impl RenderApi {
     
     
     pub fn get_glyph_indices(&self, key: font::FontKey, text: &str) -> Vec<Option<u32>> {
-        let (sender, rx) = channel();
+        let (sender, rx) = single_msg_channel();
         let msg = ApiMsg::GetGlyphIndices(font::GlyphIndexRequest {
             key,
             text: text.to_string(),
@@ -1544,7 +1544,7 @@ impl RenderApi {
 
     
     pub fn report_memory(&self, _ops: malloc_size_of::MallocSizeOfOps) -> MemoryReport {
-        let (tx, rx) = channel();
+        let (tx, rx) = single_msg_channel();
         self.api_sender.send(ApiMsg::ReportMemory(tx)).unwrap();
         *rx.recv().unwrap()
     }
@@ -1558,7 +1558,7 @@ impl RenderApi {
     
     pub fn shut_down(&self, synchronously: bool) {
         if synchronously {
-            let (tx, rx) = channel();
+            let (tx, rx) = single_msg_channel();
             self.api_sender.send(ApiMsg::ShutDown(Some(tx))).unwrap();
             rx.recv().unwrap();
         } else {
@@ -1684,7 +1684,7 @@ impl RenderApi {
                     point: WorldPoint,
                     flags: HitTestFlags)
                     -> HitTestResult {
-        let (tx, rx) = channel();
+        let (tx, rx) = single_msg_channel();
 
         self.send_frame_msg(
             document_id,
@@ -1695,7 +1695,7 @@ impl RenderApi {
 
     
     pub fn request_hit_tester(&self, document_id: DocumentId) -> HitTesterRequest {
-        let (tx, rx) = channel();
+        let (tx, rx) = single_msg_channel();
         self.send_frame_msg(
             document_id,
             FrameMsg::RequestHitTester(tx)
@@ -1736,7 +1736,7 @@ impl RenderApi {
 
     
     pub fn get_scroll_node_state(&self, document_id: DocumentId) -> Vec<ScrollNodeState> {
-        let (tx, rx) = channel();
+        let (tx, rx) = single_msg_channel();
         self.send_frame_msg(document_id, FrameMsg::GetScrollNodeState(tx));
         rx.recv().unwrap()
     }
@@ -1752,7 +1752,7 @@ impl RenderApi {
     
     
     pub fn flush_scene_builder(&self) {
-        let (tx, rx) = channel();
+        let (tx, rx) = single_msg_channel();
         self.send_message(ApiMsg::FlushSceneBuilder(tx));
         rx.recv().unwrap(); 
     }
@@ -1769,7 +1769,7 @@ impl RenderApi {
         
         self.flush_scene_builder();
 
-        let (tx, rx) = channel();
+        let (tx, rx) = unbounded_channel();
         let msg = ApiMsg::DebugCommand(DebugCommand::LoadCapture(path, ids, tx));
         self.send_message(msg);
 

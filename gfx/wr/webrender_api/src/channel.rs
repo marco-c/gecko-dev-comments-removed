@@ -7,7 +7,7 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::io::{self, Cursor, Error, ErrorKind, Read};
 use std::mem;
-use std::sync::mpsc;
+pub use crossbeam_channel::{Sender, Receiver};
 
 #[derive(Clone)]
 pub struct Payload {
@@ -74,7 +74,7 @@ pub type PayloadSender = MsgSender<Payload>;
 pub type PayloadReceiver = MsgReceiver<Payload>;
 
 pub struct MsgReceiver<T> {
-    rx: mpsc::Receiver<T>,
+    rx: Receiver<T>,
 }
 
 impl<T> MsgReceiver<T> {
@@ -82,14 +82,14 @@ impl<T> MsgReceiver<T> {
         self.rx.recv().map_err(|e| io::Error::new(ErrorKind::Other, e.to_string()))
     }
 
-    pub fn to_mpsc_receiver(self) -> mpsc::Receiver<T> {
+    pub fn to_crossbeam_receiver(self) -> Receiver<T> {
         self.rx
     }
 }
 
 #[derive(Clone)]
 pub struct MsgSender<T> {
-    tx: mpsc::Sender<T>,
+    tx: Sender<T>,
 }
 
 impl<T> MsgSender<T> {
@@ -99,12 +99,12 @@ impl<T> MsgSender<T> {
 }
 
 pub fn payload_channel() -> Result<(PayloadSender, PayloadReceiver), Error> {
-    let (tx, rx) = mpsc::channel();
+    let (tx, rx) = unbounded_channel();
     Ok((PayloadSender { tx }, PayloadReceiver { rx }))
 }
 
 pub fn msg_channel<T>() -> Result<(MsgSender<T>, MsgReceiver<T>), Error> {
-    let (tx, rx) = mpsc::channel();
+    let (tx, rx) = unbounded_channel();
     Ok((MsgSender { tx }, MsgReceiver { rx }))
 }
 
@@ -129,3 +129,26 @@ impl<'de, T> Deserialize<'de> for MsgSender<T> {
         unreachable!();
     }
 }
+
+
+
+pub fn single_msg_channel<T>() -> (Sender<T>, Receiver<T>) {
+    crossbeam_channel::bounded(1)
+}
+
+
+
+
+
+
+
+
+
+pub fn fast_channel<T>(capacity: usize) -> (Sender<T>, Receiver<T>) {
+    crossbeam_channel::bounded(capacity)
+}
+
+
+
+
+pub use crossbeam_channel::unbounded as unbounded_channel;
