@@ -2088,7 +2088,7 @@ class StaticAnalysis(MachCommandBase):
             
             with open(self._format_ignore_file, 'rb') as exclude_pattern_file:
                 for pattern in exclude_pattern_file.readlines():
-                    pattern = pattern.rstrip()
+                    pattern = six.ensure_str(pattern.rstrip())
                     pattern = pattern.replace('.*', '**')
                     if not pattern or pattern.startswith('#'):
                         continue  
