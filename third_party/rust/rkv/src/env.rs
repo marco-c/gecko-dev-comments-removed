@@ -8,13 +8,10 @@
 
 
 
-use std::{
-    fs,
-    os::raw::c_uint,
-    path::{
-        Path,
-        PathBuf,
-    },
+use std::os::raw::c_uint;
+use std::path::{
+    Path,
+    PathBuf,
 };
 
 #[cfg(any(feature = "db-dup-sort", feature = "db-int-key"))]
@@ -22,24 +19,22 @@ use crate::backend::{
     BackendDatabaseFlags,
     DatabaseFlags,
 };
-use crate::{
-    backend::{
-        BackendEnvironment,
-        BackendEnvironmentBuilder,
-        BackendRoCursorTransaction,
-        BackendRwCursorTransaction,
-        SafeModeError,
-    },
-    error::StoreError,
-    readwrite::{
-        Reader,
-        Writer,
-    },
-    store::{
-        single::SingleStore,
-        Options as StoreOptions,
-    },
+use crate::backend::{
+    BackendEnvironment,
+    BackendEnvironmentBuilder,
+    BackendInfo,
+    BackendRoCursorTransaction,
+    BackendRwCursorTransaction,
+    BackendStat,
+    SafeModeError,
 };
+use crate::error::StoreError;
+use crate::readwrite::{
+    Reader,
+    Writer,
+};
+use crate::store::single::SingleStore;
+use crate::store::Options as StoreOptions;
 
 #[cfg(feature = "db-dup-sort")]
 use crate::store::multi::MultiStore;
@@ -87,6 +82,10 @@ where
     where
         B: BackendEnvironmentBuilder<'e, Environment = E>,
     {
+        if !path.is_dir() {
+            return Err(StoreError::DirectoryDoesNotExistError(path.into()));
+        }
+
         let mut builder = B::new();
         builder.set_max_dbs(max_dbs);
 
@@ -99,9 +98,16 @@ where
     where
         B: BackendEnvironmentBuilder<'e, Environment = E>,
     {
+        if !path.is_dir() {
+            return Err(StoreError::DirectoryDoesNotExistError(path.into()));
+        }
+
         Ok(Rkv {
             path: path.into(),
-            env: builder.open(path).map_err(|e| e.into())?,
+            env: builder.open(path).map_err(|e| match e.into() {
+                StoreError::OtherError(2) => StoreError::DirectoryDoesNotExistError(path.into()),
+                e => e,
+            })?,
         })
     }
 }
@@ -111,11 +117,6 @@ impl<'e, E> Rkv<E>
 where
     E: BackendEnvironment<'e>,
 {
-    
-    pub fn get_dbs(&self) -> Result<Vec<Option<String>>, StoreError> {
-        self.env.get_dbs().map_err(|e| e.into())
-    }
-
     
     
     
@@ -186,20 +187,16 @@ where
         T: Into<Option<&'s str>>,
     {
         if opts.create {
-            self.env.create_db(name.into(), opts.flags).map_err(|e| {
-                match e.into() {
-                    StoreError::LmdbError(lmdb::Error::BadRslot) => StoreError::open_during_transaction(),
-                    StoreError::SafeModeError(SafeModeError::DbsIllegalOpen) => StoreError::open_during_transaction(),
-                    e => e,
-                }
+            self.env.create_db(name.into(), opts.flags).map_err(|e| match e.into() {
+                StoreError::LmdbError(lmdb::Error::BadRslot) => StoreError::open_during_transaction(),
+                StoreError::SafeModeError(SafeModeError::DbsIllegalOpen) => StoreError::open_during_transaction(),
+                e => e,
             })
         } else {
-            self.env.open_db(name.into()).map_err(|e| {
-                match e.into() {
-                    StoreError::LmdbError(lmdb::Error::BadRslot) => StoreError::open_during_transaction(),
-                    StoreError::SafeModeError(SafeModeError::DbsIllegalOpen) => StoreError::open_during_transaction(),
-                    e => e,
-                }
+            self.env.open_db(name.into()).map_err(|e| match e.into() {
+                StoreError::LmdbError(lmdb::Error::BadRslot) => StoreError::open_during_transaction(),
+                StoreError::SafeModeError(SafeModeError::DbsIllegalOpen) => StoreError::open_during_transaction(),
+                e => e,
             })
         }
     }
@@ -282,9 +279,18 @@ where
     
     
     
-    
-    pub fn load_ratio(&self) -> Result<Option<f32>, StoreError> {
-        self.env.load_ratio().map_err(|e| e.into())
+    pub fn load_ratio(&self) -> Result<f32, StoreError> {
+        let stat = self.stat()?;
+        let info = self.info()?;
+        let freelist = self.env.freelist().map_err(|e| e.into())?;
+
+        let last_pgno = info.last_pgno() + 1; 
+        let total_pgs = info.map_size() / stat.page_size();
+        if freelist > last_pgno {
+            return Err(StoreError::DatabaseCorrupted);
+        }
+        let used_pgs = last_pgno - freelist;
+        Ok(used_pgs as f32 / total_pgs as f32)
     }
 
     
@@ -308,19 +314,5 @@ where
     
     pub fn set_map_size(&self, size: usize) -> Result<(), StoreError> {
         self.env.set_map_size(size).map_err(Into::into)
-    }
-
-    
-    
-    pub fn close_and_delete(self) -> Result<(), StoreError> {
-        let files = self.env.get_files_on_disk();
-        self.sync(true)?;
-        drop(self);
-
-        for file in files {
-            fs::remove_file(file)?;
-        }
-
-        Ok(())
     }
 }

@@ -8,26 +8,21 @@
 
 
 
-use std::{
-    fs,
-    sync::Arc,
-};
+use std::fs;
+use std::sync::Arc;
 
 use tempfile::Builder;
 
-use rkv::{
-    backend::{
-        Lmdb,
-        LmdbEnvironment,
-        SafeMode,
-        SafeModeEnvironment,
-    },
-    Rkv,
+use rkv::backend::{
+    Lmdb,
+    LmdbEnvironment,
+    SafeMode,
+    SafeModeEnvironment,
 };
+use rkv::Rkv;
 
 
 #[test]
-#[allow(clippy::let_underscore_lock)]
 fn test_simple() {
     type Manager = rkv::Manager<LmdbEnvironment>;
 
@@ -36,7 +31,6 @@ fn test_simple() {
 
 
 #[test]
-#[allow(clippy::let_underscore_lock)]
 fn test_simple_safe() {
     type Manager = rkv::Manager<SafeModeEnvironment>;
 

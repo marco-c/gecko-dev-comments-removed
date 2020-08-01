@@ -7,19 +7,17 @@
 
 
 
-use std::{
-    fs,
-    str,
-};
+use std::fs;
+use std::str;
 
 use tempfile::Builder;
 
+use rkv::backend::{
+    Lmdb,
+    LmdbDatabase,
+    LmdbEnvironment,
+};
 use rkv::{
-    backend::{
-        Lmdb,
-        LmdbDatabase,
-        LmdbEnvironment,
-    },
     Manager,
     Rkv,
     SingleStore,

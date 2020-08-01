@@ -8,13 +8,11 @@
 
 
 
-use std::{
-    collections::{
-        BTreeMap,
-        BTreeSet,
-    },
-    sync::Arc,
+use std::collections::{
+    BTreeMap,
+    BTreeSet,
 };
+use std::sync::Arc;
 
 use serde_derive::{
     Deserialize,
