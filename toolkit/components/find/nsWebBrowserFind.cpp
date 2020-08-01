@@ -10,6 +10,7 @@
 
 #include "nsFind.h"
 
+#include "mozilla/dom/ScriptSettings.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsPIDOMWindow.h"
@@ -447,6 +448,11 @@ nsresult nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
   RefPtr<const nsRange> range;
   nsCOMPtr<nsINode> node;
   uint32_t offset;
+
+  
+  
+  
+  mozilla::dom::AutoNoJSAPI nojsapi;
 
   
   if (!mFindBackwards && !aWrap) {
