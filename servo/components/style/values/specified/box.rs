@@ -1612,6 +1612,7 @@ pub enum Appearance {
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMenulistArrowButton,
     
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     NumberInput,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
@@ -1629,6 +1630,7 @@ pub enum Appearance {
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     RadioLabel,
     
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Range,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     RangeThumb,
