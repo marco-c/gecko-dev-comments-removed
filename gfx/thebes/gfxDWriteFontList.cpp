@@ -852,7 +852,10 @@ void gfxDWriteFontEntry::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 
 
 
-gfxDWriteFontList::gfxDWriteFontList() : mForceGDIClassicMaxFontSize(0.0) {}
+gfxDWriteFontList::gfxDWriteFontList() : mForceGDIClassicMaxFontSize(0.0) {
+  CheckFamilyList(kBaseFonts, ArrayLength(kBaseFonts));
+  CheckFamilyList(kLangPackFonts, ArrayLength(kLangPackFonts));
+}
 
 
 

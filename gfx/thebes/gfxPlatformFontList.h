@@ -476,6 +476,8 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   static bool FamilyInList(const nsACString& aName, const char* aList[],
                            size_t aCount);
+  
+  static void CheckFamilyList(const char* aList[], size_t aCount);
 
   class InitOtherFamilyNamesRunnable : public mozilla::CancelableRunnable {
    public:
