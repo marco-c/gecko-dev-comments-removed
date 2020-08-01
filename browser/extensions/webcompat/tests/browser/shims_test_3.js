@@ -1,7 +1,0 @@
-
-
-
-
-"use strict";
-
-window.shimPromiseResolve("did not shim");
