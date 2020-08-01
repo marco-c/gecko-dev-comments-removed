@@ -17,7 +17,6 @@ public:
 
 protected:
   
-  virtual void InitializeApplicationList() override;
   virtual void InitializeScreenList() override;
 
 private:
