@@ -48,6 +48,7 @@ nsresult GfxInfo::Init() {
   mIsAccelerated = true;
   mIsWayland = false;
   mIsWaylandDRM = false;
+  mIsXWayland = false;
   return GfxInfoBase::Init();
 }
 
@@ -346,6 +347,18 @@ void GfxInfo::GetData() {
   
   
   
+  const char* windowEnv = getenv("XDG_SESSION_TYPE");
+  mIsXWayland = windowEnv && strcmp(windowEnv, "wayland") == 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const char* desktopEnv = getenv("XDG_CURRENT_DESKTOP");
   if (!desktopEnv) {
     desktopEnv = getenv("DESKTOP_SESSION");
@@ -357,7 +370,13 @@ void GfxInfo::GetData() {
       c = std::tolower(c);
     }
 
-    if (currentDesktop.find("gnome") != std::string::npos) {
+    if (currentDesktop.find("budgie") != std::string::npos) {
+      
+      
+      CopyUTF16toUTF8(
+          GfxDriverInfo::GetDesktopEnvironment(DesktopEnvironment::Budgie),
+          mDesktopEnvironment);
+    } else if (currentDesktop.find("gnome") != std::string::npos) {
       CopyUTF16toUTF8(
           GfxDriverInfo::GetDesktopEnvironment(DesktopEnvironment::GNOME),
           mDesktopEnvironment);
@@ -409,6 +428,10 @@ void GfxInfo::GetData() {
     } else if (currentDesktop.find("deepin") != std::string::npos) {
       CopyUTF16toUTF8(
           GfxDriverInfo::GetDesktopEnvironment(DesktopEnvironment::Deepin),
+          mDesktopEnvironment);
+    } else if (currentDesktop.find("dwm") != std::string::npos) {
+      CopyUTF16toUTF8(
+          GfxDriverInfo::GetDesktopEnvironment(DesktopEnvironment::Dwm),
           mDesktopEnvironment);
     }
   }
@@ -549,6 +572,12 @@ bool GfxInfo::DoesWindowProtocolMatch(const nsAString& aBlocklistWindowProtocol,
           nsCaseInsensitiveStringComparator)) {
     return true;
   }
+  if (!mIsWayland &&
+      aBlocklistWindowProtocol.Equals(
+          GfxDriverInfo::GetWindowProtocol(WindowProtocol::X11All),
+          nsCaseInsensitiveStringComparator)) {
+    return true;
+  }
   return GfxInfoBase::DoesWindowProtocolMatch(aBlocklistWindowProtocol,
                                               aWindowProtocol);
 }
@@ -651,10 +680,12 @@ GfxInfo::GetWindowProtocol(nsAString& aWindowProtocol) {
       aWindowProtocol =
           GfxDriverInfo::GetWindowProtocol(WindowProtocol::Wayland);
     }
-    return NS_OK;
+  } else if (mIsXWayland) {
+    aWindowProtocol =
+        GfxDriverInfo::GetWindowProtocol(WindowProtocol::XWayland);
+  } else {
+    aWindowProtocol = GfxDriverInfo::GetWindowProtocol(WindowProtocol::X11);
   }
-
-  aWindowProtocol = GfxDriverInfo::GetWindowProtocol(WindowProtocol::X11);
   return NS_OK;
 }
 

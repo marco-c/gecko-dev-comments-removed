@@ -251,6 +251,8 @@ enum class DesktopEnvironment : uint8_t {
   Pantheon,
   LXQT,
   Deepin,
+  Dwm,
+  Budgie,
   Unknown,
   Max
 };
@@ -258,10 +260,13 @@ enum class DesktopEnvironment : uint8_t {
 enum class WindowProtocol : uint8_t {
   All,  
   X11,
+  XWayland,
   Wayland,
   WaylandDRM,
   
   WaylandAll,
+  
+  X11All,
   Max
 };
 
