@@ -345,7 +345,8 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey) {
   
   switch (aKey) {
     case MediaControlKey::Pause:
-      [[fallthrough]];
+      PauseOrStopMedia();
+      return;
     case MediaControlKey::Play:
       [[fallthrough]];
     case MediaControlKey::Stop:
@@ -358,6 +359,31 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey) {
       return;
     default:
       MOZ_ASSERT_UNREACHABLE("Not supported media key for default handler");
+  }
+}
+
+void ContentMediaController::PauseOrStopMedia() {
+  
+  
+  
+  
+  
+  
+  
+  bool isAnyMediaPlaying = false;
+  for (const auto& receiver : mReceivers) {
+    if (receiver->IsPlaying()) {
+      isAnyMediaPlaying = true;
+      break;
+    }
+  }
+
+  for (auto& receiver : Reversed(mReceivers)) {
+    if (isAnyMediaPlaying && !receiver->IsPlaying()) {
+      receiver->HandleMediaKey(MediaControlKey::Stop);
+    } else {
+      receiver->HandleMediaKey(MediaControlKey::Pause);
+    }
   }
 }
 

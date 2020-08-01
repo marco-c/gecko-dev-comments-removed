@@ -30,6 +30,8 @@ class ContentMediaControlKeyReceiver {
 
   
   virtual void HandleMediaKey(MediaControlKey aKey) = 0;
+
+  virtual bool IsPlaying() const = 0;
 };
 
 
@@ -112,6 +114,11 @@ class ContentMediaController final : public ContentMediaAgent,
 
  private:
   ~ContentMediaController() = default;
+
+  
+  virtual bool IsPlaying() const override { return false; }
+
+  void PauseOrStopMedia();
 
   nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mReceivers;
   uint64_t mTopLevelBrowsingContextId;
