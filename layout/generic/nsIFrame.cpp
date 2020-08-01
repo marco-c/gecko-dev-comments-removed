@@ -8335,8 +8335,10 @@ nsresult nsIFrame::PeekOffsetForWord(nsPeekOffsetStruct* aPos, int32_t offset) {
         
         
         
+        
         if (jumpedLine && wordSelectEatSpace &&
-            current->HasSignificantTerminalNewline()) {
+            current->HasSignificantTerminalNewline() &&
+            current->StyleText()->mWhiteSpace != StyleWhiteSpace::PreLine) {
           offset -= 1;
         }
       } else {
