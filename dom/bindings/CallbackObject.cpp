@@ -199,6 +199,10 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       mErrorResult(aRv),
       mExceptionHandling(aExceptionHandling),
       mIsMainThread(NS_IsMainThread()) {
+  MOZ_ASSERT_IF(aExceptionHandling == eReportExceptions ||
+                    aExceptionHandling == eRethrowExceptions,
+                !aRealm);
+
   CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
   if (ccjs) {
     ccjs->EnterMicroTask();
@@ -317,29 +321,8 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
 bool CallbackObject::CallSetup::ShouldRethrowException(
     JS::Handle<JS::Value> aException) {
   if (mExceptionHandling == eRethrowExceptions) {
-    if (!mRealm) {
-      
-      return true;
-    }
-
-    
-    
-    
-    if (mRealm == js::GetContextRealm(mCx)) {
-      return true;
-    }
-
-    MOZ_ASSERT(NS_IsMainThread());
-
-    
-    
-    
-    nsIPrincipal* callerPrincipal =
-        nsJSPrincipals::get(JS::GetRealmPrincipals(mRealm));
-    nsIPrincipal* calleePrincipal = nsContentUtils::SubjectPrincipal();
-    if (callerPrincipal->SubsumesConsideringDomain(calleePrincipal)) {
-      return true;
-    }
+    MOZ_ASSERT(!mRealm);
+    return true;
   }
 
   MOZ_ASSERT(mRealm);

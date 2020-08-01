@@ -141,13 +141,11 @@ class CallbackObject : public nsISupports {
     
     eReportExceptions,
     
-    
-    
-    eRethrowContentExceptions,
+    eRethrowExceptions,
     
     
     
-    eRethrowExceptions
+    eRethrowContentExceptions
   };
 
   
