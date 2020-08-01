@@ -92,40 +92,42 @@ int ImageComposite::ChooseImageIndex() {
   if (mImages.IsEmpty()) {
     return -1;
   }
-  TimeStamp now = GetCompositionTime();
 
-  if (now.IsNull()) {
-    
-    
-    for (uint32_t i = 0; i < mImages.Length(); ++i) {
-      if (mImages[i].mFrameID == mLastFrameID &&
-          mImages[i].mProducerID == mLastProducerID) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
-  
+  TimeStamp compositionTime = GetCompositionTime();
   auto compositionOpportunityId = GetCompositionOpportunityId();
+  if (compositionTime &&
+      compositionOpportunityId != mLastChooseImageIndexComposition) {
+    
+    
+    
+    
+    uint32_t imageIndex = 0;
+    while (imageIndex + 1 < mImages.Length() &&
+           GetBiasedTime(mImages[imageIndex + 1].mTimeStamp) <=
+               compositionTime) {
+      ++imageIndex;
+    }
 
-  
-  uint32_t result = 0;
-  while (result + 1 < mImages.Length() &&
-         GetBiasedTime(mImages[result + 1].mTimeStamp) <= now) {
-    ++result;
-  }
-
-  
-  
-  if (compositionOpportunityId != mLastChooseImageIndexComposition) {
     bool wasVisibleAtPreviousComposition =
         compositionOpportunityId == mLastChooseImageIndexComposition.Next();
-    UpdateCompositedFrame(result, wasVisibleAtPreviousComposition);
+    UpdateCompositedFrame(imageIndex, wasVisibleAtPreviousComposition);
+
     mLastChooseImageIndexComposition = compositionOpportunityId;
+
+    return imageIndex;
   }
 
-  return result;
+  
+  
+  
+  for (uint32_t i = 0; i < mImages.Length(); ++i) {
+    if (mImages[i].mFrameID == mLastFrameID &&
+        mImages[i].mProducerID == mLastProducerID) {
+      return i;
+    }
+  }
+
+  return 0;
 }
 
 const ImageComposite::TimedImage* ImageComposite::ChooseImage() {
