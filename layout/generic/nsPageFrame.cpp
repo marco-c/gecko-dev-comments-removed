@@ -6,11 +6,13 @@
 
 #include "nsPageFrame.h"
 
+#include "mozilla/AppUnits.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/gfx/2D.h"
 #include "gfxContext.h"
 #include "nsDeviceContext.h"
 #include "nsFontMetrics.h"
+#include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsGkAtoms.h"
@@ -44,6 +46,109 @@ nsPageFrame::nsPageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
 
 nsPageFrame::~nsPageFrame() = default;
 
+nsReflowStatus nsPageFrame::ReflowPageContent(
+    nsPresContext* aPresContext, const ReflowInput& aPageReflowInput) {
+  
+  
+  
+  
+  if (mFrames.IsEmpty()) {
+    return {};
+  }
+
+  nsIFrame* frame = mFrames.FirstChild();
+  
+  
+  
+  nscoord avHeight;
+  if (mPD->mReflowSize.height == NS_UNCONSTRAINEDSIZE) {
+    avHeight = NS_UNCONSTRAINEDSIZE;
+  } else {
+    avHeight = mPD->mReflowSize.height;
+  }
+  nsSize maxSize(mPD->mReflowSize.width, avHeight);
+  float scale = aPresContext->GetPageScale();
+  maxSize.width = NSToCoordCeil(maxSize.width / scale);
+  if (maxSize.height != NS_UNCONSTRAINEDSIZE) {
+    maxSize.height = NSToCoordCeil(maxSize.height / scale);
+  }
+  
+  const nscoord onePixel = AppUnitsPerCSSPixel();
+
+  
+  
+  
+  if (maxSize.width < onePixel || maxSize.height < onePixel) {
+    NS_WARNING("Reflow aborted; no space for content");
+    return {};
+  }
+
+  ReflowInput kidReflowInput(aPresContext, aPageReflowInput, frame,
+                             LogicalSize(frame->GetWritingMode(), maxSize));
+  kidReflowInput.mFlags.mIsTopOfPage = true;
+  kidReflowInput.mFlags.mTableIsSplittable = true;
+
+  
+  
+  
+  const auto& marginStyle = kidReflowInput.mStyleMargin->mMargin;
+  for (const auto side : mozilla::AllPhysicalSides()) {
+    if (marginStyle.Get(side).IsAuto()) {
+      mPageContentMargin.Side(side) = mPD->mReflowMargin.Side(side);
+    } else {
+      mPageContentMargin.Side(side) =
+          kidReflowInput.ComputedPhysicalMargin().Side(side);
+    }
+  }
+
+  nscoord maxWidth = maxSize.width - mPageContentMargin.LeftRight() / scale;
+  nscoord maxHeight;
+  if (maxSize.height == NS_UNCONSTRAINEDSIZE) {
+    maxHeight = NS_UNCONSTRAINEDSIZE;
+  } else {
+    maxHeight = maxSize.height - mPageContentMargin.TopBottom() / scale;
+  }
+
+  
+  
+  if (maxWidth < onePixel || maxHeight < onePixel) {
+    for (const auto side : mozilla::AllPhysicalSides()) {
+      mPageContentMargin.Side(side) = mPD->mReflowMargin.Side(side);
+    }
+    maxWidth = maxSize.width - mPageContentMargin.LeftRight() / scale;
+    if (maxHeight != NS_UNCONSTRAINEDSIZE) {
+      maxHeight = maxSize.height - mPageContentMargin.TopBottom() / scale;
+    }
+  }
+
+  
+  if (maxWidth < onePixel || maxHeight < onePixel) {
+    NS_WARNING("Reflow aborted; no space for content");
+    return {};
+  }
+
+  kidReflowInput.SetComputedWidth(maxWidth);
+  kidReflowInput.SetComputedHeight(maxHeight);
+
+  
+  nscoord xc = mPageContentMargin.left;
+  nscoord yc = mPageContentMargin.top;
+
+  
+  ReflowOutput kidOutput(kidReflowInput);
+  nsReflowStatus kidStatus;
+  ReflowChild(frame, aPresContext, kidOutput, kidReflowInput, xc, yc,
+              ReflowChildFlags::Default, kidStatus);
+
+  
+  FinishReflowChild(frame, aPresContext, kidOutput, &kidReflowInput, xc, yc,
+                    ReflowChildFlags::Default);
+
+  NS_ASSERTION(!kidStatus.IsFullyComplete() || !frame->GetNextInFlow(),
+               "bad child flow list");
+  return kidStatus;
+}
+
 void nsPageFrame::Reflow(nsPresContext* aPresContext,
                          ReflowOutput& aReflowOutput,
                          const ReflowInput& aReflowInput,
@@ -59,94 +164,8 @@ void nsPageFrame::Reflow(nsPresContext* aPresContext,
       "pageFrame must have a pageContentFrame child");
 
   
-  
-  if (mFrames.NotEmpty()) {
-    nsIFrame* frame = mFrames.FirstChild();
-    
-    
-    
-    nscoord avHeight;
-    if (mPD->mReflowSize.height == NS_UNCONSTRAINEDSIZE) {
-      avHeight = NS_UNCONSTRAINEDSIZE;
-    } else {
-      avHeight = mPD->mReflowSize.height;
-    }
-    nsSize maxSize(mPD->mReflowSize.width, avHeight);
-    float scale = aPresContext->GetPageScale();
-    maxSize.width = NSToCoordCeil(maxSize.width / scale);
-    if (maxSize.height != NS_UNCONSTRAINEDSIZE) {
-      maxSize.height = NSToCoordCeil(maxSize.height / scale);
-    }
-    
-    nscoord onePixelInTwips = nsPresContext::CSSPixelsToAppUnits(1);
-    
-    
-    
-    if (maxSize.width < onePixelInTwips || maxSize.height < onePixelInTwips) {
-      aReflowOutput.ClearSize();
-      NS_WARNING("Reflow aborted; no space for content");
-      return;
-    }
+  aStatus = ReflowPageContent(aPresContext, aReflowInput);
 
-    ReflowInput kidReflowInput(aPresContext, aReflowInput, frame,
-                               LogicalSize(frame->GetWritingMode(), maxSize));
-    kidReflowInput.mFlags.mIsTopOfPage = true;
-    kidReflowInput.mFlags.mTableIsSplittable = true;
-
-    
-    
-    
-    const auto& marginStyle = kidReflowInput.mStyleMargin->mMargin;
-    for (const auto side : mozilla::AllPhysicalSides()) {
-      if (marginStyle.Get(side).IsAuto()) {
-        mPageContentMargin.Side(side) = mPD->mReflowMargin.Side(side);
-      } else {
-        mPageContentMargin.Side(side) =
-            kidReflowInput.ComputedPhysicalMargin().Side(side);
-      }
-    }
-
-    nscoord maxWidth = maxSize.width - mPageContentMargin.LeftRight() / scale;
-    nscoord maxHeight;
-    if (maxSize.height == NS_UNCONSTRAINEDSIZE) {
-      maxHeight = NS_UNCONSTRAINEDSIZE;
-    } else {
-      maxHeight = maxSize.height - mPageContentMargin.TopBottom() / scale;
-    }
-
-    
-    
-    if (maxWidth < onePixelInTwips ||
-        (maxHeight != NS_UNCONSTRAINEDSIZE && maxHeight < onePixelInTwips)) {
-      for (const auto side : mozilla::AllPhysicalSides()) {
-        mPageContentMargin.Side(side) = mPD->mReflowMargin.Side(side);
-      }
-      maxWidth = maxSize.width - mPageContentMargin.LeftRight() / scale;
-      if (maxHeight != NS_UNCONSTRAINEDSIZE) {
-        maxHeight = maxSize.height - mPageContentMargin.TopBottom() / scale;
-      }
-    }
-
-    kidReflowInput.SetComputedWidth(maxWidth);
-    kidReflowInput.SetComputedHeight(maxHeight);
-
-    
-    nscoord xc = mPageContentMargin.left;
-    nscoord yc = mPageContentMargin.top;
-
-    
-    
-    
-    ReflowChild(frame, aPresContext, aReflowOutput, kidReflowInput, xc, yc,
-                ReflowChildFlags::Default, aStatus);
-
-    
-    FinishReflowChild(frame, aPresContext, aReflowOutput, &kidReflowInput, xc,
-                      yc, ReflowChildFlags::Default);
-
-    NS_ASSERTION(!aStatus.IsFullyComplete() || !frame->GetNextInFlow(),
-                 "bad child flow list");
-  }
   PR_PL(("PageFrame::Reflow %p ", this));
   PR_PL(("[%d,%d][%d,%d]\n", aReflowOutput.Width(), aReflowOutput.Height(),
          aReflowInput.AvailableWidth(), aReflowInput.AvailableHeight()));
