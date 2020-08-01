@@ -102,6 +102,15 @@ class APZSampler {
 
 
 
+
+  AsyncTransform GetCurrentAsyncTransform(
+      const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
+      AsyncTransformComponents aComponents) const;
+
+  
+
+
+
   ParentLayerRect GetCompositionBounds(
       const LayersId& aLayersId,
       const ScrollableLayerGuid::ViewID& aScrollId) const;

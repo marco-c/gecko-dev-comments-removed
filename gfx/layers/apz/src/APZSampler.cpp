@@ -147,6 +147,27 @@ AsyncTransform APZSampler::GetCurrentAsyncTransform(
       AsyncPanZoomController::eForCompositing, aComponents);
 }
 
+AsyncTransform APZSampler::GetCurrentAsyncTransform(
+    const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
+    AsyncTransformComponents aComponents) const {
+  MOZ_ASSERT(!CompositorThreadHolder::IsInCompositorThread());
+  AssertOnSamplerThread();
+
+  RefPtr<AsyncPanZoomController> apzc =
+      mApz->GetTargetAPZC(aLayersId, aScrollId);
+  if (!apzc) {
+    
+    
+    
+    
+    
+    return AsyncTransform{};
+  }
+
+  return apzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing,
+                                        aComponents);
+}
+
 Maybe<CompositionPayload> APZSampler::NotifyScrollSampling(
     const LayerMetricsWrapper& aLayer) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
