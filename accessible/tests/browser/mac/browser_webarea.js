@@ -35,13 +35,25 @@ addAccessibleTask(``, async (browser, accDoc) => {
 addAccessibleTask(`<title>webarea test</title>`, async (browser, accDoc) => {
   
   
-  let evt = waitForMacEvent("AXLayoutComplete");
+  
+  
+  let eventPromise = Promise.race([
+    waitForMacEvent("AXLayoutComplete"),
+    waitForMacEvent("AXLoadComplete"),
+  ]);
   await SpecialPowers.spawn(browser, [], () => {
     const iframe = content.document.createElement("iframe");
     iframe.src = "data:text/html,hello world";
     content.document.body.appendChild(iframe);
   });
-  let doc = await evt;
+  let doc = await eventPromise;
+
+  if (doc.getAttributeValue("AXTitle")) {
+    
+    
+    
+    doc = doc.getAttributeValue("AXChildren")[0];
+  }
 
   is(
     doc.getAttributeValue("AXRole"),
