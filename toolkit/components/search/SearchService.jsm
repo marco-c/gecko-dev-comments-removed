@@ -395,6 +395,12 @@ SearchService.prototype = {
 
 
 
+  _dontSetUseDBForOrder: false,
+
+  
+
+
+
 
 
 
@@ -1279,6 +1285,7 @@ SearchService.prototype = {
       logConsole.debug("Ignoring maybeReloadEngines() as inside init()");
       return;
     }
+    logConsole.debug("Running maybeReloadEngines");
 
     
     if (!gModernConfig) {
@@ -1288,6 +1295,7 @@ SearchService.prototype = {
       
       this._currentEngine = null;
       this._currentPrivateEngine = null;
+      this._dontSetUseDBForOrder = true;
       
       
       
@@ -1325,16 +1333,26 @@ SearchService.prototype = {
         SearchUtils.TOPIC_SEARCH_SERVICE,
         "engines-reloaded"
       );
+      logConsole.debug("maybeReloadEngines complete");
       return;
     }
 
     
     const prevCurrentEngine = this._currentEngine;
     const prevPrivateEngine = this._currentPrivateEngine;
+
+    
+    
+    this._dontSetUseDBForOrder = true;
+
     
     
     
-    this.__sortedEngines = null;
+    
+    
+    
+    
+    
 
     let {
       engines: originalConfigEngines,
@@ -1343,7 +1361,9 @@ SearchService.prototype = {
 
     let enginesToRemove = [];
     let configEngines = [...originalConfigEngines];
-    for (let engine of this._engines.values()) {
+    let oldEngineList = [...this._engines.values()];
+
+    for (let engine of oldEngineList) {
       if (!engine.isAppProvided) {
         continue;
       }
@@ -1380,10 +1400,10 @@ SearchService.prototype = {
     
     for (let engine of configEngines) {
       try {
-        let newEngine = await this.makeEngineFromConfig(engine, true);
-        this._addEngineToStore(newEngine);
+        let newEngine = await this.makeEngineFromConfig(engine, false);
+        this._addEngineToStore(newEngine, true);
       } catch (ex) {
-        console.warn(
+        logConsole.warn(
           `Could not load engine ${
             "webExtension" in engine ? engine.webExtension.id : "unknown"
           }: ${ex}`
@@ -1392,9 +1412,6 @@ SearchService.prototype = {
     }
 
     
-    
-    
-
     this._currentEngine = null;
     this._currentPrivateEngine = null;
 
@@ -1431,16 +1448,31 @@ SearchService.prototype = {
     }
 
     
+
     for (let engine of enginesToRemove) {
       
-      if (
-        [...this._engines.values()].filter(
-          e => e._extensionID == engine._extensionID
-        ).length > 1
-      ) {
+      
+      let inUseEngines = [...this._engines.values()].filter(
+        e => e._extensionID == engine._extensionID
+      );
+
+      if (inUseEngines?.length == 1 && inUseEngines?.[0] != engine) {
+        
+        
+        
+        
+        
+        
+        
+        SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.REMOVED);
+        continue;
+      } else if (inUseEngines?.length > 1) {
+        
         
         this._internalRemoveEngine(engine);
+        SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.REMOVED);
       } else {
+        
         let addon = await AddonManager.getAddonByID(engine._extensionID);
         if (addon) {
           
@@ -1452,11 +1484,15 @@ SearchService.prototype = {
       }
     }
 
+    this._dontSetUseDBForOrder = false;
+    
+    this.__sortedEngines = null;
     Services.obs.notifyObservers(
       null,
       SearchUtils.TOPIC_SEARCH_SERVICE,
       "engines-reloaded"
     );
+    logConsole.debug("maybeReloadEngines complete");
   },
 
   _reInit(origin) {
@@ -1566,7 +1602,7 @@ SearchService.prototype = {
     this._startupExtensions = new Set();
   },
 
-  _addEngineToStore(engine) {
+  _addEngineToStore(engine, skipDuplicateCheck = false) {
     if (this._engineMatchesIgnoreLists(engine)) {
       logConsole.debug("_addEngineToStore: Ignoring engine");
       return;
@@ -1578,7 +1614,11 @@ SearchService.prototype = {
     
     var hasSameNameAsUpdate =
       engine._engineToUpdate && engine.name == engine._engineToUpdate.name;
-    if (this._engines.has(engine.name) && !hasSameNameAsUpdate) {
+    if (
+      !skipDuplicateCheck &&
+      this._engines.has(engine.name) &&
+      !hasSameNameAsUpdate
+    ) {
       logConsole.debug("_addEngineToStore: Duplicate engine found, aborting!");
       return;
     }
@@ -1613,7 +1653,7 @@ SearchService.prototype = {
       
       
       
-      if (this.__sortedEngines) {
+      if (this.__sortedEngines && !this._dontSetUseDBForOrder) {
         this.__sortedEngines.push(engine);
         this._saveSortedEngineList();
       }
@@ -2833,7 +2873,9 @@ SearchService.prototype = {
       this._internalRemoveEngine(engineToRemove);
 
       
-      this._saveSortedEngineList();
+      if (!this._dontSetUseDBForOrder) {
+        this._saveSortedEngineList();
+      }
     }
     SearchUtils.notifyAction(engineToRemove, SearchUtils.MODIFIED_TYPE.REMOVED);
   },
