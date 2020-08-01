@@ -492,7 +492,7 @@ impl ServicePipes {
 
 
 
-        device.new_compute_pipeline_state(&pipeline).unwrap()
+        unsafe { device.new_compute_pipeline_state(&pipeline) }.unwrap()
     }
 
     fn create_fill_buffer(
@@ -511,7 +511,7 @@ impl ServicePipes {
 
 
 
-        device.new_compute_pipeline_state(&pipeline).unwrap()
+        unsafe { device.new_compute_pipeline_state(&pipeline) }.unwrap()
     }
 
     pub(crate) fn simple_blit(

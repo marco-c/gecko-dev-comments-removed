@@ -8,13 +8,9 @@
 
 
 use std::os::raw::c_void;
-use core_foundation::base::{CFRange, CFTypeID, TCFType};
-use core_foundation::array::{CFArrayRef, CFArray};
+use core_foundation::base::{CFTypeID, TCFType};
 use core_graphics::context::{CGContext, CGContextRef};
-use core_graphics::geometry::CGPoint;
-use core_graphics::path::{CGPath, SysCGPathRef};
 use foreign_types::{ForeignType, ForeignTypeRef};
-use crate::line::CTLine;
 
 #[repr(C)]
 pub struct __CTFrame(c_void);
@@ -28,54 +24,6 @@ impl_TCFType!(CTFrame, CTFrameRef, CTFrameGetTypeID);
 impl_CFTypeDescription!(CTFrame);
 
 impl CTFrame {
-    
-    pub fn get_path(&self) -> CGPath {
-        unsafe {
-            CGPath::from_ptr(CTFrameGetPath(self.as_concrete_TypeRef())).clone()
-        }
-    }
-
-    
-    
-    
-    pub fn get_lines(&self) -> Vec<CTLine> {
-        unsafe {
-            let array_ref = CTFrameGetLines(self.as_concrete_TypeRef());
-            let array: CFArray<CTLine> = CFArray::wrap_under_get_rule(array_ref);
-            array.iter().map(|l| CTLine::wrap_under_get_rule(l.as_concrete_TypeRef())).collect()
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get_line_origins(&self, range: impl Into<Option<CFRange>>) -> Vec<CGPoint> {
-        let range = range.into().unwrap_or_else(|| CFRange::init(0, 0));
-        let len = match range.length {
-            
-            0 => unsafe {
-                let array_ref = CTFrameGetLines(self.as_concrete_TypeRef());
-                let array: CFArray<CTLine> = CFArray::wrap_under_get_rule(array_ref);
-                array.len() - range.location
-            }
-            n => n,
-        };
-        let len = len.max(0) as usize;
-        let mut out = vec![CGPoint::new(0., 0.); len];
-        unsafe {
-            CTFrameGetLineOrigins(self.as_concrete_TypeRef(), range, out.as_mut_ptr());
-        }
-        out
-    }
-
     pub fn draw(&self, context: &CGContextRef) {
         unsafe {
             CTFrameDraw(self.as_concrete_TypeRef(), context.as_ptr());
@@ -86,8 +34,5 @@ impl CTFrame {
 #[link(name = "CoreText", kind = "framework")]
 extern {
     fn CTFrameGetTypeID() -> CFTypeID;
-    fn CTFrameGetLines(frame: CTFrameRef) -> CFArrayRef;
     fn CTFrameDraw(frame: CTFrameRef, context: *mut <CGContext as ForeignType>::CType);
-    fn CTFrameGetLineOrigins(frame: CTFrameRef, range: CFRange, origins: *mut CGPoint);
-    fn CTFrameGetPath(frame: CTFrameRef) -> SysCGPathRef;
 }
