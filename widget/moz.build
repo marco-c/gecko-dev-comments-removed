@@ -318,6 +318,12 @@ LOCAL_INCLUDES += [
     '/widget/headless',
 ]
 
+
+if toolkit == 'gtk':
+    LOCAL_INCLUDES += [
+        '/third_party/cups/include'
+    ]
+
 if toolkit == 'windows':
     IPDL_SOURCES = [
         'headless/HeadlessWidgetTypes.ipdlh',
