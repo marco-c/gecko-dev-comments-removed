@@ -70,6 +70,13 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   ContentParent* GetHostProcess(const nsACString& aRemoteType);
 
+  
+  
+  
+  
+  void AddKeepAlive();
+  void RemoveKeepAlive();
+
   bool GetToplevelsSuspended() { return mToplevelsSuspended; }
   void SetToplevelsSuspended(bool aSuspended);
 
@@ -147,9 +154,16 @@ class BrowsingContextGroup final : public nsWrapperCache {
   explicit BrowsingContextGroup(uint64_t aId);
   ~BrowsingContextGroup();
 
-  void UnsubscribeAllContentParents();
+  void MaybeDestroy();
+  void Destroy();
 
   uint64_t mId;
+
+  uint32_t mKeepAliveCount = 0;
+
+#ifdef DEBUG
+  bool mDestroyed = false;
+#endif
 
   
   
