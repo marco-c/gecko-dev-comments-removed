@@ -19,8 +19,6 @@
 
 
 
-
-
 function do_test(insn1, insn2, errKind, errText,
                  isMem, haveStorage, haveInitA, haveInitP)
 {

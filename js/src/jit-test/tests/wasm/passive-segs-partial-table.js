@@ -7,8 +7,6 @@
 
 
 
-
-
 const tbl_init_len = 16;
 
 function tbl_init(min, max, backup, write, segoffs=0) {
