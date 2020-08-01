@@ -16,28 +16,20 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "AsyncShutdown",
-  "resource://gre/modules/AsyncShutdown.jsm"
-);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
+  ExtensionStorageIDB: "resource://gre/modules/ExtensionStorageIDB.jsm",
+  Heuristics: "resource:///modules/DoHHeuristics.jsm",
+  Preferences: "resource://gre/modules/Preferences.jsm",
+  setTimeout: "resource://gre/modules/Timer.jsm",
+  clearTimeout: "resource://gre/modules/Timer.jsm",
+});
 
-ChromeUtils.defineModuleGetter(
+XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "ExtensionStorageIDB",
-  "resource://gre/modules/ExtensionStorageIDB.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "Heuristics",
-  "resource:///modules/DoHHeuristics.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "Preferences",
-  "resource://gre/modules/Preferences.jsm"
+  "kDebounceTimeout",
+  "doh-rollout.network-debounce-timeout",
+  1000
 );
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -277,16 +269,55 @@ const DoHController = {
     this._heuristicsAreEnabled = true;
   },
 
+  _lastHeuristicsRunTimestamp: 0,
   async runHeuristics(evaluateReason) {
+    let start = Date.now();
+    
+    
+    this._lastHeuristicsRunTimestamp = start;
+
     let results = await Heuristics.run();
+
+    if (
+      !gNetworkLinkService.isLinkUp ||
+      this._lastDebounceTimestamp > start ||
+      this._lastHeuristicsRunTimestamp > start ||
+      gCaptivePortalService.state == gCaptivePortalService.LOCKED_PORTAL
+    ) {
+      
+      
+      
+      
+      
+      return;
+    }
 
     let decision = Object.values(results).includes(Heuristics.DISABLE_DOH)
       ? Heuristics.DISABLE_DOH
       : Heuristics.ENABLE_DOH;
 
+    let getCaptiveStateString = () => {
+      switch (gCaptivePortalService.state) {
+        case gCaptivePortalService.NOT_CAPTIVE:
+          return "not_captive";
+        case gCaptivePortalService.UNLOCKED_PORTAL:
+          return "unlocked";
+        case gCaptivePortalService.LOCKED_PORTAL:
+          return "locked";
+        default:
+          return "unknown";
+      }
+    };
+
     let resultsForTelemetry = {
       evaluateReason,
       steeredProvider: "",
+      captiveState: getCaptiveStateString(),
+      
+      
+      
+      
+      networkID: gNetworkLinkService.networkID,
     };
 
     if (results.steeredProvider) {
@@ -492,7 +523,41 @@ const DoHController = {
     }
   },
 
-  async onConnectionChanged() {
+  
+  
+  
+  
+  _debounceTimer: null,
+  _cancelDebounce() {
+    if (!this._debounceTimer) {
+      return;
+    }
+
+    clearTimeout(this._debounceTimer);
+    this._debounceTimer = null;
+  },
+
+  _lastDebounceTimestamp: 0,
+  onConnectionChanged() {
+    if (!gNetworkLinkService.isLinkUp) {
+      
+      this._cancelDebounce();
+      return;
+    }
+
+    if (this._debounceTimer) {
+      
+      return;
+    }
+
+    this._lastDebounceTimestamp = Date.now();
+    this._debounceTimer = setTimeout(() => {
+      this._cancelDebounce();
+      this.onConnectionChangedDebounced();
+    }, kDebounceTimeout);
+  },
+
+  async onConnectionChangedDebounced() {
     if (!gNetworkLinkService.isLinkUp) {
       return;
     }
@@ -508,6 +573,11 @@ const DoHController = {
   },
 
   async onConnectivityAvailable() {
+    if (this._debounceTimer) {
+      
+      return;
+    }
+
     await this.runHeuristics("connectivity");
   },
 };
