@@ -99,12 +99,19 @@ void OSXVersion::GetSystemVersion(int32_t& aMajor, int32_t& aMinor, int32_t& aBu
   CFRelease(sysVersionPlist);
   CFRelease(versions);
 
-  
-  
-  if (major != 10) {
+  if (major < 10) {
+    
     aMajor = 10;
     aMinor = 6;
     aBugFix = 0;
+  } else if ((major == 10) && (minor >= 16)) {
+    
+    
+    
+    
+    aMajor = 11;
+    aMinor = minor - 16;
+    aBugFix = bugfix;
   } else {
     aMajor = major;
     aMinor = minor;
