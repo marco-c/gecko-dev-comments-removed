@@ -53,8 +53,6 @@ class ImageComposite {
   };
 
  protected:
-  void UpdateBias(size_t aImageIndex);
-
   virtual TimeStamp GetCompositionTime() const = 0;
   virtual CompositionOpportunityId GetCompositionOpportunityId() const = 0;
   virtual void AppendImageCompositeNotification(
@@ -104,8 +102,11 @@ class ImageComposite {
   void CountSkippedFrames(const TimedImage* aImage);
 
   
-  void UpdateCompositedFrame(int aImageIndex,
+  
+  bool UpdateCompositedFrame(int aImageIndex,
                              bool aWasVisibleAtPreviousComposition);
+
+  void UpdateBias(size_t aImageIndex, bool aFrameUpdated);
 
   
   void DetectTimeStampJitter(const TimedImage* aNewImage);
