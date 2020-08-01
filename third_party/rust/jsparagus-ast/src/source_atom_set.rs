@@ -198,7 +198,9 @@ impl<'alloc> SourceAtomSet<'alloc> {
     
     pub fn new_uninitialized() -> Self {
         Self {
-            atoms: IndexSet::new(),
+            
+            
+            atoms: IndexSet::with_capacity(256),
         }
     }
 
