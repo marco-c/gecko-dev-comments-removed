@@ -243,6 +243,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".eml",         
     
     
+    
     ".fon",  
     
     ".gadget",  
@@ -469,6 +470,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".vhd",   
     ".vhdx",  
     ".vmdk",  
+    
     
     
     
