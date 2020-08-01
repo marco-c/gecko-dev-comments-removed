@@ -185,11 +185,6 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       actor: this.actorID,
       traits: {
         
-        
-        
-        
-        getAppliedCreatesStyleCache: true,
-        
         fontStretchLevel4: CSS.supports("font-stretch: 100%"),
         
         fontStyleLevel4: CSS.supports("font-style: oblique 20deg"),

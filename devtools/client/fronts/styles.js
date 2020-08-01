@@ -66,13 +66,6 @@ class PageStyleFront extends FrontClassWithSpec(pageStyleSpec) {
   }
 
   async getApplied(node, options = {}) {
-    
-    
-    
-    
-    if (!this._form.traits || !this._form.traits.getAppliedCreatesStyleCache) {
-      await this.getLayout(node);
-    }
     const ret = await super.getApplied(node, options);
     return ret.entries;
   }
