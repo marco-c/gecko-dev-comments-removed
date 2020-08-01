@@ -87,7 +87,17 @@ class IOUtils final {
 
   static void SetShutdownHooks();
 
+  
+
+
+
+
   static already_AddRefed<Promise> CreateJSPromise(GlobalObject& aGlobal);
+
+  
+  friend MOZ_MUST_USE bool ToJSValue(JSContext* aCx,
+                                     const InternalFileInfo& aInternalFileInfo,
+                                     JS::MutableHandle<JS::Value> aValue);
 
   
 
