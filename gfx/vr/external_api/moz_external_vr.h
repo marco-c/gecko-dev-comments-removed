@@ -47,8 +47,8 @@ namespace gfx {
 
 
 
-#define SHMEM_VERSION "0.0.10"
-static const int32_t kVRExternalVersion = 17;
+#define SHMEM_VERSION "0.0.11"
+static const int32_t kVRExternalVersion = 18;
 
 
 
@@ -345,6 +345,7 @@ struct VRDisplayState {
   VRFieldOfView eyeFOV[VRDisplayState::NumEyes];
   Point3D_POD eyeTranslation[VRDisplayState::NumEyes];
   IntSize_POD eyeResolution;
+  float nativeFramebufferScaleFactor;
   bool suppressFrames;
   bool isConnected;
   bool isMounted;

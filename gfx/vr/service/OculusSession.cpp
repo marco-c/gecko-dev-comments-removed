@@ -1054,6 +1054,7 @@ bool OculusSession::InitState(VRSystemState& aSystemState) {
                                        texSize[VRDisplayState::Eye_Right].w);
   state.eyeResolution.height = std::max(texSize[VRDisplayState::Eye_Left].h,
                                         texSize[VRDisplayState::Eye_Right].h);
+  state.nativeFramebufferScaleFactor = 1.0f;
 
   
   aSystemState.sensorState.pose.orientation[3] = 1.0f;
