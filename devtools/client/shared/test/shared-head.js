@@ -1080,3 +1080,27 @@ async function moveWindowTo(win, left, top) {
 function getCurrentTestFilePath() {
   return gTestPath.replace("chrome://mochitests/content/browser/", "");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForResourceOnce(resourceWatcher, resourceType) {
+  return new Promise(resolve => {
+    const onAvailable = ({ targetFront, resource }) => {
+      resolve({ targetFront, resource });
+      resourceWatcher.unwatchResources([resourceType], { onAvailable });
+    };
+    resourceWatcher.watchResources([resourceType], {
+      ignoreExistingResources: true,
+      onAvailable,
+    });
+  });
+}
