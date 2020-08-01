@@ -797,7 +797,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-    EditorDOMRange GetInvisibleLeadingWhiteSpaceRange() const;
+    const EditorDOMRange& InvisibleLeadingWhiteSpaceRangeRef() const;
 
     
 
@@ -807,7 +807,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-    EditorDOMRange GetInvisibleTrailingWhiteSpaceRange() const;
+    const EditorDOMRange& InvisibleTrailingWhiteSpaceRangeRef() const;
 
     
 
@@ -824,8 +824,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
       
       
       
-      EditorDOMRange trailingWhiteSpaceRange =
-          GetInvisibleTrailingWhiteSpaceRange();
+      const EditorDOMRange& trailingWhiteSpaceRange =
+          InvisibleTrailingWhiteSpaceRangeRef();
       
       if (!trailingWhiteSpaceRange.IsPositioned()) {
         return trailingWhiteSpaceRange;
@@ -833,7 +833,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
       
       
       
-      if (trailingWhiteSpaceRange != GetInvisibleLeadingWhiteSpaceRange()) {
+      if (trailingWhiteSpaceRange != InvisibleLeadingWhiteSpaceRangeRef()) {
         return EditorDOMRange();
       }
       
@@ -874,15 +874,15 @@ class MOZ_STACK_CLASS WSRunScanner final {
       
       
       
-      EditorDOMRange leadingWhiteSpaceRange =
-          GetInvisibleLeadingWhiteSpaceRange();
+      const EditorDOMRange& leadingWhiteSpaceRange =
+          InvisibleLeadingWhiteSpaceRangeRef();
       if (!leadingWhiteSpaceRange.IsPositioned()) {
         return leadingWhiteSpaceRange;
       }
       
       
       
-      if (leadingWhiteSpaceRange != GetInvisibleTrailingWhiteSpaceRange()) {
+      if (leadingWhiteSpaceRange != InvisibleTrailingWhiteSpaceRangeRef()) {
         return EditorDOMRange();
       }
       
@@ -927,8 +927,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
       }
       
       
-      EditorDOMRange leadingWhiteSpaceRange =
-          GetInvisibleLeadingWhiteSpaceRange();
+      const EditorDOMRange& leadingWhiteSpaceRange =
+          InvisibleLeadingWhiteSpaceRangeRef();
       if (!leadingWhiteSpaceRange.StartRef().IsSet()) {
         return false;
       }
