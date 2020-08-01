@@ -77,7 +77,11 @@ def generate_tasks(params=None, full=False):
     os.chdir(build.topsrcdir)
 
     root = os.path.join(build.topsrcdir, 'taskcluster', 'ci')
-    params = parameters_loader(params, strict=False, overrides={'try_mode': 'try_select'})
+    params = parameters_loader(
+        params,
+        strict=False,
+        overrides={'try_mode': 'try_select', 'target_tasks_method': 'try_select_tasks'}
+    )
 
     
     
