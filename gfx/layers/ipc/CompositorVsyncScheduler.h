@@ -97,6 +97,7 @@ class CompositorVsyncScheduler {
 
 
   const TimeStamp& GetLastVsyncTime() const;
+  const TimeStamp& GetLastVsyncOutputTime() const;
   const VsyncId& GetLastVsyncId() const;
 
   
@@ -111,7 +112,7 @@ class CompositorVsyncScheduler {
 
   
   
-  void PostCompositeTask(VsyncId aId, TimeStamp aCompositeTimestamp);
+  void PostCompositeTask(const VsyncEvent& aVsyncEvent);
 
   
   
@@ -124,7 +125,7 @@ class CompositorVsyncScheduler {
 
   
   
-  void Composite(VsyncId aId, TimeStamp aVsyncTimestamp);
+  void Composite(const VsyncEvent& aVsyncEvent);
 
   void ObserveVsync();
   void UnobserveVsync();
@@ -146,8 +147,9 @@ class CompositorVsyncScheduler {
   };
 
   CompositorVsyncSchedulerOwner* mVsyncSchedulerOwner;
-  TimeStamp mLastCompose;
-  TimeStamp mLastVsync;
+  TimeStamp mLastComposeTime;
+  TimeStamp mLastVsyncTime;
+  TimeStamp mLastVsyncOutputTime;
   VsyncId mLastVsyncId;
 
   bool mAsapScheduling;
