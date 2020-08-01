@@ -2758,16 +2758,14 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
                             ? startTime
                             : CorePS::ProcessStartTime() +
                                   TimeDuration::FromMilliseconds(endTimeMs);
+    MarkerTiming timing = endTimeMs == 0
+                              ? MarkerTiming::Instant(startTime)
+                              : MarkerTiming::Interval(startTime, endTime);
 
-    
-    
     if (!text) {
       
-      const TimingMarkerPayload payload(startTime, endTime);
-
-      
-      StoreMarker(aProfileBuffer, threadId, markerName.get(),
-                  JS::ProfilingCategoryPair::JAVA_ANDROID, &payload);
+      StoreMarker(aProfileBuffer, threadId, markerName.get(), timing,
+                  JS::ProfilingCategoryPair::JAVA_ANDROID, nullptr);
     } else {
       
       nsCString textString = text->ToCString();
@@ -2775,7 +2773,7 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
                                       nullptr);
 
       
-      StoreMarker(aProfileBuffer, threadId, markerName.get(),
+      StoreMarker(aProfileBuffer, threadId, markerName.get(), timing,
                   JS::ProfilingCategoryPair::JAVA_ANDROID, &payload);
     }
   }
