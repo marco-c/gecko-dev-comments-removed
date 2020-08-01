@@ -178,6 +178,75 @@ this.VideoControlsWidget = class {
 
     return true;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static setupToggleExperiment(prefs, shadowRoot, toggle, reflowedDimensions) {
+    let mode = String(
+      prefs["media.videocontrols.picture-in-picture.video-toggle.mode"]
+    );
+    let videocontrols = shadowRoot.firstChild;
+    let sheets = videocontrols.querySelectorAll("link[rel='stylesheet'][mode]");
+    for (let sheet of sheets) {
+      sheet.disabled = sheet.getAttribute("mode") != mode;
+    }
+
+    
+    const SMALL_VIDEO_WIDTH_MAX = 320;
+    const MEDIUM_VIDEO_WIDTH_MAX = 720;
+
+    let isSmall = reflowedDimensions.videoWidth <= SMALL_VIDEO_WIDTH_MAX;
+    toggle.toggleAttribute("small-video", isSmall);
+    toggle.toggleAttribute(
+      "medium-video",
+      !isSmall && reflowedDimensions.videoWidth <= MEDIUM_VIDEO_WIDTH_MAX
+    );
+
+    toggle.setAttribute(
+      "position",
+      prefs["media.videocontrols.picture-in-picture.video-toggle.position"]
+    );
+    toggle.toggleAttribute(
+      "has-used",
+      prefs["media.videocontrols.picture-in-picture.video-toggle.has-used"]
+    );
+  }
+
+  
+
+
+
+
+
+
+  static cleanupToggleExperiment(shadowRoot) {
+    let videocontrols = shadowRoot.firstChild;
+    let sheets = videocontrols.querySelectorAll("link[rel='stylesheet'][mode]");
+    for (let sheet of sheets) {
+      sheet.disabled = true;
+    }
+  }
 };
 
 this.VideoControlsImplWidget = class {
@@ -548,9 +617,28 @@ this.VideoControlsImplWidget = class {
             this.reflowedDimensions
           )
         ) {
-          this.pictureInPictureToggleButton.removeAttribute("hidden");
+          if (
+            this.prefs[
+              "media.videocontrols.picture-in-picture.video-toggle.mode"
+            ] == -1
+          ) {
+            VideoControlsWidget.cleanupToggleExperiment(this.shadowRoot);
+            this.pictureInPictureToggleButton.removeAttribute("hidden");
+            this.pictureInPictureToggleExperiment.setAttribute("hidden", true);
+          } else {
+            this.pictureInPictureToggleButton.setAttribute("hidden", true);
+            this.pictureInPictureToggleExperiment.removeAttribute("hidden");
+            VideoControlsWidget.setupToggleExperiment(
+              this.prefs,
+              this.shadowRoot,
+              this.pictureInPictureToggleExperiment,
+              this.reflowedDimensions
+            );
+          }
         } else {
+          VideoControlsWidget.cleanupToggleExperiment(this.shadowRoot);
           this.pictureInPictureToggleButton.setAttribute("hidden", true);
+          this.pictureInPictureToggleExperiment.setAttribute("hidden", true);
         }
       },
 
@@ -2313,6 +2401,9 @@ this.VideoControlsImplWidget = class {
         this.pictureInPictureToggleButton = this.shadowRoot.getElementById(
           "pictureInPictureToggleButton"
         );
+        this.pictureInPictureToggleExperiment = this.shadowRoot.getElementById(
+          "pictureInPictureToggleExperiment"
+        );
 
         if (this.positionDurationBox) {
           this.durationSpan = this.positionDurationBox.getElementsByTagName(
@@ -2594,6 +2685,8 @@ this.VideoControlsImplWidget = class {
       ]>
       <div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
         <link rel="stylesheet" href="chrome://global/skin/media/videocontrols.css" />
+        <link rel="stylesheet" href="chrome://global/skin/media/pictureinpicture-mode-1.css" mode="1" disabled="true" />
+        <link rel="stylesheet" href="chrome://global/skin/media/pictureinpicture-mode-2.css" mode="2" disabled="true" />
         <div id="controlsContainer" class="controlsContainer" role="none">
           <div id="statusOverlay" class="statusOverlay stackItem" hidden="true">
             <div id="statusIcon" class="statusIcon"></div>
@@ -2619,6 +2712,20 @@ this.VideoControlsImplWidget = class {
             <button id="pictureInPictureToggleButton" class="pictureInPictureToggleButton">
               <div id="pictureInPictureToggleIcon" class="pictureInPictureToggleIcon"></div>
               <span class="pictureInPictureToggleLabel">&pictureInPicture.label;</span>
+            </button>
+
+            <button id="pictureInPictureToggleExperiment" class="pip-wrapper" position="left" hidden="true">
+              <div class="pip-small clickable"></div>
+              <div class="pip-expanded clickable">
+                <span class="pip-icon-label clickable">
+                  <span class="pip-icon"></span>
+                  <span class="pip-label">&pictureInPictureToggle.label;</span>
+                </span>
+                <div class="pip-explainer clickable">
+                  &pictureInPictureExplainer;
+                </div>
+              </div>
+              <div class="pip-icon clickable"></div>
             </button>
 
             <div id="controlBar" class="controlBar" role="none" hidden="true">
@@ -2972,9 +3079,28 @@ this.NoControlsDesktopImplWidget = class {
             this.reflowedDimensions
           )
         ) {
-          this.pictureInPictureToggleButton.removeAttribute("hidden");
+          if (
+            this.prefs[
+              "media.videocontrols.picture-in-picture.video-toggle.mode"
+            ] == -1
+          ) {
+            VideoControlsWidget.cleanupToggleExperiment(this.shadowRoot);
+            this.pictureInPictureToggleButton.removeAttribute("hidden");
+            this.pictureInPictureToggleExperiment.setAttribute("hidden", true);
+          } else {
+            this.pictureInPictureToggleButton.setAttribute("hidden", true);
+            this.pictureInPictureToggleExperiment.removeAttribute("hidden");
+            VideoControlsWidget.setupToggleExperiment(
+              this.prefs,
+              this.shadowRoot,
+              this.pictureInPictureToggleExperiment,
+              this.reflowedDimensions
+            );
+          }
         } else {
+          VideoControlsWidget.cleanupToggleExperiment(this.shadowRoot);
           this.pictureInPictureToggleButton.setAttribute("hidden", true);
+          this.pictureInPictureToggleExperiment.setAttribute("hidden", true);
         }
       },
 
@@ -2989,6 +3115,10 @@ this.NoControlsDesktopImplWidget = class {
 
         this.pictureInPictureToggleButton = this.shadowRoot.getElementById(
           "pictureInPictureToggleButton"
+        );
+
+        this.pictureInPictureToggleExperiment = this.shadowRoot.getElementById(
+          "pictureInPictureToggleExperiment"
         );
 
         if (this.document.fullscreenElement) {
@@ -3077,11 +3207,26 @@ this.NoControlsDesktopImplWidget = class {
       ]>
       <div class="videocontrols" xmlns="http://www.w3.org/1999/xhtml" role="none">
         <link rel="stylesheet" href="chrome://global/skin/media/videocontrols.css" />
+        <link rel="stylesheet" href="chrome://global/skin/media/pictureinpicture-mode-1.css" mode="1" disabled="true" />
+        <link rel="stylesheet" href="chrome://global/skin/media/pictureinpicture-mode-2.css" mode="2" disabled="true" />
         <div id="controlsContainer" class="controlsContainer" role="none">
           <div class="controlsOverlay stackItem">
             <button id="pictureInPictureToggleButton" class="pictureInPictureToggleButton">
               <div id="pictureInPictureToggleIcon" class="pictureInPictureToggleIcon"></div>
               <span class="pictureInPictureToggleLabel">&pictureInPicture.label;</span>
+            </button>
+            <button id="pictureInPictureToggleExperiment" class="pip-wrapper" position="left" hidden="true">
+              <div class="pip-small clickable"></div>
+              <div class="pip-expanded clickable">
+                <span class="pip-icon-label clickable">
+                  <span class="pip-icon"></span>
+                  <span class="pip-label">&pictureInPictureToggle.label;</span>
+                </span>
+                <div class="pip-explainer clickable">
+                  &pictureInPictureExplainer;
+                </div>
+              </div>
+              <div class="pip-icon"></div>
             </button>
           </div>
         </div>

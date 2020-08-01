@@ -26,6 +26,11 @@ ChromeUtils.defineModuleGetter(
   "TOGGLE_POLICY_STRINGS",
   "resource://gre/modules/PictureInPictureTogglePolicy.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "Rect",
+  "resource://gre/modules/Geometry.jsm"
+);
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -35,6 +40,8 @@ const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
 const TOGGLE_TESTING_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.testing";
+const TOGGLE_EXPERIMENTAL_MODE_PREF =
+  "media.videocontrols.picture-in-picture.video-toggle.mode";
 const MOUSEMOVE_PROCESSING_DELAY_MS = 50;
 const TOGGLE_HIDING_TIMEOUT_MS = 2000;
 
@@ -73,6 +80,8 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
     this.weakDocStates = new WeakMap();
     this.toggleEnabled = Services.prefs.getBoolPref(TOGGLE_ENABLED_PREF);
     this.toggleTesting = Services.prefs.getBoolPref(TOGGLE_TESTING_PREF, false);
+    this.experimentalToggle =
+      Services.prefs.getIntPref(TOGGLE_EXPERIMENTAL_MODE_PREF, -1) != -1;
 
     
     
@@ -81,26 +90,46 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       this.observe(subject, topic, data);
     };
     Services.prefs.addObserver(TOGGLE_ENABLED_PREF, this.observerFunction);
+    Services.prefs.addObserver(
+      TOGGLE_EXPERIMENTAL_MODE_PREF,
+      this.observerFunction
+    );
   }
 
   willDestroy() {
     this.stopTrackingMouseOverVideos();
     Services.prefs.removeObserver(TOGGLE_ENABLED_PREF, this.observerFunction);
+    Services.prefs.removeObserver(
+      TOGGLE_EXPERIMENTAL_MODE_PREF,
+      this.observerFunction
+    );
   }
 
   observe(subject, topic, data) {
-    if (topic == "nsPref:changed" && data == TOGGLE_ENABLED_PREF) {
-      this.toggleEnabled = Services.prefs.getBoolPref(TOGGLE_ENABLED_PREF);
+    if (topic != "nsPref:changed") {
+      return;
+    }
 
-      if (this.toggleEnabled) {
-        
-        
-        this.contentWindow.requestIdleCallback(() => {
-          let videos = this.document.querySelectorAll("video");
-          for (let video of videos) {
-            this.registerVideo(video);
-          }
-        });
+    switch (data) {
+      case TOGGLE_ENABLED_PREF: {
+        this.toggleEnabled = Services.prefs.getBoolPref(TOGGLE_ENABLED_PREF);
+
+        if (this.toggleEnabled) {
+          
+          
+          this.contentWindow.requestIdleCallback(() => {
+            let videos = this.document.querySelectorAll("video");
+            for (let video of videos) {
+              this.registerVideo(video);
+            }
+          });
+        }
+        break;
+      }
+      case TOGGLE_EXPERIMENTAL_MODE_PREF: {
+        this.experimentalToggle =
+          Services.prefs.getIntPref(TOGGLE_EXPERIMENTAL_MODE_PREF, -1) != -1;
+        break;
       }
     }
   }
@@ -531,7 +560,7 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       return;
     }
 
-    let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
+    let toggle = this.getToggleElement(shadowRoot);
     if (this.isMouseOverToggle(toggle, event)) {
       let state = this.docState;
       state.isClickingToggle = true;
@@ -702,7 +731,7 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
     }
 
     let state = this.docState;
-    let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
+    let toggle = this.getToggleElement(shadowRoot);
     let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
 
     if (!state.hasCheckedPolicy) {
@@ -793,7 +822,7 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
 
     if (shadowRoot) {
       let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
-      let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
+      let toggle = this.getToggleElement(shadowRoot);
       controlsOverlay.classList.remove("hovering");
       toggle.classList.remove("hovering");
     }
@@ -821,6 +850,24 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
     let toggleRect = toggle.ownerGlobal.windowUtils.getBoundsWithoutFlushing(
       toggle
     );
+
+    if (this.experimentalToggle) {
+      
+      
+      
+      
+      
+      
+      
+      toggleRect = Rect.fromRect(toggleRect);
+      let clickableChildren = toggle.querySelectorAll(".clickable");
+      for (let child of clickableChildren) {
+        let childRect = Rect.fromRect(
+          child.ownerGlobal.windowUtils.getBoundsWithoutFlushing(child)
+        );
+        toggleRect.expandToContain(childRect);
+      }
+    }
 
     
     if (!toggleRect.width || !toggleRect.height) {
@@ -855,7 +902,7 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       return;
     }
 
-    let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
+    let toggle = this.getToggleElement(shadowRoot);
     if (this.isMouseOverToggle(toggle, event)) {
       event.stopImmediatePropagation();
       event.preventDefault();
@@ -866,6 +913,20 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
         mozInputSource: event.mozInputSource,
       });
     }
+  }
+
+  
+
+
+
+
+
+
+  getToggleElement(shadowRoot) {
+    if (!this.experimentalToggle) {
+      return shadowRoot.getElementById("pictureInPictureToggleButton");
+    }
+    return shadowRoot.getElementById("pictureInPictureToggleExperiment");
   }
 
   
