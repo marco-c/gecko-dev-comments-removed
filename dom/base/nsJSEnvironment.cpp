@@ -64,13 +64,7 @@
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "nsRefreshDriver.h"
 #include "nsJSPrincipals.h"
-
-#ifdef XP_MACOSX
-
-#  undef check
-#endif
 #include "AccessCheck.h"
-
 #include "mozilla/Logging.h"
 #include "prthread.h"
 
