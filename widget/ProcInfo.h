@@ -9,7 +9,6 @@
 #include <base/process.h>
 #include <stdint.h>
 #include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/HashTable.h"
 #include "mozilla/MozPromise.h"
 
 namespace mozilla {
@@ -84,8 +83,7 @@ struct ProcInfo {
   CopyableTArray<ThreadInfo> threads;
 };
 
-typedef MozPromise<mozilla::HashMap<base::ProcessId, ProcInfo>, nsresult, true>
-    ProcInfoPromise;
+typedef MozPromise<ProcInfo, nsresult, true> ProcInfoPromise;
 
 
 
@@ -93,108 +91,16 @@ typedef MozPromise<mozilla::HashMap<base::ProcessId, ProcInfo>, nsresult, true>
 
 
 
-
-
-
-
-struct ProcInfoRequest {
-  ProcInfoRequest(base::ProcessId aPid, ProcType aProcessType,
-                  const nsACString& aOrigin, uint32_t aChildId = 0
 #ifdef XP_MACOSX
-                  ,
-                  mach_port_t aChildTask = 0
-#endif  
-                  )
-      : pid(aPid),
-        processType(aProcessType),
-        origin(aOrigin),
-        childId(aChildId)
-#ifdef XP_MACOSX
-        ,
-        childTask(aChildTask)
-#endif  
-  {
-  }
-  const base::ProcessId pid;
-  const ProcType processType;
-  const nsCString origin;
-  
-  const int32_t childId;
-#ifdef XP_MACOSX
-  const mach_port_t childTask;
-#endif  
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests);
-
-
-
-
-
-template <typename T>
-nsresult CopySysProcInfoToDOM(const ProcInfo& source, T* dest) {
-  
-  dest->mPid = source.pid;
-  dest->mFilename.Assign(source.filename);
-  dest->mVirtualMemorySize = source.virtualMemorySize;
-  dest->mResidentSetSize = source.residentSetSize;
-  dest->mCpuUser = source.cpuUser;
-  dest->mCpuKernel = source.cpuKernel;
-
-  
-  mozilla::dom::Sequence<mozilla::dom::ThreadInfoDictionary> threads;
-  for (const ThreadInfo& entry : source.threads) {
-    mozilla::dom::ThreadInfoDictionary* thread =
-        threads.AppendElement(fallible);
-    if (NS_WARN_IF(!thread)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-    thread->mCpuUser = entry.cpuUser;
-    thread->mCpuKernel = entry.cpuKernel;
-    thread->mTid = entry.tid;
-    thread->mName.Assign(entry.name);
-  }
-  dest->mThreads = std::move(threads);
-  return NS_OK;
-}
+RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
+                                    const ProcType& processType,
+                                    const nsACString& origin,
+                                    mach_port_t aChildTask = MACH_PORT_NULL);
+#else
+RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
+                                    const ProcType& processType,
+                                    const nsACString& origin);
+#endif
 
 }  
 #endif  
