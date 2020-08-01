@@ -15,16 +15,15 @@ async function serialize_handles(handle_array) {
 
 
 async function serialize_handle(handle) {
-  let serialized;
-  if (handle.isDirectory) {
-    serialized = await serialize_file_system_directory_handle(handle);
-  } else if (handle.isFile) {
-    serialized = await serialize_file_system_file_handle(handle);
-  } else {
-    throw 'Object is not a FileSystemFileHandle or ' +
-    `FileSystemDirectoryHandle ${handle}`;
+  switch (handle.kind) {
+    case 'directory':
+      return await serialize_file_system_directory_handle(handle);
+    case 'file':
+      return await serialize_file_system_file_handle(handle);
+    default:
+      throw 'Object is not a FileSystemFileHandle or ' +
+          `FileSystemDirectoryHandle ${handle}`;
   }
-  return serialized;
 }
 
 
@@ -38,14 +37,12 @@ async function serialize_file_system_handle(handle) {
     await handle.queryPermission({ writable: true })
 
   return {
-    is_file: handle.isFile,
-    is_directory: handle.isDirectory,
+    kind: handle.kind,
     name: handle.name,
     read_permission,
     write_permission
   };
 }
-
 
 
 
@@ -76,14 +73,13 @@ async function serialize_file_system_file_handle(file_handle) {
 
 
 
-
 async function serialize_file_system_directory_handle(directory_handle) {
   
   const serialized_files = [];
   const serialized_directories = [];
   for await (const child_handle of directory_handle.getEntries()) {
     const serialized_child_handle = await serialize_handle(child_handle);
-    if (child_handle.isDirectory) {
+    if (child_handle.kind === "directory") {
       serialized_directories.push(serialized_child_handle);
     } else {
       serialized_files.push(serialized_child_handle);
@@ -138,24 +134,24 @@ function assert_equals_serialized_handles(left_array, right_array) {
 
 
 function assert_equals_serialized_handle(left, right) {
-  if (left.is_directory) {
-    assert_equals_serialized_file_system_directory_handle(left, right);
-  } else if (left.is_file) {
-    assert_equals_serialized_file_system_file_handle(left, right);
-  } else {
-    throw 'Object is not a FileSystemFileHandle or ' +
-    `FileSystemDirectoryHandle ${left}`;
+  switch (left.kind) {
+    case 'directory':
+      assert_equals_serialized_file_system_directory_handle(left, right);
+      break;
+    case 'file':
+      assert_equals_serialized_file_system_file_handle(left, right);
+      break;
+    default:
+      throw 'Object is not a FileSystemFileHandle or ' +
+          `FileSystemDirectoryHandle ${left}`;
   }
 }
 
 
 
 function assert_equals_serialized_file_system_handle(left, right) {
-  assert_equals(left.is_file, right.is_file,
-    'Each FileSystemHandle instance must use the expected "isFile".');
-
-  assert_equals(left.is_directory, right.is_directory,
-    'Each FileSystemHandle instance must use the expected "isDirectory".');
+  assert_equals(left.kind, right.kind,
+    'Each FileSystemHandle instance must use the expected "kind".');
 
   assert_equals(left.name, right.name,
     'Each FileSystemHandle instance must use the expected "name" ' +

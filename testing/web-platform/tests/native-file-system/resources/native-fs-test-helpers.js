@@ -33,7 +33,8 @@ function directory_test(func, description) {
     
     
     for await (let entry of directory.getEntries()) {
-      await directory.removeEntry(entry.name, {recursive: entry.isDirectory});
+      await directory.removeEntry(
+          entry.name, {recursive: entry.kind === 'directory'});
     }
     await func(t, directory);
   }, description);
