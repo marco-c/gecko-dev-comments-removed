@@ -1,17 +1,25 @@
-
-
-
-
 <!DOCTYPE html>
 <meta charset="utf-8">
-<title>CSS Basic User Interface Test: -webkit-appearance: menulist-button on drop-down select</title>
+<title>CSS Basic User Interface Test: appearance: menulist-button on drop-down select</title>
 <link rel="help" href="https://drafts.csswg.org/css-ui-4/#appearance-switching">
 <meta name="assert" content="menulist-button is NOT an alias to auto on drop-down select.">
 <link rel="mismatch" href="appearance-auto-ref.html">
 <style>
  #container { width: 500px; }
- #container > #drop-down-select { -webkit-appearance: none; -webkit-appearance: menulist-button; }
+ #container > #drop-down-select { appearance: none; appearance: menulist-button; }
 </style>
+
+
+
+
+
+
+
+
+
+
+
+
 <div id="container">
 	<a>a</a>
 	<button>button</button>

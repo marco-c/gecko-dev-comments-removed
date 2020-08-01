@@ -1334,6 +1334,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleAppearance EffectiveAppearance() const {
     switch (mAppearance) {
       case mozilla::StyleAppearance::Auto:
+      case mozilla::StyleAppearance::Searchfield:
+      case mozilla::StyleAppearance::Textarea:
+      case mozilla::StyleAppearance::Checkbox:
+      case mozilla::StyleAppearance::Radio:
+      case mozilla::StyleAppearance::Menulist:
+      case mozilla::StyleAppearance::Listbox:
+      case mozilla::StyleAppearance::Meter:
+      case mozilla::StyleAppearance::ProgressBar:
+        
         return mDefaultAppearance;
       case mozilla::StyleAppearance::Textfield:
         
@@ -1350,6 +1359,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
         if (mDefaultAppearance == mozilla::StyleAppearance::NumberInput) {
           return mAppearance;
         }
+        return mDefaultAppearance;
+      case mozilla::StyleAppearance::MenulistButton:
+        
+        
+        
+        
         return mDefaultAppearance;
       case mozilla::StyleAppearance::Button:
         
