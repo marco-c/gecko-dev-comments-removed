@@ -178,6 +178,9 @@ class TargetList extends EventEmitter {
     if (targetFront.isTopLevel) {
       await this.startListening({ onlyLegacy: true });
     }
+
+    
+    this.emitForTests("processed-available-target", targetFront);
   }
 
   _onTargetDestroyed(targetFront, isTargetSwitching = false) {
