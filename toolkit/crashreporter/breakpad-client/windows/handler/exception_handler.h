@@ -156,9 +156,9 @@ class ExceptionHandler {
     HANDLER_EXCEPTION = 1 << 0,          
     HANDLER_INVALID_PARAMETER = 1 << 1,  
     HANDLER_PURECALL = 1 << 2,           
-    HANDLER_ALL = HANDLER_EXCEPTION |
-                  HANDLER_INVALID_PARAMETER |
-                  HANDLER_PURECALL
+    HANDLER_HEAP_CORRUPTION = 1 << 4,    
+    HANDLER_ALL = HANDLER_EXCEPTION | HANDLER_INVALID_PARAMETER |
+                  HANDLER_PURECALL | HANDLER_HEAP_CORRUPTION
   };
 
   
@@ -345,6 +345,10 @@ class ExceptionHandler {
 
   
   
+  static LONG WINAPI HandleHeapCorruption(EXCEPTION_POINTERS* exinfo);
+
+  
+  
   
   
   
@@ -450,6 +454,10 @@ class ExceptionHandler {
   
   
   _purecall_handler previous_pch_;
+
+  
+  
+  PVOID heap_corruption_veh_;
 
   
   HANDLE handler_thread_;
