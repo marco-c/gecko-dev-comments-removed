@@ -222,13 +222,10 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
         if (browser.frameLoader.remoteTab) {
           
           packet.tabId = browser.frameLoader.remoteTab.tabId;
-        } else if (browser.outerWindowID) {
-          
-          packet.outerWindowID = browser.outerWindowID;
         } else {
           
-          const windowUtils = browser.contentWindow.windowUtils;
-          packet.outerWindowID = windowUtils.outerWindowID;
+          packet.outerWindowID =
+            browser.browsingContext.currentWindowGlobal.outerWindowId;
         }
       } else {
         

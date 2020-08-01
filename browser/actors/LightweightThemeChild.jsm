@@ -30,7 +30,7 @@ class LightweightThemeChild extends JSWindowActorChild {
     }
     
     
-    return this.contentWindow.top.windowUtils.outerWindowID;
+    return this.contentWindow.top.docShell.outerWindowID;
   }
 
   
