@@ -337,10 +337,8 @@ static Maybe<nsRect> ComputeTheIntersection(
   
   
   
-  
-  
-  
-  Maybe<nsRect> intersectionRect = Some(target->GetRectRelativeToSelf());
+  Maybe<nsRect> intersectionRect = Some(nsLayoutUtils::GetAllInFlowRectsUnion(
+      target, target, nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS));
 
   
   
