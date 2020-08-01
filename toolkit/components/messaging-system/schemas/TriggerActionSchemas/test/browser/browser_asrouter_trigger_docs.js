@@ -1,9 +1,6 @@
 const TEST_URL =
   "https://example.com/browser/toolkit/components/messaging-system/schemas/TriggerActionSchemas/test/browser/TriggerActionSchemas.md";
 
-const { TriggerActionSchemas } = ChromeUtils.import(
-  "resource://testing-common/TriggerActionSchemas.js"
-);
 const { ASRouterTriggerListeners } = ChromeUtils.import(
   "resource://activity-stream/lib/ASRouterTriggerListeners.jsm"
 );
@@ -13,21 +10,32 @@ const { CFRMessageProvider } = ChromeUtils.import(
 
 ChromeUtils.defineModuleGetter(
   this,
-  "JsonSchemaValidator",
-  "resource://gre/modules/components-utils/JsonSchemaValidator.jsm"
+  "Ajv",
+  "resource://testing-common/ajv-4.1.1.js"
 );
 
+XPCOMUtils.defineLazyGetter(this, "fetchTriggerActionSchema", async () => {
+  const response = await fetch(
+    "resource://testing-common/TriggerActionSchemas.json"
+  );
+  const schema = await response.json();
+  if (!schema) {
+    throw new Error("Failed to load TriggerActionSchemas");
+  }
+  return schema.definitions.TriggerActionSchemas;
+});
 
 async function validateTrigger(trigger) {
-  const schema = TriggerActionSchemas[trigger.id];
-  ok(schema, `should have a schema for ${trigger.id}`);
-  const { valid, error } = JsonSchemaValidator.validate(trigger, schema);
-  if (!valid) {
-    throw new Error(
-      `Trigger with id ${trigger.id} was not valid: ${error.message}`
-    );
+  const schema = await fetchTriggerActionSchema;
+  const ajv = new Ajv({ async: "co*" });
+  const validator = ajv.compile(schema);
+  if (!validator(trigger)) {
+    throw new Error(`Trigger with id ${trigger.id} was not valid.`);
   }
-  ok(valid, `should be a valid action of type ${trigger.id}`);
+  Assert.ok(
+    !validator.errors,
+    `should be a valid trigger of type ${trigger.id}`
+  );
 }
 
 function getHeadingsFromDocs(docs) {
@@ -50,7 +58,7 @@ add_task(async function test_trigger_docs() {
   for (let triggerName of ASRouterTriggerListeners.keys()) {
     Assert.ok(
       headings.includes(triggerName),
-      `${triggerName} not found in trigger-listeners.md`
+      `${triggerName} not found in TriggerActionSchemas.md`
     );
   }
 });
@@ -58,12 +66,6 @@ add_task(async function test_trigger_docs() {
 add_task(async function test_message_triggers() {
   const messages = CFRMessageProvider.getMessages();
   for (let message of messages) {
-    if (message.id === "MILESTONE_MESSAGE") {
-      
-      
-      
-      continue;
-    }
     validateTrigger(message.trigger);
   }
 });
