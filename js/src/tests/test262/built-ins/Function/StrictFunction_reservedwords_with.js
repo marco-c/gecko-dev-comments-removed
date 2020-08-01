@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+	new Function("'use strict'; with ({}) {}");
+});
+
+reportCompare(0, 0);

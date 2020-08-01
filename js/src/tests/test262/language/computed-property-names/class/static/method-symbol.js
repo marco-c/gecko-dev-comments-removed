@@ -7,6 +7,60 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var sym1 = Symbol();
 var sym2 = Symbol();
 class C {
@@ -19,17 +73,17 @@ assert.sameValue(C.a(), 'A', "`C.a()` returns `'A'`. Defined as `static a() { re
 assert.sameValue(C[sym1](), 'B', "`C[sym1]()` returns `'B'`. Defined as `static [sym1]() { return 'B'; }`");
 assert.sameValue(C.c(), 'C', "`C.c()` returns `'C'`. Defined as `static c() { return 'C'; }`");
 assert.sameValue(C[sym2](), 'D', "`C[sym2]()` returns `'D'`. Defined as `static [sym2]() { return 'D'; }`");
-assert(
-  compareArray(Object.keys(C), []),
-  "`compareArray(Object.keys(C), [])` returns `true`"
+assert.compareArray(
+  Object.keys(C),
+  []
 );
-assert(
-  compareArray(Object.getOwnPropertyNames(C), ['length', 'name', 'prototype', 'a', 'c']),
-  "`compareArray(Object.getOwnPropertyNames(C), ['length', 'name', 'prototype', 'a', 'c'])` returns `true`"
+assert.compareArray(
+  Object.getOwnPropertyNames(C),
+  ['length', 'name', 'prototype', 'a', 'c']
 );
-assert(
-  compareArray(Object.getOwnPropertySymbols(C), [sym1, sym2]),
-  "`compareArray(Object.getOwnPropertySymbols(C), [sym1, sym2])` returns `true`"
+assert.compareArray(
+  Object.getOwnPropertySymbols(C),
+  [sym1, sym2]
 );
 
 reportCompare(0, 0);

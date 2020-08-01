@@ -13,9 +13,29 @@
 
 
 
-const a = "global";
-const b = (a => eval?.("a"))("local")
 
-assert.sameValue(b, a);
+
+
+
+
+
+
+
+
+
+
+
+const a = 'global';
+
+function fn() {
+  const a = 'local';
+  return eval?.('a');
+}
+
+assert.sameValue(fn(), 'global', 'fn() returns "global" value from indirect eval');
+
+const b = (a => eval?.('a'))('local');
+
+assert.sameValue(b, 'global', 'b is "global", from indirect eval not observing parameter');
 
 reportCompare(0, 0);

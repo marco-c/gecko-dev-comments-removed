@@ -54,31 +54,34 @@
 
 
 
-var styles = ['narrow', 'short', 'long'];
+const styles = ['narrow', 'short', 'long'];
+const types = ['language', 'region', 'script', 'currency'];
 
-styles.forEach(style => {
-  var dn = new Intl.DisplayNames('en-US', { style });
-  var options = dn.resolvedOptions();
+types.forEach(type => {
+  styles.forEach(style => {
+    const dn = new Intl.DisplayNames('en-US', { style, type });
+    const options = dn.resolvedOptions();
 
-  verifyProperty(options, 'style', {
-    value: style,
-    writable: true,
-    enumerable: true,
-    configurable: true
-  });
-  
-  verifyProperty(options, 'type', {
-    value: 'language',
-    writable: true,
-    enumerable: true,
-    configurable: true
-  });
-  
-  verifyProperty(options, 'fallback', {
-    value: 'code',
-    writable: true,
-    enumerable: true,
-    configurable: true
+    verifyProperty(options, 'style', {
+      value: style,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+
+    verifyProperty(options, 'type', {
+      value: type,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
+
+    verifyProperty(options, 'fallback', {
+      value: 'code',
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
   });
 });
 

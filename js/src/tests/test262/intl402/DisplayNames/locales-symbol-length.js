@@ -29,8 +29,11 @@
 
 
 
-var calls = [];
-var symbol = Symbol();
+
+
+
+let calls = [];
+let symbol = Symbol();
 
 Symbol.prototype.length = 1;
 
@@ -54,7 +57,7 @@ Object.defineProperty(Symbol.prototype, '0', {
   }
 });
 
-new Intl.DisplayNames(symbol);
+new Intl.DisplayNames(symbol, {type: 'language'});
 
 assert.compareArray(calls, ['length', '0']);
 

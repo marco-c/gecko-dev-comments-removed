@@ -30,7 +30,10 @@
 
 
 
-var obj = new Intl.DisplayNames();
+
+
+
+var obj = new Intl.DisplayNames(undefined, {type: 'language'});
 
 assert(Object.isExtensible(obj));
 

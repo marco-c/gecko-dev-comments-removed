@@ -28,31 +28,18 @@
 
 
 
-
-
-
-
-
-
-
-
-var values = [
-  undefined,
+const types = [
   'language',
   'region',
   'script',
   'currency'
 ];
 
-for (let valid of values) {
-  let options = {
-    type: valid
-  };
+types.forEach(type => {
+  const obj = new Intl.DisplayNames('en', { type });
 
-  var obj = new Intl.DisplayNames('en', options);
-
-  assert(obj instanceof Intl.DisplayNames, `instanceof check - ${valid}`);
-  assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype, `proto check - ${valid}`);
-}
+  assert(obj instanceof Intl.DisplayNames, `instanceof check - ${type}`);
+  assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype, `proto check - ${type}`);
+});
 
 reportCompare(0, 0);

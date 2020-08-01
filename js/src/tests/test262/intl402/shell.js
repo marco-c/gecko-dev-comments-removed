@@ -42,7 +42,8 @@ function testWithIntlConstructors(f) {
 
   
   
-  ["PluralRules", "RelativeTimeFormat", "ListFormat", "DisplayNames"].forEach(function(constructor) {
+  
+  ["PluralRules", "RelativeTimeFormat", "ListFormat"].forEach(function(constructor) {
     if (typeof Intl[constructor] === "function") {
       constructors[constructors.length] = constructor;
     }

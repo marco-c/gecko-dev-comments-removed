@@ -16,7 +16,10 @@
 
 
 
-var obj = new Intl.DisplayNames();
+
+
+
+var obj = new Intl.DisplayNames(undefined, {type: 'language'});
 
 assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype);
 

@@ -34,23 +34,17 @@
 
 
 
-
-
-var values = [
+const fallbacks = [
   undefined,
   'code',
   'none'
 ];
 
-for (let valid of values) {
-  let options = {
-    fallback: valid
-  };
+fallbacks.forEach(fallback => {
+  const obj = new Intl.DisplayNames('en', { fallback, type: 'language'});
 
-  var obj = new Intl.DisplayNames('en', options);
-
-  assert(obj instanceof Intl.DisplayNames, `instanceof check - ${valid}`);
-  assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype, `proto check - ${valid}`);
-}
+  assert(obj instanceof Intl.DisplayNames, `instanceof check - ${fallback}`);
+  assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype, `proto check - ${fallback}`);
+});
 
 reportCompare(0, 0);

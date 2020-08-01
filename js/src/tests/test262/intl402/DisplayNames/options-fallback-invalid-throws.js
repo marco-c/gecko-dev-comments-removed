@@ -36,40 +36,24 @@
 
 
 
-
-
-
-
-var options = {
-  fallback: 'err'
-};
-
 assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {fallback: 'err', type: 'language'});
 }, 'err');
 
-options.fallback = 'non';
-
 assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {fallback: 'non', type: 'language'});
 }, 'non, not none');
 
-options.fallback = null;
-
 assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {fallback: null, type: 'language'});
 }, 'null');
 
-options.fallback = '';
-
 assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {fallback: '', type: 'language'});
 }, 'the empty string');
 
-options.fallback = ['code', 'none'];
-
 assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {fallback: ['code', 'none'], type: 'language'});
 }, 'an array with the valid options is not necessarily valid');
 
 reportCompare(0, 0);

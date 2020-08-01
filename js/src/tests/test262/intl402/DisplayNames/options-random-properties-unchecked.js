@@ -32,9 +32,7 @@
 
 
 
-
-
-var options = {};
+var options = { type: 'language' };
 Object.defineProperty(options, 'fallBack', {
   get() { throw new Test262Error(); }
 });

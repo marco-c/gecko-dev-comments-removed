@@ -16,11 +16,13 @@
 
 
 
+
+
 $DONOTEVALUATE();
 
-const a = {fn() {}};
+const a = function() {};
 
 
 
-a?.fn
+a?.
   `hello`

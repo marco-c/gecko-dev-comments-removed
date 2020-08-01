@@ -29,10 +29,13 @@
 
 
 
+
+
+
 var custom = new Function();
 custom.prototype = {};
 
-var obj = Reflect.construct(Intl.DisplayNames, [], custom);
+const obj = Reflect.construct(Intl.DisplayNames, [undefined, {type: 'language'}], custom);
 
 assert.sameValue(Object.getPrototypeOf(obj), custom.prototype);
 

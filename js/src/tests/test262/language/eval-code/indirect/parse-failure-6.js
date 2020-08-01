@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+  (0, eval)("for(;false;)");
+});
+
+reportCompare(0, 0);

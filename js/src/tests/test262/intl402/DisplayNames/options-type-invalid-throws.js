@@ -38,44 +38,41 @@
 
 
 
+assert.throws(TypeError, () => {
+  new Intl.DisplayNames('en', undefined);
+}, 'undefined options');
 
+assert.throws(TypeError, () => {
+  new Intl.DisplayNames('en', {});
+}, '{} options');
 
-var options = {
-  type: 'lang'
-};
-
-assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
-}, 'lang');
-
-options.type = 'day-period';
-
-assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
-}, 'day-period, not dayPeriod');
-
-options.type = 'weekDay';
+assert.throws(TypeError, () => {
+  new Intl.DisplayNames('en', {type: undefined});
+}, 'undefined type');
 
 assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
-}, 'weekDay, not weekday');
-
-options.type = null;
+  new Intl.DisplayNames('en', {type: 'lang'});
+}, 'type = lang');
 
 assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
-}, 'null');
-
-options.type = '';
+  new Intl.DisplayNames('en', {type: 'dayPeriod'});
+}, 'dayPeriod not supported yet');
 
 assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
-}, 'the empty string');
-
-options.type = ['language', 'region', 'script', 'currency', 'weekday', 'month', 'quarter', 'dayPeriod', 'dateTimeField'];
+  new Intl.DisplayNames('en', {type: 'weekday'});
+}, 'weekday not supported yet');
 
 assert.throws(RangeError, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {type: null});
+}, 'type = null');
+
+
+assert.throws(RangeError, () => {
+  new Intl.DisplayNames('en', {type: ''});
+}, 'type = ""');
+
+assert.throws(RangeError, () => {
+  new Intl.DisplayNames('en', {type: ['language', 'region', 'script', 'currency']});
 }, 'an array with the valid options is not necessarily valid');
 
 reportCompare(0, 0);

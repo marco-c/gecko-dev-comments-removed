@@ -52,33 +52,34 @@
 
 
 
+const fallbacks = ['code', 'none'];
+const types = ['language', 'region', 'script', 'currency'];
 
+types.forEach(type => {
+  fallbacks.forEach(fallback => {
+    const dn = new Intl.DisplayNames('en-US', { fallback, type });
+    const options = dn.resolvedOptions();
 
-var fallbacks = ['code', 'none'];
+    verifyProperty(options, 'fallback', {
+      value: fallback,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
 
-fallbacks.forEach(fallback => {
-  var dn = new Intl.DisplayNames('en-US', { fallback });
-  var options = dn.resolvedOptions();
+    verifyProperty(options, 'type', {
+      value: type,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
 
-  verifyProperty(options, 'fallback', {
-    value: fallback,
-    writable: true,
-    enumerable: true,
-    configurable: true
-  });
-  
-  verifyProperty(options, 'type', {
-    value: 'language',
-    writable: true,
-    enumerable: true,
-    configurable: true
-  });
-  
-  verifyProperty(options, 'style', {
-    value: 'long',
-    writable: true,
-    enumerable: true,
-    configurable: true
+    verifyProperty(options, 'style', {
+      value: 'long',
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
   });
 });
 

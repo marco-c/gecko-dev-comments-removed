@@ -29,44 +29,31 @@
 
 
 
-
-var options = {
-  fallback: {
-    toString() {
-      throw new Test262Error();
-    }
-  }
-};
-
 assert.throws(Test262Error, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {
+    type: 'language', fallback: { toString() { throw new Test262Error(); }}
+  });
 }, 'from toString');
 
-options.fallback = {
-  toString: undefined,
-  valueOf() {
-    throw new Test262Error();
-  }
-};
-
 assert.throws(Test262Error, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {
+    type: 'language',
+    fallback: {toString: undefined, valueOf() {throw new Test262Error(); }}
+  });
 }, 'from valueOf');
 
-options.fallback = {
-  [Symbol.toPrimitive]() {
-    throw new Test262Error();
-  }
-};
-
 assert.throws(Test262Error, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {
+    type: 'language',
+    fallback: { [Symbol.toPrimitive]() { throw new Test262Error(); } }
+  });
 }, 'from ToPrimitive');
 
-options.fallback = Symbol();
-
 assert.throws(TypeError, () => {
-  new Intl.DisplayNames('en', options);
+  new Intl.DisplayNames('en', {
+    type: 'language',
+    fallback: Symbol()
+  });
 }, 'symbol value');
 
 reportCompare(0, 0);

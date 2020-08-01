@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(unescape(1n), '1');
+
+assert.sameValue(unescape(-1n), '-1');
+
+reportCompare(0, 0);

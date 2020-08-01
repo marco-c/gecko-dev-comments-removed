@@ -30,28 +30,22 @@
 
 
 
-
-
-
-
-
-
-var values = [
+const styles = [
   undefined,
   'narrow',
   'short',
   'long'
 ];
 
-for (let valid of values) {
-  let options = {
-    style: valid
-  };
+const types = ['language', 'region', 'script', 'currency'];
 
-  var obj = new Intl.DisplayNames('en', options);
+types.forEach( type => {
+  styles.forEach(style => {
+    var obj = new Intl.DisplayNames('en', { style, type });
 
-  assert(obj instanceof Intl.DisplayNames, `instanceof check - ${valid}`);
-  assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype, `proto check - ${valid}`);
-}
+    assert(obj instanceof Intl.DisplayNames, `instanceof check - ${style}`);
+    assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype, `proto check - ${style}`);
+  });
+});
 
 reportCompare(0, 0);

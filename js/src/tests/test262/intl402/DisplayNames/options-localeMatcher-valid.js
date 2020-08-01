@@ -34,23 +34,17 @@
 
 
 
-
-
-var values = [
+const localeMatchers = [
   undefined,
   'lookup',
   'best fit'
 ];
 
-for (let valid of values) {
-  let options = {
-    localeMatcher: valid
-  };
+localeMatchers.forEach(localeMatcher => {
+  const obj = new Intl.DisplayNames('en', { localeMatcher, type: 'language' });
 
-  var obj = new Intl.DisplayNames('en', options);
-
-  assert(obj instanceof Intl.DisplayNames, `instanceof check - ${valid}`);
-  assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype, `proto check - ${valid}`);
-}
+  assert(obj instanceof Intl.DisplayNames, `instanceof check - ${localeMatcher}`);
+  assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype, `proto check - ${localeMatcher}`);
+});
 
 reportCompare(0, 0);

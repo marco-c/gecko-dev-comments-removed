@@ -28,13 +28,7 @@
 
 
 
-
-
-
-
-
-
-var options = {};
+var options = { type: 'language' };
 Object.defineProperty(options, 'fallback', {
   get() { throw new Test262Error(); },
 });
