@@ -34,4 +34,4 @@ assertThrowsObjectError(() => Map.prototype.has.call(WeakRef.prototype), "WeakRe
 
 
 assertThrowsObjectError(() => Map.prototype.has.call(new Error), "Error");
-assertThrowsObjectError(() => Map.prototype.has.call(new TypeError), "Error");
+assertThrowsObjectError(() => Map.prototype.has.call(new TypeError), "TypeError");
