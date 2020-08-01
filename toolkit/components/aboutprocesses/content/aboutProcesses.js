@@ -170,9 +170,6 @@ var State = {
     if (prev.pid != cur.pid) {
       throw new Error("Assertion failed: A process cannot change pid.");
     }
-    if (prev.type != cur.type) {
-      throw new Error("Assertion failed: A process cannot change type.");
-    }
     let prevThreads = new Map();
     for (let thread of prev.threads) {
       prevThreads.set(thread.tid, thread);
@@ -739,13 +736,16 @@ var Control = {
           break;
         case null:
           
-          if (a.type == "browser") {
-            order = -1;
-          } else if (b.type == "browser") {
-            order = 1;
+          order = this._getDisplayGroupRank(a) - this._getDisplayGroupRank(b);
+          if (order == 0) {
+            
+            order = String(a.name).localeCompare(b.name);
+            if (order == 0) {
+              
+              
+              order = b.slopeCpuUser - a.slopeCpuUser;
+            }
           }
-          
-          order = b.pid - a.pid;
           break;
         default:
           throw new Error("Unsupported order: " + this._sortColumn);
@@ -755,6 +755,32 @@ var Control = {
       }
       return order;
     });
+  },
+
+  
+  
+  
+  
+  
+  
+  _getDisplayGroupRank({ type }) {
+    switch (type) {
+      
+      case "browser":
+        return 0;
+      
+      case "web":
+      case "webIsolated":
+      case "webLargeAllocation":
+      case "withCoopCoep":
+        return 1;
+      
+      case "preallocated":
+        return 3;
+      
+      default:
+        return 2;
+    }
   },
 };
 
