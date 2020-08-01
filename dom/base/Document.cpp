@@ -357,6 +357,7 @@
 #include "ThirdPartyUtil.h"
 #include "nsHtml5Module.h"
 #include "nsHtml5Parser.h"
+#include "nsTableWrapperFrame.h"
 
 #define XML_DECLARATION_BITS_DECLARATION_EXISTS (1 << 0)
 #define XML_DECLARATION_BITS_ENCODING_EXISTS (1 << 1)
@@ -12523,7 +12524,7 @@ bool Document::IsPotentiallyScrollable(HTMLBodyElement* aBody) {
   
 
   
-  nsIFrame* bodyFrame = aBody->GetPrimaryFrame();
+  nsIFrame* bodyFrame = nsLayoutUtils::GetStyleFrame(aBody);
   if (!bodyFrame) {
     return false;
   }
@@ -12531,17 +12532,14 @@ bool Document::IsPotentiallyScrollable(HTMLBodyElement* aBody) {
   
   
   MOZ_ASSERT(aBody->GetParent() == aBody->OwnerDoc()->GetRootElement());
-  nsIFrame* parentFrame = aBody->GetParent()->GetPrimaryFrame();
-  if (parentFrame &&
-      parentFrame->StyleDisplay()->mOverflowX == StyleOverflow::Visible &&
-      parentFrame->StyleDisplay()->mOverflowY == StyleOverflow::Visible) {
+  nsIFrame* parentFrame = nsLayoutUtils::GetStyleFrame(aBody->GetParent());
+  if (parentFrame && !parentFrame->StyleDisplay()->IsScrollableOverflow()) {
     return false;
   }
 
   
   
-  if (bodyFrame->StyleDisplay()->mOverflowX == StyleOverflow::Visible &&
-      bodyFrame->StyleDisplay()->mOverflowY == StyleOverflow::Visible) {
+  if (!bodyFrame->StyleDisplay()->IsScrollableOverflow()) {
     return false;
   }
 
