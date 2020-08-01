@@ -1095,9 +1095,7 @@ WSRunScanner::TextFragmentData::InvisibleLeadingWhiteSpaceRangeRef() const {
 
   
   
-  
-  
-  if (mIsPreformatted || !StartsFromHardLineBreak()) {
+  if (!StartsFromHardLineBreak()) {
     mLeadingWhiteSpaceRange.emplace();
     return mLeadingWhiteSpaceRange.ref();
   }
@@ -1127,9 +1125,7 @@ WSRunScanner::TextFragmentData::InvisibleTrailingWhiteSpaceRangeRef() const {
   
   
   
-  
-  
-  if (mIsPreformatted || !EndsByBlockBoundary()) {
+  if (!EndsByBlockBoundary()) {
     mTrailingWhiteSpaceRange.emplace();
     return mTrailingWhiteSpaceRange.ref();
   }
