@@ -101,6 +101,10 @@ function getWatchedData(watcher, { createData = false } = {}) {
 
 function persistMapToSharedData() {
   Services.ppmm.sharedData.set(SHARED_DATA_KEY_NAME, watchedDataByWatcherActor);
+  
+  
+  
+  Services.ppmm.sharedData.flush();
 }
 
 const WatcherRegistry = {
