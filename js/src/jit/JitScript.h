@@ -133,12 +133,25 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   ICEntry& icEntryFromPCOffset(uint32_t pcOffset);
   ICEntry& icEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry);
 
+  MOZ_MUST_USE bool addInlinedChild(JSContext* cx,
+                                    js::UniquePtr<ICScript> child,
+                                    uint32_t pcOffset);
+  ICScript* findInlinedChild(uint32_t pcOffset);
+
   FallbackICStubSpace* fallbackStubSpace();
   void purgeOptimizedStubs(Zone* zone);
 
   void trace(JSTracer* trc);
 
  private:
+  class CallSite {
+   public:
+    CallSite(ICScript* callee, uint32_t pcOffset)
+        : callee_(callee), pcOffset_(pcOffset) {}
+    ICScript* callee_;
+    uint32_t pcOffset_;
+  };
+
   
   
   
@@ -146,7 +159,11 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
 
   
   
+  
   InliningRoot* inliningRoot_ = nullptr;
+
+  
+  js::UniquePtr<Vector<CallSite>> inlinedChildren_;
 
   
   
