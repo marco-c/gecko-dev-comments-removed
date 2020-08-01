@@ -248,10 +248,9 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
   bool threads =
       cx->realm() &&
       cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
-#if defined(JS_CODEGEN_ARM64)
-  bool multiValue = false;  
-#else
-  bool multiValue = WasmMultiValueFlag(cx);
+  bool multiValueOnX64 = false;
+#if defined(JS_CODEGEN_X64)
+  multiValueOnX64 = WasmMultiValueFlag(cx);
 #endif
   bool simd = WasmSimdFlag(cx);
   if (reason) {
@@ -262,7 +261,7 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
     if (gc && !Append(reason, "gc", &sep)) {
       return false;
     }
-    if (multiValue && !Append(reason, "multi-value", &sep)) {
+    if (multiValueOnX64 && !Append(reason, "multi-value", &sep)) {
       return false;
     }
     if (threads && !Append(reason, "threads", &sep)) {
@@ -272,7 +271,7 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
       return false;
     }
   }
-  *isDisabled = debug || gc || multiValue || threads || simd;
+  *isDisabled = debug || gc || multiValueOnX64 || threads || simd;
   return true;
 }
 
