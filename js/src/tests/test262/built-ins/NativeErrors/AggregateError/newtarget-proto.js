@@ -30,7 +30,6 @@
 
 
 
-
 var obj = new AggregateError([]);
 
 assert.sameValue(Object.getPrototypeOf(obj), AggregateError.prototype);

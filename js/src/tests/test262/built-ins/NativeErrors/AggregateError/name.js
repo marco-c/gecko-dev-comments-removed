@@ -25,7 +25,6 @@
 
 
 
-
 verifyProperty(AggregateError, 'name', {
   value: 'AggregateError',
   writable: false,

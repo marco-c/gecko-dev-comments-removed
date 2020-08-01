@@ -17,7 +17,6 @@
 
 
 
-
 assert.sameValue(typeof AggregateError, 'function');
 
 verifyProperty(this, 'AggregateError', {

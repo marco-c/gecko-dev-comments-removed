@@ -16,7 +16,6 @@
 
 
 
-
 var case1 = Symbol();
 
 assert.throws(TypeError, () => {

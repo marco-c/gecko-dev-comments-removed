@@ -16,7 +16,6 @@
 
 
 
-
 var case1 = new AggregateError([], undefined);
 
 assert.sameValue(

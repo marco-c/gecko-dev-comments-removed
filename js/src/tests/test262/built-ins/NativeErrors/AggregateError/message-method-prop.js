@@ -23,7 +23,6 @@
 
 
 
-
 var obj = new AggregateError([], '42');
 
 verifyProperty(obj, 'message', {

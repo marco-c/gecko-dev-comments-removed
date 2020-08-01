@@ -23,7 +23,6 @@
 
 
 
-
 var case1 = new AggregateError([], 42);
 
 verifyProperty(case1, 'message', {

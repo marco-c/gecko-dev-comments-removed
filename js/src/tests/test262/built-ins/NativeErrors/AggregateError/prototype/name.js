@@ -16,7 +16,6 @@
 
 
 
-
 verifyProperty(AggregateError.prototype, 'name', {
   value: 'AggregateError',
   enumerable: false,

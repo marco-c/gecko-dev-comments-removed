@@ -17,7 +17,6 @@
 
 
 
-
 verifyProperty(AggregateError.prototype, 'message', {
   value: '',
   enumerable: false,

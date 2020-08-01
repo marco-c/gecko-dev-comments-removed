@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof AggregateError.prototype, 'object');
 
 verifyProperty(AggregateError, 'prototype', {

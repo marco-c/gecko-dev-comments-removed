@@ -11,7 +11,6 @@
 
 
 
-
 var proto = Object.getPrototypeOf(AggregateError.prototype);
 
 assert.sameValue(proto, Error.prototype);

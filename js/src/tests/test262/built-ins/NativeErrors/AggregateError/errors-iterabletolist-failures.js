@@ -44,7 +44,6 @@
 
 
 
-
 var case1 = {
   get [Symbol.iterator]() {
     throw new Test262Error();
