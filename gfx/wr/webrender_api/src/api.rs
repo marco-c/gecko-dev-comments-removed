@@ -1543,7 +1543,7 @@ impl RenderApi {
     }
 
     
-    pub fn report_memory(&self) -> MemoryReport {
+    pub fn report_memory(&self, _ops: malloc_size_of::MallocSizeOfOps) -> MemoryReport {
         let (tx, rx) = channel();
         self.api_sender.send(ApiMsg::ReportMemory(tx)).unwrap();
         *rx.recv().unwrap()
