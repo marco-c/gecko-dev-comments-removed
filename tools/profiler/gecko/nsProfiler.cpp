@@ -766,6 +766,35 @@ nsProfiler::GetBufferInfo(uint32_t* aCurrentPosition, uint32_t* aTotalSize,
   return NS_OK;
 }
 
+ void nsProfiler::GatheringTimerCallback(nsITimer* aTimer,
+                                                     void* aClosure) {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  nsCOMPtr<nsIProfiler> profiler(
+      do_GetService("@mozilla.org/tools/profiler;1"));
+  if (!profiler) {
+    
+    return;
+  }
+  nsProfiler* self = static_cast<nsProfiler*>(profiler.get());
+  if (self != aClosure) {
+    
+    return;
+  }
+  if (aTimer != self->mGatheringTimer) {
+    
+    return;
+  }
+  self->mGatheringTimer = nullptr;
+  if (!profiler_is_active() || !self->mGathering) {
+    
+    return;
+  }
+  NS_WARNING("Profiler failed to gather profiles from all sub-processes");
+  
+  
+  self->FinishGathering();
+}
+
 void nsProfiler::GatheredOOPProfile(const nsACString& aProfile) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
@@ -794,6 +823,21 @@ void nsProfiler::GatheredOOPProfile(const nsACString& aProfile) {
     
     FinishGathering();
   }
+
+  
+  
+  if (mGatheringTimer) {
+    uint32_t delayMs = 0;
+    const nsresult r = mGatheringTimer->GetDelay(&delayMs);
+    mGatheringTimer->Cancel();
+    mGatheringTimer = nullptr;
+    if (NS_SUCCEEDED(r) && delayMs != 0) {
+      Unused << NS_NewTimerWithFuncCallback(
+          getter_AddRefs(mGatheringTimer), GatheringTimerCallback, this,
+          delayMs, nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, "",
+          GetMainThreadSerialEventTarget());
+    }
+  }
 }
 
 void nsProfiler::ReceiveShutdownProfile(const nsCString& aProfile) {
@@ -813,6 +857,11 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
 
   mGathering = true;
 
+  if (mGatheringTimer) {
+    mGatheringTimer->Cancel();
+    mGatheringTimer = nullptr;
+  }
+
   
   
   
@@ -823,6 +872,8 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
       ProfilerParent::GatherProfiles();
 
   mWriter.emplace();
+
+  TimeStamp streamingStart = TimeStamp::NowUnfuzzed();
 
   UniquePtr<ProfilerCodeAddressService> service =
       profiler_code_address_service_for_presymbolication();
@@ -858,20 +909,37 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
   
 
   mPendingProfiles = profiles.Length();
-  RefPtr<nsProfiler> self = this;
-  for (auto profile : profiles) {
-    profile->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [self](mozilla::ipc::Shmem&& aResult) {
-          const nsDependentCSubstring profileString(aResult.get<char>(),
-                                                    aResult.Size<char>() - 1);
-          self->GatheredOOPProfile(profileString);
-        },
-        [self](ipc::ResponseRejectReason&& aReason) {
-          self->GatheredOOPProfile(""_ns);
-        });
-  }
-  if (!mPendingProfiles) {
+  if (mPendingProfiles != 0) {
+    
+
+    
+    
+    
+    const uint32_t streamingTimeoutMs =
+        static_cast<uint32_t>(
+            (TimeStamp::NowUnfuzzed() - streamingStart).ToMilliseconds()) *
+            2 +
+        1000;
+    Unused << NS_NewTimerWithFuncCallback(
+        getter_AddRefs(mGatheringTimer), GatheringTimerCallback, this,
+        streamingTimeoutMs, nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, "",
+        GetMainThreadSerialEventTarget());
+
+    for (auto profile : profiles) {
+      profile->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [self = RefPtr<nsProfiler>(this)](mozilla::ipc::Shmem&& aResult) {
+            const nsDependentCSubstring profileString(aResult.get<char>(),
+                                                      aResult.Size<char>() - 1);
+            self->GatheredOOPProfile(profileString);
+          },
+          [self =
+               RefPtr<nsProfiler>(this)](ipc::ResponseRejectReason&& aReason) {
+            self->GatheredOOPProfile(""_ns);
+          });
+    }
+  } else {
+    
     FinishGathering();
   }
 
@@ -947,5 +1015,9 @@ void nsProfiler::ResetGathering() {
   }
   mPendingProfiles = 0;
   mGathering = false;
+  if (mGatheringTimer) {
+    mGatheringTimer->Cancel();
+    mGatheringTimer = nullptr;
+  }
   mWriter.reset();
 }
