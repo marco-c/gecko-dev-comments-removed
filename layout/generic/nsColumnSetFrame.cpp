@@ -1056,6 +1056,8 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
 
     if (aConfig.mKnownInfeasibleBSize >= aConfig.mKnownFeasibleBSize - 1) {
       
+      
+      
       break;
     }
 
