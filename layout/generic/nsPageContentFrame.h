@@ -55,7 +55,8 @@ class nsPageContentFrame final : public mozilla::ViewportFrame {
       : ViewportFrame(aStyle, aPresContext, kClassID) {}
 
   
-  nsSharedPageData* mPD;
+  
+  nsSharedPageData* mPD = nullptr;
 };
 
 #endif 

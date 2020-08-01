@@ -84,11 +84,14 @@ class nsPageFrame final : public nsContainerFrame {
 
   void ProcessSpecialCodes(const nsString& aStr, nsString& aNewStr);
 
-  int32_t mPageNum;
-  int32_t mTotNumPages;
+  static constexpr int32_t kPageNumUnset = -1;
+
+  int32_t mPageNum = kPageNumUnset;
+  int32_t mTotNumPages = kPageNumUnset;
 
   
-  nsSharedPageData* mPD;
+  
+  nsSharedPageData* mPD = nullptr;
 
   nsMargin mPageContentMargin;
 };
