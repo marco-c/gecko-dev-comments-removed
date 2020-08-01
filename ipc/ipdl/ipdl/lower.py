@@ -2462,31 +2462,32 @@ def _generateCxxStruct(sd):
     
     
 
-    
-    ovar = ExprVar('_o')
-    opeqeq = MethodDefn(MethodDecl(
-        'operator==',
-        params=[Decl(constreftype, ovar.name)],
-        ret=Type.BOOL,
-        const=True))
-    for f in sd.fields_ipdl_order():
-        ifneq = StmtIf(ExprNot(
-            ExprBinary(ExprCall(f.getMethod()), '==',
-                       ExprCall(f.getMethod(ovar)))))
-        ifneq.addifstmt(StmtReturn.FALSE)
-        opeqeq.addstmt(ifneq)
-    opeqeq.addstmt(StmtReturn.TRUE)
-    struct.addstmts([opeqeq, Whitespace.NL])
+    if sd.comparable:
+        
+        ovar = ExprVar('_o')
+        opeqeq = MethodDefn(MethodDecl(
+            'operator==',
+            params=[Decl(constreftype, ovar.name)],
+            ret=Type.BOOL,
+            const=True))
+        for f in sd.fields_ipdl_order():
+            ifneq = StmtIf(ExprNot(
+                ExprBinary(ExprCall(f.getMethod()), '==',
+                           ExprCall(f.getMethod(ovar)))))
+            ifneq.addifstmt(StmtReturn.FALSE)
+            opeqeq.addstmt(ifneq)
+        opeqeq.addstmt(StmtReturn.TRUE)
+        struct.addstmts([opeqeq, Whitespace.NL])
 
-    
-    opneq = MethodDefn(MethodDecl(
-        'operator!=',
-        params=[Decl(constreftype, ovar.name)],
-        ret=Type.BOOL,
-        const=True))
-    opneq.addstmt(StmtReturn(ExprNot(ExprCall(ExprVar('operator=='),
-                                              args=[ovar]))))
-    struct.addstmts([opneq, Whitespace.NL])
+        
+        opneq = MethodDefn(MethodDecl(
+            'operator!=',
+            params=[Decl(constreftype, ovar.name)],
+            ret=Type.BOOL,
+            const=True))
+        opneq.addstmt(StmtReturn(ExprNot(ExprCall(ExprVar('operator=='),
+                                                  args=[ovar]))))
+        struct.addstmts([opneq, Whitespace.NL])
 
     
     
@@ -2954,42 +2955,43 @@ def _generateCxxUnion(ud):
     ])
     cls.addstmts([opeq, Whitespace.NL])
 
-    
-    for c in ud.components:
+    if ud.comparable:
+        
+        for c in ud.components:
+            opeqeq = MethodDefn(MethodDecl(
+                'operator==',
+                params=[Decl(c.inType(), rhsvar.name)],
+                ret=Type.BOOL,
+                const=True))
+            opeqeq.addstmt(StmtReturn(ExprBinary(
+                ExprCall(ExprVar(c.getTypeName())), '==', rhsvar)))
+            cls.addstmts([opeqeq, Whitespace.NL])
+
+        
         opeqeq = MethodDefn(MethodDecl(
             'operator==',
-            params=[Decl(c.inType(), rhsvar.name)],
+            params=[Decl(inClsType, rhsvar.name)],
             ret=Type.BOOL,
             const=True))
-        opeqeq.addstmt(StmtReturn(ExprBinary(
-            ExprCall(ExprVar(c.getTypeName())), '==', rhsvar)))
+        iftypesmismatch = StmtIf(ExprBinary(ud.callType(), '!=',
+                                            ud.callType(rhsvar)))
+        iftypesmismatch.addifstmt(StmtReturn.FALSE)
+        opeqeq.addstmts([iftypesmismatch, Whitespace.NL])
+
+        opeqeqswitch = StmtSwitch(ud.callType())
+        for c in ud.components:
+            case = StmtBlock()
+            case.addstmt(StmtReturn(ExprBinary(
+                ExprCall(ExprVar(c.getTypeName())), '==',
+                ExprCall(ExprSelect(rhsvar, '.', c.getTypeName())))))
+            opeqeqswitch.addcase(CaseLabel(c.enum()), case)
+        opeqeqswitch.addcase(
+            DefaultLabel(),
+            StmtBlock([_logicError('unreached'),
+                       StmtReturn.FALSE]))
+        opeqeq.addstmt(opeqeqswitch)
+
         cls.addstmts([opeqeq, Whitespace.NL])
-
-    
-    opeqeq = MethodDefn(MethodDecl(
-        'operator==',
-        params=[Decl(inClsType, rhsvar.name)],
-        ret=Type.BOOL,
-        const=True))
-    iftypesmismatch = StmtIf(ExprBinary(ud.callType(), '!=',
-                                        ud.callType(rhsvar)))
-    iftypesmismatch.addifstmt(StmtReturn.FALSE)
-    opeqeq.addstmts([iftypesmismatch, Whitespace.NL])
-
-    opeqeqswitch = StmtSwitch(ud.callType())
-    for c in ud.components:
-        case = StmtBlock()
-        case.addstmt(StmtReturn(ExprBinary(
-            ExprCall(ExprVar(c.getTypeName())), '==',
-            ExprCall(ExprSelect(rhsvar, '.', c.getTypeName())))))
-        opeqeqswitch.addcase(CaseLabel(c.enum()), case)
-    opeqeqswitch.addcase(
-        DefaultLabel(),
-        StmtBlock([_logicError('unreached'),
-                   StmtReturn.FALSE]))
-    opeqeq.addstmt(opeqeqswitch)
-
-    cls.addstmts([opeqeq, Whitespace.NL])
 
     
     
