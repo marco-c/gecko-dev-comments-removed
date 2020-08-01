@@ -728,7 +728,7 @@ static void TryAttachStub(const char* name, JSContext* cx, BaselineFrame* frame,
                           ICFallbackStub* stub, BaselineCacheIRStubKind kind,
                           Args&&... args) {
   if (stub->state().maybeTransition()) {
-    stub->discardStubs(cx, frame->script());
+    stub->discardStubs(cx, frame->invalidationScript());
   }
 
   if (stub->state().canAttachStub()) {
@@ -1806,7 +1806,7 @@ static bool TryAttachGetPropStub(const char* name, JSContext* cx,
   bool attached = false;
 
   if (stub->state().maybeTransition()) {
-    stub->discardStubs(cx, frame->script());
+    stub->discardStubs(cx, frame->invalidationScript());
   }
 
   if (stub->state().canAttachStub()) {
@@ -1827,7 +1827,7 @@ static bool TryAttachGetPropStub(const char* name, JSContext* cx,
           if (gen.shouldNotePreliminaryObjectStub()) {
             newStub->toCacheIR_Monitored()->notePreliminaryObject();
           } else if (gen.shouldUnlinkPreliminaryObjectStubs()) {
-            StripPreliminaryObjectStubs(cx, stub, script);
+            StripPreliminaryObjectStubs(cx, stub, frame->invalidationScript());
           }
         }
       } break;
@@ -2236,7 +2236,7 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
   bool attached = false;
 
   if (stub->state().maybeTransition()) {
-    stub->discardStubs(cx, script);
+    stub->discardStubs(cx, frame->invalidationScript());
   }
 
   if (stub->state().canAttachStub() && !mayThrow) {
@@ -2257,7 +2257,7 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
           if (gen.shouldNotePreliminaryObjectStub()) {
             newStub->toCacheIR_Updated()->notePreliminaryObject();
           } else if (gen.shouldUnlinkPreliminaryObjectStubs()) {
-            StripPreliminaryObjectStubs(cx, stub, script);
+            StripPreliminaryObjectStubs(cx, stub, frame->invalidationScript());
           }
 
           if (gen.attachedTypedArrayOOBStub()) {
@@ -2330,7 +2330,7 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
   
   
   if (stub->state().maybeTransition()) {
-    stub->discardStubs(cx, script);
+    stub->discardStubs(cx, frame->invalidationScript());
   }
 
   bool canAttachStub = stub->state().canAttachStub();
@@ -2357,7 +2357,7 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
           if (gen.shouldNotePreliminaryObjectStub()) {
             newStub->toCacheIR_Updated()->notePreliminaryObject();
           } else if (gen.shouldUnlinkPreliminaryObjectStubs()) {
-            StripPreliminaryObjectStubs(cx, stub, script);
+            StripPreliminaryObjectStubs(cx, stub, frame->invalidationScript());
           }
         }
       } break;
@@ -2845,7 +2845,7 @@ bool DoSetPropFallback(JSContext* cx, BaselineFrame* frame,
   DeferType deferType = DeferType::None;
   bool attached = false;
   if (stub->state().maybeTransition()) {
-    stub->discardStubs(cx, script);
+    stub->discardStubs(cx, frame->invalidationScript());
   }
 
   if (stub->state().canAttachStub()) {
@@ -2867,7 +2867,7 @@ bool DoSetPropFallback(JSContext* cx, BaselineFrame* frame,
           if (gen.shouldNotePreliminaryObjectStub()) {
             newStub->toCacheIR_Updated()->notePreliminaryObject();
           } else if (gen.shouldUnlinkPreliminaryObjectStubs()) {
-            StripPreliminaryObjectStubs(cx, stub, script);
+            StripPreliminaryObjectStubs(cx, stub, frame->invalidationScript());
           }
         }
       } break;
@@ -2924,7 +2924,7 @@ bool DoSetPropFallback(JSContext* cx, BaselineFrame* frame,
   
   
   if (stub->state().maybeTransition()) {
-    stub->discardStubs(cx, script);
+    stub->discardStubs(cx, frame->invalidationScript());
   }
 
   bool canAttachStub = stub->state().canAttachStub();
@@ -2952,7 +2952,7 @@ bool DoSetPropFallback(JSContext* cx, BaselineFrame* frame,
           if (gen.shouldNotePreliminaryObjectStub()) {
             newStub->toCacheIR_Updated()->notePreliminaryObject();
           } else if (gen.shouldUnlinkPreliminaryObjectStubs()) {
-            StripPreliminaryObjectStubs(cx, stub, script);
+            StripPreliminaryObjectStubs(cx, stub, frame->invalidationScript());
           }
         }
       } break;
@@ -3049,7 +3049,7 @@ bool DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub,
 
   
   if (stub->state().maybeTransition()) {
-    stub->discardStubs(cx, script);
+    stub->discardStubs(cx, frame->invalidationScript());
   }
 
   bool canAttachStub = stub->state().canAttachStub();
@@ -3122,7 +3122,7 @@ bool DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub,
 
   
   if (stub->state().maybeTransition()) {
-    stub->discardStubs(cx, script);
+    stub->discardStubs(cx, frame->invalidationScript());
   }
   canAttachStub = stub->state().canAttachStub();
 
@@ -3182,7 +3182,7 @@ bool DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame,
 
   
   if (stub->state().maybeTransition()) {
-    stub->discardStubs(cx, script);
+    stub->discardStubs(cx, frame->invalidationScript());
   }
 
   

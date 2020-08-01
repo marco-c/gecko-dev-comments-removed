@@ -2121,6 +2121,11 @@ ICStub* js::jit::AttachBaselineCacheIRStub(
   JitZone* jitZone = cx->zone()->jitZone();
 
   
+  JSScript* invalidationScript = icScript->isInlined()
+                                     ? icScript->inliningRoot()->owningScript()
+                                     : outerScript;
+
+  
   CacheIRStubInfo* stubInfo;
   CacheIRStubKey::Lookup lookup(kind, ICStubEngine::Baseline,
                                 writer.codeStart(), writer.codeLength());
@@ -2215,7 +2220,7 @@ ICStub* js::jit::AttachBaselineCacheIRStub(
     
     
     if (updated) {
-      stub->maybeInvalidateWarp(cx, outerScript);
+      stub->maybeInvalidateWarp(cx, invalidationScript);
       *attached = true;
     } else {
       JitSpew(JitSpew_BaselineICFallback,
@@ -2241,7 +2246,7 @@ ICStub* js::jit::AttachBaselineCacheIRStub(
   
   ResetEnteredCounts(stub);
 
-  stub->maybeInvalidateWarp(cx, outerScript);
+  stub->maybeInvalidateWarp(cx, invalidationScript);
 
   switch (stubKind) {
     case BaselineCacheIRStubKind::Regular: {
