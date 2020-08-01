@@ -600,6 +600,36 @@ static inline const char* TZContainsAbsolutePath(const char* tzVar) {
 
 
 
+static icu::UnicodeString MaybeTimeZoneId(const char* timeZone) {
+  size_t timeZoneLen = std::strlen(timeZone);
+
+  for (size_t i = 0; i < timeZoneLen; i++) {
+    char c = timeZone[i];
+
+    
+    
+    
+    if (mozilla::IsAsciiAlphanumeric(c) || c == '_' || c == '-' || c == '+') {
+      continue;
+    }
+
+    
+    if (c == '/' && i > 0 && i + 1 < timeZoneLen && timeZone[i + 1] != '/') {
+      continue;
+    }
+
+    return icu::UnicodeString();
+  }
+
+  return icu::UnicodeString(timeZone, timeZoneLen, US_INV);
+}
+
+
+
+
+
+
+
 
 
 
@@ -693,30 +723,7 @@ static icu::UnicodeString ReadTimeZoneLink(const char* tz) {
   }
 
   const char* timeZone = timeZoneWithZoneInfo + ZoneInfoPathLength;
-  size_t timeZoneLen = std::strlen(timeZone);
-
-  
-  
-  
-  for (size_t i = 0; i < timeZoneLen; i++) {
-    char c = timeZone[i];
-
-    
-    
-    
-    if (mozilla::IsAsciiAlphanumeric(c) || c == '_' || c == '-' || c == '+') {
-      continue;
-    }
-
-    
-    if (c == '/' && i > 0 && i + 1 < timeZoneLen && timeZone[i + 1] != '/') {
-      continue;
-    }
-
-    return icu::UnicodeString();
-  }
-
-  return icu::UnicodeString(timeZone, timeZoneLen, US_INV);
+  return MaybeTimeZoneId(timeZone);
 }
 #endif 
 
@@ -748,6 +755,14 @@ void js::DateTimeInfo::internalResyncICUDefaultTimeZone() {
     if (const char* tzlink = TZContainsAbsolutePath(tz)) {
       tzid.setTo(ReadTimeZoneLink(tzlink));
     }
+
+#    ifdef ANDROID
+    
+    
+    else {
+      tzid.setTo(MaybeTimeZoneId(tz));
+    }
+#    endif
 #  endif 
 
     if (!tzid.isEmpty()) {
