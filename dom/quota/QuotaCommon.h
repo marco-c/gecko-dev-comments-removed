@@ -348,6 +348,17 @@ namespace mozilla {
 
 class LogModule;
 
+struct NotOk {};
+
+
+
+inline Result<Ok, NotOk> OkIf(bool aValue) {
+  if (aValue) {
+    return Ok();
+  }
+  return Err(NotOk());
+}
+
 namespace dom {
 namespace quota {
 
