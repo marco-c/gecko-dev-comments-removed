@@ -12,18 +12,15 @@ using mozilla::WeakPtr;
 static char IamB[] = "B";
 static char IamC[] = "C";
 static char IamD[] = "D";
-static char IamE[] = "E";
 
-class B : public SupportsWeakPtr<B> {
+class B : public SupportsWeakPtr {
  public:
   char const* whoAmI() const { return IamB; }
 };
 
 
-class C : public SupportsWeakPtr<C> {
+class C : public SupportsWeakPtr {
  public:
-  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(C)
-
   int mNum;
 
   C() : mNum(0) {}
@@ -44,16 +41,10 @@ class C : public SupportsWeakPtr<C> {
 };
 
 
-class D : public B, public C, public SupportsWeakPtr<D> {
+
+class D : public B {
  public:
   char const* whoAmI() const { return IamD; }
-};
-
-
-
-class E : public D {
- public:
-  char const* whoAmI() const { return IamE; }
 };
 
 bool isConst(C*) { return false; }
@@ -138,36 +129,17 @@ int main() {
 
   
   D* d = new D;
-  WeakPtr<D> dd = d;
-  WeakPtr<const D> ddconst = d;
-  WeakPtr<C> dc = d;
-  WeakPtr<const C> dcconst = d;
   WeakPtr<B> db = d;
-  WeakPtr<const B> dbconst = d;
 
-  MOZ_RELEASE_ASSERT(dd->whoAmI() == IamD);
-  MOZ_RELEASE_ASSERT(ddconst->whoAmI() == IamD);
-  MOZ_RELEASE_ASSERT(dc->whoAmI() == IamC);
-  MOZ_RELEASE_ASSERT(dcconst->whoAmI() == IamC);
+  
+  
+  WeakPtr<D> weakd = d;
+
   MOZ_RELEASE_ASSERT(db->whoAmI() == IamB);
-  MOZ_RELEASE_ASSERT(dbconst->whoAmI() == IamB);
+  MOZ_RELEASE_ASSERT(weakd.get() == db.get());
 
   delete d;
 
-  MOZ_RELEASE_ASSERT(!dd);
-  MOZ_RELEASE_ASSERT(!ddconst);
-  MOZ_RELEASE_ASSERT(!dc);
-  MOZ_RELEASE_ASSERT(!dcconst);
   MOZ_RELEASE_ASSERT(!db);
-  MOZ_RELEASE_ASSERT(!dbconst);
-
-  
-  E* e = new E;
-  WeakPtr<D> ed = e;
-
-  MOZ_RELEASE_ASSERT(ed->whoAmI() == IamD);
-
-  delete e;
-
-  MOZ_RELEASE_ASSERT(!ed);
+  MOZ_RELEASE_ASSERT(!weakd);
 }

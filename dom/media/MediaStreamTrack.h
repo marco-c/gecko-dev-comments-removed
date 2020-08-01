@@ -54,10 +54,8 @@ class MediaStreamTrackSource : public nsISupports {
   NS_DECL_CYCLE_COLLECTION_CLASS(MediaStreamTrackSource)
 
  public:
-  class Sink : public SupportsWeakPtr<Sink> {
+  class Sink : public SupportsWeakPtr {
    public:
-    MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrackSource::Sink)
-
     
 
 
@@ -345,11 +343,8 @@ class BasicTrackSource : public MediaStreamTrackSource {
 
 
 
-class MediaStreamTrackConsumer
-    : public SupportsWeakPtr<MediaStreamTrackConsumer> {
+class MediaStreamTrackConsumer : public SupportsWeakPtr {
  public:
-  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrackConsumer)
-
   
 
 
@@ -400,8 +395,7 @@ class MediaStreamTrackConsumer
 
 
 
-class MediaStreamTrack : public DOMEventTargetHelper,
-                         public SupportsWeakPtr<MediaStreamTrack> {
+class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
   
   friend class mozilla::PeerConnectionImpl;
   friend class mozilla::PeerConnectionMedia;
@@ -422,8 +416,6 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MediaStreamTrack,
                                            DOMEventTargetHelper)
-
-  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrack)
 
   nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
   JSObject* WrapObject(JSContext* aCx,

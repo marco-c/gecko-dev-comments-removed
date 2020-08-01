@@ -126,8 +126,7 @@ class nsRootPresContext;
 
 
 
-class nsPresContext : public nsISupports,
-                      public mozilla::SupportsWeakPtr<nsPresContext> {
+class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
  public:
   using Encoding = mozilla::Encoding;
   template <typename T>
@@ -140,7 +139,6 @@ class nsPresContext : public nsISupports,
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(nsPresContext)
-  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsPresContext)
 
   enum nsPresContextType {
     eContext_Galley,        

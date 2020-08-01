@@ -27,10 +27,8 @@ namespace image {
 
 
 
-class IProgressObserver : public SupportsWeakPtr<IProgressObserver> {
+class IProgressObserver : public SupportsWeakPtr {
  public:
-  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(IProgressObserver)
-
   
   
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING

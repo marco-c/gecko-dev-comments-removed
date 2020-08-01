@@ -39,10 +39,8 @@ class Document;
 
 
 
-class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
-                      public nsISupports {
+class PreloaderBase : public SupportsWeakPtr, public nsISupports {
  public:
-  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(PreloaderBase)
   PreloaderBase() = default;
 
   

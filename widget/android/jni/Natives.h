@@ -120,7 +120,6 @@ namespace jni {
 
 
 
-
 namespace detail {
 
 enum NativePtrType { OWNING, WEAK, REFPTR };
@@ -128,7 +127,7 @@ enum NativePtrType { OWNING, WEAK, REFPTR };
 template <class Impl>
 class NativePtrPicker {
   template <class I>
-  static std::enable_if_t<std::is_base_of<SupportsWeakPtr<I>, I>::value,
+  static std::enable_if_t<std::is_base_of<SupportsWeakPtr, I>::value,
                           char (&)[NativePtrType::WEAK]>
   Test(char);
 
@@ -768,7 +767,7 @@ class NativeImpl {
  protected:
   
   static void AttachNative(const typename Cls::LocalRef& instance,
-                           SupportsWeakPtr<Impl>* ptr) {
+                           SupportsWeakPtr* ptr) {
     static_assert(NativePtrPicker<Impl>::value == NativePtrType::WEAK,
                   "Use another AttachNative for non-WeakPtr usage");
     return NativePtr<Impl>::Set(instance, static_cast<Impl*>(ptr));

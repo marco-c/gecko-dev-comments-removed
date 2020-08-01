@@ -105,7 +105,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
 
 
-  mozilla::dom::Selection* GetSelection() const { return mSelection; }
+  mozilla::dom::Selection* GetSelection() const;
 
   
 

@@ -27,10 +27,8 @@ namespace {
 
 
 
-class MessageLoopIdleTask : public Runnable,
-                            public SupportsWeakPtr<MessageLoopIdleTask> {
+class MessageLoopIdleTask : public Runnable, public SupportsWeakPtr {
  public:
-  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MessageLoopIdleTask)
   MessageLoopIdleTask(nsIRunnable* aTask, uint32_t aEnsureRunsAfterMS);
   NS_IMETHOD Run() override;
 
@@ -40,7 +38,7 @@ class MessageLoopIdleTask : public Runnable,
   nsCOMPtr<nsIRunnable> mTask;
   nsCOMPtr<nsITimer> mTimer;
 
-  virtual ~MessageLoopIdleTask() {}
+  virtual ~MessageLoopIdleTask() = default;
 };
 
 
@@ -68,7 +66,7 @@ class MessageLoopTimerCallback : public nsITimerCallback, public nsINamed {
  private:
   WeakPtr<MessageLoopIdleTask> mTask;
 
-  virtual ~MessageLoopTimerCallback() {}
+  virtual ~MessageLoopTimerCallback() = default;
 };
 
 MessageLoopIdleTask::MessageLoopIdleTask(nsIRunnable* aTask,

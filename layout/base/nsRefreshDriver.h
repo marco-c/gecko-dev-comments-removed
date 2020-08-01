@@ -333,7 +333,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
 
 
-  nsPresContext* GetPresContext() const { return mPresContext; }
+  nsPresContext* GetPresContext() const;
 
   
 

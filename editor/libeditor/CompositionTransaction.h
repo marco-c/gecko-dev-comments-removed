@@ -29,9 +29,8 @@ class Text;
 
 
 
-class CompositionTransaction final
-    : public EditTransactionBase,
-      public SupportsWeakPtr<CompositionTransaction> {
+class CompositionTransaction final : public EditTransactionBase,
+                                     public SupportsWeakPtr {
  protected:
   CompositionTransaction(EditorBase& aEditorBase,
                          const nsAString& aStringToInsert,
@@ -53,8 +52,6 @@ class CompositionTransaction final
   static already_AddRefed<CompositionTransaction> Create(
       EditorBase& aEditorBase, const nsAString& aStringToInsert,
       const EditorDOMPointInText& aPointToInsert);
-
-  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(CompositionTransaction)
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CompositionTransaction,
                                            EditTransactionBase)

@@ -50,14 +50,13 @@ typedef uint32_t PromiseId;
 
 class MediaKeys final : public nsIDocumentActivity,
                         public nsWrapperCache,
-                        public SupportsWeakPtr<MediaKeys>,
+                        public SupportsWeakPtr,
                         public DecoderDoctorLifeLogger<MediaKeys> {
   ~MediaKeys();
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MediaKeys)
-  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaKeys)
   
   
   NS_DECL_NSIDOCUMENTACTIVITY

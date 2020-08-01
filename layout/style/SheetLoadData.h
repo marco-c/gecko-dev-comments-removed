@@ -39,8 +39,6 @@ static_assert(eAuthorSheetFeatures == 0 && eUserSheetFeatures == 1 &&
               "in SheetLoadData::mParsingMode");
 
 class SheetLoadData final : public PreloaderBase,
-                            
-                            public SupportsWeakPtr<SheetLoadData>,
                             public nsIRunnable,
                             public nsIThreadObserver {
   using MediaMatched = dom::LinkStyle::MediaMatched;
