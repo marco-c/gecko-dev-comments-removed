@@ -39,8 +39,6 @@ size_t IdByMethod() = delete;
 #define DEFINE_ASYNC(_METHOD) \
   DEFINE_METHOD_HELPER(_METHOD, CommandSyncType::ASYNC)
 
-
-
 DEFINE_ASYNC(HostWebGLContext::CreateBuffer)
 DEFINE_ASYNC(HostWebGLContext::CreateFramebuffer)
 
