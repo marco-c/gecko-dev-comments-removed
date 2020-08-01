@@ -915,6 +915,7 @@ class LoginManagerParent extends JSWindowActorParent {
 
 
 
+  
   async _onPasswordEditedOrGenerated(
     browser,
     formOrigin,
@@ -957,6 +958,15 @@ class LoginManagerParent extends JSWindowActorParent {
 
     let browsingContext = this.getBrowsingContextToUse();
     if (!browsingContext) {
+      return;
+    }
+
+    if (!triggeredByFillingGenerated && !Services.logins.isLoggedIn) {
+      
+      
+      log(
+        "_onPasswordEditedOrGenerated: edited field is not a generated password field, and Primary Password is locked"
+      );
       return;
     }
 
