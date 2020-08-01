@@ -4563,7 +4563,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   
   
   
-  
   bool visualScrollOffsetUpdated =
       isDefault ||
       aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eNone;
