@@ -779,23 +779,7 @@ class StorageUI {
           }
         }
 
-        const target = this.currentTarget;
-        this.actorSupportsAddItem = await target.actorHasMethod(
-          type,
-          "addItem"
-        );
-        this.actorSupportsRemoveItem = await target.actorHasMethod(
-          type,
-          "removeItem"
-        );
-        this.actorSupportsRemoveAll = await target.actorHasMethod(
-          type,
-          "removeAll"
-        );
-        this.actorSupportsRemoveAllSessionCookies = await target.actorHasMethod(
-          type,
-          "removeAllSessionCookies"
-        );
+        await this._readSupportsTraits(type);
 
         await this.resetColumns(type, host, subType);
       }
@@ -814,6 +798,41 @@ class StorageUI {
       this.emit("store-objects-updated");
     } catch (ex) {
       console.error(ex);
+    }
+  }
+
+  
+
+
+
+
+
+
+  async _readSupportsTraits(type) {
+    const { traits } = this.storageTypes[type];
+    if (traits.hasSupportsTraits) {
+      this.actorSupportsAddItem = traits.supportsAddItem;
+      this.actorSupportsRemoveItem = traits.supportsRemoveItem;
+      this.actorSupportsRemoveAll = traits.supportsRemoveAll;
+      this.actorSupportsRemoveAllSessionCookies =
+        traits.supportsRemoveAllSessionCookies;
+    } else {
+      
+      
+      const target = this.currentTarget;
+      this.actorSupportsAddItem = await target.actorHasMethod(type, "addItem");
+      this.actorSupportsRemoveItem = await target.actorHasMethod(
+        type,
+        "removeItem"
+      );
+      this.actorSupportsRemoveAll = await target.actorHasMethod(
+        type,
+        "removeAll"
+      );
+      this.actorSupportsRemoveAllSessionCookies = await target.actorHasMethod(
+        type,
+        "removeAllSessionCookies"
+      );
     }
   }
 

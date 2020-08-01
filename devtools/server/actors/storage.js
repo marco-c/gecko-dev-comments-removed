@@ -317,6 +317,27 @@ StorageActors.defaults = function(typeName, observationTopics) {
       return {
         actor: this.actorID,
         hosts: hosts,
+        traits: this._getTraits(),
+      };
+    },
+
+    
+    _getTraits() {
+      return {
+        
+        
+        
+        hasSupportsTraits: true,
+        
+        
+        
+        supportsAddItem: typeof this.addItem === "function",
+        
+        
+        supportsRemoveItem: typeof this.removeItem === "function",
+        supportsRemoveAll: typeof this.removeAll === "function",
+        supportsRemoveAllSessionCookies:
+          typeof this.removeAllSessionCookies === "function",
       };
     },
 
@@ -2121,6 +2142,7 @@ StorageActors.createActor(
       return {
         actor: this.actorID,
         hosts: hosts,
+        traits: this._getTraits(),
       };
     },
 
@@ -2627,6 +2649,7 @@ StorageActors.createActor(
       return {
         actor: this.actorID,
         hosts: hosts,
+        traits: this._getTraits(),
       };
     },
 
