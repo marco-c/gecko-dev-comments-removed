@@ -766,11 +766,7 @@ var pktUIMessaging = (function() {
       function(e) {
         var nodePrincipal = e.target.nodePrincipal;
         
-        if (
-          !nodePrincipal ||
-          !nodePrincipal.URI ||
-          !nodePrincipal.URI.spec.startsWith("about:pocket")
-        ) {
+        if (!nodePrincipal || !nodePrincipal.spec.startsWith("about:pocket")) {
           return;
         }
 

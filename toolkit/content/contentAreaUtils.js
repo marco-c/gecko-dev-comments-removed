@@ -92,8 +92,7 @@ function saveBrowser(aBrowser, aSkipPrompt, aBrowsingContext = null) {
   
   
   if (
-    aBrowser.contentPrincipal.URI &&
-    aBrowser.contentPrincipal.URI.spec == "resource://pdf.js/web/viewer.html" &&
+    aBrowser.contentPrincipal.spec == "resource://pdf.js/web/viewer.html" &&
     aBrowser.currentURI.schemeIs("file")
   ) {
     let correctPrincipal = Services.scriptSecurityManager.createContentPrincipal(

@@ -63,7 +63,7 @@ function run_test()
   var principal = res.responseXML.nodePrincipal;
   Assert.ok(principal.isContentPrincipal);
   var requestURL = "http://localhost:4444/simple";
-  Assert.equal(principal.URI.spec, requestURL);
+  Assert.equal(principal.spec, requestURL);
 
   
   try {
@@ -85,7 +85,7 @@ function run_test()
   var principal = res.responseXML.nodePrincipal;
   Assert.ok(principal.isContentPrincipal);
   var requestURL = "http://localhost:4444/simple";
-  Assert.equal(principal.URI.spec, requestURL);
+  Assert.equal(principal.spec, requestURL);
 
   httpserver2.stop(finishIfDone);
   httpserver3.stop(finishIfDone);
