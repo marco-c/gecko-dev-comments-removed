@@ -3,30 +3,12 @@
 
 
 import sys
+
+from glean_parser import lint
 from pathlib import Path
 
 
 def main(output, *filenames):
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    srcdir = Path(__file__).joinpath('../../../../../')
-    glean_parser_path = srcdir.joinpath('third_party/python/glean_parser')
-    sys.path.insert(0, str(glean_parser_path.resolve()))
-    from glean_parser import lint
     if lint.glinter([Path(x) for x in filenames], {"allow_reserved": False}):
         sys.exit(1)
 
