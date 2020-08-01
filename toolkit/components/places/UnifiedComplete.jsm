@@ -793,7 +793,7 @@ Search.prototype = {
     
     
     this._addingHeuristicResult = true;
-    let hasHeuristic = await this._matchFirstHeuristicResult(conn);
+    await this._matchFirstHeuristicResult(conn);
     this._addingHeuristicResult = false;
     if (!this.pending) {
       return;
@@ -804,7 +804,10 @@ Search.prototype = {
     
     
     
-    if (hasHeuristic) {
+    
+    
+    
+    if (this._trimmedOriginalSearchString) {
       await this._sleep(UrlbarPrefs.get("delay"));
       if (!this.pending) {
         return;
