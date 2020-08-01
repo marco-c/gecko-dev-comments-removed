@@ -36,6 +36,8 @@ const issue = {
   
   experimental: PropTypes.bool.isRequired,
   
+  prefixNeeded: PropTypes.bool.isRequired,
+  
   unsupportedBrowsers: PropTypes.arrayOf(PropTypes.shape(browser)).isRequired,
   
   nodes: PropTypes.arrayOf(node),
