@@ -409,9 +409,14 @@ class Query {
     logger.info(`Queried ${queryPromises.length} providers`);
     await Promise.all(queryPromises);
 
-    if (!this.canceled && this._chunkTimer) {
-      
-      await this._chunkTimer.fire();
+    
+    if (!this.canceled) {
+      if (this._heuristicProviderTimer) {
+        await this._heuristicProviderTimer.fire();
+      }
+      if (this._chunkTimer) {
+        await this._chunkTimer.fire();
+      }
     }
 
     
@@ -434,6 +439,9 @@ class Query {
       
       provider.queryInstance = null;
       provider.tryMethod("cancelQuery", this.context);
+    }
+    if (this._heuristicProviderTimer) {
+      this._heuristicProviderTimer.cancel().catch(Cu.reportError);
     }
     if (this._chunkTimer) {
       this._chunkTimer.cancel().catch(Cu.reportError);
