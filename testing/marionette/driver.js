@@ -1153,6 +1153,9 @@ GeckoDriver.prototype.navigateTo = async function(cmd) {
     throw new InvalidArgumentError(`Malformed URL: ${e.message}`);
   }
 
+  
+  await this.listener.switchToFrame();
+
   const navigated = this.listener.navigateTo({
     url: validURL.spec,
     pageTimeout: this.timeouts.pageLoad,

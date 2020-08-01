@@ -1133,10 +1133,6 @@ function navigateTo(msg) {
       url
     );
 
-    
-    sendSyncMessage("Marionette:switchedToFrame", { frameValue: null });
-    curContainer.frame = content;
-
     loadListener.navigate(
       () => {
         curContainer.frame.location = url;
