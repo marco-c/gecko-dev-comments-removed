@@ -338,21 +338,21 @@ enum class StyleDirection : uint8_t { Ltr, Rtl };
 
 
 
-#define NS_STYLE_WRITING_MODE_HORIZONTAL_TB 0
-#define NS_STYLE_WRITING_MODE_VERTICAL_RL 1
-
-#define NS_STYLE_WRITING_MODE_VERTICAL_LR 3
 
 
 
 
 
-#define NS_STYLE_WRITING_MODE_SIDEWAYS_MASK 4
+static constexpr uint8_t kWritingModeSidewaysMask = 4;
 
-#define NS_STYLE_WRITING_MODE_SIDEWAYS_RL \
-  (NS_STYLE_WRITING_MODE_VERTICAL_RL | NS_STYLE_WRITING_MODE_SIDEWAYS_MASK)
-#define NS_STYLE_WRITING_MODE_SIDEWAYS_LR \
-  (NS_STYLE_WRITING_MODE_VERTICAL_LR | NS_STYLE_WRITING_MODE_SIDEWAYS_MASK)
+enum class StyleWritingModeProperty : uint8_t {
+  HorizontalTb = 0,
+  VerticalRl = 1,
+  
+  VerticalLr = 3,
+  SidewaysRl = VerticalRl | kWritingModeSidewaysMask,
+  SidewaysLr = VerticalLr | kWritingModeSidewaysMask,
+};
 
 
 enum class StyleFlexDirection : uint8_t {
