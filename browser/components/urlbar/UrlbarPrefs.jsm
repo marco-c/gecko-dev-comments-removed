@@ -233,7 +233,6 @@ class Preferences {
 
   constructor() {
     this._map = new Map();
-    this._observers = new Set();
     this.QueryInterface = ChromeUtils.generateQI([
       "nsIObserver",
       "nsISupportsWeakReference",
@@ -286,28 +285,6 @@ class Preferences {
 
 
 
-
-  addObserver(observer) {
-    this._observers.add(observer);
-  }
-
-  
-
-
-
-
-
-  removeObserver(observer) {
-    this._observers.delete(observer);
-  }
-
-  
-
-
-
-
-
-
   observe(subject, topic, data) {
     let pref = data.replace(PREF_URLBAR_BRANCH, "");
     if (!PREF_URLBAR_DEFAULTS.has(pref) && !PREF_OTHER_DEFAULTS.has(pref)) {
@@ -320,10 +297,6 @@ class Preferences {
     }
     if (pref.startsWith("suggest.")) {
       this._map.delete("defaultBehavior");
-    }
-
-    for (let observer of this._observers) {
-      observer(pref);
     }
   }
 
