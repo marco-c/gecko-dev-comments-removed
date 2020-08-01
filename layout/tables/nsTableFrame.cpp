@@ -593,7 +593,8 @@ void nsTableFrame::InsertCol(nsTableColFrame& aColFrame, int32_t aColIndex) {
   }
   
   if (IsBorderCollapse()) {
-    TableArea damageArea(aColIndex, 0, 1, GetRowCount());
+    TableArea damageArea(aColIndex, 0, GetColCount() - aColIndex,
+                         GetRowCount());
     AddBCDamageArea(damageArea);
   }
 }
