@@ -23,70 +23,32 @@ using namespace js;
 
 
 const JSClass FinalizationRecordObject::class_ = {
-    "FinalizationRecord", JSCLASS_HAS_RESERVED_SLOTS(SlotCount), &classOps_,
-    JS_NULL_CLASS_SPEC};
-
-const JSClassOps FinalizationRecordObject::classOps_ = {
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    nullptr,                          
-    FinalizationRecordObject::trace,  
-};
+    "FinalizationRecord", JSCLASS_HAS_RESERVED_SLOTS(SlotCount)};
 
 
 FinalizationRecordObject* FinalizationRecordObject::create(
-    JSContext* cx, HandleFinalizationRegistryObject registry,
-    HandleValue heldValue) {
-  MOZ_ASSERT(registry);
+    JSContext* cx, HandleFinalizationQueueObject queue, HandleValue heldValue) {
+  MOZ_ASSERT(queue);
 
   auto record = NewObjectWithGivenProto<FinalizationRecordObject>(cx, nullptr);
   if (!record) {
     return nullptr;
   }
 
-  MOZ_ASSERT(registry->compartment() == record->compartment());
+  MOZ_ASSERT(queue->compartment() == record->compartment());
 
-  record->initReservedSlot(WeakRegistrySlot, PrivateValue(registry));
+  record->initReservedSlot(QueueSlot, ObjectValue(*queue));
   record->initReservedSlot(HeldValueSlot, heldValue);
 
   return record;
 }
 
-FinalizationRegistryObject* FinalizationRecordObject::registryDuringGC(
-    gc::GCRuntime* gc) const {
-  MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
-
-  FinalizationRegistryObject* registry = registryUnbarriered();
-
-  
-  
-  
-  if (registry->zone()->isGCMarking()) {
-    FinalizationRegistryObject* tmp = registry;
-    TraceManuallyBarrieredEdge(&gc->marker, &tmp,
-                               "FinalizationRegistry read barrier");
-    MOZ_ASSERT(tmp == registry);
-  } else if (registry->isMarkedGray()) {
-    gc::UnmarkGrayGCThingUnchecked(gc->rt, JS::GCCellPtr(registry));
-  }
-
-  return registry;
-}
-
-FinalizationRegistryObject* FinalizationRecordObject::registryUnbarriered()
-    const {
-  Value value = getReservedSlot(WeakRegistrySlot);
+FinalizationQueueObject* FinalizationRecordObject::queue() const {
+  Value value = getReservedSlot(QueueSlot);
   if (value.isUndefined()) {
     return nullptr;
   }
-  return static_cast<FinalizationRegistryObject*>(value.toPrivate());
+  return &value.toObject().as<FinalizationQueueObject>();
 }
 
 Value FinalizationRecordObject::heldValue() const {
@@ -94,45 +56,14 @@ Value FinalizationRecordObject::heldValue() const {
 }
 
 bool FinalizationRecordObject::isActive() const {
-  MOZ_ASSERT_IF(!registryUnbarriered(), heldValue().isUndefined());
-  return registryUnbarriered();
+  MOZ_ASSERT_IF(!queue(), heldValue().isUndefined());
+  return queue();
 }
 
 void FinalizationRecordObject::clear() {
-  MOZ_ASSERT(registryUnbarriered());
-  setReservedSlot(WeakRegistrySlot, UndefinedValue());
+  MOZ_ASSERT(queue());
+  setReservedSlot(QueueSlot, UndefinedValue());
   setReservedSlot(HeldValueSlot, UndefinedValue());
-}
-
-bool FinalizationRecordObject::sweep() {
-  FinalizationRegistryObject* obj = registryUnbarriered();
-  MOZ_ASSERT(obj);
-
-  if (IsAboutToBeFinalizedUnbarriered(&obj)) {
-    clear();
-    return false;
-  }
-
-  return true;
-}
-
-
-void FinalizationRecordObject::trace(JSTracer* trc, JSObject* obj) {
-  if (!trc->traceWeakEdges()) {
-    return;
-  }
-
-  auto record = &obj->as<FinalizationRecordObject>();
-  FinalizationRegistryObject* registry = record->registryUnbarriered();
-  if (!registry) {
-    return;
-  }
-
-  TraceManuallyBarrieredEdge(trc, &registry,
-                             "FinalizationRecordObject weak registry");
-  if (registry != record->registryUnbarriered()) {
-    record->setReservedSlot(WeakRegistrySlot, PrivateValue(registry));
-  }
 }
 
 
@@ -313,9 +244,9 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
     return false;
   }
 
-  Rooted<UniquePtr<FinalizationRecordSet>> activeRecords(
-      cx, cx->make_unique<FinalizationRecordSet>(cx->zone()));
-  if (!activeRecords) {
+  RootedFinalizationQueueObject queue(
+      cx, FinalizationQueueObject::create(cx, cleanupCallback));
+  if (!queue) {
     return false;
   }
 
@@ -325,22 +256,15 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
     return false;
   }
 
+  registry->initReservedSlot(QueueSlot, ObjectValue(*queue));
   InitReservedSlot(registry, RegistrationsSlot, registrations.release(),
                    MemoryUse::FinalizationRegistryRegistrations);
-  InitReservedSlot(registry, ActiveRecords, activeRecords.release(),
-                   MemoryUse::FinalizationRegistryRecordSet);
-
-  FinalizationQueueObject* queue =
-      FinalizationQueueObject::create(cx, registry, cleanupCallback);
-  if (!queue) {
-    return false;
-  }
-
-  registry->initReservedSlot(QueueSlot, ObjectValue(*queue));
 
   if (!cx->runtime()->gc.addFinalizationRegistry(cx, registry)) {
     return false;
   }
+
+  queue->setHasRegistry(true);
 
   args.rval().setObject(*registry);
   return true;
@@ -356,18 +280,9 @@ void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
   if (ObjectWeakMap* registrations = registry->registrations()) {
     registrations->trace(trc);
   }
-
-  
-  
-  
 }
 
 void FinalizationRegistryObject::sweep() {
-  
-  
-  MOZ_ASSERT(activeRecords());
-  activeRecords()->sweep();
-
   
   MOZ_ASSERT(registrations());
   for (ObjectValueWeakMap::Enum e(registrations()->valueMap()); !e.empty();
@@ -386,26 +301,11 @@ void FinalizationRegistryObject::finalize(JSFreeOp* fop, JSObject* obj) {
   auto registry = &obj->as<FinalizationRegistryObject>();
 
   
-
   
-  
-  
-  MOZ_ASSERT(registry->getClass()->flags & JSCLASS_FOREGROUND_FINALIZE);
-
-  FinalizationRecordSet* allRecords = registry->activeRecords();
-  for (auto r = allRecords->all(); !r.empty(); r.popFront()) {
-    auto record = &r.front()->as<FinalizationRecordObject>();
-    MOZ_ASSERT(!(record->getClass()->flags & JSCLASS_FOREGROUND_FINALIZE));
-    MOZ_ASSERT(record->zone() == registry->zone());
-    if (record->isActive()) {
-      record->clear();
-    }
-  }
+  MOZ_ASSERT_IF(registry->queue(), !registry->queue()->hasRegistry());
 
   fop->delete_(obj, registry->registrations(),
                MemoryUse::FinalizationRegistryRegistrations);
-  fop->delete_(obj, registry->activeRecords(),
-               MemoryUse::FinalizationRegistryRecordSet);
 }
 
 FinalizationQueueObject* FinalizationRegistryObject::queue() const {
@@ -422,14 +322,6 @@ ObjectWeakMap* FinalizationRegistryObject::registrations() const {
     return nullptr;
   }
   return static_cast<ObjectWeakMap*>(value.toPrivate());
-}
-
-FinalizationRecordSet* FinalizationRegistryObject::activeRecords() const {
-  Value value = getReservedSlot(ActiveRecords);
-  if (value.isUndefined()) {
-    return nullptr;
-  }
-  return static_cast<FinalizationRecordSet*>(value.toPrivate());
 }
 
 
@@ -490,20 +382,12 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
   }
 
   
+  Rooted<FinalizationQueueObject*> queue(cx, registry->queue());
   Rooted<FinalizationRecordObject*> record(
-      cx, FinalizationRecordObject::create(cx, registry, heldValue));
+      cx, FinalizationRecordObject::create(cx, queue, heldValue));
   if (!record) {
     return false;
   }
-
-  
-  if (!registry->activeRecords()->put(record)) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  auto recordsGuard = mozilla::MakeScopeExit(
-      [&] { registry->activeRecords()->remove(record); });
 
   
   if (unregisterToken &&
@@ -549,7 +433,6 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
     return false;
   }
 
-  recordsGuard.release();
   registrationsGuard.release();
   args.rval().setUndefined();
   return true;
@@ -670,7 +553,6 @@ bool FinalizationRegistryObject::unregister(JSContext* cx, unsigned argc,
       if (unregisterRecord(record)) {
         removed = true;
       }
-      MOZ_ASSERT(!registry->activeRecords()->has(record));
     }
     registry->registrations()->remove(unregisterToken);
   }
@@ -687,12 +569,8 @@ bool FinalizationRegistryObject::unregisterRecord(
     return false;
   }
 
-  FinalizationRegistryObject* registry = record->registryUnbarriered();
-  MOZ_ASSERT(registry);
-
   
   
-  registry->activeRecords()->remove(record);
   record->clear();
   return true;
 }
@@ -763,9 +641,7 @@ const JSClassOps FinalizationQueueObject::classOps_ = {
 
 
 FinalizationQueueObject* FinalizationQueueObject::create(
-    JSContext* cx, HandleFinalizationRegistryObject registry,
-    HandleObject cleanupCallback) {
-  MOZ_ASSERT(registry);
+    JSContext* cx, HandleObject cleanupCallback) {
   MOZ_ASSERT(cleanupCallback);
 
   Rooted<UniquePtr<FinalizationRecordVector>> recordsToBeCleanedUp(
@@ -797,7 +673,6 @@ FinalizationQueueObject* FinalizationQueueObject::create(
     return nullptr;
   }
 
-  queue->initReservedSlot(RegistrySlot, ObjectValue(*registry));
   queue->initReservedSlot(CleanupCallbackSlot, ObjectValue(*cleanupCallback));
   queue->initReservedSlot(IncumbentObjectSlot, ObjectValue(*incumbentObject));
   InitReservedSlot(queue, RecordsToBeCleanedUpSlot,
@@ -806,6 +681,7 @@ FinalizationQueueObject* FinalizationQueueObject::create(
   queue->initReservedSlot(IsQueuedForCleanupSlot, BooleanValue(false));
   queue->initReservedSlot(DoCleanupFunctionSlot,
                           ObjectValue(*doCleanupFunction));
+  queue->initReservedSlot(HasRegistrySlot, BooleanValue(false));
 
   doCleanupFunction->setExtendedSlot(DoCleanupFunction_QueueSlot,
                                      ObjectValue(*queue));
@@ -830,12 +706,18 @@ void FinalizationQueueObject::finalize(JSFreeOp* fop, JSObject* obj) {
                MemoryUse::FinalizationRegistryRecordVector);
 }
 
-inline FinalizationRegistryObject* FinalizationQueueObject::registry() const {
-  Value value = getReservedSlot(RegistrySlot);
-  if (value.isUndefined()) {
-    return nullptr;
-  }
-  return static_cast<FinalizationRegistryObject*>(&value.toObject());
+void FinalizationQueueObject::setHasRegistry(bool newValue) {
+  MOZ_ASSERT(hasRegistry() != newValue);
+
+  
+  
+  AutoTouchingGrayThings atgt;
+
+  setReservedSlot(HasRegistrySlot, BooleanValue(newValue));
+}
+
+bool FinalizationQueueObject::hasRegistry() const {
+  return getReservedSlot(HasRegistrySlot).toBoolean();
 }
 
 inline JSObject* FinalizationQueueObject::cleanupCallback() const {
@@ -932,7 +814,6 @@ bool FinalizationQueueObject::cleanupQueuedRecords(
   RootedValue heldValue(cx);
   RootedValue rval(cx);
   FinalizationRecordVector* records = queue->recordsToBeCleanedUp();
-  FinalizationRecordSet* activeRecords = queue->registry()->activeRecords();
   while (!records->empty()) {
     FinalizationRecordObject* record = records->popCopy();
 
@@ -943,7 +824,6 @@ bool FinalizationQueueObject::cleanupQueuedRecords(
 
     heldValue.set(record->heldValue());
 
-    activeRecords->remove(record);
     record->clear();
 
     if (!Call(cx, callback, UndefinedHandleValue, heldValue, &rval)) {

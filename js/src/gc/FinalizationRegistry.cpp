@@ -80,9 +80,14 @@ void GCRuntime::sweepFinalizationRegistries(Zone* zone) {
   
 
   Zone::FinalizationRegistrySet& set = zone->finalizationRegistries();
-  set.sweep();
-  for (auto r = set.all(); !r.empty(); r.popFront()) {
-    r.front()->as<FinalizationRegistryObject>().sweep();
+  for (Zone::FinalizationRegistrySet::Enum e(set); !e.empty(); e.popFront()) {
+    if (IsAboutToBeFinalized(&e.mutableFront())) {
+      e.front()->as<FinalizationRegistryObject>().queue()->setHasRegistry(
+          false);
+      e.removeFront();
+    } else {
+      e.front()->as<FinalizationRegistryObject>().sweep();
+    }
   }
 
   Zone::FinalizationRecordMap& map = zone->finalizationRecordMap();
@@ -95,19 +100,16 @@ void GCRuntime::sweepFinalizationRegistries(Zone* zone) {
     
     records.eraseIf([](JSObject* obj) {
       FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
-      return !record ||              
-             !record->isActive() ||  
-                                     
-             !record->sweep();       
-                                     
+      return !record ||                        
+             !record->isActive() ||            
+             !record->queue()->hasRegistry();  
     });
 
     
     if (IsAboutToBeFinalized(&e.front().mutableKey())) {
       for (JSObject* obj : records) {
         FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
-        FinalizationRegistryObject* registry = record->registryDuringGC(this);
-        FinalizationQueueObject* queue = registry->queue();
+        FinalizationQueueObject* queue = record->queue();
         queue->queueRecordToBeCleanedUp(record);
         queueFinalizationRegistryForCleanup(queue);
       }

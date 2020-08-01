@@ -104,31 +104,21 @@ using RootedFinalizationQueueObject = Rooted<FinalizationQueueObject*>;
 
 
 
-
 class FinalizationRecordObject : public NativeObject {
-  enum { WeakRegistrySlot = 0, HeldValueSlot, SlotCount };
+  enum { QueueSlot = 0, HeldValueSlot, SlotCount };
 
  public:
   static const JSClass class_;
 
-  static FinalizationRecordObject* create(
-      JSContext* cx, HandleFinalizationRegistryObject registry,
-      HandleValue heldValue);
+  static FinalizationRecordObject* create(JSContext* cx,
+                                          HandleFinalizationQueueObject queue,
+                                          HandleValue heldValue);
 
-  
-  FinalizationRegistryObject* registryDuringGC(gc::GCRuntime* gc) const;
-
-  FinalizationRegistryObject* registryUnbarriered() const;
-
+  FinalizationQueueObject* queue() const;
   Value heldValue() const;
   bool isActive() const;
+
   void clear();
-  bool sweep();
-
- private:
-  static const JSClassOps classOps_;
-
-  static void trace(JSTracer* trc, JSObject* obj);
 };
 
 
@@ -170,12 +160,9 @@ class FinalizationRegistrationsObject : public NativeObject {
 using FinalizationRecordVector =
     GCVector<HeapPtr<FinalizationRecordObject*>, 1, js::ZoneAllocPolicy>;
 
-using FinalizationRecordSet =
-    GCHashSet<HeapPtrObject, MovableCellHasher<HeapPtrObject>, ZoneAllocPolicy>;
-
 
 class FinalizationRegistryObject : public NativeObject {
-  enum { QueueSlot = 0, RegistrationsSlot, ActiveRecords, SlotCount };
+  enum { QueueSlot = 0, RegistrationsSlot, SlotCount };
 
  public:
   static const JSClass class_;
@@ -183,7 +170,6 @@ class FinalizationRegistryObject : public NativeObject {
 
   FinalizationQueueObject* queue() const;
   ObjectWeakMap* registrations() const;
-  FinalizationRecordSet* activeRecords() const;
 
   void sweep();
 
@@ -221,12 +207,12 @@ class FinalizationRegistryObject : public NativeObject {
 
 class FinalizationQueueObject : public NativeObject {
   enum {
-    RegistrySlot = 0,
-    CleanupCallbackSlot,
+    CleanupCallbackSlot = 0,
     IncumbentObjectSlot,
     RecordsToBeCleanedUpSlot,
     IsQueuedForCleanupSlot,
     DoCleanupFunctionSlot,
+    HasRegistrySlot,
     SlotCount
   };
 
@@ -237,19 +223,20 @@ class FinalizationQueueObject : public NativeObject {
  public:
   static const JSClass class_;
 
-  FinalizationRegistryObject* registry() const;
   JSObject* cleanupCallback() const;
   JSObject* incumbentObject() const;
   FinalizationRecordVector* recordsToBeCleanedUp() const;
   bool isQueuedForCleanup() const;
   JSFunction* doCleanupFunction() const;
+  bool hasRegistry() const;
 
   void queueRecordToBeCleanedUp(FinalizationRecordObject* record);
   void setQueuedForCleanup(bool value);
 
-  static FinalizationQueueObject* create(
-      JSContext* cx, HandleFinalizationRegistryObject registry,
-      HandleObject cleanupCallback);
+  void setHasRegistry(bool newValue);
+
+  static FinalizationQueueObject* create(JSContext* cx,
+                                         HandleObject cleanupCallback);
 
   static bool cleanupQueuedRecords(JSContext* cx,
                                    HandleFinalizationQueueObject registry,
