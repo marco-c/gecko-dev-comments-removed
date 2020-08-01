@@ -51,13 +51,6 @@ let whitelist = [
     isFromDevTools: false,
   },
   
-  {
-    sourceName: /(?:res|gre-resources)\/forms\.css$/i,
-    errorMessage: /Expected color but found \u2018-moz.*/i,
-    platforms: ["linux"],
-    isFromDevTools: false,
-  },
-  
   
   
   {
@@ -81,7 +74,15 @@ if (
   });
 }
 
-if (!Services.prefs.getBoolPref("layout.css.file-chooser-button.enabled")) {
+if (Services.prefs.getBoolPref("layout.css.file-chooser-button.enabled")) {
+  
+  whitelist.push({
+    sourceName: /(?:res|gre-resources)\/forms\.css$/i,
+    errorMessage: /Expected color but found \u2018-moz.*/i,
+    platforms: ["linux"],
+    isFromDevTools: false,
+  });
+} else {
   
   whitelist.push({
     sourceName: /(?:res|gre-resources)\/forms\.css$/i,
