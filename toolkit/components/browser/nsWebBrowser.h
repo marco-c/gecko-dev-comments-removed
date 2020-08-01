@@ -117,7 +117,7 @@ class nsWebBrowser final : public nsIWebBrowser,
 
   
   NS_IMETHOD SetDocShell(nsIDocShell* aDocShell);
-  NS_IMETHOD EnsureDocShellTreeOwner();
+  void EnsureDocShellTreeOwner();
 
   nsIWidget* EnsureWidget();
 
