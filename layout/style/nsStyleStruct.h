@@ -1332,12 +1332,36 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   }
 
   mozilla::StyleAppearance EffectiveAppearance() const {
-    if (mAppearance == mozilla::StyleAppearance::Auto ||
-        (mAppearance == mozilla::StyleAppearance::Button &&
-         mButtonAppearance == mozilla::StyleButtonAppearance::Disallow)) {
-      return mDefaultAppearance;
+    switch (mAppearance) {
+      case mozilla::StyleAppearance::Auto:
+        return mDefaultAppearance;
+      case mozilla::StyleAppearance::Textfield:
+        
+        
+        
+        
+        
+        if (mDefaultAppearance == mozilla::StyleAppearance::Searchfield) {
+          return mAppearance;
+        }
+        
+        
+        
+        if (mDefaultAppearance == mozilla::StyleAppearance::NumberInput) {
+          return mAppearance;
+        }
+        return mDefaultAppearance;
+      case mozilla::StyleAppearance::Button:
+        
+        
+        
+        if (mButtonAppearance == mozilla::StyleButtonAppearance::Disallow) {
+          return mDefaultAppearance;
+        }
+        return mAppearance;
+      default:
+        return mAppearance;
     }
-    return mAppearance;
   }
 
   static mozilla::StyleDisplayOutside DisplayOutside(
