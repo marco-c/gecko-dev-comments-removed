@@ -56,6 +56,11 @@ class APZThreadUtils {
   
 
 
+  static bool IsControllerThreadAlive();
+
+  
+
+
 
   static void DelayedDispatch(already_AddRefed<Runnable> aRunnable,
                               int aDelayMs);
