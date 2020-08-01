@@ -1839,6 +1839,7 @@ Element* nsImageLoadingContent::FindImageMap() {
 nsLoadFlags nsImageLoadingContent::LoadFlags() {
   auto* image = HTMLImageElement::FromNode(AsContent());
   if (image && image->OwnerDoc()->IsScriptEnabled() &&
+      !image->OwnerDoc()->IsStaticDocument() &&
       image->LoadingState() == HTMLImageElement::Loading::Lazy) {
     
     
