@@ -1970,9 +1970,14 @@ class nsINode : public mozilla::dom::EventTarget {
                         mozilla::ErrorResult& aError) {
     return ReplaceOrInsertBefore(false, &aNode, aChild, aError);
   }
+
+  
+
+
   nsINode* AppendChild(nsINode& aNode, mozilla::ErrorResult& aError) {
     return InsertBefore(aNode, nullptr, aError);
   }
+
   nsINode* ReplaceChild(nsINode& aNode, nsINode& aChild,
                         mozilla::ErrorResult& aError) {
     return ReplaceOrInsertBefore(true, &aNode, &aChild, aError);
