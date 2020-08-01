@@ -71,11 +71,10 @@ def fill_template(config, tasks):
         )
         task['treeherder'] = treeherder
 
-        if attributes.get('shippable'):
-            
-            
-            task['run-on-projects'] = dep.attributes.get('run_on_projects')
-            task['optimization'] = dep.optimization
+        
+        
+        task['run-on-projects'] = dep.attributes.get('run_on_projects')
+        task['optimization'] = dep.optimization
 
         
         del task['primary-dependency']
