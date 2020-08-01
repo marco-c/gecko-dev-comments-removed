@@ -21,7 +21,10 @@ function ignore({ getState }) {
     }
 
     if (getState()[IGNORING]) {
-      console.warn("IGNORED REDUX ACTION:", action);
+      
+      
+      
+      console.warn("IGNORED REDUX ACTION:", action.type);
       return null;
     }
 
