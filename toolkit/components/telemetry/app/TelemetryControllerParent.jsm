@@ -779,14 +779,14 @@ var Impl = {
             this._log.trace(
               "Upload enabled, but got canary client ID. Resetting."
             );
-            this._clientID = await ClientID.resetClientID();
+            await ClientID.removeClientIDs();
+            this._clientID = await ClientID.getClientID();
           } else if (!uploadEnabled && this._clientID != Utils.knownClientID) {
             this._log.trace(
               "Upload disabled, but got a valid client ID. Setting canary client ID."
             );
-            this._clientID = await ClientID.setClientID(
-              TelemetryUtils.knownClientID
-            );
+            await ClientID.setCanaryClientIDs();
+            this._clientID = await ClientID.getClientID();
           }
 
           await TelemetrySend.setup(this._testMode);
@@ -999,10 +999,12 @@ var Impl = {
       this._clientID = null;
 
       
-      let p = ClientID.resetClientID().then(id => {
+      let p = (async () => {
+        await ClientID.removeClientIDs();
+        let id = await ClientID.getClientID();
         this._clientID = id;
         Telemetry.scalarSet("telemetry.data_upload_optin", true);
-      });
+      })();
 
       this._shutdownBarrier.client.addBlocker(
         "TelemetryController: resetting client ID after data upload was enabled",
@@ -1031,18 +1033,19 @@ var Impl = {
         TelemetrySession.resetSubsessionCounter();
 
         
-        let oldClientId = await ClientID.getClientID();
-        this._clientID = await ClientID.setClientID(
-          TelemetryUtils.knownClientID
-        );
-
         
-        this._log.trace("_onUploadPrefChange - Sending deletion-request ping.");
         const scalars = Telemetry.getSnapshotForScalars(
           "deletion-request",
            true
         );
 
+        
+        let oldClientId = await ClientID.getClientID();
+        await ClientID.setCanaryClientIDs();
+        this._clientID = await ClientID.getClientID();
+
+        
+        this._log.trace("_onUploadPrefChange - Sending deletion-request ping.");
         this.submitExternalPing(
           PING_TYPE_DELETION_REQUEST,
           { scalars },
