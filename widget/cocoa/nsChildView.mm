@@ -3385,22 +3385,6 @@ static int32_t RoundUp(double aDouble) {
   return aDouble < 0 ? static_cast<int32_t>(floor(aDouble)) : static_cast<int32_t>(ceil(aDouble));
 }
 
-static int32_t TakeLargestInt(gfx::Float* aFloat) {
-  int32_t result(*aFloat);  
-  *aFloat -= result;
-  return result;
-}
-
-static gfx::IntPoint AccumulateIntegerDelta(NSEvent* aEvent) {
-  static gfx::Point sAccumulator(0.0f, 0.0f);
-  if (nsCocoaUtils::EventPhase(aEvent) == NSEventPhaseBegan) {
-    sAccumulator = gfx::Point(0.0f, 0.0f);
-  }
-  sAccumulator.x += [aEvent deltaX];
-  sAccumulator.y += [aEvent deltaY];
-  return gfx::IntPoint(TakeLargestInt(&sAccumulator.x), TakeLargestInt(&sAccumulator.y));
-}
-
 static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   if (nsCocoaFeatures::OnSierraOrLater() && [aEvent hasPreciseScrollingDeltas]) {
     
@@ -3412,7 +3396,8 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
     
     
     
-    return AccumulateIntegerDelta(aEvent);
+    return PanGestureInput::GetIntegerDeltaForEvent(
+        (nsCocoaUtils::EventPhase(aEvent) == NSEventPhaseBegan), [aEvent deltaX], [aEvent deltaY]);
   }
 
   

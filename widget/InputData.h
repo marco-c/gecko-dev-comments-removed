@@ -358,6 +358,8 @@ class PanGestureInput : public InputData {
   ScreenPoint UserMultipliedPanDisplacement() const;
   ParentLayerPoint UserMultipliedLocalPanDisplacement() const;
 
+  static gfx::IntPoint GetIntegerDeltaForEvent(bool aIsStart, float x, float y);
+
   
   
   PanGestureType mType;
