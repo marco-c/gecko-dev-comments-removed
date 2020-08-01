@@ -21,24 +21,121 @@ add_task(async function init() {
     await UrlbarTestUtils.formHistory.clear();
   });
 
+  
   await PlacesUtils.history.clear();
   await UrlbarTestUtils.formHistory.clear();
-
-  let visits = [];
   for (let i = 0; i < gMaxResults; i++) {
-    visits.push({
-      uri: makeURI("http://example.com/browser_urlbarOneOffs.js/?" + i),
-      
-      
-      transition: Ci.nsINavHistoryService.TRANSITION_TYPED,
-    });
+    await PlacesTestUtils.addVisits(
+      "http://example.com/browser_urlbarOneOffs.js/?" + i
+    );
   }
-  await PlacesTestUtils.addVisits(visits);
+
+  
+  
+  for (let i = 0; i < 5; i++) {
+    await PlacesTestUtils.addVisits(
+      "http://example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - 1)
+    );
+  }
+  await updateTopSites(sites => {
+    return sites && sites[0] && sites[0].url.startsWith("http://example.com/");
+  });
 });
 
 
 
-add_task(async function() {
+add_task(async function topSitesView() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "",
+    fireInputEvent: true,
+  });
+  Assert.equal(
+    UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
+    false,
+    "One-offs should be hidden"
+  );
+  await hidePopup();
+});
+
+
+add_task(async function topSitesViewUpdate2() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
+
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "",
+    fireInputEvent: true,
+  });
+  await TestUtils.waitForCondition(
+    () => !oneOffSearchButtons._rebuilding,
+    "Waiting for one-offs to finish rebuilding"
+  );
+
+  
+  let resultURL = "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - 1);
+  Assert.equal(UrlbarTestUtils.getResultCount(window), 1, "Result count");
+
+  Assert.equal(
+    UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
+    true,
+    "One-offs are visible"
+  );
+
+  assertState(-1, -1, "");
+
+  
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  assertState(0, -1, resultURL);
+
+  
+  let numButtons = oneOffSearchButtons.getSelectableButtons(true).length;
+  for (let i = 0; i < numButtons; i++) {
+    EventUtils.synthesizeKey("KEY_ArrowDown");
+    assertState(-1, i, "");
+  }
+
+  
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  assertState(-1, -1, "");
+
+  
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  assertState(0, -1, resultURL);
+
+  
+  EventUtils.synthesizeKey("KEY_ArrowUp");
+  assertState(-1, -1, "");
+
+  
+  
+  for (let i = numButtons - 1; i >= 0; i--) {
+    EventUtils.synthesizeKey("KEY_ArrowUp");
+    assertState(-1, i, "");
+  }
+
+  
+  EventUtils.synthesizeKey("KEY_ArrowUp");
+  assertState(0, -1, resultURL);
+
+  
+  EventUtils.synthesizeKey("KEY_ArrowUp");
+  assertState(-1, -1, "");
+
+  await hidePopup();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+add_task(async function editedView() {
   
   
   let typedValue = "browser_urlbarOneOffs";
