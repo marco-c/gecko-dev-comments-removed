@@ -125,7 +125,7 @@ union TimingFunction {
 
 struct LayerColor { DeviceColor value; };
 
-union Animatable {
+comparable union Animatable {
   null_t;
   float;
   nscolor;
@@ -149,7 +149,7 @@ struct AnimationSegment {
   TimingFunction sampleFn;
 };
 
-struct MotionPathData {
+comparable struct MotionPathData {
   
   CSSPoint origin;
   
@@ -157,7 +157,7 @@ struct MotionPathData {
   RayReferenceData rayReferenceData;
 };
 
-struct PartialPrerenderData {
+comparable struct PartialPrerenderData {
   LayoutDeviceIntRect rect;
   SideBits overflowedSides;
   
@@ -176,7 +176,7 @@ struct PartialPrerenderData {
 
 
 
-struct TransformData {
+comparable struct TransformData {
   
   nsPoint origin;
   
@@ -309,7 +309,7 @@ struct LayerAttributes {
 };
 
 
-struct PluginWindowData {
+comparable struct PluginWindowData {
   uintptr_t windowId;
   LayoutDeviceIntRect[] clip;
   LayoutDeviceIntRect bounds;
