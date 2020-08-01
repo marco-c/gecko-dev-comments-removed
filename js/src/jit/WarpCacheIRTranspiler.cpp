@@ -1861,7 +1861,9 @@ bool WarpCacheIRTranspiler::emitCallInlinedFunction(ObjOperandId calleeId,
                                                     Int32OperandId argcId,
                                                     uint32_t icScriptOffset,
                                                     CallFlags flags) {
-  return emitCallFunction(calleeId, argcId, flags, CallKind::Scripted);
+  
+  
+  return true;
 }
 
 
