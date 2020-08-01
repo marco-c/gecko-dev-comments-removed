@@ -10765,6 +10765,8 @@ void Document::DoUnblockOnload() {
 
   if (mAsyncOnloadBlockCount != 0) {
     
+    
+    
     PostUnblockOnloadEvent();
   }
 

@@ -6,6 +6,7 @@
 
 #include "nsPrintJob.h"
 
+#include "nsDebug.h"
 #include "nsDocShell.h"
 #include "nsReadableUtils.h"
 #include "nsCRT.h"
@@ -16,6 +17,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/CustomEvent.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/Telemetry.h"
@@ -24,6 +26,8 @@
 #include "nsIScriptGlobalObject.h"
 #include "nsIStringBundle.h"
 #include "nsPIDOMWindow.h"
+#include "nsPrintData.h"
+#include "nsPrintObject.h"
 #include "nsIDocShell.h"
 #include "nsIURI.h"
 #include "nsITextToSubURI.h"
@@ -910,13 +914,12 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   }
 
   
+  mDidLoadDataForPrinting = false;
+
   nsCOMPtr<nsIWebProgress> webProgress =
       do_QueryInterface(printData->mPrintObject->mDocShell);
   webProgress->AddProgressListener(static_cast<nsIWebProgressListener*>(this),
                                    nsIWebProgress::NOTIFY_STATE_REQUEST);
-
-  mLoadCounter = 0;
-  mDidLoadDataForPrinting = false;
 
   if (mIsCreatingPrintPreview) {
     bool notifyOnInit = false;
@@ -1681,18 +1684,33 @@ nsresult nsPrintJob::InitPrintDocConstruction(bool aHandleError) {
   
   
   RefPtr<nsPrintData> printData = mPrt;
+
   rv = ReflowDocList(printData->mPrintObject, DoSetPixelScale());
   NS_ENSURE_SUCCESS(rv, rv);
 
   FirePrintPreviewUpdateEvent();
 
-  if (mLoadCounter == 0) {
-    ResumePrintAfterResourcesLoaded(aHandleError);
-  }
+  MaybeResumePrintAfterResourcesLoaded(aHandleError);
   return rv;
 }
 
-nsresult nsPrintJob::ResumePrintAfterResourcesLoaded(bool aCleanupOnError) {
+bool nsPrintJob::ShouldResumePrint() const {
+  Document* doc = mPrt->mPrintObject->mDocument;
+  MOZ_ASSERT(doc);
+  NS_ENSURE_TRUE(doc, true);
+  nsCOMPtr<nsILoadGroup> lg = doc->GetDocumentLoadGroup();
+  NS_ENSURE_TRUE(lg, true);
+  bool pending = false;
+  nsresult rv = lg->IsPending(&pending);
+  NS_ENSURE_SUCCESS(rv, true);
+  return !pending;
+}
+
+nsresult nsPrintJob::MaybeResumePrintAfterResourcesLoaded(bool aCleanupOnError) {
+  if (!ShouldResumePrint()) {
+    mDidLoadDataForPrinting = true;
+    return NS_OK;
+  }
   
   
   
@@ -1733,22 +1751,9 @@ nsresult nsPrintJob::ResumePrintAfterResourcesLoaded(bool aCleanupOnError) {
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 nsPrintJob::OnStateChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
                           uint32_t aStateFlags, nsresult aStatus) {
-  nsAutoCString name;
-  aRequest->GetName(name);
-  if (name.EqualsLiteral("about:document-onload-blocker")) {
-    return NS_OK;
-  }
-  if (aStateFlags & STATE_START) {
-    ++mLoadCounter;
-  } else if (aStateFlags & STATE_STOP) {
-    mDidLoadDataForPrinting = true;
-    --mLoadCounter;
-
+  if (aStateFlags & STATE_STOP) {
     
-    
-    if (mLoadCounter == 0) {
-      ResumePrintAfterResourcesLoaded( true);
-    }
+    MaybeResumePrintAfterResourcesLoaded( true);
   }
   return NS_OK;
 }
