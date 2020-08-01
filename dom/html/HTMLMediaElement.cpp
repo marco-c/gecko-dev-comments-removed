@@ -501,13 +501,22 @@ class HTMLMediaElement::MediaControlKeyListener final
 
   void SetPictureInPictureModeEnabled(bool aIsEnabled) {
     MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(IsStarted());
     if (mIsPictureInPictureEnabled == aIsEnabled) {
       return;
     }
+    
+    
+    
+    
+    
+    
+    
     mIsPictureInPictureEnabled = aIsEnabled;
-    mControlAgent->SetIsInPictureInPictureMode(mOwnerBrowsingContextId,
-                                               mIsPictureInPictureEnabled);
+    if (RefPtr<IMediaInfoUpdater> updater =
+            ContentMediaAgent::Get(GetCurrentBrowsingContext())) {
+      updater->SetIsInPictureInPictureMode(mOwnerBrowsingContextId,
+                                           mIsPictureInPictureEnabled);
+    }
   }
 
   void HandleMediaKey(MediaControlKey aKey) override {
@@ -7881,6 +7890,11 @@ bool HTMLMediaElement::IsInFullScreen() const {
 }
 
 bool HTMLMediaElement::ShouldStartMediaControlKeyListener() const {
+  if (IsBeingUsedInPictureInPictureMode()) {
+    MEDIACONTROL_LOG("Start listener because of being used in PiP mode");
+    return true;
+  }
+
   if (IsInFullScreen()) {
     MEDIACONTROL_LOG("Start listener because of being used in fullscreen");
     return true;
@@ -7917,11 +7931,12 @@ void HTMLMediaElement::StartMediaControlKeyListenerIfNeeded() {
 }
 
 void HTMLMediaElement::UpdateMediaControlAfterPictureInPictureModeChanged() {
-  
-  if (!mMediaControlKeyListener->IsStarted()) {
-    return;
-  }
   if (IsBeingUsedInPictureInPictureMode()) {
+    
+    
+    StartMediaControlKeyListenerIfNeeded();
+    MOZ_ASSERT(mMediaControlKeyListener->IsStarted(),
+               "Failed to start listener when entering PIP mode");
     mMediaControlKeyListener->SetPictureInPictureModeEnabled(true);
   } else {
     mMediaControlKeyListener->SetPictureInPictureModeEnabled(false);
