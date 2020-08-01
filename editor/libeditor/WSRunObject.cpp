@@ -785,10 +785,7 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
 template <typename EditorDOMPointType>
 WSRunScanner::TextFragmentData::TextFragmentData(
     const EditorDOMPointType& aPoint, const Element* aEditingHost)
-    : mEditingHost(aEditingHost),
-      mIsPreformatted(
-          aPoint.IsInContentNode() &&
-          EditorUtils::IsContentPreformatted(*aPoint.ContainerAsContent())) {
+    : mEditingHost(aEditingHost), mIsPreformatted(false) {
   if (!aPoint.IsSetAndValid()) {
     NS_WARNING("aPoint was invalid");
     return;
@@ -827,6 +824,17 @@ WSRunScanner::TextFragmentData::TextFragmentData(
   mEnd = BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
       mScanStartPoint, *editableBlockParentOrTopmotEditableInlineContent,
       mEditingHost, &mNBSPData);
+  
+  
+  
+  
+  
+  
+  mIsPreformatted = mStart.AcrossPreformattedCharacter() ||
+                    mEnd.AcrossPreformattedCharacter() ||
+                    (EditorUtils::IsContentPreformatted(
+                         *mScanStartPoint.ContainerAsContent()) &&
+                     !mStart.IsNormalText() && !mEnd.IsNormalText());
 }
 
 
@@ -857,7 +865,8 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
     }
 
     return Some(BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
-                             *aPoint.ContainerAsText(), WSType::NormalText));
+                             *aPoint.ContainerAsText(), WSType::NormalText,
+                             Preformatted::No));
   }
 
   return Nothing();
@@ -876,8 +885,8 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
     
     
     if (EditorUtils::IsContentPreformatted(*aPoint.ContainerAsText())) {
-      return BoundaryData(aPoint, *aPoint.ContainerAsText(),
-                          WSType::NormalText);
+      return BoundaryData(aPoint, *aPoint.ContainerAsText(), WSType::NormalText,
+                          Preformatted::Yes);
     }
     
     
@@ -908,12 +917,12 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
     return BoundaryData(aPoint,
                         const_cast<nsIContent&>(
                             aEditableBlockParentOrTopmostEditableInlineContent),
-                        WSType::CurrentBlockBoundary);
+                        WSType::CurrentBlockBoundary, Preformatted::No);
   }
 
   if (HTMLEditUtils::IsBlockElement(*previousLeafContentOrBlock)) {
     return BoundaryData(aPoint, *previousLeafContentOrBlock,
-                        WSType::OtherBlockBoundary);
+                        WSType::OtherBlockBoundary, Preformatted::No);
   }
 
   if (!previousLeafContentOrBlock->IsText() ||
@@ -923,10 +932,11 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
     return BoundaryData(aPoint, *previousLeafContentOrBlock,
                         previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
                             ? WSType::BRElement
-                            : WSType::SpecialContent);
+                            : WSType::SpecialContent,
+                        Preformatted::No);
   }
 
-  if (!previousLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
+  if (!previousLeafContentOrBlock->AsText()->TextLength()) {
     
     
     
@@ -939,8 +949,11 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
   if (EditorUtils::IsContentPreformatted(*previousLeafContentOrBlock)) {
     
     
+    
+    
     return BoundaryData(EditorDOMPoint::AtEndOf(*previousLeafContentOrBlock),
-                        *previousLeafContentOrBlock, WSType::NormalText);
+                        *previousLeafContentOrBlock, WSType::NormalText,
+                        Preformatted::No);
   }
 
   Maybe<BoundaryData> startInTextNode =
@@ -985,7 +998,8 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
     }
 
     return Some(BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
-                             *aPoint.ContainerAsText(), WSType::NormalText));
+                             *aPoint.ContainerAsText(), WSType::NormalText,
+                             Preformatted::No));
   }
 
   return Nothing();
@@ -1004,8 +1018,8 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
     
     
     if (EditorUtils::IsContentPreformatted(*aPoint.ContainerAsText())) {
-      return BoundaryData(aPoint, *aPoint.ContainerAsText(),
-                          WSType::NormalText);
+      return BoundaryData(aPoint, *aPoint.ContainerAsText(), WSType::NormalText,
+                          Preformatted::Yes);
     }
     
     
@@ -1035,13 +1049,13 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
     return BoundaryData(aPoint,
                         const_cast<nsIContent&>(
                             aEditableBlockParentOrTopmostEditableInlineContent),
-                        WSType::CurrentBlockBoundary);
+                        WSType::CurrentBlockBoundary, Preformatted::No);
   }
 
   if (HTMLEditUtils::IsBlockElement(*nextLeafContentOrBlock)) {
     
     return BoundaryData(aPoint, *nextLeafContentOrBlock,
-                        WSType::OtherBlockBoundary);
+                        WSType::OtherBlockBoundary, Preformatted::No);
   }
 
   if (!nextLeafContentOrBlock->IsText() ||
@@ -1052,7 +1066,8 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
     return BoundaryData(aPoint, *nextLeafContentOrBlock,
                         nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
                             ? WSType::BRElement
-                            : WSType::SpecialContent);
+                            : WSType::SpecialContent,
+                        Preformatted::No);
   }
 
   if (!nextLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
@@ -1068,8 +1083,11 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
   if (EditorUtils::IsContentPreformatted(*nextLeafContentOrBlock)) {
     
     
+    
+    
     return BoundaryData(EditorDOMPoint(nextLeafContentOrBlock, 0),
-                        *nextLeafContentOrBlock, WSType::NormalText);
+                        *nextLeafContentOrBlock, WSType::NormalText,
+                        Preformatted::No);
   }
 
   Maybe<BoundaryData> endInTextNode =
