@@ -2382,7 +2382,7 @@ static JSAtom* SymbolToFunctionName(JSContext* cx, JS::Symbol* symbol,
 
 static JSAtom* NameToFunctionName(JSContext* cx, HandleValue name,
                                   FunctionPrefixKind prefixKind) {
-  MOZ_ASSERT(name.isString() || name.isNumber());
+  MOZ_ASSERT(name.isString() || name.isNumeric());
 
   if (prefixKind == FunctionPrefixKind::None) {
     return ToAtom<CanGC>(cx, name);
@@ -2443,7 +2443,7 @@ JSAtom* js::IdToFunctionName(
 
 bool js::SetFunctionName(JSContext* cx, HandleFunction fun, HandleValue name,
                          FunctionPrefixKind prefixKind) {
-  MOZ_ASSERT(name.isString() || name.isSymbol() || name.isNumber());
+  MOZ_ASSERT(name.isString() || name.isSymbol() || name.isNumeric());
 
   
   
