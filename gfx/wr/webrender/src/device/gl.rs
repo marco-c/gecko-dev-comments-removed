@@ -300,19 +300,14 @@ impl VertexDescriptor {
         }
     }
 
-    fn bind(&self, gl: &dyn gl::Gl, vertex_buf: VBOId, instance_buf: VBOId) {
-        if !self.vertex_attributes.is_empty() {
-            Self::bind_attributes(
-                self.vertex_attributes,
-                0,
-                0, gl, vertex_buf);
-        }
+    fn bind(&self, gl: &dyn gl::Gl, main: VBOId, instance: VBOId) {
+        Self::bind_attributes(self.vertex_attributes, 0, 0, gl, main);
 
         if !self.instance_attributes.is_empty() {
             Self::bind_attributes(
                 self.instance_attributes,
                 self.vertex_attributes.len(),
-                1, gl, instance_buf,
+                1, gl, instance,
             );
         }
     }
@@ -961,11 +956,6 @@ pub struct Capabilities {
     
     pub supports_texture_usage: bool,
     
-    
-    
-    
-    pub supports_fbo_readback_with_no_vertex_attributes: bool,
-    
     pub renderer_name: String,
 }
 
@@ -1516,7 +1506,6 @@ impl Device {
             ext_pixel_local_storage;
 
         let is_adreno = renderer_name.starts_with("Adreno");
-        let is_intel = renderer_name.starts_with("Intel");
 
         
         
@@ -1571,8 +1560,6 @@ impl Device {
         
         
         let supports_nonzero_pbo_offsets = !is_macos;
-        
-        let supports_fbo_readback_with_no_vertex_attributes = !(is_macos && is_intel);
 
         Device {
             gl,
@@ -1593,7 +1580,6 @@ impl Device {
                 supports_texture_swizzle,
                 supports_nonzero_pbo_offsets,
                 supports_texture_usage,
-                supports_fbo_readback_with_no_vertex_attributes,
                 renderer_name,
             },
 
@@ -1707,31 +1693,21 @@ impl Device {
         self.optimal_pbo_stride
     }
 
-    pub fn reset_state_textures(&mut self) {
+    pub fn reset_state(&mut self) {
         for i in 0 .. self.bound_textures.len() {
             self.bound_textures[i] = 0;
             self.gl.active_texture(gl::TEXTURE0 + i as gl::GLuint);
             self.gl.bind_texture(gl::TEXTURE_2D, 0);
         }
-    }
 
-    pub fn reset_state_vao(&mut self) {
         self.bound_vao = 0;
         self.gl.bind_vertex_array(0);
-    }
 
-    pub fn reset_state_fbo(&mut self) {
         self.bound_read_fbo = self.default_read_fbo;
         self.gl.bind_framebuffer(gl::READ_FRAMEBUFFER, self.bound_read_fbo.0);
 
         self.bound_draw_fbo = self.default_draw_fbo;
         self.gl.bind_framebuffer(gl::DRAW_FRAMEBUFFER, self.bound_draw_fbo.0);
-    }
-
-    pub fn reset_state(&mut self) {
-        self.reset_state_textures();
-        self.reset_state_vao();
-        self.reset_state_fbo();
     }
 
     #[cfg(debug_assertions)]
@@ -3348,7 +3324,7 @@ impl Device {
         );
     }
 
-    pub fn draw_triangles_u16(&mut self, first_index: i32, index_count: i32) {
+    pub fn draw_triangles_u16(&mut self, first_vertex: i32, index_count: i32) {
         debug_assert!(self.inside_frame);
         #[cfg(debug_assertions)]
         debug_assert!(self.shader_is_ready);
@@ -3357,11 +3333,11 @@ impl Device {
             gl::TRIANGLES,
             index_count,
             gl::UNSIGNED_SHORT,
-            first_index as u32 * 2,
+            first_vertex as u32 * 2,
         );
     }
 
-    pub fn draw_triangles_u32(&mut self, first_index: i32, index_count: i32) {
+    pub fn draw_triangles_u32(&mut self, first_vertex: i32, index_count: i32) {
         debug_assert!(self.inside_frame);
         #[cfg(debug_assertions)]
         debug_assert!(self.shader_is_ready);
@@ -3370,7 +3346,7 @@ impl Device {
             gl::TRIANGLES,
             index_count,
             gl::UNSIGNED_INT,
-            first_index as u32 * 4,
+            first_vertex as u32 * 4,
         );
     }
 
