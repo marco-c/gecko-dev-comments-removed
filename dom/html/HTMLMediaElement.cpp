@@ -466,9 +466,10 @@ class HTMLMediaElement::MediaControlKeyListener final
     }
   }
 
+  
+  
   void UpdateMediaAudibleState(bool aIsOwnerAudible) {
     MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(IsStarted());
     if (mIsOwnerAudible == aIsOwnerAudible) {
       return;
     }
@@ -7393,7 +7394,7 @@ void HTMLMediaElement::NotifyAudioPlaybackChanged(
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->NotifyAudioPlaybackChanged(aReason);
   }
-  if (mMediaControlKeyListener && mMediaControlKeyListener->IsStarted()) {
+  if (mMediaControlKeyListener) {
     mMediaControlKeyListener->UpdateMediaAudibleState(IsAudible());
   }
   
