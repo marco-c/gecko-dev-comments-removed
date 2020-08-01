@@ -409,10 +409,7 @@ nsPrintSettingsX::SetToFileName(const nsAString& aToFileName) {
       
       
       
-      
-      
       NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
-      [printInfoDict setObject:NSPrintSaveJob forKey:NSPrintJobDisposition];
       [printInfoDict setObject:jobSavingURL forKey:NSPrintJobSavingURL];
     }
     mToFileName = aToFileName;
