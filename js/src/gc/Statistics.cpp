@@ -637,12 +637,10 @@ UniqueChars Statistics::renderJsonMessage() const {
   JSONPrinter json(printer);
 
   json.beginObject();
-  json.property("status", "completed");  
-  formatJsonDescription(json);           
+  json.property("status", "completed");
+  formatJsonDescription(json);
 
-  
-
-  json.beginObjectProperty("totals");  
+  json.beginObjectProperty("totals");
   formatJsonPhaseTimes(phaseTimes, json);
   json.endObject();
 
@@ -655,68 +653,57 @@ void Statistics::formatJsonDescription(JSONPrinter& json) const {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   
   
   
-  json.property("timestamp", 0);  
+  json.property("timestamp", 0);
 
   TimeDuration total, longest;
   gcDuration(&total, &longest);
-  json.property("max_pause", longest, JSONPrinter::MILLISECONDS);  
-  json.property("total_time", total, JSONPrinter::MILLISECONDS);   
+  json.property("max_pause", longest, JSONPrinter::MILLISECONDS);
+  json.property("total_time", total, JSONPrinter::MILLISECONDS);
   
   
-  json.property("reason", ExplainGCReason(slices_[0].reason));      
-  json.property("zones_collected", zoneStats.collectedZoneCount);   
-  json.property("total_zones", zoneStats.zoneCount);                
-  json.property("total_compartments", zoneStats.compartmentCount);  
-  json.property("minor_gcs", getCount(COUNT_MINOR_GC));             
+  json.property("reason", ExplainGCReason(slices_[0].reason));
+  json.property("zones_collected", zoneStats.collectedZoneCount);
+  json.property("total_zones", zoneStats.zoneCount);
+  json.property("total_compartments", zoneStats.compartmentCount);
+  json.property("minor_gcs", getCount(COUNT_MINOR_GC));
   uint32_t storebufferOverflows = getCount(COUNT_STOREBUFFER_OVERFLOW);
   if (storebufferOverflows) {
-    json.property("store_buffer_overflows", storebufferOverflows);  
+    json.property("store_buffer_overflows", storebufferOverflows);
   }
-  json.property("slices", slices_.length());  
+  json.property("slices", slices_.length());
 
   const double mmu20 = computeMMU(TimeDuration::FromMilliseconds(20));
   const double mmu50 = computeMMU(TimeDuration::FromMilliseconds(50));
-  json.property("mmu_20ms", int(mmu20 * 100));  
-  json.property("mmu_50ms", int(mmu50 * 100));  
+  json.property("mmu_20ms", int(mmu20 * 100));
+  json.property("mmu_50ms", int(mmu50 * 100));
 
   TimeDuration sccTotal, sccLongest;
   sccDurations(&sccTotal, &sccLongest);
-  json.property("scc_sweep_total", sccTotal, JSONPrinter::MILLISECONDS);  
-  json.property("scc_sweep_max_pause", sccLongest,
-                JSONPrinter::MILLISECONDS);  
+  json.property("scc_sweep_total", sccTotal, JSONPrinter::MILLISECONDS);
+  json.property("scc_sweep_max_pause", sccLongest, JSONPrinter::MILLISECONDS);
 
   if (nonincrementalReason_ != AbortReason::None) {
     json.property("nonincremental_reason",
-                  ExplainAbortReason(nonincrementalReason_));  
+                  ExplainAbortReason(nonincrementalReason_));
   }
-  json.property("allocated_bytes", preTotalHeapBytes);  
+  json.property("allocated_bytes", preTotalHeapBytes);
   json.property("post_heap_size", postTotalHeapBytes);
 
   uint32_t addedChunks = getCount(COUNT_NEW_CHUNK);
   if (addedChunks) {
-    json.property("added_chunks", addedChunks);  
+    json.property("added_chunks", addedChunks);
   }
   uint32_t removedChunks = getCount(COUNT_DESTROY_CHUNK);
   if (removedChunks) {
-    json.property("removed_chunks", removedChunks);  
+    json.property("removed_chunks", removedChunks);
   }
-  json.property("major_gc_number", startingMajorGCNumber);  
-  json.property("minor_gc_number", startingMinorGCNumber);  
-  json.property("slice_number", startingSliceNumber);       
+  json.property("major_gc_number", startingMajorGCNumber);
+  json.property("minor_gc_number", startingMinorGCNumber);
+  json.property("slice_number", startingSliceNumber);
 }
 
 void Statistics::formatJsonSliceDescription(unsigned i, const SliceData& slice,
@@ -725,35 +712,28 @@ void Statistics::formatJsonSliceDescription(unsigned i, const SliceData& slice,
   
   
   
-  
-  
-  
-  
-  
-  
-  
   char budgetDescription[200];
   slice.budget.describe(budgetDescription, sizeof(budgetDescription) - 1);
   TimeStamp originTime = TimeStamp::ProcessCreation();
 
-  json.property("slice", i);  
-  json.property("pause", slice.duration(), JSONPrinter::MILLISECONDS);  
-  json.property("reason", ExplainGCReason(slice.reason));               
-  json.property("initial_state", gc::StateName(slice.initialState));    
-  json.property("final_state", gc::StateName(slice.finalState));        
-  json.property("budget", budgetDescription);                           
-  json.property("major_gc_number", startingMajorGCNumber);              
+  json.property("slice", i);
+  json.property("pause", slice.duration(), JSONPrinter::MILLISECONDS);
+  json.property("reason", ExplainGCReason(slice.reason));
+  json.property("initial_state", gc::StateName(slice.initialState));
+  json.property("final_state", gc::StateName(slice.finalState));
+  json.property("budget", budgetDescription);
+  json.property("major_gc_number", startingMajorGCNumber);
   if (slice.trigger) {
     Trigger trigger = slice.trigger.value();
-    json.property("trigger_amount", trigger.amount);        
-    json.property("trigger_threshold", trigger.threshold);  
+    json.property("trigger_amount", trigger.amount);
+    json.property("trigger_threshold", trigger.threshold);
   }
   int64_t numFaults = slice.endFaults - slice.startFaults;
   if (numFaults != 0) {
-    json.property("page_faults", numFaults);  
+    json.property("page_faults", numFaults);
   }
   json.property("start_timestamp", slice.start - originTime,
-                JSONPrinter::SECONDS);  
+                JSONPrinter::SECONDS);
 }
 
 void Statistics::formatJsonPhaseTimes(const PhaseTimeTable& phaseTimes,

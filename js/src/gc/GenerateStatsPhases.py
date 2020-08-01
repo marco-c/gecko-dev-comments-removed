@@ -54,9 +54,6 @@
 
 
 
-
-
-
 import re
 import collections
 
@@ -345,5 +342,4 @@ def generateCpp(out):
     
     
     out.write("// The next available phase kind number is: %d\n" %
-            (MaxBucket + 1))
-
+              (MaxBucket + 1))
