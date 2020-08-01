@@ -302,6 +302,10 @@ class ProviderAutofill extends UrlbarProvider {
     let instance = this.queryInstance;
 
     
+    
+    this._autofillResult = null;
+
+    
     if (!UrlbarPrefs.get("autoFill")) {
       return false;
     }
@@ -400,7 +404,7 @@ class ProviderAutofill extends UrlbarProvider {
 
     this._autofillResult.heuristic = true;
     addCallback(this, this._autofillResult);
-    delete this._autofillResult;
+    this._autofillResult = null;
   }
 
   
@@ -408,7 +412,7 @@ class ProviderAutofill extends UrlbarProvider {
 
 
   cancelQuery(queryContext) {
-    delete this._autofillResult;
+    this._autofillResult = null;
   }
 
   
