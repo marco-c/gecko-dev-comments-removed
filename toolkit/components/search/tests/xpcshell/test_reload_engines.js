@@ -120,86 +120,16 @@ add_task(async function setup() {
   SearchTestUtils.useMockIdleService(registerCleanupFunction);
   await useTestEngines("data", null, CONFIG);
   await AddonTestUtils.promiseStartupManager();
-});
-
-add_task(async function test_regular_init() {
-  let geoUrl = `data:application/json,{"country_code": "FR"}`;
-  Services.prefs.setCharPref("browser.region.network.url", geoUrl);
-
-  await Promise.all([
-    Services.search.init(),
-    SearchTestUtils.promiseSearchNotification("engines-reloaded"),
-    promiseAfterCache(),
-  ]);
-
-  Assert.equal(
-    Services.search.defaultEngine.name,
-    FR_DEFAULT,
-    "Geo defined default should be set"
-  );
-});
-
-add_task(async function test_init_with_slow_region_lookup() {
-  let reloadObserved = listenFor(SEARCH_SERVICE_TOPIC, "engines-reloaded");
-  let initPromise;
-
-  
-  
-  let srv = useHttpServer();
-  srv.registerPathHandler("/fetch_region", async (req, res) => {
-    res.processAsync();
-    await initPromise;
-    res.setStatusLine("1.1", 200, "OK");
-    res.write(JSON.stringify({ country_code: "FR" }));
-    res.finish();
-  });
-
-  Services.prefs.setCharPref(
-    "browser.region.network.url",
-    `http://localhost:${srv.identity.primaryPort}/fetch_region`
-  );
 
   Region._setHomeRegion("", false);
-  Region.init();
 
+  await Services.search.init();
   
-  initPromise = asyncReInit();
-  await initPromise;
-
-  let otherPromises = [
-    promiseAfterCache(),
-    SearchTestUtils.promiseSearchNotification(
-      "engine-default",
-      SEARCH_ENGINE_TOPIC
-    ),
-  ];
-
-  Assert.equal(
-    Services.search.defaultEngine.name,
-    DEFAULT,
-    "Test engine shouldn't be the default anymore"
-  );
-
-  await Promise.all(otherPromises);
-
-  
-  Assert.equal(
-    Services.search.defaultEngine.name,
-    FR_DEFAULT,
-    "engine-pref should be the default in FR"
-  );
-  Assert.equal(
-    (await Services.search.getDefaultPrivate()).name,
-    FR_DEFAULT,
-    "engine-pref should be the private default in FR"
-  );
-
-  Assert.ok(reloadObserved(), "Engines do reload with delayed region fetch");
+  await Services.search.getDefaultPrivate();
+  await Services.search.getDefault();
 });
 
 add_task(async function test_config_updated_engine_changes() {
-  
-
   
   const reloadObserved = SearchTestUtils.promiseSearchNotification(
     "engines-reloaded"
@@ -224,6 +154,8 @@ add_task(async function test_config_updated_engine_changes() {
   }
   Services.obs.addObserver(enginesAddedObs, SearchUtils.TOPIC_ENGINE_MODIFIED);
 
+  Region._setHomeRegion("FR", false);
+
   await RemoteSettings(SearchUtils.SETTINGS_KEY).emit("sync", {
     data: {
       current: ALTERNATE_CONFIG,
@@ -240,7 +172,7 @@ add_task(async function test_config_updated_engine_changes() {
 
   Assert.deepEqual(
     enginesAdded.sort(),
-    ["engine-chromeicon", "engine-resourceicon"],
+    ["engine-chromeicon", "engine-pref", "engine-resourceicon"],
     "Should have installed the correct engines"
   );
 
