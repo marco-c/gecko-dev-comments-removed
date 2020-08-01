@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 """
 Templates provide a way of modifying the task definition of selected tasks.
@@ -20,7 +20,6 @@ from textwrap import dedent
 
 import mozpack.path as mozpath
 from mozbuild.base import BuildEnvironmentNotFoundException, MozbuildObject
-from taskgraph.util.python_path import find_object
 
 from .tasks import resolve_tests_by_suite
 
@@ -116,10 +115,10 @@ class Pernosco(TryConfig):
 
         if pernosco:
             try:
-                # The Pernosco service currently requires a Mozilla e-mail address to
-                # log in. Prevent people with non-Mozilla addresses from using this
-                # flag so they don't end up consuming time and resources only to
-                # realize they can't actually log in and see the reports.
+                
+                
+                
+                
                 cmd = ['ssh', '-G', 'hg.mozilla.org']
                 output = subprocess.check_output(cmd, universal_newlines=True).splitlines()
                 address = [l.rsplit(' ', 1)[-1] for l in output if l.startswith('user')][0]
@@ -291,14 +290,14 @@ class GeckoProfile(TryConfig):
           'default': False,
           'help': 'Create and upload a gecko profile during talos/raptor tasks.',
           }],
-        # For backwards compatibility
+        
         [['--talos-profile'],
          {'dest': 'profile',
           'action': 'store_true',
           'default': False,
           'help': SUPPRESS,
           }],
-        # This is added for consistency with the 'syntax' selector
+        
         [['--geckoProfile'],
          {'dest': 'profile',
           'action': 'store_true',
@@ -311,37 +310,6 @@ class GeckoProfile(TryConfig):
         if profile:
             return {
                 'gecko-profile': True,
-            }
-
-
-class OptimizeStrategies(TryConfig):
-
-    arguments = [
-        [['--strategy'],
-         {'default': None,
-          'help': 'Override the default optimization strategy. Valid values '
-                  'are the experimental strategies defined at the bottom of '
-                  '`taskcluster/taskgraph/optimize/__init__.py`.'
-          }],
-    ]
-
-    def try_config(self, strategy, **kwargs):
-        if strategy:
-            if ':' not in strategy:
-                strategy = "taskgraph.optimize:tryselect.{}".format(strategy)
-
-            try:
-                obj = find_object(strategy)
-            except (ImportError, AttributeError):
-                print("error: invalid module path '{}'".format(strategy))
-                sys.exit(1)
-
-            if not isinstance(obj, dict):
-                print("error: object at '{}' must be a dict".format(strategy))
-                sys.exit(1)
-
-            return {
-                'optimize-strategies': strategy,
             }
 
 
@@ -461,6 +429,5 @@ all_task_configs = {
     'pernosco': Pernosco,
     'rebuild': Rebuild,
     'routes': Routes,
-    'strategy': OptimizeStrategies,
     'worker-overrides': WorkerOverrides,
 }
