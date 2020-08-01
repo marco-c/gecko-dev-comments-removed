@@ -64,7 +64,7 @@ def test_android_log(*mocked):
         env.set_arg("tests", [EXAMPLE_TEST])
 
         with env.layers[SYSTEM] as sys, env.layers[TEST] as andro:
-            metadata = sys(andro(metadata))
+            metadata = andro(sys(metadata))
 
         
         metadata._results = metadata._results[1:]

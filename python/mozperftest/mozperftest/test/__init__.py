@@ -2,19 +2,18 @@
 
 
 from mozperftest.test.browsertime import BrowsertimeRunner
-from mozperftest.test.profile import Profile
 from mozperftest.test.androidlog import AndroidLog
 from mozperftest.layers import Layers
 
 
 def get_layers():
-    return (Profile, BrowsertimeRunner, AndroidLog)
+    return (BrowsertimeRunner, AndroidLog)
 
 
 def pick_test(env, flavor, mach_cmd):
     if flavor == "desktop-browser":
-        return Layers(env, mach_cmd, (Profile, BrowsertimeRunner))
+        return Layers(env, mach_cmd, (BrowsertimeRunner,))
     if flavor == "mobile-browser":
-        return Layers(env, mach_cmd, (Profile, BrowsertimeRunner, AndroidLog))
+        return Layers(env, mach_cmd, (BrowsertimeRunner, AndroidLog))
 
     raise NotImplementedError(flavor)
