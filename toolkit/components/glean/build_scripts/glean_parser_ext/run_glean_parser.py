@@ -4,14 +4,19 @@
 
 
 
-import rust
 import sys
-
-from glean_parser import lint, parser, util
-from pathlib import Path
 
 
 def main(output_fd, *metrics_yamls):
+    from pathlib import Path
+
+    srcdir = Path(__file__).joinpath('../../../../../../')
+    glean_parser_path = srcdir.joinpath('third_party/python/glean_parser')
+    sys.path.insert(0, str(glean_parser_path.resolve()))
+
+    from glean_parser import lint, parser, util
+    import rust
+
     
     
     options = {"allow_reserved": False}
