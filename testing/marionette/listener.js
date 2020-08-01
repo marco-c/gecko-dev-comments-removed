@@ -1128,20 +1128,10 @@ function navigateTo(msg) {
   let { commandID, pageTimeout, url, loadEventExpected = null } = msg.json;
 
   try {
-    if (typeof url == "string") {
-      try {
-        if (loadEventExpected === null) {
-          loadEventExpected = navigate.isLoadEventExpected(
-            curContainer.frame.location,
-            url
-          );
-        }
-      } catch (e) {
-        let err = new InvalidArgumentError("Malformed URL: " + e.message);
-        sendError(err, commandID);
-        return;
-      }
-    }
+    loadEventExpected = navigate.isLoadEventExpected(
+      curContainer.frame.location,
+      url
+    );
 
     
     sendSyncMessage("Marionette:switchedToFrame", { frameValue: null });
