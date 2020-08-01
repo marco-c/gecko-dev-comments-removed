@@ -1261,12 +1261,6 @@ const gCSSProperties2 = {
       { type: 'discrete', options: [ [ 'middle', 'end' ] ] }
     ]
   },
-  'text-combine-upright': {
-    
-    types: [
-      { type: 'discrete', options: [ [ 'all', 'none' ] ] }
-    ]
-  },
   'text-decoration-color': {
     
     types: [ 'color' ]
