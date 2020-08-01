@@ -8516,7 +8516,12 @@ nsresult nsIFrame::PeekOffsetForLineEdge(nsPeekOffsetStruct* aPos) {
 }
 
 nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
-  MOZ_ASSERT(aPos && !HasAnyStateBits(NS_FRAME_IS_DIRTY));
+  MOZ_ASSERT(aPos);
+
+  if (NS_WARN_IF(HasAnyStateBits(NS_FRAME_IS_DIRTY))) {
+    
+    return NS_ERROR_UNEXPECTED;
+  }
 
   
   int32_t offset = aPos->mStartOffset - GetRangeForFrame(this).start;
