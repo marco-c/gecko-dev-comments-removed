@@ -7,6 +7,7 @@
 #define nsPageSequenceFrame_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/UniquePtr.h"
 #include "nsContainerFrame.h"
 #include "nsIPrintSettings.h"
 
@@ -132,7 +133,8 @@ class nsPageSequenceFrame final : public nsContainerFrame {
 
   nsSize mSize;
 
-  nsSharedPageData* mPageData;  
+  
+  mozilla::UniquePtr<nsSharedPageData> mPageData;
 
   
   int32_t mPageNum;

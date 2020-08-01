@@ -87,7 +87,9 @@ class nsPageFrame final : public nsContainerFrame {
   int32_t mPageNum;
   int32_t mTotNumPages;
 
+  
   nsSharedPageData* mPD;
+
   nsMargin mPageContentMargin;
 };
 

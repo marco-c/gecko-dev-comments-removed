@@ -54,6 +54,7 @@ class nsPageContentFrame final : public mozilla::ViewportFrame {
                               nsPresContext* aPresContext)
       : ViewportFrame(aStyle, aPresContext, kClassID) {}
 
+  
   nsSharedPageData* mPD;
 };
 
