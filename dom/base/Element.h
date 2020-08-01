@@ -1251,8 +1251,7 @@ class Element : public FragmentOrElement {
       ShadowRootMode aMode);
 
   
-  enum class NotifyUAWidgetSetup : bool { No, Yes };
-  void AttachAndSetUAShadowRoot(NotifyUAWidgetSetup = NotifyUAWidgetSetup::Yes);
+  void AttachAndSetUAShadowRoot();
 
   
   

@@ -1122,20 +1122,24 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
   return shadowRoot.forget();
 }
 
-void Element::AttachAndSetUAShadowRoot(NotifyUAWidgetSetup aNotify) {
+void Element::AttachAndSetUAShadowRoot() {
   MOZ_DIAGNOSTIC_ASSERT(!CanAttachShadowDOM(),
                         "Cannot be used to attach UI shadow DOM");
 
-  if (!GetShadowRoot()) {
-    RefPtr<ShadowRoot> shadowRoot =
-        AttachShadowWithoutNameChecks(ShadowRootMode::Closed);
-    shadowRoot->SetIsUAWidget();
-  }
+  
+  
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "Element::AttachAndSetUAShadowRoot::Runnable",
+      [self = RefPtr<Element>(this)]() {
+        if (self->GetShadowRoot()) {
+          MOZ_ASSERT(self->GetShadowRoot()->IsUAWidget());
+          return;
+        }
 
-  MOZ_ASSERT(GetShadowRoot()->IsUAWidget());
-  if (aNotify == NotifyUAWidgetSetup::Yes) {
-    NotifyUAWidgetSetupOrChange();
-  }
+        RefPtr<ShadowRoot> shadowRoot =
+            self->AttachShadowWithoutNameChecks(ShadowRootMode::Closed);
+        shadowRoot->SetIsUAWidget();
+      }));
 }
 
 void Element::NotifyUAWidgetSetupOrChange() {
@@ -1149,6 +1153,9 @@ void Element::NotifyUAWidgetSetupOrChange() {
       "Element::NotifyUAWidgetSetupOrChange::UAWidgetSetupOrChange",
       [self = RefPtr<Element>(this),
        ownerDoc = RefPtr<Document>(OwnerDoc())]() {
+        MOZ_ASSERT(self->GetShadowRoot() &&
+                   self->GetShadowRoot()->IsUAWidget());
+
         nsContentUtils::DispatchChromeEvent(ownerDoc, self,
                                             u"UAWidgetSetupOrChange"_ns,
                                             CanBubble::eYes, Cancelable::eNo);
@@ -1157,20 +1164,18 @@ void Element::NotifyUAWidgetSetupOrChange() {
 
 void Element::NotifyUAWidgetTeardown(UnattachShadowRoot aUnattachShadowRoot) {
   MOZ_ASSERT(IsInComposedDoc());
-  if (!GetShadowRoot()) {
-    return;
-  }
-  MOZ_ASSERT(GetShadowRoot()->IsUAWidget());
-  if (aUnattachShadowRoot == UnattachShadowRoot::Yes) {
-    UnattachShadow();
-  }
-
   
   
   nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
       "Element::NotifyUAWidgetTeardownAndUnattachShadow::UAWidgetTeardown",
-      [self = RefPtr<Element>(this),
+      [aUnattachShadowRoot, self = RefPtr<Element>(this),
        ownerDoc = RefPtr<Document>(OwnerDoc())]() {
+        if (!self->GetShadowRoot()) {
+          
+          return;
+        }
+        MOZ_ASSERT(self->GetShadowRoot()->IsUAWidget());
+
         
         bool hasHadScriptObject = true;
         nsIScriptGlobalObject* scriptObject =
@@ -1179,9 +1184,16 @@ void Element::NotifyUAWidgetTeardown(UnattachShadowRoot aUnattachShadowRoot) {
           return;
         }
 
-        Unused << nsContentUtils::DispatchChromeEvent(
+        nsresult rv = nsContentUtils::DispatchChromeEvent(
             ownerDoc, self, u"UAWidgetTeardown"_ns, CanBubble::eYes,
             Cancelable::eNo);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return;
+        }
+
+        if (aUnattachShadowRoot == UnattachShadowRoot::Yes) {
+          self->UnattachShadow();
+        }
       }));
 }
 
