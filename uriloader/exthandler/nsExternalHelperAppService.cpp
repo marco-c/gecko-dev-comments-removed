@@ -977,6 +977,9 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
   
   if (aBrowsingContext && aTriggeringPrincipal &&
       !StaticPrefs::security_allow_disjointed_external_uri_loads() &&
+      
+      !BasePrincipal::Cast(aTriggeringPrincipal)->AddonPolicy() &&
+      
       !aTriggeringPrincipal->IsSystemPrincipal()) {
     RefPtr<BrowsingContext> bc = aBrowsingContext;
     WindowGlobalParent* wgp = bc->Canonical()->GetCurrentWindowGlobal();
