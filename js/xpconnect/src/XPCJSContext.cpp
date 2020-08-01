@@ -619,7 +619,8 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   
   
   
-  TimeDuration duration = TimeStamp::NowLoRes() - self->mSlowScriptCheckpoint;
+  TimeStamp now = TimeStamp::NowLoRes();
+  TimeDuration duration = now - self->mSlowScriptCheckpoint;
   int32_t limit;
 
   nsString addonId;
@@ -644,13 +645,13 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     return true;
   }
 
+  self->mSlowScriptCheckpoint = now;
   self->mSlowScriptActualWait += duration;
 
   
   
   
   if (!self->mSlowScriptSecondHalf) {
-    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
     self->mSlowScriptSecondHalf = true;
     return true;
   }
