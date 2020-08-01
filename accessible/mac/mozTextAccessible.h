@@ -69,6 +69,12 @@
 #pragma mark - mozAccessible
 
 
+- (void)handleAccessibleTextChangeEvent:(NSString*)change
+                               inserted:(BOOL)isInserted
+                            inContainer:(const mozilla::a11y::AccessibleOrProxy&)container
+                                     at:(int32_t)start;
+
+
 - (void)handleAccessibleEvent:(uint32_t)eventType;
 
 @end
