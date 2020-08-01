@@ -118,14 +118,8 @@ void GCRuntime::queueFinalizationRegistryForCleanup(
     FinalizationRegistryObject* registry) {
   
   if (!registry->isQueuedForCleanup()) {
-    callHostCleanupFinalizationRegistryCallback(registry);
+    callHostCleanupFinalizationRegistryCallback(registry->doCleanupFunction(),
+                                                registry->incumbentGlobal());
     registry->setQueuedForCleanup(true);
   }
-}
-
-bool GCRuntime::cleanupQueuedFinalizationRegistry(
-    JSContext* cx, HandleFinalizationRegistryObject registry) {
-  registry->setQueuedForCleanup(false);
-  bool ok = FinalizationRegistryObject::cleanupQueuedRecords(cx, registry);
-  return ok;
 }
