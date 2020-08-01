@@ -245,10 +245,7 @@ else:
     class _CTraceback(ctypes.Structure):
         _fields_ = [
             
-            (
-                "PyObject_HEAD",
-                ctypes.c_byte * (32 if hasattr(sys, "getobjects") else 16),
-            ),
+            ("PyObject_HEAD", ctypes.c_byte * object().__sizeof__()),
             
             ("tb_next", ctypes.py_object),
         ]

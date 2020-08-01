@@ -1307,13 +1307,13 @@ class CodeGenerator(NodeVisitor):
             def finalize(value):
                 return default(env_finalize(value))
 
-            if getattr(env_finalize, "contextfunction", False):
+            if getattr(env_finalize, "contextfunction", False) is True:
                 src += "context, "
                 finalize = None  
-            elif getattr(env_finalize, "evalcontextfunction", False):
+            elif getattr(env_finalize, "evalcontextfunction", False) is True:
                 src += "context.eval_ctx, "
                 finalize = None
-            elif getattr(env_finalize, "environmentfunction", False):
+            elif getattr(env_finalize, "environmentfunction", False) is True:
                 src += "environment, "
 
                 def finalize(value):
@@ -1689,11 +1689,11 @@ class CodeGenerator(NodeVisitor):
         func = self.environment.filters.get(node.name)
         if func is None:
             self.fail("no filter named %r" % node.name, node.lineno)
-        if getattr(func, "contextfilter", False):
+        if getattr(func, "contextfilter", False) is True:
             self.write("context, ")
-        elif getattr(func, "evalcontextfilter", False):
+        elif getattr(func, "evalcontextfilter", False) is True:
             self.write("context.eval_ctx, ")
-        elif getattr(func, "environmentfilter", False):
+        elif getattr(func, "environmentfilter", False) is True:
             self.write("environment, ")
 
         

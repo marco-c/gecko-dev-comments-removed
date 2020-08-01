@@ -13,8 +13,8 @@ See <http://github.com/ActiveState/appdirs> for details and usage.
 
 
 
-__version_info__ = (1, 4, 3)
-__version__ = '.'.join(map(str, __version_info__))
+__version__ = "1.4.4"
+__version_info__ = tuple(int(segment) for segment in __version__.split("."))
 
 
 import sys
