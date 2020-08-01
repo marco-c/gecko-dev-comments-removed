@@ -2396,6 +2396,8 @@ class Extension extends ExtensionData {
   async startup() {
     this.state = "Startup";
 
+    
+    
     let resolveReadyPromise;
     let readyPromise = new Promise(resolve => {
       resolveReadyPromise = resolve;
@@ -2560,6 +2562,9 @@ class Extension extends ExtensionData {
       throw e;
     } finally {
       ExtensionTelemetry.extensionStartup.stopwatchFinish(this);
+      
+      
+      resolveReadyPromise(null);
     }
   }
 
