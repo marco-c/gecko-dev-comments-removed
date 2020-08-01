@@ -13,13 +13,13 @@ use std::fs;
 
 use tempfile::Builder;
 
-use rkv::backend::{
-    Lmdb,
-    LmdbDatabase,
-    LmdbRoCursor,
-    LmdbRwTransaction,
-};
 use rkv::{
+    backend::{
+        Lmdb,
+        LmdbDatabase,
+        LmdbRoCursor,
+        LmdbRwTransaction,
+    },
     Readable,
     Rkv,
     StoreOptions,
@@ -97,9 +97,11 @@ where
     store
         .get(txn, field)
         .expect("get iterator")
-        .map(|id| match id.expect("field") {
-            (_, Some(Value::U64(id))) => id,
-            _ => panic!("getting value in iter"),
+        .map(|id| {
+            match id.expect("field") {
+                (_, Value::U64(id)) => id,
+                _ => panic!("getting value in iter"),
+            }
         })
         .collect::<Vec<u64>>()
 }

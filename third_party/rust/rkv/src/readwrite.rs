@@ -8,17 +8,19 @@
 
 
 
-use crate::backend::{
-    BackendDatabase,
-    BackendRoCursor,
-    BackendRoCursorTransaction,
-    BackendRoTransaction,
-    BackendRwCursorTransaction,
-    BackendRwTransaction,
+use crate::{
+    backend::{
+        BackendDatabase,
+        BackendRoCursor,
+        BackendRoCursorTransaction,
+        BackendRoTransaction,
+        BackendRwCursorTransaction,
+        BackendRwTransaction,
+    },
+    error::StoreError,
+    helpers::read_transform,
+    value::Value,
 };
-use crate::error::StoreError;
-use crate::helpers::read_transform;
-use crate::value::Value;
 
 pub struct Reader<T>(T);
 pub struct Writer<T>(T);
@@ -46,7 +48,10 @@ where
         K: AsRef<[u8]>,
     {
         let bytes = self.0.get(db, k.as_ref()).map_err(|e| e.into());
-        read_transform(bytes)
+        match read_transform(bytes).map(Some) {
+            Err(StoreError::KeyValuePairNotFound) => Ok(None),
+            result => result,
+        }
     }
 
     fn open_ro_cursor(&'r self, db: &T::Database) -> Result<T::RoCursor, StoreError> {
@@ -81,7 +86,10 @@ where
         K: AsRef<[u8]>,
     {
         let bytes = self.0.get(db, k.as_ref()).map_err(|e| e.into());
-        read_transform(bytes)
+        match read_transform(bytes).map(Some) {
+            Err(StoreError::KeyValuePairNotFound) => Ok(None),
+            result => result,
+        }
     }
 
     fn open_ro_cursor(&'r self, db: &T::Database) -> Result<T::RoCursor, StoreError> {
