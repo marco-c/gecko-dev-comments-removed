@@ -274,7 +274,7 @@ void ProxyObject::nuke() {
   
   JSObject* delegate = UncheckedUnwrapWithoutExpose(this);
   if (delegate != this) {
-    delegate->zone()->delegatePreWriteBarrier(this, delegate);
+    delegate->zone()->beforeClearDelegate(this, delegate);
   }
 
   

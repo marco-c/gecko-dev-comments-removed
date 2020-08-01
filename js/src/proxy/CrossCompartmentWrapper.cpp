@@ -603,6 +603,9 @@ void js::RemapDeadWrapper(JSContext* cx, HandleObject wobj,
   MOZ_ASSERT(Wrapper::wrappedObject(wobj) == newTarget);
 
   
+  wobj->zone()->afterAddDelegate(wobj);
+
+  
   
   if (!wcompartment->putWrapper(cx, newTarget, wobj)) {
     oomUnsafe.crash("js::RemapWrapper");

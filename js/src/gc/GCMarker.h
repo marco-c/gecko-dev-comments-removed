@@ -336,6 +336,9 @@ class GCMarker : public JSTracer {
   
   void severWeakDelegate(JSObject* key, JSObject* delegate);
 
+  
+  void restoreWeakDelegate(JSObject* key, JSObject* delegate);
+
   bool isDrained() { return isMarkStackEmpty() && !delayedMarkingList; }
 
   
