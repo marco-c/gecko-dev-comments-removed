@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsCacheMetaData.h"
 #include "nsICacheEntryDescriptor.h"
@@ -12,12 +12,12 @@ const char* nsCacheMetaData::GetElement(const char* key) {
   const char* limit = mBuffer + mMetaSize;
 
   while (data < limit) {
-    
+    // Point to the value part
     const char* value = data + strlen(data) + 1;
     MOZ_ASSERT(value < limit, "Cache Metadata corrupted");
     if (strcmp(data, key) == 0) return value;
 
-    
+    // Skip value part
     data = value + strlen(value) + 1;
   }
   MOZ_ASSERT(data == limit, "Metadata corrupted");
@@ -29,7 +29,7 @@ nsresult nsCacheMetaData::SetElement(const char* key, const char* value) {
   char* pos = (char*)GetElement(key);
 
   if (!value) {
-    
+    // No value means remove the key/value pair completely, if existing
     if (pos) {
       uint32_t oldValueSize = strlen(pos) + 1;
       uint32_t offset = pos - mBuffer;
@@ -48,27 +48,27 @@ nsresult nsCacheMetaData::SetElement(const char* key, const char* value) {
     const uint32_t offset = pos - mBuffer;
     const uint32_t remainder = mMetaSize - (offset + oldValueSize);
 
-    
+    // Update the value in place
     newSize -= oldValueSize;
     nsresult rv = EnsureBuffer(newSize);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Move the remainder to the right place
     pos = mBuffer + offset;
     memmove(pos + valueSize, pos + oldValueSize, remainder);
   } else {
-    
+    // allocate new meta data element
     newSize += keySize;
     nsresult rv = EnsureBuffer(newSize);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
+    // Add after last element
     pos = mBuffer + mMetaSize;
     memcpy(pos, key, keySize);
     pos += keySize;
   }
 
-  
+  // Update value
   memcpy(pos, value, valueSize);
   mMetaSize = newSize;
 
@@ -81,19 +81,25 @@ nsresult nsCacheMetaData::FlattenMetaData(char* buffer, uint32_t bufSize) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
+  if (!mBuffer) {
+    MOZ_ASSERT(mMetaSize == 0);
+    MOZ_ASSERT(bufSize == 0);
+    return NS_OK;
+  }
+
   memcpy(buffer, mBuffer, mMetaSize);
   return NS_OK;
 }
 
 nsresult nsCacheMetaData::UnflattenMetaData(const char* data, uint32_t size) {
   if (data && size) {
-    
+    // Check if the metadata ends with a zero byte.
     if (data[size - 1] != '\0') {
       NS_ERROR("Cache MetaData is not null terminated");
       return NS_ERROR_ILLEGAL_VALUE;
     }
-    
-    
+    // Check that there are an even number of zero bytes
+    // to match the pattern { key \0 value \0 }
     bool odd = false;
     for (uint32_t i = 0; i < size; i++) {
       if (data[i] == '\0') odd = !odd;
@@ -118,14 +124,14 @@ nsresult nsCacheMetaData::VisitElements(nsICacheMetaDataVisitor* visitor) {
 
   while (data < limit) {
     const char* key = data;
-    
+    // Skip key part
     data += strlen(data) + 1;
     MOZ_ASSERT(data < limit, "Metadata corrupted");
     bool keepGoing;
     nsresult rv = visitor->VisitMetaDataElement(key, data, &keepGoing);
     if (NS_FAILED(rv) || !keepGoing) return NS_OK;
 
-    
+    // Skip value part
     data += strlen(data) + 1;
   }
   MOZ_ASSERT(data == limit, "Metadata corrupted");
