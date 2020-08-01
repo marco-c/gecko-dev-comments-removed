@@ -89,9 +89,11 @@ add_task(async function test_panel_live_reload() {
   extension.sendMessage("storage-local-set", { a: 123 });
   await extension.awaitMessage("storage-local-set:done");
 
-  const { target, extensionStorage } = await openAddonStoragePanel(
-    extension.id
-  );
+  const {
+    target,
+    extensionStorage,
+    storageFront,
+  } = await openAddonStoragePanel(extension.id);
 
   manifest = {
     ...manifest,
@@ -99,6 +101,20 @@ add_task(async function test_panel_live_reload() {
   };
   
   info("Update to version 2.0");
+
+  
+  
+  const promiseStoragePanelUpdated = new Promise(resolve => {
+    storageFront.on("stores-update", function updateListener(updates) {
+      info(`Got stores-update event: ${JSON.stringify(updates)}`);
+      const extStorageAdded = updates.added?.extensionStorage;
+      if (host in extStorageAdded && extStorageAdded[host].length > 0) {
+        storageFront.off("stores-update", updateListener);
+        resolve();
+      }
+    });
+  });
+
   await extension.upgrade(
     getExtensionConfig({
       manifest,
@@ -106,16 +122,10 @@ add_task(async function test_panel_live_reload() {
     })
   );
 
-  await extension.awaitMessage("extension-origin");
-
-  
-  
-  
-  
-  await asyncWaitUntil(async () => {
-    const { data } = await extensionStorage.getStoreObjects(host);
-    return data?.length > 0;
-  });
+  await Promise.all([
+    extension.awaitMessage("extension-origin"),
+    promiseStoragePanelUpdated,
+  ]);
 
   const { data } = await extensionStorage.getStoreObjects(host);
   Assert.deepEqual(
@@ -133,18 +143,3 @@ add_task(async function test_panel_live_reload() {
 
   await shutdown(extension, target);
 });
-
-
-
-
-async function asyncWaitUntil(predicate, interval = 100) {
-  let success = await predicate();
-  const { setTimeout } = require("resource://gre/modules/Timer.jsm");
-  while (!success) {
-    
-    
-    await new Promise(resolve => setTimeout(resolve, interval));
-    
-    success = await predicate();
-  }
-}
