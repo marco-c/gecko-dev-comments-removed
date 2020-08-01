@@ -304,14 +304,28 @@ def test_bugbug_fallback(monkeypatch, responses, params):
     assert not opt.should_remove_task(default_tasks[1], params, None)
 
 
-def test_backstop(params):
+def test_backstop(responses, params):
     all_labels = {t.label for t in default_tasks}
     opt = Backstop(10, 60, {'try'})  
+
+    responses.add(
+        responses.GET,
+        "https://hg.mozilla.org/integration/autoland/json-pushes/?version=2&startID=6&endID=7",  
+        json={"pushes": {"7": {}}},
+        status=200,
+    )
 
     
     params['pushlog_id'] = 8
     scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
     assert scheduled == all_labels
+
+    responses.add(
+        responses.GET,
+        "https://hg.mozilla.org/integration/autoland/json-pushes/?version=2&startID=7&endID=8",  
+        json={"pushes": {"8": {"date": params['pushdate']}}},
+        status=200,
+    )
 
     
     params['pushlog_id'] = 9
@@ -323,6 +337,13 @@ def test_backstop(params):
     params['pushdate'] += 1
     scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
     assert scheduled == all_labels
+
+    responses.add(
+        responses.GET,
+        "https://hg.mozilla.org/integration/autoland/json-pushes/?version=2&startID=9&endID=10",  
+        json={"pushes": {"10": {"date": params['pushdate']}}},
+        status=200,
+    )
 
     
     params['pushlog_id'] = 11
