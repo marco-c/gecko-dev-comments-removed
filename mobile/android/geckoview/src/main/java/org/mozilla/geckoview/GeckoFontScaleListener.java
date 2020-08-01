@@ -156,6 +156,10 @@ import android.util.Log;
 
         if (!stopping) { 
             fontScale = Settings.System.getFloat(contentResolver, Settings.System.FONT_SCALE, DEFAULT_FONT_SCALE);
+            
+            if (fontScale < 0) {
+                fontScale = DEFAULT_FONT_SCALE;
+            }
         } else { 
             fontScale = mPrevGeckoFontScale;
         }
