@@ -55,6 +55,7 @@
 
 
 
+
 class C {
   static #$ = 1; static #_ = 1; static #\u{6F} = 1; static #℘ = 1; static #ZW_‌_NJ = 1; static #ZW_‍_J = 1
   static $() {

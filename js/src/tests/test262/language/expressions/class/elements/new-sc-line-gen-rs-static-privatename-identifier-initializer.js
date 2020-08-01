@@ -56,6 +56,7 @@
 
 
 
+
 var C = class {
   static #$ = 1; static #_ = 1; static #\u{6F} = 1; static #\u2118 = 1; static #ZW_\u200C_NJ = 1; static #ZW_\u200D_J = 1;
   *m() { return 42; }

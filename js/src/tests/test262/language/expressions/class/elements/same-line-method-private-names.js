@@ -24,6 +24,7 @@
 
 
 
+
 var C = class {
   #x; #y; m() { return 42; }
   x() {

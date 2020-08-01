@@ -23,6 +23,7 @@
 
 
 
+
 class C {
   #f = 'Test262';
 

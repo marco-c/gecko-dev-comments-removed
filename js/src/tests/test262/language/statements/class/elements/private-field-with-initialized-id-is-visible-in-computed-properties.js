@@ -66,6 +66,7 @@
 
 
 
+
 const self = this;
 assert.throws(TypeError, function() {
   class C {

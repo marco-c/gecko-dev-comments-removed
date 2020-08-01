@@ -25,6 +25,7 @@
 
 
 
+
 class outer {
   #x = 42;
 

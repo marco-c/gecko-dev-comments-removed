@@ -38,6 +38,7 @@
 
 
 
+
 let createClass = function () {
   return class {
     static #m = 'test262';

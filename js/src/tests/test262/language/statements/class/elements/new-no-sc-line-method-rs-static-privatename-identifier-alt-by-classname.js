@@ -56,6 +56,7 @@
 
 
 
+
 class C {
   static #$; static #_; static #\u{6F}; static #℘; static #ZW_‌_NJ; static #ZW_‍_J
   m() { return 42; }
