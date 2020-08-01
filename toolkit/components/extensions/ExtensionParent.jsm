@@ -675,16 +675,30 @@ class DevToolsExtensionPageContextParent extends ExtensionPageContextParent {
 
   async getCurrentDevToolsTarget() {
     if (!this._currentDevToolsTarget) {
-      await this.devToolsToolbox.targetList.watchTargets(
-        [this.devToolsToolbox.targetList.TYPES.FRAME],
-        this._onTargetAvailable
-      );
+      if (!this._pendingWatchTargetsPromise) {
+        
+        
+        
+        
+        
+        this._pendingWatchTargetsPromise = this.devToolsToolbox.targetList.watchTargets(
+          [this.devToolsToolbox.targetList.TYPES.FRAME],
+          this._onTargetAvailable
+        );
+      }
+      await this._pendingWatchTargetsPromise;
+      this._pendingWatchTargetsPromise = null;
     }
 
     return this._currentDevToolsTarget;
   }
 
-  shutdown() {
+  unload() {
+    
+    if (!this.devToolsToolbox) {
+      return;
+    }
+
     this.devToolsToolbox.targetList.unwatchTargets(
       [this.devToolsToolbox.targetList.TYPES.FRAME],
       this._onTargetAvailable
@@ -709,7 +723,7 @@ class DevToolsExtensionPageContextParent extends ExtensionPageContextParent {
 
     this._devToolsToolbox = null;
 
-    super.shutdown();
+    super.unload();
   }
 
   async _onTargetAvailable({ targetFront }) {

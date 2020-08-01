@@ -30,16 +30,31 @@ var TargetActorRegistry = {
 
 
 
+
   getTargetActor(browserId) {
+    return this.getTargetActors(browserId)[0] || null;
+  },
+
+  
+
+
+
+
+
+
+
+
+  getTargetActors(browserId) {
+    const actors = [];
     for (const actor of browsingContextTargetActors) {
       if (
         actor.browserId == browserId ||
         (browserId === null && actor.typeName === "parentProcessTarget")
       ) {
-        return actor;
+        actors.push(actor);
       }
     }
-    return null;
+    return actors;
   },
 
   
