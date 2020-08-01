@@ -118,6 +118,9 @@ const TELEMETRY_BASENAMES = new Set(["logins", "autofillprofiles"]);
 
 
 
+
+
+
 function JSONFile(config) {
   this.path = config.path;
 
@@ -233,6 +236,13 @@ JSONFile.prototype = {
       
       
       
+      
+      
+      
+
+      
+      
+
       let cleansedBasename = OS.Path.basename(this.path)
         .replace(/\.json$/, "")
         .replaceAll(/[^a-zA-Z0-9_.]/g, "");
@@ -255,6 +265,33 @@ JSONFile.prototype = {
           this._recordTelemetry("load", cleansedBasename, "invalid_json");
         } catch (e2) {
           Cu.reportError(e2);
+        }
+      }
+
+      if (this._options.backupTo) {
+        
+        
+        
+        try {
+          await OS.File.copy(this._options.backupTo, this.path);
+        } catch (e) {
+          Cu.reportError(e);
+        }
+
+        try {
+          
+          
+          
+          let bytes = await OS.File.read(this._options.backupTo, this._options);
+
+          
+          if (this.dataReady) {
+            return;
+          }
+          data = JSON.parse(gTextDecoder.decode(bytes));
+          this._recordTelemetry("load", cleansedBasename, "used_backup");
+        } catch (e3) {
+          Cu.reportError(e3);
         }
       }
 
@@ -303,6 +340,12 @@ JSONFile.prototype = {
       
       
       
+      
+      
+      
+
+      
+      
       if (
         !(
           ex instanceof Components.Exception &&
@@ -323,6 +366,43 @@ JSONFile.prototype = {
           originalFile.moveTo(backupFile.parent, backupFile.leafName);
         } catch (e2) {
           Cu.reportError(e2);
+        }
+      }
+
+      if (this._options.backupTo) {
+        
+        
+        
+        try {
+          let basename = OS.Path.basename(this.path);
+          let backupFile = new FileUtils.File(this._options.backupTo);
+          backupFile.copyTo(null, basename);
+        } catch (e) {
+          Cu.reportError(e);
+        }
+
+        try {
+          
+          
+          
+          
+          let inputStream = new FileInputStream(
+            new FileUtils.File(this._options.backupTo),
+            FileUtils.MODE_RDONLY,
+            FileUtils.PERMS_FILE,
+            0
+          );
+          try {
+            let bytes = NetUtil.readInputStream(
+              inputStream,
+              inputStream.available()
+            );
+            data = JSON.parse(gTextDecoder.decode(bytes));
+          } finally {
+            inputStream.close();
+          }
+        } catch (e3) {
+          Cu.reportError(e3);
         }
       }
     }
