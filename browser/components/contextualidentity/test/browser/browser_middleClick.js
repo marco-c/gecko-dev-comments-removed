@@ -40,7 +40,7 @@ add_task(async function() {
     );
   });
 
-  is(newTab.getAttribute("usercontextid"), 1, "Correct UserContextId?");
+  is(newTab.getAttribute("usercontextid"), "1", "Correct UserContextId?");
 
   
   await TestUtils.waitForTick();
