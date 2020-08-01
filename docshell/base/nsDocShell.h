@@ -199,6 +199,8 @@ class nsDocShell final : public nsDocLoader,
       mozilla::dom::BrowsingContext* aBrowsingContext,
       uint64_t aContentWindowID = 0);
 
+  bool Initialize();
+
   NS_IMETHOD Stop() override {
     
     
@@ -1186,7 +1188,7 @@ class nsDocShell final : public nsDocLoader,
   bool mInEnsureScriptEnv;
 #endif
 
-  bool mCreated : 1;
+  bool mInitialized : 1;
   bool mAllowSubframes : 1;
   bool mAllowJavascript : 1;
   bool mAllowMetaRedirects : 1;

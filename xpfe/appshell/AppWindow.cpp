@@ -249,7 +249,6 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
   NS_ENSURE_SUCCESS(mDocShell->InitWindow(nullptr, mWindow, r.X(), r.Y(),
                                           r.Width(), r.Height()),
                     NS_ERROR_FAILURE);
-  NS_ENSURE_SUCCESS(mDocShell->Create(), NS_ERROR_FAILURE);
 
   
   mDocShell->AddProgressListener(this, nsIWebProgress::NOTIFY_STATE_NETWORK);
