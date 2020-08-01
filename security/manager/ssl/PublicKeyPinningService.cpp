@@ -10,10 +10,12 @@
 #include "mozilla/BinarySearch.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Span.h"
 #include "mozilla/Telemetry.h"
 #include "nsDependentString.h"
 #include "nsServiceManagerUtils.h"
 #include "mozpkix/pkixtypes.h"
+#include "mozpkix/pkixutil.h"
 #include "seccomon.h"
 #include "sechash.h"
 
@@ -29,14 +31,16 @@ LazyLogModule gPublicKeyPinningLog("PublicKeyPinningService");
 
 
 
-static nsresult GetBase64HashSPKI(const CERTCertificate* cert,
+static nsresult GetBase64HashSPKI(const BackCert& cert,
                                   nsACString& hashSPKIDigest) {
+  Input derPublicKey = cert.GetSubjectPublicKeyInfo();
+
   hashSPKIDigest.Truncate();
   Digest digest;
-  nsresult rv = digest.DigestBuf(SEC_OID_SHA256, cert->derPublicKey.data,
-                                 cert->derPublicKey.len);
-  if (NS_FAILED(rv)) {
-    return rv;
+  nsresult nsrv = digest.DigestBuf(SEC_OID_SHA256, derPublicKey.UnsafeGetData(),
+                                   derPublicKey.GetLength());
+  if (NS_FAILED(nsrv)) {
+    return nsrv;
   }
   return Base64Encode(nsDependentCSubstring(
                           BitwiseCast<char*, unsigned char*>(digest.get().data),
@@ -48,7 +52,7 @@ static nsresult GetBase64HashSPKI(const CERTCertificate* cert,
 
 
 
-static nsresult EvalCert(const CERTCertificate* cert,
+static nsresult EvalCert(const BackCert& cert,
                          const StaticFingerprints* fingerprints,
                           bool& certMatchesPinset) {
   certMatchesPinset = false;
@@ -83,7 +87,7 @@ static nsresult EvalCert(const CERTCertificate* cert,
 
 
 
-static nsresult EvalChain(const nsTArray<RefPtr<nsIX509Cert>>& certList,
+static nsresult EvalChain(const nsTArray<Span<const uint8_t>>& derCertList,
                           const StaticFingerprints* fingerprints,
                            bool& certListIntersectsPinset) {
   certListIntersectsPinset = false;
@@ -92,20 +96,27 @@ static nsresult EvalChain(const nsTArray<RefPtr<nsIX509Cert>>& certList,
     return NS_ERROR_FAILURE;
   }
 
-  for (const auto& cert : certList) {
-    UniqueCERTCertificate nssCert(cert->GetCert());
-    MOZ_LOG(gPublicKeyPinningLog, LogLevel::Debug,
-            ("pkpin: certArray subject: '%s'\n", nssCert->subjectName));
-    MOZ_LOG(gPublicKeyPinningLog, LogLevel::Debug,
-            ("pkpin: certArray issuer: '%s'\n", nssCert->issuerName));
-    nsresult rv =
-        EvalCert(nssCert.get(), fingerprints, certListIntersectsPinset);
-    if (NS_FAILED(rv)) {
-      return rv;
+  EndEntityOrCA endEntityOrCA = EndEntityOrCA::MustBeEndEntity;
+  for (const auto& cert : derCertList) {
+    Input certInput;
+    mozilla::pkix::Result rv = certInput.Init(cert.data(), cert.size());
+    if (rv != mozilla::pkix::Result::Success) {
+      return NS_ERROR_INVALID_ARG;
+    }
+    BackCert backCert(certInput, endEntityOrCA, nullptr);
+    rv = backCert.Init();
+    if (rv != mozilla::pkix::Result::Success) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
+    nsresult nsrv = EvalCert(backCert, fingerprints, certListIntersectsPinset);
+    if (NS_FAILED(nsrv)) {
+      return nsrv;
     }
     if (certListIntersectsPinset) {
       break;
     }
+    endEntityOrCA = EndEntityOrCA::MustBeCA;
   }
 
   if (!certListIntersectsPinset) {
@@ -203,7 +214,7 @@ static nsresult FindPinningInformation(
 
 
 static nsresult CheckPinsForHostname(
-    const nsTArray<RefPtr<nsIX509Cert>>& certList, const char* hostname,
+    const nsTArray<Span<const uint8_t>>& certList, const char* hostname,
     bool enforceTestMode, mozilla::pkix::Time time,
     const OriginAttributes& originAttributes,
      bool& chainHasValidPins,
@@ -267,23 +278,10 @@ static nsresult CheckPinsForHostname(
 
       
       if (!enforceTestModeResult) {
-        nsCOMPtr<nsIX509Cert> rootCert;
-        rv = nsNSSCertificate::GetRootCertificate(certList, rootCert);
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
-        if (rootCert) {
-          UniqueCERTCertificate rootCertObj(rootCert->GetCert());
-          if (!rootCertObj) {
-            return NS_ERROR_FAILURE;
-          }
-          Span<uint8_t> certSpan =
-              MakeSpan(rootCertObj->derCert.data, rootCertObj->derCert.len);
-          int32_t binNumber = RootCABinNumber(certSpan);
-          if (binNumber != ROOT_CERTIFICATE_UNKNOWN) {
-            pinningTelemetryInfo->accumulateForRoot = true;
-            pinningTelemetryInfo->rootBucket = binNumber;
-          }
+        int32_t binNumber = RootCABinNumber(certList.LastElement());
+        if (binNumber != ROOT_CERTIFICATE_UNKNOWN) {
+          pinningTelemetryInfo->accumulateForRoot = true;
+          pinningTelemetryInfo->rootBucket = binNumber;
         }
       }
     }
@@ -299,7 +297,7 @@ static nsresult CheckPinsForHostname(
 }
 
 nsresult PublicKeyPinningService::ChainHasValidPins(
-    const nsTArray<RefPtr<nsIX509Cert>>& certList, const char* hostname,
+    const nsTArray<Span<const uint8_t>>& certList, const char* hostname,
     mozilla::pkix::Time time, bool enforceTestMode,
     const OriginAttributes& originAttributes,
      bool& chainHasValidPins,

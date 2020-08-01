@@ -46,7 +46,7 @@ class BinaryHashSearchArrayComparator {
 
 
 
-int32_t RootCABinNumber(const Span<uint8_t> cert) {
+int32_t RootCABinNumber(Span<const uint8_t> cert) {
   Digest digest;
 
   
@@ -94,7 +94,7 @@ int32_t RootCABinNumber(const Span<uint8_t> cert) {
     }
   }
 
-  SECItem certItem = {siBuffer, cert.data(),
+  SECItem certItem = {siBuffer, const_cast<uint8_t*>(cert.data()),
                       static_cast<unsigned int>(cert.size())};
   UniquePK11SlotInfo softokenSlot(PK11_GetInternalKeySlot());
   if (!softokenSlot) {
@@ -126,7 +126,7 @@ int32_t RootCABinNumber(const Span<uint8_t> cert) {
 
 
 void AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe,
-                                  const Span<uint8_t> cert) {
+                                  const Span<const uint8_t> cert) {
   int32_t binId = RootCABinNumber(cert);
 
   if (binId != ROOT_CERTIFICATE_HASH_FAILURE) {
