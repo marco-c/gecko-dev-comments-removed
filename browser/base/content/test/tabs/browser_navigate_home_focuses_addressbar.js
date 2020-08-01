@@ -3,75 +3,14 @@
 
 const TEST_HTTP = httpURL("dummy_page.html");
 
-async function doNavigateHome(expectedURL, expectFocused, waitForCondition) {
+
+add_task(async function() {
   await BrowserTestUtils.withNewTab(TEST_HTTP, async function(browser) {
     info("Tab ready");
 
     document.getElementById("home-button").click();
     await BrowserTestUtils.browserLoaded(browser, false, HomePage.get());
-
-    if (waitForCondition) {
-      await waitForCondition(browser);
-    }
-
-    is(gURLBar.value, expectedURL, "URL bar set correctly");
-    is(
-      gURLBar.focused,
-      expectFocused,
-      "URL bar should" + (expectFocused ? "" : " not") + " be focused"
-    );
+    is(gURLBar.value, "", "URL bar should be empty");
+    ok(gURLBar.focused, "URL bar should be focused");
   });
-}
-
-
-add_task(async function testNavHomeDefault() {
-  await doNavigateHome("", true);
-});
-
-add_task(async function testNavHomeHTTP() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.startup.homepage", "http://example.com/"]],
-  });
-
-  
-  await doNavigateHome("example.com", false);
-
-  await SpecialPowers.popPrefEnv();
-});
-
-
-add_task(async function testNavHomeExtension() {
-  
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      applications: {
-        gecko: { id: "extension@mochi.test" },
-      },
-      name: "Extension",
-      chrome_settings_overrides: { homepage: "ext.html" },
-      
-      
-      chrome_url_overrides: { newtab: "ext.html" },
-    },
-    files: { "ext.html": "<h1>1</h1>" },
-    useAddonManager: "temporary",
-  });
-
-  await extension.startup();
-
-  
-  
-  
-  
-  
-
-  
-  await doNavigateHome("", false, browser =>
-    TestUtils.waitForCondition(() =>
-      browser.ownerDocument.getElementById("extension-homepage-notification")
-    )
-  );
-  await doNavigateHome("", true);
-
-  await extension.unload();
 });
