@@ -3298,19 +3298,13 @@ bool nsContentUtils::IsInPrivateBrowsing(nsILoadGroup* aLoadGroup) {
   return isPrivate;
 }
 
-
-
 bool nsContentUtils::DocumentInactiveForImageLoads(Document* aDocument) {
-  if (!aDocument) {
-    return false;
+  if (aDocument && !IsChromeDoc(aDocument) && !aDocument->IsResourceDoc()) {
+    nsCOMPtr<nsPIDOMWindowInner> win =
+        do_QueryInterface(aDocument->GetScopeObject());
+    return !win || !win->GetDocShell();
   }
-  if (IsChromeDoc(aDocument) || aDocument->IsResourceDoc() ||
-      aDocument->IsStaticDocument()) {
-    return false;
-  }
-  nsCOMPtr<nsPIDOMWindowInner> win =
-      do_QueryInterface(aDocument->GetScopeObject());
-  return !win || !win->GetDocShell();
+  return false;
 }
 
 imgLoader* nsContentUtils::GetImgLoaderForDocument(Document* aDoc) {
@@ -3446,6 +3440,15 @@ already_AddRefed<imgIContainer> nsContentUtils::GetImageFromContent(
   }
 
   return imgContainer.forget();
+}
+
+
+already_AddRefed<imgRequestProxy> nsContentUtils::GetStaticRequest(
+    Document* aLoadingDocument, imgRequestProxy* aRequest) {
+  NS_ENSURE_TRUE(aRequest, nullptr);
+  RefPtr<imgRequestProxy> retval;
+  aRequest->GetStaticRequest(aLoadingDocument, getter_AddRefs(retval));
+  return retval.forget();
 }
 
 

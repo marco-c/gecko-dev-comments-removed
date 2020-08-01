@@ -939,6 +939,12 @@ class nsContentUtils {
   
 
 
+  static already_AddRefed<imgRequestProxy> GetStaticRequest(
+      Document* aLoadingDocument, imgRequestProxy* aRequest);
+
+  
+
+
 
 
 

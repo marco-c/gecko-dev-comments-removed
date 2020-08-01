@@ -402,15 +402,46 @@ already_AddRefed<imgRequestProxy> ImageLoader::LoadImage(
 
   const URLExtraData& data = aImage.ExtraData();
 
+  
+  
+  
+  Document* loadingDoc = aDocument.GetOriginalDocument();
+  const bool isPrint = !!loadingDoc;
+  if (!loadingDoc) {
+    loadingDoc = &aDocument;
+  }
+
   RefPtr<imgRequestProxy> request;
   nsresult rv = nsContentUtils::LoadImage(
-      uri, &aDocument, &aDocument, data.Principal(), 0, data.ReferrerInfo(),
-      sImageObserver, loadFlags, u"css"_ns,
-      getter_AddRefs(request));
+      uri, loadingDoc, loadingDoc, data.Principal(), 0, data.ReferrerInfo(),
+      sImageObserver, loadFlags, u"css"_ns, getter_AddRefs(request));
 
   if (NS_FAILED(rv) || !request) {
     return nullptr;
   }
+
+  if (isPrint) {
+    RefPtr<imgRequestProxy> ret;
+    request->GetStaticRequest(&aDocument, getter_AddRefs(ret));
+    
+    
+    
+    
+    
+    
+    
+    
+    if (ret != request) {
+      if (!sImages->Contains(request)) {
+        request->CancelAndForgetObserver(NS_BINDING_ABORTED);
+      }
+      if (!ret) {
+        return nullptr;
+      }
+      request = std::move(ret);
+    }
+  }
+
   sImages->LookupForAdd(request).OrInsert([] { return new ImageTableEntry(); });
   return request.forget();
 }

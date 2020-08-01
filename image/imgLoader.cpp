@@ -5,7 +5,6 @@
 
 
 
-#include "mozilla/ScopeExit.h"
 #undef LoadImage
 
 #include "imgLoader.h"
@@ -1698,7 +1697,7 @@ bool imgLoader::ValidateRequestWithNewChannel(
       validator->AddProxy(proxy);
     }
 
-    return true;
+    return NS_SUCCEEDED(rv);
   }
   
   
@@ -2126,29 +2125,6 @@ imgLoader::LoadImageXPCOM(
   return rv;
 }
 
-static void MakeRequestStaticIfNeeded(
-    Document* aLoadingDocument,
-    imgRequestProxy** aProxyAboutToGetReturned) {
-  if (!aLoadingDocument || !aLoadingDocument->IsStaticDocument()) {
-    return;
-  }
-
-  if (!*aProxyAboutToGetReturned) {
-    return;
-  }
-
-  RefPtr<imgRequestProxy> proxy = dont_AddRef(*aProxyAboutToGetReturned);
-  *aProxyAboutToGetReturned = nullptr;
-
-  RefPtr<imgRequestProxy> staticProxy =
-      proxy->GetStaticRequest(aLoadingDocument);
-  if (staticProxy != proxy) {
-    proxy->CancelAndForgetObserver(NS_BINDING_ABORTED);
-    proxy = std::move(staticProxy);
-  }
-  proxy.forget(aProxyAboutToGetReturned);
-}
-
 nsresult imgLoader::LoadImage(
     nsIURI* aURI, nsIURI* aInitialDocumentURI, nsIReferrerInfo* aReferrerInfo,
     nsIPrincipal* aTriggeringPrincipal, uint64_t aRequestContextID,
@@ -2164,10 +2140,6 @@ nsresult imgLoader::LoadImage(
   if (!aURI) {
     return NS_ERROR_NULL_POINTER;
   }
-
-  auto makeStaticIfNeeded = mozilla::MakeScopeExit([&] {
-    MakeRequestStaticIfNeeded(aLoadingDocument, _retval);
-  });
 
 #ifdef MOZ_GECKO_PROFILER
   AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING("imgLoader::LoadImage", NETWORK,
@@ -2526,10 +2498,6 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
                "imgLoader::LoadImageWithChannel -- NULL channel pointer");
 
   MOZ_ASSERT(NS_UsePrivateBrowsing(channel) == mRespectPrivacy);
-
-  auto makeStaticIfNeeded = mozilla::MakeScopeExit([&] {
-    MakeRequestStaticIfNeeded(aLoadingDocument, _retval);
-  });
 
   LOG_SCOPE(gImgLog, "imgLoader::LoadImageWithChannel");
   RefPtr<imgRequest> request;

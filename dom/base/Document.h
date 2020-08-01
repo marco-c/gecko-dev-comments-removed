@@ -2627,8 +2627,7 @@ class Document : public nsINode,
   bool ShouldLoadImages() const {
     
     
-    return IsCurrentActiveDocument() || IsBeingUsedAsImage() ||
-           IsStaticDocument();
+    return IsCurrentActiveDocument() || IsBeingUsedAsImage();
   }
 
   
@@ -2809,7 +2808,7 @@ class Document : public nsINode,
 
 
 
-  Document* GetOriginalDocument() const {
+  Document* GetOriginalDocument() {
     MOZ_ASSERT(!mOriginalDocument || !mOriginalDocument->GetOriginalDocument());
     return mOriginalDocument;
   }
