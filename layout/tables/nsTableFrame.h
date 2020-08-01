@@ -646,7 +646,9 @@ class nsTableFrame : public nsContainerFrame {
  public:
   
   
-  nscoord CalcBorderBoxBSize(const ReflowInput& aReflowInput);
+  nscoord CalcBorderBoxBSize(const ReflowInput& aReflowInput,
+                             const LogicalMargin& aBorderPadding,
+                             nscoord aIntrinsicBorderBoxBSize);
 
  protected:
   
