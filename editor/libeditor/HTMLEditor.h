@@ -2663,7 +2663,7 @@ class HTMLEditor final : public TextEditor,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteCollapsedSelectionAtTextNode(
+  HandleDeleteCollapsedSelectionAtVisibleChar(
       nsIEditor::EDirection aDirectionAndAmount,
       const EditorDOMPoint& aPointToDelete);
 

@@ -2581,10 +2581,6 @@ WSRunScanner::GetRangeInTextNodesToBackspaceFrom(const HTMLEditor& aHTMLEditor,
   if (!atPreviousChar.IsSet()) {
     return EditorDOMRangeInTexts();  
   }
-  
-  if (!atPreviousChar.IsCharASCIISpaceOrNBSP()) {
-    return EditorDOMRangeInTexts();
-  }
 
   
   
@@ -2594,8 +2590,22 @@ WSRunScanner::GetRangeInTextNodesToBackspaceFrom(const HTMLEditor& aHTMLEditor,
   }
 
   
+  
+  EditorDOMPointInText atNextChar = atPreviousChar.NextPoint();
+  if (!atPreviousChar.IsStartOfContainer()) {
+    if (atPreviousChar.IsCharLowSurrogateFollowingHighSurrogate()) {
+      atPreviousChar = atPreviousChar.PreviousPoint();
+    }
+    
+    
+    else if (atPreviousChar.IsCharHighSurrogateFollowedByLowSurrogate()) {
+      atNextChar = atNextChar.NextPoint();
+    }
+  }
+
+  
   if (textFragmentDataAtCaret.IsPreformatted()) {
-    return EditorDOMRangeInTexts(atPreviousChar, atPreviousChar.NextPoint());
+    return EditorDOMRangeInTexts(atPreviousChar, atNextChar);
   }
 
   
@@ -2621,9 +2631,7 @@ WSRunScanner::GetRangeInTextNodesToBackspaceFrom(const HTMLEditor& aHTMLEditor,
   }
   
   else {
-    MOZ_ASSERT(atPreviousChar.IsCharNBSP());
-    rangeToDelete =
-        EditorDOMRangeInTexts(atPreviousChar, atPreviousChar.NextPoint());
+    rangeToDelete = EditorDOMRangeInTexts(atPreviousChar, atNextChar);
   }
 
   
@@ -2664,8 +2672,10 @@ WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
     return EditorDOMRangeInTexts();  
   }
   
-  if (!atCaret.IsCharASCIISpaceOrNBSP()) {
-    return EditorDOMRangeInTexts();
+  
+  if (!atCaret.IsEndOfContainer() &&
+      atCaret.IsCharLowSurrogateFollowingHighSurrogate()) {
+    atCaret = atCaret.NextPoint();
   }
 
   
@@ -2676,8 +2686,15 @@ WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
   }
 
   
+  
+  EditorDOMPointInText atNextChar = atCaret.NextPoint();
+  if (atCaret.IsCharHighSurrogateFollowedByLowSurrogate()) {
+    atNextChar = atNextChar.NextPoint();
+  }
+
+  
   if (textFragmentDataAtCaret.IsPreformatted()) {
-    return EditorDOMRangeInTexts(atCaret, atCaret.NextPoint());
+    return EditorDOMRangeInTexts(atCaret, atNextChar);
   }
 
   
@@ -2702,8 +2719,7 @@ WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
   }
   
   else {
-    MOZ_ASSERT(atCaret.IsCharNBSP());
-    rangeToDelete = EditorDOMRangeInTexts(atCaret, atCaret.NextPoint());
+    rangeToDelete = EditorDOMRangeInTexts(atCaret, atNextChar);
   }
 
   
