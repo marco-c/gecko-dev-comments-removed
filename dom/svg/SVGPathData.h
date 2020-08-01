@@ -148,11 +148,6 @@ class SVGPathData {
   
 
 
-  bool GetSegmentLengths(nsTArray<double>* aLengths) const;
-
-  
-
-
   bool GetDistancesFromOriginToEndsOfVisibleSegments(
       FallibleTArray<double>* aOutput) const;
 

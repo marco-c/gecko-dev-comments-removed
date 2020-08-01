@@ -161,10 +161,8 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromBasicAttrs(
     if (HasAttr(nsGkAtoms::from)) {
       const nsAString& fromStr = GetAttr(nsGkAtoms::from)->GetStringValue();
       success = pathGenerator.MoveToAbsolute(fromStr);
-      
-      
       if (!mPathVertices.AppendElement(0.0, fallible)) {
-        mozalloc_handle_oom(0);
+        success = false;
       }
     } else {
       
@@ -172,14 +170,12 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromBasicAttrs(
       
       
       pathGenerator.MoveToOrigin();
+      success = true;
       if (!HasAttr(nsGkAtoms::to)) {
-        
-        
         if (!mPathVertices.AppendElement(0.0, fallible)) {
-          mozalloc_handle_oom(0);
+          success = false;
         }
       }
-      success = true;
     }
 
     
@@ -195,10 +191,8 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromBasicAttrs(
         success = pathGenerator.LineToRelative(byStr, dist);
       }
       if (success) {
-        
-        
         if (!mPathVertices.AppendElement(dist, fallible)) {
-          mozalloc_handle_oom(0);
+          success = false;
         }
       }
     }
