@@ -10,9 +10,10 @@
 #include "PlatformMacros.h"
 #include "LulMain.h"  
 
-#include <vector>
-
 #include "mozilla/Assertions.h"
+
+#include <string>
+#include <vector>
 
 
 
