@@ -58,6 +58,8 @@ class ContentIteratorBase {
  protected:
   explicit ContentIteratorBase(bool aPre);
 
+  class Initializer;
+
   
 
 
