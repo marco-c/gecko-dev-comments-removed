@@ -665,15 +665,9 @@ static const char kFontYuGothic[] = "Yu Gothic";
 void gfxWindowsPlatform::GetCommonFallbackFonts(
     uint32_t aCh, uint32_t aNextCh, Script aRunScript,
     nsTArray<const char*>& aFontList) {
-  EmojiPresentation emoji = GetEmojiPresentation(aCh);
-  if (emoji != EmojiPresentation::TextOnly) {
-    if (aNextCh == kVariationSelector16 ||
-        (aNextCh != kVariationSelector15 &&
-         emoji == EmojiPresentation::EmojiDefault)) {
-      
-      aFontList.AppendElement(kFontSegoeUIEmoji);
-      aFontList.AppendElement(kFontTwemojiMozilla);
-    }
+  if (ShouldPreferEmojiFont(aCh, aNextCh)) {
+    aFontList.AppendElement(kFontSegoeUIEmoji);
+    aFontList.AppendElement(kFontTwemojiMozilla);
   }
 
   
