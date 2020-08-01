@@ -36,10 +36,11 @@ class TRRServiceBase {
   nsCString mPrivateURI;
   
   bool mURIPrefHasUserValue = false;
-  bool mURISetByDetection = false;
   nsCString mURIPref;
   nsCString mRolloutURIPref;
+
   Atomic<uint32_t, Relaxed> mMode;
+  Atomic<bool, Relaxed> mURISetByDetection;
 };
 
 }  
