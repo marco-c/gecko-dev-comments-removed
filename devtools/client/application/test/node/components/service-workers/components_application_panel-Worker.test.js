@@ -58,6 +58,8 @@ describe("Worker", () => {
     );
     
     expect(wrapper.find(".js-start-button")).toHaveLength(1);
+    
+    expect(wrapper.find(".js-debug-button[disabled=true]")).toHaveLength(1);
 
     expect(wrapper).toMatchSnapshot();
   });
@@ -98,11 +100,13 @@ describe("Worker", () => {
     expect(wrapper.find(".js-worker-status").text()).toBe("installed");
     
     expect(wrapper.find(".js-start-button")).toHaveLength(0);
+    
+    expect(wrapper.find(".js-debug-button[disabled=true]")).toHaveLength(1);
 
     expect(wrapper).toMatchSnapshot();
   });
 
-  it("Enables/disabled the debug button depending of debugging being available", () => {
+  it("Shows/hides the debug button depending of debugging being available", () => {
     const store = setupStore({});
 
     
@@ -113,8 +117,7 @@ describe("Worker", () => {
         store,
       })
     ).dive();
-
-    expect(wrapper.find(".js-debug-button[disabled=true]")).toHaveLength(1);
+    expect(wrapper.find(".js-debug-button")).toHaveLength(0);
 
     
     wrapper = shallow(
@@ -124,7 +127,6 @@ describe("Worker", () => {
         store,
       })
     ).dive();
-
-    expect(wrapper.find(".js-debug-button[disabled=false]")).toHaveLength(1);
+    expect(wrapper.find(".js-debug-button")).toHaveLength(1);
   });
 });

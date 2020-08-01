@@ -125,17 +125,16 @@ class Worker extends PureComponent {
   }
 
   renderDebugButton() {
-    const { isDebugEnabled } = this.props;
+    
+    if (!this.props.isDebugEnabled) {
+      return null;
+    }
 
-    const isDisabled = !this.isRunning() || !isDebugEnabled;
-
-    const localizationId = isDebugEnabled
-      ? "serviceworker-worker-debug"
-      : "serviceworker-worker-debug-forbidden";
+    const isDisabled = !this.isRunning();
 
     return Localized(
       {
-        id: localizationId,
+        id: "serviceworker-worker-debug",
         
         attrs: {
           title: isDisabled,
