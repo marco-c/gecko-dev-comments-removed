@@ -63,14 +63,6 @@ add_task(async function test_save_reload() {
   );
 
   
-  let pdfDownload = await Downloads.createDownload({
-    source: { url: httpUrl("empty.txt"), referrerInfo },
-    target: getTempFile(TEST_TARGET_FILE_NAME),
-    saver: "pdf",
-  });
-  listForSave.add(pdfDownload);
-
-  
   
   let adjustedDownload = await Downloads.createDownload({
     source: {
@@ -90,7 +82,6 @@ add_task(async function test_save_reload() {
 
   
   listForSave.remove(adjustedDownload);
-  listForSave.remove(pdfDownload);
 
   let itemsForSave = await listForSave.getAll();
   let itemsForLoad = await listForLoad.getAll();

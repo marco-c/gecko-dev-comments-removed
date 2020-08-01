@@ -17,7 +17,6 @@ var EXPORTED_SYMBOLS = [
   "DownloadSaver",
   "DownloadCopySaver",
   "DownloadLegacySaver",
-  "DownloadPDFSaver",
 ];
 
 const { Integration } = ChromeUtils.import(
@@ -50,12 +49,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "gExternalHelperAppService",
   "@mozilla.org/uriloader/external-helper-app-service;1",
   Ci.nsIExternalHelperAppService
-);
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "gPrintSettingsService",
-  "@mozilla.org/gfx/printsettings-service;1",
-  Ci.nsIPrintSettingsService
 );
 
 
@@ -1936,9 +1929,6 @@ DownloadSaver.fromSerializable = function(aSerializable) {
     case "legacy":
       saver = DownloadLegacySaver.fromSerializable(serializable);
       break;
-    case "pdf":
-      saver = DownloadPDFSaver.fromSerializable(serializable);
-      break;
     default:
       throw new Error("Unrecoginzed download saver type.");
   }
@@ -2845,154 +2835,4 @@ DownloadLegacySaver.prototype = {
 
 DownloadLegacySaver.fromSerializable = function() {
   return new DownloadLegacySaver();
-};
-
-
-
-
-
-
-
-
-
-
-
-
-var DownloadPDFSaver = function() {};
-
-DownloadPDFSaver.prototype = {
-  __proto__: DownloadSaver.prototype,
-
-  
-
-
-
-
-  _webBrowserPrint: null,
-
-  
-
-
-  async execute(aSetProgressBytesFn, aSetPropertiesFn) {
-    if (!this.download.source.windowRef) {
-      throw new DownloadError({
-        message:
-          "PDF saver must be passed an open window, and cannot be restarted.",
-        becauseSourceFailed: true,
-      });
-    }
-
-    let win = this.download.source.windowRef.get();
-
-    
-    this.download.source.windowRef = null;
-
-    if (!win) {
-      throw new DownloadError({
-        message: "PDF saver can't save a window that has been closed.",
-        becauseSourceFailed: true,
-      });
-    }
-
-    this.addToHistory();
-
-    let targetPath = this.download.target.path;
-
-    
-    let file = await OS.File.open(targetPath, { truncate: true });
-    await file.close();
-
-    let printSettings = gPrintSettingsService.newPrintSettings;
-
-    printSettings.printToFile = true;
-    printSettings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
-    printSettings.toFileName = targetPath;
-
-    printSettings.printSilent = true;
-    printSettings.showPrintProgress = false;
-
-    printSettings.printBGImages = true;
-    printSettings.printBGColors = true;
-    printSettings.headerStrCenter = "";
-    printSettings.headerStrLeft = "";
-    printSettings.headerStrRight = "";
-    printSettings.footerStrCenter = "";
-    printSettings.footerStrLeft = "";
-    printSettings.footerStrRight = "";
-
-    this._webBrowserPrint = win.getInterface(Ci.nsIWebBrowserPrint);
-
-    try {
-      await new Promise((resolve, reject) => {
-        this._webBrowserPrint.print(printSettings, {
-          onStateChange(webProgress, request, stateFlags, status) {
-            if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
-              if (!Components.isSuccessCode(status)) {
-                reject(new DownloadError({ result: status, inferCause: true }));
-              } else {
-                resolve();
-              }
-            }
-          },
-          onProgressChange(
-            webProgress,
-            request,
-            curSelfProgress,
-            maxSelfProgress,
-            curTotalProgress,
-            maxTotalProgress
-          ) {
-            aSetProgressBytesFn(curTotalProgress, maxTotalProgress, false);
-          },
-          onLocationChange() {},
-          onStatusChange() {},
-          onSecurityChange() {},
-          onContentBlockingEvent() {},
-        });
-      });
-    } finally {
-      
-      this._webBrowserPrint = null;
-    }
-
-    let fileInfo = await OS.File.stat(targetPath);
-    aSetProgressBytesFn(fileInfo.size, fileInfo.size, false);
-  },
-
-  
-
-
-  cancel: function DCS_cancel() {
-    if (this._webBrowserPrint) {
-      this._webBrowserPrint.cancel();
-      this._webBrowserPrint = null;
-    }
-  },
-
-  
-
-
-  toSerializable() {
-    if (this.download.succeeded) {
-      return DownloadCopySaver.prototype.toSerializable.call(this);
-    }
-
-    
-    
-    
-    return null;
-  },
-};
-
-
-
-
-
-
-
-
-
-
-DownloadPDFSaver.fromSerializable = function(aSerializable) {
-  return new DownloadPDFSaver();
 };
