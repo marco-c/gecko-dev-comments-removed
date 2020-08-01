@@ -69,8 +69,8 @@ class LoadInfo final : public nsILoadInfo {
            uint32_t aSandboxFlags = 0);
   
   LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
-           nsIPrincipal* aTriggeringPrincipal, uint64_t aFrameOuterWindowID,
-           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
+           nsIPrincipal* aTriggeringPrincipal, nsSecurityFlags aSecurityFlags,
+           uint32_t aSandboxFlags);
 
   
   
@@ -80,12 +80,12 @@ class LoadInfo final : public nsILoadInfo {
            uint32_t aSandboxFlags);
   LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
            nsIPrincipal* aTriggeringPrincipal,
-           const OriginAttributes& aOriginAttributes, uint64_t aOuterWindowID,
+           const OriginAttributes& aOriginAttributes,
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
   LoadInfo(dom::WindowGlobalParent* aParentWGP,
-           nsIPrincipal* aTriggeringPrincipal, uint64_t aFrameOuterWindowID,
+           nsIPrincipal* aTriggeringPrincipal,
            nsContentPolicyType aContentPolicyType,
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 

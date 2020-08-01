@@ -314,8 +314,8 @@ void DocumentLoadListener::AddURIVisit(nsIChannel* aChannel,
 }
 
 already_AddRefed<LoadInfo> DocumentLoadListener::CreateLoadInfo(
-    CanonicalBrowsingContext* aBrowsingContext, nsDocShellLoadState* aLoadState,
-    uint64_t aOuterWindowId) {
+    CanonicalBrowsingContext* aBrowsingContext,
+    nsDocShellLoadState* aLoadState) {
   
   bool inheritPrincipal = false;
 
@@ -349,13 +349,13 @@ already_AddRefed<LoadInfo> DocumentLoadListener::CreateLoadInfo(
   if (aBrowsingContext->GetParent()) {
     
     loadInfo = new LoadInfo(aBrowsingContext, aLoadState->TriggeringPrincipal(),
-                            aOuterWindowId, securityFlags, sandboxFlags);
+                            securityFlags, sandboxFlags);
   } else {
     
     OriginAttributes attrs;
     aBrowsingContext->GetOriginAttributes(attrs);
     loadInfo = new LoadInfo(aBrowsingContext, aLoadState->TriggeringPrincipal(),
-                            attrs, aOuterWindowId, securityFlags, sandboxFlags);
+                            attrs, securityFlags, sandboxFlags);
   }
 
   loadInfo->SetHasValidUserGestureActivation(
@@ -393,8 +393,7 @@ auto DocumentLoadListener::Open(
   
   
   
-  RefPtr<LoadInfo> loadInfo =
-      CreateLoadInfo(browsingContext, aLoadState, aOuterWindowId);
+  RefPtr<LoadInfo> loadInfo = CreateLoadInfo(browsingContext, aLoadState);
 
   nsLoadFlags loadFlags = aLoadState->CalculateChannelLoadFlags(
       browsingContext, std::move(aUriModified), std::move(aIsXFOError));
