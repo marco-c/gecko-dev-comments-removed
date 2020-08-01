@@ -37,9 +37,9 @@ class BrowsingContextGroup final : public nsWrapperCache {
   typedef nsTHashtable<nsRefPtrHashKey<ContentParent>> ContentParents;
 
   
-  bool Contains(BrowsingContext* aContext);
-  void Register(BrowsingContext* aContext);
-  void Unregister(BrowsingContext* aContext);
+  
+  void Register(nsISupports* aContext);
+  void Unregister(nsISupports* aContext);
 
   
   void Subscribe(ContentParent* aOriginProcess);
@@ -47,6 +47,9 @@ class BrowsingContextGroup final : public nsWrapperCache {
 
   
   void EnsureSubscribed(ContentParent* aProcess);
+
+  bool GetToplevelsSuspended() { return mToplevelsSuspended; }
+  void SetToplevelsSuspended(bool aSuspended);
 
   
   
@@ -129,10 +132,18 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   
   
-  nsTHashtable<nsRefPtrHashKey<BrowsingContext>> mContexts;
+  
+  
+  
+  
+  
+  nsTHashtable<nsRefPtrHashKey<nsISupports>> mContexts;
 
   
   nsTArray<RefPtr<BrowsingContext>> mToplevels;
+
+  
+  bool mToplevelsSuspended;
 
   
   

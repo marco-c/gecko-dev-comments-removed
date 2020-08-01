@@ -255,6 +255,12 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   void Resume();
 
   
+  bool GetWasSuspendedByGroup() const { return mWasSuspendedByGroup; }
+  void SetWasSuspendedByGroup(bool aSuspended) {
+    mWasSuspendedByGroup = aSuspended;
+  }
+
+  
   
   void SyncStateFromParentWindow();
 
@@ -638,6 +644,8 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   RefPtr<mozilla::dom::WindowGlobalChild> mWindowGlobalChild;
+
+  bool mWasSuspendedByGroup;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)

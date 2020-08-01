@@ -743,6 +743,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   }
 
   void DidSet(FieldIndex<IDX_UserActivationState>);
+  void DidSet(FieldIndex<IDX_IsActive>, bool aOldValue);
 
   
   
