@@ -1,41 +1,45 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-
+// Wrap in a block to prevent leaking to window scope.
 {
-  
+  XPCOMUtils.defineLazyModuleGetters(this, {
+    SearchOneOffs: "resource:///modules/SearchOneOffs.jsm",
+  });
 
-
-
+  /**
+   * A richlistbox popup custom element for for a browser search autocomplete
+   * widget.
+   */
   class MozSearchAutocompleteRichlistboxPopup extends MozElements.MozAutocompleteRichlistboxPopup {
     constructor() {
       super();
 
       this.addEventListener("popupshowing", event => {
-        
-        
-        
+        // First handle deciding if we are showing the reduced version of the
+        // popup containing only the preferences button. We do this if the
+        // glass icon has been clicked if the text field is empty.
         let searchbar = document.getElementById("searchbar");
         if (searchbar.hasAttribute("showonlysettings")) {
           searchbar.removeAttribute("showonlysettings");
           this.setAttribute("showonlysettings", "true");
 
-          
-          
+          // Setting this with an xbl-inherited attribute gets overridden the
+          // second time the user clicks the glass icon for some reason...
           this.richlistbox.collapsed = true;
         } else {
           this.removeAttribute("showonlysettings");
-          
-          
-          
-          
+          // Uncollapse as long as we have a view which has >= 1 row.
+          // The autocomplete binding itself will take care of uncollapsing later,
+          // if we currently have no rows but end up having some in the future
+          // when the search string changes
           this.richlistbox.collapsed = this.matchCount == 0;
         }
 
-        
+        // Show the current default engine in the top header of the panel.
         this.updateHeader().catch(Cu.reportError);
 
         this._oneOffButtons.addEventListener(
@@ -51,13 +55,13 @@
         );
       });
 
-      
-
-
-
+      /**
+       * This handles clicks on the topmost "Foo Search" header in the
+       * popup (hbox.search-panel-header]).
+       */
       this.addEventListener("click", event => {
         if (event.button == 2) {
-          
+          // Ignore right clicks.
           return;
         }
         let button = event.originalTarget;
@@ -136,16 +140,16 @@
     }
 
     openAutocompletePopup(aInput, aElement) {
-      
-      
+      // initially the panel is hidden
+      // to avoid impacting startup / new window performance
       aInput.popup.hidden = false;
 
-      
+      // this method is defined on the base binding
       this._openAutocompletePopup(aInput, aElement);
     }
 
     onPopupClick(aEvent) {
-      
+      // Ignore all right-clicks
       if (aEvent.button == 2) {
         return;
       }
@@ -159,7 +163,7 @@
         };
       }
 
-      
+      // Check for unmodified left-click, and use default behavior
       if (
         aEvent.button == 0 &&
         !aEvent.shiftKey &&
@@ -171,21 +175,21 @@
         return;
       }
 
-      
+      // Check for middle-click or modified clicks on the search bar
       if (popupForSearchBar) {
         BrowserUsageTelemetry.recordSearchbarSelectedResultMethod(
           aEvent,
           this.selectedIndex
         );
 
-        
+        // Handle search bar popup clicks
         let search = this.input.controller.getValueAt(this.selectedIndex);
 
-        
+        // open the search results according to the clicking subtlety
         let where = whereToOpenLink(aEvent, false, true);
         let params = {};
 
-        
+        // But open ctrl/cmd clicks on autocomplete items in a new background tab.
         let modifier =
           AppConstants.platform == "macosx" ? aEvent.metaKey : aEvent.ctrlKey;
         if (
@@ -196,9 +200,9 @@
           params.inBackground = true;
         }
 
-        
+        // leave the popup open for background tab loads
         if (!(where == "tab" && params.inBackground)) {
-          
+          // close the autocomplete popup and revert the entered search term
           this.closePopup();
           this.input.controller.handleEscape();
         }
@@ -225,8 +229,8 @@
       if (uri) {
         this.setAttribute("src", uri.spec);
       } else {
-        
-        
+        // If the default has just been changed to a provider without icon,
+        // avoid showing the icon of the previous default provider.
         this.removeAttribute("src");
       }
 
@@ -237,21 +241,21 @@
       this.searchbarEngine.engine = engine;
     }
 
-    
-
-
-
-    
+    /**
+     * This is called when a one-off is clicked and when "search in new tab"
+     * is selected from a one-off context menu.
+     */
+    /* eslint-disable-next-line valid-jsdoc */
     handleOneOffSearch(event, engine, where, params) {
       let searchbar = document.getElementById("searchbar");
       searchbar.handleSearchCommandWhere(event, engine, where, params);
     }
 
-    
-
-
-
-
+    /**
+     * Passes DOM events for the popup to the _on_<event type> methods.
+     * @param {Event} event
+     *   DOM event from the <popup>.
+     */
     handleEvent(event) {
       let methodName = "_on_" + event.type;
       if (methodName in this) {
