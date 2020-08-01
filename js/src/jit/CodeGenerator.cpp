@@ -11038,6 +11038,26 @@ bool CodeGenerator::generate() {
   return !masm.oom();
 }
 
+static bool AddInlinedCompilations(HandleScript script,
+                                   IonCompilationId compilationId,
+                                   const WarpSnapshot* snapshot) {
+  RecompileInfo recompileInfo(script, compilationId);
+
+  for (const auto* scriptSnapshot : snapshot->scripts()) {
+    JSScript* inlinedScript = scriptSnapshot->script();
+    if (inlinedScript == script) {
+      continue;
+    }
+    AutoSweepJitScript sweep(inlinedScript);
+    if (!inlinedScript->jitScript()->addInlinedCompilation(sweep,
+                                                           recompileInfo)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints,
                          const WarpSnapshot* snapshot) {
   
@@ -11086,6 +11106,14 @@ bool CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints,
   }
   if (!isValid) {
     return true;
+  }
+
+  if (JitOptions.warpBuilder) {
+    
+    
+    if (!AddInlinedCompilations(script, compilationId, snapshot)) {
+      return false;
+    }
   }
 
   
