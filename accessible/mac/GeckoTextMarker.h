@@ -16,6 +16,7 @@ namespace mozilla {
 namespace a11y {
 
 class AccessibleOrProxy;
+class GeckoTextMarkerRange;
 
 class GeckoTextMarker final {
  public:
@@ -31,10 +32,30 @@ class GeckoTextMarker final {
 
   id CreateAXTextMarker();
 
+  
+  
+  
+  
+  void NormalizeNext();
+
+  
+  
+  
+  void NormalizePrevious();
+
+  
+  bool AtEnd() { return static_cast<uint32_t>(mOffset) >= CharacterCount(mContainer); }
+
+  
+  GeckoTextMarkerRange WordRange();
+
   bool operator<(const GeckoTextMarker& aPoint) const;
 
   AccessibleOrProxy mContainer;
   int32_t mOffset;
+
+ private:
+  uint32_t CharacterCount(const AccessibleOrProxy& aContainer);
 };
 
 class GeckoTextMarkerRange final {
