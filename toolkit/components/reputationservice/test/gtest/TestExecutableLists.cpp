@@ -9,6 +9,10 @@
 
 
 static const char* const kTestFileExtensions[] = {
+    ".accda",   
+    ".accdb",   
+    ".accde",   
+    ".accdr",   
     ".action",  
     ".ad",      
     ".ade",     

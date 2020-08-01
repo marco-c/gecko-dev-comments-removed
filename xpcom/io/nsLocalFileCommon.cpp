@@ -28,6 +28,10 @@
 
 const char* const sExecutableExts[] = {
     
+  ".accda",       
+  ".accdb",       
+  ".accde",       
+  ".accdr",       
   ".ad",
   ".ade",         
   ".adp",

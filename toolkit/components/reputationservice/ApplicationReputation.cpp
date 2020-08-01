@@ -159,6 +159,10 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
+    
+    
+    
+    
     ".action",  
     
     
