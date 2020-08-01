@@ -16,9 +16,66 @@ const TEST_PAGE_2 = TEST_ROOT_2 + "test-page.html";
 const TEST_PAGE_WITH_IFRAME = TEST_ROOT_2 + "test-page-with-iframe.html";
 const TEST_PAGE_WITH_SOUND = TEST_ROOT + "test-page-with-sound.html";
 const WINDOW_TYPE = "Toolkit:PictureInPicture";
-const TOGGLE_ID = "pictureInPictureToggleButton";
-const HOVER_VIDEO_OPACITY = 0.8;
-const HOVER_TOGGLE_OPACITY = 1.0;
+const TOGGLE_MODE_PREF =
+  "media.videocontrols.picture-in-picture.video-toggle.mode";
+const TOGGLE_POSITION_PREF =
+  "media.videocontrols.picture-in-picture.video-toggle.position";
+const HAS_USED_PREF =
+  "media.videocontrols.picture-in-picture.video-toggle.has-used";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const DEFAULT_TOGGLE_STYLES = {
+  rootID: "pictureInPictureToggleButton",
+  stages: {
+    hoverVideo: {
+      opacities: {
+        "#pictureInPictureToggleButton": 0.8,
+      },
+      hidden: ["#pictureInPictureToggleExperiment"],
+    },
+    hoverToggle: {
+      opacities: {
+        "#pictureInPictureToggleButton": 1.0,
+      },
+      hidden: ["#pictureInPictureToggleExperiment"],
+    },
+  },
+};
 
 
 
@@ -122,28 +179,56 @@ async function ensureVideosReady(browser) {
 
 
 
+
+
 async function toggleOpacityReachesThreshold(
   browser,
   videoID,
-  opacityThreshold
+  stage,
+  toggleStyles = DEFAULT_TOGGLE_STYLES
 ) {
-  let args = { videoID, TOGGLE_ID, opacityThreshold };
+  let toggleMode = String(Services.prefs.getIntPref(TOGGLE_MODE_PREF, -1));
+  let togglePosition = Services.prefs.getStringPref(
+    TOGGLE_POSITION_PREF,
+    "right"
+  );
+  let hasUsed = Services.prefs.getBoolPref(HAS_USED_PREF, false);
+  let toggleStylesForStage = toggleStyles.stages[stage];
+  info(
+    `Testing toggle mode ${toggleMode} for stage ${stage} ` +
+      `in position ${togglePosition}, has used: ${hasUsed}`
+  );
+
+  let args = { videoID, toggleStylesForStage, togglePosition, hasUsed };
   await SpecialPowers.spawn(browser, [args], async args => {
-    let { videoID, TOGGLE_ID, opacityThreshold } = args;
+    let { videoID, toggleStylesForStage } = args;
 
     let video = content.document.getElementById(videoID);
     let shadowRoot = video.openOrClosedShadowRoot;
-    let toggle = shadowRoot.getElementById(TOGGLE_ID);
 
-    await ContentTaskUtils.waitForCondition(
-      () => {
-        let opacity = parseFloat(this.content.getComputedStyle(toggle).opacity);
-        return opacity >= opacityThreshold;
-      },
-      `Toggle should have opacity >= ${opacityThreshold}`,
-      100,
-      100
-    );
+    for (let hiddenElement of toggleStylesForStage.hidden) {
+      let el = shadowRoot.querySelector(hiddenElement);
+      ok(
+        ContentTaskUtils.is_hidden(el),
+        `Expected ${hiddenElement} to be hidden.`
+      );
+    }
+
+    for (let opacityElement in toggleStylesForStage.opacities) {
+      let opacityThreshold = toggleStylesForStage.opacities[opacityElement];
+      let el = shadowRoot.querySelector(opacityElement);
+
+      await ContentTaskUtils.waitForCondition(
+        () => {
+          let opacity = parseFloat(this.content.getComputedStyle(el).opacity);
+          return opacity >= opacityThreshold;
+        },
+        `Toggle element ${opacityElement} should have eventually reached ` +
+          `target opacity ${opacityThreshold}`,
+        100,
+        100
+      );
+    }
 
     ok(true, "Toggle reached target opacity.");
   });
@@ -164,15 +249,21 @@ async function toggleOpacityReachesThreshold(
 
 
 
-async function assertTogglePolicy(browser, videoID, policy) {
-  let args = { videoID, TOGGLE_ID, policy };
+async function assertTogglePolicy(
+  browser,
+  videoID,
+  policy,
+  toggleStyles = DEFAULT_TOGGLE_STYLES
+) {
+  let toggleID = toggleStyles.rootID;
+  let args = { videoID, toggleID, policy };
   await SpecialPowers.spawn(browser, [args], async args => {
-    let { videoID, TOGGLE_ID, policy } = args;
+    let { videoID, toggleID, policy } = args;
 
     let video = content.document.getElementById(videoID);
     let shadowRoot = video.openOrClosedShadowRoot;
     let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
-    let toggle = shadowRoot.getElementById(TOGGLE_ID);
+    let toggle = shadowRoot.getElementById(toggleID);
 
     await ContentTaskUtils.waitForCondition(() => {
       return controlsOverlay.classList.contains("hovering");
@@ -310,14 +401,26 @@ async function prepareForToggleClick(browser, videoID) {
 
 
 
-async function getToggleClientRect(browser, videoID) {
-  let args = { videoID, TOGGLE_ID };
+async function getToggleClientRect(
+  browser,
+  videoID,
+  toggleStyles = DEFAULT_TOGGLE_STYLES
+) {
+  let args = { videoID, toggleID: toggleStyles.rootID };
   return ContentTask.spawn(browser, args, async args => {
-    let { videoID, TOGGLE_ID } = args;
+    const { Rect } = ChromeUtils.import("resource://gre/modules/Geometry.jsm");
+
+    let { videoID, toggleID } = args;
     let video = content.document.getElementById(videoID);
     let shadowRoot = video.openOrClosedShadowRoot;
-    let toggle = shadowRoot.getElementById(TOGGLE_ID);
-    let rect = toggle.getBoundingClientRect();
+    let toggle = shadowRoot.getElementById(toggleID);
+    let rect = Rect.fromRect(toggle.getBoundingClientRect());
+
+    let clickableChildren = toggle.querySelectorAll(".clickable");
+    for (let child of clickableChildren) {
+      let childRect = Rect.fromRect(child.getBoundingClientRect());
+      rect.expandToContain(childRect);
+    }
 
     if (!rect.width && !rect.height) {
       rect = video.getBoundingClientRect();
@@ -359,6 +462,11 @@ async function getToggleClientRect(browser, videoID) {
 
 
 
+
+
+
+
+
 async function testToggle(testURL, expectations, prepFn = async () => {}) {
   await BrowserTestUtils.withNewTab(
     {
@@ -369,13 +477,19 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
       await prepFn(browser);
       await ensureVideosReady(browser);
 
-      for (let [videoID, { canToggle, policy }] of Object.entries(
+      for (let [videoID, { canToggle, policy, toggleStyles }] of Object.entries(
         expectations
       )) {
         await SimpleTest.promiseFocus(browser);
         info(`Testing video with id: ${videoID}`);
 
-        await testToggleHelper(browser, videoID, canToggle, policy);
+        await testToggleHelper(
+          browser,
+          videoID,
+          canToggle,
+          policy,
+          toggleStyles
+        );
       }
     }
   );
@@ -396,7 +510,15 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
 
 
 
-async function testToggleHelper(browser, videoID, canToggle, policy) {
+
+
+async function testToggleHelper(
+  browser,
+  videoID,
+  canToggle,
+  policy,
+  toggleStyles
+) {
   let { controls } = await prepareForToggleClick(browser, videoID);
 
   
@@ -416,19 +538,23 @@ async function testToggleHelper(browser, videoID, canToggle, policy) {
   );
 
   info("Checking toggle policy");
-  await assertTogglePolicy(browser, videoID, policy);
+  await assertTogglePolicy(browser, videoID, policy, toggleStyles);
 
   if (canToggle) {
     info("Waiting for toggle to become visible");
     await toggleOpacityReachesThreshold(
       browser,
       videoID,
-      HOVER_VIDEO_OPACITY,
-      policy
+      "hoverVideo",
+      toggleStyles
     );
   }
 
-  let toggleClientRect = await getToggleClientRect(browser, videoID);
+  let toggleClientRect = await getToggleClientRect(
+    browser,
+    videoID,
+    toggleStyles
+  );
 
   info("Hovering the toggle rect now.");
   
@@ -458,8 +584,8 @@ async function testToggleHelper(browser, videoID, canToggle, policy) {
     await toggleOpacityReachesThreshold(
       browser,
       videoID,
-      HOVER_TOGGLE_OPACITY,
-      policy
+      "hoverToggle",
+      toggleStyles
     );
   }
 
@@ -508,6 +634,14 @@ async function testToggleHelper(browser, videoID, canToggle, policy) {
     );
     let win = await domWindowOpened;
     ok(win, "A Picture-in-Picture window opened.");
+
+    await SpecialPowers.spawn(browser, [videoID], async videoID => {
+      let video = content.document.getElementById(videoID);
+      await ContentTaskUtils.waitForCondition(() => {
+        return video.isCloningElementVisually;
+      }, "Video is being cloned visually.");
+    });
+
     await BrowserTestUtils.closeWindow(win);
 
     
