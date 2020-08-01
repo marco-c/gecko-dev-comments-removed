@@ -166,11 +166,12 @@ FxAccountsProfile.prototype = {
   
   
   
-  async ensureProfile() {
+  async ensureProfile({ staleOk = false } = {}) {
     const profileCache = await this._getProfileCache();
     if (
       !profileCache ||
-      Date.now() > this._cachedAt + this.PROFILE_FRESHNESS_THRESHOLD
+      (Date.now() > this._cachedAt + this.PROFILE_FRESHNESS_THRESHOLD &&
+        !staleOk)
     ) {
       const profile = await this._fetchAndCacheProfile().catch(err => {
         log.error("Background refresh of profile failed", err);

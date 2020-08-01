@@ -40,6 +40,7 @@ class FxAccountsTelemetry {
   constructor(fxai) {
     this._fxai = fxai;
     Services.telemetry.setEventRecordingEnabled("fxa", true);
+    this._promiseEnsureEcosystemAnonId = null;
   }
 
   
@@ -82,13 +83,14 @@ class FxAccountsTelemetry {
   async getEcosystemAnonId() {
     try {
       
-      const profile = await this._internal.profile.getProfile();
-      if (profile.hasOwnProperty("ecosystemAnonId")) {
+      const profile = await this._fxai.profile.getProfile();
+      if (profile && profile.hasOwnProperty("ecosystemAnonId")) {
         return profile.ecosystemAnonId;
       }
     } catch (err) {
       log.error("Getting ecosystemAnonId from profile failed", err);
     }
+    
     
     
     this.ensureEcosystemAnonId().catch(err => {
@@ -102,11 +104,30 @@ class FxAccountsTelemetry {
   
   
   
-  async ensureEcosystemAnonId(generatePlaceholder = true) {
+  
+  
+  
+  async ensureEcosystemAnonId() {
+    if (!this._promiseEnsureEcosystemAnonId) {
+      this._promiseEnsureEcosystemAnonId = this._ensureEcosystemAnonId().finally(
+        () => {
+          this._promiseEnsureEcosystemAnonId = null;
+        }
+      );
+    }
+    return this._promiseEnsureEcosystemAnonId;
+  }
+
+  async _ensureEcosystemAnonId(generatePlaceholder = true) {
     const telemetry = this;
     return this._fxai.withCurrentAccountState(async function(state) {
-      const profile = await telemetry._fxai.profile.ensureProfile();
-      if (profile.hasOwnProperty("ecosystemAnonId")) {
+      
+      
+      
+      const profile = await telemetry._fxai.profile.ensureProfile({
+        staleOk: true,
+      });
+      if (profile && profile.hasOwnProperty("ecosystemAnonId")) {
         return profile.ecosystemAnonId;
       }
       if (!generatePlaceholder) {
@@ -140,7 +161,7 @@ class FxAccountsTelemetry {
       } catch (err) {
         if (err && err.code && err.code === 412) {
           
-          return telemetry.ensureEcosystemAnonId(false);
+          return telemetry._ensureEcosystemAnonId(false);
         }
         throw err;
       }
