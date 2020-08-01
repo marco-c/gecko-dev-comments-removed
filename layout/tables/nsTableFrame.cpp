@@ -1790,11 +1790,9 @@ void nsTableFrame::Reflow(nsPresContext* aPresContext,
       
       if (!GetPrevInFlow() &&
           NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize()) {
-        LogicalMargin bp = GetChildAreaOffset(wm, &aReflowInput);
-        nscoord tableSpecifiedBSize =
-            CalcBorderBoxBSize(aReflowInput, bp, NS_UNCONSTRAINEDSIZE);
-        if (tableSpecifiedBSize > 0 &&
-            tableSpecifiedBSize != NS_UNCONSTRAINEDSIZE) {
+        nscoord tableSpecifiedBSize = CalcBorderBoxBSize(aReflowInput);
+        if ((tableSpecifiedBSize > 0) &&
+            (tableSpecifiedBSize != NS_UNCONSTRAINEDSIZE)) {
           needToInitiateSpecialReflow = true;
         }
       }
@@ -3162,19 +3160,22 @@ void nsTableFrame::CalcDesiredBSize(const ReflowInput& aReflowInput,
   
   RowGroupArray rowGroups;
   OrderRowGroups(rowGroups);
-  nscoord desiredBSize = borderPadding.BStartEnd(wm);
   if (rowGroups.IsEmpty()) {
-    if (eCompatibility_NavQuirks == PresContext()->CompatibilityMode()) {
+    
+    nscoord tableSpecifiedBSize = CalcBorderBoxBSize(aReflowInput);
+    if ((NS_UNCONSTRAINEDSIZE != tableSpecifiedBSize) &&
+        (tableSpecifiedBSize > 0) &&
+        eCompatibility_NavQuirks != PresContext()->CompatibilityMode()) {
       
-      aDesiredSize.BSize(wm) = 0;
+      aDesiredSize.BSize(wm) = tableSpecifiedBSize;
     } else {
-      aDesiredSize.BSize(wm) =
-          CalcBorderBoxBSize(aReflowInput, borderPadding, desiredBSize);
+      aDesiredSize.BSize(wm) = 0;
     }
     return;
   }
   int32_t rowCount = cellMap->GetRowCount();
   int32_t colCount = cellMap->GetColCount();
+  nscoord desiredBSize = borderPadding.BStartEnd(wm);
   if (rowCount > 0 && colCount > 0) {
     desiredBSize += GetRowSpacing(-1);
     for (uint32_t rgIdx = 0; rgIdx < rowGroups.Length(); rgIdx++) {
@@ -3186,27 +3187,22 @@ void nsTableFrame::CalcDesiredBSize(const ReflowInput& aReflowInput,
 
   
   if (!GetPrevInFlow()) {
-    nscoord bSize =
-        CalcBorderBoxBSize(aReflowInput, borderPadding, desiredBSize);
-    if (bSize > desiredBSize) {
+    nscoord tableSpecifiedBSize = CalcBorderBoxBSize(aReflowInput);
+    if ((tableSpecifiedBSize > 0) &&
+        (tableSpecifiedBSize != NS_UNCONSTRAINEDSIZE) &&
+        (tableSpecifiedBSize > desiredBSize)) {
       
       
-      DistributeBSizeToRows(aReflowInput, bSize - desiredBSize);
+      DistributeBSizeToRows(aReflowInput, tableSpecifiedBSize - desiredBSize);
       
       
       for (nsIFrame* kidFrame : mFrames) {
         ConsiderChildOverflow(aDesiredSize.mOverflowAreas, kidFrame);
       }
-      aDesiredSize.BSize(wm) = bSize;
-    } else {
-      
-      
-      aDesiredSize.BSize(wm) = desiredBSize;
+      desiredBSize = tableSpecifiedBSize;
     }
-  } else {
-    
-    aDesiredSize.BSize(wm) = desiredBSize;
   }
+  aDesiredSize.BSize(wm) = desiredBSize;
 }
 
 static void ResizeCells(nsTableFrame& aTableFrame) {
@@ -3687,19 +3683,16 @@ bool nsTableFrame::IsAutoBSize(WritingMode aWM) {
   return bsize.ConvertsToPercentage() && bsize.ToPercentage() <= 0.0f;
 }
 
-nscoord nsTableFrame::CalcBorderBoxBSize(const ReflowInput& aReflowInput,
-                                         const LogicalMargin& aBorderPadding,
-                                         nscoord aIntrinsicBorderBoxBSize) {
-  WritingMode wm = aReflowInput.GetWritingMode();
+nscoord nsTableFrame::CalcBorderBoxBSize(const ReflowInput& aReflowInput) {
   nscoord bSize = aReflowInput.ComputedBSize();
-  nscoord bp = aBorderPadding.BStartEnd(wm);
-  if (bSize == NS_UNCONSTRAINEDSIZE) {
-    if (aIntrinsicBorderBoxBSize == NS_UNCONSTRAINEDSIZE) {
-      return NS_UNCONSTRAINEDSIZE;
-    }
-    bSize = std::max(0, aIntrinsicBorderBoxBSize - bp);
+  if (NS_UNCONSTRAINEDSIZE != bSize) {
+    WritingMode wm = aReflowInput.GetWritingMode();
+    LogicalMargin borderPadding = GetChildAreaOffset(wm, &aReflowInput);
+    bSize += borderPadding.BStartEnd(wm);
   }
-  return aReflowInput.ApplyMinMaxBSize(bSize) + bp;
+  bSize = std::max(0, bSize);
+
+  return bSize;
 }
 
 bool nsTableFrame::IsAutoLayout() {
