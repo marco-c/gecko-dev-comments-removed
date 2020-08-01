@@ -916,9 +916,9 @@ void MediaTrackGraphImpl::DeviceChanged() {
     return;
   }
 
-  MOZ_ASSERT(NS_IsMainThread());
   
-  mLatencyQueryCounter = LATENCY_QUERYING_INTERVAL;
+  MOZ_ASSERT(NS_IsMainThread());
+  mAudioOutputLatency = 0.0;
 
   
   
@@ -1699,11 +1699,6 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
       LOG(LogLevel::Debug,
           ("%p: Running stable state callback. Current state: %s", this,
            LifecycleState_str[LifecycleStateRef()]));
-    } else {
-      if (mLatencyQueryCounter++ == LATENCY_QUERYING_INTERVAL) {
-        UpdateAudioLatencies();
-        mLatencyQueryCounter = 0;
-      }
     }
 
     runnables.SwapElements(mUpdateRunnables);
@@ -3004,7 +2999,6 @@ MediaTrackGraphImpl::MediaTrackGraphImpl(
       ,
       mMainThreadGraphTime(0, "MediaTrackGraphImpl::mMainThreadGraphTime"),
       mAudioOutputLatency(0.0),
-      mAudioInputLatency(0.0),
       mMaxOutputChannelCount(std::min(8u, CubebUtils::MaxNumberOfChannels())) {
   if (aRunTypeRequested == SINGLE_THREAD && !mGraphRunner) {
     
@@ -3579,42 +3573,26 @@ uint32_t MediaTrackGraphImpl::AudioOutputChannelCount() const {
 }
 
 double MediaTrackGraph::AudioOutputLatency() {
-  return static_cast<MediaTrackGraphImpl*>(this)->CachedAudioOutputLatency();
+  return static_cast<MediaTrackGraphImpl*>(this)->AudioOutputLatency();
 }
 
-double MediaTrackGraphImpl::CachedAudioOutputLatency() {
+double MediaTrackGraphImpl::AudioOutputLatency() {
   MOZ_ASSERT(NS_IsMainThread());
+  if (mAudioOutputLatency != 0.0) {
+    return mAudioOutputLatency;
+  }
+  MonitorAutoLock lock(mMonitor);
+  if (CurrentDriver()->AsAudioCallbackDriver()) {
+    mAudioOutputLatency = CurrentDriver()
+                              ->AsAudioCallbackDriver()
+                              ->AudioOutputLatency()
+                              .ToSeconds();
+  } else {
+    
+    mAudioOutputLatency = 0.0;
+  }
+
   return mAudioOutputLatency;
-}
-
-double MediaTrackGraphImpl::CachedAudioInputLatency() {
-  MOZ_ASSERT(NS_IsMainThread());
-  return mAudioInputLatency;
-}
-
-void MediaTrackGraphImpl::UpdateAudioLatencies() {
-  RefPtr<MediaTrackGraphImpl> self = this;
-  NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction("UpdateLatency", [self{std::move(self)}]() {
-        MonitorAutoLock lock(self->mMonitor);
-        if (self->CurrentDriver()->AsAudioCallbackDriver()) {
-          AudioCallbackDriver* driver =
-              self->CurrentDriver()->AsAudioCallbackDriver();
-          if (driver->InputChannelCount()) {
-            self->mAudioInputLatency = driver->AudioInputLatency().ToSeconds();
-          }
-          self->mAudioOutputLatency = driver->AudioOutputLatency().ToSeconds();
-        }
-      }));
-}
-
-double MediaTrackGraphImpl::AudioOutputLatencyGraphThread() {
-  AssertOnGraphThreadOrNotRunning();
-  return mAudioOutputLatency;
-}
-double MediaTrackGraphImpl::AudioInputLatencyGraphThread() {
-  AssertOnGraphThreadOrNotRunning();
-  return mAudioInputLatency;
 }
 
 bool MediaTrackGraph::IsNonRealtime() const {

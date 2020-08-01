@@ -643,8 +643,6 @@ class AudioCallbackDriver : public GraphDriver,
 
   
   TimeDuration AudioOutputLatency();
-  
-  TimeDuration AudioInputLatency();
 
  private:
   

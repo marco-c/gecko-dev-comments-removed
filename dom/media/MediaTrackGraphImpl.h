@@ -484,14 +484,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   void SetMaxOutputChannelCount(uint32_t aMaxChannelCount);
 
-  
-  double CachedAudioOutputLatency();
-  double CachedAudioInputLatency();
-  void UpdateAudioLatencies();
-
-  
-  double AudioOutputLatencyGraphThread();
-  double AudioInputLatencyGraphThread();
+  double AudioOutputLatency();
 
   
 
@@ -1040,23 +1033,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  std::atomic<double> mAudioOutputLatency;
-  
-
-
-
-  std::atomic<double> mAudioInputLatency;
-
-  
-
-
-  const uint32_t LATENCY_QUERYING_INTERVAL = 100;
-
-  
-
-
-
-  uint32_t mLatencyQueryCounter = 0;
+  double mAudioOutputLatency;
 
   
 
