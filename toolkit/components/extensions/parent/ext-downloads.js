@@ -912,8 +912,23 @@ this.downloads = class extends ExtensionAPI {
               const source = {
                 url: options.url,
                 isPrivate: options.incognito,
+                
+                
                 loadingPrincipal: context.principal,
               };
+
+              
+              
+              
+              
+              
+              
+              
+              if (options.url.startsWith("blob:")) {
+                
+                
+                delete source.loadingPrincipal;
+              }
 
               
               
