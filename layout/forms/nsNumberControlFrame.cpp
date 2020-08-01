@@ -85,8 +85,8 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
   
 
   
-  mOuterWrapper = MakeAnonymousElement(nullptr, nsGkAtoms::div,
-                                       PseudoStyleType::mozNumberWrapper);
+  mOuterWrapper = MakeAnonymousElement(
+      nullptr, nsGkAtoms::div, PseudoStyleType::mozComplexControlWrapper);
 
   
   
