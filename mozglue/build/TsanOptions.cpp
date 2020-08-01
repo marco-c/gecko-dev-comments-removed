@@ -302,6 +302,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:libavcodec.so*\n"
          "race:libavutil.so*\n"
 
+         
+         "race:system_base_info\n"
+
       
       ;  
 }
