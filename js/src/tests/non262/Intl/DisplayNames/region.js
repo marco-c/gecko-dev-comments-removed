@@ -115,8 +115,8 @@ for (let [locale, localeTests] of Object.entries(tests)) {
   assertEq(dn3.of("AA"), undefined);
 
   
-  assertEq(dn1.of("aa"), "aa");
-  assertEq(dn2.of("aa"), "aa");
+  assertEq(dn1.of("aa"), "AA");
+  assertEq(dn2.of("aa"), "AA");
   assertEq(dn3.of("aa"), undefined);
 }
 

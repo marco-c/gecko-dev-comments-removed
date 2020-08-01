@@ -148,16 +148,16 @@ for (let [locale, localeTests] of Object.entries(tests)) {
   assertEq(dn3.of("en-AA"), undefined);
 
   
-  assertEq(dn1.of("AAA"), "AAA");
-  assertEq(dn2.of("AAA"), "AAA");
+  assertEq(dn1.of("AAA"), "aaa");
+  assertEq(dn2.of("AAA"), "aaa");
   assertEq(dn3.of("AAA"), undefined);
 
-  assertEq(dn1.of("En-aaaa"), "En-aaaa");
-  assertEq(dn2.of("En-aaaa"), "En-aaaa");
+  assertEq(dn1.of("En-aaaa"), "en-Aaaa");
+  assertEq(dn2.of("En-aaaa"), "en-Aaaa");
   assertEq(dn3.of("En-aaaa"), undefined);
 
-  assertEq(dn1.of("EN-aa"), "EN-aa");
-  assertEq(dn2.of("EN-aa"), "EN-aa");
+  assertEq(dn1.of("EN-aa"), "en-AA");
+  assertEq(dn2.of("EN-aa"), "en-AA");
   assertEq(dn3.of("EN-aa"), undefined);
 }
 

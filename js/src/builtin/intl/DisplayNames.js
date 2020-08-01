@@ -127,6 +127,17 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     var lazyDisplayNamesData = std_Object_create(null);
 
     
@@ -219,33 +230,16 @@ function Intl_DisplayNames_of(code) {
       return callFunction(CallDisplayNamesMethodIfWrapped, this, "Intl_DisplayNames_of");
   }
 
+  code = ToString(code);
+
   var internals = getDisplayNamesInternals(displayNames);
 
   
   
-  var {locale, calendar = "", style, type} = internals;
-
-  code = ToString(code);
+  var {locale, calendar = "", style, type, fallback} = internals;
 
   
-  var name = intl_ComputeDisplayName(displayNames, locale, calendar, style, type, code);
-
-  
-  
-  
-  if (name !== "") {
-      return name;
-  }
-
-  
-  if (internals.fallback === "code") {
-      
-      
-      return code;
-  }
-
-  
-  return undefined;
+  return intl_ComputeDisplayName(displayNames, locale, calendar, style, fallback, type, code);
 }
 
 
