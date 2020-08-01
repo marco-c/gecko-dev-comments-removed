@@ -857,6 +857,13 @@ pub struct ScrollFrameInfo {
     pub external_scroll_offset: LayoutVector2D,
 
     
+    
+    
+    
+    
+    
+    
+    
     pub offset: LayoutVector2D,
 }
 

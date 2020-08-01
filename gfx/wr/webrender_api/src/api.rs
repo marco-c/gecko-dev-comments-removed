@@ -324,6 +324,16 @@ impl Transaction {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn scroll_node_with_id(
         &mut self,
         origin: LayoutPoint,
