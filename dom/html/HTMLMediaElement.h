@@ -1930,7 +1930,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   void StartListeningMediaControlKeyIfNeeded();
-  void StopListeningMediaControlKeyIfNeeded();
   RefPtr<MediaControlKeyListener> mMediaControlKeyListener;
 
   

@@ -426,7 +426,12 @@ class HTMLMediaElement::MediaControlKeyListener final
     return true;
   }
 
-  void Stop() {
+  
+
+
+
+
+  void StopIfNeeded() {
     MOZ_ASSERT(NS_IsMainThread());
     if (!IsStarted()) {
       
@@ -539,7 +544,7 @@ class HTMLMediaElement::MediaControlKeyListener final
     
     
     bool wasInPlayingState = mState == MediaPlaybackState::ePlayed;
-    Stop();
+    StopIfNeeded();
     Unused << Start();
     if (wasInPlayingState) {
       NotifyMediaStartedPlaying();
@@ -2006,7 +2011,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLMediaElement,
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSeekDOMPromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSetMediaKeysDOMPromise)
   if (tmp->mMediaControlKeyListener) {
-    tmp->StopListeningMediaControlKeyIfNeeded();
+    tmp->mMediaControlKeyListener->StopIfNeeded();
   }
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -2340,7 +2345,7 @@ void HTMLMediaElement::AbortExistingLoads() {
   
   ClearResumeDelayedMediaPlaybackAgentIfNeeded();
 
-  StopListeningMediaControlKeyIfNeeded();
+  mMediaControlKeyListener->StopIfNeeded();
 
   
   
@@ -4267,7 +4272,7 @@ HTMLMediaElement::~HTMLMediaElement() {
     mResumeDelayedPlaybackAgent = nullptr;
   }
 
-  StopListeningMediaControlKeyIfNeeded();
+  mMediaControlKeyListener->StopIfNeeded();
   mMediaControlKeyListener = nullptr;
 
   WakeLockRelease();
@@ -6526,7 +6531,7 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
     mEventDeliveryPaused = true;
     
     ClearResumeDelayedMediaPlaybackAgentIfNeeded();
-    StopListeningMediaControlKeyIfNeeded();
+    mMediaControlKeyListener->StopIfNeeded();
   } else {
     if (!mPaused) {
       mCurrentLoadPlayTime.Start();
@@ -7872,12 +7877,6 @@ void HTMLMediaElement::StartListeningMediaControlKeyIfNeeded() {
   if (mMediaControlKeyListener->IsStarted() ||
       !mMediaControlKeyListener->Start()) {
     return;
-  }
-}
-
-void HTMLMediaElement::StopListeningMediaControlKeyIfNeeded() {
-  if (mMediaControlKeyListener->IsStarted()) {
-    mMediaControlKeyListener->Stop();
   }
 }
 
