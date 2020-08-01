@@ -305,6 +305,10 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:system_base_info\n"
 
+         
+         "race:sctp_close\n"
+         "race:sctp_iterator_work\n"
+
       
       ;  
 }
