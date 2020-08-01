@@ -1,5 +1,7 @@
 from six import PY3
 
+from wptserve.utils import isomorphic_encode
+
 def get_response(raw_headers, filter_value, filter_name):
     result = b""
     
@@ -11,7 +13,7 @@ def get_response(raw_headers, filter_value, filter_name):
     
     if PY3:
         header_list = [
-            (s + u'\r\n').encode("iso-8859-1") for s in raw_headers.as_string().splitlines() if s
+            isomorphic_encode(s + u'\r\n') for s in raw_headers.as_string().splitlines() if s
         ]
     else:
         header_list = raw_headers.headers
