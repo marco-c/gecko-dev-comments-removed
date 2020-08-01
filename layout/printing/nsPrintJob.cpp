@@ -2193,51 +2193,39 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult DeleteNonSelectedNodes(
   nsINode* bodyNode = aDoc.GetBodyElement();
   nsINode* startNode = bodyNode;
   uint32_t startOffset = 0;
-  uint32_t ellipsisOffset = 0;
 
   for (nsRange* origRange : *printRanges) {
     
     nsINode* endNode = origRange->GetStartContainer();
-
-    
-    if (endNode != startNode) {
-      ellipsisOffset = 0;
-    }
-    uint32_t endOffset = origRange->StartOffset() + ellipsisOffset;
+    uint32_t endOffset = origRange->StartOffset();
 
     
     
     
-    RefPtr<nsRange> unselectedRange = nsRange::Create(
+    RefPtr<nsRange> nonselectedRange = nsRange::Create(
         startNode, startOffset, endNode, endOffset, IgnoreErrors());
 
-    if (unselectedRange && !unselectedRange->Collapsed()) {
-      selection->AddRangeAndSelectFramesAndNotifyListeners(*unselectedRange,
+    if (nonselectedRange && !nonselectedRange->Collapsed()) {
+      selection->AddRangeAndSelectFramesAndNotifyListeners(*nonselectedRange,
                                                            IgnoreErrors());
       
       
       Text* text = endNode->GetAsText();
-      if (!ellipsisOffset && text && endOffset && endOffset < text->Length()) {
+      if (startNode != endNode && text && endOffset &&
+          endOffset < text->Length()) {
         text->InsertData(endOffset, kEllipsis, IgnoreErrors());
-        ellipsisOffset += kEllipsis.Length();
       }
     }
 
     
     startNode = origRange->GetEndContainer();
-
-    
-    if (startNode != endNode) {
-      ellipsisOffset = 0;
-    }
-    startOffset = origRange->EndOffset() + ellipsisOffset;
+    startOffset = origRange->EndOffset();
 
     
     Text* text = startNode ? startNode->GetAsText() : nullptr;
     if (text && startOffset && startOffset < text->Length()) {
       text->InsertData(startOffset, kEllipsis, IgnoreErrors());
       startOffset += kEllipsis.Length();
-      ellipsisOffset += kEllipsis.Length();
     }
   }
 
