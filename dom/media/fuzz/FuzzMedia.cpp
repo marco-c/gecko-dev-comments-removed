@@ -18,30 +18,30 @@
 
 using namespace mozilla;
 
-RefPtr<SharedThreadPool> sFuzzThreadPool;
-
 class FuzzRunner {
  public:
   explicit FuzzRunner(Benchmark* aBenchmark) : mBenchmark(aBenchmark) {}
 
   void Run() {
+    
+    MOZ_ASSERT(NS_IsMainThread());
+    bool done = false;
+
     mBenchmark->Init();
-    media::Await(
-        GetMediaThreadPool(MediaThreadType::PLAYBACK), mBenchmark->Run(),
-        [&](uint32_t aDecodeFps) {}, [&](const MediaResult& aError) {});
+    mBenchmark->Run()->Then(
+        
+        
+        AbstractThread::MainThread(), __func__,
+        [&](uint32_t aDecodeFps) { done = true; }, [&]() { done = true; });
+
+    
+    SpinEventLoopUntil([&]() { return done; });
     return;
   }
 
  private:
   RefPtr<Benchmark> mBenchmark;
 };
-
-static int FuzzingInitMedia(int* argc, char*** argv) {
-  
-  
-  sFuzzThreadPool = GetMediaThreadPool(MediaThreadType::PLAYBACK);
-  return 0;
-}
 
 #define MOZ_MEDIA_FUZZER(_name)                                         \
   static int FuzzingRunMedia##_name(const uint8_t* data, size_t size) { \
@@ -54,8 +54,7 @@ static int FuzzingInitMedia(int* argc, char*** argv) {
     runner.Run();                                                       \
     return 0;                                                           \
   }                                                                     \
-  MOZ_FUZZING_INTERFACE_RAW(FuzzingInitMedia, FuzzingRunMedia##_name,   \
-                            Media##_name);
+  MOZ_FUZZING_INTERFACE_RAW(nullptr, FuzzingRunMedia##_name, Media##_name);
 
 MOZ_MEDIA_FUZZER(ADTS);
 MOZ_MEDIA_FUZZER(Flac);
