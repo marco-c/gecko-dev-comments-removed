@@ -904,9 +904,6 @@ class nsIFrame : public nsQueryFrame {
   
   virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle);
 
- private:
-  void RecordAppearanceTelemetry();
-
  public:
 
 
