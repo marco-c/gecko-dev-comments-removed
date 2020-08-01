@@ -866,7 +866,7 @@ add_task(async function testContentBlockingReloadWarning() {
 
 
 
-add_task(async function testContentBlockingReloadWarning() {
+add_task(async function testContentBlockingReloadWarningSingleTab() {
   Services.prefs.setStringPref(CAT_PREF, "standard");
   await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, PRIVACY_PAGE);
 
