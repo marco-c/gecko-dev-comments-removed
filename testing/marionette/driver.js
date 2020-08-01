@@ -1138,14 +1138,17 @@ GeckoDriver.prototype.execute_ = async function(
 
 
 
-GeckoDriver.prototype.get = async function(cmd) {
+GeckoDriver.prototype.navigateTo = async function(cmd) {
   assert.content(this.context);
   assert.open(this.getCurrentWindow());
   await this._handleUserPrompts();
 
   let url = cmd.parameters.url;
 
-  let get = this.listener.get({ url, pageTimeout: this.timeouts.pageLoad });
+  const navigated = this.listener.navigateTo({
+    url,
+    pageTimeout: this.timeouts.pageLoad,
+  });
 
   
   
@@ -1163,7 +1166,7 @@ GeckoDriver.prototype.get = async function(cmd) {
     );
   });
 
-  await get;
+  await navigated;
 
   this.curBrowser.contentBrowser.focus();
 };
@@ -3815,7 +3818,7 @@ GeckoDriver.prototype.commands = {
   "WebDriver:IsElementSelected": GeckoDriver.prototype.isElementSelected,
   "WebDriver:MinimizeWindow": GeckoDriver.prototype.minimizeWindow,
   "WebDriver:MaximizeWindow": GeckoDriver.prototype.maximizeWindow,
-  "WebDriver:Navigate": GeckoDriver.prototype.get,
+  "WebDriver:Navigate": GeckoDriver.prototype.navigateTo,
   "WebDriver:NewSession": GeckoDriver.prototype.newSession,
   "WebDriver:NewWindow": GeckoDriver.prototype.newWindow,
   "WebDriver:PerformActions": GeckoDriver.prototype.performActions,
