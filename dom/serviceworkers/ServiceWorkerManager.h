@@ -122,24 +122,6 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   bool IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI,
                    nsIChannel* aChannel);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool MayHaveActiveServiceWorkerInstance(ContentParent* aContent,
-                                          nsIPrincipal* aPrincipal);
-
   void DispatchFetchEvent(nsIInterceptedChannel* aChannel, ErrorResult& aRv);
 
   void Update(nsIPrincipal* aPrincipal, const nsACString& aScope,
@@ -160,11 +142,7 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   void PropagateSoftUpdate(const OriginAttributes& aOriginAttributes,
                            const nsAString& aScope);
 
-  void PropagateRemove(const nsACString& aHost);
-
   void Remove(const nsACString& aHost);
-
-  void PropagateRemoveAll();
 
   void RemoveAll();
 
@@ -194,8 +172,6 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
 
   void StoreRegistration(nsIPrincipal* aPrincipal,
                          ServiceWorkerRegistrationInfo* aRegistration);
-
-  void FinishFetch(ServiceWorkerRegistrationInfo* aRegistration);
 
   
 
@@ -370,9 +346,6 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   void UpdateClientControllers(ServiceWorkerRegistrationInfo* aRegistration);
 
   void MaybeRemoveRegistration(ServiceWorkerRegistrationInfo* aRegistration);
-
-  
-  void RemoveAllRegistrations(OriginAttributesPattern* aPattern);
 
   RefPtr<ServiceWorkerManagerChild> mActor;
 
