@@ -10,11 +10,28 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { element } = ChromeUtils.import(
+  "chrome://marionette/content/element.js"
+);
+const { error } = ChromeUtils.import("chrome://marionette/content/error.js");
+const { evaluate } = ChromeUtils.import(
+  "chrome://marionette/content/evaluate.js"
+);
 const { Log } = ChromeUtils.import("chrome://marionette/content/log.js");
 
 XPCOMUtils.defineLazyGetter(this, "logger", Log.get);
 
 class MarionetteFrameChild extends JSWindowActorChild {
+  constructor() {
+    super();
+
+    this.seenEls = new element.Store();
+  }
+
+  get content() {
+    return this.docShell.domWindow;
+  }
+
   get id() {
     return this.browsingContext.id;
   }
@@ -42,5 +59,66 @@ class MarionetteFrameChild extends JSWindowActorChild {
         });
         break;
     }
+  }
+
+  async receiveMessage(msg) {
+    const { name, data: serializedData } = msg;
+    const data = evaluate.fromJSON(serializedData);
+
+    try {
+      let result;
+
+      switch (name) {
+        case "MarionetteFrameParent:findElement":
+          result = await this.findElement(data);
+          break;
+        case "MarionetteFrameParent:findElements":
+          result = await this.findElements(data);
+          break;
+      }
+
+      return { data: evaluate.toJSON(result) };
+    } catch (e) {
+      
+      return { error: error.wrap(e).toJSON() };
+    }
+  }
+
+  
+
+  
+
+
+
+  async findElement(options = {}) {
+    const { strategy, selector, opts } = options;
+
+    opts.all = false;
+
+    if (opts.startNode) {
+      opts.startNode = this.seenEls.get(opts.startNode);
+    }
+
+    const container = { frame: this.content };
+    const el = await element.find(container, strategy, selector, opts);
+    return this.seenEls.add(el);
+  }
+
+  
+
+
+
+  async findElements(options = {}) {
+    const { strategy, selector, opts } = options;
+
+    opts.all = true;
+
+    if (opts.startNode) {
+      opts.startNode = this.seenEls.get(opts.startNode);
+    }
+
+    const container = { frame: this.content };
+    const el = await element.find(container, strategy, selector, opts);
+    return this.seenEls.addAll(el);
   }
 }
