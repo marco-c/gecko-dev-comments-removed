@@ -5745,6 +5745,30 @@ AttachDecision CallIRGenerator::tryAttachRegExpInstanceOptimizable(
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachGetFirstDollarIndex(
+    HandleFunction callee) {
+  
+  MOZ_ASSERT(argc_ == 1);
+  MOZ_ASSERT(args_[0].isString());
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+
+  ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  StringOperandId strId = writer.guardToString(arg0Id);
+
+  writer.getFirstDollarIndexResult(strId);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("GetFirstDollarIndex");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachSubstringKernel(
     HandleFunction callee) {
   
@@ -7049,6 +7073,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachRegExpPrototypeOptimizable(callee);
     case InlinableNative::RegExpInstanceOptimizable:
       return tryAttachRegExpInstanceOptimizable(callee);
+    case InlinableNative::GetFirstDollarIndex:
+      return tryAttachGetFirstDollarIndex(callee);
 
     
     case InlinableNative::String:
