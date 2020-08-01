@@ -246,7 +246,6 @@ add_task(async function test_disableDataUpload() {
     secondClientId,
     "The client id must have changed"
   );
-  let secondEcosystemClientId = await ClientID.getEcosystemClientID();
 
   
   await PingServer.stop();
@@ -318,11 +317,6 @@ add_task(async function test_disableDataUpload() {
     secondClientId,
     ping.clientId,
     "Deletion must be requested for correct client id"
-  );
-  Assert.equal(
-    secondEcosystemClientId,
-    ping.payload.scalars.parent["deletion.request.ecosystem_client_id"],
-    "Deletion must be requested for correct ecosystem client ID"
   );
 
   

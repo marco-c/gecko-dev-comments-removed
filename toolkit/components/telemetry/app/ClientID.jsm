@@ -45,9 +45,6 @@ XPCOMUtils.defineLazyGetter(this, "gStateFilePath", () => {
 
 const PREF_CACHED_CLIENTID = "toolkit.telemetry.cachedClientID";
 
-const SCALAR_DELETION_REQUEST_ECOSYSTEM_CLIENT_ID =
-  "deletion.request.ecosystem_client_id";
-
 
 
 
@@ -80,16 +77,6 @@ var ClientID = Object.freeze({
 
 
 
-
-
-  getEcosystemClientID() {
-    return ClientIDImpl.getEcosystemClientID();
-  },
-
-  
-
-
-
   wasCanaryClientID() {
     if (AppConstants.platform == "android") {
       return ClientIDImpl.wasCanaryClientID();
@@ -109,14 +96,6 @@ var ClientID = Object.freeze({
     return ClientIDImpl.getCachedClientID();
   },
 
-  
-
-
-
-  getCachedEcosystemClientID() {
-    return ClientIDImpl.getCachedEcosystemClientID();
-  },
-
   async getClientIdHash() {
     return ClientIDImpl.getClientIdHash();
   },
@@ -130,8 +109,8 @@ var ClientID = Object.freeze({
 
 
 
-  setCanaryClientIDs() {
-    return ClientIDImpl.setCanaryClientIDs();
+  setClientID(id) {
+    return ClientIDImpl.setClientID(id);
   },
 
   
@@ -142,9 +121,8 @@ var ClientID = Object.freeze({
 
 
 
-
-  removeClientIDs() {
-    return ClientIDImpl.removeClientIDs();
+  resetClientID() {
+    return ClientIDImpl.resetClientID();
   },
 
   
@@ -159,79 +137,58 @@ var ClientID = Object.freeze({
 var ClientIDImpl = {
   _clientID: null,
   _clientIDHash: null,
-  _ecosystemClientID: null,
-  _loadClientIdsTask: null,
-  _saveClientIdsTask: null,
-  _removeClientIdsTask: null,
+  _loadClientIdTask: null,
+  _saveClientIdTask: null,
+  _removeClientIdTask: null,
   _logger: null,
   _wasCanary: null,
 
-  _loadClientIDs() {
-    if (this._loadClientIdsTask) {
-      return this._loadClientIdsTask;
+  _loadClientID() {
+    if (this._loadClientIdTask) {
+      return this._loadClientIdTask;
     }
 
-    this._loadClientIdsTask = this._doLoadClientIDs();
-    let clear = () => (this._loadClientIdsTask = null);
-    this._loadClientIdsTask.then(clear, clear);
-    return this._loadClientIdsTask;
+    this._loadClientIdTask = this._doLoadClientID();
+    let clear = () => (this._loadClientIdTask = null);
+    this._loadClientIdTask.then(clear, clear);
+    return this._loadClientIdTask;
   },
 
   
 
 
 
-
-  async _doLoadClientIDs() {
-    this._log.trace(`_doLoadClientIDs`);
+  async _doLoadClientID() {
+    this._log.trace(`_doLoadClientID`);
     
-    await this._removeClientIdsTask;
+    await this._removeClientIdTask;
 
     
-    let hasCurrentClientID = false;
-    let hasCurrentEcosystemClientID = false;
     try {
       let state = await CommonUtils.readJSON(gStateFilePath);
       if (AppConstants.platform == "android" && state && "wasCanary" in state) {
         this._wasCanary = state.wasCanary;
       }
-      if (state) {
-        hasCurrentClientID = this.updateClientID(state.clientID);
-        hasCurrentEcosystemClientID = this.updateEcosystemClientID(
-          state.ecosystemClientID
-        );
-        if (hasCurrentClientID && hasCurrentEcosystemClientID) {
-          this._log.trace(`_doLoadClientIDs: Client IDs loaded from state.`);
-          return {
-            clientID: this._clientID,
-            ecosystemClientID: this._ecosystemClientID,
-          };
-        }
+      if (state && this.updateClientID(state.clientID)) {
+        this._log.trace(`_doLoadClientID: Client id loaded from state.`);
+        return this._clientID;
       }
     } catch (e) {
       
     }
 
     
-    if (!hasCurrentClientID) {
-      this.updateClientID(CommonUtils.generateUUID());
-    }
-    if (!hasCurrentEcosystemClientID) {
-      this.updateEcosystemClientID(CommonUtils.generateUUID());
-    }
-    this._saveClientIdsTask = this._saveClientIDs();
+    this.updateClientID(CommonUtils.generateUUID());
+    this._saveClientIdTask = this._saveClientID();
 
     
     
     
     
-    await this._saveClientIdsTask;
+    await this._saveClientIdTask;
 
-    this._log.trace("_doLoadClientIDs: New client IDs loaded and persisted.");
-    return {
-      clientID: this._clientID,
-      ecosystemClientID: this._ecosystemClientID,
-    };
+    this._log.trace("_doLoadClientID: New client id loaded and persisted.");
+    return this._clientID;
   },
 
   
@@ -239,19 +196,16 @@ var ClientIDImpl = {
 
 
 
-  async _saveClientIDs() {
-    this._log.trace(`_saveClientIDs`);
-    let obj = {
-      clientID: this._clientID,
-      ecosystemClientID: this._ecosystemClientID,
-    };
+  async _saveClientID() {
+    this._log.trace(`_saveClientID`);
+    let obj = { clientID: this._clientID };
     
     if (AppConstants.platform == "android" && this._wasCanary) {
       obj.wasCanary = true;
     }
     await OS.File.makeDir(gDatareportingPath);
     await CommonUtils.writeJSON(obj, gStateFilePath);
-    this._saveClientIdsTask = null;
+    this._saveClientIdTask = null;
   },
 
   
@@ -260,22 +214,12 @@ var ClientIDImpl = {
 
 
 
-  async getClientID() {
+  getClientID() {
     if (!this._clientID) {
-      let { clientID } = await this._loadClientIDs();
-      return clientID;
+      return this._loadClientID();
     }
 
     return Promise.resolve(this._clientID);
-  },
-
-  async getEcosystemClientID() {
-    if (!this._ecosystemClientID) {
-      let { ecosystemClientID } = await this._loadClientIDs();
-      return ecosystemClientID;
-    }
-
-    return Promise.resolve(this._ecosystemClientID);
   },
 
   
@@ -330,10 +274,6 @@ var ClientIDImpl = {
     return id;
   },
 
-  getCachedEcosystemClientID() {
-    return this._ecosystemClientID;
-  },
-
   async getClientIdHash() {
     if (!this._clientIDHash) {
       let byteArr = new TextEncoder().encode(await this.getClientID());
@@ -348,63 +288,59 @@ var ClientIDImpl = {
 
 
   async _reset() {
-    await this._loadClientIdsTask;
-    await this._saveClientIdsTask;
+    await this._loadClientIdTask;
+    await this._saveClientIdTask;
     this._clientID = null;
     this._clientIDHash = null;
-    this._ecosystemClientID = null;
   },
 
-  async setCanaryClientIDs() {
-    this._log.trace("setCanaryClientIDs");
-    this.updateClientID(CANARY_CLIENT_ID);
-    this.updateEcosystemClientID(CANARY_CLIENT_ID);
+  async setClientID(id) {
+    this._log.trace("setClientID");
+    if (!this.updateClientID(id)) {
+      throw new Error("Invalid client ID: " + id);
+    }
 
-    this._saveClientIdsTask = this._saveClientIDs();
-    await this._saveClientIdsTask;
+    this._saveClientIdTask = this._saveClientID();
+    await this._saveClientIdTask;
     return this._clientID;
   },
 
-  async _doRemoveClientIDs() {
-    this._log.trace("_doRemoveClientIDs");
+  async _doRemoveClientID() {
+    this._log.trace("_doRemoveClientID");
 
     
     this._clientID = null;
     this._clientIDHash = null;
-    this._ecosystemClientID = null;
 
     
     Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
 
     
-    Services.telemetry.scalarSet(
-      SCALAR_DELETION_REQUEST_ECOSYSTEM_CLIENT_ID,
-      ""
-    );
-
-    
-    await this._saveClientIdsTask;
+    await this._saveClientIdTask;
 
     
     await OS.File.remove(gStateFilePath, { ignoreAbsent: true });
   },
 
-  async removeClientIDs() {
-    this._log.trace("removeClientIDs");
+  async resetClientID() {
+    this._log.trace("resetClientID");
     let oldClientId = this._clientID;
 
     
     
-    this._removeClientIdsTask = this._doRemoveClientIDs();
-    let clear = () => (this._removeClientIdsTask = null);
-    this._removeClientIdsTask.then(clear, clear);
+    this._removeClientIdTask = this._doRemoveClientID();
+    let clear = () => (this._removeClientIdTask = null);
+    this._removeClientIdTask.then(clear, clear);
 
-    await this._removeClientIdsTask;
+    await this._removeClientIdTask;
 
     
     if (AppConstants.platform == "android") {
       this._wasCanary = oldClientId == CANARY_CLIENT_ID;
     }
+
+    
+    return this.getClientID();
   },
 
   
@@ -424,22 +360,6 @@ var ClientIDImpl = {
     this._clientID = id;
     this._clientIDHash = null;
     Services.prefs.setStringPref(PREF_CACHED_CLIENTID, this._clientID);
-    return true;
-  },
-
-  updateEcosystemClientID(id) {
-    if (!isValidClientID(id)) {
-      this._log.error(
-        "updateEcosystemClientID - invalid ecosystem client ID",
-        id
-      );
-      return false;
-    }
-    this._ecosystemClientID = id;
-    Services.telemetry.scalarSet(
-      SCALAR_DELETION_REQUEST_ECOSYSTEM_CLIENT_ID,
-      id
-    );
     return true;
   },
 
