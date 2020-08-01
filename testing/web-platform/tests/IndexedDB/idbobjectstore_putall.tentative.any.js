@@ -1,12 +1,5 @@
 
 
-
-
-
-
-
-
-
 promise_test(async testCase => {
   const db = await createDatabase(testCase, db => {
     const store = createBooksStore(testCase, db);

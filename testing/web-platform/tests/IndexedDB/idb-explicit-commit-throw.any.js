@@ -1,13 +1,5 @@
 
 
-
-
-
-
-
-
-
-
 setup({allow_uncaught_exception:true});
 
 promise_test(async testCase => {
