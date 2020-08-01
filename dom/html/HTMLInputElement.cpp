@@ -4222,7 +4222,6 @@ nsresult HTMLInputElement::BindToTree(BindContext& aContext, nsINode& aParent) {
       IsInComposedDoc()) {
     
     AttachAndSetUAShadowRoot();
-    NotifyUAWidgetSetupOrChange();
   }
 
   if (mType == NS_FORM_INPUT_PASSWORD) {
@@ -4487,7 +4486,6 @@ void HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify) {
     } else if (mType == NS_FORM_INPUT_TIME || mType == NS_FORM_INPUT_DATE) {
       
       AttachAndSetUAShadowRoot();
-      NotifyUAWidgetSetupOrChange();
     }
   }
 }
