@@ -5703,11 +5703,6 @@ AbortReasonOr<Ok> IonBuilder::jsop_optimize_spreadcall() {
     }
 
     
-    if (types->hasObjectFlags(constraints(), OBJECT_FLAG_NON_PACKED)) {
-      break;
-    }
-
-    
     JSObject* proto;
     if (!types->getCommonPrototype(constraints(), &proto)) {
       break;
