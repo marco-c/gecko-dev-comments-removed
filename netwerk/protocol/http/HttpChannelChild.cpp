@@ -2135,6 +2135,13 @@ HttpChannelChild::CompleteRedirectSetup(nsIStreamListener* aListener) {
   NS_ENSURE_TRUE(!mIsPending, NS_ERROR_IN_PROGRESS);
   NS_ENSURE_TRUE(!mWasOpened, NS_ERROR_ALREADY_OPENED);
 
+  
+  auto eventQueueResumeGuard = MakeScopeExit([&] {
+    MOZ_ASSERT(mSuspendForWaitCompleteRedirectSetup);
+    mEventQ->Resume();
+    mSuspendForWaitCompleteRedirectSetup = false;
+  });
+
   if (mShouldParentIntercept) {
     
     
@@ -2178,11 +2185,6 @@ HttpChannelChild::CompleteRedirectSetup(nsIStreamListener* aListener) {
 
   
   if (mLoadGroup) mLoadGroup->AddRequest(this, nullptr);
-
-  
-  MOZ_ASSERT(mSuspendForWaitCompleteRedirectSetup);
-  mEventQ->Resume();
-  mSuspendForWaitCompleteRedirectSetup = false;
 
   
   
