@@ -11,6 +11,7 @@
 #include "mozilla/dom/SessionHistoryEntry.h"
 
 
+#include "mozilla/Maybe.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsDocShellLoadTypes.h"
@@ -266,8 +267,8 @@ class nsDocShellLoadState final {
   
   
   nsLoadFlags CalculateChannelLoadFlags(
-      mozilla::dom::BrowsingContext* aBrowsingContext, Maybe<bool> aUriModified,
-      Maybe<bool> aIsXFOError);
+      mozilla::dom::BrowsingContext* aBrowsingContext,
+      mozilla::Maybe<bool> aUriModified, mozilla::Maybe<bool> aIsXFOError);
 
   mozilla::dom::DocShellLoadStateInit Serialize();
 
