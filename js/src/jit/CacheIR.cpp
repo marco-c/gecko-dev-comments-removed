@@ -6519,6 +6519,30 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachIsTypedArray(HandleFunction callee,
+                                                      bool isPossiblyWrapped) {
+  
+  MOZ_ASSERT(argc_ == 1);
+  MOZ_ASSERT(args_[0].isObject());
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objArgId = writer.guardToObject(argId);
+  writer.isTypedArrayResult(objArgId, isPossiblyWrapped);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached(isPossiblyWrapped ? "IsPossiblyWrappedTypedArray"
+                                  : "IsTypedArray");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachTypedArrayByteOffset(
     HandleFunction callee) {
   
@@ -6878,6 +6902,10 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachGuardToClass(callee, native);
 
     
+    case InlinableNative::IntrinsicIsTypedArray:
+      return tryAttachIsTypedArray(callee,  false);
+    case InlinableNative::IntrinsicIsPossiblyWrappedTypedArray:
+      return tryAttachIsTypedArray(callee,  true);
     case InlinableNative::IntrinsicTypedArrayByteOffset:
       return tryAttachTypedArrayByteOffset(callee);
     case InlinableNative::IntrinsicTypedArrayElementShift:
