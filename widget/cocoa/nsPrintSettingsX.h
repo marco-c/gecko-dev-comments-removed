@@ -85,6 +85,8 @@ class nsPrintSettingsX : public nsPrintSettings {
   
   void SetPrinterNameFromPrintInfo();
 
+  void SetDispositionSaveToFile();
+
  protected:
   virtual ~nsPrintSettingsX();
 
