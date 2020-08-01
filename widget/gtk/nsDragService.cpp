@@ -402,11 +402,6 @@ bool nsDragService::SetAlphaPixmap(SourceSurface* aSurface,
 #ifdef cairo_image_surface_create
 #  error "Looks like we're including Mozilla's cairo instead of system cairo"
 #endif
-  
-  
-  
-  
-  if (gtk_check_version(3, 9, 12)) return false;
 
   
   cairo_surface_t* surf = cairo_image_surface_create(

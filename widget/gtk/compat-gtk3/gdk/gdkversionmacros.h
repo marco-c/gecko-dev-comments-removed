@@ -20,14 +20,9 @@
 
 
 
-#define GDK_VERSION_MIN_REQUIRED GDK_VERSION_3_0
+#define GDK_VERSION_MIN_REQUIRED GDK_VERSION_3_14
 
 #include_next <gdk/gdkversionmacros.h>
-
-
-#ifndef GDK_AVAILABLE_IN_ALL
-#  define GDK_AVAILABLE_IN_ALL
-#endif
 
 #undef GDK_DEPRECATED
 #define GDK_DEPRECATED GDK_AVAILABLE_IN_ALL

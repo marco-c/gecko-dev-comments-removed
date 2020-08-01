@@ -63,22 +63,6 @@ static gint PollWrapper(GPollFD* ufds, guint nfsd, gint timeout_) {
 }
 
 
-static decltype(GtkContainerClass::check_resize) sReal_gtk_window_check_resize;
-
-static void wrap_gtk_window_check_resize(GtkContainer* container) {
-  GdkWindow* gdk_window = gtk_widget_get_window(&container->widget);
-  if (gdk_window) {
-    g_object_ref(gdk_window);
-  }
-
-  sReal_gtk_window_check_resize(container);
-
-  if (gdk_window) {
-    g_object_unref(gdk_window);
-  }
-}
-
-
 
 
 static decltype(GObjectClass::constructed) sRealGdkFrameClockConstructed;
@@ -184,16 +168,6 @@ nsresult nsAppShell::Init() {
         gdk_set_program_class(NS_ConvertUTF16toUTF8(brandName).get());
       }
     }
-  }
-
-  if (!sReal_gtk_window_check_resize &&
-      gtk_check_version(3, 8, 0) != nullptr) {  
-    
-    
-    gpointer gtk_plug_class = g_type_class_ref(GTK_TYPE_WINDOW);
-    auto check_resize = &GTK_CONTAINER_CLASS(gtk_plug_class)->check_resize;
-    sReal_gtk_window_check_resize = *check_resize;
-    *check_resize = wrap_gtk_window_check_resize;
   }
 
   if (!sPendingResumeQuark &&
