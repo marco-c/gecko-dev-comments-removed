@@ -41,6 +41,8 @@ const issue = {
   unsupportedBrowsers: PropTypes.arrayOf(PropTypes.shape(browser)).isRequired,
   
   nodes: PropTypes.arrayOf(node),
+  
+  aliases: PropTypes.arrayOf(PropTypes.string),
 };
 
 exports.browser = browser;
