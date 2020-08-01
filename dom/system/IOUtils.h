@@ -95,10 +95,14 @@ class IOUtils final {
 
 
 
+
+
   static UniquePtr<PRFileDesc, PR_CloseDelete> OpenExistingSync(
       const nsAString& aPath, int32_t aFlags);
 
   
+
+
 
 
 
@@ -117,10 +121,15 @@ class IOUtils final {
 
 
 
+
+
   static Result<nsTArray<uint8_t>, nsresult> ReadSync(
       const nsAString& aPath, const Maybe<uint32_t>& aMaxBytes);
 
   
+
+
+
 
 
 
@@ -140,14 +149,41 @@ class IOUtils final {
 
 
 
+
+
+
   static Result<uint32_t, nsresult> WriteSync(PRFileDesc* aFd,
                                               const nsTArray<uint8_t>& aBytes);
 
-  static nsresult MoveSync(const nsAString& aSource, const nsAString& aDest,
-                           bool noOverwrite);
+  
 
-  static nsresult RemoveSync(const nsAString& aPath, bool aIgnoreAbsent,
-                             bool aRecursive);
+
+
+
+
+
+
+
+
+
+
+  static Result<Ok, nsresult> MoveSync(const nsAString& aSource,
+                                       const nsAString& aDest,
+                                       bool noOverwrite);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static Result<Ok, nsresult> RemoveSync(const nsAString& aPath,
+                                         bool aIgnoreAbsent, bool aRecursive);
 
   
 
@@ -164,10 +200,19 @@ class IOUtils final {
 
 
 
-  static nsresult CreateDirectorySync(const nsAString& aPath,
-                                      bool aCreateAncestors,
-                                      bool aIgnoreExisting,
-                                      int32_t aMode = 0777);
+
+
+  static Result<Ok, nsresult> CreateDirectorySync(const nsAString& aPath,
+                                                  bool aCreateAncestors,
+                                                  bool aIgnoreExisting,
+                                                  int32_t aMode = 0777);
+
+  
+
+
+
+
+
 
   static Result<IOUtils::InternalFileInfo, nsresult> StatSync(
       const nsAString& aPath);
@@ -183,7 +228,7 @@ class IOUtils final {
       mozilla::MozPromise<struct InternalFileInfo, const nsresult,
                            true>;
 
-  using IOMozPromise = mozilla::MozPromise<bool , const nsresult,
+  using IOMozPromise = mozilla::MozPromise<Ok , const nsresult,
                                             true>;
 };
 
