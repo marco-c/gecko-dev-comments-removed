@@ -9,6 +9,10 @@ const {
 } = require("devtools/shared/resources/legacy-target-watchers/legacy-workers-watcher");
 
 class LegacySharedWorkersWatcher extends LegacyWorkersWatcher {
+  
+  
+  _isSharedWorkerWatcher = true;
+
   _supportWorkerTarget(workerTarget) {
     return workerTarget.isSharedWorker;
   }

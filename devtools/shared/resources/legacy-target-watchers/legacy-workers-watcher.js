@@ -141,7 +141,16 @@ class LegacyWorkersWatcher {
       
       
       await this._onProcessAvailable({ targetFront: this.target });
-    } else if (this._isServiceWorkerWatcher) {
+      return;
+    }
+
+    if (this._isSharedWorkerWatcher) {
+      
+      
+      return;
+    }
+
+    if (this._isServiceWorkerWatcher) {
       this._legacyProcessesWatcher = new LegacyProcessesWatcher(
         this.targetList,
         async targetFront => {
@@ -157,15 +166,17 @@ class LegacyWorkersWatcher {
         }
       );
       await this._legacyProcessesWatcher.listen();
-    } else {
-      this.targetsByProcess.set(this.target, new Set());
-      this._workerListChangedListener = this._workerListChanged.bind(
-        this,
-        this.target
-      );
-      this.target.on("workerListChanged", this._workerListChangedListener);
-      await this._workerListChanged(this.target);
+      return;
     }
+
+    
+    this.targetsByProcess.set(this.target, new Set());
+    this._workerListChangedListener = this._workerListChanged.bind(
+      this,
+      this.target
+    );
+    this.target.on("workerListChanged", this._workerListChangedListener);
+    await this._workerListChanged(this.target);
   }
 
   _getProcessTargets() {
