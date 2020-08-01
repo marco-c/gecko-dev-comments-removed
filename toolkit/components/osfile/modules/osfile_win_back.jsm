@@ -52,11 +52,11 @@
 
     
     let init = function init(aDeclareFFI) {
-      let declareFFI; 
+      let declareFFI;
       if (aDeclareFFI) {
         declareFFI = aDeclareFFI.bind(null, libc);
       } else {
-        declareFFI = SysAll.declareFFI;
+        declareFFI = SysAll.declareFFI; 
       }
       let declareLazyFFI = SharedAll.declareLazyFFI; 
 

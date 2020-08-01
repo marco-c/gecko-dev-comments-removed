@@ -24,7 +24,6 @@ add_task(async function() {
   let origOverrideURL = registry.convertChromeURL(overrideURL);
   let origLocaleURL = registry.convertChromeURL(localeURL);
 
-  
   let entry1 = aomStartup.registerChrome(uri1, [
     ["override", "chrome://global/content/foo", file1.spec],
     ["content", "test", file2.spec + "/"],
@@ -53,7 +52,7 @@ add_task(async function() {
 
   
   
-  entry1 = null;
+  entry1 = null; 
   Cu.forceGC();
   Cu.forceCC();
   equal(registry.convertChromeURL(overrideURL).spec, origOverrideURL.spec);

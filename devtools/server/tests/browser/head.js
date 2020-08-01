@@ -197,10 +197,9 @@ function idleWait(time) {
 
 function busyWait(time) {
   const start = Date.now();
-  
   let stack;
   while (Date.now() - start < time) {
-    stack = Components.stack;
+    stack = Components.stack; 
   }
 }
 
