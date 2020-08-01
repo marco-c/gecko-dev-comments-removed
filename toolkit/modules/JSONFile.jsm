@@ -268,8 +268,7 @@ JSONFile.prototype = {
         }
       }
 
-      let backupFile = new FileUtils.File(this._options.backupTo);
-      if (this._options.backupTo && backupFile.exists()) {
+      if (this._options.backupTo) {
         
         
         
@@ -369,13 +368,14 @@ JSONFile.prototype = {
           Cu.reportError(e2);
         }
       }
-      let backupFile = new FileUtils.File(this._options.backupTo);
-      if (this._options.backupTo && backupFile.exists()) {
+
+      if (this._options.backupTo) {
         
         
         
         try {
           let basename = OS.Path.basename(this.path);
+          let backupFile = new FileUtils.File(this._options.backupTo);
           backupFile.copyTo(null, basename);
         } catch (e) {
           Cu.reportError(e);
