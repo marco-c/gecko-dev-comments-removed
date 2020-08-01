@@ -851,7 +851,11 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
               
               
               
+              
               type = mozilla::ProcType::WebIsolated;
+            } else if (StringBeginsWith(remoteType,
+                                        WITH_COOP_COEP_REMOTE_TYPE_PREFIX)) {
+              type = mozilla::ProcType::WebCOOPCOEP;
             } else if (StringBeginsWith(remoteType, DEFAULT_REMOTE_TYPE)) {
               type = mozilla::ProcType::Web;
             } else if (remoteType == FILE_REMOTE_TYPE) {
@@ -862,9 +866,6 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
               type = mozilla::ProcType::PrivilegedAbout;
             } else if (remoteType == PRIVILEGEDMOZILLA_REMOTE_TYPE) {
               type = mozilla::ProcType::PrivilegedMozilla;
-            } else if (StringBeginsWith(remoteType,
-                                        WITH_COOP_COEP_REMOTE_TYPE_PREFIX)) {
-              type = mozilla::ProcType::WebCOOPCOEP;
             } else if (remoteType == LARGE_ALLOCATION_REMOTE_TYPE) {
               type = mozilla::ProcType::WebLargeAllocation;
             } else if (remoteType == PREALLOC_REMOTE_TYPE) {
