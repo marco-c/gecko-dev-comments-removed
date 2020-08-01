@@ -1394,7 +1394,7 @@ WSRunScanner::TextFragmentData::GetReplaceRangeDataAtEndOfDeletionRange(
   
   
   
-  const VisibleWhiteSpacesData nonPreformattedVisibleWhiteSpacesAtEnd =
+  const VisibleWhiteSpacesData& nonPreformattedVisibleWhiteSpacesAtEnd =
       VisibleWhiteSpacesDataRef();
   if (!nonPreformattedVisibleWhiteSpacesAtEnd.IsInitialized()) {
     return ReplaceRangeData();
@@ -1472,7 +1472,7 @@ WSRunScanner::TextFragmentData::GetReplaceRangeDataAtStartOfDeletionRange(
   
   
   
-  const VisibleWhiteSpacesData nonPreformattedVisibleWhiteSpacesAtStart =
+  const VisibleWhiteSpacesData& nonPreformattedVisibleWhiteSpacesAtStart =
       VisibleWhiteSpacesDataRef();
   if (!nonPreformattedVisibleWhiteSpacesAtStart.IsInitialized()) {
     return ReplaceRangeData();
