@@ -79,7 +79,10 @@ nsresult BackgroundEventTarget::Init() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = pool->SetThreadLimit(1);
+  rv = pool->SetThreadLimit(2);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = pool->SetIdleThreadLimit(1);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -98,7 +101,10 @@ nsresult BackgroundEventTarget::Init() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = ioPool->SetThreadLimit(1);
+  rv = ioPool->SetThreadLimit(4);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = ioPool->SetIdleThreadLimit(1);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
