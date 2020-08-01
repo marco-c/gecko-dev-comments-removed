@@ -317,7 +317,9 @@ bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
 
   
   
-  if (aWindow && aURI && aURI->SchemeIs("chrome")) {
+  
+  if (aWindow && aURI &&
+      (aURI->SchemeIs("chrome") || aURI->SchemeIs("about"))) {
     return disabled;
   }
 
