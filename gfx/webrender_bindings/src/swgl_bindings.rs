@@ -490,7 +490,7 @@ impl SwCompositor {
                 for tile in &surface.tiles {
                     
                     
-                    if tile.invalid.get() &&
+                    if tile.overlaps.get() > 0 &&
                        tile.may_overlap(surface, position, clip_rect, overlap_rect) {
                         overlaps += 1;
                     }
@@ -564,9 +564,11 @@ impl SwCompositor {
                     tile.overlaps.set(tile.overlaps.get() - 1);
                 }
                 
-                if tile.overlaps.get() == 0 {
-                    self.queue_composite(surface, position, clip_rect, tile);
+                if tile.overlaps.get() > 0 {
+                    return;
                 }
+                
+                self.queue_composite(surface, position, clip_rect, tile);
                 
                 match tile.overlap_rect(surface, position, clip_rect) {
                     Some(overlap_rect) => overlap_rect,
@@ -577,22 +579,48 @@ impl SwCompositor {
         };
 
         
+        
+        let mut flushed_bounds = overlap_rect;
+        let mut flushed_rects = vec![overlap_rect];
+
+        
         for &(ref id, ref position, ref clip_rect) in frame_surfaces {
             
-            if !overlap_rect.intersects(clip_rect) {
+            if !flushed_bounds.intersects(clip_rect) {
                 continue;
             }
             if let Some(surface) = self.surfaces.get(&id) {
                 
                 for tile in &surface.tiles {
-                    let overlaps = tile.overlaps.get();
-                    if overlaps > 0 &&
-                       tile.may_overlap(surface, position, clip_rect, &overlap_rect) {
+                    let mut overlaps = tile.overlaps.get();
+                    
+                    if overlaps == 0 {
+                        continue;
+                    }
+                    
+                    let overlap_rect = match tile.overlap_rect(surface, position, clip_rect) {
+                        Some(overlap_rect) => overlap_rect,
+                        None => continue,
+                    };
+                    
+                    if !overlap_rect.intersects(&flushed_bounds) {
+                        continue;
+                    }
+                    
+                    for flushed_rect in &flushed_rects {
+                        if overlap_rect.intersects(flushed_rect) {
+                            overlaps -= 1;
+                        }
+                    }
+                    if overlaps != tile.overlaps.get() {
                         
                         
-                        tile.overlaps.set(overlaps - 1);
-                        if overlaps == 1 {
+                        tile.overlaps.set(overlaps);
+                        if overlaps == 0 {
                             self.queue_composite(surface, position, clip_rect, tile);
+                            
+                            flushed_bounds = flushed_bounds.union(&overlap_rect);
+                            flushed_rects.push(overlap_rect);
                         }
                     }
                 }
