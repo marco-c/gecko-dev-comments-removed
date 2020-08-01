@@ -578,7 +578,8 @@ static MaskPaintResult CreateAndPaintMaskSurface(
 
   if (!isMaskComplete ||
       (aParams.imgParams.result != ImgDrawResult::SUCCESS &&
-       aParams.imgParams.result != ImgDrawResult::SUCCESS_NOT_COMPLETE)) {
+       aParams.imgParams.result != ImgDrawResult::SUCCESS_NOT_COMPLETE &&
+       aParams.imgParams.result != ImgDrawResult::WRONG_SIZE)) {
     
     
     
