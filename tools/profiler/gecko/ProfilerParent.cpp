@@ -28,19 +28,15 @@ class ProfilerParentTracker;
 
 class ProfileBufferGlobalController final {
  public:
-  ProfileBufferGlobalController(ProfilerParentTracker& aTracker,
-                                size_t aMaximumBytes);
+  explicit ProfileBufferGlobalController(size_t aMaximumBytes);
 
   ~ProfileBufferGlobalController();
-
-  void Clear();
 
   void HandleChunkManagerUpdate(
       base::ProcessId aProcessId,
       ProfileBufferControlledChunkManager::Update&& aUpdate);
 
  private:
-  ProfilerParentTracker& mTracker;
   const size_t mMaximumBytes;
 
   const base::ProcessId mParentProcessId = base::GetCurrentProcId();
@@ -144,8 +140,8 @@ class ProfilerParentTracker final {
 };
 
 ProfileBufferGlobalController::ProfileBufferGlobalController(
-    ProfilerParentTracker& aTracker, size_t aMaximumBytes)
-    : mTracker(aTracker), mMaximumBytes(aMaximumBytes) {
+    size_t aMaximumBytes)
+    : mMaximumBytes(aMaximumBytes) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
   
@@ -337,8 +333,7 @@ void ProfilerParentTracker::StartTracking(ProfilerParent* aProfilerParent) {
     
     
     
-    sInstance->mMaybeController.emplace(*sInstance,
-                                        size_t(sInstance->mEntries) * 8u);
+    sInstance->mMaybeController.emplace(size_t(sInstance->mEntries) * 8u);
   }
 
   sInstance->mProfilerParents.AppendElement(aProfilerParent);
@@ -365,8 +360,7 @@ void ProfilerParentTracker::ProfilerStarted(uint32_t aEntries) {
       !sInstance->mProfilerParents.IsEmpty()) {
     
     
-    sInstance->mMaybeController.emplace(*sInstance,
-                                        size_t(sInstance->mEntries) * 8u);
+    sInstance->mMaybeController.emplace(size_t(sInstance->mEntries) * 8u);
   }
 }
 
