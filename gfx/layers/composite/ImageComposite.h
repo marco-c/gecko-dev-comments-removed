@@ -56,9 +56,6 @@ class ImageComposite {
   void UpdateBias(size_t aImageIndex);
 
   virtual TimeStamp GetCompositionTime() const = 0;
-  virtual CompositionOpportunityId GetCompositionOpportunityId() const = 0;
-  virtual void AppendImageCompositeNotification(
-      const ImageCompositeNotificationInfo& aInfo) const = 0;
 
   struct TimedImage {
     CompositableTextureHostRef mTextureHost;
@@ -84,40 +81,31 @@ class ImageComposite {
   void ClearImages();
   void SetImages(nsTArray<TimedImage>&& aNewImages);
 
- protected:
-  void UpdateCompositedFrame(int aImageIndex, const TimedImage* aImage,
-                             base::ProcessId aProcessId,
-                             const CompositableHandle& aHandle);
-
-  int32_t mLastFrameID = -1;
-  int32_t mLastProducerID = -1;
-  CompositionOpportunityId mLastCompositionOpportunityId;
+  int32_t mLastFrameID;
+  int32_t mLastProducerID;
 
  private:
   nsTArray<TimedImage> mImages;
   TimeStamp GetBiasedTime(const TimeStamp& aInput) const;
+  
+  
+  
+  
+  uint32_t ScanForLastFrameIndex(const nsTArray<TimedImage>& aNewImages);
 
   
   
   
   
-  void CountSkippedFrames(const TimedImage* aNewImage);
+  bool IsImagesUpdateRateFasterThanCompositedRate(
+      const TimedImage& aNewImage, const TimedImage& aOldImage) const;
 
   
 
 
-  Bias mBias = BIAS_NONE;
-
-  
-  
-  int32_t mSkippedFramesSinceLastComposite = 0;
-
-  
-  
-  
-  
-  
-  uint32_t mDroppedFrames = 0;
+  Bias mBias;
+  uint32_t mDroppedFrames;
+  uint32_t mLastChosenImageIndex;
 };
 
 }  

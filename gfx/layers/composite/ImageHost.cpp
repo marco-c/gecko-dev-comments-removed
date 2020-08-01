@@ -143,21 +143,6 @@ TimeStamp ImageHost::GetCompositionTime() const {
   return time;
 }
 
-CompositionOpportunityId ImageHost::GetCompositionOpportunityId() const {
-  CompositionOpportunityId id;
-  if (HostLayerManager* lm = GetLayerManager()) {
-    id = lm->GetCompositionOpportunityId();
-  }
-  return id;
-}
-
-void ImageHost::AppendImageCompositeNotification(
-    const ImageCompositeNotificationInfo& aInfo) const {
-  if (HostLayerManager* lm = GetLayerManager()) {
-    lm->AppendImageCompositeNotification(aInfo);
-  }
-}
-
 TextureHost* ImageHost::GetAsTextureHost(IntRect* aPictureRect) {
   const TimedImage* img = ChooseImage();
   if (!img) {
@@ -336,8 +321,29 @@ RefPtr<TextureSource> ImageHost::AcquireTextureSource(const RenderInfo& aInfo) {
 }
 
 void ImageHost::FinishRendering(const RenderInfo& aInfo) {
-  UpdateCompositedFrame(aInfo.imageIndex, aInfo.img, mAsyncRef.mProcessId,
-                        mAsyncRef.mHandle);
+  HostLayerManager* lm = GetLayerManager();
+  const TimedImage* img = aInfo.img;
+  int imageIndex = aInfo.imageIndex;
+
+  if (mLastFrameID != img->mFrameID || mLastProducerID != img->mProducerID) {
+    if (mAsyncRef) {
+      ImageCompositeNotificationInfo info;
+      info.mImageBridgeProcessId = mAsyncRef.mProcessId;
+      info.mNotification = ImageCompositeNotification(
+          mAsyncRef.mHandle, img->mTimeStamp, lm->GetCompositionTime(),
+          img->mFrameID, img->mProducerID);
+      lm->AppendImageCompositeNotification(info);
+    }
+    mLastFrameID = img->mFrameID;
+    mLastProducerID = img->mProducerID;
+  }
+
+  
+  
+  
+  
+  
+  UpdateBias(imageIndex);
 }
 
 void ImageHost::SetTextureSourceProvider(TextureSourceProvider* aProvider) {

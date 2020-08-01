@@ -557,7 +557,7 @@ void LayerManagerComposite::EndTransaction(const TimeStamp& aTimeStamp,
   
   
   
-  SetCompositionInfo(aTimeStamp, CompositionOpportunityId{});
+  SetCompositionTime(aTimeStamp);
 
   if (mRoot && !(aFlags & END_NO_IMMEDIATE_REDRAW)) {
     MOZ_ASSERT(!aTimeStamp.IsNull());

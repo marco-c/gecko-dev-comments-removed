@@ -74,14 +74,8 @@ class AsyncImagePipelineManager final {
   void ProcessPipelineUpdates();
 
   TimeStamp GetCompositionTime() const { return mCompositionTime; }
-  CompositionOpportunityId GetCompositionOpportunityId() const {
-    return mCompositionOpportunityId;
-  }
-
-  void SetCompositionInfo(TimeStamp aTimeStamp,
-                          CompositionOpportunityId aCompositionOpportunityId) {
+  void SetCompositionTime(TimeStamp aTimeStamp) {
     mCompositionTime = aTimeStamp;
-    mCompositionOpportunityId = aCompositionOpportunityId;
     if (!mCompositionTime.IsNull() && !mCompositeUntilTime.IsNull() &&
         mCompositionTime >= mCompositeUntilTime) {
       mCompositeUntilTime = TimeStamp();
@@ -243,9 +237,6 @@ class AsyncImagePipelineManager final {
 
   
   TimeStamp mCompositionTime;
-
-  
-  CompositionOpportunityId mCompositionOpportunityId;
 
   
   
