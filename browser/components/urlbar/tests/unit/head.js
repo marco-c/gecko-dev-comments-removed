@@ -852,3 +852,24 @@ async function getOriginAutofillThreshold() {
     stddevMultiplier * Math.sqrt((squares - (sum * sum) / count) / count)
   );
 }
+
+
+
+
+
+
+async function checkOriginsOrder(host, prefixOrder) {
+  await PlacesUtils.withConnectionWrapper("checkOriginsOrder", async db => {
+    let prefixes = (
+      await db.execute(
+        `SELECT prefix || iif(instr(host, "www.") = 1, "www.", "")
+         FROM moz_origins
+         WHERE host = :host OR host = "www." || :host
+         ORDER BY ROWID ASC
+        `,
+        { host }
+      )
+    ).map(r => r.getResultByIndex(0));
+    Assert.deepEqual(prefixes, prefixOrder);
+  });
+}
