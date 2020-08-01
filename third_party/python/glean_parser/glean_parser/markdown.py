@@ -8,17 +8,13 @@
 Outputter to generate Markdown documentation for metrics.
 """
 
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-
 from . import metrics
 from . import pings
 from . import util
 from collections import defaultdict
 
 
-def extra_info(obj: Union[metrics.Metric, pings.Ping]) -> List[Tuple[str, str]]:
+def extra_info(obj):
     """
     Returns a list of string to string tuples with extra information for the type
     (e.g. extra keys for events) or an empty list if nothing is available.
@@ -33,13 +29,10 @@ def extra_info(obj: Union[metrics.Metric, pings.Ping]) -> List[Tuple[str, str]]:
         for label in obj.ordered_labels:
             extra_info.append((label, None))
 
-    if isinstance(obj, metrics.Jwe):
-        extra_info.append(("decrypted_name", obj.decrypted_name))
-
     return extra_info
 
 
-def ping_desc(ping_name: str, custom_pings_cache: Dict[str, pings.Ping] = {}) -> str:
+def ping_desc(ping_name, custom_pings_cache={}):
     """
     Return a text description of the ping. If a custom_pings_cache
     is available, look in there for non-reserved ping names description.
@@ -59,21 +52,23 @@ def ping_desc(ping_name: str, custom_pings_cache: Dict[str, pings.Ping] = {}) ->
     return desc
 
 
-def metrics_docs(obj_name: str) -> str:
+def metrics_docs(obj_name):
     """
     Return a link to the documentation entry for the Glean SDK metric of the
     requested type.
     """
+    base_url = "https://mozilla.github.io/glean/book/user/metrics/{}.html"
+
     
     
     fixedup_name = obj_name
     if obj_name.startswith("labeled_"):
         fixedup_name += "s"
 
-    return f"https://mozilla.github.io/glean/book/user/metrics/{fixedup_name}.html"
+    return base_url.format(fixedup_name)
 
 
-def ping_docs(ping_name: str) -> str:
+def ping_docs(ping_name):
     """
     Return a link to the documentation entry for the requested Glean SDK
     built-in ping.
@@ -81,19 +76,17 @@ def ping_docs(ping_name: str) -> str:
     if ping_name not in pings.RESERVED_PING_NAMES:
         return ""
 
-    return f"https://mozilla.github.io/glean/book/user/pings/{ping_name}.html"
+    return "https://mozilla.github.io/glean/book/user/pings/{}.html".format(ping_name)
 
 
-def if_empty(ping_name: str, custom_pings_cache: Dict[str, pings.Ping] = {}) -> bool:
-    if ping_name in custom_pings_cache:
-        return custom_pings_cache[ping_name].send_if_empty
-    else:
-        return False
+def if_empty(ping_name, custom_pings_cache={}):
+    return (
+        custom_pings_cache.get(ping_name)
+        and custom_pings_cache[ping_name].send_if_empty
+    )
 
 
-def ping_reasons(
-    ping_name: str, custom_pings_cache: Dict[str, pings.Ping]
-) -> Dict[str, str]:
+def ping_reasons(ping_name, custom_pings_cache):
     """
     Returns the reasons dictionary for the ping.
     """
@@ -105,45 +98,7 @@ def ping_reasons(
     return {}
 
 
-def ping_data_reviews(
-    ping_name: str, custom_pings_cache: Dict[str, pings.Ping] = {}
-) -> Optional[List[str]]:
-    if ping_name in custom_pings_cache:
-        return custom_pings_cache[ping_name].data_reviews
-    else:
-        return None
-
-
-def ping_bugs(
-    ping_name: str, custom_pings_cache: Dict[str, pings.Ping] = {}
-) -> Optional[List[str]]:
-    if ping_name in custom_pings_cache:
-        return custom_pings_cache[ping_name].bugs
-    else:
-        return None
-
-
-def ping_include_client_id(
-    ping_name: str, custom_pings_cache: Dict[str, pings.Ping] = {}
-) -> bool:
-    if ping_name in custom_pings_cache:
-        return custom_pings_cache[ping_name].include_client_id
-    else:
-        return False
-
-
-def data_sensitivity_numbers(
-    data_sensitivity: Optional[List[metrics.DataSensitivity]],
-) -> str:
-    if data_sensitivity is None:
-        return "unknown"
-    else:
-        return ", ".join(str(x.value) for x in data_sensitivity)
-
-
-def output_markdown(
-    objs: metrics.ObjectTree, output_dir: Path, options: Dict[str, Any] = {}
-) -> None:
+def output_markdown(objs, output_dir, options={}):
     """
     Given a tree of objects, output Markdown docs to `output_dir`.
 
@@ -151,7 +106,7 @@ def output_markdown(
     contents and a section for each ping metrics are collected for.
 
     :param objects: A tree of objects (metrics and pings) as returned from
-        `parser.parse_objects`.
+    `parser.parse_objects`.
     :param output_dir: Path to an output directory to write to.
     :param options: options dictionary, with the following optional key:
         - `project_title`: The projects title.
@@ -172,23 +127,21 @@ def output_markdown(
     
     
     
-    custom_pings_cache: Dict[str, pings.Ping] = defaultdict()
-    metrics_by_pings: Dict[str, List[metrics.Metric]] = defaultdict(list)
+    custom_pings_cache = defaultdict()
+    metrics_by_pings = defaultdict(list)
     for category_key, category_val in objs.items():
         for obj in category_val.values():
             
             
             if isinstance(obj, pings.Ping):
                 custom_pings_cache[obj.name] = obj
-                
-                
-                
-                if obj.send_if_empty and not metrics_by_pings[obj.name]:
+                if obj.send_if_empty:
                     metrics_by_pings[obj.name] = []
-
-            
-            
-            if isinstance(obj, metrics.Metric) and not obj.is_internal_metric():
+            elif obj.is_internal_metric():
+                
+                
+                continue
+            else:
                 
                 
                 for ping_name in obj.send_in_pings:
@@ -212,13 +165,6 @@ def output_markdown(
             ("ping_send_if_empty", lambda x: if_empty(x, custom_pings_cache)),
             ("ping_docs", ping_docs),
             ("ping_reasons", lambda x: ping_reasons(x, custom_pings_cache)),
-            ("ping_data_reviews", lambda x: ping_data_reviews(x, custom_pings_cache)),
-            ("ping_bugs", lambda x: ping_bugs(x, custom_pings_cache)),
-            (
-                "ping_include_client_id",
-                lambda x: ping_include_client_id(x, custom_pings_cache),
-            ),
-            ("data_sensitivity_numbers", data_sensitivity_numbers),
         ),
     )
 
