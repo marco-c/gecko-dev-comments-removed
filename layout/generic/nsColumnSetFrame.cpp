@@ -996,6 +996,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
   
   
   bool maybeContinuousBreakingDetected = false;
+  bool possibleOptimalBSizeDetected = false;
 
   
   
@@ -1007,6 +1008,10 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
   
   
   bool foundFeasibleBSizeCloserToBest = !aUnboundedLastColumn;
+
+  
+  
+  const int32_t gapToStop = aPresContext->DevPixelsToAppUnits(1);
 
   while (!aPresContext->HasPendingInterrupt()) {
     nscoord lastKnownFeasibleBSize = aConfig.mKnownFeasibleBSize;
@@ -1067,6 +1072,14 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
       break;
     }
 
+    const nscoord gap =
+        aConfig.mKnownFeasibleBSize - aConfig.mKnownInfeasibleBSize;
+    if (gap <= gapToStop && possibleOptimalBSizeDetected) {
+      
+      
+      break;
+    }
+
     if (lastKnownFeasibleBSize - aConfig.mKnownFeasibleBSize == 1) {
       
       
@@ -1074,8 +1087,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
       maybeContinuousBreakingDetected = true;
     }
 
-    nscoord nextGuess =
-        (aConfig.mKnownFeasibleBSize + aConfig.mKnownInfeasibleBSize) / 2;
+    nscoord nextGuess = aConfig.mKnownInfeasibleBSize + gap / 2;
     if (aConfig.mKnownFeasibleBSize - nextGuess < extraBlockSize &&
         !maybeContinuousBreakingDetected) {
       
@@ -1097,7 +1109,13 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
       
       
       nextGuess = aConfig.mKnownInfeasibleBSize * 2 + extraBlockSize;
+    } else if (gap <= gapToStop) {
+      
+      
+      nextGuess = aConfig.mKnownFeasibleBSize / gapToStop * gapToStop;
+      possibleOptimalBSizeDetected = true;
     }
+
     
     nextGuess = std::min(availableContentBSize, nextGuess);
 
