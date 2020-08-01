@@ -287,12 +287,6 @@ enum class StyleUserModify : uint8_t {
 };
 
 
-enum class StyleInert : uint8_t {
-  None,
-  Inert,
-};
-
-
 enum class StyleWindowDragging : uint8_t {
   Default,
   Drag,
