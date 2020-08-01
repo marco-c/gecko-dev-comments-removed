@@ -5825,6 +5825,11 @@ void HTMLInputElement::DoneCreatingElement() {
   mShouldInitChecked = false;
 }
 
+void HTMLInputElement::DestroyContent() {
+  nsImageLoadingContent::Destroy();
+  TextControlElement::DestroyContent();
+}
+
 EventStates HTMLInputElement::IntrinsicState() const {
   
   

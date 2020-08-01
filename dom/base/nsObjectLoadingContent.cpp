@@ -2420,6 +2420,12 @@ void nsObjectLoadingContent::Destroy() {
   if (mInstanceOwner || mInstantiating) {
     QueueCheckPluginStopEvent();
   }
+
+  
+  
+  UnloadObject();
+
+  nsImageLoadingContent::Destroy();
 }
 
 
