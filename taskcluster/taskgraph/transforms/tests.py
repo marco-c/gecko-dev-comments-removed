@@ -227,6 +227,19 @@ TEST_VARIANTS = {
         'merge': {
             'webrender': True,
         }
+    },
+    'webgl-ipc': {
+        
+        'description': "{description} with WebGL IPC process enabled",
+        'suffix': 'gli',
+        'merge': {
+            'mozharness': {
+                'extra-options': [
+                    '--setpref=webgl.out-of-process=true',
+                ],
+            },
+            'tier': 2
+        }
     }
 }
 
