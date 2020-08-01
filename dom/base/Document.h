@@ -3733,8 +3733,7 @@ class Document : public nsINode,
   
   void SetCssUseCounterBits();
 
-  
-  bool ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
+  void ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
                                          const nsAString& aHeightString,
                                          bool aIsAutoScale);
 
@@ -3744,8 +3743,7 @@ class Document : public nsINode,
 
   
   
-  
-  bool ParseScalesInViewportMetaData(const ViewportMetaData& aViewportMetaData);
+  void ParseScalesInViewportMetaData(const ViewportMetaData& aViewportMetaData);
 
   
   
@@ -4852,7 +4850,6 @@ class Document : public nsINode,
     DisplayWidthHeight,
     Specified,
     Unknown,
-    NoValidContent,
   };
 
   ViewportType mViewportType;
