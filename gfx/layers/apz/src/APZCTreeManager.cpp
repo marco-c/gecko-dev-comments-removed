@@ -3772,7 +3772,7 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
   
   AsyncTransformComponentMatrix scrollbarTransform;
   if (*aScrollbarData.mDirection == ScrollDirection::eVertical) {
-    const ParentLayerCoord asyncScrollY = asyncTransform._42;
+    ParentLayerCoord asyncScrollY = asyncTransform._42;
     const float asyncZoomY = asyncTransform._22;
 
     
@@ -3783,6 +3783,26 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
     
     const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().yScale *
                                               asyncZoomY);
+
+    if (gfxPlatform::UseDesktopZoomingScrollbars()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      asyncScrollY -= ((aMetrics.GetLayoutViewport().TopLeft() -
+                        aMetrics.GetVisualViewportOffset()) *
+                       effectiveZoom)
+                          .y;
+    }
 
     
     
@@ -3818,13 +3838,20 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
   if (*aScrollbarData.mDirection == ScrollDirection::eHorizontal) {
     
 
-    const ParentLayerCoord asyncScrollX = asyncTransform._41;
+    ParentLayerCoord asyncScrollX = asyncTransform._41;
     const float asyncZoomX = asyncTransform._11;
 
     const float xScale = 1.f / asyncZoomX;
 
     const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().xScale *
                                               asyncZoomX);
+
+    if (gfxPlatform::UseDesktopZoomingScrollbars()) {
+      asyncScrollX -= ((aMetrics.GetLayoutViewport().TopLeft() -
+                        aMetrics.GetVisualViewportOffset()) *
+                       effectiveZoom)
+                          .x;
+    }
 
     const float ratio = aScrollbarData.mThumbRatio /
                         (aMetrics.GetPresShellResolution() * asyncZoomX);
