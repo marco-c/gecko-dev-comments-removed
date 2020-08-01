@@ -868,6 +868,10 @@ nsresult HTMLFormElement::DoSecureToInsecureSubmitCheck(nsIURI* aActionURL,
                                                         bool* aCancelSubmit) {
   *aCancelSubmit = false;
 
+  if (!StaticPrefs::security_warn_submit_secure_to_insecure()) {
+    return NS_OK;
+  }
+
   
   
   
