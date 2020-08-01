@@ -64,6 +64,11 @@ class AccessibleOrProxy {
   
 
 
+  bool HasChildren() const { return ChildCount() > 0; }
+
+  
+
+
 
   AccessibleOrProxy ChildAt(uint32_t aIdx) {
     if (IsProxy()) {
@@ -108,6 +113,28 @@ class AccessibleOrProxy {
     }
 
     return AsAccessible()->LastChild();
+  }
+
+  
+
+
+  AccessibleOrProxy NextSibling() {
+    if (IsProxy()) {
+      return AsProxy()->NextSibling();
+    }
+
+    return AsAccessible()->NextSibling();
+  }
+
+  
+
+
+  AccessibleOrProxy PrevSibling() {
+    if (IsProxy()) {
+      return AsProxy()->PrevSibling();
+    }
+
+    return AsAccessible()->PrevSibling();
   }
 
   role Role() const {
