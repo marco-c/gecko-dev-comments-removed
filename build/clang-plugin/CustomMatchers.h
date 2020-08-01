@@ -144,18 +144,6 @@ AST_MATCHER(CallExpr, isInWhitelistForFopenUsage) {
 
 
 
-
-AST_MATCHER(Stmt, isAllowedToUseLocaleSpecificFunctions) {
-  static const char AllowedFile[] = "gtest-port.h";
-  SourceLocation Loc = Node.getBeginLoc();
-  StringRef FileName =
-      getFilename(Finder->getASTContext().getSourceManager(), Loc);
-
-  return llvm::sys::path::rbegin(FileName)->equals(AllowedFile);
-}
-
-
-
 AST_MATCHER(BinaryOperator, isInWhitelistForNaNExpr) {
   const char *whitelist[] = {"SkScalar.h", "json_writer.cpp", "State.cpp"};
 
