@@ -4,19 +4,12 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["SearchOneOffs"];
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
+
+
 XPCOMUtils.defineLazyModuleGetters(this, {
-  clearTimeout: "resource://gre/modules/Timer.jsm",
-  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
-  Services: "resource://gre/modules/Services.jsm",
-  setTimeout: "resource://gre/modules/Timer.jsm",
+  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
 });
-
-
 
 
 
@@ -25,11 +18,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 class SearchOneOffs {
   constructor(container) {
     this.container = container;
-    this.window = container.ownerGlobal;
-    this.document = container.ownerDocument;
 
     this.container.appendChild(
-      this.window.MozXULElement.parseXULToFragment(
+      MozXULElement.parseXULToFragment(
         `
       <hbox class="search-panel-one-offs-header search-panel-header">
         <label class="search-panel-one-offs-header-label" data-l10n-id="search-one-offs-with-title"/>
@@ -52,6 +43,7 @@ class SearchOneOffs {
       )
     );
 
+    this._view = null;
     this._popup = null;
     this._textbox = null;
 
@@ -201,6 +193,23 @@ class SearchOneOffs {
   
 
 
+  set view(val) {
+    if (this._view) {
+      this._view.controller.removeQueryListener(this);
+    }
+    this._view = val;
+    if (val) {
+      if (val.isOpen) {
+        this._rebuild();
+      }
+      val.controller.addQueryListener(this);
+    }
+    return val;
+  }
+
+  
+
+
 
 
 
@@ -266,7 +275,10 @@ class SearchOneOffs {
 
   set query(val) {
     this._query = val;
-    if (this.isViewOpen) {
+    if (
+      (this._view && this._view.isOpen) ||
+      (this.popup && this.popup.popupOpen)
+    ) {
       let isOneOffSelected =
         this.selectedButton &&
         this.selectedButton.classList.contains("searchbar-engine-one-off-item");
@@ -301,7 +313,7 @@ class SearchOneOffs {
         
         
         
-        this.selectedViewIndex = -1;
+        this.selectedAutocompleteIndex = -1;
       }
     }
     this._selectedButton = val;
@@ -351,6 +363,20 @@ class SearchOneOffs {
     return -1;
   }
 
+  get selectedAutocompleteIndex() {
+    if (!this.compact) {
+      return this.popup.selectedIndex;
+    }
+    return this._view.selectedElementIndex;
+  }
+
+  set selectedAutocompleteIndex(val) {
+    if (!this.compact) {
+      return (this.popup.selectedIndex = val);
+    }
+    return (this._view.selectedElementIndex = val);
+  }
+
   get compact() {
     return this.getAttribute("compact") == "true";
   }
@@ -369,7 +395,7 @@ class SearchOneOffs {
     }
     let currentEngineNameToIgnore;
     if (!this.getAttribute("includecurrentengine")) {
-      if (PrivateBrowsingUtils.isWindowPrivate(this.window)) {
+      if (PrivateBrowsingUtils.isWindowPrivate(window)) {
         currentEngineNameToIgnore = (await Services.search.getDefaultPrivate())
           .name;
       } else {
@@ -433,7 +459,7 @@ class SearchOneOffs {
 
     
     if (this.popup && this._textbox) {
-      let textboxWidth = await this.window.promiseDocumentFlushed(() => {
+      let textboxWidth = await window.promiseDocumentFlushed(() => {
         return this._textbox.clientWidth;
       });
       if (this._engines && this._textboxWidth == textboxWidth) {
@@ -454,7 +480,7 @@ class SearchOneOffs {
     this.buttons.setAttribute("aria-labelledby", headerText.id);
 
     let engines = await this.getEngines();
-    let defaultEngine = PrivateBrowsingUtils.isWindowPrivate(this.window)
+    let defaultEngine = PrivateBrowsingUtils.isWindowPrivate(window)
       ? await Services.search.getDefaultPrivate()
       : await Services.search.getDefault();
     let oneOffCount = engines.length;
@@ -487,7 +513,7 @@ class SearchOneOffs {
       
       
       
-      let scale = this.window.windowUtils.screenPixelsPerCSSPixel;
+      let scale = window.windowUtils.screenPixelsPerCSSPixel;
       if (Math.floor(scale) != scale) {
         --buttonsWidth;
       }
@@ -519,7 +545,7 @@ class SearchOneOffs {
 
     for (let i = 0; i < engines.length; ++i) {
       let engine = engines[i];
-      let button = this.document.createXULElement("button");
+      let button = document.createXULElement("button");
       button.id = this._buttonIDForEngine(engine);
       let uri = "chrome://browser/skin/search-engine-placeholder.png";
       if (engine.iconURI) {
@@ -527,7 +553,17 @@ class SearchOneOffs {
       }
       button.setAttribute("image", uri);
       button.setAttribute("class", "searchbar-engine-one-off-item");
-      button.setAttribute("tooltiptext", this.tooltipForEngine(engine));
+      if (this.compact) {
+        let tooltip = engine.name;
+        let aliases = UrlbarSearchUtils.aliasesForEngine(engine);
+        if (aliases.length) {
+          tooltip = tooltip + ` (${aliases[0]})`;
+        }
+
+        button.setAttribute("tooltiptext", tooltip);
+      } else {
+        button.setAttribute("tooltiptext", engine.name);
+      }
       button.engine = engine;
 
       this.buttons.appendChild(button);
@@ -548,16 +584,16 @@ class SearchOneOffs {
     
     
 
-    if (!this.window.gBrowser.selectedBrowser.engines) {
+    if (!gBrowser.selectedBrowser.engines) {
       return;
     }
 
-    let engines = this.window.gBrowser.selectedBrowser.engines;
+    let engines = gBrowser.selectedBrowser.engines;
     let tooManyEngines = engines.length > this._addEngineMenuThreshold;
 
     if (tooManyEngines) {
       
-      let button = this.document.createXULElement("toolbarbutton");
+      let button = document.createXULElement("toolbarbutton");
       button.classList.add("addengine-menu-button", "addengine-item");
       button.setAttribute("badged", "true");
       button.setAttribute("type", "menu");
@@ -579,7 +615,7 @@ class SearchOneOffs {
       list.appendChild(button);
 
       
-      list = this.document.createXULElement("menupopup");
+      list = document.createXULElement("menupopup");
       button.appendChild(list);
       list.setAttribute("class", "addengine-menu");
       list.setAttribute("position", "topright topleft");
@@ -606,7 +642,7 @@ class SearchOneOffs {
     
     let eltType = tooManyEngines ? "menuitem" : "toolbarbutton";
     for (let engine of engines) {
-      let button = this.document.createXULElement(eltType);
+      let button = document.createXULElement(eltType);
       button.classList.add("addengine-item");
       if (!tooManyEngines) {
         button.setAttribute("badged", "true");
@@ -649,7 +685,7 @@ class SearchOneOffs {
 
   _buttonForEngine(engine) {
     let id = this._buttonIDForEngine(engine);
-    return this.document.getElementById(id);
+    return document.getElementById(id);
   }
 
   getSelectableButtons(aIncludeNonEngineButtons) {
@@ -678,19 +714,11 @@ class SearchOneOffs {
     return buttons;
   }
 
-  
+  handleSearchCommand(aEvent, aEngine, aForceNewTab) {
+    if (this._view?.oneOffsCommandHandler(aEvent, aEngine)) {
+      return;
+    }
 
-
-
-
-
-
-
-
-
-
-
-  _whereToOpen(aEvent, aForceNewTab) {
     let where = "current";
     let params;
     
@@ -705,7 +733,7 @@ class SearchOneOffs {
       let newTabPref = Services.prefs.getBoolPref("browser.search.openintab");
       if (
         (aEvent instanceof KeyboardEvent && aEvent.altKey) ^ newTabPref &&
-        !this.window.gBrowser.selectedTab.isEmpty
+        !gBrowser.selectedTab.isEmpty
       ) {
         where = "tab";
       }
@@ -720,7 +748,12 @@ class SearchOneOffs {
       }
     }
 
-    return { where, params };
+    (this._view || this.popup).handleOneOffSearch(
+      aEvent,
+      aEngine,
+      where,
+      params
+    );
   }
 
   
@@ -793,6 +826,9 @@ class SearchOneOffs {
 
 
   handleKeyDown(event, numListItems, allowEmptySelection, textboxUserValue) {
+    if (!this.popup && !this._view) {
+      return false;
+    }
     let handled = this._handleKeyDown(
       event,
       numListItems,
@@ -851,7 +887,7 @@ class SearchOneOffs {
         this.selectedButton = null;
         return false;
       }
-      this.selectedViewIndex = -1;
+      this.selectedAutocompleteIndex = -1;
       this.advanceSelection(!event.shiftKey, true, false);
       return !!this.selectedButton;
     }
@@ -868,13 +904,13 @@ class SearchOneOffs {
         this.advanceSelection(false, true, false);
         return true;
       }
-      if (this.selectedViewIndex > 0) {
+      if (this.selectedAutocompleteIndex > 0) {
         
         
         this.selectedButton = null;
         return false;
       }
-      if (this.selectedViewIndex == 0) {
+      if (this.selectedAutocompleteIndex == 0) {
         
         if (allowEmptySelection) {
           
@@ -917,18 +953,18 @@ class SearchOneOffs {
         return true;
       }
       if (
-        this.selectedViewIndex >= 0 &&
-        this.selectedViewIndex < numListItems - 1
+        this.selectedAutocompleteIndex >= 0 &&
+        this.selectedAutocompleteIndex < numListItems - 1
       ) {
         
         
         this.selectedButton = null;
         return false;
       }
-      if (this.selectedViewIndex == numListItems - 1) {
+      if (this.selectedAutocompleteIndex == numListItems - 1) {
         
         if (!allowEmptySelection) {
-          this.selectedViewIndex = -1;
+          this.selectedAutocompleteIndex = -1;
           if (this.textbox && typeof textboxUserValue == "string") {
             this.textbox.value = textboxUserValue;
           }
@@ -1015,7 +1051,7 @@ class SearchOneOffs {
         engine = target.engine;
       }
     } else if (
-      aEvent instanceof this.window.XULCommandEvent &&
+      aEvent instanceof XULCommandEvent &&
       target.classList.contains("search-one-offs-context-open-in-new-tab")
     ) {
       source = "oneoff-context";
@@ -1030,11 +1066,7 @@ class SearchOneOffs {
       source += "-" + this.telemetryOrigin;
     }
 
-    this.window.BrowserSearch.recordOneoffSearchInTelemetry(
-      engine,
-      source,
-      type
-    );
+    BrowserSearch.recordOneoffSearchInTelemetry(engine, source, type);
     return true;
   }
 
@@ -1047,66 +1079,6 @@ class SearchOneOffs {
       let button = this.querySelector(".addengine-menu-button");
       button.open = this._addEngineMenuShouldBeOpen;
     }, this._addEngineMenuTimeoutMs);
-  }
-
-  
-
-  
-
-
-  get isViewOpen() {
-    return this.popup && this.popup.popupOpen;
-  }
-
-  
-
-
-  get selectedViewIndex() {
-    return this.popup.selectedIndex;
-  }
-
-  
-
-
-
-
-
-  set selectedViewIndex(val) {
-    return (this.popup.selectedIndex = val);
-  }
-
-  
-
-
-  closeView() {
-    this.popup.hidePopup();
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  handleSearchCommand(event, engine, forceNewTab = false) {
-    let { where, params } = this._whereToOpen(event, forceNewTab);
-    this.popup.handleOneOffSearch(event, engine, where, params);
-  }
-
-  
-
-
-
-
-
-
-  tooltipForEngine(engine) {
-    return engine.name;
   }
 
   
@@ -1149,6 +1121,10 @@ class SearchOneOffs {
   }
 
   _on_click(event) {
+    if (this._view?.oneOffsClickHandler(event)) {
+      return;
+    }
+
     if (event.button == 2) {
       return; 
     }
@@ -1170,11 +1146,15 @@ class SearchOneOffs {
     let target = event.target;
 
     if (target == this.settingsButton || target == this.settingsButtonCompact) {
-      this.window.openPreferences("paneSearch");
+      openPreferences("paneSearch");
 
       
       
-      this.closeView();
+      if (this._view) {
+        this._view.close();
+      } else {
+        this.popup.hidePopup();
+      }
       return;
     }
 
@@ -1197,7 +1177,7 @@ class SearchOneOffs {
           const kSearchBundleURI =
             "chrome://global/locale/search/search.properties";
           let searchBundle = Services.strings.createBundle(kSearchBundleURI);
-          let brandBundle = this.document.getElementById("bundle_brand");
+          let brandBundle = document.getElementById("bundle_brand");
           let brandName = brandBundle.getString("brandShortName");
           let title = searchBundle.GetStringFromName(
             "error_invalid_engine_title"
@@ -1207,7 +1187,7 @@ class SearchOneOffs {
             [brandName, target.getAttribute("uri")]
           );
           Services.prompt.alertBC(
-            this.window.gBrowser.selectedBrowser.browsingContext,
+            gBrowser.selectedBrowser.browsingContext,
             Ci.nsIPrompt.MODAL_TYPE_CONTENT,
             title,
             text
@@ -1234,7 +1214,7 @@ class SearchOneOffs {
         : "defaultEngine";
       let currentEngine = Services.search[engineType];
 
-      const isPrivateWin = PrivateBrowsingUtils.isWindowPrivate(this.window);
+      const isPrivateWin = PrivateBrowsingUtils.isWindowPrivate(window);
       if (
         !this.getAttribute("includecurrentengine") &&
         isPrivateButton == isPrivateWin
@@ -1309,11 +1289,21 @@ class SearchOneOffs {
   }
 
   _on_popupshowing() {
-    this._rebuild();
+    this.onViewOpen();
   }
 
   _on_popuphidden() {
+    this.onViewClose();
+  }
+
+  onViewOpen() {
+    this._rebuild();
+  }
+
+  onViewClose() {
     this.selectedButton = null;
     this._contextEngine = null;
   }
 }
+
+window.SearchOneOffs = SearchOneOffs;

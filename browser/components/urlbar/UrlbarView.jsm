@@ -14,7 +14,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
-  UrlbarSearchOneOffs: "resource:///modules/UrlbarSearchOneOffs.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -84,7 +83,9 @@ class UrlbarView {
 
   get oneOffSearchButtons() {
     if (!this._oneOffSearchButtons) {
-      this._oneOffSearchButtons = new UrlbarSearchOneOffs(this);
+      this._oneOffSearchButtons = new this.window.SearchOneOffs(
+        this.panel.querySelector(".search-one-offs")
+      );
       this._oneOffSearchButtons.addEventListener(
         "SelectedOneOffButtonChanged",
         this
@@ -531,8 +532,10 @@ class UrlbarView {
       
       
       let trimmedValue = queryContext.searchString.trim();
-      this.oneOffSearchButtons.enable(
-        (this.oneOffsRefresh || trimmedValue) &&
+      this._enableOrDisableOneOffSearches(
+        ((UrlbarPrefs.get("update2") &&
+          UrlbarPrefs.get("update2.oneOffsRefresh")) ||
+          trimmedValue) &&
           trimmedValue[0] != "@" &&
           (trimmedValue[0] != UrlbarTokenizer.RESTRICT.SEARCH ||
             trimmedValue.length != 1)
@@ -615,6 +618,64 @@ class UrlbarView {
     } else {
       throw new Error("Unrecognized UrlbarView event: " + event.type);
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+  handleOneOffSearch(event, engine, where, params) {
+    this.input.handleCommand(event, where, params);
+  }
+
+  
+
+
+
+
+
+
+  oneOffsCommandHandler(event, engine) {
+    if (!this.oneOffsRefresh) {
+      return false;
+    }
+
+    this.input.setSearchMode(engine);
+    this.input.startQuery({
+      allowAutofill: false,
+      event,
+    });
+    return true;
+  }
+
+  
+
+
+
+
+
+  oneOffsClickHandler(event) {
+    if (!this.oneOffsRefresh) {
+      return false;
+    }
+
+    if (event.button == 2) {
+      return false; 
+    }
+
+    let button = event.originalTarget;
+    let engine = button.engine;
+
+    if (!engine) {
+      return false;
+    }
+
+    return this.oneOffsCommandHandler(event, engine);
   }
 
   static dynamicViewTemplatesByName = new Map();
@@ -1580,6 +1641,20 @@ class UrlbarView {
 
     let tailPrefixCharNode = item._elements.get("tailPrefixChar");
     tailPrefixCharNode.textContent = result.payload.tailPrefix;
+  }
+
+  _enableOrDisableOneOffSearches(enable = true) {
+    if (enable) {
+      this.oneOffSearchButtons.telemetryOrigin = "urlbar";
+      this.oneOffSearchButtons.style.display = "";
+      this.oneOffSearchButtons.textbox = this.input.inputField;
+      this.oneOffSearchButtons.view = this;
+    } else {
+      this.oneOffSearchButtons.telemetryOrigin = null;
+      this.oneOffSearchButtons.style.display = "none";
+      this.oneOffSearchButtons.textbox = null;
+      this.oneOffSearchButtons.view = null;
+    }
   }
 
   _enableOrDisableRowWrap() {
