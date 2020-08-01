@@ -2,18 +2,18 @@
 
 
 
+"use strict";
+
 
 module.exports = {
-  "extends": [
-    "plugin:mozilla/xpcshell-test"
-  ],
-  "rules": {
+  extends: ["plugin:mozilla/xpcshell-test"],
+  rules: {
     
-    "camelcase": "off",
+    camelcase: "off",
     "block-scoped-var": "off",
     
     "mozilla/balanced-observers": 0,
     
     "mozilla/reject-some-requires": "off",
-  }
+  },
 };

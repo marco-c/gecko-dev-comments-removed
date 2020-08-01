@@ -2,31 +2,31 @@
 
 
 
+"use strict";
+
 
 module.exports = {
-  "extends": [
-    "plugin:mozilla/browser-test"
-  ],
+  extends: ["plugin:mozilla/browser-test"],
   
-  "globals": {
-    "DevToolsUtils": true,
-    "gDevTools": true,
-    "once": true,
-    "synthesizeKeyFromKeyTag": true,
-    "TargetFactory": true,
-    "waitForTick": true,
-    "waitUntilState": true,
+  globals: {
+    DevToolsUtils: true,
+    gDevTools: true,
+    once: true,
+    synthesizeKeyFromKeyTag: true,
+    TargetFactory: true,
+    waitForTick: true,
+    waitUntilState: true,
   },
 
-  "parserOptions": {
-    "ecmaFeatures": {
-      "jsx": true,
-    }
+  parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
+    },
   },
 
-  "rules": {
+  rules: {
     
-    "camelcase": "off",
+    camelcase: "off",
     
     "mozilla/balanced-observers": 0,
     
