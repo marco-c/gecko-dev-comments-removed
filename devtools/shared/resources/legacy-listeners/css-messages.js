@@ -7,6 +7,7 @@
 const {
   ResourceWatcher,
 } = require("devtools/shared/resources/resource-watcher");
+const { MESSAGE_CATEGORY } = require("devtools/shared/constants");
 
 module.exports = async function({
   targetList,
@@ -39,7 +40,7 @@ module.exports = async function({
 
   const cachedMessages = [];
   for (let message of messages) {
-    if (message.pageError?.category !== "CSS Parser") {
+    if (message.pageError?.category !== MESSAGE_CATEGORY.CSS_PARSER) {
       continue;
     }
 
@@ -61,7 +62,7 @@ module.exports = async function({
   
   
   webConsoleFront.on("pageError", message => {
-    if (message.pageError.category !== "CSS Parser") {
+    if (message.pageError.category !== MESSAGE_CATEGORY.CSS_PARSER) {
       return;
     }
 

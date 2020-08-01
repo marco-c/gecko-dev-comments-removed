@@ -16,6 +16,8 @@ const {
   TYPES: { CSS_MESSAGE },
 } = require("devtools/server/actors/resources/index");
 
+const { MESSAGE_CATEGORY } = require("devtools/shared/constants");
+
 class CSSMessageWatcher extends nsIConsoleListenerWatcher {
   
 
@@ -50,7 +52,7 @@ class CSSMessageWatcher extends nsIConsoleListenerWatcher {
     if (
       
       !(message instanceof Ci.nsIScriptError) ||
-      message.category !== "CSS Parser"
+      message.category !== MESSAGE_CATEGORY.CSS_PARSER
     ) {
       return false;
     }
