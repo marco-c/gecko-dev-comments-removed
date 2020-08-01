@@ -1264,6 +1264,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   mozilla::TimeStamp mLastStyleUpdateForAllAnimations;
 
+  nsChangeHint mChangeHintForPrefChange;
+
   unsigned mHasPendingInterrupt : 1;
   unsigned mPendingInterruptFromTest : 1;
   unsigned mInterruptsEnabled : 1;
@@ -1279,7 +1281,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   unsigned mPrefScrollbarSide : 2;
   unsigned mPendingThemeChanged : 1;
   unsigned mPendingUIResolutionChanged : 1;
-  unsigned mPrefChangePendingNeedsReflow : 1;
   unsigned mPostedPrefChangedRunnable : 1;
 
   

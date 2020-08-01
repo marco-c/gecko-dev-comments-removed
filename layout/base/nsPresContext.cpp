@@ -189,6 +189,7 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mFramesConstructed(0),
       mFramesReflowed(0),
       mInteractionTimeEnabled(true),
+      mChangeHintForPrefChange(nsChangeHint(0)),
       mHasPendingInterrupt(false),
       mPendingInterruptFromTest(false),
       mInterruptsEnabled(false),
@@ -204,7 +205,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mPrefScrollbarSide(0),
       mPendingThemeChanged(false),
       mPendingUIResolutionChanged(false),
-      mPrefChangePendingNeedsReflow(false),
       mPostedPrefChangedRunnable(false),
       mIsGlyph(false),
       mUsesExChUnits(false),
@@ -513,7 +513,7 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
       if (!mMissingFonts) {
         mMissingFonts = MakeUnique<gfxMissingFontRecorder>();
         
-        mPrefChangePendingNeedsReflow = true;
+        mChangeHintForPrefChange |= NS_STYLE_HINT_REFLOW;
       }
     } else {
       if (mMissingFonts) {
@@ -522,28 +522,18 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
       mMissingFonts = nullptr;
     }
   }
-  if (StringBeginsWith(prefName, "font."_ns) ||
-      prefName.EqualsLiteral("intl.accept_languages")) {
-    
-    
-    
-
-    
-    
-    
-    
-    mPrefChangePendingNeedsReflow = true;
-  }
-  if (StringBeginsWith(prefName, "bidi."_ns)) {
-    
-    mPrefChangePendingNeedsReflow = true;
-
-    
-    
-  }
-  if (StringBeginsWith(prefName, "gfx.font_rendering."_ns)) {
-    
-    mPrefChangePendingNeedsReflow = true;
+  if (prefName.EqualsLiteral("font.internaluseonly.changed")) {
+    mChangeHintForPrefChange |= nsChangeHint_ReconstructFrame;
+  } else if (StringBeginsWith(prefName, "font."_ns) ||
+      
+      
+      
+      prefName.EqualsLiteral("intl.accept_languages") ||
+      
+      StringBeginsWith(prefName, "bidi."_ns) ||
+      
+      StringBeginsWith(prefName, "gfx.font_rendering."_ns)) {
+    mChangeHintForPrefChange |= NS_STYLE_HINT_REFLOW;
   }
 
   
@@ -600,15 +590,10 @@ void nsPresContext::UpdateAfterPreferencesChanged() {
   InvalidatePaintedLayers();
   mDeviceContext->FlushFontCache();
 
-  nsChangeHint hint = nsChangeHint(0);
-
-  if (mPrefChangePendingNeedsReflow) {
-    hint |= NS_STYLE_HINT_REFLOW;
-  }
-
   
   
-  RebuildAllStyleData(hint, RestyleHint::RestyleSubtree());
+  RebuildAllStyleData(mChangeHintForPrefChange, RestyleHint::RestyleSubtree());
+  mChangeHintForPrefChange = nsChangeHint(0);
 }
 
 nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
