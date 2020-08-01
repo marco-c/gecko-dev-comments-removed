@@ -9,7 +9,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["UrlbarPrefs"];
+var EXPORTED_SYMBOLS = ["UrlbarPrefs", "UrlbarPrefsObserver"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
@@ -233,14 +233,7 @@ class Preferences {
 
   constructor() {
     this._map = new Map();
-    this.QueryInterface = ChromeUtils.generateQI([
-      "nsIObserver",
-      "nsISupportsWeakReference",
-    ]);
-    Services.prefs.addObserver(PREF_URLBAR_BRANCH, this, true);
-    for (let pref of PREF_OTHER_DEFAULTS.keys()) {
-      Services.prefs.addObserver(pref, this, true);
-    }
+    this._observer = new UrlbarPrefsObserver(pref => this._onPrefChanged(pref));
   }
 
   
@@ -285,11 +278,7 @@ class Preferences {
 
 
 
-  observe(subject, topic, data) {
-    let pref = data.replace(PREF_URLBAR_BRANCH, "");
-    if (!PREF_URLBAR_DEFAULTS.has(pref) && !PREF_OTHER_DEFAULTS.has(pref)) {
-      return;
-    }
+  _onPrefChanged(pref) {
     this._map.delete(pref);
     
     if (pref == "matchBuckets") {
@@ -411,6 +400,47 @@ class Preferences {
       
       setter: branch[`set${type == "Float" ? "Char" : type}Pref`],
     };
+  }
+}
+
+
+
+
+
+class UrlbarPrefsObserver {
+  
+
+
+
+
+
+
+
+  constructor(callback) {
+    this._callback = callback;
+    this.QueryInterface = ChromeUtils.generateQI([
+      "nsIObserver",
+      "nsISupportsWeakReference",
+    ]);
+    Services.prefs.addObserver(PREF_URLBAR_BRANCH, this, true);
+    for (let pref of PREF_OTHER_DEFAULTS.keys()) {
+      Services.prefs.addObserver(pref, this, true);
+    }
+  }
+
+  
+
+
+
+
+
+
+  observe(subject, topic, data) {
+    let pref = data.replace(PREF_URLBAR_BRANCH, "");
+    if (!PREF_URLBAR_DEFAULTS.has(pref) && !PREF_OTHER_DEFAULTS.has(pref)) {
+      return;
+    }
+    this._callback(pref);
   }
 }
 

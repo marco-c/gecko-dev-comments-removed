@@ -49,6 +49,9 @@ var UrlbarTestUtils = {
 
   init(scope) {
     this._testScope = scope;
+    if (scope) {
+      this.Assert = scope.Assert;
+    }
   },
 
   
@@ -369,18 +372,66 @@ var UrlbarTestUtils = {
 
 
 
-  isInSearchMode(win, engineName = null) {
-    if (!!win.gURLBar.searchMode != win.gURLBar.hasAttribute("searchmode")) {
-      throw new Error(
-        "Urlbar should never be in search mode without the corresponding attribute."
+
+  assertSearchMode(window, expectedSearchMode) {
+    this.Assert.equal(
+      !!window.gURLBar.searchMode,
+      window.gURLBar.hasAttribute("searchmode"),
+      "Urlbar should never be in search mode without the corresponding attribute."
+    );
+
+    if (!expectedSearchMode) {
+      this.Assert.ok(
+        !window.gURLBar.searchMode,
+        "gURLBar.searchMode not expected"
+      );
+      return;
+    }
+
+    this.Assert.deepEqual(
+      window.gURLBar.searchMode,
+      expectedSearchMode,
+      "Expected searchMode"
+    );
+
+    
+    let expectedTextContent = "";
+    let expectedL10n = {};
+
+    if (expectedSearchMode.engineName) {
+      expectedTextContent = expectedSearchMode.engineName;
+    } else if (expectedSearchMode.source) {
+      let name = UrlbarUtils.getResultSourceName(expectedSearchMode.source);
+      this.Assert.ok(name, "Expected result source should have a name");
+      expectedL10n = { id: `urlbar-search-mode-${name}` };
+    } else {
+      this.Assert.ok(false, "Unexpected searchMode");
+    }
+
+    
+    
+    if (!expectedL10n.id) {
+      expectedL10n.id = null;
+    }
+    if (!expectedL10n.args) {
+      expectedL10n.args = null;
+    }
+
+    for (let element of [
+      window.gURLBar._searchModeIndicatorTitle,
+      window.gURLBar._searchModeLabel,
+    ]) {
+      this.Assert.equal(
+        element.textContent,
+        expectedTextContent,
+        "Expected textContent"
+      );
+      this.Assert.deepEqual(
+        window.document.l10n.getAttributes(element),
+        expectedL10n,
+        "Expected l10n"
       );
     }
-
-    if (engineName) {
-      return win.gURLBar.searchMode.engineName == engineName;
-    }
-
-    return !!win.gURLBar.searchMode;
   },
 
   

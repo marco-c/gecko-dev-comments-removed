@@ -11,8 +11,37 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
   SearchOneOffs: "resource:///modules/SearchOneOffs.jsm",
+  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarPrefsObserver: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
+  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
+  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
+
+
+const LOCAL_MODES = new Map([
+  [
+    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    {
+      restrict: UrlbarTokenizer.RESTRICT.BOOKMARK,
+      pref: "suggest.bookmark",
+    },
+  ],
+  [
+    UrlbarUtils.RESULT_SOURCE.TABS,
+    {
+      restrict: UrlbarTokenizer.RESTRICT.OPENPAGE,
+      pref: "suggest.openpage",
+    },
+  ],
+  [
+    UrlbarUtils.RESULT_SOURCE.HISTORY,
+    {
+      restrict: UrlbarTokenizer.RESTRICT.HISTORY,
+      pref: "suggest.history",
+    },
+  ],
+]);
 
 
 
@@ -28,6 +57,19 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     super(view.panel.querySelector(".search-one-offs"));
     this.view = view;
     this.input = view.input;
+    this._prefObserver = new UrlbarPrefsObserver(pref =>
+      this._onPrefChanged(pref)
+    );
+  }
+
+  
+
+
+
+
+
+  get localButtons() {
+    return this.getSelectableButtons(false).filter(b => b.source);
   }
 
   
@@ -113,14 +155,15 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
-  handleSearchCommand(event, engine, forceNewTab = false) {
+
+  handleSearchCommand(event, engineOrSource, forceNewTab = false) {
     if (!this.view.oneOffsRefresh) {
       let { where, params } = this._whereToOpen(event, forceNewTab);
       this.input.handleCommand(event, where, params);
       return;
     }
 
-    this.input.setSearchMode(engine);
+    this.input.setSearchMode(engineOrSource);
     this.selectedButton = null;
     this.input.startQuery({
       allowAutofill: false,
@@ -149,5 +192,80 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
         alias: aliases[0],
       }
     );
+  }
+
+  
+
+
+
+
+
+  _rebuildEngineList(engines) {
+    super._rebuildEngineList(engines);
+
+    if (!this.view.oneOffsRefresh || !UrlbarPrefs.get("update2.localOneOffs")) {
+      return;
+    }
+
+    for (let [source, { restrict, pref }] of LOCAL_MODES) {
+      if (!UrlbarPrefs.get(pref)) {
+        
+        
+        continue;
+      }
+      let name = UrlbarUtils.getResultSourceName(source);
+      let button = this.document.createXULElement("button");
+      button.id = `urlbar-engine-one-off-item-${name}`;
+      button.setAttribute("class", "searchbar-engine-one-off-item");
+      this.document.l10n.setAttributes(button, `search-one-offs-${name}`, {
+        restrict,
+      });
+      button.source = source;
+      this.buttons.appendChild(button);
+    }
+  }
+
+  
+
+
+
+
+
+
+  _on_click(event) {
+    if (!this.view.oneOffsRefresh) {
+      super._on_click(event);
+      return;
+    }
+
+    
+    if (event.button == 2) {
+      return;
+    }
+
+    let button = event.originalTarget;
+    let engineOrSource = button.engine || button.source;
+    if (!engineOrSource) {
+      return;
+    }
+
+    this.handleSearchCommand(event, engineOrSource);
+  }
+
+  
+
+
+
+
+
+
+  _onPrefChanged(changedPref) {
+    
+    
+    let prefs = [...LOCAL_MODES.values()].map(({ pref }) => pref);
+    prefs.push("update2", "update2.localOneOffs", "update2.oneOffsRefresh");
+    if (prefs.includes(changedPref)) {
+      this._engines = null;
+    }
   }
 }
