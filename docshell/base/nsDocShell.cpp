@@ -8121,16 +8121,17 @@ uint32_t nsDocShell::DetermineContentType() {
     return nsIContentPolicy::TYPE_DOCUMENT;
   }
 
-  nsCOMPtr<Element> requestingElement =
-      mScriptGlobal->GetFrameElementInternal();
-  if (requestingElement) {
-    return requestingElement->IsHTMLElement(nsGkAtoms::iframe)
-               ? nsIContentPolicy::TYPE_INTERNAL_IFRAME
-               : nsIContentPolicy::TYPE_INTERNAL_FRAME;
+  const auto& maybeEmbedderElementType =
+      GetBrowsingContext()->GetEmbedderElementType();
+  if (!maybeEmbedderElementType) {
+    
+    
+    return nsIContentPolicy::TYPE_INTERNAL_IFRAME;
   }
-  
-  
-  return nsIContentPolicy::TYPE_INTERNAL_IFRAME;
+
+  return maybeEmbedderElementType->EqualsLiteral("iframe")
+             ? nsIContentPolicy::TYPE_INTERNAL_IFRAME
+             : nsIContentPolicy::TYPE_INTERNAL_FRAME;
 }
 
 nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
