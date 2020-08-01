@@ -48,7 +48,14 @@ class VsyncSource {
     
     
     
-    virtual void NotifyVsync(TimeStamp aVsyncTimestamp);
+    
+    
+    
+    
+    
+    
+    virtual void NotifyVsync(const TimeStamp& aVsyncTimestamp,
+                             const TimeStamp& aOutputTimestamp);
     void NotifyGenericObservers(VsyncEvent aEvent);
 
     RefPtr<RefreshTimerVsyncDispatcher> GetRefreshTimerVsyncDispatcher();
@@ -126,9 +133,11 @@ class VsyncSource {
 struct VsyncEvent {
   VsyncId mId;
   TimeStamp mTime;
+  TimeStamp mOutputTime;  
 
-  VsyncEvent(const VsyncId& aId, const TimeStamp& aTime)
-      : mId(aId), mTime(aTime) {}
+  VsyncEvent(const VsyncId& aId, const TimeStamp& aVsyncTime,
+             const TimeStamp& aOutputTime)
+      : mId(aId), mTime(aVsyncTime), mOutputTime(aOutputTime) {}
   VsyncEvent() = default;
 };
 

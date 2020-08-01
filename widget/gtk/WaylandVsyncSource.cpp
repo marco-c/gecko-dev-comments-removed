@@ -72,7 +72,9 @@ void WaylandVsyncSource::WaylandDisplay::Refresh() {
   
   
   SetupFrameCallback();
-  NotifyVsync(TimeStamp::Now());
+  TimeStamp vsyncTimestamp = TimeStamp::Now();
+  TimeStamp outputTimestamp = vsyncTimestamp + GetVsyncRate();
+  NotifyVsync(vsyncTimestamp, outputTimestamp);
 }
 
 void WaylandVsyncSource::WaylandDisplay::EnableMonitor() {
@@ -127,7 +129,9 @@ void WaylandVsyncSource::WaylandDisplay::FrameCallback() {
     SetupFrameCallback();
   }
 
-  NotifyVsync(TimeStamp::Now());
+  TimeStamp vsyncTimestamp = TimeStamp::Now();
+  TimeStamp outputTimestamp = vsyncTimestamp + GetVsyncRate();
+  NotifyVsync(vsyncTimestamp, outputTimestamp);
 }
 
 void WaylandVsyncSource::WaylandDisplay::EnableVsync() {

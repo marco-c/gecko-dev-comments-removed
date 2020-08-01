@@ -1820,7 +1820,7 @@ class D3DVsyncSource final : public VsyncSource {
         
         
         MOZ_ASSERT(vsync <= TimeStamp::Now());
-        Display::NotifyVsync(vsync);
+        Display::NotifyVsync(vsync, vsync + mVsyncRate);
 
         
         
