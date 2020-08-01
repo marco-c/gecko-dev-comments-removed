@@ -268,7 +268,7 @@ DevToolsServerConnection.prototype = {
           );
         }
 
-        const prefix = `error occurred while processing '${type}'`;
+        const prefix = `error occurred while queuing response for '${type}'`;
         this.transport.send(this._unknownError(from, prefix, error));
       });
 
@@ -378,8 +378,17 @@ DevToolsServerConnection.prototype = {
         this.currentPacket = packet;
         ret = actor.requestTypes[packet.type].bind(actor)(packet, this);
       } catch (error) {
+        
+        
+        let errorMessage = error;
+        if (error?.error && error?.message) {
+          errorMessage = `"(${error.error}) ${error.message}"`;
+        }
+
         const prefix = `error occurred while processing '${packet.type}'`;
-        this.transport.send(this._unknownError(actor.actorID, prefix, error));
+        this.transport.send(
+          this._unknownError(actor.actorID, prefix, errorMessage)
+        );
       } finally {
         this.currentPacket = undefined;
       }
