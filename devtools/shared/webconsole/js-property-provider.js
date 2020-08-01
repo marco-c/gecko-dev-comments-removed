@@ -271,7 +271,11 @@ function JSPropertyProvider({
     };
   }
 
-  const firstProp = properties.shift().trim();
+  let firstProp = properties.shift();
+  if (typeof firstProp == "string") {
+    firstProp = firstProp.trim();
+  }
+
   if (firstProp === "this") {
     
     
@@ -367,7 +371,6 @@ function shouldInputBeAutocompleted(inputAnalysisState) {
 
   
   if (err) {
-    console.error("Failed to analyze input string", err);
     return false;
   }
 

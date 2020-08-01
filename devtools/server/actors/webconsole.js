@@ -1405,7 +1405,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       }
 
       matches = result.matches || new Set();
-      matchProp = result.matchProp;
+      matchProp = result.matchProp || "";
       isElementAccess = result.isElementAccess;
 
       
@@ -1415,7 +1415,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
       
       
-      if (!lastNonAlphaIsDot && !isElementAccess) {
+      if (matchProp && !lastNonAlphaIsDot && !isElementAccess) {
         this._getWebConsoleCommandsCache().forEach(n => {
           
           if (n !== "screenshot" && n.startsWith(result.matchProp)) {
