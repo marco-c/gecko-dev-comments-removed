@@ -76,7 +76,23 @@ const PREF_PDFJS_ISDEFAULT_CACHE_STATE = "pdfjs.enabledCache.state";
 
 
 
-let JSPROCESSACTORS = {};
+let JSPROCESSACTORS = {
+  
+  BrowserProcess: {
+    child: {
+      moduleURI: "resource:///actors/BrowserProcessChild.jsm",
+      observers: [
+        
+        
+        "getUserMedia:request",
+        "recording-device-stopped",
+        "PeerConnection:request",
+        "recording-device-events",
+        "recording-window-ended",
+      ],
+    },
+  },
+};
 
 
 
@@ -5429,7 +5445,9 @@ var AboutHomeStartupCache = {
 
 
 
-  sendCacheInputStreams(aProcManager) {
+
+
+  sendCacheInputStreams(aProcManager, aProcessParent) {
     if (aProcManager.remoteType != E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE) {
       throw new Error(
         "Cannot send about:home cache to a non-privileged content process."
@@ -5439,7 +5457,8 @@ var AboutHomeStartupCache = {
     
     this.makePipes();
     this.log.info("Sending input streams down to content process.");
-    aProcManager.sendAsyncMessage(this.SEND_STREAMS_MESSAGE, {
+    let actor = aProcessParent.getActor("BrowserProcess");
+    actor.sendAsyncMessage(this.SEND_STREAMS_MESSAGE, {
       pageInputStream: this.pagePipe.inputStream,
       scriptInputStream: this.scriptPipe.inputStream,
     });
@@ -5593,13 +5612,15 @@ var AboutHomeStartupCache = {
 
 
 
-  onContentProcessCreated(childID, procManager) {
+
+
+  onContentProcessCreated(childID, procManager, processParent) {
     if (procManager.remoteType == E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE) {
       this.log.trace(
         `A privileged about content process is launching with ID ${childID}.` +
           "Sending it the cache input streams."
       );
-      this.sendCacheInputStreams(procManager);
+      this.sendCacheInputStreams(procManager, processParent);
       procManager.addMessageListener(this.CACHE_RESPONSE_MESSAGE, this);
       procManager.addMessageListener(this.CACHE_USAGE_RESULT_MESSAGE, this);
       this._procManager = procManager;
@@ -5783,7 +5804,8 @@ var AboutHomeStartupCache = {
         let procManager = aSubject
           .QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(Ci.nsIMessageSender);
-        this.onContentProcessCreated(childID, procManager);
+        let pp = aSubject.QueryInterface(Ci.nsIDOMProcessParent);
+        this.onContentProcessCreated(childID, procManager, pp);
         break;
       }
 
