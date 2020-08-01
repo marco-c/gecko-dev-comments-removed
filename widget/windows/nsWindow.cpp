@@ -4381,8 +4381,6 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
                                   LPARAM lParam, bool aIsContextMenuKey,
                                   int16_t aButton, uint16_t aInputSource,
                                   WinPointerInfo* aPointerInfo) {
-  enum { eUnset, ePrecise, eTouch };
-  static int sTouchInputActiveState = eUnset;
   bool result = false;
 
   UserActivity();
@@ -4412,15 +4410,6 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
                            1);
     }
 
-    
-    
-    if (sTouchInputActiveState != eTouch) {
-      sTouchInputActiveState = eTouch;
-      nsCOMPtr<nsIObserverService> obsServ =
-          mozilla::services::GetObserverService();
-      obsServ->NotifyObservers(nullptr, "touch-input-detected", nullptr);
-    }
-
     if (mTouchWindow) {
       
       
@@ -4434,14 +4423,6 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
       } else {
         return result;
       }
-    }
-  } else {
-    
-    if (sTouchInputActiveState != ePrecise) {
-      sTouchInputActiveState = ePrecise;
-      nsCOMPtr<nsIObserverService> obsServ =
-          mozilla::services::GetObserverService();
-      obsServ->NotifyObservers(nullptr, "precise-input-detected", nullptr);
     }
   }
 
