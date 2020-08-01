@@ -301,6 +301,9 @@
 
 - (NSAttributedString* _Nullable)moxAttributedStringForRange:(NSValue* _Nonnull)range;
 
+
+- (id _Nullable)moxCellForColumnAndRow:(NSArray* _Nonnull)columnAndRow;
+
 @end
 
 
