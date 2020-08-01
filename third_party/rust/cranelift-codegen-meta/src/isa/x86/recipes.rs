@@ -1270,6 +1270,12 @@ pub(crate) fn define<'shared>(
         );
     }
 
+    recipes.add_recipe(
+        EncodingRecipeBuilder::new("dummy_sarg_t", &formats.nullary, 0)
+            .operands_out(vec![Stack::new(gpr)])
+            .emit(""),
+    );
+
     
     recipes.add_template_recipe(
         EncodingRecipeBuilder::new("fnaddr4", &formats.func_addr, 4)

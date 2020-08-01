@@ -20,6 +20,10 @@ pub enum ArgAction {
 
     
     
+    AssignAndChangeType(ArgumentLoc, Type),
+
+    
+    
     
     
     Convert(ValueConversion),
@@ -117,6 +121,14 @@ pub fn legalize_args<AA: ArgAssigner>(args: &[AbiParam], aa: &mut AA) -> Option<
             
             ArgAction::Assign(loc) => {
                 args.to_mut()[argno].location = loc;
+                argno += 1;
+            }
+            
+            
+            ArgAction::AssignAndChangeType(loc, ty) => {
+                let arg = &mut args.to_mut()[argno];
+                arg.location = loc;
+                arg.value_type = ty;
                 argno += 1;
             }
             

@@ -52,6 +52,11 @@ impl ShiftOpShiftImm {
     pub fn value(self) -> u8 {
         self.0
     }
+
+    
+    pub fn mask(self, bits: u8) -> ShiftOpShiftImm {
+        ShiftOpShiftImm(self.0 & (bits - 1))
+    }
 }
 
 
