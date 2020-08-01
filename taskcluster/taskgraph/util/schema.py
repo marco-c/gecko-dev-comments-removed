@@ -225,7 +225,6 @@ OptimizationSchema = voluptuous.Any(
     
     {'test': list(schedules.ALL_COMPONENTS)},
     {'test-inclusive': list(schedules.ALL_COMPONENTS)},
-    {'test-try': list(schedules.ALL_COMPONENTS)},
 )
 
 
