@@ -300,7 +300,6 @@ bool TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const {
 }
 
 
-
 #define DOM_CLAMP_TIMEOUT_NESTING_LEVEL 5u
 
 TimeDuration TimeoutManager::CalculateDelay(Timeout* aTimeout) const {
