@@ -21,6 +21,7 @@
 #include "vm/ObjectGroup.h"            
 #include "vm/Opcodes.h"                
 #include "vm/Runtime.h"                
+#include "vm/SharedStencil.h"          
 
 #include "gc/ObjectKind-inl.h"  
 #include "vm/JSAtom-inl.h"      
@@ -636,7 +637,7 @@ bool ClassEmitter::emitInitDefaultConstructor(uint32_t classStart,
     }
   }
 
-  uint32_t atomIndex;
+  GCThingIndex atomIndex;
   if (!bce_->makeAtomIndex(className, &atomIndex)) {
     return false;
   }

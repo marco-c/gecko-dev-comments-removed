@@ -34,14 +34,14 @@
 #include "js/RegExpFlags.h"        
 #include "js/RootingAPI.h"         
 #include "js/TypeDecls.h"  
-#include "js/UniquePtr.h"      
-#include "js/Utility.h"        
-#include "vm/JSAtom.h"         
-#include "vm/JSScript.h"       
-#include "vm/Scope.h"          
-#include "vm/ScopeKind.h"      
+#include "js/UniquePtr.h"  
+#include "js/Utility.h"    
+#include "vm/JSAtom.h"     
+#include "vm/JSScript.h"   
+#include "vm/Scope.h"      
+#include "vm/ScopeKind.h"  
 #include "vm/SharedStencil.h"  
-#include "vm/StringType.h"     
+#include "vm/StringType.h"  
 
 #include "vm/JSContext-inl.h"  
 
@@ -241,7 +241,7 @@ UniquePtr<ImmutableScriptData> ConvertImmutableScriptData(
   }
   for (size_t i = 0; i < smooshScriptData.scope_notes.len; i++) {
     SmooshScopeNote& scopeNote = smooshScriptData.scope_notes.data[i];
-    scopeNotes[i].index = scopeNote.index;
+    scopeNotes[i].index = GCThingIndex(scopeNote.index);
     scopeNotes[i].start = scopeNote.start;
     scopeNotes[i].length = scopeNote.length;
     scopeNotes[i].parent = scopeNote.parent;
@@ -253,7 +253,7 @@ UniquePtr<ImmutableScriptData> ConvertImmutableScriptData(
 
   return ImmutableScriptData::new_(
       cx, smooshScriptData.main_offset, smooshScriptData.nfixed,
-      smooshScriptData.nslots, smooshScriptData.body_scope_index,
+      smooshScriptData.nslots, GCThingIndex(smooshScriptData.body_scope_index),
       smooshScriptData.num_ic_entries, smooshScriptData.num_bytecode_type_sets,
       isFunction, funLength,
       mozilla::MakeSpan(smooshScriptData.bytecode.data,

@@ -1529,8 +1529,7 @@ ArrayObject* ObjectGroup::getOrFixupCopyOnWriteObject(JSContext* cx,
 
   
   
-  RootedArrayObject obj(
-      cx, &script->getObject(GET_UINT32_INDEX(pc))->as<ArrayObject>());
+  RootedArrayObject obj(cx, &script->getObject(pc)->as<ArrayObject>());
   MOZ_ASSERT(obj->denseElementsAreCopyOnWrite());
 
   {
@@ -1572,8 +1571,7 @@ ArrayObject* ObjectGroup::getCopyOnWriteObject(JSScript* script,
   
   
   
-  ArrayObject* obj =
-      &script->getObject(GET_UINT32_INDEX(pc))->as<ArrayObject>();
+  ArrayObject* obj = &script->getObject(pc)->as<ArrayObject>();
   MOZ_ASSERT(obj->denseElementsAreCopyOnWrite());
 
   return obj;

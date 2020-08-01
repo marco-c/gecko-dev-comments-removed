@@ -21,6 +21,7 @@
 #include "vm/BytecodeUtil.h"              
 #include "vm/JSAtom.h"                    
 #include "vm/JSFunction.h"                
+#include "vm/SharedStencil.h"             
 
 namespace js {
 namespace frontend {
@@ -136,9 +137,9 @@ class MOZ_STACK_CLASS FunctionEmitter {
 
   
   
-  MOZ_MUST_USE bool emitNonHoisted(unsigned index);
-  MOZ_MUST_USE bool emitHoisted(unsigned index);
-  MOZ_MUST_USE bool emitTopLevelFunction(unsigned index);
+  MOZ_MUST_USE bool emitNonHoisted(GCThingIndex index);
+  MOZ_MUST_USE bool emitHoisted(GCThingIndex index);
+  MOZ_MUST_USE bool emitTopLevelFunction(GCThingIndex index);
   MOZ_MUST_USE bool emitNewTargetForArrow();
 };
 

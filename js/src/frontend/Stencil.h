@@ -330,7 +330,7 @@ class ScopeCreationData {
 class EmptyGlobalScopeType {};
 
 
-using FunctionDeclaration = uint32_t;
+using FunctionDeclaration = GCThingIndex;
 using FunctionDeclarationVector = Vector<FunctionDeclaration>;
 
 
