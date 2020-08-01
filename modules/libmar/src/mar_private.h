@@ -7,8 +7,8 @@
 #ifndef MAR_PRIVATE_H__
 #define MAR_PRIVATE_H__
 
+#include <assert.h>  
 #include "limits.h"
-#include "mozilla/Assertions.h"
 #include <stdint.h>
 
 #define BLOCKSIZE 4096
@@ -27,14 +27,13 @@
 
 
 
-MOZ_STATIC_ASSERT(MAX_SIZE_OF_MAR_FILE < ((int64_t)LONG_MAX),
-                  "max mar file size is too big");
+static_assert(MAX_SIZE_OF_MAR_FILE < ((int64_t)LONG_MAX),
+              "max mar file size is too big");
 
 
 
-MOZ_STATIC_ASSERT(sizeof(BLOCKSIZE) <
-                      (SIGNATURE_BLOCK_OFFSET + sizeof(uint32_t)),
-                  "BLOCKSIZE is too big");
+static_assert(sizeof(BLOCKSIZE) < (SIGNATURE_BLOCK_OFFSET + sizeof(uint32_t)),
+              "BLOCKSIZE is too big");
 
 
 
