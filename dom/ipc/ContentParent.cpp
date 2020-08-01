@@ -5667,8 +5667,12 @@ void ContentParent::UpdateCookieStatus(nsIChannel* aChannel) {
 }
 
 nsresult ContentParent::AboutToLoadHttpFtpDocumentForChild(
-    nsIChannel* aChannel) {
+    nsIChannel* aChannel, bool* aShouldWaitForPermissionCookieUpdate) {
   MOZ_ASSERT(aChannel);
+
+  if (aShouldWaitForPermissionCookieUpdate) {
+    *aShouldWaitForPermissionCookieUpdate = false;
+  }
 
   nsresult rv;
   bool isDocument = aChannel->IsDocument();
@@ -5695,6 +5699,12 @@ nsresult ContentParent::AboutToLoadHttpFtpDocumentForChild(
   nsCOMPtr<nsIPrincipal> principal;
   rv = ssm->GetChannelResultPrincipal(aChannel, getter_AddRefs(principal));
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  if (aShouldWaitForPermissionCookieUpdate) {
+    *aShouldWaitForPermissionCookieUpdate = true;
+  }
 
   TransmitBlobURLsForPrincipal(principal);
 

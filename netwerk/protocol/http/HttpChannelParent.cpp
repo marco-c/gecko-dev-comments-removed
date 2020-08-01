@@ -1408,6 +1408,8 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
 
 
 
+  HttpChannelOnStartRequestArgs args;
+
   
   
   if (!mIPCClosed) {
@@ -1415,11 +1417,10 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     MOZ_ASSERT(pcp, "We should have a manager if our IPC isn't closed");
     DebugOnly<nsresult> rv =
         static_cast<ContentParent*>(pcp)->AboutToLoadHttpFtpDocumentForChild(
-            chan);
+            chan, &args.shouldWaitForOnStartRequestSent());
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
-  HttpChannelOnStartRequestArgs args;
   args.multiPartID() = multiPartID;
   args.isLastPartOfMultiPart() = isLastPartOfMultiPart;
 
@@ -1536,18 +1537,6 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     cleanedUpRequestHeaders.ClearHeader(nsHttp::Cookie);
     cleanedUpRequest = true;
   }
-
-  bool isDocument = chan->IsDocument();
-  if (!isDocument) {
-    rv = chan->GetIsMainDocumentChannel(&isDocument);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  nsLoadFlags loadflags;
-  chan->GetLoadFlags(&loadflags);
-  bool documentNeedsCookie = loadflags & nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
-
-  args.shouldWaitForOnStartRequestSent() = isDocument || documentNeedsCookie;
 
   rv = NS_OK;
 

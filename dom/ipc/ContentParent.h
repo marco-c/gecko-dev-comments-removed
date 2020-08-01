@@ -614,7 +614,11 @@ class ContentParent final
   
   
   
-  nsresult AboutToLoadHttpFtpDocumentForChild(nsIChannel* aChannel);
+  
+  
+  nsresult AboutToLoadHttpFtpDocumentForChild(
+      nsIChannel* aChannel,
+      bool* aShouldWaitForPermissionCookieUpdate = nullptr);
 
   
   
