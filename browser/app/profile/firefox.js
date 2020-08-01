@@ -1839,13 +1839,10 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 
 
-#ifdef NIGHTLY_BUILD
-  pref("extensions.formautofill.available", "on");
-#else
-  pref("extensions.formautofill.available", "detect");
-#endif
+pref("extensions.formautofill.available", "detect");
 pref("extensions.formautofill.creditCards.available", false);
 pref("extensions.formautofill.addresses.enabled", true);
+pref("extensions.formautofill.addresses.capture.enabled", false);
 pref("extensions.formautofill.creditCards.enabled", true);
 
 
@@ -1864,14 +1861,8 @@ pref("extensions.formautofill.loglevel", "Warn");
 
 pref("toolkit.osKeyStore.loglevel", "Warn");
 
-#ifdef NIGHTLY_BUILD
-  
-  pref("extensions.formautofill.supportedCountries", "US,CA,DE");
-  pref("extensions.formautofill.supportRTL", true);
-#else
-  pref("extensions.formautofill.supportedCountries", "US");
-  pref("extensions.formautofill.supportRTL", false);
-#endif
+pref("extensions.formautofill.supportedCountries", "US");
+pref("extensions.formautofill.supportRTL", false);
 
 
 pref("browser.sessionstore.restore_tabs_lazily", true);

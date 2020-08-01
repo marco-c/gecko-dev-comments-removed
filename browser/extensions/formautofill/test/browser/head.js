@@ -41,6 +41,8 @@ const FTU_PREF = "extensions.formautofill.firstTimeUse";
 const CREDITCARDS_USED_STATUS_PREF = "extensions.formautofill.creditCards.used";
 const ENABLED_AUTOFILL_ADDRESSES_PREF =
   "extensions.formautofill.addresses.enabled";
+const ENABLED_AUTOFILL_ADDRESSES_CAPTURE_PREF =
+  "extensions.formautofill.addresses.capture.enabled";
 const AUTOFILL_CREDITCARDS_AVAILABLE_PREF =
   "extensions.formautofill.creditCards.available";
 const ENABLED_AUTOFILL_CREDITCARDS_PREF =
