@@ -148,6 +148,29 @@ nsresult imgRequest::Init(nsIURI* aURI, nsIURI* aFinalURI,
   return NS_OK;
 }
 
+bool imgRequest::CanReuseWithoutValidation(dom::Document* aDoc) const {
+  
+  
+  
+  
+  
+  
+  
+  void* key = (void*)aDoc;
+  uint64_t innerWindowID = aDoc ? aDoc->InnerWindowID() : 0;
+  if (LoadId() == key && InnerWindowID() == innerWindowID) {
+    return true;
+  }
+
+  
+  
+  if (dom::Document* original = aDoc ? aDoc->GetOriginalDocument() : nullptr) {
+    return CanReuseWithoutValidation(original);
+  }
+
+  return false;
+}
+
 void imgRequest::ClearLoader() { mLoader = nullptr; }
 
 already_AddRefed<ProgressTracker> imgRequest::GetProgressTracker() const {

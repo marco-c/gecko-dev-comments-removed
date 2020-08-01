@@ -74,6 +74,10 @@ class imgRequest final : public nsIStreamListener,
   
   void AddProxy(imgRequestProxy* proxy);
 
+  
+  
+  bool CanReuseWithoutValidation(mozilla::dom::Document*) const;
+
   nsresult RemoveProxy(imgRequestProxy* proxy, nsresult aStatus);
 
   

@@ -1845,18 +1845,7 @@ bool imgLoader::ValidateEntry(
 
   bool validateRequest = false;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  void* key = (void*)aLoadingDocument;
-  uint64_t innerWindowID =
-      aLoadingDocument ? aLoadingDocument->InnerWindowID() : 0;
-  if (request->LoadId() != key || request->InnerWindowID() != innerWindowID) {
+  if (!request->CanReuseWithoutValidation(aLoadingDocument)) {
     
     
     if (aLoadFlags & nsIRequest::LOAD_BYPASS_CACHE) {
@@ -1876,10 +1865,10 @@ bool imgLoader::ValidateEntry(
             ("imgLoader::ValidateEntry validating cache entry. "
              "validateRequest = %d",
              validateRequest));
-  } else if (!key && MOZ_LOG_TEST(gImgLog, LogLevel::Debug)) {
+  } else if (!aLoadingDocument && MOZ_LOG_TEST(gImgLog, LogLevel::Debug)) {
     MOZ_LOG(gImgLog, LogLevel::Debug,
             ("imgLoader::ValidateEntry BYPASSING cache validation for %s "
-             "because of NULL LoadID",
+             "because of NULL loading document",
              aURI->GetSpecOrDefault().get()));
   }
 
@@ -1954,6 +1943,8 @@ bool imgLoader::ValidateEntry(
   if (validateRequest && aCanMakeNewChannel) {
     LOG_SCOPE(gImgLog, "imgLoader::ValidateRequest |cache hit| must validate");
 
+    uint64_t innerWindowID =
+        aLoadingDocument ? aLoadingDocument->InnerWindowID() : 0;
     return ValidateRequestWithNewChannel(
         request, aURI, aInitialDocumentURI, aReferrerInfo, aLoadGroup,
         aObserver, aLoadingDocument, innerWindowID, aLoadFlags, aLoadPolicyType,
