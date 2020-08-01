@@ -514,24 +514,25 @@ HTMLTooltip.prototype = {
     this._focusedElement = this.doc.activeElement;
 
     if (this.doc.defaultView) {
-      if (this.attachEventsTimer) {
-        this.doc.defaultView.clearTimeout(this.attachEventsTimer);
+      if (!this._pendingEventListenerPromise) {
+        
+        
+        
+        
+        
+        this._pendingEventListenerPromise = new Promise(resolve => {
+          this.doc.defaultView.setTimeout(() => {
+            
+            this.topWindow = this._getTopWindow();
+            this.topWindow.addEventListener("click", this._onClick, true);
+            this.topWindow.addEventListener("mouseup", this._onMouseup, true);
+            resolve();
+          }, 0);
+        });
       }
 
-      
-      
-      
-      
-      
-      await new Promise(resolve => {
-        this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
-          
-          this.topWindow = this._getTopWindow();
-          this.topWindow.addEventListener("click", this._onClick, true);
-          this.topWindow.addEventListener("mouseup", this._onMouseup, true);
-          resolve();
-        }, 0);
-      });
+      await this._pendingEventListenerPromise;
+      this._pendingEventListenerPromise = null;
     }
 
     this.emit("shown");
@@ -804,17 +805,17 @@ HTMLTooltip.prototype = {
       return;
     }
 
-    if (this.doc && this.doc.defaultView) {
-      this.doc.defaultView.clearTimeout(this.attachEventsTimer);
-    }
-
     
     
     if (fromMouseup) {
       await new Promise(resolve => this.topWindow.setTimeout(resolve, 0));
     }
 
-    this.removeEventListeners();
+    if (this._pendingEventListenerPromise) {
+      this._pendingEventListenerPromise.then(() => this.removeEventListeners());
+    } else {
+      this.removeEventListeners();
+    }
 
     this.container.classList.remove("tooltip-visible");
     if (this.useXulWrapper) {
