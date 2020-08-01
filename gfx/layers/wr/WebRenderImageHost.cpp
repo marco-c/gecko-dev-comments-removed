@@ -170,8 +170,8 @@ TextureHost* WebRenderImageHost::GetAsTextureHostForComposite(
 
   if (mCurrentAsyncImageManager->GetCompositionTime()) {
     
-    
-    OnFinishRendering(imageIndex, img, mAsyncRef.mProcessId, mAsyncRef.mHandle);
+    UpdateCompositedFrame(imageIndex, img, mAsyncRef.mProcessId,
+                          mAsyncRef.mHandle);
   }
 
   return mCurrentTextureHost;

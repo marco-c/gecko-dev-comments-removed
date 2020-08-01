@@ -85,29 +85,28 @@ class ImageComposite {
   void SetImages(nsTArray<TimedImage>&& aNewImages);
 
  protected:
-  
-  void OnFinishRendering(int aImageIndex, const TimedImage* aImage,
-                         base::ProcessId aProcessId,
-                         const CompositableHandle& aHandle);
+  void UpdateCompositedFrame(int aImageIndex, const TimedImage* aImage,
+                             base::ProcessId aProcessId,
+                             const CompositableHandle& aHandle);
 
   int32_t mLastFrameID = -1;
   int32_t mLastProducerID = -1;
-  CompositionOpportunityId mLastChooseImageIndexComposition;
-  CompositionOpportunityId mLastFrameUpdateComposition;
 
  private:
   nsTArray<TimedImage> mImages;
   TimeStamp GetBiasedTime(const TimeStamp& aInput) const;
+  
+  
+  
+  
+  uint32_t ScanForLastFrameIndex(const nsTArray<TimedImage>& aNewImages);
 
   
   
   
   
-  void CountSkippedFrames(const TimedImage* aImage);
-
-  
-  void UpdateCompositedFrame(const TimedImage* aImage,
-                             bool aWasVisibleAtPreviousComposition);
+  bool IsImagesUpdateRateFasterThanCompositedRate(
+      const TimedImage& aNewImage, const TimedImage& aOldImage) const;
 
   
   void DetectTimeStampJitter(const TimedImage* aNewImage);
@@ -116,17 +115,8 @@ class ImageComposite {
 
 
   Bias mBias = BIAS_NONE;
-
-  
-  
-  int32_t mSkippedFramesSinceLastComposite = 0;
-
-  
-  
-  
-  
-  
   uint32_t mDroppedFrames = 0;
+  uint32_t mLastChosenImageIndex = 0;
 };
 
 }  
