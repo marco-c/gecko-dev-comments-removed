@@ -156,11 +156,14 @@ struct Face {
                             
     uint16_t mIndex;        
     bool mFixedPitch;       
-    mozilla::WeightRange mWeight;     
-    mozilla::StretchRange mStretch;   
-    mozilla::SlantStyleRange mStyle;  
+    mozilla::WeightRange mWeight;      
+    mozilla::StretchRange mStretch;    
+    mozilla::SlantStyleRange mStyle;   
+    RefPtr<gfxCharacterMap> mCharMap;  
   };
 
+  
+  
   Face(FontList* aList, const InitData& aData)
       : mDescriptor(aList, aData.mDescriptor),
         mIndex(aData.mIndex),
@@ -274,6 +277,9 @@ struct Family {
   bool IsForceClassic() const { return mIsForceClassic; }
   bool IsSimple() const { return mIsSimple; }
 
+  
+  
+  
   bool IsInitialized() const { return !mFaces.IsNull(); }
 
   void FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,

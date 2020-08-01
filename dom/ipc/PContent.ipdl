@@ -1343,7 +1343,11 @@ parent:
 
 
 
-    sync InitializeFamily(uint32_t aGeneration, uint32_t aFamilyIndex);
+
+
+
+    sync InitializeFamily(uint32_t aGeneration, uint32_t aFamilyIndex,
+                          bool aLoadCmaps);
 
     
 
