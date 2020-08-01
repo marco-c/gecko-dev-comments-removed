@@ -98,6 +98,16 @@ class UrlbarView {
 
 
 
+  get oneOffsRefresh() {
+    return (
+      UrlbarPrefs.get("update2") && UrlbarPrefs.get("update2.oneOffsRefresh")
+    );
+  }
+
+  
+
+
+
   get isOpen() {
     return this.input.hasAttribute("open");
   }
@@ -618,8 +628,54 @@ class UrlbarView {
 
 
 
+
   handleOneOffSearch(event, engine, where, params) {
     this.input.handleCommand(event, where, params);
+  }
+
+  
+
+
+
+
+
+
+  oneOffsCommandHandler(event, engine) {
+    if (!this.oneOffsRefresh) {
+      return false;
+    }
+
+    this.input.setSearchMode(engine);
+    this.input.startQuery({
+      allowAutofill: false,
+      event,
+    });
+    return true;
+  }
+
+  
+
+
+
+
+
+  oneOffsClickHandler(event) {
+    if (!this.oneOffsRefresh) {
+      return false;
+    }
+
+    if (event.button == 2) {
+      return false; 
+    }
+
+    let button = event.originalTarget;
+    let engine = button.engine;
+
+    if (!engine) {
+      return false;
+    }
+
+    return this.oneOffsCommandHandler(event, engine);
   }
 
   static dynamicViewTemplatesByName = new Map();
@@ -1711,6 +1767,14 @@ class UrlbarView {
         (!result.heuristic &&
           (!result.payload.suggestion || result.payload.isSearchHistory) &&
           (!result.payload.inPrivateWindow || result.payload.isPrivateEngine))
+      ) {
+        continue;
+      }
+
+      if (
+        this.oneOffsRefresh &&
+        !result.heuristic &&
+        (!result.payload.inPrivateWindow || result.payload.isPrivateEngine)
       ) {
         continue;
       }

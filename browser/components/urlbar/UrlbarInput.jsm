@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   FormHistory: "resource://gre/modules/FormHistory.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ReaderMode: "resource://gre/modules/ReaderMode.jsm",
+  SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   Services: "resource://gre/modules/Services.jsm",
   TopSiteAttribution: "resource:///modules/TopSiteAttribution.jsm",
   UrlbarController: "resource:///modules/UrlbarController.jsm",
@@ -153,6 +154,15 @@ class UrlbarInput {
     this.inputField = this.querySelector("#urlbar-input");
     this._inputContainer = this.querySelector("#urlbar-input-container");
     this._identityBox = this.querySelector("#identity-box");
+    this._searchModeIndicator = this.querySelector(
+      "#urlbar-search-mode-indicator"
+    );
+    this._searchModeIndicatorTitle = this._searchModeIndicator.querySelector(
+      "#urlbar-search-mode-indicator-title"
+    );
+    this._searchModeIndicatorClose = this._searchModeIndicator.querySelector(
+      "#urlbar-search-mode-indicator-close"
+    );
     this._toolbar = this.textbox.closest("toolbar");
 
     XPCOMUtils.defineLazyGetter(this, "valueFormatter", () => {
@@ -201,6 +211,8 @@ class UrlbarInput {
     }
     this.textbox.addEventListener("mousedown", this);
     this._inputContainer.addEventListener("click", this);
+
+    this._searchModeIndicatorClose.addEventListener("click", this);
 
     
     
@@ -387,6 +399,9 @@ class UrlbarInput {
       return;
     }
 
+    let element = this.view.selectedElement;
+    let result = this.view.getResultFromElement(element);
+
     
     
     
@@ -404,12 +419,17 @@ class UrlbarInput {
         selectedOneOff.doCommand();
         return;
       }
+
+      
+      
+      
+      if (this.view.oneOffsRefresh && !result?.heuristic) {
+        selectedOneOff = null;
+      }
     }
 
     
     
-    let element = this.view.selectedElement;
-    let result = this.view.getResultFromElement(element);
     let selectedPrivateResult =
       result &&
       result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
@@ -538,6 +558,7 @@ class UrlbarInput {
   handleRevert() {
     this.window.gBrowser.userTypedValue = null;
     this.setURI(null, true);
+    this.setSearchMode(null);
     if (this.value && this.focused) {
       this.select();
     }
@@ -1125,6 +1146,39 @@ class UrlbarInput {
       this.setAttribute("focused", "true");
       this.startLayoutExtend();
     }
+  }
+
+  
+
+
+
+
+
+
+  setSearchMode(engineOrMode) {
+    if (!UrlbarPrefs.get("update2")) {
+      return;
+    }
+
+    let indicatorTitle;
+    if (!engineOrMode) {
+      this.searchMode = null;
+      this.removeAttribute("searchmode");
+    } else if (
+      engineOrMode instanceof Ci.nsISearchEngine ||
+      engineOrMode instanceof SearchEngine
+    ) {
+      this.searchMode = {
+        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        engineName: engineOrMode.name,
+      };
+      indicatorTitle = engineOrMode.name;
+      this.toggleAttribute("searchmode", true);
+    } else {
+      
+    }
+
+    this._searchModeIndicatorTitle.textContent = indicatorTitle;
   }
 
   
@@ -1840,6 +1894,8 @@ class UrlbarInput {
     
     browser.focus();
 
+    this.setSearchMode(null);
+
     if (openUILinkWhere != "current") {
       this.handleRevert();
     }
@@ -2070,6 +2126,15 @@ class UrlbarInput {
     ) {
       this._maybeSelectAll();
     }
+
+    if (event.target == this._searchModeIndicatorClose && event.button != 2) {
+      this.setSearchMode(null);
+      if (this.view.isOpen) {
+        this.startQuery({
+          event,
+        });
+      }
+    }
   }
 
   _on_contextmenu(event) {
@@ -2231,7 +2296,9 @@ class UrlbarInput {
     }
 
     let canShowTopSites =
-      !this.isPrivate && UrlbarPrefs.get("suggest.topsites");
+      !this.isPrivate &&
+      UrlbarPrefs.get("suggest.topsites") &&
+      !this.searchMode;
     if (!this.view.isOpen || (!value && !canShowTopSites)) {
       this.view.clear();
     }
@@ -2268,7 +2335,7 @@ class UrlbarInput {
     this.startQuery({
       searchString: value,
       allowAutofill,
-      resetSearchState: false,
+      resetSearchState: !!this.searchMode,
       event,
     });
   }

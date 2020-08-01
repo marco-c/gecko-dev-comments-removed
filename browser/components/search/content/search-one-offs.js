@@ -715,9 +715,12 @@ class SearchOneOffs {
   }
 
   handleSearchCommand(aEvent, aEngine, aForceNewTab) {
+    if (this._view?.oneOffsCommandHandler(aEvent, aEngine)) {
+      return;
+    }
+
     let where = "current";
     let params;
-
     
     if (aForceNewTab) {
       where = "tab";
@@ -1118,6 +1121,10 @@ class SearchOneOffs {
   }
 
   _on_click(event) {
+    if (this._view?.oneOffsClickHandler(event)) {
+      return;
+    }
+
     if (event.button == 2) {
       return; 
     }

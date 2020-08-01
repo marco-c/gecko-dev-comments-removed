@@ -78,6 +78,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["experimental.searchButton", false],
 
   
+  ["experimental.searchModeIndicatorHover", false],
+
+  
   ["filter.javascript", true],
 
   

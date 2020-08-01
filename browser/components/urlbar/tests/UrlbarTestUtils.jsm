@@ -352,6 +352,27 @@ var UrlbarTestUtils = {
 
 
 
+
+  isInSearchMode(win, engineName = null) {
+    if (!!win.gURLBar.searchMode != win.gURLBar.hasAttribute("searchmode")) {
+      throw new Error(
+        "Urlbar should never be in search mode without the corresponding attribute."
+      );
+    }
+
+    if (engineName) {
+      return win.gURLBar.searchMode.engineName == engineName;
+    }
+
+    return !!win.gURLBar.searchMode;
+  },
+
+  
+
+
+
+
+
   async promiseUserContextId(win) {
     const defaultId = Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
     let context = await win.gURLBar.lastQueryContextPromise;
