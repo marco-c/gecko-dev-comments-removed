@@ -19,6 +19,7 @@ use crate::{
     statics::get_database,
 };
 use crossbeam_utils::atomic::AtomicCell;
+use lmdb::Error as LmdbError;
 use moz_task::{dispatch_background_task_with_options, DispatchOptions, Task, TaskRunnable};
 use nserror::nsresult;
 use once_cell::sync::Lazy;
@@ -72,7 +73,7 @@ fn sync_persist() -> XULStoreResult<()> {
                     
                     
                     
-                    Err(RkvStoreError::KeyValuePairNotFound) => {
+                    Err(RkvStoreError::LmdbError(LmdbError::NotFound)) => {
                         warn!("tried to remove key that isn't in the store");
                     }
 
