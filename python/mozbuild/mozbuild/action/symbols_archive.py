@@ -9,6 +9,7 @@ import sys
 import os
 
 from mozpack.files import FileFinder
+from mozpack.mozjar import JarWriter
 import mozpack.path as mozpath
 
 
@@ -18,54 +19,14 @@ def make_archive(archive_name, base, exclude, include):
     if not include:
         include = ['*']
     archive_basename = os.path.basename(archive_name)
-
-    def fill_archive(add_file):
-        for pat in include:
-            for p, f in finder.find(pat):
-                print('  Adding to "%s":\n\t"%s"' % (archive_basename, p))
-                add_file(p, f)
-
     with open(archive_name, 'wb') as fh:
-        if archive_basename.endswith('.zip'):
-            from mozpack.mozjar import JarWriter
-            with JarWriter(fileobj=fh, compress_level=5) as writer:
-                def add_file(p, f):
+        with JarWriter(fileobj=fh, compress_level=5) as writer:
+            for pat in include:
+                for p, f in finder.find(pat):
+                    print('  Adding to "%s":\n\t"%s"' % (archive_basename, p))
                     should_compress = any(mozpath.match(p, pat) for pat in compress)
                     writer.add(p.encode('utf-8'), f, mode=f.mode,
                                compress=should_compress, skip_duplicates=True)
-                fill_archive(add_file)
-        elif archive_basename.endswith('.tar.zst'):
-            import subprocess
-            import tarfile
-            from buildconfig import topsrcdir
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            proc = subprocess.Popen([
-                'python3',
-                os.path.join(topsrcdir, 'taskcluster', 'scripts', 'misc', 'zstdpy'),
-                '-T0',
-            ], stdin=subprocess.PIPE, stdout=fh)
-
-            with tarfile.open(mode='w|', fileobj=proc.stdin, bufsize=1024*1024) as tar:
-                def add_file(p, f):
-                    info = tar.gettarinfo(os.path.join(base, p), p)
-                    tar.addfile(info, f.open())
-                fill_archive(add_file)
-            proc.stdin.close()
-            proc.wait()
-        else:
-            raise Exception('Unsupported archive format for {}'.format(archive_basename))
 
 
 def main(argv):

@@ -40,7 +40,6 @@ def check_nightlies(config, tasks):
 def fill_template(config, tasks):
     for task in tasks:
         dep = task['primary-dependency']
-        task.pop('dependent-tasks', None)
 
         
         task['label'] = dep.label + '-upload-symbols'
