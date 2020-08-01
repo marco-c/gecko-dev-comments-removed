@@ -381,6 +381,13 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return mCurrentWindowContext;
   }
 
+  
+  
+  void PreOrderWalk(const std::function<void(BrowsingContext*)>& aCallback);
+  void PostOrderWalk(const std::function<void(BrowsingContext*)>& aCallback);
+  void GetAllBrowsingContextsInSubtree(
+      nsTArray<RefPtr<BrowsingContext>>& aBrowsingContexts);
+
   BrowsingContextGroup* Group() { return mGroup; }
 
   
@@ -516,23 +523,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(BrowsingContext)
   NS_DECL_NSILOADCONTEXT
-
-  
-  void PreOrderWalk(const std::function<void(BrowsingContext*)>& aCallback) {
-    aCallback(this);
-    for (auto& child : Children()) {
-      child->PreOrderWalk(aCallback);
-    }
-  }
-
-  
-  void PostOrderWalk(const std::function<void(BrowsingContext*)>& aCallback) {
-    for (auto& child : Children()) {
-      child->PostOrderWalk(aCallback);
-    }
-
-    aCallback(this);
-  }
 
   
   WindowProxyHolder Window();
