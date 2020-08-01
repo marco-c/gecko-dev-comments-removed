@@ -58,7 +58,7 @@ nsresult BrowserBridgeParent::InitWithProcess(
 
   
   
-  browsingContext->Group()->EnsureSubscribed(aContentParent);
+  browsingContext->Group()->EnsureHostProcess(aContentParent);
   browsingContext->SetOwnerProcessId(aContentParent->ChildID());
 
   

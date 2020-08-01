@@ -72,29 +72,36 @@ void BrowsingContextGroup::Unregister(nsISupports* aContext) {
   }
 }
 
-void BrowsingContextGroup::Subscribe(ContentParent* aOriginProcess) {
-  MOZ_DIAGNOSTIC_ASSERT(aOriginProcess);
-  mSubscribers.PutEntry(aOriginProcess);
-  aOriginProcess->OnBrowsingContextGroupSubscribe(this);
+void BrowsingContextGroup::EnsureHostProcess(ContentParent* aProcess) {
+  MOZ_DIAGNOSTIC_ASSERT(this != sChromeGroup,
+                        "cannot have content host for chrome group");
+  MOZ_DIAGNOSTIC_ASSERT(aProcess->GetRemoteType() != PREALLOC_REMOTE_TYPE,
+                        "cannot use preallocated process as host");
+  MOZ_DIAGNOSTIC_ASSERT(!aProcess->GetRemoteType().IsEmpty(),
+                        "host process must have remote type");
+
+  if (!aProcess->IsDead()) {
+    auto entry = mHosts.LookupForAdd(aProcess->GetRemoteType());
+    if (entry) {
+      MOZ_DIAGNOSTIC_ASSERT(
+          entry.Data() == aProcess,
+          "There's already another host process for this remote type");
+      return;
+    }
+
+    
+    
+    entry.OrInsert([&] { return do_AddRef(aProcess); });
+  }
+
+  aProcess->AddBrowsingContextGroup(this);
 }
 
-void BrowsingContextGroup::Unsubscribe(ContentParent* aOriginProcess) {
-  MOZ_DIAGNOSTIC_ASSERT(aOriginProcess);
-  mSubscribers.RemoveEntry(aOriginProcess);
-  aOriginProcess->OnBrowsingContextGroupUnsubscribe(this);
-
-  
-  
-  
-  
-  nsTArray<RefPtr<BrowsingContext>> toDiscard;
-  for (auto& context : mToplevels) {
-    if (context->Canonical()->IsEmbeddedInProcess(aOriginProcess->ChildID())) {
-      toDiscard.AppendElement(context);
-    }
-  }
-  for (auto& context : toDiscard) {
-    context->Detach( true);
+void BrowsingContextGroup::RemoveHostProcess(ContentParent* aProcess) {
+  MOZ_DIAGNOSTIC_ASSERT(aProcess);
+  auto entry = mHosts.Lookup(aProcess->GetRemoteType());
+  if (entry && entry.Data() == aProcess) {
+    entry.Remove();
   }
 }
 
@@ -113,13 +120,19 @@ static void CollectContextInitializers(
   }
 }
 
-void BrowsingContextGroup::EnsureSubscribed(ContentParent* aProcess) {
-  MOZ_DIAGNOSTIC_ASSERT(aProcess);
-  if (mSubscribers.Contains(aProcess)) {
+void BrowsingContextGroup::Subscribe(ContentParent* aProcess) {
+  MOZ_DIAGNOSTIC_ASSERT(aProcess && !aProcess->IsLaunching());
+
+  
+  if (!mSubscribers.EnsureInserted(aProcess)) {
     return;
   }
 
-  Subscribe(aProcess);
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  auto hostEntry = mHosts.Lookup(aProcess->GetRemoteType());
+  MOZ_DIAGNOSTIC_ASSERT(hostEntry && hostEntry.Data() == aProcess,
+                        "Cannot subscribe a non-host process");
+#endif
 
   
   
@@ -148,6 +161,37 @@ void BrowsingContextGroup::EnsureSubscribed(ContentParent* aProcess) {
   }
 }
 
+void BrowsingContextGroup::Unsubscribe(ContentParent* aProcess) {
+  MOZ_DIAGNOSTIC_ASSERT(aProcess);
+  mSubscribers.RemoveEntry(aProcess);
+  aProcess->RemoveBrowsingContextGroup(this);
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  auto hostEntry = mHosts.Lookup(aProcess->GetRemoteType());
+  MOZ_DIAGNOSTIC_ASSERT(!hostEntry || hostEntry.Data() != aProcess,
+                        "Unsubscribing existing host entry");
+#endif
+
+  
+  
+  
+  
+  nsTArray<RefPtr<BrowsingContext>> toDiscard;
+  for (auto& context : mToplevels) {
+    if (context->Canonical()->IsEmbeddedInProcess(aProcess->ChildID())) {
+      toDiscard.AppendElement(context);
+    }
+  }
+  for (auto& context : toDiscard) {
+    context->Detach( true);
+  }
+}
+
+ContentParent* BrowsingContextGroup::GetHostProcess(
+    const nsACString& aRemoteType) {
+  return mHosts.GetWeak(aRemoteType);
+}
+
 void BrowsingContextGroup::SetToplevelsSuspended(bool aSuspended) {
   for (const auto& context : mToplevels) {
     nsPIDOMWindowOuter* outer = context->GetDOMWindow();
@@ -173,15 +217,15 @@ BrowsingContextGroup::~BrowsingContextGroup() {
 }
 
 void BrowsingContextGroup::UnsubscribeAllContentParents() {
+  mHosts.Clear();
+  for (auto& entry : mSubscribers) {
+    entry.GetKey()->RemoveBrowsingContextGroup(this);
+  }
+  mSubscribers.Clear();
+
   if (sBrowsingContextGroups) {
     sBrowsingContextGroups->Remove(Id());
   }
-
-  for (auto iter = mSubscribers.Iter(); !iter.Done(); iter.Next()) {
-    nsRefPtrHashKey<ContentParent>* entry = iter.Get();
-    entry->GetKey()->OnBrowsingContextGroupUnsubscribe(this);
-  }
-  mSubscribers.Clear();
 }
 
 nsISupports* BrowsingContextGroup::GetParentObject() const {
@@ -303,7 +347,7 @@ void BrowsingContextGroup::GetAllGroups(
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(BrowsingContextGroup, mContexts,
-                                      mToplevels, mSubscribers,
+                                      mToplevels, mHosts, mSubscribers,
                                       mTimerEventQueue, mWorkerEventQueue)
 
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(BrowsingContextGroup, AddRef)
