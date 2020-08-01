@@ -229,10 +229,7 @@ var State = {
 
 var View = {
   _fragment: document.createDocumentFragment(),
-  
-  _killedRecently: [],
   async commit() {
-    this._killedRecently.length = 0;
     let tbody = document.getElementById("process-tbody");
 
     
@@ -260,9 +257,6 @@ var View = {
   appendProcessRow(data, isOpen) {
     let row = document.createElement("tr");
     row.classList.add("process");
-    if (data.type == "browser") {
-      row.classList.add("browser");
-    }
 
     
     {
@@ -335,40 +329,6 @@ var View = {
       classes: ["numberOfThreads"],
     });
 
-    
-    let killButton = this._addCell(row, {
-      content: "",
-      classes: ["action-icon"],
-    });
-
-    if (data.type == "socket") {
-      
-      
-    } else if (this._killedRecently.some(pid => pid == data.pid)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      row.classList.add("killed");
-    } else {
-      
-      killButton.classList.add("close-icon");
-      if (data.type == "browser") {
-        document.l10n.setAttributes(
-          killButton,
-          "about-processes-shutdown-browser"
-        );
-      } else {
-        document.l10n.setAttributes(
-          killButton,
-          "about-processes-shutdown-process"
-        );
-      }
-    }
     this._fragment.appendChild(row);
     return row;
   },
@@ -431,21 +391,13 @@ var View = {
       classes: ["numberOfThreads"],
     });
 
-    
-    this._addCell(row, {
-      content: "",
-      classes: [],
-    });
-
     this._fragment.appendChild(row);
     return row;
   },
 
   _addCell(row, { content, classes }) {
     let elt = document.createElement("td");
-    if (content) {
-      this._setTextAndTooltip(elt, content);
-    }
+    this._setTextAndTooltip(elt, content);
     elt.classList.add(...classes);
     row.appendChild(elt);
     return elt;
@@ -589,13 +541,19 @@ var Control = {
     tbody.addEventListener("click", event => {
       this._updateLastMouseEvent();
 
+      
       let target = event.target;
       if (target.classList.contains("twisty")) {
-        
-        this._handleTwisty(target);
-        return;
-      } else if (target.classList.contains("close-icon")) {
-        this._handleClose(target);
+        let row = target.parentNode.parentNode;
+        let id = row.process.pid;
+        if (target.classList.toggle("open")) {
+          this._openItems.add(id);
+          this._showChildren(row);
+          View.insertAfterRow(row);
+        } else {
+          this._openItems.delete(id);
+          this._removeSubtree(row);
+        }
         return;
       }
 
@@ -797,34 +755,6 @@ var Control = {
       }
       return order;
     });
-  },
-
-  _handleTwisty(target) {
-    let row = target.parentNode.parentNode;
-    let id = row.process.pid;
-    if (target.classList.toggle("open")) {
-      this._openItems.add(id);
-      this._showChildren(row);
-      View.insertAfterRow(row);
-    } else {
-      this._openItems.delete(id);
-      this._removeSubtree(row);
-    }
-  },
-
-  _handleClose(target) {
-    const ProcessTools = Cc["@mozilla.org/processtools-service;1"].getService(
-      Ci.nsIProcessToolsService
-    );
-    let row = target.parentNode;
-    let pid = row.process.pid;
-    ProcessTools.kill(pid);
-
-    row.classList.add("killing");
-    target.classList.remove("close-icon");
-    
-    
-    View._killedRecently.push(pid);
   },
 };
 

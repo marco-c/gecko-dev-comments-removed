@@ -1,8 +1,0 @@
-
-
-
-
-
-#include "nsIProcessToolsService.h"
-
-already_AddRefed<nsIProcessToolsService> GetProcessToolsService();
