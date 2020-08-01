@@ -1463,12 +1463,7 @@ pref("identity.fxaccounts.remote.pairing.uri", "wss://channelserver.services.moz
 pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sync/1.5");
 
 
-#ifdef NIGHTLY_BUILD
-  
-  pref("identity.sync.useOAuthForSyncToken", true);
-#else
-  pref("identity.sync.useOAuthForSyncToken", false);
-#endif
+pref("identity.sync.useOAuthForSyncToken", true);
 
 
 pref("identity.fxaccounts.useSessionTokensForOAuth", true);
