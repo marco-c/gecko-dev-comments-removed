@@ -346,7 +346,7 @@ class TaskGraphGenerator(object):
 
         
         strategies = os.environ.get('TASKGRAPH_OPTIMIZE_STRATEGIES',
-                                    parameters['try_task_config'].get('optimize-strategies'))
+                                    parameters.get('optimize_strategies'))
         if strategies:
             strategies = find_object(strategies)
 
