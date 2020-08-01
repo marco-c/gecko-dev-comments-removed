@@ -49,6 +49,7 @@
 #include "vm/StringType.h"
 #include "vm/Time.h"
 
+#include "vm/Compartment-inl.h"  
 #include "vm/JSObject-inl.h"
 
 using namespace js;
@@ -2019,10 +2020,17 @@ static bool date_getTimezoneOffset(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-MOZ_ALWAYS_INLINE bool date_setTime_impl(JSContext* cx, const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+static bool date_setTime(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setTime"));
+  if (!unwrapped) {
+    return false;
+  }
+
   if (args.length() == 0) {
-    dateObj->setUTCTime(ClippedTime::invalid(), args.rval());
+    unwrapped->setUTCTime(ClippedTime::invalid(), args.rval());
     return true;
   }
 
@@ -2031,13 +2039,8 @@ MOZ_ALWAYS_INLINE bool date_setTime_impl(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  dateObj->setUTCTime(TimeClip(result), args.rval());
+  unwrapped->setUTCTime(TimeClip(result), args.rval());
   return true;
-}
-
-static bool date_setTime(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setTime_impl>(cx, args);
 }
 
 static bool GetMsecsOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
@@ -2068,12 +2071,16 @@ static bool GetMinsOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
 }
 
 
-MOZ_ALWAYS_INLINE bool date_setMilliseconds_impl(JSContext* cx,
-                                                 const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+static bool date_setMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  double t = LocalTime(dateObj->UTCTime().toNumber());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setMilliseconds"));
+  if (!unwrapped) {
+    return false;
+  }
+  double t = LocalTime(unwrapped->UTCTime().toNumber());
 
   
   double ms;
@@ -2088,22 +2095,22 @@ MOZ_ALWAYS_INLINE bool date_setMilliseconds_impl(JSContext* cx,
   ClippedTime u = TimeClip(UTC(MakeDate(Day(t), time)));
 
   
-  dateObj->setUTCTime(u, args.rval());
+  unwrapped->setUTCTime(u, args.rval());
   return true;
 }
 
-static bool date_setMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
+
+static bool date_setUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setMilliseconds_impl>(cx, args);
-}
 
-
-MOZ_ALWAYS_INLINE bool date_setUTCMilliseconds_impl(JSContext* cx,
-                                                    const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCMilliseconds"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = dateObj->UTCTime().toNumber();
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double milli;
@@ -2117,59 +2124,59 @@ MOZ_ALWAYS_INLINE bool date_setUTCMilliseconds_impl(JSContext* cx,
   ClippedTime v = TimeClip(MakeDate(Day(t), time));
 
   
-  dateObj->setUTCTime(v, args.rval());
-  return true;
-}
-
-static bool date_setUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setUTCMilliseconds_impl>(cx, args);
-}
-
-
-MOZ_ALWAYS_INLINE bool date_setSeconds_impl(JSContext* cx,
-                                            const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-  
-  double t = LocalTime(dateObj->UTCTime().toNumber());
-
-  
-  double s;
-  if (!ToNumber(cx, args.get(0), &s)) {
-    return false;
-  }
-
-  
-  double milli;
-  if (!GetMsecsOrDefault(cx, args, 1, t, &milli)) {
-    return false;
-  }
-
-  
-  double date =
-      MakeDate(Day(t), MakeTime(HourFromTime(t), MinFromTime(t), s, milli));
-
-  
-  ClippedTime u = TimeClip(UTC(date));
-
-  
-  dateObj->setUTCTime(u, args.rval());
+  unwrapped->setUTCTime(v, args.rval());
   return true;
 }
 
 
 static bool date_setSeconds(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setSeconds_impl>(cx, args);
-}
 
-MOZ_ALWAYS_INLINE bool date_setUTCSeconds_impl(JSContext* cx,
-                                               const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setSeconds"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = dateObj->UTCTime().toNumber();
+  double t = LocalTime(unwrapped->UTCTime().toNumber());
+
+  
+  double s;
+  if (!ToNumber(cx, args.get(0), &s)) {
+    return false;
+  }
+
+  
+  double milli;
+  if (!GetMsecsOrDefault(cx, args, 1, t, &milli)) {
+    return false;
+  }
+
+  
+  double date =
+      MakeDate(Day(t), MakeTime(HourFromTime(t), MinFromTime(t), s, milli));
+
+  
+  ClippedTime u = TimeClip(UTC(date));
+
+  
+  unwrapped->setUTCTime(u, args.rval());
+  return true;
+}
+
+
+static bool date_setUTCSeconds(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCSeconds"));
+  if (!unwrapped) {
+    return false;
+  }
+
+  
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double s;
@@ -2191,22 +2198,22 @@ MOZ_ALWAYS_INLINE bool date_setUTCSeconds_impl(JSContext* cx,
   ClippedTime v = TimeClip(date);
 
   
-  dateObj->setUTCTime(v, args.rval());
+  unwrapped->setUTCTime(v, args.rval());
   return true;
 }
 
 
-static bool date_setUTCSeconds(JSContext* cx, unsigned argc, Value* vp) {
+static bool date_setMinutes(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setUTCSeconds_impl>(cx, args);
-}
 
-MOZ_ALWAYS_INLINE bool date_setMinutes_impl(JSContext* cx,
-                                            const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setMinutes"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = LocalTime(dateObj->UTCTime().toNumber());
+  double t = LocalTime(unwrapped->UTCTime().toNumber());
 
   
   double m;
@@ -2233,23 +2240,22 @@ MOZ_ALWAYS_INLINE bool date_setMinutes_impl(JSContext* cx,
   ClippedTime u = TimeClip(UTC(date));
 
   
-  dateObj->setUTCTime(u, args.rval());
+  unwrapped->setUTCTime(u, args.rval());
   return true;
 }
 
 
-static bool date_setMinutes(JSContext* cx, unsigned argc, Value* vp) {
-  
+static bool date_setUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setMinutes_impl>(cx, args);
-}
 
-MOZ_ALWAYS_INLINE bool date_setUTCMinutes_impl(JSContext* cx,
-                                               const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCMinutes"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = dateObj->UTCTime().toNumber();
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double m;
@@ -2276,21 +2282,22 @@ MOZ_ALWAYS_INLINE bool date_setUTCMinutes_impl(JSContext* cx,
   ClippedTime v = TimeClip(date);
 
   
-  dateObj->setUTCTime(v, args.rval());
+  unwrapped->setUTCTime(v, args.rval());
   return true;
 }
 
 
-static bool date_setUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
+static bool date_setHours(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setUTCMinutes_impl>(cx, args);
-}
 
-MOZ_ALWAYS_INLINE bool date_setHours_impl(JSContext* cx, const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setHours"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = LocalTime(dateObj->UTCTime().toNumber());
+  double t = LocalTime(unwrapped->UTCTime().toNumber());
 
   
   double h;
@@ -2323,22 +2330,22 @@ MOZ_ALWAYS_INLINE bool date_setHours_impl(JSContext* cx, const CallArgs& args) {
   ClippedTime u = TimeClip(UTC(date));
 
   
-  dateObj->setUTCTime(u, args.rval());
+  unwrapped->setUTCTime(u, args.rval());
   return true;
 }
 
 
-static bool date_setHours(JSContext* cx, unsigned argc, Value* vp) {
+static bool date_setUTCHours(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setHours_impl>(cx, args);
-}
 
-MOZ_ALWAYS_INLINE bool date_setUTCHours_impl(JSContext* cx,
-                                             const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCHours"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = dateObj->UTCTime().toNumber();
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double h;
@@ -2371,21 +2378,22 @@ MOZ_ALWAYS_INLINE bool date_setUTCHours_impl(JSContext* cx,
   ClippedTime v = TimeClip(newDate);
 
   
-  dateObj->setUTCTime(v, args.rval());
+  unwrapped->setUTCTime(v, args.rval());
   return true;
 }
 
 
-static bool date_setUTCHours(JSContext* cx, unsigned argc, Value* vp) {
+static bool date_setDate(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setUTCHours_impl>(cx, args);
-}
 
-MOZ_ALWAYS_INLINE bool date_setDate_impl(JSContext* cx, const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setDate"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = LocalTime(dateObj->UTCTime().toNumber());
+  double t = LocalTime(unwrapped->UTCTime().toNumber());
 
   
   double date;
@@ -2401,22 +2409,21 @@ MOZ_ALWAYS_INLINE bool date_setDate_impl(JSContext* cx, const CallArgs& args) {
   ClippedTime u = TimeClip(UTC(newDate));
 
   
-  dateObj->setUTCTime(u, args.rval());
+  unwrapped->setUTCTime(u, args.rval());
   return true;
 }
 
-
-static bool date_setDate(JSContext* cx, unsigned argc, Value* vp) {
+static bool date_setUTCDate(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setDate_impl>(cx, args);
-}
 
-MOZ_ALWAYS_INLINE bool date_setUTCDate_impl(JSContext* cx,
-                                            const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCDate"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = dateObj->UTCTime().toNumber();
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double date;
@@ -2432,13 +2439,8 @@ MOZ_ALWAYS_INLINE bool date_setUTCDate_impl(JSContext* cx,
   ClippedTime v = TimeClip(newDate);
 
   
-  dateObj->setUTCTime(v, args.rval());
+  unwrapped->setUTCTime(v, args.rval());
   return true;
-}
-
-static bool date_setUTCDate(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setUTCDate_impl>(cx, args);
 }
 
 static bool GetDateOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
@@ -2460,11 +2462,17 @@ static bool GetMonthOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
 }
 
 
-MOZ_ALWAYS_INLINE bool date_setMonth_impl(JSContext* cx, const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+static bool date_setMonth(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setMonth"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = LocalTime(dateObj->UTCTime().toNumber());
+  double t = LocalTime(unwrapped->UTCTime().toNumber());
 
   
   double m;
@@ -2486,22 +2494,22 @@ MOZ_ALWAYS_INLINE bool date_setMonth_impl(JSContext* cx, const CallArgs& args) {
   ClippedTime u = TimeClip(UTC(newDate));
 
   
-  dateObj->setUTCTime(u, args.rval());
+  unwrapped->setUTCTime(u, args.rval());
   return true;
 }
 
-static bool date_setMonth(JSContext* cx, unsigned argc, Value* vp) {
+
+static bool date_setUTCMonth(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setMonth_impl>(cx, args);
-}
 
-
-MOZ_ALWAYS_INLINE bool date_setUTCMonth_impl(JSContext* cx,
-                                             const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCMonth"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = dateObj->UTCTime().toNumber();
+  double t = unwrapped->UTCTime().toNumber();
 
   
   double m;
@@ -2523,13 +2531,8 @@ MOZ_ALWAYS_INLINE bool date_setUTCMonth_impl(JSContext* cx,
   ClippedTime v = TimeClip(newDate);
 
   
-  dateObj->setUTCTime(v, args.rval());
+  unwrapped->setUTCTime(v, args.rval());
   return true;
-}
-
-static bool date_setUTCMonth(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setUTCMonth_impl>(cx, args);
 }
 
 static double ThisLocalTimeOrZero(Handle<DateObject*> dateObj) {
@@ -2546,12 +2549,17 @@ static double ThisUTCTimeOrZero(Handle<DateObject*> dateObj) {
 }
 
 
-MOZ_ALWAYS_INLINE bool date_setFullYear_impl(JSContext* cx,
-                                             const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+static bool date_setFullYear(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setFullYear"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = ThisLocalTimeOrZero(dateObj);
+  double t = ThisLocalTimeOrZero(unwrapped);
 
   
   double y;
@@ -2578,22 +2586,22 @@ MOZ_ALWAYS_INLINE bool date_setFullYear_impl(JSContext* cx,
   ClippedTime u = TimeClip(UTC(newDate));
 
   
-  dateObj->setUTCTime(u, args.rval());
+  unwrapped->setUTCTime(u, args.rval());
   return true;
 }
 
-static bool date_setFullYear(JSContext* cx, unsigned argc, Value* vp) {
+
+static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setFullYear_impl>(cx, args);
-}
 
-
-MOZ_ALWAYS_INLINE bool date_setUTCFullYear_impl(JSContext* cx,
-                                                const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setUTCFullYear"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = ThisUTCTimeOrZero(dateObj);
+  double t = ThisUTCTimeOrZero(unwrapped);
 
   
   double y;
@@ -2620,21 +2628,22 @@ MOZ_ALWAYS_INLINE bool date_setUTCFullYear_impl(JSContext* cx,
   ClippedTime v = TimeClip(newDate);
 
   
-  dateObj->setUTCTime(v, args.rval());
+  unwrapped->setUTCTime(v, args.rval());
   return true;
 }
 
-static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
+
+static bool date_setYear(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setUTCFullYear_impl>(cx, args);
-}
 
-
-MOZ_ALWAYS_INLINE bool date_setYear_impl(JSContext* cx, const CallArgs& args) {
-  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  Rooted<DateObject*> unwrapped(
+      cx, UnwrapAndTypeCheckThis<DateObject>(cx, args, "setYear"));
+  if (!unwrapped) {
+    return false;
+  }
 
   
-  double t = ThisLocalTimeOrZero(dateObj);
+  double t = ThisLocalTimeOrZero(unwrapped);
 
   
   double y;
@@ -2644,7 +2653,7 @@ MOZ_ALWAYS_INLINE bool date_setYear_impl(JSContext* cx, const CallArgs& args) {
 
   
   if (IsNaN(y)) {
-    dateObj->setUTCTime(ClippedTime::invalid(), args.rval());
+    unwrapped->setUTCTime(ClippedTime::invalid(), args.rval());
     return true;
   }
 
@@ -2661,13 +2670,8 @@ MOZ_ALWAYS_INLINE bool date_setYear_impl(JSContext* cx, const CallArgs& args) {
   double u = UTC(MakeDate(day, TimeWithinDay(t)));
 
   
-  dateObj->setUTCTime(TimeClip(u), args.rval());
+  unwrapped->setUTCTime(TimeClip(u), args.rval());
   return true;
-}
-
-static bool date_setYear(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CallNonGenericMethod<IsDate, date_setYear_impl>(cx, args);
 }
 
 
