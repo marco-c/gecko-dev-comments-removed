@@ -14,8 +14,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
 });
+
 
 
 
@@ -52,7 +52,6 @@ class SearchOneOffs {
       )
     );
 
-    this._view = null;
     this._popup = null;
     this._textbox = null;
 
@@ -202,23 +201,6 @@ class SearchOneOffs {
   
 
 
-  set view(val) {
-    if (this._view) {
-      this._view.controller.removeQueryListener(this);
-    }
-    this._view = val;
-    if (val) {
-      if (val.isOpen) {
-        this._rebuild();
-      }
-      val.controller.addQueryListener(this);
-    }
-    return val;
-  }
-
-  
-
-
 
 
 
@@ -284,10 +266,7 @@ class SearchOneOffs {
 
   set query(val) {
     this._query = val;
-    if (
-      (this._view && this._view.isOpen) ||
-      (this.popup && this.popup.popupOpen)
-    ) {
+    if (this.isViewOpen) {
       let isOneOffSelected =
         this.selectedButton &&
         this.selectedButton.classList.contains("searchbar-engine-one-off-item");
@@ -322,7 +301,7 @@ class SearchOneOffs {
         
         
         
-        this.selectedAutocompleteIndex = -1;
+        this.selectedViewIndex = -1;
       }
     }
     this._selectedButton = val;
@@ -370,20 +349,6 @@ class SearchOneOffs {
       }
     }
     return -1;
-  }
-
-  get selectedAutocompleteIndex() {
-    if (!this.compact) {
-      return this.popup.selectedIndex;
-    }
-    return this._view.selectedElementIndex;
-  }
-
-  set selectedAutocompleteIndex(val) {
-    if (!this.compact) {
-      return (this.popup.selectedIndex = val);
-    }
-    return (this._view.selectedElementIndex = val);
   }
 
   get compact() {
@@ -562,17 +527,7 @@ class SearchOneOffs {
       }
       button.setAttribute("image", uri);
       button.setAttribute("class", "searchbar-engine-one-off-item");
-      if (this.compact) {
-        let tooltip = engine.name;
-        let aliases = UrlbarSearchUtils.aliasesForEngine(engine);
-        if (aliases.length) {
-          tooltip = tooltip + ` (${aliases[0]})`;
-        }
-
-        button.setAttribute("tooltiptext", tooltip);
-      } else {
-        button.setAttribute("tooltiptext", engine.name);
-      }
+      button.setAttribute("tooltiptext", this.tooltipForEngine(engine));
       button.engine = engine;
 
       this.buttons.appendChild(button);
@@ -723,11 +678,19 @@ class SearchOneOffs {
     return buttons;
   }
 
-  handleSearchCommand(aEvent, aEngine, aForceNewTab) {
-    if (this._view?.oneOffsCommandHandler(aEvent, aEngine)) {
-      return;
-    }
+  
 
+
+
+
+
+
+
+
+
+
+
+  _whereToOpen(aEvent, aForceNewTab) {
     let where = "current";
     let params;
     
@@ -757,12 +720,7 @@ class SearchOneOffs {
       }
     }
 
-    (this._view || this.popup).handleOneOffSearch(
-      aEvent,
-      aEngine,
-      where,
-      params
-    );
+    return { where, params };
   }
 
   
@@ -835,9 +793,6 @@ class SearchOneOffs {
 
 
   handleKeyDown(event, numListItems, allowEmptySelection, textboxUserValue) {
-    if (!this.popup && !this._view) {
-      return false;
-    }
     let handled = this._handleKeyDown(
       event,
       numListItems,
@@ -896,7 +851,7 @@ class SearchOneOffs {
         this.selectedButton = null;
         return false;
       }
-      this.selectedAutocompleteIndex = -1;
+      this.selectedViewIndex = -1;
       this.advanceSelection(!event.shiftKey, true, false);
       return !!this.selectedButton;
     }
@@ -913,13 +868,13 @@ class SearchOneOffs {
         this.advanceSelection(false, true, false);
         return true;
       }
-      if (this.selectedAutocompleteIndex > 0) {
+      if (this.selectedViewIndex > 0) {
         
         
         this.selectedButton = null;
         return false;
       }
-      if (this.selectedAutocompleteIndex == 0) {
+      if (this.selectedViewIndex == 0) {
         
         if (allowEmptySelection) {
           
@@ -962,18 +917,18 @@ class SearchOneOffs {
         return true;
       }
       if (
-        this.selectedAutocompleteIndex >= 0 &&
-        this.selectedAutocompleteIndex < numListItems - 1
+        this.selectedViewIndex >= 0 &&
+        this.selectedViewIndex < numListItems - 1
       ) {
         
         
         this.selectedButton = null;
         return false;
       }
-      if (this.selectedAutocompleteIndex == numListItems - 1) {
+      if (this.selectedViewIndex == numListItems - 1) {
         
         if (!allowEmptySelection) {
-          this.selectedAutocompleteIndex = -1;
+          this.selectedViewIndex = -1;
           if (this.textbox && typeof textboxUserValue == "string") {
             this.textbox.value = textboxUserValue;
           }
@@ -1096,6 +1051,66 @@ class SearchOneOffs {
 
   
 
+  
+
+
+  get isViewOpen() {
+    return this.popup && this.popup.popupOpen;
+  }
+
+  
+
+
+  get selectedViewIndex() {
+    return this.popup.selectedIndex;
+  }
+
+  
+
+
+
+
+
+  set selectedViewIndex(val) {
+    return (this.popup.selectedIndex = val);
+  }
+
+  
+
+
+  closeView() {
+    this.popup.hidePopup();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  handleSearchCommand(event, engine, forceNewTab = false) {
+    let { where, params } = this._whereToOpen(event, forceNewTab);
+    this.popup.handleOneOffSearch(event, engine, where, params);
+  }
+
+  
+
+
+
+
+
+
+  tooltipForEngine(engine) {
+    return engine.name;
+  }
+
+  
+
   _on_mousedown(event) {
     let target = event.originalTarget;
     if (target.classList.contains("addengine-menu-button")) {
@@ -1134,10 +1149,6 @@ class SearchOneOffs {
   }
 
   _on_click(event) {
-    if (this._view?.oneOffsClickHandler(event)) {
-      return;
-    }
-
     if (event.button == 2) {
       return; 
     }
@@ -1163,11 +1174,7 @@ class SearchOneOffs {
 
       
       
-      if (this._view) {
-        this._view.close();
-      } else {
-        this.popup.hidePopup();
-      }
+      this.closeView();
       return;
     }
 
@@ -1302,18 +1309,10 @@ class SearchOneOffs {
   }
 
   _on_popupshowing() {
-    this.onViewOpen();
-  }
-
-  _on_popuphidden() {
-    this.onViewClose();
-  }
-
-  onViewOpen() {
     this._rebuild();
   }
 
-  onViewClose() {
+  _on_popuphidden() {
     this.selectedButton = null;
     this._contextEngine = null;
   }

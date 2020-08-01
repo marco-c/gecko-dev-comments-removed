@@ -414,18 +414,20 @@ class UrlbarInput {
       if (selectedOneOff && isMouseEvent && event.target != selectedOneOff) {
         selectedOneOff = null;
       }
-      
-      if (selectedOneOff && !selectedOneOff.engine) {
-        this.controller.engagementEvent.discard();
-        selectedOneOff.doCommand();
-        return;
-      }
-
-      
-      
-      
-      if (this.view.oneOffsRefresh && !result?.heuristic) {
-        selectedOneOff = null;
+      if (selectedOneOff) {
+        if (!selectedOneOff.engine) {
+          
+          this.controller.engagementEvent.discard();
+          selectedOneOff.doCommand();
+          return;
+        }
+        if (this.view.oneOffsRefresh) {
+          this.view.oneOffSearchButtons.handleSearchCommand(
+            event,
+            selectedOneOff.engine
+          );
+          return;
+        }
       }
     }
 
