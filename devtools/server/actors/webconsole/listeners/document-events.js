@@ -4,7 +4,7 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
@@ -13,46 +13,31 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 
+function DocumentEventsListener(targetActor) {
+  this.targetActor = targetActor;
 
-function DocumentEventsListener(console) {
-  this.console = console;
-
+  EventEmitter.decorate(this);
   this.onWindowReady = this.onWindowReady.bind(this);
   this.onContentLoaded = this.onContentLoaded.bind(this);
   this.onLoad = this.onLoad.bind(this);
-  this.listen();
 }
 
 exports.DocumentEventsListener = DocumentEventsListener;
 
 DocumentEventsListener.prototype = {
   listen() {
-    EventEmitter.on(
-      this.console.parentActor,
-      "window-ready",
-      this.onWindowReady
-    );
-    this.onWindowReady({ window: this.console.window, isTopLevel: true });
+    EventEmitter.on(this.targetActor, "window-ready", this.onWindowReady);
+    this.onWindowReady({ window: this.targetActor.window, isTopLevel: true });
   },
 
   onWindowReady({ window, isTopLevel }) {
-    
-    if (!this.console.conn) {
-      return;
-    }
-
     
     if (!isTopLevel) {
       return;
     }
 
-    const packet = {
-      from: this.console.actorID,
-      type: "documentEvent",
-      name: "dom-loading",
-      time: window.performance.timing.navigationStart,
-    };
-    this.console.conn.send(packet);
+    const time = window.performance.timing.navigationStart;
+    this.emit("dom-loading", time);
 
     const { readyState } = window.document;
     if (readyState != "interactive" && readyState != "complete") {
@@ -71,49 +56,23 @@ DocumentEventsListener.prototype = {
 
   onContentLoaded(event) {
     
-    if (!this.console.conn) {
-      return;
-    }
-
+    
+    
     const window = event.target.defaultView;
-    const packet = {
-      from: this.console.actorID,
-      type: "documentEvent",
-      name: "dom-interactive",
-      
-      
-      
-      time: window.performance.timing.domInteractive,
-    };
-    this.console.conn.send(packet);
+    const time = window.performance.timing.domInteractive;
+    this.emit("dom-interactive", time);
   },
 
   onLoad(event) {
     
-    if (!this.console.conn) {
-      return;
-    }
-
+    
+    
     const window = event.target.defaultView;
-    const packet = {
-      from: this.console.actorID,
-      type: "documentEvent",
-      name: "dom-complete",
-      
-      
-      
-      time: window.performance.timing.domComplete,
-    };
-    this.console.conn.send(packet);
+    const time = window.performance.timing.domComplete;
+    this.emit("dom-complete", time);
   },
 
   destroy() {
-    EventEmitter.off(
-      this.console.parentActor,
-      "window-ready",
-      this.onWindowReady
-    );
-
     this.listener = null;
   },
 };
