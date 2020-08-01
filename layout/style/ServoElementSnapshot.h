@@ -142,6 +142,11 @@ class ServoElementSnapshot {
     return mIsMozBrowserFrame;
   }
 
+  bool IsSelectListBox() const {
+    MOZ_ASSERT(HasOtherPseudoClassState());
+    return mIsSelectListBox;
+  }
+
  private:
   
   
@@ -156,6 +161,7 @@ class ServoElementSnapshot {
   bool mSupportsLangAttr : 1;
   bool mIsTableBorderNonzero : 1;
   bool mIsMozBrowserFrame : 1;
+  bool mIsSelectListBox : 1;
   bool mClassAttributeChanged : 1;
   bool mIdAttributeChanged : 1;
 };

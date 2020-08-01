@@ -3211,6 +3211,10 @@ static inline bool AttributeInfluencesOtherPseudoClassState(
     return aElement.IsHTMLElement(nsGkAtoms::table);
   }
 
+  if (aAttribute == nsGkAtoms::multiple || aAttribute == nsGkAtoms::size) {
+    return aElement.IsHTMLElement(nsGkAtoms::select);
+  }
+
   return false;
 }
 
