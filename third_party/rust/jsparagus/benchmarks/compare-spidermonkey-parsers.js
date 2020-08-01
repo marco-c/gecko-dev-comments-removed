@@ -4,11 +4,34 @@
 
 
 var dir = ".";
-if (scriptArgs && scriptArgs[0]) {
-    
-    
-    
-    dir = scriptArgs[0]; 
+
+
+
+
+var skipList = [], skipFile = "", skipLen = 0;
+
+
+for (var i = 0; i < scriptArgs.length; i++) {
+    switch (scriptArgs[i]) {
+    case "--dir":
+        if (++i >= scriptArgs.length) {
+            throw Error("--dir expects a path.");
+        }
+        dir = scriptArgs[i];
+        break;
+    case "--skip-file":
+        if (++i >= scriptArgs.length) {
+            throw Error("--skip-file expects a path.");
+        }
+        skipFile = scriptArgs[i];
+        try {
+            skipList = eval(os.file.readFile(skipFile));
+        } catch (e) {
+            
+        }
+        skipLen = skipList.length;
+        break;
+    }
 }
 
 
@@ -67,8 +90,10 @@ function for_all_files(parse, N = 1, prefix = "", result = {}) {
 
 
 
-function compare(res1, res2) {
+function compare(name1, res1, name2, res2) {
     var result = {
+        name1: name1,
+        name2: name2,
         time1: 0,
         time2: 0,
         parsed_files: 0,
@@ -97,6 +122,15 @@ function compare(res1, res2) {
     return result;
 }
 
+function print_result(result) {
+    print(result.name1, "\t", result.time1, "ms\t", 1e6 * result.time1 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time1), 'bytes/ns\t');
+    print(result.name2, "\t", result.time2, "ms\t", 1e6 * result.time2 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time2), 'bytes/ns\t');
+    print("Total parsed  (scripts:", result.parsed_files, ", bytes:", result.parsed_bytes, ")");
+    print("Total skipped (scripts:", result.skipped_files, ", bytes:", result.skipped_bytes, ")");
+    print(result.name2, "/", result.name1, ":", result.time2 / result.time1);
+    print(result.name2, "/", result.name1, ":", spread(result.ratios_2over1, 0, 5, 0.05));
+}
+
 
 
 
@@ -105,10 +139,19 @@ function spread(table, min, max, step) {
     var chars = ["\xa0", "\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"];
     var s = ["\xa0", "\xa0", "" + min, "\xa0", "\xa0"];
     var ending = ["\xa0", "\xa0", "" + max, "\xa0", "\xa0"];
+    var scale = "\xa0\xa0";
+    var scale_values = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
     var ranges = [];
     var vmax = table.length / 10;
     for (var i = min; i < max; i += step) {
         ranges.push(0);
+        var decimal = i - Math.trunc(i);
+        var error = Math.abs(decimal - Math.round(10 * decimal) / 10);
+        decimal = Math.round(decimal * 10) % 10;
+        if (error < step / 2)
+            scale += scale_values[decimal];
+        else
+            scale += "\xa0";
     }
     for (var x of table) {
         if (x < min || max < x) continue;
@@ -133,6 +176,7 @@ function spread(table, min, max, step) {
     var res = "";
     for (i = 0; i < s.length; i++)
         res += "\n" + s[i];
+    res += "\n" + scale;
     return res;
 }
 
@@ -148,26 +192,14 @@ function spread(table, min, max, step) {
 function strategy_1() {
     var res1 = for_all_files(parse_1, runs_per_script);
     var res2 = for_all_files(parse_2, runs_per_script);
-    var result = compare(res1, res2);
-    print(name_1, "\t", result.time1, "ms\t", 1e6 * result.time1 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time1), 'bytes/ns\t');
-    print(name_2, "\t", result.time2, "ms\t", 1e6 * result.time2 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time2), 'bytes/ns\t');
-    print("Total parsed  (scripts:", result.parsed_files, ", bytes:", result.parsed_bytes, ")");
-    print("Total skipped (scripts:", result.skipped_files, ", bytes:", result.skipped_bytes, ")");
-    print(name_2, "/", name_1, ":", result.time2 / result.time1);
-    print(name_2, "/", name_1, ":", spread(result.ratios_2over1, 0, 3, 0.05));
+    return compare(name_1, res1, name_2, res2);
 }
 
 
 function strategy_2() {
     var res2 = for_all_files(parse_2, runs_per_script);
     var res1 = for_all_files(parse_1, runs_per_script);
-    var result = compare(res1, res2);
-    print(name_1, "\t", result.time1, "ms\t", 1e6 * result.time1 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time1), 'bytes/ns\t');
-    print(name_2, "\t", result.time2, "ms\t", 1e6 * result.time2 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time2), 'bytes/ns\t');
-    print("Total parsed  (scripts:", result.parsed_files, ", bytes:", result.parsed_bytes, ")");
-    print("Total skipped (scripts:", result.skipped_files, ", bytes:", result.skipped_bytes, ")");
-    print(name_2, "/", name_1, ":", result.time2 / result.time1);
-    print(name_2, "/", name_1, ":", spread(result.ratios_2over1, 0, 3, 0.05));
+    return compare(name_1, res1, name_2, res2);
 }
 
 
@@ -182,13 +214,7 @@ function strategy_3() {
         for_all_files(parse_1, 1, "" + n, res1);
         for_all_files(parse_2, 1, "" + n, res2);
     }
-    var result = compare(res1, res2);
-    print(name_1, "\t", result.time1, "ms\t", 1e6 * result.time1 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time1), 'bytes/ns\t');
-    print(name_2, "\t", result.time2, "ms\t", 1e6 * result.time2 / result.parsed_bytes, 'ns/byte\t', result.parsed_bytes / (1e6 * result.time2), 'bytes/ns\t');
-    print("Total parsed  (scripts:", result.parsed_files, ", bytes:", result.parsed_bytes, ")");
-    print("Total skipped (scripts:", result.skipped_files, ", bytes:", result.skipped_bytes, ")");
-    print(name_2, "/", name_1, ":", result.time2 / result.time1);
-    print(name_2, "/", name_1, ":", spread(result.ratios_2over1, 0, 5, 0.05));
+    return compare(name_1, res1, name_2, res2);
 }
 
 
@@ -210,6 +236,9 @@ function strategy_0() {
     var parse1_first = true;
     for (var file of list) {
         path = os.path.join(dir, file);
+        if (skipList.includes(path)) {
+            continue;
+        }
         content = "";
         try {
             
@@ -236,20 +265,51 @@ function strategy_0() {
             
             skipped++;
             skipped_bytes += content.length;
+            skipList.push(path);
         }
     }
 
-    var total_bytes = count_bytes * runs_per_script;
-    print(name_1, "\t", time_1, "ms\t", 1e6 * time_1 / total_bytes, 'ns/byte\t', total_bytes / (1e6 * time_1), 'bytes/ns\t');
-    print(name_2, "\t", time_2, "ms\t", 1e6 * time_2 / total_bytes, 'ns/byte\t', total_bytes / (1e6 * time_2), 'bytes/ns\t');
-    print("Total parsed  (scripts:", count * runs_per_script, ", bytes:", total_bytes, ")");
-    print("Total skipped (scripts:", skipped * runs_per_script, ", bytes:", skipped_bytes, ")");
-    print(name_2, "/", name_1, ":", time_2 / time_1);
-    print(name_2, "/", name_1, ":", spread(ratios_2over1, 0, 5, 0.05));
+    return {
+        name1: name_1,
+        name2: name_2,
+        time1: time_1,
+        time2: time_2,
+        parsed_files: count * runs_per_script,
+        parsed_bytes: count_bytes * runs_per_script,
+        skipped_files: skipped * runs_per_script,
+        skipped_bytes: skipped_bytes * runs_per_script,
+        ratios_2over1: ratios_2over1,
+    };
 }
 
-print("Main thread comparison:")
-strategy_0();
-print("")
-print("Off-thread comparison:")
-strategy_3();
+var outputJSON = os.getenv("SMOOSH_BENCH_AS_JSON") !== undefined;
+if (!outputJSON) {
+    print("Main thread comparison:");
+}
+var main_thread_result = strategy_0();
+if (!outputJSON) {
+    print_result(main_thread_result);
+    print("");
+    print("Off-thread comparison:");
+}
+var off_thread_result = strategy_3();
+if (!outputJSON) {
+    print_result(off_thread_result);
+}
+
+if (outputJSON) {
+    print(JSON.stringify({
+        main_thread: main_thread_result,
+        off_thread: main_thread_result
+    }));
+}
+
+if (skipFile && skipList.length > skipLen) {
+    var content = `[${skipList.map(s => `"${s}"`).join(",")}]`;
+    var data = new ArrayBuffer(content.length);
+    var view = new Uint8Array(data);
+    for (var i = 0; i < content.length; i++) {
+        view[i] = content.charCodeAt(i);
+    }
+    os.file.writeTypedArrayToFile(skipFile, view);
+}
