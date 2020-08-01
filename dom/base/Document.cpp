@@ -4032,6 +4032,13 @@ void Document::InitialTranslationCompleted(bool aL10nCached) {
 }
 
 bool Document::AllowsL10n() const {
+  if (IsStaticDocument()) {
+    
+    
+    
+    
+    return false;
+  }
   bool allowed = false;
   NodePrincipal()->IsL10nAllowed(GetDocumentURI(), &allowed);
   return allowed;
