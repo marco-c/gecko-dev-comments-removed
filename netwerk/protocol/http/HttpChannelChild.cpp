@@ -312,9 +312,35 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
 
   if (count == 0) {
     mRefCnt = 1; 
-    delete this;
+
+    
+    
+    if (MOZ_LIKELY(mOnStartRequestCalled && mOnStopRequestCalled) ||
+        !mListener) {
+      delete this;
+      return 0;
+    }
+
+    
+    if (NS_SUCCEEDED(mStatus)) {
+      mStatus = NS_ERROR_ABORT;
+    }
+    nsresult rv = NS_DispatchToMainThread(
+        NewRunnableMethod("~HttpChannelChild>DoNotifyListener", this,
+                          &HttpChannelChild::DoNotifyListener));
+    if (NS_FAILED(rv)) {
+      
+      mOnStartRequestCalled = true;
+      mOnStopRequestCalled = true;
+      
+      
+      
+      return Release();
+    }
+
     return 0;
   }
+
   return count;
 }
 
