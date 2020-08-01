@@ -96,8 +96,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   nsISHistory* GetSessionHistory();
   UniquePtr<SessionHistoryInfo> CreateSessionHistoryEntryForLoad(
       nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
-  void SessionHistoryCommit(uint64_t aSessionHistoryEntryId,
-                            const nsID& aChangeID);
+  void SessionHistoryCommit(uint64_t aSessionHistoryEntryId);
 
   
   

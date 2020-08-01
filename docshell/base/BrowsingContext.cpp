@@ -2502,35 +2502,6 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_BrowserId>, const uint32_t& aValue,
   return GetBrowserId() == 0 && IsTop() && Children().IsEmpty();
 }
 
-void BrowsingContext::SessionHistoryChanged(int32_t aIndexDelta,
-                                            int32_t aLengthDelta) {
-  if (XRE_IsParentProcess() || StaticPrefs::fission_sessionHistoryInParent()) {
-    
-    
-    return;
-  }
-
-  if (!IsTop()) {
-    
-    
-    return;
-  }
-
-  RefPtr<ChildSHistory> shistory = GetChildSessionHistory();
-  if (!shistory || !shistory->AsyncHistoryLength()) {
-    return;
-  }
-
-  nsID changeID = shistory->AddPendingHistoryChange(aIndexDelta, aLengthDelta);
-  uint32_t index = shistory->Index();
-  uint32_t length = shistory->Count();
-
-  
-  
-  ContentChild::GetSingleton()->SendSessionHistoryUpdate(this, index, length,
-                                                         changeID);
-}
-
 }  
 
 namespace ipc {
