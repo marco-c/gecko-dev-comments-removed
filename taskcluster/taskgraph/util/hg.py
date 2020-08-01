@@ -60,8 +60,12 @@ def get_hg_revision_branch(root, revision):
 
 
 def get_hg_commit_message(root):
-    return subprocess.check_output(['hg', 'log', '-r', '.', '-T', '{desc}'], cwd=root)
+    return six.ensure_text(
+        subprocess.check_output(['hg', 'log', '-r', '.', '-T', '{desc}'], cwd=root)
+    )
 
 
 def calculate_head_rev(root):
-    return subprocess.check_output(['hg', 'log', '-r', '.', '-T', '{node}'], cwd=root)
+    return six.ensure_text(
+        subprocess.check_output(['hg', 'log', '-r', '.', '-T', '{node}'], cwd=root)
+    )
