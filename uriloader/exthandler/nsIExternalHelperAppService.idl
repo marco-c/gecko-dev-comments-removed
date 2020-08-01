@@ -15,11 +15,6 @@ interface nsIWebProgressListener2;
 interface nsIInterfaceRequestor;
 webidl BrowsingContext;
 
-[ptr] native ExternalAppHandlerPtr(nsExternalAppHandler);
-%{C++
-class nsExternalAppHandler;
-%}
-
 
 
 
@@ -67,7 +62,7 @@ interface nsIExternalHelperAppService : nsISupports
 
 
 
-  [noscript] ExternalAppHandlerPtr createListener (in ACString aMimeContentType,
+  nsIStreamListener createListener (in ACString aMimeContentType,
                                                    in nsIRequest aRequest,
                                                    in BrowsingContext aContentContext,
                                                    in boolean aForceSave,
