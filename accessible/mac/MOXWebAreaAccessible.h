@@ -9,15 +9,43 @@
 
 @interface MOXWebAreaAccessible : mozAccessible
 
-- (NSURL* _Nullable)moxURL;
+- (NSURL*)moxURL;
 
 
-- (NSNumber* _Nullable)moxLoaded;
+- (NSNumber*)moxLoaded;
 
 
-- (NSNumber* _Nullable)moxLoadingProgress;
+- (NSNumber*)moxLoadingProgress;
 
 
 - (void)handleAccessibleEvent:(uint32_t)eventType;
+
+@end
+
+@interface MOXSearchInfo : NSObject {
+  
+  
+  mozilla::a11y::AccessibleOrProxy mWebArea;
+
+  
+  
+  mozilla::a11y::AccessibleOrProxy mStartElem;
+
+  
+  unsigned mResultLimit;
+
+  
+  NSMutableArray* mSearchKeys;
+
+  
+  BOOL mSearchForward;
+
+  
+  BOOL mImmediateDescendantsOnly;
+}
+
+- (id)initWithParameters:(NSDictionary*)params andRoot:(mozilla::a11y::AccessibleOrProxy)root;
+
+- (void)dealloc;
 
 @end
