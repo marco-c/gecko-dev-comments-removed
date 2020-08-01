@@ -56,6 +56,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsIWidget.h"
 #include "mozilla/ShellHeaderOnlyUtils.h"
+#include "mozilla/Telemetry.h"
 #include "mozilla/WidgetUtils.h"
 #include "WinUtils.h"
 
@@ -3046,6 +3047,7 @@ nsLocalFile::Launch() {
   
   
   if (!isExecutable) {
+    Telemetry::AutoTimer<Telemetry::SHELLEXECUTEBYEXPLORER_DURATION_MS> timer;
     mozilla::LauncherVoidResult shellExecuteOk =
         mozilla::ShellExecuteByExplorer(execPath, args, verbDefault,
                                         workingDirectoryPtr, showCmd);
