@@ -948,7 +948,11 @@ var AddonTestUtils = {
 
 
 
-  async promiseStartupManager(newVersion) {
+
+
+
+
+  async promiseStartupManager(newVersion, newPlatformVersion = newVersion) {
     if (this.addonIntegrationService) {
       throw new Error(
         "Attempting to startup manager that was already started."
@@ -958,6 +962,11 @@ var AddonTestUtils = {
     if (newVersion) {
       this.appInfo.version = newVersion;
     }
+
+    if (newPlatformVersion) {
+      this.appInfo.platformVersion = newPlatformVersion;
+    }
+
     
     
     
