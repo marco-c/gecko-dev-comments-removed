@@ -11,6 +11,12 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/AppConstants.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "Region",
+  "resource://gre/modules/Region.jsm"
+);
+
 
 
 const { actionCreators: ac, actionTypes: at } = ChromeUtils.import(
@@ -136,7 +142,6 @@ const DEFAULT_SITES = new Map([
     "https://www.baidu.com/,https://www.zhihu.com/,https://www.ifeng.com/,https://weibo.com/,https://www.ctrip.com/,https://www.iqiyi.com/",
   ],
 ]);
-const GEO_PREF = "browser.search.region";
 const REGION_STORIES_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.region-stories-config";
 const REGION_SPOCS_CONFIG =
@@ -783,7 +788,7 @@ this.ActivityStream = class ActivityStream {
 
   uninit() {
     if (this.geo === "") {
-      Services.prefs.removeObserver(GEO_PREF, this);
+      Services.obs.removeObserver(this, Region.REGION_TOPIC);
     }
 
     this.store.uninit();
@@ -792,11 +797,11 @@ this.ActivityStream = class ActivityStream {
 
   _updateDynamicPrefs() {
     
-    if (Services.prefs.prefHasUserValue(GEO_PREF)) {
-      this.geo = Services.prefs.getStringPref(GEO_PREF);
+    if (Region.home) {
+      this.geo = Region.home;
     } else if (this.geo !== "") {
       
-      Services.prefs.addObserver(GEO_PREF, this);
+      Services.obs.addObserver(this, Region.REGION_TOPIC);
       this.geo = "";
     }
 
@@ -840,11 +845,9 @@ this.ActivityStream = class ActivityStream {
 
   observe(subject, topic, data) {
     switch (topic) {
-      case "nsPref:changed":
-        
-        if (data === GEO_PREF) {
+      case Region.REGION_TOPIC:
+        if (data === Region.REGION_UPDATED) {
           this._updateDynamicPrefs();
-          Services.prefs.removeObserver(GEO_PREF, this);
         }
         break;
     }

@@ -231,6 +231,11 @@ const TEST_GLOBAL = {
     
     File: function() {}, 
   },
+  Region: {
+    home: "US",
+    REGION_TOPIC: "browser-region",
+    REGION_UPDATED: "region-updated",
+  },
   Services: {
     dirsvc: {
       get: () => ({ parent: { parent: { path: "appPath" } } }),
