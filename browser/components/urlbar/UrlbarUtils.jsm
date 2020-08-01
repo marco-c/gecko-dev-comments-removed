@@ -746,6 +746,24 @@ var UrlbarUtils = {
     }
     return this._logger;
   },
+
+  
+
+
+
+
+
+
+
+  getResultSourceName(source) {
+    if (!this._resultSourceNamesBySource) {
+      this._resultSourceNamesBySource = new Map();
+      for (let [name, src] of Object.entries(this.RESULT_SOURCE)) {
+        this._resultSourceNamesBySource.set(src, name.toLowerCase());
+      }
+    }
+    return this._resultSourceNamesBySource.get(source);
+  },
 };
 
 XPCOMUtils.defineLazyGetter(UrlbarUtils.ICON, "DEFAULT", () => {
