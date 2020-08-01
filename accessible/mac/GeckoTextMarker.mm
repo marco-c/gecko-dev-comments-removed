@@ -100,6 +100,24 @@ bool GeckoTextMarker::operator<(const GeckoTextMarker& aPoint) const {
   return false;
 }
 
+bool GeckoTextMarker::IsEditableRoot() {
+  uint64_t state =
+      mContainer.IsProxy() ? mContainer.AsProxy()->State() : mContainer.AsAccessible()->State();
+  if ((state & states::EDITABLE) == 0) {
+    return false;
+  }
+
+  AccessibleOrProxy parent = mContainer.Parent();
+  if (parent.IsNull()) {
+    
+    return true;
+  }
+
+  state = parent.IsProxy() ? parent.AsProxy()->State() : parent.AsAccessible()->State();
+
+  return (state & states::EDITABLE) == 0;
+}
+
 void GeckoTextMarker::NormalizeNext() {
   if (AtEnd()) {
     
@@ -109,12 +127,14 @@ void GeckoTextMarker::NormalizeNext() {
                                               : mContainer.AsAccessible()->EndOffset();
 
     if (endOffset != 0) {
-      mContainer = mContainer.Parent();
-      mOffset = endOffset;
+      if (!IsEditableRoot()) {
+        mContainer = mContainer.Parent();
+        mOffset = endOffset;
 
-      
-      
-      NormalizeNext();
+        
+        
+        NormalizeNext();
+      }
     }
   } else {
     AccessibleOrProxy link;
@@ -146,12 +166,14 @@ void GeckoTextMarker::NormalizePrevious() {
                                                 : mContainer.AsAccessible()->StartOffset();
 
     if (startOffset != 0) {
-      mContainer = mContainer.Parent();
-      mOffset = startOffset;
+      if (!IsEditableRoot()) {
+        mContainer = mContainer.Parent();
+        mOffset = startOffset;
 
-      
-      
-      NormalizePrevious();
+        
+        
+        NormalizePrevious();
+      }
     }
   } else {
     AccessibleOrProxy link;
