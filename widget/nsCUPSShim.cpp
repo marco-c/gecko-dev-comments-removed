@@ -19,8 +19,19 @@ static const char gSymName[][sizeof("cupsPrintFile")] = {
 };
 static const int gSymNameCt = mozilla::ArrayLength(gSymName);
 
+#ifdef XP_MACOSX
+
+
+
+
+
+static const char gCUPSLibraryName[] = "libcups.2.dylib";
+#else
+static const char gCUPSLibraryName[] = "libcups.so.2";
+#endif
+
 bool nsCUPSShim::Init() {
-  mCupsLib = PR_LoadLibrary("libcups.so.2");
+  mCupsLib = PR_LoadLibrary(gCUPSLibraryName);
   if (!mCupsLib) return false;
 
   
