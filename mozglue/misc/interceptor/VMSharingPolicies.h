@@ -185,18 +185,10 @@ class VMSharingPolicyUnique : public MMPolicy {
 namespace mozilla {
 namespace interceptor {
 
-template <typename MMPolicy, bool Dummy>
-class VMSharingPolicyShared;
 
-
-
-
-
-template <bool Dummy>
-class MOZ_TRIVIAL_CTOR_DTOR VMSharingPolicyShared<MMPolicyInProcess, Dummy>
-    : public MMPolicyInProcess {
+class MOZ_TRIVIAL_CTOR_DTOR VMSharingPolicyShared : public MMPolicyInProcess {
   typedef VMSharingPolicyUnique<MMPolicyInProcess> UniquePolicyT;
-  typedef VMSharingPolicyShared<MMPolicyInProcess, Dummy> ThisType;
+  typedef VMSharingPolicyShared ThisType;
 
  public:
   using PoolType = TrampolinePool<ThisType, UniquePolicyT::PoolType>;
@@ -283,16 +275,9 @@ class MOZ_TRIVIAL_CTOR_DTOR VMSharingPolicyShared<MMPolicyInProcess, Dummy>
   template <typename VMPolicyT, typename InnerT>
   friend class TrampolinePool;
 
-  static RangeMap<MMPolicyInProcess> sVMMap;
-  static CRITICAL_SECTION sCS;
+  inline static RangeMap<MMPolicyInProcess> sVMMap;
+  inline static CRITICAL_SECTION sCS;
 };
-
-template <bool Dummy>
-RangeMap<MMPolicyInProcess>
-    VMSharingPolicyShared<MMPolicyInProcess, Dummy>::sVMMap;
-
-template <bool Dummy>
-CRITICAL_SECTION VMSharingPolicyShared<MMPolicyInProcess, Dummy>::sCS;
 
 }  
 }  
