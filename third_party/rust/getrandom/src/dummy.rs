@@ -7,14 +7,8 @@
 
 
 
-
-use core::num::NonZeroU32;
-use crate::Error;
+use crate::{error::UNSUPPORTED, Error};
 
 pub fn getrandom_inner(_: &mut [u8]) -> Result<(), Error> {
-    error!("no support for this platform");
-    Err(Error::UNAVAILABLE)
+    Err(UNSUPPORTED)
 }
-
-#[inline(always)]
-pub fn error_msg_inner(_: NonZeroU32) -> Option<&'static str> { None }

@@ -7,50 +7,131 @@
 
 
 
-extern crate std;
-
+use crate::util::LazyUsize;
+use crate::util_libc::{open_readonly, sys_fill_exact};
 use crate::Error;
-use crate::utils::use_init;
-use std::{thread_local, io::Read, fs::File};
-use core::cell::RefCell;
-use core::num::NonZeroU32;
-
-thread_local!(static RNG_FILE: RefCell<Option<File>> = RefCell::new(None));
+use core::cell::UnsafeCell;
+use core::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 
 #[cfg(target_os = "redox")]
-const FILE_PATH: &str = "rand:";
-#[cfg(target_os = "netbsd")]
-const FILE_PATH: &str = "/dev/urandom";
-#[cfg(any(target_os = "dragonfly", target_os = "emscripten", target_os = "haiku"))]
-const FILE_PATH: &str = "/dev/random";
+const FILE_PATH: &str = "rand:\0";
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "emscripten",
+    target_os = "haiku",
+    target_os = "macos",
+    target_os = "solaris",
+    target_os = "illumos"
+))]
+const FILE_PATH: &str = "/dev/random\0";
+#[cfg(any(target_os = "android", target_os = "linux"))]
+const FILE_PATH: &str = "/dev/urandom\0";
 
 pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
-    RNG_FILE.with(|f| {
-        use_init(f, || init_file(), |f| use_file(f, dest))
-    })
-}
+    let fd = get_rng_fd()?;
+    let read = |buf: &mut [u8]| unsafe { libc::read(fd, buf.as_mut_ptr() as *mut _, buf.len()) };
 
-fn use_file(f: &mut File, dest: &mut [u8]) -> Result<(), Error> {
     if cfg!(target_os = "emscripten") {
         
         for chunk in dest.chunks_mut(65536) {
-            f.read_exact(chunk)?;
+            sys_fill_exact(chunk, read)?;
         }
     } else {
-        f.read_exact(dest)?;
+        sys_fill_exact(dest, read)?;
     }
-    core::mem::forget(f);
     Ok(())
 }
 
-fn init_file() -> Result<File, Error> {
-    if cfg!(target_os = "netbsd") {
-        
-        File::open("/dev/random")?.read_exact(&mut [0u8; 1])?;
+
+
+
+fn get_rng_fd() -> Result<libc::c_int, Error> {
+    static FD: AtomicUsize = AtomicUsize::new(LazyUsize::UNINIT);
+    fn get_fd() -> Option<libc::c_int> {
+        match FD.load(Relaxed) {
+            LazyUsize::UNINIT => None,
+            val => Some(val as libc::c_int),
+        }
     }
-    let f = File::open(FILE_PATH)?;
-    Ok(f)
+
+    
+    if let Some(fd) = get_fd() {
+        return Ok(fd);
+    }
+
+    
+    
+    static MUTEX: Mutex = Mutex::new();
+    unsafe { MUTEX.lock() };
+    let _guard = DropGuard(|| unsafe { MUTEX.unlock() });
+
+    if let Some(fd) = get_fd() {
+        return Ok(fd);
+    }
+
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    wait_until_rng_ready()?;
+
+    let fd = unsafe { open_readonly(FILE_PATH)? };
+    
+    debug_assert!(fd >= 0 && (fd as usize) < LazyUsize::UNINIT);
+    FD.store(fd as usize, Relaxed);
+
+    Ok(fd)
 }
 
-#[inline(always)]
-pub fn error_msg_inner(_: NonZeroU32) -> Option<&'static str> { None }
+
+#[cfg(any(target_os = "android", target_os = "linux"))]
+fn wait_until_rng_ready() -> Result<(), Error> {
+    
+    let fd = unsafe { open_readonly("/dev/random\0")? };
+    let mut pfd = libc::pollfd {
+        fd,
+        events: libc::POLLIN,
+        revents: 0,
+    };
+    let _guard = DropGuard(|| unsafe {
+        libc::close(fd);
+    });
+
+    loop {
+        
+        let res = unsafe { libc::poll(&mut pfd, 1, -1) };
+        if res >= 0 {
+            assert_eq!(res, 1); 
+            return Ok(());
+        }
+        let err = crate::util_libc::last_os_error();
+        match err.raw_os_error() {
+            Some(libc::EINTR) | Some(libc::EAGAIN) => continue,
+            _ => return Err(err),
+        }
+    }
+}
+
+struct Mutex(UnsafeCell<libc::pthread_mutex_t>);
+
+impl Mutex {
+    const fn new() -> Self {
+        Self(UnsafeCell::new(libc::PTHREAD_MUTEX_INITIALIZER))
+    }
+    unsafe fn lock(&self) {
+        let r = libc::pthread_mutex_lock(self.0.get());
+        debug_assert_eq!(r, 0);
+    }
+    unsafe fn unlock(&self) {
+        let r = libc::pthread_mutex_unlock(self.0.get());
+        debug_assert_eq!(r, 0);
+    }
+}
+
+unsafe impl Sync for Mutex {}
+
+struct DropGuard<F: FnMut()>(F);
+
+impl<F: FnMut()> Drop for DropGuard<F> {
+    fn drop(&mut self) {
+        self.0()
+    }
+}

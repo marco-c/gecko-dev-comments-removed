@@ -11,23 +11,20 @@ extern crate std;
 
 use core::cell::RefCell;
 use core::mem;
-use core::num::NonZeroU32;
 use std::thread_local;
 
 use wasm_bindgen::prelude::*;
 
+use crate::error::{BINDGEN_CRYPTO_UNDEF, BINDGEN_GRV_UNDEF};
 use crate::Error;
-use crate::error::CODE_PREFIX;
-use crate::utils::use_init;
-
-const CODE_CRYPTO_UNDEF: u32 = CODE_PREFIX | 0x80;
-const CODE_GRV_UNDEF: u32 = CODE_PREFIX | 0x81;
 
 #[derive(Clone, Debug)]
 enum RngSource {
     Node(NodeCrypto),
     Browser(BrowserCrypto),
 }
+
+
 
 thread_local!(
     static RNG_SOURCE: RefCell<Option<RngSource>> = RefCell::new(None);
@@ -37,89 +34,62 @@ pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
     assert_eq!(mem::size_of::<usize>(), 4);
 
     RNG_SOURCE.with(|f| {
-        use_init(f, getrandom_init, |source| {
-            match *source {
-                RngSource::Node(ref n) => n.random_fill_sync(dest),
-                RngSource::Browser(ref n) => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    for chunk in dest.chunks_mut(65536) {
-                        n.get_random_values(chunk)
-                    }
+        let mut source = f.borrow_mut();
+        if source.is_none() {
+            *source = Some(getrandom_init()?);
+        }
+
+        match source.as_ref().unwrap() {
+            RngSource::Node(n) => n.random_fill_sync(dest),
+            RngSource::Browser(n) => {
+                
+                
+                
+                
+                
+                
+                for chunk in dest.chunks_mut(65536) {
+                    n.get_random_values(chunk)
                 }
             }
-            Ok(())
-        })
+        };
+        Ok(())
     })
-
 }
 
 fn getrandom_init() -> Result<RngSource, Error> {
-    
-    
-    
-    
-    
-    
-    let this = Function::new("return this").call(&JsValue::undefined());
-    assert!(this != JsValue::undefined());
-    let this = This::from(this);
-    let is_browser = this.self_() != JsValue::undefined();
+    if let Ok(self_) = Global::get_self() {
+        
+        
+        
+        
 
-    if !is_browser {
-        return Ok(RngSource::Node(node_require("crypto")))
+        let crypto = self_.crypto();
+        if crypto.is_undefined() {
+            return Err(BINDGEN_CRYPTO_UNDEF);
+        }
+
+        
+        let crypto: BrowserCrypto = crypto.into();
+        if crypto.get_random_values_fn().is_undefined() {
+            return Err(BINDGEN_GRV_UNDEF);
+        }
+
+        return Ok(RngSource::Browser(crypto));
     }
 
-    
-    
-    
-    
-    let crypto = this.crypto();
-    if crypto.is_undefined() {
-        return Err(Error::from(unsafe {
-            NonZeroU32::new_unchecked(CODE_CRYPTO_UNDEF)
-        }));
-    }
-
-    
-    let crypto: BrowserCrypto = crypto.into();
-    if crypto.get_random_values_fn().is_undefined() {
-        return Err(Error::from(unsafe {
-            NonZeroU32::new_unchecked(CODE_GRV_UNDEF)
-        }));
-    }
-
-    
-    
-    Ok(RngSource::Browser(crypto))
-}
-
-#[inline(always)]
-pub fn error_msg_inner(n: NonZeroU32) -> Option<&'static str> {
-    match n.get() {
-        CODE_CRYPTO_UNDEF => Some("getrandom: self.crypto is undefined"),
-        CODE_GRV_UNDEF => Some("crypto.getRandomValues is undefined"),
-        _ => None
-    }
+    return Ok(RngSource::Node(node_require("crypto")));
 }
 
 #[wasm_bindgen]
 extern "C" {
-    type Function;
-    #[wasm_bindgen(constructor)]
-    fn new(s: &str) -> Function;
-    #[wasm_bindgen(method)]
-    fn call(this: &Function, self_: &JsValue) -> JsValue;
+    type Global;
+    #[wasm_bindgen(getter, catch, static_method_of = Global, js_class = self, js_name = self)]
+    fn get_self() -> Result<Self_, JsValue>;
 
-    type This;
-    #[wasm_bindgen(method, getter, structural, js_name = self)]
-    fn self_(me: &This) -> JsValue;
+    type Self_;
     #[wasm_bindgen(method, getter, structural)]
-    fn crypto(me: &This) -> JsValue;
+    fn crypto(me: &Self_) -> JsValue;
 
     #[derive(Clone, Debug)]
     type BrowserCrypto;
