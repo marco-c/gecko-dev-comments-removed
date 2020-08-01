@@ -76,16 +76,17 @@ class nsWindowWatcher : public nsIWindowWatcher,
 
   
   
-  nsresult OpenWindowInternal(mozIDOMWindowProxy* aParent, const char* aUrl,
-                              const char* aName, const char* aFeatures,
-                              bool aCalledFromJS, bool aDialog, bool aNavigate,
-                              nsIArray* aArgv, bool aIsPopupSpam,
-                              bool aForceNoOpener, bool aForceNoReferrer,
+  nsresult OpenWindowInternal(mozIDOMWindowProxy* aParent,
+                              const nsACString& aUrl, const nsACString& aName,
+                              const nsACString& aFeatures, bool aCalledFromJS,
+                              bool aDialog, bool aNavigate, nsIArray* aArgv,
+                              bool aIsPopupSpam, bool aForceNoOpener,
+                              bool aForceNoReferrer,
                               nsDocShellLoadState* aLoadState,
                               mozilla::dom::BrowsingContext** aResult);
 
-  static nsresult URIfromURL(const char* aURL, mozIDOMWindowProxy* aParent,
-                             nsIURI** aURI);
+  static nsresult URIfromURL(const nsACString& aURL,
+                             mozIDOMWindowProxy* aParent, nsIURI** aURI);
 
   static bool ShouldOpenPopup(const mozilla::dom::WindowFeatures& aFeatures,
                               const SizeSpec& aSizeSpec);

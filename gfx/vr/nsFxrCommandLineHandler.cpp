@@ -80,13 +80,13 @@ nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
     NS_ENSURE_TRUE(wwatch, NS_ERROR_FAILURE);
 
     nsCOMPtr<mozIDOMWindowProxy> newWindow;
-    result = wwatch->OpenWindow(nullptr,                            
-                                "chrome://fxr/content/fxrui.html",  
-                                "_blank",                           
-                                "chrome,dialog=no,all,private"      
-                                ",alwaysontop",
-                                nullptr,  
-                                getter_AddRefs(newWindow));
+    result = wwatch->OpenWindow(
+        nullptr,                                        
+        "chrome://fxr/content/fxrui.html"_ns,           
+        "_blank"_ns,                                    
+        "chrome,dialog=no,all,private,alwaysontop"_ns,  
+        nullptr,                                        
+        getter_AddRefs(newWindow));
 
     MOZ_ASSERT(result == NS_OK);
 
