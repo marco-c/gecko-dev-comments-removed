@@ -287,17 +287,24 @@ PurgeTrackerService.prototype = {
       "privacy.purge_trackers.enabled",
       false
     );
+
+    
+    
+    
+    
     
     let cookieBehavior = Services.cookies.cookieBehavior;
 
-    let etpActive =
+    let activeWithCookieBehavior =
+      cookieBehavior == Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN ||
+      cookieBehavior == Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN ||
       cookieBehavior == Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER ||
       cookieBehavior ==
         Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
 
-    if (!etpActive || !purgeEnabled) {
+    if (!activeWithCookieBehavior || !purgeEnabled) {
       logger.log(
-        `returning early, etpActive: ${etpActive}, purgeEnabled: ${purgeEnabled}`
+        `returning early, activeWithCookieBehavior: ${activeWithCookieBehavior}, purgeEnabled: ${purgeEnabled}`
       );
       this.resetPurgeList();
       return;
