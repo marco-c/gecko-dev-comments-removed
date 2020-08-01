@@ -1261,17 +1261,10 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
-
-
-
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
-  ReplaceASCIIWhiteSpacesWithOneNBSP(
-      HTMLEditor& aHTMLEditor,
-      const EditorDOMPointInText& aAtFirstASCIIWhiteSpace,
-      const EditorDOMPointInText& aEndOfCollapsibleASCIIWhiteSpaces);
+  ReplaceTextAndRemoveEmptyTextNodes(
+      HTMLEditor& aHTMLEditor, const EditorDOMRangeInTexts& aRangeToReplace,
+      const nsAString& aReplaceString);
 };
 
 }  
