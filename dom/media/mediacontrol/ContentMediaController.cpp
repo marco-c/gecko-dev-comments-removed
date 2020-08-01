@@ -343,9 +343,21 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey) {
       mReceivers.Length());
   
   
-  
-  for (auto& receiver : Reversed(mReceivers)) {
-    receiver->HandleMediaKey(aKey);
+  switch (aKey) {
+    case MediaControlKey::Pause:
+      [[fallthrough]];
+    case MediaControlKey::Play:
+      [[fallthrough]];
+    case MediaControlKey::Stop:
+      
+      
+      
+      for (auto& receiver : Reversed(mReceivers)) {
+        receiver->HandleMediaKey(aKey);
+      }
+      return;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Not supported media key for default handler");
   }
 }
 
