@@ -1069,8 +1069,7 @@ void CompositorBridgeParent::CompositeToTarget(VsyncId aId, DrawTarget* aTarget,
     ScheduleComposition();
   }
 
-  
-  mLayerManager->SetCompositionTime(TimeStamp());
+  mLayerManager->SetCompositionInfo(TimeStamp(), CompositionOpportunityId{});
 
   mozilla::Telemetry::AccumulateTimeDelta(mozilla::Telemetry::COMPOSITE_TIME,
                                           start);
