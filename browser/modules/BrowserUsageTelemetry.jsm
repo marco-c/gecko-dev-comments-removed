@@ -893,6 +893,8 @@ let BrowserUsageTelemetry = {
               
               widget == "urlbar-container" ||
               
+              widget == "menubar-items" ||
+              
               widget == "personal-bookmarks"
             ) {
               continue;
