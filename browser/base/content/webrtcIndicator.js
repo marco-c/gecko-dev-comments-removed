@@ -10,12 +10,6 @@ const { webrtcUI } = ChromeUtils.import("resource:///modules/webrtcUI.jsm");
 
 ChromeUtils.defineModuleGetter(
   this,
-  "SitePermissions",
-  "resource:///modules/SitePermissions.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
   "AppConstants",
   "resource://gre/modules/AppConstants.jsm"
 );
@@ -50,6 +44,22 @@ function updateIndicatorState() {
 
 
 
+
+
+
+
+
+
+
+
+
+function closingInternally() {
+  WebRTCIndicator.closingInternally();
+}
+
+
+
+
 const WebRTCIndicator = {
   
   
@@ -66,6 +76,7 @@ const WebRTCIndicator = {
 
     this.updatingIndicatorState = false;
     this.loaded = false;
+    this.isClosingInternally = false;
 
     if (AppConstants.platform == "macosx") {
       this.macOSIndicator = new MacOSWebRTCStatusbarIndicator();
@@ -341,6 +352,21 @@ const WebRTCIndicator = {
   onUnload() {
     if (this.macOSIndicator) {
       this.macOSIndicator.close();
+      this.macOSIndicator = null;
+    }
+
+    if (!this.isClosingInternally) {
+      
+      
+      
+      
+      let activeStreams = webrtcUI.getActiveStreams(
+        true ,
+        true ,
+        true ,
+        true 
+      );
+      webrtcUI.stopSharingStreams(activeStreams);
     }
   },
 
@@ -353,7 +379,7 @@ const WebRTCIndicator = {
           true ,
           false 
         );
-        this.stopSharingScreen(activeStreams);
+        webrtcUI.stopSharingStreams(activeStreams);
         break;
       }
       case "stop-sharing-window": {
@@ -363,14 +389,22 @@ const WebRTCIndicator = {
           false ,
           true 
         );
+
         if (this.sharingBrowserWindow) {
           let browserWindowStreams = activeStreams.filter(stream => {
             return stream.devices.some(device => device.scary);
           });
-          this.stopSharingScreen(browserWindowStreams);
-        } else {
-          this.stopSharingScreen(activeStreams);
+          webrtcUI.stopSharingStreams(
+            browserWindowStreams,
+            false ,
+            false ,
+            false ,
+            true 
+          );
+          break;
         }
+
+        webrtcUI.stopSharingStreams(activeStreams);
         break;
       }
       case "microphone-button":
@@ -390,97 +424,6 @@ const WebRTCIndicator = {
         break;
       }
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-  stopSharingScreen(activeStreams) {
-    if (!activeStreams.length) {
-      return;
-    }
-
-    
-    
-    let chosenStream = activeStreams[activeStreams.length - 1];
-    let { browser } = chosenStream;
-
-    
-    
-    
-    
-    
-    let gBrowser = browser.getTabBrowser();
-    if (!gBrowser) {
-      Cu.reportError("Can't stop sharing screen - cannot find gBrowser.");
-      return;
-    }
-
-    let tab = gBrowser.getTabForBrowser(browser);
-    if (!tab) {
-      Cu.reportError("Can't stop sharing screen - cannot find tab.");
-      return;
-    }
-
-    let permissions = SitePermissions.getAllPermissionDetailsForBrowser(
-      browser
-    );
-
-    let webrtcState = tab._sharingState.webRTC;
-    let windowId = `screen:${webrtcState.windowId}`;
-    
-    
-    if (webrtcState.screen) {
-      let found = false;
-      for (let permission of permissions) {
-        if (permission.id != "screen") {
-          continue;
-        }
-        found = true;
-        permission.sharingState = webrtcState.screen;
-        break;
-      }
-      if (!found) {
-        
-        
-        
-        permissions.push({
-          id: "screen",
-          state: SitePermissions.ALLOW,
-          scope: SitePermissions.SCOPE_REQUEST,
-          sharingState: webrtcState.screen,
-        });
-      }
-    }
-
-    let permission = permissions.find(perm => {
-      return perm.id == "screen";
-    });
-
-    if (!permission) {
-      Cu.reportError(
-        "Can't stop sharing screen - cannot find screen permission."
-      );
-      return;
-    }
-
-    let bc = webrtcState.browsingContext;
-    bc.currentWindowGlobal
-      .getActor("WebRTC")
-      .sendAsyncMessage("webrtc:StopSharing", windowId);
-    webrtcUI.forgetActivePermissionsFromBrowser(browser);
-
-    SitePermissions.removeFromPrincipal(
-      browser.contentPrincipal,
-      permission.id,
-      browser
-    );
   },
 
   
@@ -516,6 +459,13 @@ const WebRTCIndicator = {
     } else {
       docEl.removeAttribute(attr);
     }
+  },
+
+  
+
+
+  closingInternally() {
+    this.isClosingInternally = true;
   },
 };
 
