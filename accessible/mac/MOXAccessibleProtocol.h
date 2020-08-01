@@ -24,6 +24,9 @@
 
 - (void)moxPostNotification:(NSString* _Nonnull)notification;
 
+- (void)moxPostNotification:(NSString* _Nonnull)notification
+               withUserInfo:(NSDictionary* _Nullable)userInfo;
+
 
 
 

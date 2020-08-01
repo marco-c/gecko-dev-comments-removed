@@ -62,6 +62,8 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 
 - (mozilla::a11y::AccessibleOrProxy)geckoAccessible;
 
+- (mozilla::a11y::AccessibleOrProxy)geckoDocument;
+
 
 - (void)dealloc;
 
@@ -73,6 +75,10 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 
 
 - (void)handleAccessibleEvent:(uint32_t)eventType;
+
+- (void)handleAccessibleTextChangeEvent:(NSString*)change
+                               inserted:(BOOL)isInserted
+                                     at:(int32_t)start;
 
 
 - (id)childAt:(uint32_t)i;
