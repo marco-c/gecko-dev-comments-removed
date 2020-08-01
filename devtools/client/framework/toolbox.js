@@ -3782,23 +3782,7 @@ Toolbox.prototype = {
             this._removeChromeEventHandlerEvents();
 
             
-            
-            
-            
-            
-            
-            
-            try {
-              
-              
-              
-              
-              if (this.hostType !== Toolbox.HostType.PAGE) {
-                win.location.replace("about:blank");
-              }
-            } catch (e) {
-              
-            }
+            this.emit("toolbox-unload");
 
             
             

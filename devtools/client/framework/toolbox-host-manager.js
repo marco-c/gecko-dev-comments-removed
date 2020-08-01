@@ -73,6 +73,8 @@ function ToolboxHostManager(target, hostType, hostOptions) {
   this.hostType = hostType;
   this.telemetry = new Telemetry();
   this.setMinWidthWithZoom = this.setMinWidthWithZoom.bind(this);
+  this._onToolboxUnload = this._onToolboxUnload.bind(this);
+  this._onMessage = this._onMessage.bind(this);
   Services.prefs.addObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
 }
 
@@ -81,9 +83,10 @@ ToolboxHostManager.prototype = {
     await this.host.create();
 
     this.host.frame.setAttribute("aria-label", L10N.getStr("toolbox.label"));
-    this.host.frame.ownerDocument.defaultView.addEventListener("message", this);
-    
-    this.host.frame.addEventListener("unload", this, true);
+    this.host.frame.ownerDocument.defaultView.addEventListener(
+      "message",
+      this._onMessage
+    );
 
     const msSinceProcessStart = parseInt(
       this.telemetry.msSinceProcessStart(),
@@ -97,6 +100,7 @@ ToolboxHostManager.prototype = {
       this.frameId,
       msSinceProcessStart
     );
+    toolbox.once("toolbox-unload", this._onToolboxUnload);
 
     
     
@@ -135,31 +139,16 @@ ToolboxHostManager.prototype = {
     }
   },
 
-  handleEvent(event) {
-    switch (event.type) {
-      case "message":
-        this.onMessage(event);
-        break;
-      case "unload":
-        
-        
-        
-        
-        if (!event.target.location.href.startsWith("about:devtools-toolbox")) {
-          break;
-        }
-        
-        
-        
-        
-        DevToolsUtils.executeSoon(() => {
-          this.destroy();
-        });
-        break;
-    }
+  _onToolboxUnload() {
+    
+    
+    
+    DevToolsUtils.executeSoon(() => {
+      this.destroy();
+    });
   },
 
-  onMessage(event) {
+  _onMessage(event) {
     if (!event.data) {
       return;
     }
@@ -259,8 +248,10 @@ ToolboxHostManager.prototype = {
     this.host = newHost;
     this.hostType = hostType;
     this.host.setTitle(this.host.frame.contentWindow.document.title);
-    this.host.frame.ownerDocument.defaultView.addEventListener("message", this);
-    this.host.frame.addEventListener("unload", this, true);
+    this.host.frame.ownerDocument.defaultView.addEventListener(
+      "message",
+      this._onMessage
+    );
 
     this.setMinWidthWithZoom();
 
@@ -289,10 +280,9 @@ ToolboxHostManager.prototype = {
     if (this.host.frame.ownerDocument.defaultView) {
       this.host.frame.ownerDocument.defaultView.removeEventListener(
         "message",
-        this
+        this._onMessage
       );
     }
-    this.host.frame.removeEventListener("unload", this, true);
 
     return this.host.destroy();
   },
