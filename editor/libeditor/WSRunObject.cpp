@@ -718,7 +718,7 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
   
   
   const VisibleWhiteSpacesData& visibleWhiteSpaces =
-      TextFragmentDataAtStart().VisibleWhiteSpacesDataRef();
+      TextFragmentDataAtStartRef().VisibleWhiteSpacesDataRef();
   if (visibleWhiteSpaces.IsInitialized() &&
       visibleWhiteSpaces.StartRef().IsBefore(aPoint)) {
     EditorDOMPointInText atPreviousChar = GetPreviousEditableCharPoint(aPoint);
@@ -733,15 +733,15 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
   }
 
   
-  if (TextFragmentDataAtStart().GetStartReasonContent() !=
-      TextFragmentDataAtStart().StartRef().GetContainer()) {
+  if (TextFragmentDataAtStartRef().GetStartReasonContent() !=
+      TextFragmentDataAtStartRef().StartRef().GetContainer()) {
     
     
-    return WSScanResult(TextFragmentDataAtStart().GetStartReasonContent(),
-                        TextFragmentDataAtStart().StartRawReason());
+    return WSScanResult(TextFragmentDataAtStartRef().GetStartReasonContent(),
+                        TextFragmentDataAtStartRef().StartRawReason());
   }
-  return WSScanResult(TextFragmentDataAtStart().StartRef(),
-                      TextFragmentDataAtStart().StartRawReason());
+  return WSScanResult(TextFragmentDataAtStartRef().StartRef(),
+                      TextFragmentDataAtStartRef().StartRawReason());
 }
 
 template <typename PT, typename CT>
@@ -752,7 +752,7 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
   
   
   const VisibleWhiteSpacesData& visibleWhiteSpaces =
-      TextFragmentDataAtStart().VisibleWhiteSpacesDataRef();
+      TextFragmentDataAtStartRef().VisibleWhiteSpacesDataRef();
   if (visibleWhiteSpaces.IsInitialized() &&
       aPoint.EqualsOrIsBefore(visibleWhiteSpaces.EndRef())) {
     EditorDOMPointInText atNextChar = GetInclusiveNextEditableCharPoint(aPoint);
@@ -767,15 +767,15 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
   }
 
   
-  if (TextFragmentDataAtStart().GetEndReasonContent() !=
-      TextFragmentDataAtStart().EndRef().GetContainer()) {
+  if (TextFragmentDataAtStartRef().GetEndReasonContent() !=
+      TextFragmentDataAtStartRef().EndRef().GetContainer()) {
     
     
-    return WSScanResult(TextFragmentDataAtStart().GetEndReasonContent(),
-                        TextFragmentDataAtStart().EndRawReason());
+    return WSScanResult(TextFragmentDataAtStartRef().GetEndReasonContent(),
+                        TextFragmentDataAtStartRef().EndRawReason());
   }
-  return WSScanResult(TextFragmentDataAtStart().EndRef(),
-                      TextFragmentDataAtStart().EndRawReason());
+  return WSScanResult(TextFragmentDataAtStartRef().EndRef(),
+                      TextFragmentDataAtStartRef().EndRawReason());
 }
 
 template <typename EditorDOMPointType>
