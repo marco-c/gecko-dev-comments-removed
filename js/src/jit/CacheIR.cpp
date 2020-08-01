@@ -5903,6 +5903,74 @@ AttachDecision CallIRGenerator::tryAttachStringFromCodePoint(
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachStringToLowerCase(
+    HandleFunction callee) {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  
+  writer.stringToLowerCaseResult(strId);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("StringToLowerCase");
+  return AttachDecision::Attach;
+}
+
+AttachDecision CallIRGenerator::tryAttachStringToUpperCase(
+    HandleFunction callee) {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  
+  writer.stringToUpperCaseResult(strId);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("StringToUpperCase");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachMathRandom(HandleFunction callee) {
   
   if (argc_ != 0) {
@@ -6872,6 +6940,10 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachStringFromCharCode(callee);
     case InlinableNative::StringFromCodePoint:
       return tryAttachStringFromCodePoint(callee);
+    case InlinableNative::StringToLowerCase:
+      return tryAttachStringToLowerCase(callee);
+    case InlinableNative::StringToUpperCase:
+      return tryAttachStringToUpperCase(callee);
 
     
     case InlinableNative::MathRandom:
