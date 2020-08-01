@@ -8,8 +8,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
-
 this.EXPORTED_SYMBOLS = ["navigate"];
 
 
@@ -42,21 +40,18 @@ navigate.isLoadEventExpected = function(current, future = undefined) {
     return true;
   }
 
-  let cur = new URL(current);
-  let fut = new URL(future);
-
   
   
   
-  if (fut.protocol == "javascript:") {
+  if (future.protocol == "javascript:") {
     return false;
   }
 
   
   if (
-    cur.href.includes("#") &&
-    fut.href.includes("#") &&
-    cur.hash === fut.hash
+    current.href.includes("#") &&
+    future.href.includes("#") &&
+    current.hash === future.hash
   ) {
     return false;
   }
