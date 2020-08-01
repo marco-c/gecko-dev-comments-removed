@@ -2342,12 +2342,7 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
-    if (found) {
-      
-      
-      if (rememberedDBKey.IsEmpty()) {
-        return;
-      }
+    if (found && !rememberedDBKey.IsEmpty()) {
       nsCOMPtr<nsIX509CertDB> certdb = do_GetService(NS_X509CERTDB_CONTRACTID);
       if (NS_WARN_IF(!certdb)) {
         return;

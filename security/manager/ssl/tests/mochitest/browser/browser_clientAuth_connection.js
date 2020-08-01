@@ -21,9 +21,6 @@ const DialogState = {
 };
 
 var sdr = Cc["@mozilla.org/security/sdr;1"].getService(Ci.nsISecretDecoderRing);
-let cars = Cc["@mozilla.org/security/clientAuthRememberService;1"].getService(
-  Ci.nsIClientAuthRememberService
-);
 
 var gExpectedClientCertificateChoices;
 
@@ -166,14 +163,7 @@ add_task(async function setup() {
 
 
 
-
-
-async function testHelper(
-  prefValue,
-  expectedURL,
-  expectCallingChooseCertificate,
-  options = undefined
-) {
+async function testHelper(prefValue, expectedURL, options = undefined) {
   gClientAuthDialogs.chooseCertificateCalled = false;
   await SpecialPowers.pushPrefEnv({
     set: [["security.default_personal_cert", prefValue]],
@@ -199,7 +189,7 @@ async function testHelper(
   );
   Assert.equal(
     gClientAuthDialogs.chooseCertificateCalled,
-    expectCallingChooseCertificate,
+    prefValue == "Ask Every Time",
     "chooseCertificate should have been called if we were expecting it to be called"
   );
 
@@ -217,12 +207,11 @@ add_task(async function testCertChosenAutomatically() {
   gClientAuthDialogs.state = DialogState.ASSERT_NOT_CALLED;
   await testHelper(
     "Select Automatically",
-    "https://requireclientcert.example.com/",
-    false
+    "https://requireclientcert.example.com/"
   );
   
   
-  cars.clearRememberedDecisions();
+  sdr.logoutAndTeardown();
 });
 
 
@@ -231,38 +220,16 @@ add_task(async function testCertNotChosenByUser() {
   gClientAuthDialogs.state = DialogState.RETURN_CERT_NOT_SELECTED;
   await testHelper(
     "Ask Every Time",
-    "about:neterror?e=nssFailure2&u=https%3A//requireclientcert.example.com/",
-    true
+    "about:neterror?e=nssFailure2&u=https%3A//requireclientcert.example.com/"
   );
-  cars.clearRememberedDecisions();
+  sdr.logoutAndTeardown();
 });
 
 
 add_task(async function testCertChosenByUser() {
   gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
-  await testHelper(
-    "Ask Every Time",
-    "https://requireclientcert.example.com/",
-    true
-  );
-  cars.clearRememberedDecisions();
-});
-
-
-add_task(async function testEmptyCertChosenByUser() {
-  gClientAuthDialogs.state = DialogState.RETURN_CERT_NOT_SELECTED;
-  gClientAuthDialogs.rememberClientAuthCertificate = true;
-  await testHelper(
-    "Ask Every Time",
-    "about:neterror?e=nssFailure2&u=https%3A//requireclientcert.example.com/",
-    true
-  );
-  await testHelper(
-    "Ask Every Time",
-    "about:neterror?e=nssFailure2&u=https%3A//requireclientcert.example.com/",
-    false
-  );
-  cars.clearRememberedDecisions();
+  await testHelper("Ask Every Time", "https://requireclientcert.example.com/");
+  sdr.logoutAndTeardown();
 });
 
 
@@ -276,32 +243,18 @@ add_task(async function testEmptyCertChosenByUser() {
 add_task(async function testClearPrivateBrowsingState() {
   gClientAuthDialogs.rememberClientAuthCertificate = true;
   gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
-  await testHelper(
-    "Ask Every Time",
-    "https://requireclientcert.example.com/",
-    true,
-    {
-      private: true,
-    }
-  );
-  await testHelper(
-    "Ask Every Time",
-    "https://requireclientcert.example.com/",
-    true,
-    {
-      private: true,
-    }
-  );
-  await testHelper(
-    "Ask Every Time",
-    "https://requireclientcert.example.com/",
-    true
-  );
+  await testHelper("Ask Every Time", "https://requireclientcert.example.com/", {
+    private: true,
+  });
+  await testHelper("Ask Every Time", "https://requireclientcert.example.com/", {
+    private: true,
+  });
+  await testHelper("Ask Every Time", "https://requireclientcert.example.com/");
   
   
   
   
-  cars.clearRememberedDecisions();
+  sdr.logoutAndTeardown();
 });
 
 
@@ -329,12 +282,8 @@ add_task(async function testCertFilteringWithIntermediate() {
   nssComponent.addEnterpriseIntermediate(intermediateBytes);
   gExpectedClientCertificateChoices = 4;
   gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
-  await testHelper(
-    "Ask Every Time",
-    "https://requireclientcert.example.com/",
-    true
-  );
-  cars.clearRememberedDecisions();
+  await testHelper("Ask Every Time", "https://requireclientcert.example.com/");
+  sdr.logoutAndTeardown();
   
   await SpecialPowers.pushPrefEnv({
     set: [["security.enterprise_roots.enabled", true]],
