@@ -271,14 +271,6 @@ impl CompositorKind {
 }
 
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-struct Occluder {
-    z_id: ZBufferId,
-    device_rect: DeviceIntRect,
-}
-
-
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -352,6 +344,8 @@ pub struct CompositeStatePreallocator {
     clear_tiles: Preallocator,
     external_surfaces: Preallocator,
     occluders: Preallocator,
+    occluders_events: Preallocator,
+    occluders_active: Preallocator,
     descriptor_surfaces: Preallocator,
 }
 
@@ -361,7 +355,9 @@ impl CompositeStatePreallocator {
         self.alpha_tiles.record_vec(&state.alpha_tiles);
         self.clear_tiles.record_vec(&state.clear_tiles);
         self.external_surfaces.record_vec(&state.external_surfaces);
-        self.occluders.record_vec(&state.occluders);
+        self.occluders.record_vec(&state.occluders.occluders);
+        self.occluders_events.record_vec(&state.occluders.events);
+        self.occluders_active.record_vec(&state.occluders.active);
         self.descriptor_surfaces.record_vec(&state.descriptor.surfaces);
     }
 
@@ -370,7 +366,9 @@ impl CompositeStatePreallocator {
         self.alpha_tiles.preallocate_vec(&mut state.alpha_tiles);
         self.clear_tiles.preallocate_vec(&mut state.clear_tiles);
         self.external_surfaces.preallocate_vec(&mut state.external_surfaces);
-        self.occluders.preallocate_vec(&mut state.occluders);
+        self.occluders.preallocate_vec(&mut state.occluders.occluders);
+        self.occluders_events.preallocate_vec(&mut state.occluders.events);
+        self.occluders_active.preallocate_vec(&mut state.occluders.active);
         self.descriptor_surfaces.preallocate_vec(&mut state.descriptor.surfaces);
     }
 }
@@ -383,6 +381,8 @@ impl Default for CompositeStatePreallocator {
             clear_tiles: Preallocator::new(0),
             external_surfaces: Preallocator::new(0),
             occluders: Preallocator::new(16),
+            occluders_events: Preallocator::new(32),
+            occluders_active: Preallocator::new(16),
             descriptor_surfaces: Preallocator::new(8),
         }
     }
@@ -419,7 +419,7 @@ pub struct CompositeState {
     
     global_device_pixel_scale: DevicePixelScale,
     
-    occluders: Vec<Occluder>,
+    pub occluders: Occluders,
     
     pub descriptor: CompositeDescriptor,
 }
@@ -452,7 +452,7 @@ impl CompositeState {
             compositor_kind,
             picture_caching_is_enabled,
             global_device_pixel_scale,
-            occluders: Vec::new(),
+            occluders: Occluders::new(),
             descriptor: CompositeDescriptor::empty(),
             external_surfaces: Vec::new(),
         }
@@ -467,41 +467,7 @@ impl CompositeState {
     ) {
         let device_rect = (rect * self.global_device_pixel_scale).round().to_i32();
 
-        self.occluders.push(Occluder {
-            device_rect,
-            z_id,
-        });
-    }
-
-    
-    
-    pub fn is_tile_occluded(
-        &self,
-        z_id: ZBufferId,
-        device_rect: DeviceRect,
-    ) -> bool {
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-
-        
-        let device_rect = device_rect.round().to_i32();
-        let ref_area = device_rect.size.width * device_rect.size.height;
-
-        
-        let cover_area = area_of_occluders(&self.occluders, z_id, &device_rect);
-        debug_assert!(cover_area <= ref_area);
-
-        
-        ref_area == cover_area
+        self.occluders.push(device_rect, z_id);
     }
 
     
@@ -952,109 +918,181 @@ pub trait Compositor {
 
 
 
-fn area_of_occluders(
-    occluders: &[Occluder],
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+struct Occluder {
     z_id: ZBufferId,
-    clip_rect: &DeviceIntRect,
-) -> i32 {
-    
-    
-    
+    device_rect: DeviceIntRect,
+}
 
-    let mut area = 0;
 
-    
-    #[derive(Debug)]
-    enum EventKind {
-        Begin,
-        End,
+#[derive(Debug)]
+enum OcclusionEventKind {
+    Begin,
+    End,
+}
+
+
+#[derive(Debug)]
+struct OcclusionEvent {
+    y: i32,
+    x_range: ops::Range<i32>,
+    kind: OcclusionEventKind,
+}
+
+impl OcclusionEvent {
+    fn new(y: i32, kind: OcclusionEventKind, x0: i32, x1: i32) -> Self {
+        OcclusionEvent {
+            y,
+            x_range: ops::Range {
+                start: x0,
+                end: x1,
+            },
+            kind,
+        }
     }
+}
+
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct Occluders {
+    occluders: Vec<Occluder>,
 
     
-    #[derive(Debug)]
-    struct Event {
-        y: i32,
-        x_range: ops::Range<i32>,
-        kind: EventKind,
-    }
 
-    impl Event {
-        fn new(y: i32, kind: EventKind, x0: i32, x1: i32) -> Self {
-            Event {
-                y,
-                x_range: ops::Range {
-                    start: x0,
-                    end: x1,
-                },
-                kind,
-            }
+    #[cfg_attr(feature = "serde", serde(skip))]
+    events: Vec<OcclusionEvent>,
+
+    #[cfg_attr(feature = "serde", serde(skip))]
+    active: Vec<ops::Range<i32>>,
+}
+
+impl Occluders {
+    fn new() -> Self {
+        Occluders {
+            occluders: Vec::new(),
+            events: Vec::new(),
+            active: Vec::new(),
         }
     }
 
-    
-    let mut events = Vec::with_capacity(occluders.len() * 2);
-    for occluder in occluders {
-        
-        if occluder.z_id.0 > z_id.0 {
-            
-            
-            if let Some(rect) = occluder.device_rect.intersection(clip_rect) {
-                let x0 = rect.origin.x;
-                let x1 = x0 + rect.size.width;
-                events.push(Event::new(rect.origin.y, EventKind::Begin, x0, x1));
-                events.push(Event::new(rect.origin.y + rect.size.height, EventKind::End, x0, x1));
-            }
-        }
+    fn push(&mut self, device_rect: DeviceIntRect, z_id: ZBufferId) {
+        self.occluders.push(Occluder { device_rect, z_id });
     }
 
     
-    if events.is_empty() {
-        return 0;
+    
+    pub fn is_tile_occluded(
+        &mut self,
+        z_id: ZBufferId,
+        device_rect: DeviceRect,
+    ) -> bool {
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+
+        
+        let device_rect = device_rect.round().to_i32();
+        let ref_area = device_rect.size.width * device_rect.size.height;
+
+        
+        let cover_area = self.area(z_id, &device_rect);
+        debug_assert!(cover_area <= ref_area);
+
+        
+        ref_area == cover_area
     }
 
     
-    events.sort_by_key(|e| e.y);
-    let mut active: Vec<ops::Range<i32>> = Vec::new();
-    let mut cur_y = events[0].y;
-
     
-    for event in &events {
+    fn area(
+        &mut self,
+        z_id: ZBufferId,
+        clip_rect: &DeviceIntRect,
+    ) -> i32 {
         
-        let dy = event.y - cur_y;
-
         
-        if dy != 0 && !active.is_empty() {
-            assert!(dy > 0);
+        
 
-            
-            active.sort_by_key(|i| i.start);
-            let mut query = 0;
-            let mut cur = active[0].start;
+        self.events.clear();
+        self.active.clear();
 
-            
-            for interval in &active {
-                cur = interval.start.max(cur);
-                query += (interval.end - cur).max(0);
-                cur = cur.max(interval.end);
-            }
-
-            
-            area += query * dy;
-        }
+        let mut area = 0;
 
         
-        match event.kind {
-            EventKind::Begin => {
-                active.push(event.x_range.clone());
-            }
-            EventKind::End => {
-                let index = active.iter().position(|i| *i == event.x_range).unwrap();
-                active.remove(index);
+        for occluder in &self.occluders {
+            
+            if occluder.z_id.0 > z_id.0 {
+                
+                
+                if let Some(rect) = occluder.device_rect.intersection(clip_rect) {
+                    let x0 = rect.origin.x;
+                    let x1 = x0 + rect.size.width;
+                    self.events.push(OcclusionEvent::new(rect.origin.y, OcclusionEventKind::Begin, x0, x1));
+                    self.events.push(OcclusionEvent::new(rect.origin.y + rect.size.height, OcclusionEventKind::End, x0, x1));
+                }
             }
         }
 
-        cur_y = event.y;
+        
+        if self.events.is_empty() {
+            return 0;
+        }
+
+        
+        self.events.sort_by_key(|e| e.y);
+        let mut cur_y = self.events[0].y;
+
+        
+        for event in &self.events {
+            
+            let dy = event.y - cur_y;
+
+            
+            if dy != 0 && !self.active.is_empty() {
+                assert!(dy > 0);
+
+                
+                self.active.sort_by_key(|i| i.start);
+                let mut query = 0;
+                let mut cur = self.active[0].start;
+
+                
+                for interval in &self.active {
+                    cur = interval.start.max(cur);
+                    query += (interval.end - cur).max(0);
+                    cur = cur.max(interval.end);
+                }
+
+                
+                area += query * dy;
+            }
+
+            
+            match event.kind {
+                OcclusionEventKind::Begin => {
+                    self.active.push(event.x_range.clone());
+                }
+                OcclusionEventKind::End => {
+                    let index = self.active.iter().position(|i| *i == event.x_range).unwrap();
+                    self.active.remove(index);
+                }
+            }
+
+            cur_y = event.y;
+        }
+
+        area
     }
-
-    area
 }

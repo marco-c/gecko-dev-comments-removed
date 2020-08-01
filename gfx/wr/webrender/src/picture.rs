@@ -5205,7 +5205,7 @@ impl PicturePrimitive {
                                     Some(device_draw_rect) => {
                                         
                                         if tile_cache.spatial_node_index == ROOT_SPATIAL_NODE_INDEX &&
-                                           frame_state.composite_state.is_tile_occluded(tile.z_id, device_draw_rect) {
+                                           frame_state.composite_state.occluders.is_tile_occluded(tile.z_id, device_draw_rect) {
                                             
                                             
                                             
