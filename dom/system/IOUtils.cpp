@@ -338,16 +338,16 @@ already_AddRefed<Promise> IOUtils::Move(GlobalObject& aGlobal,
   InvokeAsync(bg, __func__,
               [srcPathString = nsAutoString(aSourcePath),
                destPathString = nsAutoString(aDestPath), noOverwrite]() {
-                nsresult rv =
-                    MoveSync(srcPathString, destPathString, noOverwrite);
-                if (NS_FAILED(rv)) {
-                  return IOMozPromise::CreateAndReject(rv, __func__);
+                auto rv = MoveSync(srcPathString, destPathString, noOverwrite);
+                if (rv.isErr()) {
+                  return IOMozPromise::CreateAndReject(rv.unwrapErr(),
+                                                       __func__);
                 }
-                return IOMozPromise::CreateAndResolve(true, __func__);
+                return IOMozPromise::CreateAndResolve(rv.unwrap(), __func__);
               })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [promise = RefPtr(promise)](const bool&) {
+          [promise = RefPtr(promise)](const Ok&) {
             AutoJSAPI jsapi;
             if (NS_WARN_IF(!jsapi.Init(promise->GetGlobalObject()))) {
               promise->MaybeReject(NS_ERROR_UNEXPECTED);
@@ -404,18 +404,18 @@ already_AddRefed<Promise> IOUtils::Remove(GlobalObject& aGlobal,
   RefPtr<nsISerialEventTarget> bg = GetBackgroundEventTarget();
   REJECT_IF_NULL_EVENT_TARGET(bg, promise);
 
-  InvokeAsync(bg, __func__,
-              [path = nsAutoString(aPath), aOptions]() {
-                nsresult rv = RemoveSync(path, aOptions.mIgnoreAbsent,
-                                         aOptions.mRecursive);
-                if (NS_FAILED(rv)) {
-                  return IOMozPromise::CreateAndReject(rv, __func__);
-                }
-                return IOMozPromise::CreateAndResolve(true, __func__);
-              })
+  InvokeAsync(
+      bg, __func__,
+      [path = nsAutoString(aPath), aOptions]() {
+        auto rv = RemoveSync(path, aOptions.mIgnoreAbsent, aOptions.mRecursive);
+        if (rv.isErr()) {
+          return IOMozPromise::CreateAndReject(rv.unwrapErr(), __func__);
+        }
+        return IOMozPromise::CreateAndResolve(rv.unwrap(), __func__);
+      })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [promise = RefPtr(promise)](const bool&) {
+          [promise = RefPtr(promise)](const Ok&) {
             AutoJSAPI jsapi;
             if (NS_WARN_IF(!jsapi.Init(promise->GetGlobalObject()))) {
               promise->MaybeReject(NS_ERROR_UNEXPECTED);
@@ -459,16 +459,17 @@ already_AddRefed<Promise> IOUtils::MakeDirectory(
 
   InvokeAsync(bg, __func__,
               [path = nsAutoString(aPath), aOptions]() {
-                nsresult rv = CreateDirectorySync(
-                    path, aOptions.mCreateAncestors, aOptions.mIgnoreExisting);
-                if (NS_FAILED(rv)) {
-                  return IOMozPromise::CreateAndReject(rv, __func__);
+                auto rv = CreateDirectorySync(path, aOptions.mCreateAncestors,
+                                              aOptions.mIgnoreExisting);
+                if (rv.isErr()) {
+                  return IOMozPromise::CreateAndReject(rv.unwrapErr(),
+                                                       __func__);
                 }
-                return IOMozPromise::CreateAndResolve(true, __func__);
+                return IOMozPromise::CreateAndResolve(rv.unwrap(), __func__);
               })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [promise = RefPtr(promise)](const bool&) {
+          [promise = RefPtr(promise)](const Ok&) {
             AutoJSAPI jsapi;
             if (NS_WARN_IF(!jsapi.Init(promise->GetGlobalObject()))) {
               promise->MaybeReject(NS_ERROR_UNEXPECTED);
@@ -517,7 +518,7 @@ already_AddRefed<Promise> IOUtils::Stat(GlobalObject& aGlobal,
 
         auto rv = StatSync(path);
         if (rv.isErr()) {
-          return IOStatMozPromise::CreateAndReject(rv.propagateErr(), __func__);
+          return IOStatMozPromise::CreateAndReject(rv.unwrapErr(), __func__);
         }
         return IOStatMozPromise::CreateAndResolve(rv.unwrap(), __func__);
       })
@@ -737,8 +738,7 @@ Result<uint32_t, nsresult> IOUtils::WriteAtomicSync(
 
   
   if (exists && aOptions.mBackupFile.WasPassed() &&
-      NS_FAILED(
-          MoveSync(aDestPath, aOptions.mBackupFile.Value(), noOverwrite))) {
+      MoveSync(aDestPath, aOptions.mBackupFile.Value(), noOverwrite).isErr()) {
     return Err(NS_ERROR_FILE_COPY_OR_MOVE_FAILED);
   }
 
@@ -779,7 +779,7 @@ Result<uint32_t, nsresult> IOUtils::WriteAtomicSync(
 
   
   
-  if (aDestPath != tmpPath && NS_FAILED(MoveSync(tmpPath, aDestPath, false))) {
+  if (aDestPath != tmpPath && MoveSync(tmpPath, aDestPath, false).isErr()) {
     return Err(NS_ERROR_FILE_COPY_OR_MOVE_FAILED);
   }
   return result;
@@ -819,8 +819,9 @@ Result<uint32_t, nsresult> IOUtils::WriteSync(PRFileDesc* aFd,
 }
 
 
-nsresult IOUtils::MoveSync(const nsAString& aSourcePath,
-                           const nsAString& aDestPath, bool noOverwrite) {
+Result<Ok, nsresult> IOUtils::MoveSync(const nsAString& aSourcePath,
+                                       const nsAString& aDestPath,
+                                       bool noOverwrite) {
   MOZ_ASSERT(!NS_IsMainThread());
   nsresult rv = NS_OK;
 
@@ -834,8 +835,9 @@ nsresult IOUtils::MoveSync(const nsAString& aSourcePath,
   
   
   
-  if (!IsFileNotFound(rv)) {  
-    NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv) && !IsFileNotFound(rv)) {
+    
+    return Err(rv);
   }
 
   
@@ -844,21 +846,21 @@ nsresult IOUtils::MoveSync(const nsAString& aSourcePath,
 
   rv = destFile->IsDirectory(&destIsDir);
   if (NS_SUCCEEDED(rv) && destIsDir) {
-    return srcFile->MoveTo(destFile, EmptyString());
+    return ToResult(srcFile->MoveTo(destFile, EmptyString()));
   }
-  if (IsFileNotFound(rv)) {
+  if (NS_FAILED(rv) && IsFileNotFound(rv)) {
     
     destExists = false;
-  } else {
+  } else if (NS_FAILED(rv)) {
     
-    NS_ENSURE_SUCCESS(rv, rv);
+    return Err(rv);
   }
 
   
   
   
   if (noOverwrite && destExists) {
-    return NS_ERROR_FILE_ALREADY_EXISTS;
+    return Err(NS_ERROR_FILE_ALREADY_EXISTS);
   }
   if (destExists && !destIsDir) {
     
@@ -867,7 +869,7 @@ nsresult IOUtils::MoveSync(const nsAString& aSourcePath,
     bool srcIsDir = false;
     MOZ_TRY(srcFile->IsDirectory(&srcIsDir));
     if (srcIsDir) {
-      return NS_ERROR_FILE_DESTINATION_NOT_DIR;
+      return Err(NS_ERROR_FILE_DESTINATION_NOT_DIR);
     }
   }
 
@@ -877,26 +879,31 @@ nsresult IOUtils::MoveSync(const nsAString& aSourcePath,
   MOZ_TRY(destFile->GetParent(getter_AddRefs(destDir)));
 
   
-  return srcFile->MoveTo(destDir, destName);
+  return ToResult(srcFile->MoveTo(destDir, destName));
 }
 
 
-nsresult IOUtils::RemoveSync(const nsAString& aPath, bool aIgnoreAbsent,
-                             bool aRecursive) {
+Result<Ok, nsresult> IOUtils::RemoveSync(const nsAString& aPath,
+                                         bool aIgnoreAbsent, bool aRecursive) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
   RefPtr<nsLocalFile> file = new nsLocalFile();
   MOZ_TRY(file->InitWithPath(aPath));
 
   nsresult rv = file->Remove(aRecursive);
   if (aIgnoreAbsent && IsFileNotFound(rv)) {
-    return NS_OK;
+    return Ok();
   }
-  return rv;
+  return ToResult(rv);
 }
 
 
-nsresult IOUtils::CreateDirectorySync(const nsAString& aPath,
-                                      bool aCreateAncestors,
-                                      bool aIgnoreExisting, int32_t aMode) {
+Result<Ok, nsresult> IOUtils::CreateDirectorySync(const nsAString& aPath,
+                                                  bool aCreateAncestors,
+                                                  bool aIgnoreExisting,
+                                                  int32_t aMode) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
   RefPtr<nsLocalFile> targetFile = new nsLocalFile();
   MOZ_TRY(targetFile->InitWithPath(aPath));
 
@@ -909,7 +916,7 @@ nsresult IOUtils::CreateDirectorySync(const nsAString& aPath,
     bool parentExists;
     MOZ_TRY(parent->Exists(&parentExists));
     if (!parentExists) {
-      return NS_ERROR_FILE_NOT_FOUND;
+      return Err(NS_ERROR_FILE_NOT_FOUND);
     }
   }
 
@@ -922,13 +929,13 @@ nsresult IOUtils::CreateDirectorySync(const nsAString& aPath,
     bool isDirectory;
     MOZ_TRY(targetFile->IsDirectory(&isDirectory));
     if (!isDirectory) {
-      return NS_ERROR_FILE_NOT_DIRECTORY;
+      return Err(NS_ERROR_FILE_NOT_DIRECTORY);
     }
     if (aIgnoreExisting) {
-      return NS_OK;
+      return Ok();
     }
   }
-  return rv;
+  return ToResult(rv);
 }
 
 Result<IOUtils::InternalFileInfo, nsresult> IOUtils::StatSync(
