@@ -1562,6 +1562,30 @@ void nsGlobalWindowInner::UpdateAutoplayPermission() {
   GetWindowContext()->SetAutoplayPermission(perm);
 }
 
+void nsGlobalWindowInner::UpdateShortcutsPermission() {
+  if (!GetWindowContext() ||
+      !GetWindowContext()->GetBrowsingContext()->IsTop()) {
+    
+    
+    return;
+  }
+
+  uint32_t perm = nsIPermissionManager::DENY_ACTION;
+  nsIPrincipal* principal = GetPrincipal();
+  nsCOMPtr<nsIPermissionManager> permMgr =
+      mozilla::services::GetPermissionManager();
+  if (principal && permMgr) {
+    permMgr->TestExactPermissionFromPrincipal(principal, "shortcuts"_ns, &perm);
+  }
+
+  if (GetWindowContext()->GetShortcutsPermission() == perm) {
+    return;
+  }
+
+  
+  GetWindowContext()->SetShortcutsPermission(perm);
+}
+
 void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
   MOZ_ASSERT(mDoc);
 
@@ -1588,6 +1612,7 @@ void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
   }
 
   UpdateAutoplayPermission();
+  UpdateShortcutsPermission();
 
   RefPtr<PermissionDelegateHandler> permDelegateHandler =
       mDoc->GetPermissionDelegateHandler();
@@ -4991,6 +5016,8 @@ nsresult nsGlobalWindowInner::Observe(nsISupports* aSubject, const char* aTopic,
     perm->GetType(type);
     if (type == "autoplay-media"_ns) {
       UpdateAutoplayPermission();
+    } else if (type == "shortcuts"_ns) {
+      UpdateShortcutsPermission();
     }
 
     if (!mDoc) {

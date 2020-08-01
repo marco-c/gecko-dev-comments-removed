@@ -1199,6 +1199,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void FireFrameLoadEvent();
 
   void UpdateAutoplayPermission();
+  void UpdateShortcutsPermission();
 
  public:
   
