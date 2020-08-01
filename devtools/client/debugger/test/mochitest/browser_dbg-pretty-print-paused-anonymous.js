@@ -1,0 +1,14 @@
+
+
+
+
+
+add_task(async function() {
+  const dbg = await initDebugger("doc-minified.html");
+
+  const debuggerDone = dbg.client.evaluate("debugger; var foo;");
+  await waitForPaused(dbg);
+
+  
+  await prettyPrint(dbg);
+});
