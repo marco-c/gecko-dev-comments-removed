@@ -73,39 +73,8 @@ using mozilla::RangedPtr;
 
 extern mozilla::Atomic<bool> fuzzingSafe;
 
-
-
-
-
-
-static inline bool IsFuzzing() {
-#ifdef FUZZING
-  return true;
-#else
-  return fuzzingSafe;
-#endif
-}
-
-static inline bool IsFuzzingIon(JSContext* cx) {
-  return IsFuzzing() && !cx->options().wasmBaseline() &&
-         cx->options().wasmIon() && !cx->options().wasmCranelift();
-}
-
-static inline bool IsFuzzingCranelift(JSContext* cx) {
-  return IsFuzzing() && !cx->options().wasmBaseline() &&
-         !cx->options().wasmIon() && cx->options().wasmCranelift();
-}
-
-
-
-
 static inline bool WasmMultiValueFlag(JSContext* cx) {
 #ifdef ENABLE_WASM_MULTI_VALUE
-  if (IsFuzzingCranelift(cx)) {
-#  ifdef JS_CODEGEN_X64
-    return false;
-#  endif
-  }
   return cx->options().wasmMultiValue();
 #else
   return false;
@@ -114,43 +83,10 @@ static inline bool WasmMultiValueFlag(JSContext* cx) {
 
 static inline bool WasmSimdFlag(JSContext* cx) {
 #ifdef ENABLE_WASM_SIMD
-  if (IsFuzzingCranelift(cx)) {
-    return false;
-  }
   return cx->options().wasmSimd() && js::jit::JitSupportsWasmSimd();
 #else
   return false;
 #endif
-}
-
-static inline bool WasmReftypesFlag(JSContext* cx) {
-#ifdef ENABLE_WASM_REFTYPES
-  return cx->options().wasmReftypes();
-#else
-  return false;
-#endif
-}
-
-static inline bool WasmGcFlag(JSContext* cx) {
-  if (IsFuzzingIon(cx) || IsFuzzingCranelift(cx)) {
-    return false;
-  }
-  return cx->options().wasmGc();
-}
-
-static inline bool WasmThreadsFlag(JSContext* cx) {
-  if (IsFuzzingCranelift(cx)) {
-    return false;
-  }
-  return cx->realm() &&
-         cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
-}
-
-static inline bool WasmDebuggerActive(JSContext* cx) {
-  if (IsFuzzingIon(cx) || IsFuzzingCranelift(cx)) {
-    return false;
-  }
-  return cx->realm() && cx->realm()->debuggerObservesAsmJS();
 }
 
 
@@ -279,8 +215,8 @@ static inline bool Append(JSStringBuilder* reason, const char (&s)[ArrayLength],
 bool wasm::IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
                                  JSStringBuilder* reason) {
   
-  bool debug = WasmDebuggerActive(cx);
-  bool gc = WasmGcFlag(cx);
+  bool debug = cx->realm() && cx->realm()->debuggerObservesAsmJS();
+  bool gc = cx->options().wasmGc();
   if (reason) {
     char sep = 0;
     if (debug && !Append(reason, "debug", &sep)) {
@@ -307,13 +243,15 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
                                        JSStringBuilder* reason) {
   
   
-  
-  bool debug = WasmDebuggerActive(cx);
-  bool gc = WasmGcFlag(cx);
-  bool threads = WasmThreadsFlag(cx);
-  bool multiValueOnX64 = false;
-#if defined(JS_CODEGEN_X64)
-  multiValueOnX64 = WasmMultiValueFlag(cx);
+  bool debug = cx->realm() && cx->realm()->debuggerObservesAsmJS();
+  bool gc = cx->options().wasmGc();
+  bool threads =
+      cx->realm() &&
+      cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
+#if defined(JS_CODEGEN_ARM64)
+  bool multiValue = false;  
+#else
+  bool multiValue = WasmMultiValueFlag(cx);
 #endif
   bool simd = WasmSimdFlag(cx);
   if (reason) {
@@ -324,7 +262,7 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
     if (gc && !Append(reason, "gc", &sep)) {
       return false;
     }
-    if (multiValueOnX64 && !Append(reason, "multi-value", &sep)) {
+    if (multiValue && !Append(reason, "multi-value", &sep)) {
       return false;
     }
     if (threads && !Append(reason, "threads", &sep)) {
@@ -334,7 +272,7 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
       return false;
     }
   }
-  *isDisabled = debug || gc || multiValueOnX64 || threads || simd;
+  *isDisabled = debug || gc || multiValue || threads || simd;
   return true;
 }
 
@@ -348,13 +286,17 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
 
 bool wasm::ReftypesAvailable(JSContext* cx) {
   
-  return WasmReftypesFlag(cx) &&
+#ifdef ENABLE_WASM_REFTYPES
+  return cx->options().wasmReftypes() &&
          (BaselineAvailable(cx) || IonAvailable(cx) || CraneliftAvailable(cx));
+#else
+  return false;
+#endif
 }
 
 bool wasm::GcTypesAvailable(JSContext* cx) {
   
-  return WasmGcFlag(cx) && BaselineAvailable(cx);
+  return cx->options().wasmGc() && BaselineAvailable(cx);
 }
 
 bool wasm::MultiValuesAvailable(JSContext* cx) {
@@ -369,7 +311,9 @@ bool wasm::SimdAvailable(JSContext* cx) {
 
 bool wasm::ThreadsAvailable(JSContext* cx) {
   
-  return WasmThreadsFlag(cx) && (BaselineAvailable(cx) || IonAvailable(cx));
+  return cx->realm() &&
+         cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled() &&
+         (BaselineAvailable(cx) || IonAvailable(cx));
 }
 
 bool wasm::HasPlatformSupport(JSContext* cx) {
