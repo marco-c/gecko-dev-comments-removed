@@ -1256,7 +1256,10 @@ void HTMLImageElement::SetLazyLoading() {
 
   
   
-  if (!OwnerDoc()->IsScriptEnabled()) {
+  
+  
+  Document* doc = OwnerDoc();
+  if (!doc->IsScriptEnabled() || doc->IsStaticDocument()) {
     return;
   }
 
