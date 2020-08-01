@@ -8,7 +8,6 @@
 
 
 use crate::values::computed::position::Position;
-use crate::values::computed::percentage::Percentage;
 use crate::values::computed::url::ComputedImageUrl;
 #[cfg(feature = "gecko")]
 use crate::values::computed::NumberOrPercentage;
@@ -26,7 +25,7 @@ use style_traits::{CssWriter, ToCss};
 
 
 
-pub type Image = generic::GenericImage<Gradient, MozImageRect, ComputedImageUrl, Color, Percentage>;
+pub type Image = generic::GenericImage<Gradient, MozImageRect, ComputedImageUrl>;
 
 
 
@@ -40,12 +39,6 @@ pub type Gradient = generic::GenericGradient<
     AngleOrPercentage,
     Color,
 >;
-
-
-
-pub type CrossFade = generic::CrossFade<Image, Color, Percentage>;
-
-pub type PercentOrNone = generic::PercentOrNone<Percentage>;
 
 
 pub type EndingShape = generic::GenericEndingShape<NonNegativeLength, NonNegativeLengthPercentage>;

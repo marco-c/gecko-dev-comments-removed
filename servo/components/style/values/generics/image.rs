@@ -22,7 +22,7 @@ use style_traits::{CssWriter, ToCss};
     Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericImage<G, MozImageRect, ImageUrl, Color, Percentage> {
+pub enum GenericImage<G, MozImageRect, ImageUrl> {
     
     None,
     
@@ -45,95 +45,9 @@ pub enum GenericImage<G, MozImageRect, ImageUrl, Color, Percentage> {
     
     #[cfg(feature = "servo-layout-2013")]
     PaintWorklet(PaintWorklet),
-
-    
-    CrossFade(GenericCrossFade<Self, Color, Percentage>),
 }
 
 pub use self::GenericImage as Image;
-
-
-#[css(comma, function = "cross-fade")]
-#[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, ToResolvedValue, ToShmem, SpecifiedValueInfo, ToCss, ToComputedValue,
-)]
-#[repr(C)]
-pub struct GenericCrossFade<Image, Color, Percentage> {
-    
-    
-    #[css(iterable)]
-    pub elements: crate::OwnedSlice<GenericCrossFadeElement<Image, Color, Percentage>>,
-}
-
-
-
-#[derive(
-    Clone,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-    ToCss,
-)]
-#[repr(C, u8)]
-pub enum PercentOrNone<Percentage> {
-    
-    #[css(skip)]
-    None,
-    
-    Percent(Percentage),
-}
-
-
-#[derive(
-    Clone,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-    ToCss,
-)]
-#[repr(C)]
-pub struct GenericCrossFadeElement<Image, Color, Percentage> {
-    
-    pub percent: PercentOrNone<Percentage>,
-    
-    
-    pub image: GenericCrossFadeImage<Image, Color>,
-}
-
-
-
-#[derive(
-    Clone,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-    ToCss,
-    Parse,
-)]
-#[repr(C, u8)]
-pub enum GenericCrossFadeImage<I, C> {
-    
-    
-    Image(Box<I>),
-    
-    Color(C),
-}
-
-pub use self::GenericCrossFade as CrossFade;
-pub use self::GenericCrossFadeElement as CrossFadeElement;
-pub use self::GenericCrossFadeImage as CrossFadeImage;
 
 
 
@@ -373,26 +287,22 @@ pub struct GenericMozImageRect<NumberOrPercentage, MozImageRectUrl> {
 
 pub use self::GenericMozImageRect as MozImageRect;
 
-impl<G, R, U, C, P> fmt::Debug for Image<G, R, U, C, P>
+impl<G, R, U> fmt::Debug for Image<G, R, U>
 where
     G: ToCss,
     R: ToCss,
     U: ToCss,
-    C: ToCss,
-    P: ToCss,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.to_css(&mut CssWriter::new(f))
     }
 }
 
-impl<G, R, U, C, P> ToCss for Image<G, R, U, C, P>
+impl<G, R, U> ToCss for Image<G, R, U>
 where
     G: ToCss,
     R: ToCss,
     U: ToCss,
-    C: ToCss,
-    P: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -411,7 +321,6 @@ where
                 serialize_atom_identifier(selector, dest)?;
                 dest.write_str(")")
             },
-            Image::CrossFade(ref cf) => cf.to_css(dest),
         }
     }
 }
