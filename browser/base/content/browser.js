@@ -665,7 +665,7 @@ function updateFxaToolbarMenu(enable, isInitialUpdate = false) {
     false
   );
   const mainWindowEl = document.documentElement;
-  const fxaPanelEl = document.getElementById("PanelUI-fxa");
+  const fxaPanelEl = PanelMultiView.getViewNode(document, "PanelUI-fxa");
 
   mainWindowEl.setAttribute("fxastatus", "not_configured");
   fxaPanelEl.addEventListener("ViewShowing", gSync.updateSendToDeviceTitle);
@@ -687,16 +687,24 @@ function updateFxaToolbarMenu(enable, isInitialUpdate = false) {
     
     
     
-    document.getElementById(
+    PanelMultiView.getViewNode(
+      document,
       "PanelUI-fxa-menu-send-button"
     ).hidden = !gFxaSendLoginUrl;
-    document.getElementById(
+    PanelMultiView.getViewNode(
+      document,
       "PanelUI-fxa-menu-monitor-button"
     ).hidden = !gFxaMonitorLoginUrl;
     
     let hideSvcs = !gFxaSendLoginUrl && !gFxaMonitorLoginUrl;
-    document.getElementById("fxa-menu-service-separator").hidden = hideSvcs;
-    document.getElementById("fxa-menu-service-label").hidden = hideSvcs;
+    PanelMultiView.getViewNode(
+      document,
+      "fxa-menu-service-separator"
+    ).hidden = hideSvcs;
+    PanelMultiView.getViewNode(
+      document,
+      "fxa-menu-service-label"
+    ).hidden = hideSvcs;
   } else {
     mainWindowEl.removeAttribute("fxatoolbarmenu");
   }
