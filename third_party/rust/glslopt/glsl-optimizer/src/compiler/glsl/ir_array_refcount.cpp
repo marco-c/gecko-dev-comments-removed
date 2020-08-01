@@ -75,54 +75,6 @@ ir_array_refcount_entry::~ir_array_refcount_entry()
    delete [] bits;
 }
 
-
-void
-ir_array_refcount_entry::mark_array_elements_referenced(const array_deref_range *dr,
-                                                        unsigned count)
-{
-   if (count != array_depth)
-      return;
-
-   mark_array_elements_referenced(dr, count, 1, 0);
-}
-
-void
-ir_array_refcount_entry::mark_array_elements_referenced(const array_deref_range *dr,
-                                                        unsigned count,
-                                                        unsigned scale,
-                                                        unsigned linearized_index)
-{
-   
-
-
-
-   for (unsigned i = 0; i < count; i++) {
-      if (dr[i].index < dr[i].size) {
-         linearized_index += dr[i].index * scale;
-         scale *= dr[i].size;
-      } else {
-         
-
-
-
-
-
-
-
-         for (unsigned j = 0; j < dr[i].size; j++) {
-            mark_array_elements_referenced(&dr[i + 1],
-                                           count - (i + 1),
-                                           scale * dr[i].size,
-                                           linearized_index + (j * scale));
-         }
-
-         return;
-      }
-   }
-
-   BITSET_SET(bits, linearized_index);
-}
-
 ir_array_refcount_entry *
 ir_array_refcount_visitor::get_variable_entry(ir_variable *var)
 {
@@ -224,7 +176,9 @@ ir_array_refcount_visitor::visit_enter(ir_dereference_array *ir)
    if (entry == NULL)
       return visit_stop;
 
-   entry->mark_array_elements_referenced(derefs, num_derefs);
+   link_util_mark_array_elements_referenced(derefs, num_derefs,
+                                            entry->array_depth,
+                                            entry->bits);
 
    return visit_continue;
 }

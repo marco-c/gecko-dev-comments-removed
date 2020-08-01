@@ -24,6 +24,8 @@
 #ifndef GLSL_LINKER_UTIL_H
 #define GLSL_LINKER_UTIL_H
 
+#include "util/bitset.h"
+
 struct gl_context;
 struct gl_shader_program;
 struct gl_uniform_storage;
@@ -43,6 +45,23 @@ struct empty_uniform_block {
    unsigned start;
    
    unsigned slots;
+};
+
+
+
+
+struct array_deref_range {
+   
+
+
+
+
+
+
+   unsigned index;
+
+   
+   unsigned size;
 };
 
 void
@@ -80,6 +99,11 @@ link_util_check_uniform_resources(struct gl_context *ctx,
 
 void
 link_util_calculate_subroutine_compat(struct gl_shader_program *prog);
+
+void
+link_util_mark_array_elements_referenced(const struct array_deref_range *dr,
+                                         unsigned count, unsigned array_depth,
+                                         BITSET_WORD *bits);
 
 #ifdef __cplusplus
 }

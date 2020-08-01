@@ -32,25 +32,9 @@
 
 #include "ir.h"
 #include "ir_visitor.h"
+#include "linker_util.h"
 #include "compiler/glsl_types.h"
 #include "util/bitset.h"
-
-
-
-
-struct array_deref_range {
-   
-
-
-
-
-
-
-   unsigned index;
-
-   
-   unsigned size;
-};
 
 class ir_array_refcount_entry
 {
@@ -64,32 +48,10 @@ public:
    bool is_referenced;
 
    
+   unsigned array_depth;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   void mark_array_elements_referenced(const array_deref_range *dr,
-                                       unsigned count);
+   
+   BITSET_WORD *bits;
 
    
    bool is_linearized_index_referenced(unsigned linearized_index) const
@@ -101,8 +63,6 @@ public:
    }
 
 private:
-   
-   BITSET_WORD *bits;
 
    
 
@@ -110,27 +70,6 @@ private:
 
 
    unsigned num_bits;
-
-   
-   unsigned array_depth;
-
-   
-
-
-
-
-
-
-
-
-
-
-
-
-   void mark_array_elements_referenced(const array_deref_range *dr,
-                                       unsigned count,
-                                       unsigned scale,
-                                       unsigned linearized_index);
 
    friend class array_refcount_test;
 };

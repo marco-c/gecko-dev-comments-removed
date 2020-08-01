@@ -34,7 +34,9 @@
 #include "util/macros.h"
 #include "util/u_math.h"
 #include "util/rounding.h"
-#include "imports.h"
+#include "util/compiler.h"
+#include "main/glheader.h"
+#include "mesa_private.h"
 
 
 
@@ -193,6 +195,30 @@ static inline fi_type FLOAT_AS_UNION(GLfloat f)
    tmp.f = f;
    return tmp;
 }
+
+static inline uint64_t DOUBLE_AS_UINT64(double d)
+{
+   union {
+      double d;
+      uint64_t u64;
+   } tmp;
+   tmp.d = d;
+   return tmp.u64;
+}
+
+static inline double UINT64_AS_DOUBLE(uint64_t u)
+{
+   union {
+      double d;
+      uint64_t u64;
+   } tmp;
+   tmp.u64 = u;
+   return tmp.d;
+}
+
+
+#define INT_AS_UINT(x) ((uint32_t)((int32_t)(x)))
+#define FLOAT_AS_UINT(x) (FLOAT_AS_UNION(x).u)
 
 
 
@@ -668,52 +694,6 @@ minify(unsigned value, unsigned levels)
 
 
 
-
-
-
-
-
-
-
-
-
-static inline uintptr_t
-ALIGN(uintptr_t value, int32_t alignment)
-{
-   assert((alignment > 0) && _mesa_is_pow_two(alignment));
-   return (((value) + (alignment) - 1) & ~((alignment) - 1));
-}
-
-
-
-
-static inline uintptr_t
-ALIGN_NPOT(uintptr_t value, int32_t alignment)
-{
-   assert(alignment > 0);
-   return (value + alignment - 1) / alignment * alignment;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-static inline uintptr_t
-ROUND_DOWN_TO(uintptr_t value, int32_t alignment)
-{
-   assert((alignment > 0) && _mesa_is_pow_two(alignment));
-   return ((value) & ~(alignment - 1));
-}
-
-
-
 static inline void
 CROSS3(GLfloat n[3], const GLfloat u[3], const GLfloat v[3])
 {
@@ -807,5 +787,14 @@ DIFFERENT_SIGNS(GLfloat x, GLfloat y)
 
 
 #define STRINGIFY(x) #x
+
+
+
+
+
+
+
+
+#define ADD_POINTERS(A, B)  ( (GLubyte *) (A) + (uintptr_t) (B) )
 
 #endif

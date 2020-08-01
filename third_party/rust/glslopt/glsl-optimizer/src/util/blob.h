@@ -194,6 +194,21 @@ blob_write_uint8(struct blob *blob, uint8_t value);
 
 
 bool
+blob_overwrite_uint8(struct blob *blob,
+                     size_t offset,
+                     uint8_t value);
+
+
+
+
+
+
+
+
+
+
+
+bool
 blob_write_uint16(struct blob *blob, uint16_t value);
 
 

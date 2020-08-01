@@ -39,6 +39,7 @@
 #include "c11/threads.h"
 
 #include "main/glheader.h"
+#include "main/glthread.h"
 #include "main/menums.h"
 #include "main/config.h"
 #include "glapi/glapi.h"
@@ -104,6 +105,7 @@ _mesa_varying_slot_in_fs(gl_varying_slot slot)
    case VARYING_SLOT_TESS_LEVEL_INNER:
    case VARYING_SLOT_BOUNDING_BOX0:
    case VARYING_SLOT_BOUNDING_BOX1:
+   case VARYING_SLOT_VIEWPORT_MASK:
       return GL_FALSE;
    default:
       return GL_TRUE;
@@ -459,6 +461,7 @@ struct gl_vertex_format
 {
    GLenum16 Type;        
    GLenum16 Format;      
+   enum pipe_format _PipeFormat:16; 
    GLubyte Size:5;       
    GLubyte Normalized:1; 
    GLubyte Integer:1;    
@@ -686,6 +689,9 @@ struct gl_multisample_attrib
 
    
    GLbitfield SampleMaskValue;
+
+   
+   GLenum SampleAlphaToCoverageDitherControl;
 };
 
 
@@ -1310,6 +1316,9 @@ struct gl_viewport_attrib
    GLfloat X, Y;		
    GLfloat Width, Height;	
    GLfloat Near, Far;		
+
+   
+   GLenum16 SwizzleX, SwizzleY, SwizzleZ, SwizzleW;
 };
 
 
@@ -1547,6 +1556,9 @@ struct gl_vertex_array_object
    GLbitfield VertexAttribBufferMask;
 
    
+   GLbitfield NonZeroDivisorMask;
+
+   
    GLbitfield Enabled;
 
    
@@ -1557,6 +1569,9 @@ struct gl_vertex_array_object
 
 
    GLbitfield _EffEnabledVBO;
+
+   
+   GLbitfield _EffEnabledNonZeroDivisor;
 
    
    gl_attribute_map_mode _AttributeMapMode;
@@ -1584,6 +1599,9 @@ struct gl_array_attrib
    struct gl_vertex_array_object *LastLookedUpVAO;
 
    
+   struct gl_vertex_array_object DefaultVAOState;
+
+   
    struct _mesa_HashTable *Objects;
 
    GLint ActiveTexture;		
@@ -1601,6 +1619,7 @@ struct gl_array_attrib
    GLboolean PrimitiveRestartFixedIndex;
    GLboolean _PrimitiveRestart;
    GLuint RestartIndex;
+   GLuint _RestartIndex[4]; 
    
 
    
@@ -2659,6 +2678,12 @@ struct gl_shader
    bool bound_image;
 
    
+
+
+   bool redeclares_gl_layer;
+   bool layer_viewport_relative;
+
+   
    GLuint TransformFeedbackBufferStride[MAX_FEEDBACK_BUFFERS];
 
    struct gl_shader_info info;
@@ -3167,6 +3192,15 @@ struct gl_shader_compiler_options
 
 
 
+   GLbitfield LowerBuiltinVariablesXfb;   
+
+
+
+   
+
+
+
+   GLboolean LowerPrecision;
 
    
 
@@ -3292,9 +3326,6 @@ struct gl_shared_state
    mtx_t TexMutex;		
    GLuint TextureStateStamp;	        
    
-
-   
-   struct gl_buffer_object *NullBufferObj;
 
    
 
@@ -3838,6 +3869,11 @@ struct gl_constants
    
 
 
+   GLboolean ForceIntegerTexNearest;
+
+   
+
+
 
    GLboolean NativeIntegers;
 
@@ -3974,6 +4010,15 @@ struct gl_constants
 
 
 
+   GLboolean DisableTransformFeedbackPacking;
+
+   
+
+
+
+
+
+
    bool UseSTD430AsDefaultPacking;
 
    
@@ -4025,51 +4070,6 @@ struct gl_constants
       GLint NumDepthStencilSamples;
    } SupportedMultisampleModes[40];
    GLint NumSupportedMultisampleModes;
-
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   uint8_t SampleMap2x[2];
-   uint8_t SampleMap4x[4];
-   uint8_t SampleMap8x[8];
-   uint8_t SampleMap16x[16];
 
    
    GLuint MaxAtomicBufferBindings;
@@ -4132,6 +4132,12 @@ struct gl_constants
    bool AllowMappedBuffersDuringExecution;
 
    
+
+
+
+   bool BufferCreateMapUnsynchronizedThreadSafe;
+
+   
    GLuint NumProgramBinaryFormats;
 
    
@@ -4151,12 +4157,24 @@ struct gl_constants
    bool BitmapUsesRed;
 
    
+   bool VertexBufferOffsetIsInt32;
+
+   
+   bool MultiDrawWithUserIndices;
+
+   
+   bool AllowDrawOutOfOrder;
+
+   
    struct spirv_supported_capabilities SpirVCapabilities;
 
    
    struct spirv_supported_extensions *SpirVExtensions;
 
    char *VendorOverride;
+
+   
+   unsigned glBeginEndBufferSize;
 };
 
 
@@ -4365,6 +4383,7 @@ struct gl_extensions
    GLboolean ATI_texture_env_combine3;
    GLboolean ATI_fragment_shader;
    GLboolean GREMEDY_string_marker;
+   GLboolean INTEL_blackhole_render;
    GLboolean INTEL_conservative_rasterization;
    GLboolean INTEL_performance_query;
    GLboolean INTEL_shader_atomic_float_minmax;
@@ -4382,8 +4401,10 @@ struct gl_extensions
    GLboolean EXT_shader_framebuffer_fetch_non_coherent;
    GLboolean MESA_shader_integer_functions;
    GLboolean MESA_ycbcr_texture;
+   GLboolean NV_alpha_to_coverage_dither_control;
    GLboolean NV_compute_shader_derivatives;
    GLboolean NV_conditional_render;
+   GLboolean NV_copy_image;
    GLboolean NV_fill_rectangle;
    GLboolean NV_fog_distance;
    GLboolean NV_point_sprite;
@@ -4397,6 +4418,8 @@ struct gl_extensions
    GLboolean NV_conservative_raster_dilate;
    GLboolean NV_conservative_raster_pre_snap_triangles;
    GLboolean NV_conservative_raster_pre_snap;
+   GLboolean NV_viewport_array2;
+   GLboolean NV_viewport_swizzle;
    GLboolean NVX_gpu_memory_info;
    GLboolean TDFX_texture_compression_FXT1;
    GLboolean OES_EGL_image;
@@ -4421,12 +4444,6 @@ struct gl_extensions
 
 
    GLubyte Version;
-   
-
-
-
-#define MAX_UNRECOGNIZED_EXTENSIONS 16
-   const char *unrecognized_extensions[MAX_UNRECOGNIZED_EXTENSIONS];
 };
 
 
@@ -4470,7 +4487,7 @@ struct gl_matrix_stack
 #define _NEW_TEXTURE_MATRIX    (1u << 2)   /**< gl_context::TextureMatrix */
 #define _NEW_COLOR             (1u << 3)   /**< gl_context::Color */
 #define _NEW_DEPTH             (1u << 4)   /**< gl_context::Depth */
-#define _NEW_EVAL              (1u << 5)   /**< gl_context::Eval, EvalMap */
+
 #define _NEW_FOG               (1u << 6)   /**< gl_context::Fog */
 #define _NEW_HINT              (1u << 7)   /**< gl_context::Hint */
 #define _NEW_LIGHT             (1u << 8)   /**< gl_context::Light */
@@ -4557,7 +4574,7 @@ struct gl_dlist_state
    GLvertexformat ListVtxfmt;
 
    GLubyte ActiveAttribSize[VERT_ATTRIB_MAX];
-   GLfloat CurrentAttrib[VERT_ATTRIB_MAX][8];
+   uint32_t CurrentAttrib[VERT_ATTRIB_MAX][8];
 
    GLubyte ActiveMaterialSize[MAT_ATTRIB_MAX];
    GLfloat CurrentMaterial[MAT_ATTRIB_MAX][4];
@@ -4877,7 +4894,7 @@ struct gl_context
 
    
 
-   struct glthread_state *GLThread;
+   struct glthread_state GLThread;
 
    struct gl_config Visual;
    struct gl_framebuffer *DrawBuffer;	
@@ -5107,6 +5124,7 @@ struct gl_context
    struct gl_driver_flags DriverFlags;
 
    GLboolean ViewportInitialized;  
+   GLboolean _AllowDrawOutOfOrder;
 
    GLbitfield varying_vp_inputs;  
 
@@ -5140,6 +5158,8 @@ struct gl_context
    GLboolean ConservativeRasterization; 
    GLfloat ConservativeRasterDilate;
    GLenum16 ConservativeRasterMode;
+
+   GLboolean IntelBlackholeRender; 
 
    
    bool _AttribZeroAliasesVertex;

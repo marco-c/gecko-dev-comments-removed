@@ -135,10 +135,22 @@ typedef struct shader_info {
    uint32_t patch_outputs_read;
 
    
+   uint64_t inputs_read_indirectly;
+   
+   uint64_t outputs_accessed_indirectly;
+   
+   uint64_t patch_inputs_read_indirectly;
+   
+   uint64_t patch_outputs_accessed_indirectly;
+
+   
    uint32_t textures_used;
 
    
    uint32_t textures_used_by_txf;
+
+   
+   uint32_t images_used;
 
    
    uint16_t float_controls_execution_mode;
@@ -175,6 +187,12 @@ typedef struct shader_info {
 
    
    bool flrp_lowered:1;
+
+   
+   bool writes_memory:1;
+
+   
+   bool layer_viewport_relative:1;
 
    union {
       struct {
@@ -217,6 +235,7 @@ typedef struct shader_info {
 
       struct {
          bool uses_discard:1;
+         bool uses_demote:1;
 
          
 
@@ -282,6 +301,7 @@ typedef struct shader_info {
 
       struct {
          uint16_t local_size[3];
+         uint16_t max_variable_local_size;
 
          bool local_size_variable:1;
          uint8_t user_data_components_amd:3;
@@ -317,6 +337,16 @@ typedef struct shader_info {
          
          bool ccw:1;
          bool point_mode:1;
+
+         
+
+
+         uint64_t tcs_cross_invocation_inputs_read;
+
+         
+
+
+         uint64_t tcs_cross_invocation_outputs_read;
       } tess;
    };
 } shader_info;

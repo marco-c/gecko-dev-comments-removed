@@ -663,6 +663,12 @@ struct ast_type_qualifier {
          
          unsigned derivative_group:1;
          
+
+         
+
+
+
+         unsigned viewport_relative:1;
       }
       
       q;
@@ -773,7 +779,7 @@ struct ast_type_qualifier {
 
 
 
-   GLenum image_format;
+   enum pipe_format image_format;
 
    
 

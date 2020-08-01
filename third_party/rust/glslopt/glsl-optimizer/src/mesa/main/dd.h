@@ -34,6 +34,7 @@
 #include "glheader.h"
 #include "formats.h"
 #include "menums.h"
+#include "compiler/shader_enums.h"
 
 struct gl_bitmap_atlas;
 struct gl_buffer_object;
@@ -69,6 +70,9 @@ struct _mesa_index_buffer;
 
 
 #define MESA_MAP_NOWAIT_BIT       0x4000
+
+
+#define MESA_MAP_THREAD_SAFE_BIT  0x8000
 
 
 
@@ -450,7 +454,8 @@ struct dd_function_table {
 
    
    
-   struct gl_program * (*NewProgram)(struct gl_context *ctx, GLenum target,
+   struct gl_program * (*NewProgram)(struct gl_context *ctx,
+                                     gl_shader_stage stage,
                                      GLuint id, bool is_arb_asm);
    
    void (*DeleteProgram)(struct gl_context *ctx, struct gl_program *prog);   
@@ -537,13 +542,16 @@ struct dd_function_table {
 
 
 
+
+
    void (*Draw)(struct gl_context *ctx,
                 const struct _mesa_prim *prims, GLuint nr_prims,
                 const struct _mesa_index_buffer *ib,
                 GLboolean index_bounds_valid,
                 GLuint min_index, GLuint max_index,
+                GLuint num_instances, GLuint base_instance,
                 struct gl_transform_feedback_object *tfb_vertcount,
-                unsigned tfb_stream, struct gl_buffer_object *indirect);
+                unsigned tfb_stream);
 
 
    

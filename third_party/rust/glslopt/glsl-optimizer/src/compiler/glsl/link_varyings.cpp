@@ -1378,6 +1378,21 @@ tfeedback_decl::find_candidate(gl_shader_program *prog,
 
 
 
+void
+tfeedback_decl::set_lowered_candidate(const tfeedback_candidate *candidate)
+{
+   this->matched_candidate = candidate;
+
+   
+   this->is_subscripted = false;
+   this->array_subscript = 0;
+}
+
+
+
+
+
+
 
 
 
@@ -1590,7 +1605,9 @@ namespace {
 class varying_matches
 {
 public:
-   varying_matches(bool disable_varying_packing, bool xfb_enabled,
+   varying_matches(bool disable_varying_packing,
+                   bool disable_xfb_packing,
+                   bool xfb_enabled,
                    bool enhanced_layouts_enabled,
                    gl_shader_stage producer_stage,
                    gl_shader_stage consumer_stage);
@@ -1615,6 +1632,12 @@ private:
 
 
    const bool disable_varying_packing;
+
+   
+
+
+
+   const bool disable_xfb_packing;
 
    
 
@@ -1647,6 +1670,7 @@ private:
    static packing_order_enum compute_packing_order(const ir_variable *var);
    static int match_comparator(const void *x_generic, const void *y_generic);
    static int xfb_comparator(const void *x_generic, const void *y_generic);
+   static int not_xfb_comparator(const void *x_generic, const void *y_generic);
 
    
 
@@ -1702,11 +1726,13 @@ private:
 } 
 
 varying_matches::varying_matches(bool disable_varying_packing,
+                                 bool disable_xfb_packing,
                                  bool xfb_enabled,
                                  bool enhanced_layouts_enabled,
                                  gl_shader_stage producer_stage,
                                  gl_shader_stage consumer_stage)
    : disable_varying_packing(disable_varying_packing),
+     disable_xfb_packing(disable_xfb_packing),
      xfb_enabled(xfb_enabled),
      enhanced_layouts_enabled(enhanced_layouts_enabled),
      producer_stage(producer_stage),
@@ -1785,6 +1811,7 @@ varying_matches::record(ir_variable *producer_var, ir_variable *consumer_var)
        producer_var->type->contains_double());
 
    if (!disable_varying_packing &&
+       (!disable_xfb_packing || producer_var  == NULL || !producer_var->data.is_xfb) &&
        (needs_flat_qualifier ||
         (consumer_stage != MESA_SHADER_NONE && consumer_stage != MESA_SHADER_FRAGMENT))) {
       
@@ -1850,6 +1877,7 @@ varying_matches::record(ir_variable *producer_var, ir_variable *consumer_var)
    this->matches[this->num_matches].packing_order
       = this->compute_packing_order(var);
    if ((this->disable_varying_packing && !is_varying_packing_safe(type, var)) ||
+       (this->disable_xfb_packing && var->data.is_xfb) ||
        var->data.must_be_shader_input) {
       unsigned slots = type->count_attribute_slots(false);
       this->matches[this->num_matches].num_components = slots * 4;
@@ -1891,18 +1919,28 @@ varying_matches::assign_locations(struct gl_shader_program *prog,
 
 
 
-   if (!this->disable_varying_packing) {
-      
-      qsort(this->matches, this->num_matches, sizeof(*this->matches),
-            &varying_matches::match_comparator);
-   } else {
+
+
+
+
+
+   if (this->disable_varying_packing) {
       
       qsort(this->matches, this->num_matches, sizeof(*this->matches),
             &varying_matches::xfb_comparator);
+   } else if (this->disable_xfb_packing) {
+      
+      qsort(this->matches, this->num_matches, sizeof(*this->matches),
+            &varying_matches::not_xfb_comparator);
+   } else {
+      
+      qsort(this->matches, this->num_matches, sizeof(*this->matches),
+            &varying_matches::match_comparator);
    }
 
    unsigned generic_location = 0;
    unsigned generic_patch_location = MAX_VARYING*4;
+   bool previous_var_xfb = false;
    bool previous_var_xfb_only = false;
    unsigned previous_packing_class = ~0u;
 
@@ -1946,7 +1984,12 @@ varying_matches::assign_locations(struct gl_shader_program *prog,
 
 
 
+
+
+
       if (var->data.must_be_shader_input ||
+          (this->disable_xfb_packing &&
+           (previous_var_xfb || var->data.is_xfb)) ||
           (this->disable_varying_packing &&
            !(previous_var_xfb_only && var->data.is_xfb_only)) ||
           (previous_packing_class != this->matches[i].packing_class) ||
@@ -1955,6 +1998,7 @@ varying_matches::assign_locations(struct gl_shader_program *prog,
          *location = ALIGN(*location, 4);
       }
 
+      previous_var_xfb = var->data.is_xfb;
       previous_var_xfb_only = var->data.is_xfb_only;
       previous_packing_class = this->matches[i].packing_class;
 
@@ -2051,7 +2095,7 @@ varying_matches::store_locations() const
             const glsl_type *type =
                get_varying_type(producer_var, producer_stage);
             if (type->is_array() || type->is_matrix() || type->is_struct() ||
-                type->is_double()) {
+                type->is_64bit()) {
                unsigned comp_slots = type->component_slots() + offset;
                unsigned slots = comp_slots / 4;
                if (comp_slots % 4)
@@ -2195,6 +2239,32 @@ varying_matches::xfb_comparator(const void *x_generic, const void *y_generic)
    const match *x = (const match *) x_generic;
 
    if (x->producer_var != NULL && x->producer_var->data.is_xfb_only)
+      return match_comparator(x_generic, y_generic);
+
+   
+
+
+
+
+
+
+
+
+
+   return 0;
+}
+
+
+
+
+
+
+int
+varying_matches::not_xfb_comparator(const void *x_generic, const void *y_generic)
+{
+   const match *x = (const match *) x_generic;
+
+   if (x->producer_var != NULL && !x->producer_var->data.is_xfb)
       return match_comparator(x_generic, y_generic);
 
    
@@ -2566,6 +2636,12 @@ assign_varying_locations(struct gl_context *ctx,
    
 
 
+   bool disable_xfb_packing =
+      ctx->Const.DisableTransformFeedbackPacking;
+
+   
+
+
 
 
 
@@ -2577,7 +2653,9 @@ assign_varying_locations(struct gl_context *ctx,
    if (prog->SeparateShader && (producer == NULL || consumer == NULL))
       disable_varying_packing = true;
 
-   varying_matches matches(disable_varying_packing, xfb_enabled,
+   varying_matches matches(disable_varying_packing,
+                           disable_xfb_packing,
+                           xfb_enabled,
                            ctx->Extensions.ARB_enhanced_layouts,
                            producer ? producer->Stage : MESA_SHADER_NONE,
                            consumer ? consumer->Stage : MESA_SHADER_NONE);
@@ -2717,6 +2795,52 @@ assign_varying_locations(struct gl_context *ctx,
       }
 
       
+
+
+
+
+
+
+
+
+      const unsigned dmul =
+         matched_candidate->type->without_array()->is_64bit() ? 2 : 1;
+      const bool lowered =
+         (disable_xfb_packing &&
+          !tfeedback_decls[i].is_aligned(dmul, matched_candidate->offset)) ||
+         (matched_candidate->toplevel_var->data.explicit_location &&
+          matched_candidate->toplevel_var->data.location < VARYING_SLOT_VAR0 &&
+          (ctx->Const.ShaderCompilerOptions[producer->Stage].LowerBuiltinVariablesXfb &
+              BITFIELD_BIT(matched_candidate->toplevel_var->data.location)));
+
+      if (lowered) {
+         ir_variable *new_var;
+         tfeedback_candidate *new_candidate = NULL;
+
+         new_var = lower_xfb_varying(mem_ctx, producer, tfeedback_decls[i].name());
+         if (new_var == NULL) {
+            ralloc_free(hash_table_ctx);
+            return false;
+         }
+
+         
+         new_candidate = rzalloc(mem_ctx, tfeedback_candidate);
+         new_candidate->toplevel_var = new_var;
+         new_candidate->toplevel_var->data.is_unmatched_generic_inout = 1;
+         new_candidate->type = new_var->type;
+         new_candidate->offset = 0;
+         _mesa_hash_table_insert(tfeedback_candidates,
+                                 ralloc_strdup(mem_ctx, new_var->name),
+                                 new_candidate);
+
+         tfeedback_decls[i].set_lowered_candidate(new_candidate);
+         matched_candidate = new_candidate;
+      }
+
+      
+      matched_candidate->toplevel_var->data.is_xfb = 1;
+
+      
       matched_candidate->toplevel_var->data.always_active_io = 1;
 
       
@@ -2732,8 +2856,10 @@ assign_varying_locations(struct gl_context *ctx,
                                     consumer_inputs,
                                     consumer_interface_inputs,
                                     consumer_inputs_with_locations);
-      if (input_var)
+      if (input_var) {
+         input_var->data.is_xfb = 1;
          input_var->data.always_active_io = 1;
+      }
 
       if (matched_candidate->toplevel_var->data.is_unmatched_generic_inout) {
          matched_candidate->toplevel_var->data.is_xfb_only = 1;
@@ -2804,13 +2930,13 @@ assign_varying_locations(struct gl_context *ctx,
    if (producer) {
       lower_packed_varyings(mem_ctx, slots_used, components, ir_var_shader_out,
                             0, producer, disable_varying_packing,
-                            xfb_enabled);
+                            disable_xfb_packing, xfb_enabled);
    }
 
    if (consumer) {
       lower_packed_varyings(mem_ctx, slots_used, components, ir_var_shader_in,
-                            consumer_vertices, consumer,
-                            disable_varying_packing, xfb_enabled);
+                            consumer_vertices, consumer, disable_varying_packing,
+                            disable_xfb_packing, xfb_enabled);
    }
 
    return true;
