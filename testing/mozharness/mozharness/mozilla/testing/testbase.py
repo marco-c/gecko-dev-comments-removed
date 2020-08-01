@@ -268,7 +268,7 @@ class TestingMixin(VirtualenvMixin, AutomationMixin, ResourceMonitoringMixin,
             return _urlopen_basic_auth(url, **kwargs)
         else:
             
-            if self.platform_name() in ('win64',):
+            if self.platform_name() in ('win64',) and platform.architecture()[0] in ('x64',):
                 if self.ssl_context is None:
                     self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
                     self.ssl_context.load_default_certs()
