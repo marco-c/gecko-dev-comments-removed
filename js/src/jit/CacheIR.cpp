@@ -5932,6 +5932,38 @@ AttachDecision CallIRGenerator::tryAttachMathAbs(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachMathClz32(HandleFunction callee) {
+  
+  if (argc_ != 1 || !args_[0].isNumber()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+
+  Int32OperandId int32Id;
+  if (args_[0].isInt32()) {
+    int32Id = writer.guardToInt32(argId);
+  } else {
+    MOZ_ASSERT(args_[0].isDouble());
+    NumberOperandId numId = writer.guardIsNumber(argId);
+    int32Id = writer.truncateDoubleToUInt32(numId);
+  }
+  writer.mathClz32Result(int32Id);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("MathClz32");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachMathFloor(HandleFunction callee) {
   
   if (argc_ != 1 || !args_[0].isNumber()) {
@@ -6633,6 +6665,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachMathRandom(callee);
     case InlinableNative::MathAbs:
       return tryAttachMathAbs(callee);
+    case InlinableNative::MathClz32:
+      return tryAttachMathClz32(callee);
     case InlinableNative::MathFloor:
       return tryAttachMathFloor(callee);
     case InlinableNative::MathCeil:
