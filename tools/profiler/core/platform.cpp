@@ -1560,17 +1560,117 @@ void ProfilingStackOwner::DumpStackAndCrash() const {
 
 static const char* const kMainThreadName = "GeckoMain";
 
+enum class MarkerPhase : uint8_t {
+  Instant = 0,
+  Interval = 1,
+  IntervalStart = 2,
+  IntervalEnd = 3,
+};
+
+
+
+
+
+class MarkerTiming {
+ public:
+  
+  
+  static MarkerTiming Instant(
+      const TimeStamp& aTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an instant marker.");
+    return MarkerTiming{aTime, TimeStamp{}, MarkerPhase::Instant};
+  }
+
+  static MarkerTiming Interval(
+      const TimeStamp& aStartTime,
+      const TimeStamp& aEndTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aStartTime.IsNull(),
+               "Start time is null for an interval marker.");
+    MOZ_ASSERT(!aEndTime.IsNull(), "End time is null for an interval marker.");
+    return MarkerTiming{aStartTime, aEndTime, MarkerPhase::Interval};
+  }
+
+  static MarkerTiming IntervalStart(
+      const TimeStamp& aTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an interval start marker.");
+    return MarkerTiming{aTime, TimeStamp{}, MarkerPhase::IntervalStart};
+  }
+
+  static MarkerTiming IntervalEnd(
+      const TimeStamp& aTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an interval end marker.");
+    return MarkerTiming{TimeStamp{}, aTime, MarkerPhase::IntervalEnd};
+  }
+
+  
+  
+  double GetStartTime() const {
+    return MarkerTiming::timeStampToDouble(mStartTime);
+  }
+
+  double GetEndTime() const {
+    return MarkerTiming::timeStampToDouble(mEndTime);
+  }
+
+  uint8_t GetMarkerPhase() const { return static_cast<uint8_t>(mMarkerPhase); }
+
+ private:
+  MarkerTiming(TimeStamp aStartTime, TimeStamp aEndTime,
+               MarkerPhase aMarkerPhase)
+      : mStartTime(aStartTime),
+        mEndTime(aEndTime),
+        mMarkerPhase(aMarkerPhase) {}
+
+  static double timeStampToDouble(TimeStamp time) {
+    if (time.IsNull()) {
+      
+      return 0;
+    }
+    return (time - CorePS::ProcessStartTime()).ToMilliseconds();
+  }
+
+  TimeStamp mStartTime;
+  TimeStamp mEndTime;
+  MarkerPhase mMarkerPhase;
+};
+
+
+
+
+
+MarkerTiming get_marker_timing_from_payload(
+    const ProfilerMarkerPayload& aPayload) {
+  const TimeStamp& start = aPayload.GetStartTime();
+  const TimeStamp& end = aPayload.GetEndTime();
+  if (start.IsNull()) {
+    if (end.IsNull()) {
+      
+      return MarkerTiming::Instant(TimeStamp::NowUnfuzzed());
+    }
+    return MarkerTiming::IntervalEnd(end);
+  }
+  if (end.IsNull()) {
+    return MarkerTiming::IntervalStart(start);
+  }
+  if (start == end) {
+    return MarkerTiming::Instant(start);
+  }
+  return MarkerTiming::Interval(start, end);
+}
+
 
 
 template <typename Buffer>
 static void StoreMarker(Buffer& aBuffer, int aThreadId, const char* aMarkerName,
+                        const MarkerTiming& aMarkerTiming,
                         JS::ProfilingCategoryPair aCategoryPair,
                         const ProfilerMarkerPayload* aPayload,
                         const mozilla::TimeStamp& aTime) {
   aBuffer.PutObjects(ProfileBufferEntry::Kind::MarkerData, aThreadId,
                      WrapProfileBufferUnownedCString(aMarkerName),
-                     static_cast<uint32_t>(aCategoryPair), aPayload,
-                     (aTime - CorePS::ProcessStartTime()).ToMilliseconds());
+                     aMarkerTiming.GetStartTime(), aMarkerTiming.GetEndTime(),
+                     aMarkerTiming.GetMarkerPhase(),
+                     static_cast<uint32_t>(aCategoryPair), aPayload);
 }
 
 
@@ -2421,7 +2521,7 @@ static void StreamMetaJSCustomObject(
     const PreRecordedMetaInformation& aPreRecordedMetaInformation) {
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
-  aWriter.IntProperty("version", 19);
+  aWriter.IntProperty("version", 20);
 
   
   
@@ -5253,6 +5353,7 @@ void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {
 }
 
 static void racy_profiler_add_marker(const char* aMarkerName,
+                                     const MarkerTiming& aMarkerTiming,
                                      JS::ProfilingCategoryPair aCategoryPair,
                                      const ProfilerMarkerPayload* aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
@@ -5276,18 +5377,21 @@ static void racy_profiler_add_marker(const char* aMarkerName,
                          ? aPayload->GetStartTime()
                          : TimeStamp::NowUnfuzzed();
   StoreMarker(CorePS::CoreBuffer(), racyRegisteredThread->ThreadId(),
-              aMarkerName, aCategoryPair, aPayload, origin);
+              aMarkerName, aMarkerTiming, aCategoryPair, aPayload, origin);
 }
 
 void profiler_add_marker(const char* aMarkerName,
                          JS::ProfilingCategoryPair aCategoryPair,
                          const ProfilerMarkerPayload& aPayload) {
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, &aPayload);
+  racy_profiler_add_marker(aMarkerName,
+                           get_marker_timing_from_payload(aPayload),
+                           aCategoryPair, &aPayload);
 }
 
 void profiler_add_marker(const char* aMarkerName,
                          JS::ProfilingCategoryPair aCategoryPair) {
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, nullptr);
+  racy_profiler_add_marker(aMarkerName, MarkerTiming::Instant(), aCategoryPair,
+                           nullptr);
 }
 
 
@@ -5394,7 +5498,9 @@ static void maybelocked_profiler_add_marker_for_thread(
   TimeStamp origin = (!aPayload.GetStartTime().IsNull())
                          ? aPayload.GetStartTime()
                          : TimeStamp::NowUnfuzzed();
-  StoreMarker(CorePS::CoreBuffer(), aThreadId, aMarkerName, aCategoryPair,
+
+  StoreMarker(CorePS::CoreBuffer(), aThreadId, aMarkerName,
+              get_marker_timing_from_payload(aPayload), aCategoryPair,
               &aPayload, origin);
 }
 

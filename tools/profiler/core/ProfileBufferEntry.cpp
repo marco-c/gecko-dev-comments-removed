@@ -1183,21 +1183,38 @@ void ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
                    ProfileBufferEntry::Kind::MODERN_LIMIT));
     if (type == ProfileBufferEntry::Kind::MarkerData &&
         aER.ReadObject<int>() == aThreadId) {
-      
-      
-
       aWriter.StartArrayElement();
       {
-        std::string name = aER.ReadObject<std::string>();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        auto name = aER.ReadObject<std::string>();
+        auto startTime = aER.ReadObject<double>();
+        auto endTime = aER.ReadObject<double>();
+        auto phase = aER.ReadObject<uint8_t>();
         const JS::ProfilingCategoryPairInfo& info =
             GetProfilingCategoryPairInfo(static_cast<JS::ProfilingCategoryPair>(
                 aER.ReadObject<uint32_t>()));
         auto payload = aER.ReadObject<UniquePtr<ProfilerMarkerPayload>>();
-        double time = aER.ReadObject<double>();
+
         MOZ_ASSERT(aER.RemainingBytes() == 0);
 
+        
+        
         aUniqueStacks.mUniqueStrings->WriteElement(aWriter, name.c_str());
-        aWriter.DoubleElement(time);
+        aWriter.DoubleElement(startTime);
+        aWriter.DoubleElement(endTime);
+        aWriter.IntElement(phase);
         aWriter.IntElement(unsigned(info.mCategory));
         if (payload) {
           aWriter.StartObjectElement(SpliceableJSONWriter::SingleLineStyle);

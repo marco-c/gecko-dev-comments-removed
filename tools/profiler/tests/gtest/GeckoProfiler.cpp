@@ -992,8 +992,8 @@ TEST(GeckoProfiler, Markers)
 
           for (const Json::Value& marker : data) {
             ASSERT_TRUE(marker.isArray());
-            ASSERT_GE(marker.size(), 3u);
-            ASSERT_LE(marker.size(), 4u);
+            ASSERT_GE(marker.size(), 5u);
+            ASSERT_LE(marker.size(), 6u);
 
             
 
@@ -1002,9 +1002,13 @@ TEST(GeckoProfiler, Markers)
             ASSERT_TRUE(name.isString());
             std::string nameString = name.asString();
 
-            EXPECT_TRUE(marker[1].isNumeric());  
+            EXPECT_TRUE(marker[1].isNumeric() ||
+                        marker[1].isNull());  
+            EXPECT_TRUE(marker[2].isNumeric() ||
+                        marker[2].isNull());     
+            EXPECT_TRUE(marker[3].isNumeric());  
 
-            EXPECT_TRUE(marker[2].isUInt());  
+            EXPECT_TRUE(marker[4].isUInt());  
 
             if (marker.size() == 3u) {
               
@@ -1019,7 +1023,7 @@ TEST(GeckoProfiler, Markers)
             } else {
               
               
-              const Json::Value& payload = marker[3];
+              const Json::Value& payload = marker[5];
               ASSERT_TRUE(payload.isObject());
 
               
