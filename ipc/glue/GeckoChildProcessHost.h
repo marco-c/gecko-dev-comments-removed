@@ -180,6 +180,8 @@ class GeckoChildProcessHost : public ChildProcessHost,
   
   
   
+  
+  
   static void GetAll(const GeckoProcessCallback& aCallback);
 
   friend class BaseProcessLauncher;

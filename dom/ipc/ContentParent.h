@@ -238,6 +238,16 @@ class ContentParent final
       const nsACString& aRemoteType, BrowsingContext* aBrowsingContext,
       ContentParent* aOpenerContentParent);
 
+  
+
+
+
+
+
+
+
+
+
   static void GetAll(nsTArray<ContentParent*>& aArray);
 
   static void GetAllEvenIfDead(nsTArray<ContentParent*>& aArray);
