@@ -124,7 +124,8 @@ resizer {
   z-index: 2147483647;
   
 
-  -moz-appearance: resizer;
+  appearance: auto;
+  -moz-default-appearance: resizer;
 
   
 

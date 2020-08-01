@@ -61,14 +61,6 @@ let whitelist = [
   
   
   {
-    sourceName: /(?:res|gre-resources)\/forms\.css$/i,
-    errorMessage: /Error in parsing value for \u2018-moz-appearance\u2019/iu,
-    isFromDevTools: false,
-  },
-  
-  
-  
-  {
     sourceName: /jsonview\/css\/general\.css$/i,
     intermittent: true,
     errorMessage: /Property contained reference to invalid variable.*color/i,

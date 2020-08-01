@@ -84,7 +84,7 @@ label {
 
 input {
   display: inline-block;
-  -moz-appearance: textfield;
+  appearance: auto;
   -moz-default-appearance: textfield;
   
 
@@ -107,7 +107,7 @@ input::placeholder {
 }
 
 textarea {
-  -moz-appearance: textarea;
+  appearance: auto;
   -moz-default-appearance: textarea;
   margin-block: 1px;
   border: 2px inset ThreeDLightShadow;
@@ -226,7 +226,7 @@ select {
   cursor: default;
   box-sizing: border-box;
   user-select: none;
-  -moz-appearance: menulist;
+  appearance: auto;
   -moz-default-appearance: menulist;
   border-width: 2px;
   border-style: inset;
@@ -258,7 +258,7 @@ select[size][multiple] {
   padding-block: 1px;
   padding-inline: 0;
   vertical-align: text-bottom;
-  -moz-appearance: listbox;
+  appearance: auto;
   -moz-default-appearance: listbox;
 }
 
@@ -268,7 +268,7 @@ select:is([size="0"], [size="1"]) {
   color: -moz-ComboboxText;
   vertical-align: baseline;
   padding: unset;
-  -moz-appearance: menulist;
+  appearance: auto;
   -moz-default-appearance: menulist;
 }
 
@@ -279,7 +279,8 @@ select > button {
   background-image: url("arrow.gif") !important;
   background-repeat: no-repeat !important;
   background-position: center !important;
-  -moz-appearance: -moz-menulist-arrow-button;
+  appearance: auto;
+  -moz-default-appearance: -moz-menulist-arrow-button;
 
   
   block-size: 100% !important;
@@ -446,7 +447,7 @@ optgroup:disabled {
 
 
 input[type="hidden"] {
-  -moz-appearance: none;
+  appearance: none;
   -moz-default-appearance: none;
   display: none !important;
   padding: unset;
@@ -457,7 +458,7 @@ input[type="hidden"] {
 
 
 input[type="image"] {
-  -moz-appearance: none;
+  appearance: none;
   -moz-default-appearance: none;
   padding: unset;
   border: none;
@@ -485,7 +486,7 @@ input[type="image"]:disabled {
 
 
 input[type="radio"] {
-  -moz-appearance: radio;
+  appearance: auto;
   -moz-default-appearance: radio;
   margin-block: 3px 0;
   margin-inline: 5px 3px;
@@ -493,7 +494,7 @@ input[type="radio"] {
 
 
 input[type="checkbox"] {
-  -moz-appearance: checkbox;
+  appearance: auto;
   -moz-default-appearance: checkbox;
   margin-block: 3px;
   margin-inline: 4px 3px;
@@ -540,7 +541,7 @@ input[type="search"] {
 button,
 ::file-chooser-button,
 input:is([type="color"], [type="reset"], [type="button"], [type="submit"]) {
-  -moz-appearance: button;
+  appearance: auto;
   -moz-default-appearance: button;
   
 
@@ -685,7 +686,7 @@ input[type="file"] {
   color: unset;
 
   
-  -moz-appearance: none;
+  appearance: none;
   -moz-default-appearance: none;
   cursor: default;
 
@@ -769,7 +770,7 @@ output:-moz-ui-invalid {
 }
 
 progress {
-  -moz-appearance: progress-bar;
+  appearance: auto;
   -moz-default-appearance: progress-bar;
   display: inline-block;
   vertical-align: -0.2em;
@@ -790,7 +791,8 @@ progress {
   overflow: visible !important;
   box-sizing: border-box !important;
 
-  -moz-appearance: progresschunk;
+  appearance: auto;
+  -moz-default-appearance: progresschunk;
   height: 100%;
   width: 100%;
 
@@ -799,7 +801,7 @@ progress {
 }
 
 meter {
-  -moz-appearance: meter;
+  appearance: auto;
   -moz-default-appearance: meter;
   display: inline-block;
   vertical-align: -0.2em;
@@ -813,7 +815,8 @@ meter {
   position: static !important;
   overflow: visible !important;
 
-  -moz-appearance: meterchunk;
+  appearance: auto;
+  -moz-default-appearance: meterchunk;
   height: 100%;
   width: 100%;
 }
@@ -832,7 +835,7 @@ meter {
 }
 
 input[type=range] {
-  -moz-appearance: range;
+  appearance: auto;
   -moz-default-appearance: range;
   margin: 2px;
   
@@ -903,8 +906,8 @@ input[type=range]::-moz-range-thumb {
   
 
 
-  -moz-appearance: range-thumb !important;
-  -moz-default-appearance: range-thumb: !important;
+  appearance: auto !important;
+  -moz-default-appearance: range-thumb !important;
   
   display: block !important;
   float: none !important;
@@ -922,7 +925,7 @@ input[type=range]::-moz-range-thumb {
 }
 
 input[type="number"] {
-  -moz-appearance: number-input;
+  appearance: auto;
   -moz-default-appearance: number-input;
 }
 
@@ -977,7 +980,8 @@ input[type=number]::-moz-number-spin-box {
 
 input[type=number]::-moz-number-spin-up {
   writing-mode: horizontal-tb;
-  -moz-appearance: spinner-upbutton;
+  appearance: auto;
+  -moz-default-appearance: spinner-upbutton;
   display: block; 
   flex-grow: 1;
   cursor: default;
@@ -995,7 +999,8 @@ input[type=number]::-moz-number-spin-up {
 
 input[type=number]::-moz-number-spin-down {
   writing-mode: horizontal-tb;
-  -moz-appearance: spinner-downbutton;
+  appearance: auto;
+  -moz-default-appearance: spinner-downbutton;
   display: block; 
   flex-grow: 1;
   cursor: default;

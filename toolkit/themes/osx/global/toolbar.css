@@ -7,21 +7,24 @@
 toolbox {
   
 
-  -moz-appearance: toolbox;
+  appearance: auto;
+  -moz-default-appearance: toolbox;
 }
 
 toolbar {
   min-width: 1px;
   min-height: 20px;
-  -moz-appearance: toolbar;
+  appearance: auto;
+  -moz-default-appearance: toolbar;
 }
 
 toolbar:-moz-lwtheme {
-  -moz-appearance: none;
+  appearance: none;
 }
 
 toolbarseparator {
-  -moz-appearance: separator;
+  appearance: auto;
+  -moz-default-appearance: separator;
   margin: 3px 4px;
 }
 

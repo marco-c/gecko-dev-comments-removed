@@ -7,7 +7,7 @@
 
 
 #ctrlTab-panel {
-  -moz-appearance: none;
+  appearance: none;
 %ifdef XP_MACOSX
   -moz-window-shadow: none;
 %endif
@@ -22,7 +22,7 @@
 
 .ctrlTab-preview,
 #ctrlTab-showAll {
-  -moz-appearance: none;
+  appearance: none;
   
   color: inherit !important;
   

@@ -18,7 +18,7 @@ html|input[nomatch="true"][highlightnonmatches="true"] {
 
 
 panel[type="autocomplete-richlistbox"] {
-  -moz-appearance: none;
+  appearance: none;
   padding: 0;
   color: -moz-FieldText;
   background-color: -moz-Field;
@@ -27,7 +27,7 @@ panel[type="autocomplete-richlistbox"] {
 
 
 .autocomplete-richlistbox {
-  -moz-appearance: none;
+  appearance: none;
   margin: 0;
 }
 

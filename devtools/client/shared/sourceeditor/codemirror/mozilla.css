@@ -260,7 +260,8 @@
 
 
 .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
-  -moz-appearance: scrollcorner;
+  appearance: auto;
+  -moz-default-appearance: scrollcorner;
 }
 
 

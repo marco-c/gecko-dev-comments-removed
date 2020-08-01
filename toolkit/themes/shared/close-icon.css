@@ -3,7 +3,7 @@
 
 
 .close-icon {
-  -moz-appearance: none;
+  appearance: none;
   -moz-context-properties: fill, fill-opacity;
   list-style-image: url(chrome://global/skin/icons/close.svg);
   color: inherit !important;

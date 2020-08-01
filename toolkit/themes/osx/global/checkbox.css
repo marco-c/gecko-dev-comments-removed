@@ -5,7 +5,8 @@
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 
 checkbox {
-  -moz-appearance: checkbox-container;
+  appearance: auto;
+  -moz-default-appearance: checkbox-container;
   -moz-box-align: center;
   margin: 4px 2px;
 }
@@ -27,7 +28,8 @@ checkbox[disabled="true"] {
 
 
 .checkbox-check {
-  -moz-appearance: checkbox;
+  appearance: auto;
+  -moz-default-appearance: checkbox;
   margin: 1px 1px 0;
   
 

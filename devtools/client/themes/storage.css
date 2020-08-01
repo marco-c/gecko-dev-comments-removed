@@ -91,7 +91,7 @@ a {
 
 
 #storage-table input {
-  -moz-appearance: none;
+  appearance: none;
   -moz-box-flex: 1;
   
   position: relative;

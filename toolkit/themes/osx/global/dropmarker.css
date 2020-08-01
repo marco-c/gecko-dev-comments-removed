@@ -3,7 +3,8 @@
 
 
 :host {
-  -moz-appearance: -moz-menulist-arrow-button;
+  appearance: auto;
+  -moz-default-appearance: -moz-menulist-arrow-button;
   width: 16px;
   
 

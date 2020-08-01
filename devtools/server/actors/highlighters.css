@@ -1,22 +1,22 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
-  The :-moz-native-anonymous selector prefix prevents the styles defined here
-  from impacting web content. Indeed, this pseudo-class is only available to chrome code.
-  This stylesheet is loaded as a ua stylesheet via the addon sdk, so having this
-  pseudo-class is important.
 
-  A specific selector should still be specified to avoid impacting non-devtools
-  chrome content.
-*/
+
+
+
+
+
+
+
+
+
+
+
 
 :-moz-native-anonymous .highlighter-container {
-  /*
-  Content CSS applying to the html element impact the highlighters.
-  To avoid that, possible cases have been set to initial.
-  */
+  
+
+
+
   text-transform: initial;
   text-indent: initial;
   letter-spacing: initial;
@@ -43,29 +43,29 @@
   --yellow-60: #d7b600;
 }
 
-/**
- * Highlighters are asbolute positioned in the page by default.
- * A single highlighter can have fixed position in its css class if needed (see below the
- * eye dropper or rulers highlighter, for example); but if it has to handle the
- * document's scrolling (as rulers does), it would lag a bit behind due the APZ (Async
- * Pan/Zoom module), that performs asynchronously panning and zooming on the compositor
- * thread rather than the main thread.
- */
+
+
+
+
+
+
+
+
 :-moz-native-anonymous .highlighter-container {
   position: absolute;
   width: 100%;
   height: 100%;
-  /* The container for all highlighters doesn't react to pointer-events by
-     default. This is because most highlighters cover the whole viewport but
-     don't contain UIs that need to be accessed.
-     If your highlighter has UI that needs to be interacted with, add
-     'pointer-events:auto;' on its container element. */
+  
+
+
+
+
   pointer-events: none;
 }
 
 :-moz-native-anonymous .highlighter-container.box-model {
-  /* Make the box-model container have a z-index other than auto so it always sits above
-     other highlighters. */
+  
+
   z-index: 1;
 }
 
@@ -77,14 +77,14 @@
   cursor: grabbing;
 }
 
-/* Box Model Highlighter */
+
 
 :-moz-native-anonymous .box-model-regions {
   opacity: 0.6;
 }
 
-/* Box model regions can be faded (see the onlyRegionArea option in
-   highlighters.js) in order to only display certain regions. */
+
+
 :-moz-native-anonymous .box-model-regions [faded] {
   display: none;
 }
@@ -121,7 +121,7 @@
   shape-rendering: crispEdges;
 }
 
-/* Highlighter - Infobar */
+
 
 :-moz-native-anonymous [class$="infobar-container"] {
   position: absolute;
@@ -146,7 +146,7 @@
   border: 1px solid var(--highlighter-bubble-border-color);
 }
 
-/* Arrows */
+
 
 :-moz-native-anonymous
   [class$="infobar-container"]
@@ -194,7 +194,7 @@
   display: block;
 }
 
-/* Text Container */
+
 
 :-moz-native-anonymous [class$="infobar-text"] {
   overflow: hidden;
@@ -245,7 +245,7 @@
   color: var(--grey-40);
 }
 
-/* CSS Grid Highlighter */
+
 
 :-moz-native-anonymous .css-grid-canvas {
   position: absolute;
@@ -278,7 +278,7 @@
   padding-inline-start: 6px;
 }
 
-/* CSS Transform Highlighter */
+
 
 :-moz-native-anonymous .css-transform-transformed {
   fill: var(--highlighter-content-color);
@@ -298,11 +298,11 @@
   stroke-width: 2;
 }
 
-/* Element Geometry Highlighter */
+
 
 :-moz-native-anonymous .geometry-editor-root {
-  /* The geometry editor can be interacted with, so it needs to react to
-     pointer events */
+  
+
   pointer-events: auto;
   user-select: none;
 }
@@ -368,7 +368,7 @@
   dominant-baseline: middle;
 }
 
-/* Rulers Highlighter */
+
 
 :-moz-native-anonymous .rulers-highlighter-elements {
   shape-rendering: crispEdges;
@@ -423,7 +423,7 @@
   padding: 4px;
 }
 
-/* Measuring Tool Highlighter */
+
 
 :-moz-native-anonymous .measuring-tool-tool {
   pointer-events: auto;
@@ -532,25 +532,25 @@
   shape-rendering: crispEdges;
 }
 
-/* Eye Dropper */
+
 
 :-moz-native-anonymous .eye-dropper-root {
   --magnifier-width: 96px;
   --magnifier-height: 96px;
-  /* Width accounts for all color formats (hsl being the longest) */
+  
   --label-width: 160px;
   --label-height: 23px;
   --color: #e0e0e0;
 
   position: fixed;
-  /* Tool start position. This should match the X/Y defines in JS */
+  
   top: 100px;
   left: 100px;
 
-  /* Prevent interacting with the page when hovering and clicking */
+  
   pointer-events: auto;
 
-  /* Offset the UI so it is centered around the pointer */
+  
   transform: translate(
     calc(var(--magnifier-width) / -2),
     calc(var(--magnifier-height) / -2)
@@ -558,8 +558,8 @@
 
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.4));
 
-  /* We don't need the UI to be reversed in RTL locales, otherwise the # would appear
-     to the right of the hex code. Force LTR */
+  
+
   direction: ltr;
 }
 
@@ -591,19 +591,19 @@
     calc((-1 * var(--magnifier-height)) - var(--label-height))
   );
 
-  /* By default the color label container sits below the canvas.
-     Here we just center it horizontally */
+  
+
   transform: var(--label-horizontal-center);
   transition: transform 0.1s ease-in-out;
 }
 
-/* If there isn't enough space below the canvas, we move the label container to the top */
+
 :-moz-native-anonymous .eye-dropper-root[top] .eye-dropper-color-container {
   transform: var(--label-horizontal-center) var(--label-vertical-top);
 }
 
-/* If there isn't enough space right of the canvas to horizontally center the label
-   container, offset it to the left */
+
+
 :-moz-native-anonymous .eye-dropper-root[left] .eye-dropper-color-container {
   transform: var(--label-horizontal-left);
 }
@@ -613,8 +613,8 @@
   transform: var(--label-horizontal-left) var(--label-vertical-top);
 }
 
-/* If there isn't enough space left of the canvas to horizontally center the label
-   container, offset it to the right */
+
+
 :-moz-native-anonymous .eye-dropper-root[right] .eye-dropper-color-container {
   transform: var(--label-horizontal-right);
 }
@@ -642,7 +642,7 @@
   padding: 4px 0;
 }
 
-/* Paused Debugger Overlay */
+
 
 :-moz-native-anonymous .paused-dbg-root {
   position: fixed;
@@ -659,12 +659,12 @@
   align-items: center;
   flex-direction: column;
 
-  /* We don't have access to DevTools themes here, but some of these colors come from the
-     themes. Theme variable names are given in comments. */
-  --text-color: #585959; /* --theme-body-color-alt */
-  --toolbar-background: #fcfcfc; /* --theme-toolbar-background */
-  --toolbar-border: #dde1e4; /* --theme-splitter-color */
-  --toolbar-box-shadow: 0 2px 2px 0 rgba(155, 155, 155, 0.26); /* --rdm-box-shadow */
+  
+
+  --text-color: #585959; 
+  --toolbar-background: #fcfcfc; 
+  --toolbar-border: #dde1e4; 
+  --toolbar-box-shadow: 0 2px 2px 0 rgba(155, 155, 155, 0.26); 
   --overlay-background: #dde1e4a8;
 }
 
@@ -700,7 +700,7 @@
   background-color: var(--text-color);
 
   border: 0px;
-  -moz-appearance: none;
+  appearance: none;
 }
 
 :-moz-native-anonymous .paused-dbg-divider {
@@ -752,7 +752,7 @@
   font-size: var(--highlighter-font-size);
 }
 
-/* Shapes highlighter */
+
 
 :-moz-native-anonymous .shapes-root {
   pointer-events: none;
@@ -787,7 +787,7 @@
   fill: var(--highlighter-guide-color);
 }
 
-/* Accessible highlighter */
+
 
 :-moz-native-anonymous .accessible-infobar {
   min-width: unset;
