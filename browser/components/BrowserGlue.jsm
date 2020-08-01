@@ -2377,16 +2377,6 @@ BrowserGlue.prototype = {
         },
       },
 
-      {
-        task: () => {
-          let siteSpecific = Services.prefs.getBoolPref(
-            "browser.zoom.siteSpecific",
-            false
-          );
-          Services.telemetry.scalarSet("a11y.sitezoom", siteSpecific);
-        },
-      },
-
       
       
       
