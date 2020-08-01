@@ -32,6 +32,7 @@ class nsWrapperCache;
 namespace mozilla {
 class AutoSlowOperation;
 
+class CycleCollectedJSContext;
 class CycleCollectedJSRuntime;
 
 namespace dom {
@@ -83,6 +84,40 @@ class MicroTaskRunnable {
 
  protected:
   virtual ~MicroTaskRunnable() = default;
+};
+
+
+
+
+
+
+
+class FinalizationRegistryCleanup {
+ public:
+  explicit FinalizationRegistryCleanup(CycleCollectedJSContext* aContext);
+  void Init();
+  void Destroy();
+  void QueueCallback(JSFunction* aDoCleanup, JSObject* aIncumbentGlobal);
+  MOZ_CAN_RUN_SCRIPT void DoCleanup();
+
+ private:
+  static void QueueCallback(JSFunction* aDoCleanup, JSObject* aIncumbentGlobal,
+                            void* aData);
+
+  class CleanupRunnable;
+
+  struct Callback {
+    JSFunction* mCallbackFunction;
+    JSObject* mIncumbentGlobal;
+    void trace(JSTracer* trc);
+  };
+
+  
+  
+  CycleCollectedJSContext* mContext;
+
+  using CallbackVector = JS::GCVector<Callback, 0, InfallibleAllocPolicy>;
+  JS::PersistentRooted<CallbackVector> mCallbacks;
 };
 
 class CycleCollectedJSContext : dom::PerThreadAtomCache, private JS::JobQueue {
@@ -262,10 +297,6 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, private JS::JobQueue {
   class SavedMicroTaskQueue;
   js::UniquePtr<SavedJobQueue> saveJobQueue(JSContext*) override;
 
-  static void CleanupFinalizationRegistryCallback(JSObject* aRegistry,
-                                                  void* aData);
-  void QueueFinalizationRegistryForCleanup(JSObject* aRegistry);
-
  private:
   CycleCollectedJSRuntime* mRuntime;
 
@@ -340,14 +371,7 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, private JS::JobQueue {
     PromiseArray mUnhandledRejections;
   };
 
-  
-  
-  
-  
-  
-  friend class CleanupFinalizationRegistriesRunnable;
-  using ObjectVector = JS::GCVector<JSObject*, 0, InfallibleAllocPolicy>;
-  JS::PersistentRooted<ObjectVector> mFinalizationRegistriesToCleanUp;
+  FinalizationRegistryCleanup mFinalizationRegistryCleanup;
 };
 
 class MOZ_STACK_CLASS nsAutoMicroTask {
