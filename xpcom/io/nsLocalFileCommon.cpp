@@ -41,6 +41,7 @@ const char* const sExecutableExts[] = {
   ".asp",
   ".bas",
   ".bat",
+  ".cer",         
   ".chm",
   ".cmd",
   ".com",

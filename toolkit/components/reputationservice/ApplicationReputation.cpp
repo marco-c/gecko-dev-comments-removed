@@ -196,6 +196,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".cab",        
     ".caction",    
     ".cdr",        
+    
     ".cfg",        
     ".chi",        
     

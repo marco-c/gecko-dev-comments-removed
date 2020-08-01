@@ -41,6 +41,7 @@ static const char* const kTestFileExtensions[] = {
     ".cab",            
     ".caction",        
     ".cdr",            
+    ".cer",            
     ".cfg",            
     ".chi",            
     ".chm",            
