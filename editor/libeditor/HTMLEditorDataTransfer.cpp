@@ -292,8 +292,8 @@ class MOZ_STACK_CLASS
   static nsAtom* DetermineContextLocalNameForParsingPastedHTML(
       const nsIContent* aParentContentOfPastedHTMLInContext);
 
-  static bool FindTargetNodeOfContextForPastedHTML(nsINode& aStart,
-                                                   nsCOMPtr<nsINode>& aResult);
+  static bool FindTargetNodeOfContextForPastedHTMLAndRemoveInsertionCookie(
+      nsINode& aStart, nsCOMPtr<nsINode>& aResult);
 
   
 
@@ -3098,8 +3098,8 @@ void HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
 
 
 bool HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
-    FindTargetNodeOfContextForPastedHTML(nsINode& aStart,
-                                         nsCOMPtr<nsINode>& aResult) {
+    FindTargetNodeOfContextForPastedHTMLAndRemoveInsertionCookie(
+        nsINode& aStart, nsCOMPtr<nsINode>& aResult) {
   nsIContent* firstChild = aStart.GetFirstChild();
   if (!firstChild) {
     
@@ -3128,7 +3128,8 @@ bool HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
       }
     }
 
-    if (FindTargetNodeOfContextForPastedHTML(*child, aResult)) {
+    if (FindTargetNodeOfContextForPastedHTMLAndRemoveInsertionCookie(*child,
+                                                                     aResult)) {
       return true;
     }
   }
@@ -3334,8 +3335,9 @@ nsresult HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
       return rv;
     }
 
-    FragmentFromPasteCreator::FindTargetNodeOfContextForPastedHTML(
-        *documentFragmentForContext, aParentNodeOfPastedHTMLInContext);
+    FragmentFromPasteCreator::
+        FindTargetNodeOfContextForPastedHTMLAndRemoveInsertionCookie(
+            *documentFragmentForContext, aParentNodeOfPastedHTMLInContext);
   }
 
   nsCOMPtr<nsIContent> parentContentOfPastedHTMLInContext =
