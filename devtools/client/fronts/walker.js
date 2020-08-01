@@ -67,7 +67,7 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     
     
     this._rootNodeWatchers++;
-    if (this.traits.watchRootNode && this._rootNodeWatchers === 1) {
+    if (this._rootNodeWatchers === 1) {
       await super.watchRootNode();
     }
 
@@ -77,7 +77,7 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     }
 
     this._rootNodeWatchers--;
-    if (this.traits.watchRootNode && this._rootNodeWatchers === 0) {
+    if (this._rootNodeWatchers === 0) {
       super.unwatchRootNode();
     }
 
@@ -352,10 +352,6 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
           }
         }
       } else if (change.type === "documentUnload") {
-        if (!this.traits.watchRootNode && targetFront === this.rootNode) {
-          this.emit("root-destroyed");
-        }
-
         
         
         emittedMutation.target = targetFront.actorID;
@@ -573,13 +569,9 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     this.on("root-available", onRootNodeAvailable);
 
     this._rootNodeWatchers++;
-    if (this.traits.watchRootNode && this._rootNodeWatchers === 1) {
+    if (this._rootNodeWatchers === 1) {
       await super.watchRootNode();
     } else if (this.rootNode) {
-      
-      
-      
-      
       
       
       
@@ -633,7 +625,7 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     this.off("root-available", onRootNodeAvailable);
 
     this._rootNodeWatchers--;
-    if (this.traits.watchRootNode && this._rootNodeWatchers === 0) {
+    if (this._rootNodeWatchers === 0) {
       super.unwatchRootNode();
     }
   }

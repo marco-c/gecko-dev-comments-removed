@@ -446,8 +446,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       traits: {
         
         supportsNodePicker: true,
-        
-        watchRootNode: true,
       },
     };
   },
