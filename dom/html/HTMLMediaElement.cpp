@@ -6546,11 +6546,7 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
         !AutoplayPolicy::IsAllowedToPlay(*this)) {
       MaybeNotifyAutoplayBlocked();
     }
-    
-    
-    if (mMediaControlKeyListener && !mMediaControlKeyListener->IsStarted()) {
-      StartListeningMediaControlKeyIfNeeded();
-    }
+    StartListeningMediaControlKeyIfNeeded();
   }
   if (StaticPrefs::media_testing_only_events()) {
     auto dispatcher = MakeRefPtr<AsyncEventDispatcher>(
