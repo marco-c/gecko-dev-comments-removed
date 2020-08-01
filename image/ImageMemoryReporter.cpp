@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ImageMemoryReporter.h"
 #include "Image.h"
@@ -26,7 +26,7 @@ class ImageMemoryReporter::WebRenderReporter final : public nsIMemoryReporter {
                             nsISupports* aData, bool aAnonymize) override {
     layers::SharedSurfacesMemoryReport report;
     layers::SharedSurfacesParent::AccumulateMemoryReport(report);
-    ReportSharedSurfaces(aHandleReport, aData, /* aIsForCompositor */ true,
+    ReportSharedSurfaces(aHandleReport, aData,  true,
                          report);
     return NS_OK;
   }
@@ -37,7 +37,7 @@ class ImageMemoryReporter::WebRenderReporter final : public nsIMemoryReporter {
 
 NS_IMPL_ISUPPORTS(ImageMemoryReporter::WebRenderReporter, nsIMemoryReporter)
 
-/* static */
+
 void ImageMemoryReporter::InitForWebRender() {
   MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsGPUProcess());
   if (!sWrReporter) {
@@ -46,7 +46,7 @@ void ImageMemoryReporter::InitForWebRender() {
   }
 }
 
-/* static */
+
 void ImageMemoryReporter::ShutdownForWebRender() {
   MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsGPUProcess());
   if (sWrReporter) {
@@ -55,15 +55,15 @@ void ImageMemoryReporter::ShutdownForWebRender() {
   }
 }
 
-/* static */
+
 void ImageMemoryReporter::ReportSharedSurfaces(
     nsIHandleReportCallback* aHandleReport, nsISupports* aData,
     const layers::SharedSurfacesMemoryReport& aSharedSurfaces) {
   ReportSharedSurfaces(aHandleReport, aData,
-                       /* aIsForCompositor */ false, aSharedSurfaces);
+                        false, aSharedSurfaces);
 }
 
-/* static */
+
 void ImageMemoryReporter::ReportSharedSurfaces(
     nsIHandleReportCallback* aHandleReport, nsISupports* aData,
     bool aIsForCompositor,
@@ -79,7 +79,7 @@ void ImageMemoryReporter::ReportSharedSurfaces(
   }
 }
 
-/* static */
+
 void ImageMemoryReporter::ReportSharedSurface(
     nsIHandleReportCallback* aHandleReport, nsISupports* aData,
     bool aIsForCompositor, uint64_t aExternalId,
@@ -110,18 +110,24 @@ void ImageMemoryReporter::ReportSharedSurface(
   path.AppendInt(aEntry.mConsumers);
   path.AppendLiteral(", creator_ref:");
   path.AppendInt(aEntry.mCreatorRef);
-  path.AppendLiteral(")/decoded-nonheap");
+  path.AppendLiteral(")/decoded-");
 
   size_t surfaceSize = mozilla::ipc::SharedMemory::PageAlignedSize(
       aEntry.mSize.height * aEntry.mStride);
 
-  // If this memory has already been reported elsewhere (e.g. as part of our
-  // explicit section in the surface cache), we don't want report it again as
-  // KIND_NONHEAP and have it counted again.
+  
+  
+  
+  
   bool sameProcess = aEntry.mCreatorPid == base::GetCurrentProcId();
-  int32_t kind = aIsForCompositor && !sameProcess
-                     ? nsIMemoryReporter::KIND_NONHEAP
-                     : nsIMemoryReporter::KIND_OTHER;
+  int32_t kind;
+  if (aIsForCompositor && !sameProcess) {
+    path.AppendLiteral("nonheap");
+    kind = nsIMemoryReporter::KIND_NONHEAP;
+  } else {
+    path.AppendLiteral("other");
+    kind = nsIMemoryReporter::KIND_OTHER;
+  }
 
   constexpr auto desc = "Decoded image data stored in shared memory."_ns;
   aHandleReport->Callback(EmptyCString(), path, kind,
@@ -129,7 +135,7 @@ void ImageMemoryReporter::ReportSharedSurface(
                           aData);
 }
 
-/* static */
+
 void ImageMemoryReporter::AppendSharedSurfacePrefix(
     nsACString& aPathPrefix, const SurfaceMemoryCounter& aCounter,
     layers::SharedSurfacesMemoryReport& aSharedSurfaces) {
@@ -155,7 +161,7 @@ void ImageMemoryReporter::AppendSharedSurfacePrefix(
   }
 }
 
-/* static */
+
 void ImageMemoryReporter::TrimSharedSurfaces(
     const ImageMemoryCounter& aCounter,
     layers::SharedSurfacesMemoryReport& aSharedSurfaces) {
@@ -175,5 +181,5 @@ void ImageMemoryReporter::TrimSharedSurfaces(
   }
 }
 
-}  // namespace image
-}  // namespace mozilla
+}  
+}  
