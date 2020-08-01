@@ -54,8 +54,15 @@ public class GeckoWebExecutor {
     }
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FETCH_FLAGS_NONE, FETCH_FLAGS_ANONYMOUS, FETCH_FLAGS_NO_REDIRECTS, FETCH_FLAGS_STREAM_FAILURE_TEST})
-     @interface FetchFlags {};
+    @IntDef({
+            FETCH_FLAGS_NONE,
+            FETCH_FLAGS_ANONYMOUS,
+            FETCH_FLAGS_NO_REDIRECTS,
+            FETCH_FLAGS_ALLOW_SOME_ERRORS,
+            FETCH_FLAGS_PRIVATE,
+            FETCH_FLAGS_STREAM_FAILURE_TEST,
+    })
+     @interface FetchFlags {}
 
     
 
@@ -73,6 +80,21 @@ public class GeckoWebExecutor {
 
     @WrapForJNI
     public static final int FETCH_FLAGS_NO_REDIRECTS = 1 << 1;
+
+    
+    
+
+
+
+    @WrapForJNI
+     static final int FETCH_FLAGS_ALLOW_SOME_ERRORS = 1 << 2;
+
+    
+    
+
+
+    @WrapForJNI
+     static final int FETCH_FLAGS_PRIVATE = 1 << 3;
 
     
 
@@ -139,6 +161,11 @@ public class GeckoWebExecutor {
         }
 
         return result;
+    }
+
+    
+     @NonNull GeckoResult<WebResponse> fetch(final @NonNull WebExtension.DownloadRequest request) {
+        return fetch(request.request, request.downloadFlags);
     }
 
     

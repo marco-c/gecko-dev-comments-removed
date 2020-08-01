@@ -22,6 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -2117,6 +2118,213 @@ public class WebExtension {
 
             EventDispatcher.getInstance().dispatch(
                     "GeckoView:WebExtension:MenuClick", bundle);
+        }
+    }
+
+    
+     interface DownloadDelegate {
+        @AnyThread
+        default GeckoResult<WebExtension.Download> onDownload(WebExtension source, DownloadRequest request) {
+            return null;
+        }
+    }
+
+    
+    
+
+
+
+    static class Download {
+         final String id;
+
+        private Download(final String id) {
+            this.id = id;
+        }
+
+         void setDelegate(final Delegate delegate) { }
+
+         GeckoResult<Void> update(final DownloadInfo data) {
+            return null;
+        }
+
+         interface Delegate {
+
+            default GeckoResult<Void> onPause(WebExtension source, WebExtension.Download download) {
+                return null;
+            }
+
+            default GeckoResult<Void> onResume(WebExtension source, WebExtension.Download download) {
+                return null;
+            }
+
+            default GeckoResult<Void> onCancel(WebExtension source, WebExtension.Download download) {
+                return null;
+            }
+
+            default GeckoResult<Void> onErase(WebExtension source, WebExtension.Download download) {
+                return null;
+            }
+
+            default GeckoResult<Void> onOpen(WebExtension source, WebExtension.Download download) {
+                return null;
+            }
+
+            default GeckoResult<Void> onRemoveFile(WebExtension source, WebExtension.Download download) {
+                return null;
+            }
+        }
+
+         interface DownloadInfo {
+            @IntDef(flag = true, value = { IN_PROGRESS, INTERRUPTED, COMPLETE })
+             @interface DownloadStatusFlags {};
+
+            
+
+
+             static final int IN_PROGRESS = 0;
+
+            
+
+
+             static final int INTERRUPTED = 1;
+
+            
+
+
+             static final int COMPLETE = 1 << 1;
+
+            
+
+
+
+
+            default boolean paused() {
+                return false;
+            }
+
+            
+
+
+
+
+            default Date estimatedEndTime() {
+                return null;
+            }
+
+            
+
+
+
+            default boolean canResume() {
+                return false;
+            }
+
+            
+
+
+
+            default long bytesReceived() {
+                return 0;
+            }
+
+            
+
+
+
+
+            default long totalBytes() {
+                return 0;
+            }
+
+            
+
+
+
+
+            default Date endTime() {
+                return null;
+            }
+
+            
+
+
+            default boolean fileExists() {
+                return false;
+            }
+
+            
+
+
+
+            default @DownloadStatusFlags int status() {
+                return 0;
+            }
+        }
+    }
+
+    
+    
+
+
+    static final class DownloadRequest {
+         final WebRequest request;
+         final @GeckoWebExecutor.FetchFlags int downloadFlags;
+         final String filename;
+         final @ConflictActionFlags int conflictActionFlag;
+
+        @IntDef(flag = true, value = { UNIQUIFY, OVERWRITE, PROMPT })
+         @interface ConflictActionFlags {}
+
+        
+
+
+         static final int UNIQUIFY = 0;
+
+        
+
+
+         static final int OVERWRITE = 1;
+
+        
+
+
+         static final int PROMPT = 1 << 1;
+
+        private DownloadRequest(final DownloadRequest.Builder builder) {
+            this.request = builder.mRequest;
+            this.downloadFlags = builder.mDownloadFlags;
+            this.filename = builder.mFilename;
+            this.conflictActionFlag = builder.mConflictActionFlag;
+        }
+
+         class Builder {
+            private final WebRequest mRequest;
+            private @GeckoWebExecutor.FetchFlags int mDownloadFlags = 0;
+            private String mFilename = null;
+            private @ConflictActionFlags int mConflictActionFlag = UNIQUIFY;
+
+             Builder(final WebRequest request) {
+                this.mRequest = request;
+            }
+
+             Builder downloadFlags(final @GeckoWebExecutor.FetchFlags int flags) {
+                this.mDownloadFlags = flags;
+                return this;
+            }
+
+             Builder filename(final String filename) {
+                this.mFilename = filename;
+                return this;
+            }
+
+             Builder conflictAction(final @ConflictActionFlags int conflictActionFlag) {
+                this.mConflictActionFlag = conflictActionFlag;
+                return this;
+            }
+
+             DownloadRequest build() {
+                return new DownloadRequest(this);
+            }
         }
     }
 }
