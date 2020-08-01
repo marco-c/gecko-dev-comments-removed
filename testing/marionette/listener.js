@@ -1793,13 +1793,16 @@ function paintComplete(win, remote) {
       flushRendering();
       if (remote) {
         
+        logger.debug("Force update of layer tree");
         windowUtils.updateLayerTree();
       }
+
       if (windowUtils.isMozAfterPaintPending) {
-        logger.debug(`reftestWait: ${windowUtils.isMozAfterPaintPending}`);
+        logger.debug("isMozAfterPaintPending: true");
         win.addEventListener("MozAfterPaint", maybeResolve, { once: true });
       } else {
         
+        logger.debug("isMozAfterPaintPending: false");
         win.requestAnimationFrame(() => {
           win.requestAnimationFrame(resolve);
         });
