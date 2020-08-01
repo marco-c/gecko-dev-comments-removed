@@ -319,11 +319,15 @@ add_task(async function test_disableDataUpload() {
     ping.clientId,
     "Deletion must be requested for correct client id"
   );
-  Assert.equal(
-    secondEcosystemClientId,
-    ping.payload.scalars.parent["deletion.request.ecosystem_client_id"],
-    "Deletion must be requested for correct ecosystem client ID"
-  );
+  if (AppConstants.MOZ_APP_NAME != "thunderbird") {
+    
+    
+    Assert.equal(
+      secondEcosystemClientId,
+      ping.payload.scalars.parent["deletion.request.ecosystem_client_id"],
+      "Deletion must be requested for correct ecosystem client ID"
+    );
+  }
 
   
   

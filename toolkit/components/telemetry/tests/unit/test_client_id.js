@@ -135,7 +135,10 @@ add_task(async function test_removeClientIDs() {
 
   await ClientID.removeClientIDs();
 
-  if (AppConstants.platform != "android") {
+  if (
+    AppConstants.platform != "android" &&
+    AppConstants.MOZ_APP_NAME != "thunderbird"
+  ) {
     
     
     let prefClientID = Services.prefs.getStringPref(PREF_CACHED_CLIENTID, null);
@@ -177,7 +180,10 @@ add_task(async function test_removeClientIDs() {
   let prefClientID = Services.prefs.getStringPref(PREF_CACHED_CLIENTID, null);
   Assert.equal(nextClientID, prefClientID);
 
-  if (AppConstants.platform != "android") {
+  if (
+    AppConstants.platform != "android" &&
+    AppConstants.MOZ_APP_NAME != "thunderbird"
+  ) {
     let scalarsDeletionRequest = Services.telemetry.getSnapshotForScalars(
       "deletion-request"
     );
