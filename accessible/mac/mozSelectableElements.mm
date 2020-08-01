@@ -13,7 +13,7 @@
 
 
 - (NSArray*)selectableChildren {
-  return [[self moxChildren]
+  return [[self moxUnignoredChildren]
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(mozAccessible* child,
                                                                         NSDictionary* bindings) {
         return [child isKindOfClass:[mozSelectableChildAccessible class]];
@@ -31,7 +31,7 @@
 
 
 - (NSArray*)moxSelectedChildren {
-  return [[self moxChildren]
+  return [[self moxUnignoredChildren]
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(mozAccessible* child,
                                                                         NSDictionary* bindings) {
         
@@ -77,7 +77,7 @@
 }
 
 - (NSArray*)moxContents {
-  return [self moxChildren];
+  return [self moxUnignoredChildren];
 }
 
 - (id)moxValue {
@@ -103,12 +103,12 @@
 
 @implementation mozListboxAccessible
 
-- (BOOL)ignoreChild:(mozAccessible*)child {
+- (BOOL)moxIgnoreChild:(mozAccessible*)child {
   if (!child || child->mRole == roles::GROUPING) {
     return YES;
   }
 
-  return [super ignoreChild:child];
+  return [super moxIgnoreChild:child];
 }
 
 - (BOOL)disableChild:(mozAccessible*)child {
@@ -201,7 +201,7 @@
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_FOCUS:
       
-      mozAccessible* parent = (mozAccessible*)[self moxParent];
+      mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
       [parent moxPostNotification:NSAccessibilitySelectedChildrenChangedNotification];
       break;
   }

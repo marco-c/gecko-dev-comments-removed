@@ -32,6 +32,23 @@
 - (BOOL)moxBlockSelector:(SEL _Nonnull)selector;
 
 
+- (NSArray* _Nullable)moxChildren;
+
+
+- (id<mozAccessible> _Nullable)moxParent;
+
+
+
+
+- (BOOL)moxIgnoreWithParent:(id<MOXAccessible> _Nullable)parent;
+
+
+
+
+
+- (BOOL)moxIgnoreChild:(id<MOXAccessible> _Nullable)child;
+
+
 - (id<MOXTextMarkerSupport> _Nullable)moxTextMarkerDelegate;
 
 @optional
@@ -39,10 +56,10 @@
 #pragma mark - AttributeGetters
 
 
-- (NSArray* _Nullable)moxChildren;
+- (NSArray* _Nullable)moxUnignoredChildren;
 
 
-- (id _Nullable)moxParent;
+- (id _Nullable)moxUnignoredParent;
 
 
 - (NSString* _Nullable)moxRole;

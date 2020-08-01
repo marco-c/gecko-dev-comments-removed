@@ -18,22 +18,22 @@ using namespace mozilla::a11y;
 
 
 
-- (BOOL)isMozAccessible;
+- (BOOL)isMOXAccessible;
 
 
 
-- (BOOL)hasMozAccessibles;
+- (BOOL)hasMOXAccessibles;
 
 @end
 
 @implementation NSObject (MOXAccessible)
 
-- (BOOL)isMozAccessible {
-  return [self conformsToProtocol:@protocol(mozAccessible)];
+- (BOOL)isMOXAccessible {
+  return [self conformsToProtocol:@protocol(MOXAccessible)];
 }
 
-- (BOOL)hasMozAccessibles {
-  return [self isKindOfClass:[NSArray class]] && [[(NSArray*)self firstObject] isMozAccessible];
+- (BOOL)hasMOXAccessibles {
+  return [self isKindOfClass:[NSArray class]] && [[(NSArray*)self firstObject] isMOXAccessible];
 }
 
 @end
@@ -133,14 +133,13 @@ using namespace mozilla::a11y;
     }
   }
 
-  if ([value isMozAccessible]) {
+  if ([value isMOXAccessible]) {
     
     
-    value = GetObjectOrRepresentedView(value);
-    return [value isAccessibilityElement] ? value : nil;
+    return [value isAccessibilityElement] ? GetObjectOrRepresentedView(value) : nil;
   }
 
-  if ([value hasMozAccessibles]) {
+  if ([value hasMOXAccessibles]) {
     
     
     NSUInteger arrSize = [value count];
@@ -313,7 +312,20 @@ using namespace mozilla::a11y;
 }
 
 - (BOOL)isAccessibilityElement {
-  return YES;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+
+  if ([self isExpired]) {
+    return YES;
+  }
+
+  id parent = [self moxParent];
+  if (![parent isMOXAccessible]) {
+    return YES;
+  }
+
+  return ![self moxIgnoreWithParent:parent];
+
+  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NO);
 }
 
 - (BOOL)accessibilityNotifiesWhenDestroyed {
@@ -349,6 +361,50 @@ using namespace mozilla::a11y;
 }
 
 - (BOOL)moxBlockSelector:(SEL)selector {
+  return NO;
+}
+
+- (NSArray*)moxChildren {
+  return @[];
+}
+
+- (NSArray*)moxUnignoredChildren {
+  NSMutableArray* unignoredChildren = [[NSMutableArray alloc] init];
+  NSArray* allChildren = [self moxChildren];
+
+  for (MOXAccessibleBase* nativeChild in allChildren) {
+    if ([nativeChild moxIgnoreWithParent:self]) {
+      
+      
+      
+      [unignoredChildren addObjectsFromArray:[nativeChild moxUnignoredChildren]];
+    } else {
+      [unignoredChildren addObject:nativeChild];
+    }
+  }
+
+  return unignoredChildren;
+}
+
+- (id<mozAccessible>)moxParent {
+  return nil;
+}
+
+- (id<mozAccessible>)moxUnignoredParent {
+  id nativeParent = [self moxParent];
+
+  if (![nativeParent isAccessibilityElement]) {
+    return [nativeParent moxUnignoredParent];
+  }
+
+  return GetObjectOrRepresentedView(nativeParent);
+}
+
+- (BOOL)moxIgnoreWithParent:(MOXAccessibleBase*)parent {
+  return [parent moxIgnoreChild:self];
+}
+
+- (BOOL)moxIgnoreChild:(MOXAccessibleBase*)child {
   return NO;
 }
 
