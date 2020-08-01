@@ -688,18 +688,18 @@ static MOZ_ALWAYS_INLINE bool SetPrivateElementOperation(JSContext* cx,
 
 static MOZ_ALWAYS_INLINE bool InitArrayElemOperation(JSContext* cx,
                                                      jsbytecode* pc,
-                                                     HandleObject obj,
+                                                     HandleArrayObject arr,
                                                      uint32_t index,
                                                      HandleValue val) {
   JSOp op = JSOp(*pc);
   MOZ_ASSERT(op == JSOp::InitElemArray || op == JSOp::InitElemInc);
 
-  MOZ_ASSERT(obj->is<ArrayObject>());
-
   
   
+  
+  MOZ_ASSERT_IF(op == JSOp::InitElemArray, index < arr->getDenseCapacity());
   MOZ_ASSERT_IF(op == JSOp::InitElemArray,
-                index < obj->as<ArrayObject>().getDenseCapacity());
+                index == arr->getDenseInitializedLength());
 
   if (op == JSOp::InitElemInc && index == INT32_MAX) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -708,30 +708,26 @@ static MOZ_ALWAYS_INLINE bool InitArrayElemOperation(JSContext* cx,
   }
 
   
-
-
-
-
-
-
-
-
-
-
-
   if (val.isMagic(JS_ELEMENTS_HOLE)) {
     if (op == JSOp::InitElemInc) {
-      if (!SetLengthProperty(cx, obj, index + 1)) {
-        return false;
-      }
+      
+      
+      
+      return SetLengthProperty(cx, arr, index + 1);
     }
-  } else {
-    if (!DefineDataElement(cx, obj, index, val, JSPROP_ENUMERATE)) {
-      return false;
-    }
+
+    MOZ_ASSERT(op == JSOp::InitElemArray);
+
+    
+    
+    
+    
+    arr->ensureDenseInitializedLength(cx, index, 1);
+    arr->setDenseElementHole(cx, index);
+    return true;
   }
 
-  return true;
+  return DefineDataElement(cx, arr, index, val, JSPROP_ENUMERATE);
 }
 
 static inline ArrayObject* ProcessCallSiteObjOperation(JSContext* cx,
