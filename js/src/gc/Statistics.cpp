@@ -617,8 +617,7 @@ void Statistics::writeLogMessage(const char* fmt, ...) {
 }
 #endif
 
-UniqueChars Statistics::renderJsonMessage(uint64_t timestamp,
-                                          Statistics::JSONUse use) const {
+UniqueChars Statistics::renderJsonMessage() const {
   
 
 
@@ -638,16 +637,10 @@ UniqueChars Statistics::renderJsonMessage(uint64_t timestamp,
   JSONPrinter json(printer);
 
   json.beginObject();
-  json.property("status", "completed");         
-  formatJsonDescription(timestamp, json, use);  
+  json.property("status", "completed");  
+  formatJsonDescription(json);           
 
-  if (use == Statistics::JSONUse::TELEMETRY) {
-    json.beginListProperty("slices_list");  
-    for (unsigned i = 0; i < slices_.length(); i++) {
-      formatJsonSlice(i, json);
-    }
-    json.endList();
-  }
+  
 
   json.beginObjectProperty("totals");  
   formatJsonPhaseTimes(phaseTimes, json);
@@ -658,8 +651,7 @@ UniqueChars Statistics::renderJsonMessage(uint64_t timestamp,
   return printer.release();
 }
 
-void Statistics::formatJsonDescription(uint64_t timestamp, JSONPrinter& json,
-                                       JSONUse use) const {
+void Statistics::formatJsonDescription(JSONPrinter& json) const {
   
   
   
@@ -674,7 +666,10 @@ void Statistics::formatJsonDescription(uint64_t timestamp, JSONPrinter& json,
   
   
 
-  json.property("timestamp", timestamp);  
+  
+  
+  
+  json.property("timestamp", 0);  
 
   TimeDuration total, longest;
   gcDuration(&total, &longest);
@@ -709,9 +704,7 @@ void Statistics::formatJsonDescription(uint64_t timestamp, JSONPrinter& json,
                   ExplainAbortReason(nonincrementalReason_));  
   }
   json.property("allocated_bytes", preTotalHeapBytes);  
-  if (use == Statistics::JSONUse::PROFILER) {
-    json.property("post_heap_size", postTotalHeapBytes);
-  }
+  json.property("post_heap_size", postTotalHeapBytes);
 
   uint32_t addedChunks = getCount(COUNT_NEW_CHUNK);
   if (addedChunks) {

@@ -300,11 +300,11 @@ struct Statistics {
   
   void printTotalProfileTimes();
 
-  enum JSONUse { TELEMETRY, PROFILER };
+  
+  
 
   
-  
-  UniqueChars renderJsonMessage(uint64_t timestamp, JSONUse use) const;
+  UniqueChars renderJsonMessage() const;
 
   
   UniqueChars renderJsonSlice(size_t sliceNum) const;
@@ -465,7 +465,7 @@ struct Statistics {
   UniqueChars formatDetailedPhaseTimes(const PhaseTimeTable& phaseTimes) const;
   UniqueChars formatDetailedTotals() const;
 
-  void formatJsonDescription(uint64_t timestamp, JSONPrinter&, JSONUse) const;
+  void formatJsonDescription(JSONPrinter&) const;
   void formatJsonSliceDescription(unsigned i, const SliceData& slice,
                                   JSONPrinter&) const;
   void formatJsonPhaseTimes(const PhaseTimeTable& phaseTimes,
