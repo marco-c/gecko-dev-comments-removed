@@ -61,10 +61,6 @@ void ProxyObject::init(const BaseProxyHandler* handler, HandleValue priv,
   } else {
     setSameCompartmentPrivate(priv);
   }
-
-  
-  
-  setExpando(nullptr);
 }
 
 
@@ -271,18 +267,6 @@ inline void ProxyObject::setPrivate(const Value& priv) {
   *slotOfPrivate() = priv;
 }
 
-void ProxyObject::setExpando(JSObject* expando) {
-  
-  
-  MOZ_ASSERT_IF(IsMarkedBlack(this) && expando,
-                !JS::GCThingIsMarkedGray(JS::GCCellPtr(expando)));
-
-  
-  
-  MOZ_ASSERT_IF(expando, expando->compartment() == compartment());
-  *slotOfExpando() = ObjectOrNullValue(expando);
-}
-
 void ProxyObject::nuke() {
   
   
@@ -296,9 +280,6 @@ void ProxyObject::nuke() {
   
   
   setSameCompartmentPrivate(DeadProxyTargetValue(this));
-
-  
-  setExpando(nullptr);
 
   
   setHandler(&DeadObjectProxy::singleton);

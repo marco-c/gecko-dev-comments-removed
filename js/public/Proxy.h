@@ -318,22 +318,6 @@ class JS_FRIEND_API BaseProxyHandler {
                    ObjectOpResult& result) const;
 
   
-  
-  
-  virtual bool hasPrivate(JSContext* cx, HandleObject proxy, HandleId id,
-                          bool* bp) const;
-  virtual bool getPrivate(JSContext* cx, HandleObject proxy,
-                          HandleValue receiver, HandleId id,
-                          MutableHandleValue vp) const;
-  virtual bool setPrivate(JSContext* cx, HandleObject proxy, HandleId id,
-                          HandleValue v, HandleValue receiver,
-                          ObjectOpResult& result) const;
-
-  virtual bool definePrivateField(JSContext* cx, HandleObject proxy,
-                                  HandleId id, Handle<PropertyDescriptor> desc,
-                                  ObjectOpResult& result) const;
-
-  
 
 
 
@@ -415,8 +399,6 @@ namespace detail {
 
 
 
-
-
 struct ProxyReservedSlots {
   Value slots[1];
 
@@ -437,12 +419,10 @@ struct ProxyReservedSlots {
 };
 
 struct ProxyValueArray {
-  Value expandoSlot;
   Value privateSlot;
   ProxyReservedSlots reservedSlots;
 
   void init(size_t nreserved) {
-    expandoSlot = JS::ObjectOrNullValue(nullptr);
     privateSlot = JS::UndefinedValue();
     reservedSlots.init(nreserved);
   }
@@ -523,10 +503,6 @@ inline const BaseProxyHandler* GetProxyHandler(const JSObject* obj) {
 
 inline const Value& GetProxyPrivate(const JSObject* obj) {
   return detail::GetProxyDataLayout(obj)->values()->privateSlot;
-}
-
-inline const Value& GetProxyExpando(const JSObject* obj) {
-  return detail::GetProxyDataLayout(obj)->values()->expandoSlot;
 }
 
 inline JSObject* GetProxyTargetObject(JSObject* obj) {
