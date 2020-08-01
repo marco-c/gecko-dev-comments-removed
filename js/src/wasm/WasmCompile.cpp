@@ -95,7 +95,12 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
       cx->options().testWasmAwaitTier2() || JitOptions.wasmDelayTier2;
 
   
-  MOZ_RELEASE_ASSERT(!(debug && (ion || cranelift)));
+  
+  
+  if (debug && (ion || cranelift)) {
+    JS_ReportErrorASCII(cx, "no WebAssembly compiler available");
+    return nullptr;
+  }
 
   if (forceTiering && !(baseline && (cranelift || ion))) {
     
