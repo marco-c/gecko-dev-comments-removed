@@ -106,7 +106,7 @@ class ImageComposite {
   void CountSkippedFrames(const TimedImage* aImage);
 
   
-  void UpdateCompositedFrame(const TimedImage* aImage,
+  void UpdateCompositedFrame(int aImageIndex,
                              bool aWasVisibleAtPreviousComposition);
 
   
