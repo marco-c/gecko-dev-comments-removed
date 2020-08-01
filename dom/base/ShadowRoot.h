@@ -183,8 +183,6 @@ class ShadowRoot final : public DocumentFragment,
   using mozilla::dom::DocumentOrShadowRoot::GetElementById;
 
   Element* GetActiveElement();
-  void GetInnerHTML(nsAString& aInnerHTML);
-  void SetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError);
 
   
 
