@@ -1623,7 +1623,8 @@ pub enum Appearance {
     RadioLabel,
     
     Range,
-    RangeThumb, 
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    RangeThumb,
     
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
