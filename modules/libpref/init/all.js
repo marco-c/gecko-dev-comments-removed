@@ -3857,10 +3857,7 @@ pref("browser.region.network.url", "https://location.services.mozilla.com/v1/cou
 pref("browser.region.network.scan", false);
 
 pref("browser.region.timeout", 5000);
-
-#ifdef EARLY_BETA_OR_EARLIER
-  pref("browser.region.update.enabled", true);
-#endif
+pref("browser.region.update.enabled", true);
 
 
 pref("device.storage.enabled", false);
