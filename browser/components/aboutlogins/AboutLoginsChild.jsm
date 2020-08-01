@@ -92,6 +92,9 @@ class AboutLoginsChild extends JSWindowActorChild {
 
             return masterPasswordPromise;
           },
+          fileImportEnabled: Services.prefs.getBoolPref(
+            "signon.management.page.fileImport.enabled"
+          ),
           
           masterPasswordEnabled: true,
           passwordRevealVisible: true,
