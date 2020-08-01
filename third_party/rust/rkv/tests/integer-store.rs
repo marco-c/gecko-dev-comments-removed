@@ -8,14 +8,15 @@
 
 
 #![cfg(feature = "db-int-key")]
+#![allow(clippy::many_single_char_names)]
 
 use std::fs;
 
 use serde_derive::Serialize;
 use tempfile::Builder;
 
-use rkv::backend::Lmdb;
 use rkv::{
+    backend::Lmdb,
     PrimitiveInt,
     Rkv,
     StoreOptions,

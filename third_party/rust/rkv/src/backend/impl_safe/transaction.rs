@@ -8,8 +8,10 @@
 
 
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+};
 
 use super::{
     snapshot::Snapshot,
@@ -45,8 +47,8 @@ impl<'t> RoTransactionImpl<'t> {
 }
 
 impl<'t> BackendRoTransaction for RoTransactionImpl<'t> {
-    type Error = ErrorImpl;
     type Database = DatabaseImpl;
+    type Error = ErrorImpl;
 
     fn get(&self, db: &Self::Database, key: &[u8]) -> Result<&[u8], Self::Error> {
         let snapshot = self.snapshots.get(db).ok_or_else(|| ErrorImpl::DbIsForeignError)?;
@@ -86,8 +88,8 @@ impl<'t> RwTransactionImpl<'t> {
 }
 
 impl<'t> BackendRwTransaction for RwTransactionImpl<'t> {
-    type Error = ErrorImpl;
     type Database = DatabaseImpl;
+    type Error = ErrorImpl;
     type Flags = WriteFlagsImpl;
 
     fn get(&self, db: &Self::Database, key: &[u8]) -> Result<&[u8], Self::Error> {

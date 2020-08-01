@@ -199,6 +199,9 @@
 
 
 
+
+
+
 mod env;
 mod error;
 mod helpers;
@@ -206,7 +209,7 @@ mod manager;
 mod readwrite;
 
 pub mod backend;
-pub mod migrate;
+pub mod migrator;
 pub mod store;
 pub mod value;
 
@@ -222,14 +225,17 @@ pub use error::{
     StoreError,
 };
 pub use manager::Manager;
+pub use migrator::Migrator;
 pub use readwrite::{
     Readable,
     Reader,
     Writer,
 };
-pub use store::keys::EncodableKey;
-pub use store::single::SingleStore;
-pub use store::Options as StoreOptions;
+pub use store::{
+    keys::EncodableKey,
+    single::SingleStore,
+    Options as StoreOptions,
+};
 pub use value::{
     OwnedValue,
     Value,

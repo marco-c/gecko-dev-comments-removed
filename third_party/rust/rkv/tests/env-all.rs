@@ -12,11 +12,11 @@ use std::fs;
 
 use tempfile::Builder;
 
-use rkv::backend::{
-    Lmdb,
-    SafeMode,
-};
 use rkv::{
+    backend::{
+        Lmdb,
+        SafeMode,
+    },
     Rkv,
     StoreOptions,
     Value,

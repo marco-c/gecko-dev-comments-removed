@@ -8,6 +8,8 @@
 
 
 
+mod arch_migrator;
+mod arch_migrator_error;
 mod cursor;
 mod database;
 mod environment;
@@ -18,6 +20,11 @@ mod iter;
 mod stat;
 mod transaction;
 
+pub use arch_migrator::{
+    MigrateError as ArchMigrateError,
+    MigrateResult as ArchMigrateResult,
+    Migrator as ArchMigrator,
+};
 pub use cursor::{
     RoCursorImpl,
     RwCursorImpl,

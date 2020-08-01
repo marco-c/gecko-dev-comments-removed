@@ -55,21 +55,6 @@
 
 
 
-
-
-
-pub use crate::error::MigrateError;
-use bitflags::bitflags;
-use byteorder::{
-    LittleEndian,
-    ReadBytesExt,
-};
-use lmdb::{
-    DatabaseFlags,
-    Environment,
-    Transaction,
-    WriteFlags,
-};
 use std::{
     collections::{
         BTreeMap,
@@ -92,8 +77,21 @@ use std::{
     str,
 };
 
-const PAGESIZE: u16 = 4096;
+use bitflags::bitflags;
+use byteorder::{
+    LittleEndian,
+    ReadBytesExt,
+};
+use lmdb::{
+    DatabaseFlags,
+    Environment,
+    Transaction,
+    WriteFlags,
+};
 
+pub use super::arch_migrator_error::MigrateError;
+
+const PAGESIZE: u16 = 4096;
 
 
 
@@ -125,7 +123,6 @@ bitflags! {
         const DUPDATA = 0x04;
     }
 }
-
 
 
 
@@ -385,7 +382,6 @@ impl Page {
         let mv_size = Self::leaf_node_size(mn_lo, mn_hi);
         if mn_flags.contains(NodeFlags::BIGDATA) {
             let overflow_pgno = cursor.read_uint::<LittleEndian>(bits.size())?;
-
             Ok(LeafNode::BigData {
                 mn_lo,
                 mn_hi,
@@ -402,7 +398,6 @@ impl Page {
             let mut cursor = std::io::Cursor::new(&value[..]);
             let db = Database::new(&mut cursor, bits)?;
             validate_page_num(db.md_root, bits)?;
-
             Ok(LeafNode::SubData {
                 mn_lo,
                 mn_hi,
@@ -417,7 +412,6 @@ impl Page {
             let start = usize::try_from(cursor.position())?;
             let end = usize::try_from(cursor.position() + u64::from(mv_size))?;
             let value = cursor.get_ref()[start..end].to_vec();
-
             Ok(LeafNode::Regular {
                 mn_lo,
                 mn_hi,
@@ -545,8 +539,6 @@ impl Migrator {
     
     
     
-    
-    
     pub fn dump<T: Write>(&mut self, database: Option<&str>, mut out: T) -> MigrateResult<()> {
         let meta_data = self.get_meta_data()?;
         let root_page_num = meta_data.mm_dbs.main.md_root;
@@ -605,8 +597,6 @@ impl Migrator {
     
     
     
-    
-    
     pub fn migrate(&mut self, dest: &Path) -> MigrateResult<()> {
         let meta_data = self.get_meta_data()?;
         let root_page_num = meta_data.mm_dbs.main.md_root;
@@ -627,7 +617,6 @@ impl Migrator {
             env.create_db(Some(str::from_utf8(&subdb_name)?), subdb_info.md_flags)?;
         }
 
-        
         
         let mut txn = env.begin_rw_txn()?;
 
@@ -737,7 +726,6 @@ impl Migrator {
                                 
                                 
                                 
-                                
                             },
                         };
                     }
@@ -787,26 +775,17 @@ impl Migrator {
 
 #[cfg(test)]
 mod tests {
-    use super::MigrateResult;
-    use super::Migrator;
-    use crate::error::MigrateError;
+    use super::*;
+
+    use std::{
+        env,
+        fs,
+        mem::size_of,
+    };
+
     use lmdb::{
         Environment,
         Error as LmdbError,
-    };
-    use std::{
-        env,
-        fs::{
-            self,
-            File,
-        },
-        io::{
-            Read,
-            Seek,
-            SeekFrom,
-        },
-        mem::size_of,
-        path::PathBuf,
     };
     use tempfile::{
         tempdir,
@@ -823,15 +802,17 @@ mod tests {
         loop {
             match ref_file.read(ref_buf) {
                 Err(err) => panic!(err),
-                Ok(ref_len) => match new_file.read(new_buf) {
-                    Err(err) => panic!(err),
-                    Ok(new_len) => {
-                        assert_eq!(ref_len, new_len);
-                        if ref_len == 0 {
-                            break;
-                        };
-                        assert_eq!(ref_buf[0..ref_len], new_buf[0..new_len]);
-                    },
+                Ok(ref_len) => {
+                    match new_file.read(new_buf) {
+                        Err(err) => panic!(err),
+                        Ok(new_len) => {
+                            assert_eq!(ref_len, new_len);
+                            if ref_len == 0 {
+                                break;
+                            };
+                            assert_eq!(ref_buf[0..ref_len], new_buf[0..new_len]);
+                        },
+                    }
                 },
             }
         }

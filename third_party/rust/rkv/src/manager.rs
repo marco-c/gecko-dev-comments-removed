@@ -8,38 +8,53 @@
 
 
 
-use std::collections::btree_map::Entry;
-use std::collections::BTreeMap;
-use std::os::raw::c_uint;
-use std::path::{
-    Path,
-    PathBuf,
-};
-use std::result;
-use std::sync::{
-    Arc,
-    RwLock,
+use std::{
+    collections::{
+        btree_map::Entry,
+        BTreeMap,
+    },
+    os::raw::c_uint,
+    path::{
+        Path,
+        PathBuf,
+    },
+    result,
+    sync::{
+        Arc,
+        RwLock,
+    },
 };
 
 use lazy_static::lazy_static;
 
-use crate::backend::{
-    LmdbEnvironment,
-    SafeModeEnvironment,
+use crate::{
+    backend::{
+        BackendEnvironment,
+        BackendEnvironmentBuilder,
+        LmdbEnvironment,
+        SafeModeEnvironment,
+    },
+    error::StoreError,
+    helpers::canonicalize_path,
+    Rkv,
 };
-use crate::error::StoreError;
-use crate::helpers::canonicalize_path;
-use crate::Rkv;
 
 type Result<T> = result::Result<T, StoreError>;
 type SharedRkv<E> = Arc<RwLock<Rkv<E>>>;
 
 lazy_static! {
-    /// A process is only permitted to have one open handle to each Rkv environment.
-    /// This manager exists to enforce that constraint: don't open environments directly.
     static ref MANAGER_LMDB: RwLock<Manager<LmdbEnvironment>> = RwLock::new(Manager::new());
     static ref MANAGER_SAFE_MODE: RwLock<Manager<SafeModeEnvironment>> = RwLock::new(Manager::new());
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -47,7 +62,10 @@ pub struct Manager<E> {
     environments: BTreeMap<PathBuf, SharedRkv<E>>,
 }
 
-impl<E> Manager<E> {
+impl<'e, E> Manager<E>
+where
+    E: BackendEnvironment<'e>,
+{
     fn new() -> Manager<E> {
         Manager {
             environments: Default::default(),
@@ -59,7 +77,11 @@ impl<E> Manager<E> {
     where
         P: Into<&'p Path>,
     {
-        let canonical = canonicalize_path(path)?;
+        let canonical = if cfg!(feature = "no-canonicalize-path") {
+            path.into().to_path_buf()
+        } else {
+            canonicalize_path(path)?
+        };
         Ok(self.environments.get(&canonical).cloned())
     }
 
@@ -69,7 +91,11 @@ impl<E> Manager<E> {
         F: FnOnce(&Path) -> Result<Rkv<E>>,
         P: Into<&'p Path>,
     {
-        let canonical = canonicalize_path(path)?;
+        let canonical = if cfg!(feature = "no-canonicalize-path") {
+            path.into().to_path_buf()
+        } else {
+            canonicalize_path(path)?
+        };
         Ok(match self.environments.entry(canonical) {
             Entry::Occupied(e) => e.get().clone(),
             Entry::Vacant(e) => {
@@ -80,13 +106,16 @@ impl<E> Manager<E> {
     }
 
     
-    
     pub fn get_or_create_with_capacity<'p, F, P>(&mut self, path: P, capacity: c_uint, f: F) -> Result<SharedRkv<E>>
     where
         F: FnOnce(&Path, c_uint) -> Result<Rkv<E>>,
         P: Into<&'p Path>,
     {
-        let canonical = canonicalize_path(path)?;
+        let canonical = if cfg!(feature = "no-canonicalize-path") {
+            path.into().to_path_buf()
+        } else {
+            canonicalize_path(path)?
+        };
         Ok(match self.environments.entry(canonical) {
             Entry::Occupied(e) => e.get().clone(),
             Entry::Vacant(e) => {
@@ -94,6 +123,52 @@ impl<E> Manager<E> {
                 e.insert(k).clone()
             },
         })
+    }
+
+    
+    pub fn get_or_create_from_builder<'p, F, P, B>(&mut self, path: P, builder: B, f: F) -> Result<SharedRkv<E>>
+    where
+        F: FnOnce(&Path, B) -> Result<Rkv<E>>,
+        P: Into<&'p Path>,
+        B: BackendEnvironmentBuilder<'e, Environment = E>,
+    {
+        let canonical = if cfg!(feature = "no-canonicalize-path") {
+            path.into().to_path_buf()
+        } else {
+            canonicalize_path(path)?
+        };
+        Ok(match self.environments.entry(canonical) {
+            Entry::Occupied(e) => e.get().clone(),
+            Entry::Vacant(e) => {
+                let k = Arc::new(RwLock::new(f(e.key().as_path(), builder)?));
+                e.insert(k).clone()
+            },
+        })
+    }
+
+    
+    
+    
+    pub fn try_close_and_delete<'p, P>(&mut self, path: P) -> Result<()>
+    where
+        P: Into<&'p Path>,
+    {
+        let canonical = if cfg!(feature = "no-canonicalize-path") {
+            path.into().to_path_buf()
+        } else {
+            canonicalize_path(path)?
+        };
+        match self.environments.entry(canonical) {
+            Entry::Vacant(_) => {}, 
+            Entry::Occupied(e) => {
+                if Arc::strong_count(e.get()) == 1 {
+                    if let Ok(env) = Arc::try_unwrap(e.remove()) {
+                        env.into_inner()?.close_and_delete()?;
+                    }
+                }
+            },
+        }
+        Ok(())
     }
 }
 
@@ -111,11 +186,12 @@ impl Manager<SafeModeEnvironment> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-    use tempfile::Builder;
-
     use super::*;
     use crate::*;
+
+    use std::fs;
+
+    use tempfile::Builder;
 
     use backend::Lmdb;
 
@@ -140,7 +216,6 @@ mod tests {
             *rkv = rkv2;
         }
 
-        
         
         
         let path1_arc = manager.get(path1).expect("success").expect("existed");
