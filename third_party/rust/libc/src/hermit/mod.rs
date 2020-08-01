@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 pub type c_schar = i8;
 pub type c_uchar = u8;
 pub type c_short = i16;

@@ -3,23 +3,39 @@ use std::process::Command;
 use std::str;
 
 fn main() {
-    let rustc_minor_ver =
-        rustc_minor_version().expect("Failed to get rustc version");
-    let rustc_dep_of_std =
-        std::env::var("CARGO_FEATURE_RUSTC_DEP_OF_STD").is_ok();
-    let align_cargo_feature = std::env::var("CARGO_FEATURE_ALIGN").is_ok();
+    let (rustc_minor_ver, is_nightly) =
+        rustc_minor_nightly().expect("Failed to get rustc version");
+    let rustc_dep_of_std = env::var("CARGO_FEATURE_RUSTC_DEP_OF_STD").is_ok();
+    let align_cargo_feature = env::var("CARGO_FEATURE_ALIGN").is_ok();
+    let const_extern_fn_cargo_feature =
+        env::var("CARGO_FEATURE_CONST_EXTERN_FN").is_ok();
+    let libc_ci = env::var("LIBC_CI").is_ok();
 
-    if std::env::var("CARGO_FEATURE_USE_STD").is_ok() {
+    if env::var("CARGO_FEATURE_USE_STD").is_ok() {
         println!(
             "cargo:warning=\"libc's use_std cargo feature is deprecated since libc 0.2.55; \
              please consider using the `std` cargo feature instead\""
         );
     }
 
-    if std::env::var("LIBC_CI").is_ok() {
-        if let Some(12) = which_freebsd() {
-            println!("cargo:rustc-cfg=freebsd12");
+    
+    
+    
+    
+    
+    match which_freebsd() {
+        Some(10) if libc_ci || rustc_dep_of_std => {
+            println!("cargo:rustc-cfg=freebsd10")
         }
+        Some(11) if libc_ci => println!("cargo:rustc-cfg=freebsd11"),
+        Some(12) if libc_ci => println!("cargo:rustc-cfg=freebsd12"),
+        Some(13) if libc_ci => println!("cargo:rustc-cfg=freebsd13"),
+        Some(_) | None => println!("cargo:rustc-cfg=freebsd11"),
+    }
+
+    
+    if libc_ci {
+        println!("cargo:rustc-cfg=libc_deny_warnings");
     }
 
     
@@ -53,9 +69,21 @@ fn main() {
     if rustc_minor_ver >= 33 || rustc_dep_of_std {
         println!("cargo:rustc-cfg=libc_packedN");
     }
+
+    
+    if rustc_dep_of_std {
+        println!("cargo:rustc-cfg=libc_thread_local");
+    }
+
+    if const_extern_fn_cargo_feature {
+        if !is_nightly || rustc_minor_ver < 40 {
+            panic!("const-extern-fn requires a nightly compiler >= 1.40")
+        }
+        println!("cargo:rustc-cfg=libc_const_extern_fn");
+    }
 }
 
-fn rustc_minor_version() -> Option<u32> {
+fn rustc_minor_nightly() -> Option<(u32, bool)> {
     macro_rules! otry {
         ($e:expr) => {
             match $e {
@@ -74,7 +102,20 @@ fn rustc_minor_version() -> Option<u32> {
         return None;
     }
 
-    otry!(pieces.next()).parse().ok()
+    let minor = pieces.next();
+
+    
+    
+    
+    
+    
+    let nightly_raw = otry!(pieces.next()).split('-').nth(1);
+    let nightly = nightly_raw
+        .map(|raw| raw.starts_with("dev") || raw.starts_with("nightly"))
+        .unwrap_or(false);
+    let minor = otry!(otry!(minor).parse().ok());
+
+    Some((minor, nightly))
 }
 
 fn which_freebsd() -> Option<i32> {
@@ -94,8 +135,10 @@ fn which_freebsd() -> Option<i32> {
     let stdout = stdout.unwrap();
 
     match &stdout {
+        s if s.starts_with("10") => Some(10),
         s if s.starts_with("11") => Some(11),
         s if s.starts_with("12") => Some(12),
+        s if s.starts_with("13") => Some(13),
         _ => None,
     }
 }

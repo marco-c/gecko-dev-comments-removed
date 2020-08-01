@@ -1,9 +1,16 @@
+[![Build Status](https://travis-ci.com/PLSysSec/rlbox_lucet_sandbox.svg?branch=master)](https://travis-ci.com/PLSysSec/rlbox_lucet_sandbox)
+
 # RLBOX Lucet Sandbox Integration
 Integration with RLBox sandboxing API to leverage the sandboxing in WASM modules compiled with lucet compiler.
 
 For details about the RLBox sandboxing APIs, see [here](https://github.com/PLSysSec/rlbox_api_cpp17).
 
-Currently lucet supports only Linux x64, therefore this repo will only work in this environment.
+This code has been tested on 64-bit versions of Ubuntu and Mac OSX.
+The lucet compiler does not currently support Windows.
+
+## Reporting security bugs
+
+If you find a security bug, please do not create a public issue. Instead, file a security bug on bugzilla using the [following template link](https://bugzilla.mozilla.org/enter_bug.cgi?cc=tom%40mozilla.com&cc=nfroyd%40mozilla.com&cc=deian%40cs.ucsd.edu&cc=shravanrn%40gmail.com&component=Security%3A%20Process%20Sandboxing&defined_groups=1&groups=core-security&product=Core&bug_type=defect).
 
 ## Building/Running the tests
 
@@ -14,6 +21,8 @@ cmake -S . -B ./build
 cmake --build ./build --target all
 cmake --build ./build --target test
 ```
+
+On Arch Linux you'll need to install [ncurses5-compat-libs](https://aur.archlinux.org/packages/ncurses5-compat-libs/).
 
 ## Using this library
 
@@ -39,11 +48,11 @@ In order to sandbox a library of your choice.
 For instance, to edit an existing `make` based build system, you can run the commmand.
 
 ```bash
-build/_deps/wasiclang-src/opt/wasi-sdk/bin/clang c_src/lucet_sandbox_wrapper.c -c c_src/lucet_sandbox_wrapper.o
+build/_deps/wasiclang-src/opt/wasi-sdk/bin/clang --sysroot build/_deps/wasiclang-src/opt/wasi-sdk/share/wasi-sysroot/ c_src/lucet_sandbox_wrapper.c -c -o c_src/lucet_sandbox_wrapper.o
 
 CC=build/_deps/wasiclang-src/opt/wasi-sdk/bin/clang                            \
 CXX=build/_deps/wasiclang-src/opt/wasi-sdk/bin/clang++                         \
-C_FLAGS="--sysroot build/_deps/wasiclang-src/opt/wasi-sdk/share/wasi-sysroot/" \
+CFLAGS="--sysroot build/_deps/wasiclang-src/opt/wasi-sdk/share/wasi-sysroot/"  \
 LD=build/_deps/wasiclang-src/opt/wasi-sdk/bin/wasm-ld                          \
 LDLIBS=lucet_sandbox_wrapper.o                                                 \
 LDFLAGS=-Wl,--export-all                                                       \
@@ -53,12 +62,12 @@ make
 - Assuming the above command produced the wasm module `libFoo`, compile this to an ELF shared library using the modified lucetc compiler as shown below.
 
 ```bash
-build/_deps/lucet/target/release/lucetc                   \
-    --bindings build/_deps/lucet/lucet-wasi/bindings.json \
-    --guard-size "4GiB"                                   \
-    --min-reserved-size "4GiB"                            \
-    --max-reserved-size "4GiB"                            \
-    libFoo                                                \
+build/cargo/release/lucetc                                        \
+    --bindings build/_deps/mod_lucet-src/lucet-wasi/bindings.json \
+    --guard-size "4GiB"                                           \
+    --min-reserved-size "4GiB"                                    \
+    --max-reserved-size "4GiB"                                    \
+    libFoo                                                        \
     -o libWasmFoo.so
 ```
 - Finally you can write sandboxed code, just as you would with any other RLBox sandbox, such as in the short example below. For more detailed examples, please refer to the tutorial in the [RLBox Repo]((https://github.com/PLSysSec/rlbox_api_cpp17)).
@@ -79,10 +88,10 @@ int main()
 }
 ```
 
-- To compile the above example, you must include the rlbox header files in `build/_deps/rlbox-src/code/include`, the integration header files in `include/` and the lucet_sandbox library in `build/cargo/{debug or release}/librlbox_lucet_sandbox.so`. For instance, you can compile the above with
+- To compile the above example, you must include the rlbox header files in `build/_deps/rlbox-src/code/include`, the integration header files in `include/` and the lucet_sandbox library in `build/cargo/{debug or release}/librlbox_lucet_sandbox.a` (make sure to use the whole archive linker option). For instance, you can compile the above with
 
 ```bash
-g++ -std=c++17 example.cpp -o example -I build/_deps/rlbox-src/code/include -I include -l:build/cargo/release/librlbox_lucet_sandbox.so
+g++ -std=c++17 example.cpp -o example -I build/_deps/rlbox-src/code/include -I include -Wl,--whole-archive -l:build/cargo/debug/librlbox_lucet_sandbox.a -Wl,--no-whole-archive
 ```
 
 ## Contributing Code

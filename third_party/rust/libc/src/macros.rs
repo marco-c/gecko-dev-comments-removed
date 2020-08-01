@@ -122,15 +122,125 @@ macro_rules! s_no_extra_traits {
 }
 
 #[allow(unused_macros)]
-macro_rules! f {
-    ($(pub fn $i:ident($($arg:ident: $argty:ty),*) -> $ret:ty {
-        $($body:stmt);*
-    })*) => ($(
-        #[inline]
-        pub unsafe extern fn $i($($arg: $argty),*) -> $ret {
-            $($body);*
+macro_rules! e {
+    ($($(#[$attr:meta])* pub enum $i:ident { $($field:tt)* })*) => ($(
+        __item! {
+            #[cfg_attr(feature = "extra_traits", derive(Debug, Eq, Hash, PartialEq))]
+            $(#[$attr])*
+            pub enum $i { $($field)* }
         }
-    )*)
+        impl ::Copy for $i {}
+        impl ::Clone for $i {
+            fn clone(&self) -> $i { *self }
+        }
+    )*);
+}
+
+#[allow(unused_macros)]
+macro_rules! s_paren {
+    ($($(#[$attr:meta])* pub struct $i:ident ( $($field:tt)* ); )* ) => ($(
+        __item! {
+            #[cfg_attr(feature = "extra_traits", derive(Debug, Eq, Hash, PartialEq))]
+            $(#[$attr])*
+            pub struct $i ( $($field)* );
+        }
+        impl ::Copy for $i {}
+        impl ::Clone for $i {
+            fn clone(&self) -> $i { *self }
+        }
+    )*);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cfg_if! {
+    if #[cfg(libc_const_extern_fn)] {
+        #[allow(unused_macros)]
+        macro_rules! f {
+            ($(pub $({$constness:ident})* fn $i:ident(
+                        $($arg:ident: $argty:ty),*
+            ) -> $ret:ty {
+                $($body:stmt);*
+            })*) => ($(
+                #[inline]
+                pub $($constness)* unsafe extern fn $i($($arg: $argty),*
+                ) -> $ret {
+                    $($body);*
+                }
+            )*)
+        }
+
+        #[allow(unused_macros)]
+        macro_rules! const_fn {
+            ($($({$constness:ident})* fn $i:ident(
+                        $($arg:ident: $argty:ty),*
+            ) -> $ret:ty {
+                $($body:stmt);*
+            })*) => ($(
+                #[inline]
+                $($constness)* fn $i($($arg: $argty),*
+                ) -> $ret {
+                    $($body);*
+                }
+            )*)
+        }
+
+    } else {
+        #[allow(unused_macros)]
+        macro_rules! f {
+            ($(pub $({$constness:ident})* fn $i:ident(
+                        $($arg:ident: $argty:ty),*
+            ) -> $ret:ty {
+                $($body:stmt);*
+            })*) => ($(
+                #[inline]
+                pub unsafe extern fn $i($($arg: $argty),*
+                ) -> $ret {
+                    $($body);*
+                }
+            )*)
+        }
+
+        #[allow(unused_macros)]
+        macro_rules! const_fn {
+            ($($({$constness:ident})* fn $i:ident(
+                        $($arg:ident: $argty:ty),*
+            ) -> $ret:ty {
+                $($body:stmt);*
+            })*) => ($(
+                #[inline]
+                fn $i($($arg: $argty),*
+                ) -> $ret {
+                    $($body);*
+                }
+            )*)
+        }
+    }
 }
 
 #[allow(unused_macros)]

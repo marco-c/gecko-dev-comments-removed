@@ -4,15 +4,41 @@
 use unix::solarish::*;
 
 pub unsafe fn cfmakeraw(termios: *mut ::termios) {
-    let mut t = *termios as ::termios;
-    t.c_iflag &= !(IMAXBEL|IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
-    t.c_oflag &= !OPOST;
-    t.c_lflag &= !(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
-    t.c_cflag &= !(CSIZE|PARENB);
-    t.c_cflag |= CS8;
+    (*termios).c_iflag &= !(IMAXBEL
+        | IGNBRK
+        | BRKINT
+        | PARMRK
+        | ISTRIP
+        | INLCR
+        | IGNCR
+        | ICRNL
+        | IXON);
+    (*termios).c_oflag &= !OPOST;
+    (*termios).c_lflag &= !(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+    (*termios).c_cflag &= !(CSIZE | PARENB);
+    (*termios).c_cflag |= CS8;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    (*termios).c_cc[VMIN] = 1;
+    (*termios).c_cc[VTIME] = 0;
 }
 
-pub unsafe fn cfsetspeed(termios: *mut ::termios, speed: ::speed_t) -> ::c_int {
+pub unsafe fn cfsetspeed(
+    termios: *mut ::termios,
+    speed: ::speed_t,
+) -> ::c_int {
     
     
     ::cfsetispeed(termios, speed);
