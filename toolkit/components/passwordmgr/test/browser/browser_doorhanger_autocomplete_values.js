@@ -72,26 +72,25 @@ const TEST_CASES = [
     expectUsernameDropmarker: true,
     expectedValues: ["new_username"],
   },
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  {
+    description: "saved logins should be displayed in popup",
+    modifiedFields: [
+      { [USERNAME_SELECTOR]: "new_username" },
+      { [PASSWORD_SELECTOR]: "myPassword" },
+    ],
+    savedLogins: [
+      {
+        username: "savedUn1",
+        password: "somePass",
+      },
+      {
+        username: "savedUn2",
+        password: "otherPass",
+      },
+    ],
+    expectUsernameDropmarker: true,
+    expectedValues: ["new_username", "savedUn1", "savedUn2"],
+  },
   {
     description: "duplicated page usernames should only be displayed once",
     modifiedFields: [
@@ -162,7 +161,6 @@ add_task(async function test_edit_password() {
     await cleanupPasswordNotifications();
     Services.logins.removeAllLogins();
 
-    
     
     info("Adding any saved logins");
     if (testCase.savedLogins) {
