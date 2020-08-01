@@ -249,21 +249,13 @@ bool DataViewObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 template <typename NativeType>
-
-SharedMem<uint8_t*> DataViewObject::getDataPointer(JSContext* cx,
-                                                   Handle<DataViewObject*> obj,
-                                                   uint64_t offset,
+SharedMem<uint8_t*> DataViewObject::getDataPointer(uint64_t offset,
                                                    bool* isSharedMemory) {
-  const size_t TypeSize = sizeof(NativeType);
-  if (offset > UINT32_MAX - TypeSize || offset + TypeSize > obj->byteLength()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_OFFSET_OUT_OF_DATAVIEW);
-    return SharedMem<uint8_t*>::unshared(nullptr);
-  }
+  MOZ_ASSERT(offsetIsInBounds<NativeType>(offset));
 
   MOZ_ASSERT(offset < UINT32_MAX);
-  *isSharedMemory = obj->isSharedMemory();
-  return obj->dataPointerEither().cast<uint8_t*>() + uint32_t(offset);
+  *isSharedMemory = this->isSharedMemory();
+  return dataPointerEither().cast<uint8_t*>() + uint32_t(offset);
 }
 
 template <typename T>
@@ -322,6 +314,29 @@ struct DataViewIO {
 };
 
 template <typename NativeType>
+NativeType DataViewObject::read(uint64_t offset, bool isLittleEndian) {
+  bool isSharedMemory;
+  SharedMem<uint8_t*> data =
+      getDataPointer<NativeType>(offset, &isSharedMemory);
+  MOZ_ASSERT(data);
+
+  NativeType val = 0;
+  if (isSharedMemory) {
+    DataViewIO<NativeType, SharedMem<uint8_t*>>::fromBuffer(&val, data,
+                                                            isLittleEndian);
+  } else {
+    DataViewIO<NativeType, uint8_t*>::fromBuffer(&val, data.unwrapUnshared(),
+                                                 isLittleEndian);
+  }
+
+  return val;
+}
+
+template uint32_t DataViewObject::read(uint64_t offset, bool isLittleEndian);
+
+
+
+template <typename NativeType>
 
 bool DataViewObject::read(JSContext* cx, Handle<DataViewObject*> obj,
                           const CallArgs& args, NativeType* val) {
@@ -345,21 +360,14 @@ bool DataViewObject::read(JSContext* cx, Handle<DataViewObject*> obj,
   }
 
   
-  bool isSharedMemory;
-  SharedMem<uint8_t*> data = DataViewObject::getDataPointer<NativeType>(
-      cx, obj, getIndex, &isSharedMemory);
-  if (!data) {
+  if (!obj->offsetIsInBounds<NativeType>(getIndex)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_OFFSET_OUT_OF_DATAVIEW);
     return false;
   }
 
   
-  if (isSharedMemory) {
-    DataViewIO<NativeType, SharedMem<uint8_t*>>::fromBuffer(val, data,
-                                                            isLittleEndian);
-  } else {
-    DataViewIO<NativeType, uint8_t*>::fromBuffer(val, data.unwrapUnshared(),
-                                                 isLittleEndian);
-  }
+  *val = obj->read<NativeType>(getIndex, isLittleEndian);
   return true;
 }
 
@@ -460,14 +468,18 @@ bool DataViewObject::write(JSContext* cx, Handle<DataViewObject*> obj,
   }
 
   
-  bool isSharedMemory;
-  SharedMem<uint8_t*> data = DataViewObject::getDataPointer<NativeType>(
-      cx, obj, getIndex, &isSharedMemory);
-  if (!data) {
+  if (!obj->offsetIsInBounds<NativeType>(getIndex)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_OFFSET_OUT_OF_DATAVIEW);
     return false;
   }
 
   
+  bool isSharedMemory;
+  SharedMem<uint8_t*> data =
+      obj->getDataPointer<NativeType>(getIndex, &isSharedMemory);
+  MOZ_ASSERT(data);
+
   if (isSharedMemory) {
     DataViewIO<NativeType, SharedMem<uint8_t*>>::toBuffer(data, &value,
                                                           isLittleEndian);
