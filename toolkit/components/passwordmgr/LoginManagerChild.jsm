@@ -255,7 +255,18 @@ const observer = {
           break;
         }
 
+        
         this._storeUserInput(docState, aEvent.composedTarget);
+        let detail = {
+          possibleValues: {
+            usernames: docState.possibleUsernames,
+            passwords: docState.possiblePasswords,
+          },
+        };
+        LoginManagerChild.forWindow(window).sendAsyncMessage(
+          "PasswordManager:updateDoorhangerSuggestions",
+          detail
+        );
 
         if (aEvent.composedTarget.hasBeenTypePassword) {
           let triggeredByFillingGenerated = docState.generatedPasswordFields.has(
