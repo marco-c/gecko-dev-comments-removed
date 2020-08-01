@@ -6,9 +6,9 @@ LINTER = "pylint"
 def test_lint_single_file(lint, paths):
     results = lint(paths("bad.py"))
     assert len(results) == 3
-    assert results[0].rule == "E0602"
-    assert results[1].rule == "W0101"
-    assert results[1].lineno == 5
+    assert results[1].rule == "E0602"
+    assert results[2].rule == "W0101"
+    assert results[2].lineno == 5
 
     
     results = lint(paths("bad.py"))
