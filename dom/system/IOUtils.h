@@ -120,8 +120,28 @@ class IOUtils final {
   static Result<nsTArray<uint8_t>, nsresult> ReadSync(
       const nsAString& aPath, const Maybe<uint32_t>& aMaxBytes);
 
-  static nsresult WriteSync(PRFileDesc* aFd, const nsTArray<uint8_t>& aBytes,
-                            uint32_t& aResult);
+  
+
+
+
+
+
+
+
+
+  static Result<uint32_t, nsresult> WriteAtomicSync(
+      const nsAString& aDestPath, const nsTArray<uint8_t>& aByteArray,
+      const WriteAtomicOptions& aOptions);
+
+  
+
+
+
+
+
+
+  static Result<uint32_t, nsresult> WriteSync(PRFileDesc* aFd,
+                                              const nsTArray<uint8_t>& aBytes);
 
   static nsresult MoveSync(const nsAString& aSource, const nsAString& aDest,
                            bool noOverwrite);
@@ -157,7 +177,7 @@ class IOUtils final {
                            true>;
 
   using IOWriteMozPromise =
-      mozilla::MozPromise<uint32_t, const nsCString,  true>;
+      mozilla::MozPromise<uint32_t, const nsresult,  true>;
 
   using IOStatMozPromise =
       mozilla::MozPromise<struct InternalFileInfo, const nsresult,
