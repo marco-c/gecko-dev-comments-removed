@@ -1456,7 +1456,21 @@ SearchService.prototype = {
         e => e._extensionID == engine._extensionID
       );
 
-      if (inUseEngines?.length == 1 && inUseEngines?.[0] != engine) {
+      if (inUseEngines.length <= 1) {
+        if (inUseEngines.length == 1 && inUseEngines[0] == engine) {
+          
+
+          
+          
+          this._internalRemoveEngine(engine);
+
+          let addon = await AddonManager.getAddonByID(engine._extensionID);
+          if (addon) {
+            
+            
+            await addon.uninstall();
+          }
+        }
         
         
         
@@ -1464,24 +1478,15 @@ SearchService.prototype = {
         
         
         
-        SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.REMOVED);
-        continue;
-      } else if (inUseEngines?.length > 1) {
+        
+        
+        
+      } else {
         
         
         this._internalRemoveEngine(engine);
-        SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.REMOVED);
-      } else {
-        
-        let addon = await AddonManager.getAddonByID(engine._extensionID);
-        if (addon) {
-          
-          
-          
-          engine._isAppProvided = false;
-          await addon.uninstall();
-        }
       }
+      SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.REMOVED);
     }
 
     this._dontSetUseDBForOrder = false;
