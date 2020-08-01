@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+if (window.doingOptIn) {
+  window.optInPromiseResolve(true);
+} else {
+  window.shimPromiseResolve("did not shim");
+}
