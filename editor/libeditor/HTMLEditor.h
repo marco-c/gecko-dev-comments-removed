@@ -1829,10 +1829,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  template <typename EditorDOMPointType>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
-      const EditorDOMPointType& aPointToInsert);
+      const EditorDOMPoint& aPointToInsert);
 
   
 
@@ -2478,10 +2477,16 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  enum class DeleteDirection {
+    Forward,
+    Backward,
+  };
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   DeleteTextAndNormalizeSurroundingWhiteSpaces(
       const EditorDOMPointInText& aStartToDelete,
-      const EditorDOMPointInText& aEndToDelete);
+      const EditorDOMPointInText& aEndToDelete,
+      TreatEmptyTextNodes aTreatEmptyTextNodes,
+      DeleteDirection aDeleteDirection);
 
   
 

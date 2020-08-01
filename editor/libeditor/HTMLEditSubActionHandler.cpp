@@ -204,12 +204,6 @@ template nsresult HTMLEditor::DeleteTextAndTextNodesWithTransaction(
     const EditorDOMPointInText& aStartPoint,
     const EditorDOMPointInText& aEndPoint,
     TreatEmptyTextNodes aTreatEmptyTextNodes);
-template nsresult
-HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
-    const EditorDOMPoint& aPointToInsert);
-template nsresult
-HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
-    const EditorDOMPointInText& aPointToInsert);
 
 nsresult HTMLEditor::InitEditorContentAndSelection() {
   MOZ_ASSERT(IsEditActionDataAvailable());
@@ -2632,7 +2626,6 @@ EditActionResult HTMLEditor::HandleDeleteTextAroundCollapsedSelection(
              aDirectionAndAmount == nsIEditor::ePrevious);
 
   EditorDOMRangeInTexts rangeToDelete;
-  EditorDOMPointInText newCaretPosition;
   if (aDirectionAndAmount == nsIEditor::eNext) {
     Result<EditorDOMRangeInTexts, nsresult> result =
         WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(*this,
@@ -2646,7 +2639,6 @@ EditActionResult HTMLEditor::HandleDeleteTextAroundCollapsedSelection(
     if (!rangeToDelete.IsPositioned()) {
       return EditActionHandled();  
     }
-    newCaretPosition = rangeToDelete.StartRef();
   } else {
     Result<EditorDOMRangeInTexts, nsresult> result =
         WSRunScanner::GetRangeInTextNodesToBackspaceFrom(*this, aCaretPosition);
@@ -2658,38 +2650,29 @@ EditActionResult HTMLEditor::HandleDeleteTextAroundCollapsedSelection(
     if (!rangeToDelete.IsPositioned()) {
       return EditActionHandled();  
     }
-    if (rangeToDelete.InSameContainer()) {
-      newCaretPosition = rangeToDelete.StartRef();
-    } else {
-      newCaretPosition =
-          EditorDOMPointInText(rangeToDelete.EndRef().ContainerAsText(), 0);
-    }
   }
+
+  
+  
+  
+  
+  
 
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
-  nsresult rv = DeleteTextAndNormalizeSurroundingWhiteSpaces(
-      rangeToDelete.StartRef(), rangeToDelete.EndRef());
+  Result<EditorDOMPoint, nsresult> result =
+      DeleteTextAndNormalizeSurroundingWhiteSpaces(
+          rangeToDelete.StartRef(), rangeToDelete.EndRef(),
+          TreatEmptyTextNodes::RemoveAllEmptyInlineAncestors,
+          aDirectionAndAmount == nsIEditor::eNext ? DeleteDirection::Forward
+                                                  : DeleteDirection::Backward);
   TopLevelEditSubActionDataRef().mDidNormalizeWhitespaces = true;
-  if (NS_FAILED(rv)) {
+  if (result.isErr()) {
     NS_WARNING(
         "HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces() failed");
-    return EditActionHandled(rv);
+    return EditActionHandled(result.unwrapErr());
   }
-
-  if (!newCaretPosition.IsSetAndValid() ||
-      !newCaretPosition.ContainerAsText()->IsInComposedDoc()) {
-    return EditActionHandled(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-  }
-
-  
-  
-  
-  if (newCaretPosition.IsStartOfContainer() &&
-      newCaretPosition.GetContainer()->GetPreviousSibling() &&
-      newCaretPosition.GetContainer()->GetPreviousSibling()->IsText()) {
-    newCaretPosition.SetToEndOf(
-        newCaretPosition.GetContainer()->GetPreviousSibling()->AsText());
-  }
+  const EditorDOMPoint& newCaretPosition = result.inspect();
+  MOZ_ASSERT(newCaretPosition.IsSetAndValid());
 
   DebugOnly<nsresult> rvIgnored =
       SelectionRefPtr()->Collapse(newCaretPosition.ToRawRangeBoundary());
@@ -4032,9 +4015,12 @@ void HTMLEditor::ExtendRangeToDeleteWithNormalizingWhiteSpaces(
   }
 }
 
-nsresult HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
+Result<EditorDOMPoint, nsresult>
+HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
     const EditorDOMPointInText& aStartToDelete,
-    const EditorDOMPointInText& aEndToDelete) {
+    const EditorDOMPointInText& aEndToDelete,
+    TreatEmptyTextNodes aTreatEmptyTextNodes,
+    DeleteDirection aDeleteDirection) {
   MOZ_ASSERT(aStartToDelete.IsSetAndValid());
   MOZ_ASSERT(aEndToDelete.IsSetAndValid());
   MOZ_ASSERT(aStartToDelete.EqualsOrIsBefore(aEndToDelete));
@@ -4055,11 +4041,24 @@ nsresult HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
   
   
   if (startToDelete == endToDelete) {
-    return NS_OK;
+    return EditorDOMPoint(aStartToDelete);
+  }
+
+  
+  
+  EditorDOMPoint newCaretPosition;
+  if (aStartToDelete.ContainerAsText() == aEndToDelete.ContainerAsText()) {
+    newCaretPosition = aEndToDelete;
+  } else if (aDeleteDirection == DeleteDirection::Forward) {
+    newCaretPosition.SetToEndOf(aStartToDelete.ContainerAsText());
+  } else {
+    newCaretPosition.Set(aEndToDelete.ContainerAsText(), 0);
   }
 
   
   while (true) {
+    AutoTrackDOMPoint trackingNewCaretPosition(RangeUpdaterRef(),
+                                               &newCaretPosition);
     
     
     if (!normalizedWhiteSpacesInFirstNode.IsEmpty()) {
@@ -4080,7 +4079,7 @@ nsresult HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
             normalizedWhiteSpacesInFirstNode);
         if (NS_FAILED(rv)) {
           NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-          return rv;
+          return Err(rv);
         }
         if (startToDelete.ContainerAsText() ==
             trackingEndToDelete.ContainerAsText()) {
@@ -4090,10 +4089,11 @@ nsresult HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       }
       if (MaybeHasMutationEventListeners(
               NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED) &&
-          (NS_WARN_IF(!endToDelete.IsSetAndValid()) ||
-           NS_WARN_IF(!endToDelete.IsInTextNode()))) {
-        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+          (NS_WARN_IF(!trackingEndToDelete.IsSetAndValid()) ||
+           NS_WARN_IF(!trackingEndToDelete.IsInTextNode()))) {
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
       }
+      MOZ_ASSERT(trackingEndToDelete.IsInTextNode());
       endToDelete.Set(trackingEndToDelete.ContainerAsText(),
                       trackingEndToDelete.Offset());
       
@@ -4103,7 +4103,7 @@ nsresult HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       if (MaybeHasMutationEventListeners(
               NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED) &&
           NS_WARN_IF(!startToDelete.IsBefore(endToDelete))) {
-        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
       }
     }
     
@@ -4118,12 +4118,11 @@ nsresult HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
               : EditorDOMPointInText(endToDelete.ContainerAsText(), 0);
       if (startToDelete != endToDeleteExceptReplaceRange) {
         nsresult rv = DeleteTextAndTextNodesWithTransaction(
-            startToDelete, endToDeleteExceptReplaceRange,
-            TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
+            startToDelete, endToDeleteExceptReplaceRange, aTreatEmptyTextNodes);
         if (NS_FAILED(rv)) {
           NS_WARNING(
               "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-          return rv;
+          return Err(rv);
         }
         if (normalizedWhiteSpacesInLastNode.IsEmpty()) {
           break;  
@@ -4136,7 +4135,7 @@ nsresult HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
             (NS_WARN_IF(!endToDeleteExceptReplaceRange.IsSetAndValid()) ||
              NS_WARN_IF(!endToDelete.IsSetAndValid()) ||
              NS_WARN_IF(endToDelete.IsStartOfContainer()))) {
-          return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
         }
         
         startToDelete = endToDeleteExceptReplaceRange;
@@ -4154,30 +4153,82 @@ nsresult HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
         normalizedWhiteSpacesInLastNode);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-      return rv;
+      return Err(rv);
     }
     break;
   }
 
-  if (!startToDelete.IsSetAndValid() ||
-      !startToDelete.ContainerAsText()->IsInComposedDoc()) {
+  if (!newCaretPosition.IsSetAndValid() ||
+      !newCaretPosition.GetContainer()->IsInComposedDoc()) {
     NS_WARNING(
-        "Mutation event listener modified the first text node unexpectedly");
-    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+        "HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces() got lost "
+        "the modifying line");
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
-  nsresult rv =
-      InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(startToDelete);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary() "
-      "failed");
-  return rv;
+  
+  
+  if (!newCaretPosition.IsInTextNode()) {
+    if (nsIContent* currentBlock = HTMLEditUtils::
+            GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
+                *newCaretPosition.ContainerAsContent())) {
+      Element* editingHost = GetActiveEditingHost();
+      
+      nsIContent* previousContent =
+          HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+              newCaretPosition, *currentBlock, editingHost);
+      if (previousContent && !HTMLEditUtils::IsBlockElement(*previousContent)) {
+        newCaretPosition =
+            previousContent->IsText() ||
+                    HTMLEditUtils::IsContainerNode(*previousContent)
+                ? EditorDOMPoint::AtEndOf(*previousContent)
+                : EditorDOMPoint::After(*previousContent);
+      }
+      
+      
+      else if (nsIContent* nextContent =
+                   HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+                       newCaretPosition, *currentBlock, editingHost)) {
+        newCaretPosition = nextContent->IsText() ||
+                                   HTMLEditUtils::IsContainerNode(*nextContent)
+                               ? EditorDOMPoint(nextContent, 0)
+                               : EditorDOMPoint(nextContent);
+      }
+    }
+  }
+
+  
+  
+  
+  if (newCaretPosition.IsStartOfContainer() &&
+      newCaretPosition.IsInTextNode() &&
+      newCaretPosition.GetContainer()->GetPreviousSibling() &&
+      newCaretPosition.GetContainer()->GetPreviousSibling()->IsText()) {
+    newCaretPosition.SetToEndOf(
+        newCaretPosition.GetContainer()->GetPreviousSibling()->AsText());
+  }
+
+  {
+    AutoTrackDOMPoint trackingNewCaretPosition(RangeUpdaterRef(),
+                                               &newCaretPosition);
+    nsresult rv = InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
+        newCaretPosition);
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "HTMLEditor::"
+          "InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary() failed");
+      return Err(rv);
+    }
+  }
+  if (!newCaretPosition.IsSetAndValid()) {
+    NS_WARNING("Inserting <br> element caused unexpected DOM tree");
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
+  return newCaretPosition;
 }
 
-template <typename EditorDOMPointType>
 nsresult HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
-    const EditorDOMPointType& aPointToInsert) {
+    const EditorDOMPoint& aPointToInsert) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToInsert.IsSet());
 
