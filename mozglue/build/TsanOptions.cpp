@@ -289,6 +289,12 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:base::Thread::Stop\n"
 
+         
+         
+         
+         "race:Loggable\n"
+         "race:UpdateMinLogSeverity\n"
+
       
       ;  
 }
