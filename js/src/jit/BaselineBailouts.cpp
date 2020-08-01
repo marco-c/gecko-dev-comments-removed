@@ -602,6 +602,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
                             bool invalidate, BaselineStackBuilder& builder,
                             MutableHandleValueVector startFrameFormals,
                             MutableHandleFunction nextCallee,
+                            ICScript** icScriptPtr,
                             const ExceptionBailoutInfo* excInfo) {
   
   
@@ -788,8 +789,8 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   blFrame->setFlags(flags);
 
+  ICScript* icScript = *icScriptPtr;
   if (JitOptions.warpBuilder) {
-    ICScript* icScript = script->jitScript()->icScript();
     JitSpew(JitSpew_BaselineBailouts, "      ICScript=%p", icScript);
     blFrame->setICScript(icScript);
   }
@@ -1293,6 +1294,11 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   nextCallee.set(calleeFun);
 
   
+  if (JitOptions.warpBuilder) {
+    *icScriptPtr = icScript->findInlinedChild(pcOff);
+  }
+
+  
   if (!builder.writeWord(baselineStubFrameDescr, "Descriptor")) {
     return false;
   }
@@ -1580,6 +1586,10 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
   RootedFunction fun(cx, callee);
   RootedValueVector startFrameFormals(cx);
 
+  
+  
+  ICScript* icScript = scr->jitScript()->icScript();
+
   gc::AutoSuppressGC suppress(cx);
 
   while (true) {
@@ -1608,7 +1618,7 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
 
     RootedFunction nextCallee(cx, nullptr);
     if (!InitFromBailout(cx, frameNo, fun, scr, snapIter, invalidate, builder,
-                         &startFrameFormals, &nextCallee,
+                         &startFrameFormals, &nextCallee, &icScript,
                          passExcInfo ? excInfo : nullptr)) {
       MOZ_ASSERT(cx->isExceptionPending());
       return false;
