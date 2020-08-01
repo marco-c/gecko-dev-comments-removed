@@ -72,13 +72,20 @@ class JWCrypto {
 
 
 
-
-
   async generateJWE(key, data) {
+    
     
     const epk = await crypto.subtle.generateKey(ECDH_PARAMS, true, [
       "deriveKey",
     ]);
+    const ownPublicJWK = await crypto.subtle.exportKey("jwk", epk.publicKey);
+    
+    
+    
+    delete ownPublicJWK.key_ops;
+    delete ownPublicJWK.ext;
+    let header = { alg: "ECDH-ES", enc: "A256GCM", epk: ownPublicJWK };
+    
     const peerPublicKey = await crypto.subtle.importKey(
       "jwk",
       key,
@@ -86,20 +93,20 @@ class JWCrypto {
       false,
       ["deriveKey"]
     );
-    return this._generateJWE(epk, peerPublicKey, data);
-  }
-
-  async _generateJWE(epk, peerPublicKey, data) {
-    let iv = crypto.getRandomValues(new Uint8Array(AES_GCM_IV_SIZE));
-    const ownPublicJWK = await crypto.subtle.exportKey("jwk", epk.publicKey);
-    delete ownPublicJWK.key_ops;
+    if (key.hasOwnProperty("kid")) {
+      header.kid = key.kid;
+    }
     
     const contentKey = await deriveECDHSharedAESKey(
       epk.privateKey,
       peerPublicKey,
       ["encrypt"]
     );
-    let header = { alg: "ECDH-ES", enc: "A256GCM", epk: ownPublicJWK };
+    
+    
+    
+    
+    let iv = crypto.getRandomValues(new Uint8Array(AES_GCM_IV_SIZE));
     
     const additionalData = UTF8_ENCODER.encode(
       ChromeUtils.base64URLEncode(UTF8_ENCODER.encode(JSON.stringify(header)), {
@@ -116,6 +123,7 @@ class JWCrypto {
       contentKey,
       data
     );
+    
     const tagIdx = encrypted.byteLength - ((AES_TAG_LEN + 7) >> 3);
     let ciphertext = encrypted.slice(0, tagIdx);
     let tag = encrypted.slice(tagIdx);
