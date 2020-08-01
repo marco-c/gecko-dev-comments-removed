@@ -200,7 +200,7 @@ nsresult ContentIteratorBase::InitInternal(const RawRangeBoundary& aStart,
   
 
   if (!startIsCharacterData && aStart == aEnd) {
-    MakeEmpty();
+    SetEmpty();
     return NS_OK;
   }
 
@@ -365,7 +365,7 @@ nsresult ContentIteratorBase::InitInternal(const RawRangeBoundary& aStart,
   return NS_OK;
 }
 
-void ContentIteratorBase::MakeEmpty() {
+void ContentIteratorBase::SetEmpty() {
   mCurNode = nullptr;
   mFirst = nullptr;
   mLast = nullptr;
@@ -727,7 +727,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
 
     if (!child || startOffset == endOffset) {
       
-      MakeEmpty();
+      SetEmpty();
       return NS_OK;
     }
   }
@@ -767,7 +767,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
     firstCandidate = GetNextSibling(node);
 
     if (!firstCandidate) {
-      MakeEmpty();
+      SetEmpty();
       return NS_OK;
     }
   }
@@ -782,7 +782,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
                                                      &nodeBefore, &nodeAfter));
 
   if (nodeBefore || nodeAfter) {
-    MakeEmpty();
+    SetEmpty();
     return NS_OK;
   }
 
@@ -814,7 +814,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
   }
 
   if (!lastCandidate) {
-    MakeEmpty();
+    SetEmpty();
     return NS_OK;
   }
 
@@ -827,7 +827,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
                                                      &nodeBefore, &nodeAfter));
 
   if (nodeBefore || nodeAfter) {
-    MakeEmpty();
+    SetEmpty();
     return NS_OK;
   }
 
