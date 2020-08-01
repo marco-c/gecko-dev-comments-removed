@@ -719,20 +719,23 @@ class MOZ_RAII EnvironmentIter {
 
  public:
   
-  EnvironmentIter(JSContext* cx, const EnvironmentIter& ei);
+  EnvironmentIter(JSContext* cx,
+                  const EnvironmentIter& ei MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
 
   
   
-  EnvironmentIter(JSContext* cx, JSObject* env, Scope* scope);
+  EnvironmentIter(JSContext* cx, JSObject* env,
+                  Scope* scope MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
 
   
   
-  EnvironmentIter(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc);
+  EnvironmentIter(JSContext* cx, AbstractFramePtr frame,
+                  jsbytecode* pc MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
 
   
   
   EnvironmentIter(JSContext* cx, JSObject* env, Scope* scope,
-                  AbstractFramePtr frame);
+                  AbstractFramePtr frame MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
 
   bool done() const { return si_.done(); }
 
@@ -788,6 +791,7 @@ class MOZ_RAII EnvironmentIter {
 
   AbstractFramePtr maybeInitialFrame() const { return frame_; }
 
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 

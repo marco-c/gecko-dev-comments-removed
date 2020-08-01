@@ -152,13 +152,17 @@ static int64_t gCanvasAzureMemoryUsed = 0;
 
 class MOZ_RAII AutoSaveRestore {
  public:
-  explicit AutoSaveRestore(CanvasRenderingContext2D* aCtx) : mCtx(aCtx) {
+  explicit AutoSaveRestore(
+      CanvasRenderingContext2D* aCtx MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mCtx(aCtx) {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     mCtx->Save();
   }
   ~AutoSaveRestore() { mCtx->Restore(); }
 
  private:
   RefPtr<CanvasRenderingContext2D> mCtx;
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 

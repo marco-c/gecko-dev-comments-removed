@@ -784,10 +784,14 @@ class TextureClientReleaseTask : public Runnable {
 
 
 class MOZ_RAII TextureClientAutoLock {
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
 
  public:
-  TextureClientAutoLock(TextureClient* aTexture, OpenMode aMode)
+  TextureClientAutoLock(TextureClient* aTexture,
+                        OpenMode aMode MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mTexture(aTexture), mSucceeded(false) {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+
     mSucceeded = mTexture->Lock(aMode);
 #ifdef DEBUG
     mChecked = false;

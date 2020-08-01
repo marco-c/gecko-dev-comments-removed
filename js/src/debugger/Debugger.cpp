@@ -9,6 +9,7 @@
 #include "mozilla/Attributes.h"        
 #include "mozilla/DebugOnly.h"         
 #include "mozilla/DoublyLinkedList.h"  
+#include "mozilla/GuardObjects.h"      
 #include "mozilla/HashTable.h"         
 #include "mozilla/Maybe.h"             
 #include "mozilla/ScopeExit.h"         
@@ -2942,7 +2943,11 @@ class MOZ_RAII ExecutionObservableRealms
   HashSet<Zone*> zones_;
 
  public:
-  explicit ExecutionObservableRealms(JSContext* cx) : realms_(cx), zones_(cx) {}
+  explicit ExecutionObservableRealms(
+      JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : realms_(cx), zones_(cx) {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+  }
 
   bool add(Realm* realm) {
     return realms_.put(realm) && zones_.put(realm->zone());
@@ -2962,6 +2967,7 @@ class MOZ_RAII ExecutionObservableRealms
     return iter.hasUsableAbstractFramePtr() && realms_.has(iter.realm());
   }
 
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 
@@ -2973,7 +2979,11 @@ class MOZ_RAII ExecutionObservableFrame
   AbstractFramePtr frame_;
 
  public:
-  explicit ExecutionObservableFrame(AbstractFramePtr frame) : frame_(frame) {}
+  explicit ExecutionObservableFrame(
+      AbstractFramePtr frame MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : frame_(frame) {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+  }
 
   Zone* singleZone() const override {
     
@@ -3026,6 +3036,7 @@ class MOZ_RAII ExecutionObservableFrame
            iter.abstractFramePtr() == frame_;
   }
 
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 class MOZ_RAII ExecutionObservableScript
@@ -3033,8 +3044,11 @@ class MOZ_RAII ExecutionObservableScript
   RootedScript script_;
 
  public:
-  ExecutionObservableScript(JSContext* cx, JSScript* script)
-      : script_(cx, script) {}
+  ExecutionObservableScript(JSContext* cx,
+                            JSScript* script MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : script_(cx, script) {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+  }
 
   Zone* singleZone() const override { return script_->zone(); }
   JSScript* singleScriptForZoneInvalidation() const override { return script_; }
@@ -3058,6 +3072,7 @@ class MOZ_RAII ExecutionObservableScript
            iter.abstractFramePtr().script() == script_;
   }
 
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 
