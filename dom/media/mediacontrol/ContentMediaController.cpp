@@ -341,7 +341,10 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey) {
   MOZ_ASSERT(NS_IsMainThread());
   LOG("Handle '%s' event, receiver num=%zu", ToMediaControlKeyStr(aKey),
       mReceivers.Length());
-  for (auto& receiver : mReceivers) {
+  
+  
+  
+  for (auto& receiver : Reversed(mReceivers)) {
     receiver->HandleMediaKey(aKey);
   }
 }
