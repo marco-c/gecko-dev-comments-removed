@@ -164,10 +164,41 @@ bool SharedMemory::CreateInternal(size_t size, bool freezeable) {
   }
 
   if (needs_truncate) {
-    if (HANDLE_EINTR(ftruncate(fd.get(), static_cast<off_t>(size))) != 0) {
-      CHROMIUM_LOG(WARNING) << "failed to set shm size: " << strerror(errno);
+#if defined(HAVE_POSIX_FALLOCATE)
+    
+    
+    
+    int rv =
+        HANDLE_RV_EINTR(posix_fallocate(fd.get(), 0, static_cast<off_t>(size)));
+    if (rv != 0) {
+      if (rv == EOPNOTSUPP || rv == EINVAL || rv == ENODEV) {
+        
+        
+        
+        
+        int fallocate_errno = rv;
+        rv = HANDLE_EINTR(ftruncate(fd.get(), static_cast<off_t>(size)));
+        if (rv != 0) {
+          CHROMIUM_LOG(WARNING) << "fallocate failed to set shm size: "
+                                << strerror(fallocate_errno);
+          CHROMIUM_LOG(WARNING)
+              << "ftruncate failed to set shm size: " << strerror(errno);
+          return false;
+        }
+      } else {
+        CHROMIUM_LOG(WARNING)
+            << "fallocate failed to set shm size: " << strerror(rv);
+        return false;
+      }
+    }
+#else
+    int rv = HANDLE_EINTR(ftruncate(fd.get(), static_cast<off_t>(size)));
+    if (rv != 0) {
+      CHROMIUM_LOG(WARNING)
+          << "ftruncate failed to set shm size: " << strerror(errno);
       return false;
     }
+#endif
   }
 
   mapped_file_ = fd.release();

@@ -570,6 +570,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         return Allow();
 
       CASES_FOR_ftruncate:
+      case __NR_fallocate:
         return mMayCreateShmem ? Allow() : InvalidSyscall();
 
         
