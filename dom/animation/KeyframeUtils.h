@@ -90,7 +90,8 @@ class KeyframeUtils {
 
   static nsTArray<AnimationProperty> GetAnimationPropertiesFromKeyframes(
       const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
-      const ComputedStyle* aStyle, dom::CompositeOperation aEffectComposite);
+      PseudoStyleType aPseudoType, const ComputedStyle* aStyle,
+      dom::CompositeOperation aEffectComposite);
 
   
 
