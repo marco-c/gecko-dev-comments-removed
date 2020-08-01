@@ -94,16 +94,22 @@ static void CenterDialog(HWND hDlg) {
 }
 
 static void InitDialog(HWND hDlg) {
-  WCHAR szwTitle[MAX_TEXT_LEN];
-  WCHAR szwInfo[MAX_TEXT_LEN];
+  mozilla::UniquePtr<WCHAR[]> szwTitle;
+  mozilla::UniquePtr<WCHAR[]> szwInfo;
 
-  MultiByteToWideChar(CP_UTF8, 0, sUIStrings.title, -1, szwTitle,
-                      sizeof(szwTitle) / sizeof(szwTitle[0]));
-  MultiByteToWideChar(CP_UTF8, 0, sUIStrings.info, -1, szwInfo,
-                      sizeof(szwInfo) / sizeof(szwInfo[0]));
+  int bufferSize =
+      MultiByteToWideChar(CP_UTF8, 0, sUIStrings.title.get(), -1, nullptr, 0);
+  szwTitle = mozilla::MakeUnique<WCHAR[]>(bufferSize);
+  MultiByteToWideChar(CP_UTF8, 0, sUIStrings.title.get(), -1, szwTitle.get(),
+                      bufferSize);
+  bufferSize =
+      MultiByteToWideChar(CP_UTF8, 0, sUIStrings.info.get(), -1, nullptr, 0);
+  szwInfo = mozilla::MakeUnique<WCHAR[]>(bufferSize);
+  MultiByteToWideChar(CP_UTF8, 0, sUIStrings.info.get(), -1, szwInfo.get(),
+                      bufferSize);
 
-  SetWindowTextW(hDlg, szwTitle);
-  SetWindowTextW(GetDlgItem(hDlg, IDC_INFO), szwInfo);
+  SetWindowTextW(hDlg, szwTitle.get());
+  SetWindowTextW(GetDlgItem(hDlg, IDC_INFO), szwInfo.get());
 
   
   HICON hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_DIALOG));
@@ -134,7 +140,7 @@ static void InitDialog(HWND hDlg) {
 
   
   
-  if (DrawText(hDCInfo, szwInfo, -1, &textSize,
+  if (DrawText(hDCInfo, szwInfo.get(), -1, &textSize,
                DT_CALCRECT | DT_NOCLIP | DT_SINGLELINE)) {
     GetClientRect(hWndInfo, &infoSize);
     SIZE extra;
