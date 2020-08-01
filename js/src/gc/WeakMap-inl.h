@@ -83,6 +83,22 @@ inline JSObject* GetDelegate(gc::Cell* const&) = delete;
 } 
 } 
 
+
+
+
+
+
+template <class K, class V>
+void WeakMap<K, V>::assertMapIsSameZoneWithValue(const V& v) {
+#ifdef DEBUG
+  gc::Cell* cell = gc::ToMarkable(v);
+  if (cell) {
+    Zone* cellZone = cell->zoneFromAnyThread();
+    MOZ_ASSERT(zone() == cellZone || cellZone->isAtomsZone());
+  }
+#endif
+}
+
 template <class K, class V>
 WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
     : Base(cx->zone()), WeakMapBase(memOf, cx->zone()) {
