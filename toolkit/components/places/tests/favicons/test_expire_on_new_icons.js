@@ -15,17 +15,15 @@ add_task(async function test_expire_associated() {
     {
       name: "favicon-normal16.png",
       mimeType: "image/png",
-      expire: PlacesUtils.toPRTime(new Date(1)), 
+      expired: true,
     },
     {
       name: "favicon-normal32.png",
       mimeType: "image/png",
-      expire: 0,
     },
     {
       name: "favicon-big64.png",
       mimeType: "image/png",
-      expire: 0,
     },
   ];
 
@@ -34,11 +32,12 @@ add_task(async function test_expire_associated() {
     PlacesUtils.favicons.replaceFaviconData(
       NetUtil.newURI(TEST_URL + icon.name),
       data,
-      icon.mimeType,
-      icon.expire
+      icon.mimeType
     );
     await setFaviconForPage(TEST_URL, TEST_URL + icon.name);
-    if (icon.expire != 0) {
+    if (icon.expired) {
+      await expireIconRelationsForPage(TEST_URL);
+      
       PlacesUtils.favicons.replaceFaviconData(
         NetUtil.newURI(TEST_URL + icon.name),
         data,
@@ -92,16 +91,17 @@ add_task(async function test_expire_root() {
   PlacesUtils.favicons.replaceFaviconDataFromDataURL(
     iconURI,
     SMALLPNG_DATA_URI.spec,
-    PlacesUtils.toPRTime(new Date(1)),
+    0,
     systemPrincipal
   );
   await setFaviconForPage(pageURI, iconURI);
-
   Assert.equal(
     await countEntries("moz_icons_to_pages"),
     1,
     "There should be 1 association"
   );
+  
+  await expireIconRelationsForPage(pageURI.spec);
 
   
   let rootIconURI = NetUtil.newURI(pageURI.spec + "favicon.ico");
@@ -125,3 +125,27 @@ add_task(async function test_expire_root() {
     "There should be no associations"
   );
 });
+
+async function expireIconRelationsForPage(url) {
+  
+  await PlacesUtils.withConnectionWrapper("expireFavicon", async db => {
+    await db.execute(
+      `
+      UPDATE moz_icons_to_pages SET expire_ms = 0
+      WHERE page_id = (SELECT id FROM moz_pages_w_icons WHERE page_url = :url)
+      `,
+      { url }
+    );
+    
+    
+    let count = (
+      await db.execute(
+        `
+        SELECT count(*) FROM moz_icons
+        WHERE expire_ms < strftime('%s','now','localtime','utc') * 1000
+        `
+      )
+    )[0].getResultByIndex(0);
+    Assert.equal(count, 0, "All the icons should have future expiration");
+  });
+}

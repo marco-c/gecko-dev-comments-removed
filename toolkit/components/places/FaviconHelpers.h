@@ -36,7 +36,7 @@ class nsIPrincipal;
 
 
 
-
+#define MIN_FAVICON_EXPIRATION ((PRTime)1 * 24 * 60 * 60 * PR_USEC_PER_SEC)
 
 
 
