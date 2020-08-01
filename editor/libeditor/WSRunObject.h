@@ -333,6 +333,22 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+  static Result<EditorDOMRangeInTexts, nsresult>
+  GetRangeInTextNodesToForwardDeleteFrom(const HTMLEditor& aHTMLEditor,
+                                         const EditorDOMPoint& aPoint);
+
+  
+
+
+
+  static Result<EditorDOMRangeInTexts, nsresult>
+  GetRangeInTextNodesToBackspaceFrom(const HTMLEditor& aHTMLEditor,
+                                     const EditorDOMPoint& aPoint);
+
+  
+
+
+
 
 
 
@@ -1035,9 +1051,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
     ReplaceRangeData GetReplaceRangeDataAtEndOfDeletionRange(
-        const TextFragmentData& aTextFragmentDataAtStartToDelete);
+        const TextFragmentData& aTextFragmentDataAtStartToDelete) const;
     ReplaceRangeData GetReplaceRangeDataAtStartOfDeletionRange(
-        const TextFragmentData& aTextFragmentDataAtEndToDelete);
+        const TextFragmentData& aTextFragmentDataAtEndToDelete) const;
 
     
 
@@ -1092,6 +1108,20 @@ class MOZ_STACK_CLASS WSRunScanner final {
   const HTMLEditor* mHTMLEditor;
 
  private:
+  
+
+
+
+
+
+
+
+
+
+  static EditorDOMRangeInTexts
+  ComputeRangeInTextNodesContainingInvisibleWhiteSpaces(
+      const TextFragmentData& aStart, const TextFragmentData& aEnd);
+
   TextFragmentData mTextFragmentDataAtStart;
 
   friend class WhiteSpaceVisibilityKeeper;

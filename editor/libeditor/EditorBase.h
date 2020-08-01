@@ -700,6 +700,10 @@ class EditorBase : public nsIEditor,
     bool mRestoreContentEditableCount;
 
     
+    
+    bool mDidNormalizeWhitespaces;
+
+    
 
 
 
@@ -747,6 +751,7 @@ class EditorBase : public nsIEditor,
       mDidDeleteNonCollapsedRange = false;
       mDidDeleteEmptyParentBlocks = false;
       mRestoreContentEditableCount = false;
+      mDidNormalizeWhitespaces = false;
     }
 
     
