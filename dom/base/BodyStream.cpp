@@ -12,6 +12,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Unused.h"
 #include "nsProxyRelease.h"
 #include "nsStreamUtils.h"
 
@@ -361,6 +362,7 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   AssertIsOnOwningThread();
   MOZ_DIAGNOSTIC_ASSERT(aStream);
 
+  
   Maybe<MutexAutoLock> lock;
   lock.emplace(mMutex);
 
@@ -369,6 +371,11 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
     return NS_OK;
   }
 
+  
+  
+  
+  
+  
   nsAutoMicroTask mt;
   AutoEntryScript aes(mGlobal, "fetch body data available");
 
@@ -405,10 +412,15 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
 
   mState = eWriting;
 
+  
+  
   lock.reset();
 
-  DebugOnly<bool> ok =
-      JS::ReadableStreamUpdateDataAvailableFromSource(cx, stream, size);
+  Unused << JS::ReadableStreamUpdateDataAvailableFromSource(cx, stream, size);
+
+  
+  
+  
 
   return NS_OK;
 }
