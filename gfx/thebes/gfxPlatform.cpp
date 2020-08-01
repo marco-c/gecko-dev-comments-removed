@@ -3205,6 +3205,12 @@ uint32_t gfxPlatform::TargetFrameRate() {
 }
 
 
+bool gfxPlatform::UseDesktopZoomingScrollbars() {
+  return StaticPrefs::apz_allow_zooming() &&
+         !StaticPrefs::apz_force_disable_desktop_zooming_scrollbars();
+}
+
+
 bool gfxPlatform::AsyncPanZoomEnabled() {
 #if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_UIKIT)
   
