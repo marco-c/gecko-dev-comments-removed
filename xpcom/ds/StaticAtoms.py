@@ -1406,8 +1406,6 @@ STATIC_ATOMS = [
     Atom("G", "G"),
     Atom("g", "g"),
     Atom("gamma", "gamma"),
-    
-    Atom("generic_", "generic"),
     Atom("glyphRef", "glyphRef"),
     Atom("grad", "grad"),
     Atom("gradientTransform", "gradientTransform"),
