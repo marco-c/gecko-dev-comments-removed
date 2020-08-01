@@ -223,20 +223,12 @@ class GeometryEditorHighlighter extends AutoRefreshHighlighter {
       highlighterEnv,
       this._buildMarkup.bind(this)
     );
-    this.isReady = this.initialize();
 
     const { pageListenerTarget } = this.highlighterEnv;
 
     
     DOM_EVENTS.forEach(type => pageListenerTarget.addEventListener(type, this));
 
-    this.onWillNavigate = this.onWillNavigate.bind(this);
-
-    this.highlighterEnv.on("will-navigate", this.onWillNavigate);
-  }
-
-  async initialize() {
-    await this.markup.initialize();
     
     
     const onMouseDown = this.handleEvent.bind(this);
@@ -247,6 +239,10 @@ class GeometryEditorHighlighter extends AutoRefreshHighlighter {
         onMouseDown
       );
     }
+
+    this.onWillNavigate = this.onWillNavigate.bind(this);
+
+    this.highlighterEnv.on("will-navigate", this.onWillNavigate);
   }
 
   _buildMarkup() {
