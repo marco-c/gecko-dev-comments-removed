@@ -48,6 +48,12 @@ class DebuggerSource : public NativeObject {
 
   struct CallData;
 
+  
+  
+  
+  bool isInstance() const { return !getReservedSlot(OWNER_SLOT).isUndefined(); }
+  Debugger* owner() const;
+
  private:
   static const JSClassOps classOps_;
 
