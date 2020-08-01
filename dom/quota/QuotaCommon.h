@@ -14,8 +14,8 @@
 #include "nsTArray.h"
 
 
-#define MOZ_ARG_4(a1, a2, a3, a4, ...) a4
 #define MOZ_ARG_5(a1, a2, a3, a4, a5, ...) a5
+#define MOZ_ARG_6(a1, a2, a3, a4, a5, a6, ...) a6
 
 #define BEGIN_QUOTA_NAMESPACE \
   namespace mozilla {         \
@@ -215,91 +215,95 @@
 
 #define QM_VOID
 
-
-
-#define QM_TRY_MISSING_ARGS(...)                                 \
-  do {                                                           \
-    static_assert(false, "Did you forget arguments to QM_TRY?"); \
-  } while (0)
-
-
-#define QM_TRY_PROPAGATE_ERR(expr)                                            \
-  do {                                                                        \
-    auto mozTryTempResult_ = ::mozilla::ToResult(expr);                       \
-    if (MOZ_UNLIKELY(mozTryTempResult_.isErr())) {                            \
-      mozilla::dom::quota::HandleError(nsLiteralCString(#expr),               \
-                                       nsLiteralCString(__FILE__), __LINE__); \
-      return mozTryTempResult_.propagateErr();                                \
-    }                                                                         \
-  } while (0)
-
-
-#define QM_TRY_CUSTOM_RET_VAR(expr, customRetVal)                             \
-  do {                                                                        \
-    auto mozTryTempResult_ = ::mozilla::ToResult(expr);                       \
-    if (MOZ_UNLIKELY(mozTryTempResult_.isErr())) {                            \
-      mozilla::dom::quota::HandleError(nsLiteralCString(#expr),               \
-                                       nsLiteralCString(__FILE__), __LINE__); \
-      return customRetVal;                                                    \
-    }                                                                         \
+#define QM_MISSING_ARGS(...)                           \
+  do {                                                 \
+    static_assert(false, "Did you forget arguments?"); \
   } while (0)
 
 
 
 
 
-
-
-
-#define QM_TRY(...)                                              \
-  MOZ_ARG_4(, ##__VA_ARGS__, QM_TRY_CUSTOM_RET_VAR(__VA_ARGS__), \
-            QM_TRY_PROPAGATE_ERR(__VA_ARGS__),                   \
-            QM_TRY_MISSING_ARGS(__VA_ARGS__))
-
-
-
-
-#define QM_TRY_VAR_MISSING_ARGS(...)                                 \
-  do {                                                               \
-    static_assert(false, "Did you forget arguments to QM_TRY_VAR?"); \
+#define QM_TRY_PROPAGATE_ERR(ns, expr)                                     \
+  do {                                                                     \
+    auto mozTryTempResult_ = ::mozilla::ToResult(expr);                    \
+    if (MOZ_UNLIKELY(mozTryTempResult_.isErr())) {                         \
+      ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
+                      __LINE__);                                           \
+      return mozTryTempResult_.propagateErr();                             \
+    }                                                                      \
   } while (0)
 
 
-#define QM_TRY_VAR_PROPAGATE_ERR(target, expr)                                \
-  do {                                                                        \
-    auto mozTryVarTempResult_ = (expr);                                       \
-    if (MOZ_UNLIKELY(mozTryVarTempResult_.isErr())) {                         \
-      mozilla::dom::quota::HandleError(nsLiteralCString(#expr),               \
-                                       nsLiteralCString(__FILE__), __LINE__); \
-      return mozTryVarTempResult_.propagateErr();                             \
-    }                                                                         \
-    (target) = mozTryVarTempResult_.unwrap();                                 \
-  } while (0)
-
-
-#define QM_TRY_VAR_CUSTOM_RET_VAR(target, expr, customRetVal)                 \
-  do {                                                                        \
-    auto mozTryVarTempResult_ = (expr);                                       \
-    if (MOZ_UNLIKELY(mozTryVarTempResult_.isErr())) {                         \
-      mozilla::dom::quota::HandleError(nsLiteralCString(#expr),               \
-                                       nsLiteralCString(__FILE__), __LINE__); \
-      return customRetVal;                                                    \
-    }                                                                         \
-    (target) = mozTryVarTempResult_.unwrap();                                 \
+#define QM_TRY_CUSTOM_RET_VAR(ns, expr, customRetVal)                      \
+  do {                                                                     \
+    auto mozTryTempResult_ = ::mozilla::ToResult(expr);                    \
+    if (MOZ_UNLIKELY(mozTryTempResult_.isErr())) {                         \
+      ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
+                      __LINE__);                                           \
+      return customRetVal;                                                 \
+    }                                                                      \
   } while (0)
 
 
 
+#define QM_TRY_META(...)                                                     \
+  MOZ_ARG_5(, ##__VA_ARGS__, QM_TRY_CUSTOM_RET_VAR(__VA_ARGS__),             \
+            QM_TRY_PROPAGATE_ERR(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__), \
+            QM_MISSING_ARGS(__VA_ARGS__))
 
 
 
 
 
-#define QM_TRY_VAR(...)                                              \
-  MOZ_ARG_5(, ##__VA_ARGS__, QM_TRY_VAR_CUSTOM_RET_VAR(__VA_ARGS__), \
-            QM_TRY_VAR_PROPAGATE_ERR(__VA_ARGS__),                   \
-            QM_TRY_VAR_MISSING_ARGS(__VA_ARGS__),                    \
-            QM_TRY_VAR_MISSING_ARGS(__VA_ARGS__))
+
+
+
+#define QM_TRY(...) QM_TRY_META(mozilla::dom::quota, ##__VA_ARGS__)
+
+
+
+
+
+#define QM_TRY_VAR_PROPAGATE_ERR(ns, target, expr)                         \
+  do {                                                                     \
+    auto mozTryVarTempResult_ = (expr);                                    \
+    if (MOZ_UNLIKELY(mozTryVarTempResult_.isErr())) {                      \
+      ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
+                      __LINE__);                                           \
+      return mozTryVarTempResult_.propagateErr();                          \
+    }                                                                      \
+    (target) = mozTryVarTempResult_.unwrap();                              \
+  } while (0)
+
+
+#define QM_TRY_VAR_CUSTOM_RET_VAR(ns, target, expr, customRetVal)          \
+  do {                                                                     \
+    auto mozTryVarTempResult_ = (expr);                                    \
+    if (MOZ_UNLIKELY(mozTryVarTempResult_.isErr())) {                      \
+      ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
+                      __LINE__);                                           \
+      return customRetVal;                                                 \
+    }                                                                      \
+    (target) = mozTryVarTempResult_.unwrap();                              \
+  } while (0)
+
+
+
+#define QM_TRY_VAR_META(...)                                            \
+  MOZ_ARG_6(, ##__VA_ARGS__, QM_TRY_VAR_CUSTOM_RET_VAR(__VA_ARGS__),    \
+            QM_TRY_VAR_PROPAGATE_ERR(__VA_ARGS__),                      \
+            QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__), \
+            QM_MISSING_ARGS(__VA_ARGS__))
+
+
+
+
+
+
+
+
+#define QM_TRY_VAR(...) QM_TRY_VAR_META(mozilla::dom::quota, ##__VA_ARGS__)
 
 
 #ifdef NIGHTLY_BUILD
