@@ -1015,6 +1015,20 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+
+
+    ReplaceRangeData GetReplaceRangeDataAtEndOfDeletionRange(
+        const TextFragmentData& aTextFragmentDataAtStartToDelete);
+    ReplaceRangeData GetReplaceRangeDataAtStartOfDeletionRange(
+        const TextFragmentData& aTextFragmentDataAtEndToDelete);
+
+    
+
+
+
+
+
+
     const VisibleWhiteSpacesData& VisibleWhiteSpacesDataRef() const;
 
    private:
@@ -1220,18 +1234,6 @@ class WhiteSpaceVisibilityKeeper final {
                                 const EditorDOMPointType& aPoint);
 
  private:
-  
-
-
-
-
-  static ReplaceRangeData GetReplaceRangeDataAtEndOfDeletionRange(
-      HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete,
-      Element* aEditingHost);
-  static ReplaceRangeData GetReplaceRangeDataAtStartOfDeletionRange(
-      HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete,
-      Element* aEditingHost);
-
   
 
 
