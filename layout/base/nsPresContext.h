@@ -140,7 +140,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(nsPresContext)
 
-  enum nsPresContextType {
+  enum nsPresContextType : uint8_t {
     eContext_Galley,        
     eContext_PrintPreview,  
     eContext_Print,         
@@ -1142,7 +1142,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
 
-  nsPresContextType mType;
   
   
   mozilla::PresShell* MOZ_NON_OWNING_REF mPresShell;  
@@ -1162,19 +1161,11 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   RefPtr<mozilla::CounterStyleManager> mCounterStyleManager;
   const nsStaticAtom* mMedium;
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
+
   
   
   MediaEmulationData mMediaEmulationData;
 
- public:
-  
-  
-
-  
-  
-  bool mInflationDisabledForShrinkWrap;
-
- protected:
   float mSystemFontScale;    
   float mTextZoom;           
   float mEffectiveTextZoom;  
@@ -1220,15 +1211,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
   mozilla::dom::Element* MOZ_NON_OWNING_REF mViewportScrollOverrideElement;
-  ScrollStyles mViewportScrollStyles;
-
-  uint16_t mImageAnimationMode;
-  uint16_t mImageAnimationModePref;
-
-  uint32_t mInterruptChecksToSkip;
-
-  
-  uint32_t mNextFrameRateMultiplier;
 
   
   
@@ -1240,6 +1222,9 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   mozilla::Maybe<TransactionId> mFirstContentfulPaintTransactionId;
 
+  mozilla::UniquePtr<mozilla::MediaFeatureChange>
+      mPendingMediaFeatureValuesChange;
+
   
   
   mozilla::TimeStamp mFirstNonBlankPaintTime;
@@ -1248,13 +1233,33 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   mozilla::TimeStamp mFirstMouseMoveTime;
   mozilla::TimeStamp mFirstScrollTime;
 
-  bool mInteractionTimeEnabled;
-
   
   mozilla::TimeStamp mLastStyleUpdateForAllAnimations;
 
   nsChangeHint mChangeHintForPrefChange;
 
+  uint32_t mInterruptChecksToSkip;
+
+  
+  uint32_t mNextFrameRateMultiplier;
+
+  ScrollStyles mViewportScrollStyles;
+
+  uint16_t mImageAnimationMode;
+  uint16_t mImageAnimationModePref;
+
+  nsPresContextType mType;
+
+ public:
+  
+  
+
+  
+  
+  bool mInflationDisabledForShrinkWrap;
+
+ protected:
+  unsigned mInteractionTimeEnabled : 1;
   unsigned mHasPendingInterrupt : 1;
   unsigned mPendingInterruptFromTest : 1;
   unsigned mInterruptsEnabled : 1;
@@ -1315,9 +1320,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 #ifdef DEBUG
   unsigned mInitialized : 1;
 #endif
-
-  mozilla::UniquePtr<mozilla::MediaFeatureChange>
-      mPendingMediaFeatureValuesChange;
 
  protected:
   virtual ~nsPresContext();
