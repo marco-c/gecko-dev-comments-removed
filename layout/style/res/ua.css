@@ -154,11 +154,6 @@
 }
 
 
-*|*:-moz-inert {
-  -moz-inert: inert;
-}
-
-
 
 *|*::-moz-cell-content {
   display: block;
