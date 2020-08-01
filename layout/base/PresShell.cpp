@@ -4733,7 +4733,7 @@ static bool gDumpRangePaintList = false;
 
 UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
     nsRange* aRange, nsRect& aSurfaceRect, bool aForPrimarySelection) {
-  nsIFrame* ancestorFrame;
+  nsIFrame* ancestorFrame = nullptr;
   nsIFrame* rootFrame = GetRootFrame();
 
   
