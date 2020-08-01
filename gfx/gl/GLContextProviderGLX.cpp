@@ -590,6 +590,8 @@ bool GLContextGLX::Init() {
   return true;
 }
 
+bool GLContextGLX::IsAliveImpl() const { return true; }
+
 bool GLContextGLX::MakeCurrentImpl() const {
   if (mGLX->IsMesa()) {
     
