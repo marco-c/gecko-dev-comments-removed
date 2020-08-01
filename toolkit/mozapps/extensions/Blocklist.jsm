@@ -388,7 +388,7 @@ const Utils = {
 
 
 
-async function targetAppFilter(entry, environment = {}) {
+async function targetAppFilter(entry, environment) {
   
   
   
@@ -703,8 +703,8 @@ this.PluginBlocklistRS = {
     BlocklistTelemetry.recordRSBlocklistLastModified("plugins", this._client);
   },
 
-  async _filterItem(entry) {
-    if (!(await targetAppFilter(entry))) {
+  async _filterItem(entry, environment) {
+    if (!(await targetAppFilter(entry, environment))) {
       return null;
     }
     if (!Utils.matchesOSABI(entry)) {
@@ -1128,8 +1128,8 @@ this.ExtensionBlocklistRS = {
     BlocklistTelemetry.recordRSBlocklistLastModified("addons", this._client);
   },
 
-  async _filterItem(entry) {
-    if (!(await targetAppFilter(entry))) {
+  async _filterItem(entry, environment) {
+    if (!(await targetAppFilter(entry, environment))) {
       return null;
     }
     if (!Utils.matchesOSABI(entry)) {
