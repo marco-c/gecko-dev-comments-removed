@@ -216,12 +216,16 @@ void DCLayerTree::CompositorEndFrame() {
     
     
     mRootVisual->RemoveAllVisuals();
+  }
 
+  for (auto it = mCurrentLayers.begin(); it != mCurrentLayers.end(); ++it) {
+    auto surface_it = mDCSurfaces.find(*it);
+    MOZ_RELEASE_ASSERT(surface_it != mDCSurfaces.end());
+    const auto surface = surface_it->second.get();
     
-    for (auto it = mCurrentLayers.begin(); it != mCurrentLayers.end(); ++it) {
-      auto surface_it = mDCSurfaces.find(*it);
-      MOZ_RELEASE_ASSERT(surface_it != mDCSurfaces.end());
-      const auto surface = surface_it->second.get();
+    surface->UpdateAllocatedRect();
+    if (!same) {
+      
       const auto visual = surface->GetVisual();
       mRootVisual->AddVisual(visual, FALSE, nullptr);
     }
@@ -320,8 +324,6 @@ void DCLayerTree::AddSurface(wr::NativeSurfaceId aId,
   MOZ_RELEASE_ASSERT(it != mDCSurfaces.end());
   const auto surface = it->second.get();
   const auto visual = surface->GetVisual();
-
-  surface->UpdateAllocatedRect();
 
   wr::DeviceIntPoint virtualOffset = surface->GetVirtualOffset();
   aPosition.x -= virtualOffset.x;
