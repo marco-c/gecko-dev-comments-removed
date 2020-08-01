@@ -1,0 +1,30 @@
+
+
+
+
+"use strict";
+
+
+
+this.matchPatterns = class extends ExtensionAPI {
+  getAPI(context) {
+    return {
+      matchPatterns: {
+        getMatcher(patterns) {
+          const set = new MatchPatternSet(patterns);
+          return Cu.cloneInto(
+            {
+              matches: url => {
+                return set.matches(url);
+              },
+            },
+            context.cloneScope,
+            {
+              cloneFunctions: true,
+            }
+          );
+        },
+      },
+    };
+  }
+};
