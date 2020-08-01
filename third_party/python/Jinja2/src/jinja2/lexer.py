@@ -681,6 +681,8 @@ class Lexer(object):
         source_length = len(source)
         balancing_stack = []
         lstrip_unless_re = self.lstrip_unless_re
+        newlines_stripped = 0
+        line_starting = True
 
         while 1:
             
@@ -717,7 +719,9 @@ class Lexer(object):
 
                         if strip_sign == "-":
                             
-                            groups = (text.rstrip(),) + groups[1:]
+                            stripped = text.rstrip()
+                            newlines_stripped = text[len(stripped) :].count("\n")
+                            groups = (stripped,) + groups[1:]
                         elif (
                             
                             strip_sign != "+"
@@ -728,11 +732,11 @@ class Lexer(object):
                         ):
                             
                             l_pos = text.rfind("\n") + 1
-
-                            
-                            
-                            if not lstrip_unless_re.search(text, l_pos):
-                                groups = (text[:l_pos],) + groups[1:]
+                            if l_pos > 0 or line_starting:
+                                
+                                
+                                if not lstrip_unless_re.search(text, l_pos):
+                                    groups = (text[:l_pos],) + groups[1:]
 
                     for idx, token in enumerate(tokens):
                         
@@ -758,7 +762,8 @@ class Lexer(object):
                             data = groups[idx]
                             if data or token not in ignore_if_empty:
                                 yield lineno, token, data
-                            lineno += data.count("\n")
+                            lineno += data.count("\n") + newlines_stripped
+                            newlines_stripped = 0
 
                 
                 else:
@@ -789,6 +794,8 @@ class Lexer(object):
                     if data or tokens not in ignore_if_empty:
                         yield lineno, tokens, data
                     lineno += data.count("\n")
+
+                line_starting = m.group()[-1:] == "\n"
 
                 
                 
