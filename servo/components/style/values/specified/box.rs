@@ -1532,7 +1532,30 @@ pub enum Appearance {
     
     Auto,
     
+    Searchfield,
+    
+    #[parse(aliases = "textfield-multiline")]
+    Textarea,
+    
+    Checkbox,
+    
+    Radio,
+    
+    Menulist,
+    
+    Listbox,
+    
+    #[parse(aliases = "meterbar")]
+    Meter,
+    
+    #[parse(aliases = "progressbar")]
+    ProgressBar,
+    
     Button,
+    
+    Textfield,
+    
+    MenulistButton,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ButtonArrowDown,
@@ -1552,8 +1575,6 @@ pub enum Appearance {
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Groupbox,
     
-    Listbox,
-    
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menubar,
     
@@ -1566,10 +1587,6 @@ pub enum Appearance {
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuitemtext,
-    
-    Menulist,
-    
-    MenulistButton,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MenulistText,
@@ -1589,9 +1606,6 @@ pub enum Appearance {
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuimage,
     
-    #[parse(aliases = "meterbar")]
-    Meter,
-    
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Meterchunk,
     
@@ -1600,15 +1614,8 @@ pub enum Appearance {
     
     NumberInput,
     
-    #[parse(aliases = "progressbar")]
-    ProgressBar,
-    
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Progresschunk,
-    
-    Checkbox,
-    
-    Radio,
     
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
@@ -1668,8 +1675,6 @@ pub enum Appearance {
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Scrollcorner,
     
-    Searchfield,
-    
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Separator,
     
@@ -1707,11 +1712,6 @@ pub enum Appearance {
     TabScrollArrowBack,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     TabScrollArrowForward,
-    
-    #[parse(aliases = "textfield-multiline")]
-    Textarea,
-    
-    Textfield,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Toolbar,
