@@ -12,23 +12,16 @@
 namespace mozilla {
 namespace scache {
 
-void StartupCacheChild::Init(bool wantCacheData) {
-  mWantCacheData = wantCacheData;
-
+void StartupCacheChild::Init() {
   auto* cache = StartupCache::GetSingleton();
   if (cache) {
-    Unused << cache->InitChild(wantCacheData ? this : nullptr);
-  }
-
-  if (!wantCacheData) {
-    
-    
+    Unused << cache->InitChild(this);
+  } else {
     Send__delete__(this, AutoTArray<EntryData, 0>());
   }
 }
 
 void StartupCacheChild::SendEntriesAndFinalize(StartupCache::Table& entries) {
-  MOZ_RELEASE_ASSERT(mWantCacheData);
   nsTArray<EntryData> dataArray;
   for (auto iter = entries.iter(); !iter.done(); iter.next()) {
     const auto& key = iter.get().key();
@@ -52,7 +45,6 @@ void StartupCacheChild::SendEntriesAndFinalize(StartupCache::Table& entries) {
     }
   }
 
-  mWantCacheData = false;
   Send__delete__(this, dataArray);
 }
 
