@@ -21,63 +21,7 @@ uint64_t ToNanoSeconds(const FILETIME& aFileTime) {
   return usec.QuadPart * 100;
 }
 
-void AppendThreads(ProcInfo* info) {
-  THREADENTRY32 te32;
-  
-  
-  
-  auto getThreadDescription =
-      reinterpret_cast<GETTHREADDESCRIPTION>(::GetProcAddress(
-          ::GetModuleHandleW(L"Kernel32.dll"), "GetThreadDescription"));
-
-  
-  nsAutoHandle hThreadSnap(CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0));
-  if (!hThreadSnap) {
-    return;
-  }
-  te32.dwSize = sizeof(THREADENTRY32);
-
-  
-  
-  if (!Thread32First(hThreadSnap.get(), &te32)) {
-    return;
-  }
-
-  do {
-    if (te32.th32OwnerProcessID == info->pid) {
-      nsAutoHandle hThread(
-          OpenThread(THREAD_QUERY_INFORMATION, TRUE, te32.th32ThreadID));
-      if (!hThread) {
-        continue;
-      }
-
-      FILETIME createTime, exitTime, kernelTime, userTime;
-      if (!GetThreadTimes(hThread.get(), &createTime, &exitTime, &kernelTime,
-                          &userTime)) {
-        continue;
-      }
-
-      ThreadInfo thread;
-      if (getThreadDescription) {
-        PWSTR threadName = nullptr;
-        if (getThreadDescription(hThread.get(), &threadName) && threadName) {
-          thread.name = threadName;
-        }
-        if (threadName) {
-          LocalFree(threadName);
-        }
-      }
-      thread.tid = te32.th32ThreadID;
-      thread.cpuKernel = ToNanoSeconds(kernelTime);
-      thread.cpuUser = ToNanoSeconds(userTime);
-      info->threads.AppendElement(thread);
-    }
-  } while (Thread32Next(hThreadSnap.get(), &te32));
-}
-
-RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
-                                    const ProcType& type,
-                                    const nsACString& origin) {
+RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
   auto holder = MakeUnique<MozPromiseHolder<ProcInfoPromise>>();
   RefPtr<ProcInfoPromise> promise = holder->Ensure(__func__);
 
@@ -90,50 +34,136 @@ RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
     return promise;
   }
 
-  
-  nsCString originCopy(origin);
   RefPtr<nsIRunnable> r = NS_NewRunnableFunction(
       __func__,
-      [holder = std::move(holder), originCopy = std::move(originCopy), pid,
-       type, childId]() -> void {
-        nsAutoHandle handle(OpenProcess(
-            PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid));
-
-        if (!handle) {
-          holder->Reject(NS_ERROR_FAILURE, __func__);
+      [holder = std::move(holder), requests = std::move(aRequests)]() -> void {
+        HashMap<base::ProcessId, ProcInfo> gathered;
+        if (!gathered.reserve(requests.Length())) {
+          holder->Reject(NS_ERROR_OUT_OF_MEMORY, __func__);
           return;
         }
 
-        wchar_t filename[MAX_PATH];
-        if (GetProcessImageFileNameW(handle.get(), filename, MAX_PATH) == 0) {
-          holder->Reject(NS_ERROR_FAILURE, __func__);
+        
+
+        for (const auto& request : requests) {
+          nsAutoHandle handle(OpenProcess(
+              PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, request.pid));
+
+          if (!handle) {
+            
+            continue;
+          }
+
+          wchar_t filename[MAX_PATH];
+          if (GetProcessImageFileNameW(handle.get(), filename, MAX_PATH) == 0) {
+            
+            continue;
+          }
+          FILETIME createTime, exitTime, kernelTime, userTime;
+          if (!GetProcessTimes(handle.get(), &createTime, &exitTime,
+                               &kernelTime, &userTime)) {
+            
+            continue;
+          }
+          PROCESS_MEMORY_COUNTERS memoryCounters;
+          if (!GetProcessMemoryInfo(handle.get(),
+                                    (PPROCESS_MEMORY_COUNTERS)&memoryCounters,
+                                    sizeof(memoryCounters))) {
+            
+            continue;
+          }
+
+          
+          
+          
+          
+          
+          
+          ProcInfo info;
+          info.pid = request.pid;
+          info.childId = request.childId;
+          info.type = request.processType;
+          info.origin = request.origin;
+          info.filename.Assign(filename);
+          info.cpuKernel = ToNanoSeconds(kernelTime);
+          info.cpuUser = ToNanoSeconds(userTime);
+          info.residentSetSize = memoryCounters.WorkingSetSize;
+          info.virtualMemorySize = memoryCounters.PagefileUsage;
+          if (!gathered.put(request.pid, std::move(info))) {
+            holder->Reject(NS_ERROR_OUT_OF_MEMORY, __func__);
+            return;
+          }
+        }
+
+        
+
+        
+        
+        nsAutoHandle hThreadSnap(CreateToolhelp32Snapshot(
+             TH32CS_SNAPTHREAD,  0));
+        if (!hThreadSnap) {
+          holder->Reject(NS_ERROR_UNEXPECTED, __func__);
           return;
         }
-        FILETIME createTime, exitTime, kernelTime, userTime;
-        if (!GetProcessTimes(handle.get(), &createTime, &exitTime, &kernelTime,
-                             &userTime)) {
-          holder->Reject(NS_ERROR_FAILURE, __func__);
-          return;
+
+        
+        
+        
+        auto getThreadDescription =
+            reinterpret_cast<GETTHREADDESCRIPTION>(::GetProcAddress(
+                ::GetModuleHandleW(L"Kernel32.dll"), "GetThreadDescription"));
+
+        THREADENTRY32 te32;
+        te32.dwSize = sizeof(THREADENTRY32);
+
+        
+        for (auto success = Thread32First(hThreadSnap.get(), &te32); success;
+             success = Thread32Next(hThreadSnap.get(), &te32)) {
+          auto processLookup = gathered.lookup(te32.th32OwnerProcessID);
+          if (!processLookup) {
+            
+            continue;
+          }
+          ThreadInfo* threadInfo =
+              processLookup->value().threads.AppendElement(fallible);
+          if (!threadInfo) {
+            holder->Reject(NS_ERROR_OUT_OF_MEMORY, __func__);
+            return;
+          }
+
+          nsAutoHandle hThread(
+              OpenThread( THREAD_QUERY_INFORMATION,
+                          FALSE,
+                          te32.th32ThreadID));
+          if (!hThread) {
+            
+            
+            continue;
+          }
+
+          FILETIME createTime, exitTime, kernelTime, userTime;
+          if (!GetThreadTimes(hThread.get(), &createTime, &exitTime,
+                              &kernelTime, &userTime)) {
+            continue;
+          }
+
+          if (getThreadDescription) {
+            PWSTR threadName = nullptr;
+            if (getThreadDescription(hThread.get(), &threadName) &&
+                threadName) {
+              threadInfo->name = threadName;
+            }
+            if (threadName) {
+              LocalFree(threadName);
+            }
+          }
+          threadInfo->tid = te32.th32ThreadID;
+          threadInfo->cpuKernel = ToNanoSeconds(kernelTime);
+          threadInfo->cpuUser = ToNanoSeconds(userTime);
         }
-        PROCESS_MEMORY_COUNTERS memoryCounters;
-        if (!GetProcessMemoryInfo(handle.get(),
-                                  (PPROCESS_MEMORY_COUNTERS)&memoryCounters,
-                                  sizeof(memoryCounters))) {
-          holder->Reject(NS_ERROR_FAILURE, __func__);
-          return;
-        }
-        ProcInfo info;
-        info.pid = pid;
-        info.childId = childId;
-        info.type = type;
-        info.origin = originCopy;
-        info.filename.Assign(filename);
-        info.cpuKernel = ToNanoSeconds(kernelTime);
-        info.cpuUser = ToNanoSeconds(userTime);
-        info.residentSetSize = memoryCounters.WorkingSetSize;
-        info.virtualMemorySize = memoryCounters.PagefileUsage;
-        AppendThreads(&info);
-        holder->Resolve(info, __func__);
+
+        
+        holder->Resolve(std::move(gathered), __func__);
       });
 
   rv = target->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
