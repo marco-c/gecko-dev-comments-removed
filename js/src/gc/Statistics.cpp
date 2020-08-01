@@ -654,11 +654,6 @@ void Statistics::formatJsonDescription(JSONPrinter& json) const {
   
   
 
-  
-  
-  
-  json.property("timestamp", 0);
-
   TimeDuration total, longest;
   gcDuration(&total, &longest);
   json.property("max_pause", longest, JSONPrinter::MILLISECONDS);
