@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+#include "SVGPaintServerFrame.h"
+
+namespace mozilla {
+
+NS_QUERYFRAME_HEAD(SVGPaintServerFrame)
+  NS_QUERYFRAME_ENTRY(SVGPaintServerFrame)
+NS_QUERYFRAME_TAIL_INHERITING(SVGContainerFrame)
+
+}  

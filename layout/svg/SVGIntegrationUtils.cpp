@@ -1331,12 +1331,10 @@ already_AddRefed<gfxDrawable> SVGIntegrationUtils::DrawableFromPaintServer(
   
   
   
-  if (aFrame->IsFrameOfType(nsIFrame::eSVGPaintServer)) {
+  if (SVGPaintServerFrame* server = do_QueryFrame(aFrame)) {
     
     
     
-    auto* server = static_cast<SVGPaintServerFrame*>(aFrame);
-
     gfxRect overrideBounds(0, 0, aPaintServerSize.width,
                            aPaintServerSize.height);
     overrideBounds.Scale(1.0 / aFrame->PresContext()->AppUnitsPerDevPixel());
