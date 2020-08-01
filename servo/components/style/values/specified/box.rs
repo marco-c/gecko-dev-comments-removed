@@ -1844,6 +1844,31 @@ pub enum Appearance {
 }
 
 
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum ButtonAppearance {
+    
+    
+    Allow,
+    
+    Disallow,
+}
+
+
 
 
 #[allow(missing_docs)]

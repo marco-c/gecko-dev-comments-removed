@@ -639,6 +639,25 @@ ${helpers.predefined_type(
     gecko_ffi_name="mDefaultAppearance",
 )}
 
+
+
+
+
+
+
+
+${helpers.predefined_type(
+    "-moz-button-appearance",
+    "ButtonAppearance",
+    "computed::ButtonAppearance::Allow",
+    engines="gecko",
+    animation_value_type="none",
+    needs_context=False,
+    spec="Internal (not web-exposed)",
+    enabled_in="ua",
+    gecko_ffi_name="mButtonAppearance",
+)}
+
 ${helpers.single_keyword(
     "-moz-orient",
     "inline block horizontal vertical",
