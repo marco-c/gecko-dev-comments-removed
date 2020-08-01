@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+include!(concat!(
+    env!("MOZ_TOPOBJDIR"),
+    "/toolkit/components/glean/api/src/metrics.rs"
+));
