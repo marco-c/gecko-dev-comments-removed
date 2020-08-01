@@ -53,11 +53,26 @@ typedef nsTArray<nsCOMPtr<nsIRedirectHistoryEntry>> RedirectHistoryArray;
 
 
 class LoadInfo final : public nsILoadInfo {
+  template <typename T, typename... Args>
+  friend already_AddRefed<T> mozilla::MakeAndAddRef(Args&&... aArgs);
+
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSILOADINFO
 
   
+  static already_AddRefed<LoadInfo> CreateForDocument(
+      dom::CanonicalBrowsingContext* aBrowsingContext,
+      nsIPrincipal* aTriggeringPrincipal,
+      const OriginAttributes& aOriginAttributes, nsSecurityFlags aSecurityFlags,
+      uint32_t aSandboxFlags);
+
+  
+  static already_AddRefed<LoadInfo> CreateForFrame(
+      dom::CanonicalBrowsingContext* aBrowsingContext,
+      nsIPrincipal* aTriggeringPrincipal, nsSecurityFlags aSecurityFlags,
+      uint32_t aSandboxFlags);
+
   
   LoadInfo(nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
            nsINode* aLoadingContext, nsSecurityFlags aSecurityFlags,
@@ -67,10 +82,6 @@ class LoadInfo final : public nsILoadInfo {
            const Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController =
                Maybe<mozilla::dom::ServiceWorkerDescriptor>(),
            uint32_t aSandboxFlags = 0);
-  
-  LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
-           nsIPrincipal* aTriggeringPrincipal, nsSecurityFlags aSecurityFlags,
-           uint32_t aSandboxFlags);
 
   
   
@@ -78,10 +89,6 @@ class LoadInfo final : public nsILoadInfo {
   LoadInfo(nsPIDOMWindowOuter* aOuterWindow, nsIPrincipal* aTriggeringPrincipal,
            nsISupports* aContextForTopLevelLoad, nsSecurityFlags aSecurityFlags,
            uint32_t aSandboxFlags);
-  LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
-           nsIPrincipal* aTriggeringPrincipal,
-           const OriginAttributes& aOriginAttributes,
-           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
   LoadInfo(dom::WindowGlobalParent* aParentWGP,
@@ -89,6 +96,21 @@ class LoadInfo final : public nsILoadInfo {
            nsContentPolicyType aContentPolicyType,
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
+ private:
+  
+  
+  LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
+           nsIPrincipal* aTriggeringPrincipal,
+           const OriginAttributes& aOriginAttributes,
+           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
+
+  
+  
+  LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
+           nsIPrincipal* aTriggeringPrincipal, nsSecurityFlags aSecurityFlags,
+           uint32_t aSandboxFlags);
+
+ public:
   
   
   
