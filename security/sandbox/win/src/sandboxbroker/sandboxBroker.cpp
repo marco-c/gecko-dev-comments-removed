@@ -1048,14 +1048,6 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
       "With these static arguments AddRule should never fail, what happened?");
 
   
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_NAMED_PIPES,
-                            sandbox::TargetPolicy::NAMEDPIPES_ALLOW_ANY,
-                            L"\\\\.\\pipe\\chrome.*");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-
-  
   result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
                             sandbox::TargetPolicy::FILES_ALLOW_ANY,
                             L"\\??\\pipe\\gecko-crash-server-pipe.*");
