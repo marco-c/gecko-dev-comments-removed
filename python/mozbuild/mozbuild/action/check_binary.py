@@ -17,7 +17,6 @@ from mozbuild.util import memoize
 from mozpack.executables import (
     get_type,
     ELF,
-    MACHO,
     UNKNOWN,
 )
 
@@ -78,73 +77,37 @@ def at_least_one(iter):
 
 
 
-
-def iter_symbols(binary):
+def iter_elf_symbols(binary):
     ty = get_type(binary)
-    
-    
-    
-    
-    
     
     if ty == UNKNOWN and open(binary, 'rb').read(8) == b'!<arch>\n':
         ty = ELF
-    if ty in (ELF, MACHO):
-        for line in get_output(buildconfig.substs['LLVM_OBJDUMP'], '-t',
-                               binary):
-            m = ADDR_RE.match(line)
-            if not m:
-                continue
-            addr = int(m.group(0), 16)
-            
-            
-            
-            rest = line[m.end() + 9:].split()
-            
-            
-            
-            
-            
-            name = rest[-1]
-            if '@' in name:
-                name, ver = name.rsplit('@', 1)
-                while name.endswith('@'):
-                    name = name[:-1]
-            else:
-                ver = None
-            yield {
-                'addr': addr,
-                'size': int(rest[1], 16) if ty == ELF else 0,
-                'name': name,
-                'version': ver or None,
-            }
-    else:
-        export_table = False
-        for line in get_output(buildconfig.substs['LLVM_OBJDUMP'], '-p',
-                               binary):
-            if line.strip() == 'Export Table:':
-                export_table = True
-                continue
-            elif not export_table:
-                continue
-
-            cols = line.split()
-            
-            
-            if len(cols) != 3 or not cols[0].isdigit():
-                continue
-            _, rva, name = cols
-            
-            
-            
-            
-            name = name.split('@@')[0].split('@')[0].lstrip('?')
-            yield {
-                'addr': int(rva, 16),
-                'size': 0,
-                'name': name,
-                'version': None,
-            }
+    assert ty == ELF
+    for line in get_output(buildconfig.substs['LLVM_OBJDUMP'], '-t',
+                           binary):
+        m = ADDR_RE.match(line)
+        if not m:
+            continue
+        addr = int(m.group(0), 16)
+        
+        
+        
+        rest = line[m.end() + 9:].split()
+        
+        
+        name = rest[-1]
+        if '@' in name:
+            name, ver = name.rsplit('@', 1)
+            while name.endswith('@'):
+                name = name[:-1]
+        else:
+            ver = None
+        yield {
+            'addr': addr,
+            'size': int(rest[1], 16) if ty == ELF else 0,
+            'name': name,
+            'version': ver or None,
+        }
 
 
 def iter_readelf_dynamic(target, binary):
@@ -166,7 +129,7 @@ def check_binary_compat(target, binary):
 
     unwanted = {}
     try:
-        for sym in at_least_one(iter_symbols(binary)):
+        for sym in at_least_one(iter_elf_symbols(binary)):
             
             if sym['addr'] != 0:
                 continue
@@ -272,7 +235,7 @@ def check_networking(binary):
     bad_occurences_names = set()
 
     try:
-        for sym in at_least_one(iter_symbols(binary)):
+        for sym in at_least_one(iter_elf_symbols(binary)):
             if sym['addr'] == 0 and sym['name'] in networking_functions:
                 bad_occurences_names.add(sym['name'])
     except Empty:
