@@ -581,13 +581,13 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1563839",
+    id: "bug1646791",
     platform: "all",
     domain: "santanderbank.com",
-    bug: "1563839",
+    bug: "1646791",
     config: {
       matches: [
-        "*://*.bancosantander.es*",
+        "*://*.bancosantander.es/*",
         "*://*.santander.co.uk/*",
         "*://bob.santanderbank.com/*",
         "*://rolb.santanderbank.com/*",
