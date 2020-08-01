@@ -116,12 +116,6 @@ class ProviderHeuristicFallback extends UrlbarProvider {
   }
 
   
-
-
-
-  cancelQuery(queryContext) {}
-
-  
   
   _matchUnknownUrl(queryContext) {
     let unescapedSearchString = Services.textToSubURI.unEscapeURIForUI(

@@ -173,15 +173,6 @@ class ProviderOmnibox extends UrlbarProvider {
       Cu.reportError
     );
   }
-
-  
-
-
-
-
-
-
-  cancelQuery(queryContext) {}
 }
 
 var UrlbarProviderOmnibox = new ProviderOmnibox();

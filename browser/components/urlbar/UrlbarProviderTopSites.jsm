@@ -231,13 +231,6 @@ class ProviderTopSites extends UrlbarProvider {
       }
     }
   }
-
-  
-
-
-
-
-  cancelQuery(queryContext) {}
 }
 
 var UrlbarProviderTopSites = new ProviderTopSites();

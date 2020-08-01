@@ -220,13 +220,6 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
 
-  cancelQuery(queryContext) {}
-
-  
-
-
-
-
   pickResult(result) {
     let window = BrowserWindowTracker.getTopWindow();
     window.gURLBar.value = "";

@@ -158,12 +158,6 @@ class UrlbarProviderOpenTabs extends UrlbarProvider {
       }
     );
   }
-
-  
-
-
-
-  cancelQuery(queryContext) {}
 }
 
 
