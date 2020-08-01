@@ -40,6 +40,10 @@ const PREFERENCES = [
       "url (parent process to content process). Or when navigating between " +
       "two distinct domains if `fission.autostart` is set to true",
   ],
+  [
+    "devtools.testing.enableServerWatcherSupport",
+    "Enable server-side Resource watchers",
+  ],
 ];
 
 
@@ -113,6 +117,11 @@ function showTooltip(toolbox) {
   }
 
   toolbox._fissionPrefsTooltip.panel.innerHTML = "";
+
+  
+  
+  toolbox._fissionPrefsTooltip.panel.style.maxWidth = "unset";
+
   toolbox._fissionPrefsTooltip.panel.appendChild(container);
 
   const commandId = "command-button-fission-prefs";
