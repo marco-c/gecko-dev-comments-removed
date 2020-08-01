@@ -79,7 +79,7 @@ function GetCachedFormat(format, required, defaults) {
 
 function Date_toLocaleString() {
     
-    var x = callFunction(std_Date_valueOf, this);
+    var x = callFunction(ThisTimeValue, this, DATE_METHOD_LOCALE_STRING);
     if (Number_isNaN(x))
         return "Invalid Date";
 
@@ -112,7 +112,7 @@ function Date_toLocaleString() {
 
 function Date_toLocaleDateString() {
     
-    var x = callFunction(std_Date_valueOf, this);
+    var x = callFunction(ThisTimeValue, this, DATE_METHOD_LOCALE_DATE_STRING);
     if (Number_isNaN(x))
         return "Invalid Date";
 
@@ -145,7 +145,7 @@ function Date_toLocaleDateString() {
 
 function Date_toLocaleTimeString() {
     
-    var x = callFunction(std_Date_valueOf, this);
+    var x = callFunction(ThisTimeValue, this, DATE_METHOD_LOCALE_TIME_STRING);
     if (Number_isNaN(x))
         return "Invalid Date";
 
