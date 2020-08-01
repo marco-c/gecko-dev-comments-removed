@@ -146,6 +146,7 @@ void ImageComposite::UpdateCompositedFrame(int aImageIndex,
                                            const TimedImage* aImage,
                                            base::ProcessId aProcessId,
                                            const CompositableHandle& aHandle) {
+  auto compositionOpportunityId = GetCompositionOpportunityId();
   TimeStamp compositionTime = GetCompositionTime();
   MOZ_RELEASE_ASSERT(compositionTime,
                      "Should only be called during a composition");
@@ -161,9 +162,10 @@ void ImageComposite::UpdateCompositedFrame(int aImageIndex,
     }
     static const char* kBiasStrings[] = {"NONE", "NEGATIVE", "POSITIVE"};
     descr.AppendPrintf("frameID %" PRId32 " (producerID %" PRId32
-                       ") [bias %s]%s",
+                       ") [composite %" PRIu64 "] [bias %s]%s",
                        aImage->mFrameID, aImage->mProducerID,
-                       kBiasStrings[mBias], relativeTimeString.get());
+                       compositionOpportunityId.mId, kBiasStrings[mBias],
+                       relativeTimeString.get());
     if (mLastProducerID != aImage->mProducerID) {
       descr.AppendPrintf(", previous producerID: %" PRId32, mLastProducerID);
     } else if (mLastFrameID != aImage->mFrameID) {
@@ -178,6 +180,7 @@ void ImageComposite::UpdateCompositedFrame(int aImageIndex,
 
   if (mLastFrameID == aImage->mFrameID &&
       mLastProducerID == aImage->mProducerID) {
+    mLastCompositionOpportunityId = compositionOpportunityId;
     return;
   }
 
@@ -185,6 +188,14 @@ void ImageComposite::UpdateCompositedFrame(int aImageIndex,
 
   int32_t dropped = mSkippedFramesSinceLastComposite;
   mSkippedFramesSinceLastComposite = 0;
+
+  if (compositionOpportunityId != mLastCompositionOpportunityId.Next()) {
+    
+    
+    
+    
+    dropped = 0;
+  }
 
   if (dropped > 0) {
     mDroppedFrames += dropped;
@@ -204,6 +215,7 @@ void ImageComposite::UpdateCompositedFrame(int aImageIndex,
 
   mLastFrameID = aImage->mFrameID;
   mLastProducerID = aImage->mProducerID;
+  mLastCompositionOpportunityId = compositionOpportunityId;
 
   if (aHandle) {
     ImageCompositeNotificationInfo info;
