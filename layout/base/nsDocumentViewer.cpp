@@ -1694,7 +1694,8 @@ nsDocumentViewer::Destroy() {
     
     
     shEntry->SyncPresentationState();
-    shEntry->SynchronizeLayoutHistoryState();
+    
+    
 
     
 #ifdef ACCESSIBILITY

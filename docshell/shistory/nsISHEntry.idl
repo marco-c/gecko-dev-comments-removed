@@ -435,13 +435,6 @@ interface nsISHEntry : nsISupports
 
 
 
-    void synchronizeLayoutHistoryState();
-
-    
-
-
-
-
 
 
 

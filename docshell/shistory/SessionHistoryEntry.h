@@ -8,6 +8,7 @@
 #define mozilla_dom_SessionHistoryEntry_h
 
 #include "mozilla/UniquePtr.h"
+#include "nsILayoutHistoryState.h"
 #include "nsISHEntry.h"
 #include "nsStructuredCloneContainer.h"
 #include "nsDataHashtable.h"
@@ -50,6 +51,12 @@ class SessionHistoryInfo {
 
   uint64_t Id() const { return mId; }
 
+  nsILayoutHistoryState* GetLayoutHistoryState() { return mLayoutHistoryState; }
+
+  void SetLayoutHistoryState(nsILayoutHistoryState* aState) {
+    mLayoutHistoryState = aState;
+  }
+
  private:
   friend class SessionHistoryEntry;
   friend struct mozilla::ipc::IPDLParamTraits<SessionHistoryInfo>;
@@ -66,6 +73,11 @@ class SessionHistoryInfo {
   RefPtr<nsStructuredCloneContainer> mStateData;
   nsString mSrcdocData;
   nsCOMPtr<nsIURI> mBaseURI;
+  
+  
+  
+  nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
+
   uint64_t mId = 0;
   bool mLoadReplace = false;
   bool mURIWasModified = false;
@@ -90,6 +102,9 @@ class SessionHistoryEntry : public nsISHEntry {
   
   static SessionHistoryEntry* GetByInfoId(uint64_t aId);
 
+  static void UpdateLayoutHistoryState(uint64_t aSessionHistoryEntryID,
+                                       nsILayoutHistoryState* aState);
+
  private:
   virtual ~SessionHistoryEntry();
 
@@ -104,8 +119,8 @@ class SessionHistoryEntry : public nsISHEntry {
 
 }  
 
-
 namespace ipc {
+
 
 template <>
 struct IPDLParamTraits<dom::SessionHistoryInfo> {
@@ -113,6 +128,15 @@ struct IPDLParamTraits<dom::SessionHistoryInfo> {
                     const dom::SessionHistoryInfo& aParam);
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, dom::SessionHistoryInfo* aResult);
+};
+
+
+template <>
+struct IPDLParamTraits<nsILayoutHistoryState*> {
+  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+                    nsILayoutHistoryState* aParam);
+  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                   IProtocol* aActor, RefPtr<nsILayoutHistoryState>* aResult);
 };
 
 }  
