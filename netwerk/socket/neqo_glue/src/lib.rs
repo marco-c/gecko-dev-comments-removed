@@ -185,6 +185,14 @@ pub extern "C" fn neqo_http3conn_process_output(conn: &mut NeqoHttp3Conn) -> u64
             }
             Output::Callback(to) => {
                 let timeout = to.as_millis() as u64;
+                
+                
+                
+                
+                
+                if timeout == 0 {
+                    break 1;
+                }
                 break timeout;
             }
             Output::None => break std::u64::MAX,
