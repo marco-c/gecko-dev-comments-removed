@@ -1011,6 +1011,30 @@ bool IMEHandler::IsInTabletMode() {
   return isInTabletMode;
 }
 
+static bool ReadEnableDesktopModeAutoInvoke(uint32_t aRoot,
+                                            nsIWindowsRegKey* aRegKey,
+                                            uint32_t& aValue) {
+  nsresult rv;
+  rv = aRegKey->Open(aRoot, u"SOFTWARE\\Microsoft\\TabletTip\\1.7"_ns,
+                     nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+  if (NS_FAILED(rv)) {
+    Preferences::SetString(kOskDebugReason,
+                           L"AIOSKIDM: failed opening regkey.");
+    return false;
+  }
+  
+  
+  
+  
+  rv = aRegKey->ReadIntValue(u"EnableDesktopModeAutoInvoke"_ns, &aValue);
+  if (NS_FAILED(rv)) {
+    Preferences::SetString(kOskDebugReason,
+                           L"AIOSKIDM: failed reading value of regkey.");
+    return false;
+  }
+  return true;
+}
+
 
 bool IMEHandler::AutoInvokeOnScreenKeyboardInDesktopMode() {
   nsresult rv;
@@ -1022,23 +1046,12 @@ bool IMEHandler::AutoInvokeOnScreenKeyboardInDesktopMode() {
                            L"nsIWindowsRegKey not available");
     return false;
   }
-  rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
-                    u"SOFTWARE\\Microsoft\\TabletTip\\1.7"_ns,
-                    nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  if (NS_FAILED(rv)) {
-    Preferences::SetString(kOskDebugReason,
-                           L"AIOSKIDM: failed opening regkey.");
-    return false;
-  }
-  
-  
-  
-  
+
   uint32_t value;
-  rv = regKey->ReadIntValue(u"EnableDesktopModeAutoInvoke"_ns, &value);
-  if (NS_FAILED(rv)) {
-    Preferences::SetString(kOskDebugReason,
-                           L"AIOSKIDM: failed reading value of regkey.");
+  if (!ReadEnableDesktopModeAutoInvoke(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
+                                       regKey, value) &&
+      !ReadEnableDesktopModeAutoInvoke(nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE,
+                                       regKey, value)) {
     return false;
   }
   if (!!value) {
