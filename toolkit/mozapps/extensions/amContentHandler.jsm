@@ -43,7 +43,7 @@ amContentHandler.prototype = {
     let sourceURL;
 
     try {
-      sourceURL = triggeringPrincipal.spec;
+      sourceURL = triggeringPrincipal.URI.spec;
       sourceHost = triggeringPrincipal.host;
     } catch (error) {
       
