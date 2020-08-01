@@ -2947,6 +2947,11 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
     mAllowScrollOriginDowngrade = false;
   }
   mLastSmoothScrollOrigin = ScrollOrigin::None;
+  
+  if (aOrigin == ScrollOrigin::Restore || aOrigin == ScrollOrigin::Other ||
+      aOrigin == ScrollOrigin::Scrollbars) {
+    mRelativeOffset.reset();
+  }
   mScrollGeneration = ++sScrollGenerationCounter;
   if (mLastScrollOrigin == ScrollOrigin::Apz) {
     mApzScrollPos = GetScrollPosition();
@@ -4490,6 +4495,43 @@ void ScrollFrameHelper::ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit,
     default:
       NS_ERROR("Invalid scroll mode");
       return;
+  }
+
+  
+  if (gfxPlatform::UseDesktopZoomingScrollbars() &&
+      nsLayoutUtils::AsyncPanZoomEnabled(mOuter) &&
+      !nsLayoutUtils::ShouldDisableApzForElement(mOuter->GetContent()) &&
+      (WantAsyncScroll() || mZoomableByAPZ)) {
+    if (mRelativeOffset.isNothing()) {
+      mRelativeOffset = Some(nsPoint(0, 0));
+    }
+    mRelativeOffset->x = NSCoordSaturatingAdd(
+        mRelativeOffset->x,
+        NSCoordSaturatingNonnegativeMultiply(aDelta.x, deltaMultiplier.width));
+    mRelativeOffset->y = NSCoordSaturatingAdd(
+        mRelativeOffset->y,
+        NSCoordSaturatingNonnegativeMultiply(aDelta.y, deltaMultiplier.height));
+
+    mScrollGeneration = ++sScrollGenerationCounter;
+
+    if (!nsLayoutUtils::HasDisplayPort(mOuter->GetContent())) {
+      if (MOZ_LOG_TEST(sDisplayportLog, LogLevel::Debug)) {
+        mozilla::layers::ScrollableLayerGuid::ViewID viewID =
+            mozilla::layers::ScrollableLayerGuid::NULL_SCROLL_ID;
+        nsLayoutUtils::FindIDFor(mOuter->GetContent(), &viewID);
+        MOZ_LOG(
+            sDisplayportLog, LogLevel::Debug,
+            ("ScrollBy setting displayport on scrollId=%" PRIu64 "\n", viewID));
+      }
+
+      nsLayoutUtils::CalculateAndSetDisplayPortMargins(
+          mOuter->GetScrollTargetFrame(), nsLayoutUtils::RepaintMode::Repaint);
+      nsIFrame* frame = do_QueryFrame(mOuter->GetScrollTargetFrame());
+      nsLayoutUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(frame);
+    }
+
+    mOuter->SchedulePaint();
+    return;
   }
 
   nsPoint newPos(NSCoordSaturatingAdd(mDestination.x,
@@ -6794,7 +6836,8 @@ UniquePtr<PresState> ScrollFrameHelper::SaveState() const {
   
   
   bool isInSmoothScroll = IsProcessingAsyncScroll() ||
-                          mLastSmoothScrollOrigin != ScrollOrigin::None;
+                          mLastSmoothScrollOrigin != ScrollOrigin::None ||
+                          mRelativeOffset.isSome();
   if (!mHasBeenScrolled && !mDidHistoryRestore && !isInSmoothScroll) {
     return nullptr;
   }

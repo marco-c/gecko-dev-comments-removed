@@ -147,7 +147,8 @@ struct FrameMetrics {
            mIsRelative == aOther.mIsRelative &&
            mDoSmoothScroll == aOther.mDoSmoothScroll &&
            mIsScrollInfoLayer == aOther.mIsScrollInfoLayer &&
-           mFixedLayerMargins == aOther.mFixedLayerMargins;
+           mFixedLayerMargins == aOther.mFixedLayerMargins &&
+           mPureRelativeOffset == aOther.mPureRelativeOffset;
   }
 
   bool operator!=(const FrameMetrics& aOther) const {
@@ -308,6 +309,16 @@ struct FrameMetrics {
     mDoSmoothScroll = aOther.mDoSmoothScroll;
   }
 
+  void ApplyPureRelativeSmoothScrollUpdateFrom(const FrameMetrics& aOther,
+                                               bool aApplyToSmoothScroll) {
+    MOZ_ASSERT(aOther.IsPureRelative() && aOther.mPureRelativeOffset.isSome());
+    ClampAndSetSmoothScrollOffset(
+        (aApplyToSmoothScroll ? mSmoothScrollOffset : mScrollOffset) +
+        *aOther.mPureRelativeOffset);
+    mScrollGeneration = aOther.mScrollGeneration;
+    mDoSmoothScroll = true;
+  }
+
   void UpdatePendingScrollInfo(const ScrollUpdateInfo& aInfo) {
     mScrollOffset = aInfo.mScrollOffset;
     mBaseScrollOffset = aInfo.mBaseScrollOffset;
@@ -422,6 +433,8 @@ struct FrameMetrics {
 
   bool IsRelative() const { return mIsRelative; }
 
+  bool IsPureRelative() const { return mPureRelativeOffset.isSome(); }
+
   bool GetDoSmoothScroll() const { return mDoSmoothScroll; }
 
   uint32_t GetScrollGeneration() const { return mScrollGeneration; }
@@ -517,6 +530,10 @@ struct FrameMetrics {
   }
   const ScreenMargin& GetFixedLayerMargins() const {
     return mFixedLayerMargins;
+  }
+
+  void SetPureRelativeOffset(const Maybe<CSSPoint>& aPureRelativeOffset) {
+    mPureRelativeOffset = aPureRelativeOffset;
   }
 
   
@@ -693,6 +710,10 @@ struct FrameMetrics {
   
   
   ScreenMargin mFixedLayerMargins;
+
+  
+  
+  Maybe<CSSPoint> mPureRelativeOffset;
 
   
   bool mIsRootContent : 1;

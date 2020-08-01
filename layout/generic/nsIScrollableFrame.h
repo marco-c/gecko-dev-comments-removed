@@ -454,6 +454,10 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
+  virtual Maybe<nsPoint> GetRelativeOffset() const = 0;
+  
+
+
 
   virtual bool WantAsyncScroll() const = 0;
   
