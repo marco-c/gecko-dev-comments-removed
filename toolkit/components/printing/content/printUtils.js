@@ -152,7 +152,9 @@ var PrintUtils = {
 
 
 
-  printWindow(aBrowsingContext) {
+
+
+  printWindow(aBrowsingContext, aPrintSettings) {
     let windowID = aBrowsingContext.currentWindowGlobal.outerWindowId;
     let topBrowser = aBrowsingContext.top.embedderElement;
 
@@ -166,7 +168,8 @@ var PrintUtils = {
       this._logKeyedTelemetry("PRINT_DIALOG_OPENED_COUNT", "FROM_PAGE");
     }
 
-    let printSettings = this.getPrintSettings();
+    
+    let printSettings = aPrintSettings || this.getPrintSettings();
 
     
     
