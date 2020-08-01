@@ -286,11 +286,11 @@ function generateDocumentation() {
   
   
   let string_mapping = {
+    DisableMasterPasswordCreation: "DisablePrimaryPasswordCreation",
     DisableSetDesktopBackground: "DisableSetAsDesktopBackground",
     Certificates: "CertificatesDescription",
     SanitizeOnShutdown: "SanitizeOnShutdown2",
     Permissions: "Permissions2",
-    PrimaryPassword: "MasterPassword",
   };
 
   for (let policyName in schema.properties) {
