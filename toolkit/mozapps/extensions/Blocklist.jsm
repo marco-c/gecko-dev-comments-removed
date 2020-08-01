@@ -1665,6 +1665,15 @@ this.ExtensionBlocklistMLBF = {
       return null;
     }
 
+    if (AppConstants.NIGHTLY_BUILD && addon.type === "locale") {
+      
+      
+      
+      
+      
+      return null;
+    }
+
     return this._createBlockEntry(addon);
   },
 
