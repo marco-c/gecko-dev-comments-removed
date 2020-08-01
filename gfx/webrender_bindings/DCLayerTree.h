@@ -139,12 +139,14 @@ class DCLayerTree {
     int height;
     GLuint fboId;
     GLuint depthRboId;
+    int lastFrameUsed;
   };
 
   
   
   
-  std::vector<CachedFrameBuffer> mFrameBuffers;
+  nsTArray<CachedFrameBuffer> mFrameBuffers;
+  int mCurrentFrame = 0;
 
   bool mPendingCommit;
 };
