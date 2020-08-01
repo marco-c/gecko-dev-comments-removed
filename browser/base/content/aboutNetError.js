@@ -480,6 +480,52 @@ function setupBlockingReportingUI() {
   }
 
   showBlockingErrorReporting();
+
+  if (reportingAutomatic) {
+    reportBlockingError();
+  }
+}
+
+function reportBlockingError() {
+  
+  if (window === window.top) {
+    return;
+  }
+
+  let err = getErrorCode();
+  
+  if (!["xfoBlocked", "cspBlocked"].includes(err)) {
+    return;
+  }
+
+  let xfo_header = RPMGetHttpResponseHeader("X-Frame-Options");
+  let csp_header = RPMGetHttpResponseHeader("Content-Security-Policy");
+
+  
+  let reg = /(?:^|\s)frame-ancestors\s([^;]*)[$]*/i;
+  let match = reg.exec(csp_header);
+  csp_header = match ? match[1] : "";
+
+  
+  
+  
+  if (err === "cspBlocked" && !csp_header) {
+    return;
+  }
+
+  let xfoAndCspInfo = {
+    error_type: err === "xfoBlocked" ? "xfo" : "csp",
+    xfo_header,
+    csp_header,
+  };
+
+  RPMSendAsyncMessage("ReportBlockingError", {
+    scheme: document.location.protocol,
+    host: document.location.host,
+    port: parseInt(document.location.port) || -1,
+    path: document.location.pathname,
+    xfoAndCspInfo,
+  });
 }
 
 function onSetAutomatic(checked) {
@@ -501,6 +547,11 @@ function onSetAutomatic(checked) {
 
 function onSetBlockingReportAutomatic(checked) {
   RPMSetBoolPref("security.xfocsp.errorReporting.automatic", checked);
+
+  
+  if (checked) {
+    reportBlockingError();
+  }
 }
 
 async function setNetErrorMessageFromCode() {
