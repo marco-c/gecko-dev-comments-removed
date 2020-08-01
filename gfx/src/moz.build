@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 XPIDL_SOURCES += [
     'nsIFontEnumerator.idl',
@@ -14,6 +14,7 @@ DEFINES['MOZ_APP_VERSION'] = '"%s"' % CONFIG['MOZ_APP_VERSION']
 
 EXPORTS += [
     'DriverCrashGuard.h',
+    'FilterDescription.h',
     'FilterSupport.h',
     'gfxCrashReporterUtils.h',
     'gfxTelemetry.h',
@@ -72,7 +73,7 @@ UNIFIED_SOURCES += [
     'TiledRegion.cpp',
 ]
 
-# nsDeviceContext.cpp cannot be built in unified mode because it pulls in OS X system headers.
+
 SOURCES += [
     'nsDeviceContext.cpp',
 ]
@@ -84,7 +85,7 @@ XPCOM_MANIFESTS += [
 include('/ipc/chromium/chromium-config.mozbuild')
 
 LOCAL_INCLUDES += [
-    '/dom/ipc',  # for ContentChild.h
+    '/dom/ipc',  
 ]
 
 FINAL_LIBRARY = 'xul'

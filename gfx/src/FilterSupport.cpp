@@ -5,6 +5,7 @@
 
 
 #include "FilterSupport.h"
+#include "FilterDescription.h"
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Filters.h"

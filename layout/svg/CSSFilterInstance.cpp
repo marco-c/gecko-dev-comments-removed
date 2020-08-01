@@ -8,6 +8,7 @@
 #include "CSSFilterInstance.h"
 
 
+#include "FilterDescription.h"
 #include "gfx2DGlue.h"
 #include "gfxUtils.h"
 #include "nsIFrame.h"
