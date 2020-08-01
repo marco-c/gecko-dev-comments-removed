@@ -18,9 +18,6 @@ namespace mozilla {
 
 
 
-
-
-
 class CUPSPrinter {
  public:
   CUPSPrinter(const CUPSPrinter&) = delete;
@@ -28,6 +25,7 @@ class CUPSPrinter {
       : mShim(other.mShim),
         mPrinter(other.mPrinter),
         mPrinterInfo(other.mPrinterInfo) {
+    other.mPrinter = nullptr;
     other.mPrinterInfo = nullptr;
   }
   
@@ -47,7 +45,7 @@ class CUPSPrinter {
   bool Supports(const char* option, const char* value) const;
 
   const nsCUPSShim& mShim;
-  cups_dest_t* const mPrinter;
+  cups_dest_t* mPrinter;
   cups_dinfo_t* mPrinterInfo;
 };
 
