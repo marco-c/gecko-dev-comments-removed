@@ -21,7 +21,7 @@ except ImportError:
     from time import time as monotonic
 
 BUGBUG_BASE_URL = "https://bugbug.herokuapp.com"
-RETRY_TIMEOUT = 8 * 60  
+RETRY_TIMEOUT = 9 * 60  
 RETRY_INTERVAL = 10     
 
 
@@ -83,10 +83,9 @@ def push_schedules(branch, rev):
     
     
     
-    
     timeout = RETRY_TIMEOUT
     if branch == "try":
-        timeout *= 2
+        timeout += int(timeout / 3)
 
     attempts = timeout / RETRY_INTERVAL
     i = 0
