@@ -317,8 +317,6 @@ class InterpreterFrame {
   jsbytecode* prevpc_;
   Value* prevsp_;
 
-  void* unused;
-
   
 
 
