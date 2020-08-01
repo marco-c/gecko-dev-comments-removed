@@ -182,8 +182,6 @@ var PrintUtils = {
       printSettings.docURL = this._originalURL;
     }
 
-    
-    
     topBrowser.print(windowID, printSettings);
 
     if (printPreviewIsOpen) {
