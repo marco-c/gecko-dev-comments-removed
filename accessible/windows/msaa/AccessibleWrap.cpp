@@ -91,10 +91,10 @@ NS_IMPL_ISUPPORTS_INHERITED0(AccessibleWrap, Accessible)
 void AccessibleWrap::Shutdown() {
   if (mID != kNoID) {
     auto doc = static_cast<DocAccessibleWrap*>(mDoc.get());
-    MOZ_ASSERT(doc);
+    
+    
     if (doc) {
       doc->RemoveID(mID);
-      mID = kNoID;
     }
   }
 
