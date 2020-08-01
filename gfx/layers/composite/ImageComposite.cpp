@@ -74,6 +74,10 @@ void ImageComposite::UpdateBias(size_t aImageIndex) {
     
     
     
+    
+    
+    
+    
     mBias = ImageComposite::BIAS_POSITIVE;
     return;
   }
