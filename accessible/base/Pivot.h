@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "Role.h"
 #include "mozilla/dom/ChildIterator.h"
-#include "AccessibleOrProxy.h"
 
 namespace mozilla {
 namespace a11y {
@@ -24,7 +23,7 @@ class PivotRule {
   
   
   
-  virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) = 0;
+  virtual uint16_t Match(Accessible* aAccessible) = 0;
 };
 
 
@@ -32,7 +31,7 @@ class PivotRule {
 
 class Pivot final {
  public:
-  explicit Pivot(const AccessibleOrProxy& aRoot);
+  explicit Pivot(Accessible* aRoot);
   Pivot() = delete;
   Pivot(const Pivot&) = delete;
   Pivot& operator=(const Pivot&) = delete;
@@ -41,19 +40,19 @@ class Pivot final {
 
   
   
-  AccessibleOrProxy Next(AccessibleOrProxy& aAnchor, PivotRule& aRule,
-                         bool aIncludeStart = false);
+  Accessible* Next(Accessible* aAnchor, PivotRule& aRule,
+                   bool aIncludeStart = false);
 
   
   
-  AccessibleOrProxy Prev(AccessibleOrProxy& aAnchor, PivotRule& aRule,
-                         bool aIncludeStart = false);
+  Accessible* Prev(Accessible* aAnchor, PivotRule& aRule,
+                   bool aIncludeStart = false);
 
   
-  AccessibleOrProxy First(PivotRule& aRule);
+  Accessible* First(PivotRule& aRule);
 
   
-  AccessibleOrProxy Last(PivotRule& aRule);
+  Accessible* Last(PivotRule& aRule);
 
   
   Accessible* NextText(Accessible* aAnchor, int32_t* aStartOffset,
@@ -65,25 +64,24 @@ class Pivot final {
 
   
   
-  AccessibleOrProxy AtPoint(int32_t aX, int32_t aY, PivotRule& aRule);
+  Accessible* AtPoint(int32_t aX, int32_t aY, PivotRule& aRule);
 
  private:
-  AccessibleOrProxy AdjustStartPosition(AccessibleOrProxy& aAnchor,
-                                        PivotRule& aRule,
-                                        uint16_t* aFilterResult);
+  Accessible* AdjustStartPosition(Accessible* aAnchor, PivotRule& aRule,
+                                  uint16_t* aFilterResult);
 
   
-  AccessibleOrProxy SearchForward(AccessibleOrProxy& aAnchor, PivotRule& aRule,
-                                  bool aSearchCurrent);
+  Accessible* SearchForward(Accessible* aAnchor, PivotRule& aRule,
+                            bool aSearchCurrent);
 
   
-  AccessibleOrProxy SearchBackward(AccessibleOrProxy& aAnchor, PivotRule& aRule,
-                                   bool aSearchCurrent);
+  Accessible* SearchBackward(Accessible* aAnchor, PivotRule& aRule,
+                             bool aSearchCurrent);
 
   
   HyperTextAccessible* SearchForText(Accessible* aAnchor, bool aBackward);
 
-  AccessibleOrProxy mRoot;
+  Accessible* mRoot;
 };
 
 
@@ -93,18 +91,10 @@ class PivotRoleRule final : public PivotRule {
  public:
   explicit PivotRoleRule(role aRole);
 
-  virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override;
+  virtual uint16_t Match(Accessible* aAccessible) override;
 
  private:
   role mRole;
-};
-
-
-
-
-class PivotMatchAllRule final : public PivotRule {
- public:
-  virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override;
 };
 
 }  
