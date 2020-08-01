@@ -77,15 +77,17 @@ class StatusBar extends Component {
     const receivedText = getFormattedSize(receivedSize);
     const totalMillisText = getFormattedTime(totalMs);
 
+    
+    
     const summaryText =
-      channelType === CHANNEL_TYPE.EVENT_STREAM
-        ? `${totalSizeText} total`
-        : L10N.getFormatStr(
+      channelType === CHANNEL_TYPE.WEB_SOCKET
+        ? L10N.getFormatStr(
             "networkMenu.ws.summary.label.framesTranferredSize",
             totalSizeText,
             sentSizeText,
             receivedText
-          );
+          )
+        : `${totalSizeText} total`;
 
     return footer(
       { className: "devtools-toolbar devtools-toolbar-bottom" },
