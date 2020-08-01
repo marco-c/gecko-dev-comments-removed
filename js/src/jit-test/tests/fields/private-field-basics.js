@@ -38,6 +38,14 @@ class A {
   static ssz(o) {
     this.#z = o;
   }
+
+  static six(o) {
+    o.#x++;
+  }
+
+  static dix(o) {
+    o.#x--;
+  }
 };
 
 for (var i = 0; i < 1000; i++) {
@@ -75,9 +83,16 @@ function assertThrows(fun, errorType) {
   }
 }
 
-assertThrows(() => A.readx(), TypeError);    
-assertThrows(() => A.readx({}), TypeError);  
-assertThrows(() => A.readx(1), TypeError);   
+function testTypeErrors(v) {
+  assertThrows(() => A.readx(v), TypeError);  
+  assertThrows(() => A.six(v), TypeError);    
+  assertThrows(() => A.dix(v), TypeError);    
+}
+
+testTypeErrors(undefined);  
+testTypeErrors({});         
+testTypeErrors(1);          
+
 assertThrows(
     () => eval('class B extends class { #x; } { g() { return super.#x; } }'),
     SyntaxError);  

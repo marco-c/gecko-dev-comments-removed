@@ -180,8 +180,6 @@ bool BaseProxyHandler::setPrivate(JSContext* cx, HandleObject proxy,
   
   RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
 
-  
-  
   MOZ_ASSERT(expando);
 
   Rooted<PropertyDescriptor> ownDesc(cx);

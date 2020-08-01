@@ -324,12 +324,10 @@ bool ICScript::initICEntries(JSContext* cx, JSScript* script) {
         break;
       }
       case JSOp::InitElem:
-      case JSOp::InitPrivateElem:
       case JSOp::InitHiddenElem:
       case JSOp::InitElemArray:
       case JSOp::InitElemInc:
       case JSOp::SetElem:
-      case JSOp::SetPrivateElem:
       case JSOp::StrictSetElem: {
         ICStub* stub = alloc.newStub<ICSetElem_Fallback>(Kind::SetElem);
         if (!addIC(loc, stub)) {
@@ -371,7 +369,6 @@ bool ICScript::initICEntries(JSContext* cx, JSScript* script) {
         break;
       }
       case JSOp::GetElem:
-      case JSOp::GetPrivateElem:
       case JSOp::CallElem: {
         ICStub* stub = alloc.newStub<ICGetElem_Fallback>(Kind::GetElem);
         if (!addIC(loc, stub)) {
@@ -1848,104 +1845,6 @@ static bool TryAttachGetPropStub(const char* name, JSContext* cx,
 
 
 
-
-static MOZ_ALWAYS_INLINE bool CanAttachPrivateSetGetIC(JSContext* cx,
-                                                       HandleObject obj,
-                                                       HandleId id) {
-  
-  if (!obj->is<PlainObject>()) {
-    return false;
-  }
-
-  bool hasOwn = false;
-  if (!HasOwnDataPropertyPure(cx, obj, id, &hasOwn)) {
-    return false;
-  }
-
-  
-  
-  return hasOwn;
-}
-
-static void VerifyPrivateElemThrow(JSContext* cx, bool attached,
-                                   bool mayThrow) {
-  
-  
-  
-  
-  bool throwingOOM =
-      cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed();
-  if (!throwingOOM) {
-    
-    MOZ_RELEASE_ASSERT(!attached);
-    
-    
-    
-    MOZ_RELEASE_ASSERT(mayThrow);
-  }
-}
-
-bool DoPrivateGetElemFallback(JSContext* cx, BaselineFrame* frame,
-                              ICGetElem_Fallback* stub, HandleValue lhs,
-                              HandleValue rhs, MutableHandleValue res) {
-  RootedScript script(cx, frame->script());
-  jsbytecode* pc = stub->icEntry()->pc(frame->script());
-
-  MOZ_ASSERT(JSOp(*pc) == JSOp::GetPrivateElem);
-  MOZ_ASSERT(rhs.isSymbol());
-  MOZ_ASSERT(rhs.toSymbol()->isPrivateName());
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  RootedId id(cx);
-  if (!ToPropertyKey(cx, rhs, &id)) {
-    return false;
-  }
-
-  
-  if (!lhs.isObject()) {
-    ReportNotObject(cx, lhs);
-    return false;
-  }
-
-  RootedObject obj(cx, &lhs.toObject());
-  bool mayThrow = !CanAttachPrivateSetGetIC(cx, obj, id);
-
-  
-  MOZ_ASSERT(!lhs.isMagic(JS_OPTIMIZED_ARGUMENTS));
-
-  bool attached = false;
-  if (!mayThrow) {
-    attached = TryAttachGetPropStub("GetPrivateElem", cx, frame, stub,
-                                    CacheKind::GetElem, lhs, rhs, lhs);
-  }
-
-  if (!GetPrivateElemOperation(cx, pc, lhs, rhs, res)) {
-    VerifyPrivateElemThrow(cx, attached, mayThrow);
-    return false;
-  }
-
-  return true;
-}
-
-
-
-
-
-
 bool DoGetElemFallback(JSContext* cx, BaselineFrame* frame,
                        ICGetElem_Fallback* stub, HandleValue lhs,
                        HandleValue rhs, MutableHandleValue res) {
@@ -1957,19 +1856,13 @@ bool DoGetElemFallback(JSContext* cx, BaselineFrame* frame,
   JSOp op = JSOp(*pc);
   FallbackICSpew(cx, stub, "GetElem(%s)", CodeName(op));
 
-  MOZ_ASSERT(op == JSOp::GetElem || op == JSOp::GetPrivateElem ||
-             op == JSOp::CallElem);
-
-  if (op == JSOp::GetPrivateElem) {
-    return DoPrivateGetElemFallback(cx, frame, stub, lhs, rhs, res);
-  }
+  MOZ_ASSERT(op == JSOp::GetElem || op == JSOp::CallElem);
 
   
   RootedValue lhsCopy(cx, lhs);
 
   bool isOptimizedArgs = false;
   if (lhs.isMagic(JS_OPTIMIZED_ARGUMENTS)) {
-    MOZ_ASSERT(op != JSOp::GetPrivateElem);
     
     if (!GetElemOptimizedArguments(cx, frame, &lhsCopy, rhs, res,
                                    &isOptimizedArgs)) {
@@ -2194,9 +2087,8 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
   JSOp op = JSOp(*pc);
   FallbackICSpew(cx, stub, "SetElem(%s)", CodeName(JSOp(*pc)));
 
-  MOZ_ASSERT(op == JSOp::SetElem || op == JSOp::SetPrivateElem ||
-             op == JSOp::StrictSetElem || op == JSOp::InitElem ||
-             op == JSOp::InitPrivateElem || op == JSOp::InitHiddenElem ||
+  MOZ_ASSERT(op == JSOp::SetElem || op == JSOp::StrictSetElem ||
+             op == JSOp::InitElem || op == JSOp::InitHiddenElem ||
              op == JSOp::InitElemArray || op == JSOp::InitElemInc);
 
   int objvIndex = -3;
@@ -2215,22 +2107,6 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
   
   
   bool mayThrow = false;
-
-  
-  
-  RootedId id(cx);
-  if (op == JSOp::InitPrivateElem || op == JSOp::SetPrivateElem) {
-    if (!ToPropertyKey(cx, index, &id)) {
-      return false;
-    }
-
-    if (op == JSOp::InitPrivateElem) {
-      mayThrow = !CanAttachPrivateInitIC(cx, obj, id);
-    } else {
-      MOZ_ASSERT(op == JSOp::SetPrivateElem);
-      mayThrow = !CanAttachPrivateSetGetIC(cx, obj, id);
-    }
-  }
 
   DeferType deferType = DeferType::None;
   bool attached = false;
@@ -2294,16 +2170,6 @@ bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
   } else if (op == JSOp::InitElemInc) {
     if (!InitArrayElemOperation(cx, pc, obj.as<ArrayObject>(), index.toInt32(),
                                 rhs)) {
-      return false;
-    }
-  } else if (op == JSOp::InitPrivateElem) {
-    if (!InitPrivateElemOperation(cx, pc, obj, index, rhs)) {
-      VerifyPrivateElemThrow(cx, attached, mayThrow);
-      return false;
-    }
-  } else if (op == JSOp::SetPrivateElem) {
-    if (!SetPrivateElementOperation(cx, obj, id, rhs, objv)) {
-      VerifyPrivateElemThrow(cx, attached, mayThrow);
       return false;
     }
   } else {

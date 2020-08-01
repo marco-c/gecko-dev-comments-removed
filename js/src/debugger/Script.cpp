@@ -1336,7 +1336,6 @@ static bool BytecodeIsEffectful(JSOp op) {
     case JSOp::StrictSetPropSuper:
     case JSOp::SetElem:
     case JSOp::StrictSetElem:
-    case JSOp::SetPrivateElem:
     case JSOp::SetElemSuper:
     case JSOp::StrictSetElemSuper:
     case JSOp::SetName:
@@ -1351,7 +1350,6 @@ static bool BytecodeIsEffectful(JSOp op) {
     case JSOp::SetAliasedVar:
     case JSOp::InitHomeObject:
     case JSOp::InitAliasedLexical:
-    case JSOp::InitPrivateElem:
     case JSOp::SetIntrinsic:
     case JSOp::InitGLexical:
     case JSOp::DefVar:
@@ -1488,7 +1486,6 @@ static bool BytecodeIsEffectful(JSOp op) {
     case JSOp::Int32:
     case JSOp::LoopHead:
     case JSOp::GetElem:
-    case JSOp::GetPrivateElem:
     case JSOp::CallElem:
     case JSOp::Length:
     case JSOp::Not:
@@ -1522,6 +1519,7 @@ static bool BytecodeIsEffectful(JSOp op) {
     case JSOp::EndIter:
     case JSOp::In:
     case JSOp::HasOwn:
+    case JSOp::CheckPrivateField:
     case JSOp::SetRval:
     case JSOp::Instanceof:
     case JSOp::DebugLeaveLexicalEnv:
@@ -1896,6 +1894,7 @@ struct DebuggerScript::SetBreakpointMatcher {
 
     
     
+    
     if (IsDeadProxyObject(handler_) || IsDeadProxyObject(debuggerObject_)) {
       ReportAccessDenied(cx_);
       return false;
@@ -2098,6 +2097,7 @@ class DebuggerScript::ClearBreakpointMatcher {
       return true;
     }
 
+    
     
     
     

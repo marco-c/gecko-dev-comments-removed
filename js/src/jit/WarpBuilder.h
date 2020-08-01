@@ -64,9 +64,7 @@ namespace jit {
   _(SetIntrinsic)                        \
   _(ThrowMsg)                            \
   /* Private Fields */                   \
-  _(InitPrivateElem)                     \
-  _(GetPrivateElem)                      \
-  _(SetPrivateElem)                      \
+  _(CheckPrivateField)                   \
   // === !! WARNING WARNING WARNING !! ===
   
   

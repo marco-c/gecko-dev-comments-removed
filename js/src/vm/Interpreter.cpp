@@ -2465,6 +2465,20 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     }
     END_CASE(HasOwn)
 
+    CASE(CheckPrivateField) {
+      
+      HandleValue val = REGS.stackHandleAt(-2);
+      HandleValue idval = REGS.stackHandleAt(-1);
+
+      bool result = false;
+      if (!CheckPrivateFieldOperation(cx, REGS.pc, val, idval, &result)) {
+        goto error;
+      }
+
+      PUSH_BOOLEAN(result);
+    }
+    END_CASE(CheckPrivateField)
+
     CASE(Iter) {
       MOZ_ASSERT(REGS.stackDepth() >= 1);
       HandleValue val = REGS.stackHandleAt(-1);
@@ -3110,21 +3124,6 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     }
     END_CASE(GetElem)
 
-    CASE(GetPrivateElem) {
-      int lvalIndex = -2;
-      MutableHandleValue lval = REGS.stackHandleAt(lvalIndex);
-      HandleValue rval = REGS.stackHandleAt(-1);
-      MutableHandleValue res = REGS.stackHandleAt(-2);
-
-      if (!GetPrivateElemOperation(cx, REGS.pc, lval, rval, res)) {
-        goto error;
-      }
-
-      JitScript::MonitorBytecodeType(cx, script, REGS.pc, res);
-      REGS.sp--;
-    }
-    END_CASE(GetPrivateElem)
-
     CASE(GetElemSuper) {
       ReservedRooted<Value> receiver(&rootValue1, REGS.sp[-3]);
       ReservedRooted<Value> rval(&rootValue0, REGS.sp[-2]);
@@ -3168,26 +3167,6 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       REGS.sp -= 2;
     }
     END_CASE(SetElem)
-
-    CASE(SetPrivateElem) {
-      int receiverIndex = -3;
-      HandleValue receiver = REGS.stackHandleAt(receiverIndex);
-      ReservedRooted<JSObject*> obj(&rootObject0);
-      obj = ToObjectFromStackForPropertyAccess(cx, receiver, receiverIndex,
-                                               REGS.stackHandleAt(-2));
-      if (!obj) {
-        goto error;
-      }
-      ReservedRooted<jsid> id(&rootId0);
-      FETCH_ELEMENT_ID(-2, id);
-      HandleValue value = REGS.stackHandleAt(-1);
-      if (!SetPrivateElementOperation(cx, obj, id, value, receiver)) {
-        goto error;
-      }
-      REGS.sp[-3] = value;
-      REGS.sp -= 2;
-    }
-    END_CASE(SetPrivateElem)
 
     CASE(SetElemSuper)
     CASE(StrictSetElemSuper) {
@@ -4060,21 +4039,6 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       ReservedRooted<JSObject*> obj(&rootObject0, &REGS.sp[-3].toObject());
 
       if (!InitElemOperation(cx, REGS.pc, obj, id, val)) {
-        goto error;
-      }
-
-      REGS.sp -= 2;
-    }
-    END_CASE(InitElem)
-
-    CASE(InitPrivateElem) {
-      MOZ_ASSERT(REGS.stackDepth() >= 3);
-      HandleValue val = REGS.stackHandleAt(-1);
-      HandleValue id = REGS.stackHandleAt(-2);
-
-      ReservedRooted<JSObject*> obj(&rootObject0, &REGS.sp[-3].toObject());
-
-      if (!InitPrivateElemOperation(cx, REGS.pc, obj, id, val)) {
         goto error;
       }
 
@@ -5251,7 +5215,6 @@ unsigned js::GetInitDataPropAttrs(JSOp op) {
       return JSPROP_PERMANENT | JSPROP_READONLY;
     case JSOp::InitHiddenProp:
     case JSOp::InitHiddenElem:
-    case JSOp::InitPrivateElem:
       
       return 0;
     default:;

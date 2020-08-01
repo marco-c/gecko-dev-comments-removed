@@ -183,8 +183,6 @@ class MOZ_STACK_CLASS ElemOpEmitter {
   
   
   
-  
-  
   enum class State {
     
     Start,
@@ -268,6 +266,11 @@ class MOZ_STACK_CLASS ElemOpEmitter {
   MOZ_MUST_USE bool emitAssignment();
 
   MOZ_MUST_USE bool emitIncDec();
+
+ private:
+  
+  
+  MOZ_MUST_USE bool emitPrivateGuard();
 };
 
 } 
