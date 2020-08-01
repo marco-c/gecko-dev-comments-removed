@@ -196,6 +196,7 @@ class MOZ_STACK_CLASS ContentIteratorBase::Initializer final {
   nsresult Run();
 
  private:
+  void DetermineFirstNode();
   [[nodiscard]] nsresult DetermineLastNode();
 
   bool IsCollapsedNonCharacterRange() const;
@@ -249,8 +250,25 @@ nsresult ContentIteratorBase::Initializer::Run() {
     return NS_OK;
   }
 
-  
+  DetermineFirstNode();
+  const nsresult rv = DetermineLastNode();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  };
 
+  
+  if (!mIterator.mFirst || !mIterator.mLast) {
+    mIterator.mFirst = nullptr;
+    mIterator.mLast = nullptr;
+  }
+
+  mIterator.mCurNode = mIterator.mFirst;
+  mIterator.mIsDone = !mIterator.mCurNode;
+
+  return NS_OK;
+}
+
+void ContentIteratorBase::Initializer::DetermineFirstNode() {
   nsIContent* cChild = nullptr;
 
   
@@ -319,21 +337,6 @@ nsresult ContentIteratorBase::Initializer::Run() {
       }
     }
   }
-  const nsresult rv = DetermineLastNode();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  };
-
-  
-  if (!mIterator.mFirst || !mIterator.mLast) {
-    mIterator.mFirst = nullptr;
-    mIterator.mLast = nullptr;
-  }
-
-  mIterator.mCurNode = mIterator.mFirst;
-  mIterator.mIsDone = !mIterator.mCurNode;
-
-  return NS_OK;
 }
 
 nsresult ContentIteratorBase::Initializer::DetermineLastNode() {
