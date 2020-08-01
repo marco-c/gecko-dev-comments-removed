@@ -80,6 +80,12 @@ class BugBugPushSchedules(OptimizationStrategy):
             if confidence >= self.confidence_threshold
         )
 
+        
+        
+        
+        
+        tasks = map(lambda t: t.replace("-shippable", ""), tasks)
+
         test_manifests = task.attributes.get('test_manifests')
         if test_manifests is None or self.tasks_only:
             if data.get("known_tasks") and task.label not in data["known_tasks"]:
