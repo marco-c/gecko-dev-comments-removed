@@ -61,6 +61,10 @@ class IOUtils final {
                                           const nsAString& aPath,
                                           const RemoveOptions& aOptions);
 
+  static already_AddRefed<Promise> MakeDirectory(
+      GlobalObject& aGlobal, const nsAString& aPath,
+      const MakeDirectoryOptions& aOptions);
+
   static bool IsAbsolutePath(const nsAString& aPath);
 
  private:
@@ -114,6 +118,26 @@ class IOUtils final {
   static nsresult RemoveSync(const nsAString& aPath, bool aIgnoreAbsent,
                              bool aRecursive);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsresult CreateDirectorySync(const nsAString& aPath,
+                                      bool aCreateAncestors,
+                                      bool aIgnoreExisting,
+                                      int32_t aMode = 0777);
+
   using IOReadMozPromise =
       mozilla::MozPromise<nsTArray<uint8_t>, const nsCString,
                            true>;
@@ -121,13 +145,8 @@ class IOUtils final {
   using IOWriteMozPromise =
       mozilla::MozPromise<uint32_t, const nsCString,  true>;
 
-  using IOMoveMozPromise =
-      mozilla::MozPromise<bool , const nsresult,
-                           true>;
-
-  using IORemoveMozPromise =
-      mozilla::MozPromise<bool , const nsresult,
-                           true>;
+  using IOMozPromise = mozilla::MozPromise<bool , const nsresult,
+                                            true>;
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
