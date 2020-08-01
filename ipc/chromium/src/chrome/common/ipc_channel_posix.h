@@ -55,7 +55,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
  private:
   void Init(Mode mode, Listener* listener);
-  bool CreatePipe(const std::wstring& channel_id, Mode mode);
+  bool CreatePipe(Mode mode);
   bool EnqueueHelloMessage();
 
   bool ProcessIncomingMessages();
@@ -91,10 +91,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   int server_listen_pipe_;
   int pipe_;
   int client_pipe_;  
-
-  
-  
-  std::string pipe_name_;
 
   Listener* listener_;
 

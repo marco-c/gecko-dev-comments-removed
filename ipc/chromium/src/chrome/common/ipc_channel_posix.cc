@@ -35,6 +35,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 
 #ifdef FUZZING
 #  include "mozilla/ipc/Faulty.h"
@@ -82,88 +83,6 @@ namespace {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class PipeMap {
- public:
-  
-  int Lookup(const std::string& channel_id) {
-    mozilla::StaticMutexAutoLock locked(lock_);
-
-    ChannelToFDMap::const_iterator i = map_.find(channel_id);
-    if (i == map_.end()) return -1;
-    return i->second;
-  }
-
-  
-  
-  void Remove(const std::string& channel_id) {
-    mozilla::StaticMutexAutoLock locked(lock_);
-
-    ChannelToFDMap::iterator i = map_.find(channel_id);
-    if (i != map_.end()) map_.erase(i);
-  }
-
-  
-  
-  void Insert(const std::string& channel_id, int fd) {
-    mozilla::StaticMutexAutoLock locked(lock_);
-    DCHECK(fd != -1);
-
-    ChannelToFDMap::const_iterator i = map_.find(channel_id);
-    CHECK(i == map_.end())
-    << "Creating second IPC server for '" << channel_id
-    << "' while first still exists";
-    map_[channel_id] = fd;
-  }
-
-  static PipeMap& instance() {
-    
-    
-    
-    
-    
-    
-    
-    static mozilla::StaticMutex mutex;
-    static PipeMap map(mutex);
-    return map;
-  }
-
- private:
-  explicit PipeMap(mozilla::StaticMutex& aMutex) : lock_(aMutex) {}
-  ~PipeMap() = default;
-
-  mozilla::StaticMutex& lock_;
-  typedef std::map<std::string, int> ChannelToFDMap;
-  ChannelToFDMap map_;
-};
-
-
-
 static int gClientChannelFd =
 #if defined(MOZ_WIDGET_ANDROID)
     
@@ -172,17 +91,6 @@ static int gClientChannelFd =
     3
 #endif  
     ;
-
-
-int ChannelNameToClientFD(const std::string& channel_id) {
-  
-  const int fd = PipeMap::instance().Lookup(channel_id);
-  if (fd != -1) return dup(fd);
-
-  
-  
-  return gClientChannelFd;
-}
 
 
 const size_t kMaxPipeNameLength = sizeof(((sockaddr_un*)0)->sun_path);
@@ -211,10 +119,12 @@ Channel::ChannelImpl::ChannelImpl(const std::wstring& channel_id, Mode mode,
     : factory_(this) {
   Init(mode, listener);
 
-  if (!CreatePipe(channel_id, mode)) {
-    
-    CHROMIUM_LOG(WARNING) << "Unable to create pipe named \"" << channel_id
-                          << "\" in "
+  
+  
+  mozilla::Unused << channel_id;
+
+  if (!CreatePipe(mode)) {
+    CHROMIUM_LOG(WARNING) << "Unable to create pipe in "
                           << (mode == MODE_SERVER ? "server" : "client")
                           << " mode error(" << strerror(errno) << ").";
     closed_ = true;
@@ -258,13 +168,11 @@ void Channel::ChannelImpl::Init(Mode mode, Listener* listener) {
   output_queue_length_ = 0;
 }
 
-bool Channel::ChannelImpl::CreatePipe(const std::wstring& channel_id,
-                                      Mode mode) {
+bool Channel::ChannelImpl::CreatePipe(Mode mode) {
   DCHECK(server_listen_pipe_ == -1 && pipe_ == -1);
 
-  
-  pipe_name_ = WideToASCII(channel_id);
   if (mode == MODE_SERVER) {
+    
     int pipe_fds[2];
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, pipe_fds) != 0) {
       mozilla::ipc::AnnotateCrashReportWithErrno(
@@ -291,13 +199,8 @@ bool Channel::ChannelImpl::CreatePipe(const std::wstring& channel_id,
 
     pipe_ = pipe_fds[0];
     client_pipe_ = pipe_fds[1];
-
-    if (pipe_name_.length()) {
-      PipeMap::instance().Insert(pipe_name_, client_pipe_);
-    }
   } else {
-    pipe_ = ChannelNameToClientFD(pipe_name_);
-    DCHECK(pipe_ > 0);
+    pipe_ = gClientChannelFd;
     waiting_connect_ = false;
   }
 
@@ -847,7 +750,6 @@ void Channel::ChannelImpl::GetClientFileDescriptorMapping(int* src_fd,
 
 void Channel::ChannelImpl::CloseClientFileDescriptor() {
   if (client_pipe_ != -1) {
-    PipeMap::instance().Remove(pipe_name_);
     IGNORE_EINTR(close(client_pipe_));
     client_pipe_ = -1;
   }
@@ -925,7 +827,6 @@ void Channel::ChannelImpl::Close() {
     pipe_ = -1;
   }
   if (client_pipe_ != -1) {
-    PipeMap::instance().Remove(pipe_name_);
     IGNORE_EINTR(close(client_pipe_));
     client_pipe_ = -1;
   }
