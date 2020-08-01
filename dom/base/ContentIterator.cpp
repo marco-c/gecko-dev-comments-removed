@@ -196,6 +196,8 @@ class MOZ_STACK_CLASS ContentIteratorBase::Initializer final {
   nsresult Run();
 
  private:
+  [[nodiscard]] nsresult DetermineLastNode();
+
   bool IsCollapsedNonCharacterRange() const;
   bool IsSingleNodeCharacterRange() const;
 
@@ -317,9 +319,24 @@ nsresult ContentIteratorBase::Initializer::Run() {
       }
     }
   }
+  const nsresult rv = DetermineLastNode();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  };
 
   
+  if (!mIterator.mFirst || !mIterator.mLast) {
+    mIterator.mFirst = nullptr;
+    mIterator.mLast = nullptr;
+  }
 
+  mIterator.mCurNode = mIterator.mFirst;
+  mIterator.mIsDone = !mIterator.mCurNode;
+
+  return NS_OK;
+}
+
+nsresult ContentIteratorBase::Initializer::DetermineLastNode() {
   const bool endIsCharacterData = mEnd.Container()->IsCharacterData();
 
   if (endIsCharacterData || !mEnd.Container()->HasChildren() ||
@@ -371,7 +388,7 @@ nsresult ContentIteratorBase::Initializer::Run() {
       }
     }
   } else {
-    cChild = mEnd.Ref();
+    nsIContent* cChild = mEnd.Ref();
 
     if (NS_WARN_IF(!cChild)) {
       
@@ -392,16 +409,6 @@ nsresult ContentIteratorBase::Initializer::Run() {
       mIterator.mLast = cChild;
     }
   }
-
-  
-
-  if (!mIterator.mFirst || !mIterator.mLast) {
-    mIterator.mFirst = nullptr;
-    mIterator.mLast = nullptr;
-  }
-
-  mIterator.mCurNode = mIterator.mFirst;
-  mIterator.mIsDone = !mIterator.mCurNode;
 
   return NS_OK;
 }
