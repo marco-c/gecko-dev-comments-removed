@@ -791,6 +791,11 @@ nsresult Accessible::HandleAccEvent(AccEvent* aEvent) {
 
   if (IPCAccessibilityActive() && Document()) {
     DocAccessibleChild* ipcDoc = mDoc->IPCDoc();
+    
+    
+    
+    
+    
     MOZ_ASSERT(ipcDoc);
     if (ipcDoc) {
       uint64_t id = aEvent->GetAccessible()->IsDoc()

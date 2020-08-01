@@ -568,7 +568,10 @@ void DocAccessible::HandleScroll(nsINode* aTarget) {
   
   if (!mLastScrollingDispatch.Get(aTarget, &lastDispatch) ||
       (now - lastDispatch).ToMilliseconds() >= kScrollEventInterval) {
-    DispatchScrollingEvent(aTarget, nsIAccessibleEvent::EVENT_SCROLLING);
+    
+    if (HasLoadState(eTreeConstructed)) {
+      DispatchScrollingEvent(aTarget, nsIAccessibleEvent::EVENT_SCROLLING);
+    }
     mLastScrollingDispatch.Put(aTarget, now);
   }
 
@@ -1590,7 +1593,9 @@ void DocAccessible::NotifyOfLoading(bool aIsReloading) {
 
   if (!IsLoadEventTarget()) return;
 
-  if (aIsReloading && !mLoadEventType) {
+  if (aIsReloading && !mLoadEventType &&
+      
+      HasLoadState(eTreeConstructed)) {
     
     
     
