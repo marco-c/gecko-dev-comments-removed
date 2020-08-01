@@ -28,6 +28,8 @@ class Text;
 class nsTextFrameUtils {
  public:
   
+  
+  
   enum class Flags : uint16_t {
     
 
