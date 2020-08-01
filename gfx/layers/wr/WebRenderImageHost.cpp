@@ -157,8 +157,11 @@ TextureHost* WebRenderImageHost::GetAsTextureHostForComposite(
   const TimedImage* img = GetImage(imageIndex);
   SetCurrentTextureHost(img->mTextureHost);
 
-  UpdateCompositedFrame(imageIndex, img, mAsyncRef.mProcessId,
-                        mAsyncRef.mHandle);
+  if (mCurrentAsyncImageManager->GetCompositionTime()) {
+    
+    UpdateCompositedFrame(imageIndex, img, mAsyncRef.mProcessId,
+                          mAsyncRef.mHandle);
+  }
 
   return mCurrentTextureHost;
 }
