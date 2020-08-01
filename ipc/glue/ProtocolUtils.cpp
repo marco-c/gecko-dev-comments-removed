@@ -19,6 +19,9 @@
 #include "mozilla/ipc/MessageChannel.h"
 #include "mozilla/ipc/Transport.h"
 #include "mozilla/StaticMutex.h"
+#if defined(DEBUG) || defined(FUZZING)
+#  include "mozilla/Tokenizer.h"
+#endif
 #include "mozilla/Unused.h"
 #include "nsPrintfCString.h"
 
@@ -113,6 +116,32 @@ void AnnotateSystemError() {
 #if defined(XP_MACOSX)
 void AnnotateCrashReportWithErrno(CrashReporter::Annotation tag, int error) {
   CrashReporter::AnnotateCrashReport(tag, error);
+}
+#endif  
+
+#if defined(DEBUG) || defined(FUZZING)
+
+
+
+bool LoggingEnabledFor(const char* aTopLevelProtocol, const char* aFilter) {
+  if (!aFilter) {
+    return false;
+  }
+  if (strcmp(aFilter, "1") == 0) {
+    return true;
+  }
+
+  const char kDelimiters[] = ", ";
+  Tokenizer tokens(aFilter, kDelimiters);
+  Tokenizer::Token t;
+  while (tokens.Next(t)) {
+    if (t.Type() == Tokenizer::TOKEN_WORD &&
+        t.AsString() == aTopLevelProtocol) {
+      return true;
+    }
+  }
+
+  return false;
 }
 #endif  
 

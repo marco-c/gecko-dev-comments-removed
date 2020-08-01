@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_ipc_ProtocolUtils_h
 #define mozilla_ipc_ProtocolUtils_h 1
 
@@ -573,13 +572,13 @@ inline bool LoggingEnabled() {
 #endif
 }
 
+#if defined(DEBUG) || defined(FUZZING)
+bool LoggingEnabledFor(const char* aTopLevelProtocol, const char* aFilter);
+#endif
+
 inline bool LoggingEnabledFor(const char* aTopLevelProtocol) {
 #if defined(DEBUG) || defined(FUZZING)
-  const char* filter = PR_GetEnv("MOZ_IPC_MESSAGE_LOG");
-  if (!filter) {
-    return false;
-  }
-  return strcmp(filter, "1") == 0 || strcmp(filter, aTopLevelProtocol) == 0;
+  return LoggingEnabledFor(aTopLevelProtocol, PR_GetEnv("MOZ_IPC_MESSAGE_LOG"));
 #else
   return false;
 #endif
