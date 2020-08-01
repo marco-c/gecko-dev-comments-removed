@@ -65,4 +65,7 @@
 
 - (id)moxPreviousTextMarkerForTextMarker:(id)textMarker;
 
+
+- (NSAttributedString*)moxAttributedStringForTextMarkerRange:(id)textMarkerRange;
+
 @end

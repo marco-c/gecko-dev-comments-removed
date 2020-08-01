@@ -367,4 +367,7 @@
 
 - (id _Nullable)moxPreviousTextMarkerForTextMarker:(id _Nonnull)textMarker;
 
+
+- (NSAttributedString* _Nullable)moxAttributedStringForTextMarkerRange:(id _Nonnull)textMarkerRange;
+
 @end
