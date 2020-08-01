@@ -36,6 +36,12 @@
 
 using namespace mozilla;
 
+
+
+
+
+
+
 nsLookAndFeelIntPref nsXPLookAndFeel::sIntPrefs[] = {
     {"ui.caretBlinkTime", IntID::CaretBlinkTime, false, 0},
     {"ui.caretWidth", IntID::CaretWidth, false, 0},
