@@ -2448,12 +2448,6 @@ void BrowsingContext::InitSessionHistory() {
 
   if (!GetHasSessionHistory()) {
     SetHasSessionHistory(true);
-
-    
-    
-    
-    
-    mChildSessionHistory->SetIsInProcess(IsInProcess());
   }
 }
 
@@ -2482,6 +2476,11 @@ void BrowsingContext::CreateChildSHistory() {
   
   
   mChildSessionHistory = new ChildSHistory(this);
+
+  
+  
+  
+  
   mChildSessionHistory->SetIsInProcess(IsInProcess());
 }
 
