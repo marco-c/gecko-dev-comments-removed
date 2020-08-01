@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef nsNativeBasicThemeCocoa_h
+#define nsNativeBasicThemeCocoa_h
+
+#include "nsNativeBasicTheme.h"
+
+class nsNativeBasicThemeCocoa : public nsNativeBasicTheme {
+ public:
+  nsNativeBasicThemeCocoa() = default;
+
+ protected:
+  virtual ~nsNativeBasicThemeCocoa() = default;
+};
+
+#endif

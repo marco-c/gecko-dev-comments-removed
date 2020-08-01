@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef nsNativeBasicThemeWin_h
+#define nsNativeBasicThemeWin_h
+
+#include "nsNativeBasicTheme.h"
+
+class nsNativeBasicThemeWin : public nsNativeBasicTheme {
+ public:
+  nsNativeBasicThemeWin() = default;
+
+ protected:
+  virtual ~nsNativeBasicThemeWin() = default;
+};
+
+#endif
