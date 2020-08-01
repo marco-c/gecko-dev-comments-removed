@@ -602,8 +602,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+
       template <typename EditorDOMPointType>
-      static BoundaryData ScanWhiteSpaceStartFrom(
+      static BoundaryData ScanCollapsibleWhiteSpaceStartFrom(
           const EditorDOMPointType& aPoint,
           const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent,
           const Element* aEditingHost, NoBreakingSpaceData* aNBSPData);
@@ -621,8 +622,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+
       template <typename EditorDOMPointType>
-      static BoundaryData ScanWhiteSpaceEndFrom(
+      static BoundaryData ScanCollapsibleWhiteSpaceEndFrom(
           const EditorDOMPointType& aPoint,
           const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent,
           const Element* aEditingHost, NoBreakingSpaceData* aNBSPData);
@@ -672,11 +674,12 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+
       template <typename EditorDOMPointType>
-      static Maybe<BoundaryData> ScanWhiteSpaceStartInTextNode(
+      static Maybe<BoundaryData> ScanCollapsibleWhiteSpaceStartInTextNode(
           const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData);
       template <typename EditorDOMPointType>
-      static Maybe<BoundaryData> ScanWhiteSpaceEndInTextNode(
+      static Maybe<BoundaryData> ScanCollapsibleWhiteSpaceEndInTextNode(
           const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData);
 
       nsCOMPtr<nsIContent> mReasonContent;

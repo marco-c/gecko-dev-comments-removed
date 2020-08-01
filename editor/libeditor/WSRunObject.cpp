@@ -817,21 +817,23 @@ WSRunScanner::TextFragmentData::TextFragmentData(
         mScanStartPoint.ContainerAsContent();
   }
 
-  mStart = BoundaryData::ScanWhiteSpaceStartFrom(
+  mStart = BoundaryData::ScanCollapsibleWhiteSpaceStartFrom(
       mScanStartPoint, *editableBlockParentOrTopmotEditableInlineContent,
       mEditingHost, &mNBSPData);
-  mEnd = BoundaryData::ScanWhiteSpaceEndFrom(
+  mEnd = BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
       mScanStartPoint, *editableBlockParentOrTopmotEditableInlineContent,
       mEditingHost, &mNBSPData);
 }
 
 
 template <typename EditorDOMPointType>
-Maybe<WSRunScanner::TextFragmentData::BoundaryData>
-WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceStartInTextNode(
-    const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData) {
+Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
+    TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceStartInTextNode(
+        const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
   MOZ_DIAGNOSTIC_ASSERT(aPoint.IsInTextNode());
+  MOZ_DIAGNOSTIC_ASSERT(
+      !EditorUtils::IsContentPreformatted(*aPoint.ContainerAsText()));
 
   const nsTextFragment& textFragment = aPoint.ContainerAsText()->TextFragment();
   for (uint32_t i = std::min(aPoint.Offset(), textFragment.GetLength()); i;
@@ -859,23 +861,31 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceStartInTextNode(
 
 
 template <typename EditorDOMPointType>
-WSRunScanner::TextFragmentData::BoundaryData
-WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceStartFrom(
-    const EditorDOMPointType& aPoint,
-    const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent,
-    const Element* aEditingHost, NoBreakingSpaceData* aNBSPData) {
+WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
+    BoundaryData::ScanCollapsibleWhiteSpaceStartFrom(
+        const EditorDOMPointType& aPoint,
+        const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent,
+        const Element* aEditingHost, NoBreakingSpaceData* aNBSPData) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  
   if (aPoint.IsInTextNode() && !aPoint.IsStartOfContainer()) {
+    
+    
+    if (EditorUtils::IsContentPreformatted(*aPoint.ContainerAsText())) {
+      return BoundaryData(aPoint, *aPoint.ContainerAsText(),
+                          WSType::NormalText);
+    }
+    
+    
     Maybe<BoundaryData> startInTextNode =
-        BoundaryData::ScanWhiteSpaceStartInTextNode(aPoint, aNBSPData);
+        BoundaryData::ScanCollapsibleWhiteSpaceStartInTextNode(aPoint,
+                                                               aNBSPData);
     if (startInTextNode.isSome()) {
       return startInTextNode.ref();
     }
     
     
-    return BoundaryData::ScanWhiteSpaceStartFrom(
+    return BoundaryData::ScanCollapsibleWhiteSpaceStartFrom(
         EditorDOMPoint(aPoint.ContainerAsText(), 0),
         aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
         aNBSPData);
@@ -915,14 +925,22 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceStartFrom(
   if (!previousLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
     
     
-    return BoundaryData::ScanWhiteSpaceStartFrom(
+    
+    return BoundaryData::ScanCollapsibleWhiteSpaceStartFrom(
         EditorDOMPointInText(previousLeafContentOrBlock->AsText(), 0),
         aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
         aNBSPData);
   }
 
+  if (EditorUtils::IsContentPreformatted(*previousLeafContentOrBlock)) {
+    
+    
+    return BoundaryData(EditorDOMPoint::AtEndOf(*previousLeafContentOrBlock),
+                        *previousLeafContentOrBlock, WSType::NormalText);
+  }
+
   Maybe<BoundaryData> startInTextNode =
-      BoundaryData::ScanWhiteSpaceStartInTextNode(
+      BoundaryData::ScanCollapsibleWhiteSpaceStartInTextNode(
           EditorDOMPointInText::AtEndOf(*previousLeafContentOrBlock->AsText()),
           aNBSPData);
   if (startInTextNode.isSome()) {
@@ -931,7 +949,7 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceStartFrom(
 
   
   
-  return BoundaryData::ScanWhiteSpaceStartFrom(
+  return BoundaryData::ScanCollapsibleWhiteSpaceStartFrom(
       EditorDOMPointInText(previousLeafContentOrBlock->AsText(), 0),
       aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
       aNBSPData);
@@ -939,11 +957,13 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceStartFrom(
 
 
 template <typename EditorDOMPointType>
-Maybe<WSRunScanner::TextFragmentData::BoundaryData>
-WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceEndInTextNode(
-    const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData) {
+Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
+    TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndInTextNode(
+        const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
   MOZ_DIAGNOSTIC_ASSERT(aPoint.IsInTextNode());
+  MOZ_DIAGNOSTIC_ASSERT(
+      !EditorUtils::IsContentPreformatted(*aPoint.ContainerAsText()));
 
   const nsTextFragment& textFragment = aPoint.ContainerAsText()->TextFragment();
   for (uint32_t i = aPoint.Offset(); i < textFragment.GetLength(); i++) {
@@ -970,21 +990,29 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceEndInTextNode(
 
 template <typename EditorDOMPointType>
 WSRunScanner::TextFragmentData::BoundaryData
-WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceEndFrom(
+WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
     const EditorDOMPointType& aPoint,
     const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent,
     const Element* aEditingHost, NoBreakingSpaceData* aNBSPData) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
   if (aPoint.IsInTextNode() && !aPoint.IsEndOfContainer()) {
+    
+    
+    if (EditorUtils::IsContentPreformatted(*aPoint.ContainerAsText())) {
+      return BoundaryData(aPoint, *aPoint.ContainerAsText(),
+                          WSType::NormalText);
+    }
+    
+    
     Maybe<BoundaryData> endInTextNode =
-        BoundaryData::ScanWhiteSpaceEndInTextNode(aPoint, aNBSPData);
+        BoundaryData::ScanCollapsibleWhiteSpaceEndInTextNode(aPoint, aNBSPData);
     if (endInTextNode.isSome()) {
       return endInTextNode.ref();
     }
     
     
-    return BoundaryData::ScanWhiteSpaceEndFrom(
+    return BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
         EditorDOMPointInText::AtEndOf(*aPoint.ContainerAsText()),
         aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
         aNBSPData);
@@ -1026,21 +1054,30 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanWhiteSpaceEndFrom(
   if (!nextLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
     
     
-    return BoundaryData::ScanWhiteSpaceEndFrom(
+    
+    return BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
         EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0),
         aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
         aNBSPData);
   }
 
-  Maybe<BoundaryData> endInTextNode = BoundaryData::ScanWhiteSpaceEndInTextNode(
-      EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0), aNBSPData);
+  if (EditorUtils::IsContentPreformatted(*nextLeafContentOrBlock)) {
+    
+    
+    return BoundaryData(EditorDOMPoint(nextLeafContentOrBlock, 0),
+                        *nextLeafContentOrBlock, WSType::NormalText);
+  }
+
+  Maybe<BoundaryData> endInTextNode =
+      BoundaryData::ScanCollapsibleWhiteSpaceEndInTextNode(
+          EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0), aNBSPData);
   if (endInTextNode.isSome()) {
     return endInTextNode.ref();
   }
 
   
   
-  return BoundaryData::ScanWhiteSpaceEndFrom(
+  return BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
       EditorDOMPointInText::AtEndOf(*nextLeafContentOrBlock->AsText()),
       aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
       aNBSPData);
