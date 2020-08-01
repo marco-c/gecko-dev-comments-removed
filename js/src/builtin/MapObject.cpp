@@ -306,8 +306,11 @@ static void DestroyRange(JSObject* iterator, Range* range) {
   }
 }
 
-bool MapIteratorObject::next(Handle<MapIteratorObject*> mapIterator,
-                             HandleArrayObject resultPairObj, JSContext* cx) {
+bool MapIteratorObject::next(MapIteratorObject* mapIterator,
+                             ArrayObject* resultPairObj) {
+  
+  AutoUnsafeCallWithABI unsafe;
+
   
 
   
@@ -329,18 +332,20 @@ bool MapIteratorObject::next(Handle<MapIteratorObject*> mapIterator,
     return true;
   }
 
+  
+  
   switch (mapIterator->kind()) {
     case MapObject::Keys:
-      resultPairObj->setDenseElementWithType(cx, 0, range->front().key.get());
+      resultPairObj->setDenseElement(0, range->front().key.get());
       break;
 
     case MapObject::Values:
-      resultPairObj->setDenseElementWithType(cx, 1, range->front().value);
+      resultPairObj->setDenseElement(1, range->front().value);
       break;
 
     case MapObject::Entries: {
-      resultPairObj->setDenseElementWithType(cx, 0, range->front().key.get());
-      resultPairObj->setDenseElementWithType(cx, 1, range->front().value);
+      resultPairObj->setDenseElement(0, range->front().key.get());
+      resultPairObj->setDenseElement(1, range->front().value);
       break;
     }
   }
@@ -1099,8 +1104,11 @@ size_t SetIteratorObject::objectMoved(JSObject* obj, JSObject* old) {
   return sizeof(ValueSet::Range);
 }
 
-bool SetIteratorObject::next(Handle<SetIteratorObject*> setIterator,
-                             HandleArrayObject resultObj, JSContext* cx) {
+bool SetIteratorObject::next(SetIteratorObject* setIterator,
+                             ArrayObject* resultObj) {
+  
+  AutoUnsafeCallWithABI unsafe;
+
   
 
   
@@ -1122,7 +1130,9 @@ bool SetIteratorObject::next(Handle<SetIteratorObject*> setIterator,
     return true;
   }
 
-  resultObj->setDenseElementWithType(cx, 0, range->front().get());
+  
+  
+  resultObj->setDenseElement(0, range->front().get());
   range->popFront();
   return false;
 }

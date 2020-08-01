@@ -11,6 +11,7 @@
 #include "mozilla/Unused.h"
 
 #include "builtin/DataViewObject.h"
+#include "builtin/MapObject.h"
 #include "jit/BaselineCacheIRCompiler.h"
 #include "jit/BaselineIC.h"
 #include "jit/CacheIRSpewer.h"
@@ -6765,6 +6766,39 @@ AttachDecision CallIRGenerator::tryAttachIsConstructing(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachGetNextMapSetEntryForIterator(
+    HandleFunction callee, bool isMap) {
+  
+  MOZ_ASSERT(argc_ == 2);
+  if (isMap) {
+    MOZ_ASSERT(args_[0].toObject().is<MapIteratorObject>());
+  } else {
+    MOZ_ASSERT(args_[0].toObject().is<SetIteratorObject>());
+  }
+  MOZ_ASSERT(args_[1].toObject().is<ArrayObject>());
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+
+  ValOperandId iterId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objIterId = writer.guardToObject(iterId);
+
+  ValOperandId resultArrId =
+      writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
+  ObjOperandId objResultArrId = writer.guardToObject(resultArrId);
+
+  writer.getNextMapSetEntryForIteratorResult(objIterId, objResultArrId, isMap);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("GetNextMapSetEntryForIterator");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
   MOZ_ASSERT(calleeFunc->isNativeWithoutJitEntry());
   if (calleeFunc->native() != fun_apply) {
@@ -7068,6 +7102,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     
     case InlinableNative::IntrinsicGuardToMapObject:
       return tryAttachGuardToClass(callee, native);
+    case InlinableNative::IntrinsicGetNextMapEntryForIterator:
+      return tryAttachGetNextMapSetEntryForIterator(callee,  true);
 
     
     case InlinableNative::Object:
@@ -7076,6 +7112,9 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     
     case InlinableNative::IntrinsicGuardToSetObject:
       return tryAttachGuardToClass(callee, native);
+    case InlinableNative::IntrinsicGetNextSetEntryForIterator:
+      return tryAttachGetNextMapSetEntryForIterator(callee,
+                                                     false);
 
     
     case InlinableNative::IntrinsicGuardToArrayBuffer:
