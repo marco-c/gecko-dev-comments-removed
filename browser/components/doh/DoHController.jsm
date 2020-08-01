@@ -18,6 +18,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
+  ClientID: "resource://gre/modules/ClientID.jsm",
   ExtensionStorageIDB: "resource://gre/modules/ExtensionStorageIDB.jsm",
   Heuristics: "resource:///modules/DoHHeuristics.jsm",
   Preferences: "resource://gre/modules/Preferences.jsm",
@@ -92,6 +93,28 @@ const TRRSELECT_TELEMETRY_CATEGORY = "security.doh.trrPerformance";
 const kLinkStatusChangedTopic = "network:link-status-changed";
 const kConnectivityTopic = "network:captive-portal-connectivity";
 const kPrefChangedTopic = "nsPref:changed";
+
+
+
+function getHashedNetworkID() {
+  let currentNetworkID = gNetworkLinkService.networkID;
+  if (!currentNetworkID) {
+    return "";
+  }
+
+  let hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
+    Ci.nsICryptoHash
+  );
+
+  hasher.init(Ci.nsICryptoHash.SHA256);
+  
+  let clientNetworkID = ClientID.getClientID() + currentNetworkID;
+  hasher.update(
+    clientNetworkID.split("").map(c => c.charCodeAt(0)),
+    clientNetworkID.length
+  );
+  return hasher.finish(true);
+}
 
 const DoHController = {
   _heuristicsAreEnabled: false,
@@ -317,7 +340,7 @@ const DoHController = {
       
       
       
-      networkID: gNetworkLinkService.networkID,
+      networkID: getHashedNetworkID(),
     };
 
     if (results.steeredProvider) {
