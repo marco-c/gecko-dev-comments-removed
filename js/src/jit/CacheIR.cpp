@@ -3589,8 +3589,7 @@ AttachDecision SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj,
   return AttachDecision::Attach;
 }
 
-OperandId SetPropIRGenerator::emitNumericGuard(ValOperandId valId,
-                                               Scalar::Type type) {
+OperandId IRGenerator::emitNumericGuard(ValOperandId valId, Scalar::Type type) {
   switch (type) {
     case Scalar::Int8:
     case Scalar::Uint8:
@@ -5198,6 +5197,88 @@ AttachDecision CallIRGenerator::tryAttachDataViewGet(HandleFunction callee,
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachDataViewSet(HandleFunction callee,
+                                                     Scalar::Type type) {
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<DataViewObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (argc_ < 2 || argc_ > 3) {
+    return AttachDecision::NoAction;
+  }
+  if (!args_[0].isNumber()) {
+    return AttachDecision::NoAction;
+  }
+  if (Scalar::isBigIntType(type)) {
+    if (!args_[1].isBigInt()) {
+      return AttachDecision::NoAction;
+    }
+  } else {
+    if (!args_[1].isNumber()) {
+      return AttachDecision::NoAction;
+    }
+  }
+  if (argc_ > 2 && !args_[2].isBoolean()) {
+    return AttachDecision::NoAction;
+  }
+
+  DataViewObject* dv = &thisval_.toObject().as<DataViewObject>();
+
+  
+  int32_t offsetInt32;
+  if (!mozilla::NumberEqualsInt32(args_[0].toNumber(), &offsetInt32)) {
+    return AttachDecision::NoAction;
+  }
+  if (offsetInt32 < 0 ||
+      !dv->offsetIsInBounds(Scalar::byteSize(type), offsetInt32)) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  writer.guardClass(objId, GuardClassKind::DataView);
+
+  
+  ValOperandId offsetId =
+      writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  Int32OperandId int32OffsetId = writer.guardToInt32Index(offsetId);
+
+  
+  ValOperandId valueId =
+      writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
+  OperandId numericValueId = emitNumericGuard(valueId, type);
+
+  
+  Int32OperandId boolLittleEndianId;
+  if (argc_ > 2) {
+    ValOperandId littleEndianId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Arg2, argc_);
+    boolLittleEndianId = writer.guardToBoolean(littleEndianId);
+  } else {
+    boolLittleEndianId = writer.loadInt32Constant(0);
+  }
+
+  writer.storeDataViewValueResult(objId, int32OffsetId, numericValueId,
+                                  boolLittleEndianId, type);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("DataViewSet");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachUnsafeGetReservedSlot(
     HandleFunction callee, InlinableNative native) {
   
@@ -6471,6 +6552,26 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachDataViewGet(callee, Scalar::BigInt64);
     case InlinableNative::DataViewGetBigUint64:
       return tryAttachDataViewGet(callee, Scalar::BigUint64);
+    case InlinableNative::DataViewSetInt8:
+      return tryAttachDataViewSet(callee, Scalar::Int8);
+    case InlinableNative::DataViewSetUint8:
+      return tryAttachDataViewSet(callee, Scalar::Uint8);
+    case InlinableNative::DataViewSetInt16:
+      return tryAttachDataViewSet(callee, Scalar::Int16);
+    case InlinableNative::DataViewSetUint16:
+      return tryAttachDataViewSet(callee, Scalar::Uint16);
+    case InlinableNative::DataViewSetInt32:
+      return tryAttachDataViewSet(callee, Scalar::Int32);
+    case InlinableNative::DataViewSetUint32:
+      return tryAttachDataViewSet(callee, Scalar::Uint32);
+    case InlinableNative::DataViewSetFloat32:
+      return tryAttachDataViewSet(callee, Scalar::Float32);
+    case InlinableNative::DataViewSetFloat64:
+      return tryAttachDataViewSet(callee, Scalar::Float64);
+    case InlinableNative::DataViewSetBigInt64:
+      return tryAttachDataViewSet(callee, Scalar::BigInt64);
+    case InlinableNative::DataViewSetBigUint64:
+      return tryAttachDataViewSet(callee, Scalar::BigUint64);
 
     
     case InlinableNative::IntlGuardToCollator:
