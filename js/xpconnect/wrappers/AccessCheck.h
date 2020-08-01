@@ -11,12 +11,6 @@
 #include "js/Wrapper.h"
 #include "nsString.h"
 
-#ifdef XP_MACOSX
-
-
-#  undef check
-#endif
-
 namespace xpc {
 
 class AccessCheck {
