@@ -53,13 +53,6 @@ var FxAccountsProfileClient = function(options) {
   }
 
   this.fxai = options.fxai || fxAccounts._internal;
-  
-  
-  
-  
-  
-  
-  this.token = options.token;
 
   try {
     this.serverURL = new URL(options.serverURL);
@@ -99,19 +92,12 @@ FxAccountsProfileClient.prototype = {
 
 
   async _createRequest(path, method = "GET", etag = null) {
-    let token = this.token;
-    if (!token) {
-      
-      token = await this.fxai.getOAuthToken(this.oauthOptions);
-    }
+    
+    let token = await this.fxai.getOAuthToken(this.oauthOptions);
     try {
       return await this._rawRequest(path, method, token, etag);
     } catch (ex) {
       if (!(ex instanceof FxAccountsProfileClientError) || ex.code != 401) {
-        throw ex;
-      }
-      
-      if (this.token) {
         throw ex;
       }
       
