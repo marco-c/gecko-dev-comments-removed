@@ -604,6 +604,12 @@ nsBaseChannel::SetContentDispositionFilename(
     const nsAString& aContentDispositionFilename) {
   mContentDispositionFilename =
       MakeUnique<nsString>(aContentDispositionFilename);
+
+  
+  
+  
+  mContentDispositionFilename->ReplaceChar(char16_t(0), '_');
+
   return NS_OK;
 }
 
