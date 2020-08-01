@@ -23,12 +23,12 @@ nsPageContentFrame* NS_NewPageContentFrame(PresShell* aPresShell,
 NS_IMPL_FRAMEARENA_HELPERS(nsPageContentFrame)
 
 void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
-                                ReflowOutput& aDesiredSize,
+                                ReflowOutput& aReflowOutput,
                                 const ReflowInput& aReflowInput,
                                 nsReflowStatus& aStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsPageContentFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aReflowOutput, aStatus);
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   MOZ_ASSERT(mPD, "Need a pointer to nsSharedPageData before reflow starts");
 
@@ -58,7 +58,9 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
     kidReflowInput.SetComputedBSize(logicalSize.BSize(wm));
 
     
-    ReflowChild(frame, aPresContext, aDesiredSize, kidReflowInput, 0, 0,
+    
+    
+    ReflowChild(frame, aPresContext, aReflowOutput, kidReflowInput, 0, 0,
                 ReflowChildFlags::Default, aStatus);
 
     
@@ -77,8 +79,8 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
     if (frame->HasOverflowAreas()) {
       
       
-      nscoord xmost = aDesiredSize.ScrollableOverflow().XMost();
-      if (xmost > aDesiredSize.Width()) {
+      nscoord xmost = aReflowOutput.ScrollableOverflow().XMost();
+      if (xmost > aReflowOutput.Width()) {
         nscoord widthToFit =
             xmost + padding.right +
             kidReflowInput.mStyleBorder->GetComputedBorderWidth(eSideRight);
@@ -90,7 +92,7 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
     }
 
     
-    FinishReflowChild(frame, aPresContext, aDesiredSize, &kidReflowInput, 0, 0,
+    FinishReflowChild(frame, aPresContext, aReflowOutput, &kidReflowInput, 0, 0,
                       ReflowChildFlags::Default);
 
     NS_ASSERTION(aPresContext->IsDynamic() || !aStatus.IsFullyComplete() ||
@@ -100,19 +102,19 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
 
   
   nsReflowStatus fixedStatus;
-  ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, fixedStatus);
+  ReflowAbsoluteFrames(aPresContext, aReflowOutput, aReflowInput, fixedStatus);
   NS_ASSERTION(fixedStatus.IsComplete(),
                "fixed frames can be truncated, but not incomplete");
 
   
   WritingMode wm = aReflowInput.GetWritingMode();
-  aDesiredSize.ISize(wm) = aReflowInput.ComputedISize();
+  aReflowOutput.ISize(wm) = aReflowInput.ComputedISize();
   if (aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
-    aDesiredSize.BSize(wm) = aReflowInput.ComputedBSize();
+    aReflowOutput.BSize(wm) = aReflowInput.ComputedBSize();
   }
-  FinishAndStoreOverflow(&aDesiredSize);
+  FinishAndStoreOverflow(&aReflowOutput);
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aReflowOutput);
 }
 
 void nsPageContentFrame::AppendDirectlyOwnedAnonBoxes(

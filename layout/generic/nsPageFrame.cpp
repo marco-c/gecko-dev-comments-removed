@@ -45,12 +45,12 @@ nsPageFrame::nsPageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
 nsPageFrame::~nsPageFrame() = default;
 
 void nsPageFrame::Reflow(nsPresContext* aPresContext,
-                         ReflowOutput& aDesiredSize,
+                         ReflowOutput& aReflowOutput,
                          const ReflowInput& aReflowInput,
                          nsReflowStatus& aStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsPageFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aReflowOutput, aStatus);
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   MOZ_ASSERT(mPD, "Need a pointer to nsSharedPageData before reflow starts");
 
@@ -83,7 +83,7 @@ void nsPageFrame::Reflow(nsPresContext* aPresContext,
     
     
     if (maxSize.width < onePixelInTwips || maxSize.height < onePixelInTwips) {
-      aDesiredSize.ClearSize();
+      aReflowOutput.ClearSize();
       NS_WARNING("Reflow aborted; no space for content");
       return;
     }
@@ -135,35 +135,37 @@ void nsPageFrame::Reflow(nsPresContext* aPresContext,
     nscoord yc = mPageContentMargin.top;
 
     
-    ReflowChild(frame, aPresContext, aDesiredSize, kidReflowInput, xc, yc,
+    
+    
+    ReflowChild(frame, aPresContext, aReflowOutput, kidReflowInput, xc, yc,
                 ReflowChildFlags::Default, aStatus);
 
     
-    FinishReflowChild(frame, aPresContext, aDesiredSize, &kidReflowInput, xc,
+    FinishReflowChild(frame, aPresContext, aReflowOutput, &kidReflowInput, xc,
                       yc, ReflowChildFlags::Default);
 
     NS_ASSERTION(!aStatus.IsFullyComplete() || !frame->GetNextInFlow(),
                  "bad child flow list");
   }
   PR_PL(("PageFrame::Reflow %p ", this));
-  PR_PL(("[%d,%d][%d,%d]\n", aDesiredSize.Width(), aDesiredSize.Height(),
+  PR_PL(("[%d,%d][%d,%d]\n", aReflowOutput.Width(), aReflowOutput.Height(),
          aReflowInput.AvailableWidth(), aReflowInput.AvailableHeight()));
 
   
   WritingMode wm = aReflowInput.GetWritingMode();
-  aDesiredSize.ISize(wm) = aReflowInput.AvailableISize();
+  aReflowOutput.ISize(wm) = aReflowInput.AvailableISize();
   if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
-    aDesiredSize.BSize(wm) = aReflowInput.AvailableBSize();
+    aReflowOutput.BSize(wm) = aReflowInput.AvailableBSize();
   }
 
-  aDesiredSize.SetOverflowAreasToDesiredBounds();
-  FinishAndStoreOverflow(&aDesiredSize);
+  aReflowOutput.SetOverflowAreasToDesiredBounds();
+  FinishAndStoreOverflow(&aReflowOutput);
 
   PR_PL(("PageFrame::Reflow %p ", this));
   PR_PL(("[%d,%d]\n", aReflowInput.AvailableWidth(),
          aReflowInput.AvailableHeight()));
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aReflowOutput);
 }
 
 #ifdef DEBUG_FRAME_DUMP
@@ -731,11 +733,11 @@ nscoord nsPageBreakFrame::GetIntrinsicISize() {
 nscoord nsPageBreakFrame::GetIntrinsicBSize() { return 0; }
 
 void nsPageBreakFrame::Reflow(nsPresContext* aPresContext,
-                              ReflowOutput& aDesiredSize,
+                              ReflowOutput& aReflowOutput,
                               const ReflowInput& aReflowInput,
                               nsReflowStatus& aStatus) {
   DO_GLOBAL_REFLOW_COUNT("nsPageBreakFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aReflowOutput, aStatus);
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
   
@@ -768,7 +770,7 @@ void nsPageBreakFrame::Reflow(nsPresContext* aPresContext,
   
   finalSize.BSize(wm) -=
       finalSize.BSize(wm) % nsPresContext::CSSPixelsToAppUnits(1);
-  aDesiredSize.SetSize(wm, finalSize);
+  aReflowOutput.SetSize(wm, finalSize);
 
   
   
