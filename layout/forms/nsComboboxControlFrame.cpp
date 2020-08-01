@@ -708,21 +708,6 @@ bool nsComboboxControlFrame::HasDropDownButton() const {
           PresContext()->Theme()->ThemeNeedsComboboxDropmarker());
 }
 
-nscoord nsComboboxControlFrame::DropDownButtonISize() {
-  if (!HasDropDownButton()) {
-    return 0;
-  }
-
-  LayoutDeviceIntSize dropdownButtonSize;
-  bool canOverride = true;
-  nsPresContext* presContext = PresContext();
-  presContext->Theme()->GetMinimumWidgetSize(
-      presContext, this, StyleAppearance::MozMenulistArrowButton,
-      &dropdownButtonSize, &canOverride);
-
-  return presContext->DevPixelsToAppUnits(dropdownButtonSize.width);
-}
-
 nscoord nsComboboxControlFrame::GetIntrinsicISize(
     gfxContext* aRenderingContext, nsLayoutUtils::IntrinsicISizeType aType) {
   
@@ -772,7 +757,9 @@ nscoord nsComboboxControlFrame::GetIntrinsicISize(
   }
 
   
-  displayISize += DropDownButtonISize();
+  if (HasDropDownButton()) {
+    displayISize += scrollbarWidth;
+  }
 
   return displayISize;
 }
@@ -832,12 +819,21 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
     Unused << resize.forget();
   }
 
+  
+  
   WritingMode wm = aReflowInput.GetWritingMode();
-  nscoord buttonISize = 0;
-
-  
-  
-  buttonISize += DropDownButtonISize();
+  nscoord buttonISize;
+  if (!HasDropDownButton()) {
+    buttonISize = 0;
+  } else {
+    nsIScrollableFrame* scrollable = do_QueryFrame(mListControlFrame);
+    NS_ASSERTION(scrollable, "List must be a scrollable frame");
+    buttonISize = scrollable->GetNondisappearingScrollbarWidth(
+        PresContext(), aReflowInput.mRenderingContext, wm);
+    if (buttonISize > aReflowInput.ComputedISize()) {
+      buttonISize = 0;
+    }
+  }
 
   mDisplayISize = aReflowInput.ComputedISize() - buttonISize;
 

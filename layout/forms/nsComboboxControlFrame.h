@@ -226,7 +226,6 @@ class nsComboboxControlFrame final : public nsBlockFrame,
 
   
   bool HasDropDownButton() const;
-  nscoord DropDownButtonISize();
 
   enum DropDownPositionState {
     
