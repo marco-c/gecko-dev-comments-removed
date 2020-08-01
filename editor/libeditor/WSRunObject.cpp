@@ -1256,38 +1256,24 @@ nsresult WhiteSpaceVisibilityKeeper::
     MakeSureToKeepVisibleStateOfWhiteSpacesAtEndOfDeletingRange(
         HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete,
         Element* aEditingHost) {
-  
-  
-  
-  
-  
-  
-
   if (NS_WARN_IF(!aRangeToDelete.IsPositioned())) {
     return NS_ERROR_INVALID_ARG;
   }
 
   TextFragmentData textFragmentDataAtStart(aRangeToDelete.StartRef(),
                                            aEditingHost);
-  const bool deleteStartEqualsOrIsBeforeTextStart =
-      aRangeToDelete.StartRef().EqualsOrIsBefore(
-          textFragmentDataAtStart.StartRef());
   TextFragmentData textFragmentDataAtEnd(aRangeToDelete.EndRef(), aEditingHost);
-  const bool deleteEndIsAfterTextEnd =
-      textFragmentDataAtEnd.EndRef().EqualsOrIsBefore(aRangeToDelete.EndRef());
-  if (deleteStartEqualsOrIsBeforeTextStart && deleteEndIsAfterTextEnd) {
+  if (textFragmentDataAtEnd.EndRef().EqualsOrIsBefore(
+          aRangeToDelete.EndRef())) {
     return NS_OK;
   }
 
   const EditorDOMRange invisibleTrailingWhiteSpaceRangeAtEnd =
-      !deleteEndIsAfterTextEnd
-          ? textFragmentDataAtEnd
-                .GetNewInvisibleTrailingWhiteSpaceRangeIfSplittingAt(
-                    aRangeToDelete.EndRef())
-          : EditorDOMRange();
+      textFragmentDataAtEnd.GetNewInvisibleTrailingWhiteSpaceRangeIfSplittingAt(
+          aRangeToDelete.EndRef());
   const Maybe<const VisibleWhiteSpacesData>
       nonPreformattedVisibleWhiteSpacesAtEnd =
-          !deleteEndIsAfterTextEnd && !textFragmentDataAtEnd.IsPreformatted() &&
+          !textFragmentDataAtEnd.IsPreformatted() &&
                   !invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned()
               ? Some(textFragmentDataAtEnd.VisibleWhiteSpacesDataRef())
               : Nothing();
@@ -1302,66 +1288,67 @@ nsresult WhiteSpaceVisibilityKeeper::
           aRangeToDelete.StartRef());
 
   EditorDOMPoint startToDelete(aRangeToDelete.StartRef());
-  if (!deleteEndIsAfterTextEnd) {
+
+  
+  
+  if (invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned()) {
+    if (!invisibleTrailingWhiteSpaceRangeAtEnd.Collapsed()) {
+      
+      MOZ_ASSERT(invisibleTrailingWhiteSpaceRangeAtEnd.StartRef() ==
+                 aRangeToDelete.EndRef());
+      
+      
+      AutoEditorDOMPointChildInvalidator forgetChild(startToDelete);
+      nsresult rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
+          invisibleTrailingWhiteSpaceRangeAtEnd.StartRef(),
+          invisibleTrailingWhiteSpaceRangeAtEnd.EndRef());
+      if (NS_FAILED(rv)) {
+        NS_WARNING(
+            "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+        return rv;
+      }
+    }
+    return NS_OK;
+  }
+
+  
+  
+  
+  if (pointPositionWithNonPreformattedVisibleWhiteSpacesAtEnd ==
+          PointPosition::StartOfFragment ||
+      pointPositionWithNonPreformattedVisibleWhiteSpacesAtEnd ==
+          PointPosition::MiddleOfFragment) {
     
     
-    if (invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned()) {
-      if (!invisibleTrailingWhiteSpaceRangeAtEnd.Collapsed()) {
-        
-        MOZ_ASSERT(invisibleTrailingWhiteSpaceRangeAtEnd.StartRef() ==
-                   aRangeToDelete.EndRef());
+    
+    if (followingContentMayBecomeFirstVisibleContent) {
+      EditorDOMPointInText nextCharOfStartOfEnd =
+          textFragmentDataAtEnd.GetInclusiveNextEditableCharPoint(
+              aRangeToDelete.EndRef());
+      if (nextCharOfStartOfEnd.IsSet() &&
+          !nextCharOfStartOfEnd.IsEndOfContainer() &&
+          nextCharOfStartOfEnd.IsCharASCIISpace()) {
         
         
         AutoEditorDOMPointChildInvalidator forgetChild(startToDelete);
-        nsresult rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-            invisibleTrailingWhiteSpaceRangeAtEnd.StartRef(),
-            invisibleTrailingWhiteSpaceRangeAtEnd.EndRef());
+        if (nextCharOfStartOfEnd.IsStartOfContainer() ||
+            nextCharOfStartOfEnd.IsPreviousCharASCIISpace()) {
+          nextCharOfStartOfEnd =
+              textFragmentDataAtStart.GetFirstASCIIWhiteSpacePointCollapsedTo(
+                  nextCharOfStartOfEnd);
+        }
+        EditorDOMPointInText endOfCollapsibleASCIIWhiteSpaces =
+            textFragmentDataAtStart.GetEndOfCollapsibleASCIIWhiteSpaces(
+                nextCharOfStartOfEnd);
+        nsresult rv =
+            WhiteSpaceVisibilityKeeper::ReplaceASCIIWhiteSpacesWithOneNBSP(
+                aHTMLEditor, nextCharOfStartOfEnd,
+                endOfCollapsibleASCIIWhiteSpaces);
         if (NS_FAILED(rv)) {
           NS_WARNING(
-              "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+              "WhiteSpaceVisibilityKeeper::"
+              "ReplaceASCIIWhiteSpacesWithOneNBSP() failed");
           return rv;
-        }
-      }
-    }
-    
-    
-    
-    else if (pointPositionWithNonPreformattedVisibleWhiteSpacesAtEnd ==
-                 PointPosition::StartOfFragment ||
-             pointPositionWithNonPreformattedVisibleWhiteSpacesAtEnd ==
-                 PointPosition::MiddleOfFragment) {
-      
-      
-      
-      if (followingContentMayBecomeFirstVisibleContent) {
-        EditorDOMPointInText nextCharOfStartOfEnd =
-            textFragmentDataAtEnd.GetInclusiveNextEditableCharPoint(
-                aRangeToDelete.EndRef());
-        if (nextCharOfStartOfEnd.IsSet() &&
-            !nextCharOfStartOfEnd.IsEndOfContainer() &&
-            nextCharOfStartOfEnd.IsCharASCIISpace()) {
-          
-          
-          AutoEditorDOMPointChildInvalidator forgetChild(startToDelete);
-          if (nextCharOfStartOfEnd.IsStartOfContainer() ||
-              nextCharOfStartOfEnd.IsPreviousCharASCIISpace()) {
-            nextCharOfStartOfEnd =
-                textFragmentDataAtStart.GetFirstASCIIWhiteSpacePointCollapsedTo(
-                    nextCharOfStartOfEnd);
-          }
-          EditorDOMPointInText endOfCollapsibleASCIIWhiteSpaces =
-              textFragmentDataAtStart.GetEndOfCollapsibleASCIIWhiteSpaces(
-                  nextCharOfStartOfEnd);
-          nsresult rv =
-              WhiteSpaceVisibilityKeeper::ReplaceASCIIWhiteSpacesWithOneNBSP(
-                  aHTMLEditor, nextCharOfStartOfEnd,
-                  endOfCollapsibleASCIIWhiteSpaces);
-          if (NS_FAILED(rv)) {
-            NS_WARNING(
-                "WhiteSpaceVisibilityKeeper::"
-                "ReplaceASCIIWhiteSpacesWithOneNBSP() failed");
-            return rv;
-          }
         }
       }
     }
@@ -1374,39 +1361,25 @@ nsresult WhiteSpaceVisibilityKeeper::
     MakeSureToKeepVisibleStateOfWhiteSpacesAtStartOfDeletingRange(
         HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete,
         Element* aEditingHost) {
-  
-  
-  
-  
-  
-  
-
   if (NS_WARN_IF(!aRangeToDelete.IsPositioned())) {
     return NS_ERROR_INVALID_ARG;
   }
 
   TextFragmentData textFragmentDataAtStart(aRangeToDelete.StartRef(),
                                            aEditingHost);
-  const bool deleteStartEqualsOrIsBeforeTextStart =
-      aRangeToDelete.StartRef().EqualsOrIsBefore(
-          textFragmentDataAtStart.StartRef());
-  TextFragmentData textFragmentDataAtEnd(aRangeToDelete.EndRef(), aEditingHost);
-  const bool deleteEndIsAfterTextEnd =
-      textFragmentDataAtEnd.EndRef().EqualsOrIsBefore(aRangeToDelete.EndRef());
-  if (deleteStartEqualsOrIsBeforeTextStart && deleteEndIsAfterTextEnd) {
+  if (aRangeToDelete.StartRef().EqualsOrIsBefore(
+          textFragmentDataAtStart.StartRef())) {
     return NS_OK;
   }
+  TextFragmentData textFragmentDataAtEnd(aRangeToDelete.EndRef(), aEditingHost);
 
   const EditorDOMRange invisibleLeadingWhiteSpaceRangeAtStart =
-      !deleteStartEqualsOrIsBeforeTextStart
-          ? textFragmentDataAtStart
-                .GetNewInvisibleLeadingWhiteSpaceRangeIfSplittingAt(
-                    aRangeToDelete.StartRef())
-          : EditorDOMRange();
+      textFragmentDataAtStart
+          .GetNewInvisibleLeadingWhiteSpaceRangeIfSplittingAt(
+              aRangeToDelete.StartRef());
   const Maybe<const VisibleWhiteSpacesData>
       nonPreformattedVisibleWhiteSpacesAtStart =
-          !deleteStartEqualsOrIsBeforeTextStart &&
-                  !textFragmentDataAtStart.IsPreformatted() &&
+          !textFragmentDataAtStart.IsPreformatted() &&
                   !invisibleLeadingWhiteSpaceRangeAtStart.IsPositioned()
               ? Some(textFragmentDataAtStart.VisibleWhiteSpacesDataRef())
               : Nothing();
@@ -1422,9 +1395,6 @@ nsresult WhiteSpaceVisibilityKeeper::
           aRangeToDelete.EndRef());
 
   EditorDOMPoint startToDelete(aRangeToDelete.StartRef());
-  if (deleteStartEqualsOrIsBeforeTextStart) {
-    return NS_OK;
-  }
 
   
   
