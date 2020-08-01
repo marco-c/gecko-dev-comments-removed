@@ -22,22 +22,6 @@ bool BaseProxyHandler::enter(JSContext* cx, HandleObject wrapper, HandleId id,
   return true;
 }
 
-bool BaseProxyHandler::hasPrivate(JSContext* cx, HandleObject proxy,
-                                  HandleId id, bool* bp) const {
-  assertEnteredPolicy(cx, proxy, id, GET);
-
-  
-  RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
-
-  
-  if (!expando) {
-    *bp = false;
-    return true;
-  }
-
-  return HasOwnProperty(cx, expando, id, bp);
-}
-
 bool BaseProxyHandler::has(JSContext* cx, HandleObject proxy, HandleId id,
                            bool* bp) const {
   assertEnteredPolicy(cx, proxy, id, GET);
@@ -82,35 +66,6 @@ bool BaseProxyHandler::hasOwn(JSContext* cx, HandleObject proxy, HandleId id,
     return false;
   }
   *bp = !!desc.object();
-  return true;
-}
-
-bool BaseProxyHandler::getPrivate(JSContext* cx, HandleObject proxy,
-                                  HandleValue receiver, HandleId id,
-                                  MutableHandleValue vp) const {
-  assertEnteredPolicy(cx, proxy, id, GET);
-
-  
-  RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
-
-  
-  
-  MOZ_ASSERT(expando);
-
-  
-  
-  
-  Rooted<PropertyDescriptor> desc(cx);
-  if (!GetOwnPropertyDescriptor(cx, expando, id, &desc)) {
-    return false;
-  }
-
-  
-  MOZ_ASSERT(desc.object());
-  MOZ_ASSERT(desc.hasValue());
-  MOZ_ASSERT(desc.isDataDescriptor());
-
-  vp.set(desc.value());
   return true;
 }
 
@@ -168,31 +123,6 @@ bool BaseProxyHandler::get(JSContext* cx, HandleObject proxy,
   
   RootedValue getterFunc(cx, ObjectValue(*getter));
   return CallGetter(cx, receiver, getterFunc, vp);
-}
-
-bool BaseProxyHandler::setPrivate(JSContext* cx, HandleObject proxy,
-                                  HandleId id, HandleValue v,
-                                  HandleValue receiver,
-                                  ObjectOpResult& result) const {
-  assertEnteredPolicy(cx, proxy, id, SET);
-  MOZ_ASSERT(JSID_IS_SYMBOL(id) && JSID_TO_SYMBOL(id)->isPrivateName());
-
-  
-  RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
-
-  MOZ_ASSERT(expando);
-
-  Rooted<PropertyDescriptor> ownDesc(cx);
-  if (!GetOwnPropertyDescriptor(cx, expando, id, &ownDesc)) {
-    return false;
-  }
-  ownDesc.assertCompleteIfFound();
-
-  MOZ_ASSERT(ownDesc.object());
-
-  RootedValue expandoValue(cx, proxy->as<ProxyObject>().expando());
-  return SetPropertyIgnoringNamedGetter(cx, expando, id, v, expandoValue,
-                                        ownDesc, result);
 }
 
 bool BaseProxyHandler::set(JSContext* cx, HandleObject proxy, HandleId id,
@@ -298,41 +228,6 @@ bool js::SetPropertyIgnoringNamedGetter(JSContext* cx, HandleObject obj,
     return false;
   }
   return result.succeed();
-}
-
-bool BaseProxyHandler::definePrivateField(JSContext* cx, HandleObject proxy,
-                                          HandleId id,
-                                          Handle<PropertyDescriptor> desc,
-                                          ObjectOpResult& result) const {
-  MOZ_ASSERT(JSID_IS_SYMBOL(id) && JSID_TO_SYMBOL(id)->isPrivateName());
-
-  
-  RootedObject expando(cx, proxy->as<ProxyObject>().expando().toObjectOrNull());
-
-  if (!expando) {
-    expando = NewObjectWithGivenProto<PlainObject>(cx, nullptr);
-    if (!expando) {
-      return false;
-    }
-
-    proxy->as<ProxyObject>().setExpando(expando);
-  }
-
-  
-  Rooted<PropertyDescriptor> ownDesc(cx);
-  if (!GetOwnPropertyDescriptor(cx, expando, id, &ownDesc)) {
-    return false;
-  }
-  ownDesc.assertCompleteIfFound();
-  
-  ownDesc.setValue(desc.value());
-
-  
-  
-  
-  MOZ_ASSERT(!ownDesc.object());
-
-  return DefineProperty(cx, expando, id, ownDesc, result);
 }
 
 bool BaseProxyHandler::getOwnEnumerablePropertyKeys(
