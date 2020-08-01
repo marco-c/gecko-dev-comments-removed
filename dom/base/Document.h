@@ -3861,7 +3861,6 @@ class Document : public nsINode,
 
   
   void SetDocTreeHadAudibleMedia();
-  void SetDocTreeHadPlayRevoked();
 
   dom::XPathEvaluator* XPathEvaluator();
 
@@ -4543,12 +4542,6 @@ class Document : public nsINode,
   bool mReportedUseCounters : 1;
 
   bool mHasReportedShadowDOMUsage : 1;
-
-  
-  
-  
-  
-  bool mDocTreeHadPlayRevoked : 1;
 
   
   
