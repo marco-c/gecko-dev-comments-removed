@@ -44,6 +44,7 @@ class JS_PUBLIC_API JSString;
 
 
 
+
 enum JSExnType {
   JSEXN_ERR,
   JSEXN_FIRST = JSEXN_ERR,

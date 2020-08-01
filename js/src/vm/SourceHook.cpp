@@ -4,14 +4,16 @@
 
 
 
+#include "js/experimental/SourceHook.h"
+
 #include "mozilla/UniquePtr.h"  
 
 #include <utility>  
 
 #include "jstypes.h"  
 
-#include "js/experimental/SourceHook.h"  
-#include "vm/JSContext.h"
+#include "vm/JSContext.h"  
+#include "vm/Runtime.h"    
 
 JS_FRIEND_API void js::SetSourceHook(JSContext* cx,
                                      mozilla::UniquePtr<SourceHook> hook) {

@@ -305,7 +305,7 @@ def check_style(enable_fixup):
     js_public_root = os.path.join('js', 'public')
     for dirpath, dirnames, filenames in os.walk(js_public_root):
         for filename in filenames:
-            if filename.endswith('.h'):
+            if filename.endswith(('.h', '.msg')):
                 filepath = os.path.join(dirpath, filename).replace('\\', '/')
                 inclname = 'js/' + filepath[len('js/public/'):]
                 js_names[filepath] = inclname
@@ -367,11 +367,20 @@ def is_module_header(enclosing_inclname, header_inclname):
     module = module_name(enclosing_inclname)
 
     
+    
     if module == module_name(header_inclname):
         return True
 
     
-    m = re.match(r'js\/(.*)\.h', header_inclname)
+    
+    
+    
+    
+    
+    
+    
+    
+    m = re.match(r'js\/.*?([^\/]+)\.h', header_inclname)
     if m is not None and module.endswith('/' + m.group(1)):
         return True
 
@@ -404,7 +413,7 @@ class Include(object):
           4. foo/Bar.h
           5. jsfooinlines.h
           6. foo/Bar-inl.h
-          7. non-.h, e.g. *.tbl, *.msg
+          7. non-.h, e.g. *.tbl, *.msg (these can be scattered throughout files)
         '''
 
         if self.is_system:
