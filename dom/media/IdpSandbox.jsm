@@ -257,7 +257,7 @@ IdpSandbox.prototype = {
   
   
   _logError(e) {
-    let winID = this.window.windowGlobalChild.innerWindowId;
+    let winID = this.window.windowUtils.currentInnerWindowID;
     let scriptError = Cc["@mozilla.org/scripterror;1"].createInstance(
       Ci.nsIScriptError
     );

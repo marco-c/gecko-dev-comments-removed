@@ -231,7 +231,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     let window = this.contentWindow;
     
     if (!("SpecialPowers" in window.wrappedJSObject)) {
-      this._windowID = window.windowGlobalChild.innerWindowId;
+      this._windowID = window.windowUtils.currentInnerWindowID;
 
       defineSpecialPowers(this);
       if (this.IsInNestedFrame) {

@@ -5199,7 +5199,7 @@
         this._uniquePanelIDCounter = 0;
       }
 
-      let outerID = window.docShell.outerWindowID;
+      let outerID = window.windowUtils.outerWindowID;
 
       
       
