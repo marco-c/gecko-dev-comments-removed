@@ -211,7 +211,7 @@ class BaseProcessLauncher {
 
   
   IPC::Channel* mChannel = nullptr;
-  std::wstring mChannelId;
+  IPC::Channel::ChannelId mChannelId;
   ScopedPRFileDesc mCrashAnnotationReadPipe;
   ScopedPRFileDesc mCrashAnnotationWritePipe;
   nsCOMPtr<nsIFile> mAppDir;

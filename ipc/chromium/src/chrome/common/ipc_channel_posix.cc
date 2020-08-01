@@ -115,14 +115,10 @@ bool ErrorIsBrokenPipe(int err) { return err == EPIPE || err == ECONNRESET; }
 void Channel::SetClientChannelFd(int fd) { gClientChannelFd = fd; }
 #endif  
 
-Channel::ChannelImpl::ChannelImpl(const std::wstring& channel_id, Mode mode,
+Channel::ChannelImpl::ChannelImpl(const ChannelId& channel_id, Mode mode,
                                   Listener* listener)
     : factory_(this) {
   Init(mode, listener);
-
-  
-  
-  mozilla::Unused << channel_id;
 
   if (!CreatePipe(mode)) {
     CHROMIUM_LOG(WARNING) << "Unable to create pipe in "
@@ -865,7 +861,7 @@ uint32_t Channel::ChannelImpl::Unsound_NumQueuedMessages() const {
 
 
 
-Channel::Channel(const std::wstring& channel_id, Mode mode, Listener* listener)
+Channel::Channel(const ChannelId& channel_id, Mode mode, Listener* listener)
     : channel_impl_(new ChannelImpl(channel_id, mode, listener)) {
   MOZ_COUNT_CTOR(IPC::Channel);
 }
@@ -917,10 +913,9 @@ uint32_t Channel::Unsound_NumQueuedMessages() const {
 }
 
 
-std::wstring Channel::GenerateVerifiedChannelID() {
-  
-  
-  return GenerateUniqueRandomChannelID();
-}
+Channel::ChannelId Channel::GenerateVerifiedChannelID() { return {}; }
+
+
+Channel::ChannelId Channel::ChannelIDForCurrentProcess() { return {}; }
 
 }  

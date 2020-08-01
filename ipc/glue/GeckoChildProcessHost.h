@@ -122,7 +122,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
 
   using ChildProcessHost::TakeChannel;
   IPC::Channel* GetChannel() { return channelp(); }
-  std::wstring GetChannelId() { return channel_id(); }
+  ChannelId GetChannelId() { return channel_id(); }
 
   
   

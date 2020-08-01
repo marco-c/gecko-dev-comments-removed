@@ -29,8 +29,10 @@ namespace IPC {
 
 class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
  public:
+  using ChannelId = Channel::ChannelId;
+
   
-  ChannelImpl(const std::wstring& channel_id, Mode mode, Listener* listener);
+  ChannelImpl(const ChannelId& channel_id, Mode mode, Listener* listener);
   ChannelImpl(int fd, Mode mode, Listener* listener);
   ~ChannelImpl() { Close(); }
   bool Connect();

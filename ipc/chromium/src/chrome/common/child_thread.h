@@ -44,7 +44,7 @@ class ChildThread : public IPC::Channel::Listener, public base::Thread {
   
   MessageLoop* owner_loop_;
 
-  std::wstring channel_name_;
+  IPC::Channel::ChannelId channel_name_;
   mozilla::UniquePtr<IPC::Channel> channel_;
 
   Thread::Options options_;

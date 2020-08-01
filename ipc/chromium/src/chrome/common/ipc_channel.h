@@ -23,6 +23,16 @@ class Channel {
 
  public:
   
+  
+  
+  
+#ifdef OS_WIN
+  typedef std::wstring ChannelId;
+#else
+  struct ChannelId {};
+#endif
+
+  
   class Listener {
    public:
     virtual ~Listener() {}
@@ -67,7 +77,7 @@ class Channel {
   
   
   
-  Channel(const std::wstring& channel_id, Mode mode, Listener* listener);
+  Channel(const ChannelId& channel_id, Mode mode, Listener* listener);
 
   
   
@@ -77,7 +87,7 @@ class Channel {
 #elif defined(OS_WIN)
   
   
-  Channel(const std::wstring& channel_id, void* server_pipe, Mode mode,
+  Channel(const ChannelId& channel_id, void* server_pipe, Mode mode,
           Listener* listener);
 #endif
 
@@ -137,13 +147,15 @@ class Channel {
 #endif  
 
   
-  static std::wstring GenerateUniqueRandomChannelID();
+  
+  
+  
+  static ChannelId GenerateVerifiedChannelID();
 
   
   
   
-  
-  static std::wstring GenerateVerifiedChannelID();
+  static ChannelId ChannelIDForCurrentProcess();
 
 #if defined(MOZ_WIDGET_ANDROID)
   
