@@ -2781,8 +2781,6 @@ bool CacheIRCompiler::emitInt32LeftShiftResult(Int32OperandId lhsId,
   AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
 
   masm.mov(lhs, scratch);
-  
-  masm.and32(Imm32(0x1F), rhs);
   masm.flexibleLshift32(rhs, scratch);
   EmitStoreResult(masm, scratch, JSVAL_TYPE_INT32, output);
 
@@ -2798,8 +2796,6 @@ bool CacheIRCompiler::emitInt32RightShiftResult(Int32OperandId lhsId,
   AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
 
   masm.mov(lhs, scratch);
-  
-  masm.and32(Imm32(0x1F), rhs);
   masm.flexibleRshift32Arithmetic(rhs, scratch);
   EmitStoreResult(masm, scratch, JSVAL_TYPE_INT32, output);
 
@@ -2822,8 +2818,6 @@ bool CacheIRCompiler::emitInt32URightShiftResult(Int32OperandId lhsId,
   }
 
   masm.mov(lhs, scratch);
-  
-  masm.and32(Imm32(0x1F), rhs);
   masm.flexibleRshift32(rhs, scratch);
   Label intDone, floatDone;
   if (allowDouble) {

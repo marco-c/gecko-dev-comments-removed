@@ -1105,6 +1105,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                  Register srcDest) PER_SHARED_ARCH;
 
   
+  
+  
+  
   inline void flexibleLshift32(Register shift,
                                Register srcDest) PER_SHARED_ARCH;
   inline void flexibleRshift32(Register shift,
