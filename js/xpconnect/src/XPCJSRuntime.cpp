@@ -1065,7 +1065,9 @@ size_t CompartmentPrivate::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) {
 void XPCJSRuntime::SystemIsBeingShutDown() {
   
   
-  mWrappedJSRoots = nullptr;
+  while (mWrappedJSRoots) {
+    mWrappedJSRoots->RemoveFromRootSet();
+  }
 }
 
 StaticAutoPtr<HelperThreadPool> gHelperThreads;
