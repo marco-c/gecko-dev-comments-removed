@@ -348,9 +348,45 @@ class RemoteSettingsClient extends EventEmitter {
     } = options;
     let { verifySignature = false } = options;
 
-    let hasLocalData;
+    let data;
     try {
-      hasLocalData = await Utils.hasLocalData(this);
+      let hasLocalData = await Utils.hasLocalData(this);
+
+      if (syncIfEmpty && !hasLocalData) {
+        
+        
+        if (!this._importingPromise) {
+          
+          this._importingPromise = (async () => {
+            const importedFromDump = gLoadDump
+              ? await this._importJSONDump()
+              : -1;
+            if (importedFromDump < 0) {
+              
+              console.debug(
+                `${this.identifier} Local DB is empty, pull data from server`
+              );
+              await this.sync({ loadDump: false });
+            }
+          })();
+        }
+        try {
+          await this._importingPromise;
+        } catch (e) {
+          
+          
+          Cu.reportError(e);
+        } finally {
+          
+          delete this._importingPromise;
+        }
+        
+        
+        verifySignature = false;
+      }
+
+      
+      data = await this.db.list({ filters, order });
     } catch (e) {
       
       
@@ -380,41 +416,6 @@ class RemoteSettingsClient extends EventEmitter {
       return this._filterEntries(data);
     }
 
-    if (syncIfEmpty && !hasLocalData) {
-      
-      
-      if (!this._importingPromise) {
-        
-        this._importingPromise = (async () => {
-          const importedFromDump = gLoadDump
-            ? await this._importJSONDump()
-            : -1;
-          if (importedFromDump < 0) {
-            
-            console.debug(
-              `${this.identifier} Local DB is empty, pull data from server`
-            );
-            await this.sync({ loadDump: false });
-          }
-        })();
-      }
-      try {
-        await this._importingPromise;
-      } catch (e) {
-        
-        
-        Cu.reportError(e);
-      } finally {
-        
-        delete this._importingPromise;
-      }
-      
-      
-      verifySignature = false;
-    }
-
-    
-    const data = await this.db.list({ filters, order });
     console.debug(
       `${this.identifier} ${data.length} records before filtering.`
     );
