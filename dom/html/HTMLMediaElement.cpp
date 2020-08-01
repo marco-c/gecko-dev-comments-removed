@@ -4764,7 +4764,6 @@ nsresult HTMLMediaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   if (IsInComposedDoc()) {
     
     AttachAndSetUAShadowRoot();
-    NotifyUAWidgetSetupOrChange();
 
     
     
