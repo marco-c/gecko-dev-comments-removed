@@ -210,8 +210,6 @@ static gboolean key_release_event_cb(GtkWidget* widget, GdkEventKey* event);
 static gboolean property_notify_event_cb(GtkWidget* widget,
                                          GdkEventProperty* event);
 static gboolean scroll_event_cb(GtkWidget* widget, GdkEventScroll* event);
-static gboolean visibility_notify_event_cb(GtkWidget* widget,
-                                           GdkEventVisibility* event);
 static void hierarchy_changed_cb(GtkWidget* widget,
                                  GtkWidget* previous_toplevel);
 static gboolean window_state_event_cb(GtkWidget* widget,
@@ -397,7 +395,6 @@ nsWindow::nsWindow() {
   mShell = nullptr;
   mCompositorWidgetDelegate = nullptr;
   mHasMappedToplevel = false;
-  mIsFullyObscured = false;
   mRetryPointerGrab = false;
   mWindowType = eWindowType_child;
   mSizeState = nsSizeMode_Normal;
@@ -563,7 +560,8 @@ void nsWindow::InvalidateWindowOrigin() {
   
   GList* children = gdk_window_get_children(mGdkWindow);
   for (GList* list = children; list; list = list->next) {
-    RefPtr<nsWindow> childWindow = get_window_for_gdk_window(GDK_WINDOW(list->data));
+    RefPtr<nsWindow> childWindow =
+        get_window_for_gdk_window(GDK_WINDOW(list->data));
     if (childWindow) {
       childWindow->InvalidateWindowOrigin();
     }
@@ -2735,7 +2733,9 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   }
 
   
-  if (!mGdkWindow || mIsFullyObscured || !mHasMappedToplevel) return FALSE;
+  if (!mGdkWindow || !mHasMappedToplevel) {
+    return FALSE;
+  }
 #ifdef MOZ_WAYLAND
   if (!mIsX11Display && !moz_container_wayland_can_draw(mContainer)) {
     return FALSE;
@@ -3810,32 +3810,6 @@ void nsWindow::OnScrollEvent(GdkEventScroll* aEvent) {
   DispatchInputEvent(&wheelEvent);
 }
 
-void nsWindow::OnVisibilityNotifyEvent(GdkEventVisibility* aEvent) {
-  LOGDRAW(("Visibility event %i on [%p] %p\n", aEvent->state, this,
-           aEvent->window));
-
-  if (!mGdkWindow) return;
-
-  switch (aEvent->state) {
-    case GDK_VISIBILITY_UNOBSCURED:
-    case GDK_VISIBILITY_PARTIAL:
-      if (mIsFullyObscured && mHasMappedToplevel) {
-        
-        
-        gdk_window_invalidate_rect(mGdkWindow, nullptr, FALSE);
-      }
-
-      mIsFullyObscured = false;
-
-      
-      EnsureGrabs();
-      break;
-    default:  
-      mIsFullyObscured = true;
-      break;
-  }
-}
-
 void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
                                   GdkEventWindowState* aEvent) {
   LOG(
@@ -4710,19 +4684,18 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     g_signal_connect(mContainer, "drag_data_received",
                      G_CALLBACK(drag_data_received_event_cb), nullptr);
 
-    GtkWidget* widgets[] = {GTK_WIDGET(mContainer),
-                            !mDrawToContainer ? mShell : nullptr};
-    for (size_t i = 0; i < ArrayLength(widgets) && widgets[i]; ++i) {
-      
-      
-      
-      g_signal_connect(widgets[i], "visibility-notify-event",
-                       G_CALLBACK(visibility_notify_event_cb), nullptr);
-      
-      
-      
-      gtk_widget_set_double_buffered(widgets[i], FALSE);
+#ifdef MOZ_X11
+    if (mIsX11Display) {
+      GtkWidget* widgets[] = {GTK_WIDGET(mContainer),
+                              !mDrawToContainer ? mShell : nullptr};
+      for (size_t i = 0; i < ArrayLength(widgets) && widgets[i]; ++i) {
+        
+        
+        
+        gtk_widget_set_double_buffered(widgets[i], FALSE);
+      }
     }
+#endif
 
     
     
@@ -5146,12 +5119,7 @@ void nsWindow::SetHasMappedToplevel(bool aState) {
   
   if (!mIsShown || !mGdkWindow) return;
 
-  if (aState && !oldState && !mIsFullyObscured) {
-    
-    
-    
-    gdk_window_invalidate_rect(mGdkWindow, nullptr, FALSE);
-
+  if (aState && !oldState) {
     
     
     EnsureGrabs();
@@ -5794,7 +5762,7 @@ void nsWindow::GrabPointer(guint32 aTime) {
   
   
   
-  if (!mHasMappedToplevel || mIsFullyObscured) {
+  if (!mHasMappedToplevel) {
     LOG(("GrabPointer: window not visible\n"));
     mRetryPointerGrab = true;
     return;
@@ -6817,16 +6785,6 @@ static gboolean scroll_event_cb(GtkWidget* widget, GdkEventScroll* event) {
   if (!window) return FALSE;
 
   window->OnScrollEvent(event);
-
-  return TRUE;
-}
-
-static gboolean visibility_notify_event_cb(GtkWidget* widget,
-                                           GdkEventVisibility* event) {
-  RefPtr<nsWindow> window = get_window_for_gdk_window(event->window);
-  if (!window) return FALSE;
-
-  window->OnVisibilityNotifyEvent(event);
 
   return TRUE;
 }
