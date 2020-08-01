@@ -8,6 +8,7 @@
 #define mozilla_dom_IOUtils__
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Buffer.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/IOUtilsBinding.h"
@@ -46,6 +47,8 @@ namespace dom {
 
 class IOUtils final {
  public:
+  class IOError;
+
   static already_AddRefed<Promise> Read(GlobalObject& aGlobal,
                                         const nsAString& aPath,
                                         const Optional<uint32_t>& aMaxBytes);
@@ -77,8 +80,7 @@ class IOUtils final {
 
   friend class IOUtilsShutdownBlocker;
   struct InternalFileInfo;
-
-  class IOError;
+  struct InternalWriteAtomicOpts;
 
   static StaticDataMutex<StaticRefPtr<nsISerialEventTarget>>
       sBackgroundEventTarget;
@@ -90,6 +92,10 @@ class IOUtils final {
   static already_AddRefed<nsISerialEventTarget> GetBackgroundEventTarget();
 
   static void SetShutdownHooks();
+
+  template <typename OkT, typename Fn, typename... Args>
+  static already_AddRefed<Promise> RunOnBackgroundThread(
+      RefPtr<Promise>& aPromise, Fn aFunc, Args... aArgs);
 
   
 
@@ -159,8 +165,8 @@ class IOUtils final {
 
 
   static Result<uint32_t, IOError> WriteAtomicSync(
-      const nsAString& aDestPath, const nsTArray<uint8_t>& aByteArray,
-      const WriteAtomicOptions& aOptions);
+      const nsAString& aDestPath, const Buffer<uint8_t>& aByteArray,
+      const InternalWriteAtomicOpts& aOptions);
 
   
 
@@ -174,7 +180,7 @@ class IOUtils final {
 
   static Result<uint32_t, IOError> WriteSync(PRFileDesc* aFd,
                                              const nsACString& aPath,
-                                             const nsTArray<uint8_t>& aBytes);
+                                             const Buffer<uint8_t>& aBytes);
 
   
 
@@ -237,18 +243,8 @@ class IOUtils final {
   static Result<IOUtils::InternalFileInfo, IOError> StatSync(
       const nsAString& aPath);
 
-  using IOReadMozPromise = mozilla::MozPromise<nsTArray<uint8_t>, const IOError,
-                                                true>;
-
   using IOWriteMozPromise =
       mozilla::MozPromise<uint32_t, const IOError,  true>;
-
-  using IOStatMozPromise =
-      mozilla::MozPromise<struct InternalFileInfo, const IOError,
-                           true>;
-
-  using IOMozPromise = mozilla::MozPromise<Ok , const IOError,
-                                            true>;
 };
 
 
@@ -286,13 +282,6 @@ class IOUtils::IOError {
 
   const Maybe<nsCString>& Message() const { return mMessage; }
 
-  using IOStatMozPromise =
-      mozilla::MozPromise<struct InternalFileInfo, const IOError,
-                           true>;
-
-  using IOMozPromise = mozilla::MozPromise<Ok , const IOError,
-                                            true>;
-
  private:
   nsresult mCode;
   Maybe<nsCString> mMessage;
@@ -311,6 +300,21 @@ struct IOUtils::InternalFileInfo {
   FileType mType;
   uint64_t mSize;
   uint64_t mLastModified;
+};
+
+
+
+
+
+
+
+
+
+struct IOUtils::InternalWriteAtomicOpts {
+  Maybe<nsString> mBackupFile;
+  bool mFlush;
+  bool mNoOverwrite;
+  Maybe<nsString> mTmpPath;
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
