@@ -379,7 +379,23 @@ const WebRTCIndicator = {
           true ,
           false 
         );
-        webrtcUI.stopSharingStreams(activeStreams);
+
+        if (!activeStreams.length) {
+          return;
+        }
+
+        
+        
+        
+        
+        
+        webrtcUI.stopSharingStreams(
+          [activeStreams[0]],
+          false ,
+          false ,
+          true ,
+          false 
+        );
         break;
       }
       case "stop-sharing-window": {
@@ -394,8 +410,15 @@ const WebRTCIndicator = {
           let browserWindowStreams = activeStreams.filter(stream => {
             return stream.devices.some(device => device.scary);
           });
+
+          if (!browserWindowStreams.length) {
+            return;
+          }
+
+          
+          
           webrtcUI.stopSharingStreams(
-            browserWindowStreams,
+            [browserWindowStreams[0]],
             false ,
             false ,
             false ,
@@ -404,7 +427,22 @@ const WebRTCIndicator = {
           break;
         }
 
-        webrtcUI.stopSharingStreams(activeStreams);
+        if (!activeStreams.length) {
+          return;
+        }
+
+        
+        
+        
+        
+        
+        webrtcUI.stopSharingStreams(
+          [activeStreams[0]],
+          false ,
+          false ,
+          false ,
+          true 
+        );
         break;
       }
       case "microphone-button":
