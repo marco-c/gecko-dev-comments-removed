@@ -44,20 +44,6 @@ void nsSearchControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
   nsTextControlFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
-already_AddRefed<Element> nsSearchControlFrame::MakeAnonymousElement(
-    Element* aParent, nsAtom* aTagName, PseudoStyleType aPseudoType) {
-  
-  Document* doc = mContent->OwnerDoc();
-  RefPtr<Element> resultElement = doc->CreateHTMLElement(aTagName);
-  resultElement->SetPseudoElementType(aPseudoType);
-
-  if (aParent) {
-    aParent->AppendChildTo(resultElement, false);
-  }
-
-  return resultElement.forget();
-}
-
 nsresult nsSearchControlFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   
@@ -74,8 +60,7 @@ nsresult nsSearchControlFrame::CreateAnonymousContent(
   
 
   
-  mOuterWrapper = MakeAnonymousElement(
-      nullptr, nsGkAtoms::div, PseudoStyleType::mozComplexControlWrapper);
+  mOuterWrapper = MakeAnonElement(PseudoStyleType::mozComplexControlWrapper);
 
   aElements.AppendElement(mOuterWrapper);
 
@@ -92,8 +77,8 @@ nsresult nsSearchControlFrame::CreateAnonymousContent(
   }
 
   
-  mClearButton = MakeAnonymousElement(mOuterWrapper, nsGkAtoms::button,
-                                      PseudoStyleType::mozSearchClearButton);
+  mClearButton = MakeAnonElement(PseudoStyleType::mozSearchClearButton,
+                                 mOuterWrapper, nsGkAtoms::button);
 
   
   UpdateClearButtonState();

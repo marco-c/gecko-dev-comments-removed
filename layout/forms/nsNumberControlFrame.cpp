@@ -47,26 +47,6 @@ void nsNumberControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
   nsTextControlFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
-already_AddRefed<Element> nsNumberControlFrame::MakeAnonymousElement(
-    Element* aParent, nsAtom* aTagName, PseudoStyleType aPseudoType) {
-  
-  Document* doc = mContent->GetComposedDoc();
-  RefPtr<Element> resultElement = doc->CreateHTMLElement(aTagName);
-  resultElement->SetPseudoElementType(aPseudoType);
-
-  if (aPseudoType == PseudoStyleType::mozNumberSpinDown ||
-      aPseudoType == PseudoStyleType::mozNumberSpinUp) {
-    resultElement->SetAttr(kNameSpaceID_None, nsGkAtoms::aria_hidden,
-                           u"true"_ns, false);
-  }
-
-  if (aParent) {
-    aParent->AppendChildTo(resultElement, false);
-  }
-
-  return resultElement.forget();
-}
-
 nsresult nsNumberControlFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   
@@ -85,8 +65,7 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
   
 
   
-  mOuterWrapper = MakeAnonymousElement(
-      nullptr, nsGkAtoms::div, PseudoStyleType::mozComplexControlWrapper);
+  mOuterWrapper = MakeAnonElement(PseudoStyleType::mozComplexControlWrapper);
 
   
   
@@ -114,16 +93,13 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
   }
 
   
-  mSpinBox = MakeAnonymousElement(mOuterWrapper, nsGkAtoms::div,
-                                  PseudoStyleType::mozNumberSpinBox);
+  mSpinBox = MakeAnonElement(PseudoStyleType::mozNumberSpinBox, mOuterWrapper);
 
   
-  mSpinUp = MakeAnonymousElement(mSpinBox, nsGkAtoms::div,
-                                 PseudoStyleType::mozNumberSpinUp);
+  mSpinUp = MakeAnonElement(PseudoStyleType::mozNumberSpinUp, mSpinBox);
 
   
-  mSpinDown = MakeAnonymousElement(mSpinBox, nsGkAtoms::div,
-                                   PseudoStyleType::mozNumberSpinDown);
+  mSpinDown = MakeAnonElement(PseudoStyleType::mozNumberSpinDown, mSpinBox);
 
   return NS_OK;
 }
