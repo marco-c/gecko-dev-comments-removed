@@ -247,11 +247,12 @@ bool nsProgressFrame::ShouldUseNativeStyle() const {
   
   
   
-  return StyleDisplay()->mAppearance == StyleAppearance::ProgressBar &&
+  return StyleDisplay()->EffectiveAppearance() ==
+             StyleAppearance::ProgressBar &&
          !PresContext()->HasAuthorSpecifiedRules(
              this, NS_AUTHOR_SPECIFIED_BORDER_OR_BACKGROUND) &&
          barFrame &&
-         barFrame->StyleDisplay()->mAppearance ==
+         barFrame->StyleDisplay()->EffectiveAppearance() ==
              StyleAppearance::Progresschunk &&
          !PresContext()->HasAuthorSpecifiedRules(
              barFrame, NS_AUTHOR_SPECIFIED_BORDER_OR_BACKGROUND);

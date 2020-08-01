@@ -922,7 +922,8 @@ void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     const nsStyleDisplay* styles = StyleDisplay();
-    if (styles && styles->mAppearance == StyleAppearance::MozWinExcludeGlass) {
+    if (styles &&
+        styles->EffectiveAppearance() == StyleAppearance::MozWinExcludeGlass) {
       aBuilder->AddWindowExcludeGlassRegion(
           this, nsRect(aBuilder->ToReferenceFrame(this), GetSize()));
     }

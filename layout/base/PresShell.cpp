@@ -5289,9 +5289,10 @@ void PresShell::UpdateCanvasBackground() {
     bool drawBackgroundImage = false;
     bool drawBackgroundColor = false;
     const nsStyleDisplay* disp = rootStyleFrame->StyleDisplay();
+    StyleAppearance appearance = disp->EffectiveAppearance();
     if (rootStyleFrame->IsThemed(disp) &&
-        disp->mAppearance != StyleAppearance::MozWinGlass &&
-        disp->mAppearance != StyleAppearance::MozWinBorderlessGlass) {
+        appearance != StyleAppearance::MozWinGlass &&
+        appearance != StyleAppearance::MozWinBorderlessGlass) {
       
       
       
