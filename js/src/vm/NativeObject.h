@@ -216,6 +216,12 @@ class ObjectElements {
     
     
     NON_PACKED = 0x40,
+
+    
+    
+    
+    
+    MAYBE_IN_ITERATION = 0x80,
   };
 
   
@@ -314,6 +320,9 @@ class ObjectElements {
   }
 
   void markNonPacked() { flags |= NON_PACKED; }
+
+  void markMaybeInIteration() { flags |= MAYBE_IN_ITERATION; }
+  bool maybeInIteration() { return flags & MAYBE_IN_ITERATION; }
 
   void seal() {
     MOZ_ASSERT(!isSealed());
@@ -1334,6 +1343,24 @@ class NativeObject : public JSObject {
   bool denseElementsArePacked() const {
     return getElementsHeader()->isPacked();
   }
+
+  MOZ_MUST_USE bool markDenseElementsMaybeInIteration(JSContext* cx) {
+    if (!maybeCopyElementsForWrite(cx)) {
+      return false;
+    }
+    getElementsHeader()->markMaybeInIteration();
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  inline bool denseElementsMaybeInIteration();
 
   
   

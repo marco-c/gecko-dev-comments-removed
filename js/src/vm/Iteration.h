@@ -414,6 +414,12 @@ extern bool SuppressDeletedProperty(JSContext* cx, HandleObject obj, jsid id);
 extern bool SuppressDeletedElement(JSContext* cx, HandleObject obj,
                                    uint32_t index);
 
+#ifdef DEBUG
+extern void AssertDenseElementsNotIterated(NativeObject* obj);
+#else
+inline void AssertDenseElementsNotIterated(NativeObject* obj) {}
+#endif
+
 
 
 
