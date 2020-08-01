@@ -385,7 +385,7 @@ const loadListener = {
       
       
       case "outer-window-destroyed":
-        if (bc.currentWindowContext.outerWindowId == winId) {
+        if (bc.window.windowUtils.outerWindowID == winId) {
           this.stop();
           sendOk(this.commandID);
         }
