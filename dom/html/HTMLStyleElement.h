@@ -37,6 +37,13 @@ class HTMLStyleElement final : public nsGenericHTMLElement,
   virtual void SetTextContentInternal(const nsAString& aTextContent,
                                       nsIPrincipal* aSubjectPrincipal,
                                       mozilla::ErrorResult& aError) override;
+  
+
+
+
+
+
+  void SetDevtoolsAsTriggeringPrincipal();
 
   virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
   virtual void UnbindFromTree(bool aNullParent = true) override;
