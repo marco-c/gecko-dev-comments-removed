@@ -93,13 +93,6 @@ class nsMathMLFrame : public nsIMathMLFrame {
   
   
   
-  static void ResolveMathMLCharStyle(
-      nsPresContext* aPresContext, nsIContent* aContent,
-      mozilla::ComputedStyle* aParenComputedStyle, nsMathMLChar* aMathMLChar);
-
-  
-  
-  
   
   
   

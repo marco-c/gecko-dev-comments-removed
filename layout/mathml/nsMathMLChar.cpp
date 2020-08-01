@@ -1806,41 +1806,17 @@ void nsDisplayMathMLCharDebug::Paint(nsDisplayListBuilder* aBuilder,
 void nsMathMLChar::Display(nsDisplayListBuilder* aBuilder, nsIFrame* aForFrame,
                            const nsDisplayListSet& aLists, uint32_t aIndex,
                            const nsRect* aSelectedRect) {
-  bool usingParentStyle = false;
   ComputedStyle* computedStyle = mComputedStyle;
-
-  if (mDraw == DRAW_NORMAL) {
-    
-    
-    usingParentStyle = true;
-    computedStyle = aForFrame->Style();
-  }
-
   if (!computedStyle->StyleVisibility()->IsVisible()) {
     return;
   }
 
   const bool isSelected = aSelectedRect && !aSelectedRect->IsEmpty();
 
-  
-  
-  
-  
   if (isSelected) {
     aLists.BorderBackground()->AppendNewToTop<nsDisplayMathMLSelectionRect>(
         aBuilder, aForFrame, *aSelectedRect);
   } else if (mRect.width && mRect.height) {
-    if (!usingParentStyle &&
-        NS_GET_A(computedStyle->StyleBackground()->BackgroundColor(
-            computedStyle)) > 0) {
-      nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
-          aBuilder, aForFrame, mRect + aBuilder->ToReferenceFrame(aForFrame),
-          aLists.BorderBackground(),
-           true, computedStyle);
-    }
-    
-    
-
 #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
     
     aLists.BorderBackground()->AppendNewToTop<nsDisplayMathMLCharDebug>(

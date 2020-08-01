@@ -87,23 +87,6 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
 }
 
 
-
-
-
-
-void nsMathMLFrame::ResolveMathMLCharStyle(nsPresContext* aPresContext,
-                                           nsIContent* aContent,
-                                           ComputedStyle* aParentComputedStyle,
-                                           nsMathMLChar* aMathMLChar) {
-  PseudoStyleType pseudoType = PseudoStyleType::mozMathAnonymous;  
-  RefPtr<ComputedStyle> newComputedStyle;
-  newComputedStyle = aPresContext->StyleSet()->ResolvePseudoElementStyle(
-      *aContent->AsElement(), pseudoType, aParentComputedStyle);
-
-  aMathMLChar->SetComputedStyle(newComputedStyle);
-}
-
-
 void nsMathMLFrame::GetEmbellishDataFrom(nsIFrame* aFrame,
                                          nsEmbellishData& aEmbellishData) {
   

@@ -19,9 +19,6 @@ using namespace mozilla;
 
 
 
-
-#define NS_MATHML_CHAR_STYLE_CONTEXT_INDEX 0
-
 nsIFrame* NS_NewMathMLmoFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsMathMLmoFrame(aStyle, aPresShell->GetPresContext());
 }
@@ -109,11 +106,10 @@ void nsMathMLmoFrame::ProcessTextData() {
   }
 
   
-  nsPresContext* presContext = PresContext();
   if (mFrames.GetLength() != 1) {
     data.Truncate();  
     mMathMLChar.SetData(data);
-    ResolveMathMLCharStyle(presContext, mContent, mComputedStyle, &mMathMLChar);
+    mMathMLChar.SetComputedStyle(Style());
     return;
   }
 
@@ -168,7 +164,7 @@ void nsMathMLmoFrame::ProcessTextData() {
       (mEmbellishData.direction != NS_STRETCH_DIRECTION_UNSUPPORTED);
   if (isMutable) mFlags |= NS_MATHML_OPERATOR_MUTABLE;
 
-  ResolveMathMLCharStyle(presContext, mContent, mComputedStyle, &mMathMLChar);
+  mMathMLChar.SetComputedStyle(Style());
 }
 
 
@@ -1052,25 +1048,7 @@ nsresult nsMathMLmoFrame::AttributeChanged(int32_t aNameSpaceID,
                                               aModType);
 }
 
-
-
-
-
-ComputedStyle* nsMathMLmoFrame::GetAdditionalComputedStyle(
-    int32_t aIndex) const {
-  switch (aIndex) {
-    case NS_MATHML_CHAR_STYLE_CONTEXT_INDEX:
-      return mMathMLChar.GetComputedStyle();
-    default:
-      return nullptr;
-  }
-}
-
-void nsMathMLmoFrame::SetAdditionalComputedStyle(
-    int32_t aIndex, ComputedStyle* aComputedStyle) {
-  switch (aIndex) {
-    case NS_MATHML_CHAR_STYLE_CONTEXT_INDEX:
-      mMathMLChar.SetComputedStyle(aComputedStyle);
-      break;
-  }
+void nsMathMLmoFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
+  nsMathMLTokenFrame::DidSetComputedStyle(aOldStyle);
+  mMathMLChar.SetComputedStyle(Style());
 }
