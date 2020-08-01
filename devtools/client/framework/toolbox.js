@@ -195,7 +195,7 @@ loader.lazyGetter(this, "registerHarOverlay", () => {
 
 loader.lazyRequireGetter(
   this,
-  "defaultThreadOptions",
+  "getThreadOptions",
   "devtools/client/shared/thread-utils",
   true
 );
@@ -750,21 +750,22 @@ Toolbox.prototype = {
   async _attachTarget(targetFront) {
     await targetFront.attach();
 
-    
-    
-    
-    
-    
-    
-    if (
-      targetFront.isTopLevel ||
-      targetFront.targetType == TargetList.TYPES.PROCESS
-    ) {
-      const threadFront = await this._attachAndResumeThread(targetFront);
-      this._startThreadFrontListeners(threadFront);
-      if (targetFront.isTopLevel) {
-        this._threadFront = threadFront;
-      }
+    const isBrowserToolbox = this.targetList.targetFront.isParentProcess;
+    const isNonTopLevelFrameTarget =
+      !targetFront.isTopLevel && targetFront.type === TargetList.TYPES.FRAME;
+
+    if (isBrowserToolbox && isNonTopLevelFrameTarget) {
+      
+      
+      
+      
+      return;
+    }
+
+    const threadFront = await this._attachAndResumeThread(targetFront);
+    this._startThreadFrontListeners(threadFront);
+    if (targetFront.isTopLevel) {
+      this._threadFront = threadFront;
     }
   },
 
@@ -777,7 +778,7 @@ Toolbox.prototype = {
   },
 
   _attachAndResumeThread: async function(target) {
-    const options = defaultThreadOptions();
+    const options = await getThreadOptions();
     const threadFront = await target.attachThread(options);
 
     try {

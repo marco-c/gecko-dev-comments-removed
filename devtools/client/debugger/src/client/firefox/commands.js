@@ -42,20 +42,13 @@ import type {
   SourcesPacket,
 } from "./types";
 
-import type {
-  EventListenerCategoryList,
-  EventListenerActiveList,
-} from "../../actions/types";
-
-
-const { defaultThreadOptions } = require("devtools/client/shared/thread-utils");
+import type { EventListenerCategoryList } from "../../actions/types";
 
 let targets: { [string]: Target };
 let devToolsClient: DevToolsClient;
 let targetList: TargetList;
 let sourceActors: { [ActorId]: SourceId };
 let breakpoints: { [string]: Object };
-let eventBreakpoints: ?EventListenerActiveList;
 
 const CALL_STACK_PAGE_SIZE = 1000;
 
@@ -371,8 +364,6 @@ function interrupt(thread: string): Promise<*> {
 }
 
 function setEventListenerBreakpoints(ids: string[]) {
-  eventBreakpoints = ids;
-
   return forEachThread(thread => thread.setActiveEventBreakpoints(ids));
 }
 
@@ -461,51 +452,16 @@ function getSourceForActor(actor: ActorId) {
   return sourceActors[actor];
 }
 
-async function attachThread(targetFront: Target) {
-  const options = {
-    breakpoints,
-    eventBreakpoints,
-    observeAsmJS: true,
-  };
+async function addThread(targetFront: Target) {
+  
+  await targetFront.onThreadAttached;
 
-  await attachTarget(targetFront, options);
-  const threadFront: ThreadFront = await targetFront.getFront("thread");
-
-  return createThread(threadFront.actorID, targetFront);
-}
-
-export async function attachTarget(targetFront: Target, options: Object) {
-  try {
-    await targetFront.attach();
-
-    const threadActorID = targetFront.targetForm.threadActor;
-    if (targets[threadActorID]) {
-      return;
-    }
+  const threadActorID = targetFront.targetForm.threadActor;
+  if (!targets[threadActorID]) {
     targets[threadActorID] = targetFront;
-
-    
-    
-    
-    let threadFront = targetFront.threadFront;
-
-    
-    
-    if (!threadFront) {
-      threadFront = await targetFront.attachThread({
-        ...defaultThreadOptions(),
-        ...options,
-      });
-      
-      
-      threadFront.resume();
-    }
-
-    addThreadEventListeners(threadFront);
-  } catch (e) {
-    
-    
+    addThreadEventListeners(targetFront.threadFront);
   }
+  return createThread(threadActorID, targetFront);
 }
 
 function removeThread(thread: Thread) {
@@ -606,7 +562,7 @@ const clientCommands = {
   fetchThreadSources,
   checkIfAlreadyPaused,
   registerSourceActor,
-  attachThread,
+  addThread,
   removeThread,
   getMainThread,
   sendPacket,

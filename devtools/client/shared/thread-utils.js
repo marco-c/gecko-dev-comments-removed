@@ -4,8 +4,18 @@
 "use strict";
 
 var Services = require("Services");
+const asyncStoreHelper = require("devtools/client/shared/async-store-helper");
 
-exports.defaultThreadOptions = function() {
+
+
+
+
+const asyncStore = asyncStoreHelper("debugger", {
+  breakpoints: ["pending-breakpoints", {}],
+  eventBreakpoints: ["event-listener-breakpoints", {}],
+});
+
+exports.getThreadOptions = async function() {
   return {
     pauseOnExceptions: Services.prefs.getBoolPref(
       "devtools.debugger.pause-on-exceptions"
@@ -28,5 +38,13 @@ exports.defaultThreadOptions = function() {
     logEventBreakpoints: Services.prefs.getBoolPref(
       "devtools.debugger.log-event-breakpoints"
     ),
+    
+    observeAsmJS: true,
+    breakpoints: await asyncStore.breakpoints,
+    
+    
+    
+    
+    eventBreakpoints: (await asyncStore.eventBreakpoints).active || [],
   };
 };
