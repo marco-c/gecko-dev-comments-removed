@@ -4112,13 +4112,6 @@ nsDocShell::InitWindow(nativeWindow aParentNativeWindow,
 }
 
 NS_IMETHODIMP
-nsDocShell::Create() {
-  
-  MOZ_DIAGNOSTIC_ASSERT(false);
-  return NS_ERROR_NULL_POINTER;
-}
-
-NS_IMETHODIMP
 nsDocShell::Destroy() {
   
   
