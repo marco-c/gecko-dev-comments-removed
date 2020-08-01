@@ -9,9 +9,9 @@ import logging
 
 import attr
 import requests
+import six
 from redo import retry
 from requests import exceptions
-
 from taskgraph.optimize import OptimizationStrategy, register_strategy
 
 logger = logging.getLogger(__name__)
@@ -67,8 +67,9 @@ class SETA(object):
             task_list = json.loads(response.content).get('jobtypes', '')
 
             if type(task_list) == dict and len(task_list) > 0:
-                if type(task_list.values()[0]) == list and len(task_list.values()[0]) > 0:
-                    low_value_tasks = set(task_list.values()[0])
+                task_list = list(task_list.values())[0]
+                if type(task_list) == list and len(task_list) > 0:
+                    low_value_tasks = set(task_list)
 
             
             logger.debug("Retrieving high-value jobs list from SETA")
@@ -79,8 +80,9 @@ class SETA(object):
 
             high_value_tasks = set()
             if type(task_list) == dict and len(task_list) > 0:
-                if type(task_list.values()[0]) == list and len(task_list.values()[0]) > 0:
-                    high_value_tasks = set(task_list.values()[0])
+                task_list = list(task_list.values())[0]
+                if type(task_list) == list and len(task_list) > 0:
+                    high_value_tasks = set(task_list)
 
             
             def only_android_raptor(task):
@@ -98,14 +100,14 @@ class SETA(object):
                 'test-windows10-64-qr/opt': 'test-windows10-64-shippable-qr/opt',
                 }
             
-            for old, new in seta_conversions.iteritems():
+            for old, new in six.iteritems(seta_conversions):
                 if any(t.startswith(old) for t in low_value_tasks):
                     low_value_tasks.update(
                         [t.replace(old, new) for t in low_value_tasks]
                     )
 
             
-            for old, new in seta_conversions.iteritems():
+            for old, new in six.iteritems(seta_conversions):
                 if any(t.startswith(old) for t in high_value_tasks):
                     high_value_tasks.update(
                         [t.replace(old, new) for t in high_value_tasks]
@@ -114,7 +116,7 @@ class SETA(object):
             def new_as_old_is_high_value(label):
                 
                 
-                for old, new in seta_conversions.iteritems():
+                for old, new in six.iteritems(seta_conversions):
                     if label.startswith(new):
                         old_label = label.replace(new, old)
                         if old_label in high_value_tasks:
