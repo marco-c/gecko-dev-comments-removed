@@ -914,7 +914,8 @@ SearchService.prototype = {
     }
 
     logConsole.debug("_loadEngines: start");
-    let engines = await this._findEngineSelectorEngines();
+    let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
+    this._setDefaultAndOrdersFromSelector(engines, privateDefault);
 
     let enginesCorrupted = false;
 
@@ -1185,16 +1186,7 @@ SearchService.prototype = {
   ) {
     logConsole.debug("ensureBuiltinExtension: ", id);
     try {
-      let policy = WebExtensionPolicy.getByID(id);
-      if (!policy) {
-        logConsole.debug("ensureBuiltinExtension: Installing ", id);
-        let path = EXT_SEARCH_PREFIX + id.split("@")[0] + "/";
-        await AddonManager.installBuiltinAddon(path);
-        policy = WebExtensionPolicy.getByID(id);
-      }
-      
-      
-      await policy.readyPromise;
+      let policy = await this._getExtensionPolicy(id);
       await this._installExtensionEngine(
         policy.extension,
         locales,
@@ -1289,16 +1281,127 @@ SearchService.prototype = {
     }
 
     
+    if (!gModernConfig) {
+      
+      const prevCurrentEngine = this._currentEngine;
+      const prevPrivateEngine = this._currentPrivateEngine;
+      
+      this._currentEngine = null;
+      this._currentPrivateEngine = null;
+      
+      
+      
+      this.__sortedEngines = null;
+      await this._loadEngines(await this._cache.get(), true);
+
+      
+      
+      if (prevCurrentEngine && this.defaultEngine !== prevCurrentEngine) {
+        SearchUtils.notifyAction(
+          this._currentEngine,
+          SearchUtils.MODIFIED_TYPE.DEFAULT
+        );
+        
+        
+        if (!this._separatePrivateDefault) {
+          SearchUtils.notifyAction(
+            this._currentEngine,
+            SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
+          );
+        }
+      }
+      if (
+        this._separatePrivateDefault &&
+        prevPrivateEngine &&
+        this.defaultPrivateEngine !== prevPrivateEngine
+      ) {
+        SearchUtils.notifyAction(
+          this._currentPrivateEngine,
+          SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
+        );
+      }
+      Services.obs.notifyObservers(
+        null,
+        SearchUtils.TOPIC_SEARCH_SERVICE,
+        "engines-reloaded"
+      );
+      return;
+    }
+
+    
     const prevCurrentEngine = this._currentEngine;
     const prevPrivateEngine = this._currentPrivateEngine;
-    
-    this._currentEngine = null;
-    this._currentPrivateEngine = null;
     
     
     
     this.__sortedEngines = null;
-    await this._loadEngines(await this._cache.get(), true);
+
+    let {
+      engines: originalConfigEngines,
+      privateDefault,
+    } = await this._fetchEngineSelectorEngines();
+
+    let enginesToRemove = [];
+    let configEngines = [...originalConfigEngines];
+    for (let engine of this._engines.values()) {
+      if (!engine.isAppProvided) {
+        continue;
+      }
+
+      let index = configEngines.findIndex(
+        e =>
+          e.webExtension.id == engine._extensionID &&
+          e.webExtension.locale == engine._locale
+      );
+      if (index == -1) {
+        enginesToRemove.push(engine);
+      } else {
+        
+        
+        let policy = await this._getExtensionPolicy(engine._extensionID);
+
+        let manifest = policy.extension.manifest;
+        let locale = engine._locale || SearchUtils.DEFAULT_TAG;
+        if (locale != SearchUtils.DEFAULT_TAG) {
+          manifest = await policy.extension.getLocalizedManifest(locale);
+        }
+        engine._updateFromManifest(
+          policy.extension.id,
+          policy.extension.baseURI,
+          manifest,
+          locale,
+          configEngines[index]
+        );
+
+        configEngines.splice(index, 1);
+      }
+    }
+
+    
+    for (let engine of configEngines) {
+      try {
+        let newEngine = await this.makeEngineFromConfig(engine, true);
+        this._addEngineToStore(newEngine);
+      } catch (ex) {
+        console.warn(
+          `Could not load engine ${
+            "webExtension" in engine ? engine.webExtension.id : "unknown"
+          }: ${ex}`
+        );
+      }
+    }
+
+    
+    
+    
+
+    this._currentEngine = null;
+    this._currentPrivateEngine = null;
+
+    this._setDefaultAndOrdersFromSelector(
+      originalConfigEngines,
+      privateDefault
+    );
 
     
     
@@ -1326,6 +1429,29 @@ SearchService.prototype = {
         SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
       );
     }
+
+    
+    for (let engine of enginesToRemove) {
+      
+      if (
+        [...this._engines.values()].filter(
+          e => e._extensionID == engine._extensionID
+        ).length > 1
+      ) {
+        
+        this._internalRemoveEngine(engine);
+      } else {
+        let addon = await AddonManager.getAddonByID(engine._extensionID);
+        if (addon) {
+          
+          
+          
+          engine._isAppProvided = false;
+          await addon.uninstall();
+        }
+      }
+    }
+
     Services.obs.notifyObservers(
       null,
       SearchUtils.TOPIC_SEARCH_SERVICE,
@@ -1661,11 +1787,7 @@ SearchService.prototype = {
     return { engines, privateDefault };
   },
 
-  async _findEngineSelectorEngines() {
-    logConsole.debug("Finding engine configuration from the selector");
-
-    let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
-
+  _setDefaultAndOrdersFromSelector(engines, privateDefault) {
     const defaultEngine = engines[0];
     this._searchDefault = {
       id: defaultEngine.webExtension.id,
@@ -1683,7 +1805,6 @@ SearchService.prototype = {
         locale: privateDefault.webExtension.locale,
       };
     }
-    return engines;
   },
 
   
@@ -2508,18 +2629,7 @@ SearchService.prototype = {
 
   async makeEngineFromConfig(config, isReload = false) {
     logConsole.debug("makeEngineFromConfig:", config);
-    let id = config.webExtension.id;
-    let policy = WebExtensionPolicy.getByID(id);
-    if (!policy) {
-      let idPrefix = id.split("@")[0];
-      let path = `resource://search-extensions/${idPrefix}/`;
-      await AddonManager.installBuiltinAddon(path);
-      policy = WebExtensionPolicy.getByID(id);
-    }
-    
-    
-    await policy.readyPromise;
-
+    let policy = await this._getExtensionPolicy(config.webExtension.id);
     let locale =
       "locale" in config.webExtension
         ? config.webExtension.locale
@@ -2720,9 +2830,18 @@ SearchService.prototype = {
         }
         engineToRemove._filePath = null;
       }
+      this._internalRemoveEngine(engineToRemove);
 
       
-      var index = this._sortedEngines.indexOf(engineToRemove);
+      this._saveSortedEngineList();
+    }
+    SearchUtils.notifyAction(engineToRemove, SearchUtils.MODIFIED_TYPE.REMOVED);
+  },
+
+  _internalRemoveEngine(engine) {
+    
+    if (this.__sortedEngines) {
+      var index = this.__sortedEngines.indexOf(engine);
       if (index == -1) {
         throw Components.Exception(
           "Can't find engine to remove in _sortedEngines!",
@@ -2730,14 +2849,10 @@ SearchService.prototype = {
         );
       }
       this.__sortedEngines.splice(index, 1);
-
-      
-      this._engines.delete(engineToRemove.name);
-
-      
-      this._saveSortedEngineList();
     }
-    SearchUtils.notifyAction(engineToRemove, SearchUtils.MODIFIED_TYPE.REMOVED);
+
+    
+    this._engines.delete(engine.name);
   },
 
   async moveEngine(engine, newIndex) {
@@ -3333,6 +3448,27 @@ SearchService.prototype = {
       length
     );
     return submission;
+  },
+
+  
+
+
+
+
+
+
+  async _getExtensionPolicy(id) {
+    let policy = WebExtensionPolicy.getByID(id);
+    if (!policy) {
+      let idPrefix = id.split("@")[0];
+      let path = `resource://search-extensions/${idPrefix}/`;
+      await AddonManager.installBuiltinAddon(path);
+      policy = WebExtensionPolicy.getByID(id);
+    }
+    
+    
+    await policy.readyPromise;
+    return policy;
   },
 
   
