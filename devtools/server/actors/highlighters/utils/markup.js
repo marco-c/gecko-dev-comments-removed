@@ -10,6 +10,7 @@ const {
   getWindowDimensions,
   getViewportDimensions,
   loadSheet,
+  removeSheet,
 } = require("devtools/shared/layout/utils");
 const EventEmitter = require("devtools/shared/event-emitter");
 const InspectorUtils = require("InspectorUtils");
@@ -40,6 +41,22 @@ exports.removePseudoClassLock = (...args) =>
 const SVG_NS = "http://www.w3.org/2000/svg";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
+
+
+
+const XUL_HIGHLIGHTER_STYLES_SHEET = `data:text/css;charset=utf-8,
+:root > iframe.devtools-highlighter-renderer {
+  border: none;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}`;
+
 const STYLESHEET_URI =
   "resource://devtools/server/actors/" + "highlighters.css";
 
@@ -236,11 +253,9 @@ exports.createNode = createNode;
 function CanvasFrameAnonymousContentHelper(highlighterEnv, nodeBuilder) {
   this.highlighterEnv = highlighterEnv;
   this.nodeBuilder = nodeBuilder;
-  this.anonymousContentDocument = this.highlighterEnv.document;
-  
-  this.anonymousContentGlobal = Cu.getGlobalForObject(
-    this.anonymousContentDocument
-  );
+
+  this._insert = this._insert.bind(this);
+  this._onWindowReady = this._onWindowReady.bind(this);
 
   
   
@@ -249,7 +264,6 @@ function CanvasFrameAnonymousContentHelper(highlighterEnv, nodeBuilder) {
     this._insert();
   }
 
-  this._onWindowReady = this._onWindowReady.bind(this);
   this.highlighterEnv.on("window-ready", this._onWindowReady);
 
   this.listeners = new Map();
@@ -259,35 +273,94 @@ function CanvasFrameAnonymousContentHelper(highlighterEnv, nodeBuilder) {
 CanvasFrameAnonymousContentHelper.prototype = {
   destroy() {
     this._remove();
+    if (this._iframe) {
+      
+      
+      const numberOfHighlighters =
+        parseInt(this._iframe.dataset.numberOfHighlighters, 10) - 1;
+      this._iframe.dataset.numberOfHighlighters = numberOfHighlighters;
+      
+      
+      if (numberOfHighlighters === 0) {
+        this._iframe.remove();
+        removeSheet(this.highlighterEnv.window, XUL_HIGHLIGHTER_STYLES_SHEET);
+      }
+      this._iframe = null;
+    }
+
     this.highlighterEnv.off("window-ready", this._onWindowReady);
     this.highlighterEnv = this.nodeBuilder = this._content = null;
     this.anonymousContentDocument = null;
-    this.anonymousContentGlobal = null;
+    this.anonymousContentWindow = null;
+    this.pageListenerTarget = null;
 
     this._removeAllListeners();
     this.elements.clear();
   },
 
-  _insert() {
-    const doc = this.highlighterEnv.document;
-    
-    if (doc.readyState != "interactive" && doc.readyState != "complete") {
-      doc.addEventListener("DOMContentLoaded", this._insert.bind(this), {
-        once: true,
-      });
+  async _insert() {
+    await waitForContentLoaded(this.highlighterEnv.window);
+    if (!this.highlighterEnv) {
+      
       return;
     }
-    
-    
     if (isXUL(this.highlighterEnv.window)) {
-      return;
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!this._iframe) {
+        const { documentElement } = this.highlighterEnv.window.document;
+        this._iframe = documentElement.querySelector(
+          ":scope > .devtools-highlighter-renderer"
+        );
+        if (this._iframe) {
+          
+          
+          const numberOfHighlighters =
+            parseInt(this._iframe.dataset.numberOfHighlighters, 10) + 1;
+          this._iframe.dataset.numberOfHighlighters = numberOfHighlighters;
+        } else {
+          this._iframe = this.highlighterEnv.window.document.createElement(
+            "iframe"
+          );
+          this._iframe.classList.add("devtools-highlighter-renderer");
+          
+          
+          this._iframe.dataset.numberOfHighlighters = 1;
+          documentElement.append(this._iframe);
+          loadSheet(this.highlighterEnv.window, XUL_HIGHLIGHTER_STYLES_SHEET);
+        }
+      }
+
+      await waitForContentLoaded(this._iframe);
+      if (!this.highlighterEnv) {
+        
+        return;
+      }
+
+      
+      
+      this.anonymousContentDocument = this._iframe.contentDocument;
+      this.anonymousContentWindow = this._iframe.contentWindow;
+      this.pageListenerTarget = this._iframe.contentWindow;
+    } else {
+      
+      
+      this.anonymousContentDocument = this.highlighterEnv.document;
+      this.anonymousContentWindow = this.highlighterEnv.window;
+      this.pageListenerTarget = this.highlighterEnv.pageListenerTarget;
     }
 
     
     
     
     
-    loadSheet(this.highlighterEnv.window, STYLESHEET_URI);
+    loadSheet(this.anonymousContentWindow, STYLESHEET_URI);
 
     const node = this.nodeBuilder();
 
@@ -297,7 +370,9 @@ CanvasFrameAnonymousContentHelper.prototype = {
     
     
     try {
-      this._content = doc.insertAnonymousContent(node);
+      this._content = this.anonymousContentDocument.insertAnonymousContent(
+        node
+      );
     } catch (e) {
       
       
@@ -306,15 +381,18 @@ CanvasFrameAnonymousContentHelper.prototype = {
       
       if (
         e.result === Cr.NS_ERROR_UNEXPECTED &&
-        doc.readyState === "interactive"
+        this.anonymousContentDocument.readyState === "interactive"
       ) {
         
-        doc.addEventListener(
-          "readystatechange",
-          () => {
-            this._content = doc.insertAnonymousContent(node);
-          },
-          { once: true }
+        await new Promise(resolve => {
+          this.anonymousContentDocument.addEventListener(
+            "readystatechange",
+            resolve,
+            { once: true }
+          );
+        });
+        this._content = this.anonymousContentDocument.insertAnonymousContent(
+          node
         );
       } else {
         throw e;
@@ -324,8 +402,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
   _remove() {
     try {
-      const doc = this.anonymousContentDocument;
-      doc.removeAnonymousContent(this._content);
+      this.anonymousContentDocument.removeAnonymousContent(this._content);
     } catch (e) {
       
       
@@ -343,8 +420,16 @@ CanvasFrameAnonymousContentHelper.prototype = {
     if (isTopLevel) {
       this._removeAllListeners();
       this.elements.clear();
+      if (this._iframe) {
+        
+        
+        
+        this._iframe.remove();
+        removeSheet(this.highlighterEnv.window, XUL_HIGHLIGHTER_STYLES_SHEET);
+        this._iframe = null;
+      }
+
       this._insert();
-      this.anonymousContentDocument = this.highlighterEnv.document;
     }
   },
 
@@ -433,7 +518,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
     
     if (!this.listeners.has(type)) {
-      const target = this.highlighterEnv.pageListenerTarget;
+      const target = this.pageListenerTarget;
       target.addEventListener(type, this, true);
       
       this.listeners.set(type, new Map());
@@ -458,7 +543,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
     
     if (!this.listeners.has(type)) {
-      const target = this.highlighterEnv.pageListenerTarget;
+      const target = this.pageListenerTarget;
       target.removeEventListener(type, this, true);
     }
   },
@@ -501,8 +586,8 @@ CanvasFrameAnonymousContentHelper.prototype = {
   },
 
   _removeAllListeners() {
-    if (this.highlighterEnv && this.highlighterEnv.pageListenerTarget) {
-      const target = this.highlighterEnv.pageListenerTarget;
+    if (this.pageListenerTarget) {
+      const target = this.pageListenerTarget;
       for (const [type] of this.listeners) {
         target.removeEventListener(type, this, true);
       }
@@ -598,6 +683,33 @@ CanvasFrameAnonymousContentHelper.prototype = {
   },
 };
 exports.CanvasFrameAnonymousContentHelper = CanvasFrameAnonymousContentHelper;
+
+
+
+
+
+
+function waitForContentLoaded(iframeOrWindow) {
+  let loadEvent = "DOMContentLoaded";
+  
+  
+  if (
+    iframeOrWindow.contentWindow &&
+    iframeOrWindow.ownerGlobal !==
+      iframeOrWindow.contentWindow.browsingContext.topChromeWindow
+  ) {
+    loadEvent = "load";
+  }
+
+  const doc = iframeOrWindow.contentDocument || iframeOrWindow.document;
+  if (doc.readyState == "interactive" || doc.readyState == "complete") {
+    return Promise.resolve();
+  }
+
+  return new Promise(resolve => {
+    iframeOrWindow.addEventListener(loadEvent, resolve, { once: true });
+  });
+}
 
 
 
