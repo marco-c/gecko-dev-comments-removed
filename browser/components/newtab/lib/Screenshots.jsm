@@ -123,7 +123,15 @@ this.Screenshots = {
     }
     
     
+    
+    link.__sharedCache ??= {
+      updateLink(prop, val) {
+        link[prop] = val;
+      },
+    };
     const cache = link.__sharedCache;
+    
+    
     if (cache.fetchingScreenshot || link[property] !== undefined) {
       return;
     }
