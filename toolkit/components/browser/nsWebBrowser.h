@@ -113,7 +113,7 @@ class nsWebBrowser final : public nsIWebBrowser,
 
  protected:
   virtual ~nsWebBrowser();
-  NS_IMETHOD InternalDestroy();
+  void InternalDestroy();
 
   
   NS_IMETHOD SetDocShell(nsIDocShell* aDocShell);
