@@ -35,7 +35,7 @@ use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 
 
 
-pub type Image = generic::Image<Gradient, MozImageRect, SpecifiedImageUrl>;
+pub type Image = generic::Image<Gradient, MozImageRect, SpecifiedImageUrl, Color, Percentage>;
 
 
 
@@ -50,6 +50,17 @@ pub type Gradient = generic::Gradient<
     Color,
 >;
 
+
+
+
+pub type CrossFade = generic::CrossFade<Image, Color, Percentage>;
+
+pub type CrossFadeElement = generic::CrossFadeElement<Image, Color, Percentage>;
+
+pub type CrossFadeImage = generic::CrossFadeImage<Image, Color>;
+
+pub type PercentOrNone = generic::PercentOrNone<Percentage>;
+
 type LengthPercentageItemList = crate::OwnedSlice<generic::GradientItem<Color, LengthPercentage>>;
 
 #[cfg(feature = "gecko")]
@@ -59,6 +70,16 @@ fn conic_gradients_enabled() -> bool {
 
 #[cfg(feature = "servo")]
 fn conic_gradients_enabled() -> bool {
+    false
+}
+
+#[cfg(feature = "gecko")]
+fn cross_fade_enabled() -> bool {
+    static_prefs::pref!("layout.css.cross-fade.enabled")
+}
+
+#[cfg(feature = "servo")]
+fn cross_fade_enabled() -> bool {
     false
 }
 
@@ -141,6 +162,11 @@ impl Parse for Image {
         if let Ok(gradient) = input.try_parse(|i| Gradient::parse(context, i)) {
             return Ok(generic::Image::Gradient(Box::new(gradient)));
         }
+        if cross_fade_enabled() {
+            if let Ok(cf) = input.try_parse(|input| CrossFade::parse(context, input)) {
+                return Ok(generic::Image::CrossFade(cf));
+            }
+        }
         #[cfg(feature = "servo-layout-2013")]
         {
             if let Ok(paint_worklet) = input.try_parse(|i| PaintWorklet::parse(context, i)) {
@@ -194,6 +220,57 @@ impl Image {
             return Ok(generic::Image::Url(url));
         }
         Self::parse(context, input)
+    }
+}
+
+impl Parse for CrossFade {
+    
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        input.expect_function_matching("cross-fade")?;
+        let elements = input.parse_nested_block(|input| {
+            input.parse_comma_separated(|input| CrossFadeElement::parse(context, input))
+        })?;
+        let elements = crate::OwnedSlice::from(elements);
+        Ok(Self { elements })
+    }
+}
+
+impl Parse for CrossFadeElement {
+    
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        
+        let mut percent = PercentOrNone::parse_or_none(context, input);
+        
+        let image = CrossFadeImage::parse(context, input)?;
+        
+        if percent == PercentOrNone::None {
+            percent = PercentOrNone::parse_or_none(context, input);
+        }
+        Ok(Self { percent, image })
+    }
+}
+
+impl PercentOrNone {
+    fn parse_or_none<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Self {
+        
+        
+        
+        
+        
+        if let Ok(percent) = input.try_parse(|input| Percentage::parse_non_negative(context, input)) {
+            Self::Percent(percent.clamp_to_hundred())
+        } else {
+            Self::None
+        }
     }
 }
 
