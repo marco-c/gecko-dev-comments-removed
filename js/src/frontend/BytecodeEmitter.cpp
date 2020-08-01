@@ -7316,6 +7316,29 @@ bool BytecodeEmitter::checkSelfHostedUnsafeGetReservedSlot(
 
   return true;
 }
+
+bool BytecodeEmitter::checkSelfHostedUnsafeSetReservedSlot(
+    BinaryNode* callNode) {
+  ListNode* argsList = &callNode->right()->as<ListNode>();
+
+  if (argsList->count() != 3) {
+    reportNeedMoreArgsError(callNode, "UnsafeSetReservedSlot", "3", "",
+                            argsList);
+    return false;
+  }
+
+  ParseNode* objNode = argsList->head();
+  ParseNode* slotNode = objNode->pn_next;
+
+  
+  if (!slotNode->isKind(ParseNodeKind::NumberExpr)) {
+    reportError(callNode, JSMSG_UNEXPECTED_TYPE, "slot argument",
+                "not a constant");
+    return false;
+  }
+
+  return true;
+}
 #endif
 
 bool BytecodeEmitter::isRestParameter(ParseNode* expr) {
@@ -7760,7 +7783,7 @@ bool BytecodeEmitter::emitCallOrNew(
     
     
     
-    PropertyName* calleeName = calleeNode->as<NameNode>().name();
+    RootedPropertyName calleeName(cx, calleeNode->as<NameNode>().name());
     if (calleeName == cx->parserNames().callFunction ||
         calleeName == cx->parserNames().callContentFunction ||
         calleeName == cx->parserNames().constructContentFunction) {
@@ -7799,6 +7822,12 @@ bool BytecodeEmitter::emitCallOrNew(
         calleeName == cx->parserNames().UnsafeGetBooleanFromReservedSlot) {
       
       if (!checkSelfHostedUnsafeGetReservedSlot(callNode)) {
+        return false;
+      }
+    }
+    if (calleeName == cx->parserNames().UnsafeSetReservedSlot) {
+      
+      if (!checkSelfHostedUnsafeSetReservedSlot(callNode)) {
         return false;
       }
     }

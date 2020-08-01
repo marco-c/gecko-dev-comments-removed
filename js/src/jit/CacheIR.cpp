@@ -5266,12 +5266,13 @@ AttachDecision CallIRGenerator::tryAttachDataViewSet(HandleFunction callee,
 AttachDecision CallIRGenerator::tryAttachUnsafeGetReservedSlot(
     HandleFunction callee, InlinableNative native) {
   
-  if (argc_ != 2 || !args_[0].isObject() || !args_[1].isInt32()) {
-    return AttachDecision::NoAction;
-  }
+  MOZ_ASSERT(argc_ == 2);
+  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(args_[1].isInt32());
+  MOZ_ASSERT(args_[1].toInt32() >= 0);
 
-  int32_t slot = args_[1].toInt32();
-  if (slot < 0 || uint32_t(slot) >= NativeObject::MAX_FIXED_SLOTS) {
+  uint32_t slot = uint32_t(args_[1].toInt32());
+  if (slot >= NativeObject::MAX_FIXED_SLOTS) {
     return AttachDecision::NoAction;
   }
   size_t offset = NativeObject::getFixedSlotOffset(slot);
@@ -5280,7 +5281,6 @@ AttachDecision CallIRGenerator::tryAttachUnsafeGetReservedSlot(
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
 
   
   ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -5314,6 +5314,46 @@ AttachDecision CallIRGenerator::tryAttachUnsafeGetReservedSlot(
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
 
   trackAttached("UnsafeGetReservedSlot");
+  return AttachDecision::Attach;
+}
+
+AttachDecision CallIRGenerator::tryAttachUnsafeSetReservedSlot(
+    HandleFunction callee) {
+  
+  MOZ_ASSERT(argc_ == 3);
+  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(args_[1].isInt32());
+  MOZ_ASSERT(args_[1].toInt32() >= 0);
+
+  uint32_t slot = uint32_t(args_[1].toInt32());
+  if (slot >= NativeObject::MAX_FIXED_SLOTS) {
+    return AttachDecision::NoAction;
+  }
+  size_t offset = NativeObject::getFixedSlotOffset(slot);
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+
+  
+  ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objId = writer.guardToObject(arg0Id);
+
+  
+  
+
+  
+  ValOperandId valId = writer.loadArgumentFixedSlot(ArgumentKind::Arg2, argc_);
+
+  
+  writer.storeFixedSlotUndefinedResult(objId, offset, valId);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("UnsafeSetReservedSlot");
   return AttachDecision::Attach;
 }
 
@@ -7026,6 +7066,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     case InlinableNative::IntrinsicUnsafeGetStringFromReservedSlot:
     case InlinableNative::IntrinsicUnsafeGetBooleanFromReservedSlot:
       return tryAttachUnsafeGetReservedSlot(callee, native);
+    case InlinableNative::IntrinsicUnsafeSetReservedSlot:
+      return tryAttachUnsafeSetReservedSlot(callee);
 
     
     case InlinableNative::IntrinsicIsSuspendedGenerator:
