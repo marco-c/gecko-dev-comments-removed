@@ -569,6 +569,10 @@ class HTMLMediaElement::MediaControlKeyListener final
   
   
   BrowsingContext* GetCurrentBrowsingContext() const {
+    
+    if (!Owner()) {
+      return nullptr;
+    }
     nsPIDOMWindowInner* window = Owner()->OwnerDoc()->GetInnerWindow();
     return window ? window->GetBrowsingContext() : nullptr;
   }
@@ -589,7 +593,9 @@ class HTMLMediaElement::MediaControlKeyListener final
   }
 
   HTMLMediaElement* Owner() const {
-    MOZ_ASSERT(mElement);
+    
+    
+    MOZ_ASSERT(mElement || !IsStarted());
     return mElement.get();
   }
 
