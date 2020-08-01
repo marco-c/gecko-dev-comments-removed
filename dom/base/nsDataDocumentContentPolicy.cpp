@@ -75,11 +75,29 @@ nsDataDocumentContentPolicy::ShouldLoad(nsIURI* aContentLocation,
     return NS_OK;
   }
 
-  
   if (doc->IsLoadedAsData()) {
-    
-    if (!doc->IsStaticDocument() ||
-        contentType != nsIContentPolicy::TYPE_FONT) {
+    bool allowed = [&] {
+      if (!doc->IsStaticDocument()) {
+        
+        
+        return false;
+      }
+      
+      
+      switch (contentType) {
+        case nsIContentPolicy::TYPE_IMAGE:
+        case nsIContentPolicy::TYPE_IMAGESET:
+        case nsIContentPolicy::TYPE_FONT:
+        
+        
+        case nsIContentPolicy::TYPE_OBJECT:
+          return true;
+        default:
+          return false;
+      }
+    }();
+
+    if (!allowed) {
       *aDecision = nsIContentPolicy::REJECT_TYPE;
       return NS_OK;
     }

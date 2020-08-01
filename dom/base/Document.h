@@ -2627,7 +2627,8 @@ class Document : public nsINode,
   bool ShouldLoadImages() const {
     
     
-    return IsCurrentActiveDocument() || IsBeingUsedAsImage();
+    return IsCurrentActiveDocument() || IsBeingUsedAsImage() ||
+           IsStaticDocument();
   }
 
   

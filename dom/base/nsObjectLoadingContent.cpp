@@ -1837,8 +1837,19 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   
   
   
-  if (doc->IsBeingUsedAsImage() || doc->IsLoadedAsData()) {
+  if (doc->IsBeingUsedAsImage()) {
     return NS_OK;
+  }
+
+  if (doc->IsLoadedAsData() && !doc->IsStaticDocument()) {
+    return NS_OK;
+  }
+  if (doc->IsStaticDocument()) {
+    
+    
+    if (mType != eType_Image && mType != eType_Loading) {
+      return NS_OK;
+    }
   }
 
   LOG(("OBJLC [%p]: LoadObject called, notify %u, forceload %u, channel %p",
@@ -2589,8 +2600,6 @@ nsPluginFrame* nsObjectLoadingContent::GetExistingFrame() {
 
 void nsObjectLoadingContent::CreateStaticClone(
     nsObjectLoadingContent* aDest) const {
-  nsImageLoadingContent::CreateStaticImageClone(aDest);
-
   aDest->mType = mType;
   nsObjectLoadingContent* thisObj = const_cast<nsObjectLoadingContent*>(this);
   if (thisObj->mPrintFrame.IsAlive()) {
