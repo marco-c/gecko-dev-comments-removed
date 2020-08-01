@@ -716,23 +716,7 @@ interface nsILoadInfo : nsISupports
 
 
 
-
-
-
   [infallible] readonly attribute unsigned long long innerWindowID;
-  [infallible] readonly attribute unsigned long long outerWindowID;
-  [infallible] readonly attribute unsigned long long parentOuterWindowID;
-  [infallible] readonly attribute unsigned long long topOuterWindowID;
-
-  
-
-
-
-
-
-
-
-  [infallible] readonly attribute unsigned long long frameOuterWindowID;
 
   
 
@@ -741,6 +725,10 @@ interface nsILoadInfo : nsISupports
   [infallible] readonly attribute BrowsingContext browsingContext;
 
   
+
+
+
+
 
 
 
