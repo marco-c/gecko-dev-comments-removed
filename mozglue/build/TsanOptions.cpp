@@ -298,6 +298,10 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:event_debug_mode_too_late\n"
 
+         
+         "race:libavcodec.so*\n"
+         "race:libavutil.so*\n"
+
       
       ;  
 }
