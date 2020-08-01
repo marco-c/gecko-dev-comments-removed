@@ -53,12 +53,12 @@ module.exports = function(context) {
             return fixer.removeRange([
               
               
-              startNode ? startNode.end + 1 : 0,
+              startNode ? startNode.range[1] + 1 : 0,
               
               
               
               
-              node.end + 1,
+              node.range[1] + 1,
             ]);
           },
           message:
