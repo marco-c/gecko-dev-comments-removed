@@ -9,7 +9,7 @@
 
 use ast::source_atom_set::SourceAtomSetIndex;
 use std::collections::hash_map::RandomState;
-use std::collections::hash_set::Difference;
+use std::collections::hash_set::{Difference, Intersection};
 use std::collections::HashSet;
 
 
@@ -86,6 +86,13 @@ impl FreeNameTracker {
     
     pub fn closed_over_freevars(&self) -> Difference<'_, SourceAtomSetIndex, RandomState> {
         self.closed_over_names.difference(&self.def_names)
+    }
+
+    
+    pub fn defined_and_closed_over_vars(
+        &self,
+    ) -> Intersection<'_, SourceAtomSetIndex, RandomState> {
+        self.def_names.intersection(&self.closed_over_names)
     }
 
     

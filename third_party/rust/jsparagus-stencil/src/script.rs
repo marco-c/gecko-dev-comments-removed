@@ -247,6 +247,14 @@ impl SourceExtent {
 
 #[derive(Debug)]
 pub struct ScriptStencil {
+    
+    
+    
+    
+    
+    
+    
+    
     pub immutable_flags: ImmutableScriptFlags,
 
     
@@ -254,17 +262,56 @@ pub struct ScriptStencil {
     
     
     
+    
+    
+    
+    
+    
+    
     pub gcthings: Vec<GCThing>,
 
+    
     pub immutable_script_data: Option<ImmutableScriptDataIndex>,
 
+    
     pub extent: SourceExtent,
 
+    
+    
+    
+    
+    
+    
+    
     pub fun_name: Option<SourceAtomSetIndex>,
+
+    
     pub fun_nargs: u16,
+
+    
     pub fun_flags: FunctionFlags,
 
+    
+    
+    
+    
+    
+    
+    
     pub lazy_function_enclosing_scope_index: Option<ScopeIndex>,
+
+    
+    
+    pub is_standalone_function: bool,
+
+    
+    
+    pub was_function_emitted: bool,
+
+    
+    
+    
+    pub is_singleton_function: bool,
 }
 
 impl ScriptStencil {
@@ -282,6 +329,9 @@ impl ScriptStencil {
             fun_nargs: 0,
             fun_flags: FunctionFlags::empty(),
             lazy_function_enclosing_scope_index: None,
+            is_standalone_function: false,
+            was_function_emitted: false,
+            is_singleton_function: false,
         }
     }
 
@@ -310,6 +360,9 @@ impl ScriptStencil {
             fun_nargs: 0,
             fun_flags,
             lazy_function_enclosing_scope_index: Some(lazy_function_enclosing_scope_index),
+            is_standalone_function: false,
+            was_function_emitted: false,
+            is_singleton_function: false,
         }
     }
 
@@ -392,16 +445,24 @@ impl ScriptStencil {
         self.fun_nargs += 1;
     }
 
-    pub fn set_to_string_starts(&mut self, to_string_start: usize) {
-        self.extent.to_string_start = to_string_start as u32;
+    
+    pub fn set_source_starts(&mut self, source_start: usize) {
+        self.extent.source_start = source_start as u32;
     }
 
+    
+    
     pub fn set_to_string_end(&mut self, to_string_end: usize) {
         self.extent.to_string_end = to_string_end as u32;
     }
 
+    
     pub fn set_source_end(&mut self, source_end: usize) {
         self.extent.source_end = source_end as u32;
+    }
+
+    pub fn set_function_emitted(&mut self) {
+        self.was_function_emitted = true;
     }
 
     pub fn push_inner_function(&mut self, fun: ScriptStencilIndex) {
@@ -413,6 +474,11 @@ impl ScriptStencil {
     pub fn push_closed_over_bindings(&mut self, name: SourceAtomSetIndex) {
         debug_assert!(self.is_lazy_function());
         self.gcthings.push(GCThing::Atom(name));
+    }
+
+    pub fn push_closed_over_bindings_delimiter(&mut self) {
+        debug_assert!(self.is_lazy_function());
+        self.gcthings.push(GCThing::Null);
     }
 }
 

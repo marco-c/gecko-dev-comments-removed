@@ -7,6 +7,7 @@ use ast::source_atom_set::SourceAtomSetIndex;
 
 #[derive(Debug)]
 pub enum GCThing {
+    Null,
     Atom(SourceAtomSetIndex),
     Function(ScriptStencilIndex),
     RegExp(RegExpIndex),
