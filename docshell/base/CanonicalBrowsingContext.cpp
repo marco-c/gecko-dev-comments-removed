@@ -659,11 +659,16 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Finish() {
                             mContentParent ? u"true"_ns : u"false"_ns,
                              true);
 
+    RefPtr<BrowsingContextGroup> specificGroup;
+    if (mSpecificGroupId != 0) {
+      specificGroup = BrowsingContextGroup::GetOrCreate(mSpecificGroupId);
+    }
+
     
     
     ErrorResult error;
     frameLoaderOwner->ChangeRemotenessToProcess(
-        mContentParent, mReplaceBrowsingContext, mSpecificGroup, error);
+        mContentParent, mReplaceBrowsingContext, specificGroup, error);
     if (error.Failed()) {
       Cancel(error.StealNSResult());
       return;
@@ -838,12 +843,6 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Clear() {
     mContentParent = nullptr;
   }
 
-  
-  if (mSpecificGroup) {
-    mSpecificGroup->RemoveKeepAlive();
-    mSpecificGroup = nullptr;
-  }
-
   mPromise = nullptr;
   mTarget = nullptr;
   mPrepareToChangePromise = nullptr;
@@ -851,15 +850,16 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Clear() {
 
 CanonicalBrowsingContext::PendingRemotenessChange::PendingRemotenessChange(
     CanonicalBrowsingContext* aTarget, RemotenessPromise::Private* aPromise,
-    uint64_t aPendingSwitchId, bool aReplaceBrowsingContext)
+    uint64_t aPendingSwitchId, bool aReplaceBrowsingContext,
+    uint64_t aSpecificGroupId)
     : mTarget(aTarget),
       mPromise(aPromise),
       mPendingSwitchId(aPendingSwitchId),
+      mSpecificGroupId(aSpecificGroupId),
       mReplaceBrowsingContext(aReplaceBrowsingContext) {}
 
 CanonicalBrowsingContext::PendingRemotenessChange::~PendingRemotenessChange() {
-  MOZ_ASSERT(!mPromise && !mTarget && !mContentParent && !mSpecificGroup &&
-                 !mPrepareToChangePromise,
+  MOZ_ASSERT(!mPromise && !mTarget,
              "should've already been Cancel() or Complete()-ed");
 }
 
@@ -936,17 +936,10 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsACString& aRemoteType,
 
   
   auto promise = MakeRefPtr<RemotenessPromise::Private>(__func__);
-  RefPtr<PendingRemotenessChange> change = new PendingRemotenessChange(
-      this, promise, aPendingSwitchId, aReplaceBrowsingContext);
+  RefPtr<PendingRemotenessChange> change =
+      new PendingRemotenessChange(this, promise, aPendingSwitchId,
+                                  aReplaceBrowsingContext, aSpecificGroupId);
   mPendingRemotenessChange = change;
-
-  
-  
-  if (aSpecificGroupId) {
-    change->mSpecificGroup =
-        BrowsingContextGroup::GetOrCreate(aSpecificGroupId);
-    change->mSpecificGroup->AddKeepAlive();
-  }
 
   
   
@@ -969,20 +962,9 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsACString& aRemoteType,
   if (aRemoteType.IsEmpty()) {
     change->ProcessReady();
   } else {
-    
-    
-    
-    
-    
-    
-    
-    
-    BrowsingContextGroup* finalGroup =
-        aReplaceBrowsingContext ? change->mSpecificGroup.get() : Group();
-
     change->mContentParent = ContentParent::GetNewOrUsedLaunchingBrowserProcess(
+         nullptr,
          aRemoteType,
-         finalGroup,
          hal::PROCESS_PRIORITY_FOREGROUND,
          false);
     if (!change->mContentParent) {

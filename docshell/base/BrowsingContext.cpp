@@ -379,7 +379,7 @@ void BrowsingContext::CreateFromIPC(BrowsingContext::IPCInitializer&& aInit,
   uint64_t originId = 0;
   if (aOriginProcess) {
     originId = aOriginProcess->ChildID();
-    aGroup->EnsureHostProcess(aOriginProcess);
+    aGroup->EnsureSubscribed(aOriginProcess);
   }
 
   MOZ_LOG(GetLog(), LogLevel::Debug,
@@ -642,38 +642,29 @@ void BrowsingContext::Detach(bool aFromIPC) {
     mGroup->Toplevels().RemoveElement(this);
   }
 
-  auto callSendDiscard = [&](auto* aActor) {
+  {
     
     
     
-    
-    
-    
-    
-    mGroup->AddKeepAlive();
-    auto callback = [self = RefPtr{this}](auto) {
-      self->mGroup->RemoveKeepAlive();
-    };
-
-    aActor->SendDiscardBrowsingContext(this, callback, callback);
-  };
-
-  if (XRE_IsParentProcess()) {
-    Group()->EachParent([&](ContentParent* aParent) {
-      
-      
-      
-      
-      
-      
-      
-      if (!Canonical()->IsEmbeddedInProcess(aParent->ChildID()) &&
-          !Canonical()->IsOwnedByProcess(aParent->ChildID())) {
-        callSendDiscard(aParent);
-      }
-    });
-  } else if (!aFromIPC) {
-    callSendDiscard(ContentChild::GetSingleton());
+    RefPtr<BrowsingContext> self(this);
+    auto callback = [self](auto) {};
+    if (XRE_IsParentProcess()) {
+      Group()->EachParent([&](ContentParent* aParent) {
+        
+        
+        
+        
+        
+        
+        if (!Canonical()->IsEmbeddedInProcess(aParent->ChildID()) &&
+            !Canonical()->IsOwnedByProcess(aParent->ChildID())) {
+          aParent->SendDiscardBrowsingContext(this, callback, callback);
+        }
+      });
+    } else if (!aFromIPC) {
+      ContentChild::GetSingleton()->SendDiscardBrowsingContext(this, callback,
+                                                               callback);
+    }
   }
 
   mGroup->Unregister(this);

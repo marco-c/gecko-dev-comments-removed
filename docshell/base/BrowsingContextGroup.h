@@ -8,7 +8,6 @@
 #define mozilla_dom_BrowsingContextGroup_h
 
 #include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/FunctionRef.h"
 #include "nsRefPtrHashtable.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
@@ -36,46 +35,19 @@ class BrowsingContextGroup final : public nsWrapperCache {
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(BrowsingContextGroup)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(BrowsingContextGroup)
 
+  typedef nsTHashtable<nsRefPtrHashKey<ContentParent>> ContentParents;
+
   
   
   void Register(nsISupports* aContext);
   void Unregister(nsISupports* aContext);
 
   
-  
-  
-  
-  
-  
-  
-  void EnsureHostProcess(ContentParent* aProcess);
+  void Subscribe(ContentParent* aOriginProcess);
+  void Unsubscribe(ContentParent* aOriginProcess);
 
   
-  
-  void RemoveHostProcess(ContentParent* aProcess);
-
-  
-  
-  
-  
-  
-  void Subscribe(ContentParent* aProcess);
-
-  
-  
-  void Unsubscribe(ContentParent* aProcess);
-
-  
-  
-  
-  ContentParent* GetHostProcess(const nsACString& aRemoteType);
-
-  
-  
-  
-  
-  void AddKeepAlive();
-  void RemoveKeepAlive();
+  void EnsureSubscribed(ContentParent* aProcess);
 
   bool GetToplevelsSuspended() { return mToplevelsSuspended; }
   void SetToplevelsSuspended(bool aSuspended);
@@ -154,16 +126,9 @@ class BrowsingContextGroup final : public nsWrapperCache {
   explicit BrowsingContextGroup(uint64_t aId);
   ~BrowsingContextGroup();
 
-  void MaybeDestroy();
-  void Destroy();
+  void UnsubscribeAllContentParents();
 
   uint64_t mId;
-
-  uint32_t mKeepAliveCount = 0;
-
-#ifdef DEBUG
-  bool mDestroyed = false;
-#endif
 
   
   
@@ -187,15 +152,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   nsRefPtrHashtable<nsCStringHashKey, DocGroup> mDocGroups;
 
-  
-  
-  
-  
-  
-  
-  nsRefPtrHashtable<nsCStringHashKey, ContentParent> mHosts;
-
-  nsTHashtable<nsRefPtrHashKey<ContentParent>> mSubscribers;
+  ContentParents mSubscribers;
 
   
   

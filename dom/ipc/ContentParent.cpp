@@ -979,27 +979,11 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
 
 already_AddRefed<ContentParent>
 ContentParent::GetNewOrUsedLaunchingBrowserProcess(
-    const nsACString& aRemoteType, BrowsingContextGroup* aGroup,
+    Element* aFrameElement, const nsACString& aRemoteType,
     ProcessPriority aPriority, bool aPreferUsed) {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("GetNewOrUsedProcess for type %s",
            PromiseFlatCString(aRemoteType).get()));
-
-  
-  
-  
-  RefPtr<ContentParent> contentParent;
-  if (aGroup) {
-    contentParent = aGroup->GetHostProcess(aRemoteType);
-    if (contentParent) {
-      MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-              ("GetNewOrUsedProcess: Existing host process %p (launching %d)",
-               contentParent.get(), contentParent->IsLaunching()));
-      contentParent->AssertAlive();
-      return contentParent.forget();
-    }
-  }
-
   nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
   uint32_t maxContentParents = GetMaxProcessCount(aRemoteType);
   
@@ -1007,14 +991,14 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
       contentParents.Length() >= maxContentParents) {
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("GetNewOrUsedProcess: returning Large Used process"));
-    return GetNewOrUsedLaunchingBrowserProcess(DEFAULT_REMOTE_TYPE, aGroup,
-                                               aPriority,
+    return GetNewOrUsedLaunchingBrowserProcess(aFrameElement,
+                                               DEFAULT_REMOTE_TYPE, aPriority,
                                                false);
   }
 
   
-  contentParent = GetUsedBrowserProcess(aRemoteType, contentParents,
-                                        maxContentParents, aPreferUsed);
+  RefPtr<ContentParent> contentParent = GetUsedBrowserProcess(
+      aRemoteType, contentParents, maxContentParents, aPreferUsed);
 
   if (contentParent) {
     
@@ -1023,9 +1007,6 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
             ("GetNewOrUsedProcess: Used process %p (launching %d)",
              contentParent.get(), contentParent->IsLaunching()));
     contentParent->AssertAlive();
-    if (aGroup) {
-      aGroup->EnsureHostProcess(contentParent);
-    }
     return contentParent.forget();
   }
 
@@ -1054,21 +1035,18 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("GetNewOrUsedProcess: new process %p", contentParent.get()));
   contentParent->AssertAlive();
-  if (aGroup) {
-    aGroup->EnsureHostProcess(contentParent);
-  }
   return contentParent.forget();
 }
 
 
 RefPtr<ContentParent::LaunchPromise>
-ContentParent::GetNewOrUsedBrowserProcessAsync(const nsACString& aRemoteType,
-                                               BrowsingContextGroup* aGroup,
+ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
+                                               const nsACString& aRemoteType,
                                                ProcessPriority aPriority,
                                                bool aPreferUsed) {
   
   RefPtr<ContentParent> contentParent = GetNewOrUsedLaunchingBrowserProcess(
-      aRemoteType, aGroup, aPriority, aPreferUsed);
+      aFrameElement, aRemoteType, aPriority, aPreferUsed);
   if (!contentParent) {
     
     return LaunchPromise::CreateAndReject(LaunchError(), __func__);
@@ -1078,10 +1056,10 @@ ContentParent::GetNewOrUsedBrowserProcessAsync(const nsACString& aRemoteType,
 
 
 already_AddRefed<ContentParent> ContentParent::GetNewOrUsedBrowserProcess(
-    const nsACString& aRemoteType, BrowsingContextGroup* aGroup,
+    Element* aFrameElement, const nsACString& aRemoteType,
     ProcessPriority aPriority, bool aPreferUsed) {
   RefPtr<ContentParent> contentParent = GetNewOrUsedLaunchingBrowserProcess(
-      aRemoteType, aGroup, aPriority, aPreferUsed);
+      aFrameElement, aRemoteType, aPriority, aPreferUsed);
   if (!contentParent || !contentParent->WaitForLaunchSync(aPriority)) {
     
     return nullptr;
@@ -1176,6 +1154,24 @@ already_AddRefed<ContentParent> ContentParent::GetNewOrUsedJSPluginProcess(
   sJSPluginContentParents->Put(aPluginID, p);
 
   return p.forget();
+}
+
+
+ProcessPriority ContentParent::GetInitialProcessPriority(
+    Element* aFrameElement) {
+  
+  
+
+  if (!aFrameElement) {
+    return PROCESS_PRIORITY_FOREGROUND;
+  }
+
+  nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(aFrameElement);
+  if (!browserFrame) {
+    return PROCESS_PRIORITY_FOREGROUND;
+  }
+
+  return PROCESS_PRIORITY_FOREGROUND;
 }
 
 #if defined(XP_WIN)
@@ -1322,6 +1318,7 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
     remoteType = DEFAULT_REMOTE_TYPE;
   }
 
+  ProcessPriority initialPriority = GetInitialProcessPriority(aFrameElement);
   TabId tabId(nsContentUtils::GenerateTabId());
 
   nsIDocShell* docShell = GetOpenerDocShellHelper(aFrameElement);
@@ -1344,12 +1341,11 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
     constructorSender = aOpenerContentParent;
   } else {
     if (aContext.IsJSPlugin()) {
-      constructorSender = GetNewOrUsedJSPluginProcess(
-          aContext.JSPluginId(), PROCESS_PRIORITY_FOREGROUND);
+      constructorSender =
+          GetNewOrUsedJSPluginProcess(aContext.JSPluginId(), initialPriority);
     } else {
       constructorSender = GetNewOrUsedBrowserProcess(
-          remoteType, aBrowsingContext->Group(), PROCESS_PRIORITY_FOREGROUND,
-          isPreloadBrowser);
+          aFrameElement, remoteType, initialPriority, isPreloadBrowser);
     }
     if (!constructorSender) {
       return nullptr;
@@ -1360,7 +1356,7 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
 
   
   
-  aBrowsingContext->Group()->EnsureHostProcess(constructorSender);
+  aBrowsingContext->Group()->EnsureSubscribed(constructorSender);
 
   nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
   docShell->GetTreeOwner(getter_AddRefs(treeOwner));
@@ -1701,13 +1697,6 @@ void ContentParent::RemoveFromList() {
     return;
   }
 
-  
-  
-  
-  for (auto& group : mGroups) {
-    group.GetKey()->RemoveHostProcess(this);
-  }
-
   if (sBrowserContentParents) {
     if (auto entry = sBrowserContentParents->Lookup(mRemoteType)) {
       const auto& contentParents = entry.Data();
@@ -1929,13 +1918,13 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   a11y::AccessibleWrap::ReleaseContentProcessIdFor(ChildID());
 #endif
 
-  
-  
   nsTHashtable<nsRefPtrHashKey<BrowsingContextGroup>> groups;
   mGroups.SwapElements(groups);
-  for (auto& group : groups) {
-    group.GetKey()->Unsubscribe(this);
+
+  for (auto iter = groups.Iter(); !iter.Done(); iter.Next()) {
+    iter.Get()->GetKey()->Unsubscribe(this);
   }
+
   MOZ_DIAGNOSTIC_ASSERT(mGroups.IsEmpty());
 }
 
@@ -2911,12 +2900,6 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
     actorSvc->GetJSWindowActorInfos(windowInfos);
 
     Unused << SendInitJSActorInfos(contentInfos, windowInfos);
-  }
-
-  
-  
-  for (auto& group : mGroups) {
-    group.GetKey()->Subscribe(this);
   }
 
   
@@ -6379,21 +6362,13 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateBrowsingContext(
   RefPtr<BrowsingContextGroup> group =
       BrowsingContextGroup::GetOrCreate(aGroupId);
   if (parent && parent->Group() != group) {
-    if (parent->Group()->Id() != aGroupId) {
-      return IPC_FAIL(this, "Parent has different group ID");
-    } else {
-      return IPC_FAIL(this, "Parent has different group object");
-    }
+    return IPC_FAIL(this, "Parent is not in the given group");
   }
   if (opener && opener->Group() != group) {
-    if (opener->Group()->Id() != aGroupId) {
-      return IPC_FAIL(this, "Opener has different group ID");
-    } else {
-      return IPC_FAIL(this, "Opener has different group object");
-    }
+    return IPC_FAIL(this, "Opener is not in the given group");
   }
   if (!parent && !opener && !group->Toplevels().IsEmpty()) {
-    return IPC_FAIL(this, "Unrelated context from child in stale group");
+    return IPC_FAIL(this, "Unrelated context must be created in a new group");
   }
 
   BrowsingContext::CreateFromIPC(std::move(aInit), group, this);
@@ -6774,20 +6749,15 @@ mozilla::ipc::IPCResult ContentParent::RecvWindowPostMessage(
   return IPC_OK();
 }
 
-void ContentParent::AddBrowsingContextGroup(BrowsingContextGroup* aGroup) {
+void ContentParent::OnBrowsingContextGroupSubscribe(
+    BrowsingContextGroup* aGroup) {
   MOZ_DIAGNOSTIC_ASSERT(aGroup);
-  
-  
-  
-  if (mGroups.EnsureInserted(aGroup) && !IsLaunching()) {
-    aGroup->Subscribe(this);
-  }
+  mGroups.PutEntry(aGroup);
 }
 
-void ContentParent::RemoveBrowsingContextGroup(BrowsingContextGroup* aGroup) {
+void ContentParent::OnBrowsingContextGroupUnsubscribe(
+    BrowsingContextGroup* aGroup) {
   MOZ_DIAGNOSTIC_ASSERT(aGroup);
-  
-  
   mGroups.RemoveEntry(aGroup);
 }
 

@@ -188,12 +188,12 @@ class ContentParent final
 
 
   static RefPtr<ContentParent::LaunchPromise> GetNewOrUsedBrowserProcessAsync(
-      const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
+      Element* aFrameElement, const nsACString& aRemoteType,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
       bool aPreferUsed = false);
   static already_AddRefed<ContentParent> GetNewOrUsedBrowserProcess(
-      const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
+      Element* aFrameElement, const nsACString& aRemoteType,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
       bool aPreferUsed = false);
@@ -209,7 +209,7 @@ class ContentParent final
 
 
   static already_AddRefed<ContentParent> GetNewOrUsedLaunchingBrowserProcess(
-      const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
+      Element* aFrameElement, const nsACString& aRemoteType,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
       bool aPreferUsed = false);
@@ -641,6 +641,8 @@ class ContentParent final
   void TransmitBlobDataIfBlobURL(nsIURI* aURI, nsIPrincipal* aPrincipal);
 
   void OnCompositorDeviceReset() override;
+
+  static hal::ProcessPriority GetInitialProcessPriority(Element* aFrameElement);
 
   
   void SetInputPriorityEventEnabled(bool aEnabled);
@@ -1354,8 +1356,8 @@ class ContentParent final
                                const bool& aMinimizeMemoryUsage,
                                const Maybe<FileDescriptor>& aDMDFile) override;
 
-  void AddBrowsingContextGroup(BrowsingContextGroup* aGroup);
-  void RemoveBrowsingContextGroup(BrowsingContextGroup* aGroup);
+  void OnBrowsingContextGroupSubscribe(BrowsingContextGroup* aGroup);
+  void OnBrowsingContextGroupUnsubscribe(BrowsingContextGroup* aGroup);
 
   
   uint64_t GetBrowsingContextFieldEpoch() const {
