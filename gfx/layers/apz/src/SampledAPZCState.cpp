@@ -5,6 +5,7 @@
 
 
 #include "SampledAPZCState.h"
+#include "APZUtils.h"
 
 namespace mozilla {
 namespace layers {
@@ -14,14 +15,18 @@ SampledAPZCState::SampledAPZCState() {}
 SampledAPZCState::SampledAPZCState(const FrameMetrics& aMetrics)
     : mLayoutViewport(aMetrics.GetLayoutViewport()),
       mScrollOffset(aMetrics.GetScrollOffset()),
-      mZoom(aMetrics.GetZoom()) {}
+      mZoom(aMetrics.GetZoom()) {
+  RemoveFractionalAsyncDelta();
+}
 
 SampledAPZCState::SampledAPZCState(const FrameMetrics& aMetrics,
                                    Maybe<CompositionPayload>&& aPayload)
     : mLayoutViewport(aMetrics.GetLayoutViewport()),
       mScrollOffset(aMetrics.GetScrollOffset()),
       mZoom(aMetrics.GetZoom()),
-      mScrollPayload(std::move(aPayload)) {}
+      mScrollPayload(std::move(aPayload)) {
+  RemoveFractionalAsyncDelta();
+}
 
 bool SampledAPZCState::operator==(const SampledAPZCState& aOther) const {
   
@@ -57,6 +62,30 @@ void SampledAPZCState::ClampScrollOffset(const FrameMetrics& aMetrics) {
 void SampledAPZCState::ZoomBy(const gfxSize& aScale) {
   mZoom.xScale *= aScale.width;
   mZoom.yScale *= aScale.height;
+}
+
+void SampledAPZCState::RemoveFractionalAsyncDelta() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mLayoutViewport.TopLeft() == mScrollOffset) {
+    return;
+  }
+  ParentLayerPoint paintedOffset = mLayoutViewport.TopLeft() * mZoom;
+  ParentLayerPoint asyncOffset = mScrollOffset * mZoom;
+  if (FuzzyEqualsAdditive(paintedOffset.x, asyncOffset.x, COORDINATE_EPSILON) &&
+      FuzzyEqualsAdditive(paintedOffset.y, asyncOffset.y, COORDINATE_EPSILON)) {
+    mScrollOffset = mLayoutViewport.TopLeft();
+  }
 }
 
 }  

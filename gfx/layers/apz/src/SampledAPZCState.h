@@ -51,6 +51,8 @@ class SampledAPZCState {
   CSSToParentLayerScale2D mZoom;
   
   Maybe<CompositionPayload> mScrollPayload;
+
+  void RemoveFractionalAsyncDelta();
 };
 
 }  
