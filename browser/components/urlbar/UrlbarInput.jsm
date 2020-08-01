@@ -1063,26 +1063,35 @@ class UrlbarInput {
     this._lastSearchString = searchString;
     this._valueOnLastSearch = this.value;
 
+    let options = {
+      allowAutofill,
+      isPrivate: this.isPrivate,
+      maxResults: UrlbarPrefs.get("maxRichResults"),
+      searchString,
+      userContextId: this.window.gBrowser.selectedBrowser.getAttribute(
+        "usercontextid"
+      ),
+      currentPage: this.window.gBrowser.currentURI.spec,
+      formHistoryName: this.formHistoryName,
+      allowSearchSuggestions:
+        !event ||
+        !UrlbarUtils.isPasteEvent(event) ||
+        !event.data ||
+        event.data.length <= UrlbarPrefs.get("maxCharsForSearchSuggestions"),
+    };
+
+    if (this.searchMode) {
+      options.sources = [this.searchMode.source];
+      if (this.searchMode.engineName) {
+        options.engineName = this.searchMode.engineName;
+      }
+    }
+
     
     
     
     this.lastQueryContextPromise = this.controller.startQuery(
-      new UrlbarQueryContext({
-        allowAutofill,
-        isPrivate: this.isPrivate,
-        maxResults: UrlbarPrefs.get("maxRichResults"),
-        searchString,
-        userContextId: this.window.gBrowser.selectedBrowser.getAttribute(
-          "usercontextid"
-        ),
-        currentPage: this.window.gBrowser.currentURI.spec,
-        formHistoryName: this.formHistoryName,
-        allowSearchSuggestions:
-          !event ||
-          !UrlbarUtils.isPasteEvent(event) ||
-          !event.data ||
-          event.data.length <= UrlbarPrefs.get("maxCharsForSearchSuggestions"),
-      })
+      new UrlbarQueryContext(options)
     );
   }
 

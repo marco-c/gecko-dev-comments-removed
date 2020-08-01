@@ -9,11 +9,35 @@
 
 
 const TEST_QUERY = "test string";
+const DEFAULT_ENGINE_NAME = "Test";
+const SUGGESTIONS_ENGINE_NAME = "searchSuggestionEngine.xml";
+
+let suggestionsEngine;
+let defaultEngine;
 
 add_task(async function setup() {
+  suggestionsEngine = await SearchTestUtils.promiseNewSearchEngine(
+    getRootDirectory(gTestPath) + SUGGESTIONS_ENGINE_NAME
+  );
+
+  let oldDefaultEngine = await Services.search.getDefault();
+  defaultEngine = await Services.search.addEngineWithDetails(
+    DEFAULT_ENGINE_NAME,
+    {
+      template: "http://example.com/?search={searchTerms}",
+    }
+  );
+  await Services.search.setDefault(defaultEngine);
+  await Services.search.moveEngine(suggestionsEngine, 0);
+
+  registerCleanupFunction(async () => {
+    await Services.search.setDefault(oldDefaultEngine);
+    await Services.search.removeEngine(defaultEngine);
+  });
+
   SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.suggest.searches", false],
+      ["browser.search.separatePrivateDefault.ui.enabled", false],
       ["browser.urlbar.update2", true],
       ["browser.urlbar.update2.oneOffsRefresh", true],
     ],
@@ -40,6 +64,100 @@ async function enterSearchMode(window) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+async function exitSearchMode(
+  window,
+  { backspace, clickClose, waitForSearch = true }
+) {
+  if (backspace) {
+    let urlbarValue = gURLBar.value;
+    gURLBar.selectionStart = gURLBar.selectionEnd = 0;
+    if (waitForSearch) {
+      let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+      EventUtils.synthesizeKey("KEY_Backspace");
+      await searchPromise;
+    } else {
+      EventUtils.synthesizeKey("KEY_Backspace");
+    }
+    Assert.equal(gURLBar.value, urlbarValue, "Urlbar value hasn't changed.");
+    Assert.ok(
+      !UrlbarTestUtils.isInSearchMode(window),
+      "The Urlbar is no longer in search mode."
+    );
+  } else if (clickClose) {
+    
+    
+    let indicator = gURLBar.querySelector("#urlbar-search-mode-indicator");
+    EventUtils.synthesizeMouseAtCenter(indicator, { type: "mouseover" });
+    let closeButton = gURLBar.querySelector(
+      "#urlbar-search-mode-indicator-close"
+    );
+    if (waitForSearch) {
+      let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+      EventUtils.synthesizeMouseAtCenter(closeButton, {});
+      await searchPromise;
+    } else {
+      EventUtils.synthesizeMouseAtCenter(closeButton, {});
+    }
+    Assert.ok(
+      !UrlbarTestUtils.isInSearchMode(window),
+      "The Urlbar is no longer in search mode."
+    );
+  }
+}
+
+async function verifySearchModeResultsAdded(window) {
+  Assert.equal(
+    UrlbarTestUtils.getResultCount(window),
+    3,
+    "There should be three results."
+  );
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.equal(
+    result.searchParams.engine,
+    suggestionsEngine.name,
+    "The first result should be a search result for our suggestion engine."
+  );
+  result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
+  Assert.equal(
+    result.searchParams.suggestion,
+    `${TEST_QUERY}foo`,
+    "The second result should be a suggestion result."
+  );
+  Assert.equal(
+    result.searchParams.engine,
+    suggestionsEngine.name,
+    "The second result should be a search result for our suggestion engine."
+  );
+}
+
+async function verifySearchModeResultsRemoved(window) {
+  Assert.equal(
+    UrlbarTestUtils.getResultCount(window),
+    1,
+    "There should only be one result."
+  );
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.equal(
+    result.searchParams.engine,
+    defaultEngine.name,
+    "The first result should be a search result for our default engine."
+  );
+}
+
+
+
 add_task(async function backspace() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -47,13 +165,10 @@ add_task(async function backspace() {
     value: TEST_QUERY,
   });
   await enterSearchMode(window);
-  gURLBar.selectionStart = gURLBar.selectionEnd = 0;
-  EventUtils.synthesizeKey("KEY_Backspace");
-  Assert.equal(gURLBar.value, TEST_QUERY, "Urlbar value hasn't changed.");
-  Assert.ok(
-    !UrlbarTestUtils.isInSearchMode(window),
-    "The Urlbar is no longer in search mode."
-  );
+  await verifySearchModeResultsAdded(window);
+  await exitSearchMode(window, { backspace: true });
+  await verifySearchModeResultsRemoved(window);
+  Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is open.");
 
   
   
@@ -64,12 +179,8 @@ add_task(async function backspace() {
     EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
   });
   await enterSearchMode(window);
-  EventUtils.synthesizeKey("KEY_Backspace");
-  Assert.equal(gURLBar.value, "", "Urlbar value is empty.");
-  Assert.ok(
-    !UrlbarTestUtils.isInSearchMode(window),
-    "The Urlbar is no longer in search mode."
-  );
+  await exitSearchMode(window, { backspace: true, waitForSearch: false });
+  Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is open.");
 
   
   
@@ -78,17 +189,10 @@ add_task(async function backspace() {
     value: TEST_QUERY,
   });
   await enterSearchMode(window);
+  await verifySearchModeResultsAdded(window);
   UrlbarTestUtils.promisePopupClose(window);
-
-  gURLBar.selectionStart = gURLBar.selectionEnd = 0;
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-  EventUtils.synthesizeKey("KEY_Backspace");
-  await searchPromise;
-  Assert.equal(gURLBar.value, TEST_QUERY, "Urlbar value hasn't changed.");
-  Assert.ok(
-    !UrlbarTestUtils.isInSearchMode(window),
-    "The Urlbar is no longer in search mode."
-  );
+  await exitSearchMode(window, { backspace: true });
+  await verifySearchModeResultsRemoved(window);
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is now open.");
 
   
@@ -100,14 +204,7 @@ add_task(async function backspace() {
   });
   await enterSearchMode(window);
   UrlbarTestUtils.promisePopupClose(window);
-
-  gURLBar.selectionStart = gURLBar.selectionEnd = 0;
-  EventUtils.synthesizeKey("KEY_Backspace");
-  Assert.equal(gURLBar.value, "", "Urlbar value is empty.");
-  Assert.ok(
-    !UrlbarTestUtils.isInSearchMode(window),
-    "The Urlbar is no longer in search mode."
-  );
+  await exitSearchMode(window, { backspace: true, waitForSearch: false });
   Assert.ok(
     !UrlbarTestUtils.isPopupOpen(window),
     "Urlbar view is still closed."
@@ -121,6 +218,7 @@ add_task(async function escape() {
     value: TEST_QUERY,
   });
   await enterSearchMode(window);
+  await verifySearchModeResultsAdded(window);
 
   EventUtils.synthesizeKey("KEY_Escape");
   Assert.ok(!UrlbarTestUtils.isPopupOpen(window, "UrlbarView is closed."));
@@ -147,20 +245,9 @@ add_task(async function click_close() {
     value: TEST_QUERY,
   });
   await enterSearchMode(window);
-  
-  
-  let indicator = gURLBar.querySelector("#urlbar-search-mode-indicator");
-  EventUtils.synthesizeMouseAtCenter(indicator, { type: "mouseover" });
-  let closeButton = gURLBar.querySelector(
-    "#urlbar-search-mode-indicator-close"
-  );
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-  EventUtils.synthesizeMouseAtCenter(closeButton, {});
-  await searchPromise;
-  Assert.ok(
-    !UrlbarTestUtils.isInSearchMode(window),
-    "The Urlbar is no longer in search mode."
-  );
+  await verifySearchModeResultsAdded(window);
+  await exitSearchMode(window, { clickClose: true });
+  await verifySearchModeResultsRemoved(window);
 
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -170,18 +257,7 @@ add_task(async function click_close() {
   await enterSearchMode(window);
   UrlbarTestUtils.promisePopupClose(window);
   if (gURLBar.hasAttribute("breakout-extend")) {
-    Assert.ok(
-      UrlbarTestUtils.isInSearchMode(window),
-      "The Urlbar is still in search mode."
-    );
-    indicator = gURLBar.querySelector("#urlbar-search-mode-indicator");
-    EventUtils.synthesizeMouseAtCenter(indicator, { type: "mouseover" });
-    closeButton = gURLBar.querySelector("#urlbar-search-mode-indicator-close");
-    EventUtils.synthesizeMouseAtCenter(closeButton, {});
-    Assert.ok(
-      !UrlbarTestUtils.isInSearchMode(window),
-      "The Urlbar is no longer in search mode."
-    );
+    await exitSearchMode(window, { clickClose: true, waitForSearch: false });
   } else {
     
     
