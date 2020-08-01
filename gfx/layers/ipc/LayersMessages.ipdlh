@@ -44,6 +44,7 @@ using mozilla::LayerIntRegion from "Units.h";
 using mozilla::ParentLayerIntRect from "Units.h";
 using mozilla::ParentLayerRect from "Units.h";
 using mozilla::LayoutDeviceIntRect from "Units.h";
+using mozilla::LayoutDevicePoint from "Units.h";
 using mozilla::layers::ScaleMode from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::EventRegions from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::EventRegionsOverride from "mozilla/layers/LayersTypes.h";
@@ -165,6 +166,12 @@ struct PartialPrerenderData {
   
   
   ParentLayerRect clipRect;
+  
+  
+  Matrix4x4 transformInClip; 
+  
+  
+  LayoutDevicePoint position; 
 };
 
 
