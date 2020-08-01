@@ -18636,7 +18636,7 @@ class GlobalGenRoots():
         curr = CGWrapper(curr, post='\n')
 
         
-        declareIncludes = ['mozilla/dom/BindingUtils.h']
+        declareIncludes = ['mozilla/dom/PinnedStringId.h']
         curr = CGHeaders([], [], [], [], declareIncludes, [], 'GeneratedAtomList',
                          curr)
 

@@ -2914,33 +2914,6 @@ bool CreateGlobal(JSContext* aCx, T* aNative, nsWrapperCache* aCache,
   return true;
 }
 
-
-
-
-
-class PinnedStringId {
-  jsid id;
-
- public:
-  constexpr PinnedStringId() : id(JSID_VOID) {}
-
-  bool init(JSContext* cx, const char* string) {
-    JSString* str = JS_AtomizeAndPinString(cx, string);
-    if (!str) {
-      return false;
-    }
-    id = JS::PropertyKey::fromPinnedString(str);
-    return true;
-  }
-
-  operator const jsid&() const { return id; }
-
-  operator JS::Handle<jsid>() const {
-    
-    return JS::Handle<jsid>::fromMarkedLocation(&id);
-  }
-} JS_HAZ_ROOTED;
-
 namespace binding_detail {
 
 
