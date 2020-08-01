@@ -444,7 +444,10 @@ def get_raptor_test_list(args, oskey):
             
             next_test['cold'] = True
             next_test['expected_browser_cycles'] = int(next_test['browser_cycles'])
-            next_test['page_cycles'] = 1
+            if args.chimera:
+                next_test['page_cycles'] = 2
+            else:
+                next_test['page_cycles'] = 1
             
             
             if "-cold" not in next_test['name'] and not args.browsertime:
