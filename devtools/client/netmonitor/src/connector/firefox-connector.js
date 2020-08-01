@@ -151,8 +151,9 @@ class FirefoxConnector {
 
   async onResourceAvailable({ resourceType, targetFront, resource }) {
     const { TYPES } = this.toolbox.resourceWatcher;
+
     if (resourceType === TYPES.DOCUMENT_EVENT) {
-      this.onDocEvent(resource);
+      this.onDocEvent(targetFront, resource);
       return;
     }
 
@@ -319,7 +320,13 @@ class FirefoxConnector {
 
 
 
-  onDocEvent(event) {
+
+  onDocEvent(targetFront, event) {
+    if (!targetFront.isTopLevel) {
+      
+      return;
+    }
+
     if (event.name === "dom-loading") {
       
       return;
