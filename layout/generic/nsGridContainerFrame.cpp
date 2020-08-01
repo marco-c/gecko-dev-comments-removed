@@ -9618,8 +9618,12 @@ nsGridContainerFrame* nsGridContainerFrame::GetGridContainerFrame(
     if (MOZ_UNLIKELY(aFrame->IsFieldSetFrame())) {
       inner = static_cast<nsFieldSetFrame*>(aFrame)->GetInner();
     }
-    inner = inner->GetContentInsertionFrame();
-    nsIFrame* possibleGridFrame = inner ? inner : aFrame;
+    
+    
+    
+    nsIFrame* insertionFrame =
+        inner ? inner->GetContentInsertionFrame() : nullptr;
+    nsIFrame* possibleGridFrame = insertionFrame ? insertionFrame : aFrame;
     gridFrame = possibleGridFrame->IsGridContainerFrame()
                     ? static_cast<nsGridContainerFrame*>(possibleGridFrame)
                     : nullptr;
