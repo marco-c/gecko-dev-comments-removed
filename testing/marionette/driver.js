@@ -387,6 +387,19 @@ GeckoDriver.prototype.sendAsync = function(name, data, commandID) {
 
 
 
+GeckoDriver.prototype.getActor = async function() {
+  
+  
+  const browsingContext = await this.getBrowsingContext();
+  return browsingContext.currentWindowGlobal.getActor("MarionetteFrame");
+};
+
+
+
+
+
+
+
 
 
 
@@ -396,7 +409,7 @@ GeckoDriver.prototype.getBrowsingContext = async function(topContext = false) {
 
   switch (this.context) {
     case Context.Chrome:
-      browsingContext = this.getCurrentWindow().docShell.browsingContext;
+      browsingContext = this.getCurrentWindow().browsingContext;
       break;
 
     case Context.Content:
@@ -849,6 +862,26 @@ GeckoDriver.prototype.newSession = async function(cmd) {
 
   await registerBrowsers;
   await browserListening;
+
+  
+  ChromeUtils.registerWindowActor("MarionetteFrame", {
+    kind: "JSWindowActor",
+    parent: {
+      moduleURI: "chrome://marionette/content/actors/MarionetteFrameParent.jsm",
+    },
+    child: {
+      moduleURI: "chrome://marionette/content/actors/MarionetteFrameChild.jsm",
+      events: {
+        beforeunload: { capture: true },
+        DOMContentLoaded: { mozSystemGroup: true },
+        pagehide: { mozSystemGroup: true },
+        pageshow: { mozSystemGroup: true },
+      },
+    },
+
+    allFrames: true,
+    includeChrome: true,
+  });
 
   if (this.mainFrame) {
     this.mainFrame.focus();
@@ -2915,6 +2948,8 @@ GeckoDriver.prototype.deleteSession = function() {
       }
     }
   }
+
+  ChromeUtils.unregisterWindowActor("MarionetteFrame");
 
   
   this.curFrame = null;

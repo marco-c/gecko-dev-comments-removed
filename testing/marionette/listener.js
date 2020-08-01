@@ -1282,11 +1282,9 @@ function getActiveElement() {
 
 
 function getBrowsingContextId(topContext = false) {
-  if (topContext) {
-    return content.docShell.browsingContext.id;
-  }
+  const bc = curContainer.frame.docShell.browsingContext;
 
-  return curContainer.frame.docShell.browsingContext.id;
+  return topContext ? bc.top.id : bc.id;
 }
 
 
