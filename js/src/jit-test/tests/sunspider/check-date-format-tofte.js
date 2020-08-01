@@ -1,3 +1,4 @@
+|jit-test| tz-pacific; skip-if: getBuildConfiguration()['android'] 
 
 
 function arrayExists(array, x) {
