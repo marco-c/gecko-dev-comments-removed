@@ -10,7 +10,6 @@ var EXPORTED_SYMBOLS = [
   "getUniqueDomainsVisitedInPast24Hours",
   "URICountListener",
   "URLBAR_SELECTED_RESULT_TYPES",
-  "URLBAR_SELECTED_RESULT_METHODS",
   "MINIMUM_TAB_COUNT_INTERVAL_MS",
 ];
 
@@ -102,22 +101,6 @@ const URLBAR_SELECTED_RESULT_TYPES = {
   formhistory: 14,
   dynamic: 15,
   
-};
-
-
-
-
-
-
-
-
-const URLBAR_SELECTED_RESULT_METHODS = {
-  enter: 0,
-  enterSelection: 1,
-  click: 2,
-  arrowEnterSelection: 3,
-  tabEnterSelection: 4,
-  rightClickEnter: 5,
 };
 
 const MINIMUM_TAB_COUNT_INTERVAL_MS = 5 * 60 * 1000; 
@@ -746,6 +729,9 @@ let BrowserUsageTelemetry = {
     histogramID,
     userSelectionBehavior
   ) {
+    
+    
+
     let histogram = Services.telemetry.getHistogramById(histogramID);
     
     

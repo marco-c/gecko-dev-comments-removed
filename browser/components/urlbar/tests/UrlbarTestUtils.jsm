@@ -31,6 +31,22 @@ var UrlbarTestUtils = {
 
 
 
+
+  SELECTED_RESULT_METHODS: {
+    enter: 0,
+    enterSelection: 1,
+    click: 2,
+    arrowEnterSelection: 3,
+    tabEnterSelection: 4,
+    rightClickEnter: 5,
+  },
+
+  
+
+
+
+
+
   init(scope) {
     this._testScope = scope;
   },
