@@ -9,7 +9,42 @@ const {
 } = require("devtools/shared/resources/resource-watcher");
 
 module.exports = async function({ targetList, targetFront, onAvailable }) {
-  if (!targetFront.isTopLevel) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!targetFront.getTrait("isBrowsingContext")) {
+    
     return;
   }
 

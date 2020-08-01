@@ -2665,6 +2665,12 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         this.emit("root-destroyed", this.rootNode);
       }
       this.rootNode = null;
+      this.releaseNode(documentActor, { force: true });
+      
+      
+      
+      
+      return;
     }
 
     this.queueMutation({
