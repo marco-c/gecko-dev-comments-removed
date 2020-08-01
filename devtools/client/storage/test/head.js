@@ -177,9 +177,6 @@ var openStoragePanel = async function(cb, target, hostType) {
   
   gUI.animationsEnabled = false;
 
-  info("Waiting for the stores to update");
-  await gUI.once("store-objects-updated");
-
   await waitForToolboxFrameFocus(toolbox);
 
   if (cb) {

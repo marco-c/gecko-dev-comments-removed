@@ -313,7 +313,7 @@ class StorageUI {
         storageTypes.indexedDB.hosts = newHosts;
       }
 
-      this.populateStorageTree(storageTypes);
+      await this.populateStorageTree(storageTypes);
     } catch (e) {
       if (!this._toolbox || this._toolbox._destroyer) {
         
@@ -864,8 +864,22 @@ class StorageUI {
 
 
 
-  populateStorageTree(storageTypes) {
+  async populateStorageTree(storageTypes) {
     this.storageTypes = {};
+
+    
+    
+    
+    
+    
+    
+    
+    const onStoresObjectsUpdated = this.once("store-objects-updated");
+
+    
+    
+    const initialSelectedItem = this.tree.selectedItem;
+
     for (const type in storageTypes) {
       
       
@@ -901,6 +915,10 @@ class StorageUI {
           this.tree.selectedItem = [type, host];
         }
       }
+    }
+
+    if (initialSelectedItem !== this.tree.selectedItem) {
+      await onStoresObjectsUpdated;
     }
   }
 
