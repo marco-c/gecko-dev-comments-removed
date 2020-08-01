@@ -295,6 +295,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:Loggable\n"
          "race:UpdateMinLogSeverity\n"
 
+         
+         "race:event_debug_mode_too_late\n"
+
       
       ;  
 }
