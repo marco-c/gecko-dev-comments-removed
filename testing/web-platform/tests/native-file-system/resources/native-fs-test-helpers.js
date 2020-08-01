@@ -21,7 +21,7 @@ const directory_promise = (async () => {
   const entries = await self.showDirectoryPicker();
   assert_true(entries instanceof FileSystemHandle);
   assert_true(entries instanceof FileSystemDirectoryHandle);
-  for await (const entry of entries.getEntries()) {
+  for await (const entry of entries) {
     assert_unreached('Selected directory is not empty');
   }
   return entries;
@@ -32,7 +32,7 @@ function directory_test(func, description) {
     const directory = await directory_promise;
     
     
-    for await (let entry of directory.getEntries()) {
+    for await (let entry of directory.values()) {
       await directory.removeEntry(
           entry.name, {recursive: entry.kind === 'directory'});
     }
