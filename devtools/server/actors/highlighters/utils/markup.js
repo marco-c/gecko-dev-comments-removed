@@ -182,66 +182,6 @@ exports.isNodeValid = isNodeValid;
 
 
 
-function createSVGNode(win, options) {
-  if (!options.nodeType) {
-    options.nodeType = "box";
-  }
-  options.namespace = SVG_NS;
-  return createNode(win, options);
-}
-exports.createSVGNode = createSVGNode;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createNode(win, options) {
-  const type = options.nodeType || "div";
-  const namespace = options.namespace || XHTML_NS;
-  const doc = win.document;
-
-  const node = doc.createElementNS(namespace, type);
-
-  for (const name in options.attributes || {}) {
-    let value = options.attributes[name];
-    if (options.prefix && (name === "class" || name === "id")) {
-      value = options.prefix + value;
-    }
-    node.setAttribute(name, value);
-  }
-
-  if (options.parent) {
-    options.parent.appendChild(node);
-  }
-
-  if (options.text) {
-    node.appendChild(doc.createTextNode(options.text));
-  }
-
-  return node;
-}
-exports.createNode = createNode;
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -688,6 +628,64 @@ CanvasFrameAnonymousContentHelper.prototype = {
     value += `position:absolute; width:${width}px;height:${height}px; overflow:hidden`;
 
     this.setAttributeForElement(id, "style", value);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  createSVGNode(options) {
+    if (!options.nodeType) {
+      options.nodeType = "box";
+    }
+
+    options.namespace = SVG_NS;
+
+    return this.createNode(options);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  createNode(options) {
+    const type = options.nodeType || "div";
+    const namespace = options.namespace || XHTML_NS;
+    const doc = this.anonymousContentDocument;
+
+    const node = doc.createElementNS(namespace, type);
+
+    for (const name in options.attributes || {}) {
+      let value = options.attributes[name];
+      if (options.prefix && (name === "class" || name === "id")) {
+        value = options.prefix + value;
+      }
+      node.setAttribute(name, value);
+    }
+
+    if (options.parent) {
+      options.parent.appendChild(node);
+    }
+
+    if (options.text) {
+      node.appendChild(doc.createTextNode(options.text));
+    }
+
+    return node;
   },
 };
 exports.CanvasFrameAnonymousContentHelper = CanvasFrameAnonymousContentHelper;
