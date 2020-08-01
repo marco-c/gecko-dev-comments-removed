@@ -606,6 +606,23 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_multiple_setComposingText() {
+
+        setupContent("")
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+
+        
+        ic.setComposingText("aaa", 1)
+        ic.setComposingText("aaa", 1)
+        ic.setComposingText("aab", 1)
+
+        finishComposingText(ic)
+        assertTextAndSelectionAt("Multiple setComposingText don't commit composition string",
+                                 ic, "aab", 3)
+    }
+
+    
     @Ignore 
     @WithDisplay(width = 512, height = 512) 
     @Test fun inputConnection_bug1133802() {

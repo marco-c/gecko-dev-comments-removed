@@ -595,24 +595,30 @@ void GeckoEditableSupport::AddIMETextChange(const IMETextChange& aChange) {
       
       continue;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    dst.mStart = std::min(dst.mStart, src.mStart);
-    if (src.mOldEnd < dst.mNewEnd) {
+
+    if (src.mStart == dst.mStart && src.mNewEnd == dst.mNewEnd) {
       
-      dst.mNewEnd += src.mNewEnd - src.mOldEnd;
-    } else {  
+      dst.mOldEnd = std::min(src.mOldEnd, dst.mOldEnd);
+    } else {
       
-      dst.mOldEnd += src.mOldEnd - dst.mNewEnd;
-      dst.mNewEnd = src.mNewEnd;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      dst.mStart = std::min(dst.mStart, src.mStart);
+      if (src.mOldEnd < dst.mNewEnd) {
+        
+        dst.mNewEnd += src.mNewEnd - src.mOldEnd;
+      } else {  
+        
+        dst.mOldEnd += src.mOldEnd - dst.mNewEnd;
+        dst.mNewEnd = src.mNewEnd;
+      }
     }
     
     mIMETextChanges.RemoveElementAt(srcIndex);
