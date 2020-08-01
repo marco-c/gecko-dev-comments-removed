@@ -1,7 +1,7 @@
-#!/usr/bin/env python
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
 
 from __future__ import absolute_import, print_function
 
@@ -17,7 +17,7 @@ if AWSY_PATH not in sys.path:
 
 import parse_about_memory
 
-# A description of each checkpoint and the root path to it.
+
 CHECKPOINTS = [
     {'name': "Fresh start", 'path': "memory-report-Start-0.json.gz"},
     {'name': "Fresh start [+30s]", 'path': "memory-report-StartSettled-0.json.gz"},
@@ -33,7 +33,7 @@ CHECKPOINTS = [
      'path': "memory-report-TabsClosedForceGC-4.json.gz"}
 ]
 
-# A description of each perfherder suite and the path to its values.
+
 PERF_SUITES = [
     {'name': "Resident Memory", 'node': "resident"},
     {'name': "Explicit Memory", 'node': "explicit/"},
@@ -105,7 +105,7 @@ def create_suite(name, node, data_path, checkpoints=CHECKPOINTS,
     if extra_opts:
         opts.extend(extra_opts)
 
-    # The stylo attributes override each other.
+    
     stylo_opt = None
     if 'STYLO_FORCE_ENABLED' in os.environ and os.environ['STYLO_FORCE_ENABLED']:
         stylo_opt = "stylo"
@@ -138,12 +138,12 @@ def create_suite(name, node, data_path, checkpoints=CHECKPOINTS,
                                             memory_report_path, node, name_filter)
             value = process(totals.values())
         else:
-            # For "resident" we really want RSS of the chrome ("Main") process
-            # and USS of the child processes. We'll still call it resident
-            # for simplicity (it's nice to be able to compare RSS of non-e10s
-            # with RSS + USS of e10s).
+            
+            
+            
+            
             totals_rss = parse_about_memory.calculate_memory_report_values(
-                                            memory_report_path, node, 'Main')
+                                            memory_report_path, node, ['Main'])
             totals_uss = parse_about_memory.calculate_memory_report_values(
                                             memory_report_path, 'resident-unique')
             value = totals_rss.values()[0] + \
@@ -158,8 +158,8 @@ def create_suite(name, node, data_path, checkpoints=CHECKPOINTS,
         suite['subtests'].append(subtest)
         total += math.log(subtest['value'])
 
-    # Add the geometric mean. For more details on the calculation see:
-    #   https://en.wikipedia.org/wiki/Geometric_mean#Relationship_with_arithmetic_mean_of_logarithms
+    
+    
     suite['value'] = math.exp(total / len(checkpoints))
 
     return suite
@@ -193,7 +193,7 @@ if __name__ == '__main__':
         print("Usage: process_perf_data.py data_path")
         sys.exit(1)
 
-    # Determine which revisions we need to process.
+    
     data_path = args[0]
     perf_blob = create_perf_data(data_path)
     print("PERFHERDER_DATA: {}").format(json.dumps(perf_blob))
