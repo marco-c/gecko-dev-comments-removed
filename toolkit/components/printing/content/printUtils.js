@@ -58,6 +58,13 @@
 
 
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "PRINT_TAB_MODAL",
+  "print.tab_modal.enabled",
+  false
+);
+
 var gFocusedElement = null;
 
 var PrintUtils = {
@@ -104,6 +111,39 @@ var PrintUtils = {
     }
 
     return null;
+  },
+
+  
+
+
+
+
+
+  _openTabModalPrint(aBrowsingContext) {
+    let printPath = "chrome://global/content/print.html";
+    gBrowser.loadOneTab(
+      `${printPath}?browsingContextId=${aBrowsingContext.id}`,
+      {
+        inBackground: false,
+        relatedToCurrent: true,
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      }
+    );
+  },
+
+  
+
+
+
+
+
+
+  startPrintWindow(aBrowsingContext) {
+    if (PRINT_TAB_MODAL) {
+      this._openTabModalPrint(aBrowsingContext);
+    } else {
+      this.printWindow(aBrowsingContext);
+    }
   },
 
   
@@ -192,6 +232,11 @@ var PrintUtils = {
 
 
   printPreview(aListenerObj) {
+    if (PRINT_TAB_MODAL) {
+      this._openTabModalPrint(aListenerObj.getSourceBrowser().browsingContext);
+      return;
+    }
+
     
     
     let printPreviewTB = document.getElementById("print-preview-toolbar");
