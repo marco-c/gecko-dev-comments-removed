@@ -2772,7 +2772,9 @@ var XPIProvider = {
         continue;
       }
 
-      let cleanNames = [];
+      
+      
+      let stagedFailureNames = [];
       let promises = [];
       for (let [id, metadata] of loc.getStagedAddons()) {
         loc.unstageAddon(id);
@@ -2785,7 +2787,7 @@ var XPIProvider = {
             },
             error => {
               delete aManifests[loc.name][id];
-              cleanNames.push(`${id}.xpi`);
+              stagedFailureNames.push(`${id}.xpi`);
 
               logger.error(
                 `Failed to install staged add-on ${id} in ${loc.name}`,
@@ -2802,8 +2804,8 @@ var XPIProvider = {
       }
 
       try {
-        if (cleanNames.length) {
-          loc.installer.cleanStagingDir(cleanNames);
+        if (changed || stagedFailureNames.length) {
+          loc.installer.cleanStagingDir(stagedFailureNames);
         }
       } catch (e) {
         
