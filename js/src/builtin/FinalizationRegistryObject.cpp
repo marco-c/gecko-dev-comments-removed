@@ -663,7 +663,7 @@ FinalizationQueueObject* FinalizationQueueObject::create(
   
   
   RootedObject incumbentObject(cx);
-  if (!GetObjectFromIncumbentGlobal(cx, &incumbentObject)) {
+  if (!GetObjectFromIncumbentGlobal(cx, &incumbentObject) || !incumbentObject) {
     return nullptr;
   }
 
