@@ -9,6 +9,7 @@ import os
 import posixpath
 import re
 import shutil
+import six
 import sys
 import tempfile
 import traceback
@@ -214,7 +215,7 @@ class JUnitTestRunner(MochitestDesktop):
         for [key, value] in [p.split('=', 1) for p in self.options.add_env]:
             env[key] = value
 
-        for (env_count, (env_key, env_val)) in enumerate(env.iteritems()):
+        for (env_count, (env_key, env_val)) in enumerate(six.iteritems(env)):
             cmd = cmd + " -e env%d %s=%s" % (env_count, env_key, env_val)
         
         cmd = cmd + " %s/%s" % (self.options.app, self.options.runner)
@@ -259,6 +260,7 @@ class JUnitTestRunner(MochitestDesktop):
             
             
 
+            line = six.ensure_str(line)
             self.log.process_output(self.options.app, str(line))
             
             match = re.match(r'INSTRUMENTATION_STATUS:\s*class=(.*)', line)
