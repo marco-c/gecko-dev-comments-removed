@@ -2109,15 +2109,8 @@ CSSPoint AsyncPanZoomController::GetKeyboardDestination(
     pageScrollSize = mScrollMetadata.GetPageScrollAmount() /
                      Metrics().GetDevPixelsPerCSSPixel();
 
-    if (mState == WHEEL_SCROLL) {
-      scrollOffset = mAnimation->AsWheelScrollAnimation()->GetDestination();
-    } else if (mState == SMOOTH_SCROLL) {
-      scrollOffset = mAnimation->AsSmoothScrollAnimation()->GetDestination();
-    } else if (mState == KEYBOARD_SCROLL) {
-      scrollOffset = mAnimation->AsKeyboardScrollAnimation()->GetDestination();
-    } else {
-      scrollOffset = Metrics().GetScrollOffset();
-    }
+    scrollOffset = GetCurrentAnimationDestination(lock).valueOr(
+        Metrics().GetScrollOffset());
 
     scrollRect = Metrics().GetScrollableRect();
   }
@@ -3435,6 +3428,21 @@ float AsyncPanZoomController::ComputePLPPI(ParentLayerPoint aPoint,
 
   
   return GetDPI() / screenPerParent;
+}
+
+Maybe<CSSPoint> AsyncPanZoomController::GetCurrentAnimationDestination(
+    const RecursiveMutexAutoLock& aProofOfLock) const {
+  if (mState == WHEEL_SCROLL) {
+    return Some(mAnimation->AsWheelScrollAnimation()->GetDestination());
+  }
+  if (mState == SMOOTH_SCROLL) {
+    return Some(mAnimation->AsSmoothScrollAnimation()->GetDestination());
+  }
+  if (mState == KEYBOARD_SCROLL) {
+    return Some(mAnimation->AsKeyboardScrollAnimation()->GetDestination());
+  }
+
+  return Nothing();
 }
 
 ParentLayerPoint
@@ -4781,12 +4789,17 @@ void AsyncPanZoomController::NotifyLayersUpdated(
              Stringify(Metrics().GetScrollOffset()).c_str(),
              Stringify(aLayerMetrics.GetSmoothScrollOffset()).c_str(), mState);
 
+    
+    
+    Maybe<CSSPoint> destination = GetCurrentAnimationDestination(lock);
+
     if (smoothScrollRequested) {
       
       
       if (StaticPrefs::apz_relative_update_enabled() &&
           aLayerMetrics.IsRelative()) {
-        Metrics().ApplyRelativeSmoothScrollUpdateFrom(aLayerMetrics);
+        Metrics().ApplyRelativeSmoothScrollUpdateFrom(aLayerMetrics,
+                                                      destination);
       } else {
         Metrics().ApplySmoothScrollUpdateFrom(aLayerMetrics);
       }
@@ -4795,8 +4808,14 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     if (pureRelativeSmoothScrollRequested) {
       MOZ_ASSERT(aLayerMetrics.IsPureRelative());
       MOZ_ASSERT(gfxPlatform::UseDesktopZoomingScrollbars());
-      Metrics().ApplyPureRelativeSmoothScrollUpdateFrom(aLayerMetrics,
-                                                        smoothScrollRequested);
+      
+      
+      
+      
+      
+      
+      Metrics().ApplyPureRelativeSmoothScrollUpdateFrom(
+          aLayerMetrics, destination, smoothScrollRequested);
     }
 
     needContentRepaint = true;

@@ -301,19 +301,27 @@ struct FrameMetrics {
 
 
 
-  void ApplyRelativeSmoothScrollUpdateFrom(const FrameMetrics& aOther) {
+
+  void ApplyRelativeSmoothScrollUpdateFrom(
+      const FrameMetrics& aOther, const Maybe<CSSPoint>& aExistingDestination) {
     MOZ_ASSERT(aOther.IsRelative());
     CSSPoint delta = (aOther.mSmoothScrollOffset - aOther.mBaseScrollOffset);
-    ClampAndSetSmoothScrollOffset(mScrollOffset + delta);
+    ClampAndSetSmoothScrollOffset(aExistingDestination.valueOr(mScrollOffset) +
+                                  delta);
     mScrollGeneration = aOther.mScrollGeneration;
     mDoSmoothScroll = aOther.mDoSmoothScroll;
   }
 
-  void ApplyPureRelativeSmoothScrollUpdateFrom(const FrameMetrics& aOther,
-                                               bool aApplyToSmoothScroll) {
+  void ApplyPureRelativeSmoothScrollUpdateFrom(
+      const FrameMetrics& aOther, const Maybe<CSSPoint>& aExistingDestination,
+      bool aApplyToSmoothScroll) {
     MOZ_ASSERT(aOther.IsPureRelative() && aOther.mPureRelativeOffset.isSome());
+    
+    
+    
     ClampAndSetSmoothScrollOffset(
-        (aApplyToSmoothScroll ? mSmoothScrollOffset : mScrollOffset) +
+        (aApplyToSmoothScroll ? mSmoothScrollOffset
+                              : aExistingDestination.valueOr(mScrollOffset)) +
         *aOther.mPureRelativeOffset);
     mScrollGeneration = aOther.mScrollGeneration;
     mDoSmoothScroll = true;

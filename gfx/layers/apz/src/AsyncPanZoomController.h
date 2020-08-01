@@ -1407,6 +1407,9 @@ class AsyncPanZoomController {
   float ComputePLPPI(ParentLayerPoint aPoint,
                      ParentLayerPoint aDirection) const;
 
+  Maybe<CSSPoint> GetCurrentAnimationDestination(
+      const RecursiveMutexAutoLock& aProofOfLock) const;
+
   
 
 
