@@ -12,6 +12,7 @@
 #include "mozilla/Logging.h"
 #include "nsINSSComponent.h"
 #include "nsNSSCertHelper.h"
+#include "pk11pub.h"
 
 namespace mozilla {
 namespace psm {
@@ -45,11 +46,11 @@ class BinaryHashSearchArrayComparator {
 
 
 
-int32_t RootCABinNumber(const SECItem* cert, PK11SlotInfo* slot) {
+int32_t RootCABinNumber(const Span<uint8_t> cert) {
   Digest digest;
 
   
-  nsresult rv = digest.DigestBuf(SEC_OID_SHA256, cert->data, cert->len);
+  nsresult rv = digest.DigestBuf(SEC_OID_SHA256, cert.data(), cert.size());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return ROOT_CERTIFICATE_HASH_FAILURE;
   }
@@ -75,21 +76,7 @@ int32_t RootCABinNumber(const SECItem* cert, PK11SlotInfo* slot) {
 
   
   
-  UniquePK11SlotInfo softokenSlot(PK11_GetInternalKeySlot());
-  if (!softokenSlot) {
-    return ROOT_CERTIFICATE_UNKNOWN;
-  }
-  if (slot == softokenSlot.get()) {
-    return ROOT_CERTIFICATE_SOFTOKEN;
-  }
-  UniquePK11SlotInfo nssInternalSlot(PK11_GetInternalSlot());
-  UniqueSECMODModule rootsModule(SECMOD_FindModule(kRootModuleName));
-  if (!rootsModule || rootsModule->slotCount != 1) {
-    return ROOT_CERTIFICATE_UNKNOWN;
-  }
-  if (slot && slot != nssInternalSlot.get() && slot != rootsModule->slots[0]) {
-    return ROOT_CERTIFICATE_EXTERNAL_TOKEN;
-  }
+  
   nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
   if (!component) {
     return ROOT_CERTIFICATE_UNKNOWN;
@@ -100,11 +87,36 @@ int32_t RootCABinNumber(const SECItem* cert, PK11SlotInfo* slot) {
     return ROOT_CERTIFICATE_UNKNOWN;
   }
   for (const auto& enterpriseRoot : enterpriseRoots) {
-    if (enterpriseRoot.Length() == cert->len &&
-        memcmp(enterpriseRoot.Elements(), cert->data,
+    if (enterpriseRoot.Length() == cert.size() &&
+        memcmp(enterpriseRoot.Elements(), cert.data(),
                enterpriseRoot.Length()) == 0) {
       return ROOT_CERTIFICATE_ENTERPRISE_ROOT;
     }
+  }
+
+  SECItem certItem = {siBuffer, cert.data(),
+                      static_cast<unsigned int>(cert.size())};
+  UniquePK11SlotInfo softokenSlot(PK11_GetInternalKeySlot());
+  if (!softokenSlot) {
+    return ROOT_CERTIFICATE_UNKNOWN;
+  }
+  CK_OBJECT_HANDLE softokenCertHandle =
+      PK11_FindEncodedCertInSlot(softokenSlot.get(), &certItem, nullptr);
+  if (softokenCertHandle != CK_INVALID_HANDLE) {
+    return ROOT_CERTIFICATE_SOFTOKEN;
+  }
+  
+  
+  
+  
+  UniqueSECMODModule rootsModule(SECMOD_FindModule(kRootModuleName));
+  if (!rootsModule || rootsModule->slotCount != 1) {
+    return ROOT_CERTIFICATE_UNKNOWN;
+  }
+  CK_OBJECT_HANDLE builtinCertHandle =
+      PK11_FindEncodedCertInSlot(rootsModule->slots[0], &certItem, nullptr);
+  if (builtinCertHandle == CK_INVALID_HANDLE) {
+    return ROOT_CERTIFICATE_EXTERNAL_TOKEN;
   }
 
   
@@ -114,8 +126,8 @@ int32_t RootCABinNumber(const SECItem* cert, PK11SlotInfo* slot) {
 
 
 void AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe,
-                                  const CERTCertificate* cert) {
-  int32_t binId = RootCABinNumber(&cert->derCert, cert->slot);
+                                  const Span<uint8_t> cert) {
+  int32_t binId = RootCABinNumber(cert);
 
   if (binId != ROOT_CERTIFICATE_HASH_FAILURE) {
     Accumulate(probe, binId);
