@@ -15,46 +15,47 @@ const L10N = new LocalizationHelper(
 
 
 
-
-
-
-
-
-function ClassListPreviewer(inspector, containerEl) {
-  this.inspector = inspector;
-  this.containerEl = containerEl;
-  this.model = new ClassList(inspector);
-
-  this.onNewSelection = this.onNewSelection.bind(this);
-  this.onCheckBoxChanged = this.onCheckBoxChanged.bind(this);
-  this.onKeyPress = this.onKeyPress.bind(this);
-  this.onCurrentNodeClassChanged = this.onCurrentNodeClassChanged.bind(this);
-
+class ClassListPreviewer {
   
-  this.addEl = this.doc.createElement("input");
-  this.addEl.classList.add("devtools-textinput");
-  this.addEl.classList.add("add-class");
-  this.addEl.setAttribute(
-    "placeholder",
-    L10N.getStr("inspector.classPanel.newClass.placeholder")
-  );
-  this.addEl.addEventListener("keypress", this.onKeyPress);
-  this.containerEl.appendChild(this.addEl);
 
-  
-  this.classesEl = this.doc.createElement("div");
-  this.classesEl.classList.add("classes");
-  this.containerEl.appendChild(this.classesEl);
 
-  
-  this.inspector.selection.on("new-node-front", this.onNewSelection);
-  this.containerEl.addEventListener("input", this.onCheckBoxChanged);
-  this.model.on("current-node-class-changed", this.onCurrentNodeClassChanged);
 
-  this.onNewSelection();
-}
 
-ClassListPreviewer.prototype = {
+
+  constructor(inspector, containerEl) {
+    this.inspector = inspector;
+    this.containerEl = containerEl;
+    this.model = new ClassList(inspector);
+
+    this.onNewSelection = this.onNewSelection.bind(this);
+    this.onCheckBoxChanged = this.onCheckBoxChanged.bind(this);
+    this.onKeyPress = this.onKeyPress.bind(this);
+    this.onCurrentNodeClassChanged = this.onCurrentNodeClassChanged.bind(this);
+
+    
+    this.addEl = this.doc.createElement("input");
+    this.addEl.classList.add("devtools-textinput");
+    this.addEl.classList.add("add-class");
+    this.addEl.setAttribute(
+      "placeholder",
+      L10N.getStr("inspector.classPanel.newClass.placeholder")
+    );
+    this.addEl.addEventListener("keypress", this.onKeyPress);
+    this.containerEl.appendChild(this.addEl);
+
+    
+    this.classesEl = this.doc.createElement("div");
+    this.classesEl.classList.add("classes");
+    this.containerEl.appendChild(this.classesEl);
+
+    
+    this.inspector.selection.on("new-node-front", this.onNewSelection);
+    this.containerEl.addEventListener("input", this.onCheckBoxChanged);
+    this.model.on("current-node-class-changed", this.onCurrentNodeClassChanged);
+
+    this.onNewSelection();
+  }
+
   destroy() {
     this.inspector.selection.off("new-node-front", this.onNewSelection);
     this.addEl.removeEventListener("keypress", this.onKeyPress);
@@ -67,11 +68,11 @@ ClassListPreviewer.prototype = {
     this.inspector = null;
     this.addEl = null;
     this.classesEl = null;
-  },
+  }
 
   get doc() {
     return this.containerEl.ownerDocument;
-  },
+  }
 
   
 
@@ -88,7 +89,7 @@ ClassListPreviewer.prototype = {
     if (!this.model.currentClasses.length) {
       this.classesEl.appendChild(this.renderNoClassesMessage());
     }
-  },
+  }
 
   
 
@@ -117,7 +118,7 @@ ClassListPreviewer.prototype = {
     labelWrapper.appendChild(label);
 
     return labelWrapper;
-  },
+  }
 
   
 
@@ -129,7 +130,7 @@ ClassListPreviewer.prototype = {
     msg.classList.add("no-classes");
     msg.textContent = L10N.getStr("inspector.classPanel.noClasses");
     return msg;
-  },
+  }
 
   
 
@@ -138,7 +139,7 @@ ClassListPreviewer.prototype = {
     if (this.addEl) {
       this.addEl.focus();
     }
-  },
+  }
 
   onCheckBoxChanged({ target }) {
     if (!target.dataset.name) {
@@ -151,7 +152,7 @@ ClassListPreviewer.prototype = {
         console.error(e);
       }
     });
-  },
+  }
 
   onKeyPress(event) {
     if (event.key !== "Enter" || this.addEl.value === "") {
@@ -170,15 +171,15 @@ ClassListPreviewer.prototype = {
           console.error(e);
         }
       });
-  },
+  }
 
   onNewSelection() {
     this.render();
-  },
+  }
 
   onCurrentNodeClassChanged() {
     this.render();
-  },
-};
+  }
+}
 
 module.exports = ClassListPreviewer;
