@@ -16,7 +16,7 @@
 #include "nsAlgorithm.h"
 #include "nsExceptionHandler.h"
 #include "nsGkAtoms.h"
-#include "nsIIdleServiceInternal.h"
+#include "nsIUserIdleServiceInternal.h"
 #include "nsIWindowsRegKey.h"
 #include "nsMemory.h"
 #include "nsPrintfCString.h"
@@ -3866,7 +3866,7 @@ void NativeKey::WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyboardEvent,
 
 
 KeyboardLayout* KeyboardLayout::sInstance = nullptr;
-nsIIdleServiceInternal* KeyboardLayout::sIdleService = nullptr;
+nsIUserIdleServiceInternal* KeyboardLayout::sIdleService = nullptr;
 
 
 
@@ -3878,8 +3878,8 @@ LazyLogModule sKeyboardLayoutLogger("KeyboardLayoutWidgets");
 KeyboardLayout* KeyboardLayout::GetInstance() {
   if (!sInstance) {
     sInstance = new KeyboardLayout();
-    nsCOMPtr<nsIIdleServiceInternal> idleService =
-        do_GetService("@mozilla.org/widget/idleservice;1");
+    nsCOMPtr<nsIUserIdleServiceInternal> idleService =
+        do_GetService("@mozilla.org/widget/useridleservice;1");
     
     sIdleService = idleService.forget().take();
   }

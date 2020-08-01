@@ -5,15 +5,15 @@
 
 
 
-#ifndef nsIdleService_h__
-#define nsIdleService_h__
+#ifndef nsUserIdleService_h__
+#define nsUserIdleService_h__
 
-#include "nsIIdleServiceInternal.h"
+#include "nsIUserIdleServiceInternal.h"
 #include "nsCOMPtr.h"
 #include "nsITimer.h"
 #include "nsTArray.h"
 #include "nsIObserver.h"
-#include "nsIIdleService.h"
+#include "nsIUserIdleService.h"
 #include "nsCategoryCache.h"
 #include "nsWeakReference.h"
 #include "mozilla/TimeStamp.h"
@@ -34,17 +34,18 @@ class IdleListener {
 };
 
 
-class nsIdleService;
+class nsUserIdleService;
 
 
 
 
-class nsIdleServiceDaily : public nsIObserver, public nsSupportsWeakReference {
+class nsUserIdleServiceDaily : public nsIObserver,
+                               public nsSupportsWeakReference {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  explicit nsIdleServiceDaily(nsIIdleService* aIdleService);
+  explicit nsUserIdleServiceDaily(nsIUserIdleService* aIdleService);
 
   
 
@@ -54,7 +55,7 @@ class nsIdleServiceDaily : public nsIObserver, public nsSupportsWeakReference {
   void Init();
 
  private:
-  virtual ~nsIdleServiceDaily();
+  virtual ~nsUserIdleServiceDaily();
 
   
 
@@ -73,7 +74,7 @@ class nsIdleServiceDaily : public nsIObserver, public nsSupportsWeakReference {
 
 
 
-  nsIIdleService* mIdleService;
+  nsIUserIdleService* mIdleService;
 
   
 
@@ -110,17 +111,16 @@ class nsIdleServiceDaily : public nsIObserver, public nsSupportsWeakReference {
   int32_t mIdleDailyTriggerWait;
 };
 
-class nsIdleService : public nsIIdleServiceInternal {
+class nsUserIdleService : public nsIUserIdleServiceInternal {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIIDLESERVICE
-  NS_DECL_NSIIDLESERVICEINTERNAL
+  NS_DECL_NSIUSERIDLESERVICE NS_DECL_NSIUSERIDLESERVICEINTERNAL
 
- protected:
-  static already_AddRefed<nsIdleService> GetInstance();
+      protected : static already_AddRefed<nsUserIdleService>
+                  GetInstance();
 
-  nsIdleService();
-  virtual ~nsIdleService();
+  nsUserIdleService();
+  virtual ~nsUserIdleService();
 
   
 
@@ -177,7 +177,7 @@ class nsIdleService : public nsIIdleServiceInternal {
   
 
 
-  RefPtr<nsIdleServiceDaily> mDailyIdle;
+  RefPtr<nsUserIdleServiceDaily> mDailyIdle;
 
   
 

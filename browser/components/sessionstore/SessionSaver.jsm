@@ -394,8 +394,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
     
     
     
-    var idleService = Cc["@mozilla.org/widget/idleservice;1"].getService(
-      Ci.nsIIdleService
+    var idleService = Cc["@mozilla.org/widget/useridleservice;1"].getService(
+      Ci.nsIUserIdleService
     );
     if (previous != undefined) {
       idleService.removeIdleObserver(SessionSaverInternal, previous);
@@ -406,8 +406,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
   }
 );
 
-var idleService = Cc["@mozilla.org/widget/idleservice;1"].getService(
-  Ci.nsIIdleService
+var idleService = Cc["@mozilla.org/widget/useridleservice;1"].getService(
+  Ci.nsIUserIdleService
 );
 idleService.addIdleObserver(
   SessionSaverInternal,

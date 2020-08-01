@@ -5,10 +5,10 @@
 
 
 
-#include "nsIdleServiceWin.h"
+#include "nsUserIdleServiceWin.h"
 #include <windows.h>
 
-bool nsIdleServiceWin::PollIdleTime(uint32_t* aIdleTime) {
+bool nsUserIdleServiceWin::PollIdleTime(uint32_t* aIdleTime) {
   LASTINPUTINFO inputInfo;
   inputInfo.cbSize = sizeof(inputInfo);
   if (!::GetLastInputInfo(&inputInfo)) return false;
@@ -19,4 +19,4 @@ bool nsIdleServiceWin::PollIdleTime(uint32_t* aIdleTime) {
   return true;
 }
 
-bool nsIdleServiceWin::UsePollMode() { return true; }
+bool nsUserIdleServiceWin::UsePollMode() { return true; }

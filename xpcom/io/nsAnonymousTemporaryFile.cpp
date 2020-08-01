@@ -16,7 +16,7 @@
 #  include "nsIObserverService.h"
 #  include "mozilla/ResultExtensions.h"
 #  include "mozilla/Services.h"
-#  include "nsIIdleService.h"
+#  include "nsIUserIdleService.h"
 #  include "nsISimpleEnumerator.h"
 #  include "nsIFile.h"
 #  include "nsITimer.h"
@@ -183,8 +183,8 @@ class nsAnonTempFileRemover final : public nsIObserver {
       mTimer = nullptr;
     }
     
-    nsCOMPtr<nsIIdleService> idleSvc =
-        do_GetService("@mozilla.org/widget/idleservice;1");
+    nsCOMPtr<nsIUserIdleService> idleSvc =
+        do_GetService("@mozilla.org/widget/useridleservice;1");
     if (idleSvc) {
       idleSvc->RemoveIdleObserver(this, TEMP_FILE_IDLE_TIME_S);
     }
@@ -216,8 +216,8 @@ class nsAnonTempFileRemover final : public nsIObserver {
     
     
     
-    nsCOMPtr<nsIIdleService> idleSvc =
-        do_GetService("@mozilla.org/widget/idleservice;1");
+    nsCOMPtr<nsIUserIdleService> idleSvc =
+        do_GetService("@mozilla.org/widget/useridleservice;1");
     if (!idleSvc) {
       return NS_ERROR_FAILURE;
     }

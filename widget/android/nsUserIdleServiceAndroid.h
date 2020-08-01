@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+#ifndef nsUserIdleServiceAndroid_h__
+#define nsUserIdleServiceAndroid_h__
+
+#include "nsUserIdleService.h"
+
+class nsUserIdleServiceAndroid : public nsUserIdleService {
+ public:
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsUserIdleServiceAndroid,
+                                       nsUserIdleService)
+
+  bool PollIdleTime(uint32_t* aIdleTime) override;
+
+  static already_AddRefed<nsUserIdleServiceAndroid> GetInstance() {
+    RefPtr<nsUserIdleService> idleService = nsUserIdleService::GetInstance();
+    if (!idleService) {
+      idleService = new nsUserIdleServiceAndroid();
+    }
+
+    return idleService.forget().downcast<nsUserIdleServiceAndroid>();
+  }
+
+ protected:
+  nsUserIdleServiceAndroid() {}
+  virtual ~nsUserIdleServiceAndroid() {}
+  bool UsePollMode() override;
+};
+
+#endif  

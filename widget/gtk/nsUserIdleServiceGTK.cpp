@@ -7,14 +7,14 @@
 
 #include <gtk/gtk.h>
 
-#include "nsIdleServiceGTK.h"
+#include "nsUserIdleServiceGTK.h"
 #include "nsDebug.h"
 #include "prlink.h"
 #include "mozilla/Logging.h"
 
 using mozilla::LogLevel;
 
-static mozilla::LazyLogModule sIdleLog("nsIIdleService");
+static mozilla::LazyLogModule sIdleLog("nsIUserIdleService");
 
 typedef bool (*_XScreenSaverQueryExtension_fn)(Display* dpy, int* event_base,
                                                int* error_base);
@@ -61,9 +61,11 @@ static void Initialize() {
   sInitialized = true;
 }
 
-nsIdleServiceGTK::nsIdleServiceGTK() : mXssInfo(nullptr) { Initialize(); }
+nsUserIdleServiceGTK::nsUserIdleServiceGTK() : mXssInfo(nullptr) {
+  Initialize();
+}
 
-nsIdleServiceGTK::~nsIdleServiceGTK() {
+nsUserIdleServiceGTK::~nsUserIdleServiceGTK() {
   if (mXssInfo) XFree(mXssInfo);
 
 
@@ -77,7 +79,7 @@ nsIdleServiceGTK::~nsIdleServiceGTK() {
 #endif
 }
 
-bool nsIdleServiceGTK::PollIdleTime(uint32_t* aIdleTime) {
+bool nsUserIdleServiceGTK::PollIdleTime(uint32_t* aIdleTime) {
   if (!sInitialized) {
     
     return false;
@@ -110,4 +112,4 @@ bool nsIdleServiceGTK::PollIdleTime(uint32_t* aIdleTime) {
   return false;
 }
 
-bool nsIdleServiceGTK::UsePollMode() { return sInitialized; }
+bool nsUserIdleServiceGTK::UsePollMode() { return sInitialized; }

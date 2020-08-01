@@ -1,0 +1,31 @@
+
+
+
+
+#ifndef nsUserIdleServiceX_h_
+#define nsUserIdleServiceX_h_
+
+#include "nsUserIdleService.h"
+
+class nsUserIdleServiceX : public nsUserIdleService {
+ public:
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsUserIdleServiceX, nsUserIdleService)
+
+  bool PollIdleTime(uint32_t* aIdleTime) override;
+
+  static already_AddRefed<nsUserIdleServiceX> GetInstance() {
+    RefPtr<nsUserIdleService> idleService = nsUserIdleService::GetInstance();
+    if (!idleService) {
+      idleService = new nsUserIdleServiceX();
+    }
+
+    return idleService.forget().downcast<nsUserIdleServiceX>();
+  }
+
+ protected:
+  nsUserIdleServiceX() {}
+  virtual ~nsUserIdleServiceX() {}
+  bool UsePollMode() override;
+};
+
+#endif  
