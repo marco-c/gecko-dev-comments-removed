@@ -688,9 +688,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                         return True
             else:
                 
-                if 'youtube-playback' in try_name and 'youtube-playback-chrome' not in try_name:
-                    return False
-                
                 if '-chrome' in try_name:
                     return True
                 if '-chromium' in try_name:
