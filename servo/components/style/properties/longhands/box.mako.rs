@@ -615,19 +615,16 @@ ${helpers.predefined_type(
     spec="https://drafts.csswg.org/css-contain/#contain-property",
 )}
 
-
 ${helpers.predefined_type(
-    "-moz-appearance",
+    "appearance",
     "Appearance",
     "computed::Appearance::None",
     engines="gecko",
-    alias="-webkit-appearance",
-    spec="Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/-moz-appearance)",
+    alias="-moz-appearance -webkit-appearance",
+    spec="https://drafts.csswg.org/css-ui-4/#propdef-appearance",
     animation_value_type="discrete",
     gecko_ffi_name="mAppearance",
 )}
-
-
 
 
 
