@@ -166,7 +166,8 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
         
         MOXTextMarkerDelegate* delegate =
             [MOXTextMarkerDelegate getOrCreateForDoc:aEvent->Document()];
-        [delegate invalidateSelection];
+        int32_t caretOffset = event->GetCaretOffset();
+        [delegate setSelectionFrom:eventTarget at:caretOffset to:eventTarget at:caretOffset];
       }
 
       [nativeAcc handleAccessibleEvent:eventType];
