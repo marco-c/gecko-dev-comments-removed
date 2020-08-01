@@ -6500,9 +6500,6 @@ var TabContextMenu = {
 
     let disabled = gBrowser.tabs.length == 1;
     let multiselectionContext = this.contextTab.multiselected;
-    let tabCountInfo = JSON.stringify({
-      tabCount: (multiselectionContext && gBrowser.multiSelectedTabsCount) || 1,
-    });
 
     var menuItems = aPopupMenu.getElementsByAttribute(
       "tbattr",
@@ -6554,8 +6551,11 @@ var TabContextMenu = {
     let contextMoveTabOptions = document.getElementById(
       "context_moveTabOptions"
     );
-    contextMoveTabOptions.setAttribute("data-l10n-args", tabCountInfo);
     contextMoveTabOptions.disabled = gBrowser.allTabsSelected();
+    document.l10n.setAttributes(
+      contextMoveTabOptions,
+      multiselectionContext ? "move-tabs" : "move-tab"
+    );
     let selectedTabs = gBrowser.selectedTabs;
     let contextMoveTabToEnd = document.getElementById("context_moveToEnd");
     let allSelectedTabsAdjacent = selectedTabs.every(
@@ -6608,9 +6608,10 @@ var TabContextMenu = {
       unpinnedTabsToClose < 1;
 
     
-    document
-      .getElementById("context_closeTab")
-      .setAttribute("data-l10n-args", tabCountInfo);
+    document.getElementById("context_closeTab").hidden = multiselectionContext;
+    document.getElementById(
+      "context_closeSelectedTabs"
+    ).hidden = !multiselectionContext;
 
     
     
@@ -6773,14 +6774,6 @@ var TabContextMenu = {
       if (tab.muted && !newTab.muted) {
         newTab.toggleMuteAudio(tab.muteReason);
       }
-    }
-  },
-
-  closeContextTabs(event) {
-    if (this.contextTab.multiselected) {
-      gBrowser.removeMultiSelectedTabs();
-    } else {
-      gBrowser.removeTab(this.contextTab, { animate: true });
     }
   },
 };
