@@ -626,27 +626,20 @@ class LoginManagerPrompter {
                 .getElementById("password-notification-username-dropmarker")
                 .addEventListener("click", togglePopup);
 
-              LoginManagerPrompter._getUsernameSuggestions(
+              let usernameSuggestions = LoginManagerPrompter._getUsernameSuggestions(
                 login,
                 possibleValues?.usernames
-              ).then(usernameSuggestions => {
-                let dropmarker = chromeDoc?.getElementById(
-                  "password-notification-username-dropmarker"
-                );
-                if (dropmarker) {
-                  dropmarker.hidden = !usernameSuggestions.length;
-                }
+              );
+              chromeDoc.getElementById(
+                "password-notification-username-dropmarker"
+              ).hidden = !usernameSuggestions.length;
 
-                let usernameField = chromeDoc?.getElementById(
-                  "password-notification-username"
+              chromeDoc
+                .getElementById("password-notification-username")
+                .classList.toggle(
+                  "ac-has-end-icon",
+                  !!usernameSuggestions.length
                 );
-                if (usernameField) {
-                  usernameField.classList.toggle(
-                    "ac-has-end-icon",
-                    !!usernameSuggestions.length
-                  );
-                }
-              });
 
               let toggleBtn = chromeDoc.getElementById(
                 "password-notification-visibilityToggle"
@@ -977,16 +970,13 @@ class LoginManagerPrompter {
 
 
 
-  static async _setUsernameAutocomplete(login, possibleUsernames = new Set()) {
+  static _setUsernameAutocomplete(login, possibleUsernames = new Set()) {
     let result = Cc["@mozilla.org/autocomplete/simple-result;1"].createInstance(
       Ci.nsIAutoCompleteSimpleResult
     );
     result.setDefaultIndex(0);
 
-    let usernames = await this._getUsernameSuggestions(
-      login,
-      possibleUsernames
-    );
+    let usernames = this._getUsernameSuggestions(login, possibleUsernames);
     for (let { text, style } of usernames) {
       let value = text;
       let comment = "";
@@ -1010,37 +1000,34 @@ class LoginManagerPrompter {
 
 
 
-  static async _getUsernameSuggestions(login, possibleUsernames = new Set()) {
-    if (!Services.prefs.getBoolPref("signon.capture.inputChanges.enabled")) {
-      return [];
-    }
+  static _getUsernameSuggestions(login, possibleUsernames = new Set()) {
+    
+    
+    
+    
+    
+    
+    
 
-    let baseDomainLogins = await Services.logins.searchLoginsAsync({
-      origin: login.origin,
-      schemeUpgrades: LoginHelper.schemeUpgrades,
-    });
-
-    let saved = baseDomainLogins.map(login => {
-      return { text: login.username, style: "login" };
-    });
+    
+    
+    
     let possible = [...possibleUsernames].map(username => {
-      return { text: username, style: "possible-username" };
+      
+      return { text: username, style: "" };
     });
 
-    return possible
-      .concat(saved)
-      .reduce((acc, next) => {
-        let alreadyInAcc =
-          acc.findIndex(entry => entry.text == next.text) != -1;
-        if (!alreadyInAcc) {
-          acc.push(next);
-        } else if (next.style == "possible-username") {
-          let existingIndex = acc.findIndex(entry => entry.text == next.text);
-          acc[existingIndex] = next;
-        }
-        return acc;
-      }, [])
-      .filter(suggestion => suggestion.text != "");
+    
+    return possible.reduce((acc, next) => {
+      let alreadyInAcc = acc.findIndex(entry => entry.text == next.text) != -1;
+      if (!alreadyInAcc) {
+        acc.push(next);
+      } else if (next.style == "possible-username") {
+        let existingIndex = acc.findIndex(entry => entry.text == next.text);
+        acc[existingIndex] = next;
+      }
+      return acc;
+    }, []);
   }
 }
 
