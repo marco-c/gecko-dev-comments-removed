@@ -403,7 +403,6 @@ class nsLineBox final : public nsLineLink {
   
   
   
-  
   void SetOverflowAreas(const nsOverflowAreas& aOverflowAreas);
   mozilla::LogicalRect GetOverflowArea(nsOverflowType aType,
                                        mozilla::WritingMode aWM,
