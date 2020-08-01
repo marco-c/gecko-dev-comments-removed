@@ -10417,9 +10417,11 @@ void CodeGenerator::emitArrayPush(LInstruction* lir, Register obj,
   masm.load32(Address(elementsTemp, ObjectElements::offsetOfLength()), length);
 
   
+  
   if (!IsTypeInferenceEnabled()) {
     
-    bailoutCmp32(Assembler::Equal, length, Imm32(INT32_MAX), lir->snapshot());
+    bailoutCmp32(Assembler::AboveOrEqual, length, Imm32(INT32_MAX),
+                 lir->snapshot());
   }
 
 #ifdef DEBUG
