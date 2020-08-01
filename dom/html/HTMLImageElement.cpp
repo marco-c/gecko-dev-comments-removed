@@ -735,32 +735,25 @@ uint32_t HTMLImageElement::NaturalWidth() {
 }
 
 nsresult HTMLImageElement::CopyInnerTo(HTMLImageElement* aDest) {
-  bool destIsStatic = aDest->OwnerDoc()->IsStaticDocument();
-  if (destIsStatic) {
-    CreateStaticImageClone(aDest);
-  }
-
   nsresult rv = nsGenericHTMLElement::CopyInnerTo(aDest);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  if (!destIsStatic) {
+  
+  
+  
+  
+  if (!aDest->InResponsiveMode() &&
+      aDest->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
+      aDest->ShouldLoadImage()) {
     
     
-    
-    
-    if (!aDest->InResponsiveMode() &&
-        aDest->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
-        aDest->ShouldLoadImage()) {
-      
-      
-      mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
 
-      nsContentUtils::AddScriptRunner(NewRunnableMethod<bool>(
-          "dom::HTMLImageElement::MaybeLoadImage", aDest,
-          &HTMLImageElement::MaybeLoadImage, false));
-    }
+    nsContentUtils::AddScriptRunner(NewRunnableMethod<bool>(
+        "dom::HTMLImageElement::MaybeLoadImage", aDest,
+        &HTMLImageElement::MaybeLoadImage, false));
   }
 
   return NS_OK;

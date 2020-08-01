@@ -373,8 +373,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   nsresult StringToURI(const nsAString& aSpec,
                        mozilla::dom::Document* aDocument, nsIURI** aURI);
 
-  void CreateStaticImageClone(nsImageLoadingContent* aDest) const;
-
   
 
 

@@ -1053,29 +1053,21 @@ void imgRequestProxy::NullOutListener() {
 
 NS_IMETHODIMP
 imgRequestProxy::GetStaticRequest(imgIRequest** aReturn) {
-  imgRequestProxy* proxy;
-  nsresult result = GetStaticRequest(nullptr, &proxy);
-  *aReturn = proxy;
-  return result;
+  RefPtr<imgRequestProxy> proxy =
+      GetStaticRequest(static_cast<Document*>(nullptr));
+  proxy.forget(aReturn);
+  return NS_OK;
 }
 
-nsresult imgRequestProxy::GetStaticRequest(Document* aLoadingDocument,
-                                           imgRequestProxy** aReturn) {
-  *aReturn = nullptr;
+already_AddRefed<imgRequestProxy> imgRequestProxy::GetStaticRequest(
+    Document* aLoadingDocument) {
+  MOZ_DIAGNOSTIC_ASSERT(!aLoadingDocument || aLoadingDocument->IsStaticDocument());
   RefPtr<Image> image = GetImage();
 
   bool animated;
   if (!image || (NS_SUCCEEDED(image->GetAnimated(&animated)) && !animated)) {
     
-    NS_ADDREF(*aReturn = this);
-    return NS_OK;
-  }
-
-  
-  
-  
-  if (image->HasError()) {
-    return NS_ERROR_FAILURE;
+    return do_AddRef(this);
   }
 
   
@@ -1090,9 +1082,7 @@ nsresult imgRequestProxy::GetStaticRequest(Document* aLoadingDocument,
       frozenImage, currentPrincipal, hadCrossOriginRedirects);
   req->Init(nullptr, nullptr, aLoadingDocument, mURI, nullptr);
 
-  NS_ADDREF(*aReturn = req);
-
-  return NS_OK;
+  return req.forget();
 }
 
 void imgRequestProxy::NotifyListener() {
