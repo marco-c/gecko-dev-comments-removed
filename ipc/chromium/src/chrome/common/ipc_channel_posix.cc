@@ -917,14 +917,10 @@ uint32_t Channel::Unsound_NumQueuedMessages() const {
 }
 
 
-std::wstring Channel::GenerateVerifiedChannelID(const std::wstring& prefix) {
+std::wstring Channel::GenerateVerifiedChannelID() {
   
   
-
-  std::wstring id = prefix;
-  if (!id.empty()) id.append(L".");
-
-  return id.append(GenerateUniqueRandomChannelID());
+  return GenerateUniqueRandomChannelID();
 }
 
 }  

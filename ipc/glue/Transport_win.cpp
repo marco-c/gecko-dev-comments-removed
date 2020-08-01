@@ -16,7 +16,7 @@ namespace ipc {
 
 nsresult CreateTransport(base::ProcessId aProcIdOne, TransportDescriptor* aOne,
                          TransportDescriptor* aTwo) {
-  std::wstring id = IPC::Channel::GenerateVerifiedChannelID(std::wstring());
+  std::wstring id = IPC::Channel::GenerateVerifiedChannelID();
   
   Transport t(id, Transport::MODE_SERVER, nullptr);
   HANDLE serverPipe = t.GetServerPipeHandle();
