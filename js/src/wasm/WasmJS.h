@@ -50,8 +50,6 @@ bool HasPlatformSupport(JSContext* cx);
 
 
 
-
-
 bool HasSupport(JSContext* cx);
 
 
@@ -67,10 +65,6 @@ bool HasSupport(JSContext* cx);
 bool BaselineAvailable(JSContext* cx);
 bool IonAvailable(JSContext* cx);
 bool CraneliftAvailable(JSContext* cx);
-
-
-
-bool AnyCompilerAvailable(JSContext* cx);
 
 
 
