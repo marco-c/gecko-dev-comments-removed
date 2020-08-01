@@ -8529,8 +8529,9 @@ function duplicateTabIn(aTab, where, delta) {
       
       break;
     case "tab":
-      let newTab = SessionStore.duplicateTab(window, aTab, delta);
-      gBrowser.selectedTab = newTab;
+      SessionStore.duplicateTab(window, aTab, delta, true, {
+        inBackground: false,
+      });
       break;
   }
 }
