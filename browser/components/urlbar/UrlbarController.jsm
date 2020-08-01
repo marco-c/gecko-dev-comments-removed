@@ -19,7 +19,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
-  URLBAR_SELECTED_RESULT_TYPES: "resource:///modules/BrowserUsageTelemetry.jsm",
 });
 
 const TELEMETRY_1ST_RESULT = "PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS";
@@ -582,10 +581,10 @@ class UrlbarController {
     Services.telemetry
       .getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX")
       .add(resultIndex);
-    if (telemetryType in URLBAR_SELECTED_RESULT_TYPES) {
+    if (telemetryType in UrlbarUtils.SELECTED_RESULT_TYPES) {
       Services.telemetry
         .getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE_2")
-        .add(URLBAR_SELECTED_RESULT_TYPES[telemetryType]);
+        .add(UrlbarUtils.SELECTED_RESULT_TYPES[telemetryType]);
       Services.telemetry
         .getKeyedHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX_BY_TYPE_2")
         .add(telemetryType, resultIndex);
