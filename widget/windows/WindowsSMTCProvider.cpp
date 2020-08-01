@@ -429,8 +429,8 @@ void WindowsSMTCProvider::LoadImageAtIndex(const size_t aIndex) {
   
   
 
-  if (image.mSrc.Find("file:///"_ns, false, 0, 0) == 0) {
-    LOG("Skip the local file. Try next image");
+  if (!mozilla::dom::IsValidImageUrl(image.mSrc)) {
+    LOG("Skip the image with invalid URL. Try next image");
     mImageFetchRequest.DisconnectIfExists();
     LoadImageAtIndex(mNextImageIndex++);
     return;
