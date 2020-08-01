@@ -346,10 +346,8 @@
         height = lastRowRect.bottom - firstRowRect.top + this._rlbPadding;
       }
 
-      let currentHeight = this.richlistbox.getBoundingClientRect().height;
-      if (height <= currentHeight) {
-        this._collapseUnusedItems();
-      }
+      this._collapseUnusedItems();
+
       this.richlistbox.style.removeProperty("height");
       
       
