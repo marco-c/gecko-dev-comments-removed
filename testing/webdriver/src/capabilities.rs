@@ -57,7 +57,7 @@ pub trait BrowserCapabilities {
     
     
     
-    fn validate_custom(&self, name: &str, value: &Value) -> WebDriverResult<()>;
+    fn validate_custom(&mut self, name: &str, value: &Value) -> WebDriverResult<()>;
 
     
     
@@ -112,7 +112,7 @@ impl SpecNewSessionParameters {
     fn validate<T: BrowserCapabilities>(
         &self,
         mut capabilities: Capabilities,
-        browser_capabilities: &T,
+        browser_capabilities: &mut T,
     ) -> WebDriverResult<Capabilities> {
         
         let null_entries = capabilities
