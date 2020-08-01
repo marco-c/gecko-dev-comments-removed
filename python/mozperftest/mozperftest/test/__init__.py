@@ -3,14 +3,17 @@
 
 from mozperftest.test.browsertime import BrowsertimeRunner
 from mozperftest.test.androidlog import AndroidLog
+from mozperftest.test.xpcshell import XPCShell
 from mozperftest.layers import Layers
 
 
 def get_layers():
-    return (BrowsertimeRunner, AndroidLog)
+    return BrowsertimeRunner, AndroidLog, XPCShell
 
 
 def pick_test(env, flavor, mach_cmd):
+    if flavor == "xpcshell":
+        return Layers(env, mach_cmd, (XPCShell,))
     if flavor == "desktop-browser":
         return Layers(env, mach_cmd, (BrowsertimeRunner,))
     if flavor == "mobile-browser":
