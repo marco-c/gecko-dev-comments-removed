@@ -285,6 +285,7 @@ static const char* const kTestFileExtensions[] = {
     ".xml",     
     ".xnk",     
     ".xrm-ms",  
+    ".xsd",     
     ".xsl",     
     ".xz",      
     ".z",       

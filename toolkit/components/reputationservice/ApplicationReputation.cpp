@@ -515,6 +515,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".xml",     
     ".xnk",     
     ".xrm-ms",  
+    ".xsd",     
     ".xsl",     
     
     ".xz",     
