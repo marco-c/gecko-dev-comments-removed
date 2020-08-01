@@ -465,9 +465,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  
-  
-  
 
   static_assert(TYPE_DATAREQUEST == TYPE_XMLHTTPREQUEST,
                 "TYPE_DATAREQUEST is not a synonym for "
@@ -485,12 +482,20 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       *aDecision = ACCEPT;
       return NS_OK;
 
-    
-    
-    
+      
+      
+      
+      
+      
+      
+      
+
     case TYPE_SAVEAS_DOWNLOAD:
-      *aDecision = ACCEPT;
-      return NS_OK;
+      if (!StaticPrefs::dom_block_download_insecure()) {
+        *aDecision = ACCEPT;
+        return NS_OK;
+      }
+      break;
 
     
     
