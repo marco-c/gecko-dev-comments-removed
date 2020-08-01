@@ -1652,7 +1652,7 @@ ssl3_SendSigAlgsXtn(const sslSocket *ss, TLSExtensionData *xtnData,
         minVersion = ss->vrange.min; 
     }
 
-    SECStatus rv = ssl3_EncodeSigAlgs(ss, minVersion, buf);
+    SECStatus rv = ssl3_EncodeSigAlgs(ss, minVersion, PR_TRUE , buf);
     if (rv != SECSuccess) {
         return SECFailure;
     }

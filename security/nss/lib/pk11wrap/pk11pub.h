@@ -949,7 +949,7 @@ PRBool SECMOD_HasRootCerts(void);
 
 
 
-int SECMOD_GetSystemFIPSEnabled();
+int SECMOD_GetSystemFIPSEnabled(void);
 
 SEC_END_PROTOS
 
