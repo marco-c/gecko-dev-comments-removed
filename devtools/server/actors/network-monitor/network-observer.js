@@ -74,7 +74,7 @@ const HTTP_TEMPORARY_REDIRECT = 307;
 
 function matchRequest(channel, filters) {
   
-  if (!filters.browsingContextID && !filters.window) {
+  if (!filters.browserId && !filters.window) {
     return true;
   }
 
@@ -105,10 +105,10 @@ function matchRequest(channel, filters) {
     }
   }
 
-  if (filters.browsingContextID) {
+  if (filters.browserId) {
     const topFrame = NetworkHelper.getTopFrameForRequest(channel);
     
-    if (topFrame && topFrame.browsingContext.id == filters.browsingContextID) {
+    if (topFrame && topFrame.browsingContext.browserId == filters.browserId) {
       return true;
     }
 
@@ -116,7 +116,8 @@ function matchRequest(channel, filters) {
     
     if (
       channel.loadInfo &&
-      channel.loadInfo.browsingContextID == filters.browsingContextID
+      channel.loadInfo.browsingContext &&
+      channel.loadInfo.browsingContext.browserId == filters.browserId
     ) {
       return true;
     }
