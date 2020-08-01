@@ -1227,6 +1227,21 @@ class WhiteSpaceVisibilityKeeper final {
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  MakeSureToKeepVisibleStateOfWhiteSpacesAtEndOfDeletingRange(
+      HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete,
+      Element* aEditingHost);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  MakeSureToKeepVisibleStateOfWhiteSpacesAtStartOfDeletingRange(
+      HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete,
+      Element* aEditingHost);
+
+  
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
   MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange(
       HTMLEditor& aHTMLEditor, const EditorDOMRange& aRangeToDelete);
 
