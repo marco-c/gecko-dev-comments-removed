@@ -731,13 +731,12 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
   const RefPtr<ClientWebGLExtensionLoseContext> mExtLoseContext;
 
-  webgl::LossStatus mLossStatus = webgl::LossStatus::Ready;
-  bool mAwaitingRestore = false;
+  mutable std::shared_ptr<webgl::NotLostData> mNotLost;
+  mutable GLenum mNextError = 0;
+  mutable webgl::LossStatus mLossStatus = webgl::LossStatus::Ready;
+  mutable bool mAwaitingRestore = false;
 
   
- private:
-  std::shared_ptr<webgl::NotLostData> mNotLost;
-  mutable GLenum mNextError = 0;
 
  public:
   const auto& Limits() const { return mNotLost->info.limits; }
@@ -755,14 +754,14 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   
 
  public:
-  void EmulateLoseContext();
-  void OnContextLoss(webgl::ContextLossReason);
-  void RestoreContext(webgl::LossStatus requiredStatus);
+  void EmulateLoseContext() const;
+  void OnContextLoss(webgl::ContextLossReason) const;
+  void RestoreContext(webgl::LossStatus requiredStatus) const;
 
  private:
   bool DispatchEvent(const nsAString&) const;
-  void Event_webglcontextlost();
-  void Event_webglcontextrestored();
+  void Event_webglcontextlost() const;
+  void Event_webglcontextrestored() const;
 
   bool CreateHostContext(const uvec2& requestedSize);
   void ThrowEvent_WebGLContextCreationError(const std::string&) const;
@@ -853,6 +852,10 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
     EnqueueErrorImpl(error, text);
   }
 
+  void EnqueueError(const webgl::ErrorInfo& info) const {
+    EnqueueError(info.type, "%s", info.info.c_str());
+  }
+
   template <typename... Args>
   void EnqueueWarning(const char* const format, const Args&... args) const {
     EnqueueError(0, format, args...);
@@ -923,9 +926,6 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   bool UpdateWebRenderCanvasData(
       nsDisplayListBuilder* aBuilder,
       layers::WebRenderCanvasData* aCanvasData) override;
-
-  bool UpdateCompositableHandle(LayerTransactionChild* aLayerTransaction,
-                                CompositableHandle aHandle) override;
 
   
 
@@ -1026,6 +1026,11 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   void Enable(GLenum cap) const;
   bool IsEnabled(GLenum cap) const;
 
+ private:
+  Maybe<double> GetNumber(GLenum pname);
+  Maybe<std::string> GetString(GLenum pname);
+
+ public:
   void GetParameter(JSContext* cx, GLenum pname,
                     JS::MutableHandle<JS::Value> retval, ErrorResult& rv,
                     bool debug = false);
@@ -1703,6 +1708,10 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   }
 
   
+
+ private:
+  Maybe<double> GetVertexAttribPriv(GLuint index, GLenum pname);
+
  public:
   void GetVertexAttrib(JSContext* cx, GLuint index, GLenum pname,
                        JS::MutableHandle<JS::Value> retval, ErrorResult& rv);
@@ -2079,61 +2088,6 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   
   
  protected:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   template <typename ReturnType>
   friend struct WebGLClientDispatcher;
 
@@ -2143,16 +2097,8 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
   
   
-  
-  
-  
-  
-  
-  template <
-      typename MethodType, MethodType method,
-      typename ReturnType = typename FunctionTypeTraits<MethodType>::ReturnType,
-      typename... Args>
-  ReturnType Run(Args&&... aArgs) const;
+  template <typename MethodType, MethodType method, typename... Args>
+  void Run(Args&&... aArgs) const;
 
   
   

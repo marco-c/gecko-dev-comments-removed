@@ -20,5 +20,10 @@ void test_RangeToBoolConversionShouldCompile() {
   (void)dummy;
 }
 
+void test_RangeT_To_RangeConstT_ShouldCompile() {
+  auto dummy = Range<const int>{Range<int>{}};
+  (void)dummy;
+}
+
 
 int main() { return 0; }

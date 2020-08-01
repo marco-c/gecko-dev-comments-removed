@@ -18,6 +18,11 @@ namespace mozilla {
 
 template <typename T>
 class Range {
+  template <typename U>
+  friend class Range;
+
+  
+  
   const RangedPtr<T> mStart;
   const RangedPtr<T> mEnd;
 
