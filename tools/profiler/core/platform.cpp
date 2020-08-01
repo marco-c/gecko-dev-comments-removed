@@ -34,6 +34,7 @@
 #include "ProfileBuffer.h"
 #include "ProfiledThreadData.h"
 #include "ProfilerBacktrace.h"
+#include "ProfilerChild.h"
 #include "ProfilerCodeAddressService.h"
 #include "ProfilerIOInterposeObserver.h"
 #include "ProfilerMarkerPayload.h"
@@ -3571,6 +3572,8 @@ void SamplerThread::Run() {
     
     InvokePostSamplingCallbacks(std::move(postSamplingCallbacks),
                                 samplingState);
+
+    ProfilerChild::ProcessPendingUpdate();
 
     
     
