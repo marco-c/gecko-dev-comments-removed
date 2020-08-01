@@ -2106,7 +2106,11 @@ fn generate_capture_path(path: *const c_char) -> Option<PathBuf> {
     
     
     
+    
+    
     let mut path = if let Ok(storage_path) = env::var("PUBLIC_STORAGE") {
+        PathBuf::from(storage_path).join(local_dir)
+    } else if let Ok(storage_path) = env::var("MOZ_UPLOAD_DIR") {
         PathBuf::from(storage_path).join(local_dir)
     } else if let Some(storage_path) = dirs::home_dir() {
         PathBuf::from(storage_path).join(local_dir)
