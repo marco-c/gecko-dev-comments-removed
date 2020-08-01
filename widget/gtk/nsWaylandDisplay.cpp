@@ -20,10 +20,7 @@ wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay) {
     }
   }
 
-  
-  static auto sGdkWaylandDisplayGetWlDisplay = (wl_display * (*)(GdkDisplay*))
-      dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_wl_display");
-  return sGdkWaylandDisplayGetWlDisplay(aGdkDisplay);
+  return gdk_wayland_display_get_wl_display(aGdkDisplay);
 }
 
 
