@@ -6,6 +6,8 @@
   
 
   text-transform: uppercase;
+  direction: ltr; 
+  display: inline-block;
 }
 
 .manifest-item__color::before {
