@@ -788,6 +788,12 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   blFrame->setFlags(flags);
 
+  if (JitOptions.warpBuilder) {
+    ICScript* icScript = script->jitScript()->icScript();
+    JitSpew(JitSpew_BaselineBailouts, "      ICScript=%p", icScript);
+    blFrame->setICScript(icScript);
+  }
+
   
   if (argsObj) {
     blFrame->initArgsObjUnchecked(*argsObj);
