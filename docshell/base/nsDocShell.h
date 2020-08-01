@@ -444,6 +444,9 @@ class nsDocShell final : public nsDocLoader,
       bool aNotifyKeywordSearchLoading = false,
       nsIInputStream** aNewPostData = nullptr);
 
+  static already_AddRefed<nsIURI> MaybeFixBadCertDomainErrorURI(
+      nsIChannel* aChannel, nsIURI* aUrl);
+
   
   
   
