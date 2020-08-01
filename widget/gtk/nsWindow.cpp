@@ -7487,20 +7487,14 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
     gtk_widget_reparent(GTK_WIDGET(mContainer), tmpWindow);
     gtk_widget_unrealize(GTK_WIDGET(mShell));
 
-    
-    static auto sGtkWindowSetTitlebar = (void (*)(GtkWindow*, GtkWidget*))dlsym(
-        RTLD_DEFAULT, "gtk_window_set_titlebar");
-    MOZ_ASSERT(sGtkWindowSetTitlebar,
-               "Missing gtk_window_set_titlebar(), old Gtk+ library?");
-
     if (aState) {
       
       
       
       
-      sGtkWindowSetTitlebar(GTK_WINDOW(mShell), gtk_fixed_new());
+      gtk_window_set_titlebar(GTK_WINDOW(mShell), gtk_fixed_new());
     } else {
-      sGtkWindowSetTitlebar(GTK_WINDOW(mShell), nullptr);
+      gtk_window_set_titlebar(GTK_WINDOW(mShell), nullptr);
     }
 
     
