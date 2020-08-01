@@ -185,20 +185,30 @@ class MOZ_STACK_CLASS ContentIteratorBase::Initializer final {
  public:
   Initializer(ContentIteratorBase& aIterator, const RawRangeBoundary& aStart,
               const RawRangeBoundary& aEnd)
-      : mIterator{aIterator}, mStart{aStart}, mEnd{aEnd} {}
+      : mIterator{aIterator},
+        mStart{aStart},
+        mEnd{aEnd},
+        mStartIsCharacterData{mStart.Container()->IsCharacterData()} {}
 
   nsresult Run();
 
  private:
+  bool IsSingleNodeCharacterRange() const;
+
   ContentIteratorBase& mIterator;
   const RawRangeBoundary& mStart;
   const RawRangeBoundary& mEnd;
+  const bool mStartIsCharacterData;
 };
 
 nsresult ContentIteratorBase::InitInternal(const RawRangeBoundary& aStart,
                                            const RawRangeBoundary& aEnd) {
   Initializer initializer{*this, aStart, aEnd};
   return initializer.Run();
+}
+
+bool ContentIteratorBase::Initializer::IsSingleNodeCharacterRange() const {
+  return mStartIsCharacterData && mStart.Container() == mEnd.Container();
 }
 
 nsresult ContentIteratorBase::Initializer::Run() {
@@ -209,8 +219,6 @@ nsresult ContentIteratorBase::Initializer::Run() {
     return NS_ERROR_FAILURE;
   }
 
-  const bool startIsCharacterData = mStart.Container()->IsCharacterData();
-
   
   
   
@@ -218,13 +226,12 @@ nsresult ContentIteratorBase::Initializer::Run() {
   
   
 
-  if (!startIsCharacterData && mStart == mEnd) {
+  if (!mStartIsCharacterData && mStart == mEnd) {
     mIterator.SetEmpty();
     return NS_OK;
   }
 
-  
-  if (startIsCharacterData && mStart.Container() == mEnd.Container()) {
+  if (IsSingleNodeCharacterRange()) {
     mIterator.mFirst = mStart.Container()->AsContent();
     mIterator.mLast = mIterator.mFirst;
     mIterator.mCurNode = mIterator.mFirst;
@@ -238,7 +245,7 @@ nsresult ContentIteratorBase::Initializer::Run() {
 
   
   
-  if (!startIsCharacterData) {
+  if (!mStartIsCharacterData) {
     cChild = mStart.GetChildAtOffset();
   }
 
@@ -260,7 +267,7 @@ nsresult ContentIteratorBase::Initializer::Run() {
         startIsContainer =
             nsHTMLElement::IsContainer(nsHTMLTags::AtomTagToId(name));
       }
-      if (!startIsCharacterData &&
+      if (!mStartIsCharacterData &&
           (startIsContainer || !mStart.IsStartOfContainer())) {
         mIterator.mFirst = mIterator.GetNextSibling(mStart.Container());
         NS_WARNING_ASSERTION(mIterator.mFirst, "GetNextSibling returned null");
