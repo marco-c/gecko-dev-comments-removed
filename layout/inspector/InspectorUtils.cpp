@@ -42,6 +42,7 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/InspectorUtils.h"
 #include "mozilla/dom/InspectorFontFace.h"
+#include "mozilla/gfx/Matrix.h"
 
 using namespace mozilla;
 using namespace mozilla::css;
@@ -703,30 +704,88 @@ Element* InspectorUtils::ContainingBlockOf(GlobalObject&, Element& aElement) {
   return Element::FromNodeOrNull(cb->GetContent());
 }
 
+static bool FrameHasSpecifiedSize(const nsIFrame* aFrame) {
+  auto wm = aFrame->GetWritingMode();
+
+  const nsStylePosition* stylePos = aFrame->StylePosition();
+
+  return stylePos->ISize(wm).IsLengthPercentage() ||
+         stylePos->BSize(wm).IsLengthPercentage();
+}
+
+static bool IsFrameOutsideOfAncestor(const nsIFrame* aFrame,
+                                     const nsIFrame* aAncestorFrame,
+                                     const nsRect& aAncestorRect) {
+  nsRect frameRectInAncestorSpace = nsLayoutUtils::TransformFrameRectToAncestor(
+      aFrame, aFrame->GetScrollableOverflowRect(), RelativeTo{aAncestorFrame},
+      nullptr, nullptr, false, nullptr);
+
+  
+  
+  
+  nsRect unionizedRect =
+      frameRectInAncestorSpace.SaturatingUnionEdges(aAncestorRect);
+
+  
+  
+  
+
+  return !(unionizedRect == aAncestorRect);
+}
+
+static void AddOverflowingChildrenOfElement(const nsIFrame* aFrame,
+                                            const nsIFrame* aAncestorFrame,
+                                            const nsRect& aRect,
+                                            nsSimpleContentList& aList) {
+  MOZ_ASSERT(aFrame, "we assume the passed-in frame is non-null");
+  for (const auto& childList : aFrame->ChildLists()) {
+    for (const nsIFrame* child : childList.mList) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      if (FrameHasSpecifiedSize(child) &&
+          IsFrameOutsideOfAncestor(child, aAncestorFrame, aRect)) {
+        aList.AppendElement(child->GetContent());
+        continue;
+      }
+
+      uint32_t currListLength = aList.Length();
+      AddOverflowingChildrenOfElement(child, aAncestorFrame, aRect, aList);
+
+      
+      
+      if (currListLength == aList.Length() &&
+          IsFrameOutsideOfAncestor(child, aAncestorFrame, aRect)) {
+        aList.AppendElement(child->GetContent());
+      }
+    }
+  }
+}
+
 already_AddRefed<nsINodeList> InspectorUtils::GetOverflowingChildrenOfElement(
     GlobalObject& aGlobal, Element& aElement) {
   RefPtr<nsSimpleContentList> list = new nsSimpleContentList(&aElement);
-  nsIFrame* scrollableFrame = aElement.GetPrimaryFrame();
+  nsIFrame* primaryFrame = aElement.GetPrimaryFrame(FlushType::Frames);
 
-  std::function<void(const nsIFrame*)> GetOverflowingElement =
-      [&](const nsIFrame* aFrame) {
-        MOZ_ASSERT(aFrame, "we assume the passed-in frame is non-null");
-        for (const auto& childList : aFrame->ChildLists()) {
-          for (const nsIFrame* child : childList.mList) {
-            bool isBlameElem = true;  
-                                      
-            if (!isBlameElem) {
-              GetOverflowingElement(child);
-            } else {
-              list->AppendElement(child->GetContent());
-            }
-          }
-        }
-      };
-
-  if (scrollableFrame) {
-    GetOverflowingElement(scrollableFrame);
+  const nsIScrollableFrame* scrollFrame = do_QueryFrame(primaryFrame);
+  
+  if (!scrollFrame) {
+    return list.forget();
   }
+
+  auto scrollPortRect = scrollFrame->GetScrollPortRect();
+  AddOverflowingChildrenOfElement(scrollFrame->GetScrolledFrame(), primaryFrame,
+                                  scrollPortRect, *list);
   return list.forget();
 }
 
