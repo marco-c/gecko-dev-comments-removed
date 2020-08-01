@@ -316,6 +316,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:sctp_handle_tick\n"
          "race:sctp_handle_sack\n"
 
+         
+         "mutex:XErrorTrap\n"
+
       
       ;  
 }
