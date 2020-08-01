@@ -74,6 +74,12 @@ class LoadInfo final : public nsILoadInfo {
       uint32_t aSandboxFlags);
 
   
+  static already_AddRefed<LoadInfo> CreateForNonDocument(
+      dom::WindowGlobalParent* aParentWGP, nsIPrincipal* aTriggeringPrincipal,
+      nsContentPolicyType aContentPolicyType, nsSecurityFlags aSecurityFlags,
+      uint32_t aSandboxFlags);
+
+  
   LoadInfo(nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
            nsINode* aLoadingContext, nsSecurityFlags aSecurityFlags,
            nsContentPolicyType aContentPolicyType,
@@ -90,12 +96,6 @@ class LoadInfo final : public nsILoadInfo {
            nsISupports* aContextForTopLevelLoad, nsSecurityFlags aSecurityFlags,
            uint32_t aSandboxFlags);
 
-  
-  LoadInfo(dom::WindowGlobalParent* aParentWGP,
-           nsIPrincipal* aTriggeringPrincipal,
-           nsContentPolicyType aContentPolicyType,
-           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
-
  private:
   
   
@@ -109,6 +109,13 @@ class LoadInfo final : public nsILoadInfo {
   LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
            nsIPrincipal* aTriggeringPrincipal, nsSecurityFlags aSecurityFlags,
            uint32_t aSandboxFlags);
+
+  
+  
+  LoadInfo(dom::WindowGlobalParent* aParentWGP,
+           nsIPrincipal* aTriggeringPrincipal,
+           nsContentPolicyType aContentPolicyType,
+           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
  public:
   
@@ -131,6 +138,12 @@ class LoadInfo final : public nsILoadInfo {
   
   
   already_AddRefed<nsILoadInfo> CloneForNewRequest() const;
+
+  
+  
+  
+  
+  using nsILoadInfo::GetExternalContentPolicyType;
 
   void SetIsPreflight();
   void SetUpgradeInsecureRequests(bool aValue);

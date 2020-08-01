@@ -1034,7 +1034,7 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
   
   
   return net::DocumentLoadListener::LoadInParent(this, aLoadState,
-                                                 outerWindowId, aSetNavigating);
+                                                 aSetNavigating);
 }
 
 bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
@@ -1058,8 +1058,7 @@ bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
   
   
   
-  return net::DocumentLoadListener::SpeculativeLoadInParent(this, aLoadState,
-                                                            outerWindowId);
+  return net::DocumentLoadListener::SpeculativeLoadInParent(this, aLoadState);
 }
 
 bool CanonicalBrowsingContext::StartDocumentLoad(

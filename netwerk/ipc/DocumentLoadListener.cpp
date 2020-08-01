@@ -42,10 +42,13 @@
 #include "nsIViewSourceChannel.h"
 #include "nsImportModule.h"
 #include "nsMimeTypes.h"
+#include "nsQueryObject.h"
 #include "nsRedirectHistoryEntry.h"
 #include "nsSandboxFlags.h"
+#include "nsStringStream.h"
 #include "nsURILoader.h"
 #include "nsWebNavigationInfo.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/RemoteWebProgress.h"
@@ -76,6 +79,93 @@ static void SetNeedToAddURIVisit(nsIChannel* aChannel,
                            aNeedToAddURIVisit);
 }
 
+static auto SecurityFlagsForLoadInfo(nsDocShellLoadState* aLoadState)
+    -> nsSecurityFlags {
+  
+  nsSecurityFlags securityFlags =
+      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
+
+  if (aLoadState->LoadType() == LOAD_ERROR_PAGE) {
+    securityFlags |= nsILoadInfo::SEC_LOAD_ERROR_PAGE;
+  }
+
+  if (aLoadState->PrincipalToInherit()) {
+    bool isSrcdoc =
+        aLoadState->HasLoadFlags(nsDocShell::INTERNAL_LOAD_FLAGS_IS_SRCDOC);
+    bool inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
+        aLoadState->PrincipalToInherit(), aLoadState->URI(),
+        true,  
+        isSrcdoc);
+
+    bool isURIUniqueOrigin =
+        StaticPrefs::security_data_uri_unique_opaque_origin() &&
+        SchemeIsData(aLoadState->URI());
+    if (inheritAttrs && !isURIUniqueOrigin) {
+      securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+    }
+  }
+
+  return securityFlags;
+}
+
+
+
+static auto CreateDocumentLoadInfo(CanonicalBrowsingContext* aBrowsingContext,
+                                   nsDocShellLoadState* aLoadState)
+    -> already_AddRefed<LoadInfo> {
+  uint32_t sandboxFlags = aBrowsingContext->GetSandboxFlags();
+  RefPtr<LoadInfo> loadInfo;
+
+  auto securityFlags = SecurityFlagsForLoadInfo(aLoadState);
+
+  if (aBrowsingContext->GetParent()) {
+    loadInfo = LoadInfo::CreateForFrame(aBrowsingContext,
+                                        aLoadState->TriggeringPrincipal(),
+                                        securityFlags, sandboxFlags);
+  } else {
+    OriginAttributes attrs;
+    aBrowsingContext->GetOriginAttributes(attrs);
+    loadInfo = LoadInfo::CreateForDocument(aBrowsingContext,
+                                           aLoadState->TriggeringPrincipal(),
+                                           attrs, securityFlags, sandboxFlags);
+  }
+
+  loadInfo->SetHasValidUserGestureActivation(
+      aLoadState->HasValidUserGestureActivation());
+
+  return loadInfo.forget();
+}
+
+
+
+static auto CreateObjectLoadInfo(nsDocShellLoadState* aLoadState,
+                                 uint64_t aInnerWindowId,
+                                 nsContentPolicyType aContentPolicyType,
+                                 uint32_t aSandboxFlags)
+    -> already_AddRefed<LoadInfo> {
+  RefPtr<WindowGlobalParent> wgp =
+      WindowGlobalParent::GetByInnerWindowId(aInnerWindowId);
+  MOZ_RELEASE_ASSERT(wgp);
+
+  auto securityFlags = SecurityFlagsForLoadInfo(aLoadState);
+
+  RefPtr<LoadInfo> loadInfo = LoadInfo::CreateForNonDocument(
+      wgp, wgp->DocumentPrincipal(), aContentPolicyType, securityFlags,
+      aSandboxFlags);
+
+  loadInfo->SetHasValidUserGestureActivation(
+      aLoadState->HasValidUserGestureActivation());
+
+  return loadInfo.forget();
+}
+
+static auto WebProgressForBrowsingContext(
+    CanonicalBrowsingContext* aBrowsingContext)
+    -> already_AddRefed<BrowsingContextWebProgress> {
+  return RefPtr<BrowsingContextWebProgress>(aBrowsingContext->GetWebProgress())
+      .forget();
+}
+
 
 
 
@@ -94,10 +184,12 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
  public:
   ParentProcessDocumentOpenInfo(ParentChannelListener* aListener,
                                 uint32_t aFlags,
-                                mozilla::dom::BrowsingContext* aBrowsingContext)
+                                mozilla::dom::BrowsingContext* aBrowsingContext,
+                                bool aIsDocumentLoad)
       : nsDocumentOpenInfo(aFlags, false),
         mBrowsingContext(aBrowsingContext),
-        mListener(aListener) {
+        mListener(aListener),
+        mIsDocumentLoad(aIsDocumentLoad) {
     LOG(("ParentProcessDocumentOpenInfo ctor [this=%p]", this));
   }
 
@@ -170,11 +262,12 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
   nsDocumentOpenInfo* Clone() override {
     mCloned = true;
     return new ParentProcessDocumentOpenInfo(mListener, mFlags,
-                                             mBrowsingContext);
+                                             mBrowsingContext, mIsDocumentLoad);
   }
 
-  NS_IMETHOD OnStartRequest(nsIRequest* request) override {
-    LOG(("ParentProcessDocumentOpenInfo OnStartRequest [this=%p]", this));
+  nsresult OnDocumentStartRequest(nsIRequest* request) {
+    LOG(("ParentProcessDocumentOpenInfo OnDocumentStartRequest [this=%p]",
+         this));
 
     nsresult rv = nsDocumentOpenInfo::OnStartRequest(request);
 
@@ -213,6 +306,23 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     return rv;
   }
 
+  nsresult OnObjectStartRequest(nsIRequest* request) {
+    LOG(("ParentProcessDocumentOpenInfo OnObjectStartRequest [this=%p]", this));
+    
+    m_targetStreamListener = mListener;
+    return m_targetStreamListener->OnStartRequest(request);
+  }
+
+  NS_IMETHOD OnStartRequest(nsIRequest* request) override {
+    LOG(("ParentProcessDocumentOpenInfo OnStartRequest [this=%p]", this));
+
+    if (mIsDocumentLoad) {
+      return OnDocumentStartRequest(request);
+    }
+
+    return OnObjectStartRequest(request);
+  }
+
   NS_IMETHOD OnAfterLastPart(nsresult aStatus) override {
     mListener->OnAfterLastPart(aStatus);
     return NS_OK;
@@ -236,6 +346,7 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
 
   RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
   RefPtr<ParentChannelListener> mListener;
+  const bool mIsDocumentLoad;
 
   
 
@@ -267,10 +378,12 @@ NS_INTERFACE_MAP_BEGIN(DocumentLoadListener)
 NS_INTERFACE_MAP_END
 
 DocumentLoadListener::DocumentLoadListener(
-    CanonicalBrowsingContext* aBrowsingContext) {
+    CanonicalBrowsingContext* aLoadingBrowsingContext, bool aIsDocumentLoad)
+    : mIsDocumentLoad(aIsDocumentLoad) {
   LOG(("DocumentLoadListener ctor [this=%p]", this));
-  mParentChannelListener = new ParentChannelListener(
-      this, aBrowsingContext, aBrowsingContext->UsePrivateBrowsing());
+  mParentChannelListener =
+      new ParentChannelListener(this, aLoadingBrowsingContext,
+                                aLoadingBrowsingContext->UsePrivateBrowsing());
 }
 
 DocumentLoadListener::~DocumentLoadListener() {
@@ -304,7 +417,7 @@ void DocumentLoadListener::AddURIVisit(nsIChannel* aChannel,
   }
 
   RefPtr<CanonicalBrowsingContext> browsingContext =
-      mParentChannelListener->GetBrowsingContext();
+      GetDocumentBrowsingContext();
   nsCOMPtr<nsIWidget> widget =
       browsingContext->GetParentProcessWidgetContaining();
 
@@ -313,96 +426,44 @@ void DocumentLoadListener::AddURIVisit(nsIChannel* aChannel,
                                   mLoadStateLoadType);
 }
 
-already_AddRefed<LoadInfo> DocumentLoadListener::CreateLoadInfo(
-    CanonicalBrowsingContext* aBrowsingContext,
-    nsDocShellLoadState* aLoadState) {
-  
-  bool inheritPrincipal = false;
-
-  if (aLoadState->PrincipalToInherit()) {
-    bool isSrcdoc =
-        aLoadState->HasLoadFlags(nsDocShell::INTERNAL_LOAD_FLAGS_IS_SRCDOC);
-    bool inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
-        aLoadState->PrincipalToInherit(), aLoadState->URI(),
-        true,  
-        isSrcdoc);
-
-    bool isURIUniqueOrigin =
-        StaticPrefs::security_data_uri_unique_opaque_origin() &&
-        SchemeIsData(aLoadState->URI());
-    inheritPrincipal = inheritAttrs && !isURIUniqueOrigin;
-  }
-
-  nsSecurityFlags securityFlags =
-      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
-  uint32_t sandboxFlags = aBrowsingContext->GetSandboxFlags();
-
-  if (aLoadState->LoadType() == LOAD_ERROR_PAGE) {
-    securityFlags |= nsILoadInfo::SEC_LOAD_ERROR_PAGE;
-  }
-
-  if (inheritPrincipal) {
-    securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-  }
-
-  RefPtr<LoadInfo> loadInfo;
-  if (aBrowsingContext->GetParent()) {
-    
-    loadInfo = LoadInfo::CreateForFrame(aBrowsingContext,
-                                        aLoadState->TriggeringPrincipal(),
-                                        securityFlags, sandboxFlags);
-  } else {
-    
-    OriginAttributes attrs;
-    aBrowsingContext->GetOriginAttributes(attrs);
-    loadInfo = LoadInfo::CreateForDocument(aBrowsingContext,
-                                           aLoadState->TriggeringPrincipal(),
-                                           attrs, securityFlags, sandboxFlags);
-  }
-
-  loadInfo->SetHasValidUserGestureActivation(
-      aLoadState->HasValidUserGestureActivation());
-
-  return loadInfo.forget();
+CanonicalBrowsingContext* DocumentLoadListener::GetLoadingBrowsingContext()
+    const {
+  return mParentChannelListener ? mParentChannelListener->GetBrowsingContext()
+                                : nullptr;
 }
 
-CanonicalBrowsingContext* DocumentLoadListener::GetBrowsingContext() const {
-  if (!mParentChannelListener) {
-    return nullptr;
-  }
-  return mParentChannelListener->GetBrowsingContext();
+CanonicalBrowsingContext* DocumentLoadListener::GetDocumentBrowsingContext()
+    const {
+  return mIsDocumentLoad ? GetLoadingBrowsingContext() : nullptr;
 }
 
-auto DocumentLoadListener::Open(
-    nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
-    const Maybe<uint64_t>& aChannelId, const TimeStamp& aAsyncOpenTime,
-    nsDOMNavigationTiming* aTiming, Maybe<ClientInfo>&& aInfo,
-    uint64_t aOuterWindowId, bool aHasGesture, Maybe<bool> aUriModified,
-    Maybe<bool> aIsXFOError, base::ProcessId aPid, nsresult* aRv)
-    -> RefPtr<OpenPromise> {
-  LOG(("DocumentLoadListener Open [this=%p, uri=%s]", this,
-       aLoadState->URI()->GetSpecOrDefault().get()));
-  RefPtr<CanonicalBrowsingContext> browsingContext =
-      mParentChannelListener->GetBrowsingContext();
+CanonicalBrowsingContext* DocumentLoadListener::GetTopBrowsingContext() const {
+  auto* loadingContext = GetLoadingBrowsingContext();
+  return loadingContext ? loadingContext->Top() : nullptr;
+}
+
+auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
+                                LoadInfo* aLoadInfo, nsLoadFlags aLoadFlags,
+                                uint32_t aCacheKey,
+                                const Maybe<uint64_t>& aChannelId,
+                                const TimeStamp& aAsyncOpenTime,
+                                nsDOMNavigationTiming* aTiming,
+                                Maybe<ClientInfo>&& aInfo, bool aHasGesture,
+                                bool aUrgentStart, base::ProcessId aPid,
+                                nsresult* aRv) -> RefPtr<OpenPromise> {
+  auto* loadingContext = GetLoadingBrowsingContext();
+
+  MOZ_DIAGNOSTIC_ASSERT_IF(loadingContext->GetParent(),
+                           loadingContext->GetParentWindowContext());
 
   OriginAttributes attrs;
-  browsingContext->GetOriginAttributes(attrs);
+  loadingContext->GetOriginAttributes(attrs);
 
   mLoadIdentifier = aLoadState->GetLoadIdentifier();
-  MOZ_DIAGNOSTIC_ASSERT_IF(browsingContext->GetParent(),
-                           browsingContext->GetParentWindowContext());
-
-  
-  
-  
-  RefPtr<LoadInfo> loadInfo = CreateLoadInfo(browsingContext, aLoadState);
-
-  nsLoadFlags loadFlags = aLoadState->CalculateChannelLoadFlags(
-      browsingContext, std::move(aUriModified), std::move(aIsXFOError));
 
   if (!nsDocShell::CreateAndConfigureRealChannelForLoadState(
-          browsingContext, aLoadState, loadInfo, mParentChannelListener,
-          nullptr, attrs, loadFlags, aCacheKey, *aRv,
+          loadingContext, aLoadState, aLoadInfo, mParentChannelListener,
+          nullptr, attrs, aLoadFlags, aCacheKey, *aRv,
           getter_AddRefs(mChannel))) {
     LOG(("DocumentLoadListener::Open failed to create channel [this=%p]",
          this));
@@ -410,19 +471,20 @@ auto DocumentLoadListener::Open(
     return nullptr;
   }
 
-  nsCOMPtr<nsIURI> uriBeingLoaded =
-      AntiTrackingUtils::MaybeGetDocumentURIBeingLoaded(mChannel);
+  nsCOMPtr<nsIURI> uriBeingLoaded;
+  Unused << NS_WARN_IF(
+      NS_FAILED(mChannel->GetURI(getter_AddRefs(uriBeingLoaded))));
 
   RefPtr<HttpBaseChannel> httpBaseChannel = do_QueryObject(mChannel, aRv);
-  if (httpBaseChannel) {
+  if (uriBeingLoaded && httpBaseChannel) {
     nsCOMPtr<nsIURI> topWindowURI;
-    if (browsingContext->IsTop()) {
+    if (loadingContext->IsTop()) {
       
       
       topWindowURI = uriBeingLoaded;
     } else if (RefPtr<WindowGlobalParent> topWindow = AntiTrackingUtils::
                    GetTopWindowExcludingExtensionAccessibleContentFrames(
-                       browsingContext, uriBeingLoaded)) {
+                       loadingContext, uriBeingLoaded)) {
       nsCOMPtr<nsIPrincipal> topWindowPrincipal =
           topWindow->DocumentPrincipal();
       if (topWindowPrincipal && !topWindowPrincipal->GetIsNullPrincipal()) {
@@ -450,7 +512,12 @@ auto DocumentLoadListener::Open(
 
   if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel)) {
     Unused << httpChannel->SetRequestContextID(
-        browsingContext->GetRequestContextId());
+        loadingContext->GetRequestContextId());
+
+    nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(httpChannel));
+    if (cos && aUrgentStart) {
+      cos->AddClassFlags(nsIClassOfService::UrgentStart);
+    }
   }
 
   
@@ -466,7 +533,8 @@ auto DocumentLoadListener::Open(
   
   AddClientChannelHelperInParent(mChannel, std::move(aInfo));
 
-  if (!browsingContext->StartDocumentLoad(this)) {
+  auto* documentContext = GetDocumentBrowsingContext();
+  if (documentContext && !documentContext->StartDocumentLoad(this)) {
     LOG(("DocumentLoadListener::Open failed StartDocumentLoad [this=%p]",
          this));
     *aRv = NS_BINDING_ABORTED;
@@ -479,29 +547,29 @@ auto DocumentLoadListener::Open(
   
   
   MOZ_ASSERT(!aLoadState->GetPendingRedirectedChannel());
-  uint32_t openFlags = nsDocShell::ComputeURILoaderFlags(
-      browsingContext, aLoadState->LoadType());
+  uint32_t openFlags =
+      nsDocShell::ComputeURILoaderFlags(loadingContext, aLoadState->LoadType());
 
   RefPtr<ParentProcessDocumentOpenInfo> openInfo =
       new ParentProcessDocumentOpenInfo(mParentChannelListener, openFlags,
-                                        browsingContext);
+                                        loadingContext, mIsDocumentLoad);
   openInfo->Prepare();
 
 #ifdef ANDROID
   RefPtr<MozPromise<bool, bool, false>> promise;
-  if (aLoadState->LoadType() != LOAD_ERROR_PAGE &&
+  if (documentContext && aLoadState->LoadType() != LOAD_ERROR_PAGE &&
       !(aLoadState->HasLoadFlags(
           nsDocShell::INTERNAL_LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE)) &&
       !(aLoadState->LoadType() & LOAD_HISTORY)) {
     nsCOMPtr<nsIWidget> widget =
-        browsingContext->GetParentProcessWidgetContaining();
+        documentContext->GetParentProcessWidgetContaining();
     RefPtr<nsWindow> window = nsWindow::From(widget);
 
     if (window) {
       promise = window->OnLoadRequest(
           aLoadState->URI(), nsIBrowserDOMWindow::OPEN_CURRENTWINDOW,
           aLoadState->LoadFlags(), aLoadState->TriggeringPrincipal(),
-          aHasGesture, browsingContext->IsTopContent());
+          aHasGesture, documentContext->IsTopContent());
     }
   }
 
@@ -532,7 +600,9 @@ auto DocumentLoadListener::Open(
       LOG(("DocumentLoadListener::Open failed AsyncOpen [this=%p rv=%" PRIx32
            "]",
            this, static_cast<uint32_t>(*aRv)));
-      browsingContext->EndDocumentLoad(false);
+      if (documentContext) {
+        documentContext->EndDocumentLoad(false);
+      }
       mParentChannelListener = nullptr;
       return nullptr;
     }
@@ -546,11 +616,11 @@ auto DocumentLoadListener::Open(
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
   mOriginalUriString = aLoadState->GetOriginalURIString();
-  if (StaticPrefs::fission_sessionHistoryInParent()) {
+  if (documentContext && StaticPrefs::fission_sessionHistoryInParent()) {
     
     
     mSessionHistoryInfo =
-        browsingContext->CreateSessionHistoryEntryForLoad(aLoadState, mChannel);
+        documentContext->CreateSessionHistoryEntryForLoad(aLoadState, mChannel);
   }
 
   *aRv = NS_OK;
@@ -561,14 +631,64 @@ auto DocumentLoadListener::Open(
   return mOpenPromise;
 }
 
+auto DocumentLoadListener::OpenDocument(
+    nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
+    const Maybe<uint64_t>& aChannelId, const TimeStamp& aAsyncOpenTime,
+    nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
+    bool aHasGesture, Maybe<bool> aUriModified, Maybe<bool> aIsXFOError,
+    base::ProcessId aPid, nsresult* aRv) -> RefPtr<OpenPromise> {
+  LOG(("DocumentLoadListener [%p] OpenDocument [uri=%s]", this,
+       aLoadState->URI()->GetSpecOrDefault().get()));
+
+  MOZ_ASSERT(mIsDocumentLoad);
+
+  RefPtr<CanonicalBrowsingContext> browsingContext =
+      GetDocumentBrowsingContext();
+
+  
+  
+  
+  RefPtr<LoadInfo> loadInfo =
+      CreateDocumentLoadInfo(browsingContext, aLoadState);
+
+  nsLoadFlags loadFlags = aLoadState->CalculateChannelLoadFlags(
+      browsingContext, std::move(aUriModified), std::move(aIsXFOError));
+
+  return Open(aLoadState, loadInfo, loadFlags, aCacheKey, aChannelId,
+              aAsyncOpenTime, aTiming, std::move(aInfo), aHasGesture, false,
+              aPid, aRv);
+}
+
+auto DocumentLoadListener::OpenObject(
+    nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
+    const Maybe<uint64_t>& aChannelId, const TimeStamp& aAsyncOpenTime,
+    nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
+    uint64_t aInnerWindowId, nsLoadFlags aLoadFlags,
+    nsContentPolicyType aContentPolicyType, bool aHasGesture, bool aUrgentStart,
+    base::ProcessId aPid, nsresult* aRv) -> RefPtr<OpenPromise> {
+  LOG(("DocumentLoadListener [%p] OpenObject [uri=%s]", this,
+       aLoadState->URI()->GetSpecOrDefault().get()));
+
+  MOZ_ASSERT(!mIsDocumentLoad);
+
+  auto sandboxFlags = GetLoadingBrowsingContext()->GetSandboxFlags();
+
+  RefPtr<LoadInfo> loadInfo = CreateObjectLoadInfo(
+      aLoadState, aInnerWindowId, aContentPolicyType, sandboxFlags);
+
+  return Open(aLoadState, loadInfo, aLoadFlags, aCacheKey, aChannelId,
+              aAsyncOpenTime, aTiming, std::move(aInfo), aHasGesture,
+              aUrgentStart, aPid, aRv);
+}
+
 auto DocumentLoadListener::OpenInParent(nsDocShellLoadState* aLoadState,
-                                        uint64_t aOuterWindowId,
                                         bool aSupportsRedirectToRealChannel)
     -> RefPtr<OpenPromise> {
   
   
-  if (!GetBrowsingContext()->IsTopContent() ||
-      !GetBrowsingContext()->GetContentParent()) {
+  auto* browsingContext = GetDocumentBrowsingContext();
+  if (!browsingContext->IsTopContent() ||
+      !browsingContext->GetContentParent()) {
     LOG(("DocumentLoadListener::OpenInParent failed because of subdoc"));
     return nullptr;
   }
@@ -607,7 +727,7 @@ auto DocumentLoadListener::OpenInParent(nsDocShellLoadState* aLoadState,
 
   RefPtr<nsDOMNavigationTiming> timing = new nsDOMNavigationTiming(nullptr);
   timing->NotifyNavigationStart(
-      GetBrowsingContext()->GetIsActive()
+      browsingContext->GetIsActive()
           ? nsDOMNavigationTiming::DocShellState::eActive
           : nsDOMNavigationTiming::DocShellState::eInactive);
 
@@ -625,27 +745,37 @@ auto DocumentLoadListener::OpenInParent(nsDocShellLoadState* aLoadState,
 
   mSupportsRedirectToRealChannel = aSupportsRedirectToRealChannel;
 
+  
+  
+  
+  RefPtr<LoadInfo> loadInfo =
+      CreateDocumentLoadInfo(browsingContext, aLoadState);
+
+  nsLoadFlags loadFlags = loadState->CalculateChannelLoadFlags(
+      browsingContext, Nothing(), Nothing());
+
   nsresult rv;
-  return Open(loadState, cacheKey, channelId, TimeStamp::Now(), timing,
-              std::move(initialClientInfo), aOuterWindowId, false, Nothing(),
-              Nothing(), GetBrowsingContext()->GetContentParent()->OtherPid(),
-              &rv);
+  return Open(loadState, loadInfo, loadFlags, cacheKey, channelId,
+              TimeStamp::Now(), timing, std::move(initialClientInfo), false,
+              false, browsingContext->GetContentParent()->OtherPid(), &rv);
 }
 
-static void FireStateChange(DocumentLoadListener* aLoad, uint32_t aStateFlags,
-                            nsresult aStatus) {
-  nsCOMPtr<nsIChannel> request = aLoad->GetChannel();
+void DocumentLoadListener::FireStateChange(uint32_t aStateFlags,
+                                           nsresult aStatus) {
+  nsCOMPtr<nsIChannel> request = GetChannel();
   nsCOMPtr<nsIWebProgress> webProgress =
-      new RemoteWebProgress(aLoad->GetLoadType(), true, true);
+      new RemoteWebProgress(GetLoadType(), true, true);
 
-  RefPtr<CanonicalBrowsingContext> ctx = aLoad->GetBrowsingContext();
-  NS_DispatchToMainThread(
-      NS_NewRunnableFunction("DocumentLoadListener::FireStateChange", [=]() {
-        if (ctx && ctx->GetWebProgress()) {
-          ctx->GetWebProgress()->OnStateChange(webProgress, request,
-                                               aStateFlags, aStatus);
-        }
-      }));
+  RefPtr<BrowsingContextWebProgress> loadingWebProgress =
+      WebProgressForBrowsingContext(GetLoadingBrowsingContext());
+
+  if (loadingWebProgress) {
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("DocumentLoadListener::FireStateChange", [=]() {
+          loadingWebProgress->OnStateChange(webProgress, request, aStateFlags,
+                                            aStatus);
+        }));
+  }
 }
 
 static void SetNavigating(CanonicalBrowsingContext* aBrowsingContext,
@@ -666,13 +796,13 @@ static void SetNavigating(CanonicalBrowsingContext* aBrowsingContext,
 
  bool DocumentLoadListener::LoadInParent(
     CanonicalBrowsingContext* aBrowsingContext, nsDocShellLoadState* aLoadState,
-    uint64_t aOuterWindowId, bool aSetNavigating) {
+    bool aSetNavigating) {
   SetNavigating(aBrowsingContext, aSetNavigating);
 
   RefPtr<DocumentLoadListener> load =
-      new DocumentLoadListener(aBrowsingContext);
+      new DocumentLoadListener(aBrowsingContext, true);
   RefPtr<DocumentLoadListener::OpenPromise> promise = load->OpenInParent(
-      aLoadState, aOuterWindowId,  false);
+      aLoadState,  false);
   if (!promise) {
     SetNavigating(aBrowsingContext, false);
     return false;
@@ -691,21 +821,19 @@ static void SetNavigating(CanonicalBrowsingContext* aBrowsingContext,
           
           
           
-          FireStateChange(load,
-                          nsIWebProgressListener::STATE_STOP |
-                              nsIWebProgressListener::STATE_IS_WINDOW |
-                              nsIWebProgressListener::STATE_IS_NETWORK,
-                          rejectValue.mStatus);
+          load->FireStateChange(nsIWebProgressListener::STATE_STOP |
+                                    nsIWebProgressListener::STATE_IS_WINDOW |
+                                    nsIWebProgressListener::STATE_IS_NETWORK,
+                                rejectValue.mStatus);
         }
       });
 
-  FireStateChange(load,
-                  nsIWebProgressListener::STATE_START |
-                      nsIWebProgressListener::STATE_IS_DOCUMENT |
-                      nsIWebProgressListener::STATE_IS_REQUEST |
-                      nsIWebProgressListener::STATE_IS_WINDOW |
-                      nsIWebProgressListener::STATE_IS_NETWORK,
-                  NS_OK);
+  load->FireStateChange(nsIWebProgressListener::STATE_START |
+                            nsIWebProgressListener::STATE_IS_DOCUMENT |
+                            nsIWebProgressListener::STATE_IS_REQUEST |
+                            nsIWebProgressListener::STATE_IS_WINDOW |
+                            nsIWebProgressListener::STATE_IS_NETWORK,
+                        NS_OK);
   SetNavigating(aBrowsingContext, false);
   return true;
 }
@@ -713,13 +841,13 @@ static void SetNavigating(CanonicalBrowsingContext* aBrowsingContext,
 
 bool DocumentLoadListener::SpeculativeLoadInParent(
     dom::CanonicalBrowsingContext* aBrowsingContext,
-    nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId) {
+    nsDocShellLoadState* aLoadState) {
   LOG(("DocumentLoadListener::OpenFromParent"));
 
   RefPtr<DocumentLoadListener> listener =
-      new DocumentLoadListener(aBrowsingContext);
+      new DocumentLoadListener(aBrowsingContext, true);
 
-  auto promise = listener->OpenInParent(aLoadState, aOuterWindowId, true);
+  auto promise = listener->OpenInParent(aLoadState, true);
   if (promise) {
     
     
@@ -793,7 +921,7 @@ void DocumentLoadListener::Disconnect() {
     httpChannelImpl->SetWarningReporter(nullptr);
   }
 
-  if (auto* ctx = GetBrowsingContext()) {
+  if (auto* ctx = GetDocumentBrowsingContext()) {
     ctx->EndDocumentLoad(mDoingProcessSwitch);
   }
 }
@@ -887,7 +1015,7 @@ void DocumentLoadListener::FinishReplacementChannelSetup(nsresult aResult) {
        this, int(aResult)));
 
   auto endDocumentLoad = MakeScopeExit([&]() {
-    if (auto* ctx = GetBrowsingContext()) {
+    if (auto* ctx = GetDocumentBrowsingContext()) {
       ctx->EndDocumentLoad(false);
     }
   });
@@ -947,7 +1075,7 @@ void DocumentLoadListener::ApplyPendingFunctions(
   
 
   nsCOMPtr<nsIParentChannel> parentChannel = aChannel;
-  for (auto& variant : mIParentChannelFunctions) {
+  for (const auto& variant : mIParentChannelFunctions) {
     variant.match(
         [parentChannel](const nsIHttpChannel::FlashPluginState& aState) {
           parentChannel->NotifyFlashPluginStateChanged(aState);
@@ -973,7 +1101,7 @@ void DocumentLoadListener::ApplyPendingFunctions(
     reporter = httpChannel->GetWarningReporter();
   }
   if (reporter) {
-    for (auto& variant : mSecurityWarningFunctions) {
+    for (const auto& variant : mSecurityWarningFunctions) {
       variant.match(
           [reporter](const ReportSecurityMessageParams& aParams) {
             Unused << reporter->ReportSecurityMessage(aParams.mMessageTag,
@@ -1068,7 +1196,7 @@ bool DocumentLoadListener::ResumeSuspendedChannel(
 
   mChannel->Resume();
 
-  if (auto* ctx = GetBrowsingContext()) {
+  if (auto* ctx = GetDocumentBrowsingContext()) {
     ctx->EndDocumentLoad(mDoingProcessSwitch);
   }
 
@@ -1294,6 +1422,12 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   MOZ_DIAGNOSTIC_ASSERT(aWillSwitchToRemote);
 
   LOG(("DocumentLoadListener MaybeTriggerProcessSwitch [this=%p]", this));
+
+  
+  if (!mIsDocumentLoad) {
+    LOG(("Process Switch Abort: non-document load"));
+    return false;
+  }
 
   
   RefPtr<CanonicalBrowsingContext> browsingContext =
@@ -1550,14 +1684,17 @@ DocumentLoadListener::RedirectToRealChannel(
        "aRedirectFlags=%" PRIx32 ", aLoadFlags=%" PRIx32,
        this, aRedirectFlags, aLoadFlags));
 
-  
-  
-  nsresult status = NS_OK;
-  mChannel->GetStatus(&status);
-  bool updateGHistory =
-      nsDocShell::ShouldUpdateGlobalHistory(mLoadStateLoadType);
-  if (NS_SUCCEEDED(status) && updateGHistory && !net::ChannelIsPost(mChannel)) {
-    AddURIVisit(mChannel, aLoadFlags);
+  if (mIsDocumentLoad) {
+    
+    
+    nsresult status = NS_OK;
+    mChannel->GetStatus(&status);
+    bool updateGHistory =
+        nsDocShell::ShouldUpdateGlobalHistory(mLoadStateLoadType);
+    if (NS_SUCCEEDED(status) && updateGHistory &&
+        !net::ChannelIsPost(mChannel)) {
+      AddURIVisit(mChannel, aLoadFlags);
+    }
   }
 
   
@@ -1703,7 +1840,9 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   MOZ_ALWAYS_SUCCEEDS(mChannel->GetLoadFlags(&newLoadFlags));
   
   
-  newLoadFlags |= nsIChannel::LOAD_DOCUMENT_URI;
+  if (mIsDocumentLoad) {
+    newLoadFlags |= nsIChannel::LOAD_DOCUMENT_URI;
+  }
   if (!aDestinationProcess) {
     newLoadFlags |= nsIChannel::LOAD_REPLACE;
   }
@@ -1742,7 +1881,8 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
 }
 
 void DocumentLoadListener::MaybeReportBlockedByURLClassifier(nsresult aStatus) {
-  if (!GetBrowsingContext() || GetBrowsingContext()->IsTop() ||
+  auto* browsingContext = GetDocumentBrowsingContext();
+  if (!browsingContext || browsingContext->IsTop() ||
       !StaticPrefs::privacy_trackingprotection_testing_report_blocked_node()) {
     return;
   }
@@ -1751,10 +1891,10 @@ void DocumentLoadListener::MaybeReportBlockedByURLClassifier(nsresult aStatus) {
     return;
   }
 
-  RefPtr<WindowGlobalParent> parent =
-      GetBrowsingContext()->GetParentWindowContext();
+  RefPtr<WindowGlobalParent> parent = browsingContext->GetParentWindowContext();
   if (parent) {
-    Unused << parent->SendAddBlockedFrameNodeByClassifier(GetBrowsingContext());
+    Unused << parent->SendAddBlockedFrameNodeByClassifier(
+        GetLoadingBrowsingContext());
   }
 }
 
@@ -1768,15 +1908,17 @@ bool DocumentLoadListener::DocShellWillDisplayContent(nsresult aStatus) {
   
   
 
+  auto* loadingContext = GetLoadingBrowsingContext();
+
   bool isInitialDocument = true;
   if (WindowGlobalParent* currentWindow =
-          GetBrowsingContext()->GetCurrentWindowGlobal()) {
+          loadingContext->GetCurrentWindowGlobal()) {
     isInitialDocument = currentWindow->IsInitialDocument();
   }
 
   nsresult rv = nsDocShell::FilterStatusForErrorPage(
-      aStatus, mChannel, mLoadStateLoadType, GetBrowsingContext()->IsTop(),
-      GetBrowsingContext()->GetUseErrorPages(), isInitialDocument, nullptr);
+      aStatus, mChannel, mLoadStateLoadType, loadingContext->IsTop(),
+      loadingContext->GetUseErrorPages(), isInitialDocument, nullptr);
 
   
   
@@ -1784,14 +1926,17 @@ bool DocumentLoadListener::DocShellWillDisplayContent(nsresult aStatus) {
 }
 
 bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
+  auto* bc = GetDocumentBrowsingContext();
+  if (!bc) {
+    return false;
+  }
+
   nsCOMPtr<nsIInputStream> newPostData;
   nsCOMPtr<nsIURI> newURI = nsDocShell::AttemptURIFixup(
-      mChannel, aStatus, mOriginalUriString, mLoadStateLoadType,
-      GetBrowsingContext()->IsTop(),
+      mChannel, aStatus, mOriginalUriString, mLoadStateLoadType, bc->IsTop(),
       mLoadStateLoadFlags &
           nsDocShell::INTERNAL_LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP,
-      GetBrowsingContext()->UsePrivateBrowsing(), true,
-      getter_AddRefs(newPostData));
+      bc->UsePrivateBrowsing(), true, getter_AddRefs(newPostData));
   if (!newURI) {
     return false;
   }
@@ -1812,7 +1957,7 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
 
   loadState->SetPostDataStream(newPostData);
 
-  GetBrowsingContext()->LoadURI(loadState, false);
+  bc->LoadURI(loadState, false);
   return true;
 }
 
@@ -1834,7 +1979,8 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   nsContentSecurityUtils::PerformCSPFrameAncestorAndXFOCheck(mChannel);
 
-  if (!GetBrowsingContext() || GetBrowsingContext()->IsDiscarded()) {
+  auto* loadingContext = GetLoadingBrowsingContext();
+  if (!loadingContext || loadingContext->IsDiscarded()) {
     DisconnectListeners(NS_ERROR_UNEXPECTED, NS_ERROR_UNEXPECTED);
     return NS_ERROR_UNEXPECTED;
   }
@@ -1893,10 +2039,10 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
 
       
       
-      MOZ_ASSERT(GetBrowsingContext()->GetCurrentWindowGlobal());
+      MOZ_ASSERT(loadingContext->GetCurrentWindowGlobal());
 
       RefPtr<BrowserParent> browserParent =
-          GetBrowsingContext()->GetCurrentWindowGlobal()->GetBrowserParent();
+          loadingContext->GetCurrentWindowGlobal()->GetBrowserParent();
 
       
       
@@ -1908,14 +2054,13 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
 
       
       
-      TriggerRedirectToRealChannel(
-          Some(GetBrowsingContext()->OwnerProcessId()));
+      TriggerRedirectToRealChannel(Some(loadingContext->OwnerProcessId()));
     } else {
       TriggerRedirectToRealChannel(Nothing());
     }
 
     
-    if (GetBrowsingContext() && GetBrowsingContext()->GetContentParent()) {
+    if (auto* bc = GetDocumentBrowsingContext(); bc && bc->GetContentParent()) {
       willBeRemote = true;
     }
   }
@@ -2006,7 +2151,7 @@ DocumentLoadListener::OnAfterLastPart(nsresult aStatus) {
 NS_IMETHODIMP
 DocumentLoadListener::GetInterface(const nsIID& aIID, void** result) {
   RefPtr<CanonicalBrowsingContext> browsingContext =
-      mParentChannelListener->GetBrowsingContext();
+      GetDocumentBrowsingContext();
   if (aIID.Equals(NS_GET_IID(nsILoadContext)) && browsingContext) {
     browsingContext.forget(result);
     return NS_OK;
@@ -2080,7 +2225,8 @@ DocumentLoadListener::Delete() {
 
 NS_IMETHODIMP
 DocumentLoadListener::GetRemoteType(nsACString& aRemoteType) {
-  RefPtr<CanonicalBrowsingContext> browsingContext = GetBrowsingContext();
+  RefPtr<CanonicalBrowsingContext> browsingContext =
+      GetDocumentBrowsingContext();
   if (!browsingContext) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -2160,7 +2306,7 @@ DocumentLoadListener::AsyncOnChannelRedirect(
     return NS_OK;
   }
 
-  if (!net::ChannelIsPost(aOldChannel)) {
+  if (GetDocumentBrowsingContext() && !net::ChannelIsPost(aOldChannel)) {
     AddURIVisit(aOldChannel, 0);
 
     nsCOMPtr<nsIURI> oldURI;
@@ -2207,7 +2353,8 @@ DocumentLoadListener::AsyncOnChannelRedirect(
       AntiTrackingUtils::MaybeGetDocumentURIBeingLoaded(mChannel);
 
   RefPtr<MozPromise<bool, bool, false>> promise;
-  nsCOMPtr<nsIWidget> widget = bc->GetParentProcessWidgetContaining();
+  nsCOMPtr<nsIWidget> widget =
+      bc ? bc->GetParentProcessWidgetContaining() : nullptr;
   RefPtr<nsWindow> window = nsWindow::From(widget);
 
   if (window) {
@@ -2283,16 +2430,17 @@ NS_IMETHODIMP DocumentLoadListener::OnStatus(nsIRequest* aRequest,
   nsCOMPtr<nsIWebProgress> webProgress =
       new RemoteWebProgress(mLoadStateLoadType, true, true);
 
-  RefPtr<CanonicalBrowsingContext> ctx = GetBrowsingContext();
+  RefPtr<BrowsingContextWebProgress> topWebProgress =
+      WebProgressForBrowsingContext(GetTopBrowsingContext());
   const nsString message(aStatusArg);
 
-  NS_DispatchToMainThread(
-      NS_NewRunnableFunction("DocumentLoadListener::FireStateChange", [=]() {
-        if (ctx && ctx->Top()->GetWebProgress()) {
-          ctx->Top()->GetWebProgress()->OnStatusChange(webProgress, channel,
-                                                       aStatus, message.get());
-        }
-      }));
+  if (topWebProgress) {
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("DocumentLoadListener::OnStatus", [=]() {
+          topWebProgress->OnStatusChange(webProgress, channel, aStatus,
+                                         message.get());
+        }));
+  }
   return NS_OK;
 }
 

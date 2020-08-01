@@ -48,6 +48,7 @@
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsDocShellCID.h"
+#include "nsDocShellLoadState.h"
 #include "nsGkAtoms.h"
 #include "nsThreadUtils.h"
 #include "nsNetUtil.h"
@@ -88,6 +89,7 @@
 #include "mozilla/dom/HTMLObjectElement.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/nsCSPContext.h"
+#include "mozilla/net/DocumentChannel.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"
@@ -2267,38 +2269,28 @@ nsresult nsObjectLoadingContent::OpenChannel() {
   RefPtr<ObjectInterfaceRequestorShim> shim =
       new ObjectInterfaceRequestorShim(this);
 
-  bool inherit = nsContentUtils::ChannelShouldInheritPrincipal(
-      thisContent->NodePrincipal(), mURI,
-      true,    
-      false);  
-  nsSecurityFlags securityFlags =
-      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
+  bool inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
+      thisContent->NodePrincipal(),  
+      mURI,                          
+      true,                          
+      false);                        
 
   bool isURIUniqueOrigin =
       StaticPrefs::security_data_uri_unique_opaque_origin() &&
-      mURI->SchemeIs("data");
+      SchemeIsData(mURI);
+  bool inheritPrincipal = inheritAttrs && !isURIUniqueOrigin;
 
-  if (inherit && !isURIUniqueOrigin) {
+  nsSecurityFlags securityFlags =
+      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
+  if (inheritPrincipal) {
     securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
 
   nsContentPolicyType contentPolicyType = GetContentPolicyType();
-
-  rv = NS_NewChannel(getter_AddRefs(chan), mURI, thisContent, securityFlags,
-                     contentPolicyType,
-                     nullptr,  
-                     group,    
-                     shim,     
-                     nsIChannel::LOAD_CALL_CONTENT_SNIFFERS |
-                         nsIChannel::LOAD_BYPASS_SERVICE_WORKER |
-                         nsIRequest::LOAD_HTML_OBJECT_DATA,
-                     nullptr,  
-                     doc->GetSandboxFlags());
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (inherit) {
-    nsCOMPtr<nsILoadInfo> loadinfo = chan->LoadInfo();
-    loadinfo->SetPrincipalToInherit(thisContent->NodePrincipal());
-  }
+  nsLoadFlags loadFlags = nsIChannel::LOAD_CALL_CONTENT_SNIFFERS |
+                          nsIChannel::LOAD_BYPASS_SERVICE_WORKER |
+                          nsIRequest::LOAD_HTML_OBJECT_DATA;
+  uint32_t sandboxFlags = doc->GetSandboxFlags();
 
   
   
@@ -2307,13 +2299,79 @@ nsresult nsObjectLoadingContent::OpenChannel() {
   
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp();
-  if (csp) {
-    RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
+  RefPtr<nsCSPContext> cspToInherit;
+  if (nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp()) {
+    cspToInherit = new nsCSPContext();
     cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
-    nsCOMPtr<nsILoadInfo> loadinfo = chan->LoadInfo();
-    static_cast<LoadInfo*>(loadinfo.get())->SetCSPToInherit(cspToInherit);
   }
+
+  
+  RefPtr<LoadInfo> loadInfo = new LoadInfo(
+       nullptr,
+       nullptr,
+       thisContent,
+       securityFlags,
+       contentPolicyType,
+       Nothing(),
+       Nothing(),
+       sandboxFlags);
+
+  if (inheritAttrs) {
+    loadInfo->SetPrincipalToInherit(thisContent->NodePrincipal());
+  }
+
+  if (cspToInherit) {
+    loadInfo->SetCSPToInherit(cspToInherit);
+  }
+
+  if (DocumentChannel::CanUseDocumentChannel(
+          mURI, nsIWebNavigation::LOAD_FLAGS_NONE)) {
+    
+    RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(mURI);
+    loadState->SetPrincipalToInherit(thisContent->NodePrincipal());
+    loadState->SetTriggeringPrincipal(loadInfo->TriggeringPrincipal());
+    if (cspToInherit) {
+      loadState->SetCsp(cspToInherit);
+    }
+    
+    
+    auto referrerInfo = MakeRefPtr<ReferrerInfo>(*doc);
+    loadState->SetReferrerInfo(referrerInfo);
+
+    chan =
+        DocumentChannel::CreateForObject(loadState, loadInfo, loadFlags, shim);
+    MOZ_ASSERT(chan);
+    
+    
+    chan->SetLoadGroup(group);
+  } else {
+    rv = NS_NewChannelInternal(getter_AddRefs(chan),  
+                               mURI,                  
+                               loadInfo,              
+                               nullptr,               
+                               group,                 
+                               shim,                  
+                               loadFlags,             
+                               nullptr);              
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (inheritAttrs) {
+      nsCOMPtr<nsILoadInfo> loadinfo = chan->LoadInfo();
+      loadinfo->SetPrincipalToInherit(thisContent->NodePrincipal());
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (cspToInherit) {
+      nsCOMPtr<nsILoadInfo> loadinfo = chan->LoadInfo();
+      static_cast<LoadInfo*>(loadinfo.get())->SetCSPToInherit(cspToInherit);
+    }
+  };
 
   
   nsCOMPtr<nsIHttpChannel> httpChan(do_QueryInterface(chan));

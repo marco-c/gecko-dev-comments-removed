@@ -94,8 +94,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              public nsIMultiPartChannelListener,
                              public nsIProgressEventSink {
  public:
-  explicit DocumentLoadListener(
-      dom::CanonicalBrowsingContext* aBrowsingContext);
+  
+  
+  DocumentLoadListener(dom::CanonicalBrowsingContext* aLoadingBrowsingContext,
+                       bool aIsDocumentLoad);
 
   struct OpenPromiseSucceededType {
     nsTArray<ipc::Endpoint<extensions::PStreamFilterParent>>
@@ -117,6 +119,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                      true >
       OpenPromise;
 
+ private:
   
   
   
@@ -125,14 +128,30 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  RefPtr<OpenPromise> Open(nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
+  RefPtr<OpenPromise> Open(nsDocShellLoadState* aLoadState, LoadInfo* aLoadInfo,
+                           nsLoadFlags aLoadFlags, uint32_t aCacheKey,
                            const Maybe<uint64_t>& aChannelId,
                            const TimeStamp& aAsyncOpenTime,
                            nsDOMNavigationTiming* aTiming,
-                           Maybe<dom::ClientInfo>&& aInfo,
-                           uint64_t aOuterWindowId, bool aHasGesture,
-                           Maybe<bool> aUriModified, Maybe<bool> aIsXFOError,
-                           base::ProcessId aPid, nsresult* aRv);
+                           Maybe<dom::ClientInfo>&& aInfo, bool aHasGesture,
+                           bool aUrgentStart, base::ProcessId aPid,
+                           nsresult* aRv);
+
+ public:
+  RefPtr<OpenPromise> OpenDocument(
+      nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
+      const Maybe<uint64_t>& aChannelId, const TimeStamp& aAsyncOpenTime,
+      nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
+      bool aHasGesture, Maybe<bool> aUriModified, Maybe<bool> aIsXFOError,
+      base::ProcessId aPid, nsresult* aRv);
+
+  RefPtr<OpenPromise> OpenObject(
+      nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
+      const Maybe<uint64_t>& aChannelId, const TimeStamp& aAsyncOpenTime,
+      nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
+      uint64_t aInnerWindowId, nsLoadFlags aLoadFlags,
+      nsContentPolicyType aContentPolicyType, bool aHasGesture,
+      bool aUrgentStart, base::ProcessId aPid, nsresult* aRv);
 
   
   
@@ -140,7 +159,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   static bool LoadInParent(dom::CanonicalBrowsingContext* aBrowsingContext,
                            nsDocShellLoadState* aLoadState,
-                           uint64_t aOuterWindowId, bool aSetNavigating);
+                           bool aSetNavigating);
 
   
   
@@ -149,7 +168,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   static bool SpeculativeLoadInParent(
       dom::CanonicalBrowsingContext* aBrowsingContext,
-      nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId);
+      nsDocShellLoadState* aLoadState);
 
   
   
@@ -185,7 +204,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   NS_DECLARE_STATIC_IID_ACCESSOR(DOCUMENT_LOAD_LISTENER_IID)
 
   
-  void Cancel(const nsresult& status);
+  void Cancel(const nsresult& aStatusCode);
 
   nsIChannel* GetChannel() const { return mChannel; }
 
@@ -237,8 +256,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              dom::ContentParent* aParent) const;
 
   uint64_t GetLoadIdentifier() const { return mLoadIdentifier; }
-  dom::CanonicalBrowsingContext* GetBrowsingContext() const;
-
   uint32_t GetLoadType() const { return mLoadStateLoadType; }
 
  protected:
@@ -246,7 +263,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
  private:
   RefPtr<OpenPromise> OpenInParent(nsDocShellLoadState* aLoadState,
-                                   uint64_t aOuterWindowId,
                                    bool aSupportsRedirectToRealChannel);
 
   friend class ParentProcessDocumentOpenInfo;
@@ -296,9 +312,14 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   RedirectToParentProcess(uint32_t aRedirectFlags, uint32_t aLoadFlags);
 
   
-  already_AddRefed<LoadInfo> CreateLoadInfo(
-      dom::CanonicalBrowsingContext* aBrowsingContext,
-      nsDocShellLoadState* aLoadState);
+  
+  
+  dom::CanonicalBrowsingContext* GetLoadingBrowsingContext() const;
+
+  
+  
+  dom::CanonicalBrowsingContext* GetDocumentBrowsingContext() const;
+  dom::CanonicalBrowsingContext* GetTopBrowsingContext() const;
 
   void AddURIVisit(nsIChannel* aChannel, uint32_t aLoadFlags);
   bool HasCrossOriginOpenerPolicyMismatch() const;
@@ -313,6 +334,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   bool DocShellWillDisplayContent(nsresult aStatus);
+
+  void FireStateChange(uint32_t aStateFlags, nsresult aStatus);
 
   
   
@@ -495,6 +518,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   }
   RefPtr<OpenPromise::Private> mOpenPromise;
   bool mOpenPromiseResolved = false;
+
+  const bool mIsDocumentLoad;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DocumentLoadListener, DOCUMENT_LOAD_LISTENER_IID)
