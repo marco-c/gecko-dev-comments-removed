@@ -95,18 +95,12 @@ class ImageComposite {
  private:
   nsTArray<TimedImage> mImages;
   TimeStamp GetBiasedTime(const TimeStamp& aInput) const;
-  
-  
-  
-  
-  uint32_t ScanForLastFrameIndex(const nsTArray<TimedImage>& aNewImages);
 
   
   
   
   
-  bool IsImagesUpdateRateFasterThanCompositedRate(
-      const TimedImage& aNewImage, const TimedImage& aOldImage) const;
+  void CountSkippedFrames(const TimedImage* aImage);
 
   
   void DetectTimeStampJitter(const TimedImage* aNewImage);
@@ -115,8 +109,14 @@ class ImageComposite {
 
 
   Bias mBias = BIAS_NONE;
+
+  
+  
+  int32_t mSkippedFramesSinceLastComposite = 0;
+
+  
+  
   uint32_t mDroppedFrames = 0;
-  uint32_t mLastChosenImageIndex = 0;
 };
 
 }  
