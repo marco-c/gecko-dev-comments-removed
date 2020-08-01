@@ -29,6 +29,7 @@ using namespace webrtc;
 
 
 #define MAX_CHANNELS 2
+#define MONO 1
 #define MAX_SAMPLING_FREQ 48000  // Hz - multiple of 100
 
 namespace mozilla {
@@ -970,21 +971,46 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
 
     
     
+    
+    
+    
+    
     AutoTArray<float*, 8> deinterleavedPacketizedInputDataChannelPointers;
-    deinterleavedPacketizedInputDataChannelPointers.SetLength(aChannels);
-    offset = 0;
-    for (size_t i = 0;
-         i < deinterleavedPacketizedInputDataChannelPointers.Length(); ++i) {
-      deinterleavedPacketizedInputDataChannelPointers[i] =
-          mDeinterleavedBuffer.Data() + offset;
-      offset += mPacketizerInput->PacketSize();
+    uint32_t channelCountInput = 0;
+    if (aChannels > MAX_CHANNELS) {
+      channelCountInput = MONO;
+      deinterleavedPacketizedInputDataChannelPointers.SetLength(
+          channelCountInput);
+      deinterleavedPacketizedInputDataChannelPointers[0] =
+          mDeinterleavedBuffer.Data();
+      
+      
+      size_t readIndex = 0;
+      for (size_t i = 0; i < mPacketizerInput->PacketSize(); i++) {
+        mDeinterleavedBuffer.Data()[i] = 0.;
+        for (size_t j = 0; j < aChannels; j++) {
+          mDeinterleavedBuffer.Data()[i] += packet[readIndex++];
+        }
+      }
+    } else {
+      channelCountInput = aChannels;
+      
+      
+      deinterleavedPacketizedInputDataChannelPointers.SetLength(
+          channelCountInput);
+      offset = 0;
+      for (size_t i = 0;
+           i < deinterleavedPacketizedInputDataChannelPointers.Length(); ++i) {
+        deinterleavedPacketizedInputDataChannelPointers[i] =
+            mDeinterleavedBuffer.Data() + offset;
+        offset += mPacketizerInput->PacketSize();
+      }
+      
+      Deinterleave(packet, mPacketizerInput->PacketSize(), channelCountInput,
+                   deinterleavedPacketizedInputDataChannelPointers.Elements());
     }
 
-    
-    Deinterleave(packet, mPacketizerInput->PacketSize(), aChannels,
-                 deinterleavedPacketizedInputDataChannelPointers.Elements());
-
-    StreamConfig inputConfig(aRate, aChannels,
+    StreamConfig inputConfig(aRate, channelCountInput,
                              false );
     StreamConfig outputConfig = inputConfig;
 
@@ -1003,14 +1029,14 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
     
     CheckedInt<size_t> bufferSize(sizeof(float));
     bufferSize *= mPacketizerInput->PacketSize();
-    bufferSize *= aChannels;
+    bufferSize *= channelCountInput;
     RefPtr<SharedBuffer> buffer = SharedBuffer::Create(bufferSize);
 
     
     AutoTArray<float*, 8> processedOutputChannelPointers;
     AutoTArray<const float*, 8> processedOutputChannelPointersConst;
-    processedOutputChannelPointers.SetLength(aChannels);
-    processedOutputChannelPointersConst.SetLength(aChannels);
+    processedOutputChannelPointers.SetLength(channelCountInput);
+    processedOutputChannelPointersConst.SetLength(channelCountInput);
 
     offset = 0;
     for (size_t i = 0; i < processedOutputChannelPointers.Length(); ++i) {
@@ -1044,7 +1070,7 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
 
     
     
-    MOZ_ASSERT(processedOutputChannelPointers.Length() == aChannels);
+    MOZ_ASSERT(processedOutputChannelPointers.Length() == channelCountInput);
     RefPtr<SharedBuffer> other = buffer;
     segment.AppendFrames(other.forget(), processedOutputChannelPointersConst,
                          mPacketizerInput->PacketSize(), mPrincipal);
