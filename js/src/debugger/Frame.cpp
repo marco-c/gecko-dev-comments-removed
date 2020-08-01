@@ -174,10 +174,10 @@ size_t ScriptedOnPopHandler::allocSize() const { return sizeof(*this); }
 
 
 
-inline bool js::DebuggerFrame::isInstance() const {
+bool js::DebuggerFrame::isInstance() const {
   return !getReservedSlot(OWNER_SLOT).isUndefined();
 }
-inline js::Debugger* js::DebuggerFrame::owner() const {
+js::Debugger* js::DebuggerFrame::owner() const {
   MOZ_ASSERT(isInstance());
   JSObject* dbgobj = &getReservedSlot(OWNER_SLOT).toObject();
   return Debugger::fromJSObject(dbgobj);
