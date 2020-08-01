@@ -32,8 +32,6 @@ interface nsIHangReport : nsISupports
   
   readonly attribute Element scriptBrowser;
   readonly attribute ACString scriptFileName;
-  
-  readonly attribute double hangDuration;
   readonly attribute AString addonId;
 
   

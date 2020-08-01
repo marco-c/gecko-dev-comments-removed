@@ -619,8 +619,7 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   
   
   
-  TimeStamp now = TimeStamp::NowLoRes();
-  TimeDuration duration = now - self->mSlowScriptCheckpoint;
+  TimeDuration duration = TimeStamp::NowLoRes() - self->mSlowScriptCheckpoint;
   int32_t limit;
 
   nsString addonId;
@@ -645,13 +644,13 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     return true;
   }
 
-  self->mSlowScriptCheckpoint = now;
   self->mSlowScriptActualWait += duration;
 
   
   
   
   if (!self->mSlowScriptSecondHalf) {
+    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
     self->mSlowScriptSecondHalf = true;
     return true;
   }
@@ -701,8 +700,8 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   }
 
   
-  nsGlobalWindowInner::SlowScriptResponse response = win->ShowSlowScriptDialog(
-      cx, addonId, self->mSlowScriptActualWait.ToMilliseconds());
+  nsGlobalWindowInner::SlowScriptResponse response =
+      win->ShowSlowScriptDialog(cx, addonId);
   if (response == nsGlobalWindowInner::KillSlowScript) {
     if (Preferences::GetBool("dom.global_stop_script", true)) {
       xpc::Scriptability::Get(global).Block();
