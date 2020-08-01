@@ -169,33 +169,4 @@ menuseparator {
   padding: 1px 0;
 }
 
-
-
-
-.menupopup-arrowscrollbox[scrolledtostart="true"]::part(scrollbutton-up),
-.menupopup-arrowscrollbox[scrolledtoend="true"]::part(scrollbutton-down) {
-  visibility: collapse;
-}
-
-
-
-
-
-
-.menupopup-arrowscrollbox:not([scrolledtostart="true"])::part(scrollbox) {
-  
-  margin-top: -16px;
-}
-
-.menupopup-arrowscrollbox:not([scrolledtoend="true"])::part(scrollbox) {
-  
-  margin-bottom: -16px;
-}
-
-.menupopup-arrowscrollbox::part(scrollbox-clip) {
-  
-
-
-
-  overflow: hidden;
-}
+%include ../../shared/menu-scrolling.inc.css
