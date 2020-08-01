@@ -80,12 +80,6 @@
 
 - (NSArray*)moxChildren;
 
-
-- (NSArray*)moxColumnHeaderUIElements;
-
-
-- (id)moxCellForColumnAndRow:(NSArray*)columnAndRow
-
 @end
 
 @interface mozTableRowAccessible : mozTablePartAccessible
