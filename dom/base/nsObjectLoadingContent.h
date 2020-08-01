@@ -306,7 +306,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   
 
 
-  void DestroyContent();
+  void Destroy();
 
   static void Traverse(nsObjectLoadingContent* tmp,
                        nsCycleCollectionTraversalCallback& cb);
