@@ -13,7 +13,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Telemetry.h"
 
-#include <algorithm>
 #include <wchar.h>
 #include <windef.h>
 #include <winspool.h>
@@ -23,8 +22,7 @@
 #include "nsTArray.h"
 #include "nsIPrintSettingsWin.h"
 
-#include "nsPaper.h"
-#include "nsPrinter.h"
+#include "nsPrinterWin.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 
@@ -55,8 +53,6 @@ using namespace mozilla::widget;
 #endif
 
 static const wchar_t kDriverName[] = L"WINSPOOL";
-static const float kTenthMMToPoint =
-    (POINTS_PER_INCH_FLOAT / MM_PER_INCH_FLOAT) / 10;
 
 
 
@@ -593,89 +589,6 @@ nsPrinterListWin::InitPrintSettingsFromPrinter(
   return NS_OK;
 }
 
-template <class T>
-static nsTArray<T> GetDeviceCapabilityArray(const wchar_t* aPrinterName,
-                                            WORD aCapabilityID) {
-  nsTArray<T> caps;
-
-  
-  if (!XRE_IsParentProcess()) {
-    return caps;
-  }
-
-  
-  
-  
-  
-  int count = ::DeviceCapabilitiesW(aPrinterName, nullptr, aCapabilityID,
-                                    nullptr, nullptr);
-  if (count <= 0) {
-    return caps;
-  }
-
-  caps.SetLength(count);
-  count =
-      ::DeviceCapabilitiesW(aPrinterName, nullptr, aCapabilityID,
-                            reinterpret_cast<LPWSTR>(caps.Elements()), nullptr);
-  if (count <= 0) {
-    caps.Clear();
-    return caps;
-  }
-
-  MOZ_DIAGNOSTIC_ASSERT(
-      count <= caps.Length(),
-      "DeviceCapabilitiesW returned more than buffer could hold.");
-
-  caps.SetLength(count);
-  return caps;
-}
-
-static nsTArray<RefPtr<nsIPaper>> GetPaperListForPrinter(LPWSTR aPrinterName) {
-  nsTArray<RefPtr<nsIPaper>> paperList;
-
-  
-  auto paperNames =
-      GetDeviceCapabilityArray<Array<wchar_t, 64>>(aPrinterName, DC_PAPERNAMES);
-
-  
-  
-  auto paperSizes = GetDeviceCapabilityArray<POINT>(aPrinterName, DC_PAPERSIZE);
-
-  
-  if (!paperNames.Length() || paperNames.Length() != paperSizes.Length()) {
-    return paperList;
-  }
-
-  paperList.SetCapacity(paperNames.Length());
-  for (size_t i = 0; i < paperNames.Length(); ++i) {
-    
-    auto firstNull =
-        std::find(paperNames[i].cbegin(), paperNames[i].cend(), L'\0');
-    auto nameLength = firstNull - paperNames[i].cbegin();
-    double width = paperSizes[i].x * kTenthMMToPoint;
-    double height = paperSizes[i].y * kTenthMMToPoint;
-
-    
-    if (!nameLength || width <= 0 || height <= 0) {
-      continue;
-    }
-
-    nsAutoString paperName;
-    paperName.Assign(paperNames[i].cbegin(), nameLength);
-    paperList.AppendElement(
-        new nsPaper(paperName, width, height, 0.0, 0.0, 0.0, 0.0));
-  }
-
-  return paperList;
-}
-
-static RefPtr<nsPrinter> CreatePrinter(LPWSTR aPrinterName) {
-  nsAutoString printerName;
-  printerName.Assign(aPrinterName);
-  nsTArray<RefPtr<nsIPaper>> paperList = GetPaperListForPrinter(aPrinterName);
-  return MakeAndAddRef<nsPrinter>(printerName, paperList);
-}
-
 NS_IMETHODIMP
 nsPrinterListWin::GetPrinters(nsTArray<RefPtr<nsIPrinter>>& aPrinters) {
   nsresult rv = GlobalPrinters::GetInstance()->EnumeratePrinterList();
@@ -692,7 +605,8 @@ nsPrinterListWin::GetPrinters(nsTArray<RefPtr<nsIPrinter>>& aPrinters) {
     
     LPWSTR name = GlobalPrinters::GetInstance()->GetItemFromList(printerInx);
 
-    aPrinters.AppendElement(CreatePrinter(name));
+    nsAutoString printerName(name);
+    aPrinters.AppendElement(new nsPrinterWin(printerName));
   }
 
   return NS_OK;

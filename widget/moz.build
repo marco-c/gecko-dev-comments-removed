@@ -207,9 +207,7 @@ UNIFIED_SOURCES += [
     'nsHTMLFormatConverter.cpp',
     'nsIWidgetListener.cpp',
     'nsNativeBasicTheme.cpp',
-    'nsPaper.cpp',
     'nsPrimitiveHelpers.cpp',
-    'nsPrinter.cpp',
     'nsPrintSettingsImpl.cpp',
     'nsSoundProxy.cpp',
     'nsTransferable.cpp',
@@ -243,6 +241,13 @@ if CONFIG['MOZ_XUL'] and CONFIG['NS_PRINTING']:
         'nsPrintSession.cpp',
         'nsPrintSettingsService.cpp',
     ]
+
+    
+    if toolkit != 'windows':
+        UNIFIED_SOURCES += [
+            'nsPaper.cpp',
+            'nsPrinter.cpp',
+        ]
 
 
 
