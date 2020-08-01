@@ -73,8 +73,39 @@ using mozilla::RangedPtr;
 
 extern mozilla::Atomic<bool> fuzzingSafe;
 
+
+
+
+
+
+static inline bool IsFuzzing() {
+#ifdef FUZZING
+  return true;
+#else
+  return fuzzingSafe;
+#endif
+}
+
+static inline bool IsFuzzingIon(JSContext* cx) {
+  return IsFuzzing() && !cx->options().wasmBaseline() &&
+         cx->options().wasmIon() && !cx->options().wasmCranelift();
+}
+
+static inline bool IsFuzzingCranelift(JSContext* cx) {
+  return IsFuzzing() && !cx->options().wasmBaseline() &&
+         !cx->options().wasmIon() && cx->options().wasmCranelift();
+}
+
+
+
+
 static inline bool WasmMultiValueFlag(JSContext* cx) {
 #ifdef ENABLE_WASM_MULTI_VALUE
+  if (IsFuzzingCranelift(cx)) {
+#  ifdef JS_CODEGEN_X64
+    return false;
+#  endif
+  }
   return cx->options().wasmMultiValue();
 #else
   return false;
@@ -83,6 +114,9 @@ static inline bool WasmMultiValueFlag(JSContext* cx) {
 
 static inline bool WasmSimdFlag(JSContext* cx) {
 #ifdef ENABLE_WASM_SIMD
+  if (IsFuzzingCranelift(cx)) {
+    return false;
+  }
   return cx->options().wasmSimd() && js::jit::JitSupportsWasmSimd();
 #else
   return false;
@@ -97,14 +131,25 @@ static inline bool WasmReftypesFlag(JSContext* cx) {
 #endif
 }
 
-static inline bool WasmGcFlag(JSContext* cx) { return cx->options().wasmGc(); }
+static inline bool WasmGcFlag(JSContext* cx) {
+  if (IsFuzzingIon(cx) || IsFuzzingCranelift(cx)) {
+    return false;
+  }
+  return cx->options().wasmGc();
+}
 
 static inline bool WasmThreadsFlag(JSContext* cx) {
+  if (IsFuzzingCranelift(cx)) {
+    return false;
+  }
   return cx->realm() &&
          cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
 }
 
 static inline bool WasmDebuggerActive(JSContext* cx) {
+  if (IsFuzzingIon(cx) || IsFuzzingCranelift(cx)) {
+    return false;
+  }
   return cx->realm() && cx->realm()->debuggerObservesAsmJS();
 }
 
