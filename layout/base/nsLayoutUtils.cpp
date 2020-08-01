@@ -893,6 +893,19 @@ static nsRect GetDisplayPortFromMarginsData(
       float sx = fmin(1.0, (xMargin + w) / w * 0.25);
       posAlignment.width =
           fmax(defaultAlignment, multiple * round(sx * w / multiple));
+      
+      
+      
+      
+      
+      
+      
+      
+      float rightMargin = fabs(aMarginsData->mMargins.right);
+      if (posAlignment.width > rightMargin) {
+        posAlignment.width -=
+            multiple * ceil((posAlignment.width - rightMargin) / multiple);
+      }
     } else {
       posAlignment.width = defaultAlignment;
     }
@@ -902,6 +915,12 @@ static nsRect GetDisplayPortFromMarginsData(
       float sy = fmin(1.0, (yMargin + h) / h * 0.25);
       posAlignment.height =
           fmax(defaultAlignment, multiple * round(sy * h / multiple));
+
+      float bottomMargin = fabs(aMarginsData->mMargins.bottom);
+      if (posAlignment.height > bottomMargin) {
+        posAlignment.height -=
+            multiple * ceil((posAlignment.height - bottomMargin) / multiple);
+      }
     } else {
       posAlignment.height = defaultAlignment;
     }
@@ -988,6 +1007,9 @@ static nsRect GetDisplayPortFromMarginsData(
   ScreenPoint scrollPosScreen =
       LayoutDevicePoint::FromAppUnits(scrollPos, auPerDevPixel) * res;
 
+  
+  
+  
   
   screenRect += scrollPosScreen;
   float x = posAlignment.width * floor(screenRect.x / posAlignment.width);
