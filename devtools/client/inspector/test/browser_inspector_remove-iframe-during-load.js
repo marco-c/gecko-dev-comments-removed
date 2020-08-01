@@ -8,12 +8,25 @@
 const TEST_URL = URL_ROOT + "doc_inspector_remove-iframe-during-load.html";
 
 add_task(async function() {
-  const { inspector, testActor } = await openInspectorForURL("about:blank");
+  await pushPref("devtools.target-switching.enabled", true);
+
+  const { inspector, tab } = await openInspectorForURL("about:blank");
   await selectNode("body", inspector);
 
   
   
-  await testActor.loadAndWaitForCustomEvent(TEST_URL);
+  
+  
+  const browser = tab.linkedBrowser;
+  const onBrowserLoaded = BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.loadURI(browser, TEST_URL);
+  await onBrowserLoaded;
+
+  
+  
+  await SpecialPowers.spawn(browser, [], async function() {
+    await content.wrappedJSObject.readyPromise;
+  });
 
   
   
@@ -21,33 +34,40 @@ add_task(async function() {
   
   
   ok(
-    !(await testActor.hasNode("iframe")),
+    !(await contentPageHasNode(browser, "iframe")),
     "Iframes added by the content page should have been removed"
   );
 
   
   info("Creating and removing an iframe.");
-  testActor.eval(
-    "new " +
-      function() {
-        const iframe = document.createElement("iframe");
-        document.body.appendChild(iframe);
-        iframe.remove();
-      }
-  );
+  await SpecialPowers.spawn(browser, [], async function() {
+    const iframe = content.document.createElement("iframe");
+    content.document.body.appendChild(iframe);
+    iframe.remove();
+  });
 
   ok(
-    !(await testActor.hasNode("iframe")),
+    !(await contentPageHasNode(browser, "iframe")),
     "The after-load iframe should have been removed."
   );
 
   
-  ok(!(await testActor.hasNode("iframe")), "Iframe has been removed.");
-  is(
-    await testActor.getProperty("#yay", "textContent"),
-    "load",
-    "Load event fired."
-  );
+  ok(!(await contentPageHasNode(browser, "iframe")), "Iframe has been removed");
 
+  const expectedText = await SpecialPowers.spawn(browser, [], async function() {
+    return content.document.querySelector("#yay").textContent;
+  });
+  is(expectedText, "load", "Load event fired.");
+
+  
+  
   await selectNode("#yay", inspector);
 });
+
+function contentPageHasNode(browser, selector) {
+  return SpecialPowers.spawn(browser, [selector], async function(
+    selectorChild
+  ) {
+    return !!content.document.querySelector(selectorChild);
+  });
+}
