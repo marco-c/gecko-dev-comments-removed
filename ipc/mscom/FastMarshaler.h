@@ -25,6 +25,9 @@ namespace mscom {
 
 
 
+
+
+
 class FastMarshaler final : public IMarshal {
  public:
   static HRESULT Create(IUnknown* aOuter, IUnknown** aOutMarshalerUnk);

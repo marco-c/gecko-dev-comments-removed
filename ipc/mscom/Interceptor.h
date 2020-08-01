@@ -64,6 +64,11 @@ struct IInterceptor : public IUnknown {
 
 
 
+
+
+
+
+
 class Interceptor final : public WeakReferenceSupport,
                           public IStdMarshalInfo,
                           public IMarshal,
