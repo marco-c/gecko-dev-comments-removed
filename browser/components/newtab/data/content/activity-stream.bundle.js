@@ -13180,15 +13180,17 @@ class SubmitFormSnippet_SubmitFormSnippet extends external_React_default.a.PureC
 
     if (this.state.signupSubmitted) {
       return this.renderSignupSubmitted();
-    }
-
-    if (this.state.expanded) {
-      return this.renderSignupView();
     } 
+    
+    
 
 
     if (this.props.expandedAlt) {
       return this.renderSignupViewAlt();
+    }
+
+    if (this.state.expanded) {
+      return this.renderSignupView();
     }
 
     return external_React_default.a.createElement(SimpleSnippet_SimpleSnippet, SubmitFormSnippet_extends({}, this.props, {
