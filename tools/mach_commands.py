@@ -345,7 +345,7 @@ def mozregression_create_parser():
     
     
     cmd = MozbuildObject.from_environment()
-    cmd._activate_virtualenv()
+    cmd.activate_virtualenv()
     mozregression = mozregression_import()
     if not mozregression:
         
@@ -383,7 +383,7 @@ class MozregressionCommand(MachCommandBase):
                           " and inbound builds."),
              parser=mozregression_create_parser)
     def run(self, **options):
-        self._activate_virtualenv()
+        self.activate_virtualenv()
         mozregression = mozregression_import()
         mozregression.run(options)
 

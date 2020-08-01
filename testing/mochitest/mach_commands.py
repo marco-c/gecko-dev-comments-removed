@@ -290,7 +290,7 @@ class MachCommands(MachCommandBase):
 
         
         
-        self._activate_virtualenv()
+        self.activate_virtualenv()
 
         buildapp = None
         for app in SUPPORTED_APPS:
