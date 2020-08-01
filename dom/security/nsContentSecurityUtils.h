@@ -53,8 +53,6 @@ class nsContentSecurityUtils {
   
   static bool IsDownloadAllowed(nsIChannel* aChannel,
                                 const nsAutoCString& aMimeTypeGuess);
-  
-  static void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg);
 
 #if defined(DEBUG)
   static void AssertAboutPageHasCSP(mozilla::dom::Document* aDocument);
@@ -62,6 +60,12 @@ class nsContentSecurityUtils {
 
   static bool ValidateScriptFilename(const char* aFilename,
                                      bool aIsSystemRealm);
+  
+
+
+  static bool IsDownloadAllowed(nsIChannel* aChannel);
+  
+  static void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg);
 };
 
 #endif 

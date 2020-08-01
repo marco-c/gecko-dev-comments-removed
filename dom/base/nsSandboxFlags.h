@@ -120,7 +120,14 @@ const unsigned long SANDBOXED_STORAGE_ACCESS = 0x8000;
 
 
 
-const unsigned long SANDBOXED_TOPLEVEL_NAVIGATION_USER_ACTIVATION = 0x10000;
+const unsigned long SANDBOXED_TOPLEVEL_NAVIGATION_USER_ACTIVATION = 0x20000;
+
+
+
+
+
+
+const unsigned long SANDBOXED_ALLOW_DOWNLOADS = 0x10000;
 
 const unsigned long SANDBOX_ALL_FLAGS = 0xFFFFF;
 #endif
