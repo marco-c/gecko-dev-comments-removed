@@ -24,6 +24,11 @@ menucaption {
   max-width: 42em;
   list-style-image: none;
   -moz-image-region: auto;
+
+  
+
+
+  background-color: initial;
 }
 
 menu[_moz-menuactive="true"],
