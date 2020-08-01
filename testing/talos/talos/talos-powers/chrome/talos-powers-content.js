@@ -147,6 +147,22 @@ addEventListener(
 
 
 
+addEventListener(
+  "TalosPowersWebRenderCapture",
+  e => {
+    if (content && content.windowUtils) {
+      content.windowUtils.wrCapture();
+    } else {
+      dump("Unable to obtain DOMWindowUtils for TalosPowersWebRenderCapture\n");
+    }
+  },
+  { wantUntrusted: true } 
+);
+
+
+
+
+
 
 
 
