@@ -107,8 +107,9 @@ void GCRuntime::sweepFinalizationRegistries(Zone* zone) {
       for (JSObject* obj : records) {
         FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
         FinalizationRegistryObject* registry = record->registryDuringGC(this);
-        registry->queueRecordToBeCleanedUp(record);
-        queueFinalizationRegistryForCleanup(registry);
+        FinalizationQueueObject* queue = registry->queue();
+        queue->queueRecordToBeCleanedUp(record);
+        queueFinalizationRegistryForCleanup(queue);
       }
       e.removeFront();
     }
@@ -116,23 +117,22 @@ void GCRuntime::sweepFinalizationRegistries(Zone* zone) {
 }
 
 void GCRuntime::queueFinalizationRegistryForCleanup(
-    FinalizationRegistryObject* registry) {
+    FinalizationQueueObject* queue) {
   
   
 
-  if (registry->isQueuedForCleanup()) {
+  if (queue->isQueuedForCleanup()) {
     return;
   }
 
   
   
-  JSObject* object =
-      UncheckedUnwrapWithoutExpose(registry->incumbentObject());
+  JSObject* object = UncheckedUnwrapWithoutExpose(queue->incumbentObject());
   MOZ_ASSERT(object);
   GlobalObject* incumbentGlobal = &object->nonCCWGlobal();
 
-  callHostCleanupFinalizationRegistryCallback(registry->doCleanupFunction(),
+  callHostCleanupFinalizationRegistryCallback(queue->doCleanupFunction(),
                                               incumbentGlobal);
 
-  registry->setQueuedForCleanup(true);
+  queue->setQueuedForCleanup(true);
 }
