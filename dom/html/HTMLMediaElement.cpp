@@ -4489,6 +4489,7 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
   AddRemoveSelfReference();
   UpdatePreloadAction();
   UpdateSrcMediaStreamPlaying();
+  StartMediaControlKeyListenerIfNeeded();
 
   
   
@@ -6216,6 +6217,7 @@ void HTMLMediaElement::CheckAutoplayDataReady() {
   AddRemoveSelfReference();
   UpdateSrcMediaStreamPlaying();
   UpdateAudioChannelPlayingState();
+  StartMediaControlKeyListenerIfNeeded();
 
   if (mDecoder) {
     SetPlayedOrSeeked(true);
