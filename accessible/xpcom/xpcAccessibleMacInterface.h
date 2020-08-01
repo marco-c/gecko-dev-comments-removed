@@ -49,8 +49,8 @@ class xpcAccessibleMacInterface : public xpcAccessibleMacNSObjectWrapper,
 
   
   
-  
-  static void FireEvent(id aNativeObj, id aNotification);
+  static nsresult NSObjectToJsValue(id aObj, JSContext* aCx,
+                                    JS::MutableHandleValue aResult);
 
  protected:
   virtual ~xpcAccessibleMacInterface() {}
@@ -59,11 +59,6 @@ class xpcAccessibleMacInterface : public xpcAccessibleMacNSObjectWrapper,
   
   
   bool SupportsSelector(SEL aSelector);
-
-  
-  
-  nsresult NSObjectToJsValue(id aObj, JSContext* aCx,
-                             JS::MutableHandleValue aResult);
 
   
   
@@ -80,6 +75,25 @@ class xpcAccessibleMacInterface : public xpcAccessibleMacNSObjectWrapper,
   xpcAccessibleMacInterface(const xpcAccessibleMacInterface&) = delete;
   xpcAccessibleMacInterface& operator=(const xpcAccessibleMacInterface&) =
       delete;
+};
+
+class xpcAccessibleMacEvent : public nsIAccessibleMacEvent {
+ public:
+  explicit xpcAccessibleMacEvent(id aNativeObj, id aData);
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIACCESSIBLEMACEVENT;
+
+  
+  
+  
+  static void FireEvent(id aNativeObj, id aNotification, id aUserInfo);
+
+ protected:
+  virtual ~xpcAccessibleMacEvent();
+
+  id mNativeObject;
+  id mData;
 };
 
 }  

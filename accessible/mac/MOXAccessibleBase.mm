@@ -348,7 +348,7 @@ using namespace mozilla::a11y;
 
 - (void)moxPostNotification:(NSString*)notification withUserInfo:(NSDictionary*)userInfo {
   
-  xpcAccessibleMacInterface::FireEvent(self, notification);
+  xpcAccessibleMacEvent::FireEvent(self, notification, userInfo);
 
   if (gfxPlatform::IsHeadless()) {
     
