@@ -30,9 +30,6 @@
 #include "misc.h"
 #include "os.h"
 
-
-
-
 #if defined(TRAIN_RES) || defined (TRAIN_RESAUX)
 #include <stdio.h>
 #endif

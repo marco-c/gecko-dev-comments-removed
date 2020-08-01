@@ -60,7 +60,7 @@ void *_alloca(size_t size);
 #  define FAST_HYPOT hypot
 #endif
 
-#endif
+#endif 
 
 #ifdef HAVE_ALLOCA_H
 #  include <alloca.h>
@@ -80,7 +80,7 @@ void *_alloca(size_t size);
 
 
 
-#if defined(__i386__) && defined(__GNUC__) && !defined(__BEOS__)
+#if defined(__i386__) && defined(__GNUC__) && !defined(__BEOS__) && !defined(__SSE2_MATH__)
 #  define VORBIS_FPU_CONTROL
 
 
@@ -119,8 +119,7 @@ static inline int vorbis_ftoi(double f){
 
 
 
-#if defined(_MSC_VER) && !defined(_WIN64) && \
-      !defined(_WIN32_WCE) && !defined(_M_ARM)
+#if defined(_MSC_VER) && defined(_M_IX86) && !defined(_WIN32_WCE)
 #  define VORBIS_FPU_CONTROL
 
 typedef ogg_int16_t vorbis_fpu_control;
@@ -147,7 +146,7 @@ static __inline void vorbis_fpu_restore(vorbis_fpu_control fpu){
 
 
 
-#if (defined(_MSC_VER) && defined(_M_X64)) || (defined(__GNUC__) && defined (__x86_64__))
+#if (defined(_MSC_VER) && defined(_M_X64)) || (defined(__GNUC__) && defined (__SSE2_MATH__))
 #  define VORBIS_FPU_CONTROL
 
 typedef ogg_int16_t vorbis_fpu_control;
@@ -174,7 +173,7 @@ static __inline void vorbis_fpu_restore(vorbis_fpu_control fpu){
 
 typedef int vorbis_fpu_control;
 
-static int vorbis_ftoi(double f){
+STIN int vorbis_ftoi(double f){
         
 
 
