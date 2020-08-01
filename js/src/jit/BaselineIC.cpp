@@ -2056,24 +2056,6 @@ static void SetUpdateStubData(ICCacheIR_Updated* stub,
   }
 }
 
-
-static MOZ_ALWAYS_INLINE bool CanAttachPrivateInitIC(JSContext* cx,
-                                                     HandleObject obj,
-                                                     HandleId id) {
-  
-  if (!obj->is<PlainObject>()) {
-    return false;
-  }
-
-  PropertyResult prop;
-  if (!LookupOwnPropertyPure(cx, obj, id, &prop)) {
-    return false;
-  }
-
-  
-  return !prop;
-}
-
 bool DoSetElemFallback(JSContext* cx, BaselineFrame* frame,
                        ICSetElem_Fallback* stub, Value* stack, HandleValue objv,
                        HandleValue index, HandleValue rhs) {
