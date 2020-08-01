@@ -417,6 +417,20 @@ add_task(async function test_ensureProfile() {
       },
       fetchAndCacheProfileResolves: false,
     },
+    
+    {
+      
+      
+      threshold: Date.now() + 5000,
+      hasRecentCachedProfile: false,
+      cachedProfile: null,
+      fetchedProfile: {
+        uid: `${ACCOUNT_UID}7`,
+        email: `${ACCOUNT_EMAIL}7`,
+        avatar: "myimg7",
+      },
+      fetchAndCacheProfileResolves: true,
+    },
   ];
 
   for (const tc of testCases) {
@@ -424,9 +438,13 @@ add_task(async function test_ensureProfile() {
     mockProfile
       .expects("_getProfileCache")
       .once()
-      .returns({
-        profile: tc.cachedProfile,
-      });
+      .returns(
+        tc.cachedProfile
+          ? {
+              profile: tc.cachedProfile,
+            }
+          : null
+      );
     profile.PROFILE_FRESHNESS_THRESHOLD = tc.threshold;
 
     if (tc.hasRecentCachedProfile) {
