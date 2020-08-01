@@ -136,12 +136,21 @@ ProfilerMarkerPayload::DeserializeCommonProps(
   return props;
 }
 
+
+
+
+
+
+void ProfilerMarkerPayload::StreamStartEndTime(
+    SpliceableJSONWriter& aWriter, const TimeStamp& aProcessStartTime) const {
+  WriteTime(aWriter, aProcessStartTime, mCommonProps.mStartTime, "startTime");
+  WriteTime(aWriter, aProcessStartTime, mCommonProps.mEndTime, "endTime");
+}
+
 void ProfilerMarkerPayload::StreamCommonProps(
     const char* aMarkerType, SpliceableJSONWriter& aWriter,
     const TimeStamp& aProcessStartTime, UniqueStacks& aUniqueStacks) const {
   StreamType(aMarkerType, aWriter);
-  WriteTime(aWriter, aProcessStartTime, mCommonProps.mStartTime, "startTime");
-  WriteTime(aWriter, aProcessStartTime, mCommonProps.mEndTime, "endTime");
   if (mCommonProps.mInnerWindowID) {
     
     
@@ -692,6 +701,10 @@ void NetworkMarkerPayload::StreamPayload(SpliceableJSONWriter& aWriter,
                                          const TimeStamp& aProcessStartTime,
                                          UniqueStacks& aUniqueStacks) const {
   StreamCommonProps("Network", aWriter, aProcessStartTime, aUniqueStacks);
+  
+  
+  StreamStartEndTime(aWriter, aProcessStartTime);
+
   aWriter.IntProperty("id", mID);
   const char* typeString = GetNetworkState(mType);
   const char* cacheString = GetCacheState(mCacheDisposition);
@@ -1169,6 +1182,11 @@ void IPCMarkerPayload::StreamPayload(SpliceableJSONWriter& aWriter,
                                      UniqueStacks& aUniqueStacks) const {
   using namespace mozilla::ipc;
   StreamCommonProps("IPC", aWriter, aProcessStartTime, aUniqueStacks);
+
+  
+  
+  StreamStartEndTime(aWriter, aProcessStartTime);
+
   aWriter.IntProperty("otherPid", mOtherPid);
   aWriter.IntProperty("messageSeqno", mMessageSeqno);
   aWriter.StringProperty("messageType",
