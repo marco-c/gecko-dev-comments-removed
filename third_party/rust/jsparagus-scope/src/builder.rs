@@ -288,7 +288,13 @@ enum ScopeKind {
     
     Const,
 
+    
     FunctionName,
+
+    
+    
+    
+    FunctionParametersAndBody,
 
     FormalParameter,
 
@@ -394,21 +400,9 @@ impl PossiblyAnnexBFunctionList {
         self.functions.remove(&name);
     }
 
-    fn mark_annex_b(
-        &self,
-        scopes: &mut ScopeDataList,
-        function_declaration_properties: &mut FunctionDeclarationPropertyMap,
-    ) {
+    fn mark_annex_b(&self, function_declaration_properties: &mut FunctionDeclarationPropertyMap) {
         for functions in &mut self.functions.values() {
             for fun in functions {
-                let scope = scopes.get_mut(fun.owner_scope_index);
-                match scope {
-                    ScopeData::Lexical(data) => {
-                        data.mark_annex_b_function(fun.name, fun.binding_index.into());
-                    }
-                    _ => panic!("unexpected scope pointed by Annex B function"),
-                }
-
                 function_declaration_properties.mark_annex_b(fun.script_index);
             }
         }
@@ -580,7 +574,6 @@ impl GlobalScopeBuilder {
 
     fn perform_annex_b(
         &mut self,
-        scopes: &mut ScopeDataList,
         function_declaration_properties: &mut FunctionDeclarationPropertyMap,
         possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
     ) {
@@ -662,12 +655,11 @@ impl GlobalScopeBuilder {
         
         
         
-        possibly_annex_b_functions.mark_annex_b(scopes, function_declaration_properties);
+        possibly_annex_b_functions.mark_annex_b(function_declaration_properties);
     }
 
     fn into_scope_data(
         mut self,
-        scopes: &mut ScopeDataList,
         function_declaration_properties: &mut FunctionDeclarationPropertyMap,
         possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
     ) -> ScopeData {
@@ -680,11 +672,7 @@ impl GlobalScopeBuilder {
         
         
         
-        self.perform_annex_b(
-            scopes,
-            function_declaration_properties,
-            possibly_annex_b_functions,
-        );
+        self.perform_annex_b(function_declaration_properties, possibly_annex_b_functions);
 
         
         self.remove_function_names_from_var_names();
@@ -1020,10 +1008,6 @@ struct FunctionParametersScopeBuilder {
     strict: bool,
 
     
-    
-    
-    
-    
     parameter_names: HashSet<SourceAtomSetIndex>,
 
     
@@ -1244,7 +1228,6 @@ impl FunctionParametersScopeBuilder {
 
     fn perform_annex_b(
         &mut self,
-        scopes: &mut ScopeDataList,
         function_declaration_properties: &mut FunctionDeclarationPropertyMap,
         possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
         body_scope_builder: &mut FunctionBodyScopeBuilder,
@@ -1281,6 +1264,9 @@ impl FunctionParametersScopeBuilder {
         for n in &body_scope_builder.const_names {
             possibly_annex_b_functions.remove_if_exists(*n);
         }
+        for n in &self.parameter_names {
+            possibly_annex_b_functions.remove_if_exists(*n);
+        }
 
         
         
@@ -1310,12 +1296,11 @@ impl FunctionParametersScopeBuilder {
         
         
         
-        possibly_annex_b_functions.mark_annex_b(scopes, function_declaration_properties);
+        possibly_annex_b_functions.mark_annex_b(function_declaration_properties);
     }
 
     fn into_scope_data_set(
         mut self,
-        scopes: &mut ScopeDataList,
         function_declaration_properties: &mut FunctionDeclarationPropertyMap,
         possibly_annex_b_functions: &mut PossiblyAnnexBFunctionList,
         enclosing: ScopeIndex,
@@ -1382,7 +1367,6 @@ impl FunctionParametersScopeBuilder {
         
         
         self.perform_annex_b(
-            scopes,
             function_declaration_properties,
             possibly_annex_b_functions,
             &mut body_scope_builder,
@@ -1390,7 +1374,6 @@ impl FunctionParametersScopeBuilder {
 
         let has_extra_body_var_scope = self.has_parameter_expressions;
 
-        
         
         
         
@@ -1489,7 +1472,6 @@ impl FunctionParametersScopeBuilder {
 
             
             
-            
 
             
             for n in &body_scope_builder.var_names {
@@ -1537,7 +1519,6 @@ impl FunctionParametersScopeBuilder {
             
             
             
-            
             let mut data = VarScopeData::new(
                 body_scope_builder.var_names.len(),
                 function_has_extensible_scope,
@@ -1545,10 +1526,10 @@ impl FunctionParametersScopeBuilder {
             );
 
             
-            
 
             
             for n in &body_scope_builder.var_names {
+                
                 
                 
                 
@@ -1730,6 +1711,9 @@ impl FunctionBodyScopeBuilder {
         
         
         
+        
+        self.var_names.insert(name);
+
         
         
         
@@ -1981,7 +1965,10 @@ impl ScopeBuilderStack {
 
     fn pop_block(&mut self) -> BlockScopeBuilder {
         match self.pop() {
-            ScopeBuilder::Block(builder) => builder,
+            ScopeBuilder::Block(builder) => {
+                self.update_closed_over_bindings_for_lazy(&builder.base);
+                builder
+            }
             _ => panic!("unmatching scope builder"),
         }
     }
@@ -1992,7 +1979,10 @@ impl ScopeBuilderStack {
 
     fn pop_function_expression(&mut self) -> FunctionExpressionScopeBuilder {
         match self.pop() {
-            ScopeBuilder::FunctionExpression(builder) => builder,
+            ScopeBuilder::FunctionExpression(builder) => {
+                self.update_closed_over_bindings_for_lazy(&builder.base);
+                builder
+            }
             _ => panic!("unmatching scope builder"),
         }
     }
@@ -2001,11 +1991,32 @@ impl ScopeBuilderStack {
         self.stack.push(ScopeBuilder::FunctionParameters(builder))
     }
 
-    fn pop_function_parameters(&mut self) -> FunctionParametersScopeBuilder {
-        match self.pop() {
+    fn pop_function_parameters_and_body(
+        &mut self,
+    ) -> (FunctionParametersScopeBuilder, FunctionBodyScopeBuilder) {
+        let body_scope_builder = match self.pop() {
+            ScopeBuilder::FunctionBody(builder) => builder,
+            _ => panic!("unmatching scope builder"),
+        };
+
+        let parameter_scope_builder = match self.pop() {
             ScopeBuilder::FunctionParameters(builder) => builder,
             _ => panic!("unmatching scope builder"),
+        };
+
+        let has_extra_body_var_scope = parameter_scope_builder.has_parameter_expressions;
+
+        if has_extra_body_var_scope {
+            self.update_closed_over_bindings_for_lazy(&body_scope_builder.base);
+            self.update_closed_over_bindings_for_lazy(&parameter_scope_builder.base);
+        } else {
+            self.update_closed_over_bindings_for_lazy_with_parameters_and_body(
+                &parameter_scope_builder.base,
+                &body_scope_builder.base,
+            );
         }
+
+        (parameter_scope_builder, body_scope_builder)
     }
 
     fn get_function_parameters<'a>(&'a mut self) -> &'a mut FunctionParametersScopeBuilder {
@@ -2019,10 +2030,41 @@ impl ScopeBuilderStack {
         self.stack.push(ScopeBuilder::FunctionBody(builder))
     }
 
-    fn pop_function_body(&mut self) -> FunctionBodyScopeBuilder {
-        match self.pop() {
-            ScopeBuilder::FunctionBody(builder) => builder,
-            _ => panic!("unmatching scope builder"),
+    fn update_closed_over_bindings_for_lazy(&mut self, builder: &BaseScopeBuilder) {
+        match self.closed_over_bindings_for_lazy.last_mut() {
+            Some(bindings) => {
+                for name in builder.name_tracker.defined_and_closed_over_vars() {
+                    bindings.push(Some(*name));
+                }
+                bindings.push(None);
+            }
+            None => {
+                
+            }
+        }
+    }
+
+    
+    
+    
+    fn update_closed_over_bindings_for_lazy_with_parameters_and_body(
+        &mut self,
+        builder1: &BaseScopeBuilder,
+        builder2: &BaseScopeBuilder,
+    ) {
+        match self.closed_over_bindings_for_lazy.last_mut() {
+            Some(bindings) => {
+                for name in builder1.name_tracker.defined_and_closed_over_vars() {
+                    bindings.push(Some(*name));
+                }
+                for name in builder2.name_tracker.defined_and_closed_over_vars() {
+                    bindings.push(Some(*name));
+                }
+                bindings.push(None);
+            }
+            None => {
+                
+            }
         }
     }
 
@@ -2033,18 +2075,6 @@ impl ScopeBuilderStack {
             Some(outer) => {
                 let inner_base = inner.base();
                 let outer_base = outer.base_mut();
-
-                match self.closed_over_bindings_for_lazy.last_mut() {
-                    Some(bindings) => {
-                        for name in inner_base.name_tracker.defined_and_closed_over_vars() {
-                            bindings.push(Some(*name));
-                        }
-                        bindings.push(None);
-                    }
-                    None => {
-                        
-                    }
-                }
 
                 
                 
@@ -2286,6 +2316,13 @@ impl FunctionScriptStencilBuilder {
 
 
 
+#[derive(Clone, Debug)]
+pub enum ScopeBuildError {
+    NotImplemented(&'static str),
+}
+
+
+
 
 
 
@@ -2309,6 +2346,8 @@ pub struct ScopeDataMapBuilder {
     function_declaration_properties: FunctionDeclarationPropertyMap,
 
     possibly_annex_b_functions: PossiblyAnnexBFunctionList,
+
+    error: Option<ScopeBuildError>,
 }
 
 impl ScopeDataMapBuilder {
@@ -2322,6 +2361,13 @@ impl ScopeDataMapBuilder {
             function_stencil_builder: FunctionScriptStencilBuilder::new(),
             function_declaration_properties: FunctionDeclarationPropertyMap::new(),
             possibly_annex_b_functions: PossiblyAnnexBFunctionList::new(),
+            error: None,
+        }
+    }
+
+    fn set_error(&mut self, e: ScopeBuildError) {
+        if self.error.is_none() {
+            self.error = Some(e);
         }
     }
 
@@ -2373,7 +2419,6 @@ impl ScopeDataMapBuilder {
         
         let scope_index = builder.scope_index;
         let scope = builder.into_scope_data(
-            &mut self.scopes,
             &mut self.function_declaration_properties,
             &mut self.possibly_annex_b_functions,
         );
@@ -2461,7 +2506,9 @@ impl ScopeDataMapBuilder {
         if self.scope_kind_stack.is_empty() {
             
             
-            
+            self.set_error(ScopeBuildError::NotImplemented(
+                "Unsupported binding identifier",
+            ));
             return;
         }
 
@@ -2472,6 +2519,14 @@ impl ScopeDataMapBuilder {
             ScopeKind::FunctionName => {
                 self.builder_stack.innermost().set_function_name(name);
                 self.function_stencil_builder.set_function_name(name);
+            }
+            ScopeKind::FunctionParametersAndBody => {
+                
+                
+                self.set_error(ScopeBuildError::NotImplemented(
+                    "Unsupported binding identifier",
+                ));
+                return;
             }
             ScopeKind::FormalParameter => self.builder_stack.innermost().declare_param(name),
             _ => panic!("Not implemeneted"),
@@ -2496,6 +2551,13 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        if is_generator || is_async {
+            
+            self.set_error(ScopeBuildError::NotImplemented(
+                "Generator or async function",
+            ));
+        }
+
         let fun_index = self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::function_declaration(is_generator, is_async),
@@ -2529,6 +2591,11 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        
+        self.set_error(ScopeBuildError::NotImplemented(
+            "Function expression (name analysis)",
+        ));
+
         let index = self.scopes.allocate();
         let builder = FunctionExpressionScopeBuilder::new(index);
         self.non_global.insert(fun, index);
@@ -2563,6 +2630,9 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        
+        self.set_error(ScopeBuildError::NotImplemented("Method (name calculation)"));
+
         self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::method(is_generator, is_async),
@@ -2581,6 +2651,9 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        
+        self.set_error(ScopeBuildError::NotImplemented("Getter (name calculation)"));
+
         self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::getter(),
@@ -2607,6 +2680,9 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        
+        self.set_error(ScopeBuildError::NotImplemented("Setter (name calculation)"));
+
         self.function_stencil_builder.enter(
             fun,
             FunctionSyntaxKind::setter(),
@@ -2637,6 +2713,12 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        
+        
+        self.set_error(ScopeBuildError::NotImplemented(
+            "Arrow function (special name handling)",
+        ));
+
         self.function_stencil_builder.enter(
             params,
             FunctionSyntaxKind::arrow(is_async),
@@ -2655,6 +2737,9 @@ impl ScopeDataMapBuilder {
     where
         T: SourceLocationAccessor + NodeTypeIdAccessor,
     {
+        self.scope_kind_stack
+            .push(ScopeKind::FunctionParametersAndBody);
+
         self.builder_stack
             .closed_over_bindings_for_lazy
             .push(Vec::new());
@@ -2736,9 +2821,11 @@ impl ScopeDataMapBuilder {
     }
 
     pub fn after_function_body(&mut self) {
-        let body_scope_builder = self.builder_stack.pop_function_body();
-        let parameter_scope_builder = self.builder_stack.pop_function_parameters();
+        let (parameter_scope_builder, body_scope_builder) =
+            self.builder_stack.pop_function_parameters_and_body();
         let enclosing = self.builder_stack.current_scope_index();
+
+        let has_extra_body_var_scope = parameter_scope_builder.has_parameter_expressions;
 
         self.function_stencil_builder.add_closed_over_bindings(
             self.builder_stack
@@ -2793,7 +2880,6 @@ impl ScopeDataMapBuilder {
         
         
         let scope_data_set = parameter_scope_builder.into_scope_data_set(
-            &mut self.scopes,
             &mut self.function_declaration_properties,
             &mut self.possibly_annex_b_functions,
             enclosing,
@@ -2801,9 +2887,13 @@ impl ScopeDataMapBuilder {
         );
         self.possibly_annex_b_functions.clear();
 
-        let has_extra_body_var = match &scope_data_set.extra_body_var {
-            ScopeData::Var(_) => true,
-            _ => false,
+        match &scope_data_set.extra_body_var {
+            ScopeData::Var(_) => {
+                debug_assert!(has_extra_body_var_scope);
+            }
+            _ => {
+                debug_assert!(!has_extra_body_var_scope);
+            }
         };
 
         let fun_stencil = self.function_stencil_builder.current_mut();
@@ -2816,8 +2906,14 @@ impl ScopeDataMapBuilder {
             panic!("Unexpected scope data for function");
         }
 
-        if has_extra_body_var {
-            fun_stencil.set_function_has_extra_body_var_scope();
+        if has_extra_body_var_scope {
+            let extra_body_var_scope = match &scope_data_set.extra_body_var {
+                ScopeData::Var(scope) => scope,
+                _ => panic!(""),
+            };
+            if extra_body_var_scope.base.bindings.len() > 0 {
+                fun_stencil.set_function_has_extra_body_var_scope();
+            }
         }
 
         if has_mapped_arguments {
@@ -2851,7 +2947,7 @@ impl ScopeDataMapBuilder {
             
             
             if var_names_has_arguments {
-                if has_extra_body_var {
+                if has_extra_body_var_scope {
                     try_declare_arguments = true;
                 } else if !parameter_has_arguments {
                     uses_arguments = true;
@@ -2861,8 +2957,8 @@ impl ScopeDataMapBuilder {
             if try_declare_arguments {
                 
                 
-                let declare_arguments =
-                    !parameter_has_arguments && (has_extra_body_var || !body_has_defined_arguments);
+                let declare_arguments = !parameter_has_arguments
+                    && (has_extra_body_var_scope || !body_has_defined_arguments);
 
                 if declare_arguments {
                     fun_stencil.set_should_declare_arguments();
@@ -2879,6 +2975,15 @@ impl ScopeDataMapBuilder {
                 if bindings_accessed_dynamically {
                     fun_stencil.set_always_needs_args_obj();
                 }
+
+                if has_used_this {
+                    
+                    
+                    
+                    self.set_error(ScopeBuildError::NotImplemented(
+                        "IsLikelyConstructorWrapper condition",
+                    ));
+                }
             }
         }
 
@@ -2888,10 +2993,22 @@ impl ScopeDataMapBuilder {
             .populate(var_scope_index, scope_data_set.extra_body_var);
         self.scopes
             .populate(lexical_scope_index, scope_data_set.lexical);
+
+        self.scope_kind_stack
+            .pop(ScopeKind::FunctionParametersAndBody);
     }
 
-    #[allow(dead_code)]
+    pub fn before_catch_clause(&mut self) {
+        
+        self.set_error(ScopeBuildError::NotImplemented("try-catch"));
+    }
+
     pub fn on_direct_eval(&mut self) {
+        
+        self.set_error(ScopeBuildError::NotImplemented(
+            "direct eval (script flags)",
+        ));
+
         if let Some(parameter_scope_builder) =
             self.builder_stack.maybe_innermost_function_parameters()
         {
@@ -2903,6 +3020,31 @@ impl ScopeDataMapBuilder {
             .base_mut()
             .bindings_accessed_dynamically = true;
     }
+
+    pub fn on_class(&mut self) {
+        
+        self.set_error(ScopeBuildError::NotImplemented("class"));
+    }
+
+    pub fn on_with(&mut self) {
+        
+        self.set_error(ScopeBuildError::NotImplemented("with statement"));
+    }
+
+    pub fn on_delete(&mut self) {
+        
+        self.set_error(ScopeBuildError::NotImplemented("delete operator"));
+    }
+
+    pub fn on_lexical_for(&mut self) {
+        
+        self.set_error(ScopeBuildError::NotImplemented("lexical for"));
+    }
+
+    pub fn on_switch(&mut self) {
+        
+        self.set_error(ScopeBuildError::NotImplemented("switch"));
+    }
 }
 
 pub struct ScopeDataMapAndScriptStencilList {
@@ -2910,6 +3052,7 @@ pub struct ScopeDataMapAndScriptStencilList {
     pub function_stencil_indices: AssociatedData<ScriptStencilIndex>,
     pub function_declaration_properties: FunctionDeclarationPropertyMap,
     pub functions: ScriptStencilList,
+    pub error: Option<ScopeBuildError>,
 }
 
 impl From<ScopeDataMapBuilder> for ScopeDataMapAndScriptStencilList {
@@ -2923,6 +3066,7 @@ impl From<ScopeDataMapBuilder> for ScopeDataMapAndScriptStencilList {
             function_stencil_indices: builder.function_stencil_builder.function_stencil_indices,
             function_declaration_properties: builder.function_declaration_properties,
             functions: builder.function_stencil_builder.functions,
+            error: builder.error,
         }
     }
 }

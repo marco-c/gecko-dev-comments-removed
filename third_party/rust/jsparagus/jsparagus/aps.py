@@ -4,7 +4,7 @@ from __future__ import annotations
 import typing
 from dataclasses import dataclass
 from .lr0 import ShiftedTerm, Term
-from .actions import Action, FilterStates
+from .actions import Action, FilterStates, Replay
 
 
 if typing.TYPE_CHECKING:
@@ -55,6 +55,7 @@ def reduce_path(pt: ParseTable, shifted: Path) -> typing.Iterator[Path]:
     nt = stack_diff.nt
     assert nt is not None
     depth = stack_diff.pop + stack_diff.replay
+    assert depth >= 0
     if depth > 0:
         
         stacked = [i for i, e in enumerate(shifted) if pt.term_is_stacked(e.term)]
@@ -240,10 +241,12 @@ class APS:
             
             
             if a.update_stack():
+                new_rp: typing.List[ShiftedTerm]
                 stack_diff = a.update_stack_with()
-                if stack_diff.replay < 0:
+                if isinstance(a, Replay):
                     assert stack_diff.pop == 0
                     assert stack_diff.nt is None
+                    assert stack_diff.replay < 0
                     num_replay = -stack_diff.replay
                     assert len(self.replay) >= num_replay
                     new_rp = self.replay[:]
@@ -267,10 +270,10 @@ class APS:
                     
                     
                     continue
+
                 reducing = not a.follow_edge()
                 assert stack_diff.pop >= 0
                 assert stack_diff.nt is not None
-                assert stack_diff.replay >= 0
                 for path in reduce_path(pt, prev_sh):
                     
                     
@@ -323,12 +326,22 @@ class APS:
                     assert nt is not None
                     new_rp = [nt]
                     if replay > 0:
+                        
+                        
+                        
                         stacked_terms = [
                             typing.cast(ShiftedTerm, edge.term)
                             for edge in path if pt.term_is_stacked(edge.term)
                         ]
-                        new_rp = new_rp + stacked_terms[-replay:]
-                    new_rp = new_rp + rp
+                        new_rp = new_rp + stacked_terms[-replay:] + rp
+                    elif replay == 0:
+                        new_rp = new_rp + rp
+                    elif replay < 0:
+                        
+                        
+                        
+                        assert len(rp) >= -replay
+                        new_rp = new_rp + rp[-replay:]
                     new_la = la[:max(len(la) - replay, 0)]
 
                     
