@@ -65,12 +65,16 @@ class IOUtils final {
       GlobalObject& aGlobal, const nsAString& aPath,
       const MakeDirectoryOptions& aOptions);
 
+  static already_AddRefed<Promise> Stat(GlobalObject& aGlobal,
+                                        const nsAString& aPath);
+
   static bool IsAbsolutePath(const nsAString& aPath);
 
  private:
   ~IOUtils() = default;
 
   friend class IOUtilsShutdownBlocker;
+  struct InternalFileInfo;
 
   static StaticDataMutex<StaticRefPtr<nsISerialEventTarget>>
       sBackgroundEventTarget;
@@ -138,6 +142,9 @@ class IOUtils final {
                                       bool aIgnoreExisting,
                                       int32_t aMode = 0777);
 
+  static Result<IOUtils::InternalFileInfo, nsresult> StatSync(
+      const nsAString& aPath);
+
   using IOReadMozPromise =
       mozilla::MozPromise<nsTArray<uint8_t>, const nsCString,
                            true>;
@@ -145,8 +152,27 @@ class IOUtils final {
   using IOWriteMozPromise =
       mozilla::MozPromise<uint32_t, const nsCString,  true>;
 
+  using IOStatMozPromise =
+      mozilla::MozPromise<struct InternalFileInfo, const nsresult,
+                           true>;
+
   using IOMozPromise = mozilla::MozPromise<bool , const nsresult,
                                             true>;
+};
+
+
+
+
+
+
+
+
+
+struct IOUtils::InternalFileInfo {
+  nsString mPath;
+  FileType mType;
+  uint64_t mSize;
+  uint64_t mLastModified;
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
