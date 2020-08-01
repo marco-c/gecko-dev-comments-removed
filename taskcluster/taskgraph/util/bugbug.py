@@ -22,7 +22,7 @@ except ImportError:
 
 BUGBUG_BASE_URL = "https://bugbug.herokuapp.com"
 RETRY_TIMEOUT = 8 * 60  
-RETRY_INTERVAL = 10      
+RETRY_INTERVAL = 10     
 
 
 CT_LOW = 0.7
@@ -79,7 +79,16 @@ def push_schedules(branch, rev):
     url = BUGBUG_BASE_URL + '/push/{branch}/{rev}/schedules'.format(branch=branch, rev=rev)
     start = monotonic()
     session = get_session()
-    attempts = RETRY_TIMEOUT / RETRY_INTERVAL
+
+    
+    
+    
+    
+    timeout = RETRY_TIMEOUT
+    if branch == "try":
+        timeout *= 2
+
+    attempts = timeout / RETRY_INTERVAL
     i = 0
     while i < attempts:
         r = session.get(url)
