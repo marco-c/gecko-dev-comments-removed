@@ -2304,8 +2304,8 @@ void ReflowInput::InitConstraints(
       }
 
       
-      if ((StyleDisplay::TableColumn == mStyleDisplay->mDisplay) ||
-          (StyleDisplay::TableColumnGroup == mStyleDisplay->mDisplay)) {
+      if (StyleDisplay::TableColumn == mStyleDisplay->mDisplay ||
+          StyleDisplay::TableColumnGroup == mStyleDisplay->mDisplay) {
         
         isAutoBSize = true;
       }
@@ -2322,7 +2322,6 @@ void ReflowInput::InitConstraints(
       
       ComputedMinWidth() = ComputedMinHeight() = 0;
       ComputedMaxWidth() = ComputedMaxHeight() = NS_UNCONSTRAINEDSIZE;
-
     } else if (NS_FRAME_GET_TYPE(mFrameType) == NS_CSS_FRAME_TYPE_ABSOLUTE) {
       
       InitAbsoluteConstraints(aPresContext, cbri,
