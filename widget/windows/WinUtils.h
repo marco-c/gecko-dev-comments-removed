@@ -238,6 +238,13 @@ class WinUtils {
 
 
 
+
+  static gfx::MarginDouble GetUnwriteableMarginsForDeviceInInches(HDC aHdc);
+
+  
+
+
+
   static void Log(const char* fmt, ...);
   static void LogW(const wchar_t* fmt, ...);
 
