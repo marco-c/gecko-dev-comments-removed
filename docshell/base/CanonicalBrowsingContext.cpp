@@ -962,8 +962,26 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsACString& aRemoteType,
   if (aRemoteType.IsEmpty()) {
     change->ProcessReady();
   } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<BrowsingContextGroup> finalGroup;
+    if (aSpecificGroupId) {
+      
+      finalGroup = BrowsingContextGroup::GetOrCreate(aSpecificGroupId);
+    } else if (!aReplaceBrowsingContext) {
+      
+      finalGroup = Group();
+    }
+
     change->mContentParent = ContentParent::GetNewOrUsedLaunchingBrowserProcess(
          aRemoteType,
+         finalGroup,
          hal::PROCESS_PRIORITY_FOREGROUND,
          false);
     if (!change->mContentParent) {
