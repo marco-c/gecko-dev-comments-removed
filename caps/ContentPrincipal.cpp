@@ -357,7 +357,8 @@ ContentPrincipal::SetDomain(nsIURI* aDomain) {
 
   
   
-  auto cb = [](JSContext*, void*, JS::Handle<JS::Realm*> aRealm) {
+  auto cb = [](JSContext*, void*, JS::Realm* aRealm,
+               const JS::AutoRequireNoGC& nogc) {
     JS::Compartment* comp = JS::GetCompartmentForRealm(aRealm);
     xpc::SetCompartmentChangedDocumentDomain(comp);
   };
