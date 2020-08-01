@@ -14,9 +14,11 @@
 
 
 use super::{
-    BinaryReader, Result, SectionIteratorLimited, SectionReader, SectionWithLimitedItems, TableType,
+    BinaryReader, Range, Result, SectionIteratorLimited, SectionReader, SectionWithLimitedItems,
+    TableType,
 };
 
+#[derive(Clone)]
 pub struct TableSectionReader<'a> {
     reader: BinaryReader<'a>,
     count: u32,
@@ -50,12 +52,6 @@ impl<'a> TableSectionReader<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn read(&mut self) -> Result<TableType> {
         self.reader.read_table_type()
     }
@@ -71,6 +67,9 @@ impl<'a> SectionReader for TableSectionReader<'a> {
     }
     fn original_position(&self) -> usize {
         TableSectionReader::original_position(self)
+    }
+    fn range(&self) -> Range {
+        self.reader.range()
     }
 }
 

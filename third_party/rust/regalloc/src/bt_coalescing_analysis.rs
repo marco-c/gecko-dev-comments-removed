@@ -30,8 +30,8 @@ use log::{debug, info, log_enabled, Level};
 use smallvec::{smallvec, SmallVec};
 
 use crate::data_structures::{
-    BlockIx, InstIx, InstPoint, RangeFrag, RangeFragIx, RealRange, RealRangeIx, RealReg,
-    RealRegUniverse, Reg, RegVecsAndBounds, SpillCost, TypedIxVec, VirtualRange, VirtualRangeIx,
+    InstIx, InstPoint, MoveInfo, MoveInfoElem, RangeFrag, RangeFragIx, RealRange, RealRangeIx,
+    RealReg, RealRegUniverse, RegToRangesMaps, SpillCost, TypedIxVec, VirtualRange, VirtualRangeIx,
     VirtualReg,
 };
 use crate::union_find::{ToFromU32, UnionFind, UnionFindEquivClasses};
@@ -132,184 +132,94 @@ impl ToFromU32 for VirtualRangeIx {
 #[inline(never)]
 pub fn do_coalescing_analysis<F: Function>(
     func: &F,
-    reg_vecs_and_bounds: &RegVecsAndBounds,
+    univ: &RealRegUniverse,
     rlr_env: &TypedIxVec<RealRangeIx, RealRange>,
     vlr_env: &mut TypedIxVec<VirtualRangeIx, VirtualRange>,
     frag_env: &TypedIxVec<RangeFragIx, RangeFrag>,
-    est_freqs: &TypedIxVec<BlockIx, u32>,
-    univ: &RealRegUniverse,
+    reg_to_ranges_maps: &RegToRangesMaps,
+    move_info: &MoveInfo,
 ) -> (
     TypedIxVec<VirtualRangeIx, SmallVec<[Hint; 8]>>,
     UnionFindEquivClasses<VirtualRangeIx>,
     TypedIxVec<InstIx, bool>,
-    Vec< SmallVec<[VirtualRangeIx; 3]>>,
 ) {
     info!("");
     info!("do_coalescing_analysis: begin");
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let mut vreg_to_vlrs_map = Vec::< SmallVec<[VirtualRangeIx; 3]>>::new();
 
-    for (vlr, n) in vlr_env.iter().zip(0..) {
-        let vlrix = VirtualRangeIx::new(n);
-        let vreg: VirtualReg = vlr.vreg;
-        
-        
-        
-        
-        
-        
-        
-        let vreg_ix = vreg.get_index();
-
-        while vreg_to_vlrs_map.len() <= vreg_ix {
-            vreg_to_vlrs_map.push(smallvec![]); 
-        }
-
-        vreg_to_vlrs_map[vreg_ix].push(vlrix);
-    }
-
-    
-    let mut rreg_to_rlrs_map = Vec::< Vec<RealRangeIx>>::new();
-
-    for (rlr, n) in rlr_env.iter().zip(0..) {
-        let rlrix = RealRangeIx::new(n);
-        let rreg: RealReg = rlr.rreg;
-        let rreg_ix = rreg.get_index();
-
-        while rreg_to_rlrs_map.len() <= rreg_ix {
-            rreg_to_rlrs_map.push(vec![]); 
-        }
-
-        rreg_to_rlrs_map[rreg_ix].push(rlrix);
-    }
-
-    
-    
-    
     
     
     
     
 
     
-    
-    let doesVRegHaveXXat
-    
-    
-    = |xxIsLastUse: bool, vreg: VirtualReg, iix: InstIx|
-    -> Option<VirtualRangeIx> {
-      let vreg_no = vreg.get_index();
-      let vlrixs = &vreg_to_vlrs_map[vreg_no];
-      for vlrix in vlrixs {
-        for frag in &vlr_env[*vlrix].sorted_frags.frags {
-          if xxIsLastUse {
-            
-            
-            
-            
-            
-            if frag.last == InstPoint::new_use(iix) {
-              return Some(*vlrix);
-            }
-          } else {
-            
-            
-            if frag.first == InstPoint::new_def(iix) {
-              return Some(*vlrix);
-            }
-          }
-        }
-      }
-      None
-    };
-
-    
-    let doesRRegHaveXXat
-    
-    
-    = |xxIsLastUse: bool, rreg: RealReg, iix: InstIx|
-    -> Option<RealRangeIx> {
-      let rreg_no = rreg.get_index();
-      let rlrixs = &rreg_to_rlrs_map[rreg_no];
-      for rlrix in rlrixs {
-        let frags = &rlr_env[*rlrix].sorted_frags;
-        for fix in &frags.frag_ixs {
-          let frag = &frag_env[*fix];
-          if xxIsLastUse {
-            
-            
-            if frag.last == InstPoint::new_use(iix) {
-              return Some(*rlrix);
-            }
-          } else {
-            
-            
-            if frag.first == InstPoint::new_def(iix) {
-              return Some(*rlrix);
-            }
-          }
-        }
-      }
-      None
-    };
-
-    
-    
-    
-    
-    
-    
-    
-    let mut connectedByMoves = Vec::<(Reg, Reg, InstIx, u32)>::new();
-    for b in func.blocks() {
-        let block_eef = est_freqs[b];
-        for iix in func.block_insns(b) {
-            let insn = &func.get_insn(iix);
-            let im = func.is_move(insn);
-            match im {
-                None => {}
-                Some((wreg, reg)) => {
-                    let iix_bounds = &reg_vecs_and_bounds.bounds[iix];
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    assert!(iix_bounds.uses_len <= 1);
-                    assert!(iix_bounds.defs_len <= 1);
-                    assert!(iix_bounds.mods_len == 0);
-                    if iix_bounds.uses_len == 1 && iix_bounds.defs_len == 1 {
-                        let reg_vecs = &reg_vecs_and_bounds.vecs;
-                        assert!(reg_vecs.uses[iix_bounds.uses_start as usize] == reg);
-                        assert!(reg_vecs.defs[iix_bounds.defs_start as usize] == wreg.to_reg());
-                        connectedByMoves.push((wreg.to_reg(), reg, iix, block_eef));
-                    }
+    let doesVRegHaveLastUseAt = |vreg: VirtualReg, iix: InstIx| -> Option<VirtualRangeIx> {
+        let vreg_no = vreg.get_index();
+        let vlrixs = &reg_to_ranges_maps.vreg_to_vlrs_map[vreg_no];
+        for vlrix in vlrixs {
+            for frag in &vlr_env[*vlrix].sorted_frags.frags {
+                
+                
+                
+                
+                
+                if frag.last == InstPoint::new_use(iix) {
+                    return Some(*vlrix);
                 }
             }
         }
-    }
+        None
+    };
 
+    
+    let doesVRegHaveFirstDefAt = |vreg: VirtualReg, iix: InstIx| -> Option<VirtualRangeIx> {
+        let vreg_no = vreg.get_index();
+        let vlrixs = &reg_to_ranges_maps.vreg_to_vlrs_map[vreg_no];
+        for vlrix in vlrixs {
+            for frag in &vlr_env[*vlrix].sorted_frags.frags {
+                
+                if frag.first == InstPoint::new_def(iix) {
+                    return Some(*vlrix);
+                }
+            }
+        }
+        None
+    };
+
+    
+    let doesRRegHaveLastUseAt = |rreg: RealReg, iix: InstIx| -> Option<RealRangeIx> {
+        let rreg_no = rreg.get_index();
+        let rlrixs = &reg_to_ranges_maps.rreg_to_rlrs_map[rreg_no];
+        for rlrix in rlrixs {
+            let frags = &rlr_env[*rlrix].sorted_frags;
+            for fix in &frags.frag_ixs {
+                let frag = &frag_env[*fix];
+                
+                if frag.last == InstPoint::new_use(iix) {
+                    return Some(*rlrix);
+                }
+            }
+        }
+        None
+    };
+
+    
+    let doesRRegHaveFirstDefAt = |rreg: RealReg, iix: InstIx| -> Option<RealRangeIx> {
+        let rreg_no = rreg.get_index();
+        let rlrixs = &reg_to_ranges_maps.rreg_to_rlrs_map[rreg_no];
+        for rlrix in rlrixs {
+            let frags = &rlr_env[*rlrix].sorted_frags;
+            for fix in &frags.frag_ixs {
+                let frag = &frag_env[*fix];
+                
+                if frag.first == InstPoint::new_def(iix) {
+                    return Some(*rlrix);
+                }
+            }
+        }
+        None
+    };
+
+    
     
     
     
@@ -317,9 +227,14 @@ pub fn do_coalescing_analysis<F: Function>(
     let mut hints = TypedIxVec::<VirtualRangeIx, SmallVec<[Hint; 8]>>::new();
     hints.resize(vlr_env.len(), smallvec![]);
 
+    
+    
+    
+    
     let mut is_vv_boundary_move = TypedIxVec::<InstIx, bool>::new();
     is_vv_boundary_move.resize(func.insns().len() as u32, false);
 
+    
     
     let mut vlrEquivClassesUF = UnionFind::<VirtualRangeIx>::new(vlr_env.len() as usize);
 
@@ -328,20 +243,28 @@ pub fn do_coalescing_analysis<F: Function>(
     
     
     
+    
     let mut decVLRcosts = Vec::<(VirtualRangeIx, VirtualRangeIx, u32)>::new();
 
-    for (rDst, rSrc, iix, block_eef) in connectedByMoves {
+    for MoveInfoElem {
+        dst,
+        src,
+        iix,
+        est_freq,
+        ..
+    } in &move_info.moves
+    {
         debug!(
-            "QQQQ connectedByMoves {:?} {:?} <- {:?} (block_eef {})",
-            iix, rDst, rSrc, block_eef
+            "connected by moves: {:?} {:?} <- {:?} (est_freq {})",
+            iix, dst, src, est_freq
         );
-        match (rDst.is_virtual(), rSrc.is_virtual()) {
+        match (dst.is_virtual(), src.is_virtual()) {
             (true, true) => {
                 
-                let rSrcV = rSrc.to_virtual_reg();
-                let rDstV = rDst.to_virtual_reg();
-                let mb_vlrixSrc = doesVRegHaveXXat( true, rSrcV, iix);
-                let mb_vlrixDst = doesVRegHaveXXat( false, rDstV, iix);
+                let srcV = src.to_virtual_reg();
+                let dstV = dst.to_virtual_reg();
+                let mb_vlrixSrc = doesVRegHaveLastUseAt(srcV, *iix);
+                let mb_vlrixDst = doesVRegHaveFirstDefAt(dstV, *iix);
                 if mb_vlrixSrc.is_some() && mb_vlrixDst.is_some() {
                     let vlrixSrc = mb_vlrixSrc.unwrap();
                     let vlrixDst = mb_vlrixDst.unwrap();
@@ -353,39 +276,39 @@ pub fn do_coalescing_analysis<F: Function>(
                         
                         
                         
-                        hints[vlrixSrc].push(Hint::SameAs(vlrixDst, block_eef));
-                        hints[vlrixDst].push(Hint::SameAs(vlrixSrc, block_eef));
+                        hints[vlrixSrc].push(Hint::SameAs(vlrixDst, *est_freq));
+                        hints[vlrixDst].push(Hint::SameAs(vlrixSrc, *est_freq));
                         vlrEquivClassesUF.union(vlrixDst, vlrixSrc);
-                        is_vv_boundary_move[iix] = true;
+                        is_vv_boundary_move[*iix] = true;
                         
                         
                         
                         
-                        debug!("QQQQ reduce cost of {:?} and {:?}", vlrixSrc, vlrixDst);
-                        decVLRcosts.push((vlrixSrc, vlrixDst, 1 * block_eef));
+                        debug!("reduce cost of {:?} and {:?}", vlrixSrc, vlrixDst);
+                        decVLRcosts.push((vlrixSrc, vlrixDst, 1 * est_freq));
                     }
                 }
             }
             (true, false) => {
                 
-                let rSrcR = rSrc.to_real_reg();
-                let rDstV = rDst.to_virtual_reg();
-                let mb_rlrSrc = doesRRegHaveXXat( true, rSrcR, iix);
-                let mb_vlrDst = doesVRegHaveXXat( false, rDstV, iix);
+                let srcR = src.to_real_reg();
+                let dstV = dst.to_virtual_reg();
+                let mb_rlrSrc = doesRRegHaveLastUseAt(srcR, *iix);
+                let mb_vlrDst = doesVRegHaveFirstDefAt(dstV, *iix);
                 if mb_rlrSrc.is_some() && mb_vlrDst.is_some() {
                     let vlrDst = mb_vlrDst.unwrap();
-                    hints[vlrDst].push(Hint::Exactly(rSrcR, block_eef));
+                    hints[vlrDst].push(Hint::Exactly(srcR, *est_freq));
                 }
             }
             (false, true) => {
                 
-                let rSrcV = rSrc.to_virtual_reg();
-                let rDstR = rDst.to_real_reg();
-                let mb_vlrSrc = doesVRegHaveXXat( true, rSrcV, iix);
-                let mb_rlrDst = doesRRegHaveXXat( false, rDstR, iix);
+                let srcV = src.to_virtual_reg();
+                let dstR = dst.to_real_reg();
+                let mb_vlrSrc = doesVRegHaveLastUseAt(srcV, *iix);
+                let mb_rlrDst = doesRRegHaveFirstDefAt(dstR, *iix);
                 if mb_vlrSrc.is_some() && mb_rlrDst.is_some() {
                     let vlrSrc = mb_vlrSrc.unwrap();
-                    hints[vlrSrc].push(Hint::Exactly(rDstR, block_eef));
+                    hints[vlrSrc].push(Hint::Exactly(dstR, *est_freq));
                 }
             }
             (false, false) => {
@@ -468,10 +391,5 @@ pub fn do_coalescing_analysis<F: Function>(
     info!("do_coalescing_analysis: end");
     info!("");
 
-    (
-        hints,
-        vlrEquivClasses,
-        is_vv_boundary_move,
-        vreg_to_vlrs_map,
-    )
+    (hints, vlrEquivClasses, is_vv_boundary_move)
 }

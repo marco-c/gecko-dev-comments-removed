@@ -98,6 +98,7 @@ impl<'a> fmt::Display for DisplayValueLoc<'a> {
 
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum ArgumentLoc {
     
     Unassigned,

@@ -14,10 +14,11 @@
 
 
 use crate::{
-    BinaryReader, BinaryReaderError, Result, SectionIteratorLimited, SectionReader,
+    BinaryReader, BinaryReaderError, Range, Result, SectionIteratorLimited, SectionReader,
     SectionWithLimitedItems, TypeDef,
 };
 
+#[derive(Clone)]
 pub struct TypeSectionReader<'a> {
     reader: BinaryReader<'a>,
     count: u32,
@@ -38,10 +39,6 @@ impl<'a> TypeSectionReader<'a> {
         self.count
     }
 
-    
-    
-    
-    
     
     
     
@@ -80,6 +77,9 @@ impl<'a> SectionReader for TypeSectionReader<'a> {
     fn original_position(&self) -> usize {
         TypeSectionReader::original_position(self)
     }
+    fn range(&self) -> Range {
+        self.reader.range()
+    }
 }
 
 impl<'a> SectionWithLimitedItems for TypeSectionReader<'a> {
@@ -92,11 +92,6 @@ impl<'a> IntoIterator for TypeSectionReader<'a> {
     type Item = Result<TypeDef<'a>>;
     type IntoIter = SectionIteratorLimited<TypeSectionReader<'a>>;
 
-    
-    
-    
-    
-    
     
     
     

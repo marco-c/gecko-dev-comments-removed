@@ -14,10 +14,11 @@
 
 
 use super::{
-    BinaryReader, MemoryType, Result, SectionIteratorLimited, SectionReader,
+    BinaryReader, MemoryType, Range, Result, SectionIteratorLimited, SectionReader,
     SectionWithLimitedItems,
 };
 
+#[derive(Clone)]
 pub struct MemorySectionReader<'a> {
     reader: BinaryReader<'a>,
     count: u32,
@@ -50,13 +51,6 @@ impl<'a> MemorySectionReader<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub fn read(&mut self) -> Result<MemoryType> {
         self.reader.read_memory_type()
     }
@@ -72,6 +66,9 @@ impl<'a> SectionReader for MemorySectionReader<'a> {
     }
     fn original_position(&self) -> usize {
         MemorySectionReader::original_position(self)
+    }
+    fn range(&self) -> Range {
+        self.reader.range()
     }
 }
 

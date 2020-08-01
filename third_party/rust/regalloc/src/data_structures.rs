@@ -1794,6 +1794,22 @@ impl SortedRangeFragIxs {
         res.check(fenv);
         res
     }
+
+    
+    pub fn contains_pt(&self, fenv: &TypedIxVec<RangeFragIx, RangeFrag>, pt: InstPoint) -> bool {
+        self.frag_ixs
+            .binary_search_by(|&ix| {
+                let frag = &fenv[ix];
+                if pt < frag.first {
+                    Ordering::Greater
+                } else if pt >= frag.first && pt <= frag.last {
+                    Ordering::Equal
+                } else {
+                    Ordering::Less
+                }
+            })
+            .is_ok()
+    }
 }
 
 
@@ -1855,6 +1871,21 @@ impl SortedRangeFrags {
                 }
             }
         }
+    }
+
+    
+    pub fn contains_pt(&self, pt: InstPoint) -> bool {
+        self.frags
+            .binary_search_by(|frag| {
+                if pt < frag.first {
+                    Ordering::Greater
+                } else if pt >= frag.first && pt <= frag.last {
+                    Ordering::Equal
+                } else {
+                    Ordering::Less
+                }
+            })
+            .is_ok()
     }
 }
 
@@ -1997,19 +2028,27 @@ impl SpillCost {
 pub struct RealRange {
     pub rreg: RealReg,
     pub sorted_frags: SortedRangeFragIxs,
+    pub is_ref: bool,
 }
 
 impl fmt::Debug for RealRange {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "(RR: {:?}, {:?})", self.rreg, self.sorted_frags)
+        write!(
+            fmt,
+            "(RR: {:?}{}, {:?})",
+            self.rreg,
+            if self.is_ref { " REF" } else { "" },
+            self.sorted_frags
+        )
     }
 }
 
 impl RealRange {
     pub fn show_with_rru(&self, univ: &RealRegUniverse) -> String {
         format!(
-            "(RR: {}, {:?})",
+            "(RR: {}{}, {:?})",
             self.rreg.to_reg().show_with_rru(univ),
+            if self.is_ref { " REF" } else { "" },
             self.sorted_frags
         )
     }
@@ -2026,6 +2065,7 @@ pub struct VirtualRange {
     pub vreg: VirtualReg,
     pub rreg: Option<RealReg>,
     pub sorted_frags: SortedRangeFrags,
+    pub is_ref: bool,
     pub size: u16,
     pub total_cost: u32,
     pub spill_cost: SpillCost, 
@@ -2039,7 +2079,12 @@ impl VirtualRange {
 
 impl fmt::Debug for VirtualRange {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "(VR: {:?},", self.vreg)?;
+        write!(
+            fmt,
+            "(VR: {:?}{},",
+            self.vreg,
+            if self.is_ref { " REF" } else { "" }
+        )?;
         if self.rreg.is_some() {
             write!(fmt, " -> {:?}", self.rreg.unwrap())?;
         }
@@ -2048,6 +2093,109 @@ impl fmt::Debug for VirtualRange {
             " sz={}, tc={}, sc={:?}, {:?})",
             self.size, self.total_cost, self.spill_cost, self.sorted_frags
         )
+    }
+}
+
+
+
+
+
+
+
+
+pub struct RegToRangesMaps {
+    
+    
+    
+    
+    
+    pub rreg_to_rlrs_map: Vec< Vec<RealRangeIx>>,
+
+    
+    
+    
+    
+    pub vreg_to_vlrs_map: Vec< SmallVec<[VirtualRangeIx; 3]>>,
+}
+
+
+
+
+
+
+pub struct MoveInfoElem {
+    pub dst: Reg,
+    pub dst_range: RangeId, 
+    pub src: Reg,
+    pub src_range: RangeId, 
+    pub iix: InstIx,
+    pub est_freq: u32,
+}
+
+pub struct MoveInfo {
+    pub moves: Vec<MoveInfoElem>,
+}
+
+
+
+
+
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+pub struct RangeId {
+    
+    
+    bits: u32,
+}
+
+impl RangeId {
+    #[inline(always)]
+    pub fn new_real(rlrix: RealRangeIx) -> Self {
+        let n = rlrix.get();
+        assert!(n <= 0x7FFF_FFFF);
+        Self {
+            bits: n | 0x8000_0000,
+        }
+    }
+    #[inline(always)]
+    pub fn new_virtual(vlrix: VirtualRangeIx) -> Self {
+        let n = vlrix.get();
+        assert!(n <= 0x7FFF_FFFF);
+        Self { bits: n }
+    }
+    #[inline(always)]
+    pub fn is_real(self) -> bool {
+        self.bits & 0x8000_0000 != 0
+    }
+    #[allow(dead_code)]
+    #[inline(always)]
+    pub fn is_virtual(self) -> bool {
+        self.bits & 0x8000_0000 == 0
+    }
+    #[inline(always)]
+    pub fn to_real(self) -> RealRangeIx {
+        assert!(self.bits & 0x8000_0000 != 0);
+        RealRangeIx::new(self.bits & 0x7FFF_FFFF)
+    }
+    #[inline(always)]
+    pub fn to_virtual(self) -> VirtualRangeIx {
+        assert!(self.bits & 0x8000_0000 == 0);
+        VirtualRangeIx::new(self.bits)
+    }
+    #[inline(always)]
+    pub fn invalid_value() -> Self {
+        
+        Self { bits: 0xFFFF_FFFF }
+    }
+}
+
+impl fmt::Debug for RangeId {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        if self.is_real() {
+            self.to_real().fmt(fmt)
+        } else {
+            self.to_virtual().fmt(fmt)
+        }
     }
 }
 

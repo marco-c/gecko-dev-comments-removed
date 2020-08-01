@@ -15,6 +15,7 @@ mod analysis_main;
 
 mod analysis_control_flow;
 mod analysis_data_flow;
+mod analysis_reftypes;
 mod avl_tree;
 mod bt_coalescing_analysis;
 mod bt_commitment_map;
@@ -270,7 +271,12 @@ pub trait Function {
     
     
     
-    fn gen_spill(&self, to_slot: SpillSlot, from_reg: RealReg, for_vreg: VirtualReg) -> Self::Inst;
+    fn gen_spill(
+        &self,
+        to_slot: SpillSlot,
+        from_reg: RealReg,
+        for_vreg: Option<VirtualReg>,
+    ) -> Self::Inst;
 
     
     
@@ -280,7 +286,7 @@ pub trait Function {
         &self,
         to_reg: Writable<RealReg>,
         from_slot: SpillSlot,
-        for_vreg: VirtualReg,
+        for_vreg: Option<VirtualReg>,
     ) -> Self::Inst;
 
     
@@ -367,6 +373,14 @@ pub struct RegAllocResult<F: Function> {
     
     
     pub block_annotations: Option<TypedIxVec<BlockIx, Vec<String>>>,
+
+    
+    
+    pub stackmaps: Vec<Vec<SpillSlot>>,
+
+    
+    
+    pub new_safepoint_insns: Vec<InstIx>,
 }
 
 
@@ -445,6 +459,26 @@ impl fmt::Debug for Options {
 }
 
 
+pub struct StackmapRequestInfo {
+    
+    
+    pub reftype_class: RegClass,
+
+    
+    
+    pub reftyped_vregs: Vec<VirtualReg>,
+
+    
+    
+    
+    
+    
+    
+    
+    pub safepoint_insns: Vec<InstIx>,
+}
+
+
 
 
 
@@ -462,6 +496,7 @@ impl fmt::Debug for Options {
 pub fn allocate_registers_with_opts<F: Function>(
     func: &mut F,
     rreg_universe: &RealRegUniverse,
+    stackmap_info: Option<&StackmapRequestInfo>,
     opts: Options,
 ) -> Result<RegAllocResult<F>, RegAllocError> {
     info!("");
@@ -474,10 +509,69 @@ pub fn allocate_registers_with_opts<F: Function>(
             info!("  {}", s);
         }
     }
+    
+    if let Some(&StackmapRequestInfo {
+        reftype_class,
+        ref reftyped_vregs,
+        ref safepoint_insns,
+    }) = stackmap_info
+    {
+        if let Algorithm::LinearScan(_) = opts.algorithm {
+            return Err(RegAllocError::Other(
+                "stackmap request: not currently available for Linear Scan".to_string(),
+            ));
+        }
+        if reftype_class != RegClass::I64 && reftype_class != RegClass::I32 {
+            return Err(RegAllocError::Other(
+                "stackmap request: invalid reftype_class".to_string(),
+            ));
+        }
+        let num_avail_vregs = func.get_num_vregs();
+        for i in 0..reftyped_vregs.len() {
+            let vreg = &reftyped_vregs[i];
+            if vreg.get_class() != reftype_class {
+                return Err(RegAllocError::Other(
+                    "stackmap request: invalid vreg class".to_string(),
+                ));
+            }
+            if vreg.get_index() >= num_avail_vregs {
+                return Err(RegAllocError::Other(
+                    "stackmap request: out of range vreg".to_string(),
+                ));
+            }
+            if i > 0 && reftyped_vregs[i - 1].get_index() >= vreg.get_index() {
+                return Err(RegAllocError::Other(
+                    "stackmap request: non-ascending vregs".to_string(),
+                ));
+            }
+        }
+        let num_avail_insns = func.insns().len();
+        for i in 0..safepoint_insns.len() {
+            let safepoint_iix = safepoint_insns[i];
+            if safepoint_iix.get() as usize >= num_avail_insns {
+                return Err(RegAllocError::Other(
+                    "stackmap request: out of range safepoint insn".to_string(),
+                ));
+            }
+            if i > 0 && safepoint_insns[i - 1].get() >= safepoint_iix.get() {
+                return Err(RegAllocError::Other(
+                    "stackmap request: non-ascending safepoint insns".to_string(),
+                ));
+            }
+            if func.is_move(func.get_insn(safepoint_iix)).is_some() {
+                return Err(RegAllocError::Other(
+                    "stackmap request: safepoint insn is a move insn".to_string(),
+                ));
+            }
+        }
+        
+        
+    }
+
     let run_checker = opts.run_checker;
     let res = match &opts.algorithm {
         Algorithm::Backtracking(opts) => {
-            bt_main::alloc_main(func, rreg_universe, run_checker, opts)
+            bt_main::alloc_main(func, rreg_universe, stackmap_info, run_checker, opts)
         }
         Algorithm::LinearScan(opts) => linear_scan::run(func, rreg_universe, run_checker, opts),
     };
@@ -502,6 +596,7 @@ pub fn allocate_registers_with_opts<F: Function>(
 pub fn allocate_registers<F: Function>(
     func: &mut F,
     rreg_universe: &RealRegUniverse,
+    stackmap_info: Option<&StackmapRequestInfo>,
     algorithm: AlgorithmWithDefaults,
 ) -> Result<RegAllocResult<F>, RegAllocError> {
     let algorithm = match algorithm {
@@ -512,7 +607,7 @@ pub fn allocate_registers<F: Function>(
         algorithm,
         ..Default::default()
     };
-    allocate_registers_with_opts(func, rreg_universe, opts)
+    allocate_registers_with_opts(func, rreg_universe, stackmap_info, opts)
 }
 
 

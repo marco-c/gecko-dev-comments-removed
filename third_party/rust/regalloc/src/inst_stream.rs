@@ -1,7 +1,7 @@
 use crate::checker::Inst as CheckerInst;
 use crate::checker::{CheckerContext, CheckerErrors};
 use crate::data_structures::{
-    BlockIx, InstIx, InstPoint, RangeFrag, RealReg, RealRegUniverse, SpillSlot, TypedIxVec,
+    BlockIx, InstIx, InstPoint, Point, RangeFrag, RealReg, RealRegUniverse, SpillSlot, TypedIxVec,
     VirtualReg, Writable,
 };
 use crate::{reg_maps::VrangeRegUsageMapper, Function, RegAllocError};
@@ -17,12 +17,12 @@ pub(crate) enum InstToInsert {
     Spill {
         to_slot: SpillSlot,
         from_reg: RealReg,
-        for_vreg: VirtualReg,
+        for_vreg: Option<VirtualReg>,
     },
     Reload {
         to_reg: Writable<RealReg>,
         from_slot: SpillSlot,
-        for_vreg: VirtualReg,
+        for_vreg: Option<VirtualReg>,
     },
     Move {
         to_reg: Writable<RealReg>,
@@ -76,14 +76,112 @@ impl InstToInsert {
     }
 }
 
-pub(crate) struct InstToInsertAndPoint {
-    pub(crate) inst: InstToInsert,
-    pub(crate) point: InstPoint,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ExtPoint {
+    Reload = 0,
+    SpillBefore = 1,
+    Use = 2,
+    Def = 3,
+    ReloadAfter = 4,
+    Spill = 5,
 }
 
-impl InstToInsertAndPoint {
-    pub(crate) fn new(inst: InstToInsert, point: InstPoint) -> Self {
-        Self { inst, point }
+impl ExtPoint {
+    
+    #[inline(always)]
+    pub fn from_point(pt: Point) -> Self {
+        match pt {
+            Point::Reload => ExtPoint::Reload,
+            Point::Use => ExtPoint::Use,
+            Point::Def => ExtPoint::Def,
+            Point::Spill => ExtPoint::Spill,
+        }
+    }
+}
+
+
+
+
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct InstExtPoint {
+    pub iix: InstIx,
+    pub extpt: ExtPoint,
+}
+
+impl InstExtPoint {
+    #[inline(always)]
+    pub fn new(iix: InstIx, extpt: ExtPoint) -> Self {
+        Self { iix, extpt }
+    }
+    
+    #[inline(always)]
+    pub fn from_inst_point(inst_pt: InstPoint) -> Self {
+        InstExtPoint {
+            iix: inst_pt.iix(),
+            extpt: ExtPoint::from_point(inst_pt.pt()),
+        }
+    }
+}
+
+
+
+pub(crate) struct InstToInsertAndExtPoint {
+    pub(crate) inst: InstToInsert,
+    pub(crate) iep: InstExtPoint,
+}
+
+impl InstToInsertAndExtPoint {
+    #[inline(always)]
+    pub(crate) fn new(inst: InstToInsert, iep: InstExtPoint) -> Self {
+        Self { inst, iep }
     }
 }
 
@@ -96,7 +194,7 @@ impl InstToInsertAndPoint {
 fn map_vregs_to_rregs<F: Function>(
     func: &mut F,
     frag_map: Vec<(RangeFrag, VirtualReg, RealReg)>,
-    insts_to_add: &Vec<InstToInsertAndPoint>,
+    insts_to_add: &Vec<InstToInsertAndExtPoint>,
     iixs_to_nop_out: &Vec<InstIx>,
     reg_universe: &RealRegUniverse,
     use_checker: bool,
@@ -391,12 +489,14 @@ fn map_vregs_to_rregs<F: Function>(
 #[inline(never)]
 pub(crate) fn add_spills_reloads_and_moves<F: Function>(
     func: &mut F,
-    mut insts_to_add: Vec<InstToInsertAndPoint>,
+    safepoint_insns: &Vec<InstIx>,
+    mut insts_to_add: Vec<InstToInsertAndExtPoint>,
 ) -> Result<
     (
         Vec<F::Inst>,
         TypedIxVec<BlockIx, InstIx>,
         TypedIxVec<InstIx, InstIx>,
+        Vec<InstIx>,
     ),
     String,
 > {
@@ -410,17 +510,28 @@ pub(crate) fn add_spills_reloads_and_moves<F: Function>(
     
     
     
+    
+    
+    
+    
+    
 
-    insts_to_add.sort_by_key(|mem_move| mem_move.point);
+    insts_to_add.sort_by_key(|to_add| to_add.iep.clone());
 
     let mut cur_inst_to_add = 0;
     let mut cur_block = BlockIx::new(0);
 
     let mut insns: Vec<F::Inst> = vec![];
     let mut target_map: TypedIxVec<BlockIx, InstIx> = TypedIxVec::new();
-    let mut orig_insn_map: TypedIxVec<InstIx, InstIx> = TypedIxVec::new();
+
+    let mut new_to_old_insn_map: TypedIxVec<InstIx, InstIx> = TypedIxVec::new();
     target_map.reserve(func.blocks().len());
-    orig_insn_map.reserve(func.insn_indices().len() + insts_to_add.len());
+    new_to_old_insn_map.reserve(func.insn_indices().len() + insts_to_add.len());
+
+    
+    let mut next_safepoint_insn_index = 0;
+    let mut new_safepoint_insns = Vec::<InstIx>::new();
+    new_safepoint_insns.reserve(safepoint_insns.len());
 
     for iix in func.insn_indices() {
         
@@ -434,24 +545,30 @@ pub(crate) fn add_spills_reloads_and_moves<F: Function>(
         
         
         while cur_inst_to_add < insts_to_add.len()
-            && insts_to_add[cur_inst_to_add].point == InstPoint::new_reload(iix)
+            && insts_to_add[cur_inst_to_add].iep <= InstExtPoint::new(iix, ExtPoint::SpillBefore)
         {
             insns.push(insts_to_add[cur_inst_to_add].inst.construct(func));
-            orig_insn_map.push(InstIx::invalid_value());
+            new_to_old_insn_map.push(InstIx::invalid_value());
             cur_inst_to_add += 1;
         }
 
         
-        orig_insn_map.push(iix);
+        if next_safepoint_insn_index < safepoint_insns.len()
+            && iix == safepoint_insns[next_safepoint_insn_index]
+        {
+            new_safepoint_insns.push(InstIx::new(insns.len() as u32));
+            next_safepoint_insn_index += 1;
+        }
+        new_to_old_insn_map.push(iix);
         insns.push(func.get_insn(iix).clone());
 
         
         
         while cur_inst_to_add < insts_to_add.len()
-            && insts_to_add[cur_inst_to_add].point == InstPoint::new_spill(iix)
+            && insts_to_add[cur_inst_to_add].iep <= InstExtPoint::new(iix, ExtPoint::Spill)
         {
             insns.push(insts_to_add[cur_inst_to_add].inst.construct(func));
-            orig_insn_map.push(InstIx::invalid_value());
+            new_to_old_insn_map.push(InstIx::invalid_value());
             cur_inst_to_add += 1;
         }
 
@@ -464,8 +581,10 @@ pub(crate) fn add_spills_reloads_and_moves<F: Function>(
 
     debug_assert!(cur_inst_to_add == insts_to_add.len());
     debug_assert!(cur_block.get() == func.blocks().len() as u32);
+    debug_assert!(next_safepoint_insn_index == safepoint_insns.len());
+    debug_assert!(new_safepoint_insns.len() == safepoint_insns.len());
 
-    Ok((insns, target_map, orig_insn_map))
+    Ok((insns, target_map, new_to_old_insn_map, new_safepoint_insns))
 }
 
 
@@ -474,7 +593,8 @@ pub(crate) fn add_spills_reloads_and_moves<F: Function>(
 #[inline(never)]
 pub(crate) fn edit_inst_stream<F: Function>(
     func: &mut F,
-    insts_to_add: Vec<InstToInsertAndPoint>,
+    safepoint_insns: &Vec<InstIx>,
+    insts_to_add: Vec<InstToInsertAndExtPoint>,
     iixs_to_nop_out: &Vec<InstIx>,
     frag_map: Vec<(RangeFrag, VirtualReg, RealReg)>,
     reg_universe: &RealRegUniverse,
@@ -484,6 +604,7 @@ pub(crate) fn edit_inst_stream<F: Function>(
         Vec<F::Inst>,
         TypedIxVec<BlockIx, InstIx>,
         TypedIxVec<InstIx, InstIx>,
+        Vec<InstIx>,
     ),
     RegAllocError,
 > {
@@ -496,5 +617,6 @@ pub(crate) fn edit_inst_stream<F: Function>(
         use_checker,
     )
     .map_err(|e| RegAllocError::RegChecker(e))?;
-    add_spills_reloads_and_moves(func, insts_to_add).map_err(|e| RegAllocError::Other(e))
+    add_spills_reloads_and_moves(func, safepoint_insns, insts_to_add)
+        .map_err(|e| RegAllocError::Other(e))
 }

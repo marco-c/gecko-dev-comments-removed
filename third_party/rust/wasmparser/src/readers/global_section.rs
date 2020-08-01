@@ -14,7 +14,7 @@
 
 
 use super::{
-    BinaryReader, GlobalType, InitExpr, Result, SectionIteratorLimited, SectionReader,
+    BinaryReader, GlobalType, InitExpr, Range, Result, SectionIteratorLimited, SectionReader,
     SectionWithLimitedItems,
 };
 
@@ -24,6 +24,7 @@ pub struct Global<'a> {
     pub init_expr: InitExpr<'a>,
 }
 
+#[derive(Clone)]
 pub struct GlobalSectionReader<'a> {
     reader: BinaryReader<'a>,
     count: u32,
@@ -44,13 +45,6 @@ impl<'a> GlobalSectionReader<'a> {
         self.count
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -89,6 +83,9 @@ impl<'a> SectionReader for GlobalSectionReader<'a> {
     }
     fn original_position(&self) -> usize {
         GlobalSectionReader::original_position(self)
+    }
+    fn range(&self) -> Range {
+        self.reader.range()
     }
 }
 

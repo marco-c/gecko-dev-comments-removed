@@ -23,7 +23,7 @@ where
     
     let lower = Lower::new(f, abi, block_order)?;
     
-    let mut vcode = lower.lower(b)?;
+    let (mut vcode, stackmap_request_info) = lower.lower(b)?;
 
     debug!(
         "vcode from lowering: \n{}",
@@ -57,11 +57,23 @@ where
         }
     }
 
+    
+    
+    
+    let sri = if stackmap_request_info.reftyped_vregs.len() > 0
+        && stackmap_request_info.safepoint_insns.len() > 0
+    {
+        Some(&stackmap_request_info)
+    } else {
+        None
+    };
+
     let result = {
         let _tt = timing::regalloc();
         allocate_registers_with_opts(
             &mut vcode,
             b.reg_universe(),
+            sri,
             Options {
                 run_checker,
                 algorithm,

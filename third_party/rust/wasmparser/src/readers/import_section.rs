@@ -14,7 +14,7 @@
 
 
 use crate::{
-    BinaryReader, ImportSectionEntryType, Result, SectionIteratorLimited, SectionReader,
+    BinaryReader, ImportSectionEntryType, Range, Result, SectionIteratorLimited, SectionReader,
     SectionWithLimitedItems,
 };
 
@@ -25,6 +25,7 @@ pub struct Import<'a> {
     pub ty: ImportSectionEntryType,
 }
 
+#[derive(Clone)]
 pub struct ImportSectionReader<'a> {
     reader: BinaryReader<'a>,
     count: u32,
@@ -57,12 +58,6 @@ impl<'a> ImportSectionReader<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn read<'b>(&mut self) -> Result<Import<'b>>
     where
         'a: 'b,
@@ -81,6 +76,9 @@ impl<'a> SectionReader for ImportSectionReader<'a> {
     }
     fn original_position(&self) -> usize {
         ImportSectionReader::original_position(self)
+    }
+    fn range(&self) -> Range {
+        self.reader.range()
     }
 }
 

@@ -14,8 +14,8 @@
 
 
 use super::{
-    BinaryReader, BinaryReaderError, InitExpr, Result, SectionIteratorLimited, SectionReader,
-    SectionWithLimitedItems, Type,
+    BinaryReader, BinaryReaderError, InitExpr, Range, Result, SectionIteratorLimited,
+    SectionReader, SectionWithLimitedItems, Type,
 };
 use crate::{ExternalKind, Operator};
 
@@ -142,6 +142,7 @@ impl<'a> Iterator for ElementItemsIterator<'a> {
     }
 }
 
+#[derive(Clone)]
 pub struct ElementSectionReader<'a> {
     reader: BinaryReader<'a>,
     count: u32,
@@ -162,12 +163,6 @@ impl<'a> ElementSectionReader<'a> {
         self.count
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -273,6 +268,9 @@ impl<'a> SectionReader for ElementSectionReader<'a> {
     }
     fn original_position(&self) -> usize {
         ElementSectionReader::original_position(self)
+    }
+    fn range(&self) -> Range {
+        self.reader.range()
     }
 }
 

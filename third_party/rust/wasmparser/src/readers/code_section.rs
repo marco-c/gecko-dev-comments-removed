@@ -175,11 +175,6 @@ impl<'a> CodeSectionReader<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn read<'b>(&mut self) -> Result<FunctionBody<'b>>
     where
         'a: 'b,
@@ -207,6 +202,9 @@ impl<'a> SectionReader for CodeSectionReader<'a> {
     fn original_position(&self) -> usize {
         CodeSectionReader::original_position(self)
     }
+    fn range(&self) -> Range {
+        self.reader.range()
+    }
 }
 
 impl<'a> SectionWithLimitedItems for CodeSectionReader<'a> {
@@ -219,11 +217,6 @@ impl<'a> IntoIterator for CodeSectionReader<'a> {
     type Item = Result<FunctionBody<'a>>;
     type IntoIter = SectionIteratorLimited<CodeSectionReader<'a>>;
 
-    
-    
-    
-    
-    
     
     
     

@@ -700,6 +700,7 @@ fn gen_isa(
 pub(crate) fn generate(
     isas: &[TargetIsa],
     transform_groups: &TransformGroups,
+    extra_legalization_groups: &[&'static str],
     filename_prefix: &str,
     out_dir: &str,
 ) -> Result<(), error::Error> {
@@ -712,7 +713,13 @@ pub(crate) fn generate(
     }
 
     
+    for group in extra_legalization_groups {
+        shared_group_names.insert(group);
+    }
+
+    
     let mut fmt = Formatter::new();
+    
     let mut type_sets = UniqueTable::new();
     let mut sorted_shared_group_names = Vec::from_iter(shared_group_names);
     sorted_shared_group_names.sort();

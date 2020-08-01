@@ -5,7 +5,7 @@
 
 use crate::avl_tree::{AVLTree, AVL_NULL};
 use crate::data_structures::{
-    cmp_range_frags, RangeFrag, SortedRangeFrags, SpillSlot, TypedIxVec, VirtualRange,
+    cmp_range_frags, InstPoint, RangeFrag, SortedRangeFrags, SpillSlot, TypedIxVec, VirtualRange,
     VirtualRangeIx,
 };
 use crate::union_find::UnionFindEquivClasses;
@@ -29,6 +29,22 @@ use crate::Function;
 
 
 
+
+
+
+
+#[derive(Clone, PartialEq, PartialOrd)]
+struct RangeFragAndRefness {
+    frag: RangeFrag,
+    is_ref: bool,
+}
+impl RangeFragAndRefness {
+    fn new(frag: RangeFrag, is_ref: bool) -> Self {
+        Self { frag, is_ref }
+    }
+}
+
+
 enum LogicalSpillSlot {
     
     
@@ -36,7 +52,10 @@ enum LogicalSpillSlot {
     
     
     
-    InUse { size: u32, tree: AVLTree<RangeFrag> },
+    InUse {
+        size: u32,
+        tree: AVLTree<RangeFragAndRefness>,
+    },
     
     
     
@@ -53,13 +72,13 @@ impl LogicalSpillSlot {
     fn is_InUse(&self) -> bool {
         !self.is_Unavail()
     }
-    fn get_tree(&self) -> &AVLTree<RangeFrag> {
+    fn get_tree(&self) -> &AVLTree<RangeFragAndRefness> {
         match self {
             LogicalSpillSlot::InUse { ref tree, .. } => tree,
             LogicalSpillSlot::Unavail => panic!("LogicalSpillSlot::get_tree"),
         }
     }
-    fn get_mut_tree(&mut self) -> &mut AVLTree<RangeFrag> {
+    fn get_mut_tree(&mut self) -> &mut AVLTree<RangeFragAndRefness> {
         match self {
             LogicalSpillSlot::InUse { ref mut tree, .. } => tree,
             LogicalSpillSlot::Unavail => panic!("LogicalSpillSlot::get_mut_tree"),
@@ -71,6 +90,62 @@ impl LogicalSpillSlot {
             LogicalSpillSlot::Unavail => panic!("LogicalSpillSlot::get_size"),
         }
     }
+    
+    
+    fn get_refness_at_inst_point(&self, pt: InstPoint) -> Option<bool> {
+        match self {
+            LogicalSpillSlot::InUse { size: 1, tree } => {
+                
+                let mut root = tree.root;
+                while root != AVL_NULL {
+                    let root_node = &tree.pool[root as usize];
+                    let root_item = &root_node.item;
+                    if pt < root_item.frag.first {
+                        
+                        
+                        root = root_node.left;
+                    } else if root_item.frag.last < pt {
+                        
+                        root = root_node.right;
+                    } else {
+                        
+                        return Some(root_item.is_ref);
+                    }
+                }
+                None
+            }
+            LogicalSpillSlot::InUse { .. } | LogicalSpillSlot::Unavail => {
+                
+                None
+            }
+        }
+    }
+}
+
+
+
+#[inline(always)]
+fn ssal_is_add_frag_possible(tree: &AVLTree<RangeFragAndRefness>, frag: &RangeFrag) -> bool {
+    
+    let mut root = tree.root;
+    while root != AVL_NULL {
+        let root_node = &tree.pool[root as usize];
+        let root_item = &root_node.item;
+        if frag.last < root_item.frag.first {
+            
+            
+            root = root_node.left;
+        } else if root_item.frag.last < frag.first {
+            
+            root = root_node.right;
+        } else {
+            
+            return false;
+        }
+    }
+    
+    
+    true
 }
 
 
@@ -81,27 +156,12 @@ impl LogicalSpillSlot {
 
 
 
-fn ssal_is_add_possible(tree: &AVLTree<RangeFrag>, frags: &SortedRangeFrags) -> bool {
+fn ssal_is_add_possible(tree: &AVLTree<RangeFragAndRefness>, frags: &SortedRangeFrags) -> bool {
     
     for frag in &frags.frags {
-        
-        let mut root = tree.root;
-        while root != AVL_NULL {
-            let root_node = &tree.pool[root as usize];
-            let root_frag = root_node.item.clone();
-            if frag.last < root_frag.first {
-                
-                
-                root = root_node.left;
-            } else if root_frag.last < frag.first {
-                
-                root = root_node.right;
-            } else {
-                
-                return false;
-            }
+        if !ssal_is_add_frag_possible(&tree, frag) {
+            return false;
         }
-        
         
     }
     true
@@ -112,7 +172,7 @@ fn ssal_is_add_possible(tree: &AVLTree<RangeFrag>, frags: &SortedRangeFrags) -> 
 
 
 
-fn ssal_add_if_possible(tree: &mut AVLTree<RangeFrag>, frags: &SortedRangeFrags) -> bool {
+fn ssal_add_if_possible(tree: &mut AVLTree<RangeFragAndRefness>, frags: &SortedRangeFrags) -> bool {
     
     if !ssal_is_add_possible(tree, frags) {
         return false;
@@ -120,13 +180,36 @@ fn ssal_add_if_possible(tree: &mut AVLTree<RangeFrag>, frags: &SortedRangeFrags)
     
     for frag in &frags.frags {
         let inserted = tree.insert(
-            frag.clone(),
-            Some(&|frag1, frag2| cmp_range_frags(&frag1, &frag2)),
+            RangeFragAndRefness::new(frag.clone(),  false),
+            Some(&|item1: RangeFragAndRefness, item2: RangeFragAndRefness| {
+                cmp_range_frags(&item1.frag, &item2.frag)
+            }),
         );
         
         assert!(inserted);
     }
     true
+}
+
+
+
+
+fn ssal_mark_frags_as_reftyped(tree: &mut AVLTree<RangeFragAndRefness>, frags: &SortedRangeFrags) {
+    for frag in &frags.frags {
+        
+        
+        let del_this = RangeFragAndRefness::new(frag.clone(),  false);
+        let add_this = RangeFragAndRefness::new(frag.clone(),  true);
+        let replaced_ok = tree.find_and_replace(
+            del_this,
+            add_this,
+            &|item1: RangeFragAndRefness, item2: RangeFragAndRefness| {
+                cmp_range_frags(&item1.frag, &item2.frag)
+            },
+        );
+        
+        assert!(replaced_ok);
+    }
 }
 
 
@@ -156,8 +239,10 @@ impl SpillSlotAllocator {
             self.slots.push(LogicalSpillSlot::Unavail);
         }
         
-        let dflt = RangeFrag::invalid_value();
-        let tree = AVLTree::<RangeFrag>::new(dflt);
+        
+        
+        let dflt = RangeFragAndRefness::new(RangeFrag::invalid_value(), false);
+        let tree = AVLTree::<RangeFragAndRefness>::new(dflt);
         let res = self.slots.len() as u32;
         self.slots.push(LogicalSpillSlot::InUse {
             size: req_size,
@@ -183,6 +268,7 @@ impl SpillSlotAllocator {
     
     
     
+    
     pub fn alloc_spill_slots<F: Function>(
         &mut self,
         vlr_slot_env: &mut TypedIxVec<VirtualRangeIx, Option<SpillSlot>>,
@@ -191,8 +277,25 @@ impl SpillSlotAllocator {
         vlrEquivClasses: &UnionFindEquivClasses<VirtualRangeIx>,
         vlrix: VirtualRangeIx,
     ) {
+        let is_ref = vlr_env[vlrix].is_ref;
         for cand_vlrix in vlrEquivClasses.equiv_class_elems_iter(vlrix) {
+            
+            
+            
             assert!(vlr_slot_env[cand_vlrix].is_none());
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            assert!(vlr_env[cand_vlrix].is_ref == is_ref);
         }
 
         
@@ -242,6 +345,12 @@ impl SpillSlotAllocator {
         let vlrix_vreg = vlr_env[vlrix].vreg;
         let req_size = func.get_spillslot_size(vlrix_vreg.get_class(), vlrix_vreg);
         assert!(req_size == 1 || req_size == 2 || req_size == 4 || req_size == 8);
+
+        
+        
+        if is_ref {
+            assert!(req_size == 1);
+        }
 
         
         
@@ -343,5 +452,71 @@ impl SpillSlotAllocator {
             panic!("SpillSlotAllocator: alloc_spill_slots: failed?!?!");
             
         } 
+    }
+
+    
+    
+    
+    pub fn notify_spillage_of_reftyped_vlr(
+        &mut self,
+        slot_no: SpillSlot,
+        frags: &SortedRangeFrags,
+    ) {
+        let slot_ix = slot_no.get_usize();
+        assert!(slot_ix < self.slots.len());
+        let slot = &mut self.slots[slot_ix];
+        match slot {
+            LogicalSpillSlot::InUse { size, tree } if *size == 1 => {
+                ssal_mark_frags_as_reftyped(tree, frags)
+            }
+            _ => panic!("SpillSlotAllocator::notify_spillage_of_reftyped_vlr: invalid slot"),
+        }
+    }
+
+    
+    
+    
+    pub fn alloc_reftyped_spillslot_for_frag(&mut self, frag: RangeFrag) -> SpillSlot {
+        for i in 0..self.slots.len() {
+            match &mut self.slots[i] {
+                LogicalSpillSlot::InUse { size: 1, tree } => {
+                    if ssal_is_add_frag_possible(&tree, &frag) {
+                        
+                        let inserted = tree.insert(
+                            RangeFragAndRefness::new(frag,  true),
+                            Some(&|item1: RangeFragAndRefness, item2: RangeFragAndRefness| {
+                                cmp_range_frags(&item1.frag, &item2.frag)
+                            }),
+                        );
+                        
+                        assert!(inserted);
+                        return SpillSlot::new(i as u32);
+                    }
+                    
+                }
+                LogicalSpillSlot::InUse { .. } | LogicalSpillSlot::Unavail => {
+                    
+                    
+                }
+            }
+        }
+        
+        
+        
+        self.add_new_slot(1 );
+        self.alloc_reftyped_spillslot_for_frag(frag) 
+    }
+
+    
+    
+    
+    pub fn get_reftyped_spillslots_at_inst_point(&self, pt: InstPoint) -> Vec<SpillSlot> {
+        let mut res = Vec::<SpillSlot>::new();
+        for (i, slot) in self.slots.iter().enumerate() {
+            if slot.get_refness_at_inst_point(pt) == Some(true) {
+                res.push(SpillSlot::new(i as u32));
+            }
+        }
+        res
     }
 }

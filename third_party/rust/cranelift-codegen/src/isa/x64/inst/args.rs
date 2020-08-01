@@ -27,6 +27,10 @@ pub enum Amode {
         index: Reg,
         shift: u8, 
     },
+
+    
+    
+    RipRelative { target: BranchTarget },
 }
 
 impl Amode {
@@ -47,6 +51,10 @@ impl Amode {
         }
     }
 
+    pub(crate) fn rip_relative(target: BranchTarget) -> Self {
+        Self::RipRelative { target }
+    }
+
     
     pub(crate) fn get_regs_as_uses(&self, collector: &mut RegUsageCollector) {
         match self {
@@ -56,6 +64,9 @@ impl Amode {
             Amode::ImmRegRegShift { base, index, .. } => {
                 collector.add_use(*base);
                 collector.add_use(*index);
+            }
+            Amode::RipRelative { .. } => {
+                
             }
         }
     }
@@ -78,6 +89,13 @@ impl ShowWithRRU for Amode {
                 base.show_rru(mb_rru),
                 index.show_rru(mb_rru),
                 1 << shift
+            ),
+            Amode::RipRelative { ref target } => format!(
+                "{}(%rip)",
+                match target {
+                    BranchTarget::Label(label) => format!("label{}", label.get()),
+                    BranchTarget::ResolvedOffset(offset) => offset.to_string(),
+                }
             ),
         }
     }
@@ -181,7 +199,7 @@ impl RegMemImm {
         match self {
             Self::Reg { reg } => collector.add_use(*reg),
             Self::Mem { addr } => addr.get_regs_as_uses(collector),
-            Self::Imm { simm32: _ } => {}
+            Self::Imm { .. } => {}
         }
     }
 }
@@ -216,12 +234,11 @@ impl RegMem {
     pub(crate) fn mem(addr: impl Into<SyntheticAmode>) -> Self {
         Self::Mem { addr: addr.into() }
     }
-
     
     pub(crate) fn get_regs_as_uses(&self, collector: &mut RegUsageCollector) {
         match self {
             RegMem::Reg { reg } => collector.add_use(*reg),
-            RegMem::Mem { addr } => addr.get_regs_as_uses(collector),
+            RegMem::Mem { addr, .. } => addr.get_regs_as_uses(collector),
         }
     }
 }
@@ -234,7 +251,7 @@ impl ShowWithRRU for RegMem {
     fn show_rru_sized(&self, mb_rru: Option<&RealRegUniverse>, size: u8) -> String {
         match self {
             RegMem::Reg { reg } => show_ireg_sized(*reg, mb_rru, size),
-            RegMem::Mem { addr } => addr.show_rru(mb_rru),
+            RegMem::Mem { addr, .. } => addr.show_rru(mb_rru),
         }
     }
 }
@@ -265,9 +282,32 @@ impl fmt::Debug for AluRmiROpcode {
     }
 }
 
-impl ToString for AluRmiROpcode {
-    fn to_string(&self) -> String {
-        format!("{:?}", self)
+impl fmt::Display for AluRmiROpcode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub enum UnaryRmROpcode {
+    
+    Bsr,
+    
+    Bsf,
+}
+
+impl fmt::Debug for UnaryRmROpcode {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            UnaryRmROpcode::Bsr => write!(fmt, "bsr"),
+            UnaryRmROpcode::Bsf => write!(fmt, "bsf"),
+        }
+    }
+}
+
+impl fmt::Display for UnaryRmROpcode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
     }
 }
 
@@ -428,9 +468,9 @@ impl fmt::Debug for SseOpcode {
     }
 }
 
-impl ToString for SseOpcode {
-    fn to_string(&self) -> String {
-        format!("{:?}", self)
+impl fmt::Display for SseOpcode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
     }
 }
 
@@ -479,34 +519,65 @@ impl fmt::Debug for ExtMode {
     }
 }
 
-impl ToString for ExtMode {
-    fn to_string(&self) -> String {
-        format!("{:?}", self)
+impl fmt::Display for ExtMode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
     }
 }
 
 
 #[derive(Clone)]
 pub enum ShiftKind {
-    Left,
-    RightZ,
-    RightS,
+    ShiftLeft,
+    
+    ShiftRightLogical,
+    
+    ShiftRightArithmetic,
+    RotateLeft,
+    RotateRight,
 }
 
 impl fmt::Debug for ShiftKind {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
-            ShiftKind::Left => "shl",
-            ShiftKind::RightZ => "shr",
-            ShiftKind::RightS => "sar",
+            ShiftKind::ShiftLeft => "shl",
+            ShiftKind::ShiftRightLogical => "shr",
+            ShiftKind::ShiftRightArithmetic => "sar",
+            ShiftKind::RotateLeft => "rol",
+            ShiftKind::RotateRight => "ror",
         };
         write!(fmt, "{}", name)
     }
 }
 
-impl ToString for ShiftKind {
-    fn to_string(&self) -> String {
-        format!("{:?}", self)
+impl fmt::Display for ShiftKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
+
+
+#[derive(Clone)]
+pub enum DivOrRemKind {
+    SignedDiv,
+    UnsignedDiv,
+    SignedRem,
+    UnsignedRem,
+}
+
+impl DivOrRemKind {
+    pub(crate) fn is_signed(&self) -> bool {
+        match self {
+            DivOrRemKind::SignedDiv | DivOrRemKind::SignedRem => true,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn is_div(&self) -> bool {
+        match self {
+            DivOrRemKind::SignedDiv | DivOrRemKind::UnsignedDiv => true,
+            _ => false,
+        }
     }
 }
 
@@ -621,9 +692,9 @@ impl fmt::Debug for CC {
     }
 }
 
-impl ToString for CC {
-    fn to_string(&self) -> String {
-        format!("{:?}", self)
+impl fmt::Display for CC {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
     }
 }
 

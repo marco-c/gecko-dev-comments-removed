@@ -2,6 +2,7 @@
 use crate::environ::{TargetEnvironment, WasmResult, WasmType};
 use crate::state::ModuleTranslationState;
 use crate::wasm_unsupported;
+use core::convert::TryInto;
 use core::u32;
 use cranelift_codegen::entity::entity_impl;
 use cranelift_codegen::ir;
@@ -39,31 +40,37 @@ entity_impl!(DefinedGlobalIndex);
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct TableIndex(u32);
 entity_impl!(TableIndex);
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct GlobalIndex(u32);
 entity_impl!(GlobalIndex);
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct MemoryIndex(u32);
 entity_impl!(MemoryIndex);
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct SignatureIndex(u32);
 entity_impl!(SignatureIndex);
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct DataIndex(u32);
 entity_impl!(DataIndex);
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct ElemIndex(u32);
 entity_impl!(ElemIndex);
 
@@ -75,6 +82,7 @@ entity_impl!(ElemIndex);
 
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Global {
     
     pub wasm_ty: crate::WasmType,
@@ -88,6 +96,7 @@ pub struct Global {
 
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum GlobalInit {
     
     I32Const(i32),
@@ -111,6 +120,7 @@ pub enum GlobalInit {
 
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Table {
     
     pub wasm_ty: WasmType,
@@ -124,6 +134,7 @@ pub struct Table {
 
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum TableElementType {
     
     Val(ir::Type),
@@ -133,6 +144,7 @@ pub enum TableElementType {
 
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Memory {
     
     pub minimum: u32,
@@ -153,7 +165,9 @@ pub fn type_to_type<PE: TargetEnvironment + ?Sized>(
         wasmparser::Type::F32 => Ok(ir::types::F32),
         wasmparser::Type::F64 => Ok(ir::types::F64),
         wasmparser::Type::V128 => Ok(ir::types::I8X16),
-        wasmparser::Type::ExternRef | wasmparser::Type::FuncRef => Ok(environ.reference_type(ty)),
+        wasmparser::Type::ExternRef | wasmparser::Type::FuncRef => {
+            Ok(environ.reference_type(ty.try_into()?))
+        }
         ty => Err(wasm_unsupported!("type_to_type: wasm type {:?}", ty)),
     }
 }
@@ -170,7 +184,7 @@ pub fn tabletype_to_type<PE: TargetEnvironment + ?Sized>(
         wasmparser::Type::F32 => Ok(Some(ir::types::F32)),
         wasmparser::Type::F64 => Ok(Some(ir::types::F64)),
         wasmparser::Type::V128 => Ok(Some(ir::types::I8X16)),
-        wasmparser::Type::ExternRef => Ok(Some(environ.reference_type(ty))),
+        wasmparser::Type::ExternRef => Ok(Some(environ.reference_type(ty.try_into()?))),
         wasmparser::Type::FuncRef => Ok(None),
         ty => Err(wasm_unsupported!(
             "tabletype_to_type: table wasm type {:?}",
@@ -226,7 +240,7 @@ pub fn block_with_params<PE: TargetEnvironment + ?Sized>(
                 builder.append_block_param(block, ir::types::F64);
             }
             wasmparser::Type::ExternRef | wasmparser::Type::FuncRef => {
-                builder.append_block_param(block, environ.reference_type(*ty));
+                builder.append_block_param(block, environ.reference_type((*ty).try_into()?));
             }
             wasmparser::Type::V128 => {
                 builder.append_block_param(block, ir::types::I8X16);

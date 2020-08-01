@@ -14,8 +14,8 @@
 
 
 use super::{
-    BinaryReader, BinaryReaderError, InitExpr, Result, SectionIteratorLimited, SectionReader,
-    SectionWithLimitedItems,
+    BinaryReader, BinaryReaderError, InitExpr, Range, Result, SectionIteratorLimited,
+    SectionReader, SectionWithLimitedItems,
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -33,6 +33,7 @@ pub enum DataKind<'a> {
     },
 }
 
+#[derive(Clone)]
 pub struct DataSectionReader<'a> {
     reader: BinaryReader<'a>,
     count: u32,
@@ -63,15 +64,6 @@ impl<'a> DataSectionReader<'a> {
         Ok(())
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -138,6 +130,9 @@ impl<'a> SectionReader for DataSectionReader<'a> {
     }
     fn original_position(&self) -> usize {
         DataSectionReader::original_position(self)
+    }
+    fn range(&self) -> Range {
+        self.reader.range()
     }
 }
 

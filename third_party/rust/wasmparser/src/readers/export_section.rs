@@ -14,7 +14,7 @@
 
 
 use super::{
-    BinaryReader, ExternalKind, Result, SectionIteratorLimited, SectionReader,
+    BinaryReader, ExternalKind, Range, Result, SectionIteratorLimited, SectionReader,
     SectionWithLimitedItems,
 };
 
@@ -25,6 +25,7 @@ pub struct Export<'a> {
     pub index: u32,
 }
 
+#[derive(Clone)]
 pub struct ExportSectionReader<'a> {
     reader: BinaryReader<'a>,
     count: u32,
@@ -45,12 +46,6 @@ impl<'a> ExportSectionReader<'a> {
         self.count
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -85,6 +80,9 @@ impl<'a> SectionReader for ExportSectionReader<'a> {
     }
     fn original_position(&self) -> usize {
         ExportSectionReader::original_position(self)
+    }
+    fn range(&self) -> Range {
+        self.reader.range()
     }
 }
 

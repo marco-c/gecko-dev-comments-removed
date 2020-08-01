@@ -1,5 +1,6 @@
 
 
+use crate::binemit::Stackmap;
 use crate::ir::{ArgumentExtension, StackSlot};
 use crate::machinst::*;
 use crate::settings;
@@ -103,6 +104,15 @@ pub trait ABIBody {
     
     
     
+    fn spillslots_to_stackmap(
+        &self,
+        slots: &[SpillSlot],
+        state: &<Self::I as MachInstEmit>::State,
+    ) -> Stackmap;
+
+    
+    
+    
     
     
     fn gen_prologue(&mut self) -> Vec<Self::I>;
@@ -118,16 +128,29 @@ pub trait ABIBody {
     
     
     
+    
     fn frame_size(&self) -> u32;
+
+    
+    fn stack_args_size(&self) -> u32;
 
     
     fn get_spillslot_size(&self, rc: RegClass, ty: Type) -> u32;
 
     
-    fn gen_spill(&self, to_slot: SpillSlot, from_reg: RealReg, ty: Type) -> Self::I;
+    
+    
+    
+    fn gen_spill(&self, to_slot: SpillSlot, from_reg: RealReg, ty: Option<Type>) -> Self::I;
 
     
-    fn gen_reload(&self, to_reg: Writable<RealReg>, from_slot: SpillSlot, ty: Type) -> Self::I;
+    
+    fn gen_reload(
+        &self,
+        to_reg: Writable<RealReg>,
+        from_slot: SpillSlot,
+        ty: Option<Type>,
+    ) -> Self::I;
 }
 
 

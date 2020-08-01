@@ -97,11 +97,6 @@ impl<'a> IntoIterator for OperatorsReader<'a> {
     
     
     
-    
-    
-    
-    
-    
     fn into_iter(self) -> Self::IntoIter {
         OperatorsIterator {
             reader: self,
@@ -136,11 +131,6 @@ pub struct OperatorsIteratorWithOffsets<'a> {
 impl<'a> Iterator for OperatorsIteratorWithOffsets<'a> {
     type Item = Result<(Operator<'a>, usize)>;
 
-    
-    
-    
-    
-    
     
     
     

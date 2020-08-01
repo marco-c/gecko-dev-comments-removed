@@ -4,14 +4,17 @@ use log::{debug, info};
 
 use crate::analysis_control_flow::{CFGInfo, InstIxToBlockIxMap};
 use crate::analysis_data_flow::{
-    calc_def_and_use, calc_livein_and_liveout, get_range_frags, get_sanitized_reg_uses_for_func,
-    merge_range_frags,
+    calc_def_and_use, calc_livein_and_liveout, collect_move_info, compute_reg_to_ranges_maps,
+    get_range_frags, get_sanitized_reg_uses_for_func, merge_range_frags,
 };
+use crate::analysis_reftypes::do_reftypes_analysis;
 use crate::data_structures::{
-    BlockIx, RangeFrag, RangeFragIx, RangeFragMetrics, RealRange, RealRangeIx, RealReg,
-    RealRegUniverse, RegVecsAndBounds, TypedIxVec, VirtualRange, VirtualRangeIx,
+    BlockIx, MoveInfo, RangeFrag, RangeFragIx, RangeFragMetrics, RealRange, RealRangeIx, RealReg,
+    RealRegUniverse, RegClass, RegToRangesMaps, RegVecsAndBounds, TypedIxVec, VirtualRange,
+    VirtualRangeIx, VirtualReg,
 };
 use crate::sparse_set::SparseSet;
+use crate::AlgorithmWithDefaults;
 use crate::Function;
 
 
@@ -45,6 +48,10 @@ pub enum AnalysisError {
     
     
     ImplementationLimitsExceeded,
+
+    
+    
+    LSRACantDoStackmaps,
 }
 
 impl ToString for AnalysisError {
@@ -64,6 +71,9 @@ impl ToString for AnalysisError {
       }
       AnalysisError::ImplementationLimitsExceeded => {
         "implementation limits exceeded (more than 1 million blocks or 16 million insns)".to_string()
+      }
+      AnalysisError::LSRACantDoStackmaps => {
+        "LSRA *and* stackmap creation requested; but this combination is not yet supported".to_string()
       }
     }
     }
@@ -87,12 +97,23 @@ pub struct AnalysisInfo {
     pub(crate) estimated_frequencies: TypedIxVec<BlockIx, u32>,
     
     pub(crate) inst_to_block_map: InstIxToBlockIxMap,
+    
+    
+    
+    pub(crate) reg_to_ranges_maps: Option<RegToRangesMaps>,
+    
+    
+    pub(crate) move_info: Option<MoveInfo>,
 }
 
 #[inline(never)]
 pub fn run_analysis<F: Function>(
     func: &F,
     reg_universe: &RealRegUniverse,
+    algorithm: AlgorithmWithDefaults,
+    client_wants_stackmaps: bool,
+    reftype_class: RegClass,
+    reftyped_vregs: &Vec<VirtualReg>, 
 ) -> Result<AnalysisInfo, AnalysisError> {
     info!("run_analysis: begin");
     info!(
@@ -100,6 +121,12 @@ pub fn run_analysis<F: Function>(
         func.blocks().len(),
         func.insns().len()
     );
+
+    
+    if client_wants_stackmaps {
+        assert!(algorithm != AlgorithmWithDefaults::LinearScan);
+    }
+
     info!("  run_analysis: begin control flow analysis");
 
     
@@ -196,7 +223,9 @@ pub fn run_analysis<F: Function>(
         &liveout_sets_per_block,
     );
 
-    let (rlr_env, vlr_env) = merge_range_frags(
+    
+    
+    let (mut rlr_env, mut vlr_env) = merge_range_frags(
         &frag_ixs_per_reg,
         &frag_env,
         &frag_metrics_env,
@@ -226,7 +255,53 @@ pub fn run_analysis<F: Function>(
         n += 1;
     }
 
+    
+    
+
+    
+    let reg_to_ranges_maps =
+        if client_wants_stackmaps || algorithm == AlgorithmWithDefaults::Backtracking {
+            Some(compute_reg_to_ranges_maps(
+                func,
+                &reg_universe,
+                &rlr_env,
+                &vlr_env,
+            ))
+        } else {
+            None
+        };
+
+    
+    let move_info = if client_wants_stackmaps || algorithm == AlgorithmWithDefaults::Backtracking {
+        Some(collect_move_info(
+            func,
+            &reg_vecs_and_bounds,
+            &estimated_frequencies,
+            reg_to_ranges_maps.as_ref().unwrap(),
+            &rlr_env,
+            &vlr_env,
+            &frag_env,
+             client_wants_stackmaps,
+        ))
+    } else {
+        None
+    };
+
     info!("  run_analysis: end liveness analysis");
+
+    if client_wants_stackmaps {
+        info!("  run_analysis: begin reftypes analysis");
+        do_reftypes_analysis(
+            &mut rlr_env,
+            &mut vlr_env,
+            reg_to_ranges_maps.as_ref().unwrap(), 
+            &move_info.as_ref().unwrap(),         
+            reftype_class,
+            reftyped_vregs,
+        );
+        info!("  run_analysis: end reftypes analysis");
+    }
+
     info!("run_analysis: end");
 
     Ok(AnalysisInfo {
@@ -237,5 +312,7 @@ pub fn run_analysis<F: Function>(
         range_metrics: frag_metrics_env,
         estimated_frequencies,
         inst_to_block_map,
+        reg_to_ranges_maps,
+        move_info,
     })
 }

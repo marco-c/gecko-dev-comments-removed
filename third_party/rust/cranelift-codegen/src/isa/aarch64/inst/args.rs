@@ -3,6 +3,7 @@
 
 #![allow(dead_code)]
 
+use crate::ir::types::{F32X2, F32X4, F64X2, I16X4, I16X8, I32X2, I32X4, I64X2, I8X16, I8X8};
 use crate::ir::Type;
 use crate::isa::aarch64::inst::*;
 use crate::isa::aarch64::lower::ty_bits;
@@ -403,8 +404,8 @@ impl ShowWithRRU for MemArg {
             &MemArg::RegScaledExtended(r1, r2, ty, op) => {
                 let shift = shift_for_type(ty);
                 let size = match op {
-                    ExtendOp::SXTW | ExtendOp::UXTW => InstSize::Size32,
-                    _ => InstSize::Size64,
+                    ExtendOp::SXTW | ExtendOp::UXTW => OperandSize::Size32,
+                    _ => OperandSize::Size64,
                 };
                 let op = op.show_rru(mb_rru);
                 format!(
@@ -417,8 +418,8 @@ impl ShowWithRRU for MemArg {
             }
             &MemArg::RegExtended(r1, r2, op) => {
                 let size = match op {
-                    ExtendOp::SXTW | ExtendOp::UXTW => InstSize::Size32,
-                    _ => InstSize::Size64,
+                    ExtendOp::SXTW | ExtendOp::UXTW => OperandSize::Size32,
+                    _ => OperandSize::Size64,
                 };
                 let op = op.show_rru(mb_rru);
                 format!(
@@ -493,66 +494,149 @@ impl ShowWithRRU for BranchTarget {
 
 
 
-
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum InstSize {
+pub enum OperandSize {
     Size32,
     Size64,
-    Size128,
 }
 
-impl InstSize {
+impl OperandSize {
     
     pub fn is32(self) -> bool {
-        self == InstSize::Size32
+        self == OperandSize::Size32
     }
     
     pub fn is64(self) -> bool {
-        self == InstSize::Size64
+        self == OperandSize::Size64
     }
     
-    pub fn from_is32(is32: bool) -> InstSize {
+    pub fn from_is32(is32: bool) -> OperandSize {
         if is32 {
-            InstSize::Size32
+            OperandSize::Size32
         } else {
-            InstSize::Size64
+            OperandSize::Size64
         }
     }
     
-    pub fn from_bits<I: Into<usize>>(bits: I) -> InstSize {
+    pub fn from_bits<I: Into<usize>>(bits: I) -> OperandSize {
         let bits: usize = bits.into();
-        assert!(bits <= 128);
+        assert!(bits <= 64);
         if bits <= 32 {
-            InstSize::Size32
-        } else if bits <= 64 {
-            InstSize::Size64
+            OperandSize::Size32
         } else {
-            InstSize::Size128
+            OperandSize::Size64
         }
     }
 
     
-    pub fn from_ty(ty: Type) -> InstSize {
+    pub fn from_ty(ty: Type) -> OperandSize {
         Self::from_bits(ty_bits(ty))
     }
 
     
     pub fn to_ty(self) -> Type {
         match self {
-            InstSize::Size32 => I32,
-            InstSize::Size64 => I64,
-            InstSize::Size128 => I128,
+            OperandSize::Size32 => I32,
+            OperandSize::Size64 => I64,
         }
     }
 
     pub fn sf_bit(&self) -> u32 {
         match self {
-            InstSize::Size32 => 0,
-            InstSize::Size64 => 1,
-            _ => {
-                panic!("Unexpected size");
-            }
+            OperandSize::Size32 => 0,
+            OperandSize::Size64 => 1,
+        }
+    }
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScalarSize {
+    Size8,
+    Size16,
+    Size32,
+    Size64,
+    Size128,
+}
+
+impl ScalarSize {
+    
+    pub fn from_bits<I: Into<usize>>(bits: I) -> ScalarSize {
+        match bits.into().next_power_of_two() {
+            8 => ScalarSize::Size8,
+            16 => ScalarSize::Size16,
+            32 => ScalarSize::Size32,
+            64 => ScalarSize::Size64,
+            128 => ScalarSize::Size128,
+            _ => panic!("Unexpected type width"),
+        }
+    }
+
+    
+    pub fn from_ty(ty: Type) -> ScalarSize {
+        Self::from_bits(ty_bits(ty))
+    }
+
+    
+    
+    pub fn ftype(&self) -> u32 {
+        match self {
+            ScalarSize::Size16 => 0b11,
+            ScalarSize::Size32 => 0b00,
+            ScalarSize::Size64 => 0b01,
+            _ => panic!("Unexpected scalar FP operand size"),
+        }
+    }
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VectorSize {
+    Size8x8,
+    Size8x16,
+    Size16x4,
+    Size16x8,
+    Size32x2,
+    Size32x4,
+    Size64x2,
+}
+
+impl VectorSize {
+    
+    pub fn from_ty(ty: Type) -> VectorSize {
+        match ty {
+            F32X2 => VectorSize::Size32x2,
+            F32X4 => VectorSize::Size32x4,
+            F64X2 => VectorSize::Size64x2,
+            I8X8 => VectorSize::Size8x8,
+            I8X16 => VectorSize::Size8x16,
+            I16X4 => VectorSize::Size16x4,
+            I16X8 => VectorSize::Size16x8,
+            I32X2 => VectorSize::Size32x2,
+            I32X4 => VectorSize::Size32x4,
+            I64X2 => VectorSize::Size64x2,
+            _ => unimplemented!(),
+        }
+    }
+
+    
+    pub fn operand_size(&self) -> OperandSize {
+        match self {
+            VectorSize::Size64x2 => OperandSize::Size64,
+            _ => OperandSize::Size32,
+        }
+    }
+
+    
+    pub fn lane_size(&self) -> ScalarSize {
+        match self {
+            VectorSize::Size8x8 => ScalarSize::Size8,
+            VectorSize::Size8x16 => ScalarSize::Size8,
+            VectorSize::Size16x4 => ScalarSize::Size16,
+            VectorSize::Size16x8 => ScalarSize::Size16,
+            VectorSize::Size32x2 => ScalarSize::Size32,
+            VectorSize::Size32x4 => ScalarSize::Size32,
+            VectorSize::Size64x2 => ScalarSize::Size64,
         }
     }
 }

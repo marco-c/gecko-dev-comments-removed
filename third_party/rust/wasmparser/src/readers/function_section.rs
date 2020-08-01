@@ -13,8 +13,11 @@
 
 
 
-use super::{BinaryReader, Result, SectionIteratorLimited, SectionReader, SectionWithLimitedItems};
+use super::{
+    BinaryReader, Range, Result, SectionIteratorLimited, SectionReader, SectionWithLimitedItems,
+};
 
+#[derive(Clone)]
 pub struct FunctionSectionReader<'a> {
     reader: BinaryReader<'a>,
     count: u32,
@@ -48,10 +51,6 @@ impl<'a> FunctionSectionReader<'a> {
     
     
     
-    
-    
-    
-    
     pub fn read(&mut self) -> Result<u32> {
         self.reader.read_var_u32()
     }
@@ -67,6 +66,9 @@ impl<'a> SectionReader for FunctionSectionReader<'a> {
     }
     fn original_position(&self) -> usize {
         FunctionSectionReader::original_position(self)
+    }
+    fn range(&self) -> Range {
+        self.reader.range()
     }
 }
 

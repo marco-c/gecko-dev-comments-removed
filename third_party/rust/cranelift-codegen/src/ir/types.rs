@@ -3,6 +3,8 @@
 use core::default::Default;
 use core::fmt::{self, Debug, Display, Formatter};
 use cranelift_codegen_shared::constants;
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
 use target_lexicon::{PointerWidth, Triple};
 
 
@@ -21,6 +23,7 @@ use target_lexicon::{PointerWidth, Triple};
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Type(u8);
 
 
@@ -285,6 +288,17 @@ impl Type {
     pub fn split_lanes(self) -> Option<Self> {
         match self.half_width() {
             Some(half_width) => half_width.by(2),
+            None => None,
+        }
+    }
+
+    
+    
+    
+    
+    pub fn merge_lanes(self) -> Option<Self> {
+        match self.double_width() {
+            Some(double_width) => double_width.half_vector(),
             None => None,
         }
     }

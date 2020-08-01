@@ -96,7 +96,7 @@
 
 
 
-use crate::binemit::{CodeInfo, CodeOffset};
+use crate::binemit::{CodeInfo, CodeOffset, Stackmap};
 use crate::ir::condcodes::IntCC;
 use crate::ir::{Function, Type};
 use crate::result::CodegenResult;
@@ -193,6 +193,10 @@ pub trait MachInst: Clone + Debug {
 
     
     
+    fn ref_type_regclass(_flags: &Flags) -> RegClass;
+
+    
+    
     type LabelUse: MachInstLabelUse;
 }
 
@@ -256,9 +260,21 @@ pub enum MachTerminator<'a> {
 
 pub trait MachInstEmit: MachInst {
     
-    type State: Default + Clone + Debug;
+    type State: MachInstEmitState<Self>;
     
     fn emit(&self, code: &mut MachBuffer<Self>, flags: &Flags, state: &mut Self::State);
+    
+    fn pretty_print(&self, mb_rru: Option<&RealRegUniverse>, state: &mut Self::State) -> String;
+}
+
+
+
+pub trait MachInstEmitState<I: MachInst>: Default + Clone + Debug {
+    
+    fn new(abi: &dyn ABIBody<I = I>) -> Self;
+    
+    
+    fn pre_safepoint(&mut self, _stackmap: Stackmap) {}
 }
 
 

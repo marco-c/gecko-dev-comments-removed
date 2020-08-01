@@ -6,10 +6,10 @@
 use std::cmp::Ordering;
 use std::fmt;
 
-use crate::avl_tree::AVLTree;
+use crate::avl_tree::{AVLTree, AVL_NULL};
 use crate::data_structures::{
-    cmp_range_frags, RangeFrag, RangeFragIx, SortedRangeFragIxs, SortedRangeFrags, TypedIxVec,
-    VirtualRangeIx,
+    cmp_range_frags, InstPoint, RangeFrag, RangeFragIx, RangeId, SortedRangeFragIxs,
+    SortedRangeFrags, TypedIxVec,
 };
 
 
@@ -32,40 +32,38 @@ use crate::data_structures::{
 
 
 
+
+
+
+
+
 #[derive(Clone)]
-pub struct RangeFragAndVLRIx {
+pub struct RangeFragAndRangeId {
     pub frag: RangeFrag,
-    pub mb_vlrix: Option<VirtualRangeIx>,
+    pub id: RangeId,
 }
-impl RangeFragAndVLRIx {
-    fn new(frag: RangeFrag, mb_vlrix: Option<VirtualRangeIx>) -> Self {
-        Self { frag, mb_vlrix }
+impl RangeFragAndRangeId {
+    fn new(frag: RangeFrag, id: RangeId) -> Self {
+        Self { frag, id }
     }
 }
-impl PartialEq for RangeFragAndVLRIx {
+impl PartialEq for RangeFragAndRangeId {
     fn eq(&self, _other: &Self) -> bool {
         
-        panic!("impl PartialEq for RangeFragAndVLRIx: should never be used");
+        panic!("impl PartialEq for RangeFragAndRangeId: should never be used");
     }
 }
-impl PartialOrd for RangeFragAndVLRIx {
+impl PartialOrd for RangeFragAndRangeId {
     fn partial_cmp(&self, _other: &Self) -> Option<Ordering> {
         
-        panic!("impl PartialOrd for RangeFragAndVLRIx: should never be used");
+        panic!("impl PartialOrd for RangeFragAndRangeId: should never be used");
     }
 }
-impl fmt::Debug for RangeFragAndVLRIx {
+impl fmt::Debug for RangeFragAndRangeId {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let vlrix_string = match self.mb_vlrix {
-            None => "NONE".to_string(),
-            Some(vlrix) => format!("{:?}", vlrix),
-        };
-        write!(fmt, "(FnV {:?} {})", self.frag, vlrix_string)
+        write!(fmt, "(FnV {:?} {:?})", self.frag, self.id)
     }
 }
-
-
-
 
 
 
@@ -76,7 +74,7 @@ impl fmt::Debug for RangeFragAndVLRIx {
 
 
 pub struct CommitmentMap {
-    pub tree: AVLTree<RangeFragAndVLRIx>,
+    pub tree: AVLTree<RangeFragAndRangeId>,
 }
 impl fmt::Debug for CommitmentMap {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -90,25 +88,18 @@ impl CommitmentMap {
         
         
         
-        let dflt = RangeFragAndVLRIx::new(
-            RangeFrag::invalid_value(),
-            Some(VirtualRangeIx::invalid_value()),
-        );
+        let dflt = RangeFragAndRangeId::new(RangeFrag::invalid_value(), RangeId::invalid_value());
         Self {
-            tree: AVLTree::<RangeFragAndVLRIx>::new(dflt),
+            tree: AVLTree::<RangeFragAndRangeId>::new(dflt),
         }
     }
 
-    pub fn add(
-        &mut self,
-        to_add_frags: &SortedRangeFrags,
-        to_add_mb_vlrix: Option<VirtualRangeIx>,
-    ) {
+    pub fn add(&mut self, to_add_frags: &SortedRangeFrags, to_add_lr_id: RangeId) {
         for frag in &to_add_frags.frags {
-            let to_add = RangeFragAndVLRIx::new(frag.clone(), to_add_mb_vlrix);
+            let to_add = RangeFragAndRangeId::new(frag.clone(), to_add_lr_id);
             let added = self.tree.insert(
                 to_add,
-                Some(&|pair1: RangeFragAndVLRIx, pair2: RangeFragAndVLRIx| {
+                Some(&|pair1: RangeFragAndRangeId, pair2: RangeFragAndRangeId| {
                     cmp_range_frags(&pair1.frag, &pair2.frag)
                 }),
             );
@@ -121,14 +112,14 @@ impl CommitmentMap {
     pub fn add_indirect(
         &mut self,
         to_add_frags: &SortedRangeFragIxs,
-        to_add_mb_vlrix: Option<VirtualRangeIx>,
+        to_add_lr_id: RangeId,
         frag_env: &TypedIxVec<RangeFragIx, RangeFrag>,
     ) {
         for fix in &to_add_frags.frag_ixs {
-            let to_add = RangeFragAndVLRIx::new(frag_env[*fix].clone(), to_add_mb_vlrix);
+            let to_add = RangeFragAndRangeId::new(frag_env[*fix].clone(), to_add_lr_id);
             let added = self.tree.insert(
                 to_add,
-                Some(&|pair1: RangeFragAndVLRIx, pair2: RangeFragAndVLRIx| {
+                Some(&|pair1: RangeFragAndRangeId, pair2: RangeFragAndRangeId| {
                     cmp_range_frags(&pair1.frag, &pair2.frag)
                 }),
             );
@@ -142,10 +133,10 @@ impl CommitmentMap {
         for frag in &to_del_frags.frags {
             
             
-            let to_del = RangeFragAndVLRIx::new(frag.clone(), None);
+            let to_del = RangeFragAndRangeId::new(frag.clone(), RangeId::invalid_value());
             let deleted = self.tree.delete(
                 to_del,
-                Some(&|pair1: RangeFragAndVLRIx, pair2: RangeFragAndVLRIx| {
+                Some(&|pair1: RangeFragAndRangeId, pair2: RangeFragAndRangeId| {
                     cmp_range_frags(&pair1.frag, &pair2.frag)
                 }),
             );
@@ -153,5 +144,27 @@ impl CommitmentMap {
             
             assert!(deleted);
         }
+    }
+
+    
+    
+    pub fn lookup_inst_point(&self, pt: InstPoint) -> Option<RangeId> {
+        let mut root = self.tree.root;
+        while root != AVL_NULL {
+            let root_node = &self.tree.pool[root as usize];
+            let root_item = &root_node.item;
+            if pt < root_item.frag.first {
+                
+                
+                root = root_node.left;
+            } else if root_item.frag.last < pt {
+                
+                root = root_node.right;
+            } else {
+                
+                return Some(root_item.id);
+            }
+        }
+        None
     }
 }

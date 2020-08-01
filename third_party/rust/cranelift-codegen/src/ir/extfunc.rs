@@ -11,6 +11,8 @@ use crate::machinst::RelocDistance;
 use alloc::vec::Vec;
 use core::fmt;
 use core::str::FromStr;
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
 
 
 
@@ -20,6 +22,7 @@ use core::str::FromStr;
 
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Signature {
     
     pub params: Vec<AbiParam>,
@@ -145,6 +148,7 @@ impl fmt::Display for Signature {
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct AbiParam {
     
     pub value_type: Type,
@@ -255,6 +259,7 @@ impl fmt::Display for AbiParam {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum ArgumentExtension {
     
     None,
@@ -272,6 +277,7 @@ pub enum ArgumentExtension {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum ArgumentPurpose {
     
     Normal,
