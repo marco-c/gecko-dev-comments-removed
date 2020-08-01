@@ -6618,6 +6618,14 @@ void HTMLMediaElement::NotifyOwnerDocumentActivityChanged() {
   AddRemoveSelfReference();
 }
 
+void HTMLMediaElement::NotifyFullScreenChanged() {
+  if (IsInFullScreen()) {
+    StartMediaControlKeyListenerIfNeeded();
+    MOZ_ASSERT(mMediaControlKeyListener->IsStarted(),
+               "Failed to start the listener when entering fullscreen!");
+  }
+}
+
 void HTMLMediaElement::AddRemoveSelfReference() {
   
   
@@ -7868,7 +7876,16 @@ void HTMLMediaElement::NotifyMediaControlPlaybackStateChanged() {
   }
 }
 
+bool HTMLMediaElement::IsInFullScreen() const {
+  return State().HasState(NS_EVENT_STATE_FULLSCREEN);
+}
+
 bool HTMLMediaElement::ShouldStartMediaControlKeyListener() const {
+  if (IsInFullScreen()) {
+    MEDIACONTROL_LOG("Start listener because of being used in fullscreen");
+    return true;
+  }
+
   
   
   

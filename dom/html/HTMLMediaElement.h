@@ -259,6 +259,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void NotifyOwnerDocumentActivityChanged();
 
   
+  void NotifyFullScreenChanged();
+
+  bool IsInFullScreen() const;
+
+  
   void PrincipalChanged(MediaStreamTrack* aTrack) override;
 
   void UpdateSrcStreamVideoPrincipal(const PrincipalHandle& aPrincipalHandle);
