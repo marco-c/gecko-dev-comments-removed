@@ -125,10 +125,11 @@ static const int kStartupCacheKeyLengthCap = 1024;
 
 
 class MaybeOwnedCharPtr {
- public:
+ private:
   char* mPtr;
   bool mOwned;
 
+ public:
   ~MaybeOwnedCharPtr() {
     if (mOwned) {
       delete[] mPtr;
@@ -149,6 +150,9 @@ class MaybeOwnedCharPtr {
   }
 
   MaybeOwnedCharPtr& operator=(decltype(nullptr)) {
+    if (mOwned) {
+      delete[] mPtr;
+    }
     mPtr = nullptr;
     mOwned = false;
     return *this;
@@ -159,6 +163,8 @@ class MaybeOwnedCharPtr {
   explicit operator bool() const { return !!mPtr; }
 
   char* get() const { return mPtr; }
+
+  bool IsOwned() const { return mOwned; }
 
   explicit MaybeOwnedCharPtr(char* aBytes) : mPtr(aBytes), mOwned(false) {}
 
@@ -191,6 +197,11 @@ enum class StartupCacheEntryFlags {
   Shared,
   RequestedByChild,
   AddedThisSession,
+
+  
+  
+  
+  DoNotFree,
 };
 
 struct StartupCacheEntry {

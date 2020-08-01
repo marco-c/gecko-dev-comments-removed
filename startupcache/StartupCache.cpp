@@ -7,6 +7,7 @@
 #include "prio.h"
 #include "PLDHashTable.h"
 #include "mozilla/IOInterposer.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/AutoMemMap.h"
 #include "mozilla/IOBuffers.h"
 #include "mozilla/ipc/FileDescriptor.h"
@@ -889,6 +890,12 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
   *outbuf = value.mData.get();
   *length = value.mUncompressedSize;
 
+  if (value.mData.IsOwned()) {
+    
+    
+    value.mFlags += StartupCacheEntryFlags::DoNotFree;
+  }
+
   return NS_OK;
 }
 
@@ -1145,6 +1152,21 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
   mWrittenOnce = true;
   mCacheData.reset();
   tmpFile->MoveToNative(nullptr, leafName);
+
+  
+  if (AppShutdown::IsShuttingDown()) {
+    return Ok();
+  }
+
+  
+  
+  
+  for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
+    auto& value = iter.get().value();
+    if (!value.mFlags.contains(StartupCacheEntryFlags::DoNotFree)) {
+      value.mData = nullptr;
+    }
+  }
 
   return Ok();
 }
