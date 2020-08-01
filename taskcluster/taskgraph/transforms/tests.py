@@ -1836,9 +1836,6 @@ def make_job_description(config, tasks):
             jobdesc['when'] = task['when']
         elif 'optimization' in task:
             jobdesc['optimization'] = task['optimization']
-        
-        elif config.params.is_try() and config.params['try_mode'] != 'try_auto':
-            jobdesc['optimization'] = {'test-try': schedules}
         elif set(schedules) & set(INCLUSIVE_COMPONENTS):
             jobdesc['optimization'] = {'test-inclusive': schedules}
         else:
