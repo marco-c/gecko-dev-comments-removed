@@ -930,7 +930,6 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsACString& aRemoteType,
     change->ProcessReady();
   } else {
     change->mContentParent = ContentParent::GetNewOrUsedLaunchingBrowserProcess(
-         nullptr,
          aRemoteType,
          hal::PROCESS_PRIORITY_FOREGROUND,
          false);
