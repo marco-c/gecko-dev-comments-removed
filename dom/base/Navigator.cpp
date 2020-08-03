@@ -1845,9 +1845,8 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform,
   
 #if defined(WIN32)
   aPlatform.AssignLiteral("Win32");
-#elif defined(XP_MACOSX) && defined(__i386__)
-  aPlatform.AssignLiteral("MacIntel");
-#elif defined(XP_MACOSX) && defined(__x86_64__)
+#elif defined(XP_MACOSX)
+  
   aPlatform.AssignLiteral("MacIntel");
 #else
   
