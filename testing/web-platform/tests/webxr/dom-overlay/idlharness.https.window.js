@@ -1,0 +1,16 @@
+
+
+
+'use strict';
+
+
+
+idl_test(
+  ['dom-overlays'],
+  ['webxr', 'html', 'dom'],
+  async idl_array => {
+    idl_array.add_objects({
+      
+    });
+  }
+);
