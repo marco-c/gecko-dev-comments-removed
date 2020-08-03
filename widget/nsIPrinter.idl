@@ -23,9 +23,4 @@ interface nsIPrinter : nsISupports
 
 
   readonly attribute boolean supportsDuplex;
-
-  
-
-
-  readonly attribute boolean supportsColor;
 };
