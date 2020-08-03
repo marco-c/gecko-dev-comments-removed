@@ -631,6 +631,13 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
                                    Document* aSourceDoc) {
   nsresult rv;
 
+  
+  
+  
+  mPrt = new nsPrintData(aIsPrintPreview ? nsPrintData::eIsPrintPreview
+                                         : nsPrintData::eIsPrinting);
+  RefPtr<nsPrintData> printData = mPrt;
+
   if (aIsPrintPreview) {
     
     
@@ -641,25 +648,17 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     mIsCreatingPrintPreview = true;
 
     
+    
+    
+    mPrtPreview = nullptr;
+
+    
     SetIsPrintPreview(true);
   } else {
     mProgressDialogIsShown = false;
 
     
     SetIsPrinting(true);
-  }
-
-  
-  
-  mPrt = new nsPrintData(mIsCreatingPrintPreview ? nsPrintData::eIsPrintPreview
-                                                 : nsPrintData::eIsPrinting);
-  RefPtr<nsPrintData> printData = mPrt;
-
-  if (mIsCreatingPrintPreview) {
-    
-    
-    
-    mPrtPreview = nullptr;
   }
 
   if (aWebProgressListener) {
@@ -1704,7 +1703,8 @@ bool nsPrintJob::ShouldResumePrint() const {
   return !pending;
 }
 
-nsresult nsPrintJob::MaybeResumePrintAfterResourcesLoaded(bool aCleanupOnError) {
+nsresult nsPrintJob::MaybeResumePrintAfterResourcesLoaded(
+    bool aCleanupOnError) {
   if (!ShouldResumePrint()) {
     mDidLoadDataForPrinting = true;
     return NS_OK;
