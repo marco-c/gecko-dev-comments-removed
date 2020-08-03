@@ -124,9 +124,9 @@ class PCUuidGenerator : public mozilla::JsepUuidGenerator {
 
 
 struct PeerConnectionAutoTimer {
-  PeerConnectionAutoTimer() : mRefCnt(1), mStart(TimeStamp::Now()){};
-  void AddRef();
-  void Release();
+  PeerConnectionAutoTimer() : mRefCnt(0), mStart(TimeStamp::Now()){};
+  void RegisterConnection();
+  void UnregisterConnection();
   bool IsStopped();
 
  private:
@@ -381,7 +381,7 @@ class PeerConnectionImpl final
 
   bool PluginCrash(uint32_t aPluginID, const nsAString& aPluginName);
 
-  void RecordEndOfCallTelemetry() const;
+  void RecordEndOfCallTelemetry();
 
   nsresult InitializeDataChannel();
 
@@ -405,7 +405,7 @@ class PeerConnectionImpl final
   bool HasMedia() const;
 
   
-  void startCallTelem();
+  void StartCallTelem();
 
   RefPtr<dom::RTCStatsReportPromise> GetStats(dom::MediaStreamTrack* aSelector,
                                               bool aInternalStats);
@@ -574,10 +574,13 @@ class PeerConnectionImpl final
   unsigned long mIceRollbackCount;
 
   
+  bool mCallTelemStarted = false;
+  bool mCallTelemEnded = false;
+
   
   mozilla::TimeStamp mIceStartTime;
   
-  static std::map<std::string, PeerConnectionAutoTimer> mAutoTimers;
+  static std::map<uint64_t, PeerConnectionAutoTimer> sCallDurationTimers;
 
   bool mHaveConfiguredCodecs;
 
