@@ -8,6 +8,7 @@
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
 #include "js/Exception.h"
+#include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
 #include "jsapi-tests/tests.h"
 

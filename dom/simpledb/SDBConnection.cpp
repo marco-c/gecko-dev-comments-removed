@@ -7,8 +7,8 @@
 #include "SDBConnection.h"
 
 #include "ActorsChild.h"
-#include "jsfriendapi.h"     
 #include "js/ArrayBuffer.h"  
+#include "js/experimental/TypedData.h"  
 #include "js/RootingAPI.h"   
 #include "js/Value.h"        
 #include "mozilla/ipc/BackgroundChild.h"

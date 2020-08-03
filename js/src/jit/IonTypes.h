@@ -13,9 +13,9 @@
 #include <initializer_list>
 #include <stdint.h>
 
-#include "jsfriendapi.h"
 #include "jstypes.h"
 
+#include "js/ScalarType.h"  
 #include "js/Value.h"
 #include "vm/StringType.h"
 

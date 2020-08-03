@@ -10,6 +10,7 @@
 #include "nsWrapperCacheInlines.h"
 #include "XPCLog.h"
 #include "js/Array.h"  
+#include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Printf.h"
 #include "jsfriendapi.h"

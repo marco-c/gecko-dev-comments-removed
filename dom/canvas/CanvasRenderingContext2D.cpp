@@ -67,6 +67,7 @@
 #include "jsfriendapi.h"
 #include "js/Array.h"  
 #include "js/Conversions.h"
+#include "js/experimental/TypedData.h"  
 #include "js/HeapAPI.h"
 #include "js/Warnings.h"  
 

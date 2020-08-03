@@ -24,6 +24,7 @@
 #include "builtin/TypedObject.h"
 #include "jit/JitOptions.h"
 #include "js/BuildId.h"  
+#include "js/experimental/TypedData.h"  
 #include "threading/LockGuard.h"
 #include "vm/PlainObject.h"  
 #include "wasm/WasmBaselineCompile.h"

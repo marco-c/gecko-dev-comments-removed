@@ -40,6 +40,7 @@
 #include "gc/Memory.h"
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
+#include "js/experimental/TypedData.h"  
 #include "js/MemoryMetrics.h"
 #include "js/PropertySpec.h"
 #include "js/SharedArrayBuffer.h"

@@ -19,6 +19,7 @@
 #include "jit/ICState.h"
 #include "jit/MacroAssembler.h"
 #include "jit/Simulator.h"
+#include "js/ScalarType.h"  
 #include "vm/Iteration.h"
 #include "vm/Shape.h"
 

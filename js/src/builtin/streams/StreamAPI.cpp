@@ -24,6 +24,7 @@
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "builtin/streams/StreamController.h"  
 #include "gc/Zone.h"                           
+#include "js/experimental/TypedData.h"  
 #include "js/GCAPI.h"       
 #include "js/RootingAPI.h"  
 #include "js/Stream.h"      

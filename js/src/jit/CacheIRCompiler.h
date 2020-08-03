@@ -12,6 +12,7 @@
 #include "jit/CacheIR.h"
 #include "jit/JitOptions.h"
 #include "jit/SharedICRegisters.h"
+#include "js/ScalarType.h"  
 
 namespace js {
 namespace jit {

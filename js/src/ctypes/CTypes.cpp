@@ -42,6 +42,7 @@
 #include "js/Array.h"  
 #include "js/ArrayBuffer.h"  
 #include "js/CharacterEncoding.h"
+#include "js/experimental/TypedData.h"  
 #include "js/PropertySpec.h"
 #include "js/SharedArrayBuffer.h"  
 #include "js/StableStringChars.h"

@@ -4,6 +4,7 @@
 
 
 
+#include "js/experimental/TypedData.h"  
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/Pose.h"

@@ -16,6 +16,7 @@
 #include "jit/JitRealm.h"
 #include "jit/Linker.h"
 #include "jit/RangeAnalysis.h"
+#include "js/ScalarType.h"  
 #include "vm/TraceLogging.h"
 
 #include "jit/MacroAssembler-inl.h"

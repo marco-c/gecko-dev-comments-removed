@@ -105,6 +105,7 @@
 #include "js/ErrorReport.h"              
 #include "js/Exception.h"                
 #include "js/experimental/SourceHook.h"  
+#include "js/experimental/TypedData.h"   
 #include "js/friend/DumpFunctions.h"     
 #include "js/friend/StackLimits.h"       
 #include "js/friend/WindowProxy.h"  

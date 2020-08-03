@@ -15,12 +15,13 @@
 #include <utility>   
 
 #include "jsapi.h"        
-#include "jsfriendapi.h"  
 
 #include "debugger/Debugger.h"  
 #include "debugger/Script.h"    
 #include "gc/Tracer.h"  
 #include "js/CompilationAndEvaluation.h"  
+#include "js/experimental/TypedData.h"    
+#include "js/friend/ErrorMessages.h"      
 #include "vm/BytecodeUtil.h"              
 #include "vm/JSContext.h"                 
 #include "vm/JSObject.h"                  

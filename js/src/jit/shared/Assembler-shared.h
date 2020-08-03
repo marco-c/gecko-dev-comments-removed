@@ -16,6 +16,7 @@
 #include "jit/Label.h"
 #include "jit/Registers.h"
 #include "jit/RegisterSets.h"
+#include "js/ScalarType.h"  
 #include "vm/HelperThreads.h"
 #include "wasm/WasmTypes.h"
 

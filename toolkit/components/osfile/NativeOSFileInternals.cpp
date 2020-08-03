@@ -37,6 +37,7 @@
 #include "jsfriendapi.h"
 #include "js/ArrayBuffer.h"  
 #include "js/Conversions.h"
+#include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"

@@ -20,6 +20,7 @@
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "js/ArrayBuffer.h"                        
+#include "js/experimental/TypedData.h"  
 #include "js/PropertySpec.h"
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"

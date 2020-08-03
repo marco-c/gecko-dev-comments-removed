@@ -5,6 +5,7 @@
 
 #include "Crypto.h"
 #include "jsfriendapi.h"
+#include "js/experimental/TypedData.h"  
 #include "nsCOMPtr.h"
 #include "nsIRandomGenerator.h"
 #include "MainThreadUtils.h"

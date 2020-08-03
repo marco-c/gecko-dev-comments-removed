@@ -15,6 +15,7 @@
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
 #include "js/Date.h"
+#include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Value.h"
 #include "jsfriendapi.h"

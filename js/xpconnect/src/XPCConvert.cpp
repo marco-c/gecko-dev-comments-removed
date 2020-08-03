@@ -25,6 +25,7 @@
 #include "jsfriendapi.h"
 #include "js/Array.h"  
 #include "js/CharacterEncoding.h"
+#include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
 
 #include "mozilla/dom/BindingUtils.h"

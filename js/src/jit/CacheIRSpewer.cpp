@@ -22,6 +22,7 @@
 
 #  include "jsmath.h"
 
+#  include "js/ScalarType.h"  
 #  include "util/Text.h"
 #  include "vm/JSFunction.h"
 #  include "vm/JSObject.h"

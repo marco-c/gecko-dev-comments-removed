@@ -25,6 +25,7 @@
 #include "jit/IonIC.h"
 #include "jit/SharedICHelpers.h"
 #include "jit/SharedICRegisters.h"
+#include "js/ScalarType.h"  
 #include "proxy/Proxy.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/ArrayBufferViewObject.h"

@@ -20,6 +20,7 @@
 #include "js/CompileOptions.h"            
 #include "js/ErrorReport.h"               
 #include "js/Exception.h"                 
+#include "js/experimental/TypedData.h"  
 #include "js/RootingAPI.h"                
 #include "js/SourceText.h"                
 #include "js/Value.h"                     

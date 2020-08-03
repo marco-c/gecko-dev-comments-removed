@@ -11,10 +11,11 @@
 
 #include "js/ArrayBuffer.h"
 #include "js/ArrayBufferMaybeShared.h"
+#include "js/experimental/TypedData.h"  
 #include "js/GCAPI.h"       
 #include "js/RootingAPI.h"  
+#include "js/ScalarType.h"  
 #include "js/SharedArrayBuffer.h"
-#include "jsfriendapi.h"  
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/SpiderMonkeyInterface.h"

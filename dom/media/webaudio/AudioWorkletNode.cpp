@@ -9,6 +9,7 @@
 #include "AudioParamMap.h"
 #include "js/Array.h"  
 #include "js/Exception.h"
+#include "js/experimental/TypedData.h"  
 #include "mozilla/dom/AudioWorkletNodeBinding.h"
 #include "mozilla/dom/AudioParamMapBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
