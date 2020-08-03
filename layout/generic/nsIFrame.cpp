@@ -11023,12 +11023,6 @@ void nsIFrame::UpdateVisibleDescendantsState() {
 
 bool nsIFrame::ShouldApplyOverflowClipping(const nsStyleDisplay* aDisp) const {
   MOZ_ASSERT(aDisp == StyleDisplay(), "Wrong display struct");
-  
-  
-  if (MOZ_UNLIKELY(aDisp->mOverflowX == StyleOverflow::MozHiddenUnscrollable &&
-                   !IsListControlFrame())) {
-    return true;
-  }
 
   
   
@@ -11059,6 +11053,17 @@ bool nsIFrame::ShouldApplyOverflowClipping(const nsStyleDisplay* aDisp) const {
           
           return type != LayoutFrameType::TextInput;
         }
+    }
+  }
+
+  
+  
+  if (MOZ_UNLIKELY(aDisp->mOverflowX == StyleOverflow::MozHiddenUnscrollable &&
+                   !IsListControlFrame())) {
+    const auto* element = Element::FromNodeOrNull(GetContent());
+    if (!element ||
+        !PresContext()->ElementWouldPropagateScrollStyles(*element)) {
+      return true;
     }
   }
 
