@@ -8,7 +8,6 @@
 #define mozilla_ScrollStyles_h
 
 #include <stdint.h>
-#include "mozilla/dom/WindowBinding.h"
 
 
 struct nsStyleDisplay;
@@ -17,17 +16,20 @@ namespace mozilla {
 
 enum class StyleOverflow : uint8_t;
 
-
-
 struct ScrollStyles {
   
   StyleOverflow mHorizontal;
   StyleOverflow mVertical;
 
-  ScrollStyles(StyleOverflow aH, StyleOverflow aV)
-      : mHorizontal(aH), mVertical(aV) {}
+  ScrollStyles(StyleOverflow aH, StyleOverflow aV);
 
-  explicit ScrollStyles(const nsStyleDisplay&);
+  
+  
+  
+  
+  enum MapOverflowToValidScrollStyleTag { MapOverflowToValidScrollStyle };
+  ScrollStyles(const nsStyleDisplay&, MapOverflowToValidScrollStyleTag);
+
   bool operator==(const ScrollStyles& aStyles) const {
     return aStyles.mHorizontal == mHorizontal && aStyles.mVertical == mVertical;
   }

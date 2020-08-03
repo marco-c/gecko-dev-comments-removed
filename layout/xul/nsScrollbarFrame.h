@@ -97,7 +97,7 @@ class nsScrollbarFrame final : public nsBoxFrame,
 
 
 
-  virtual bool DoesClipChildren() override { return true; }
+  virtual bool DoesClipChildrenInBothAxes() override { return true; }
 
   virtual nsresult GetXULMargin(nsMargin& aMargin) override;
 
