@@ -148,6 +148,8 @@ bool MediaController::IsAudible() const { return IsMediaAudible(); }
 
 bool MediaController::IsPlaying() const { return IsMediaPlaying(); }
 
+bool MediaController::IsActive() const { return mIsActive; };
+
 void MediaController::UpdateMediaControlActionToContentMediaIfNeeded(
     const MediaControlAction& aAction) {
   
@@ -306,6 +308,7 @@ void MediaController::Activate() {
     LOG("Activate");
     mIsActive = service->RegisterActiveMediaController(this);
     MOZ_ASSERT(mIsActive, "Fail to register controller!");
+    DispatchAsyncEvent(u"activated"_ns);
   }
 }
 
@@ -318,6 +321,7 @@ void MediaController::Deactivate() {
       LOG("Deactivate");
       mIsActive = !service->UnregisterActiveMediaController(this);
       MOZ_ASSERT(!mIsActive, "Fail to unregister controller!");
+      DispatchAsyncEvent(u"deactivated"_ns);
     }
   }
 }
