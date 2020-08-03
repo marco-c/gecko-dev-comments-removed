@@ -17,6 +17,7 @@
 
 #include "FuzzerSHA1.h"
 #include "FuzzerDefs.h"
+#include "FuzzerPlatform.h"
 
 
 

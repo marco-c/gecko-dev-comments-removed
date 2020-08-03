@@ -9,6 +9,7 @@
 
 
 #include "FuzzerDefs.h"
+#include "FuzzerPlatform.h"
 
 extern "C" {
 

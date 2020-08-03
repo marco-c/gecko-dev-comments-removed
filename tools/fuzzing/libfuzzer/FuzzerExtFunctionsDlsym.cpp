@@ -10,7 +10,7 @@
 
 
 
-#include "FuzzerDefs.h"
+#include "FuzzerPlatform.h"
 #if LIBFUZZER_APPLE
 
 #include "FuzzerExtFunctions.h"

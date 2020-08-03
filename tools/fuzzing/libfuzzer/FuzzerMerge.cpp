@@ -19,6 +19,7 @@
 #include <iterator>
 #include <set>
 #include <sstream>
+#include <unordered_set>
 
 namespace fuzzer {
 
@@ -210,6 +211,9 @@ void Fuzzer::CrashResistantMergeInternalStep(const std::string &CFPath) {
 
   std::ofstream OF(CFPath, std::ofstream::out | std::ofstream::app);
   Set<size_t> AllFeatures;
+  auto PrintStatsWrapper = [this, &AllFeatures](const char* Where) {
+    this->PrintStats(Where, "\n", 0, AllFeatures.size());
+  };
   Set<const TracePC::PCTableEntry *> AllPCs;
   for (size_t i = M.FirstNotProcessedFile; i < M.Files.size(); i++) {
     Fuzzer::MaybeExitGracefully();
@@ -218,7 +222,7 @@ void Fuzzer::CrashResistantMergeInternalStep(const std::string &CFPath) {
       U.resize(MaxInputLen);
       U.shrink_to_fit();
     }
-    std::ostringstream StartedLine;
+
     
     OF << "STARTED " << i << " " << U.size() << "\n";
     OF.flush();  
@@ -240,7 +244,9 @@ void Fuzzer::CrashResistantMergeInternalStep(const std::string &CFPath) {
     TPC.UpdateObservedPCs();
     
     if (!(TotalNumberOfRuns & (TotalNumberOfRuns - 1)))
-      PrintStats("pulse ");
+      PrintStatsWrapper("pulse ");
+    if (TotalNumberOfRuns == M.NumFilesInFirstCorpus)
+      PrintStatsWrapper("LOADED");
     
     OF << "FT " << i;
     for (size_t F : UniqFeatures)
@@ -254,25 +260,42 @@ void Fuzzer::CrashResistantMergeInternalStep(const std::string &CFPath) {
     OF << "\n";
     OF.flush();
   }
-  PrintStats("DONE ");
+  PrintStatsWrapper("DONE  ");
 }
 
-static void WriteNewControlFile(const std::string &CFPath,
-                                const Vector<SizedFile> &OldCorpus,
-                                const Vector<SizedFile> &NewCorpus) {
+static size_t WriteNewControlFile(const std::string &CFPath,
+                                  const Vector<SizedFile> &OldCorpus,
+                                  const Vector<SizedFile> &NewCorpus,
+                                  const Vector<MergeFileInfo> &KnownFiles) {
+  std::unordered_set<std::string> FilesToSkip;
+  for (auto &SF: KnownFiles)
+    FilesToSkip.insert(SF.Name);
+
+  Vector<std::string> FilesToUse;
+  auto MaybeUseFile = [=, &FilesToUse](std::string Name) {
+    if (FilesToSkip.find(Name) == FilesToSkip.end())
+      FilesToUse.push_back(Name);
+  };
+  for (auto &SF: OldCorpus)
+    MaybeUseFile(SF.File);
+  auto FilesToUseFromOldCorpus = FilesToUse.size();
+  for (auto &SF: NewCorpus)
+    MaybeUseFile(SF.File);
+
   RemoveFile(CFPath);
   std::ofstream ControlFile(CFPath);
-  ControlFile << (OldCorpus.size() + NewCorpus.size()) << "\n";
-  ControlFile << OldCorpus.size() << "\n";
-  for (auto &SF: OldCorpus)
-    ControlFile << SF.File << "\n";
-  for (auto &SF: NewCorpus)
-    ControlFile << SF.File << "\n";
+  ControlFile << FilesToUse.size() << "\n";
+  ControlFile << FilesToUseFromOldCorpus << "\n";
+  for (auto &FN: FilesToUse)
+    ControlFile << FN << "\n";
+
   if (!ControlFile) {
     Printf("MERGE-OUTER: failed to write to the control file: %s\n",
            CFPath.c_str());
     exit(1);
   }
+
+  return FilesToUse.size();
 }
 
 
@@ -288,12 +311,13 @@ void CrashResistantMerge(const Vector<std::string> &Args,
                          bool V ) {
   if (NewCorpus.empty() && OldCorpus.empty()) return;  
   size_t NumAttempts = 0;
+  Vector<MergeFileInfo> KnownFiles;
   if (FileSize(CFPath)) {
     VPrintf(V, "MERGE-OUTER: non-empty control file provided: '%s'\n",
            CFPath.c_str());
     Merger M;
     std::ifstream IF(CFPath);
-    if (M.Parse(IF, false)) {
+    if (M.Parse(IF, true)) {
       VPrintf(V, "MERGE-OUTER: control file ok, %zd files total,"
              " first not processed file %zd\n",
              M.Files.size(), M.FirstNotProcessedFile);
@@ -302,12 +326,25 @@ void CrashResistantMerge(const Vector<std::string> &Args,
                "(merge has stumbled on it the last time)\n",
                M.LastFailure.c_str());
       if (M.FirstNotProcessedFile >= M.Files.size()) {
-        VPrintf(
-            V, "MERGE-OUTER: nothing to do, merge has been completed before\n");
-        exit(0);
-      }
+        
+        if (M.Files.size() == OldCorpus.size() + NewCorpus.size()) {
+          VPrintf(
+              V,
+              "MERGE-OUTER: nothing to do, merge has been completed before\n");
+          exit(0);
+        }
 
-      NumAttempts = M.Files.size() - M.FirstNotProcessedFile;
+        
+        
+        VPrintf(
+            V,
+            "MERGE-OUTER: starting merge from scratch, but reusing coverage "
+            "information from the given control file\n");
+        KnownFiles = M.Files;
+      } else {
+        
+        NumAttempts = M.Files.size() - M.FirstNotProcessedFile;
+      }
     } else {
       VPrintf(V, "MERGE-OUTER: bad control file, will overwrite it\n");
     }
@@ -315,10 +352,11 @@ void CrashResistantMerge(const Vector<std::string> &Args,
 
   if (!NumAttempts) {
     
-    NumAttempts = OldCorpus.size() + NewCorpus.size();
-    VPrintf(V, "MERGE-OUTER: %zd files, %zd in the initial corpus\n",
-            NumAttempts, OldCorpus.size());
-    WriteNewControlFile(CFPath, OldCorpus, NewCorpus);
+    VPrintf(V, "MERGE-OUTER: "
+            "%zd files, %zd in the initial corpus, %zd processed earlier\n",
+            OldCorpus.size() + NewCorpus.size(), OldCorpus.size(),
+            KnownFiles.size());
+    NumAttempts = WriteNewControlFile(CFPath, OldCorpus, NewCorpus, KnownFiles);
   }
 
   
@@ -326,6 +364,7 @@ void CrashResistantMerge(const Vector<std::string> &Args,
   Command BaseCmd(Args);
   BaseCmd.removeFlag("merge");
   BaseCmd.removeFlag("fork");
+  BaseCmd.removeFlag("collect_data_flow");
   for (size_t Attempt = 1; Attempt <= NumAttempts; Attempt++) {
     Fuzzer::MaybeExitGracefully();
     VPrintf(V, "MERGE-OUTER: attempt %zd\n", Attempt);
@@ -354,6 +393,8 @@ void CrashResistantMerge(const Vector<std::string> &Args,
   VPrintf(V,
           "MERGE-OUTER: consumed %zdMb (%zdMb rss) to parse the control file\n",
           M.ApproximateMemoryConsumption() >> 20, GetPeakRSSMb());
+
+  M.Files.insert(M.Files.end(), KnownFiles.begin(), KnownFiles.end());
   M.Merge(InitialFeatures, NewFeatures, InitialCov, NewCov, NewFiles);
   VPrintf(V, "MERGE-OUTER: %zd new files with %zd new features added; "
           "%zd new coverage edges\n",
