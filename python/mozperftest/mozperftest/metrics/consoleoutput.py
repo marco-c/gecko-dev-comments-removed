@@ -1,7 +1,7 @@
 
 
 
-from mozperftest.metrics.common import filtered_metrics
+from mozperftest.metrics.common import filtered_metrics, COMMON_ARGS
 from mozperftest.layers import Layer
 
 
@@ -22,20 +22,7 @@ class ConsoleOutput(Layer):
 
     name = "console"
     activated = False
-
-    arguments = {
-        "metrics": {
-            "nargs": "*",
-            "default": [],
-            "help": "The metrics that should be retrieved from the data.",
-        },
-        
-        "prefix": {
-            "type": str,
-            "default": "",
-            "help": "Prefix used by the output files.",
-        },
-    }
+    arguments = COMMON_ARGS
 
     def run(self, metadata):
         
@@ -44,6 +31,7 @@ class ConsoleOutput(Layer):
             self.get_arg("output"),
             self.get_arg("prefix"),
             metrics=self.get_arg("metrics"),
+            split_by=self.get_arg("split-by"),
         )
 
         if not results:
