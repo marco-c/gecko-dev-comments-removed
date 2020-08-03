@@ -477,10 +477,13 @@ void Family::SetupFamilyCharMap(FontList* aList) {
   for (size_t i = 0; i < NumFaces(); i++) {
     auto f = static_cast<Face*>(faces[i].ToPtr(aList));
     if (!f) {
-      continue;
+      continue;  
     }
     auto faceMap = static_cast<SharedBitSet*>(f->mCharacterMap.ToPtr(aList));
-    MOZ_ASSERT(faceMap);
+    if (!faceMap) {
+      return;  
+               
+    }
     if (!firstMap) {
       firstMap = faceMap;
       firstMapShmPointer = f->mCharacterMap;
