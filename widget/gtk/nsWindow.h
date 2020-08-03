@@ -431,9 +431,6 @@ class nsWindow final : public nsBaseWidget {
   void DispatchResized();
   void MaybeDispatchResized();
 
-  nsIntPoint GetWindowOrigin();
-  void InvalidateWindowOrigin();
-
   virtual void RegisterTouchWindow() override;
   virtual bool CompositorInitiallyPaused() override {
 #ifdef MOZ_WAYLAND
@@ -522,8 +519,6 @@ class nsWindow final : public nsBaseWidget {
   float mAspectRatio;
   float mAspectRatioSaved;
   nsIntPoint mClientOffset;
-  
-  mozilla::Maybe<nsIntPoint> mWindowOrigin;
 
   
   guint32 mLastScrollEventTime;
