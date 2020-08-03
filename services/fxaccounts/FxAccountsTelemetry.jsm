@@ -124,9 +124,15 @@ class FxAccountsTelemetry {
       
       
       
-      const profile = await telemetry._fxai.profile.ensureProfile({
-        staleOk: true,
-      });
+      
+      
+      
+      
+      
+      let options = generatePlaceholder
+        ? { staleOk: true }
+        : { forceFresh: true };
+      const profile = await telemetry._fxai.profile.ensureProfile(options);
       if (profile && profile.hasOwnProperty("ecosystemAnonId")) {
         return profile.ecosystemAnonId;
       }

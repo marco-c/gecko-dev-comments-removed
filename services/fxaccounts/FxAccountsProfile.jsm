@@ -166,9 +166,13 @@ FxAccountsProfile.prototype = {
   
   
   
-  async ensureProfile({ staleOk = false } = {}) {
+  async ensureProfile({ staleOk = false, forceFresh = false } = {}) {
+    if (staleOk && forceFresh) {
+      throw new Error("contradictory options specified");
+    }
     const profileCache = await this._getProfileCache();
     if (
+      forceFresh ||
       !profileCache ||
       (Date.now() > this._cachedAt + this.PROFILE_FRESHNESS_THRESHOLD &&
         !staleOk)
