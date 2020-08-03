@@ -214,6 +214,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 
 
+
+
 #[derive(Debug, Clone, Copy)]
 struct BoxHeader {
     
@@ -224,6 +226,11 @@ struct BoxHeader {
     offset: u64,
     
     uuid: Option<[u8; 16]>,
+}
+
+impl BoxHeader {
+    const MIN_SIZE: u64 = 8; 
+    const MIN_LARGE_SIZE: u64 = 16; 
 }
 
 
@@ -366,6 +373,8 @@ pub enum SampleEntry {
     Video(VideoSampleEntry),
     Unknown,
 }
+
+
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
@@ -538,7 +547,7 @@ pub struct TrackEncryptionBox {
 
 #[derive(Debug, Default)]
 pub struct ProtectionSchemeInfoBox {
-    pub code_name: TryString,
+    pub original_format: FourCC,
     pub scheme_type: Option<SchemeTypeBox>,
     pub tenc: Option<TrackEncryptionBox>,
 }
@@ -1007,6 +1016,7 @@ impl Track {
     }
 }
 
+
 struct BMFFBox<'a, T: 'a> {
     head: BoxHeader,
     content: Take<&'a mut T>,
@@ -1115,6 +1125,8 @@ impl<'a, T> Drop for BMFFBox<'a, T> {
 
 
 
+
+
 fn read_box_header<T: ReadBytesExt>(src: &mut T) -> Result<BoxHeader> {
     let size32 = be_u32(src)?;
     let name = BoxType::from(be_u32(src)?);
@@ -1123,17 +1135,21 @@ fn read_box_header<T: ReadBytesExt>(src: &mut T) -> Result<BoxHeader> {
         0 => return Err(Error::Unsupported("unknown sized box")),
         1 => {
             let size64 = be_u64(src)?;
-            if size64 < 16 {
+            if size64 < BoxHeader::MIN_LARGE_SIZE {
                 return Err(Error::InvalidData("malformed wide size"));
             }
             size64
         }
-        2..=7 => return Err(Error::InvalidData("malformed size")),
-        _ => u64::from(size32),
+        _ => {
+            if u64::from(size32) < BoxHeader::MIN_SIZE {
+                return Err(Error::InvalidData("malformed size"));
+            }
+            u64::from(size32)
+        }
     };
     let mut offset = match size32 {
-        1 => 4 + 4 + 8,
-        _ => 4 + 4,
+        1 => BoxHeader::MIN_LARGE_SIZE,
+        _ => BoxHeader::MIN_SIZE,
     };
     let uuid = if name == BoxType::UuidBox {
         if size >= offset + 16 {
@@ -1587,9 +1603,11 @@ fn read_iloc<T: Read>(src: &mut BMFFBox<T>) -> Result<TryVec<ItemLocationBoxItem
         })?;
     }
 
-    debug_assert_eq!(iloc.remaining(), 0);
-
-    Ok(items)
+    if iloc.remaining() == 0 {
+        Ok(items)
+    } else {
+        Err(Error::InvalidData("invalid iloc size"))
+    }
 }
 
 
@@ -2389,6 +2407,7 @@ fn read_flac_metadata<T: Read>(src: &mut BMFFBox<T>) -> Result<FLACMetadataBlock
     Ok(FLACMetadataBlock { block_type, data })
 }
 
+
 fn find_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
     
     const ESDESCR_TAG: u8 = 0x03;
@@ -2402,6 +2421,8 @@ fn find_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
         let des = &mut Cursor::new(remains);
         let tag = des.read_u8()?;
 
+        
+
         let mut end: u32 = 0; 
                               
         for _ in 0..4 {
@@ -2413,7 +2434,7 @@ fn find_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
             }
             let extend_or_len = des.read_u8()?;
             end = (end << 7) + u32::from(extend_or_len & 0x7F);
-            if (extend_or_len & 0x80) == 0 {
+            if (extend_or_len & 0b1000_0000) == 0 {
                 end += des.position() as u32;
                 break;
             }
@@ -2441,6 +2462,7 @@ fn find_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
         }
 
         remains = &remains[end.to_usize()..remains.len()];
+        debug!("remains.len(): {}", remains.len());
     }
 
     Ok(())
@@ -2456,6 +2478,7 @@ fn get_audio_object_type(bit_reader: &mut BitReader) -> Result<u16> {
     }
     Ok(audio_object_type)
 }
+
 
 fn read_ds_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
     let frequency_table = vec![
@@ -2623,6 +2646,7 @@ fn read_surround_channel_count(bit_reader: &mut BitReader, channels: u8) -> Resu
     Ok(count)
 }
 
+
 fn read_dc_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
     let des = &mut Cursor::new(data);
     let object_profile = des.read_u8()?;
@@ -2642,6 +2666,7 @@ fn read_dc_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
 
     Ok(())
 }
+
 
 fn read_es_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
     let des = &mut Cursor::new(data);
@@ -2673,14 +2698,7 @@ fn read_es_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
 fn read_esds<T: Read>(src: &mut BMFFBox<T>) -> Result<ES_Descriptor> {
     let (_, _) = read_fullbox_extra(src)?;
 
-    
-    
-    let esds_size = src
-        .head
-        .size
-        .checked_sub(src.head.offset + 4)
-        .expect("offset invalid");
-    let esds_array = read_buf(src, esds_size)?;
+    let esds_array = read_buf(src, src.bytes_left())?;
 
     let mut es_data = ES_Descriptor::default();
     find_descriptor(&esds_array, &mut es_data)?;
@@ -2983,6 +3001,7 @@ fn read_qt_wave_atom<T: Read>(src: &mut BMFFBox<T>) -> Result<ES_Descriptor> {
 }
 
 
+
 fn read_audio_sample_entry<T: Read>(src: &mut BMFFBox<T>) -> Result<SampleEntry> {
     let name = src.get_header().name;
 
@@ -3115,6 +3134,7 @@ fn read_audio_sample_entry<T: Read>(src: &mut BMFFBox<T>) -> Result<SampleEntry>
 }
 
 
+
 fn read_stsd<T: Read>(src: &mut BMFFBox<T>, track: &mut Track) -> Result<SampleDescriptionBox> {
     let (_, _) = read_fullbox_extra(src)?;
 
@@ -3163,8 +3183,7 @@ fn read_sinf<T: Read>(src: &mut BMFFBox<T>) -> Result<ProtectionSchemeInfoBox> {
     while let Some(mut b) = iter.next_box()? {
         match b.head.name {
             BoxType::OriginalFormatBox => {
-                let frma = read_frma(&mut b)?;
-                sinf.code_name = frma;
+                sinf.original_format = FourCC::from(be_u32(&mut b)?);
             }
             BoxType::SchemeTypeBox => {
                 sinf.scheme_type = Some(read_schm(&mut b)?);
@@ -3239,10 +3258,6 @@ fn read_tenc<T: Read>(src: &mut BMFFBox<T>) -> Result<TrackEncryptionBox> {
         skip_byte_block_count: default_skip_byte_block,
         constant_iv: default_constant_iv,
     })
-}
-
-fn read_frma<T: Read>(src: &mut BMFFBox<T>) -> Result<TryString> {
-    read_buf(src, 4)
 }
 
 fn read_schm<T: Read>(src: &mut BMFFBox<T>) -> Result<SchemeTypeBox> {
