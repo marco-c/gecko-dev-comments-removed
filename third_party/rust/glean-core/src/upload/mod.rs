@@ -9,64 +9,90 @@
 
 
 
-
-
-
-#![allow(dead_code)]
-
 use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, RwLock, RwLockWriteGuard};
+use std::sync::{Arc, RwLock, RwLockWriteGuard};
 use std::thread;
+use std::time::{Duration, Instant};
 
-use once_cell::sync::OnceCell;
-use serde_json::Value as JsonValue;
-
-use crate::error::Result;
 use directory::PingDirectoryManager;
-pub use request::PingRequest;
+pub use request::{HeaderMap, PingRequest};
 pub use result::{ffi_upload_result, UploadResult};
 
 mod directory;
 mod request;
 mod result;
 
-
-
-
-
-static UPLOAD_MANAGER: OnceCell<Mutex<PingUploadManager>> = OnceCell::new();
-
-
-pub fn global_upload_manager() -> Option<&'static Mutex<PingUploadManager>> {
-    UPLOAD_MANAGER.get()
+#[derive(Debug)]
+struct RateLimiter {
+    
+    started: Option<Instant>,
+    
+    count: u32,
+    
+    interval: Duration,
+    
+    max_count: u32,
 }
 
 
-pub fn setup_upload_manager(upload_manager: PingUploadManager) -> Result<()> {
+#[derive(PartialEq)]
+enum RateLimiterState {
     
+    Incrementing,
     
-    
-    
-    
-    
-    
-    
-    if UPLOAD_MANAGER.get().is_none() {
-        if UPLOAD_MANAGER.set(Mutex::new(upload_manager)).is_err() {
-            log::error!(
-                "Global Upload Manager object is initialized already. This probably happened concurrently."
-            )
+    Throttled,
+}
+
+impl RateLimiter {
+    pub fn new(interval: Duration, max_count: u32) -> Self {
+        Self {
+            started: None,
+            count: 0,
+            interval,
+            max_count,
         }
-    } else {
-        
-        
-        
-        let mut lock = UPLOAD_MANAGER.get().unwrap().lock().unwrap();
-        *lock = upload_manager;
     }
-    Ok(())
+
+    fn reset(&mut self) {
+        self.started = Some(Instant::now());
+        self.count = 0;
+    }
+
+    
+    
+    
+    
+    
+    fn should_reset(&self) -> bool {
+        if self.started.is_none() {
+            return true;
+        }
+
+        
+        let elapsed = self.started.unwrap().elapsed();
+        if elapsed > self.interval {
+            return true;
+        }
+
+        false
+    }
+
+    
+    
+    pub fn get_state(&mut self) -> RateLimiterState {
+        if self.should_reset() {
+            self.reset();
+        }
+
+        if self.count == self.max_count {
+            return RateLimiterState::Throttled;
+        }
+
+        self.count += 1;
+        RateLimiterState::Incrementing
+    }
 }
 
 
@@ -94,6 +120,15 @@ pub struct PingUploadManager {
     directory_manager: PingDirectoryManager,
     
     processed_pending_pings: Arc<AtomicBool>,
+    
+    
+    
+    
+    rate_limiter: Option<RwLock<RateLimiter>>,
+    
+    
+    
+    language_binding_name: String,
 }
 
 impl PingUploadManager {
@@ -110,7 +145,11 @@ impl PingUploadManager {
     
     
     
-    pub fn new<P: Into<PathBuf>>(data_path: P, sync_scan: bool) -> Self {
+    pub fn new<P: Into<PathBuf>>(
+        data_path: P,
+        language_binding_name: &str,
+        sync_scan: bool,
+    ) -> Self {
         let queue = Arc::new(RwLock::new(VecDeque::new()));
         let directory_manager = PingDirectoryManager::new(data_path);
         let processed_pending_pings = Arc::new(AtomicBool::new(false));
@@ -118,13 +157,26 @@ impl PingUploadManager {
         let local_queue = queue.clone();
         let local_flag = processed_pending_pings.clone();
         let local_manager = directory_manager.clone();
+        let local_language_binding_name = language_binding_name.to_string();
         let ping_scanning_thread = thread::Builder::new()
             .name("glean.ping_directory_manager.process_dir".to_string())
             .spawn(move || {
                 let mut local_queue = local_queue
                     .write()
                     .expect("Can't write to pending pings queue.");
-                local_queue.extend(local_manager.process_dir());
+                for (document_id, path, body, headers) in local_manager.process_dir() {
+                    if Self::is_enqueued(&local_queue, &document_id) {
+                        continue;
+                    }
+                    let mut request = PingRequest::builder(&local_language_binding_name)
+                        .document_id(document_id)
+                        .path(path)
+                        .body(body);
+                    if let Some(headers) = headers {
+                        request = request.headers(headers);
+                    }
+                    local_queue.push_back(request.build());
+                }
                 local_flag.store(true, Ordering::SeqCst);
             })
             .expect("Unable to spawn thread to process pings directories.");
@@ -139,6 +191,8 @@ impl PingUploadManager {
             queue,
             processed_pending_pings,
             directory_manager,
+            rate_limiter: None,
+            language_binding_name: language_binding_name.into(),
         }
     }
 
@@ -147,15 +201,71 @@ impl PingUploadManager {
     }
 
     
-    pub fn enqueue_ping(&self, document_id: &str, path: &str, body: JsonValue) {
-        log::trace!("Enqueuing ping {} at {}", document_id, path);
+    fn is_enqueued(queue: &VecDeque<PingRequest>, document_id: &str) -> bool {
+        queue
+            .iter()
+            .any(|request| request.document_id == document_id)
+    }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_rate_limiter(&mut self, interval: u64, max_tasks: u32) {
+        self.rate_limiter = Some(RwLock::new(RateLimiter::new(
+            Duration::from_secs(interval),
+            max_tasks,
+        )));
+    }
+
+    fn enqueue_ping(&self, document_id: &str, path: &str, body: &str, headers: Option<HeaderMap>) {
         let mut queue = self
             .queue
             .write()
             .expect("Can't write to pending pings queue.");
-        let request = PingRequest::new(document_id, path, body);
-        queue.push_back(request);
+
+        
+        if Self::is_enqueued(&queue, &document_id) {
+            log::trace!(
+                "Attempted to enqueue a duplicate ping {} at {}.",
+                document_id,
+                path
+            );
+            return;
+        }
+
+        log::trace!("Enqueuing ping {} at {}", document_id, path);
+        let mut request = PingRequest::builder(&self.language_binding_name)
+            .document_id(document_id)
+            .path(path)
+            .body(body);
+        if let Some(headers) = headers {
+            request = request.headers(headers);
+        }
+
+        queue.push_back(request.build());
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn enqueue_ping_from_file(&self, document_id: &str) {
+        if let Some((doc_id, path, body, headers)) =
+            self.directory_manager.process_file(document_id)
+        {
+            self.enqueue_ping(&doc_id, &path, &body, headers)
+        }
     }
 
     
@@ -195,8 +305,20 @@ impl PingUploadManager {
             .queue
             .write()
             .expect("Can't write to pending pings queue.");
-        match queue.pop_front() {
+        match queue.front() {
             Some(request) => {
+                if let Some(rate_limiter) = &self.rate_limiter {
+                    let mut rate_limiter = rate_limiter
+                        .write()
+                        .expect("Can't write to the rate limiter.");
+                    if rate_limiter.get_state() == RateLimiterState::Throttled {
+                        log::info!(
+                            "Tried getting an upload task, but we are throttled at the moment."
+                        );
+                        return PingUploadTask::Wait;
+                    }
+                }
+
                 log::info!(
                     "New upload task with id {} (path: {})",
                     request.document_id,
@@ -211,7 +333,7 @@ impl PingUploadManager {
                     }
                 }
 
-                PingUploadTask::Upload(request)
+                PingUploadTask::Upload(queue.pop_front().unwrap())
             }
             None => {
                 log::info!("No more pings to upload! You are done.");
@@ -280,13 +402,7 @@ impl PingUploadManager {
                     document_id,
                     status
                 );
-                if let Some(request) = self.directory_manager.process_file(document_id) {
-                    let mut queue = self
-                        .queue
-                        .write()
-                        .expect("Can't write to pending pings queue.");
-                    queue.push_back(request);
-                }
+                self.enqueue_ping_from_file(&document_id);
             }
         };
     }
@@ -363,21 +479,20 @@ mod test {
     use std::thread;
     use std::time::Duration;
 
-    use serde_json::json;
+    use uuid::Uuid;
 
     use super::UploadResult::*;
     use super::*;
     use crate::metrics::PingType;
     use crate::{tests::new_glean, PENDING_PINGS_DIRECTORY};
 
-    const DOCUMENT_ID: &str = "40e31919-684f-43b0-a5aa-e15c2d56a674"; 
     const PATH: &str = "/submit/app_id/ping_name/schema_version/doc_id";
 
     #[test]
-    fn test_doesnt_error_when_there_are_no_pending_pings() {
+    fn doesnt_error_when_there_are_no_pending_pings() {
         
         let dir = tempfile::tempdir().unwrap();
-        let upload_manager = PingUploadManager::new(dir.path(), false);
+        let upload_manager = PingUploadManager::new(dir.path(), "Testing", false);
 
         
         while upload_manager.get_upload_task(false) == PingUploadTask::Wait {
@@ -390,10 +505,10 @@ mod test {
     }
 
     #[test]
-    fn test_returns_ping_request_when_there_is_one() {
+    fn returns_ping_request_when_there_is_one() {
         
         let dir = tempfile::tempdir().unwrap();
-        let upload_manager = PingUploadManager::new(dir.path(), false);
+        let upload_manager = PingUploadManager::new(dir.path(), "Testing", false);
 
         
         while upload_manager.get_upload_task(false) == PingUploadTask::Wait {
@@ -401,7 +516,7 @@ mod test {
         }
 
         
-        upload_manager.enqueue_ping(DOCUMENT_ID, PATH, json!({}));
+        upload_manager.enqueue_ping(&Uuid::new_v4().to_string(), PATH, "", None);
 
         
         
@@ -412,10 +527,10 @@ mod test {
     }
 
     #[test]
-    fn test_returns_as_many_ping_requests_as_there_are() {
+    fn returns_as_many_ping_requests_as_there_are() {
         
         let dir = tempfile::tempdir().unwrap();
-        let upload_manager = PingUploadManager::new(dir.path(), false);
+        let upload_manager = PingUploadManager::new(dir.path(), "Testing", false);
 
         
         while upload_manager.get_upload_task(false) == PingUploadTask::Wait {
@@ -425,7 +540,7 @@ mod test {
         
         let n = 10;
         for _ in 0..n {
-            upload_manager.enqueue_ping(DOCUMENT_ID, PATH, json!({}));
+            upload_manager.enqueue_ping(&Uuid::new_v4().to_string(), PATH, "", None);
         }
 
         
@@ -441,10 +556,54 @@ mod test {
     }
 
     #[test]
-    fn test_clearing_the_queue_works_correctly() {
+    fn limits_the_number_of_pings_when_there_is_rate_limiting() {
         
         let dir = tempfile::tempdir().unwrap();
-        let upload_manager = PingUploadManager::new(dir.path(), false);
+        let mut upload_manager = PingUploadManager::new(dir.path(), "Testing", false);
+
+        
+        let secs_per_interval = 3;
+        let max_pings_per_interval = 10;
+        upload_manager.set_rate_limiter(secs_per_interval, 10);
+
+        
+        while upload_manager.get_upload_task(false) == PingUploadTask::Wait {
+            thread::sleep(Duration::from_millis(10));
+        }
+
+        
+        for _ in 0..max_pings_per_interval {
+            upload_manager.enqueue_ping(&Uuid::new_v4().to_string(), PATH, "", None);
+        }
+
+        
+        for _ in 0..max_pings_per_interval {
+            match upload_manager.get_upload_task(false) {
+                PingUploadTask::Upload(_) => {}
+                _ => panic!("Expected upload manager to return the next request!"),
+            }
+        }
+
+        
+        
+        upload_manager.enqueue_ping(&Uuid::new_v4().to_string(), PATH, "", None);
+
+        
+        assert_eq!(PingUploadTask::Wait, upload_manager.get_upload_task(false));
+
+        thread::sleep(Duration::from_secs(secs_per_interval));
+
+        match upload_manager.get_upload_task(false) {
+            PingUploadTask::Upload(_) => {}
+            _ => panic!("Expected upload manager to return the next request!"),
+        }
+    }
+
+    #[test]
+    fn clearing_the_queue_works_correctly() {
+        
+        let dir = tempfile::tempdir().unwrap();
+        let upload_manager = PingUploadManager::new(dir.path(), "Testing", false);
 
         
         while upload_manager.get_upload_task(false) == PingUploadTask::Wait {
@@ -453,7 +612,7 @@ mod test {
 
         
         for _ in 0..10 {
-            upload_manager.enqueue_ping(DOCUMENT_ID, PATH, json!({}));
+            upload_manager.enqueue_ping(&Uuid::new_v4().to_string(), PATH, "", None);
         }
 
         
@@ -464,8 +623,13 @@ mod test {
     }
 
     #[test]
-    fn test_clearing_the_queue_doesnt_clear_deletion_request_pings() {
+    fn clearing_the_queue_doesnt_clear_deletion_request_pings() {
         let (mut glean, _) = new_glean(None);
+
+        
+        while glean.get_upload_task() == PingUploadTask::Wait {
+            thread::sleep(Duration::from_millis(10));
+        }
 
         
         let ping_type = PingType::new("test", true,  true, vec![]);
@@ -486,19 +650,24 @@ mod test {
         
         drop(glean.upload_manager.clear_ping_queue());
 
-        let upload_task = glean.get_upload_task(false);
+        let upload_task = glean.get_upload_task();
         match upload_task {
             PingUploadTask::Upload(request) => assert!(request.is_deletion_request()),
             _ => panic!("Expected upload manager to return the next request!"),
         }
 
         
-        assert_eq!(glean.get_upload_task(false), PingUploadTask::Done);
+        assert_eq!(glean.get_upload_task(), PingUploadTask::Done);
     }
 
     #[test]
-    fn test_fills_up_queue_successfully_from_disk() {
-        let (mut glean, dir) = new_glean(None);
+    fn fills_up_queue_successfully_from_disk() {
+        let (mut glean, _) = new_glean(None);
+
+        
+        while glean.get_upload_task() == PingUploadTask::Wait {
+            thread::sleep(Duration::from_millis(10));
+        }
 
         
         let ping_type = PingType::new("test", true,  true, vec![]);
@@ -511,13 +680,10 @@ mod test {
         }
 
         
-        let upload_manager = PingUploadManager::new(dir.path(), false);
-
-        
-        let mut upload_task = upload_manager.get_upload_task(false);
+        let mut upload_task = glean.get_upload_task();
         while upload_task == PingUploadTask::Wait {
             thread::sleep(Duration::from_millis(10));
-            upload_task = upload_manager.get_upload_task(false);
+            upload_task = glean.get_upload_task();
         }
 
         
@@ -527,16 +693,21 @@ mod test {
                 _ => panic!("Expected upload manager to return the next request!"),
             }
 
-            upload_task = upload_manager.get_upload_task(false);
+            upload_task = glean.get_upload_task();
         }
 
         
-        assert_eq!(upload_manager.get_upload_task(false), PingUploadTask::Done);
+        assert_eq!(glean.get_upload_task(), PingUploadTask::Done);
     }
 
     #[test]
-    fn test_processes_correctly_success_upload_response() {
+    fn processes_correctly_success_upload_response() {
         let (mut glean, dir) = new_glean(None);
+
+        
+        while glean.get_upload_task() == PingUploadTask::Wait {
+            thread::sleep(Duration::from_millis(10));
+        }
 
         
         let ping_type = PingType::new("test", true,  true, vec![]);
@@ -546,24 +717,14 @@ mod test {
         glean.submit_ping(&ping_type, None).unwrap();
 
         
-        let upload_manager = PingUploadManager::new(&dir.path(), false);
-
-        
-        let mut upload_task = upload_manager.get_upload_task(false);
-        while upload_task == PingUploadTask::Wait {
-            thread::sleep(Duration::from_millis(10));
-            upload_task = upload_manager.get_upload_task(false);
-        }
-
-        
         let pending_pings_dir = dir.path().join(PENDING_PINGS_DIRECTORY);
 
         
-        match upload_task {
+        match glean.get_upload_task() {
             PingUploadTask::Upload(request) => {
                 
                 let document_id = request.document_id;
-                upload_manager.process_ping_upload_response(&document_id, HttpStatus(200));
+                glean.process_ping_upload_response(&document_id, HttpStatus(200));
                 
                 assert!(!pending_pings_dir.join(document_id).exists());
             }
@@ -571,12 +732,17 @@ mod test {
         }
 
         
-        assert_eq!(upload_manager.get_upload_task(false), PingUploadTask::Done);
+        assert_eq!(glean.get_upload_task(), PingUploadTask::Done);
     }
 
     #[test]
-    fn test_processes_correctly_client_error_upload_response() {
+    fn processes_correctly_client_error_upload_response() {
         let (mut glean, dir) = new_glean(None);
+
+        
+        while glean.get_upload_task() == PingUploadTask::Wait {
+            thread::sleep(Duration::from_millis(10));
+        }
 
         
         let ping_type = PingType::new("test", true,  true, vec![]);
@@ -586,24 +752,14 @@ mod test {
         glean.submit_ping(&ping_type, None).unwrap();
 
         
-        let upload_manager = PingUploadManager::new(&dir.path(), false);
-
-        
-        let mut upload_task = upload_manager.get_upload_task(false);
-        while upload_task == PingUploadTask::Wait {
-            thread::sleep(Duration::from_millis(10));
-            upload_task = upload_manager.get_upload_task(false);
-        }
-
-        
         let pending_pings_dir = dir.path().join(PENDING_PINGS_DIRECTORY);
 
         
-        match upload_task {
+        match glean.get_upload_task() {
             PingUploadTask::Upload(request) => {
                 
                 let document_id = request.document_id;
-                upload_manager.process_ping_upload_response(&document_id, HttpStatus(404));
+                glean.process_ping_upload_response(&document_id, HttpStatus(404));
                 
                 assert!(!pending_pings_dir.join(document_id).exists());
             }
@@ -611,12 +767,17 @@ mod test {
         }
 
         
-        assert_eq!(upload_manager.get_upload_task(false), PingUploadTask::Done);
+        assert_eq!(glean.get_upload_task(), PingUploadTask::Done);
     }
 
     #[test]
-    fn test_processes_correctly_server_error_upload_response() {
-        let (mut glean, dir) = new_glean(None);
+    fn processes_correctly_server_error_upload_response() {
+        let (mut glean, _) = new_glean(None);
+
+        
+        while glean.get_upload_task() == PingUploadTask::Wait {
+            thread::sleep(Duration::from_millis(10));
+        }
 
         
         let ping_type = PingType::new("test", true,  true, vec![]);
@@ -626,23 +787,13 @@ mod test {
         glean.submit_ping(&ping_type, None).unwrap();
 
         
-        let upload_manager = PingUploadManager::new(dir.path(), false);
-
-        
-        let mut upload_task = upload_manager.get_upload_task(false);
-        while upload_task == PingUploadTask::Wait {
-            thread::sleep(Duration::from_millis(10));
-            upload_task = upload_manager.get_upload_task(false);
-        }
-
-        
-        match upload_task {
+        match glean.get_upload_task() {
             PingUploadTask::Upload(request) => {
                 
                 let document_id = request.document_id;
-                upload_manager.process_ping_upload_response(&document_id, HttpStatus(500));
+                glean.process_ping_upload_response(&document_id, HttpStatus(500));
                 
-                match upload_manager.get_upload_task(false) {
+                match glean.get_upload_task() {
                     PingUploadTask::Upload(request) => {
                         assert_eq!(document_id, request.document_id);
                     }
@@ -653,12 +804,17 @@ mod test {
         }
 
         
-        assert_eq!(upload_manager.get_upload_task(false), PingUploadTask::Done);
+        assert_eq!(glean.get_upload_task(), PingUploadTask::Done);
     }
 
     #[test]
-    fn test_processes_correctly_unrecoverable_upload_response() {
+    fn processes_correctly_unrecoverable_upload_response() {
         let (mut glean, dir) = new_glean(None);
+
+        
+        while glean.get_upload_task() == PingUploadTask::Wait {
+            thread::sleep(Duration::from_millis(10));
+        }
 
         
         let ping_type = PingType::new("test", true,  true, vec![]);
@@ -668,24 +824,14 @@ mod test {
         glean.submit_ping(&ping_type, None).unwrap();
 
         
-        let upload_manager = PingUploadManager::new(&dir.path(), false);
-
-        
-        let mut upload_task = upload_manager.get_upload_task(false);
-        while upload_task == PingUploadTask::Wait {
-            thread::sleep(Duration::from_millis(10));
-            upload_task = upload_manager.get_upload_task(false);
-        }
-
-        
         let pending_pings_dir = dir.path().join(PENDING_PINGS_DIRECTORY);
 
         
-        match upload_task {
+        match glean.get_upload_task() {
             PingUploadTask::Upload(request) => {
                 
                 let document_id = request.document_id;
-                upload_manager.process_ping_upload_response(&document_id, UnrecoverableFailure);
+                glean.process_ping_upload_response(&document_id, UnrecoverableFailure);
                 
                 assert!(!pending_pings_dir.join(document_id).exists());
             }
@@ -693,28 +839,28 @@ mod test {
         }
 
         
-        assert_eq!(upload_manager.get_upload_task(false), PingUploadTask::Done);
+        assert_eq!(glean.get_upload_task(), PingUploadTask::Done);
     }
 
     #[test]
     fn new_pings_are_added_while_upload_in_progress() {
         
         let dir = tempfile::tempdir().unwrap();
-        let upload_manager = PingUploadManager::new(dir.path(), false);
+        let upload_manager = PingUploadManager::new(dir.path(), "Testing", false);
 
         
         while upload_manager.get_upload_task(false) == PingUploadTask::Wait {
             thread::sleep(Duration::from_millis(10));
         }
 
-        let doc1 = "684fa150-8dff-11ea-8faf-cb1ff3b11119";
+        let doc1 = Uuid::new_v4().to_string();
         let path1 = format!("/submit/app_id/test-ping/1/{}", doc1);
 
-        let doc2 = "74f14e9a-8dff-11ea-b45a-6f936923f639";
+        let doc2 = Uuid::new_v4().to_string();
         let path2 = format!("/submit/app_id/test-ping/1/{}", doc2);
 
         
-        upload_manager.enqueue_ping(doc1, &path1, json!({}));
+        upload_manager.enqueue_ping(&doc1, &path1, "", None);
 
         
         let req = match upload_manager.get_upload_task(false) {
@@ -724,7 +870,7 @@ mod test {
         assert_eq!(doc1, req.document_id);
 
         
-        upload_manager.enqueue_ping(doc2, &path2, json!({}));
+        upload_manager.enqueue_ping(&doc2, &path2, "", None);
 
         
         upload_manager.process_ping_upload_response(&req.document_id, HttpStatus(200));
@@ -740,20 +886,72 @@ mod test {
         upload_manager.process_ping_upload_response(&req.document_id, HttpStatus(200));
 
         
-        match upload_manager.get_upload_task(false) {
-            PingUploadTask::Done => {}
+        assert_eq!(upload_manager.get_upload_task(false), PingUploadTask::Done);
+    }
+
+    #[test]
+    fn uploader_sync_init() {
+        
+        let dir = tempfile::tempdir().unwrap();
+        let upload_manager = PingUploadManager::new(dir.path(), "Testing", true);
+
+        
+        
+        assert_eq!(PingUploadTask::Done, upload_manager.get_upload_task(false))
+    }
+
+    #[test]
+    fn adds_debug_view_header_to_requests_when_tag_is_set() {
+        let (mut glean, _) = new_glean(None);
+
+        
+        while glean.get_upload_task() == PingUploadTask::Wait {
+            thread::sleep(Duration::from_millis(10));
+        }
+
+        glean.set_debug_view_tag("valid-tag");
+
+        
+        let ping_type = PingType::new("test", true,  true, vec![]);
+        glean.register_ping_type(&ping_type);
+
+        
+        glean.submit_ping(&ping_type, None).unwrap();
+
+        
+        match glean.get_upload_task() {
+            PingUploadTask::Upload(request) => {
+                assert_eq!(request.headers.get("X-Debug-ID").unwrap(), "valid-tag")
+            }
             _ => panic!("Expected upload manager to return the next request!"),
         }
     }
 
     #[test]
-    fn test_uploader_sync_init() {
+    fn duplicates_are_not_enqueued() {
         
         let dir = tempfile::tempdir().unwrap();
-        let upload_manager = PingUploadManager::new(dir.path(), true);
+        let upload_manager = PingUploadManager::new(dir.path(), "Testing", false);
 
         
+        while upload_manager.get_upload_task(false) == PingUploadTask::Wait {
+            thread::sleep(Duration::from_millis(10));
+        }
+
+        let doc_id = Uuid::new_v4().to_string();
+        let path = format!("/submit/app_id/test-ping/1/{}", doc_id);
+
         
-        assert_eq!(PingUploadTask::Done, upload_manager.get_upload_task(false))
+        upload_manager.enqueue_ping(&doc_id, &path, "", None);
+        upload_manager.enqueue_ping(&doc_id, &path, "", None);
+
+        
+        match upload_manager.get_upload_task(false) {
+            PingUploadTask::Upload(_) => {}
+            _ => panic!("Expected upload manager to return the next request!"),
+        }
+
+        
+        assert_eq!(upload_manager.get_upload_task(false), PingUploadTask::Done);
     }
 }

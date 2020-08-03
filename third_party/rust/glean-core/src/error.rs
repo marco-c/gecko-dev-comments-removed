@@ -55,6 +55,9 @@ pub enum ErrorKind {
     Utf8Error,
 
     
+    InvalidConfig,
+
+    
     NotInitialized,
 
     #[doc(hidden)]
@@ -103,6 +106,7 @@ impl Display for Error {
             HistogramType(h) => write!(f, "HistogramType conversion from {} failed", h),
             OsString(s) => write!(f, "OsString conversion from {:?} failed", s),
             Utf8Error => write!(f, "Invalid UTF-8 byte sequence in string"),
+            InvalidConfig => write!(f, "Invalid Glean configuration provided"),
             NotInitialized => write!(f, "Global Glean object missing"),
             __NonExhaustive => write!(f, "Unknown error"),
         }

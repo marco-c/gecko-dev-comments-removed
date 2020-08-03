@@ -11,6 +11,166 @@ use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use serde_json::{self, Value as JsonValue};
 use std::io::prelude::*;
 
+use crate::system;
+
+
+pub type HeaderMap = HashMap<String, String>;
+
+
+fn create_date_header_value(current_time: DateTime<Utc>) -> String {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    current_time.format("%a, %d %b %Y %T GMT").to_string()
+}
+
+fn create_user_agent_header_value(
+    version: &str,
+    language_binding_name: &str,
+    system: &str,
+) -> String {
+    format!(
+        "Glean/{} ({} on {})",
+        version, language_binding_name, system
+    )
+}
+
+
+fn gzip_content(path: &str, content: &[u8]) -> Option<Vec<u8>> {
+    let mut gzipper = GzEncoder::new(Vec::new(), Compression::default());
+
+    
+    if let Err(e) = gzipper.write_all(content) {
+        log::error!("Failed to write to the gzipper: {} - {:?}", path, e);
+        return None;
+    }
+
+    gzipper.finish().ok()
+}
+
+pub struct Builder {
+    document_id: Option<String>,
+    path: Option<String>,
+    body: Option<Vec<u8>>,
+    headers: HeaderMap,
+}
+
+impl Builder {
+    
+    pub fn new(language_binding_name: &str) -> Self {
+        let mut headers = HashMap::new();
+        headers.insert("Date".to_string(), create_date_header_value(Utc::now()));
+        headers.insert(
+            "User-Agent".to_string(),
+            create_user_agent_header_value(crate::GLEAN_VERSION, language_binding_name, system::OS),
+        );
+        headers.insert(
+            "Content-Type".to_string(),
+            "application/json; charset=utf-8".to_string(),
+        );
+        headers.insert("X-Client-Type".to_string(), "Glean".to_string());
+        headers.insert(
+            "X-Client-Version".to_string(),
+            crate::GLEAN_VERSION.to_string(),
+        );
+
+        Self {
+            document_id: None,
+            path: None,
+            body: None,
+            headers,
+        }
+    }
+
+    
+    pub fn document_id<S: Into<String>>(mut self, value: S) -> Self {
+        self.document_id = Some(value.into());
+        self
+    }
+
+    
+    pub fn path<S: Into<String>>(mut self, value: S) -> Self {
+        self.path = Some(value.into());
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn body<S: Into<String>>(mut self, value: S) -> Self {
+        
+        let original_as_string = value.into();
+        let gzipped_content = gzip_content(
+            self.path
+                .as_ref()
+                .expect("Path must be set before attempting to set the body"),
+            original_as_string.as_bytes(),
+        );
+        let add_gzip_header = gzipped_content.is_some();
+        let body = gzipped_content.unwrap_or_else(|| original_as_string.into_bytes());
+
+        
+        self = self.header("Content-Length", &body.len().to_string());
+        if add_gzip_header {
+            self = self.header("Content-Encoding", "gzip");
+        }
+
+        self.body = Some(body);
+        self
+    }
+
+    
+    pub fn header<S: Into<String>>(mut self, key: S, value: S) -> Self {
+        self.headers.insert(key.into(), value.into());
+        self
+    }
+
+    
+    pub fn headers(mut self, values: HeaderMap) -> Self {
+        self.headers.extend(values);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn build(self) -> PingRequest {
+        PingRequest {
+            document_id: self
+                .document_id
+                .expect("document_id must be set before attempting to build PingRequest"),
+            path: self
+                .path
+                .expect("path must be set before attempting to build PingRequest"),
+            body: self
+                .body
+                .expect("body must be set before attempting to build PingRequest"),
+            headers: self.headers,
+        }
+    }
+}
+
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct PingRequest {
@@ -24,7 +184,7 @@ pub struct PingRequest {
     
     pub body: Vec<u8>,
     
-    pub headers: HashMap<&'static str, String>,
+    pub headers: HeaderMap,
 }
 
 impl PingRequest {
@@ -32,21 +192,10 @@ impl PingRequest {
     
     
     
-    pub fn new(document_id: &str, path: &str, body: JsonValue) -> Self {
-        
-        
-        let original_as_string = body.to_string();
-        let gzipped_content = Self::gzip_content(path, original_as_string.as_bytes());
-        let add_gzip_header = gzipped_content.is_some();
-        let body = gzipped_content.unwrap_or_else(|| original_as_string.into_bytes());
-        let body_len = body.len();
-
-        Self {
-            document_id: document_id.into(),
-            path: path.into(),
-            body,
-            headers: Self::create_request_headers(add_gzip_header, body_len),
-        }
+    
+    
+    pub fn builder(language_binding_name: &str) -> Builder {
+        Builder::new(language_binding_name)
     }
 
     
@@ -74,35 +223,43 @@ impl PingRequest {
             .and_then(|payload| serde_json::from_str::<JsonValue>(payload).ok())
             .and_then(|json| serde_json::to_string_pretty(&json).ok())
     }
+}
 
-    
-    fn gzip_content(path: &str, content: &[u8]) -> Option<Vec<u8>> {
-        let mut gzipper = GzEncoder::new(Vec::new(), Compression::default());
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chrono::offset::TimeZone;
 
-        
-        if let Err(e) = gzipper.write_all(content) {
-            log::error!("Failed to write to the gzipper: {} - {:?}", path, e);
-            return None;
-        }
-
-        gzipper.finish().ok()
+    #[test]
+    fn date_header_resolution() {
+        let date: DateTime<Utc> = Utc.ymd(2018, 2, 25).and_hms(11, 10, 37);
+        let test_value = create_date_header_value(date);
+        assert_eq!("Sun, 25 Feb 2018 11:10:37 GMT", test_value);
     }
 
-    
-    fn create_request_headers(is_gzipped: bool, body_len: usize) -> HashMap<&'static str, String> {
-        let mut headers = HashMap::new();
-        let date: DateTime<Utc> = Utc::now();
-        headers.insert("Date", date.to_string());
-        headers.insert("X-Client-Type", "Glean".to_string());
-        headers.insert(
-            "Content-Type",
-            "application/json; charset=utf-8".to_string(),
-        );
-        headers.insert("Content-Length", body_len.to_string());
-        if is_gzipped {
-            headers.insert("Content-Encoding", "gzip".to_string());
-        }
-        headers.insert("X-Client-Version", crate::GLEAN_VERSION.to_string());
-        headers
+    #[test]
+    fn user_agent_header_resolution() {
+        let test_value = create_user_agent_header_value("0.0.0", "Rust", "Windows");
+        assert_eq!("Glean/0.0.0 (Rust on Windows)", test_value);
+    }
+
+    #[test]
+    fn correctly_builds_ping_request() {
+        let request = PingRequest::builder( "Rust")
+            .document_id("woop")
+            .path("/random/path/doesnt/matter")
+            .body("{}")
+            .build();
+
+        assert_eq!(request.document_id, "woop");
+        assert_eq!(request.path, "/random/path/doesnt/matter");
+
+        
+        assert!(request.headers.contains_key("Date"));
+        assert!(request.headers.contains_key("User-Agent"));
+        assert!(request.headers.contains_key("Content-Type"));
+        assert!(request.headers.contains_key("X-Client-Type"));
+        assert!(request.headers.contains_key("X-Client-Version"));
+        assert!(request.headers.contains_key("Content-Length"));
     }
 }

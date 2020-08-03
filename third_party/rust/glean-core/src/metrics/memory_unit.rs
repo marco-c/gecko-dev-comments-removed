@@ -12,6 +12,7 @@ use crate::error::{Error, ErrorKind};
 
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
+#[repr(i32)] 
 pub enum MemoryUnit {
     
     Byte,

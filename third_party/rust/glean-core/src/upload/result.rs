@@ -64,3 +64,20 @@ impl From<u32> for UploadResult {
         }
     }
 }
+
+impl UploadResult {
+    
+    
+    
+    
+    pub fn get_label(&self) -> Option<&str> {
+        match self {
+            UploadResult::HttpStatus(200..=299) => None,
+            UploadResult::HttpStatus(400..=499) => Some("status_code_4xx"),
+            UploadResult::HttpStatus(500..=599) => Some("status_code_5xx"),
+            UploadResult::HttpStatus(_) => Some("status_code_unknown"),
+            UploadResult::UnrecoverableFailure => Some("unrecoverable"),
+            UploadResult::RecoverableFailure => Some("recoverable"),
+        }
+    }
+}

@@ -27,6 +27,7 @@ mod macros;
 
 mod common_metric_data;
 mod database;
+mod debug;
 mod error;
 mod error_recording;
 mod event_database;
@@ -42,7 +43,8 @@ mod util;
 
 pub use crate::common_metric_data::{CommonMetricData, Lifetime};
 use crate::database::Database;
-pub use crate::error::{Error, Result};
+use crate::debug::DebugOptions;
+pub use crate::error::{Error, ErrorKind, Result};
 pub use crate::error_recording::{test_get_num_recorded_errors, ErrorType};
 use crate::event_database::EventDatabase;
 use crate::internal_metrics::CoreMetrics;
@@ -118,10 +120,13 @@ pub struct Configuration {
     
     pub application_id: String,
     
+    pub language_binding_name: String,
+    
     pub max_events: Option<usize>,
     
     pub delay_ping_lifetime_io: bool,
 }
+
 
 
 
@@ -173,37 +178,56 @@ pub struct Glean {
     max_events: usize,
     is_first_run: bool,
     upload_manager: PingUploadManager,
+    debug: DebugOptions,
 }
 
 impl Glean {
     
     
     
-    
-    pub fn new(cfg: Configuration) -> Result<Self> {
+    pub fn new_for_subprocess(cfg: &Configuration) -> Result<Self> {
         log::info!("Creating new Glean v{}", GLEAN_VERSION);
 
         let application_id = sanitize_application_id(&cfg.application_id);
+        if application_id.is_empty() {
+            return Err(ErrorKind::InvalidConfig.into());
+        }
 
         
         
         let data_store = Some(Database::new(&cfg.data_path, cfg.delay_ping_lifetime_io)?);
         let event_data_store = EventDatabase::new(&cfg.data_path)?;
 
-        let mut glean = Self {
+        
+        let mut upload_manager =
+            PingUploadManager::new(&cfg.data_path, &cfg.language_binding_name, false);
+        upload_manager.set_rate_limiter(
+             60,  10,
+        );
+
+        Ok(Self {
             upload_enabled: cfg.upload_enabled,
             data_store,
             event_data_store,
             core_metrics: CoreMetrics::new(),
             internal_pings: InternalPings::new(),
-            upload_manager: PingUploadManager::new(&cfg.data_path, false),
-            data_path: PathBuf::from(cfg.data_path),
+            upload_manager,
+            data_path: PathBuf::from(&cfg.data_path),
             application_id,
             ping_registry: HashMap::new(),
             start_time: local_now_with_offset(),
             max_events: cfg.max_events.unwrap_or(DEFAULT_MAX_EVENTS),
             is_first_run: false,
-        };
+            debug: DebugOptions::new(),
+        })
+    }
+
+    
+    
+    
+    
+    pub fn new(cfg: Configuration) -> Result<Self> {
+        let mut glean = Self::new_for_subprocess(&cfg)?;
 
         
         
@@ -249,6 +273,7 @@ impl Glean {
         let cfg = Configuration {
             data_path: data_path.into(),
             application_id: application_id.into(),
+            language_binding_name: "Rust".into(),
             upload_enabled,
             max_events: None,
             delay_ping_lifetime_io: false,
@@ -474,8 +499,8 @@ impl Glean {
     
     
     
-    pub fn get_upload_task(&self, log_ping: bool) -> PingUploadTask {
-        self.upload_manager.get_upload_task(log_ping)
+    pub fn get_upload_task(&self) -> PingUploadTask {
+        self.upload_manager.get_upload_task(self.log_pings())
     }
 
     
@@ -485,6 +510,11 @@ impl Glean {
     
     
     pub fn process_ping_upload_response(&self, uuid: &str, status: UploadResult) {
+        if let Some(label) = status.get_label() {
+            let metric = self.core_metrics.ping_upload_failure.get(label);
+            metric.add(self, 1);
+        }
+
         self.upload_manager
             .process_ping_upload_response(uuid, status);
     }
@@ -549,6 +579,7 @@ impl Glean {
             }
             Some(content) => {
                 if let Err(e) = ping_maker.store_ping(
+                    self,
                     &doc_id,
                     &ping.name,
                     &self.get_data_path(),
@@ -559,8 +590,7 @@ impl Glean {
                     return Err(e.into());
                 }
 
-                self.upload_manager
-                    .enqueue_ping(&doc_id, &url_path, content);
+                self.upload_manager.enqueue_ping_from_file(&doc_id);
 
                 log::info!(
                     "The ping '{}' was submitted and will be sent as soon as possible",
@@ -682,6 +712,50 @@ impl Glean {
     
     pub fn is_first_run(&self) -> bool {
         self.is_first_run
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_debug_view_tag(&mut self, value: &str) -> bool {
+        self.debug.debug_view_tag.set(value.into())
+    }
+
+    
+    
+    
+    
+    pub(crate) fn debug_view_tag(&self) -> Option<&String> {
+        self.debug.debug_view_tag.get()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_log_pings(&mut self, value: bool) -> bool {
+        self.debug.log_pings.set(value)
+    }
+
+    
+    
+    
+    
+    pub(crate) fn log_pings(&self) -> bool {
+        self.debug.log_pings.get().copied().unwrap_or(false)
     }
 
     fn get_dirty_bit_metric(&self) -> metrics::BooleanMetric {

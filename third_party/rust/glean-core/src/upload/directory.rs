@@ -9,11 +9,15 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
-use serde_json::Value as JsonValue;
+use serde::Deserialize;
 use uuid::Uuid;
 
-use super::PingRequest;
+use super::request::HeaderMap;
 use crate::{DELETION_REQUEST_PINGS_DIRECTORY, PENDING_PINGS_DIRECTORY};
+
+
+
+type PingPayload = (String, String, String, Option<HeaderMap>);
 
 
 
@@ -34,6 +38,26 @@ fn get_file_name_as_str(path: &Path) -> Option<&str> {
             file_name
         }
     }
+}
+
+
+
+
+
+
+
+fn process_metadata(path: &str, metadata: &str) -> Option<HeaderMap> {
+    #[derive(Deserialize)]
+    struct PingMetadata {
+        pub headers: HeaderMap,
+    }
+
+    if let Ok(metadata) = serde_json::from_str::<PingMetadata>(metadata) {
+        return Some(metadata.headers);
+    } else {
+        log::warn!("Error while parsing ping metadata: {}", path);
+    }
+    None
 }
 
 
@@ -89,7 +113,7 @@ impl PingDirectoryManager {
     
     
     
-    pub fn process_file(&self, document_id: &str) -> Option<PingRequest> {
+    pub fn process_file(&self, document_id: &str) -> Option<PingPayload> {
         let path = match self.get_file_path(document_id) {
             Some(path) => path,
             None => {
@@ -110,16 +134,13 @@ impl PingDirectoryManager {
         
         
         
+        
         let mut lines = BufReader::new(file).lines();
-        if let (Some(Ok(path)), Some(Ok(body))) = (lines.next(), lines.next()) {
-            if let Ok(parsed_body) = serde_json::from_str::<JsonValue>(&body) {
-                return Some(PingRequest::new(document_id, &path, parsed_body));
-            } else {
-                log::warn!(
-                    "Error processing ping file: {}. Can't parse ping contents as JSON.",
-                    document_id
-                );
-            }
+        if let (Some(Ok(path)), Some(Ok(body)), Ok(metadata)) =
+            (lines.next(), lines.next(), lines.next().transpose())
+        {
+            let headers = metadata.map(|m| process_metadata(&path, &m)).flatten();
+            return Some((document_id.into(), path, body, headers));
         } else {
             log::warn!(
                 "Error processing ping file: {}. Ping file is not formatted as expected.",
@@ -142,7 +163,8 @@ impl PingDirectoryManager {
     
     
     
-    pub fn process_dir(&self) -> Vec<PingRequest> {
+    
+    pub fn process_dir(&self) -> Vec<PingPayload> {
         log::info!("Processing persisted pings.");
 
         
@@ -162,11 +184,11 @@ impl PingDirectoryManager {
                         return None;
                     }
                     
-                    if let Some(request) = self.process_file(file_name) {
+                    if let Some(data) = self.process_file(file_name) {
                         
                         
                         let modified_date = fs::metadata(&path).and_then(|data| data.modified());
-                        return Some((modified_date, request));
+                        return Some((modified_date, data));
                     }
                 };
                 None
@@ -185,10 +207,7 @@ impl PingDirectoryManager {
         });
 
         
-        pending_pings
-            .into_iter()
-            .map(|(_, request)| request)
-            .collect()
+        pending_pings.into_iter().map(|(_, data)| data).collect()
     }
 
     
@@ -220,15 +239,13 @@ impl PingDirectoryManager {
 #[cfg(test)]
 mod test {
     use std::fs::File;
-    use std::io::prelude::*;
-    use uuid::Uuid;
 
     use super::*;
     use crate::metrics::PingType;
     use crate::tests::new_glean;
 
     #[test]
-    fn test_doesnt_panic_if_no_pending_pings_directory() {
+    fn doesnt_panic_if_no_pending_pings_directory() {
         let dir = tempfile::tempdir().unwrap();
         let directory_manager = PingDirectoryManager::new(dir.path());
 
@@ -237,7 +254,7 @@ mod test {
     }
 
     #[test]
-    fn test_creates_requests_correctly_from_valid_ping_file() {
+    fn gets_correct_data_from_valid_ping_file() {
         let (mut glean, dir) = new_glean(None);
 
         
@@ -250,18 +267,18 @@ mod test {
         let directory_manager = PingDirectoryManager::new(dir.path());
 
         
-        let requests = directory_manager.process_dir();
+        let data = directory_manager.process_dir();
 
         
-        assert_eq!(requests.len(), 1);
+        assert_eq!(data.len(), 1);
 
         
-        let request_ping_type = requests[0].path.split('/').nth(3).unwrap();
+        let request_ping_type = data[0].1.split('/').nth(3).unwrap();
         assert_eq!(request_ping_type, "test");
     }
 
     #[test]
-    fn test_non_uuid_files_are_deleted_and_ignored() {
+    fn non_uuid_files_are_deleted_and_ignored() {
         let (mut glean, dir) = new_glean(None);
 
         
@@ -280,13 +297,13 @@ mod test {
         File::create(&not_uuid_path).unwrap();
 
         
-        let requests = directory_manager.process_dir();
+        let data = directory_manager.process_dir();
 
         
-        assert_eq!(requests.len(), 1);
+        assert_eq!(data.len(), 1);
 
         
-        let request_ping_type = requests[0].path.split('/').nth(3).unwrap();
+        let request_ping_type = data[0].1.split('/').nth(3).unwrap();
         assert_eq!(request_ping_type, "test");
 
         
@@ -294,7 +311,7 @@ mod test {
     }
 
     #[test]
-    fn test_wrongly_formatted_files_are_deleted_and_ignored() {
+    fn wrongly_formatted_files_are_deleted_and_ignored() {
         let (mut glean, dir) = new_glean(None);
 
         
@@ -313,13 +330,13 @@ mod test {
         File::create(&wrong_contents_file_path).unwrap();
 
         
-        let requests = directory_manager.process_dir();
+        let data = directory_manager.process_dir();
 
         
-        assert_eq!(requests.len(), 1);
+        assert_eq!(data.len(), 1);
 
         
-        let request_ping_type = requests[0].path.split('/').nth(3).unwrap();
+        let request_ping_type = data[0].1.split('/').nth(3).unwrap();
         assert_eq!(request_ping_type, "test");
 
         
@@ -327,46 +344,7 @@ mod test {
     }
 
     #[test]
-    fn test_non_json_ping_body_files_are_deleted_and_ignored() {
-        let (mut glean, dir) = new_glean(None);
-
-        
-        let ping_type = PingType::new("test", true, true, vec![]);
-        glean.register_ping_type(&ping_type);
-
-        
-        glean.submit_ping(&ping_type, None).unwrap();
-
-        let directory_manager = PingDirectoryManager::new(&dir.path());
-
-        let non_json_body_file_path = dir
-            .path()
-            .join(PENDING_PINGS_DIRECTORY)
-            .join(Uuid::new_v4().to_string());
-        let mut non_json_body_file = File::create(&non_json_body_file_path).unwrap();
-        non_json_body_file
-            .write_all(
-                b"https://doc.rust-lang.org/std/fs/struct.File.html
-                This is not JSON!!!!",
-            )
-            .unwrap();
-
-        
-        let requests = directory_manager.process_dir();
-
-        
-        assert_eq!(requests.len(), 1);
-
-        
-        let request_ping_type = requests[0].path.split('/').nth(3).unwrap();
-        assert_eq!(request_ping_type, "test");
-
-        
-        assert!(!non_json_body_file_path.exists());
-    }
-
-    #[test]
-    fn test_takes_deletion_request_pings_into_account_while_processing() {
+    fn takes_deletion_request_pings_into_account_while_processing() {
         let (glean, dir) = new_glean(None);
 
         
@@ -379,10 +357,12 @@ mod test {
         let directory_manager = PingDirectoryManager::new(dir.path());
 
         
-        let requests = directory_manager.process_dir();
+        let data = directory_manager.process_dir();
 
-        assert_eq!(requests.len(), 1);
+        assert_eq!(data.len(), 1);
 
-        assert!(requests[0].is_deletion_request());
+        
+        let request_ping_type = data[0].1.split('/').nth(3).unwrap();
+        assert_eq!(request_ping_type, "deletion-request");
     }
 }

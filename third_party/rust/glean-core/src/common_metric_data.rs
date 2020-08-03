@@ -12,6 +12,7 @@ use crate::Glean;
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(i32)] 
 pub enum Lifetime {
     
     Ping,

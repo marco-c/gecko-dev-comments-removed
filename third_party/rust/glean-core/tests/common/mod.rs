@@ -53,6 +53,7 @@ pub fn new_glean(tempdir: Option<tempfile::TempDir>) -> (Glean, tempfile::TempDi
     let cfg = glean_core::Configuration {
         data_path: tmpname,
         application_id: GLOBAL_APPLICATION_ID.into(),
+        language_binding_name: "Rust".into(),
         upload_enabled: true,
         max_events: None,
         delay_ping_lifetime_io: false,
@@ -88,7 +89,7 @@ pub fn iso8601_to_chrono(datetime: &iso8601::DateTime) -> chrono::DateTime<chron
 
 
 
-pub fn get_queued_pings(data_path: &Path) -> Result<Vec<(String, JsonValue)>> {
+pub fn get_queued_pings(data_path: &Path) -> Result<Vec<(String, JsonValue, Option<JsonValue>)>> {
     get_pings(&data_path.join("pending_pings"))
 }
 
@@ -102,11 +103,12 @@ pub fn get_queued_pings(data_path: &Path) -> Result<Vec<(String, JsonValue)>> {
 
 
 
-pub fn get_deletion_pings(data_path: &Path) -> Result<Vec<(String, JsonValue)>> {
+
+pub fn get_deletion_pings(data_path: &Path) -> Result<Vec<(String, JsonValue, Option<JsonValue>)>> {
     get_pings(&data_path.join("deletion_request"))
 }
 
-fn get_pings(pings_dir: &Path) -> Result<Vec<(String, JsonValue)>> {
+fn get_pings(pings_dir: &Path) -> Result<Vec<(String, JsonValue, Option<JsonValue>)>> {
     let entries = read_dir(pings_dir)?;
     Ok(entries
         .filter_map(|entry| entry.ok())
@@ -117,9 +119,14 @@ fn get_pings(pings_dir: &Path) -> Result<Vec<(String, JsonValue)>> {
         .filter_map(|entry| File::open(entry.path()).ok())
         .filter_map(|file| {
             let mut lines = BufReader::new(file).lines();
-            if let (Some(Ok(url)), Some(Ok(json))) = (lines.next(), lines.next()) {
-                if let Ok(parsed_json) = serde_json::from_str::<JsonValue>(&json) {
-                    Some((url, parsed_json))
+            if let (Some(Ok(url)), Some(Ok(body)), Ok(metadata)) =
+                (lines.next(), lines.next(), lines.next().transpose())
+            {
+                let parsed_metadata = metadata.map(|m| {
+                    serde_json::from_str::<JsonValue>(&m).expect("metadata should be valid JSON")
+                });
+                if let Ok(parsed_body) = serde_json::from_str::<JsonValue>(&body) {
+                    Some((url, parsed_body, parsed_metadata))
                 } else {
                     None
                 }

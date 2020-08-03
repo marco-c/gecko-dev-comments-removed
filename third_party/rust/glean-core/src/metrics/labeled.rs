@@ -2,9 +2,6 @@
 
 
 
-use once_cell::sync::Lazy;
-use regex::Regex;
-
 use crate::common_metric_data::CommonMetricData;
 use crate::error_recording::{record_error, ErrorType};
 use crate::metrics::{Metric, MetricType};
@@ -32,8 +29,48 @@ const MAX_LABEL_LENGTH: usize = 61;
 
 
 
-static LABEL_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new("^[a-z_][a-z0-9_-]{0,29}(\\.[a-z_][a-z0-9_-]{0,29})*$").unwrap());
+
+
+
+
+
+
+
+
+
+
+fn matches_label_regex(value: &str) -> bool {
+    let mut iter = value.chars();
+
+    loop {
+        
+        match iter.next() {
+            Some('_') | Some('a'..='z') => (),
+            _ => return false,
+        };
+
+        
+        let mut count = 0;
+        loop {
+            match iter.next() {
+                
+                None => return true,
+                
+                Some('_') | Some('-') | Some('a'..='z') | Some('0'..='9') => (),
+                
+                Some('.') => break,
+                
+                _ => return false,
+            }
+            count += 1;
+            
+            
+            if count == 29 {
+                return false;
+            }
+        }
+    }
+}
 
 
 
@@ -90,7 +127,7 @@ where
     
     
     
-    fn static_label<'a>(&mut self, label: &'a str) -> &'a str {
+    fn static_label<'a>(&self, label: &'a str) -> &'a str {
         debug_assert!(self.labels.is_some());
         let labels = self.labels.as_ref().unwrap();
         if labels.iter().any(|l| l == label) {
@@ -111,7 +148,7 @@ where
     
     
     
-    pub fn get(&mut self, label: &str) -> T {
+    pub fn get(&self, label: &str) -> T {
         
         
         
@@ -200,7 +237,7 @@ pub fn dynamic_label(
         );
         record_error(glean, meta, ErrorType::InvalidLabel, msg, None);
         true
-    } else if !LABEL_REGEX.is_match(label) {
+    } else if !matches_label_regex(label) {
         let msg = format!("label must be snake_case, got '{}'", label);
         record_error(glean, meta, ErrorType::InvalidLabel, msg, None);
         true
