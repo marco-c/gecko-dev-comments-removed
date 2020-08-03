@@ -67,11 +67,7 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
       const nsresult& aChannelStatus, const ResourceTimingStructArgs& aTiming,
       const TimeStamp& aLastActiveTabOptHit,
       const nsHttpHeaderArray& aResponseTrailers,
-      nsTArray<ConsoleReportCollected>&& aConsoleReports,
-      const bool& aFromSocketProcess);
-
-  IPCResult RecvOnConsoleReport(
-      nsTArray<ConsoleReportCollected>&& aConsoleReports);
+      const nsTArray<ConsoleReportCollected>& aConsoleReports);
 
   IPCResult RecvOnAfterLastPart(const nsresult& aStatus);
 
@@ -131,23 +127,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
-
-  enum ODASource {
-    ODA_PENDING = 0,      
-    ODA_FROM_PARENT = 1,  
-    ODA_FROM_SOCKET = 2   
-  };
-  
-  
-  
-  ODASource mFirstODASource;
-
-  
-  bool mOnStopRequestCalled;
-
-  
-  
-  std::function<void()> mConsoleReportTask;
 };
 
 }  

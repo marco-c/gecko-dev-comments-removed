@@ -380,10 +380,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   uint8_t mAsyncOpenBarrier = 0;
-
-  
-  
-  uint8_t mDataSentToChildProcess : 1;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpChannelParent, HTTP_CHANNEL_PARENT_IID)
