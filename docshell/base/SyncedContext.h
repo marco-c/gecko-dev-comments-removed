@@ -57,7 +57,7 @@ class Transaction {
   
   
   
-  nsresult Commit(Context* aOwner);
+  MOZ_MUST_USE nsresult Commit(Context* aOwner);
 
   
   mozilla::ipc::IPCResult CommitFromIPC(const MaybeDiscarded<Context>& aOwner,
@@ -198,7 +198,7 @@ class FieldStorage {
   const type& Get##name() const { return mFields.template Get<IDX_##name>(); } \
                                                                                \
   template <typename U>                                                        \
-  nsresult Set##name(U&& aValue) {                                             \
+  MOZ_MUST_USE nsresult Set##name(U&& aValue) {                                \
     Transaction txn;                                                           \
     txn.template Set<IDX_##name>(std::forward<U>(aValue));                     \
     return txn.Commit(this);                                                   \
