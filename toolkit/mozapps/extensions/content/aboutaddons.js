@@ -363,6 +363,7 @@ function checkForUpdate(addon) {
           attachUpdateHandler(install);
 
           let failed = () => {
+            detachUpdateHandler(install);
             install.removeListener(updateListener);
             resolve({ installed: false, pending: false, found: true });
           };
@@ -371,10 +372,12 @@ function checkForUpdate(addon) {
             onInstallCancelled: failed,
             onInstallFailed: failed,
             onInstallEnded: (...args) => {
+              detachUpdateHandler(install);
               install.removeListener(updateListener);
               resolve({ installed: true, pending: false, found: true });
             },
             onInstallPostponed: (...args) => {
+              detachUpdateHandler(install);
               install.removeListener(updateListener);
               resolve({ installed: false, pending: true, found: true });
             },
@@ -2895,11 +2898,13 @@ class AddonCard extends HTMLElement {
           attachUpdateHandler(this.updateInstall);
           this.updateInstall.install().then(
             () => {
+              detachUpdateHandler(this.updateInstall);
               
               
               this.sendEvent("update-installed");
             },
             () => {
+              detachUpdateHandler(this.updateInstall);
               
               this.update();
               this.sendEvent("update-cancelled");
