@@ -1254,12 +1254,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   Maybe<ReflowInput> mutableReflowInput;
   
   
-  const PhysicalAxes physicalBlockAxis =
-      wm.IsVertical() ? PhysicalAxes::Horizontal : PhysicalAxes::Vertical;
   if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
       aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE &&
-      (ShouldApplyOverflowClipping(aReflowInput.mStyleDisplay) &
-       physicalBlockAxis)) {
+      ShouldApplyOverflowClipping(aReflowInput.mStyleDisplay)) {
     LogicalMargin blockDirExtras = aReflowInput.ComputedLogicalBorderPadding();
     if (GetLogicalSkipSides().BStart()) {
       blockDirExtras.BStart(wm) = 0;
@@ -2045,7 +2042,7 @@ void nsBlockFrame::ComputeOverflowAreas(const nsRect& aBounds,
   
   
   nsOverflowAreas areas(aBounds, aBounds);
-  if (ShouldApplyOverflowClipping(aDisplay) != PhysicalAxes::Both) {
+  if (!ShouldApplyOverflowClipping(aDisplay)) {
     for (const auto& line : Lines()) {
       if (aDisplay->IsContainLayout()) {
         

@@ -475,16 +475,42 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     fn adjust_for_overflow(&mut self) {
-        let overflow_x = self.style.get_box().clone_overflow_x();
-        let overflow_y = self.style.get_box().clone_overflow_y();
+        let original_overflow_x = self.style.get_box().clone_overflow_x();
+        let original_overflow_y = self.style.get_box().clone_overflow_y();
+
+        let mut overflow_x = original_overflow_x;
+        let mut overflow_y = original_overflow_y;
+
         if overflow_x == overflow_y {
-            return; 
+            return;
         }
 
-        if overflow_x.is_scrollable() != overflow_y.is_scrollable() {
+        
+        
+        if overflow_x == Overflow::Visible {
+            overflow_x = Overflow::Auto;
+        }
+
+        if overflow_y == Overflow::Visible {
+            overflow_y = Overflow::Auto;
+        }
+
+        #[cfg(feature = "gecko")]
+        {
+            
+            
+            if overflow_x == Overflow::MozHiddenUnscrollable {
+                overflow_x = Overflow::Hidden;
+            }
+            if overflow_y == Overflow::MozHiddenUnscrollable {
+                overflow_y = Overflow::Hidden;
+            }
+        }
+
+        if overflow_x != original_overflow_x || overflow_y != original_overflow_y {
             let box_style = self.style.mutate_box();
-            box_style.set_overflow_x(overflow_x.to_scrollable());
-            box_style.set_overflow_y(overflow_y.to_scrollable());
+            box_style.set_overflow_x(overflow_x);
+            box_style.set_overflow_y(overflow_y);
         }
     }
 
@@ -534,7 +560,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         let overflow_y = box_style.clone_overflow_y();
 
         fn scrollable(v: Overflow) -> bool {
-            v != Overflow::Clip && v != Overflow::Visible
+            v != Overflow::MozHiddenUnscrollable && v != Overflow::Visible
         }
 
         

@@ -2957,17 +2957,9 @@ class nsIFrame : public nsQueryFrame {
   virtual void UnionChildOverflow(nsOverflowAreas& aOverflowAreas);
 
   
-  enum class PhysicalAxes : uint8_t {
-    None = 0x0,
-    Horizontal = 0x1,
-    Vertical = 0x2,
-    Both = Horizontal | Vertical,
-  };
-
-  
 
 
-  PhysicalAxes ShouldApplyOverflowClipping(const nsStyleDisplay* aDisp) const;
+  bool ShouldApplyOverflowClipping(const nsStyleDisplay* aDisp) const;
 
   
 
@@ -4262,7 +4254,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual bool DoesClipChildrenInBothAxes();
+  virtual bool DoesClipChildren();
 
   
   
@@ -5389,7 +5381,6 @@ class nsIFrame : public nsQueryFrame {
 #endif
 };
 
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIFrame::PhysicalAxes)
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIFrame::ReflowChildFlags)
 
 

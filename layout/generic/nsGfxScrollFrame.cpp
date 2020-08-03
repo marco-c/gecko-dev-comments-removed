@@ -917,6 +917,7 @@ void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
   
   
   
+  
   nsOverflowAreas overflow(scrolledArea, scrolledArea);
   scrolledFrame->FinishAndStoreOverflow(overflow, scrolledFrame->GetSize());
 
@@ -4314,8 +4315,7 @@ ScrollStyles ScrollFrameHelper::GetScrollStylesFromFrame() const {
   }
 
   if (!mIsRoot) {
-    return ScrollStyles(*mOuter->StyleDisplay(),
-                        ScrollStyles::MapOverflowToValidScrollStyle);
+    return ScrollStyles(*mOuter->StyleDisplay());
   }
 
   ScrollStyles result = presContext->GetViewportScrollStylesOverride();
