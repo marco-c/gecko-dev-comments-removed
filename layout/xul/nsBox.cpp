@@ -255,13 +255,10 @@ nsresult nsIFrame::XULLayout(nsBoxLayoutState& aState) {
   return NS_OK;
 }
 
-bool nsIFrame::DoesClipChildren() {
+bool nsIFrame::DoesClipChildrenInBothAxes() {
   const nsStyleDisplay* display = StyleDisplay();
-  NS_ASSERTION(
-      (display->mOverflowY == StyleOverflow::Clip) ==
-          (display->mOverflowX == StyleOverflow::Clip),
-      "If one overflow is clip, the other should be too");
-  return display->mOverflowX == StyleOverflow::Clip;
+  return display->mOverflowX == StyleOverflow::Clip &&
+         display->mOverflowY == StyleOverflow::Clip;
 }
 
 nsresult nsIFrame::SyncXULLayout(nsBoxLayoutState& aBoxLayoutState) {
@@ -290,7 +287,7 @@ nsresult nsIFrame::SyncXULLayout(nsBoxLayoutState& aBoxLayoutState) {
   } else {
     nsRect rect(nsPoint(0, 0), GetSize());
     nsOverflowAreas overflowAreas(rect, rect);
-    if (!DoesClipChildren() && !IsXULCollapsed()) {
+    if (!DoesClipChildrenInBothAxes() && !IsXULCollapsed()) {
       
       
       
