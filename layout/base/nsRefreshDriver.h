@@ -482,6 +482,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   uint32_t ObserverCount() const;
   bool HasImageRequests() const;
+  bool HasReasonToTick() const;
+  bool ShouldKeepTimerRunningWhileWaitingForFirstContentfulPaint();
   ObserverArray& ArrayFor(mozilla::FlushType aFlushType);
   
   void DoRefresh();
@@ -575,7 +577,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   mozilla::TimeStamp mTickVsyncTime;
   mozilla::TimeStamp mNextThrottledFrameRequestTick;
   mozilla::TimeStamp mNextRecomputeVisibilityTick;
-  mozilla::TimeStamp mInitialTimerRunningLimit;
+  mozilla::TimeStamp mBeforeFirstContentfulPaintTimerRunningLimit;
 
   
   ObserverArray mObservers[4];
