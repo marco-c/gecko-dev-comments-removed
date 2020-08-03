@@ -443,6 +443,7 @@ inline bool SetArgv0ToFullBinaryPath(wchar_t* aArgv[]) {
   return true;
 }
 
+#  if defined(MOZILLA_INTERNAL_API)
 
 
 
@@ -608,6 +609,7 @@ class CommandLineParserWin final {
     }
   }
 };
+#  endif  
 
 #endif  
 
