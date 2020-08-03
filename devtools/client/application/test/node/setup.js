@@ -16,28 +16,34 @@ global.loader = {
     const module = fn();
     global[name] = module;
   },
-  lazyRequireGetter: (obj, property, module, destructure) => {
-    Object.defineProperty(obj, property, {
-      get: () => {
-        
-        
-        
-        
-        delete obj[property];
-        const value = destructure
-          ? require(module)[property]
-          : require(module || property);
-        Object.defineProperty(obj, property, {
-          value,
-          writable: true,
-          configurable: true,
-          enumerable: true,
-        });
-        return value;
-      },
-      configurable: true,
-      enumerable: true,
-    });
+  lazyRequireGetter: (obj, properties, module, destructure) => {
+    if (!Array.isArray(properties)) {
+      properties = [properties];
+    }
+
+    for (const property of properties) {
+      Object.defineProperty(obj, property, {
+        get: () => {
+          
+          
+          
+          
+          delete obj[property];
+          const value = destructure
+            ? require(module)[property]
+            : require(module || property);
+          Object.defineProperty(obj, property, {
+            value,
+            writable: true,
+            configurable: true,
+            enumerable: true,
+          });
+          return value;
+        },
+        configurable: true,
+        enumerable: true,
+      });
+    }
   },
   lazyImporter: () => {},
 };

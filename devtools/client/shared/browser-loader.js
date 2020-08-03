@@ -222,12 +222,29 @@ BrowserLoaderBuilder.prototype = {
 
 
 
-  lazyRequireGetter: function(obj, property, module, destructure) {
-    loader.lazyGetter(obj, property, () => {
-      return destructure
-        ? this.require(module)[property]
-        : this.require(module || property);
-    });
+
+
+
+
+
+  lazyRequireGetter: function(obj, properties, module, destructure) {
+    if (Array.isArray(properties) && !destructure) {
+      throw new Error(
+        "Pass destructure=true to call lazyRequireGetter with an array of properties"
+      );
+    }
+
+    if (!Array.isArray(properties)) {
+      properties = [properties];
+    }
+
+    for (const property of properties) {
+      loader.lazyGetter(obj, property, () => {
+        return destructure
+          ? this.require(module)[property]
+          : this.require(module || property);
+      });
+    }
   },
 };
 

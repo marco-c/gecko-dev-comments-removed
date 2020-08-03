@@ -174,12 +174,29 @@ function defineLazyModuleGetter(object, name, resource) {
 
 
 
-function lazyRequireGetter(obj, property, module, destructure) {
-  defineLazyGetter(obj, property, () => {
-    return destructure
-      ? require(module)[property]
-      : require(module || property);
-  });
+
+
+
+
+
+function lazyRequireGetter(obj, properties, module, destructure) {
+  if (Array.isArray(properties) && !destructure) {
+    throw new Error(
+      "Pass destructure=true to call lazyRequireGetter with an array of properties"
+    );
+  }
+
+  if (!Array.isArray(properties)) {
+    properties = [properties];
+  }
+
+  for (const property of properties) {
+    defineLazyGetter(obj, property, () => {
+      return destructure
+        ? require(module)[property]
+        : require(module || property);
+    });
+  }
 }
 
 
