@@ -1438,6 +1438,15 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     httpChannelImpl->GetCacheTokenCachedCharset(args.cachedCharset());
 
     mDataSentToChildProcess = httpChannelImpl->DataSentToChildProcess();
+
+    
+    
+    if (args.isRacing()) {
+      mDataSentToChildProcess =
+          httpChannelImpl->DataSentToChildProcess() && !args.isFromCache();
+    }
+    args.dataFromSocketProcess() = mDataSentToChildProcess;
+
     bool loadedFromApplicationCache = false;
     httpChannelImpl->GetLoadedFromApplicationCache(&loadedFromApplicationCache);
     if (loadedFromApplicationCache) {
