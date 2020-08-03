@@ -174,22 +174,49 @@ var PrintUtils = {
     );
   },
 
-  async updatePrintPreview(sourceBrowser) {
+  
+
+
+
+
+
+
+
+
+
+
+  async updatePrintPreview(sourceBrowser, printSettings) {
     let container = gBrowser.getBrowserContainer(sourceBrowser);
     let printPreviewBrowser = container.querySelector(".printPreviewBrowser");
 
     if (!printPreviewBrowser) {
+      
       return 0;
     }
 
     let numPages = await this._updatePrintPreview(
       sourceBrowser,
-      printPreviewBrowser
+      printPreviewBrowser,
+      printSettings
     );
     return numPages;
   },
 
-  _updatePrintPreview(sourceBrowser, printPreviewBrowser) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _updatePrintPreview(sourceBrowser, printPreviewBrowser, printSettings) {
     return new Promise(resolve => {
       printPreviewBrowser.messageManager.addMessageListener(
         "Printing:Preview:UpdatePageCount",
@@ -206,7 +233,7 @@ var PrintUtils = {
         "Printing:Preview:Enter",
         {
           changingBrowsers: false,
-          lastUsedPrinterName: this._getLastUsedPrinterName(),
+          lastUsedPrinterName: printSettings.printerName,
           simplifiedMode: false,
           windowID: sourceBrowser.outerWindowID,
         }
