@@ -691,27 +691,35 @@ GetClipRectAndTransformForPartialPrerender(const nsIFrame* aFrame,
       
       scrollFrame = aFrame->PresShell()->GetRootScrollFrameAsScrollable();
     }
-    aClipFrame = do_QueryFrame(scrollFrame);
+    if (scrollFrame) {
+      aClipFrame = do_QueryFrame(scrollFrame);
+    } else {
+      
+      aClipFrame = aFrame->PresShell()->GetRootFrame();
+    }
   } else {
     scrollFrame = do_QueryFrame(aClipFrame);
   }
 
-  MOZ_ASSERT(scrollFrame);
   MOZ_ASSERT(aClipFrame);
 
   gfx::Matrix4x4 transformInClip =
       nsLayoutUtils::GetTransformToAncestor(RelativeTo{aFrame->GetParent()},
                                             RelativeTo{aClipFrame})
           .GetMatrix();
-  transformInClip.PostTranslate(
-      LayoutDevicePoint::FromAppUnits(scrollFrame->GetScrollPosition(),
-                                      aDevPixelsToAppUnits)
-          .ToUnknownPoint());
+  if (scrollFrame) {
+    transformInClip.PostTranslate(
+        LayoutDevicePoint::FromAppUnits(scrollFrame->GetScrollPosition(),
+                                        aDevPixelsToAppUnits)
+            .ToUnknownPoint());
+  }
 
   
   
   return std::make_pair(
-      LayoutDeviceRect::FromAppUnits(scrollFrame->GetScrollPortRect(),
+      LayoutDeviceRect::FromAppUnits(scrollFrame
+                                         ? scrollFrame->GetScrollPortRect()
+                                         : aClipFrame->GetRectRelativeToSelf(),
                                      aDevPixelsToAppUnits) *
           LayoutDeviceToLayerScale2D() * LayerToParentLayerScale(),
       transformInClip);
