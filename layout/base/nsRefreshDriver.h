@@ -447,6 +447,16 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     mNeedToUpdateIntersectionObservations = true;
   }
 
+  enum class TickReasons : uint32_t {
+    eNone = 0,
+    eHasObservers = 1 << 0,
+    eHasImageRequests = 1 << 1,
+    eNeedsToUpdateIntersectionObservations = 1 << 2,
+    eHasVisualViewportResizeEvents = 1 << 3,
+    eHasScrollEvents = 1 << 4,
+    eHasVisualVieportScrollEvents = 1 << 5,
+  };
+
  private:
   typedef nsTObserverArray<nsARefreshObserver*> ObserverArray;
   typedef nsTArray<RefPtr<VVPResizeEvent>> VisualViewportResizeEventArray;
@@ -482,11 +492,13 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   uint32_t ObserverCount() const;
   bool HasImageRequests() const;
-  bool HasReasonToTick() const;
   bool ShouldKeepTimerRunningWhileWaitingForFirstContentfulPaint();
   ObserverArray& ArrayFor(mozilla::FlushType aFlushType);
   
   void DoRefresh();
+
+  TickReasons GetReasonsToTick() const;
+  void AppendTickReasonsToString(TickReasons aReasons, nsACString& aStr) const;
 
   double GetRegularTimerInterval() const;
   static double GetThrottledTimerInterval();
