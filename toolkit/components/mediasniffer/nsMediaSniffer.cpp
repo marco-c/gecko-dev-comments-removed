@@ -38,7 +38,9 @@ nsMediaSnifferEntry nsMediaSniffer::sSnifferEntries[] = {
     
     PATTERN_ENTRY("\xFF\xFF\xFF", "ID3", AUDIO_MP3),
     
-    PATTERN_ENTRY("\xFF\xFF\xFF\xFF", "fLaC", AUDIO_FLAC)};
+    PATTERN_ENTRY("\xFF\xFF\xFF\xFF", "fLaC", AUDIO_FLAC),
+    PATTERN_ENTRY("\xFF\xFF\xFF\xFF\xFF\xFF\xFF", "#EXTM3U",
+                  APPLICATION_MPEGURL)};
 
 
 nsMediaSnifferEntry sFtypEntries[] = {
