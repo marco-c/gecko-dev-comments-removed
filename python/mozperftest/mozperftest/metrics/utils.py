@@ -1,9 +1,11 @@
 
 
 
+import ast
 import os
 import json
 import pathlib
+import re
 
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
@@ -26,6 +28,11 @@ KNOWN_SUITE_PROPS = set(
     | KNOWN_PERFHERDER_PROPS
 )
 KNOWN_SINGLE_MEASURE_PROPS = set(set(["values"]) | KNOWN_PERFHERDER_PROPS)
+
+
+
+
+METRIC_SPLITTER = re.compile(r",\s*(?![^\[\]]*\])")
 
 
 def is_number(value):
@@ -107,17 +114,29 @@ def metric_fields(value):
         return {"name": value}
 
     def _check(field):
-        sfield = field.strip().split(":")
-        if len(sfield) != 2:
+        sfield = field.strip().partition(":")
+        if len(sfield) != 3 or not (sfield[1] and sfield[2]):
             raise ValueError(f"Unexpected metrics definition {field}")
-        if sfield[0] not in KNOWN_PERFHERDER_PROPS:
+        if sfield[0] not in KNOWN_SUITE_PROPS:
             raise ValueError(
-                f"Unknown field '{sfield[0]}', should be in "
-                f"{KNOWN_PERFHERDER_PROPS}"
+                f"Unknown field '{sfield[0]}', should be in " f"{KNOWN_SUITE_PROPS}"
             )
+
+        sfield = [sfield[0], sfield[2]]
+
+        try:
+            
+            
+            sfield[1] = ast.literal_eval(sfield[1])
+        except (ValueError, SyntaxError):
+            
+            
+            
+            pass
+
         return sfield
 
-    fields = [field.strip() for field in value.split(",")]
+    fields = [field.strip() for field in METRIC_SPLITTER.split(value)]
     res = dict([_check(field) for field in fields])
     if "name" not in res:
         raise ValueError(f"{value} misses the 'name' field")
