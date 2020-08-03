@@ -29,7 +29,7 @@ extern crate xpcom;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
-use nserror::{nsresult, NS_ERROR_FAILURE, NS_OK};
+use nserror::{nsresult, NS_ERROR_FAILURE, NS_ERROR_NO_CONTENT, NS_OK};
 use nsstring::{nsACString, nsCStr};
 use xpcom::interfaces::{mozIViaduct, nsIObserver, nsIPrefBranch, nsISupports};
 use xpcom::{RefPtr, XpCom};
@@ -209,4 +209,40 @@ pub unsafe extern "C" fn fog_use_ipc_buf(buf: *const u8, buf_len: usize) {
     
 
 
+}
+
+#[no_mangle]
+
+
+pub unsafe extern "C" fn fog_set_debug_view_tag(value: &nsACString) -> nsresult {
+    let result = api::set_debug_view_tag(&value.to_string());
+    if result {
+        return NS_OK;
+    } else {
+        return NS_ERROR_FAILURE;
+    }
+}
+
+#[no_mangle]
+
+
+
+
+pub unsafe extern "C" fn fog_submit_ping(ping_name: &nsACString) -> nsresult {
+    match api::submit_ping(&ping_name.to_string()) {
+        Ok(true) => NS_OK,
+        Ok(false) => NS_ERROR_NO_CONTENT,
+        _ => NS_ERROR_FAILURE,
+    }
+}
+
+#[no_mangle]
+
+
+pub unsafe extern "C" fn fog_set_log_pings(value: bool) -> nsresult {
+    if api::set_log_pings(value) {
+        return NS_OK;
+    } else {
+        return NS_ERROR_FAILURE;
+    }
 }
