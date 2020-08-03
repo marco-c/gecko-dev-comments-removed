@@ -72,7 +72,12 @@ class SVGElement;
 
 
 class DOMSVGPathSeg : public nsWrapperCache {
-  friend class AutoChangePathSegNotifier;
+  template <class T>
+  friend class AutoChangePathSegListNotifier;
+
+ protected:
+  using AutoChangePathSegListNotifier =
+      AutoChangePathSegListNotifier<DOMSVGPathSeg>;
 
  public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGPathSeg)
@@ -93,6 +98,12 @@ class DOMSVGPathSeg : public nsWrapperCache {
   virtual DOMSVGPathSeg* Clone() = 0;
 
   bool IsInList() const { return !!mList; }
+
+  
+
+
+
+  bool AttrIsAnimating() const { return mList && mList->AttrIsAnimating(); }
 
   
 

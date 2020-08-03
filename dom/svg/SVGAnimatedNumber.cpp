@@ -19,6 +19,29 @@ namespace mozilla {
 
 
 
+
+
+
+class MOZ_RAII AutoChangeNumberNotifier {
+ public:
+  AutoChangeNumberNotifier(SVGAnimatedNumber* aNumber, SVGElement* aSVGElement)
+      : mNumber(aNumber), mSVGElement(aSVGElement) {
+    MOZ_ASSERT(mNumber, "Expecting non-null number");
+    MOZ_ASSERT(mSVGElement, "Expecting non-null element");
+  }
+
+  ~AutoChangeNumberNotifier() {
+    mSVGElement->DidChangeNumber(mNumber->mAttrEnum);
+    if (mNumber->mIsAnimated) {
+      mSVGElement->AnimationNeedsResample();
+    }
+  }
+
+ private:
+  SVGAnimatedNumber* const mNumber;
+  SVGElement* const mSVGElement;
+};
+
 static SVGAttrTearoffTable<SVGAnimatedNumber,
                            SVGAnimatedNumber::DOMAnimatedNumber>
     sSVGAnimatedNumberTearoffTable;
@@ -84,14 +107,13 @@ void SVGAnimatedNumber::SetBaseValue(float aValue, SVGElement* aSVGElement) {
     return;
   }
 
+  AutoChangeNumberNotifier notifier(this, aSVGElement);
+
   mBaseVal = aValue;
   mIsBaseSet = true;
   if (!mIsAnimated) {
     mAnimVal = mBaseVal;
-  } else {
-    aSVGElement->AnimationNeedsResample();
   }
-  aSVGElement->DidChangeNumber(mAttrEnum);
 }
 
 void SVGAnimatedNumber::SetAnimValue(float aValue, SVGElement* aSVGElement) {
