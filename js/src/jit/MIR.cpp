@@ -2549,9 +2549,7 @@ static inline bool NeedNegativeZeroCheck(MDefinition* def) {
         MDefinition* first = use_def->toAdd()->lhs();
         MDefinition* second = use_def->toAdd()->rhs();
         if (first->id() > second->id()) {
-          MDefinition* temp = first;
-          first = second;
-          second = temp;
+          std::swap(first, second);
         }
         
         
