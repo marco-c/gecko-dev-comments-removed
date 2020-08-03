@@ -186,64 +186,9 @@ JS_FRIEND_API void RemoveRawValueRoot(JSContext* cx, JS::Value* vp);
 
 JS_FRIEND_API JSAtom* GetPropertyNameFromPC(JSScript* script, jsbytecode* pc);
 
-
-
-
-
-
-
-
-
-
-extern JS_FRIEND_API void DumpString(JSString* str, FILE* fp);
-
-extern JS_FRIEND_API void DumpAtom(JSAtom* atom, FILE* fp);
-
-extern JS_FRIEND_API void DumpObject(JSObject* obj, FILE* fp);
-
-extern JS_FRIEND_API void DumpChars(const char16_t* s, size_t n, FILE* fp);
-
-extern JS_FRIEND_API void DumpValue(const JS::Value& val, FILE* fp);
-
-extern JS_FRIEND_API void DumpId(jsid id, FILE* fp);
-
-extern JS_FRIEND_API void DumpInterpreterFrame(
-    JSContext* cx, FILE* fp, InterpreterFrame* start = nullptr);
-
-extern JS_FRIEND_API bool DumpPC(JSContext* cx, FILE* fp);
-
-extern JS_FRIEND_API bool DumpScript(JSContext* cx, JSScript* scriptArg,
-                                     FILE* fp);
-
-
-
-extern JS_FRIEND_API void DumpString(JSString* str);
-extern JS_FRIEND_API void DumpAtom(JSAtom* atom);
-extern JS_FRIEND_API void DumpObject(JSObject* obj);
-extern JS_FRIEND_API void DumpChars(const char16_t* s, size_t n);
-extern JS_FRIEND_API void DumpValue(const JS::Value& val);
-extern JS_FRIEND_API void DumpId(jsid id);
-extern JS_FRIEND_API void DumpInterpreterFrame(
-    JSContext* cx, InterpreterFrame* start = nullptr);
-extern JS_FRIEND_API bool DumpPC(JSContext* cx);
-extern JS_FRIEND_API bool DumpScript(JSContext* cx, JSScript* scriptArg);
-
-
-
-
-extern JS_FRIEND_API void DumpBacktrace(JSContext* cx, FILE* fp);
-
-extern JS_FRIEND_API void DumpBacktrace(JSContext* cx);
-
 }  
 
 namespace JS {
-
-
-extern JS_FRIEND_API JS::UniqueChars FormatStackDump(JSContext* cx,
-                                                     bool showArgs,
-                                                     bool showLocals,
-                                                     bool showThisProps);
 
 
 
@@ -363,19 +308,6 @@ extern JS_FRIEND_API JS::Zone* GetRealmZone(JS::Realm* realm);
 
 using PreserveWrapperCallback = bool (*)(JSContext*, JS::HandleObject);
 using HasReleasedWrapperCallback = bool (*)(JS::HandleObject);
-
-typedef enum {
-  CollectNurseryBeforeDump,
-  IgnoreNurseryObjects
-} DumpHeapNurseryBehaviour;
-
-
-
-
-
-extern JS_FRIEND_API void DumpHeap(
-    JSContext* cx, FILE* fp, DumpHeapNurseryBehaviour nurseryBehaviour,
-    mozilla::MallocSizeOf mallocSizeOf = nullptr);
 
 extern JS_FRIEND_API bool IsSystemRealm(JS::Realm* realm);
 

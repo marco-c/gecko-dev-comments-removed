@@ -5,6 +5,7 @@
 
 
 #include "xpcprivate.h"
+#include "js/friend/DumpFunctions.h"  
 #include "nsThreadUtils.h"
 #include "nsContentUtils.h"
 

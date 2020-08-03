@@ -26,6 +26,7 @@
 #include "gc/GCProbes.h"
 #include "gc/Policy.h"
 #include "jit/JitCode.h"
+#include "js/friend/DumpFunctions.h"  
 #include "js/GCTypeMacros.h"  
 #include "js/SliceBudget.h"
 #include "util/DiagnosticAssertions.h"

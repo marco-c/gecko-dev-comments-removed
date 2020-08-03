@@ -20,6 +20,7 @@
 #include "gc/PublicIterators.h"
 #include "gc/WeakMap.h"
 #include "gc/Zone.h"
+#include "js/friend/DumpFunctions.h"  
 #include "js/HashTable.h"
 #include "vm/JSContext.h"
 

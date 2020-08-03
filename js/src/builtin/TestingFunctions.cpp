@@ -55,6 +55,7 @@
 #include "js/CompileOptions.h"
 #include "js/Date.h"
 #include "js/Debug.h"
+#include "js/friend/DumpFunctions.h"  
 #include "js/friend/WindowProxy.h"  
 #include "js/HashTable.h"
 #include "js/LocaleSensitive.h"
