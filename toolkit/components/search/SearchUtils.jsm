@@ -166,6 +166,13 @@ var SearchUtils = {
   
   DEFAULT_TAG: "default",
 
+  MOZ_PARAM: {
+    DATE: "moz:date",
+    DIST_ID: "moz:distributionID",
+    LOCALE: "moz:locale",
+    OFFICIAL: "moz:official",
+  },
+
   LoadListener,
 
   

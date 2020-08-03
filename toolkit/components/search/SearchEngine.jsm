@@ -39,11 +39,6 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
 const USER_DEFINED = "searchTerms";
 
 
-const MOZ_PARAM_LOCALE = "moz:locale";
-const MOZ_PARAM_DIST_ID = "moz:distributionID";
-const MOZ_PARAM_OFFICIAL = "moz:official";
-
-
 
 const OS_PARAM_INPUT_ENCODING = "inputEncoding";
 const OS_PARAM_LANGUAGE = "language";
@@ -277,17 +272,31 @@ function ParamSubstitution(paramValue, searchTerms, engine) {
     
     if (name.startsWith("moz:") && engine.isAppProvided) {
       
-      if (name == MOZ_PARAM_LOCALE) {
+      if (name == SearchUtils.MOZ_PARAM.LOCALE) {
         return Services.locale.requestedLocale;
       }
-      if (name == MOZ_PARAM_DIST_ID) {
+
+      
+      if (name == SearchUtils.MOZ_PARAM.DATE) {
+        let date = new Date();
+        let pad = number => number.toString().padStart(2, "0");
+        return (
+          String(date.getFullYear()) +
+          pad(date.getMonth() + 1) +
+          pad(date.getDate()) +
+          pad(date.getHours())
+        );
+      }
+
+      
+      if (name == SearchUtils.MOZ_PARAM.DIST_ID) {
         return Services.prefs.getCharPref(
           SearchUtils.BROWSER_SEARCH_PREF + "distributionID",
           Services.appinfo.distributionID || ""
         );
       }
-      
-      if (name == MOZ_PARAM_OFFICIAL) {
+
+      if (name == SearchUtils.MOZ_PARAM.OFFICIAL) {
         if (
           Services.prefs.getBoolPref(
             SearchUtils.BROWSER_SEARCH_PREF + "official",
