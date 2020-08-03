@@ -97,11 +97,24 @@ class ChangesView {
       changesApp
     );
 
-    this.resourceWatcher.watchResources(
-      [
-        this.resourceWatcher.TYPES.CSS_CHANGE,
-        this.resourceWatcher.TYPES.DOCUMENT_EVENT,
-      ],
+    this.watchResources();
+  }
+
+  async watchResources() {
+    await this.resourceWatcher.watchResources(
+      [this.resourceWatcher.TYPES.DOCUMENT_EVENT],
+      {
+        onAvailable: this.onResourceAvailable,
+        
+        
+        
+        
+        ignoreExistingResources: true,
+      }
+    );
+
+    await this.resourceWatcher.watchResources(
+      [this.resourceWatcher.TYPES.CSS_CHANGE],
       { onAvailable: this.onResourceAvailable }
     );
   }
