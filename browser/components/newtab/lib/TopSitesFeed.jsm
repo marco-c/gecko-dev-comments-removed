@@ -201,7 +201,7 @@ this.TopSitesFeed = class TopSitesFeed {
       sites = Services.prefs.getStringPref(REMOTE_SETTING_OVERRIDE_PREF);
     } catch (e) {
       
-      sites = "https://mozilla.org,https://firefox.com";
+      sites = "https://mozilla.org/#%YYYYMMDDHH%,https://firefox.com";
     }
     this.refreshDefaults(sites);
   }
@@ -332,6 +332,7 @@ this.TopSitesFeed = class TopSitesFeed {
     return false;
   }
 
+  
   async getLinksWithDefaults(isStartup = false) {
     const numItems =
       this.store.getState().Prefs.values[ROWS_PREF] *
@@ -363,16 +364,29 @@ this.TopSitesFeed = class TopSitesFeed {
     }
 
     
+    let date = new Date();
+    let pad = number => number.toString().padStart(2, "0");
+    let yyyymmdd =
+      String(date.getFullYear()) +
+      pad(date.getMonth() + 1) +
+      pad(date.getDate());
+    let yyyymmddhh = yyyymmdd + pad(date.getHours());
     let notBlockedDefaultSites = [];
     for (let link of DEFAULT_TOP_SITES) {
-      const searchProvider = getSearchProvider(shortURL(link));
+      if (this._useRemoteSetting) {
+        link = { ...link, url: link.url.replace("%YYYYMMDDHH%", yyyymmddhh) };
+      }
+      
       if (NewTabUtils.blockedLinks.isBlocked({ url: link.url })) {
         continue;
-      } else if (this.shouldFilterSearchTile(link.hostname)) {
+      }
+      if (this.shouldFilterSearchTile(link.hostname)) {
         continue;
-        
-        
-      } else if (
+      }
+      
+      
+      const searchProvider = getSearchProvider(shortURL(link));
+      if (
         searchProvider &&
         NewTabUtils.blockedLinks.isBlocked({ url: searchProvider.url })
       ) {
@@ -459,14 +473,9 @@ this.TopSitesFeed = class TopSitesFeed {
     for (let [pref, hostname] of SEARCH_TILE_OVERRIDE_PREFS) {
       let url = Services.prefs.getStringPref(pref, "");
       if (url) {
-        let date = new Date();
-        let pad = number => number.toString().padStart(2, "0");
-        url = url.replace(
-          "%YYYYMMDD%",
-          String(date.getFullYear()) +
-            pad(date.getMonth() + 1) +
-            pad(date.getDate())
-        );
+        url = url
+          .replace("%YYYYMMDD%", yyyymmdd)
+          .replace("%YYYYMMDDHH%", yyyymmddhh);
         searchTileOverrideURLs.set(hostname, url);
       }
     }
