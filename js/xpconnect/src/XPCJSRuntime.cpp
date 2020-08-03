@@ -53,6 +53,7 @@
 #include "js/MemoryMetrics.h"
 #include "js/UbiNode.h"
 #include "js/UbiNodeUtils.h"
+#include "js/friend/UsageStatistics.h"  
 #include "mozilla/dom/GeneratedAtomList.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Element.h"

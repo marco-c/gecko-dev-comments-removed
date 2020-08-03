@@ -35,6 +35,7 @@
 #include "js/CompilationAndEvaluation.h"
 #include "js/Debug.h"
 #include "js/experimental/SourceHook.h"  
+#include "js/friend/UsageStatistics.h"   
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/Modules.h"  
