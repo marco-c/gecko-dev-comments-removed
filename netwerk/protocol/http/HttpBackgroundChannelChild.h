@@ -127,6 +127,17 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
+
+  enum ODASource {
+    ODA_PENDING = 0,      
+    ODA_FROM_PARENT = 1,  
+    ODA_FROM_SOCKET = 2   
+  };
+  
+  
+  
+  ODASource mFirstODASource;
+
 };
 
 }  
