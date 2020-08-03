@@ -1,0 +1,16 @@
+
+
+
+'use strict';
+
+
+
+idl_test(
+  ['anchors'],
+  ['hit-test', 'webxr', 'dom'],
+  async idl_array => {
+    idl_array.add_objects({
+      
+    });
+  }
+);
