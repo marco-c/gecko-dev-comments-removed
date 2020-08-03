@@ -4038,7 +4038,7 @@ bool AsyncPanZoomController::UpdateAnimation(
   
   
   if (mLastSampleTime == aSampleTime) {
-    return (mAnimation != nullptr);
+    return !!mAnimation;
   }
 
   
@@ -4883,7 +4883,6 @@ FrameMetrics& AsyncPanZoomController::Metrics() {
 const FrameMetrics& AsyncPanZoomController::Metrics() const {
   mRecursiveMutex.AssertCurrentThreadIn();
   return mScrollMetadata.GetMetrics();
-  ;
 }
 
 bool AsyncPanZoomController::UpdateRootFrameMetricsIfChanged(
