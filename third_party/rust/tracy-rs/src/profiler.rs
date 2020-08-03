@@ -85,6 +85,10 @@ impl ProfileScope {
             ctx,
         }
     }
+
+    pub fn text(&self, text: &[u8]) {
+        unsafe { EMIT_ZONE_TEXT(self.ctx, text.as_ptr(), text.len()) };
+    }
 }
 
 impl Drop for ProfileScope {
@@ -96,9 +100,34 @@ impl Drop for ProfileScope {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_export]
 macro_rules! profile_scope {
-    ($string:expr) => {
+    ($string:literal $(, text: $text:expr )? ) => {
         const CALLSITE: $crate::profiler::SourceLocation = $crate::profiler::SourceLocation {
             name: concat!($string, "\0").as_ptr(),
             function: concat!(module_path!(), "\0").as_ptr(),
@@ -108,6 +137,10 @@ macro_rules! profile_scope {
         };
 
         let _profile_scope = $crate::profiler::ProfileScope::new(&CALLSITE);
+
+        $(
+            _profile_scope.text(str::as_bytes($text));
+        )?
     }
 }
 
