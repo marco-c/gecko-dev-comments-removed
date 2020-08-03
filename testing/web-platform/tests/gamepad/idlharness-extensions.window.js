@@ -1,0 +1,12 @@
+
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['gamepad-extensions'],
+  ['gamepad'],
+);
