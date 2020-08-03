@@ -3982,8 +3982,7 @@ void AsyncPanZoomController::RequestContentRepaint(
   }
   MOZ_ASSERT(controller->IsRepaintThread());
 
-  const bool isAnimationInProgress = !!mAnimation;
-  RepaintRequest request(aFrameMetrics, aUpdateType, isAnimationInProgress);
+  RepaintRequest request(aFrameMetrics, aUpdateType);
 
   
   
@@ -3999,9 +3998,7 @@ void AsyncPanZoomController::RequestContentRepaint(
       request.GetScrollGeneration() ==
           mLastPaintRequestMetrics.GetScrollGeneration() &&
       request.GetScrollUpdateType() ==
-          mLastPaintRequestMetrics.GetScrollUpdateType() &&
-      request.IsAnimationInProgress() ==
-          mLastPaintRequestMetrics.IsAnimationInProgress()) {
+          mLastPaintRequestMetrics.GetScrollUpdateType()) {
     return;
   }
 
@@ -4041,7 +4038,7 @@ bool AsyncPanZoomController::UpdateAnimation(
   
   
   if (mLastSampleTime == aSampleTime) {
-    return !!mAnimation;
+    return (mAnimation != nullptr);
   }
 
   
@@ -4886,6 +4883,7 @@ FrameMetrics& AsyncPanZoomController::Metrics() {
 const FrameMetrics& AsyncPanZoomController::Metrics() const {
   mRecursiveMutex.AssertCurrentThreadIn();
   return mScrollMetadata.GetMetrics();
+  ;
 }
 
 bool AsyncPanZoomController::UpdateRootFrameMetricsIfChanged(

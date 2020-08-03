@@ -383,6 +383,11 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+  virtual bool IsProcessingAsyncScroll() = 0;
+  
+
+
+
   virtual void ResetScrollPositionForLayerPixelAlignment() = 0;
   
 
@@ -430,19 +435,6 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
   virtual ScrollOrigin LastSmoothScrollOrigin() = 0;
-
-  
-
-
-
-
-
-
-
-  enum class IncludeApzAnimation : bool { No, Yes };
-  virtual bool IsScrollAnimating(
-      IncludeApzAnimation = IncludeApzAnimation::Yes) = 0;
-
   
 
 
@@ -458,10 +450,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-
-
-  virtual void ResetScrollInfoIfNeeded(uint32_t aGeneration,
-                                       bool aApzAnimationInProgress) = 0;
+  virtual void ResetScrollInfoIfGeneration(uint32_t aGeneration) = 0;
   
 
 

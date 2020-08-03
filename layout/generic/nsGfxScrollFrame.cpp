@@ -2185,7 +2185,6 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mIsUsingMinimumScaleSize(false),
       mMinimumScaleSizeChanged(false),
       mProcessingScrollEvent(false),
-      mApzAnimationInProgress(false),
       mVelocityQueue(aOuter->PresContext()) {
   if (LookAndFeel::GetInt(LookAndFeel::IntID::UseOverlayScrollbars) != 0) {
     mScrollbarActivity = new ScrollbarActivity(do_QueryFrame(aOuter));
@@ -6186,7 +6185,8 @@ bool ScrollFrameHelper::ReflowFinished() {
     
     nsPoint currentScrollPos = GetScrollPosition();
     ScrollToImpl(currentScrollPos, nsRect(currentScrollPos, nsSize(0, 0)));
-    if (!IsScrollAnimating()) {
+    if (!mAsyncScroll && !mAsyncSmoothMSDScroll &&
+        !mApzSmoothScrollDestination) {
       
       
       
@@ -6826,16 +6826,6 @@ nscoord ScrollFrameHelper::GetCoordAttribute(nsIFrame* aBox, nsAtom* aAtom,
   return aDefaultValue;
 }
 
-bool ScrollFrameHelper::IsScrollAnimating(
-    IncludeApzAnimation aIncludeApz) const {
-  if (aIncludeApz == IncludeApzAnimation::Yes && IsApzAnimationInProgress()) {
-    return true;
-  }
-  return mAsyncScroll || mAsyncSmoothMSDScroll ||
-         LastSmoothScrollOrigin() != ScrollOrigin::None ||
-         mRelativeOffset.isSome();
-}
-
 UniquePtr<PresState> ScrollFrameHelper::SaveState() const {
   nsIScrollbarMediator* mediator = do_QueryFrame(GetScrolledFrame());
   if (mediator) {
@@ -6845,8 +6835,10 @@ UniquePtr<PresState> ScrollFrameHelper::SaveState() const {
 
   
   
-  bool isScrollAnimating = IsScrollAnimating();
-  if (!mHasBeenScrolled && !mDidHistoryRestore && !isScrollAnimating) {
+  bool isInSmoothScroll = IsProcessingAsyncScroll() ||
+                          mLastSmoothScrollOrigin != ScrollOrigin::None ||
+                          mRelativeOffset.isSome();
+  if (!mHasBeenScrolled && !mDidHistoryRestore && !isInSmoothScroll) {
     return nullptr;
   }
 
@@ -6864,7 +6856,7 @@ UniquePtr<PresState> ScrollFrameHelper::SaveState() const {
   
   
   nsPoint pt = GetLogicalVisualViewportOffset();
-  if (isScrollAnimating) {
+  if (isInSmoothScroll) {
     pt = mDestination;
     allowScrollOriginDowngrade = false;
   }
