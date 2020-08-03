@@ -1507,7 +1507,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     
     
     return mOverflowX != mozilla::StyleOverflow::Visible &&
-           mOverflowX != mozilla::StyleOverflow::MozHiddenUnscrollable;
+           mOverflowX != mozilla::StyleOverflow::Clip;
   }
 
   bool IsContainPaint() const {

@@ -228,7 +228,7 @@ select {
   user-select: none;
   border-width: 2px;
   border-style: inset;
-  overflow: -moz-hidden-unscrollable;
+  overflow: clip;
   
   display: inline-block;
   page-break-inside: avoid;
@@ -298,7 +298,7 @@ select > button[orientation="right"]:active {
 }
 
 *|*::-moz-display-comboboxcontrol-frame {
-  overflow: -moz-hidden-unscrollable;
+  overflow: clip;
   
 
   padding-block: 1px;
@@ -920,7 +920,7 @@ input:is([type=number], [type=search])::-moz-complex-control-wrapper {
   block-size: 100%;
   
 
-  overflow: -moz-hidden-unscrollable;
+  overflow: clip;
 }
 
 input:is([type=number], [type=search])::-moz-text-control-editing-root {

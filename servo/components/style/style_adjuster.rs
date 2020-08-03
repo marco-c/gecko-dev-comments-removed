@@ -499,10 +499,10 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         {
             
             
-            if overflow_x == Overflow::MozHiddenUnscrollable {
+            if overflow_x == Overflow::Clip {
                 overflow_x = Overflow::Hidden;
             }
-            if overflow_y == Overflow::MozHiddenUnscrollable {
+            if overflow_y == Overflow::Clip {
                 overflow_y = Overflow::Hidden;
             }
         }
@@ -560,7 +560,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         let overflow_y = box_style.clone_overflow_y();
 
         fn scrollable(v: Overflow) -> bool {
-            v != Overflow::MozHiddenUnscrollable && v != Overflow::Visible
+            v != Overflow::Clip && v != Overflow::Visible
         }
 
         

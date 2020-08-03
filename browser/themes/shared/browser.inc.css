@@ -59,7 +59,7 @@
 
 
 #PersonalToolbar {
-  overflow: -moz-hidden-unscrollable;
+  overflow: clip;
   max-height: 4em;
   padding: 2px 6px;
 }

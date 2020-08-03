@@ -2663,7 +2663,6 @@ static void ApplyOverflowClipping(
   
   
   
-  
   MOZ_ASSERT(aFrame->ShouldApplyOverflowClipping(aFrame->StyleDisplay()));
 
   nsRect clipRect;
@@ -9276,8 +9275,8 @@ bool nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   
   
   
-  NS_ASSERTION((disp->mOverflowY == StyleOverflow::MozHiddenUnscrollable) ==
-                   (disp->mOverflowX == StyleOverflow::MozHiddenUnscrollable),
+  NS_ASSERTION((disp->mOverflowY == StyleOverflow::Clip) ==
+                   (disp->mOverflowX == StyleOverflow::Clip),
                "If one overflow is clip, the other should be too");
   if (applyOverflowClipping) {
     
@@ -11058,7 +11057,7 @@ bool nsIFrame::ShouldApplyOverflowClipping(const nsStyleDisplay* aDisp) const {
 
   
   
-  if (MOZ_UNLIKELY(aDisp->mOverflowX == StyleOverflow::MozHiddenUnscrollable &&
+  if (MOZ_UNLIKELY(aDisp->mOverflowX == StyleOverflow::Clip &&
                    !IsListControlFrame())) {
     const auto* element = Element::FromNodeOrNull(GetContent());
     if (!element ||
