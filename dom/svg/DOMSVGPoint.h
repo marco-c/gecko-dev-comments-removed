@@ -36,10 +36,8 @@ class SVGElement;
 
 
 class DOMSVGPoint final : public nsISVGPoint {
-  template <class T>
-  friend class AutoChangePointListNotifier;
+  friend class AutoChangePointNotifier;
 
-  using AutoChangePointListNotifier = AutoChangePointListNotifier<DOMSVGPoint>;
   using Point = gfx::Point;
 
  public:
@@ -79,12 +77,6 @@ class DOMSVGPoint final : public nsISVGPoint {
   virtual already_AddRefed<nsISVGPoint> MatrixTransform(
       const DOMMatrix2DInit& aMatrix, ErrorResult& aRv) override;
   nsISupports* GetParentObject() override { return mList; }
-
-  
-
-
-
-  bool AttrIsAnimating() const { return mList && mList->AttrIsAnimating(); }
 
   virtual DOMSVGPoint* Copy() override { return new DOMSVGPoint(this); }
 

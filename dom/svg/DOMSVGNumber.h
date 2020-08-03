@@ -38,10 +38,7 @@ class SVGSVGElement;
 
 
 class DOMSVGNumber final : public nsISupports, public nsWrapperCache {
-  template <class T>
-  friend class AutoChangeNumberListNotifier;
-  using AutoChangeNumberListNotifier =
-      AutoChangeNumberListNotifier<DOMSVGNumber>;
+  friend class AutoChangeNumberNotifier;
 
   ~DOMSVGNumber() {
     
@@ -82,11 +79,6 @@ class DOMSVGNumber final : public nsISupports, public nsWrapperCache {
   }
 
   bool IsInList() const { return !!mList; }
-
-  
-
-
-  bool IsAnimating() const { return mList && mList->IsAnimating(); }
 
   
 

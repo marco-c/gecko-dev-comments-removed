@@ -7,15 +7,14 @@
 #ifndef DOM_SVG_DOMSVGPATHSEGLIST_H_
 #define DOM_SVG_DOMSVGPATHSEGLIST_H_
 
-#include "mozAutoDocUpdate.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
+#include "SVGElement.h"
 #include "nsTArray.h"
 #include "SVGPathData.h"  
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/dom/SVGElement.h"
 
 namespace mozilla {
 
@@ -24,32 +23,6 @@ class SVGAnimatedPathSegList;
 namespace dom {
 
 class DOMSVGPathSeg;
-
-
-
-
-
-template <class T>
-class MOZ_RAII AutoChangePathSegListNotifier : public mozAutoDocUpdate {
- public:
-  explicit AutoChangePathSegListNotifier(T* aValue)
-      : mozAutoDocUpdate(aValue->Element()->GetComposedDoc(), true),
-        mValue(aValue) {
-    MOZ_ASSERT(mValue, "Expecting non-null value");
-    mEmptyOrOldValue = mValue->Element()->WillChangePathSegList(*this);
-  }
-
-  ~AutoChangePathSegListNotifier() {
-    mValue->Element()->DidChangePathSegList(mEmptyOrOldValue, *this);
-    if (mValue->AttrIsAnimating()) {
-      mValue->Element()->AnimationNeedsResample();
-    }
-  }
-
- private:
-  T* const mValue;
-  nsAttrValue mEmptyOrOldValue;
-};
 
 
 
@@ -77,11 +50,8 @@ class MOZ_RAII AutoChangePathSegListNotifier : public mozAutoDocUpdate {
 
 
 class DOMSVGPathSegList final : public nsISupports, public nsWrapperCache {
-  template <class T>
   friend class AutoChangePathSegListNotifier;
   friend class DOMSVGPathSeg;
-  using AutoChangePathSegListNotifier =
-      AutoChangePathSegListNotifier<DOMSVGPathSegList>;
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS

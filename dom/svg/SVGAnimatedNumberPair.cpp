@@ -16,43 +16,6 @@ using namespace mozilla::dom;
 
 namespace mozilla {
 
-
-
-
-
-class MOZ_RAII AutoChangeNumberPairNotifier {
- public:
-  AutoChangeNumberPairNotifier(SVGAnimatedNumberPair* aNumberPair,
-                               SVGElement* aSVGElement, bool aDoSetAttr = true)
-      : mNumberPair(aNumberPair),
-        mSVGElement(aSVGElement),
-        mDoSetAttr(aDoSetAttr) {
-    MOZ_ASSERT(mNumberPair, "Expecting non-null numberPair");
-    MOZ_ASSERT(mSVGElement, "Expecting non-null element");
-
-    if (mDoSetAttr) {
-      mEmptyOrOldValue =
-          mSVGElement->WillChangeNumberPair(mNumberPair->mAttrEnum);
-    }
-  }
-
-  ~AutoChangeNumberPairNotifier() {
-    if (mDoSetAttr) {
-      mSVGElement->DidChangeNumberPair(mNumberPair->mAttrEnum,
-                                       mEmptyOrOldValue);
-    }
-    if (mNumberPair->mIsAnimated) {
-      mSVGElement->AnimationNeedsResample();
-    }
-  }
-
- private:
-  SVGAnimatedNumberPair* const mNumberPair;
-  SVGElement* const mSVGElement;
-  nsAttrValue mEmptyOrOldValue;
-  bool mDoSetAttr;
-};
-
 static SVGAttrTearoffTable<SVGAnimatedNumberPair,
                            SVGAnimatedNumberPair::DOMAnimatedNumber>
     sSVGFirstAnimatedNumberTearoffTable;
@@ -92,19 +55,19 @@ nsresult SVGAnimatedNumberPair::SetBaseValueString(
     return rv;
   }
 
-  
-  
-  
-  AutoChangeNumberPairNotifier notifier(this, aSVGElement, false);
-
   mBaseVal[0] = val[0];
   mBaseVal[1] = val[1];
   mIsBaseSet = true;
   if (!mIsAnimated) {
     mAnimVal[0] = mBaseVal[0];
     mAnimVal[1] = mBaseVal[1];
+  } else {
+    aSVGElement->AnimationNeedsResample();
   }
 
+  
+  
+  
   return NS_OK;
 }
 
@@ -124,14 +87,15 @@ void SVGAnimatedNumberPair::SetBaseValue(float aValue, PairIndex aPairIndex,
   if (mIsBaseSet && mBaseVal[index] == aValue) {
     return;
   }
-
-  AutoChangeNumberPairNotifier notifier(this, aSVGElement);
-
+  nsAttrValue emptyOrOldValue = aSVGElement->WillChangeNumberPair(mAttrEnum);
   mBaseVal[index] = aValue;
   mIsBaseSet = true;
   if (!mIsAnimated) {
     mAnimVal[index] = aValue;
+  } else {
+    aSVGElement->AnimationNeedsResample();
   }
+  aSVGElement->DidChangeNumberPair(mAttrEnum, emptyOrOldValue);
 }
 
 void SVGAnimatedNumberPair::SetBaseValues(float aValue1, float aValue2,
@@ -139,16 +103,17 @@ void SVGAnimatedNumberPair::SetBaseValues(float aValue1, float aValue2,
   if (mIsBaseSet && mBaseVal[0] == aValue1 && mBaseVal[1] == aValue2) {
     return;
   }
-
-  AutoChangeNumberPairNotifier notifier(this, aSVGElement);
-
+  nsAttrValue emptyOrOldValue = aSVGElement->WillChangeNumberPair(mAttrEnum);
   mBaseVal[0] = aValue1;
   mBaseVal[1] = aValue2;
   mIsBaseSet = true;
   if (!mIsAnimated) {
     mAnimVal[0] = aValue1;
     mAnimVal[1] = aValue2;
+  } else {
+    aSVGElement->AnimationNeedsResample();
   }
+  aSVGElement->DidChangeNumberPair(mAttrEnum, emptyOrOldValue);
 }
 
 void SVGAnimatedNumberPair::SetAnimValue(const float aValue[2],

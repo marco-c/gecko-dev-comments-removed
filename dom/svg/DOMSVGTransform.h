@@ -30,10 +30,7 @@ class SVGMatrix;
 
 
 class DOMSVGTransform final : public nsWrapperCache {
-  template <class T>
-  friend class AutoChangeTransformListNotifier;
-  using AutoChangeTransformListNotifier =
-      AutoChangeTransformListNotifier<DOMSVGTransform>;
+  friend class AutoChangeTransformNotifier;
 
  public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGTransform)
@@ -71,12 +68,6 @@ class DOMSVGTransform final : public nsWrapperCache {
   }
 
   bool IsInList() const { return !!mList; }
-
-  
-
-
-
-  bool IsAnimating() const { return mList && mList->IsAnimating(); }
 
   
 
