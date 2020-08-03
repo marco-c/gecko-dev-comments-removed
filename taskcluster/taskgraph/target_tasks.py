@@ -180,18 +180,27 @@ def filter_release_tasks(task, parameters):
         return True
 
     
-    platform = task.attributes.get('test_platform', '')
-    if 'debug' in platform:
-        if 'linux' not in platform:
+    build_type = task.attributes.get('build_type', '')
+    build_platform = task.attributes.get('build_platform', '')
+    test_platform = task.attributes.get('test_platform', '')
+    if task.kind == 'hazard' or 'toolchain' in build_platform:
+        
+        return True
+
+    if build_type == 'debug':
+        if 'linux' not in build_platform:
             
             return False
-        elif 'spidermonkey' not in platform and '-qr' in platform:
+        elif task.kind not in ['spidermonkey'] and '-qr' in test_platform:
+            
+            return False
+        elif '64' not in build_platform:
             
             return False
 
-    if task.attributes.get('build_type', '') == 'debug':
-        if 'linux' not in task.attributes.get('build_platform', ''):
-            return False
+    
+    if task.kind == 'webrender' and 'debug' in task.label:
+        return False
     return True
 
 
