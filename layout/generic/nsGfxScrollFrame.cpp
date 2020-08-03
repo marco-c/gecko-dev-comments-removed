@@ -917,7 +917,6 @@ void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
   
   
   
-  
   nsOverflowAreas overflow(scrolledArea, scrolledArea);
   scrolledFrame->FinishAndStoreOverflow(overflow, scrolledFrame->GetSize());
 
