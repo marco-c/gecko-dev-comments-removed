@@ -1163,9 +1163,8 @@ bool SVGIntegrationUtils::CreateWebRenderCSSFilters(
         
         float appUnitsPerDevPixel =
             aFrame->PresContext()->AppUnitsPerDevPixel();
-        float radius = NSAppUnitsToFloatPixels(filter.AsBlur().ToAppUnits(),
-                                               appUnitsPerDevPixel);
-        wrFilters.AppendElement(wr::FilterOp::Blur(radius, radius));
+        wrFilters.AppendElement(wr::FilterOp::Blur(NSAppUnitsToFloatPixels(
+            filter.AsBlur().ToAppUnits(), appUnitsPerDevPixel)));
         break;
       }
       case StyleFilter::Tag::DropShadow: {
