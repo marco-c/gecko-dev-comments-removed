@@ -23,7 +23,7 @@ use std::fmt;
 use std::mem;
 
 use cranelift_codegen::binemit::{
-    Addend, CodeInfo, CodeOffset, NullStackmapSink, Reloc, RelocSink, Stackmap, TrapSink,
+    Addend, CodeInfo, CodeOffset, NullStackmapSink, Reloc, RelocSink, TrapSink,
 };
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::{
@@ -223,11 +223,7 @@ impl<'static_env, 'module_env> BatchCompiler<'static_env, 'module_env> {
         }
 
         if self.static_environ.ref_types_enabled {
-            if self.context.mach_compile_result.is_some() {
-                self.emit_stackmaps_from_vcode(stackmaps);
-            } else {
-                self.emit_stackmaps_from_clif_insts(stackmaps);
-            }
+            self.emit_stackmaps(stackmaps);
         }
 
         self.current_func.code_size = info.code_size;
@@ -238,42 +234,7 @@ impl<'static_env, 'module_env> BatchCompiler<'static_env, 'module_env> {
     }
 
     
-    
-    
-    
-    
-    fn emit_stackmaps_from_clif_insts(&self, mut stackmaps: bindings::Stackmaps) {
-        let encinfo = self.isa.encoding_info();
-        let func = &self.context.func;
-        let stack_slots = &func.stack_slots;
-
-        debug_assert!(
-            stack_slots.layout_info.unwrap().inbound_args_size == 0,
-            "We do not expect the stackmap to cover inbound args"
-        );
-
-        for block in func.layout.blocks() {
-            let mut pending_safepoint = None;
-            for (offset, inst, inst_size) in func.inst_offsets(block, &encinfo) {
-                if let Some(stackmap) = pending_safepoint.take() {
-                    stackmaps.add_stackmap(
-                         0,
-                        offset + inst_size,
-                        &stackmap,
-                    );
-                }
-                if func.dfg[inst].opcode() == ir::Opcode::Safepoint {
-                    let args = func.dfg.inst_args(inst);
-                    let stackmap = Stackmap::from_values(&args, func, &*self.isa);
-                    pending_safepoint = Some(stackmap);
-                }
-            }
-            debug_assert!(pending_safepoint.is_none());
-        }
-    }
-
-    
-    fn emit_stackmaps_from_vcode(&self, mut stackmaps: bindings::Stackmaps) {
+    fn emit_stackmaps(&self, mut stackmaps: bindings::Stackmaps) {
         let mach_buf = &self.context.mach_compile_result.as_ref().unwrap().buffer;
         let mach_stackmaps = mach_buf.stackmaps();
 
@@ -297,16 +258,12 @@ impl<'static_env, 'module_env> BatchCompiler<'static_env, 'module_env> {
     fn frame_pushed(&self) -> StackSize {
         
         
-        let total = if let Some(result) = &self.context.mach_compile_result {
-            result.frame_size
-        } else {
-            self.context
-                .func
-                .stack_slots
-                .layout_info
-                .expect("No frame")
-                .frame_size
-        };
+        let total = self
+            .context
+            .mach_compile_result
+            .as_ref()
+            .expect("always use Mach backend")
+            .frame_size;
 
         let sm_pushed = StackSize::from(self.isa.flags().baldrdash_prologue_words())
             * mem::size_of::<usize>() as StackSize;
