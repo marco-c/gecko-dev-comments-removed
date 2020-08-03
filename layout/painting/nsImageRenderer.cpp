@@ -188,6 +188,11 @@ bool nsImageRenderer::PrepareImage() {
     }
 
     mPrepareResult = ImgDrawResult::SUCCESS;
+  } else if (mImage->IsCrossFade()) {
+    
+    
+    mPrepareResult = ImgDrawResult::BAD_IMAGE;
+    return false;
   } else {
     MOZ_ASSERT(mImage->IsNone(), "Unknown image type?");
   }
@@ -262,6 +267,8 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
     
     
     case StyleImage::Tag::Gradient:
+    
+    case StyleImage::Tag::CrossFade:
     case StyleImage::Tag::None:
       break;
   }
@@ -511,6 +518,9 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
           aOpacity);
       break;
     }
+    
+    
+    case StyleImage::Tag::CrossFade:
     case StyleImage::Tag::None:
       break;
   }
