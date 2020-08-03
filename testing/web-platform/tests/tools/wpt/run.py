@@ -751,12 +751,8 @@ def setup_wptrunner(venv, **kwargs):
 
     affected_revish = kwargs.get("affected")
     if affected_revish is not None:
-        
-        
         files_changed, _ = testfiles.files_changed(
-            affected_revish,
-            ignore_rules=["resources/testharness*"],
-            include_uncommitted=True, include_new=True)
+            affected_revish, include_uncommitted=True, include_new=True)
         
         
         
