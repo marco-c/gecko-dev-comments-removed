@@ -33,15 +33,19 @@ InputBlockState::InputBlockState(
     const RefPtr<AsyncPanZoomController>& aTargetApzc,
     TargetConfirmationFlags aFlags)
     : mTargetApzc(aTargetApzc),
-      mTargetConfirmed(aFlags.mTargetConfirmed
-                           ? TargetConfirmationState::eConfirmed
-                           : TargetConfirmationState::eUnconfirmed),
       mRequiresTargetConfirmation(aFlags.mRequiresTargetConfirmation),
       mBlockId(sBlockCounter++),
       mTransformToApzc(aTargetApzc->GetTransformToThis()) {
   
   MOZ_ASSERT(mTargetApzc);
   mOverscrollHandoffChain = mTargetApzc->BuildOverscrollHandoffChain();
+  
+  
+  
+  bool startingDrag = StaticPrefs::apz_drag_enabled() && aFlags.mHitScrollThumb;
+  mTargetConfirmed = aFlags.mTargetConfirmed && !startingDrag
+                         ? TargetConfirmationState::eConfirmed
+                         : TargetConfirmationState::eUnconfirmed;
 }
 
 bool InputBlockState::SetConfirmedTargetApzc(

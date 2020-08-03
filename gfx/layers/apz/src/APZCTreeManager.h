@@ -690,12 +690,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
-
-
   APZEventResult ProcessTouchInputForScrollbarDrag(
       MultiTouchInput& aInput,
-      const HitTestingTreeNodeAutoLock& aScrollThumbNode);
+      const HitTestingTreeNodeAutoLock& aScrollThumbNode,
+      const gfx::CompositorHitTestInfo& aHitInfo);
   void FlushRepaintsToClearScreenToGeckoTransform();
 
   void SynthesizePinchGestureFromMouseWheel(

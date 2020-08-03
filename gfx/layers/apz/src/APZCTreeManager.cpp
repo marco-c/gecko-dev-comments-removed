@@ -1519,17 +1519,11 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
         }
 
         TargetConfirmationFlags confFlags{hitResult};
-        bool apzDragEnabled = StaticPrefs::apz_drag_enabled();
-        if (apzDragEnabled && hitScrollbar) {
-          
-          
-          
-          confFlags.mTargetConfirmed = false;
-        }
         result.mStatus = mInputQueue->ReceiveInputEvent(
             hit.mTargetApzc, confFlags, mouseInput, &result.mInputBlockId);
 
         
+        bool apzDragEnabled = StaticPrefs::apz_drag_enabled();
         if (apzDragEnabled && startsDrag && hit.mScrollbarNode &&
             hit.mScrollbarNode->IsScrollThumbNode() &&
             hit.mScrollbarNode->GetScrollbarData().mThumbIsAsyncDraggable) {
@@ -2020,7 +2014,8 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
   }
 
   if (mInScrollbarTouchDrag) {
-    result = ProcessTouchInputForScrollbarDrag(aInput, hitScrollbarNode);
+    result = ProcessTouchInputForScrollbarDrag(aInput, hitScrollbarNode,
+                                               mTouchBlockHitResult.mHitResult);
   } else {
     
     
@@ -2127,7 +2122,8 @@ static MouseInput::MouseType MultiTouchTypeToMouseType(
 
 APZEventResult APZCTreeManager::ProcessTouchInputForScrollbarDrag(
     MultiTouchInput& aTouchInput,
-    const HitTestingTreeNodeAutoLock& aScrollThumbNode) {
+    const HitTestingTreeNodeAutoLock& aScrollThumbNode,
+    const gfx::CompositorHitTestInfo& aHitInfo) {
   MOZ_ASSERT(mRetainedTouchIdentifier == -1);
   MOZ_ASSERT(mTouchBlockHitResult.mTargetApzc);
   MOZ_ASSERT(aTouchInput.mTouches.Length() == 1);
@@ -2144,12 +2140,7 @@ APZEventResult APZCTreeManager::ProcessTouchInputForScrollbarDrag(
                         aTouchInput.modifiers};
   mouseInput.mHandledByAPZ = true;
 
-  
-  
-  
-  
-  TargetConfirmationFlags targetConfirmed{false};
-
+  TargetConfirmationFlags targetConfirmed{aHitInfo};
   APZEventResult result;
   result.mStatus = mInputQueue->ReceiveInputEvent(
       mTouchBlockHitResult.mTargetApzc, targetConfirmed, mouseInput,
