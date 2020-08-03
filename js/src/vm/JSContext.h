@@ -1144,7 +1144,6 @@ class MOZ_RAII AutoLockScriptData {
 #endif
     }
   }
-
 };
 
 

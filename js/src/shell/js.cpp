@@ -109,7 +109,7 @@
 #include "js/friend/DumpFunctions.h"     
 #include "js/friend/StackLimits.h"       
 #include "js/friend/WindowProxy.h"  
-#include "js/GCAPI.h"                    
+#include "js/GCAPI.h"               
 #include "js/GCVector.h"
 #include "js/Initialization.h"
 #include "js/JSON.h"

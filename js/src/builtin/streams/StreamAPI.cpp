@@ -11,9 +11,9 @@
 
 #include <stdint.h>  
 
-#include "jsapi.h"        
+#include "jsapi.h"  
 #include "jsfriendapi.h"  
-#include "jstypes.h"      
+#include "jstypes.h"  
 
 #include "builtin/Stream.h"  
 #include "builtin/streams/ReadableStream.h"  

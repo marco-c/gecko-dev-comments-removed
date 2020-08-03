@@ -1216,7 +1216,6 @@ class MOZ_RAII AutoProfilerLabel {
   }
 
  private:
-
   
   
   ProfilingStack* mProfilingStack;

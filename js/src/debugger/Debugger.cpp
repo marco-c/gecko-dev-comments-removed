@@ -2961,7 +2961,6 @@ class MOZ_RAII ExecutionObservableRealms
     
     return iter.hasUsableAbstractFramePtr() && realms_.has(iter.realm());
   }
-
 };
 
 
@@ -3025,7 +3024,6 @@ class MOZ_RAII ExecutionObservableFrame
     return iter.hasUsableAbstractFramePtr() &&
            iter.abstractFramePtr() == frame_;
   }
-
 };
 
 class MOZ_RAII ExecutionObservableScript
@@ -3057,7 +3055,6 @@ class MOZ_RAII ExecutionObservableScript
     return iter.hasUsableAbstractFramePtr() && !iter.isWasm() &&
            iter.abstractFramePtr().script() == script_;
   }
-
 };
 
 

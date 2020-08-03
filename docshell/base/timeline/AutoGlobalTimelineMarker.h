@@ -27,7 +27,6 @@ namespace mozilla {
 
 
 class MOZ_RAII AutoGlobalTimelineMarker {
-
   
   const char* mName;
   

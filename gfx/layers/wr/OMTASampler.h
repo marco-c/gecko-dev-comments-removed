@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <queue>
 
-#include "base/platform_thread.h"  
+#include "base/platform_thread.h"           
 #include "mozilla/layers/OMTAController.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticMutex.h"

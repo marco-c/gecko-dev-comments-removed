@@ -784,7 +784,6 @@ class TextureClientReleaseTask : public Runnable {
 
 
 class MOZ_RAII TextureClientAutoLock {
-
  public:
   TextureClientAutoLock(TextureClient* aTexture, OpenMode aMode)
       : mTexture(aTexture), mSucceeded(false) {

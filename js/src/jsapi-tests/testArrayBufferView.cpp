@@ -4,7 +4,7 @@
 
 #include "jsfriendapi.h"
 
-#include "js/ArrayBuffer.h"  
+#include "js/ArrayBuffer.h"             
 #include "js/experimental/TypedData.h"  
 #include "js/ScalarType.h"              
 #include "jsapi-tests/tests.h"

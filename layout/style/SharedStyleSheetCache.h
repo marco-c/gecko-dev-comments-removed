@@ -129,7 +129,8 @@ class SharedStyleSheetCache final : public nsIMemoryReporter {
   
   
   
-  nsDataHashtable<SheetLoadDataHashKey, WeakPtr<css::SheetLoadData>> mLoadingDatas;
+  nsDataHashtable<SheetLoadDataHashKey, WeakPtr<css::SheetLoadData>>
+      mLoadingDatas;
 
   
   

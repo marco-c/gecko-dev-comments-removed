@@ -13,6 +13,7 @@ namespace mozilla {
 namespace webgl {
 
 
+
 class RaiiShmem final {
   RefPtr<mozilla::ipc::ActorLifecycleProxy> mWeakRef;
   mozilla::ipc::Shmem mShmem = {};

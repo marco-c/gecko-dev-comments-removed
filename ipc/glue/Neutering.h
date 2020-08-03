@@ -12,7 +12,6 @@
 
 
 
-
 namespace mozilla {
 namespace ipc {
 

@@ -222,13 +222,13 @@ extern "C" NS_EXPORT void Crash(int16_t how) {
       
       HMODULE kernel32 = LoadLibraryW(L"Kernel32.dll");
       if (kernel32) {
-        typedef BOOL(*HeapFreeT)(HANDLE, DWORD, LPVOID);
+        typedef BOOL (*HeapFreeT)(HANDLE, DWORD, LPVOID);
         HeapFreeT heapFree = (HeapFreeT)GetProcAddress(kernel32, "HeapFree");
         if (heapFree) {
           HANDLE heap = GetProcessHeap();
           LPVOID badPointer = (LPVOID)3;
           heapFree(heap, 0, badPointer);
-          break; 
+          break;  
         }
       }
     }

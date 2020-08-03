@@ -290,8 +290,8 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
       
       return false;
     }
-    *(fields[fieldsCount]) = static_cast<uint8_t>(
-        (*fieldsItr).ToInteger(&rv, 10));
+    *(fields[fieldsCount]) =
+        static_cast<uint8_t>((*fieldsItr).ToInteger(&rv, 10));
     
     NS_ENSURE_SUCCESS(rv, false);
   }

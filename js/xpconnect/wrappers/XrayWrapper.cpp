@@ -20,7 +20,7 @@
 
 #include "jsapi.h"
 #include "js/experimental/TypedData.h"  
-#include "js/friend/WindowProxy.h"  
+#include "js/friend/WindowProxy.h"      
 #include "js/PropertySpec.h"
 #include "nsJSUtils.h"
 #include "nsPrintfCString.h"

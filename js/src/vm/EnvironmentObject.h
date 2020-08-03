@@ -787,7 +787,6 @@ class MOZ_RAII EnvironmentIter {
   }
 
   AbstractFramePtr maybeInitialFrame() const { return frame_; }
-
 };
 
 

@@ -7,7 +7,7 @@
 #include "AudioBuffer.h"
 #include "mozilla/dom/AudioBufferBinding.h"
 #include "jsfriendapi.h"
-#include "js/ArrayBuffer.h"  
+#include "js/ArrayBuffer.h"             
 #include "js/experimental/TypedData.h"  
 #include "mozilla/ErrorResult.h"
 #include "AudioSegment.h"

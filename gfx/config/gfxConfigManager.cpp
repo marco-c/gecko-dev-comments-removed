@@ -271,7 +271,7 @@ void gfxConfigManager::ConfigureWebRender() {
   if (mXRenderEnabled) {
     
     
-    mFeatureWr->ForceDisable(FeatureStatus::Blocked,"XRender is enabled",
+    mFeatureWr->ForceDisable(FeatureStatus::Blocked, "XRender is enabled",
                              "FEATURE_FAILURE_XRENDER"_ns);
   }
 

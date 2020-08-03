@@ -397,7 +397,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
     ~TemporarilyDisableDialogs();
 
    private:
-
     
     
     

@@ -33,7 +33,6 @@ namespace devtools {
 
 
 class MOZ_RAII AutoMemMap {
-
   PRFileInfo64 fileInfo;
   PRFileDesc* fd;
   PRFileMap* fileMap;
