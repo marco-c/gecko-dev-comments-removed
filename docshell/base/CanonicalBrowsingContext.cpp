@@ -274,8 +274,14 @@ nsISHistory* CanonicalBrowsingContext::GetSessionHistory() {
 UniquePtr<SessionHistoryInfo>
 CanonicalBrowsingContext::CreateSessionHistoryEntryForLoad(
     nsDocShellLoadState* aLoadState, nsIChannel* aChannel) {
-  RefPtr<SessionHistoryEntry> entry =
-      new SessionHistoryEntry(aLoadState, aChannel);
+  RefPtr<SessionHistoryEntry> entry;
+  const SessionHistoryInfo* info = aLoadState->GetSessionHistoryInfo();
+  if (info) {
+    entry = SessionHistoryEntry::GetByInfoId(info->Id());
+  }
+  if (!entry) {
+    entry = new SessionHistoryEntry(aLoadState, aChannel);
+  }
   mLoadingEntries.AppendElement(entry);
   MOZ_ASSERT(SessionHistoryEntry::GetByInfoId(entry->Info().Id()) == entry);
   return MakeUnique<SessionHistoryInfo>(entry->Info());
@@ -295,9 +301,17 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
       mActiveEntry = mLoadingEntries[i];
       mLoadingEntries.RemoveElementAt(i);
       if (IsTop()) {
-        shistory->AddEntry(mActiveEntry,
-                            true);
+        nsCOMPtr<nsISHistory> existingSHistory = mActiveEntry->GetShistory();
+        if (existingSHistory) {
+          MOZ_ASSERT(existingSHistory == shistory);
+          shistory->UpdateIndex();
+        } else {
+          shistory->AddEntry(mActiveEntry,
+                              true);
+        }
       } else {
+        
+        
         
         
         
