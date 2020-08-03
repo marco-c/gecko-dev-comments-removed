@@ -257,7 +257,9 @@ class ProviderAutofill extends UrlbarProvider {
 
     
     
-    this._autofillResult = null;
+    
+    
+    this._autofillData = null;
 
     
     if (!UrlbarPrefs.get("autoFill")) {
@@ -312,16 +314,11 @@ class ProviderAutofill extends UrlbarProvider {
     
     
     
-    let autofilled = await this._getAutofillResult(queryContext);
-    if (!autofilled || !this._autofillResult) {
+    let result = await this._getAutofillResult(queryContext);
+    if (!result || instance != this.queryInstance) {
       return false;
     }
-
-    
-    if (instance != this.queryInstance) {
-      return false;
-    }
-
+    this._autofillData = { result, instance };
     return true;
   }
 
@@ -333,8 +330,9 @@ class ProviderAutofill extends UrlbarProvider {
   getPriority(queryContext) {
     
     if (
-      this._autofillResult &&
-      this._autofillResult.type == UrlbarUtils.RESULT_TYPE.SEARCH
+      this._autofillData &&
+      this._autofillData.instance == this.queryInstance &&
+      this._autofillData.result.type == UrlbarUtils.RESULT_TYPE.SEARCH
     ) {
       return 1;
     }
@@ -351,14 +349,19 @@ class ProviderAutofill extends UrlbarProvider {
 
   async startQuery(queryContext, addCallback) {
     
-    if (!this._autofillResult) {
-      this.logger.error("startQuery invoked without an _autofillResult");
+    
+    
+    if (
+      !this._autofillData ||
+      this._autofillData.instance != this.queryInstance
+    ) {
+      this.logger.error("startQuery invoked with an invalid _autofillData");
       return;
     }
 
-    this._autofillResult.heuristic = true;
-    addCallback(this, this._autofillResult);
-    this._autofillResult = null;
+    this._autofillData.result.heuristic = true;
+    addCallback(this, this._autofillData.result);
+    this._autofillData = null;
   }
 
   
@@ -366,7 +369,9 @@ class ProviderAutofill extends UrlbarProvider {
 
 
   cancelQuery(queryContext) {
-    this._autofillResult = null;
+    if (this._autofillData?.instance == this.queryInstance) {
+      this._autofillData = null;
+    }
   }
 
   
@@ -501,9 +506,7 @@ class ProviderAutofill extends UrlbarProvider {
 
 
 
-
-
-  _onResultRow(row, cancel, queryContext) {
+  _processRow(row, queryContext) {
     let queryType = row.getResultByName("query_type");
     let autofilledValue, finalCompleteValue;
     switch (queryType) {
@@ -534,10 +537,6 @@ class ProviderAutofill extends UrlbarProvider {
         break;
     }
 
-    
-    
-    cancel();
-
     let [title] = UrlbarUtils.stripPrefixAndTrim(finalCompleteValue, {
       stripHttp: true,
       trimEmptyQuery: true,
@@ -560,37 +559,36 @@ class ProviderAutofill extends UrlbarProvider {
       selectionStart: queryContext.searchString.length,
       selectionEnd: autofilledValue.length,
     };
-
-    this._autofillResult = result;
+    return result;
   }
 
   async _getAutofillResult(queryContext) {
     
-    this._matchAboutPageForAutofill(queryContext);
-    if (this._autofillResult) {
-      return true;
+    let result = this._matchAboutPageForAutofill(queryContext);
+    if (result) {
+      return result;
     }
 
     
-    await this._matchKnownUrl(queryContext);
-    if (this._autofillResult) {
-      return true;
+    result = await this._matchKnownUrl(queryContext);
+    if (result) {
+      return result;
     }
 
     
-    await this._matchSearchEngineDomain(queryContext);
-    if (this._autofillResult) {
-      return true;
+    result = await this._matchSearchEngineDomain(queryContext);
+    if (result) {
+      return result;
     }
 
-    return false;
+    return null;
   }
 
   _matchAboutPageForAutofill(queryContext) {
     
     
     if (this._strippedPrefix != "about:" || !this._searchString) {
-      return;
+      return null;
     }
 
     for (const aboutUrl of AboutPagesUtils.visibleAboutUrls) {
@@ -617,16 +615,16 @@ class ProviderAutofill extends UrlbarProvider {
           selectionStart: queryContext.searchString.length,
           selectionEnd: autofilledValue.length,
         };
-        this._autofillResult = result;
-        return;
+        return result;
       }
     }
+    return null;
   }
 
   async _matchKnownUrl(queryContext) {
     let conn = await PlacesUtils.promiseLargeCacheDBConnection();
     if (!conn) {
-      return;
+      return null;
     }
     
     
@@ -644,15 +642,17 @@ class ProviderAutofill extends UrlbarProvider {
 
     
     if (query) {
-      await conn.executeCached(query, params, (row, cancel) => {
-        this._onResultRow(row, cancel, queryContext);
-      });
+      let rows = await conn.executeCached(query, params);
+      if (rows.length) {
+        return this._processRow(rows[0], queryContext);
+      }
     }
+    return null;
   }
 
   async _matchSearchEngineDomain(queryContext) {
     if (!UrlbarPrefs.get("autoFill.searchEngines")) {
-      return;
+      return null;
     }
 
     
@@ -668,12 +668,12 @@ class ProviderAutofill extends UrlbarProvider {
     if (
       !UrlbarTokenizer.looksLikeOrigin(searchStr, { ignoreKnownDomains: true })
     ) {
-      return;
+      return null;
     }
 
     let engine = await UrlbarSearchUtils.engineForDomainPrefix(searchStr);
     if (!engine) {
-      return;
+      return null;
     }
     let url = engine.searchForm;
     let domain = engine.getResultDomain();
@@ -683,7 +683,7 @@ class ProviderAutofill extends UrlbarProvider {
       (this._strippedPrefix && !url.startsWith(this._strippedPrefix)) ||
       !(domain + "/").includes(this._searchString)
     ) {
-      return;
+      return null;
     }
 
     
@@ -708,7 +708,7 @@ class ProviderAutofill extends UrlbarProvider {
       selectionStart: queryContext.searchString.length,
       selectionEnd: autofilledValue.length,
     };
-    this._autofillResult = result;
+    return result;
   }
 }
 

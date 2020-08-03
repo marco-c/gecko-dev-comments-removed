@@ -60,6 +60,12 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
   async isActive(queryContext) {
     let instance = this.queryInstance;
+
+    
+    
+    
+    this._autofillData = null;
+
     
     
     if (
@@ -86,8 +92,9 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
     
     
     if (UrlbarPrefs.get("autoFill") && queryContext.allowAutofill) {
-      this._autofillResult = this._getAutofillResult(queryContext);
-      if (this._autofillResult) {
+      let result = this._getAutofillResult(queryContext);
+      if (result) {
+        this._autofillData = { result, instance };
         return true;
       }
     }
@@ -121,8 +128,12 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
         );
         addCallback(this, result);
       }
-    } else if (this._autofillResult) {
-      addCallback(this, this._autofillResult);
+    } else if (
+      this._autofillData &&
+      this._autofillData.instance == this.queryInstance
+    ) {
+      addCallback(this, this._autofillData.result);
+      this._autofillData = null;
     }
   }
 
@@ -140,7 +151,9 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
 
   cancelQuery(queryContext) {
-    delete this._autofillResult;
+    if (this._autofillData?.instance == this.queryInstance) {
+      this._autofillData = null;
+    }
   }
 
   _getAutofillResult(queryContext) {
