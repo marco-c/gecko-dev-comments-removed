@@ -311,39 +311,46 @@ bool AudioBuffer::RestoreJSChannelData(JSContext* aJSContext) {
 
 void AudioBuffer::CopyFromChannel(const Float32Array& aDestination,
                                   uint32_t aChannelNumber,
-                                  uint32_t aBufferOffset, ErrorResult& aRv) {
+                                  uint32_t aStartInChannel, ErrorResult& aRv) {
   if (aChannelNumber >= NumberOfChannels()) {
     aRv.ThrowIndexSizeError(
         nsPrintfCString("Channel number (%u) is out of range", aChannelNumber));
     return;
   }
 
+  if (aStartInChannel > Length()) {
+    
+    
+    aRv.ThrowIndexSizeError(
+        nsPrintfCString("Start index (%u) is out of range", aStartInChannel));
+    return;
+  }
+
   JS::AutoCheckCannotGC nogc;
   aDestination.ComputeState();
-
-  int64_t length = Length();
-  int64_t offset = aBufferOffset;
-  int64_t destLength = aDestination.Length();
-  uint32_t count = std::max(0l, std::min(length - offset, destLength));
-
+  uint32_t count = std::min(Length() - aStartInChannel, aDestination.Length());
   JSObject* channelArray = mJSChannels[aChannelNumber];
   if (channelArray) {
     if (JS_GetTypedArrayLength(channelArray) != Length()) {
       
+      
+      
+      aRv.ThrowIndexSizeError("Channel's backing buffer is detached");
       return;
     }
+
     bool isShared = false;
     const float* sourceData =
         JS_GetFloat32ArrayData(channelArray, &isShared, nogc);
     
     
     MOZ_ASSERT(!isShared);
-    PodMove(aDestination.Data(), sourceData + aBufferOffset, count);
+    PodMove(aDestination.Data(), sourceData + aStartInChannel, count);
     return;
   }
 
   if (!mSharedChannels.IsNull()) {
-    CopyChannelDataToFloat(mSharedChannels, aChannelNumber, aBufferOffset,
+    CopyChannelDataToFloat(mSharedChannels, aChannelNumber, aStartInChannel,
                            aDestination.Data(), count);
     return;
   }
@@ -353,11 +360,19 @@ void AudioBuffer::CopyFromChannel(const Float32Array& aDestination,
 
 void AudioBuffer::CopyToChannel(JSContext* aJSContext,
                                 const Float32Array& aSource,
-                                uint32_t aChannelNumber, uint32_t aBufferOffset,
-                                ErrorResult& aRv) {
+                                uint32_t aChannelNumber,
+                                uint32_t aStartInChannel, ErrorResult& aRv) {
   if (aChannelNumber >= NumberOfChannels()) {
     aRv.ThrowIndexSizeError(
         nsPrintfCString("Channel number (%u) is out of range", aChannelNumber));
+    return;
+  }
+
+  if (aStartInChannel > Length()) {
+    
+    
+    aRv.ThrowIndexSizeError(
+        nsPrintfCString("Start index (%u) is out of range", aStartInChannel));
     return;
   }
 
@@ -370,20 +385,20 @@ void AudioBuffer::CopyToChannel(JSContext* aJSContext,
   JSObject* channelArray = mJSChannels[aChannelNumber];
   if (JS_GetTypedArrayLength(channelArray) != Length()) {
     
+    
+    
+    aRv.ThrowIndexSizeError("Channel's backing buffer is detached");
     return;
   }
 
   aSource.ComputeState();
-  int64_t length = JS_GetTypedArrayLength(channelArray);
-  int64_t offset = aBufferOffset;
-  int64_t srcLength = aSource.Length();
-  uint32_t count = std::max(0l, std::min(length - offset, srcLength));
+  uint32_t count = std::min(Length() - aStartInChannel, aSource.Length());
   bool isShared = false;
   float* channelData = JS_GetFloat32ArrayData(channelArray, &isShared, nogc);
   
   
   MOZ_ASSERT(!isShared);
-  PodMove(channelData + aBufferOffset, aSource.Data(), count);
+  PodMove(channelData + aStartInChannel, aSource.Data(), count);
 }
 
 void AudioBuffer::GetChannelData(JSContext* aJSContext, uint32_t aChannel,
