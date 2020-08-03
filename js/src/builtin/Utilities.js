@@ -103,19 +103,6 @@ function IsPropertyKey(argument) {
 #define TO_PROPERTY_KEY(name) \
 (typeof name !== "string" && typeof name !== "number" && typeof name !== "symbol" ? ToPropertyKey(name) : name)
 
-var _builtinCtorsCache = {__proto__: null};
-
-function GetBuiltinConstructor(builtinName) {
-    var ctor = _builtinCtorsCache[builtinName] ||
-               (_builtinCtorsCache[builtinName] = GetBuiltinConstructorImpl(builtinName));
-    assert(ctor, `No builtin with name "${builtinName}" found`);
-    return ctor;
-}
-
-function GetBuiltinPrototype(builtinName) {
-    return (_builtinCtorsCache[builtinName] || GetBuiltinConstructor(builtinName)).prototype;
-}
-
 
 function SpeciesConstructor(obj, defaultConstructor) {
     
