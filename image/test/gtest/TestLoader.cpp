@@ -67,6 +67,26 @@ TEST_F(ImageLoader, DetectWebP) {
   CheckMimeType(buffer, sizeof(buffer), IMAGE_WEBP);
 }
 
+TEST_F(ImageLoader, DetectAVIFMajorBrand) {
+  const char buffer[] =
+      "\x00\x00\x00\x20"   
+      "ftyp"               
+      "avif"               
+      "\x00\x00\x00\x00"   
+      "avifmif1miafMA1B";  
+  CheckMimeType(buffer, sizeof(buffer), IMAGE_AVIF);
+}
+
+TEST_F(ImageLoader, DetectAVIFCompatibleBrand) {
+  const char buffer[] =
+      "\x00\x00\x00\x20"   
+      "ftyp"               
+      "XXXX"               
+      "\x00\x00\x00\x00"   
+      "avifmif1miafMA1B";  
+  CheckMimeType(buffer, sizeof(buffer), IMAGE_AVIF);
+}
+
 TEST_F(ImageLoader, DetectNone) {
   const char buffer[] = "abcdefghijklmnop";
   CheckMimeType(buffer, sizeof(buffer), nullptr);
