@@ -291,7 +291,7 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
       return false;
     }
     *(fields[fieldsCount]) = static_cast<uint8_t>(
-        PromiseFlatString((*fieldsItr)).ToInteger(&rv, 10));
+        (*fieldsItr).ToInteger(&rv, 10));
     
     NS_ENSURE_SUCCESS(rv, false);
   }
@@ -437,15 +437,15 @@ bool ExtractH264CodecDetails(const nsAString& aCodec, uint8_t& aProfile,
 
   
   nsresult rv = NS_OK;
-  aProfile = PromiseFlatString(Substring(aCodec, 5, 2)).ToInteger(&rv, 16);
+  aProfile = Substring(aCodec, 5, 2).ToInteger(&rv, 16);
   NS_ENSURE_SUCCESS(rv, false);
 
   
   
-  aConstraint = PromiseFlatString(Substring(aCodec, 7, 2)).ToInteger(&rv, 16);
+  aConstraint = Substring(aCodec, 7, 2).ToInteger(&rv, 16);
   NS_ENSURE_SUCCESS(rv, false);
 
-  aLevel = PromiseFlatString(Substring(aCodec, 9, 2)).ToInteger(&rv, 16);
+  aLevel = Substring(aCodec, 9, 2).ToInteger(&rv, 16);
   NS_ENSURE_SUCCESS(rv, false);
 
   if (aLevel == 9) {
