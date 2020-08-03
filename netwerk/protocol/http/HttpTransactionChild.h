@@ -99,7 +99,7 @@ class HttpTransactionChild final : public PHttpTransactionChild,
   
   
   Atomic<bool, ReleaseAcquire> mCanceled;
-  nsresult mStatus;
+  Atomic<nsresult, ReleaseAcquire> mStatus;
   uint64_t mChannelId;
   nsHttpRequestHead mRequestHead;
   bool mIsDocumentLoad;

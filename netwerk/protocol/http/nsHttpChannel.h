@@ -198,7 +198,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   void SetWarningReporter(HttpChannelSecurityWarningReporter* aReporter);
   HttpChannelSecurityWarningReporter* GetWarningReporter();
 
-  bool OnDataAlreadySent() { return mDataAlreadySent; }
+  bool DataSentToChildProcess() { return mDataSentToChildProcess; }
 
  public: 
   uint32_t GetRequestTime() const { return mRequestTime; }
@@ -734,7 +734,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  uint32_t mDataAlreadySent : 1;
+  uint32_t mDataSentToChildProcess : 1;
 
   
   

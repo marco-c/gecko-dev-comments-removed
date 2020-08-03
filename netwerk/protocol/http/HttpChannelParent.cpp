@@ -83,7 +83,8 @@ HttpChannelParent::HttpChannelParent(dom::BrowserParent* iframeEmbedding,
       mCacheNeedFlowControlInitialized(false),
       mNeedFlowControl(true),
       mSuspendedForFlowControl(false),
-      mAfterOnStartRequestBegun(false) {
+      mAfterOnStartRequestBegun(false),
+      mDataSentToChildProcess(false) {
   LOG(("Creating HttpChannelParent [this=%p]\n", this));
 
   
@@ -1436,6 +1437,7 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     httpChannelImpl->GetCacheTokenExpirationTime(&args.cacheExpirationTime());
     httpChannelImpl->GetCacheTokenCachedCharset(args.cachedCharset());
 
+    mDataSentToChildProcess = httpChannelImpl->DataSentToChildProcess();
     bool loadedFromApplicationCache = false;
     httpChannelImpl->GetLoadedFromApplicationCache(&loadedFromApplicationCache);
     if (loadedFromApplicationCache) {
@@ -1682,6 +1684,11 @@ HttpChannelParent::OnDataAvailable(nsIRequest* aRequest,
   MOZ_RELEASE_ASSERT(!mDivertingFromChild,
                      "Cannot call OnDataAvailable if diverting is set!");
 
+  if (mDataSentToChildProcess) {
+    uint32_t n;
+    return aInputStream->ReadSegments(NS_DiscardSegment, nullptr, aCount, &n);
+  }
+
   nsresult channelStatus = NS_OK;
   mChannel->GetStatus(&channelStatus);
 
@@ -1690,12 +1697,6 @@ HttpChannelParent::OnDataAvailable(nsIRequest* aRequest,
   if (httpChannelImpl) {
     if (httpChannelImpl->IsReadingFromCache()) {
       transportStatus = NS_NET_STATUS_READING;
-    }
-
-    if (httpChannelImpl->OnDataAlreadySent()) {
-      LOG(("  OnDataAvailable already sent to the child.\n"));
-      uint32_t n;
-      return aInputStream->ReadSegments(NS_DiscardSegment, nullptr, aCount, &n);
     }
   }
 
@@ -1763,10 +1764,12 @@ bool HttpChannelParent::NeedFlowControl() {
   
   
   
+  
   if (gHttpHandler->SendWindowSize() == 0 || !httpChannelImpl ||
       httpChannelImpl->IsReadingFromCache() ||
       NS_FAILED(httpChannelImpl->GetContentLength(&contentLength)) ||
-      contentLength < gHttpHandler->SendWindowSize()) {
+      contentLength < gHttpHandler->SendWindowSize() ||
+      mDataSentToChildProcess) {
     mNeedFlowControl = false;
   }
   mCacheNeedFlowControlInitialized = true;
