@@ -187,8 +187,8 @@ nsresult HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                aName == nsGkAtoms::mozallowfullscreen) {
       if (mFrameLoader) {
         if (auto* bc = mFrameLoader->GetExtantBrowsingContext()) {
-          
-          bc->SetFullscreenAllowedByOwner(AllowFullscreen());
+          MOZ_ALWAYS_SUCCEEDS(
+              bc->SetFullscreenAllowedByOwner(AllowFullscreen()));
         }
       }
     }

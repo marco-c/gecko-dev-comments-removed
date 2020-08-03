@@ -125,7 +125,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   
-  void NotifyMediaMutedChanged(bool aMuted);
+  void NotifyMediaMutedChanged(bool aMuted, ErrorResult& aRv);
 
   
   

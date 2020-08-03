@@ -2621,7 +2621,7 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     nsAutoString frameName;
     mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, frameName);
     if (nsContentUtils::IsOverridingWindowName(frameName)) {
-      mPendingBrowsingContext->SetName(frameName);
+      MOZ_ALWAYS_SUCCEEDS(mPendingBrowsingContext->SetName(frameName));
     }
     
     if (mOwnerContent->AttrValueIs(kNameSpaceID_None,
@@ -2988,7 +2988,7 @@ void nsFrameLoader::ApplySandboxFlags(uint32_t sandboxFlags) {
     }
   }
 
-  context->SetSandboxFlags(sandboxFlags);
+  MOZ_ALWAYS_SUCCEEDS(context->SetSandboxFlags(sandboxFlags));
 }
 
 

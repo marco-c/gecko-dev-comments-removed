@@ -5102,7 +5102,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   
   
   if (nsContentUtils::IsOverridingWindowName(aName)) {
-    newBrowserHost->GetBrowsingContext()->SetName(aName);
+    MOZ_ALWAYS_SUCCEEDS(newBrowserHost->GetBrowsingContext()->SetName(aName));
   }
 
   MOZ_ASSERT(newBrowserHost->GetBrowsingContext()->OriginAttributesRef() ==

@@ -142,7 +142,8 @@ void WindowGlobalParent::Init() {
   
   
   if (!BrowsingContext()->IsDiscarded()) {
-    BrowsingContext()->SetCurrentInnerWindowId(InnerWindowId());
+    MOZ_ALWAYS_SUCCEEDS(
+        BrowsingContext()->SetCurrentInnerWindowId(InnerWindowId()));
   }
 
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();

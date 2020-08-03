@@ -967,7 +967,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   
   if (activeDocsSandboxFlags && parentBC) {
-    newBC->SetOnePermittedSandboxedNavigator(parentBC);
+    MOZ_ALWAYS_SUCCEEDS(newBC->SetOnePermittedSandboxedNavigator(parentBC));
   }
 
   if (!aForceNoOpener && parentBC) {
@@ -998,7 +998,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   if (activeDocsSandboxFlags &
       SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS) {
     MOZ_ASSERT(windowIsNew, "Should only get here for new windows");
-    newBC->SetSandboxFlags(activeDocsSandboxFlags);
+    MOZ_ALWAYS_SUCCEEDS(newBC->SetSandboxFlags(activeDocsSandboxFlags));
   }
 
   RefPtr<nsGlobalWindowOuter> win(
@@ -1043,9 +1043,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   if (windowNeedsName) {
     if (nameSpecified && !name.LowerCaseEqualsLiteral("_blank")) {
-      newBC->SetName(name);
+      MOZ_ALWAYS_SUCCEEDS(newBC->SetName(name));
     } else {
-      newBC->SetName(EmptyString());
+      MOZ_ALWAYS_SUCCEEDS(newBC->SetName(EmptyString()));
     }
   }
 
@@ -1123,7 +1123,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
         
         
         if (!newBC->GetIsPopupSpam()) {
-          newBC->SetIsPopupSpam(true);
+          MOZ_ALWAYS_SUCCEEDS(newBC->SetIsPopupSpam(true));
         }
       }
     }

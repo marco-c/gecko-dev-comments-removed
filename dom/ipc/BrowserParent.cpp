@@ -732,7 +732,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
         
         mBrowsingContext->SetOwnerProcessId(
             bridge->Manager()->Manager()->ChildID());
-        mBrowsingContext->SetCurrentInnerWindowId(0);
+        MOZ_ALWAYS_SUCCEEDS(mBrowsingContext->SetCurrentInnerWindowId(0));
 
         
         Unused << bridge->SendSubFrameCrashed();
