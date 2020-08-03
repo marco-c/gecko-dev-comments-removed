@@ -282,7 +282,7 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
   if (mFrames.NotEmpty()) {
     
     
-    if (aReflowInput.ShouldReflowAllKids() || aReflowInput.IsBResize() ||
+    if (aReflowInput.ShouldReflowAllKids() ||
         mFrames.FirstChild()->IsSubtreeDirty()) {
       
       nsIFrame* kidFrame = mFrames.FirstChild();
