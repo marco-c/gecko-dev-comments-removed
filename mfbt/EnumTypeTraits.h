@@ -84,6 +84,30 @@ struct EnumTypeFitsWithin
 template <typename T>
 struct MaxEnumValue;  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+inline constexpr auto UnderlyingValue(const T v) {
+  static_assert(std::is_enum_v<T>);
+  return static_cast<typename std::underlying_type<T>::type>(v);
+}
+
 }  
 
 #endif 
