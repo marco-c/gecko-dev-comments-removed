@@ -355,6 +355,32 @@
         set_user_verified: function(authenticator_id, uv) {
             return window.test_driver_internal.set_user_verified(authenticator_id, uv);
         },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        set_storage_access: function(origin, embedding_origin, state) {
+            if (state !== "allowed" && state !== "blocked") {
+                throw new Error("storage access status must be 'allowed' or 'blocked'");
+            }
+            const blocked = state === "blocked";
+            return window.test_driver_internal.set_storage_access(origin, embedding_origin, blocked);
+        },
     };
 
     window.test_driver_internal = {
@@ -567,6 +593,14 @@
 
 
         set_user_verified: function(authenticator_id, uv) {
+            return Promise.reject(new Error("unimplemented"));
+        },
+
+        
+
+
+
+        set_storage_access: function(origin, embedding_origin, blocked) {
             return Promise.reject(new Error("unimplemented"));
         },
     };
