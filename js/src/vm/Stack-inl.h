@@ -15,6 +15,7 @@
 #include "jit/BaselineFrame.h"
 #include "jit/RematerializedFrame.h"
 #include "js/Debug.h"
+#include "js/friend/StackLimits.h"  
 #include "vm/EnvironmentObject.h"
 #include "vm/FrameIter.h"  
 #include "vm/JSContext.h"

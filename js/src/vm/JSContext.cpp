@@ -42,6 +42,7 @@
 #include "jit/PcScriptCache.h"
 #include "js/CharacterEncoding.h"
 #include "js/ContextOptions.h"  
+#include "js/friend/StackLimits.h"  
 #include "js/Printf.h"
 #ifdef JS_SIMULATOR_ARM
 #  include "jit/arm/Simulator-arm.h"

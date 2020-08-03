@@ -19,6 +19,7 @@
 #include "gc/MaybeRooted.h"
 #include "jit/BaselineIC.h"
 #include "js/CharacterEncoding.h"
+#include "js/friend/StackLimits.h"  
 #include "js/Result.h"
 #include "js/Value.h"
 #include "util/Memory.h"

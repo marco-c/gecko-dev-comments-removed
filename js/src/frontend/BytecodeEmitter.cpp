@@ -56,6 +56,7 @@
 #include "frontend/TryEmitter.h"     
 #include "frontend/WhileEmitter.h"   
 #include "js/CompileOptions.h"       
+#include "js/friend/StackLimits.h"   
 #include "vm/AsyncFunctionResolveKind.h"  
 #include "vm/BytecodeUtil.h"  
 #include "vm/FunctionPrefixKind.h"  

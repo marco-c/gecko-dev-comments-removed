@@ -56,6 +56,7 @@
 #include "js/ContextOptions.h"  
 #include "js/Conversions.h"
 #include "js/Date.h"
+#include "js/friend/StackLimits.h"  
 #include "js/Initialization.h"
 #include "js/JSON.h"
 #include "js/LocaleSensitive.h"

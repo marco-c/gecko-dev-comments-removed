@@ -35,6 +35,7 @@
 #include "js/CompilationAndEvaluation.h"
 #include "js/Debug.h"
 #include "js/experimental/SourceHook.h"  
+#include "js/friend/StackLimits.h"       
 #include "js/friend/UsageStatistics.h"   
 #include "js/GCVector.h"
 #include "js/HashTable.h"
@@ -91,8 +92,6 @@ extern MOZ_COLD mozilla::GenericErrorResult<OOM&> ReportOutOfMemoryResult(
     JSContext* cx);
 
 extern MOZ_COLD void ReportAllocationOverflow(JSContext* maybecx);
-
-extern MOZ_COLD void ReportOverRecursed(JSContext* cx);
 
 class Activation;
 class ActivationIterator;

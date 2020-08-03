@@ -6,6 +6,8 @@
 
 #include "util/NativeStack.h"
 
+#include "mozilla/Assertions.h"  
+
 #ifdef XP_WIN
 #  include "util/Windows.h"
 #elif defined(XP_DARWIN) || defined(DARWIN) || defined(XP_UNIX)
@@ -31,7 +33,7 @@
 #  error "Unsupported platform"
 #endif
 
-#include "jsfriendapi.h"
+#include "js/friend/StackLimits.h"  
 
 #if defined(XP_WIN)
 

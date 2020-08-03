@@ -8,6 +8,7 @@
 
 #include "builtin/ModuleObject.h"
 #include "gc/Policy.h"
+#include "js/friend/StackLimits.h"  
 #include "js/friend/WindowProxy.h"  
 #include "vm/ArgumentsObject.h"
 #include "vm/AsyncFunction.h"

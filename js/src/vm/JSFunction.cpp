@@ -36,6 +36,7 @@
 #include "jit/Ion.h"
 #include "js/CallNonGenericMethod.h"
 #include "js/CompileOptions.h"
+#include "js/friend/StackLimits.h"  
 #include "js/PropertySpec.h"
 #include "js/Proxy.h"
 #include "js/SourceText.h"
