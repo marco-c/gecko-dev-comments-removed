@@ -183,6 +183,9 @@ class APZCCallbackHelper {
 
 
 
+
+
+
   static bool IsScrollInProgress(nsIScrollableFrame* aFrame);
 
   
