@@ -57,12 +57,10 @@ struct RepaintRequest {
         mPaintRequestTime(),
         mScrollUpdateType(eNone),
         mIsRootContent(false),
-        mIsAnimationInProgress(false),
         mIsScrollInfoLayer(false) {}
 
   RepaintRequest(const FrameMetrics& aOther,
-                 const ScrollOffsetUpdateType aScrollUpdateType,
-                 bool aIsAnimationInProgress)
+                 const ScrollOffsetUpdateType aScrollUpdateType)
       : mScrollId(aOther.GetScrollId()),
         mPresShellResolution(aOther.GetPresShellResolution()),
         mCompositionBounds(aOther.GetCompositionBounds()),
@@ -78,7 +76,6 @@ struct RepaintRequest {
         mPaintRequestTime(aOther.GetPaintRequestTime()),
         mScrollUpdateType(aScrollUpdateType),
         mIsRootContent(aOther.IsRootContent()),
-        mIsAnimationInProgress(aIsAnimationInProgress),
         mIsScrollInfoLayer(aOther.IsScrollInfoLayer()) {}
 
   
@@ -100,7 +97,6 @@ struct RepaintRequest {
            mPaintRequestTime == aOther.mPaintRequestTime &&
            mScrollUpdateType == aOther.mScrollUpdateType &&
            mIsRootContent == aOther.mIsRootContent &&
-           mIsAnimationInProgress == aOther.mIsAnimationInProgress &&
            mIsScrollInfoLayer == aOther.mIsScrollInfoLayer;
   }
 
@@ -151,8 +147,6 @@ struct RepaintRequest {
     return mDevPixelsPerCSSPixel;
   }
 
-  bool IsAnimationInProgress() const { return mIsAnimationInProgress; }
-
   bool IsRootContent() const { return mIsRootContent; }
 
   const CSSPoint& GetScrollOffset() const { return mScrollOffset; }
@@ -186,10 +180,6 @@ struct RepaintRequest {
   bool IsScrollInfoLayer() const { return mIsScrollInfoLayer; }
 
  protected:
-  void SetIsAnimationInProgress(bool aInProgress) {
-    mIsAnimationInProgress = aInProgress;
-  }
-
   void SetIsRootContent(bool aIsRootContent) {
     mIsRootContent = aIsRootContent;
   }
@@ -289,9 +279,6 @@ struct RepaintRequest {
 
   
   bool mIsRootContent : 1;
-
-  
-  bool mIsAnimationInProgress : 1;
 
   
   
