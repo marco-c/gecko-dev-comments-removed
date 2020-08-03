@@ -17,6 +17,7 @@
 #include "jit/JitRealm.h"
 #include "jit/mips32/Simulator-mips32.h"
 #include "jit/mips64/Simulator-mips64.h"
+#include "js/friend/WindowProxy.h"  
 #include "vm/ArrayObject.h"
 #include "vm/EqualityOperations.h"  
 #include "vm/Interpreter.h"

@@ -31,6 +31,7 @@
 #include "gc/Tracer.h"  
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Conversions.h"               
+#include "js/friend/WindowProxy.h"        
 #include "js/HeapAPI.h"                   
 #include "js/Promise.h"                   
 #include "js/Proxy.h"                     

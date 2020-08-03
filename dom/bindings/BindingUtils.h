@@ -12,6 +12,7 @@
 #include "jsfriendapi.h"
 #include "js/CharacterEncoding.h"
 #include "js/Conversions.h"
+#include "js/friend/WindowProxy.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Wrapper.h"
 #include "mozilla/ArrayUtils.h"

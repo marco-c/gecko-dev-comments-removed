@@ -105,6 +105,7 @@
 #include "js/ErrorReport.h"              
 #include "js/Exception.h"                
 #include "js/experimental/SourceHook.h"  
+#include "js/friend/WindowProxy.h"  
 #include "js/GCAPI.h"                    
 #include "js/GCVector.h"
 #include "js/Initialization.h"

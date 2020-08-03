@@ -19,6 +19,7 @@
 #include "js/Array.h"  
 #include "js/CharacterEncoding.h"
 #include "js/ContextOptions.h"
+#include "js/friend/WindowProxy.h"  
 #include "js/SavedFrameAPI.h"
 #include "js/StructuredClone.h"
 #include "mozilla/AppShutdown.h"

@@ -12,6 +12,7 @@
 
 #include "jsapi.h"
 
+#include "js/friend/WindowProxy.h"  
 #include "js/PropertySpec.h"
 #include "js/Wrapper.h"
 #include "proxy/DeadObjectProxy.h"

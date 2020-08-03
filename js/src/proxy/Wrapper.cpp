@@ -8,6 +8,7 @@
 
 #include "jsexn.h"
 
+#include "js/friend/WindowProxy.h"  
 #include "js/Proxy.h"
 #include "vm/ErrorObject.h"
 #include "vm/JSContext.h"

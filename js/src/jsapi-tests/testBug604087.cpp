@@ -7,6 +7,7 @@
 
 
 
+#include "js/friend/WindowProxy.h"  
 #include "js/Wrapper.h"
 #include "jsapi-tests/tests.h"
 #include "vm/JSObject.h"

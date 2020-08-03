@@ -17,6 +17,7 @@
 #include "jit/CacheIRSpewer.h"
 #include "jit/InlinableNatives.h"
 #include "jit/Ion.h"  
+#include "js/friend/WindowProxy.h"  
 #include "util/Unicode.h"
 #include "vm/PlainObject.h"  
 #include "vm/SelfHosting.h"

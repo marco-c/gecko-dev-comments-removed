@@ -12,6 +12,7 @@
 
 #include "jsfriendapi.h"
 #include "js/Array.h"  
+#include "js/friend/WindowProxy.h"  
 #include "js/Wrapper.h"
 
 using namespace JS;

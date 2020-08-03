@@ -36,6 +36,7 @@
 #include "gc/Policy.h"
 #include "jit/BaselineJIT.h"
 #include "js/CharacterEncoding.h"
+#include "js/friend/WindowProxy.h"  
 #include "js/MemoryMetrics.h"
 #include "js/PropertyDescriptor.h"  
 #include "js/PropertySpec.h"        
