@@ -606,6 +606,13 @@ function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
   return true;
 }
 
+
+function promiseNativeClick(aElement, aX, aY) {
+  return new Promise(resolve => {
+    synthesizeNativeClick(aElement, aX, aY, resolve);
+  });
+}
+
 function synthesizeNativeClickAndWaitForClickEvent(
   aElement,
   aX,
