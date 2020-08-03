@@ -904,8 +904,12 @@ void KeyframeEffect::UpdateTarget(Element* aElement,
   }
 
   if (mTarget) {
-    UnregisterTarget();
+    
+    
+    
+    
     ResetIsRunningOnCompositor();
+    UnregisterTarget();
 
     RequestRestyle(EffectCompositor::RestyleType::Layer);
 

@@ -25,6 +25,8 @@
 #include "mozilla/Telemetry.h"  
 #include "mozilla/ToString.h"
 #include "mozilla/dom/Animation.h"              
+#include "mozilla/dom/KeyframeEffect.h"         
+#include "mozilla/EffectSet.h"                  
 #include "mozilla/gfx/2D.h"                     
 #include "mozilla/gfx/BaseSize.h"               
 #include "mozilla/gfx/Matrix.h"                 
@@ -180,8 +182,15 @@ void LayerManager::RemovePartialPrerenderedAnimation(
 #ifdef DEBUG
   RefPtr<dom::Animation> animation;
   if (mPartialPrerenderedAnimations.Remove(aCompositorAnimationId,
-                                           getter_AddRefs(animation))) {
-    MOZ_ASSERT(aAnimation == animation.get());
+                                           getter_AddRefs(animation)) &&
+      
+      
+      aAnimation->GetEffect() && aAnimation->GetEffect()->AsKeyframeEffect() &&
+      animation->GetEffect() && animation->GetEffect()->AsKeyframeEffect()) {
+    MOZ_ASSERT(EffectSet::GetEffectSetForEffect(
+                   aAnimation->GetEffect()->AsKeyframeEffect()) ==
+               EffectSet::GetEffectSetForEffect(
+                   animation->GetEffect()->AsKeyframeEffect()));
   }
 #else
   mPartialPrerenderedAnimations.Remove(aCompositorAnimationId);

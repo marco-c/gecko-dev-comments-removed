@@ -125,6 +125,16 @@ EffectSet* EffectSet::GetEffectSetForStyleFrame(const nsIFrame* aStyleFrame) {
 }
 
 
+EffectSet* EffectSet::GetEffectSetForEffect(const KeyframeEffect* aEffect) {
+  NonOwningAnimationTarget target = aEffect->GetAnimationTarget();
+  if (!target) {
+    return nullptr;
+  }
+
+  return EffectSet::GetEffectSet(target.mElement, target.mPseudoType);
+}
+
+
 void EffectSet::DestroyEffectSet(dom::Element* aElement,
                                  PseudoStyleType aPseudoType) {
   nsAtom* propName = GetEffectSetPropertyAtom(aPseudoType);
