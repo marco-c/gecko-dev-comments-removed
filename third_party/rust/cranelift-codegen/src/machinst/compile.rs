@@ -23,7 +23,10 @@ where
     
     let lower = Lower::new(f, abi, block_order)?;
     
-    let (mut vcode, stackmap_request_info) = lower.lower(b)?;
+    let (mut vcode, stackmap_request_info) = {
+        let _tt = timing::vcode_lower();
+        lower.lower(b)?
+    };
 
     debug!(
         "vcode from lowering: \n{}",
@@ -92,7 +95,10 @@ where
 
     
     
-    vcode.replace_insns_from_regalloc(result);
+    {
+        let _tt = timing::vcode_post_ra();
+        vcode.replace_insns_from_regalloc(result);
+    }
 
     debug!(
         "vcode after regalloc: final version:\n{}",

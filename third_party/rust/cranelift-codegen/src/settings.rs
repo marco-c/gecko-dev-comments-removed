@@ -45,7 +45,7 @@ pub trait Configurable {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Hash)]
 pub struct Builder {
     template: &'static detail::Template,
     bytes: Box<[u8]>,
@@ -212,8 +212,10 @@ impl<'a> PredicateView<'a> {
 pub mod detail {
     use crate::constant_hash;
     use core::fmt;
+    use core::hash::Hash;
 
     
+    #[derive(Hash)]
     pub struct Template {
         
         pub name: &'static str,
@@ -281,6 +283,7 @@ pub mod detail {
     
     
     
+    #[derive(Hash)]
     pub struct Descriptor {
         
         pub name: &'static str,
@@ -293,7 +296,7 @@ pub mod detail {
     }
 
     
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Hash)]
     pub enum Detail {
         
         Bool {

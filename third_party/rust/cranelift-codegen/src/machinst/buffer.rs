@@ -143,6 +143,7 @@
 use crate::binemit::{Addend, CodeOffset, CodeSink, Reloc, Stackmap};
 use crate::ir::{ExternalName, Opcode, SourceLoc, TrapCode};
 use crate::machinst::{BlockIndex, MachInstLabelUse, VCodeInst};
+use crate::timing;
 
 use log::trace;
 use smallvec::SmallVec;
@@ -175,6 +176,9 @@ pub struct MachBuffer<I: VCodeInst> {
     cur_srcloc: Option<(CodeOffset, SourceLoc)>,
     
     label_offsets: SmallVec<[CodeOffset; 16]>,
+    
+    
+    
     
     
     
@@ -257,7 +261,19 @@ impl MachLabel {
     }
 }
 
+
+pub enum StackmapExtent {
+    
+    
+    UpcomingBytes(CodeOffset),
+
+    
+    
+    StartedAtOffset(CodeOffset),
+}
+
 impl<I: VCodeInst> MachBuffer<I> {
+    
     
     pub fn new() -> MachBuffer<I> {
         MachBuffer {
@@ -489,13 +505,19 @@ impl<I: VCodeInst> MachBuffer<I> {
     }
 
     
-    fn resolve_label_offset(&self, label: MachLabel) -> CodeOffset {
-        let alias = self.label_aliases[label.0 as usize];
-        if alias != UNKNOWN_LABEL {
-            self.label_offsets[alias.0 as usize]
-        } else {
-            self.label_offsets[label.0 as usize]
+    fn resolve_label_offset(&self, mut label: MachLabel) -> CodeOffset {
+        let mut iters = 0;
+        while self.label_aliases[label.0 as usize] != UNKNOWN_LABEL {
+            label = self.label_aliases[label.0 as usize];
+            
+            
+            
+            
+            
+            iters += 1;
+            assert!(iters < 1_000_000, "Unexpected cycle in label aliases");
         }
+        self.label_offsets[label.0 as usize]
 
         
     }
@@ -809,6 +831,35 @@ impl<I: VCodeInst> MachBuffer<I> {
                 
                 
                 
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 if self.resolve_label_offset(b.target) != b.start {
                     let redirected = b.labels_at_this_branch.len();
                     for &l in &b.labels_at_this_branch {
@@ -834,7 +885,10 @@ impl<I: VCodeInst> MachBuffer<I> {
                         trace!(" -> after label redirects, restarting loop");
                         continue;
                     }
+                } else {
+                    break;
                 }
+
                 let b = self.latest_branches.last().unwrap();
 
                 
@@ -1074,6 +1128,8 @@ impl<I: VCodeInst> MachBuffer<I> {
 
     
     pub fn finish(mut self) -> MachBufferFinalized {
+        let _tt = timing::vcode_emit_finish();
+
         
         
         
@@ -1162,12 +1218,21 @@ impl<I: VCodeInst> MachBuffer<I> {
     
     
     
-    
-    pub fn add_stackmap(&mut self, insn_len: CodeOffset, stackmap: Stackmap) {
-        let offset = self.cur_offset();
+    pub fn add_stackmap(&mut self, extent: StackmapExtent, stackmap: Stackmap) {
+        let (start, end) = match extent {
+            StackmapExtent::UpcomingBytes(insn_len) => {
+                let start_offset = self.cur_offset();
+                (start_offset, start_offset + insn_len)
+            }
+            StackmapExtent::StartedAtOffset(start_offset) => {
+                let end_offset = self.cur_offset();
+                debug_assert!(end_offset >= start_offset);
+                (start_offset, end_offset)
+            }
+        };
         self.stackmaps.push(MachStackMap {
-            offset,
-            offset_end: offset + insn_len,
+            offset: start,
+            offset_end: end,
             stackmap,
         });
     }
@@ -1559,5 +1624,151 @@ mod test {
         let buf2 = buf2.finish();
 
         assert_eq!(&buf.data[2000000..], &buf2.data[..]);
+    }
+
+    #[test]
+    fn test_multiple_redirect() {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        let flags = settings::Flags::new(settings::builder());
+        let mut buf = MachBuffer::new();
+        let mut state = Default::default();
+
+        buf.reserve_labels_for_blocks(8);
+
+        buf.bind_label(label(0));
+        let inst = Inst::CondBr {
+            kind: CondBrKind::Zero(xreg(0)),
+            taken: target(1),
+            not_taken: target(2),
+        };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(1));
+        let inst = Inst::Jump { dest: target(3) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(2));
+        let inst = Inst::Nop4;
+        inst.emit(&mut buf, &flags, &mut state);
+        inst.emit(&mut buf, &flags, &mut state);
+        let inst = Inst::Jump { dest: target(0) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(3));
+        let inst = Inst::Jump { dest: target(4) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(4));
+        let inst = Inst::Jump { dest: target(5) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(5));
+        let inst = Inst::Jump { dest: target(7) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(6));
+        let inst = Inst::Nop4;
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(7));
+        let inst = Inst::Ret;
+        inst.emit(&mut buf, &flags, &mut state);
+
+        let buf = buf.finish();
+
+        let golden_data = vec![
+            0xa0, 0x00, 0x00, 0xb4, // cbz x0, 0x14
+            0x1f, 0x20, 0x03, 0xd5, // nop
+            0x1f, 0x20, 0x03, 0xd5, // nop
+            0xfd, 0xff, 0xff, 0x17, // b 0
+            0x1f, 0x20, 0x03, 0xd5, // nop
+            0xc0, 0x03, 0x5f, 0xd6, // ret
+        ];
+
+        assert_eq!(&golden_data[..], &buf.data[..]);
+    }
+
+    #[test]
+    fn test_handle_branch_cycle() {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let flags = settings::Flags::new(settings::builder());
+        let mut buf = MachBuffer::new();
+        let mut state = Default::default();
+
+        buf.reserve_labels_for_blocks(5);
+
+        buf.bind_label(label(0));
+        let inst = Inst::Jump { dest: target(1) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(1));
+        let inst = Inst::Jump { dest: target(2) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(2));
+        let inst = Inst::Jump { dest: target(3) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(3));
+        let inst = Inst::Jump { dest: target(4) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        buf.bind_label(label(4));
+        let inst = Inst::Jump { dest: target(1) };
+        inst.emit(&mut buf, &flags, &mut state);
+
+        let buf = buf.finish();
+
+        let golden_data = vec![
+            0x00, 0x00, 0x00, 0x14, // b 0
+        ];
+
+        assert_eq!(&golden_data[..], &buf.data[..]);
     }
 }

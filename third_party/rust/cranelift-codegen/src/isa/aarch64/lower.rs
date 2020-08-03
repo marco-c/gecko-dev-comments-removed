@@ -7,7 +7,6 @@
 
 
 
-
 use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::types::*;
 use crate::ir::Inst as IRInst;
@@ -21,8 +20,9 @@ use crate::isa::aarch64::AArch64Backend;
 
 use super::lower_inst;
 
-use log::debug;
+use log::{debug, trace};
 use regalloc::{Reg, RegClass, Writable};
+use smallvec::SmallVec;
 
 
 
@@ -322,7 +322,7 @@ fn put_input_in_rs<C: LowerCtx<I = Inst>>(
             
             if let Some(shiftimm) = input_to_shiftimm(ctx, shift_amt) {
                 let shiftee_bits = ty_bits(ctx.input_ty(insn, 0));
-                if shiftee_bits <= u8::MAX as usize {
+                if shiftee_bits <= std::u8::MAX as usize {
                     let shiftimm = shiftimm.mask(shiftee_bits as u8);
                     let reg = put_input_in_reg(ctx, shiftee, narrow_mode);
                     return ResultRS::RegShift(reg, ShiftOpAndAmt::new(ShiftOp::LSL, shiftimm));
@@ -422,6 +422,35 @@ pub(crate) fn put_input_in_rse_imm12<C: LowerCtx<I = Inst>>(
     }
 
     ResultRSEImm12::from_rse(put_input_in_rse(ctx, input, narrow_mode))
+}
+
+
+
+
+
+pub(crate) fn put_input_in_rse_imm12_maybe_negated<C: LowerCtx<I = Inst>>(
+    ctx: &mut C,
+    input: InsnInput,
+    twos_complement_bits: usize,
+    narrow_mode: NarrowValueMode,
+) -> (ResultRSEImm12, bool) {
+    assert!(twos_complement_bits <= 64);
+    if let Some(imm_value) = input_to_const(ctx, input) {
+        if let Some(i) = Imm12::maybe_from_u64(imm_value) {
+            return (ResultRSEImm12::Imm12(i), false);
+        }
+        let sign_extended =
+            ((imm_value as i64) << (64 - twos_complement_bits)) >> (64 - twos_complement_bits);
+        let inverted = sign_extended.wrapping_neg();
+        if let Some(i) = Imm12::maybe_from_u64(inverted as u64) {
+            return (ResultRSEImm12::Imm12(i), true);
+        }
+    }
+
+    (
+        ResultRSEImm12::from_rse(put_input_in_rse(ctx, input, narrow_mode)),
+        false,
+    )
 }
 
 pub(crate) fn put_input_in_rs_immlogic<C: LowerCtx<I = Inst>>(
@@ -545,104 +574,250 @@ pub(crate) fn alu_inst_immshift(
 
 
 
+
+type AddressAddend32List = SmallVec<[(Reg, ExtendOp); 4]>;
+
+type AddressAddend64List = SmallVec<[Reg; 4]>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn collect_address_addends<C: LowerCtx<I = Inst>>(
+    ctx: &mut C,
+    roots: &[InsnInput],
+) -> (AddressAddend64List, AddressAddend32List, i64) {
+    let mut result32: AddressAddend32List = SmallVec::new();
+    let mut result64: AddressAddend64List = SmallVec::new();
+    let mut offset: i64 = 0;
+
+    let mut workqueue: SmallVec<[InsnInput; 4]> = roots.iter().cloned().collect();
+
+    while let Some(input) = workqueue.pop() {
+        debug_assert!(ty_bits(ctx.input_ty(input.insn, input.input)) == 64);
+        if let Some((op, insn)) = maybe_input_insn_multi(
+            ctx,
+            input,
+            &[
+                Opcode::Uextend,
+                Opcode::Sextend,
+                Opcode::Iadd,
+                Opcode::Iconst,
+            ],
+        ) {
+            match op {
+                Opcode::Uextend | Opcode::Sextend if ty_bits(ctx.input_ty(insn, 0)) == 32 => {
+                    let extendop = if op == Opcode::Uextend {
+                        ExtendOp::UXTW
+                    } else {
+                        ExtendOp::SXTW
+                    };
+                    let extendee_input = InsnInput { insn, input: 0 };
+                    let reg = put_input_in_reg(ctx, extendee_input, NarrowValueMode::None);
+                    result32.push((reg, extendop));
+                }
+                Opcode::Uextend | Opcode::Sextend => {
+                    let reg = put_input_in_reg(ctx, input, NarrowValueMode::None);
+                    result64.push(reg);
+                }
+                Opcode::Iadd => {
+                    for input in 0..ctx.num_inputs(insn) {
+                        let addend = InsnInput { insn, input };
+                        workqueue.push(addend);
+                    }
+                }
+                Opcode::Iconst => {
+                    let value: i64 = ctx.get_constant(insn).unwrap() as i64;
+                    offset += value;
+                }
+                _ => panic!("Unexpected opcode from maybe_input_insn_multi"),
+            }
+        } else {
+            let reg = put_input_in_reg(ctx, input, NarrowValueMode::ZeroExtend64);
+            result64.push(reg);
+        }
+    }
+
+    (result64, result32, offset)
+}
+
+
 pub(crate) fn lower_address<C: LowerCtx<I = Inst>>(
     ctx: &mut C,
     elem_ty: Type,
-    addends: &[InsnInput],
+    roots: &[InsnInput],
     offset: i32,
 ) -> MemArg {
     
     
 
     
-    if addends.len() == 1 {
-        let reg = put_input_in_reg(ctx, addends[0], NarrowValueMode::ZeroExtend64);
-        return MemArg::RegOffset(reg, offset as i64, elem_ty);
-    }
+    
+    
+    let (mut addends64, mut addends32, args_offset) = collect_address_addends(ctx, roots);
+    let mut offset = args_offset + (offset as i64);
+
+    trace!(
+        "lower_address: addends64 {:?}, addends32 {:?}, offset {}",
+        addends64,
+        addends32,
+        offset
+    );
 
     
-    if addends.len() == 2 && offset == 0 {
-        
-        let mut parts: Option<(Reg, Reg, usize, bool)> = None;
-        
-        for i in 0..2 {
-            if let Some((op, ext_insn)) =
-                maybe_input_insn_multi(ctx, addends[i], &[Opcode::Uextend, Opcode::Sextend])
-            {
-                
-                let r1 = put_input_in_reg(ctx, addends[1 - i], NarrowValueMode::ZeroExtend64);
-                
-                let r2 = put_input_in_reg(
-                    ctx,
-                    InsnInput {
-                        insn: ext_insn,
-                        input: 0,
-                    },
-                    NarrowValueMode::None,
-                );
-                let r2_bits = ty_bits(ctx.input_ty(ext_insn, 0));
-                parts = Some((
-                    r1,
-                    r2,
-                    r2_bits,
-                     op == Opcode::Sextend,
-                ));
-                break;
-            }
+    
+    
+    let memarg = if addends64.len() > 0 {
+        if addends32.len() > 0 {
+            let (reg32, extendop) = addends32.pop().unwrap();
+            let reg64 = addends64.pop().unwrap();
+            MemArg::RegExtended(reg64, reg32, extendop)
+        } else if offset > 0 && offset < 0x1000 {
+            let reg64 = addends64.pop().unwrap();
+            let off = offset;
+            offset = 0;
+            MemArg::RegOffset(reg64, off, elem_ty)
+        } else if addends64.len() >= 2 {
+            let reg1 = addends64.pop().unwrap();
+            let reg2 = addends64.pop().unwrap();
+            MemArg::RegReg(reg1, reg2)
+        } else {
+            let reg1 = addends64.pop().unwrap();
+            MemArg::reg(reg1)
         }
-
-        if let Some((r1, r2, r2_bits, is_signed)) = parts {
-            match (r2_bits, is_signed) {
-                (32, false) => {
-                    return MemArg::RegExtended(r1, r2, ExtendOp::UXTW);
-                }
-                (32, true) => {
-                    return MemArg::RegExtended(r1, r2, ExtendOp::SXTW);
-                }
-                _ => {}
+    } else
+    
+    {
+        if addends32.len() > 0 {
+            let tmp = ctx.alloc_tmp(RegClass::I64, I64);
+            let (reg1, extendop) = addends32.pop().unwrap();
+            let signed = match extendop {
+                ExtendOp::SXTW => true,
+                ExtendOp::UXTW => false,
+                _ => unreachable!(),
+            };
+            ctx.emit(Inst::Extend {
+                rd: tmp,
+                rn: reg1,
+                signed,
+                from_bits: 32,
+                to_bits: 64,
+            });
+            if let Some((reg2, extendop)) = addends32.pop() {
+                MemArg::RegExtended(tmp.to_reg(), reg2, extendop)
+            } else {
+                MemArg::reg(tmp.to_reg())
             }
+        } else
+        
+        {
+            let off_reg = ctx.alloc_tmp(RegClass::I64, I64);
+            lower_constant_u64(ctx, off_reg, offset as u64);
+            offset = 0;
+            MemArg::reg(off_reg.to_reg())
         }
-    }
+    };
 
     
-    if addends.len() == 2 && offset == 0 {
-        let ra = put_input_in_reg(ctx, addends[0], NarrowValueMode::ZeroExtend64);
-        let rb = put_input_in_reg(ctx, addends[1], NarrowValueMode::ZeroExtend64);
-        return MemArg::reg_plus_reg(ra, rb);
+    
+    
+    
+    if offset == 0 && addends32.len() == 0 && addends64.len() == 0 {
+        return memarg;
     }
 
     
     let addr = ctx.alloc_tmp(RegClass::I64, I64);
+    let (reg, memarg) = match memarg {
+        MemArg::RegExtended(r1, r2, extendop) => {
+            (r1, MemArg::RegExtended(addr.to_reg(), r2, extendop))
+        }
+        MemArg::RegOffset(r, off, ty) => (r, MemArg::RegOffset(addr.to_reg(), off, ty)),
+        MemArg::RegReg(r1, r2) => (r2, MemArg::RegReg(addr.to_reg(), r1)),
+        MemArg::UnsignedOffset(r, imm) => (r, MemArg::UnsignedOffset(addr.to_reg(), imm)),
+        _ => unreachable!(),
+    };
 
     
-    lower_constant_u64(ctx, addr.clone(), offset as u64);
+    
+    if offset != 0 {
+        
+        
+        if let Some(imm12) = Imm12::maybe_from_u64(offset as u64) {
+            ctx.emit(Inst::AluRRImm12 {
+                alu_op: ALUOp::Add64,
+                rd: addr,
+                rn: reg,
+                imm12,
+            });
+        } else if let Some(imm12) = Imm12::maybe_from_u64(offset.wrapping_neg() as u64) {
+            ctx.emit(Inst::AluRRImm12 {
+                alu_op: ALUOp::Sub64,
+                rd: addr,
+                rn: reg,
+                imm12,
+            });
+        } else {
+            lower_constant_u64(ctx, addr, offset as u64);
+            ctx.emit(Inst::AluRRR {
+                alu_op: ALUOp::Add64,
+                rd: addr,
+                rn: addr.to_reg(),
+                rm: reg,
+            });
+        }
+    } else {
+        ctx.emit(Inst::gen_move(addr, reg, I64));
+    }
 
     
-    for addend in addends {
-        let reg = put_input_in_reg(ctx, *addend, NarrowValueMode::ZeroExtend64);
-
+    for reg in addends64 {
         
         
         let reg = if reg == stack_reg() {
             let tmp = ctx.alloc_tmp(RegClass::I64, I64);
-            ctx.emit(Inst::Mov {
-                rd: tmp,
-                rm: stack_reg(),
-            });
+            ctx.emit(Inst::gen_move(tmp, stack_reg(), I64));
             tmp.to_reg()
         } else {
             reg
         };
-
         ctx.emit(Inst::AluRRR {
             alu_op: ALUOp::Add64,
-            rd: addr.clone(),
+            rd: addr,
             rn: addr.to_reg(),
-            rm: reg.clone(),
+            rm: reg,
+        });
+    }
+    for (reg, extendop) in addends32 {
+        assert!(reg != stack_reg());
+        ctx.emit(Inst::AluRRRExtend {
+            alu_op: ALUOp::Add64,
+            rd: addr,
+            rn: addr.to_reg(),
+            rm: reg,
+            extendop,
         });
     }
 
-    MemArg::reg(addr.to_reg())
+    memarg
 }
 
 pub(crate) fn lower_constant_u64<C: LowerCtx<I = Inst>>(
@@ -801,21 +976,20 @@ pub(crate) fn lower_vector_compare<C: LowerCtx<I = Inst>>(
 
 
 
-
-pub fn condcode_is_signed(cc: IntCC) -> bool {
+pub(crate) fn condcode_is_signed(cc: IntCC) -> bool {
     match cc {
-        IntCC::Equal => false,
-        IntCC::NotEqual => false,
-        IntCC::SignedGreaterThanOrEqual => true,
-        IntCC::SignedGreaterThan => true,
-        IntCC::SignedLessThanOrEqual => true,
-        IntCC::SignedLessThan => true,
-        IntCC::UnsignedGreaterThanOrEqual => false,
-        IntCC::UnsignedGreaterThan => false,
-        IntCC::UnsignedLessThanOrEqual => false,
-        IntCC::UnsignedLessThan => false,
-        IntCC::Overflow => true,
-        IntCC::NotOverflow => true,
+        IntCC::Equal
+        | IntCC::UnsignedGreaterThanOrEqual
+        | IntCC::UnsignedGreaterThan
+        | IntCC::UnsignedLessThanOrEqual
+        | IntCC::UnsignedLessThan
+        | IntCC::NotEqual => false,
+        IntCC::SignedGreaterThanOrEqual
+        | IntCC::SignedGreaterThan
+        | IntCC::SignedLessThanOrEqual
+        | IntCC::SignedLessThan
+        | IntCC::Overflow
+        | IntCC::NotOverflow => true,
     }
 }
 
@@ -1011,6 +1185,24 @@ pub(crate) fn lower_fcmp_or_ffcmp_to_flags<C: LowerCtx<I = Inst>>(ctx: &mut C, i
             ctx.emit(Inst::FpuCmp64 { rn, rm });
         }
         _ => panic!("Unknown float size"),
+    }
+}
+
+
+
+pub(crate) fn normalize_bool_result<C: LowerCtx<I = Inst>>(
+    ctx: &mut C,
+    insn: IRInst,
+    rd: Writable<Reg>,
+) {
+    
+    if ty_bits(ctx.output_ty(insn, 0)) > 1 {
+        ctx.emit(Inst::AluRRR {
+            alu_op: ALUOp::Sub64,
+            rd,
+            rn: zero_reg(),
+            rm: rd.to_reg(),
+        });
     }
 }
 

@@ -261,6 +261,28 @@ pub enum VecALUOp {
     Sshl,
     
     Ushl,
+    
+    Umin,
+    
+    Smin,
+    
+    Umax,
+    
+    Smax,
+    
+    Urhadd,
+    
+    Fadd,
+    
+    Fsub,
+    
+    Fdiv,
+    
+    Fmax,
+    
+    Fmin,
+    
+    Fmul,
 }
 
 
@@ -270,6 +292,14 @@ pub enum VecMisc2 {
     Not,
     
     Neg,
+    
+    Abs,
+    
+    Fabs,
+    
+    Fneg,
+    
+    Fsqrt,
 }
 
 
@@ -742,6 +772,15 @@ pub enum Inst {
     },
 
     
+    MovFromVecSigned {
+        rd: Writable<Reg>,
+        rn: Reg,
+        idx: u8,
+        size: VectorSize,
+        scalar_size: OperandSize,
+    },
+
+    
     VecDup {
         rd: Writable<Reg>,
         rn: Reg,
@@ -795,12 +834,6 @@ pub enum Inst {
     
     MovFromNZCV {
         rd: Writable<Reg>,
-    },
-
-    
-    CondSet {
-        rd: Writable<Reg>,
-        cond: Cond,
     },
 
     
@@ -1313,7 +1346,7 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
             collector.add_def(rd);
             collector.add_use(rn);
         }
-        &Inst::MovFromVec { rd, rn, .. } => {
+        &Inst::MovFromVec { rd, rn, .. } | &Inst::MovFromVecSigned { rd, rn, .. } => {
             collector.add_def(rd);
             collector.add_use(rn);
         }
@@ -1344,9 +1377,6 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
             collector.add_use(rn);
         }
         &Inst::MovFromNZCV { rd } => {
-            collector.add_def(rd);
-        }
-        &Inst::CondSet { rd, .. } => {
             collector.add_def(rd);
         }
         &Inst::Extend { rd, rn, .. } => {
@@ -1893,6 +1923,11 @@ fn aarch64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
             ref mut rd,
             ref mut rn,
             ..
+        }
+        | &mut Inst::MovFromVecSigned {
+            ref mut rd,
+            ref mut rn,
+            ..
         } => {
             map_def(mapper, rd);
             map_use(mapper, rn);
@@ -1940,9 +1975,6 @@ fn aarch64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
             map_use(mapper, rn);
         }
         &mut Inst::MovFromNZCV { ref mut rd } => {
-            map_def(mapper, rd);
-        }
-        &mut Inst::CondSet { ref mut rd, .. } => {
             map_def(mapper, rd);
         }
         &mut Inst::Extend {
@@ -2726,6 +2758,17 @@ impl Inst {
                 let rn = show_vreg_element(rn, mb_rru, idx, size);
                 format!("{} {}, {}", op, rd, rn)
             }
+            &Inst::MovFromVecSigned {
+                rd,
+                rn,
+                idx,
+                size,
+                scalar_size,
+            } => {
+                let rd = show_ireg_sized(rd.to_reg(), mb_rru, scalar_size);
+                let rn = show_vreg_element(rn, mb_rru, idx, size);
+                format!("smov {}, {}", rd, rn)
+            }
             &Inst::VecDup { rd, rn, size } => {
                 let rd = show_vreg_vector(rd.to_reg(), mb_rru, size);
                 let rn = show_ireg_sized(rn, mb_rru, size.operand_size());
@@ -2780,6 +2823,17 @@ impl Inst {
                     VecALUOp::Mul => ("mul", size),
                     VecALUOp::Sshl => ("sshl", size),
                     VecALUOp::Ushl => ("ushl", size),
+                    VecALUOp::Umin => ("umin", size),
+                    VecALUOp::Smin => ("smin", size),
+                    VecALUOp::Umax => ("umax", size),
+                    VecALUOp::Smax => ("smax", size),
+                    VecALUOp::Urhadd => ("urhadd", size),
+                    VecALUOp::Fadd => ("fadd", size),
+                    VecALUOp::Fsub => ("fsub", size),
+                    VecALUOp::Fdiv => ("fdiv", size),
+                    VecALUOp::Fmax => ("fmax", size),
+                    VecALUOp::Fmin => ("fmin", size),
+                    VecALUOp::Fmul => ("fmul", size),
                 };
                 let rd = show_vreg_vector(rd.to_reg(), mb_rru, size);
                 let rn = show_vreg_vector(rn, mb_rru, size);
@@ -2790,6 +2844,10 @@ impl Inst {
                 let (op, size) = match op {
                     VecMisc2::Not => ("mvn", VectorSize::Size8x16),
                     VecMisc2::Neg => ("neg", size),
+                    VecMisc2::Abs => ("abs", size),
+                    VecMisc2::Fabs => ("fabs", size),
+                    VecMisc2::Fneg => ("fneg", size),
+                    VecMisc2::Fsqrt => ("fsqrt", size),
                 };
 
                 let rd = show_vreg_vector(rd.to_reg(), mb_rru, size);
@@ -2811,11 +2869,6 @@ impl Inst {
             &Inst::MovFromNZCV { rd } => {
                 let rd = rd.to_reg().show_rru(mb_rru);
                 format!("mrs {}, nzcv", rd)
-            }
-            &Inst::CondSet { rd, cond } => {
-                let rd = rd.to_reg().show_rru(mb_rru);
-                let cond = cond.show_rru(mb_rru);
-                format!("cset {}, {}", rd, cond)
             }
             &Inst::Extend {
                 rd,
