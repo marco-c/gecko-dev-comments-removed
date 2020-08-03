@@ -1,5 +1,8 @@
+import errno
 import logging
 import os
+import shutil
+import stat
 import subprocess
 import tarfile
 import zipfile
@@ -95,3 +98,19 @@ def get(url):
     resp = requests.get(url, stream=True)
     resp.raise_for_status()
     return resp
+
+
+def rmtree(path):
+    
+    
+    
+    
+    def handle_remove_readonly(func, path, exc):
+        excvalue = exc[1]
+        if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
+            os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  
+            func(path)
+        else:
+            raise
+
+    return shutil.rmtree(path, onerror=handle_remove_readonly)
