@@ -9,6 +9,7 @@
 #include "nsStyleConsts.h"
 #include "nsUXThemeData.h"
 #include "nsUXThemeConstants.h"
+#include "nsWindowsHelpers.h"
 #include "WinUtils.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/Telemetry.h"
@@ -629,65 +630,11 @@ nsresult nsLookAndFeel::GetFloatImpl(FloatID aID, float& aResult) {
   return res;
 }
 
-static bool GetSysFontInfo(HDC aHDC, LookAndFeel::FontID anID,
-                           nsString& aFontName, gfxFontStyle& aFontStyle) {
-  const LOGFONTW* ptrLogFont = nullptr;
-  LOGFONTW logFont;
-  NONCLIENTMETRICSW ncm;
-  char16_t name[LF_FACESIZE];
-  bool useShellDlg = false;
+LookAndFeelFontInfo nsLookAndFeel::GetLookAndFeelFontInfoInternal(
+    const LOGFONTW& aLogFont, bool aUseShellDlg) {
+  LookAndFeelFontInfo result{};
 
-  
-  
-  switch (anID) {
-    case LookAndFeel::FontID::Icon:
-      if (!::SystemParametersInfoW(SPI_GETICONTITLELOGFONT, sizeof(logFont),
-                                   (PVOID)&logFont, 0))
-        return false;
-
-      ptrLogFont = &logFont;
-      break;
-
-    default:
-      ncm.cbSize = sizeof(NONCLIENTMETRICSW);
-      if (!::SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm),
-                                   (PVOID)&ncm, 0))
-        return false;
-
-      switch (anID) {
-        case LookAndFeel::FontID::Menu:
-        case LookAndFeel::FontID::PullDownMenu:
-          ptrLogFont = &ncm.lfMenuFont;
-          break;
-        case LookAndFeel::FontID::Caption:
-          ptrLogFont = &ncm.lfCaptionFont;
-          break;
-        case LookAndFeel::FontID::SmallCaption:
-          ptrLogFont = &ncm.lfSmCaptionFont;
-          break;
-        case LookAndFeel::FontID::StatusBar:
-        case LookAndFeel::FontID::Tooltips:
-          ptrLogFont = &ncm.lfStatusFont;
-          break;
-        case LookAndFeel::FontID::Widget:
-        case LookAndFeel::FontID::Dialog:
-        case LookAndFeel::FontID::Button:
-        case LookAndFeel::FontID::Field:
-        case LookAndFeel::FontID::List:
-          
-          
-          
-          
-          useShellDlg = true;
-          
-          
-          
-        default:
-          ptrLogFont = &ncm.lfMessageFont;
-          break;
-      }
-      break;
-  }
+  result.haveFont = false;
 
   
   double pixelScale = 1.0 / WinUtils::SystemScaleFactor();
@@ -702,46 +649,128 @@ static bool GetSysFontInfo(HDC aHDC, LookAndFeel::FontID anID,
   
   
   
-  float pixelHeight = -ptrLogFont->lfHeight;
+  float pixelHeight = -aLogFont.lfHeight;
   if (pixelHeight < 0) {
-    HFONT hFont = ::CreateFontIndirectW(ptrLogFont);
-    if (!hFont) return false;
-    HGDIOBJ hObject = ::SelectObject(aHDC, hFont);
+    nsAutoFont hFont(::CreateFontIndirectW(&aLogFont));
+    if (!hFont) {
+      return result;
+    }
+
+    nsAutoHDC dc(::GetDC(nullptr));
+    HGDIOBJ hObject = ::SelectObject(dc, hFont);
     TEXTMETRIC tm;
-    ::GetTextMetrics(aHDC, &tm);
-    ::SelectObject(aHDC, hObject);
-    ::DeleteObject(hFont);
+    ::GetTextMetrics(dc, &tm);
+    ::SelectObject(dc, hObject);
+
     pixelHeight = tm.tmAscent;
   }
+
   pixelHeight *= pixelScale;
 
   
   
   
   
-  if (pixelHeight < 12 && ::GetACP() == 936) pixelHeight = 12;
+  if (pixelHeight < 12 && ::GetACP() == 936) {
+    pixelHeight = 12;
+  }
 
-  aFontStyle.size = pixelHeight;
+  result.haveFont = true;
+
+  if (aUseShellDlg) {
+    result.fontName = u"MS Shell Dlg 2"_ns;
+  } else {
+    result.fontName = aLogFont.lfFaceName;
+  }
+
+  result.pixelHeight = pixelHeight;
+  result.italic = !!aLogFont.lfItalic;
+  result.bold = (aLogFont.lfWeight == FW_BOLD);
+
+  return result;
+}
+
+LookAndFeelFontInfo nsLookAndFeel::GetLookAndFeelFontInfo(
+    LookAndFeel::FontID anID) {
+  LookAndFeelFontInfo result{};
+
+  result.haveFont = false;
 
   
-  aFontStyle.style = (ptrLogFont->lfItalic) ? FontSlantStyle::Italic()
-                                            : FontSlantStyle::Normal();
+  if (anID == LookAndFeel::FontID::Icon) {
+    LOGFONTW logFont;
+    if (::SystemParametersInfoW(SPI_GETICONTITLELOGFONT, sizeof(logFont),
+                                (PVOID)&logFont, 0)) {
+      result = GetLookAndFeelFontInfoInternal(logFont, false);
+    }
+    return result;
+  }
+
+  NONCLIENTMETRICSW ncm;
+  ncm.cbSize = sizeof(NONCLIENTMETRICSW);
+  if (!::SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm),
+                               (PVOID)&ncm, 0)) {
+    return result;
+  }
+
+  switch (anID) {
+    case LookAndFeel::FontID::Menu:
+    case LookAndFeel::FontID::PullDownMenu:
+      result = GetLookAndFeelFontInfoInternal(ncm.lfMenuFont, false);
+      break;
+    case LookAndFeel::FontID::Caption:
+      result = GetLookAndFeelFontInfoInternal(ncm.lfCaptionFont, false);
+      break;
+    case LookAndFeel::FontID::SmallCaption:
+      result = GetLookAndFeelFontInfoInternal(ncm.lfSmCaptionFont, false);
+      break;
+    case LookAndFeel::FontID::StatusBar:
+    case LookAndFeel::FontID::Tooltips:
+      result = GetLookAndFeelFontInfoInternal(ncm.lfStatusFont, false);
+      break;
+    case LookAndFeel::FontID::Widget:
+    case LookAndFeel::FontID::Dialog:
+    case LookAndFeel::FontID::Button:
+    case LookAndFeel::FontID::Field:
+    case LookAndFeel::FontID::List:
+      
+      
+      
+      
+      result = GetLookAndFeelFontInfoInternal(ncm.lfMessageFont, true);
+      break;
+    default:
+      result = GetLookAndFeelFontInfoInternal(ncm.lfMessageFont, false);
+      break;
+  }
+
+  return result;
+}
+
+bool nsLookAndFeel::GetSysFontInfo(LookAndFeel::FontID anID,
+                                   nsString& aFontName,
+                                   gfxFontStyle& aFontStyle) {
+  LookAndFeelFontInfo fontInfo = GetLookAndFeelFontInfo(anID);
+
+  if (!fontInfo.haveFont) {
+    return false;
+  }
+
+  aFontName = std::move(fontInfo.fontName);
+
+  aFontStyle.size = fontInfo.pixelHeight;
 
   
-  aFontStyle.weight = (ptrLogFont->lfWeight == FW_BOLD ? FontWeight::Bold()
-                                                       : FontWeight::Normal());
+  aFontStyle.style =
+      fontInfo.italic ? FontSlantStyle::Italic() : FontSlantStyle::Normal();
+
+  
+  aFontStyle.weight = fontInfo.bold ? FontWeight::Bold() : FontWeight::Normal();
 
   
   aFontStyle.stretch = FontStretch::Normal();
 
   aFontStyle.systemFont = true;
-
-  if (useShellDlg) {
-    aFontName = u"MS Shell Dlg 2"_ns;
-  } else {
-    memcpy(name, ptrLogFont->lfFaceName, LF_FACESIZE * sizeof(char16_t));
-    aFontName = name;
-  }
 
   return true;
 }
@@ -758,9 +787,7 @@ bool nsLookAndFeel::GetFontImpl(FontID anID, nsString& aFontName,
       aFontStyle = cacheSlot.mFontStyle;
     }
   } else {
-    HDC tdc = GetDC(nullptr);
-    status = GetSysFontInfo(tdc, anID, aFontName, aFontStyle);
-    ReleaseDC(nullptr, tdc);
+    status = GetSysFontInfo(anID, aFontName, aFontStyle);
 
     cacheSlot.mCacheValid = true;
     cacheSlot.mHaveFont = status;
