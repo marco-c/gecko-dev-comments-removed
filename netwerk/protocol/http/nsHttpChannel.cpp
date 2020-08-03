@@ -1352,6 +1352,13 @@ nsresult nsHttpChannel::SetupTransaction() {
     LOG1(("nsHttpChannel %p created HttpTransactionParent %p\n", this,
           transParent.get()));
 
+    
+    
+    
+    
+    transParent->SetRedirectTimestamp(mRedirectStartTimeStamp,
+                                      mRedirectEndTimeStamp);
+
     SocketProcessParent* socketProcess = SocketProcessParent::GetSingleton();
     if (socketProcess) {
       Unused << socketProcess->SendPHttpTransactionConstructor(transParent);
