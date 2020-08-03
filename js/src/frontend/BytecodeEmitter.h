@@ -41,6 +41,7 @@
 #include "frontend/ValueUsage.h"           
 #include "js/RootingAPI.h"                 
 #include "js/TypeDecls.h"                  
+#include "vm/BuiltinObjectKind.h"          
 #include "vm/BytecodeUtil.h"               
 #include "vm/CheckIsObjectKind.h"          
 #include "vm/FunctionPrefixKind.h"         
@@ -408,6 +409,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitCheckIsObj(CheckIsObjectKind kind);
 
   
+  MOZ_MUST_USE bool emitBuiltinObject(BuiltinObjectKind kind);
+
+  
   MOZ_MUST_USE bool emitPushNotUndefinedOrNull();
 
   
@@ -766,6 +770,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitSelfHostedHasOwn(BinaryNode* callNode);
   MOZ_MUST_USE bool emitSelfHostedToNumeric(BinaryNode* callNode);
   MOZ_MUST_USE bool emitSelfHostedToString(BinaryNode* callNode);
+  MOZ_MUST_USE bool emitSelfHostedGetBuiltinConstructor(BinaryNode* callNode);
+  MOZ_MUST_USE bool emitSelfHostedGetBuiltinPrototype(BinaryNode* callNode);
 #ifdef DEBUG
   MOZ_MUST_USE bool checkSelfHostedUnsafeGetReservedSlot(BinaryNode* callNode);
   MOZ_MUST_USE bool checkSelfHostedUnsafeSetReservedSlot(BinaryNode* callNode);
@@ -867,6 +873,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                                                      GCThingIndex atomIndex);
 
   MOZ_MUST_USE bool allowSelfHostedIter(ParseNode* parseNode);
+
+  MOZ_MUST_USE bool emitSelfHostedGetBuiltinConstructorOrPrototype(
+      BinaryNode* callNode, bool isConstructor);
 };
 
 class MOZ_RAII AutoCheckUnstableEmitterScope {
