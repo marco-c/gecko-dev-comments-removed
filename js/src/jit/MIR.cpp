@@ -3435,9 +3435,10 @@ MCompare::CompareType MCompare::determineCompareType(JSOp op, MDefinition* left,
   MIRType lhs = left->type();
   MIRType rhs = right->type();
 
-  bool looseEq = op == JSOp::Eq || op == JSOp::Ne;
-  bool strictEq = op == JSOp::StrictEq || op == JSOp::StrictNe;
+  bool looseEq = IsLooseEqualityOp(op);
+  bool strictEq = IsStrictEqualityOp(op);
   bool relationalEq = !(looseEq || strictEq);
+  MOZ_ASSERT(IsRelationalOp(op) == relationalEq);
 
   
   if (unsignedOperands(left, right)) {
@@ -4128,7 +4129,7 @@ bool MCompare::tryFoldEqualOperands(bool* result) {
   
   
 
-  if (jsop() != JSOp::StrictEq && jsop() != JSOp::StrictNe) {
+  if (!IsStrictEqualityOp(jsop())) {
     return false;
   }
 
@@ -4177,8 +4178,7 @@ bool MCompare::tryFoldTypeOf(bool* result) {
     return false;
   }
 
-  if (jsop() != JSOp::StrictEq && jsop() != JSOp::StrictNe &&
-      jsop() != JSOp::Eq && jsop() != JSOp::Ne) {
+  if (!IsEqualityOp(jsop())) {
     return false;
   }
 
@@ -4245,7 +4245,7 @@ bool MCompare::tryFold(bool* result) {
 
   if (compareType_ == Compare_Null || compareType_ == Compare_Undefined) {
     
-    if (op == JSOp::StrictEq || op == JSOp::StrictNe) {
+    if (IsStrictEqualityOp(op)) {
       if (lhs()->type() == inputType()) {
         *result = (op == JSOp::StrictEq);
         return true;
@@ -4255,7 +4255,7 @@ bool MCompare::tryFold(bool* result) {
         return true;
       }
     } else {
-      MOZ_ASSERT(op == JSOp::Eq || op == JSOp::Ne);
+      MOZ_ASSERT(IsLooseEqualityOp(op));
       if (IsNullOrUndefined(lhs()->type())) {
         *result = (op == JSOp::Eq);
         return true;
@@ -4272,7 +4272,7 @@ bool MCompare::tryFold(bool* result) {
   }
 
   if (compareType_ == Compare_Boolean) {
-    MOZ_ASSERT(op == JSOp::StrictEq || op == JSOp::StrictNe);
+    MOZ_ASSERT(IsStrictEqualityOp(op));
     MOZ_ASSERT(rhs()->type() == MIRType::Boolean);
     MOZ_ASSERT(lhs()->type() != MIRType::Boolean,
                "Should use Int32 comparison");
@@ -4285,7 +4285,7 @@ bool MCompare::tryFold(bool* result) {
   }
 
   if (compareType_ == Compare_StrictString) {
-    MOZ_ASSERT(op == JSOp::StrictEq || op == JSOp::StrictNe);
+    MOZ_ASSERT(IsStrictEqualityOp(op));
     MOZ_ASSERT(rhs()->type() == MIRType::String);
     MOZ_ASSERT(lhs()->type() != MIRType::String,
                "Should use String comparison");
@@ -4501,8 +4501,7 @@ void MCompare::filtersUndefinedOrNull(bool trueBranch, MDefinition** subject,
     return;
   }
 
-  MOZ_ASSERT(jsop() == JSOp::StrictNe || jsop() == JSOp::Ne ||
-             jsop() == JSOp::StrictEq || jsop() == JSOp::Eq);
+  MOZ_ASSERT(IsEqualityOp(jsop()));
 
   
   if (!trueBranch && (jsop() == JSOp::StrictNe || jsop() == JSOp::Ne)) {
@@ -4514,7 +4513,7 @@ void MCompare::filtersUndefinedOrNull(bool trueBranch, MDefinition** subject,
     return;
   }
 
-  if (jsop() == JSOp::StrictEq || jsop() == JSOp::StrictNe) {
+  if (IsStrictEqualityOp(jsop())) {
     *filtersUndefined = compareType() == Compare_Undefined;
     *filtersNull = compareType() == Compare_Null;
   } else {
