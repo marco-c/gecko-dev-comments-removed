@@ -29,6 +29,8 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
+
+
 function SubDialog({
   template,
   parentElement,
@@ -37,12 +39,14 @@ function SubDialog({
     styleSheets = [],
     consumeOutsideClicks = true,
     resizeCallback,
+    reuseDialog = true,
   } = {},
 }) {
   this._id = id;
 
   this._injectedStyleSheets = this._injectedStyleSheets.concat(styleSheets);
   this._consumeOutsideClicks = consumeOutsideClicks;
+  this._reuseDialog = reuseDialog;
   this._resizeCallback = resizeCallback;
   this._overlay = template.cloneNode(true);
   this._box = this._overlay.querySelector(".dialogBox");
@@ -114,6 +118,11 @@ SubDialog.prototype = {
   },
 
   async open(aURL, aFeatures = null, aParams = null, aClosingCallback = null) {
+    
+    this._dialogReady = new Promise(resolve => {
+      this._resolveDialogReady = resolve;
+    });
+
     
     await this._frameCreated;
 
@@ -213,10 +222,15 @@ SubDialog.prototype = {
       
       let onBlankLoad = e => {
         if (this._frame.contentWindow.location.href == "about:blank") {
-          this._frame.removeEventListener("load", onBlankLoad);
+          this._frame.removeEventListener("load", onBlankLoad, true);
           
           this._openedURL = null;
           this._isClosing = false;
+
+          if (!this._reuseDialog) {
+            this._overlay.remove();
+          }
+
           this._resolveClosePromise();
         }
       };
@@ -232,7 +246,7 @@ SubDialog.prototype = {
         );
       }
 
-      this._frame.addEventListener("load", onBlankLoad, { capture: true });
+      this._frame.addEventListener("load", onBlankLoad, true);
       this._frame.loadURI("about:blank", {
         triggeringPrincipal,
       });
@@ -366,6 +380,7 @@ SubDialog.prototype = {
     }
 
     await this.resizeDialog();
+    this._resolveDialogReady();
   },
 
   async resizeDialog() {
@@ -615,7 +630,7 @@ SubDialog.prototype = {
 
     
     
-    this._frame.addEventListener("load", this, { capture: true });
+    this._frame.addEventListener("load", this, true);
 
     chromeEventHandler.addEventListener("unload", this, true);
 
@@ -635,7 +650,7 @@ SubDialog.prototype = {
     this._closeButton?.removeEventListener("command", this);
 
     this._window.removeEventListener("DOMFrameContentLoaded", this, true);
-    this._frame.removeEventListener("load", this);
+    this._frame.removeEventListener("load", this, true);
     this._frame.contentWindow.removeEventListener("dialogclosing", this);
     this._window.removeEventListener("keydown", this, true);
 
@@ -660,7 +675,7 @@ SubDialog.prototype = {
   _untrapFocus() {
     this._frame.contentDocument.removeEventListener("keydown", this, true);
     this._closeButton?.removeEventListener("keydown", this);
-    this._window.removeEventListener("focus", this);
+    this._window.removeEventListener("focus", this, true);
   },
 };
 
