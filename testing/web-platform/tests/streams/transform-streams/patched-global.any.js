@@ -4,16 +4,22 @@
 
 
 
-Object.defineProperty(Object.prototype, 'highWaterMark', {
-  set() { throw new Error('highWaterMark setter called'); }
-});
+test(t => {
+  
+  Object.defineProperty(Object.prototype, 'highWaterMark', {
+    set() { throw new Error('highWaterMark setter called'); }
+  });
 
+  
+  Object.defineProperty(Object.prototype, 'size', {
+    set() { throw new Error('size setter called'); }
+  });
 
-Object.defineProperty(Object.prototype, 'size', {
-  set() { throw new Error('size setter called'); }
-});
+  t.add_cleanup(() => {
+    delete Object.prototype.highWaterMark;
+    delete Object.prototype.size;
+  });
 
-test(() => {
   assert_not_equals(new TransformStream(), null, 'constructor should work');
 }, 'TransformStream constructor should not call setters for highWaterMark or size');
 
