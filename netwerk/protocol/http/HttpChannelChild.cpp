@@ -2148,12 +2148,13 @@ HttpChannelChild::ConnectParent(uint32_t registrarId) {
 #endif
   }
 
-  MaybeConnectToSocketProcess();
-
   
   mEventQ->Suspend();
   MOZ_ASSERT(!mSuspendForWaitCompleteRedirectSetup);
   mSuspendForWaitCompleteRedirectSetup = true;
+
+  
+  MaybeConnectToSocketProcess();
 
   return NS_OK;
 }
