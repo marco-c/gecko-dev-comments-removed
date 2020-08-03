@@ -208,14 +208,9 @@ Inspector.prototype = {
     );
 
     await this.toolbox.resourceWatcher.watchResources(
-      [
-        this.toolbox.resourceWatcher.TYPES.ROOT_NODE,
-        
-        this.toolbox.resourceWatcher.TYPES.CSS_CHANGE,
-      ],
+      [this.toolbox.resourceWatcher.TYPES.ROOT_NODE],
       { onAvailable: this.onResourceAvailable }
     );
-
     
     
     this.previousURL = this.currentTarget.url;
