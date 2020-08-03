@@ -1600,6 +1600,14 @@ HttpChannelParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   
   MOZ_ASSERT(mIPCClosed || mBgParent);
 
+  if (mDataSentToChildProcess) {
+    if (mIPCClosed || !mBgParent ||
+        !mBgParent->OnConsoleReport(consoleReports)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    return NS_OK;
+  }
+
   
   
   if (mIPCClosed || !mBgParent ||

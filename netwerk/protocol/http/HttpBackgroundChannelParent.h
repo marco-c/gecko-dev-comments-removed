@@ -58,6 +58,10 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
                      const nsTArray<ConsoleReportCollected>& aConsoleReports);
 
   
+  
+  bool OnConsoleReport(const nsTArray<ConsoleReportCollected>& aConsoleReports);
+
+  
   bool OnAfterLastPart(const nsresult aStatus);
 
   
