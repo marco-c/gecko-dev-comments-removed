@@ -42,7 +42,7 @@ UNCOMMON_TRY_TASK_LABELS = [
     r'-profiling-',  
     
     
-    r'-shippable(?!.*(awsy|browsertime|marionette-headless|raptor|talos|web-platform-tests-wdspec-headless))',  
+    r'-shippable(?!.*(awsy|browsertime|marionette-headless|mochitest-devtools-chrome-fis|raptor|talos|web-platform-tests-wdspec-headless))',  
 ]
 
 
