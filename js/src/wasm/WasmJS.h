@@ -118,7 +118,7 @@ bool ThreadsAvailable(JSContext* cx);
 
 bool SimdAvailable(JSContext* cx);
 
-#if defined(ENABLE_WASM_SIMD)
+#if defined(ENABLE_WASM_SIMD) && defined(DEBUG)
 
 void ReportSimdAnalysis(const char* data);
 #endif
