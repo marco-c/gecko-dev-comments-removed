@@ -1504,6 +1504,15 @@ bool WarpBuilder::build_Not(BytecodeLocation loc) {
 
 bool WarpBuilder::build_ToString(BytecodeLocation loc) {
   MDefinition* value = current->pop();
+
+  
+  
+  
+  if (value->type() == MIRType::String) {
+    current->push(value);
+    return true;
+  }
+
   MToString* ins =
       MToString::New(alloc(), value, MToString::SideEffectHandling::Supported);
   current->add(ins);
