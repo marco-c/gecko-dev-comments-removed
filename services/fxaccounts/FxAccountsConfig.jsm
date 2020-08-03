@@ -221,6 +221,31 @@ var FxAccountsConfig = {
   
   
   
+  
+  
+  
+  
+  
+  
+  isProductionConfig() {
+    
+    
+    if (this.getAutoConfigURL()) {
+      return false;
+    }
+    for (let pref of CONFIG_PREFS) {
+      if (Services.prefs.prefHasUserValue(pref)) {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  
+  
+  
+  
+  
   async updateConfigURLs() {
     let rootURL = this.getAutoConfigURL();
     if (!rootURL) {

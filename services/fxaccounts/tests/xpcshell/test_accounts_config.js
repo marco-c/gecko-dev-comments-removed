@@ -35,3 +35,21 @@ add_task(async function test_non_https_remote_server_uri() {
   );
   Services.prefs.clearUserPref("identity.fxaccounts.remote.root");
 });
+
+add_task(async function test_is_production_config() {
+  
+  Assert.ok(!FxAccounts.config.getAutoConfigURL());
+  
+  Assert.ok(FxAccounts.config.isProductionConfig());
+
+  
+  Services.prefs.setCharPref("identity.fxaccounts.autoconfig.uri", "http://x");
+  Assert.equal(FxAccounts.config.getAutoConfigURL(), "http://x");
+  Assert.ok(!FxAccounts.config.isProductionConfig());
+
+  
+  Services.prefs.clearUserPref("identity.fxaccounts.autoconfig.uri");
+  Services.prefs.setCharPref("identity.sync.tokenserver.uri", "http://t");
+  Assert.ok(!FxAccounts.config.isProductionConfig());
+  Services.prefs.clearUserPref("identity.sync.tokenserver.uri");
+});
