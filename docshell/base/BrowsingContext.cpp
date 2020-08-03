@@ -1159,11 +1159,13 @@ JSObject* BrowsingContext::ReadStructuredClone(JSContext* aCx,
 }
 
 void BrowsingContext::NotifyUserGestureActivation() {
-  SetUserActivationState(UserActivation::State::FullActivated);
+  
+  Unused << SetUserActivationState(UserActivation::State::FullActivated);
 }
 
 void BrowsingContext::NotifyResetUserGestureActivation() {
-  SetUserActivationState(UserActivation::State::None);
+  
+  Unused << SetUserActivationState(UserActivation::State::None);
 }
 
 bool BrowsingContext::HasBeenUserGestureActivated() {
@@ -1201,7 +1203,9 @@ bool BrowsingContext::ConsumeTransientUserGestureActivation() {
   top->PreOrderWalk([&](BrowsingContext* aContext) {
     if (aContext->GetUserActivationState() ==
         UserActivation::State::FullActivated) {
-      aContext->SetUserActivationState(UserActivation::State::HasBeenActivated);
+      
+      Unused << aContext->SetUserActivationState(
+          UserActivation::State::HasBeenActivated);
     }
   });
 
@@ -2222,7 +2226,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_DefaultLoadFlags>) {
   if (XRE_IsParentProcess()) {
     PreOrderWalk([&](BrowsingContext* aContext) {
       if (aContext != this) {
-        aContext->SetDefaultLoadFlags(loadFlags);
+        
+        Unused << aContext->SetDefaultLoadFlags(loadFlags);
       }
     });
   }
@@ -2428,7 +2433,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_TextZoom>, float aOldValue) {
     }
 
     for (BrowsingContext* child : Children()) {
-      child->SetTextZoom(GetTextZoom());
+      
+      Unused << child->SetTextZoom(GetTextZoom());
     }
   }
 
@@ -2458,7 +2464,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_FullZoom>, float aOldValue) {
     }
 
     for (BrowsingContext* child : Children()) {
-      child->SetFullZoom(GetFullZoom());
+      
+      Unused << child->SetFullZoom(GetFullZoom());
     }
   }
 

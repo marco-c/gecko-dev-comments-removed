@@ -151,7 +151,8 @@ NS_IMETHODIMP ParentProcessDocumentChannel::AsyncOpen(
   gHttpHandler->OnOpeningDocumentRequest(this);
 
   if (isDocumentLoad) {
-    GetDocShell()->GetBrowsingContext()->SetCurrentLoadIdentifier(
+    
+    Unused << GetDocShell()->GetBrowsingContext()->SetCurrentLoadIdentifier(
         Some(mLoadState->GetLoadIdentifier()));
   }
 

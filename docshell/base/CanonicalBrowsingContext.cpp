@@ -1143,7 +1143,9 @@ void CanonicalBrowsingContext::EndDocumentLoad(bool aForProcessSwitch) {
   mCurrentLoad = nullptr;
 
   if (!aForProcessSwitch) {
-    SetCurrentLoadIdentifier(Nothing());
+    
+    
+    Unused << SetCurrentLoadIdentifier(Nothing());
   }
 }
 

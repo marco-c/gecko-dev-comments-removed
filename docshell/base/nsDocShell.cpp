@@ -4555,7 +4555,8 @@ nsDocShell::GetSuspendMediaWhenInactive(bool* aSuspendMediaWhenInactive) {
 NS_IMETHODIMP
 nsDocShell::SetIsActive(bool aIsActive) {
   
-  mBrowsingContext->SetIsActive(aIsActive);
+  
+  Unused << mBrowsingContext->SetIsActive(aIsActive);
 
   
   if (RefPtr<PresShell> presShell = GetPresShell()) {
@@ -4637,7 +4638,8 @@ nsDocShell::GetIsAppTab(bool* aIsAppTab) {
 NS_IMETHODIMP
 nsDocShell::SetDefaultLoadFlags(uint32_t aDefaultLoadFlags) {
   if (!mWillChangeProcess) {
-    mBrowsingContext->SetDefaultLoadFlags(aDefaultLoadFlags);
+    
+    Unused << mBrowsingContext->SetDefaultLoadFlags(aDefaultLoadFlags);
   } else {
     
     

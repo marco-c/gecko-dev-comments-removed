@@ -279,7 +279,8 @@ void HTMLIFrameElement::MaybeStoreCrossOriginFeaturePolicy() {
     return;
   }
 
-  browsingContext->SetFeaturePolicy(mFeaturePolicy);
+  
+  Unused << browsingContext->SetFeaturePolicy(mFeaturePolicy);
 }
 
 already_AddRefed<nsIPrincipal>

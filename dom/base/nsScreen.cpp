@@ -211,7 +211,9 @@ static void UpdateDocShellOrientationLock(nsPIDOMWindowInner* aWindow,
   if (!bc) {
     return;
   }
-  bc->SetOrientationLock(aOrientation);
+
+  
+  Unused << bc->SetOrientationLock(aOrientation);
 }
 
 bool nsScreen::MozLockOrientation(const nsAString& aOrientation,

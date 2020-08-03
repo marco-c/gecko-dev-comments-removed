@@ -145,9 +145,11 @@ void GVAutoplayPermissionRequest::SetRequestStatus(RStatus aStatus) {
   MOZ_ASSERT(mContext);
   AssertIsOnMainThread();
   if (mType == RType::eAUDIBLE) {
-    mContext->SetGVAudibleAutoplayRequestStatus(aStatus);
+    
+    Unused << mContext->SetGVAudibleAutoplayRequestStatus(aStatus);
   } else {
-    mContext->SetGVInaudibleAutoplayRequestStatus(aStatus);
+    
+    Unused << mContext->SetGVInaudibleAutoplayRequestStatus(aStatus);
   }
 }
 
