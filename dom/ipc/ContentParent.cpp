@@ -2643,7 +2643,8 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   
   nsTArray<SystemFontListEntry> fontList;
   gfxPlatform::GetPlatform()->ReadSystemFontList(&fontList);
-  nsTArray<LookAndFeelInt> lnfCache = LookAndFeel::GetIntCache();
+
+  LookAndFeelCache lnfCache = LookAndFeel::GetCache();
 
   
   

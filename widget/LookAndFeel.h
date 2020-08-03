@@ -17,8 +17,7 @@
 
 struct gfxFontStyle;
 
-struct LookAndFeelInt;
-struct LookAndFeelFontInfo;
+struct LookAndFeelCache;
 
 namespace mozilla {
 
@@ -546,8 +545,8 @@ class LookAndFeel {
 
 
 
-  static nsTArray<LookAndFeelInt> GetIntCache();
-  static void SetIntCache(const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache);
+  static LookAndFeelCache GetCache();
+  static void SetCache(const LookAndFeelCache& aCache);
   static void NotifyChangedAllWindows();
 };
 
@@ -558,12 +557,21 @@ struct LookAndFeelInt {
   int32_t value;
 };
 
-struct LookAndFeelFontInfo {
+struct LookAndFeelFont {
   bool haveFont;
   nsString fontName;
   float pixelHeight;
   bool italic;
   bool bold;
+};
+
+struct LookAndFeelCache {
+  void Clear() {
+    mInts.Clear();
+    mFonts.Clear();
+  }
+  nsTArray<LookAndFeelInt> mInts;
+  nsTArray<LookAndFeelFont> mFonts;
 };
 
 
