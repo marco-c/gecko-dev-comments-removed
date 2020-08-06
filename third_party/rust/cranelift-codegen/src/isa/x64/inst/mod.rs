@@ -941,6 +941,40 @@ impl Inst {
 
 
 
+impl Inst {
+    
+    
+    
+    
+    
+    
+    
+    
+    fn produces_const(&self) -> bool {
+        match self {
+            Self::Alu_RMI_R { op, src, dst, .. } => {
+                src.to_reg() == Some(dst.to_reg())
+                    && (*op == AluRmiROpcode::Xor || *op == AluRmiROpcode::Sub)
+            }
+
+            Self::XMM_RM_R { op, src, dst, .. } => {
+                src.to_reg() == Some(dst.to_reg())
+                    && (*op == SseOpcode::Xorps || *op == SseOpcode::Xorpd)
+            }
+
+            Self::XmmRmRImm { op, src, dst, imm } => {
+                src.to_reg() == Some(dst.to_reg())
+                    && (*op == SseOpcode::Cmppd || *op == SseOpcode::Cmpps)
+                    && *imm == FcmpImm::Equal.encode()
+            }
+
+            _ => false,
+        }
+    }
+}
+
+
+
 
 impl ShowWithRRU for Inst {
     fn show_rru(&self, mb_rru: Option<&RealRegUniverse>) -> String {
@@ -1433,8 +1467,13 @@ fn x64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
     
     match inst {
         Inst::Alu_RMI_R { src, dst, .. } => {
-            src.get_regs_as_uses(collector);
-            collector.add_mod(*dst);
+            if inst.produces_const() {
+                
+                collector.add_def(*dst);
+            } else {
+                src.get_regs_as_uses(collector);
+                collector.add_mod(*dst);
+            }
         }
         Inst::Div { divisor, .. } => {
             collector.add_mod(Writable::from_reg(regs::rax()));
@@ -1466,26 +1505,17 @@ fn x64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
             collector.add_def(*dst);
         }
         Inst::XMM_RM_R { src, dst, .. } => {
-            src.get_regs_as_uses(collector);
-            collector.add_mod(*dst);
-        }
-        Inst::XmmRmRImm { src, dst, op, imm } => {
-            
-            
-            
-            
-            
-            
-            
-            let is_def = if let RegMem::Reg { reg } = src {
-                (*op == SseOpcode::Cmppd || *op == SseOpcode::Cmpps)
-                    && *imm == FcmpImm::Equal.encode()
-                    && *reg == dst.to_reg()
+            if inst.produces_const() {
+                
+                collector.add_def(*dst);
             } else {
-                false
-            };
-
-            if is_def {
+                src.get_regs_as_uses(collector);
+                collector.add_mod(*dst);
+            }
+        }
+        Inst::XmmRmRImm { src, dst, .. } => {
+            if inst.produces_const() {
+                
                 collector.add_def(*dst);
             } else {
                 src.get_regs_as_uses(collector);
@@ -1694,6 +1724,17 @@ impl RegMemImm {
             RegMemImm::Imm { .. } => {}
         }
     }
+
+    fn map_as_def<RUM: RegUsageMapper>(&mut self, mapper: &RUM) {
+        match self {
+            Self::Reg { reg } => {
+                let mut writable_src = Writable::from_reg(*reg);
+                map_def(mapper, &mut writable_src);
+                *self = Self::reg(writable_src.to_reg());
+            }
+            _ => panic!("unexpected RegMemImm kind in map_src_reg_as_def"),
+        }
+    }
 }
 
 impl RegMem {
@@ -1703,10 +1744,23 @@ impl RegMem {
             RegMem::Mem { ref mut addr, .. } => addr.map_uses(map),
         }
     }
+
+    fn map_as_def<RUM: RegUsageMapper>(&mut self, mapper: &RUM) {
+        match self {
+            Self::Reg { reg } => {
+                let mut writable_src = Writable::from_reg(*reg);
+                map_def(mapper, &mut writable_src);
+                *self = Self::reg(writable_src.to_reg());
+            }
+            _ => panic!("unexpected RegMem kind in map_src_reg_as_def"),
+        }
+    }
 }
 
 fn x64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
     
+    let produces_const = inst.produces_const();
+
     match inst {
         
         Inst::Alu_RMI_R {
@@ -1714,8 +1768,13 @@ fn x64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
             ref mut dst,
             ..
         } => {
-            src.map_uses(mapper);
-            map_mod(mapper, dst);
+            if produces_const {
+                src.map_as_def(mapper);
+                map_def(mapper, dst);
+            } else {
+                src.map_uses(mapper);
+                map_mod(mapper, dst);
+            }
         }
         Inst::Div { divisor, .. } => divisor.map_uses(mapper),
         Inst::MulHi { rhs, .. } => rhs.map_uses(mapper),
@@ -1742,28 +1801,12 @@ fn x64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
         Inst::XmmRmRImm {
             ref mut src,
             ref mut dst,
-            ref op,
-            ref imm,
+            ..
         } => {
-            
-            
-            
-            if let RegMem::Reg { reg } = src {
-                if (*op == SseOpcode::Cmppd || *op == SseOpcode::Cmpps)
-                    && *imm == FcmpImm::Equal.encode()
-                    && *reg == dst.to_reg()
-                {
-                    let mut writable_src = Writable::from_reg(*reg);
-                    map_def(mapper, &mut writable_src);
-                    *reg = writable_src.to_reg();
-                    map_def(mapper, dst);
-                } else {
-                    
-                    src.map_uses(mapper);
-                    map_mod(mapper, dst);
-                }
+            if produces_const {
+                src.map_as_def(mapper);
+                map_def(mapper, dst);
             } else {
-                
                 src.map_uses(mapper);
                 map_mod(mapper, dst);
             }
@@ -1773,8 +1816,13 @@ fn x64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
             ref mut dst,
             ..
         } => {
-            src.map_uses(mapper);
-            map_mod(mapper, dst);
+            if produces_const {
+                src.map_as_def(mapper);
+                map_def(mapper, dst);
+            } else {
+                src.map_uses(mapper);
+                map_mod(mapper, dst);
+            }
         }
         Inst::XmmRmiReg {
             ref mut src,
@@ -2097,8 +2145,23 @@ impl MachInst for Inst {
     ) -> SmallVec<[Self; 4]> {
         let mut ret = SmallVec::new();
         if ty.is_int() {
-            let is_64 = ty == I64 && value > 0x7fffffff;
-            ret.push(Inst::imm_r(is_64, value, to_reg));
+            if value == 0 {
+                ret.push(Inst::alu_rmi_r(
+                    ty == I64,
+                    AluRmiROpcode::Xor,
+                    RegMemImm::reg(to_reg.to_reg()),
+                    to_reg,
+                ));
+            } else {
+                let is_64 = ty == I64 && value > 0x7fffffff;
+                ret.push(Inst::imm_r(is_64, value, to_reg));
+            }
+        } else if value == 0 {
+            ret.push(Inst::xmm_rm_r(
+                SseOpcode::Xorps,
+                RegMem::reg(to_reg.to_reg()),
+                to_reg,
+            ));
         } else {
             match ty {
                 F32 => {

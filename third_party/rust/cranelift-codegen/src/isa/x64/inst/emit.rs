@@ -2074,8 +2074,6 @@ pub(crate) fn emit(
             
             
             
-            
-            
 
             let src = src.to_reg();
 
@@ -2120,11 +2118,10 @@ pub(crate) fn emit(
                 sink.bind_label(not_nan);
 
                 
+
                 
-                let inst = Inst::imm_r(false, 0, *tmp_gpr); 
-                inst.emit(sink, flags, state);
                 let inst =
-                    Inst::gpr_to_xmm(cast_op, RegMem::reg(tmp_gpr.to_reg()), *src_size, *tmp_xmm);
+                    Inst::xmm_rm_r(SseOpcode::Xorpd, RegMem::reg(tmp_xmm.to_reg()), *tmp_xmm);
                 inst.emit(sink, flags, state);
 
                 let inst = Inst::xmm_cmp_rm_r(cmp_op, RegMem::reg(src), tmp_xmm.to_reg());
@@ -2195,11 +2192,8 @@ pub(crate) fn emit(
                 sink.bind_label(check_positive);
 
                 
-                let inst = Inst::imm_r(false, 0, *tmp_gpr);
-                inst.emit(sink, flags, state);
-
                 let inst =
-                    Inst::gpr_to_xmm(cast_op, RegMem::reg(tmp_gpr.to_reg()), *src_size, *tmp_xmm);
+                    Inst::xmm_rm_r(SseOpcode::Xorpd, RegMem::reg(tmp_xmm.to_reg()), *tmp_xmm);
                 inst.emit(sink, flags, state);
 
                 let inst = Inst::xmm_cmp_rm_r(cmp_op, RegMem::reg(src), tmp_xmm.to_reg());

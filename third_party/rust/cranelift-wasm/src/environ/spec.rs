@@ -66,6 +66,20 @@ impl TryFrom<wasmparser::Type> for WasmType {
     }
 }
 
+impl From<WasmType> for wasmparser::Type {
+    fn from(ty: WasmType) -> wasmparser::Type {
+        match ty {
+            WasmType::I32 => wasmparser::Type::I32,
+            WasmType::I64 => wasmparser::Type::I64,
+            WasmType::F32 => wasmparser::Type::F32,
+            WasmType::F64 => wasmparser::Type::F64,
+            WasmType::V128 => wasmparser::Type::V128,
+            WasmType::FuncRef => wasmparser::Type::FuncRef,
+            WasmType::ExternRef => wasmparser::Type::ExternRef,
+        }
+    }
+}
+
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
@@ -745,7 +759,10 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
 
     
     
-    
+    fn reserve_function_bodies(&mut self, bodies: u32, code_section_offset: u64) {
+        drop((bodies, code_section_offset));
+    }
+
     
     fn define_function_body(
         &mut self,
@@ -773,16 +790,19 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     
     
     
-    fn declare_module_name(&mut self, _name: &'data str) -> WasmResult<()> {
-        Ok(())
-    }
+    fn declare_module_name(&mut self, _name: &'data str) {}
 
     
     
     
     
-    fn declare_func_name(&mut self, _func_index: FuncIndex, _name: &'data str) -> WasmResult<()> {
-        Ok(())
+    fn declare_func_name(&mut self, _func_index: FuncIndex, _name: &'data str) {}
+
+    
+    
+    
+    
+    fn declare_local_name(&mut self, _func_index: FuncIndex, _local_index: u32, _name: &'data str) {
     }
 
     
