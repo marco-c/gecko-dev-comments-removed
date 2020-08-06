@@ -1188,16 +1188,6 @@ class WhiteSpaceVisibilityKeeper final {
                                   const EditorDOMPoint& aPoint);
 
   
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult PrepareToJoinBlocks(
-      HTMLEditor& aHTMLEditor, dom::Element& aLeftBlockElement,
-      dom::Element& aRightBlockElement);
-
-  
   
   
   

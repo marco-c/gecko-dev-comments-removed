@@ -63,22 +63,6 @@ template WSRunScanner::TextFragmentData::TextFragmentData(
 template WSRunScanner::TextFragmentData::TextFragmentData(
     const EditorDOMPointInText& aPoint, const Element* aEditingHost);
 
-
-nsresult WhiteSpaceVisibilityKeeper::PrepareToJoinBlocks(
-    HTMLEditor& aHTMLEditor, Element& aLeftBlockElement,
-    Element& aRightBlockElement) {
-  nsresult rv = WhiteSpaceVisibilityKeeper::
-      MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange(
-          aHTMLEditor,
-          EditorDOMRange(EditorRawDOMPoint::AtEndOf(aLeftBlockElement),
-                         EditorRawDOMPoint(&aRightBlockElement, 0)));
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "WhiteSpaceVisibilityKeeper::"
-      "MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange() failed");
-  return rv;
-}
-
 nsresult WhiteSpaceVisibilityKeeper::PrepareToDeleteRange(
     HTMLEditor& aHTMLEditor, EditorDOMPoint* aStartPoint,
     EditorDOMPoint* aEndPoint) {
@@ -157,10 +141,20 @@ EditActionResult WhiteSpaceVisibilityKeeper::
       !EditorUtils::IsDescendantOf(aRightBlockElement, aLeftBlockElement));
 
   
-  nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToJoinBlocks(
-      aHTMLEditor, aLeftBlockElement, aRightBlockElement);
+  
+  
+  
+
+  
+  nsresult rv = WhiteSpaceVisibilityKeeper::
+      MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange(
+          aHTMLEditor,
+          EditorDOMRange(EditorDOMPoint::AtEndOf(aLeftBlockElement),
+                         EditorDOMPoint(&aRightBlockElement, 0)));
   if (NS_FAILED(rv)) {
-    NS_WARNING("WhiteSpaceVisibilityKeeper::PrepareToJoinBlocks() failed");
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::"
+        "MakeSureToKeepVisibleStateOfWhiteSpacesAroundDeletingRange() failed");
     return EditActionIgnored(rv);
   }
   
