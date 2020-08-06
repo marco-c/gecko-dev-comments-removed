@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -17,20 +17,14 @@ const promise = require("promise");
 
 loader.lazyRequireGetter(
   this,
-  "getIndentationFromPrefs",
-  "devtools/shared/indentation",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "getIndentationFromString",
+  ["getIndentationFromPrefs", "getIndentationFromString"],
   "devtools/shared/indentation",
   true
 );
 
-
-
-
+/**
+ * Corresponding client-side front for a MediaRuleActor.
+ */
 class MediaRuleFront extends FrontClassWithSpec(mediaRuleSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
@@ -71,9 +65,9 @@ class MediaRuleFront extends FrontClassWithSpec(mediaRuleSpec) {
 exports.MediaRuleFront = MediaRuleFront;
 registerFront(MediaRuleFront);
 
-
-
-
+/**
+ * StyleSheetFront is the client-side counterpart to a StyleSheetActor.
+ */
 class StyleSheetFront extends FrontClassWithSpec(styleSheetSpec) {
   constructor(conn, targetFront, parentFront) {
     super(conn, targetFront, parentFront);
@@ -118,7 +112,7 @@ class StyleSheetFront extends FrontClassWithSpec(styleSheetSpec) {
     return this._form.ruleCount;
   }
   get sourceMapBaseURL() {
-    
+    // Handle backward-compat for servers that don't return sourceMapBaseURL.
     if (this._form.sourceMapBaseURL === undefined) {
       return this.href || this.nodeHref;
     }
@@ -129,12 +123,12 @@ class StyleSheetFront extends FrontClassWithSpec(styleSheetSpec) {
     return this._form.sourceMapURL;
   }
 
-  
-
-
-
-
-
+  /**
+   * Get the indentation to use for edits to this style sheet.
+   *
+   * @return {Promise} A promise that will resolve to a string that
+   * should be used to indent a block in this style sheet.
+   */
   guessIndentation() {
     const prefIndent = getIndentationFromPrefs();
     if (prefIndent) {
@@ -156,14 +150,14 @@ class StyleSheetFront extends FrontClassWithSpec(styleSheetSpec) {
 exports.StyleSheetFront = StyleSheetFront;
 registerFront(StyleSheetFront);
 
-
-
-
+/**
+ * The corresponding Front object for the StyleSheetsActor.
+ */
 class StyleSheetsFront extends FrontClassWithSpec(styleSheetsSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
 
-    
+    // Attribute name from which to retrieve the actorID out of the target actor's form
     this.formAttributeName = "styleSheetsActor";
   }
 }
