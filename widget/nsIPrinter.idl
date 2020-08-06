@@ -22,10 +22,14 @@ interface nsIPrinter : nsISupports
   
 
 
-  readonly attribute boolean supportsDuplex;
+
+  [implicit_jscontext]
+  readonly attribute Promise supportsDuplex;
 
   
 
 
-  readonly attribute boolean supportsColor;
+
+  [implicit_jscontext]
+  readonly attribute Promise supportsColor;
 };
