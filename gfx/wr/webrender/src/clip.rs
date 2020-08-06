@@ -417,6 +417,16 @@ pub struct ClipChainNode {
     pub parent_clip_chain_id: ClipChainId,
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct ClipSet {
+    
+    pub local_clip_rect: LayoutRect,
+
+    
+    pub clip_chain_id: ClipChainId,
+}
+
 
 
 

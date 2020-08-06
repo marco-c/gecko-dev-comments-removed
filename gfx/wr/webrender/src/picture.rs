@@ -4471,10 +4471,9 @@ impl PrimitiveList {
             flags.insert(ClusterFlags::PREFER_COMPOSITOR_SURFACE);
         }
 
-        let culling_rect = prim_instance.local_clip_rect
+        let culling_rect = prim_instance.clip_set.local_clip_rect
             .intersection(&prim_rect)
             .unwrap_or_else(LayoutRect::zero);
-
 
         
         
@@ -6157,7 +6156,7 @@ impl PicturePrimitive {
                             
                             
                             prim_data.common.prim_rect = prim_rect;
-                            prim_instance.local_clip_rect = prim_rect;
+                            prim_instance.clip_set.local_clip_rect = prim_rect;
 
                             
                             cluster.bounding_rect = cluster.bounding_rect.union(&prim_rect);
