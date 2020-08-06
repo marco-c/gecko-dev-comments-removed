@@ -5099,6 +5099,59 @@ AttachDecision CallIRGenerator::tryAttachArrayPush(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachArrayPopShift(HandleFunction callee,
+                                                       InlinableNative native) {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isObject() || !IsPackedArray(&thisval_.toObject())) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ArrayObject* arr = &thisval_.toObject().as<ArrayObject>();
+  if (!arr->lengthIsWritable() || arr->denseElementsAreCopyOnWrite() ||
+      !arr->isExtensible() || arr->denseElementsHaveMaybeInIterationFlag()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  writer.guardClass(objId, GuardClassKind::Array);
+
+  if (native == InlinableNative::ArrayPop) {
+    writer.packedArrayPopResult(objId);
+  } else {
+    MOZ_ASSERT(native == InlinableNative::ArrayShift);
+    writer.packedArrayShiftResult(objId);
+  }
+
+  writer.typeMonitorResult();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
+
+  trackAttached("ArrayPopShift");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachArrayJoin(HandleFunction callee) {
   
   if (argc_ > 1) {
@@ -7432,6 +7485,9 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachArrayConstructor(callee);
     case InlinableNative::ArrayPush:
       return tryAttachArrayPush(callee);
+    case InlinableNative::ArrayPop:
+    case InlinableNative::ArrayShift:
+      return tryAttachArrayPopShift(callee, native);
     case InlinableNative::ArrayJoin:
       return tryAttachArrayJoin(callee);
     case InlinableNative::ArrayIsArray:

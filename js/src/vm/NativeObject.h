@@ -1330,8 +1330,6 @@ class NativeObject : public JSObject {
                                 uint32_t srcStart, uint32_t count);
   inline void moveDenseElements(uint32_t dstStart, uint32_t srcStart,
                                 uint32_t count);
-  inline void moveDenseElementsNoPreBarrier(uint32_t dstStart,
-                                            uint32_t srcStart, uint32_t count);
   inline void reverseDenseElementsNoPreBarrier(uint32_t length);
 
   inline DenseElementResult setOrExtendDenseElements(
@@ -1376,6 +1374,7 @@ class NativeObject : public JSObject {
   
   
   
+  inline bool denseElementsHaveMaybeInIterationFlag();
   inline bool denseElementsMaybeInIteration();
 
   
