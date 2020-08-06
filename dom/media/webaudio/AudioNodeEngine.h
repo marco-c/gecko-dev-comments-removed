@@ -285,7 +285,7 @@ class AudioNodeEngine {
   }
   
   
-  virtual void SetRawArrayData(nsTArray<float>& aData) {
+  virtual void SetRawArrayData(nsTArray<float>&& aData) {
     NS_ERROR("SetRawArrayData called on an engine that doesn't support it");
   }
 

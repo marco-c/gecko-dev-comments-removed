@@ -1279,8 +1279,8 @@ void nsRefreshDriver::DispatchVisualViewportResizeEvents() {
   
   
   
-  VisualViewportResizeEventArray events;
-  events.SwapElements(mVisualViewportResizeEvents);
+  VisualViewportResizeEventArray events =
+      std::move(mVisualViewportResizeEvents);
   for (auto& event : events) {
     event->Run();
   }
@@ -1301,8 +1301,7 @@ void nsRefreshDriver::DispatchScrollEvents() {
   
   
   
-  ScrollEventArray events;
-  events.SwapElements(mScrollEvents);
+  ScrollEventArray events = std::move(mScrollEvents);
   for (auto& event : events) {
     event->Run();
   }
@@ -1319,8 +1318,8 @@ void nsRefreshDriver::DispatchVisualViewportScrollEvents() {
   
   
   
-  VisualViewportScrollEventArray events;
-  events.SwapElements(mVisualViewportScrollEvents);
+  VisualViewportScrollEventArray events =
+      std::move(mVisualViewportScrollEvents);
   for (auto& event : events) {
     event->Run();
   }
@@ -2015,8 +2014,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     nsLayoutUtils::UpdateDisplayPortMarginsFromPendingMessages();
   }
 
-  AutoTArray<nsCOMPtr<nsIRunnable>, 16> earlyRunners;
-  earlyRunners.SwapElements(mEarlyRunners);
+  AutoTArray<nsCOMPtr<nsIRunnable>, 16> earlyRunners = std::move(mEarlyRunners);
   for (auto& runner : earlyRunners) {
     runner->Run();
   }

@@ -50,8 +50,8 @@ void ServiceWorkerJob::StealResultCallbacksFrom(ServiceWorkerJob* aJob) {
 
   
   
-  nsTArray<RefPtr<Callback>> callbackList;
-  callbackList.SwapElements(aJob->mResultCallbackList);
+  nsTArray<RefPtr<Callback>> callbackList =
+      std::move(aJob->mResultCallbackList);
 
   for (RefPtr<Callback>& callback : callbackList) {
     
@@ -138,8 +138,7 @@ void ServiceWorkerJob::InvokeResultCallbacks(ErrorResult& aRv) {
   MOZ_DIAGNOSTIC_ASSERT(!mResultCallbacksInvoked);
   mResultCallbacksInvoked = true;
 
-  nsTArray<RefPtr<Callback>> callbackList;
-  callbackList.SwapElements(mResultCallbackList);
+  nsTArray<RefPtr<Callback>> callbackList = std::move(mResultCallbackList);
 
   for (RefPtr<Callback>& callback : callbackList) {
     

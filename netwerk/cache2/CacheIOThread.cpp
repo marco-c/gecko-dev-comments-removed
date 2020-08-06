@@ -503,8 +503,7 @@ void CacheIOThread::ThreadFunc() {
 }
 
 void CacheIOThread::LoopOneLevel(uint32_t aLevel) {
-  EventQueue events;
-  events.SwapElements(mEventQueue[aLevel]);
+  EventQueue events = std::move(mEventQueue[aLevel]);
   EventQueue::size_type length = events.Length();
 
   mCurrentlyExecutingLevel = aLevel;
@@ -570,7 +569,7 @@ void CacheIOThread::LoopOneLevel(uint32_t aLevel) {
     
     events.AppendElements(std::move(mEventQueue[aLevel]));
     
-    events.SwapElements(mEventQueue[aLevel]);
+    mEventQueue[aLevel] = std::move(events);
   }
 }
 

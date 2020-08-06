@@ -223,7 +223,7 @@ bool MessagePortService::DisentanglePort(
 
   
   if (!nextParent) {
-    data->mMessages.SwapElements(aMessages);
+    data->mMessages = std::move(aMessages);
     data->mWaitingForNewParent = true;
     data->mParent = nullptr;
     return true;

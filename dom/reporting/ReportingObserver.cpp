@@ -136,8 +136,7 @@ void ReportingObserver::MaybeNotify() {
   }
 
   
-  nsTArray<RefPtr<Report>> list;
-  list.SwapElements(mReports);
+  nsTArray<RefPtr<Report>> list = std::move(mReports);
 
   Sequence<OwningNonNull<Report>> reports;
   for (Report* report : list) {

@@ -827,8 +827,8 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   
   
   
-  nsTArray<RefPtr<Notification>> notifications;
-  notifications.SwapElements(mNotifications);
+  const nsTArray<RefPtr<Notification>> notifications =
+      std::move(mNotifications);
 
   uint32_t notificationCount = notifications.Length();
   for (uint32_t idx = 0; idx < notificationCount; idx++) {

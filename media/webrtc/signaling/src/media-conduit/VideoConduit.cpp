@@ -1627,8 +1627,7 @@ MediaConduitErrorCode WebrtcVideoConduit::ConfigureRecvMediaCodecs(
                 mRecvStreamConfig.rtp.remote_ssrc);
 
     
-    mRecvCodecList.SwapElements(recv_codecs);
-    recv_codecs.Clear();
+    mRecvCodecList = std::move(recv_codecs);
 
     DeleteRecvStream();
     return StartReceivingLocked();

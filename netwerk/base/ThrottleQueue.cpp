@@ -221,7 +221,7 @@ already_AddRefed<nsIInputChannelThrottleQueue> ThrottleQueue::Create() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   nsCOMPtr<nsIInputChannelThrottleQueue> tq;
-  if (gIOService->UseSocketProcess()) {
+  if (nsIOService::UseSocketProcess()) {
     tq = new InputChannelThrottleQueueParent();
   } else {
     tq = new ThrottleQueue();
@@ -330,8 +330,7 @@ ThrottleQueue::Notify(nsITimer* aTimer) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   
   
-  nsTArray<RefPtr<ThrottleInputStream>> events;
-  events.SwapElements(mAsyncEvents);
+  nsTArray<RefPtr<ThrottleInputStream>> events = std::move(mAsyncEvents);
 
   
   
