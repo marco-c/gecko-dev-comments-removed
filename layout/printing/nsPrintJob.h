@@ -164,8 +164,6 @@ class nsPrintJob final : public nsIObserver,
                        nsresult& aStatus);
   nsresult DoPrint(const mozilla::UniquePtr<nsPrintObject>& aPO);
 
-  void SetPrintPO(nsPrintObject* aPO, bool aPrint);
-
   
 
 
@@ -186,17 +184,14 @@ class nsPrintJob final : public nsIObserver,
       nsIPrintProgressParams* aParams);
   void EllipseLongString(nsAString& aStr, const uint32_t aLen, bool aDoFront);
 
-  bool IsThereARangeSelection(nsPIDOMWindowOuter* aDOMWin);
-
   nsresult StartPagePrintTimer(const mozilla::UniquePtr<nsPrintObject>& aPO);
 
   bool IsWindowsInOurSubTree(nsPIDOMWindowOuter* aDOMWindow) const;
-  bool IsThereAnIFrameSelected(nsIDocShell* aDocShell,
-                               nsPIDOMWindowOuter* aDOMWin,
-                               bool& aIsParentFrameSet);
 
   
-  already_AddRefed<nsPIDOMWindowOuter> FindFocusedDOMWindow() const;
+
+
+  Document* FindFocusedDocument() const;
 
   
   enum class DocTitleDefault : uint32_t { eDocURLElseFallback, eFallback };
