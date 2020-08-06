@@ -203,16 +203,6 @@ class ScopeCreationData {
   EnvironmentShapeCreationData environmentShape_;
 
   
-  
-  
-  
-  
-  
-  
-  
-  HeapPtr<Scope*> scope_ = {};
-
-  
   mozilla::Maybe<FunctionIndex> functionIndex_;
 
   
@@ -237,7 +227,7 @@ class ScopeCreationData {
   ScopeKind kind() const { return kind_; }
   AbstractScopePtr enclosing() { return enclosing_; }
 
-  Scope* getEnclosingScope(JSContext* cx);
+  Scope* getEnclosingScope();
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
@@ -287,13 +277,6 @@ class ScopeCreationData {
 
   bool isArrow() const { return isArrow_; }
 
-  bool hasScope() const { return scope_ != nullptr; }
-
-  Scope* getScope() const {
-    MOZ_ASSERT(hasScope());
-    return scope_;
-  }
-
   Scope* createScope(JSContext* cx, CompilationInfo& compilationInfo);
 
   void trace(JSTracer* trc);
@@ -320,9 +303,6 @@ class ScopeCreationData {
   uint32_t nextFrameSlot() const {
     
     
-    if (hasScope()) {
-      return getScope()->template as<SpecificScopeType>().nextFrameSlot();
-    }
     return data<SpecificScopeType>().nextFrameSlot;
   }
 };

@@ -74,13 +74,8 @@ bool frontend::EnvironmentShapeCreationData::createShape(
   return data_.match(m);
 }
 
-Scope* ScopeCreationData::getEnclosingScope(JSContext* cx) {
-  if (enclosing_.isScopeCreationData()) {
-    ScopeCreationData& enclosingData = enclosing_.scopeCreationData().get();
-    return enclosingData.getScope();
-  }
-
-  return enclosing_.scope();
+Scope* ScopeCreationData::getEnclosingScope() {
+  return enclosing_.existingScope();
 }
 
 JSFunction* ScopeCreationData::function(
@@ -90,11 +85,6 @@ JSFunction* ScopeCreationData::function(
 
 Scope* ScopeCreationData::createScope(JSContext* cx,
                                       CompilationInfo& compilationInfo) {
-  
-  if (scope_) {
-    return scope_;
-  }
-
   Scope* scope = nullptr;
   switch (kind()) {
     case ScopeKind::Function: {
@@ -147,10 +137,6 @@ void ScopeCreationData::trace(JSTracer* trc) {
   }
 
   environmentShape_.trace(trc);
-
-  if (scope_) {
-    TraceEdge(trc, &scope_, "ScopeCreationData Scope");
-  }
 
   
   if (data_) {
@@ -423,10 +409,18 @@ static bool InstantiateScopes(JSContext* cx, CompilationInfo& compilationInfo) {
   
   
   
+
+  if (!compilationInfo.scopes.reserve(
+          compilationInfo.scopeCreationData.length())) {
+    return false;
+  }
+
   for (auto& scd : compilationInfo.scopeCreationData) {
-    if (!scd.createScope(cx, compilationInfo)) {
+    Scope* scope = scd.createScope(cx, compilationInfo);
+    if (!scope) {
       return false;
     }
+    compilationInfo.scopes.infallibleAppend(scope);
   }
 
   return true;
@@ -558,7 +552,7 @@ static void UpdateEmittedInnerFunctions(CompilationInfo& compilationInfo) {
       BaseScript* script = fun->baseScript();
 
       ScopeIndex index = *stencil.lazyFunctionEnclosingScopeIndex_;
-      Scope* scope = compilationInfo.scopeCreationData[index].get().getScope();
+      Scope* scope = compilationInfo.scopes[index].get();
       script->setEnclosingScope(scope);
       script->initTreatAsRunOnce(stencil.immutableFlags.hasFlag(
           ImmutableScriptFlagsEnum::TreatAsRunOnce));

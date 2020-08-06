@@ -56,6 +56,8 @@ class AbstractScopePtr {
  private:
   ScopeType scope_ = ScopeType(HeapPtrScope());
 
+  Scope* scope() const { return scope_.as<HeapPtrScope>(); }
+
  public:
   friend class js::Scope;
 
@@ -85,7 +87,9 @@ class AbstractScopePtr {
   MutableHandle<frontend::ScopeCreationData> scopeCreationData() const;
   frontend::CompilationInfo& compilationInfo() const;
 
-  Scope* scope() const { return scope_.as<HeapPtrScope>(); }
+  
+  
+  Scope* existingScope() const;
 
   
   
