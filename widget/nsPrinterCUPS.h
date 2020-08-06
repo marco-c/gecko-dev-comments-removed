@@ -34,6 +34,14 @@ class nsPrinterCUPS final : public nsPrinterBase {
   static already_AddRefed<nsPrinterCUPS> Create(const nsCUPSShim& aShim,
                                                 cups_dest_t* aPrinter);
 
+  
+
+
+
+
+
+  void SetDisplayName(const nsAString& aName) { mDisplayName = aName; }
+
  private:
   nsPrinterCUPS(const nsCUPSShim& aShim, cups_dest_t* aPrinter);
 
@@ -42,6 +50,7 @@ class nsPrinterCUPS final : public nsPrinterBase {
   
   bool Supports(const char* option, const char* value) const;
 
+  nsString mDisplayName;
   const nsCUPSShim& mShim;
   cups_dest_t* mPrinter;
   cups_dinfo_t* mPrinterInfo;
