@@ -998,29 +998,6 @@ nsresult nsPrintJob::PrintPreview(
 }
 
 
-bool nsPrintJob::IsIFrameSelected() {
-  
-  nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
-  
-  nsCOMPtr<nsPIDOMWindowOuter> currentFocusWin = FindFocusedDOMWindow();
-  if (currentFocusWin && docShell) {
-    
-    
-    
-    bool isParentFrameSet;
-    return IsThereAnIFrameSelected(docShell, currentFocusWin, isParentFrameSet);
-  }
-  return false;
-}
-
-
-bool nsPrintJob::IsRangeSelection() {
-  
-  nsCOMPtr<nsPIDOMWindowOuter> currentFocusWin = FindFocusedDOMWindow();
-  return IsThereARangeSelection(currentFocusWin);
-}
-
-
 int32_t nsPrintJob::GetPrintPreviewNumPages() {
   
   
