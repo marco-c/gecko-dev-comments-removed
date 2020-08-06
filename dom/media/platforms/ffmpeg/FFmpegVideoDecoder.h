@@ -75,6 +75,12 @@ class DMABufSurfaceWrapper final {
     return mSurface->GetAsDMABufSurfaceYUV();
   }
 
+  
+  
+  
+  DMABufSurfaceWrapper(const DMABufSurfaceWrapper&) = delete;
+  const DMABufSurfaceWrapper& operator=(DMABufSurfaceWrapper const&) = delete;
+
  private:
   const RefPtr<DMABufSurface> mSurface;
   const FFmpegLibWrapper* mLib;
