@@ -86,7 +86,8 @@ class LintSandbox(ConfigureSandbox):
         
         
         
-        co_lnotab = bytes([0, 255] * (offset // 255) + [0, offset % 255])
+        
+        co_lnotab = bytes([0, 127] * (offset // 127) + [0, offset % 127])
         code = thrower.__code__
         code = types.CodeType(
             code.co_argcount,
