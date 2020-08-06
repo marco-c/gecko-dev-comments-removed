@@ -7015,7 +7015,7 @@ void HTMLInputElement::UpdateEntries(
   
   fs->CreateRoot(entries);
 
-  mFileData->mEntries = std::move(entries);
+  mFileData->mEntries.SwapElements(entries);
 }
 
 void HTMLInputElement::GetWebkitEntries(

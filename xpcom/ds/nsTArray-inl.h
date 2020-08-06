@@ -268,27 +268,6 @@ void nsTArray_base<Alloc, RelocationStrategy>::ShrinkCapacity(
 }
 
 template <class Alloc, class RelocationStrategy>
-void nsTArray_base<Alloc, RelocationStrategy>::ShrinkCapacityToZero(
-    size_type aElemSize, size_t aElemAlign) {
-  MOZ_ASSERT(mHdr->mLength == 0);
-
-  if (mHdr == EmptyHdr() || UsesAutoArrayBuffer()) {
-    return;
-  }
-
-  const bool isAutoArray = IsAutoArray();
-
-  nsTArrayFallibleAllocator::Free(mHdr);
-
-  if (isAutoArray) {
-    mHdr = GetAutoArrayBufferUnsafe(aElemAlign);
-    mHdr->mLength = 0;
-  } else {
-    mHdr = EmptyHdr();
-  }
-}
-
-template <class Alloc, class RelocationStrategy>
 template <typename ActualAlloc>
 void nsTArray_base<Alloc, RelocationStrategy>::ShiftData(index_type aStart,
                                                          size_type aOldLen,
@@ -305,7 +284,7 @@ void nsTArray_base<Alloc, RelocationStrategy>::ShiftData(index_type aStart,
   
   mHdr->mLength += aNewLen - aOldLen;
   if (mHdr->mLength == 0) {
-    ShrinkCapacityToZero(aElemSize, aElemAlign);
+    ShrinkCapacity(aElemSize, aElemAlign);
   } else {
     
     if (num == 0) {
@@ -341,7 +320,7 @@ void nsTArray_base<Alloc, RelocationStrategy>::SwapFromEnd(index_type aStart,
 
   if (mHdr->mLength == 0) {
     
-    ShrinkCapacityToZero(aElemSize, aElemAlign);
+    ShrinkCapacity(aElemSize, aElemAlign);
     return;
   }
 
@@ -525,100 +504,6 @@ nsTArray_base<Alloc, RelocationStrategy>::SwapArrayElements(
   }
 
   return ActualAlloc::SuccessResult();
-}
-
-template <class Alloc, class RelocationStrategy>
-template <class Allocator>
-void nsTArray_base<Alloc, RelocationStrategy>::MoveInit(
-    nsTArray_base<Allocator, RelocationStrategy>& aOther, size_type aElemSize,
-    size_t aElemAlign) {
-  
-  
-  
-  
-
-  MOZ_ASSERT(Length() == 0);
-  MOZ_ASSERT(Capacity() == 0 || (IsAutoArray() && UsesAutoArrayBuffer()));
-
-  
-  
-  
-  
-
-  IsAutoArrayRestorer ourAutoRestorer(*this, aElemAlign);
-  typename nsTArray_base<Allocator, RelocationStrategy>::IsAutoArrayRestorer
-      otherAutoRestorer(aOther, aElemAlign);
-
-  
-  
-  
-  if ((!IsAutoArray() || Capacity() < aOther.Length()) &&
-      !aOther.UsesAutoArrayBuffer()) {
-    mHdr = aOther.mHdr;
-
-    aOther.mHdr = EmptyHdr();
-
-    return;
-  }
-
-  
-  
-
-  EnsureCapacity<nsTArrayInfallibleAllocator>(aOther.Length(), aElemSize);
-
-  
-  
-  MOZ_ASSERT(UsesAutoArrayBuffer() || aOther.UsesAutoArrayBuffer(),
-             "One of the arrays should be using its auto buffer.");
-
-  RelocationStrategy::RelocateNonOverlappingRegion(Hdr() + 1, aOther.Hdr() + 1,
-                                                   aOther.Length(), aElemSize);
-
-  
-  MOZ_ASSERT((aOther.Length() == 0 || mHdr != EmptyHdr()) &&
-                 (Length() == 0 || aOther.mHdr != EmptyHdr()),
-             "Don't set sEmptyTArrayHeader's length.");
-
-  
-  
-  if (mHdr != EmptyHdr()) {
-    mHdr->mLength = aOther.Length();
-  }
-  if (aOther.mHdr != EmptyHdr()) {
-    aOther.mHdr->mLength = 0;
-  }
-}
-
-template <class Alloc, class RelocationStrategy>
-template <class Allocator>
-void nsTArray_base<Alloc, RelocationStrategy>::MoveConstructNonAutoArray(
-    nsTArray_base<Allocator, RelocationStrategy>& aOther, size_type aElemSize,
-    size_t aElemAlign) {
-  
-  
-  
-
-  
-  
-  const bool otherUsesAutoArrayBuffer = aOther.UsesAutoArrayBuffer();
-  if (otherUsesAutoArrayBuffer) {
-    
-    
-    
-    aOther.template EnsureNotUsingAutoArrayBuffer<nsTArrayInfallibleAllocator>(
-        aElemSize);
-  }
-
-  const bool otherIsAuto = otherUsesAutoArrayBuffer || aOther.IsAutoArray();
-  mHdr = aOther.mHdr;
-
-  if (otherIsAuto) {
-    mHdr->mIsAutoArray = false;
-    aOther.mHdr = aOther.GetAutoArrayBufferUnsafe(aElemAlign);
-    aOther.mHdr->mLength = 0;
-  } else {
-    aOther.mHdr = aOther.EmptyHdr();
-  }
 }
 
 template <class Alloc, class RelocationStrategy>

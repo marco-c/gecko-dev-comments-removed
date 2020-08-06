@@ -2178,7 +2178,8 @@ void nsHttpConnectionMgr::DispatchSpdyPendingQ(
 
   
   
-  pendingQ = std::move(leftovers);
+  leftovers.SwapElements(pendingQ);
+  leftovers.Clear();
 }
 
 

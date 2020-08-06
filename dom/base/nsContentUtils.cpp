@@ -6074,7 +6074,7 @@ void* nsContentUtils::AllocClassMatchingInfo(nsINode* aRootNode,
   
   auto* info = new ClassMatchingInfo;
   if (attrValue.Type() == nsAttrValue::eAtomArray) {
-    info->mClasses = std::move(*(attrValue.GetAtomArrayValue()));
+    info->mClasses.SwapElements(*(attrValue.GetAtomArrayValue()));
   } else if (attrValue.Type() == nsAttrValue::eAtom) {
     info->mClasses.AppendElement(attrValue.GetAtomValue());
   }

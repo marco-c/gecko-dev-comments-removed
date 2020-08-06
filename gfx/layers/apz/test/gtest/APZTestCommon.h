@@ -199,8 +199,8 @@ class MockContentControllerDelayed : public MockContentController {
   
   
   int RunThroughDelayedTasks() {
-    nsTArray<std::pair<RefPtr<Runnable>, TimeStamp>> runQueue =
-        std::move(mTaskQueue);
+    nsTArray<std::pair<RefPtr<Runnable>, TimeStamp>> runQueue;
+    runQueue.SwapElements(mTaskQueue);
     int numTasks = runQueue.Length();
     for (int i = 0; i < numTasks; i++) {
       mTime = runQueue[i].second;

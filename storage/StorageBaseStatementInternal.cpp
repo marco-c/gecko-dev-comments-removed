@@ -180,7 +180,7 @@ StorageBaseStatementInternal::ExecuteAsync(
   stmts.AppendElement(data);
 
   
-  return AsyncExecuteStatements::execute(std::move(stmts), mDBConnection,
+  return AsyncExecuteStatements::execute(stmts, mDBConnection,
                                          mNativeConnection, aCallback, _stmt);
 }
 

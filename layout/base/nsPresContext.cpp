@@ -1958,16 +1958,16 @@ void nsPresContext::ClearNotifySubDocInvalidationData(
 class DelayedFireDOMPaintEvent : public Runnable {
  public:
   DelayedFireDOMPaintEvent(
-      nsPresContext* aPresContext, nsTArray<nsRect>&& aList,
+      nsPresContext* aPresContext, nsTArray<nsRect>* aList,
       TransactionId aTransactionId,
       const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp())
       : mozilla::Runnable("DelayedFireDOMPaintEvent"),
         mPresContext(aPresContext),
         mTransactionId(aTransactionId),
-        mTimeStamp(aTimeStamp),
-        mList(std::move(aList)) {
+        mTimeStamp(aTimeStamp) {
     MOZ_ASSERT(mPresContext->GetContainerWeak(),
                "DOMPaintEvent requested for a detached pres context");
+    mList.SwapElements(*aList);
   }
   NS_IMETHOD Run() override {
     
@@ -2010,8 +2010,8 @@ void nsPresContext::NotifyRevokingDidPaint(TransactionId aTransactionId) {
   
   if (mTransactions.Length() == 1) {
     nsCOMPtr<nsIRunnable> ev = new DelayedFireDOMPaintEvent(
-        this, std::move(transaction->mInvalidations),
-        transaction->mTransactionId, mozilla::TimeStamp());
+        this, &transaction->mInvalidations, transaction->mTransactionId,
+        mozilla::TimeStamp());
     nsContentUtils::AddScriptRunner(ev);
     mTransactions.RemoveElementAt(0);
   } else {
@@ -2059,7 +2059,7 @@ void nsPresContext::NotifyDidPaintForSubtree(
     if (mTransactions[i].mTransactionId <= aTransactionId) {
       if (!mTransactions[i].mInvalidations.IsEmpty()) {
         nsCOMPtr<nsIRunnable> ev = new DelayedFireDOMPaintEvent(
-            this, std::move(mTransactions[i].mInvalidations),
+            this, &mTransactions[i].mInvalidations,
             mTransactions[i].mTransactionId, aTimeStamp);
         nsContentUtils::AddScriptRunner(ev);
         sent = true;
@@ -2070,7 +2070,7 @@ void nsPresContext::NotifyDidPaintForSubtree(
       
       if (sent && mTransactions[i].mIsWaitingForPreviousTransaction) {
         nsCOMPtr<nsIRunnable> ev = new DelayedFireDOMPaintEvent(
-            this, std::move(mTransactions[i].mInvalidations),
+            this, &mTransactions[i].mInvalidations,
             mTransactions[i].mTransactionId, aTimeStamp);
         nsContentUtils::AddScriptRunner(ev);
         sent = true;
@@ -2083,8 +2083,8 @@ void nsPresContext::NotifyDidPaintForSubtree(
 
   if (!sent) {
     nsTArray<nsRect> dummy;
-    nsCOMPtr<nsIRunnable> ev = new DelayedFireDOMPaintEvent(
-        this, std::move(dummy), aTransactionId, aTimeStamp);
+    nsCOMPtr<nsIRunnable> ev =
+        new DelayedFireDOMPaintEvent(this, &dummy, aTransactionId, aTimeStamp);
     nsContentUtils::AddScriptRunner(ev);
   }
 
@@ -2684,8 +2684,8 @@ static void SortConfigurations(
     return;
   }
 
-  nsTArray<nsIWidget::Configuration> pluginsToMove =
-      std::move(*aConfigurations);
+  nsTArray<nsIWidget::Configuration> pluginsToMove;
+  pluginsToMove.SwapElements(*aConfigurations);
 
   
   
@@ -2807,7 +2807,8 @@ void nsRootPresContext::AddWillPaintObserver(nsIRunnable* aRunnable) {
 
 void nsRootPresContext::FlushWillPaintObservers() {
   mWillPaintFallbackEvent = nullptr;
-  nsTArray<nsCOMPtr<nsIRunnable>> observers = std::move(mWillPaintObservers);
+  nsTArray<nsCOMPtr<nsIRunnable>> observers;
+  observers.SwapElements(mWillPaintObservers);
   for (uint32_t i = 0; i < observers.Length(); ++i) {
     observers[i]->Run();
   }

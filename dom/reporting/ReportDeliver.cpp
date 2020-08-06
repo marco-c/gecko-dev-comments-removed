@@ -339,7 +339,8 @@ NS_IMETHODIMP
 ReportDeliver::Notify(nsITimer* aTimer) {
   mTimer = nullptr;
 
-  nsTArray<ReportData> reports = std::move(mReportQueue);
+  nsTArray<ReportData> reports;
+  reports.SwapElements(mReportQueue);
 
   
   std::map<std::pair<nsCString, nsCOMPtr<nsIPrincipal>>, nsTArray<ReportData>>

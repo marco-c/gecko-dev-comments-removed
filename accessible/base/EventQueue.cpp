@@ -268,7 +268,8 @@ void EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
 
 void EventQueue::ProcessEventQueue() {
   
-  const nsTArray<RefPtr<AccEvent> > events = std::move(mEvents);
+  nsTArray<RefPtr<AccEvent> > events;
+  events.SwapElements(mEvents);
 
   uint32_t eventCount = events.Length();
 #ifdef A11Y_LOG

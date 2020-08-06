@@ -5818,8 +5818,8 @@ void PresShell::RebuildApproximateFrameVisibilityDisplayList(
 
   
   
-  VisibleFrames oldApproximatelyVisibleFrames =
-      std::move(mApproximatelyVisibleFrames);
+  VisibleFrames oldApproximatelyVisibleFrames;
+  mApproximatelyVisibleFrames.SwapElements(oldApproximatelyVisibleFrames);
 
   MarkFramesInListApproximatelyVisible(aList);
 
@@ -5970,8 +5970,8 @@ void PresShell::RebuildApproximateFrameVisibility(
 
   
   
-  VisibleFrames oldApproximatelyVisibleFrames =
-      std::move(mApproximatelyVisibleFrames);
+  VisibleFrames oldApproximatelyVisibleFrames;
+  mApproximatelyVisibleFrames.SwapElements(oldApproximatelyVisibleFrames);
 
   nsRect vis(nsPoint(0, 0), rootFrame->GetSize());
   if (aRect) {

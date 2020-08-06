@@ -156,7 +156,8 @@ class AnimationEventDispatcher final {
 
     SortEvents();
 
-    EventArray events = std::move(mPendingEvents);
+    EventArray events;
+    mPendingEvents.SwapElements(events);
     
     
     for (AnimationEventInfo& info : events) {

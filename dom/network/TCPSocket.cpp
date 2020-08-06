@@ -413,7 +413,7 @@ void TCPSocket::NotifyCopyComplete(nsresult aStatus) {
     
     
     if (!mPendingDataAfterStartTLS.IsEmpty()) {
-      mPendingData = std::move(mPendingDataAfterStartTLS);
+      mPendingData.SwapElements(mPendingDataAfterStartTLS);
       EnsureCopying();
       return;
     }
