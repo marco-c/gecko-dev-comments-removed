@@ -419,6 +419,27 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
             CVPixelBufferGetIOSurface(aImage));
     MOZ_ASSERT(surface, "Decoder didn't return an IOSurface backed buffer");
 
+    
+    
+    if (mColorSpace == gfx::YUVColorSpace::BT601) {
+      IOSurfaceSetValue(surface.get(), CFSTR("IOSurfaceYCbCrMatrix"),
+                        CFSTR("ITU_R_601_4"));
+    } else {
+      IOSurfaceSetValue(surface.get(), CFSTR("IOSurfaceYCbCrMatrix"),
+                        CFSTR("ITU_R_709_2"));
+    }
+    
+    
+    
+    
+    
+    auto colorSpace = CFTypeRefPtr<CGColorSpaceRef>::WrapUnderCreateRule(
+        CGDisplayCopyColorSpace(CGMainDisplayID()));
+    auto colorData = CFTypeRefPtr<CFDataRef>::WrapUnderCreateRule(
+        CGColorSpaceCopyICCProfile(colorSpace.get()));
+    IOSurfaceSetValue(surface.get(), CFSTR("IOSurfaceColorSpace"),
+                      colorData.get());
+
     RefPtr<MacIOSurface> macSurface = new MacIOSurface(std::move(surface));
     macSurface->SetYUVColorSpace(mColorSpace);
 

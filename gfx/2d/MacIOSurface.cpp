@@ -154,15 +154,22 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateNV12Surface(
     return nullptr;
   }
 
-  CFTypeRefPtr<CGColorSpaceRef> colorSpace;
+  
+  
   if (aColorSpace == YUVColorSpace::BT601) {
-    colorSpace = CFTypeRefPtr<CGColorSpaceRef>::WrapUnderCreateRule(
-        CGColorSpaceCreateWithName(kCGColorSpaceSRGB));
-
+    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceYCbCrMatrix"),
+                      CFSTR("ITU_R_601_4"));
   } else {
-    colorSpace = CFTypeRefPtr<CGColorSpaceRef>::WrapUnderCreateRule(
-        CGColorSpaceCreateWithName(kCGColorSpaceITUR_709));
+    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceYCbCrMatrix"),
+                      CFSTR("ITU_R_709_2"));
   }
+  
+  
+  
+  
+  
+  auto colorSpace = CFTypeRefPtr<CGColorSpaceRef>::WrapUnderCreateRule(
+      CGDisplayCopyColorSpace(CGMainDisplayID()));
   auto colorData = CFTypeRefPtr<CFDataRef>::WrapUnderCreateRule(
       CGColorSpaceCopyICCProfile(colorSpace.get()));
   IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceColorSpace"),
