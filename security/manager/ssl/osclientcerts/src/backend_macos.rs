@@ -885,6 +885,12 @@ fn get_issuers(identity: &SecIdentity) -> Result<Vec<SecCertificate>, ()> {
     }
     let trust = unsafe { SecTrust::wrap_under_create_rule(trust) };
     
+    let status = unsafe { SecTrustSetNetworkFetchAllowed(trust.as_concrete_TypeRef(), 0) };
+    if status != errSecSuccess {
+        error!("SecTrustSetNetworkFetchAllowed failed: {}", status);
+        return Err(());
+    }
+    
     
     let _ = SECURITY_FRAMEWORK.sec_trust_evaluate_with_error(&trust)?;
     let certificate_count = unsafe { SecTrustGetCertificateCount(trust.as_concrete_TypeRef()) };
