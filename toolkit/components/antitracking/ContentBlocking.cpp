@@ -212,24 +212,25 @@ ContentBlocking::AllowAccessFor(
                                                                  __func__);
   }
 
+  bool isParentTopLevel = aParentContext->IsTopContent();
+
   
-  if (!aParentContext->IsTopContent() &&
+  if (!isParentTopLevel &&
       Document::StorageAccessSandboxed(aParentContext->GetSandboxFlags())) {
     LOG(("Our document is sandboxed"));
     return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                 __func__);
   }
 
-  bool isParentThirdParty = parentWindowContext->GetIsThirdPartyWindow();
   uint64_t topLevelWindowId;
   nsAutoCString trackingOrigin;
   nsCOMPtr<nsIPrincipal> trackingPrincipal;
 
   LOG(("The current resource is %s-party",
-       isParentThirdParty ? "third" : "first"));
+       isParentTopLevel ? "first" : "third"));
 
   
-  if (!isParentThirdParty) {
+  if (isParentTopLevel) {
     nsAutoCString origin;
     nsresult rv = aPrincipal->GetAsciiOrigin(origin);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -258,7 +259,7 @@ ContentBlocking::AllowAccessFor(
     if ((CookieJarSettings::IsRejectThirdPartyWithExceptions(behavior) ||
          behavior ==
              nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) &&
-        !isParentThirdParty) {
+        !parentWindowContext->GetIsThirdPartyWindow()) {
       LOG(("Our window isn't a third-party window"));
       return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                   __func__);
@@ -792,16 +793,10 @@ void ContentBlocking::UpdateAllowAccessOnParentProcess(
     if (topContext == aParentContext->Top()) {
       
       
+      
       bool useRemoteSubframes;
       aParentContext->GetUseRemoteSubframes(&useRemoteSubframes);
-      if (!useRemoteSubframes) {
-        continue;
-      }
-      
-      
-      RefPtr<dom::WindowContext> ctx =
-          aParentContext->GetCurrentWindowContext();
-      if (ctx && ctx->GetIsThirdPartyWindow()) {
+      if (!useRemoteSubframes || !aParentContext->IsTop()) {
         continue;
       }
     } else {
