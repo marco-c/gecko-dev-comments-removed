@@ -55,6 +55,9 @@ class nsSharedPageData {
 };
 
 
+
+
+
 class nsPageSequenceFrame final : public nsContainerFrame {
  public:
   friend nsPageSequenceFrame* NS_NewPageSequenceFrame(

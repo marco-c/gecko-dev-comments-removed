@@ -8,6 +8,7 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/PrintedSheetFrame.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/StaticPresData.h"
 
@@ -247,8 +248,10 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   
   for (nsIFrame* kidFrame : mFrames) {
     
-    auto* pf = static_cast<nsPageFrame*>(kidFrame);
-    pf->SetSharedPageData(mPageData.get());
+    MOZ_ASSERT(kidFrame->IsPrintedSheetFrame(),
+               "we're only expecting PrintedSheetFrame as children");
+    auto* sheet = static_cast<PrintedSheetFrame*>(kidFrame);
+    sheet->SetSharedPageData(mPageData.get());
 
     
     ReflowInput kidReflowInput(
@@ -287,15 +290,18 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     } else if (!kidNextInFlow) {
       
       
-      nsIFrame* continuingPage =
+      nsIFrame* continuingSheet =
           PresShell()->FrameConstructor()->CreateContinuingFrame(kidFrame,
                                                                  this);
 
       
-      mFrames.InsertFrame(nullptr, kidFrame, continuingPage);
+      mFrames.InsertFrame(nullptr, kidFrame, continuingSheet);
     }
   }
 
+  
+  
+  
   
   
   
@@ -303,13 +309,19 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
 
   
   int32_t pageNum = 1;
-  for (nsIFrame* child : mFrames) {
-    MOZ_ASSERT(child->IsPageFrame(),
-               "only expecting nsPageFrame children. Other children will make "
-               "this static_cast bogus & probably violate other assumptions");
-    auto* pf = static_cast<nsPageFrame*>(child);
-    pf->SetPageNumInfo(pageNum, pageTot);
-    pageNum++;
+  for (nsIFrame* sheetFrame : mFrames) {
+    MOZ_ASSERT(sheetFrame->IsPrintedSheetFrame(),
+               "only expecting PrintedSheetFrame children");
+    for (nsIFrame* pageFrame : sheetFrame->PrincipalChildList()) {
+      MOZ_ASSERT(
+          pageFrame->IsPageFrame(),
+          "only expecting nsPageFrame grandchildren. Other types will make "
+          "this static_cast bogus & probably violate other assumptions");
+      static_cast<nsPageFrame*>(pageFrame)->SetPageNumInfo(pageNum, pageTot);
+      
+      
+      pageNum++;
+    }
   }
 
   nsAutoString formattedDateString;
@@ -445,6 +457,25 @@ static void GetPrintCanvasElementsInFrame(
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void nsPageSequenceFrame::DetermineWhetherToPrintPage() {
   
@@ -737,7 +768,11 @@ void nsPageSequenceFrame::SetDateTimeStr(const nsAString& aDateTimeStr) {
 
 void nsPageSequenceFrame::AppendDirectlyOwnedAnonBoxes(
     nsTArray<OwnedAnonBox>& aResult) {
-  if (mFrames.NotEmpty()) {
-    aResult.AppendElement(mFrames.FirstChild());
-  }
+  MOZ_ASSERT(
+      mFrames.FirstChild() && mFrames.FirstChild()->IsPrintedSheetFrame(),
+      "nsPageSequenceFrame must have a PrintedSheetFrame child");
+  
+  
+  
+  aResult.AppendElement(mFrames.FirstChild());
 }

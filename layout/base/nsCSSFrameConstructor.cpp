@@ -29,6 +29,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/PrintedSheetFrame.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/StaticPrefs_layout.h"
@@ -2497,6 +2498,8 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
 
 
 
+
+
   
 
   
@@ -2630,11 +2633,18 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   if (isPaginated) {
     
     
+    auto* printedSheetFrame =
+        ConstructPrintedSheetFrame(mPresShell, rootFrame, nullptr);
+    printedSheetFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
+    SetInitialSingleChild(rootFrame, printedSheetFrame);
+
+    
+    
     nsContainerFrame* canvasFrame;
     nsContainerFrame* pageFrame =
-        ConstructPageFrame(mPresShell, rootFrame, nullptr, canvasFrame);
+        ConstructPageFrame(mPresShell, printedSheetFrame, nullptr, canvasFrame);
     pageFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
-    SetInitialSingleChild(rootFrame, pageFrame);
+    SetInitialSingleChild(printedSheetFrame, pageFrame);
 
     
     
@@ -2671,15 +2681,33 @@ void nsCSSFrameConstructor::ConstructAnonymousContentForCanvas(
                               aFrameList);
 }
 
+PrintedSheetFrame* nsCSSFrameConstructor::ConstructPrintedSheetFrame(
+    PresShell* aPresShell, nsContainerFrame* aParentFrame,
+    nsIFrame* aPrevSheetFrame) {
+  ComputedStyle* parentComputedStyle = aParentFrame->Style();
+  ServoStyleSet* styleSet = aPresShell->StyleSet();
+
+  RefPtr<ComputedStyle> printedSheetPseudoStyle =
+      styleSet->ResolveInheritingAnonymousBoxStyle(
+          PseudoStyleType::printedSheet, parentComputedStyle);
+
+  auto* printedSheetFrame =
+      NS_NewPrintedSheetFrame(aPresShell, printedSheetPseudoStyle);
+
+  printedSheetFrame->Init(nullptr, aParentFrame, aPrevSheetFrame);
+
+  return printedSheetFrame;
+}
+
 nsContainerFrame* nsCSSFrameConstructor::ConstructPageFrame(
     PresShell* aPresShell, nsContainerFrame* aParentFrame,
     nsIFrame* aPrevPageFrame, nsContainerFrame*& aCanvasFrame) {
   ComputedStyle* parentComputedStyle = aParentFrame->Style();
   ServoStyleSet* styleSet = aPresShell->StyleSet();
 
-  RefPtr<ComputedStyle> pagePseudoStyle;
-  pagePseudoStyle = styleSet->ResolveInheritingAnonymousBoxStyle(
-      PseudoStyleType::page, parentComputedStyle);
+  RefPtr<ComputedStyle> pagePseudoStyle =
+      styleSet->ResolveInheritingAnonymousBoxStyle(PseudoStyleType::page,
+                                                   parentComputedStyle);
 
   nsContainerFrame* pageFrame = NS_NewPageFrame(aPresShell, pagePseudoStyle);
 
@@ -7931,8 +7959,10 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingFrame(
                "no support for fragmenting table captions yet");
     newFrame = NS_NewColumnSetFrame(mPresShell, computedStyle, nsFrameState(0));
     newFrame->Init(content, aParentFrame, aFrame);
+  } else if (LayoutFrameType::PrintedSheet == frameType) {
+    newFrame = ConstructPrintedSheetFrame(mPresShell, aParentFrame, aFrame);
   } else if (LayoutFrameType::Page == frameType) {
-    nsContainerFrame* canvasFrame;
+    nsContainerFrame* canvasFrame;  
     newFrame =
         ConstructPageFrame(mPresShell, aParentFrame, aFrame, canvasFrame);
   } else if (LayoutFrameType::TableWrapper == frameType) {
