@@ -206,6 +206,21 @@ nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
     mozilla::Unused << nsDocShell::Cast(mDocShell)->GetDocument();
   }
 
+  
+  
+  
+  BrowsingContext* targetBC = mDocShell->GetBrowsingContext();
+  BrowsingContext* sourceBC = aDoc->GetBrowsingContext();
+  NS_ENSURE_STATE(sourceBC);
+  if (targetBC != sourceBC) {
+    MOZ_ASSERT(targetBC->IsTopContent());
+    
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(
+        targetBC->SetOpenerPolicy(sourceBC->Top()->GetOpenerPolicy()));
+  }
+
   mDocument = aDoc->CreateStaticClone(mDocShell);
   NS_ENSURE_STATE(mDocument);
   mHasSelection = CachePrintSelectionRanges(*aDoc, *mDocument);
