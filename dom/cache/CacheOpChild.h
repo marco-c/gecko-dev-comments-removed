@@ -28,10 +28,6 @@ class CacheOpChild final : public PCacheOpChild,
   friend class CacheStorageChild;
   friend class PCacheOpChild;
 
- public:
-  NS_DECL_OWNINGTHREAD
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheOpChild, override)
-
  private:
   
   
@@ -69,6 +65,8 @@ class CacheOpChild final : public PCacheOpChild,
   
   nsCOMPtr<nsISupports> mParent;
   RefPtr<Promise> mPromise;
+
+  NS_DECL_OWNINGTHREAD
 };
 
 }  
