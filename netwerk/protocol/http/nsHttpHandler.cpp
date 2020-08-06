@@ -2743,7 +2743,11 @@ void nsHttpHandler::ShutdownConnectionManager() {
 
 nsresult nsHttpHandler::NewChannelId(uint64_t& channelId) {
   channelId =
-      ((static_cast<uint64_t>(mProcessId) << 32) & 0xFFFFFFFF00000000LL) |
+      
+      
+      
+      
+      ((static_cast<uint64_t>(mProcessId) << 31) & 0xFFFFFFFF80000000LL) |
       mNextChannelId++;
   return NS_OK;
 }
