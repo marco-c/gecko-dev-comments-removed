@@ -22,13 +22,20 @@ void CUPSPrinterList::Initialize() {
 
 cups_dest_t* CUPSPrinterList::FindPrinterByName(const char* aName) {
   MOZ_ASSERT(aName);
-  return mShim.cupsGetDest(aName, NULL, mNumPrinters, mPrinters);
+  return mShim.cupsGetDest(aName,  nullptr, mNumPrinters,
+                           mPrinters);
 }
 
 cups_dest_t* CUPSPrinterList::GetPrinter(int i) {
   if (i < 0 || i >= mNumPrinters)
     MOZ_CRASH("CUPSPrinterList::GetPrinter out of range");
   return mPrinters + i;
+}
+
+cups_dest_t* CUPSPrinterList::GetDefaultPrinter() {
+  
+  return mShim.cupsGetNamedDest(CUPS_HTTP_DEFAULT,  nullptr,
+                                 nullptr);
 }
 
 }  
