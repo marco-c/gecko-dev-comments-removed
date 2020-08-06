@@ -26,8 +26,6 @@ const ONE_GIGA = 1024 * 1024 * 1024;
 const ONE_MEGA = 1024 * 1024;
 const ONE_KILO = 1024;
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 
 
@@ -150,7 +148,6 @@ var State = {
   _getProcessDelta(cur, prev) {
     let result = {
       pid: cur.pid,
-      childID: cur.childID,
       filename: cur.filename,
       totalVirtualMemorySize: cur.virtualMemorySize,
       deltaVirtualMemorySize: null,
@@ -254,13 +251,10 @@ var View = {
 
 
 
-  appendProcessRow(data) {
+
+  appendProcessRow(data, isOpen) {
     let row = document.createElement("tr");
     row.classList.add("process");
-
-    if (data.isHung) {
-      row.classList.add("hung");
-    }
 
     
     {
@@ -272,7 +266,7 @@ var View = {
       if (data.threads.length) {
         let img = document.createElement("span");
         img.classList.add("twisty", "process");
-        if (data.isOpen) {
+        if (isOpen) {
           img.classList.add("open");
         }
         elt.insertBefore(img, elt.firstChild);
@@ -533,10 +527,6 @@ var View = {
 
 var Control = {
   _openItems: new Set(),
-  
-  
-  
-  _hungItems: new Set(),
   _sortColumn: null,
   _sortAscendent: true,
   _removeSubtree(row) {
@@ -545,8 +535,6 @@ var Control = {
     }
   },
   init() {
-    this._initHangReports();
-
     let tbody = document.getElementById("process-tbody");
     tbody.addEventListener("click", event => {
       this._updateLastMouseEvent();
@@ -627,29 +615,6 @@ var Control = {
   _updateLastMouseEvent() {
     this._lastMouseEvent = Date.now();
   },
-  _initHangReports() {
-    const PROCESS_HANG_REPORT_NOTIFICATION = "process-hang-report";
-
-    
-    
-    let hangReporter = report => {
-      report.QueryInterface(Ci.nsIHangReport);
-      this._hungItems.add(report.childID);
-    };
-    Services.obs.addObserver(hangReporter, PROCESS_HANG_REPORT_NOTIFICATION);
-
-    
-    window.addEventListener(
-      "unload",
-      () => {
-        Services.obs.removeObserver(
-          hangReporter,
-          PROCESS_HANG_REPORT_NOTIFICATION
-        );
-      },
-      { once: true }
-    );
-  },
   async update() {
     await State.update();
 
@@ -679,26 +644,13 @@ var Control = {
     let openItems = this._openItems;
     this._openItems = new Set();
 
-    
-    
-    
-    
-    let hungItems = this._hungItems;
-    this._hungItems = new Set();
-
     counters = this._sortProcesses(counters);
     let previousRow = null;
     let previousProcess = null;
     for (let process of counters) {
       let isOpen = openItems.has(process.pid);
-      process.isOpen = isOpen;
-
-      let isHung = process.childID && hungItems.has(process.childID);
-      process.isHung = isHung;
- 
       let processRow = View.appendProcessRow(process, isOpen);
       processRow.process = process;
-
       let latestRow = processRow;
       if (isOpen) {
         this._openItems.add(process.pid);
