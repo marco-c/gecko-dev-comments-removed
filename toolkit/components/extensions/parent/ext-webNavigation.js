@@ -233,6 +233,15 @@ this.webNavigation = class extends ExtensionAPI {
         getAllFrames(details) {
           let tab = tabManager.get(details.tabId);
 
+          try {
+            if (tab.discarded) {
+              return null;
+            }
+          } catch (e) {
+            
+            
+          }
+
           let { innerWindowID, messageManager } = tab.browser;
           let recipient = { innerWindowID };
 
@@ -249,6 +258,15 @@ this.webNavigation = class extends ExtensionAPI {
         },
         getFrame(details) {
           let tab = tabManager.get(details.tabId);
+
+          try {
+            if (tab.discarded) {
+              return null;
+            }
+          } catch (e) {
+            
+            
+          }
 
           let recipient = {
             innerWindowID: tab.browser.innerWindowID,
