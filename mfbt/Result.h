@@ -563,7 +563,6 @@ inline GenericErrorResult<E> Err(E&& aErrorValue) {
 
 
 
-
 #define MOZ_TRY_VAR(target, expr)                     \
   do {                                                \
     auto mozTryVarTempResult_ = (expr);               \
