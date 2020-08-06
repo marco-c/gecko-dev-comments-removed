@@ -11,6 +11,7 @@
 #include "mozilla/dom/CustomElementRegistryBinding.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/HTMLElementBinding.h"
+#include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/XULElementBinding.h"
 #include "mozilla/dom/Promise.h"
@@ -847,6 +848,7 @@ void CustomElementRegistry::Define(
   auto callbacksHolder = MakeUnique<LifecycleCallbacks>();
   nsTArray<RefPtr<nsAtom>> observedAttributes;
   AutoTArray<RefPtr<nsAtom>, 2> disabledFeatures;
+  bool formAssociated = false;
   bool disableInternals = false;
   bool disableShadow = false;
   {  
@@ -921,7 +923,7 @@ void CustomElementRegistry::Define(
 
 
 
-    if (StaticPrefs::dom_webcomponents_elementInternals_enabled()) {
+    if (StaticPrefs::dom_webcomponents_formAssociatedCustomElement_enabled()) {
       if (!JSObjectToAtomArray(aCx, constructor, u"disabledFeatures"_ns,
                                disabledFeatures, aRv)) {
         return;
@@ -936,6 +938,24 @@ void CustomElementRegistry::Define(
       
       disableShadow = disabledFeatures.Contains(
           static_cast<nsStaticAtom*>(nsGkAtoms::shadow));
+
+      
+      
+      JS::Rooted<JS::Value> formAssociatedValue(aCx);
+      if (!JS_GetProperty(aCx, constructor, "formAssociated",
+                          &formAssociatedValue)) {
+        aRv.NoteJSContextException(aCx);
+        return;
+      }
+
+      
+      
+      
+      if (!ValueToPrimitive<bool, eDefault>(
+              aCx, formAssociatedValue, "formAssociated", &formAssociated)) {
+        aRv.NoteJSContextException(aCx);
+        return;
+      }
     }
   }  
 
@@ -958,7 +978,7 @@ void CustomElementRegistry::Define(
 
   RefPtr<CustomElementDefinition> definition = new CustomElementDefinition(
       nameAtom, localNameAtom, nameSpaceID, &aFunctionConstructor,
-      std::move(observedAttributes), std::move(callbacksHolder),
+      std::move(observedAttributes), std::move(callbacksHolder), formAssociated,
       disableInternals, disableShadow);
 
   CustomElementDefinition* def = definition.get();
@@ -1470,14 +1490,15 @@ CustomElementDefinition::CustomElementDefinition(
     nsAtom* aType, nsAtom* aLocalName, int32_t aNamespaceID,
     CustomElementConstructor* aConstructor,
     nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
-    UniquePtr<LifecycleCallbacks>&& aCallbacks, bool aDisableInternals,
-    bool aDisableShadow)
+    UniquePtr<LifecycleCallbacks>&& aCallbacks, bool aFormAssociated,
+    bool aDisableInternals, bool aDisableShadow)
     : mType(aType),
       mLocalName(aLocalName),
       mNamespaceID(aNamespaceID),
       mConstructor(aConstructor),
       mObservedAttributes(std::move(aObservedAttributes)),
       mCallbacks(std::move(aCallbacks)),
+      mFormAssociated(aFormAssociated),
       mDisableInternals(aDisableInternals),
       mDisableShadow(aDisableShadow) {}
 
