@@ -397,6 +397,9 @@ let FormAutofillDoorhanger = {
 
         if (topic == "removed" || topic == "dismissed") {
           this._removeCheckboxListener(browser, { notificationId, options });
+          if (topic == "dismissed" && type.includes("CreditCard")) {
+            this.incrementCcUsageCount("dismissed");
+          }
           return;
         }
 
@@ -442,5 +445,21 @@ let FormAutofillDoorhanger = {
         options
       );
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+  incrementCcUsageCount(metric) {
+    const pref = "extensions.formautofill.creditCards.usage." + metric;
+    const curr = Services.prefs.getIntPref(pref, 0);
+    Services.prefs.setIntPref(pref, curr + 1);
+    log.debug("Setting", pref, "to", curr + 1);
   },
 };
