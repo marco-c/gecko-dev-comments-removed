@@ -380,8 +380,7 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
   bool isSecondOnStackBody();
   void documentModeInternal(nsHtml5DocumentMode m,
                             nsHtml5String publicIdentifier,
-                            nsHtml5String systemIdentifier,
-                            bool html4SpecificAdditionalErrorChecks);
+                            nsHtml5String systemIdentifier);
   bool isAlmostStandards(nsHtml5String publicIdentifier,
                          nsHtml5String systemIdentifier);
   bool isQuirky(nsAtom* name, nsHtml5String publicIdentifier,

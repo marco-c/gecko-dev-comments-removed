@@ -450,11 +450,6 @@ public class Tokenizer implements Locator {
     
 
 
-    protected boolean html4;
-
-    
-
-
     private boolean metaBoundaryPassed;
 
     
@@ -494,8 +489,6 @@ public class Tokenizer implements Locator {
     private XmlViolationPolicy xmlnsPolicy = XmlViolationPolicy.ALTER_INFOSET;
 
     private XmlViolationPolicy namePolicy = XmlViolationPolicy.ALTER_INFOSET;
-
-    private boolean html4ModeCompatibleWithXhtml1Schemata;
 
     private int mappingLangToXmlLang;
 
@@ -733,17 +726,6 @@ public class Tokenizer implements Locator {
 
     
 
-
-
-
-
-    public void setHtml4ModeCompatibleWithXhtml1Schemata(
-            boolean html4ModeCompatibleWithXhtml1Schemata) {
-        this.html4ModeCompatibleWithXhtml1Schemata = html4ModeCompatibleWithXhtml1Schemata;
-    }
-
-    
-
     
 
     
@@ -888,10 +870,6 @@ public class Tokenizer implements Locator {
 
     public void notifyAboutMetaBoundary() {
         metaBoundaryPassed = true;
-    }
-
-    void turnOnAdditionalHtml4Errors() {
-        html4 = true;
     }
 
     
@@ -1292,39 +1270,20 @@ public class Tokenizer implements Locator {
         
         if (attributeName != null) {
             
-            if (html4) {
-                if (attributeName.isBoolean()) {
-                    if (html4ModeCompatibleWithXhtml1Schemata) {
-                        attributes.addAttribute(attributeName,
-                                attributeName.getLocal(AttributeName.HTML),
-                                xmlnsPolicy);
-                    } else {
-                        attributes.addAttribute(attributeName, "", xmlnsPolicy);
-                    }
-                } else {
-                    if (AttributeName.BORDER != attributeName) {
-                        err("Attribute value omitted for a non-boolean attribute. (HTML4-only error.)");
-                        attributes.addAttribute(attributeName, "", xmlnsPolicy);
-                    }
-                }
-            } else {
-                if (AttributeName.SRC == attributeName
-                        || AttributeName.HREF == attributeName) {
-                    warn("Attribute \u201C"
-                            + attributeName.getLocal(AttributeName.HTML)
-                            + "\u201D without an explicit value seen. The attribute may be dropped by IE7.");
-                }
-                
-                attributes.addAttribute(attributeName,
-                        Portability.newEmptyString()
-                        
-                        , xmlnsPolicy
-                
-                
-                );
-                
+            if (AttributeName.SRC == attributeName
+                    || AttributeName.HREF == attributeName) {
+                warn("Attribute \u201C"
+                        + attributeName.getLocal(AttributeName.HTML)
+                        + "\u201D without an explicit value seen. The attribute may be dropped by IE7.");
             }
             
+            attributes.addAttribute(attributeName,
+                    Portability.newEmptyString()
+                    
+                    , xmlnsPolicy
+            
+            
+            );
             attributeName = null;
         } else {
             clearStrBufAfterUse();
@@ -1344,12 +1303,6 @@ public class Tokenizer implements Locator {
             
             
             
-            
-            if (!endTag && html4 && html4ModeCompatibleWithXhtml1Schemata
-                    && attributeName.isCaseFolded()) {
-                val = newAsciiLowerCaseStringFromString(val);
-            }
-            
             attributes.addAttribute(attributeName, val
             
                     , xmlnsPolicy
@@ -1364,21 +1317,6 @@ public class Tokenizer implements Locator {
     }
 
     
-
-    private static String newAsciiLowerCaseStringFromString(String str) {
-        if (str == null) {
-            return null;
-        }
-        char[] buf = new char[str.length()];
-        for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);
-            if (c >= 'A' && c <= 'Z') {
-                c += 0x20;
-            }
-            buf[i] = c;
-        }
-        return new String(buf);
-    }
 
     protected void startErrorReporting() throws SAXException {
 
@@ -2135,9 +2073,6 @@ public class Tokenizer implements Locator {
                                 
                             default:
                                 
-                                errHtml4NonNameInUnquotedAttribute(c);
-                                
-                                
 
 
 
@@ -2293,9 +2228,6 @@ public class Tokenizer implements Locator {
 
 
 
-                            
-                            errHtml4XmlVoidSyntax();
-                            
                             state = transition(state, emitCurrentTagToken(true, pos), reconsume, pos);
                             if (shouldSuspend) {
                                 break stateloop;
@@ -2395,9 +2327,6 @@ public class Tokenizer implements Locator {
 
                                 
                             default:
-                                
-                                errHtml4NonNameInUnquotedAttribute(c);
-                                
                                 
 
 
@@ -6933,7 +6862,6 @@ public class Tokenizer implements Locator {
         line = 1;
         
         
-        html4 = false;
         metaBoundaryPassed = false;
         wantsComments = tokenHandler.wantsComments();
         if (!newAttributesEachTime) {
@@ -6985,14 +6913,7 @@ public class Tokenizer implements Locator {
     protected void errSlashNotFollowedByGt() throws SAXException {
     }
 
-    protected void errHtml4XmlVoidSyntax() throws SAXException {
-    }
-
     protected void errNoSpaceBetweenAttributes() throws SAXException {
-    }
-
-    protected void errHtml4NonNameInUnquotedAttribute(char c)
-            throws SAXException {
     }
 
     protected void errLtOrEqualsOrGraveInUnquotedAttributeOrNull(char c)

@@ -52,7 +52,6 @@ import nu.validator.htmlparser.annotation.Literal;
 import nu.validator.htmlparser.annotation.Local;
 import nu.validator.htmlparser.annotation.NoLength;
 import nu.validator.htmlparser.annotation.NsUri;
-import nu.validator.htmlparser.common.DoctypeExpectation;
 import nu.validator.htmlparser.common.DocumentMode;
 import nu.validator.htmlparser.common.DocumentModeHandler;
 import nu.validator.htmlparser.common.Interner;
@@ -301,17 +300,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     
 
-    
-
-    private final static String[] HTML4_PUBLIC_IDS = {
-            "-//W3C//DTD HTML 4.0 Frameset//EN",
-            "-//W3C//DTD HTML 4.0 Transitional//EN",
-            "-//W3C//DTD HTML 4.0//EN", "-//W3C//DTD HTML 4.01 Frameset//EN",
-            "-//W3C//DTD HTML 4.01 Transitional//EN",
-            "-//W3C//DTD HTML 4.01//EN" };
-
-    
-
     @Literal private final static String[] QUIRKY_PUBLIC_IDS = {
             "+//silmaril//dtd html pro v0r11 19970101//",
             "-//advasoft ltd//dtd html 3.0 aswedit + extensions//",
@@ -389,8 +377,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     private DocumentModeHandler documentModeHandler;
 
-    private DoctypeExpectation doctypeExpectation = DoctypeExpectation.HTML;
-
     
 
     private boolean scriptingEnabled = false;
@@ -457,8 +443,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     private XmlViolationPolicy namePolicy = XmlViolationPolicy.ALTER_INFOSET;
 
     private final Map<String, LocatorImpl> idLocations = new HashMap<String, LocatorImpl>();
-
-    private boolean html4;
 
     
 
@@ -609,7 +593,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         formPointer = null;
         headPointer = null;
         
-        html4 = false;
         idLocations.clear();
         wantingComments = wantsComments();
         
@@ -750,161 +733,50 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 Portability.releaseString(emptyString);
                 
             }
-            switch (doctypeExpectation) {
-                case HTML:
-                    
-                    if (isQuirky(name, publicIdentifier, systemIdentifier,
-                            forceQuirks)) {
-                        errQuirkyDoctype();
-                        documentModeInternal(DocumentMode.QUIRKS_MODE,
-                                publicIdentifier, systemIdentifier, false);
-                    } else if (isAlmostStandards(publicIdentifier,
-                            systemIdentifier)) {
-                        errAlmostStandardsDoctype();
-                        documentModeInternal(
-                                DocumentMode.ALMOST_STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, false);
-                    } else {
-                        
-                        if ((Portability.literalEqualsString(
-                                "-//W3C//DTD HTML 4.0//EN", publicIdentifier) && (systemIdentifier == null || Portability.literalEqualsString(
-                                "http://www.w3.org/TR/REC-html40/strict.dtd",
-                                systemIdentifier)))
-                                || (Portability.literalEqualsString(
-                                        "-//W3C//DTD HTML 4.01//EN",
-                                        publicIdentifier) && (systemIdentifier == null || Portability.literalEqualsString(
-                                        "http://www.w3.org/TR/html4/strict.dtd",
-                                        systemIdentifier)))
-                                || (Portability.literalEqualsString(
-                                        "-//W3C//DTD XHTML 1.0 Strict//EN",
-                                        publicIdentifier) && Portability.literalEqualsString(
-                                        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd",
-                                        systemIdentifier))
-                                || (Portability.literalEqualsString(
-                                        "-//W3C//DTD XHTML 1.1//EN",
-                                        publicIdentifier) && Portability.literalEqualsString(
-                                        "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd",
-                                        systemIdentifier))
-
-                        ) {
-                            warn("Obsolete doctype. Expected \u201C<!DOCTYPE html>\u201D.");
-                        } else if (!((systemIdentifier == null || Portability.literalEqualsString(
-                                "about:legacy-compat", systemIdentifier)) && publicIdentifier == null)) {
-                            err("Legacy doctype. Expected \u201C<!DOCTYPE html>\u201D.");
-                        }
-                        
-                        documentModeInternal(DocumentMode.STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, false);
-                    }
-                    
-                    break;
-                case HTML401_STRICT:
-                    html4 = true;
-                    tokenizer.turnOnAdditionalHtml4Errors();
-                    if (isQuirky(name, publicIdentifier, systemIdentifier,
-                            forceQuirks)) {
-                        err("Quirky doctype. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\u201D.");
-                        documentModeInternal(DocumentMode.QUIRKS_MODE,
-                                publicIdentifier, systemIdentifier, true);
-                    } else if (isAlmostStandards(publicIdentifier,
-                            systemIdentifier)) {
-                        err("Almost standards mode doctype. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\u201D.");
-                        documentModeInternal(
-                                DocumentMode.ALMOST_STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, true);
-                    } else {
-                        if ("-//W3C//DTD HTML 4.01//EN".equals(publicIdentifier)) {
-                            if (!"http://www.w3.org/TR/html4/strict.dtd".equals(systemIdentifier)) {
-                                warn("The doctype did not contain the system identifier prescribed by the HTML 4.01 specification. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\u201D.");
-                            }
-                        } else {
-                            err("The doctype was not the HTML 4.01 Strict doctype. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\u201D.");
-                        }
-                        documentModeInternal(DocumentMode.STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, true);
-                    }
-                    break;
-                case HTML401_TRANSITIONAL:
-                    html4 = true;
-                    tokenizer.turnOnAdditionalHtml4Errors();
-                    if (isQuirky(name, publicIdentifier, systemIdentifier,
-                            forceQuirks)) {
-                        err("Quirky doctype. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\u201D.");
-                        documentModeInternal(DocumentMode.QUIRKS_MODE,
-                                publicIdentifier, systemIdentifier, true);
-                    } else if (isAlmostStandards(publicIdentifier,
-                            systemIdentifier)) {
-                        if ("-//W3C//DTD HTML 4.01 Transitional//EN".equals(publicIdentifier)
-                                && systemIdentifier != null) {
-                            if (!"http://www.w3.org/TR/html4/loose.dtd".equals(systemIdentifier)) {
-                                warn("The doctype did not contain the system identifier prescribed by the HTML 4.01 specification. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\u201D.");
-                            }
-                        } else {
-                            err("The doctype was not a non-quirky HTML 4.01 Transitional doctype. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\u201D.");
-                        }
-                        documentModeInternal(
-                                DocumentMode.ALMOST_STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, true);
-                    } else {
-                        err("The doctype was not the HTML 4.01 Transitional doctype. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\u201D.");
-                        documentModeInternal(DocumentMode.STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, true);
-                    }
-                    break;
-                case AUTO:
-                    html4 = isHtml4Doctype(publicIdentifier);
-                    if (html4) {
-                        tokenizer.turnOnAdditionalHtml4Errors();
-                    }
-                    if (isQuirky(name, publicIdentifier, systemIdentifier,
-                            forceQuirks)) {
-                        err("Quirky doctype. Expected e.g. \u201C<!DOCTYPE html>\u201D.");
-                        documentModeInternal(DocumentMode.QUIRKS_MODE,
-                                publicIdentifier, systemIdentifier, html4);
-                    } else if (isAlmostStandards(publicIdentifier,
-                            systemIdentifier)) {
-                        errAlmostStandardsDoctype();
-                        documentModeInternal(
-                                DocumentMode.ALMOST_STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, html4);
-                    } else {
-                        if ("-//W3C//DTD HTML 4.01//EN".equals(publicIdentifier)) {
-                            if (!"http://www.w3.org/TR/html4/strict.dtd".equals(systemIdentifier)) {
-                                warn("The doctype did not contain the system identifier prescribed by the HTML 4.01 specification. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\u201D.");
-                            }
-                        } else if ("-//W3C//DTD XHTML 1.0 Strict//EN".equals(publicIdentifier)) {
-                            if (!"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd".equals(systemIdentifier)) {
-                                warn("The doctype did not contain the system identifier prescribed by the XHTML 1.0 specification. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\u201D.");
-                            }
-                        } else if ("//W3C//DTD XHTML 1.1//EN".equals(publicIdentifier)) {
-                            if (!"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd".equals(systemIdentifier)) {
-                                warn("The doctype did not contain the system identifier prescribed by the XHTML 1.1 specification. Expected \u201C<!DOCTYPE HTML PUBLIC \"//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\u201D.");
-                            }
-                        } else if (!((systemIdentifier == null || Portability.literalEqualsString(
-                                "about:legacy-compat", systemIdentifier)) && publicIdentifier == null)) {
-                            err("Unexpected doctype. Expected, e.g., \u201C<!DOCTYPE html>\u201D.");
-                        }
-                        documentModeInternal(DocumentMode.STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, html4);
-                    }
-                    break;
-                case NO_DOCTYPE_ERRORS:
-                    if (isQuirky(name, publicIdentifier, systemIdentifier,
-                            forceQuirks)) {
-                        documentModeInternal(DocumentMode.QUIRKS_MODE,
-                                publicIdentifier, systemIdentifier, false);
-                    } else if (isAlmostStandards(publicIdentifier,
-                            systemIdentifier)) {
-                        documentModeInternal(
-                                DocumentMode.ALMOST_STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, false);
-                    } else {
-                        documentModeInternal(DocumentMode.STANDARDS_MODE,
-                                publicIdentifier, systemIdentifier, false);
-                    }
-                    break;
-            }
             
+            if (isQuirky(name, publicIdentifier, systemIdentifier,
+                    forceQuirks)) {
+                errQuirkyDoctype();
+                documentModeInternal(DocumentMode.QUIRKS_MODE,
+                        publicIdentifier, systemIdentifier);
+            } else if (isAlmostStandards(publicIdentifier,
+                    systemIdentifier)) {
+                errAlmostStandardsDoctype();
+                documentModeInternal(
+                        DocumentMode.ALMOST_STANDARDS_MODE,
+                        publicIdentifier, systemIdentifier);
+            } else {
+                
+                if ((Portability.literalEqualsString(
+                        "-//W3C//DTD HTML 4.0//EN", publicIdentifier) && (systemIdentifier == null || Portability.literalEqualsString(
+                        "http://www.w3.org/TR/REC-html40/strict.dtd",
+                        systemIdentifier)))
+                        || (Portability.literalEqualsString(
+                                "-//W3C//DTD HTML 4.01//EN",
+                                publicIdentifier) && (systemIdentifier == null || Portability.literalEqualsString(
+                                "http://www.w3.org/TR/html4/strict.dtd",
+                                systemIdentifier)))
+                        || (Portability.literalEqualsString(
+                                "-//W3C//DTD XHTML 1.0 Strict//EN",
+                                publicIdentifier) && Portability.literalEqualsString(
+                                "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd",
+                                systemIdentifier))
+                        || (Portability.literalEqualsString(
+                                "-//W3C//DTD XHTML 1.1//EN",
+                                publicIdentifier) && Portability.literalEqualsString(
+                                "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd",
+                                systemIdentifier))
+
+                ) {
+                    warn("Obsolete doctype. Expected \u201C<!DOCTYPE html>\u201D.");
+                } else if (!((systemIdentifier == null || Portability.literalEqualsString(
+                        "about:legacy-compat", systemIdentifier)) && publicIdentifier == null)) {
+                    err("Legacy doctype. Expected \u201C<!DOCTYPE html>\u201D.");
+                }
+                
+                documentModeInternal(DocumentMode.STANDARDS_MODE,
+                        publicIdentifier, systemIdentifier);
+            }
 
             
 
@@ -923,19 +795,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
         return;
     }
-
-    
-
-    private boolean isHtml4Doctype(String publicIdentifier) {
-        if (publicIdentifier != null
-                && (Arrays.binarySearch(TreeBuilder.HTML4_PUBLIC_IDS,
-                        publicIdentifier) > -1)) {
-            return true;
-        }
-        return false;
-    }
-
-    
 
     public final void comment(@NoLength char[] buf, int start, int length)
             throws SAXException {
@@ -1119,22 +978,8 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
 
                                     
-                                    switch (doctypeExpectation) {
-                                        case AUTO:
-                                            err("Non-space characters found without seeing a doctype first. Expected e.g. \u201C<!DOCTYPE html>\u201D.");
-                                            break;
-                                        case HTML:
-                                            
-                                            err("Non-space characters found without seeing a doctype first. Expected \u201C<!DOCTYPE html>\u201D.");
-                                            break;
-                                        case HTML401_STRICT:
-                                            err("Non-space characters found without seeing a doctype first. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\u201D.");
-                                            break;
-                                        case HTML401_TRANSITIONAL:
-                                            err("Non-space characters found without seeing a doctype first. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\u201D.");
-                                            break;
-                                        case NO_DOCTYPE_ERRORS:
-                                    }
+                                    
+                                    err("Non-space characters found without seeing a doctype first. Expected \u201C<!DOCTYPE html>\u201D.");
                                     
                                     
 
@@ -1142,7 +987,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
                                     documentModeInternal(
                                             DocumentMode.QUIRKS_MODE, null,
-                                            null, false);
+                                            null);
                                     
 
 
@@ -1406,28 +1251,13 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
 
                     
-                    switch (doctypeExpectation) {
-                        case AUTO:
-                            err("End of file seen without seeing a doctype first. Expected e.g. \u201C<!DOCTYPE html>\u201D.");
-                            break;
-                        case HTML:
-                            err("End of file seen without seeing a doctype first. Expected \u201C<!DOCTYPE html>\u201D.");
-                            break;
-                        case HTML401_STRICT:
-                            err("End of file seen without seeing a doctype first. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\u201D.");
-                            break;
-                        case HTML401_TRANSITIONAL:
-                            err("End of file seen without seeing a doctype first. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\u201D.");
-                            break;
-                        case NO_DOCTYPE_ERRORS:
-                    }
+                    err("End of file seen without seeing a doctype first. Expected \u201C<!DOCTYPE html>\u201D.");
                     
                     
 
 
 
-                    documentModeInternal(DocumentMode.QUIRKS_MODE, null, null,
-                            false);
+                    documentModeInternal(DocumentMode.QUIRKS_MODE, null, null);
                     
 
 
@@ -2770,31 +2600,12 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                     
 
 
-                    
-                    switch (doctypeExpectation) {
-                        case AUTO:
-                            err("Start tag seen without seeing a doctype first. Expected e.g. \u201C<!DOCTYPE html>\u201D.");
-                            break;
-                        case HTML:
-                            
-                            errStartTagWithoutDoctype();
-                            
-                            break;
-                        case HTML401_STRICT:
-                            err("Start tag seen without seeing a doctype first. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\u201D.");
-                            break;
-                        case HTML401_TRANSITIONAL:
-                            err("Start tag seen without seeing a doctype first. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\u201D.");
-                            break;
-                        case NO_DOCTYPE_ERRORS:
-                    }
-                    
+                    errStartTagWithoutDoctype();
                     
 
 
 
-                    documentModeInternal(DocumentMode.QUIRKS_MODE, null, null,
-                            false);
+                    documentModeInternal(DocumentMode.QUIRKS_MODE, null, null);
                     
 
 
@@ -3980,31 +3791,12 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                     
 
 
-                    
-                    switch (doctypeExpectation) {
-                        case AUTO:
-                            err("End tag seen without seeing a doctype first. Expected e.g. \u201C<!DOCTYPE html>\u201D.");
-                            break;
-                        case HTML:
-                            
-                            errEndTagSeenWithoutDoctype();
-                            
-                            break;
-                        case HTML401_STRICT:
-                            err("End tag seen without seeing a doctype first. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\u201D.");
-                            break;
-                        case HTML401_TRANSITIONAL:
-                            err("End tag seen without seeing a doctype first. Expected \u201C<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\u201D.");
-                            break;
-                        case NO_DOCTYPE_ERRORS:
-                    }
-                    
+                    errEndTagSeenWithoutDoctype();
                     
 
 
 
-                    documentModeInternal(DocumentMode.QUIRKS_MODE, null, null,
-                            false);
+                    documentModeInternal(DocumentMode.QUIRKS_MODE, null, null);
                     
 
 
@@ -4235,7 +4027,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     }
 
     private void documentModeInternal(DocumentMode m, String publicIdentifier,
-            String systemIdentifier, boolean html4SpecificAdditionalErrorChecks)
+            String systemIdentifier)
             throws SAXException {
 
         if (isSrcdocDocument) {
@@ -4245,7 +4037,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 documentModeHandler.documentMode(
                         DocumentMode.STANDARDS_MODE
                         
-                        , null, null, false
+                        , null, null
                 
                 );
             }
@@ -4257,14 +4049,12 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             documentModeHandler.documentMode(
                     m
                     
-                    , publicIdentifier, systemIdentifier,
-                    html4SpecificAdditionalErrorChecks
+                    , publicIdentifier, systemIdentifier
             
             );
         }
         
-        documentMode(m, publicIdentifier, systemIdentifier,
-                html4SpecificAdditionalErrorChecks);
+        documentMode(m, publicIdentifier, systemIdentifier);
         
     }
 
@@ -5208,25 +4998,21 @@ public abstract class TreeBuilder<T> implements TokenHandler,
             for (int i = 0; i < len; i++) {
                 AttributeName name = attributes.getXmlnsAttributeName(i);
                 if (name == AttributeName.XMLNS) {
-                    if (html4) {
-                        err("Attribute \u201Cxmlns\u201D not allowed here. (HTML4-only error.)");
-                    } else {
-                        String xmlns = attributes.getXmlnsValue(i);
-                        if (!ns.equals(xmlns)) {
-                            err("Bad value \u201C"
-                                    + xmlns
-                                    + "\u201D for the attribute \u201Cxmlns\u201D (only \u201C"
-                                    + ns + "\u201D permitted here).");
-                            switch (namePolicy) {
-                                case ALTER_INFOSET:
-                                    
-                                case ALLOW:
-                                    warn("Attribute \u201Cxmlns\u201D is not serializable as XML 1.0.");
-                                    break;
-                                case FATAL:
-                                    fatal("Attribute \u201Cxmlns\u201D is not serializable as XML 1.0.");
-                                    break;
-                            }
+                    String xmlns = attributes.getXmlnsValue(i);
+                    if (!ns.equals(xmlns)) {
+                        err("Bad value \u201C"
+                                + xmlns
+                                + "\u201D for the attribute \u201Cxmlns\u201D (only \u201C"
+                                + ns + "\u201D permitted here).");
+                        switch (namePolicy) {
+                            case ALTER_INFOSET:
+                                
+                            case ALLOW:
+                                warn("Attribute \u201Cxmlns\u201D is not serializable as XML 1.0.");
+                                break;
+                            case FATAL:
+                                fatal("Attribute \u201Cxmlns\u201D is not serializable as XML 1.0.");
+                                break;
                         }
                     }
                 } else if (ns != "http://www.w3.org/1999/xhtml"
@@ -5872,7 +5658,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     
 
     protected void documentMode(DocumentMode m, String publicIdentifier,
-            String systemIdentifier, boolean html4SpecificAdditionalErrorChecks)
+            String systemIdentifier)
             throws SAXException {
 
     }
@@ -5992,16 +5778,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     }
 
     
-
-    
-
-
-
-
-
-    public void setDoctypeExpectation(DoctypeExpectation doctypeExpectation) {
-        this.doctypeExpectation = doctypeExpectation;
-    }
 
     public void setNamePolicy(XmlViolationPolicy namePolicy) {
         this.namePolicy = namePolicy;
