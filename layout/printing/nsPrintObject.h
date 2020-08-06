@@ -38,6 +38,7 @@ class nsPrintObject {
                             bool aForPrintPreview);
   nsresult InitAsNestedObject(nsIDocShell* aDocShell,
                               mozilla::dom::Document* aDoc,
+                              mozilla::dom::Document* aSourceOfDoc,
                               nsPrintObject* aParent);
 
   void DestroyPresentation();
@@ -47,6 +48,12 @@ class nsPrintObject {
 
 
   void EnablePrinting(bool aEnable);
+
+  
+
+
+  void EnablePrintingSelectionOnly();
+
   bool PrintingIsEnabled() const { return mPrintingIsEnabled; }
 
   
@@ -66,6 +73,7 @@ class nsPrintObject {
   bool mHasBeenPrinted;
   bool mInvisible;  
   bool mDidCreateDocShell;
+  bool mHasSelection = false;
   float mShrinkRatio;
   float mZoomRatio;
 

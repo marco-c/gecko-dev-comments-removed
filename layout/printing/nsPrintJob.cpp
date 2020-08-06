@@ -270,31 +270,6 @@ static bool IsParentAFrameSet(nsIDocShell* aParent) {
   return isFrameSet;
 }
 
-static nsPrintObject* FindPrintObjectByDOMWin(nsPrintObject* aPO,
-                                              nsPIDOMWindowOuter* aDOMWin) {
-  NS_ASSERTION(aPO, "Pointer is null!");
-
-  
-  
-  if (!aDOMWin) {
-    return nullptr;
-  }
-
-  nsCOMPtr<Document> doc = aDOMWin->GetDoc();
-  if (aPO->mDocument && aPO->mDocument->GetOriginalDocument() == doc) {
-    return aPO;
-  }
-
-  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-    nsPrintObject* po = FindPrintObjectByDOMWin(kid.get(), aDOMWin);
-    if (po) {
-      return po;
-    }
-  }
-
-  return nullptr;
-}
-
 static std::tuple<nsPageSequenceFrame*, int32_t>
 GetSeqFrameAndCountPagesInternal(const UniquePtr<nsPrintObject>& aPO) {
   if (!aPO) {
@@ -323,15 +298,20 @@ GetSeqFrameAndCountPagesInternal(const UniquePtr<nsPrintObject>& aPO) {
 
 
 
-static void BuildNestedPrintObjects(Document* aDocument,
-                                    const UniquePtr<nsPrintObject>& aPO,
-                                    nsTArray<nsPrintObject*>* aDocList) {
-  MOZ_ASSERT(aDocument, "Pointer is null!");
-  MOZ_ASSERT(aDocList, "Pointer is null!");
-  MOZ_ASSERT(aPO, "Pointer is null!");
+
+
+
+
+
+
+static void BuildNestedPrintObjects(const UniquePtr<nsPrintObject>& aParentPO,
+                                    const RefPtr<Document>& aFocusedDoc,
+                                    RefPtr<nsPrintData>& aPrintData) {
+  MOZ_ASSERT(aParentPO);
+  MOZ_ASSERT(aPrintData);
 
   nsTArray<Document::PendingFrameStaticClone> pendingClones =
-      aDocument->TakePendingFrameStaticClones();
+      aParentPO->mDocument->TakePendingFrameStaticClones();
   for (auto& clone : pendingClones) {
     if (NS_WARN_IF(!clone.mStaticCloneOf)) {
       continue;
@@ -350,14 +330,39 @@ static void BuildNestedPrintObjects(Document* aDocument,
       continue;
     }
 
+    nsIDocShell* sourceDocShell =
+        clone.mStaticCloneOf->GetDocShell(IgnoreErrors());
+    if (!sourceDocShell) {
+      continue;
+    }
+
+    Document* sourceDoc = sourceDocShell->GetDocument();
+    if (!sourceDoc) {
+      continue;
+    }
+
     auto childPO = MakeUnique<nsPrintObject>();
-    rv = childPO->InitAsNestedObject(docshell, doc, aPO.get());
+    rv = childPO->InitAsNestedObject(docshell, doc, sourceDoc, aParentPO.get());
     if (NS_FAILED(rv)) {
       MOZ_ASSERT_UNREACHABLE("Init failed?");
     }
-    aPO->mKids.AppendElement(std::move(childPO));
-    aDocList->AppendElement(aPO->mKids.LastElement().get());
-    BuildNestedPrintObjects(doc, aPO->mKids.LastElement(), aDocList);
+
+    
+    
+    if (childPO->mFrameType == eIFrame &&
+        doc->GetOriginalDocument() == aFocusedDoc) {
+      aPrintData->mSelectionRoot = childPO.get();
+    } else if (!aPrintData->mSelectionRoot && childPO->mHasSelection) {
+      
+      
+      
+      
+      aPrintData->mSelectionRoot = aPrintData->mPrintObject.get();
+    }
+
+    aPrintData->mPrintDocList.AppendElement(childPO.get());
+    BuildNestedPrintObjects(childPO, aFocusedDoc, aPrintData);
+    aParentPO->mKids.AppendElement(std::move(childPO));
   }
 }
 
@@ -666,9 +671,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   }
 
   
-  
-  
-  printData->mCurrentFocusWin = FindFocusedDOMWindow();
+  RefPtr<Document> focusedDoc = FindFocusedDocument();
 
   
   nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell, &rv));
@@ -695,8 +698,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     printData->mPrintObject->mFrameType =
         printData->mIsParentAFrameSet ? eFrameSet : eDoc;
 
-    BuildNestedPrintObjects(printData->mPrintObject->mDocument,
-                            printData->mPrintObject, &printData->mPrintDocList);
+    BuildNestedPrintObjects(printData->mPrintObject, focusedDoc, printData);
   }
 
   if (!aSourceDoc->IsStaticDocument()) {
@@ -754,11 +756,8 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   }
 
   
-  bool isSelection = IsThereARangeSelection(printData->mCurrentFocusWin);
-  bool isIFrameSelected = IsThereAnIFrameSelected(
-      docShell, printData->mCurrentFocusWin, printData->mIsParentAFrameSet);
   printData->mPrintSettings->SetPrintOptions(
-      nsIPrintSettings::kEnableSelectionRB, isSelection || isIFrameSelected);
+      nsIPrintSettings::kEnableSelectionRB, !!printData->mSelectionRoot);
 
   bool printingViaParent =
       XRE_IsContentProcess() && Preferences::GetBool("print.print_via_parent");
@@ -1089,68 +1088,6 @@ void nsPrintJob::ShowPrintProgress(bool aIsForPrinting, bool& aDoNotify) {
       }
     }
   }
-}
-
-
-bool nsPrintJob::IsThereARangeSelection(nsPIDOMWindowOuter* aDOMWin) {
-  if (mDisallowSelectionPrint || !aDOMWin) {
-    return false;
-  }
-
-  PresShell* presShell = aDOMWin->GetDocShell()->GetPresShell();
-  if (!presShell) {
-    return false;
-  }
-
-  
-  
-  Selection* selection = presShell->GetCurrentSelection(SelectionType::eNormal);
-  if (!selection) {
-    return false;
-  }
-
-  int32_t rangeCount = selection->RangeCount();
-  if (!rangeCount) {
-    return false;
-  }
-
-  if (rangeCount > 1) {
-    return true;
-  }
-
-  
-  return selection->GetRangeAt(0) && !selection->IsCollapsed();
-}
-
-
-bool nsPrintJob::IsThereAnIFrameSelected(nsIDocShell* aDocShell,
-                                         nsPIDOMWindowOuter* aDOMWin,
-                                         bool& aIsParentFrameSet) {
-  aIsParentFrameSet = IsParentAFrameSet(aDocShell);
-  bool iFrameIsSelected = false;
-  if (mPrt && mPrt->mPrintObject) {
-    nsPrintObject* po =
-        FindPrintObjectByDOMWin(mPrt->mPrintObject.get(), aDOMWin);
-    iFrameIsSelected = po && po->mFrameType == eIFrame;
-  } else {
-    
-    if (!aIsParentFrameSet) {
-      
-      
-      
-      if (aDOMWin) {
-        
-        
-        nsPIDOMWindowOuter* domWin =
-            aDocShell ? aDocShell->GetWindow() : nullptr;
-        if (domWin != aDOMWin) {
-          iFrameIsSelected = true;  
-        }
-      }
-    }
-  }
-
-  return iFrameIsSelected;
 }
 
 
@@ -1988,7 +1925,10 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
   printData->mPrintSettings->GetPrintRange(&printRangeType);
   if (printRangeType == nsIPrintSettings::kRangeSelection) {
-    DeleteNonSelectedNodes(*aPO->mDocument);
+    
+    
+    
+    MOZ_TRY(DeleteNonSelectedNodes(*aPO->mDocument));
   }
 
   bool doReturn = false;
@@ -2161,6 +2101,11 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult DeleteNonSelectedNodes(
 
   MOZ_ASSERT(!selection->RangeCount());
   nsINode* bodyNode = aDoc.GetBodyElement();
+  if (!bodyNode) {
+    
+    return NS_ERROR_FAILURE;
+  }
+
   nsINode* startNode = bodyNode;
   uint32_t startOffset = 0;
 
@@ -2499,10 +2444,7 @@ void nsPrintJob::SetIsPrintPreview(bool aIsPrintPreview) {
   }
 }
 
-
-
-
-already_AddRefed<nsPIDOMWindowOuter> nsPrintJob::FindFocusedDOMWindow() const {
+Document* nsPrintJob::FindFocusedDocument() const {
   nsIFocusManager* fm = nsFocusManager::GetFocusManager();
   NS_ENSURE_TRUE(fm, nullptr);
 
@@ -2519,7 +2461,7 @@ already_AddRefed<nsPIDOMWindowOuter> nsPrintJob::FindFocusedDOMWindow() const {
   NS_ENSURE_TRUE(focusedWindow, nullptr);
 
   if (IsWindowsInOurSubTree(focusedWindow)) {
-    return focusedWindow.forget();
+    return focusedWindow->GetDoc();
   }
 
   return nullptr;
@@ -2621,48 +2563,18 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
 
   
   
-
   MOZ_ASSERT(printRangeType == nsIPrintSettings::kRangeSelection);
+  NS_ENSURE_STATE(printData->mSelectionRoot);
 
   
-  if (!printData->mCurrentFocusWin) {
-    for (uint32_t i = 0; i < printData->mPrintDocList.Length(); i++) {
-      nsPrintObject* po = printData->mPrintDocList.ElementAt(i);
-      NS_ASSERTION(po, "nsPrintObject can't be null!");
-      nsCOMPtr<nsPIDOMWindowOuter> domWin = po->mDocShell->GetWindow();
-      if (IsThereARangeSelection(domWin)) {
-        printData->mCurrentFocusWin = std::move(domWin);
-        po->EnablePrinting(true);
-        break;
-      }
-    }
-    return NS_OK;
+  
+  if (printData->mSelectionRoot->mFrameType == eIFrame &&
+      !printData->mSelectionRoot->mHasSelection) {
+    printData->mSelectionRoot->EnablePrinting(true);
+  } else {
+    
+    printData->mSelectionRoot->EnablePrintingSelectionOnly();
   }
-
-  
-  nsPrintObject* po = FindPrintObjectByDOMWin(printData->mPrintObject.get(),
-                                              printData->mCurrentFocusWin);
-  if (!po) {
-    return NS_OK;
-  }
-
-  
-  po->EnablePrinting(true);
-
-  
-  
-  
-  
-  
-  
-  
-  nsPIDOMWindowOuter* domWin =
-      po->mDocument->GetOriginalDocument()->GetWindow();
-  if (!IsThereARangeSelection(domWin)) {
-    printRangeType = nsIPrintSettings::kRangeAllPages;
-    printData->mPrintSettings->SetPrintRange(printRangeType);
-  }
-  PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
   return NS_OK;
 }
 
