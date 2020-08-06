@@ -21,13 +21,15 @@ namespace dom {
 NS_IMPL_CYCLE_COLLECTION_CLASS(XULFrameElement)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(XULFrameElement, nsXULElement)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameLoader);
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameLoader)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOpenWindowInfo)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(XULFrameElement, nsXULElement)
   if (tmp->mFrameLoader) {
     tmp->mFrameLoader->Destroy();
   }
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mOpenWindowInfo)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(XULFrameElement, nsXULElement,
@@ -78,6 +80,14 @@ uint64_t XULFrameElement::BrowserId() {
   return 0;
 }
 
+nsIOpenWindowInfo* XULFrameElement::GetOpenWindowInfo() const {
+  return mOpenWindowInfo;
+}
+
+void XULFrameElement::SetOpenWindowInfo(nsIOpenWindowInfo* aInfo) {
+  mOpenWindowInfo = aInfo;
+}
+
 void XULFrameElement::LoadSrc() {
   if (!IsInUncomposedDoc() || !OwnerDoc()->GetRootElement()) {
     return;
@@ -87,12 +97,7 @@ void XULFrameElement::LoadSrc() {
     
     
     
-    
-    nsCOMPtr<nsIOpenWindowInfo> openWindowInfo;
-    if (nsCOMPtr<nsIBrowser> browser = AsBrowser()) {
-      browser->GetOpenWindowInfo(getter_AddRefs(openWindowInfo));
-      browser->SetOpenWindowInfo(nullptr);
-    }
+    nsCOMPtr<nsIOpenWindowInfo> openWindowInfo = mOpenWindowInfo.forget();
 
     
     
