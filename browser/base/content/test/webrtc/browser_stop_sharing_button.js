@@ -9,23 +9,12 @@ const TEST_ROOT = getRootDirectory(gTestPath).replace(
 );
 const TEST_PAGE = TEST_ROOT + "get_user_media.html";
 
-add_task(async function setup() {
-  let prefs = [
-    [PREF_PERMISSION_FAKE, true],
-    [PREF_AUDIO_LOOPBACK, ""],
-    [PREF_VIDEO_LOOPBACK, ""],
-    [PREF_FAKE_STREAMS, true],
-    [PREF_FOCUS_SOURCE, false],
-  ];
-  await SpecialPowers.pushPrefEnv({ set: prefs });
-});
 
 
 
 
 
-
-add_task(async function test_stop_sharing() {
+add_task(async function test_close_indicator() {
   let prefs = [
     [PREF_PERMISSION_FAKE, true],
     [PREF_AUDIO_LOOPBACK, ""],
@@ -38,78 +27,100 @@ add_task(async function test_stop_sharing() {
   await BrowserTestUtils.withNewTab(TEST_PAGE, async browser => {
     let indicatorPromise = promiseIndicatorWindow();
 
-    await shareDevices(
-      browser,
-      true ,
-      true ,
-      true 
+    
+
+    let promise = promisePopupNotificationShown(
+      "webRTC-shareDevices",
+      null,
+      window
     );
 
-    let indicator = await indicatorPromise;
+    await promiseRequestDevice(
+      true ,
+      true ,
+      null ,
+      null ,
+      browser
+    );
+    await promise;
 
-    let stopSharingButton = indicator.document.getElementById("stop-sharing");
+    checkDeviceSelectors(true , true );
+
+    let observerPromise1 = expectObserverCalled("getUserMedia:response:allow");
+    let observerPromise2 = expectObserverCalled("recording-device-events");
+    promise = promiseMessage("ok", () => {
+      PopupNotifications.panel.firstElementChild.button.click();
+    });
+
+    await observerPromise1;
+    await observerPromise2;
+    await promise;
+
+    promise = promisePopupNotificationShown(
+      "webRTC-shareDevices",
+      null,
+      window
+    );
+
+    
+
+    await promiseRequestDevice(
+      false ,
+      true ,
+      null ,
+      "screen" ,
+      browser
+    );
+    await promise;
+
+    checkDeviceSelectors(
+      false ,
+      false ,
+      true ,
+      window
+    );
+
+    let document = window.document;
+
+    
+    let menulist = document.getElementById("webRTC-selectWindow-menulist");
+    menulist.getItemAtIndex(menulist.itemCount - 1).doCommand();
+    let notification = window.PopupNotifications.panel.firstElementChild;
+
+    observerPromise1 = expectObserverCalled("getUserMedia:response:allow");
+    observerPromise2 = expectObserverCalled("recording-device-events");
+    await promiseMessage(
+      "ok",
+      () => {
+        notification.button.click();
+      },
+      1,
+      browser
+    );
+    await observerPromise1;
+    await observerPromise2;
+
+    let indicator = await indicatorPromise;
+    let indicatorDoc = indicator.document;
+
+    
+    
+    
+    
+    
+    let isSharingScreen = indicatorDoc.documentElement.hasAttribute(
+      "sharingscreen"
+    );
+    let stopSharingID = isSharingScreen
+      ? "stop-sharing-screen"
+      : "stop-sharing-window";
+
+    let stopSharingButton = indicator.document.getElementById(stopSharingID);
     let stopSharingPromise = expectObserverCalled("recording-device-events");
     stopSharingButton.click();
     await stopSharingPromise;
 
     
     await checkSharingUI({ audio: true, video: true });
-
-    
-    Assert.ok(
-      BrowserTestUtils.is_hidden(
-        indicator.document.getElementById("display-share")
-      ),
-      "The display-share section of the indicator should now be hidden."
-    );
   });
-});
-
-
-
-
-
-
-add_task(async function test_stop_sharing_multiple() {
-  let indicatorPromise = promiseIndicatorWindow();
-
-  info("Opening first tab");
-  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
-  info("Sharing camera, microphone and screen");
-  await shareDevices(tab1.linkedBrowser, true, true, true);
-
-  info("Opening second tab");
-  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
-  info("Sharing camera and screen");
-  await shareDevices(tab2.linkedBrowser, true, false, true);
-
-  let indicator = await indicatorPromise;
-
-  let stopSharingButton = indicator.document.getElementById("stop-sharing");
-  let stopSharingPromise = expectObserverCalled("recording-device-events");
-  stopSharingButton.click();
-  await stopSharingPromise;
-
-  Assert.equal(gBrowser.selectedTab, tab2, "Should have tab2 selected.");
-  await checkSharingUI({ audio: false, video: true }, window, {
-    audio: true,
-    video: true,
-  });
-  BrowserTestUtils.removeTab(tab2);
-
-  Assert.equal(gBrowser.selectedTab, tab1, "Should have tab1 selected.");
-  await checkSharingUI({ audio: true, video: true }, window, {
-    audio: true,
-    video: true,
-  });
-
-  
-  Assert.ok(
-    BrowserTestUtils.is_hidden(
-      indicator.document.getElementById("display-share")
-    ),
-    "The display-share section of the indicator should now be hidden."
-  );
-
-  BrowserTestUtils.removeTab(tab1);
 });
