@@ -99,11 +99,18 @@ class JSActor : public nsISupports, public nsWrapperCache {
 
   
   
-  void ReceiveMessageOrQuery(JSContext* aCx,
-                             const JSActorMessageMeta& aMetadata,
-                             JS::Handle<JS::Value> aData, ErrorResult& aRv);
+  void ReceiveMessage(JSContext* aCx, const JSActorMessageMeta& aMetadata,
+                      JS::Handle<JS::Value> aData, ErrorResult& aRv);
+  void ReceiveQuery(JSContext* aCx, const JSActorMessageMeta& aMetadata,
+                    JS::Handle<JS::Value> aData, ErrorResult& aRv);
   void ReceiveQueryReply(JSContext* aCx, const JSActorMessageMeta& aMetadata,
                          JS::Handle<JS::Value> aData, ErrorResult& aRv);
+
+  
+  void CallReceiveMessage(JSContext* aCx, const JSActorMessageMeta& aMetadata,
+                          JS::Handle<JS::Value> aData,
+                          JS::MutableHandle<JS::Value> aRetVal,
+                          ErrorResult& aRv);
 
   
   

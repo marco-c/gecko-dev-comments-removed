@@ -180,7 +180,7 @@ NS_IMETHODIMP JSWindowActorProtocol::HandleEvent(Event* aEvent) {
 
   
   RefPtr<JSActor> actor = wgc->GetActor(mName, IgnoreErrors());
-  if (!actor) {
+  if (!actor || NS_WARN_IF(!actor->GetWrapperPreserveColor())) {
     return NS_OK;
   }
 
@@ -217,7 +217,7 @@ NS_IMETHODIMP JSWindowActorProtocol::Observe(nsISupports* aSubject,
 
   
   RefPtr<JSActor> actor = wgc->GetActor(mName, IgnoreErrors());
-  if (!actor) {
+  if (!actor || NS_WARN_IF(!actor->GetWrapperPreserveColor())) {
     return NS_OK;
   }
 

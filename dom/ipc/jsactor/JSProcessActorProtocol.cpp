@@ -97,7 +97,7 @@ NS_IMETHODIMP JSProcessActorProtocol::Observe(nsISupports* aSubject,
 
   
   RefPtr<JSActor> actor = manager->GetActor(mName, IgnoreErrors());
-  if (!actor) {
+  if (!actor || NS_WARN_IF(!actor->GetWrapperPreserveColor())) {
     return NS_OK;
   }
 
