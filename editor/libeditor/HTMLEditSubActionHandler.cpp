@@ -4461,12 +4461,11 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   
   
   Maybe<nsAtom*> newListElementTagNameOfRightListElement;
-  RefPtr<Element> leftListElement, rightListElement;
   if (HTMLEditUtils::IsListItem(leftBlockElement) &&
       HTMLEditUtils::IsListItem(rightBlockElement)) {
     
-    leftListElement = leftBlockElement->GetParentElement();
-    rightListElement = rightBlockElement->GetParentElement();
+    Element* leftListElement = leftBlockElement->GetParentElement();
+    Element* rightListElement = rightBlockElement->GetParentElement();
     EditorDOMPoint atChildInBlock;
     if (leftListElement && rightListElement &&
         leftListElement != rightListElement &&
@@ -4615,6 +4614,7 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
       return EditActionIgnored(rv);
     }
 
+    OwningNonNull<Element> originalLeftBlockElement = *leftBlockElement;
     {
       
       
@@ -4645,14 +4645,11 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
     EditActionResult ret(NS_OK);
     if (newListElementTagNameOfRightListElement.isSome()) {
       
-      
-      
-      
-      NS_WARNING_ASSERTION(leftListElement == atLeftBlockChild.GetContainer(),
-                           "This is not guaranteed, but assumed");
+      MOZ_ASSERT(originalLeftBlockElement == atLeftBlockChild.GetContainer(),
+                 "This is not guaranteed, but assumed");
       MoveNodeResult moveNodeResult = MoveChildrenWithTransaction(
-          *rightListElement,
-          EditorDOMPoint(leftListElement, atLeftBlockChild.Offset()));
+          *rightBlockElement,
+          EditorDOMPoint(originalLeftBlockElement, atLeftBlockChild.Offset()));
       if (NS_WARN_IF(moveNodeResult.EditorDestroyed())) {
         return ret.SetResult(NS_ERROR_EDITOR_DESTROYED);
       }
