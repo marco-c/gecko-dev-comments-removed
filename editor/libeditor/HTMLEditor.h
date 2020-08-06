@@ -2681,6 +2681,65 @@ class HTMLEditor final : public TextEditor,
       nsIEditor::EStripWrappers aStripWrappers, nsIContent& aAtomicContent,
       const EditorDOMPoint& aCaretPoint, WSRunScanner& aWSRunScannerAtCaret);
 
+  class MOZ_STACK_CLASS AutoBlockElementsJoiner final {
+   public:
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    bool PrepareToDeleteCollapsedSelectionAtCurrentBlockBoundary(
+        const HTMLEditor& aHTMLEditor,
+        nsIEditor::EDirection aDirectionAndAmount,
+        Element& aCurrentBlockElement, const EditorDOMPoint& aCaretPoint);
+
+    
+
+
+
+
+
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+    Run(HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint) {
+      switch (mMode) {
+        case Mode::JoinCurrentBlock: {
+          EditActionResult result =
+              HandleDeleteCollapsedSelectionAtCurrentBlockBoundary(aHTMLEditor,
+                                                                   aCaretPoint);
+          NS_WARNING_ASSERTION(
+              result.Succeeded(),
+              "AutoBlockElementsJoiner::"
+              "HandleDeleteCollapsedSelectionAtCurrentBlockBoundary() failed");
+          return result;
+        }
+        case Mode::NotInitialized:
+          return EditActionIgnored();
+      }
+      return EditActionResult(NS_ERROR_NOT_INITIALIZED);
+    }
+
+   private:
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+    HandleDeleteCollapsedSelectionAtCurrentBlockBoundary(
+        HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint);
+
+    enum class Mode {
+      NotInitialized,
+      JoinCurrentBlock,
+    };
+    nsCOMPtr<nsIContent> mLeftContent;
+    nsCOMPtr<nsIContent> mRightContent;
+    Mode mMode = Mode::NotInitialized;
+  };
+
   
 
 
@@ -2701,20 +2760,6 @@ class HTMLEditor final : public TextEditor,
       nsIEditor::EDirection aDirectionAndAmount,
       nsIEditor::EStripWrappers aStripWrappers, Element& aOtherBlockElement,
       const EditorDOMPoint& aCaretPoint, WSRunScanner& aWSRunScannerAtCaret);
-
-  
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteCollapsedSelectionAtCurrentBlockBoundary(
-      nsIEditor::EDirection aDirectionAndAmount, Element& aCurrentBlockElement,
-      const EditorDOMPoint& aCaretPoint);
 
   
 
