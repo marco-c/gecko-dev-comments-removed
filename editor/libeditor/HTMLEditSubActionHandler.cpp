@@ -3476,7 +3476,7 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
     
     bool join = true;
 
-    AutoRangeArray arrayOfRanges(SelectionRefPtr());
+    AutoSelectionRangeArray arrayOfRanges(SelectionRefPtr());
     for (auto& range : arrayOfRanges.mRanges) {
       
       AutoTArray<OwningNonNull<nsIContent>, 10> arrayOfTopChildren;

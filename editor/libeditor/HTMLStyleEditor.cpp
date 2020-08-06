@@ -239,7 +239,7 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
     
     
     
-    AutoRangeArray arrayOfRanges(SelectionRefPtr());
+    AutoSelectionRangeArray arrayOfRanges(SelectionRefPtr());
     for (auto& range : arrayOfRanges.mRanges) {
       
       
@@ -1810,7 +1810,7 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
       
       
       
-      AutoRangeArray arrayOfRanges(SelectionRefPtr());
+      AutoSelectionRangeArray arrayOfRanges(SelectionRefPtr());
       for (auto& range : arrayOfRanges.mRanges) {
         if (style.mProperty == nsGkAtoms::name) {
           
@@ -2164,7 +2164,7 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
   
-  AutoRangeArray arrayOfRanges(SelectionRefPtr());
+  AutoSelectionRangeArray arrayOfRanges(SelectionRefPtr());
   for (auto& range : arrayOfRanges.mRanges) {
     
     nsresult rv = PromoteInlineRange(*range);
