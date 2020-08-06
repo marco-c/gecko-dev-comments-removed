@@ -5099,9 +5099,10 @@ void profiler_unregister_thread() {
   
 
   RegisteredThread* registeredThread = FindCurrentThreadRegisteredThread(lock);
-  MOZ_RELEASE_ASSERT(registeredThread ==
-                     TLSRegisteredThread::RegisteredThread(lock));
   if (registeredThread) {
+    MOZ_RELEASE_ASSERT(TLSRegisteredThread::RegisteredThread(lock));
+    MOZ_RELEASE_ASSERT(registeredThread ==
+                       TLSRegisteredThread::RegisteredThread(lock));
     RefPtr<ThreadInfo> info = registeredThread->Info();
 
     DEBUG_LOG("profiler_unregister_thread: %s", info->Name());
@@ -5115,10 +5116,12 @@ void profiler_unregister_thread() {
     
     TLSRegisteredThread::ResetRegisteredThread(lock);
     TLSRegisteredThread::ResetAutoProfilerLabelProfilingStack(lock);
+    MOZ_RELEASE_ASSERT(!TLSRegisteredThread::RegisteredThread(lock));
 
     
     
     CorePS::RemoveRegisteredThread(lock, registeredThread);
+    MOZ_RELEASE_ASSERT(!FindCurrentThreadRegisteredThread(lock));
   } else {
     LOG("profiler_unregister_thread() - thread %d already unregistered",
         profiler_current_thread_id());
