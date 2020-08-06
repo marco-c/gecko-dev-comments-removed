@@ -112,14 +112,6 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
     return IPC_OK();
   }
 
-  mozilla::ipc::IPCResult RecvGetFrameUniformity(
-      FrameUniformityData* aOutData) override {
-    
-    
-    MOZ_ASSERT(false);
-    return IPC_OK();
-  }
-
   
 
 
@@ -151,6 +143,8 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   void FlushApzRepaints(const LayersId& aLayersId) override;
   void GetAPZTestData(const LayersId& aLayersId,
                       APZTestData* aOutData) override;
+  void GetFrameUniformity(const LayersId& aLayersId,
+                          FrameUniformityData* aOutData) override;
   void SetConfirmedTargetAPZC(
       const LayersId& aLayersId, const uint64_t& aInputBlockId,
       const nsTArray<ScrollableLayerGuid>& aTargets) override;

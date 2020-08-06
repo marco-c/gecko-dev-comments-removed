@@ -183,6 +183,8 @@ class WebRenderLayerManager final : public LayerManager {
 
   void TakeCompositionPayloads(nsTArray<CompositionPayload>& aPayloads);
 
+  void GetFrameUniformity(FrameUniformityData* aOutData) override;
+
  private:
   
 

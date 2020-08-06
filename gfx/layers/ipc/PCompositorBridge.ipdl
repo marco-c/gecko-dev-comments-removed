@@ -38,7 +38,6 @@ using mozilla::LayoutDeviceIntPoint from "Units.h";
 using mozilla::LayoutDeviceIntRegion from "Units.h";
 using mozilla::LayoutDeviceIntSize from "Units.h";
 using class mozilla::TimeStamp from "mozilla/TimeStamp.h";
-using class mozilla::layers::FrameUniformityData from "mozilla/layers/FrameUniformityData.h";
 using mozilla::layers::TextureFlags from "mozilla/layers/CompositorTypes.h";
 using mozilla::layers::CompositorOptions from "mozilla/layers/CompositorOptions.h";
 using mozilla::wr::PipelineId from "mozilla/webrender/WebRenderTypes.h";
@@ -184,9 +183,6 @@ parent:
 
 
   async RemotePluginsReady();
-
-  
-  sync GetFrameUniformity() returns (FrameUniformityData data);
 
   
   sync WillClose();
