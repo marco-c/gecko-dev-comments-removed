@@ -125,7 +125,32 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
 }
 
 
-bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsresult aError) {
+bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsIChannel* aChannel,
+                                             nsresult aError) {
+  
+  if (!aChannel) {
+    return false;
+  }
+
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
+    return false;
+  }
+
+  
+  uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
+  if (!(httpsOnlyStatus &
+        nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED)) {
+    return false;
+  }
+
+  
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+    return false;
+  }
+
   
   
   return !(NS_ERROR_UNKNOWN_PROTOCOL == aError ||

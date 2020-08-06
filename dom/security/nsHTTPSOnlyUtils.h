@@ -47,7 +47,8 @@ class nsHTTPSOnlyUtils {
 
 
 
-  static bool CouldBeHttpsOnlyError(nsresult aError);
+
+  static bool CouldBeHttpsOnlyError(nsIChannel* aChannel, nsresult aError);
 
   
 
