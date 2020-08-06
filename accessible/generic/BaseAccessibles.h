@@ -107,7 +107,11 @@ class EnumRoleAccessible : public AccessibleWrap {
 class DummyAccessible : public AccessibleWrap {
  public:
   explicit DummyAccessible(DocAccessible* aDocument = nullptr)
-      : AccessibleWrap(nullptr, aDocument) {}
+      : AccessibleWrap(nullptr, aDocument) {
+    
+    
+    mStateFlags |= eSharedNode;
+  }
 
   uint64_t NativeState() const final;
   uint64_t NativeInteractiveState() const final;
