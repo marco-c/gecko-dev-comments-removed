@@ -87,6 +87,16 @@ TEST_F(ImageLoader, DetectAVIFCompatibleBrand) {
   CheckMimeType(buffer, sizeof(buffer), IMAGE_AVIF);
 }
 
+TEST_F(ImageLoader, DetectNonImageMP4) {
+  const char buffer[] =
+      "\x00\x00\x00\x1c"  
+      "ftyp"              
+      "isom"              
+      "\x00\x00\x02\x00"  
+      "isomiso2mp41";     
+  CheckMimeType(buffer, sizeof(buffer), nullptr);
+}
+
 TEST_F(ImageLoader, DetectNone) {
   const char buffer[] = "abcdefghijklmnop";
   CheckMimeType(buffer, sizeof(buffer), nullptr);
