@@ -461,6 +461,12 @@ class nsTArray_base {
   
   
   
+  void ShrinkCapacityToZero(size_type aElemSize, size_t aElemAlign);
+
+  
+  
+  
+  
   
   
   
@@ -1891,7 +1897,7 @@ class nsTArray_Impl
 
   void Clear() {
     ClearAndRetainStorage();
-    Compact();
+    base_type::ShrinkCapacityToZero(sizeof(elem_type), MOZ_ALIGNOF(elem_type));
   }
 
   
