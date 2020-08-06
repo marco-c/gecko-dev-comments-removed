@@ -162,7 +162,6 @@ impl SceneProperties {
 pub struct ScenePipeline {
     pub pipeline_id: PipelineId,
     pub viewport_size: LayoutSize,
-    pub content_size: LayoutSize,
     pub background_color: Option<ColorF>,
     pub display_list: DisplayListWithCache,
 }
@@ -197,7 +196,6 @@ impl Scene {
         display_list: BuiltDisplayList,
         background_color: Option<ColorF>,
         viewport_size: LayoutSize,
-        content_size: LayoutSize,
     ) {
         
         
@@ -212,7 +210,6 @@ impl Scene {
         let new_pipeline = ScenePipeline {
             pipeline_id,
             viewport_size,
-            content_size,
             background_color,
             display_list,
         };
