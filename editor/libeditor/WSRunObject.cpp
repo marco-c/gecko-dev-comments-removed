@@ -146,6 +146,8 @@ EditActionResult WhiteSpaceVisibilityKeeper::
   
   
 
+  AutoTransactionsConserveSelection dontChangeMySelection(aHTMLEditor);
+
   EditorDOMPoint afterRightBlockChild = aAtRightBlockChild.NextPoint();
   MOZ_ASSERT(afterRightBlockChild.IsSetAndValid());
   nsresult rv = WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
@@ -268,6 +270,8 @@ EditActionResult WhiteSpaceVisibilityKeeper::
   
   
   
+
+  AutoTransactionsConserveSelection dontChangeMySelection(aHTMLEditor);
 
   nsresult rv = WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
       aHTMLEditor, EditorDOMPoint(&aRightBlockElement, 0));
@@ -434,6 +438,8 @@ EditActionResult WhiteSpaceVisibilityKeeper::
   
   
   
+
+  AutoTransactionsConserveSelection dontChangeMySelection(aHTMLEditor);
 
   
   nsresult rv = WhiteSpaceVisibilityKeeper::

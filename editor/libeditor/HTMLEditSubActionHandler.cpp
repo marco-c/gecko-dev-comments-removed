@@ -4485,8 +4485,6 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
     }
   }
 
-  AutoTransactionsConserveSelection dontChangeMySelection(*this);
-
   
   
   
