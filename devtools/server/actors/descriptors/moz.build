@@ -4,10 +4,6 @@
 
 
 
-DIRS += [
-    'watcher',
-]
-
 DevToolsModules(
     'process.js',
     'tab.js',
