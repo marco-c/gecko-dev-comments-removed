@@ -6956,10 +6956,17 @@ AttachDecision CallIRGenerator::tryAttachTypedArrayElementShift(
 }
 
 AttachDecision CallIRGenerator::tryAttachTypedArrayLength(
-    HandleFunction callee) {
+    HandleFunction callee, bool isPossiblyWrapped) {
+  
   
   MOZ_ASSERT(argc_ == 1);
   MOZ_ASSERT(args_[0].isObject());
+
+  
+  if (isPossiblyWrapped && IsWrapper(&args_[0].toObject())) {
+    return AttachDecision::NoAction;
+  }
+
   MOZ_ASSERT(args_[0].toObject().is<TypedArrayObject>());
 
   
@@ -6969,6 +6976,10 @@ AttachDecision CallIRGenerator::tryAttachTypedArrayLength(
 
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   ObjOperandId objArgId = writer.guardToObject(argId);
+
+  if (isPossiblyWrapped) {
+    writer.guardIsNotProxy(objArgId);
+  }
 
   
   
@@ -7782,7 +7793,9 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     case InlinableNative::IntrinsicTypedArrayElementShift:
       return tryAttachTypedArrayElementShift(callee);
     case InlinableNative::IntrinsicTypedArrayLength:
-      return tryAttachTypedArrayLength(callee);
+      return tryAttachTypedArrayLength(callee,  false);
+    case InlinableNative::IntrinsicPossiblyWrappedTypedArrayLength:
+      return tryAttachTypedArrayLength(callee,  true);
 
     
     case InlinableNative::ReflectGetPrototypeOf:
