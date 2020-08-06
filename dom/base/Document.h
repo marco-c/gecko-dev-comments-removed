@@ -2161,6 +2161,7 @@ class Document : public nsINode,
     mIsContentDocument = aIsContentDocument;
   }
 
+  void ProcessMETATag(HTMLMetaElement* aMetaElement);
   
 
 

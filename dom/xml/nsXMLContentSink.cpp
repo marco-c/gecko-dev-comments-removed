@@ -565,14 +565,9 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
   }
 
   nsresult rv = NS_OK;
-  if (nodeInfo->Equals(nsGkAtoms::meta, kNameSpaceID_XHTML) &&
-      
-      
-      (!mPrettyPrintXML || !mPrettyPrintHasSpecialRoot)) {
-    rv = ProcessMETATag(aContent);
-  } else if (nodeInfo->Equals(nsGkAtoms::link, kNameSpaceID_XHTML) ||
-             nodeInfo->Equals(nsGkAtoms::style, kNameSpaceID_XHTML) ||
-             nodeInfo->Equals(nsGkAtoms::style, kNameSpaceID_SVG)) {
+  if (nodeInfo->Equals(nsGkAtoms::link, kNameSpaceID_XHTML) ||
+      nodeInfo->Equals(nsGkAtoms::style, kNameSpaceID_XHTML) ||
+      nodeInfo->Equals(nsGkAtoms::style, kNameSpaceID_SVG)) {
     if (auto* linkStyle = LinkStyle::FromNode(*aContent)) {
       linkStyle->SetEnableUpdates(true);
       auto updateOrError =

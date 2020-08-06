@@ -50,6 +50,8 @@ class Document;
 class nsIXMLContentSink : public nsIContentSink {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IXMLCONTENT_SINK_IID)
+  virtual bool IsPrettyPrintXML() const { return false; }
+  virtual bool IsPrettyPrintHasSpecialRoot() const { return false; }
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIXMLContentSink, NS_IXMLCONTENT_SINK_IID)
@@ -58,4 +60,4 @@ nsresult NS_NewXMLContentSink(nsIXMLContentSink** aInstancePtrResult,
                               mozilla::dom::Document* aDoc, nsIURI* aURL,
                               nsISupports* aContainer, nsIChannel* aChannel);
 
-#endif
+#endif  
