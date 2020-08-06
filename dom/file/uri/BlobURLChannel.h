@@ -28,7 +28,7 @@ class BlobURLChannel final : public nsBaseChannel {
 
   
   
-  void Initialize(BlobImpl* aBlobImpl);
+  void Initialize();
 
  private:
   ~BlobURLChannel();
