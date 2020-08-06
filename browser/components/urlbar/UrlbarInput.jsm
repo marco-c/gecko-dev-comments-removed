@@ -1218,6 +1218,21 @@ class UrlbarInput {
 
   
 
+
+
+
+  searchModeShortcut() {
+    if (this.view.oneOffsRefresh) {
+      let defaultEngine = Services.search.defaultEngine;
+      this.setSearchMode(defaultEngine);
+      this.search("");
+    } else {
+      this.search(UrlbarTokenizer.RESTRICT.SEARCH);
+    }
+  }
+
+  
+
   get editor() {
     return this.inputField.editor;
   }

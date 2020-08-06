@@ -80,6 +80,20 @@ async function exitSearchMode(
   window,
   { backspace, clickClose, waitForSearch = true }
 ) {
+  
+  
+  
+  if (!gURLBar.hasAttribute("breakout-extend") && clickClose) {
+    if (waitForSearch) {
+      let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+      gURLBar.setSearchMode(null);
+      await searchPromise;
+    } else {
+      gURLBar.setSearchMode(null);
+    }
+    return;
+  }
+
   if (backspace) {
     let urlbarValue = gURLBar.value;
     gURLBar.selectionStart = gURLBar.selectionEnd = 0;
@@ -251,15 +265,31 @@ add_task(async function click_close() {
   });
   await enterSearchMode(window);
   UrlbarTestUtils.promisePopupClose(window);
-  if (gURLBar.hasAttribute("breakout-extend")) {
-    await exitSearchMode(window, { clickClose: true, waitForSearch: false });
-  } else {
-    
-    
-    
-    
-    gURLBar.setSearchMode(null);
-  }
+  await exitSearchMode(window, { clickClose: true, waitForSearch: false });
+});
+
+
+add_task(async function keyboard_shortcut() {
+  UrlbarTestUtils.assertSearchMode(window, null);
+  EventUtils.synthesizeKey("k", { accelKey: true });
+  UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    engineName: defaultEngine.name,
+  });
+  await exitSearchMode(window, { clickClose: true, waitForSearch: false });
+});
+
+
+
+add_task(async function menubar_item() {
+  UrlbarTestUtils.assertSearchMode(window, null);
+  let command = window.document.getElementById("Tools:Search");
+  command.doCommand();
+  UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    engineName: defaultEngine.name,
+  });
+  await exitSearchMode(window, { clickClose: true, waitForSearch: false });
 });
 
 
