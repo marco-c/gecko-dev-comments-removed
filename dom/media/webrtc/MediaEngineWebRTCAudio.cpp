@@ -550,6 +550,10 @@ nsresult MediaEngineWebRTCMicrophoneSource::Start() {
 
   MOZ_ASSERT(mState == kAllocated || mState == kStopped);
 
+  
+  
+  
+  
   CubebUtils::AudioDeviceID deviceID = mDeviceInfo->DeviceID();
   if (mTrack->GraphImpl()->InputDeviceID() &&
       mTrack->GraphImpl()->InputDeviceID() != deviceID) {

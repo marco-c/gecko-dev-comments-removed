@@ -764,7 +764,10 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  CubebUtils::AudioDeviceID mInputDeviceID;
+
+
+
+  std::atomic<CubebUtils::AudioDeviceID> mInputDeviceID;
   CubebUtils::AudioDeviceID mOutputDeviceID;
   
   
