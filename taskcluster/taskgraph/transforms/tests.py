@@ -1449,6 +1449,10 @@ def set_test_manifests(config, tasks):
             yield task
             continue
 
+        
+        
+        task.setdefault("tags", {})["tests_grouped"] = "1"
+
         if taskgraph.fast:
             
             
