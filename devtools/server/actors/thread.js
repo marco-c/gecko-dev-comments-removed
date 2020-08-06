@@ -21,6 +21,8 @@ const { threadSpec } = require("devtools/shared/specs/thread");
 const {
   getAvailableEventBreakpoints,
   eventBreakpointForNotification,
+  eventsRequireNotifications,
+  firstStatementBreakpointId,
   makeEventBreakpointMessage,
 } = require("devtools/server/actors/utils/event-breakpoints");
 const {
@@ -215,6 +217,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._parent.on("will-navigate", this._onWillNavigate);
     this._parent.on("navigate", this._onNavigate);
 
+    this._firstStatementBreakpoint = null;
     this._debuggerNotificationObserver = new DebuggerNotificationObserver();
 
     if (Services.obs) {
@@ -617,18 +620,92 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   setActiveEventBreakpoints: function(ids) {
     this._activeEventBreakpoints = new Set(ids);
 
-    if (this._activeEventBreakpoints.size === 0) {
-      this._debuggerNotificationObserver.removeListener(
-        this._eventBreakpointListener
-      );
-    } else {
+    if (eventsRequireNotifications(ids)) {
       this._debuggerNotificationObserver.addListener(
         this._eventBreakpointListener
       );
+    } else {
+      this._debuggerNotificationObserver.removeListener(
+        this._eventBreakpointListener
+      );
+    }
+
+    if (this._activeEventBreakpoints.has(firstStatementBreakpointId())) {
+      this._ensureFirstStatementBreakpointInitialized();
+
+      this._firstStatementBreakpoint.hit = frame =>
+        this._pauseAndRespondEventBreakpoint(
+          frame,
+          firstStatementBreakpointId()
+        );
+    } else if (this._firstStatementBreakpoint) {
+      
+      
+      
+      
+      
+      
+      
+      this._firstStatementBreakpoint.hit = null;
     }
   },
 
+  _ensureFirstStatementBreakpointInitialized() {
+    if (this._firstStatementBreakpoint) {
+      return;
+    }
+
+    this._firstStatementBreakpoint = { hit: null };
+    for (const script of this.dbg.findScripts()) {
+      this._maybeTrackFirstStatementBreakpoint(script);
+    }
+  },
+
+  _maybeTrackFirstStatementBreakpointForNewGlobal(global) {
+    if (this._firstStatementBreakpoint) {
+      for (const script of this.dbg.findScripts({ global })) {
+        this._maybeTrackFirstStatementBreakpoint(script);
+      }
+    }
+  },
+
+  _maybeTrackFirstStatementBreakpoint(script) {
+    if (
+      
+      !this._firstStatementBreakpoint ||
+      
+      script.format !== "js" ||
+      
+      
+      script.isFunction
+    ) {
+      return;
+    }
+
+    const bps = script.getPossibleBreakpoints();
+
+    
+    
+    
+    let meta = bps.find(bp => bp.isStepStart) || bps[0];
+    if (!meta) {
+      
+      
+      
+      
+      meta = script.getAllColumnOffsets()[0];
+    }
+
+    if (!meta) {
+      
+      
+      return;
+    }
+    script.setBreakpoint(meta.offset, this._firstStatementBreakpoint);
+  },
+
   _onNewDebuggee(global) {
+    this._maybeTrackFirstStatementBreakpointForNewGlobal(global);
     try {
       this._debuggerNotificationObserver.connect(global.unsafeDereference());
     } catch (e) {}
@@ -1954,11 +2031,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-
-
-
-  onNewScript: function(script, global) {
+  onNewScript: function(script) {
     this._addSource(script.source);
+
+    this._maybeTrackFirstStatementBreakpoint(script);
   },
 
   
