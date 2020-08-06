@@ -332,6 +332,14 @@ bool GeckoTextMarkerRange::TextInternal(nsAString& aText, AccessibleOrProxy aCur
   
   for (int32_t i = 0; i < linkCount; i++) {
     AccessibleOrProxy link = LinkAt(aCurrent, i);
+    
+    
+    
+    
+    
+    if (link.IsNull()) {
+      return false;
+    }
     MOZ_ASSERT(!link.IsNull());
     linkStartOffset = StartOffset(link);
     if (aStartIntlOffset <= linkStartOffset) {
