@@ -746,7 +746,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
             ("  - upgradeInsecureRequests: %s\n",
              aLoadInfo->GetUpgradeInsecureRequests() ? "true" : "false"));
     MOZ_LOG(sCSMLog, LogLevel::Verbose,
-            ("  - initalSecurityChecksDone: %s\n",
+            ("  - initialSecurityChecksDone: %s\n",
              aLoadInfo->GetInitialSecurityCheckDone() ? "true" : "false"));
     MOZ_LOG(sCSMLog, LogLevel::Verbose,
             ("  - allowDeprecatedSystemRequests: %s\n",
