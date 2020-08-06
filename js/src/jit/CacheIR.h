@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_CacheIR_h
 #define jit_CacheIR_h
@@ -19,7 +19,7 @@
 #include "jit/ICState.h"
 #include "jit/MacroAssembler.h"
 #include "jit/Simulator.h"
-#include "js/ScalarType.h"  
+#include "js/ScalarType.h"  // js::Scalar::Type
 #include "vm/Iteration.h"
 #include "vm/Shape.h"
 
@@ -29,46 +29,46 @@ namespace jit {
 enum class BaselineCacheIRStubKind;
 enum class InlinableNative : uint16_t;
 
+// [SMDOC] CacheIR
+//
+// CacheIR is an (extremely simple) linear IR language for inline caches.
+// From this IR, we can generate machine code for Baseline or Ion IC stubs.
+//
+// IRWriter
+// --------
+// CacheIR bytecode is written using IRWriter. This class also records some
+// metadata that's used by the Baseline and Ion code generators to generate
+// (efficient) machine code.
+//
+// Sharing Baseline stub code
+// --------------------------
+// Baseline stores data (like Shape* and fixed slot offsets) inside the ICStub
+// structure, instead of embedding them directly in the JitCode. This makes
+// Baseline IC code slightly slower, but allows us to share IC code between
+// caches. CacheIR makes it easy to share code between stubs: stubs that have
+// the same CacheIR (and CacheKind), will have the same Baseline stub code.
+//
+// Baseline stubs that share JitCode also share a CacheIRStubInfo structure.
+// This class stores the CacheIR and the location of GC things stored in the
+// stub, for the GC.
+//
+// JitZone has a CacheIRStubInfo* -> JitCode* weak map that's used to share both
+// the IR and JitCode between Baseline CacheIR stubs. This HashMap owns the
+// stubInfo (it uses UniquePtr), so once there are no references left to the
+// shared stub code, we can also free the CacheIRStubInfo.
+//
+// Ion stubs
+// ---------
+// Unlike Baseline stubs, Ion stubs do not share stub code, and data stored in
+// the IonICStub is baked into JIT code. This is one of the reasons Ion stubs
+// are faster than Baseline stubs. Also note that Ion ICs contain more state
+// (see IonGetPropertyIC for example) and use dynamic input/output registers,
+// so sharing stub code for Ion would be much more difficult.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// An OperandId represents either a cache input or a value returned by a
+// CacheIR instruction. Most code should use the ValOperandId and ObjOperandId
+// classes below. The ObjOperandId class represents an operand that's known to
+// be an object, just as StringOperandId represents a known string, etc.
 class OperandId {
  protected:
   static const uint16_t InvalidId = UINT16_MAX;
@@ -211,7 +211,7 @@ extern const uint32_t CacheIROpHealth[];
 class StubField {
  public:
   enum class Type : uint8_t {
-    
+    // These fields take up a single word.
     RawWord,
     Shape,
     ObjectGroup,
@@ -220,7 +220,7 @@ class StubField {
     String,
     Id,
 
-    
+    // These fields take up 64 bits on all platforms.
     RawInt64,
     First64BitType = RawInt64,
     DOMExpandoGeneration,
@@ -271,10 +271,10 @@ class StubField {
   }
 } JS_HAZ_GC_POINTER;
 
-
-
-
-
+// This class is used to wrap up information about a call to make it
+// easier to convey from one function to another. (In particular,
+// CacheIRWriter encodes the CallFlags in CacheIR, and CacheIRReader
+// decodes them and uses them for compilation.)
 class CallFlags {
  public:
   enum ArgFormat : uint8_t {
@@ -303,7 +303,7 @@ class CallFlags {
   bool isSameRealm() const { return isSameRealm_; }
 
   uint8_t toByte() const {
-    
+    // See CacheIRReader::callFlags()
     MOZ_ASSERT(argFormat_ != ArgFormat::Unknown);
     uint8_t value = getArgFormat();
     if (isConstructing()) {
@@ -320,7 +320,7 @@ class CallFlags {
   bool isConstructing_ = false;
   bool isSameRealm_ = false;
 
-  
+  // Used for encoding/decoding
   static const uint8_t ArgFormatBits = 4;
   static const uint8_t ArgFormatMask = (1 << ArgFormatBits) - 1;
   static_assert(LastArgFormat <= ArgFormatMask, "Not enough arg format bits");
@@ -332,29 +332,29 @@ class CallFlags {
 };
 
 enum class AttachDecision {
-  
+  // We cannot attach a stub.
   NoAction,
 
-  
+  // We can attach a stub.
   Attach,
 
-  
-  
+  // We cannot currently attach a stub, but we expect to be able to do so in the
+  // future. In this case, we do not call trackNotAttached().
   TemporarilyUnoptimizable,
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // We want to attach a stub, but the result of the operation is
+  // needed to generate that stub. For example, AddSlot needs to know
+  // the resulting shape. Note: the attached stub will inspect the
+  // inputs to the operation, so most input checks should be done
+  // before the actual operation, with only minimal checks remaining
+  // for the deferred portion. This prevents arbitrary scripted code
+  // run by the operation from interfering with the conditions being
+  // checked.
   Deferred
 };
 
-
-
+// If the input expression evaluates to an AttachDecision other than NoAction,
+// return that AttachDecision. If it is NoAction, do nothing.
 #define TRY_ATTACH(expr)                                    \
   do {                                                      \
     AttachDecision tryAttachTempResult_ = expr;             \
@@ -363,36 +363,36 @@ enum class AttachDecision {
     }                                                       \
   } while (0)
 
-
-
-
+// Set of arguments supported by GetIndexOfArgument.
+// Support for higher argument indices can be added easily, but is currently
+// unneeded.
 enum class ArgumentKind : uint8_t { Callee, This, NewTarget, Arg0, Arg1, Arg2 };
 
-
-
-
+// This function calculates the index of an argument based on the call flags.
+// addArgc is an out-parameter, indicating whether the value of argc should
+// be added to the return value to find the actual index.
 inline int32_t GetIndexOfArgument(ArgumentKind kind, CallFlags flags,
                                   bool* addArgc) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // *** STACK LAYOUT (bottom to top) ***        ******** INDEX ********
+  //   Callee                                <-- argc+1 + isConstructing
+  //   ThisValue                             <-- argc   + isConstructing
+  //   Args: | Arg0 |        |  ArgArray  |  <-- argc-1 + isConstructing
+  //         | Arg1 | --or-- |            |  <-- argc-2 + isConstructing
+  //         | ...  |        | (if spread |  <-- ...
+  //         | ArgN |        |  call)     |  <-- 0      + isConstructing
+  //   NewTarget (only if constructing)      <-- 0 (if it exists)
+  //
+  // If this is a spread call, then argc is always 1, and we can calculate the
+  // index directly. If this is not a spread call, then the index of any
+  // argument other than NewTarget depends on argc.
 
-  
+  // First we determine whether the caller needs to add argc.
   switch (flags.getArgFormat()) {
     case CallFlags::Standard:
       *addArgc = true;
       break;
     case CallFlags::Spread:
-      
+      // Spread calls do not have Arg1 or higher.
       MOZ_ASSERT(kind <= ArgumentKind::Arg0);
       *addArgc = false;
       break;
@@ -404,7 +404,7 @@ inline int32_t GetIndexOfArgument(ArgumentKind kind, CallFlags flags,
       break;
   }
 
-  
+  // Second, we determine the offset relative to argc.
   bool hasArgumentArray = !*addArgc;
   switch (kind) {
     case ArgumentKind::Callee:
@@ -426,8 +426,8 @@ inline int32_t GetIndexOfArgument(ArgumentKind kind, CallFlags flags,
   }
 }
 
-
-
+// We use this enum as GuardClass operand, instead of storing Class* pointers
+// in the IR, to keep the IR compact and the same size on all platforms.
 enum class GuardClassKind : uint8_t {
   Array,
   DataView,
@@ -437,13 +437,13 @@ enum class GuardClassKind : uint8_t {
   JSFunction,
 };
 
-
-
-
-
+// Some ops refer to shapes that might be in other zones. Instead of putting
+// cross-zone pointers in the caches themselves (which would complicate tracing
+// enormously), these ops instead contain wrappers for objects in the target
+// zone, which refer to the actual shape via a reserved slot.
 JSObject* NewWrapperWithObjectShape(JSContext* cx, HandleNativeObject obj);
 
-
+// Enum for stubs handling a combination of typed arrays and typed objects.
 enum class TypedThingLayout : uint8_t {
   TypedArray,
   OutlineTypedObject,
@@ -462,7 +462,7 @@ enum class MetaTwoByteKind : uint8_t {
 bool CallAnyNative(JSContext* cx, unsigned argc, Value* vp);
 #endif
 
-
+// Class to record CacheIR + some additional metadata for code generation.
 class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   JSContext* cx_;
   CompactBufferWriter buffer_;
@@ -471,26 +471,26 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   uint32_t nextInstructionId_;
   uint32_t numInputOperands_;
 
-  
+  // The data (shapes, slot offsets, etc.) that will be stored in the ICStub.
   Vector<StubField, 8, SystemAllocPolicy> stubFields_;
   size_t stubDataSize_;
 
-  
-  
+  // For each operand id, record which instruction accessed it last. This
+  // information greatly improves register allocation.
   Vector<uint32_t, 8, SystemAllocPolicy> operandLastUsed_;
 
-  
-  
+  // OperandId and stub offsets are stored in a single byte, so make sure
+  // this doesn't overflow. We use a very conservative limit for now.
   static const size_t MaxOperandIds = 20;
   static const size_t MaxStubDataSizeInBytes = 20 * sizeof(uintptr_t);
   bool tooLarge_;
 
-  
+  // Basic caching to avoid quadatic lookup behaviour in readStubFieldForIon.
   mutable uint32_t lastOffset_;
   mutable uint32_t lastIndex_;
 
 #ifdef DEBUG
-  
+  // Information for assertLengthMatches.
   mozilla::Maybe<CacheOp> currentOp_;
   size_t currentOpArgsStart_ = 0;
 #endif
@@ -509,7 +509,7 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
 
   void assertLengthMatches() {
 #ifdef DEBUG
-    
+    // After writing arguments, assert the length matches CacheIROpArgLengths.
     size_t expectedLen = CacheIROpArgLengths[size_t(*currentOp_)];
     MOZ_ASSERT_IF(!failed(),
                   buffer_.length() - currentOpArgsStart_ == expectedLen);
@@ -684,7 +684,7 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   }
 
   void trace(JSTracer* trc) override {
-    
+    // For now, assert we only GC before we append stub fields.
     MOZ_RELEASE_ASSERT(stubFields_.empty());
   }
 
@@ -714,8 +714,8 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     return buffer_.length();
   }
 
-  
-  
+  // This should not be used when compiling Baseline code, as Baseline code
+  // shouldn't bake in stub values.
   StubField readStubFieldForIon(uint32_t offset, StubField::Type type) const;
 
   ObjOperandId guardToObject(ValOperandId input) {
@@ -754,45 +754,45 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   }
 
   void guardShapeForClass(ObjOperandId obj, Shape* shape) {
-    
-    
+    // Guard shape to ensure that object class is unchanged. This is true
+    // for all shapes.
     guardShape(obj, shape);
   }
 
   void guardShapeForOwnProperties(ObjOperandId obj, Shape* shape) {
-    
-    
+    // Guard shape to detect changes to (non-dense) own properties. This
+    // also implies |guardShapeForClass|.
     MOZ_ASSERT(shape->getObjectClass()->isNative());
     guardShape(obj, shape);
   }
 
  public:
-  
-  
+  // Instead of calling guardGroup manually, use (or create) a specialization
+  // below to clarify what constraint the group guard is implying.
   void guardGroupForProto(ObjOperandId obj, ObjectGroup* group) {
     MOZ_ASSERT(!group->hasUncacheableProto());
     guardGroup(obj, group);
   }
 
   void guardGroupForTypeBarrier(ObjOperandId obj, ObjectGroup* group) {
-    
-    
-    
-    
+    // Typesets will always be a super-set of any typesets previously seen
+    // for this group. If the type/group of a value being stored to a
+    // property in this group is not known, a TypeUpdate IC chain should be
+    // used as well.
     guardGroup(obj, group);
   }
 
   void guardGroupForLayout(ObjOperandId obj, ObjectGroup* group) {
-    
+    // NOTE: Comment in guardGroupForTypeBarrier also applies.
     MOZ_ASSERT(IsTypedObjectClass(group->clasp()));
     guardGroup(obj, group);
   }
 
   void guardSpecificFunction(ObjOperandId obj, JSFunction* expected) {
-    
-    
-    
-    
+    // Guard object is a specific function. This implies immutable fields on
+    // the JSFunction struct itself are unchanged.
+    // Bake in the nargs and FunctionFlags so Warp can use them off-main thread,
+    // instead of directly using the JSFunction fields.
     static_assert(JSFunction::NArgsBits == 16);
     static_assert(sizeof(decltype(expected->flags().toRaw())) ==
                   sizeof(uint16_t));
@@ -836,19 +836,19 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
 
   void callNativeFunction(ObjOperandId calleeId, Int32OperandId argc, JSOp op,
                           HandleFunction calleeFunc, CallFlags flags) {
-    
-    
+    // Some native functions can be implemented faster if we know that
+    // the return value is ignored.
     bool ignoresReturnValue =
         op == JSOp::CallIgnoresRv && calleeFunc->hasJitInfo() &&
         calleeFunc->jitInfo()->type() == JSJitInfo::IgnoresReturnValueNative;
 
 #ifdef JS_SIMULATOR
-    
-    
-    
-    
-    
-    
+    // The simulator requires VM calls to be redirected to a special
+    // swi instruction to handle them, so we store the redirected
+    // pointer in the stub and use that instead of the original one.
+    // If we are calling the ignoresReturnValue version of a native
+    // function, we bake it into the redirected pointer.
+    // (See BaselineCacheIRCompiler::emitCallNativeFunction.)
     JSNative target = ignoresReturnValue
                           ? calleeFunc->jitInfo()->ignoresReturnValueMethod
                           : calleeFunc->native();
@@ -856,8 +856,8 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     void* redirected = Simulator::RedirectNativeFunction(rawPtr, Args_General3);
     callNativeFunction_(calleeId, argc, flags, redirected);
 #else
-    
-    
+    // If we are not running in the simulator, we generate different jitcode
+    // to find the ignoresReturnValue version of a native function.
     callNativeFunction_(calleeId, argc, flags, ignoresReturnValue);
 #endif
   }
@@ -866,18 +866,18 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
                              CallFlags flags) {
     MOZ_ASSERT(!flags.isSameRealm());
 #ifdef JS_SIMULATOR
-    
-    
-    
-    
-    
+    // The simulator requires native calls to be redirected to a
+    // special swi instruction. If we are calling an arbitrary native
+    // function, we can't wrap the real target ahead of time, so we
+    // call a wrapper function (CallAnyNative) that calls the target
+    // itself, and redirect that wrapper.
     JSNative target = CallAnyNative;
     void* rawPtr = JS_FUNC_TO_DATA_PTR(void*, target);
     void* redirected = Simulator::RedirectNativeFunction(rawPtr, Args_General3);
     callNativeFunction_(calleeId, argc, flags, redirected);
 #else
     callNativeFunction_(calleeId, argc, flags,
-                         false);
+                        /* ignoresReturnValue = */ false);
 #endif
   }
 
@@ -886,16 +886,16 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     MOZ_ASSERT(!flags.isSameRealm());
     void* target = JS_FUNC_TO_DATA_PTR(void*, hook);
 #ifdef JS_SIMULATOR
-    
-    
-    
+    // The simulator requires VM calls to be redirected to a special
+    // swi instruction to handle them, so we store the redirected
+    // pointer in the stub and use that instead of the original one.
     target = Simulator::RedirectNativeFunction(target, Args_General3);
 #endif
     callClassHook_(calleeId, argc, flags, target);
   }
 
-  
-  
+  // These generate no code, but save the template object in a stub
+  // field for BaselineInspector.
   void metaNativeTemplateObject(JSFunction* callee, JSObject* templateObject) {
     metaTwoByte_(MetaTwoByteKind::NativeTemplateObject, callee, templateObject);
   }
@@ -912,7 +912,7 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
 
 class CacheIRStubInfo;
 
-
+// Helper class for reading CacheIR bytecode.
 class MOZ_RAII CacheIRReader {
   CompactBufferReader buffer_;
 
@@ -930,7 +930,7 @@ class MOZ_RAII CacheIRReader {
 
   CacheOp readOp() { return CacheOp(buffer_.readUnsigned15Bit()); }
 
-  
+  // Skip data not currently used.
   void skip() { buffer_.readByte(); }
   void skip(uint32_t skipLength) {
     if (skipLength > 0) {
@@ -998,7 +998,7 @@ class MOZ_RAII CacheIRReader {
   }
 
   CallFlags callFlags() {
-    
+    // See CacheIRWriter::writeCallFlagsImm()
     uint8_t encoded = buffer_.readByte();
     CallFlags::ArgFormat format =
         CallFlags::ArgFormat(encoded & CallFlags::ArgFormatMask);
@@ -1008,12 +1008,12 @@ class MOZ_RAII CacheIRReader {
       case CallFlags::Unknown:
         MOZ_CRASH("Unexpected call flags");
       case CallFlags::Standard:
-        return CallFlags(isConstructing, false, isSameRealm);
+        return CallFlags(isConstructing, /*isSpread =*/false, isSameRealm);
       case CallFlags::Spread:
-        return CallFlags(isConstructing, true, isSameRealm);
+        return CallFlags(isConstructing, /*isSpread =*/true, isSameRealm);
       default:
-        
-        
+        // The existing non-standard argument formats (FunCall and FunApply)
+        // can't be constructors and have no support for isSameRealm.
         MOZ_ASSERT(!isConstructing && !isSameRealm);
         return CallFlags(format);
     }
@@ -1121,16 +1121,16 @@ class MOZ_RAII IRGenerator {
   static constexpr char* NotAttached = nullptr;
 };
 
-
+// Flags used to describe what values a GetProperty cache may produce.
 enum class GetPropertyResultFlags {
   None = 0,
 
-  
-  
-  
+  // Values produced by this cache will go through a type barrier,
+  // so the cache may produce any type of value that is compatible with its
+  // result operand.
   Monitored = 1 << 0,
 
-  
+  // Whether particular primitives may be produced by this cache.
   AllowUndefined = 1 << 1,
   AllowInt32 = 1 << 2,
   AllowDouble = 1 << 3,
@@ -1155,7 +1155,7 @@ static inline GetPropertyResultFlags& operator|=(GetPropertyResultFlags& lhs,
   return lhs;
 }
 
-
+// GetPropIRGenerator generates CacheIR for a GetProp IC.
 class MOZ_RAII GetPropIRGenerator : public IRGenerator {
   HandleValue val_;
   HandleValue idVal_;
@@ -1253,12 +1253,12 @@ class MOZ_RAII GetPropIRGenerator : public IRGenerator {
             cacheKind_ == CacheKind::GetElemSuper);
   }
 
-  
-  
+  // No pc if idempotent, as there can be multiple bytecode locations
+  // due to GVN.
   bool idempotent() const { return pc_ == nullptr; }
 
-  
-  
+  // If this is a GetElem cache, emit instructions to guard the incoming Value
+  // matches |id|.
   void maybeEmitIdGuard(jsid id);
 
   void trackAttached(const char* name);
@@ -1281,7 +1281,7 @@ class MOZ_RAII GetPropIRGenerator : public IRGenerator {
   }
 };
 
-
+// GetNameIRGenerator generates CacheIR for a GetName IC.
 class MOZ_RAII GetNameIRGenerator : public IRGenerator {
   HandleObject env_;
   HandlePropertyName name_;
@@ -1300,7 +1300,7 @@ class MOZ_RAII GetNameIRGenerator : public IRGenerator {
   AttachDecision tryAttachStub();
 };
 
-
+// BindNameIRGenerator generates CacheIR for a BindName IC.
 class MOZ_RAII BindNameIRGenerator : public IRGenerator {
   HandleObject env_;
   HandlePropertyName name_;
@@ -1318,7 +1318,7 @@ class MOZ_RAII BindNameIRGenerator : public IRGenerator {
   AttachDecision tryAttachStub();
 };
 
-
+// Information used by SetProp/SetElem stubs to check/update property types.
 class MOZ_RAII PropertyTypeCheckInfo {
   RootedObjectGroup group_;
   RootedId id_;
@@ -1358,7 +1358,7 @@ class MOZ_RAII PropertyTypeCheckInfo {
   }
 };
 
-
+// SetPropIRGenerator generates CacheIR for a SetProp IC.
 class MOZ_RAII SetPropIRGenerator : public IRGenerator {
   HandleValue lhsVal_;
   HandleValue idVal_;
@@ -1390,8 +1390,8 @@ class MOZ_RAII SetPropIRGenerator : public IRGenerator {
     return ValOperandId(2);
   }
 
-  
-  
+  // If this is a SetElem cache, emit instructions to guard the incoming Value
+  // matches |id|.
   void maybeEmitIdGuard(jsid id);
 
   AttachDecision tryAttachNativeSetSlot(HandleObject obj, ObjOperandId objId,
@@ -1482,8 +1482,8 @@ class MOZ_RAII SetPropIRGenerator : public IRGenerator {
   DeferType deferType() const { return deferType_; }
 };
 
-
-
+// HasPropIRGenerator generates CacheIR for a HasProp IC. Used for
+// CacheKind::In / CacheKind::HasOwn.
 class MOZ_RAII HasPropIRGenerator : public IRGenerator {
   HandleValue val_;
   HandleValue idVal_;
@@ -1521,7 +1521,7 @@ class MOZ_RAII HasPropIRGenerator : public IRGenerator {
   void trackAttached(const char* name);
 
  public:
-  
+  // NOTE: Argument order is PROPERTY, OBJECT
   HasPropIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
                      ICState::Mode mode, CacheKind cacheKind, HandleValue idVal,
                      HandleValue val);
@@ -1655,6 +1655,7 @@ class MOZ_RAII CallIRGenerator : public IRGenerator {
   AttachDecision tryAttachNewArrayIterator(HandleFunction callee);
   AttachDecision tryAttachNewStringIterator(HandleFunction callee);
   AttachDecision tryAttachNewRegExpStringIterator(HandleFunction callee);
+  AttachDecision tryAttachObjectCreate(HandleFunction callee);
 
   AttachDecision tryAttachFunCall(HandleFunction calleeFunc);
   AttachDecision tryAttachFunApply(HandleFunction calleeFunc);
@@ -1849,10 +1850,10 @@ inline ReferenceType ReferenceTypeFromSimpleTypeDescrKey(uint32_t key) {
   return ReferenceType(key >> 1);
 }
 
-
+// Returns whether obj is a WindowProxy wrapping the script's global.
 extern bool IsWindowProxyForScriptGlobal(JSScript* script, JSObject* obj);
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_CacheIR_h */
