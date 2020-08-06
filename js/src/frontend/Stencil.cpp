@@ -45,8 +45,25 @@ bool frontend::RegExpCreationData::init(JSContext* cx, JSAtom* pattern,
   return true;
 }
 
-Scope* ScopeCreationData::getEnclosingScope() {
-  return enclosing_.existingScope();
+AbstractScopePtr ScopeCreationData::enclosing(
+    CompilationInfo& compilationInfo) {
+  if (enclosing_) {
+    return AbstractScopePtr(compilationInfo, *enclosing_);
+  }
+
+  
+  
+  
+  if (compilationInfo.options.selfHostingMode) {
+    MOZ_ASSERT(compilationInfo.enclosingScope == nullptr);
+    return AbstractScopePtr(&compilationInfo.cx->global()->emptyGlobalScope());
+  }
+
+  return AbstractScopePtr(compilationInfo.enclosingScope);
+}
+
+Scope* ScopeCreationData::getEnclosingScope(CompilationInfo& compilationInfo) {
+  return enclosing(compilationInfo).existingScope();
 }
 
 JSFunction* ScopeCreationData::function(
@@ -110,10 +127,6 @@ Scope* ScopeCreationData::createScope(JSContext* cx,
 }
 
 void ScopeCreationData::trace(JSTracer* trc) {
-  if (enclosing_) {
-    enclosing_.trace(trc);
-  }
-
   
   if (data_) {
     switch (kind()) {

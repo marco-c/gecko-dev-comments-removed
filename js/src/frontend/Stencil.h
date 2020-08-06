@@ -143,7 +143,8 @@ class ScopeCreationData {
   friend class js::GCMarker;
 
   
-  AbstractScopePtr enclosing_;
+  
+  mozilla::Maybe<ScopeIndex> enclosing_;
 
   
   ScopeKind kind_;
@@ -165,7 +166,7 @@ class ScopeCreationData {
 
  public:
   ScopeCreationData(
-      JSContext* cx, ScopeKind kind, Handle<AbstractScopePtr> enclosing,
+      JSContext* cx, ScopeKind kind, mozilla::Maybe<ScopeIndex> enclosing,
       uint32_t firstFrameSlot, mozilla::Maybe<uint32_t> numEnvironmentSlots,
       UniquePtr<BaseScopeData> data = {},
       mozilla::Maybe<FunctionIndex> functionIndex = mozilla::Nothing(),
@@ -179,27 +180,27 @@ class ScopeCreationData {
         data_(std::move(data)) {}
 
   ScopeKind kind() const { return kind_; }
-  AbstractScopePtr enclosing() { return enclosing_; }
+  AbstractScopePtr enclosing(CompilationInfo& compilationInfo);
 
-  Scope* getEnclosingScope();
+  Scope* getEnclosingScope(frontend::CompilationInfo& compilationInfo);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      Handle<FunctionScope::Data*> dataArg,
                      bool hasParameterExprs, bool needsEnvironment,
                      FunctionIndex functionIndex, bool isArrow,
-                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
+                     mozilla::Maybe<ScopeIndex> enclosing, ScopeIndex* index);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      ScopeKind kind, Handle<LexicalScope::Data*> dataArg,
                      uint32_t firstFrameSlot,
-                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
+                     mozilla::Maybe<ScopeIndex> enclosing, ScopeIndex* index);
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      ScopeKind kind, Handle<VarScope::Data*> dataArg,
                      uint32_t firstFrameSlot, bool needsEnvironment,
-                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
+                     mozilla::Maybe<ScopeIndex> enclosing, ScopeIndex* index);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
@@ -209,16 +210,16 @@ class ScopeCreationData {
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      ScopeKind kind, Handle<EvalScope::Data*> dataArg,
-                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
+                     mozilla::Maybe<ScopeIndex> enclosing, ScopeIndex* index);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      Handle<ModuleScope::Data*> dataArg,
-                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
+                     mozilla::Maybe<ScopeIndex> enclosing, ScopeIndex* index);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
-                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
+                     mozilla::Maybe<ScopeIndex> enclosing, ScopeIndex* index);
 
   bool hasEnvironmentShape() const { return numEnvironmentSlots_.isSome(); }
 
@@ -267,6 +268,10 @@ class ScopeCreationData {
   template <typename SpecificScopeType, typename SpecificEnvironmentType>
   Scope* createSpecificScope(JSContext* cx, CompilationInfo& compilationInfo);
 };
+
+
+
+
 
 class EmptyGlobalScopeType {};
 
