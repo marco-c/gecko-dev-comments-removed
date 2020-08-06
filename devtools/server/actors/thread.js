@@ -1746,10 +1746,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   threadObjectGrip: function(actor) {
-    
-    
-    actor.originalRegisteredPool = actor.getParent();
-
     this.threadLifetimePool.manage(actor);
     this.threadLifetimePool.objectActors.set(actor.obj, actor);
   },
