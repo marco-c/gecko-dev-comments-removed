@@ -138,57 +138,6 @@ class BigIntCreationData {
 
 using BigIntIndex = TypedIndex<BigIntCreationData>;
 
-class EnvironmentShapeCreationData {
-  
-  struct CreateEnvShapeData {
-    BindingIter freshBi;
-    const JSClass* cls;
-    uint32_t nextEnvironmentSlot;
-    uint32_t baseShapeFlags;
-
-    void trace(JSTracer* trc) { freshBi.trace(trc); }
-  };
-
-  
-  struct EmptyEnvShapeData {
-    const JSClass* cls;
-    uint32_t baseShapeFlags;
-    void trace(JSTracer* trc){
-        
-        
-    };
-  };
-
-  
-  
-  
-  mozilla::Variant<mozilla::Nothing, CreateEnvShapeData, EmptyEnvShapeData>
-      data_ = mozilla::AsVariant(mozilla::Nothing());
-
- public:
-  explicit operator bool() const { return !data_.is<mozilla::Nothing>(); }
-
-  
-  void set(const BindingIter& freshBi, const JSClass* cls,
-           uint32_t nextEnvironmentSlot, uint32_t baseShapeFlags) {
-    data_ = mozilla::AsVariant(
-        CreateEnvShapeData{freshBi, cls, nextEnvironmentSlot, baseShapeFlags});
-  }
-
-  
-  void set(const JSClass* cls, uint32_t shapeFlags) {
-    data_ = mozilla::AsVariant(EmptyEnvShapeData{cls, shapeFlags});
-  }
-
-  
-  MOZ_MUST_USE bool createShape(JSContext* cx, MutableHandleShape shape);
-
-  void trace(JSTracer* trc) {
-    using DataGCPolicy = JS::GCPolicy<decltype(data_)>;
-    DataGCPolicy::trace(trc, &data_, "data_");
-  }
-};
-
 class ScopeCreationData {
   friend class js::AbstractScopePtr;
   friend class js::GCMarker;
@@ -200,7 +149,11 @@ class ScopeCreationData {
   ScopeKind kind_;
 
   
-  EnvironmentShapeCreationData environmentShape_;
+  uint32_t firstFrameSlot_;
+
+  
+  
+  mozilla::Maybe<uint32_t> numEnvironmentSlots_;
 
   
   mozilla::Maybe<FunctionIndex> functionIndex_;
@@ -213,13 +166,14 @@ class ScopeCreationData {
  public:
   ScopeCreationData(
       JSContext* cx, ScopeKind kind, Handle<AbstractScopePtr> enclosing,
-      Handle<frontend::EnvironmentShapeCreationData> environmentShape,
+      uint32_t firstFrameSlot, mozilla::Maybe<uint32_t> numEnvironmentSlots,
       UniquePtr<BaseScopeData> data = {},
       mozilla::Maybe<FunctionIndex> functionIndex = mozilla::Nothing(),
       bool isArrow = false)
       : enclosing_(enclosing),
         kind_(kind),
-        environmentShape_(environmentShape),  
+        firstFrameSlot_(firstFrameSlot),
+        numEnvironmentSlots_(numEnvironmentSlots),
         functionIndex_(functionIndex),
         isArrow_(isArrow),
         data_(std::move(data)) {}
@@ -266,10 +220,12 @@ class ScopeCreationData {
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
 
+  bool hasEnvironmentShape() const { return numEnvironmentSlots_.isSome(); }
+
   bool hasEnvironment() const {
     
     
-    return Scope::hasEnvironment(kind(), !!environmentShape_);
+    return Scope::hasEnvironment(kind(), hasEnvironmentShape());
   }
 
   
@@ -297,14 +253,19 @@ class ScopeCreationData {
       CompilationInfo& compilationInfo);
 
   template <typename SpecificScopeType>
-  Scope* createSpecificScope(JSContext* cx, CompilationInfo& compilationInfo);
-
-  template <typename SpecificScopeType>
   uint32_t nextFrameSlot() const {
     
     
     return data<SpecificScopeType>().nextFrameSlot;
   }
+
+  template <typename SpecificEnvironmentType>
+  MOZ_MUST_USE bool createSpecificShape(JSContext* cx, ScopeKind kind,
+                                        BaseScopeData* scopeData,
+                                        MutableHandleShape shape);
+
+  template <typename SpecificScopeType, typename SpecificEnvironmentType>
+  Scope* createSpecificScope(JSContext* cx, CompilationInfo& compilationInfo);
 };
 
 class EmptyGlobalScopeType {};
