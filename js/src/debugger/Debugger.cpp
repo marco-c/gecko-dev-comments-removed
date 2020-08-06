@@ -110,7 +110,8 @@
 #include "wasm/WasmTypes.h"           
 
 #include "debugger/DebugAPI-inl.h"
-#include "debugger/Frame-inl.h"    
+#include "debugger/Environment-inl.h"  
+#include "debugger/Frame-inl.h"        
 #include "debugger/Object-inl.h"   
 #include "debugger/Script-inl.h"   
 #include "gc/GC-inl.h"             
