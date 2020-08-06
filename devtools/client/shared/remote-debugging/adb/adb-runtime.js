@@ -38,7 +38,28 @@ class AdbRuntime {
   }
 
   get isFenix() {
-    return this._packageName().includes("org.mozilla.fenix");
+    
+    
+    
+    const isFirefox =
+      this._packageName().includes("org.mozilla.firefox") ||
+      this._packageName().includes("org.mozilla.fenix");
+
+    if (!isFirefox) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    const mainVersion = Number(this.versionName.split(".")[0]);
+    const isFennec = mainVersion === 68;
+
+    
+    
+    return !isFennec;
   }
 
   get deviceId() {
@@ -58,25 +79,21 @@ class AdbRuntime {
 
     switch (packageName) {
       case "org.mozilla.firefox":
+        if (!this.isFenix) {
+          
+          return "Firefox (Fennec)";
+        }
+        
         return "Firefox";
       case "org.mozilla.firefox_beta":
+        
         return "Firefox Beta";
-      case "org.mozilla.fennec":
-      case "org.mozilla.fennec_aurora":
-        
-        
-        
-        return "Firefox Nightly";
       case "org.mozilla.fenix":
         
-        
-        return "Firefox Preview";
-      case "org.mozilla.fenix.beta":
-        return "Firefox Preview Beta";
-      case "org.mozilla.fenix.nightly":
-        return "Firefox Preview Nightly";
+        return "Firefox Nightly";
       default:
-        return "Firefox Custom";
+        
+        return `Firefox (${packageName})`;
     }
   }
 
