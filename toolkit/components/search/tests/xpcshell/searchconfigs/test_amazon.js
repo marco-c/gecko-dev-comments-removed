@@ -441,10 +441,5 @@ add_task(async function setup() {
 });
 
 add_task(async function test_searchConfig_amazon() {
-  await test.run(true);
-  
-  
-  
-  test._config.available.included[0].locales.matches.push("unknown");
-  await test.run(false);
+  await test.run();
 });

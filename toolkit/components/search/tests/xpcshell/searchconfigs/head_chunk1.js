@@ -1,8 +1,0 @@
-
-
-
-
-
-"use strict";
-
-Services.prefs.setIntPref("browser.search.config.test.section", 1);

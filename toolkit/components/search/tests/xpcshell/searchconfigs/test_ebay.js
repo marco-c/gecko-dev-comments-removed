@@ -284,15 +284,5 @@ add_task(async function setup() {
 });
 
 add_task(async function test_searchConfig_ebay() {
-  await test.run(true);
-  
-  
-  
-  test._config.available.included[0].locales.matches.push("unknown");
-  
-  
-  test._config.available.included[1].regions = availableRegions.filter(
-    region => !["by", "kz", "ru", "tr"].includes(region)
-  );
-  await test.run(false);
+  await test.run();
 });
