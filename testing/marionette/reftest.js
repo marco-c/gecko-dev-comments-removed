@@ -636,8 +636,14 @@ max-width: ${width}px; max-height: ${height}px`;
       this.updateBrowserRemotenessByURL(win.gBrowser, url);
 
       navigateOpts.url = url;
-      navigateOpts.loadEventExpected = false;
-      await this.driver.listener.navigateTo(navigateOpts);
+      
+      
+      
+      
+      if (this.lastURL || url != "about:blank") {
+        navigateOpts.loadEventExpected = false;
+        await this.driver.listener.navigateTo(navigateOpts);
+      }
       this.lastURL = url;
     }
 
