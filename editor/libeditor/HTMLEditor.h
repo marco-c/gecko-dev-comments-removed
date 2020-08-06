@@ -2048,13 +2048,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  template <typename PT, typename CT>
-  Element* GetInvisibleBRElementAt(const EditorDOMPointBase<PT, CT>& aPoint);
-
-  
-
-
-
 
 
 

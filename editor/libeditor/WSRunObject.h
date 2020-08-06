@@ -351,6 +351,36 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+  template <typename EditorDOMPointType>
+  MOZ_NEVER_INLINE_DEBUG static HTMLBRElement*
+  GetPrecedingBRElementUnlessVisibleContentFound(
+      const HTMLEditor& aHTMLEditor, const EditorDOMPointType& aPoint) {
+    MOZ_ASSERT(aPoint.IsSetAndValid());
+    
+    
+    
+    
+    
+    
+    
+    if (aPoint.IsStartOfContainer()) {
+      return nullptr;
+    }
+    
+    
+    TextFragmentData textFragmentData(aPoint,
+                                      aHTMLEditor.GetActiveEditingHost());
+    return textFragmentData.StartsFromBRElement()
+               ? textFragmentData.StartReasonBRElementPtr()
+               : nullptr;
+  }
+
+  
+
+
+
+
+
 
 
 
