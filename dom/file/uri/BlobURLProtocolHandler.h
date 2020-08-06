@@ -99,6 +99,9 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
 bool IsBlobURI(nsIURI* aUri);
 bool IsMediaSourceURI(nsIURI* aUri);
 
+
+bool BlobURLSchemeIsHTTPOrHTTPS(const nsACString& aUri);
+
 }  
 }  
 
