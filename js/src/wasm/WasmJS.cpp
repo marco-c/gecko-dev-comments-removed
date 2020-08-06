@@ -384,16 +384,17 @@ bool wasm::HasPlatformSupport(JSContext* cx) {
     return false;
   }
 
+#ifdef JS_CODEGEN_ARM
+  
+  if (!HasLDSTREXBHD()) {
+    return false;
+  }
+#endif
+
   
   if (!jit::AtomicOperations::isLockfree8()) {
     return false;
   }
-
-#ifdef JS_SIMULATOR
-  if (!Simulator::supportsAtomics()) {
-    return false;
-  }
-#endif
 
   
   

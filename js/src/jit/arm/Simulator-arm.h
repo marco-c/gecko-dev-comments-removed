@@ -197,8 +197,6 @@ class Simulator {
   Simulator();
   ~Simulator();
 
-  static bool supportsAtomics() { return HasLDSTREXBHD(); }
-
   
   
   static Simulator* Current();

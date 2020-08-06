@@ -215,8 +215,6 @@ class Simulator {
   Simulator();
   ~Simulator();
 
-  static bool supportsAtomics() { return true; }
-
   
   
   static Simulator* Current();
