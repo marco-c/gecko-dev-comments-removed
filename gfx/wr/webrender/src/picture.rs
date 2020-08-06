@@ -2188,6 +2188,9 @@ pub struct ExternalNativeSurfaceKey {
     pub image_keys: [ImageKey; 3],
     
     pub size: DeviceIntSize,
+    
+    
+    pub is_external_surface: bool,
 }
 
 
@@ -2946,6 +2949,7 @@ impl TileCacheInstance {
     fn setup_compositor_surfaces_yuv(
         &mut self,
         prim_info: &mut PrimitiveDependencyInfo,
+        flags: PrimitiveFlags,
         prim_rect: PictureRect,
         local_prim_rect: LayoutRect,
         prim_spatial_node_index: SpatialNodeIndex,
@@ -2961,6 +2965,7 @@ impl TileCacheInstance {
     ) -> bool {
         self.setup_compositor_surfaces_impl(
             prim_info,
+            flags,
             prim_rect,
             local_prim_rect,
             prim_spatial_node_index,
@@ -2981,6 +2986,7 @@ impl TileCacheInstance {
     fn setup_compositor_surfaces_rgb(
         &mut self,
         prim_info: &mut PrimitiveDependencyInfo,
+        flags: PrimitiveFlags,
         prim_rect: PictureRect,
         local_prim_rect: LayoutRect,
         prim_spatial_node_index: SpatialNodeIndex,
@@ -2996,6 +3002,7 @@ impl TileCacheInstance {
         api_keys[0] = api_key;
         self.setup_compositor_surfaces_impl(
             prim_info,
+            flags,
             prim_rect,
             local_prim_rect,
             prim_spatial_node_index,
@@ -3016,6 +3023,7 @@ impl TileCacheInstance {
     fn setup_compositor_surfaces_impl(
         &mut self,
         prim_info: &mut PrimitiveDependencyInfo,
+        flags: PrimitiveFlags,
         prim_rect: PictureRect,
         local_prim_rect: LayoutRect,
         prim_spatial_node_index: SpatialNodeIndex,
@@ -3084,6 +3092,17 @@ impl TileCacheInstance {
         
         
         
+        let external_image_id = if flags.contains(PrimitiveFlags::SUPPORTS_EXTERNAL_COMPOSITOR_SURFACE) {
+            resource_cache.get_image_properties(api_keys[0])
+                .and_then(|properties| properties.external_image)
+                .and_then(|image| Some(image.id))
+        } else {
+            None
+        };
+
+        
+        
+        
         
         let (native_surface_id, update_params) = match composite_state.compositor_kind {
             CompositorKind::Draw { .. } => {
@@ -3095,27 +3114,39 @@ impl TileCacheInstance {
                 let key = ExternalNativeSurfaceKey {
                     image_keys: *api_keys,
                     size: native_surface_size,
+                    is_external_surface: external_image_id.is_some(),
                 };
 
                 let native_surface = self.external_native_surface_cache
                     .entry(key)
                     .or_insert_with(|| {
                         
-                        
+                        let native_surface_id = match external_image_id {
+                            Some(_external_image) => {
+                                
+                                
+                                resource_cache.create_compositor_external_surface(true)
+                            }
+                            None => {
+                                
+                                
+                                let native_surface_id =
+                                resource_cache.create_compositor_surface(
+                                    DeviceIntPoint::zero(),
+                                    native_surface_size,
+                                    true,
+                                ); 
 
-                        let native_surface_id = resource_cache.create_compositor_surface(
-                            DeviceIntPoint::zero(),
-                            native_surface_size,
-                            true,
-                        );
+                                let tile_id = NativeTileId {
+                                    surface_id: native_surface_id,
+                                    x: 0,
+                                    y: 0,
+                                };
+                                resource_cache.create_compositor_tile(tile_id);
 
-                        let tile_id = NativeTileId {
-                            surface_id: native_surface_id,
-                            x: 0,
-                            y: 0,
+                                native_surface_id
+                            }
                         };
-
-                        resource_cache.create_compositor_tile(tile_id);
 
                         ExternalNativeSurface {
                             used_this_frame: true,
@@ -3128,23 +3159,37 @@ impl TileCacheInstance {
                 
                 native_surface.used_this_frame = true;
 
-                
-                
-                let update_params = match dependency {
-                    ExternalSurfaceDependency::Yuv{ image_dependencies, .. } => {
-                       if image_dependencies == native_surface.image_dependencies {
-                           None
-                       } else {
-                           Some(native_surface_size)
-                       }
-                    },
-                    ExternalSurfaceDependency::Rgb{ image_dependency, .. } => {
-                       if image_dependency == native_surface.image_dependencies[0] {
-                           None
-                       } else {
-                           Some(native_surface_size)
-                       }
-                    },
+                let update_params = match external_image_id {
+                    Some(external_image) => {
+                        
+                        
+                        
+                        resource_cache.attach_compositor_external_image(
+                            native_surface.native_surface_id,
+                            external_image,
+                        );
+                        None
+                    }
+                    None => {
+                        
+                        
+                        match dependency {
+                            ExternalSurfaceDependency::Yuv{ image_dependencies, .. } => {
+                                if image_dependencies == native_surface.image_dependencies {
+                                    None
+                                } else {
+                                    Some(native_surface_size)
+                                }
+                            },
+                            ExternalSurfaceDependency::Rgb{ image_dependency, .. } => {
+                                if image_dependency == native_surface.image_dependencies[0] {
+                                    None
+                                } else {
+                                    Some(native_surface_size)
+                                }
+                            },
+                        }
+                    }
                 };
 
                 (Some(native_surface.native_surface_id), update_params)
@@ -3370,6 +3415,7 @@ impl TileCacheInstance {
                 if promote_to_surface {
                     promote_to_surface = self.setup_compositor_surfaces_rgb(
                         &mut prim_info,
+                        image_key.common.flags,
                         prim_rect,
                         local_prim_rect,
                         prim_spatial_node_index,
@@ -3436,6 +3482,7 @@ impl TileCacheInstance {
 
                     promote_to_surface = self.setup_compositor_surfaces_yuv(
                         &mut prim_info,
+                        prim_data.common.flags,
                         prim_rect,
                         local_prim_rect,
                         prim_spatial_node_index,

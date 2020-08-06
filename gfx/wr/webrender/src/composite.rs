@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, YuvColorSpace, YuvFormat, ImageRendering};
+use api::{ColorF, YuvColorSpace, YuvFormat, ImageRendering, ExternalImageId};
 use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect};
 use api::units::{DevicePixelScale, DevicePoint, PictureRect, TexelRect, DevicePixel};
 use crate::batch::{resolve_image, get_buffer_kind};
@@ -33,6 +33,10 @@ pub enum NativeSurfaceOperationDetails {
         tile_size: DeviceIntSize,
         is_opaque: bool,
     },
+    CreateExternalSurface {
+        id: NativeSurfaceId,
+        is_opaque: bool,
+    },
     DestroySurface {
         id: NativeSurfaceId,
     },
@@ -41,6 +45,10 @@ pub enum NativeSurfaceOperationDetails {
     },
     DestroyTile {
         id: NativeTileId,
+    },
+    AttachExternalImage {
+        id: NativeSurfaceId,
+        external_image: ExternalImageId,
     }
 }
 
@@ -858,6 +866,16 @@ pub trait Compositor {
     
     
     
+    fn create_external_surface(
+        &mut self,
+        id: NativeSurfaceId,
+        is_opaque: bool,
+    );
+
+    
+    
+    
+    
     
     
     fn destroy_surface(
@@ -875,6 +893,16 @@ pub trait Compositor {
     fn destroy_tile(
         &mut self,
         id: NativeTileId,
+    );
+
+    
+    
+    
+    
+    fn attach_external_image(
+        &mut self,
+        id: NativeSurfaceId,
+        external_image: ExternalImageId
     );
 
     
