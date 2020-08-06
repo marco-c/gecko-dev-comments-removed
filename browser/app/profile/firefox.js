@@ -1844,7 +1844,7 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 
 pref("extensions.formautofill.available", "detect");
-pref("extensions.formautofill.creditCards.available", false);
+pref("extensions.formautofill.creditCards.available", true);
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", false);
 pref("extensions.formautofill.creditCards.enabled", true);
