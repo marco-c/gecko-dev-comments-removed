@@ -1227,6 +1227,28 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static EditActionResult
+  MergeFirstLineOfRightBlockElementIntoDescendantLeftBlockElement(
+      HTMLEditor& aHTMLEditor, Element& aLeftBlockElement,
+      Element& aRightBlockElement, const EditorDOMPoint& aAtRightBlockChild,
+      const Maybe<nsAtom*>& aListElementTagName);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

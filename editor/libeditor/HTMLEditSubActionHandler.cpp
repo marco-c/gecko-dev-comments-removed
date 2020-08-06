@@ -4493,103 +4493,15 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   EditorDOMPoint atRightBlockChild;
   if (EditorUtils::IsDescendantOf(*leftBlockElement, *rightBlockElement,
                                   &atRightBlockChild)) {
-    MOZ_ASSERT(atRightBlockChild.GetContainer() == rightBlockElement);
-    DebugOnly<bool> advanced = atRightBlockChild.AdvanceOffset();
-    NS_WARNING_ASSERTION(
-        advanced,
-        "Failed to advance offset to after child of rightBlockElement, "
-        "leftBlockElement is a descendant of the child");
-    nsresult rv = WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
-        *this, EditorDOMPoint::AtEndOf(leftBlockElement));
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
-          "failed at left block");
-      return EditActionIgnored(rv);
-    }
-
-    {
-      
-      AutoTrackDOMPoint tracker(RangeUpdaterRef(), &atRightBlockChild);
-      nsresult rv = WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
-          *this, atRightBlockChild);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
-            "failed at right block child");
-        return EditActionIgnored(rv);
-      }
-
-      
-      
-      if (atRightBlockChild.GetContainerAsElement()) {
-        rightBlockElement = atRightBlockChild.GetContainerAsElement();
-      } else if (NS_WARN_IF(!atRightBlockChild.GetContainerParentAsElement())) {
-        return EditActionIgnored(NS_ERROR_UNEXPECTED);
-      } else {
-        rightBlockElement = atRightBlockChild.GetContainerParentAsElement();
-      }
-    }
-
-    
-    RefPtr<HTMLBRElement> invisibleBRElementAtEndOfLeftBlockElement =
-        WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
-            *this, EditorDOMPoint::AtEndOf(leftBlockElement));
-    EditActionResult ret(NS_OK);
-    if (NS_WARN_IF(newListElementTagNameOfRightListElement.isSome())) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-      
-      
-      ret.MarkAsHandled();
-    } else {
-      
-      NS_WARNING_ASSERTION(
-          rightBlockElement == atRightBlockChild.GetContainer(),
-          "The relation is not guaranteed but assumed");
-      MoveNodeResult moveNodeResult = MoveOneHardLineContents(
-          EditorDOMPoint(rightBlockElement, atRightBlockChild.Offset()),
-          EditorDOMPoint(leftBlockElement, 0), MoveToEndOfContainer::Yes);
-      if (NS_WARN_IF(moveNodeResult.EditorDestroyed())) {
-        return ret.SetResult(NS_ERROR_EDITOR_DESTROYED);
-      }
-      NS_WARNING_ASSERTION(moveNodeResult.Succeeded(),
-                           "HTMLEditor::MoveOneHardLineContents("
-                           "MoveToEndOfContainer::Yes) failed, but ignored");
-      if (moveNodeResult.Succeeded()) {
-        ret |= moveNodeResult;
-      }
-      
-      
-      atRightBlockChild.Clear();
-    }
-
-    if (!invisibleBRElementAtEndOfLeftBlockElement) {
-      return ret;
-    }
-
-    rv = DeleteNodeWithTransaction(*invisibleBRElementAtEndOfLeftBlockElement);
-    if (NS_WARN_IF(Destroyed())) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "HTMLEditor::DeleteNodeWithTransaction() failed, but ignored");
-    if (NS_SUCCEEDED(rv)) {
-      ret.MarkAsHandled();
-    }
-    return ret;
+    EditActionResult result = WhiteSpaceVisibilityKeeper::
+        MergeFirstLineOfRightBlockElementIntoDescendantLeftBlockElement(
+            *this, *leftBlockElement, *rightBlockElement, atRightBlockChild,
+            newListElementTagNameOfRightListElement);
+    NS_WARNING_ASSERTION(result.Succeeded(),
+                         "WhiteSpaceVisibilityKeeper::"
+                         "MergeFirstLineOfRightBlockElementIntoDescendantLeftBl"
+                         "ockElement() failed");
+    return result;
   }
 
   MOZ_DIAGNOSTIC_ASSERT(!atRightBlockChild.IsSet());
