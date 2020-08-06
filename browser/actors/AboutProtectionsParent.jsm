@@ -152,7 +152,6 @@ class AboutProtectionsParent extends JSWindowActorParent {
 
 
 
-
   async getLoginData() {
     if (gTestOverride && "getLoginData" in gTestOverride) {
       return gTestOverride.getLoginData();
@@ -170,16 +169,6 @@ class AboutProtectionsParent extends JSWindowActorParent {
       Services.logins.countLogins("", "", "") -
       Services.logins.countLogins(FXA_PWDMGR_HOST, null, FXA_PWDMGR_REALM);
 
-    let potentiallyBreachedLogins = null;
-    
-    
-    if (userFacingLogins && Services.logins.isLoggedIn) {
-      const logins = await LoginHelper.getAllUserFacingLogins();
-      potentiallyBreachedLogins = await LoginBreaches.getPotentialBreachesByLoginGUID(
-        logins
-      );
-    }
-
     let mobileDeviceConnected =
       fxAccounts.device.recentDeviceList &&
       fxAccounts.device.recentDeviceList.filter(
@@ -188,14 +177,12 @@ class AboutProtectionsParent extends JSWindowActorParent {
 
     return {
       numLogins: userFacingLogins,
-      potentiallyBreachedLogins: potentiallyBreachedLogins
-        ? potentiallyBreachedLogins.size
-        : 0,
       mobileDeviceConnected,
     };
   }
 
   
+
 
 
 
@@ -215,6 +202,7 @@ class AboutProtectionsParent extends JSWindowActorParent {
     }
 
     let monitorData = {};
+    let potentiallyBreachedLogins = null;
     let userEmail = null;
     let token = await this.getMonitorScopedOAuthToken();
 
@@ -222,6 +210,14 @@ class AboutProtectionsParent extends JSWindowActorParent {
       if (token) {
         monitorData = await this.fetchUserBreachStats(token);
 
+        
+        
+        if (!LoginHelper.isMasterPasswordSet()) {
+          const logins = await LoginHelper.getAllUserFacingLogins();
+          potentiallyBreachedLogins = await LoginBreaches.getPotentialBreachesByLoginGUID(
+            logins
+          );
+        }
         
         
         const { email } = await fxAccounts.getSignedInUser();
@@ -261,6 +257,9 @@ class AboutProtectionsParent extends JSWindowActorParent {
     return {
       ...monitorData,
       userEmail,
+      potentiallyBreachedLogins: potentiallyBreachedLogins
+        ? potentiallyBreachedLogins.size
+        : 0,
       error: !!monitorData.errorMessage,
     };
   }
@@ -370,7 +369,9 @@ class AboutProtectionsParent extends JSWindowActorParent {
         return this.getMonitorData();
 
       case "FetchUserLoginsData":
-        return this.getLoginData();
+        let { potentiallyBreachedLogins } = await this.getMonitorData();
+        let loginsData = await this.getLoginData();
+        return { ...loginsData, potentiallyBreachedLogins };
 
       case "ClearMonitorCache":
         monitorResponse = null;
