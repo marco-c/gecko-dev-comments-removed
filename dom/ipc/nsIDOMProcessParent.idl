@@ -44,4 +44,9 @@ interface nsIDOMProcessParent: nsISupports {
   [infallible] readonly attribute boolean canSend;
 
   [notxpcom, nostdcall] ContentParentPtr AsContentParent();
+
+  
+
+
+  readonly attribute ACString remoteType;
 };
