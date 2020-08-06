@@ -126,7 +126,11 @@ const kSafeSchemes = [
 ];
 
 const kDocumentChannelDeniedSchemes = ["javascript"];
-const kDocumentChannelDeniedURIs = ["about:crashcontent", "about:printpreview"];
+const kDocumentChannelDeniedURIs = [
+  "about:blank",
+  "about:crashcontent",
+  "about:printpreview",
+];
 
 
 function documentChannelPermittedForURI(aURI) {
@@ -579,15 +583,8 @@ var E10SUtils = {
 
     
     
-    
-    let useOriginalURI;
-    if (aOriginalURI.scheme == "about") {
-      useOriginalURI = !["about:srcdoc", "about:blank"].includes(
-        aOriginalURI.spec
-      );
-    } else {
-      useOriginalURI = aOriginalURI.scheme == "chrome";
-    }
+    let useOriginalURI =
+      aOriginalURI.scheme == "about" || aOriginalURI.scheme == "chrome";
 
     if (!useOriginalURI) {
       
@@ -600,9 +597,7 @@ var E10SUtils = {
       
       
       if (aPrincipal.isNullPrincipal) {
-        if (aOriginalURI.spec == "about:blank") {
-          useOriginalURI = true;
-        } else if (
+        if (
           (aRemoteSubframes && useSeparateDataUriProcess) ||
           aPreferredRemoteType == NOT_REMOTE
         ) {

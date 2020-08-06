@@ -1468,18 +1468,6 @@ function do_send_remote_message(name, data) {
 
 
 
-async function schedulePreciseGCAndForceCC(maxCount) {
-  for (let count = 0; count < maxCount; count++) {
-    await new Promise(resolve => Cu.schedulePreciseGC(resolve));
-    Cu.forceCC();
-  }
-}
-
-
-
-
-
-
 
 
 

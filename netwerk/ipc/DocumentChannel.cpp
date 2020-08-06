@@ -151,7 +151,7 @@ nsDocShell* DocumentChannel::GetDocShell() {
 
 
 static bool URIUsesDocChannel(nsIURI* aURI) {
-  if (SchemeIsJavascript(aURI)) {
+  if (SchemeIsJavascript(aURI) || NS_IsAboutBlank(aURI)) {
     return false;
   }
 
@@ -160,9 +160,14 @@ static bool URIUsesDocChannel(nsIURI* aURI) {
          !spec.EqualsLiteral("about:crashcontent");
 }
 
-bool DocumentChannel::CanUseDocumentChannel(nsIURI* aURI) {
+bool DocumentChannel::CanUseDocumentChannel(nsIURI* aURI, uint32_t aLoadFlags) {
   
-  return URIUsesDocChannel(aURI);
+  
+  
+  
+  
+  return !(aLoadFlags & nsDocShell::INTERNAL_LOAD_FLAGS_IS_SRCDOC) &&
+         URIUsesDocChannel(aURI);
 }
 
 

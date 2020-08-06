@@ -645,15 +645,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void SessionHistoryChanged(int32_t aIndexDelta, int32_t aLengthDelta);
 
-  void SetTriggeringAndInheritPrincipals(nsIPrincipal* aTriggeringPrincipal,
-                                         nsIPrincipal* aPrincipalToInherit,
-                                         uint64_t aLoadIdentifier);
-
-  
-  
-  Tuple<nsCOMPtr<nsIPrincipal>, nsCOMPtr<nsIPrincipal>>
-  GetTriggeringAndInheritPrincipalsForCurrentLoad();
-
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(WindowContext* aParentWindow, BrowsingContextGroup* aGroup,
@@ -834,12 +825,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void CreateChildSHistory();
 
-  using PrincipalWithLoadIdentifierTuple =
-      Tuple<nsCOMPtr<nsIPrincipal>, uint64_t>;
-
-  nsIPrincipal* GetSavedPrincipal(
-      Maybe<PrincipalWithLoadIdentifierTuple> aPrincipalTuple);
-
   
   const Type mType;
 
@@ -915,13 +900,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   TimeStamp mUserGestureStart;
-
-  
-  
-  
-  
-  Maybe<PrincipalWithLoadIdentifierTuple> mTriggeringPrincipal;
-  Maybe<PrincipalWithLoadIdentifierTuple> mPrincipalToInherit;
 
   class DeprioritizedLoadRunner
       : public mozilla::Runnable,

@@ -248,6 +248,14 @@ void nsFrameLoaderOwner::ChangeRemotenessToProcess(
                                         aContentParent);
     }
 
+    
+    
+    
+    
+    
+    
+    
+    mFrameLoader->LoadFrame(false);
   };
 
   auto shouldPreserve =
