@@ -301,28 +301,6 @@ interface nsIPrincipal : nsISerializable
     
 
 
-
-
-    readonly attribute ACString displaySpec;
-
-    
-
-
-
-
-    readonly attribute ACString displayHost;
-
-    
-
-
-
-
-    readonly attribute ACString displayPrePath;
-
-
-    
-
-
     readonly attribute ACString scheme;
 
     
