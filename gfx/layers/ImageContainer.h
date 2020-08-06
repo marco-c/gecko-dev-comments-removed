@@ -153,6 +153,9 @@ class NVImage;
 #ifdef XP_WIN
 class D3D11YCbCrRecycleAllocator;
 #endif
+#ifdef XP_MACOSX
+class MacIOSurfaceRecycleAllocator;
+#endif
 class SurfaceDescriptorBuffer;
 
 struct ImageBackendData {
@@ -555,6 +558,10 @@ class ImageContainer final : public SupportsWeakPtr {
       KnowsCompositor* aKnowsCompositor);
 #endif
 
+#ifdef XP_MACOSX
+  MacIOSurfaceRecycleAllocator* GetMacIOSurfaceRecycleAllocator();
+#endif
+
   
 
 
@@ -638,6 +645,9 @@ class ImageContainer final : public SupportsWeakPtr {
 
 #ifdef XP_WIN
   RefPtr<D3D11YCbCrRecycleAllocator> mD3D11YCbCrRecycleAllocator;
+#endif
+#ifdef XP_MACOSX
+  RefPtr<MacIOSurfaceRecycleAllocator> mMacIOSurfaceRecycleAllocator;
 #endif
 
   nsTArray<OwningImage> mCurrentImages;
