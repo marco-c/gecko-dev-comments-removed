@@ -530,9 +530,13 @@ class UrlbarView {
       
       
       
+      
+      
       let trimmedValue = queryContext.searchString.trim();
       this.oneOffSearchButtons.enable(
-        (this.oneOffsRefresh || trimmedValue) &&
+        ((this.oneOffsRefresh &&
+          firstResult.providerName != "UrlbarProviderSearchTips") ||
+          trimmedValue) &&
           trimmedValue[0] != "@" &&
           (trimmedValue[0] != UrlbarTokenizer.RESTRICT.SEARCH ||
             trimmedValue.length != 1)

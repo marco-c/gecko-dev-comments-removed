@@ -494,6 +494,17 @@ async function promiseAlertDialog(buttonAction, uris, func) {
   return BrowserTestUtils.windowClosed(win);
 }
 
+
+
+
+
+
+
+
+
+
+
+
 async function checkTip(win, expectedTip, closeView = true) {
   if (!expectedTip) {
     
@@ -544,10 +555,29 @@ async function checkTip(win, expectedTip, closeView = true) {
     1
   );
 
+  Assert.ok(
+    !UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
+    "One-offs should be hidden when showing a search tip"
+  );
+
   if (closeView) {
     await UrlbarTestUtils.promisePopupClose(win);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function checkTab(win, url, expectedTip, reset = true) {
   

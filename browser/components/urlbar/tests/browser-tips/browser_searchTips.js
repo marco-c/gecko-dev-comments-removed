@@ -293,3 +293,21 @@ add_task(async function oncePerSession() {
     await checkTab(window, url, UrlbarProviderSearchTips.TIP_TYPE.NONE);
   });
 });
+
+
+
+add_task(async function update2() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
+  });
+  await checkTab(
+    window,
+    "about:newtab",
+    UrlbarProviderSearchTips.TIP_TYPE.ONBOARD
+  );
+  await SpecialPowers.popPrefEnv();
+});
