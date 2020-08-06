@@ -71,6 +71,12 @@ class xpcAccessibleMacInterface : public xpcAccessibleMacNSObjectWrapper,
   id JsValueToNSValue(JS::HandleObject aObject, JSContext* aCx,
                       nsresult* aResult);
 
+  
+  
+  
+  id JsValueToSpecifiedNSObject(JS::HandleObject aObject, JSContext* aCx,
+                                nsresult* aResult);
+
  private:
   xpcAccessibleMacInterface(const xpcAccessibleMacInterface&) = delete;
   xpcAccessibleMacInterface& operator=(const xpcAccessibleMacInterface&) =

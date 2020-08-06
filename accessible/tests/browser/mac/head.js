@@ -56,3 +56,10 @@ function NSRange(location, length) {
     value: [location, length],
   };
 }
+
+function NSDictionary(dict) {
+  return {
+    objectType: "NSDictionary",
+    object: dict,
+  };
+}
