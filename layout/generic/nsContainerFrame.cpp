@@ -2556,12 +2556,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         auto inlineAxisAlignment =
             isOrthogonal ? stylePos->UsedAlignSelf(GetParent()->Style())._0
                          : stylePos->UsedJustifySelf(GetParent()->Style())._0;
-        
-        
-        
-        if ((inlineAxisAlignment == StyleAlignFlags::NORMAL &&
-             !hasIntrinsicISize && !logicalRatio) ||
-            inlineAxisAlignment == StyleAlignFlags::STRETCH) {
+        if (inlineAxisAlignment == StyleAlignFlags::STRETCH) {
           stretchI = eStretch;
         }
       }
@@ -2624,12 +2619,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         auto blockAxisAlignment =
             !isOrthogonal ? stylePos->UsedAlignSelf(GetParent()->Style())._0
                           : stylePos->UsedJustifySelf(GetParent()->Style())._0;
-        
-        
-        
-        if ((blockAxisAlignment == StyleAlignFlags::NORMAL &&
-             !hasIntrinsicBSize && !logicalRatio) ||
-            blockAxisAlignment == StyleAlignFlags::STRETCH) {
+        if (blockAxisAlignment == StyleAlignFlags::STRETCH) {
           stretchB = eStretch;
         }
       }
@@ -2717,33 +2707,31 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         stretchB = (stretchI == eStretch ? eStretch : eStretchPreservingRatio);
       }
 
-      if (logicalRatio) {
-        if (stretchI == eStretch) {
-          tentISize = iSize;  
-          if (stretchB == eStretch) {
-            tentBSize = bSize;  
-          } else if (stretchB == eStretchPreservingRatio) {
-            
-            tentBSize = logicalRatio.Inverted().ApplyTo(iSize);
-          }
-        } else if (stretchB == eStretch) {
+      if (stretchI == eStretch) {
+        tentISize = iSize;  
+        if (stretchB == eStretch) {
           tentBSize = bSize;  
-          if (stretchI == eStretchPreservingRatio) {
-            
-            tentISize = logicalRatio.ApplyTo(bSize);
-          }
-        } else if (stretchI == eStretchPreservingRatio) {
-          tentISize = iSize;  
+        } else if (stretchB == eStretchPreservingRatio && logicalRatio) {
+          
           tentBSize = logicalRatio.Inverted().ApplyTo(iSize);
-          if (stretchB == eStretchPreservingRatio && tentBSize > bSize) {
-            
-            tentBSize = bSize;  
-            tentISize = logicalRatio.ApplyTo(bSize);
-          }
-        } else if (stretchB == eStretchPreservingRatio) {
+        }
+      } else if (stretchB == eStretch) {
+        tentBSize = bSize;  
+        if (stretchI == eStretchPreservingRatio && logicalRatio) {
+          
+          tentISize = logicalRatio.ApplyTo(bSize);
+        }
+      } else if (stretchI == eStretchPreservingRatio && logicalRatio) {
+        tentISize = iSize;  
+        tentBSize = logicalRatio.Inverted().ApplyTo(iSize);
+        if (stretchB == eStretchPreservingRatio && tentBSize > bSize) {
+          
           tentBSize = bSize;  
           tentISize = logicalRatio.ApplyTo(bSize);
         }
+      } else if (stretchB == eStretchPreservingRatio && logicalRatio) {
+        tentBSize = bSize;  
+        tentISize = logicalRatio.ApplyTo(bSize);
       }
 
       
