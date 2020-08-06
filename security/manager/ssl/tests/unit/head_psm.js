@@ -30,6 +30,7 @@ const isDebugBuild = Cc["@mozilla.org/xpcom/debug;1"].getService(Ci.nsIDebug2)
 
 const gEVExpected = isDebugBuild;
 
+const CLIENT_AUTH_FILE_NAME = "ClientAuthRememberList.txt";
 const SSS_STATE_FILE_NAME = "SiteSecurityServiceState.txt";
 const PRELOAD_STATE_FILE_NAME = "SecurityPreloadState.txt";
 
