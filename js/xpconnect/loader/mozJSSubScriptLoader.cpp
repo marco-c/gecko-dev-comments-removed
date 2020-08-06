@@ -281,7 +281,7 @@ bool mozJSSubScriptLoader::ReadScript(JS::MutableHandle<JSScript*> script,
   int64_t len = -1;
 
   rv = chan->GetContentLength(&len);
-  if (NS_FAILED(rv) || len == -1) {
+  if (NS_FAILED(rv)) {
     ReportError(cx, LOAD_ERROR_NOCONTENT, uri);
     return false;
   }
@@ -294,6 +294,21 @@ bool mozJSSubScriptLoader::ReadScript(JS::MutableHandle<JSScript*> script,
   nsCString buf;
   rv = NS_ReadInputStreamToString(instream, buf, len);
   NS_ENSURE_SUCCESS(rv, false);
+
+  if (len < 0) {
+    len = buf.Length();
+  }
+
+#ifdef DEBUG
+  int64_t currentLength = -1;
+  
+  MOZ_ASSERT(chan->GetContentLength(&currentLength) == NS_OK);
+  
+  
+  
+  
+  MOZ_ASSERT(currentLength == len);
+#endif
 
   Maybe<JSAutoRealm> ar;
 
