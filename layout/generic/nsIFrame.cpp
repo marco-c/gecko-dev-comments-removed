@@ -8340,48 +8340,51 @@ nsresult nsIFrame::PeekOffsetForWord(nsPeekOffsetStruct* aPos, int32_t offset) {
   bool wordSelectEatSpace = ShouldWordSelectionEatSpace(*aPos);
 
   PeekWordState state;
-  bool done = false;
-  while (!done) {
+  while (true) {
     bool movingInFrameDirection =
         IsMovingInFrameDirection(current, aPos->mDirection, aPos->mVisual);
 
-    done = current->PeekOffsetWord(movingInFrameDirection, wordSelectEatSpace,
-                                   aPos->mIsKeyboardSelect, &offset, &state,
-                                   aPos->mTrimSpaces) == FOUND;
+    FrameSearchResult searchResult = current->PeekOffsetWord(
+        movingInFrameDirection, wordSelectEatSpace, aPos->mIsKeyboardSelect,
+        &offset, &state, aPos->mTrimSpaces);
+    if (searchResult == FOUND) {
+      break;
+    }
 
-    if (!done) {
-      nsIFrame* nextFrame;
-      int32_t nextFrameOffset;
-      bool jumpedLine, movedOverNonSelectableText;
-      nsresult result = current->GetFrameFromDirection(
-          *aPos, &nextFrame, &nextFrameOffset, &jumpedLine,
-          &movedOverNonSelectableText);
+    nsIFrame* nextFrame;
+    int32_t nextFrameOffset;
+    bool jumpedLine, movedOverNonSelectableText;
+    nsresult result = current->GetFrameFromDirection(
+        *aPos, &nextFrame, &nextFrameOffset, &jumpedLine,
+        &movedOverNonSelectableText);
+
+    if (NS_FAILED(result)) {
       
       
-      if (NS_FAILED(result) ||
-          (jumpedLine && !wordSelectEatSpace && state.mSawBeforeType)) {
-        done = true;
-        
-        
-        
-        
-        if (jumpedLine && wordSelectEatSpace &&
-            current->HasSignificantTerminalNewline() &&
-            current->StyleText()->mWhiteSpace != StyleWhiteSpace::PreLine) {
-          offset -= 1;
-        }
-      } else {
-        MOZ_ASSERT(nextFrame);
-        if (jumpedLine) {
-          state.mContext.Truncate();
-        }
-        current = nextFrame;
-        offset = nextFrameOffset;
-        
-        if (wordSelectEatSpace && jumpedLine) {
-          state.SetSawBeforeType();
-        }
+      
+      if (jumpedLine && wordSelectEatSpace &&
+          current->HasSignificantTerminalNewline() &&
+          current->StyleText()->mWhiteSpace != StyleWhiteSpace::PreLine) {
+        offset -= 1;
       }
+      break;
+    }
+
+    if (jumpedLine && !wordSelectEatSpace && state.mSawBeforeType) {
+      
+      
+      break;
+    }
+
+    MOZ_ASSERT(nextFrame);
+    if (jumpedLine) {
+      state.mContext.Truncate();
+    }
+    current = nextFrame;
+    offset = nextFrameOffset;
+    
+    if (wordSelectEatSpace && jumpedLine) {
+      state.SetSawBeforeType();
     }
   }
 
