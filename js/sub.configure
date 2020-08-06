@@ -1,6 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 @depends(host_for_sub_configure, target_for_sub_configure, check_build_environment,
          js_configure_args, prepare_mozconfig, old_configure,
@@ -58,21 +60,21 @@ def js_subconfigure(host, target, build_env, js_configure_args, mozconfig,
     if 'MOZ_BUILD_APP' in environ:
         del environ['MOZ_BUILD_APP']
 
-    # Here, we mimic what we used to do from old-configure, which makes this
-    # all awkward.
+    
+    
 
-    # The following variables were saved at the beginning of old-configure,
-    # and restored before invoking the subconfigure. Which means their value
-    # should be taken from the old_configure_assignments or mozconfig.
+    
+    
+    
     from_assignment = set(
         ('CC', 'CXX', 'CPPFLAGS', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS', 'HOST_CC',
          'HOST_CXXFLAGS', 'HOST_LDFLAGS'))
 
-    # Variables that were explicitly exported from old-configure, and those
-    # explicitly set in the environment when invoking old-configure, were
-    # automatically inherited from subconfigure. We assume the relevant ones
-    # have a corresponding AC_SUBST in old-configure, making them available
-    # in `substs`.
+    
+    
+    
+    
+    
     for var in (
         'MOZ_SYSTEM_ZLIB', 'MOZ_ZLIB_CFLAGS', 'MOZ_ZLIB_LIBS',
         'MOZ_APP_NAME', 'MOZ_APP_REMOTINGNAME', 'MOZ_DEV_EDITION',
@@ -117,10 +119,10 @@ def js_subconfigure(host, target, build_env, js_configure_args, mozconfig,
     with open(data_file, 'wb') as f:
         pickle.dump(options, f)
 
-    # Only run configure if one of the following is true:
-    # - config.status doesn't exist
-    # - config.status is older than an input to configure
-    # - the configure arguments changed
+    
+    
+    
+    
     configure = os.path.join(srcdir, 'old-configure')
     config_status_path = os.path.join(objdir, 'config.status')
     skip_configure = True
@@ -160,7 +162,7 @@ def js_subconfigure(host, target, build_env, js_configure_args, mozconfig,
         ret = config_status(config)
         os.chdir(oldpwd)
 
-    # Restore unprefixed logging.
+    
     formatter = logging.Formatter('%(levelname)s: %(message)s')
     for handler in logger.handlers:
         handler.setFormatter(formatter)
