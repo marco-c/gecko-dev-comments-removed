@@ -37,8 +37,7 @@ this.rpc = function(method, ...params) {
 loadSubScript("resource://devtools/shared/worker/loader.js");
 
 var defer = worker.require("devtools/shared/defer");
-var EventEmitter = worker.require("devtools/shared/event-emitter");
-const { Pool } = worker.require("devtools/shared/protocol/Pool");
+const { Actor } = worker.require("devtools/shared/protocol/Actor");
 var { ThreadActor } = worker.require("devtools/server/actors/thread");
 var { WebConsoleActor } = worker.require("devtools/server/actors/webconsole");
 var { TabSources } = worker.require("devtools/server/actors/utils/TabSources");
@@ -60,14 +59,8 @@ this.addEventListener("message", function(event) {
     case "connect":
       
       const connection = DevToolsServer.connectToParent(packet.id, this);
-      connections[packet.id] = {
-        connection,
-        rpcs: [],
-      };
 
       
-      const pool = new Pool(connection, "workerStartup");
-
       let sources = null;
 
       const makeWorkerDebugger = makeDebugger.bind(null, {
@@ -80,9 +73,21 @@ this.addEventListener("message", function(event) {
         },
       });
 
-      const parent = {
+      const targetActorMock = new Actor();
+      targetActorMock.initialize(connection);
+
+      const threadActor = new ThreadActor(targetActorMock, global);
+      targetActorMock.manage(threadActor);
+
+      Object.assign(targetActorMock, {
         actorID: packet.id,
-        conn: connection,
+        
+        threadActor,
+        window: global,
+
+        onThreadAttached() {
+          postMessage(JSON.stringify({ type: "attached" }));
+        },
 
         get dbg() {
           if (!this._dbg) {
@@ -98,31 +103,22 @@ this.addEventListener("message", function(event) {
           }
           return sources;
         },
+      });
 
-        window: global,
+      const consoleActor = new WebConsoleActor(connection, targetActorMock);
+      targetActorMock.manage(consoleActor);
 
-        onThreadAttached() {
-          postMessage(JSON.stringify({ type: "attached" }));
-        },
+      
+      
+      targetActorMock._consoleActor = consoleActor;
+
+      
+      
+      connections[packet.id] = {
+        connection,
+        rpcs: [],
       };
 
-      EventEmitter.decorate(parent);
-
-      const threadActor = new ThreadActor(parent, global);
-      pool.manage(threadActor);
-
-      
-      parent.threadActor = threadActor;
-
-      const consoleActor = new WebConsoleActor(connection, parent);
-      pool.manage(consoleActor);
-
-      
-      
-      parent._consoleActor = consoleActor;
-
-      
-      
       postMessage(
         JSON.stringify({
           type: "connected",
