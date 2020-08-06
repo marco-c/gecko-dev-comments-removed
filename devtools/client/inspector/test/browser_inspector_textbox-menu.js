@@ -5,13 +5,6 @@
 
 
 
-
-
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
-);
-PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
-
 add_task(async function() {
   await addTab(`data:text/html;charset=utf-8,
                 <style>h1 { color: red; }</style>
