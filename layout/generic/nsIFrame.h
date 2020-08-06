@@ -3779,6 +3779,8 @@ class nsIFrame : public nsQueryFrame {
     
     bool mJumpedLine = false;
     
+    bool mJumpedHardBreak = false;
+    
     bool mMovedOverNonSelectableText = false;
 
     FrameSearchResult PeekOffsetNoAmount(bool aForward) {
