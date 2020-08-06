@@ -244,17 +244,16 @@ if CONFIG['MOZ_XUL'] and CONFIG['NS_PRINTING']:
         'nsPrintSettingsService.cpp',
     ]
 
-    
-    if toolkit == 'cocoa':
+    if toolkit in ('cocoa', 'gtk'):
         UNIFIED_SOURCES += [
             'CUPSPrinterList.cpp',
             'nsCUPSShim.cpp',
             'nsPrinterCUPS.cpp',
         ]
 
+    
     if toolkit == 'gtk':
         UNIFIED_SOURCES += [
-            'nsCUPSShim.cpp',
             'nsPrinter.cpp',
         ]
 
