@@ -111,8 +111,10 @@ void SerializeInputStreamAsPipeInternal(nsIInputStream* aInputStream,
     nsCOMPtr<nsIEventTarget> target =
         do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
 
+    
+    
     rv = NS_AsyncCopy(aInputStream, sink, target, NS_ASYNCCOPY_VIA_READSEGMENTS,
-                      kBufferSize);
+                      kBufferSize, nullptr, nullptr, false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
