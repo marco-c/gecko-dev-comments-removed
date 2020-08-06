@@ -562,12 +562,29 @@ AccessibleOrProxy Pivot::AtPoint(int32_t aX, int32_t aY, PivotRule& aRule) {
 
 
 
-PivotRoleRule::PivotRoleRule(mozilla::a11y::role aRole) : mRole(aRole) {}
+PivotRoleRule::PivotRoleRule(mozilla::a11y::role aRole)
+    : mRole(aRole), mDirectDescendantsFrom(nullptr) {}
+
+PivotRoleRule::PivotRoleRule(mozilla::a11y::role aRole,
+                             AccessibleOrProxy& aDirectDescendantsFrom)
+    : mRole(aRole), mDirectDescendantsFrom(aDirectDescendantsFrom) {}
 
 uint16_t PivotRoleRule::Match(const AccessibleOrProxy& aAccOrProxy) {
   uint16_t result = nsIAccessibleTraversalRule::FILTER_IGNORE;
 
   if (nsAccUtils::MustPrune(aAccOrProxy)) {
+    result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+  }
+
+  if (!mDirectDescendantsFrom.IsNull() &&
+      (aAccOrProxy != mDirectDescendantsFrom)) {
+    
+    
+    
+    
+    
+    
+    
     result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
   }
 
@@ -580,11 +597,20 @@ uint16_t PivotRoleRule::Match(const AccessibleOrProxy& aAccOrProxy) {
 
 
 
+PivotMatchAllRule::PivotMatchAllRule(AccessibleOrProxy& aDirectDescendantsFrom)
+    : mDirectDescendantsFrom(aDirectDescendantsFrom) {}
+
+PivotMatchAllRule::PivotMatchAllRule() : mDirectDescendantsFrom(nullptr) {}
+
 uint16_t PivotMatchAllRule::Match(const AccessibleOrProxy& aAccOrProxy) {
   uint16_t result = nsIAccessibleTraversalRule::FILTER_IGNORE;
 
   if (nsAccUtils::MustPrune(aAccOrProxy)) {
     result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+  } else if (!mDirectDescendantsFrom.IsNull() &&
+             (aAccOrProxy != mDirectDescendantsFrom)) {
+    result |= nsIAccessibleTraversalRule::FILTER_MATCH |
+              nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
   } else {
     result |= nsIAccessibleTraversalRule::FILTER_MATCH;
   }

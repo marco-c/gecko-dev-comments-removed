@@ -322,6 +322,12 @@
 - (NSAttributedString* _Nullable)moxAttributedStringForRange:(NSValue* _Nonnull)range;
 
 
+- (NSArray* _Nullable)moxUIElementsForSearchPredicate:(NSDictionary* _Nonnull)searchPredicate;
+
+
+- (NSUInteger)moxUIElementCountForSearchPredicate:(NSDictionary* _Nonnull)searchPredicate;
+
+
 - (id _Nullable)moxCellForColumnAndRow:(NSArray* _Nonnull)columnAndRow;
 
 @end
