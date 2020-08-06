@@ -22,16 +22,15 @@
 #include "nsTHashtable.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
+#include "nsRefreshObservers.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/VisualViewport.h"
 #include "mozilla/layers/TransactionIdAllocator.h"
-#include "mozilla/VsyncDispatcher.h"
 
 class nsPresContext;
 
 class imgIRequest;
-class nsINode;
 class nsIRunnable;
 
 namespace mozilla {
@@ -45,50 +44,7 @@ namespace layout {
 class VsyncChild;
 }  
 
-namespace dom {
-class Event;
 }  
-
-}  
-
-
-
-
-
-
-class nsARefreshObserver {
- public:
-  
-  
-  
-  
-  
-  
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-
-  MOZ_CAN_RUN_SCRIPT virtual void WillRefresh(mozilla::TimeStamp aTime) = 0;
-};
-
-
-
-
-
-
-
-class nsATimerAdjustmentObserver {
- public:
-  virtual void NotifyTimerAdjusted(mozilla::TimeStamp aTime) = 0;
-};
-
-
-
-
-
-
-class nsAPostRefreshObserver {
- public:
-  virtual void DidRefresh() = 0;
-};
 
 class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
                               public nsARefreshObserver {
@@ -642,4 +598,4 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   static bool IsJankCritical();
 };
 
-#endif
+#endif 

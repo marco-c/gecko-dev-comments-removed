@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "SwipeTracker.h"
 
@@ -14,9 +14,10 @@
 #include "mozilla/dom/SimpleGestureEventBinding.h"
 #include "nsAlgorithm.h"
 #include "nsChildView.h"
+#include "nsRefreshDriver.h"
 #include "UnitTransforms.h"
 
-// These values were tweaked to make the physics feel similar to the native swipe.
+
 static const double kSpringForce = 250.0;
 static const double kVelocityTwitchTolerance = 0.0000001;
 static const double kWholePagePixelSize = 1000.0;
@@ -65,8 +66,8 @@ double SwipeTracker::SwipeSuccessTargetValue() const {
 }
 
 double SwipeTracker::ClampToAllowedRange(double aGestureAmount) const {
-  // gestureAmount needs to stay between -1 and 0 when swiping right and
-  // between 0 and 1 when swiping left.
+  
+  
   double min = (mSwipeDirection == dom::SimpleGestureEvent_Binding::DIRECTION_RIGHT) ? -1.0 : 0.0;
   double max = (mSwipeDirection == dom::SimpleGestureEvent_Binding::DIRECTION_LEFT) ? 1.0 : 0.0;
   return clamped(aGestureAmount, min, max);
@@ -75,8 +76,8 @@ double SwipeTracker::ClampToAllowedRange(double aGestureAmount) const {
 bool SwipeTracker::ComputeSwipeSuccess() const {
   double targetValue = SwipeSuccessTargetValue();
 
-  // If the fingers were moving away from the target direction when they were
-  // lifted from the touchpad, abort the swipe.
+  
+  
   if (mCurrentVelocity * targetValue < -kVelocityTwitchTolerance) {
     return false;
   }
@@ -87,10 +88,10 @@ bool SwipeTracker::ComputeSwipeSuccess() const {
 }
 
 nsEventStatus SwipeTracker::ProcessEvent(const PanGestureInput& aEvent) {
-  // If the fingers have already been lifted, don't process this event for swiping.
+  
   if (!mEventsAreControllingSwipe) {
-    // Return nsEventStatus_eConsumeNoDefault for events from the swipe gesture
-    // and nsEventStatus_eIgnore for events of subsequent scroll gestures.
+    
+    
     if (aEvent.mType == PanGestureInput::PANGESTURE_MAYSTART ||
         aEvent.mType == PanGestureInput::PANGESTURE_START) {
       mEventsHaveStartedNewGesture = true;
@@ -114,8 +115,8 @@ nsEventStatus SwipeTracker::ProcessEvent(const PanGestureInput& aEvent) {
     bool didSwipeSucceed = SwipingInAllowedDirection() && ComputeSwipeSuccess();
     double targetValue = 0.0;
     if (didSwipeSucceed) {
-      // Let's use same timestamp as previous event because this is caused by
-      // the preceding event.
+      
+      
       SendSwipeEvent(eSwipeGesture, mSwipeDirection, 0.0, aEvent.mTimeStamp);
       targetValue = SwipeSuccessTargetValue();
     }
@@ -132,9 +133,9 @@ void SwipeTracker::StartAnimating(double aTargetValue) {
 
   mLastAnimationFrameTime = TimeStamp::Now();
 
-  // Add ourselves as a refresh driver observer. The refresh driver
-  // will call WillRefresh for each animation frame until we
-  // unregister ourselves.
+  
+  
+  
   MOZ_ASSERT(!mRegisteredWithRefreshDriver);
   if (mRefreshDriver) {
     mRefreshDriver->AddRefreshObserver(this, FlushType::Style);
@@ -174,13 +175,13 @@ void SwipeTracker::UnregisterFromRefreshDriver() {
   mRegisteredWithRefreshDriver = false;
 }
 
-/* static */ WidgetSimpleGestureEvent SwipeTracker::CreateSwipeGestureEvent(
+ WidgetSimpleGestureEvent SwipeTracker::CreateSwipeGestureEvent(
     EventMessage aMsg, nsIWidget* aWidget, const LayoutDeviceIntPoint& aPosition,
     const TimeStamp& aTimeStamp) {
-  // XXX Why isn't this initialized with nsCocoaUtils::InitInputEvent()?
+  
   WidgetSimpleGestureEvent geckoEvent(true, aMsg, aWidget);
   geckoEvent.mModifiers = 0;
-  // XXX How about geckoEvent.mTime?
+  
   geckoEvent.mTimeStamp = aTimeStamp;
   geckoEvent.mRefPoint = aPosition;
   geckoEvent.mButtons = 0;
@@ -197,4 +198,4 @@ bool SwipeTracker::SendSwipeEvent(EventMessage aMsg, uint32_t aDirection, double
   return mWidget.DispatchWindowEvent(geckoEvent);
 }
 
-}  // namespace mozilla
+}  
