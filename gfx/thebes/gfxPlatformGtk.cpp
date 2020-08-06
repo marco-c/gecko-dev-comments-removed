@@ -95,15 +95,6 @@ gfxPlatformGtk::gfxPlatformGtk() {
 
   InitBackendPrefs(GetBackendPrefs());
 
-#ifdef MOZ_X11
-  if (mIsX11Display) {
-    mCompositorDisplay = XOpenDisplay(nullptr);
-    MOZ_ASSERT(mCompositorDisplay, "Failed to create compositor display!");
-  } else {
-    mCompositorDisplay = nullptr;
-  }
-#endif  
-
 #ifdef MOZ_WAYLAND
   mUseWebGLDmabufBackend =
       IsWaylandDisplay() && GetDMABufDevice()->IsDMABufWebGLEnabled();
@@ -115,12 +106,6 @@ gfxPlatformGtk::gfxPlatformGtk() {
 }
 
 gfxPlatformGtk::~gfxPlatformGtk() {
-#ifdef MOZ_X11
-  if (mCompositorDisplay) {
-    XCloseDisplay(mCompositorDisplay);
-  }
-#endif  
-
   Factory::ReleaseFTLibrary(gPlatformFTLibrary);
   gPlatformFTLibrary = nullptr;
 }
