@@ -59,6 +59,7 @@ class nsRange;
 
 namespace mozilla {
 class AlignStateAtSelection;
+class AutoRangeArray;
 class AutoSelectionRestorer;
 class AutoTopLevelEditSubActionNotifier;
 class AutoTransactionBatch;
@@ -2238,9 +2239,30 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteRangesWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
+                              nsIEditor::EStripWrappers aStripWrappers,
+                              const AutoRangeArray& aRangesToDelete);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   already_AddRefed<EditAggregateTransaction>
   CreateTransactionForDeleteSelection(
-      HowToHandleCollapsedRange aHowToHandleCollapsedRange);
+      HowToHandleCollapsedRange aHowToHandleCollapsedRange,
+      const AutoRangeArray& aRangesToDelete);
 
   
 
