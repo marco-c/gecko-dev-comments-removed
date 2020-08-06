@@ -94,12 +94,18 @@ struct NativeIterator {
   static constexpr uint32_t PropCountLimit = 1 << (32 - FlagsBits);
 
   
+  NativeIterator* next_ = nullptr;
+  NativeIterator* prev_ = nullptr;
+
+  
   
   uint32_t flagsAndCount_ = 0;
 
+#ifdef DEBUG
   
-  NativeIterator* next_ = nullptr;
-  NativeIterator* prev_ = nullptr;
+  
+  bool maybeHasIndexedPropertiesFromProto_ = false;
+#endif
 
   
 
@@ -234,6 +240,15 @@ struct NativeIterator {
   bool isInitialized() const { return flags() & Flags::Initialized; }
 
   size_t allocationSize() const;
+
+#ifdef DEBUG
+  void setMaybeHasIndexedPropertiesFromProto() {
+    maybeHasIndexedPropertiesFromProto_ = true;
+  }
+  bool maybeHasIndexedPropertiesFromProto() const {
+    return maybeHasIndexedPropertiesFromProto_;
+  }
+#endif
 
  private:
   uint32_t flags() const { return flagsAndCount_ & FlagsMask; }
