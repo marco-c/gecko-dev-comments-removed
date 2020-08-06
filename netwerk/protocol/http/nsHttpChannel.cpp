@@ -584,18 +584,17 @@ nsresult nsHttpChannel::OnBeforeConnect() {
     nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
         this, getter_AddRefs(resultPrincipal));
   }
+  OriginAttributes originAttributes;
+  if (!StoragePrincipalHelper::GetOriginAttributes(
+          this, originAttributes, StoragePrincipalHelper::eRegularPrincipal)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
   mUpgradableToSecure = false;
   bool shouldUpgrade = mUpgradeToSecure;
   if (mURI->SchemeIs("http")) {
-    OriginAttributes originAttributes;
-    if (!StoragePrincipalHelper::GetOriginAttributesForNetworkState(
-            this, originAttributes)) {
-      return NS_ERROR_FAILURE;
-    }
-
     if (!shouldUpgrade) {
       
       
@@ -2206,11 +2205,8 @@ nsresult nsHttpChannel::ProcessSingleSecurityHeader(
     
     
     OriginAttributes originAttributes;
-    if (NS_WARN_IF(!StoragePrincipalHelper::GetOriginAttributesForHSTS(
-            this, originAttributes))) {
-      return NS_ERROR_FAILURE;
-    }
-
+    StoragePrincipalHelper::GetOriginAttributes(
+        this, originAttributes, StoragePrincipalHelper::eRegularPrincipal);
     uint32_t failureResult;
     uint32_t headerSource = nsISiteSecurityService::SOURCE_ORGANIC_REQUEST;
     rv = sss->ProcessHeader(aType, mURI, securityHeader, aSecInfo, aFlags,
