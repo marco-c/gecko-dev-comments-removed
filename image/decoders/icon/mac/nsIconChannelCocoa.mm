@@ -213,7 +213,7 @@ nsIconChannel::AsyncOpen(nsIStreamListener* aListener) {
     return rv;
   }
 
-  rv = mPump->AsyncRead(this, nullptr);
+  rv = mPump->AsyncRead(this);
   if (NS_SUCCEEDED(rv)) {
     
     mListener = aListener;

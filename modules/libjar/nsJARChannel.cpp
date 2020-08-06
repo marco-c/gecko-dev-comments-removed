@@ -451,7 +451,7 @@ nsresult nsJARChannel::ContinueOpenLocalFile(nsJARInputThunk* aInput,
   
   rv = NS_NewInputStreamPump(getter_AddRefs(mPump), input.forget());
   if (NS_SUCCEEDED(rv)) {
-    rv = mPump->AsyncRead(this, nullptr);
+    rv = mPump->AsyncRead(this);
   }
 
   if (NS_SUCCEEDED(rv)) {

@@ -14,7 +14,7 @@ function run_test() {
   
   
   try {
-    pump.asyncRead(null, null);
+    pump.asyncRead(null);
   } catch (e) {
     return;
   }
