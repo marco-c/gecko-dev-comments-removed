@@ -89,6 +89,21 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
             continue;
           }
 
+          
+          
+          
+          auto guardThreadCount = MakeScopeExit([&] {
+            if (threadList == nullptr) {
+              return;
+            }
+            
+            for (mach_msg_type_number_t i = 0; i < threadCount; i++) {
+              mach_port_deallocate(mach_task_self(), threadList[i]);
+            }
+            vm_deallocate(mach_task_self(),  (vm_address_t)threadList,
+                           sizeof(thread_t) * threadCount);
+          });
+
           mach_msg_type_number_t count;
 
           for (mach_msg_type_number_t i = 0; i < threadCount; i++) {
