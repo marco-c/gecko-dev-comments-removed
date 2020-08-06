@@ -946,6 +946,10 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
             : "false",
       }
     );
+    Services.telemetry.scalarAdd(
+      "formautofill.creditCards.detected_sections_count",
+      1
+    );
 
     
     
