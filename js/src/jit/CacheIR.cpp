@@ -5544,7 +5544,10 @@ AttachDecision CallIRGenerator::tryAttachToObject(HandleFunction callee,
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
+  
+  if (native == InlinableNative::Object) {
+    emitNativeCalleeGuard(callee);
+  }
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -5579,7 +5582,6 @@ AttachDecision CallIRGenerator::tryAttachToInteger(HandleFunction callee) {
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -5607,7 +5609,6 @@ AttachDecision CallIRGenerator::tryAttachToLength(HandleFunction callee) {
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -5636,7 +5637,6 @@ AttachDecision CallIRGenerator::tryAttachIsObject(HandleFunction callee) {
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -5685,7 +5685,6 @@ AttachDecision CallIRGenerator::tryAttachIsCallable(HandleFunction callee) {
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -5710,7 +5709,6 @@ AttachDecision CallIRGenerator::tryAttachIsConstructor(HandleFunction callee) {
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -5773,7 +5771,6 @@ AttachDecision CallIRGenerator::tryAttachGuardToClass(HandleFunction callee,
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
@@ -5804,7 +5801,6 @@ AttachDecision CallIRGenerator::tryAttachHasClass(HandleFunction callee,
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  emitNativeCalleeGuard(callee);
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
