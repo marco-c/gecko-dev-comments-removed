@@ -211,11 +211,11 @@ bool ModuleLoader::doDynamicImport(JSContext* cx,
                                    JS::HandleObject promise) {
   
   
-  mozilla::DebugOnly<bool> ok =
-      tryDynamicImport(cx, referencingPrivate, specifier, promise);
-  MOZ_ASSERT_IF(!ok, JS_IsExceptionPending(cx));
-  return JS::FinishDynamicModuleImport(cx, referencingPrivate, specifier,
-                                       promise);
+  bool ok = tryDynamicImport(cx, referencingPrivate, specifier, promise);
+  JS::DynamicImportStatus status =
+      ok ? JS::DynamicImportStatus::Ok : JS::DynamicImportStatus::Failed;
+  return JS::FinishDynamicModuleImport(cx, status, referencingPrivate,
+                                       specifier, promise);
 }
 
 bool ModuleLoader::tryDynamicImport(JSContext* cx,

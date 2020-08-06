@@ -81,8 +81,20 @@ GetModuleDynamicImportHook(JSRuntime* rt);
 extern JS_PUBLIC_API void SetModuleDynamicImportHook(
     JSRuntime* rt, ModuleDynamicImportHook func);
 
+
+
+
+
+enum class DynamicImportStatus { Failed = 0, Ok };
+
+
+
+
+
+
+
 extern JS_PUBLIC_API bool FinishDynamicModuleImport(
-    JSContext* cx, Handle<Value> referencingPrivate,
+    JSContext* cx, DynamicImportStatus status, Handle<Value> referencingPrivate,
     Handle<JSString*> specifier, Handle<JSObject*> promise);
 
 
