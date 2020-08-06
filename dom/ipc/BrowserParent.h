@@ -483,7 +483,7 @@ class BrowserParent final : public PBrowserParent,
       const uint64_t& aOuterWindowID,
       IsWindowSupportingWebVRResolver&& aResolve);
 
-  void LoadURL(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal);
+  void LoadURL(nsDocShellLoadState* aLoadState);
 
   void ResumeLoad(uint64_t aPendingSwitchID);
 
@@ -925,9 +925,7 @@ class BrowserParent final : public PBrowserParent,
   
   
   
-  
   bool mCreatingWindow;
-  nsCString mDelayedURL;
 
   
   
@@ -1004,22 +1002,17 @@ class BrowserParent final : public PBrowserParent,
 
 struct MOZ_STACK_CLASS BrowserParent::AutoUseNewTab final {
  public:
-  AutoUseNewTab(BrowserParent* aNewTab, nsCString* aURLToLoad)
-      : mNewTab(aNewTab), mURLToLoad(aURLToLoad) {
+  explicit AutoUseNewTab(BrowserParent* aNewTab) : mNewTab(aNewTab) {
     MOZ_ASSERT(!aNewTab->mCreatingWindow);
-
     aNewTab->mCreatingWindow = true;
-    aNewTab->mDelayedURL.Truncate();
   }
 
   ~AutoUseNewTab() {
     mNewTab->mCreatingWindow = false;
-    *mURLToLoad = mNewTab->mDelayedURL;
   }
 
  private:
   RefPtr<BrowserParent> mNewTab;
-  nsCString* mURLToLoad;
 };
 
 }  

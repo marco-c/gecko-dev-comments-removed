@@ -583,8 +583,13 @@ var E10SUtils = {
 
     
     
-    let useOriginalURI =
-      aOriginalURI.scheme == "about" || aOriginalURI.scheme == "chrome";
+    
+    let useOriginalURI;
+    if (aOriginalURI.scheme == "about") {
+      useOriginalURI = !["srcdoc"].includes(aOriginalURI.spec);
+    } else {
+      useOriginalURI = aOriginalURI.scheme == "chrome";
+    }
 
     if (!useOriginalURI) {
       
