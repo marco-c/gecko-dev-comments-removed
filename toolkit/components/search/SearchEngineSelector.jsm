@@ -180,14 +180,23 @@ class SearchEngineSelector {
 
 
 
-  async fetchEngineConfiguration(locale, region, channel, distroID) {
+
+
+
+
+
+
+
+  async fetchEngineConfiguration({
+    locale,
+    region,
+    channel = "default",
+    distroID,
+    experiment,
+  }) {
     if (!this._configuration) {
       await this.getEngineConfiguration();
     }
-    let experiment = Services.prefs.getCharPref(
-      "browser.search.experiment",
-      null
-    );
     let name = getAppInfo("name");
     let version = getAppInfo("version");
     logConsole.debug(
