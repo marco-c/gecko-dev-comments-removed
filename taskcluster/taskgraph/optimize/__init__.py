@@ -413,13 +413,10 @@ import_sibling_modules()
 
 
 register_strategy('build', args=('skip-unless-schedules',))(Alias)
-register_strategy('build-optimized', args=(
-    Any('skip-unless-schedules', 'bugbug-reduced-fallback', split_args=split_bugbug_arg),
-    'backstop',
-))(All)
 register_strategy('build-fuzzing', args=('push-interval-10',))(Alias)
 register_strategy('test', args=('skip-unless-schedules',))(Alias)
 register_strategy('test-inclusive', args=('skip-unless-schedules',))(Alias)
+register_strategy('build-optimized', args=('test',))(Alias)
 
 
 
@@ -428,14 +425,42 @@ register_strategy('test-inclusive', args=('skip-unless-schedules',))(Alias)
 class project(object):
     """Strategies that should be applied per-project."""
 
+    
+    register_strategy('full-backstop', args=('backstop-20-pushes-4-hours',))(Alias)
+
+    
+    
+    register_strategy(
+        'optimized-backstop',
+        args=(
+            'backstop-10-pushes-2-hours',
+            Any(
+                'skip-unless-schedules',
+                Any(
+                    'bugbug-reduced-manifests-fallback-last-10-pushes',
+                    'platform-disperse',
+                ),
+                split_args=split_bugbug_arg,
+            ),
+        ),
+    )(Any)
+
+    
+    
+    
+    
+    
+    
+    
     autoland = {
         'test': All(
+            'full-backstop',
+            'optimized-backstop',
             Any(
                 'skip-unless-schedules',
                 Any('bugbug-reduced-manifests-fallback', 'platform-disperse'),
                 split_args=split_bugbug_arg,
             ),
-            'backstop',
         ),
     }
     """Strategy overrides that apply to autoland."""
