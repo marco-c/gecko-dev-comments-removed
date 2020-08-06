@@ -96,7 +96,6 @@ nsTArray<mozilla::PaperInfo> nsPrinterWin::PaperList() const {
     return {};
   }
 
-  static const wchar_t kDriverName[] = L"WINSPOOL";
   nsTArray<mozilla::PaperInfo> paperList;
   paperList.SetCapacity(paperNames.Length());
   for (size_t i = 0; i < paperNames.Length(); ++i) {
@@ -112,34 +111,38 @@ nsTArray<mozilla::PaperInfo> nsPrinterWin::PaperList() const {
       continue;
     }
 
-    WORD id = paperIds[i];
-
     
     
-    DEVMODEW devmode = {};
-    devmode.dmSize = sizeof(DEVMODEW);
-    devmode.dmFields = DM_PAPERSIZE;
-    devmode.dmPaperSize = id;
-
-    
-    
-    nsAutoHDC printerDc(
-        ::CreateICW(kDriverName, mName.get(), nullptr, &devmode));
-
-    auto marginInInches =
-        WinUtils::GetUnwriteableMarginsForDeviceInInches(printerDc);
-
     nsDependentSubstring name(paperNames[i].cbegin(), nameLength);
     paperList.AppendElement(mozilla::PaperInfo{
         nsString(name),
-        width,
-        height,
-        marginInInches.top * POINTS_PER_INCH_FLOAT,
-        marginInInches.right * POINTS_PER_INCH_FLOAT,
-        marginInInches.bottom * POINTS_PER_INCH_FLOAT,
-        marginInInches.left * POINTS_PER_INCH_FLOAT,
+        {width, height},
+        Nothing(),
+        paperIds[i],
     });
   }
 
   return paperList;
+}
+
+mozilla::gfx::MarginDouble nsPrinterWin::GetMarginsForPaper(
+    uint64_t aPaperId) const {
+  static const wchar_t kDriverName[] = L"WINSPOOL";
+  
+  
+  DEVMODEW devmode = {};
+  devmode.dmSize = sizeof(DEVMODEW);
+  devmode.dmFields = DM_PAPERSIZE;
+  devmode.dmPaperSize = aPaperId;
+
+  
+  
+  nsAutoHDC printerDc(::CreateICW(kDriverName, mName.get(), nullptr, &devmode));
+
+  auto margin = WinUtils::GetUnwriteableMarginsForDeviceInInches(printerDc);
+  margin.top *= POINTS_PER_INCH_FLOAT;
+  margin.right *= POINTS_PER_INCH_FLOAT;
+  margin.bottom *= POINTS_PER_INCH_FLOAT;
+  margin.left *= POINTS_PER_INCH_FLOAT;
+  return margin;
 }

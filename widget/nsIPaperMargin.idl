@@ -1,0 +1,16 @@
+
+
+
+
+
+#include "nsISupports.idl"
+
+
+[builtinclass, scriptable, uuid(0858d1a7-b646-4b15-a1e8-7eb5ab572d0a)]
+interface nsIPaperMargin : nsISupports
+{
+  [infallible] readonly attribute double top;
+  [infallible] readonly attribute double right;
+  [infallible] readonly attribute double bottom;
+  [infallible] readonly attribute double left;
+};
