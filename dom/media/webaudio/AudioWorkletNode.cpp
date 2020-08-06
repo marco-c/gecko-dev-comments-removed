@@ -247,7 +247,12 @@ void WorkletNodeEngine::ConstructProcessor(
     UniqueMessagePortId& aPortIdentifier, AudioNodeTrack* aTrack) {
   MOZ_ASSERT(mInputs.mPorts.empty() && mOutputs.mPorts.empty());
   RefPtr<AudioWorkletGlobalScope> global = aWorkletImpl->GetGlobalScope();
-  MOZ_ASSERT(global);  
+  if (!global) {
+    
+    
+    
+    return;
+  }
   AutoJSAPI api;
   if (NS_WARN_IF(!api.Init(global))) {
     SendProcessorError(aTrack, nullptr);
