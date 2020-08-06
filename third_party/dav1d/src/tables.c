@@ -692,7 +692,7 @@ const int8_t ALIGN(dav1d_resize_filter[64][8], 8) = {
     { 0, -1,  2,   -4, -127,  3, -1, 0 }, { 0,  0,  1,   -2, -128,  1,  0, 0 },
 };
 
-const uint8_t dav1d_sm_weights[128] = {
+const uint8_t ALIGN(dav1d_sm_weights[128], 16) = {
     
       0,   0,
     
