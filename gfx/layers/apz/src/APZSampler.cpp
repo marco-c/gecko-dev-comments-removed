@@ -77,6 +77,9 @@ void APZSampler::SampleForWebRender(
 void APZSampler::SetSampleTime(const TimeStamp& aSampleTime) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MutexAutoLock lock(mSampleTimeLock);
+  
+  
+  
   mSampleTime = aSampleTime;
 }
 
@@ -92,7 +95,25 @@ void APZSampler::SampleForWebRender(
     
     
     
-    sampleTime = mSampleTime.IsNull() ? TimeStamp::Now() : mSampleTime;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    TimeStamp now = TimeStamp::Now();
+    sampleTime =
+        (mSampleTime.IsNull() || mSampleTime < now) ? now : mSampleTime;
   }
   mApz->SampleForWebRender(aTxn, sampleTime, aEpochsBeingRendered);
 }
