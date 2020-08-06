@@ -2,6 +2,12 @@
 const PAGE_URL =
   "https://example.com/browser/dom/media/mediacontrol/tests/file_non_looping_media.html";
 
+add_task(async function setupTestingPref() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["media.mediacontrol.stopcontrol.aftermediaends", true]],
+  });
+});
+
 
 
 
