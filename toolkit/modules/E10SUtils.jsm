@@ -52,12 +52,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false,
   val => val.split(",")
 );
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "documentChannel",
-  "browser.tabs.documentchannel",
-  false
-);
+
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "useCrossOriginOpenerPolicy",
@@ -151,25 +146,7 @@ function canProcessSwitchWithDocumentChannel(
   aDesiredRemoteType,
   aBrowsingContext
 ) {
-  if (
-    aBrowsingContext &&
-    aBrowsingContext.top &&
-    aBrowsingContext.inRDMPane &&
-    aBrowsingContext.embedderElementType == "iframe" &&
-    aDesiredRemoteType == NOT_REMOTE
-  ) {
-    
-    
-    
-    
-    
-    
-    return false;
-  }
-  return (
-    (aRemoteSubframes || documentChannel) &&
-    documentChannelPermittedForURI(aURI)
-  );
+  return documentChannelPermittedForURI(aURI);
 }
 
 
@@ -330,9 +307,6 @@ var E10SUtils = {
 
   useCrossOriginOpenerPolicy() {
     return useCrossOriginOpenerPolicy;
-  },
-  documentChannel() {
-    return documentChannel;
   },
 
   _log: null,

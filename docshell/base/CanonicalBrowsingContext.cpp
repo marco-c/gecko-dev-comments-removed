@@ -1085,7 +1085,6 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
   
   
   if (!IsTopContent() || !GetContentParent() ||
-      !StaticPrefs::browser_tabs_documentchannel() ||
       !StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
     return false;
   }
@@ -1110,8 +1109,6 @@ bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
   
   
   if (!IsTopContent() || !GetContentParent() ||
-      !StaticPrefs::browser_tabs_documentchannel() ||
-      !StaticPrefs::browser_tabs_documentchannel_parent_initiated() ||
       StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
     return false;
   }

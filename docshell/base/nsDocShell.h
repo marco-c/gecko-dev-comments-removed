@@ -436,6 +436,15 @@ class nsDocShell final : public nsDocLoader,
       nsLoadFlags aLoadFlags, uint32_t aCacheKey, nsresult& rv,
       nsIChannel** aChannel);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static already_AddRefed<nsIURI> AttemptURIFixup(
       nsIChannel* aChannel, nsresult aStatus,
       const mozilla::Maybe<nsCString>& aOriginalURIString, uint32_t aLoadType,

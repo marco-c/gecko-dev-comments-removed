@@ -6007,11 +6007,6 @@
           }
         }
       } else if (aStateFlags & STATE_STOP && aStateFlags & STATE_IS_NETWORK) {
-        if (--this.mRequestCount > 0 && aStatus == Cr.NS_ERROR_UNKNOWN_HOST) {
-          
-          
-          return;
-        }
         
         
         this.mRequestCount = 0;

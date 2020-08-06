@@ -10,14 +10,6 @@ const FILE_DUMMY = fileURL("dummy_page.html");
 const DATA_URL = "data:text/html,Hello%2C World!";
 const DATA_STRING = "Hello, World!";
 
-const DOCUMENT_CHANNEL_PREF = "browser.tabs.documentchannel";
-
-async function setPref() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[DOCUMENT_CHANNEL_PREF, true]],
-  });
-}
-
 async function performLoad(browser, opts, action) {
   let loadedPromise = BrowserTestUtils.browserLoaded(
     browser,
@@ -222,8 +214,6 @@ async function testLoadAndRedirect(
 }
 
 add_task(async function test_enabled() {
-  await setPref();
-
   
   
   info("ENABLED -- FILE -- raw URI load");
@@ -289,8 +279,6 @@ async function sendMessage(ext, method, url) {
 
 
 add_task(async function test_protocol() {
-  await setPref();
-
   
   await testLoadAndRedirect("data:,foo", false, true);
 

@@ -161,18 +161,12 @@ static bool URIUsesDocChannel(nsIURI* aURI) {
 }
 
 bool DocumentChannel::CanUseDocumentChannel(nsIURI* aURI, uint32_t aLoadFlags) {
-  if (XRE_IsParentProcess() &&
-      !StaticPrefs::browser_tabs_documentchannel_ppdc()) {
-    return false;
-  }
-
   
   
   
   
   
-  return StaticPrefs::browser_tabs_documentchannel() &&
-         !(aLoadFlags & nsDocShell::INTERNAL_LOAD_FLAGS_IS_SRCDOC) &&
+  return !(aLoadFlags & nsDocShell::INTERNAL_LOAD_FLAGS_IS_SRCDOC) &&
          URIUsesDocChannel(aURI);
 }
 

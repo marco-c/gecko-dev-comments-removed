@@ -46,7 +46,6 @@ async function runTest() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.tabs.documentchannel", true],
       ["dom.serviceWorkers.enabled", true],
       ["dom.serviceWorkers.exemptFromPerDomainMax", true],
       ["dom.serviceWorkers.testing.enabled", true],

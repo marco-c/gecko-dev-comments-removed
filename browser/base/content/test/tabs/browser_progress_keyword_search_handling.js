@@ -4,15 +4,12 @@
 "use strict";
 
 const kButton = document.getElementById("reload-button");
-const kDocChanPref = "browser.tabs.documentchannel";
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.fixup.dns_first_for_single_words", true]],
   });
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(kDocChanPref);
-  });
+
   await Services.search.init();
 
   
@@ -37,31 +34,28 @@ add_task(async function setup() {
 
 
 add_task(async function test_unknown_host() {
-  for (let docChan of [true, false]) {
-    Services.prefs.setBoolPref(kDocChanPref, docChan);
-    await BrowserTestUtils.withNewTab("about:blank", async browser => {
-      const kNonExistingHost = "idontreallyexistonthisnetwork";
-      let searchPromise = BrowserTestUtils.browserStarted(
-        browser,
-        Services.uriFixup.keywordToURI(kNonExistingHost).preferredURI.spec
-      );
+  await BrowserTestUtils.withNewTab("about:blank", async browser => {
+    const kNonExistingHost = "idontreallyexistonthisnetwork";
+    let searchPromise = BrowserTestUtils.browserStarted(
+      browser,
+      Services.uriFixup.keywordToURI(kNonExistingHost).preferredURI.spec
+    );
 
-      gURLBar.value = kNonExistingHost;
-      gURLBar.select();
-      EventUtils.synthesizeKey("KEY_Enter");
+    gURLBar.value = kNonExistingHost;
+    gURLBar.select();
+    EventUtils.synthesizeKey("KEY_Enter");
 
-      await searchPromise;
-      ok(kButton.hasAttribute("displaystop"), "Should be showing stop");
+    await searchPromise;
+    ok(kButton.hasAttribute("displaystop"), "Should be showing stop");
 
-      await BrowserTestUtils.waitForCondition(
-        () => !kButton.hasAttribute("displaystop")
-      );
-      ok(
-        !kButton.hasAttribute("displaystop"),
-        "Should no longer be showing stop after search"
-      );
-    });
-  }
+    await BrowserTestUtils.waitForCondition(
+      () => !kButton.hasAttribute("displaystop")
+    );
+    ok(
+      !kButton.hasAttribute("displaystop"),
+      "Should no longer be showing stop after search"
+    );
+  });
 });
 
 
@@ -70,27 +64,24 @@ add_task(async function test_unknown_host() {
 
 
 add_task(async function test_unknown_host_without_search() {
-  for (let docChan of [true, false]) {
-    Services.prefs.setBoolPref(kDocChanPref, docChan);
-    await BrowserTestUtils.withNewTab("about:blank", async browser => {
-      const kNonExistingHost = "idontreallyexistonthisnetwork.example.com";
-      let searchPromise = BrowserTestUtils.browserLoaded(
-        browser,
-        false,
-        "http://" + kNonExistingHost + "/",
-        true 
-      );
-      gURLBar.value = kNonExistingHost;
-      gURLBar.select();
-      EventUtils.synthesizeKey("KEY_Enter");
-      await searchPromise;
-      await BrowserTestUtils.waitForCondition(
-        () => !kButton.hasAttribute("displaystop")
-      );
-      ok(
-        !kButton.hasAttribute("displaystop"),
-        "Should not be showing stop on error page"
-      );
-    });
-  }
+  await BrowserTestUtils.withNewTab("about:blank", async browser => {
+    const kNonExistingHost = "idontreallyexistonthisnetwork.example.com";
+    let searchPromise = BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      "http://" + kNonExistingHost + "/",
+      true 
+    );
+    gURLBar.value = kNonExistingHost;
+    gURLBar.select();
+    EventUtils.synthesizeKey("KEY_Enter");
+    await searchPromise;
+    await BrowserTestUtils.waitForCondition(
+      () => !kButton.hasAttribute("displaystop")
+    );
+    ok(
+      !kButton.hasAttribute("displaystop"),
+      "Should not be showing stop on error page"
+    );
+  });
 });
