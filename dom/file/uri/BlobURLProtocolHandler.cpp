@@ -688,14 +688,14 @@ nsresult BlobURLProtocolHandler::GenerateURIString(nsIPrincipal* aPrincipal,
 
 
 nsIPrincipal* BlobURLProtocolHandler::GetDataEntryPrincipal(
-    const nsACString& aUri) {
+    const nsACString& aUri, bool aAlsoIfRevoked) {
   MOZ_ASSERT(NS_IsMainThread(),
              "without locking gDataTable is main-thread only");
   if (!gDataTable) {
     return nullptr;
   }
 
-  DataInfo* res = GetDataInfo(aUri);
+  DataInfo* res = GetDataInfo(aUri, aAlsoIfRevoked);
 
   if (!res) {
     return nullptr;
@@ -779,59 +779,10 @@ BlobURLProtocolHandler::GetFlagsForURI(nsIURI* aURI, uint32_t* aResult) {
 NS_IMETHODIMP
 BlobURLProtocolHandler::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
                                    nsIChannel** aResult) {
-  RefPtr<BlobURLChannel> channel = new BlobURLChannel(aURI, aLoadInfo);
-
-  auto raii = MakeScopeExit([&] {
-    channel->InitFailed();
-    channel.forget(aResult);
-  });
-
-  RefPtr<BlobURL> blobURL;
-  nsresult rv =
-      aURI->QueryInterface(kHOSTOBJECTURICID, getter_AddRefs(blobURL));
-  if (NS_FAILED(rv) || !blobURL) {
-    return NS_OK;
+  auto channel = MakeRefPtr<BlobURLChannel>(aURI, aLoadInfo);
+  if (!channel) {
+    return NS_ERROR_NOT_INITIALIZED;
   }
-
-  MOZ_ASSERT(NS_IsMainThread(),
-             "without locking gDataTable is main-thread only");
-  DataInfo* info = GetDataInfoFromURI(aURI, true );
-  if (!info || info->mObjectType != DataInfo::eBlobImpl || !info->mBlobImpl) {
-    return NS_OK;
-  }
-
-  if (blobURL->Revoked()) {
-#ifdef MOZ_WIDGET_ANDROID
-    
-    
-    if (aLoadInfo && !aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
-      return NS_OK;
-    }
-#else
-    return NS_OK;
-#endif
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aLoadInfo &&
-      (!aLoadInfo->GetLoadingPrincipal() ||
-       !aLoadInfo->GetLoadingPrincipal()->IsSystemPrincipal()) &&
-      !ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
-          aLoadInfo->GetOriginAttributes(),
-          BasePrincipal::Cast(info->mPrincipal)->OriginAttributesRef())) {
-    return NS_OK;
-  }
-
-  raii.release();
-
   channel->Initialize();
   channel.forget(aResult);
   return NS_OK;
@@ -901,13 +852,14 @@ nsresult NS_GetBlobForBlobURI(nsIURI* aURI, BlobImpl** aBlob) {
   return NS_OK;
 }
 
-nsresult NS_GetBlobForBlobURISpec(const nsACString& aSpec, BlobImpl** aBlob) {
+nsresult NS_GetBlobForBlobURISpec(const nsACString& aSpec, BlobImpl** aBlob,
+                                  bool aAlsoIfRevoked) {
   *aBlob = nullptr;
   MOZ_ASSERT(NS_IsMainThread(),
              "without locking gDataTable is main-thread only");
 
-  DataInfo* info = GetDataInfo(aSpec);
-  if (!info || info->mObjectType != DataInfo::eBlobImpl) {
+  DataInfo* info = GetDataInfo(aSpec, aAlsoIfRevoked);
+  if (!info || info->mObjectType != DataInfo::eBlobImpl || !info->mBlobImpl) {
     return NS_ERROR_DOM_BAD_URI;
   }
 

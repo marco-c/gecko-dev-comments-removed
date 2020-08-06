@@ -332,7 +332,6 @@ void BlobURLInputStream::CallRetrieveBlobData() {
 
 void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
-  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
 
   MOZ_ASSERT(mState == State::WAITING);
 
@@ -343,27 +342,63 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
     NotifyWaitTargets(aProofOfLock);
   });
 
-  nsIPrincipal* triggeringPrincipal;
-  if (NS_WARN_IF(
-          NS_FAILED(loadInfo->GetTriggeringPrincipal(&triggeringPrincipal))) ||
-      !triggeringPrincipal) {
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  if (NS_WARN_IF(NS_FAILED(mChannel->GetLoadInfo(getter_AddRefs(loadInfo))))) {
+    NS_WARNING("Failed to get owning channel's loadinfo");
+    return;
+  }
+
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+  nsCOMPtr<nsIPrincipal> loadingPrincipal;
+  if (NS_WARN_IF(NS_FAILED(loadInfo->GetTriggeringPrincipal(
+          getter_AddRefs(triggeringPrincipal)))) ||
+      NS_WARN_IF(!triggeringPrincipal)) {
     NS_WARNING("Failed to get owning channel's triggering principal");
+    return;
+  }
+
+  if (NS_WARN_IF(NS_FAILED(
+          loadInfo->GetLoadingPrincipal(getter_AddRefs(loadingPrincipal))))) {
+    NS_WARNING("Failed to get owning channel's loading principal");
     return;
   }
 
   if (XRE_IsParentProcess()) {
     nsIPrincipal* const dataEntryPrincipal =
-        BlobURLProtocolHandler::GetDataEntryPrincipal(mBlobURLSpec);
+        BlobURLProtocolHandler::GetDataEntryPrincipal(mBlobURLSpec,
+                                                      true );
 
-    MOZ_ASSERT(dataEntryPrincipal);
+    
+    
+    if (!dataEntryPrincipal) {
+      NS_WARNING("Failed to get data entry principal. URL revoked?");
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (NS_WARN_IF(!loadingPrincipal ||
+                   !loadingPrincipal->IsSystemPrincipal()) &&
+        NS_WARN_IF(!ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
+            loadInfo->GetOriginAttributes(),
+            BasePrincipal::Cast(dataEntryPrincipal)->OriginAttributesRef()))) {
+      return;
+    }
 
     if (NS_WARN_IF(!triggeringPrincipal->Subsumes(dataEntryPrincipal))) {
       return;
     }
 
     RefPtr<BlobImpl> blobImpl;
-    nsresult rv =
-        NS_GetBlobForBlobURISpec(mBlobURLSpec, getter_AddRefs(blobImpl));
+    nsresult rv = NS_GetBlobForBlobURISpec(
+        mBlobURLSpec, getter_AddRefs(blobImpl), true );
 
     if (NS_WARN_IF(NS_FAILED(rv)) || (NS_WARN_IF(!blobImpl))) {
       return;
@@ -393,7 +428,10 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
 
   cleanupOnEarlyExit.release();
 
-  contentChild->SendBlobURLDataRequest(mBlobURLSpec, triggeringPrincipal)
+  contentChild
+      ->SendBlobURLDataRequest(mBlobURLSpec, triggeringPrincipal,
+                               loadingPrincipal,
+                               loadInfo->GetOriginAttributes())
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self](const BlobURLDataRequestResult& aResult) {
@@ -514,10 +552,10 @@ void BlobURLInputStream::NotifyWaitTargets(const MutexAutoLock& aProofOfLock) {
         });
 
     mAsyncLengthWaitCallback = nullptr;
-    mAsyncLengthWaitTarget = nullptr;
 
     if (mAsyncLengthWaitTarget) {
       mAsyncLengthWaitTarget->Dispatch(runnable, NS_DISPATCH_NORMAL);
+      mAsyncLengthWaitTarget = nullptr;
     } else {
       runnable->Run();
     }

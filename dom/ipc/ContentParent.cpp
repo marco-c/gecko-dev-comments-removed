@@ -6827,9 +6827,11 @@ PFileDescriptorSetParent* ContentParent::SendPFileDescriptorSetConstructor(
 
 mozilla::ipc::IPCResult ContentParent::RecvBlobURLDataRequest(
     const nsCString& aBlobURL, nsIPrincipal* pTriggeringPrincipal,
+    nsIPrincipal* pLoadingPrincipal, const OriginAttributes& aOriginAttributes,
     BlobURLDataRequestResolver&& aResolver) {
   RefPtr<BlobImpl> blobImpl;
-  nsresult rv = NS_GetBlobForBlobURISpec(aBlobURL, getter_AddRefs(blobImpl));
+  nsresult rv = NS_GetBlobForBlobURISpec(aBlobURL, getter_AddRefs(blobImpl),
+                                         true );
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aResolver(rv);
@@ -6841,10 +6843,35 @@ mozilla::ipc::IPCResult ContentParent::RecvBlobURLDataRequest(
     return IPC_OK();
   }
 
+  
+  
   nsIPrincipal* const dataEntryPrincipal =
-      BlobURLProtocolHandler::GetDataEntryPrincipal(aBlobURL);
+      BlobURLProtocolHandler::GetDataEntryPrincipal(aBlobURL,
+                                                    true );
 
-  MOZ_ASSERT(dataEntryPrincipal);
+  if (!dataEntryPrincipal) {
+    aResolver(NS_ERROR_DOM_BAD_URI);
+    return IPC_OK();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (NS_WARN_IF(!pLoadingPrincipal ||
+                 !pLoadingPrincipal->IsSystemPrincipal()) &&
+      NS_WARN_IF(!ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
+          aOriginAttributes,
+          BasePrincipal::Cast(dataEntryPrincipal)->OriginAttributesRef()))) {
+    aResolver(NS_ERROR_DOM_BAD_URI);
+    return IPC_OK();
+  }
 
   if (!pTriggeringPrincipal->Subsumes(dataEntryPrincipal)) {
     aResolver(NS_ERROR_DOM_BAD_URI);
