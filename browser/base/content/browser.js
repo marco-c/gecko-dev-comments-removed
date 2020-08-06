@@ -4129,15 +4129,11 @@ const BrowserSearch = {
 
 
   _setURLBarPlaceholder(name) {
-    let placeholder;
-    if (name) {
-      placeholder = gBrowserBundle.formatStringFromName("urlbar.placeholder", [
-        name,
-      ]);
-    } else {
-      placeholder = gURLBar.getAttribute("defaultPlaceholder");
-    }
-    gURLBar.placeholder = placeholder;
+    document.l10n.setAttributes(
+      gURLBar.inputField,
+      name ? "urlbar-placeholder-with-name" : "urlbar-placeholder",
+      name ? { name } : undefined
+    );
   },
 
   addEngine(browser, engine, uri) {
