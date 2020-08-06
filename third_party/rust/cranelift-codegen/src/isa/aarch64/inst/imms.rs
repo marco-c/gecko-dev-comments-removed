@@ -328,8 +328,7 @@ impl Imm12 {
 }
 
 
-#[derive(Clone, Debug)]
-#[cfg_attr(test, derive(PartialEq))]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ImmLogic {
     
     value: u64,
@@ -550,6 +549,37 @@ impl ImmLogic {
     pub fn invert(&self) -> ImmLogic {
         
         Self::maybe_from_u64(!self.value, self.size.to_ty()).unwrap()
+    }
+
+    
+    
+    
+    
+    
+    pub fn from_n_r_s(value_to_check: u64, n: bool, r: u8, s: u8, size: OperandSize) -> Self {
+        
+        let imml = Self {
+            value: value_to_check,
+            n,
+            r,
+            s,
+            size,
+        };
+
+        
+        debug_assert!(match ImmLogic::maybe_from_u64(
+            value_to_check,
+            if size == OperandSize::Size64 {
+                I64
+            } else {
+                I32
+            }
+        ) {
+            None => false, // fail: `value` is unrepresentable
+            Some(imml_check) => imml_check == imml,
+        });
+
+        imml
     }
 }
 

@@ -564,6 +564,38 @@ pub trait FuncEnvironment: TargetEnvironment {
     
     
     
+    
+    
+    
+    fn translate_atomic_wait(
+        &mut self,
+        pos: FuncCursor,
+        index: MemoryIndex,
+        heap: ir::Heap,
+        addr: ir::Value,
+        expected: ir::Value,
+        timeout: ir::Value,
+    ) -> WasmResult<ir::Value>;
+
+    
+    
+    
+    
+    
+    
+    fn translate_atomic_notify(
+        &mut self,
+        pos: FuncCursor,
+        index: MemoryIndex,
+        heap: ir::Heap,
+        addr: ir::Value,
+        count: ir::Value,
+    ) -> WasmResult<ir::Value>;
+
+    
+    
+    
+    
     fn translate_loop_header(&mut self, _pos: FuncCursor) -> WasmResult<()> {
         
         Ok(())

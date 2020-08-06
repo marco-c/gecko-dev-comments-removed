@@ -182,7 +182,7 @@ pub struct StackLayoutInfo {
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct StackSlots {
     
@@ -202,12 +202,7 @@ pub struct StackSlots {
 impl StackSlots {
     
     pub fn new() -> Self {
-        Self {
-            slots: PrimaryMap::new(),
-            outgoing: Vec::new(),
-            emergency: Vec::new(),
-            layout_info: None,
-        }
+        StackSlots::default()
     }
 
     

@@ -608,6 +608,68 @@ pub enum Inst {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AtomicRMW {
+        ty: Type, 
+        op: AtomicRMWOp,
+        srcloc: Option<SourceLoc>,
+    },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AtomicCAS {
+        ty: Type, 
+        srcloc: Option<SourceLoc>,
+    },
+
+    
+    
+    
+    AtomicLoad {
+        ty: Type, 
+        r_data: Writable<Reg>,
+        r_addr: Reg,
+        srcloc: Option<SourceLoc>,
+    },
+
+    
+    
+    
+    AtomicStore {
+        ty: Type, 
+        r_data: Reg,
+        r_addr: Reg,
+        srcloc: Option<SourceLoc>,
+    },
+
+    
+    
+    
+    Fence,
+
+    
+    
     FpuMove64 {
         rd: Writable<Reg>,
         rn: Reg,
@@ -1249,6 +1311,29 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
         &Inst::CCmpImm { rn, .. } => {
             collector.add_use(rn);
         }
+        &Inst::AtomicRMW { .. } => {
+            collector.add_use(xreg(25));
+            collector.add_use(xreg(26));
+            collector.add_def(writable_xreg(24));
+            collector.add_def(writable_xreg(27));
+            collector.add_def(writable_xreg(28));
+        }
+        &Inst::AtomicCAS { .. } => {
+            collector.add_use(xreg(25));
+            collector.add_use(xreg(26));
+            collector.add_use(xreg(28));
+            collector.add_def(writable_xreg(24));
+            collector.add_def(writable_xreg(27));
+        }
+        &Inst::AtomicLoad { r_data, r_addr, .. } => {
+            collector.add_use(r_addr);
+            collector.add_def(r_data);
+        }
+        &Inst::AtomicStore { r_data, r_addr, .. } => {
+            collector.add_use(r_addr);
+            collector.add_use(r_data);
+        }
+        &Inst::Fence {} => {}
         &Inst::FpuMove64 { rd, rn } => {
             collector.add_def(rd);
             collector.add_use(rn);
@@ -1721,6 +1806,29 @@ fn aarch64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
         &mut Inst::CCmpImm { ref mut rn, .. } => {
             map_use(mapper, rn);
         }
+        &mut Inst::AtomicRMW { .. } => {
+            
+        }
+        &mut Inst::AtomicCAS { .. } => {
+            
+        }
+        &mut Inst::AtomicLoad {
+            ref mut r_data,
+            ref mut r_addr,
+            ..
+        } => {
+            map_def(mapper, r_data);
+            map_use(mapper, r_addr);
+        }
+        &mut Inst::AtomicStore {
+            ref mut r_data,
+            ref mut r_addr,
+            ..
+        } => {
+            map_use(mapper, r_data);
+            map_use(mapper, r_addr);
+        }
+        &mut Inst::Fence {} => {}
         &mut Inst::FpuMove64 {
             ref mut rd,
             ref mut rn,
@@ -2533,6 +2641,28 @@ impl Inst {
                 let nzcv = nzcv.show_rru(mb_rru);
                 let cond = cond.show_rru(mb_rru);
                 format!("ccmp {}, {}, {}, {}", rn, imm, nzcv, cond)
+            }
+            &Inst::AtomicRMW { ty, op, .. } => {
+                format!(
+                    "atomically {{ {}_bits_at_[x25]) {:?}= x26 ; x27 = old_value_at_[x25]; x24,x28 = trash }}",
+                    ty.bits(), op)
+            }
+            &Inst::AtomicCAS { ty, .. } => {
+                format!(
+                    "atomically {{ compare-and-swap({}_bits_at_[x25], x26 -> x28), x27 = old_value_at_[x25]; x24 = trash }}",
+                    ty.bits())
+            }
+            &Inst::AtomicLoad { ty, r_data, r_addr, .. } => {
+                format!(
+                    "atomically {{ {} = zero_extend_{}_bits_at[{}] }}",
+                    r_data.show_rru(mb_rru), ty.bits(), r_addr.show_rru(mb_rru))
+            }
+            &Inst::AtomicStore { ty, r_data, r_addr, .. } => {
+                format!(
+                    "atomically {{ {}_bits_at[{}] = {} }}", ty.bits(), r_addr.show_rru(mb_rru), r_data.show_rru(mb_rru))
+            }
+            &Inst::Fence {} => {
+                format!("dmb ish")
             }
             &Inst::FpuMove64 { rd, rn } => {
                 let rd = rd.to_reg().show_rru(mb_rru);

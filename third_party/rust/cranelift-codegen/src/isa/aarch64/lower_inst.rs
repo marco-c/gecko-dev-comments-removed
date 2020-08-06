@@ -12,7 +12,7 @@ use crate::CodegenResult;
 use crate::isa::aarch64::abi::*;
 use crate::isa::aarch64::inst::*;
 
-use regalloc::RegClass;
+use regalloc::{RegClass, Writable};
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -20,6 +20,13 @@ use core::convert::TryFrom;
 use smallvec::SmallVec;
 
 use super::lower::*;
+
+fn is_single_word_int_ty(ty: Type) -> bool {
+    match ty {
+        I8 | I16 | I32 | I64 => true,
+        _ => false,
+    }
+}
 
 
 pub(crate) fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
@@ -1108,6 +1115,123 @@ pub(crate) fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
             ctx.emit(inst);
         }
 
+        Opcode::AtomicRmw => {
+            let r_dst = get_output_reg(ctx, outputs[0]);
+            let mut r_addr = put_input_in_reg(ctx, inputs[0], NarrowValueMode::None);
+            let mut r_arg2 = put_input_in_reg(ctx, inputs[1], NarrowValueMode::None);
+            let ty_access = ty.unwrap();
+            assert!(is_single_word_int_ty(ty_access));
+            let memflags = ctx.memflags(insn).expect("memory flags");
+            let srcloc = if !memflags.notrap() {
+                Some(ctx.srcloc(insn))
+            } else {
+                None
+            };
+            
+            
+            
+            r_addr = ctx.ensure_in_vreg(r_addr, I64);
+            r_arg2 = ctx.ensure_in_vreg(r_arg2, I64);
+            
+            ctx.emit(Inst::gen_move(Writable::from_reg(xreg(25)), r_addr, I64));
+            ctx.emit(Inst::gen_move(Writable::from_reg(xreg(26)), r_arg2, I64));
+            
+            let op = AtomicRMWOp::from(inst_atomic_rmw_op(ctx.data(insn)).unwrap());
+            ctx.emit(Inst::AtomicRMW {
+                ty: ty_access,
+                op,
+                srcloc,
+            });
+            
+            ctx.emit(Inst::gen_move(r_dst, xreg(27), I64));
+            
+        }
+
+        Opcode::AtomicCas => {
+            
+            
+            
+            let r_dst = get_output_reg(ctx, outputs[0]);
+            let mut r_addr = put_input_in_reg(ctx, inputs[0], NarrowValueMode::None);
+            let mut r_expected = put_input_in_reg(ctx, inputs[1], NarrowValueMode::None);
+            let mut r_replacement = put_input_in_reg(ctx, inputs[2], NarrowValueMode::None);
+            let ty_access = ty.unwrap();
+            assert!(is_single_word_int_ty(ty_access));
+            let memflags = ctx.memflags(insn).expect("memory flags");
+            let srcloc = if !memflags.notrap() {
+                Some(ctx.srcloc(insn))
+            } else {
+                None
+            };
+            
+            
+            r_addr = ctx.ensure_in_vreg(r_addr, I64);
+            r_expected = ctx.ensure_in_vreg(r_expected, I64);
+            r_replacement = ctx.ensure_in_vreg(r_replacement, I64);
+            
+            ctx.emit(Inst::gen_move(Writable::from_reg(xreg(25)), r_addr, I64));
+            ctx.emit(Inst::gen_move(
+                Writable::from_reg(xreg(26)),
+                r_expected,
+                I64,
+            ));
+            ctx.emit(Inst::gen_move(
+                Writable::from_reg(xreg(28)),
+                r_replacement,
+                I64,
+            ));
+            
+            ctx.emit(Inst::AtomicCAS {
+                ty: ty_access,
+                srcloc,
+            });
+            
+            ctx.emit(Inst::gen_move(r_dst, xreg(27), I64));
+            
+        }
+
+        Opcode::AtomicLoad => {
+            let r_data = get_output_reg(ctx, outputs[0]);
+            let r_addr = put_input_in_reg(ctx, inputs[0], NarrowValueMode::None);
+            let ty_access = ty.unwrap();
+            assert!(is_single_word_int_ty(ty_access));
+            let memflags = ctx.memflags(insn).expect("memory flags");
+            let srcloc = if !memflags.notrap() {
+                Some(ctx.srcloc(insn))
+            } else {
+                None
+            };
+            ctx.emit(Inst::AtomicLoad {
+                ty: ty_access,
+                r_data,
+                r_addr,
+                srcloc,
+            });
+        }
+
+        Opcode::AtomicStore => {
+            let r_data = put_input_in_reg(ctx, inputs[0], NarrowValueMode::None);
+            let r_addr = put_input_in_reg(ctx, inputs[1], NarrowValueMode::None);
+            let ty_access = ctx.input_ty(insn, 0);
+            assert!(is_single_word_int_ty(ty_access));
+            let memflags = ctx.memflags(insn).expect("memory flags");
+            let srcloc = if !memflags.notrap() {
+                Some(ctx.srcloc(insn))
+            } else {
+                None
+            };
+            ctx.emit(Inst::AtomicStore {
+                ty: ty_access,
+                r_data,
+                r_addr,
+                srcloc,
+            });
+        }
+
+        Opcode::Fence => {
+            ctx.emit(Inst::Fence {});
+        }
+
         Opcode::StackLoad | Opcode::StackStore => {
             panic!("Direct stack memory access not supported; should not be used by Wasm");
         }
@@ -1544,11 +1668,10 @@ pub(crate) fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                 cond
             };
 
-            ctx.emit(Inst::TrapIf {
+            ctx.emit_safepoint(Inst::TrapIf {
                 trap_info,
                 kind: CondBrKind::Cond(cond),
             });
-            ctx.emit_safepoint(Inst::Udf { trap_info })
         }
 
         Opcode::Safepoint => {

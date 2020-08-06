@@ -749,7 +749,11 @@ impl<'a> Verifier<'a> {
             }
 
             
-            Unary { .. }
+            AtomicCas { .. }
+            | AtomicRmw { .. }
+            | LoadNoOffset { .. }
+            | StoreNoOffset { .. }
+            | Unary { .. }
             | UnaryConst { .. }
             | UnaryImm { .. }
             | UnaryIeee32 { .. }
