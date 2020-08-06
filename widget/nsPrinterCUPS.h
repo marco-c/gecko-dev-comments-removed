@@ -36,7 +36,10 @@ class nsPrinterCUPS final : public nsIPrinter {
   
 
 
-  nsPrinterCUPS(const nsCUPSShim& aShim, cups_dest_t* aPrinter);
+
+
+  nsPrinterCUPS(const nsCUPSShim& aShim, cups_dest_t* aPrinter,
+                nsTArray<RefPtr<nsIPaper>>&& aPaperList);
 
  private:
   ~nsPrinterCUPS();
@@ -44,15 +47,10 @@ class nsPrinterCUPS final : public nsIPrinter {
   
   bool Supports(const char* option, const char* value) const;
 
-  
-
-
-  nsresult InitPaperList();
-
   const nsCUPSShim& mShim;
   cups_dest_t* mPrinter;
   cups_dinfo_t* mPrinterInfo;
-  UniquePtr<nsTArray<RefPtr<nsIPaper>>> mPaperList;
+  nsTArray<RefPtr<nsIPaper>> mPaperList;
   Maybe<bool> mSupportsDuplex;
 };
 
