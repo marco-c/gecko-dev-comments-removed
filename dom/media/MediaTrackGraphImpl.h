@@ -429,8 +429,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   void NotifyStarted() override;
   
 
+
   void NotifyInputData(const AudioDataValue* aBuffer, size_t aFrames,
                        TrackRate aRate, uint32_t aChannels) override;
+  
+
+  void ProcessInputData();
   
 
 
@@ -775,6 +779,11 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   nsDataHashtable<nsVoidPtrHashKey, nsTArray<RefPtr<AudioDataListener>>>
       mInputDeviceUsers;
+
+  
+  const AudioDataValue* mInputData;
+  uint32_t mInputChannelCount;
+  uint32_t mInputFrames;
 
   
 
