@@ -3775,8 +3775,21 @@ bool ContentParent::SendRequestMemoryReport(
     const bool& aMinimizeMemoryUsage, const Maybe<FileDescriptor>& aDMDFile) {
   
   mMemoryReportRequest = MakeUnique<MemoryReportRequestHost>(aGeneration);
-  Unused << PContentParent::SendRequestMemoryReport(
-      aGeneration, aAnonymize, aMinimizeMemoryUsage, aDMDFile);
+  
+  
+  
+  RefPtr<ContentParent> self(this);
+  PContentParent::SendRequestMemoryReport(
+      aGeneration, aAnonymize, aMinimizeMemoryUsage, aDMDFile,
+      [&, self](const uint32_t& aGeneration2) {
+        if (self->mMemoryReportRequest) {
+          self->mMemoryReportRequest->Finish(aGeneration2);
+          self->mMemoryReportRequest = nullptr;
+        }
+      },
+      [&, self](mozilla::ipc::ResponseRejectReason) {
+        self->mMemoryReportRequest = nullptr;
+      });
   return IPC_OK();
 }
 
@@ -3784,15 +3797,6 @@ mozilla::ipc::IPCResult ContentParent::RecvAddMemoryReport(
     const MemoryReport& aReport) {
   if (mMemoryReportRequest) {
     mMemoryReportRequest->RecvReport(aReport);
-  }
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentParent::RecvFinishMemoryReport(
-    const uint32_t& aGeneration) {
-  if (mMemoryReportRequest) {
-    mMemoryReportRequest->Finish(aGeneration);
-    mMemoryReportRequest = nullptr;
   }
   return IPC_OK();
 }
