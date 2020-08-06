@@ -235,8 +235,6 @@ struct SelfHostedLazyScript {
 
 }  
 
-struct JSTelemetrySender;
-
 struct JSRuntime {
  private:
   friend class js::Activation;
@@ -326,8 +324,7 @@ struct JSRuntime {
   }
 
   
-
-  JSAccumulateTelemetryDataCallback telemetryCallback;
+  js::MainThreadData<JSAccumulateTelemetryDataCallback> telemetryCallback;
 
   
   js::MainThreadData<JSSetUseCounterCallback> useCounterCallback;
@@ -339,8 +336,6 @@ struct JSRuntime {
   
   
   void addTelemetry(int id, uint32_t sample, const char* key = nullptr);
-
-  JSTelemetrySender getTelemetrySender() const;
 
   void setTelemetryCallback(JSRuntime* rt,
                             JSAccumulateTelemetryDataCallback callback);
@@ -1074,38 +1069,6 @@ struct JSRuntime {
   };
   ErrorInterceptionSupport errorInterception;
 #endif  
-};
-
-
-
-
-struct JSTelemetrySender {
- private:
-  friend struct JSRuntime;
-
-  JSAccumulateTelemetryDataCallback callback_;
-
-  JSTelemetrySender(JSAccumulateTelemetryDataCallback callback)
-      : callback_(callback) {}
-
- public:
-  JSTelemetrySender() : callback_(nullptr) {}
-  JSTelemetrySender(const JSTelemetrySender& other)
-      : callback_(other.callback_) {}
-  explicit JSTelemetrySender(JSRuntime* runtime)
-      : JSTelemetrySender(runtime->getTelemetrySender()) {}
-
-  
-  
-  
-  void addTelemetry(int id, uint32_t sample, const char* key = nullptr) {
-    if (callback_) {
-      callback_(id, sample, key);
-    }
-  }
-
-  
-  void* get() const { return (void*)callback_; }
 };
 
 namespace js {

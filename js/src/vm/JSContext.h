@@ -191,10 +191,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   mozilla::Atomic<bool, mozilla::ReleaseAcquire> freeUnusedMemory;
 
-  
-  
-  js::ContextData<bool> measuringExecutionTime_;
-
  public:
   
   
@@ -212,11 +208,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   bool shouldFreeUnusedMemory() const {
     return kind_ == js::ContextKind::HelperThread && freeUnusedMemory;
-  }
-
-  bool isMeasuringExecutionTime() const { return measuringExecutionTime_; }
-  void setIsMeasuringExecutionTime(bool value) {
-    measuringExecutionTime_ = value;
   }
 
   bool isMainThreadContext() const {
