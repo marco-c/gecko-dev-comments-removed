@@ -984,6 +984,10 @@ JS_PUBLIC_API void js::gc::PerformIncrementalReadBarrier(JS::GCCellPtr thing) {
   
   
 
+  AutoGeckoProfilerEntry profilingStackFrame(
+      TlsContext.get(), "PerformIncrementalReadBarrier",
+      JS::ProfilingCategoryPair::GCCC_Barrier);
+
   MOZ_ASSERT(thing);
   MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
 
@@ -4269,7 +4273,8 @@ bool js::gc::UnmarkGrayGCThingUnchecked(JSRuntime* rt, JS::GCCellPtr thing) {
   MOZ_ASSERT(thing.asCell()->isMarkedGray());
 
   AutoGeckoProfilerEntry profilingStackFrame(
-      TlsContext.get(), "UnmarkGrayGCThing", JS::ProfilingCategoryPair::GCCC);
+      TlsContext.get(), "UnmarkGrayGCThing",
+      JS::ProfilingCategoryPair::GCCC_UnmarkGray);
 
   UnmarkGrayTracer unmarker(rt);
   unmarker.unmark(thing);
