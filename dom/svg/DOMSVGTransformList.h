@@ -8,6 +8,7 @@
 #define DOM_SVG_DOMSVGTRANSFORMLIST_H_
 
 #include "DOMSVGAnimatedTransformList.h"
+#include "mozAutoDocUpdate.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
 #include "SVGTransformList.h"
@@ -27,11 +28,45 @@ class SVGMatrix;
 
 
 
+template <class T>
+class MOZ_RAII AutoChangeTransformListNotifier {
+ public:
+  explicit AutoChangeTransformListNotifier(T* aValue) : mValue(aValue) {
+    MOZ_ASSERT(mValue, "Expecting non-null value");
+    
+    if (mValue->HasOwner()) {
+      mUpdateBatch.emplace(mValue->Element()->GetComposedDoc(), true);
+      mEmptyOrOldValue =
+          mValue->Element()->WillChangeTransformList(mUpdateBatch.ref());
+    }
+  }
+
+  ~AutoChangeTransformListNotifier() {
+    if (mValue->HasOwner()) {
+      mValue->Element()->DidChangeTransformList(mEmptyOrOldValue,
+                                                mUpdateBatch.ref());
+      if (mValue->IsAnimating()) {
+        mValue->Element()->AnimationNeedsResample();
+      }
+    }
+  }
+
+ private:
+  T* const mValue;
+  Maybe<mozAutoDocUpdate> mUpdateBatch;
+  nsAttrValue mEmptyOrOldValue;
+};
+
+
+
+
+
 
 
 
 
 class DOMSVGTransformList final : public nsISupports, public nsWrapperCache {
+  template <class T>
   friend class AutoChangeTransformListNotifier;
   friend class dom::DOMSVGTransform;
 
@@ -76,6 +111,12 @@ class DOMSVGTransformList final : public nsISupports, public nsWrapperCache {
 
   
   void InternalListLengthWillChange(uint32_t aNewLength);
+
+  
+
+
+
+  bool HasOwner() const { return true; }
 
   
 

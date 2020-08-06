@@ -7,6 +7,7 @@
 #ifndef DOM_SVG_DOMSVGPOINTLIST_H_
 #define DOM_SVG_DOMSVGPOINTLIST_H_
 
+#include "mozAutoDocUpdate.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
 #include "SVGElement.h"
@@ -24,6 +25,32 @@ namespace dom {
 
 class DOMSVGPoint;
 class nsISVGPoint;
+
+
+
+
+
+template <class T>
+class MOZ_RAII AutoChangePointListNotifier : public mozAutoDocUpdate {
+ public:
+  explicit AutoChangePointListNotifier(T* aValue)
+      : mozAutoDocUpdate(aValue->Element()->GetComposedDoc(), true),
+        mValue(aValue) {
+    MOZ_ASSERT(mValue, "Expecting non-null value");
+    mEmptyOrOldValue = mValue->Element()->WillChangePointList(*this);
+  }
+
+  ~AutoChangePointListNotifier() {
+    mValue->Element()->DidChangePointList(mEmptyOrOldValue, *this);
+    if (mValue->AttrIsAnimating()) {
+      mValue->Element()->AnimationNeedsResample();
+    }
+  }
+
+ private:
+  T* const mValue;
+  nsAttrValue mEmptyOrOldValue;
+};
 
 
 
@@ -51,6 +78,7 @@ class nsISVGPoint;
 
 
 class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
+  template <class T>
   friend class AutoChangePointListNotifier;
   friend class nsISVGPoint;
   friend class DOMSVGPoint;

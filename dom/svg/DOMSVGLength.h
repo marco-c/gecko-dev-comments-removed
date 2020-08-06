@@ -79,7 +79,8 @@ class SVGElement;
 
 
 class DOMSVGLength final : public nsISupports, public nsWrapperCache {
-  friend class AutoChangeLengthNotifier;
+  template <class T>
+  friend class AutoChangeLengthListNotifier;
 
   
 
@@ -118,6 +119,11 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
   DOMSVGLength* Copy();
 
   bool IsInList() const { return !!mList; }
+
+  
+
+
+  bool IsAnimating() const { return mList && mList->IsAnimating(); }
 
   
 
