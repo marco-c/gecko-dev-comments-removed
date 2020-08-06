@@ -56,6 +56,8 @@ class nsILineIterator {
 
 
     nsRect mLineBounds;
+    
+    bool mIsWrapped;
   };
 
   
