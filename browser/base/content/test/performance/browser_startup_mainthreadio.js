@@ -261,7 +261,7 @@ const startupPhases = {
       
       
       path: "*ld.so.conf*",
-      condition: LINUX,
+      condition: LINUX && !AppConstants.MOZ_CODE_COVERAGE,
       read: 22,
       close: 11,
     },
@@ -336,7 +336,7 @@ const startupPhases = {
     {
       
       path: "*ld.so.conf*",
-      condition: LINUX,
+      condition: LINUX && !AppConstants.MOZ_CODE_COVERAGE,
       read: 22,
       close: 11,
     },
