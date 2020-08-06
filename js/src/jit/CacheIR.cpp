@@ -5534,6 +5534,9 @@ AttachDecision CallIRGenerator::tryAttachIsSuspendedGenerator(
 AttachDecision CallIRGenerator::tryAttachToObject(HandleFunction callee,
                                                   InlinableNative native) {
   
+  MOZ_ASSERT_IF(native == InlinableNative::IntrinsicToObject, argc_ == 1);
+
+  
   
   
   if (argc_ != 1 || !args_[0].isObject()) {
@@ -5571,10 +5574,13 @@ AttachDecision CallIRGenerator::tryAttachToObject(HandleFunction callee,
 
 AttachDecision CallIRGenerator::tryAttachToInteger(HandleFunction callee) {
   
+  MOZ_ASSERT(argc_ == 1);
+
   
   
   
-  if (argc_ != 1 || !args_[0].isInt32()) {
+  
+  if (!args_[0].isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -5601,7 +5607,10 @@ AttachDecision CallIRGenerator::tryAttachToInteger(HandleFunction callee) {
 
 AttachDecision CallIRGenerator::tryAttachToLength(HandleFunction callee) {
   
-  if (argc_ != 1 || !args_[0].isInt32()) {
+  MOZ_ASSERT(argc_ == 1);
+
+  
+  if (!args_[0].isInt32()) {
     return AttachDecision::NoAction;
   }
 
@@ -5629,9 +5638,7 @@ AttachDecision CallIRGenerator::tryAttachToLength(HandleFunction callee) {
 
 AttachDecision CallIRGenerator::tryAttachIsObject(HandleFunction callee) {
   
-  if (argc_ != 1) {
-    return AttachDecision::NoAction;
-  }
+  MOZ_ASSERT(argc_ == 1);
 
   
   Int32OperandId argcId(writer.setInputOperandId(0));
@@ -5677,9 +5684,7 @@ AttachDecision CallIRGenerator::tryAttachIsPackedArray(HandleFunction callee) {
 
 AttachDecision CallIRGenerator::tryAttachIsCallable(HandleFunction callee) {
   
-  if (argc_ != 1) {
-    return AttachDecision::NoAction;
-  }
+  MOZ_ASSERT(argc_ == 1);
 
   
   Int32OperandId argcId(writer.setInputOperandId(0));
@@ -5701,7 +5706,10 @@ AttachDecision CallIRGenerator::tryAttachIsCallable(HandleFunction callee) {
 
 AttachDecision CallIRGenerator::tryAttachIsConstructor(HandleFunction callee) {
   
-  if (argc_ != 1 || !args_[0].isObject()) {
+  MOZ_ASSERT(argc_ == 1);
+
+  
+  if (!args_[0].isObject()) {
     return AttachDecision::NoAction;
   }
 
@@ -5757,9 +5765,8 @@ AttachDecision CallIRGenerator::tryAttachIsCrossRealmArrayConstructor(
 AttachDecision CallIRGenerator::tryAttachGuardToClass(HandleFunction callee,
                                                       InlinableNative native) {
   
-  if (argc_ != 1 || !args_[0].isObject()) {
-    return AttachDecision::NoAction;
-  }
+  MOZ_ASSERT(argc_ == 1);
+  MOZ_ASSERT(args_[0].isObject());
 
   
   const JSClass* clasp = InlinableNativeGuardToClass(native);
@@ -5793,9 +5800,8 @@ AttachDecision CallIRGenerator::tryAttachGuardToClass(HandleFunction callee,
 AttachDecision CallIRGenerator::tryAttachHasClass(HandleFunction callee,
                                                   const JSClass* clasp) {
   
-  if (argc_ != 1 || !args_[0].isObject()) {
-    return AttachDecision::NoAction;
-  }
+  MOZ_ASSERT(argc_ == 1);
+  MOZ_ASSERT(args_[0].isObject());
 
   
   Int32OperandId argcId(writer.setInputOperandId(0));
@@ -5818,10 +5824,13 @@ AttachDecision CallIRGenerator::tryAttachHasClass(HandleFunction callee,
 AttachDecision CallIRGenerator::tryAttachRegExpMatcherSearcherTester(
     HandleFunction callee, InlinableNative native) {
   
-  if (argc_ != 3) {
-    return AttachDecision::NoAction;
-  }
-  if (!args_[0].isObject() || !args_[1].isString() || !args_[2].isInt32()) {
+  MOZ_ASSERT(argc_ == 3);
+  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(args_[1].isString());
+  MOZ_ASSERT(args_[2].isNumber());
+
+  
+  if (!args_[2].isInt32()) {
     return AttachDecision::NoAction;
   }
 
