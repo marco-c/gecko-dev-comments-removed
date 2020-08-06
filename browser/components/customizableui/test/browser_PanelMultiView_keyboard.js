@@ -457,10 +457,20 @@ async function testTabArrowsEmbeddedDoc(aView, aEmbedder) {
   await openPopup();
   await showSubView(aView);
   let doc = aEmbedder.contentDocument;
-  if (doc.readyState != "complete") {
+  if (doc.readyState != "complete" || doc.location.href != kEmbeddedDocUrl) {
     info(`Embedded doc readyState ${doc.readyState}, location ${doc.location}`);
     info("Waiting for load on embedder");
-    await BrowserTestUtils.waitForEvent(aEmbedder, "load");
+    if (aEmbedder.tagName == "browser") {
+      
+      
+      await BrowserTestUtils.waitForEvent(
+        aEmbedder,
+        "BrowserTestUtils:ContentEvent:load"
+      );
+    } else {
+      
+      await BrowserTestUtils.waitForEvent(aEmbedder, "load");
+    }
     
     
     doc = aEmbedder.contentDocument;
