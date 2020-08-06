@@ -13,42 +13,17 @@ add_task(async function() {
   browser.setAttribute("type", "content");
   document.body.appendChild(browser);
 
-  const mm = browser.messageManager;
-
-  function onError(e) {
-    ok(false, e.data.error);
-  }
-  mm.addMessageListener("testSaveHeapSnapshot:error", onError);
-
-  const onDone = new Promise(resolve => {
-    mm.addMessageListener("testSaveHeapSnapshot:done", function onMsg() {
-      mm.removeMessageListener("testSaveHeapSnapshot:done", onMsg);
-      mm.removeMessageListener("testSaveHeapSnapshot:error", onError);
-      ok(true, "Saved heap snapshot in child process");
-      resolve();
-    });
-  });
-
-  info("Loading frame script to save heap snapshot");
-  
-  
-  function childFrameScript() {
-    
+  info("Save heap snapshot");
+  const result = await SpecialPowers.spawn(browser, [], () => {
     try {
       ChromeUtils.saveHeapSnapshot({ runtime: true });
     } catch (err) {
-      sendAsyncMessage("testSaveHeapSnapshot:error", { error: err.toString() });
-      return;
+      return err.toString();
     }
 
-    sendAsyncMessage("testSaveHeapSnapshot:done", {});
-  }
-  mm.loadFrameScript(
-    "data:,(" + encodeURI(childFrameScript.toString()) + ")();",
-    false
-  );
-
-  await onDone;
+    return "";
+  });
+  is(result, "", "result of saveHeapSnapshot");
 
   browser.remove();
 });
