@@ -461,19 +461,7 @@ class nsDisplayVideo : public nsPaintedDisplayItem {
       return true;
     }
 
-    VideoInfo::Rotation rotationDeg = element->RotationDegrees();
-    IntSize scaleHint(static_cast<int32_t>(destGFXRect.Width()),
-                      static_cast<int32_t>(destGFXRect.Height()));
-    
-    SwapScaleWidthHeightForRotation(scaleHint, rotationDeg);
-    container->SetScaleHint(scaleHint);
-
-    Matrix transformHint;
-    if (rotationDeg != VideoInfo::Rotation::kDegree_0) {
-      transformHint = ComputeRotationMatrix(destGFXRect.Width(),
-                                            destGFXRect.Height(), rotationDeg);
-    }
-    container->SetTransformHint(transformHint);
+    container->SetRotation(element->RotationDegrees());
 
     
     
