@@ -5151,7 +5151,7 @@ class BaseCompiler final : public BaseCompilerInterface {
     }
 
     
-    for (ABIArgIter i(args); !i.done(); i++) {
+    for (WasmABIArgIter i(args); !i.done(); i++) {
       ABIArg argLoc = *i;
       if (argLoc.kind() == ABIArg::Stack &&
           args[i.index()] == MIRType::RefOrNull) {
@@ -5236,7 +5236,7 @@ class BaseCompiler final : public BaseCompilerInterface {
     }
 
     
-    for (ABIArgIter i(args); !i.done(); i++) {
+    for (WasmABIArgIter i(args); !i.done(); i++) {
       if (args.isSyntheticStackResultPointerArg(i.index())) {
         
         
@@ -5501,7 +5501,7 @@ class BaseCompiler final : public BaseCompilerInterface {
     }
 
     uint32_t lineOrBytecode;
-    ABIArgGenerator abi;
+    WasmABIArgGenerator abi;
     bool isInterModule;
     bool usesSystemAbi;
 #ifdef JS_CODEGEN_ARM

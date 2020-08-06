@@ -64,7 +64,7 @@ class FunctionCompiler;
 
 class CallCompileState {
   
-  ABIArgGenerator abi_;
+  WasmABIArgGenerator abi_;
 
   
   MWasmCall::Args regArgs_;
@@ -161,7 +161,7 @@ class FunctionCompiler {
       return false;
     }
 
-    for (ABIArgIter i(args); !i.done(); i++) {
+    for (WasmABIArgIter i(args); !i.done(); i++) {
       MWasmParameter* ins = MWasmParameter::New(alloc(), *i, i.mirType());
       curBlock_->add(ins);
       if (args.isSyntheticStackResultPointerArg(i.index())) {
