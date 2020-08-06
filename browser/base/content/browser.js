@@ -1105,13 +1105,17 @@ var gPopupBlockerObserver = {
     
     
     let browser = gBrowser.selectedBrowser;
-    var uri = browser.contentPrincipal.URI || browser.currentURI;
+    var uriOrPrincipal = browser.contentPrincipal.isContentPrincipal
+      ? browser.contentPrincipal
+      : browser.currentURI;
     var blockedPopupAllowSite = document.getElementById(
       "blockedPopupAllowSite"
     );
     try {
       blockedPopupAllowSite.removeAttribute("hidden");
-      let uriHost = uri.asciiHost ? uri.host : uri.spec;
+      let uriHost = uriOrPrincipal.asciiHost
+        ? uriOrPrincipal.host
+        : uriOrPrincipal.spec;
       var pm = Services.perms;
       if (
         pm.testPermissionFromPrincipal(browser.contentPrincipal, "popup") ==
@@ -1182,7 +1186,7 @@ var gPopupBlockerObserver = {
             popupURIspec == "" ||
             popupURIspec == "about:blank" ||
             popupURIspec == "<self>" ||
-            popupURIspec == uri.spec
+            popupURIspec == uriOrPrincipal.spec
           ) {
             continue;
           }

@@ -282,6 +282,15 @@ interface nsIPrincipal : nsISerializable
     
 
 
+
+
+
+
+    readonly attribute ACString spec;
+
+    
+
+
     readonly attribute ACString exposablePrePath;
 
     
