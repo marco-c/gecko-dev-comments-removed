@@ -2568,6 +2568,9 @@ bool TextControlState::SetValue(const nsAString& aValue,
     aOldValue = nullptr;
   }
 
+  const bool wasHandlingSetValue =
+      mHandlingState && mHandlingState->IsHandling(TextControlAction::SetValue);
+
   ErrorResult error;
   AutoTextControlHandlingState handlingSetValue(
       *this, TextControlAction::SetValue, aValue, aOldValue, aFlags, error);
@@ -2646,14 +2649,8 @@ bool TextControlState::SetValue(const nsAString& aValue,
   }
 
   if (mTextEditor && mBoundFrame) {
-    AutoWeakFrame weakFrame(mBoundFrame);
-
     if (!SetValueWithTextEditor(handlingSetValue)) {
       return false;
-    }
-
-    if (!weakFrame.IsAlive()) {
-      return true;
     }
   } else if (!SetValueWithoutTextEditor(handlingSetValue)) {
     return false;
@@ -2661,10 +2658,14 @@ bool TextControlState::SetValue(const nsAString& aValue,
 
   
   
-  auto changeKind = (aFlags & eSetValue_Internal) ? ValueChangeKind::Internal
-                                                  : ValueChangeKind::Script;
+  if (!wasHandlingSetValue) {
+    
+    
+    auto changeKind = (aFlags & eSetValue_Internal) ? ValueChangeKind::Internal
+                                                    : ValueChangeKind::Script;
 
-  handlingSetValue.GetTextControlElement()->OnValueChanged(changeKind);
+    handlingSetValue.GetTextControlElement()->OnValueChanged(changeKind);
+  }
   return true;
 }
 
