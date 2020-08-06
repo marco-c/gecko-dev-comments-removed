@@ -4460,8 +4460,7 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
 
   
   
-  bool mergeListElements = false;
-  nsAtom* leftListElementTagName = nsGkAtoms::_empty;
+  Maybe<nsAtom*> newListElementTagNameOfRightListElement;
   RefPtr<Element> leftListElement, rightListElement;
   if (HTMLEditUtils::IsListItem(leftBlockElement) &&
       HTMLEditUtils::IsListItem(rightBlockElement)) {
@@ -4482,8 +4481,8 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
       MOZ_DIAGNOSTIC_ASSERT(!atChildInBlock.IsSet());
       leftBlockElement = leftListElement;
       rightBlockElement = rightListElement;
-      mergeListElements = true;
-      leftListElementTagName = leftListElement->NodeInfo()->NameAtom();
+      newListElementTagNameOfRightListElement =
+          Some(leftListElement->NodeInfo()->NameAtom());
     }
   }
 
@@ -4538,7 +4537,7 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
             *this, EditorDOMPoint::AtEndOf(leftBlockElement));
     EditActionResult ret(NS_OK);
-    if (NS_WARN_IF(mergeListElements)) {
+    if (NS_WARN_IF(newListElementTagNameOfRightListElement.isSome())) {
       
       
       
@@ -4644,7 +4643,7 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
             *this, atLeftBlockChild);
     EditActionResult ret(NS_OK);
-    if (mergeListElements) {
+    if (newListElementTagNameOfRightListElement.isSome()) {
       
       
       
@@ -4759,72 +4758,15 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   
   
   
-
-  
-  nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToJoinBlocks(
-      *this, *leftBlockElement, *rightBlockElement);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("WhiteSpaceVisibilityKeeper::PrepareToJoinBlocks() failed");
-    return EditActionIgnored(rv);
-  }
-  
-  RefPtr<HTMLBRElement> invisibleBRElementAtEndOfLeftBlockElement =
-      WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
-          *this, EditorDOMPoint::AtEndOf(leftBlockElement));
-  EditActionResult ret(NS_OK);
-  if (mergeListElements || leftBlockElement->NodeInfo()->NameAtom() ==
-                               rightBlockElement->NodeInfo()->NameAtom()) {
-    
-    EditorDOMPoint atFirstChildOfRightNode;
-    nsresult rv = JoinNearestEditableNodesWithTransaction(
-        *leftBlockElement, *rightBlockElement, &atFirstChildOfRightNode);
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
-    }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditor::JoinNearestEditableNodesWithTransaction()"
-                         " failed, but ignored");
-    if (mergeListElements && atFirstChildOfRightNode.IsSet()) {
-      CreateElementResult convertListTypeResult = ChangeListElementType(
-          *rightBlockElement, MOZ_KnownLive(*leftListElementTagName),
-          *nsGkAtoms::li);
-      if (NS_WARN_IF(convertListTypeResult.EditorDestroyed())) {
-        return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
-      }
-      NS_WARNING_ASSERTION(
-          convertListTypeResult.Succeeded(),
-          "HTMLEditor::ChangeListElementType() failed, but ignored");
-    }
-    ret.MarkAsHandled();
-  } else {
-    
-    ret |= MoveOneHardLineContents(EditorDOMPoint(rightBlockElement, 0),
-                                   EditorDOMPoint(leftBlockElement, 0),
-                                   MoveToEndOfContainer::Yes);
-    if (ret.Failed()) {
-      NS_WARNING(
-          "HTMLEditor::MoveOneHardLineContents(MoveToEndOfContainer::Yes) "
-          "failed");
-      return ret;
-    }
-  }
-
-  if (!invisibleBRElementAtEndOfLeftBlockElement) {
-    return ret.MarkAsHandled();
-  }
-
-  rv = DeleteNodeWithTransaction(*invisibleBRElementAtEndOfLeftBlockElement);
-  if (NS_WARN_IF(Destroyed())) {
-    return ret.SetResult(NS_ERROR_EDITOR_DESTROYED);
-  }
-  
-  
-  
-  if (NS_FAILED(rv)) {
-    NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-    return ret.SetResult(rv);
-  }
-  return ret.MarkAsHandled();
+  EditActionResult result = WhiteSpaceVisibilityKeeper::
+      MergeFirstLineOfRightBlockElementIntoLeftBlockElement(
+          *this, *leftBlockElement, *rightBlockElement,
+          newListElementTagNameOfRightListElement);
+  NS_WARNING_ASSERTION(
+      result.Succeeded(),
+      "WhiteSpaceVisibilityKeeper::"
+      "MergeFirstLineOfRightBlockElementIntoLeftBlockElement() failed");
+  return result;
 }
 
 MoveNodeResult HTMLEditor::MoveOneHardLineContents(

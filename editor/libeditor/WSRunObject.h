@@ -1234,6 +1234,25 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static EditActionResult
+  MergeFirstLineOfRightBlockElementIntoLeftBlockElement(
+      HTMLEditor& aHTMLEditor, Element& aLeftBlockElement,
+      Element& aRightBlockElement, const Maybe<nsAtom*>& aListElementTagName);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<RefPtr<Element>, nsresult>
   InsertBRElement(HTMLEditor& aHTMLEditor,
                   const EditorDOMPoint& aPointToInsert);
