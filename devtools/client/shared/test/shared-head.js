@@ -315,6 +315,9 @@ registerCleanupFunction(async function cleanup() {
       conn.close();
     }
   }
+
+  
+  gDevTools.clearIsFissionContentToolboxEnabledReferenceForTest();
 });
 
 

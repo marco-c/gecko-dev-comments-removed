@@ -844,7 +844,7 @@ DevTools.prototype = {
 
 
   isFissionContentToolboxEnabled() {
-    if (typeof this._isFissionContentToolboxEnabled === "undefined") {
+    if (typeof this._cachedFissionContentToolboxEnabled === "undefined") {
       const isContentFissionEnabled = Services.prefs.getBoolPref(
         CONTENT_FISSION_ENABLED_PREF,
         false
@@ -857,10 +857,22 @@ DevTools.prototype = {
         FISSION_AUTOSTART_PREF,
         false
       );
-      this._isFissionContentToolboxEnabled =
+      this._cachedFissionContentToolboxEnabled =
         isFissionEnabled && isContentFissionEnabled;
     }
-    return this._isFissionContentToolboxEnabled;
+    return this._cachedFissionContentToolboxEnabled;
+  },
+
+  
+
+
+
+
+
+
+
+  clearIsFissionContentToolboxEnabledReferenceForTest() {
+    delete this._cachedFissionContentToolboxEnabled;
   },
 };
 

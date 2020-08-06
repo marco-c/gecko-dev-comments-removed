@@ -119,7 +119,13 @@ async function testTabFrames(mainRoot) {
 
   
   const frames = await targetList.getAllTargets([TargetList.TYPES.FRAME]);
-  is(frames.length, 1, "retrieved only the top level document");
+  
+  const expectedFramesCount = isFissionEnabled() ? 2 : 1;
+  is(
+    frames.length,
+    expectedFramesCount,
+    "retrieved only the top level document"
+  );
 
   
   const targets = [];

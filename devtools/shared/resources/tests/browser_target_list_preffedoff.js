@@ -25,6 +25,12 @@ add_task(async function() {
   await pushPref("devtools.browsertoolbox.fission", false);
   await pushPref("devtools.contenttoolbox.fission", false);
 
+  is(
+    gDevTools.isFissionContentToolboxEnabled(),
+    false,
+    "isFissionContentToolboxEnabled returns the expected value"
+  );
+
   
   await testPreffedOffMainProcess(mainRoot, mainProcess);
 
