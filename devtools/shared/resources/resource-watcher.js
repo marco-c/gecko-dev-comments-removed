@@ -90,6 +90,14 @@ class ResourceWatcher {
           "resource-available-form",
           this._onResourceAvailable.bind(this, { watcherFront: this.watcher })
         );
+        this.watcher.on(
+          "resource-updated-form",
+          this._onResourceUpdated.bind(this, { watcherFront: this.watcher })
+        );
+        this.watcher.on(
+          "resource-destroyed-form",
+          this._onResourceDestroyed.bind(this, { watcherFront: this.watcher })
+        );
       }
     }
 
@@ -224,6 +232,10 @@ class ResourceWatcher {
       this._onResourceAvailable.bind(this, { targetFront })
     );
     targetFront.on(
+      "resource-updated-form",
+      this._onResourceUpdated.bind(this, { targetFront })
+    );
+    targetFront.on(
       "resource-destroyed-form",
       this._onResourceDestroyed.bind(this, { targetFront })
     );
@@ -259,21 +271,11 @@ class ResourceWatcher {
     for (let resource of resources) {
       const { resourceType } = resource;
 
-      
-      
-      
       if (watcherFront) {
-        
-        const { browsingContextID } = resource;
-        if (!browsingContextID) {
-          console.error(
-            `Resource of ${resourceType} is missing a browsingContextID attribute`
-          );
+        targetFront = await this._getTargetForWatcherResource(resource);
+        if (!targetFront) {
           continue;
         }
-        targetFront = await this.watcher.getBrowsingContextTarget(
-          browsingContextID
-        );
       }
 
       
@@ -310,36 +312,68 @@ class ResourceWatcher {
 
 
 
+  async _onResourceUpdated({ targetFront, watcherFront }, resources) {
+    for (const resource of resources) {
+      const { resourceType } = resource;
 
+      if (watcherFront) {
+        targetFront = await this._getTargetForWatcherResource(resource);
+        if (!targetFront) {
+          continue;
+        }
+      }
 
-
-
-  _onResourceUpdated(targetFront, resource) {
-    const { resourceType } = resource;
-    this._updatedListeners.emit(resourceType, {
-      resourceType,
-      targetFront,
-      resource,
-    });
+      this._updatedListeners.emit(resourceType, {
+        resourceType,
+        targetFront,
+        resource,
+      });
+    }
   }
 
   
 
 
 
+  async _onResourceDestroyed({ targetFront, watcherFront }, resources) {
+    for (const resource of resources) {
+      const { resourceType } = resource;
 
+      if (watcherFront) {
+        targetFront = await this._getTargetForWatcherResource(resource);
+        if (!targetFront) {
+          continue;
+        }
+      }
 
-  _onResourceDestroyed(targetFront, resourceType, resource) {
-    const index = this._cache.indexOf(resource);
-    if (index >= 0) {
-      this._cache.splice(index, 1);
+      const index = this._cache.indexOf(resource);
+      if (index >= 0) {
+        this._cache.splice(index, 1);
+      }
+
+      this._destroyedListeners.emit(resourceType, {
+        resourceType,
+        targetFront,
+        resource,
+      });
     }
+  }
 
-    this._destroyedListeners.emit(resourceType, {
-      resourceType,
-      targetFront,
-      resource,
-    });
+  
+  
+  
+  _getTargetForWatcherResource(resource) {
+    const { browsingContextID, resourceType } = resource;
+
+    
+    
+    if (!browsingContextID) {
+      console.error(
+        `Resource of ${resourceType} is missing a browsingContextID attribute`
+      );
+      return null;
+    }
+    return this.watcher.getBrowsingContextTarget(browsingContextID);
   }
 
   _onWillNavigate(targetFront) {
@@ -412,12 +446,14 @@ class ResourceWatcher {
 
   _watchResourcesForTarget(targetFront, resourceType) {
     const onAvailable = this._onResourceAvailable.bind(this, { targetFront });
+    const onDestroyed = this._onResourceDestroyed.bind(this, { targetFront });
     const onUpdated = this._onResourceUpdated.bind(this, { targetFront });
     return LegacyListeners[resourceType]({
       targetList: this.targetList,
       targetFront,
       isFissionEnabledOnContentToolbox: gDevTools.isFissionContentToolboxEnabled(),
       onAvailable,
+      onDestroyed,
       onUpdated,
     });
   }
