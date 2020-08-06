@@ -458,7 +458,8 @@ void TextureHost::NotifyNotUsed() {
 
   
   
-  if (!(GetFlags() & TextureFlags::RECYCLE)) {
+  if (!(GetFlags() & TextureFlags::RECYCLE) &&
+      !(GetFlags() & TextureFlags::WAIT_HOST_USAGE_END)) {
     return;
   }
 
