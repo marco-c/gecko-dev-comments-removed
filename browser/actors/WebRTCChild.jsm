@@ -142,19 +142,6 @@ function getActorForWindow(window) {
 function handlePCRequest(aSubject, aTopic, aData) {
   let { windowID, innerWindowID, callID, isSecure } = aSubject;
   let contentWindow = Services.wm.getOuterWindowWithId(windowID);
-
-  let mm = getMessageManagerForWindow(contentWindow);
-  if (!mm) {
-    
-    
-    
-    
-
-    
-    Services.obs.notifyObservers(null, "PeerConnection:response:allow", callID);
-    return;
-  }
-
   if (!contentWindow.pendingPeerConnectionRequests) {
     setupPendingListsInitially(contentWindow);
   }
@@ -505,14 +492,4 @@ function getTabStateForContentWindow(aContentWindow, aForRemove = false) {
 
 function getInnerWindowIDForWindow(aContentWindow) {
   return aContentWindow.windowUtils.currentInnerWindowID;
-}
-
-function getMessageManagerForWindow(aContentWindow) {
-  let docShell = aContentWindow.docShell;
-  if (!docShell) {
-    
-    return null;
-  }
-
-  return docShell.messageManager;
 }
