@@ -106,8 +106,7 @@ void DelayHttpChannelQueue::FireQueue() {
   
   TimeStamp ts = TimeStamp::Now();
 
-  FallibleTArray<RefPtr<nsHttpChannel>> queue;
-  queue.SwapElements(mQueue);
+  FallibleTArray<RefPtr<nsHttpChannel>> queue = std::move(mQueue);
 
   for (RefPtr<nsHttpChannel>& channel : queue) {
     channel->AsyncOpenFinal(ts);

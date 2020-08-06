@@ -400,8 +400,7 @@ void RequestContext::ProcessTailQueue(nsresult aResult) {
   
   mUntailAt = TimeStamp();
 
-  nsTArray<PendingTailRequest> queue;
-  queue.SwapElements(mTailQueue);
+  nsTArray<PendingTailRequest> queue = std::move(mTailQueue);
 
   for (const auto& request : queue) {
     LOG(("  untailing %p", request.get()));

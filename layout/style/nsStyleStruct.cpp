@@ -1858,6 +1858,11 @@ nsStyleImageLayers& nsStyleImageLayers::operator=(nsStyleImageLayers&& aOther) {
   mCompositeCount = aOther.mCompositeCount;
   mLayers = std::move(aOther.mLayers);
 
+  
+  
+  
+  
+  
   uint32_t count = mLayers.Length();
   if (count != aOther.mLayers.Length()) {
     NS_WARNING("truncating counts due to out-of-memory");

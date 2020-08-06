@@ -330,8 +330,7 @@ ThrottleQueue::Notify(nsITimer* aTimer) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   
   
-  nsTArray<RefPtr<ThrottleInputStream>> events;
-  events.SwapElements(mAsyncEvents);
+  nsTArray<RefPtr<ThrottleInputStream>> events = std::move(mAsyncEvents);
 
   
   

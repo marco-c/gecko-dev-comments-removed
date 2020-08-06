@@ -29,8 +29,7 @@ bool ViewRegion::UpdateRegion(const LayoutDeviceIntRegion& aRegion,
   
   
 
-  nsTArray<NSView*> viewsToRecycle;
-  mViews.SwapElements(viewsToRecycle);
+  nsTArray<NSView*> viewsToRecycle = std::move(mViews);
   
 
   size_t i = 0;

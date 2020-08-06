@@ -741,8 +741,7 @@ int32_t WebrtcGmpVideoDecoder::GmpInitDone(GMPVideoDecoderProxy* aGMP,
   
   if (!mQueuedFrames.IsEmpty()) {
     
-    nsTArray<UniquePtr<GMPDecodeData>> temp;
-    temp.SwapElements(mQueuedFrames);
+    nsTArray<UniquePtr<GMPDecodeData>> temp = std::move(mQueuedFrames);
     for (auto& queued : temp) {
       Decode_g(RefPtr<WebrtcGmpVideoDecoder>(this), std::move(queued));
     }

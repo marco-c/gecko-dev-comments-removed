@@ -80,10 +80,10 @@ class HRTFElevation {
   HRTFElevation(const HRTFElevation& other) = delete;
   void operator=(const HRTFElevation& other) = delete;
 
-  HRTFElevation(HRTFKernelList* kernelListL, int elevation, float sampleRate)
-      : m_elevationAngle(elevation), m_sampleRate(sampleRate) {
-    m_kernelListL.SwapElements(*kernelListL);
-  }
+  HRTFElevation(HRTFKernelList&& kernelListL, int elevation, float sampleRate)
+      : m_kernelListL(std::move(kernelListL)),
+        m_elevationAngle(elevation),
+        m_sampleRate(sampleRate) {}
 
   
   

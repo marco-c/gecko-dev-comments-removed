@@ -100,7 +100,7 @@ class AudioNodeTrack : public ProcessedMediaTrack {
                          const dom::AudioTimelineEvent& aEvent);
   
   
-  void SetRawArrayData(nsTArray<float>& aData);
+  void SetRawArrayData(nsTArray<float>&& aData);
   void SetChannelMixingParameters(uint32_t aNumberOfChannels,
                                   ChannelCountMode aChannelCountMoe,
                                   ChannelInterpretation aChannelInterpretation);
