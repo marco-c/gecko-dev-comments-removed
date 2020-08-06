@@ -183,6 +183,8 @@ InProcessParent::GetCanSend(bool* aCanSend) {
 
 ContentParent* InProcessParent::AsContentParent() { return nullptr; }
 
+JSActorManager* InProcessParent::AsJSActorManager() { return this; }
+
 
 
 
@@ -232,6 +234,8 @@ InProcessChild::GetCanSend(bool* aCanSend) {
 }
 
 ContentChild* InProcessChild::AsContentChild() { return nullptr; }
+
+JSActorManager* InProcessChild::AsJSActorManager() { return this; }
 
 
 
