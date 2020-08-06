@@ -381,6 +381,9 @@ extern SECStatus KEA_Derive(SECItem *prime,
 extern PRBool KEA_Verify(SECItem *Y, SECItem *prime, SECItem *subPrime);
 
 
+PRBool KEA_PrimeCheck(SECItem *prime);
+
+
 
 
 

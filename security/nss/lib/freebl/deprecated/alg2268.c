@@ -6,11 +6,11 @@
 
 
 #ifdef FREEBL_NO_DEPEND
-#include "stubs.h"
+#include "../stubs.h"
 #endif
 
-#include "blapi.h"
-#include "blapii.h"
+#include "../blapi.h"
+#include "../blapii.h"
 #include "secerr.h"
 #ifdef XP_UNIX_XXX
 #include <stddef.h> 

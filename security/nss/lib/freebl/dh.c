@@ -17,6 +17,7 @@
 #include "blapii.h"
 #include "secitem.h"
 #include "mpi.h"
+#include "mpprime.h"
 #include "secmpi.h"
 
 #define KEA_DERIVED_SECRET_LEN 128
@@ -267,7 +268,7 @@ DH_Derive(SECItem *publicValue,
 
 
 
-    if (mp_cmp_d(&ZZ, 1) == 0 ||
+    if (mp_cmp_d(&ZZ, 0) == 0 || mp_cmp_d(&ZZ, 1) == 0 ||
         mp_cmp(&ZZ, &psub1) == 0) {
         err = MP_BADARG;
         goto cleanup;
@@ -411,6 +412,35 @@ cleanup:
         return SECFailure;
     }
     return SECSuccess;
+}
+
+
+
+static int
+dh_prime_testcount(int prime_length)
+{
+    if (prime_length < 1024) {
+        return 50;
+    } else if (prime_length < 2048) {
+        return 40;
+    } else if (prime_length < 3072) {
+        return 56;
+    }
+    return 64;
+}
+
+PRBool
+KEA_PrimeCheck(SECItem *prime)
+{
+    mp_int p;
+    mp_err err = 0;
+    MP_DIGITS(&p) = 0;
+    CHECK_MPI_OK(mp_init(&p));
+    SECITEM_TO_MPINT(*prime, &p);
+    CHECK_MPI_OK(mpp_pprime(&p, dh_prime_testcount(prime->len)));
+cleanup:
+    mp_clear(&p);
+    return err ? PR_FALSE : PR_TRUE;
 }
 
 PRBool
