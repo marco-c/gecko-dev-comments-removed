@@ -301,13 +301,13 @@ struct Texture {
     set_stride();
     assert(new_stride >= buf_stride);
 
-    buf = (char *)new_buf;
+    buf = (char*)new_buf;
     buf_size = 0;
     buf_stride = new_stride;
   }
 
   bool allocate(bool force = false, int min_width = 0, int min_height = 0) {
-    assert(!locked); 
+    assert(!locked);  
     
     
     if ((!buf || force) && should_free()) {
@@ -339,7 +339,7 @@ struct Texture {
   }
 
   void cleanup() {
-    assert(!locked); 
+    assert(!locked);  
     if (buf && should_free()) {
       free(buf);
       buf = nullptr;
@@ -398,27 +398,26 @@ struct Program {
   FragmentShaderImpl* frag_impl = nullptr;
   bool deleted = false;
 
-  ~Program() {
-    delete impl;
-  }
+  ~Program() { delete impl; }
 };
+
 
 
 #define CONCAT_KEY(prefix, x, y, z, w, ...) prefix##x##y##z##w
 #define BLEND_KEY(...) CONCAT_KEY(BLEND_, __VA_ARGS__, 0, 0)
-#define FOR_EACH_BLEND_KEY(macro)                             \
-  macro(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE) \
-  macro(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, 0, 0)                 \
-  macro(GL_ZERO, GL_ONE_MINUS_SRC_COLOR, 0, 0)                \
-  macro(GL_ZERO, GL_ONE_MINUS_SRC_COLOR, GL_ZERO, GL_ONE)     \
-  macro(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, 0, 0)                \
-  macro(GL_ZERO, GL_SRC_COLOR, 0, 0)                          \
-  macro(GL_ONE, GL_ONE, 0, 0)                                 \
-  macro(GL_ONE, GL_ONE, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)       \
-  macro(GL_ONE, GL_ZERO, 0, 0)                                \
-  macro(GL_ONE_MINUS_DST_ALPHA, GL_ONE, GL_ZERO, GL_ONE)      \
-  macro(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_COLOR, 0, 0)      \
+#define FOR_EACH_BLEND_KEY(macro)                                              \
+  macro(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE)                  \
+  macro(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, 0, 0)                                  \
+  macro(GL_ZERO, GL_ONE_MINUS_SRC_COLOR, 0, 0)                                 \
+  macro(GL_ZERO, GL_ONE_MINUS_SRC_COLOR, GL_ZERO, GL_ONE)                      \
+  macro(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA, 0, 0)                                 \ 
+  macro(GL_ZERO, GL_SRC_COLOR, 0, 0) macro(GL_ONE, GL_ONE, 0, 0)               \
+  macro(GL_ONE, GL_ONE, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)                        \
+  macro(GL_ONE, GL_ZERO, 0, 0)                                                 \
+  macro(GL_ONE_MINUS_DST_ALPHA, GL_ONE, GL_ZERO, GL_ONE)                       \
+  macro(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_COLOR, 0, 0)                       \
   macro(GL_ONE, GL_ONE_MINUS_SRC1_COLOR, 0, 0)
+
 
 #define DEFINE_BLEND_KEY(...) BLEND_KEY(__VA_ARGS__),
 enum BlendKey : uint8_t {
@@ -488,8 +487,10 @@ struct ObjectStore {
 
   O* find(size_t i) const { return i < size ? objects[i] : nullptr; }
 
-  template <typename T> void on_erase(T*, ...) {}
-  template <typename T> void on_erase(T* o, decltype(&T::on_erase)) {
+  template <typename T>
+  void on_erase(T*, ...) {}
+  template <typename T>
+  void on_erase(T* o, decltype(&T::on_erase)) {
     o->on_erase();
   }
 
@@ -656,9 +657,12 @@ static inline void init_sampler(S* s, Texture& t) {
   s->height = t.height;
   s->stride = t.stride();
   int bpp = t.bpp();
-  if (bpp >= 4) s->stride /= 4;
-  else if (bpp == 2) s->stride /= 2;
-  else assert(bpp == 1);
+  if (bpp >= 4)
+    s->stride /= 4;
+  else if (bpp == 2)
+    s->stride /= 2;
+  else
+    assert(bpp == 1);
   
   
   s->buf = (uint32_t*)t.buf;
@@ -772,13 +776,11 @@ void load_attrib(T& attrib, VertexAttrib& va, uint32_t start, int instance,
     if (!count) return;
     assert(count == 3 || count == 4);
     char* src = (char*)va.buf + va.stride * start + va.offset;
-    attrib = (T){
-        load_attrib_scalar<scalar_type>(va, src),
-        load_attrib_scalar<scalar_type>(va, src + va.stride),
-        load_attrib_scalar<scalar_type>(va, src + va.stride * 2 +
-                                            (count > 3 ? va.stride : 0)),
-        load_attrib_scalar<scalar_type>(va, src + va.stride * 2)
-    };
+    attrib = (T){load_attrib_scalar<scalar_type>(va, src),
+                 load_attrib_scalar<scalar_type>(va, src + va.stride),
+                 load_attrib_scalar<scalar_type>(
+                     va, src + va.stride * 2 + (count > 3 ? va.stride : 0)),
+                 load_attrib_scalar<scalar_type>(va, src + va.stride * 2)};
   }
 }
 
@@ -1334,10 +1336,10 @@ void TexStorage3D(GLenum target, GLint levels, GLenum internal_format,
   t.allocate(changed);
 }
 
-static void set_tex_storage(Texture& t, GLenum internal_format,
-                            GLsizei width, GLsizei height,
-                            void* buf = nullptr, GLsizei stride = 0,
-                            GLsizei min_width = 0, GLsizei min_height = 0) {
+static void set_tex_storage(Texture& t, GLenum internal_format, GLsizei width,
+                            GLsizei height, void* buf = nullptr,
+                            GLsizei stride = 0, GLsizei min_width = 0,
+                            GLsizei min_height = 0) {
   internal_format = remap_internal_format(internal_format);
   bool changed = false;
   if (t.width != width || t.height != height || t.depth != 0 ||
@@ -1433,7 +1435,10 @@ static void* get_pixel_unpack_buffer_data(void* data) {
 void TexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
                    GLsizei width, GLsizei height, GLenum format, GLenum ty,
                    void* data) {
-  if (level != 0) { assert(false); return; }
+  if (level != 0) {
+    assert(false);
+    return;
+  }
   data = get_pixel_unpack_buffer_data(data);
   if (!data) return;
   Texture& t = ctx->textures[ctx->get_binding(target)];
@@ -1464,7 +1469,10 @@ void TexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
 void TexImage2D(GLenum target, GLint level, GLint internal_format,
                 GLsizei width, GLsizei height, GLint border, GLenum format,
                 GLenum ty, void* data) {
-  if (level != 0) { assert(false); return; }
+  if (level != 0) {
+    assert(false);
+    return;
+  }
   assert(border == 0);
   TexStorage2D(target, 1, internal_format, width, height);
   TexSubImage2D(target, 0, 0, 0, width, height, format, ty, data);
@@ -1473,7 +1481,10 @@ void TexImage2D(GLenum target, GLint level, GLint internal_format,
 void TexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
                    GLint zoffset, GLsizei width, GLsizei height, GLsizei depth,
                    GLenum format, GLenum ty, void* data) {
-  if (level != 0) { assert(false); return; }
+  if (level != 0) {
+    assert(false);
+    return;
+  }
   data = get_pixel_unpack_buffer_data(data);
   if (!data) return;
   Texture& t = ctx->textures[ctx->get_binding(target)];
@@ -1482,8 +1493,7 @@ void TexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
   GLsizei row_length =
       ctx->unpack_row_length != 0 ? ctx->unpack_row_length : width;
   if (format == GL_BGRA) {
-    assert(ty == GL_UNSIGNED_BYTE ||
-           ty == GL_UNSIGNED_INT_8_8_8_8_REV);
+    assert(ty == GL_UNSIGNED_BYTE || ty == GL_UNSIGNED_INT_8_8_8_8_REV);
     assert(t.internal_format == GL_RGBA8);
   } else {
     assert(t.internal_format == internal_format_for_data(format, ty));
@@ -1512,7 +1522,10 @@ void TexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
 void TexImage3D(GLenum target, GLint level, GLint internal_format,
                 GLsizei width, GLsizei height, GLsizei depth, GLint border,
                 GLenum format, GLenum ty, void* data) {
-  if (level != 0) { assert(false); return; }
+  if (level != 0) {
+    assert(false);
+    return;
+  }
   assert(border == 0);
   TexStorage3D(target, 1, internal_format, width, height, depth);
   TexSubImage3D(target, 0, 0, 0, 0, width, height, depth, format, ty, data);
@@ -1692,7 +1705,8 @@ void VertexAttribDivisor(GLuint index, GLuint divisor) {
   va.divisor = divisor;
 }
 
-void BufferData(GLenum target, GLsizeiptr size, void* data, UNUSED GLenum usage) {
+void BufferData(GLenum target, GLsizeiptr size, void* data,
+                UNUSED GLenum usage) {
   Buffer& b = ctx->buffers[ctx->get_binding(target)];
   if (b.allocate(size)) {
     ctx->validate_vertex_array = true;
@@ -1825,9 +1839,7 @@ static inline uint32_t clear_chunk(uint16_t value) {
   return uint32_t(value) | (uint32_t(value) << 16);
 }
 
-static inline uint32_t clear_chunk(uint32_t value) {
-  return value;
-}
+static inline uint32_t clear_chunk(uint32_t value) { return value; }
 
 template <typename T>
 static inline void clear_row(T* buf, size_t len, T value, uint32_t chunk) {
@@ -1930,8 +1942,8 @@ static void force_clear(Texture& t, const IntRect* skip = nullptr) {
         int count = __builtin_ctz(mask);
         if (count > 0) {
           clear_buffer<T>(t, t.clear_val, 0,
-                          IntRect{0, start, t.width, start + count},
-                          skip_start, skip_end);
+                          IntRect{0, start, t.width, start + count}, skip_start,
+                          skip_end);
           t.delay_clear -= count;
           start += count;
           mask >>= count;
@@ -1943,8 +1955,8 @@ static void force_clear(Texture& t, const IntRect* skip = nullptr) {
       int count = (i + 1) * 32 - start;
       if (count > 0) {
         clear_buffer<T>(t, t.clear_val, 0,
-                        IntRect{0, start, t.width, start + count},
-                        skip_start, skip_end);
+                        IntRect{0, start, t.width, start + count}, skip_start,
+                        skip_end);
         t.delay_clear -= count;
       }
     }
@@ -1982,9 +1994,9 @@ static inline bool clear_requires_scissor(Texture& t) {
 
 template <typename T>
 static void request_clear(Texture& t, int layer, T value) {
-   
-   
-   if (clear_requires_scissor(t)) {
+  
+  
+  if (clear_requires_scissor(t)) {
     force_clear<T>(t, &ctx->scissor);
     clear_buffer<T>(t, value, layer);
   } else if (t.depth > 1) {
@@ -2037,8 +2049,8 @@ void SetTextureBuffer(GLuint texid, GLenum internal_format, GLsizei width,
                       GLsizei height, GLsizei stride, void* buf,
                       GLsizei min_width, GLsizei min_height) {
   Texture& t = ctx->textures[texid];
-  set_tex_storage(t, internal_format, width, height, buf, stride,
-                  min_width, min_height);
+  set_tex_storage(t, internal_format, width, height, buf, stride, min_width,
+                  min_height);
 }
 
 GLenum CheckFramebufferStatus(GLenum target) {
@@ -2135,9 +2147,9 @@ void ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format,
 
 void CopyImageSubData(GLuint srcName, GLenum srcTarget, UNUSED GLint srcLevel,
                       GLint srcX, GLint srcY, GLint srcZ, GLuint dstName,
-                      GLenum dstTarget, UNUSED GLint dstLevel, GLint dstX, GLint dstY,
-                      GLint dstZ, GLsizei srcWidth, GLsizei srcHeight,
-                      GLsizei srcDepth) {
+                      GLenum dstTarget, UNUSED GLint dstLevel, GLint dstX,
+                      GLint dstY, GLint dstZ, GLsizei srcWidth,
+                      GLsizei srcHeight, GLsizei srcDepth) {
   assert(srcLevel == 0 && dstLevel == 0);
   if (srcTarget == GL_RENDERBUFFER) {
     Renderbuffer& rb = ctx->renderbuffers[srcName];
@@ -2179,9 +2191,9 @@ void CopyImageSubData(GLuint srcName, GLenum srcTarget, UNUSED GLint srcLevel,
   }
 }
 
-void CopyTexSubImage3D(GLenum target, UNUSED GLint level, GLint xoffset, GLint yoffset,
-                       GLint zoffset, GLint x, GLint y, GLsizei width,
-                       GLsizei height) {
+void CopyTexSubImage3D(GLenum target, UNUSED GLint level, GLint xoffset,
+                       GLint yoffset, GLint zoffset, GLint x, GLint y,
+                       GLsizei width, GLsizei height) {
   assert(level == 0);
   Framebuffer* fb = get_framebuffer(GL_READ_FRAMEBUFFER);
   if (!fb) return;
@@ -2190,8 +2202,9 @@ void CopyTexSubImage3D(GLenum target, UNUSED GLint level, GLint xoffset, GLint y
                    zoffset, width, height, 1);
 }
 
-void CopyTexSubImage2D(GLenum target, UNUSED GLint level, GLint xoffset, GLint yoffset,
-                       GLint x, GLint y, GLsizei width, GLsizei height) {
+void CopyTexSubImage2D(GLenum target, UNUSED GLint level, GLint xoffset,
+                       GLint yoffset, GLint x, GLint y, GLsizei width,
+                       GLsizei height) {
   assert(level == 0);
   Framebuffer* fb = get_framebuffer(GL_READ_FRAMEBUFFER);
   if (!fb) return;
@@ -2465,8 +2478,8 @@ static inline WideRGBA8 blend_pixels_RGBA8(PackedRGBA8 pdst, WideRGBA8 src) {
     case BLEND_KEY(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE):
       
       
-      return addlow(dst,
-          muldiv255(alphas(src), (src | ALPHA_OPAQUE) - (dst & RGB_MASK)));
+      return addlow(
+          dst, muldiv255(alphas(src), (src | ALPHA_OPAQUE) - (dst & RGB_MASK)));
     case BLEND_KEY(GL_ONE, GL_ONE_MINUS_SRC_ALPHA):
       return src + dst - muldiv255(dst, alphas(src));
     case BLEND_KEY(GL_ZERO, GL_ONE_MINUS_SRC_COLOR):
@@ -2489,8 +2502,8 @@ static inline WideRGBA8 blend_pixels_RGBA8(PackedRGBA8 pdst, WideRGBA8 src) {
     case BLEND_KEY(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_COLOR):
       
       
-      return addlow(dst,
-          muldiv255(src, combine(ctx->blendcolor, ctx->blendcolor) - dst));
+      return addlow(
+          dst, muldiv255(src, combine(ctx->blendcolor, ctx->blendcolor) - dst));
     case BLEND_KEY(GL_ONE, GL_ONE_MINUS_SRC1_COLOR): {
       WideRGBA8 secondary =
           pack_pixels_RGBA8(fragment_shader->gl_SecondaryFragColor);
@@ -2531,9 +2544,7 @@ static inline PackedRGBA8 span_mask(uint32_t*, int span) {
   return span_mask_RGBA8(span);
 }
 
-static inline WideR8 pack_pixels_R8(Float c) {
-  return packR8(round_pixel(c));
-}
+static inline WideR8 pack_pixels_R8(Float c) { return packR8(round_pixel(c)); }
 
 static inline WideR8 pack_pixels_R8() {
   return pack_pixels_R8(fragment_shader->gl_FragColor.x);
@@ -2686,14 +2697,15 @@ UNUSED static inline void commit_solid_span(uint8_t* buf, PackedR8 r, int len) {
   }
 }
 
-#define DISPATCH_DRAW_SPAN(self, buf, len) do {           \
-  int drawn = self->draw_span(buf, len);                  \
-  if (drawn) self->step_interp_inputs(drawn >> 2);        \
-  for (buf += drawn; drawn < len; drawn += 4, buf += 4) { \
-    run(self);                                            \
-    commit_span(buf, pack_span(buf));                     \
-  }                                                       \
-} while (0)
+#define DISPATCH_DRAW_SPAN(self, buf, len)                  \
+  do {                                                      \
+    int drawn = self->draw_span(buf, len);                  \
+    if (drawn) self->step_interp_inputs(drawn >> 2);        \
+    for (buf += drawn; drawn < len; drawn += 4, buf += 4) { \
+      run(self);                                            \
+      commit_span(buf, pack_span(buf));                     \
+    }                                                       \
+  } while (0)
 
 #include "texture.h"
 
@@ -2704,9 +2716,9 @@ UNUSED static inline void commit_solid_span(uint8_t* buf, PackedR8 r, int len) {
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #ifdef __clang__
-#pragma GCC diagnostic ignored "-Wunused-private-field"
+#  pragma GCC diagnostic ignored "-Wunused-private-field"
 #else
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#  pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
 #include "load_shader.h"
 #pragma GCC diagnostic pop
@@ -2758,7 +2770,7 @@ static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
       ZMask8 zmask;
       
       switch (check_depth8<FUNC, MASK>(z, depth, zmask)) {
-        case 0: 
+        case 0:  
           if (len) {
             
             fragment_shader->draw_span(buf - len, len);
@@ -2767,7 +2779,7 @@ static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
           
           skip += 2;
           break;
-        case -1: 
+        case -1:  
           if (skip) {
             
             fragment_shader->skip(skip);
@@ -2776,7 +2788,7 @@ static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
           
           len += 8;
           break;
-        default: 
+        default:  
           if (len) {
             
             fragment_shader->draw_span(buf - len, len);
@@ -2809,11 +2821,11 @@ static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
       ZMask8 zmask;
       
       switch (check_depth8<FUNC, MASK>(z, depth, zmask)) {
-        case 0: 
+        case 0:  
           
           skip += 2;
           break;
-        case -1: 
+        case -1:  
           if (skip) {
             
             fragment_shader->skip(skip);
@@ -2823,7 +2835,7 @@ static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
           commit_output<false, false>(buf);
           commit_output<false, false>(buf + 4);
           break;
-        default: 
+        default:  
           if (skip) {
             
             fragment_shader->skip(skip);
@@ -2942,41 +2954,39 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
       r1i = prev;
     }
     
-    l0 = p[l0i]; 
-    r0 = p[r0i]; 
-    l1 = p[l1i]; 
-    r1 = p[r1i]; 
+    l0 = p[l0i];  
+    r0 = p[r0i];  
+    l1 = p[l1i];  
+    r1 = p[r1i];  
     
     
     
   }
 
-  struct Edge
-  {
+  struct Edge {
     float yScale;
     float xSlope;
     float x;
     Interpolants interpSlope;
     Interpolants interp;
 
-    Edge(float y, const Point2D& p0, const Point2D& p1,
-         const Interpolants& i0, const Interpolants& i1) :
-      
-      
-      
-      
-      
-      
-      yScale(1.0f / max(p1.y - p0.y, 1.0f / 256)),
-      
-      xSlope((p1.x - p0.x) * yScale),
-      
-      x(p0.x + (y - p0.y) * xSlope),
-      
-      interpSlope((i1 - i0) * yScale),
-      
-      interp(i0 + (y - p0.y) * interpSlope)
-    {}
+    Edge(float y, const Point2D& p0, const Point2D& p1, const Interpolants& i0,
+         const Interpolants& i1)
+        :  
+           
+           
+           
+           
+           
+          yScale(1.0f / max(p1.y - p0.y, 1.0f / 256)),
+          
+          xSlope((p1.x - p0.x) * yScale),
+          
+          x(p0.x + (y - p0.y) * xSlope),
+          
+          interpSlope((i1 - i0) * yScale),
+          
+          interp(i0 + (y - p0.y) * interpSlope) {}
 
     void nextRow() {
       
@@ -3002,31 +3012,35 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
     if (y > checkY) {
       
       if (y > clipRect.y1) break;
-      
-#define STEP_EDGE(e0i, e0, e1i, e1, STEP_POINT, end)                   \
-      for (;;) {                                                       \
-        /* Set new start of edge to be end of old edge */              \
-        e0i = e1i;                                                     \
-        e0 = e1;                                                       \
-        /* Set new end of edge to next point */                        \
-        e1i = STEP_POINT(e1i);                                         \
-        e1 = p[e1i];                                                   \
-        /* If the edge is descending, use it. */                       \
-        if (e1.y > e0.y) break;                                        \
-        /* If the edge is ascending or crossed the end, we're done. */ \
-        if (e1.y < e0.y || e0i == end) return;                         \
-        /* Otherwise, it's a duplicate, so keep searching. */          \
-      }
+        
+#define STEP_EDGE(e0i, e0, e1i, e1, STEP_POINT, end)               \
+  for (;;) {                                                       \
+    /* Set new start of edge to be end of old edge */              \
+    e0i = e1i;                                                     \
+    e0 = e1;                                                       \
+    /* Set new end of edge to next point */                        \
+    e1i = STEP_POINT(e1i);                                         \
+    e1 = p[e1i];                                                   \
+    /* If the edge is descending, use it. */                       \
+    if (e1.y > e0.y) break;                                        \
+    /* If the edge is ascending or crossed the end, we're done. */ \
+    if (e1.y < e0.y || e0i == end) return;                         \
+    /* Otherwise, it's a duplicate, so keep searching. */          \
+  }
       
       if (y > l1.y) {
         
-        do { STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i); } while (y > l1.y);
+        do {
+          STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i);
+        } while (y > l1.y);
         left = Edge(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
       }
       
       if (y > r1.y) {
         
-        do { STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i); } while (y > r1.y);
+        do {
+          STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i);
+        } while (y > r1.y);
         right = Edge(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
       }
       
@@ -3163,11 +3177,11 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
             span &= 3;
           }
         }
-        draw_span<false, false>(buf, depth, span, [=]{ return z; });
+        draw_span<false, false>(buf, depth, span, [=] { return z; });
       } else {
         
         
-        draw_span<true, false>(buf, depth, span, [=]{ return z; });
+        draw_span<true, false>(buf, depth, span, [=] { return z; });
       }
     }
   next_span:
@@ -3231,14 +3245,13 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
     l1i = NEXT_POINT(l0i);
     
     r1i = PREV_POINT(r0i);
-    l0 = p[l0i]; 
-    r0 = p[r0i]; 
-    l1 = p[l1i]; 
-    r1 = p[r1i]; 
+    l0 = p[l0i];  
+    r0 = p[r0i];  
+    l1 = p[l1i];  
+    r1 = p[r1i];  
   }
 
-  struct Edge
-  {
+  struct Edge {
     float yScale;
     
     
@@ -3249,22 +3262,22 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
     Interpolants interpSlope;
     Interpolants interp;
 
-    Edge(float y, const Point3D& p0, const Point3D& p1,
-         const Interpolants& i0, const Interpolants& i1) :
-      
-      yScale(1.0f / max(p1.y - p0.y, 1.0f / 256)),
-      
-      pSlope((p1 - p0) * yScale),
-      
-      p(p0 + (y - p0.y) * pSlope),
-      
-      
-      
-      
-      interpSlope((i1 * p1.w - i0 * p0.w) * yScale),
-      
-      interp(i0 * p0.w + (y - p0.y) * interpSlope)
-    {}
+    Edge(float y, const Point3D& p0, const Point3D& p1, const Interpolants& i0,
+         const Interpolants& i1)
+        :  
+           
+          yScale(1.0f / max(p1.y - p0.y, 1.0f / 256)),
+          
+          pSlope((p1 - p0) * yScale),
+          
+          p(p0 + (y - p0.y) * pSlope),
+          
+          
+          
+          
+          interpSlope((i1 * p1.w - i0 * p0.w) * yScale),
+          
+          interp(i0 * p0.w + (y - p0.y) * interpSlope) {}
 
     float x() const { return p.x; }
     vec2_scalar zw() const { return {p.z, p.w}; }
@@ -3296,13 +3309,17 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
       
       if (y > l1.y) {
         
-        do { STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i); } while (y > l1.y);
+        do {
+          STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i);
+        } while (y > l1.y);
         left = Edge(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
       }
       
       if (y > r1.y) {
         
-        do { STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i); } while (y > r1.y);
+        do {
+          STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i);
+        } while (y > r1.y);
         right = Edge(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
       }
       
@@ -3481,11 +3498,11 @@ static inline void draw_perspective_clipped(int nump, Point3D* p_clip,
 
   
   if (colortex.internal_format == GL_RGBA8) {
-    draw_perspective_spans<uint32_t>(nump, p_clip, interp_clip, colortex,
-                                     layer, depthtex, clipRect);
+    draw_perspective_spans<uint32_t>(nump, p_clip, interp_clip, colortex, layer,
+                                     depthtex, clipRect);
   } else if (colortex.internal_format == GL_R8) {
-    draw_perspective_spans<uint8_t>(nump, p_clip, interp_clip, colortex,
-                                    layer, depthtex, clipRect);
+    draw_perspective_spans<uint8_t>(nump, p_clip, interp_clip, colortex, layer,
+                                    depthtex, clipRect);
   } else {
     assert(false);
   }
@@ -3502,37 +3519,31 @@ static inline void draw_perspective_clipped(int nump, Point3D* p_clip,
 
 
 
-static void draw_perspective(int nump,
-                             Interpolants interp_outs[4],
-                             Texture& colortex, int layer,
-                             Texture& depthtex) {
+static void draw_perspective(int nump, Interpolants interp_outs[4],
+                             Texture& colortex, int layer, Texture& depthtex) {
   
   vec4 pos = vertex_shader->gl_Position;
   vec3_scalar scale =
-    vec3_scalar(ctx->viewport.width(), ctx->viewport.height(), 1) * 0.5f;
+      vec3_scalar(ctx->viewport.width(), ctx->viewport.height(), 1) * 0.5f;
   vec3_scalar offset =
-    vec3_scalar(ctx->viewport.x0, ctx->viewport.y0, 0.0f) + scale;
+      vec3_scalar(ctx->viewport.x0, ctx->viewport.y0, 0.0f) + scale;
   if (test_none(pos.z <= -pos.w || pos.z >= pos.w)) {
     
     
     Float w = 1.0f / pos.w;
     vec3 screen = pos.sel(X, Y, Z) * w * scale + offset;
-    Point3D p[4] = {
-        {screen.x.x, screen.y.x, screen.z.x, w.x},
-        {screen.x.y, screen.y.y, screen.z.y, w.y},
-        {screen.x.z, screen.y.z, screen.z.z, w.z},
-        {screen.x.w, screen.y.w, screen.z.w, w.w}
-    };
+    Point3D p[4] = {{screen.x.x, screen.y.x, screen.z.x, w.x},
+                    {screen.x.y, screen.y.y, screen.z.y, w.y},
+                    {screen.x.z, screen.y.z, screen.z.z, w.z},
+                    {screen.x.w, screen.y.w, screen.z.w, w.w}};
     draw_perspective_clipped(nump, p, interp_outs, colortex, layer, depthtex);
   } else {
     
     
-    Point3D p[4] = {
-        {pos.x.x, pos.y.x, pos.z.x, pos.w.x},
-        {pos.x.y, pos.y.y, pos.z.y, pos.w.y},
-        {pos.x.z, pos.y.z, pos.z.z, pos.w.z},
-        {pos.x.w, pos.y.w, pos.z.w, pos.w.w}
-    };
+    Point3D p[4] = {{pos.x.x, pos.y.x, pos.z.x, pos.w.x},
+                    {pos.x.y, pos.y.y, pos.z.y, pos.w.y},
+                    {pos.x.z, pos.y.z, pos.z.z, pos.w.z},
+                    {pos.x.w, pos.y.w, pos.z.w, pos.w.w}};
     
     Point3D p_clip[4 + 6];
     Interpolants interp_clip[4 + 6];
@@ -3598,10 +3609,9 @@ static void draw_quad(int nump, Texture& colortex, int layer,
   
   
   float w = 1.0f / pos.w.x;
-  vec2 screen =
-      (pos.sel(X, Y) * w + 1) * 0.5f *
-          vec2_scalar(ctx->viewport.width(), ctx->viewport.height()) +
-      vec2_scalar(ctx->viewport.x0, ctx->viewport.y0);
+  vec2 screen = (pos.sel(X, Y) * w + 1) * 0.5f *
+                    vec2_scalar(ctx->viewport.width(), ctx->viewport.height()) +
+                vec2_scalar(ctx->viewport.x0, ctx->viewport.y0);
   Point2D p[4] = {{screen.x.x, screen.y.x},
                   {screen.x.y, screen.y.y},
                   {screen.x.z, screen.y.z},
@@ -3663,8 +3673,7 @@ static inline void draw_elements(GLsizei count, GLsizei instancecount,
                                  Texture& depthtex) {
   assert((offset & (sizeof(INDEX) - 1)) == 0);
   INDEX* indices = (INDEX*)(indices_buf.buf + offset);
-  count = min(count,
-              (GLsizei)((indices_buf.size - offset) / sizeof(INDEX)));
+  count = min(count, (GLsizei)((indices_buf.size - offset) / sizeof(INDEX)));
   
   
   if (count == 6 && indices[1] == indices[0] + 1 &&
@@ -3773,7 +3782,7 @@ void DrawElementsInstanced(GLenum mode, GLsizei count, GLenum type,
 #endif
 }
 
-} 
+}  
 
 template <typename P>
 static inline void scale_row(P* dst, int dstWidth, const P* src, int srcWidth,
@@ -3800,8 +3809,8 @@ static void scale_blit(Texture& srctex, const IntRect& srcReq, int srcZ,
   IntRect dstBounds = dsttex.sample_bounds(dstReq, invertY);
   
   
-  IntRect srcBounds = srctex.sample_bounds(srcReq)
-    .scale(srcWidth, srcHeight, dstWidth, dstHeight, true);
+  IntRect srcBounds = srctex.sample_bounds(srcReq).scale(
+      srcWidth, srcHeight, dstWidth, dstHeight, true);
   
   dstBounds.intersect(srcBounds);
   
@@ -3809,8 +3818,8 @@ static void scale_blit(Texture& srctex, const IntRect& srcReq, int srcZ,
     return;
   }
   
-  srcBounds = IntRect(dstBounds)
-    .scale(dstWidth, dstHeight, srcWidth, srcHeight);
+  srcBounds =
+      IntRect(dstBounds).scale(dstWidth, dstHeight, srcWidth, srcHeight);
   
   int bpp = srctex.bpp();
   int srcStride = srctex.stride();
@@ -3907,8 +3916,7 @@ static void linear_blit(Texture& srctex, const IntRect& srcReq, int srcZ,
                         Texture& dsttex, const IntRect& dstReq, int dstZ,
                         bool invertY) {
   assert(srctex.internal_format == GL_RGBA8 ||
-         srctex.internal_format == GL_R8 ||
-         srctex.internal_format == GL_RG8);
+         srctex.internal_format == GL_R8 || srctex.internal_format == GL_RG8);
   
   IntRect dstBounds = dsttex.sample_bounds(dstReq, invertY);
   
@@ -3942,8 +3950,7 @@ static void linear_blit(Texture& srctex, const IntRect& srcReq, int srcZ,
   for (int rows = dstBounds.height(); rows > 0; rows--) {
     switch (bpp) {
       case 1:
-        linear_row((uint8_t*)dest, span, srcUV, srcDUV.x, srcZOffset,
-                   &sampler);
+        linear_row((uint8_t*)dest, span, srcUV, srcDUV.x, srcZOffset, &sampler);
         break;
       case 2:
         linear_row((uint16_t*)dest, span, srcUV, srcDUV.x, srcZOffset,
@@ -3998,8 +4005,7 @@ void BlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
   prepare_texture(srctex);
   prepare_texture(dsttex, &dstReq);
   if (!srcReq.same_size(dstReq) && filter == GL_LINEAR &&
-      (srctex.internal_format == GL_RGBA8 ||
-       srctex.internal_format == GL_R8 ||
+      (srctex.internal_format == GL_RGBA8 || srctex.internal_format == GL_R8 ||
        srctex.internal_format == GL_RG8)) {
     linear_blit(srctex, srcReq, srcfb->layer, dsttex, dstReq, dstfb->layer,
                 invertY);
