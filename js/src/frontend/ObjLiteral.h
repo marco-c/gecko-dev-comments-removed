@@ -139,8 +139,6 @@
 
 namespace js {
 
-class JSONPrinter;
-
 
 
 
@@ -363,12 +361,6 @@ struct ObjLiteralWriter : private ObjLiteralWriterBase {
     return i >= 0 && static_cast<uint32_t>(i) <= ATOM_INDEX_MASK;
   }
 
-#ifdef DEBUG
-  void dump();
-  void dump(JSONPrinter& json);
-  void dumpFields(JSONPrinter& json);
-#endif
-
  private:
   ObjLiteralFlags flags_;
   ObjLiteralKey nextKey_;
@@ -572,12 +564,6 @@ class ObjLiteralCreationData {
   }
 
   JSObject* create(JSContext* cx) const;
-
-#ifdef DEBUG
-  void dump();
-  void dump(JSONPrinter& json);
-  void dumpFields(JSONPrinter& json);
-#endif
 };
 
 }  

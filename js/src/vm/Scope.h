@@ -114,7 +114,6 @@ class AbstractBindingName {
 
  private:
   friend class AbstractBindingIter<NameT>;
-  friend class frontend::ScopeStencil;
 
   
   
