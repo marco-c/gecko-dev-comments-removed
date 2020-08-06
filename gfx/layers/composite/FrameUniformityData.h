@@ -30,6 +30,7 @@ struct LayerTransforms {
 
   gfx::Point GetAverage();
   gfx::Point GetStdDev();
+  bool Sanitize();
 
   
   AutoTArray<gfx::Point, 300> mTransforms;
