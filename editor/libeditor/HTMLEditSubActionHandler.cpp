@@ -3079,16 +3079,6 @@ bool HTMLEditor::AutoBlockElementsJoiner::
   }
 
   
-  
-  
-  WSScanResult scanFromCaretResult =
-      aDirectionAndAmount == nsIEditor::eNext
-          ? aWSRunScannerAtCaret.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
-                aCaretPoint)
-          : aWSRunScannerAtCaret.ScanNextVisibleNodeOrBlockBoundaryFrom(
-                aCaretPoint);
-
-  
   if (aDirectionAndAmount == nsIEditor::ePrevious) {
     mLeafContentInOtherBlock =
         aHTMLEditor.GetLastEditableLeaf(aOtherBlockElement);
@@ -3103,61 +3093,74 @@ bool HTMLEditor::AutoBlockElementsJoiner::
 
   
   
+  
+  WSScanResult scanFromCaretResult =
+      aDirectionAndAmount == nsIEditor::eNext
+          ? aWSRunScannerAtCaret.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
+                aCaretPoint)
+          : aWSRunScannerAtCaret.ScanNextVisibleNodeOrBlockBoundaryFrom(
+                aCaretPoint);
+  
+  
   if (scanFromCaretResult.ReachedBRElement()) {
     mBRElement = scanFromCaretResult.BRElementPtr();
+    mMode = Mode::DeleteBRElement;
     return true;
   }
 
   return mLeftContent && mRightContent;
 }
 
-EditActionResult HTMLEditor::AutoBlockElementsJoiner::
-    HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-        const EditorDOMPoint& aCaretPoint) {
+EditActionResult HTMLEditor::AutoBlockElementsJoiner::DeleteBRElement(
+    HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+    const EditorDOMPoint& aCaretPoint) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(aCaretPoint.IsSetAndValid());
+  MOZ_ASSERT(mBRElement);
 
   
   
-  if (mBRElement) {
-    nsresult rv =
-        aHTMLEditor.DeleteNodeWithTransaction(MOZ_KnownLive(*mBRElement));
-    if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
-      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-    }
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-      return EditActionResult(rv);
-    }
+  nsresult rv =
+      aHTMLEditor.DeleteNodeWithTransaction(MOZ_KnownLive(*mBRElement));
+  if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
+    return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+  }
+  if (NS_FAILED(rv)) {
+    NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
+    return EditActionResult(rv);
+  }
 
-    if (mLeftContent && mRightContent &&
-        HTMLEditor::NodesInDifferentTableElements(*mLeftContent,
-                                                  *mRightContent)) {
-      return EditActionHandled();
-    }
-
-    
-    if (NS_WARN_IF(!mLeafContentInOtherBlock)) {
-      
-      return EditActionHandled(NS_ERROR_FAILURE);
-    }
-    EditorDOMPoint newCaretPosition = aHTMLEditor.GetGoodCaretPointFor(
-        *mLeafContentInOtherBlock, aDirectionAndAmount);
-    if (!newCaretPosition.IsSet()) {
-      NS_WARNING("HTMLEditor::GetGoodCaretPointFor() failed");
-      return EditActionHandled(NS_ERROR_FAILURE);
-    }
-    rv = aHTMLEditor.CollapseSelectionTo(newCaretPosition);
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+  if (mLeftContent && mRightContent &&
+      HTMLEditor::NodesInDifferentTableElements(*mLeftContent,
+                                                *mRightContent)) {
     return EditActionHandled();
   }
 
+  
+  if (NS_WARN_IF(!mLeafContentInOtherBlock)) {
+    
+    return EditActionHandled(NS_ERROR_FAILURE);
+  }
+  EditorDOMPoint newCaretPosition = aHTMLEditor.GetGoodCaretPointFor(
+      *mLeafContentInOtherBlock, aDirectionAndAmount);
+  if (!newCaretPosition.IsSet()) {
+    NS_WARNING("HTMLEditor::GetGoodCaretPointFor() failed");
+    return EditActionHandled(NS_ERROR_FAILURE);
+  }
+  rv = aHTMLEditor.CollapseSelectionTo(newCaretPosition);
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+  return EditActionHandled();
+}
+
+EditActionResult HTMLEditor::AutoBlockElementsJoiner::
+    HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
+        HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint) {
+  MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
+  MOZ_ASSERT(aCaretPoint.IsSetAndValid());
   MOZ_ASSERT(mLeftContent);
   MOZ_ASSERT(mRightContent);
 
