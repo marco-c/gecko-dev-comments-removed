@@ -233,7 +233,16 @@ class Preferences {
 
   constructor() {
     this._map = new Map();
-    this._observer = new UrlbarPrefsObserver(pref => this._onPrefChanged(pref));
+    this.QueryInterface = ChromeUtils.generateQI([
+      "nsIObserver",
+      "nsISupportsWeakReference",
+    ]);
+    Services.prefs.addObserver(PREF_URLBAR_BRANCH, this, true);
+    for (let pref of PREF_OTHER_DEFAULTS.keys()) {
+      Services.prefs.addObserver(pref, this, true);
+    }
+    this._observerWeakRefs = [];
+    this.addObserver(this);
   }
 
   
@@ -278,7 +287,45 @@ class Preferences {
 
 
 
-  _onPrefChanged(pref) {
+
+
+
+  addObserver(observer) {
+    this._observerWeakRefs.push(Cu.getWeakReference(observer));
+  }
+
+  
+
+
+
+
+
+
+  observe(subject, topic, data) {
+    let pref = data.replace(PREF_URLBAR_BRANCH, "");
+    if (!PREF_URLBAR_DEFAULTS.has(pref) && !PREF_OTHER_DEFAULTS.has(pref)) {
+      return;
+    }
+    for (let i = 0; i < this._observerWeakRefs.length; ) {
+      let observer = this._observerWeakRefs[i].get();
+      if (!observer) {
+        
+        this._observerWeakRefs.splice(i, 1);
+      } else {
+        observer.onPrefChanged(pref);
+        ++i;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+  onPrefChanged(pref) {
     this._map.delete(pref);
     
     if (pref == "matchBuckets") {
@@ -400,47 +447,6 @@ class Preferences {
       
       setter: branch[`set${type == "Float" ? "Char" : type}Pref`],
     };
-  }
-}
-
-
-
-
-
-class UrlbarPrefsObserver {
-  
-
-
-
-
-
-
-
-  constructor(callback) {
-    this._callback = callback;
-    this.QueryInterface = ChromeUtils.generateQI([
-      "nsIObserver",
-      "nsISupportsWeakReference",
-    ]);
-    Services.prefs.addObserver(PREF_URLBAR_BRANCH, this, true);
-    for (let pref of PREF_OTHER_DEFAULTS.keys()) {
-      Services.prefs.addObserver(pref, this, true);
-    }
-  }
-
-  
-
-
-
-
-
-
-  observe(subject, topic, data) {
-    let pref = data.replace(PREF_URLBAR_BRANCH, "");
-    if (!PREF_URLBAR_DEFAULTS.has(pref) && !PREF_OTHER_DEFAULTS.has(pref)) {
-      return;
-    }
-    this._callback(pref);
   }
 }
 

@@ -12,7 +12,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   SearchOneOffs: "resource:///modules/SearchOneOffs.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
-  UrlbarPrefsObserver: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
@@ -57,9 +56,7 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     super(view.panel.querySelector(".search-one-offs"));
     this.view = view;
     this.input = view.input;
-    this._prefObserver = new UrlbarPrefsObserver(pref =>
-      this._onPrefChanged(pref)
-    );
+    UrlbarPrefs.addObserver(this);
   }
 
   
@@ -200,6 +197,23 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
+
+  onPrefChanged(changedPref) {
+    
+    
+    let prefs = [...LOCAL_MODES.values()].map(({ pref }) => pref);
+    prefs.push("update2", "update2.localOneOffs", "update2.oneOffsRefresh");
+    if (prefs.includes(changedPref)) {
+      this._engines = null;
+    }
+  }
+
+  
+
+
+
+
+
   _rebuildEngineList(engines) {
     super._rebuildEngineList(engines);
 
@@ -250,22 +264,5 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     }
 
     this.handleSearchCommand(event, engineOrSource);
-  }
-
-  
-
-
-
-
-
-
-  _onPrefChanged(changedPref) {
-    
-    
-    let prefs = [...LOCAL_MODES.values()].map(({ pref }) => pref);
-    prefs.push("update2", "update2.localOneOffs", "update2.oneOffsRefresh");
-    if (prefs.includes(changedPref)) {
-      this._engines = null;
-    }
   }
 }
