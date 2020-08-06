@@ -51,16 +51,6 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
     return false;
   }
 
-  if (aData.mCbCrSize.width * 2 != aData.mYSize.width) {
-    return false;
-  }
-
-  
-  if (aData.mCbCrSize.height != aData.mYSize.height &&
-      aData.mCbCrSize.height * 2 != aData.mYSize.height) {
-    return false;
-  }
-
   RefPtr<MacIOSurfaceRecycleAllocator> allocator =
       aContainer->GetMacIOSurfaceRecycleAllocator();
 
@@ -69,44 +59,30 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
 
   surf->Lock(false);
 
-  
-  
-  size_t heightScale = aData.mYSize.height / aData.mCbCrSize.height;
-
-  MOZ_ASSERT(surf->GetFormat() == SurfaceFormat::YUV422);
-
-  
-  
-  
   MOZ_ASSERT(aData.mYSize.height > 0);
   uint8_t* dst = (uint8_t*)surf->GetBaseAddressOfPlane(0);
   size_t stride = surf->GetBytesPerRow(0);
   for (size_t i = 0; i < (size_t)aData.mYSize.height; i++) {
-    
-    
-    
-    uint8_t* rowYSrc = aData.mYChannel + aData.mYStride * i;
-    uint8_t* rowCbSrc =
-        aData.mCbChannel + aData.mCbCrStride * (i / heightScale);
-    uint8_t* rowCrSrc =
-        aData.mCrChannel + aData.mCbCrStride * (i / heightScale);
+    uint8_t* rowSrc = aData.mYChannel + aData.mYStride * i;
+    uint8_t* rowDst = dst + stride * i;
+    memcpy(rowDst, rowSrc, aData.mYSize.width);
+  }
+
+  
+  
+  
+  MOZ_ASSERT(aData.mCbCrSize.height > 0);
+  dst = (uint8_t*)surf->GetBaseAddressOfPlane(1);
+  stride = surf->GetBytesPerRow(1);
+  for (size_t i = 0; i < (size_t)aData.mCbCrSize.height; i++) {
+    uint8_t* rowCbSrc = aData.mCbChannel + aData.mCbCrStride * i;
+    uint8_t* rowCrSrc = aData.mCrChannel + aData.mCbCrStride * i;
     uint8_t* rowDst = dst + stride * i;
 
-    
-    
     for (size_t j = 0; j < (size_t)aData.mCbCrSize.width; j++) {
-      *rowDst = *rowYSrc;
-      rowDst++;
-      rowYSrc++;
-
       *rowDst = *rowCbSrc;
       rowDst++;
       rowCbSrc++;
-
-      *rowDst = *rowYSrc;
-      rowDst++;
-      rowYSrc++;
-
       *rowDst = *rowCrSrc;
       rowDst++;
       rowCrSrc++;
@@ -125,10 +101,15 @@ already_AddRefed<MacIOSurface> MacIOSurfaceRecycleAllocator::Allocate(
   nsTArray<CFTypeRefPtr<IOSurfaceRef>> surfaces = std::move(mSurfaces);
   RefPtr<MacIOSurface> result;
   for (auto& surf : surfaces) {
+    MOZ_ASSERT(::IOSurfaceGetPlaneCount(surf.get()) == 2);
+
     
     
     if (::IOSurfaceGetWidthOfPlane(surf.get(), 0) != (size_t)aYSize.width ||
-        ::IOSurfaceGetHeightOfPlane(surf.get(), 0) != (size_t)aYSize.height) {
+        ::IOSurfaceGetHeightOfPlane(surf.get(), 0) != (size_t)aYSize.height ||
+        ::IOSurfaceGetWidthOfPlane(surf.get(), 1) != (size_t)aCbCrSize.width ||
+        ::IOSurfaceGetHeightOfPlane(surf.get(), 1) !=
+            (size_t)aCbCrSize.height) {
       continue;
     }
 
@@ -142,8 +123,8 @@ already_AddRefed<MacIOSurface> MacIOSurfaceRecycleAllocator::Allocate(
   }
 
   if (!result) {
-    result =
-        MacIOSurface::CreateYUV422Surface(aYSize, aYUVColorSpace, aColorRange);
+    result = MacIOSurface::CreateNV12Surface(aYSize, aCbCrSize, aYUVColorSpace,
+                                             aColorRange);
 
     if (mSurfaces.Length() <
         StaticPrefs::layers_iosurfaceimage_recycle_limit()) {
