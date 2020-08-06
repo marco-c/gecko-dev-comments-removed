@@ -29,8 +29,8 @@ class JSActorManager : public nsISupports {
 
 
 
-
-  already_AddRefed<JSActor> GetActor(const nsACString& aName, ErrorResult& aRv);
+  already_AddRefed<JSActor> GetActor(JSContext* aCx, const nsACString& aName,
+                                     ErrorResult& aRv);
 
   
 

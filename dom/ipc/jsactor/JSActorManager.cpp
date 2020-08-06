@@ -12,7 +12,8 @@
 namespace mozilla {
 namespace dom {
 
-already_AddRefed<JSActor> JSActorManager::GetActor(const nsACString& aName,
+already_AddRefed<JSActor> JSActorManager::GetActor(JSContext* aCx,
+                                                   const nsACString& aName,
                                                    ErrorResult& aRv) {
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
 
@@ -49,30 +50,29 @@ already_AddRefed<JSActor> JSActorManager::GetActor(const nsACString& aName,
 
   
   
-  AutoEntryScript aes(xpc::PrivilegedJunkScope(), "JSActor construction");
-  JSContext* cx = aes.cx();
+  JSAutoRealm ar(aCx, xpc::PrivilegedJunkScope());
 
   
   RefPtr<mozJSComponentLoader> loader = mozJSComponentLoader::Get();
   MOZ_ASSERT(loader);
 
   
-  JS::RootedObject actorObj(cx);
+  JS::RootedObject actorObj(aCx);
   if (side.mModuleURI) {
-    JS::RootedObject global(cx);
-    JS::RootedObject exports(cx);
-    aRv = loader->Import(cx, side.mModuleURI.ref(), &global, &exports);
+    JS::RootedObject global(aCx);
+    JS::RootedObject exports(aCx);
+    aRv = loader->Import(aCx, side.mModuleURI.ref(), &global, &exports);
     if (aRv.Failed()) {
       return nullptr;
     }
     MOZ_ASSERT(exports, "null exports!");
 
     
-    JS::RootedValue ctor(cx);
+    JS::RootedValue ctor(aCx);
     nsAutoCString ctorName(aName);
     ctorName.Append(isParent ? "Parent"_ns : "Child"_ns);
-    if (!JS_GetProperty(cx, exports, ctorName.get(), &ctor)) {
-      aRv.NoteJSContextException(cx);
+    if (!JS_GetProperty(aCx, exports, ctorName.get(), &ctor)) {
+      aRv.NoteJSContextException(aCx);
       return nullptr;
     }
 
@@ -83,8 +83,8 @@ already_AddRefed<JSActor> JSActorManager::GetActor(const nsACString& aName,
     }
 
     
-    if (!JS::Construct(cx, ctor, JS::HandleValueArray::empty(), &actorObj)) {
-      aRv.NoteJSContextException(cx);
+    if (!JS::Construct(aCx, ctor, JS::HandleValueArray::empty(), &actorObj)) {
+      aRv.NoteJSContextException(aCx);
       return nullptr;
     }
   }
@@ -150,7 +150,7 @@ void JSActorManager::ReceiveRawMessage(const JSActorMessageMeta& aMetadata,
     }
   }
 
-  RefPtr<JSActor> actor = GetActor(aMetadata.actorName(), error);
+  RefPtr<JSActor> actor = GetActor(cx, aMetadata.actorName(), error);
   if (error.Failed()) {
     return;
   }

@@ -90,7 +90,8 @@ class WindowGlobalChild final : public WindowGlobalActor,
   already_AddRefed<BrowserChild> GetBrowserChild();
 
   
-  already_AddRefed<JSWindowActorChild> GetActor(const nsACString& aName,
+  already_AddRefed<JSWindowActorChild> GetActor(JSContext* aCx,
+                                                const nsACString& aName,
                                                 ErrorResult& aRv);
 
   

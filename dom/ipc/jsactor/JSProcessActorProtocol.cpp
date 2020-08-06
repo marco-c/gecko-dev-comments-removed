@@ -96,13 +96,15 @@ NS_IMETHODIMP JSProcessActorProtocol::Observe(nsISupports* aSubject,
   }
 
   
-  RefPtr<JSActor> actor = manager->GetActor(mName, IgnoreErrors());
+  AutoJSAPI jsapi;
+  jsapi.Init();
+  RefPtr<JSActor> actor = manager->GetActor(jsapi.cx(), mName, IgnoreErrors());
   if (!actor || NS_WARN_IF(!actor->GetWrapperPreserveColor())) {
     return NS_OK;
   }
 
   
-  JS::Rooted<JSObject*> global(RootingCx(),
+  JS::Rooted<JSObject*> global(jsapi.cx(),
                                JS::GetNonCCWObjectGlobal(actor->GetWrapper()));
   RefPtr<MozObserverCallback> observerCallback =
       new MozObserverCallback(actor->GetWrapper(), global, nullptr, nullptr);
