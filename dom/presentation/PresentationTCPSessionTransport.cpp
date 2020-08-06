@@ -21,8 +21,8 @@
 
 #define BUFFER_SIZE 65536
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
+namespace dom {
 
 class CopierCallbacks final : public nsIRequestObserver {
  public:
@@ -548,3 +548,6 @@ PresentationTCPSessionTransport::OnDataAvailable(nsIRequest* aRequest,
   
   return mCallback->NotifyData(data, false);
 }
+
+}  
+}  
