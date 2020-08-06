@@ -3361,28 +3361,6 @@ nsDocumentViewer::Cancel() {
   return mPrintJob->Cancel();
 }
 
-#  ifdef NS_PRINT_PREVIEW
-
-static void ResetFocusState(nsIDocShell* aDocShell) {
-  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (!fm) {
-    return;
-  }
-
-  nsTArray<RefPtr<nsIDocShell>> docShells;
-  aDocShell->GetAllDocShellsInSubtree(nsIDocShellTreeItem::typeContent,
-                                      nsIDocShell::ENUMERATE_FORWARDS,
-                                      docShells);
-
-  for (const auto& currentContainer : docShells) {
-    nsCOMPtr<nsPIDOMWindowOuter> win = do_GetInterface(currentContainer);
-    if (win) {
-      fm->ClearFocus(win);
-    }
-  }
-}
-#  endif  
-
 NS_IMETHODIMP
 nsDocumentViewer::ExitPrintPreview() {
   NS_ENSURE_TRUE(mPrintJob, NS_ERROR_FAILURE);
@@ -3410,14 +3388,9 @@ nsDocumentViewer::ExitPrintPreview() {
   
   
   
-
-  SetIsPrintPreview(false);
-
-  nsCOMPtr<nsIDocShell> docShell(mContainer);
-  ResetFocusState(docShell);
-
-  SetOverrideDPPX(mOverrideDPPX);
-  Show();
+  
+  
+  
 #  endif  
 
   return NS_OK;
