@@ -136,9 +136,12 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   void GetAllowlistForFeature(const nsAString& aFeatureName,
                               nsTArray<nsString>& aList) const;
 
-  void GetInheritedDeniedFeatureNames(
-      nsTArray<nsString>& aInheritedDeniedFeatureNames) {
-    aInheritedDeniedFeatureNames = mInheritedDeniedFeatureNames.Clone();
+  const nsTArray<nsString>& InheritedDeniedFeatureNames() const {
+    return mInheritedDeniedFeatureNames;
+  }
+
+  const nsTArray<nsString>& AttributeEnabledFeatureNames() const {
+    return mAttributeEnabledFeatureNames;
   }
 
   void SetInheritedDeniedFeatureNames(
@@ -146,9 +149,8 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
     mInheritedDeniedFeatureNames = aInheritedDeniedFeatureNames.Clone();
   }
 
-  void GetDeclaredString(nsAString& aDeclaredString) {
-    aDeclaredString = mDeclaredString;
-  }
+  const nsAString& DeclaredString() const { return mDeclaredString; }
+
   nsIPrincipal* GetSelfOrigin() const { return mSelfOrigin; }
   nsIPrincipal* GetSrcOrigin() const { return mSrcOrigin; }
 
@@ -174,6 +176,9 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   
   
   nsTArray<nsString> mInheritedDeniedFeatureNames;
+
+  
+  nsTArray<nsString> mAttributeEnabledFeatureNames;
 
   
   nsTArray<nsString> mParentAllowedAllFeatures;
