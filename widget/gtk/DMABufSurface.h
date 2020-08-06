@@ -95,7 +95,6 @@ class DMABufSurface {
   
   
   
-  void SetUID(uint32_t aUID) { mUID = aUID; };
   uint32_t GetUID() const { return mUID; };
 
   
