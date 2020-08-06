@@ -1606,6 +1606,8 @@ class ICGetProp_Fallback : public ICMonitoredFallbackStub {
       : ICMonitoredFallbackStub(ICStub::GetProp_Fallback, stubCode) {}
 
  public:
+  
+  
   static const size_t ACCESSED_GETTER_BIT = 1;
 
   void noteAccessedGetter() { extra_ |= (1u << ACCESSED_GETTER_BIT); }
