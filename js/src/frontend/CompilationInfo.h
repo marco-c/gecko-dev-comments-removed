@@ -202,7 +202,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   
   
   JS::RootedVector<js::Scope*> scopes;
-  JS::RootedVector<ScopeCreationData> scopeCreationData;
+  JS::RootedVector<ScopeStencil> scopeData;
 
   
   JS::Rooted<StencilModuleMetadata> moduleMetadata;
@@ -249,7 +249,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
         enclosingScope(cx),
         topLevel(cx),
         scopes(cx),
-        scopeCreationData(cx),
+        scopeData(cx),
         moduleMetadata(cx),
         asmJS(cx),
         source_(cx),

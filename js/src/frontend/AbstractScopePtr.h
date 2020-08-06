@@ -26,7 +26,7 @@ class GCMarker;
 
 namespace frontend {
 struct CompilationInfo;
-class ScopeCreationData;
+class ScopeStencil;
 }  
 
 using ScopeIndex = frontend::TypedIndex<Scope>;
@@ -69,7 +69,7 @@ class AbstractScopePtr {
       : scope_(Deferred{scope, compilationInfo}) {}
 
   bool isNullptr() const {
-    if (isScopeCreationData()) {
+    if (isScopeStencil()) {
       return false;
     }
     return scope_.as<HeapPtrScope>() == nullptr;
@@ -81,10 +81,10 @@ class AbstractScopePtr {
   
   explicit operator bool() const { return !isNullptr(); }
 
-  bool isScopeCreationData() const { return scope_.is<Deferred>(); }
+  bool isScopeStencil() const { return scope_.is<Deferred>(); }
 
   
-  MutableHandle<frontend::ScopeCreationData> scopeCreationData() const;
+  MutableHandle<frontend::ScopeStencil> scopeData() const;
   frontend::CompilationInfo& compilationInfo() const;
 
   

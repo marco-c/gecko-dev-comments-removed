@@ -12,7 +12,6 @@
 #include "frontend/AbstractScopePtr.h"  
 #include "frontend/CompilationInfo.h"
 #include "frontend/SharedContext.h"  
-#include "frontend/Stencil.h"        
 #include "vm/BytecodeUtil.h"         
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"     

@@ -45,8 +45,7 @@ bool frontend::RegExpCreationData::init(JSContext* cx, JSAtom* pattern,
   return true;
 }
 
-AbstractScopePtr ScopeCreationData::enclosing(
-    CompilationInfo& compilationInfo) {
+AbstractScopePtr ScopeStencil::enclosing(CompilationInfo& compilationInfo) {
   if (enclosing_) {
     return AbstractScopePtr(compilationInfo, *enclosing_);
   }
@@ -62,17 +61,16 @@ AbstractScopePtr ScopeCreationData::enclosing(
   return AbstractScopePtr(compilationInfo.enclosingScope);
 }
 
-Scope* ScopeCreationData::getEnclosingScope(CompilationInfo& compilationInfo) {
+Scope* ScopeStencil::getEnclosingScope(CompilationInfo& compilationInfo) {
   return enclosing(compilationInfo).existingScope();
 }
 
-JSFunction* ScopeCreationData::function(
-    frontend::CompilationInfo& compilationInfo) {
+JSFunction* ScopeStencil::function(frontend::CompilationInfo& compilationInfo) {
   return compilationInfo.functions[*functionIndex_];
 }
 
-Scope* ScopeCreationData::createScope(JSContext* cx,
-                                      CompilationInfo& compilationInfo) {
+Scope* ScopeStencil::createScope(JSContext* cx,
+                                 CompilationInfo& compilationInfo) {
   Scope* scope = nullptr;
   switch (kind()) {
     case ScopeKind::Function: {
@@ -126,7 +124,7 @@ Scope* ScopeCreationData::createScope(JSContext* cx,
   return scope;
 }
 
-void ScopeCreationData::trace(JSTracer* trc) {
+void ScopeStencil::trace(JSTracer* trc) {
   
   if (data_) {
     switch (kind()) {
@@ -169,7 +167,7 @@ void ScopeCreationData::trace(JSTracer* trc) {
   }
 }
 
-uint32_t ScopeCreationData::nextFrameSlot() const {
+uint32_t ScopeStencil::nextFrameSlot() const {
   switch (kind()) {
     case ScopeKind::Function:
       return nextFrameSlot<FunctionScope>();
@@ -397,14 +395,12 @@ static bool InstantiateScopes(JSContext* cx, CompilationInfo& compilationInfo) {
   
   
   
-  
 
-  if (!compilationInfo.scopes.reserve(
-          compilationInfo.scopeCreationData.length())) {
+  if (!compilationInfo.scopes.reserve(compilationInfo.scopeData.length())) {
     return false;
   }
 
-  for (auto& scd : compilationInfo.scopeCreationData) {
+  for (auto& scd : compilationInfo.scopeData) {
     Scope* scope = scd.createScope(cx, compilationInfo);
     if (!scope) {
       return false;

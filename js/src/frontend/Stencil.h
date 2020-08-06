@@ -138,7 +138,7 @@ class BigIntCreationData {
 
 using BigIntIndex = TypedIndex<BigIntCreationData>;
 
-class ScopeCreationData {
+class ScopeStencil {
   friend class js::AbstractScopePtr;
   friend class js::GCMarker;
 
@@ -165,12 +165,12 @@ class ScopeCreationData {
   UniquePtr<BaseScopeData> data_;
 
  public:
-  ScopeCreationData(
-      JSContext* cx, ScopeKind kind, mozilla::Maybe<ScopeIndex> enclosing,
-      uint32_t firstFrameSlot, mozilla::Maybe<uint32_t> numEnvironmentSlots,
-      UniquePtr<BaseScopeData> data = {},
-      mozilla::Maybe<FunctionIndex> functionIndex = mozilla::Nothing(),
-      bool isArrow = false)
+  ScopeStencil(JSContext* cx, ScopeKind kind,
+               mozilla::Maybe<ScopeIndex> enclosing, uint32_t firstFrameSlot,
+               mozilla::Maybe<uint32_t> numEnvironmentSlots,
+               UniquePtr<BaseScopeData> data = {},
+               mozilla::Maybe<FunctionIndex> functionIndex = mozilla::Nothing(),
+               bool isArrow = false)
       : enclosing_(enclosing),
         kind_(kind),
         firstFrameSlot_(firstFrameSlot),
@@ -489,8 +489,8 @@ class ScriptStencil {
 
 namespace JS {
 template <>
-struct GCPolicy<js::frontend::ScopeCreationData*> {
-  static void trace(JSTracer* trc, js::frontend::ScopeCreationData** data,
+struct GCPolicy<js::frontend::ScopeStencil*> {
+  static void trace(JSTracer* trc, js::frontend::ScopeStencil** data,
                     const char* name) {
     (*data)->trace(trc);
   }

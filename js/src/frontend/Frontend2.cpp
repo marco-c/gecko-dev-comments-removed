@@ -112,9 +112,9 @@ void CopyBindingNames(JSContext* cx, CVec<COption<SmooshBindingName>>& from,
 
 
 
-bool ConvertScopeCreationData(JSContext* cx, const SmooshResult& result,
-                              JS::HandleVector<JSAtom*> allAtoms,
-                              CompilationInfo& compilationInfo) {
+bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
+                         JS::HandleVector<JSAtom*> allAtoms,
+                         CompilationInfo& compilationInfo) {
   auto& alloc = compilationInfo.allocScope.alloc();
 
   for (size_t i = 0; i < result.scopes.len; i++) {
@@ -139,8 +139,8 @@ bool ConvertScopeCreationData(JSContext* cx, const SmooshResult& result,
         data->constStart = global.const_start;
         data->length = numBindings;
 
-        if (!ScopeCreationData::create(cx, compilationInfo, ScopeKind::Global,
-                                       data, &index)) {
+        if (!ScopeStencil::create(cx, compilationInfo, ScopeKind::Global, data,
+                                  &index)) {
           return false;
         }
         break;
@@ -165,7 +165,7 @@ bool ConvertScopeCreationData(JSContext* cx, const SmooshResult& result,
 
         uint32_t firstFrameSlot = var.first_frame_slot;
         ScopeIndex enclosingIndex(var.enclosing);
-        if (!ScopeCreationData::create(
+        if (!ScopeStencil::create(
                 cx, compilationInfo, ScopeKind::FunctionBodyVar, data,
                 firstFrameSlot, var.function_has_extensible_scope,
                 mozilla::Some(enclosingIndex), &index)) {
@@ -193,9 +193,9 @@ bool ConvertScopeCreationData(JSContext* cx, const SmooshResult& result,
 
         uint32_t firstFrameSlot = lexical.first_frame_slot;
         ScopeIndex enclosingIndex(lexical.enclosing);
-        if (!ScopeCreationData::create(cx, compilationInfo, ScopeKind::Lexical,
-                                       data, firstFrameSlot,
-                                       mozilla::Some(enclosingIndex), &index)) {
+        if (!ScopeStencil::create(cx, compilationInfo, ScopeKind::Lexical, data,
+                                  firstFrameSlot, mozilla::Some(enclosingIndex),
+                                  &index)) {
           return false;
         }
         break;
@@ -226,10 +226,9 @@ bool ConvertScopeCreationData(JSContext* cx, const SmooshResult& result,
         bool isArrow = function.is_arrow;
 
         ScopeIndex enclosingIndex(function.enclosing);
-        if (!ScopeCreationData::create(cx, compilationInfo, data,
-                                       hasParameterExprs, needsEnvironment,
-                                       functionIndex, isArrow,
-                                       mozilla::Some(enclosingIndex), &index)) {
+        if (!ScopeStencil::create(cx, compilationInfo, data, hasParameterExprs,
+                                  needsEnvironment, functionIndex, isArrow,
+                                  mozilla::Some(enclosingIndex), &index)) {
           return false;
         }
         break;
@@ -543,7 +542,7 @@ JSScript* Smoosh::compileGlobalScript(CompilationInfo& compilationInfo,
     return nullptr;
   }
 
-  if (!ConvertScopeCreationData(cx, result, allAtoms, compilationInfo)) {
+  if (!ConvertScopeStencil(cx, result, allAtoms, compilationInfo)) {
     return nullptr;
   }
 
