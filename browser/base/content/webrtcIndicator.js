@@ -372,61 +372,14 @@ const WebRTCIndicator = {
 
   onClick(event) {
     switch (event.target.id) {
-      case "stop-sharing-screen": {
+      case "stop-sharing": {
         let activeStreams = webrtcUI.getActiveStreams(
           false ,
           false ,
           true ,
-          false 
-        );
-
-        if (!activeStreams.length) {
-          return;
-        }
-
-        
-        
-        
-        
-        
-        webrtcUI.stopSharingStreams(
-          [activeStreams[0]],
-          false ,
-          false ,
-          true ,
-          false 
-        );
-        break;
-      }
-      case "stop-sharing-window": {
-        let activeStreams = webrtcUI.getActiveStreams(
-          false ,
-          false ,
-          false ,
           true 
         );
 
-        if (this.sharingBrowserWindow) {
-          let browserWindowStreams = activeStreams.filter(stream => {
-            return stream.devices.some(device => device.scary);
-          });
-
-          if (!browserWindowStreams.length) {
-            return;
-          }
-
-          
-          
-          webrtcUI.stopSharingStreams(
-            [browserWindowStreams[0]],
-            false ,
-            false ,
-            false ,
-            true 
-          );
-          break;
-        }
-
         if (!activeStreams.length) {
           return;
         }
@@ -437,10 +390,10 @@ const WebRTCIndicator = {
         
         
         webrtcUI.stopSharingStreams(
-          [activeStreams[0]],
+          activeStreams,
           false ,
           false ,
-          false ,
+          true ,
           true 
         );
         break;

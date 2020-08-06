@@ -93,12 +93,11 @@ button {
 
 
 :root[sharingwindow]:not([sharingscreen]) > body > #display-share > #screen-share-info,
-:root[sharingwindow]:not([sharingscreen]) > body > #display-share > #stop-sharing-screen,
 :root[sharingwindow]:not([sharingbrowserwindow]) > body > #display-share > #browser-window-share-info,
 :root[sharingwindow][sharingbrowserwindow] > body > #display-share > #window-share-info,
 :root[sharingscreen] > body > #display-share > #window-share-info,
 :root[sharingscreen] > body > #display-share > #browser-window-share-info,
-:root[sharingscreen] > body > #display-share > #stop-sharing-window,
+
 
 
 
