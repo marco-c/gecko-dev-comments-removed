@@ -1757,9 +1757,18 @@ static nsresult merge_rrset(AddrInfo* rrto, AddrInfo* rrfrom) {
     return NS_ERROR_NULL_POINTER;
   }
   NetAddrElement* element;
+  
+  
+  bool isIPv6 = (element = rrfrom->mAddresses.getFirst()) &&
+                element->mAddress.raw.family == PR_AF_INET6;
   while ((element = rrfrom->mAddresses.getFirst())) {
-    element->remove();          
-    rrto->AddAddress(element);  
+    element->remove();  
+    if (isIPv6) {
+      
+      rrto->mAddresses.insertFront(element);
+    } else {
+      rrto->mAddresses.insertBack(element);
+    }
   }
   return NS_OK;
 }
