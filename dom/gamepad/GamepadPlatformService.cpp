@@ -261,12 +261,7 @@ bool GamepadPlatformService::HasGamepadListeners() {
 
   
   MutexAutoLock autoLock(mMutex);
-  for (uint32_t i = 0; i < mChannelParents.Length(); i++) {
-    if (mChannelParents[i]->HasGamepadListener()) {
-      return true;
-    }
-  }
-  return false;
+  return !mChannelParents.IsEmpty();
 }
 
 void GamepadPlatformService::MaybeShutdown() {
