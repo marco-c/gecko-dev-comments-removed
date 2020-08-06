@@ -644,6 +644,8 @@ class WindowsDllDetourPatcher final
       return !!aTramp;
     }
 
+    
+    
     if (aType == JumpType::Je) {
       
       aTramp.WriteByte(0x75);
@@ -654,7 +656,7 @@ class WindowsDllDetourPatcher final
       aTramp.WriteByte(14);
     } else if (aType == JumpType::Jae) {
       
-      aTramp.WriteByte(0x73);
+      aTramp.WriteByte(0x72);
       aTramp.WriteByte(14);
     }
 
@@ -1084,13 +1086,18 @@ class WindowsDllDetourPatcher final
           } else {
             COPY_CODES(nModRmSibBytes);
           }
-        } else if (*origBytes == 0x84) {
+        } else if (*origBytes >= 0x83 && *origBytes <= 0x85) {
           
+          
+          
+          const JumpType kJumpTypes[] = {JumpType::Jae, JumpType::Je,
+                                         JumpType::Jne};
+          auto jumpType = kJumpTypes[*origBytes - 0x83];
           ++origBytes;
           --tramp;  
 
           if (!GenerateJump(tramp, origBytes.ReadDisp32AsAbsolute(),
-                            JumpType::Je)) {
+                            jumpType)) {
             return;
           }
         } else {
