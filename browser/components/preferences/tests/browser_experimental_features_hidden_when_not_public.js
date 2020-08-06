@@ -41,7 +41,7 @@ class DefinitionServer {
     const definition = {
       id: "test-feature",
       
-      title: "pane-experimental-subtitle",
+      title: "experimental-features-media-avif",
       description: "pane-experimental-description",
       restartRequired: false,
       type: "boolean",
