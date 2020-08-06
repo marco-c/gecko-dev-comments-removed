@@ -595,8 +595,10 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     }
 
     if (aFeature == FEATURE_WEBRENDER_SCISSORED_CACHE_CLEARS) {
-      const bool isMali = false;  
-      if (isMali) {
+      
+      
+      const bool isMaliGxx = mGLStrings->Renderer().Find("Mali-G",  true) >= 0;
+      if (isMaliGxx) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_BUG_1603515";
       } else {
