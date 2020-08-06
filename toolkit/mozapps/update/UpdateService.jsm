@@ -30,11 +30,13 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser", "XMLHttpRequest"]);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AddonManager: "resource://gre/modules/AddonManager.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   CertUtils: "resource://gre/modules/CertUtils.jsm",
   ctypes: "resource://gre/modules/ctypes.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   OS: "resource://gre/modules/osfile.jsm",
+  setTimeout: "resource://gre/modules/Timer.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.jsm",
 });
@@ -57,6 +59,8 @@ const PREF_APP_UPDATE_ELEVATE_NEVER = "app.update.elevate.never";
 const PREF_APP_UPDATE_ELEVATE_VERSION = "app.update.elevate.version";
 const PREF_APP_UPDATE_ELEVATE_ATTEMPTS = "app.update.elevate.attempts";
 const PREF_APP_UPDATE_ELEVATE_MAXATTEMPTS = "app.update.elevate.maxAttempts";
+const PREF_APP_UPDATE_LANGPACK_ENABLED = "app.update.langpack.enabled";
+const PREF_APP_UPDATE_LANGPACK_TIMEOUT = "app.update.langpack.timeout";
 const PREF_APP_UPDATE_LOG = "app.update.log";
 const PREF_APP_UPDATE_LOG_FILE = "app.update.log.file";
 const PREF_APP_UPDATE_NOTIFYDURINGDOWNLOAD = "app.update.notifyDuringDownload";
@@ -239,6 +243,10 @@ const XML_SAVER_INTERVAL_MS = 200;
 
 
 
+const LANGPACK_UPDATE_DEFAULT_TIMEOUT = 300000;
+
+
+
 
 var gUpdateFileWriteInfo = { phase: null, failure: false };
 var gUpdateMutexHandle = null;
@@ -275,6 +283,38 @@ XPCOMUtils.defineLazyGetter(
     return Services.strings.createBundle(URI_UPDATES_PROPERTIES);
   }
 );
+
+
+
+
+
+
+
+
+
+
+function unwrap(obj) {
+  return obj.wrappedJSObject ?? obj;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const LangPackUpdates = new WeakMap();
 
 
 
@@ -469,6 +509,23 @@ function getElevationRequired() {
       "not required"
   );
   return false;
+}
+
+
+
+
+
+function promiseLangPacksUpdated(update) {
+  let promise = LangPackUpdates.get(unwrap(update));
+  if (promise) {
+    LOG(
+      "promiseLangPacksUpdated - waiting for language pack updates to stage."
+    );
+    return promise;
+  }
+
+  
+  return Promise.resolve();
 }
 
 
@@ -3711,12 +3768,14 @@ UpdateManager.prototype = {
 
     
     
-    LOG(
-      "UpdateManager:refreshUpdateStatus - Notifying observers that " +
-        "the update was staged. topic: update-staged, status: " +
-        update.state
-    );
-    Services.obs.notifyObservers(update, "update-staged", update.state);
+    promiseLangPacksUpdated(update).then(() => {
+      LOG(
+        "UpdateManager:refreshUpdateStatus - Notifying observers that " +
+          "the update was staged. topic: update-staged, status: " +
+          update.state
+      );
+      Services.obs.notifyObservers(update, "update-staged", update.state);
+    });
   },
 
   
@@ -4205,6 +4264,13 @@ Downloader.prototype = {
 
 
 
+  _langPackTimeout: null,
+
+  
+
+
+
+
 
 
   cancel: async function Downloader_cancel(cancelError) {
@@ -4474,6 +4540,45 @@ Downloader.prototype = {
 
 
 
+  _startLangPackUpdates: function Downloader__startLangPackUpdates() {
+    if (!Services.prefs.getBoolPref(PREF_APP_UPDATE_LANGPACK_ENABLED, false)) {
+      return;
+    }
+
+    
+    
+    let timeoutPromise = new Promise(resolve => {
+      this._langPackTimeout = resolve;
+    });
+
+    let update = unwrap(this._update);
+
+    
+    
+    let langPackPromise = AddonManager.stageLangpacksForAppUpdate(
+      update.appVersion,
+      update.appVersion
+    )
+      .catch(error => {
+        LOG(
+          `Add-ons manager threw exception while updating language packs: ${error}`
+        );
+      })
+      .finally(() => {
+        LangPackUpdates.delete(update);
+        this._langPackTimeout = null;
+      });
+
+    LangPackUpdates.set(
+      update,
+      Promise.race([langPackPromise, timeoutPromise])
+    );
+  },
+
+  
+
+
+
 
   downloadUpdate: function Downloader_downloadUpdate(update) {
     LOG("UpdateService:_downloadUpdate");
@@ -4680,6 +4785,8 @@ Downloader.prototype = {
         .getService(Ci.nsIUpdateManager)
         .saveUpdates();
     }
+
+    this._startLangPackUpdates();
 
     this._notifyDownloadStatusObservers();
 
@@ -5271,6 +5378,10 @@ Downloader.prototype = {
       }
       if (allFailed) {
         
+        this._langPackTimeout = null;
+        LangPackUpdates.delete(unwrap(this._update));
+
+        
         this._update = null;
       }
       
@@ -5306,17 +5417,29 @@ Downloader.prototype = {
 
     
     
+    if (this._langPackTimeout) {
+      setTimeout(
+        this._langPackTimeout,
+        Services.prefs.getIntPref(
+          PREF_APP_UPDATE_LANGPACK_TIMEOUT,
+          LANGPACK_UPDATE_DEFAULT_TIMEOUT
+        )
+      );
+    }
+
+    
+    
     if (shouldShowPrompt) {
-      LOG(
-        "UpdateManager:refreshUpdateStatus - Notifying observers that " +
-          "an update was downloaded. topic: update-downloaded, status: " +
-          this._update.state
-      );
-      Services.obs.notifyObservers(
-        this._update,
-        "update-downloaded",
-        this._update.state
-      );
+      
+      let update = this._update;
+      promiseLangPacksUpdated(update).then(() => {
+        LOG(
+          "UpdateManager:refreshUpdateStatus - Notifying observers that " +
+            "an update was downloaded. topic: update-downloaded, status: " +
+            update.state
+        );
+        Services.obs.notifyObservers(update, "update-downloaded", update.state);
+      });
     }
 
     if (shouldRegisterOnlineObserver) {

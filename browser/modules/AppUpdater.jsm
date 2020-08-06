@@ -326,7 +326,7 @@ class AppUpdater {
           this._setStatus(AppUpdater.STATUS.STAGING);
           this._awaitStagingComplete();
         } else {
-          this._setStatus(AppUpdater.STATUS.READY_FOR_RESTART);
+          this._awaitDownloadComplete();
         }
         break;
       default:
@@ -346,6 +346,19 @@ class AppUpdater {
 
   onProgress(aRequest, aProgress, aProgressMax) {
     this._setStatus(AppUpdater.STATUS.DOWNLOADING, aProgress, aProgressMax);
+  }
+
+  
+
+
+
+  _awaitDownloadComplete() {
+    let observer = (aSubject, aTopic, aData) => {
+      
+      this._setStatus(AppUpdater.STATUS.READY_FOR_RESTART);
+      Services.obs.removeObserver(observer, "update-downloaded");
+    };
+    Services.obs.addObserver(observer, "update-downloaded");
   }
 
   

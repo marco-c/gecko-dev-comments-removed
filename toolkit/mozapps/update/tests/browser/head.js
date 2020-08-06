@@ -17,6 +17,9 @@ ChromeUtils.defineModuleGetter(
   "UpdateListener",
   "resource://gre/modules/UpdateListener.jsm"
 );
+const { XPIInstall } = ChromeUtils.import(
+  "resource://gre/modules/addons/XPIInstall.jsm"
+);
 
 const BIN_SUFFIX = AppConstants.platform == "win" ? ".exe" : "";
 const FILE_UPDATER_BIN =
@@ -100,6 +103,34 @@ registerCleanupFunction(async () => {
   
   await finishTestRestoreUpdaterBackup();
 });
+
+
+
+
+
+
+
+function mockLangpackInstall() {
+  let original = XPIInstall.stageLangpacksForAppUpdate;
+  registerCleanupFunction(() => {
+    XPIInstall.stageLangpacksForAppUpdate = original;
+  });
+
+  let stagingCall = PromiseUtils.defer();
+  XPIInstall.stageLangpacksForAppUpdate = (appVersion, platformVersion) => {
+    let result = PromiseUtils.defer();
+    stagingCall.resolve({
+      appVersion,
+      platformVersion,
+      resolve: result.resolve,
+      reject: result.reject,
+    });
+
+    return result.promise;
+  };
+
+  return stagingCall.promise;
+}
 
 
 
@@ -680,7 +711,7 @@ function runAboutDialogUpdateTest(params, steps) {
   let aboutDialog;
   function processAboutDialogStep(step) {
     if (typeof step == "function") {
-      return step();
+      return step(aboutDialog);
     }
 
     const { panelId, checkActiveUpdate, continueFile, downloadInfo } = step;
@@ -863,7 +894,7 @@ function runAboutPrefsUpdateTest(params, steps) {
   let tab;
   function processAboutPrefsStep(step) {
     if (typeof step == "function") {
-      return step();
+      return step(tab);
     }
 
     const { panelId, checkActiveUpdate, continueFile, downloadInfo } = step;
