@@ -43,7 +43,11 @@
 
 class JS_PUBLIC_API JSTracer;
 
-namespace js::frontend {
+namespace js {
+
+class JSONPrinter;
+
+namespace frontend {
 
 struct CompilationInfo;
 
@@ -97,6 +101,11 @@ class RegExpCreationData {
   MOZ_MUST_USE bool init(JSContext* cx, JSAtom* pattern, JS::RegExpFlags flags);
 
   RegExpObject* createRegExp(JSContext* cx) const;
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+  void dump(JSONPrinter& json);
+#endif
 };
 
 using RegExpIndex = TypedIndex<RegExpCreationData>;
@@ -112,7 +121,7 @@ class BigIntCreationData {
   BigIntCreationData() = default;
 
   MOZ_MUST_USE bool init(JSContext* cx, const Vector<char16_t, 32>& buf) {
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     
     
     for (char16_t c : buf) {
@@ -134,6 +143,11 @@ class BigIntCreationData {
     mozilla::Range<const char16_t> source(buf_.get(), length_);
     return js::BigIntLiteralIsZero(source);
   }
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+  void dump(JSONPrinter& json);
+#endif
 };
 
 using BigIntIndex = TypedIndex<BigIntCreationData>;
@@ -243,6 +257,12 @@ class ScopeStencil {
   void trace(JSTracer* trc);
 
   uint32_t nextFrameSlot() const;
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+  void dump(JSONPrinter& json);
+  void dumpFields(JSONPrinter& json);
+#endif
 
  private:
   
@@ -385,6 +405,12 @@ class StencilModuleMetadata {
   bool initModule(JSContext* cx, JS::Handle<ModuleObject*> module);
 
   void trace(JSTracer* trc);
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+  void dump(JSONPrinter& json);
+  void dumpFields(JSONPrinter& json);
+#endif
 };
 
 
@@ -487,8 +513,15 @@ class ScriptStencil {
     MOZ_ASSERT_IF(result, !isFunction());
     return result;
   }
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+  void dump(JSONPrinter& json);
+  void dumpFields(JSONPrinter& json);
+#endif
 };
 
+} 
 } 
 
 namespace JS {
