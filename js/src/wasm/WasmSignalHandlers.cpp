@@ -707,7 +707,9 @@ static MOZ_MUST_USE bool HandleTrap(CONTEXT* context,
   
   
   
-  Instance* instance = ((Frame*)ContextToFP(context))->instance();
+
+  auto* frame = reinterpret_cast<Frame*>(ContextToFP(context));
+  Instance* instance = GetNearestEffectiveTls(frame)->instance;
   MOZ_RELEASE_ASSERT(&instance->code() == &segment.code() ||
                      trap == Trap::IndirectCallBadSig);
 
