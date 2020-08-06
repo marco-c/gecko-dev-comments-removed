@@ -512,6 +512,11 @@ class nsTArray_base {
       nsTArray_base<Allocator, RelocationStrategy>& aOther, size_type aElemSize,
       size_t aElemAlign);
 
+  template <class Allocator>
+  void MoveConstructNonAutoArray(
+      nsTArray_base<Allocator, RelocationStrategy>& aOther, size_type aElemSize,
+      size_t aElemAlign);
+
   
   class IsAutoArrayRestorer {
    public:
@@ -1007,8 +1012,13 @@ class nsTArray_Impl
   
   
   template <typename Allocator>
-  explicit nsTArray_Impl(nsTArray_Impl<E, Allocator>&& aOther) {
-    SwapElements(aOther);
+  explicit nsTArray_Impl(nsTArray_Impl<E, Allocator>&& aOther) noexcept {
+    
+    MOZ_ASSERT(!this->IsAutoArray());
+
+    
+    this->MoveConstructNonAutoArray(aOther, sizeof(elem_type),
+                                    MOZ_ALIGNOF(elem_type));
   }
 
   
