@@ -35,7 +35,6 @@ UNCOMMON_TRY_TASK_LABELS = [
     
     r'linux-',  
     r'linux1804-32',  
-    r'linux.*web-platform-tests.*-fis-',  
     
     r'web-platform-tests.*backlog',  
     r'-ccov/',
