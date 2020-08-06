@@ -1,18 +1,13 @@
 
 
-use std::fmt;
-use std::string::{String, ToString};
-
-use regalloc::{RealRegUniverse, Reg, RegClass, RegUsageCollector, RegUsageMapper};
-
+use super::regs::{self, show_ireg_sized};
+use super::EmitState;
 use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::machinst::*;
-
-use super::{
-    regs::{self, show_ireg_sized},
-    EmitState,
-};
 use core::fmt::Debug;
+use regalloc::{RealRegUniverse, Reg, RegClass, RegUsageCollector, RegUsageMapper};
+use std::fmt;
+use std::string::{String, ToString};
 
 
 
