@@ -115,8 +115,15 @@ class NativeLayer {
   virtual bool IsOpaque() = 0;
 
   
+  
   virtual void SetPosition(const gfx::IntPoint& aPosition) = 0;
   virtual gfx::IntPoint GetPosition() = 0;
+
+  
+  
+  
+  virtual void SetTransform(const gfx::Matrix4x4& aTransform) = 0;
+  virtual gfx::Matrix4x4 GetTransform() = 0;
 
   virtual gfx::IntRect GetRect() = 0;
 

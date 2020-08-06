@@ -335,8 +335,18 @@ void DCLayerTree::DestroyTile(wr::NativeSurfaceId aId, int aX, int aY) {
   surface->DestroyTile(aX, aY);
 }
 
+template <typename T>
+static inline D2D1_RECT_F D2DRect(const T& aRect) {
+  return D2D1::RectF(aRect.X(), aRect.Y(), aRect.XMost(), aRect.YMost());
+}
+
+static inline D2D1_MATRIX_3X2_F D2DMatrix(const gfx::Matrix& aTransform) {
+  return D2D1::Matrix3x2F(aTransform._11, aTransform._12, aTransform._21,
+                          aTransform._22, aTransform._31, aTransform._32);
+}
+
 void DCLayerTree::AddSurface(wr::NativeSurfaceId aId,
-                             wr::DeviceIntPoint aPosition,
+                             const wr::CompositorSurfaceTransform& aTransform,
                              wr::DeviceIntRect aClipRect) {
   auto it = mDCSurfaces.find(aId);
   MOZ_RELEASE_ASSERT(it != mDCSurfaces.end());
@@ -344,22 +354,33 @@ void DCLayerTree::AddSurface(wr::NativeSurfaceId aId,
   const auto visual = surface->GetVisual();
 
   wr::DeviceIntPoint virtualOffset = surface->GetVirtualOffset();
-  aPosition.x -= virtualOffset.x;
-  aPosition.y -= virtualOffset.y;
+
+  gfx::Matrix transform(aTransform.m11, aTransform.m12, aTransform.m21,
+                        aTransform.m22, aTransform.m41, aTransform.m42);
+  transform.PreTranslate(-virtualOffset.x, -virtualOffset.y);
 
   
   
-  visual->SetOffsetX(aPosition.x);
-  visual->SetOffsetY(aPosition.y);
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(transform.IsRectilinear());
+  gfx::Rect clip = transform.Inverse().TransformBounds(
+      gfx::Rect(aClipRect.origin.x, aClipRect.origin.y, aClipRect.size.width,
+                aClipRect.size.height));
+  clip.Round();
+  
+  
+  visual->SetClip(D2DRect(clip));
 
   
   
-  D2D_RECT_F clip_rect;
-  clip_rect.left = aClipRect.origin.x - aPosition.x;
-  clip_rect.top = aClipRect.origin.y - aPosition.y;
-  clip_rect.right = clip_rect.left + aClipRect.size.width;
-  clip_rect.bottom = clip_rect.top + aClipRect.size.height;
-  visual->SetClip(clip_rect);
+  
+  
+  visual->SetTransform(D2DMatrix(transform));
 
   mCurrentLayers.push_back(aId);
 }

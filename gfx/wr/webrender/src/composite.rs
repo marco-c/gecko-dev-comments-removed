@@ -4,8 +4,9 @@
 
 use api::{ColorF, YuvColorSpace, YuvFormat, ImageRendering};
 use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect};
-use api::units::{DevicePixelScale, DevicePoint, PictureRect, TexelRect};
+use api::units::{DevicePixelScale, DevicePoint, PictureRect, TexelRect, DevicePixel};
 use crate::batch::{resolve_image, get_buffer_kind};
+use euclid::Transform3D;
 use crate::gpu_cache::GpuCache;
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
 use crate::internal_types::TextureSource;
@@ -106,10 +107,10 @@ pub enum ExternalSurfaceDependency {
 
 pub struct ExternalSurfaceDescriptor {
     pub local_rect: PictureRect,
-    pub world_rect: WorldRect,
     pub device_rect: DeviceRect,
     pub local_clip_rect: PictureRect,
     pub clip_rect: DeviceRect,
+    pub transform: CompositorSurfaceTransform,
     pub image_rendering: ImageRendering,
     pub z_id: ZBufferId,
     pub dependency: ExternalSurfaceDependency,
@@ -268,6 +269,15 @@ impl CompositorKind {
             CompositorKind::Native { virtual_surface_size, .. } => *virtual_surface_size,
         }
     }
+
+    
+    
+    pub fn supports_transforms(&self) -> bool {
+        match self {
+            CompositorKind::Draw { .. } => false,
+            CompositorKind::Native { .. } => true,
+        }
+    }
 }
 
 
@@ -311,6 +321,7 @@ pub struct CompositeSurfaceDescriptor {
     pub surface_id: Option<NativeSurfaceId>,
     pub offset: DevicePoint,
     pub clip_rect: DeviceRect,
+    pub transform: CompositorSurfaceTransform,
     
     
     
@@ -553,6 +564,9 @@ impl CompositeState {
                     surface_id: tile_cache.native_surface.as_ref().map(|s| s.opaque),
                     offset: tile_cache.device_position,
                     clip_rect: device_clip_rect,
+                    transform: CompositorSurfaceTransform::create_translation(tile_cache.device_position.x,
+                                                                              tile_cache.device_position.y,
+                                                                              0.0),
                     image_dependencies: [ImageDependency::INVALID; 3],
                     tile_descriptors: opaque_tile_descriptors,
                 }
@@ -670,11 +684,13 @@ impl CompositeState {
 
                     let image_buffer_kind = get_buffer_kind(planes[0].texture);
 
+                    
+                    
                     self.external_surfaces.push(ResolvedExternalSurface {
                         color_data: ResolvedExternalSurfaceColorData::Rgb {
                             image_dependency: image_dependencies[0],
                             plane: planes[0],
-                            flip_y,
+                            flip_y: flip_y && !self.compositor_kind.supports_transforms(),
                         },
                         image_buffer_kind,
                         update_params,
@@ -682,12 +698,19 @@ impl CompositeState {
                 },
             }
 
+            
+            
+            let tile_clip = if self.compositor_kind.supports_transforms() {
+                external_surface.device_rect
+            } else {
+                clip_rect
+            };
             let tile = CompositeTile {
                 surface,
                 rect: external_surface.device_rect,
                 valid_rect: external_surface.device_rect.translate(-external_surface.device_rect.origin.to_vector()),
                 dirty_rect: external_surface.device_rect.translate(-external_surface.device_rect.origin.to_vector()),
-                clip_rect,
+                clip_rect: tile_clip,
                 z_id: external_surface.z_id,
             };
 
@@ -698,7 +721,8 @@ impl CompositeState {
                 CompositeSurfaceDescriptor {
                     surface_id: external_surface.native_surface_id,
                     offset: tile.rect.origin,
-                    clip_rect: tile.clip_rect,
+                    clip_rect,
+                    transform: external_surface.transform,
                     image_dependencies: image_dependencies,
                     tile_descriptors: Vec::new(),
                 }
@@ -714,6 +738,9 @@ impl CompositeState {
                     surface_id: tile_cache.native_surface.as_ref().map(|s| s.alpha),
                     offset: tile_cache.device_position,
                     clip_rect: device_clip_rect,
+                    transform: CompositorSurfaceTransform::create_translation(tile_cache.device_position.x,
+                                                                              tile_cache.device_position.y,
+                                                                              0.0),
                     image_dependencies: [ImageDependency::INVALID; 3],
                     tile_descriptors: alpha_tile_descriptors,
                 }
@@ -811,6 +838,10 @@ pub struct CompositorCapabilities {
 }
 
 
+pub struct CompositorSurfacePixel;
+pub type CompositorSurfaceTransform = Transform3D<f32, CompositorSurfacePixel, DevicePixel>;
+
+
 
 
 pub trait Compositor {
@@ -891,11 +922,10 @@ pub trait Compositor {
     
     
     
-    
     fn add_surface(
         &mut self,
         id: NativeSurfaceId,
-        position: DeviceIntPoint,
+        transform: CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
     );
 
