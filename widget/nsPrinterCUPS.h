@@ -31,13 +31,19 @@ class nsPrinterCUPS final : public nsPrinterBase {
   
 
 
-  static already_AddRefed<nsPrinterCUPS> Create(
-      const nsCUPSShim& aShim, cups_dest_t* aPrinter,
-      const nsAString& aDisplayname = EmptyString());
+  static already_AddRefed<nsPrinterCUPS> Create(const nsCUPSShim& aShim,
+                                                cups_dest_t* aPrinter);
+
+  
+
+
+
+
+
+  void SetDisplayName(const nsAString& aName) { mDisplayName = aName; }
 
  private:
-  nsPrinterCUPS(const nsCUPSShim& aShim, cups_dest_t* aPrinter,
-                const nsAString& aDisplayName = EmptyString());
+  nsPrinterCUPS(const nsCUPSShim& aShim, cups_dest_t* aPrinter);
 
   ~nsPrinterCUPS();
 

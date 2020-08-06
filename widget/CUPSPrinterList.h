@@ -32,20 +32,12 @@ class CUPSPrinterList {
   cups_dest_t* FindPrinterByName(const char* name);
 
   int NumPrinters() const { return mNumPrinters; }
-
   
 
 
 
 
   cups_dest_t* GetPrinter(int i);
-
-  
-
-
-
-
-  cups_dest_t* GetDefaultPrinter();
 
  private:
   const nsCUPSShim& mShim;
