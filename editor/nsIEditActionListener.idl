@@ -9,7 +9,6 @@
 webidl CharacterData;
 webidl Node;
 webidl Range;
-webidl Selection;
 
 
 
@@ -71,12 +70,6 @@ interface nsIEditActionListener : nsISupports
   void WillDeleteText(in CharacterData       aTextNode,
                       in long                aOffset,
                       in long                aLength);
-
-  
-
-
-
-  void WillDeleteSelection(in Selection aSelection);
 
   
 
