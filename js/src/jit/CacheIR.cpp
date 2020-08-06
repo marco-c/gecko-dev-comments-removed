@@ -19,7 +19,9 @@
 #include "jit/Ion.h"  
 #include "js/friend/WindowProxy.h"  
 #include "js/ScalarType.h"  
+#include "js/Wrapper.h"
 #include "util/Unicode.h"
+#include "vm/ArrayBufferObject.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/PlainObject.h"  
 #include "vm/SelfHosting.h"
@@ -6980,6 +6982,45 @@ AttachDecision CallIRGenerator::tryAttachTypedArrayLength(
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachArrayBufferByteLength(
+    HandleFunction callee, bool isPossiblyWrapped) {
+  
+  
+  MOZ_ASSERT(argc_ == 1);
+  MOZ_ASSERT(args_[0].isObject());
+
+  
+  if (isPossiblyWrapped && IsWrapper(&args_[0].toObject())) {
+    return AttachDecision::NoAction;
+  }
+
+  MOZ_ASSERT(args_[0].toObject().is<ArrayBufferObject>());
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objArgId = writer.guardToObject(argId);
+
+  if (isPossiblyWrapped) {
+    writer.guardIsNotProxy(objArgId);
+  }
+
+  size_t offset =
+      NativeObject::getFixedSlotOffset(ArrayBufferObject::BYTE_LENGTH_SLOT);
+
+  writer.loadFixedSlotTypedResult(objArgId, offset, ValueType::Int32);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("ArrayBufferByteLength");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachIsConstructing(HandleFunction callee) {
   
   MOZ_ASSERT(argc_ == 0);
@@ -7720,6 +7761,12 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     
     case InlinableNative::IntrinsicGuardToArrayBuffer:
       return tryAttachGuardToClass(callee, native);
+    case InlinableNative::IntrinsicArrayBufferByteLength:
+      return tryAttachArrayBufferByteLength(callee,
+                                             false);
+    case InlinableNative::IntrinsicPossiblyWrappedArrayBufferByteLength:
+      return tryAttachArrayBufferByteLength(callee,
+                                             true);
 
     
     case InlinableNative::IntrinsicGuardToSharedArrayBuffer:
