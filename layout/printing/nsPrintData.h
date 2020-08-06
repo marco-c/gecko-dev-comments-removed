@@ -59,10 +59,8 @@ class nsPrintData {
   nsCOMArray<nsIWebProgressListener> mPrintProgressListeners;
   nsCOMPtr<nsIPrintProgressParams> mPrintProgressParams;
 
-  
-  
-  
-  nsPrintObject* mSelectionRoot = nullptr;
+  nsCOMPtr<nsPIDOMWindowOuter> mCurrentFocusWin;  
+                                                  
 
   
   
