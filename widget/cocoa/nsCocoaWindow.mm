@@ -2022,6 +2022,13 @@ void nsCocoaWindow::ReportMoveEvent() {
   UpdateBounds();
 
   
+  
+  
+  if (mWindow && ((mSizeMode == nsSizeMode_Maximized) ^ [mWindow isZoomed])) {
+    DispatchSizeModeEvent();
+  }
+
+  
   NotifyWindowMoved(mBounds.x, mBounds.y);
 
   mInReportMoveEvent = false;
