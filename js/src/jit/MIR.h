@@ -2144,7 +2144,7 @@ class MNewArrayDynamicLength : public MUnaryInstruction,
         initialHeap_(initialHeap) {
     setGuard();  
     setResultType(MIRType::Object);
-    if (!templateObject->isSingleton()) {
+    if (!JitOptions.warpBuilder && !templateObject->isSingleton()) {
       setResultTypeSet(
           MakeSingletonTypeSet(alloc, constraints, templateObject));
     }
@@ -2158,7 +2158,10 @@ class MNewArrayDynamicLength : public MUnaryInstruction,
   JSObject* templateObject() const { return templateObject_; }
   gc::InitialHeap initialHeap() const { return initialHeap_; }
 
-  virtual AliasSet getAliasSet() const override { return AliasSet::None(); }
+  AliasSet getAliasSet() const override {
+    
+    return AliasSet::Store(AliasSet::ExceptionState);
+  }
 
   bool appendRoots(MRootList& roots) const override {
     return roots.append(templateObject_);
