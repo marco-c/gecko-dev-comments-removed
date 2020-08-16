@@ -6,17 +6,22 @@
 
 #include <algorithm>
 
+#include "ErrorList.h"
 #include "mozilla/dom/IOUtils.h"
+#include "mozilla/dom/IOUtilsBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/TextUtils.h"
+#include "nspr/prerror.h"
 #include "nspr/prio.h"
 #include "nspr/private/pprio.h"
 #include "nspr/prtypes.h"
 #include "nsIFile.h"
 #include "nsIGlobalObject.h"
 #include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nsStringFwd.h"
 #include "nsThreadManager.h"
 
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
@@ -260,13 +265,8 @@ already_AddRefed<Promise> IOUtils::WriteAtomic(
   RefPtr<Promise> promise = CreateJSPromise(aGlobal);
   NS_ENSURE_TRUE(!!promise, nullptr);
 
-  REJECT_IF_SHUTTING_DOWN(promise);
-  REJECT_IF_RELATIVE_PATH(aPath, promise);
-
-  RefPtr<nsISerialEventTarget> bg = GetBackgroundEventTarget();
-  REJECT_IF_NULL_EVENT_TARGET(bg, promise);
-
   
+  REJECT_IF_RELATIVE_PATH(aPath, promise);
   aData.ComputeState();
   auto buf = Buffer<uint8_t>::CopyFrom(Span(aData.Data(), aData.Length()));
   if (buf.isNothing()) {
@@ -301,13 +301,9 @@ already_AddRefed<Promise> IOUtils::Move(GlobalObject& aGlobal,
   REJECT_IF_RELATIVE_PATH(aDestPath, promise);
   nsAutoString sourcePath(aSourcePath);
   nsAutoString destPath(aDestPath);
-  bool noOverwrite = false;
-  if (aOptions.IsAnyMemberPresent()) {
-    noOverwrite = aOptions.mNoOverwrite;
-  }
 
   return RunOnBackgroundThread<Ok>(promise, &MoveSync, sourcePath, destPath,
-                                   noOverwrite);
+                                   aOptions.mNoOverwrite);
 }
 
 
@@ -348,6 +344,24 @@ already_AddRefed<Promise> IOUtils::Stat(GlobalObject& aGlobal,
   nsAutoString path(aPath);
 
   return RunOnBackgroundThread<InternalFileInfo>(promise, &StatSync, path);
+}
+
+
+already_AddRefed<Promise> IOUtils::Copy(GlobalObject& aGlobal,
+                                        const nsAString& aSourcePath,
+                                        const nsAString& aDestPath,
+                                        const CopyOptions& aOptions) {
+  RefPtr<Promise> promise = CreateJSPromise(aGlobal);
+  NS_ENSURE_TRUE(!!promise, nullptr);
+
+  
+  REJECT_IF_RELATIVE_PATH(aSourcePath, promise);
+  REJECT_IF_RELATIVE_PATH(aDestPath, promise);
+  nsAutoString sourcePath(aSourcePath);
+  nsAutoString destPath(aDestPath);
+
+  return RunOnBackgroundThread<Ok>(promise, &CopySync, sourcePath, destPath,
+                                   aOptions.mNoOverwrite, aOptions.mRecursive);
 }
 
 
@@ -565,10 +579,14 @@ Result<nsTArray<uint8_t>, IOUtils::IOError> IOUtils::ReadSync(
       break;
     }
     if (nRead < 0) {
+      PRErrorCode errNo = PR_GetError();
+      const char* errName = PR_ErrorToName(errNo);
       return Err(
           IOError(NS_ERROR_UNEXPECTED)
-              .WithMessage("Encountered an unexpected error while reading %s",
-                           NS_ConvertUTF16toUTF8(aPath).get()));
+              .WithMessage(
+                  "Encountered an unexpected error while reading file(%s)"
+                  "(PRErrorCode: %s)",
+                  NS_ConvertUTF16toUTF8(aPath).get(), errName));
     }
     totalRead += nRead;
     DebugOnly<bool> success = buffer.SetLength(totalRead, fallible);
@@ -701,16 +719,15 @@ Result<uint32_t, IOUtils::IOError> IOUtils::WriteSync(
 
 Result<Ok, IOUtils::IOError> IOUtils::MoveSync(const nsAString& aSourcePath,
                                                const nsAString& aDestPath,
-                                               bool noOverwrite) {
+                                               bool aNoOverwrite) {
   MOZ_ASSERT(!NS_IsMainThread());
-  nsresult rv = NS_OK;
+
+  RefPtr<nsLocalFile> srcFile = new nsLocalFile();
+  MOZ_TRY(srcFile->InitWithPath(aSourcePath));  
 
   
-  nsCOMPtr<nsIFile> srcFile = new nsLocalFile();
-  MOZ_TRY(srcFile->InitWithPath(aSourcePath));  
+  
   bool srcExists;
-  
-  
   MOZ_TRY(srcFile->Exists(&srcExists));
   if (!srcExists) {
     return Err(
@@ -719,12 +736,69 @@ Result<Ok, IOUtils::IOError> IOUtils::MoveSync(const nsAString& aSourcePath,
                 "Could not move source file(%s) because it does not exist",
                 NS_ConvertUTF16toUTF8(aSourcePath).get()));
   }
-  MOZ_TRY(srcFile->Normalize());
+
+  RefPtr<nsLocalFile> destFile = new nsLocalFile();
+  MOZ_TRY(destFile->InitWithPath(aDestPath));  
+
+  return CopyOrMoveSync(&nsLocalFile::MoveTo, "move", srcFile, destFile,
+                        aNoOverwrite);
+}
+
+
+Result<Ok, IOUtils::IOError> IOUtils::CopySync(const nsAString& aSourcePath,
+                                               const nsAString& aDestPath,
+                                               bool aNoOverwrite,
+                                               bool aRecursive) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  RefPtr<nsLocalFile> srcFile = new nsLocalFile();
+  MOZ_TRY(srcFile->InitWithPath(aSourcePath));  
 
   
-  nsCOMPtr<nsIFile> destFile = new nsLocalFile();
+  
+  bool srcExists;
+  MOZ_TRY(srcFile->Exists(&srcExists));
+  if (!srcExists) {
+    return Err(
+        IOError(NS_ERROR_FILE_NOT_FOUND)
+            .WithMessage(
+                "Could not copy source file(%s) because it does not exist",
+                NS_ConvertUTF16toUTF8(aSourcePath).get()));
+  }
+
+  
+  
+  bool srcIsDir = false;
+  MOZ_TRY(srcFile->IsDirectory(&srcIsDir));
+  if (srcIsDir && !aRecursive) {
+    return Err(
+        IOError(NS_ERROR_FILE_COPY_OR_MOVE_FAILED)
+            .WithMessage(
+                "Refused to copy source directory(%s) to the destination(%s)\n"
+                "Specify the `recursive: true` option to allow copying "
+                "directories",
+                NS_ConvertUTF16toUTF8(aSourcePath).get(),
+                NS_ConvertUTF16toUTF8(aDestPath).get()));
+  }
+
+  RefPtr<nsLocalFile> destFile = new nsLocalFile();
   MOZ_TRY(destFile->InitWithPath(aDestPath));  
-  rv = destFile->Normalize();
+
+  return CopyOrMoveSync(&nsLocalFile::CopyTo, "copy", srcFile, destFile,
+                        aNoOverwrite);
+}
+
+
+template <typename CopyOrMoveFn>
+Result<Ok, IOUtils::IOError> IOUtils::CopyOrMoveSync(
+    CopyOrMoveFn aMethod, const char* aMethodName,
+    const RefPtr<nsLocalFile>& aSource, const RefPtr<nsLocalFile>& aDest,
+    bool aNoOverwrite) {
+  nsresult rv = NS_OK;
+
+  
+  MOZ_TRY(aSource->Normalize());
+  rv = aDest->Normalize();
   
   
   
@@ -733,18 +807,24 @@ Result<Ok, IOUtils::IOError> IOUtils::MoveSync(const nsAString& aSourcePath,
     return Err(IOError(rv));
   }
 
+  nsAutoString src;
+  MOZ_TRY(aSource->GetPath(src));
+  auto sourcePath = NS_ConvertUTF16toUTF8(src);
+  nsAutoString dest;
+  MOZ_TRY(aDest->GetPath(dest));
+  auto destPath = NS_ConvertUTF16toUTF8(dest);
+
   
   bool destIsDir = false;
   bool destExists = true;
 
-  rv = destFile->IsDirectory(&destIsDir);
+  rv = aDest->IsDirectory(&destIsDir);
   if (NS_SUCCEEDED(rv) && destIsDir) {
-    rv = srcFile->MoveTo(destFile, EmptyString());
+    rv = (aSource->*aMethod)(aDest, EmptyString());
     if (NS_FAILED(rv)) {
       return Err(IOError(rv).WithMessage(
-          "Could not move source file(%s) to destination(%s)",
-          NS_ConvertUTF16toUTF8(aSourcePath).get(),
-          NS_ConvertUTF16toUTF8(aDestPath).get()));
+          "Could not %s source file(%s) to destination directory(%s)",
+          aMethodName, sourcePath.get(), destPath.get()));
     }
     return Ok();
   }
@@ -761,45 +841,44 @@ Result<Ok, IOUtils::IOError> IOUtils::MoveSync(const nsAString& aSourcePath,
   
   
   
-  if (noOverwrite && destExists) {
+  
+  if (aNoOverwrite && destExists) {
     return Err(
         IOError(NS_ERROR_FILE_ALREADY_EXISTS)
             .WithMessage(
-                "Could not move source file(%s) to destination(%s) because the "
+                "Could not %s source file(%s) to destination(%s) because the "
                 "destination already exists and overwrites are not allowed\n"
                 "Specify the `noOverwrite: false` option to mitigate this "
                 "error",
-                NS_ConvertUTF16toUTF8(aSourcePath).get(),
-                NS_ConvertUTF16toUTF8(aDestPath).get()));
+                aMethodName, sourcePath.get(), destPath.get()));
   }
   if (destExists && !destIsDir) {
     
     
     
     bool srcIsDir = false;
-    MOZ_TRY(srcFile->IsDirectory(&srcIsDir));
+    MOZ_TRY(aSource->IsDirectory(&srcIsDir));
     if (srcIsDir) {
       return Err(IOError(NS_ERROR_FILE_DESTINATION_NOT_DIR)
-                     .WithMessage("Could not move the source directory(%s) to "
-                                  "the destination(%s) "
-                                  "because the destination is not a directory",
-                                  NS_ConvertUTF16toUTF8(aSourcePath).get(),
-                                  NS_ConvertUTF16toUTF8(aDestPath).get()));
+                     .WithMessage("Could not %s the source directory(%s) to "
+                                  "the destination(%s) because the destination "
+                                  "is not a directory",
+                                  aMethodName, sourcePath.get(),
+                                  destPath.get()));
     }
   }
 
   nsCOMPtr<nsIFile> destDir;
   nsAutoString destName;
-  MOZ_TRY(destFile->GetLeafName(destName));
-  MOZ_TRY(destFile->GetParent(getter_AddRefs(destDir)));
+  MOZ_TRY(aDest->GetLeafName(destName));
+  MOZ_TRY(aDest->GetParent(getter_AddRefs(destDir)));
 
   
-  rv = srcFile->MoveTo(destDir, destName);
+  rv = (aSource->*aMethod)(destDir, destName);
   if (NS_FAILED(rv)) {
     return Err(IOError(rv).WithMessage(
-        "Could not move the source file(%s) to the destination(%s)",
-        NS_ConvertUTF16toUTF8(aSourcePath).get(),
-        NS_ConvertUTF16toUTF8(aDestPath).get()));
+        "Could not %s the source file(%s) to the destination(%s)", aMethodName,
+        sourcePath.get(), destPath.get()));
   }
   return Ok();
 }

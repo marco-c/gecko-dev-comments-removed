@@ -15,6 +15,7 @@
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Result.h"
+#include "nsStringFwd.h"
 #include "nspr/prio.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISerialEventTarget.h"
@@ -72,6 +73,11 @@ class IOUtils final {
 
   static already_AddRefed<Promise> Stat(GlobalObject& aGlobal,
                                         const nsAString& aPath);
+
+  static already_AddRefed<Promise> Copy(GlobalObject& aGlobal,
+                                        const nsAString& aSourcePath,
+                                        const nsAString& aDestPath,
+                                        const CopyOptions& aOptions);
 
   static bool IsAbsolutePath(const nsAString& aPath);
 
@@ -194,8 +200,45 @@ class IOUtils final {
 
 
 
-  static Result<Ok, IOError> MoveSync(const nsAString& aSource,
-                                      const nsAString& aDest, bool noOverwrite);
+  static Result<Ok, IOError> MoveSync(const nsAString& aSourcePath,
+                                      const nsAString& aDestPath,
+                                      bool aNoOverwrite);
+
+  
+
+
+
+
+
+
+
+
+
+  static Result<Ok, IOError> CopySync(const nsAString& aSourcePath,
+                                      const nsAString& aDestPath,
+                                      bool aNoOverWrite, bool aRecursive);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename CopyOrMoveFn>
+  static Result<Ok, IOError> CopyOrMoveSync(CopyOrMoveFn aMethod,
+                                            const char* aMethodName,
+                                            const RefPtr<nsLocalFile>& aSource,
+                                            const RefPtr<nsLocalFile>& aDest,
+                                            bool aNoOverwrite);
 
   
 
@@ -242,9 +285,6 @@ class IOUtils final {
 
   static Result<IOUtils::InternalFileInfo, IOError> StatSync(
       const nsAString& aPath);
-
-  using IOWriteMozPromise =
-      mozilla::MozPromise<uint32_t, const IOError,  true>;
 };
 
 
