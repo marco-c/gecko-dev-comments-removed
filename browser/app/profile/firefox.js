@@ -1308,6 +1308,15 @@ pref("browser.topsites.useRemoteSetting", false);
 pref("browser.topsites.attributionURL", "");
 
 
+
+
+#ifdef NIGHTLY_BUILD
+  pref("prompts.tabChromePromptSubDialog", true);
+#else
+  pref("prompts.tabChromePromptSubDialog", false);
+#endif
+
+
 pref("browser.newtab.preload", true);
 
 
