@@ -22,7 +22,6 @@
 #endif
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/Parser.h"
-#include "js/friend/UsageStatistics.h"  
 #include "js/SourceText.h"
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
@@ -502,10 +501,6 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
   }
 
   
-  
-  compilationInfo.source()->recordParseEnded();
-
-  
   if (!compilationInfo.cx->isHelperThreadContext()) {
     if (!compilationInfo.source()->tryCompressOffThread(cx)) {
       return nullptr;
@@ -773,25 +768,6 @@ static bool CompileLazyFunctionImpl(JSContext* cx, Handle<BaseScript*> lazy,
       .setScriptSourceOffset(lazy->sourceStart())
       .setNoScriptRval(false)
       .setSelfHostingMode(false);
-
-  
-  
-  
-  
-  if (!lazy->scriptSource()->parseEnded().IsNull()) {
-    const mozilla::TimeDuration delta =
-        ReallyNow() - lazy->scriptSource()->parseEnded();
-
-    
-    
-    
-    
-    const int HISTOGRAM =
-        cx->runningWithTrustedPrincipals()
-            ? JS_TELEMETRY_PRIVILEGED_PARSER_COMPILE_LAZY_AFTER_MS
-            : JS_TELEMETRY_WEB_PARSER_COMPILE_LAZY_AFTER_MS;
-    cx->runtime()->addTelemetry(HISTOGRAM, delta.ToMilliseconds());
-  }
 
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
   CompilationInfo compilationInfo(cx, allocScope, options,

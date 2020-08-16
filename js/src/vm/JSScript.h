@@ -548,14 +548,6 @@ class ScriptSource {
   
   
   
-  
-  
-  
-  mozilla::TimeStamp parseEnded_;
-
-  
-  
-  
   const char* introductionType_ = nullptr;
 
   
@@ -1036,13 +1028,6 @@ class ScriptSource {
   
   
   bool xdrFinalizeEncoder(JS::TranscodeBuffer& buffer);
-
-  const mozilla::TimeStamp parseEnded() const { return parseEnded_; }
-  
-  void recordParseEnded() {
-    MOZ_ASSERT(parseEnded_.IsNull());
-    parseEnded_ = ReallyNow();
-  }
 
  private:
   template <typename Unit,
