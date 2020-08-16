@@ -460,6 +460,14 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+
+  const unsigned long HTTPS_ONLY_TOP_LEVEL_LOAD_IN_PROGRESS = (1 << 4);
+
+  
+
+
+
   [infallible] attribute unsigned long httpsOnlyStatus;
 
   

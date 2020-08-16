@@ -8,6 +8,8 @@
 #define nsHTTPSOnlyUtils_h___
 
 #include "nsIScriptError.h"
+#include "nsISupports.h"
+#include "mozilla/net/DocumentLoadListener.h"
 
 class nsHTTPSOnlyUtils {
  public:
@@ -17,6 +19,16 @@ class nsHTTPSOnlyUtils {
 
 
   static bool IsHttpsOnlyModeEnabled(bool aFromPrivateWindow);
+
+  
+
+
+
+
+
+
+  static void PotentiallyFireHttpRequestToShortenTimout(
+      mozilla::net::DocumentLoadListener* aDocumentLoadListener);
 
   
 
@@ -100,4 +112,40 @@ class nsHTTPSOnlyUtils {
 
   static bool LoopbackOrLocalException(nsIURI* aURI);
 };
+
+
+
+
+
+
+
+
+
+class TestHTTPAnswerRunnable final : public mozilla::Runnable,
+                                     public nsIStreamListener,
+                                     public nsIInterfaceRequestor,
+                                     public nsITimerCallback {
+ public:
+  
+  
+  
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIRUNNABLE
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSIINTERFACEREQUESTOR
+  NS_DECL_NSITIMERCALLBACK
+
+  explicit TestHTTPAnswerRunnable(
+      nsIURI* aURI, mozilla::net::DocumentLoadListener* aDocumentLoadListener);
+
+ protected:
+  ~TestHTTPAnswerRunnable() = default;
+
+ private:
+  RefPtr<nsIURI> mURI;
+  RefPtr<mozilla::net::DocumentLoadListener> mDocumentLoadListener;
+  RefPtr<nsITimer> mTimer;
+};
+
 #endif 
