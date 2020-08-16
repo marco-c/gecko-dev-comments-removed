@@ -940,16 +940,43 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     
     WarpScriptOracle scriptOracle(cx_, oracle_, targetScript, info, icScript);
 
-    WarpScriptSnapshot* scriptSnapshot;
-    MOZ_TRY_VAR(scriptSnapshot, scriptOracle.createScriptSnapshot());
-    oracle_->addScriptSnapshot(scriptSnapshot);
+    AbortReasonOr<WarpScriptSnapshot*> maybeScriptSnapshot =
+        scriptOracle.createScriptSnapshot();
 
-    if (!AddOpSnapshot<WarpInlinedCall>(
-            alloc_, snapshots, offset, cacheIRSnapshot, scriptSnapshot, info)) {
-      return abort(AbortReason::Alloc);
+    if (maybeScriptSnapshot.isOk()) {
+      WarpScriptSnapshot* scriptSnapshot = maybeScriptSnapshot.unwrap();
+      oracle_->addScriptSnapshot(scriptSnapshot);
+
+      if (!AddOpSnapshot<WarpInlinedCall>(alloc_, snapshots, offset,
+                                          cacheIRSnapshot, scriptSnapshot,
+                                          info)) {
+        return abort(AbortReason::Alloc);
+      }
+      fallbackStub->setUsedByTranspiler();
+      return Ok();
     }
-    fallbackStub->setUsedByTranspiler();
-    return Ok();
+
+    
+    JitSpew(JitSpew_WarpTranspiler, "Can't create snapshot for JSOp::%s",
+            CodeName(loc.getOp()));
+
+    switch (maybeScriptSnapshot.unwrapErr()) {
+      case AbortReason::Disable:
+        
+        
+        MOZ_ASSERT(stub == entry.firstStub());
+        fallbackStub->unlinkStubDontInvalidateWarp(cx_->zone(),
+                                                   nullptr, stub);
+        targetScript->setUninlineable();
+        info_->inlineScriptTree()->removeCallee(inlineScriptTree);
+        icScript_->removeInlinedChild(loc.bytecodeToOffset(script_));
+        break;
+      case AbortReason::Error:
+      case AbortReason::Alloc:
+        return Err(maybeScriptSnapshot.unwrapErr());
+      default:
+        MOZ_CRASH("Unexpected abort reason");
+    }
   }
 
   if (!AddOpSnapshot<WarpCacheIR>(alloc_, snapshots, offset, jitCode, stubInfo,

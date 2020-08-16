@@ -3162,6 +3162,7 @@ bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,
   
   
   
+  callInfo.markAsInlined();
   if (!TranspileCacheIRToMIR(this, loc, inlineSnapshot->cacheIRSnapshot(),
                              callInfo)) {
     return false;
