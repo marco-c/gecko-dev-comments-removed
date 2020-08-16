@@ -1506,13 +1506,13 @@ AttachDecision GetPropIRGenerator::tryAttachGenericProxy(
   if (cacheKind_ == CacheKind::GetProp || mode_ == ICState::Mode::Specialized) {
     MOZ_ASSERT(!isSuper());
     maybeEmitIdGuard(id);
-    writer.callProxyGetResult(objId, id);
+    writer.proxyGetResult(objId, id);
   } else {
     
     MOZ_ASSERT(cacheKind_ == CacheKind::GetElem);
     MOZ_ASSERT(mode_ == ICState::Mode::Megamorphic);
     MOZ_ASSERT(!isSuper());
-    writer.callProxyGetByValueResult(objId, getElemKeyValueId());
+    writer.proxyGetByValueResult(objId, getElemKeyValueId());
   }
 
   writer.typeMonitorResult();
@@ -1604,7 +1604,7 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyShadowed(HandleObject obj,
 
   maybeEmitIdGuard(id);
   TestMatchingProxyReceiver(writer, &obj->as<ProxyObject>(), objId);
-  writer.callProxyGetResult(objId, id);
+  writer.proxyGetResult(objId, id);
   writer.typeMonitorResult();
 
   trackAttached("DOMProxyShadowed");
@@ -1696,7 +1696,7 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyUnshadowed(
     
     
     MOZ_ASSERT(!isSuper());
-    writer.callProxyGetResult(objId, id);
+    writer.proxyGetResult(objId, id);
     writer.typeMonitorResult();
   }
 
@@ -2533,7 +2533,7 @@ AttachDecision GetPropIRGenerator::tryAttachProxyElement(HandleObject obj,
   
   MOZ_ASSERT(cacheKind_ == CacheKind::GetElem);
   MOZ_ASSERT(!isSuper());
-  writer.callProxyGetByValueResult(objId, getElemKeyValueId());
+  writer.proxyGetByValueResult(objId, getElemKeyValueId());
   writer.typeMonitorResult();
 
   trackAttached("ProxyElement");
