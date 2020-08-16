@@ -20,7 +20,6 @@ var listener = {
 
     while (true) {
       try {
-        inRecord.QueryInterface(Ci.nsIDNSAddrRecord);
         var answer = inRecord.getNextAddrAsString();
         
         dump(answer);
@@ -40,9 +39,7 @@ function run_test() {
   try {
     dns.asyncResolve(
       "example.org",
-      Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
       Ci.nsIDNSService.RESOLVE_DISABLE_IPV4,
-      null, 
       listener,
       null,
       defaultOriginAttributes
