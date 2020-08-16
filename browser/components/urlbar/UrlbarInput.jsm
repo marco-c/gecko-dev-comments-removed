@@ -106,6 +106,8 @@ class UrlbarInput {
     this._suppressPrimaryAdjustment = false;
     this._untrimmedValue = "";
 
+    UrlbarPrefs.addObserver(this);
+
     
     this._enableAutofillPlaceholder = true;
 
@@ -869,6 +871,19 @@ class UrlbarInput {
 
 
 
+  onPrefChanged(changedPref) {
+    if (changedPref == "update2" && !UrlbarPrefs.get("update2")) {
+      this.setSearchMode(null);
+    }
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -1154,7 +1169,8 @@ class UrlbarInput {
 
   setSearchMode(engineOrSource) {
     if (!UrlbarPrefs.get("update2")) {
-      return;
+      
+      engineOrSource = null;
     }
 
     this._searchModeIndicatorTitle.textContent = "";

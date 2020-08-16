@@ -315,3 +315,19 @@ add_task(async function invalidate_pageproxystate() {
     );
   });
 });
+
+
+
+add_task(async function pref_flip_while_enabled() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: TEST_QUERY,
+  });
+  await enterSearchMode(window);
+  await verifySearchModeResultsAdded(window);
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", false]],
+  });
+  UrlbarTestUtils.assertSearchMode(window, null);
+  await SpecialPowers.popPrefEnv();
+});
