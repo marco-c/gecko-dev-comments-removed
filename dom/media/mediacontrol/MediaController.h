@@ -122,10 +122,6 @@ class MediaController final : public DOMEventTargetHelper,
 
   
   
-  bool IsInPictureInPictureMode() const;
-
-  
-  
   void Shutdown();
 
   
