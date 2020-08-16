@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+const TYPES = {
+  FRAME: "frame",
+  PROCESS: "process",
+  WORKER: "worker",
+};
+exports.TYPES = TYPES;

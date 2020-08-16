@@ -8,6 +8,7 @@ const Services = require("Services");
 const {
   WatcherRegistry,
 } = require("devtools/server/actors/watcher/WatcherRegistry.jsm");
+const Targets = require("devtools/server/actors/targets/index");
 
 
 
@@ -145,7 +146,7 @@ function getWatchingBrowsingContexts(watcher) {
   
   const watchingAdditionalTargets = WatcherRegistry.isWatchingTargets(
     watcher,
-    "frame"
+    Targets.TYPES.FRAME
   );
   const { browserElement } = watcher;
   const browsingContexts = watchingAdditionalTargets
