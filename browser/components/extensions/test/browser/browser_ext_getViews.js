@@ -39,16 +39,11 @@ function genericChecker() {
           background = view;
         }
 
-        
-        
-        
-        if (kind == "tab" && view.kind == "tab") {
-          browser.test.assertEq(
-            bcGroupId,
-            SpecialPowers.wrap(view).browsingContext.group.id,
-            "browsing context group is correct"
-          );
-        }
+        browser.test.assertEq(
+          bcGroupId,
+          SpecialPowers.wrap(view).browsingContext.group.id,
+          "browsing context group is correct"
+        );
       }
       if (background) {
         browser.runtime.getBackgroundPage().then(view => {

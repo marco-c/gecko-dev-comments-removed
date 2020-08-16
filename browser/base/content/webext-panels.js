@@ -46,6 +46,10 @@ function getBrowser(panel) {
 
   
   
+  browser.setAttribute(
+    "initialBrowsingContextGroupId",
+    panel.extension.policy.browsingContextGroupId
+  );
   browser.sameProcessAsFrameLoader = panel.extension.groupFrameLoader;
 
   let readyPromise;

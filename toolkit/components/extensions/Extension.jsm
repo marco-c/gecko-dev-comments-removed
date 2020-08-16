@@ -1956,6 +1956,10 @@ class Extension extends ExtensionData {
     return new BootstrapScope();
   }
 
+  get browsingContextGroupId() {
+    return this.policy.browsingContextGroupId;
+  }
+
   get groupFrameLoader() {
     let frameLoader = this._backgroundPageFrameLoader;
     for (let view of this.views) {
