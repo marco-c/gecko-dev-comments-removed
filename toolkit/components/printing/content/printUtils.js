@@ -165,8 +165,9 @@ var PrintUtils = {
       skipLoad: false,
     });
     printPreviewBrowser.classList.add("printPreviewBrowser");
-    printPreviewBrowser.setAttribute("isRendering", "true");
-    container.querySelector(".previewStack").append(printPreviewBrowser);
+    let stack = container.querySelector(".previewStack");
+    stack.setAttribute("isRendering", "true");
+    stack.append(printPreviewBrowser);
     printPreviewBrowser.loadURI("about:printpreview", {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
@@ -198,8 +199,8 @@ var PrintUtils = {
 
 
   updatePrintPreview(sourceBrowser, printPreviewBrowser, printSettings) {
-    let previewContainer = printPreviewBrowser.parentElement;
-    previewContainer.classList.add("previewRendering");
+    let stack = printPreviewBrowser.parentElement;
+    stack.setAttribute("isRendering", true);
 
     return new Promise(resolve => {
       printPreviewBrowser.messageManager.addMessageListener(
@@ -210,8 +211,7 @@ var PrintUtils = {
             done
           );
 
-          previewContainer.classList.remove("previewRendering");
-          printPreviewBrowser.removeAttribute("isRendering");
+          stack.removeAttribute("isRendering");
 
           resolve(message.data.numPages);
         }
