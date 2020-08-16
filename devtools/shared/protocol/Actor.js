@@ -77,6 +77,10 @@ class Actor extends Pool {
     this.actorID = null;
   }
 
+  isDestroyed() {
+    return this.actorID === null;
+  }
+
   
 
 
