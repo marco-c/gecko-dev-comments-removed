@@ -916,6 +916,10 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     this.flowId = gUUIDGenerator.generateUUID().toString();
     log.debug("Creating new credit card section with flowId =", this.flowId);
 
+    if (!this.isValidSection()) {
+      return;
+    }
+
     
     let identified = new Set();
     fieldDetails.forEach(detail => identified.add(detail.fieldName));
@@ -941,19 +945,15 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
 
     
     
-    
-    
-    if (this.fieldDetails.length) {
-      if (handler.window.location != handler.window.parent?.location) {
-        log.debug(
-          "Credit card form is in an iframe -- watching for pagehide",
-          fieldDetails
-        );
-        handler.window.addEventListener(
-          "pagehide",
-          this._handlePageHide.bind(this)
-        );
-      }
+    if (handler.window.location != handler.window.parent?.location) {
+      log.debug(
+        "Credit card form is in an iframe -- watching for pagehide",
+        fieldDetails
+      );
+      handler.window.addEventListener(
+        "pagehide",
+        this._handlePageHide.bind(this)
+      );
     }
   }
 
