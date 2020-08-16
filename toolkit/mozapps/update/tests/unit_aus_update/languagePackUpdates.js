@@ -63,6 +63,13 @@ function mockLangpackUpdate() {
 }
 
 add_task(async function init() {
+  
+  
+  Services.prefs.setBoolPref(
+    "toolkit.telemetry.testing.overrideProductsCheck",
+    true
+  );
+
   await AddonTestUtils.promiseStartupManager();
 });
 
