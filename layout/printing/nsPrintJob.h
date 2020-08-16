@@ -51,6 +51,8 @@ class Document;
 class nsPrintJob final : public nsIObserver,
                          public nsIWebProgressListener,
                          public nsSupportsWeakReference {
+  using Document = mozilla::dom::Document;
+
  public:
   static void CloseProgressDialog(nsIWebProgressListener* aWebProgressListener);
 
@@ -88,8 +90,8 @@ class nsPrintJob final : public nsIObserver,
 
 
   nsresult Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
-                      nsIDocShell* aDocShell,
-                      mozilla::dom::Document* aOriginalDoc, float aScreenDPI);
+                      nsIDocShell* aDocShell, Document* aOriginalDoc,
+                      float aScreenDPI);
 
   
   
@@ -99,7 +101,7 @@ class nsPrintJob final : public nsIObserver,
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  Print(mozilla::dom::Document* aSourceDoc, nsIPrintSettings* aPrintSettings,
+  Print(Document* aSourceDoc, nsIPrintSettings* aPrintSettings,
         nsIWebProgressListener* aWebProgressListener);
 
   
@@ -112,9 +114,9 @@ class nsPrintJob final : public nsIObserver,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult PrintPreview(
-      mozilla::dom::Document* aSourceDoc, nsIPrintSettings* aPrintSettings,
-      nsIWebProgressListener* aWebProgressListener);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  PrintPreview(Document* aSourceDoc, nsIPrintSettings* aPrintSettings,
+               nsIWebProgressListener* aWebProgressListener);
 
   bool IsDoingPrint() const { return mIsDoingPrinting; }
   bool IsDoingPrintPreview() const { return mIsDoingPrintPreview; }
@@ -131,8 +133,6 @@ class nsPrintJob final : public nsIObserver,
   bool GetIsCreatingPrintPreview() const { return mIsCreatingPrintPreview; }
 
   std::tuple<nsPageSequenceFrame*, int32_t> GetSeqFrameAndCountPages();
-
-  void TurnScriptingOn(bool aDoTurnOn);
 
   bool PrePrintPage();
   bool PrintPage(nsPrintObject* aPOect, bool& aInRange);
@@ -207,20 +207,17 @@ class nsPrintJob final : public nsIObserver,
 
 
 
-  static void GetDisplayTitleAndURL(mozilla::dom::Document& aDoc,
-                                    nsIPrintSettings* aSettings,
+  static void GetDisplayTitleAndURL(Document& aDoc, nsIPrintSettings* aSettings,
                                     DocTitleDefault aTitleDefault,
                                     nsAString& aTitle, nsAString& aURLStr);
 
-  MOZ_CAN_RUN_SCRIPT nsresult
-  CommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
-              nsIWebProgressListener* aWebProgressListener,
-              mozilla::dom::Document* aSourceDoc);
+  MOZ_CAN_RUN_SCRIPT nsresult CommonPrint(
+      bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
+      nsIWebProgressListener* aWebProgressListener, Document* aSourceDoc);
 
-  MOZ_CAN_RUN_SCRIPT nsresult
-  DoCommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
-                nsIWebProgressListener* aWebProgressListener,
-                mozilla::dom::Document* aSourceDoc);
+  MOZ_CAN_RUN_SCRIPT nsresult DoCommonPrint(
+      bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
+      nsIWebProgressListener* aWebProgressListener, Document* aSourceDoc);
 
   void FirePrintCompletionEvent();
 
@@ -258,7 +255,7 @@ class nsPrintJob final : public nsIObserver,
   
   
   
-  RefPtr<mozilla::dom::Document> mOriginalDoc;
+  RefPtr<Document> mOriginalDoc;
 
   
   nsCOMPtr<nsIDocumentViewerPrint> mDocViewerPrint;

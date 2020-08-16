@@ -193,34 +193,6 @@ static void DispatchEventToWindowTree(Document& aDoc, const nsAString& aEvent) {
   }
 }
 
-class nsScriptSuppressor {
- public:
-  explicit nsScriptSuppressor(nsPrintJob* aPrintJob)
-      : mPrintJob(aPrintJob), mSuppressed(false) {}
-
-  ~nsScriptSuppressor() { Unsuppress(); }
-
-  void Suppress() {
-    if (mPrintJob) {
-      mSuppressed = true;
-      mPrintJob->TurnScriptingOn(false);
-    }
-  }
-
-  void Unsuppress() {
-    if (mPrintJob && mSuppressed) {
-      mPrintJob->TurnScriptingOn(true);
-    }
-    mSuppressed = false;
-  }
-
-  void Disconnect() { mPrintJob = nullptr; }
-
- protected:
-  RefPtr<nsPrintJob> mPrintJob;
-  bool mSuppressed;
-};
-
 
 
 
@@ -769,13 +741,11 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  nsScriptSuppressor scriptSuppressor(this);
   
   
   
   
   if (!mIsCreatingPrintPreview || printingViaParent) {
-    scriptSuppressor.Suppress();
     bool printSilently = false;
     printData->mPrintSettings->GetPrintSilent(&printSilently);
     if (StaticPrefs::print_always_print_silent()) {
@@ -910,9 +880,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     bool notifyOnInit = false;
     ShowPrintProgress(false, notifyOnInit);
 
-    
-    TurnScriptingOn(false);
-
     if (!notifyOnInit) {
       SuppressPrintPreviewUserEvents();
       rv = InitPrintDocConstruction(false);
@@ -929,9 +896,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
       rv = InitPrintDocConstruction(false);
     }
   }
-
-  
-  scriptSuppressor.Disconnect();
 
   return NS_OK;
 }
@@ -2525,7 +2489,6 @@ bool nsPrintJob::DonePrintingPages(nsPrintObject* aPO, nsresult aResult) {
     
   }
 
-  TurnScriptingOn(true);
   SetIsPrinting(false);
 
   
@@ -2605,69 +2568,6 @@ nsPrintObject* nsPrintJob::FindSmallestSTF() {
 }
 
 
-void nsPrintJob::TurnScriptingOn(bool aDoTurnOn) {
-  if (mIsDoingPrinting && aDoTurnOn && mDocViewerPrint &&
-      mDocViewerPrint->GetIsPrintPreview()) {
-    
-    
-    return;
-  }
-
-  
-  
-  
-  RefPtr<nsPrintData> printData = mPrt ? mPrt : mPrtPreview;
-  if (!printData) {
-    return;
-  }
-
-  
-
-  for (uint32_t i = 0; i < printData->mPrintDocList.Length(); i++) {
-    nsPrintObject* po = printData->mPrintDocList.ElementAt(i);
-    MOZ_ASSERT(po);
-
-    Document* doc = po->mDocument;
-    if (!doc) {
-      continue;
-    }
-
-    if (nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow()) {
-      nsCOMPtr<nsIGlobalObject> go = window->AsGlobal();
-      NS_WARNING_ASSERTION(go->HasJSGlobal(), "Window has no global");
-      nsresult propThere = NS_PROPTABLE_PROP_NOT_THERE;
-      doc->GetProperty(nsGkAtoms::scriptEnabledBeforePrintOrPreview,
-                       &propThere);
-      if (aDoTurnOn) {
-        if (propThere != NS_PROPTABLE_PROP_NOT_THERE) {
-          doc->RemoveProperty(nsGkAtoms::scriptEnabledBeforePrintOrPreview);
-          if (go->HasJSGlobal()) {
-            xpc::Scriptability::Get(go->GetGlobalJSObjectPreserveColor())
-                .Unblock();
-          }
-          window->Resume();
-        }
-      } else {
-        
-        
-        
-        if (propThere == NS_PROPTABLE_PROP_NOT_THERE) {
-          
-          
-          doc->SetProperty(nsGkAtoms::scriptEnabledBeforePrintOrPreview,
-                           NS_INT32_TO_PTR(doc->IsScriptEnabled()));
-          if (go && go->HasJSGlobal()) {
-            xpc::Scriptability::Get(go->GetGlobalJSObjectPreserveColor())
-                .Block();
-          }
-          window->Suspend();
-        }
-      }
-    }
-  }
-}
-
-
 
 
 
@@ -2719,9 +2619,6 @@ nsresult nsPrintJob::FinishPrintPreview() {
 
 
     printData->OnEndPrinting();
-    
-    
-    TurnScriptingOn(true);
 
     return rv;
   }

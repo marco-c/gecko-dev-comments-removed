@@ -1534,14 +1534,6 @@ nsDocumentViewer::Close(nsISHEntry* aSHEntry) {
     mDocument->AddMutationObserver(mBFCachePreventionObserver);
   }
 
-#if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
-  
-  
-  if (GetIsPrintPreview() && mPrintJob) {
-    mPrintJob->TurnScriptingOn(true);
-  }
-#endif
-
 #ifdef NS_PRINTING
   
   
@@ -3423,7 +3415,6 @@ nsDocumentViewer::ExitPrintPreview() {
   }
 
 #  ifdef NS_PRINT_PREVIEW
-  mPrintJob->TurnScriptingOn(true);
   mPrintJob->Destroy();
   mPrintJob = nullptr;
 
