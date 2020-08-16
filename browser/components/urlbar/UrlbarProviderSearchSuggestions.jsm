@@ -87,7 +87,11 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     }
 
     
-    if (!queryContext.searchString.trim()) {
+    
+    if (
+      !queryContext.searchString.trim() &&
+      !this._isTokenOrRestrictionPresent(queryContext)
+    ) {
       return false;
     }
 
@@ -149,9 +153,18 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
 
 
-  _allowRemoteSuggestions(queryContext) {
+
+
+  _allowRemoteSuggestions(
+    queryContext,
+    searchString = queryContext.searchString
+  ) {
     
-    if (!this._allowSuggestions(queryContext)) {
+    if (
+      !this._allowSuggestions(queryContext) ||
+      
+      !searchString.trim()
+    ) {
       return false;
     }
 
@@ -167,15 +180,14 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     
     if (
       !!this._lastLowResultsSearchSuggestion &&
-      queryContext.searchString.length >
-        this._lastLowResultsSearchSuggestion.length &&
-      queryContext.searchString.startsWith(this._lastLowResultsSearchSuggestion)
+      searchString.length > this._lastLowResultsSearchSuggestion.length &&
+      searchString.startsWith(this._lastLowResultsSearchSuggestion)
     ) {
       return false;
     }
 
     
-    if (queryContext.searchString.length < 2) {
+    if (searchString.length < 2) {
       return false;
     }
 
@@ -210,8 +222,6 @@ class ProviderSearchSuggestions extends UrlbarProvider {
   async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
 
-    let trimmedOriginalSearchString = queryContext.searchString.trim();
-
     let aliasEngine = await this._maybeGetAlias(queryContext);
     if (!aliasEngine) {
       
@@ -229,11 +239,8 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       ? aliasEngine.query
       : UrlbarUtils.substringAt(
           queryContext.searchString,
-          queryContext.tokens[0].value
-        );
-    if (!query) {
-      return;
-    }
+          queryContext.tokens[0]?.value || ""
+        ).trim();
 
     let leadingRestrictionToken = null;
     if (
@@ -242,23 +249,6 @@ class ProviderSearchSuggestions extends UrlbarProvider {
         queryContext.tokens[0].type == UrlbarTokenizer.TYPE.RESTRICT_SEARCH)
     ) {
       leadingRestrictionToken = queryContext.tokens[0].value;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    let emptyQueryTokenAlias =
-      aliasEngine && aliasEngine.isTokenAlias && !aliasEngine.query;
-    let emptySearchRestriction =
-      trimmedOriginalSearchString.length <= 3 &&
-      leadingRestrictionToken == UrlbarTokenizer.RESTRICT.SEARCH &&
-      /\s*\S?$/.test(trimmedOriginalSearchString);
-    if (emptySearchRestriction || emptyQueryTokenAlias) {
-      return;
     }
 
     
@@ -329,14 +319,26 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
 
 
-  _getFormHistoryCount(queryContext) {
+
+
+  _getFormHistoryCount(queryContext, searchString = queryContext.searchString) {
     if (!this._allowSuggestions(queryContext)) {
       return 0;
     }
 
+    
+    
     let count = UrlbarPrefs.get("maxHistoricalSearchSuggestions");
     if (!count) {
       return 0;
+    }
+
+    
+    
+    
+    
+    if (!searchString) {
+      return queryContext.maxResults;
     }
 
     
@@ -350,17 +352,18 @@ class ProviderSearchSuggestions extends UrlbarProvider {
   }
 
   async _fetchSearchSuggestions(queryContext, engine, searchString, alias) {
-    if (!engine || !searchString) {
+    if (!engine) {
       return null;
     }
 
     this._suggestionsController = new SearchSuggestionController();
     this._suggestionsController.formHistoryParam = queryContext.formHistoryName;
     this._suggestionsController.maxLocalResults = this._getFormHistoryCount(
-      queryContext
+      queryContext,
+      searchString
     );
 
-    let allowRemote = this._allowRemoteSuggestions(queryContext);
+    let allowRemote = this._allowRemoteSuggestions(queryContext, searchString);
 
     
     
@@ -374,7 +377,8 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       searchString,
       queryContext.isPrivate,
       engine,
-      queryContext.userContextId
+      queryContext.userContextId,
+      this._isTokenOrRestrictionPresent(queryContext)
     );
 
     

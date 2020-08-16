@@ -301,63 +301,66 @@ FormAutoComplete.prototype = {
 
 
 
+
+
+
   autoCompleteSearchAsync(
-    aInputName,
+    aSearchParam,
     aUntrimmedSearchString,
     aField,
     aPreviousResult,
     aDatalistResult,
     aListener
   ) {
-    function sortBytotalScore(a, b) {
-      return b.totalScore - a.totalScore;
-    }
-
     
-    if (typeof aInputName === "object") {
-      aInputName = "";
+    if (typeof aSearchParam === "object") {
+      aSearchParam = "";
     }
     if (typeof aUntrimmedSearchString === "object") {
       aUntrimmedSearchString = "";
     }
 
+    let searchParams = aSearchParam.split("\x1F");
+    let inputName = searchParams.shift();
+    let params = {};
+    for (let p of searchParams) {
+      let [key, val] = p.split("=");
+      params[key] = val;
+    }
+
     let client = new FormHistoryClient({
       formField: aField,
-      inputName: aInputName,
+      inputName,
     });
+
+    function maybeNotifyListener(result) {
+      if (aListener) {
+        aListener.onSearchCompletion(result);
+      }
+    }
 
     
     let emptyResult =
       aDatalistResult ||
-      new FormAutoCompleteResult(
-        client,
-        [],
-        aInputName,
-        aUntrimmedSearchString
-      );
+      new FormAutoCompleteResult(client, [], inputName, aUntrimmedSearchString);
     if (!this._enabled) {
-      if (aListener) {
-        aListener.onSearchCompletion(emptyResult);
-      }
+      maybeNotifyListener(emptyResult);
       return;
     }
 
     
-    if (aInputName == "searchbar-history" && aField) {
+    
+    if (inputName == "searchbar-history" && aField) {
       this.log(
-        'autoCompleteSearch for input name "' + aInputName + '" is denied'
+        'autoCompleteSearch for input name "' + inputName + '" is denied'
       );
-      if (aListener) {
-        aListener.onSearchCompletion(emptyResult);
-      }
+      maybeNotifyListener(emptyResult);
       return;
     }
 
     if (aField && isAutocompleteDisabled(aField)) {
       this.log("autoCompleteSearch not allowed due to autcomplete=off");
-      if (aListener) {
-        aListener.onSearchCompletion(emptyResult);
-      }
+      maybeNotifyListener(emptyResult);
       return;
     }
 
@@ -435,7 +438,7 @@ FormAutoComplete.prototype = {
         );
         filteredEntries.push(entry);
       }
-      filteredEntries.sort(sortBytotalScore);
+      filteredEntries.sort((a, b) => b.totalScore - a.totalScore);
       wrappedResult.entries = filteredEntries;
 
       
@@ -459,9 +462,7 @@ FormAutoComplete.prototype = {
         wrappedResult._comments = comments;
       }
 
-      if (aListener) {
-        aListener.onSearchCompletion(result);
-      }
+      maybeNotifyListener(result);
     } else {
       this.log("Creating new autocomplete search result.");
 
@@ -470,7 +471,7 @@ FormAutoComplete.prototype = {
         ? new FormAutoCompleteResult(
             client,
             [],
-            aInputName,
+            inputName,
             aUntrimmedSearchString
           )
         : emptyResult;
@@ -488,15 +489,14 @@ FormAutoComplete.prototype = {
           result = this.mergeResults(result, aDatalistResult);
         }
 
-        if (aListener) {
-          aListener.onSearchCompletion(result);
-        }
+        maybeNotifyListener(result);
       };
 
       this.getAutoCompleteValues(
         client,
-        aInputName,
+        inputName,
         searchString,
+        params,
         processEntry
       );
     }
@@ -556,17 +556,22 @@ FormAutoComplete.prototype = {
 
 
 
-  getAutoCompleteValues(client, fieldName, searchString, callback) {
-    let params = {
-      agedWeight: this._agedWeight,
-      bucketSize: this._bucketSize,
-      expiryDate: 1000 * (Date.now() - this._expireDays * 24 * 60 * 60 * 1000),
-      fieldname: fieldName,
-      maxTimeGroupings: this._maxTimeGroupings,
-      timeGroupingSize: this._timeGroupingSize,
-      prefixWeight: this._prefixWeight,
-      boundaryWeight: this._boundaryWeight,
-    };
+
+  getAutoCompleteValues(client, fieldName, searchString, params, callback) {
+    params = Object.assign(
+      {
+        agedWeight: this._agedWeight,
+        bucketSize: this._bucketSize,
+        expiryDate:
+          1000 * (Date.now() - this._expireDays * 24 * 60 * 60 * 1000),
+        fieldname: fieldName,
+        maxTimeGroupings: this._maxTimeGroupings,
+        timeGroupingSize: this._timeGroupingSize,
+        prefixWeight: this._prefixWeight,
+        boundaryWeight: this._boundaryWeight,
+      },
+      params
+    );
 
     this.stopAutoCompleteSearch();
     client.requestAutoCompleteResults(searchString, params, entries => {

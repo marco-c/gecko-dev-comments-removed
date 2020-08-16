@@ -208,7 +208,15 @@ SearchSuggestionController.prototype = {
 
 
 
-  fetch(searchTerm, privateMode, engine, userContextId = 0) {
+
+
+  fetch(
+    searchTerm,
+    privateMode,
+    engine,
+    userContextId = 0,
+    restrictToEngine = false
+  ) {
     
     
     
@@ -256,7 +264,12 @@ SearchSuggestionController.prototype = {
 
     
     if (this.maxLocalResults) {
-      promises.push(this._fetchFormHistory(searchTerm));
+      promises.push(
+        this._fetchFormHistory(
+          searchTerm,
+          restrictToEngine ? engine.name : null
+        )
+      );
     }
 
     function handleRejection(reason) {
@@ -289,7 +302,7 @@ SearchSuggestionController.prototype = {
 
   
 
-  _fetchFormHistory(searchTerm) {
+  _fetchFormHistory(searchTerm, source) {
     return new Promise(resolve => {
       let acSearchObserver = {
         
@@ -336,9 +349,13 @@ SearchSuggestionController.prototype = {
       let formHistory = Cc[
         "@mozilla.org/autocomplete/search;1?name=form-history"
       ].createInstance(Ci.nsIAutoCompleteSearch);
+      let params = this.formHistoryParam || DEFAULT_FORM_HISTORY_PARAM;
+      if (source) {
+        params += "\x1Fsource=" + source;
+      }
       formHistory.startSearch(
         searchTerm,
-        this.formHistoryParam || DEFAULT_FORM_HISTORY_PARAM,
+        params,
         this._formHistoryResult,
         acSearchObserver
       );

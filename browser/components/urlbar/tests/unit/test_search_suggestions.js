@@ -128,9 +128,11 @@ add_task(async function setup() {
 
   
   let context = createContext(SEARCH_STRING, { isPrivate: false });
-  for (let result of makeExpectedFormHistoryResults(context, 2)) {
-    await updateSearchHistory("bump", result.payload.suggestion);
-  }
+  let entries = makeExpectedFormHistoryResults(context, 2).map(r => ({
+    value: r.payload.suggestion,
+    source: ENGINE_NAME,
+  }));
+  await UrlbarTestUtils.formHistory.add(entries);
 });
 
 add_task(async function disabled_urlbarSuggestions() {
@@ -430,6 +432,7 @@ add_task(async function restrictToken() {
         query: "",
         heuristic: true,
       }),
+      ...makeExpectedFormHistoryResults(context),
     ],
   });
   
@@ -444,10 +447,12 @@ add_task(async function restrictToken() {
         query: "",
         heuristic: true,
       }),
+      ...makeExpectedFormHistoryResults(context),
     ],
   });
   
-  context = createContext(`${UrlbarTokenizer.RESTRICT.SEARCH}a`, {
+  
+  context = createContext(`${UrlbarTokenizer.RESTRICT.SEARCH}h`, {
     isPrivate: false,
   });
   await check_results({
@@ -455,13 +460,17 @@ add_task(async function restrictToken() {
     matches: [
       makeSearchResult(context, {
         engineName: ENGINE_NAME,
-        query: "a",
+        query: "h",
         heuristic: true,
+      }),
+      ...makeExpectedSuggestionResults(context, {
+        suggestionPrefix: "h",
+        query: "h",
       }),
     ],
   });
   
-  context = createContext(`${UrlbarTokenizer.RESTRICT.SEARCH} a`, {
+  context = createContext(`${UrlbarTokenizer.RESTRICT.SEARCH} h`, {
     isPrivate: false,
   });
   await check_results({
@@ -469,8 +478,12 @@ add_task(async function restrictToken() {
     matches: [
       makeSearchResult(context, {
         engineName: ENGINE_NAME,
-        query: "a",
+        query: "h",
         heuristic: true,
+      }),
+      ...makeExpectedSuggestionResults(context, {
+        suggestionPrefix: "h",
+        query: "h",
       }),
     ],
   });
@@ -958,7 +971,7 @@ add_task(async function avoid_remote_url_suggestions_1() {
 
   const query = "test";
 
-  await updateSearchHistory("bump", `${query}.com`);
+  await UrlbarTestUtils.formHistory.add([`${query}.com`]);
 
   let context = createContext(query, { isPrivate: false });
   await check_results({
@@ -1554,24 +1567,3 @@ add_task(async function formHistory() {
   await PlacesUtils.history.clear();
   Services.prefs.clearUserPref(MAX_FORM_HISTORY_PREF);
 });
-
-function updateSearchHistory(op, value) {
-  return new Promise((resolve, reject) => {
-    FormHistory.update(
-      { op, fieldname: "searchbar-history", value },
-      {
-        handleError(error) {
-          do_throw("Error occurred updating form history: " + error);
-          reject(error);
-        },
-        handleCompletion(reason) {
-          if (reason) {
-            reject(reason);
-          } else {
-            resolve();
-          }
-        },
-      }
-    );
-  });
-}
