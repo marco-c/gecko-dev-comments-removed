@@ -105,6 +105,7 @@ class UrlbarInput {
     this._suppressStartQuery = false;
     this._suppressPrimaryAdjustment = false;
     this._untrimmedValue = "";
+    this._searchModesByBrowser = new WeakMap();
 
     UrlbarPrefs.addObserver(this);
 
@@ -1167,10 +1168,21 @@ class UrlbarInput {
 
 
 
-  setSearchMode(engineOrSource) {
+
+
+
+
+
+
+
+
+
+
+
+  setSearchMode(value) {
     if (!UrlbarPrefs.get("update2")) {
       
-      engineOrSource = null;
+      value = null;
     }
 
     this._searchModeIndicatorTitle.textContent = "";
@@ -1178,25 +1190,36 @@ class UrlbarInput {
     this._searchModeIndicatorTitle.removeAttribute("data-l10n-id");
     this._searchModeLabel.removeAttribute("data-l10n-id");
 
-    if (!engineOrSource) {
+    
+    if (!value) {
       this.searchMode = null;
     } else if (
-      engineOrSource instanceof Ci.nsISearchEngine ||
-      engineOrSource instanceof SearchEngine
+      value instanceof Ci.nsISearchEngine ||
+      value instanceof SearchEngine
     ) {
       this.searchMode = {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        engineName: engineOrSource.name,
+        engineName: value.name,
       };
-      this._searchModeIndicatorTitle.textContent = engineOrSource.name;
-      this._searchModeLabel.textContent = engineOrSource.name;
-    } else if (typeof engineOrSource == "number") {
-      let sourceName = UrlbarUtils.getResultSourceName(engineOrSource);
+    } else if (typeof value == "number") {
+      this.searchMode = { source: value };
+    } else if (typeof value == "object") {
+      this.searchMode = value;
+    } else {
+      Cu.reportError(`Unexpected search mode value: ${value}`);
+      this.searchMode = null;
+    }
+
+    
+    if (this.searchMode?.engineName) {
+      this._searchModeIndicatorTitle.textContent = this.searchMode.engineName;
+      this._searchModeLabel.textContent = this.searchMode.engineName;
+    } else if (this.searchMode?.source) {
+      let sourceName = UrlbarUtils.getResultSourceName(this.searchMode.source);
       if (!sourceName) {
-        Cu.reportError(`Unrecognized source: ${engineOrSource}`);
+        Cu.reportError(`Unrecognized source: ${this.searchMode.source}`);
         this.searchMode = null;
       } else {
-        this.searchMode = { source: engineOrSource };
         let l10nID = `urlbar-search-mode-${sourceName}`;
         this.document.l10n.setAttributes(
           this._searchModeIndicatorTitle,
@@ -1204,8 +1227,9 @@ class UrlbarInput {
         );
         this.document.l10n.setAttributes(this._searchModeLabel, l10nID);
       }
-    } else {
-      Cu.reportError(`Unexpected search mode: ${engineOrSource}`);
+    } else if (this.searchMode) {
+      Cu.reportError(`Unexpected search mode object: ${this.searchMode}`);
+      this.searchMode = null;
     }
 
     if (this.searchMode) {
@@ -1215,8 +1239,13 @@ class UrlbarInput {
         this.value = "";
         this.setPageProxyState("invalid", true);
       }
+      this._searchModesByBrowser.set(
+        this.window.gBrowser.selectedBrowser,
+        this.searchMode
+      );
     } else {
       this.removeAttribute("searchmode");
+      this._searchModesByBrowser.delete(this.window.gBrowser.selectedBrowser);
     }
   }
 
@@ -1420,6 +1449,12 @@ class UrlbarInput {
     this._gotFocusChange = this._gotTabSelect = false;
 
     this._resetSearchState();
+
+    
+    let searchMode = this._searchModesByBrowser.get(
+      this.window.gBrowser.selectedBrowser
+    );
+    this.setSearchMode(searchMode);
 
     
     
