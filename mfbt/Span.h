@@ -366,7 +366,6 @@ class extent_type<dynamic_extent> {
 
 
 
-
 template <class ElementType, size_t Extent >
 class Span {
  public:
@@ -926,83 +925,6 @@ inline Span<const char> AsChars(Span<const uint8_t> s) {
 
 inline Span<char> AsWritableChars(Span<uint8_t> s) {
   return {reinterpret_cast<char*>(s.data()), s.size()};
-}
-
-
-
-
-
-
-
-template <class ElementType>
-Span<ElementType> MakeSpan(ElementType* aPtr,
-                           typename Span<ElementType>::index_type aLength) {
-  return Span<ElementType>(aPtr, aLength);
-}
-
-
-
-
-template <class ElementType>
-Span<ElementType> MakeSpan(ElementType* aStartPtr, ElementType* aEndPtr) {
-  return Span<ElementType>(aStartPtr, aEndPtr);
-}
-
-
-
-
-
-
-
-
-
-
-template <
-    class ElementType, size_t N,
-    class = std::enable_if_t<!std::is_same_v<ElementType, const char> &&
-                             !std::is_same_v<ElementType, const char16_t>>>
-Span<ElementType> MakeSpan(ElementType (&aArr)[N]) {
-  return Span<ElementType>(aArr, N);
-}
-
-
-
-
-template <class ElementType, size_t N>
-Span<ElementType> MakeSpan(mozilla::Array<ElementType, N>& aArr) {
-  return aArr;
-}
-
-
-
-
-template <class ElementType, size_t N>
-Span<const ElementType> MakeSpan(const mozilla::Array<ElementType, N>& arr) {
-  return arr;
-}
-
-
-
-
-template <class Container>
-Span<typename Container::value_type> MakeSpan(Container& cont) {
-  return Span<typename Container::value_type>(cont);
-}
-
-
-
-
-template <class Container>
-Span<const typename Container::value_type> MakeSpan(const Container& cont) {
-  return Span<const typename Container::value_type>(cont);
-}
-
-
-
-
-template <class Ptr>
-Span<typename Ptr::element_type> MakeSpan(Ptr& aPtr, size_t aLength) {
-  return Span<typename Ptr::element_type>(aPtr, aLength);
 }
 
 
