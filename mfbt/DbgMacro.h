@@ -126,7 +126,7 @@ std::ostream& operator<<(std::ostream& aOut,
 template <typename T, size_t N,
           typename = std::enable_if_t<!std::is_same<T, char>::value>>
 std::ostream& operator<<(std::ostream& aOut, const T (&aArray)[N]) {
-  return aOut << mozilla::MakeSpan(aArray);
+  return aOut << mozilla::Span(aArray);
 }
 
 

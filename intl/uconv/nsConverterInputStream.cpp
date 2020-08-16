@@ -196,8 +196,8 @@ uint32_t nsConverterInputStream::Fill(nsresult* aErrorCode) {
                "mByteData is lying to us somewhere");
 
   
-  auto src = AsBytes(MakeSpan(mByteData));
-  auto dst = MakeSpan(mUnicharData);
+  auto src = AsBytes(Span(mByteData));
+  auto dst = Span(mUnicharData);
   
   
   mUnicharDataLength = 0;

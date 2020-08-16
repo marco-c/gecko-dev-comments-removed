@@ -172,7 +172,7 @@ void DocumentOrShadowRoot::SetAdoptedStyleSheets(
   mAdoptedStyleSheets.SetCapacity(aAdoptedStyleSheets.Length());
 
   
-  for (const auto& sheet : MakeSpan(aAdoptedStyleSheets).From(commonPrefix)) {
+  for (const auto& sheet : Span(aAdoptedStyleSheets).From(commonPrefix)) {
     if (MOZ_UNLIKELY(!set.EnsureInserted(sheet))) {
       
       

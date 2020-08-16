@@ -256,15 +256,14 @@ class InflatedChar16Sequence<mozilla::Utf8Unit> {
 
 
 inline void CopyAndInflateChars(char16_t* dst, const char* src, size_t srclen) {
-  mozilla::ConvertLatin1toUtf16(mozilla::MakeSpan(src, srclen),
-                                mozilla::MakeSpan(dst, srclen));
+  mozilla::ConvertLatin1toUtf16(mozilla::Span(src, srclen),
+                                mozilla::Span(dst, srclen));
 }
 
 inline void CopyAndInflateChars(char16_t* dst, const JS::Latin1Char* src,
                                 size_t srclen) {
-  mozilla::ConvertLatin1toUtf16(
-      mozilla::AsChars(mozilla::MakeSpan(src, srclen)),
-      mozilla::MakeSpan(dst, srclen));
+  mozilla::ConvertLatin1toUtf16(mozilla::AsChars(mozilla::Span(src, srclen)),
+                                mozilla::Span(dst, srclen));
 }
 
 

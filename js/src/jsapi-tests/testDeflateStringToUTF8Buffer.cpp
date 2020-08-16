@@ -16,7 +16,7 @@ BEGIN_TEST(test_DeflateStringToUTF8Buffer) {
   
 
   char actual[100];
-  auto span = mozilla::MakeSpan(actual);
+  auto span = mozilla::Span(actual);
 
   
   

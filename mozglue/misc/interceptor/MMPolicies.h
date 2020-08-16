@@ -286,8 +286,8 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
     }
 
     
-    return Some(MakeSpan(reinterpret_cast<const uint8_t*>(lowerBound.value()),
-                         upperBound.value() - lowerBound.value()));
+    return Some(Span(reinterpret_cast<const uint8_t*>(lowerBound.value()),
+                     upperBound.value() - lowerBound.value()));
   }
 
   

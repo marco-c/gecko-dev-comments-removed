@@ -1278,8 +1278,8 @@ void nsLookAndFeel::EnsureInit() {
   
   ButtonLayout buttonLayout[TOOLBAR_BUTTONS];
 
-  size_t activeButtons = GetGtkHeaderBarButtonLayout(MakeSpan(buttonLayout),
-                                                     &mCSDReversedPlacement);
+  size_t activeButtons =
+      GetGtkHeaderBarButtonLayout(Span(buttonLayout), &mCSDReversedPlacement);
   for (size_t i = 0; i < activeButtons; i++) {
     
     

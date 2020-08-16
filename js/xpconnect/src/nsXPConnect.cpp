@@ -946,7 +946,7 @@ nsXPConnect::WriteScript(nsIObjectOutputStream* stream, JSContext* cx,
   rv = stream->Write32(size);
   if (NS_SUCCEEDED(rv)) {
     
-    rv = stream->WriteBytes(MakeSpan(buffer.begin(), size));
+    rv = stream->WriteBytes(Span(buffer.begin(), size));
   }
 
   return rv;

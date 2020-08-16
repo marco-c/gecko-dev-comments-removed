@@ -743,7 +743,7 @@ nsresult ProxyAutoConfig::SetupJS() {
     
     const char* scriptData = this->mConcatenatedPACData.get();
     size_t scriptLength = this->mConcatenatedPACData.Length();
-    if (mozilla::IsUtf8(mozilla::MakeSpan(scriptData, scriptLength))) {
+    if (mozilla::IsUtf8(mozilla::Span(scriptData, scriptLength))) {
       JS::SourceText<Utf8Unit> srcBuf;
       if (!srcBuf.init(cx, scriptData, scriptLength,
                        JS::SourceOwnership::Borrowed)) {

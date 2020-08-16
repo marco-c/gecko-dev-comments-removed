@@ -134,7 +134,7 @@ class DynamicResampler final {
     }
 
     if (mInRate == mOutRate) {
-      mInternalInBuffer[aChannelIndex].Read(MakeSpan(aOutBuffer, *aOutFrames));
+      mInternalInBuffer[aChannelIndex].Read(Span(aOutBuffer, *aOutFrames));
       
       
       
@@ -176,7 +176,7 @@ class DynamicResampler final {
     MOZ_ASSERT(aChannelIndex >= 0);
     MOZ_ASSERT(aChannelIndex <= mChannels);
     MOZ_ASSERT((uint32_t)aChannelIndex <= mInternalInBuffer.Length());
-    mInternalInBuffer[aChannelIndex].Write(MakeSpan(aInBuffer, aInFrames));
+    mInternalInBuffer[aChannelIndex].Write(Span(aInBuffer, aInFrames));
   }
 
   void WarmUpResampler(bool aSkipLatency);

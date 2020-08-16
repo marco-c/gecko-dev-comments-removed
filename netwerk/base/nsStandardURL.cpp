@@ -105,7 +105,7 @@ int32_t nsStandardURL::nsSegmentEncoder::EncodeSegmentCount(
 
   uint32_t origLen = aOut.Length();
 
-  Span<const char> span = MakeSpan(aStr + aSeg.mPos, aSeg.mLen);
+  Span<const char> span = Span(aStr + aSeg.mPos, aSeg.mLen);
 
   
   
@@ -115,7 +115,7 @@ int32_t nsStandardURL::nsSegmentEncoder::EncodeSegmentCount(
     if (upTo != span.Length()) {
       
       char bufferArr[512];
-      Span<char> buffer = MakeSpan(bufferArr);
+      Span<char> buffer = Span(bufferArr);
 
       auto encoder = mEncoding->NewEncoder();
 

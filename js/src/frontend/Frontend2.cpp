@@ -333,8 +333,8 @@ UniquePtr<ImmutableScriptData> ConvertImmutableScriptData(
       smooshScriptData.nslots, GCThingIndex(smooshScriptData.body_scope_index),
       smooshScriptData.num_ic_entries, smooshScriptData.num_bytecode_type_sets,
       isFunction, smooshScriptData.fun_length,
-      mozilla::MakeSpan(smooshScriptData.bytecode.data,
-                        smooshScriptData.bytecode.len),
+      mozilla::Span(smooshScriptData.bytecode.data,
+                    smooshScriptData.bytecode.len),
       mozilla::Span<const SrcNote>(), mozilla::Span<const uint32_t>(),
       scopeNotes, mozilla::Span<const TryNote>());
 }

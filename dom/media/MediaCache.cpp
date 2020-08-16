@@ -2009,13 +2009,13 @@ void MediaCacheStream::NotifyDataReceived(uint32_t aLoadID, uint32_t aCount,
   
   bool cacheUpdated = false;
 
-  auto source = MakeSpan<const uint8_t>(aData, aCount);
+  auto source = Span<const uint8_t>(aData, aCount);
 
   
   while (!source.IsEmpty()) {
     
-    auto partial = MakeSpan<const uint8_t>(mPartialBlockBuffer.get(),
-                                           OffsetInBlock(mChannelOffset));
+    auto partial = Span<const uint8_t>(mPartialBlockBuffer.get(),
+                                       OffsetInBlock(mChannelOffset));
 
     if (partial.IsEmpty()) {
       
@@ -2037,8 +2037,8 @@ void MediaCacheStream::NotifyDataReceived(uint32_t aLoadID, uint32_t aCount,
       cacheUpdated = true;
     } else {
       
-      auto buf = MakeSpan<uint8_t>(mPartialBlockBuffer.get() + partial.Length(),
-                                   remaining);
+      auto buf = Span<uint8_t>(mPartialBlockBuffer.get() + partial.Length(),
+                               remaining);
       memcpy(buf.Elements(), source.Elements(), source.Length());
       mChannelOffset += source.Length();
       break;
@@ -2078,7 +2078,7 @@ void MediaCacheStream::FlushPartialBlockInternal(AutoLock& aLock,
     
     memset(mPartialBlockBuffer.get() + blockOffset, 0,
            BLOCK_SIZE - blockOffset);
-    auto data = MakeSpan<const uint8_t>(mPartialBlockBuffer.get(), BLOCK_SIZE);
+    auto data = Span<const uint8_t>(mPartialBlockBuffer.get(), BLOCK_SIZE);
     mMediaCache->AllocateAndWriteBlock(
         aLock, this, blockIndex,
         mMetadataInPartialBlockBuffer ? MODE_METADATA : MODE_PLAYBACK, data);
@@ -2458,7 +2458,7 @@ uint32_t MediaCacheStream::ReadPartialBlock(AutoLock&, int64_t aOffset,
     return 0;
   }
 
-  auto source = MakeSpan<const uint8_t>(
+  auto source = Span<const uint8_t>(
       mPartialBlockBuffer.get() + OffsetInBlock(aOffset),
       OffsetInBlock(mChannelOffset) - OffsetInBlock(aOffset));
   
@@ -2529,7 +2529,7 @@ nsresult MediaCacheStream::Read(AutoLock& aLock, char* aBuffer, uint32_t aCount,
   auto streamOffset = mStreamOffset;
 
   
-  auto buffer = MakeSpan<char>(aBuffer, aCount);
+  auto buffer = Span<char>(aBuffer, aCount);
 
   
   while (!buffer.IsEmpty()) {
@@ -2634,7 +2634,7 @@ nsresult MediaCacheStream::ReadFromCache(char* aBuffer, int64_t aOffset,
   AutoLock lock(mMediaCache->Monitor());
 
   
-  auto buffer = MakeSpan<char>(aBuffer, aCount);
+  auto buffer = Span<char>(aBuffer, aCount);
 
   
   int64_t streamOffset = aOffset;

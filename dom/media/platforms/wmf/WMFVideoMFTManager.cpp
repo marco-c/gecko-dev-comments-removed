@@ -727,7 +727,7 @@ WMFVideoMFTManager::Input(MediaRawData* aSample) {
     
     
     int profile =
-        VPXDecoder::GetVP9Profile(MakeSpan(aSample->Data(), aSample->Size()));
+        VPXDecoder::GetVP9Profile(Span(aSample->Data(), aSample->Size()));
     if (profile != 0 && profile != 2) {
       return E_FAIL;
     }
