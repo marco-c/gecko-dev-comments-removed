@@ -447,7 +447,11 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   mozilla::StyleGenericFontFamily GetDefaultGeneric(eFontPrefLang aLang);
 
   
-  bool IsFontFamilyWhitelistActive();
+  
+  
+  bool IsFontFamilyWhitelistActive() const {
+    return mFontFamilyWhitelistActive;
+  };
 
   static void FontWhitelistPrefChanged(const char* aPref, void* aClosure);
 
