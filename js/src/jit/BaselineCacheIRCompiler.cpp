@@ -1477,9 +1477,7 @@ bool BaselineCacheIRCompiler::emitIsArrayResult(ValOperandId inputId) {
 
   Label isNotArray;
   
-  masm.branchTestObject(Assembler::NotEqual, val, &isNotArray);
-
-  masm.unboxObject(val, scratch1);
+  masm.fallibleUnboxObject(val, scratch1, &isNotArray);
 
   Label isArray;
   masm.branchTestObjClass(Assembler::Equal, scratch1, &ArrayObject::class_,
@@ -2571,8 +2569,7 @@ bool BaselineCacheIRCompiler::emitGuardFunApply(Int32OperandId argcId,
     } break;
     case CallFlags::FunApplyArray: {
       
-      masm.branchTestObject(Assembler::NotEqual, argsAddr, failure->label());
-      masm.unboxObject(argsAddr, scratch);
+      masm.fallibleUnboxObject(argsAddr, scratch, failure->label());
       const JSClass* clasp = &ArrayObject::class_;
       masm.branchTestObjClass(Assembler::NotEqual, scratch, clasp, scratch2,
                               scratch, failure->label());
