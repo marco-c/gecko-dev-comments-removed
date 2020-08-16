@@ -444,6 +444,9 @@ var SidebarUI = {
 
 
   async show(commandID, triggerNode) {
+    let panelType = commandID.substring(4, commandID.length - 7);
+    Services.telemetry.keyedScalarAdd("sidebar.opened", panelType, 1);
+
     
     
     if (!this.sidebars.has(commandID)) {
@@ -470,6 +473,9 @@ var SidebarUI = {
 
 
   async showInitially(commandID) {
+    let panelType = commandID.substring(4, commandID.length - 7);
+    Services.telemetry.keyedScalarAdd("sidebar.opened", panelType, 1);
+
     
     
     if (!this.sidebars.has(commandID)) {
