@@ -71,7 +71,7 @@ NS_IMETHODIMP nsNativeAppSupportCocoa::Start(bool* _retval) {
   
   
   
-  if (major < 10 || minor < 6) {
+  if (major < 10 || (major == 10 && minor < 12)) {
     NSLog(@"Minimum OS version requirement not met!");
     return NS_OK;
   }
