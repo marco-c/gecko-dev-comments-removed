@@ -2219,13 +2219,19 @@ nsRect nsLayoutUtils::GetScrolledRect(nsIFrame* aScrolledFrame,
           y1 = aScrolledFrameOverflowArea.y,
           y2 = aScrolledFrameOverflowArea.YMost();
 
-  bool horizontal = !wm.IsVertical();
+  const bool isHorizontalWM = !wm.IsVertical();
+  const bool isVerticalWM = wm.IsVertical();
+  bool isInlineFlowFromTopOrLeft = !wm.IsInlineReversed();
+  bool isBlockFlowFromTopOrLeft = isHorizontalWM || wm.IsVerticalLR();
+
+  
+  
 
   
   
   
-  
-  if ((horizontal && !wm.IsInlineReversed()) || wm.IsVerticalLR()) {
+  if ((isHorizontalWM && isInlineFlowFromTopOrLeft) ||
+      (isVerticalWM && isBlockFlowFromTopOrLeft)) {
     if (x1 < 0) {
       x1 = 0;
     }
@@ -2248,7 +2254,8 @@ nsRect nsLayoutUtils::GetScrolledRect(nsIFrame* aScrolledFrame,
   
   
   
-  if (horizontal || !wm.IsInlineReversed()) {
+  if ((isHorizontalWM && isBlockFlowFromTopOrLeft) ||
+      (isVerticalWM && isInlineFlowFromTopOrLeft)) {
     if (y1 < 0) {
       y1 = 0;
     }
