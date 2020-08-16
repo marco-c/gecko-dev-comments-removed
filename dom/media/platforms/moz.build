@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 EXPORTS += [
     'agnostic/AgnosticDecoderModule.h',
@@ -54,7 +54,7 @@ if CONFIG['MOZ_WMF']:
     DIRS += [ 'wmf' ];
 
 if CONFIG['MOZ_FFVPX'] or CONFIG['MOZ_FFMPEG']:
-    # common code to either FFmpeg or FFVPX
+    
     EXPORTS += [
         'ffmpeg/FFmpegRDFTTypes.h',
     ]
@@ -109,6 +109,13 @@ if CONFIG['MOZ_APPLEMEDIA']:
       '-framework AudioToolbox',
       '-framework CoreMedia',
       '-framework VideoToolbox',
+      
+      
+      
+      
+      '-Wl,-U,_VTRegisterSupplementalVideoDecoderIfAvailable',
+      
+      '-Wl,-U,_VTIsHardwareDecodeSupported',
   ]
 
 include('/ipc/chromium/chromium-config.mozbuild')
@@ -134,5 +141,5 @@ FINAL_LIBRARY = 'xul'
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     CXXFLAGS += ['-Wno-error=shadow']
 
-# Add libFuzzer configuration directives
+
 include('/tools/fuzzing/libfuzzer-config.mozbuild')
