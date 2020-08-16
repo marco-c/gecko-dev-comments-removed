@@ -71,6 +71,8 @@ class FunctionIndex : public TypedIndex<FunctionIndexType> {
   using Base::Base;
 };
 
+using ObjLiteralIndex = TypedIndex<ObjLiteralCreationData>;
+
 FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
                                    GeneratorKind generatorKind,
                                    FunctionAsyncKind asyncKind,
@@ -421,9 +423,9 @@ using ScriptAtom = JSAtom*;
 
 
 using ScriptThingVariant =
-    mozilla::Variant<ScriptAtom, NullScriptThing, BigIntIndex,
-                     ObjLiteralCreationData, RegExpIndex, ScopeIndex,
-                     FunctionIndex, EmptyGlobalScopeType>;
+    mozilla::Variant<ScriptAtom, NullScriptThing, BigIntIndex, ObjLiteralIndex,
+                     RegExpIndex, ScopeIndex, FunctionIndex,
+                     EmptyGlobalScopeType>;
 
 
 using ScriptThingsVector = Vector<ScriptThingVariant>;

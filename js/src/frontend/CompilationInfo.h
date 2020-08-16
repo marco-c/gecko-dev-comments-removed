@@ -180,6 +180,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   
   Vector<RegExpCreationData> regExpData;
   Vector<BigIntCreationData> bigIntData;
+  Vector<ObjLiteralCreationData> objLiteralData;
 
   
   
@@ -247,6 +248,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
         allocScope(alloc),
         regExpData(cx),
         bigIntData(cx),
+        objLiteralData(cx),
         functions(cx),
         funcData(cx),
         enclosingScope(cx),
