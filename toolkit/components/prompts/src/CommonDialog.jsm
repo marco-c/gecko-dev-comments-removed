@@ -26,11 +26,7 @@ CommonDialog.prototype = {
   soundID: undefined,
   focusTimer: null,
 
-  
-
-
-
-  async onLoad(commonDialogEl = null) {
+  onLoad(xulDialog) {
     switch (this.args.promptType) {
       case "alert":
       case "alertCheck":
@@ -98,11 +94,8 @@ CommonDialog.prototype = {
         throw new Error("unknown dialog type");
     }
 
-    if (commonDialogEl) {
-      commonDialogEl.setAttribute(
-        "windowtype",
-        "prompt:" + this.args.promptType
-      );
+    if (xulDialog) {
+      xulDialog.setAttribute("windowtype", "prompt:" + this.args.promptType);
     }
 
     
@@ -110,8 +103,8 @@ CommonDialog.prototype = {
     
     let infoTitle = this.ui.infoTitle;
     infoTitle.appendChild(infoTitle.ownerDocument.createTextNode(title));
-    if (commonDialogEl) {
-      commonDialogEl.ownerDocument.title = title;
+    if (xulDialog) {
+      xulDialog.ownerDocument.title = title;
     }
 
     
@@ -176,29 +169,15 @@ CommonDialog.prototype = {
     let b = this.args.defaultButtonNum || 0;
     let button = this.ui["button" + b];
 
-    if (commonDialogEl) {
-      commonDialogEl.defaultButton = ["accept", "cancel", "extra1", "extra2"][
-        b
-      ];
+    if (xulDialog) {
+      xulDialog.defaultButton = ["accept", "cancel", "extra1", "extra2"][b];
     } else {
       button.setAttribute("default", "true");
     }
 
-    let focusReady;
     if (!this.ui.promptContainer || !this.ui.promptContainer.hidden) {
       
-
-      if (commonDialogEl && this.ui.prompt.docShell.chromeEventHandler) {
-        
-        
-        focusReady = new Promise(resolve =>
-          this.ui.prompt.addEventListener("load", resolve, { once: true })
-        ).then(() => {
-          this.setDefaultFocus(true);
-        });
-      } else {
-        this.setDefaultFocus(true);
-      }
+      this.setDefaultFocus(true);
     }
 
     if (this.args.enableDelay) {
@@ -210,9 +189,8 @@ CommonDialog.prototype = {
     }
 
     
-    
     try {
-      if (commonDialogEl && this.soundID) {
+      if (xulDialog && this.soundID) {
         Cc["@mozilla.org/sound;1"]
           .createInstance(Ci.nsISound)
           .playEventSound(this.soundID);
@@ -221,10 +199,7 @@ CommonDialog.prototype = {
       Cu.reportError("Couldn't play common dialog event sound: " + e);
     }
 
-    if (commonDialogEl) {
-      
-      
-      await focusReady;
+    if (xulDialog) {
       
       Services.obs.notifyObservers(this.ui.prompt, "common-dialog-loaded");
     } else {
