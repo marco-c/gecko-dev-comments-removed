@@ -2669,6 +2669,16 @@ class HTMLEditor final : public TextEditor,
 
 
 
+    [[nodiscard]] Element* ScanEmptyBlockInclusiveAncestor(
+        const HTMLEditor& aHTMLEditor, nsIContent& aStartContent,
+        Element& aEditingHostElement);
+
+    
+
+
+
+
+
 
 
 
@@ -2684,9 +2694,10 @@ class HTMLEditor final : public TextEditor,
 
 
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-    Run(HTMLEditor& aHTMLEditor, nsIContent& aStartContent,
-        Element& aEditingHostElement,
-        nsIEditor::EDirection aDirectionAndAmount);
+    Run(HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount);
+
+   private:
+    RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
   };
 
   class MOZ_STACK_CLASS AutoBlockElementsJoiner final {
