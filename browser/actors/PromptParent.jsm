@@ -106,10 +106,10 @@ class PromptParent extends JSWindowActorParent {
 
     switch (message.name) {
       case "Prompt:Open": {
-        if (args.modalType === Ci.nsIPrompt.MODAL_TYPE_WINDOW) {
-          return this.openWindowPrompt(args);
+        if (args.modalType === Ci.nsIPrompt.MODAL_TYPE_CONTENT) {
+          return this.openContentPrompt(args, id);
         }
-        return this.openTabPrompt(args, id);
+        return this.openChromePrompt(args);
       }
     }
 
@@ -131,7 +131,7 @@ class PromptParent extends JSWindowActorParent {
 
 
 
-  openTabPrompt(args, id) {
+  openContentPrompt(args, id) {
     let browser = this.browsingContext.top.embedderElement;
     if (!browser) {
       throw new Error("Cannot tab-prompt without a browser!");
@@ -221,7 +221,7 @@ class PromptParent extends JSWindowActorParent {
 
 
 
-  async openWindowPrompt(args) {
+  async openChromePrompt(args) {
     const COMMON_DIALOG = "chrome://global/content/commonDialog.xhtml";
     const SELECT_DIALOG = "chrome://global/content/selectDialog.xhtml";
     let uri = args.promptType == "select" ? SELECT_DIALOG : COMMON_DIALOG;
@@ -254,13 +254,23 @@ class PromptParent extends JSWindowActorParent {
 
       let bag = PromptUtils.objectToPropBag(args);
 
-      Services.ww.openWindow(
-        win,
-        uri,
-        "_blank",
-        "centerscreen,chrome,modal,titlebar",
-        bag
-      );
+      if (args.modalType === Services.prompt.MODAL_TYPE_TAB) {
+        if (!browser) {
+          throw new Error("Cannot tab-prompt without a browser!");
+        }
+        
+        let dialogBox = win.gBrowser.getTabDialogBox(browser);
+        await dialogBox.open(uri, "resizable=no", bag);
+      } else {
+        
+        Services.ww.openWindow(
+          win,
+          uri,
+          "_blank",
+          "centerscreen,chrome,modal,titlebar",
+          bag
+        );
+      }
 
       PromptUtils.propBagToObject(bag, args);
     } finally {
