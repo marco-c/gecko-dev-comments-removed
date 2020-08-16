@@ -106,22 +106,43 @@ void Sampler::SuspendAndSampleAndResumeThread(
   
   
 
+#if defined(__x86_64__)
   thread_state_flavor_t flavor = x86_THREAD_STATE64;
   x86_thread_state64_t state;
   mach_msg_type_number_t count = x86_THREAD_STATE64_COUNT;
-#if __DARWIN_UNIX03
-#  define REGISTER_FIELD(name) __r##name
+#  if __DARWIN_UNIX03
+#    define REGISTER_FIELD(name) __r##name
+#  else
+#    define REGISTER_FIELD(name) r##name
+#  endif  
+#elif defined(__aarch64__)
+  thread_state_flavor_t flavor = ARM_THREAD_STATE64;
+  arm_thread_state64_t state;
+  mach_msg_type_number_t count = ARM_THREAD_STATE64_COUNT;
+#  if __DARWIN_UNIX03
+#    define REGISTER_FIELD(name) __##name
+#  else
+#    define REGISTER_FIELD(name) name
+#  endif  
 #else
-#  define REGISTER_FIELD(name) r##name
-#endif  
+#  error "unknown architecture"
+#endif
 
   if (thread_get_state(samplee_thread, flavor,
                        reinterpret_cast<natural_t*>(&state),
                        &count) == KERN_SUCCESS) {
     Registers regs;
+#if defined(__x86_64__)
     regs.mPC = reinterpret_cast<Address>(state.REGISTER_FIELD(ip));
     regs.mSP = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
     regs.mFP = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
+#elif defined(__aarch64__)
+    regs.mPC = reinterpret_cast<Address>(state.REGISTER_FIELD(pc));
+    regs.mSP = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
+    regs.mFP = reinterpret_cast<Address>(state.REGISTER_FIELD(fp));
+#else
+#  error "unknown architecture"
+#endif
     regs.mLR = 0;
 
     aProcessRegs(regs, aNow);
@@ -183,6 +204,7 @@ static void PlatformInit(PSLockRef aLock) {}
 
 #if defined(HAVE_NATIVE_UNWIND)
 void Registers::SyncPopulate() {
+#if defined(__x86_64__)
   asm(
       
       
@@ -190,6 +212,17 @@ void Registers::SyncPopulate() {
       
       "movq (%%rbp), %1\n\t"
       : "=r"(mSP), "=r"(mFP));
+#elif defined(__aarch64__)
+  asm(
+      
+      
+      "add %0, x29, #0x10\n\t"
+      
+      "ldr %1, [x29]\n\t"
+      : "=r"(mSP), "=r"(mFP));
+#else
+#  error "unknown architecture"
+#endif
   mPC = reinterpret_cast<Address>(
       __builtin_extract_return_addr(__builtin_return_address(0)));
   mLR = 0;
