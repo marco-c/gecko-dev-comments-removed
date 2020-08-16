@@ -1872,10 +1872,12 @@
       
       
       
-      let tabbrowser = this.getTabBrowser();
-      if (tabbrowser) {
-        tabbrowser.finishBrowserRemotenessChange(this, redirectLoadSwitchId);
-        return true;
+      if (!Services.prefs.getBoolPref("fission.sessionHistoryInParent")) {
+        let tabbrowser = this.getTabBrowser();
+        if (tabbrowser) {
+          tabbrowser.finishBrowserRemotenessChange(this, redirectLoadSwitchId);
+          return true;
+        }
       }
       return false;
     }
