@@ -4,6 +4,12 @@
 
 loadTestSubscript("head_devtools.js");
 
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /can't be sent as the connection just closed/
+);
+
 function background() {
   browser.test.onMessage.addListener(msg => {
     let code;
