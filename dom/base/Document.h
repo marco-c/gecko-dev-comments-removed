@@ -1852,7 +1852,7 @@ class Document : public nsINode,
   void CleanupFullscreenState();
 
   
-  bool TopLayerPush(Element* aElement);
+  void TopLayerPush(Element* aElement);
 
   
   
@@ -1864,7 +1864,7 @@ class Document : public nsINode,
 
   
   
-  bool SetFullscreenElement(Element* aElement);
+  void SetFullscreenElement(Element* aElement);
 
   
   void TryCancelDialog();
