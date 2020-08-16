@@ -1144,8 +1144,8 @@ function getNormalizedLeafName(aFile, aDefaultExtension) {
 
   
   var i = aFile.lastIndexOf(".");
-  let previousExtension = aFile.substr(i + 1);
-  if (previousExtension != aDefaultExtension) {
+  let previousExtension = aFile.substr(i + 1).toLowerCase();
+  if (previousExtension != aDefaultExtension.toLowerCase()) {
     
     
     
