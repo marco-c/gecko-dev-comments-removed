@@ -135,7 +135,6 @@ class TRRService : public TRRServiceBase,
   Atomic<bool, Relaxed> mSkipTRRWhenParentalControlEnabled;
   Atomic<uint32_t, Relaxed>
       mDisableAfterFails;  
-  Atomic<bool, Relaxed> mPlatformDisabledTRR;
 
   
   
