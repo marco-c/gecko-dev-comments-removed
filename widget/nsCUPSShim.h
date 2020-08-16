@@ -30,6 +30,10 @@ class nsCUPSShim {
 
   bool IsInitialized() const { return mInited; }
 
+  bool EnsureInitialized() {
+    return IsInitialized() || Init();
+  }
+
   
 
 
