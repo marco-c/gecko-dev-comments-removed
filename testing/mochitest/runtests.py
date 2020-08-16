@@ -2258,6 +2258,8 @@ toolbar#nav-bar {
         
         marionette_exception = None
 
+        temp_file_paths = []
+
         
         try:
             
@@ -2345,8 +2347,6 @@ toolbar#nav-bar {
             gecko_id = "GECKO(%d)" % proc.pid
             self.log.process_start(gecko_id)
             self.message_logger.gecko_id = gecko_id
-
-            temp_file_paths = []
 
             try:
                 
