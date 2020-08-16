@@ -23,9 +23,7 @@ add_task(
     };
     
     
-    Resources.watchTargetResources(targetActor, [
-      Resources.TYPES.CONSOLE_MESSAGE,
-    ]);
+    Resources.watchResources(targetActor, [Resources.TYPES.CONSOLE_MESSAGE]);
     
     
     
