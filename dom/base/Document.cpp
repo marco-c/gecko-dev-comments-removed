@@ -6240,10 +6240,8 @@ void Document::UpdateFrameRequestCallbackSchedulingState(
   
   
   
-  
-  
-  bool shouldBeScheduled =
-      WouldScheduleFrameRequestCallbacks() && !mFrameRequestCallbacks.IsEmpty();
+  bool shouldBeScheduled = mPresShell && IsEventHandlingEnabled() &&
+                           !mFrameRequestCallbacks.IsEmpty();
   if (shouldBeScheduled == mFrameRequestCallbacksScheduled) {
     
     return;
@@ -6271,7 +6269,7 @@ void Document::TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks) {
   mFrameRequestCallbacksScheduled = false;
 }
 
-bool Document::ShouldThrottleFrameRequests() const {
+bool Document::ShouldThrottleFrameRequests() {
   if (mStaticCloneCount > 0) {
     
     return false;
