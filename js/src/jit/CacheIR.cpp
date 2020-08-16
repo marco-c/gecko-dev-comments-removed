@@ -7222,6 +7222,62 @@ AttachDecision CallIRGenerator::tryAttachNewRegExpStringIterator(
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachArrayIteratorPrototypeOptimizable(
+    HandleFunction callee) {
+  
+  MOZ_ASSERT(argc_ == 0);
+
+  
+  
+
+  auto* arrayIteratorProto = cx_->global()->maybeGetArrayIteratorPrototype();
+  if (!arrayIteratorProto) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Shape* shape = arrayIteratorProto->lookupPure(cx_->names().next);
+  if (!shape || !shape->isDataProperty()) {
+    return AttachDecision::NoAction;
+  }
+
+  uint32_t slot = shape->slot();
+
+  MOZ_ASSERT(arrayIteratorProto->numFixedSlots() == 0,
+             "Stub code relies on this");
+
+  const Value& nextVal = arrayIteratorProto->getSlot(slot);
+  if (!nextVal.isObject() || !nextVal.toObject().is<JSFunction>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* nextFun = &nextVal.toObject().as<JSFunction>();
+  if (!IsSelfHostedFunctionWithName(nextFun, cx_->names().ArrayIteratorNext)) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+
+  ObjOperandId protoId = writer.loadObject(arrayIteratorProto);
+  ObjOperandId nextId = writer.loadObject(nextFun);
+
+  writer.guardShape(protoId, arrayIteratorProto->lastProperty());
+
+  
+  writer.guardDynamicSlotIsSpecificObject(protoId, nextId, slot);
+  writer.loadBooleanResult(true);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("ArrayIteratorPrototypeOptimizable");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachObjectCreate(HandleFunction callee) {
   
   if (argc_ != 1 || !args_[0].isObjectOrNull()) {
@@ -7663,6 +7719,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachNewStringIterator(callee);
     case InlinableNative::IntrinsicNewRegExpStringIterator:
       return tryAttachNewRegExpStringIterator(callee);
+    case InlinableNative::IntrinsicArrayIteratorPrototypeOptimizable:
+      return tryAttachArrayIteratorPrototypeOptimizable(callee);
 
     
     case InlinableNative::IsRegExpObject:
