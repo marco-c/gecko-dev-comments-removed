@@ -1297,7 +1297,8 @@ Inspector.prototype = {
 
   onResourceAvailable: function({ resourceType, targetFront, resource }) {
     if (resourceType === this.toolbox.resourceWatcher.TYPES.ROOT_NODE) {
-      if (targetFront.isTopLevel) {
+      const isTopLevelTarget = !!targetFront.isTopLevel;
+      if (resource.isTopLevelDocument && isTopLevelTarget) {
         
         
         

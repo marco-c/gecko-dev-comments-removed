@@ -113,7 +113,7 @@ loader.lazyServiceGetter(
 
 const MUTATIONS_THROTTLING_DELAY = 100;
 
-const IMMEDIATE_MUTATIONS = ["documentUnload", "frameLoad", "pseudoClassLock"];
+const IMMEDIATE_MUTATIONS = ["pseudoClassLock"];
 
 const HIDDEN_CLASS = "__fx-devtools-hide-shortcut__";
 
@@ -296,7 +296,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     this._isWatchingRootNode = true;
     if (this.rootNode && this._isRootDocumentReady()) {
-      this._emitNewRoot();
+      this._emitNewRoot(this.rootNode, { isTopLevelDocument: true });
     }
   },
 
@@ -305,13 +305,17 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     this._emittedRootNode = null;
   },
 
-  _emitNewRoot() {
-    if (!this._isWatchingRootNode || this._emittedRootNode === this.rootNode) {
+  _emitNewRoot(rootNode, { isTopLevelDocument }) {
+    const alreadyEmittedTopRootNode = this._emittedRootNode === rootNode;
+    if (!this._isWatchingRootNode || alreadyEmittedTopRootNode) {
       return;
     }
 
-    this._emittedRootNode = this.rootNode;
-    this.emit("root-available", this.rootNode);
+    if (isTopLevelDocument) {
+      this._emittedRootNode = this.rootNode;
+    }
+
+    this.emit("root-available", rootNode);
   },
 
   _isRootDocumentReady() {
@@ -2527,6 +2531,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       );
       return;
     }
+
     if (isTopLevel) {
       
       
@@ -2541,27 +2546,17 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       this.rootWin = window;
       this.rootDoc = window.document;
       this.rootNode = this.document();
-      this._emitNewRoot();
-      return;
+      this._emitNewRoot(this.rootNode, { isTopLevelDocument: true });
+    } else {
+      const frame = getFrameElement(window);
+      const frameActor = this.getNode(frame);
+      if (frameActor) {
+        
+        
+        const documentActor = this._getOrCreateNodeActor(window.document);
+        this._emitNewRoot(documentActor, { isTopLevelDocument: false });
+      }
     }
-    const frame = getFrameElement(window);
-    const frameActor = this.getNode(frame);
-    if (!frameActor) {
-      return;
-    }
-
-    this.queueMutation({
-      type: "frameLoad",
-      target: frameActor.actorID,
-    });
-
-    
-    this.queueMutation({
-      type: "childList",
-      target: frameActor.actorID,
-      added: [],
-      removed: [],
-    });
   },
 
   
@@ -2615,39 +2610,17 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       this._updateMutationBreakpointState("unload", node, null);
     }
 
-    if (this.rootDoc === doc) {
-      this.rootDoc = null;
-      if (this._isWatchingRootNode) {
-        this.emit("root-destroyed", this.rootNode);
-      }
-      this.rootNode = null;
-      this.releaseNode(documentActor, { force: true });
-      
-      
-      
-      
-      return;
-    }
-
-    this.queueMutation({
-      type: "documentUnload",
-      target: documentActor.actorID,
-    });
-
-    const walker = this.getDocumentWalker(doc);
-    const parentNode = walker.parentNode();
-    if (parentNode) {
-      
-      
-      this.queueMutation({
-        type: "childList",
-        target: this.getNode(parentNode).actorID,
-        added: [],
-        removed: [],
-      });
+    if (this._isWatchingRootNode) {
+      this.emit("root-destroyed", documentActor);
     }
 
     
+    
+    if (this.rootDoc === doc) {
+      this.rootDoc = null;
+      this.rootNode = null;
+    }
+
     
     this.releaseNode(documentActor, { force: true });
   },

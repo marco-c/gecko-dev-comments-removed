@@ -333,6 +333,10 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
         
         
         
+
+        
+        
+        
         for (const child of targetFront.treeChildren()) {
           if (child.nodeType === nodeConstants.DOCUMENT_NODE) {
             console.warn(
@@ -343,6 +347,10 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
           }
         }
       } else if (change.type === "documentUnload") {
+        
+        
+        
+
         
         
         emittedMutation.target = targetFront.actorID;
@@ -544,12 +552,23 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
   }
 
   _onRootNodeAvailable(rootNode) {
-    this.rootNode = rootNode;
+    if (this._isTopLevelRootNode(rootNode)) {
+      this.rootNode = rootNode;
+    }
   }
 
-  _onRootNodeDestroyed() {
-    this._releaseFront(this.rootNode, true);
-    this.rootNode = null;
+  _onRootNodeDestroyed(rootNode) {
+    this._releaseFront(rootNode, true);
+    if (this._isTopLevelRootNode(rootNode)) {
+      this.rootNode = null;
+    }
+  }
+
+  _isTopLevelRootNode(rootNode) {
+    
+    
+    const { supportsIsTopLevelDocument } = rootNode.traits;
+    return supportsIsTopLevelDocument ? rootNode.isTopLevelDocument : true;
   }
 
   async watchRootNode(onRootNodeAvailable) {

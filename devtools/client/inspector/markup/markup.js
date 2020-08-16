@@ -1432,6 +1432,10 @@ MarkupView.prototype = {
       if (mutation.type === "documentUnload") {
         
         
+        
+
+        
+        
         type = "childList";
         target = mutation.targetParent;
         if (!target) {

@@ -119,22 +119,10 @@ async function navigateIframeTo(inspector, url) {
   const { resourceWatcher, targetList } = inspector.toolbox;
   const onTargetProcessed = waitForTargetProcessed(targetList, url);
 
-  let onNewRoot;
-  if (isFissionEnabled()) {
-    
-    
-    onNewRoot = waitForResourceOnce(
-      resourceWatcher,
-      resourceWatcher.TYPES.ROOT_NODE
-    );
-  } else {
-    
-    
-    onNewRoot = Promise.all([
-      waitForMutation(inspector, "childList"),
-      waitForMutation(inspector, "frameLoad"),
-    ]);
-  }
+  const onNewRoot = waitForResourceOnce(
+    resourceWatcher,
+    resourceWatcher.TYPES.ROOT_NODE
+  );
 
   info("Update the src attribute of the iframe tag");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [url], function(_url) {
