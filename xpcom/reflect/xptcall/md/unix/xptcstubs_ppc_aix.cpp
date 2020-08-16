@@ -23,7 +23,6 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32_t methodIndex, uint32_t* args, u
         uint32_t lo;      
     } DU;               
 
-#define PARAM_BUFFER_COUNT     16
 #define PARAM_GPR_COUNT         7
 
     nsXPTCMiniVariant paramBuffer[PARAM_BUFFER_COUNT];

@@ -507,6 +507,10 @@ static_assert(sizeof(nsXPTMethodInfo) == 8, "wrong size");
 
 
 
+#define PARAM_BUFFER_COUNT 16
+
+
+
 
 struct nsXPTConstantInfo {
   const char* Name() const { return xpt::detail::GetString(mName); }
