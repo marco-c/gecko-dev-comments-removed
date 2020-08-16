@@ -5375,6 +5375,10 @@ var XULBrowserWindow = {
   _lastLocation: null,
   _event: null,
   _lastLocationForEvent: null,
+  
+  
+  
+  _isSecureContext: null,
 
   
   
@@ -5425,7 +5429,12 @@ var XULBrowserWindow = {
     
     let uri = gBrowser.currentURI;
     let spec = uri.spec;
-    if (this._state == aState && this._lastLocation == spec) {
+    let isSecureContext = gBrowser.securityUI.isSecureContext;
+    if (
+      this._state == aState &&
+      this._lastLocation == spec &&
+      this._isSecureContext === isSecureContext
+    ) {
       
       
       gIdentityHandler.refreshIdentityBlock();
@@ -5433,6 +5442,7 @@ var XULBrowserWindow = {
     }
     this._state = aState;
     this._lastLocation = spec;
+    this._isSecureContext = isSecureContext;
 
     
     
