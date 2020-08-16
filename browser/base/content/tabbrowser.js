@@ -29,6 +29,12 @@
         "UrlbarProviderOpenTabs",
         "resource:///modules/UrlbarProviderOpenTabs.jsm"
       );
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "sessionHistoryInParent",
+        "fission.sessionHistoryInParent",
+        false
+      );
 
       Services.obs.addObserver(this, "contextual-identity-updated");
 
@@ -1979,8 +1985,10 @@
 
       
       
-      b.prepareToChangeRemoteness = () =>
-        SessionStore.prepareToChangeRemoteness(b);
+      if (!this.sessionHistoryInParent) {
+        b.prepareToChangeRemoteness = () =>
+          SessionStore.prepareToChangeRemoteness(b);
+      }
 
       const defaultBrowserAttributes = {
         contextmenu: "contentAreaContextMenu",
