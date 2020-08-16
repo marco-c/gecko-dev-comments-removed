@@ -4573,6 +4573,10 @@ Downloader.prototype = {
       })
       .finally(() => {
         this._langPackTimeout = null;
+
+        if (TelemetryStopwatch.running("UPDATE_LANGPACK_OVERTIME", update)) {
+          TelemetryStopwatch.finish("UPDATE_LANGPACK_OVERTIME", update);
+        }
       });
 
     LangPackUpdates.set(
@@ -5424,6 +5428,14 @@ Downloader.prototype = {
     
     
     if (this._langPackTimeout) {
+      
+      
+      TelemetryStopwatch.start(
+        "UPDATE_LANGPACK_OVERTIME",
+        unwrap(this._update),
+        { inSeconds: true }
+      );
+
       setTimeout(
         this._langPackTimeout,
         Services.prefs.getIntPref(

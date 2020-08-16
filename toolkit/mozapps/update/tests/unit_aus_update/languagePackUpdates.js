@@ -11,8 +11,9 @@ const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-
-gDebugTest = true;
+const { TelemetryTestUtils } = ChromeUtils.import(
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
 
 AddonTestUtils.init(this);
 setupTestCommon();
@@ -66,6 +67,10 @@ add_task(async function init() {
 });
 
 add_task(async function testLangpackUpdateSuccess() {
+  let histogram = TelemetryTestUtils.getAndClearHistogram(
+    "UPDATE_LANGPACK_OVERTIME"
+  );
+
   let updateDownloadNotified = false;
   let notified = waitForEvent("update-downloaded").then(
     () => (updateDownloadNotified = true)
@@ -99,6 +104,14 @@ add_task(async function testLangpackUpdateSuccess() {
   resolve();
 
   await notified;
+
+  
+  
+  let snapshot = histogram.snapshot();
+  Assert.ok(
+    !Object.values(snapshot.values).every(val => val == 0),
+    "Should have recorded a time"
+  );
 });
 
 add_task(async function testLangpackUpdateFails() {
@@ -186,6 +199,9 @@ add_task(async function testRedownload() {
   
   
   Services.prefs.setBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false);
+  let histogram = TelemetryTestUtils.getAndClearHistogram(
+    "UPDATE_LANGPACK_OVERTIME"
+  );
 
   let partialPatch = getRemotePatchString({
     type: "partial",
@@ -239,6 +255,14 @@ add_task(async function testRedownload() {
 
   Assert.equal(downloadCount, 2, "Should have seen two downloads");
   Assert.equal(stageCount, 1, "Should have only tried to stage langpacks once");
+
+  
+  
+  let snapshot = histogram.snapshot();
+  Assert.ok(
+    Object.values(snapshot.values).every(val => val == 0),
+    "Should have recorded a time"
+  );
 });
 
 add_task(async function finish() {
