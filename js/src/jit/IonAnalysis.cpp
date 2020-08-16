@@ -3310,7 +3310,13 @@ static bool MonotoneSub(int32_t lhs, int32_t rhs) {
 
 
 
-SimpleLinearSum jit::ExtractLinearSum(MDefinition* ins, MathSpace space) {
+SimpleLinearSum jit::ExtractLinearSum(MDefinition* ins, MathSpace space,
+                                      int32_t recursionDepth) {
+  const int32_t SAFE_RECURSION_LIMIT = 100;
+  if (recursionDepth > SAFE_RECURSION_LIMIT) {
+    return SimpleLinearSum(ins, 0);
+  }
+
   if (ins->isBeta()) {
     ins = ins->getOperand(0);
   }
@@ -3343,8 +3349,8 @@ SimpleLinearSum jit::ExtractLinearSum(MDefinition* ins, MathSpace space) {
   }
 
   
-  SimpleLinearSum lsum = ExtractLinearSum(lhs, space);
-  SimpleLinearSum rsum = ExtractLinearSum(rhs, space);
+  SimpleLinearSum lsum = ExtractLinearSum(lhs, space, recursionDepth + 1);
+  SimpleLinearSum rsum = ExtractLinearSum(rhs, space, recursionDepth + 1);
 
   
   
