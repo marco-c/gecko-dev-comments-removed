@@ -508,17 +508,30 @@ void MediaTransportHandlerSTS::Destroy() {
       mStsThread, __func__,
       [this, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
         disconnect_all();
+        
+        
+        
+        mTransports.clear();
         if (mIceCtx) {
-          NrIceStats stats = mIceCtx->Destroy();
-          CSFLogDebug(LOGTAG,
-                      "Ice Telemetry: stun (retransmits: %d)"
-                      "   turn (401s: %d   403s: %d   438s: %d)",
-                      stats.stun_retransmits, stats.turn_401s, stats.turn_403s,
-                      stats.turn_438s);
+          
+          
+          
+          
+          
+          
+          
+          mStsThread->Dispatch(NS_NewRunnableFunction(
+              __func__, [iceCtx = RefPtr<NrIceCtx>(mIceCtx)] {
+                NrIceStats stats = iceCtx->Destroy();
+                CSFLogDebug(LOGTAG,
+                            "Ice Telemetry: stun (retransmits: %d)"
+                            "   turn (401s: %d   403s: %d   438s: %d)",
+                            stats.stun_retransmits, stats.turn_401s,
+                            stats.turn_403s, stats.turn_438s);
+              }));
 
           mIceCtx = nullptr;
         }
-        mTransports.clear();
       },
       [](const std::string& aError) {});
 }
