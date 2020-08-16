@@ -392,7 +392,7 @@ GLContextEGL::~GLContextEGL() {
   MarkDestroyed();
 
   
-  if (!mOwnsContext) {
+  if (!mOwnsContext || !mEgl->IsAlive()) {
     return;
   }
 
