@@ -103,22 +103,10 @@ async function openNewTabAndApplicationPanel(url) {
 }
 
 async function unregisterAllWorkers(client, doc) {
-  info("Wait until all workers have a valid registrationFront");
-  let workers;
-  await asyncWaitUntil(async function() {
-    workers = await client.mainRoot.listAllWorkers();
-    const allWorkersRegistered = workers.service.every(
-      worker => !!worker.registrationFront
-    );
-    return allWorkersRegistered;
-  });
-
-  info("Unregister all service workers");
-  for (const worker of workers.service) {
-    await worker.registrationFront.unregister();
-  }
-
   
+  await unregisterAllServiceWorkers(client);
+
+  info("Wait for service workers to disappear from the UI");
   waitUntil(() => getWorkerContainers(doc).length === 0);
 }
 
