@@ -378,8 +378,10 @@ struct Texture {
   }
 };
 
-#define MAX_ATTRIBS 16
-#define NULL_ATTRIB 15
+
+
+#define MAX_ATTRIBS 17
+#define NULL_ATTRIB 16
 struct VertexArray {
   VertexAttrib attribs[MAX_ATTRIBS];
   int max_attrib = -1;
