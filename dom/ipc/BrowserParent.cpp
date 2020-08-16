@@ -633,6 +633,14 @@ void BrowserParent::Destroy() {
 
   Manager()->NotifyTabDestroying();
 
+  
+  
+  
+  
+  if (CanRecv()) {
+    mBrowsingContext->Group()->AddKeepAlive();
+  }
+
   mMarkedDestroying = true;
 }
 
@@ -704,6 +712,13 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   if (XRE_IsContentProcess() && why == AbnormalShutdown && !mIsDestroyed) {
     DestroyInternal();
     mIsDestroyed = true;
+  }
+
+  
+  
+  
+  if (mMarkedDestroying) {
+    mBrowsingContext->Group()->RemoveKeepAlive();
   }
 
   
