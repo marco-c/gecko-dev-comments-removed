@@ -630,6 +630,13 @@ class ScrollFrameHelper : public nsIReflowCallback {
   bool mNeverHasHorizontalScrollbar : 1;
   bool mHasVerticalScrollbar : 1;
   bool mHasHorizontalScrollbar : 1;
+  
+  
+  
+  
+  
+  bool mOnlyNeedVScrollbarToScrollVVInsideLV : 1;
+  bool mOnlyNeedHScrollbarToScrollVVInsideLV : 1;
   bool mFrameIsUpdatingScrollbar : 1;
   bool mDidHistoryRestore : 1;
   
