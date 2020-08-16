@@ -356,10 +356,11 @@ void Family::SearchAllFontsForChar(FontList* aList,
       return;
     }
     charmap = static_cast<const SharedBitSet*>(mCharacterMap.ToPtr(aList));
-    if (charmap && !charmap->test(aMatchData->mCh)) {
-      return;
-    }
   }
+  if (charmap && !charmap->test(aMatchData->mCh)) {
+    return;
+  }
+
   uint32_t numFaces = NumFaces();
   uint32_t charMapsLoaded = 0;  
   Pointer* facePtrs = Faces(aList);
@@ -459,6 +460,9 @@ void Family::SetFacePtrs(FontList* aList, nsTArray<Pointer>& aFaces) {
 void Family::SetupFamilyCharMap(FontList* aList) {
   
   
+  if (!mCharacterMap.IsNull()) {
+    return;
+  }
   if (!XRE_IsParentProcess()) {
     
     
