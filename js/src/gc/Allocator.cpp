@@ -210,7 +210,7 @@ StringAllocT* js::AllocateStringImpl(JSContext* cx, InitialHeap heap) {
 
   if (cx->nursery().isEnabled() && heap != TenuredHeap &&
       cx->nursery().canAllocateStrings() && cx->zone()->allocNurseryStrings) {
-    auto str = static_cast<StringAllocT*>(
+    auto* str = static_cast<StringAllocT*>(
         rt->gc.tryNewNurseryString<allowGC>(cx, size, kind));
     if (str) {
       return str;
@@ -281,7 +281,7 @@ JS::BigInt* js::AllocateBigInt(JSContext* cx, InitialHeap heap) {
 
   if (cx->nursery().isEnabled() && heap != TenuredHeap &&
       cx->nursery().canAllocateBigInts() && cx->zone()->allocNurseryBigInts) {
-    auto bi = static_cast<JS::BigInt*>(
+    auto* bi = static_cast<JS::BigInt*>(
         rt->gc.tryNewNurseryBigInt<allowGC>(cx, size, kind));
     if (bi) {
       return bi;
@@ -346,7 +346,7 @@ template <typename T, AllowGC allowGC>
 T* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
                                  size_t thingSize) {
   
-  T* t = reinterpret_cast<T*>(cx->freeLists().allocate(kind));
+  auto* t = reinterpret_cast<T*>(cx->freeLists().allocate(kind));
   if (MOZ_UNLIKELY(!t)) {
     
     
@@ -819,7 +819,7 @@ void BackgroundAllocTask::run() {
 
 
 Chunk* Chunk::allocate(GCRuntime* gc) {
-  Chunk* chunk = static_cast<Chunk*>(MapAlignedPages(ChunkSize, ChunkSize));
+  auto* chunk = static_cast<Chunk*>(MapAlignedPages(ChunkSize, ChunkSize));
   if (!chunk) {
     return nullptr;
   }
