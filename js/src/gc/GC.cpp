@@ -2494,6 +2494,7 @@ void GCRuntime::updateZonePointersToRelocatedCells(Zone* zone) {
 
   zone->externalStringCache().purge();
   zone->functionToStringCache().purge();
+  rt->caches().stringToAtomCache.purge();
 
   
   

@@ -1211,6 +1211,12 @@ js::Nursery::CollectionResult js::Nursery::doCollection(
   endProfile(ProfileKey::ClearStoreBuffer);
 
   
+  
+  startProfile(ProfileKey::PurgeStringToAtomCache);
+  runtime()->caches().stringToAtomCache.purge();
+  endProfile(ProfileKey::PurgeStringToAtomCache);
+
+  
   startProfile(ProfileKey::CheckHashTables);
 #ifdef JS_GC_ZEAL
   if (gc->hasZealMode(ZealMode::CheckHashTablesOnMinorGC)) {
