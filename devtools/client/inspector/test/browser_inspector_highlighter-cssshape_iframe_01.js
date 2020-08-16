@@ -37,7 +37,11 @@ async function testPolygonIframeMovePoint(config) {
   await toggleShapesHighlighter(view, selector, property, true);
   const { mouse } = helper;
 
-  let onRuleViewChanged = view.once("ruleview-changed");
+  
+  
+  
+  let onRuleViewChanged = waitForNEvents(view, "ruleview-changed", 2);
+
   info("Moving polygon point visible in iframe");
   
   await mouse.down(10, 10);
@@ -52,7 +56,8 @@ async function testPolygonIframeMovePoint(config) {
   let definition = computedStyle["clip-path"].value;
   ok(definition.includes("10px 1.25%"), "Point moved to 10px 1.25%");
 
-  onRuleViewChanged = view.once("ruleview-changed");
+  onRuleViewChanged = waitForNEvents(view, "ruleview-changed", 2);
+
   info("Moving polygon point not visible in iframe");
   await mouse.down(110, 410);
   await mouse.move(120, 420);
