@@ -580,7 +580,10 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       isUnblocked |= gpu.Find("Adreno (TM) 5",  true) >= 0;
 #endif
       
-      isUnblocked |= model.Find("Pixel 2",  true) >= 0;
+      isUnblocked |=
+          gpu.Find("Adreno (TM) 5",  true) >= 0 &&
+          gpu.Find("Adreno (TM) 505",  true) == kNotFound &&
+          gpu.Find("Adreno (TM) 506",  true) == kNotFound;
 
       
       isUnblocked |= gpu.Find("Adreno (TM) 6",  true) >= 0;
