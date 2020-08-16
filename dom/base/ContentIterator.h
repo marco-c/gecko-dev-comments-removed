@@ -86,8 +86,8 @@ class ContentIteratorBase {
   
   
   
-  nsIContent* GetNextSibling(nsINode* aNode);
-  nsIContent* GetPrevSibling(nsINode* aNode);
+  static nsIContent* GetNextSibling(nsINode* aNode);
+  static nsIContent* GetPrevSibling(nsINode* aNode);
 
   nsINode* NextNode(nsINode* aNode);
   nsINode* PrevNode(nsINode* aNode);

@@ -309,7 +309,8 @@ nsINode* ContentIteratorBase::Initializer::DetermineFirstNode() const {
       }
       if (!mStartIsCharacterData &&
           (startIsContainer || !mStart.IsStartOfContainer())) {
-        nsINode* const result = mIterator.GetNextSibling(mStart.Container());
+        nsINode* const result =
+            ContentIteratorBase::GetNextSibling(mStart.Container());
         NS_WARNING_ASSERTION(result, "GetNextSibling returned null");
 
         
@@ -395,7 +396,8 @@ Result<nsINode*, nsresult> ContentIteratorBase::Initializer::DetermineLastNode()
       
 
       if (!endIsCharacterData) {
-        nsINode* const result = mIterator.GetPrevSibling(mEnd.Container());
+        nsINode* const result =
+            ContentIteratorBase::GetPrevSibling(mEnd.Container());
         NS_WARNING_ASSERTION(result, "GetPrevSibling returned null");
 
         if (!NodeIsInTraversalRange(result, mIterator.mOrder == Order::Pre,
@@ -489,6 +491,7 @@ nsIContent* ContentIteratorBase::GetDeepLastChild(nsIContent* aRoot) {
 }
 
 
+
 nsIContent* ContentIteratorBase::GetNextSibling(nsINode* aNode) {
   if (NS_WARN_IF(!aNode)) {
     return nullptr;
@@ -510,8 +513,9 @@ nsIContent* ContentIteratorBase::GetNextSibling(nsINode* aNode) {
     return parent->GetFirstChild();
   }
 
-  return GetNextSibling(parent);
+  return ContentIteratorBase::GetNextSibling(parent);
 }
+
 
 
 nsIContent* ContentIteratorBase::GetPrevSibling(nsINode* aNode) {
@@ -535,7 +539,7 @@ nsIContent* ContentIteratorBase::GetPrevSibling(nsINode* aNode) {
     return parent->GetLastChild();
   }
 
-  return GetPrevSibling(parent);
+  return ContentIteratorBase::GetPrevSibling(parent);
 }
 
 nsINode* ContentIteratorBase::NextNode(nsINode* aNode) {
@@ -552,7 +556,7 @@ nsINode* ContentIteratorBase::NextNode(nsINode* aNode) {
     }
 
     
-    return GetNextSibling(node);
+    return ContentIteratorBase::GetNextSibling(node);
   }
 
   
@@ -598,7 +602,7 @@ nsINode* ContentIteratorBase::PrevNode(nsINode* aNode) {
   }
 
   
-  return GetPrevSibling(node);
+  return ContentIteratorBase::GetPrevSibling(node);
 }
 
 
@@ -838,7 +842,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
 
   if (!firstCandidate) {
     
-    firstCandidate = GetNextSibling(node);
+    firstCandidate = ContentIteratorBase::GetNextSibling(node);
 
     if (!firstCandidate) {
       SetEmpty();
@@ -884,7 +888,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
 
   if (!lastCandidate) {
     
-    lastCandidate = GetPrevSibling(node);
+    lastCandidate = ContentIteratorBase::GetPrevSibling(node);
   }
 
   if (!lastCandidate) {
@@ -943,7 +947,7 @@ void ContentSubtreeIterator::Next() {
     return;
   }
 
-  nsINode* nextNode = GetNextSibling(mCurNode);
+  nsINode* nextNode = ContentIteratorBase::GetNextSibling(mCurNode);
   NS_ASSERTION(nextNode, "No next sibling!?! This could mean deadlock!");
 
   int32_t i = mEndNodes.IndexOf(nextNode);
