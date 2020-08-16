@@ -462,8 +462,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   nsString mSrcdocData;
   nsCOMPtr<nsIURI> mBaseURI;
 
-  mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo>
-      mLoadingSessionHistoryInfo;
+  mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mSessionHistoryInfo;
 
   
   

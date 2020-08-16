@@ -1971,10 +1971,8 @@
 
       
       
-      if (!Services.prefs.getBoolPref("fission.sessionHistoryInParent")) {
-        b.prepareToChangeRemoteness = () =>
-          SessionStore.prepareToChangeRemoteness(b);
-      }
+      b.prepareToChangeRemoteness = () =>
+        SessionStore.prepareToChangeRemoteness(b);
 
       const defaultBrowserAttributes = {
         contextmenu: "contentAreaContextMenu",

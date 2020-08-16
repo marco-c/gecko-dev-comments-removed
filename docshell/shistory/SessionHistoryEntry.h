@@ -23,7 +23,6 @@ class nsIURI;
 namespace mozilla {
 namespace dom {
 
-struct LoadingSessionHistoryInfo;
 class SHEntrySharedParentState;
 
 
@@ -31,7 +30,6 @@ class SHEntrySharedParentState;
 class SessionHistoryInfo {
  public:
   SessionHistoryInfo() = default;
-  explicit SessionHistoryInfo(uint64_t aExistingId);
   SessionHistoryInfo(nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
 
   bool operator==(const SessionHistoryInfo& aInfo) const {
@@ -69,7 +67,7 @@ class SessionHistoryInfo {
 
  private:
   friend class SessionHistoryEntry;
-  friend struct mozilla::ipc::IPDLParamTraits<LoadingSessionHistoryInfo>;
+  friend struct mozilla::ipc::IPDLParamTraits<SessionHistoryInfo>;
 
   void MaybeUpdateTitleFromURI();
 
@@ -101,24 +99,6 @@ class SessionHistoryInfo {
   bool mPersist = false;
 };
 
-struct LoadingSessionHistoryInfo {
-  LoadingSessionHistoryInfo() = default;
-  explicit LoadingSessionHistoryInfo(const SessionHistoryInfo& aInfo);
-
-  SessionHistoryInfo mInfo;
-
-  
-  
-  
-  
-  
-  bool mIsLoadFromSessionHistory = false;
-  
-  
-  int32_t mRequestedIndex = -1;
-  int32_t mSessionHistoryLength = 0;
-};
-
 
 
 
@@ -132,7 +112,7 @@ struct LoadingSessionHistoryInfo {
 class SessionHistoryEntry : public nsISHEntry {
  public:
   SessionHistoryEntry(nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
-  SessionHistoryEntry();
+  explicit SessionHistoryEntry(SessionHistoryInfo* aInfo);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSISHENTRY
@@ -178,11 +158,11 @@ namespace ipc {
 
 
 template <>
-struct IPDLParamTraits<dom::LoadingSessionHistoryInfo> {
+struct IPDLParamTraits<dom::SessionHistoryInfo> {
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
-                    const dom::LoadingSessionHistoryInfo& aParam);
+                    const dom::SessionHistoryInfo& aParam);
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
-                   IProtocol* aActor, dom::LoadingSessionHistoryInfo* aResult);
+                   IProtocol* aActor, dom::SessionHistoryInfo* aResult);
 };
 
 
