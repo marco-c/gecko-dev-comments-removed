@@ -3,6 +3,13 @@ const PAGE_NON_ELIGIBLE_MEDIA =
   "https://example.com/browser/dom/media/mediacontrol/tests/file_non_eligible_media.html";
 
 
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/toolkit/components/pictureinpicture/tests/head.js",
+  this
+);
+
+
 const gNonEligibleElementIds = [
   "muted",
   "volume-0",
@@ -55,6 +62,43 @@ add_task(async function testPlayPauseAndStop() {
     }
 
     info(`remove tab`);
+    await BrowserTestUtils.removeTab(tab);
+  }
+});
+
+
+
+
+
+add_task(async function testNonEligibleMediaEnterFullscreen() {
+  for (const elementId of gNonEligibleElementIds) {
+    info(`- open new tab and start non eligible media ${elementId} -`);
+    const tab = await createTabAndLoad(PAGE_NON_ELIGIBLE_MEDIA);
+    await startNonEligibleMedia(tab, elementId);
+
+    info(`entering fullscreen should activate the media controller`);
+    await enableFullScreen(tab, elementId);
+    await checkOrWaitUntilControllerBecomeActive(tab);
+    ok(true, `fullscreen ${elementId} media is able to being controlled`);
+
+    info(`remove tab`);
+    await BrowserTestUtils.removeTab(tab);
+  }
+});
+
+add_task(async function testNonEligibleMediaEnterPIPMode() {
+  for (const elementId of gNonEligibleElementIds) {
+    info(`- open new tab and start non eligible media ${elementId} -`);
+    const tab = await createTabAndLoad(PAGE_NON_ELIGIBLE_MEDIA);
+    await startNonEligibleMedia(tab, elementId);
+
+    info(`media entering PIP mode should activate the media controller`);
+    const winPIP = await triggerPictureInPicture(tab.linkedBrowser, elementId);
+    await checkOrWaitUntilControllerBecomeActive(tab);
+    ok(true, `PIP ${elementId} media is able to being controlled`);
+
+    info(`remove tab`);
+    await BrowserTestUtils.closeWindow(winPIP);
     await BrowserTestUtils.removeTab(tab);
   }
 });
@@ -128,5 +172,23 @@ function waitUntilMediaPaused(tab, elementId) {
       return Promise.resolve();
     }
     return new Promise(r => (video.onpaused = r));
+  });
+}
+
+function enableFullScreen(tab, elementId) {
+  return SpecialPowers.spawn(tab.linkedBrowser, [elementId], elementId => {
+    return new Promise(r => {
+      const element = content.document.getElementById(elementId);
+      element.requestFullscreen();
+      element.onfullscreenchange = () => {
+        element.onfullscreenchange = null;
+        element.onfullscreenerror = null;
+        r();
+      };
+      element.onfullscreenerror = () => {
+        
+        element.requestFullscreen();
+      };
+    });
   });
 }
