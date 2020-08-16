@@ -197,7 +197,6 @@ nsresult StartupCache::FullyInitSingleton() {
 
 StaticRefPtr<StartupCache> StartupCache::gStartupCache;
 ProcessType sProcessType;
-bool StartupCache::gShutdownInitiated;
 bool StartupCache::gIgnoreDiskCache;
 bool StartupCache::gFoundDiskCacheOnInit;
 
@@ -207,6 +206,7 @@ StartupCache::StartupCache()
     : mLock("StartupCache::mLock"),
       mDirty(false),
       mWrittenOnce(false),
+      mStartupFinished(false),
       mCurTableReferenced(false),
       mLoaded(false),
       mFullyInitialized(false),
@@ -821,6 +821,10 @@ Result<Ok, nsresult> StartupCache::DecompressEntry(StartupCacheEntry& aEntry) {
 bool StartupCache::HasEntry(const char* id) {
   AUTO_PROFILER_LABEL("StartupCache::HasEntry", OTHER);
 
+  if (mStartupFinished) {
+    return false;
+  }
+
   MutexAutoLock lock(mLock);
 
   MOZ_ASSERT(
@@ -835,6 +839,12 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
       Telemetry::LABELS_STARTUP_CACHE_REQUESTS::Miss;
   auto telemetry =
       MakeScopeExit([&label] { Telemetry::AccumulateCategorical(label); });
+
+  
+  
+  if (mStartupFinished) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   MutexAutoLock lock(mLock);
   if (!mLoaded) {
@@ -904,7 +914,7 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
 
 nsresult StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
                                  uint32_t len, bool isFromChildProcess) {
-  if (StartupCache::gShutdownInitiated) {
+  if (mStartupFinished) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1237,7 +1247,6 @@ void StartupCache::MaybeInitShutdownWrite() {
   if (mWriteTimer) {
     mWriteTimer->Cancel();
   }
-  gShutdownInitiated = true;
 
   MaybeWriteOffMainThread();
 }
@@ -1346,6 +1355,11 @@ void StartupCache::MaybeWriteOffMainThread() {
     return;
   }
 
+  
+  
+  
+  mStartupFinished = true;
+
   if (mWrittenOnce) {
     return;
   }
@@ -1380,7 +1394,6 @@ nsresult StartupCacheListener::Observe(nsISupports* subject, const char* topic,
   if (strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
     
     sc->WaitOnPrefetchThread();
-    StartupCache::gShutdownInitiated = true;
     
     
     
