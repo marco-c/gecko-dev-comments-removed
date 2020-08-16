@@ -33,7 +33,6 @@ var { assert } = DevToolsUtils;
 var { TabSources } = require("devtools/server/actors/utils/TabSources");
 var makeDebugger = require("devtools/server/actors/utils/make-debugger");
 const InspectorUtils = require("InspectorUtils");
-const Targets = require("devtools/server/actors/targets/index");
 const { TargetActorRegistry } = ChromeUtils.import(
   "resource://devtools/server/actors/targets/target-actor-registry.jsm"
 );
@@ -315,11 +314,11 @@ const browsingContextTargetPrototype = {
 
 
   watchTargetResources(resourceTypes) {
-    return Resources.watchResources(this, resourceTypes);
+    return Resources.watchTargetResources(this, resourceTypes);
   },
 
   unwatchTargetResources(resourceTypes) {
-    return Resources.unwatchResources(this, resourceTypes);
+    return Resources.unwatchTargetResources(this, resourceTypes);
   },
 
   
@@ -349,7 +348,7 @@ const browsingContextTargetPrototype = {
       
       return;
     }
-    this.emit(name, resources);
+    this.emit("resource-available-form", resources);
   },
 
   traits: null,
@@ -395,7 +394,10 @@ const browsingContextTargetPrototype = {
 
   _targetScopedActorPool: null,
 
-  targetType: Targets.TYPES.FRAME,
+  
+
+
+  typeName: "browsingContextTarget",
 
   
 

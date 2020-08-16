@@ -15,12 +15,14 @@ const {
 const {
   WatcherRegistry,
 } = require("devtools/server/actors/watcher/WatcherRegistry.jsm");
-const Targets = require("devtools/server/actors/targets/index");
 
+const TARGET_TYPES = {
+  FRAME: "frame",
+};
 const TARGET_HELPERS = {};
 loader.lazyRequireGetter(
   TARGET_HELPERS,
-  Targets.TYPES.FRAME,
+  TARGET_TYPES.FRAME,
   "devtools/server/actors/watcher/target-helpers/frame-helper"
 );
 
@@ -63,7 +65,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   destroy: function() {
     
     
-    for (const targetType of Object.values(Targets.TYPES)) {
+    for (const targetType of Object.values(TARGET_TYPES)) {
       this.unwatchTargets(targetType);
     }
     this.unwatchResources(Object.values(Resources.TYPES));
@@ -233,19 +235,17 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   async watchResources(resourceTypes) {
     
     
-    Resources.watchResources(
+    const contentProcessResourceTypes = Resources.watchParentProcessResources(
       this,
-      Resources.getParentProcessResourceTypes(resourceTypes)
+      resourceTypes
     );
 
     
-    
-    
-    if (!Resources.hasResourceTypesForTargets(resourceTypes)) {
+    if (contentProcessResourceTypes.length == 0) {
       return;
     }
 
-    WatcherRegistry.watchResources(this, resourceTypes);
+    WatcherRegistry.watchResources(this, contentProcessResourceTypes);
 
     
     for (const targetType in TARGET_HELPERS) {
@@ -253,18 +253,14 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       
       if (
         !WatcherRegistry.isWatchingTargets(this, targetType) &&
-        targetType != Targets.TYPES.FRAME
+        targetType != TARGET_TYPES.FRAME
       ) {
         continue;
       }
-      const targetResourceTypes = Resources.getResourceTypesForTargetType(
-        resourceTypes,
-        targetType
-      );
       const targetHelperModule = TARGET_HELPERS[targetType];
       await targetHelperModule.watchResources({
         watcher: this,
-        resourceTypes: targetResourceTypes,
+        resourceTypes: contentProcessResourceTypes,
       });
     }
 
@@ -287,15 +283,11 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-    const frameResourceTypes = Resources.getResourceTypesForTargetType(
-      resourceTypes,
-      Targets.TYPES.FRAME
-    );
     const targetActor = this.browserElement
       ? TargetActorRegistry.getTargetActor(this.browserId)
       : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
-      await targetActor.watchTargetResources(frameResourceTypes);
+      await targetActor.watchTargetResources(resourceTypes);
     }
   },
 
@@ -308,21 +300,21 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   unwatchResources(resourceTypes) {
     
     
-    Resources.unwatchResources(
+    const contentProcessResourceTypes = Resources.unwatchParentProcessResources(
       this,
-      Resources.getParentProcessResourceTypes(resourceTypes)
+      resourceTypes
     );
 
     
     
     
-    if (!Resources.hasResourceTypesForTargets(resourceTypes)) {
+    if (contentProcessResourceTypes.length == 0) {
       return;
     }
 
     const isWatchingResources = WatcherRegistry.unwatchResources(
       this,
-      resourceTypes
+      contentProcessResourceTypes
     );
     if (!isWatchingResources) {
       return;
@@ -336,32 +328,24 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         
         if (
           !WatcherRegistry.isWatchingTargets(this, targetType) &&
-          targetType != Targets.TYPES.FRAME
+          targetType != TARGET_TYPES.FRAME
         ) {
           continue;
         }
-        const targetResourceTypes = Resources.getResourceTypesForTargetType(
-          resourceTypes,
-          targetType
-        );
         const targetHelperModule = TARGET_HELPERS[targetType];
         targetHelperModule.unwatchResources({
           watcher: this,
-          resourceTypes: targetResourceTypes,
+          resourceTypes: contentProcessResourceTypes,
         });
       }
     }
 
     
-    const frameResourceTypes = Resources.getResourceTypesForTargetType(
-      resourceTypes,
-      Targets.TYPES.FRAME
-    );
     const targetActor = this.browserElement
       ? TargetActorRegistry.getTargetActor(this.browserId)
       : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
-      targetActor.unwatchTargetResources(frameResourceTypes);
+      targetActor.unwatchTargetResources(contentProcessResourceTypes);
     }
 
     

@@ -4,8 +4,6 @@
 
 "use strict";
 
-const Targets = require("devtools/server/actors/targets/index");
-
 const TYPES = {
   CONSOLE_MESSAGE: "console-message",
   CSS_CHANGE: "css-change",
@@ -25,7 +23,8 @@ exports.TYPES = TYPES;
 
 
 
-const FrameTargetResources = augmentResourceDictionary({
+
+const Resources = {
   [TYPES.CONSOLE_MESSAGE]: {
     path: "devtools/server/actors/resources/console-messages",
   },
@@ -44,58 +43,12 @@ const FrameTargetResources = augmentResourceDictionary({
   [TYPES.PLATFORM_MESSAGE]: {
     path: "devtools/server/actors/resources/platform-messages",
   },
-});
-const ParentProcessResources = augmentResourceDictionary({});
+};
 
-function augmentResourceDictionary(dict) {
-  for (const resource of Object.values(dict)) {
-    resource.watchers = new WeakMap();
+for (const resource of Object.values(Resources)) {
+  resource.watchers = new WeakMap();
 
-    loader.lazyRequireGetter(resource, "WatcherClass", resource.path);
-  }
-  return dict;
-}
-
-
-
-
-
-
-
-
-function getResourceTypeDictionary(watcherOrTargetActor) {
-  const { typeName } = watcherOrTargetActor;
-  if (typeName == "watcher") {
-    return ParentProcessResources;
-  }
-  const { targetType } = watcherOrTargetActor;
-  switch (targetType) {
-    case "frame":
-      return FrameTargetResources;
-    default:
-      throw new Error(
-        `Unsupported target actor typeName '${targetType}'`
-      );
-  }
-}
-
-
-
-
-
-
-
-
-
-
-function getResourceTypeEntry(watcherOrTargetActor, resourceType) {
-  const dict = getResourceTypeDictionary(watcherOrTargetActor);
-  if (!(resourceType in dict)) {
-    throw new Error(
-      `Unsupported resource type '${resourceType}' for ${watcherOrTargetActor.typeName}`
-    );
-  }
-  return dict[resourceType];
+  loader.lazyRequireGetter(resource, "WatcherClass", resource.path);
 }
 
 
@@ -115,17 +68,12 @@ function getResourceTypeEntry(watcherOrTargetActor, resourceType) {
 
 
 function watchResources(watcherOrTargetActor, resourceTypes) {
-  
-  
-  const { targetType } = watcherOrTargetActor;
-  if (targetType) {
-    resourceTypes = getResourceTypesForTargetType(resourceTypes, targetType);
-  }
   for (const resourceType of resourceTypes) {
-    const { watchers, WatcherClass } = getResourceTypeEntry(
-      watcherOrTargetActor,
-      resourceType
-    );
+    if (!(resourceType in Resources)) {
+      throw new Error(`Unsupported resource type '${resourceType}'`);
+    }
+    
+    const { watchers, WatcherClass } = Resources[resourceType];
 
     
     if (watchers.has(watcherOrTargetActor)) {
@@ -140,31 +88,52 @@ function watchResources(watcherOrTargetActor, resourceTypes) {
     watchers.set(watcherOrTargetActor, watcher);
   }
 }
-exports.watchResources = watchResources;
-
 function getParentProcessResourceTypes(resourceTypes) {
   return resourceTypes.filter(resourceType => {
-    return resourceType in ParentProcessResources;
+    if (!(resourceType in Resources)) {
+      throw new Error(`Unsupported resource type '${resourceType}'`);
+    }
+    return !!Resources[resourceType].parentProcessResource;
   });
 }
-exports.getParentProcessResourceTypes = getParentProcessResourceTypes;
-
-function getResourceTypesForTargetType(resourceTypes, targetType) {
-  if (targetType == Targets.TYPES.FRAME) {
-    return resourceTypes.filter(resourceType => {
-      return resourceType in FrameTargetResources;
-    });
-  }
-  throw new Error(`Unsupported target type ${targetType}`);
-}
-exports.getResourceTypesForTargetType = getResourceTypesForTargetType;
-
-function hasResourceTypesForTargets(resourceTypes) {
-  return resourceTypes.some(resourceType => {
-    return resourceType in FrameTargetResources;
+function getContentProcessResourceTypes(resourceTypes) {
+  return resourceTypes.filter(resourceType => {
+    if (!(resourceType in Resources)) {
+      throw new Error(`Unsupported resource type '${resourceType}'`);
+    }
+    return !Resources[resourceType].parentProcessResource;
   });
 }
-exports.hasResourceTypesForTargets = hasResourceTypesForTargets;
+
+
+
+
+
+
+
+function watchTargetResources(targetActor, resourceTypes) {
+  const contentProcessTypes = getContentProcessResourceTypes(resourceTypes);
+  watchResources(targetActor, contentProcessTypes);
+}
+exports.watchTargetResources = watchTargetResources;
+
+
+
+
+
+
+
+
+
+function watchParentProcessResources(watcherActor, resourceTypes) {
+  const parentProcessTypes = getParentProcessResourceTypes(resourceTypes);
+  watchResources(watcherActor, parentProcessTypes);
+
+  return resourceTypes.filter(
+    resource => !parentProcessTypes.includes(resource)
+  );
+}
+exports.watchParentProcessResources = watchParentProcessResources;
 
 
 
@@ -176,11 +145,11 @@ exports.hasResourceTypesForTargets = hasResourceTypesForTargets;
 
 function unwatchResources(watcherOrTargetActor, resourceTypes) {
   for (const resourceType of resourceTypes) {
+    if (!(resourceType in Resources)) {
+      throw new Error(`Unsupported resource type '${resourceType}'`);
+    }
     
-    const { watchers } = getResourceTypeEntry(
-      watcherOrTargetActor,
-      resourceType
-    );
+    const { watchers } = Resources[resourceType];
 
     const watcher = watchers.get(watcherOrTargetActor);
     if (watcher) {
@@ -189,7 +158,35 @@ function unwatchResources(watcherOrTargetActor, resourceTypes) {
     }
   }
 }
-exports.unwatchResources = unwatchResources;
+
+
+
+
+
+
+function unwatchTargetResources(targetActor, resourceTypes) {
+  const contentProcessTypes = getContentProcessResourceTypes(resourceTypes);
+  unwatchResources(targetActor, contentProcessTypes);
+}
+exports.unwatchTargetResources = unwatchTargetResources;
+
+
+
+
+
+
+
+
+
+function unwatchParentProcessResources(watcherActor, resourceTypes) {
+  const parentProcessTypes = getParentProcessResourceTypes(resourceTypes);
+  unwatchResources(watcherActor, parentProcessTypes);
+
+  return resourceTypes.filter(
+    resource => !parentProcessTypes.includes(resource)
+  );
+}
+exports.unwatchParentProcessResources = unwatchParentProcessResources;
 
 
 
@@ -198,9 +195,7 @@ exports.unwatchResources = unwatchResources;
 
 
 function unwatchAllTargetResources(watcherOrTargetActor) {
-  for (const { watchers } of Object.values(
-    getResourceTypeDictionary(watcherOrTargetActor)
-  )) {
+  for (const { watchers } of Object.values(Resources)) {
     const watcher = watchers.get(watcherOrTargetActor);
     if (watcher) {
       watcher.destroy();
@@ -225,7 +220,11 @@ exports.unwatchAllTargetResources = unwatchAllTargetResources;
 
 
 function getResourceWatcher(watcherOrTargetActor, resourceType) {
-  const { watchers } = getResourceTypeEntry(watcherOrTargetActor, resourceType);
+  if (!(resourceType in Resources)) {
+    throw new Error(`Unsupported resource type '${resourceType}'`);
+  }
+  
+  const { watchers } = Resources[resourceType];
 
   return watchers.get(watcherOrTargetActor);
 }
