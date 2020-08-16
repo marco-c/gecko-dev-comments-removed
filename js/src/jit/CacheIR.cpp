@@ -7231,6 +7231,59 @@ AttachDecision CallIRGenerator::tryAttachAtomicsXor(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachAtomicsLoad(HandleFunction callee) {
+  if (!JitSupportsAtomics()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (argc_ != 2) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+  if (!args_[1].isNumber()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
+  if (!AtomicsMeetsPreconditions(typedArray, args_[1].toNumber())) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (typedArray->type() == Scalar::Uint32) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objId = writer.guardToObject(arg0Id);
+  writer.guardShapeForClass(objId, typedArray->shape());
+
+  
+  ValOperandId indexId =
+      writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
+  Int32OperandId int32IndexId = writer.guardToInt32Index(indexId);
+
+  writer.atomicsLoadResult(objId, int32IndexId, typedArray->type());
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("AtomicsLoad");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   MOZ_ASSERT(callee->isNativeWithoutJitEntry());
   if (callee->native() != fun_call) {
@@ -8326,6 +8379,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachAtomicsOr(callee);
     case InlinableNative::AtomicsXor:
       return tryAttachAtomicsXor(callee);
+    case InlinableNative::AtomicsLoad:
+      return tryAttachAtomicsLoad(callee);
 
     default:
       return AttachDecision::NoAction;
