@@ -365,16 +365,15 @@ nsUnknownContentTypeDialog.prototype = {
           result = picker.file;
 
           if (result) {
+            let allowOverwrite = false;
             try {
-              
-              
               
               
               if (
                 result.exists() &&
                 this.getFinalLeafName(result.leafName) == result.leafName
               ) {
-                result.remove(false);
+                allowOverwrite = true;
               }
             } catch (ex) {
               
@@ -387,7 +386,12 @@ nsUnknownContentTypeDialog.prototype = {
             gDownloadLastDir.setFile(aLauncher.source, newDir);
 
             try {
-              result = this.validateLeafName(newDir, result.leafName, null);
+              result = this.validateLeafName(
+                newDir,
+                result.leafName,
+                null,
+                allowOverwrite
+              );
             } catch (ex) {
               
               
@@ -431,7 +435,9 @@ nsUnknownContentTypeDialog.prototype = {
 
 
 
-  validateLeafName(aLocalFolder, aLeafName, aFileExt) {
+
+
+  validateLeafName(aLocalFolder, aLeafName, aFileExt, aAllowExisting = false) {
     if (!(aLocalFolder && isUsableDirectory(aLocalFolder))) {
       throw new Components.Exception(
         "Destination directory non-existing or permission error",
@@ -442,9 +448,13 @@ nsUnknownContentTypeDialog.prototype = {
     aLeafName = this.getFinalLeafName(aLeafName, aFileExt);
     aLocalFolder.append(aLeafName);
 
-    
-    
-    var createdFile = DownloadPaths.createNiceUniqueFile(aLocalFolder);
+    if (!aAllowExisting) {
+      
+      
+      var validatedFile = DownloadPaths.createNiceUniqueFile(aLocalFolder);
+    } else {
+      validatedFile = aLocalFolder;
+    }
 
     if (AppConstants.platform == "win") {
       let ext;
@@ -455,15 +465,17 @@ nsUnknownContentTypeDialog.prototype = {
 
       
       
-      let leaf = createdFile.leafName;
-      if (ext && leaf.slice(-ext.length) != ext && createdFile.isExecutable()) {
-        createdFile.remove(false);
+      let leaf = validatedFile.leafName;
+      if (ext && !leaf.endsWith(ext) && validatedFile.isExecutable()) {
+        validatedFile.remove(false);
         aLocalFolder.leafName = leaf + ext;
-        createdFile = DownloadPaths.createNiceUniqueFile(aLocalFolder);
+        if (!aAllowExisting) {
+          validatedFile = DownloadPaths.createNiceUniqueFile(aLocalFolder);
+        }
       }
     }
 
-    return createdFile;
+    return validatedFile;
   },
 
   
