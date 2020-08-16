@@ -137,6 +137,20 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   nsSize mSize;
 
   
+  
+  
+
+  
+  
+  
+  
+  
+  
+  LogicalSize mMaxSheetSize;
+  
+  LogicalSize mScrollportSize;
+
+  
   mozilla::UniquePtr<nsSharedPageData> mPageData;
 
   
@@ -145,8 +159,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   int32_t mPrintRangeType;
   int32_t mFromPageNum;
   int32_t mToPageNum;
-  
-  nscoord mAvailableISize = -1;
+
   nsTArray<int32_t> mPageRanges;
   nsTArray<RefPtr<mozilla::dom::HTMLCanvasElement> > mCurrentCanvasList;
 

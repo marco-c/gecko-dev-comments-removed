@@ -50,6 +50,8 @@ NS_IMPL_FRAMEARENA_HELPERS(nsPageSequenceFrame)
 nsPageSequenceFrame::nsPageSequenceFrame(ComputedStyle* aStyle,
                                          nsPresContext* aPresContext)
     : nsContainerFrame(aStyle, aPresContext, kClassID),
+      mMaxSheetSize(mWritingMode),
+      mScrollportSize(mWritingMode),
       mTotalPages(-1),
       mCalledBeginPage(false),
       mCurrentCanvasListSetup(false) {
@@ -79,16 +81,34 @@ NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 
 float nsPageSequenceFrame::GetPrintPreviewScale() const {
-  MOZ_DIAGNOSTIC_ASSERT(mAvailableISize >= 0, "Unset available width?");
-
   nsPresContext* pc = PresContext();
   float scale = pc->GetPrintPreviewScaleForSequenceFrame();
-  if (pc->IsScreen()) {
+
+  WritingMode wm = GetWritingMode();
+  if (pc->IsScreen() && MOZ_LIKELY(mScrollportSize.ISize(wm) > 0 &&
+                                   mScrollportSize.BSize(wm) > 0)) {
     
-    nscoord iSize = GetWritingMode().IsVertical() ? mSize.height : mSize.width;
-    nscoord scaledISize = NSToCoordCeil(iSize * scale);
-    if (scaledISize > mAvailableISize) {
-      scale *= float(mAvailableISize) / float(scaledISize);
+    
+
+    
+    
+    nscoord scaledISize = NSToCoordCeil(mMaxSheetSize.ISize(wm) * scale);
+    if (scaledISize > mScrollportSize.ISize(wm)) {
+      scale *= float(mScrollportSize.ISize(wm)) / float(scaledISize);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (MOZ_LIKELY(mScrollportSize.BSize(wm) != NS_UNCONSTRAINEDSIZE)) {
+      nscoord scaledBSize = NSToCoordCeil(mMaxSheetSize.BSize(wm) * scale);
+      if (scaledBSize > mScrollportSize.BSize(wm)) {
+        scale *= float(mScrollportSize.BSize(wm)) / float(scaledBSize);
+      }
     }
   }
   return scale;
@@ -177,7 +197,12 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     }
   };
 
-  mAvailableISize = aReflowInput.AvailableISize();
+  if (aPresContext->IsScreen()) {
+    
+    
+    
+    mScrollportSize = aReflowInput.ComputedSize();
+  }
 
   
   
@@ -243,7 +268,11 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   
   
   nscoord y = 0;
-  nscoord maxXMost = 0;
+
+  
+  
+  nscoord maxInflatedSheetWidth = 0;
+  nscoord maxInflatedSheetHeight = 0;
 
   
   for (nsIFrame* kidFrame : mFrames) {
@@ -279,8 +308,12 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     y += kidReflowOutput.Height();
     y += pageCSSMargin.bottom;
 
-    maxXMost =
-        std::max(maxXMost, x + kidReflowOutput.Width() + pageCSSMargin.right);
+    maxInflatedSheetWidth =
+        std::max(maxInflatedSheetWidth,
+                 kidReflowOutput.Width() + pageCSSMargin.LeftRight());
+    maxInflatedSheetHeight =
+        std::max(maxInflatedSheetHeight,
+                 kidReflowOutput.Height() + pageCSSMargin.TopBottom());
 
     
     nsIFrame* kidNextInFlow = kidFrame->GetNextInFlow();
@@ -333,7 +366,20 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
 
   
   
-  mSize = nsSize(maxXMost, y);
+  
+  
+  
+  mSize = nsSize(maxInflatedSheetWidth, y);
+
+  if (aPresContext->IsScreen()) {
+    
+    
+    
+    
+    WritingMode wm = aReflowInput.GetWritingMode();
+    mMaxSheetSize =
+        LogicalSize(wm, nsSize(maxInflatedSheetWidth, maxInflatedSheetHeight));
+  }
 
   
   
