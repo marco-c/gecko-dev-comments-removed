@@ -38,12 +38,149 @@ mozilla::GenericErrorResult<OOM&> RaiseParserAtomsOOMError(JSContext* cx);
 
 
 
-class ParserAtomEntry {
+
+
+
+class alignas(alignof(void*)) ParserAtomEntry {
   friend class ParserAtomsTable;
 
- public:
+  template <typename CharT>
+  static constexpr uint32_t MaxInline() {
+    return std::is_same_v<CharT, Latin1Char>
+               ? JSFatInlineString::MAX_LENGTH_LATIN1
+               : JSFatInlineString::MAX_LENGTH_TWO_BYTE;
+  }
+
   
-  mozilla::Variant<JS::UniqueLatin1Chars, JS::UniqueTwoByteChars> chars_;
+
+
+
+
+
+
+
+
+
+
+
+
+  struct ContentPtrVariant {
+    uintptr_t taggedPtr;
+
+    static const uintptr_t CHARTYPE_MASK = 0x1;
+    static const uintptr_t CHARTYPE_LATIN1 = 0x0;
+    static const uintptr_t CHARTYPE_TWO_BYTE = 0x1;
+
+    static const uintptr_t LOCATION_MASK = 0x2;
+    static const uintptr_t LOCATION_INLINE = 0x0;
+    static const uintptr_t LOCATION_HEAP = 0x2;
+
+    static const uintptr_t LOWBITS_MASK = CHARTYPE_MASK | LOCATION_MASK;
+
+    
+    
+    
+    
+    static const uintptr_t EMPTY_TAGGED_PTR =
+        CHARTYPE_LATIN1 | LOCATION_INLINE | (0x0 );
+
+    template <typename CharT>
+    static uintptr_t Tag(const CharT* ptr, bool isInline) {
+      static_assert(std::is_same_v<CharT, Latin1Char> ||
+                    std::is_same_v<CharT, char16_t>);
+      return uintptr_t(ptr) |
+             (std::is_same_v<CharT, Latin1Char> ? CHARTYPE_LATIN1
+                                                : CHARTYPE_TWO_BYTE) |
+             (isInline ? LOCATION_INLINE : LOCATION_HEAP);
+    }
+
+    
+    ContentPtrVariant(const ContentPtrVariant& other) = delete;
+
+    
+    template <typename CharT>
+    ContentPtrVariant(const CharT* weakContents, bool isInline)
+        : taggedPtr(Tag(weakContents, isInline)) {
+      static_assert(std::is_same_v<CharT, Latin1Char> ||
+                    std::is_same_v<CharT, char16_t>);
+      MOZ_ASSERT((reinterpret_cast<uintptr_t>(weakContents) & LOWBITS_MASK) ==
+                 0);
+    }
+
+    
+    template <typename CharT>
+    explicit ContentPtrVariant(
+        mozilla::UniquePtr<CharT[], JS::FreePolicy> owned)
+        : ContentPtrVariant(owned.release(), false) {}
+
+    
+    
+    ContentPtrVariant(ContentPtrVariant&& other) : taggedPtr(other.taggedPtr) {
+      other.taggedPtr = EMPTY_TAGGED_PTR;
+    }
+
+    ~ContentPtrVariant() {
+      if (isInline()) {
+        return;
+      }
+
+      
+      if (hasCharType<Latin1Char>()) {
+        UniqueLatin1Chars chars(getUnchecked<Latin1Char>());
+      } else {
+        UniqueTwoByteChars chars(getUnchecked<char16_t>());
+      }
+    }
+
+    template <typename T>
+    const T* getUnchecked() const {
+      return reinterpret_cast<const T*>(taggedPtr & ~LOWBITS_MASK);
+    }
+    template <typename T>
+    T* getUnchecked() {
+      return reinterpret_cast<T*>(taggedPtr & ~LOWBITS_MASK);
+    }
+    template <typename CharT>
+    bool hasCharType() const {
+      static_assert(std::is_same_v<CharT, Latin1Char> ||
+                    std::is_same_v<CharT, char16_t>);
+      return (taggedPtr & CHARTYPE_MASK) ==
+             (std::is_same_v<CharT, Latin1Char> ? CHARTYPE_LATIN1
+                                                : CHARTYPE_TWO_BYTE);
+    }
+    bool isInline() const {
+      return (taggedPtr & LOCATION_MASK) == LOCATION_INLINE;
+    }
+  };
+
+  static const uint16_t MAX_LATIN1_CHAR = 0xff;
+
+  
+  
+  
+  
+  template <typename CharT, typename SeqCharT>
+  static void drainChar16Seq(CharT* buf, InflatedChar16Sequence<SeqCharT> seq,
+                             uint32_t length) {
+    static_assert(
+        std::is_same_v<CharT, char16_t> || std::is_same_v<CharT, Latin1Char>,
+        "Invalid target buffer type.");
+    CharT* cur = buf;
+    while (seq.hasMore()) {
+      char16_t ch = seq.next();
+      if constexpr (std::is_same_v<CharT, Latin1Char>) {
+        MOZ_ASSERT(ch <= MAX_LATIN1_CHAR);
+      }
+      MOZ_ASSERT(cur < (buf + length));
+      *cur = ch;
+      cur++;
+    }
+  }
+
+ public:
+ private:
+  
+  ContentPtrVariant variant_;
 
   
   uint32_t length_;
@@ -56,22 +193,41 @@ class ParserAtomEntry {
   
   mutable JSAtom* jsatom_ = nullptr;
 
-  template <typename CharsT>
-  ParserAtomEntry(CharsT&& chars, uint32_t length, HashNumber hash)
-      : chars_(std::forward<CharsT&&>(chars)), length_(length), hash_(hash) {}
+ public:
+  template <typename CharT>
+  ParserAtomEntry(mozilla::UniquePtr<CharT[], JS::FreePolicy> chars,
+                  uint32_t length, HashNumber hash)
+      : variant_(std::move(chars)), length_(length), hash_(hash) {}
+
+  template <typename CharT>
+  ParserAtomEntry(const CharT* chars, uint32_t length, HashNumber hash)
+      : variant_(chars,  true), length_(length), hash_(hash) {}
+
+  template <typename CharT>
+  static CharT* inlineBufferPtr(ParserAtomEntry* entry) {
+    return reinterpret_cast<CharT*>(entry + 1);
+  }
+  template <typename CharT>
+  static const CharT* inlineBufferPtr(const ParserAtomEntry* entry) {
+    return reinterpret_cast<const CharT*>(entry + 1);
+  }
+
+  template <typename CharT>
+  static JS::Result<UniquePtr<ParserAtomEntry>, OOM&> allocate(
+      JSContext* cx, mozilla::UniquePtr<CharT[], JS::FreePolicy>&& ptr,
+      uint32_t length, HashNumber hash);
+
+  template <typename CharT, typename SeqCharT>
+  static JS::Result<UniquePtr<ParserAtomEntry>, OOM&> allocateInline(
+      JSContext* cx, InflatedChar16Sequence<SeqCharT> seq, uint32_t length,
+      HashNumber hash);
 
  public:
   
   
   ParserAtomEntry(const ParserAtomEntry&) = delete;
 
-  ParserAtomEntry(ParserAtomEntry&& other) = default;
-
-  template <typename CharT>
-  static ParserAtomEntry make(mozilla::UniquePtr<CharT[], JS::FreePolicy>&& ptr,
-                              uint32_t length, HashNumber hash) {
-    return ParserAtomEntry(std::move(ptr), length, hash);
-  }
+  ParserAtomEntry(ParserAtomEntry&& other) = delete;
 
   ParserAtom* asAtom() { return reinterpret_cast<ParserAtom*>(this); }
   const ParserAtom* asAtom() const {
@@ -81,16 +237,16 @@ class ParserAtomEntry {
   inline ParserName* asName();
   inline const ParserName* asName() const;
 
-  bool hasLatin1Chars() const { return chars_.is<UniqueLatin1Chars>(); }
-  bool hasTwoByteChars() const { return chars_.is<UniqueTwoByteChars>(); }
+  bool hasLatin1Chars() const { return variant_.hasCharType<Latin1Char>(); }
+  bool hasTwoByteChars() const { return variant_.hasCharType<char16_t>(); }
 
   const Latin1Char* latin1Chars() const {
     MOZ_ASSERT(hasLatin1Chars());
-    return chars_.as<UniqueLatin1Chars>().get();
+    return variant_.getUnchecked<Latin1Char>();
   }
   const char16_t* twoByteChars() const {
     MOZ_ASSERT(hasTwoByteChars());
-    return chars_.as<UniqueTwoByteChars>().get();
+    return variant_.getUnchecked<char16_t>();
   }
 
   bool isIndex(uint32_t* indexp) const;
@@ -220,14 +376,50 @@ class ParserAtomsTable {
   explicit ParserAtomsTable(JSContext* cx);
 
  private:
-  JS::Result<const ParserAtom*, OOM&> addEntry(JSContext* cx,
-                                               EntrySet::AddPtr addPtr,
-                                               ParserAtomEntry&& entry);
+  
+  struct AddPtr {
+    struct InnerAddPtr {
+      EntrySet::AddPtr entrySetAddPtr;
+      HashNumber hash;
+      InnerAddPtr(EntrySet::AddPtr e, HashNumber h)
+          : entrySetAddPtr(e), hash(h) {}
+    };
+    using VariantType = mozilla::Variant<const ParserAtomEntry*, InnerAddPtr>;
+    VariantType atomOrAdd;
+
+    explicit AddPtr(const ParserAtomEntry* atom) : atomOrAdd(atom) {}
+
+    AddPtr(EntrySet::AddPtr entrySetAddPtr, HashNumber hash)
+        : atomOrAdd((const ParserAtomEntry*)nullptr) {
+      if (entrySetAddPtr) {
+        atomOrAdd = VariantType(
+            const_cast<const ParserAtomEntry*>(entrySetAddPtr->get()));
+      } else {
+        atomOrAdd = VariantType(InnerAddPtr(entrySetAddPtr, hash));
+      }
+    }
+
+    explicit operator bool() const {
+      return atomOrAdd.is<const ParserAtomEntry*>();
+    }
+    const ParserAtomEntry* get() const {
+      return atomOrAdd.as<const ParserAtomEntry*>();
+    }
+    InnerAddPtr& inner() { return atomOrAdd.as<InnerAddPtr>(); }
+  };
+
+  JS::Result<const ParserAtom*, OOM&> addEntry(
+      JSContext* cx, AddPtr& addPtr, UniquePtr<ParserAtomEntry> entry);
 
   template <typename AtomCharT, typename SeqCharT>
   JS::Result<const ParserAtom*, OOM&> internChar16Seq(
-      JSContext* cx, EntrySet::AddPtr add, InflatedChar16Sequence<SeqCharT> seq,
-      uint32_t length, HashNumber hash);
+      JSContext* cx, AddPtr& add, InflatedChar16Sequence<SeqCharT> seq,
+      uint32_t length);
+
+  
+  
+  template <typename CharT>
+  AddPtr lookupForAdd(JSContext* cx, InflatedChar16Sequence<CharT> seq);
 
   template <typename CharT>
   JS::Result<const ParserAtom*, OOM&> lookupOrInternChar16Seq(
@@ -263,25 +455,16 @@ class SpecificParserAtomLookup : public ParserAtomLookup {
 
  public:
   explicit SpecificParserAtomLookup(const InflatedChar16Sequence<CharT>& seq)
-      : SpecificParserAtomLookup(seq, computeHash(seq)) {}
+      : SpecificParserAtomLookup(seq, seq.computeHash()) {}
 
   SpecificParserAtomLookup(const InflatedChar16Sequence<CharT>& seq,
                            HashNumber hash)
       : ParserAtomLookup(hash), seq_(seq) {
-    MOZ_ASSERT(computeHash(seq_) == hash);
+    MOZ_ASSERT(seq_.computeHash() == hash);
   }
 
   virtual bool equalsEntry(const ParserAtomEntry* entry) const override {
     return entry->equalsSeq<CharT>(hash_, seq_);
-  }
-
- private:
-  static HashNumber computeHash(InflatedChar16Sequence<CharT> seq) {
-    HashNumber hash = 0;
-    while (seq.hasMore()) {
-      hash = mozilla::AddToHash(hash, seq.next());
-    }
-    return hash;
   }
 };
 
