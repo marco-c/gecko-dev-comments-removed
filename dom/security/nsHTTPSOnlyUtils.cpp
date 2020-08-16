@@ -9,7 +9,6 @@
 #include "nsContentUtils.h"
 #include "nsHTTPSOnlyUtils.h"
 #include "nsIConsoleService.h"
-#include "nsIHttpChannel.h"
 #include "nsIHttpsOnlyModePermission.h"
 #include "nsIPermissionManager.h"
 #include "nsIScriptError.h"
@@ -165,57 +164,23 @@ bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsIChannel* aChannel,
 }
 
 
-void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
-    nsIChannel* aChannel) {
-  NS_ENSURE_TRUE_VOID(aChannel);
-
-  
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
-    return;
+bool nsHTTPSOnlyUtils::TestHttpsOnlySitePermission(nsIPrincipal* aPrincipal) {
+  if (!aPrincipal) {
+    
+    return false;
   }
-
-  
-  nsContentPolicyType type = loadInfo->GetExternalContentPolicyType();
-  if (type != nsIContentPolicy::TYPE_DOCUMENT &&
-      type != nsIContentPolicy::TYPE_SUBDOCUMENT) {
-    return;
-  }
-
-  
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
-  if (!httpChannel) {
-    return;
-  }
-
-  nsCOMPtr<nsIPrincipal> principal;
-  nsresult rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
-      aChannel, getter_AddRefs(principal));
-  NS_ENSURE_SUCCESS_VOID(rv);
 
   nsCOMPtr<nsIPermissionManager> permMgr =
       mozilla::services::GetPermissionManager();
-  NS_ENSURE_TRUE_VOID(permMgr);
+  NS_ENSURE_TRUE(permMgr, false);
 
   uint32_t perm;
-  rv = permMgr->TestExactPermissionFromPrincipal(
-      principal, "https-only-load-insecure"_ns, &perm);
-  NS_ENSURE_SUCCESS_VOID(rv);
+  nsresult rv = permMgr->TestExactPermissionFromPrincipal(
+      aPrincipal, "https-only-load-insecure"_ns, &perm);
+  NS_ENSURE_SUCCESS(rv, false);
 
-  bool isHttpsOnlyExempt =
-      perm == nsIHttpsOnlyModePermission::LOAD_INSECURE_ALLOW ||
-      perm == nsIHttpsOnlyModePermission::LOAD_INSECURE_ALLOW_SESSION;
-
-  
-  
-  uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-  if (isHttpsOnlyExempt) {
-    httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
-  } else {
-    httpsOnlyStatus &= ~nsILoadInfo::HTTPS_ONLY_EXEMPT;
-  }
-  loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+  return perm == nsIHttpsOnlyModePermission::LOAD_INSECURE_ALLOW ||
+         perm == nsIHttpsOnlyModePermission::LOAD_INSECURE_ALLOW_SESSION;
 }
 
 
