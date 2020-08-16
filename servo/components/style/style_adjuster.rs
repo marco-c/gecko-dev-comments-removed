@@ -162,8 +162,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
-    
-    
     fn adjust_for_inert(&mut self) {
         use properties::longhands::_moz_inert::computed_value::T as Inert;
         use properties::longhands::_moz_user_focus::computed_value::T as UserFocus;

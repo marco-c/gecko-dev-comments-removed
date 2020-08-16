@@ -180,7 +180,6 @@ class ImageTracker;
 class HTMLAllCollection;
 class HTMLBodyElement;
 class HTMLMetaElement;
-class HTMLDialogElement;
 class HTMLSharedElement;
 class HTMLImageElement;
 struct LifecycleCallbackArgs;
@@ -1853,7 +1852,7 @@ class Document : public nsINode,
   void CleanupFullscreenState();
 
   
-  void TopLayerPush(Element* aElement);
+  bool TopLayerPush(Element* aElement);
 
   
   
@@ -1865,14 +1864,10 @@ class Document : public nsINode,
 
   
   
-  void SetFullscreenElement(Element* aElement);
+  bool SetFullscreenElement(Element* aElement);
 
   
   void TryCancelDialog();
-
-  void SetBlockedByModalDialog(HTMLDialogElement&);
-
-  void UnsetBlockedByModalDialog(HTMLDialogElement&);
 
   
 

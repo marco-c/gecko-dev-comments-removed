@@ -202,13 +202,6 @@ add_task(async function testAboutPage() {
         "after cancelling enrollment, Pioneer is not enrolled."
       );
 
-      
-      
-      
-      
-      
-      
-      enrollmentButton.getBoundingClientRect();
       enrollmentButton.click();
       ok(dialog.open, "after retrying enrollment, consent dialog is open.");
 
@@ -283,9 +276,6 @@ add_task(async function testAboutPage() {
           "After canceling study enrollment, join button is enabled."
         );
 
-        
-        
-        joinButton.getBoundingClientRect();
         joinButton.click();
         await waitForAnimationFrame();
 
