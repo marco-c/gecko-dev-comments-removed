@@ -9,7 +9,7 @@ use peek_poke::PeekPoke;
 use std::ops::{Add, Sub};
 use std::sync::Arc;
 
-use crate::api::{IdNamespace, PipelineId, TileSize};
+use crate::api::{IdNamespace, TileSize};
 use crate::display_item::ImageRendering;
 use crate::font::{FontInstanceKey, FontInstanceData, FontKey, FontTemplate};
 use crate::units::*;
@@ -98,16 +98,6 @@ pub trait ExternalImageHandler {
     
     
     fn unlock(&mut self, key: ExternalImageId, channel_index: u8);
-}
-
-
-
-pub trait OutputImageHandler {
-    
-    fn lock(&mut self, pipeline_id: PipelineId) -> Option<(u32, FramebufferIntSize)>;
-    
-    
-    fn unlock(&mut self, pipeline_id: PipelineId);
 }
 
 

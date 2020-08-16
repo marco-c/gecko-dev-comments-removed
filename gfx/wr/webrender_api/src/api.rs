@@ -309,12 +309,6 @@ impl Transaction {
 
     
     
-    pub fn enable_frame_output(&mut self, pipeline_id: PipelineId, enable: bool) {
-        self.scene_ops.push(SceneMsg::EnableFrameOutput(pipeline_id, enable));
-    }
-
-    
-    
     
     
     pub fn scroll(&mut self, scroll_location: ScrollLocation, cursor: WorldPoint) {
@@ -799,8 +793,6 @@ pub enum SceneMsg {
     
     RemovePipeline(PipelineId),
     
-    EnableFrameOutput(PipelineId, bool),
-    
     SetDisplayList {
         
         display_list: BuiltDisplayList,
@@ -862,7 +854,6 @@ impl fmt::Debug for SceneMsg {
             SceneMsg::SetDisplayList { .. } => "SceneMsg::SetDisplayList",
             SceneMsg::SetPageZoom(..) => "SceneMsg::SetPageZoom",
             SceneMsg::RemovePipeline(..) => "SceneMsg::RemovePipeline",
-            SceneMsg::EnableFrameOutput(..) => "SceneMsg::EnableFrameOutput",
             SceneMsg::SetDocumentView { .. } => "SceneMsg::SetDocumentView",
             SceneMsg::SetRootPipeline(..) => "SceneMsg::SetRootPipeline",
             SceneMsg::SetQualitySettings { .. } => "SceneMsg::SetQualitySettings",
@@ -1724,21 +1715,6 @@ impl RenderApi {
         self.send_scene_msg(
             document_id,
             SceneMsg::SetDocumentView { device_rect, device_pixel_ratio },
-        );
-    }
-
-    
-    
-    
-    pub fn enable_frame_output(
-        &self,
-        document_id: DocumentId,
-        pipeline_id: PipelineId,
-        enable: bool,
-    ) {
-        self.send_scene_msg(
-            document_id,
-            SceneMsg::EnableFrameOutput(pipeline_id, enable),
         );
     }
 
