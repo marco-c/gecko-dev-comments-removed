@@ -170,7 +170,14 @@ var PrintUtils = {
     });
 
     await dialog.open(
-      `chrome://global/content/print.html?browsingContextId=${aBrowsingContext.id}`
+      `chrome://global/content/print.html?browsingContextId=${aBrowsingContext.id}`,
+      null,
+      null,
+      () => {
+        printPreviewBrowser.messageManager.sendAsyncMessage(
+          "Printing:Preview:Exit"
+        );
+      }
     );
   },
 
@@ -185,38 +192,10 @@ var PrintUtils = {
 
 
 
-  async updatePrintPreview(sourceBrowser, printSettings) {
-    let container = gBrowser.getBrowserContainer(sourceBrowser);
-    let printPreviewBrowser = container.querySelector(".printPreviewBrowser");
-
-    if (!printPreviewBrowser) {
-      
-      return 0;
-    }
-
-    let numPages = await this._updatePrintPreview(
-      sourceBrowser,
-      printPreviewBrowser,
-      printSettings
-    );
-    return numPages;
-  },
-
-  
 
 
 
-
-
-
-
-
-
-
-
-
-
-  _updatePrintPreview(sourceBrowser, printPreviewBrowser, printSettings) {
+  updatePrintPreview(sourceBrowser, printPreviewBrowser, printSettings) {
     return new Promise(resolve => {
       printPreviewBrowser.messageManager.addMessageListener(
         "Printing:Preview:UpdatePageCount",
