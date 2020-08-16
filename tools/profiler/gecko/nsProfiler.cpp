@@ -997,7 +997,7 @@ void nsProfiler::FinishGathering() {
   
   mWriter->End();
 
-  UniquePtr<char[]> buf = mWriter->WriteFunc()->CopyData();
+  UniquePtr<char[]> buf = mWriter->ChunkedWriteFunc()->CopyData();
   size_t len = strlen(buf.get());
   nsCString result;
   result.Adopt(buf.release(), len);
