@@ -18,6 +18,17 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/Services.jsm"
 );
 
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "tabChromePromptSubDialog",
+  "prompts.tabChromePromptSubDialog",
+  false
+);
+
 
 
 
@@ -106,7 +117,11 @@ class PromptParent extends JSWindowActorParent {
 
     switch (message.name) {
       case "Prompt:Open": {
-        if (args.modalType === Ci.nsIPrompt.MODAL_TYPE_CONTENT) {
+        if (
+          args.modalType === Ci.nsIPrompt.MODAL_TYPE_CONTENT ||
+          (args.modalType === Ci.nsIPrompt.MODAL_TYPE_TAB &&
+            !tabChromePromptSubDialog)
+        ) {
           return this.openContentPrompt(args, id);
         }
         return this.openChromePrompt(args);
