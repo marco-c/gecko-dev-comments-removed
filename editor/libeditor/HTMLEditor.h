@@ -32,6 +32,7 @@
 #include "nsTArray.h"
 
 class nsDocumentFragment;
+class nsFrameSelection;
 class nsHTMLDocument;
 class nsITransferable;
 class nsIClipboard;
@@ -2457,8 +2458,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  already_AddRefed<nsRange> GetRangeExtendedToIncludeInvisibleNodes(
-      const dom::AbstractRange& aAbstractRange);
+
+
+  bool ExtendRangeToIncludeInvisibleNodes(
+      const nsFrameSelection* aFrameSelection, nsRange& aRange);
 
   
 
