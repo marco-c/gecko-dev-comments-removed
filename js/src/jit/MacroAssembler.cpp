@@ -3918,6 +3918,22 @@ void MacroAssembler::debugAssertObjHasFixedSlots(Register obj,
 #endif
 }
 
+void MacroAssembler::branchArrayIsNotPacked(Register array, Register temp1,
+                                            Register temp2, Label* label) {
+  loadPtr(Address(array, NativeObject::offsetOfElements()), temp1);
+
+  
+  Label done;
+  Address initLength(temp1, ObjectElements::offsetOfInitializedLength());
+  load32(Address(temp1, ObjectElements::offsetOfLength()), temp2);
+  branch32(Assembler::NotEqual, initLength, temp2, label);
+
+  
+  Address flags(temp1, ObjectElements::offsetOfFlags());
+  branchTest32(Assembler::NonZero, flags, Imm32(ObjectElements::NON_PACKED),
+               label);
+}
+
 void MacroAssembler::setIsPackedArray(Register obj, Register output,
                                       Register temp) {
   
@@ -3925,19 +3941,9 @@ void MacroAssembler::setIsPackedArray(Register obj, Register output,
   branchTestObjClass(Assembler::NotEqual, obj, &ArrayObject::class_, temp, obj,
                      &notPackedArray);
 
-  loadPtr(Address(obj, NativeObject::offsetOfElements()), temp);
+  branchArrayIsNotPacked(obj, temp, output, &notPackedArray);
 
-  
   Label done;
-  Address initLength(temp, ObjectElements::offsetOfInitializedLength());
-  load32(Address(temp, ObjectElements::offsetOfLength()), output);
-  branch32(Assembler::NotEqual, initLength, output, &notPackedArray);
-
-  
-  Address flags(temp, ObjectElements::offsetOfFlags());
-  branchTest32(Assembler::NonZero, flags, Imm32(ObjectElements::NON_PACKED),
-               &notPackedArray);
-
   move32(Imm32(1), output);
   jump(&done);
 
