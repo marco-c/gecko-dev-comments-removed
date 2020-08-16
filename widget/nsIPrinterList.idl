@@ -32,5 +32,5 @@ interface nsIPrinterList : nsISupports
   
 
 
-  readonly attribute Array<nsIPrinter> printers;
+  [implicit_jscontext] readonly attribute Promise printers;
 };

@@ -58,6 +58,8 @@ interface nsIPrintSettingsService : nsISupports
   
 
 
+
+
   readonly attribute AString lastUsedPrinterName;
 
   

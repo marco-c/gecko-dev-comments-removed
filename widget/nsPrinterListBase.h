@@ -7,11 +7,33 @@
 #define nsPrinterListBase_h__
 
 #include "nsIPrinterList.h"
+
+#include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
+#include "nsString.h"
 
 class nsPrinterListBase : public nsIPrinterList {
  public:
-  NS_DECL_ISUPPORTS
+  using Promise = mozilla::dom::Promise;
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(nsPrinterListBase)
+  NS_IMETHOD GetPrinters(JSContext*, Promise**) final;
+
+  struct PrinterInfo {
+    
+    nsString mName;
+    
+    std::array<void*, 2> mCupsHandles{};
+  };
+
+  
+  
+  virtual nsTArray<PrinterInfo> GetPrinters() const = 0;
+
+  
+  
+  virtual RefPtr<nsIPrinter> CreatePrinter(PrinterInfo) const = 0;
 
   
   nsPrinterListBase(const nsPrinterListBase&) = delete;
@@ -20,6 +42,8 @@ class nsPrinterListBase : public nsIPrinterList {
  protected:
   nsPrinterListBase();
   virtual ~nsPrinterListBase();
+
+  RefPtr<Promise> mPrintersPromise;
 };
 
 #endif

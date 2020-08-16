@@ -890,36 +890,8 @@ nsPrintSettingsService::GetNewPrintSettings(
 NS_IMETHODIMP
 nsPrintSettingsService::GetLastUsedPrinterName(
     nsAString& aLastUsedPrinterName) {
-  nsresult rv;
-  nsCOMPtr<nsIPrinterList> printerList =
-      do_GetService(NS_PRINTER_LIST_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   aLastUsedPrinterName.Truncate();
-
-  
-  nsAutoString lastUsedPrinterName;
-  Preferences::GetString(kPrinterName, lastUsedPrinterName);
-  if (!lastUsedPrinterName.IsEmpty()) {
-    
-
-    nsTArray<RefPtr<nsIPrinter>> printers;
-    rv = printerList->GetPrinters(printers);
-    if (NS_SUCCEEDED(rv)) {
-      for (nsIPrinter* printer : printers) {
-        nsAutoString printerName;
-        printer->GetName(printerName);
-        if (printerName.Equals(lastUsedPrinterName)) {
-          aLastUsedPrinterName = lastUsedPrinterName;
-          return NS_OK;
-        }
-      }
-    }
-  }
-
-  
-  
-  printerList->GetSystemDefaultPrinterName(aLastUsedPrinterName);
+  Preferences::GetString(kPrinterName, aLastUsedPrinterName);
   return NS_OK;
 }
 
