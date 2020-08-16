@@ -351,7 +351,11 @@ pref("print.shrink-to-fit.scale-limit-percent", 20);
 pref("print.use_simplify_page", false);
 
 
-pref("print.tab_modal.enabled", false);
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("print.tab_modal.enabled", true);
+#else
+  pref("print.tab_modal.enabled", false);
+#endif
 
 
 pref("mathml.disabled",    false);

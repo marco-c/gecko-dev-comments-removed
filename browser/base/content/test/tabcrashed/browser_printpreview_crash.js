@@ -14,6 +14,9 @@ const DOMAIN = "example.com";
 
 
 add_task(async function test() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["print.tab_modal.enabled", false]],
+  });
   
   let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
   let browser = newTab.linkedBrowser;
