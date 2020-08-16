@@ -26,7 +26,6 @@ use core_foundation::string::*;
 
 include!("bindings_macos.rs");
 
-use crate::manager::SlotType;
 use crate::util::*;
 
 #[repr(C)]
@@ -815,17 +814,7 @@ pub enum Object {
 }
 
 impl Object {
-    pub fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
-        
-        
-        
-        
-        
-        
-        
-        if slot_type != SlotType::Modern {
-            return false;
-        }
+    pub fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         match self {
             Object::Cert(cert) => cert.matches(attrs),
             Object::Key(key) => key.matches(attrs),

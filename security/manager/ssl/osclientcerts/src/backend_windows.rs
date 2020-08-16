@@ -17,7 +17,6 @@ use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::ncrypt::*;
 use winapi::um::wincrypt::{HCRYPTHASH, HCRYPTPROV, *};
 
-use crate::manager::SlotType;
 use crate::util::*;
 
 
@@ -66,25 +65,6 @@ fn get_cert_subject_dn(cert_info: &CERT_INFO) -> Result<Vec<u8>, ()> {
 }
 
 
-
-
-
-fn get_slot_type_for_cert(cert: PCCERT_CONTEXT) -> SlotType {
-    if unsafe {
-        CryptFindCertificateKeyProvInfo(
-            cert,
-            CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG,
-            std::ptr::null_mut(),
-        )
-    } != 0
-    {
-        SlotType::Modern
-    } else {
-        SlotType::Legacy
-    }
-}
-
-
 pub struct Cert {
     
     class: Vec<u8>,
@@ -102,13 +82,11 @@ pub struct Cert {
     serial_number: Vec<u8>,
     
     subject: Vec<u8>,
-    
-    slot_type: SlotType,
 }
 
 impl Cert {
-    fn new(cert_context: PCCERT_CONTEXT) -> Result<Cert, ()> {
-        let cert = unsafe { &*cert_context };
+    fn new(cert: PCCERT_CONTEXT) -> Result<Cert, ()> {
+        let cert = unsafe { &*cert };
         let cert_info = unsafe { &*cert.pCertInfo };
         let value =
             unsafe { slice::from_raw_parts(cert.pbCertEncoded, cert.cbCertEncoded as usize) };
@@ -133,7 +111,6 @@ impl Cert {
             issuer,
             serial_number,
             subject,
-            slot_type: get_slot_type_for_cert(cert_context),
         })
     }
 
@@ -169,10 +146,7 @@ impl Cert {
         &self.subject
     }
 
-    fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
-        if slot_type != self.slot_type {
-            return false;
-        }
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         for (attr_type, attr_value) in attrs {
             let comparison = match *attr_type {
                 CKA_CLASS => self.class(),
@@ -589,8 +563,6 @@ pub struct Key {
     ec_params: Option<Vec<u8>>,
     
     key_type_enum: KeyType,
-    
-    slot_type: SlotType,
 }
 
 impl Key {
@@ -637,7 +609,6 @@ impl Key {
             modulus,
             ec_params,
             key_type_enum,
-            slot_type: get_slot_type_for_cert(cert_context),
         })
     }
 
@@ -675,10 +646,7 @@ impl Key {
         }
     }
 
-    fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
-        if slot_type != self.slot_type {
-            return false;
-        }
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         for (attr_type, attr_value) in attrs {
             let comparison = match *attr_type {
                 CKA_CLASS => self.class(),
@@ -765,10 +733,10 @@ pub enum Object {
 }
 
 impl Object {
-    pub fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
+    pub fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         match self {
-            Object::Cert(cert) => cert.matches(slot_type, attrs),
-            Object::Key(key) => key.matches(slot_type, attrs),
+            Object::Cert(cert) => cert.matches(attrs),
+            Object::Key(key) => key.matches(attrs),
         }
     }
 
