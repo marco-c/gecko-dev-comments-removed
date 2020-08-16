@@ -1917,9 +1917,8 @@ nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
 
   
   
-  
   MOZ_ASSERT(childReflowStatus.IsComplete(),
-             "We gave flex item unconstrained available height, so it "
+             "We gave flex item unconstrained available block-size, so it "
              "should be complete");
 
   
