@@ -1823,6 +1823,11 @@ bool WarpBuilder::buildCallOp(BytecodeLocation loc) {
     needsThisCheck = true;
   }
 
+  if (op == JSOp::FunApply && argc == 2) {
+    MDefinition* arg = maybeGuardNotOptimizedArguments(callInfo.getArg(1));
+    callInfo.setArg(1, arg);
+  }
+
   MCall* call = makeCall(callInfo, needsThisCheck);
   if (!call) {
     return false;
@@ -3043,21 +3048,28 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
       MOZ_ASSERT(numInputs == 1);
       PropertyName* name = loc.getPropertyName(script_);
       MConstant* id = constant(StringValue(name));
+      MDefinition* val = getInput(0);
+      if (info().hasArguments()) {
+        const JSAtomState& names = mirGen().runtime->names();
+        if (name == names.length || name == names.callee) {
+          val = maybeGuardNotOptimizedArguments(val);
+        }
+      }
       
       
       
       bool monitoredResult = true;
-      auto* ins =
-          MGetPropertyCache::New(alloc(), getInput(0), id, monitoredResult);
+      auto* ins = MGetPropertyCache::New(alloc(), val, id, monitoredResult);
       current->add(ins);
       current->push(ins);
       return resumeAfter(ins, loc);
     }
     case CacheKind::GetElem: {
       MOZ_ASSERT(numInputs == 2);
+      MDefinition* val = maybeGuardNotOptimizedArguments(getInput(0));
       bool monitoredResult = true;  
-      auto* ins = MGetPropertyCache::New(alloc(), getInput(0), getInput(1),
-                                         monitoredResult);
+      auto* ins =
+          MGetPropertyCache::New(alloc(), val, getInput(1), monitoredResult);
       current->add(ins);
       current->push(ins);
       return resumeAfter(ins, loc);
@@ -3168,6 +3180,31 @@ bool WarpBuilder::buildBailoutForColdIC(BytecodeLocation loc, CacheKind kind) {
   current->push(ins);
 
   return true;
+}
+
+MDefinition* WarpBuilder::maybeGuardNotOptimizedArguments(MDefinition* def) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!info().hasArguments() || info().needsArgsObj() || info().isAnalysis()) {
+    return def;
+  }
+
+  if (!MGuardNotOptimizedArguments::maybeIsOptimizedArguments(def)) {
+    return def;
+  }
+
+  auto* ins = MGuardNotOptimizedArguments::New(alloc(), def);
+  current->add(ins);
+  return ins;
 }
 
 bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,

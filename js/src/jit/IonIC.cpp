@@ -168,6 +168,9 @@ bool IonGetPropertyIC::update(JSContext* cx, HandleScript outerScript,
   AutoDetectInvalidation adi(cx, res, ionScript);
 
   
+  MOZ_ASSERT(!val.isMagic());
+
+  
   if (ic->idempotent()) {
     adi.disable();
   }

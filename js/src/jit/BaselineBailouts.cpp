@@ -2050,6 +2050,12 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       HandleBaselineInfoBailout(cx, outerScript, innerScript);
       break;
 
+    case BailoutKind::NotOptimizedArgumentsGuard:
+      
+      
+      JSScript::argumentsOptimizationFailed(cx, innerScript);
+      break;
+
     case BailoutKind::ArgumentCheck:
       
       break;

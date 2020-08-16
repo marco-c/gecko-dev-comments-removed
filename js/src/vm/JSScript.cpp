@@ -4643,6 +4643,13 @@ void JSScript::argumentsOptimizationFailed(JSContext* cx, HandleScript script) {
   script->setFlag(MutableFlags::NeedsArgsObj);
 
   
+  
+  if (jit::JitOptions.warpBuilder) {
+    AutoEnterAnalysis enter(cx->runtime()->defaultFreeOp(), script->zone());
+    script->zone()->types.addPendingRecompile(cx, script);
+  }
+
+  
 
 
 
