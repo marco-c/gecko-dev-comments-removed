@@ -1,0 +1,41 @@
+
+
+
+
+
+
+#ifndef mozHunspellFileMgrSandbox_h
+#define mozHunspellFileMgrSandbox_h
+
+#include <string>
+#include <stdint.h>
+
+#include "mozilla/Result.h"
+#include "mozilla/ResultExtensions.h"
+#include "nsIInputStream.h"
+#include "nsReadLine.h"
+
+
+
+class FileMgr final {
+ public:
+  
+
+
+
+
+
+  explicit FileMgr(const char* aFilename, const char* aKey = nullptr);
+  ~FileMgr();
+
+  
+  
+  bool getline(std::string& aLine);
+  int getlinenum() const;
+
+ private:
+  
+  uint32_t mFd;
+};
+
+#endif  
