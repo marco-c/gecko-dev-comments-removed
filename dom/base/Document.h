@@ -2682,8 +2682,15 @@ class Document : public nsINode,
 
   uint32_t EventHandlingSuppressed() const { return mEventsSuppressed; }
 
-  bool IsEventHandlingEnabled() {
+  bool IsEventHandlingEnabled() const {
     return !EventHandlingSuppressed() && mScriptGlobalObject;
+  }
+
+  bool WouldScheduleFrameRequestCallbacks() const {
+    
+    
+    
+    return mPresShell && IsEventHandlingEnabled();
   }
 
   void DecreaseEventSuppression() {
@@ -3017,7 +3024,7 @@ class Document : public nsINode,
 
 
 
-  bool ShouldThrottleFrameRequests();
+  bool ShouldThrottleFrameRequests() const;
 
   
   bool InUnlinkOrDeletion() { return mInUnlinkOrDeletion; }
