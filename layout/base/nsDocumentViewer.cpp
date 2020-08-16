@@ -3493,7 +3493,7 @@ bool nsDocumentViewer::ShouldAttachToTopLevel() {
 
 
 
-bool nsDocumentViewer::GetIsPrinting() {
+bool nsDocumentViewer::GetIsPrinting() const {
 #ifdef NS_PRINTING
   if (mPrintJob) {
     return mPrintJob->GetIsPrinting();
@@ -3521,7 +3521,7 @@ void nsDocumentViewer::SetIsPrinting(bool aIsPrinting) {
 
 
 
-bool nsDocumentViewer::GetIsPrintPreview() {
+bool nsDocumentViewer::GetIsPrintPreview() const {
 #ifdef NS_PRINTING
   if (mPrintJob) {
     return mPrintJob->GetIsPrintPreview();
