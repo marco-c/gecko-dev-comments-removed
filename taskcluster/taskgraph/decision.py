@@ -267,9 +267,6 @@ def taskgraph_decision(options, parameters=None):
     write_artifact('target-tasks.json', list(tgg.target_task_set.tasks.keys()))
 
     
-    write_artifact('optimization-data.json', tgg.optimized_data)
-
-    
     
     write_artifact('task-graph.json', tgg.morphed_task_graph.to_json())
     write_artifact('label-to-taskid.json', tgg.label_to_taskid)
