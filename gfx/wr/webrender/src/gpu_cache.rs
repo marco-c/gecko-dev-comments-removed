@@ -140,6 +140,13 @@ impl From<TexelRect> for GpuBlockData {
 
 
 
+
+pub trait ToGpuBlocks {
+    
+    fn write_gpu_blocks(&self, _: GpuDataRequest);
+}
+
+
 #[derive(Debug, Copy, Clone, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
