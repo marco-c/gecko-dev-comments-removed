@@ -23,6 +23,12 @@ pub const SYNC_MAX_ITEMS: usize = 512;
 
 type JsonMap = Map<String, JsonValue>;
 
+enum StorageChangeOp {
+    Clear,
+    Set(JsonValue),
+    SetWithoutQuota(JsonValue),
+}
+
 fn get_from_db(conn: &Connection, ext_id: &str) -> Result<Option<JsonMap>> {
     Ok(
         match conn.try_query_one::<String>(
@@ -42,13 +48,14 @@ fn get_from_db(conn: &Connection, ext_id: &str) -> Result<Option<JsonMap>> {
     )
 }
 
-fn save_to_db(tx: &Transaction<'_>, ext_id: &str, val: &JsonValue) -> Result<()> {
+fn save_to_db(tx: &Transaction<'_>, ext_id: &str, val: &StorageChangeOp) -> Result<()> {
     
     
     
     let is_delete = match val {
-        JsonValue::Null => true,
-        JsonValue::Object(m) => m.is_empty(),
+        StorageChangeOp::Clear => true,
+        StorageChangeOp::Set(JsonValue::Object(v)) => v.is_empty(),
+        StorageChangeOp::SetWithoutQuota(JsonValue::Object(v)) => v.is_empty(),
         _ => false,
     };
     if is_delete {
@@ -85,10 +92,18 @@ fn save_to_db(tx: &Transaction<'_>, ext_id: &str, val: &JsonValue) -> Result<()>
         }
     } else {
         
-        let sval = val.to_string();
-        if sval.len() > SYNC_QUOTA_BYTES {
-            return Err(ErrorKind::QuotaError(QuotaReason::TotalBytes).into());
-        }
+        let sval = match val {
+            StorageChangeOp::Set(v) => {
+                let sv = v.to_string();
+                if sv.len() > SYNC_QUOTA_BYTES {
+                    return Err(ErrorKind::QuotaError(QuotaReason::TotalBytes).into());
+                }
+                sv
+            }
+            StorageChangeOp::SetWithoutQuota(v) => v.to_string(),
+            StorageChangeOp::Clear => unreachable!(),
+        };
+
         log::trace!("saving data for '{}': writing", ext_id);
         tx.execute_named_cached(
             "INSERT INTO storage_sync_data(ext_id, data, sync_change_counter)
@@ -105,7 +120,7 @@ fn save_to_db(tx: &Transaction<'_>, ext_id: &str, val: &JsonValue) -> Result<()>
 }
 
 fn remove_from_db(tx: &Transaction<'_>, ext_id: &str) -> Result<()> {
-    save_to_db(tx, ext_id, &JsonValue::Null)
+    save_to_db(tx, ext_id, &StorageChangeOp::Clear)
 }
 
 
@@ -206,7 +221,11 @@ pub fn set(tx: &Transaction<'_>, ext_id: &str, val: JsonValue) -> Result<Storage
         current.insert(k, v);
     }
 
-    save_to_db(tx, ext_id, &JsonValue::Object(current))?;
+    save_to_db(
+        tx,
+        ext_id,
+        &StorageChangeOp::Set(JsonValue::Object(current)),
+    )?;
     Ok(changes)
 }
 
@@ -281,7 +300,11 @@ pub fn remove(tx: &Transaction<'_>, ext_id: &str, keys: JsonValue) -> Result<Sto
         }
     }
     if !result.is_empty() {
-        save_to_db(tx, ext_id, &JsonValue::Object(existing))?;
+        save_to_db(
+            tx,
+            ext_id,
+            &StorageChangeOp::SetWithoutQuota(JsonValue::Object(existing)),
+        )?;
     }
     Ok(result)
 }
@@ -578,6 +601,43 @@ mod tests {
             ErrorKind::QuotaError(QuotaReason::ItemBytes) => {}
             _ => panic!("unexpected error type"),
         };
+        Ok(())
+    }
+
+    #[test]
+    fn test_quota_bytes() -> Result<()> {
+        let mut db = new_mem_db();
+        let tx = db.transaction()?;
+        let ext_id = "xyz";
+        let val = "x".repeat(SYNC_QUOTA_BYTES + 1);
+
+        
+        save_to_db(
+            &tx,
+            ext_id,
+            &StorageChangeOp::SetWithoutQuota(json!({ "x": val })),
+        )?;
+
+        
+        let e = set(&tx, &ext_id, json!({ "y": "newvalue" })).unwrap_err();
+        match e.kind() {
+            ErrorKind::QuotaError(QuotaReason::TotalBytes) => {}
+            _ => panic!("unexpected error type"),
+        };
+
+        
+        remove(&tx, &ext_id, json!["x"])?;
+
+        
+        save_to_db(
+            &tx,
+            ext_id,
+            &StorageChangeOp::SetWithoutQuota(json!({ "y": val })),
+        )?;
+
+        
+        set(&tx, &ext_id, json!({ "y": "lessdata" }))?;
+
         Ok(())
     }
 
