@@ -1048,6 +1048,8 @@ class nsDocShell final : public nsDocLoader,
   
   void SetLoadGroupDefaultLoadFlags(nsLoadFlags aLoadFlags);
 
+  void SetTitleOnHistoryEntry();
+
  private:  
   nsID mHistoryID;
   nsString mTitle;
