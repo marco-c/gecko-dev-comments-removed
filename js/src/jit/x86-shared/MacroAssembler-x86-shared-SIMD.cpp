@@ -1362,52 +1362,139 @@ void MacroAssemblerX86Shared::mulInt32x4(FloatRegister lhs, Operand rhs,
 
 
 
-void MacroAssemblerX86Shared::minFloat32x4(FloatRegister lhs, Operand rhs,
-                                           FloatRegister output) {
+void MacroAssemblerX86Shared::minMaxFloat32x4(bool isMin, FloatRegister lhs_,
+                                              Operand rhs, FloatRegister temp1,
+                                              FloatRegister temp2,
+                                              FloatRegister output) {
   ScratchSimd128Scope scratch(asMasm());
-  FloatRegister rhsCopy = reusedInputAlignedSimd128Float(rhs, scratch);
-  vminps(Operand(lhs), rhsCopy, scratch);
-  vminps(rhs, lhs, output);
-  vorps(scratch, output, output);  
+  Label l;
+  SimdConstant quietBits(SimdConstant::SplatX4(int32_t(0x00400000)));
+
+   
+  FloatRegister lhs = reusedInputSimd128Float(lhs_, scratch);
+  if (isMin) {
+    vmovaps(lhs, output);                    
+    vminps(rhs, output, output);             
+    vmovaps(rhs, temp1);                     
+    vminps(Operand(lhs), temp1, temp1);      
+    vorps(temp1, output, output);            
+  } else {
+    vmovaps(lhs, output);                    
+    vmaxps(rhs, output, output);             
+    vmovaps(rhs, temp1);                     
+    vmaxps(Operand(lhs), temp1, temp1);      
+    vandps(temp1, output, output);           
+  }
+  vmovaps(lhs, temp1);                       
+  vcmpunordps(rhs, temp1, temp1);            
+  vptest(temp1, temp1);                      
+  j(Assembler::Equal, &l);                   
+
+  
+  
+  
+  
+
+  vmovaps(temp1, temp2);                     
+  vpandn(output, temp2, temp2);              
+  asMasm().loadConstantSimd128Float(quietBits, output);
+  vandps(output, temp1, temp1);              
+  vorps(temp1, temp2, temp2);                
+  vmovaps(lhs, temp1);                       
+  vcmpunordps(Operand(temp1), temp1, temp1); 
+  vmovaps(temp1, output);                    
+  vandps(lhs, temp1, temp1);                 
+  vorps(temp1, temp2, temp2);                
+  vmovaps(rhs, temp1);                       
+  vcmpunordps(Operand(temp1), temp1, temp1); 
+  vpandn(temp1, output, output);             
+  vandps(rhs, output, output);               
+  vorps(temp2, output, output);              
+
+  bind(&l);
+  
+}
+
+
+void MacroAssemblerX86Shared::minMaxFloat64x2(bool isMin, FloatRegister lhs_,
+                                              Operand rhs, FloatRegister temp1,
+                                              FloatRegister temp2,
+                                              FloatRegister output) {
+  ScratchSimd128Scope scratch(asMasm());
+  Label l;
+  SimdConstant quietBits(SimdConstant::SplatX2(int64_t(0x0008000000000000ull)));
+
+   
+  FloatRegister lhs = reusedInputSimd128Float(lhs_, scratch);
+  if (isMin) {
+    vmovapd(lhs, output);                    
+    vminpd(rhs, output, output);             
+    vmovapd(rhs, temp1);                     
+    vminpd(Operand(lhs), temp1, temp1);      
+    vorpd(temp1, output, output);            
+  } else {
+    vmovapd(lhs, output);                    
+    vmaxpd(rhs, output, output);             
+    vmovapd(rhs, temp1);                     
+    vmaxpd(Operand(lhs), temp1, temp1);      
+    vandpd(temp1, output, output);           
+  }
+  vmovapd(lhs, temp1);                       
+  vcmpunordpd(rhs, temp1, temp1);            
+  vptest(temp1, temp1);                      
+  j(Assembler::Equal, &l);                   
+
+  
+  
+  
+  
+
+  vmovapd(temp1, temp2);                     
+  vpandn(output, temp2, temp2);              
+  asMasm().loadConstantSimd128Float(quietBits, output);
+  vandpd(output, temp1, temp1);              
+  vorpd(temp1, temp2, temp2);                
+  vmovapd(lhs, temp1);                       
+  vcmpunordpd(Operand(temp1), temp1, temp1); 
+  vmovapd(temp1, output);                    
+  vandpd(lhs, temp1, temp1);                 
+  vorpd(temp1, temp2, temp2);                
+  vmovapd(rhs, temp1);                       
+  vcmpunordpd(Operand(temp1), temp1, temp1); 
+  vpandn(temp1, output, output);             
+  vandpd(rhs, output, output);               
+  vorpd(temp2, output, output);              
+
+  bind(&l);
+  
+}
+
+void MacroAssemblerX86Shared::minFloat32x4(FloatRegister lhs, Operand rhs,
+                                           FloatRegister temp1,
+                                           FloatRegister temp2,
+                                           FloatRegister output) {
+  minMaxFloat32x4(true, lhs, rhs, temp1, temp2, output);
 }
 
 void MacroAssemblerX86Shared::maxFloat32x4(FloatRegister lhs, Operand rhs,
-                                           FloatRegister temp,
+                                           FloatRegister temp1,
+                                           FloatRegister temp2,
                                            FloatRegister output) {
-  ScratchSimd128Scope scratch(asMasm());
-  FloatRegister lhsCopy = reusedInputSimd128Float(lhs, scratch);
-  vcmpunordps(rhs, lhsCopy, scratch);
-
-  FloatRegister rhsCopy = reusedInputAlignedSimd128Float(rhs, temp);
-  vmaxps(Operand(lhs), rhsCopy, temp);
-  vmaxps(rhs, lhs, output);
-
-  vandps(temp, output, output);
-  vorps(scratch, output, output);  
+  minMaxFloat32x4(false, lhs, rhs, temp1, temp2, output);
 }
 
 void MacroAssemblerX86Shared::minFloat64x2(FloatRegister lhs, Operand rhs,
+                                           FloatRegister temp1,
+                                           FloatRegister temp2,
                                            FloatRegister output) {
-  ScratchSimd128Scope scratch(asMasm());
-  FloatRegister rhsCopy = reusedInputAlignedSimd128Float(rhs, scratch);
-  vminpd(Operand(lhs), rhsCopy, scratch);
-  vminpd(rhs, lhs, output);
-  vorpd(scratch, output, output);  
+  minMaxFloat64x2(true, lhs, rhs, temp1, temp2, output);
 }
 
 void MacroAssemblerX86Shared::maxFloat64x2(FloatRegister lhs, Operand rhs,
-                                           FloatRegister temp,
+                                           FloatRegister temp1,
+                                           FloatRegister temp2,
                                            FloatRegister output) {
-  ScratchSimd128Scope scratch(asMasm());
-  FloatRegister lhsCopy = reusedInputSimd128Float(lhs, scratch);
-  vcmpunordpd(rhs, lhsCopy, scratch);
-
-  FloatRegister rhsCopy = reusedInputAlignedSimd128Float(rhs, temp);
-  vmaxpd(Operand(lhs), rhsCopy, temp);
-  vmaxpd(rhs, lhs, output);
-
-  vandpd(temp, output, output);
-  vorpd(scratch, output, output);  
+  minMaxFloat64x2(false, lhs, rhs, temp1, temp2, output);
 }
 
 void MacroAssemblerX86Shared::minNumFloat32x4(FloatRegister lhs, Operand rhs,
