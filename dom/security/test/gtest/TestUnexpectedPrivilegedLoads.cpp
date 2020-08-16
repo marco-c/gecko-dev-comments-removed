@@ -93,13 +93,27 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
            "other"_ns, "TYPE_SCRIPT"_ns, "web"_ns, "unknown"_ns
 #endif
        }},
+      {
+       ""_ns,
+       nsIContentPolicy::TYPE_IMAGE,
+       "web"_ns,
+       {"other"_ns, "TYPE_IMAGE"_ns, "web"_ns, "unknown"_ns}},
+      {
+       
+       "URLWillResultInNullPtr"_ns,
+       nsIContentPolicy::TYPE_FONT,
+       "web"_ns,
+       {"other"_ns, "TYPE_FONT"_ns, "web"_ns, "unknown"_ns}},
   };
 
   int i = 0;
   for (auto const& currentTest : myTestCases) {
     nsCOMPtr<nsIURI> uri;
-    NS_NewURI(getter_AddRefs(uri), currentTest.urlstring);
 
+    
+    if (!currentTest.urlstring.Equals("URLWillResultInNullPtr")) {
+      NS_NewURI(getter_AddRefs(uri), currentTest.urlstring);
+    }
     
     nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
         uri, currentTest.contentType, currentTest.remoteType);
