@@ -151,19 +151,7 @@ static nsDataHashtable<nsUint64HashKey, MOXTextMarkerDelegate*> sDelegates;
     return nil;
   }
 
-  geckoTextMarker.NormalizePrevious();
-
-  if (geckoTextMarker.mOffset == 0) {
-    
-    
-    geckoTextMarker.NormalizeNext();
-  } else {
-    
-    geckoTextMarker.mOffset--;
-    geckoTextMarker.NormalizePrevious();
-  }
-
-  return geckoTextMarker.WordRange().CreateAXTextMarkerRange();
+  return geckoTextMarker.LeftWordRange().CreateAXTextMarkerRange();
 }
 
 - (id)moxRightWordTextMarkerRangeForTextMarker:(id)textMarker {
@@ -172,13 +160,7 @@ static nsDataHashtable<nsUint64HashKey, MOXTextMarkerDelegate*> sDelegates;
     return nil;
   }
 
-  geckoTextMarker.NormalizeNext();
-
-  GeckoTextMarkerRange range = geckoTextMarker.AtEnd()
-                                   ? GeckoTextMarkerRange(geckoTextMarker, geckoTextMarker)
-                                   : geckoTextMarker.WordRange();
-
-  return range.CreateAXTextMarkerRange();
+  return geckoTextMarker.RightWordRange().CreateAXTextMarkerRange();
 }
 
 - (id)moxNextTextMarkerForTextMarker:(id)textMarker {
@@ -187,12 +169,9 @@ static nsDataHashtable<nsUint64HashKey, MOXTextMarkerDelegate*> sDelegates;
     return nil;
   }
 
-  geckoTextMarker.NormalizeNext();
-  if (geckoTextMarker.AtEnd()) {
+  if (!geckoTextMarker.Next()) {
     return nil;
   }
-
-  geckoTextMarker.mOffset++;
 
   return geckoTextMarker.CreateAXTextMarker();
 }
@@ -203,12 +182,10 @@ static nsDataHashtable<nsUint64HashKey, MOXTextMarkerDelegate*> sDelegates;
     return nil;
   }
 
-  geckoTextMarker.NormalizePrevious();
-  if (geckoTextMarker.mOffset == 0) {
+  if (!geckoTextMarker.Previous()) {
     return nil;
   }
 
-  geckoTextMarker.mOffset--;
   return geckoTextMarker.CreateAXTextMarker();
 }
 

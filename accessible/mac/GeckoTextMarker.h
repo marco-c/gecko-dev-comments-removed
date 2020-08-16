@@ -32,22 +32,15 @@ class GeckoTextMarker final {
 
   id CreateAXTextMarker();
 
-  
-  
-  
-  
-  void NormalizeNext();
+  bool Next();
+
+  bool Previous();
 
   
-  
-  
-  void NormalizePrevious();
+  GeckoTextMarkerRange LeftWordRange();
 
   
-  bool AtEnd() { return static_cast<uint32_t>(mOffset) >= CharacterCount(mContainer); }
-
-  
-  GeckoTextMarkerRange WordRange();
+  GeckoTextMarkerRange RightWordRange();
 
   bool IsValid() const { return !mContainer.IsNull(); };
 
@@ -55,6 +48,12 @@ class GeckoTextMarker final {
 
   AccessibleOrProxy mContainer;
   int32_t mOffset;
+
+  HyperTextAccessibleWrap* ContainerAsHyperTextWrap() const {
+    return mContainer.IsAccessible()
+               ? static_cast<HyperTextAccessibleWrap*>(mContainer.AsAccessible()->AsHyperText())
+               : nullptr;
+  }
 
  private:
   uint32_t CharacterCount(const AccessibleOrProxy& aContainer);
@@ -80,27 +79,6 @@ class GeckoTextMarkerRange final {
 
   GeckoTextMarker mStart;
   GeckoTextMarker mEnd;
-
- private:
-  int32_t StartOffset(const AccessibleOrProxy& aChild) const;
-
-  int32_t EndOffset(const AccessibleOrProxy& aChild) const;
-
-  int32_t LinkCount(const AccessibleOrProxy& aContainer) const;
-
-  AccessibleOrProxy LinkAt(const AccessibleOrProxy& aContainer, uint32_t aIndex) const;
-
-  void AppendTextTo(const AccessibleOrProxy& aContainer, nsAString& aText, uint32_t aStartOffset,
-                    uint32_t aEndOffset) const;
-
-  
-
-
-
-
-
-
-  bool TextInternal(nsAString& aText, AccessibleOrProxy aCurrent, int32_t aStartIntlOffset) const;
 };
 
 }  
