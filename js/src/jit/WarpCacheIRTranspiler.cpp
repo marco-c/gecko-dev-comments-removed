@@ -447,6 +447,7 @@ bool WarpCacheIRTranspiler::emitLoadFrameNumActualArgsResult() {
 bool WarpCacheIRTranspiler::emitLoadFrameArgumentResult(
     Int32OperandId indexId) {
   
+  
   MOZ_ASSERT(!builder_->inlineCallInfo());
 
   MDefinition* index = getOperand(indexId);
