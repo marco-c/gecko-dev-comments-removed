@@ -722,16 +722,10 @@ static bool ShouldCacheTitleBarInfo(nsWindowType aWindowType,
 }
 
 void nsWindow::SendAnAPZEvent(InputData& aEvent) {
-  RefPtr<nsWindow> strongThis(this);
-  if (::IsWindowVisible(mWnd)) {
-    nsIRollupListener* rollupListener = nsBaseWidget::GetActiveRollupListener();
-    if (rollupListener) {
-      nsCOMPtr<nsIWidget> popup = rollupListener->GetRollupWidget();
-      if (popup) {
-        uint32_t popupsToRollup = UINT32_MAX;
-        rollupListener->Rollup(popupsToRollup, true, nullptr, nullptr);
-      }
-    }
+  LRESULT popupHandlingResult;
+  if (DealWithPopups(mWnd, MOZ_WM_DMANIP, 0, 0, &popupHandlingResult)) {
+    
+    return;
   }
 
   APZEventResult result;
@@ -8103,6 +8097,17 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
       POINT pt;
       pt.x = GET_X_LPARAM(aLParam);
       pt.y = GET_Y_LPARAM(aLParam);
+      if (!GetPopupsToRollup(rollupListener, &popupsToRollup, Some(pt))) {
+        return false;
+      }
+      if (EventIsInsideWindow(popupWindow, Some(pt))) {
+        
+        return false;
+      }
+    } break;
+    case MOZ_WM_DMANIP: {
+      POINT pt;
+      ::GetCursorPos(&pt);
       if (!GetPopupsToRollup(rollupListener, &popupsToRollup, Some(pt))) {
         return false;
       }
