@@ -14,13 +14,12 @@
 
 
 #ifndef __NO_FPRS__
-#define PARAM_BUFFER_COUNT     16
 #define GPR_COUNT               8
 #define FPR_COUNT               8
 #else
-#define PARAM_BUFFER_COUNT      8
 #define GPR_COUNT               8
 #endif
+#define PARAM_BUFFER_COUNT     16
 
 
 
