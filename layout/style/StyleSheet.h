@@ -37,6 +37,8 @@ typedef MozPromise< bool,
                     true>
     StyleSheetParsePromise;
 
+enum class StyleRuleChangeKind : uint32_t;
+
 namespace css {
 class GroupRule;
 class Loader;
@@ -155,21 +157,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   StyleOrigin GetOrigin() const;
-
-  
-
-
-
-
-
-  enum class ChangeType {
-    Added,
-    Removed,
-    ApplicableStateChanged,
-    RuleAdded,
-    RuleRemoved,
-    RuleChanged,
-  };
 
   void SetOwningNode(nsINode* aOwningNode) { mOwningNode = aOwningNode; }
 
@@ -426,7 +413,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   
   
-  void RuleChanged(css::Rule*);
+  void RuleChanged(css::Rule*, StyleRuleChangeKind);
 
   void AddStyleSet(ServoStyleSet* aStyleSet);
   void DropStyleSet(ServoStyleSet* aStyleSet);

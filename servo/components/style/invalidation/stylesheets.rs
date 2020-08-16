@@ -16,9 +16,25 @@ use crate::selector_map::{MaybeCaseInsensitiveHashMap, PrecomputedHashMap};
 use crate::selector_parser::{SelectorImpl, Snapshot, SnapshotMap};
 use crate::shared_lock::SharedRwLockReadGuard;
 use crate::stylesheets::{CssRule, StylesheetInDocument};
+use crate::stylesheets::{EffectiveRules, EffectiveRulesIterator};
 use crate::Atom;
 use crate::LocalName as SelectorLocalName;
 use selectors::parser::{Component, LocalName, Selector};
+
+
+#[repr(u32)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
+pub enum RuleChangeKind {
+    
+    Insertion,
+    
+    Removal,
+    
+    
+    Generic,
+    
+    StyleRuleDeclarations,
+}
 
 
 
@@ -162,7 +178,8 @@ impl StylesheetInvalidationSet {
         have_invalidations
     }
 
-    fn is_empty(&self) -> bool {
+    
+    pub fn is_empty(&self) -> bool {
         !self.fully_invalid &&
             self.classes.is_empty() &&
             self.ids.is_empty() &&
@@ -482,6 +499,75 @@ impl StylesheetInvalidationSet {
         }
 
         true
+    }
+
+    
+    
+    
+    
+    
+    pub fn rule_changed<S>(
+        &mut self,
+        stylesheet: &S,
+        rule: &CssRule,
+        guard: &SharedRwLockReadGuard,
+        device: &Device,
+        quirks_mode: QuirksMode,
+        change_kind: RuleChangeKind,
+    ) where
+        S: StylesheetInDocument,
+    {
+        use crate::stylesheets::CssRule::*;
+
+        debug!("StylesheetInvalidationSet::rule_changed");
+        if self.fully_invalid {
+            return;
+        }
+
+        if !stylesheet.enabled() || !stylesheet.is_effective_for_device(device, guard) {
+            debug!(" > Stylesheet was not effective");
+            return; 
+        }
+
+        let is_generic_change = change_kind == RuleChangeKind::Generic;
+
+        match *rule {
+            Namespace(..) => {
+                
+                
+            },
+            CounterStyle(..) |
+            Page(..) |
+            Viewport(..) |
+            FontFeatureValues(..) |
+            FontFace(..) |
+            Keyframes(..) |
+            Style(..) => {
+                if is_generic_change {
+                    
+                    
+                    
+                    
+                    
+                    return self.invalidate_fully();
+                }
+
+                self.collect_invalidations_for_rule(rule, guard, device, quirks_mode)
+            },
+            Document(..) | Import(..) | Media(..) | Supports(..) => {
+                if !is_generic_change &&
+                    !EffectiveRules::is_effective(guard, device, quirks_mode, rule)
+                {
+                    return;
+                }
+
+                let rules =
+                    EffectiveRulesIterator::effective_children(device, quirks_mode, guard, rule);
+                for rule in rules {
+                    self.collect_invalidations_for_rule(rule, guard, device, quirks_mode)
+                }
+            },
+        }
     }
 
     

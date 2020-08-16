@@ -58,7 +58,7 @@ void MediaList::DoMediaChange(Func aCallback, ErrorResult& aRv) {
     
     
     
-    mStyleSheet->RuleChanged(nullptr);
+    mStyleSheet->RuleChanged(nullptr, StyleRuleChangeKind::Generic);
   }
 }
 
