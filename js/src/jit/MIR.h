@@ -9173,6 +9173,28 @@ class MGuardIsNotProxy : public MUnaryInstruction,
 };
 
 
+class MGuardIsNotDOMProxy : public MUnaryInstruction,
+                            public SingleObjectPolicy::Data {
+  explicit MGuardIsNotDOMProxy(MDefinition* proxy)
+      : MUnaryInstruction(classOpcode, proxy) {
+    setGuard();
+    setMovable();
+    setResultType(MIRType::Object);
+    setResultTypeSet(proxy->resultTypeSet());
+  }
+
+ public:
+  INSTRUCTION_HEADER(GuardIsNotDOMProxy)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, proxy))
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+};
+
+
 class MGuardIsNotArrayBufferMaybeShared : public MUnaryInstruction,
                                           public SingleObjectPolicy::Data {
   explicit MGuardIsNotArrayBufferMaybeShared(MDefinition* obj)

@@ -177,6 +177,9 @@ enum class BailoutKind : uint8_t {
   NotProxyGuard,
 
   
+  NotDOMProxyGuard,
+
+  
   NotArrayBufferMaybeSharedGuard,
 
   
@@ -281,6 +284,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::ProxyGuard";
     case BailoutKind::NotProxyGuard:
       return "BailoutKind::NotProxyGuard";
+    case BailoutKind::NotDOMProxyGuard:
+      return "BailoutKind::NotDOMProxyGuard";
     case BailoutKind::NotArrayBufferMaybeSharedGuard:
       return "BailoutKind::NotArrayBufferMaybeSharedGuard";
     case BailoutKind::ArrayPopShift:

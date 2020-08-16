@@ -1500,7 +1500,7 @@ AttachDecision GetPropIRGenerator::tryAttachGenericProxy(
   if (!handleDOMProxies) {
     
     
-    writer.guardNotDOMProxy(objId);
+    writer.guardIsNotDOMProxy(objId);
   }
 
   if (cacheKind_ == CacheKind::GetProp || mode_ == ICState::Mode::Specialized) {
@@ -4293,7 +4293,7 @@ AttachDecision SetPropIRGenerator::tryAttachGenericProxy(
     
     
     
-    writer.guardNotDOMProxy(objId);
+    writer.guardIsNotDOMProxy(objId);
   }
 
   if (cacheKind_ == CacheKind::SetProp || mode_ == ICState::Mode::Specialized) {
