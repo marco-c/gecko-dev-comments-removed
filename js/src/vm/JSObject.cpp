@@ -1870,10 +1870,6 @@ NativeObject* js::InitClass(JSContext* cx, HandleObject obj,
 }
 
 void JSObject::fixupAfterMovingGC() {
-  if (IsForwarded(groupRaw())) {
-    setGroupRaw(Forwarded(groupRaw()));
-  }
-
   
   
   if (is<NativeObject>()) {

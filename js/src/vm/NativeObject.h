@@ -765,10 +765,6 @@ class NativeObject : public JSObject {
   
   inline uint32_t numFixedSlotsMaybeForwarded() const;
 
-  
-  
-  inline void* getPrivateMaybeForwarded() const;
-
   uint32_t numUsedFixedSlots() const {
     uint32_t nslots = lastProperty()->slotSpan(getClass());
     return std::min(nslots, numFixedSlots());

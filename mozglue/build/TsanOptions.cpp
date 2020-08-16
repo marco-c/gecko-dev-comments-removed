@@ -129,7 +129,6 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:UpdateArenaPointersTyped<js::ObjectGroup>\n"
          "race:UpdateArenaPointersTyped<js::Shape>\n"
-         "race:UpdateArenaPointersTyped<JSObject>\n"
 
          
          "race:setFlagBit\n"
