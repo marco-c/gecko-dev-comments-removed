@@ -28,8 +28,6 @@ if CONFIG['CC_TYPE'] == 'clang-cl':
 
 
 if CONFIG['OS_ARCH'] == 'WINNT':
-    RCINCLUDE = 'xpcshell.rc'
-
     if CONFIG['MOZ_SANDBOX']:
         
         LOCAL_INCLUDES += [
