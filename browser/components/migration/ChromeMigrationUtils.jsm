@@ -20,6 +20,9 @@ const S100NS_FROM1601TO1970 = 0x19db1ded53e8000;
 const S100NS_PER_MS = 10;
 
 var ChromeMigrationUtils = {
+  
+  CONTEXTUAL_LOGIN_IMPORT_BROWSERS: ["chrome", "chromium-edge", "chromium"],
+
   _extensionVersionDirectoryNames: {},
 
   
@@ -371,7 +374,7 @@ var ChromeMigrationUtils = {
       this._importableLoginsCache = new Map();
 
       
-      for (const browserId of ["chrome", "chromium-edge", "chromium"]) {
+      for (const browserId of this.CONTEXTUAL_LOGIN_IMPORT_BROWSERS) {
         
         const migrator = await MigrationUtils.getMigrator(browserId);
         if (!migrator) {
