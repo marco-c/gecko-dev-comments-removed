@@ -87,6 +87,7 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   bool IsInProcess() const { return mInProcess; }
 
   nsGlobalWindowInner* GetInnerWindow() const;
+  Document* GetDocument() const;
 
   
   
