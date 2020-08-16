@@ -1948,27 +1948,35 @@ static JS::RealmCreationOptions& SelectZone(
     return aOptions.setExistingCompartment(xpc::PrivilegedJunkScope());
   }
 
-  if (aNewInner->GetOuterWindow()) {
-    nsGlobalWindowOuter* top = aNewInner->GetInProcessTopInternal();
-    if (top == aNewInner->GetOuterWindow()) {
-      
-      
-      
-      return aOptions.setNewCompartmentAndZone();
-    }
-
+  BrowsingContext* bc = aNewInner->GetBrowsingContext();
+  if (bc->IsTop()) {
     
-    if (top && top->GetGlobalJSObject()) {
-      JS::Zone* zone = JS::GetObjectZone(top->GetGlobalJSObject());
-      
-      
-      CompartmentFinderState data(aPrincipal);
-      JS_IterateCompartmentsInZone(aCx, zone, &data, FindSameOriginCompartment);
-      if (data.compartment) {
-        return aOptions.setExistingCompartment(data.compartment);
-      }
-      return aOptions.setNewCompartmentInExistingZone(top->GetGlobalJSObject());
+    
+    
+    return aOptions.setNewCompartmentAndZone();
+  }
+
+  
+  nsGlobalWindowInner* ancestor = nullptr;
+  for (WindowContext* wc = bc->GetParentWindowContext(); wc;
+       wc = wc->GetParentWindowContext()) {
+    if (nsGlobalWindowInner* win = wc->GetInnerWindow()) {
+      ancestor = win;
     }
+  }
+
+  
+  if (ancestor && ancestor->GetGlobalJSObject()) {
+    JS::Zone* zone = JS::GetObjectZone(ancestor->GetGlobalJSObject());
+    
+    
+    CompartmentFinderState data(aPrincipal);
+    JS_IterateCompartmentsInZone(aCx, zone, &data, FindSameOriginCompartment);
+    if (data.compartment) {
+      return aOptions.setExistingCompartment(data.compartment);
+    }
+    return aOptions.setNewCompartmentInExistingZone(
+        ancestor->GetGlobalJSObject());
   }
 
   return aOptions.setNewCompartmentAndZone();

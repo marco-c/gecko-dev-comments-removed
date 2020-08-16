@@ -16,6 +16,8 @@
 
 class nsIGlobalObject;
 
+class nsGlobalWindowInner;
+
 namespace mozilla {
 class LogModule;
 
@@ -82,7 +84,9 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   bool IsCached() const;
 
-  bool IsInProcess() { return mInProcess; }
+  bool IsInProcess() const { return mInProcess; }
+
+  nsGlobalWindowInner* GetInnerWindow() const;
 
   
   
