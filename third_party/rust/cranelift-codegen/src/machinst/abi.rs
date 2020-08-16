@@ -1,6 +1,6 @@
 
 
-use crate::binemit::Stackmap;
+use crate::binemit::StackMap;
 use crate::ir::StackSlot;
 use crate::machinst::*;
 use crate::settings;
@@ -99,11 +99,11 @@ pub trait ABIBody {
     
     
     
-    fn spillslots_to_stackmap(
+    fn spillslots_to_stack_map(
         &self,
         slots: &[SpillSlot],
         state: &<Self::I as MachInstEmit>::State,
-    ) -> Stackmap;
+    ) -> StackMap;
 
     
     

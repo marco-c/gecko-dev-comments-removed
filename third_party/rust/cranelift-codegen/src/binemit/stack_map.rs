@@ -70,12 +70,13 @@ const NUM_BITS: usize = core::mem::size_of::<Num>() * 8;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "enable-serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct Stackmap {
+pub struct StackMap {
     bitmap: Vec<BitSet<Num>>,
     mapped_words: u32,
 }
 
-impl Stackmap {
+impl StackMap {
+    
     
     pub fn from_values(
         args: &[ir::entities::Value],
@@ -171,9 +172,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn stackmaps() {
+    fn stack_maps() {
         let vec: Vec<bool> = Vec::new();
-        assert!(Stackmap::from_slice(&vec).bitmap.is_empty());
+        assert!(StackMap::from_slice(&vec).bitmap.is_empty());
 
         let mut vec: [bool; NUM_BITS] = Default::default();
         let set_true_idx = [5, 7, 24, 31];
@@ -185,12 +186,12 @@ mod tests {
         let mut vec = vec.to_vec();
         assert_eq!(
             vec![BitSet::<Num>(2164261024)],
-            Stackmap::from_slice(&vec).bitmap
+            StackMap::from_slice(&vec).bitmap
         );
 
         vec.push(false);
         vec.push(true);
-        let res = Stackmap::from_slice(&vec);
+        let res = StackMap::from_slice(&vec);
         assert_eq!(
             vec![BitSet::<Num>(2164261024), BitSet::<Num>(2)],
             res.bitmap

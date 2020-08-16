@@ -96,7 +96,7 @@
 
 
 
-use crate::binemit::{CodeInfo, CodeOffset, Stackmap};
+use crate::binemit::{CodeInfo, CodeOffset, StackMap};
 use crate::ir::condcodes::IntCC;
 use crate::ir::{Function, Type};
 use crate::result::CodegenResult;
@@ -279,7 +279,7 @@ pub trait MachInstEmitState<I: MachInst>: Default + Clone + Debug {
     fn new(abi: &dyn ABIBody<I = I>) -> Self;
     
     
-    fn pre_safepoint(&mut self, _stackmap: Stackmap) {}
+    fn pre_safepoint(&mut self, _stack_map: StackMap) {}
 }
 
 

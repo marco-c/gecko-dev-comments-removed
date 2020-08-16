@@ -820,9 +820,17 @@ pub enum Inst {
     },
 
     
-    MovToVec64 {
+    MovToFpu {
         rd: Writable<Reg>,
         rn: Reg,
+    },
+
+    
+    MovToVec {
+        rd: Writable<Reg>,
+        rn: Reg,
+        idx: u8,
+        size: VectorSize,
     },
 
     
@@ -864,6 +872,15 @@ pub enum Inst {
     },
 
     
+    VecMovElement {
+        rd: Writable<Reg>,
+        rn: Reg,
+        idx1: u8,
+        idx2: u8,
+        size: VectorSize,
+    },
+
+    
     VecRRR {
         alu_op: VecALUOp,
         rd: Writable<Reg>,
@@ -886,6 +903,32 @@ pub enum Inst {
         rd: Writable<Reg>,
         rn: Reg,
         size: VectorSize,
+    },
+
+    
+    
+    
+    
+    
+    VecTbl {
+        rd: Writable<Reg>,
+        rn: Reg,
+        rm: Reg,
+        is_extension: bool,
+    },
+
+    
+    
+    
+    
+    
+    
+    VecTbl2 {
+        rd: Writable<Reg>,
+        rn: Reg,
+        rn2: Reg,
+        rm: Reg,
+        is_extension: bool,
     },
 
     
@@ -1377,6 +1420,39 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
             collector.add_def(rd);
             collector.add_use(rn);
         }
+        &Inst::VecTbl {
+            rd,
+            rn,
+            rm,
+            is_extension,
+        } => {
+            collector.add_use(rn);
+            collector.add_use(rm);
+
+            if is_extension {
+                collector.add_mod(rd);
+            } else {
+                collector.add_def(rd);
+            }
+        }
+        &Inst::VecTbl2 {
+            rd,
+            rn,
+            rn2,
+            rm,
+            is_extension,
+        } => {
+            collector.add_use(rn);
+            collector.add_use(rn2);
+            collector.add_use(rm);
+
+            if is_extension {
+                collector.add_mod(rd);
+            } else {
+                collector.add_def(rd);
+            }
+        }
+
         &Inst::FpuCmp32 { rn, rm } | &Inst::FpuCmp64 { rn, rm } => {
             collector.add_use(rn);
             collector.add_use(rm);
@@ -1427,8 +1503,12 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
             collector.add_def(rd);
             collector.add_use(rn);
         }
-        &Inst::MovToVec64 { rd, rn } => {
+        &Inst::MovToFpu { rd, rn } => {
             collector.add_def(rd);
+            collector.add_use(rn);
+        }
+        &Inst::MovToVec { rd, rn, .. } => {
+            collector.add_mod(rd);
             collector.add_use(rn);
         }
         &Inst::MovFromVec { rd, rn, .. } | &Inst::MovFromVecSigned { rd, rn, .. } => {
@@ -1445,6 +1525,10 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
         }
         &Inst::VecExtend { rd, rn, .. } => {
             collector.add_def(rd);
+            collector.add_use(rn);
+        }
+        &Inst::VecMovElement { rd, rn, .. } => {
+            collector.add_mod(rd);
             collector.add_use(rn);
         }
         &Inst::VecRRR {
@@ -1905,6 +1989,38 @@ fn aarch64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
             map_def(mapper, rd);
             map_use(mapper, rn);
         }
+        &mut Inst::VecTbl {
+            ref mut rd,
+            ref mut rn,
+            ref mut rm,
+            is_extension,
+        } => {
+            map_use(mapper, rn);
+            map_use(mapper, rm);
+
+            if is_extension {
+                map_mod(mapper, rd);
+            } else {
+                map_def(mapper, rd);
+            }
+        }
+        &mut Inst::VecTbl2 {
+            ref mut rd,
+            ref mut rn,
+            ref mut rn2,
+            ref mut rm,
+            is_extension,
+        } => {
+            map_use(mapper, rn);
+            map_use(mapper, rn2);
+            map_use(mapper, rm);
+
+            if is_extension {
+                map_mod(mapper, rd);
+            } else {
+                map_def(mapper, rd);
+            }
+        }
         &mut Inst::FpuCmp32 {
             ref mut rn,
             ref mut rm,
@@ -2020,11 +2136,19 @@ fn aarch64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
             map_def(mapper, rd);
             map_use(mapper, rn);
         }
-        &mut Inst::MovToVec64 {
+        &mut Inst::MovToFpu {
             ref mut rd,
             ref mut rn,
         } => {
             map_def(mapper, rd);
+            map_use(mapper, rn);
+        }
+        &mut Inst::MovToVec {
+            ref mut rd,
+            ref mut rn,
+            ..
+        } => {
+            map_mod(mapper, rd);
             map_use(mapper, rn);
         }
         &mut Inst::MovFromVec {
@@ -2062,6 +2186,14 @@ fn aarch64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
             ..
         } => {
             map_def(mapper, rd);
+            map_use(mapper, rn);
+        }
+        &mut Inst::VecMovElement {
+            ref mut rd,
+            ref mut rn,
+            ..
+        } => {
+            map_mod(mapper, rd);
             map_use(mapper, rn);
         }
         &mut Inst::VecRRR {
@@ -2871,10 +3003,15 @@ impl Inst {
                 let rn = show_vreg_scalar(rn, mb_rru, size);
                 format!("{} {}, {}", inst, rd, rn)
             }
-            &Inst::MovToVec64 { rd, rn } => {
-                let rd = rd.to_reg().show_rru(mb_rru);
-                let rn = rn.show_rru(mb_rru);
-                format!("mov {}.d[0], {}", rd, rn)
+            &Inst::MovToFpu { rd, rn } => {
+                let rd = show_vreg_scalar(rd.to_reg(), mb_rru, ScalarSize::Size64);
+                let rn = show_ireg_sized(rn, mb_rru, OperandSize::Size64);
+                format!("fmov {}, {}", rd, rn)
+            }
+            &Inst::MovToVec { rd, rn, idx, size } => {
+                let rd = show_vreg_element(rd.to_reg(), mb_rru, idx, size);
+                let rn = show_ireg_sized(rn, mb_rru, size.operand_size());
+                format!("mov {}, {}", rd, rn)
             }
             &Inst::MovFromVec { rd, rn, idx, size } => {
                 let op = match size {
@@ -2921,6 +3058,17 @@ impl Inst {
                 let rd = show_vreg_vector(rd.to_reg(), mb_rru, dest);
                 let rn = show_vreg_vector(rn, mb_rru, src);
                 format!("{} {}, {}", op, rd, rn)
+            }
+            &Inst::VecMovElement {
+                rd,
+                rn,
+                idx1,
+                idx2,
+                size,
+            } => {
+                let rd = show_vreg_element(rd.to_reg(), mb_rru, idx1, size);
+                let rn = show_vreg_element(rn, mb_rru, idx2, size);
+                format!("mov {}, {}", rd, rn)
             }
             &Inst::VecRRR {
                 rd,
@@ -2991,6 +3139,32 @@ impl Inst {
                 let rd = show_vreg_scalar(rd.to_reg(), mb_rru, size.lane_size());
                 let rn = show_vreg_vector(rn, mb_rru, size);
                 format!("{} {}, {}", op, rd, rn)
+            }
+            &Inst::VecTbl {
+                rd,
+                rn,
+                rm,
+                is_extension,
+            } => {
+                let op = if is_extension { "tbx" } else { "tbl" };
+                let rd = show_vreg_vector(rd.to_reg(), mb_rru, VectorSize::Size8x16);
+                let rn = show_vreg_vector(rn, mb_rru, VectorSize::Size8x16);
+                let rm = show_vreg_vector(rm, mb_rru, VectorSize::Size8x16);
+                format!("{} {}, {{ {} }}, {}", op, rd, rn, rm)
+            }
+            &Inst::VecTbl2 {
+                rd,
+                rn,
+                rn2,
+                rm,
+                is_extension,
+            } => {
+                let op = if is_extension { "tbx" } else { "tbl" };
+                let rd = show_vreg_vector(rd.to_reg(), mb_rru, VectorSize::Size8x16);
+                let rn = show_vreg_vector(rn, mb_rru, VectorSize::Size8x16);
+                let rn2 = show_vreg_vector(rn2, mb_rru, VectorSize::Size8x16);
+                let rm = show_vreg_vector(rm, mb_rru, VectorSize::Size8x16);
+                format!("{} {}, {{ {}, {} }}, {}", op, rd, rn, rn2, rm)
             }
             &Inst::MovToNZCV { rn } => {
                 let rn = rn.show_rru(mb_rru);

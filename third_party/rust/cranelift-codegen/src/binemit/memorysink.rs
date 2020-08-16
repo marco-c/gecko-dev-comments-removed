@@ -14,7 +14,7 @@
 
 
 use super::{Addend, CodeInfo, CodeOffset, CodeSink, Reloc};
-use crate::binemit::stackmap::Stackmap;
+use crate::binemit::stack_map::StackMap;
 use crate::ir::entities::Value;
 use crate::ir::{ConstantOffset, ExternalName, Function, JumpTable, Opcode, SourceLoc, TrapCode};
 use crate::isa::TargetIsa;
@@ -38,7 +38,7 @@ pub struct MemoryCodeSink<'a> {
     offset: isize,
     relocs: &'a mut dyn RelocSink,
     traps: &'a mut dyn TrapSink,
-    stackmaps: &'a mut dyn StackmapSink,
+    stack_maps: &'a mut dyn StackMapSink,
     
     pub info: CodeInfo,
 }
@@ -54,7 +54,7 @@ impl<'a> MemoryCodeSink<'a> {
         data: *mut u8,
         relocs: &'a mut dyn RelocSink,
         traps: &'a mut dyn TrapSink,
-        stackmaps: &'a mut dyn StackmapSink,
+        stack_maps: &'a mut dyn StackMapSink,
     ) -> Self {
         Self {
             data,
@@ -67,7 +67,7 @@ impl<'a> MemoryCodeSink<'a> {
             },
             relocs,
             traps,
-            stackmaps,
+            stack_maps,
         }
     }
 }
@@ -182,10 +182,10 @@ impl<'a> CodeSink for MemoryCodeSink<'a> {
         self.info.total_size = self.offset();
     }
 
-    fn add_stackmap(&mut self, val_list: &[Value], func: &Function, isa: &dyn TargetIsa) {
+    fn add_stack_map(&mut self, val_list: &[Value], func: &Function, isa: &dyn TargetIsa) {
         let ofs = self.offset();
-        let stackmap = Stackmap::from_values(&val_list, func, isa);
-        self.stackmaps.add_stackmap(ofs, stackmap);
+        let stack_map = StackMap::from_values(&val_list, func, isa);
+        self.stack_maps.add_stack_map(ofs, stack_map);
     }
 
     fn add_call_site(&mut self, opcode: Opcode, loc: SourceLoc) {
@@ -228,14 +228,14 @@ impl TrapSink for NullTrapSink {
 }
 
 
-pub trait StackmapSink {
+pub trait StackMapSink {
     
-    fn add_stackmap(&mut self, _: CodeOffset, _: Stackmap);
+    fn add_stack_map(&mut self, _: CodeOffset, _: StackMap);
 }
 
 
-pub struct NullStackmapSink {}
+pub struct NullStackMapSink {}
 
-impl StackmapSink for NullStackmapSink {
-    fn add_stackmap(&mut self, _: CodeOffset, _: Stackmap) {}
+impl StackMapSink for NullStackMapSink {
+    fn add_stack_map(&mut self, _: CodeOffset, _: StackMap) {}
 }

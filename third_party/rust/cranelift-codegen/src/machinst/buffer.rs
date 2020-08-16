@@ -140,7 +140,7 @@
 
 
 
-use crate::binemit::{Addend, CodeOffset, CodeSink, Reloc, Stackmap};
+use crate::binemit::{Addend, CodeOffset, CodeSink, Reloc, StackMap};
 use crate::ir::{ExternalName, Opcode, SourceLoc, TrapCode};
 use crate::machinst::{BlockIndex, MachInstLabelUse, VCodeInst};
 use crate::timing;
@@ -170,7 +170,7 @@ pub struct MachBuffer<I: VCodeInst> {
     
     srclocs: SmallVec<[MachSrcLoc; 64]>,
     
-    stackmaps: SmallVec<[MachStackMap; 8]>,
+    stack_maps: SmallVec<[MachStackMap; 8]>,
     
     
     cur_srcloc: Option<(CodeOffset, SourceLoc)>,
@@ -235,7 +235,7 @@ pub struct MachBufferFinalized {
     
     srclocs: SmallVec<[MachSrcLoc; 64]>,
     
-    stackmaps: SmallVec<[MachStackMap; 8]>,
+    stack_maps: SmallVec<[MachStackMap; 8]>,
 }
 
 static UNKNOWN_LABEL_OFFSET: CodeOffset = 0xffff_ffff;
@@ -262,7 +262,7 @@ impl MachLabel {
 }
 
 
-pub enum StackmapExtent {
+pub enum StackMapExtent {
     
     
     UpcomingBytes(CodeOffset),
@@ -282,7 +282,7 @@ impl<I: VCodeInst> MachBuffer<I> {
             traps: SmallVec::new(),
             call_sites: SmallVec::new(),
             srclocs: SmallVec::new(),
-            stackmaps: SmallVec::new(),
+            stack_maps: SmallVec::new(),
             cur_srcloc: None,
             label_offsets: SmallVec::new(),
             label_aliases: SmallVec::new(),
@@ -1151,7 +1151,7 @@ impl<I: VCodeInst> MachBuffer<I> {
             traps: self.traps,
             call_sites: self.call_sites,
             srclocs: self.srclocs,
-            stackmaps: self.stackmaps,
+            stack_maps: self.stack_maps,
         }
     }
 
@@ -1218,22 +1218,22 @@ impl<I: VCodeInst> MachBuffer<I> {
     
     
     
-    pub fn add_stackmap(&mut self, extent: StackmapExtent, stackmap: Stackmap) {
+    pub fn add_stack_map(&mut self, extent: StackMapExtent, stack_map: StackMap) {
         let (start, end) = match extent {
-            StackmapExtent::UpcomingBytes(insn_len) => {
+            StackMapExtent::UpcomingBytes(insn_len) => {
                 let start_offset = self.cur_offset();
                 (start_offset, start_offset + insn_len)
             }
-            StackmapExtent::StartedAtOffset(start_offset) => {
+            StackMapExtent::StartedAtOffset(start_offset) => {
                 let end_offset = self.cur_offset();
                 debug_assert!(end_offset >= start_offset);
                 (start_offset, end_offset)
             }
         };
-        self.stackmaps.push(MachStackMap {
+        self.stack_maps.push(MachStackMap {
             offset: start,
             offset_end: end,
-            stackmap,
+            stack_map,
         });
     }
 }
@@ -1296,8 +1296,8 @@ impl MachBufferFinalized {
     }
 
     
-    pub fn stackmaps(&self) -> &[MachStackMap] {
-        &self.stackmaps[..]
+    pub fn stack_maps(&self) -> &[MachStackMap] {
+        &self.stack_maps[..]
     }
 }
 
@@ -1388,7 +1388,7 @@ pub struct MachStackMap {
     
     pub offset_end: CodeOffset,
     
-    pub stackmap: Stackmap,
+    pub stack_map: StackMap,
 }
 
 

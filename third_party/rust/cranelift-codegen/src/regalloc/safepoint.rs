@@ -34,7 +34,7 @@ fn insert_and_encode_safepoint<'f>(
 
 
 
-pub fn emit_stackmaps(
+pub fn emit_stack_maps(
     func: &mut Function,
     domtree: &DominatorTree,
     liveness: &Liveness,

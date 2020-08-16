@@ -118,7 +118,7 @@ pub struct VCodeBuilder<I: VCodeInst> {
     vcode: VCode<I>,
 
     
-    stackmap_info: StackmapRequestInfo,
+    stack_map_info: StackmapRequestInfo,
 
     
     block_start: InsnIndex,
@@ -135,7 +135,7 @@ impl<I: VCodeInst> VCodeBuilder<I> {
     pub fn new(abi: Box<dyn ABIBody<I = I>>, block_order: BlockLoweringOrder) -> VCodeBuilder<I> {
         let reftype_class = I::ref_type_regclass(abi.flags());
         let vcode = VCode::new(abi, block_order);
-        let stackmap_info = StackmapRequestInfo {
+        let stack_map_info = StackmapRequestInfo {
             reftype_class,
             reftyped_vregs: vec![],
             safepoint_insns: vec![],
@@ -143,7 +143,7 @@ impl<I: VCodeInst> VCodeBuilder<I> {
 
         VCodeBuilder {
             vcode,
-            stackmap_info,
+            stack_map_info,
             block_start: 0,
             succ_start: 0,
             cur_srcloc: SourceLoc::default(),
@@ -169,7 +169,7 @@ impl<I: VCodeInst> VCodeBuilder<I> {
         }
         self.vcode.vreg_types[vreg.get_index()] = ty;
         if is_reftype(ty) {
-            self.stackmap_info.reftyped_vregs.push(vreg);
+            self.stack_map_info.reftyped_vregs.push(vreg);
             self.vcode.have_ref_values = true;
         }
     }
@@ -222,7 +222,7 @@ impl<I: VCodeInst> VCodeBuilder<I> {
         self.vcode.insts.push(insn);
         self.vcode.srclocs.push(self.cur_srcloc);
         if is_safepoint {
-            self.stackmap_info
+            self.stack_map_info
                 .safepoint_insns
                 .push(InstIx::new((self.vcode.insts.len() - 1) as u32));
         }
@@ -244,7 +244,7 @@ impl<I: VCodeInst> VCodeBuilder<I> {
         
         
         
-        (self.vcode, self.stackmap_info)
+        (self.vcode, self.stack_map_info)
     }
 }
 
@@ -460,11 +460,11 @@ impl<I: VCodeInst> VCode<I> {
                     && self.safepoint_insns[safepoint_idx] == iix
                 {
                     if self.safepoint_slots[safepoint_idx].len() > 0 {
-                        let stackmap = self.abi.spillslots_to_stackmap(
+                        let stack_map = self.abi.spillslots_to_stack_map(
                             &self.safepoint_slots[safepoint_idx][..],
                             &state,
                         );
-                        state.pre_safepoint(stackmap);
+                        state.pre_safepoint(stack_map);
                     }
                     safepoint_idx += 1;
                 }
