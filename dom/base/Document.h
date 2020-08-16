@@ -3087,6 +3087,9 @@ class Document : public nsINode,
   }
 
   
+  void GetConnectedShadowRoots(nsTArray<RefPtr<ShadowRoot>>&) const;
+
+  
   
   void NotifyMediaFeatureValuesChanged();
 
