@@ -20,6 +20,7 @@
 #include "nsISecureBrowserUI.h"
 
 class nsISHistory;
+class nsSHistory;
 class nsBrowserStatusFilter;
 class nsSecureBrowserUI;
 
@@ -272,7 +273,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   RefPtr<PendingRemotenessChange> mPendingRemotenessChange;
 
-  nsCOMPtr<nsISHistory> mSessionHistory;
+  RefPtr<nsSHistory> mSessionHistory;
 
   
   
