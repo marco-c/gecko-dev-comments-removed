@@ -274,8 +274,6 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
 
 
 
-#if defined(__x86_64__)
-
 @implementation SearchFieldCellWithFocusRing
 
 - (void)drawWithFrame:(NSRect)rect inView:(NSView*)controlView {
@@ -298,8 +296,6 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
 }
 
 @end
-
-#endif
 
 @interface ToolbarSearchFieldCellWithFocusRing : SearchFieldCellWithFocusRing
 @end
