@@ -8,30 +8,16 @@
 #define nsCUPSShim_h___
 
 #include <cups/cups.h>
+#include "mozilla/Atomics.h"
+#include "mozilla/Mutex.h"
 
 struct PRLibrary;
 
 
 class nsCUPSShim {
  public:
-  
-
-
-
-
-
-
-
-  bool Init();
-
-  
-
-
-
-  bool IsInitialized() const { return mInited; }
-
   bool EnsureInitialized() {
-    return IsInitialized() || Init();
+    return mInited || Init();
   }
 
   
@@ -61,7 +47,24 @@ class nsCUPSShim {
 #undef CUPS_SHIM_FUNC_DECL
 
  private:
-  bool mInited = false;
+  
+
+
+
+
+
+
+
+  bool Init();
+
+  bool IsInitialized() const { return mInited; }
+
+  
+  
+  
+  
+  mozilla::Atomic<bool, mozilla::ReleaseAcquire> mInited {false};
+  mozilla::OffTheBooksMutex mInitMutex {"nsCUPSShim::mInitMutex"};
   PRLibrary* mCupsLib;
 };
 

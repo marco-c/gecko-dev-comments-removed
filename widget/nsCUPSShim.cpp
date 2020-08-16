@@ -44,7 +44,11 @@ static bool LoadCupsFunc(PRLibrary*& lib, FuncT*& dest,
 }
 
 bool nsCUPSShim::Init() {
-  MOZ_ASSERT(!mInited);
+  mozilla::OffTheBooksMutexAutoLock lock(mInitMutex);
+  if (mInited) {
+    return true;
+  }
+
   mCupsLib = PR_LoadLibrary(gCUPSLibraryName);
   if (!mCupsLib) {
     return false;
