@@ -255,6 +255,11 @@ pub trait Parser<'i> {
     }
 
     
+    fn is_is_alias(&self, _name: &str) -> bool {
+        false
+    }
+
+    
     fn parse_host(&self) -> bool {
         false
     }
@@ -2300,6 +2305,10 @@ where
             return parse_negation(parser, input, state)
         },
         _ => {}
+    }
+
+    if parser.parse_is_and_where() && parser.is_is_alias(&name) {
+        return parse_is_or_where(parser, input, state, Component::Is);
     }
 
     if !state.allows_custom_functional_pseudo_classes() {
