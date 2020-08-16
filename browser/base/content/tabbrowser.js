@@ -318,6 +318,7 @@
       let tabArgument = gBrowserInit.getTabToAdopt();
 
       
+      let initialBrowsingContextGroupId;
       let sameProcessAsFrameLoader;
       
       
@@ -327,6 +328,8 @@
       let remoteType;
       if (tabArgument && tabArgument.linkedBrowser) {
         remoteType = tabArgument.linkedBrowser.remoteType;
+        initialBrowsingContextGroupId =
+          tabArgument.linkedBrowser.browsingContext?.group.id;
         sameProcessAsFrameLoader = tabArgument.linkedBrowser.frameLoader;
       } else if (openWindowInfo) {
         userContextId = openWindowInfo.originAttributes.userContextId;
@@ -364,6 +367,7 @@
         uriIsAboutBlank: false,
         userContextId,
         sameProcessAsFrameLoader,
+        initialBrowsingContextGroupId,
         remoteType,
         openWindowInfo,
       };
@@ -1549,6 +1553,7 @@
       var aPreferredRemoteType;
       var aUserContextId;
       var aSameProcessAsFrameLoader;
+      var aInitialBrowsingContextGroupId;
       var aOriginPrincipal;
       var aOriginStoragePrincipal;
       var aOpenWindowInfo;
@@ -1579,6 +1584,7 @@
         aPreferredRemoteType = params.preferredRemoteType;
         aUserContextId = params.userContextId;
         aSameProcessAsFrameLoader = params.sameProcessAsFrameLoader;
+        aInitialBrowsingContextGroupId = params.initialBrowsingContextGroupId;
         aOriginPrincipal = params.originPrincipal;
         aOriginStoragePrincipal = params.originStoragePrincipal;
         aOpenWindowInfo = params.openWindowInfo;
@@ -1622,6 +1628,7 @@
         originPrincipal: aOriginPrincipal,
         originStoragePrincipal: aOriginStoragePrincipal,
         sameProcessAsFrameLoader: aSameProcessAsFrameLoader,
+        initialBrowsingContextGroupId: aInitialBrowsingContextGroupId,
         openWindowInfo: aOpenWindowInfo,
         openerBrowser: aOpenerBrowser,
         focusUrlBar: aFocusUrlBar,
@@ -1965,6 +1972,7 @@
       openWindowInfo,
       remoteType,
       sameProcessAsFrameLoader,
+      initialBrowsingContextGroupId,
       uriIsAboutBlank,
       userContextId,
       skipLoad,
@@ -2027,6 +2035,18 @@
 
       if (sameProcessAsFrameLoader) {
         b.sameProcessAsFrameLoader = sameProcessAsFrameLoader;
+      }
+
+      
+      
+      
+      
+      
+      if (initialBrowsingContextGroupId) {
+        b.setAttribute(
+          "initialBrowsingContextGroupId",
+          initialBrowsingContextGroupId
+        );
       }
 
       
@@ -2439,6 +2459,7 @@
         referrerInfo,
         relatedToCurrent,
         sameProcessAsFrameLoader,
+        initialBrowsingContextGroupId,
         skipAnimation,
         skipBackgroundNotify,
         triggeringPrincipal,
@@ -2633,6 +2654,7 @@
             uriIsAboutBlank,
             userContextId,
             sameProcessAsFrameLoader,
+            initialBrowsingContextGroupId,
             openWindowInfo,
             name,
             skipLoad,
@@ -4418,6 +4440,7 @@
         eventDetail: { adoptedTab: aTab },
         preferredRemoteType: linkedBrowser.remoteType,
         sameProcessAsFrameLoader: linkedBrowser.frameLoader,
+        initialBrowsingContextGroupId: linkedBrowser.browsingContext?.group.id,
         skipAnimation: true,
         index: aIndex,
         createLazyBrowser,

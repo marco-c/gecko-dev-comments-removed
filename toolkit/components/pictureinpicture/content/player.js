@@ -110,6 +110,18 @@ let Player = {
     browser.remove();
 
     browser.setAttribute("nodefaultsrc", "true");
+
+    
+    
+    
+    
+    
+    
+    browser.setAttribute("remoteType", originatingBrowser.remoteType);
+    browser.setAttribute(
+      "initialBrowsingContextGroupId",
+      originatingBrowser.browsingContext.group.id
+    );
     browser.sameProcessAsFrameLoader = originatingBrowser.frameLoader;
     holder.appendChild(browser);
 

@@ -118,6 +118,13 @@ var gViewSourceUtils = {
     }
 
     if (browser) {
+      
+      
+      
+      
+      
+      
+      
       viewSourceBrowser.sameProcessAsFrameLoader = browser.frameLoader;
 
       
