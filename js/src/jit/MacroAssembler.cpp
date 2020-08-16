@@ -18,6 +18,7 @@
 #include "builtin/TypedObject.h"
 #include "gc/GCProbes.h"
 #include "jit/AtomicOp.h"
+#include "jit/AtomicOperations.h"
 #include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineIC.h"
@@ -3817,6 +3818,26 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
 
   
   branchTestPtr(Assembler::NonZero, temp2, temp1, noBarrier);
+}
+
+
+
+
+void MacroAssembler::atomicIsLockFreeJS(Register value, Register output) {
+  
+  MOZ_ASSERT(AtomicOperations::isLockfreeJS(1));  
+  MOZ_ASSERT(AtomicOperations::isLockfreeJS(2));  
+  MOZ_ASSERT(AtomicOperations::isLockfreeJS(4));  
+  MOZ_ASSERT(
+      !AtomicOperations::isLockfreeJS(8));  
+
+  Label done;
+  move32(Imm32(1), output);
+  branch32(Assembler::Equal, value, Imm32(4), &done);
+  branch32(Assembler::Equal, value, Imm32(2), &done);
+  branch32(Assembler::Equal, value, Imm32(1), &done);
+  move32(Imm32(0), output);
+  bind(&done);
 }
 
 
