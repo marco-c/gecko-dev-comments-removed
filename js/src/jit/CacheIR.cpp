@@ -7510,6 +7510,31 @@ AttachDecision CallIRGenerator::tryAttachBailout(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachAssertFloat32(HandleFunction callee) {
+  
+  if (argc_ != 2) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+
+  
+  writer.loadUndefinedResult();
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("AssertFloat32");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   MOZ_ASSERT(callee->isNativeWithoutJitEntry());
   if (callee->native() != fun_call) {
@@ -8621,6 +8646,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     
     case InlinableNative::TestBailout:
       return tryAttachBailout(callee);
+    case InlinableNative::TestAssertFloat32:
+      return tryAttachAssertFloat32(callee);
 
     default:
       return AttachDecision::NoAction;
