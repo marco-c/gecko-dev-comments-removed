@@ -348,14 +348,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
                                           originAttributes);
   }
 
-  void UpdateAltServiceMappingWithoutValidation(
-      AltSvcMapping* map, nsProxyInfo* proxyInfo,
-      nsIInterfaceRequestor* callbacks, uint32_t caps,
-      const OriginAttributes& originAttributes) {
-    mAltSvcCache->UpdateAltServiceMappingWithoutValidation(
-        map, proxyInfo, callbacks, caps, originAttributes);
-  }
-
   already_AddRefed<AltSvcMapping> GetAltServiceMapping(
       const nsACString& scheme, const nsACString& host, int32_t port, bool pb,
       bool isolated, const nsACString& topWindowOrigin,
@@ -496,12 +488,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   nsresult DoShiftReloadConnectionCleanupWithConnInfo(
       nsHttpConnectionInfo* aCI);
 
-
-  void MaybeAddAltSvcForTesting(nsIURI* aUri, const nsACString& aUsername,
-                                const nsACString& aTopWindowOrigin,
-                                bool aPrivateBrowsing, bool aIsolated,
-                                nsIInterfaceRequestor* aCallbacks,
-                                const OriginAttributes& aOriginAttributes);
  private:
   nsHttpHandler();
 
@@ -849,11 +835,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   nsDataHashtable<nsUint64HashKey, nsWeakPtr> mIDToHttpChannelMap;
-
-  
-  
-  
-  nsClassHashtable<nsCStringHashKey, nsCString> mAltSvcMappingTemptativeMap;
 };
 
 extern StaticRefPtr<nsHttpHandler> gHttpHandler;

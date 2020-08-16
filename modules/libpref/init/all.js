@@ -1449,12 +1449,6 @@ pref("network.http.http3.default-max-stream-blocked", 20);
 
 
 
-
-
-pref("network.http.http3.alt-svc-mapping-for-testing", "");
-
-
-
 pref("network.http.altsvc.enabled", true);
 pref("network.http.altsvc.oe", true);
 
