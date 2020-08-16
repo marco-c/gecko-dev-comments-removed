@@ -6,76 +6,25 @@
 
 #include "nsLayoutUtils.h"
 
-#include <algorithm>
-#include <limits>
-
-#include "ActiveLayerTracker.h"
-#include "ClientLayerManager.h"
-#include "DisplayItemClip.h"
-#include "DisplayListChecker.h"
-#include "FrameLayerBuilder.h"
-#include "GeckoProfiler.h"
-#include "gfx2DGlue.h"
-#include "gfxContext.h"
-#include "gfxDrawable.h"
-#include "gfxEnv.h"
-#include "gfxMatrix.h"
-#include "gfxPlatform.h"
-#include "gfxRect.h"
-#include "gfxTypes.h"
-#include "gfxUtils.h"
-#include "ImageContainer.h"
-#include "ImageOps.h"
-#include "ImageRegion.h"
-#include "imgIContainer.h"
-#include "imgIRequest.h"
-#include "LayersLogging.h"
-#include "LayoutLogging.h"
-#include "MobileViewportManager.h"
 #include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/BasicEvents.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/dom/AnonymousContent.h"
-#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/CanvasUtils.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/DOMRect.h"
-#include "mozilla/dom/DOMStringList.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/HTMLBodyElement.h"
-#include "mozilla/dom/HTMLCanvasElement.h"
-#include "mozilla/dom/HTMLImageElement.h"
-#include "mozilla/dom/HTMLMediaElementBinding.h"
-#include "mozilla/dom/HTMLVideoElement.h"
-#include "mozilla/dom/InspectorFontFace.h"
-#include "mozilla/dom/KeyframeEffect.h"
-#include "mozilla/dom/SVGViewportElement.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/PathHelpers.h"
-#include "mozilla/layers/APZCCallbackHelper.h"
-#include "mozilla/layers/APZUtils.h"  
-#include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/PAPZ.h"
-#include "mozilla/layers/StackingContextHelper.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/Likely.h"
-#include "mozilla/LookAndFeel.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PerfStats.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/RestyleManager.h"
 #include "mozilla/ScrollOrigin.h"
-#include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -84,79 +33,129 @@
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/StyleAnimationValue.h"
 #include "mozilla/SVGImageContext.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/SVGTextFrame.h"
 #include "mozilla/SVGUtils.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/ViewportUtils.h"
-#include "mozilla/WheelHandlingHelper.h"  
-#include "nsAnimationManager.h"
-#include "nsAtom.h"
-#include "nsBidiPresUtils.h"
-#include "nsBlockFrame.h"
-#include "nsCanvasFrame.h"
-#include "nsCaret.h"
 #include "nsCharTraits.h"
-#include "nsCOMPtr.h"
-#include "nsComputedDOMStyle.h"
-#include "nsCSSAnonBoxes.h"
-#include "nsCSSColorUtils.h"
-#include "nsCSSFrameConstructor.h"
-#include "nsCSSProps.h"
-#include "nsCSSPseudoElements.h"
-#include "nsCSSRendering.h"
-#include "nsDataHashtable.h"
-#include "nsDeckFrame.h"
-#include "nsDisplayList.h"
-#include "nsFlexContainerFrame.h"
-#include "nsFontInflationData.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "nsFontMetrics.h"
-#include "nsFrameList.h"
-#include "nsFrameSelection.h"
-#include "nsGenericHTMLElement.h"
-#include "nsGkAtoms.h"
-#include "nsICanvasRenderingContextInternal.h"
-#include "nsIContent.h"
-#include "nsIContentViewer.h"
-#include "nsIDocShell.h"
-#include "nsIFrameInlines.h"
-#include "nsIImageLoadingContent.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsIScrollableFrame.h"
-#include "nsIWidget.h"
-#include "nsListControlFrame.h"
-#include "nsPIDOMWindow.h"
-#include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"
-#include "nsRefreshDriver.h"
-#include "nsRegion.h"
-#include "nsStyleConsts.h"
-#include "nsStyleStructInlines.h"
-#include "nsStyleTransformMatrix.h"
-#include "nsSubDocumentFrame.h"
-#include "nsTableWrapperFrame.h"
-#include "nsTArray.h"
-#include "nsTextFragment.h"
-#include "nsTextFrame.h"
-#include "nsTransitionManager.h"
+#include "nsIContent.h"
+#include "nsFrameList.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsAtom.h"
+#include "nsCaret.h"
+#include "nsCSSPseudoElements.h"
+#include "nsCSSAnonBoxes.h"
+#include "nsCSSColorUtils.h"
 #include "nsView.h"
 #include "nsViewManager.h"
-#include "prenv.h"
-#include "RegionBuilder.h"
-#include "RetainedDisplayListBuilder.h"
-#include "TextDrawTarget.h"
-#include "TiledLayerBuffer.h"  
+#include "nsPlaceholderFrame.h"
+#include "nsIScrollableFrame.h"
+#include "nsSubDocumentFrame.h"
+#include "nsDisplayList.h"
+#include "nsRegion.h"
+#include "nsCSSFrameConstructor.h"
+#include "nsBlockFrame.h"
+#include "nsBidiPresUtils.h"
+#include "imgIContainer.h"
+#include "ImageOps.h"
+#include "ImageRegion.h"
+#include "gfxRect.h"
+#include "gfxContext.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsCSSRendering.h"
+#include "nsTextFragment.h"
+#include "nsStyleConsts.h"
+#include "nsPIDOMWindow.h"
+#include "nsIDocShell.h"
+#include "nsIWidget.h"
+#include "gfxMatrix.h"
+#include "gfxTypes.h"
+#include "nsTArray.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
+#include "nsICanvasRenderingContextInternal.h"
+#include "gfxPlatform.h"
+#include <algorithm>
+#include <limits>
+#include "mozilla/dom/AnonymousContent.h"
+#include "mozilla/dom/HTMLBodyElement.h"
+#include "mozilla/dom/HTMLMediaElementBinding.h"
+#include "mozilla/dom/HTMLVideoElement.h"
+#include "mozilla/dom/HTMLImageElement.h"
+#include "mozilla/dom/DOMRect.h"
+#include "mozilla/dom/DOMStringList.h"
+#include "mozilla/dom/KeyframeEffect.h"
+#include "mozilla/layers/APZCCallbackHelper.h"
+#include "imgIRequest.h"
+#include "nsIImageLoadingContent.h"
+#include "nsCOMPtr.h"
+#include "nsCSSProps.h"
+#include "nsListControlFrame.h"
+#include "mozilla/dom/Element.h"
+#include "nsCanvasFrame.h"
+#include "gfxDrawable.h"
+#include "gfxEnv.h"
+#include "gfxUtils.h"
+#include "nsDataHashtable.h"
+#include "nsTableWrapperFrame.h"
+#include "nsTextFrame.h"
+#include "nsFontInflationData.h"
+#include "nsStyleStructInlines.h"
+#include "nsStyleTransformMatrix.h"
+#include "nsIFrameInlines.h"
+#include "ImageContainer.h"
+#include "nsComputedDOMStyle.h"
+#include "ActiveLayerTracker.h"
+#include "mozilla/gfx/2D.h"
+#include "gfx2DGlue.h"
+#include "mozilla/LookAndFeel.h"
 #include "UnitTransforms.h"
+#include "TiledLayerBuffer.h"  
+#include "ClientLayerManager.h"
+#include "nsRefreshDriver.h"
+#include "nsIContentViewer.h"
+#include "LayersLogging.h"
+#include "mozilla/Preferences.h"
+#include "nsFrameSelection.h"
+#include "FrameLayerBuilder.h"
+#include "mozilla/layers/APZUtils.h"  
+#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/StyleAnimationValue.h"
+#include "mozilla/ServoStyleSet.h"
+#include "mozilla/WheelHandlingHelper.h"  
+#include "RegionBuilder.h"
+#include "mozilla/dom/SVGViewportElement.h"
+#include "DisplayItemClip.h"
+#include "mozilla/layers/StackingContextHelper.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
+#include "prenv.h"
+#include "RetainedDisplayListBuilder.h"
+#include "DisplayListChecker.h"
+#include "TextDrawTarget.h"
+#include "nsDeckFrame.h"
+#include "mozilla/dom/InspectorFontFace.h"
 #include "ViewportFrame.h"
+#include "MobileViewportManager.h"
 
 #ifdef MOZ_XUL
 #  include "nsXULPopupManager.h"
 #endif
+
+#include "GeckoProfiler.h"
+#include "nsAnimationManager.h"
+#include "nsTransitionManager.h"
+#include "mozilla/RestyleManager.h"
+#include "LayoutLogging.h"
 
 
 #ifdef XP_WIN
@@ -2220,38 +2219,13 @@ nsRect nsLayoutUtils::GetScrolledRect(nsIFrame* aScrolledFrame,
           y1 = aScrolledFrameOverflowArea.y,
           y2 = aScrolledFrameOverflowArea.YMost();
 
-  const bool isHorizontalWM = !wm.IsVertical();
-  const bool isVerticalWM = wm.IsVertical();
-  bool isInlineFlowFromTopOrLeft = !wm.IsInlineReversed();
-  bool isBlockFlowFromTopOrLeft = isHorizontalWM || wm.IsVerticalLR();
-
-  if (aScrolledFrame->IsFlexContainerFrame()) {
-    
-    
-    
-    
-    
-    FlexboxAxisInfo info(aScrolledFrame);
-    if (info.mIsRowOriented) {
-      
-      isInlineFlowFromTopOrLeft =
-          isInlineFlowFromTopOrLeft == !info.mIsMainAxisReversed;
-      isBlockFlowFromTopOrLeft =
-          isBlockFlowFromTopOrLeft == !info.mIsCrossAxisReversed;
-    } else {
-      
-      isBlockFlowFromTopOrLeft =
-          isBlockFlowFromTopOrLeft == !info.mIsMainAxisReversed;
-      isInlineFlowFromTopOrLeft =
-          isInlineFlowFromTopOrLeft == !info.mIsCrossAxisReversed;
-    }
-  }
+  bool horizontal = !wm.IsVertical();
 
   
   
   
-  if ((isHorizontalWM && isInlineFlowFromTopOrLeft) ||
-      (isVerticalWM && isBlockFlowFromTopOrLeft)) {
+  
+  if ((horizontal && !wm.IsInlineReversed()) || wm.IsVerticalLR()) {
     if (x1 < 0) {
       x1 = 0;
     }
@@ -2274,8 +2248,7 @@ nsRect nsLayoutUtils::GetScrolledRect(nsIFrame* aScrolledFrame,
   
   
   
-  if ((isHorizontalWM && isBlockFlowFromTopOrLeft) ||
-      (isVerticalWM && isInlineFlowFromTopOrLeft)) {
+  if (horizontal || !wm.IsInlineReversed()) {
     if (y1 < 0) {
       y1 = 0;
     }
