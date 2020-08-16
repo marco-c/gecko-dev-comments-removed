@@ -172,7 +172,12 @@ def add_resource_monitor(config, jobs):
             )
             
             worker_os = worker_os.split('-')[0]
-            if 'win7' in job["worker-type"]:
+            
+            
+            if 'aarch64' in job["worker-type"]:
+                yield job
+                continue
+            elif 'win7' in job["worker-type"]:
                 arch = '32'
             else:
                 arch = '64'
