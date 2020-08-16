@@ -30,7 +30,7 @@ class PivotRule;
 - (NSArray*)moxUIElementsForSearchPredicate:(NSDictionary*)searchPredicate;
 
 
-- (NSUInteger)moxUIElementCountForSearchPredicate:(NSDictionary*)searchPredicate;
+- (NSNumber*)moxUIElementCountForSearchPredicate:(NSDictionary*)searchPredicate;
 
 
 - (void)handleAccessibleEvent:(uint32_t)eventType;

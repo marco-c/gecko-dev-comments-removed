@@ -325,7 +325,7 @@
 - (NSArray* _Nullable)moxUIElementsForSearchPredicate:(NSDictionary* _Nonnull)searchPredicate;
 
 
-- (NSUInteger)moxUIElementCountForSearchPredicate:(NSDictionary* _Nonnull)searchPredicate;
+- (NSNumber* _Nullable)moxUIElementCountForSearchPredicate:(NSDictionary* _Nonnull)searchPredicate;
 
 
 - (id _Nullable)moxCellForColumnAndRow:(NSArray* _Nonnull)columnAndRow;
