@@ -16,7 +16,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/dom/PContentParent.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/gfx/GraphicsMessages.h"
 #include "nsCOMPtr.h"
@@ -78,7 +77,7 @@ class GfxInfoBase : public nsIGfxInfo,
   NS_IMETHOD GetTargetFrameRate(uint32_t* aTargetFrameRate) override;
 
   
-  void GetAllFeatures(dom::XPCOMInitData& xpcomInit);
+  nsTArray<mozilla::gfx::GfxInfoFeatureStatus> GetAllFeatures();
 
   
   
@@ -114,7 +113,7 @@ class GfxInfoBase : public nsIGfxInfo,
   virtual nsresult FindMonitors(JSContext* cx, JS::HandleObject array);
 
   static void SetFeatureStatus(
-      const nsTArray<mozilla::gfx::GfxInfoFeatureStatus>& aFS);
+      nsTArray<mozilla::gfx::GfxInfoFeatureStatus>&& aFS);
 
  protected:
   virtual ~GfxInfoBase();
