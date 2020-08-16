@@ -584,25 +584,9 @@ bool AntiTrackingUtils::IsThirdPartyChannel(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
 
   
-  bool thirdParty = true;
-
-  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
-  if (!thirdPartyUtil) {
-    return thirdParty;
-  }
-
-  
-  nsresult rv =
-      thirdPartyUtil->IsThirdPartyChannel(aChannel, nullptr, &thirdParty);
-  if (NS_FAILED(rv)) {
-    
-    thirdParty = true;
-  }
-
-  
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  return thirdParty && loadInfo->GetIsThirdPartyContextToTopWindow();
+  return loadInfo->GetIsThirdPartyContextToTopWindow();
 }
 
 
@@ -614,11 +598,44 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
   
   bool thirdParty = true;
 
-  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
-  Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(), aURI,
-                                               &thirdParty);
+  
+  if (aURI && !NS_IsAboutBlank(aURI)) {
+    nsCOMPtr<nsIScriptObjectPrincipal> scriptObjPrin =
+        do_QueryInterface(aWindow);
+    if (!scriptObjPrin) {
+      return thirdParty;
+    }
 
-  return thirdParty;
+    nsCOMPtr<nsIPrincipal> prin = scriptObjPrin->GetPrincipal();
+    if (!prin) {
+      return thirdParty;
+    }
+
+    
+    nsresult rv = prin->IsThirdPartyURI(aURI, &thirdParty);
+    if (NS_FAILED(rv)) {
+      return thirdParty;
+    }
+
+    if (thirdParty) {
+      return thirdParty;
+    }
+  }
+
+  RefPtr<Document> doc = aWindow->GetDoc();
+  if (!doc || !doc->GetChannel()) {
+    
+    
+    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
+    Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
+                                                 nullptr, &thirdParty);
+    return thirdParty;
+  }
+
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = doc->GetChannel()->LoadInfo();
+  return loadInfo->GetIsThirdPartyContextToTopWindow();
 }
 
 
