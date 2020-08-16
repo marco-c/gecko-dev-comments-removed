@@ -109,6 +109,14 @@ class SessionHistoryEntry : public nsISHEntry {
 
   const SessionHistoryInfo& Info() const { return *mInfo; }
 
+  void AddChild(SessionHistoryEntry* aChild, int32_t aOffset,
+                bool aUseRemoteSubframes);
+  void RemoveChild(SessionHistoryEntry* aChild);
+  
+  
+  
+  bool ReplaceChild(SessionHistoryEntry* aNewChild);
+
   
   static SessionHistoryEntry* GetByInfoId(uint64_t aId);
 
@@ -117,6 +125,8 @@ class SessionHistoryEntry : public nsISHEntry {
 
  private:
   virtual ~SessionHistoryEntry();
+
+  const nsID& DocshellID() const;
 
   UniquePtr<SessionHistoryInfo> mInfo;
   RefPtr<SHEntrySharedParentState> mSharedInfo;
