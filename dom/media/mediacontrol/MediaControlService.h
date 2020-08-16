@@ -53,8 +53,7 @@ class MediaControlService final : public nsIObserver {
 
   
   
-  void NotifyControllerBeingUsedInPictureInPictureMode(
-      MediaController* aController);
+  void RequestUpdateMainController(MediaController* aController);
 
   
   
