@@ -23,6 +23,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  FormHistory: "resource://gre/modules/FormHistory.jsm",
   Log: "resource://gre/modules/Log.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.jsm",
@@ -787,6 +788,35 @@ var UrlbarUtils = {
       }
     }
     return this._resultSourceNamesBySource.get(source);
+  },
+
+  
+
+
+
+
+
+
+  addToFormHistory(input, value) {
+    
+    
+    
+    if (!value || input.isPrivate) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+      FormHistory.update(
+        {
+          op: "bump",
+          fieldname: input.formHistoryName,
+          value,
+        },
+        {
+          handleError: reject,
+          handleCompletion: resolve,
+        }
+      );
+    });
   },
 };
 
