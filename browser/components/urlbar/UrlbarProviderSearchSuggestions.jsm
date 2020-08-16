@@ -116,7 +116,9 @@ class ProviderSearchSuggestions extends UrlbarProvider {
         queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH) ||
       queryContext.tokens.some(
         t => t.type == UrlbarTokenizer.TYPE.RESTRICT_SEARCH
-      )
+      ) ||
+      (queryContext.searchMode &&
+        queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH))
     );
   }
 
