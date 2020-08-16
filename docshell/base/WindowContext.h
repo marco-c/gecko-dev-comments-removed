@@ -115,6 +115,9 @@ class WindowContext : public nsISupports, public nsWrapperCache {
     uint64_t mInnerWindowId;
     uint64_t mOuterWindowId;
     uint64_t mBrowsingContextId;
+    
+    
+    bool mBrowsingContextIsTop;
 
     FieldValues mFields;
   };
