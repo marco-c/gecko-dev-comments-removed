@@ -9,17 +9,16 @@ const TESTROOT = getRootDirectory(gTestPath).replace(
 );
 
 
-const PDF_URL = TESTROOT + "file_pdfjs_object_stream.pdf";
-
-var gMIMEService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-
-
 
 
 
 add_task(async function test_octet_stream_opens_pdfjs() {
   await SpecialPowers.pushPrefEnv({ set: [["pdfjs.handleOctetStream", true]] });
-  let handlerInfo = gMIMEService.getFromTypeAndExtension(
+  
+  let pdfURL = TESTROOT + "file_pdfjs_object_stream.pdf";
+
+  let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+  let handlerInfo = mimeService.getFromTypeAndExtension(
     "application/pdf",
     "pdf"
   );
@@ -39,43 +38,8 @@ add_task(async function test_octet_stream_opens_pdfjs() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function(newTabBrowser) {
-      await waitForPdfJS(newTabBrowser, PDF_URL);
-      is(newTabBrowser.currentURI.spec, PDF_URL, "Should load pdfjs");
-    }
-  );
-});
-
-
-
-
-
-add_task(async function test_octet_stream_in_frame_downloads() {
-  await SpecialPowers.pushPrefEnv({ set: [["pdfjs.handleOctetStream", true]] });
-
-  let handlerInfo = gMIMEService.getFromTypeAndExtension(
-    "application/pdf",
-    "pdf"
-  );
-
-  
-  is(
-    handlerInfo.alwaysAskBeforeHandling,
-    false,
-    "pdf handler defaults to always-ask is false"
-  );
-  is(
-    handlerInfo.preferredAction,
-    Ci.nsIHandlerInfo.handleInternally,
-    "pdf handler defaults to internal"
-  );
-
-  let dialogPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: `data:text/html,<iframe src='${PDF_URL}'>` },
-    async function(newTabBrowser) {
-      let dialogWin = await dialogPromise;
-      ok(dialogWin, "Should have a dialog asking what to do.");
-      dialogWin.close(); 
+      await waitForPdfJS(newTabBrowser, pdfURL);
+      is(newTabBrowser.currentURI.spec, pdfURL, "Should load pdfjs");
     }
   );
 });
