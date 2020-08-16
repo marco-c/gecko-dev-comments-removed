@@ -21,6 +21,7 @@
 #include "mozilla/dom/ClientChannelHelper.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentProcessManager.h"
+#include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/ipc/IdType.h"
@@ -2274,7 +2275,33 @@ DocumentLoadListener::AsyncOnChannelRedirect(
 
   
   
-  nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(mChannel);
+  RefPtr<CanonicalBrowsingContext> bc =
+      mParentChannelListener->GetBrowsingContext();
+  nsCOMPtr<nsILoadInfo> channelLoadInfo = mChannel->LoadInfo();
+  bool isPrivateWin =
+      channelLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  if (nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin) && bc &&
+      bc->IsTop()) {
+    bool isHttpsOnlyExempt = false;
+    if (httpChannel) {
+      nsCOMPtr<nsIPrincipal> resultPrincipal;
+      nsresult rv =
+          nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+              mChannel, getter_AddRefs(resultPrincipal));
+      if (NS_SUCCEEDED(rv)) {
+        isHttpsOnlyExempt =
+            nsHTTPSOnlyUtils::TestHttpsOnlySitePermission(resultPrincipal);
+      }
+    }
+
+    uint32_t httpsOnlyStatus = channelLoadInfo->GetHttpsOnlyStatus();
+    if (isHttpsOnlyExempt) {
+      httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
+    } else {
+      httpsOnlyStatus &= ~nsILoadInfo::HTTPS_ONLY_EXEMPT;
+    }
+    channelLoadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+  }
 
   
   
