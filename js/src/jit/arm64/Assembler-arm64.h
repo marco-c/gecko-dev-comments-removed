@@ -368,19 +368,6 @@ class Assembler : public vixl::Assembler {
  protected:
   
   
-  
-  struct JumpRelocation {
-    BufferOffset
-        jump;  
-    uint32_t
-        extendedTableIndex;  
-
-    JumpRelocation(BufferOffset jump, uint32_t extendedTableIndex)
-        : jump(jump), extendedTableIndex(extendedTableIndex) {}
-  };
-
-  
-  
   struct RelativePatch {
     BufferOffset offset;
     void* target;
