@@ -740,7 +740,8 @@ bool BlobURLProtocolHandler::GetDataEntry(
   }
 
   
-  if (aAgentClusterId.isSome() && info->mAgentClusterId.isSome() &&
+  if (StaticPrefs::privacy_partition_bloburl_per_agent_cluster() &&
+      aAgentClusterId.isSome() && info->mAgentClusterId.isSome() &&
       !aAgentClusterId.value().Equals(info->mAgentClusterId.value())) {
     return false;
   }
