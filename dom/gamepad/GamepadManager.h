@@ -133,7 +133,11 @@ class GamepadManager final : public nsIObserver {
 
   bool SetGamepadByEvent(const GamepadChangeEvent& aEvent,
                          nsGlobalWindowInner* aWindow = nullptr);
-
+  
+  
+  
+  bool AxisMoveIsFirstIntent(nsGlobalWindowInner* aWindow, uint32_t aIndex,
+                             const GamepadChangeEvent& aEvent);
   bool MaybeWindowHasSeenGamepad(nsGlobalWindowInner* aWindow, uint32_t aIndex);
   
   
