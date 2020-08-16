@@ -2436,6 +2436,8 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
     return EditActionResult(error.StealNSResult());
   }
 
+  AutoRangeArray rangesToDelete(*SelectionRefPtr());
+
   
   
   
@@ -2443,23 +2445,23 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
   
   
   
-  SelectionWasCollapsed selectionWasCollapsed = SelectionRefPtr()->IsCollapsed()
+  
+  SelectionWasCollapsed selectionWasCollapsed = rangesToDelete.IsCollapsed()
                                                     ? SelectionWasCollapsed::Yes
                                                     : SelectionWasCollapsed::No;
 
   if (selectionWasCollapsed == SelectionWasCollapsed::Yes) {
-    EditorDOMPoint startPoint(EditorBase::GetStartPoint(*SelectionRefPtr()));
+    EditorDOMPoint startPoint(rangesToDelete.GetStartPointOfFirstRange());
     if (NS_WARN_IF(!startPoint.IsSet())) {
       return EditActionResult(NS_ERROR_FAILURE);
     }
 
     
-    RefPtr<Element> editingHost = GetActiveEditingHost();
-    if (NS_WARN_IF(!editingHost)) {
-      return EditActionResult(NS_ERROR_FAILURE);
-    }
-
     if (startPoint.GetContainerAsContent()) {
+      RefPtr<Element> editingHost = GetActiveEditingHost();
+      if (NS_WARN_IF(!editingHost)) {
+        return EditActionResult(NS_ERROR_FAILURE);
+      }
 #ifdef DEBUG
       nsMutationGuard debugMutation;
 #endif  
@@ -2480,6 +2482,12 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
     }
 
     
+    
+    
+    
+    
+    
+    
     EditActionResult result =
         SetCaretBidiLevelForDeletion(startPoint, aDirectionAndAmount);
     if (result.Failed() || result.Canceled()) {
@@ -2494,22 +2502,30 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
     AutoSetTemporaryAncestorLimiter autoSetter(*this, *SelectionRefPtr(),
                                                *startPoint.GetContainer());
 
-    nsresult rv = ExtendSelectionForDelete(&aDirectionAndAmount);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("TextEditor::ExtendSelectionForDelete() failed");
-      return EditActionResult(rv);
+    Result<nsIEditor::EDirection, nsresult> extendResult =
+        rangesToDelete.ExtendAnchorFocusRangeFor(*this, aDirectionAndAmount);
+    if (extendResult.isErr()) {
+      NS_WARNING("AutoRangeArray::ExtendAnchorFocusRangeFor() failed");
+      return EditActionResult(extendResult.unwrapErr());
     }
+    aDirectionAndAmount = extendResult.unwrap();
 
     if (aDirectionAndAmount == nsIEditor::eNone) {
       
       
       
       
+      
+      
+      MOZ_ASSERT(rangesToDelete.Ranges().Length() == 1);
+      MOZ_KnownLive(SelectionRefPtr())->RemoveAllRanges(IgnoreErrors());
+      MOZ_KnownLive(SelectionRefPtr())
+          ->AddRangeAndSelectFramesAndNotifyListeners(
+              MOZ_KnownLive(rangesToDelete.FirstRangeRef()), IgnoreErrors());
       return EditActionIgnored();
     }
 
-    if (SelectionRefPtr()->IsCollapsed()) {
-      AutoRangeArray rangesToDelete(*SelectionRefPtr());
+    if (rangesToDelete.IsCollapsed()) {
       EditActionResult result = HandleDeleteAroundCollapsedRanges(
           aDirectionAndAmount, aStripWrappers, rangesToDelete);
       NS_WARNING_ASSERTION(
@@ -2519,7 +2535,6 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
     }
   }
 
-  AutoRangeArray rangesToDelete(*SelectionRefPtr());
   EditActionResult result =
       HandleDeleteNonCollapsedRanges(aDirectionAndAmount, aStripWrappers,
                                      rangesToDelete, selectionWasCollapsed);

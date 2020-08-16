@@ -2197,19 +2197,12 @@ class EditorBase : public nsIEditor,
       case nsIEditor::eToEndOfLine:
         
         
+        
         return HowToHandleCollapsedRange::Ignore;
     }
     MOZ_ASSERT_UNREACHABLE("Invalid nsIEditor::EDirection value");
     return HowToHandleCollapsedRange::Ignore;
   }
-
-  
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  ExtendSelectionForDelete(nsIEditor::EDirection* aDirectionAndAmount);
 
   
 
@@ -2548,6 +2541,7 @@ class EditorBase : public nsIEditor,
   bool mIsHTMLEditorClass;
 
   friend class AlignStateAtSelection;
+  friend class AutoRangeArray;
   friend class CompositionTransaction;
   friend class CreateElementTransaction;
   friend class CSSEditUtils;

@@ -11,6 +11,7 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/RangeBoundary.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/StaticRange.h"
@@ -780,6 +781,17 @@ class MOZ_STACK_CLASS AutoRangeArray final {
   
 
 
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<nsIEditor::EDirection, nsresult>
+  ExtendAnchorFocusRangeFor(EditorBase& aEditorBase,
+                            nsIEditor::EDirection aDirectionAndAmount);
+
+  
+
+
   bool IsCollapsed() const {
     return mRanges.IsEmpty() ||
            (mRanges.Length() == 1 && mRanges[0]->Collapsed());
@@ -1070,8 +1082,10 @@ class EditorUtils final {
 
 
 
+  template <typename SelectionOrAutoRangeArray>
   static bool IsFrameSelectionRequiredToExtendSelection(
-      nsIEditor::EDirection aDirectionAndAmount, Selection& aSelection) {
+      nsIEditor::EDirection aDirectionAndAmount,
+      SelectionOrAutoRangeArray& aSelectionOrAutoRangeArray) {
     switch (aDirectionAndAmount) {
       case nsIEditor::eNextWord:
       case nsIEditor::ePreviousWord:
@@ -1080,7 +1094,7 @@ class EditorUtils final {
         return true;
       case nsIEditor::ePrevious:
       case nsIEditor::eNext:
-        return aSelection.IsCollapsed();
+        return aSelectionOrAutoRangeArray.IsCollapsed();
       default:
         return false;
     }
