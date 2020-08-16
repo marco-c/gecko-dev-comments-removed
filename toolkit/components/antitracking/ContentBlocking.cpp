@@ -599,6 +599,10 @@ ContentBlocking::CompleteAllowAccessFor(
     return;
   }
 
+  if (!doc->GetChannel()) {
+    return;
+  }
+
   
   
   
