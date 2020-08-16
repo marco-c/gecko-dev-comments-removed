@@ -677,7 +677,7 @@
          Type.int
       );
 
-      if (Const._DARWIN_FEATURE_64_BIT_INODE) {
+      if (Const._DARWIN_INODE64_SYMBOLS) {
         
         
         
@@ -840,7 +840,7 @@
 
       
       
-      if (Const._DARWIN_FEATURE_64_BIT_INODE) {
+      if (Const._DARWIN_INODE64_SYMBOLS) {
         
         libc.declareLazyFFI(
           SysFile,
