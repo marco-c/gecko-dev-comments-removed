@@ -262,7 +262,7 @@ nsresult PermissionDelegateHandler::GetPermission(const nsACString& aType,
       bc) {
     RefPtr<WindowContext> topWC = bc->GetTopWindowContext();
 
-    if (topWC->IsInProcess()) {
+    if (topWC && topWC->IsInProcess()) {
       
       
       
@@ -276,7 +276,7 @@ nsresult PermissionDelegateHandler::GetPermission(const nsACString& aType,
       if (topDoc) {
         principal = topDoc->NodePrincipal();
       }
-    } else {
+    } else if (topWC) {
       
       DelegatedPermissionList list =
           aExactHostMatch ? topWC->GetDelegatedExactHostMatchPermissions()
