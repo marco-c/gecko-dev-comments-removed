@@ -48,6 +48,7 @@ static mozilla::LazyLogModule gWinWakeLockLog("WinWakeLock");
 class WinWakeLockListener final : public nsIDOMMozWakeLockListener {
  public:
   NS_DECL_ISUPPORTS
+  WinWakeLockListener() { MOZ_ASSERT(XRE_IsParentProcess()); }
 
  private:
   ~WinWakeLockListener() {}
@@ -425,11 +426,17 @@ nsAppShell::Run(void) {
 
   
   
-  AddScreenWakeLockListener();
+  
+  
+  if (XRE_IsParentProcess()) {
+    AddScreenWakeLockListener();
+  }
 
   nsresult rv = nsBaseAppShell::Run();
 
-  RemoveScreenWakeLockListener();
+  if (XRE_IsParentProcess()) {
+    RemoveScreenWakeLockListener();
+  }
 
   return rv;
 }
