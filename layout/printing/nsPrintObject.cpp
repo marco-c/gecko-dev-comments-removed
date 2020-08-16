@@ -51,124 +51,11 @@ nsPrintObject::~nsPrintObject() {
     nsDocShell::Cast(mDocShell)->Destroy();
     bc->Detach();
   }
-  if (mDocument) {
-    mDocument->RemoveProperty(nsGkAtoms::printselectionranges);
-  }
   mDocShell = nullptr;
   mTreeOwner = nullptr;  
 }
 
 
-
-
-
-
-
-static nsINode* GetCorrespondingNodeInDocument(const nsINode* aOrigNode,
-                                               Document& aStaticClone) {
-  MOZ_ASSERT(aOrigNode);
-
-  
-  if (aOrigNode->IsInNativeAnonymousSubtree() || aOrigNode->IsInShadowTree()) {
-    return nullptr;
-  }
-
-  nsTArray<int32_t> indexArray;
-  const nsINode* child = aOrigNode;
-  while (const nsINode* parent = child->GetParentNode()) {
-    int32_t index = parent->ComputeIndexOf(child);
-    MOZ_ASSERT(index >= 0);
-    indexArray.AppendElement(index);
-    child = parent;
-  }
-  MOZ_ASSERT(child->IsDocument());
-
-  nsINode* correspondingNode = &aStaticClone;
-  for (int32_t i : Reversed(indexArray)) {
-    correspondingNode = correspondingNode->GetChildAt_Deprecated(i);
-    NS_ENSURE_TRUE(correspondingNode, nullptr);
-  }
-
-  return correspondingNode;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool CachePrintSelectionRanges(const Document& aSourceDoc,
-                                      Document& aStaticClone) {
-  MOZ_ASSERT(aStaticClone.IsStaticDocument());
-  MOZ_ASSERT(!aStaticClone.GetProperty(nsGkAtoms::printselectionranges));
-
-  const Selection* origSelection = nullptr;
-  const nsTArray<RefPtr<nsRange>>* origRanges = nullptr;
-  bool sourceDocIsStatic = aSourceDoc.IsStaticDocument();
-
-  if (sourceDocIsStatic) {
-    origRanges = static_cast<nsTArray<RefPtr<nsRange>>*>(
-        aSourceDoc.GetProperty(nsGkAtoms::printselectionranges));
-  } else if (PresShell* shell = aSourceDoc.GetPresShell()) {
-    origSelection = shell->GetCurrentSelection(SelectionType::eNormal);
-  }
-
-  if (!origSelection && !origRanges) {
-    return false;
-  }
-
-  size_t rangeCount =
-      sourceDocIsStatic ? origRanges->Length() : origSelection->RangeCount();
-  auto printRanges = MakeUnique<nsTArray<RefPtr<nsRange>>>(rangeCount);
-
-  for (size_t i = 0; i < rangeCount; ++i) {
-    const nsRange* range = sourceDocIsStatic ? origRanges->ElementAt(i).get()
-                                             : origSelection->GetRangeAt(i);
-    nsINode* startContainer = range->GetStartContainer();
-    nsINode* endContainer = range->GetEndContainer();
-
-    if (!startContainer || !endContainer) {
-      continue;
-    }
-
-    nsINode* startNode =
-        GetCorrespondingNodeInDocument(startContainer, aStaticClone);
-    nsINode* endNode =
-        GetCorrespondingNodeInDocument(endContainer, aStaticClone);
-
-    if (!startNode || !endNode) {
-      continue;
-    }
-
-    RefPtr<nsRange> clonedRange =
-        nsRange::Create(startNode, range->StartOffset(), endNode,
-                        range->EndOffset(), IgnoreErrors());
-    if (clonedRange && !clonedRange->Collapsed()) {
-      printRanges->AppendElement(std::move(clonedRange));
-    }
-  }
-
-  if (printRanges->IsEmpty()) {
-    return false;
-  }
-
-  aStaticClone.SetProperty(nsGkAtoms::printselectionranges,
-                           printRanges.release(),
-                           nsINode::DeleteProperty<nsTArray<RefPtr<nsRange>>>);
-  return true;
-}
 
 nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
                                          bool aForPrintPreview) {
@@ -223,7 +110,6 @@ nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
 
   mDocument = aDoc->CreateStaticClone(mDocShell);
   NS_ENSURE_STATE(mDocument);
-  mHasSelection = CachePrintSelectionRanges(*aDoc, *mDocument);
 
   nsCOMPtr<nsIContentViewer> viewer;
   mDocShell->GetContentViewer(getter_AddRefs(viewer));
@@ -235,7 +121,6 @@ nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
 
 nsresult nsPrintObject::InitAsNestedObject(nsIDocShell* aDocShell,
                                            Document* aDoc,
-                                           Document* aSourceOfDoc,
                                            nsPrintObject* aParent) {
   NS_ENSURE_STATE(aDocShell);
   NS_ENSURE_STATE(aDoc);
@@ -256,12 +141,6 @@ nsresult nsPrintObject::InitAsNestedObject(nsIDocShell* aDocShell,
     
     mFrameType = eIFrame;
   }
-
-  
-  
-  
-  
-  mHasSelection = CachePrintSelectionRanges(*aSourceOfDoc, *aDoc);
 
   return NS_OK;
 }
@@ -288,8 +167,12 @@ void nsPrintObject::EnablePrinting(bool aEnable) {
   }
 }
 
+bool nsPrintObject::HasSelection() const {
+  return mDocument && mDocument->GetProperty(nsGkAtoms::printselectionranges);
+}
+
 void nsPrintObject::EnablePrintingSelectionOnly() {
-  mPrintingIsEnabled = mHasSelection;
+  mPrintingIsEnabled = HasSelection();
 
   for (const UniquePtr<nsPrintObject>& kid : mKids) {
     kid->EnablePrintingSelectionOnly();

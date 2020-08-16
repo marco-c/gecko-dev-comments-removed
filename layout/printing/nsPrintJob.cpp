@@ -315,7 +315,7 @@ static void BuildNestedPrintObjects(const UniquePtr<nsPrintObject>& aParentPO,
   if (aParentPO->mFrameType == eIFrame &&
       aParentPO->mDocument->GetOriginalDocument() == aFocusedDoc) {
     aPrintData->mSelectionRoot = aParentPO.get();
-  } else if (!aPrintData->mSelectionRoot && aParentPO->mHasSelection) {
+  } else if (!aPrintData->mSelectionRoot && aParentPO->HasSelection()) {
     
     
     
@@ -355,7 +355,7 @@ static void BuildNestedPrintObjects(const UniquePtr<nsPrintObject>& aParentPO,
     }
 
     auto childPO = MakeUnique<nsPrintObject>();
-    rv = childPO->InitAsNestedObject(docshell, doc, sourceDoc, aParentPO.get());
+    rv = childPO->InitAsNestedObject(docshell, doc, aParentPO.get());
     if (NS_FAILED(rv)) {
       MOZ_ASSERT_UNREACHABLE("Init failed?");
     }
@@ -2569,7 +2569,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   
   
   if (printData->mSelectionRoot->mFrameType == eIFrame &&
-      !printData->mSelectionRoot->mHasSelection) {
+      !printData->mSelectionRoot->HasSelection()) {
     printData->mSelectionRoot->EnablePrinting(true);
   } else {
     
