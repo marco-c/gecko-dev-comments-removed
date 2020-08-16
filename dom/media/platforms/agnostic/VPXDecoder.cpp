@@ -5,17 +5,19 @@
 
 
 #include "VPXDecoder.h"
+
+#include <algorithm>
+
 #include "BitReader.h"
+#include "ByteWriter.h"
+#include "ImageContainer.h"
 #include "TimeUnits.h"
 #include "gfx2DGlue.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Unused.h"
-#include "ImageContainer.h"
 #include "nsError.h"
 #include "prsystem.h"
-
-#include <algorithm>
 
 #undef LOG
 #define LOG(arg, ...)                                                  \
@@ -480,6 +482,61 @@ bool VPXDecoder::GetStreamInfo(Span<const uint8_t> aBuffer,
     }
   }
   return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void VPXDecoder::GetVPCCBox(MediaByteBuffer* aDestBox,
+                            const VPXStreamInfo& aInfo) {
+  ByteWriter<BigEndian> writer(*aDestBox);
+
+  int chroma = [&]() {
+    if (aInfo.mSubSampling_x && aInfo.mSubSampling_y) {
+      return 1;  
+    }
+    if (aInfo.mSubSampling_x && !aInfo.mSubSampling_y) {
+      return 2;  
+    }
+    if (!aInfo.mSubSampling_x && !aInfo.mSubSampling_y) {
+      return 3;  
+    }
+    
+    
+    return 1;
+  }();
+
+  MOZ_ALWAYS_TRUE(writer.WriteU32(1 << 24));        
+  MOZ_ALWAYS_TRUE(writer.WriteU8(aInfo.mProfile));  
+  MOZ_ALWAYS_TRUE(writer.WriteU8(10));              
+  MOZ_ALWAYS_TRUE(writer.WriteU8(
+      (0xF & aInfo.mBitDepth) << 4 | (0x7 & chroma) << 1 |
+      (0x1 & aInfo.mFullRange)));      
+                                       
+  MOZ_ALWAYS_TRUE(writer.WriteU8(2));  
+  MOZ_ALWAYS_TRUE(writer.WriteU8(2));  
+  MOZ_ALWAYS_TRUE(writer.WriteU8(2));  
+  MOZ_ALWAYS_TRUE(
+      writer.WriteU16(0));  
 }
 
 }  
