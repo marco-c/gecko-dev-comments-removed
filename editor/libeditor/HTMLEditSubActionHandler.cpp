@@ -2460,8 +2460,9 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
     }
 
     if (startPoint.GetContainerAsContent()) {
-      AutoEditorDOMPointChildInvalidator lockOffset(startPoint);
-
+#ifdef DEBUG
+      nsMutationGuard debugMutation;
+#endif  
       AutoEmptyBlockAncestorDeleter deleter;
       if (deleter.ScanEmptyBlockInclusiveAncestor(
               *this, MOZ_KnownLive(*startPoint.GetContainerAsContent()),
@@ -2473,6 +2474,9 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
           return result;
         }
       }
+      MOZ_ASSERT(!debugMutation.Mutated(0),
+                 "AutoEmptyBlockAncestorDeleter shouldn't modify the DOM tree "
+                 "if it returns not handled nor error");
     }
 
     
