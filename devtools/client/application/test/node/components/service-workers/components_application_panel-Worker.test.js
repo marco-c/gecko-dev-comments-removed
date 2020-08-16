@@ -59,7 +59,7 @@ describe("Worker", () => {
     
     expect(wrapper.find(".js-start-button")).toHaveLength(1);
     
-    expect(wrapper.find(".js-debug-link")).toHaveLength(0);
+    expect(wrapper.find(".js-inspect-link")).toHaveLength(0);
 
     expect(wrapper).toMatchSnapshot();
   });
@@ -101,32 +101,8 @@ describe("Worker", () => {
     
     expect(wrapper.find(".js-start-button")).toHaveLength(0);
     
-    expect(wrapper.find(".js-debug-link")).toHaveLength(0);
+    expect(wrapper.find(".js-inspect-link")).toHaveLength(0);
 
     expect(wrapper).toMatchSnapshot();
-  });
-
-  it("Shows/hides the debug link depending of debugging being available", () => {
-    const store = setupStore({});
-
-    
-    let wrapper = shallow(
-      Worker({
-        isDebugEnabled: false,
-        worker: WORKER_RUNNING,
-        store,
-      })
-    ).dive();
-    expect(wrapper.find(".js-debug-link")).toHaveLength(0);
-
-    
-    wrapper = shallow(
-      Worker({
-        isDebugEnabled: true,
-        worker: WORKER_RUNNING,
-        store,
-      })
-    ).dive();
-    expect(wrapper.find(".js-debug-link")).toHaveLength(1);
   });
 });
