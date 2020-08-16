@@ -27,6 +27,8 @@ class ProfileBuffer final {
   
   explicit ProfileBuffer(ProfileChunkedBuffer& aBuffer);
 
+  ProfileChunkedBuffer& UnderlyingChunkedBuffer() const { return mEntries; }
+
   bool IsThreadSafe() const { return mEntries.IsThreadSafe(); }
 
   

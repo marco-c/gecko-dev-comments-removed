@@ -1660,16 +1660,17 @@ MarkerTiming get_marker_timing_from_payload(
 
 
 
-template <typename Buffer>
-static void StoreMarker(Buffer& aBuffer, int aThreadId, const char* aMarkerName,
+static void StoreMarker(ProfileChunkedBuffer& aChunkedBuffer, int aThreadId,
+                        const char* aMarkerName,
                         const MarkerTiming& aMarkerTiming,
                         JS::ProfilingCategoryPair aCategoryPair,
                         const ProfilerMarkerPayload* aPayload) {
-  aBuffer.PutObjects(ProfileBufferEntry::Kind::MarkerData, aThreadId,
-                     WrapProfileBufferUnownedCString(aMarkerName),
-                     aMarkerTiming.GetStartTime(), aMarkerTiming.GetEndTime(),
-                     aMarkerTiming.GetMarkerPhase(),
-                     static_cast<uint32_t>(aCategoryPair), aPayload);
+  aChunkedBuffer.PutObjects(ProfileBufferEntry::Kind::MarkerData, aThreadId,
+                            WrapProfileBufferUnownedCString(aMarkerName),
+                            aMarkerTiming.GetStartTime(),
+                            aMarkerTiming.GetEndTime(),
+                            aMarkerTiming.GetMarkerPhase(),
+                            static_cast<uint32_t>(aCategoryPair), aPayload);
 }
 
 
@@ -2764,7 +2765,8 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
 
     if (!text) {
       
-      StoreMarker(aProfileBuffer, threadId, markerName.get(), timing,
+      StoreMarker(aProfileBuffer.UnderlyingChunkedBuffer(), threadId,
+                  markerName.get(), timing,
                   JS::ProfilingCategoryPair::JAVA_ANDROID, nullptr);
     } else {
       
@@ -2773,7 +2775,8 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
                                       nullptr);
 
       
-      StoreMarker(aProfileBuffer, threadId, markerName.get(), timing,
+      StoreMarker(aProfileBuffer.UnderlyingChunkedBuffer(), threadId,
+                  markerName.get(), timing,
                   JS::ProfilingCategoryPair::JAVA_ANDROID, &payload);
     }
   }
