@@ -64,7 +64,11 @@ class ProviderTopSites extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return !queryContext.restrictSource && !queryContext.searchString;
+    return (
+      !queryContext.restrictSource &&
+      !queryContext.searchString &&
+      !queryContext.searchMode
+    );
   }
 
   
