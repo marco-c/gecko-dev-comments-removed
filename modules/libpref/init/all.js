@@ -1190,12 +1190,6 @@ pref("javascript.options.mem.gc_min_empty_chunk_count", 1);
 
 pref("javascript.options.mem.gc_max_empty_chunk_count", 30);
 
-
-pref("javascript.options.mem.gc_helper_thread_ratio", 50);
-
-
-pref("javascript.options.mem.gc_max_helper_threads", 8);
-
 pref("javascript.options.showInConsole", false);
 
 pref("javascript.options.shared_memory", true);

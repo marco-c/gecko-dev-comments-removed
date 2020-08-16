@@ -355,30 +355,6 @@ typedef enum JSGCParamKey {
 
 
   JSGC_CHUNK_BYTES = 38,
-
-  
-
-
-
-
-
-  JSGC_HELPER_THREAD_RATIO = 39,
-
-  
-
-
-
-
-  JSGC_MAX_HELPER_THREADS = 40,
-
-  
-
-
-
-
-
-  JSGC_HELPER_THREAD_COUNT = 41,
-
 } JSGCParamKey;
 
 
