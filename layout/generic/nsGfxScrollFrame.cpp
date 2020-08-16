@@ -2852,7 +2852,7 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   
   
   bool suppressScrollOriginChange = false;
-  if (presContext->PresShell()->GetIsViewportOverridden() && aPt == curPos) {
+  if (StaticPrefs::apz_allow_zooming() && aPt == curPos) {
     suppressScrollOriginChange = true;
   }
 
