@@ -235,6 +235,9 @@ pub struct SceneBuilder<'a> {
     sc_stack: Vec<FlattenedStackingContext>,
 
     
+    containing_block_stack: Vec<SpatialNodeIndex>,
+
+    
     pending_shadow_items: VecDeque<ShadowItem>,
 
     
@@ -318,6 +321,7 @@ impl<'a> SceneBuilder<'a> {
             hit_testing_scene: HitTestingScene::new(&stats.hit_test_stats),
             pending_shadow_items: VecDeque::new(),
             sc_stack: Vec::new(),
+            containing_block_stack: Vec::new(),
             prim_store: PrimitiveStore::new(&stats.prim_store_stats),
             clip_store: ClipStore::new(),
             interners,
@@ -395,8 +399,7 @@ impl<'a> SceneBuilder<'a> {
         enum ContextKind<'a> {
             Root,
             StackingContext {
-                is_useful: bool,
-                has_clip: bool,
+                sc_info: StackingContextInfo,
             },
             ReferenceFrame,
             Iframe {
@@ -448,7 +451,7 @@ impl<'a> SceneBuilder<'a> {
                             info.stacking_context.mix_blend_mode_for_compositing(),
                         );
 
-                        let is_useful = self.push_stacking_context(
+                        let sc_info = self.push_stacking_context(
                             bc.pipeline_id,
                             composition_operations,
                             info.stacking_context.transform_style,
@@ -463,8 +466,7 @@ impl<'a> SceneBuilder<'a> {
                         let new_context = BuildContext {
                             pipeline_id: bc.pipeline_id,
                             kind: ContextKind::StackingContext {
-                                is_useful,
-                                has_clip: info.stacking_context.clip_id.is_some(),
+                                sc_info,
                             },
                         };
                         stack.push(bc);
@@ -586,13 +588,9 @@ impl<'a> SceneBuilder<'a> {
 
             match bc.kind {
                 ContextKind::Root => {}
-                ContextKind::StackingContext { is_useful, has_clip } => {
+                ContextKind::StackingContext { sc_info } => {
                     self.rf_mapper.pop_offset();
-                    if is_useful {
-                        self.pop_stacking_context();
-                    } else if has_clip {
-                        self.clip_store.pop_clip_root();
-                    }
+                    self.pop_stacking_context(sc_info);
                 }
                 ContextKind::ReferenceFrame => {
                     self.rf_mapper.pop_scope();
@@ -1532,9 +1530,7 @@ impl<'a> SceneBuilder<'a> {
     }
 
     
-    
-    #[must_use]
-    pub fn push_stacking_context(
+    fn push_stacking_context(
         &mut self,
         pipeline_id: PipelineId,
         composite_ops: CompositeOps,
@@ -1544,7 +1540,7 @@ impl<'a> SceneBuilder<'a> {
         clip_id: Option<ClipId>,
         requested_raster_space: RasterSpace,
         flags: StackingContextFlags,
-    ) -> bool {
+    ) -> StackingContextInfo {
         profile_scope!("push_stacking_context");
 
         
@@ -1610,19 +1606,18 @@ impl<'a> SceneBuilder<'a> {
         let context_3d = if participating_in_3d_context {
             
             
-            let ancestor_context = self.sc_stack
-                .iter()
-                .rfind(|sc| !sc.is_3d());
+            let ancestor_index = self.containing_block_stack
+                .last()
+                .cloned()
+                .unwrap_or(ROOT_SPATIAL_NODE_INDEX);
+
             Picture3DContext::In {
                 root_data: if parent_is_3d {
                     None
                 } else {
                     Some(Vec::new())
                 },
-                ancestor_index: match ancestor_context {
-                    Some(sc) => sc.spatial_node_index,
-                    None => ROOT_SPATIAL_NODE_INDEX,
-                },
+                ancestor_index,
             }
         } else {
             Picture3DContext::Out
@@ -1666,7 +1661,22 @@ impl<'a> SceneBuilder<'a> {
             self.sc_stack.last(),
         );
 
+        let mut sc_info = StackingContextInfo {
+            pop_clip_root: false,
+            pop_stacking_context: false,
+            pop_containing_block: false,
+        };
+
+        
+        if !participating_in_3d_context {
+            sc_info.pop_containing_block = true;
+            self.containing_block_stack.push(spatial_node_index);
+        }
+
+        
         if let Some(clip_id) = clip_id {
+            sc_info.pop_clip_root = true;
+
             
             
             
@@ -1681,40 +1691,54 @@ impl<'a> SceneBuilder<'a> {
             }
         }
 
-        if is_redundant {
-            return false;
+        
+        if !is_redundant {
+            sc_info.pop_stacking_context = true;
+
+            
+            
+            self.sc_stack.push(FlattenedStackingContext {
+                prim_list: PrimitiveList::empty(),
+                pipeline_id,
+                prim_flags,
+                requested_raster_space,
+                spatial_node_index,
+                clip_chain_id,
+                frame_output_pipeline_id,
+                composite_ops,
+                blit_reason,
+                transform_style,
+                context_3d,
+                is_redundant,
+                is_backdrop_root: flags.contains(StackingContextFlags::IS_BACKDROP_ROOT),
+            });
         }
 
-        
-        
-        self.sc_stack.push(FlattenedStackingContext {
-            prim_list: PrimitiveList::empty(),
-            pipeline_id,
-            prim_flags,
-            requested_raster_space,
-            spatial_node_index,
-            clip_id,
-            clip_chain_id,
-            frame_output_pipeline_id,
-            composite_ops,
-            blit_reason,
-            transform_style,
-            context_3d,
-            is_redundant,
-            is_backdrop_root: flags.contains(StackingContextFlags::IS_BACKDROP_ROOT),
-        });
-
-        true
+        sc_info
     }
 
-    pub fn pop_stacking_context(&mut self) {
+    fn pop_stacking_context(
+        &mut self,
+        info: StackingContextInfo,
+    ) {
         profile_scope!("pop_stacking_context");
 
-        let stacking_context = self.sc_stack.pop().unwrap();
+        
+        if info.pop_containing_block {
+            self.containing_block_stack.pop().unwrap();
+        }
 
-        if stacking_context.clip_id.is_some() {
+        
+        if info.pop_clip_root {
             self.clip_store.pop_clip_root();
         }
+
+        
+        if !info.pop_stacking_context {
+            return;
+        }
+
+        let stacking_context = self.sc_stack.pop().unwrap();
 
         let parent_is_empty = match self.sc_stack.last() {
             Some(parent_sc) => {
@@ -3395,6 +3419,17 @@ struct ExtendedPrimitiveInstance {
 
 
 
+struct StackingContextInfo {
+    
+    pop_clip_root: bool,
+    
+    pop_containing_block: bool,
+    
+    pop_stacking_context: bool,
+}
+
+
+
 
 struct FlattenedStackingContext {
     
@@ -3412,7 +3447,6 @@ struct FlattenedStackingContext {
 
     
     clip_chain_id: ClipChainId,
-    clip_id: Option<ClipId>,
 
     
     
