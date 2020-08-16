@@ -15,18 +15,6 @@
 #include "mozilla/Attributes.h"
 #include "nsWrapperCache.h"
 
-
-
-
-
-
-#define MOZILLA_DOMSVGLENGTH_IID                     \
-  {                                                  \
-    0xA8468350, 0x7F7B, 0x4976, {                    \
-      0x9A, 0x7E, 0x37, 0x65, 0xA1, 0xDA, 0xDF, 0x9A \
-    }                                                \
-  }
-
 #define MOZ_SVG_LIST_INDEX_BIT_COUNT 22  // supports > 4 million list items
 
 namespace mozilla {
@@ -78,7 +66,7 @@ class SVGElement;
 
 
 
-class DOMSVGLength final : public nsISupports, public nsWrapperCache {
+class DOMSVGLength final : public nsWrapperCache {
   template <class T>
   friend class AutoChangeLengthListNotifier;
 
@@ -92,9 +80,8 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
   ~DOMSVGLength();
 
  public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(MOZILLA_DOMSVGLENGTH_IID)
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGLength)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGLength)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(DOMSVGLength)
 
   
 
@@ -238,8 +225,6 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
   SVGAnimatedLength* mVal;  
   RefPtr<dom::SVGElement> mSVGElement;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(DOMSVGLength, MOZILLA_DOMSVGLENGTH_IID)
 
 }  
 }  

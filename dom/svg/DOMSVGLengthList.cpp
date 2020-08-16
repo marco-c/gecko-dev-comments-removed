@@ -10,7 +10,6 @@
 #include "DOMSVGLength.h"
 #include "nsError.h"
 #include "SVGAnimatedLengthList.h"
-#include "nsCOMPtr.h"
 #include "mozilla/dom/SVGLengthListBinding.h"
 #include <algorithm>
 
@@ -293,7 +292,7 @@ already_AddRefed<DOMSVGLength> DOMSVGLengthList::RemoveItem(
   MaybeRemoveItemFromAnimValListAt(index);
 
   
-  nsCOMPtr<DOMSVGLength> result = GetItemAt(index);
+  RefPtr<DOMSVGLength> result = GetItemAt(index);
 
   
   
