@@ -57,14 +57,18 @@ function run_test() {
   
   requestList1Canceled1 = dns.asyncResolve(
     hostname2,
+    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
     flags,
+    null, 
     listener1,
     mainThread,
     defaultOriginAttributes
   );
   dns.cancelAsyncResolve(
     hostname2,
+    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
     flags,
+    null, 
     listener1,
     Cr.NS_ERROR_ABORT,
     defaultOriginAttributes
@@ -73,7 +77,9 @@ function run_test() {
   
   requestList1NotCanceled = dns.asyncResolve(
     hostname1,
+    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
     flags,
+    null, 
     listener1,
     mainThread,
     defaultOriginAttributes
@@ -82,7 +88,9 @@ function run_test() {
   
   requestList1Canceled2 = dns.asyncResolve(
     hostname1,
+    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
     flags,
+    null, 
     listener1,
     mainThread,
     defaultOriginAttributes
@@ -92,7 +100,9 @@ function run_test() {
   
   requestList2NotCanceled = dns.asyncResolve(
     hostname1,
+    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
     flags,
+    null, 
     listener2,
     mainThread,
     defaultOriginAttributes
@@ -101,7 +111,9 @@ function run_test() {
   
   requestList2Canceled = dns.asyncResolve(
     hostname2,
+    Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
     flags,
+    null, 
     listener2,
     mainThread,
     defaultOriginAttributes
