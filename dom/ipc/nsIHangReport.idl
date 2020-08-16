@@ -41,6 +41,9 @@ interface nsIHangReport : nsISupports
   readonly attribute ACString pluginName;
 
   
+  readonly attribute unsigned long long childID;
+
+  
   
   void userCanceled();
 
