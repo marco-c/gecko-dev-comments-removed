@@ -66,11 +66,9 @@ class nsHTTPSOnlyUtils {
 
 
 
-
   static void LogLocalizedString(const char* aName,
                                  const nsTArray<nsString>& aParams,
-                                 uint32_t aFlags, uint64_t aInnerWindowID,
-                                 bool aFromPrivateWindow,
+                                 uint32_t aFlags, nsILoadInfo* aLoadInfo,
                                  nsIURI* aURI = nullptr);
 
   
@@ -89,10 +87,8 @@ class nsHTTPSOnlyUtils {
 
 
 
-
   static void LogMessage(const nsAString& aMessage, uint32_t aFlags,
-                         uint64_t aInnerWindowID, bool aFromPrivateWindow,
-                         nsIURI* aURI = nullptr);
+                         nsILoadInfo* aLoadInfo, nsIURI* aURI = nullptr);
 
   
 
