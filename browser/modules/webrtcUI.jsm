@@ -365,8 +365,12 @@ var webrtcUI = {
         
         
         
+        
+        
         let browser = stream.topBrowsingContext.embedderElement;
-        this.allowedSharedBrowsers.add(browser.permanentKey);
+        if (browser.permanentKey) {
+          this.allowedSharedBrowsers.add(browser.permanentKey);
+        }
       }
     }
 
