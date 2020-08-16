@@ -512,9 +512,6 @@ function do_test(testcases, testFn) {
         let decryptHelper = async (cipherText, reauth) => {
           return OSKeyStore.decrypt(cipherText, false);
         };
-        
-        
-        const setUserInput = (element, value) => element.setUserInput(value);
 
         handler.collectFormFields();
 
@@ -523,7 +520,6 @@ function do_test(testcases, testFn) {
 
         for (let section of handler.sections) {
           section._decrypt = decryptHelper;
-          section._focusAndSetTextValue = setUserInput;
         }
 
         handler.activeSection.fieldDetails.forEach(field => {
