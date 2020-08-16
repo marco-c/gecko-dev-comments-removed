@@ -264,7 +264,7 @@ class CommandAction(argparse.Action):
                 
                 
                 if handler.conditions:
-                    instance = handler.cls(self._context)
+                    instance = handler.cls(self._context, handler.virtualenv_name)
 
                     is_filtered = False
                     for c in handler.conditions:
