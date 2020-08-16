@@ -63,6 +63,26 @@ void SpawnPrintBackgroundTask(
 
 
 template <typename T, typename Result, typename... Args>
+nsresult PrintBackgroundTaskPromise(
+    T& aReceiver, JSContext* aCx, dom::Promise** aResultPromise,
+    PrintBackgroundTask<T, Result, Args...> aTask, Args... aArgs) {
+  ErrorResult rv;
+  RefPtr<dom::Promise> promise =
+      dom::Promise::Create(xpc::CurrentNativeGlobal(aCx), rv);
+  if (MOZ_UNLIKELY(rv.Failed())) {
+    return rv.StealNSResult();
+  }
+
+  SpawnPrintBackgroundTask(aReceiver, *promise, aTask,
+                           std::forward<Args>(aArgs)...);
+
+  promise.forget(aResultPromise);
+  return NS_OK;
+}
+
+
+
+template <typename T, typename Result, typename... Args>
 nsresult AsyncPromiseAttributeGetter(
     T& aReceiver, RefPtr<dom::Promise>& aPromiseSlot, JSContext* aCx,
     dom::Promise** aResultPromise,
@@ -72,17 +92,11 @@ nsresult AsyncPromiseAttributeGetter(
     return NS_OK;
   }
 
-  ErrorResult rv;
-  aPromiseSlot = dom::Promise::Create(xpc::CurrentNativeGlobal(aCx), rv);
-  if (MOZ_UNLIKELY(rv.Failed())) {
-    return rv.StealNSResult();
-  }
+  nsresult rv = PrintBackgroundTaskPromise(aReceiver, aCx, aResultPromise,
+                                           aTask, std::forward<Args>(aArgs)...);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  RefPtr<dom::Promise> promise = aPromiseSlot;
-  SpawnPrintBackgroundTask(aReceiver, *promise, aTask,
-                           std::forward<Args>(aArgs)...);
-
-  promise.forget(aResultPromise);
+  aPromiseSlot = *aResultPromise;
   return NS_OK;
 }
 
