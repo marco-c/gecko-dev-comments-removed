@@ -2886,12 +2886,13 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
   enum class SelectionWasCollapsed { Yes, No };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteNonCollapsedSelection(
-      nsIEditor::EDirection aDirectionAndAmount,
-      nsIEditor::EStripWrappers aStripWrappers,
-      SelectionWasCollapsed aSelectionWasCollapsed);
+  HandleDeleteNonCollapsedRanges(nsIEditor::EDirection aDirectionAndAmount,
+                                 nsIEditor::EStripWrappers aStripWrappers,
+                                 AutoRangeArray& aRangesToDelete,
+                                 SelectionWasCollapsed aSelectionWasCollapsed);
 
   
 
