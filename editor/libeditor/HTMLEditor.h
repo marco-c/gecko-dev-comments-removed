@@ -2858,10 +2858,12 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteAroundCollapsedSelection(
-      nsIEditor::EDirection aDirectionAndAmount,
-      nsIEditor::EStripWrappers aStripWrappers);
+  HandleDeleteAroundCollapsedRanges(nsIEditor::EDirection aDirectionAndAmount,
+                                    nsIEditor::EStripWrappers aStripWrappers,
+                                    AutoRangeArray& aRangesToDelete);
 
   
 
