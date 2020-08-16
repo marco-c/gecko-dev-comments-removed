@@ -53,7 +53,7 @@ const { ExtensionUtils } = ChromeUtils.import(
   "resource://gre/modules/ExtensionUtils.jsm"
 );
 
-const { DefaultMap, LimitedSet, getUniqueId } = ExtensionUtils;
+const { DefaultMap, ExtensionError, LimitedSet, getUniqueId } = ExtensionUtils;
 
 const {
   EventEmitter,
@@ -124,6 +124,15 @@ const ExtensionActivityLogChild = {
 
 
 
+class ExtensionErrorHolder {
+  constructor(trustedErrorObject) {
+    this.trustedErrorObject = trustedErrorObject;
+  }
+}
+
+
+
+
 
 
 const StrongPromise = {
@@ -145,7 +154,7 @@ const StrongPromise = {
   observe(subject, topic, id) {
     let message = "Promised response from onMessage listener went out of scope";
     let { reject, location } = this.stillAlive.get(id);
-    reject({ message, mozWebExtLocation: location });
+    reject(new ExtensionErrorHolder({ message, mozWebExtLocation: location }));
     this.stillAlive.delete(id);
   },
 };
@@ -183,7 +192,19 @@ class MessageEvent extends SimpleEventAPI {
 
     return !responses.length
       ? { received: true, response: false }
-      : Promise.race(responses).then(value => ({ response: true, value }));
+      : Promise.race(responses).then(
+          value => ({ response: true, value }),
+          error => Promise.reject(this.unwrapOrSanitizeError(error))
+        );
+  }
+
+  unwrapOrSanitizeError(error) {
+    if (error instanceof ExtensionErrorHolder) {
+      return error.trustedErrorObject;
+    }
+    
+    
+    return new ExtensionError(error?.message ?? "An unexpected error occurred");
   }
 
   wrapResponse(fire, message, sender) {
@@ -306,15 +327,13 @@ class Messenger {
   }
 
   sendRuntimeMessage({ extensionId, message, callback, ...args }) {
-    let response = this.conduit
-      .queryRuntimeMessage({
-        extensionId: extensionId || this.context.extension.id,
-        holder: holdMessage(message),
-        ...args,
-      })
-      .catch(({ message, mozWebExtLocation }) =>
-        Promise.reject({ message, mozWebExtLocation })
-      );
+    let response = this.conduit.queryRuntimeMessage({
+      extensionId: extensionId || this.context.extension.id,
+      holder: holdMessage(message),
+      ...args,
+    });
+    
+    
     return this.context.wrapPromise(response, callback);
   }
 
