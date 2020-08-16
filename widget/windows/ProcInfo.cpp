@@ -138,15 +138,23 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
           if (!hThread) {
             
             
+            processLookup->value().threads.RemoveLastElement();
             continue;
           }
 
+          threadInfo->tid = te32.th32ThreadID;
+
+          
+          
           FILETIME createTime, exitTime, kernelTime, userTime;
-          if (!GetThreadTimes(hThread.get(), &createTime, &exitTime,
-                              &kernelTime, &userTime)) {
-            continue;
+          if (GetThreadTimes(hThread.get(), &createTime, &exitTime, &kernelTime,
+                             &userTime)) {
+            threadInfo->cpuKernel = ToNanoSeconds(kernelTime);
+            threadInfo->cpuUser = ToNanoSeconds(userTime);
           }
 
+          
+          
           if (getThreadDescription) {
             PWSTR threadName = nullptr;
             if (getThreadDescription(hThread.get(), &threadName) &&
@@ -157,9 +165,6 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
               LocalFree(threadName);
             }
           }
-          threadInfo->tid = te32.th32ThreadID;
-          threadInfo->cpuKernel = ToNanoSeconds(kernelTime);
-          threadInfo->cpuUser = ToNanoSeconds(userTime);
         }
 
         
