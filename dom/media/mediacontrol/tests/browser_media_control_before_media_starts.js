@@ -102,7 +102,7 @@ add_task(async function testNonMediaEntersFullScreen() {
   info(`press 'play' which should not start media`);
   
   
-  ChromeUtils.generateMediaControlKey("play");
+  MediaControlService.generateMediaControlKey("play");
   await checkOrWaitUntilMediaStoppedPlaying(tab, testVideoId);
 
   info(`remove tab`);

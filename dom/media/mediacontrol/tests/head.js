@@ -31,7 +31,7 @@ async function createTabAndLoad(url, inputWindow = null) {
 
 function generateMediaControlKeyEvent(event) {
   const playbackStateChanged = waitUntilDisplayedPlaybackChanged();
-  ChromeUtils.generateMediaControlKey(event);
+  MediaControlService.generateMediaControlKey(event);
   return playbackStateChanged;
 }
 
@@ -158,7 +158,7 @@ function checkOrWaitUntilMediaStoppedPlaying(tab, elementId) {
 
 
 function isCurrentMetadataEmpty() {
-  const current = ChromeUtils.getCurrentActiveMediaMetadata();
+  const current = MediaControlService.getCurrentActiveMediaMetadata();
   is(current.title, "", `current title should be empty`);
   is(current.artist, "", `current title should be empty`);
   is(current.album, "", `current album should be empty`);
@@ -172,7 +172,7 @@ function isCurrentMetadataEmpty() {
 
 
 function isCurrentMetadataEqualTo(metadata) {
-  const current = ChromeUtils.getCurrentActiveMediaMetadata();
+  const current = MediaControlService.getCurrentActiveMediaMetadata();
   is(
     current.title,
     metadata.title,
@@ -220,7 +220,7 @@ function isCurrentMetadataEqualTo(metadata) {
 
 
 async function isUsingDefaultMetadata(tab, options = {}) {
-  let metadata = ChromeUtils.getCurrentActiveMediaMetadata();
+  const metadata = MediaControlService.getCurrentActiveMediaMetadata();
   await SpecialPowers.spawn(
     tab.linkedBrowser,
     [metadata.title, options.isPrivateBrowsing],
