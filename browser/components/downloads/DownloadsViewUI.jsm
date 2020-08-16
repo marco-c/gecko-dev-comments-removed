@@ -856,7 +856,6 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       );
       
       mimeInfo.preferredAction = mimeInfo.handleInternally;
-      mimeInfo.alwaysAskBeforeHandling = true;
     }
     handlerSvc.store(mimeInfo);
     DownloadsCommon.openDownload(this.download).catch(Cu.reportError);

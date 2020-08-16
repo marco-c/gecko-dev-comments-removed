@@ -795,23 +795,29 @@ var DownloadIntegration = {
     }
 
     const PDF_CONTENT_TYPE = "application/pdf";
-    if (
-      aDownload.handleInternally ||
-      (!useSystemDefault && 
-        mimeInfo &&
-        (mimeInfo.type == PDF_CONTENT_TYPE ||
-          fileExtension?.toLowerCase() == "pdf") &&
-        !mimeInfo.alwaysAskBeforeHandling &&
-        mimeInfo.preferredAction === Ci.nsIHandlerInfo.handleInternally &&
-        !aDownload.launchWhenSucceeded)
-    ) {
-      DownloadUIHelper.loadFileIn(file, {
-        browsingContextId: aDownload.source.browsingContextId,
-        isPrivate: aDownload.source.isPrivate,
-        openWhere,
-        userContextId: aDownload.source.userContextId,
-      });
-      return;
+
+    if (!useSystemDefault && mimeInfo) {
+      useSystemDefault = mimeInfo.preferredAction == mimeInfo.useSystemDefault;
+    }
+    if (!useSystemDefault) {
+      
+      if (
+        aDownload.handleInternally ||
+        (mimeInfo &&
+          (mimeInfo.type == PDF_CONTENT_TYPE ||
+            fileExtension?.toLowerCase() == "pdf") &&
+          !mimeInfo.alwaysAskBeforeHandling &&
+          mimeInfo.preferredAction === Ci.nsIHandlerInfo.handleInternally &&
+          !aDownload.launchWhenSucceeded)
+      ) {
+        DownloadUIHelper.loadFileIn(file, {
+          browsingContextId: aDownload.source.browsingContextId,
+          isPrivate: aDownload.source.isPrivate,
+          openWhere,
+          userContextId: aDownload.source.userContextId,
+        });
+        return;
+      }
     }
 
     
