@@ -713,16 +713,16 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
     InitConstructor,
 
     
-    InstanceFieldInitializers,
+    InstanceMemberInitializers,
 
     
-    InstanceFieldInitializersEnd,
+    InstanceMemberInitializersEnd,
 
     
-    StaticFieldInitializers,
+    StaticMemberInitializers,
 
     
-    StaticFieldInitializersEnd,
+    StaticMemberInitializersEnd,
 
     
     BoundName,
@@ -753,7 +753,7 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   
   
   
-  enum class FieldState {
+  enum class MemberState {
     
     
     Start,
@@ -764,16 +764,16 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
     
     InitializerWithHomeObject,
   };
-  FieldState fieldState_ = FieldState::Start;
+  MemberState memberState_ = MemberState::Start;
 
-  size_t numFields_ = 0;
+  size_t numInitializers_ = 0;
 #endif
 
   JS::Rooted<JSAtom*> name_;
   JS::Rooted<JSAtom*> nameForAnonymousClass_;
   bool hasNameOnStack_ = false;
   mozilla::Maybe<NameOpEmitter> initializersAssignment_;
-  size_t fieldIndex_ = 0;
+  size_t initializerIndex_ = 0;
 
  public:
   explicit ClassEmitter(BytecodeEmitter* bce);
@@ -811,12 +811,12 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   MOZ_MUST_USE bool emitInitDefaultConstructor(uint32_t classStart,
                                                uint32_t classEnd);
 
-  MOZ_MUST_USE bool prepareForFieldInitializers(size_t numFields,
-                                                bool isStatic);
-  MOZ_MUST_USE bool prepareForFieldInitializer();
-  MOZ_MUST_USE bool emitFieldInitializerHomeObject(bool isStatic);
-  MOZ_MUST_USE bool emitStoreFieldInitializer();
-  MOZ_MUST_USE bool emitFieldInitializersEnd();
+  MOZ_MUST_USE bool prepareForMemberInitializers(size_t numInitializers,
+                                                 bool isStatic);
+  MOZ_MUST_USE bool prepareForMemberInitializer();
+  MOZ_MUST_USE bool emitMemberInitializerHomeObject(bool isStatic);
+  MOZ_MUST_USE bool emitStoreMemberInitializer();
+  MOZ_MUST_USE bool emitMemberInitializersEnd();
 
   MOZ_MUST_USE bool emitBinding();
 

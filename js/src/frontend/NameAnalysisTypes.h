@@ -125,6 +125,16 @@ static inline bool DeclarationKindIsLexical(DeclarationKind kind) {
 }
 
 
+enum class PrivateNameKind : uint8_t {
+  None,
+  Field,
+  Method,
+  Getter,
+  Setter,
+  GetterSetter,
+};
+
+
 class DeclaredNameInfo {
   uint32_t pos_;
   DeclarationKind kind_;
@@ -134,9 +144,14 @@ class DeclaredNameInfo {
   
   bool closedOver_;
 
+  PrivateNameKind privateNameKind_;
+
  public:
   explicit DeclaredNameInfo(DeclarationKind kind, uint32_t pos)
-      : pos_(pos), kind_(kind), closedOver_(false) {}
+      : pos_(pos),
+        kind_(kind),
+        closedOver_(false),
+        privateNameKind_(PrivateNameKind::None) {}
 
   
   DeclaredNameInfo() = default;
@@ -152,6 +167,12 @@ class DeclaredNameInfo {
   void setClosedOver() { closedOver_ = true; }
 
   bool closedOver() const { return closedOver_; }
+
+  void setPrivateNameKind(PrivateNameKind privateNameKind) {
+    privateNameKind_ = privateNameKind;
+  }
+
+  PrivateNameKind privateNameKind() const { return privateNameKind_; }
 };
 
 

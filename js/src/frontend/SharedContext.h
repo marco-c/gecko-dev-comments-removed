@@ -357,7 +357,7 @@ class FunctionBox : public SharedContext {
   
   
   
-  mozilla::Maybe<FieldInitializers> fieldInitializers_ = {};
+  mozilla::Maybe<MemberInitializers> memberInitializers_ = {};
 
  public:
   
@@ -676,15 +676,15 @@ class FunctionBox : public SharedContext {
 
   size_t nargs() { return nargs_; }
 
-  bool hasFieldInitializers() const { return fieldInitializers_.isSome(); }
-  const FieldInitializers& fieldInitializers() const {
-    return *fieldInitializers_;
+  bool hasMemberInitializers() const { return memberInitializers_.isSome(); }
+  const MemberInitializers& memberInitializers() const {
+    return *memberInitializers_;
   }
-  void setFieldInitializers(FieldInitializers fieldInitializers) {
-    MOZ_ASSERT(fieldInitializers_.isNothing());
-    fieldInitializers_ = mozilla::Some(fieldInitializers);
+  void setMemberInitializers(MemberInitializers memberInitializers) {
+    MOZ_ASSERT(memberInitializers_.isNothing());
+    memberInitializers_ = mozilla::Some(memberInitializers);
     if (isScriptFieldCopiedToStencil) {
-      copyUpdatedFieldInitializers();
+      copyUpdatedMemberInitializers();
     }
   }
 
@@ -712,7 +712,7 @@ class FunctionBox : public SharedContext {
 
   
   
-  void copyUpdatedFieldInitializers();
+  void copyUpdatedMemberInitializers();
 
   
   

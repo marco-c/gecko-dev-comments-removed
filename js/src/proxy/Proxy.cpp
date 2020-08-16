@@ -15,9 +15,11 @@
 #include "js/friend/StackLimits.h"  
 #include "js/friend/WindowProxy.h"  
 #include "js/PropertySpec.h"
+#include "js/Value.h"  
 #include "js/Wrapper.h"
 #include "proxy/DeadObjectProxy.h"
 #include "proxy/ScriptedProxyHandler.h"
+#include "vm/Interpreter.h"  
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"
 #include "vm/JSObject.h"
@@ -77,6 +79,12 @@ static bool ProxyGetOnExpando(JSContext* cx, HandleObject proxy,
   }
 
   
+  if (desc.hasGetterObject()) {
+    RootedValue getter(cx, JS::ObjectValue(*desc.getterObject().get()));
+    return js::CallGetter(cx, receiver, getter, vp);
+  }
+
+  
   MOZ_ASSERT(desc.object());
   MOZ_ASSERT(desc.hasValue());
   MOZ_ASSERT(desc.isDataDescriptor());
@@ -116,21 +124,7 @@ static bool ProxyDefineOnExpando(JSContext* cx, HandleObject proxy, HandleId id,
     proxy->as<ProxyObject>().setExpando(expando);
   }
 
-  
-  Rooted<PropertyDescriptor> ownDesc(cx);
-  if (!GetOwnPropertyDescriptor(cx, expando, id, &ownDesc)) {
-    return false;
-  }
-  ownDesc.assertCompleteIfFound();
-  
-  ownDesc.setValue(desc.value());
-
-  
-  
-  
-  MOZ_ASSERT(!ownDesc.object());
-
-  return DefineProperty(cx, expando, id, ownDesc, result);
+  return DefineProperty(cx, expando, id, desc, result);
 }
 
 void js::AutoEnterPolicy::reportErrorIfExceptionIsNotPending(JSContext* cx,

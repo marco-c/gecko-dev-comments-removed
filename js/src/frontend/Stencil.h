@@ -426,7 +426,7 @@ class ScriptStencil {
   ImmutableScriptFlags immutableFlags;
 
   
-  mozilla::Maybe<FieldInitializers> fieldInitializers;
+  mozilla::Maybe<MemberInitializers> memberInitializers;
   ScriptThingsVector gcThings;
 
   

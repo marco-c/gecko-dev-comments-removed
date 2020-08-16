@@ -58,7 +58,7 @@ struct ScopeContext {
 
   
   
-  mozilla::Maybe<FieldInitializers> fieldInitializers = {};
+  mozilla::Maybe<MemberInitializers> memberInitializers = {};
 
   explicit ScopeContext(Scope* scope, JSObject* enclosingEnv = nullptr) {
     computeAllowSyntax(scope);

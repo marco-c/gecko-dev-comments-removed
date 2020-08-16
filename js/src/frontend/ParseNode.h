@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "frontend/FunctionSyntaxKind.h"  
+#include "frontend/NameAnalysisTypes.h"   
 #include "frontend/Stencil.h"
 #include "frontend/Token.h"
 #include "js/RootingAPI.h"
@@ -264,6 +265,8 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
   return ParseNodeKind::TypeOfNameExpr <= kind &&
          kind <= ParseNodeKind::TypeOfExpr;
 }
+
+
 
 
 
@@ -846,6 +849,7 @@ class NullaryNode : public ParseNode {
 
 class NameNode : public ParseNode {
   JSAtom* atom_; 
+  PrivateNameKind privateNameKind_ = PrivateNameKind::None;
 
  public:
   NameNode(ParseNodeKind kind, JSAtom* atom, const TokenPos& pos)
@@ -877,6 +881,12 @@ class NameNode : public ParseNode {
   }
 
   void setAtom(JSAtom* atom) { atom_ = atom; }
+
+  void setPrivateNameKind(PrivateNameKind privateNameKind) {
+    privateNameKind_ = privateNameKind;
+  }
+
+  PrivateNameKind privateNameKind() { return privateNameKind_; }
 };
 
 inline bool ParseNode::isName(PropertyName* name) const {
@@ -2067,6 +2077,7 @@ class CallNode : public BinaryNode {
 class ClassMethod : public BinaryNode {
   bool isStatic_;
   AccessorType accessorType_;
+  FunctionNode* initializerIfPrivate_;
 
  public:
   
@@ -2074,11 +2085,12 @@ class ClassMethod : public BinaryNode {
 
 
   ClassMethod(ParseNode* name, ParseNode* body, AccessorType accessorType,
-              bool isStatic)
+              bool isStatic, FunctionNode* initializerIfPrivate)
       : BinaryNode(ParseNodeKind::ClassMethod,
                    TokenPos(name->pn_pos.begin, body->pn_pos.end), name, body),
         isStatic_(isStatic),
-        accessorType_(accessorType) {}
+        accessorType_(accessorType),
+        initializerIfPrivate_(initializerIfPrivate) {}
 
   static bool test(const ParseNode& node) {
     bool match = node.isKind(ParseNodeKind::ClassMethod);
@@ -2093,6 +2105,8 @@ class ClassMethod : public BinaryNode {
   bool isStatic() const { return isStatic_; }
 
   AccessorType accessorType() const { return accessorType_; }
+
+  FunctionNode* initializerIfPrivate() const { return initializerIfPrivate_; }
 };
 
 class ClassField : public BinaryNode {
