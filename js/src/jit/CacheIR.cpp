@@ -5999,6 +5999,40 @@ AttachDecision CallIRGenerator::tryAttachSubstringKernel(
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachObjectHasPrototype(
+    HandleFunction callee) {
+  
+  MOZ_ASSERT(argc_ == 2);
+  MOZ_ASSERT(args_[0].isObject());
+  MOZ_ASSERT(args_[1].isObject());
+
+  auto* obj = &args_[0].toObject().as<NativeObject>();
+  auto* proto = &args_[1].toObject().as<NativeObject>();
+
+  
+  if (obj->staticPrototype() != proto) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+
+  ValOperandId arg0Id = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objId = writer.guardToObject(arg0Id);
+
+  writer.guardProto(objId, proto);
+  writer.loadBooleanResult(true);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("ObjectHasPrototype");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachString(HandleFunction callee) {
   
   
@@ -7744,6 +7778,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachNewRegExpStringIterator(callee);
     case InlinableNative::IntrinsicArrayIteratorPrototypeOptimizable:
       return tryAttachArrayIteratorPrototypeOptimizable(callee);
+    case InlinableNative::IntrinsicObjectHasPrototype:
+      return tryAttachObjectHasPrototype(callee);
 
     
     case InlinableNative::IsRegExpObject:
