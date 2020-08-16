@@ -14,7 +14,10 @@ from mozperftest.layers import Layer
 
 
 
-POTENTIAL_DMGS = {"browsertime-binary": "Contents/MacOS/firefox"}
+POTENTIAL_DMGS = {
+    "browsertime-binary": "Contents/MacOS/firefox",
+    "xpcshell-xre-path": "Contents/MacOS",
+}
 
 
 class MacosDevice(Layer):
