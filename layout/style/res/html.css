@@ -835,20 +835,6 @@ dialog:not([open]) {
   display: none;
 }
 
-
-
-
-
-dialog:-moz-topmost-modal-dialog {
-  -moz-inert: none;
-  -moz-user-focus: initial;
-  -moz-user-input: initial;
-  -moz-user-modify: initial;
-  user-select: text;
-  pointer-events: initial;
-  cursor: initial;
-}
-
 dialog:-moz-modal-dialog {
   -moz-top-layer: top !important;
   
