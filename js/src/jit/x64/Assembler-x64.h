@@ -303,14 +303,6 @@ class Assembler : public AssemblerX86Shared {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   static const uint32_t SizeOfExtendedJump = 1 + 1 + 4 + 2 + 8;
   static const uint32_t SizeOfJumpTableEntry = 16;
 

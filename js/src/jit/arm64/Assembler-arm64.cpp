@@ -77,16 +77,6 @@ void Assembler::finish() {
   
   ExtendedJumpTable_ = emitExtendedJumpTable();
   Assembler::FinalizeCode();
-
-  
-  
-  
-  
-  
-  if (jumpRelocations_.length() && !oom()) {
-    MOZ_ASSERT(jumpRelocations_.length() >= sizeof(uint32_t));
-    *(uint32_t*)jumpRelocations_.buffer() = ExtendedJumpTable_.getOffset();
-  }
 }
 
 bool Assembler::appendRawCode(const uint8_t* code, size_t numBytes) {
@@ -290,17 +280,7 @@ void Assembler::addJumpRelocation(BufferOffset src, RelocationKind reloc) {
   
   MOZ_ASSERT(reloc == RelocationKind::JITCODE);
 
-  
-  
-  
-  
-  if (!jumpRelocations_.length()) {
-    jumpRelocations_.writeFixedUint32_t(0);
-  }
-
-  
   jumpRelocations_.writeUnsigned(src.getOffset());
-  jumpRelocations_.writeUnsigned(pendingJumps_.length());
 }
 
 void Assembler::addPendingJump(BufferOffset src, ImmPtr target,
@@ -451,27 +431,20 @@ void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
 
 class RelocationIterator {
   CompactBufferReader reader_;
-  uint32_t tableStart_;
-  uint32_t offset_;
-  uint32_t extOffset_;
+  uint32_t offset_ = 0;
 
  public:
-  explicit RelocationIterator(CompactBufferReader& reader) : reader_(reader) {
-    
-    tableStart_ = reader_.readFixedUint32_t();
-  }
+  explicit RelocationIterator(CompactBufferReader& reader) : reader_(reader) {}
 
   bool read() {
     if (!reader_.more()) {
       return false;
     }
     offset_ = reader_.readUnsigned();
-    extOffset_ = reader_.readUnsigned();
     return true;
   }
 
   uint32_t offset() const { return offset_; }
-  uint32_t extendedOffset() const { return extOffset_; }
 };
 
 static JitCode* CodeFromJump(JitCode* code, uint8_t* jump) {
