@@ -634,7 +634,7 @@ class GCRuntime {
                                         SliceBudget& budget);
   void checkZoneIsScheduled(Zone* zone, JS::GCReason reason,
                             const char* trigger);
-  IncrementalResult resetIncrementalGC(AbortReason reason);
+  IncrementalResult resetIncrementalGC(GCAbortReason reason);
 
   
   
