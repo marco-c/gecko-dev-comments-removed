@@ -57,7 +57,6 @@ tls13_ReleaseAntiReplayContext(SSLAntiReplayContext *ctx)
 }
 
 
-
 SECStatus
 SSLExp_ReleaseAntiReplayContext(SSLAntiReplayContext *ctx)
 {

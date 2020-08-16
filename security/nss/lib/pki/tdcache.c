@@ -74,7 +74,7 @@ log_cert_ref(const char *msg, NSSCertificate *c)
 
 
 struct nssTDCertificateCacheStr {
-    PZLock *lock;
+    PZLock *lock; 
     NSSArena *arena;
     nssHash *issuerAndSN;
     nssHash *subject;
@@ -712,6 +712,14 @@ add_cert_to_cache(
     cache_entry *ce;
     NSSCertificate *rvCert = NULL;
     NSSUTF8 *certNickname = nssCertificate_GetNickname(cert, NULL);
+
+    
+
+
+
+    if (cert->type == NSSCertificateType_PKIX) {
+        (void)STAN_GetCERTCertificate(cert);
+    }
 
     PZ_Lock(td->cache->lock);
     

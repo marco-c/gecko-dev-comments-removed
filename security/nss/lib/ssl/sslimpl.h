@@ -713,18 +713,24 @@ typedef struct SSL3HandshakeStateStr {
     PRBool receivedCcs;                   
 
     PRBool clientCertRequested;           
+    PRBool endOfFlight;                   
     ssl3KEADef kea_def_mutable;           
 
-    PRTime serverHelloTime;               
     PRUint16 ticketNonce;                 
     SECItem fakeSid;                      
-    PRBool endOfFlight;                   
+
+    
+
+
+
+    PRTime rttEstimate;
 
     
     PRCList dtlsSentHandshake; 
     PRCList dtlsRcvdHandshake; 
 
-    PRCList psks;              
+
+    PRCList psks; 
 } SSL3HandshakeState;
 
 #define SSL_ASSERT_HASHES_EMPTY(ss)                                  \

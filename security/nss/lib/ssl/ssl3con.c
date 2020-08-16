@@ -7653,16 +7653,6 @@ ssl3_CompleteHandleCertificateRequest(sslSocket *ss,
             
             if ((!ss->ssl3.clientCertificate) || (!ss->ssl3.clientPrivateKey)) {
                 
-                if (ss->ssl3.clientCertificate) {
-                    
-                    CERT_DestroyCertificate(ss->ssl3.clientCertificate);
-                    ss->ssl3.clientCertificate = NULL;
-                }
-                if (ss->ssl3.clientPrivateKey) {
-                    
-                    SECKEY_DestroyPrivateKey(ss->ssl3.clientPrivateKey);
-                    ss->ssl3.clientPrivateKey = NULL;
-                }
                 goto send_no_certificate;
             }
             
@@ -7672,22 +7662,33 @@ ssl3_CompleteHandleCertificateRequest(sslSocket *ss,
                 ss->ssl3.clientCertificate,
                 certUsageSSLClient, PR_FALSE);
             if (ss->ssl3.clientCertChain == NULL) {
-                CERT_DestroyCertificate(ss->ssl3.clientCertificate);
-                ss->ssl3.clientCertificate = NULL;
-                SECKEY_DestroyPrivateKey(ss->ssl3.clientPrivateKey);
-                ss->ssl3.clientPrivateKey = NULL;
                 goto send_no_certificate;
             }
             if (ss->ssl3.hs.hashType == handshake_hash_record ||
                 ss->ssl3.hs.hashType == handshake_hash_single) {
                 rv = ssl_PickClientSignatureScheme(ss, signatureSchemes,
                                                    signatureSchemeCount);
+                if (rv != SECSuccess) {
+                    
+
+
+                    goto send_no_certificate;
+                }
             }
             break; 
 
         case SECFailure:
         default:
         send_no_certificate:
+            CERT_DestroyCertificate(ss->ssl3.clientCertificate);
+            SECKEY_DestroyPrivateKey(ss->ssl3.clientPrivateKey);
+            ss->ssl3.clientCertificate = NULL;
+            ss->ssl3.clientPrivateKey = NULL;
+            if (ss->ssl3.clientCertChain) {
+                CERT_DestroyCertificateList(ss->ssl3.clientCertChain);
+                ss->ssl3.clientCertChain = NULL;
+            }
+
             if (ss->version > SSL_LIBRARY_VERSION_3_0) {
                 ss->ssl3.sendEmptyCert = PR_TRUE;
             } else {
