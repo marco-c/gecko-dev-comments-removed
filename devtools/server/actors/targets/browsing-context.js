@@ -349,7 +349,7 @@ const browsingContextTargetPrototype = {
       
       return;
     }
-    this.emit("resource-available-form", resources);
+    this.emit(name, resources);
   },
 
   traits: null,
