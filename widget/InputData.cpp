@@ -530,6 +530,7 @@ PinchGestureInput::PinchGestureInput(
       mScreenOffset(aScreenOffset),
       mCurrentSpan(aCurrentSpan),
       mPreviousSpan(aPreviousSpan),
+      mLineOrPageDeltaY(0),
       mHandledByAPZ(false) {}
 
 bool PinchGestureInput::TransformToLocal(
@@ -555,6 +556,16 @@ WidgetWheelEvent PinchGestureInput::ToWidgetWheelEvent(
   wheelEvent.mFlags.mHandledByAPZ = mHandledByAPZ;
   wheelEvent.mDeltaMode = WheelEvent_Binding::DOM_DELTA_PIXEL;
 
+  wheelEvent.mDeltaY = ComputeDeltaY(aWidget);
+
+  wheelEvent.mLineOrPageDeltaY = mLineOrPageDeltaY;
+
+  MOZ_ASSERT(mType == PINCHGESTURE_END || wheelEvent.mDeltaY != 0.0);
+
+  return wheelEvent;
+}
+
+double PinchGestureInput::ComputeDeltaY(nsIWidget* aWidget) const {
 #if defined(OS_MACOSX)
   
   
@@ -583,8 +594,8 @@ WidgetWheelEvent PinchGestureInput::ToWidgetWheelEvent(
   
   
   
-  wheelEvent.mDeltaY = (mPreviousSpan - 100.0) *
-                       (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
+  return (mPreviousSpan - 100.0) *
+         (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
 #else
   
   
@@ -601,13 +612,21 @@ WidgetWheelEvent PinchGestureInput::ToWidgetWheelEvent(
   
   
 
-  wheelEvent.mDeltaY = (mPreviousSpan - mCurrentSpan) *
-                       (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
+  return (mPreviousSpan - mCurrentSpan) *
+         (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
 #endif
+}
 
-  MOZ_ASSERT(mType == PINCHGESTURE_END || wheelEvent.mDeltaY != 0.0);
-
-  return wheelEvent;
+ gfx::IntPoint PinchGestureInput::GetIntegerDeltaForEvent(
+    bool aIsStart, float x, float y) {
+  static gfx::Point sAccumulator(0.0f, 0.0f);
+  if (aIsStart) {
+    sAccumulator = gfx::Point(0.0f, 0.0f);
+  }
+  sAccumulator.x += x;
+  sAccumulator.y += y;
+  return gfx::IntPoint(TakeLargestInt(&sAccumulator.x),
+                       TakeLargestInt(&sAccumulator.y));
 }
 
 TapGestureInput::TapGestureInput()

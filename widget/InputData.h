@@ -475,6 +475,10 @@ class PinchGestureInput : public InputData {
 
   WidgetWheelEvent ToWidgetWheelEvent(nsIWidget* aWidget) const;
 
+  double ComputeDeltaY(nsIWidget* aWidget) const;
+
+  static gfx::IntPoint GetIntegerDeltaForEvent(bool aIsStart, float x, float y);
+
   
   
   PinchGestureType mType;
@@ -508,6 +512,14 @@ class PinchGestureInput : public InputData {
   
   
   ScreenCoord mPreviousSpan;
+
+  
+  
+  
+  
+  
+  
+  int32_t mLineOrPageDeltaY;
 
   bool mHandledByAPZ;
 };
