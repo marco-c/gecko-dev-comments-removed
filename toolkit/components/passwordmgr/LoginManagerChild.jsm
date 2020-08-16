@@ -292,6 +292,8 @@ const observer = {
         let loginManagerChild = LoginManagerChild.forWindow(window);
         if (
           docState.generatedPasswordFields.has(field) &&
+          
+          
           loginManagerChild._doesEventClearPrevFieldValue(aEvent)
         ) {
           loginManagerChild._stopTreatingAsGeneratedPasswordField(field);
@@ -354,6 +356,18 @@ const observer = {
           break;
         }
         if (field.hasBeenTypePassword) {
+          
+          
+          
+          
+          let form = LoginFormFactory.createFromField(field);
+          if (
+            docState.generatedPasswordFields.has(field) &&
+            LoginManagerChild.forWindow(window)._getFormFields(form)
+              .confirmPasswordField === field
+          ) {
+            break;
+          }
           
           
           LoginManagerChild.forWindow(window)._passwordEditedOrGenerated(field);
@@ -1817,8 +1831,17 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
 
-  _doesEventClearPrevFieldValue({ target, data }) {
-    return !target.value || (data && data == target.value);
+  _doesEventClearPrevFieldValue({ target, data, inputType }) {
+    return (
+      !target.value ||
+      
+      
+      
+      
+      
+      
+      (data && data == target.value && inputType !== "insertReplacementText")
+    );
   }
 
   _stopTreatingAsGeneratedPasswordField(passwordField) {
@@ -1958,9 +1981,9 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       }
     }
     if (confirmPasswordInput && !confirmPasswordInput.value) {
+      this._treatAsGeneratedPasswordField(confirmPasswordInput);
       confirmPasswordInput.setUserInput(passwordField.value);
       this._highlightFilledField(confirmPasswordInput);
-      this._treatAsGeneratedPasswordField(confirmPasswordInput);
     }
   }
 
