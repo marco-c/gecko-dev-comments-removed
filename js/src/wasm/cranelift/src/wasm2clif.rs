@@ -59,14 +59,31 @@ fn imm64(offset: usize) -> ir::immediates::Imm64 {
 }
 
 
+
+
+
+
+
+
+
+
+
+
 fn init_sig_from_wsig(
     call_conv: CallConv,
     wsig: bindings::FuncTypeWithId,
 ) -> WasmResult<ir::Signature> {
     let mut sig = ir::Signature::new(call_conv);
 
-    for arg in wsig.args()? {
-        sig.params.push(ir::AbiParam::new(arg));
+    for arg_type in wsig.args()? {
+        let arg = match arg_type {
+            
+            
+            
+            ir::types::I32 => ir::AbiParam::new(arg_type).uext(),
+            _ => ir::AbiParam::new(arg_type),
+        };
+        sig.params.push(arg);
     }
 
     for ret_type in wsig.results()? {
