@@ -624,8 +624,9 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   if (documentContext && StaticPrefs::fission_sessionHistoryInParent()) {
     
     
-    mSessionHistoryInfo =
-        documentContext->CreateSessionHistoryEntryForLoad(aLoadState, mChannel);
+    mLoadingSessionHistoryInfo =
+        documentContext->CreateLoadingSessionHistoryEntryForLoad(aLoadState,
+                                                                 mChannel);
   }
 
   *aRv = NS_OK;
@@ -1330,8 +1331,8 @@ void DocumentLoadListener::SerializeRedirectData(
   aArgs.loadStateLoadFlags() = mLoadStateLoadFlags;
   aArgs.loadStateLoadType() = mLoadStateLoadType;
   aArgs.originalUriString() = mOriginalUriString;
-  if (mSessionHistoryInfo) {
-    aArgs.sessionHistoryInfo().emplace(*mSessionHistoryInfo);
+  if (mLoadingSessionHistoryInfo) {
+    aArgs.loadingSessionHistoryInfo().emplace(*mLoadingSessionHistoryInfo);
   }
 }
 
@@ -1661,8 +1662,8 @@ DocumentLoadListener::RedirectToParentProcess(uint32_t aRedirectFlags,
 
   loadState->SetLoadFlags(mLoadStateLoadFlags);
   loadState->SetLoadType(mLoadStateLoadType);
-  if (mSessionHistoryInfo) {
-    loadState->SetSessionHistoryInfo(*mSessionHistoryInfo);
+  if (mLoadingSessionHistoryInfo) {
+    loadState->SetLoadingSessionHistoryInfo(*mLoadingSessionHistoryInfo);
   }
 
   

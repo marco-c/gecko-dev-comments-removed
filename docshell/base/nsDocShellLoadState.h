@@ -138,9 +138,11 @@ class nsDocShellLoadState final {
 
   void SetSHEntry(nsISHEntry* aSHEntry);
 
-  const mozilla::dom::SessionHistoryInfo* GetSessionHistoryInfo() const;
+  const mozilla::dom::LoadingSessionHistoryInfo* GetLoadingSessionHistoryInfo()
+      const;
 
-  void SetSessionHistoryInfo(const mozilla::dom::SessionHistoryInfo& aInfo);
+  void SetLoadingSessionHistoryInfo(
+      const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo);
 
   const nsString& Target() const;
 
@@ -276,6 +278,9 @@ class nsDocShellLoadState final {
 
   mozilla::dom::DocShellLoadStateInit Serialize();
 
+  void SetLoadIsFromSessionHistory(int32_t aRequestedIndex,
+                                   int32_t aSessionHistoryLength);
+
  protected:
   
   
@@ -378,7 +383,8 @@ class nsDocShellLoadState final {
   nsCOMPtr<nsISHEntry> mSHEntry;
 
   
-  mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mSessionHistoryInfo;
+  mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo>
+      mLoadingSessionHistoryInfo;
 
   
   nsString mTarget;

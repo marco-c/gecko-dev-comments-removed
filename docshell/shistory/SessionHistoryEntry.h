@@ -23,6 +23,7 @@ class nsIURI;
 namespace mozilla {
 namespace dom {
 
+struct LoadingSessionHistoryInfo;
 class SHEntrySharedParentState;
 
 
@@ -30,6 +31,7 @@ class SHEntrySharedParentState;
 class SessionHistoryInfo {
  public:
   SessionHistoryInfo() = default;
+  explicit SessionHistoryInfo(uint64_t aExistingId);
   SessionHistoryInfo(nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
 
   bool operator==(const SessionHistoryInfo& aInfo) const {
@@ -59,7 +61,7 @@ class SessionHistoryInfo {
 
  private:
   friend class SessionHistoryEntry;
-  friend struct mozilla::ipc::IPDLParamTraits<SessionHistoryInfo>;
+  friend struct mozilla::ipc::IPDLParamTraits<LoadingSessionHistoryInfo>;
 
   void MaybeUpdateTitleFromURI();
 
@@ -88,6 +90,24 @@ class SessionHistoryInfo {
   bool mPersist = false;
 };
 
+struct LoadingSessionHistoryInfo {
+  LoadingSessionHistoryInfo() = default;
+  explicit LoadingSessionHistoryInfo(const SessionHistoryInfo& aInfo);
+
+  SessionHistoryInfo mInfo;
+
+  
+  
+  
+  
+  
+  bool mIsLoadFromSessionHistory = false;
+  
+  
+  int32_t mRequestedIndex = -1;
+  int32_t mSessionHistoryLength = 0;
+};
+
 
 
 
@@ -101,7 +121,7 @@ class SessionHistoryInfo {
 class SessionHistoryEntry : public nsISHEntry {
  public:
   SessionHistoryEntry(nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
-  explicit SessionHistoryEntry(SessionHistoryInfo* aInfo);
+  SessionHistoryEntry();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSISHENTRY
@@ -145,11 +165,11 @@ namespace ipc {
 
 
 template <>
-struct IPDLParamTraits<dom::SessionHistoryInfo> {
+struct IPDLParamTraits<dom::LoadingSessionHistoryInfo> {
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
-                    const dom::SessionHistoryInfo& aParam);
+                    const dom::LoadingSessionHistoryInfo& aParam);
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
-                   IProtocol* aActor, dom::SessionHistoryInfo* aResult);
+                   IProtocol* aActor, dom::LoadingSessionHistoryInfo* aResult);
 };
 
 
