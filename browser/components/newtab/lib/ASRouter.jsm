@@ -41,9 +41,9 @@ XPCOMUtils.defineLazyServiceGetters(this, {
 });
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "multiStageAboutWelcome",
-  "browser.aboutwelcome.overrideContent",
-  ""
+  "isSeparateAboutWelcome",
+  "browser.aboutwelcome.enabled",
+  true
 );
 const { actionTypes: at, actionCreators: ac } = ChromeUtils.import(
   "resource://activity-stream/common/Actions.jsm"
@@ -1948,28 +1948,6 @@ class _ASRouter {
     this.onMessage({ data: action, target });
   }
 
-  hasMultiStageAboutWelcome() {
-    
-    
-    
-    let experimentData;
-    try {
-      experimentData = ExperimentAPI.getExperiment({
-        group: "aboutwelcome",
-      });
-    } catch (e) {
-      Cu.reportError(e);
-    }
-
-    return !!(
-      multiStageAboutWelcome ||
-      (experimentData &&
-        experimentData.branch &&
-        experimentData.branch.value &&
-        experimentData.branch.value.template === "multistage")
-    );
-  }
-
   async sendNewTabMessage(target, options = {}) {
     const { endpoint } = options;
     let message;
@@ -1996,7 +1974,7 @@ class _ASRouter {
       TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
       
       
-      if (!this.hasMultiStageAboutWelcome()) {
+      if (!isSeparateAboutWelcome) {
         message = await this.handleMessageRequest({
           template: "extended_triplets",
         });
