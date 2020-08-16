@@ -208,7 +208,10 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(osrPcMismatchesBeforeRecompile, 6000);
 
   
-  SET_DEFAULT(smallFunctionMaxBytecodeLength_, 130);
+  SET_DEFAULT(smallFunctionMaxBytecodeLength, 130);
+
+  
+  SET_DEFAULT(inliningEntryThreshold, 100);
 
   
   
@@ -310,7 +313,7 @@ DefaultJitOptions::DefaultJitOptions() {
 }
 
 bool DefaultJitOptions::isSmallFunction(JSScript* script) const {
-  return script->length() <= smallFunctionMaxBytecodeLength_;
+  return script->length() <= smallFunctionMaxBytecodeLength;
 }
 
 void DefaultJitOptions::enableGvn(bool enable) { disableGvn = !enable; }
