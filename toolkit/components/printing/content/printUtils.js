@@ -68,6 +68,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
 var gFocusedElement = null;
 
 var PrintUtils = {
+  SAVE_TO_PDF_PRINTER: "Mozilla Save to PDF",
+
   init() {
     window.messageManager.addMessageListener("Printing:Error", this);
   },
@@ -224,6 +226,7 @@ var PrintUtils = {
           lastUsedPrinterName: printSettings.printerName,
           simplifiedMode: false,
           windowID: sourceBrowser.outerWindowID,
+          outputFormat: printSettings.outputFormat,
         }
       );
     });
@@ -551,10 +554,14 @@ var PrintUtils = {
     }
 
     
-    aPSSVC.initPrintSettingsFromPrinter(
-      aPrintSettings.printerName,
-      aPrintSettings
-    );
+    
+    if (aPrintSettings.printerName != this.SAVE_TO_PDF_PRINTER) {
+      aPSSVC.initPrintSettingsFromPrinter(
+        aPrintSettings.printerName,
+        aPrintSettings
+      );
+    }
+
     
     aPSSVC.initPrintSettingsFromPrefs(
       aPrintSettings,
