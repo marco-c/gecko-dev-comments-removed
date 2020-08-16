@@ -8508,11 +8508,18 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       
       
       
+      if (mLoadingEntry && !mLoadingEntry->mIsLoadFromSessionHistory) {
+        
+        
+        SetScrollRestorationIsManualOnHistoryEntry(
+            nullptr, &mLoadingEntry->mInfo, scrollRestorationIsManual);
+      }
       if (mLSHE) {
         if (!aLoadState->SHEntry()) {
           
           
-          mLSHE->SetScrollRestorationIsManual(scrollRestorationIsManual);
+          SetScrollRestorationIsManualOnHistoryEntry(mLSHE, nullptr,
+                                                     scrollRestorationIsManual);
         }
         mLSHE->AdoptBFCacheEntry(mOSHE);
       }
@@ -10787,11 +10794,33 @@ nsDocShell::GetCurrentScrollRestorationIsManual(bool* aIsManual) {
 
 NS_IMETHODIMP
 nsDocShell::SetCurrentScrollRestorationIsManual(bool aIsManual) {
-  if (mOSHE) {
-    mOSHE->SetScrollRestorationIsManual(aIsManual);
-  }
+  SetScrollRestorationIsManualOnHistoryEntry(mOSHE, mActiveEntry.get(),
+                                             aIsManual);
 
   return NS_OK;
+}
+
+void nsDocShell::SetScrollRestorationIsManualOnHistoryEntry(
+    nsISHEntry* aSHEntry, mozilla::dom::SessionHistoryInfo* aInfo,
+    bool aIsManual) {
+  if (aSHEntry) {
+    aSHEntry->SetScrollRestorationIsManual(aIsManual);
+  }
+
+  if (aInfo) {
+    aInfo->SetScrollRestorationIsManual(aIsManual);
+    if (XRE_IsParentProcess()) {
+      SessionHistoryEntry* entry =
+          SessionHistoryEntry::GetByInfoId(aInfo->Id());
+      if (entry) {
+        entry->SetScrollRestorationIsManual(aIsManual);
+      }
+    } else {
+      mozilla::Unused << ContentChild::GetSingleton()
+                             ->SendSessionHistoryEntryScrollRestorationIsManual(
+                                 aInfo->Id(), aIsManual);
+    }
+  }
 }
 
 bool nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel) {
