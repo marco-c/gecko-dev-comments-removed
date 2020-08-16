@@ -1047,12 +1047,6 @@ class nsDocShell final : public nsDocLoader,
   
   void SetLoadGroupDefaultLoadFlags(nsLoadFlags aLoadFlags);
 
-  void SetTitleOnHistoryEntry();
-
-  void SetScrollRestorationIsManualOnHistoryEntry(
-      nsISHEntry* aSHEntry, mozilla::dom::SessionHistoryInfo* aInfo,
-      bool aIsManual);
-
  private:  
   nsID mHistoryID;
   nsString mTitle;
