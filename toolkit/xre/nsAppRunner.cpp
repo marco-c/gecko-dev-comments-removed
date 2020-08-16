@@ -5161,9 +5161,13 @@ bool BrowserTabsRemoteAutostart() {
   }
 
   
-  if (gBrowserTabsRemoteAutostart && EnvHasValue("MOZ_FORCE_DISABLE_E10S")) {
-    gBrowserTabsRemoteAutostart = false;
-    status = kE10sForceDisabled;
+  if (gBrowserTabsRemoteAutostart) {
+    const char* forceDisable = PR_GetEnv("MOZ_FORCE_DISABLE_E10S");
+    
+    if (forceDisable && !strcmp(forceDisable, gAppData->version)) {
+      gBrowserTabsRemoteAutostart = false;
+      status = kE10sForceDisabled;
+    }
   }
 
   gBrowserTabsRemoteStatus = status;
