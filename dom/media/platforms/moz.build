@@ -109,13 +109,6 @@ if CONFIG['MOZ_APPLEMEDIA']:
       '-framework AudioToolbox',
       '-framework CoreMedia',
       '-framework VideoToolbox',
-      
-      
-      
-      
-      '-Wl,-U,_VTRegisterSupplementalVideoDecoderIfAvailable',
-      
-      '-Wl,-U,_VTIsHardwareDecodeSupported',
   ]
 
 include('/ipc/chromium/chromium-config.mozbuild')

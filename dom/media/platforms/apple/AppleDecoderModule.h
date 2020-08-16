@@ -29,25 +29,12 @@ class AppleDecoderModule : public PlatformDecoderModule {
   bool SupportsMimeType(const nsACString& aMimeType,
                         DecoderDoctorDiagnostics* aDiagnostics) const override;
 
-  bool Supports(const TrackInfo& aTrackInfo,
-                DecoderDoctorDiagnostics* aDiagnostics) const override;
-
   static void Init();
 
   static bool sCanUseHardwareVideoDecoder;
-  static bool sCanUseVP9Decoder;
-
-  static constexpr int kCMVideoCodecType_VP9{'vp09'};
 
  private:
   static bool sInitialized;
-  bool IsVideoSupported(const VideoInfo& aConfig,
-                        const CreateDecoderParams::OptionSet& aOptions =
-                            CreateDecoderParams::OptionSet()) const;
-  
-  static bool RegisterSupplementalVP9Decoder();
-  
-  static bool CanCreateVP9Decoder();
 };
 
 }  

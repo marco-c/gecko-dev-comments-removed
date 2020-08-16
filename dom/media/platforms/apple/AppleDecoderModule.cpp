@@ -4,31 +4,17 @@
 
 
 
-#include "AppleDecoderModule.h"
-
-#include <dlfcn.h>
-
 #include "AppleATDecoder.h"
+#include "AppleDecoderModule.h"
 #include "AppleVTDecoder.h"
-#include "MP4Decoder.h"
-#include "VPXDecoder.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
-
-extern "C" {
-
-extern void VTRegisterSupplementalVideoDecoderIfAvailable(
-    CMVideoCodecType codecType) __attribute__((weak_import));
-extern Boolean VTIsHardwareDecodeSupported(CMVideoCodecType codecType)
-    __attribute__((weak_import));
-}
 
 namespace mozilla {
 
 bool AppleDecoderModule::sInitialized = false;
 bool AppleDecoderModule::sCanUseHardwareVideoDecoder = true;
-bool AppleDecoderModule::sCanUseVP9Decoder = false;
 
 AppleDecoderModule::AppleDecoderModule() {}
 
@@ -43,9 +29,6 @@ void AppleDecoderModule::Init() {
   sCanUseHardwareVideoDecoder = gfx::gfxVars::CanUseHardwareVideoDecoding();
 
   sInitialized = true;
-  if (RegisterSupplementalVP9Decoder()) {
-    sCanUseVP9Decoder = CanCreateVP9Decoder();
-  }
 }
 
 nsresult AppleDecoderModule::Startup() {
@@ -57,12 +40,9 @@ nsresult AppleDecoderModule::Startup() {
 
 already_AddRefed<MediaDataDecoder> AppleDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
-  RefPtr<MediaDataDecoder> decoder;
-  if (IsVideoSupported(aParams.VideoConfig(), aParams.mOptions)) {
-    decoder = new AppleVTDecoder(aParams.VideoConfig(), aParams.mTaskQueue,
-                                 aParams.mImageContainer, aParams.mOptions,
-                                 aParams.mKnowsCompositor);
-  }
+  RefPtr<MediaDataDecoder> decoder = new AppleVTDecoder(
+      aParams.VideoConfig(), aParams.mTaskQueue, aParams.mImageContainer,
+      aParams.mOptions, aParams.mKnowsCompositor);
   return decoder.forget();
 }
 
@@ -77,90 +57,8 @@ bool AppleDecoderModule::SupportsMimeType(
     const nsACString& aMimeType, DecoderDoctorDiagnostics* aDiagnostics) const {
   return aMimeType.EqualsLiteral("audio/mpeg") ||
          aMimeType.EqualsLiteral("audio/mp4a-latm") ||
-         MP4Decoder::IsH264(aMimeType) || VPXDecoder::IsVP9(aMimeType);
-}
-
-bool AppleDecoderModule::Supports(
-    const TrackInfo& aTrackInfo, DecoderDoctorDiagnostics* aDiagnostics) const {
-  if (aTrackInfo.IsAudio()) {
-    return SupportsMimeType(aTrackInfo.mMimeType, aDiagnostics);
-  }
-  return aTrackInfo.GetAsVideoInfo() &&
-         IsVideoSupported(*aTrackInfo.GetAsVideoInfo());
-}
-
-bool AppleDecoderModule::IsVideoSupported(
-    const VideoInfo& aConfig,
-    const CreateDecoderParams::OptionSet& aOptions) const {
-  if (MP4Decoder::IsH264(aConfig.mMimeType)) {
-    return true;
-  }
-  if (!VPXDecoder::IsVP9(aConfig.mMimeType) || !sCanUseVP9Decoder ||
-      aOptions.contains(
-          CreateDecoderParams::Option::HardwareDecoderNotAllowed)) {
-    return false;
-  }
-  if (aConfig.HasAlpha()) {
-    return false;
-  }
-
-  
-  if (aConfig.mColorDepth != gfx::ColorDepth::COLOR_8 &&
-      aConfig.mColorDepth != gfx::ColorDepth::COLOR_10) {
-    return false;
-  }
-
-  
-  
-  if (aConfig.mExtraData && aConfig.mExtraData->Length() < 5) {
-    return true;  
-  }
-  int profile = aConfig.mExtraData->ElementAt(4);
-
-  if (profile != 0 && profile != 2) {
-    return false;
-  }
-
-  return true;
-}
-
-
-bool AppleDecoderModule::CanCreateVP9Decoder() {
-  
-  
-  if (__builtin_available(macOS 10.13, *)) {
-    
-    if (!sCanUseHardwareVideoDecoder || !VTIsHardwareDecodeSupported ||
-        !VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9)) {
-      return false;
-    }
-
-    VideoInfo info(1920, 1080);
-    VPXDecoder::GetVPCCBox(info.mExtraData, VPXDecoder::VPXStreamInfo());
-
-    RefPtr<AppleVTDecoder> decoder =
-        new AppleVTDecoder(info, nullptr, nullptr, {}, nullptr);
-    nsAutoCString reason;
-    MediaResult rv = decoder->InitializeSession();
-    bool isHardwareAccelerated = decoder->IsHardwareAccelerated(reason);
-    decoder->Shutdown();
-
-    return NS_SUCCEEDED(rv) && isHardwareAccelerated;
-  }
-
-  return false;
-}
-
-
-bool AppleDecoderModule::RegisterSupplementalVP9Decoder() {
-  static bool sRegisterIfAvailable = []() {
-    if (VTRegisterSupplementalVideoDecoderIfAvailable) {
-      VTRegisterSupplementalVideoDecoderIfAvailable(kCMVideoCodecType_VP9);
-      return true;
-    }
-    return false;
-  }();
-  return sRegisterIfAvailable;
+         aMimeType.EqualsLiteral("video/mp4") ||
+         aMimeType.EqualsLiteral("video/avc");
 }
 
 }  

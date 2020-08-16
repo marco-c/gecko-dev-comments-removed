@@ -156,12 +156,7 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, mStreamID++);
   }
 
-  bool CanBeInstantiated() const override {
-    
-    
-    return mCodec == VPXDecoder::Codec::VP8 || mInfo ||
-           mCurrentConfig.mCrypto.IsEncrypted();
-  }
+  bool CanBeInstantiated() const override { return true; }
 
   MediaResult CheckForChange(MediaRawData* aSample) override {
     
@@ -199,9 +194,6 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     mCurrentConfig.mColorDepth = gfx::ColorDepthForBitDepth(info.mBitDepth);
     mCurrentConfig.mColorSpace = info.ColorSpace();
     mCurrentConfig.mColorRange = info.ColorRange();
-    if (mCodec == VPXDecoder::Codec::VP9) {
-      VPXDecoder::GetVPCCBox(mCurrentConfig.mExtraData, info);
-    }
     mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, mStreamID++);
 
     return rv;
@@ -470,19 +462,10 @@ MediaResult MediaChangeMonitor::CreateDecoder(
        mDecoderOptions, mRate, &error});
 
   if (!mDecoder) {
-    
-    
-    RefPtr<PDMFactory> factory = new PDMFactory();
-    mDecoder = factory->CreateDecoder(
-        {mCurrentConfig, mTaskQueue, aDiagnostics, mImageContainer,
-         mKnowsCompositor, mGMPCrashHelper, mType, mOnWaitingForKeyEvent,
-         mDecoderOptions, mRate, &error, CreateDecoderParams::NoWrapper(true)});
-
-    if (!mDecoder) {
-      if (NS_FAILED(error)) {
-        
-        return error;
-      }
+    if (NS_FAILED(error)) {
+      
+      return error;
+    } else {
       return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                          RESULT_DETAIL("Unable to create decoder"));
     }
