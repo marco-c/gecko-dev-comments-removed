@@ -581,10 +581,6 @@ class FormAutofillParent extends JSWindowActorParent {
   }
 
   async _onCreditCardSubmit(creditCard, browser, timeStartedFillingMS) {
-    if (FormAutofill.isAutofillCreditCardsHideUI) {
-      return false;
-    }
-
     
     
     let setUsedStatus = status => {
