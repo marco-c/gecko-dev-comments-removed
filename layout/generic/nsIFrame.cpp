@@ -8342,9 +8342,6 @@ nsresult nsIFrame::PeekOffsetForCharacter(nsPeekOffsetStruct* aPos,
 nsresult nsIFrame::PeekOffsetForWord(nsPeekOffsetStruct* aPos,
                                      int32_t aOffset) {
   SelectablePeekReport current{this, aOffset};
-  bool shouldStopAtHardBreak =
-      aPos->mWordMovementType == eDefaultBehavior &&
-      StaticPrefs::layout_word_select_eat_space_to_next_word();
   bool wordSelectEatSpace = ShouldWordSelectionEatSpace(*aPos);
 
   PeekWordState state;
@@ -8379,34 +8376,10 @@ nsresult nsIFrame::PeekOffsetForWord(nsPeekOffsetStruct* aPos,
       break;
     }
 
-    if (shouldStopAtHardBreak && next.mJumpedHardBreak) {
-      
-
-
-
-
-      if (aPos->mDirection == eDirPrevious) {
-        
-        current.TransferTo(*aPos);
-        current.mFrame->PeekOffsetForCharacter(aPos, current.mOffset);
-        return NS_OK;
-      }
-      if (state.mSawInlineCharacter || current.mJumpedHardBreak) {
-        if (current.mFrame->HasSignificantTerminalNewline()) {
-          current.mOffset -= 1;
-        }
-        current.TransferTo(*aPos);
-        return NS_OK;
-      }
-      
-      state.Update(false, true);
-    }
-
     if (next.mJumpedLine) {
       state.mContext.Truncate();
     }
     current = next;
-    
     
     if (wordSelectEatSpace && next.mJumpedLine) {
       state.SetSawBeforeType();
@@ -8769,11 +8742,11 @@ Result<bool, nsresult> nsIFrame::IsVisuallyAtLineEdge(
   nsIFrame* firstFrame;
   nsIFrame* lastFrame;
 
-  bool lineIsRTL = aLineIterator->GetDirection();
+  nsAutoLineIterator it = aLineIterator;
+  bool lineIsRTL = it->GetDirection();
   bool isReordered;
 
-  MOZ_TRY(aLineIterator->CheckLineOrder(aLine, &isReordered, &firstFrame,
-                                        &lastFrame));
+  MOZ_TRY(it->CheckLineOrder(aLine, &isReordered, &firstFrame, &lastFrame));
 
   nsIFrame** framePtr = aDirection == eDirPrevious ? &firstFrame : &lastFrame;
   if (!*framePtr) {
@@ -8791,7 +8764,8 @@ Result<bool, nsresult> nsIFrame::IsVisuallyAtLineEdge(
 
 Result<bool, nsresult> nsIFrame::IsLogicallyAtLineEdge(
     nsILineIterator* aLineIterator, int32_t aLine, nsDirection aDirection) {
-  auto line = aLineIterator->GetLine(aLine).unwrap();
+  nsAutoLineIterator it = aLineIterator;
+  auto line = it->GetLine(aLine).unwrap();
 
   if (aDirection == eDirPrevious) {
     nsIFrame* firstFrame = line.mFirstFrameOnLine;
@@ -8803,7 +8777,7 @@ Result<bool, nsresult> nsIFrame::IsLogicallyAtLineEdge(
   nsIFrame* lastFrame = line.mFirstFrameOnLine;
   for (int32_t lineFrameCount = line.mNumFramesOnLine; lineFrameCount > 1;
        lineFrameCount--) {
-    MOZ_TRY(aLineIterator->GetNextSiblingOnLine(lastFrame, aLine));
+    MOZ_TRY(it->GetNextSiblingOnLine(lastFrame, aLine));
     if (!lastFrame) {
       NS_ERROR("should not be reached nsIFrame");
       return Err(NS_ERROR_FAILURE);
@@ -8838,7 +8812,7 @@ nsIFrame::SelectablePeekReport nsIFrame::GetFrameFromDirection(
     MOZ_TRY_VAR(thisLine,
                 traversedFrame->GetLineNumber(aScrollViewStop, &blockFrame));
 
-    nsAutoLineIterator it = blockFrame->GetLineIterator();
+    nsILineIterator* it = blockFrame->GetLineIterator();
 
     bool atLineEdge;
     MOZ_TRY_VAR(
@@ -8850,12 +8824,6 @@ nsIFrame::SelectablePeekReport nsIFrame::GetFrameFromDirection(
       result.mJumpedLine = true;
       if (!aJumpLines) {
         return result;  
-      }
-      int32_t lineToCheckWrap =
-          aDirection == eDirPrevious ? thisLine - 1 : thisLine;
-      if (lineToCheckWrap < 0 ||
-          !it->GetLine(lineToCheckWrap).unwrap().mIsWrapped) {
-        result.mJumpedHardBreak = true;
       }
     }
 
@@ -8879,9 +8847,7 @@ nsIFrame::SelectablePeekReport nsIFrame::GetFrameFromDirection(
       for (nsIFrame* current = traversedFrame->GetPrevSibling(); current;
            current = current->GetPrevSibling()) {
         if (!current->IsBlockOutside() && IsSelectable(current)) {
-          if (!current->IsBrFrame()) {
-            canSkipBr = true;
-          }
+          canSkipBr = true;
           break;
         }
       }
