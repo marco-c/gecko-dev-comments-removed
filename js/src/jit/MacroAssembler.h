@@ -2405,23 +2405,19 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
 
-  inline void minFloat32x4(FloatRegister rhs, FloatRegister lhsDest,
-                           FloatRegister temp1, FloatRegister temp2)
+  inline void minFloat32x4(FloatRegister rhs, FloatRegister lhsDest)
       DEFINED_ON(x86_shared);
 
-  inline void minFloat64x2(FloatRegister rhs, FloatRegister lhsDest,
-                           FloatRegister temp1, FloatRegister temp2)
+  inline void minFloat64x2(FloatRegister rhs, FloatRegister lhsDest)
       DEFINED_ON(x86_shared);
 
   
 
   inline void maxFloat32x4(FloatRegister rhs, FloatRegister lhsDest,
-                           FloatRegister temp1, FloatRegister temp2)
-      DEFINED_ON(x86_shared);
+                           FloatRegister temp) DEFINED_ON(x86_shared);
 
   inline void maxFloat64x2(FloatRegister rhs, FloatRegister lhsDest,
-                           FloatRegister temp1, FloatRegister temp2)
-      DEFINED_ON(x86_shared);
+                           FloatRegister temp) DEFINED_ON(x86_shared);
 
   
 
@@ -2526,54 +2522,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
       DEFINED_ON(x86_shared);
 
   inline void unsignedWidenLowInt32x4(FloatRegister src, FloatRegister dest)
-      DEFINED_ON(x86_shared);
-
-  
-  
-
-  inline void pseudoMinFloat32x4(FloatRegister rhs, FloatRegister lhsDest)
-      DEFINED_ON(x86_shared);
-
-  inline void pseudoMinFloat64x2(FloatRegister rhs, FloatRegister lhsDest)
-      DEFINED_ON(x86_shared);
-
-  inline void pseudoMaxFloat32x4(FloatRegister rhs, FloatRegister lhsDest)
-      DEFINED_ON(x86_shared);
-
-  inline void pseudoMaxFloat64x2(FloatRegister rhs, FloatRegister lhsDest)
-      DEFINED_ON(x86_shared);
-
-  
-  
-
-  inline void widenDotInt16x8(FloatRegister rhs, FloatRegister lhsDest)
-      DEFINED_ON(x86_shared);
-
-  
-  
-
-  inline void ceilFloat32x4(FloatRegister src, FloatRegister dest)
-      DEFINED_ON(x86_shared);
-
-  inline void ceilFloat64x2(FloatRegister src, FloatRegister dest)
-      DEFINED_ON(x86_shared);
-
-  inline void floorFloat32x4(FloatRegister src, FloatRegister dest)
-      DEFINED_ON(x86_shared);
-
-  inline void floorFloat64x2(FloatRegister src, FloatRegister dest)
-      DEFINED_ON(x86_shared);
-
-  inline void truncFloat32x4(FloatRegister src, FloatRegister dest)
-      DEFINED_ON(x86_shared);
-
-  inline void truncFloat64x2(FloatRegister src, FloatRegister dest)
-      DEFINED_ON(x86_shared);
-
-  inline void nearestFloat32x4(FloatRegister src, FloatRegister dest)
-      DEFINED_ON(x86_shared);
-
-  inline void nearestFloat64x2(FloatRegister src, FloatRegister dest)
       DEFINED_ON(x86_shared);
 
  public:

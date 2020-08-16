@@ -286,17 +286,6 @@ enum RoundingMode {
 
 
 
-
-enum class SSERoundingMode {
-  RoundToNearest = 0x08,
-  RoundDown = 0x09,
-  RoundUp = 0x0A,
-  RoundToZero = 0x0B
-};
-
-
-
-
 inline bool IsAddressImmediate(const void* address) {
   intptr_t value = reinterpret_cast<intptr_t>(address);
   int32_t immediate = static_cast<int32_t>(value);

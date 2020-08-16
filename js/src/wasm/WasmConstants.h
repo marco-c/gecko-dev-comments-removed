@@ -404,16 +404,6 @@ enum class GcOp {
 };
 
 
-
-
-
-
-
-
-
-
-static constexpr bool SimdExperimentalEnabled = true;
-
 enum class SimdOp {
   V128Load = 0x00,
   I16x8LoadS8x8 = 0x01,
@@ -601,7 +591,7 @@ enum class SimdOp {
   I32x4MinU = 0xb7,
   I32x4MaxS = 0xb8,
   I32x4MaxU = 0xb9,
-  I32x4DotSI16x8Experimental = 0xba,
+  
   
   
   
@@ -631,14 +621,14 @@ enum class SimdOp {
   I64x2Mul = 0xd5,
   
   
-  F32x4CeilExperimental = 0xd8,
-  F32x4FloorExperimental = 0xd9,
-  F32x4TruncExperimental = 0xda,
-  F32x4NearestExperimental = 0xdb,
-  F64x2CeilExperimental = 0xdc,
-  F64x2FloorExperimental = 0xdd,
-  F64x2TruncExperimental = 0xde,
-  F64x2NearestExperimental = 0xdf,
+  
+  
+  
+  
+  
+  
+  
+  
   F32x4Abs = 0xe0,
   F32x4Neg = 0xe1,
   
@@ -649,8 +639,8 @@ enum class SimdOp {
   F32x4Div = 0xe7,
   F32x4Min = 0xe8,
   F32x4Max = 0xe9,
-  F32x4PMinExperimental = 0xea,
-  F32x4PMaxExperimental = 0xeb,
+  
+  
   F64x2Abs = 0xec,
   F64x2Neg = 0xed,
   
@@ -661,14 +651,12 @@ enum class SimdOp {
   F64x2Div = 0xf3,
   F64x2Min = 0xf4,
   F64x2Max = 0xf5,
-  F64x2PMinExperimental = 0xf6,
-  F64x2PMaxExperimental = 0xf7,
+  
+  
   I32x4TruncSSatF32x4 = 0xf8,
   I32x4TruncUSatF32x4 = 0xf9,
   F32x4ConvertSI32x4 = 0xfa,
   F32x4ConvertUI32x4 = 0xfb,
-  V128Load32ZeroExperimental = 0xfc,
-  V128Load64ZeroExperimental = 0xfd,
   
 
   Limit

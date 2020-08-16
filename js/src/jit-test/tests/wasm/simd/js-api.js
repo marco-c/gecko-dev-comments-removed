@@ -11,42 +11,30 @@
 
 
 
-setJitCompilerOption("baseline.warmup.trigger", 2);
-setJitCompilerOption("ion.warmup.trigger", 4);
 
 
 
 
 
 
-
-
-
-
-
-
-var ins = wasmEvalText(`
+var ins = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`
   (module
     (import "m" "v128_param" (func $f (param v128)))
     (import "m" "v128_return" (func $g (result v128)))
     (func (export "v128_param")
       (call $f (v128.const i32x4 0 0 0 0)))
     (func (export "v128_result")
-      (drop (call $g))))`,
-                       {m:{v128_param: (x) => 0,
-                           v128_return: () => 0}});
+      (drop (call $g))))`)),
+                                   {m:{v128_param: (x) => 0,
+                                       v128_return: () => 0}});
 
-function call_v128_param() { ins.exports.v128_param(); }
-function call_v128_result() { ins.exports.v128_result(); }
+assertErrorMessage(() => ins.exports.v128_param(),
+                   TypeError,
+                   /cannot pass.*v128.*to or from JS/);
 
-for ( let i = 0 ; i < 100; i++ ) {
-    assertErrorMessage(call_v128_param,
-                       TypeError,
-                       /cannot pass.*v128.*to or from JS/);
-    assertErrorMessage(call_v128_result,
-                       TypeError,
-                       /cannot pass.*v128.*to or from JS/);
-}
+assertErrorMessage(() => ins.exports.v128_result(),
+                   TypeError,
+                   /cannot pass.*v128.*to or from JS/);
 
 
 
@@ -59,33 +47,29 @@ for ( let i = 0 ; i < 100; i++ ) {
 
 
 
-var ins2 = wasmEvalText(`
+var ins = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`
   (module
     (func (export "v128_param") (param v128) (result i32)
       (i32.const 0))
     (func (export "v128_result") (result v128)
-      (v128.const i32x4 0 0 0 0)))`);
+      (v128.const i32x4 0 0 0 0)))`)));
 
-function call_v128_param2() { ins2.exports.v128_param(); }
-function call_v128_result2() { ins2.exports.v128_result(); }
+assertErrorMessage(() => ins.exports.v128_param(),
+                   TypeError,
+                   /cannot pass.*v128.*to or from JS/);
 
-for ( let i = 0 ; i < 100; i++ ) {
-    assertErrorMessage(call_v128_param2,
-                       TypeError,
-                       /cannot pass.*v128.*to or from JS/);
-    assertErrorMessage(call_v128_result2,
-                       TypeError,
-                       /cannot pass.*v128.*to or from JS/);
-}
+assertErrorMessage(() => ins.exports.v128_result(),
+                   TypeError,
+                   /cannot pass.*v128.*to or from JS/);
 
 
 
 
 var newfn = (x) => x;
-var ins = wasmEvalText(`
+var ins = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`
   (module
     (import "m" "fn" (func $f (param v128) (result v128)))
-    (export "newfn" (func $f)))`,
+    (export "newfn" (func $f)))`)),
                                    {m:{fn: newfn}});
 assertErrorMessage(() => ins.exports.newfn(3),
                    TypeError,
