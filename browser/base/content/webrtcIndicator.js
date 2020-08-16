@@ -61,10 +61,6 @@ function closingInternally() {
 
 
 const WebRTCIndicator = {
-  
-  
-  VERTICAL_OFFSET_PX: 80,
-
   init(event) {
     addEventListener("load", this);
     addEventListener("unload", this);
@@ -94,7 +90,7 @@ const WebRTCIndicator = {
 
 
 
-  updateIndicatorState(initialLayout = false) {
+  updateIndicatorState() {
     if (this.macOSIndicator) {
       this.macOSIndicator.updateIndicatorState();
     }
@@ -196,7 +192,7 @@ const WebRTCIndicator = {
       this.ensureOnScreen();
 
       if (!this.positionCustomized) {
-        this.centerOnDisplay(initialLayout);
+        this.centerOnLatestBrowser();
       }
     }
 
@@ -222,78 +218,37 @@ const WebRTCIndicator = {
 
 
 
+  centerOnLatestBrowser() {
+    let activeStreams = webrtcUI.getActiveStreams(
+      true ,
+      true ,
+      true ,
+      true 
+    );
 
-
-
-  centerOnDisplay(aInitialLayout) {
-    
-    
-    
-    
-    let {
-      height: windowHeight,
-      width: windowWidth,
-    } = window.windowUtils.getBoundsWithoutFlushing(document.documentElement);
-
-    let screen;
-
-    if (aInitialLayout) {
-      
-      
-      let recentWindow = BrowserWindowTracker.getTopWindow();
-
-      let {
-        height: originatorHeight,
-        width: originatorWidth,
-      } = recentWindow.windowUtils.getBoundsWithoutFlushing(
-        recentWindow.document.documentElement
-      );
-
-      screen = gScreenManager.screenForRect(
-        recentWindow.screenX,
-        recentWindow.screenY,
-        originatorWidth,
-        originatorHeight
-      );
-    } else {
-      
-      
-      screen = gScreenManager.screenForRect(
-        window.screenX,
-        window.screenY,
-        windowWidth,
-        windowHeight
-      );
+    if (!activeStreams.length) {
+      return;
     }
 
-    let scaleFactor = screen.contentsScaleFactor / screen.defaultCSSScaleFactor;
+    let browser = activeStreams[activeStreams.length - 1].browser;
+    let browserWindow = browser.ownerGlobal;
+    let browserRect = browserWindow.windowUtils.getBoundsWithoutFlushing(
+      browser
+    );
 
     
     
     
-    let leftDevPix = {};
-    let widthDevPix = {};
-    screen.GetRectDisplayPix(leftDevPix, {}, widthDevPix, {});
-    let screenWidth = widthDevPix.value * scaleFactor;
+    
+    let { width: windowWidth } = window.windowUtils.getBoundsWithoutFlushing(
+      document.documentElement
+    );
 
-    
-    
-    
-    let availTopDevPix = {};
-    let availHeightDevPix = {};
-    screen.GetAvailRectDisplayPix({}, availTopDevPix, {}, availHeightDevPix);
-
-    let left = leftDevPix.value * scaleFactor;
-    let availHeight =
-      (availTopDevPix.value + availHeightDevPix.value) * scaleFactor;
-    
-    
-    
-    
-    
     window.moveTo(
-      left + (screenWidth - windowWidth) / 2,
-      availHeight - windowHeight - this.VERTICAL_OFFSET_PX
+      browserWindow.mozInnerScreenX +
+        browserRect.left +
+        (browserRect.width - windowWidth) / 2,
+      browserWindow.mozInnerScreenY + browserRect.top
     );
   },
 
@@ -331,7 +286,7 @@ const WebRTCIndicator = {
   onLoad() {
     this.loaded = true;
 
-    this.updateIndicatorState(true );
+    this.updateIndicatorState();
 
     window.addEventListener("click", this);
     window.addEventListener("sizemodechange", this);
