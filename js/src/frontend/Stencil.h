@@ -44,6 +44,9 @@ class JSONPrinter;
 namespace frontend {
 
 struct CompilationInfo;
+class ScriptStencil;
+class RegExpStencil;
+class BigIntStencil;
 
 
 
@@ -55,17 +58,10 @@ struct CompilationInfo;
 
 
 
-class FunctionIndexType;
-
-
-
-class FunctionIndex : public TypedIndex<FunctionIndexType> {
-  
-  using Base = TypedIndex<FunctionIndexType>;
-  using Base::Base;
-};
-
-using ObjLiteralIndex = TypedIndex<ObjLiteralCreationData>;
+using RegExpIndex = TypedIndex<RegExpStencil>;
+using BigIntIndex = TypedIndex<BigIntStencil>;
+using ObjLiteralIndex = TypedIndex<ObjLiteralStencil>;
+using FunctionIndex = TypedIndex<ScriptStencil>;
 
 FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
                                    GeneratorKind generatorKind,
@@ -75,13 +71,13 @@ FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
 
 
 
-class RegExpCreationData {
-  UniquePtr<char16_t[], JS::FreePolicy> buf_;
+class RegExpStencil {
+  UniqueTwoByteChars buf_;
   size_t length_ = 0;
   JS::RegExpFlags flags_;
 
  public:
-  RegExpCreationData() = default;
+  RegExpStencil() = default;
 
   MOZ_MUST_USE bool init(JSContext* cx, mozilla::Range<const char16_t> range,
                          JS::RegExpFlags flags) {
@@ -104,17 +100,15 @@ class RegExpCreationData {
 #endif
 };
 
-using RegExpIndex = TypedIndex<RegExpCreationData>;
 
 
 
-
-class BigIntCreationData {
+class BigIntStencil {
   UniqueTwoByteChars buf_;
   size_t length_ = 0;
 
  public:
-  BigIntCreationData() = default;
+  BigIntStencil() = default;
 
   MOZ_MUST_USE bool init(JSContext* cx, const Vector<char16_t, 32>& buf) {
 #ifdef DEBUG
@@ -145,8 +139,6 @@ class BigIntCreationData {
   void dump(JSONPrinter& json);
 #endif
 };
-
-using BigIntIndex = TypedIndex<BigIntCreationData>;
 
 class ScopeStencil {
   friend class js::AbstractScopePtr;

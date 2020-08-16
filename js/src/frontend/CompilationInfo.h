@@ -178,9 +178,9 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
 
   
   
-  Vector<RegExpCreationData> regExpData;
-  Vector<BigIntCreationData> bigIntData;
-  Vector<ObjLiteralCreationData> objLiteralData;
+  Vector<RegExpStencil> regExpData;
+  Vector<BigIntStencil> bigIntData;
+  Vector<ObjLiteralStencil> objLiteralData;
 
   
   
