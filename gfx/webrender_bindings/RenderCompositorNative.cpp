@@ -98,7 +98,7 @@ bool RenderCompositorNative::ShouldUseNativeCompositor() {
 
 bool RenderCompositorNative::MaybeReadback(
     const gfx::IntSize& aReadbackSize, const wr::ImageFormat& aReadbackFormat,
-    const Range<uint8_t>& aReadbackBuffer, bool* aNeedsYFlip) {
+    const Range<uint8_t>& aReadbackBuffer) {
   if (!ShouldUseNativeCompositor()) {
     return false;
   }
@@ -113,10 +113,6 @@ bool RenderCompositorNative::MaybeReadback(
   
   
   MakeCurrent();
-
-  if (aNeedsYFlip) {
-    *aNeedsYFlip = true;
-  }
 
   return success;
 }
