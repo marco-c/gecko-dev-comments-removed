@@ -19,7 +19,7 @@ RUST_TESTS = [
 if not CONFIG['MOZ_CODE_COVERAGE']:
     
     
-    RUST_TESTS += ['glean']
+    RUST_TESTS += ['fog']
 
 for feature in gkrust_features:
     
