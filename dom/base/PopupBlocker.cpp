@@ -121,22 +121,30 @@ PopupBlocker::GetPopupControlState() {
 
 bool PopupBlocker::CanShowPopupByPermission(nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(aPrincipal);
-  uint32_t permit;
-  nsCOMPtr<nsIPermissionManager> permissionManager =
-      services::GetPermissionManager();
+  uint32_t permit = GetPopupPermission(aPrincipal);
 
-  if (permissionManager &&
-      NS_SUCCEEDED(permissionManager->TestPermissionFromPrincipal(
-          aPrincipal, "popup"_ns, &permit))) {
-    if (permit == nsIPermissionManager::ALLOW_ACTION) {
-      return true;
-    }
-    if (permit == nsIPermissionManager::DENY_ACTION) {
-      return false;
-    }
+  if (permit == nsIPermissionManager::ALLOW_ACTION) {
+    return true;
+  }
+  if (permit == nsIPermissionManager::DENY_ACTION) {
+    return false;
   }
 
   return !StaticPrefs::dom_disable_open_during_load();
+}
+
+
+uint32_t PopupBlocker::GetPopupPermission(nsIPrincipal* aPrincipal) {
+  uint32_t permit = nsIPermissionManager::UNKNOWN_ACTION;
+  nsCOMPtr<nsIPermissionManager> permissionManager =
+      services::GetPermissionManager();
+
+  if (permissionManager) {
+    permissionManager->TestPermissionFromPrincipal(aPrincipal, "popup"_ns,
+                                                   &permit);
+  }
+
+  return permit;
 }
 
 
