@@ -57,8 +57,6 @@ class nsCUPSShim {
 
   bool Init();
 
-  bool IsInitialized() const { return mInited; }
-
   
   
   
