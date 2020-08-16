@@ -216,8 +216,6 @@ OptimizationSchema = voluptuous.Any(
     {'push-interval-10': None},
     {'push-interval-25': None},
     
-    {'seta': None},
-    
     {'skip-unless-changed': [text_type]},
     
     {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
