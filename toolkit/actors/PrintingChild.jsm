@@ -317,6 +317,12 @@ class PrintingChild extends ActorChild {
       let printSettings = this.getPrintSettings(lastUsedPrinterName);
 
       
+      printSettings.showPrintProgress = !Services.prefs.getBoolPref(
+        "print.tab_modal.enabled",
+        false
+      );
+
+      
       
       
       if (printSettings && simplifiedMode) {
