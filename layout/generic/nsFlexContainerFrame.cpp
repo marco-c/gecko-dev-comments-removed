@@ -198,8 +198,12 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
                      const WritingMode& aWM);
 
   
-  LogicalAxis MainAxis() const { return mMainAxis; }
-  LogicalAxis CrossAxis() const { return GetOrthogonalAxis(mMainAxis); }
+  LogicalAxis MainAxis() const {
+    return IsRowOriented() ? eLogicalAxisInline : eLogicalAxisBlock;
+  }
+  LogicalAxis CrossAxis() const {
+    return IsRowOriented() ? eLogicalAxisBlock : eLogicalAxisInline;
+  }
 
   LogicalSide MainAxisStartSide() const;
   LogicalSide MainAxisEndSide() const {
@@ -326,8 +330,6 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
   
   void InitAxesFromLegacyProps(const nsFlexContainerFrame* aFlexContainer);
   void InitAxesFromModernProps(const nsFlexContainerFrame* aFlexContainer);
-
-  LogicalAxis mMainAxis = eLogicalAxisInline;
 
   const WritingMode mWM;  
 
@@ -3803,7 +3805,6 @@ void FlexboxAxisTracker::InitAxesFromLegacyProps(
   
   
   mIsRowOriented = (boxOrientIsVertical == wmIsVertical);
-  mMainAxis = mIsRowOriented ? eLogicalAxisInline : eLogicalAxisBlock;
 
   
   
@@ -3822,22 +3823,18 @@ void FlexboxAxisTracker::InitAxesFromModernProps(
   
   switch (flexDirection) {
     case StyleFlexDirection::Row:
-      mMainAxis = eLogicalAxisInline;
       mIsRowOriented = true;
       mIsMainAxisReversed = false;
       break;
     case StyleFlexDirection::RowReverse:
-      mMainAxis = eLogicalAxisInline;
       mIsRowOriented = true;
       mIsMainAxisReversed = true;
       break;
     case StyleFlexDirection::Column:
-      mMainAxis = eLogicalAxisBlock;
       mIsRowOriented = false;
       mIsMainAxisReversed = false;
       break;
     case StyleFlexDirection::ColumnReverse:
-      mMainAxis = eLogicalAxisBlock;
       mIsRowOriented = false;
       mIsMainAxisReversed = true;
       break;
