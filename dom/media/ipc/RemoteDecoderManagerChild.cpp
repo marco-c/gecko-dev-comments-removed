@@ -20,7 +20,7 @@ using namespace layers;
 using namespace gfx;
 
 
-StaticRefPtr<TaskQueue> sRemoteDecoderManagerChildThread;
+StaticRefPtr<nsIThread> sRemoteDecoderManagerChildThread;
 
 
 static StaticRefPtr<RemoteDecoderManagerChild>
@@ -39,9 +39,10 @@ void RemoteDecoderManagerChild::InitializeThread() {
     
     
     
-    sRemoteDecoderManagerChildThread = new TaskQueue(
-        GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER), "RemVidChild");
-
+    RefPtr<nsIThread> childThread;
+    nsresult rv = NS_NewNamedThread("RemVidChild", getter_AddRefs(childThread));
+    NS_ENSURE_SUCCESS_VOID(rv);
+    sRemoteDecoderManagerChildThread = childThread;
     sRecreateTasks = MakeUnique<nsTArray<RefPtr<Runnable>>>();
   }
 }
@@ -84,8 +85,7 @@ void RemoteDecoderManagerChild::Shutdown() {
               sRemoteDecoderManagerChildForGPUProcess = nullptr;
             })));
 
-    sRemoteDecoderManagerChildThread->BeginShutdown();
-    sRemoteDecoderManagerChildThread->AwaitShutdownAndIdle();
+    sRemoteDecoderManagerChildThread->Shutdown();
     sRemoteDecoderManagerChildThread = nullptr;
 
     sRecreateTasks = nullptr;
