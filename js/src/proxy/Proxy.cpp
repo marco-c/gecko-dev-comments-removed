@@ -819,6 +819,26 @@ void ProxyObject::traceEdgeToTarget(JSTracer* trc, ProxyObject* obj) {
   TraceCrossCompartmentEdge(trc, obj, obj->slotOfPrivate(), "proxy target");
 }
 
+#ifdef DEBUG
+static inline void CheckProxyIsInCCWMap(ProxyObject* proxy) {
+  if (proxy->zone()->isGCCompacting()) {
+    
+    
+    
+    return;
+  }
+
+  JSObject* referent = MaybeForwarded(proxy->target());
+  if (referent->compartment() != proxy->compartment()) {
+    
+    
+    ObjectWrapperMap::Ptr p = proxy->compartment()->lookupWrapper(referent);
+    MOZ_ASSERT(p);
+    MOZ_ASSERT(*p->value().unsafeGet() == proxy);
+  }
+}
+#endif
+
 
 void ProxyObject::trace(JSTracer* trc, JSObject* obj) {
   ProxyObject* proxy = &obj->as<ProxyObject>();
@@ -829,16 +849,7 @@ void ProxyObject::trace(JSTracer* trc, JSObject* obj) {
 #ifdef DEBUG
   if (TlsContext.get()->isStrictProxyCheckingEnabled() &&
       proxy->is<WrapperObject>()) {
-    JSObject* referent = MaybeForwarded(proxy->target());
-    if (referent->compartment() != proxy->compartment()) {
-      
-
-
-
-      ObjectWrapperMap::Ptr p = proxy->compartment()->lookupWrapper(referent);
-      MOZ_ASSERT(p);
-      MOZ_ASSERT(*p->value().unsafeGet() == proxy);
-    }
+    CheckProxyIsInCCWMap(proxy);
   }
 #endif
 
