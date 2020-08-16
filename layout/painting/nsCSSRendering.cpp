@@ -2751,7 +2751,8 @@ nsRect nsCSSRendering::ComputeImageLayerPositioningArea(
     
     
     if (geometryFrame) {
-      positionArea = geometryFrame->GetRect();
+      positionArea =
+          nsPlaceholderFrame::GetRealFrameFor(geometryFrame)->GetRect();
     }
   } else {
     positionArea = nsRect(nsPoint(0, 0), aBorderArea.Size());
