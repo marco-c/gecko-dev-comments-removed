@@ -77,29 +77,11 @@ class SearchUtils {
 
 
 
-
-  aliasesForEngine(engine) {
-    let aliases = [];
-    if (engine.alias) {
-      aliases.push(engine.alias);
-    }
-    aliases.push(...engine.wrappedJSObject._internalAliases);
-    return aliases;
-  }
-
-  
-
-
-
-
-
   async tokenAliasEngines() {
     await this.init();
     let tokenAliasEngines = [];
     for (let engine of await Services.search.getVisibleEngines()) {
-      let tokenAliases = this.aliasesForEngine(engine).filter(a =>
-        a.startsWith("@")
-      );
+      let tokenAliases = engine.aliases.filter(a => a.startsWith("@"));
       if (tokenAliases.length) {
         tokenAliasEngines.push({ engine, tokenAliases });
       }
@@ -120,8 +102,7 @@ class SearchUtils {
     this._enginesByAlias = new Map();
     for (let engine of await Services.search.getVisibleEngines()) {
       if (!engine.hidden) {
-        let aliases = this.aliasesForEngine(engine);
-        for (let alias of aliases) {
+        for (let alias of engine.aliases) {
           this._enginesByAlias.set(alias.toLocaleLowerCase(), engine);
         }
       }
