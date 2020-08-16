@@ -782,12 +782,12 @@ nsresult ContentSubtreeIterator::Init(const RawRangeBoundary& aStartBoundary,
 }
 
 void ContentSubtreeIterator::CacheInclusiveAncestorsOfEndContainer() {
-  mEndNodes.Clear();
+  mInclusiveAncestorsOfEndContainer.Clear();
   nsINode* const endContainer = mRange->GetEndContainer();
   nsIContent* endNode =
       endContainer->IsContent() ? endContainer->AsContent() : nullptr;
   while (endNode) {
-    mEndNodes.AppendElement(endNode);
+    mInclusiveAncestorsOfEndContainer.AppendElement(endNode);
     endNode = endNode->GetParent();
   }
 }
@@ -980,7 +980,7 @@ void ContentSubtreeIterator::Next() {
   nsINode* nextNode = ContentIteratorBase::GetNextSibling(mCurNode);
   NS_ASSERTION(nextNode, "No next sibling!?! This could mean deadlock!");
 
-  int32_t i = mEndNodes.IndexOf(nextNode);
+  int32_t i = mInclusiveAncestorsOfEndContainer.IndexOf(nextNode);
   while (i != -1) {
     
     
@@ -991,7 +991,7 @@ void ContentSubtreeIterator::Next() {
     
     
     
-    i = mEndNodes.IndexOf(nextNode);
+    i = mInclusiveAncestorsOfEndContainer.IndexOf(nextNode);
   }
 
   mCurNode = nextNode;
