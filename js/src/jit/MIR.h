@@ -11636,24 +11636,6 @@ class MInitHomeObject : public MBinaryInstruction,
 
 
 
-class MIsTypedArrayConstructor : public MUnaryInstruction,
-                                 public SingleObjectPolicy::Data {
-  explicit MIsTypedArrayConstructor(MDefinition* object)
-      : MUnaryInstruction(classOpcode, object) {
-    setResultType(MIRType::Boolean);
-  }
-
- public:
-  INSTRUCTION_HEADER(IsTypedArrayConstructor)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, object))
-
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-};
-
-
-
-
 class MWasmNeg : public MUnaryInstruction, public NoTypePolicy::Data {
   MWasmNeg(MDefinition* op, MIRType type) : MUnaryInstruction(classOpcode, op) {
     setResultType(type);

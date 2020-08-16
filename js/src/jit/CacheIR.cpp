@@ -4832,7 +4832,7 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   
   ObjOperandId protoId = writer.loadObject(prototypeObject);
   
-  writer.guardDynamicSlotIsSpecificObject(rhsId, protoId, slot);
+  writer.guardFunctionPrototype(rhsId, protoId, slot);
 
   
   
@@ -6923,29 +6923,6 @@ AttachDecision CallIRGenerator::tryAttachIsTypedArray(HandleFunction callee,
   return AttachDecision::Attach;
 }
 
-AttachDecision CallIRGenerator::tryAttachIsTypedArrayConstructor(
-    HandleFunction callee) {
-  
-  MOZ_ASSERT(argc_ == 1);
-  MOZ_ASSERT(args_[0].isObject());
-
-  
-  Int32OperandId argcId(writer.setInputOperandId(0));
-
-  
-
-  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-  ObjOperandId objArgId = writer.guardToObject(argId);
-  writer.isTypedArrayConstructorResult(objArgId);
-
-  
-  writer.returnFromIC();
-  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
-
-  trackAttached("IsTypedArrayConstructor");
-  return AttachDecision::Attach;
-}
-
 AttachDecision CallIRGenerator::tryAttachTypedArrayByteOffset(
     HandleFunction callee) {
   
@@ -7242,62 +7219,6 @@ AttachDecision CallIRGenerator::tryAttachNewRegExpStringIterator(
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
 
   trackAttached("NewRegExpStringIterator");
-  return AttachDecision::Attach;
-}
-
-AttachDecision CallIRGenerator::tryAttachArrayIteratorPrototypeOptimizable(
-    HandleFunction callee) {
-  
-  MOZ_ASSERT(argc_ == 0);
-
-  
-  
-
-  auto* arrayIteratorProto = cx_->global()->maybeGetArrayIteratorPrototype();
-  if (!arrayIteratorProto) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  Shape* shape = arrayIteratorProto->lookupPure(cx_->names().next);
-  if (!shape || !shape->isDataProperty()) {
-    return AttachDecision::NoAction;
-  }
-
-  uint32_t slot = shape->slot();
-
-  MOZ_ASSERT(arrayIteratorProto->numFixedSlots() == 0,
-             "Stub code relies on this");
-
-  const Value& nextVal = arrayIteratorProto->getSlot(slot);
-  if (!nextVal.isObject() || !nextVal.toObject().is<JSFunction>()) {
-    return AttachDecision::NoAction;
-  }
-
-  auto* nextFun = &nextVal.toObject().as<JSFunction>();
-  if (!IsSelfHostedFunctionWithName(nextFun, cx_->names().ArrayIteratorNext)) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  Int32OperandId argcId(writer.setInputOperandId(0));
-
-  
-
-  ObjOperandId protoId = writer.loadObject(arrayIteratorProto);
-  ObjOperandId nextId = writer.loadObject(nextFun);
-
-  writer.guardShape(protoId, arrayIteratorProto->lastProperty());
-
-  
-  writer.guardDynamicSlotIsSpecificObject(protoId, nextId, slot);
-  writer.loadBooleanResult(true);
-
-  
-  writer.returnFromIC();
-  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
-
-  trackAttached("ArrayIteratorPrototypeOptimizable");
   return AttachDecision::Attach;
 }
 
@@ -7742,8 +7663,6 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachNewStringIterator(callee);
     case InlinableNative::IntrinsicNewRegExpStringIterator:
       return tryAttachNewRegExpStringIterator(callee);
-    case InlinableNative::IntrinsicArrayIteratorPrototypeOptimizable:
-      return tryAttachArrayIteratorPrototypeOptimizable(callee);
 
     
     case InlinableNative::IsRegExpObject:
@@ -7889,8 +7808,6 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachIsTypedArray(callee,  false);
     case InlinableNative::IntrinsicIsPossiblyWrappedTypedArray:
       return tryAttachIsTypedArray(callee,  true);
-    case InlinableNative::IntrinsicIsTypedArrayConstructor:
-      return tryAttachIsTypedArrayConstructor(callee);
     case InlinableNative::IntrinsicTypedArrayByteOffset:
       return tryAttachTypedArrayByteOffset(callee);
     case InlinableNative::IntrinsicTypedArrayElementShift:
@@ -8051,7 +7968,6 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
         JSFunction* newTarget = &newTarget_.toObject().as<JSFunction>();
         Shape* shape = newTarget->lookupPure(cx_->names().prototype);
         MOZ_ASSERT(shape);
-        MOZ_ASSERT(newTarget->numFixedSlots() == 0, "Stub code relies on this");
         uint32_t slot = shape->slot();
         JSObject* prototypeObject = &newTarget->getSlot(slot).toObject();
 
@@ -8060,7 +7976,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
         ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
         writer.guardShape(newTargetObjId, newTarget->lastProperty());
         ObjOperandId protoId = writer.loadObject(prototypeObject);
-        writer.guardDynamicSlotIsSpecificObject(newTargetObjId, protoId, slot);
+        writer.guardFunctionPrototype(newTargetObjId, protoId, slot);
       }
       writer.metaScriptedTemplateObject(calleeFunc, templateObj);
     }
