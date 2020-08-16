@@ -2693,10 +2693,20 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
     Run(HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount);
 
    private:
+    
+
+
+
+
+
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
+    MaybeInsertBRElementBeforeEmptyListItemElement(HTMLEditor& aHTMLEditor);
+
     RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
   };
 

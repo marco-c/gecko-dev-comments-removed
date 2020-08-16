@@ -7901,50 +7901,68 @@ HTMLEditor::AutoEmptyBlockAncestorDeleter::ScanEmptyBlockInclusiveAncestor(
   return mEmptyInclusiveAncestorBlockElement;
 }
 
+Result<RefPtr<Element>, nsresult> HTMLEditor::AutoEmptyBlockAncestorDeleter::
+    MaybeInsertBRElementBeforeEmptyListItemElement(HTMLEditor& aHTMLEditor) {
+  MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement);
+  MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement->GetParentElement());
+  MOZ_ASSERT(HTMLEditUtils::IsListItem(mEmptyInclusiveAncestorBlockElement));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aHTMLEditor.IsFirstEditableChild(mEmptyInclusiveAncestorBlockElement)) {
+    return RefPtr<Element>();
+  }
+
+  EditorDOMPoint atParentOfEmptyListItem(
+      mEmptyInclusiveAncestorBlockElement->GetParentElement());
+  if (NS_WARN_IF(!atParentOfEmptyListItem.IsSet())) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  if (HTMLEditUtils::IsAnyListElement(atParentOfEmptyListItem.GetContainer())) {
+    return RefPtr<Element>();
+  }
+  RefPtr<Element> brElement =
+      aHTMLEditor.InsertBRElementWithTransaction(atParentOfEmptyListItem);
+  if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
+    return Err(NS_ERROR_EDITOR_DESTROYED);
+  }
+  if (!brElement) {
+    NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
+    return Err(NS_ERROR_FAILURE);
+  }
+  return brElement;
+}
+
 EditActionResult HTMLEditor::AutoEmptyBlockAncestorDeleter::Run(
     HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount) {
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement);
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement->GetParentElement());
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
 
-  RefPtr<Element> parentOfEmptyBlockElement =
-      mEmptyInclusiveAncestorBlockElement->GetParentElement();
-
   if (HTMLEditUtils::IsListItem(mEmptyInclusiveAncestorBlockElement)) {
+    Result<RefPtr<Element>, nsresult> result =
+        MaybeInsertBRElementBeforeEmptyListItemElement(aHTMLEditor);
+    if (result.isErr()) {
+      NS_WARNING(
+          "AutoEmptyBlockAncestorDeleter::"
+          "MaybeInsertBRElementBeforeEmptyListItemElement() failed");
+      return EditActionResult(result.inspectErr());
+    }
     
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aHTMLEditor.IsFirstEditableChild(mEmptyInclusiveAncestorBlockElement)) {
-      EditorDOMPoint atParentOfEmptyBlock(parentOfEmptyBlockElement);
-      if (NS_WARN_IF(!atParentOfEmptyBlock.IsSet())) {
-        return EditActionResult(NS_ERROR_FAILURE);
-      }
-      
-      
-      if (!HTMLEditUtils::IsAnyListElement(
-              atParentOfEmptyBlock.GetContainer())) {
-        RefPtr<Element> brElement =
-            aHTMLEditor.InsertBRElementWithTransaction(atParentOfEmptyBlock);
-        if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
-          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-        }
-        if (!brElement) {
-          NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
-          return EditActionResult(NS_ERROR_FAILURE);
-        }
-        nsresult rv =
-            aHTMLEditor.CollapseSelectionTo(EditorRawDOMPoint(brElement));
-        if (NS_FAILED(rv)) {
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                               "HTMLEditor::CollapseSelectionTo() failed");
-          return EditActionResult(rv);
-        }
+    if (RefPtr<Element> brElement = result.unwrap()) {
+      nsresult rv =
+          aHTMLEditor.CollapseSelectionTo(EditorRawDOMPoint(brElement));
+      if (NS_FAILED(rv)) {
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "HTMLEditor::CollapseSelectionTo() failed");
+        return EditActionResult(rv);
       }
     }
   } else {
