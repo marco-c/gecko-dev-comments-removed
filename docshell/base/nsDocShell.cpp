@@ -3803,9 +3803,6 @@ nsresult nsDocShell::LoadErrorPage(nsIURI* aErrorURI, nsIURI* aFailedURI,
   loadState->SetLoadType(LOAD_ERROR_PAGE);
   loadState->SetFirstParty(true);
   loadState->SetSourceBrowsingContext(mBrowsingContext);
-  loadState->SetHasValidUserGestureActivation(
-      mBrowsingContext &&
-      mBrowsingContext->HasValidTransientUserGestureActivation());
   return InternalLoad(loadState);
 }
 
@@ -9683,7 +9680,8 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   
   
-  if (mBrowsingContext->HasValidTransientUserGestureActivation() ||
+  if ((mLoadType != LOAD_ERROR_PAGE &&
+       mBrowsingContext->HasValidTransientUserGestureActivation()) ||
       aLoadState->HasValidUserGestureActivation() ||
       aLoadState->HasLoadFlags(LOAD_FLAGS_FROM_EXTERNAL)) {
     loadInfo->SetHasValidUserGestureActivation(true);
