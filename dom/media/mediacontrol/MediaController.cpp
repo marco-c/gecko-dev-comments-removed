@@ -341,11 +341,7 @@ void MediaController::SetIsInPictureInPictureMode(
   LOG("Set IsInPictureInPictureMode to %s",
       aIsInPictureInPictureMode ? "true" : "false");
   mIsInPictureInPictureMode = aIsInPictureInPictureMode;
-  UpdateActivatedStateIfNeeded();
-  if (RefPtr<MediaControlService> service = MediaControlService::GetService();
-      service && mIsInPictureInPictureMode) {
-    service->RequestUpdateMainController(this);
-  }
+  ForceToBecomeMainControllerIfNeeded();
   UpdateDeactivationTimerIfNeeded();
   mPictureInPictureModeChangedEvent.Notify(mIsInPictureInPictureMode);
 }
@@ -357,12 +353,41 @@ void MediaController::NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
   }
   LOG("%s fullscreen", aIsInFullScreen ? "Entered" : "Left");
   mIsInFullScreenMode = aIsInFullScreen;
-  UpdateActivatedStateIfNeeded();
-  if (RefPtr<MediaControlService> service = MediaControlService::GetService();
-      service && mIsInFullScreenMode) {
+  ForceToBecomeMainControllerIfNeeded();
+  mFullScreenChangedEvent.Notify(mIsInFullScreenMode);
+}
+
+bool MediaController::IsMainController() const {
+  RefPtr<MediaControlService> service = MediaControlService::GetService();
+  return service ? service->GetMainController() == this : false;
+}
+
+bool MediaController::ShouldRequestForMainController() const {
+  
+  if (IsMainController()) {
+    return false;
+  }
+  
+  
+  
+  return IsBeingUsedInPIPModeOrFullscreen() && !mShutdown;
+}
+
+void MediaController::ForceToBecomeMainControllerIfNeeded() {
+  if (!ShouldRequestForMainController()) {
+    return;
+  }
+  RefPtr<MediaControlService> service = MediaControlService::GetService();
+  MOZ_ASSERT(service, "service was shutdown before shutting down controller?");
+  
+  
+  
+  
+  if (!IsActive() && ShouldActivateController()) {
+    Activate();
+  } else if (IsActive()) {
     service->RequestUpdateMainController(this);
   }
-  mFullScreenChangedEvent.Notify(mIsInFullScreenMode);
 }
 
 void MediaController::HandleActualPlaybackStateChanged() {
