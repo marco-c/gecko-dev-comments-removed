@@ -697,8 +697,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   mozilla::dom::Element* GetFrameElementInternal() const;
   void SetFrameElementInternal(mozilla::dom::Element* aFrameElement);
 
-  bool IsActive() { return mIsActive; }
-
   void SetDesktopModeViewport(bool aDesktopModeViewport) {
     mDesktopModeViewport = aDesktopModeViewport;
   }
@@ -757,7 +755,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   virtual bool IsTopLevelWindowActive() = 0;
 
-  virtual void SetActive(bool aActive) { mIsActive = aActive; }
+  virtual void SetActive(bool aActive) = 0;
 
   virtual void SetIsBackground(bool aIsBackground) = 0;
 
@@ -1051,9 +1049,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 
   uint32_t mModalStateDepth;
-
-  
-  bool mIsActive;
 
   
   
