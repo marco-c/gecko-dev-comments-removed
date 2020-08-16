@@ -1670,6 +1670,17 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         decl.isNameValid = CSS.supports(decl.name, "initial");
         return decl;
       });
+
+      
+      
+      
+      
+      
+      const compatibility = this.pageStyle.inspector.getCompatibility();
+      form.compatibilityIssues = compatibility.getCSSDeclarationBlockIssues(
+        declarations
+      );
+
       
       
       this._declarations = declarations;
