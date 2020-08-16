@@ -123,6 +123,7 @@ class MediaChangeMonitor : public MediaDataDecoder,
   Maybe<MediaDataDecoder::ConversionRequired> mConversionRequired;
   
   Atomic<bool> mInConstructor;
+  bool mDecoderInitialized = false;
 };
 
 }  

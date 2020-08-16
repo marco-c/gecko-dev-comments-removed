@@ -10,6 +10,7 @@
 #include <CoreFoundation/CFDictionary.h>  
 #include <CoreMedia/CoreMedia.h>          
 #include <VideoToolbox/VideoToolbox.h>    
+#include "AppleDecoderModule.h"
 #include "PlatformDecoderModule.h"
 #include "ReorderQueue.h"
 #include "TimeUnits.h"
@@ -70,6 +71,7 @@ class AppleVTDecoder : public MediaDataDecoder,
   void OnDecodeError(OSStatus aError);
 
  private:
+  friend class AppleDecoderModule;  
   virtual ~AppleVTDecoder();
   RefPtr<FlushPromise> ProcessFlush();
   RefPtr<DecodePromise> ProcessDrain();
@@ -98,6 +100,8 @@ class AppleVTDecoder : public MediaDataDecoder,
   CFDictionaryRef CreateDecoderSpecification();
   CFDictionaryRef CreateDecoderExtensions();
 
+  enum class StreamType { Unknown, H264, VP9 };
+  const StreamType mStreamType;
   const RefPtr<TaskQueue> mTaskQueue;
   const uint32_t mMaxRefFrames;
   const RefPtr<layers::ImageContainer> mImageContainer;
