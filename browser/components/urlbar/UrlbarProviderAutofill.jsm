@@ -458,7 +458,7 @@ class ProviderAutofill extends UrlbarProvider {
     
     
     
-    let strippedURL = queryContext.searchString.trim();
+    let strippedURL = queryContext.trimmedSearchString;
     if (this._strippedPrefix) {
       strippedURL = strippedURL.substr(this._strippedPrefix.length);
     }

@@ -1141,7 +1141,6 @@ class UrlbarQueryContext {
 
 
 
-
   constructor(options = {}) {
     this._checkRequiredOptions(options, [
       "allowAutofill",
@@ -1160,9 +1159,9 @@ class UrlbarQueryContext {
     for (let [prop, checkFn, defaultValue] of [
       ["allowSearchSuggestions", v => true, true],
       ["currentPage", v => typeof v == "string" && !!v.length],
-      ["engineName", v => typeof v == "string" && !!v.length],
       ["formHistoryName", v => typeof v == "string" && !!v.length],
       ["providers", v => Array.isArray(v) && v.length],
+      ["searchMode", v => v && typeof v == "object"],
       ["sources", v => Array.isArray(v) && v.length],
     ]) {
       if (prop in options) {
@@ -1178,6 +1177,7 @@ class UrlbarQueryContext {
     this.lastResultCount = 0;
     this.allHeuristicResults = [];
     this.pendingHeuristicProviders = new Set();
+    this.trimmedSearchString = this.searchString.trim();
     this.userContextId =
       options.userContextId ||
       Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
@@ -1208,7 +1208,7 @@ class UrlbarQueryContext {
 
 
   get fixupInfo() {
-    if (this.searchString.trim() && !this._fixupInfo) {
+    if (this.trimmedSearchString && !this._fixupInfo) {
       let flags =
         Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
         Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
@@ -1218,7 +1218,7 @@ class UrlbarQueryContext {
 
       try {
         let info = Services.uriFixup.getFixupURIInfo(
-          this.searchString.trim(),
+          this.trimmedSearchString,
           flags
         );
         this._fixupInfo = {

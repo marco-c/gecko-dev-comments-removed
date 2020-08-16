@@ -514,6 +514,7 @@ function Search(
   
   let { tokens } = UrlbarTokenizer.tokenize({
     searchString: unescapedSearchString,
+    trimmedSearchString: unescapedSearchString.trim(),
   });
 
   

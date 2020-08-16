@@ -86,14 +86,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
 
     
-    
     let topHeuristicRank = Infinity;
     for (let result of context.allHeuristicResults) {
-      
-      if (!result.heuristic) {
-        continue;
-      }
-
       
       
       let heuristicRank = heuristicOrder.indexOf(result.providerName) + 2;

@@ -69,6 +69,10 @@ class UrlbarView {
     this._rows.addEventListener("overflow", this);
     this._rows.addEventListener("underflow", this);
 
+    
+    
+    this.panel.setAttribute("noresults", "true");
+
     this.controller.setView(this);
     this.controller.addQueryListener(this);
     
@@ -367,6 +371,7 @@ class UrlbarView {
 
   clear() {
     this._rows.textContent = "";
+    this.panel.setAttribute("noresults", "true");
   }
 
   
@@ -496,17 +501,29 @@ class UrlbarView {
 
   onQueryFinished(queryContext) {
     this._cancelRemoveStaleRowsTimer();
-    if (!this._queryWasCancelled) {
-      
-      
-      
-      if (this._queryUpdatedResults) {
-        this._removeStaleRows();
-      } else {
-        this.clear();
-        this.close();
-      }
+    if (this._queryWasCancelled) {
+      return;
     }
+
+    
+    if (this._queryUpdatedResults) {
+      this._removeStaleRows();
+      return;
+    }
+
+    
+    this.clear();
+
+    
+    if (!this.input.searchMode) {
+      this.close();
+      return;
+    }
+
+    
+    
+    this.oneOffSearchButtons.enable(true);
+    this._openPanel();
   }
 
   onQueryResults(queryContext) {
@@ -532,14 +549,14 @@ class UrlbarView {
       
       
       
-      let trimmedValue = queryContext.searchString.trim();
       this.oneOffSearchButtons.enable(
         ((this.oneOffsRefresh &&
           firstResult.providerName != "UrlbarProviderSearchTips") ||
-          trimmedValue) &&
-          trimmedValue[0] != "@" &&
-          (trimmedValue[0] != UrlbarTokenizer.RESTRICT.SEARCH ||
-            trimmedValue.length != 1)
+          queryContext.trimmedSearchString) &&
+          queryContext.trimmedSearchString[0] != "@" &&
+          (queryContext.trimmedSearchString[0] !=
+            UrlbarTokenizer.RESTRICT.SEARCH ||
+            queryContext.trimmedSearchString.length != 1)
       );
 
       
@@ -1273,15 +1290,22 @@ class UrlbarView {
   }
 
   _updateIndices() {
+    let visibleRowsExist = false;
     for (let i = 0; i < this._rows.children.length; i++) {
       let item = this._rows.children[i];
       item.result.rowIndex = i;
+      visibleRowsExist = visibleRowsExist || this._isElementVisible(item);
     }
     let selectableElement = this._getFirstSelectableElement();
     let uiIndex = 0;
     while (selectableElement) {
       selectableElement.elementIndex = uiIndex++;
       selectableElement = this._getNextSelectableElement(selectableElement);
+    }
+    if (visibleRowsExist) {
+      this.panel.removeAttribute("noresults");
+    } else {
+      this.panel.setAttribute("noresults", "true");
     }
   }
 

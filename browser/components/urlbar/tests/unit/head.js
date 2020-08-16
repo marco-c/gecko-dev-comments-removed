@@ -619,7 +619,7 @@ function makeSearchResult(
       keyword: [alias, UrlbarUtils.HIGHLIGHT.TYPED],
       
       query: [
-        typeof query != "undefined" ? query : queryContext.searchString.trim(),
+        typeof query != "undefined" ? query : queryContext.trimmedSearchString,
         UrlbarUtils.HIGHLIGHT.TYPED,
       ],
       isSearchHistory: false,

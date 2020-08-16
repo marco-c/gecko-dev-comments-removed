@@ -476,6 +476,16 @@ class Query {
     
     
     if (
+      result.heuristic &&
+      !this.context.trimmedSearchString &&
+      this.context.searchMode
+    ) {
+      return;
+    }
+
+    
+    
+    if (
       !this.acceptableSources.includes(result.source) &&
       !result.heuristic &&
       

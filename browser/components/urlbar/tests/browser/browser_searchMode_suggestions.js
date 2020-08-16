@@ -64,10 +64,6 @@ add_task(async function emptySearch() {
     
     await checkResults([
       {
-        isSearchHistory: false,
-        suggestion: undefined,
-      },
-      {
         isSearchHistory: true,
         suggestion: "hello formHistory 1",
       },

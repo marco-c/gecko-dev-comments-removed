@@ -89,7 +89,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     
     
     if (
-      !queryContext.searchString.trim() &&
+      !queryContext.trimmedSearchString &&
       !this._isTokenOrRestrictionPresent(queryContext)
     ) {
       return false;
@@ -263,8 +263,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     let engine;
     if (aliasEngine) {
       engine = aliasEngine.engine;
-    } else if (queryContext.engineName) {
-      engine = Services.search.getEngineByName(queryContext.engineName);
+    } else if (queryContext.searchMode?.engineName) {
+      engine = Services.search.getEngineByName(
+        queryContext.searchMode.engineName
+      );
     } else if (queryContext.isPrivate) {
       engine = Services.search.defaultPrivateEngine;
     } else {
@@ -496,7 +498,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     if (
       queryContext.restrictSource &&
       queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH &&
-      queryContext.engineName &&
+      queryContext.searchMode?.engineName &&
       !queryContext.searchString.startsWith("@")
     ) {
       
