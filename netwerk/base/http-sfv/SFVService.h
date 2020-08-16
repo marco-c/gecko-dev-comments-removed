@@ -1,0 +1,14 @@
+
+
+
+
+
+
+#include "nsIStructuredFieldValues.h"
+namespace mozilla {
+namespace net {
+
+already_AddRefed<nsISFVService> GetSFVService();
+
+}  
+}  
