@@ -9,6 +9,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/gfx/Types.h"
 
 #include "GLTypes.h"
 #include "nsISupportsImpl.h"
@@ -151,6 +152,8 @@ class NativeLayer {
   
   virtual void SetSurfaceIsFlipped(bool aIsFlipped) = 0;
   virtual bool SurfaceIsFlipped() = 0;
+
+  virtual void SetSamplingFilter(gfx::SamplingFilter aSamplingFilter) = 0;
 
   
   
