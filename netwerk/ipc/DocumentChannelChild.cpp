@@ -57,8 +57,10 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
   rv = NS_CheckPortSafety(mURI);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  bool isNotDownload = mLoadState->FileName().IsVoid();
+
   
-  if (mLoadGroup) {
+  if (isNotDownload && mLoadGroup) {
     
     
     mLoadGroup->AddRequest(this, nullptr);
