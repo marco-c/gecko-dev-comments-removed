@@ -15,7 +15,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserTestUtils: "resource://testing-common/BrowserTestUtils.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
-  FormHistory: "resource://gre/modules/FormHistory.jsm",
+  FormHistoryTestUtils: "resource://testing-common/FormHistoryTestUtils.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   TestUtils: "resource://testing-common/TestUtils.jsm",
   UrlbarController: "resource:///modules/UrlbarController.jsm",
@@ -517,50 +517,10 @@ UrlbarTestUtils.formHistory = {
 
 
 
-  async update(
-    updateObject = {},
-    window = BrowserWindowTracker.getTopWindow()
-  ) {
-    await new Promise((resolve, reject) => {
-      FormHistory.update(
-        Object.assign(
-          {
-            fieldname: this.getFormHistoryName(window),
-          },
-          updateObject
-        ),
-        {
-          handleError(error) {
-            reject(error);
-          },
-          handleCompletion(errored) {
-            if (!errored) {
-              resolve();
-            }
-          },
-        }
-      );
-    });
-  },
 
-  
-
-
-
-
-
-
-
-  async add(values = [], window = BrowserWindowTracker.getTopWindow()) {
-    for (let value of values) {
-      await this.update(
-        {
-          value,
-          op: "bump",
-        },
-        window
-      );
-    }
+  add(values = [], window = BrowserWindowTracker.getTopWindow()) {
+    let fieldname = this.getFormHistoryName(window);
+    return FormHistoryTestUtils.add(fieldname, values);
   },
 
   
@@ -572,16 +532,10 @@ UrlbarTestUtils.formHistory = {
 
 
 
-  async remove(values = [], window = BrowserWindowTracker.getTopWindow()) {
-    for (let value of values) {
-      await this.update(
-        {
-          value,
-          op: "remove",
-        },
-        window
-      );
-    }
+
+  remove(values = [], window = BrowserWindowTracker.getTopWindow()) {
+    let fieldname = this.getFormHistoryName(window);
+    return FormHistoryTestUtils.remove(fieldname, values);
   },
 
   
@@ -591,8 +545,10 @@ UrlbarTestUtils.formHistory = {
 
 
 
-  async clear(window = BrowserWindowTracker.getTopWindow()) {
-    await this.update({ op: "remove" }, window);
+
+  clear(window = BrowserWindowTracker.getTopWindow()) {
+    let fieldname = this.getFormHistoryName(window);
+    return FormHistoryTestUtils.clear(fieldname);
   },
 
   
@@ -606,31 +562,8 @@ UrlbarTestUtils.formHistory = {
 
 
   search(criteria = {}, window = BrowserWindowTracker.getTopWindow()) {
-    return new Promise((resolve, reject) => {
-      let results = [];
-      FormHistory.search(
-        null,
-        Object.assign(
-          {
-            fieldname: this.getFormHistoryName(window),
-          },
-          criteria
-        ),
-        {
-          handleResult(result) {
-            results.push(result);
-          },
-          handleError(error) {
-            reject(error);
-          },
-          handleCompletion(errored) {
-            if (!errored) {
-              resolve(results);
-            }
-          },
-        }
-      );
-    });
+    let fieldname = this.getFormHistoryName(window);
+    return FormHistoryTestUtils.search(fieldname, criteria);
   },
 
   

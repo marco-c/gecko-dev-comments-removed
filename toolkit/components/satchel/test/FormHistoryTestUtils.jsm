@@ -47,19 +47,19 @@ var FormHistoryTestUtils = {
 
 
 
-  add(fieldname, additions = []) {
-    let promises = [];
+
+  async add(fieldname, additions = []) {
+    
+    
+    additions = additions.map(v => (typeof v == "string" ? { value: v } : v));
     for (let { value, source } of additions) {
-      promises.push(
-        new Promise((resolve, reject) => {
-          FormHistory.update(
-            Object.assign({ fieldname }, { op: "bump", value, source }),
-            this.makeListener(resolve, reject)
-          );
-        })
-      );
+      await new Promise((resolve, reject) => {
+        FormHistory.update(
+          Object.assign({ fieldname }, { op: "bump", value, source }),
+          this.makeListener(resolve, reject)
+        );
+      });
     }
-    return Promise.all(promises);
   },
 
   
@@ -92,18 +92,13 @@ var FormHistoryTestUtils = {
 
 
   remove(fieldname, removals) {
-    let promises = [];
-    for (let { value, source } of removals) {
-      promises.push(
-        new Promise((resolve, reject) => {
-          FormHistory.update(
-            Object.assign({ fieldname }, { op: "remove", value, source }),
-            this.makeListener(resolve, reject)
-          );
-        })
-      );
-    }
-    return Promise.all(promises);
+    let changes = removals.map(v => {
+      let criteria = typeof v == "string" ? { value: v } : v;
+      return Object.assign({ fieldname, op: "remove" }, criteria);
+    });
+    return new Promise((resolve, reject) => {
+      FormHistory.update(changes, this.makeListener(resolve, reject));
+    });
   },
 
   

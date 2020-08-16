@@ -797,7 +797,9 @@ var UrlbarUtils = {
 
 
 
-  addToFormHistory(input, value) {
+
+
+  addToFormHistory(input, value, source) {
     
     
     
@@ -810,6 +812,7 @@ var UrlbarUtils = {
           op: "bump",
           fieldname: input.formHistoryName,
           value,
+          source,
         },
         {
           handleError: reject,
