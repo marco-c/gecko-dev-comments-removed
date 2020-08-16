@@ -916,9 +916,11 @@ nsUnknownContentTypeDialog.prototype = {
     
     
     
+    
     var discardUpdate =
       this.mLauncher.MIMEInfo.preferredAction ==
         this.nsIMIMEInfo.handleInternally &&
+      !this.shouldShowInternalHandlerOption() &&
       !this.dialogElement("rememberChoice").checked;
 
     var needUpdate = false;
