@@ -158,6 +158,8 @@ extern bool dumpEntrainedVariables;
 extern bool OOM_printAllocationCount;
 #endif
 
+extern UniqueChars processWideModuleLoadPath;
+
 
 
 
