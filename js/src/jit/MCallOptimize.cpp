@@ -3764,9 +3764,6 @@ bool IonBuilder::atomicsMeetsPreconditions(
       return checkResult == DontCheckAtomicResult ||
              getInlineReturnType() == MIRType::Int32;
     case Scalar::Uint32:
-      
-      
-      
       return checkResult == DontCheckAtomicResult ||
              getInlineReturnType() == MIRType::Double;
     case Scalar::BigInt64:

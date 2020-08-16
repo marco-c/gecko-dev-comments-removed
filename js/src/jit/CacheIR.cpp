@@ -7078,11 +7078,6 @@ AttachDecision CallIRGenerator::tryAttachAtomicsCompareExchange(
   }
 
   
-  if (typedArray->type() == Scalar::Uint32) {
-    return AttachDecision::NoAction;
-  }
-
-  
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
@@ -7111,6 +7106,7 @@ AttachDecision CallIRGenerator::tryAttachAtomicsCompareExchange(
   writer.atomicsCompareExchangeResult(objId, int32IndexId, int32ExpectedId,
                                       int32ReplacementId, typedArray->type());
 
+  
   
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
@@ -7142,11 +7138,6 @@ bool CallIRGenerator::canAttachAtomicsReadWriteModify() {
 
   auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
   if (!AtomicsMeetsPreconditions(typedArray, args_[1].toNumber())) {
-    return false;
-  }
-
-  
-  if (typedArray->type() == Scalar::Uint32) {
     return false;
   }
 
@@ -7197,6 +7188,7 @@ AttachDecision CallIRGenerator::tryAttachAtomicsExchange(
                                typedArray->type());
 
   
+  
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
 
@@ -7217,6 +7209,7 @@ AttachDecision CallIRGenerator::tryAttachAtomicsAdd(HandleFunction callee) {
   writer.atomicsAddResult(objId, int32IndexId, int32ValueId,
                           typedArray->type());
 
+  
   
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
@@ -7239,6 +7232,7 @@ AttachDecision CallIRGenerator::tryAttachAtomicsSub(HandleFunction callee) {
                           typedArray->type());
 
   
+  
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
 
@@ -7260,6 +7254,7 @@ AttachDecision CallIRGenerator::tryAttachAtomicsAnd(HandleFunction callee) {
                           typedArray->type());
 
   
+  
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
 
@@ -7279,6 +7274,7 @@ AttachDecision CallIRGenerator::tryAttachAtomicsOr(HandleFunction callee) {
 
   writer.atomicsOrResult(objId, int32IndexId, int32ValueId, typedArray->type());
 
+  
   
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
@@ -7300,6 +7296,7 @@ AttachDecision CallIRGenerator::tryAttachAtomicsXor(HandleFunction callee) {
   writer.atomicsXorResult(objId, int32IndexId, int32ValueId,
                           typedArray->type());
 
+  
   
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
@@ -7332,11 +7329,6 @@ AttachDecision CallIRGenerator::tryAttachAtomicsLoad(HandleFunction callee) {
   }
 
   
-  if (typedArray->type() == Scalar::Uint32) {
-    return AttachDecision::NoAction;
-  }
-
-  
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
@@ -7353,6 +7345,7 @@ AttachDecision CallIRGenerator::tryAttachAtomicsLoad(HandleFunction callee) {
 
   writer.atomicsLoadResult(objId, int32IndexId, typedArray->type());
 
+  
   
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
@@ -7397,11 +7390,6 @@ AttachDecision CallIRGenerator::tryAttachAtomicsStore(HandleFunction callee) {
   }
 
   
-  if (typedArray->type() == Scalar::Uint32) {
-    return AttachDecision::NoAction;
-  }
-
-  
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
@@ -7429,6 +7417,7 @@ AttachDecision CallIRGenerator::tryAttachAtomicsStore(HandleFunction callee) {
   writer.atomicsStoreResult(objId, int32IndexId, int32ValueId,
                             typedArray->type());
 
+  
   
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
