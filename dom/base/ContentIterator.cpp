@@ -820,15 +820,14 @@ nsresult ContentSubtreeIterator::InitWithRange() {
   nsIContent* lastCandidate = nullptr;
 
   
-  int32_t offset = mRange->StartOffset();
-
   nsINode* node = nullptr;
   if (!startContainer->GetChildCount()) {
     
     node = startContainer;
   } else {
     nsIContent* child = mRange->GetChildAtStartOffset();
-    MOZ_ASSERT(child == startContainer->GetChildAt_Deprecated(offset));
+    MOZ_ASSERT(child ==
+               startContainer->GetChildAt_Deprecated(mRange->StartOffset()));
     if (!child) {
       
       node = startContainer;
@@ -867,7 +866,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
   mFirst = GetTopAncestorInRange(firstCandidate);
 
   
-  offset = mRange->EndOffset();
+  int32_t offset = mRange->EndOffset();
   int32_t numChildren = endContainer->GetChildCount();
 
   if (offset > numChildren) {
