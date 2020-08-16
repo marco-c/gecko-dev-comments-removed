@@ -13,6 +13,7 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ProfileBufferEntryKinds.h"
 #include "mozilla/ProfileJSONWriter.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
@@ -21,81 +22,14 @@
 
 class ProfilerCodeAddressService;
 
-
-
-
-#define FOR_EACH_PROFILE_BUFFER_ENTRY_KIND(MACRO)                    \
-  MACRO(CategoryPair, int, sizeof(int))                              \
-  MACRO(CollectionStart, double, sizeof(double))                     \
-  MACRO(CollectionEnd, double, sizeof(double))                       \
-  MACRO(Label, const char*, sizeof(const char*))                     \
-  MACRO(FrameFlags, uint64_t, sizeof(uint64_t))                      \
-  MACRO(DynamicStringFragment, char*, ProfileBufferEntry::kNumChars) \
-  MACRO(JitReturnAddr, void*, sizeof(void*))                         \
-  MACRO(InnerWindowID, uint64_t, sizeof(uint64_t))                   \
-  MACRO(LineNumber, int, sizeof(int))                                \
-  MACRO(ColumnNumber, int, sizeof(int))                              \
-  MACRO(NativeLeafAddr, void*, sizeof(void*))                        \
-  MACRO(Pause, double, sizeof(double))                               \
-  MACRO(Resume, double, sizeof(double))                              \
-  MACRO(PauseSampling, double, sizeof(double))                       \
-  MACRO(ResumeSampling, double, sizeof(double))                      \
-  MACRO(ThreadId, int, sizeof(int))                                  \
-  MACRO(Time, double, sizeof(double))                                \
-  MACRO(TimeBeforeCompactStack, double, sizeof(double))              \
-  MACRO(CounterId, void*, sizeof(void*))                             \
-  MACRO(CounterKey, uint64_t, sizeof(uint64_t))                      \
-  MACRO(Number, uint64_t, sizeof(uint64_t))                          \
-  MACRO(Count, int64_t, sizeof(int64_t))                             \
-  MACRO(ProfilerOverheadTime, double, sizeof(double))                \
-  MACRO(ProfilerOverheadDuration, double, sizeof(double))
-
 class ProfileBufferEntry {
  public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  using KindUnderlyingType = uint8_t;
-  enum class Kind : KindUnderlyingType {
-    INVALID = 0,
-#define KIND(KIND, TYPE, SIZE) KIND,
-    FOR_EACH_PROFILE_BUFFER_ENTRY_KIND(KIND)
-#undef KIND
-
-    
-    LEGACY_LIMIT,
-
-    
-    
-
-    
-    MarkerData = LEGACY_LIMIT,
-
-    
-    UnresponsiveDurationMs,
-
-    
-    
-    
-    
-    CompactStack,
-
-    MODERN_LIMIT
-  };
+  using KindUnderlyingType = mozilla::ProfileBufferEntryKindUnderlyingType;
+  using Kind = mozilla::ProfileBufferEntryKind;
 
   ProfileBufferEntry();
 
-  
-  
-  static const size_t kNumChars = 8;
+  static constexpr size_t kNumChars = mozilla::ProfileBufferEntryNumChars;
 
  private:
   
