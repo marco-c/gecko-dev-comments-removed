@@ -180,10 +180,6 @@ function isChildList(change) {
   return change.type === "childList";
 }
 
-function isNewRoot(change) {
-  return change.type === "newRoot";
-}
-
 
 
 function assertSrcChange(mutations) {

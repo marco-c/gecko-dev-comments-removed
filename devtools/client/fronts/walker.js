@@ -264,15 +264,6 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     const emitMutations = [];
     for (const change of mutations) {
       
-      
-      if (change.type === "newRoot") {
-        const rootNode = types.getType("domnode").read(change.target, this);
-        this.emit("root-available", rootNode);
-        
-        continue;
-      }
-
-      
       const targetID = change.target;
       const targetFront = this.getActorByID(targetID);
 
