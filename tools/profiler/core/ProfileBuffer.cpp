@@ -21,13 +21,6 @@ ProfileBuffer::ProfileBuffer(ProfileChunkedBuffer& aBuffer)
   MOZ_ASSERT(mEntries.IsInSession());
 }
 
-ProfileBuffer::~ProfileBuffer() {
-  
-  
-  mEntries.ResetChunkManager();
-  MOZ_ASSERT(!mEntries.IsInSession());
-}
-
 
 ProfileBufferBlockIndex ProfileBuffer::AddEntry(
     ProfileChunkedBuffer& aProfileChunkedBuffer,

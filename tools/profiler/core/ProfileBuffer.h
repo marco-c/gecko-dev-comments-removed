@@ -25,8 +25,6 @@ class ProfileBuffer final {
   
   explicit ProfileBuffer(mozilla::ProfileChunkedBuffer& aBuffer);
 
-  ~ProfileBuffer();
-
   bool IsThreadSafe() const { return mEntries.IsThreadSafe(); }
 
   
