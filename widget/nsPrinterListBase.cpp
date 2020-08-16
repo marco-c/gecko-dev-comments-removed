@@ -1,0 +1,11 @@
+
+
+
+
+
+#include "nsPrinterListBase.h"
+
+nsPrinterListBase::nsPrinterListBase() = default;
+nsPrinterListBase::~nsPrinterListBase() = default;
+
+NS_IMPL_ISUPPORTS(nsPrinterListBase, nsIPrinterList)
