@@ -56,8 +56,6 @@ class Http3Stream final : public nsAHttpSegmentReader,
     mRecvState = RECEIVED_RESET;
   }
 
-  void StopSending();
-
   void SetResponseHeaders(nsTArray<uint8_t>& aResponseHeaders, bool fin);
 
  private:
