@@ -1182,10 +1182,7 @@ class UrlbarInput {
 
 
 
-
-
-
-  setSearchMode({ engineName, source, alternateLabel }) {
+  setSearchMode({ engineName, source }) {
     if (!UrlbarPrefs.get("update2")) {
       
       engineName = null;
@@ -1201,10 +1198,9 @@ class UrlbarInput {
       this.searchMode = {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         engineName,
-        alternateLabel,
       };
-      this._searchModeIndicatorTitle.textContent = alternateLabel || engineName;
-      this._searchModeLabel.textContent = alternateLabel || engineName;
+      this._searchModeIndicatorTitle.textContent = engineName;
+      this._searchModeLabel.textContent = engineName;
       this.document.l10n.setAttributes(
         this.inputField,
         UrlbarUtils.WEB_ENGINE_NAMES.has(engineName)
@@ -2147,11 +2143,7 @@ class UrlbarInput {
       (!result.payload.originalEngine ||
         result.payload.engine == result.payload.originalEngine)
     ) {
-      let params = { engineName: result.payload.engine };
-      if (result.payload.keyword && !result.payload.keyword.startsWith("@")) {
-        params.alternateLabel = result.payload.keyword;
-      }
-      return params;
+      return { engineName: result.payload.engine };
     }
 
     return null;
