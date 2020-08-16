@@ -7,7 +7,10 @@
 #ifndef READSTRINGS_H__
 #define READSTRINGS_H__
 
+#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
+
+#include <vector>
 
 #ifdef XP_WIN
 #  include <windows.h>
@@ -33,5 +36,56 @@ int ReadStrings(const NS_tchar* path, StringTable* results);
 int ReadStrings(const NS_tchar* path, const char* keyList,
                 unsigned int numStrings, mozilla::UniquePtr<char[]>* results,
                 const char* section = nullptr);
+
+
+
+
+
+class IniReader {
+ public:
+  
+  
+  
+  explicit IniReader(const NS_tchar* iniPath, const char* section = nullptr);
+
+  
+  
+  
+  
+  
+  void AddKey(const char* key, mozilla::UniquePtr<char[]>* outputPtr);
+#ifdef XP_WIN
+  void AddKey(const char* key, mozilla::UniquePtr<wchar_t[]>* outputPtr);
+#endif
+  bool HasRead() { return mMaybeStatusCode.isSome(); }
+  
+  
+  
+  
+  int Read();
+
+ private:
+  bool MaybeAddKey(const char* key, size_t& insertionIndex);
+
+  mozilla::UniquePtr<NS_tchar[]> mPath;
+  mozilla::UniquePtr<char[]> mSection;
+  std::vector<mozilla::UniquePtr<char[]>> mKeys;
+
+  template <class T>
+  struct ValueOutput {
+    size_t keyIndex;
+    T* outputPtr;
+  };
+
+  
+  
+  std::vector<ValueOutput<mozilla::UniquePtr<char[]>>> mNarrowOutputs;
+#ifdef XP_WIN
+  std::vector<ValueOutput<mozilla::UniquePtr<wchar_t[]>>> mWideOutputs;
+#endif
+  
+  
+  mozilla::Maybe<int> mMaybeStatusCode;
+};
 
 #endif  
