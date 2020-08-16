@@ -510,7 +510,11 @@ static_assert(sizeof(nsXPTMethodInfo) == 8, "wrong size");
 
 
 
-#define PARAM_BUFFER_COUNT 14
+#if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
+#  define PARAM_BUFFER_COUNT 18
+#else
+#  define PARAM_BUFFER_COUNT 14
+#endif
 
 
 
