@@ -3,10 +3,7 @@
 
 
 SpecialPowers.pushPrefEnv({
-  set: [
-    ["dom.security.featurePolicy.enabled", true],
-    ["permissions.delegation.enabled", true],
-  ],
+  set: [["permissions.delegation.enabled", true]],
 });
 
 let gShouldObserveSubframes = false;

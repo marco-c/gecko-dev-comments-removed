@@ -52,7 +52,6 @@
 
 
 
-
 class nsINode;
 
 namespace mozilla {
