@@ -1062,7 +1062,7 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
     mZoomConstraintsClient->Init(this, mDocument);
 
     
-    UpdateViewportOverridden(false);
+    MaybeRecreateMobileViewportManager(false);
   }
 
   if (nsCOMPtr<nsIDocShell> docShell = mPresContext->GetDocShell()) {
@@ -10944,7 +10944,7 @@ Maybe<MobileViewportManager::ManagerType> UseMobileViewportManager(
   return Nothing();
 }
 
-void PresShell::UpdateViewportOverridden(bool aAfterInitialization) {
+void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
   
   
   

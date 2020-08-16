@@ -353,7 +353,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  void UpdateViewportOverridden(bool aAfterInitialization);
+  void MaybeRecreateMobileViewportManager(bool aAfterInitialization);
 
   
 
