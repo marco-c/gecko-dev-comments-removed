@@ -777,11 +777,11 @@ PopupNotifications.prototype = {
         }
       
       case "TabSelect":
+        let self = this;
         
         
-        this.window.setTimeout(() => {
-          this._suppress = this._shouldSuppress();
-          this._update();
+        this.window.setTimeout(function() {
+          self._update();
         }, 0);
         break;
       case "click":
