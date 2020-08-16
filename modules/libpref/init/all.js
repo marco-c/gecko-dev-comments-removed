@@ -510,8 +510,16 @@ pref("media.videocontrols.picture-in-picture.video-toggle.has-used", false);
   pref("media.peerconnection.mute_on_bye_or_timeout", false);
 
   
+#ifdef EARLY_BETA_OR_EARLIER
   pref("media.peerconnection.dtls.version.min", 771);
+#else
+  pref("media.peerconnection.dtls.version.min", 770);
+#endif
+#ifdef NIGHTLY_BUILD
   pref("media.peerconnection.dtls.version.max", 772);
+#else
+  pref("media.peerconnection.dtls.version.max", 771);
+#endif
 
   
   
