@@ -939,11 +939,27 @@ DReport.ADDED_FOR_BALANCE = 3;
 
 
 
+function hasWebIsolatedProcess(aJSONReports) {
+  for (let jr of aJSONReports) {
+    assert(jr.process !== undefined, "Missing process");
+    if (jr.process.startsWith("webIsolated")) {
+      return true;
+    }
+  }
+  return false;
+}
 
 
 
 
-function makeDReportMap(aJSONReports) {
+
+
+
+
+
+
+
+function makeDReportMap(aJSONReports, aForgetIsolation) {
   let dreportMap = {};
   for (let jr of aJSONReports) {
     assert(jr.process !== undefined, "Missing process");
@@ -967,6 +983,10 @@ function makeDReportMap(aJSONReports) {
     let pidSubst = "pid$1NNN";
     let process = jr.process.replace(pidRegex, pidSubst);
     let path = jr.path.replace(pidRegex, pidSubst);
+
+    if (aForgetIsolation && process.startsWith("webIsolated")) {
+      process = "web (pid NNN)";
+    }
 
     
     path = path.replace(/\(tid=(\d+)\)/, "(tid=NNN)");
@@ -1103,6 +1123,16 @@ function diffJSONObjects(aJson1, aJson2) {
     return aJson1[aProp];
   }
 
+  
+  
+  
+  
+  
+  let hasIsolated1 = hasWebIsolatedProcess(aJson1.reports);
+  let hasIsolated2 = hasWebIsolatedProcess(aJson2.reports);
+  let eitherIsolated = hasIsolated1 || hasIsolated2;
+  let forgetIsolation = hasIsolated1 != hasIsolated2 && eitherIsolated;
+
   return {
     version: simpleProp("version"),
 
@@ -1110,8 +1140,8 @@ function diffJSONObjects(aJson1, aJson2) {
 
     reports: makeJSONReports(
       diffDReportMaps(
-        makeDReportMap(aJson1.reports),
-        makeDReportMap(aJson2.reports)
+        makeDReportMap(aJson1.reports, forgetIsolation),
+        makeDReportMap(aJson2.reports, forgetIsolation)
       )
     ),
   };
