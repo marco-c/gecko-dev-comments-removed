@@ -144,8 +144,8 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   
   
   
-  nsCOMPtr<nsISerialEventTarget> mIntermediatePreloadingHealerTaskQueue;
   nsCOMPtr<nsITimer> mIntermediatePreloadingHealerTimer;
+  nsCOMPtr<nsISerialEventTarget> mBackgroundTaskQueue;
 };
 
 inline nsresult BlockUntilLoadableCertsLoaded() {

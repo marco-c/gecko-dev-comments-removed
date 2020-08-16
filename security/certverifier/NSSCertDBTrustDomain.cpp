@@ -1820,6 +1820,11 @@ void SaveIntermediateCerts(const UniqueCERTCertList& certList) {
   size_t numIntermediates = 0;
   for (CERTCertListNode* node = CERT_LIST_HEAD(certList);
        !CERT_LIST_END(node, certList); node = CERT_LIST_NEXT(node)) {
+    if (!node || !node->cert) {
+      
+      continue;
+    }
+
     if (isEndEntity) {
       
       isEndEntity = false;
@@ -1832,7 +1837,11 @@ void SaveIntermediateCerts(const UniqueCERTCertList& certList) {
       continue;
     }
 
-    if (node->cert->isperm) {
+    PRBool isperm;
+    if (CERT_GetCertIsPerm(node->cert, &isperm) != SECSuccess) {
+      continue;
+    }
+    if (isperm) {
       
       continue;
     }
@@ -1880,6 +1889,22 @@ void SaveIntermediateCerts(const UniqueCERTCertList& certList) {
             if (AppShutdown::IsShuttingDown()) {
               return;
             }
+            if (!node || !node->cert) {
+              continue;
+            }
+            PRBool isperm;
+            if (CERT_GetCertIsPerm(node->cert, &isperm) != SECSuccess) {
+              continue;
+            }
+            if (isperm) {
+              
+              
+              
+              
+              
+              
+              continue;
+            }
 
 #ifdef MOZ_NEW_CERT_STORAGE
             if (CertIsInCertStorage(node->cert, certStorage)) {
@@ -1911,8 +1936,12 @@ void SaveIntermediateCerts(const UniqueCERTCertList& certList) {
               }));
           Unused << NS_DispatchToMainThread(runnable.forget());
         }));
-    Unused << NS_DispatchToCurrentThreadQueue(importCertsRunnable.forget(),
-                                              EventQueuePriority::Idle);
+    nsCOMPtr<nsINSSComponent> nssComponent(
+        do_GetService(PSM_COMPONENT_CONTRACTID));
+    if (nssComponent) {
+      Unused << nssComponent->DispatchTaskToSerialBackgroundQueue(
+          importCertsRunnable);
+    }
   }
 }
 

@@ -4,6 +4,7 @@
 
 
 
+#include "nsIRunnable.idl"
 #include "nsISupports.idl"
 
 %{C++
@@ -111,4 +112,10 @@ interface nsINSSComponent : nsISupports {
 
 
   void clearSSLExternalAndInternalSessionCache();
+
+  
+
+
+
+  [noscript] void dispatchTaskToSerialBackgroundQueue(in nsIRunnable task);
 };
