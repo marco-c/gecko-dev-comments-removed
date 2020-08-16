@@ -13,6 +13,23 @@
 static nsCUPSShim sCupsShim;
 using PrinterInfo = nsPrinterListBase::PrinterInfo;
 
+
+
+
+
+static void GetDisplayNameForPrinter(const cups_dest_t& aDest,
+                                     nsAString& aName) {
+
+
+#ifdef XP_MACOSX
+  const char* displayName =
+      sCupsShim.cupsGetOption("printer-info", aDest.num_options, aDest.options);
+  if (displayName) {
+    CopyUTF8toUTF16(MakeStringSpan(displayName), aName);
+  }
+#endif
+}
+
 nsTArray<PrinterInfo> nsPrinterListCUPS::Printers() const {
   if (!sCupsShim.EnsureInitialized()) {
     return {};
