@@ -14,7 +14,7 @@ const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 const {
   decodeUnicodeBase64,
   fetchNetworkUpdatePacket,
-  isJSON,
+  parseJSON,
 } = require("devtools/client/netmonitor/src/utils/request-utils");
 const {
   Filters,
@@ -136,26 +136,12 @@ class ResponsePanel extends Component {
       return result;
     }
 
-    let { json, error } = isJSON(response);
+    const { json, error, jsonpCallback } = parseJSON(response);
 
     if (/\bjson/.test(mimeType) || json) {
-      
-      
-      
-      const jsonpRegex = /^\s*([\w$]+)\s*\(\s*([^]*)\s*\)\s*;?\s*$/;
-      const [, jsonpCallback, jsonp] = response.match(jsonpRegex) || [];
       const result = {};
-
       
       
-      if (jsonpCallback && jsonp) {
-        error = null;
-        try {
-          json = JSON.parse(jsonp);
-        } catch (err) {
-          error = err;
-        }
-      }
 
       
       if (json) {

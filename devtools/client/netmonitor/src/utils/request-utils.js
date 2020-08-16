@@ -633,9 +633,46 @@ function isBase64(payload) {
 
 
 
-function isJSON(payload) {
-  let json, error;
 
+
+function parseJSON(payloadUnclean) {
+  let json, error;
+  const jsonpRegex = /^\s*([\w$]+)\s*\(\s*([^]*)\s*\)\s*;?\s*$/;
+  const [, jsonpCallback, jsonp] = payloadUnclean.match(jsonpRegex) || [];
+  if (jsonpCallback && jsonp) {
+    try {
+      json = parseJSON(jsonp).json;
+    } catch (err) {
+      error = err;
+    }
+    return { json, error, jsonpCallback };
+  }
+  
+  
+  const firstSquare = payloadUnclean.indexOf("[");
+  const firstCurly = payloadUnclean.indexOf("{");
+  
+  
+  
+  
+  
+  const minFirst = Math.min(firstSquare, firstCurly);
+  let first;
+  if (minFirst === -1) {
+    first = Math.max(firstCurly, firstSquare);
+  } else {
+    first = minFirst;
+  }
+  let payload = "";
+  if (first !== -1) {
+    try {
+      payload = payloadUnclean.substring(first);
+    } catch (err) {
+      error = err;
+    }
+  } else {
+    payload = payloadUnclean;
+  }
   try {
     json = JSON.parse(payload);
   } catch (err) {
@@ -643,7 +680,7 @@ function isJSON(payload) {
       try {
         json = JSON.parse(atob(payload));
       } catch (err64) {
-        error = err;
+        error = err64;
       }
     } else {
       error = err;
@@ -657,7 +694,6 @@ function isJSON(payload) {
       return {};
     }
   }
-
   return {
     json,
     error,
@@ -693,5 +729,5 @@ module.exports = {
   processNetworkUpdates,
   propertiesEqual,
   ipToLong,
-  isJSON,
+  parseJSON,
 };
