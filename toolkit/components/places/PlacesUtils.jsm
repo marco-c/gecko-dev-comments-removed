@@ -1408,13 +1408,6 @@ var PlacesUtils = {
     return found;
   },
 
-  getChildCountForFolder(guid) {
-    let folder = PlacesUtils.getFolderContents(guid).root;
-    let childCount = folder.childCount;
-    folder.containerOpen = false;
-    return childCount;
-  },
-
   
 
 
