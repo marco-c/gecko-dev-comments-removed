@@ -64,6 +64,9 @@ const PREF_ADDON_RECOMMENDATIONS_ENABLED = "browser.discovery.enabled";
 const PREF_PASSWORD_GENERATION_AVAILABLE = "signon.generation.available";
 const { BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN } = Ci.nsICookieService;
 
+const PASSWORD_MANAGER_PREF_ID = "services.passwordSavingEnabled";
+const PREF_PASSWORD_MANAGER_ENABLED = "signon.rememberSignons";
+
 XPCOMUtils.defineLazyGetter(this, "AlertsServiceDND", function() {
   try {
     let alertsService = Cc["@mozilla.org/alerts-service;1"]
@@ -600,6 +603,8 @@ var gPrivacyPane = {
 
     this._initPasswordGenerationUI();
     this._initMasterPasswordUI();
+
+    this.initListenersForExtensionControllingPasswordManager();
     
     const breachAlertsLearnMoreLink = document.getElementById(
       "breachAlertsLearnMoreLink"
@@ -2133,6 +2138,32 @@ var gPrivacyPane = {
 
     
     return undefined;
+  },
+
+  
+
+
+
+
+  initListenersForExtensionControllingPasswordManager() {
+    this._passwordManagerCheckbox = document.getElementById("savePasswords");
+    this._disableExtensionButton = document.getElementById(
+      "disablePasswordManagerExtension"
+    );
+
+    this._disableExtensionButton.addEventListener(
+      "command",
+      makeDisableControllingExtension(
+        PREF_SETTING_TYPE,
+        PASSWORD_MANAGER_PREF_ID
+      )
+    );
+
+    initListenersForPrefChange(
+      PREF_SETTING_TYPE,
+      PASSWORD_MANAGER_PREF_ID,
+      this._passwordManagerCheckbox
+    );
   },
 
   
