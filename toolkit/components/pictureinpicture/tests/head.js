@@ -352,6 +352,20 @@ async function assertSawMouseEvents(
 async function prepareForToggleClick(browser, videoID) {
   
   
+  
+  await BrowserTestUtils.synthesizeMouse(
+    `#${videoID}`,
+    -5,
+    -5,
+    {
+      type: "mousemove",
+    },
+    browser,
+    false
+  );
+
+  
+  
   let args = { videoID };
   return SpecialPowers.spawn(browser, [args], async args => {
     let { videoID } = args;
@@ -377,6 +391,17 @@ async function prepareForToggleClick(browser, videoID) {
         100
       );
     }
+
+    let shadowRoot = video.openOrClosedShadowRoot;
+    let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
+    await ContentTaskUtils.waitForCondition(
+      () => {
+        return !controlsOverlay.classList.contains("hovering");
+      },
+      "Waiting for the video to not be hovered.",
+      100,
+      100
+    );
 
     return {
       controls: video.controls,
