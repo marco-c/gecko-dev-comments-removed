@@ -18,6 +18,7 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["Element"]);
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  CustomizableUI: "resource:///modules/CustomizableUI.jsm",
   OpenInTabsUtils: "resource:///modules/OpenInTabsUtils.jsm",
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
@@ -1158,6 +1159,58 @@ var PlacesUIUtils = {
     
     if (win.top.XULBrowserWindow) {
       win.top.XULBrowserWindow.setOverLink(url);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  NUM_TOOLBAR_BOOKMARKS_TO_UNHIDE: 3,
+  maybeToggleBookmarkToolbarVisibility(aForceVisible = false) {
+    const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
+    let xulStore = Services.xulStore;
+
+    if (
+      aForceVisible ||
+      !xulStore.hasValue(BROWSER_DOCURL, "PersonalToolbar", "collapsed")
+    ) {
+      
+      
+      let toolbarIsCustomized = xulStore.hasValue(
+        BROWSER_DOCURL,
+        "PersonalToolbar",
+        "currentset"
+      );
+
+      if (
+        aForceVisible ||
+        toolbarIsCustomized ||
+        PlacesUtils.getToolbarFolderCount(PlacesUtils.bookmarks.toolbarGuid) >
+          this.NUM_TOOLBAR_BOOKMARKS_TO_UNHIDE
+      ) {
+        Services.obs.notifyObservers(
+          null,
+          "browser-set-toolbar-visibility",
+          JSON.stringify([CustomizableUI.AREA_BOOKMARKS, "true"])
+        );
+      }
+    }
+  },
+
+  maybeToggleBookmarkToolbarVisibilityAfterMigration() {
+    if (
+      Services.prefs.getBoolPref(
+        "browser.migrate.showBookmarksToolbarAfterMigration"
+      )
+    ) {
+      this.maybeToggleBookmarkToolbarVisibility(true);
     }
   },
 };
