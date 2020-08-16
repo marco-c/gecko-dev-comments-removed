@@ -315,11 +315,11 @@ const browsingContextTargetPrototype = {
 
 
   watchTargetResources(resourceTypes) {
-    return Resources.watchTargetResources(this, resourceTypes);
+    return Resources.watchResources(this, resourceTypes);
   },
 
   unwatchTargetResources(resourceTypes) {
-    return Resources.unwatchTargetResources(this, resourceTypes);
+    return Resources.unwatchResources(this, resourceTypes);
   },
 
   

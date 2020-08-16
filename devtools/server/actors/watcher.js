@@ -233,17 +233,19 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   async watchResources(resourceTypes) {
     
     
-    const contentProcessResourceTypes = Resources.watchParentProcessResources(
+    Resources.watchResources(
       this,
-      resourceTypes
+      Resources.getParentProcessResourceTypes(resourceTypes)
     );
 
     
-    if (contentProcessResourceTypes.length == 0) {
+    
+    
+    if (!Resources.hasResourceTypesForTargets(resourceTypes)) {
       return;
     }
 
-    WatcherRegistry.watchResources(this, contentProcessResourceTypes);
+    WatcherRegistry.watchResources(this, resourceTypes);
 
     
     for (const targetType in TARGET_HELPERS) {
@@ -255,10 +257,14 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       ) {
         continue;
       }
+      const targetResourceTypes = Resources.getResourceTypesForTargetType(
+        resourceTypes,
+        targetType
+      );
       const targetHelperModule = TARGET_HELPERS[targetType];
       await targetHelperModule.watchResources({
         watcher: this,
-        resourceTypes: contentProcessResourceTypes,
+        resourceTypes: targetResourceTypes,
       });
     }
 
@@ -281,11 +287,15 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
+    const frameResourceTypes = Resources.getResourceTypesForTargetType(
+      resourceTypes,
+      Targets.TYPES.FRAME
+    );
     const targetActor = this.browserElement
       ? TargetActorRegistry.getTargetActor(this.browserId)
       : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
-      await targetActor.watchTargetResources(resourceTypes);
+      await targetActor.watchTargetResources(frameResourceTypes);
     }
   },
 
@@ -298,21 +308,21 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   unwatchResources(resourceTypes) {
     
     
-    const contentProcessResourceTypes = Resources.unwatchParentProcessResources(
+    Resources.unwatchResources(
       this,
-      resourceTypes
+      Resources.getParentProcessResourceTypes(resourceTypes)
     );
 
     
     
     
-    if (contentProcessResourceTypes.length == 0) {
+    if (!Resources.hasResourceTypesForTargets(resourceTypes)) {
       return;
     }
 
     const isWatchingResources = WatcherRegistry.unwatchResources(
       this,
-      contentProcessResourceTypes
+      resourceTypes
     );
     if (!isWatchingResources) {
       return;
@@ -330,20 +340,28 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         ) {
           continue;
         }
+        const targetResourceTypes = Resources.getResourceTypesForTargetType(
+          resourceTypes,
+          targetType
+        );
         const targetHelperModule = TARGET_HELPERS[targetType];
         targetHelperModule.unwatchResources({
           watcher: this,
-          resourceTypes: contentProcessResourceTypes,
+          resourceTypes: targetResourceTypes,
         });
       }
     }
 
     
+    const frameResourceTypes = Resources.getResourceTypesForTargetType(
+      resourceTypes,
+      Targets.TYPES.FRAME
+    );
     const targetActor = this.browserElement
       ? TargetActorRegistry.getTargetActor(this.browserId)
       : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
-      targetActor.unwatchTargetResources(contentProcessResourceTypes);
+      targetActor.unwatchTargetResources(frameResourceTypes);
     }
 
     
