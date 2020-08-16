@@ -215,6 +215,18 @@ var EventDispatcher = {
 
 
 
+  byName(aName) {
+    if (!IS_PARENT_PROCESS) {
+      return undefined;
+    }
+    const dispatcher = Services.androidBridge.getDispatcherByName(aName);
+    return new DispatcherDelegate(dispatcher);
+  },
+
+  
+
+
+
 
 
   forMessageManager(aMessageManager) {
