@@ -789,6 +789,9 @@ class SearchOneOffs {
 
 
   handleKeyDown(event, numListItems, allowEmptySelection, textboxUserValue) {
+    if (!this.hasView) {
+      return false;
+    }
     let handled = this._handleKeyDown(
       event,
       numListItems,
@@ -1047,6 +1050,13 @@ class SearchOneOffs {
   }
 
   
+
+  
+
+
+  get hasView() {
+    return !!this.popup;
+  }
 
   
 

@@ -109,6 +109,16 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
+  get hasView() {
+    
+    
+    return this.style.display != "none";
+  }
+
+  
+
+
+
   get isViewOpen() {
     return this.view.isOpen;
   }
