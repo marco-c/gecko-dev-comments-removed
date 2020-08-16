@@ -26,8 +26,6 @@ function SelectorHighlighter(highlighterEnv) {
 }
 
 SelectorHighlighter.prototype = {
-  typeName: "SelectorHighlighter",
-
   
 
 

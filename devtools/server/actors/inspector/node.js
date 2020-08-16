@@ -707,8 +707,6 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
 const NodeListActor = protocol.ActorClassWithSpec(nodeListSpec, {
-  typeName: "domnodelist",
-
   initialize: function(walker, nodeList) {
     protocol.Actor.prototype.initialize.call(this);
     this.walker = walker;

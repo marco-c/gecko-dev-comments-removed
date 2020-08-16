@@ -18,7 +18,6 @@ const { objectSpec } = require("devtools/shared/specs/object");
 const proto = extend({}, ObjectActorProto);
 
 Object.assign(proto, {
-  typeName: "pausedobj",
   
 
 

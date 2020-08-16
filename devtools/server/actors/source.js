@@ -85,8 +85,6 @@ function getSourceURL(source, window) {
 
 
 const SourceActor = ActorClassWithSpec(sourceSpec, {
-  typeName: "source",
-
   initialize: function({ source, thread }) {
     Actor.prototype.initialize.call(this, thread.conn);
 
