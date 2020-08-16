@@ -280,9 +280,6 @@ class Assembler : public vixl::Assembler {
 
   static bool HasRoundInstruction(RoundingMode mode) { return false; }
 
-  
-  void addJumpRelocation(BufferOffset src, RelocationKind reloc);
-
  protected:
   
   

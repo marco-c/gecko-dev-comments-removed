@@ -110,12 +110,6 @@ ABIArg ABIArgGenerator::next(MIRType type) {
 #endif
 }
 
-void Assembler::writeRelocation(JmpSrc src, RelocationKind reloc) {
-  if (reloc == RelocationKind::JITCODE) {
-    jumpRelocations_.writeUnsigned(src.offset());
-  }
-}
-
 void Assembler::addPendingJump(JmpSrc src, ImmPtr target,
                                RelocationKind reloc) {
   MOZ_ASSERT(target.value != nullptr);
@@ -123,7 +117,7 @@ void Assembler::addPendingJump(JmpSrc src, ImmPtr target,
   
   
   if (reloc == RelocationKind::JITCODE) {
-    writeRelocation(src, reloc);
+    jumpRelocations_.writeUnsigned(src.offset());
   }
   enoughMemory_ &=
       jumps_.append(RelativePatch(src.offset(), target.value, reloc));

@@ -1255,10 +1255,6 @@ class Assembler : public AssemblerShared {
 
   static DoubleCondition InvertCondition(DoubleCondition cond);
 
-  void writeRelocation(BufferOffset src) {
-    jumpRelocations_.writeUnsigned(src.getOffset());
-  }
-
   void writeDataRelocation(BufferOffset offset, ImmGCPtr ptr) {
     
     
@@ -1678,7 +1674,7 @@ class Assembler : public AssemblerShared {
   void addPendingJump(BufferOffset src, ImmPtr target, RelocationKind kind) {
     enoughMemory_ &= jumps_.append(RelativePatch(target.value, kind));
     if (kind == RelocationKind::JITCODE) {
-      writeRelocation(src);
+      jumpRelocations_.writeUnsigned(src.getOffset());
     }
   }
 
