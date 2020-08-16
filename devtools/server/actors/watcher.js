@@ -15,14 +15,12 @@ const {
 const {
   WatcherRegistry,
 } = require("devtools/server/actors/watcher/WatcherRegistry.jsm");
+const Targets = require("devtools/server/actors/targets/index");
 
-const TARGET_TYPES = {
-  FRAME: "frame",
-};
 const TARGET_HELPERS = {};
 loader.lazyRequireGetter(
   TARGET_HELPERS,
-  TARGET_TYPES.FRAME,
+  Targets.TYPES.FRAME,
   "devtools/server/actors/watcher/target-helpers/frame-helper"
 );
 
@@ -65,7 +63,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   destroy: function() {
     
     
-    for (const targetType of Object.values(TARGET_TYPES)) {
+    for (const targetType of Object.values(Targets.TYPES)) {
       this.unwatchTargets(targetType);
     }
     this.unwatchResources(Object.values(Resources.TYPES));
@@ -253,7 +251,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       
       if (
         !WatcherRegistry.isWatchingTargets(this, targetType) &&
-        targetType != TARGET_TYPES.FRAME
+        targetType != Targets.TYPES.FRAME
       ) {
         continue;
       }
@@ -328,7 +326,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         
         if (
           !WatcherRegistry.isWatchingTargets(this, targetType) &&
-          targetType != TARGET_TYPES.FRAME
+          targetType != Targets.TYPES.FRAME
         ) {
           continue;
         }
