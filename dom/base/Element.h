@@ -626,6 +626,7 @@ class Element : public FragmentOrElement {
   
   
   friend class mozilla::EventStateManager;
+  friend class mozilla::dom::Document;
   friend class ::nsGlobalWindowInner;
   friend class ::nsGlobalWindowOuter;
   friend class ::nsFocusManager;
@@ -644,6 +645,7 @@ class Element : public FragmentOrElement {
   EventStates StyleStateFromLocks() const;
 
  protected:
+  
   
   
   
