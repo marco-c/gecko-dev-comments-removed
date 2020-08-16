@@ -11,7 +11,6 @@
 #include "GLContextProvider.h"
 #include "GLLibraryEGL.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/layers/BuildConstants.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/CompositorWidget.h"
 
@@ -118,45 +117,42 @@ RenderedFrameId RenderCompositorEGL::EndFrame(
 void RenderCompositorEGL::Pause() { DestroyEGLSurface(); }
 
 bool RenderCompositorEGL::Resume() {
-  if (kIsAndroid) {
-    
-    DestroyEGLSurface();
-    mEGLSurface = CreateEGLSurface();
-    gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
-
 #ifdef MOZ_WIDGET_ANDROID
+  
+  DestroyEGLSurface();
+  mEGLSurface = CreateEGLSurface();
+  gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
+
+  
+  
+  
+  EGLNativeWindowType window = mWidget->AsAndroid()->GetEGLNativeWindow();
+  JNIEnv* const env = jni::GetEnvForThread();
+  ANativeWindow* const nativeWindow =
+      ANativeWindow_fromSurface(env, reinterpret_cast<jobject>(window));
+  const int32_t width = ANativeWindow_getWidth(nativeWindow);
+  const int32_t height = ANativeWindow_getHeight(nativeWindow);
+  mEGLSurfaceSize = LayoutDeviceIntSize(width, height);
+  ANativeWindow_release(nativeWindow);
+#elif defined(MOZ_WAYLAND)
+  
+  
+  DestroyEGLSurface();
+  mEGLSurface = CreateEGLSurface();
+  if (mEGLSurface != EGL_NO_SURFACE) {
     
     
     
     
-    EGLNativeWindowType window = mWidget->AsAndroid()->GetEGLNativeWindow();
-    JNIEnv* const env = jni::GetEnvForThread();
-    ANativeWindow* const nativeWindow =
-        ANativeWindow_fromSurface(env, reinterpret_cast<jobject>(window));
-    const int32_t width = ANativeWindow_getWidth(nativeWindow);
-    const int32_t height = ANativeWindow_getHeight(nativeWindow);
-    mEGLSurfaceSize = LayoutDeviceIntSize(width, height);
-    ANativeWindow_release(nativeWindow);
-#endif  
-  } else if (kIsWayland) {
+    const auto& gle = gl::GLContextEGL::Cast(gl());
+    const auto& egl = gle->mEgl;
+    MakeCurrent();
     
-    
-    DestroyEGLSurface();
-    mEGLSurface = CreateEGLSurface();
-    if (mEGLSurface != EGL_NO_SURFACE) {
-      
-      
-      
-      
-      const auto& gle = gl::GLContextEGL::Cast(gl());
-      const auto& egl = gle->mEgl;
-      MakeCurrent();
-      
-      egl->fSwapInterval(0);
-    } else {
-      RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
-    }
+    egl->fSwapInterval(egl->Display(), 0);
+  } else {
+    RenderThread::Get()->HandleWebRenderError(WebRenderError::NEW_SURFACE);
   }
+#endif
   return true;
 }
 
@@ -176,7 +172,7 @@ void RenderCompositorEGL::DestroyEGLSurface() {
   
   if (mEGLSurface) {
     gle->SetEGLSurfaceOverride(EGL_NO_SURFACE);
-    egl->fDestroySurface(mEGLSurface);
+    egl->fDestroySurface(egl->Display(), mEGLSurface);
     mEGLSurface = nullptr;
   }
 }
