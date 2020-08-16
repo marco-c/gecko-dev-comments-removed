@@ -29,7 +29,7 @@ class WarpScriptSnapshot;
 #define WARP_OP_SNAPSHOT_LIST(_) \
   _(WarpArguments)               \
   _(WarpRegExp)                  \
-  _(WarpFunctionProto)           \
+  _(WarpBuiltinObject)           \
   _(WarpGetIntrinsic)            \
   _(WarpGetImport)               \
   _(WarpLambda)                  \
@@ -148,17 +148,17 @@ class WarpRegExp : public WarpOpSnapshot {
 };
 
 
-class WarpFunctionProto : public WarpOpSnapshot {
-  WarpGCPtr<JSObject*> proto_;
+class WarpBuiltinObject : public WarpOpSnapshot {
+  WarpGCPtr<JSObject*> builtin_;
 
  public:
-  static constexpr Kind ThisKind = Kind::WarpFunctionProto;
+  static constexpr Kind ThisKind = Kind::WarpBuiltinObject;
 
-  WarpFunctionProto(uint32_t offset, JSObject* proto)
-      : WarpOpSnapshot(ThisKind, offset), proto_(proto) {
-    MOZ_ASSERT(proto);
+  WarpBuiltinObject(uint32_t offset, JSObject* builtin)
+      : WarpOpSnapshot(ThisKind, offset), builtin_(builtin) {
+    MOZ_ASSERT(builtin);
   }
-  JSObject* proto() const { return proto_; }
+  JSObject* builtin() const { return builtin_; }
 
   void traceData(JSTracer* trc);
 

@@ -24,6 +24,7 @@
 #include "js/UniquePtr.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
+#include "vm/BuiltinObjectKind.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/Interpreter.h"
@@ -6386,22 +6387,25 @@ bool BaselineCodeGen<Handler>::emit_InitHomeObject() {
 }
 
 template <>
-bool BaselineCompilerCodeGen::emit_FunctionProto() {
+bool BaselineCompilerCodeGen::emit_BuiltinObject() {
   
-  JSObject* funProto = FunctionProtoOperation(cx);
-  if (!funProto) {
+  auto kind = BuiltinObjectKind(GET_UINT8(handler.pc()));
+  JSObject* builtin = BuiltinObjectOperation(cx, kind);
+  if (!builtin) {
     return false;
   }
-  frame.push(ObjectValue(*funProto));
+  frame.push(ObjectValue(*builtin));
   return true;
 }
 
 template <>
-bool BaselineInterpreterCodeGen::emit_FunctionProto() {
+bool BaselineInterpreterCodeGen::emit_BuiltinObject() {
   prepareVMCall();
 
-  using Fn = JSObject* (*)(JSContext*);
-  if (!callVM<Fn, FunctionProtoOperation>()) {
+  pushUint8BytecodeOperandArg(R0.scratchReg());
+
+  using Fn = JSObject* (*)(JSContext*, BuiltinObjectKind);
+  if (!callVM<Fn, BuiltinObjectOperation>()) {
     return false;
   }
 
