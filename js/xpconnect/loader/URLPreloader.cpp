@@ -78,6 +78,11 @@ nsresult URLPreloader::CollectReports(nsIHandleReportCallback* aHandleReport,
 
 
 already_AddRefed<URLPreloader> URLPreloader::Create() {
+  
+  
+  
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+
   RefPtr<URLPreloader> preloader = new URLPreloader();
   if (preloader->InitInternal().isOk()) {
     RegisterWeakMemoryReporter(preloader);
@@ -131,16 +136,11 @@ Result<Ok, nsresult> URLPreloader::InitInternal() {
     return Err(NS_ERROR_UNEXPECTED);
   }
 
-  if (XRE_IsParentProcess()) {
-    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
 
-    MOZ_TRY(obs->AddObserver(this, DELAYED_STARTUP_TOPIC, false));
+  MOZ_TRY(obs->AddObserver(this, DELAYED_STARTUP_TOPIC, false));
 
-    MOZ_TRY(NS_GetSpecialDirectory("ProfLDS", getter_AddRefs(mProfD)));
-  } else {
-    mStartupFinished = true;
-    mReaderInitialized = true;
-  }
+  MOZ_TRY(NS_GetSpecialDirectory("ProfLDS", getter_AddRefs(mProfD)));
 
   return Ok();
 }
