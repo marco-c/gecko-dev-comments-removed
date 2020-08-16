@@ -105,9 +105,7 @@ Statement::Statement()
       mParamCount(0),
       mResultColumnCount(0),
       mColumnNames(),
-      mExecuting(false),
-      mQueryStatusRecorded(false),
-      mHasExecuted(false) {}
+      mExecuting(false) {}
 
 nsresult Statement::initialize(Connection* aDBConnection,
                                sqlite3* aNativeConnection,
@@ -126,9 +124,6 @@ nsresult Statement::initialize(Connection* aDBConnection,
              ::sqlite3_errmsg(aNativeConnection)));
     MOZ_LOG(gStorageLog, LogLevel::Error,
             ("Statement was: '%s'", PromiseFlatCString(aSQLStatement).get()));
-
-    aDBConnection->RecordQueryStatus(srv);
-    mQueryStatusRecorded = true;
     return NS_ERROR_FAILURE;
   }
 
@@ -220,28 +215,6 @@ mozIStorageBindingParams* Statement::getParams() {
   return *mParamsArray->begin();
 }
 
-void Statement::MaybeRecordQueryStatus(int srv, bool isResetting) {
-  
-  
-  
-  if (!mHasExecuted) {
-    return;
-  }
-
-  if (!isResetting && !isErrorCode(srv)) {
-    
-    return;
-  }
-
-  
-  if (!mQueryStatusRecorded && mDBConnection) {
-    mDBConnection->RecordQueryStatus(srv);
-  }
-
-  
-  mQueryStatusRecorded = !isResetting;
-}
-
 Statement::~Statement() { (void)internalFinalize(true); }
 
 
@@ -277,7 +250,6 @@ int Statement::getAsyncStatement(sqlite3_stmt** _stmt) {
     int rc = mDBConnection->prepareStatement(mNativeConnection, sql,
                                              &mAsyncStatement);
     if (rc != SQLITE_OK) {
-      mDBConnection->RecordQueryStatus(rc);
       *_stmt = nullptr;
       return rc;
     }
@@ -373,11 +345,6 @@ nsresult Statement::internalFinalize(bool aDestructing) {
     }
 #endif  
   }
-
-  
-  
-  
-  MaybeRecordQueryStatus(srv, true);
 
   mDBStatement = nullptr;
 
@@ -493,12 +460,6 @@ Statement::Reset() {
 
   mExecuting = false;
 
-  
-  
-  
-  MaybeRecordQueryStatus(SQLITE_OK, true);
-  mHasExecuted = false;
-
   return NS_OK;
 }
 
@@ -556,8 +517,6 @@ Statement::ExecuteStep(bool* _moreResults) {
     mParamsArray = nullptr;
   }
   int srv = mDBConnection->stepStatement(mNativeConnection, mDBStatement);
-  mHasExecuted = true;
-  MaybeRecordQueryStatus(srv);
 
   if (srv != SQLITE_ROW && srv != SQLITE_DONE &&
       MOZ_LOG_TEST(gStorageLog, LogLevel::Debug)) {

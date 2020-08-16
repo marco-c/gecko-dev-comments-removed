@@ -39,15 +39,6 @@ namespace storage {
 
 
 
-bool isErrorCode(int aSQLiteResultCode);
-
-
-
-
-
-
-
-
 nsresult convertResultCode(int aSQLiteResultCode);
 
 

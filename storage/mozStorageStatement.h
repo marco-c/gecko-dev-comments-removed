@@ -77,24 +77,10 @@ class Statement final : public mozIStorageStatement,
   bool mExecuting;
 
   
-  
-  bool mQueryStatusRecorded;
-  
-  
-  bool mHasExecuted;
-
-  
 
 
 
   mozIStorageBindingParams* getParams();
-
-  
-
-
-
-
-  void MaybeRecordQueryStatus(int srv, bool isResetting = false);
 
   
 
