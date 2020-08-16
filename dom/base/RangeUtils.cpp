@@ -95,6 +95,21 @@ bool RangeUtils::IsValidPoints(
 }
 
 
+Maybe<bool> RangeUtils::IsNodeContainedInRange(nsINode& aNode,
+                                               AbstractRange* aAbstractRange) {
+  bool nodeIsBeforeRange{false};
+  bool nodeIsAfterRange{false};
+
+  const nsresult rv = CompareNodeToRange(&aNode, aAbstractRange,
+                                         &nodeIsBeforeRange, &nodeIsAfterRange);
+  if (NS_FAILED(rv)) {
+    return Nothing();
+  }
+
+  return Some(!nodeIsBeforeRange && !nodeIsAfterRange);
+}
+
+
 
 
 
