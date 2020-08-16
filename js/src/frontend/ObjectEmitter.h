@@ -16,13 +16,12 @@
 #include "frontend/BytecodeOffset.h"  
 #include "frontend/EmitterScope.h"    
 #include "frontend/NameOpEmitter.h"   
-#include "frontend/ObjLiteral.h"     
-#include "frontend/TDZCheckCache.h"  
-#include "js/RootingAPI.h"           
-#include "vm/BytecodeUtil.h"         
-#include "vm/JSAtom.h"               
-#include "vm/NativeObject.h"         
-#include "vm/Scope.h"                
+#include "frontend/TDZCheckCache.h"   
+#include "js/RootingAPI.h"            
+#include "vm/BytecodeUtil.h"          
+#include "vm/JSAtom.h"                
+#include "vm/NativeObject.h"          
+#include "vm/Scope.h"                 
 
 namespace js {
 

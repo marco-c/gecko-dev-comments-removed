@@ -26,7 +26,6 @@
 
 #include "jstypes.h"
 
-#include "frontend/NameAnalysisTypes.h"
 #include "frontend/SourceNotes.h"  
 #include "gc/Barrier.h"
 #include "gc/Rooting.h"
@@ -69,23 +68,16 @@ struct IonScriptCounts;
 class JitScript;
 }  
 
-class AutoSweepJitScript;
 class ModuleObject;
 class RegExpObject;
 class ScriptSourceHolder;
 class SourceCompressionTask;
 class Shape;
-class DebugAPI;
 class DebugScript;
 
 namespace frontend {
 struct CompilationInfo;
-class FunctionIndex;
-class FunctionBox;
-class ModuleSharedContext;
 class ScriptStencil;
-
-class BinASTSourceMetadata {};
 }  
 
 class ScriptCounts {
