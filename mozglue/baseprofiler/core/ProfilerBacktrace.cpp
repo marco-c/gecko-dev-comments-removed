@@ -20,7 +20,7 @@ ProfilerBacktrace::ProfilerBacktrace(
     const char* aName, int aThreadId,
     UniquePtr<ProfileChunkedBuffer> aProfileChunkedBuffer,
     UniquePtr<ProfileBuffer> aProfileBuffer)
-    : mName(strdup(aName)),
+    : mName(aName),
       mThreadId(aThreadId),
       mProfileChunkedBuffer(std::move(aProfileChunkedBuffer)),
       mProfileBuffer(std::move(aProfileBuffer)) {
@@ -44,8 +44,8 @@ void ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
   
   
   
-  StreamSamplesAndMarkers(mName.get(), mThreadId, *mProfileBuffer, aWriter, "",
-                          "", aProcessStartTime,
+  StreamSamplesAndMarkers(mName.c_str(), mThreadId, *mProfileBuffer, aWriter,
+                          "", "", aProcessStartTime,
                            TimeStamp(),
                            TimeStamp(),
                            0, aUniqueStacks);
