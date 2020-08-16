@@ -1096,9 +1096,7 @@ class UrlbarInput {
 
     if (this.searchMode) {
       options.searchMode = this.searchMode;
-      if (this.searchMode.source) {
-        options.sources = [this.searchMode.source];
-      }
+      options.sources = [this.searchMode.source];
     }
 
     
@@ -1195,15 +1193,10 @@ class UrlbarInput {
     this._searchModeLabel.removeAttribute("data-l10n-id");
 
     if (engineName) {
-      this.searchMode = { engineName };
-      if (source) {
-        this.searchMode.source = source;
-      } else if (UrlbarUtils.WEB_ENGINE_NAMES.has(engineName)) {
-        
-        
-        
-        this.searchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
-      }
+      this.searchMode = {
+        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        engineName,
+      };
       this._searchModeIndicatorTitle.textContent = engineName;
       this._searchModeLabel.textContent = engineName;
       this.document.l10n.setAttributes(
@@ -1260,12 +1253,7 @@ class UrlbarInput {
 
   searchModeShortcut() {
     if (this.view.oneOffsRefresh) {
-      
-      
-      this.setSearchMode({
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        engineName: Services.search.defaultEngine.name,
-      });
+      this.setSearchMode({ engineName: Services.search.defaultEngine.name });
       this.search("");
     } else {
       this.search(UrlbarTokenizer.RESTRICT.SEARCH);

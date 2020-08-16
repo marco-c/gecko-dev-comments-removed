@@ -492,7 +492,6 @@ function Search(
     this._maxResults = queryContext.maxResults;
     this._userContextId = queryContext.userContextId;
     this._currentPage = queryContext.currentPage;
-    this._engineName = queryContext.searchMode?.engineName;
   } else {
     let params = new Set(searchParam.split(" "));
     this._enableActions = params.has("enable-actions");
@@ -549,6 +548,10 @@ function Search(
     this.setBehavior("restrict");
     let behavior = sourceToBehaviorMap.get(queryContext.restrictSource);
     this.setBehavior(behavior);
+
+    if (behavior == "search" && queryContext.engineName) {
+      this._engineName = queryContext.engineName;
+    }
 
     
     
@@ -785,16 +788,6 @@ Search.prototype = {
     if (this._trimmedOriginalSearchString == "@" && tokenAliasEngines.length) {
       this._autocompleteSearch.finishSearch(true);
       return;
-    }
-
-    
-    
-    if (this._engineName && !this._keywordSubstitute) {
-      let engine = Services.search.getEngineByName(this._engineName);
-      this._keywordSubstitute = {
-        host: engine.getResultDomain(),
-        keyword: null,
-      };
     }
 
     
@@ -1092,10 +1085,7 @@ Search.prototype = {
 
     this._addMatch(match);
     if (!this._keywordSubstitute) {
-      this._keywordSubstitute = {
-        host: entry.url.host,
-        keyword,
-      };
+      this._keywordSubstitute = entry.url.host;
     }
     return true;
   },
@@ -1114,10 +1104,7 @@ Search.prototype = {
     };
     this._addSearchEngineMatch(this._searchEngineAliasMatch);
     if (!this._keywordSubstitute) {
-      this._keywordSubstitute = {
-        host: engine.getResultDomain(),
-        keyword: alias,
-      };
+      this._keywordSubstitute = engine.getResultDomain();
     }
     return true;
   },
@@ -1708,10 +1695,7 @@ Search.prototype = {
   get _keywordSubstitutedSearchString() {
     let tokens = this._searchTokens.map(t => t.value);
     if (this._keywordSubstitute) {
-      tokens = [
-        this._keywordSubstitute.host,
-        ...tokens.slice(this._keywordSubstitute.keyword ? 1 : 0),
-      ];
+      tokens = [this._keywordSubstitute, ...tokens.slice(1)];
     }
     return tokens.join(" ");
   },
