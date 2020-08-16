@@ -29,7 +29,7 @@ class nsPrinterListBase : public nsIPrinterList {
 
   
   
-  virtual nsTArray<PrinterInfo> GetPrinters() const = 0;
+  virtual nsTArray<PrinterInfo> Printers() const = 0;
 
   
   
