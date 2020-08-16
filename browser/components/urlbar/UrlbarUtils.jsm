@@ -180,6 +180,20 @@ var UrlbarUtils = {
   REGEXP_SINGLE_WORD: /^[^\s@:/?#]+(:\d+)?$/,
 
   
+  
+  
+  
+  WEB_ENGINE_NAMES: new Set([
+    "Baidu",
+    "Bing",
+    "DuckDuckGo",
+    "Ecosia",
+    "Google",
+    "Qwant",
+    "Yandex",
+  ]),
+
+  
 
 
 

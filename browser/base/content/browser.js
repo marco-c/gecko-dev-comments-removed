@@ -4035,12 +4035,17 @@ const BrowserSearch = {
 
 
 
-  initPlaceHolder() {
+
+
+
+
+
+  initPlaceHolder(force = false) {
     const prefName =
       "browser.urlbar.placeholderName" +
       (PrivateBrowsingUtils.isWindowPrivate(window) ? ".private" : "");
     let engineName = Services.prefs.getStringPref(prefName, "");
-    if (engineName) {
+    if (engineName || force) {
       
       this._setURLBarPlaceholder(engineName);
     }
