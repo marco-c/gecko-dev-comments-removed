@@ -507,7 +507,10 @@ static_assert(sizeof(nsXPTMethodInfo) == 8, "wrong size");
 
 
 
-#define PARAM_BUFFER_COUNT 16
+
+
+
+#define PARAM_BUFFER_COUNT 14
 
 
 
