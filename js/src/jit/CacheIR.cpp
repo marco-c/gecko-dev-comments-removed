@@ -8810,6 +8810,8 @@ bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
     return true;
   }
 
+  bool isConstructing = IsConstructOp(op_);
+
   
   
   switch (calleeFunc->jitInfo()->inlinableNative) {
@@ -8861,6 +8863,10 @@ bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
     }
 
     case InlinableNative::String: {
+      if (!isConstructing) {
+        return true;
+      }
+
       RootedString emptyString(cx_, cx_->runtime()->emptyString);
       res.set(StringObject::create(cx_, emptyString,  nullptr,
                                    TenuredObject));
