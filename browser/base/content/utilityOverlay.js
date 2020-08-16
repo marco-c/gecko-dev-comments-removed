@@ -734,6 +734,11 @@ function checkForMiddleClick(node, event) {
 
     
     
+    
+    event.stopPropagation();
+
+    
+    
     closeMenus(event.target);
   }
 }
