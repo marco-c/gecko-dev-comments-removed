@@ -210,27 +210,8 @@ class VirtualenvManager(object):
         called out to), the path to create the virtualenv in, and a handle to
         write output to.
         """
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        venv_python = os.path.join(self.bin_path, os.path.basename(python))
-        if os.path.islink(venv_python):
-            os.remove(venv_python)
+        if os.path.exists(self.virtualenv_root):
+            shutil.rmtree(self.virtualenv_root)
 
         args = [python, self.virtualenv_script_path,
                 
