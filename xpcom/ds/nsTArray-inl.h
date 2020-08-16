@@ -598,6 +598,10 @@ void nsTArray_base<Alloc, RelocationStrategy>::MoveConstructNonAutoArray(
   
   
 
+  if (aOther.IsEmpty()) {
+    return;
+  }
+
   
   
   const bool otherUsesAutoArrayBuffer = aOther.UsesAutoArrayBuffer();
@@ -611,6 +615,9 @@ void nsTArray_base<Alloc, RelocationStrategy>::MoveConstructNonAutoArray(
 
   const bool otherIsAuto = otherUsesAutoArrayBuffer || aOther.IsAutoArray();
   mHdr = aOther.mHdr;
+  
+  
+  MOZ_ASSERT(EmptyHdr() != mHdr);
 
   if (otherIsAuto) {
     mHdr->mIsAutoArray = false;
