@@ -2412,7 +2412,7 @@ class HTMLEditor final : public TextEditor,
 
 
   EditorDOMPoint GetGoodCaretPointFor(
-      nsIContent& aContent, nsIEditor::EDirection aDirectionAndAmount);
+      nsIContent& aContent, nsIEditor::EDirection aDirectionAndAmount) const;
 
   
 
@@ -2706,6 +2706,14 @@ class HTMLEditor final : public TextEditor,
 
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
     MaybeInsertBRElementBeforeEmptyListItemElement(HTMLEditor& aHTMLEditor);
+
+    
+
+
+
+    [[nodiscard]] Result<EditorDOMPoint, nsresult> GetNewCaretPoisition(
+        const HTMLEditor& aHTMLEditor,
+        nsIEditor::EDirection aDirectionAndAmount) const;
 
     RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
   };
