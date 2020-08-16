@@ -288,10 +288,6 @@ class Assembler : public vixl::Assembler {
   
   void addPendingJump(BufferOffset src, ImmPtr target, RelocationKind kind);
 
-  
-  
-  size_t addPatchableJump(BufferOffset src, RelocationKind kind);
-
  public:
   static uint32_t PatchWrite_NearCallSize() { return 4; }
 
