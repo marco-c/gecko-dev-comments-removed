@@ -232,6 +232,11 @@ class ContentSubtreeIterator final : public ContentIteratorBase {
   
 
 
+  nsIContent* DetermineFirstContent() const;
+
+  
+
+
   nsresult InitWithRange();
 
   
@@ -239,7 +244,7 @@ class ContentSubtreeIterator final : public ContentIteratorBase {
   
   
   
-  nsIContent* GetTopAncestorInRange(nsINode* aNode);
+  nsIContent* GetTopAncestorInRange(nsINode* aNode) const;
 
   RefPtr<nsRange> mRange;
 
