@@ -48,7 +48,7 @@ const RecipeExecutor = class RecipeExecutor {
       scalar_add: this.scalarAdd,
       vector_add: this.vectorAdd,
       make_boolean: this.makeBoolean,
-      whitelist_fields: this.whitelistFields,
+      allow_fields: this.allowFields,
       filter_by_value: this.filterByValue,
       l2_normalize: this.l2Normalize,
       prob_normalize: this.probNormalize,
@@ -681,7 +681,7 @@ const RecipeExecutor = class RecipeExecutor {
 
 
 
-  whitelistFields(item, config) {
+  allowFields(item, config) {
     let newItem = {};
     for (let ele of config.fields) {
       if (ele in item) {
