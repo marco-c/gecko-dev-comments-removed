@@ -1565,7 +1565,7 @@ void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
     
     {
       ScratchFloat32Scope scratch(*this);
-      vroundss(X86Encoding::RoundDown, src, scratch, scratch);
+      vroundss(X86Encoding::RoundDown, src, scratch);
       truncateFloat32ToInt32(scratch, dest, fail);
     }
   } else {
@@ -1620,7 +1620,7 @@ void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
     
     {
       ScratchDoubleScope scratch(*this);
-      vroundsd(X86Encoding::RoundDown, src, scratch, scratch);
+      vroundsd(X86Encoding::RoundDown, src, scratch);
       truncateDoubleToInt32(scratch, dest, fail);
     }
   } else {
@@ -1684,7 +1684,7 @@ void MacroAssembler::ceilFloat32ToInt32(FloatRegister src, Register dest,
     
     bind(&lessThanOrEqualMinusOne);
     
-    vroundss(X86Encoding::RoundUp, src, scratch, scratch);
+    vroundss(X86Encoding::RoundUp, src, scratch);
     truncateFloat32ToInt32(scratch, dest, fail);
     return;
   }
@@ -1729,7 +1729,7 @@ void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
     
     bind(&lessThanOrEqualMinusOne);
     
-    vroundsd(X86Encoding::RoundUp, src, scratch, scratch);
+    vroundsd(X86Encoding::RoundUp, src, scratch);
     truncateDoubleToInt32(scratch, dest, fail);
     return;
   }
@@ -1848,7 +1848,7 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
       
       
       addFloat32(src, temp);
-      vroundss(X86Encoding::RoundDown, temp, scratch, scratch);
+      vroundss(X86Encoding::RoundDown, temp, scratch);
 
       
       truncateFloat32ToInt32(scratch, dest, fail);
@@ -1934,7 +1934,7 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
       
       
       addDouble(src, temp);
-      vroundsd(X86Encoding::RoundDown, temp, scratch, scratch);
+      vroundsd(X86Encoding::RoundDown, temp, scratch);
 
       
       truncateDoubleToInt32(scratch, dest, fail);
