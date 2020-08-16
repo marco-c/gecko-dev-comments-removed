@@ -85,6 +85,11 @@ function testInXOriginFrame() {
   }
 }
 
+function testInDifferentProcess() {
+  
+  return SpecialPowers.Cu.isRemoteProxy($("testframe").contentWindow);
+}
+
 
 
 
@@ -787,12 +792,30 @@ TestRunner.testFinished = function(tests) {
   });
 };
 
+
+
+
+TestRunner._xoriginAssertionCount = 0;
+TestRunner.addAssertionCount = function(count) {
+  if (!testInXOriginFrame()) {
+    TestRunner.error(
+      `addAssertionCount should only be called by a cross origin test`
+    );
+    return;
+  }
+
+  if (testInDifferentProcess()) {
+    TestRunner._xoriginAssertionCount += count;
+  }
+};
+
 TestRunner.testUnloaded = function() {
   
   
   
   if (SpecialPowers.isDebugBuild) {
-    var newAssertionCount = SpecialPowers.assertionCount();
+    var newAssertionCount =
+      SpecialPowers.assertionCount() + TestRunner._xoriginAssertionCount;
     var numAsserts = newAssertionCount - TestRunner._lastAssertionCount;
     TestRunner._lastAssertionCount = newAssertionCount;
 
@@ -954,6 +977,7 @@ var xOriginDispatchMap = {
   "structuredLogger.testStatus": TestRunner.structuredLogger.testStatus,
   "structuredLogger.info": TestRunner.structuredLogger.info,
   testFinished: TestRunner.testFinished,
+  addAssertionCount: TestRunner.addAssertionCount,
 };
 
 function xOriginTestRunnerHandler(event) {
