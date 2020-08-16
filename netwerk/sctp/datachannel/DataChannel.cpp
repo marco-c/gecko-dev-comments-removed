@@ -904,15 +904,16 @@ void DataChannelConnection::ProcessQueuedOpens() {
 
   
   
-  nsRefPtrDeque<DataChannel> temp;
-  RefPtr<DataChannel> temp_channel;
+  nsDeque<DataChannel> temp;
+  DataChannel* temp_channel;  
   while (nullptr != (temp_channel = mPending.PopFront())) {
-    temp.Push(temp_channel.forget());
+    temp.Push(temp_channel);
   }
 
   RefPtr<DataChannel> channel;
-
-  while (nullptr != (channel = temp.PopFront())) {
+  
+  
+  while (nullptr != (channel = dont_AddRef(temp.PopFront()))) {
     if (channel->mFlags & DATA_CHANNEL_FLAGS_FINISH_OPEN) {
       DC_DEBUG(("Processing queued open for %p (%u)", channel.get(),
                 channel->mStream));
@@ -2505,7 +2506,10 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
     DC_DEBUG(("Queuing channel %p (%u) to finish open", channel.get(), stream));
     
     channel->mFlags |= DATA_CHANNEL_FLAGS_FINISH_OPEN;
-    mPending.Push(channel);
+    
+    DataChannel* rawChannel = channel;
+    rawChannel->AddRef();
+    mPending.Push(rawChannel);
     return channel.forget();
   }
 
@@ -3051,7 +3055,7 @@ void DataChannelConnection::CloseAll() {
 
   
   RefPtr<DataChannel> channel;
-  while (nullptr != (channel = mPending.PopFront())) {
+  while (nullptr != (channel = dont_AddRef(mPending.PopFront()))) {
     DC_DEBUG(("closing pending channel %p, stream %u", channel.get(),
               channel->mStream));
     channel->Close();  
