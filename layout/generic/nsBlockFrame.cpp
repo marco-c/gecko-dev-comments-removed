@@ -2565,9 +2565,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
           aState.mReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE ||
           GetPrevInFlow() || GetNextInFlow() ||
           
-          
-          
-          HasPushedFloats();
+          aState.mPresContext->IsPaginated();
       if (isPaginated) {
         
         const bool mayContainFloats =
@@ -2577,6 +2575,13 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
           
           
           if (deltaBCoord != 0 || aState.mReflowInput.IsBResize()) {
+            
+            
+            
+            
+            line->MarkDirty();
+          } else if (HasPushedFloats()) {
+            
             
             
             
@@ -3511,8 +3516,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
   }
 
   nsIFrame* clearanceFrame = nullptr;
-  nscoord startingBCoord = aState.mBCoord;
-  nsCollapsingMargin incomingMargin = aState.mPrevBEndMargin;
+  const nscoord startingBCoord = aState.mBCoord;
+  const nsCollapsingMargin incomingMargin = aState.mPrevBEndMargin;
   nscoord clearance;
   
   
@@ -3876,6 +3881,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     } while (true);
 
     if (mayNeedRetry && clearanceFrame) {
+      
+      
       aState.FloatManager()->PopState(&floatManagerState);
       aState.mBCoord = startingBCoord;
       aState.mPrevBEndMargin = incomingMargin;
