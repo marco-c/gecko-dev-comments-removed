@@ -2,7 +2,11 @@
 
 
 
-const { gBrowser, PrintUtils } = window.docShell.chromeEventHandler.ownerGlobal;
+const {
+  gBrowser,
+  PrintUtils,
+  Services,
+} = window.docShell.chromeEventHandler.ownerGlobal;
 
 document.addEventListener(
   "DOMContentLoaded",
@@ -42,43 +46,23 @@ var PrintEventHandler = {
 
     
     
-    this.viewSettings = new Proxy(this.settings, {
-      get(target, name) {
-        switch (name) {
-          case "printBackgrounds":
-            return target.printBGImages || target.printBGColors;
-          case "printAllOrCustomRange":
-            return target.printRange == Ci.nsIPrintSettings.kRangeAllPages
-              ? "all"
-              : "custom";
-        }
-        return target[name];
-      },
-      set(target, name, value) {
-        switch (name) {
-          case "printBackgrounds":
-            target.printBGImages = value;
-            target.printBGColors = value;
-            break;
-          case "printAllOrCustomRange":
-            target.printRange =
-              value == "all"
-                ? Ci.nsIPrintSettings.kRangeAllPages
-                : Ci.nsIPrintSettings.kRangeSpecifiedPageRange;
-            
-            
-            break;
-          default:
-            target[name] = value;
-        }
-      },
-    });
+    this.viewSettings = new Proxy(this.settings, PrintSettingsViewProxy);
 
     this.settingFlags = {
       orientation: Ci.nsIPrintSettings.kInitSaveOrientation,
       printerName: Ci.nsIPrintSettings.kInitSaveAll,
       scaling: Ci.nsIPrintSettings.kInitSaveScaling,
       shrinkToFit: Ci.nsIPrintSettings.kInitSaveShrinkToFit,
+      printFootersHeaders:
+        Ci.nsIPrintSettings.kInitSaveHeaderLeft |
+        Ci.nsIPrintSettings.kInitSaveHeaderCenter |
+        Ci.nsIPrintSettings.kInitSaveHeaderRight |
+        Ci.nsIPrintSettings.kInitSaveFooterLeft |
+        Ci.nsIPrintSettings.kInitSaveFooterCenter |
+        Ci.nsIPrintSettings.kInitSaveFooterRight,
+      printBackgrounds:
+        Ci.nsIPrintSettings.kInitSaveBGColors |
+        Ci.nsIPrintSettings.kInitSaveBGImages,
     };
 
     document.dispatchEvent(
@@ -193,6 +177,81 @@ var PrintEventHandler = {
       };
     });
     return destinations;
+  },
+};
+
+const PrintSettingsViewProxy = {
+  get defaultHeadersAndFooterValues() {
+    const defaultBranch = Services.prefs.getDefaultBranch("");
+    let settingValues = {};
+    for (let [name, pref] of Object.entries(this.headerFooterSettingsPrefs)) {
+      settingValues[name] = defaultBranch.getStringPref(pref);
+    }
+    
+    Object.defineProperty(this, "defaultHeadersAndFooterValues", {
+      value: settingValues,
+    });
+    return settingValues;
+  },
+
+  headerFooterSettingsPrefs: {
+    footerStrCenter: "print.print_footercenter",
+    footerStrLeft: "print.print_footerleft",
+    footerStrRight: "print.print_footerright",
+    headerStrCenter: "print.print_headercenter",
+    headerStrLeft: "print.print_headerleft",
+    headerStrRight: "print.print_headerright",
+  },
+
+  get(target, name) {
+    switch (name) {
+      case "printBackgrounds":
+        return target.printBGImages || target.printBGColors;
+
+      case "printFootersHeaders":
+        
+        
+        return Object.keys(this.headerFooterSettingsPrefs).some(
+          name => !!target[name]
+        );
+
+      case "printAllOrCustomRange":
+        return target.printRange == Ci.nsIPrintSettings.kRangeAllPages
+          ? "all"
+          : "custom";
+    }
+    return target[name];
+  },
+
+  set(target, name, value) {
+    switch (name) {
+      case "printBackgrounds":
+        target.printBGImages = value;
+        target.printBGColors = value;
+        break;
+
+      case "printFootersHeaders":
+        
+        
+        for (let [settingName, defaultValue] of Object.entries(
+          this.defaultHeadersAndFooterValues
+        )) {
+          target[settingName] = value ? defaultValue : "";
+        }
+        break;
+
+      case "printAllOrCustomRange":
+        target.printRange =
+          value == "all"
+            ? Ci.nsIPrintSettings.kRangeAllPages
+            : Ci.nsIPrintSettings.kRangeSpecifiedPageRange;
+        
+        
+        break;
+
+      default:
+        target[name] = value;
+    }
   },
 };
 
@@ -399,23 +458,44 @@ class PageRangeInput extends PrintUIControlMixin(HTMLElement) {
 }
 customElements.define("page-range-input", PageRangeInput);
 
-class BackgroundsInput extends PrintUIControlMixin(HTMLInputElement) {
+class PrintSettingNumber extends PrintUIControlMixin(HTMLInputElement) {
   connectedCallback() {
-    this.type = "checkbox";
+    this.type = "number";
+    this.settingName = this.dataset.settingName;
     super.connectedCallback();
   }
-
   update(settings) {
-    this.checked = settings.printBackgrounds;
+    this.value = settings[this.settingName];
   }
 
   handleEvent(e) {
     this.dispatchSettingsChange({
-      printBackgrounds: this.checked,
+      [this.settingName]: this.value,
     });
   }
 }
-customElements.define("backgrounds-input", BackgroundsInput, {
+customElements.define("setting-number", PrintSettingNumber, {
+  extends: "input",
+});
+
+class PrintSettingCheckbox extends PrintUIControlMixin(HTMLInputElement) {
+  connectedCallback() {
+    this.type = "checkbox";
+    this.settingName = this.dataset.settingName;
+    super.connectedCallback();
+  }
+
+  update(settings) {
+    this.checked = settings[this.settingName];
+  }
+
+  handleEvent(e) {
+    this.dispatchSettingsChange({
+      [this.settingName]: this.checked,
+    });
+  }
+}
+customElements.define("setting-checkbox", PrintSettingCheckbox, {
   extends: "input",
 });
 
