@@ -24,7 +24,7 @@ class nsPrinterListBase : public nsIPrinterList {
     
     nsString mName;
     
-    std::array<void*, 2> mCupsHandles{};
+    void* mCupsHandles[2]{nullptr, nullptr};
   };
 
   
