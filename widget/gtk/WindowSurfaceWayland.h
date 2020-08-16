@@ -13,7 +13,6 @@
 #include "mozilla/gfx/Types.h"
 #include "nsWaylandDisplay.h"
 #include "nsWindow.h"
-#include "DMABufSurface.h"
 #include "WindowSurface.h"
 
 #define BACK_BUFFER_NUM 3
@@ -45,8 +44,6 @@ class WaylandShmPool {
 
 class WindowBackBuffer {
  public:
-  virtual bool IsDMABufBuffer() { return false; };
-
   virtual already_AddRefed<gfx::DrawTarget> Lock() = 0;
   virtual void Unlock() = 0;
   virtual bool IsLocked() = 0;
@@ -127,35 +124,6 @@ class WindowBackBufferShm : public WindowBackBuffer {
   bool mIsLocked;
 };
 
-class WindowBackBufferDMABuf : public WindowBackBuffer {
- public:
-  WindowBackBufferDMABuf(WindowSurfaceWayland* aWindowSurfaceWayland,
-                         int aWidth, int aHeight);
-  ~WindowBackBufferDMABuf();
-
-  bool IsDMABufBuffer() { return true; };
-
-  bool IsAttached();
-  void SetAttached();
-
-  int GetWidth();
-  int GetHeight();
-  wl_buffer* GetWlBuffer();
-
-  bool SetImageDataFromBuffer(class WindowBackBuffer* aSourceBuffer);
-
-  already_AddRefed<gfx::DrawTarget> Lock();
-  bool IsLocked();
-  void Unlock();
-
-  void Clear();
-  void Detach(wl_buffer* aBuffer);
-  bool Resize(int aWidth, int aHeight);
-
- private:
-  RefPtr<DMABufSurfaceRGBA> mDMAbufSurface;
-};
-
 class WindowImageSurface {
  public:
   static void Draw(gfx::SourceSurface* aSurface, gfx::DrawTarget* aDest,
@@ -227,21 +195,15 @@ class WindowSurfaceWayland : public WindowSurface {
     
     CACHE_MISSING = 1,
     
-    
-    
     CACHE_NONE = 2
   } RenderingCacheMode;
 
  private:
   WindowBackBuffer* GetWaylandBufferWithSwitch();
   WindowBackBuffer* GetWaylandBufferRecent();
-  WindowBackBuffer* SetNewWaylandBuffer(bool aAllowDMABufBackend);
-  WindowBackBuffer* CreateWaylandBuffer(int aWidth, int aHeight,
-                                        bool aUseDMABufBackend);
-  WindowBackBuffer* CreateWaylandBufferInternal(int aWidth, int aHeight,
-                                                bool aUseDMABufBackend);
-  WindowBackBuffer* WaylandBufferFindAvailable(int aWidth, int aHeight,
-                                               bool aUseDMABufBackend);
+  WindowBackBuffer* SetNewWaylandBuffer();
+  WindowBackBuffer* CreateWaylandBuffer(int aWidth, int aHeight);
+  WindowBackBuffer* WaylandBufferFindAvailable(int aWidth, int aHeight);
 
   already_AddRefed<gfx::DrawTarget> LockWaylandBuffer();
   void UnlockWaylandBuffer();
@@ -275,7 +237,6 @@ class WindowSurfaceWayland : public WindowSurface {
   
   WindowBackBuffer* mWaylandBuffer;
   WindowBackBuffer* mShmBackupBuffer[BACK_BUFFER_NUM];
-  WindowBackBuffer* mDMABackupBuffer[BACK_BUFFER_NUM];
 
   
   
@@ -334,10 +295,6 @@ class WindowSurfaceWayland : public WindowSurface {
   bool mSmoothRendering;
 
   bool mIsMainThread;
-
-  static bool UseDMABufBackend();
-  static bool mUseDMABufInitialized;
-  static bool mUseDMABuf;
 };
 
 }  
