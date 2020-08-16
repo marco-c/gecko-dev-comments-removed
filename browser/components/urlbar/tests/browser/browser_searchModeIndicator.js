@@ -12,6 +12,14 @@ const TEST_QUERY = "test string";
 const DEFAULT_ENGINE_NAME = "Test";
 const SUGGESTIONS_ENGINE_NAME = "searchSuggestionEngine.xml";
 
+
+
+const TOP_SITES_URLS = [
+  "http://top-site-0.com/",
+  "http://top-site-1.com/",
+  "http://top-site-2.com/",
+];
+
 let suggestionsEngine;
 let defaultEngine;
 
@@ -35,7 +43,25 @@ add_task(async function setup() {
     await Services.search.removeEngine(defaultEngine);
   });
 
-  SpecialPowers.pushPrefEnv({
+  
+  await PlacesUtils.history.clear();
+  await PlacesUtils.bookmarks.eraseEverything();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        TOP_SITES_URLS.join(","),
+      ],
+    ],
+  });
+  await updateTopSites(sites =>
+    ObjectUtils.deepEqual(
+      sites.map(s => s.url),
+      TOP_SITES_URLS
+    )
+  );
+
+  await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.search.separatePrivateDefault.ui.enabled", false],
       ["browser.urlbar.update2", true],
@@ -84,6 +110,22 @@ async function verifySearchModeResultsRemoved(window) {
   );
 }
 
+async function verifyTopSitesResultsAdded(window) {
+  Assert.equal(
+    UrlbarTestUtils.getResultCount(window),
+    TOP_SITES_URLS.length,
+    "Expected number of top sites results"
+  );
+  for (let i = 0; i < TOP_SITES_URLS; i++) {
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    Assert.equal(
+      result.url,
+      TOP_SITES_URLS[i],
+      `Expected top sites result URL at index ${i}`
+    );
+  }
+}
+
 
 
 add_task(async function backspace() {
@@ -99,7 +141,6 @@ add_task(async function backspace() {
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is open.");
 
   
-  
   await UrlbarTestUtils.promisePopupOpen(window, () => {
     if (gURLBar.getAttribute("pageproxystate") == "invalid") {
       gURLBar.handleRevert();
@@ -107,13 +148,11 @@ add_task(async function backspace() {
     EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
   });
   await UrlbarTestUtils.enterSearchMode(window);
-  await UrlbarTestUtils.exitSearchMode(window, {
-    backspace: true,
-    waitForSearch: false,
-  });
+  await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is open.");
+  await verifyTopSitesResultsAdded(window);
+  await UrlbarTestUtils.promisePopupClose(window);
 
-  
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -121,7 +160,7 @@ add_task(async function backspace() {
   });
   await UrlbarTestUtils.enterSearchMode(window);
   await verifySearchModeResultsAdded(window);
-  UrlbarTestUtils.promisePopupClose(window);
+  await UrlbarTestUtils.promisePopupClose(window);
   await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
   await verifySearchModeResultsRemoved(window);
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is now open.");
@@ -134,15 +173,11 @@ add_task(async function backspace() {
     EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
   });
   await UrlbarTestUtils.enterSearchMode(window);
-  UrlbarTestUtils.promisePopupClose(window);
-  await UrlbarTestUtils.exitSearchMode(window, {
-    backspace: true,
-    waitForSearch: false,
-  });
-  Assert.ok(
-    !UrlbarTestUtils.isPopupOpen(window),
-    "Urlbar view is still closed."
-  );
+  await UrlbarTestUtils.promisePopupClose(window);
+  await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
+  Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is open.");
+  await verifyTopSitesResultsAdded(window);
+  await UrlbarTestUtils.promisePopupClose(window);
 });
 
 
@@ -183,6 +218,21 @@ add_task(async function click_close() {
   await verifySearchModeResultsAdded(window);
   await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
   await verifySearchModeResultsRemoved(window);
+  Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is open.");
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  
+  await UrlbarTestUtils.promisePopupOpen(window, () => {
+    if (gURLBar.getAttribute("pageproxystate") == "invalid") {
+      gURLBar.handleRevert();
+    }
+    EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
+  });
+  await UrlbarTestUtils.enterSearchMode(window);
+  await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
+  Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is open.");
+  await verifyTopSitesResultsAdded(window);
+  await UrlbarTestUtils.promisePopupClose(window);
 
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -190,11 +240,28 @@ add_task(async function click_close() {
     value: TEST_QUERY,
   });
   await UrlbarTestUtils.enterSearchMode(window);
-  UrlbarTestUtils.promisePopupClose(window);
+  await verifySearchModeResultsAdded(window);
+  await UrlbarTestUtils.promisePopupClose(window);
   await UrlbarTestUtils.exitSearchMode(window, {
     clickClose: true,
     waitForSearch: false,
   });
+  Assert.ok(!UrlbarTestUtils.isPopupOpen(window), "Urlbar view is closed.");
+
+  
+  await UrlbarTestUtils.promisePopupOpen(window, () => {
+    if (gURLBar.getAttribute("pageproxystate") == "invalid") {
+      gURLBar.handleRevert();
+    }
+    EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
+  });
+  await UrlbarTestUtils.enterSearchMode(window);
+  await UrlbarTestUtils.promisePopupClose(window);
+  await UrlbarTestUtils.exitSearchMode(window, {
+    clickClose: true,
+    waitForSearch: false,
+  });
+  Assert.ok(!UrlbarTestUtils.isPopupOpen(window), "Urlbar view is closed.");
 });
 
 
