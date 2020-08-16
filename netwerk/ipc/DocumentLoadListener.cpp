@@ -609,10 +609,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     }
   }
 
-  
-  
-  nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(this);
-
   mOtherPid = aPid;
   mChannelCreationURI = aLoadState->URI();
   mLoadStateLoadFlags = aLoadState->LoadFlags();
@@ -1989,19 +1985,6 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   
   nsContentSecurityUtils::PerformCSPFrameAncestorAndXFOCheck(mChannel);
-
-  
-  
-  
-  if (httpChannel) {
-    nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->LoadInfo();
-    bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-    if (nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin)) {
-      uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-      httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_TOP_LEVEL_LOAD_IN_PROGRESS;
-      loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
-    }
-  }
 
   auto* loadingContext = GetLoadingBrowsingContext();
   if (!loadingContext || loadingContext->IsDiscarded()) {
