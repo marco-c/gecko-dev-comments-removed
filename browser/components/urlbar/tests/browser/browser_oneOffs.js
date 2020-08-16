@@ -59,6 +59,16 @@ add_task(async function init() {
   await updateTopSites(sites => {
     return sites && sites[0] && sites[0].url.startsWith("http://example.com/");
   });
+
+  
+  
+  EventUtils.synthesizeMouse(
+    gURLBar.inputField,
+    0,
+    0,
+    { type: "mousemove" },
+    window
+  );
 });
 
 
