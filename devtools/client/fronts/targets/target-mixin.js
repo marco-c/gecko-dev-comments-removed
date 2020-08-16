@@ -314,10 +314,17 @@ function TargetMixin(parentClass) {
     
     async getFront(typeName) {
       let front = this.fronts.get(typeName);
-      
-      if (front?.actorID || (front && typeof front.then === "function")) {
-        return front;
+      if (front) {
+        
+        
+        
+        const isFrontInitializing = typeof front.then === "function";
+        const isFrontAlive = !isFrontInitializing && !front.isDestroyed();
+        if (isFrontInitializing || isFrontAlive) {
+          return front;
+        }
       }
+
       front = getFront(this.client, typeName, this.targetForm, this);
       this.fronts.set(typeName, front);
       
@@ -580,7 +587,7 @@ function TargetMixin(parentClass) {
 
         
         
-      } else if (this.detach && this.actorID) {
+      } else if (this.detach && !this.isDestroyed()) {
         
         
         

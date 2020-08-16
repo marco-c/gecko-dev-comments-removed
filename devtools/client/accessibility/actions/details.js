@@ -16,7 +16,7 @@ exports.updateDetails = accessible => async dispatch => {
   );
   
   
-  if (!accessible.actorID) {
+  if (accessible.isDestroyed()) {
     return;
   }
   try {

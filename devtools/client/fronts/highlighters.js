@@ -23,15 +23,11 @@ class HighlighterFront extends FrontClassWithSpec(highlighterSpec) {
 
     
     this.highlight = safeAsyncMethod(this.highlight.bind(this), () =>
-      this._isDestroyed()
+      this.isDestroyed()
     );
     this.unhighlight = safeAsyncMethod(this.unhighlight.bind(this), () =>
-      this._isDestroyed()
+      this.isDestroyed()
     );
-  }
-
-  _isDestroyed() {
-    return !this.actorID;
   }
 
   

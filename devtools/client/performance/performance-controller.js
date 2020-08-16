@@ -253,8 +253,7 @@ const PerformanceController = {
   async stopRecording() {
     const recording = this.getLatestManualRecording();
 
-    
-    if (this.front.actorID) {
+    if (!this.front.isDestroyed()) {
       await this.front.stopRecording(recording);
     } else {
       

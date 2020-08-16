@@ -127,7 +127,7 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
     } catch (e) {
       
       
-      if (this.actorID) {
+      if (!this.isDestroyed()) {
         console.error(
           "Failed to retrieve the async form data for " + this.url,
           e
@@ -137,7 +137,7 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
   }
 
   async getTarget() {
-    if (this._targetFront && this._targetFront.actorID) {
+    if (this._targetFront && !this._targetFront.isDestroyed()) {
       return this._targetFront;
     }
 

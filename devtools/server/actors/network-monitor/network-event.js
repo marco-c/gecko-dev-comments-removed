@@ -318,7 +318,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   addRequestHeaders(headers, rawHeaders) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -348,7 +348,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   addRequestCookies(cookies) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -368,7 +368,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   addRequestPostData(postData) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -396,7 +396,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   addResponseStart(info, rawHeaders) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -427,7 +427,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   addSecurityInfo(info, isRacing) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -446,7 +446,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   addResponseHeaders(headers) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -467,7 +467,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   addResponseCookies(cookies) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -495,7 +495,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     { discardResponseBody, truncated, blockedReason, blockingExtension }
   ) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -520,7 +520,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   addResponseCache: function(content) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 
@@ -541,7 +541,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   addEventTimings(total, timings, offsets, serverTimings) {
     
-    if (!this.actorID) {
+    if (this.isDestroyed()) {
       return;
     }
 

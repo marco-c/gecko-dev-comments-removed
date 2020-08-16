@@ -61,7 +61,7 @@ class ProcessDescriptorFront extends FrontClassWithSpec(processDescriptorSpec) {
 
   async getTarget() {
     
-    if (this._processTargetFront && this._processTargetFront.actorID) {
+    if (this._processTargetFront && !this._processTargetFront.isDestroyed()) {
       return this._processTargetFront;
     }
     

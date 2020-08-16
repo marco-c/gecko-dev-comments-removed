@@ -48,7 +48,7 @@ class AuditController extends React.Component {
 
   onAudited() {
     const { accessibleFront } = this.props;
-    if (!accessibleFront.actorID) {
+    if (accessibleFront.isDestroyed()) {
       
       accessibleFront.off("audited", this.onAudited);
       return;
@@ -59,7 +59,7 @@ class AuditController extends React.Component {
 
   maybeRequestAudit() {
     const { accessibleFront } = this.props;
-    if (!accessibleFront.actorID) {
+    if (accessibleFront.isDestroyed()) {
       
       accessibleFront.off("audited", this.onAudited);
       return;
@@ -71,7 +71,8 @@ class AuditController extends React.Component {
 
     accessibleFront.audit().catch(error => {
       
-      if (accessibleFront.actorID) {
+      
+      if (!accessibleFront.isDestroyed()) {
         console.warn(error);
       }
     });
