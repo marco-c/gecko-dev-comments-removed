@@ -36,7 +36,6 @@ namespace shell {
 
 enum GlobalAppSlot {
   GlobalAppSlotModuleRegistry,
-  GlobalAppSlotModuleResolveHook,  
   GlobalAppSlotCount
 };
 static_assert(GlobalAppSlotCount <= JSCLASS_GLOBAL_APPLICATION_SLOTS,

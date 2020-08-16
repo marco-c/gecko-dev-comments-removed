@@ -1,12 +1,9 @@
-setModuleResolveHook(function(module, specifier) {
-    throw "Module '" + specifier + "' not found";
-});
 g = newGlobal({newCompartment: true});
 g.parent = this;
-g.eval("new Debugger(parent).onExceptionUnwind = () => null;");
-
+g.eval(`new Debugger(parent).onExceptionUnwind = () => null;`);
 let exc = "fail";
 
-import("javascript: ").catch(e => { exc = e; });
+import("javascript: throw 'foo'").catch(e => { exc = e; });
 drainJobQueue();
 assertEq(exc, undefined);
+

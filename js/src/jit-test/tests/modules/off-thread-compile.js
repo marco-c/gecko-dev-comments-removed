@@ -3,7 +3,6 @@
 
 
 load(libdir + "asserts.js");
-load(libdir + "dummyModuleResolveHook.js");
 
 function offThreadParseAndEvaluate(source) {
     offThreadCompileModule(source);

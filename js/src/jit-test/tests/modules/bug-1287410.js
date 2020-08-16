@@ -1,21 +1,15 @@
 
 
-let moduleRepo = {};
-setModuleResolveHook(function(module, specifier) {
-    if (specifier in moduleRepo)
-        return moduleRepo[specifier];
-    throw "Module '" + specifier + "' not found";
-});
-let a = moduleRepo['a'] = parseModule("export var a = 1; export var b = 2;");
-let b = moduleRepo['b'] = parseModule("export var b = 3; export var c = 4;");
-let c = moduleRepo['c'] = parseModule("export * from 'a'; export * from 'b';");
+let a = registerModule('a', parseModule("export var a = 1; export var b = 2;"));
+let b = registerModule('b', parseModule("export var b = 3; export var c = 4;"));
+let c = registerModule('c', parseModule("export * from 'a'; export * from 'b';"));
 c.declarationInstantiation();
 
 
 
-a = moduleRepo['a'] = parseModule("export var a = 1; export var b = 2;");
+a = registerModule('a', parseModule("export var a = 1; export var b = 2;"));
 
-let d = moduleRepo['d'] = parseModule("import { a } from 'c'; a;");
+let d = registerModule('d', parseModule("import { a } from 'c'; a;"));
 
 
 
