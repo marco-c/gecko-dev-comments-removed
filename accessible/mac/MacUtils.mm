@@ -16,7 +16,7 @@ namespace a11y {
 namespace utils {
 
 
-static inline NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
+NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
   NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
 
   
@@ -31,7 +31,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
 }
 
 
-static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray) {
+NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray) {
   NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
 
   

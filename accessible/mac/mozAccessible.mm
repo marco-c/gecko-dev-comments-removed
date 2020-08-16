@@ -16,7 +16,6 @@
 #include "Role.h"
 #include "RootAccessible.h"
 #include "TableAccessible.h"
-#include "TableCellAccessible.h"
 #include "mozilla/a11y/PDocAccessible.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "OuterDocAccessible.h"
@@ -812,16 +811,18 @@ struct RoleDescrComparator {
     case nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED: {
       
       
-      id<MOXTextMarkerSupport> delegate =  [self moxTextMarkerDelegate];
+      id<MOXTextMarkerSupport> delegate = [self moxTextMarkerDelegate];
       id selectedRange = [delegate moxSelectedTextMarkerRange];
       NSDictionary* userInfo = @{
-        @"AXTextChangeElement": self,
-        @"AXSelectedTextMarkerRange": (selectedRange ? selectedRange : [NSNull null])
+        @"AXTextChangeElement" : self,
+        @"AXSelectedTextMarkerRange" : (selectedRange ? selectedRange : [NSNull null])
       };
 
       mozAccessible* webArea = GetNativeFromGeckoAccessible([self geckoDocument]);
-      [webArea moxPostNotification:NSAccessibilitySelectedTextChangedNotification withUserInfo:userInfo];
-      [self moxPostNotification:NSAccessibilitySelectedTextChangedNotification withUserInfo:userInfo];
+      [webArea moxPostNotification:NSAccessibilitySelectedTextChangedNotification
+                      withUserInfo:userInfo];
+      [self moxPostNotification:NSAccessibilitySelectedTextChangedNotification
+                   withUserInfo:userInfo];
       break;
     }
   }
