@@ -390,12 +390,6 @@ var UrlbarTestUtils = {
       return;
     }
 
-    
-    
-    if (expectedSearchMode.engineName && !expectedSearchMode.alternateLabel) {
-      expectedSearchMode.alternateLabel = undefined;
-    }
-
     this.Assert.deepEqual(
       window.gURLBar.searchMode,
       expectedSearchMode,
@@ -406,11 +400,7 @@ var UrlbarTestUtils = {
     let expectedTextContent = "";
     let expectedL10n = {};
 
-    if (expectedSearchMode.alternateLabel) {
-      expectedTextContent = expectedSearchMode.alternateLabel;
-    } else if (expectedSearchMode.engineDisplayName) {
-      expectedTextContent = expectedSearchMode.engineDisplayName;
-    } else if (expectedSearchMode.engineName) {
+    if (expectedSearchMode.engineName) {
       expectedTextContent = expectedSearchMode.engineName;
     } else if (expectedSearchMode.source) {
       let name = UrlbarUtils.getResultSourceName(expectedSearchMode.source);
