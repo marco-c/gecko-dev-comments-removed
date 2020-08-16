@@ -75,55 +75,10 @@ class Tainted {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #define MOZ_TAINT_GLUE(a, b) a b
+
+
+
 
 
 
@@ -135,19 +90,127 @@ class Tainted {
 
 #define MOZ_VALIDATE_AND_GET_HELPER3(tainted_value, condition, \
                                      assertionstring)          \
-  [&tainted_value]() {                                         \
+  [&]() {                                                      \
     auto& tmp = tainted_value.Coerce();                        \
-    auto& MOZ_MAYBE_UNUSED tainted_value = tmp;                \
-    MOZ_RELEASE_ASSERT((condition), assertionstring);          \
+    auto& tainted_value = tmp;                                 \
+    bool test = (condition);                                   \
+    MOZ_RELEASE_ASSERT(test, assertionstring);                 \
     return tmp;                                                \
   }()
-
-
 
 #define MOZ_VALIDATE_AND_GET_HELPER2(tainted_value, condition)        \
   MOZ_VALIDATE_AND_GET_HELPER3(tainted_value, condition,              \
                                "MOZ_VALIDATE_AND_GET(" #tainted_value \
                                ", " #condition ") has failed")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define MOZ_VALIDATE_AND_GET(...)                                            \
   MOZ_TAINT_GLUE(MOZ_PASTE_PREFIX_AND_ARG_COUNT(MOZ_VALIDATE_AND_GET_HELPER, \
@@ -157,12 +220,46 @@ class Tainted {
 
 
 
-#define MOZ_IS_VALID(tainted_value, condition)  \
-  [&tainted_value]() {                          \
-    auto& tmp = tainted_value.Coerce();         \
-    auto& MOZ_MAYBE_UNUSED tainted_value = tmp; \
-    return (condition);                         \
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define MOZ_IS_VALID(tainted_value, condition) \
+  [&]() {                                      \
+    auto& tmp = tainted_value.Coerce();        \
+    auto& tainted_value = tmp;                 \
+    return (condition);                        \
   }()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -172,7 +269,30 @@ class Tainted {
 
 
 
-#define MOZ_NO_VALIDATE(tainted_value, justification) tainted_value.Coerce()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define MOZ_NO_VALIDATE(tainted_value, justification)      \
+  [&tainted_value] {                                       \
+    static_assert(sizeof(justification) > 3,               \
+                  "Must provide a justification string."); \
+    return tainted_value.Coerce();                         \
+  }()
 
 
 
