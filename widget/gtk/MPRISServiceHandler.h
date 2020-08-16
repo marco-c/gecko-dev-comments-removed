@@ -73,16 +73,8 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   
   GVariant* GetPlaybackStatus() const;
 
-  
   const char* Identity() const;
-  void Raise();
-  
-  void Next();
-  void Previous();
-  void Pause();
-  void PlayPause();
-  void Stop();
-  void Play();
+  void PressKey(dom::MediaControlKey aKey) const;
 
   void SetMediaMetadata(const dom::MediaMetadataBase& aMetadata) override;
   GVariant* GetMetadataAsGVariant() const;
@@ -168,7 +160,7 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   static void OnBusAcquiredStatic(GDBusConnection* aConnection,
                                   const gchar* aName, gpointer aUserData);
 
-  void EmitEvent(dom::MediaControlKey aKey);
+  void EmitEvent(dom::MediaControlKey aKey) const;
 
   bool EmitMetadataChanged() const;
 
