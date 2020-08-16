@@ -5,38 +5,89 @@
 
 
 
+#![deny(clippy::pedantic)]
 
-use neqo_common::qwarn;
+use neqo_common::qinfo;
+use std::cell::RefCell;
+use std::fmt::{self, Debug};
+use std::ops::Deref;
+use std::rc::Rc;
 
-#[derive(Default, Debug)]
 
+#[derive(Default, Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub struct Stats {
-    conn_display_info: String,
+    info: String,
 
     
     pub packets_rx: usize,
     
-    pub packets_tx: usize,
-    
     pub dups_rx: usize,
     
     pub dropped_rx: usize,
+
+    
+    pub packets_tx: usize,
+    
+    pub lost: usize,
+    
+    pub late_ack: usize,
+    
+    
+    pub pto_ack: usize,
+
     
     pub resumed: bool,
 }
 
 impl Stats {
-    pub fn init(&mut self, conn_info: String) {
-        self.conn_display_info = conn_info;
+    pub fn init(&mut self, info: String) {
+        self.info = info;
     }
 
     pub fn pkt_dropped(&mut self, reason: impl AsRef<str>) {
         self.dropped_rx += 1;
-        qwarn!(
-            [self.conn_display_info],
+        qinfo!(
+            [self.info],
             "Dropped received packet: {}; Total: {}",
             reason.as_ref(),
             self.dropped_rx
         )
+    }
+}
+
+impl Debug for Stats {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "stats for {}", self.info)?;
+        writeln!(
+            f,
+            "  rx: {} drop {} dup {}",
+            self.packets_rx, self.dropped_rx, self.dups_rx
+        )?;
+        writeln!(
+            f,
+            "  tx: {} lost {} lateack {} ptoack {}",
+            self.packets_tx, self.lost, self.late_ack, self.pto_ack
+        )?;
+        write!(f, "  resumed: {} ", self.resumed)
+    }
+}
+
+#[derive(Default, Clone)]
+#[allow(clippy::module_name_repetitions)]
+pub struct StatsCell {
+    stats: Rc<RefCell<Stats>>,
+}
+
+impl Deref for StatsCell {
+    type Target = RefCell<Stats>;
+    fn deref(&self) -> &Self::Target {
+        &*self.stats
+    }
+}
+
+impl Debug for StatsCell {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.stats.borrow().fmt(f)
     }
 }

@@ -123,6 +123,8 @@ pub struct PacketBuilder {
 
 impl PacketBuilder {
     
+    #[allow(clippy::unknown_clippy_lints)] 
+    #[allow(clippy::reversed_empty_ranges)]
     pub fn short(mut encoder: Encoder, key_phase: bool, dcid: &ConnectionId) -> Self {
         let header_start = encoder.len();
         
@@ -143,6 +145,8 @@ impl PacketBuilder {
     
     
     
+    #[allow(clippy::unknown_clippy_lints)] 
+    #[allow(clippy::reversed_empty_ranges)] 
     pub fn long(
         mut encoder: Encoder,
         pt: PacketType,

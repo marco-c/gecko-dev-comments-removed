@@ -12,4 +12,5 @@ pub struct Stats {
     pub dynamic_table_inserts: usize,
     
     pub dynamic_table_references: usize,
+    pub stream_cancelled_recv: usize,
 }

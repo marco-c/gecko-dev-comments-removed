@@ -8,4 +8,4 @@
 #[cfg_attr(not(feature = "humantime"), path = "shim_impl.rs")]
 mod imp;
 
-pub(in ::fmt) use self::imp::*;
+pub(in crate::fmt) use self::imp::*;

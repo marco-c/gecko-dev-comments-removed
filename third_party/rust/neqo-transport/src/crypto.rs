@@ -237,6 +237,12 @@ impl Crypto {
 
     
     
+    pub fn resend_unacked(&mut self, space: PNSpace) {
+        self.streams.resend_unacked(space);
+    }
+
+    
+    
     pub fn discard(&mut self, space: PNSpace) -> bool {
         self.streams.discard(space);
         self.states.discard(space)
@@ -274,6 +280,8 @@ pub struct CryptoDxState {
 }
 
 impl CryptoDxState {
+    #[allow(clippy::unknown_clippy_lints)] 
+    #[allow(clippy::reversed_empty_ranges)] 
     pub fn new(
         direction: CryptoDxDirection,
         epoch: Epoch,
@@ -996,13 +1004,23 @@ impl CryptoStreams {
         self.get_mut(token.space)
             .unwrap()
             .tx
-            .mark_as_acked(token.offset, token.length)
+            .mark_as_acked(token.offset, token.length);
     }
 
     pub fn lost(&mut self, token: &CryptoRecoveryToken) {
         
         if let Some(cs) = self.get_mut(token.space) {
-            cs.tx.mark_as_lost(token.offset, token.length)
+            cs.tx.mark_as_lost(token.offset, token.length);
+        }
+    }
+
+    
+    
+    pub fn resend_unacked(&mut self, space: PNSpace) {
+        if space != PNSpace::ApplicationData {
+            if let Some(cs) = self.get_mut(space) {
+                cs.tx.unmark_sent();
+            }
         }
     }
 

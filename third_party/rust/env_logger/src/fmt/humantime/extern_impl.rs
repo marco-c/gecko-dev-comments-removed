@@ -1,11 +1,13 @@
 use std::fmt;
 use std::time::SystemTime;
 
-use humantime::{format_rfc3339_nanos, format_rfc3339_seconds};
+use humantime::{
+    format_rfc3339_micros, format_rfc3339_millis, format_rfc3339_nanos, format_rfc3339_seconds,
+};
 
-use ::fmt::Formatter;
+use crate::fmt::{Formatter, TimestampPrecision};
 
-pub(in ::fmt) mod glob {
+pub(in crate::fmt) mod glob {
     pub use super::*;
 }
 
@@ -30,12 +32,46 @@ impl Formatter {
     
     
     pub fn timestamp(&self) -> Timestamp {
-        Timestamp(SystemTime::now())
+        Timestamp {
+            time: SystemTime::now(),
+            precision: TimestampPrecision::Seconds,
+        }
     }
 
     
-    pub fn precise_timestamp(&self) -> PreciseTimestamp {
-        PreciseTimestamp(SystemTime::now())
+    
+    pub fn timestamp_seconds(&self) -> Timestamp {
+        Timestamp {
+            time: SystemTime::now(),
+            precision: TimestampPrecision::Seconds,
+        }
+    }
+
+    
+    
+    pub fn timestamp_millis(&self) -> Timestamp {
+        Timestamp {
+            time: SystemTime::now(),
+            precision: TimestampPrecision::Millis,
+        }
+    }
+
+    
+    
+    pub fn timestamp_micros(&self) -> Timestamp {
+        Timestamp {
+            time: SystemTime::now(),
+            precision: TimestampPrecision::Micros,
+        }
+    }
+
+    
+    
+    pub fn timestamp_nanos(&self) -> Timestamp {
+        Timestamp {
+            time: SystemTime::now(),
+            precision: TimestampPrecision::Nanos,
+        }
     }
 }
 
@@ -46,13 +82,10 @@ impl Formatter {
 
 
 
-pub struct Timestamp(SystemTime);
-
-
-
-
-#[derive(Debug)]
-pub struct PreciseTimestamp(SystemTime);
+pub struct Timestamp {
+    time: SystemTime,
+    precision: TimestampPrecision,
+}
 
 impl fmt::Debug for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -66,19 +99,20 @@ impl fmt::Debug for Timestamp {
         }
 
         f.debug_tuple("Timestamp")
-        .field(&TimestampValue(&self))
-        .finish()
+            .field(&TimestampValue(&self))
+            .finish()
     }
 }
 
 impl fmt::Display for Timestamp {
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        format_rfc3339_seconds(self.0).fmt(f)
-    }
-}
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let formatter = match self.precision {
+            TimestampPrecision::Seconds => format_rfc3339_seconds,
+            TimestampPrecision::Millis => format_rfc3339_millis,
+            TimestampPrecision::Micros => format_rfc3339_micros,
+            TimestampPrecision::Nanos => format_rfc3339_nanos,
+        };
 
-impl fmt::Display for PreciseTimestamp {
-    fn fmt(&self, f: &mut fmt::Formatter)->fmt::Result {
-        format_rfc3339_nanos(self.0).fmt(f)
+        formatter(self.time).fmt(f)
     }
 }

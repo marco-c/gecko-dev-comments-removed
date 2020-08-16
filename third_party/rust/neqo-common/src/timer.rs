@@ -89,7 +89,10 @@ impl<T> Timer<T> {
     }
 
     
-    #[allow(clippy::cast_possible_truncation)] 
+    #[allow(clippy::unknown_clippy_lints)] 
+    #[allow(clippy::cast_possible_truncation, clippy::reversed_empty_ranges)]
+    
+    
     fn tick(&mut self, n: usize) {
         let new = self.bucket(n);
         let iter = if new < self.cursor {
@@ -147,7 +150,7 @@ impl<T> Timer<T> {
         let bucket = self.time_bucket(time);
         let start_index = match self.items[bucket].binary_search_by_key(&time, TimerItem::time) {
             Ok(idx) => idx,
-            _ => return None,
+            Err(_) => return None,
         };
         
         
