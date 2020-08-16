@@ -218,7 +218,12 @@ class ContentSubtreeIterator final : public ContentIteratorBase {
                                           uint32_t);
   friend void ImplCycleCollectionUnlink(ContentSubtreeIterator&);
 
- protected:
+ private:
+  
+
+
+  void CacheInclusiveAncestorsOfEndContainer();
+
   
 
 
