@@ -2725,6 +2725,7 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
   rv = NS_OK;
 
   uint32_t httpStatus = mResponseHead->Status();
+  bool transactionRestarted = mTransaction->TakeRestartedState();
 
   
   
@@ -2816,6 +2817,13 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
       break;
     case 401:
     case 407:
+      if (MOZ_UNLIKELY(httpStatus == 407 && transactionRestarted)) {
+        
+        
+        
+        
+        mAuthProvider->ClearProxyIdent();
+      }
       if (MOZ_UNLIKELY(mCustomAuthHeader) && httpStatus == 401) {
         
         

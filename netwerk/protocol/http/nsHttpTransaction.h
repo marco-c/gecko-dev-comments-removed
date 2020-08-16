@@ -182,6 +182,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   void CheckForStickyAuthScheme();
   void CheckForStickyAuthSchemeAt(nsHttpAtom const& header);
+  bool IsStickyAuthSchemeAt(nsACString const& auth);
 
   
   
@@ -340,6 +341,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mResponseHeadTaken;
   UniquePtr<nsHttpHeaderArray> mForTakeResponseTrailers;
   bool mResponseTrailersTaken;
+
+  
+  
+  Atomic<bool> mRestarted;
 
   
   TimeStamp mPendingTime;
