@@ -91,10 +91,6 @@ class SVGFE : public SVGFEBase {
 
   virtual bool HasValidDimensions() const override;
 
-  bool IsNodeOfType(uint32_t aFlags) const override {
-    return !(aFlags & ~eFILTER);
-  }
-
   virtual SVGAnimatedString& GetResultImageName() = 0;
   
   

@@ -94,17 +94,6 @@ class SVGContentUtils {
 
 
 
-  static void ActivateByHyperlink(nsIContent* aContent);
-
-  
-
-
-
-
-
-
-
-
   struct AutoStrokeOptions : public StrokeOptions {
     AutoStrokeOptions() {
       MOZ_ASSERT(mDashLength == 0, "InitDashPattern() depends on this");
