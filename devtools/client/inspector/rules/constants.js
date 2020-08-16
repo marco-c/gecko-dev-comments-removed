@@ -11,3 +11,17 @@ exports.ELEMENT_STYLE = 100;
 
 
 exports.COLOR_SCHEMES = [null, "dark", "light"];
+
+
+
+exports.COMPATIBILITY_TOOLTIP_MESSAGE = {
+  default: "css-compatibility-default-message",
+  deprecated: "css-compatibility-deprecated-message",
+  "deprecated-experimental":
+    "css-compatibility-deprecated-experimental-message",
+  "deprecated-experimental-supported":
+    "css-compatibility-deprecated-experimental-supported-message",
+  "deprecated-supported": "css-compatibility-deprecated-supported-message",
+  experimental: "css-compatibility-experimental-message",
+  "experimental-supported": "css-compatibility-experimental-supported-message",
+};

@@ -41,6 +41,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "getNodeCompatibilityInfo",
+  "devtools/client/inspector/rules/utils/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "COLOR_SCHEMES",
   "devtools/client/inspector/rules/constants",
   true
@@ -444,6 +450,30 @@ CssRuleView.prototype = {
 
   getNodeInfo: function(node) {
     return getNodeInfo(node, this._elementStyle);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getNodeCompatibilityInfo: async function(node) {
+    const compatibilityInfo = await getNodeCompatibilityInfo(
+      node,
+      this._elementStyle
+    );
+
+    return compatibilityInfo;
   },
 
   

@@ -321,6 +321,22 @@ function getCSSVariables(propertyValue = "") {
 
 
 
+async function getNodeCompatibilityInfo(node, elementStyle) {
+  const rule = getRuleFromNode(node, elementStyle);
+  const declaration = getDeclarationFromNode(node, rule);
+  const issue = await declaration.isCompatible();
+
+  return issue;
+}
+
+
+
+
+
+
+
+
+
 
 function hasCSSVariable(propertyValue, variableName) {
   return getCSSVariables(propertyValue).includes(variableName);
@@ -331,4 +347,5 @@ module.exports = {
   getNodeInfo,
   getRuleFromNode,
   hasCSSVariable,
+  getNodeCompatibilityInfo,
 };
