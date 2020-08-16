@@ -383,6 +383,8 @@ class nsINode : public mozilla::dom::EventTarget {
     
     eHTML_FORM_CONTROL = 1 << 6,
     
+    eUSE_TARGET = 1 << 9,
+    
     eANIMATION = 1 << 10,
     
     eFILTER = 1 << 11,
