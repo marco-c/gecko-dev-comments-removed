@@ -4312,7 +4312,11 @@ AMTelemetry = {
 
   onInstallEnded(install) {
     this.recordInstallEvent(install, { step: "completed" });
-    this.recordInstallStatsEvent(install);
+    
+    
+    if (!install.existingAddon) {
+      this.recordInstallStatsEvent(install);
+    }
   },
 
   onDownloadStarted(install) {
