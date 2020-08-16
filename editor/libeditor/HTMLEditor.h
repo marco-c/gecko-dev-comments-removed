@@ -2434,32 +2434,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  MaybeDeleteTopMostEmptyAncestor(nsIContent& aStartContent,
-                                  Element& aEditingHostElement,
-                                  nsIEditor::EDirection aDirectionAndAmount);
-
-  
-
-
-
-
-
-
-
-
-
-
   bool ExtendRangeToIncludeInvisibleNodes(
       const nsFrameSelection* aFrameSelection, nsRange& aRange);
 
@@ -2683,6 +2657,37 @@ class HTMLEditor final : public TextEditor,
       nsIEditor::EDirection aDirectionAndAmount,
       nsIEditor::EStripWrappers aStripWrappers, nsIContent& aAtomicContent,
       const EditorDOMPoint& aCaretPoint, WSRunScanner& aWSRunScannerAtCaret);
+
+  class MOZ_STACK_CLASS AutoEmptyBlockAncestorDeleter final {
+   public:
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+    Run(HTMLEditor& aHTMLEditor, nsIContent& aStartContent,
+        Element& aEditingHostElement,
+        nsIEditor::EDirection aDirectionAndAmount);
+  };
 
   class MOZ_STACK_CLASS AutoBlockElementsJoiner final {
    public:
