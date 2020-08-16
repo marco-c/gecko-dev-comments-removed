@@ -737,13 +737,6 @@ var Impl = {
       ) {
         payloadObj.slowSQLStartup = this._slowSQLStartup;
       }
-
-      
-      
-      let stacks = protect(() => Telemetry.snapshotCapturedStacks(true));
-      if (stacks && "captures" in stacks && stacks.captures.length) {
-        payloadObj.processes.parent.capturedStacks = stacks;
-      }
     }
 
     return payloadObj;
