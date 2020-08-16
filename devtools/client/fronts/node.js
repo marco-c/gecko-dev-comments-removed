@@ -539,17 +539,6 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     );
     return this._remoteFrameTarget;
   }
-
-  async getAllSelectors() {
-    if (!this.traits.supportsGetAllSelectors) {
-      
-      
-      
-      const selector = await super.getUniqueSelector();
-      return [selector];
-    }
-    return super.getAllSelectors();
-  }
 }
 
 exports.NodeFront = NodeFront;
