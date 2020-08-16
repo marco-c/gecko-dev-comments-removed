@@ -12,7 +12,11 @@
 #include "nsISupportsImpl.h"
 #include "nsString.h"
 
+namespace mozilla {
+namespace baseprofiler {
 class SpliceableJSONWriter;
+}  
+}  
 
 
 
@@ -29,7 +33,7 @@ class PageInformation final {
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   bool Equals(PageInformation* aOtherPageInfo) const;
-  void StreamJSON(SpliceableJSONWriter& aWriter) const;
+  void StreamJSON(mozilla::baseprofiler::SpliceableJSONWriter& aWriter) const;
 
   uint64_t InnerWindowID() const { return mInnerWindowID; }
   uint64_t BrowsingContextID() const { return mBrowsingContextID; }

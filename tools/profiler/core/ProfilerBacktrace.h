@@ -14,13 +14,15 @@
 
 class ProfileBuffer;
 class ProfilerCodeAddressService;
-class SpliceableJSONWriter;
 class ThreadInfo;
 class UniqueStacks;
 
 namespace mozilla {
 class ProfileChunkedBuffer;
 class TimeStamp;
+namespace baseprofiler {
+class SpliceableJSONWriter;
+}  
 }  
 
 
@@ -38,7 +40,7 @@ class ProfilerBacktrace {
   
   
   
-  void StreamJSON(SpliceableJSONWriter& aWriter,
+  void StreamJSON(mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
                   const mozilla::TimeStamp& aProcessStartTime,
                   UniqueStacks& aUniqueStacks);
 

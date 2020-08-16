@@ -111,9 +111,11 @@ static inline UniqueProfilerBacktrace profiler_get_backtrace() {
 class ProfilerBacktrace;
 class ProfilerCodeAddressService;
 class ProfilerMarkerPayload;
-class SpliceableJSONWriter;
 namespace mozilla {
 class ProfileBufferControlledChunkManager;
+namespace baseprofiler {
+class SpliceableJSONWriter;
+}  
 namespace net {
 struct TimingStruct;
 enum CacheDisposition : uint8_t;
@@ -1054,7 +1056,7 @@ mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0,
 
 
 bool profiler_stream_json_for_this_process(
-    SpliceableJSONWriter& aWriter, double aSinceTime = 0,
+    mozilla::baseprofiler::SpliceableJSONWriter& aWriter, double aSinceTime = 0,
     bool aIsShuttingDown = false,
     ProfilerCodeAddressService* aService = nullptr);
 
