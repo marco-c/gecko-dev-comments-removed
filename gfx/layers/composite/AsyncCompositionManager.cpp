@@ -27,6 +27,7 @@
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/LayerAnimationUtils.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h"  
+#include "mozilla/layers/SampleTime.h"
 #include "nsCoord.h"                 
 #include "nsDebug.h"                 
 #include "nsDeviceContext.h"         
@@ -1223,7 +1224,7 @@ void AsyncCompositionManager::GetFrameUniformity(
 }
 
 bool AsyncCompositionManager::TransformShadowTree(
-    TimeStamp aCurrentFrame, TimeDuration aVsyncRate,
+    const SampleTime& aCurrentFrame, TimeDuration aVsyncRate,
     CompositorBridgeParentBase::TransformsToSkip aSkip) {
   AUTO_PROFILER_LABEL("AsyncCompositionManager::TransformShadowTree", GRAPHICS);
 
@@ -1235,21 +1236,21 @@ bool AsyncCompositionManager::TransformShadowTree(
   
   
   
-  bool wantNextFrame = SampleAnimations(root, aCurrentFrame);
+  bool wantNextFrame = SampleAnimations(root, aCurrentFrame.Time());
 
   
   
-  TimeStamp nextFrame = aCurrentFrame;
+  SampleTime nextFrame = aCurrentFrame;
 
   MOZ_ASSERT(aVsyncRate != TimeDuration::Forever());
   if (aVsyncRate != TimeDuration::Forever()) {
-    nextFrame += aVsyncRate;
+    nextFrame = nextFrame + aVsyncRate;
   }
 
   
   
   
-  mPreviousFrameTimeStamp = wantNextFrame ? aCurrentFrame : TimeStamp();
+  mPreviousFrameTimeStamp = wantNextFrame ? aCurrentFrame.Time() : TimeStamp();
 
   if (!(aSkip & CompositorBridgeParentBase::TransformsToSkip::APZ)) {
     bool apzAnimating = false;

@@ -65,7 +65,7 @@ CompositorVsyncScheduler::CompositorVsyncScheduler(
     CompositorVsyncSchedulerOwner* aVsyncSchedulerOwner,
     widget::CompositorWidget* aWidget)
     : mVsyncSchedulerOwner(aVsyncSchedulerOwner),
-      mLastComposeTime(TimeStamp::Now()),
+      mLastComposeTime(SampleTime::FromNow()),
       mLastVsyncTime(TimeStamp::Now()),
       mLastVsyncOutputTime(TimeStamp::Now()),
       mIsObservingVsync(false),
@@ -233,7 +233,7 @@ void CompositorVsyncScheduler::Composite(const VsyncEvent& aVsyncEvent) {
 
   if (!mAsapScheduling) {
     
-    if (aVsyncEvent.mTime < mLastComposeTime) {
+    if (aVsyncEvent.mTime < mLastComposeTime.Time()) {
       
       
       
@@ -250,7 +250,7 @@ void CompositorVsyncScheduler::Composite(const VsyncEvent& aVsyncEvent) {
 
   if (mCompositeRequestedAt || mAsapScheduling) {
     mCompositeRequestedAt = TimeStamp();
-    mLastComposeTime = aVsyncEvent.mTime;
+    mLastComposeTime = SampleTime::FromVsync(aVsyncEvent.mTime);
 
     
     mVsyncSchedulerOwner->CompositeToTarget(aVsyncEvent.mId, nullptr, nullptr);
@@ -287,7 +287,7 @@ void CompositorVsyncScheduler::ForceComposeToTarget(gfx::DrawTarget* aTarget,
 
   mVsyncNotificationsSkipped = 0;
 
-  mLastComposeTime = TimeStamp::Now();
+  mLastComposeTime = SampleTime::FromNow();
   MOZ_ASSERT(mVsyncSchedulerOwner);
   mVsyncSchedulerOwner->CompositeToTarget(VsyncId(), aTarget, aRect);
 }
@@ -336,7 +336,7 @@ void CompositorVsyncScheduler::DispatchVREvents(TimeStamp aVsyncTimestamp) {
   vm->NotifyVsync(aVsyncTimestamp);
 }
 
-const TimeStamp& CompositorVsyncScheduler::GetLastComposeTime() const {
+const SampleTime& CompositorVsyncScheduler::GetLastComposeTime() const {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   return mLastComposeTime;
 }
@@ -358,7 +358,7 @@ const VsyncId& CompositorVsyncScheduler::GetLastVsyncId() const {
 
 void CompositorVsyncScheduler::UpdateLastComposeTime() {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  mLastComposeTime = TimeStamp::Now();
+  mLastComposeTime = SampleTime::FromNow();
 }
 
 }  

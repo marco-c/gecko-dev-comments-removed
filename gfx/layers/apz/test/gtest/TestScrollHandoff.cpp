@@ -485,7 +485,7 @@ TEST_F(APZScrollHandoffTester, PartialFlingHandoff) {
   
   
   mcc->AdvanceByMillis(10);
-  child->AdvanceAnimations(mcc->Time());
+  child->AdvanceAnimations(mcc->GetSampleTime());
 
   
   child->AssertStateIsFling();

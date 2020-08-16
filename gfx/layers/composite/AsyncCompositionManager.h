@@ -29,6 +29,7 @@ class Layer;
 class LayerManagerComposite;
 class AutoResolveRefLayers;
 class CompositorBridgeParent;
+class SampleTime;
 
 
 struct AsyncTransform {
@@ -83,7 +84,7 @@ class AsyncCompositionManager final {
   
   
   bool TransformShadowTree(
-      TimeStamp aCurrentFrame, TimeDuration aVsyncRate,
+      const SampleTime& aCurrentFrame, TimeDuration aVsyncRate,
       CompositorBridgeParentBase::TransformsToSkip aSkip =
           CompositorBridgeParentBase::TransformsToSkip::NoneOfThem);
 

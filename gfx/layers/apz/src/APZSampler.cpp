@@ -74,7 +74,7 @@ void APZSampler::SampleForWebRender(
   }
 }
 
-void APZSampler::SetSampleTime(const TimeStamp& aSampleTime) {
+void APZSampler::SetSampleTime(const SampleTime& aSampleTime) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MutexAutoLock lock(mSampleTimeLock);
   mSampleTime = aSampleTime;
@@ -84,7 +84,7 @@ void APZSampler::SampleForWebRender(
     wr::TransactionWrapper& aTxn,
     const wr::WrPipelineIdEpochs* aEpochsBeingRendered) {
   AssertOnSamplerThread();
-  TimeStamp sampleTime;
+  SampleTime sampleTime;
   {  
     MutexAutoLock lock(mSampleTimeLock);
 
@@ -92,12 +92,12 @@ void APZSampler::SampleForWebRender(
     
     
     
-    sampleTime = mSampleTime.IsNull() ? TimeStamp::Now() : mSampleTime;
+    sampleTime = mSampleTime.IsNull() ? SampleTime::FromNow() : mSampleTime;
   }
   mApz->SampleForWebRender(aTxn, sampleTime, aEpochsBeingRendered);
 }
 
-bool APZSampler::AdvanceAnimations(const TimeStamp& aSampleTime) {
+bool APZSampler::AdvanceAnimations(const SampleTime& aSampleTime) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   AssertOnSamplerThread();
   return mApz->AdvanceAnimations(aSampleTime);

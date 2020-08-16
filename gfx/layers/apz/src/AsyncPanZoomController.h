@@ -10,6 +10,7 @@
 #include "CrossProcessMutex.h"
 #include "mozilla/layers/GeckoContentController.h"
 #include "mozilla/layers/RepaintRequest.h"
+#include "mozilla/layers/SampleTime.h"
 #include "mozilla/layers/ZoomConstraints.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
@@ -246,10 +247,10 @@ class AsyncPanZoomController {
 
 
 
-  bool AdvanceAnimations(const TimeStamp& aSampleTime);
+  bool AdvanceAnimations(const SampleTime& aSampleTime);
 
   bool UpdateAnimation(const RecursiveMutexAutoLock& aProofOfLock,
-                       const TimeStamp& aSampleTime,
+                       const SampleTime& aSampleTime,
                        nsTArray<RefPtr<Runnable>>* aOutDeferredTasks);
 
   
@@ -318,7 +319,7 @@ class AsyncPanZoomController {
 
 
 
-  void ReportCheckerboard(const TimeStamp& aSampleTime,
+  void ReportCheckerboard(const SampleTime& aSampleTime,
                           const ParentLayerRect& aClippedCompositionBounds);
 
   
@@ -544,7 +545,7 @@ class AsyncPanZoomController {
   virtual ~AsyncPanZoomController();
 
   
-  TimeStamp GetFrameTime() const;
+  SampleTime GetFrameTime() const;
 
   
 
@@ -992,10 +993,10 @@ class AsyncPanZoomController {
 
   
   
-  TimeStamp mLastSampleTime;
+  SampleTime mLastSampleTime;
 
   
-  TimeStamp mLastCheckerboardReport;
+  SampleTime mLastCheckerboardReport;
 
   
   
@@ -1375,7 +1376,7 @@ class AsyncPanZoomController {
   
   ParentLayerPoint mLastFlingVelocity;
   
-  TimeStamp mLastFlingTime;
+  SampleTime mLastFlingTime;
   
   bool mPinchPaintTimerSet;
 

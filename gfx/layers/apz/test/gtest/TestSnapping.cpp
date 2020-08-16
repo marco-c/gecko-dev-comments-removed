@@ -56,7 +56,7 @@ TEST_F(APZCSnappingTester, Bug1265510) {
                  AsyncPanZoomController::AsyncTransformConsumer::eForHitTesting)
              .y < 70) {
     mcc->AdvanceByMillis(5);
-    outer->AdvanceAnimations(mcc->Time());
+    outer->AdvanceAnimations(mcc->GetSampleTime());
   }
   
   

@@ -14,6 +14,7 @@
 #include "mozilla/RefPtr.h"      
 #include "mozilla/TimeStamp.h"   
 #include "mozilla/gfx/Point.h"   
+#include "mozilla/layers/SampleTime.h"
 #include "mozilla/VsyncDispatcher.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsISupportsImpl.h"
@@ -90,7 +91,7 @@ class CompositorVsyncScheduler {
 
 
 
-  const TimeStamp& GetLastComposeTime() const;
+  const SampleTime& GetLastComposeTime() const;
 
   
 
@@ -147,7 +148,7 @@ class CompositorVsyncScheduler {
   };
 
   CompositorVsyncSchedulerOwner* mVsyncSchedulerOwner;
-  TimeStamp mLastComposeTime;
+  SampleTime mLastComposeTime;
   TimeStamp mLastVsyncTime;
   TimeStamp mLastVsyncOutputTime;
   VsyncId mLastVsyncId;
