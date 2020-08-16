@@ -73,18 +73,9 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   
   GVariant* GetPlaybackStatus() const;
 
-
-
-
-  bool HasTrackList();
+  
   const char* Identity() const;
-  GVariant* SupportedUriSchemes();
-  GVariant* SupportedMimeTypes();
-  constexpr bool CanRaise();
   void Raise();
-  constexpr bool CanQuit();
-  void Quit();
-
   
   void Next();
   void Previous();
@@ -92,27 +83,6 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   void PlayPause();
   void Stop();
   void Play();
-  void Seek(int64_t aOffset);
-  void SetPosition(char* aTrackId, int64_t aPosition);
-  
-  
-  bool OpenUri(char* aUri);
-
-  double GetRate() const;
-  bool SetRate(double aRate);
-  constexpr double GetMinimumRate();
-  constexpr double GetMaximumRate();
-
-  double GetVolume() const;
-  bool SetVolume(double aVolume);
-  int64_t GetPosition() const;
-
-  bool CanGoNext() const;
-  bool CanGoPrevious() const;
-  bool CanPlay() const;
-  bool CanPause() const;
-  bool CanSeek() const;
-  bool CanControl() const;
 
   void SetMediaMetadata(const dom::MediaMetadataBase& aMetadata) override;
   GVariant* GetMetadataAsGVariant() const;
