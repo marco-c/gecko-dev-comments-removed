@@ -36,6 +36,14 @@ class MediaControlService final : public nsIObserver {
 
   static RefPtr<MediaControlService> GetService();
 
+  
+  static void GenerateMediaControlKey(const GlobalObject& global,
+                                      MediaControlKey aKey);
+  static void GetCurrentActiveMediaMetadata(const GlobalObject& aGlobal,
+                                            MediaMetadataInit& aMetadata);
+  static MediaSessionPlaybackState GetCurrentMediaSessionPlaybackState(
+      GlobalObject& aGlobal);
+
   AudioFocusManager& GetAudioFocusManager() { return mAudioFocusManager; }
   MediaControlKeySource* GetMediaControlKeySource() {
     return mMediaControlKeyManager;
