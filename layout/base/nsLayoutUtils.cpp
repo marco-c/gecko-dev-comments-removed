@@ -112,6 +112,7 @@
 #include "nsDataHashtable.h"
 #include "nsDeckFrame.h"
 #include "nsDisplayList.h"
+#include "nsFlexContainerFrame.h"
 #include "nsFontInflationData.h"
 #include "nsFontMetrics.h"
 #include "nsFrameList.h"
@@ -2224,8 +2225,27 @@ nsRect nsLayoutUtils::GetScrolledRect(nsIFrame* aScrolledFrame,
   bool isInlineFlowFromTopOrLeft = !wm.IsInlineReversed();
   bool isBlockFlowFromTopOrLeft = isHorizontalWM || wm.IsVerticalLR();
 
-  
-  
+  if (aScrolledFrame->IsFlexContainerFrame()) {
+    
+    
+    
+    
+    
+    FlexboxAxisInfo info(aScrolledFrame);
+    if (info.mIsRowOriented) {
+      
+      isInlineFlowFromTopOrLeft =
+          isInlineFlowFromTopOrLeft == !info.mIsMainAxisReversed;
+      isBlockFlowFromTopOrLeft =
+          isBlockFlowFromTopOrLeft == !info.mIsCrossAxisReversed;
+    } else {
+      
+      isBlockFlowFromTopOrLeft =
+          isBlockFlowFromTopOrLeft == !info.mIsMainAxisReversed;
+      isInlineFlowFromTopOrLeft =
+          isInlineFlowFromTopOrLeft == !info.mIsCrossAxisReversed;
+    }
+  }
 
   
   
