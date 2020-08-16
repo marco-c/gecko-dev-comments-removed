@@ -100,6 +100,9 @@ extern bool CanLikelyAllocateMoreExecutableMemory();
 
 extern size_t LikelyAvailableExecutableMemory();
 
+
+extern bool AddressIsInExecutableMemory(const void* p);
+
 }  
 }  
 

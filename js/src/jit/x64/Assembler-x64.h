@@ -301,12 +301,22 @@ class Assembler : public AssemblerX86Shared {
   
   
   
-  
-  
   static const uint32_t SizeOfExtendedJump = 1 + 1 + 4 + 2 + 8;
   static const uint32_t SizeOfJumpTableEntry = 16;
 
-  Vector<RelativePatch, 8, SystemAllocPolicy> jumps_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using PendingJumpVector = Vector<RelativePatch, 8, SystemAllocPolicy>;
+  PendingJumpVector codeJumps_;
+  PendingJumpVector extendedJumps_;
+
   uint32_t extendedJumpTable_;
 
   static JitCode* CodeFromJump(JitCode* code, uint8_t* jump);
@@ -337,7 +347,10 @@ class Assembler : public AssemblerX86Shared {
   void assertNoGCThings() const {
 #ifdef DEBUG
     MOZ_ASSERT(dataRelocations_.length() == 0);
-    for (auto& j : jumps_) {
+    for (auto& j : codeJumps_) {
+      MOZ_ASSERT(j.kind == RelocationKind::HARDCODED);
+    }
+    for (auto& j : extendedJumps_) {
       MOZ_ASSERT(j.kind == RelocationKind::HARDCODED);
     }
 #endif
