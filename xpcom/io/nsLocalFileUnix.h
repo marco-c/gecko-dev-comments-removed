@@ -101,7 +101,7 @@ class nsLocalFile final
 
  private:
   nsLocalFile(const nsLocalFile& aOther);
-  ~nsLocalFile() {}
+  ~nsLocalFile() = default;
 
  protected:
   
@@ -122,6 +122,9 @@ class nsLocalFile final
 
   nsresult CreateAndKeepOpen(uint32_t aType, int aFlags, uint32_t aPermissions,
                              PRFileDesc** aResult);
+
+  nsresult SetLastModifiedTimeImpl(PRTime aLastModTime, bool aFollowLinks);
+  nsresult GetLastModifiedTimeImpl(PRTime* aLastModTime, bool aFollowLinks);
 };
 
 #endif 
