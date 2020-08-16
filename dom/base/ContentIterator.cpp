@@ -196,7 +196,10 @@ class MOZ_STACK_CLASS ContentIteratorBase::Initializer final {
   nsresult Run();
 
  private:
-  void DetermineFirstNode();
+  
+
+
+  nsINode* DetermineFirstNode() const;
   [[nodiscard]] nsresult DetermineLastNode();
 
   bool IsCollapsedNonCharacterRange() const;
@@ -250,7 +253,7 @@ nsresult ContentIteratorBase::Initializer::Run() {
     return NS_OK;
   }
 
-  DetermineFirstNode();
+  mIterator.mFirst = DetermineFirstNode();
   const nsresult rv = DetermineLastNode();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -268,7 +271,7 @@ nsresult ContentIteratorBase::Initializer::Run() {
   return NS_OK;
 }
 
-void ContentIteratorBase::Initializer::DetermineFirstNode() {
+nsINode* ContentIteratorBase::Initializer::DetermineFirstNode() const {
   nsIContent* cChild = nullptr;
 
   
@@ -297,46 +300,47 @@ void ContentIteratorBase::Initializer::DetermineFirstNode() {
       }
       if (!mStartIsCharacterData &&
           (startIsContainer || !mStart.IsStartOfContainer())) {
-        mIterator.mFirst = mIterator.GetNextSibling(mStart.Container());
-        NS_WARNING_ASSERTION(mIterator.mFirst, "GetNextSibling returned null");
+        nsINode* const result = mIterator.GetNextSibling(mStart.Container());
+        NS_WARNING_ASSERTION(result, "GetNextSibling returned null");
 
         
         
-        if (mIterator.mFirst &&
-            NS_WARN_IF(!NodeIsInTraversalRange(mIterator.mFirst, mIterator.mPre,
-                                               mStart, mEnd))) {
-          mIterator.mFirst = nullptr;
+        if (result && NS_WARN_IF(!NodeIsInTraversalRange(result, mIterator.mPre,
+                                                         mStart, mEnd))) {
+          return nullptr;
         }
-      } else {
-        mIterator.mFirst = mStart.Container()->AsContent();
+
+        return result;
       }
+      return mStart.Container()->AsContent();
     } else {
       
       if (NS_WARN_IF(!mStart.Container()->IsContent())) {
         
-        mIterator.mFirst = nullptr;
-      } else {
-        mIterator.mFirst = mStart.Container()->AsContent();
+        return nullptr;
       }
+      return mStart.Container()->AsContent();
     }
   } else {
     if (mIterator.mPre) {
-      mIterator.mFirst = cChild;
-    } else {
-      
-      mIterator.mFirst = mIterator.GetDeepFirstChild(cChild);
-      NS_WARNING_ASSERTION(mIterator.mFirst, "GetDeepFirstChild returned null");
-
-      
-      
-
-      if (mIterator.mFirst &&
-          !NodeIsInTraversalRange(mIterator.mFirst, mIterator.mPre, mStart,
-                                  mEnd)) {
-        mIterator.mFirst = nullptr;
-      }
+      return cChild;
     }
+    
+    nsINode* const result = mIterator.GetDeepFirstChild(cChild);
+    NS_WARNING_ASSERTION(result, "GetDeepFirstChild returned null");
+
+    
+    
+
+    if (result &&
+        !NodeIsInTraversalRange(result, mIterator.mPre, mStart, mEnd)) {
+      return nullptr;
+    }
+
+    return result;
   }
+
+  return nullptr;
 }
 
 nsresult ContentIteratorBase::Initializer::DetermineLastNode() {
