@@ -1,5 +1,5 @@
-#[cfg(has_std)]
-#[macro_export(local_inner_macros)]
+
+#[macro_export]
 
 
 
@@ -37,8 +37,7 @@ macro_rules! indexmap {
     };
 }
 
-#[cfg(has_std)]
-#[macro_export(local_inner_macros)]
+#[macro_export]
 
 
 
