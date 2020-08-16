@@ -83,6 +83,7 @@ exports.POLL_SESSION = 1000 * 60 * 20;
 exports.ONLOGIN_NOTIFICATION = "fxaccounts:onlogin";
 exports.ONVERIFIED_NOTIFICATION = "fxaccounts:onverified";
 exports.ONLOGOUT_NOTIFICATION = "fxaccounts:onlogout";
+exports.ON_PRELOGOUT_NOTIFICATION = "fxaccounts:on_pre_logout";
 
 exports.ON_DEVICE_CONNECTED_NOTIFICATION = "fxaccounts:device_connected";
 exports.ON_DEVICE_DISCONNECTED_NOTIFICATION = "fxaccounts:device_disconnected";

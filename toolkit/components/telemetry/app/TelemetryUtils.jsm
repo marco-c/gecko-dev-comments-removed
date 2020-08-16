@@ -86,6 +86,8 @@ var TelemetryUtils = {
 
     
     EcosystemTelemetryEnabled: "toolkit.telemetry.ecosystemtelemetry.enabled",
+    EcosystemTelemetryAllowForNonProductionFxA:
+      "toolkit.telemetry.ecosystemtelemetry.allowForNonProductionFxA",
 
     
     PrioPingEnabled: "toolkit.telemetry.prioping.enabled",

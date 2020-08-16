@@ -7,6 +7,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = ["EcosystemTelemetry"];
@@ -14,14 +30,18 @@ var EXPORTED_SYMBOLS = ["EcosystemTelemetry"];
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  Weave: "resource://services-sync/main.js",
   ONLOGIN_NOTIFICATION: "resource://gre/modules/FxAccountsCommon.js",
   ONLOGOUT_NOTIFICATION: "resource://gre/modules/FxAccountsCommon.js",
+  ONVERIFIED_NOTIFICATION: "resource://gre/modules/FxAccountsCommon.js",
+  ON_PRELOGOUT_NOTIFICATION: "resource://gre/modules/FxAccountsCommon.js",
   TelemetryController: "resource://gre/modules/TelemetryController.jsm",
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
   Log: "resource://gre/modules/Log.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  fxAccounts: "resource://gre/modules/FxAccounts.jsm",
+  FxAccounts: "resource://gre/modules/FxAccounts.jsm",
+  ClientID: "resource://gre/modules/ClientID.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetters(this, {
@@ -31,44 +51,60 @@ XPCOMUtils.defineLazyServiceGetters(this, {
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "EcosystemTelemetry::";
 
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  return Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, LOGGER_PREFIX);
+});
+
 var Policy = {
   sendPing: (type, payload, options) =>
     TelemetryController.submitExternalPing(type, payload, options),
   monotonicNow: () => TelemetryUtils.monotonicNow(),
-  fxaUid: () => {
+  
+  
+  async getEcosystemAnonId() {
     try {
-      return Weave.Service.identity.hashedUID();
+      let userData = await fxAccounts.getSignedInUser();
+      if (!userData || !userData.verified) {
+        log.debug("No ecosystem anonymized ID - no user or unverified user");
+        return null;
+      }
+      return await fxAccounts.telemetry.ensureEcosystemAnonId();
     } catch (ex) {
+      log.error("Failed to fetch the ecosystem anonymized ID", ex);
       return null;
     }
   },
-  isClientConfigured: () =>
-    Weave.Status.checkSetup() !== Weave.CLIENT_NOT_CONFIGURED,
+  
+  getEcosystemClientId() {
+    return ClientID.getEcosystemClientID();
+  },
 };
 
 var EcosystemTelemetry = {
   Reason: Object.freeze({
     PERIODIC: "periodic", 
     SHUTDOWN: "shutdown", 
-    LOGIN: "login", 
     LOGOUT: "logout", 
   }),
-  PingType: Object.freeze({
-    PRE: "pre-account",
-    
-    POST: "post-account",
-  }),
-  METRICS_STORE: "pre-account",
-  _logger: null,
+  PING_TYPE: "account-ecosystem",
+  METRICS_STORE: "account-ecosystem",
   _lastSendTime: 0,
   
-  _pingType: null,
-  
-  _uidPending: false,
-  
   _initialized: false,
+  
+  _promiseEcosystemAnonId: null,
+  
+  
+  prepareEcosystemAnonId() {
+    this._promiseEcosystemAnonId = Policy.getEcosystemAnonId();
+  },
 
   enabled() {
+    
+    
+    
+    
+    
     
     if (
       !Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false)
@@ -85,23 +121,52 @@ var EcosystemTelemetry = {
       return false;
     }
 
+    if (
+      !FxAccounts.config.isProductionConfig() &&
+      !Services.prefs.getBoolPref(
+        TelemetryUtils.Preferences.EcosystemTelemetryAllowForNonProductionFxA,
+        false
+      )
+    ) {
+      log.info("Ecosystem telemetry disabled due to FxA non-production user");
+      return false;
+    }
+    
     return true;
   },
 
   
 
 
+
+
+
+  async prepareForFxANotification() {
+    
+    this.startup();
+    
+    
+    if (this._promiseEcosystemAnonId) {
+      await this._promiseEcosystemAnonId;
+    }
+  },
+
+  
+
+
   startup() {
-    if (!this.enabled()) {
+    if (!this.enabled() || this._initialized) {
       return;
     }
-    this._log.trace("Starting up.");
-    this._addObservers();
+    log.trace("Starting up.");
 
     
     
     
-    this._pingType = this.PingType.PRE;
+    this.prepareEcosystemAnonId();
+
+    this._addObservers();
+
     this._initialized = true;
   },
 
@@ -111,85 +176,85 @@ var EcosystemTelemetry = {
 
 
   shutdown() {
-    if (!this.enabled()) {
+    if (!this._initialized) {
       return;
     }
-    this._log.trace("Shutting down.");
-    this._submitPing(this._pingType, this.Reason.SHUTDOWN);
+    log.trace("Shutting down.");
+    this._submitPing(this.Reason.SHUTDOWN);
 
     this._removeObservers();
+    this._initialized = false;
   },
 
   _addObservers() {
     
     Services.obs.addObserver(this, ONLOGIN_NOTIFICATION);
-    
+    Services.obs.addObserver(this, ONVERIFIED_NOTIFICATION);
     Services.obs.addObserver(this, ONLOGOUT_NOTIFICATION);
-    
-    Services.obs.addObserver(this, "weave:service:ready");
-    
-    Services.obs.addObserver(this, "weave:service:login:change");
+    Services.obs.addObserver(this, ON_PRELOGOUT_NOTIFICATION);
   },
 
   _removeObservers() {
     try {
       
       Services.obs.removeObserver(this, ONLOGIN_NOTIFICATION);
+      Services.obs.removeObserver(this, ONVERIFIED_NOTIFICATION);
       Services.obs.removeObserver(this, ONLOGOUT_NOTIFICATION);
-      Services.obs.removeObserver(this, "weave:service:ready");
-      Services.obs.removeObserver(this, "weave:service:login:change");
+      Services.obs.removeObserver(this, ON_PRELOGOUT_NOTIFICATION);
     } catch (ex) {}
   },
 
   observe(subject, topic, data) {
-    this._log.trace(`observe, topic: ${topic}`);
+    log.trace(`observe, topic: ${topic}`);
 
     switch (topic) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       case ONLOGIN_NOTIFICATION:
+      case ONVERIFIED_NOTIFICATION:
         
-        this._uidPending = true;
+        
+        
+        
+        
+        this.prepareEcosystemAnonId();
         break;
 
       case ONLOGOUT_NOTIFICATION:
         
-        this._uidPending = false;
-        this._pingType = this.PingType.PRE;
-        this._submitPing(this._pingType, this.Reason.LOGOUT);
-        break;
-
-      case "weave:service:login:change":
-        let uid = Policy.fxaUid();
-        if (this._uidPending && uid) {
-          
-          this._submitPing(this._pingType, this.Reason.LOGIN);
-          this._pingType = this.PingType.POST;
-          this._uidPending = false;
-        } else if (!this._uidPending && uid) {
-          
-          
-          
-          this._pingType = this.PingType.POST;
-        } else if (!uid) {
-          
-          this._pingType = this.PingType.PRE;
-        }
-        break;
-
-      case "weave:service:ready":
         
-        if (Policy.isClientConfigured()) {
-          this._pingType = this.PingType.POST;
-        } else {
-          
-          this._pingType = this.PingType.PRE;
-        }
+        
+        return this._submitPing(this.Reason.LOGOUT)
+          .then(() => {
+            
+            this.prepareEcosystemAnonId();
+          })
+          .catch(e => {
+            log.error("ONLOGOUT promise chain failed", e);
+          });
+
+      case ON_PRELOGOUT_NOTIFICATION:
+        
+        
+        
+        
         break;
     }
+    return null;
   },
 
+  
   periodicPing() {
-    this._log.trace("periodic ping triggered");
-    this._submitPing(this._pingType, this.Reason.PERIODIC);
+    log.trace("periodic ping triggered");
+    return this._submitPing(this.Reason.PERIODIC);
   },
 
   
@@ -202,29 +267,20 @@ var EcosystemTelemetry = {
 
 
 
-
-  _submitPing(pingType, reason) {
+  async _submitPing(reason) {
     if (!this.enabled()) {
-      this._log.trace(`_submitPing was called, but ping is not enabled. Bug?`);
-      return;
-    }
-
-    if (!this._initialized || !pingType) {
-      this._log.trace(
-        `Not initialized or ping type undefined when sending. Bug?`
-      );
-      return;
-    }
-
-    if (pingType == this.PingType.POST) {
       
-      this._log.trace(
-        `Post-account ping not implemented yet. Sending pre-account instead.`
-      );
-      pingType = this.PingType.PRE;
+      
+      log.trace(`_submitPing was called, but ping is not enabled.`);
+      return;
     }
 
-    this._log.trace(`_submitPing, ping type: ${pingType}, reason: ${reason}`);
+    if (!this._initialized) {
+      log.trace(`Not initialized when sending. Bug?`);
+      return;
+    }
+
+    log.trace(`_submitPing, reason: ${reason}`);
 
     let now = Policy.monotonicNow();
 
@@ -232,7 +288,11 @@ var EcosystemTelemetry = {
     let duration = Math.round((now - this._lastSendTime) / 1000);
     this._lastSendTime = now;
 
-    let payload = this._payload(reason, duration);
+    let payload = await this._payload(reason, duration);
+    if (!payload) {
+      
+      return;
+    }
 
     
     
@@ -243,7 +303,8 @@ var EcosystemTelemetry = {
       usePingSender: reason === this.Reason.SHUTDOWN,
     };
 
-    Policy.sendPing(pingType, payload, options);
+    let id = await Policy.sendPing(this.PING_TYPE, payload, options);
+    log.info(`submitted ping ${id}`);
   },
 
   
@@ -252,10 +313,19 @@ var EcosystemTelemetry = {
 
 
 
-  _payload(reason, duration) {
+  async _payload(reason, duration) {
+    let ecosystemAnonId = await this._promiseEcosystemAnonId;
+    if (!ecosystemAnonId) {
+      
+      
+      log.info("Unable to determine the ecosystem anon id; skipping this ping");
+      return null;
+    }
+
     let payload = {
       reason,
-      ecosystemClientId: this._ecosystemClientId(),
+      ecosystemAnonId,
+      ecosystemClientId: await Policy.getEcosystemClientId(),
       duration,
 
       scalars: Telemetry.getSnapshotForScalars(
@@ -280,25 +350,7 @@ var EcosystemTelemetry = {
       ),
     };
 
-    
-    if (this._pingType == this.PingType.POST || reason == this.Reason.LOGIN) {
-      let uid = Policy.fxaUid();
-      if (uid) {
-        
-        payload.uid = "00000000000000000000000000000000";
-      }
-    }
-
     return payload;
-  },
-
-  
-
-
-
-
-  _ecosystemClientId() {
-    return "unknown";
   },
 
   
@@ -339,16 +391,5 @@ var EcosystemTelemetry = {
     this._initialized = false;
     this._lastSendTime = 0;
     this.startup();
-  },
-
-  get _log() {
-    if (!this._logger) {
-      this._logger = Log.repository.getLoggerWithMessagePrefix(
-        LOGGER_NAME,
-        LOGGER_PREFIX
-      );
-    }
-
-    return this._logger;
   },
 };
