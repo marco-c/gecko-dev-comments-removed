@@ -471,7 +471,8 @@ void WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize) {
   }
 
   IntRect bounds = ToOutsideIntRect(mTarget->GetClipExtents());
-  if (!WrBridge()->SendGetSnapshot(texture->GetIPDLActor())) {
+  bool needsYFlip = false;
+  if (!WrBridge()->SendGetSnapshot(texture->GetIPDLActor(), &needsYFlip)) {
     return;
   }
 
@@ -495,14 +496,6 @@ void WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize) {
   Rect dst(bounds.X(), bounds.Y(), bounds.Width(), bounds.Height());
   Rect src(0, 0, bounds.Width(), bounds.Height());
 
-  
-  
-#ifdef XP_WIN
-  
-  const bool needsYFlip = !WrBridge()->GetCompositorUseANGLE();
-#else
-  const bool needsYFlip = true;
-#endif
   Matrix m;
   if (needsYFlip) {
     m = Matrix::Scaling(1.0, -1.0).PostTranslate(0.0, aSize.height);
