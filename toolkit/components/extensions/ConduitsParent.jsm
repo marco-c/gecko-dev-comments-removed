@@ -49,7 +49,7 @@ const EXPORTED_SYMBOLS = ["BroadcastConduit", "ConduitsParent"];
 
 
 const {
-  ExtensionUtils: { DefaultWeakMap },
+  ExtensionUtils: { DefaultWeakMap, ExtensionError },
 } = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
 const { BaseConduit } = ChromeUtils.import(
@@ -288,8 +288,15 @@ class BroadcastConduit extends BaseConduit {
               result = value;
             }
           })
-          
-          .catch(err => err.result !== Cr.NS_ERROR_NOT_AVAILABLE && reject(err))
+          .catch(err => {
+            
+            
+            if (err instanceof ExtensionError || err?.mozWebExtLocation) {
+              reject(err);
+            } else {
+              Cu.reportError(err);
+            }
+          })
       );
       
       Promise.allSettled(promises).then(() => resolve(result));
