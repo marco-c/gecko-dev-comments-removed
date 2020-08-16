@@ -6905,11 +6905,38 @@ nsRect ScrollFrameHelper::GetUnsnappedScrolledRectInternal(
                                         aScrollPortSize, GetScrolledFrameDir());
 }
 
-nsMargin ScrollFrameHelper::GetActualScrollbarSizes() const {
+nsMargin ScrollFrameHelper::GetActualScrollbarSizes(
+    nsIScrollableFrame::ScrollbarSizesOptions
+        aOptions )
+    const {
   nsRect r = mOuter->GetPaddingRectRelativeToSelf();
 
-  return nsMargin(mScrollPort.y - r.y, r.XMost() - mScrollPort.XMost(),
-                  r.YMost() - mScrollPort.YMost(), mScrollPort.x - r.x);
+  nsMargin m(mScrollPort.y - r.y, r.XMost() - mScrollPort.XMost(),
+             r.YMost() - mScrollPort.YMost(), mScrollPort.x - r.x);
+
+  if (aOptions == nsIScrollableFrame::ScrollbarSizesOptions::
+                      INCLUDE_VISUAL_VIEWPORT_SCROLLBARS &&
+      !UsesOverlayScrollbars()) {
+    
+    
+    
+    
+    
+    if (mHScrollbarBox && mHasHorizontalScrollbar &&
+        mOnlyNeedHScrollbarToScrollVVInsideLV) {
+      m.bottom += mHScrollbarBox->GetRect().height;
+    }
+    if (mVScrollbarBox && mHasVerticalScrollbar &&
+        mOnlyNeedVScrollbarToScrollVVInsideLV) {
+      if (IsScrollbarOnRight()) {
+        m.right += mVScrollbarBox->GetRect().width;
+      } else {
+        m.left += mVScrollbarBox->GetRect().width;
+      }
+    }
+  }
+
+  return m;
 }
 
 void ScrollFrameHelper::SetScrollbarVisibility(nsIFrame* aScrollbar,
