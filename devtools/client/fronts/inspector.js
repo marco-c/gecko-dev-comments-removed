@@ -80,15 +80,8 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
   }
 
   async getCompatibilityFront() {
-    
-    
-    
-    if (this._compatibility === undefined) {
-      try {
-        this._compatibility = await super.getCompatibility();
-      } catch (error) {
-        this._compatibility = null;
-      }
+    if (!this._compatibility) {
+      this._compatibility = await super.getCompatibility();
     }
 
     return this._compatibility;
