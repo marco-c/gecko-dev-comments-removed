@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 4; -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SharedSurfaceIO.h"
 
@@ -9,14 +9,14 @@
 #include "MozFramebuffer.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/gfx/MacIOSurface.h"
-#include "mozilla/layers/LayersSurfaces.h"  
+#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
 #include "ScopedGLHelpers.h"
 
 namespace mozilla {
 namespace gl {
 
-
-
+// -
+// Factory
 
 SurfaceFactory_IOSurface::SurfaceFactory_IOSurface(GLContext& gl)
     : SurfaceFactory({&gl, SharedSurfaceType::IOSurface,
@@ -24,8 +24,8 @@ SurfaceFactory_IOSurface::SurfaceFactory_IOSurface(GLContext& gl)
       mMaxDims(gfx::IntSize::Truncate(MacIOSurface::GetMaxWidth(),
                                       MacIOSurface::GetMaxHeight())) {}
 
-
-
+// -
+// Surface
 
 static void BackTextureWithIOSurf(GLContext* const gl, const GLuint tex,
                                   MacIOSurface* const ioSurf) {
@@ -48,7 +48,7 @@ static void BackTextureWithIOSurf(GLContext* const gl, const GLuint tex,
   ioSurf->CGLTexImageIOSurface2D(gl, cgl, 0);
 }
 
-
+/*static*/
 UniquePtr<SharedSurface_IOSurface> SharedSurface_IOSurface::Create(
     const SharedSurfaceDesc& desc) {
   const auto& size = desc.size;
@@ -89,36 +89,11 @@ void SharedSurface_IOSurface::ProducerReleaseImpl() {
 
 Maybe<layers::SurfaceDescriptor>
 SharedSurface_IOSurface::ToSurfaceDescriptor() {
-  const bool isOpaque = false;  
+  const bool isOpaque = false;  // RGBA
   return Some(layers::SurfaceDescriptorMacIOSurface(
       mIOSurf->GetIOSurfaceID(), mIOSurf->GetContentsScaleFactor(), isOpaque,
       mIOSurf->GetYUVColorSpace()));
 }
 
-bool SharedSurface_IOSurface::ReadbackBySharedHandle(
-    gfx::DataSourceSurface* out_surface) {
-  MOZ_ASSERT(out_surface);
-  mIOSurf->Lock();
-  size_t bytesPerRow = mIOSurf->GetBytesPerRow();
-  size_t ioWidth = mIOSurf->GetDevicePixelWidth();
-  size_t ioHeight = mIOSurf->GetDevicePixelHeight();
-
-  const unsigned char* ioData = (unsigned char*)mIOSurf->GetBaseAddress();
-  gfx::DataSourceSurface::ScopedMap map(out_surface,
-                                        gfx::DataSourceSurface::WRITE);
-  if (!map.IsMapped()) {
-    mIOSurf->Unlock();
-    return false;
-  }
-
-  for (size_t i = 0; i < ioHeight; i++) {
-    memcpy(map.GetData() + i * map.GetStride(), ioData + i * bytesPerRow,
-           ioWidth * 4);
-  }
-
-  mIOSurf->Unlock();
-  return true;
-}
-
-}  
-}  
+}  // namespace gl
+}  // namespace mozilla

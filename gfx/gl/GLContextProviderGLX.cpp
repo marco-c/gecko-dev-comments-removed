@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifdef MOZ_WIDGET_GTK
 #  include <gdk/gdk.h>
@@ -64,21 +64,21 @@ bool GLXLibrary::EnsureInitialized() {
     return true;
   }
 
-  
+  // Don't repeatedly try to initialize.
   if (mTriedInitializing) {
     return false;
   }
   mTriedInitializing = true;
 
-  
+  // Force enabling s3 texture compression. (Bug 774134)
   PR_SetEnv("force_s3tc_enable=true");
 
   if (!mOGLLibrary) {
-    
-    
-    
-    
-    
+    // see e.g. bug 608526: it is intrinsically interesting to know whether we
+    // have dynamically linked to libGL.so.1 because at least the NVIDIA
+    // implementation requires an executable stack, which causes mprotect calls,
+    // which trigger glibc bug
+    // http://sourceware.org/bugzilla/show_bug.cgi?id=12225
     const char* libGLfilename = "libGL.so.1";
 #if defined(__OpenBSD__) || defined(__NetBSD__)
     libGLfilename = "libGL.so";
@@ -110,7 +110,7 @@ bool GLXLibrary::EnsureInitialized() {
   }
 
   const SymLoadStruct symbols[] = {
-      
+      /* functions that were in GLX 1.0 */
       SYMBOL(DestroyContext),
       SYMBOL(MakeCurrent),
       SYMBOL(SwapBuffers),
@@ -120,12 +120,12 @@ bool GLXLibrary::EnsureInitialized() {
       SYMBOL(WaitGL),
       SYMBOL(WaitX),
 
-      
+      /* functions introduced in GLX 1.1 */
       SYMBOL(QueryExtensionsString),
       SYMBOL(GetClientString),
       SYMBOL(QueryServerString),
 
-      
+      /* functions introduced in GLX 1.3 */
       SYMBOL(ChooseFBConfig),
       SYMBOL(ChooseVisual),
       SYMBOL(GetFBConfigAttrib),
@@ -134,7 +134,7 @@ bool GLXLibrary::EnsureInitialized() {
       SYMBOL(DestroyPixmap),
       SYMBOL(CreateNewContext),
 
-      
+      // Core in GLX 1.4, ARB extension before.
       {(PRFuncPtr*)&mSymbols.fGetProcAddress,
        {{"glXGetProcAddress", "glXGetProcAddressARB"}}},
       END_OF_SYMBOLS};
@@ -282,7 +282,7 @@ GLXPixmap GLXLibrary::CreatePixmap(gfxASurface* aSurface) {
   ScopedXFree<GLXFBConfig> cfgs(
       fChooseFBConfig(display, xscreen, attribs, &numConfigs));
 
-  
+  // Find an fbconfig that matches the pixel format used on the Pixmap.
   int matchIndex = -1;
   unsigned long redMask = static_cast<unsigned long>(direct.redMask)
                           << direct.red;
@@ -290,7 +290,7 @@ GLXPixmap GLXLibrary::CreatePixmap(gfxASurface* aSurface) {
                             << direct.green;
   unsigned long blueMask = static_cast<unsigned long>(direct.blueMask)
                            << direct.blue;
-  
+  // This is true if the Pixmap has bits for alpha or unused bits.
   bool haveNonColorBits =
       ~(redMask | greenMask | blueMask) != -1UL << format->depth;
 
@@ -306,50 +306,50 @@ GLXPixmap GLXLibrary::CreatePixmap(gfxASurface* aSurface) {
       continue;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Historically Xlib Visuals did not try to represent an alpha channel
+    // and there was no means to use an alpha channel on a Pixmap.  The
+    // Xlib Visual from the fbconfig was not intended to have any
+    // information about alpha bits.
+    //
+    // Since then, RENDER has added formats for 32 bit depth Pixmaps.
+    // Some of these formats have bits for alpha and some have unused
+    // bits.
+    //
+    // Then the Composite extension added a 32 bit depth Visual intended
+    // for Windows with an alpha channel, so bits not in the visual color
+    // masks were expected to be treated as alpha bits.
+    //
+    // Usually GLX counts only color bits in the Visual depth, but the
+    // depth of Composite's ARGB Visual includes alpha bits.  However,
+    // bits not in the color masks are not necessarily alpha bits because
+    // sometimes (NVIDIA) 32 bit Visuals are added for fbconfigs with 32
+    // bit BUFFER_SIZE but zero alpha bits and 24 color bits (NVIDIA
+    // again).
+    //
+    // This checks that the depth matches in one of the two ways.
+    // NVIDIA now forces format->depth == depth so only the first way
+    // is checked for NVIDIA
     if (depth != format->depth &&
         (mIsNVIDIA || depth != format->depth - alphaSize)) {
       continue;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // If all bits of the Pixmap are color bits and the Pixmap depth
+    // matches the depth of the fbconfig visual, then we can assume that
+    // the driver will do whatever is necessary to ensure that any
+    // GLXPixmap alpha bits are treated as set.  We can skip the
+    // ALPHA_SIZE check in this situation.  We need to skip this check for
+    // situations (ATI) where there are no fbconfigs without alpha bits.
+    //
+    // glXChooseFBConfig should prefer configs with smaller
+    // LOCAL_GLX_BUFFER_SIZE, so we should still get zero alpha bits if
+    // available, except perhaps with NVIDIA drivers where buffer size is
+    // not the specified sum of the component sizes.
     if (haveNonColorBits) {
-      
-      
-      
-      
+      // There are bits in the Pixmap format that haven't been matched
+      // against the fbconfig visual.  These bits could either represent
+      // alpha or be unused, so just check that the number of alpha bits
+      // matches.
       int size = 0;
       sGLXLibrary.fGetFBConfigAttrib(display, cfgs[i], LOCAL_GLX_ALPHA_SIZE,
                                      &size);
@@ -362,8 +362,8 @@ GLXPixmap GLXLibrary::CreatePixmap(gfxASurface* aSurface) {
     break;
   }
   if (matchIndex == -1) {
-    
-    
+    // GLX can't handle A8 surfaces, so this is not really unexpected. The
+    // caller should deal with this situation.
     NS_WARNING_ASSERTION(
         format->depth == 8,
         "[GLX] Couldn't find a FBConfig matching Pixmap format");
@@ -395,12 +395,12 @@ void GLXLibrary::BindTexImage(Display* aDisplay, GLXPixmap aPixmap) {
     return;
   }
 
-  
-  
+  // Make sure all X drawing to the surface has finished before binding to a
+  // texture.
   if (mClientIsMesa) {
-    
-    
-    
+    // Using XSync instead of Mesa's glXWaitX, because its glxWaitX is a
+    // noop when direct rendering unless the current drawable is a
+    // single-buffer window.
     FinishX(aDisplay);
   } else {
     fWaitX();
@@ -417,8 +417,8 @@ void GLXLibrary::ReleaseTexImage(Display* aDisplay, GLXPixmap aPixmap) {
 }
 
 void GLXLibrary::UpdateTexImage(Display* aDisplay, GLXPixmap aPixmap) {
-  
-  
+  // NVIDIA drivers don't require a rebind of the pixmap in order
+  // to display an updated image, and it's faster not to do it.
   if (mIsNVIDIA) {
     fWaitX();
     return;
@@ -535,9 +535,9 @@ already_AddRefed<GLContextGLX> GLContextGLX::CreateGLContext(
 
     if (error) {
       NS_WARNING("Failed to create GLXContext!");
-      glContext = nullptr;  
-                            
-                            
+      glContext = nullptr;  // note: this must be done while the graceful X
+                            // error handler is set, because glxMakeCurrent can
+                            // give a GLXBadDrawable error
     }
 
     return glContext.forget();
@@ -547,12 +547,12 @@ already_AddRefed<GLContextGLX> GLContextGLX::CreateGLContext(
 GLContextGLX::~GLContextGLX() {
   MarkDestroyed();
 
-  
+  // Wrapped context should not destroy glxContext/Surface
   if (!mOwnsContext) {
     return;
   }
 
-  
+  // see bug 659842 comment 76
 #ifdef DEBUG
   bool success =
 #endif
@@ -573,8 +573,8 @@ bool GLContextGLX::Init() {
     return false;
   }
 
-  
-  
+  // EXT_framebuffer_object is not supported on Core contexts
+  // so we'll also check for ARB_framebuffer_object
   if (!IsExtensionSupported(EXT_framebuffer_object) &&
       !IsSupported(GLFeature::framebuffer_object))
     return false;
@@ -582,12 +582,10 @@ bool GLContextGLX::Init() {
   return true;
 }
 
-bool GLContextGLX::IsAliveImpl() const { return true; }
-
 bool GLContextGLX::MakeCurrentImpl() const {
   if (mGLX->IsMesa()) {
-    
-    
+    // Read into the event queue to ensure that Mesa receives a
+    // DRI2InvalidateBuffers event before drawing. See bug 1280653.
     Unused << XPending(mDisplay);
   }
 
@@ -595,9 +593,9 @@ bool GLContextGLX::MakeCurrentImpl() const {
   NS_ASSERTION(succeeded, "Failed to make GL context current!");
 
   if (!IsOffscreen() && mGLX->SupportsSwapControl()) {
-    
-    
-    
+    // Many GLX implementations default to blocking until the next
+    // VBlank when calling glXSwapBuffers. We want to run unthrottled
+    // in ASAP mode. See bug 1280744.
     const bool isASAP = (StaticPrefs::layout_frame_rate() == 0);
     mGLX->fSwapInterval(mDisplay, mDrawable, isASAP ? 0 : 1);
   }
@@ -679,27 +677,6 @@ static bool AreCompatibleVisuals(Visual* one, Visual* two) {
   return true;
 }
 
-already_AddRefed<GLContext> GLContextProviderGLX::CreateWrappingExisting(
-    void* aContext, void* aSurface) {
-  if (!sGLXLibrary.EnsureInitialized()) {
-    return nullptr;
-  }
-
-  if (aContext && aSurface) {
-    RefPtr<GLContextGLX> glContext =
-        new GLContextGLX({},
-                         (Display*)DefaultXDisplay(),  
-                         (GLXDrawable)aSurface, (GLXContext)aContext,
-                         false,  
-                         true, (gfxXlibSurface*)nullptr);
-
-    glContext->mOwnsContext = false;
-    return glContext.forget();
-  }
-
-  return nullptr;
-}
-
 already_AddRefed<GLContext> CreateForWidget(Display* aXDisplay, Window aXWindow,
                                             bool aWebRender,
                                             bool aForceAccelerated) {
@@ -707,12 +684,12 @@ already_AddRefed<GLContext> CreateForWidget(Display* aXDisplay, Window aXWindow,
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
+  // Currently, we take whatever Visual the window already has, and
+  // try to create an fbconfig for that visual.  This isn't
+  // necessarily what we want in the long run; an fbconfig may not
+  // be available for the existing visual, or if it is, the GL
+  // performance might be suboptimal.  But using the existing visual
+  // is a relatively safe intermediate step.
 
   if (!aXDisplay) {
     NS_ERROR("X Display required for GLX Context provider");
@@ -731,7 +708,7 @@ already_AddRefed<GLContext> CreateForWidget(Display* aXDisplay, Window aXWindow,
 
   CreateContextFlags flags;
   if (aWebRender) {
-    flags = CreateContextFlags::NONE;  
+    flags = CreateContextFlags::NONE;  // WR needs GL3.2+
   } else {
     flags = CreateContextFlags::REQUIRE_COMPAT_PROFILE;
   }
@@ -780,17 +757,17 @@ static bool ChooseConfig(GLXLibrary* glx, Display* display, int screen,
   scopedConfigArr = glx->fChooseFBConfig(display, screen, attribs, &numConfigs);
   if (!scopedConfigArr || !numConfigs) return false;
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Issues with glxChooseFBConfig selection and sorting:
+  // * ALPHA_SIZE is sorted as 'largest total RGBA bits first'. If we don't
+  // request
+  //   alpha bits, we'll probably get RGBA anyways, since 32 is more than 24.
+  // * DEPTH_SIZE is sorted largest first, including for `0` inputs.
+  // * STENCIL_SIZE is smallest first, but it might return `8` even though we
+  // ask for
+  //   `0`.
 
-  
-  
+  // For now, we don't care about these. We *will* care when we do XPixmap
+  // sharing.
 
   for (int i = 0; i < numConfigs; ++i) {
     GLXFBConfig curConfig = scopedConfigArr[i];
@@ -820,7 +797,7 @@ bool GLContextGLX::FindVisual(Display* display, int screen, bool useWebRender,
   XVisualInfo visualTemplate;
   visualTemplate.screen = screen;
 
-  
+  // Get all visuals of screen
 
   int visualsLen = 0;
   XVisualInfo* xVisuals =
@@ -831,7 +808,7 @@ bool GLContextGLX::FindVisual(Display* display, int screen, bool useWebRender,
   const Range<XVisualInfo> visualInfos(xVisuals, visualsLen);
   auto cleanupVisuals = MakeScopeExit([&] { XFree(xVisuals); });
 
-  
+  // Get default visual info
 
   Visual* defaultVisual = DefaultVisual(display, screen);
   const auto defaultVisualInfo = [&]() -> const XVisualInfo* {
@@ -860,12 +837,12 @@ bool GLContextGLX::FindVisual(Display* display, int screen, bool useWebRender,
       return actual == expected;
     };
 
-    
+    // Check if visual is compatible.
     if (cur.depth != bpp || cur.c_class != defaultVisualInfo->c_class) {
       continue;
     }
 
-    
+    // Check if visual is compatible to GL requests.
     if (fnConfigMatches(LOCAL_GLX_USE_GL, 1) &&
         fnConfigMatches(LOCAL_GLX_DOUBLEBUFFER, 1) &&
         fnConfigMatches(LOCAL_GLX_RED_SIZE, 8) &&
@@ -885,9 +862,9 @@ bool GLContextGLX::FindFBConfigForWindow(
     Display* display, int screen, Window window,
     ScopedXFree<GLXFBConfig>* const out_scopedConfigArr,
     GLXFBConfig* const out_config, int* const out_visid, bool aWebRender) {
-  
-  
-  
+  // XXX the visual ID is almost certainly the LOCAL_GLX_FBCONFIG_ID, so
+  // we could probably do this first and replace the glXGetFBConfigs
+  // with glXChooseConfigs.  Docs are sparklingly clear as always.
   XWindowAttributes windowAttrs;
   if (!XGetWindowAttributes(display, window, &windowAttrs)) {
     NS_WARNING("[GLX] XGetWindowAttributes() failed");
@@ -927,9 +904,9 @@ bool GLContextGLX::FindFBConfigForWindow(
     sGLXLibrary.fGetFBConfigAttrib(display, cfgs[i], LOCAL_GLX_VISUAL_ID,
                                    &visid);
     if (visid) {
-      
-      
-      
+      // WebRender compatible GLX visual is configured
+      // at nsWindow::Create() by GLContextGLX::FindVisual(),
+      // just reuse it here.
       if (windowVisualID == static_cast<VisualID>(visid)) {
         *out_config = cfgs[i];
         *out_visid = visid;
@@ -938,9 +915,9 @@ bool GLContextGLX::FindFBConfigForWindow(
     }
   }
 
-  
-  
-  
+  // We don't have a frame buffer visual which matches the GLX visual
+  // from GLContextGLX::FindVisual(). Let's try to find a near one and hope
+  // we're not on NVIDIA (Bug 1478454) as it causes X11 BadMatch error there.
   for (int i = 0; i < numConfigs; i++) {
     int visid = X11None;
     sGLXLibrary.fGetFBConfigAttrib(display, cfgs[i], LOCAL_GLX_VISUAL_ID,
@@ -994,9 +971,9 @@ static already_AddRefed<GLContextGLX> CreateOffscreenPixmapContext(
     return nullptr;
   }
 
-  
-  
-  
+  // Handle slightly different signature between glXCreatePixmap and
+  // its pre-GLX-1.3 extension equivalent (though given the ABI, we
+  // might not need to).
   const auto drawable = surface->XDrawable();
   const auto pixmap = glx->fCreatePixmap(display, config, drawable, nullptr);
   if (pixmap == 0) {
@@ -1012,20 +989,20 @@ static already_AddRefed<GLContextGLX> CreateOffscreenPixmapContext(
                                        surface);
 }
 
-
+/*static*/
 already_AddRefed<GLContext> GLContextProviderGLX::CreateHeadless(
     const GLContextCreateDesc& desc, nsACString* const out_failureId) {
   IntSize dummySize = IntSize(16, 16);
   return CreateOffscreenPixmapContext(desc, dummySize, out_failureId);
 }
 
-
+/*static*/
 GLContext* GLContextProviderGLX::GetGlobalContext() {
-  
+  // Context sharing not supported.
   return nullptr;
 }
 
-
+/*static*/
 void GLContextProviderGLX::Shutdown() {}
 
-}  
+}  // namespace mozilla::gl

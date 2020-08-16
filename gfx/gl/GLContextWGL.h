@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef GLCONTEXTWGL_H_
 #define GLCONTEXTWGL_H_
@@ -16,11 +16,11 @@ namespace gl {
 class GLContextWGL final : public GLContext {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(GLContextWGL, override)
-  
+  // From Window: (possibly for offscreen!)
   GLContextWGL(const GLContextDesc&, HDC aDC, HGLRC aContext,
                HWND aWindow = nullptr);
 
-  
+  // From PBuffer
   GLContextWGL(const GLContextDesc&, HANDLE aPbuffer, HDC aDC, HGLRC aContext,
                int aPixelFormat);
 
@@ -30,7 +30,6 @@ class GLContextWGL final : public GLContext {
     return GLContextType::WGL;
   }
 
-  virtual bool IsAliveImpl() const override;
   virtual bool MakeCurrentImpl() const override;
   virtual bool IsCurrentImpl() const override;
   virtual bool IsDoubleBuffered() const override { return mIsDoubleBuffered; }
@@ -56,7 +55,7 @@ class GLContextWGL final : public GLContext {
   bool mIsDoubleBuffered = false;
 };
 
-}  
-}  
+}  // namespace gl
+}  // namespace mozilla
 
-#endif  
+#endif  // GLCONTEXTWGL_H_

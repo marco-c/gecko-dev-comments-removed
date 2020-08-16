@@ -61,8 +61,6 @@ class GLContextCGL : public GLContext {
   
   void MigrateToActiveGPU();
 
-  virtual bool IsAliveImpl() const override;
-
   virtual bool MakeCurrentImpl() const override;
 
   virtual bool IsCurrentImpl() const override;
