@@ -63,8 +63,6 @@ namespace jit {
   _(GetRval)                             \
   _(SetIntrinsic)                        \
   _(ThrowMsg)                            \
-  /* Private Fields */                   \
-  _(CheckPrivateField)                   \
   // === !! WARNING WARNING WARNING !! ===
   
   
