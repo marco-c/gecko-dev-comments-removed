@@ -14,7 +14,18 @@ namespace jit {
 
 class MDefinition;
 
-enum class KnownClass { PlainObject, Array, Function, RegExp, None };
+
+
+enum class KnownClass {
+  PlainObject,
+  Array,
+  Function,
+  RegExp,
+  ArrayIterator,
+  StringIterator,
+  RegExpStringIterator,
+  None
+};
 
 KnownClass GetObjectKnownClass(const MDefinition* def);
 const JSClass* GetObjectKnownJSClass(const MDefinition* def);
