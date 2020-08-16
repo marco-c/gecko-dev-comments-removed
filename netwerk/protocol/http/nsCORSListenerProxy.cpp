@@ -894,9 +894,7 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   if (CheckInsecureUpgradePreventsCORS(mRequestingPrincipal, aChannel)) {
     
     nsCOMPtr<nsILoadInfo> loadinfo = aChannel->LoadInfo();
-    bool isPrivateWin = loadinfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-    if (!(loadInfo->GetHttpsOnlyStatus() & nsILoadInfo::HTTPS_ONLY_EXEMPT) &&
-        nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin)) {
+    if (nsHTTPSOnlyUtils::IsSafeToAcceptCORSOrMixedContent(loadinfo)) {
       return NS_OK;
     }
     
