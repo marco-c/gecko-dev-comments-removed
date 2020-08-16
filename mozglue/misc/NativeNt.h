@@ -840,7 +840,7 @@ class MOZ_RAII PEHeaders final {
     
     auto numSections =
         std::min(mPeHeader->FileHeader.NumberOfSections, WORD(96));
-    return MakeSpan(base, numSections);
+    return Span{base, numSections};
   }
 
   PIMAGE_RESOURCE_DIRECTORY_ENTRY

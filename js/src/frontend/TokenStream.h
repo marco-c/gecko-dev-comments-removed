@@ -1569,8 +1569,7 @@ class TokenStreamCharsShared {
   CharBuffer& getCharBuffer() { return charBuffer; }
 };
 
-inline mozilla::Span<const char> ToCharSpan(
-    mozilla::Span<const mozilla::Utf8Unit> codeUnits) {
+inline auto ToCharSpan(mozilla::Span<const mozilla::Utf8Unit> codeUnits) {
   static_assert(alignof(char) == alignof(mozilla::Utf8Unit),
                 "must have equal alignment to reinterpret_cast<>");
   static_assert(sizeof(char) == sizeof(mozilla::Utf8Unit),
@@ -1584,8 +1583,8 @@ inline mozilla::Span<const char> ToCharSpan(
   
   
   
-  return mozilla::MakeSpan(reinterpret_cast<const char*>(codeUnits.data()),
-                           codeUnits.size());
+  return mozilla::Span{reinterpret_cast<const char*>(codeUnits.data()),
+                       codeUnits.size()};
 }
 
 template <typename Unit>
