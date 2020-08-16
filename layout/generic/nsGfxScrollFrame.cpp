@@ -6593,11 +6593,27 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
                               : mScrollPort.x + compositionSize.width;
     if (mHasVerticalScrollbar) {
       nsMargin margin;
+
       
       
       
       
       mVScrollbarBox->GetXULMargin(margin);
+
+      if (!UsesOverlayScrollbars() && mOnlyNeedVScrollbarToScrollVVInsideLV) {
+        
+        
+        
+        nsSize vScrollbarPrefSize(0, 0);
+        GetScrollbarMetrics(aState, mVScrollbarBox, nullptr,
+                            &vScrollbarPrefSize);
+        if (scrollbarOnLeft) {
+          margin.right -= vScrollbarPrefSize.width;
+        } else {
+          margin.left -= vScrollbarPrefSize.width;
+        }
+      }
+
       vRect.Deflate(margin);
     }
     AdjustScrollbarRectForResizer(mOuter, presContext, vRect, hasResizer,
@@ -6615,11 +6631,23 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
     hRect.y = mScrollPort.y + compositionSize.height;
     if (mHasHorizontalScrollbar) {
       nsMargin margin;
+
       
       
       
       
       mHScrollbarBox->GetXULMargin(margin);
+
+      if (!UsesOverlayScrollbars() && mOnlyNeedHScrollbarToScrollVVInsideLV) {
+        
+        
+        
+        nsSize hScrollbarPrefSize(0, 0);
+        GetScrollbarMetrics(aState, mHScrollbarBox, nullptr,
+                            &hScrollbarPrefSize);
+        margin.top -= hScrollbarPrefSize.height;
+      }
+
       hRect.Deflate(margin);
     }
     AdjustScrollbarRectForResizer(mOuter, presContext, hRect, hasResizer,
