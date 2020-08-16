@@ -67,13 +67,17 @@ add_task(async function() {
 
       
       
-      
-      await BrowserTestUtils.waitForCondition(() => {
-        return (
-          iframeBC.currentWindowGlobal &&
-          iframeBC.currentWindowGlobal.documentURI != "about:blank"
-        );
-      });
+      let {
+        subject: windowGlobal,
+      } = await BrowserUtils.promiseObserved("window-global-created", wgp =>
+        wgp.documentURI.spec.startsWith("about:framecrashed")
+      );
+
+      is(
+        windowGlobal,
+        iframeBC.currentWindowGlobal,
+        "Resolved on expected window global"
+      );
 
       let newIframeURI = await SpecialPowers.spawn(iframeBC, [], async () => {
         return content.document.documentURI;
