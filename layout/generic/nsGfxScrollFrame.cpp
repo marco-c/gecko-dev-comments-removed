@@ -6553,6 +6553,11 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
                                   ScrollDirection::eVertical);
   }
 
+  bool hasVisualOnlyScrollbarsOnBothDirections =
+      !UsesOverlayScrollbars() && mHScrollbarBox && mHasHorizontalScrollbar &&
+      mOnlyNeedHScrollbarToScrollVVInsideLV && mVScrollbarBox &&
+      mHasVerticalScrollbar && mOnlyNeedVScrollbarToScrollVVInsideLV;
+
   nsRect hRect;
   if (mHScrollbarBox) {
     MOZ_ASSERT(mHScrollbarBox->IsXULBoxFrame(), "Must be a box frame!");
@@ -6605,6 +6610,16 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
       r.height = aContentArea.YMost() - mScrollPort.YMost();
       r.y = aContentArea.YMost() - r.height;
       NS_ASSERTION(r.height >= 0, "Scroll area should be inside client rect");
+    }
+
+    
+    
+    
+    if (r.IsEmpty() && hasVisualOnlyScrollbarsOnBothDirections) {
+      r.width = vRect.width;
+      r.height = hRect.height;
+      r.x = scrollbarOnLeft ? mScrollPort.x : mScrollPort.XMost() - r.width;
+      r.y = mScrollPort.YMost() - r.height;
     }
 
     if (mScrollCornerBox) {
