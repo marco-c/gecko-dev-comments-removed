@@ -460,17 +460,10 @@ async function testTabArrowsEmbeddedDoc(aView, aEmbedder) {
   if (doc.readyState != "complete" || doc.location.href != kEmbeddedDocUrl) {
     info(`Embedded doc readyState ${doc.readyState}, location ${doc.location}`);
     info("Waiting for load on embedder");
-    if (aEmbedder.tagName == "browser") {
-      
-      
-      await BrowserTestUtils.waitForEvent(
-        aEmbedder,
-        "BrowserTestUtils:ContentEvent:load"
-      );
-    } else {
-      
-      await BrowserTestUtils.waitForEvent(aEmbedder, "load");
-    }
+    
+    
+    
+    await BrowserTestUtils.waitForEvent(aEmbedder, "load", true);
     
     
     doc = aEmbedder.contentDocument;
