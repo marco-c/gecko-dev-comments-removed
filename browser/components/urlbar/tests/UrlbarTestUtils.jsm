@@ -51,6 +51,7 @@ var UrlbarTestUtils = {
     this._testScope = scope;
     if (scope) {
       this.Assert = scope.Assert;
+      this.EventUtils = scope.EventUtils;
     }
   },
 
@@ -373,6 +374,7 @@ var UrlbarTestUtils = {
 
 
 
+
   assertSearchMode(window, expectedSearchMode) {
     this.Assert.equal(
       !!window.gURLBar.searchMode,
@@ -433,6 +435,96 @@ var UrlbarTestUtils = {
         expectedL10n,
         "Expected l10n"
       );
+    }
+  },
+
+  
+
+
+
+
+  async enterSearchMode(window) {
+    
+    await this.promiseSearchComplete(window);
+    
+    let oneOffs = this.getOneOffSearchButtons(window).getSelectableButtons(
+      true
+    );
+    this.EventUtils.synthesizeMouseAtCenter(oneOffs[0], {});
+    await this.promiseSearchComplete(window);
+    this.Assert.ok(this.isPopupOpen(window), "Urlbar view is still open.");
+    this.assertSearchMode(window, {
+      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      engineName: oneOffs[0].engine.name,
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async exitSearchMode(
+    window,
+    { backspace, clickClose, waitForSearch = true }
+  ) {
+    let urlbar = window.gURLBar;
+    
+    
+    
+    if (!urlbar.hasAttribute("breakout-extend") && clickClose) {
+      if (waitForSearch) {
+        let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+        urlbar.setSearchMode(null);
+        await searchPromise;
+      } else {
+        urlbar.setSearchMode(null);
+      }
+      return;
+    }
+
+    if (backspace) {
+      let urlbarValue = urlbar.value;
+      urlbar.selectionStart = urlbar.selectionEnd = 0;
+      if (waitForSearch) {
+        let searchPromise = this.promiseSearchComplete(window);
+        this.EventUtils.synthesizeKey("KEY_Backspace");
+        await searchPromise;
+      } else {
+        this.EventUtils.synthesizeKey("KEY_Backspace");
+      }
+      this.Assert.equal(
+        urlbar.value,
+        urlbarValue,
+        "Urlbar value hasn't changed."
+      );
+      this.assertSearchMode(window, null);
+    } else if (clickClose) {
+      
+      
+      let indicator = urlbar.querySelector("#urlbar-search-mode-indicator");
+      this.EventUtils.synthesizeMouseAtCenter(indicator, { type: "mouseover" });
+      let closeButton = urlbar.querySelector(
+        "#urlbar-search-mode-indicator-close"
+      );
+      if (waitForSearch) {
+        let searchPromise = this.promiseSearchComplete(window);
+        this.EventUtils.synthesizeMouseAtCenter(closeButton, {});
+        await searchPromise;
+      } else {
+        this.EventUtils.synthesizeMouseAtCenter(closeButton, {});
+      }
+      this.assertSearchMode(window, null);
     }
   },
 

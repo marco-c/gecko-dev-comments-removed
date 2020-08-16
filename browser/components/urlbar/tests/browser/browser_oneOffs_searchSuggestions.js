@@ -230,11 +230,14 @@ add_task(async function test_selectOneOffThenSuggestion() {
 
     
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index + 1);
-
+    
+    
     let resultsPromise = BrowserTestUtils.browserLoaded(
       gBrowser.selectedBrowser,
       false,
-      `http://localhost:20709/?terms=foobar`
+      usingFormHistory
+        ? `http://mochi.test:8888/?terms=foobar`
+        : `http://localhost:20709/?terms=foobar`
     );
     EventUtils.synthesizeMouseAtCenter(result.element.row, {});
     await resultsPromise;

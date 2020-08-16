@@ -45,87 +45,6 @@ add_task(async function setup() {
   });
 });
 
-
-
-
-
-async function enterSearchMode(window) {
-  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(
-    window
-  ).getSelectableButtons(true);
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-  EventUtils.synthesizeMouseAtCenter(oneOffs[0], {});
-  await searchPromise;
-  Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is still open.");
-  UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-    engineName: oneOffs[0].engine.name,
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function exitSearchMode(
-  window,
-  { backspace, clickClose, waitForSearch = true }
-) {
-  
-  
-  
-  if (!gURLBar.hasAttribute("breakout-extend") && clickClose) {
-    if (waitForSearch) {
-      let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-      gURLBar.setSearchMode(null);
-      await searchPromise;
-    } else {
-      gURLBar.setSearchMode(null);
-    }
-    return;
-  }
-
-  if (backspace) {
-    let urlbarValue = gURLBar.value;
-    gURLBar.selectionStart = gURLBar.selectionEnd = 0;
-    if (waitForSearch) {
-      let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-      EventUtils.synthesizeKey("KEY_Backspace");
-      await searchPromise;
-    } else {
-      EventUtils.synthesizeKey("KEY_Backspace");
-    }
-    Assert.equal(gURLBar.value, urlbarValue, "Urlbar value hasn't changed.");
-    UrlbarTestUtils.assertSearchMode(window, null);
-  } else if (clickClose) {
-    
-    
-    let indicator = gURLBar.querySelector("#urlbar-search-mode-indicator");
-    EventUtils.synthesizeMouseAtCenter(indicator, { type: "mouseover" });
-    let closeButton = gURLBar.querySelector(
-      "#urlbar-search-mode-indicator-close"
-    );
-    if (waitForSearch) {
-      let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-      EventUtils.synthesizeMouseAtCenter(closeButton, {});
-      await searchPromise;
-    } else {
-      EventUtils.synthesizeMouseAtCenter(closeButton, {});
-    }
-    UrlbarTestUtils.assertSearchMode(window, null);
-  }
-}
-
 async function verifySearchModeResultsAdded(window) {
   Assert.equal(
     UrlbarTestUtils.getResultCount(window),
@@ -173,9 +92,9 @@ add_task(async function backspace() {
     window,
     value: TEST_QUERY,
   });
-  await enterSearchMode(window);
+  await UrlbarTestUtils.enterSearchMode(window);
   await verifySearchModeResultsAdded(window);
-  await exitSearchMode(window, { backspace: true });
+  await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
   await verifySearchModeResultsRemoved(window);
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is open.");
 
@@ -187,8 +106,11 @@ add_task(async function backspace() {
     }
     EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
   });
-  await enterSearchMode(window);
-  await exitSearchMode(window, { backspace: true, waitForSearch: false });
+  await UrlbarTestUtils.enterSearchMode(window);
+  await UrlbarTestUtils.exitSearchMode(window, {
+    backspace: true,
+    waitForSearch: false,
+  });
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is open.");
 
   
@@ -197,10 +119,10 @@ add_task(async function backspace() {
     window,
     value: TEST_QUERY,
   });
-  await enterSearchMode(window);
+  await UrlbarTestUtils.enterSearchMode(window);
   await verifySearchModeResultsAdded(window);
   UrlbarTestUtils.promisePopupClose(window);
-  await exitSearchMode(window, { backspace: true });
+  await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
   await verifySearchModeResultsRemoved(window);
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Urlbar view is now open.");
 
@@ -211,9 +133,12 @@ add_task(async function backspace() {
     }
     EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
   });
-  await enterSearchMode(window);
+  await UrlbarTestUtils.enterSearchMode(window);
   UrlbarTestUtils.promisePopupClose(window);
-  await exitSearchMode(window, { backspace: true, waitForSearch: false });
+  await UrlbarTestUtils.exitSearchMode(window, {
+    backspace: true,
+    waitForSearch: false,
+  });
   Assert.ok(
     !UrlbarTestUtils.isPopupOpen(window),
     "Urlbar view is still closed."
@@ -226,7 +151,7 @@ add_task(async function escape() {
     window,
     value: TEST_QUERY,
   });
-  await enterSearchMode(window);
+  await UrlbarTestUtils.enterSearchMode(window);
   await verifySearchModeResultsAdded(window);
 
   EventUtils.synthesizeKey("KEY_Escape");
@@ -254,9 +179,9 @@ add_task(async function click_close() {
     window,
     value: TEST_QUERY,
   });
-  await enterSearchMode(window);
+  await UrlbarTestUtils.enterSearchMode(window);
   await verifySearchModeResultsAdded(window);
-  await exitSearchMode(window, { clickClose: true });
+  await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
   await verifySearchModeResultsRemoved(window);
 
   
@@ -264,9 +189,12 @@ add_task(async function click_close() {
     window,
     value: TEST_QUERY,
   });
-  await enterSearchMode(window);
+  await UrlbarTestUtils.enterSearchMode(window);
   UrlbarTestUtils.promisePopupClose(window);
-  await exitSearchMode(window, { clickClose: true, waitForSearch: false });
+  await UrlbarTestUtils.exitSearchMode(window, {
+    clickClose: true,
+    waitForSearch: false,
+  });
 });
 
 
@@ -277,7 +205,10 @@ add_task(async function keyboard_shortcut() {
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     engineName: defaultEngine.name,
   });
-  await exitSearchMode(window, { clickClose: true, waitForSearch: false });
+  await UrlbarTestUtils.exitSearchMode(window, {
+    clickClose: true,
+    waitForSearch: false,
+  });
 });
 
 
@@ -290,7 +221,10 @@ add_task(async function menubar_item() {
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     engineName: defaultEngine.name,
   });
-  await exitSearchMode(window, { clickClose: true, waitForSearch: false });
+  await UrlbarTestUtils.exitSearchMode(window, {
+    clickClose: true,
+    waitForSearch: false,
+  });
 });
 
 
@@ -301,14 +235,14 @@ add_task(async function invalidate_pageproxystate() {
       EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
     });
     Assert.equal(gURLBar.getAttribute("pageproxystate"), "valid");
-    await enterSearchMode(window);
+    await UrlbarTestUtils.enterSearchMode(window);
     Assert.equal(
       gURLBar.getAttribute("pageproxystate"),
       "invalid",
       "Entering search mode should clear pageproxystate."
     );
     Assert.equal(gURLBar.value, "", "Urlbar value should be cleared.");
-    await exitSearchMode(window, { clickClose: true });
+    await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
     Assert.equal(
       gURLBar.getAttribute("pageproxystate"),
       "invalid",
@@ -324,7 +258,7 @@ add_task(async function pref_flip_while_enabled() {
     window,
     value: TEST_QUERY,
   });
-  await enterSearchMode(window);
+  await UrlbarTestUtils.enterSearchMode(window);
   await verifySearchModeResultsAdded(window);
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.update2", false]],
@@ -357,7 +291,7 @@ add_task(async function tab_switch() {
     value: TEST_QUERY,
     fireInputEvent: true,
   });
-  await enterSearchMode(window);
+  await UrlbarTestUtils.enterSearchMode(window);
 
   
   await BrowserTestUtils.switchTab(gBrowser, tabs[1]);
@@ -427,7 +361,7 @@ add_task(async function tab_switch() {
   });
 
   
-  await exitSearchMode(window, { clickClose: true });
+  await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
 
   
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
@@ -455,7 +389,7 @@ add_task(async function tab_switch() {
   });
 
   
-  await exitSearchMode(window, { clickClose: true });
+  await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
 
   
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
