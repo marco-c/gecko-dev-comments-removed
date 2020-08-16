@@ -576,6 +576,8 @@ class GCRuntime {
   void joinTask(GCParallelTask& task, gcstats::PhaseKind phase,
                 AutoLockHelperThreadState& locked);
   void joinTask(GCParallelTask& task, gcstats::PhaseKind phase);
+  void updateHelperThreadCount();
+  size_t parallelWorkerCount() const;
 
   void mergeRealms(JS::Realm* source, JS::Realm* target);
 
@@ -848,6 +850,11 @@ class GCRuntime {
   
   GCSchedulingTunables tunables;
   GCSchedulingState schedulingState;
+
+  
+  MainThreadData<double> helperThreadRatio;
+  MainThreadData<size_t> maxHelperThreads;
+  MainThreadData<size_t> helperThreadCount;
 
   
   AtomMarkingRuntime atomMarking;

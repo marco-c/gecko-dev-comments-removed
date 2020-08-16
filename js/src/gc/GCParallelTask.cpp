@@ -158,11 +158,6 @@ bool js::GCParallelTask::wasStarted() const {
 }
 
 
-size_t js::gc::ParallelWorkerCount() {
-  if (!CanUseExtraThreads()) {
-    return 1;  
-  }
-
-  size_t targetTaskCount = HelperThreadState().cpuCount / 2;
-  return mozilla::Clamp(targetTaskCount, size_t(1), MaxParallelWorkers);
+size_t js::gc::GCRuntime::parallelWorkerCount() const {
+  return std::min(helperThreadCount.ref(), MaxParallelWorkers);
 }

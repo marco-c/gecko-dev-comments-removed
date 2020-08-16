@@ -421,6 +421,12 @@ static const size_t MallocThresholdBase = 38 * 1024 * 1024;
 
 static const double MallocGrowthFactor = 1.5;
 
+
+static const double HelperThreadRatio = 0.5;
+
+
+static const size_t MaxHelperThreads = 8;
+
 }  
 
 
