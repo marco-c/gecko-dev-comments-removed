@@ -8,9 +8,12 @@
 #define AndroidSurfaceTexture_h__
 
 #include "mozilla/gfx/Matrix.h"
-#include "SurfaceTexture.h"
 
 typedef uint32_t AndroidSurfaceTextureHandle;
+
+#ifdef MOZ_WIDGET_ANDROID
+
+#  include "SurfaceTexture.h"
 
 namespace mozilla {
 namespace gl {
@@ -25,5 +28,7 @@ class AndroidSurfaceTexture {
 
 }  
 }  
+
+#endif  
 
 #endif  

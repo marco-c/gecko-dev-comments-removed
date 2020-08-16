@@ -50,23 +50,6 @@ class GL_CONTEXT_PROVIDER_NAME {
   
 
 
-
-
-
-
-
-  static already_AddRefed<GLContext> CreateWrappingExisting(void* aContext,
-                                                            void* aSurface);
-
-#if defined(MOZ_WIDGET_ANDROID)
-  static EGLSurface CreateEGLSurface(void* aWindow,
-                                     EGLConfig aConfig = nullptr);
-  static void DestroyEGLSurface(EGLSurface surface);
-#endif  
-
-  
-
-
   static GLContext* GetGlobalContext();
 
   
