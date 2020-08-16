@@ -193,7 +193,7 @@ class Shims {
 
     this._registerShims(availableShims);
 
-    browser.runtime.onMessage.addListener(this._onMessageFromShim.bind(this));
+    onMessageFromTab(this._onMessageFromShim.bind(this));
 
     this.ENABLED_PREF = "enable_shims";
     browser.aboutConfigPrefs.onPrefChange.addListener(() => {
@@ -272,6 +272,13 @@ class Shims {
   async _onMessageFromShim(payload, sender, sendResponse) {
     const { tab } = sender;
     const { id, url } = tab;
+    const { shimId, message } = payload;
+
+    
+    if (message !== "getOptions" && message !== "optIn") {
+      return undefined;
+    }
+
     if (sender.id !== browser.runtime.id || id === -1) {
       throw new Error("not allowed");
     }
@@ -279,8 +286,6 @@ class Shims {
     
     
     
-
-    const { shimId, message } = payload;
 
     const shim = this.shims.get(shimId);
     if (!shim?.needsShimHelpers?.includes(message)) {
