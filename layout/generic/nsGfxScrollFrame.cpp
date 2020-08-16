@@ -273,6 +273,10 @@ namespace mozilla {
 enum class ShowScrollbar : uint8_t {
   Auto,
   Always,
+  
+  
+  
+  
   Never,
 };
 
@@ -292,7 +296,15 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   const ReflowInput& mReflowInput;
   nsBoxLayoutState mBoxState;
   ShowScrollbar mHScrollbar;
+  
+  
+  
+  bool mHScrollbarAllowedForScrollingVVInsideLV = true;
   ShowScrollbar mVScrollbar;
+  
+  
+  
+  bool mVScrollbarAllowedForScrollingVVInsideLV = true;
   nsMargin mComputedBorder;
 
   
@@ -1156,9 +1168,11 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
   
   
   if (!mHelper.mVScrollbarBox || mHelper.mNeverHasVerticalScrollbar) {
+    state.mVScrollbarAllowedForScrollingVVInsideLV = false;
     state.mVScrollbar = ShowScrollbar::Never;
   }
   if (!mHelper.mHScrollbarBox || mHelper.mNeverHasHorizontalScrollbar) {
+    state.mHScrollbarAllowedForScrollingVVInsideLV = false;
     state.mHScrollbar = ShowScrollbar::Never;
   }
 
@@ -1188,6 +1202,8 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
     ComputedStyle* scrollbarStyle = nsLayoutUtils::StyleForScrollbar(this);
     auto scrollbarWidth = scrollbarStyle->StyleUIReset()->mScrollbarWidth;
     if (scrollbarWidth == StyleScrollbarWidth::None) {
+      state.mVScrollbarAllowedForScrollingVVInsideLV = false;
+      state.mHScrollbarAllowedForScrollingVVInsideLV = false;
       state.mVScrollbar = ShowScrollbar::Never;
       state.mHScrollbar = ShowScrollbar::Never;
     }
