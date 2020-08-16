@@ -3,7 +3,7 @@
 
 
 use bindings::{GeckoProfilerThreadListener, WrCompositor};
-use gleam::{gl, gl::Gl};
+use gleam::{gl, gl::Gl, gl::GLenum};
 use std::cell::Cell;
 use std::collections::hash_map::HashMap;
 use std::os::raw::c_void;
@@ -295,6 +295,7 @@ impl DrawTileHelper {
         surface: &SwSurface,
         tile: &SwTile,
         flip_y: bool,
+        filter: GLenum,
     ) {
         let dx = dest.origin.x as f32 / viewport.size.width as f32;
         let dy = dest.origin.y as f32 / viewport.size.height as f32;
@@ -323,6 +324,8 @@ impl DrawTileHelper {
             .uniform_matrix_3fv(self.tex_matrix_loc, false, &[sw, 0.0, 0.0, 0.0, sh, 0.0, sx, sy, 1.0]);
 
         self.gl.bind_texture(gl::TEXTURE_2D, tile.tex_id);
+        self.gl.tex_parameter_i(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, filter as gl::GLint);
+        self.gl.tex_parameter_i(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, filter as gl::GLint);
         self.gl.draw_arrays(gl::TRIANGLE_STRIP, 0, 4);
     }
 
@@ -343,6 +346,7 @@ struct SwCompositeJob {
     dst_rect: DeviceIntRect,
     opaque: bool,
     flip_y: bool,
+    filter: GLenum,
 }
 
 
@@ -394,6 +398,7 @@ impl SwCompositeThread {
                         job.dst_rect.size.height,
                         job.opaque,
                         job.flip_y,
+                        job.filter,
                     );
                     
                     drop(job);
@@ -420,6 +425,7 @@ impl SwCompositeThread {
         dst_rect: DeviceIntRect,
         opaque: bool,
         flip_y: bool,
+        filter: GLenum,
     ) {
         
         *self.job_count.lock().unwrap() += 1;
@@ -431,6 +437,7 @@ impl SwCompositeThread {
                 dst_rect,
                 opaque,
                 flip_y,
+                filter,
             })
             .expect("Failing queuing SwComposite job");
     }
@@ -449,7 +456,7 @@ pub struct SwCompositor {
     native_gl: Option<Rc<dyn gl::Gl>>,
     compositor: Option<WrCompositor>,
     surfaces: HashMap<NativeSurfaceId, SwSurface>,
-    frame_surfaces: Vec<(NativeSurfaceId, CompositorSurfaceTransform, DeviceIntRect)>,
+    frame_surfaces: Vec<(NativeSurfaceId, CompositorSurfaceTransform, DeviceIntRect, GLenum)>,
     cur_tile: NativeTileId,
     draw_tile: Option<DrawTileHelper>,
     
@@ -542,7 +549,7 @@ impl SwCompositor {
     
     fn get_overlaps(&self, overlap_rect: &DeviceIntRect) -> u32 {
         let mut overlaps = 0;
-        for &(ref id, ref transform, ref clip_rect) in &self.frame_surfaces {
+        for &(ref id, ref transform, ref clip_rect, _) in &self.frame_surfaces {
             
             
             if !overlap_rect.intersects(clip_rect) {
@@ -568,13 +575,14 @@ impl SwCompositor {
         surface: &SwSurface,
         transform: &CompositorSurfaceTransform,
         clip_rect: &DeviceIntRect,
+        filter: GLenum,
         tile: &SwTile,
     ) {
         if let Some(ref composite_thread) = self.composite_thread {
             if let Some((src_rect, dst_rect, flip_y)) = tile.composite_rects(surface, transform, clip_rect) {
                 if let Some(texture) = self.gl.lock_texture(tile.color_id) {
                     let framebuffer = self.locked_framebuffer.clone().unwrap();
-                    composite_thread.queue_composite(texture, framebuffer, src_rect, dst_rect, surface.is_opaque, flip_y);
+                    composite_thread.queue_composite(texture, framebuffer, src_rect, dst_rect, surface.is_opaque, flip_y, filter);
                 }
             }
         }
@@ -584,7 +592,13 @@ impl SwCompositor {
     
     
     
-    fn init_composites(&mut self, id: &NativeSurfaceId, transform: &CompositorSurfaceTransform, clip_rect: &DeviceIntRect) {
+    fn init_composites(
+        &mut self,
+        id: &NativeSurfaceId,
+        transform: &CompositorSurfaceTransform,
+        clip_rect: &DeviceIntRect,
+        filter: GLenum,
+    ) {
         if self.composite_thread.is_none() {
             return;
         }
@@ -600,7 +614,7 @@ impl SwCompositor {
                     }
                     if overlaps == 0 {
                         
-                        self.queue_composite(surface, transform, clip_rect, tile);
+                        self.queue_composite(surface, transform, clip_rect, filter, tile);
                     } else {
                         
                         tile.overlaps.set(overlaps);
@@ -621,9 +635,9 @@ impl SwCompositor {
         let mut frame_surfaces = self
             .frame_surfaces
             .iter()
-            .skip_while(|&(ref id, _, _)| *id != tile_id.surface_id);
+            .skip_while(|&(ref id, _, _, _)| *id != tile_id.surface_id);
         let overlap_rect = match frame_surfaces.next() {
-            Some(&(_, ref transform, ref clip_rect)) => {
+            Some(&(_, ref transform, ref clip_rect, filter)) => {
                 
                 if tile.invalid.get() {
                     tile.overlaps.set(tile.overlaps.get() - 1);
@@ -633,7 +647,7 @@ impl SwCompositor {
                     return;
                 }
                 
-                self.queue_composite(surface, transform, clip_rect, tile);
+                self.queue_composite(surface, transform, clip_rect, filter, tile);
                 
                 match tile.overlap_rect(surface, transform, clip_rect) {
                     Some(overlap_rect) => overlap_rect,
@@ -649,7 +663,7 @@ impl SwCompositor {
         let mut flushed_rects = vec![overlap_rect];
 
         
-        for &(ref id, ref transform, ref clip_rect) in frame_surfaces {
+        for &(ref id, ref transform, ref clip_rect, filter) in frame_surfaces {
             
             if !flushed_bounds.intersects(clip_rect) {
                 continue;
@@ -682,7 +696,7 @@ impl SwCompositor {
                         
                         tile.overlaps.set(overlaps);
                         if overlaps == 0 {
-                            self.queue_composite(surface, transform, clip_rect, tile);
+                            self.queue_composite(surface, transform, clip_rect, filter, tile);
                             
                             flushed_bounds = flushed_bounds.union(&overlap_rect);
                             flushed_rects.push(overlap_rect);
@@ -993,7 +1007,7 @@ impl Compositor for SwCompositor {
                     let viewport = dirty.translate(info.origin.to_vector());
                     let draw_tile = self.draw_tile.as_ref().unwrap();
                     draw_tile.enable(&viewport);
-                    draw_tile.draw(&viewport, &viewport, &dirty, &surface, &tile, false);
+                    draw_tile.draw(&viewport, &viewport, &dirty, &surface, &tile, false, gl::LINEAR);
                     draw_tile.disable();
 
                     native_gl.bind_framebuffer(gl::DRAW_FRAMEBUFFER, 0);
@@ -1029,10 +1043,19 @@ impl Compositor for SwCompositor {
             compositor.add_surface(id, transform, clip_rect, image_rendering);
         }
 
-        
-        self.init_composites(&id, &transform, &clip_rect);
+        let filter = match image_rendering {
+            ImageRendering::Pixelated => {
+                gl::NEAREST
+            }
+            ImageRendering::Auto | ImageRendering::CrispEdges => {
+                gl::LINEAR
+            }
+        };
 
-        self.frame_surfaces.push((id, transform, clip_rect));
+        
+        self.init_composites(&id, &transform, &clip_rect, filter);
+
+        self.frame_surfaces.push((id, transform, clip_rect, filter));
     }
 
     fn end_frame(&mut self) {
@@ -1045,7 +1068,7 @@ impl Compositor for SwCompositor {
             draw_tile.enable(&viewport);
             let mut blend = false;
             native_gl.blend_func(gl::ONE, gl::ONE_MINUS_SRC_ALPHA);
-            for &(ref id, ref transform, ref clip_rect) in &self.frame_surfaces {
+            for &(ref id, ref transform, ref clip_rect, filter) in &self.frame_surfaces {
                 if let Some(surface) = self.surfaces.get(id) {
                     if surface.is_opaque {
                         if blend {
@@ -1058,7 +1081,7 @@ impl Compositor for SwCompositor {
                     }
                     for tile in &surface.tiles {
                         if let Some((src_rect, dst_rect, flip_y)) = tile.composite_rects(surface, transform, clip_rect) {
-                            draw_tile.draw(&viewport, &dst_rect, &src_rect, surface, tile, flip_y);
+                            draw_tile.draw(&viewport, &dst_rect, &src_rect, surface, tile, flip_y, filter);
                         }
                     }
                 }
