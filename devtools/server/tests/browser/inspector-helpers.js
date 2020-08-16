@@ -6,8 +6,6 @@
 
 
 
-
-
 function serverOwnershipTree(walkerArg) {
   return SpecialPowers.spawn(
     gBrowser.selectedBrowser,
@@ -153,23 +151,8 @@ function waitForMutation(walker, test, mutations = []) {
   });
 }
 
-function assertAndStrip(mutations, message, test) {
-  const size = mutations.length;
-  mutations = mutations.filter(test);
-  ok(mutations.size != size, message);
-  return mutations;
-}
-
 function isSrcChange(change) {
   return change.type === "attributes" && change.attributeName === "src";
-}
-
-function isUnload(change) {
-  return change.type === "documentUnload";
-}
-
-function isFrameLoad(change) {
-  return change.type === "frameLoad";
 }
 
 function isUnretained(change) {
@@ -178,44 +161,4 @@ function isUnretained(change) {
 
 function isChildList(change) {
   return change.type === "childList";
-}
-
-
-
-function assertSrcChange(mutations) {
-  return assertAndStrip(
-    mutations,
-    "Should have had an iframe source change.",
-    isSrcChange
-  );
-}
-
-
-
-function assertUnload(mutations) {
-  return assertAndStrip(
-    mutations,
-    "Should have had a document unload change.",
-    isUnload
-  );
-}
-
-
-
-function assertFrameLoad(mutations) {
-  return assertAndStrip(
-    mutations,
-    "Should have had a frame load change.",
-    isFrameLoad
-  );
-}
-
-
-
-function assertChildList(mutations) {
-  return assertAndStrip(
-    mutations,
-    "Should have had a frame load change.",
-    isChildList
-  );
 }
