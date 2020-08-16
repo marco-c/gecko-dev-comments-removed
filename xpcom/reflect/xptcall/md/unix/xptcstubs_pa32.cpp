@@ -25,7 +25,6 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32_t methodIndex,
 
 
   nsXPTCMiniVariant paramBuffer[PARAM_BUFFER_COUNT];
-  nsXPTCMiniVariant* dispatchParams = nullptr;
   const nsXPTMethodInfo* info;
   int32_t regwords = 1; 
   uint8_t paramCount;
@@ -40,20 +39,13 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32_t methodIndex,
 
   paramCount = info->GetParamCount();
 
-  
-  if(paramCount > PARAM_BUFFER_COUNT)
-    dispatchParams = new nsXPTCMiniVariant[paramCount];
-  else
-    dispatchParams = paramBuffer;
-  NS_ASSERTION(dispatchParams,"no place for params");
-
   const uint8_t indexOfJSContext = info->IndexOfJSContext();
 
   for(i = 0; i < paramCount; ++i, --args)
   {
     const nsXPTParamInfo& param = info->GetParam(i);
     const nsXPTType& type = param.GetType();
-    nsXPTCMiniVariant* dp = &dispatchParams[i];
+    nsXPTCMiniVariant* dp = &paramBuffer[i];
 
     MOZ_CRASH("NYI: support implicit JSContext*, bug 1475699");
 
@@ -116,10 +108,7 @@ PrepareAndDispatch(nsXPTCStubBase* self, uint32_t methodIndex,
   }
 
   nsresult result = self->mOuter->CallMethod((uint16_t) methodIndex, info,
-                                             dispatchParams);
-
-  if(dispatchParams != paramBuffer)
-    delete [] dispatchParams;
+                                             paramBuffer);
 
   return result;
 }
