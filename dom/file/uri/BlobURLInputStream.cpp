@@ -363,22 +363,44 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
     return;
   }
 
-  Maybe<nsID> agentClusterId;
-  Maybe<ClientInfo> clientInfo = loadInfo->GetClientInfo();
-  if (clientInfo.isSome()) {
-    agentClusterId = clientInfo->AgentClusterId();
-  }
-
   if (XRE_IsParentProcess() || !BlobURLSchemeIsHTTPOrHTTPS(mBlobURLSpec)) {
-    RefPtr<BlobImpl> blobImpl;
+    nsIPrincipal* const dataEntryPrincipal =
+        BlobURLProtocolHandler::GetDataEntryPrincipal(mBlobURLSpec,
+                                                      true );
 
     
     
-    if (!BlobURLProtocolHandler::GetDataEntry(
-            mBlobURLSpec, getter_AddRefs(blobImpl), loadingPrincipal,
-            triggeringPrincipal, loadInfo->GetOriginAttributes(),
-            agentClusterId, true )) {
+    if (!dataEntryPrincipal) {
       NS_WARNING("Failed to get data entry principal. URL revoked?");
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (NS_WARN_IF(!loadingPrincipal ||
+                   !loadingPrincipal->IsSystemPrincipal()) &&
+        NS_WARN_IF(!ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
+            loadInfo->GetOriginAttributes(),
+            BasePrincipal::Cast(dataEntryPrincipal)->OriginAttributesRef()))) {
+      return;
+    }
+
+    if (NS_WARN_IF(!triggeringPrincipal->Subsumes(dataEntryPrincipal))) {
+      return;
+    }
+
+    RefPtr<BlobImpl> blobImpl;
+    nsresult rv = NS_GetBlobForBlobURISpec(
+        mBlobURLSpec, getter_AddRefs(blobImpl), true );
+
+    if (NS_WARN_IF(NS_FAILED(rv)) || (NS_WARN_IF(!blobImpl))) {
       return;
     }
 
@@ -409,7 +431,7 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
   contentChild
       ->SendBlobURLDataRequest(mBlobURLSpec, triggeringPrincipal,
                                loadingPrincipal,
-                               loadInfo->GetOriginAttributes(), agentClusterId)
+                               loadInfo->GetOriginAttributes())
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self](const BlobURLDataRequestResult& aResult) {
