@@ -79,14 +79,6 @@ class nsHTTPSOnlyUtils {
   static void TestSitePermissionAndPotentiallyAddExemption(
       nsIChannel* aChannel);
 
-  
-
-
-
-
-
-  static bool IsSafeToAcceptCORSOrMixedContent(nsILoadInfo* aLoadInfo);
-
  private:
   
 

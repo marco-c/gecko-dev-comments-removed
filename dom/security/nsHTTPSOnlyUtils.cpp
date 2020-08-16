@@ -269,18 +269,6 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
 }
 
 
-bool nsHTTPSOnlyUtils::IsSafeToAcceptCORSOrMixedContent(
-    nsILoadInfo* aLoadInfo) {
-  
-  if ((aLoadInfo->GetHttpsOnlyStatus() & nsILoadInfo::HTTPS_ONLY_EXEMPT)) {
-    return false;
-  }
-  
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  return nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin);
-}
-
-
 
 
 void nsHTTPSOnlyUtils::LogLocalizedString(const char* aName,
