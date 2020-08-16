@@ -1331,11 +1331,11 @@ pref("browser.newtabpage.activity-stream.discoverystream.enabled", true);
 pref("browser.newtabpage.activity-stream.discoverystream.hardcoded-basic-layout", false);
 pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA,GB");
+pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA,GB,IE");
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-spocs-config", "US,CA");
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-layout-config", "US,CA,GB,DE");
+pref("browser.newtabpage.activity-stream.discoverystream.region-layout-config", "US,CA,GB,DE,IE");
 
 pref("browser.newtabpage.activity-stream.discoverystream.isCollectionDismissible", true);
 pref("browser.newtabpage.activity-stream.discoverystream.personalization.version", 2);
