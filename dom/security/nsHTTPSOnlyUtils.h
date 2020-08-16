@@ -35,11 +35,7 @@ class nsHTTPSOnlyUtils {
 
 
 
-
-
-  static bool ShouldUpgradeWebSocket(nsIURI* aURI, int32_t aInnerWindowId,
-                                     bool aFromPrivateWindow,
-                                     uint32_t aHttpsOnlyStatus);
+  static bool ShouldUpgradeWebSocket(nsIURI* aURI, nsILoadInfo* aLoadInfo);
 
   
 
