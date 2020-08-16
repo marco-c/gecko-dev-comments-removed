@@ -1,0 +1,7 @@
+
+
+runTest(
+  "/workers/modules/resources/syntax-error.js",
+  false,
+  "SyntaxError"
+);
