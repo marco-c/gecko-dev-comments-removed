@@ -43,6 +43,7 @@
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsError.h"
+#include "nsFrameSelection.h"
 #include "nsGkAtoms.h"
 #include "nsHTMLDocument.h"
 #include "nsIContent.h"
@@ -3278,55 +3279,54 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
   MOZ_ASSERT(!SelectionRefPtr()->IsCollapsed());
 
+  AutoRangeArray rangesToDelete(*SelectionRefPtr());
+  MOZ_ASSERT(!rangesToDelete.IsCollapsed());
+
+  if (NS_WARN_IF(!rangesToDelete.FirstRangeRef()->StartRef().IsSet()) ||
+      NS_WARN_IF(!rangesToDelete.FirstRangeRef()->EndRef().IsSet())) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+
   
   
-  if (SelectionRefPtr()->RangeCount() == 1) {
-    if (const nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0)) {
-      RefPtr<StaticRange> extendedRange =
-          GetRangeExtendedToIncludeInvisibleNodes(*firstRange);
-      if (!extendedRange) {
-        NS_WARNING(
-            "HTMLEditor::GetRangeExtendedToIncludeInvisibleNodes() failed");
-        return EditActionResult(NS_ERROR_FAILURE);
-      }
-      ErrorResult error;
-      MOZ_KnownLive(SelectionRefPtr())
-          ->SetStartAndEndInLimiter(extendedRange->StartRef().AsRaw(),
-                                    extendedRange->EndRef().AsRaw(), error);
-      if (NS_WARN_IF(Destroyed())) {
-        error = NS_ERROR_EDITOR_DESTROYED;
-      }
-      if (error.Failed()) {
-        NS_WARNING_ASSERTION(error.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED),
-                             "Selection::SetStartAndEndInLimiter() failed");
-        return EditActionResult(error.StealNSResult());
-      }
+  if (rangesToDelete.Ranges().Length() == 1) {
+    RefPtr<nsRange> extendedRange =
+        GetRangeExtendedToIncludeInvisibleNodes(rangesToDelete.FirstRangeRef());
+    if (!extendedRange || !extendedRange->IsPositioned() ||
+        !extendedRange->StartRef().IsSet() ||
+        !extendedRange->EndRef().IsSet()) {
+      NS_WARNING(
+          "HTMLEditor::GetRangeExtendedToIncludeInvisibleNodes() failed");
+      return EditActionResult(NS_ERROR_FAILURE);
     }
+
+    nsFrameSelection* frameSelection = SelectionRefPtr()->GetFrameSelection();
+    if (NS_WARN_IF(!frameSelection)) {
+      return EditActionResult(NS_ERROR_FAILURE);
+    }
+    if (!frameSelection->IsValidSelectionPoint(
+            extendedRange->GetStartContainer()) ||
+        !frameSelection->IsValidSelectionPoint(
+            extendedRange->GetEndContainer())) {
+      NS_WARNING(
+          "HTMLEditor::GetRangeExtendedToIncludeInvisibleNodes() returned a "
+          "range outer limit");
+      return EditActionResult(NS_ERROR_FAILURE);
+    }
+    rangesToDelete.FirstRangeRef() = *extendedRange;
   }
 
   
   TopLevelEditSubActionDataRef().mDidDeleteNonCollapsedRange = true;
 
-  const nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
-  if (NS_WARN_IF(!firstRange)) {
-    return EditActionResult(NS_ERROR_FAILURE);
-  }
-  EditorDOMPoint firstRangeStart(firstRange->StartRef());
-  EditorDOMPoint firstRangeEnd(firstRange->EndRef());
-  if (NS_WARN_IF(!firstRangeStart.IsSet()) ||
-      NS_WARN_IF(!firstRangeEnd.IsSet())) {
-    return EditActionResult(NS_ERROR_FAILURE);
-  }
-
   
   
   if (!IsPlaintextEditor()) {
     AutoTransactionsConserveSelection dontChangeMySelection(*this);
+    EditorDOMPoint firstRangeStart(rangesToDelete.FirstRangeRef()->StartRef());
+    EditorDOMPoint firstRangeEnd(rangesToDelete.FirstRangeRef()->EndRef());
     nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToDeleteRange(
         *this, &firstRangeStart, &firstRangeEnd);
-    if (NS_WARN_IF(Destroyed())) {
-      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-    }
     if (NS_FAILED(rv)) {
       NS_WARNING("WhiteSpaceVisibilityKeeper::PrepareToDeleteRange() failed");
       return EditActionResult(rv);
@@ -3341,22 +3341,32 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
       NS_WARNING("Mutation event listener changed the DOM tree");
       return EditActionHandled(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
+    rv = rangesToDelete.FirstRangeRef()->SetStartAndEnd(
+        firstRangeStart.ToRawRangeBoundary(),
+        firstRangeEnd.ToRawRangeBoundary());
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Failed to modify first range to delete");
+      return EditActionResult(NS_ERROR_FAILURE);
+    }
   }
 
   
   
-  if (firstRangeStart.GetContainer() == firstRangeEnd.GetContainer()) {
+  if (rangesToDelete.FirstRangeRef()->GetStartContainer() ==
+      rangesToDelete.FirstRangeRef()->GetEndContainer()) {
     
     
     
-    if (firstRangeStart != firstRangeEnd) {
+    EditorDOMPoint firstRangeStart(rangesToDelete.FirstRangeRef()->StartRef());
+    EditorDOMPoint firstRangeEnd(rangesToDelete.FirstRangeRef()->EndRef());
+    if (!rangesToDelete.FirstRangeRef()->Collapsed()) {
       AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &firstRangeStart);
       AutoTrackDOMPoint endTracker(RangeUpdaterRef(), &firstRangeEnd);
 
-      nsresult rv =
-          DeleteSelectionWithTransaction(aDirectionAndAmount, aStripWrappers);
+      nsresult rv = DeleteRangesWithTransaction(aDirectionAndAmount,
+                                                aStripWrappers, rangesToDelete);
       if (NS_FAILED(rv)) {
-        NS_WARNING("EditorBase::DeleteSelectionWithTransaction() failed");
+        NS_WARNING("EditorBase::DeleteRangesWithTransaction() failed");
         return EditActionHandled(rv);
       }
     }
@@ -3370,11 +3380,18 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
     return EditActionHandled(rv);
   }
 
+  if (NS_WARN_IF(
+          !rangesToDelete.FirstRangeRef()->GetStartContainer()->IsContent()) ||
+      NS_WARN_IF(
+          !rangesToDelete.FirstRangeRef()->GetEndContainer()->IsContent())) {
+    return EditActionHandled(NS_ERROR_FAILURE);  
+  }
+
   
-  RefPtr<Element> startCiteNode =
-      GetMostAncestorMailCiteElement(*firstRangeStart.GetContainer());
-  RefPtr<Element> endCiteNode =
-      GetMostAncestorMailCiteElement(*firstRangeEnd.GetContainer());
+  RefPtr<Element> startCiteNode = GetMostAncestorMailCiteElement(
+      *rangesToDelete.FirstRangeRef()->GetStartContainer());
+  RefPtr<Element> endCiteNode = GetMostAncestorMailCiteElement(
+      *rangesToDelete.FirstRangeRef()->GetEndContainer());
 
   
   
@@ -3387,15 +3404,11 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
 
   
   RefPtr<Element> leftBlockElement =
-      firstRangeStart.IsInContentNode()
-          ? HTMLEditUtils::GetInclusiveAncestorBlockElement(
-                *firstRangeStart.ContainerAsContent())
-          : nullptr;
+      HTMLEditUtils::GetInclusiveAncestorBlockElement(
+          *rangesToDelete.FirstRangeRef()->GetStartContainer()->AsContent());
   RefPtr<Element> rightBlockElement =
-      firstRangeEnd.IsInContentNode()
-          ? HTMLEditUtils::GetInclusiveAncestorBlockElement(
-                *firstRangeEnd.ContainerAsContent())
-          : nullptr;
+      HTMLEditUtils::GetInclusiveAncestorBlockElement(
+          *rangesToDelete.FirstRangeRef()->GetEndContainer()->AsContent());
   if (NS_WARN_IF(!leftBlockElement) || NS_WARN_IF(!rightBlockElement)) {
     return EditActionHandled(NS_ERROR_FAILURE);  
   }
@@ -3404,21 +3417,23 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
   
   
   if (leftBlockElement && leftBlockElement == rightBlockElement) {
+    EditorDOMPoint firstRangeStart(rangesToDelete.FirstRangeRef()->StartRef());
+    EditorDOMPoint firstRangeEnd(rangesToDelete.FirstRangeRef()->EndRef());
     {
       AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &firstRangeStart);
       AutoTrackDOMPoint endTracker(RangeUpdaterRef(), &firstRangeEnd);
 
-      nsresult rv =
-          DeleteSelectionWithTransaction(aDirectionAndAmount, aStripWrappers);
+      nsresult rv = DeleteRangesWithTransaction(aDirectionAndAmount,
+                                                aStripWrappers, rangesToDelete);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
-            "EditorBase::DeleteSelectionWithTransaction() caused destroying "
+            "EditorBase::DeleteRangesWithTransaction() caused destroying "
             "the editor");
         return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
       }
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rv),
-          "EditorBase::DeleteSelectionWithTransaction() failed, but ignored");
+          "EditorBase::DeleteRangesWithTransaction() failed, but ignored");
     }
     nsresult rv = DeleteUnnecessaryNodesAndCollapseSelection(
         aDirectionAndAmount, firstRangeStart, firstRangeEnd);
@@ -3443,10 +3458,10 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
        HTMLEditUtils::IsListItem(leftBlockElement) ||
        HTMLEditUtils::IsHeader(*leftBlockElement))) {
     
-    nsresult rv =
-        DeleteSelectionWithTransaction(aDirectionAndAmount, aStripWrappers);
+    nsresult rv = DeleteRangesWithTransaction(aDirectionAndAmount,
+                                              aStripWrappers, rangesToDelete);
     if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::DeleteSelectionWithTransaction() failed");
+      NS_WARNING("EditorBase::DeleteRangesWithTransaction() failed");
       return EditActionHandled(rv);
     }
     
@@ -3468,6 +3483,8 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
   
   EditActionResult result(NS_OK);
   result.MarkAsHandled();
+  EditorDOMPoint firstRangeStart(rangesToDelete.FirstRangeRef()->StartRef());
+  EditorDOMPoint firstRangeEnd(rangesToDelete.FirstRangeRef()->EndRef());
   {
     AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &firstRangeStart);
     AutoTrackDOMPoint endTracker(RangeUpdaterRef(), &firstRangeEnd);
@@ -3476,12 +3493,11 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
     
     bool join = true;
 
-    AutoSelectionRangeArray arrayOfRanges(SelectionRefPtr());
-    for (auto& range : arrayOfRanges.mRanges) {
+    for (auto& range : rangesToDelete.Ranges()) {
       
       AutoTArray<OwningNonNull<nsIContent>, 10> arrayOfTopChildren;
       DOMSubtreeIterator iter;
-      nsresult rv = iter.Init(*range);
+      nsresult rv = iter.Init(range);
       if (NS_FAILED(rv)) {
         NS_WARNING("DOMSubtreeIterator::Init() failed");
         return result.SetResult(rv);
@@ -8053,8 +8069,7 @@ size_t HTMLEditor::CollectChildren(
   return numberOfFoundChildren;
 }
 
-already_AddRefed<StaticRange>
-HTMLEditor::GetRangeExtendedToIncludeInvisibleNodes(
+already_AddRefed<nsRange> HTMLEditor::GetRangeExtendedToIncludeInvisibleNodes(
     const AbstractRange& aAbstractRange) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!aAbstractRange.Collapsed());
@@ -8160,10 +8175,10 @@ HTMLEditor::GetRangeExtendedToIncludeInvisibleNodes(
               HTMLEditUtils::GetInclusiveAncestorBlockElement(
                   *atFirstInvisibleBRElement.ContainerAsContent())) {
         
-        RefPtr<StaticRange> staticRange =
-            StaticRange::Create(atStart.ToRawRangeBoundary(),
-                                atEnd.ToRawRangeBoundary(), IgnoreErrors());
-        if (!staticRange) {
+        RefPtr<nsRange> range =
+            nsRange::Create(atStart.ToRawRangeBoundary(),
+                            atEnd.ToRawRangeBoundary(), IgnoreErrors());
+        if (!range) {
           NS_WARNING("StaticRange::Create() failed");
           return nullptr;
         }
@@ -8171,12 +8186,12 @@ HTMLEditor::GetRangeExtendedToIncludeInvisibleNodes(
         
         bool nodeBefore = false, nodeAfter = false;
         DebugOnly<nsresult> rvIgnored = RangeUtils::CompareNodeToRange(
-            brElementParent, staticRange, &nodeBefore, &nodeAfter);
+            brElementParent, range, &nodeBefore, &nodeAfter);
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                              "RangeUtils::CompareNodeToRange() failed");
         
         if (!nodeBefore && !nodeAfter) {
-          return staticRange.forget();
+          return range.forget();
         }
         
         atEnd = atFirstInvisibleBRElement;
@@ -8186,8 +8201,8 @@ HTMLEditor::GetRangeExtendedToIncludeInvisibleNodes(
 
   
   
-  return StaticRange::Create(atStart.ToRawRangeBoundary(),
-                             atEnd.ToRawRangeBoundary(), IgnoreErrors());
+  return nsRange::Create(atStart.ToRawRangeBoundary(),
+                         atEnd.ToRawRangeBoundary(), IgnoreErrors());
 }
 
 nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
