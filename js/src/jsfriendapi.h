@@ -218,9 +218,9 @@ extern JS_FRIEND_API bool GetIsSecureContext(JS::Realm* realm);
 
 
 
-extern JS_FRIEND_API bool JS_CopyPropertiesFrom(JSContext* cx,
-                                                JS::HandleObject target,
-                                                JS::HandleObject obj);
+
+extern JS_FRIEND_API bool JS_CopyOwnPropertiesAndPrivateFields(
+    JSContext* cx, JS::HandleObject target, JS::HandleObject obj);
 
 
 
@@ -808,7 +808,7 @@ JS_FRIEND_API bool IsObjectInContextCompartment(JSObject* obj,
 
 
 
-
+#define JSITER_PRIVATE 0x4      /* Include private names in iteration */
 #define JSITER_OWNONLY 0x8      /* iterate over obj's own properties only */
 #define JSITER_HIDDEN 0x10      /* also enumerate non-enumerable properties */
 #define JSITER_SYMBOLS 0x20     /* also include symbol property keys */
