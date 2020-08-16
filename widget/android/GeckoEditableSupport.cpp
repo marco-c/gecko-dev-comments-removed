@@ -1301,6 +1301,7 @@ nsresult GeckoEditableSupport::NotifyIME(
           mIMEDelaySynchronizeReply = false;
           mIMEActiveSynchronizeCount = 0;
           mIMEActiveCompositionCount = 0;
+          mInputContext.ShutDown();
           mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_BLUR);
           OnRemovedFrom(mDispatcher);
         }
@@ -1397,6 +1398,8 @@ GeckoEditableSupport::GetIMENotificationRequests() {
 
 void GeckoEditableSupport::SetInputContext(const InputContext& aContext,
                                            const InputContextAction& aAction) {
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(mEditable);
 
   ALOGIME(
@@ -1448,6 +1451,8 @@ void GeckoEditableSupport::NotifyIMEContext(const InputContext& aContext,
 }
 
 InputContext GeckoEditableSupport::GetInputContext() {
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
   InputContext context = mInputContext;
   context.mIMEState.mOpen = IMEState::OPEN_STATE_NOT_SUPPORTED;
   return context;
@@ -1460,7 +1465,20 @@ void GeckoEditableSupport::TransferParent(jni::Object::Param aEditableParent) {
   
   if (mIMEFocusCount > 0) {
     mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_TOKEN);
-    NotifyIMEContext(mInputContext, InputContextAction());
+    if (mIsRemote) {
+      
+      
+      
+      RefPtr<GeckoEditableSupport> self(this);
+      nsAppShell::PostEvent([self] {
+        NS_WARNING_ASSERTION(
+            self->mDispatcher,
+            "Text dispatcher is still null. Why don't we get focus yet?");
+        self->NotifyIMEContext(self->mInputContext, InputContextAction());
+      });
+    } else {
+      NotifyIMEContext(mInputContext, InputContextAction());
+    }
     mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_FOCUS);
     
     return;
