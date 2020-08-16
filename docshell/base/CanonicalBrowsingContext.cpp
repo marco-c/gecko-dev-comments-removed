@@ -395,15 +395,14 @@ void CanonicalBrowsingContext::CanonicalDiscard() {
 }
 
 void CanonicalBrowsingContext::NotifyStartDelayedAutoplayMedia() {
-  WindowContext* windowContext = GetCurrentWindowContext();
-  if (!windowContext) {
+  if (!GetCurrentWindowGlobal()) {
     return;
   }
 
   
   
   
-  windowContext->NotifyUserGestureActivation();
+  NotifyUserGestureActivation();
   AUTOPLAY_LOG("NotifyStartDelayedAutoplayMedia for chrome bc 0x%08" PRIx64,
                Id());
   StartDelayedAutoplayMediaComponents();
