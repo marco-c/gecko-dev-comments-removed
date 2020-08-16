@@ -36,7 +36,7 @@ add_task(async function setup() {
   
   const privateEngine = await Services.search.getEngineByName("DuckDuckGo");
   await Services.search.setDefaultPrivate(privateEngine);
-  expectedEngineAlias = privateEngine.wrappedJSObject.__internalAliases[0];
+  expectedEngineAlias = privateEngine.aliases[0];
   expectedIconURL = privateEngine.iconURI.spec;
 
   registerCleanupFunction(async () => {

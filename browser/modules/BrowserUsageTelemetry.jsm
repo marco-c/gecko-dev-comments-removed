@@ -557,7 +557,8 @@ let BrowserUsageTelemetry = {
       }
       if (
         details.alias &&
-        engine.wrappedJSObject._internalAliases.includes(details.alias)
+        engine.isAppProvided &&
+        engine.aliases.includes(details.alias)
       ) {
         
         

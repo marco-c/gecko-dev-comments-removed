@@ -334,33 +334,6 @@ function ParamSubstitution(paramValue, searchTerms, engine) {
   });
 }
 
-const ENGINE_ALIASES = new Map([
-  ["google", ["@google"]],
-  ["amazondotcom", ["@amazon"]],
-  ["amazon", ["@amazon"]],
-  ["wikipedia", ["@wikipedia"]],
-  ["ebay", ["@ebay"]],
-  ["bing", ["@bing"]],
-  ["ddg", ["@duckduckgo", "@ddg"]],
-  ["yandex", ["@\u044F\u043D\u0434\u0435\u043A\u0441", "@yandex"]],
-  ["baidu", ["@\u767E\u5EA6", "@baidu"]],
-]);
-
-function getInternalAliases(engine) {
-  if (!engine.isAppProvided) {
-    return [];
-  }
-  for (let [name, aliases] of ENGINE_ALIASES) {
-    
-    
-    
-    if (engine._shortName.startsWith(name)) {
-      return aliases;
-    }
-  }
-  return [];
-}
-
 
 
 
@@ -647,8 +620,6 @@ class SearchEngine {
   _definedAliases = [];
   
   _urls = [];
-  
-  __internalAliases = null;
 
   
 
@@ -1271,19 +1242,37 @@ class SearchEngine {
   }
 
   
+
+  
+
+
+
+
   get alias() {
-    return this.getAttr("alias") || this._definedAliases[0];
+    return this.getAttr("alias");
   }
+
+  
+
+
+
+
   set alias(val) {
     var value = val ? val.trim() : null;
     this.setAttr("alias", value);
     SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
   }
+
+  
+
+
+
+
+
   get aliases() {
     return [
       ...(this.getAttr("alias") ? [this.getAttr("alias")] : []),
       ...this._definedAliases,
-      ...this._internalAliases,
     ];
   }
 
@@ -1404,13 +1393,6 @@ class SearchEngine {
 
   get searchForm() {
     return this._getSearchFormWithPurpose();
-  }
-
-  get _internalAliases() {
-    if (!this.__internalAliases) {
-      this.__internalAliases = getInternalAliases(this);
-    }
-    return this.__internalAliases;
   }
 
   _getSearchFormWithPurpose(purpose) {
