@@ -138,8 +138,14 @@ using namespace mozilla::a11y;
     
     
     
-    [matches addObject:GetNativeFromGeckoAccessible(match)];
-    resultLimit -= 1;
+    mozAccessible* nativeMatch = GetNativeFromGeckoAccessible(match);
+    if (nativeMatch) {
+      
+      
+      [matches addObject:nativeMatch];
+      resultLimit -= 1;
+    }
+
     match = mSearchForward ? p.Next(match, rule) : p.Prev(match, rule);
   }
 
