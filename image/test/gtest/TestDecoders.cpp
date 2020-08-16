@@ -799,6 +799,16 @@ TEST_F(ImageDecoders, CorruptICOWithBadBppSingleChunk) {
   CheckDecoderSingleChunk(CorruptICOWithBadBppTestCase());
 }
 
+
+
+
+
+#ifndef ANDROID
+TEST_F(ImageDecoders, CorruptAVIFSingleChunk) {
+  CheckDecoderSingleChunk(CorruptAVIFTestCase());
+}
+#endif
+
 TEST_F(ImageDecoders, AnimatedGIFWithFRAME_FIRST) {
   CheckDecoderFrameFirst(GreenFirstFrameAnimatedGIFTestCase());
 }
