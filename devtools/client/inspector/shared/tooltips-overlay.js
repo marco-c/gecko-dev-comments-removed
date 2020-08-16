@@ -65,6 +65,7 @@ loader.lazyRequireGetter(
 const PREF_IMAGE_TOOLTIP_SIZE = "devtools.inspector.imagePreviewTooltipSize";
 
 
+const TOOLTIP_CSS_COMPATIBILITY = "css-compatibility";
 const TOOLTIP_IMAGE_TYPE = "image";
 const TOOLTIP_FONTFAMILY_TYPE = "font-family";
 const TOOLTIP_INACTIVE_CSS = "inactive-css";
@@ -355,6 +356,8 @@ TooltipsOverlay.prototype = {
         nodeCompatibilityInfo,
         this.getTooltip("interactiveTooltip")
       );
+
+      this.sendOpenScalarToTelemetry(TOOLTIP_CSS_COMPATIBILITY);
       return true;
     }
 
