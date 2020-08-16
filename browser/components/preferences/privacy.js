@@ -516,10 +516,6 @@ var gPrivacyPane = {
       gPrivacyPane.networkCookieBehaviorReadPrefs.bind(gPrivacyPane)
     );
 
-    setEventListener("a11yPrivacyCheckbox", "command", ev => {
-      this.updateA11yPrefs(ev.target.checked);
-    });
-
     setEventListener(
       "trackingProtectionExceptions",
       "command",
@@ -746,7 +742,7 @@ var gPrivacyPane = {
       }
       this.initAddonRecommendationsCheckbox();
     }
-    this._initA11yState();
+
     let signonBundle = document.getElementById("signonBundle");
     let pkiBundle = document.getElementById("pkiBundle");
     appendSearchKeywords("showPasswords", [
@@ -2518,49 +2514,5 @@ var gPrivacyPane = {
         );
         break;
     }
-  },
-
-  
-  _initA11yState() {
-    this._initA11yString();
-    let checkbox = document.getElementById("a11yPrivacyCheckbox");
-    switch (Services.prefs.getIntPref("accessibility.force_disabled")) {
-      case 1: 
-        checkbox.checked = true;
-        break;
-      case -1: 
-      case 0: 
-        checkbox.checked = false;
-        break;
-    }
-  },
-
-  _initA11yString() {
-    let a11yLearnMoreLink = Services.urlFormatter.formatURLPref(
-      "accessibility.support.url"
-    );
-    document
-      .getElementById("a11yLearnMoreLink")
-      .setAttribute("href", a11yLearnMoreLink);
-  },
-
-  async updateA11yPrefs(checked) {
-    let buttonIndex = await confirmRestartPrompt(checked, 0, true, false);
-    if (buttonIndex == CONFIRM_RESTART_PROMPT_RESTART_NOW) {
-      Services.prefs.setIntPref(
-        "accessibility.force_disabled",
-        checked ? 1 : 0
-      );
-      Services.telemetry.scalarSet(
-        "preferences.prevent_accessibility_services",
-        true
-      );
-      Services.startup.quit(
-        Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
-      );
-    }
-
-    
-    document.getElementById("a11yPrivacyCheckbox").checked = !checked;
   },
 };
