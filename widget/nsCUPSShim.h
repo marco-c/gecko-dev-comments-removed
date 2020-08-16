@@ -11,6 +11,11 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 
+
+#ifndef XP_MACOSX
+#  define CUPS_SHIM_RUNTIME_LINK
+#endif
+
 struct PRLibrary;
 
 
@@ -43,7 +48,15 @@ class nsCUPSShim {
   X(cupsTempFd)                \
   X(httpClose)
 
-#define CUPS_SHIM_FUNC_DECL(X) decltype(::X)* X;
+#ifdef CUPS_SHIM_RUNTIME_LINK
+  
+#  define CUPS_SHIM_FUNC_DECL(X) decltype(::X)* X;
+#else
+  
+  
+#  define CUPS_SHIM_FUNC_DECL(X) static constexpr decltype(::X)* const X = ::X;
+#endif
+
   CUPS_SHIM_ALL_FUNCS(CUPS_SHIM_FUNC_DECL)
 #undef CUPS_SHIM_FUNC_DECL
 
@@ -63,8 +76,10 @@ class nsCUPSShim {
   
   
   mozilla::Atomic<bool, mozilla::ReleaseAcquire> mInited {false};
+#ifdef CUPS_SHIM_RUNTIME_LINK
   mozilla::OffTheBooksMutex mInitMutex {"nsCUPSShim::mInitMutex"};
   PRLibrary* mCupsLib;
+#endif
 };
 
 #endif 

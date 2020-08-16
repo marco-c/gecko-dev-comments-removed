@@ -10,33 +10,34 @@
 #include "mozilla/ArrayUtils.h"
 #include "prlink.h"
 
-#ifdef XP_MACOSX
+#ifdef CUPS_SHIM_RUNTIME_LINK
 
 
 
 
 
+#  ifdef XP_MACOSX
 static const char gCUPSLibraryName[] = "libcups.2.dylib";
-#else
+#  else
 static const char gCUPSLibraryName[] = "libcups.so.2";
-#endif
+#  endif
 
 template <typename FuncT>
 static bool LoadCupsFunc(PRLibrary*& lib, FuncT*& dest,
                          const char* const name) {
   dest = (FuncT*)PR_FindSymbol(lib, name);
   if (MOZ_UNLIKELY(!dest)) {
-#ifdef DEBUG
+#  ifdef DEBUG
     nsAutoCString msg(name);
     msg.AppendLiteral(" not found in CUPS library");
     NS_WARNING(msg.get());
-#endif
-#ifndef MOZ_TSAN
+#  endif
+#  ifndef MOZ_TSAN
     
     
     
     PR_UnloadLibrary(lib);
-#endif
+#  endif
     lib = nullptr;
     return false;
   }
@@ -56,10 +57,19 @@ bool nsCUPSShim::Init() {
 
 
 
-#define CUPS_SHIM_LOAD(NAME) \
-  if (!LoadCupsFunc(mCupsLib, NAME, #NAME)) return false;
+#  define CUPS_SHIM_LOAD(NAME) \
+    if (!LoadCupsFunc(mCupsLib, NAME, #NAME)) return false;
   CUPS_SHIM_ALL_FUNCS(CUPS_SHIM_LOAD)
-#undef CUPS_SHIM_LOAD
+#  undef CUPS_SHIM_LOAD
   mInited = true;
   return true;
 }
+
+#else  
+
+bool nsCUPSShim::Init() {
+  mInited = true;
+  return true;
+}
+
+#endif
