@@ -423,12 +423,15 @@ void nsThread::ThreadFunc(void* aArg) {
 
   mozilla::IOInterposer::RegisterCurrentThread();
 
+#ifdef MOZ_GECKO_PROFILER
   
   
   
-  if (!initData->name.IsEmpty()) {
+  const bool registerWithProfiler = !initData->name.IsEmpty();
+  if (registerWithProfiler) {
     PROFILER_REGISTER_THREAD(initData->name.BeginReading());
   }
+#endif  
 
   
   nsCOMPtr<nsIRunnable> event = self->mEvents->GetEvent(true, nullptr);
@@ -473,7 +476,12 @@ void nsThread::ThreadFunc(void* aArg) {
   
   nsThreadManager::get().UnregisterCurrentThread(*self);
 
-  PROFILER_UNREGISTER_THREAD();
+#ifdef MOZ_GECKO_PROFILER
+  
+  if (registerWithProfiler) {
+    PROFILER_UNREGISTER_THREAD();
+  }
+#endif  
 
   
   NotNull<nsThreadShutdownContext*> context =
