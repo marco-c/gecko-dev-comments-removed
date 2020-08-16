@@ -4553,6 +4553,13 @@ Downloader.prototype = {
 
     let update = unwrap(this._update);
 
+    let existing = LangPackUpdates.get(update);
+    if (existing) {
+      
+      
+      return;
+    }
+
     
     
     let langPackPromise = AddonManager.stageLangpacksForAppUpdate(
@@ -4565,7 +4572,6 @@ Downloader.prototype = {
         );
       })
       .finally(() => {
-        LangPackUpdates.delete(update);
         this._langPackTimeout = null;
       });
 
