@@ -6,13 +6,13 @@
 
 
 use super::collect;
-use super::rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use super::rayon::prelude::*;
+use super::rayon::iter::plumbing::{Consumer, UnindexedConsumer, ProducerCallback};
 
 use std::cmp::Ordering;
 use std::fmt;
-use std::hash::BuildHasher;
 use std::hash::Hash;
+use std::hash::BuildHasher;
 
 use Bucket;
 use Entries;
@@ -20,10 +20,9 @@ use IndexMap;
 
 
 impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>
-where
-    K: Hash + Eq + Send,
-    V: Send,
-    S: BuildHasher,
+    where K: Hash + Eq + Send,
+          V: Send,
+          S: BuildHasher,
 {
     type Item = (K, V);
     type Iter = IntoParIter<K, V>;
@@ -64,11 +63,11 @@ impl<K: Send, V: Send> IndexedParallelIterator for IntoParIter<K, V> {
 }
 
 
+
 impl<'a, K, V, S> IntoParallelIterator for &'a IndexMap<K, V, S>
-where
-    K: Hash + Eq + Sync,
-    V: Sync,
-    S: BuildHasher,
+    where K: Hash + Eq + Sync,
+          V: Sync,
+          S: BuildHasher,
 {
     type Item = (&'a K, &'a V);
     type Iter = ParIter<'a, K, V>;
@@ -115,11 +114,11 @@ impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParIter<'a, K, V> {
 }
 
 
+
 impl<'a, K, V, S> IntoParallelIterator for &'a mut IndexMap<K, V, S>
-where
-    K: Hash + Eq + Sync + Send,
-    V: Send,
-    S: BuildHasher,
+    where K: Hash + Eq + Sync + Send,
+          V: Send,
+          S: BuildHasher,
 {
     type Item = (&'a K, &'a mut V);
     type Iter = ParIterMut<'a, K, V>;
@@ -154,14 +153,10 @@ impl<'a, K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'a, K, 
 
 
 
-
-
-
 impl<K, V, S> IndexMap<K, V, S>
-where
-    K: Hash + Eq + Sync,
-    V: Sync,
-    S: BuildHasher,
+    where K: Hash + Eq + Sync,
+          V: Sync,
+          S: BuildHasher,
 {
     
     
@@ -186,15 +181,14 @@ where
     
     
     pub fn par_eq<V2, S2>(&self, other: &IndexMap<K, V2, S2>) -> bool
-    where
-        V: PartialEq<V2>,
-        V2: Sync,
-        S2: BuildHasher + Sync,
+        where V: PartialEq<V2>,
+              V2: Sync,
+              S2: BuildHasher + Sync
     {
-        self.len() == other.len()
-            && self
-                .par_iter()
-                .all(move |(key, value)| other.get(key).map_or(false, |v| *value == *v))
+        self.len() == other.len() &&
+            self.par_iter().all(move |(key, value)| {
+                other.get(key).map_or(false, |v| *value == *v)
+            })
     }
 }
 
@@ -267,11 +261,11 @@ impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParValues<'a, K, V> {
 }
 
 
+
 impl<K, V, S> IndexMap<K, V, S>
-where
-    K: Hash + Eq + Send,
-    V: Send,
-    S: BuildHasher,
+    where K: Hash + Eq + Send,
+          V: Send,
+          S: BuildHasher,
 {
     
     
@@ -285,8 +279,7 @@ where
 
     
     pub fn par_sort_keys(&mut self)
-    where
-        K: Ord,
+        where K: Ord,
     {
         self.with_entries(|entries| {
             entries.par_sort_by(|a, b| K::cmp(&a.key, &b.key));
@@ -299,8 +292,7 @@ where
     
     
     pub fn par_sort_by<F>(&mut self, cmp: F)
-    where
-        F: Fn(&K, &V, &K, &V) -> Ordering + Sync,
+        where F: Fn(&K, &V, &K, &V) -> Ordering + Sync,
     {
         self.with_entries(|entries| {
             entries.par_sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
@@ -310,8 +302,7 @@ where
     
     
     pub fn par_sorted_by<F>(self, cmp: F) -> IntoParIter<K, V>
-    where
-        F: Fn(&K, &V, &K, &V) -> Ordering + Sync,
+        where F: Fn(&K, &V, &K, &V) -> Ordering + Sync
     {
         let mut entries = self.into_entries();
         entries.par_sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
@@ -341,15 +332,14 @@ impl<'a, K: Send, V: Send> IndexedParallelIterator for ParValuesMut<'a, K, V> {
 }
 
 
+
 impl<K, V, S> FromParallelIterator<(K, V)> for IndexMap<K, V, S>
-where
-    K: Eq + Hash + Send,
-    V: Send,
-    S: BuildHasher + Default + Send,
+    where K: Eq + Hash + Send,
+          V: Send,
+          S: BuildHasher + Default + Send,
 {
     fn from_par_iter<I>(iter: I) -> Self
-    where
-        I: IntoParallelIterator<Item = (K, V)>,
+        where I: IntoParallelIterator<Item = (K, V)>
     {
         let list = collect(iter);
         let len = list.iter().map(Vec::len).sum();
@@ -363,14 +353,12 @@ where
 
 
 impl<K, V, S> ParallelExtend<(K, V)> for IndexMap<K, V, S>
-where
-    K: Eq + Hash + Send,
-    V: Send,
-    S: BuildHasher + Send,
+    where K: Eq + Hash + Send,
+          V: Send,
+          S: BuildHasher + Send,
 {
     fn par_extend<I>(&mut self, iter: I)
-    where
-        I: IntoParallelIterator<Item = (K, V)>,
+        where I: IntoParallelIterator<Item = (K, V)>
     {
         for vec in collect(iter) {
             self.extend(vec);
@@ -380,20 +368,19 @@ where
 
 
 impl<'a, K: 'a, V: 'a, S> ParallelExtend<(&'a K, &'a V)> for IndexMap<K, V, S>
-where
-    K: Copy + Eq + Hash + Send + Sync,
-    V: Copy + Send + Sync,
-    S: BuildHasher + Send,
+    where K: Copy + Eq + Hash + Send + Sync,
+          V: Copy + Send + Sync,
+          S: BuildHasher + Send,
 {
     fn par_extend<I>(&mut self, iter: I)
-    where
-        I: IntoParallelIterator<Item = (&'a K, &'a V)>,
+        where I: IntoParallelIterator<Item = (&'a K, &'a V)>
     {
         for vec in collect(iter) {
             self.extend(vec);
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -413,12 +400,9 @@ mod tests {
         insert.par_iter().zip(map.par_keys()).for_each(|(a, b)| {
             assert_eq!(a, b);
         });
-        (0..insert.len())
-            .into_par_iter()
-            .zip(map.par_keys())
-            .for_each(|(i, k)| {
-                assert_eq!(map.get_index(i).unwrap().0, k);
-            });
+        (0..insert.len()).into_par_iter().zip(map.par_keys()).for_each(|(i, k)| {
+            assert_eq!(map.get_index(i).unwrap().0, k);
+        });
     }
 
     #[test]
@@ -428,15 +412,13 @@ mod tests {
         map_a.insert(2, "2");
         let mut map_b = map_a.clone();
         assert!(map_a.par_eq(&map_b));
-        map_b.swap_remove(&1);
+        map_b.remove(&1);
         assert!(!map_a.par_eq(&map_b));
         map_b.insert(3, "3");
         assert!(!map_a.par_eq(&map_b));
 
-        let map_c: IndexMap<_, String> = map_b
-            .into_par_iter()
-            .map(|(k, v)| (k, v.to_owned()))
-            .collect();
+        let map_c: IndexMap<_, String>
+            = map_b.into_par_iter().map(|(k, v)| (k, v.to_owned())).collect();
         assert!(!map_a.par_eq(&map_c));
         assert!(!map_c.par_eq(&map_a));
     }
@@ -446,10 +428,7 @@ mod tests {
         let mut map = IndexMap::new();
         map.par_extend(vec![(&1, &2), (&3, &4)]);
         map.par_extend(vec![(5, 6)]);
-        assert_eq!(
-            map.into_par_iter().collect::<Vec<_>>(),
-            vec![(1, 2), (3, 4), (5, 6)]
-        );
+        assert_eq!(map.into_par_iter().collect::<Vec<_>>(), vec![(1, 2), (3, 4), (5, 6)]);
     }
 
     #[test]
@@ -478,7 +457,9 @@ mod tests {
     fn values_mut() {
         let vec = vec![(1, 1), (2, 2), (3, 3)];
         let mut map: IndexMap<_, _> = vec.into_par_iter().collect();
-        map.par_values_mut().for_each(|value| *value *= 2);
+        map.par_values_mut().for_each(|value| {
+            *value = (*value) * 2
+        });
         let values: Vec<_> = map.par_values().cloned().collect();
         assert_eq!(values.len(), 3);
         assert!(values.contains(&2));
