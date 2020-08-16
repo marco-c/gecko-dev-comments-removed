@@ -82,6 +82,14 @@ static inline UniqueProfilerBacktrace profiler_get_backtrace() {
   return nullptr;
 }
 
+namespace mozilla {
+class ProfileChunkedBuffer;
+}  
+static inline bool profiler_capture_backtrace(
+    mozilla::ProfileChunkedBuffer& aChunkedBuffer) {
+  return false;
+}
+
 #else  
 
 #  include "BaseProfiler.h"
@@ -110,6 +118,7 @@ class ProfilerCodeAddressService;
 class ProfilerMarkerPayload;
 namespace mozilla {
 class ProfileBufferControlledChunkManager;
+class ProfileChunkedBuffer;
 namespace baseprofiler {
 class SpliceableJSONWriter;
 }  
@@ -673,6 +682,7 @@ using UniqueProfilerBacktrace =
 
 
 UniqueProfilerBacktrace profiler_get_backtrace();
+bool profiler_capture_backtrace(mozilla::ProfileChunkedBuffer& aChunkedBuffer);
 
 struct ProfilerStats {
   unsigned n = 0;
