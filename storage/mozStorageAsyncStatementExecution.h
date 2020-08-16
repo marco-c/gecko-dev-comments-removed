@@ -126,8 +126,7 @@ class AsyncExecuteStatements final : public Runnable,
 
 
 
-  bool executeAndProcessStatement(sqlite3_stmt* aStatement,
-                                  bool aLastStatement);
+  bool executeAndProcessStatement(StatementData& aData, bool aLastStatement);
 
   
 
@@ -138,7 +137,7 @@ class AsyncExecuteStatements final : public Runnable,
 
 
 
-  bool executeStatement(sqlite3_stmt* aStatement);
+  bool executeStatement(StatementData& aData);
 
   
 

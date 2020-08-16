@@ -103,7 +103,8 @@ class Connection final : public mozIStorageConnection,
 
 
 
-  nsresult initialize(nsIFileURL* aFileURL);
+  nsresult initialize(nsIFileURL* aFileURL,
+                      const nsACString& aTelemetryFilename);
 
   
 
@@ -305,10 +306,24 @@ class Connection final : public mozIStorageConnection,
 
   nsresult initializeClone(Connection* aClone, bool aReadOnly);
 
+  
+
+
+
+
+  void RecordQueryStatus(int srv);
+
  private:
   ~Connection();
   nsresult initializeInternal();
   void initializeFailed();
+
+  
+
+
+
+
+  void RecordOpenStatus(nsresult rv);
 
   
 

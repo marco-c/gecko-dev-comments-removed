@@ -27,6 +27,13 @@ extern mozilla::LazyLogModule gStorageLog;
 namespace mozilla {
 namespace storage {
 
+bool isErrorCode(int aSQLiteResultCode) {
+  
+  int rc = aSQLiteResultCode & 0xFF;
+
+  return rc != SQLITE_OK && rc != SQLITE_ROW && rc != SQLITE_DONE;
+}
+
 nsresult convertResultCode(int aSQLiteResultCode) {
   
   int rc = aSQLiteResultCode & 0xFF;
