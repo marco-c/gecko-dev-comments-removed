@@ -1848,6 +1848,7 @@ CGFloat nsCocoaWindow::BackingScaleFactor() {
 }
 
 void nsCocoaWindow::BackingScaleFactorChanged() {
+  CGFloat oldScale = mBackingScaleFactor;
   CGFloat newScale = GetBackingScaleFactor(mWindow);
 
   
@@ -1881,6 +1882,23 @@ void nsCocoaWindow::BackingScaleFactorChanged() {
     presShell->BackingScaleFactorChanged();
   }
   mWidgetListener->UIResolutionChanged();
+
+  if ((mWindowType == eWindowType_popup) && (mBackingScaleFactor == 2.0)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    NSRect frame = [mWindow frame];
+    CGFloat previousYOrigin = frame.origin.y + frame.size.height;
+    frame.size.width = mBounds.Width() * (oldScale / newScale);
+    frame.size.height = mBounds.Height() * (oldScale / newScale);
+    frame.origin.y = previousYOrigin - frame.size.height;
+    [mWindow setFrame:frame display:NO animate:NO];
+  }
 }
 
 int32_t nsCocoaWindow::RoundsWidgetCoordinatesTo() {
