@@ -411,6 +411,7 @@ const BackgroundPageThumbs = {
     });
 
     this._thumbBrowser = browser;
+    browser.docShellIsActive = false;
   },
 
   _destroyBrowser() {
@@ -618,6 +619,8 @@ Capture.prototype = {
       this.redirectTimer.delay = waitTime;
       return;
     }
+
+    aBrowser.docShellIsActive = true;
 
     
     
