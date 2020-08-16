@@ -83,7 +83,7 @@ this.addEventListener("message", function(event) {
         actorID: packet.id,
         
         threadActor,
-        window: global,
+        workerGlobal: global,
 
         onThreadAttached() {
           postMessage(JSON.stringify({ type: "attached" }));

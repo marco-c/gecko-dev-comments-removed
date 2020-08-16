@@ -76,8 +76,6 @@ const proto = {
 
 
 
-
-
   initialize(
     obj,
     {

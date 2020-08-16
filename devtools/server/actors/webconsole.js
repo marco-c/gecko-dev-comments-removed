@@ -249,13 +249,11 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-
-
-  get window() {
+  get global() {
     if (this.parentActor.isRootActor) {
       return this._getWindowForBrowserConsole();
     }
-    return this.parentActor.window;
+    return this.parentActor.window || this.parentActor.workerGlobal;
   },
 
   
@@ -326,13 +324,13 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
   _lastChromeWindow: null,
 
   
-  _evalWindow: null,
-  get evalWindow() {
-    return this._evalWindow || this.window;
+  _evalGlobal: null,
+  get evalGlobal() {
+    return this._evalGlobal || this.global;
   },
 
-  set evalWindow(window) {
-    this._evalWindow = window;
+  set evalGlobal(global) {
+    this._evalGlobal = global;
 
     if (!this._progressListenerActive) {
       EventEmitter.on(this.parentActor, "will-navigate", this._onWillNavigate);
@@ -431,7 +429,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
     this._webConsoleCommandsCache = null;
     this._lastConsoleInputEvaluation = null;
-    this._evalWindow = null;
+    this._evalGlobal = null;
     this.dbg = null;
     this.conn = null;
   },
@@ -495,7 +493,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         
       }
     }
-    const dbgGlobal = this.dbg.makeGlobalObjectReference(this.window);
+    const dbgGlobal = this.dbg.makeGlobalObjectReference(this.global);
     return dbgGlobal.makeDebuggeeValue(value);
   },
 
@@ -621,7 +619,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
   
   startListeners: async function(listeners) {
     const startedListeners = [];
-    const window = !this.parentActor.isRootActor ? this.window : null;
+    const global = !this.parentActor.isRootActor ? this.global : null;
 
     for (const event of listeners) {
       switch (event) {
@@ -632,7 +630,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
           }
           if (!this.consoleServiceListener) {
             this.consoleServiceListener = new ConsoleServiceListener(
-              window,
+              global,
               this.onConsoleServiceMessage
             );
             this.consoleServiceListener.init();
@@ -644,7 +642,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             
             
             this.consoleAPIListener = new ConsoleAPIListener(
-              window,
+              global,
               this.onConsoleAPICall,
               this.parentActor.consoleAPIListenerOptions
             );
@@ -703,7 +701,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             
             new NetworkMonitorActor(
               this.conn,
-              { window },
+              { window: global },
               this.actorID,
               mmMockParent
             );
@@ -718,7 +716,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             
             
             this.stackTraceCollector = new StackTraceCollector(
-              { window },
+              { window: global },
               this.netmonitors
             );
             this.stackTraceCollector.init();
@@ -730,10 +728,10 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
           if (isWorker) {
             break;
           }
-          if (this.window instanceof Ci.nsIDOMWindow) {
+          if (this.global instanceof Ci.nsIDOMWindow) {
             if (!this.consoleFileActivityListener) {
               this.consoleFileActivityListener = new ConsoleFileActivityListener(
-                this.window,
+                this.global,
                 this
               );
             }
@@ -748,7 +746,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
           }
           if (!this.consoleReflowListener) {
             this.consoleReflowListener = new ConsoleReflowListener(
-              this.window,
+              this.global,
               this
             );
           }
@@ -788,7 +786,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
     return {
       startedListeners: startedListeners,
-      nativeConsoleAPI: this.hasNativeConsoleAPI(this.window),
+      nativeConsoleAPI: this.hasNativeConsoleAPI(this.global),
       traits: this.traits,
     };
   },
@@ -920,10 +918,9 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
           }
 
           
-          const winStartTime =
-            this.window && this.window.performance
-              ? this.window.performance.timing.navigationStart
-              : 0;
+          
+          const winStartTime = this.global?.performance?.timing
+            ?.navigationStart;
 
           const cache = this.consoleAPIListener.getCachedMessages(
             !this.parentActor.isRootActor
@@ -1031,7 +1028,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         });
         return;
       } catch (e) {
-        const message = `Encountered error while waiting for Helper Result: ${e}`;
+        const message = `Encountered error while waiting for Helper Result: ${e}\n${e.stack}`;
         DevToolsUtils.reportException("evaluateJSAsync", Error(message));
       }
     });
@@ -1355,7 +1352,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
           );
         }
       } else {
-        dbgObject = this.dbg.addDebuggee(this.evalWindow);
+        dbgObject = this.dbg.addDebuggee(this.evalGlobal);
       }
 
       const result = JSPropertyProvider({
@@ -1444,7 +1441,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
   clearMessagesCache: function() {
     const windowId = !this.parentActor.isRootActor
-      ? WebConsoleUtils.getInnerWindowId(this.window)
+      ? WebConsoleUtils.getInnerWindowId(this.global)
       : null;
     const ConsoleAPIStorage = Cc[
       "@mozilla.org/consoleAPI-storage;1"
@@ -1531,8 +1528,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
   _getWebConsoleCommands: function(debuggerGlobal) {
     const helpers = {
-      window: this.evalWindow,
-      chromeWindow: this.chromeWindow.bind(this),
+      window: this.evalGlobal,
       makeDebuggeeValue: debuggerGlobal.makeDebuggeeValue.bind(debuggerGlobal),
       createValueGrip: this.createValueGrip.bind(this),
       preprocessDebuggerObject: this.preprocessDebuggerObject.bind(this),
@@ -1542,7 +1538,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     };
     addWebConsoleCommands(helpers);
 
-    const evalWindow = this.evalWindow;
+    const evalGlobal = this.evalGlobal;
     function maybeExport(obj, name) {
       if (typeof obj[name] != "function") {
         return;
@@ -1554,7 +1550,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       
       
       
-      obj[name] = Cu.exportFunction(obj[name], evalWindow, {
+      obj[name] = Cu.exportFunction(obj[name], evalGlobal, {
         allowCrossOriginArguments: true,
       });
     }
@@ -1780,7 +1776,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     const { url, method, headers, body, cause } = request;
     
     
-    const doc = this.window.document;
+    const doc = this.global.document;
 
     const channel = NetUtil.newChannel({
       uri: NetUtil.newURI(url),
@@ -2115,24 +2111,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  chromeWindow: function() {
-    let window = null;
-    try {
-      window = this.window.docShell.chromeEventHandler.ownerGlobal;
-    } catch (ex) {
-      
-      
-    }
-
-    return window;
-  },
-
-  
-
-
-
-
-
 
 
 
@@ -2149,7 +2127,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
   _onWillNavigate: function({ window, isTopLevel }) {
     if (isTopLevel) {
-      this._evalWindow = null;
+      this._evalGlobal = null;
       EventEmitter.off(this.parentActor, "will-navigate", this._onWillNavigate);
       this._progressListenerActive = false;
     }

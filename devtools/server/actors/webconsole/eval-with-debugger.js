@@ -117,7 +117,6 @@ function isObject(value) {
 
 
 
-
 exports.evalWithDebugger = function(string, options = {}, webConsole) {
   if (isCommand(string.trim()) && options.eager) {
     return {
@@ -128,11 +127,11 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
   const evalString = getEvalInput(string);
   const { frame, dbg } = getFrameDbg(options, webConsole);
 
-  const { dbgWindow, bindSelf } = getDbgWindow(options, dbg, webConsole);
-  const helpers = getHelpers(dbgWindow, options, webConsole);
+  const { dbgGlobal, bindSelf } = getDbgGlobal(options, dbg, webConsole);
+  const helpers = getHelpers(dbgGlobal, options, webConsole);
   let { bindings, helperCache } = bindCommands(
     isCommand(string),
-    dbgWindow,
+    dbgGlobal,
     bindSelf,
     frame,
     helpers
@@ -156,7 +155,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
     evalOptions.lineNumber = options.lineNumber;
   }
 
-  updateConsoleInputEvaluation(dbg, dbgWindow, webConsole);
+  updateConsoleInputEvaluation(dbg, webConsole);
 
   let noSideEffectDebugger = null;
   if (options.eager) {
@@ -171,7 +170,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
       evalOptions,
       bindings,
       frame,
-      dbgWindow,
+      dbgGlobal,
       noSideEffectDebugger
     );
   } finally {
@@ -187,7 +186,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
   
   
   if (!frame && result && "throw" in result) {
-    parseErrorOutput(dbgWindow, string);
+    parseErrorOutput(dbgGlobal, string);
   }
 
   const { helperResult } = helpers;
@@ -203,7 +202,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
     helperResult,
     dbg,
     frame,
-    window: dbgWindow,
+    dbgGlobal,
   };
 };
 
@@ -213,14 +212,14 @@ function getEvalResult(
   evalOptions,
   bindings,
   frame,
-  dbgWindow,
+  dbgGlobal,
   noSideEffectDebugger
 ) {
   if (noSideEffectDebugger) {
     
     
     
-    if (!noSideEffectDebugger.hasDebuggee(dbgWindow.unsafeDereference())) {
+    if (!noSideEffectDebugger.hasDebuggee(dbgGlobal.unsafeDereference())) {
       return null;
     }
 
@@ -228,7 +227,7 @@ function getEvalResult(
     
     
     frame = frame ? noSideEffectDebugger.adoptFrame(frame) : null;
-    dbgWindow = noSideEffectDebugger.adoptDebuggeeValue(dbgWindow);
+    dbgGlobal = noSideEffectDebugger.adoptDebuggeeValue(dbgGlobal);
     if (bindings) {
       bindings = Object.keys(bindings).reduce((acc, key) => {
         acc[key] = noSideEffectDebugger.adoptDebuggeeValue(bindings[key]);
@@ -241,7 +240,7 @@ function getEvalResult(
   if (frame) {
     result = frame.evalWithBindings(string, bindings, evalOptions);
   } else {
-    result = dbgWindow.executeInGlobalWithBindings(
+    result = dbgGlobal.executeInGlobalWithBindings(
       string,
       bindings,
       evalOptions
@@ -258,7 +257,7 @@ function getEvalResult(
   return result;
 }
 
-function parseErrorOutput(dbgWindow, string) {
+function parseErrorOutput(dbgGlobal, string) {
   
   
   if (isWorker) {
@@ -320,7 +319,7 @@ function parseErrorOutput(dbgWindow, string) {
     }
 
     for (const name of identifiers) {
-      dbgWindow.forceLexicalInitializationByName(name);
+      dbgGlobal.forceLexicalInitializationByName(name);
     }
   }
 }
@@ -454,7 +453,7 @@ function nativeHasNoSideEffects(fn) {
   return natives && natives.some(n => fn.isSameNative(n));
 }
 
-function updateConsoleInputEvaluation(dbg, dbgWindow, webConsole) {
+function updateConsoleInputEvaluation(dbg, webConsole) {
   
   
   
@@ -513,8 +512,8 @@ function getFrameDbg(options, webConsole) {
   );
 }
 
-function getDbgWindow(options, dbg, webConsole) {
-  let evalWindow = webConsole.evalWindow;
+function getDbgGlobal(options, dbg, webConsole) {
+  let evalGlobal = webConsole.evalGlobal;
 
   if (options.innerWindowID) {
     const window = Services.wm.getCurrentInnerWindowWithId(
@@ -522,16 +521,16 @@ function getDbgWindow(options, dbg, webConsole) {
     );
 
     if (window) {
-      evalWindow = window;
+      evalGlobal = window;
     }
   }
 
-  const dbgWindow = dbg.makeGlobalObjectReference(evalWindow);
+  const dbgGlobal = dbg.makeGlobalObjectReference(evalGlobal);
 
   
   
   if (!options.selectedObjectActor) {
-    return { bindSelf: null, dbgWindow };
+    return { bindSelf: null, dbgGlobal };
   }
 
   
@@ -542,25 +541,25 @@ function getDbgWindow(options, dbg, webConsole) {
     webConsole.parentActor.getActorByID(options.selectedObjectActor);
 
   if (!actor) {
-    return { bindSelf: null, dbgWindow };
+    return { bindSelf: null, dbgGlobal };
   }
 
   const jsVal = actor instanceof LongStringActor ? actor.str : actor.rawValue();
   if (!isObject(jsVal)) {
-    return { bindSelf: jsVal, dbgWindow };
+    return { bindSelf: jsVal, dbgGlobal };
   }
 
   
   
   
   
-  const bindSelf = dbgWindow.makeDebuggeeValue(jsVal);
-  return { bindSelf, dbgWindow };
+  const bindSelf = dbgGlobal.makeDebuggeeValue(jsVal);
+  return { bindSelf, dbgGlobal };
 }
 
-function getHelpers(dbgWindow, options, webConsole) {
+function getHelpers(dbgGlobal, options, webConsole) {
   
-  const helpers = webConsole._getWebConsoleCommands(dbgWindow);
+  const helpers = webConsole._getWebConsoleCommands(dbgGlobal);
   if (options.selectedNodeActor) {
     const actor = webConsole.conn.getActor(options.selectedNodeActor);
     if (actor) {
@@ -582,7 +581,7 @@ function cleanupBindings(bindings, helperCache) {
   }
 }
 
-function bindCommands(isCmd, dbgWindow, bindSelf, frame, helpers) {
+function bindCommands(isCmd, dbgGlobal, bindSelf, frame, helpers) {
   const bindings = helpers.sandbox;
   if (bindSelf) {
     bindings._self = bindSelf;
@@ -605,7 +604,7 @@ function bindCommands(isCmd, dbgWindow, bindSelf, frame, helpers) {
       }
     } else {
       helpersToDisable = availableHelpers.filter(
-        name => !!dbgWindow.getOwnPropertyDescriptor(name)
+        name => !!dbgGlobal.getOwnPropertyDescriptor(name)
       );
     }
     

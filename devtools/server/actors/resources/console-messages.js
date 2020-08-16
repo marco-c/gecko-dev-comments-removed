@@ -65,10 +65,9 @@ class ConsoleMessageWatcher {
     listener.init();
 
     
+    
     const winStartTime =
-      targetActor.window && targetActor.window.performance
-        ? targetActor.window.performance.timing.navigationStart
-        : 0;
+      targetActor.window?.performance?.timing?.navigationStart || 0;
 
     const cachedMessages = listener.getCachedMessages(!targetActor.isRootActor);
     const messages = [];
