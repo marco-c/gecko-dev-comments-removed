@@ -1050,11 +1050,16 @@ PdfStreamConverter.prototype = {
     
     
     if (aFromType != "application/pdf") {
-      let isPDF = channelURI?.QueryInterface(Ci.nsIURL).fileExtension == "pdf";
-      let typeIsOctetStream = aFromType == "application/octet-stream";
+      let ext = channelURI?.QueryInterface(Ci.nsIURL).fileExtension;
+      let isPDF = ext.toLowerCase() == "pdf";
+      let browsingContext = aChannel?.loadInfo.targetBrowsingContext;
+      let toplevelOctetStream =
+        aFromType == "application/octet-stream" &&
+        browsingContext &&
+        !browsingContext.parent;
       if (
         !isPDF ||
-        !typeIsOctetStream ||
+        !toplevelOctetStream ||
         !getBoolPref(PREF_PREFIX + ".handleOctetStream", false)
       ) {
         throw new Components.Exception(
