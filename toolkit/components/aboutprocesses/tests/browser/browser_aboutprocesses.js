@@ -3,7 +3,7 @@
 
 "use strict";
 
-let { AppConstants } = ChromeUtils.import(
+const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
@@ -233,19 +233,54 @@ function testMemory(string, total, delta, assumptions) {
 
 add_task(async function testAboutProcesses() {
   info("Setting up about:processes");
+
+  
   let tabAboutProcesses = (gBrowser.selectedTab = BrowserTestUtils.addTab(
     gBrowser,
     "about:processes"
   ));
-
   await BrowserTestUtils.browserLoaded(tabAboutProcesses.linkedBrowser);
+
+  info("Setting up example.com");
+  
+  let tabHung = BrowserTestUtils.addTab(gBrowser, "http://example.com");
+  await BrowserTestUtils.browserLoaded(tabHung.linkedBrowser);
+
+  info("Setting up fake process hang detector");
+  let hungChildID = tabHung.linkedBrowser.frameLoader.childID;
 
   let doc = tabAboutProcesses.linkedBrowser.contentDocument;
   let tbody = doc.getElementById("process-tbody");
 
   
+  
+  let isProcessHangDetected = false;
+  let fakeProcessHangMonitor = async function() {
+    for (let i = 0; i < 100; ++i) {
+      if (isProcessHangDetected || !tabHung.linkedBrowser) {
+        
+        return;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      Services.obs.notifyObservers(
+        {
+          childID: hungChildID,
+          hangType: Ci.nsIHangReport.PLUGIN_HANG,
+          pluginName: "Fake plug-in",
+          QueryInterface: ChromeUtils.generateQI(["nsIHangReport"]),
+        },
+        "process-hang-report"
+      );
+    }
+  };
+  fakeProcessHangMonitor();
+
+  info("Waiting for the first update of about:processes");
+  
   await TestUtils.waitForCondition(() => tbody.childElementCount);
 
+  info("Waiting for the second update of about:processes");
   
   
   await new Promise(resolve => {
@@ -256,6 +291,7 @@ add_task(async function testAboutProcesses() {
     observer.observe(tbody, { childList: true });
   });
 
+  info("Looking at the contents of about:processes");
   
   let row = tbody.firstChild;
   while (row && row.children[1].textContent != "browser") {
@@ -349,8 +385,29 @@ add_task(async function testAboutProcesses() {
       HARDCODED_ASSUMPTIONS_THREAD
     );
   }
-
   Assert.equal(numberOfThreads, numberOfThreadsFound);
 
+  info("Ensuring that the hung process is marked as hung");
+  let isOneNonHungProcessDetected = false;
+  for (let row of tbody.getElementsByClassName("process")) {
+    if (row.classList.contains("hung")) {
+      if (row.process.childID == hungChildID) {
+        isProcessHangDetected = true;
+      }
+    } else {
+      isOneNonHungProcessDetected = true;
+    }
+    if (isProcessHangDetected && isOneNonHungProcessDetected) {
+      break;
+    }
+  }
+
+  Assert.ok(isProcessHangDetected, "We have found our hung process");
+  Assert.ok(
+    isOneNonHungProcessDetected,
+    "We have found at least one non-hung process"
+  );
+
   BrowserTestUtils.removeTab(tabAboutProcesses);
+  BrowserTestUtils.removeTab(tabHung);
 });
