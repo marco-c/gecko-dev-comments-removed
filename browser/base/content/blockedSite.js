@@ -120,10 +120,16 @@ function initPage() {
   });
 
   
+  
+  
+  let stringMapping = {
+    malware: "safeb-blocked-malware-page-learn-more-sumo",
+  };
+
   let learnMore = document.getElementById("learn_more");
   document.l10n.setAttributes(
     learnMore,
-    "safeb-blocked-" + error + "-page-learn-more"
+    stringMapping[error] || `safeb-blocked-${error}-page-learn-more`
   );
 
   
