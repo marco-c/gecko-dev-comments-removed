@@ -686,14 +686,132 @@ SessionHistoryEntry::SetLoadTypeAsHistory() {
 NS_IMETHODIMP
 SessionHistoryEntry::AddChild(nsISHEntry* aChild, int32_t aOffset,
                               bool aUseRemoteSubframes) {
-  MOZ_CRASH("Need to implement this");
-  return NS_ERROR_NOT_IMPLEMENTED;
+  if (aChild) {
+    NS_ENSURE_SUCCESS(aChild->SetParent(this), NS_ERROR_FAILURE);
+  }
+
+  if (aOffset < 0) {
+    mChildren.AppendObject(aChild);
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  NS_ASSERTION(aOffset < (mChildren.Count() + 1023), "Large frames array!\n");
+
+  bool newChildIsDyn = aChild ? aChild->IsDynamicallyAdded() : false;
+
+  
+  
+  if (newChildIsDyn) {
+    int32_t lastNonDyn = aOffset - 1;
+    for (int32_t i = aOffset; i < mChildren.Count(); ++i) {
+      nsISHEntry* entry = mChildren[i];
+      if (entry) {
+        if (entry->IsDynamicallyAdded()) {
+          break;
+        } else {
+          lastNonDyn = i;
+        }
+      }
+    }
+    
+    
+    
+    if (aOffset > mChildren.Count()) {
+      mChildren.SetCount(aOffset);
+    }
+    if (!mChildren.InsertObjectAt(aChild, lastNonDyn + 1)) {
+      NS_WARNING("Adding a child failed!");
+      aChild->SetParent(nullptr);
+      return NS_ERROR_FAILURE;
+    }
+  } else {
+    
+    
+    
+    if (mChildren.Count() > 0) {
+      int32_t start = std::min(mChildren.Count() - 1, aOffset);
+      int32_t dynEntryIndex = -1;
+      nsISHEntry* dynEntry = nullptr;
+      for (int32_t i = start; i >= 0; --i) {
+        nsISHEntry* entry = mChildren[i];
+        if (entry) {
+          if (entry->IsDynamicallyAdded()) {
+            dynEntryIndex = i;
+            dynEntry = entry;
+          } else {
+            break;
+          }
+        }
+      }
+
+      if (dynEntry) {
+        nsCOMArray<nsISHEntry> tmp;
+        tmp.SetCount(aOffset - dynEntryIndex + 1);
+        mChildren.InsertObjectsAt(tmp, dynEntryIndex);
+        NS_ASSERTION(mChildren[aOffset + 1] == dynEntry, "Whaat?");
+      }
+    }
+
+    
+    if (aOffset < mChildren.Count()) {
+      nsISHEntry* oldChild = mChildren[aOffset];
+      if (oldChild && oldChild != aChild) {
+        
+        
+        
+        
+        
+        
+        
+        
+        NS_ASSERTION(
+            aUseRemoteSubframes,
+            "Adding a child where we already have a child? This may misbehave");
+        oldChild->SetParent(nullptr);
+      }
+    }
+
+    mChildren.ReplaceObjectAt(aChild, aOffset);
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 SessionHistoryEntry::RemoveChild(nsISHEntry* aChild) {
-  MOZ_CRASH("Need to implement this");
-  return NS_ERROR_NOT_IMPLEMENTED;
+  NS_ENSURE_TRUE(aChild, NS_ERROR_FAILURE);
+  bool childRemoved = false;
+  if (aChild->IsDynamicallyAdded()) {
+    childRemoved = mChildren.RemoveObject(aChild);
+  } else {
+    int32_t index = mChildren.IndexOfObject(aChild);
+    if (index >= 0) {
+      
+      
+      mChildren.ReplaceObjectAt(nullptr, index);
+      childRemoved = true;
+    }
+  }
+  if (childRemoved) {
+    aChild->SetParent(nullptr);
+
+    
+    for (int32_t i = mChildren.Count() - 1; i >= 0 && !mChildren[i]; --i) {
+      if (!mChildren.RemoveObjectAt(i)) {
+        break;
+      }
+    }
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -711,8 +829,24 @@ SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
 
 NS_IMETHODIMP
 SessionHistoryEntry::ReplaceChild(nsISHEntry* aNewChild) {
-  MOZ_CRASH("Need to implement this");
-  return NS_ERROR_NOT_IMPLEMENTED;
+  NS_ENSURE_STATE(aNewEntry);
+
+  nsID docshellID;
+  aNewEntry->GetDocshellID(docshellID);
+
+  for (int32_t i = 0; i < mChildren.Count(); ++i) {
+    if (mChildren[i]) {
+      nsID childDocshellID;
+      nsresult rv = mChildren[i]->GetDocshellID(childDocshellID);
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (docshellID == childDocshellID) {
+        mChildren[i]->SetParent(nullptr);
+        mChildren.ReplaceObjectAt(aNewEntry, i);
+        return aNewEntry->SetParent(this);
+      }
+    }
+  }
+  return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP_(void)
