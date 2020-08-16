@@ -367,7 +367,15 @@ enum class AttachDecision {
 
 
 
-enum class ArgumentKind : uint8_t { Callee, This, NewTarget, Arg0, Arg1, Arg2 };
+enum class ArgumentKind : uint8_t {
+  Callee,
+  This,
+  NewTarget,
+  Arg0,
+  Arg1,
+  Arg2,
+  Arg3
+};
 
 
 
@@ -418,6 +426,8 @@ inline int32_t GetIndexOfArgument(ArgumentKind kind, CallFlags flags,
       return flags.isConstructing() + hasArgumentArray - 2;
     case ArgumentKind::Arg2:
       return flags.isConstructing() + hasArgumentArray - 3;
+    case ArgumentKind::Arg3:
+      return flags.isConstructing() + hasArgumentArray - 4;
     case ArgumentKind::NewTarget:
       MOZ_ASSERT(flags.isConstructing());
       *addArgc = false;
