@@ -2,6 +2,8 @@
 
 
 
+
+
 new WebAssembly.Module(wasmTextToBinary(`
 (module
   (func (result v128)

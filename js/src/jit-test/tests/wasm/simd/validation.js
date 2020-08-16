@@ -1,3 +1,5 @@
+
+
 function testValid(code) {
     assertEq(WebAssembly.validate(wasmTextToBinary(code)), true);
 }
