@@ -6656,9 +6656,11 @@ void HTMLMediaElement::NotifyFullScreenChanged() {
   const bool isInFullScreen = IsInFullScreen();
   if (isInFullScreen) {
     StartMediaControlKeyListenerIfNeeded();
-    MOZ_ASSERT(mMediaControlKeyListener->IsStarted(),
-               "Failed to start the listener when entering fullscreen!");
+    if (!mMediaControlKeyListener->IsStarted()) {
+      MEDIACONTROL_LOG("Failed to start the listener when entering fullscreen");
+    }
   }
+  
   BrowsingContext* bc = OwnerDoc()->GetBrowsingContext();
   if (RefPtr<IMediaInfoUpdater> updater = ContentMediaAgent::Get(bc)) {
     updater->NotifyMediaFullScreenState(bc->Id(), isInFullScreen);
@@ -7919,7 +7921,16 @@ bool HTMLMediaElement::IsInFullScreen() const {
   return State().HasState(NS_EVENT_STATE_FULLSCREEN);
 }
 
+bool HTMLMediaElement::IsPlayable() const {
+  return (mDecoder || mSrcStream) && !HasError();
+}
+
 bool HTMLMediaElement::ShouldStartMediaControlKeyListener() const {
+  if (!IsPlayable()) {
+    MEDIACONTROL_LOG("Not start listener because media is not playable");
+    return false;
+  }
+
   if (IsBeingUsedInPictureInPictureMode()) {
     MEDIACONTROL_LOG("Start listener because of being used in PiP mode");
     return true;
@@ -7965,8 +7976,10 @@ void HTMLMediaElement::UpdateMediaControlAfterPictureInPictureModeChanged() {
     
     
     StartMediaControlKeyListenerIfNeeded();
-    MOZ_ASSERT(mMediaControlKeyListener->IsStarted(),
-               "Failed to start listener when entering PIP mode");
+    if (!mMediaControlKeyListener->IsStarted()) {
+      MEDIACONTROL_LOG("Failed to start listener when entering PIP mode");
+    }
+    
     mMediaControlKeyListener->SetPictureInPictureModeEnabled(true);
   } else {
     mMediaControlKeyListener->SetPictureInPictureModeEnabled(false);

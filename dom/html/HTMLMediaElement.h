@@ -1934,6 +1934,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  bool IsPlayable() const;
+
+  
+  
   bool ShouldStartMediaControlKeyListener() const;
 
   
