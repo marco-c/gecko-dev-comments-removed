@@ -1,18 +1,21 @@
 
 
 use crate::data_structures::{
-    MoveInfo, MoveInfoElem, RangeId, RealRange, RealRangeIx, RegClass, RegToRangesMaps, TypedIxVec,
-    VirtualRange, VirtualRangeIx, VirtualReg,
+    InstPoint, Map, MoveInfo, MoveInfoElem, RangeFrag, RangeFragIx, RangeId, RealRange,
+    RealRangeIx, Reg, RegClass, RegToRangesMaps, TypedIxVec, VirtualRange, VirtualRangeIx,
+    VirtualReg,
 };
-use crate::sparse_set::SparseSet;
+use crate::sparse_set::{SparseSet, SparseSetU};
 
 use log::debug;
+use smallvec::SmallVec;
 
 pub fn do_reftypes_analysis(
     
     rlr_env: &mut TypedIxVec<RealRangeIx, RealRange>,
     vlr_env: &mut TypedIxVec<VirtualRangeIx, VirtualRange>,
     
+    frag_env: &TypedIxVec<RangeFragIx, RangeFrag>,
     reg_to_ranges_maps: &RegToRangesMaps,
     move_info: &MoveInfo,
     
@@ -20,41 +23,70 @@ pub fn do_reftypes_analysis(
     reftyped_vregs: &Vec<VirtualReg>,
 ) {
     
+    let find_range_id_for_reg = |pt: InstPoint, reg: Reg| -> RangeId {
+        if reg.is_real() {
+            for &rlrix in &reg_to_ranges_maps.rreg_to_rlrs_map[reg.get_index() as usize] {
+                if rlr_env[rlrix].sorted_frags.contains_pt(frag_env, pt) {
+                    return RangeId::new_real(rlrix);
+                }
+            }
+        } else {
+            for &vlrix in &reg_to_ranges_maps.vreg_to_vlrs_map[reg.get_index() as usize] {
+                if vlr_env[vlrix].sorted_frags.contains_pt(pt) {
+                    return RangeId::new_virtual(vlrix);
+                }
+            }
+        }
+        panic!("do_reftypes_analysis::find_range_for_reg: can't find range");
+    };
+
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
 
     
     
     
-
-    let mut range_pairs = Vec::<(RangeId, RangeId)>::new(); 
-
-    debug!("do_reftypes_analysis starting");
-
-    for &MoveInfoElem {
-        dst,
-        src,
-        src_range,
-        dst_range,
-        iix,
-        ..
-    } in &move_info.moves
-    {
+    let mut succ = Map::<RangeId, SparseSetU<[RangeId; 4]>>::default();
+    for &MoveInfoElem { dst, src, iix, .. } in &move_info.moves {
         
+        debug_assert!(dst.get_class() == src.get_class());
         if dst.get_class() != reftype_class {
             continue;
         }
+        let src_range = find_range_id_for_reg(InstPoint::new_use(iix), src);
+        let dst_range = find_range_id_for_reg(InstPoint::new_def(iix), dst);
         debug!(
             "move from {:?} (range {:?}) to {:?} (range {:?}) at inst {:?}",
             src, src_range, dst, dst_range, iix
         );
-        range_pairs.push((dst_range, src_range));
+        match succ.get_mut(&src_range) {
+            Some(dst_ranges) => dst_ranges.insert(dst_range),
+            None => {
+                
+                let mut dst_ranges = SparseSetU::<[RangeId; 4]>::empty();
+                dst_ranges.insert(dst_range);
+                let r = succ.insert(src_range, dst_ranges);
+                assert!(r.is_none());
+            }
+        }
     }
 
     
-    
-    
-
     let mut reftyped_ranges = SparseSet::<RangeId>::empty();
     for vreg in reftyped_vregs {
         
@@ -69,42 +101,36 @@ pub fn do_reftypes_analysis(
 
     
     
-    
-    
-    
-    
-    
-    loop {
-        let card_before = reftyped_ranges.card();
-
-        for (dst_lr_id, src_lr_id) in &range_pairs {
-            if reftyped_ranges.contains(*src_lr_id) {
-                debug!("reftyped range {:?} -> {:?}", src_lr_id, dst_lr_id);
-                reftyped_ranges.insert(*dst_lr_id);
+    let mut stack = SmallVec::<[RangeId; 64]>::new();
+    let mut visited = reftyped_ranges.clone();
+    for start_point_range in reftyped_ranges.iter() {
+        
+        stack.clear();
+        stack.push(*start_point_range);
+        while let Some(src_range) = stack.pop() {
+            visited.insert(src_range);
+            if let Some(dst_ranges) = succ.get(&src_range) {
+                for dst_range in dst_ranges.iter() {
+                    if !visited.contains(*dst_range) {
+                        stack.push(*dst_range);
+                    }
+                }
             }
-        }
-
-        let card_after = reftyped_ranges.card();
-        if card_after == card_before {
-            
-            
-            
-            break;
         }
     }
 
     
     
-    for lr_id in reftyped_ranges.iter() {
-        if lr_id.is_real() {
-            let rrange = &mut rlr_env[lr_id.to_real()];
+    for range in visited.iter() {
+        if range.is_real() {
+            let rrange = &mut rlr_env[range.to_real()];
             debug_assert!(!rrange.is_ref);
-            debug!(" -> rrange {:?} is reffy", lr_id.to_real());
+            debug!(" -> rrange {:?} is reffy", range.to_real());
             rrange.is_ref = true;
         } else {
-            let vrange = &mut vlr_env[lr_id.to_virtual()];
+            let vrange = &mut vlr_env[range.to_virtual()];
             debug_assert!(!vrange.is_ref);
-            debug!(" -> rrange {:?} is reffy", lr_id.to_virtual());
+            debug!(" -> rrange {:?} is reffy", range.to_virtual());
             vrange.is_ref = true;
         }
     }

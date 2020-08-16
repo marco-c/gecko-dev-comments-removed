@@ -30,7 +30,7 @@ use log::{debug, info, log_enabled, Level};
 use smallvec::{smallvec, SmallVec};
 
 use crate::data_structures::{
-    InstIx, InstPoint, MoveInfo, MoveInfoElem, RangeFrag, RangeFragIx, RealRange, RealRangeIx,
+    InstIx, InstPoint, Map, MoveInfo, MoveInfoElem, RangeFrag, RangeFragIx, RealRange, RealRangeIx,
     RealReg, RealRegUniverse, RegToRangesMaps, SpillCost, TypedIxVec, VirtualRange, VirtualRangeIx,
     VirtualReg,
 };
@@ -105,6 +105,7 @@ fn show_hint(h: &Hint, univ: &RealRegUniverse) -> String {
     }
 }
 impl Hint {
+    #[inline(always)]
     fn get_weight(&self) -> u32 {
         match self {
             Hint::SameAs(_vlrix, weight) => *weight,
@@ -150,74 +151,350 @@ pub fn do_coalescing_analysis<F: Function>(
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     
+    
+    
+
+    struct ManyFragsInfoR {
+        sorted_firsts: Vec<(InstPoint, RealRangeIx)>,
+        sorted_lasts: Vec<(InstPoint, RealRangeIx)>,
+    }
+    let r_many_card = reg_to_ranges_maps.rregs_with_many_frags.len();
+    let mut r_many_map = Map::<u32 , ManyFragsInfoR>::default();
+    r_many_map.reserve(r_many_card);
+
+    for rreg_no in &reg_to_ranges_maps.rregs_with_many_frags {
+        
+        
+        
+        
+        
+        let mut many_frags_info = ManyFragsInfoR {
+            sorted_firsts: Vec::with_capacity(2 * reg_to_ranges_maps.many_frags_thresh),
+            sorted_lasts: Vec::with_capacity(2 * reg_to_ranges_maps.many_frags_thresh),
+        };
+        let rlrixs = &reg_to_ranges_maps.rreg_to_rlrs_map[*rreg_no as usize];
+        for rlrix in rlrixs {
+            for fix in &rlr_env[*rlrix].sorted_frags.frag_ixs {
+                let frag = &frag_env[*fix];
+                many_frags_info.sorted_firsts.push((frag.first, *rlrix));
+                many_frags_info.sorted_lasts.push((frag.last, *rlrix));
+            }
+        }
+        many_frags_info
+            .sorted_firsts
+            .sort_unstable_by_key(|&(point, _)| point);
+        many_frags_info
+            .sorted_lasts
+            .sort_unstable_by_key(|&(point, _)| point);
+        debug_assert!(many_frags_info.sorted_firsts.len() == many_frags_info.sorted_lasts.len());
+        
+        
+        
+        
+        for i in 1..(many_frags_info.sorted_firsts.len()) {
+            debug_assert!(
+                many_frags_info.sorted_firsts[i - 1].0 < many_frags_info.sorted_firsts[i].0
+            );
+        }
+        for i in 1..(many_frags_info.sorted_lasts.len()) {
+            debug_assert!(
+                many_frags_info.sorted_lasts[i - 1].0 < many_frags_info.sorted_lasts[i].0
+            );
+        }
+        r_many_map.insert(*rreg_no, many_frags_info);
+    }
+
+    
+    struct ManyFragsInfoV {
+        sorted_firsts: Vec<(InstPoint, VirtualRangeIx)>,
+        sorted_lasts: Vec<(InstPoint, VirtualRangeIx)>,
+    }
+    let v_many_card = reg_to_ranges_maps.vregs_with_many_frags.len();
+    let mut v_many_map = Map::<u32 , ManyFragsInfoV>::default();
+    v_many_map.reserve(v_many_card);
+
+    for vreg_no in &reg_to_ranges_maps.vregs_with_many_frags {
+        let mut many_frags_info = ManyFragsInfoV {
+            sorted_firsts: Vec::with_capacity(2 * reg_to_ranges_maps.many_frags_thresh),
+            sorted_lasts: Vec::with_capacity(2 * reg_to_ranges_maps.many_frags_thresh),
+        };
+        let vlrixs = &reg_to_ranges_maps.vreg_to_vlrs_map[*vreg_no as usize];
+        for vlrix in vlrixs {
+            for frag in &vlr_env[*vlrix].sorted_frags.frags {
+                many_frags_info.sorted_firsts.push((frag.first, *vlrix));
+                many_frags_info.sorted_lasts.push((frag.last, *vlrix));
+            }
+        }
+        many_frags_info
+            .sorted_firsts
+            .sort_unstable_by_key(|&(point, _)| point);
+        many_frags_info
+            .sorted_lasts
+            .sort_unstable_by_key(|&(point, _)| point);
+        debug_assert!(many_frags_info.sorted_firsts.len() == many_frags_info.sorted_lasts.len());
+        for i in 1..(many_frags_info.sorted_firsts.len()) {
+            debug_assert!(
+                many_frags_info.sorted_firsts[i - 1].0 < many_frags_info.sorted_firsts[i].0
+            );
+        }
+        for i in 1..(many_frags_info.sorted_lasts.len()) {
+            debug_assert!(
+                many_frags_info.sorted_lasts[i - 1].0 < many_frags_info.sorted_lasts[i].0
+            );
+        }
+        v_many_map.insert(*vreg_no, many_frags_info);
+    }
+
+    
+    
+    
+    
+
+    
+    
+
+    let doesVRegHaveLastUseAt_LINEAR = |vreg: VirtualReg, iix: InstIx| -> Option<VirtualRangeIx> {
+        let point_to_find = InstPoint::new_use(iix);
+        let vreg_no = vreg.get_index();
+        let vlrixs = &reg_to_ranges_maps.vreg_to_vlrs_map[vreg_no];
+        for vlrix in vlrixs {
+            for frag in &vlr_env[*vlrix].sorted_frags.frags {
+                if frag.last == point_to_find {
+                    return Some(*vlrix);
+                }
+            }
+        }
+        None
+    };
     let doesVRegHaveLastUseAt = |vreg: VirtualReg, iix: InstIx| -> Option<VirtualRangeIx> {
+        let point_to_find = InstPoint::new_use(iix);
+        let vreg_no = vreg.get_index();
+        let mut binary_search_result = None;
+        if let Some(ref mfi) = v_many_map.get(&(vreg_no as u32)) {
+            match mfi
+                .sorted_lasts
+                .binary_search_by_key(&point_to_find, |(point, _)| *point)
+            {
+                Ok(found_at_ix) => binary_search_result = Some(mfi.sorted_lasts[found_at_ix].1),
+                Err(_) => {}
+            }
+        }
+        match binary_search_result {
+            None => doesVRegHaveLastUseAt_LINEAR(vreg, iix),
+            Some(_) => {
+                debug_assert!(binary_search_result == doesVRegHaveLastUseAt_LINEAR(vreg, iix));
+                binary_search_result
+            }
+        }
+    };
+
+    
+    
+
+    let doesVRegHaveFirstDefAt_LINEAR = |vreg: VirtualReg, iix: InstIx| -> Option<VirtualRangeIx> {
+        let point_to_find = InstPoint::new_def(iix);
         let vreg_no = vreg.get_index();
         let vlrixs = &reg_to_ranges_maps.vreg_to_vlrs_map[vreg_no];
         for vlrix in vlrixs {
             for frag in &vlr_env[*vlrix].sorted_frags.frags {
-                
-                
-                
-                
-                
-                if frag.last == InstPoint::new_use(iix) {
+                if frag.first == point_to_find {
                     return Some(*vlrix);
                 }
             }
         }
         None
     };
-
-    
     let doesVRegHaveFirstDefAt = |vreg: VirtualReg, iix: InstIx| -> Option<VirtualRangeIx> {
+        let point_to_find = InstPoint::new_def(iix);
         let vreg_no = vreg.get_index();
-        let vlrixs = &reg_to_ranges_maps.vreg_to_vlrs_map[vreg_no];
-        for vlrix in vlrixs {
-            for frag in &vlr_env[*vlrix].sorted_frags.frags {
-                
-                if frag.first == InstPoint::new_def(iix) {
-                    return Some(*vlrix);
+        let mut binary_search_result = None;
+        if let Some(ref mfi) = v_many_map.get(&(vreg_no as u32)) {
+            match mfi
+                .sorted_firsts
+                .binary_search_by_key(&point_to_find, |(point, _)| *point)
+            {
+                Ok(found_at_ix) => binary_search_result = Some(mfi.sorted_firsts[found_at_ix].1),
+                Err(_) => {}
+            }
+        }
+        match binary_search_result {
+            None => doesVRegHaveFirstDefAt_LINEAR(vreg, iix),
+            Some(_) => {
+                debug_assert!(binary_search_result == doesVRegHaveFirstDefAt_LINEAR(vreg, iix));
+                binary_search_result
+            }
+        }
+    };
+
+    
+    
+
+    let doesRRegHaveLastUseAt_LINEAR = |rreg: RealReg, iix: InstIx| -> Option<RealRangeIx> {
+        let point_to_find = InstPoint::new_use(iix);
+        let rreg_no = rreg.get_index();
+        let rlrixs = &reg_to_ranges_maps.rreg_to_rlrs_map[rreg_no];
+        for rlrix in rlrixs {
+            let frags = &rlr_env[*rlrix].sorted_frags;
+            for fix in &frags.frag_ixs {
+                let frag = &frag_env[*fix];
+                if frag.last == point_to_find {
+                    return Some(*rlrix);
                 }
             }
         }
         None
     };
-
-    
     let doesRRegHaveLastUseAt = |rreg: RealReg, iix: InstIx| -> Option<RealRangeIx> {
+        let point_to_find = InstPoint::new_use(iix);
         let rreg_no = rreg.get_index();
-        let rlrixs = &reg_to_ranges_maps.rreg_to_rlrs_map[rreg_no];
-        for rlrix in rlrixs {
-            let frags = &rlr_env[*rlrix].sorted_frags;
-            for fix in &frags.frag_ixs {
-                let frag = &frag_env[*fix];
-                
-                if frag.last == InstPoint::new_use(iix) {
-                    return Some(*rlrix);
-                }
+        let mut binary_search_result = None;
+        if let Some(ref mfi) = r_many_map.get(&(rreg_no as u32)) {
+            match mfi
+                .sorted_lasts
+                .binary_search_by_key(&point_to_find, |(point, _)| *point)
+            {
+                Ok(found_at_ix) => binary_search_result = Some(mfi.sorted_lasts[found_at_ix].1),
+                Err(_) => {}
             }
         }
-        None
+        match binary_search_result {
+            None => doesRRegHaveLastUseAt_LINEAR(rreg, iix),
+            Some(_) => {
+                debug_assert!(binary_search_result == doesRRegHaveLastUseAt_LINEAR(rreg, iix));
+                binary_search_result
+            }
+        }
     };
 
     
-    let doesRRegHaveFirstDefAt = |rreg: RealReg, iix: InstIx| -> Option<RealRangeIx> {
+    
+
+    let doesRRegHaveFirstDefAt_LINEAR = |rreg: RealReg, iix: InstIx| -> Option<RealRangeIx> {
+        let point_to_find = InstPoint::new_def(iix);
         let rreg_no = rreg.get_index();
         let rlrixs = &reg_to_ranges_maps.rreg_to_rlrs_map[rreg_no];
         for rlrix in rlrixs {
             let frags = &rlr_env[*rlrix].sorted_frags;
             for fix in &frags.frag_ixs {
                 let frag = &frag_env[*fix];
-                
-                if frag.first == InstPoint::new_def(iix) {
+                if frag.first == point_to_find {
                     return Some(*rlrix);
                 }
             }
         }
         None
     };
+    let doesRRegHaveFirstDefAt = |rreg: RealReg, iix: InstIx| -> Option<RealRangeIx> {
+        let point_to_find = InstPoint::new_def(iix);
+        let rreg_no = rreg.get_index();
+        let mut binary_search_result = None;
+        if let Some(ref mfi) = r_many_map.get(&(rreg_no as u32)) {
+            match mfi
+                .sorted_firsts
+                .binary_search_by_key(&point_to_find, |(point, _)| *point)
+            {
+                Ok(found_at_ix) => binary_search_result = Some(mfi.sorted_firsts[found_at_ix].1),
+                Err(_) => {}
+            }
+        }
+        match binary_search_result {
+            None => doesRRegHaveFirstDefAt_LINEAR(rreg, iix),
+            Some(_) => {
+                debug_assert!(binary_search_result == doesRRegHaveFirstDefAt_LINEAR(rreg, iix));
+                binary_search_result
+            }
+        }
+    };
+
+    
+    
+    
 
     
     

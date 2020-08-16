@@ -5,8 +5,10 @@ use std::cmp::Ordering;
 
 use crate::analysis_main::AnalysisError;
 use crate::data_structures::{BlockIx, InstIx, Range, Set, TypedIxVec};
-use crate::sparse_set::SparseSetU;
+use crate::sparse_set::{SparseSetU, SparseSetUIter};
 use crate::Function;
+
+use smallvec::SmallVec;
 
 
 
@@ -167,8 +169,6 @@ fn calc_preord_and_postord<F: Function>(
 ) -> Option<(Vec<BlockIx>, Vec<BlockIx>)> {
     info!("      calc_preord_and_postord: begin");
 
-    
-    
     let mut pre_ord = Vec::<BlockIx>::new();
     let mut post_ord = Vec::<BlockIx>::new();
 
@@ -176,31 +176,33 @@ fn calc_preord_and_postord<F: Function>(
     visited.resize(num_blocks, false);
 
     
-    fn dfs(
-        pre_ord: &mut Vec<BlockIx>,
-        post_ord: &mut Vec<BlockIx>,
-        visited: &mut TypedIxVec<BlockIx, bool>,
-        succ_map: &TypedIxVec<BlockIx, SparseSetU<[BlockIx; 4]>>,
-        bix: BlockIx,
-    ) {
-        debug_assert!(!visited[bix]);
-        visited[bix] = true;
-        pre_ord.push(bix);
-        for succ in succ_map[bix].iter() {
-            if !visited[*succ] {
-                dfs(pre_ord, post_ord, visited, succ_map, *succ);
+    
+    let mut stack = SmallVec::<[(BlockIx, SparseSetUIter<[BlockIx; 4]>); 64]>::new();
+    let bix_entry = func.entry_block();
+    visited[bix_entry] = true;
+    pre_ord.push(bix_entry);
+    stack.push((bix_entry, succ_map[bix_entry].iter()));
+
+    'outer: while let Some((bix, bix_succ_iter)) = stack.last_mut() {
+        
+        
+        while let Some(bix_next_succ) = bix_succ_iter.next() {
+            if !visited[*bix_next_succ] {
+                
+                
+                
+                
+                visited[*bix_next_succ] = true;
+                pre_ord.push(*bix_next_succ);
+                stack.push((*bix_next_succ, succ_map[*bix_next_succ].iter()));
+                continue 'outer;
             }
         }
-        post_ord.push(bix);
+        
+        
+        post_ord.push(*bix);
+        stack.pop();
     }
-
-    dfs(
-        &mut pre_ord,
-        &mut post_ord,
-        &mut visited,
-        &succ_map,
-        func.entry_block(),
-    );
 
     assert!(pre_ord.len() == post_ord.len());
     assert!(pre_ord.len() <= num_blocks as usize);
