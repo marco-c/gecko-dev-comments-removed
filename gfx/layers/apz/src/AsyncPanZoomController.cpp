@@ -2415,18 +2415,12 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(
 
       RecordScrollPayload(aEvent.mTimeStamp);
       
-      CSSPoint startPosition = Metrics().GetScrollOffset();
       
       
       
-      if (mState == WHEEL_SCROLL) {
-        startPosition = mAnimation->AsWheelScrollAnimation()->GetDestination();
-      } else if (mState == SMOOTH_SCROLL) {
-        startPosition = mAnimation->AsSmoothScrollAnimation()->GetDestination();
-      } else if (mState == KEYBOARD_SCROLL) {
-        startPosition =
-            mAnimation->AsKeyboardScrollAnimation()->GetDestination();
-      }
+      CSSPoint startPosition = GetCurrentAnimationDestination(lock).valueOr(
+          Metrics().GetScrollOffset());
+
       if (MaybeAdjustDeltaForScrollSnappingOnWheelInput(aEvent, delta,
                                                         startPosition)) {
         
