@@ -98,34 +98,41 @@
 #endif
 
 
-#if defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
-#  define HAVE_NATIVE_UNWIND
-#  define USE_EHABI_STACKWALK
-#  include "EHABIStackWalk.h"
-#endif
-
-
-#if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux) ||       \
-    defined(GP_PLAT_amd64_android) || defined(GP_PLAT_x86_android) ||   \
-    defined(GP_PLAT_mips64_linux) || defined(GP_PLAT_arm64_linux) ||    \
-    defined(GP_PLAT_arm64_android) || defined(GP_PLAT_amd64_freebsd) || \
-    defined(GP_PLAT_arm64_freebsd)
-#  define HAVE_NATIVE_UNWIND
-#  define USE_LUL_STACKWALK
-#  include "lul/LulMain.h"
-#  include "lul/platform-linux-lul.h"
 
 
 
 
+#if 0
+
+#  if defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
+#    define HAVE_NATIVE_UNWIND
+#    define USE_EHABI_STACKWALK
+#    include "EHABIStackWalk.h"
+#  endif
+
+
+#  if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux) ||       \
+      defined(GP_PLAT_amd64_android) || defined(GP_PLAT_x86_android) ||   \
+      defined(GP_PLAT_mips64_linux) || defined(GP_PLAT_arm64_linux) ||    \
+      defined(GP_PLAT_arm64_android) || defined(GP_PLAT_amd64_freebsd) || \
+      defined(GP_PLAT_arm64_freebsd)
+#    define HAVE_NATIVE_UNWIND
+#    define USE_LUL_STACKWALK
+#    include "lul/LulMain.h"
+#    include "lul/platform-linux-lul.h"
 
 
 
 
 
 
-#  if defined(MOZ_PROFILING)
-#    define USE_FRAME_POINTER_STACK_WALK
+
+
+
+
+#    if defined(MOZ_PROFILING)
+#      define USE_FRAME_POINTER_STACK_WALK
+#    endif
 #  endif
 #endif
 
