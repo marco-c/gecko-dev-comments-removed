@@ -2677,7 +2677,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
       bool shouldRollup = true;
 
       
-      if ([theEvent type] == NSScrollWheel) {
+      if ([theEvent type] == NSScrollWheel || [theEvent type] == NSEventTypeMagnify) {
         shouldRollup = rollupListener->ShouldRollupOnMouseWheelEvent();
         
         
