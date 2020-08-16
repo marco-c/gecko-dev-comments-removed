@@ -11,9 +11,6 @@ namespace mozilla {
 namespace dom {
 
 
-void MaybeStopGamepadMonitoring();
-
-
 
 void StartGamepadMonitoring();
 void StopGamepadMonitoring();

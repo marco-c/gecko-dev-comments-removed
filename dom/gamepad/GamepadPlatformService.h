@@ -85,8 +85,6 @@ class GamepadPlatformService final {
   
   void RemoveChannelParent(GamepadEventChannelParent* aParent);
 
-  bool HasGamepadListeners();
-
   void MaybeShutdown();
 
  private:
