@@ -7,7 +7,7 @@ add_task(async () => {
 
   let button = win.document.getElementById("appMenu-ssb-button");
 
-  Assert.ok(button.hidden, "Button should be hidden.");
+  Assert.equal(button, null, "Button should be not be available.");
   Assert.equal(
     win.document.querySelector("#appMenu-SSBView .panel-subview-body"),
     null,
@@ -18,7 +18,8 @@ add_task(async () => {
     Services.io.newURI(gHttpsTestRoot)
   );
 
-  Assert.ok(button.hidden, "Button should be hidden.");
+  button = win.document.getElementById("appMenu-ssb-button");
+  Assert.equal(button, null, "Button should be not be available.");
   Assert.equal(
     win.document.querySelector("#appMenu-SSBView .panel-subview-body"),
     null,
@@ -27,9 +28,10 @@ add_task(async () => {
 
   await ssb.install();
 
+  button = win.document.getElementById("appMenu-ssb-button");
   
   
-  Assert.ok(button.hidden, "Button should be hidden.");
+  Assert.equal(button, null, "Button should be not be available.");
   Assert.equal(
     win.document.querySelector("#appMenu-SSBView .panel-subview-body"),
     null,
@@ -41,14 +43,15 @@ add_task(async () => {
     "popupshown"
   );
 
-  let buttonShown = BrowserTestUtils.waitForAttributeRemoval("hidden", button);
-
   EventUtils.synthesizeMouseAtCenter(
     win.document.getElementById("PanelUI-menu-button"),
     {},
     win
   );
-  await Promise.all([appMenuOpened, buttonShown]);
+  await appMenuOpened;
+
+  button = win.document.getElementById("appMenu-ssb-button");
+  await BrowserTestUtils.waitForAttributeRemoval("hidden", button);
 
   Assert.ok(!button.hidden, "Button should be visible.");
 
