@@ -39,6 +39,21 @@ const DEFAULT_SECTION_NAME = "-moz-section-default";
 
 
 
+const MULTI_FIELD_NAMES = [
+  "address-level3",
+  "address-level2",
+  "address-level1",
+  "tel",
+  "postal-code",
+  "email",
+  "street-address",
+];
+
+
+
+
+
+
 class FieldScanner {
   
 
@@ -141,7 +156,8 @@ class FieldScanner {
       }
       if (
         seenTypes.has(fieldDetail.fieldName) &&
-        previousType != fieldDetail.fieldName
+        (previousType != fieldDetail.fieldName ||
+          !MULTI_FIELD_NAMES.includes(fieldDetail.fieldName))
       ) {
         seenTypes.clear();
         sectionCount++;
