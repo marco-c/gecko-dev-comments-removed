@@ -914,10 +914,21 @@ nsresult ContentSubtreeIterator::InitWithRange() {
     return NS_OK;
   }
 
-  nsIContent* lastCandidate = DetermineCandidateForLastContent();
-  if (!lastCandidate) {
+  mLast = DetermineLastContent();
+  if (!mLast) {
     SetEmpty();
     return NS_OK;
+  }
+
+  mCurNode = mFirst;
+
+  return NS_OK;
+}
+
+nsIContent* ContentSubtreeIterator::DetermineLastContent() const {
+  nsIContent* lastCandidate = DetermineCandidateForLastContent();
+  if (!lastCandidate) {
+    return nullptr;
   }
 
   
@@ -929,18 +940,13 @@ nsresult ContentSubtreeIterator::InitWithRange() {
                                                      &nodeBefore, &nodeAfter));
 
   if (nodeBefore || nodeAfter) {
-    SetEmpty();
-    return NS_OK;
+    return nullptr;
   }
 
   
   
   
-  mLast = GetTopAncestorInRange(lastCandidate);
-
-  mCurNode = mFirst;
-
-  return NS_OK;
+  return GetTopAncestorInRange(lastCandidate);
 }
 
 

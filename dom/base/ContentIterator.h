@@ -242,6 +242,11 @@ class ContentSubtreeIterator final : public ContentIteratorBase {
   
 
 
+  nsIContent* DetermineLastContent() const;
+
+  
+
+
   nsresult InitWithRange();
 
   
