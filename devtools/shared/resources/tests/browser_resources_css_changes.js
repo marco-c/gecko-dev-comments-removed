@@ -10,6 +10,16 @@ const {
 } = require("devtools/shared/resources/resource-watcher");
 
 add_task(async function() {
+  info("Test CSS changes legacy listener");
+  await pushPref("devtools.testing.enableServerWatcherSupport", false);
+  await testCSSChangeResources();
+
+  info("Test CSS changes server listener");
+  await pushPref("devtools.testing.enableServerWatcherSupport", true);
+  await testCSSChangeResources();
+});
+
+async function testCSSChangeResources() {
   
   const tab = await addTab(
     "data:text/html,<body style='color: lime;'>CSS Changes</body>"
@@ -20,6 +30,12 @@ add_task(async function() {
     resourceWatcher,
     targetList,
   } = await initResourceWatcherAndTarget(tab);
+
+  
+  
+  await resourceWatcher.watchResources([ResourceWatcher.TYPES.CSS_CHANGE], {
+    onAvailable: () => {},
+  });
 
   const { walker } = await targetList.targetFront.getFront("inspector");
   const nodeList = await walker.querySelectorAll(walker.rootNode, "body");
@@ -87,7 +103,7 @@ add_task(async function() {
 
   await targetList.stopListening();
   await client.close();
-});
+}
 
 function assertResource(resource, expectedAddedChange, expectedRemovedChange) {
   if (expectedAddedChange) {
