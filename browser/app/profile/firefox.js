@@ -520,7 +520,7 @@ pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
 
 
-#if defined(MOZ_CODE_COVERAGE) && defined(XP_LINUX) || defined(MOZ_ASAN)
+#if defined(MOZ_CODE_COVERAGE) && defined(XP_LINUX)
   
   pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
 #else
