@@ -124,9 +124,11 @@ class MediaControlService final : public nsIObserver {
     
     
     
+    
+    
     enum class InsertOptions {
-      eInsertToTail,
-      eInsertBeforeTail,
+      eInsertAsMainController,
+      eInsertAsNormalController,
     };
 
     

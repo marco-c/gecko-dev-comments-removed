@@ -268,15 +268,16 @@ void MediaControlService::ControllerManager::UpdateMainControllerIfNeeded(
     return;
   }
 
-  if (GetMainController() && GetMainController()->IsInPictureInPictureMode() &&
-      !aController->IsInPictureInPictureMode()) {
+  if (GetMainController() &&
+      GetMainController()->IsBeingUsedInPIPModeOrFullscreen() &&
+      !aController->IsBeingUsedInPIPModeOrFullscreen()) {
     LOG_MAINCONTROLLER(
-        "Main controller is being used in PIP mode, so we won't replace it "
-        "with non-PIP controller");
+        "Normal media controller can't replace the controller being used in "
+        "PIP mode or fullscreen");
     return ReorderGivenController(aController,
-                                  InsertOptions::eInsertBeforeTail);
+                                  InsertOptions::eInsertAsNormalController);
   }
-  ReorderGivenController(aController, InsertOptions::eInsertToTail);
+  ReorderGivenController(aController, InsertOptions::eInsertAsMainController);
   UpdateMainControllerInternal(aController);
 }
 
@@ -284,8 +285,10 @@ void MediaControlService::ControllerManager::ReorderGivenController(
     MediaController* aController, InsertOptions aOption) {
   MOZ_DIAGNOSTIC_ASSERT(aController);
   MOZ_DIAGNOSTIC_ASSERT(mControllers.contains(aController));
+  
+  static_cast<LinkedListControllerPtr>(aController)->remove();
 
-  if (aOption == InsertOptions::eInsertToTail) {
+  if (aOption == InsertOptions::eInsertAsMainController) {
     
     
     
@@ -296,22 +299,24 @@ void MediaControlService::ControllerManager::ReorderGivenController(
     
     
     
-    static_cast<LinkedListControllerPtr>(aController)->remove();
     return mControllers.insertBack(aController);
   }
 
-  if (aOption == InsertOptions::eInsertBeforeTail) {
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(GetMainController() != aController);
-    static_cast<LinkedListControllerPtr>(aController)->remove();
-    return static_cast<LinkedListControllerPtr>(GetMainController())
-        ->setPrevious(aController);
+  MOZ_ASSERT(aOption == InsertOptions::eInsertAsNormalController);
+  MOZ_ASSERT(GetMainController() != aController);
+  
+  
+  
+  
+  
+  
+  auto* current = static_cast<LinkedListControllerPtr>(mControllers.getFirst());
+  while (!static_cast<MediaController*>(current)
+              ->IsBeingUsedInPIPModeOrFullscreen()) {
+    current = current->getNext();
   }
+  MOZ_ASSERT(current, "Should have at least one higher priority controller!");
+  current->setPrevious(aController);
 }
 
 void MediaControlService::ControllerManager::Shutdown() {
