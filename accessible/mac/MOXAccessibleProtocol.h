@@ -350,7 +350,9 @@
 #pragma mark - ParameterizedTextAttributeGetters
 
 
+
 - (NSNumber* _Nullable)moxLengthForTextMarkerRange:(id _Nonnull)textMarkerRange;
+
 
 
 - (NSString* _Nullable)moxStringForTextMarkerRange:(id _Nonnull)textMarkerRange;
@@ -375,6 +377,7 @@
 
 
 - (id _Nullable)moxPreviousTextMarkerForTextMarker:(id _Nonnull)textMarker;
+
 
 
 - (NSAttributedString* _Nullable)moxAttributedStringForTextMarkerRange:(id _Nonnull)textMarkerRange;
