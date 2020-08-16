@@ -19,7 +19,6 @@ import org.mozilla.gecko.util.GeckoBundle;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -327,7 +326,8 @@ public class WebExtension {
          final long id;
          PortDelegate delegate;
          boolean disconnected = false;
-         final WeakReference<Observer> observer;
+         final EventDispatcher mEventDispatcher;
+         boolean mListenersRegistered = false;
 
         
         public @NonNull final MessageSender sender;
@@ -335,27 +335,50 @@ public class WebExtension {
         
         public @NonNull final String name;
 
-         interface Observer {
-            void onDisconnectFromApp(Port port);
-            void onDelegateAttached(Port port);
-        }
-
         
         protected Port() {
             this.id = -1;
             this.delegate = null;
-            this.observer = null;
             this.sender = null;
             this.name = null;
+            mEventDispatcher = null;
         }
 
-         Port(final String name, final long id, final MessageSender sender,
-                           final Observer observer) {
+         Port(final String name, final long id, final MessageSender sender) {
             this.id = id;
             this.delegate = null;
-            this.observer = new WeakReference<>(observer);
             this.sender = sender;
             this.name = name;
+            mEventDispatcher = EventDispatcher.byName("port:" + id);
+        }
+
+        private BundleEventListener mEventListener = new BundleEventListener() {
+            @Override
+            public void handleMessage(final String event, final GeckoBundle message,
+                                      final EventCallback callback) {
+                if ("GeckoView:WebExtension:Disconnect".equals(event)) {
+                    disconnectFromExtension(callback);
+                } else if ("GeckoView:WebExtension:PortMessage".equals(event)) {
+                    portMessage(message, callback);
+                }
+            }
+        };
+
+        private void disconnectFromExtension(final EventCallback callback) {
+            delegate.onDisconnect(this);
+            disconnected();
+        }
+
+        private void portMessage(final GeckoBundle bundle, final EventCallback callback) {
+            final Object content;
+            try {
+                content = bundle.toJSONObject().get("data");
+            } catch (JSONException ex) {
+                callback.sendError(ex);
+                return;
+            }
+
+            delegate.onPortMessage(content, this);
         }
 
         
@@ -364,16 +387,14 @@ public class WebExtension {
 
 
         public void postMessage(final @NonNull JSONObject message) {
-            GeckoBundle args = new GeckoBundle(2);
-            args.putLong("portId", id);
+            GeckoBundle args = new GeckoBundle(1);
             try {
                 args.putBundle("message", GeckoBundle.fromJSONObject(message));
             } catch (JSONException ex) {
                 throw new RuntimeException(ex);
             }
 
-            EventDispatcher.getInstance()
-                    .dispatch("GeckoView:WebExtension:PortMessageFromApp", args);
+            mEventDispatcher.dispatch("GeckoView:WebExtension:PortMessageFromApp", args);
         }
 
         
@@ -384,15 +405,16 @@ public class WebExtension {
                 return;
             }
 
-            final Observer observer = this.observer.get();
-            if (observer != null) {
-                observer.onDisconnectFromApp(this);
-            }
-
             GeckoBundle args = new GeckoBundle(1);
             args.putLong("portId", id);
 
-            EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:PortDisconnect", args);
+            mEventDispatcher.dispatch("GeckoView:WebExtension:PortDisconnect", args);
+            disconnected();
+        }
+
+        private void disconnected() {
+            unregisterListeners();
+            mEventDispatcher.shutdown();
             this.disconnected = true;
         }
 
@@ -404,10 +426,34 @@ public class WebExtension {
 
         public void setDelegate(final @Nullable PortDelegate delegate) {
             this.delegate = delegate;
-            final Observer observer = this.observer.get();
-            if (observer != null) {
-                observer.onDelegateAttached(this);
+
+            if (delegate != null) {
+                registerListeners();
+            } else {
+                unregisterListeners();
             }
+        }
+
+        private void unregisterListeners() {
+            if (!mListenersRegistered) {
+                return;
+            }
+
+            mEventDispatcher.unregisterUiThreadListener(mEventListener,
+                    "GeckoView:WebExtension:Disconnect",
+                    "GeckoView:WebExtension:PortMessage");
+            mListenersRegistered = false;
+        }
+
+        private void registerListeners() {
+            if (mListenersRegistered) {
+                return;
+            }
+
+            mEventDispatcher.registerUiThreadListener(mEventListener,
+                    "GeckoView:WebExtension:Disconnect",
+                    "GeckoView:WebExtension:PortMessage");
+            mListenersRegistered = true;
         }
     }
 
