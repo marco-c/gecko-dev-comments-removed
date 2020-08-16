@@ -220,7 +220,8 @@ add_task(async function nonTokenAlias() {
 
 
 
-add_task(async function clickAndFillAlias() {
+
+add_task(async function clickAndFillAlias_legacy() {
   
   gURLBar.search("@");
   await UrlbarTestUtils.promiseSearchComplete(window);
@@ -269,7 +270,48 @@ add_task(async function clickAndFillAlias() {
 
 
 
-add_task(async function enterAndFillAlias() {
+add_task(async function clickAndFillAlias() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", true]],
+  });
+
+  
+  gURLBar.search("@");
+  await UrlbarTestUtils.promiseSearchComplete(window);
+
+  
+  
+  let testEngineItem;
+  for (let i = 0; !testEngineItem; i++) {
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    if (details.searchParams && details.searchParams.keyword == ALIAS) {
+      testEngineItem = await UrlbarTestUtils.waitForAutocompleteResultAt(
+        window,
+        i
+      );
+    }
+  }
+
+  
+  EventUtils.synthesizeMouseAtCenter(testEngineItem, {});
+
+  UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    engineName: testEngineItem.result.payload.engine,
+  });
+
+  gURLBar.setSearchMode({});
+
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function enterAndFillAlias_legacy() {
   
   gURLBar.search("@");
   await UrlbarTestUtils.promiseSearchComplete(window);
@@ -317,7 +359,48 @@ add_task(async function enterAndFillAlias() {
 
 
 
-add_task(async function enterAutofillsAlias() {
+add_task(async function enterAndFillAlias() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", true]],
+  });
+
+  
+  gURLBar.search("@");
+  await UrlbarTestUtils.promiseSearchComplete(window);
+
+  
+  
+  let details;
+  let index = 0;
+  for (; ; index++) {
+    details = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
+    if (details.searchParams && details.searchParams.keyword == ALIAS) {
+      index++;
+      break;
+    }
+  }
+
+  
+  EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index });
+  EventUtils.synthesizeKey("KEY_Enter");
+
+  UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    engineName: details.searchParams.engine,
+  });
+
+  gURLBar.setSearchMode({});
+
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function enterAutofillsAlias_legacy() {
   let expectedString = `${ALIAS} `;
   for (let value of [ALIAS.substring(0, ALIAS.length - 1), ALIAS]) {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -342,6 +425,40 @@ add_task(async function enterAutofillsAlias() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
+});
+
+
+
+add_task(async function enterAutofillsAlias() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", true]],
+  });
+  for (let value of [ALIAS.substring(0, ALIAS.length - 1), ALIAS]) {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value,
+      selectionStart: value.length,
+      selectionEnd: value.length,
+    });
+    let testEngineItem = await UrlbarTestUtils.waitForAutocompleteResultAt(
+      window,
+      0
+    );
+
+    
+    EventUtils.synthesizeKey("KEY_Enter");
+
+    UrlbarTestUtils.assertSearchMode(window, {
+      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      engineName: testEngineItem.result.payload.engine,
+    });
+
+    gURLBar.setSearchMode({});
+  }
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
+  await SpecialPowers.popPrefEnv();
 });
 
 async function doSimpleTest(revertBetweenSteps) {
