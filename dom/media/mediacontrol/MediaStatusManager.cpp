@@ -177,15 +177,27 @@ MediaMetadataBase MediaStatusManager::CreateDefaultMetadata() const {
 }
 
 nsString MediaStatusManager::GetDefaultTitle() const {
+  nsString defaultTitle;
+  
+  if (nsCOMPtr<nsIXULAppInfo> appInfo =
+          do_GetService("@mozilla.org/xre/app-info;1")) {
+    nsCString appName;
+    appInfo->GetName(appName);
+    CopyUTF8toUTF16(appName, defaultTitle);
+  } else {
+    defaultTitle.AssignLiteral("Firefox");
+  }
+  defaultTitle.AppendLiteral(" is playing media");
+
   RefPtr<CanonicalBrowsingContext> bc =
       CanonicalBrowsingContext::Get(mTopLevelBrowsingContextId);
   if (!bc) {
-    return EmptyString();
+    return defaultTitle;
   }
 
   RefPtr<WindowGlobalParent> globalParent = bc->GetCurrentWindowGlobal();
   if (!globalParent) {
-    return EmptyString();
+    return defaultTitle;
   }
 
   
@@ -193,22 +205,13 @@ nsString MediaStatusManager::GetDefaultTitle() const {
   
   
   
-  nsString defaultTitle;
-  if (IsInPrivateBrowsing()) {
-    
-    if (nsCOMPtr<nsIXULAppInfo> appInfo =
-            do_GetService("@mozilla.org/xre/app-info;1")) {
-      nsCString appName;
-      appInfo->GetName(appName);
-      CopyUTF8toUTF16(appName, defaultTitle);
-    } else {
-      defaultTitle.AssignLiteral("Firefox");
-    }
-    defaultTitle.AppendLiteral(" is playing media");
-  } else {
-    globalParent->GetDocumentTitle(defaultTitle);
+  
+  
+  nsString documentTitle;
+  if (!IsInPrivateBrowsing()) {
+    globalParent->GetDocumentTitle(documentTitle);
   }
-  return defaultTitle;
+  return documentTitle.IsEmpty() ? defaultTitle : documentTitle;
 }
 
 nsString MediaStatusManager::GetDefaultFaviconURL() const {
