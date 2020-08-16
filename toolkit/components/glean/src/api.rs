@@ -20,7 +20,7 @@
 
 #![allow(dead_code)]
 
-use fog::ping_upload::{self, UploadResult};
+use glean::ping_upload::{self, UploadResult};
 use glean_core::{global_glean, setup_glean, Configuration, Glean, Result};
 use once_cell::sync::OnceCell;
 use url::Url;
