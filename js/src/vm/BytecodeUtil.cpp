@@ -33,6 +33,7 @@
 #include "gc/PublicIterators.h"
 #include "jit/IonScript.h"  
 #include "js/CharacterEncoding.h"
+#include "js/experimental/CodeCoverage.h"
 #include "js/friend/DumpFunctions.h"  
 #include "js/Printf.h"
 #include "js/Symbol.h"

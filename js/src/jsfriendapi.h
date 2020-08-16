@@ -827,20 +827,6 @@ JS_FRIEND_API JSString* GetPCCountScriptSummary(JSContext* cx, size_t script);
 
 JS_FRIEND_API JSString* GetPCCountScriptContents(JSContext* cx, size_t script);
 
-
-
-
-
-
-
-
-
-
-JS_FRIEND_API JS::UniqueChars GetCodeCoverageSummary(JSContext* cx,
-                                                     size_t* length);
-JS_FRIEND_API JS::UniqueChars GetCodeCoverageSummaryAll(JSContext* cx,
-                                                        size_t* length);
-
 using DOMInstanceClassHasProtoAtDepth = bool (*)(const JSClass*, uint32_t,
                                                  uint32_t);
 struct JSDOMCallbacks {
