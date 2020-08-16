@@ -20,6 +20,7 @@ var listener = {
 
     while (true) {
       try {
+        inRecord.QueryInterface(Ci.nsIDNSAddrRecord);
         var answer = inRecord.getNextAddrAsString();
         
         dump(answer);

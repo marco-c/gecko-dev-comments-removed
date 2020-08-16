@@ -529,11 +529,13 @@ PRStatus nsSOCKSSocketInfo::ConnectToProxy(PRFileDesc* fd) {
         return PR_FAILURE;
       }
     } else {
+      nsCOMPtr<nsIDNSAddrRecord> record = do_QueryInterface(mDnsRec);
+      MOZ_ASSERT(record);
       if (addresses++) {
-        mDnsRec->ReportUnusable(proxyPort);
+        record->ReportUnusable(proxyPort);
       }
 
-      rv = mDnsRec->GetNextAddr(proxyPort, &mInternalProxyAddr);
+      rv = record->GetNextAddr(proxyPort, &mInternalProxyAddr);
       
       if (NS_FAILED(rv)) {
         LOGERROR(

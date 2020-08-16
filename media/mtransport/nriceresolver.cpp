@@ -192,7 +192,7 @@ abort:
 }
 
 nsresult NrIceResolver::PendingResolution::OnLookupComplete(
-    nsICancelable* request, nsIDNSRecord* record, nsresult status) {
+    nsICancelable* request, nsIDNSRecord* aRecord, nsresult status) {
   ASSERT_ON_THREAD(thread_);
   
   
@@ -202,7 +202,8 @@ nsresult NrIceResolver::PendingResolution::OnLookupComplete(
     
     if (NS_SUCCEEDED(status)) {
       net::NetAddr na;
-      if (NS_SUCCEEDED(record->GetNextAddr(port_, &na))) {
+      nsCOMPtr<nsIDNSAddrRecord> record = do_QueryInterface(aRecord);
+      if (record && NS_SUCCEEDED(record->GetNextAddr(port_, &na))) {
         MOZ_ALWAYS_TRUE(nr_netaddr_to_transport_addr(&na, &ta, transport_) ==
                         0);
         cb_addr = &ta;
