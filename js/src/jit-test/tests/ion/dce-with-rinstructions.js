@@ -5,6 +5,8 @@ setJitCompilerOption("ion.warmup.trigger", 20);
 setJitCompilerOption("ion.full.warmup.trigger", 20);
 var i;
 
+var warp = isWarpEnabled();
+
 
 gczeal(0);
 
@@ -1336,8 +1338,15 @@ function rrandom(i) {
     if(config.debug) setRNGState(2, 1+i);
 
     var x = Math.random();
-    if (uceFault_random(i) || uceFault_random(i))
-        assertEq(x, config.debug ? setRNGState(2, 1+i) || Math.random() : x);
+    if (uceFault_random(i) || uceFault_random(i)) {
+      
+      
+      if (config.debug) {
+        assertEq(x, setRNGState(2, 1+i) || Math.random());
+      } else {
+        assertEq(x, x);
+      }
+    }
     assertRecoveredOnBailout(x, true);
     return i;
 }
@@ -1479,7 +1488,13 @@ for (j = 100 - max; j < 100; j++) {
     rsqrt_object(i);
     ratan2_number(i);
     ratan2_object(i);
-    rstr_split(i);
+    if (!warp) {
+      
+      
+      
+      
+      rstr_split(i);
+    }
     rregexp_exec(i);
     rregexp_y_exec(i);
     rregexp_y_literal_exec(i);
@@ -1517,7 +1532,10 @@ for (j = 100 - max; j < 100; j++) {
     rtofloat32_object(i);
     rtrunc_to_int32_number(i);
     rtrunc_to_int32_object(i);
-    rtrunc_to_int32_string(i);
+    if (!warp) {
+      
+      rtrunc_to_int32_string(i);
+    }
     rhypot_number_2args(i);
     rhypot_number_3args(i);
     rhypot_number_4args(i);
