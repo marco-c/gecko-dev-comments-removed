@@ -24,12 +24,41 @@ class ThreadInfo;
 class UniqueStacks;
 
 
+
+
+
+
+
+
+
+
+
+
 class ProfilerBacktrace {
  public:
-  ProfilerBacktrace(const char* aName, int aThreadId,
-                    UniquePtr<ProfileChunkedBuffer> aProfileChunkedBuffer,
-                    UniquePtr<ProfileBuffer> aProfileBuffer);
+  
+  
+  
+  ProfilerBacktrace(
+      const char* aName, int aThreadId,
+      UniquePtr<ProfileChunkedBuffer> aProfileChunkedBufferStorage,
+      UniquePtr<ProfileBuffer> aProfileBufferStorageOrNull = nullptr);
+
+  
+  
+  
+  ProfilerBacktrace(
+      const char* aName, int aThreadId,
+      ProfileChunkedBuffer* aExternalProfileChunkedBufferOrNull = nullptr,
+      ProfileBuffer* aExternalProfileBufferOrNull = nullptr);
+
   ~ProfilerBacktrace();
+
+  [[nodiscard]] bool IsEmpty() const {
+    return !mProfileChunkedBuffer ||
+           ProfileBufferEntryWriter::Serializer<ProfileChunkedBuffer>::Bytes(
+               *mProfileChunkedBuffer) <= ULEB128Size(0u);
+  }
 
   
   
@@ -43,15 +72,21 @@ class ProfilerBacktrace {
 
  private:
   
-  friend struct ProfileBufferEntryWriter::Serializer<ProfilerBacktrace>;
-  friend struct ProfileBufferEntryReader::Deserializer<ProfilerBacktrace>;
+  friend ProfileBufferEntryWriter::Serializer<ProfilerBacktrace>;
+  friend ProfileBufferEntryReader::Deserializer<ProfilerBacktrace>;
 
   std::string mName;
   int mThreadId;
+
   
   
-  UniquePtr<ProfileChunkedBuffer> mProfileChunkedBuffer;
-  UniquePtr<ProfileBuffer> mProfileBuffer;
+  UniquePtr<ProfileChunkedBuffer> mOptionalProfileChunkedBufferStorage;
+  
+  
+  ProfileChunkedBuffer* mProfileChunkedBuffer;
+
+  UniquePtr<ProfileBuffer> mOptionalProfileBufferStorage;
+  ProfileBuffer* mProfileBuffer;
 };
 
 }  
@@ -61,27 +96,27 @@ class ProfilerBacktrace {
 template <>
 struct ProfileBufferEntryWriter::Serializer<baseprofiler::ProfilerBacktrace> {
   static Length Bytes(const baseprofiler::ProfilerBacktrace& aBacktrace) {
-    if (!aBacktrace.mProfileBuffer) {
+    if (!aBacktrace.mProfileChunkedBuffer) {
       
-      return ULEB128Size<Length>(0);
+      return ULEB128Size(0u);
     }
     auto bufferBytes = SumBytes(*aBacktrace.mProfileChunkedBuffer);
-    if (bufferBytes == 0) {
+    if (bufferBytes <= ULEB128Size(0u)) {
       
-      return ULEB128Size<Length>(0);
+      return ULEB128Size(0u);
     }
     return bufferBytes + SumBytes(aBacktrace.mThreadId, aBacktrace.mName);
   }
 
   static void Write(ProfileBufferEntryWriter& aEW,
                     const baseprofiler::ProfilerBacktrace& aBacktrace) {
-    if (!aBacktrace.mProfileBuffer ||
-        SumBytes(aBacktrace.mProfileChunkedBuffer) == 0) {
+    if (!aBacktrace.mProfileChunkedBuffer ||
+        SumBytes(*aBacktrace.mProfileChunkedBuffer) <= ULEB128Size(0u)) {
       
-      aEW.WriteULEB128<Length>(0);
+      aEW.WriteULEB128(0u);
       return;
     }
-    aEW.WriteObject(aBacktrace.mProfileChunkedBuffer);
+    aEW.WriteObject(*aBacktrace.mProfileChunkedBuffer);
     aEW.WriteObject(aBacktrace.mThreadId);
     aEW.WriteObject(aBacktrace.mName);
   }
@@ -94,7 +129,7 @@ struct ProfileBufferEntryWriter::Serializer<
                                       Destructor>& aBacktrace) {
     if (!aBacktrace) {
       
-      return ULEB128Size<Length>(0);
+      return ULEB128Size(0u);
     }
     return SumBytes(*aBacktrace);
   }
@@ -104,7 +139,7 @@ struct ProfileBufferEntryWriter::Serializer<
                                     Destructor>& aBacktrace) {
     if (!aBacktrace) {
       
-      aEW.WriteULEB128<Length>(0);
+      aEW.WriteULEB128(0u);
       return;
     }
     aEW.WriteObject(*aBacktrace);
