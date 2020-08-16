@@ -582,8 +582,6 @@ bool GLContextGLX::Init() {
   return true;
 }
 
-bool GLContextGLX::IsAliveImpl() const { return true; }
-
 bool GLContextGLX::MakeCurrentImpl() const {
   if (mGLX->IsMesa()) {
     
@@ -677,27 +675,6 @@ static bool AreCompatibleVisuals(Visual* one, Visual* two) {
   }
 
   return true;
-}
-
-already_AddRefed<GLContext> GLContextProviderGLX::CreateWrappingExisting(
-    void* aContext, void* aSurface) {
-  if (!sGLXLibrary.EnsureInitialized()) {
-    return nullptr;
-  }
-
-  if (aContext && aSurface) {
-    RefPtr<GLContextGLX> glContext =
-        new GLContextGLX({},
-                         (Display*)DefaultXDisplay(),  
-                         (GLXDrawable)aSurface, (GLXContext)aContext,
-                         false,  
-                         true, (gfxXlibSurface*)nullptr);
-
-    glContext->mOwnsContext = false;
-    return glContext.forget();
-  }
-
-  return nullptr;
 }
 
 already_AddRefed<GLContext> CreateForWidget(Display* aXDisplay, Window aXWindow,

@@ -582,8 +582,8 @@ GLuint DCLayerTree::CreateEGLSurfaceForCompositionSurface(
 
   
   const EGLint attribs[] = {LOCAL_EGL_NONE};
-  mEGLImage = egl->fCreateImage(egl->Display(), EGL_NO_CONTEXT,
-                                LOCAL_EGL_D3D11_TEXTURE_ANGLE, buffer, attribs);
+  mEGLImage = egl->fCreateImage(EGL_NO_CONTEXT, LOCAL_EGL_D3D11_TEXTURE_ANGLE,
+                                buffer, attribs);
 
   
   GLint currentFboId, currentRboId;
@@ -625,7 +625,7 @@ void DCLayerTree::DestroyEGLSurface() {
   if (mEGLImage) {
     const auto& gle = gl::GLContextEGL::Cast(gl);
     const auto& egl = gle->mEgl;
-    egl->fDestroyImage(egl->Display(), mEGLImage);
+    egl->fDestroyImage(mEGLImage);
     mEGLImage = EGL_NO_IMAGE;
   }
 }
