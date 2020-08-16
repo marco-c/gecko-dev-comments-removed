@@ -172,7 +172,11 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
         
         isTrackingVideos: false,
         togglePolicy: TOGGLE_POLICIES.DEFAULT,
-        hasCheckedPolicy: false,
+        
+        
+        
+        
+        checkedPolicyDocumentURI: null,
       };
       this.weakDocStates.set(this.document, state);
     }
@@ -734,7 +738,8 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
     let toggle = this.getToggleElement(shadowRoot);
     let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
 
-    if (!state.hasCheckedPolicy) {
+    if (state.checkedPolicyDocumentURI != this.document.documentURI) {
+      state.togglePolicy = TOGGLE_POLICIES.DEFAULT;
       
       
       let toggleOverrides = this.toggleTesting
@@ -749,7 +754,7 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
         }
       }
 
-      state.hasCheckedPolicy = true;
+      state.checkedPolicyDocumentURI = this.document.documentURI;
     }
 
     
@@ -760,6 +765,8 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       !(state.togglePolicy == TOGGLE_POLICIES.BOTTOM && video.controls)
     ) {
       toggle.setAttribute("policy", TOGGLE_POLICY_STRINGS[state.togglePolicy]);
+    } else {
+      toggle.removeAttribute("policy");
     }
 
     controlsOverlay.removeAttribute("hidetoggle");
