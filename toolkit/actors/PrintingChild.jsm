@@ -333,6 +333,15 @@ class PrintingChild extends ActorChild {
       
       
       let printPreviewInitialize = () => {
+        
+        
+        
+        if (docShell.isBeingDestroyed()) {
+          this.mm.sendAsyncMessage("Printing:Preview:Entered", {
+            failed: true,
+          });
+          return;
+        }
         try {
           let listener = new PrintingListener(this.mm);
 
