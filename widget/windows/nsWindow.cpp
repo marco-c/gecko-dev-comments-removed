@@ -7968,13 +7968,18 @@ static bool IsDifferentThreadWindow(HWND aWnd) {
 }
 
 
-bool nsWindow::EventIsInsideWindow(nsWindow* aWindow) {
+bool nsWindow::EventIsInsideWindow(nsWindow* aWindow,
+                                   Maybe<POINT> aEventPoint) {
   RECT r;
   ::GetWindowRect(aWindow->mWnd, &r);
-  DWORD pos = ::GetMessagePos();
   POINT mp;
-  mp.x = GET_X_LPARAM(pos);
-  mp.y = GET_Y_LPARAM(pos);
+  if (aEventPoint) {
+    mp = *aEventPoint;
+  } else {
+    DWORD pos = ::GetMessagePos();
+    mp.x = GET_X_LPARAM(pos);
+    mp.y = GET_Y_LPARAM(pos);
+  }
 
   
   return static_cast<bool>(::PtInRect(&r, mp));
@@ -7982,7 +7987,8 @@ bool nsWindow::EventIsInsideWindow(nsWindow* aWindow) {
 
 
 bool nsWindow::GetPopupsToRollup(nsIRollupListener* aRollupListener,
-                                 uint32_t* aPopupsToRollup) {
+                                 uint32_t* aPopupsToRollup,
+                                 Maybe<POINT> aEventPoint) {
   
   
   
@@ -7991,7 +7997,7 @@ bool nsWindow::GetPopupsToRollup(nsIRollupListener* aRollupListener,
   uint32_t sameTypeCount = aRollupListener->GetSubmenuWidgetChain(&widgetChain);
   for (uint32_t i = 0; i < widgetChain.Length(); ++i) {
     nsIWidget* widget = widgetChain[i];
-    if (EventIsInsideWindow(static_cast<nsWindow*>(widget))) {
+    if (EventIsInsideWindow(static_cast<nsWindow*>(widget), aEventPoint)) {
       
       
       
@@ -8094,19 +8100,13 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
       if (!pointerEvents.ShouldRollupOnPointerEvent(nativeMessage, aWParam)) {
         return false;
       }
-      if (!GetPopupsToRollup(rollupListener, &popupsToRollup)) {
-        return false;
-      }
-      
-      
-      
-      
       POINT pt;
       pt.x = GET_X_LPARAM(aLParam);
       pt.y = GET_Y_LPARAM(aLParam);
-      RECT r;
-      ::GetWindowRect(popupWindow->mWnd, &r);
-      if (::PtInRect(&r, pt) != 0) {
+      if (!GetPopupsToRollup(rollupListener, &popupsToRollup, Some(pt))) {
+        return false;
+      }
+      if (EventIsInsideWindow(popupWindow, Some(pt))) {
         
         return false;
       }
