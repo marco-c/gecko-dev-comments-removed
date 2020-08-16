@@ -24,22 +24,22 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "nsThreadUtils.h"
+#include "nsIBrowserWindowTracker.h"
 #include "nsIDocShellTreeOwner.h"
+#include "nsImportModule.h"
 #include "mozilla/dom/BrowserHost.h"
 #include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/StaticPrefs_media.h"
 
+#include "MediaUtils.h"
+
 mozilla::LazyLogModule gTabShareLog("TabShare");
 
 using namespace mozilla::dom;
-
-
-#define NO_TABSHARE_UI 1
 
 namespace mozilla {
 
@@ -65,39 +65,6 @@ bool TabCapturer::FocusOnSelectedSource() { return true; }
 
 nsresult TabCapturer::StartRunnable::Run() {
   MOZ_ASSERT(NS_IsMainThread());
-  
-  
-
-#ifdef NO_TABSHARE_UI
-  
-  
-  nsCOMPtr<nsPIDOMWindowOuter> chromeWindow =
-      nsContentUtils::GetMostRecentNonPBWindow();
-  if (!chromeWindow) {
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<nsIDocShell> docShell = chromeWindow->GetDocShell();
-  if (!docShell) {
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<nsIDocShellTreeOwner> owner;
-  docShell->GetTreeOwner(getter_AddRefs(owner));
-  if (!owner) {
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<nsIRemoteTab> primaryRemoteTab;
-  owner->GetPrimaryRemoteTab(getter_AddRefs(primaryRemoteTab));
-  if (!primaryRemoteTab) {
-    return NS_ERROR_FAILURE;
-  }
-  RefPtr<BrowsingContext> context =
-      BrowserHost::GetFrom(primaryRemoteTab)->GetBrowsingContext();
-  if (!context) {
-    return NS_ERROR_FAILURE;
-  }
-  mVideoSource->mBrowserId = context->BrowserId();
-#endif
-
   MOZ_LOG(gTabShareLog, LogLevel::Debug,
           ("TabShare: Start, id=%" PRIu64, mVideoSource->mBrowserId));
 
@@ -255,16 +222,49 @@ webrtc::DesktopCapturer::CreateRawTabCapturer(
 }
 
 void webrtc::DesktopDeviceInfoImpl::InitializeTabList() {
-  if (mozilla::StaticPrefs::media_getusermedia_browser_enabled()) {
-    DesktopTab* desktop_tab = new DesktopTab;
-    if (desktop_tab) {
-      desktop_tab->setTabBrowserId(0);
-      desktop_tab->setTabName("dummy tab");
-      desktop_tab->setUniqueIdName("dummy tab 0");
-      desktop_tab->setTabCount(1);
-      desktop_tab_list_[desktop_tab->getTabBrowserId()] = desktop_tab;
-    }
+  if (!mozilla::StaticPrefs::media_getusermedia_browser_enabled()) {
+    return;
   }
+
+  
+  
+  
+  
+  
+  NS_DispatchToMainThread(
+      mozilla::media::NewRunnableFrom([this]() -> nsresult {
+        nsresult rv;
+        nsCOMPtr<nsIBrowserWindowTracker> bwt =
+            do_ImportModule("resource:///modules/BrowserWindowTracker.jsm",
+                            "BrowserWindowTracker", &rv);
+        if (NS_SUCCEEDED(rv)) {
+          nsTArray<RefPtr<nsIVisibleTab>> tabArray;
+          rv = bwt->GetAllVisibleTabs(tabArray);
+          if (NS_SUCCEEDED(rv)) {
+            for (const auto& browserTab : tabArray) {
+              nsString contentTitle;
+              browserTab->GetContentTitle(contentTitle);
+              int64_t browserId;
+              browserTab->GetBrowserId(&browserId);
+
+              DesktopTab* desktopTab = new DesktopTab;
+              if (desktopTab) {
+                char* contentTitleUTF8 = ToNewUTF8String(contentTitle);
+                desktopTab->setTabBrowserId(browserId);
+                desktopTab->setTabName(contentTitleUTF8);
+                std::ostringstream uniqueId;
+                uniqueId << browserId;
+                desktopTab->setUniqueIdName(uniqueId.str().c_str());
+                desktop_tab_list_[desktopTab->getTabBrowserId()] = desktopTab;
+                free(contentTitleUTF8);
+              }
+            }
+          }
+        }
+
+        return NS_OK;
+      }),
+      nsIEventTarget::DISPATCH_SYNC);
 }
 
 }  
