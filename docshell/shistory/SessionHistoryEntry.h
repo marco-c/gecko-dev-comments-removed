@@ -51,8 +51,6 @@ class SessionHistoryInfo {
     mScrollRestorationIsManual = aIsManual;
   }
 
-  void SetCacheKey(uint32_t aCacheKey) { mCacheKey = aCacheKey; }
-
   nsIURI* GetURI() const { return mURI; }
 
   bool GetURIWasModified() const { return mURIWasModified; }
@@ -87,9 +85,6 @@ class SessionHistoryInfo {
   
   
   nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
-
-  
-  uint32_t mCacheKey = 0;
 
   uint64_t mId = 0;
   bool mLoadReplace = false;
@@ -133,8 +128,6 @@ class SessionHistoryEntry : public nsISHEntry {
 
   static void UpdateLayoutHistoryState(uint64_t aSessionHistoryEntryID,
                                        nsILayoutHistoryState* aState);
-
-  static void MaybeSynchronizeSharedStateToInfo(nsISHEntry* aEntry);
 
  private:
   virtual ~SessionHistoryEntry();

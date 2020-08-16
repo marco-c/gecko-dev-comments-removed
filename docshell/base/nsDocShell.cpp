@@ -8537,10 +8537,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     
     
     if (cacheKey != 0) {
-      
-      
-      
-      SetCacheKeyOnHistoryEntry(mOSHE, nullptr, cacheKey);
+      mOSHE->SetCacheKey(cacheKey);
     }
   }
 
@@ -10312,17 +10309,10 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
     
     
     
-
-    if (mLoadingEntry) {
-      SetCacheKeyOnHistoryEntry(nullptr, &mLoadingEntry->mInfo, cacheKey);
-    } else if (mActiveEntry) {
-      SetCacheKeyOnHistoryEntry(nullptr, mActiveEntry.get(), cacheKey);
-    }
-
     if (mLSHE) {
-      SetCacheKeyOnHistoryEntry(mLSHE, nullptr, cacheKey);
+      mLSHE->SetCacheKey(cacheKey);
     } else if (mOSHE) {
-      SetCacheKeyOnHistoryEntry(mOSHE, nullptr, cacheKey);
+      mOSHE->SetCacheKey(cacheKey);
     }
 
     
@@ -10815,29 +10805,6 @@ void nsDocShell::SetScrollRestorationIsManualOnHistoryEntry(
       mozilla::Unused << ContentChild::GetSingleton()
                              ->SendSessionHistoryEntryScrollRestorationIsManual(
                                  aInfo->Id(), aIsManual);
-    }
-  }
-}
-
-void nsDocShell::SetCacheKeyOnHistoryEntry(
-    nsISHEntry* aSHEntry, mozilla::dom::SessionHistoryInfo* aInfo,
-    uint32_t aCacheKey) {
-  if (aSHEntry) {
-    aSHEntry->SetCacheKey(aCacheKey);
-  }
-
-  if (aInfo) {
-    aInfo->SetCacheKey(aCacheKey);
-    if (XRE_IsParentProcess()) {
-      SessionHistoryEntry* entry =
-          SessionHistoryEntry::GetByInfoId(aInfo->Id());
-      if (entry) {
-        entry->SetCacheKey(aCacheKey);
-      }
-    } else {
-      mozilla::Unused
-          << ContentChild::GetSingleton()->SendSessionHistoryEntryCacheKey(
-                 aInfo->Id(), aCacheKey);
     }
   }
 }

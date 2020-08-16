@@ -943,17 +943,6 @@ void SessionHistoryEntry::UpdateLayoutHistoryState(
   }
 }
 
-void SessionHistoryEntry::MaybeSynchronizeSharedStateToInfo(
-    nsISHEntry* aEntry) {
-  nsCOMPtr<SessionHistoryEntry> entry = do_QueryInterface(aEntry);
-  if (!entry) {
-    return;
-  }
-
-  entry->mInfo->mCacheKey = entry->mSharedInfo->mCacheKey;
-  
-}
-
 }  
 
 namespace ipc {
