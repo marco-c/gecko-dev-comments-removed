@@ -873,6 +873,10 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForLastContent() const {
     lastCandidate = ContentIteratorBase::GetPrevSibling(node);
   }
 
+  if (lastCandidate) {
+    lastCandidate = ContentIteratorBase::GetDeepLastChild(lastCandidate);
+  }
+
   return lastCandidate;
 }
 
@@ -915,8 +919,6 @@ nsresult ContentSubtreeIterator::InitWithRange() {
     SetEmpty();
     return NS_OK;
   }
-
-  lastCandidate = ContentIteratorBase::GetDeepLastChild(lastCandidate);
 
   
   
