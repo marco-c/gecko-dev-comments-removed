@@ -6593,6 +6593,10 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
                               : mScrollPort.x + compositionSize.width;
     if (mHasVerticalScrollbar) {
       nsMargin margin;
+      
+      
+      
+      
       mVScrollbarBox->GetXULMargin(margin);
       vRect.Deflate(margin);
     }
@@ -6611,6 +6615,10 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
     hRect.y = mScrollPort.y + compositionSize.height;
     if (mHasHorizontalScrollbar) {
       nsMargin margin;
+      
+      
+      
+      
       mHScrollbarBox->GetXULMargin(margin);
       hRect.Deflate(margin);
     }
