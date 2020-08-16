@@ -143,30 +143,17 @@ add_task(async function test_cached_engine_properties() {
   const engines = await Services.search.getEngines();
 
   
-  const expectedEngines = gModernConfig
-    ? [
-        
-        "Test search engine",
-        
-        "engine-resourceicon",
-        "engine-chromeicon",
-        "engine-pref",
-        "engine-rel-searchform-purpose",
-        "Test search engine (Reordered)",
-        "A second test engine",
-      ]
-    : [
-        
-        "Test search engine",
-        
-        "engine-resourceicon",
-        "engine-chromeicon",
-        "A second test engine",
-        
-        "engine-pref",
-        "engine-rel-searchform-purpose",
-        "Test search engine (Reordered)",
-      ];
+  const expectedEngines = [
+    
+    "Test search engine",
+    
+    "engine-resourceicon",
+    "engine-chromeicon",
+    "engine-pref",
+    "engine-rel-searchform-purpose",
+    "Test search engine (Reordered)",
+    "A second test engine",
+  ];
 
   Assert.deepEqual(
     engines.map(e => e.name),

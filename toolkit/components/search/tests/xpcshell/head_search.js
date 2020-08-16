@@ -49,13 +49,6 @@ var XULRuntime = Cc["@mozilla.org/xre/runtime;1"].getService(Ci.nsIXULRuntime);
 Services.prefs.setBoolPref("browser.search.log", true);
 Services.prefs.setBoolPref("browser.region.log", true);
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gModernConfig",
-  SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
-  false
-);
-
 AddonTestUtils.init(this, false);
 AddonTestUtils.createAppInfo(
   "xpcshell@tests.mozilla.org",
@@ -86,7 +79,6 @@ SearchCache.CACHE_INVALIDATION_DELAY = 250;
 
 
 
-
 async function useTestEngines(
   folder = "data",
   subFolder = null,
@@ -100,19 +92,17 @@ async function useTestEngines(
     .getProtocolHandler("resource")
     .QueryInterface(Ci.nsIResProtocolHandler);
   resProt.setSubstitution("search-extensions", Services.io.newURI(url));
-  if (gModernConfig) {
-    const settings = await RemoteSettings(SearchUtils.SETTINGS_KEY);
-    if (config) {
-      return sinon.stub(settings, "get").returns(config);
-    }
-    let chan = NetUtil.newChannel({
-      uri: "resource://search-extensions/engines.json",
-      loadUsingSystemPrincipal: true,
-    });
-    let json = parseJsonFromStream(chan.open());
-    return sinon.stub(settings, "get").returns(json.data);
+
+  const settings = await RemoteSettings(SearchUtils.SETTINGS_KEY);
+  if (config) {
+    return sinon.stub(settings, "get").returns(config);
   }
-  return null;
+  let chan = NetUtil.newChannel({
+    uri: "resource://search-extensions/engines.json",
+    loadUsingSystemPrincipal: true,
+  });
+  let json = parseJsonFromStream(chan.open());
+  return sinon.stub(settings, "get").returns(json.data);
 }
 
 async function promiseCacheData() {

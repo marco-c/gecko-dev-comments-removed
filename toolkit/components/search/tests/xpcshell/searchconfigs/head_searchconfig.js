@@ -129,12 +129,6 @@ class SearchConfigTest {
       true
     );
 
-    
-    Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
-      true
-    );
-
     await AddonTestUtils.promiseStartupManager();
     await Services.search.init();
 
