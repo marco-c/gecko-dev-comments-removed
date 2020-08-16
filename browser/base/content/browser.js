@@ -5024,29 +5024,10 @@ var XULBrowserWindow = {
       return;
     }
 
-    
-    
     let elt = document.getElementById("remoteBrowserTooltip");
     elt.label = tooltip;
     elt.style.direction = direction;
-
-    let screenX;
-    let screenY;
-
-    if (browser instanceof XULElement) {
-      
-      
-      screenX = browser.screenX;
-      screenY = browser.screenY;
-    } else {
-      
-      
-      const componentBounds = browser.getBoundingClientRect();
-      screenX = window.screenX + componentBounds.x;
-      screenY = window.screenY + componentBounds.y;
-    }
-
-    elt.openPopupAtScreen(screenX + x, screenY + y, false, null);
+    elt.openPopupAtScreen(x, y, false, null);
   },
 
   hideTooltip() {
