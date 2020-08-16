@@ -341,25 +341,35 @@ void PreallocatedProcessManagerImpl::AllocateNow() {
 
       [self, this](const RefPtr<ContentParent>& process) {
         mLaunchInProgress = false;
-        if (CanAllocate()) {
+        if (process->IsDead()) {
           
           
           
           
           
           
-          mPreallocatedProcesses.push_back(process);
-          MOZ_LOG(
-              ContentParent::GetLog(), LogLevel::Debug,
-              ("Preallocated = %lu of %d processes",
-               (unsigned long)mPreallocatedProcesses.size(), mNumberPreallocs));
-
           
-          if (mPreallocatedProcesses.size() < mNumberPreallocs) {
-            AllocateOnIdle();
-          }
         } else {
-          process->ShutDownProcess(ContentParent::SEND_SHUTDOWN_MESSAGE);
+          if (CanAllocate()) {
+            
+            
+            
+            
+            
+            
+            mPreallocatedProcesses.push_back(process);
+            MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+                    ("Preallocated = %lu of %d processes",
+                     (unsigned long)mPreallocatedProcesses.size(),
+                     mNumberPreallocs));
+
+            
+            if (mPreallocatedProcesses.size() < mNumberPreallocs) {
+              AllocateOnIdle();
+            }
+          } else {
+            process->ShutDownProcess(ContentParent::SEND_SHUTDOWN_MESSAGE);
+          }
         }
       },
 
