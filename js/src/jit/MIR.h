@@ -11675,6 +11675,29 @@ class MIsTypedArrayConstructor : public MUnaryInstruction,
 
 
 
+
+class MLoadValueTag : public MUnaryInstruction, public BoxInputsPolicy::Data {
+  explicit MLoadValueTag(MDefinition* value)
+      : MUnaryInstruction(classOpcode, value) {
+    setResultType(MIRType::Int32);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(LoadValueTag)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, value))
+
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+};
+
+
+
+
 class MWasmNeg : public MUnaryInstruction, public NoTypePolicy::Data {
   MWasmNeg(MDefinition* op, MIRType type) : MUnaryInstruction(classOpcode, op) {
     setResultType(type);
