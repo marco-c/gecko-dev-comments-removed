@@ -180,6 +180,9 @@ enum class BailoutKind : uint8_t {
   ArrayPopShift,
 
   
+  ArraySlice,
+
+  
   ValueGuard,
 
   
@@ -277,6 +280,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::NotArrayBufferMaybeSharedGuard";
     case BailoutKind::ArrayPopShift:
       return "BailoutKind::ArrayPopShift";
+    case BailoutKind::ArraySlice:
+      return "BailoutKind::ArraySlice";
     case BailoutKind::ValueGuard:
       return "BailoutKind::ValueGuard";
     case BailoutKind::NotOptimizedArgumentsGuard:

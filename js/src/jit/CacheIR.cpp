@@ -5229,6 +5229,84 @@ AttachDecision CallIRGenerator::tryAttachArrayJoin(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachArraySlice(HandleFunction callee) {
+  
+  if (argc_ > 2) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isObject() || !IsPackedArray(&thisval_.toObject())) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (argc_ > 0 && !args_[0].isInt32()) {
+    return AttachDecision::NoAction;
+  }
+  if (argc_ > 1 && !args_[1].isInt32()) {
+    return AttachDecision::NoAction;
+  }
+
+  RootedArrayObject arr(cx_, &thisval_.toObject().as<ArrayObject>());
+
+  
+  
+  
+  if (arr->isSingleton()) {
+    return AttachDecision::NoAction;
+  }
+
+  JSObject* templateObj =
+      NewFullyAllocatedArrayTryReuseGroup(cx_, arr, 0, TenuredObject);
+  if (!templateObj) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  writer.guardClass(objId, GuardClassKind::Array);
+
+  Int32OperandId int32BeginId;
+  if (argc_ > 0) {
+    ValOperandId beginId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+    int32BeginId = writer.guardToInt32(beginId);
+  } else {
+    int32BeginId = writer.loadInt32Constant(0);
+  }
+
+  Int32OperandId int32EndId;
+  if (argc_ > 1) {
+    ValOperandId endId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
+    int32EndId = writer.guardToInt32(endId);
+  } else {
+    int32EndId = writer.loadInt32ArrayLength(objId);
+  }
+
+  writer.packedArraySliceResult(templateObj, objId, int32BeginId, int32EndId);
+
+  if (!JitOptions.warpBuilder) {
+    
+    writer.metaNativeTemplateObject(callee, templateObj);
+  }
+
+  writer.typeMonitorResult();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
+
+  trackAttached("ArraySlice");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachArrayIsArray(HandleFunction callee) {
   
   if (argc_ != 1) {
@@ -8228,6 +8306,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachArrayPopShift(callee, native);
     case InlinableNative::ArrayJoin:
       return tryAttachArrayJoin(callee);
+    case InlinableNative::ArraySlice:
+      return tryAttachArraySlice(callee);
     case InlinableNative::ArrayIsArray:
       return tryAttachArrayIsArray(callee);
 
@@ -8762,6 +8842,17 @@ bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
 
       RootedObject obj(cx_, &thisval_.toObject());
       if (obj->isSingleton()) {
+        return true;
+      }
+
+      if (IsPackedArray(obj)) {
+        
+        return true;
+      }
+
+      
+      
+      if (JitOptions.warpBuilder) {
         return true;
       }
 
