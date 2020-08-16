@@ -1570,6 +1570,13 @@ bool BaselineCacheIRCompiler::emitStringFromCodeResult(Int32OperandId codeId,
     }
   }
 
+  if (stringCode == StringCode::CodePoint) {
+    
+    
+    masm.branch32(Assembler::Above, code, Imm32(unicode::NonBMPMax),
+                  failure->label());
+  }
+
   allocator.discardStack(masm);
 
   
@@ -1584,13 +1591,6 @@ bool BaselineCacheIRCompiler::emitStringFromCodeResult(Int32OperandId codeId,
 
   {
     masm.bind(&vmCall);
-
-    if (stringCode == StringCode::CodePoint) {
-      
-      
-      masm.branch32(Assembler::Above, code, Imm32(unicode::NonBMPMax),
-                    failure->label());
-    }
 
     AutoStubFrame stubFrame(*this);
     stubFrame.enter(masm, scratch);
