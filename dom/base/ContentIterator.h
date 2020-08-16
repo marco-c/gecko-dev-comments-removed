@@ -71,10 +71,10 @@ class ContentIteratorBase {
 
   
   
-  nsINode* GetDeepFirstChild(nsINode* aRoot);
-  nsIContent* GetDeepFirstChild(nsIContent* aRoot);
-  nsINode* GetDeepLastChild(nsINode* aRoot);
-  nsIContent* GetDeepLastChild(nsIContent* aRoot);
+  static nsINode* GetDeepFirstChild(nsINode* aRoot);
+  static nsIContent* GetDeepFirstChild(nsIContent* aRoot);
+  static nsINode* GetDeepLastChild(nsINode* aRoot);
+  static nsIContent* GetDeepLastChild(nsIContent* aRoot);
 
   
   

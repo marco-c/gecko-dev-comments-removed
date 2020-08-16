@@ -129,10 +129,10 @@ nsresult ContentIteratorBase::Init(nsINode* aRoot) {
 
   if (mPre) {
     mFirst = aRoot;
-    mLast = GetDeepLastChild(aRoot);
+    mLast = ContentIteratorBase::GetDeepLastChild(aRoot);
     NS_WARNING_ASSERTION(mLast, "GetDeepLastChild returned null");
   } else {
-    mFirst = GetDeepFirstChild(aRoot);
+    mFirst = ContentIteratorBase::GetDeepFirstChild(aRoot);
     NS_WARNING_ASSERTION(mFirst, "GetDeepFirstChild returned null");
     mLast = aRoot;
   }
@@ -334,7 +334,7 @@ nsINode* ContentIteratorBase::Initializer::DetermineFirstNode() const {
       return cChild;
     }
     
-    nsINode* const result = mIterator.GetDeepFirstChild(cChild);
+    nsINode* const result = ContentIteratorBase::GetDeepFirstChild(cChild);
     NS_WARNING_ASSERTION(result, "GetDeepFirstChild returned null");
 
     
@@ -413,7 +413,7 @@ Result<nsINode*, nsresult> ContentIteratorBase::Initializer::DetermineLastNode()
     }
 
     if (mIterator.mPre) {
-      nsINode* const result = mIterator.GetDeepLastChild(cChild);
+      nsINode* const result = ContentIteratorBase::GetDeepLastChild(cChild);
       NS_WARNING_ASSERTION(result, "GetDeepLastChild returned null");
 
       if (NS_WARN_IF(
@@ -436,13 +436,15 @@ void ContentIteratorBase::SetEmpty() {
   mIsDone = true;
 }
 
+
 nsINode* ContentIteratorBase::GetDeepFirstChild(nsINode* aRoot) {
   if (NS_WARN_IF(!aRoot) || !aRoot->HasChildren()) {
     return aRoot;
   }
 
-  return GetDeepFirstChild(aRoot->GetFirstChild());
+  return ContentIteratorBase::GetDeepFirstChild(aRoot->GetFirstChild());
 }
+
 
 nsIContent* ContentIteratorBase::GetDeepFirstChild(nsIContent* aRoot) {
   if (NS_WARN_IF(!aRoot)) {
@@ -460,13 +462,15 @@ nsIContent* ContentIteratorBase::GetDeepFirstChild(nsIContent* aRoot) {
   return node;
 }
 
+
 nsINode* ContentIteratorBase::GetDeepLastChild(nsINode* aRoot) {
   if (NS_WARN_IF(!aRoot) || !aRoot->HasChildren()) {
     return aRoot;
   }
 
-  return GetDeepLastChild(aRoot->GetLastChild());
+  return ContentIteratorBase::GetDeepLastChild(aRoot->GetLastChild());
 }
+
 
 nsIContent* ContentIteratorBase::GetDeepLastChild(nsIContent* aRoot) {
   if (NS_WARN_IF(!aRoot)) {
@@ -559,7 +563,7 @@ nsINode* ContentIteratorBase::NextNode(nsINode* aNode) {
   nsIContent* sibling = node->GetNextSibling();
   if (sibling) {
     
-    return GetDeepFirstChild(sibling);
+    return ContentIteratorBase::GetDeepFirstChild(sibling);
   }
 
   return parent;
@@ -579,7 +583,7 @@ nsINode* ContentIteratorBase::PrevNode(nsINode* aNode) {
 
     nsIContent* sibling = node->GetPreviousSibling();
     if (sibling) {
-      return GetDeepLastChild(sibling);
+      return ContentIteratorBase::GetDeepLastChild(sibling);
     }
 
     return parent;
@@ -835,7 +839,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
     }
   }
 
-  firstCandidate = GetDeepFirstChild(firstCandidate);
+  firstCandidate = ContentIteratorBase::GetDeepFirstChild(firstCandidate);
 
   
   
@@ -881,7 +885,7 @@ nsresult ContentSubtreeIterator::InitWithRange() {
     return NS_OK;
   }
 
-  lastCandidate = GetDeepLastChild(lastCandidate);
+  lastCandidate = ContentIteratorBase::GetDeepLastChild(lastCandidate);
 
   
   
@@ -971,11 +975,11 @@ void ContentSubtreeIterator::Prev() {
 
   
   
-  nsINode* prevNode = GetDeepFirstChild(mCurNode);
+  nsINode* prevNode = ContentIteratorBase::GetDeepFirstChild(mCurNode);
 
   prevNode = PrevNode(prevNode);
 
-  prevNode = GetDeepLastChild(prevNode);
+  prevNode = ContentIteratorBase::GetDeepLastChild(prevNode);
 
   mCurNode = GetTopAncestorInRange(prevNode);
 
