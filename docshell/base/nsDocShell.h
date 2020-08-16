@@ -65,6 +65,7 @@ class ClientInfo;
 class ClientSource;
 class EventTarget;
 class SessionHistoryInfo;
+struct LoadingSessionHistoryInfo;
 }  
 namespace net {
 class LoadInfo;
@@ -499,7 +500,7 @@ class nsDocShell final : public nsDocLoader,
       mozilla::dom::BrowsingContext* aBrowsingContext, uint32_t aLoadType);
 
   void SetLoadingSessionHistoryInfo(
-      const mozilla::dom::SessionHistoryInfo& aInfo);
+      const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo);
 
  private:  
   friend class nsDSURIContentListener;
@@ -1110,7 +1111,7 @@ class nsDocShell final : public nsDocLoader,
 
   
   mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mActiveEntry;
-  mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mLoadingEntry;
+  mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> mLoadingEntry;
 
   
   
