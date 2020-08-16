@@ -66,6 +66,16 @@ add_task(async function() {
   
   
   for (let value of TEST_STRINGS) {
+    if (
+      UrlbarPrefs.get("update2") &&
+      (await UrlbarSearchUtils.engineForAlias(value))
+    ) {
+      
+      
+      
+      
+      continue;
+    }
     let promise = promiseLoadURL();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -122,6 +132,13 @@ add_task(async function no_heuristic_test() {
   
   
   for (let value of TEST_STRINGS) {
+    if (
+      UrlbarPrefs.get("update2") &&
+      (await UrlbarSearchUtils.engineForAlias(value))
+    ) {
+      
+      continue;
+    }
     let promise = promiseLoadURL();
     gURLBar.value = value;
     EventUtils.synthesizeKey("KEY_Enter");

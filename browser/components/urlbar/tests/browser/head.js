@@ -77,3 +77,20 @@ async function updateTopSites(condition, searchShortcuts = false) {
     return condition(sites);
   }, "Waiting for top sites to be updated");
 }
+
+
+
+
+
+
+
+
+
+
+
+function getAutofillSearchString(val) {
+  if (!val.startsWith("@")) {
+    return val;
+  }
+  return val + (UrlbarPrefs.get("update2") ? "" : " ");
+}

@@ -287,6 +287,16 @@ add_task(async function editedView() {
   }
 
   
+  
+  
+  
+  const localOneOffIds = [
+    "urlbar-engine-one-off-item-bookmarks",
+    "urlbar-engine-one-off-item-tabs",
+    "urlbar-engine-one-off-item-history",
+  ];
+
+  
   let numButtons = oneOffSearchButtons.getSelectableButtons(true).length;
   for (let i = 0; i < numButtons; i++) {
     EventUtils.synthesizeKey("KEY_ArrowDown");
@@ -295,7 +305,7 @@ add_task(async function editedView() {
       BrowserTestUtils.is_visible(heuristicResult.element.action),
       !oneOffSearchButtons.selectedButton.classList.contains(
         "search-setting-button-compact"
-      ),
+      ) && !localOneOffIds.includes(oneOffSearchButtons.selectedButton.id),
       "The heuristic action should be visible when a one-off button is selected"
     );
   }
@@ -317,7 +327,7 @@ add_task(async function editedView() {
       BrowserTestUtils.is_visible(heuristicResult.element.action),
       !oneOffSearchButtons.selectedButton.classList.contains(
         "search-setting-button-compact"
-      ),
+      ) && !localOneOffIds.includes(oneOffSearchButtons.selectedButton.id),
       "The heuristic action should be visible when a one-off button is selected"
     );
   }

@@ -222,6 +222,9 @@ add_task(async function nonTokenAlias() {
 
 
 add_task(async function clickAndFillAlias_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", false]],
+  });
   
   gURLBar.search("@");
   await UrlbarTestUtils.promiseSearchComplete(window);
@@ -266,6 +269,7 @@ add_task(async function clickAndFillAlias_legacy() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -312,6 +316,9 @@ add_task(async function clickAndFillAlias() {
 
 
 add_task(async function enterAndFillAlias_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", false]],
+  });
   
   gURLBar.search("@");
   await UrlbarTestUtils.promiseSearchComplete(window);
@@ -355,6 +362,7 @@ add_task(async function enterAndFillAlias_legacy() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -401,6 +409,9 @@ add_task(async function enterAndFillAlias() {
 
 
 add_task(async function enterAutofillsAlias_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", false]],
+  });
   let expectedString = `${ALIAS} `;
   for (let value of [ALIAS.substring(0, ALIAS.length - 1), ALIAS]) {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -425,6 +436,7 @@ add_task(async function enterAutofillsAlias_legacy() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
+  await SpecialPowers.popPrefEnv();
 });
 
 

@@ -132,10 +132,18 @@ add_task(async function test_search_disabled_suggestions() {
   await SpecialPowers.popPrefEnv();
 });
 
+
+
 add_task(async function test_oneoff_selected_keyboard() {
   info(
     "Test that 'Search in a Private Window' with keyboard opens the selected one-off engine if there's no private engine"
   );
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "unique198273982173",
@@ -159,12 +167,21 @@ add_task(async function test_oneoff_selected_keyboard() {
     "Should open a private window"
   );
   await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
 });
+
+
 
 add_task(async function test_oneoff_selected_mouse() {
   info(
     "Test that 'Search in a Private Window' with mouse opens the selected one-off engine if there's no private engine"
   );
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "unique198273982173",
@@ -190,6 +207,7 @@ add_task(async function test_oneoff_selected_mouse() {
     "Should open a private window"
   );
   await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -271,10 +289,18 @@ add_task(async function test_openPBWindow() {
   });
 });
 
+
+
 add_task(async function test_oneoff_selected_with_private_engine_mouse() {
   info(
     "Test that 'Search in a Private Window' opens the private engine even if a one-off is selected"
   );
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "unique198273982173",
@@ -307,12 +333,21 @@ add_task(async function test_oneoff_selected_with_private_engine_mouse() {
     );
     await BrowserTestUtils.closeWindow(win);
   });
+  await SpecialPowers.popPrefEnv();
 });
+
+
 
 add_task(async function test_oneoff_selected_with_private_engine_keyboard() {
   info(
     "Test that 'Search in a Private Window' opens the private engine even if a one-off is selected"
   );
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "unique198273982173",
@@ -343,6 +378,7 @@ add_task(async function test_oneoff_selected_with_private_engine_keyboard() {
     );
     await BrowserTestUtils.closeWindow(win);
   });
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_alias() {
