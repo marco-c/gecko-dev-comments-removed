@@ -1856,14 +1856,12 @@ Maybe<wr::ImageKey> WebRenderCommandBuilder::CreateImageKey(
 
     LayoutDeviceRect rect = aAsyncImageBounds.value();
     LayoutDeviceRect scBounds(LayoutDevicePoint(0, 0), rect.Size());
-    gfx::Matrix4x4 transform;
     
     
     
     imageData->CreateAsyncImageWebRenderCommands(
-        aBuilder, aContainer, aSc, rect, scBounds, transform,
-        gfx::MaybeIntSize(), aContainer->GetRotation(), aRendering,
-        wr::MixBlendMode::Normal, !aItem->BackfaceIsHidden());
+        aBuilder, aContainer, aSc, rect, scBounds, aContainer->GetRotation(),
+        aRendering, wr::MixBlendMode::Normal, !aItem->BackfaceIsHidden());
     return Nothing();
   }
 
