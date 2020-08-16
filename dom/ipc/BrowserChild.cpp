@@ -524,8 +524,7 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   
   if (mIsTopLevel) {
     nsContentUtils::SetScrollbarsVisibility(
-        window->GetDocShell(),
-        !!(mChromeFlags & nsIWebBrowserChrome::CHROME_SCROLLBARS));
+        docShell, !!(mChromeFlags & nsIWebBrowserChrome::CHROME_SCROLLBARS));
   }
 
   nsWeakPtr weakPtrThis = do_GetWeakReference(
@@ -548,6 +547,11 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   rv = mSessionStoreListener->Init();
   NS_ENSURE_SUCCESS(rv, rv);
 #endif
+
+  
+  
+  UpdateVisibility();
+
   return NS_OK;
 }
 
