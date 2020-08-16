@@ -358,9 +358,30 @@ class VirtualenvMixin(object):
         
         
         
+        
+        
+        
+        
+        venv_search_dirs = [
+            os.path.join('{base_work_dir}', 'mozharness'),
+            '{abs_src_dir}',
+        ]
+        if 'abs_src_dir' not in dirs and 'repo_path' in self.config:
+            dirs['abs_src_dir'] = os.path.normpath(self.config['repo_path'])
+        for d in venv_search_dirs:
+            file = os.path.join(d, 'third_party', 'python', 'virtualenv', 'virtualenv.py')
+            try:
+                venv_py_path = file.format(**dirs)
+            except KeyError:
+                continue
+            if os.path.exists(venv_py_path):
+                break
+        else:
+            self.fatal("Can't find the virtualenv module")
+
         virtualenv = [
             sys.executable,
-            os.path.join(external_tools_path, 'virtualenv', 'virtualenv.py'),
+            venv_py_path,
         ]
         virtualenv_options = c.get('virtualenv_options', [])
         
