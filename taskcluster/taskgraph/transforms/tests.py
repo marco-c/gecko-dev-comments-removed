@@ -244,6 +244,18 @@ TEST_VARIANTS = {
             'webrender': True,
         }
     },
+    'webrender-sw': {
+        'description': "{description} with software webrender enabled",
+        'suffix': 'swr',
+        'merge': {
+            'webrender': True,
+            'mozharness': {
+                'extra-options': [
+                    '--setpref=gfx.webrender.software=true',
+                ],
+            }
+        }
+    },
     'webgl-ipc': {
         
         'description': "{description} with WebGL IPC process enabled",
