@@ -1850,6 +1850,9 @@ pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", false);
 pref("extensions.formautofill.creditCards.enabled", true);
 
+
+pref("extensions.formautofill.creditCards.hideui", false);
+
 pref("services.sync.engine.creditcards.available", true);
 
 
