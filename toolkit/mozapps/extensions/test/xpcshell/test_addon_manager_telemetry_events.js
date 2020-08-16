@@ -76,6 +76,13 @@ add_task(async function setup() {
 
   
   
+  Services.prefs.setBoolPref(
+    "toolkit.telemetry.testing.overrideProductsCheck",
+    true
+  );
+
+  
+  
   await TelemetryController.testSetup();
 
   await promiseStartupManager();
