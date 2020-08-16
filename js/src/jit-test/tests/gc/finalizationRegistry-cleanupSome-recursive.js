@@ -25,14 +25,16 @@ let registry = new FinalizationRegistry(x => {
 });
 
 
+var stackSize = 0;
 function findStackSize(i) {
   try {
-    return findStackSize(i + 1);
-  } catch {
-    return i;
+    stackSize = i;
+    findStackSize(i + 1);
+  } catch (e) {
+    return;
   }
 }
-const stackSize = findStackSize(0);
+findStackSize(0);
 
 
 const exceedStackDepthLimit = stackSize * 5;
