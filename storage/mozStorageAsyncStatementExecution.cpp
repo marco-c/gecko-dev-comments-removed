@@ -122,8 +122,8 @@ bool AsyncExecuteStatements::bindExecuteAndProcessStatement(
 
   sqlite3_stmt* aStatement = nullptr;
   
-  (void)aData.getSqliteStatement(&aStatement);
-  NS_ASSERTION(aStatement, "You broke the code; do not call here like that!");
+  Unused << aData.getSqliteStatement(&aStatement);
+  MOZ_DIAGNOSTIC_ASSERT(aStatement, "bindExecuteAndProcessStatement called without an initialized statement");
   BindingParamsArray* paramsArray(aData);
 
   
@@ -147,7 +147,7 @@ bool AsyncExecuteStatements::bindExecuteAndProcessStatement(
     
     itr++;
     bool lastStatement = aLastStatement && itr == end;
-    continueProcessing = executeAndProcessStatement(aStatement, lastStatement);
+    continueProcessing = executeAndProcessStatement(aData, lastStatement);
 
     
     (void)::sqlite3_reset(aStatement);
@@ -157,13 +157,18 @@ bool AsyncExecuteStatements::bindExecuteAndProcessStatement(
 }
 
 bool AsyncExecuteStatements::executeAndProcessStatement(
-    sqlite3_stmt* aStatement, bool aLastStatement) {
+    StatementData& aData, bool aLastStatement) {
   mMutex.AssertNotCurrentThreadOwns();
+
+  sqlite3_stmt* aStatement = nullptr;
+  
+  Unused << aData.getSqliteStatement(&aStatement);
+  MOZ_DIAGNOSTIC_ASSERT(aStatement, "executeAndProcessStatement called without an initialized statement");
 
   
   bool hasResults;
   do {
-    hasResults = executeStatement(aStatement);
+    hasResults = executeStatement(aData);
 
     
     if (mState == ERROR || mState == CANCELED) return false;
@@ -208,10 +213,15 @@ bool AsyncExecuteStatements::executeAndProcessStatement(
   return true;
 }
 
-bool AsyncExecuteStatements::executeStatement(sqlite3_stmt* aStatement) {
+bool AsyncExecuteStatements::executeStatement(StatementData& aData) {
   mMutex.AssertNotCurrentThreadOwns();
   Telemetry::AutoTimer<Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_MS>
       finallySendExecutionDuration(mRequestStartDate);
+
+  sqlite3_stmt* aStatement = nullptr;
+  
+  Unused << aData.getSqliteStatement(&aStatement);
+  MOZ_DIAGNOSTIC_ASSERT(aStatement, "executeStatement called without an initialized statement");
 
   bool busyRetry = false;
   while (true) {
@@ -235,6 +245,16 @@ bool AsyncExecuteStatements::executeStatement(sqlite3_stmt* aStatement) {
     SQLiteMutexAutoLock lockedScope(mDBMutex);
 
     int rc = mConnection->stepStatement(mNativeConnection, aStatement);
+
+    
+    if (rc == SQLITE_BUSY) {
+      ::sqlite3_reset(aStatement);
+      busyRetry = true;
+      continue;
+    }
+
+    aData.MaybeRecordQueryStatus(rc);
+
     
     if (rc == SQLITE_DONE) {
       Telemetry::Accumulate(Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_SUCCESS,
@@ -247,13 +267,6 @@ bool AsyncExecuteStatements::executeStatement(sqlite3_stmt* aStatement) {
       Telemetry::Accumulate(Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_SUCCESS,
                             true);
       return true;
-    }
-
-    
-    if (rc == SQLITE_BUSY) {
-      ::sqlite3_reset(aStatement);
-      busyRetry = true;
-      continue;
     }
 
     if (rc == SQLITE_INTERRUPT) {
@@ -548,7 +561,7 @@ AsyncExecuteStatements::Run() {
       if (!bindExecuteAndProcessStatement(mStatements[i], finished)) break;
     }
     
-    else if (!executeAndProcessStatement(stmt, finished)) {
+    else if (!executeAndProcessStatement(mStatements[i], finished)) {
       break;
     }
   }
