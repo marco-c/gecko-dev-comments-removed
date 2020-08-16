@@ -115,13 +115,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-
-
-
-
-  enum class ScrollbarSizesOptions { NONE, INCLUDE_VISUAL_VIEWPORT_SCROLLBARS };
-  virtual nsMargin GetActualScrollbarSizes(
-      ScrollbarSizesOptions aOptions = ScrollbarSizesOptions::NONE) const = 0;
+  virtual nsMargin GetActualScrollbarSizes() const = 0;
   
 
 
