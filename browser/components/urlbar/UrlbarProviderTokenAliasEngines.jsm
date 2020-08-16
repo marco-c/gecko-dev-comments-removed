@@ -165,7 +165,10 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
           
           let aliasPreservingUserCase =
             token.value + alias.substr(token.value.length);
-          let value = aliasPreservingUserCase + " ";
+          
+          
+          let value =
+            aliasPreservingUserCase + (UrlbarPrefs.get("update2") ? "" : " ");
           let result = new UrlbarResult(
             UrlbarUtils.RESULT_TYPE.SEARCH,
             UrlbarUtils.RESULT_SOURCE.SEARCH,

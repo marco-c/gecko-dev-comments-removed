@@ -16,7 +16,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ReaderMode: "resource://gre/modules/ReaderMode.jsm",
-  SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   Services: "resource://gre/modules/Services.jsm",
   TopSiteAttribution: "resource:///modules/TopSiteAttribution.jsm",
   UrlbarController: "resource:///modules/UrlbarController.jsm",
@@ -424,10 +423,10 @@ class UrlbarInput {
         return;
       }
       if (selectedOneOff && this.view.oneOffsRefresh) {
-        this.view.oneOffSearchButtons.handleSearchCommand(
-          event,
-          selectedOneOff.engine || selectedOneOff.source
-        );
+        this.view.oneOffSearchButtons.handleSearchCommand(event, {
+          engineName: selectedOneOff.engine?.name,
+          source: selectedOneOff.source,
+        });
         return;
       }
     }
@@ -568,7 +567,7 @@ class UrlbarInput {
   handleRevert() {
     this.window.gBrowser.userTypedValue = null;
     this.setURI(null, true);
-    this.setSearchMode(null);
+    this.setSearchMode({});
     if (this.value && this.focused) {
       this.select();
     }
@@ -702,22 +701,29 @@ class UrlbarInput {
       }
       case UrlbarUtils.RESULT_TYPE.SEARCH: {
         if (result.payload.keywordOffer) {
-          
-          
-          
-          this.selectionStart = this.selectionEnd = this.value.length;
-
           this.controller.engagementEvent.record(event, {
             searchString: this._lastSearchString,
             selIndex,
             selType: "keywordoffer",
           });
 
-          
-          
-          
-          
-          this.startQuery();
+          let searchModeParams = this._searchModeForResult(result);
+          if (searchModeParams) {
+            this.setSearchMode(searchModeParams);
+            this.search("");
+          } else {
+            
+            
+            
+            this.selectionStart = this.selectionEnd = this.value.length;
+
+            
+            
+            
+            
+            this.startQuery();
+          }
+
           return;
         }
 
@@ -879,7 +885,7 @@ class UrlbarInput {
 
   onPrefChanged(changedPref) {
     if (changedPref == "update2" && !UrlbarPrefs.get("update2")) {
-      this.setSearchMode(null);
+      this.setSearchMode({});
     }
   }
 
@@ -1179,15 +1185,11 @@ class UrlbarInput {
 
 
 
-
-
-
-
-
-  setSearchMode(value) {
+  setSearchMode({ engineName, source, alternateLabel }) {
     if (!UrlbarPrefs.get("update2")) {
       
-      value = null;
+      engineName = null;
+      source = null;
     }
 
     this._searchModeIndicatorTitle.textContent = "";
@@ -1195,36 +1197,21 @@ class UrlbarInput {
     this._searchModeIndicatorTitle.removeAttribute("data-l10n-id");
     this._searchModeLabel.removeAttribute("data-l10n-id");
 
-    
-    if (!value) {
-      this.searchMode = null;
-    } else if (
-      value instanceof Ci.nsISearchEngine ||
-      value instanceof SearchEngine
-    ) {
+    if (engineName) {
       this.searchMode = {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        engineName: value.name,
+        engineName,
+        alternateLabel,
       };
-    } else if (typeof value == "number") {
-      this.searchMode = { source: value };
-    } else if (typeof value == "object") {
-      this.searchMode = value;
-    } else {
-      Cu.reportError(`Unexpected search mode value: ${value}`);
-      this.searchMode = null;
-    }
-
-    
-    if (this.searchMode?.engineName) {
-      this._searchModeIndicatorTitle.textContent = this.searchMode.engineName;
-      this._searchModeLabel.textContent = this.searchMode.engineName;
-    } else if (this.searchMode?.source) {
-      let sourceName = UrlbarUtils.getResultSourceName(this.searchMode.source);
+      this._searchModeIndicatorTitle.textContent = alternateLabel || engineName;
+      this._searchModeLabel.textContent = alternateLabel || engineName;
+    } else if (source) {
+      let sourceName = UrlbarUtils.getResultSourceName(source);
       if (!sourceName) {
-        Cu.reportError(`Unrecognized source: ${this.searchMode.source}`);
+        Cu.reportError(`Unrecognized source: ${source}`);
         this.searchMode = null;
       } else {
+        this.searchMode = { source };
         let l10nID = `urlbar-search-mode-${sourceName}`;
         this.document.l10n.setAttributes(
           this._searchModeIndicatorTitle,
@@ -1232,8 +1219,8 @@ class UrlbarInput {
         );
         this.document.l10n.setAttributes(this._searchModeLabel, l10nID);
       }
-    } else if (this.searchMode) {
-      Cu.reportError(`Unexpected search mode object: ${this.searchMode}`);
+    } else {
+      
       this.searchMode = null;
     }
 
@@ -1261,8 +1248,7 @@ class UrlbarInput {
 
   searchModeShortcut() {
     if (this.view.oneOffsRefresh) {
-      let defaultEngine = Services.search.defaultEngine;
-      this.setSearchMode(defaultEngine);
+      this.setSearchMode({ engineName: Services.search.defaultEngine.name });
       this.search("");
     } else {
       this.search(UrlbarTokenizer.RESTRICT.SEARCH);
@@ -1459,7 +1445,7 @@ class UrlbarInput {
     let searchMode = this._searchModesByBrowser.get(
       this.window.gBrowser.selectedBrowser
     );
-    this.setSearchMode(searchMode);
+    this.setSearchMode(searchMode || {});
 
     
     
@@ -1542,8 +1528,9 @@ class UrlbarInput {
         return result.payload.input;
       case UrlbarUtils.RESULT_TYPE.SEARCH:
         return (
-          (result.payload.keyword ? result.payload.keyword + " " : "") +
-          (result.payload.suggestion || result.payload.query)
+          (result.payload.keyword && !UrlbarPrefs.get("update2")
+            ? result.payload.keyword + " "
+            : "") + (result.payload.suggestion || result.payload.query)
         );
       case UrlbarUtils.RESULT_TYPE.OMNIBOX:
         return result.payload.content;
@@ -1579,7 +1566,7 @@ class UrlbarInput {
 
 
   _maybeAutofillOnInput(value) {
-    let allowAutofill = this.selectionEnd == value.length;
+    let allowAutofill = this.selectionEnd == value.length && !this.searchMode;
 
     
     
@@ -1988,7 +1975,7 @@ class UrlbarInput {
     
     browser.focus();
 
-    this.setSearchMode(null);
+    this.setSearchMode({});
 
     if (openUILinkWhere != "current") {
       this.handleRevert();
@@ -2132,6 +2119,37 @@ class UrlbarInput {
 
 
 
+
+
+
+
+  _searchModeForResult(result) {
+    if (!UrlbarPrefs.get("update2")) {
+      return null;
+    }
+
+    
+    
+    if (
+      result &&
+      result.payload.keywordOffer &&
+      (!result.payload.originalEngine ||
+        result.payload.engine == result.payload.originalEngine)
+    ) {
+      let params = { engineName: result.payload.engine };
+      if (result.payload.keyword && !result.payload.keyword.startsWith("@")) {
+        params.alternateLabel = result.payload.keyword;
+      }
+      return params;
+    }
+
+    return null;
+  }
+
+  
+
+
+
   _maybeSelectAll() {
     if (
       !this._preventClickSelectsAll &&
@@ -2222,7 +2240,7 @@ class UrlbarInput {
     }
 
     if (event.target == this._searchModeIndicatorClose && event.button != 2) {
-      this.setSearchMode(null);
+      this.setSearchMode({});
       if (this.view.isOpen) {
         this.startQuery({
           event,
@@ -2357,6 +2375,23 @@ class UrlbarInput {
   }
 
   _on_input(event) {
+    
+    
+    let searchModeParams;
+    if (event.data == " ") {
+      let result = this.view.selectedResult;
+      searchModeParams = this._searchModeForResult(result);
+      if (
+        searchModeParams &&
+        this.value.trim() == result.payload.keyword.trim()
+      ) {
+        this.setSearchMode(searchModeParams);
+        this.value = "";
+      } else {
+        searchModeParams = null;
+      }
+    }
+
     let value = this.value;
     this.valueIsTyped = true;
     this._untrimmedValue = value;
@@ -2393,10 +2428,13 @@ class UrlbarInput {
       !this.isPrivate &&
       UrlbarPrefs.get("suggest.topsites") &&
       !this.searchMode;
-    if (!this.view.isOpen || (!value && !canShowTopSites)) {
+    if (
+      !this.view.isOpen ||
+      (!value && !canShowTopSites && !searchModeParams)
+    ) {
       this.view.clear();
     }
-    if (!value && !canShowTopSites) {
+    if (!value && !canShowTopSites && !searchModeParams) {
       this.view.close();
       return;
     }
@@ -2429,7 +2467,7 @@ class UrlbarInput {
     this.startQuery({
       searchString: value,
       allowAutofill,
-      resetSearchState: !!this.searchMode,
+      resetSearchState: false,
       event,
     });
   }

@@ -162,14 +162,14 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
-  handleSearchCommand(event, engineOrSource, forceNewTab = false) {
+  handleSearchCommand(event, searchMode, forceNewTab = false) {
     if (!this.view.oneOffsRefresh) {
       let { where, params } = this._whereToOpen(event, forceNewTab);
       this.input.handleCommand(event, where, params);
       return;
     }
 
-    this.input.setSearchMode(engineOrSource);
+    this.input.setSearchMode(searchMode);
     this.selectedButton = null;
     this.input.startQuery({
       allowAutofill: false,
@@ -267,11 +267,13 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     }
 
     let button = event.originalTarget;
-    let engineOrSource = button.engine || button.source;
-    if (!engineOrSource) {
+    if (!button.engine && !button.source) {
       return;
     }
 
-    this.handleSearchCommand(event, engineOrSource);
+    this.handleSearchCommand(event, {
+      engineName: button.engine?.name,
+      source: button.source,
+    });
   }
 }
