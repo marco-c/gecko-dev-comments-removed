@@ -76,18 +76,20 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
   
   if (!target->zone()->keepDuringJob(target)) {
+    ReportOutOfMemory(cx);
     return false;
   };
-
-  
-  weakRef->setPrivateGCThing(target);
 
   
   
   gc::GCRuntime* gc = &cx->runtime()->gc;
   if (!gc->registerWeakRef(target, wrappedWeakRef)) {
+    ReportOutOfMemory(cx);
     return false;
   };
+
+  
+  weakRef->setPrivateGCThing(target);
 
   
   args.rval().setObject(*weakRef);
