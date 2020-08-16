@@ -318,19 +318,19 @@
       let tabArgument = gBrowserInit.getTabToAdopt();
 
       
-      let initialBrowsingContextGroupId;
-      let sameProcessAsFrameLoader;
+      
+      
       
       
       
       
       
       let remoteType;
+      let initialBrowsingContextGroupId;
       if (tabArgument && tabArgument.linkedBrowser) {
         remoteType = tabArgument.linkedBrowser.remoteType;
         initialBrowsingContextGroupId =
           tabArgument.linkedBrowser.browsingContext?.group.id;
-        sameProcessAsFrameLoader = tabArgument.linkedBrowser.frameLoader;
       } else if (openWindowInfo) {
         userContextId = openWindowInfo.originAttributes.userContextId;
         if (openWindowInfo.isRemote) {
@@ -366,7 +366,6 @@
       let createOptions = {
         uriIsAboutBlank: false,
         userContextId,
-        sameProcessAsFrameLoader,
         initialBrowsingContextGroupId,
         remoteType,
         openWindowInfo,
@@ -1583,7 +1582,6 @@
         aForceNotRemote = params.forceNotRemote;
         aPreferredRemoteType = params.preferredRemoteType;
         aUserContextId = params.userContextId;
-        aSameProcessAsFrameLoader = params.sameProcessAsFrameLoader;
         aInitialBrowsingContextGroupId = params.initialBrowsingContextGroupId;
         aOriginPrincipal = params.originPrincipal;
         aOriginStoragePrincipal = params.originStoragePrincipal;
@@ -1627,7 +1625,6 @@
         userContextId: aUserContextId,
         originPrincipal: aOriginPrincipal,
         originStoragePrincipal: aOriginStoragePrincipal,
-        sameProcessAsFrameLoader: aSameProcessAsFrameLoader,
         initialBrowsingContextGroupId: aInitialBrowsingContextGroupId,
         openWindowInfo: aOpenWindowInfo,
         openerBrowser: aOpenerBrowser,
@@ -1821,7 +1818,6 @@
       listener.destroy();
 
       let oldDroppedLinkHandler = aBrowser.droppedLinkHandler;
-      let oldSameProcessAsFrameLoader = aBrowser.sameProcessAsFrameLoader;
       let oldUserTypedValue = aBrowser.userTypedValue;
       let hadStartedLoad = aBrowser.didStartLoadSinceLastUserTyping();
 
@@ -1829,14 +1825,6 @@
 
       
       aBrowser.destroy();
-
-      
-      
-      if (!shouldBeRemote || oldRemoteType == remoteType) {
-        
-        
-        aBrowser.sameProcessAsFrameLoader = oldSameProcessAsFrameLoader;
-      }
 
       if (shouldBeRemote) {
         aBrowser.setAttribute("remote", "true");
@@ -1971,7 +1959,6 @@
       name,
       openWindowInfo,
       remoteType,
-      sameProcessAsFrameLoader,
       initialBrowsingContextGroupId,
       uriIsAboutBlank,
       userContextId,
@@ -2031,10 +2018,6 @@
 
       if (isPreloadBrowser) {
         b.setAttribute("preloadedState", "preloaded");
-      }
-
-      if (sameProcessAsFrameLoader) {
-        b.sameProcessAsFrameLoader = sameProcessAsFrameLoader;
       }
 
       
@@ -2458,7 +2441,6 @@
         preferredRemoteType,
         referrerInfo,
         relatedToCurrent,
-        sameProcessAsFrameLoader,
         initialBrowsingContextGroupId,
         skipAnimation,
         skipBackgroundNotify,
@@ -2633,10 +2615,6 @@
               gFissionBrowser,
               preferredRemoteType
             );
-        if (sameProcessAsFrameLoader) {
-          remoteType =
-            sameProcessAsFrameLoader.browsingContext.currentRemoteType;
-        }
 
         
         
@@ -2653,7 +2631,6 @@
             remoteType,
             uriIsAboutBlank,
             userContextId,
-            sameProcessAsFrameLoader,
             initialBrowsingContextGroupId,
             openWindowInfo,
             name,
@@ -4439,7 +4416,6 @@
       let params = {
         eventDetail: { adoptedTab: aTab },
         preferredRemoteType: linkedBrowser.remoteType,
-        sameProcessAsFrameLoader: linkedBrowser.frameLoader,
         initialBrowsingContextGroupId: linkedBrowser.browsingContext?.group.id,
         skipAnimation: true,
         index: aIndex,

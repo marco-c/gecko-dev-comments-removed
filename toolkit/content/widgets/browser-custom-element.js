@@ -207,19 +207,6 @@
 
       this._documentContentType = null;
 
-      
-
-
-
-
-
-
-
-
-      if (this.mInitialized) {
-        this._sameProcessAsFrameLoader = null;
-      }
-
       this._loadContext = null;
 
       this._webBrowserFind = null;
@@ -355,16 +342,6 @@
           this.contentDocument.documentContentType = aContentType;
         }
       }
-    }
-
-    set sameProcessAsFrameLoader(val) {
-      this._sameProcessAsFrameLoader = Cu.getWeakReference(val);
-    }
-
-    get sameProcessAsFrameLoader() {
-      return (
-        this._sameProcessAsFrameLoader && this._sameProcessAsFrameLoader.get()
-      );
     }
 
     get loadContext() {
