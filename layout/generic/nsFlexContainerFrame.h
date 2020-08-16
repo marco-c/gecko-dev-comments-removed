@@ -75,6 +75,33 @@ struct ComputedFlexContainerInfo {
 
 
 
+class MOZ_STACK_CLASS FlexboxAxisInfo final {
+ public:
+  explicit FlexboxAxisInfo(const nsIFrame* aFlexContainer);
+
+  
+  bool mIsRowOriented = true;
+
+  
+  
+  bool mIsMainAxisReversed = false;
+
+  
+  
+  bool mIsCrossAxisReversed = false;
+
+ private:
+  
+  
+  
+  
+  void InitAxesFromLegacyProps(const nsIFrame* aFlexContainer);
+  void InitAxesFromModernProps(const nsIFrame* aFlexContainer);
+};
+
+
+
+
 
 
 
