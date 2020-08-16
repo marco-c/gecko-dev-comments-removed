@@ -21,6 +21,7 @@ class nsIPrincipal;
 
 namespace mozilla {
 class BlobURLsReporter;
+class OriginAttributes;
 
 namespace dom {
 
@@ -44,10 +45,16 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
 
   
   
-  static nsresult AddDataEntry(BlobImpl*, nsIPrincipal*, nsACString& aUri);
-  static nsresult AddDataEntry(MediaSource*, nsIPrincipal*, nsACString& aUri);
+  static nsresult AddDataEntry(BlobImpl*, nsIPrincipal*,
+                               const Maybe<nsID>& aAgentClusterId,
+                               nsACString& aUri);
+  static nsresult AddDataEntry(MediaSource*, nsIPrincipal*,
+                               const Maybe<nsID>& aAgentClusterId,
+                               nsACString& aUri);
   
-  static void AddDataEntry(const nsACString& aURI, nsIPrincipal*, BlobImpl*);
+  static void AddDataEntry(const nsACString& aURI, nsIPrincipal* aPrincipal,
+                           const Maybe<nsID>& aAgentClusterId,
+                           BlobImpl* aBlobImpl);
 
   
   
@@ -58,6 +65,13 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   static void RemoveDataEntries();
 
   static bool HasDataEntry(const nsACString& aUri);
+
+  static bool GetDataEntry(const nsACString& aUri, BlobImpl** aBlobImpl,
+                           nsIPrincipal* aLoadingPrincipal,
+                           nsIPrincipal* aTriggeringPrincipal,
+                           const OriginAttributes& aOriginAttributes,
+                           const Maybe<nsID>& blobAgentClusterId,
+                           bool aAlsoIfRevoked = false);
 
   static nsIPrincipal* GetDataEntryPrincipal(const nsACString& aUri,
                                              bool aAlsoIfRevoked = false);
@@ -70,8 +84,8 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   
   
   static bool ForEachBlobURL(
-      std::function<bool(BlobImpl*, nsIPrincipal*, const nsACString&,
-                         bool aRevoked)>&& aCb);
+      std::function<bool(BlobImpl*, nsIPrincipal*, const Maybe<nsID>&,
+                         const nsACString&, bool aRevoked)>&& aCb);
 
   
   
