@@ -553,14 +553,34 @@ var FormAutofillContent = {
     }
 
     records.creditCard.forEach(record => {
-      let totalCount = handler.form.elements.length;
-      let autofilledCount = Object.keys(record.record).length;
-      let unmodifiedCount = record.untouchedFields.length;
-      const extra = {
-        fields_not_auto: (totalCount - autofilledCount).toString(),
-        fields_auto: autofilledCount.toString(),
-        fields_modified: (autofilledCount - unmodifiedCount).toString(),
+      let extra = {
+        
+        fields_not_auto: "0",
+        
+        fields_auto: "0",
+        
+        fields_modified: "0",
       };
+
+      if (record.guid !== null) {
+        
+        
+        
+        let totalCount = handler.form.elements.length;
+        let autofilledCount = Object.keys(record.record).length;
+        let unmodifiedCount = record.untouchedFields.length;
+
+        extra.fields_not_auto = (totalCount - autofilledCount).toString();
+        extra.fields_auto = autofilledCount.toString();
+        extra.fields_modified = (autofilledCount - unmodifiedCount).toString();
+      } else {
+        
+        
+        extra.fields_not_auto = Array.from(handler.form.elements)
+          .filter(element => !!element.value.trim().length)
+          .length.toString();
+      }
+
       Services.telemetry.recordEvent(
         "creditcard",
         "submitted",
