@@ -2693,8 +2693,10 @@ nsresult nsPrintJob::FinishPrintPreview() {
 
 #ifdef NS_PRINT_PREVIEW
 
-  if (!mPrt) {
-    
+  
+  
+  
+  if (!mPrt || !mIsCreatingPrintPreview) {
     return rv;
   }
 
