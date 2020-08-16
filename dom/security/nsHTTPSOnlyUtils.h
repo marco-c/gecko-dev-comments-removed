@@ -70,7 +70,8 @@ class nsHTTPSOnlyUtils {
 
 
 
-  static bool TestHttpsOnlySitePermission(nsIPrincipal* aPrincipal);
+  static void TestSitePermissionAndPotentiallyAddExemption(
+      nsIChannel* aChannel);
 
  private:
   

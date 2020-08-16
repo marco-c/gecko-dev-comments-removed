@@ -9183,23 +9183,6 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
     aLoadInfo->SetIsFormSubmission(true);
   }
 
-  
-  
-  
-  bool isPrivateWin = attrs.mPrivateBrowsingId > 0;
-  if (nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin)) {
-    
-    
-    nsCOMPtr<nsIPrincipal> permissionPrincipal =
-        BasePrincipal::CreateContentPrincipal(aLoadState->URI(), attrs);
-
-    if (nsHTTPSOnlyUtils::TestHttpsOnlySitePermission(permissionPrincipal)) {
-      uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
-      httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
-      aLoadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
-    }
-  }
-
   nsCOMPtr<nsIChannel> channel;
   aRv = CreateRealChannelForDocument(getter_AddRefs(channel), aLoadState->URI(),
                                      aLoadInfo, aCallbacks, aLoadFlags, srcdoc,
@@ -9209,6 +9192,11 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
   if (!channel) {
     return false;
   }
+
+  
+  
+  
+  nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(channel);
 
   if (nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
           do_QueryInterface(channel)) {
