@@ -1138,18 +1138,23 @@ nsresult HTMLEditor::RemoveStyleInside(Element& aElement, nsAtom* aProperty,
   if (CSSEditUtils::IsCSSEditableProperty(&aElement, aProperty, aAttribute) &&
       CSSEditUtils::HaveSpecifiedCSSEquivalentStyles(aElement, aProperty,
                                                      aAttribute)) {
-    
-    nsresult rv = mCSSEditUtils->RemoveCSSEquivalentToHTMLStyle(
-        &aElement, aProperty, aAttribute, nullptr, false);
-    if (rv == NS_ERROR_EDITOR_DESTROYED) {
-      NS_WARNING(
-          "CSSEditUtils::RemoveCSSEquivalentToHTMLStyle() destroyed the "
-          "editor");
-      return NS_ERROR_EDITOR_DESTROYED;
+    if (nsCOMPtr<nsStyledElement> styledElement =
+            do_QueryInterface(&aElement)) {
+      
+      nsresult rv =
+          mCSSEditUtils->RemoveCSSEquivalentToHTMLStyleWithTransaction(
+              *styledElement, aProperty, aAttribute, nullptr);
+      if (rv == NS_ERROR_EDITOR_DESTROYED) {
+        NS_WARNING(
+            "CSSEditUtils::RemoveCSSEquivalentToHTMLStyleWithTransaction() "
+            "destroyed the editor");
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "CSSEditUtils::RemoveCSSEquivalentToHTMLStyleWithTransaction() "
+          "failed, but ignored");
     }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "CSSEditUtils::RemoveCSSEquivalentToHTMLStyle() failed, but ignored");
     
     
     if (aElement.IsAnyOfHTMLElements(nsGkAtoms::span, nsGkAtoms::font) &&

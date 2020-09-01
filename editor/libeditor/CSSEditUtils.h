@@ -269,11 +269,21 @@ class CSSEditUtils final {
 
 
 
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveCSSEquivalentToHTMLStyle(
-      dom::Element* aElement, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-      const nsAString* aValue, bool aSuppressTransaction);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveCSSEquivalentToHTMLStyleWithTransaction(nsStyledElement& aStyledElement,
+                                                nsAtom* aHTMLProperty,
+                                                nsAtom* aAttribute,
+                                                const nsAString* aValue) {
+    return RemoveCSSEquivalentToHTMLStyleInternal(aStyledElement, aHTMLProperty,
+                                                  aAttribute, aValue, false);
+  }
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveCSSEquivalentToHTMLStyleWithoutTransaction(
+      nsStyledElement& aStyledElement, nsAtom* aHTMLProperty,
+      nsAtom* aAttribute, const nsAString* aValue) {
+    return RemoveCSSEquivalentToHTMLStyleInternal(aStyledElement, aHTMLProperty,
+                                                  aAttribute, aValue, true);
+  }
 
   
 
@@ -409,6 +419,12 @@ class CSSEditUtils final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveCSSPropertyInternal(
       nsStyledElement& aStyledElement, nsAtom& aProperty,
       const nsAString& aPropertyValue, bool aSuppressTxn = false);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveCSSEquivalentToHTMLStyleInternal(nsStyledElement& aStyledElement,
+                                         nsAtom* aHTMLProperty,
+                                         nsAtom* aAttribute,
+                                         const nsAString* aValue,
+                                         bool aSuppressTransaction);
 
  private:
   HTMLEditor* mHTMLEditor;
