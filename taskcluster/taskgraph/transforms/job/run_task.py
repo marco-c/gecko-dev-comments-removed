@@ -54,7 +54,7 @@ run_task_schema = Schema({
     Required('command'): Any([taskref_or_string], taskref_or_string),
 
     
-    Optional('workdir'): text_type,
+    Required('workdir'): text_type,
 
     
     
