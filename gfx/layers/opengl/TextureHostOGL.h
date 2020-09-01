@@ -450,6 +450,11 @@ class SurfaceTextureHost : public TextureHost {
                         const Range<wr::ImageKey>& aImageKeys,
                         const bool aPreferCompositorSurface) override;
 
+  
+  
+  
+  bool NeedsDeferredDeletion() const override { return false; }
+
  protected:
   bool EnsureAttached();
 
@@ -527,6 +532,10 @@ class AndroidHardwareBufferTextureHost : public TextureHost {
   AndroidHardwareBuffer* GetAndroidHardwareBuffer() const override {
     return mAndroidHardwareBuffer;
   }
+
+  
+  
+  bool NeedsDeferredDeletion() const override { return false; }
 
  protected:
   void DestroyEGLImage();
