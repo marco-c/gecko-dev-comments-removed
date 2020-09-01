@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 XPIDL_MODULE = 'content_geckomediaplugins'
 
@@ -19,6 +19,7 @@ EXPORTS += [
     'gmp-api/gmp-entrypoints.h',
     'gmp-api/gmp-errors.h',
     'gmp-api/gmp-platform.h',
+    'gmp-api/gmp-sanitized-cdm-exports.h',
     'gmp-api/gmp-storage.h',
     'gmp-api/gmp-video-codec.h',
     'gmp-api/gmp-video-decode.h',
@@ -125,13 +126,13 @@ IPDL_SOURCES += [
 if CONFIG['OS_TARGET'] in ['WINNT', 'Darwin']:
     DEFINES['SUPPORT_STORAGE_ID'] = 1;
 
-# comment this out to use Unsafe Shmem for more performance
+
 DEFINES['GMP_SAFE_SHMEM'] = True
 
 include('/ipc/chromium/chromium-config.mozbuild')
 
 if CONFIG['MOZ_SANDBOX']:
-    # For sandbox includes and the include dependencies those have
+    
     LOCAL_INCLUDES += [
         '/security/sandbox/chromium',
         '/security/sandbox/chromium-shim',
@@ -139,7 +140,7 @@ if CONFIG['MOZ_SANDBOX']:
 
 
 FINAL_LIBRARY = 'xul'
-# media/mtransport so we work with --disable-webrtc
+
 LOCAL_INCLUDES += [
     '/media/mtransport',
     '/xpcom/base',

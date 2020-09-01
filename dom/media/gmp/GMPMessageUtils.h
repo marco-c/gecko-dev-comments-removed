@@ -6,14 +6,7 @@
 #ifndef GMPMessageUtils_h_
 #define GMPMessageUtils_h_
 
-
-
-
-#ifdef Status
-#  undef Status
-#endif
-
-#include "content_decryption_module.h"
+#include "gmp-sanitized-cdm-exports.h"
 #include "gmp-video-codec.h"
 #include "gmp-video-frame-encoded.h"
 #include "IPCMessageUtils.h"
