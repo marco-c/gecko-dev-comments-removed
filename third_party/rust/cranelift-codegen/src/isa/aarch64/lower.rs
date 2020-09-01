@@ -7,10 +7,11 @@
 
 
 
+use crate::ir;
 use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::types::*;
 use crate::ir::Inst as IRInst;
-use crate::ir::{AtomicRmwOp, InstructionData, Opcode, TrapCode, Type};
+use crate::ir::{InstructionData, Opcode, TrapCode, Type};
 use crate::machinst::lower::*;
 use crate::machinst::*;
 use crate::CodegenResult;
@@ -349,13 +350,52 @@ fn put_input_in_rse<C: LowerCtx<I = Inst>>(
         let out_bits = ty_bits(out_ty);
 
         
+        if op == Opcode::Uextend || op == Opcode::Sextend {
+            let sign_extend = op == Opcode::Sextend;
+            let inner_ty = ctx.input_ty(insn, 0);
+            let inner_bits = ty_bits(inner_ty);
+            assert!(inner_bits < out_bits);
+            if match (sign_extend, narrow_mode) {
+                
+                (_, NarrowValueMode::None) => true,
+                
+                (false, NarrowValueMode::ZeroExtend32) | (false, NarrowValueMode::ZeroExtend64) => {
+                    true
+                }
+                (true, NarrowValueMode::SignExtend32) | (true, NarrowValueMode::SignExtend64) => {
+                    true
+                }
+                
+                (false, NarrowValueMode::SignExtend32) | (false, NarrowValueMode::SignExtend64) => {
+                    false
+                }
+                (true, NarrowValueMode::ZeroExtend32) | (true, NarrowValueMode::ZeroExtend64) => {
+                    false
+                }
+            } {
+                let extendop = match (sign_extend, inner_bits) {
+                    (true, 8) => ExtendOp::SXTB,
+                    (false, 8) => ExtendOp::UXTB,
+                    (true, 16) => ExtendOp::SXTH,
+                    (false, 16) => ExtendOp::UXTH,
+                    (true, 32) => ExtendOp::SXTW,
+                    (false, 32) => ExtendOp::UXTW,
+                    _ => unreachable!(),
+                };
+                let reg =
+                    put_input_in_reg(ctx, InsnInput { insn, input: 0 }, NarrowValueMode::None);
+                return ResultRSE::RegExtend(reg, extendop);
+            }
+        }
+
+        
         
         
         if narrow_mode != NarrowValueMode::None
             && ((narrow_mode.is_32bit() && out_bits < 32)
                 || (!narrow_mode.is_32bit() && out_bits < 64))
         {
-            let reg = put_input_in_reg(ctx, InsnInput { insn, input: 0 }, NarrowValueMode::None);
+            let reg = put_input_in_reg(ctx, input, NarrowValueMode::None);
             let extendop = match (narrow_mode, out_bits) {
                 (NarrowValueMode::SignExtend32, 1) | (NarrowValueMode::SignExtend64, 1) => {
                     ExtendOp::SXTB
@@ -379,28 +419,6 @@ fn put_input_in_rse<C: LowerCtx<I = Inst>>(
                 (NarrowValueMode::ZeroExtend64, 32) => ExtendOp::UXTW,
                 _ => unreachable!(),
             };
-            return ResultRSE::RegExtend(reg, extendop);
-        }
-
-        
-        if op == Opcode::Uextend || op == Opcode::Sextend {
-            assert!(out_bits == 32 || out_bits == 64);
-            let sign_extend = op == Opcode::Sextend;
-            let inner_ty = ctx.input_ty(insn, 0);
-            let inner_bits = ty_bits(inner_ty);
-            assert!(inner_bits < out_bits);
-            let extendop = match (sign_extend, inner_bits) {
-                (true, 1) => ExtendOp::SXTB,
-                (false, 1) => ExtendOp::UXTB,
-                (true, 8) => ExtendOp::SXTB,
-                (false, 8) => ExtendOp::UXTB,
-                (true, 16) => ExtendOp::SXTH,
-                (false, 16) => ExtendOp::UXTH,
-                (true, 32) => ExtendOp::SXTW,
-                (false, 32) => ExtendOp::UXTW,
-                _ => unreachable!(),
-            };
-            let reg = put_input_in_reg(ctx, InsnInput { insn, input: 0 }, NarrowValueMode::None);
             return ResultRSE::RegExtend(reg, extendop);
         }
     }
@@ -1050,7 +1068,7 @@ pub(crate) fn inst_trapcode(data: &InstructionData) -> Option<TrapCode> {
     }
 }
 
-pub(crate) fn inst_atomic_rmw_op(data: &InstructionData) -> Option<AtomicRmwOp> {
+pub(crate) fn inst_atomic_rmw_op(data: &InstructionData) -> Option<ir::AtomicRmwOp> {
     match data {
         &InstructionData::AtomicRmw { op, .. } => Some(op),
         _ => None,

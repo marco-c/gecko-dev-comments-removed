@@ -380,6 +380,8 @@ pub enum SseOpcode {
     Movaps,
     Movapd,
     Movd,
+    Movdqa,
+    Movdqu,
     Movq,
     Movss,
     Movsd,
@@ -395,6 +397,9 @@ pub enum SseOpcode {
     Paddd,
     Paddq,
     Paddw,
+    Pmulld,
+    Pmullw,
+    Pmuludq,
     Psllw,
     Pslld,
     Psllq,
@@ -484,6 +489,8 @@ impl SseOpcode {
             | SseOpcode::Movq
             | SseOpcode::Movsd
             | SseOpcode::Movupd
+            | SseOpcode::Movdqa
+            | SseOpcode::Movdqu
             | SseOpcode::Mulpd
             | SseOpcode::Mulsd
             | SseOpcode::Orpd
@@ -491,6 +498,8 @@ impl SseOpcode {
             | SseOpcode::Paddd
             | SseOpcode::Paddq
             | SseOpcode::Paddw
+            | SseOpcode::Pmullw
+            | SseOpcode::Pmuludq
             | SseOpcode::Psllw
             | SseOpcode::Pslld
             | SseOpcode::Psllq
@@ -510,7 +519,9 @@ impl SseOpcode {
             | SseOpcode::Ucomisd
             | SseOpcode::Xorpd => SSE2,
 
-            SseOpcode::Insertps | SseOpcode::Roundss | SseOpcode::Roundsd => SSE41,
+            SseOpcode::Insertps | SseOpcode::Pmulld | SseOpcode::Roundss | SseOpcode::Roundsd => {
+                SSE41
+            }
         }
     }
 
@@ -564,6 +575,8 @@ impl fmt::Debug for SseOpcode {
             SseOpcode::Movaps => "movaps",
             SseOpcode::Movapd => "movapd",
             SseOpcode::Movd => "movd",
+            SseOpcode::Movdqa => "movdqa",
+            SseOpcode::Movdqu => "movdqu",
             SseOpcode::Movq => "movq",
             SseOpcode::Movss => "movss",
             SseOpcode::Movsd => "movsd",
@@ -579,6 +592,9 @@ impl fmt::Debug for SseOpcode {
             SseOpcode::Paddd => "paddd",
             SseOpcode::Paddq => "paddq",
             SseOpcode::Paddw => "paddw",
+            SseOpcode::Pmulld => "pmulld",
+            SseOpcode::Pmullw => "pmullw",
+            SseOpcode::Pmuludq => "pmuludq",
             SseOpcode::Psllw => "psllw",
             SseOpcode::Pslld => "pslld",
             SseOpcode::Psllq => "psllq",
@@ -616,6 +632,16 @@ impl fmt::Display for SseOpcode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }
+}
+
+
+
+
+#[derive(Clone, PartialEq)]
+pub enum ExtKind {
+    None,
+    SignExtend,
+    ZeroExtend,
 }
 
 
@@ -823,7 +849,7 @@ impl CC {
             FloatCC::Ordered => CC::NP,
             FloatCC::Unordered => CC::P,
             
-            FloatCC::NotEqual | FloatCC::OrderedNotEqual => CC::NZ,
+            FloatCC::OrderedNotEqual => CC::NZ,
             
             FloatCC::UnorderedOrEqual => CC::Z,
             
@@ -833,12 +859,14 @@ impl CC {
             FloatCC::UnorderedOrLessThan => CC::B,
             FloatCC::UnorderedOrLessThanOrEqual => CC::BE,
             FloatCC::Equal
+            | FloatCC::NotEqual
             | FloatCC::LessThan
             | FloatCC::LessThanOrEqual
             | FloatCC::UnorderedOrGreaterThan
-            | FloatCC::UnorderedOrGreaterThanOrEqual => {
-                panic!("No single condition code to guarantee ordered. Treat as special case.")
-            }
+            | FloatCC::UnorderedOrGreaterThanOrEqual => panic!(
+                "{:?} can't be lowered to a CC code; treat as special case.",
+                floatcc
+            ),
         }
     }
 
@@ -983,4 +1011,15 @@ impl OperandSize {
             Self::Size64 => 64,
         }
     }
+}
+
+
+#[derive(Clone)]
+pub enum FenceKind {
+    
+    MFence,
+    
+    LFence,
+    
+    SFence,
 }

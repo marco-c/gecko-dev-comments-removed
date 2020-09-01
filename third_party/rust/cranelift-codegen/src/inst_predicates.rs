@@ -42,8 +42,10 @@ pub fn has_side_effect(func: &Function, inst: Inst) -> bool {
 }
 
 
-pub fn has_side_effect_or_load(func: &Function, inst: Inst) -> bool {
-    has_side_effect(func, inst) || func.dfg[inst].opcode().can_load()
+
+pub fn has_lowering_side_effect(func: &Function, inst: Inst) -> bool {
+    let op = func.dfg[inst].opcode();
+    op != Opcode::GetPinnedReg && (has_side_effect(func, inst) || op.can_load())
 }
 
 

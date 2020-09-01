@@ -2,6 +2,7 @@
 
 #![allow(non_snake_case)]
 
+use crate::ir;
 use crate::ir::{
     condcodes::FloatCC, condcodes::IntCC, types, AbiParam, ArgumentPurpose, ExternalName,
     Inst as IRInst, InstructionData, LibCall, Opcode, Signature, TrapCode, Type,
@@ -45,6 +46,14 @@ fn is_bool_ty(ty: Type) -> bool {
     }
 }
 
+
+fn is_valid_atomic_transaction_ty(ty: Type) -> bool {
+    match ty {
+        types::I8 | types::I16 | types::I32 | types::I64 => true,
+        _ => false,
+    }
+}
+
 fn iri_to_u64_imm(ctx: Ctx, inst: IRInst) -> Option<u64> {
     ctx.get_constant(inst)
 }
@@ -72,12 +81,19 @@ fn inst_condcode(data: &InstructionData) -> IntCC {
     }
 }
 
-fn inst_fp_condcode(data: &InstructionData) -> Option<FloatCC> {
+fn inst_fp_condcode(data: &InstructionData) -> FloatCC {
     match data {
         &InstructionData::BranchFloat { cond, .. }
         | &InstructionData::FloatCompare { cond, .. }
         | &InstructionData::FloatCond { cond, .. }
-        | &InstructionData::FloatCondTrap { cond, .. } => Some(cond),
+        | &InstructionData::FloatCondTrap { cond, .. } => cond,
+        _ => panic!("inst_fp_condcode(x64): unhandled: {:?}", data),
+    }
+}
+
+fn inst_atomic_rmw_op(data: &InstructionData) -> Option<ir::AtomicRmwOp> {
+    match data {
+        &InstructionData::AtomicRmw { op, .. } => Some(op),
         _ => None,
     }
 }
@@ -108,23 +124,37 @@ struct InsnOutput {
     output: usize,
 }
 
-fn matches_input<C: LowerCtx<I = Inst>>(c: &mut C, input: InsnInput, op: Opcode) -> Option<IRInst> {
-    let inputs = c.get_input(input.insn, input.input);
-    if let Some((src_inst, _)) = inputs.inst {
-        let data = c.data(src_inst);
+
+
+
+fn matches_input<C: LowerCtx<I = Inst>>(
+    ctx: &mut C,
+    input: InsnInput,
+    op: Opcode,
+) -> Option<IRInst> {
+    let inputs = ctx.get_input(input.insn, input.input);
+    inputs.inst.and_then(|(src_inst, _)| {
+        let data = ctx.data(src_inst);
         if data.opcode() == op {
             return Some(src_inst);
         }
-    }
-    None
+        None
+    })
 }
+
+fn lowerinput_to_reg(ctx: Ctx, input: LowerInput) -> Reg {
+    ctx.use_input_reg(input);
+    input.reg
+}
+
 
 fn input_to_reg(ctx: Ctx, spec: InsnInput) -> Reg {
-    let inputs = ctx.get_input(spec.insn, spec.input);
-    ctx.use_input_reg(inputs);
-    inputs.reg
+    let input = ctx.get_input(spec.insn, spec.input);
+    lowerinput_to_reg(ctx, input)
 }
 
+
+#[derive(Clone, Copy)]
 enum ExtSpec {
     ZeroExtendTo32,
     ZeroExtendTo64,
@@ -132,12 +162,20 @@ enum ExtSpec {
     SignExtendTo64,
 }
 
+
+
 fn extend_input_to_reg(ctx: Ctx, spec: InsnInput, ext_spec: ExtSpec) -> Reg {
     let requested_size = match ext_spec {
         ExtSpec::ZeroExtendTo32 | ExtSpec::SignExtendTo32 => 32,
         ExtSpec::ZeroExtendTo64 | ExtSpec::SignExtendTo64 => 64,
     };
     let input_size = ctx.input_ty(spec.insn, spec.input).bits();
+
+    let requested_ty = if requested_size == 32 {
+        types::I32
+    } else {
+        types::I64
+    };
 
     let ext_mode = match (input_size, requested_size) {
         (a, b) if a == b => return input_to_reg(ctx, spec),
@@ -147,12 +185,6 @@ fn extend_input_to_reg(ctx: Ctx, spec: InsnInput, ext_spec: ExtSpec) -> Reg {
         (16, 64) => ExtMode::WQ,
         (32, 64) => ExtMode::LQ,
         _ => unreachable!(),
-    };
-
-    let requested_ty = if requested_size == 32 {
-        types::I32
-    } else {
-        types::I64
     };
 
     let src = input_to_reg_mem(ctx, spec);
@@ -172,27 +204,54 @@ fn extend_input_to_reg(ctx: Ctx, spec: InsnInput, ext_spec: ExtSpec) -> Reg {
     dst.to_reg()
 }
 
-fn input_to_reg_mem(ctx: Ctx, spec: InsnInput) -> RegMem {
+fn lowerinput_to_reg_mem(ctx: Ctx, input: LowerInput) -> RegMem {
     
-    RegMem::reg(input_to_reg(ctx, spec))
+    RegMem::reg(lowerinput_to_reg(ctx, input))
+}
+
+
+
+fn input_to_reg_mem(ctx: Ctx, spec: InsnInput) -> RegMem {
+    let input = ctx.get_input(spec.insn, spec.input);
+    lowerinput_to_reg_mem(ctx, input)
+}
+
+
+
+fn lowerinput_to_sext_imm(input: LowerInput, input_ty: Type) -> Option<u32> {
+    input.constant.and_then(|x| {
+        
+        
+        
+        if input_ty.bytes() != 8 || low32_will_sign_extend_to_64(x) {
+            Some(x as u32)
+        } else {
+            None
+        }
+    })
+}
+
+fn input_to_sext_imm(ctx: Ctx, spec: InsnInput) -> Option<u32> {
+    let input = ctx.get_input(spec.insn, spec.input);
+    let input_ty = ctx.input_ty(spec.insn, spec.input);
+    lowerinput_to_sext_imm(input, input_ty)
+}
+
+fn input_to_imm(ctx: Ctx, spec: InsnInput) -> Option<u64> {
+    ctx.get_input(spec.insn, spec.input).constant
 }
 
 
 
 fn input_to_reg_mem_imm(ctx: Ctx, spec: InsnInput) -> RegMemImm {
-    let imm = ctx.get_input(spec.insn, spec.input).constant.and_then(|x| {
-        
-        
-        
-        if ctx.input_ty(spec.insn, spec.input).bytes() != 8 || low32_will_sign_extend_to_64(x) {
-            Some(x as u32)
-        } else {
-            None
-        }
-    });
-    match imm {
+    let input = ctx.get_input(spec.insn, spec.input);
+    let input_ty = ctx.input_ty(spec.insn, spec.input);
+    match lowerinput_to_sext_imm(input, input_ty) {
         Some(x) => RegMemImm::imm(x),
-        None => RegMemImm::reg(input_to_reg(ctx, spec)),
+        None => match lowerinput_to_reg_mem(ctx, input) {
+            RegMem::Reg { reg } => RegMemImm::reg(reg),
+            RegMem::Mem { addr } => RegMemImm::mem(addr),
+        },
     }
 }
 
@@ -214,19 +273,88 @@ fn emit_cmp(ctx: Ctx, insn: IRInst) {
     ctx.emit(Inst::cmp_rmi_r(ty.bytes() as u8, rhs, lhs));
 }
 
-fn emit_fcmp(ctx: Ctx, insn: IRInst) {
+
+enum FcmpSpec {
+    
+    Normal,
+
     
     
-    let input_ty = ctx.input_ty(insn, 0);
-    let op = match input_ty {
+    
+    
+    
+    
+    InvertEqual,
+}
+
+
+enum FcmpCondResult {
+    
+    Condition(CC),
+
+    
+    AndConditions(CC, CC),
+
+    
+    OrConditions(CC, CC),
+
+    
+    
+    
+    
+    InvertedEqualOrConditions(CC, CC),
+}
+
+fn emit_fcmp(ctx: Ctx, insn: IRInst, mut cond_code: FloatCC, spec: FcmpSpec) -> FcmpCondResult {
+    let (flip_operands, inverted_equal) = match cond_code {
+        FloatCC::LessThan
+        | FloatCC::LessThanOrEqual
+        | FloatCC::UnorderedOrGreaterThan
+        | FloatCC::UnorderedOrGreaterThanOrEqual => {
+            cond_code = cond_code.reverse();
+            (true, false)
+        }
+        FloatCC::Equal => {
+            let inverted_equal = match spec {
+                FcmpSpec::Normal => false,
+                FcmpSpec::InvertEqual => {
+                    cond_code = FloatCC::NotEqual; 
+                    true
+                }
+            };
+            (false, inverted_equal)
+        }
+        _ => (false, false),
+    };
+
+    
+    
+    let op = match ctx.input_ty(insn, 0) {
         types::F32 => SseOpcode::Ucomiss,
         types::F64 => SseOpcode::Ucomisd,
         _ => panic!("Bad input type to Fcmp"),
     };
+
     let inputs = &[InsnInput { insn, input: 0 }, InsnInput { insn, input: 1 }];
-    let lhs = input_to_reg(ctx, inputs[0]);
-    let rhs = input_to_reg_mem(ctx, inputs[1]);
+    let (lhs_input, rhs_input) = if flip_operands {
+        (inputs[1], inputs[0])
+    } else {
+        (inputs[0], inputs[1])
+    };
+    let lhs = input_to_reg(ctx, lhs_input);
+    let rhs = input_to_reg_mem(ctx, rhs_input);
     ctx.emit(Inst::xmm_cmp_rm_r(op, rhs, lhs));
+
+    let cond_result = match cond_code {
+        FloatCC::Equal => FcmpCondResult::AndConditions(CC::NP, CC::Z),
+        FloatCC::NotEqual if inverted_equal => {
+            FcmpCondResult::InvertedEqualOrConditions(CC::P, CC::NZ)
+        }
+        FloatCC::NotEqual if !inverted_equal => FcmpCondResult::OrConditions(CC::P, CC::NZ),
+        _ => FcmpCondResult::Condition(CC::from_floatcc(cond_code)),
+    };
+
+    cond_result
 }
 
 fn make_libcall_sig(ctx: Ctx, insn: IRInst, call_conv: CallConv, ptr_ty: Type) -> Signature {
@@ -297,6 +425,80 @@ fn emit_vm_call<C: LowerCtx<I = Inst>>(
 
 
 
+fn matches_small_constant_shift<C: LowerCtx<I = Inst>>(
+    ctx: &mut C,
+    spec: InsnInput,
+) -> Option<(InsnInput, u8)> {
+    matches_input(ctx, spec, Opcode::Ishl).and_then(|shift| {
+        match input_to_imm(
+            ctx,
+            InsnInput {
+                insn: shift,
+                input: 1,
+            },
+        ) {
+            Some(shift_amt) if shift_amt <= 3 => Some((
+                InsnInput {
+                    insn: shift,
+                    input: 0,
+                },
+                shift_amt as u8,
+            )),
+            _ => None,
+        }
+    })
+}
+
+fn lower_to_amode<C: LowerCtx<I = Inst>>(ctx: &mut C, spec: InsnInput, offset: u32) -> Amode {
+    
+    
+    if let Some(add) = matches_input(ctx, spec, Opcode::Iadd) {
+        let add_inputs = &[
+            InsnInput {
+                insn: add,
+                input: 0,
+            },
+            InsnInput {
+                insn: add,
+                input: 1,
+            },
+        ];
+
+        
+        
+        let (base, index, shift) = if let Some((shift_input, shift_amt)) =
+            matches_small_constant_shift(ctx, add_inputs[0])
+        {
+            (
+                input_to_reg(ctx, add_inputs[1]),
+                input_to_reg(ctx, shift_input),
+                shift_amt,
+            )
+        } else if let Some((shift_input, shift_amt)) =
+            matches_small_constant_shift(ctx, add_inputs[1])
+        {
+            (
+                input_to_reg(ctx, add_inputs[0]),
+                input_to_reg(ctx, shift_input),
+                shift_amt,
+            )
+        } else {
+            (
+                input_to_reg(ctx, add_inputs[0]),
+                input_to_reg(ctx, add_inputs[1]),
+                0,
+            )
+        };
+
+        return Amode::imm_reg_reg_shift(offset, base, index, shift);
+    }
+
+    let input = input_to_reg(ctx, spec);
+    Amode::imm_reg(offset, input)
+}
+
+
+
 
 
 fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
@@ -338,8 +540,6 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
         | Opcode::Band
         | Opcode::Bor
         | Opcode::Bxor => {
-            
-            
             let ty = ty.unwrap();
             if ty.lane_count() > 1 {
                 let sse_op = match op {
@@ -356,6 +556,11 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                         types::I32X4 => SseOpcode::Psubd,
                         types::I64X2 => SseOpcode::Psubq,
                         _ => panic!("Unsupported type for packed Isub instruction"),
+                    },
+                    Opcode::Imul => match ty {
+                        types::I16X8 => SseOpcode::Pmullw,
+                        types::I32X4 => SseOpcode::Pmulld,
+                        _ => panic!("Unsupported type for packed Imul instruction"),
                     },
                     _ => panic!("Unsupported packed instruction"),
                 };
@@ -377,8 +582,32 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                     Opcode::Bxor => AluRmiROpcode::Xor,
                     _ => unreachable!(),
                 };
-                let lhs = input_to_reg(ctx, inputs[0]);
-                let rhs = input_to_reg_mem_imm(ctx, inputs[1]);
+
+                let (lhs, rhs) = match op {
+                    Opcode::Iadd
+                    | Opcode::IaddIfcout
+                    | Opcode::Imul
+                    | Opcode::Band
+                    | Opcode::Bor
+                    | Opcode::Bxor => {
+                        
+                        
+                        if let Some(imm) = input_to_sext_imm(ctx, inputs[0]) {
+                            (input_to_reg(ctx, inputs[1]), RegMemImm::imm(imm))
+                        } else {
+                            (
+                                input_to_reg(ctx, inputs[0]),
+                                input_to_reg_mem_imm(ctx, inputs[1]),
+                            )
+                        }
+                    }
+                    Opcode::Isub => (
+                        input_to_reg(ctx, inputs[0]),
+                        input_to_reg_mem_imm(ctx, inputs[1]),
+                    ),
+                    _ => unreachable!(),
+                };
+
                 let dst = output_to_reg(ctx, outputs[0]);
                 ctx.emit(Inst::mov_r_r(true, lhs, dst));
                 ctx.emit(Inst::alu_rmi_r(is_64, alu_op, rhs, dst));
@@ -873,15 +1102,9 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
         }
 
         Opcode::Fcmp => {
-            let condcode = inst_fp_condcode(ctx.data(insn)).unwrap();
+            let cond_code = inst_fp_condcode(ctx.data(insn));
             let input_ty = ctx.input_ty(insn, 0);
             if !input_ty.is_vector() {
-                let op = match input_ty {
-                    types::F32 => SseOpcode::Ucomiss,
-                    types::F64 => SseOpcode::Ucomisd,
-                    _ => panic!("Bad input type to fcmp: {}", input_ty),
-                };
-
                 
                 
                 
@@ -897,71 +1120,35 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                 
                 
 
-                match condcode {
-                    FloatCC::LessThan
-                    | FloatCC::LessThanOrEqual
-                    | FloatCC::UnorderedOrGreaterThan
-                    | FloatCC::UnorderedOrGreaterThanOrEqual => {
-                        
-                        
-                        
-                        
-                        
-                        
-                        let lhs = input_to_reg_mem(ctx, inputs[0]);
-                        let rhs = input_to_reg(ctx, inputs[1]);
-                        let dst = output_to_reg(ctx, outputs[0]);
-                        ctx.emit(Inst::xmm_cmp_rm_r(op, lhs, rhs));
-                        let condcode = condcode.reverse();
-                        let cc = CC::from_floatcc(condcode);
+                let dst = output_to_reg(ctx, outputs[0]);
+
+                match emit_fcmp(ctx, insn, cond_code, FcmpSpec::Normal) {
+                    FcmpCondResult::Condition(cc) => {
                         ctx.emit(Inst::setcc(cc, dst));
                     }
-
-                    FloatCC::Equal => {
-                        
-                        
-                        let lhs = input_to_reg(ctx, inputs[0]);
-                        let rhs = input_to_reg_mem(ctx, inputs[1]);
-                        let dst = output_to_reg(ctx, outputs[0]);
-                        let tmp_gpr1 = ctx.alloc_tmp(RegClass::I64, types::I32);
-                        ctx.emit(Inst::xmm_cmp_rm_r(op, rhs, lhs));
-                        ctx.emit(Inst::setcc(CC::NP, tmp_gpr1));
-                        ctx.emit(Inst::setcc(CC::Z, dst));
+                    FcmpCondResult::AndConditions(cc1, cc2) => {
+                        let tmp = ctx.alloc_tmp(RegClass::I64, types::I32);
+                        ctx.emit(Inst::setcc(cc1, tmp));
+                        ctx.emit(Inst::setcc(cc2, dst));
                         ctx.emit(Inst::alu_rmi_r(
                             false,
                             AluRmiROpcode::And,
-                            RegMemImm::reg(tmp_gpr1.to_reg()),
+                            RegMemImm::reg(tmp.to_reg()),
                             dst,
                         ));
                     }
-
-                    FloatCC::NotEqual => {
-                        
-                        
-                        let lhs = input_to_reg(ctx, inputs[0]);
-                        let rhs = input_to_reg_mem(ctx, inputs[1]);
-                        let dst = output_to_reg(ctx, outputs[0]);
-                        let tmp_gpr1 = ctx.alloc_tmp(RegClass::I64, types::I32);
-                        ctx.emit(Inst::xmm_cmp_rm_r(op, rhs, lhs));
-                        ctx.emit(Inst::setcc(CC::P, tmp_gpr1));
-                        ctx.emit(Inst::setcc(CC::NZ, dst));
+                    FcmpCondResult::OrConditions(cc1, cc2) => {
+                        let tmp = ctx.alloc_tmp(RegClass::I64, types::I32);
+                        ctx.emit(Inst::setcc(cc1, tmp));
+                        ctx.emit(Inst::setcc(cc2, dst));
                         ctx.emit(Inst::alu_rmi_r(
                             false,
                             AluRmiROpcode::Or,
-                            RegMemImm::reg(tmp_gpr1.to_reg()),
+                            RegMemImm::reg(tmp.to_reg()),
                             dst,
                         ));
                     }
-
-                    _ => {
-                        
-                        let lhs = input_to_reg(ctx, inputs[0]);
-                        let rhs = input_to_reg_mem(ctx, inputs[1]);
-                        let dst = output_to_reg(ctx, outputs[0]);
-                        let cc = CC::from_floatcc(condcode);
-                        ctx.emit(Inst::xmm_cmp_rm_r(op, rhs, lhs));
-                        ctx.emit(Inst::setcc(cc, dst));
-                    }
+                    FcmpCondResult::InvertedEqualOrConditions(_, _) => unreachable!(),
                 }
             } else {
                 let op = match input_ty {
@@ -972,7 +1159,7 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
 
                 
                 
-                let (imm, flip) = match condcode {
+                let (imm, flip) = match cond_code {
                     FloatCC::GreaterThan => (FcmpImm::LessThan, true),
                     FloatCC::GreaterThanOrEqual => (FcmpImm::LessThanOrEqual, true),
                     FloatCC::UnorderedOrLessThan => (FcmpImm::UnorderedOrGreaterThan, true),
@@ -980,9 +1167,9 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                         (FcmpImm::UnorderedOrGreaterThanOrEqual, true)
                     }
                     FloatCC::OrderedNotEqual | FloatCC::UnorderedOrEqual => {
-                        panic!("unsupported float condition code: {}", condcode)
+                        panic!("unsupported float condition code: {}", cond_code)
                     }
-                    _ => (FcmpImm::from(condcode), false),
+                    _ => (FcmpImm::from(cond_code), false),
                 };
 
                 
@@ -1071,35 +1258,77 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
             let srcloc = ctx.srcloc(insn);
             let trap_code = inst_trapcode(ctx.data(insn)).unwrap();
 
-            let cc = if matches_input(ctx, inputs[0], Opcode::IaddIfcout).is_some() {
-                let condcode = inst_condcode(ctx.data(insn));
+            if matches_input(ctx, inputs[0], Opcode::IaddIfcout).is_some() {
+                let cond_code = inst_condcode(ctx.data(insn));
                 
                 
                 
-                CC::from_intcc(condcode)
+                let cc = CC::from_intcc(cond_code);
+
+                ctx.emit_safepoint(Inst::TrapIf {
+                    trap_code,
+                    srcloc,
+                    cc,
+                });
             } else if op == Opcode::Trapif {
-                let condcode = inst_condcode(ctx.data(insn));
-                let cc = CC::from_intcc(condcode);
+                let cond_code = inst_condcode(ctx.data(insn));
+                let cc = CC::from_intcc(cond_code);
 
                 
-                let ifcmp_insn = matches_input(ctx, inputs[0], Opcode::Ifcmp).unwrap();
-                emit_cmp(ctx, ifcmp_insn);
-                cc
+                let ifcmp = matches_input(ctx, inputs[0], Opcode::Ifcmp).unwrap();
+                emit_cmp(ctx, ifcmp);
+
+                ctx.emit_safepoint(Inst::TrapIf {
+                    trap_code,
+                    srcloc,
+                    cc,
+                });
             } else {
-                let condcode = inst_fp_condcode(ctx.data(insn)).unwrap();
-                let cc = CC::from_floatcc(condcode);
+                let cond_code = inst_fp_condcode(ctx.data(insn));
 
                 
-                let ffcmp_insn = matches_input(ctx, inputs[0], Opcode::Ffcmp).unwrap();
-                emit_fcmp(ctx, ffcmp_insn);
-                cc
-            };
+                let ffcmp = matches_input(ctx, inputs[0], Opcode::Ffcmp).unwrap();
 
-            ctx.emit_safepoint(Inst::TrapIf {
-                trap_code,
-                srcloc,
-                cc,
-            });
+                match emit_fcmp(ctx, ffcmp, cond_code, FcmpSpec::Normal) {
+                    FcmpCondResult::Condition(cc) => ctx.emit_safepoint(Inst::TrapIf {
+                        trap_code,
+                        srcloc,
+                        cc,
+                    }),
+                    FcmpCondResult::AndConditions(cc1, cc2) => {
+                        
+                        
+                        let tmp = ctx.alloc_tmp(RegClass::I64, types::I32);
+                        let tmp2 = ctx.alloc_tmp(RegClass::I64, types::I32);
+                        ctx.emit(Inst::setcc(cc1, tmp));
+                        ctx.emit(Inst::setcc(cc2, tmp2));
+                        ctx.emit(Inst::alu_rmi_r(
+                            false, 
+                            AluRmiROpcode::And,
+                            RegMemImm::reg(tmp.to_reg()),
+                            tmp2,
+                        ));
+                        ctx.emit_safepoint(Inst::TrapIf {
+                            trap_code,
+                            srcloc,
+                            cc: CC::NZ,
+                        });
+                    }
+                    FcmpCondResult::OrConditions(cc1, cc2) => {
+                        ctx.emit_safepoint(Inst::TrapIf {
+                            trap_code,
+                            srcloc,
+                            cc: cc1,
+                        });
+                        ctx.emit_safepoint(Inst::TrapIf {
+                            trap_code,
+                            srcloc,
+                            cc: cc2,
+                        });
+                    }
+                    FcmpCondResult::InvertedEqualOrConditions(_, _) => unreachable!(),
+                };
+            };
         }
 
         Opcode::F64const => {
@@ -1588,7 +1817,7 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                 _ => false,
             };
 
-            let addr = match op {
+            let amode = match op {
                 Opcode::Load
                 | Opcode::Uload8
                 | Opcode::Sload8
@@ -1597,8 +1826,7 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                 | Opcode::Uload32
                 | Opcode::Sload32 => {
                     assert_eq!(inputs.len(), 1, "only one input for load operands");
-                    let base = input_to_reg(ctx, inputs[0]);
-                    Amode::imm_reg(offset as u32, base)
+                    lower_to_amode(ctx, inputs[0], offset as u32)
                 }
 
                 Opcode::LoadComplex
@@ -1632,7 +1860,7 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                     
                     ctx.emit(Inst::movsx_rm_r(
                         ext_mode.unwrap(),
-                        RegMem::mem(addr),
+                        RegMem::mem(amode),
                         dst,
                         srcloc,
                     ));
@@ -1640,12 +1868,12 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                 (false, false) => {
                     if elem_ty.bytes() == 8 {
                         
-                        ctx.emit(Inst::mov64_m_r(addr, dst, srcloc))
+                        ctx.emit(Inst::mov64_m_r(amode, dst, srcloc))
                     } else {
                         
                         ctx.emit(Inst::movzx_rm_r(
                             ext_mode.unwrap(),
-                            RegMem::mem(addr),
+                            RegMem::mem(amode),
                             dst,
                             srcloc,
                         ))
@@ -1654,13 +1882,13 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                 (_, true) => {
                     ctx.emit(match elem_ty {
                         types::F32 => {
-                            Inst::xmm_mov(SseOpcode::Movss, RegMem::mem(addr), dst, srcloc)
+                            Inst::xmm_mov(SseOpcode::Movss, RegMem::mem(amode), dst, srcloc)
                         }
                         types::F64 => {
-                            Inst::xmm_mov(SseOpcode::Movsd, RegMem::mem(addr), dst, srcloc)
+                            Inst::xmm_mov(SseOpcode::Movsd, RegMem::mem(amode), dst, srcloc)
                         }
                         _ if elem_ty.is_vector() && elem_ty.bits() == 128 => {
-                            Inst::xmm_mov(SseOpcode::Movups, RegMem::mem(addr), dst, srcloc)
+                            Inst::xmm_mov(SseOpcode::Movups, RegMem::mem(amode), dst, srcloc)
                         } 
                         _ => unreachable!("unexpected type for load: {:?}", elem_ty),
                     });
@@ -1689,9 +1917,7 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
             let addr = match op {
                 Opcode::Store | Opcode::Istore8 | Opcode::Istore16 | Opcode::Istore32 => {
                     assert_eq!(inputs.len(), 2, "only one input for store memory operands");
-                    let base = input_to_reg(ctx, inputs[1]);
-                    
-                    Amode::imm_reg(offset as u32, base)
+                    lower_to_amode(ctx, inputs[1], offset as u32)
                 }
 
                 Opcode::StoreComplex
@@ -1724,6 +1950,148 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
                     Inst::xmm_mov_r_m(SseOpcode::Movups, src, addr, srcloc)
                 }
                 _ => Inst::mov_r_m(elem_ty.bytes() as u8, src, addr, srcloc),
+            });
+        }
+
+        Opcode::AtomicRmw => {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let dst = output_to_reg(ctx, outputs[0]);
+            let mut addr = input_to_reg(ctx, inputs[0]);
+            let mut arg2 = input_to_reg(ctx, inputs[1]);
+            let ty_access = ty.unwrap();
+            assert!(is_valid_atomic_transaction_ty(ty_access));
+            let memflags = ctx.memflags(insn).expect("memory flags");
+            let srcloc = if !memflags.notrap() {
+                Some(ctx.srcloc(insn))
+            } else {
+                None
+            };
+
+            
+            
+            
+            addr = ctx.ensure_in_vreg(addr, types::I64);
+            arg2 = ctx.ensure_in_vreg(arg2, types::I64);
+
+            
+            
+            
+            ctx.emit(Inst::gen_move(
+                Writable::from_reg(regs::r9()),
+                addr,
+                types::I64,
+            ));
+            ctx.emit(Inst::gen_move(
+                Writable::from_reg(regs::r10()),
+                arg2,
+                types::I64,
+            ));
+
+            
+            let op = inst_common::AtomicRmwOp::from(inst_atomic_rmw_op(ctx.data(insn)).unwrap());
+            ctx.emit(Inst::AtomicRmwSeq {
+                ty: ty_access,
+                op,
+                srcloc,
+            });
+
+            
+            ctx.emit(Inst::gen_move(dst, regs::rax(), types::I64));
+        }
+
+        Opcode::AtomicCas => {
+            
+            
+            let dst = output_to_reg(ctx, outputs[0]);
+            let addr = lower_to_amode(ctx, inputs[0], 0);
+            let expected = input_to_reg(ctx, inputs[1]);
+            let replacement = input_to_reg(ctx, inputs[2]);
+            let ty_access = ty.unwrap();
+            assert!(is_valid_atomic_transaction_ty(ty_access));
+            let memflags = ctx.memflags(insn).expect("memory flags");
+            let srcloc = if !memflags.notrap() {
+                Some(ctx.srcloc(insn))
+            } else {
+                None
+            };
+
+            
+            
+            
+            ctx.emit(Inst::gen_move(
+                Writable::from_reg(regs::rax()),
+                expected,
+                types::I64,
+            ));
+            ctx.emit(Inst::LockCmpxchg {
+                ty: ty_access,
+                src: replacement,
+                dst: addr.into(),
+                srcloc,
+            });
+            
+            ctx.emit(Inst::gen_move(dst, regs::rax(), types::I64));
+        }
+
+        Opcode::AtomicLoad => {
+            
+            
+            
+            let data = output_to_reg(ctx, outputs[0]);
+            let addr = lower_to_amode(ctx, inputs[0], 0);
+            let ty_access = ty.unwrap();
+            assert!(is_valid_atomic_transaction_ty(ty_access));
+            let memflags = ctx.memflags(insn).expect("memory flags");
+            let srcloc = if !memflags.notrap() {
+                Some(ctx.srcloc(insn))
+            } else {
+                None
+            };
+
+            let rm = RegMem::mem(addr);
+            if ty_access == types::I64 {
+                ctx.emit(Inst::mov64_rm_r(rm, data, srcloc));
+            } else {
+                let ext_mode = match ty_access {
+                    types::I8 => ExtMode::BQ,
+                    types::I16 => ExtMode::WQ,
+                    types::I32 => ExtMode::LQ,
+                    _ => panic!("lowering AtomicLoad: invalid type"),
+                };
+                ctx.emit(Inst::movzx_rm_r(ext_mode, rm, data, srcloc));
+            }
+        }
+
+        Opcode::AtomicStore => {
+            
+            let data = input_to_reg(ctx, inputs[0]);
+            let addr = lower_to_amode(ctx, inputs[1], 0);
+            let ty_access = ctx.input_ty(insn, 0);
+            assert!(is_valid_atomic_transaction_ty(ty_access));
+            let memflags = ctx.memflags(insn).expect("memory flags");
+            let srcloc = if !memflags.notrap() {
+                Some(ctx.srcloc(insn))
+            } else {
+                None
+            };
+
+            ctx.emit(Inst::mov_r_m(ty_access.bytes() as u8, data, addr, srcloc));
+            ctx.emit(Inst::Fence {
+                kind: FenceKind::MFence,
+            });
+        }
+
+        Opcode::Fence => {
+            ctx.emit(Inst::Fence {
+                kind: FenceKind::MFence,
             });
         }
 
@@ -1770,26 +2138,115 @@ fn lower_insn_to_regs<C: LowerCtx<I = Inst>>(
             ctx.emit(inst);
         }
 
-        Opcode::Select | Opcode::Selectif | Opcode::SelectifSpectreGuard => {
-            let cc = if op == Opcode::Select {
-                
-                let size = ctx.input_ty(insn, 0).bytes() as u8;
-                let test = input_to_reg(ctx, inputs[0]);
-                ctx.emit(Inst::cmp_rmi_r(size, RegMemImm::imm(0), test));
+        Opcode::Select => {
+            let flag_input = inputs[0];
+            if let Some(fcmp) = matches_input(ctx, flag_input, Opcode::Fcmp) {
+                let cond_code = inst_fp_condcode(ctx.data(fcmp));
 
-                CC::NZ
+                
+                
+                
+                
+                let fcmp_results = emit_fcmp(ctx, fcmp, cond_code, FcmpSpec::InvertEqual);
+
+                let (lhs_input, rhs_input) = match fcmp_results {
+                    FcmpCondResult::InvertedEqualOrConditions(_, _) => (inputs[2], inputs[1]),
+                    FcmpCondResult::Condition(_)
+                    | FcmpCondResult::AndConditions(_, _)
+                    | FcmpCondResult::OrConditions(_, _) => (inputs[1], inputs[2]),
+                };
+
+                let ty = ctx.output_ty(insn, 0);
+                let rhs = input_to_reg(ctx, rhs_input);
+                let dst = output_to_reg(ctx, outputs[0]);
+                let lhs = if is_int_ty(ty) && ty.bytes() < 4 {
+                    
+                    
+                    
+                    
+                    RegMem::reg(input_to_reg(ctx, lhs_input))
+                } else {
+                    input_to_reg_mem(ctx, lhs_input)
+                };
+
+                ctx.emit(Inst::gen_move(dst, rhs, ty));
+
+                match fcmp_results {
+                    FcmpCondResult::Condition(cc) => {
+                        if is_int_ty(ty) {
+                            let size = u8::max(ty.bytes() as u8, 4);
+                            ctx.emit(Inst::cmove(size, cc, lhs, dst));
+                        } else {
+                            ctx.emit(Inst::xmm_cmove(ty == types::F64, cc, lhs, dst));
+                        }
+                    }
+                    FcmpCondResult::AndConditions(_, _) => {
+                        unreachable!(
+                            "can't AND with select; see above comment about inverting equal"
+                        );
+                    }
+                    FcmpCondResult::InvertedEqualOrConditions(cc1, cc2)
+                    | FcmpCondResult::OrConditions(cc1, cc2) => {
+                        if is_int_ty(ty) {
+                            let size = u8::max(ty.bytes() as u8, 4);
+                            ctx.emit(Inst::cmove(size, cc1, lhs.clone(), dst));
+                            ctx.emit(Inst::cmove(size, cc2, lhs, dst));
+                        } else {
+                            ctx.emit(Inst::xmm_cmove(ty == types::F64, cc1, lhs.clone(), dst));
+                            ctx.emit(Inst::xmm_cmove(ty == types::F64, cc2, lhs, dst));
+                        }
+                    }
+                }
             } else {
-                
-                let cmp_insn = ctx
-                    .get_input(inputs[0].insn, inputs[0].input)
-                    .inst
-                    .unwrap()
-                    .0;
-                debug_assert_eq!(ctx.data(cmp_insn).opcode(), Opcode::Ifcmp);
-                emit_cmp(ctx, cmp_insn);
+                let cc = if let Some(icmp) = matches_input(ctx, flag_input, Opcode::Icmp) {
+                    emit_cmp(ctx, icmp);
+                    let cond_code = inst_condcode(ctx.data(icmp));
+                    CC::from_intcc(cond_code)
+                } else {
+                    
+                    let size = ctx.input_ty(insn, 0).bytes() as u8;
+                    let test = input_to_reg(ctx, inputs[0]);
+                    ctx.emit(Inst::cmp_rmi_r(size, RegMemImm::imm(0), test));
+                    CC::NZ
+                };
 
-                CC::from_intcc(inst_condcode(ctx.data(insn)))
-            };
+                let rhs = input_to_reg(ctx, inputs[2]);
+                let dst = output_to_reg(ctx, outputs[0]);
+                let ty = ctx.output_ty(insn, 0);
+
+                ctx.emit(Inst::gen_move(dst, rhs, ty));
+
+                if is_int_ty(ty) {
+                    let mut size = ty.bytes() as u8;
+                    let lhs = if size < 4 {
+                        
+                        
+                        
+                        size = 4;
+                        RegMem::reg(input_to_reg(ctx, inputs[1]))
+                    } else {
+                        input_to_reg_mem(ctx, inputs[1])
+                    };
+                    ctx.emit(Inst::cmove(size, cc, lhs, dst));
+                } else {
+                    debug_assert!(ty == types::F32 || ty == types::F64);
+                    let lhs = input_to_reg_mem(ctx, inputs[1]);
+                    ctx.emit(Inst::xmm_cmove(ty == types::F64, cc, lhs, dst));
+                }
+            }
+        }
+
+        Opcode::Selectif | Opcode::SelectifSpectreGuard => {
+            
+            let cmp_insn = ctx
+                .get_input(inputs[0].insn, inputs[0].input)
+                .inst
+                .unwrap()
+                .0;
+            debug_assert_eq!(ctx.data(cmp_insn).opcode(), Opcode::Ifcmp);
+            emit_cmp(ctx, cmp_insn);
+
+            let cc = CC::from_intcc(inst_condcode(ctx.data(insn)));
 
             let lhs = input_to_reg_mem(ctx, inputs[1]);
             let rhs = input_to_reg(ctx, inputs[2]);
@@ -2037,8 +2494,47 @@ impl LowerBackend for X64Backend {
 
             match op0 {
                 Opcode::Brz | Opcode::Brnz => {
+                    let flag_input = InsnInput {
+                        insn: branches[0],
+                        input: 0,
+                    };
+
                     let src_ty = ctx.input_ty(branches[0], 0);
-                    if is_int_ty(src_ty) || is_bool_ty(src_ty) {
+
+                    if let Some(icmp) = matches_input(ctx, flag_input, Opcode::Icmp) {
+                        emit_cmp(ctx, icmp);
+
+                        let cond_code = inst_condcode(ctx.data(icmp));
+                        let cond_code = if op0 == Opcode::Brz {
+                            cond_code.inverse()
+                        } else {
+                            cond_code
+                        };
+
+                        let cc = CC::from_intcc(cond_code);
+                        ctx.emit(Inst::jmp_cond(cc, taken, not_taken));
+                    } else if let Some(fcmp) = matches_input(ctx, flag_input, Opcode::Fcmp) {
+                        let cond_code = inst_fp_condcode(ctx.data(fcmp));
+                        let cond_code = if op0 == Opcode::Brz {
+                            cond_code.inverse()
+                        } else {
+                            cond_code
+                        };
+                        match emit_fcmp(ctx, fcmp, cond_code, FcmpSpec::Normal) {
+                            FcmpCondResult::Condition(cc) => {
+                                ctx.emit(Inst::jmp_cond(cc, taken, not_taken));
+                            }
+                            FcmpCondResult::AndConditions(cc1, cc2) => {
+                                ctx.emit(Inst::jmp_if(cc1.invert(), not_taken));
+                                ctx.emit(Inst::jmp_cond(cc2.invert(), not_taken, taken));
+                            }
+                            FcmpCondResult::OrConditions(cc1, cc2) => {
+                                ctx.emit(Inst::jmp_if(cc1, taken));
+                                ctx.emit(Inst::jmp_cond(cc2, taken, not_taken));
+                            }
+                            FcmpCondResult::InvertedEqualOrConditions(_, _) => unreachable!(),
+                        }
+                    } else if is_int_ty(src_ty) || is_bool_ty(src_ty) {
                         let src = input_to_reg(
                             ctx,
                             InsnInput {
@@ -2087,8 +2583,7 @@ impl LowerBackend for X64Backend {
                     }
                 }
 
-                
-                _ => unimplemented!("branch opcode"),
+                _ => panic!("unexpected branch opcode: {:?}", op0),
             }
         } else {
             assert_eq!(branches.len(), 1);
