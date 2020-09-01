@@ -58,11 +58,17 @@ typedef struct {
   
   
   uint32_t mIsDirty;
+
+  
+  
+  
+  uint32_t mKBWritten;
 } CacheIndexHeader;
 
 static_assert(sizeof(CacheIndexHeader::mVersion) +
                       sizeof(CacheIndexHeader::mTimeStamp) +
-                      sizeof(CacheIndexHeader::mIsDirty) ==
+                      sizeof(CacheIndexHeader::mIsDirty) +
+                      sizeof(CacheIndexHeader::mKBWritten) ==
                   sizeof(CacheIndexHeader),
               "Unexpected sizeof(CacheIndexHeader)!");
 
