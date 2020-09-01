@@ -1281,8 +1281,10 @@
 
       let newBrowser = this.getBrowserForTab(newTab);
 
-      
-      if (newBrowser.hasAttribute("tabmodalPromptShowing")) {
+      if (newBrowser.hasAttribute("tabDialogShowing")) {
+        newBrowser.tabDialogBox.focus();
+      } else if (newBrowser.hasAttribute("tabmodalPromptShowing")) {
+        
         let prompts = newBrowser.tabModalPromptBox.listPrompts();
         let prompt = prompts[prompts.length - 1];
         

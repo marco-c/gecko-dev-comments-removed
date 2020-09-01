@@ -8934,6 +8934,10 @@ class TabDialogBox {
     this._dialogManager.abortAll();
   }
 
+  focus() {
+    this._dialogManager.focusTopDialog();
+  }
+
   
 
 
