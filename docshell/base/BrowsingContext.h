@@ -466,8 +466,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     }
   }
 
-  nsresult SetAllowContentRetargeting(bool aAllowContentRetargeting);
-
   
   
   
