@@ -115,33 +115,112 @@ def remove_tasks(target_task_graph, requested_tasks, params, optimizations, do_n
     opt_counts = defaultdict(int)
     opt_reasons = {}
     removed = set()
-    reverse_links_dict = target_task_graph.graph.reverse_links_dict()
+    dependents_of = target_task_graph.graph.reverse_links_dict()
+    tasks = target_task_graph.tasks
+    prune_candidates = set()
 
+    
+    
     for label in target_task_graph.graph.visit_preorder():
         
+        
+        
+        
+        
+        
+        prune_deps = {l for l in dependents_of[label]
+                      if l in prune_candidates
+                      if not tasks[l].if_dependencies or label in tasks[l].if_dependencies}
+
+        def _keep(reason):
+            """Mark a task as being kept in the graph. Also recursively removes
+            any dependents from `prune_candidates`, assuming they should be
+            kept because of this task.
+            """
+            opt_reasons[label] = ("kept", reason)
+
+            
+            
+            
+            queue = list(prune_deps)
+            while queue:
+                l = queue.pop()
+
+                
+                
+                if l not in prune_candidates:
+                    continue
+
+                
+                
+                
+                if not tasks[l].if_dependencies:
+                    continue
+
+                prune_candidates.remove(l)
+                queue.extend([r for r in dependents_of[l] if r in prune_candidates])
+
+        def _remove(reason):
+            """Potentially mark a task as being removed from the graph. If the
+            task has dependents that can be pruned, add this task to
+            `prune_candidates` rather than removing it.
+            """
+            if prune_deps:
+                
+                prune_candidates.add(label)
+            else:
+                opt_reasons[label] = ("removed", reason)
+                opt_counts[reason] += 1
+                removed.add(label)
+
+        
         if label in do_not_optimize:
-            opt_reasons[label] = ("kept", "do not optimize")
+            _keep("do not optimize")
             continue
 
         
-        if any(l not in removed for l in reverse_links_dict[label]):
-            opt_reasons[label] = ("kept", "dependent tasks")
+        if any(l for l in dependents_of[label] if l not in removed and l not in prune_deps):
+            _keep("dependent tasks")
             continue
 
         
         
         if label not in requested_tasks:
-            opt_counts['dependents-optimized'] += 1
-            opt_reasons[label] = ("removed", "dependents optimized")
-            removed.add(label)
+            _remove("dependents optimized")
+            continue
 
         
-        task = target_task_graph.tasks[label]
+        task = tasks[label]
         opt_by, opt, arg = optimizations(label)
         if opt.should_remove_task(task, params, arg):
-            opt_counts[opt_by] += 1
-            opt_reasons[label] = ("removed", "'{}' strategy".format(opt_by))
+            _remove(opt_by)
+            continue
+
+        
+        
+        
+        if task.if_dependencies:
+            opt_reasons[label] = ("kept", opt_by)
+            prune_candidates.add(label)
+        else:
+            _keep(opt_by)
+
+    if prune_candidates:
+        reason = "if-dependencies pruning"
+        for label in prune_candidates:
+            
+            
+            
+            
+            dependents = any(d for d in dependents_of[label]
+                             if d not in prune_candidates
+                             if d not in removed)
+            if dependents:
+                opt_reasons[label] = ("kept", "dependent tasks")
+                continue
             removed.add(label)
+            opt_counts[reason] += 1
+            opt_reasons[label] = ("removed", reason)
 
     _log_optimization('removed', opt_counts, opt_reasons)
     return removed
