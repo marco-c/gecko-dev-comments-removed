@@ -1038,6 +1038,19 @@ nsresult TRR::DohDecode(nsCString& aHost) {
             return rv;
           }
 
+          if (parsed.mSvcDomainName.IsEmpty()) {
+            if (parsed.mSvcFieldPriority == 0) {
+              
+              
+              continue;
+            }
+
+            
+            
+            
+            parsed.mSvcDomainName = qname;
+          }
+
           available -= (svcbIndex - index);
           if (!available.isValid()) {
             return NS_ERROR_UNEXPECTED;
