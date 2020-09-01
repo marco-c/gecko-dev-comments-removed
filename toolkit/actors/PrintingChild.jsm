@@ -87,7 +87,10 @@ class PrintingChild extends ActorChild {
           data.simplifiedMode,
           data.changingBrowsers,
           data.lastUsedPrinterName,
-          data.outputFormat
+          data.outputFormat,
+          data.startPageRange,
+          data.endPageRange,
+          data.printRange
         );
         break;
       }
@@ -312,7 +315,10 @@ class PrintingChild extends ActorChild {
     simplifiedMode,
     changingBrowsers,
     lastUsedPrinterName,
-    outputFormat
+    outputFormat,
+    startPageRange,
+    endPageRange,
+    printRange
   ) {
     const { docShell } = this;
 
@@ -330,6 +336,11 @@ class PrintingChild extends ActorChild {
         printSettings.outputFormat = printSettings.kOutputFormatPDF;
         printSettings.printToFile = true;
       }
+
+      
+      printSettings.startPageRange = startPageRange;
+      printSettings.endPageRange = endPageRange;
+      printSettings.printRange = printRange;
 
       
       
