@@ -1757,6 +1757,28 @@ class StoragePressureRunnable final : public Runnable {
   NS_DECL_NSIRUNNABLE
 };
 
+class RecordQuotaInfoLoadTimeHelper final : public Runnable {
+  
+  LazyInitializedOnceNotNull<const TimeStamp> mStartTime;
+  LazyInitializedOnceNotNull<const TimeStamp> mEndTime;
+
+  
+  LazyInitializedOnceNotNull<const TimeStamp> mInitializedTime;
+
+ public:
+  RecordQuotaInfoLoadTimeHelper()
+      : Runnable("dom::quota::RecordQuotaInfoLoadTimeHelper") {}
+
+  void Start();
+
+  void End();
+
+ private:
+  ~RecordQuotaInfoLoadTimeHelper() = default;
+
+  NS_DECL_NSIRUNNABLE
+};
+
 
 
 
@@ -1979,6 +2001,9 @@ bool gQuotaManagerInitialized = false;
 StaticRefPtr<QuotaManager> gInstance;
 bool gCreateFailed = false;
 mozilla::Atomic<bool> gShutdown(false);
+
+
+TimeStamp gLastOSWake;
 
 typedef nsTArray<CheckedUnsafePtr<NormalOriginOperationBase>>
     NormalOriginOpArray;
@@ -2764,24 +2789,6 @@ uint64_t GetTemporaryStorageLimit(uint64_t aAvailableSpaceBytes) {
   return availableSpaceKB * .50 * 1024;
 }
 
-void RecordQuotaLoadTime(TimeStamp aStartTime, TimeStamp aEndTime) {
-  const auto key = [aStartTime, aEndTime]() {
-    
-    
-    
-    
-    
-    if (aStartTime > aEndTime) {
-      return "TimeStampError"_ns;
-    }
-
-    return "Normal"_ns;
-  }();
-
-  Telemetry::AccumulateTimeDelta(Telemetry::QM_QUOTA_INFO_LOAD_TIME_V0, key,
-                                 aStartTime, aEndTime);
-}
-
 }  
 
 
@@ -3122,6 +3129,7 @@ nsresult QuotaManager::Observer::Init() {
     return NS_ERROR_FAILURE;
   }
 
+  
   nsresult rv = obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -3140,6 +3148,14 @@ nsresult QuotaManager::Observer::Init() {
     return rv;
   }
 
+  rv = obs->AddObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC, false);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    obs->RemoveObserver(this, kProfileDoChangeTopic);
+    obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
+    obs->RemoveObserver(this, PROFILE_BEFORE_CHANGE_QM_OBSERVER_ID);
+    return rv;
+  }
+
   return NS_OK;
 }
 
@@ -3151,6 +3167,7 @@ nsresult QuotaManager::Observer::Shutdown() {
     return NS_ERROR_FAILURE;
   }
 
+  MOZ_ALWAYS_SUCCEEDS(obs->RemoveObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC));
   MOZ_ALWAYS_SUCCEEDS(
       obs->RemoveObserver(this, PROFILE_BEFORE_CHANGE_QM_OBSERVER_ID));
   MOZ_ALWAYS_SUCCEEDS(obs->RemoveObserver(this, kProfileDoChangeTopic));
@@ -3268,6 +3285,12 @@ QuotaManager::Observer::Observe(nsISupports* aSubject, const char* aTopic,
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+
+    return NS_OK;
+  }
+
+  if (!strcmp(aTopic, NS_WIDGET_WAKE_OBSERVER_TOPIC)) {
+    gLastOSWake = TimeStamp::Now();
 
     return NS_OK;
   }
@@ -4341,7 +4364,9 @@ nsresult QuotaManager::LoadQuota() {
   MOZ_ASSERT(mStorageConnection);
   MOZ_ASSERT(!mTemporaryStorageInitialized);
 
-  const auto startTime = TimeStamp::Now();
+  auto recordQuotaInfoLoadTimeHelper =
+      MakeRefPtr<RecordQuotaInfoLoadTimeHelper>();
+  recordQuotaInfoLoadTimeHelper->Start();
 
   auto LoadQuotaFromCache = [&]() {
     nsCOMPtr<mozIStorageStatement> stmt;
@@ -4594,7 +4619,7 @@ nsresult QuotaManager::LoadQuota() {
     }
   }
 
-  RecordQuotaLoadTime(startTime, TimeStamp::Now());
+  recordQuotaInfoLoadTimeHelper->End();
 
   autoRemoveQuota.release();
 
@@ -8556,6 +8581,61 @@ StoragePressureRunnable::Run() {
   wrapper->SetData(mUsage);
 
   obsSvc->NotifyObservers(wrapper, "QuotaManager::StoragePressure", u"");
+
+  return NS_OK;
+}
+
+void RecordQuotaInfoLoadTimeHelper::Start() {
+  AssertIsOnIOThread();
+
+  
+  
+  
+  mStartTime.init(TimeStamp::Now());
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(this));
+}
+
+void RecordQuotaInfoLoadTimeHelper::End() {
+  AssertIsOnIOThread();
+
+  mEndTime.init(TimeStamp::Now());
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(this));
+}
+
+NS_IMETHODIMP
+RecordQuotaInfoLoadTimeHelper::Run() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mInitializedTime.isSome()) {
+    const auto key = [this, wasSuspended = gLastOSWake > *mInitializedTime]() {
+      if (wasSuspended) {
+        return "WasSuspended"_ns;
+      }
+
+      
+      
+      
+      
+      
+      if (*mStartTime > *mEndTime) {
+        return "TimeStampError1"_ns;
+      }
+
+      if (*mInitializedTime > gLastOSWake) {
+        return "TimeStampErr2"_ns;
+      }
+
+      return "Normal"_ns;
+    }();
+
+    Telemetry::AccumulateTimeDelta(Telemetry::QM_QUOTA_INFO_LOAD_TIME_V0, key,
+                                   *mStartTime, *mEndTime);
+
+    return NS_OK;
+  }
+
+  gLastOSWake = TimeStamp::Now();
+  mInitializedTime.init(gLastOSWake);
 
   return NS_OK;
 }
