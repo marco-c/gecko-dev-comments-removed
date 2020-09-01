@@ -3088,12 +3088,9 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
   
   
   
-  if (isVarSelector) {
-    if (aPrevMatchedFont) {
-      return aPrevMatchedFont;
-    }
-    
-    return nullptr;
+  
+  if (isVarSelector || IsDefaultIgnorable(aCh)) {
+    return aPrevMatchedFont;
   }
 
   
