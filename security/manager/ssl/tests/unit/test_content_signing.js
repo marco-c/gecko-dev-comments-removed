@@ -377,7 +377,6 @@ add_task(async function run_test() {
   let badSections = [
     
     "-----BEGIN CERTIFICATE-----\nBSsPRlYp5+gaFMRIczwUzaioRfteCjr94xyz0g==\n",
-    "-----BEGIN CERTIFICATE-----\nBSsPRlYp5+gaFMRIczwUzaioRfteCjr94xyz0g==\n-----END CERTIFICATE-----",
     
     "-----BEGIN CERTIFICATE-----\nnon-base64-stuff\n-----END CERTIFICATE-----",
     
