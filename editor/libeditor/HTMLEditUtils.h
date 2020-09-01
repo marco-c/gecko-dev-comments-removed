@@ -532,6 +532,24 @@ class HTMLEditUtils final {
 
 
 
+  static Element* GetInclusiveAncestorBlockElementExceptHRElement(
+      const nsIContent& aContent, const nsINode* aAncestorLimiter = nullptr) {
+    Element* blockElement =
+        GetInclusiveAncestorBlockElement(aContent, aAncestorLimiter);
+    if (!blockElement || !blockElement->IsHTMLElement(nsGkAtoms::hr)) {
+      return blockElement;
+    }
+    if (!blockElement->GetParentElement()) {
+      return nullptr;
+    }
+    return GetInclusiveAncestorBlockElementExceptHRElement(
+        *blockElement->GetParentElement(), aAncestorLimiter);
+  }
+
+  
+
+
+
 
   static Element* GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
       nsIContent& aContent);

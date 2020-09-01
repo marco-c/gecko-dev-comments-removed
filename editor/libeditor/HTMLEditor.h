@@ -2947,6 +2947,11 @@ class HTMLEditor final : public TextEditor,
             mInclusiveDescendantOfRightBlockElement(
                 aInclusiveDescendantOfRightBlockElement) {}
 
+      bool IsSet() const { return mLeftBlockElement && mRightBlockElement; }
+      bool IsSameBlockElement() const {
+        return mLeftBlockElement && mLeftBlockElement == mRightBlockElement;
+      }
+
       
 
 
