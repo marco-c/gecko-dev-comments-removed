@@ -769,17 +769,17 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
       if (!parent || parent->ChildEnteringOnload(this)) {
         nsresult loadGroupStatus = NS_OK;
         mLoadGroup->GetStatus(&loadGroupStatus);
+        
+        
+        if (NS_SUCCEEDED(loadGroupStatus) ||
+            loadGroupStatus == NS_ERROR_PARSED_DATA_CACHED) {
+          
+          
+          nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this));
+          if (doc) {
+            doc->SetReadyStateInternal(Document::READYSTATE_COMPLETE,
+                                        false);
 
-        
-        
-        nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this));
-        if (doc) {
-          doc->SetReadyStateInternal(Document::READYSTATE_COMPLETE,
-                                      false);
-          
-          
-          if (NS_SUCCEEDED(loadGroupStatus) ||
-              loadGroupStatus == NS_ERROR_PARSED_DATA_CACHED) {
             nsCOMPtr<nsPIDOMWindowOuter> window = doc->GetWindow();
             if (window && !doc->SkipLoadEventAfterClose()) {
               if (!mozilla::dom::DocGroup::TryToLoadIframesInBackground() ||
@@ -816,19 +816,6 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
                   }
                 }
               }
-            }
-          } else if (loadGroupStatus == NS_BINDING_ABORTED) {
-            doc->NotifyAbortedLoad();
-          }
-
-          if (doc->IsCurrentActiveDocument() && !doc->IsShowing() &&
-              loadGroupStatus != NS_BINDING_ABORTED) {
-            nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(this);
-            bool isInUnload;
-            if (docShell &&
-                NS_SUCCEEDED(docShell->GetIsInUnload(&isInUnload)) &&
-                !isInUnload) {
-              doc->OnPageShow(false, nullptr);
             }
           }
         }
