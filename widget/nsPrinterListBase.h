@@ -55,7 +55,8 @@ class nsPrinterListBase : public nsIPrinterList {
   
   
   
-  virtual Maybe<PrinterInfo> NamedPrinter(nsString aName) const;
+  virtual Maybe<PrinterInfo> NamedPrinter(nsString aName) const = 0;
+
   
   
   virtual nsresult SystemDefaultPrinterName(nsAString&) const = 0;

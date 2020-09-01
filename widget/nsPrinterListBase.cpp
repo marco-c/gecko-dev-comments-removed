@@ -70,11 +70,6 @@ NS_IMETHODIMP nsPrinterListBase::GetNamedOrDefaultPrinter(
                                     nsString{aPrinterName});
 }
 
-Maybe<PrinterInfo> nsPrinterListBase::NamedPrinter(nsString aName) const {
-  
-  return Nothing();
-}
-
 Maybe<PrinterInfo> nsPrinterListBase::NamedOrDefaultPrinter(
     nsString aName) const {
   if (Maybe<PrinterInfo> value = NamedPrinter(std::move(aName))) {
