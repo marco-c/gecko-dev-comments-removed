@@ -206,6 +206,21 @@ function fastEventsTimeout() {
 
 
 
+
+function armTimeoutWhenReady(animation, timeoutPromise) {
+  return () => {
+    if (animation.pending)
+      return animation.ready.then(() => { return timeoutPromise(); });
+    else
+      return timeoutPromise();
+  };
+}
+
+
+
+
+
+
 function waitForAllAnimations(animations) {
   return Promise.all(animations.map(animation => animation.ready));
 }
