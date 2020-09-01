@@ -30,4 +30,4 @@ var GeckoViewActorManager = {
   },
 };
 
-const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewActorManager"); 
+const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewActorManager");

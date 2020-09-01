@@ -21,4 +21,4 @@ class GeckoViewActorChild extends JSWindowActorChild {
   }
 }
 
-const { debug, warn } = GeckoViewUtils.initLogging("Actor[C]"); 
+const { debug, warn } = GeckoViewUtils.initLogging("Actor[C]");

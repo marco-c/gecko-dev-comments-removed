@@ -45,7 +45,7 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIMIMEService"
 );
 
-const { debug, warn } = GeckoViewUtils.initLogging("Console"); 
+const { debug, warn } = GeckoViewUtils.initLogging("Console");
 
 
 class ExtensionActionHelper {

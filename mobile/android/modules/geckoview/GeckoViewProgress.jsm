@@ -355,4 +355,4 @@ class GeckoViewProgress extends GeckoViewModule {
   }
 }
 
-const { debug, warn } = GeckoViewProgress.initLogging("GeckoViewProgress"); 
+const { debug, warn } = GeckoViewProgress.initLogging("GeckoViewProgress");

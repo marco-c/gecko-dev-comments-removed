@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
-const { debug, warn } = GeckoViewUtils.initLogging("Startup"); 
+const { debug, warn } = GeckoViewUtils.initLogging("Startup");
 
 const JSWINDOWACTORS = {
   BrowserTab: {

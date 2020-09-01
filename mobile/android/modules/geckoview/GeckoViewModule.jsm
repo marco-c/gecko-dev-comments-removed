@@ -10,7 +10,7 @@ const { GeckoViewUtils } = ChromeUtils.import(
   "resource://gre/modules/GeckoViewUtils.jsm"
 );
 
-const { debug, warn } = GeckoViewUtils.initLogging("Module"); 
+const { debug, warn } = GeckoViewUtils.initLogging("Module");
 
 class GeckoViewModule {
   static initLogging(aModuleName) {

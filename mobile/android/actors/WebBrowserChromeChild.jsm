@@ -75,4 +75,4 @@ WebBrowserChromeChild.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsIWebBrowserChrome3",
 ]);
 
-const { debug, warn } = WebBrowserChromeChild.initLogging("WebBrowserChrome"); 
+const { debug, warn } = WebBrowserChromeChild.initLogging("WebBrowserChrome");

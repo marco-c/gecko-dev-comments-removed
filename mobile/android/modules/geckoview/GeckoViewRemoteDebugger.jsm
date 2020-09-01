@@ -34,7 +34,7 @@ XPCOMUtils.defineLazyGetter(this, "SocketListener", () => {
   return SocketListener;
 });
 
-const { debug, warn } = GeckoViewUtils.initLogging("RemoteDebugger"); 
+const { debug, warn } = GeckoViewUtils.initLogging("RemoteDebugger");
 
 var GeckoViewRemoteDebugger = {
   observe(aSubject, aTopic, aData) {

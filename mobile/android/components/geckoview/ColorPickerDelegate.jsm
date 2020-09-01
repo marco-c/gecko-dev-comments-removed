@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   GeckoViewPrompter: "resource://gre/modules/GeckoViewPrompter.jsm",
 });
 
-const { debug, warn } = GeckoViewUtils.initLogging("ColorPickerDelegate"); 
+const { debug, warn } = GeckoViewUtils.initLogging("ColorPickerDelegate");
 
 class ColorPickerDelegate {
   init(aParent, aTitle, aInitialColor) {

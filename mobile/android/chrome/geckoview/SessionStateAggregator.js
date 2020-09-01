@@ -646,5 +646,5 @@ class SessionStateAggregator extends GeckoViewChildModule {
 
 const { debug, warn } = SessionStateAggregator.initLogging(
   "SessionStateAggregator"
-); 
+);
 const module = SessionStateAggregator.create(this);

@@ -574,4 +574,4 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 }
 
-const { debug, warn } = GeckoViewNavigation.initLogging("GeckoViewNavigation"); 
+const { debug, warn } = GeckoViewNavigation.initLogging("GeckoViewNavigation");

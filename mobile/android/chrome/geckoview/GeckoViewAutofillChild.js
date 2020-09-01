@@ -102,5 +102,5 @@ class GeckoViewAutofillChild extends GeckoViewChildModule {
   }
 }
 
-const { debug, warn } = GeckoViewAutofillChild.initLogging("GeckoViewAutofill"); 
+const { debug, warn } = GeckoViewAutofillChild.initLogging("GeckoViewAutofill");
 const module = GeckoViewAutofillChild.create(this);

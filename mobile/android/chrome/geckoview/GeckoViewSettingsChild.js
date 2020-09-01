@@ -161,5 +161,5 @@ class GeckoViewSettingsChild extends GeckoViewChildModule {
   }
 }
 
-const { debug, warn } = GeckoViewSettingsChild.initLogging("GeckoViewSettings"); 
+const { debug, warn } = GeckoViewSettingsChild.initLogging("GeckoViewSettings");
 const module = GeckoViewSettingsChild.create(this);

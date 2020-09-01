@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   GeckoViewPrompter: "resource://gre/modules/GeckoViewPrompter.jsm",
 });
 
-const { debug, warn } = GeckoViewUtils.initLogging("PromptCollection"); 
+const { debug, warn } = GeckoViewUtils.initLogging("PromptCollection");
 
 class PromptCollection {
   beforeUnloadCheck(browsingContext) {

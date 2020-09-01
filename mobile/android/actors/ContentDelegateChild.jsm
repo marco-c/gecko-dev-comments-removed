@@ -163,7 +163,6 @@ class ContentDelegateChild extends GeckoViewActorChild {
   }
 }
 
-
 const { debug, warn } = ContentDelegateChild.initLogging(
   "ContentDelegateChild"
 );

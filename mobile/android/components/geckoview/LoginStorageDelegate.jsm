@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
-const { debug, warn } = GeckoViewUtils.initLogging("LoginStorageDelegate"); 
+const { debug, warn } = GeckoViewUtils.initLogging("LoginStorageDelegate");
 
 
 const LoginStorageHint = {

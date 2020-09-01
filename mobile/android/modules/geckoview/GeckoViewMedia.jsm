@@ -129,4 +129,4 @@ const GeckoViewRecordingMedia = {
   },
 };
 
-const { debug, warn } = GeckoViewMedia.initLogging("GeckoViewMedia"); 
+const { debug, warn } = GeckoViewMedia.initLogging("GeckoViewMedia");

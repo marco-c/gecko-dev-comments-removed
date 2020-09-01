@@ -136,4 +136,4 @@ class GeckoViewSettings extends GeckoViewModule {
   }
 }
 
-const { debug, warn } = GeckoViewSettings.initLogging("GeckoViewSettings"); 
+const { debug, warn } = GeckoViewSettings.initLogging("GeckoViewSettings");

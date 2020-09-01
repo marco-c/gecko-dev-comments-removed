@@ -120,4 +120,4 @@ LoadURIDelegateChild.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsILoadURIDelegate",
 ]);
 
-const { debug, warn } = LoadURIDelegateChild.initLogging("LoadURIDelegate"); 
+const { debug, warn } = LoadURIDelegateChild.initLogging("LoadURIDelegate");

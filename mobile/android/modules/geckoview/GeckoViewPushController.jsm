@@ -21,7 +21,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIPushNotifier"
 );
 
-
 const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewPushController");
 
 function createScopeAndPrincipal(scopeAndAttrs) {

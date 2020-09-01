@@ -237,7 +237,6 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
   }
 }
 
-
 const { debug, warn } = GeckoViewProcessHangMonitor.initLogging(
   "GeckoViewProcessHangMonitor"
 );

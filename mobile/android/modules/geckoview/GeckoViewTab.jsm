@@ -183,4 +183,4 @@ class GeckoViewTab extends GeckoViewModule {
   }
 }
 
-const { debug, warn } = GeckoViewTab.initLogging("GeckoViewTab"); 
+const { debug, warn } = GeckoViewTab.initLogging("GeckoViewTab");

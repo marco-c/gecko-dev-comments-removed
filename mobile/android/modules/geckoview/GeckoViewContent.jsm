@@ -394,4 +394,4 @@ class GeckoViewContent extends GeckoViewModule {
   }
 }
 
-const { debug, warn } = GeckoViewContent.initLogging("GeckoViewContent"); 
+const { debug, warn } = GeckoViewContent.initLogging("GeckoViewContent");

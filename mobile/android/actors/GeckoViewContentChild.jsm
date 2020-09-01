@@ -349,4 +349,4 @@ class GeckoViewContentChild extends GeckoViewActorChild {
   }
 }
 
-const { debug, warn } = GeckoViewContentChild.initLogging("GeckoViewContent"); 
+const { debug, warn } = GeckoViewContentChild.initLogging("GeckoViewContent");
