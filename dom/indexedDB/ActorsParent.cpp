@@ -9447,6 +9447,50 @@ nsresult RemoveMarkerFile(nsIFile* aMarkerFile) {
   return NS_OK;
 }
 
+Result<mozilla::Ok, nsresult> DeleteFileManagerDirectory(
+    nsIFile& aFileManagerDirectory, QuotaManager* aQuotaManager,
+    const PersistenceType aPersistenceType, const nsACString& aGroup,
+    const nsACString& aOrigin) {
+  if (!aQuotaManager) {
+    IDB_TRY(aFileManagerDirectory.Remove(true));
+
+    return mozilla::Ok{};
+  }
+
+  IDB_TRY_VAR(auto fileUsage, FileManager::GetUsage(&aFileManagerDirectory));
+
+  uint64_t usageValue = fileUsage.GetValue().valueOr(0);
+
+  auto res =
+      MOZ_TO_RESULT_INVOKE(aFileManagerDirectory, Remove, true)
+          .orElse([&usageValue, &aFileManagerDirectory](nsresult rv) {
+            
+            
+
+            
+            Unused << FileManager::GetUsage(&aFileManagerDirectory)
+                          .andThen([&usageValue](const auto& newFileUsage) {
+                            const auto newFileUsageValue =
+                                newFileUsage.GetValue().valueOr(0);
+                            MOZ_ASSERT(newFileUsageValue <= usageValue);
+                            usageValue -= newFileUsageValue;
+
+                            
+                            
+                            return Result<mozilla::Ok, nsresult>{mozilla::Ok{}};
+                          });
+
+            return Result<mozilla::Ok, nsresult>{Err(rv)};
+          });
+
+  if (usageValue) {
+    aQuotaManager->DecreaseUsageForOrigin(aPersistenceType, aGroup, aOrigin,
+                                          Client::IDB, usageValue);
+  }
+
+  return res;
+}
+
 
 
 
@@ -9508,45 +9552,8 @@ nsresult RemoveDatabaseFilesAndDirectory(nsIFile& aBaseDirectory,
 
     IDB_TRY(OkIf(isDirectory), NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
-    if (!aQuotaManager) {
-      IDB_TRY(fmDirectory->Remove(true));
-    } else {
-      IDB_TRY_VAR(auto fileUsage, FileManager::GetUsage(fmDirectory));
-
-      uint64_t usageValue = fileUsage.GetValue().valueOr(0);
-
-      const auto res =
-          MOZ_TO_RESULT_INVOKE(fmDirectory, Remove, true)
-              .orElse([&usageValue, &fmDirectory](nsresult rv) {
-                
-                
-
-                
-                Unused << FileManager::GetUsage(fmDirectory)
-                              .andThen([&usageValue](const auto& newFileUsage) {
-                                const auto newFileUsageValue =
-                                    newFileUsage.GetValue().valueOr(0);
-                                MOZ_ASSERT(newFileUsageValue <= usageValue);
-                                usageValue -= newFileUsageValue;
-
-                                
-                                
-                                return Result<mozilla::Ok, nsresult>{
-                                    mozilla::Ok{}};
-                              });
-
-                return Result<mozilla::Ok, nsresult>{Err(rv)};
-              });
-
-      if (usageValue) {
-        aQuotaManager->DecreaseUsageForOrigin(aPersistenceType, aGroup, aOrigin,
-                                              Client::IDB, usageValue);
-      }
-
-      if (res.isErr()) {
-        return res.inspectErr();
-      }
-    }
+    IDB_TRY(DeleteFileManagerDirectory(*fmDirectory, aQuotaManager,
+                                       aPersistenceType, aGroup, aOrigin));
   }
 
   IndexedDatabaseManager* mgr = IndexedDatabaseManager::Get();
