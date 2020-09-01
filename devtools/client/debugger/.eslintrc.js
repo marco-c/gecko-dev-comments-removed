@@ -97,6 +97,10 @@ module.exports = {
     "flowtype/use-flow-type": 1,
 
     
+    
+    "jest/no-standalone-expect": "off",
+
+    
     "no-unsafe-finally": "error",
 
     
