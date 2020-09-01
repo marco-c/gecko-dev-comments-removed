@@ -118,6 +118,17 @@ class ProviderHeuristicFallback extends UrlbarProvider {
   
   
   _matchUnknownUrl(queryContext) {
+    
+    
+    
+    if (
+      (queryContext.restrictSource &&
+        queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH) ||
+      queryContext.searchMode
+    ) {
+      return null;
+    }
+
     let unescapedSearchString = Services.textToSubURI.unEscapeURIForUI(
       queryContext.searchString
     );
@@ -125,14 +136,6 @@ class ProviderHeuristicFallback extends UrlbarProvider {
     if (!suffix && prefix) {
       
       
-      return null;
-    }
-    
-    
-    if (
-      queryContext.restrictSource &&
-      queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH
-    ) {
       return null;
     }
 
