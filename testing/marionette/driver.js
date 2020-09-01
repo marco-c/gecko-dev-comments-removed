@@ -1714,6 +1714,8 @@ GeckoDriver.prototype.setWindowHandle = async function(
       await registerBrowsers;
       const id = await browserListening;
       this.contentBrowsingContext = BrowsingContext.get(id);
+    } else {
+      this.contentBrowsingContext = null;
     }
   } else {
     
