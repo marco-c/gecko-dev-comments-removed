@@ -1,13 +1,13 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et tw=80 : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+// HttpLog.h should generally be included first
 #include "HttpLog.h"
 
-
+// Log on level :5, instead of default :4.
 #undef LOG
 #define LOG(args) LOG5(args)
 #undef LOG_ENABLED
@@ -71,7 +71,7 @@ nsHttpConnectionInfo::nsHttpConnectionInfo(
     const OriginAttributes& originAttributes, const nsACString& routedHost,
     int32_t routedPort, bool isolated, bool aIsHttp3)
     : mIsolated(isolated), mLessThanTls13(false) {
-  mEndToEndSSL = true;  
+  mEndToEndSSL = true;  // so DefaultPort() works
   mRoutedPort = routedPort == -1 ? DefaultPort() : routedPort;
 
   if (!originHost.Equals(routedHost) || (originPort != routedPort)) {
@@ -118,7 +118,7 @@ void nsHttpConnectionInfo::Init(const nsACString& host, int32_t port,
   mUsingHttpProxy = mUsingHttpsProxy || (proxyInfo && proxyInfo->IsHTTP());
 
   if (mUsingHttpProxy) {
-    mUsingConnect = mEndToEndSSL;  
+    mUsingConnect = mEndToEndSSL;  // SSL always uses CONNECT
     uint32_t resolveFlags = 0;
     if (NS_SUCCEEDED(mProxyInfo->GetResolveFlags(&resolveFlags)) &&
         resolveFlags & nsIProtocolProxyService::RESOLVE_ALWAYS_TUNNEL) {
@@ -130,15 +130,15 @@ void nsHttpConnectionInfo::Init(const nsACString& host, int32_t port,
 }
 
 void nsHttpConnectionInfo::BuildHashKey() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  //
+  // build hash key:
+  //
+  // the hash key uniquely identifies the connection type.  two connections
+  // are "equal" if they end up talking the same protocol to the same server
+  // and are both used for anonymous or non-anonymous connection only;
+  // anonymity of the connection is setup later from nsHttpChannel::AsyncOpen
+  // where we know we use anonymous connection (LOAD_ANONYMOUS load flag)
+  //
 
   const char* keyHost;
   int32_t keyPort;
@@ -151,18 +151,18 @@ void nsHttpConnectionInfo::BuildHashKey() {
     keyPort = OriginPort();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The hashkey has 4 fields followed by host connection info
+  // byte 0 is P/T/. {P,T} for Plaintext/TLS Proxy over HTTP
+  // byte 1 is S/. S is for end to end ssl such as https:// uris
+  // byte 2 is A/. A is for an anonymous channel (no cookies, etc..)
+  // byte 3 is P/. P is for a private browising channel
+  // byte 4 is I/. I is for insecure scheme on TLS for http:// uris
+  // byte 5 is X/. X is for disallow_spdy flag
+  // byte 6 is C/. C is for be Conservative
+  // byte 7 is i/. i is for isolated
+  // Note: when adding/removing fields from this list which do not have
+  // corresponding data fields on the object itself, you may also need to
+  // modify RebuildHashKey.
 
   mHashKey.AssignLiteral("........[tlsflags0x00000000]");
   if (mIsolated) {
@@ -187,20 +187,20 @@ void nsHttpConnectionInfo::BuildHashKey() {
     mHashKey.SetCharAt('S', 1);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // NOTE: for transparent proxies (e.g., SOCKS) we need to encode the proxy
+  // info in the hash key (this ensures that we will continue to speak the
+  // right protocol even if our proxy preferences change).
+  //
+  // NOTE: for SSL tunnels add the proxy information to the cache key.
+  // We cannot use the proxy as the host parameter (as we do for non SSL)
+  // because this is a single host tunnel, but we need to include the proxy
+  // information so that a change in proxy config will mean this connection
+  // is not reused
 
-  
-  
-  
-  
+  // NOTE: Adding the username and the password provides a means to isolate
+  // keep-alive to the URL bar domain as well: If the username is the URL bar
+  // domain, keep-alive connections are not reused by resources bound to
+  // different URL bar domains as the respective hash keys are not matching.
 
   if ((!mUsingHttpProxy && ProxyHost()) || (mUsingHttpProxy && mUsingConnect)) {
     mHashKey.AppendLiteral(" (");
@@ -239,9 +239,9 @@ void nsHttpConnectionInfo::BuildHashKey() {
   }
 
   if (GetTRRMode() != nsIRequest::TRR_DEFAULT_MODE) {
-    
-    
-    
+    // When connecting with another TRR mode, we enforce a separate connection
+    // hashkey so that we also can trigger a fresh DNS resolver that then
+    // doesn't use TRR as the previous connection might have.
     mHashKey.AppendLiteral("[TRR:");
     mHashKey.AppendInt(GetTRRMode());
     mHashKey.AppendLiteral("]");
@@ -282,7 +282,7 @@ void nsHttpConnectionInfo::BuildHashKey() {
 }
 
 void nsHttpConnectionInfo::RebuildHashKey() {
-  
+  // Create copies of all properties stored in our hash key.
   bool isAnonymous = GetAnonymous();
   bool isPrivate = GetPrivate();
   bool isInsecureScheme = GetInsecureScheme();
@@ -291,7 +291,7 @@ void nsHttpConnectionInfo::RebuildHashKey() {
 
   BuildHashKey();
 
-  
+  // Restore all of those properties.
   SetAnonymous(isAnonymous);
   SetPrivate(isPrivate);
   SetInsecureScheme(isInsecureScheme);
@@ -303,15 +303,15 @@ void nsHttpConnectionInfo::SetOriginServer(const nsACString& host,
                                            int32_t port) {
   mOrigin = host;
   mOriginPort = port == -1 ? DefaultPort() : port;
-  
-  
+  // Use BuildHashKey() since this can only be called when constructing an
+  // nsHttpConnectionInfo object.
   MOZ_DIAGNOSTIC_ASSERT(mHashKey.IsEmpty());
   BuildHashKey();
 }
 
-
-
-
+// Note that this function needs to be synced with
+// nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs to make sure
+// nsHttpConnectionInfo can be serialized/deserialized.
 already_AddRefed<nsHttpConnectionInfo> nsHttpConnectionInfo::Clone() const {
   RefPtr<nsHttpConnectionInfo> clone;
   if (mRoutedHost.IsEmpty()) {
@@ -326,7 +326,7 @@ already_AddRefed<nsHttpConnectionInfo> nsHttpConnectionInfo::Clone() const {
                                      mRoutedPort, mIsolated, mIsHttp3);
   }
 
-  
+  // Make sure the anonymous, insecure-scheme, and private flags are transferred
   clone->SetAnonymous(GetAnonymous());
   clone->SetPrivate(GetPrivate());
   clone->SetInsecureScheme(GetInsecureScheme());
@@ -347,13 +347,13 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
     nsISVCBRecord* aRecord) const {
   MOZ_ASSERT(aRecord);
 
-  
-  
+  // Get the domain name of this HTTPS RR. This name will be assigned to
+  // mRoutedHost in the new connection info.
   nsAutoCString name;
   aRecord->GetName(name);
 
-  
-  
+  // Try to get the port and Alpn. If this record has SvcParamKeyPort defined,
+  // the new port will be used as mRoutedPort.
   Maybe<uint16_t> port = aRecord->GetPort();
   Maybe<nsCString> alpn = aRecord->GetAlpn();
 
@@ -374,7 +374,7 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
         port ? *port : mRoutedPort, mIsolated, mIsHttp3);
   }
 
-  
+  // Make sure the anonymous, insecure-scheme, and private flags are transferred
   clone->SetAnonymous(GetAnonymous());
   clone->SetPrivate(GetPrivate());
   clone->SetInsecureScheme(GetInsecureScheme());
@@ -389,7 +389,7 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
   return clone.forget();
 }
 
-
+/* static */
 void nsHttpConnectionInfo::SerializeHttpConnectionInfo(
     nsHttpConnectionInfo* aInfo, HttpConnectionInfoCloneArgs& aArgs) {
   aArgs.host() = aInfo->GetOrigin();
@@ -423,8 +423,8 @@ void nsHttpConnectionInfo::SerializeHttpConnectionInfo(
   aArgs.proxyInfo() = std::move(proxyInfoArray);
 }
 
-
-
+// This function needs to be synced with nsHttpConnectionInfo::Clone.
+/* static */
 already_AddRefed<nsHttpConnectionInfo>
 nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(
     const HttpConnectionInfoCloneArgs& aInfoArgs) {
@@ -445,7 +445,7 @@ nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(
         aInfoArgs.routedPort(), aInfoArgs.isolated(), aInfoArgs.isHttp3());
   }
 
-  
+  // Make sure the anonymous, insecure-scheme, and private flags are transferred
   cinfo->SetAnonymous(aInfoArgs.anonymous());
   cinfo->SetPrivate(aInfoArgs.aPrivate());
   cinfo->SetInsecureScheme(aInfoArgs.insecureScheme());
@@ -470,7 +470,7 @@ void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI) {
   RefPtr<nsHttpConnectionInfo> clone = new nsHttpConnectionInfo(
       mOrigin, mOriginPort, EmptyCString(), mUsername, mTopWindowOrigin,
       mProxyInfo, mOriginAttributes, mEndToEndSSL, mIsolated);
-  
+  // Make sure the anonymous, insecure-scheme, and private flags are transferred
   clone->SetAnonymous(GetAnonymous());
   clone->SetPrivate(GetPrivate());
   clone->SetInsecureScheme(GetInsecureScheme());
@@ -486,8 +486,8 @@ void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI) {
 }
 
 nsresult nsHttpConnectionInfo::CreateWildCard(nsHttpConnectionInfo** outParam) {
-  
-  
+  // T???mozilla.org:443 (https:proxy.ducksong.com:3128) [specifc form]
+  // TS??*:0 (https:proxy.ducksong.com:3128)   [wildcard form]
 
   if (!mUsingHttpsProxy) {
     MOZ_ASSERT(false);
@@ -498,7 +498,7 @@ nsresult nsHttpConnectionInfo::CreateWildCard(nsHttpConnectionInfo** outParam) {
   clone = new nsHttpConnectionInfo("*"_ns, 0, mNPNToken, mUsername,
                                    mTopWindowOrigin, mProxyInfo,
                                    mOriginAttributes, true, mIsHttp3);
-  
+  // Make sure the anonymous and private flags are transferred!
   clone->SetAnonymous(GetAnonymous());
   clone->SetPrivate(GetPrivate());
   clone.forget(outParam);
@@ -539,7 +539,7 @@ bool nsHttpConnectionInfo::UsingProxy() {
 
 bool nsHttpConnectionInfo::HostIsLocalIPLiteral() const {
   PRNetAddr prAddr;
-  
+  // If the host/proxy host is not an IP address literal, return false.
   if (ProxyHost()) {
     if (PR_StringToNetAddr(ProxyHost(), &prAddr) != PR_SUCCESS) {
       return false;
@@ -547,9 +547,10 @@ bool nsHttpConnectionInfo::HostIsLocalIPLiteral() const {
   } else if (PR_StringToNetAddr(Origin(), &prAddr) != PR_SUCCESS) {
     return false;
   }
-  NetAddr netAddr(&prAddr);
+  NetAddr netAddr;
+  PRNetAddrToNetAddr(&prAddr, &netAddr);
   return IsIPAddrLocal(&netAddr);
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
