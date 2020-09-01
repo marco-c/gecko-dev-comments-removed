@@ -61,7 +61,7 @@ inline void ArrayObject::setLength(JSContext* cx, uint32_t length) {
   aobj->initShape(shape);
   
   if (!nDynamicSlots) {
-    aobj->initSlots(nullptr);
+    aobj->initEmptyDynamicSlots();
   }
 
   MOZ_ASSERT(clasp->shouldDelayMetadataBuilder());

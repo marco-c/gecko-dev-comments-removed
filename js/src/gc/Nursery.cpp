@@ -452,7 +452,7 @@ JSObject* js::Nursery::allocateObject(JSContext* cx, size_t size,
       
       return nullptr;
     }
-    slotsHeader = new (allocation) ObjectSlots(nDynamicSlots);
+    slotsHeader = new (allocation) ObjectSlots(nDynamicSlots, 0);
   }
 
   
