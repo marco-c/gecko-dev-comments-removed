@@ -1206,8 +1206,15 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
 
-  mozilla::Result<mozilla::BulkWriteHandle<T>, nsresult> NS_FASTCALL BulkWrite(
-      size_type aCapacity, size_type aPrefixToPreserve, bool aAllowShrinking);
+
+
+
+
+
+  mozilla::BulkWriteHandle<T> NS_FASTCALL BulkWrite(size_type aCapacity,
+                                                    size_type aPrefixToPreserve,
+                                                    bool aAllowShrinking,
+                                                    nsresult& aRv);
 
   
 
