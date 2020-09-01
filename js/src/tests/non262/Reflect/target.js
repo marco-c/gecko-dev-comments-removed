@@ -22,14 +22,14 @@ var methodInfo = {
 };
 
 
-for (var name of Reflect.ownKeys(Reflect)) {
+for (const name of Reflect.ownKeys(Reflect)) {
     
     
-    if (name !== "parse")
+    if (typeof name !== "symbol" && name !== "parse")
       assertEq(name in methodInfo, true);
 }
 
-for (var name of Object.keys(methodInfo)) {
+for (const name of Object.keys(methodInfo)) {
     var args = methodInfo[name];
 
     
