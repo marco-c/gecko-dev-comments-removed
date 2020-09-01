@@ -333,21 +333,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-
-
-
-
-  template <typename EditorDOMPointType>
-  static EditorDOMPointType GetAfterLastVisiblePoint(
-      Text& aTextNode, const Element* aAncestorLimiter);
-  template <typename EditorDOMPointType>
-  static EditorDOMPointType GetFirstVisiblePoint(
-      Text& aTextNode, const Element* aAncestorLimiter);
-
-  
-
-
-
   static Result<EditorDOMRangeInTexts, nsresult>
   GetRangeInTextNodesToForwardDeleteFrom(const HTMLEditor& aHTMLEditor,
                                          const EditorDOMPoint& aPoint);
