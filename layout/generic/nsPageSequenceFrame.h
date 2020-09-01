@@ -41,6 +41,11 @@ class nsSharedPageData {
   int32_t mRawNumPages = 0;
 
   
+  int32_t mFromPageNum = 0;
+  int32_t mToPageNum = 0;
+  nsTArray<int32_t> mPageRanges;
+
+  
   
   
   nsMargin mEdgePaperMargin;
@@ -51,6 +56,9 @@ class nsSharedPageData {
   
   
   float mShrinkToFitRatio = 1.0f;
+
+  
+  bool mDoingPageRange = false;
 };
 
 
@@ -89,7 +97,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   void ResetPrintCanvasList();
   int32_t GetCurrentPageNum() const { return mPageNum; }
   int32_t GetRawNumPages() const { return mPageData->mRawNumPages; }
-  bool IsDoingPrintRange() const { return mDoingPageRange; }
+  bool IsDoingPrintRange() const { return mPageData->mDoingPageRange; }
   void GetPrintRange(int32_t* aFromPage, int32_t* aToPage) const;
   nsresult DoPageEnd();
 
@@ -152,15 +160,11 @@ class nsPageSequenceFrame final : public nsContainerFrame {
 
   
   int32_t mPageNum;
-  int32_t mFromPageNum;
-  int32_t mToPageNum;
 
-  nsTArray<int32_t> mPageRanges;
   nsTArray<RefPtr<mozilla::dom::HTMLCanvasElement> > mCurrentCanvasList;
 
   
   bool mPrintThisPage;
-  bool mDoingPageRange;
 
   bool mCalledBeginPage;
 

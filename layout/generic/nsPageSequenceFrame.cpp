@@ -357,8 +357,8 @@ nsresult nsPageSequenceFrame::GetFrameName(nsAString& aResult) const {
 
 void nsPageSequenceFrame::GetPrintRange(int32_t* aFromPage,
                                         int32_t* aToPage) const {
-  *aFromPage = mFromPageNum;
-  *aToPage = mToPageNum;
+  *aFromPage = mPageData->mFromPageNum;
+  *aToPage = mPageData->mToPageNum;
 }
 
 
@@ -395,18 +395,19 @@ nsresult nsPageSequenceFrame::StartPrint(nsPresContext* aPresContext,
     mPageData->mDocURL = aDocURL;
   }
 
-  aPrintSettings->GetStartPageRange(&mFromPageNum);
-  aPrintSettings->GetEndPageRange(&mToPageNum);
-  aPrintSettings->GetPageRanges(mPageRanges);
+  aPrintSettings->GetStartPageRange(&mPageData->mFromPageNum);
+  aPrintSettings->GetEndPageRange(&mPageData->mToPageNum);
+  aPrintSettings->GetPageRanges(mPageData->mPageRanges);
 
   int16_t printType;
   aPrintSettings->GetPrintRange(&printType);
-  mDoingPageRange = nsIPrintSettings::kRangeSpecifiedPageRange == printType;
+  mPageData->mDoingPageRange =
+      nsIPrintSettings::kRangeSpecifiedPageRange == printType;
 
   
   
-  if (mDoingPageRange) {
-    if (mFromPageNum > mPageData->mRawNumPages) {
+  if (mPageData->mDoingPageRange) {
+    if (mPageData->mFromPageNum > mPageData->mRawNumPages) {
       return NS_ERROR_INVALID_ARG;
     }
   }
@@ -482,15 +483,16 @@ void nsPageSequenceFrame::DetermineWhetherToPrintPage() {
 
   
   
-  if (mDoingPageRange) {
-    if (mPageNum < mFromPageNum) {
+  if (mPageData->mDoingPageRange) {
+    if (mPageNum < mPageData->mFromPageNum) {
       mPrintThisPage = false;
-    } else if (mPageNum > mToPageNum) {
+    } else if (mPageNum > mPageData->mToPageNum) {
       mPageNum++;
       mPrintThisPage = false;
       return;
     } else {
-      int32_t length = mPageRanges.Length();
+      const auto& ranges = mPageData->mPageRanges;
+      int32_t length = ranges.Length();
 
       
       if (length && (length % 2 == 0)) {
@@ -498,7 +500,7 @@ void nsPageSequenceFrame::DetermineWhetherToPrintPage() {
 
         int32_t i;
         for (i = 0; i < length; i += 2) {
-          if (mPageRanges[i] <= mPageNum && mPageNum <= mPageRanges[i + 1]) {
+          if (ranges[i] <= mPageNum && mPageNum <= ranges[i + 1]) {
             mPrintThisPage = true;
             break;
           }
