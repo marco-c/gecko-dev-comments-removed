@@ -58,7 +58,7 @@ impl ToU64 for usize {
 
 
 
-pub trait ToUsize {
+trait ToUsize {
     fn to_usize(self) -> usize;
 }
 
@@ -975,16 +975,16 @@ pub struct TrackTimeScale<T: Num>(pub T, pub usize);
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct TrackScaledTime<T>(pub T, pub usize);
+pub struct TrackScaledTime<T: Num>(pub T, pub usize);
 
 impl<T> std::ops::Add for TrackScaledTime<T>
 where
-    T: num_traits::CheckedAdd,
+    T: Num,
 {
-    type Output = Option<Self>;
+    type Output = TrackScaledTime<T>;
 
-    fn add(self, other: TrackScaledTime<T>) -> Self::Output {
-        self.0.checked_add(&other.0).map(|sum| Self(sum, self.1))
+    fn add(self, other: TrackScaledTime<T>) -> TrackScaledTime<T> {
+        TrackScaledTime::<T>(self.0 + other.0, self.1)
     }
 }
 
@@ -1953,7 +1953,6 @@ fn read_stbl<T: Read>(f: &mut BMFFBox<T>, track: &mut Track) -> Result<()> {
 }
 
 
-
 fn read_ftyp<T: Read>(src: &mut BMFFBox<T>) -> Result<FileTypeBox> {
     let major = be_u32(src)?;
     let minor = be_u32(src)?;
@@ -1963,7 +1962,7 @@ fn read_ftyp<T: Read>(src: &mut BMFFBox<T>) -> Result<FileTypeBox> {
     }
     
     let brand_count = bytes_left / 4;
-    let mut brands = TryVec::with_capacity(brand_count.try_into()?)?;
+    let mut brands = TryVec::new();
     for _ in 0..brand_count {
         brands.push(be_u32(src)?.into())?;
     }
@@ -2059,11 +2058,10 @@ fn read_tkhd<T: Read>(src: &mut BMFFBox<T>) -> Result<TrackHeaderBox> {
 }
 
 
-
 fn read_elst<T: Read>(src: &mut BMFFBox<T>) -> Result<EditListBox> {
     let (version, _) = read_fullbox_extra(src)?;
     let edit_count = be_u32_with_limit(src)?;
-    let mut edits = TryVec::with_capacity(edit_count.to_usize())?;
+    let mut edits = TryVec::new();
     for _ in 0..edit_count {
         let (segment_duration, media_time) = match version {
             1 => {
@@ -2135,11 +2133,10 @@ fn read_mdhd<T: Read>(src: &mut BMFFBox<T>) -> Result<MediaHeaderBox> {
 }
 
 
-
 fn read_stco<T: Read>(src: &mut BMFFBox<T>) -> Result<ChunkOffsetBox> {
     let (_, _) = read_fullbox_extra(src)?;
     let offset_count = be_u32_with_limit(src)?;
-    let mut offsets = TryVec::with_capacity(offset_count.to_usize())?;
+    let mut offsets = TryVec::new();
     for _ in 0..offset_count {
         offsets.push(be_u32(src)?.into())?;
     }
@@ -2151,11 +2148,10 @@ fn read_stco<T: Read>(src: &mut BMFFBox<T>) -> Result<ChunkOffsetBox> {
 }
 
 
-
 fn read_co64<T: Read>(src: &mut BMFFBox<T>) -> Result<ChunkOffsetBox> {
     let (_, _) = read_fullbox_extra(src)?;
     let offset_count = be_u32_with_limit(src)?;
-    let mut offsets = TryVec::with_capacity(offset_count.to_usize())?;
+    let mut offsets = TryVec::new();
     for _ in 0..offset_count {
         offsets.push(be_u64(src)?)?;
     }
@@ -2167,11 +2163,10 @@ fn read_co64<T: Read>(src: &mut BMFFBox<T>) -> Result<ChunkOffsetBox> {
 }
 
 
-
 fn read_stss<T: Read>(src: &mut BMFFBox<T>) -> Result<SyncSampleBox> {
     let (_, _) = read_fullbox_extra(src)?;
     let sample_count = be_u32_with_limit(src)?;
-    let mut samples = TryVec::with_capacity(sample_count.to_usize())?;
+    let mut samples = TryVec::new();
     for _ in 0..sample_count {
         samples.push(be_u32(src)?)?;
     }
@@ -2183,11 +2178,10 @@ fn read_stss<T: Read>(src: &mut BMFFBox<T>) -> Result<SyncSampleBox> {
 }
 
 
-
 fn read_stsc<T: Read>(src: &mut BMFFBox<T>) -> Result<SampleToChunkBox> {
     let (_, _) = read_fullbox_extra(src)?;
     let sample_count = be_u32_with_limit(src)?;
-    let mut samples = TryVec::with_capacity(sample_count.to_usize())?;
+    let mut samples = TryVec::new();
     for _ in 0..sample_count {
         let first_chunk = be_u32(src)?;
         let samples_per_chunk = be_u32_with_limit(src)?;
@@ -2205,23 +2199,16 @@ fn read_stsc<T: Read>(src: &mut BMFFBox<T>) -> Result<SampleToChunkBox> {
     Ok(SampleToChunkBox { samples })
 }
 
-
-
 fn read_ctts<T: Read>(src: &mut BMFFBox<T>) -> Result<CompositionOffsetBox> {
     let (version, _) = read_fullbox_extra(src)?;
 
-    let counts = be_u32_with_limit(src)?;
+    let counts = u64::from(be_u32_with_limit(src)?);
 
-    if src.bytes_left()
-        < counts
-            .checked_mul(8)
-            .expect("counts -> bytes overflow")
-            .into()
-    {
+    if src.bytes_left() < counts.checked_mul(8).expect("counts -> bytes overflow") {
         return Err(Error::InvalidData("insufficient data in 'ctts' box"));
     }
 
-    let mut offsets = TryVec::with_capacity(counts.to_usize())?;
+    let mut offsets = TryVec::new();
     for _ in 0..counts {
         let (sample_count, time_offset) = match version {
             
@@ -2248,14 +2235,12 @@ fn read_ctts<T: Read>(src: &mut BMFFBox<T>) -> Result<CompositionOffsetBox> {
 }
 
 
-
 fn read_stsz<T: Read>(src: &mut BMFFBox<T>) -> Result<SampleSizeBox> {
     let (_, _) = read_fullbox_extra(src)?;
     let sample_size = be_u32(src)?;
     let sample_count = be_u32_with_limit(src)?;
     let mut sample_sizes = TryVec::new();
     if sample_size == 0 {
-        sample_sizes.reserve(sample_count.to_usize())?;
         for _ in 0..sample_count {
             sample_sizes.push(be_u32(src)?)?;
         }
@@ -2271,11 +2256,10 @@ fn read_stsz<T: Read>(src: &mut BMFFBox<T>) -> Result<SampleSizeBox> {
 }
 
 
-
 fn read_stts<T: Read>(src: &mut BMFFBox<T>) -> Result<TimeToSampleBox> {
     let (_, _) = read_fullbox_extra(src)?;
     let sample_count = be_u32_with_limit(src)?;
-    let mut samples = TryVec::with_capacity(sample_count.to_usize())?;
+    let mut samples = TryVec::new();
     for _ in 0..sample_count {
         let sample_count = be_u32_with_limit(src)?;
         let sample_delta = be_u32(src)?;
@@ -2643,11 +2627,7 @@ fn read_ds_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
             esds.extended_audio_object_type = extended_audio_object_type;
             esds.audio_sample_rate = Some(sample_frequency_value);
             esds.audio_channel_count = Some(channel_counts);
-            if !esds.decoder_specific_data.is_empty() {
-                return Err(Error::InvalidData(
-                    "There can be only one DecSpecificInfoTag descriptor",
-                ));
-            }
+            assert!(esds.decoder_specific_data.is_empty());
             esds.decoder_specific_data.extend_from_slice(data)?;
 
             Ok(())
@@ -2715,7 +2695,6 @@ fn read_es_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
     Ok(())
 }
 
-
 fn read_esds<T: Read>(src: &mut BMFFBox<T>) -> Result<ES_Descriptor> {
     let (_, _) = read_fullbox_extra(src)?;
 
@@ -2728,7 +2707,6 @@ fn read_esds<T: Read>(src: &mut BMFFBox<T>) -> Result<ES_Descriptor> {
 
     Ok(es_data)
 }
-
 
 
 fn read_dfla<T: Read>(src: &mut BMFFBox<T>) -> Result<FLACSpecificBox> {
@@ -3154,7 +3132,6 @@ fn read_audio_sample_entry<T: Read>(src: &mut BMFFBox<T>) -> Result<SampleEntry>
         }),
     )
 }
-
 
 
 
