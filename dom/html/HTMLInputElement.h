@@ -1593,6 +1593,11 @@ class HTMLInputElement final : public TextControlElement,
 
   static bool IsDateTimeTypeSupported(uint8_t aDateTimeInputType);
 
+  static bool CreatesDateTimeWidget(uint8_t aType) {
+    return aType == NS_FORM_INPUT_TIME || aType == NS_FORM_INPUT_DATE;
+  }
+  bool CreatesDateTimeWidget() const { return CreatesDateTimeWidget(mType); }
+
   struct nsFilePickerFilter {
     nsFilePickerFilter() : mFilterMask(0) {}
 
