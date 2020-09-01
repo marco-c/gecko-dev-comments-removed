@@ -4614,7 +4614,12 @@ var DefaultBrowserCheck = {
     }
 
     let shouldCheck =
-      !AppConstants.DEBUG && ShellService.shouldCheckDefaultBrowser;
+      !AppConstants.DEBUG &&
+      ShellService.shouldCheckDefaultBrowser &&
+      !Services.prefs.getBoolPref(
+        "browser.defaultbrowser.notificationbar",
+        false
+      );
 
     
     
