@@ -321,8 +321,8 @@ class CSSEditUtils final {
 
 
 
-  static bool DoElementsHaveSameStyle(const dom::Element& aElement,
-                                      const dom::Element& aOtherElement);
+  static bool DoStyledElementsHaveSameStyle(
+      nsStyledElement& aStyledElement, nsStyledElement& aOtherStyledElement);
 
  public:
   

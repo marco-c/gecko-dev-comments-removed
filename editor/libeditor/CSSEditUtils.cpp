@@ -1169,10 +1169,10 @@ bool CSSEditUtils::IsCSSPrefChecked() const { return mIsCSSPrefChecked; }
 
 
 
-bool CSSEditUtils::DoElementsHaveSameStyle(const Element& aElement,
-                                           const Element& aOtherElement) {
-  if (aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::id) ||
-      aOtherElement.HasAttr(kNameSpaceID_None, nsGkAtoms::id)) {
+bool CSSEditUtils::DoStyledElementsHaveSameStyle(
+    nsStyledElement& aStyledElement, nsStyledElement& aOtherStyledElement) {
+  if (aStyledElement.HasAttr(kNameSpaceID_None, nsGkAtoms::id) ||
+      aOtherStyledElement.HasAttr(kNameSpaceID_None, nsGkAtoms::id)) {
     
     
     return false;
@@ -1180,9 +1180,9 @@ bool CSSEditUtils::DoElementsHaveSameStyle(const Element& aElement,
 
   nsAutoString firstClass, otherClass;
   bool isElementClassSet =
-      aElement.GetAttr(kNameSpaceID_None, nsGkAtoms::_class, firstClass);
-  bool isOtherElementClassSet =
-      aOtherElement.GetAttr(kNameSpaceID_None, nsGkAtoms::_class, otherClass);
+      aStyledElement.GetAttr(kNameSpaceID_None, nsGkAtoms::_class, firstClass);
+  bool isOtherElementClassSet = aOtherStyledElement.GetAttr(
+      kNameSpaceID_None, nsGkAtoms::_class, otherClass);
   if (isElementClassSet && isOtherElementClassSet) {
     
     if (!firstClass.Equals(otherClass)) {
@@ -1199,24 +1199,14 @@ bool CSSEditUtils::DoElementsHaveSameStyle(const Element& aElement,
     return false;
   }
 
-  nsCOMPtr<nsStyledElement> styledElement =
-      do_QueryInterface(const_cast<Element*>(&aElement));
-  if (NS_WARN_IF(!styledElement)) {
-    return false;
-  }
   
   
-  nsCOMPtr<nsICSSDeclaration> firstCSSDecl = styledElement->Style();
+  nsCOMPtr<nsICSSDeclaration> firstCSSDecl = aStyledElement.Style();
   if (!firstCSSDecl) {
     NS_WARNING("nsStyledElement::Style() failed");
     return false;
   }
-  nsCOMPtr<nsStyledElement> otherStyledElement =
-      do_QueryInterface(const_cast<Element*>(&aOtherElement));
-  if (NS_WARN_IF(!otherStyledElement)) {
-    return false;
-  }
-  nsCOMPtr<nsICSSDeclaration> otherCSSDecl = otherStyledElement->Style();
+  nsCOMPtr<nsICSSDeclaration> otherCSSDecl = aOtherStyledElement.Style();
   if (!otherCSSDecl) {
     NS_WARNING("nsStyledElement::Style() failed");
     return false;
