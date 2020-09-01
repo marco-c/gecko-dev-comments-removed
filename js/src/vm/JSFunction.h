@@ -1,22 +1,22 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_JSFunction_h
 #define vm_JSFunction_h
 
-
-
-
+/*
+ * JS function definitions.
+ */
 
 #include "jstypes.h"
 
-#include "js/shadow/Function.h"        
-#include "vm/FunctionFlags.h"          
-#include "vm/FunctionPrefixKind.h"     
-#include "vm/GeneratorAndAsyncKind.h"  
+#include "js/shadow/Function.h"        // JS::shadow::Function
+#include "vm/FunctionFlags.h"          // FunctionFlags
+#include "vm/FunctionPrefixKind.h"     // FunctionPrefixKind
+#include "vm/GeneratorAndAsyncKind.h"  // GeneratorKind, FunctionAsyncKind
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
 
@@ -34,44 +34,44 @@ static constexpr uint32_t BoundFunctionEnvArgsSlot = 4;
 static const char FunctionConstructorMedialSigils[] = ") {\n";
 static const char FunctionConstructorFinalBrace[] = "\n}";
 
-}  
+}  // namespace js
 
 class JSFunction : public js::NativeObject {
  public:
   static const JSClass class_;
 
  private:
-  
-
-
-
+  /*
+   * number of formal arguments
+   * (including defaults and the rest parameter unlike f.length)
+   */
   uint16_t nargs_;
 
-  
-
-
-
-
-
+  /*
+   * Bitfield composed of the above Flags enum, as well as the kind.
+   *
+   * If any of these flags needs to be accessed in off-thread JIT
+   * compilation, copy it to js::jit::WrappedFunction.
+   */
   using FunctionFlags = js::FunctionFlags;
   FunctionFlags flags_;
 
   union U {
     class {
       friend class JSFunction;
-      js::Native func_; 
+      js::Native func_; /* native method pointer or null */
       union {
-        
-        
+        // Information about this function to be used by the JIT, only
+        // used if isBuiltinNative(); use the accessor!
         const JSJitInfo* jitInfo_;
-        
+        // for wasm/asm.js without a jit entry
         size_t wasmFuncIndex_;
-        
+        // for wasm that has been given a jit entry
         void** wasmJitEntry_;
       } extra;
     } native;
     struct {
-      JSObject* env_; 
+      JSObject* env_; /* environment for new activations */
       union {
         js::BaseScript* script_;
         js::SelfHostedLazyScript* selfHostedLazy_;
@@ -79,50 +79,50 @@ class JSFunction : public js::NativeObject {
     } scripted;
   } u;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The `atom_` field can have different meanings depending on the function
+  // type and flags. It is used for diagnostics, decompiling, and
+  //
+  // 1. If the function is not a bound function:
+  //   a. If HAS_GUESSED_ATOM is not set, to store the initial value of the
+  //      "name" property of functions. But also see RESOLVED_NAME.
+  //   b. If HAS_GUESSED_ATOM is set, `atom_` is only used for diagnostics,
+  //      but must not be used for the "name" property.
+  //   c. If HAS_INFERRED_NAME is set, the function wasn't given an explicit
+  //      name in the source text, e.g. `function fn(){}`, but instead it
+  //      was inferred based on how the function was defined in the source
+  //      text. The exact name inference rules are defined in the ECMAScript
+  //      specification.
+  //      Name inference can happen at compile-time, for example in
+  //      `var fn = function(){}`, or it can happen at runtime, for example
+  //      in `var o = {[Symbol.iterator]: function(){}}`. When it happens at
+  //      compile-time, the HAS_INFERRED_NAME is set directly in the
+  //      bytecode emitter, when it happens at runtime, the flag is set when
+  //      evaluating the JSOp::SetFunName bytecode.
+  //   d. HAS_GUESSED_ATOM and HAS_INFERRED_NAME cannot both be set.
+  //   e. `atom_` can be null if neither an explicit, nor inferred, nor a
+  //      guessed name was set.
+  //   f. HAS_INFERRED_NAME can be set for cloned singleton function, even
+  //      though the clone shouldn't receive an inferred name. See the
+  //      comments in NewFunctionClone() and SetFunctionName() for details.
+  //
+  // 2. If the function is a bound function:
+  //   a. To store the initial value of the "name" property.
+  //   b. If HAS_BOUND_FUNCTION_NAME_PREFIX is not set, `atom_` doesn't
+  //      contain the "bound " prefix which is prepended to the "name"
+  //      property of bound functions per ECMAScript.
+  //   c. Bound functions can never have an inferred or guessed name.
+  //   d. `atom_` is never null for bound functions.
+  //
+  // Self-hosted functions have two names. For example, Array.prototype.sort
+  // has the standard name "sort", but the implementation in Array.js is named
+  // "ArraySort".
+  //
+  // -   In the self-hosting realm, these functions have `_atom` set to the
+  //     implementation name.
+  //
+  // -   When we clone these functions into normal realms, we set `_atom` to
+  //     the standard name. (The self-hosted name is also stored on the clone,
+  //     in another slot; see GetClonedSelfHostedFunctionName().)
   js::GCPtrAtom atom_;
 
  public:
@@ -130,7 +130,7 @@ class JSFunction : public js::NativeObject {
       JSContext* cx, js::gc::AllocKind kind, js::gc::InitialHeap heap,
       js::HandleShape shape, js::HandleObjectGroup group);
 
-  
+  /* Call objects must be created for each invocation of this function. */
   bool needsCallObject() const {
     if (isNative()) {
       return false;
@@ -138,8 +138,8 @@ class JSFunction : public js::NativeObject {
 
     MOZ_ASSERT(hasBytecode());
 
-    
-    
+    // Note: this should be kept in sync with
+    // FunctionBox::needsCallObjectRegardlessOfBindings().
     MOZ_ASSERT_IF(
         baseScript()->funHasExtensibleScope() || isGenerator() || isAsync(),
         nonLazyScript()->bodyScope()->hasEnvironment());
@@ -167,13 +167,17 @@ class JSFunction : public js::NativeObject {
 
   FunctionFlags::FunctionKind kind() const { return flags_.kind(); }
 
-  
+  /* A function can be classified as either native (C++) or interpreted (JS): */
   bool isInterpreted() const { return flags_.isInterpreted(); }
   bool isNative() const { return flags_.isNative(); }
 
   bool isConstructor() const { return flags_.isConstructor(); }
 
-  
+  bool isNonBuiltinConstructor() const {
+    return flags_.isNonBuiltinConstructor();
+  }
+
+  /* Possible attributes of a native function: */
   bool isAsmJSNative() const { return flags_.isAsmJSNative(); }
 
   bool isWasm() const { return flags_.isWasm(); }
@@ -185,7 +189,7 @@ class JSFunction : public js::NativeObject {
 
   bool hasJitEntry() const { return flags_.hasJitEntry(); }
 
-  
+  /* Possible attributes of an interpreted function: */
   bool isBoundFunction() const { return flags_.isBoundFunction(); }
   bool hasInferredName() const { return flags_.hasInferredName(); }
   bool hasGuessedAtom() const { return flags_.hasGuessedAtom(); }
@@ -195,10 +199,10 @@ class JSFunction : public js::NativeObject {
 
   bool isLambda() const { return flags_.isLambda(); }
 
-  
-  
-  
-  
+  // These methods determine which of the u.scripted.s union arms are active.
+  // For live JSFunctions the pointer values will always be non-null, but due
+  // to partial initialization the GC (and other features that scan the heap
+  // directly) may still return a null pointer.
   bool hasSelfHostedLazyScript() const {
     return flags_.hasSelfHostedLazyScript();
   }
@@ -209,9 +213,9 @@ class JSFunction : public js::NativeObject {
     return hasBaseScript() && baseScript()->hasBytecode();
   }
 
-  
+  // Arrow functions store their lexical new.target in the first extended slot.
   bool isArrow() const { return flags_.isArrow(); }
-  
+  // Every class-constructor is also a method.
   bool isMethod() const { return flags_.isMethod(); }
   bool isClassConstructor() const { return flags_.isClassConstructor(); }
 
@@ -238,7 +242,7 @@ class JSFunction : public js::NativeObject {
     return baseScript()->hasJitScript();
   }
 
-  
+  /* Compound attributes: */
   bool isBuiltin() const { return isBuiltinNative() || isSelfHostedBuiltin(); }
 
   bool isNamedLambda() const {
@@ -250,31 +254,31 @@ class JSFunction : public js::NativeObject {
   bool isBuiltinFunctionConstructor();
   bool needsPrototypeProperty();
 
-  
-  
-  
+  // Returns true if this function must have a non-configurable .prototype data
+  // property. This is used to ensure looking up .prototype elsewhere will have
+  // no side-effects.
   bool hasNonConfigurablePrototypeDataProperty();
 
-  
-  
-  
+  // Returns true if |new Fun()| should not allocate a new object caller-side
+  // but pass the uninitialized-lexical MagicValue and rely on the callee to
+  // construct its own |this| object.
   bool constructorNeedsUninitializedThis() const {
     MOZ_ASSERT(isConstructor());
     MOZ_ASSERT(isInterpreted());
     return isBoundFunction() || isDerivedClassConstructor();
   }
 
-  
+  /* Returns the strictness of this function, which must be interpreted. */
   bool strict() const { return baseScript()->strict(); }
 
   void setFlags(uint16_t flags) { flags_ = FunctionFlags(flags); }
   void setFlags(FunctionFlags flags) { flags_ = flags; }
 
-  
+  // Make the function constructible.
   void setIsConstructor() { flags_.setIsConstructor(); }
   void setIsClassConstructor() { flags_.setIsClassConstructor(); }
 
-  
+  // Can be called multiple times by the parser.
   void setArgCount(uint16_t nargs) { this->nargs_ = nargs; }
 
   void setIsBoundFunction() { flags_.setIsBoundFunction(); }
@@ -284,7 +288,7 @@ class JSFunction : public js::NativeObject {
   void setResolvedLength() { flags_.setResolvedLength(); }
   void setResolvedName() { flags_.setResolvedName(); }
 
-  
+  // Mark a function as having its 'new' script information cleared.
   bool wasNewScriptCleared() const { return flags_.wasNewScriptCleared(); }
   void setNewScriptCleared() { flags_.setNewScriptCleared(); }
 
@@ -355,13 +359,13 @@ class JSFunction : public js::NativeObject {
     setAtom(atom);
   }
 
-  
+  /* uint16_t representation bounds number of call object dynamic slots. */
   enum { MAX_ARGS_AND_VARS = 2 * ((1U << 16) - 1) };
 
-  
-
-
-
+  /*
+   * For an interpreted function, accessors for the initial scope object of
+   * activations (stack frames) of the function.
+   */
   JSObject* environment() const {
     MOZ_ASSERT(isInterpreted());
     return u.scripted.env_;
@@ -395,19 +399,19 @@ class JSFunction : public js::NativeObject {
                                              js::HandleFunction fun);
   void maybeRelazify(JSRuntime* rt);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Function Scripts
+  //
+  // Interpreted functions have either a BaseScript or a SelfHostedLazyScript. A
+  // BaseScript may either be lazy or non-lazy (hasBytecode()). Methods may
+  // return a JSScript* if underlying BaseScript is known to have bytecode.
+  //
+  // There are several methods to get the script of an interpreted function:
+  //
+  // - For all interpreted functions, getOrCreateScript() will get the
+  //   JSScript, delazifying the function if necessary. This is the safest to
+  //   use, but has extra checks, requires a cx and may trigger a GC.
+  //
+  // - For functions known to have a JSScript, nonLazyScript() will get it.
 
   static JSScript* getOrCreateScript(JSContext* cx, js::HandleFunction fun) {
     MOZ_ASSERT(fun->isInterpreted());
@@ -431,9 +435,9 @@ class JSFunction : public js::NativeObject {
     return fun->nonLazyScript();
   }
 
-  
-  
-  
+  // If this is a scripted function, returns its canonical function (the
+  // original function allocated by the frontend). Note that lazy self-hosted
+  // builtins don't have a lazy script so in that case we also return nullptr.
   JSFunction* maybeCanonicalFunction() const {
     if (hasBaseScript()) {
       return baseScript()->function();
@@ -441,12 +445,12 @@ class JSFunction : public js::NativeObject {
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
+  // The default state of a JSFunction that is not ready for execution. If
+  // observed outside initialization, this is the result of failure during
+  // bytecode compilation.
+  //
+  // A BaseScript is fully initialized before u.script.s.script_ is initialized
+  // with a reference to it.
   bool isIncomplete() const { return isInterpreted() && !u.scripted.s.script_; }
 
   JSScript* nonLazyScript() const {
@@ -461,7 +465,7 @@ class JSFunction : public js::NativeObject {
     return u.scripted.s.selfHostedLazy_;
   }
 
-  
+  // Access fields defined on both lazy and non-lazy scripts.
   js::BaseScript* baseScript() const {
     MOZ_ASSERT(hasBaseScript());
     MOZ_ASSERT(u.scripted.s.script_);
@@ -520,8 +524,8 @@ class JSFunction : public js::NativeObject {
   }
 
   void clearSelfHostedLazyScript() {
-    
-    
+    // Note: The selfHostedLazy_ field is not a GC-thing pointer so we don't
+    // need to trigger barriers.
     flags_.clearSelfHostedLazy();
     flags_.setBaseScript();
     u.scripted.s.script_ = nullptr;
@@ -533,7 +537,7 @@ class JSFunction : public js::NativeObject {
     return u.native.func_;
   }
   JSNative nativeUnchecked() const {
-    
+    // Called by Ion off-main thread.
     return u.native.func_;
   }
 
@@ -554,7 +558,7 @@ class JSFunction : public js::NativeObject {
     return u.native.extra.jitInfo_;
   }
   const JSJitInfo* jitInfoUnchecked() const {
-    
+    // Called by Ion off-main thread.
     return u.native.extra.jitInfo_;
   }
   void setJitInfo(const JSJitInfo* data) {
@@ -562,12 +566,12 @@ class JSFunction : public js::NativeObject {
     u.native.extra.jitInfo_ = data;
   }
 
-  
-  
-  
-  
-  
-  
+  // wasm functions are always natives and either:
+  //  - store a function-index in u.n.extra and can only be called through the
+  //    fun->native() entry point from C++.
+  //  - store a jit-entry code pointer in u.n.extra and can be called by jit
+  //    code directly. C++ callers can still use the fun->native() entry point
+  //    (computing the function index from the jit-entry point).
   void setWasmFuncIndex(uint32_t funcIndex) {
     MOZ_ASSERT(isWasm() || isAsmJSNative());
     MOZ_ASSERT(!isWasmWithJitEntry());
@@ -622,17 +626,17 @@ class JSFunction : public js::NativeObject {
 
   inline void trace(JSTracer* trc);
 
-  
+  /* Bound function accessors. */
 
   JSObject* getBoundFunctionTarget() const;
   const js::Value& getBoundFunctionThis() const;
   const js::Value& getBoundFunctionArgument(unsigned which) const;
   size_t getBoundFunctionArgumentCount() const;
 
-  
-
-
-
+  /*
+   * Used to mark bound functions as such and make them constructible if the
+   * target is. Also assigns the prototype and sets the name and correct length.
+   */
   static bool finishBoundFunctionInit(JSContext* cx, js::HandleFunction bound,
                                       js::HandleObject targetObj,
                                       int32_t argCount);
@@ -650,35 +654,35 @@ class JSFunction : public js::NativeObject {
     return extended;
   }
 
-  
-
-
-
-
+  /*
+   * Accessors for data stored in extended functions. Use setExtendedSlot if
+   * the function has already been initialized. Otherwise use
+   * initExtendedSlot.
+   */
   inline void initializeExtended();
   inline void initExtendedSlot(size_t which, const js::Value& val);
   inline void setExtendedSlot(size_t which, const js::Value& val);
   inline const js::Value& getExtendedSlot(size_t which) const;
 
-  
-
-
-
-
-
-
-
-
-
+  /*
+   * Same as `toExtended` and `getExtendedSlot`, but `this` is guaranteed to be
+   * an extended function.
+   *
+   * This function is supposed to be used off-thread, especially the JIT
+   * compilation thread, that cannot access JSFunction.flags_, because of
+   * a race condition.
+   *
+   * See Also: WrappedFunction.isExtended_
+   */
   inline js::FunctionExtended* toExtendedOffMainThread();
   inline const js::FunctionExtended* toExtendedOffMainThread() const;
   inline const js::Value& getExtendedSlotOffMainThread(size_t which) const;
 
-  
+  /* Constructs a new type for the function if necessary. */
   static bool setTypeForScriptedFunction(JSContext* cx, js::HandleFunction fun,
                                          bool singleton = false);
 
-  
+  /* GC support. */
   js::gc::AllocKind getAllocKind() const {
     static_assert(
         js::gc::AllocKind::FUNCTION != js::gc::AllocKind::FUNCTION_EXTENDED,
@@ -710,9 +714,9 @@ extern bool AsyncFunctionConstructor(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool AsyncGeneratorConstructor(JSContext* cx, unsigned argc, Value* vp);
 
-
-
-
+// If enclosingEnv is null, the function will have a null environment()
+// (yes, null, not the global lexical environment).  In all cases, the global
+// will be used as the terminating environment.
 
 extern JSFunction* NewFunctionWithProto(
     JSContext* cx, JSNative native, unsigned nargs, FunctionFlags flags,
@@ -720,8 +724,8 @@ extern JSFunction* NewFunctionWithProto(
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
     NewObjectKind newKind = GenericObject);
 
-
-
+// Allocate a new function backed by a JSNative.  Note that by default this
+// creates a singleton object.
 inline JSFunction* NewNativeFunction(
     JSContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
@@ -732,8 +736,8 @@ inline JSFunction* NewNativeFunction(
                               allocKind, newKind);
 }
 
-
-
+// Allocate a new constructor backed by a JSNative.  Note that by default this
+// creates a singleton object.
 inline JSFunction* NewNativeConstructor(
     JSContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
@@ -745,23 +749,23 @@ inline JSFunction* NewNativeConstructor(
                               allocKind, newKind);
 }
 
-
-
-
+// Allocate a new scripted function.  If enclosingEnv is null, the
+// global lexical environment will be used.  In all cases the terminating
+// environment of the resulting object will be the global.
 extern JSFunction* NewScriptedFunction(
     JSContext* cx, unsigned nargs, FunctionFlags flags, HandleAtom atom,
     HandleObject proto = nullptr,
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
     NewObjectKind newKind = GenericObject, HandleObject enclosingEnv = nullptr);
 
-
-
-
-
-
-
-
-
+// Determine which [[Prototype]] to use when creating a new function using the
+// requested generator and async kind.
+//
+// This sets `proto` to `nullptr` for non-generator, synchronous functions to
+// mean "the builtin %FunctionPrototype% in the current realm", the common case.
+//
+// We could set it to `cx->global()->getOrCreateFunctionPrototype()`, but
+// nullptr gets a fast path in e.g. js::NewObjectWithClassProtoCommon.
 extern bool GetFunctionPrototype(JSContext* cx, js::GeneratorKind generatorKind,
                                  js::FunctionAsyncKind asyncKind,
                                  js::MutableHandleObject proto);
@@ -782,38 +786,38 @@ extern bool fun_toString(JSContext* cx, unsigned argc, Value* vp);
 
 struct WellKnownSymbols;
 
-
-
-
+// Assumes that fun.__proto__ === Function.__proto__, i.e., does not check for
+// the case where a function with a non-default __proto__ has an overridden
+// @@hasInstance handler. Will assert if not.
 extern bool FunctionHasDefaultHasInstance(JSFunction* fun,
                                           const WellKnownSymbols& symbols);
 
 extern void ThrowTypeErrorBehavior(JSContext* cx);
 
-
-
-
-
-
+/*
+ * Function extended with reserved slots for use by various kinds of functions.
+ * Most functions do not have these extensions, but enough do that efficient
+ * storage is required (no malloc'ed reserved slots).
+ */
 class FunctionExtended : public JSFunction {
  public:
   static const unsigned NUM_EXTENDED_SLOTS = 2;
 
-  
-  
+  // Arrow functions store their lexical new.target in the first extended
+  // slot.
   static const unsigned ARROW_NEWTARGET_SLOT = 0;
 
   static const unsigned METHOD_HOMEOBJECT_SLOT = 0;
 
-  
-  
+  // Exported asm.js/wasm functions store their WasmInstanceObject in the
+  // first slot.
   static const unsigned WASM_INSTANCE_SLOT = 0;
 
-  
-  
+  // wasm/asm.js exported functions store the wasm::TlsData pointer of their
+  // instance.
   static const unsigned WASM_TLSDATA_SLOT = 1;
 
-  
+  // asm.js module functions store their WasmModuleObject in the first slot.
   static const unsigned ASMJS_MODULE_SLOT = 0;
 
   static inline size_t offsetOfExtendedSlot(unsigned which) {
@@ -831,7 +835,7 @@ class FunctionExtended : public JSFunction {
  private:
   friend class JSFunction;
 
-  
+  /* Reserved slots available for storage by particular native functions. */
   GCPtrValue extendedSlots[NUM_EXTENDED_SLOTS];
 };
 
@@ -843,7 +847,7 @@ extern JSFunction* CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
                                             gc::AllocKind kind,
                                             HandleObject proto);
 
-
+// Functions whose scripts are cloned are always given singleton types.
 extern JSFunction* CloneFunctionAndScript(
     JSContext* cx, HandleFunction fun, HandleObject enclosingEnv,
     HandleScope newScope, Handle<ScriptSourceObject*> sourceObject,
@@ -856,7 +860,7 @@ extern JSFunction* CloneSelfHostingIntrinsic(JSContext* cx, HandleFunction fun);
 extern bool SetPrototypeForClonedFunction(JSContext* cx, HandleFunction fun,
                                           HandleObject proto);
 
-}  
+}  // namespace js
 
 inline js::FunctionExtended* JSFunction::toExtended() {
   MOZ_ASSERT(isExtended());
@@ -918,25 +922,25 @@ XDRResult XDRInterpretedFunction(XDRState<mode>* xdr,
                                  HandleScriptSourceObject sourceObject,
                                  MutableHandleFunction objp);
 
-
-
-
-
-
+/*
+ * Report an error that call.thisv is not compatible with the specified class,
+ * assuming that the method (clasp->name).prototype.<name of callee function>
+ * is what was called.
+ */
 extern void ReportIncompatibleMethod(JSContext* cx, const CallArgs& args,
                                      const JSClass* clasp);
 
-
-
-
-
+/*
+ * Report an error that call.thisv is not an acceptable this for the callee
+ * function.
+ */
 extern void ReportIncompatible(JSContext* cx, const CallArgs& args);
 
 extern bool fun_apply(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool fun_call(JSContext* cx, unsigned argc, Value* vp);
 
-} 
+} /* namespace js */
 
 #ifdef DEBUG
 namespace JS {
@@ -944,8 +948,8 @@ namespace detail {
 
 JS_PUBLIC_API void CheckIsValidConstructible(const Value& calleev);
 
-}  
-}  
+}  // namespace detail
+}  // namespace JS
 #endif
 
-#endif 
+#endif /* vm_JSFunction_h */
