@@ -1923,7 +1923,8 @@ static bool DecodeTableTypeAndLimits(Decoder& d, bool refTypesEnabled,
     maximumLength = Some(uint32_t(*limits.maximum));
   }
 
-  return tables->emplaceBack(tableElemType, initialLength, maximumLength,  false);
+  return tables->emplaceBack(tableElemType, initialLength, maximumLength,
+                              false);
 }
 
 static bool GlobalIsJSCompatible(Decoder& d, ValType type) {

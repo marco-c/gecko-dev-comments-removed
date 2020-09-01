@@ -37,7 +37,7 @@
 #include "vm/Runtime.h"           
 #include "vm/StringType.h"        
 
-#include "vm/Compartment-inl.h"  
+#include "vm/Compartment-inl.h"   
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
 
