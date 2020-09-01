@@ -11,6 +11,7 @@
 #include "mozilla/Likely.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/WritingModes.h"
 #include "nsBulletFrame.h"  
 #include "nsContentUtils.h"
@@ -131,6 +132,33 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
   
   
   
+  
+  if (aNode->mType != nsCounterNode::USE &&
+      StaticPrefs::layout_css_counter_ancestor_scope_enabled()) {
+    nsIContent* const counterNode = aNode->mPseudoFrame->GetContent();
+    nsCounterNode* lastPrev = nullptr;
+    for (nsCounterNode* prev = Prev(aNode); prev; prev = prev->mScopePrev) {
+      if (prev->mType == nsCounterNode::RESET) {
+        if (aNode->mPseudoFrame == prev->mPseudoFrame) {
+          break;
+        }
+        
+        nsIContent* resetNode = prev->mPseudoFrame->GetContent();
+        if (counterNode->IsInclusiveDescendantOf(resetNode)) {
+          aNode->mScopeStart = prev;
+          aNode->mScopePrev = lastPrev ? lastPrev : prev;
+          return;
+        }
+        lastPrev = prev->mScopePrev;
+      } else if (!lastPrev) {
+        lastPrev = prev;
+      }
+    }
+  }
+
+  
+  
+  
   nsIContent* nodeContent = aNode->mPseudoFrame->GetContent()->GetParent();
 
   for (nsCounterNode *prev = Prev(aNode), *start; prev;
@@ -155,6 +183,7 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
     
     if (!(aNode->mType == nsCounterNode::RESET &&
           nodeContent == startContent) &&
+        
         
         
         (!startContent || nodeContent->IsInclusiveDescendantOf(startContent))) {
