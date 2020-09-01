@@ -251,6 +251,16 @@ class AppWindow final : public nsIBaseWindow,
   
   
   
+  nsresult MaybeSaveEarlyWindowPersistentValues(
+      const LayoutDeviceIntRect& aRect);
+
+  
+  nsresult GetDocXulStoreKeys(nsString& aUriSpec, nsString& aWindowElementId);
+
+  
+  
+  
+  
   
   
   
