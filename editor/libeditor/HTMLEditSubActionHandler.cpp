@@ -103,9 +103,10 @@ static bool IsStyleCachePreservingSubAction(EditSubAction aEditSubAction) {
 
 class MOZ_RAII AutoSetTemporaryAncestorLimiter final {
  public:
-  explicit AutoSetTemporaryAncestorLimiter(HTMLEditor& aHTMLEditor,
-                                           Selection& aSelection,
-                                           nsINode& aStartPointNode) {
+  AutoSetTemporaryAncestorLimiter(HTMLEditor& aHTMLEditor,
+                                  Selection& aSelection,
+                                  nsINode& aStartPointNode,
+                                  AutoRangeArray* aRanges = nullptr) {
     MOZ_ASSERT(aSelection.GetType() == SelectionType::eNormal);
 
     if (aSelection.GetAncestorLimiter()) {
@@ -116,6 +117,11 @@ class MOZ_RAII AutoSetTemporaryAncestorLimiter final {
     if (root) {
       aHTMLEditor.InitializeSelectionAncestorLimit(*root);
       mSelection = &aSelection;
+      
+      
+      if (aRanges) {
+        aRanges->Initialize(aSelection);
+      }
     }
   }
 
@@ -2508,7 +2514,8 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
     
     
     AutoSetTemporaryAncestorLimiter autoSetter(*this, *SelectionRefPtr(),
-                                               *startPoint.GetContainer());
+                                               *startPoint.GetContainer(),
+                                               &aRangesToDelete);
 
     Result<nsIEditor::EDirection, nsresult> extendResult =
         aRangesToDelete.ExtendAnchorFocusRangeFor(*this, aDirectionAndAmount);
