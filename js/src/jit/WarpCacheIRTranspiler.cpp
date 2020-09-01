@@ -3218,6 +3218,17 @@ bool WarpCacheIRTranspiler::emitCallInlinedFunction(ObjOperandId calleeId,
   if (callInfo_->isInlined()) {
     
     
+    
+    
+    MDefinition* callee = getOperand(calleeId);
+    switch (updateCallInfo(callee, flags)) {
+      case ArgumentLocation::Standard:
+        break;
+      case ArgumentLocation::OOM:
+        return false;
+      default:
+        MOZ_CRASH("Unsupported argument location");
+    }
     return true;
   }
   return emitCallFunction(calleeId, argcId, flags, CallKind::Scripted);
