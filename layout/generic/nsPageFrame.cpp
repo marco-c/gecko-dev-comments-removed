@@ -57,18 +57,21 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   }
 
   nsIFrame* frame = mFrames.FirstChild();
-  nsSize maxSize = aPresContext->GetPageSize();
+  
+  
+  
+  nscoord avHeight;
+  if (mPD->mReflowSize.height == NS_UNCONSTRAINEDSIZE) {
+    avHeight = NS_UNCONSTRAINEDSIZE;
+  } else {
+    avHeight = mPD->mReflowSize.height;
+  }
+  nsSize maxSize(mPD->mReflowSize.width, avHeight);
   float scale = aPresContext->GetPageScale();
-  
-  
-  
-  
-  
   maxSize.width = NSToCoordCeil(maxSize.width / scale);
   if (maxSize.height != NS_UNCONSTRAINEDSIZE) {
     maxSize.height = NSToCoordCeil(maxSize.height / scale);
   }
-
   
   const nscoord onePixel = AppUnitsPerCSSPixel();
 
@@ -91,8 +94,7 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   const auto& marginStyle = kidReflowInput.mStyleMargin->mMargin;
   for (const auto side : mozilla::AllPhysicalSides()) {
     if (marginStyle.Get(side).IsAuto()) {
-      mPageContentMargin.Side(side) =
-          aPresContext->GetDefaultPageMargin().Side(side);
+      mPageContentMargin.Side(side) = mPD->mReflowMargin.Side(side);
     } else {
       mPageContentMargin.Side(side) =
           kidReflowInput.ComputedPhysicalMargin().Side(side);
@@ -110,7 +112,9 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   
   
   if (maxWidth < onePixel || maxHeight < onePixel) {
-    mPageContentMargin = aPresContext->GetDefaultPageMargin();
+    for (const auto side : mozilla::AllPhysicalSides()) {
+      mPageContentMargin.Side(side) = mPD->mReflowMargin.Side(side);
+    }
     maxWidth = maxSize.width - mPageContentMargin.LeftRight() / scale;
     if (maxHeight != NS_UNCONSTRAINEDSIZE) {
       maxHeight = maxSize.height - mPageContentMargin.TopBottom() / scale;
@@ -489,9 +493,9 @@ static void PaintMarginGuides(nsIFrame* aFrame, DrawTarget* aDrawTarget,
                         0.0f);
   DrawOptions options;
 
-  
-  
-  const nsMargin& margin = aFrame->PresContext()->GetDefaultPageMargin();
+  auto* pageData = static_cast<nsPageFrame*>(aFrame)->GetSharedPageData();
+  MOZ_ASSERT(pageData, "Should have page data by the time we're painting");
+  const nsMargin& margin = pageData->mReflowMargin;
   int32_t appUnitsPerDevPx = aFrame->PresContext()->AppUnitsPerDevPixel();
 
   
@@ -537,11 +541,8 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    
-    
-    
-    clipRect.y = NSToCoordCeil(
-        (-child->GetRect().y + pc->GetDefaultPageMargin().top) / scale);
+    clipRect.y =
+        NSToCoordCeil((-child->GetRect().y + mPD->mReflowMargin.top) / scale);
     clipRect.height = expectedPageContentHeight;
     NS_ASSERTION(clipRect.y < child->GetSize().height,
                  "Should be clipping to region inside the page content bounds");

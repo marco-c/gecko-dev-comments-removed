@@ -17,6 +17,18 @@ use crate::Atom;
 use app_units::Au;
 use euclid::default::Size2D;
 
+fn viewport_size(device: &Device) -> Size2D<Au> {
+    if let Some(pc) = device.pres_context() {
+        if pc.mIsRootPaginatedDocument() != 0 {
+            
+            
+            let area = &pc.mPageSize;
+            return Size2D::new(Au(area.width), Au(area.height));
+        }
+    }
+    device.au_viewport_size()
+}
+
 fn device_size(device: &Device) -> Size2D<Au> {
     let mut width = 0;
     let mut height = 0;
@@ -35,7 +47,7 @@ fn eval_width(
     RangeOrOperator::evaluate(
         range_or_operator,
         value.map(Au::from),
-        device.au_viewport_size().width,
+        viewport_size(device).width,
     )
 }
 
@@ -61,7 +73,7 @@ fn eval_height(
     RangeOrOperator::evaluate(
         range_or_operator,
         value.map(Au::from),
-        device.au_viewport_size().height,
+        viewport_size(device).height,
     )
 }
 
@@ -103,7 +115,7 @@ fn eval_aspect_ratio(
     query_value: Option<Ratio>,
     range_or_operator: Option<RangeOrOperator>,
 ) -> bool {
-    eval_aspect_ratio_for(device, query_value, range_or_operator, Device::au_viewport_size)
+    eval_aspect_ratio_for(device, query_value, range_or_operator, viewport_size)
 }
 
 
@@ -156,7 +168,7 @@ where
 
 
 fn eval_orientation(device: &Device, value: Option<Orientation>) -> bool {
-    eval_orientation_for(device, value, Device::au_viewport_size)
+    eval_orientation_for(device, value, viewport_size)
 }
 
 
