@@ -8698,7 +8698,13 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState) {
   
   if (!aLoadState->Target().IsEmpty()) {
     return PerformRetargeting(aLoadState);
+  } else if (aLoadState->TargetBrowsingContext().IsNull()) {
+    aLoadState->SetTargetBrowsingContext(GetBrowsingContext());
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(
+      aLoadState->TargetBrowsingContext() == GetBrowsingContext(),
+      "Load must be targeting this BrowsingContext");
 
   
   
