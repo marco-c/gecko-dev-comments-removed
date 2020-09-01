@@ -166,10 +166,6 @@ bool IsCloseToVertical(float aAngle, float aThreshold);
 
 
 
-gfxFloat IntervalOverlap(gfxFloat aTranslation, gfxFloat aMin, gfxFloat aMax);
-
-
-
 
 
 bool IsStuckAtBottom(gfxFloat aTranslation,
