@@ -675,6 +675,14 @@ bool BacktrackingAllocator::buildLivenessInfo() {
           }
         }
 
+        
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT_IF(ins->isCall(), temp->policy() == LDefinition::FIXED);
         CodePosition to =
             ins->isCall() ? outputOf(*ins) : outputOf(*ins).next();
 
