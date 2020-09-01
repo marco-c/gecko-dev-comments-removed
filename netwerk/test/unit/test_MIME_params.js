@@ -537,7 +537,10 @@ var tests = [
     Cr.NS_ERROR_INVALID_ARG,
   ],
 
-  ["attachment; filename=foo extension=bla", "attachment", "foo"],
+  
+  
+  
+  ["attachment; filename=foo extension=bla", "attachment", "foo extension=bla"],
 
   ["attachment filename=foo", "attachment", Cr.NS_ERROR_INVALID_ARG],
 
@@ -555,6 +558,27 @@ var tests = [
 
   
   ["attachment; badparameter; filename=foo", "attachment", "foo"],
+
+  
+  
+  
+  ["attachment; filename=foo bar.html", "attachment", "foo bar.html"],
+  
+  
+  ["attachment; filename=foo\tbar.html", "attachment", "foo\tbar.html"],
+  
+  
+  
+  ["attachment; filename=foo\nbar.html", "attachment", "foobar.html"],
+  ["attachment; filename=foo\r\nbar.html", "attachment", "foobar.html"],
+  ["attachment; filename=foo\rbar.html", "attachment", "foobar.html"],
+
+  
+  ["attachment; filename=foo bar; garbage", "attachment", "foo bar"],
+  ["attachment; filename=foo bar; extension=blah", "attachment", "foo bar"],
+
+  
+  ["attachment; filename =      ", "attachment", ""],
 ];
 
 var rfc5987paramtests = [

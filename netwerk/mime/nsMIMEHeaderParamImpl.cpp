@@ -497,10 +497,13 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
     if (*str != '"') {
       
       valueStart = str;
-      for (valueEnd = str;
-           *valueEnd && !nsCRT::IsAsciiSpace(*valueEnd) && *valueEnd != ';';
-           valueEnd++)
+      for (valueEnd = str; *valueEnd && *valueEnd != ';'; valueEnd++) {
         ;
+      }
+      
+      while (valueEnd > valueStart && nsCRT::IsAsciiSpace(*(valueEnd - 1))) {
+        valueEnd--;
+      }
       str = valueEnd;
     } else {
       isQuotedString = true;
