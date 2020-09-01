@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/RegisterAllocator.h"
 
@@ -11,7 +11,7 @@ using namespace js::jit;
 
 #ifdef DEBUG
 bool AllocationIntegrityState::record() {
-  // Ignore repeated record() calls.
+  
   if (!instructions.empty()) {
     return true;
   }
@@ -101,8 +101,8 @@ bool AllocationIntegrityState::check() {
   for (size_t blockIndex = 0; blockIndex < graph.numBlocks(); blockIndex++) {
     LBlock* block = graph.getBlock(blockIndex);
 
-    // Check that all instruction inputs and outputs have been assigned an
-    // allocation.
+    
+    
     for (LInstructionIterator iter = block->begin(); iter != block->end();
          iter++) {
       LInstruction* ins = *iter;
@@ -134,15 +134,15 @@ bool AllocationIntegrityState::check() {
     }
   }
 
-  // Check that the register assignment and move groups preserve the original
-  // semantics of the virtual registers. Each virtual register has a single
-  // write (owing to the SSA representation), but the allocation may move the
-  // written value around between registers and memory locations along
-  // different paths through the script.
-  //
-  // For each use of an allocation, follow the physical value which is read
-  // backward through the script, along all paths to the value's virtual
-  // register's definition.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   for (size_t blockIndex = 0; blockIndex < graph.numBlocks(); blockIndex++) {
     LBlock* block = graph.getBlock(blockIndex);
     for (LInstructionIterator iter = block->begin(); iter != block->end();
@@ -166,8 +166,8 @@ bool AllocationIntegrityState::check() {
 
       size_t inputIndex = 0;
       for (LInstruction::InputIterator alloc(*ins); alloc.more();
-           alloc.next()) {
-        LAllocation oldInput = info.inputs[inputIndex++];
+           inputIndex++, alloc.next()) {
+        LAllocation oldInput = info.inputs[inputIndex];
         if (!oldInput.isUse()) {
           continue;
         }
@@ -178,8 +178,30 @@ bool AllocationIntegrityState::check() {
           checkSafepointAllocation(ins, vreg, **alloc);
         }
 
-        // Start checking at the previous instruction, in case this
-        // instruction reuses its input register for an output.
+        
+        
+        for (size_t i = 0; i < ins->numTemps(); i++) {
+          if (ins->getTemp(i)->isBogusTemp()) {
+            continue;
+          }
+          LAllocation* tempAlloc = ins->getTemp(i)->output();
+
+          
+          if (oldInput.toUse()->isFixedRegister() && info.temps[i].isFixed()) {
+            continue;
+          }
+
+          
+          if (info.temps[i].policy() == LDefinition::MUST_REUSE_INPUT &&
+              info.temps[i].getReusedInput() == inputIndex) {
+            continue;
+          }
+
+          MOZ_ASSERT(!tempAlloc->aliases(**alloc));
+        }
+
+        
+        
         LInstructionReverseIterator riter = block->rbegin(ins);
         riter++;
         if (!checkIntegrity(block, *riter, vreg, **alloc)) {
@@ -207,9 +229,9 @@ bool AllocationIntegrityState::checkIntegrity(LBlock* block, LInstruction* ins,
        iter != block->rend(); iter++) {
     ins = *iter;
 
-    // Follow values through assignments in move groups. All assignments in
-    // a move group are considered to happen simultaneously, so stop after
-    // the first matching move is found.
+    
+    
+    
     if (ins->isMoveGroup()) {
       LMoveGroup* group = ins->toMoveGroup();
       for (int i = group->numMoves() - 1; i >= 0; i--) {
@@ -222,9 +244,9 @@ bool AllocationIntegrityState::checkIntegrity(LBlock* block, LInstruction* ins,
 
     const InstructionInfo& info = instructions[ins->id()];
 
-    // Make sure the physical location being tracked is not clobbered by
-    // another instruction, and that if the originating vreg definition is
-    // found that it is writing to the tracked location.
+    
+    
+    
 
     for (size_t i = 0; i < ins->numDefs(); i++) {
       LDefinition* def = ins->getDef(i);
@@ -234,7 +256,7 @@ bool AllocationIntegrityState::checkIntegrity(LBlock* block, LInstruction* ins,
       if (info.outputs[i].virtualRegister() == vreg) {
         MOZ_ASSERT(*def->output() == alloc);
 
-        // Found the original definition, done scanning.
+        
         return true;
       } else {
         MOZ_ASSERT(*def->output() != alloc);
@@ -253,10 +275,10 @@ bool AllocationIntegrityState::checkIntegrity(LBlock* block, LInstruction* ins,
     }
   }
 
-  // Phis are effectless, but change the vreg we are tracking. Check if there
-  // is one which produced this vreg. We need to follow back through the phi
-  // inputs as it is not guaranteed the register allocator filled in physical
-  // allocations for the inputs and outputs of the phis.
+  
+  
+  
+  
   for (size_t i = 0; i < block->numPhis(); i++) {
     const InstructionInfo& info = blocks[block->mir()->id()].phis[i];
     LPhi* phi = block->getPhi(i);
@@ -272,8 +294,8 @@ bool AllocationIntegrityState::checkIntegrity(LBlock* block, LInstruction* ins,
     }
   }
 
-  // No phi which defined the vreg we are tracking, follow back through all
-  // predecessors with the existing vreg.
+  
+  
   for (size_t i = 0, iend = block->mir()->numPredecessors(); i < iend; i++) {
     LBlock* predecessor = block->mir()->getPredecessor(i)->lir();
     if (!addPredecessor(predecessor, vreg, alloc)) {
@@ -298,7 +320,7 @@ void AllocationIntegrityState::checkSafepointAllocation(LInstruction* ins,
     MOZ_ASSERT(safepoint->liveRegs().has(alloc.toRegister()));
   }
 
-  // The |this| argument slot is implicitly included in all safepoints.
+  
   if (alloc.isArgument() &&
       alloc.toArgument()->index() < THIS_FRAME_ARGSLOT + sizeof(Value)) {
     return;
@@ -312,14 +334,17 @@ void AllocationIntegrityState::checkSafepointAllocation(LInstruction* ins,
     case LDefinition::OBJECT:
       MOZ_ASSERT(safepoint->hasGcPointer(alloc));
       break;
+    case LDefinition::STACKRESULTS:
+      MOZ_ASSERT(safepoint->hasAllGcPointersFromStackArea(alloc));
+      break;
     case LDefinition::SLOTS:
       MOZ_ASSERT(safepoint->hasSlotsOrElementsPointer(alloc));
       break;
 #  ifdef JS_NUNBOX32
-    // Do not assert that safepoint information for nunbox types is complete,
-    // as if a vreg for a value's components are copied in multiple places
-    // then the safepoint information may not reflect all copies. All copies
-    // of payloads must be reflected, however, for generational GC.
+    
+    
+    
+    
     case LDefinition::TYPE:
       break;
     case LDefinition::PAYLOAD:
@@ -337,9 +362,9 @@ void AllocationIntegrityState::checkSafepointAllocation(LInstruction* ins,
 
 bool AllocationIntegrityState::addPredecessor(LBlock* block, uint32_t vreg,
                                               LAllocation alloc) {
-  // There is no need to reanalyze if we have already seen this predecessor.
-  // We share the seen allocations across analysis of each use, as there will
-  // likely be common ground between different uses of the same vreg.
+  
+  
+  
   IntegrityItem item;
   item.block = block;
   item.vreg = vreg;
@@ -437,8 +462,8 @@ void AllocationIntegrityState::dump() {
     }
   }
 
-  // Print discovered allocations at the ends of blocks, in the order they
-  // were discovered.
+  
+  
 
   Vector<IntegrityItem, 20, SystemAllocPolicy> seenOrdered;
   if (!seenOrdered.appendN(IntegrityItem(), seen.count())) {
@@ -464,7 +489,7 @@ void AllocationIntegrityState::dump() {
   fprintf(stderr, "\n");
 #  endif
 }
-#endif  // DEBUG
+#endif  
 
 const CodePosition CodePosition::MAX(UINT_MAX);
 const CodePosition CodePosition::MIN(0);
@@ -577,7 +602,7 @@ void RegisterAllocator::dumpInstructions() {
       if (ins->isMoveGroup()) {
         LMoveGroup* group = ins->toMoveGroup();
         for (int i = group->numMoves() - 1; i >= 0; i--) {
-          // Use two printfs, as LAllocation::toString is not reentant.
+          
           fprintf(stderr, " [%s", group->getMove(i).from().toString().get());
           fprintf(stderr, " -> %s]", group->getMove(i).to().toString().get());
         }
@@ -607,5 +632,5 @@ void RegisterAllocator::dumpInstructions() {
     }
   }
   fprintf(stderr, "\n");
-#endif  // JS_JITSPEW
+#endif  
 }
