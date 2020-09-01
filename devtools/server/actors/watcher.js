@@ -6,7 +6,6 @@
 
 const protocol = require("devtools/shared/protocol");
 const { watcherSpec } = require("devtools/shared/specs/watcher");
-const Services = require("Services");
 
 const Resources = require("devtools/server/actors/resources/index");
 const {
@@ -83,11 +82,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   },
 
   form() {
-    const enableServerWatcher = Services.prefs.getBoolPref(
-      "devtools.testing.enableServerWatcherSupport",
-      false
-    );
-
     const hasBrowserElement = !!this.browserElement;
 
     return {
@@ -104,17 +98,18 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           
           
           
-          [Resources.TYPES.CONSOLE_MESSAGE]:
-            enableServerWatcher && hasBrowserElement,
-          [Resources.TYPES.CSS_CHANGE]:
-            enableServerWatcher && hasBrowserElement,
-          [Resources.TYPES.CSS_MESSAGE]:
-            enableServerWatcher && hasBrowserElement,
-          [Resources.TYPES.DOCUMENT_EVENT]:
-            enableServerWatcher && hasBrowserElement,
-          [Resources.TYPES.ERROR_MESSAGE]:
-            enableServerWatcher && hasBrowserElement,
-          [Resources.TYPES.PLATFORM_MESSAGE]: enableServerWatcher,
+          
+          
+          
+          
+          
+          
+          [Resources.TYPES.CONSOLE_MESSAGE]: hasBrowserElement,
+          [Resources.TYPES.CSS_CHANGE]: hasBrowserElement,
+          [Resources.TYPES.CSS_MESSAGE]: hasBrowserElement,
+          [Resources.TYPES.DOCUMENT_EVENT]: hasBrowserElement,
+          [Resources.TYPES.ERROR_MESSAGE]: hasBrowserElement,
+          [Resources.TYPES.PLATFORM_MESSAGE]: true,
         },
       },
     };

@@ -11,9 +11,6 @@ const {
 } = require("devtools/shared/resources/resource-watcher");
 
 add_task(async function() {
-  
-  await pushPref("devtools.testing.enableServerWatcherSupport", true);
-
   const tab = await addTab("data:text/html,Test");
   const {
     client,
@@ -94,6 +91,4 @@ add_task(async function() {
     
     delete content._testTargetActor;
   });
-
-  await pushPref("devtools.testing.enableServerWatcherSupport", false);
 });
