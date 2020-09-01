@@ -535,6 +535,27 @@ class MarkerStack {
   ProfileChunkedBuffer* mChunkedBuffer = nullptr;
 };
 
+
+class MarkerInnerWindowId {
+ public:
+  
+  constexpr MarkerInnerWindowId() = default;
+
+  
+  constexpr explicit MarkerInnerWindowId(uint64_t i) : mInnerWindowId(i) {}
+
+  
+  constexpr static MarkerInnerWindowId NoId() { return MarkerInnerWindowId{}; }
+
+  [[nodiscard]] bool IsUnspecified() const { return mInnerWindowId == scNoId; }
+
+  [[nodiscard]] constexpr uint64_t Id() const { return mInnerWindowId; }
+
+ private:
+  static constexpr uint64_t scNoId = 0;
+  uint64_t mInnerWindowId = scNoId;
+};
+
 }  
 
 #endif  
