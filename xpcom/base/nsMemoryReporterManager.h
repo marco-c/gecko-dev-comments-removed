@@ -16,6 +16,10 @@
 #include "nsServiceManagerUtils.h"
 #include "nsDataHashtable.h"
 
+#ifdef XP_WIN
+#  include <windows.h>
+#endif  
+
 namespace mozilla {
 class MemoryReportingProcess;
 namespace dom {
@@ -170,7 +174,19 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
 
   
   
+  
+  
+  
+  
+#ifdef XP_WIN
+  static int64_t ResidentUnique(HANDLE aProcess = nullptr);
+#elif XP_MACOSX
+  static int64_t ResidentUnique(mach_port_t aPort = 0);
+#elif XP_LINUX
+  static int64_t ResidentUnique(pid_t aPid = 0);
+#else
   static int64_t ResidentUnique();
+#endif  
 
   
   struct SizeOfTabFns {
