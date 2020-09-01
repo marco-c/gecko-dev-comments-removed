@@ -649,7 +649,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       
       
-      if (mouseEvent->mExitFrom != WidgetMouseEvent::eTopLevel) {
+      if (mouseEvent->mExitFrom.value() != WidgetMouseEvent::eTopLevel) {
         
         
         
@@ -1327,6 +1327,7 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
           UniquePtr<WidgetMouseEvent> mouseExitEvent =
               CreateMouseOrPointerWidgetEvent(mouseEvent, eMouseExitFromWidget,
                                               mouseEvent->mRelatedTarget);
+          mouseExitEvent->mExitFrom = Some(WidgetMouseEvent::eChild);
           oldRemote->SendRealMouseEvent(*mouseExitEvent);
         }
 
@@ -4223,7 +4224,7 @@ nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
         UniquePtr<WidgetMouseEvent> remoteEvent =
             CreateMouseOrPointerWidgetEvent(aMouseEvent, eMouseExitFromWidget,
                                             relatedContent);
-        remoteEvent->mExitFrom = WidgetMouseEvent::eTopLevel;
+        remoteEvent->mExitFrom = Some(WidgetMouseEvent::eTopLevel);
 
         
         

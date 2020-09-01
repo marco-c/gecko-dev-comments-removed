@@ -6984,9 +6984,9 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
   }
 
   WidgetMouseEvent* mouseEvent = aGUIEvent->AsMouseEvent();
-  bool isWindowLevelMouseExit =
-      (aGUIEvent->mMessage == eMouseExitFromWidget) &&
-      (mouseEvent && mouseEvent->mExitFrom == WidgetMouseEvent::eTopLevel);
+  bool isWindowLevelMouseExit = (aGUIEvent->mMessage == eMouseExitFromWidget) &&
+                                (mouseEvent && mouseEvent->mExitFrom.value() ==
+                                                   WidgetMouseEvent::eTopLevel);
 
   
   
