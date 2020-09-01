@@ -91,7 +91,7 @@ struct ScopeContext {
 };
 
 
-struct MOZ_RAII CompilationInput {
+struct CompilationInput {
   const JS::ReadOnlyCompileOptions& options;
 
   
@@ -99,23 +99,19 @@ struct MOZ_RAII CompilationInput {
   
   
   
-  JS::RootedVector<JSAtom*> atoms;
+  JS::GCVector<JSAtom*> atoms;
 
-  JS::Rooted<BaseScript*> lazy;
+  BaseScript* lazy = nullptr;
 
-  JS::Rooted<ScriptSourceHolder> source_;
+  ScriptSourceHolder source_;
 
   
   
   
-  JS::Rooted<Scope*> enclosingScope;
+  Scope* enclosingScope = nullptr;
 
   CompilationInput(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
-      : options(options),
-        atoms(cx),
-        lazy(cx),
-        source_(cx),
-        enclosingScope(cx) {}
+      : options(options), atoms(cx) {}
 
  private:
   bool initScriptSource(JSContext* cx);
@@ -153,10 +149,10 @@ struct MOZ_RAII CompilationInput {
     enclosingScope = lazy->function()->enclosingScope();
   }
 
-  ScriptSource* source() { return source_.get().get(); }
+  ScriptSource* source() { return source_.get(); }
 
  private:
-  void setSource(ScriptSource* ss) { return source_.get().reset(ss); }
+  void setSource(ScriptSource* ss) { return source_.reset(ss); }
 
  public:
   template <typename Unit>
@@ -164,7 +160,9 @@ struct MOZ_RAII CompilationInput {
                                  JS::SourceText<Unit>& sourceBuffer) {
     return source()->assignSource(cx, options, sourceBuffer);
   }
-};
+
+  void trace(JSTracer* trc);
+} JS_HAZ_GC_POINTER;
 
 struct MOZ_RAII CompilationState {
   
@@ -190,7 +188,7 @@ struct MOZ_RAII CompilationState {
 };
 
 
-struct MOZ_RAII CompilationStencil {
+struct CompilationStencil {
   
   
   Vector<RegExpStencil> regExpData;
@@ -349,7 +347,7 @@ class ScriptStencilIterable {
 };
 
 
-struct MOZ_RAII CompilationInfo {
+struct CompilationInfo {
   static constexpr FunctionIndex TopLevelIndex = FunctionIndex(0);
 
   JSContext* cx;
@@ -383,15 +381,18 @@ struct MOZ_RAII CompilationInfo {
   }
 
   
+  CompilationInfo(CompilationInfo&&) = default;
+
   
   CompilationInfo(const CompilationInfo&) = delete;
-  CompilationInfo(CompilationInfo&&) = delete;
   CompilationInfo& operator=(const CompilationInfo&) = delete;
   CompilationInfo& operator=(CompilationInfo&&) = delete;
 
   ScriptStencilIterable functionScriptStencils(CompilationGCOutput& gcOutput) {
     return ScriptStencilIterable(stencil, gcOutput);
   }
+
+  void trace(JSTracer* trc);
 };
 
 }  

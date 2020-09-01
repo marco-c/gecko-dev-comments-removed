@@ -5958,8 +5958,9 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
   bool result = true;
 
   CompileOptions options(cx);
-  frontend::CompilationInfo compilationInfo(cx, options);
-  if (!compilationInfo.input.initForGlobal(cx)) {
+  Rooted<frontend::CompilationInfo> compilationInfo(
+      cx, frontend::CompilationInfo(cx, options));
+  if (!compilationInfo.get().input.initForGlobal(cx)) {
     return false;
   }
 
@@ -5969,8 +5970,8 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
   JS::AutoSuppressWarningReporter suppressWarnings(cx);
   frontend::Parser<frontend::FullParseHandler, char16_t> parser(
       cx, options, chars.twoByteChars(), length,
-       true, compilationInfo, compilationState, nullptr,
-      nullptr);
+       true, compilationInfo.get(), compilationState,
+      nullptr, nullptr);
   if (!parser.checkOptions() || !parser.parse()) {
     
     

@@ -606,14 +606,15 @@ void ScriptParseTask<Unit>::parse(JSContext* cx) {
   ScopeKind scopeKind =
       options.nonSyntacticScope ? ScopeKind::NonSyntactic : ScopeKind::Global;
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
-  frontend::CompilationInfo compilationInfo(cx, options);
-  if (!compilationInfo.input.initForGlobal(cx)) {
+  Rooted<frontend::CompilationInfo> compilationInfo(
+      cx, frontend::CompilationInfo(cx, options));
+  if (!compilationInfo.get().input.initForGlobal(cx)) {
     return;
   }
 
   frontend::CompilationGCOutput gcOutput(cx);
-  bool result =
-      frontend::CompileGlobalScript(compilationInfo, data, scopeKind, gcOutput);
+  bool result = frontend::CompileGlobalScript(compilationInfo.get(), data,
+                                              scopeKind, gcOutput);
 
   
   
