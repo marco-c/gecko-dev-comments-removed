@@ -80,7 +80,27 @@ class nsFrameList {
     VerifyList();
   }
 
+  
+  
   nsFrameList(const nsFrameList& aOther) = default;
+
+  
+  
+  nsFrameList& operator=(const nsFrameList& aOther) = default;
+
+  
+
+
+
+  nsFrameList(nsFrameList&& aOther)
+      : mFirstChild(aOther.mFirstChild), mLastChild(aOther.mLastChild) {
+    aOther.Clear();
+    VerifyList();
+  }
+  nsFrameList& operator=(nsFrameList&& aOther) {
+    SetFrames(aOther);
+    return *this;
+  }
 
   
 

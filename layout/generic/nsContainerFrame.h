@@ -564,10 +564,10 @@ class nsContainerFrame : public nsSplittableFrame {
   
 
 
-  void SetOverflowFrames(const nsFrameList& aOverflowFrames) {
+  void SetOverflowFrames(nsFrameList&& aOverflowFrames) {
     MOZ_ASSERT(aOverflowFrames.NotEmpty(), "Shouldn't be called");
     SetProperty(OverflowProperty(),
-                new (PresShell()) nsFrameList(aOverflowFrames));
+                new (PresShell()) nsFrameList(std::move(aOverflowFrames)));
   }
 
   

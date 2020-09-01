@@ -2107,7 +2107,7 @@ void nsTableFrame::PushChildren(const RowGroupArray& aRowGroups,
     nextInFlow->mFrames.InsertFrames(nextInFlow, prevSibling, frames);
   } else {
     
-    SetOverflowFrames(frames);
+    SetOverflowFrames(std::move(frames));
   }
 }
 
