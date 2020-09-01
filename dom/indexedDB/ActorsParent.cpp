@@ -9463,100 +9463,80 @@ nsresult RemoveDatabaseFilesAndDirectory(nsIFile& aBaseDirectory,
               CreateMarkerFile(aBaseDirectory, aDatabaseFilenameBase));
 
   
-  nsresult rv = DeleteFile(aBaseDirectory,
-                           aDatabaseFilenameBase + kSQLiteSuffix, aQuotaManager,
-                           aPersistenceType, aGroup, aOrigin, Idempotency::Yes);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY(DeleteFile(aBaseDirectory, aDatabaseFilenameBase + kSQLiteSuffix,
+                     aQuotaManager, aPersistenceType, aGroup, aOrigin,
+                     Idempotency::Yes));
 
   
-  rv = DeleteFile(aBaseDirectory, aDatabaseFilenameBase + kSQLiteJournalSuffix,
-                   nullptr, aPersistenceType, aGroup,
-                  aOrigin, Idempotency::Yes);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY(DeleteFile(aBaseDirectory,
+                     aDatabaseFilenameBase + kSQLiteJournalSuffix,
+                      nullptr, aPersistenceType, aGroup,
+                     aOrigin, Idempotency::Yes));
 
   
-  rv = DeleteFile(aBaseDirectory, aDatabaseFilenameBase + kSQLiteSHMSuffix,
-                   nullptr, aPersistenceType, aGroup,
-                  aOrigin, Idempotency::Yes);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY(DeleteFile(aBaseDirectory, aDatabaseFilenameBase + kSQLiteSHMSuffix,
+                      nullptr, aPersistenceType, aGroup,
+                     aOrigin, Idempotency::Yes));
 
   
-  rv = DeleteFile(aBaseDirectory, aDatabaseFilenameBase + kSQLiteWALSuffix,
-                  aQuotaManager, aPersistenceType, aGroup, aOrigin,
-                  Idempotency::Yes);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY(DeleteFile(aBaseDirectory, aDatabaseFilenameBase + kSQLiteWALSuffix,
+                     aQuotaManager, aPersistenceType, aGroup, aOrigin,
+                     Idempotency::Yes));
 
-  nsCOMPtr<nsIFile> fmDirectory;
-  rv = aBaseDirectory.Clone(getter_AddRefs(fmDirectory));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY_VAR(const auto fmDirectory,
+              ToResultInvoke<nsCOMPtr<nsIFile>>(std::mem_fn(&nsIFile::Clone),
+                                                aBaseDirectory));
 
   
-  rv = fmDirectory->Append(aDatabaseFilenameBase +
-                           kFileManagerDirectoryNameSuffix);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY(fmDirectory->Append(aDatabaseFilenameBase +
+                              kFileManagerDirectoryNameSuffix));
 
-  bool exists;
-  rv = fmDirectory->Exists(&exists);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY_VAR(const bool exists, MOZ_TO_RESULT_INVOKE(fmDirectory, Exists));
 
   if (exists) {
-    bool isDirectory;
-    rv = fmDirectory->IsDirectory(&isDirectory);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    IDB_TRY_VAR(const bool isDirectory,
+                MOZ_TO_RESULT_INVOKE(fmDirectory, IsDirectory));
 
-    if (NS_WARN_IF(!isDirectory)) {
-      IDB_REPORT_INTERNAL_ERR();
-      return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-    }
+    IDB_TRY(OkIf(isDirectory), NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
 
-    uint64_t usage;
+    if (!aQuotaManager) {
+      IDB_TRY(fmDirectory->Remove(true));
+    } else {
+      IDB_TRY_VAR(auto fileUsage, FileManager::GetUsage(fmDirectory));
 
-    if (aQuotaManager) {
-      auto fileUsageOrErr = FileManager::GetUsage(fmDirectory);
-      if (NS_WARN_IF(fileUsageOrErr.isErr())) {
-        return fileUsageOrErr.unwrapErr();
+      uint64_t usageValue = fileUsage.GetValue().valueOr(0);
+
+      const auto res =
+          MOZ_TO_RESULT_INVOKE(fmDirectory, Remove, true)
+              .orElse([&usageValue, &fmDirectory](nsresult rv) {
+                
+                
+
+                
+                Unused << FileManager::GetUsage(fmDirectory)
+                              .andThen([&usageValue](const auto& newFileUsage) {
+                                const auto newFileUsageValue =
+                                    newFileUsage.GetValue().valueOr(0);
+                                MOZ_ASSERT(newFileUsageValue <= usageValue);
+                                usageValue -= newFileUsageValue;
+
+                                
+                                
+                                return Result<mozilla::Ok, nsresult>{
+                                    mozilla::Ok{}};
+                              });
+
+                return Result<mozilla::Ok, nsresult>{Err(rv)};
+              });
+
+      if (usageValue) {
+        aQuotaManager->DecreaseUsageForOrigin(aPersistenceType, aGroup, aOrigin,
+                                              Client::IDB, usageValue);
       }
-      usage = fileUsageOrErr.inspect().GetValue().valueOr(0);
-    }
 
-    rv = fmDirectory->Remove(true);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      
-      
-      if (aQuotaManager) {
-        auto newFileUsageOrErr = FileManager::GetUsage(fmDirectory);
-        if (newFileUsageOrErr.isOk()) {
-          const auto newFileUsage =
-              newFileUsageOrErr.inspect().GetValue().valueOr(0);
-          MOZ_ASSERT(newFileUsage <= usage);
-          usage -= newFileUsage;
-        }
+      if (res.isErr()) {
+        return res.inspectErr();
       }
-    }
-
-    if (aQuotaManager && usage) {
-      aQuotaManager->DecreaseUsageForOrigin(aPersistenceType, aGroup, aOrigin,
-                                            Client::IDB, usage);
-    }
-
-    if (NS_FAILED(rv)) {
-      return rv;
     }
   }
 
@@ -9567,10 +9547,7 @@ nsresult RemoveDatabaseFilesAndDirectory(nsIFile& aBaseDirectory,
     mgr->InvalidateFileManager(aPersistenceType, aOrigin, aDatabaseName);
   }
 
-  rv = RemoveMarkerFile(markerFile);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY(RemoveMarkerFile(markerFile));
 
   return NS_OK;
 }
