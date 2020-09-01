@@ -3338,6 +3338,12 @@ nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
   }
 
   
+  if (aType == nsIWebBrowserPrint::PRINTPREVIEW_END) {
+    sf->ScrollTo(nsPoint(0, sf->GetScrollRange().YMost()), ScrollMode::Instant);
+    return NS_OK;
+  }
+
+  
   auto [seqFrame, pageCount] = mPrintJob->GetSeqFrameAndCountPages();
   if (!seqFrame) {
     return NS_ERROR_FAILURE;
@@ -3349,12 +3355,6 @@ nsDocumentViewer::PrintPreviewScrollToPage(int16_t aType, int32_t aPageNum) {
   int32_t pageNum = 1;
   nsIFrame* fndPageFrame = nullptr;
   nsIFrame* currentPage = nullptr;
-
-  
-  if (aType == nsIWebBrowserPrint::PRINTPREVIEW_END) {
-    aType = nsIWebBrowserPrint::PRINTPREVIEW_GOTO_PAGENUM;
-    aPageNum = pageCount;
-  }
 
   
   
