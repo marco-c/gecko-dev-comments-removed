@@ -648,6 +648,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   void ReplaceActiveSessionHistoryEntry(SessionHistoryInfo* aInfo);
 
+  
+  void RemoveDynEntriesFromActiveSessionHistoryEntry();
+
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(WindowContext* aParentWindow, BrowsingContextGroup* aGroup,
