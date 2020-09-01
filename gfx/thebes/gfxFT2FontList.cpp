@@ -346,7 +346,7 @@ FT2FontEntry* gfxFT2Font::GetFontEntry() {
 
 
 nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
-  if (mCharacterMap) {
+  if (mCharacterMap || mShmemCharacterMap) {
     return NS_OK;
   }
 
@@ -397,13 +397,25 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
 #endif
 
   mHasCmapTable = NS_SUCCEEDED(rv);
+
   if (mHasCmapTable) {
     gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
-    mCharacterMap = pfl->FindCharMap(charmap);
+    fontlist::FontList* sharedFontList = pfl->SharedFontList();
+    if (!IsUserFont() && mShmemFace) {
+      mShmemFace->SetCharacterMap(sharedFontList, charmap);  
+      if (!TrySetShmemCharacterMap()) {
+        
+        
+        mCharacterMap = charmap;
+      }
+    } else {
+      mCharacterMap = pfl->FindCharMap(charmap);
+    }
   } else {
     
     mCharacterMap = new gfxCharacterMap();
   }
+
   return rv;
 }
 
