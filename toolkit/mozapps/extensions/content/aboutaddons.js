@@ -3159,6 +3159,11 @@ class AddonCard extends HTMLElement {
     moreOptionsButton.hidden = this.options.visibleItems.length === 0;
 
     
+    for (let node of card.querySelectorAll(".addon-badge")) {
+      node.hidden = true;
+    }
+
+    
     if (
       !allowPrivateBrowsingByDefault &&
       addon.type == "extension" &&
@@ -3173,9 +3178,14 @@ class AddonCard extends HTMLElement {
     }
 
     
-    card.querySelector(
-      ".addon-badge-recommended"
-    ).hidden = !addon.isRecommended;
+    
+    let states = addon.recommendationStates || [];
+    for (let badgeName of states) {
+      let badge = card.querySelector(`.addon-badge-${badgeName}`);
+      if (badge) {
+        badge.hidden = false;
+      }
+    }
 
     
     card.querySelector(".addon-description").textContent = addon.description;
