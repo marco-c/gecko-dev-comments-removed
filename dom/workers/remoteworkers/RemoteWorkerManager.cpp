@@ -15,19 +15,11 @@
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundParent.h"
-#include "mozilla/StaticPrefs_extensions.h"
 #include "nsCOMPtr.h"
-#include "nsIE10SUtils.h"
-#include "nsImportModule.h"
 #include "nsIXULRuntime.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 #include "RemoteWorkerServiceParent.h"
-
-mozilla::LazyLogModule gRemoteWorkerManagerLog("RemoteWorkerManager");
-
-#define LOG(fmt) \
-  MOZ_LOG(gRemoteWorkerManagerLog, mozilla::LogLevel::Verbose, fmt)
 
 namespace mozilla {
 
@@ -70,9 +62,9 @@ void TransmitPermissionsAndBlobURLsForPrincipalInfo(
 
 bool RemoteWorkerManager::MatchRemoteType(const nsACString& processRemoteType,
                                           const nsACString& workerRemoteType) {
-  LOG(("MatchRemoteType [processRemoteType=%s, workerRemoteType=%s]",
-       PromiseFlatCString(processRemoteType).get(),
-       PromiseFlatCString(workerRemoteType).get()));
+  if (processRemoteType.Equals(workerRemoteType)) {
+    return true;
+  }
 
   
   
@@ -82,17 +74,18 @@ bool RemoteWorkerManager::MatchRemoteType(const nsACString& processRemoteType,
   
   
   
-  
-  
-  
-  
-  MOZ_ASSERT(!IsWebCoopCoepRemoteType(workerRemoteType));
+  if (IsWebCoopCoepRemoteType(processRemoteType)) {
+    return false;
+  }
 
   
   
-  MOZ_ASSERT(workerRemoteType != LARGE_ALLOCATION_REMOTE_TYPE);
+  if ((workerRemoteType.IsEmpty() || IsWebRemoteType(workerRemoteType)) &&
+      IsWebRemoteType(processRemoteType)) {
+    return true;
+  }
 
-  return processRemoteType.Equals(workerRemoteType);
+  return false;
 }
 
 
@@ -100,88 +93,62 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
     const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerType aWorkerType) {
   AssertIsOnMainThread();
 
-  MOZ_ASSERT_IF(aWorkerType == WorkerType::WorkerTypeService,
-                aPrincipal->GetIsContentPrincipal());
-
-  nsCOMPtr<nsIE10SUtils> e10sUtils =
-      do_ImportModule("resource://gre/modules/E10SUtils.jsm", "E10SUtils");
-  if (NS_WARN_IF(!e10sUtils)) {
-    LOG(("GetRemoteType Abort: could not import E10SUtils"));
-    return Err(NS_ERROR_DOM_ABORT_ERR);
+  if (aWorkerType != WorkerType::WorkerTypeService &&
+      aWorkerType != WorkerType::WorkerTypeShared) {
+    
+    
+    return Err(NS_ERROR_UNEXPECTED);
   }
-
-  nsCString preferredRemoteType = DEFAULT_REMOTE_TYPE;
-  if (aWorkerType == WorkerType::WorkerTypeShared) {
-    if (auto* contentChild = ContentChild::GetSingleton()) {
-      
-      
-      preferredRemoteType = contentChild->GetRemoteType();
-    } else if (aPrincipal->IsSystemPrincipal()) {
-      preferredRemoteType = NOT_REMOTE_TYPE;
-    }
-  }
-
-  nsIE10SUtils::RemoteWorkerType workerType;
-
-  switch (aWorkerType) {
-    case WorkerType::WorkerTypeService:
-      workerType = nsIE10SUtils::REMOTE_WORKER_TYPE_SERVICE;
-      break;
-    case WorkerType::WorkerTypeShared:
-      workerType = nsIE10SUtils::REMOTE_WORKER_TYPE_SHARED;
-      break;
-    default:
-      
-      
-      LOG(("GetRemoteType Error on unexpected worker type"));
-      MOZ_DIAGNOSTIC_ASSERT(false, "Unexpected worker type");
-      return Err(NS_ERROR_DOM_ABORT_ERR);
-  }
-
-  
-  
-  
-  
-  bool isMultiprocess = BrowserTabsRemoteAutostart();
-  bool isFission = FissionAutostart();
 
   nsCString remoteType = NOT_REMOTE_TYPE;
 
-  nsresult rv = e10sUtils->GetRemoteTypeForWorkerPrincipal(
-      aPrincipal, workerType, isMultiprocess, isFission, preferredRemoteType,
-      remoteType);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    LOG(
-        ("GetRemoteType Abort: E10SUtils.getRemoteTypeForWorkerPrincipal "
-         "exception"));
-    MOZ_DIAGNOSTIC_ASSERT(
-        false, "E10SUtils.getRemoteTypeForworkerPrincipal did throw");
-    return Err(NS_ERROR_DOM_ABORT_ERR);
+  
+  
+  if (!BrowserTabsRemoteAutostart()) {
+    return remoteType;
   }
 
-  if (MOZ_LOG_TEST(gRemoteWorkerManagerLog, LogLevel::Verbose)) {
-    nsCString principalOrigin;
-    aPrincipal->GetOrigin(principalOrigin);
+  auto* contentChild = ContentChild::GetSingleton();
 
-    LOG(
-        ("GetRemoteType workerType=%s, principal=%s, "
-         "preferredRemoteType=%s, selectedRemoteType=%s",
-         aWorkerType == WorkerType::WorkerTypeService ? "service" : "shared",
-         principalOrigin.get(), preferredRemoteType.get(), remoteType.get()));
+  bool isSystem = !!BasePrincipal::Cast(aPrincipal)->IsSystemPrincipal();
+  bool isMozExtension =
+      !isSystem && !!BasePrincipal::Cast(aPrincipal)->AddonPolicy();
+
+  if (aWorkerType == WorkerType::WorkerTypeShared && !contentChild &&
+      !isSystem) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return Err(NS_ERROR_ABORT);
+  }
+
+  bool separatePrivilegedMozilla = Preferences::GetBool(
+      "browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
+
+  if (isMozExtension) {
+    remoteType = EXTENSION_REMOTE_TYPE;
+  } else if (separatePrivilegedMozilla) {
+    bool isPrivilegedMozilla = false;
+    aPrincipal->IsURIInPrefList("browser.tabs.remote.separatedMozillaDomains",
+                                &isPrivilegedMozilla);
+
+    if (isPrivilegedMozilla) {
+      remoteType = PRIVILEGEDMOZILLA_REMOTE_TYPE;
+    } else if (aWorkerType == WorkerType::WorkerTypeShared && contentChild) {
+      remoteType = contentChild->GetRemoteType();
+    } else {
+      remoteType = DEFAULT_REMOTE_TYPE;
+    }
+  } else {
+    remoteType = DEFAULT_REMOTE_TYPE;
   }
 
   return remoteType;
-}
-
-
-bool RemoteWorkerManager::HasExtensionPrincipal(const RemoteWorkerData& aData) {
-  auto principalInfo = aData.principalInfo();
-  return principalInfo.type() == PrincipalInfo::TContentPrincipalInfo &&
-         
-         
-         
-         StringBeginsWith(principalInfo.get_ContentPrincipalInfo().spec(),
-                          "moz-extension://"_ns);
 }
 
 
@@ -202,11 +169,7 @@ bool RemoteWorkerManager::IsRemoteTypeAllowed(const RemoteWorkerData& aData) {
   if (!contentChild) {
     
     
-    
-    return principalInfo.type() == PrincipalInfo::TSystemPrincipalInfo ||
-           (!StaticPrefs::extensions_webextensions_remote() &&
-            aData.remoteType().Equals(NOT_REMOTE_TYPE) &&
-            HasExtensionPrincipal(aData));
+    return principalInfo.type() == PrincipalInfo::TSystemPrincipalInfo;
   }
 
   auto principalOrErr = PrincipalInfoToPrincipal(principalInfo);
@@ -223,7 +186,6 @@ bool RemoteWorkerManager::IsRemoteTypeAllowed(const RemoteWorkerData& aData) {
   auto remoteType = GetRemoteType(
       principal, isServiceWorker ? WorkerTypeService : WorkerTypeShared);
   if (NS_WARN_IF(remoteType.isErr())) {
-    LOG(("IsRemoteTypeAllowed: Error to retrieve remote type"));
     return false;
   }
 
@@ -284,8 +246,6 @@ void RemoteWorkerManager::RegisterActor(RemoteWorkerServiceParent* aActor) {
       const auto& workerRemoteType = p.mData.remoteType();
 
       if (MatchRemoteType(remoteType, workerRemoteType)) {
-        LOG(("RegisterActor - Launch Pending, workerRemoteType=%s",
-             workerRemoteType.get()));
         LaunchInternal(p.mController, aActor, p.mData);
       } else {
         unlaunched.AppendElement(std::move(p));
@@ -302,8 +262,6 @@ void RemoteWorkerManager::RegisterActor(RemoteWorkerServiceParent* aActor) {
     if (mPendings.IsEmpty()) {
       Release();
     }
-
-    LOG(("RegisterActor - mPendings length: %zu", mPendings.Length()));
   }
 }
 
@@ -554,16 +512,6 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActor(
   }
 
   
-  
-  if (aProcessId == base::GetCurrentProcId() &&
-      aData.remoteType().Equals(NOT_REMOTE_TYPE) &&
-      !StaticPrefs::extensions_webextensions_remote() &&
-      HasExtensionPrincipal(aData)) {
-    MOZ_ASSERT(mParentActor);
-    return mParentActor;
-  }
-
-  
   if (!BrowserTabsRemoteAutostart()) {
     MOZ_ASSERT(mParentActor);
     return mParentActor;
@@ -603,7 +551,6 @@ void RemoteWorkerManager::LaunchNewContentProcess(
                                    const CallbackParamType& aValue,
                                    const nsCString& remoteType) mutable {
     if (aValue.IsResolve()) {
-      LOG(("LaunchNewContentProcess: successfully got child process"));
       if (isServiceWorker) {
         TransmitPermissionsAndBlobURLsForPrincipalInfo(aValue.ResolveValue(),
                                                        principalInfo);
@@ -622,10 +569,6 @@ void RemoteWorkerManager::LaunchNewContentProcess(
             for (const auto& pending : pendings) {
               const auto& workerRemoteType = pending.mData.remoteType();
               if (self->MatchRemoteType(remoteType, workerRemoteType)) {
-                LOG(
-                    ("LaunchNewContentProcess: Cancel pending with "
-                     "workerRemoteType=%s",
-                     workerRemoteType.get()));
                 pending.mController->CreationFailed();
               } else {
                 uncancelled.AppendElement(pending);
@@ -638,8 +581,6 @@ void RemoteWorkerManager::LaunchNewContentProcess(
       bgEventTarget->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
     }
   };
-
-  LOG(("LaunchNewContentProcess: remoteType=%s", aData.remoteType().get()));
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       __func__, [callback = std::move(processLaunchCallback),
