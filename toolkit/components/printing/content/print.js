@@ -760,7 +760,9 @@ async function pickFileName(sourceBrowser, pageSettings) {
   );
   picker.appendFilter("PDF", "*.pdf");
   picker.defaultExtension = "pdf";
-  picker.defaultString = filename;
+  
+  
+  picker.defaultString = filename + ".pdf";
 
   let retval = await new Promise(resolve => picker.open(resolve));
 
