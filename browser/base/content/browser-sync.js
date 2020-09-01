@@ -1321,42 +1321,72 @@ var gSync = {
   
   
   async disconnect({ confirm = true, disconnectAccount = true } = {}) {
-    if (confirm && !(await this._confirmDisconnect(disconnectAccount))) {
+    if (disconnectAccount) {
+      let deleteLocalData = false;
+      if (confirm) {
+        let options = await this._confirmFxaAndSyncDisconnect();
+        if (!options.userConfirmedDisconnect) {
+          return false;
+        }
+        deleteLocalData = options.deleteLocalData;
+      }
+      return this._disconnectFxaAndSync(deleteLocalData);
+    }
+
+    if (confirm && !(await this._confirmSyncDisconnect())) {
       return false;
     }
-    
-    await fxAccounts.telemetry.recordDisconnection(
-      disconnectAccount ? null : "sync",
-      "ui"
+    return this._disconnectSync();
+  },
+
+  
+  
+  async _confirmFxaAndSyncDisconnect() {
+    let options = {
+      userConfirmedDisconnect: false,
+    };
+
+    window.openDialog(
+      "chrome://browser/content/browser-fxaSignout.xhtml",
+      "_blank",
+      "chrome,modal,centerscreen,resizable=no",
+      { hideDeleteDataOption: !UIState.get().syncEnabled },
+      options
     );
 
-    await Weave.Service.promiseInitialized;
-    await Weave.Service.startOver();
-    if (disconnectAccount) {
-      await fxAccounts.signOut();
-    }
+    return options;
+  },
+
+  async _disconnectFxaAndSync(deleteLocalData) {
+    const { SyncDisconnect } = ChromeUtils.import(
+      "resource://services-sync/SyncDisconnect.jsm"
+    );
+    
+    await fxAccounts.telemetry.recordDisconnection(null, "ui");
+
+    await SyncDisconnect.disconnect(deleteLocalData).catch(e => {
+      console.error("Failed to disconnect.", e);
+    });
+
     return true;
   },
 
   
+  
+  async _confirmSyncDisconnect() {
+    const l10nPrefix = "sync-disconnect-dialog";
 
-
-
-
-
-  async _confirmDisconnect(disconnectAccount) {
-    const l10nPrefix = `${
-      disconnectAccount ? "fxa" : "sync"
-    }-disconnect-dialog`;
     const [title, body, button] = await document.l10n.formatValues([
       { id: `${l10nPrefix}-title` },
       { id: `${l10nPrefix}-body` },
       { id: "sync-disconnect-dialog-button" },
     ]);
-    
+
     const flags =
       Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
       Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1;
+
+    
     const buttonPressed = Services.prompt.confirmEx(
       window,
       title,
@@ -1369,6 +1399,15 @@ var gSync = {
       {}
     );
     return buttonPressed == 0;
+  },
+
+  async _disconnectSync() {
+    await fxAccounts.telemetry.recordDisconnection("sync", "ui");
+
+    await Weave.Service.promiseInitialized;
+    await Weave.Service.startOver();
+
+    return true;
   },
 
   
