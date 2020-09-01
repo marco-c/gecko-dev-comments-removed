@@ -1796,7 +1796,9 @@ class UrlbarInput {
 
     if (
       !selectedVal.startsWith(BrowserUtils.trimURLProtocol) &&
-      displaySpec != this._trimValue(displaySpec)
+      
+      
+      !displaySpec.startsWith(this._trimValue(displaySpec))
     ) {
       selectedVal = BrowserUtils.trimURLProtocol + selectedVal;
     }
