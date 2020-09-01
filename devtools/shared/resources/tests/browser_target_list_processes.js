@@ -30,6 +30,13 @@ add_task(async function() {
   await testProcesses(targetList, mainProcess);
 
   await targetList.stopListening();
+  
+  await Promise.all(
+    targetList
+      .getAllTargets(targetList.ALL_TYPES)
+      .map(t => t.attachAndInitThread(targetList))
+  );
+
   await client.close();
 });
 

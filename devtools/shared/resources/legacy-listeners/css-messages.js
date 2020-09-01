@@ -30,6 +30,9 @@ module.exports = async function({
   }
 
   const webConsoleFront = await targetFront.getFront("console");
+  if (webConsoleFront.isDestroyed()) {
+    return;
+  }
 
   
   await webConsoleFront.startListeners(["PageError"]);

@@ -20,6 +20,9 @@ module.exports = async function({ targetList, targetFront, onAvailable }) {
   }
 
   const webConsoleFront = await targetFront.getFront("console");
+  if (webConsoleFront.isDestroyed()) {
+    return;
+  }
 
   
   

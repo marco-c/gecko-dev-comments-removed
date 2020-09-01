@@ -52,6 +52,9 @@ class TargetList extends EventEmitter {
 
 
 
+
+
+
   constructor(rootFront, targetFront) {
     super();
 
@@ -83,6 +86,12 @@ class TargetList extends EventEmitter {
 
     
     this._targets = new Set();
+    
+    
+    
+    this._pendingWatchTargetInitialization = new Map();
+
+    
     this._targets.add(targetFront);
 
     
@@ -140,6 +149,10 @@ class TargetList extends EventEmitter {
       return;
     }
 
+    if (targetFront.isDestroyedOrBeingDestroyed()) {
+      return;
+    }
+
     
     
     
@@ -166,6 +179,10 @@ class TargetList extends EventEmitter {
     targetFront.setTargetType(targetType);
 
     this._targets.add(targetFront);
+    await targetFront.attachAndInitThread(this);
+    for (const targetFrontsSet of this._pendingWatchTargetInitialization.values()) {
+      targetFrontsSet.delete(targetFront);
+    }
 
     
     await this._createListeners.emitAsync(targetType, {
@@ -378,27 +395,49 @@ class TargetList extends EventEmitter {
     }
 
     
-    const promises = [...this._targets]
-      .filter(targetFront => types.includes(targetFront.targetType))
-      .map(async targetFront => {
-        try {
-          
-          
-          
-          await onAvailable({
-            targetFront,
-            isTargetSwitching: false,
-          });
-        } catch (e) {
-          
-          
-          console.error(
-            "Exception when calling onAvailable handler",
-            e.message,
-            e
-          );
-        }
-      });
+    const targetFronts = [...this._targets].filter(targetFront =>
+      types.includes(targetFront.targetType)
+    );
+    this._pendingWatchTargetInitialization.set(
+      onAvailable,
+      new Set(targetFronts)
+    );
+    const promises = targetFronts.map(async targetFront => {
+      
+      
+      await targetFront.attachAndInitThread(this);
+
+      
+      
+      
+      if (
+        this._pendingWatchTargetInitialization &&
+        this._pendingWatchTargetInitialization.has(onAvailable) &&
+        !this._pendingWatchTargetInitialization
+          .get(onAvailable)
+          .has(targetFront)
+      ) {
+        return;
+      }
+
+      try {
+        
+        
+        
+        await onAvailable({
+          targetFront,
+          isTargetSwitching: false,
+        });
+      } catch (e) {
+        
+        
+        console.error(
+          "Exception when calling onAvailable handler",
+          e.message,
+          e
+        );
+      }
+    });
 
     for (const type of types) {
       this._createListeners.on(type, onAvailable);
@@ -408,6 +447,7 @@ class TargetList extends EventEmitter {
     }
 
     await Promise.all(promises);
+    this._pendingWatchTargetInitialization.delete(onAvailable);
   }
 
   
@@ -427,6 +467,7 @@ class TargetList extends EventEmitter {
         this._destroyListeners.off(type, onDestroy);
       }
     }
+    this._pendingWatchTargetInitialization.delete(onAvailable);
   }
 
   

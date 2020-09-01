@@ -29,14 +29,6 @@ async function createResourceWatcherForTarget(target) {
   const { TargetList } = require("devtools/shared/resources/target-list");
 
   const targetList = new TargetList(target.client.mainRoot, target);
-
-  await target.attach();
-  
-  
-  const threadFront = await target.attachThread({});
-  
-  await threadFront.resume();
-
   await targetList.startListening();
   return new ResourceWatcher(targetList);
 }

@@ -212,7 +212,7 @@ export type Target = {
 
   
   debuggerServiceWorkerStatus: string,
-  onThreadAttached: Promise<*>,
+  attachAndInitThread: TargetList => Promise<*>,
 };
 
 

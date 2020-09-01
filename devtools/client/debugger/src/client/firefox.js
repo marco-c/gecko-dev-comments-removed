@@ -69,10 +69,9 @@ async function onTargetAvailable({
   }
 
   
-  await targetFront.onThreadAttached;
-
   const { threadFront } = targetFront;
   if (!threadFront) {
+    console.error("The thread for", targetFront, "isn't attached.");
     return;
   }
 

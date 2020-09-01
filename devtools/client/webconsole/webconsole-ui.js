@@ -354,6 +354,10 @@ class WebConsoleUI {
   }
 
   _onResourceAvailable({ resourceType, targetFront, resource }) {
+    if (!this.hud) {
+      return;
+    }
+
     const { TYPES } = this.hud.resourceWatcher;
     
     if (

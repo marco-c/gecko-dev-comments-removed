@@ -5,6 +5,12 @@
 "use strict";
 
 loader.lazyRequireGetter(this, "getFront", "devtools/shared/protocol", true);
+loader.lazyRequireGetter(
+  this,
+  "getThreadOptions",
+  "devtools/client/shared/thread-utils",
+  true
+);
 
 
 
@@ -39,12 +45,6 @@ function TargetMixin(parentClass) {
       this._onNewSource = this._onNewSource.bind(this);
 
       this.threadFront = null;
-
-      
-      
-      this.onThreadAttached = new Promise(
-        r => (this._resolveOnThreadAttached = r)
-      );
 
       
       
@@ -468,6 +468,13 @@ function TargetMixin(parentClass) {
     
     async attachConsole() {
       const consoleFront = await this.getFront("console");
+
+      if (this.isDestroyedOrBeingDestroyed()) {
+        return;
+      }
+
+      
+      
       await consoleFront.startListeners([]);
 
       this._onInspectObject = packet => this.emit("inspect-object", packet);
@@ -485,6 +492,64 @@ function TargetMixin(parentClass) {
 
 
 
+
+
+    attachAndInitThread(targetList) {
+      if (this._onThreadInitialized) {
+        return this._onThreadInitialized;
+      }
+
+      this._onThreadInitialized = this._attachAndInitThread(targetList);
+      return this._onThreadInitialized;
+    }
+
+    
+
+
+
+
+
+
+
+    async _attachAndInitThread(targetList) {
+      
+      if (this.isDestroyedOrBeingDestroyed()) {
+        return;
+      }
+      await this.attach();
+      const isBrowserToolbox = targetList.targetFront.isParentProcess;
+      const isNonTopLevelFrameTarget =
+        !this.isTopLevel && this.targetType === targetList.TYPES.FRAME;
+
+      if (isBrowserToolbox && isNonTopLevelFrameTarget) {
+        
+        
+        
+        
+        return;
+      }
+
+      const options = await getThreadOptions();
+      
+      if (this.isDestroyedOrBeingDestroyed()) {
+        return;
+      }
+      const threadFront = await this.attachThread(options);
+
+      try {
+        if (this.isDestroyedOrBeingDestroyed() || threadFront.isDestroyed()) {
+          return;
+        }
+        await threadFront.resume();
+      } catch (ex) {
+        if (ex.error === "wrongOrder") {
+          targetList.emit("target-thread-wrong-order-on-resume");
+        } else {
+          throw ex;
+        }
+      }
+    }
+
     async attachThread(options = {}) {
       if (!this.targetForm || !this.targetForm.threadActor) {
         throw new Error(
@@ -493,13 +558,16 @@ function TargetMixin(parentClass) {
         );
       }
       this.threadFront = await this.getFront("thread");
+      if (
+        this.isDestroyedOrBeingDestroyed() ||
+        this.threadFront.isDestroyed()
+      ) {
+        return this.threadFront;
+      }
+
       await this.threadFront.attach(options);
 
       this.threadFront.on("newSource", this._onNewSource);
-
-      
-      
-      this._resolveOnThreadAttached();
 
       return this.threadFront;
     }
@@ -540,6 +608,10 @@ function TargetMixin(parentClass) {
       }
     }
 
+    isDestroyedOrBeingDestroyed() {
+      return this.isDestroyed() || this._destroyer;
+    }
+
     
 
 
@@ -562,6 +634,10 @@ function TargetMixin(parentClass) {
     async _destroyTarget() {
       
       this.emit("close");
+
+      if (this._onThreadInitialized) {
+        await this._onThreadInitialized;
+      }
 
       for (let [, front] of this.fronts) {
         

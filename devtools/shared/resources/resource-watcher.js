@@ -219,6 +219,10 @@ class ResourceWatcher {
       }
     }
 
+    if (targetFront.isDestroyed()) {
+      return;
+    }
+
     targetFront.on("will-navigate", () => this._onWillNavigate(targetFront));
 
     
@@ -499,6 +503,10 @@ class ResourceWatcher {
 
 
   _watchResourcesForTarget(targetFront, resourceType) {
+    if (targetFront.isDestroyed()) {
+      return Promise.resolve();
+    }
+
     const onAvailable = this._onResourceAvailable.bind(this, { targetFront });
     const onDestroyed = this._onResourceDestroyed.bind(this, { targetFront });
     const onUpdated = this._onResourceUpdated.bind(this, { targetFront });
