@@ -2080,10 +2080,7 @@ void TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
   
   
 
-  TimeIntervals intersection = trackBuffer.mBufferedRanges;
-  intersection.Intersection(aIntervals);
-
-  if (!intersection.IsEmpty()) {
+  if (trackBuffer.mBufferedRanges.IntersectsStrict(aIntervals)) {
     if (aSamples[0]->mKeyframe &&
         (mType.Type() == MEDIAMIMETYPE("video/webm") ||
          mType.Type() == MEDIAMIMETYPE("audio/webm"))) {
