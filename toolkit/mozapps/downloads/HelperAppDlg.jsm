@@ -935,14 +935,26 @@ nsUnknownContentTypeDialog.prototype = {
   },
 
   updateMIMEInfo() {
+    let { MIMEInfo } = this.mLauncher;
+
     
     
     
     
-    var discardUpdate =
-      this.mLauncher.MIMEInfo.preferredAction ==
-        this.nsIMIMEInfo.handleInternally &&
-      !this.shouldShowInternalHandlerOption() &&
+    
+
+    
+    
+    
+    
+    
+    
+    
+    let areAlwaysOpeningInternally =
+      MIMEInfo.preferredAction == Ci.nsIMIMEInfo.handleInternally &&
+      !MIMEInfo.alwaysAskBeforeHandling;
+    let discardUpdate =
+      areAlwaysOpeningInternally &&
       !this.dialogElement("rememberChoice").checked;
 
     var needUpdate = false;
