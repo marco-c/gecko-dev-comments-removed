@@ -2385,6 +2385,7 @@ STATIC_ATOMS = [
     
     Atom("onactivated", "onactivated"),
     Atom("ondeactivated", "ondeactivated"),
+    Atom("onplaybackstatechange", "onplaybackstatechange"),
     Atom("onpositionstatechange", "onpositionstatechange"),
     Atom("onsupportedkeyschange", "onsupportedkeyschange"),
 
