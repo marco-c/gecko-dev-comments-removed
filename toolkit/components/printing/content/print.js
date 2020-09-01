@@ -170,6 +170,7 @@ var PrintEventHandler = {
     
     let printPreviewBrowser = gBrowser.createBrowser({
       remoteType: sourceBrowsingContext.currentRemoteType,
+      userContextId: sourceBrowsingContext.originAttributes.userContextId,
       initialBrowsingContextGroupId: sourceBrowsingContext.group.id,
       skipLoad: false,
     });
