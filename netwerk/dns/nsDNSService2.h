@@ -7,6 +7,7 @@
 #ifndef nsDNSService2_h__
 #define nsDNSService2_h__
 
+#include "nsClassHashtable.h"
 #include "nsPIDNSService.h"
 #include "nsIIDNService.h"
 #include "nsIMemoryReporter.h"
@@ -80,6 +81,7 @@ class nsDNSService final : public nsPIDNSService,
   nsCOMPtr<nsIIDNService> mIDN;
 
   
+  
   mozilla::Mutex mLock;
 
   
@@ -101,6 +103,7 @@ class nsDNSService final : public nsPIDNSService,
   uint32_t mResCacheExpiration;
   uint32_t mResCacheGrace;
   bool mResolverPrefsUpdated;
+  nsClassHashtable<nsCStringHashKey, nsTArray<nsCString>> mFailedSVCDomainNames;
 };
 
 #endif  
