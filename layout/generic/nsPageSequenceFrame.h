@@ -26,12 +26,9 @@ class HTMLCanvasElement;
 
 
 
+
 class nsSharedPageData {
  public:
-  
-  
-  nsSharedPageData() : mShrinkToFitRatio(1.0f) {}
-
   nsString mDateTimeStr;
   nsString mPageNumFormat;
   nsString mPageNumAndTotalsFormat;
@@ -53,7 +50,7 @@ class nsSharedPageData {
   
   
   
-  float mShrinkToFitRatio;
+  float mShrinkToFitRatio = 1.0f;
 };
 
 
