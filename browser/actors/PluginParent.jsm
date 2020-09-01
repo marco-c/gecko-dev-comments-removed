@@ -171,8 +171,9 @@ const PluginManager = {
 
     let pluginID = propertyBag.getPropertyAsUint32("pluginID");
     let pluginDumpID = propertyBag.getPropertyAsAString("pluginDumpID");
+    let pluginName = propertyBag.getPropertyAsACString("pluginName");
     if (pluginDumpID) {
-      this.gmpCrashes.set(pluginID, { pluginDumpID, pluginID });
+      this.gmpCrashes.set(pluginID, { pluginDumpID, pluginID, pluginName });
     }
 
     
@@ -182,7 +183,6 @@ const PluginManager = {
     
     
     if (Services.ppmm) {
-      let pluginName = propertyBag.getPropertyAsAString("pluginName");
       Services.ppmm.broadcastAsyncMessage("gmp-plugin-crash", {
         pluginName,
         pluginID,
