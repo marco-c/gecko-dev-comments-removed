@@ -24,7 +24,8 @@ class PlatformMessageWatcher extends nsIConsoleListenerWatcher {
 
 
 
-  shouldHandleMessage(message) {
+
+  shouldHandleMessage(targetActor, message) {
     
     
     
