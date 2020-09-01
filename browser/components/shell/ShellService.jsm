@@ -47,26 +47,6 @@ let ShellServiceInternal = {
     return false;
   },
 
-  isDefaultBrowserOptOut() {
-    if (AppConstants.platform == "win") {
-      let optOutValue = WindowsRegistry.readRegKey(
-        Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-        "Software\\Mozilla\\Firefox",
-        "DefaultBrowserOptOut"
-      );
-      WindowsRegistry.removeRegKey(
-        Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-        "Software\\Mozilla\\Firefox",
-        "DefaultBrowserOptOut"
-      );
-      if (optOutValue == "True") {
-        Services.prefs.setBoolPref("browser.shell.checkDefaultBrowser", false);
-        return true;
-      }
-    }
-    return false;
-  },
-
   
 
 
@@ -85,8 +65,21 @@ let ShellServiceInternal = {
       return false;
     }
 
-    if (this.isDefaultBrowserOptOut()) {
-      return false;
+    if (AppConstants.platform == "win") {
+      let optOutValue = WindowsRegistry.readRegKey(
+        Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+        "Software\\Mozilla\\Firefox",
+        "DefaultBrowserOptOut"
+      );
+      WindowsRegistry.removeRegKey(
+        Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+        "Software\\Mozilla\\Firefox",
+        "DefaultBrowserOptOut"
+      );
+      if (optOutValue == "True") {
+        Services.prefs.setBoolPref("browser.shell.checkDefaultBrowser", false);
+        return false;
+      }
     }
 
     return true;
@@ -110,37 +103,6 @@ let ShellServiceInternal = {
       return this.shellService.isDefaultBrowser(forAllTypes);
     }
     return false;
-  },
-
-  setAsDefault() {
-    let claimAllTypes = true;
-    let setAsDefaultError = false;
-    if (AppConstants.platform == "win") {
-      try {
-        
-        
-        
-        
-        let version = Services.sysinfo.getProperty("version");
-        claimAllTypes = parseFloat(version) < 6.2;
-      } catch (ex) {}
-    }
-    try {
-      ShellService.setDefaultBrowser(claimAllTypes, false);
-    } catch (ex) {
-      setAsDefaultError = true;
-      Cu.reportError(ex);
-    }
-    
-    
-    
-    
-    Services.telemetry
-      .getHistogramById("BROWSER_IS_USER_DEFAULT")
-      .add(!setAsDefaultError);
-    Services.telemetry
-      .getHistogramById("BROWSER_SET_DEFAULT_ERROR")
-      .add(setAsDefaultError);
   },
 };
 

@@ -240,13 +240,7 @@ pref("browser.shell.mostRecentDateSetAsDefault", "");
 pref("browser.shell.skipDefaultBrowserCheckOnFirstRun", true);
 pref("browser.shell.didSkipDefaultBrowserCheckOnFirstRun", false);
 pref("browser.shell.defaultBrowserCheckCount", 0);
-#ifdef EARLY_BETA_OR_EARLIER
-pref("browser.defaultbrowser.notificationbar", true);
-#else
 pref("browser.defaultbrowser.notificationbar", false);
-#endif
-pref("browser.defaultbrowser.notificationbar.checkcount", 0);
-pref("browser.defaultbrowser.notificationbar.checklimit", 10000);
 
 
 
