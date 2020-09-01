@@ -130,7 +130,7 @@ nsresult nsPrinterListCUPS::SystemDefaultPrinterName(nsAString& aName) const {
   }
 
   
-  const cups_dest_t* dest =
+  cups_dest_t* dest =
       sCupsShim.cupsGetNamedDest(CUPS_HTTP_DEFAULT,  nullptr,
                                   nullptr);
   if (!dest) {
@@ -142,6 +142,7 @@ nsresult nsPrinterListCUPS::SystemDefaultPrinterName(nsAString& aName) const {
     CopyUTF8toUTF16(mozilla::MakeStringSpan(dest->name), aName);
   }
 
+  sCupsShim.cupsFreeDests(1, dest);
   return NS_OK;
 }
 
