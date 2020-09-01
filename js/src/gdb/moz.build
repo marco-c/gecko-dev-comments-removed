@@ -43,6 +43,12 @@ if CONFIG['CC_TYPE'] != 'clang-cl':
     
     SOURCES['tests/test-prettyprinters.cpp'].flags += ['-fno-eliminate-unused-debug-types']
 
+if CONFIG['CC_TYPE'] == 'clang':
+    
+    
+    
+    CXXFLAGS += ['-O0']
+
 DEFINES['EXPORT_JS_API'] = True
 
 LOCAL_INCLUDES += [
