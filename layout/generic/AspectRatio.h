@@ -1,13 +1,13 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_AspectRatio_h
 #define mozilla_AspectRatio_h
 
-/* The aspect ratio of a box, in a "width / height" format. */
+
 
 #include "mozilla/Attributes.h"
 #include "nsCoord.h"
@@ -15,6 +15,8 @@
 #include <limits>
 
 namespace mozilla {
+
+class WritingMode;
 
 struct AspectRatio {
   AspectRatio() : mRatio(0.0f) {}
@@ -39,17 +41,20 @@ struct AspectRatio {
     return mRatio * aFloat;
   }
 
-  // Inverts the ratio, in order to get the height / width ratio.
+  
   [[nodiscard]] AspectRatio Inverted() const {
     if (!*this) {
       return AspectRatio();
     }
-    // Clamp to a small epsilon, in case mRatio is absurdly large & produces
-    // 0.0f in the division here (so that valid ratios always generate other
-    // valid ratios when inverted).
+    
+    
+    
     return AspectRatio(
         std::max(std::numeric_limits<float>::epsilon(), 1.0f / mRatio));
   }
+
+  [[nodiscard]] inline AspectRatio ConvertToWritingMode(
+      const WritingMode& aWM) const;
 
   bool operator==(const AspectRatio& aOther) const {
     return mRatio == aOther.mRatio;
@@ -64,10 +69,10 @@ struct AspectRatio {
   }
 
  private:
-  // 0.0f represents no aspect ratio.
+  
   float mRatio;
 };
 
-}  // namespace mozilla
+}  
 
-#endif  // mozilla_AspectRatio_h
+#endif  
