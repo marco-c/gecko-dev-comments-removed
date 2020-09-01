@@ -19,7 +19,7 @@ use cssparser::RGBA;
 use euclid::default::Size2D;
 use euclid::{Scale, SideOffsets2D};
 use servo_arc::Arc;
-use std::fmt;
+use std::{cmp, fmt};
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use style_traits::viewport::ViewportConstraints;
 use style_traits::{CSSPixel, DevicePixel};
@@ -224,11 +224,28 @@ impl Device {
     }
 
     
+    
+    
+    fn page_size_minus_default_margin(&self, pc: &structs::nsPresContext) -> Size2D<Au> {
+        debug_assert!(pc.mIsRootPaginatedDocument() != 0);
+        let area = &pc.mPageSize;
+        let margin = &pc.mDefaultPageMargin;
+        let width = area.width - margin.left - margin.right;
+        let height = area.height - margin.top - margin.bottom;
+        Size2D::new(Au(cmp::max(width, 0)), Au(cmp::max(height, 0)))
+    }
+
+    
     pub fn au_viewport_size(&self) -> Size2D<Au> {
         let pc = match self.pres_context() {
             Some(pc) => pc,
             None => return Size2D::new(Au(0), Au(0)),
         };
+
+        if pc.mIsRootPaginatedDocument() != 0 {
+            return self.page_size_minus_default_margin(pc);
+        }
+
         let area = &pc.mVisibleArea;
         Size2D::new(Au(area.width), Au(area.height))
     }
@@ -237,11 +254,15 @@ impl Device {
     
     pub fn au_viewport_size_for_viewport_unit_resolution(&self) -> Size2D<Au> {
         self.used_viewport_size.store(true, Ordering::Relaxed);
-
         let pc = match self.pres_context() {
             Some(pc) => pc,
             None => return Size2D::new(Au(0), Au(0)),
         };
+
+        if pc.mIsRootPaginatedDocument() != 0 {
+            return self.page_size_minus_default_margin(pc)
+        }
+
         let size = &pc.mSizeForViewportUnits;
         Size2D::new(Au(size.width), Au(size.height))
     }

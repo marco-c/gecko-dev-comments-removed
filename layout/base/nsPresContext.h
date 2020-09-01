@@ -432,7 +432,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
 
 
-  nsSize GetPageSize() { return mPageSize; }
+  const nsSize& GetPageSize() const { return mPageSize; }
+  const nsMargin& GetDefaultPageMargin() const { return mDefaultPageMargin; }
   void SetPageSize(nsSize aSize) { mPageSize = aSize; }
 
   
@@ -1204,6 +1205,16 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   mozilla::ScreenIntMargin mSafeAreaInsets;
   nsSize mPageSize;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsMargin mDefaultPageMargin;
   float mPageScale;
   float mPPScale;
 

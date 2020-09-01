@@ -55,9 +55,6 @@ nsPageSequenceFrame::nsPageSequenceFrame(ComputedStyle* aStyle,
       mTotalPages(-1),
       mCalledBeginPage(false),
       mCurrentCanvasListSetup(false) {
-  nscoord halfInch = PresContext()->CSSTwipsToAppUnits(NS_INCHES_TO_TWIPS(0.5));
-  mMargin.SizeTo(halfInch, halfInch, halfInch, halfInch);
-
   mPageData = MakeUnique<nsSharedPageData>();
   mPageData->mHeadFootFont =
       *PresContext()
@@ -218,27 +215,15 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   }
 
   
-  if (!mPageData->mPrintSettings &&
-      aPresContext->Medium() == nsGkAtoms::print) {
+  if (!mPageData->mPrintSettings) {
     mPageData->mPrintSettings = aPresContext->GetPrintSettings();
   }
 
   
+  
   if (mPageData->mPrintSettings) {
     nsIntMargin unwriteableTwips;
     mPageData->mPrintSettings->GetUnwriteableMarginInTwips(unwriteableTwips);
-    NS_ASSERTION(unwriteableTwips.left >= 0 && unwriteableTwips.top >= 0 &&
-                     unwriteableTwips.right >= 0 &&
-                     unwriteableTwips.bottom >= 0,
-                 "Unwriteable twips should be non-negative");
-
-    nsIntMargin marginTwips;
-    mPageData->mPrintSettings->GetMarginInTwips(marginTwips);
-    mMargin = nsPresContext::CSSTwipsToAppUnits(marginTwips + unwriteableTwips);
-
-    int16_t printType;
-    mPageData->mPrintSettings->GetPrintRange(&printType);
-    mPrintRangeType = printType;
 
     nsIntMargin edgeTwips;
     mPageData->mPrintSettings->GetEdgeInTwips(edgeTwips);
@@ -253,16 +238,6 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     mPageData->mEdgePaperMargin =
         nsPresContext::CSSTwipsToAppUnits(edgeTwips + unwriteableTwips);
   }
-
-  
-  
-  
-  
-
-  nsSize pageSize = aPresContext->GetPageSize();
-
-  mPageData->mReflowSize = pageSize;
-  mPageData->mReflowMargin = mMargin;
 
   
   
@@ -285,7 +260,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     
     ReflowInput kidReflowInput(
         aPresContext, aReflowInput, kidFrame,
-        LogicalSize(kidFrame->GetWritingMode(), pageSize));
+        LogicalSize(kidFrame->GetWritingMode(), aPresContext->GetPageSize()));
     ReflowOutput kidReflowOutput(kidReflowInput);
     nsReflowStatus status;
 
@@ -450,8 +425,9 @@ nsresult nsPageSequenceFrame::StartPrint(nsPresContext* aPresContext,
   aPrintSettings->GetEndPageRange(&mToPageNum);
   aPrintSettings->GetPageRanges(mPageRanges);
 
-  mDoingPageRange =
-      nsIPrintSettings::kRangeSpecifiedPageRange == mPrintRangeType;
+  int16_t printType;
+  aPrintSettings->GetPrintRange(&printType);
+  mDoingPageRange = nsIPrintSettings::kRangeSpecifiedPageRange == printType;
 
   
   
