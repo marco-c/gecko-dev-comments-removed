@@ -30,6 +30,9 @@ class GeckoTextMarker final {
 
   GeckoTextMarker() : mContainer(nullptr), mOffset(0) {}
 
+  static GeckoTextMarker MarkerFromIndex(const AccessibleOrProxy& aRoot,
+                                         int32_t aIndex);
+
   id CreateAXTextMarker();
 
   bool Next();
@@ -81,6 +84,11 @@ class GeckoTextMarkerRange final {
 
 
   NSString* Text() const;
+
+  
+
+
+  int32_t Length() const;
 
   
 

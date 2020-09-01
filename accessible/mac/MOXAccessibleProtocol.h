@@ -392,4 +392,10 @@
 
 - (NSValue* _Nullable)moxBoundsForTextMarkerRange:(id _Nonnull)textMarkerRange;
 
+
+- (NSNumber* _Nullable)moxIndexForTextMarker:(id _Nonnull)textMarker;
+
+
+- (id _Nullable)moxTextMarkerForIndex:(NSNumber* _Nonnull)index;
+
 @end

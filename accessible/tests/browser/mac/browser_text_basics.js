@@ -238,6 +238,8 @@ addAccessibleTask(`<p>hello <input> world</p>`, (browser, accDoc) => {
 
 
 
+
+
 function testMarkerIntegrity(accDoc) {
   let macDoc = accDoc.nativeInterface.QueryInterface(
     Ci.nsIAccessibleMacInterface
@@ -248,6 +250,16 @@ function testMarkerIntegrity(accDoc) {
   
   let marker = macDoc.getAttributeValue("AXStartTextMarker");
   while (marker) {
+    let index = macDoc.getParameterizedAttributeValue(
+      "AXIndexForTextMarker",
+      marker
+    );
+    is(
+      index,
+      count,
+      `Correct index in "AXNextTextMarkerForTextMarker": ${count}`
+    );
+
     marker = macDoc.getParameterizedAttributeValue(
       "AXNextTextMarkerForTextMarker",
       marker
@@ -255,12 +267,29 @@ function testMarkerIntegrity(accDoc) {
     count++;
   }
 
-  ok(count != 0, "Iterated forward through text markers");
+  
+  for (let i = 0; i < count; i++) {
+    marker = macDoc.getParameterizedAttributeValue("AXTextMarkerForIndex", i);
+    let index = macDoc.getParameterizedAttributeValue(
+      "AXIndexForTextMarker",
+      marker
+    );
+    is(index, i, `Correct index in "AXPreviousTextMarkerForTextMarker": ${i}`);
+  }
 
   
   marker = macDoc.getAttributeValue("AXEndTextMarker");
   while (marker) {
     count--;
+    let index = macDoc.getParameterizedAttributeValue(
+      "AXIndexForTextMarker",
+      marker
+    );
+    is(
+      index,
+      count,
+      `Correct index in "AXPreviousTextMarkerForTextMarker": ${count}`
+    );
     marker = macDoc.getParameterizedAttributeValue(
       "AXPreviousTextMarkerForTextMarker",
       marker
