@@ -4,6 +4,8 @@
 
 
 
+#define MOZ_USE_LAUNCHER_ERROR
+
 #include "mozilla/UrlmonHeaderOnlyUtils.h"
 #include "TestUrisToValidate.h"
 

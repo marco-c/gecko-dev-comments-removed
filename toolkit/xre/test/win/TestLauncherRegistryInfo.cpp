@@ -4,6 +4,8 @@
 
 
 
+#define MOZ_USE_LAUNCHER_ERROR
+
 #include "mozilla/LauncherRegistryInfo.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/ScopeExit.h"

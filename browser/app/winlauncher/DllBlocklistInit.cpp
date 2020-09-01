@@ -4,6 +4,8 @@
 
 
 
+#define MOZ_USE_LAUNCHER_ERROR
+
 #include "nsWindowsDllInterceptor.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
