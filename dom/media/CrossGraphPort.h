@@ -25,8 +25,6 @@ namespace mozilla {
 
 
 class CrossGraphTransmitter : public ForwardedInputTrack {
-  friend class CrossGraphPort;
-
  public:
   CrossGraphTransmitter(TrackRate aSampleRate, CrossGraphReceiver* aReceiver);
   virtual CrossGraphTransmitter* AsCrossGraphTransmitter() override {
@@ -34,7 +32,6 @@ class CrossGraphTransmitter : public ForwardedInputTrack {
   }
 
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
-  void Destroy() override;
 
  private:
   RefPtr<CrossGraphReceiver> mReceiver;
@@ -82,17 +79,23 @@ class CrossGraphPort final {
 
   RefPtr<GenericPromise> EnsureConnected();
 
+  const RefPtr<CrossGraphTransmitter> mTransmitter;
+  const RefPtr<CrossGraphReceiver> mReceiver;
+
  private:
-  explicit CrossGraphPort(RefPtr<MediaInputPort> aPort)
-      : mSourcePort(std::move(aPort)),
-        mTransmitter(mSourcePort->GetDestination()->AsCrossGraphTransmitter()) {
+  explicit CrossGraphPort(RefPtr<MediaInputPort> aTransmitterPort,
+                          RefPtr<CrossGraphTransmitter> aTransmitter,
+                          RefPtr<CrossGraphReceiver> aReceiver)
+      : mTransmitter(std::move(aTransmitter)),
+        mReceiver(std::move(aReceiver)),
+        mTransmitterPort(std::move(aTransmitterPort)) {
+    MOZ_ASSERT(mTransmitter);
+    MOZ_ASSERT(mReceiver);
+    MOZ_ASSERT(mTransmitterPort);
   }
-  RefPtr<CrossGraphTransmitter> GetTransmitter();
-  RefPtr<CrossGraphReceiver> GetReceiver();
 
   
-  const RefPtr<MediaInputPort> mSourcePort;
-  RefPtr<CrossGraphTransmitter> mTransmitter;
+  const RefPtr<MediaInputPort> mTransmitterPort;
 };
 
 }  
