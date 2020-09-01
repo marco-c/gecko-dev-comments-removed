@@ -273,8 +273,6 @@ nsresult nsLayoutStatics::Initialize() {
     
     
     mozilla::dom::RemoteWorkerService::Initialize();
-    
-    mozilla::dom::BrowserParent::InitializeStatics();
   }
 
   nsThreadManager::InitializeShutdownObserver();

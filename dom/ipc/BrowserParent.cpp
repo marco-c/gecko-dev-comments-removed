@@ -239,9 +239,6 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
 BrowserParent::~BrowserParent() = default;
 
 
-void BrowserParent::InitializeStatics() { MOZ_ASSERT(XRE_IsParentProcess()); }
-
-
 BrowserParent* BrowserParent::GetFocused() { return sFocus; }
 
 
@@ -658,7 +655,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvEnsureLayersConnected(
 }
 
 mozilla::ipc::IPCResult BrowserParent::Recv__delete__() {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   Manager()->NotifyTabDestroyed(mTabId, mMarkedDestroying);
   return IPC_OK();
 }
@@ -701,22 +697,6 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
         CrashReport::Deliver(principal, is_oom);
       }
     }
-  }
-
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  if (XRE_IsContentProcess() && why == AbnormalShutdown && !mIsDestroyed) {
-    DestroyInternal();
-    mIsDestroyed = true;
   }
 
   
@@ -944,12 +924,10 @@ void BrowserParent::InitRendering() {
   }
 
 #if defined(MOZ_WIDGET_ANDROID)
-  if (XRE_IsParentProcess()) {
-    MOZ_ASSERT(widget);
+  MOZ_ASSERT(widget);
 
-    Unused << SendDynamicToolbarMaxHeightChanged(
-        widget->GetDynamicToolbarMaxHeight());
-  }
+  Unused << SendDynamicToolbarMaxHeightChanged(
+      widget->GetDynamicToolbarMaxHeight());
 #endif
 }
 

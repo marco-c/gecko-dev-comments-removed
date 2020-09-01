@@ -111,9 +111,6 @@ class BrowserParent final : public PBrowserParent,
                 uint32_t aChromeFlags);
 
   
-  static void InitializeStatics();
-
-  
 
 
 
