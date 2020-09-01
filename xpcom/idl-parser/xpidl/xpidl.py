@@ -1465,7 +1465,10 @@ class IDLParser(object):
         t.lexer.lineno += len(t.value)
 
     def t_nativeid_NATIVEID(self, t):
-        r'[^()\n]+(?=\))'
+        
+        
+        
+        r'[^()\n]+(?:\([^()\n]+\)[^()\n]+)?(?=\))'
         t.lexer.begin('INITIAL')
         return t
 
