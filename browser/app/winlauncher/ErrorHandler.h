@@ -16,27 +16,30 @@ namespace mozilla {
 
 
 
-void HandleLauncherError(const LauncherError& aError);
+void HandleLauncherError(const LauncherError& aError,
+                         const char* aProcessType = nullptr);
 
 
 
 
 template <typename T>
-inline void HandleLauncherError(const LauncherResult<T>& aResult) {
+inline void HandleLauncherError(const LauncherResult<T>& aResult,
+                                const char* aProcessType = nullptr) {
   MOZ_ASSERT(aResult.isErr());
   if (aResult.isOk()) {
     return;
   }
 
-  HandleLauncherError(aResult.inspectErr());
+  HandleLauncherError(aResult.inspectErr(), aProcessType);
 }
 
 
 
 inline void HandleLauncherError(
-    const GenericErrorResult<LauncherError>& aResult) {
+    const GenericErrorResult<LauncherError>& aResult,
+    const char* aProcessType = nullptr) {
   LauncherVoidResult r(aResult);
-  HandleLauncherError(r);
+  HandleLauncherError(r, aProcessType);
 }
 
 
