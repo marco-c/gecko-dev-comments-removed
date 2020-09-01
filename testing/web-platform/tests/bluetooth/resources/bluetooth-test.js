@@ -24,54 +24,35 @@ function loadScript(path) {
 
 
 
-async function loadScripts(paths) {
-  for (let path of paths) {
-    await loadScript(path);
-  }
-  return;
-}
-
-
-
-
-
-
-
 
 
 
 
 async function performChromiumSetup() {
   
-  if (typeof Mojo === 'undefined') {
+  let resPrefix = '/resources';
+  let extra = ['/resources/chromium/web-bluetooth-test.js'];
+  const pathname = window.location.pathname;
+  if (pathname.includes('/web_tests/')) {
+    let root = pathname.match(/.*(?:web_tests)/);
+    resPrefix = `${root}/external/wpt/resources`;
+    extra = [
+      `${root}/external/wpt/resources/chromium/web-bluetooth-test.js`,
+      `${root}/resources/bluetooth/bluetooth-fake-adapter.js`,
+    ];
+  }
+
+  await loadScript(`${resPrefix}/test-only-api.js`);
+  if (!isChromiumBased) {
     return;
   }
 
-  
-  let prefix = '/resources/chromium';
-  let genPrefix = '/gen';
-  let extra = [];
-  const pathname = window.location.pathname;
-  if (pathname.includes('/LayoutTests/') || pathname.includes('/web_tests/')) {
-    let root = pathname.match(/.*(?:LayoutTests|web_tests)/);
-    prefix = `${root}/external/wpt/resources/chromium`;
-    extra = [
-      `${root}/resources/bluetooth/bluetooth-fake-adapter.js`,
-    ];
-    genPrefix = 'file:///gen';
-  } else if (window.location.pathname.startsWith('/bluetooth/https/')) {
-    extra = [
-      '/js-test-resources/bluetooth/bluetooth-fake-adapter.js',
-    ];
-  }
-  await loadScripts([
-    `${genPrefix}/layout_test_data/mojo/public/js/mojo_bindings.js`,
-    `${genPrefix}/content/test/data/mojo_web_test_helper_test.mojom.js`,
-    `${genPrefix}/device/bluetooth/public/mojom/uuid.mojom.js`,
-    `${genPrefix}/url/mojom/origin.mojom.js`,
-    `${genPrefix}/device/bluetooth/public/mojom/test/fake_bluetooth.mojom.js`,
-    `${genPrefix}/content/shell/common/web_test/fake_bluetooth_chooser.mojom.js`,
-    `${prefix}/web-bluetooth-test.js`,
+  await loadMojoResources([
+    '/gen/content/test/data/mojo_web_test_helper_test.mojom.js',
+    '/gen/device/bluetooth/public/mojom/uuid.mojom.js',
+    '/gen/url/mojom/origin.mojom.js',
+    '/gen/device/bluetooth/public/mojom/test/fake_bluetooth.mojom.js',
+    '/gen/content/shell/common/web_test/fake_bluetooth_chooser.mojom.js',
   ].concat(extra));
 
   
@@ -98,8 +79,10 @@ async function performChromiumSetup() {
 
 function bluetooth_test(test_function, name, properties) {
   return promise_test(async (t) => {
+    assert_implements(navigator.bluetooth, 'missing navigator.bluetooth');
     
     await performChromiumSetup();
+    assert_implements(navigator.bluetooth.test, 'missing navigator.bluetooth.test');
     await test_function(t);
     let consumed = await navigator.bluetooth.test.allResponsesConsumed();
     assert_true(consumed);
