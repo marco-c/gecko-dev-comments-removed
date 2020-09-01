@@ -1004,6 +1004,12 @@ ReturnToGlobal<Cls> ReturnTo(GlobalRef<Cls>* ref) {
   return ReturnToGlobal<Cls>(ref);
 }
 
+
+template <typename Cls, typename JNIType>
+LocalRef<Cls> ToLocalRef(const Ref<Cls, JNIType>& aRef) {
+  return LocalRef<Cls>(aRef);
+}
+
 }  
 }  
 
