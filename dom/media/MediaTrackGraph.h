@@ -329,7 +329,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
   
   
-  void SetEnabled(DisabledTrackMode aMode);
+  void SetDisabledTrackMode(DisabledTrackMode aMode);
 
   
   
@@ -411,7 +411,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   virtual void AddDirectListenerImpl(
       already_AddRefed<DirectMediaTrackListener> aListener);
   virtual void RemoveDirectListenerImpl(DirectMediaTrackListener* aListener);
-  virtual void SetEnabledImpl(DisabledTrackMode aMode);
+  virtual void SetDisabledTrackModeImpl(DisabledTrackMode aMode);
 
   void AddConsumer(MediaInputPort* aPort) { mConsumers.AppendElement(aPort); }
   void RemoveConsumer(MediaInputPort* aPort) {
@@ -671,7 +671,7 @@ class SourceMediaTrack : public MediaTrack {
 
   
   
-  void SetEnabledImpl(DisabledTrackMode aMode) override;
+  void SetDisabledTrackModeImpl(DisabledTrackMode aMode) override;
 
   
   
