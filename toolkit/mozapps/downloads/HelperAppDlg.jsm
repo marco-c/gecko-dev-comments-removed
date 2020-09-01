@@ -22,6 +22,16 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIApplicationReputationService
 );
 
+const { Integration } = ChromeUtils.import(
+  "resource://gre/modules/Integration.jsm"
+);
+
+Integration.downloads.defineModuleGetter(
+  this,
+  "DownloadIntegration",
+  "resource://gre/modules/DownloadIntegration.jsm"
+);
+
 
 
 
@@ -1272,8 +1282,6 @@ nsUnknownContentTypeDialog.prototype = {
   },
 
   shouldShowInternalHandlerOption() {
-    
-    
     let browsingContext = this.mDialog.BrowsingContext.get(
       this.mLauncher.browsingContextId
     );
@@ -1283,16 +1291,25 @@ nsUnknownContentTypeDialog.prototype = {
       
       primaryExtension = this.mLauncher.MIMEInfo.primaryExtension;
     } catch (e) {}
-    return (
-      !browsingContext?.currentWindowGlobal?.documentPrincipal?.URI?.schemeIs(
-        "resource"
-      ) &&
-      primaryExtension == "pdf" &&
-      !Services.prefs.getBoolPref("pdfjs.disabled", true) &&
-      Services.prefs.getBoolPref(
-        "browser.helperApps.showOpenOptionForPdfJS",
-        false
-      )
+
+    
+    
+    
+    if (primaryExtension == "pdf") {
+      return (
+        !browsingContext?.currentWindowGlobal?.documentPrincipal?.URI?.schemeIs(
+          "resource"
+        ) &&
+        !Services.prefs.getBoolPref("pdfjs.disabled", true) &&
+        Services.prefs.getBoolPref(
+          "browser.helperApps.showOpenOptionForPdfJS",
+          false
+        )
+      );
+    }
+
+    return DownloadIntegration.shouldViewDownloadInternally(
+      this.mLauncher.MIMEInfo.MIMEType
     );
   },
 
