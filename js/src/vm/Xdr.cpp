@@ -171,6 +171,7 @@ template <XDRMode mode>
 static XDRResult VersionCheck(XDRState<mode>* xdr) {
   JS::BuildIdCharVector buildId;
   uint8_t profileSize = 0;
+  uint8_t isTypeInferenceEnabled = 0;
   MOZ_ASSERT(GetBuildId);
   if (!GetBuildId(&buildId)) {
     ReportOutOfMemory(xdr->cx());
@@ -182,10 +183,12 @@ static XDRResult VersionCheck(XDRState<mode>* xdr) {
   if (mode == XDR_ENCODE) {
     buildIdLength = buildId.length();
     profileSize = sizeof(uintptr_t);
+    isTypeInferenceEnabled = IsTypeInferenceEnabled();
   }
 
   MOZ_TRY(xdr->codeUint32(&buildIdLength));
   MOZ_TRY(xdr->codeUint8(&profileSize));
+  MOZ_TRY(xdr->codeUint8(&isTypeInferenceEnabled));
 
   if (mode == XDR_DECODE && buildIdLength != buildId.length()) {
     return xdr->fail(JS::TranscodeResult_Failure_BadBuildId);
@@ -199,6 +202,12 @@ static XDRResult VersionCheck(XDRState<mode>* xdr) {
     
     
     if (profileSize != sizeof(uintptr_t)) {
+      return xdr->fail(JS::TranscodeResult_Failure_BadDecode);
+    }
+
+    
+    
+    if (isTypeInferenceEnabled != IsTypeInferenceEnabled()) {
       return xdr->fail(JS::TranscodeResult_Failure_BadDecode);
     }
 
