@@ -23,6 +23,7 @@
 #include "mozilla/UniquePtr.h"
 #include "InputData.h"
 #include "Axis.h"  
+#include "ExpectedGeckoMetrics.h"
 #include "InputQueue.h"
 #include "APZUtils.h"
 #include "Layers.h"  
