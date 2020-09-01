@@ -819,10 +819,11 @@ void nsDOMMutationObserver::HandleMutationsInternal(AutoSlowOperation& aAso) {
   
   
   
-  nsTArray<RefPtr<HTMLSlotElement>> signalList;
+  nsTArray<nsTArray<RefPtr<HTMLSlotElement>>> signalLists;
   if (DocGroup::sPendingDocGroups) {
+    signalLists.SetCapacity(DocGroup::sPendingDocGroups->Length());
     for (DocGroup* docGroup : *DocGroup::sPendingDocGroups) {
-      docGroup->MoveSignalSlotListTo(signalList);
+      signalLists.AppendElement(docGroup->MoveSignalSlotList());
     }
     delete DocGroup::sPendingDocGroups;
     DocGroup::sPendingDocGroups = nullptr;
@@ -860,8 +861,10 @@ void nsDOMMutationObserver::HandleMutationsInternal(AutoSlowOperation& aAso) {
   }
 
   
-  for (uint32_t i = 0; i < signalList.Length(); ++i) {
-    signalList[i]->FireSlotChangeEvent();
+  for (const nsTArray<RefPtr<HTMLSlotElement>>& signalList : signalLists) {
+    for (const RefPtr<HTMLSlotElement>& signal : signalList) {
+      signal->FireSlotChangeEvent();
+    }
   }
 }
 

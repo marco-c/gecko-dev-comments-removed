@@ -112,7 +112,7 @@ class DocGroup final {
   
   void SignalSlotChange(HTMLSlotElement& aSlot);
 
-  void MoveSignalSlotListTo(nsTArray<RefPtr<HTMLSlotElement>>& aDest);
+  nsTArray<RefPtr<HTMLSlotElement>> MoveSignalSlotList();
 
   
   static AutoTArray<RefPtr<DocGroup>, 2>* sPendingDocGroups;
