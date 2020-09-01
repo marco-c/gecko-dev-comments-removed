@@ -127,9 +127,14 @@ void BrowsingContextGroup::Subscribe(ContentParent* aProcess) {
   }
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  auto hostEntry = mHosts.Lookup(aProcess->GetRemoteType());
-  MOZ_DIAGNOSTIC_ASSERT(hostEntry && hostEntry.Data() == aProcess,
-                        "Cannot subscribe a non-host process");
+  
+  
+  
+  if (!aProcess->IsDead()) {
+    auto hostEntry = mHosts.Lookup(aProcess->GetRemoteType());
+    MOZ_DIAGNOSTIC_ASSERT(hostEntry && hostEntry.Data() == aProcess,
+                          "Cannot subscribe a non-host process");
+  }
 #endif
 
   
