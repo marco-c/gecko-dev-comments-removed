@@ -22,7 +22,7 @@
 #include "js/shadow/Function.h"     
 #include "js/shadow/Object.h"       
 #include "js/shadow/ObjectGroup.h"  
-#include "js/shadow/String.h"  
+#include "js/shadow/String.h"       
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 

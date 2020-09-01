@@ -205,7 +205,7 @@ static void PlatformInit(PSLockRef aLock) {}
 
 #if defined(HAVE_NATIVE_UNWIND)
 void Registers::SyncPopulate() {
-#if defined(__x86_64__)
+#  if defined(__x86_64__)
   asm(
       
       
@@ -213,7 +213,7 @@ void Registers::SyncPopulate() {
       
       "movq (%%rbp), %1\n\t"
       : "=r"(mSP), "=r"(mFP));
-#elif defined(__aarch64__)
+#  elif defined(__aarch64__)
   asm(
       
       
@@ -221,9 +221,9 @@ void Registers::SyncPopulate() {
       
       "ldr %1, [x29]\n\t"
       : "=r"(mSP), "=r"(mFP));
-#else
-#  error "unknown architecture"
-#endif
+#  else
+#    error "unknown architecture"
+#  endif
   mPC = reinterpret_cast<Address>(
       __builtin_extract_return_addr(__builtin_return_address(0)));
   mLR = 0;

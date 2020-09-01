@@ -713,7 +713,7 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   
   const JSClass* clasp() const { return headerPtr(); }
 
-  uint32_t flags;     
+  uint32_t flags; 
 
   
   GCPtrUnownedBaseShape unowned_;

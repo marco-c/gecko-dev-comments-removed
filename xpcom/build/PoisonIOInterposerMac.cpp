@@ -7,7 +7,7 @@
 #include "PoisonIOInterposer.h"
 
 #ifndef __aarch64__
-#include "mach_override.h"
+#  include "mach_override.h"
 #endif
 
 #include "mozilla/ArrayUtils.h"

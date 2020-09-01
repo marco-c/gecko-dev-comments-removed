@@ -107,7 +107,6 @@ class ShadowRoot final : public DocumentFragment,
  private:
   bool IsStaticUAWidget() const { return mIsStaticUAWidget; }
 
-
   void InsertSheetIntoAuthorData(size_t aIndex, StyleSheet&,
                                  const nsTArray<RefPtr<StyleSheet>>&);
 
@@ -206,9 +205,7 @@ class ShadowRoot final : public DocumentFragment,
   
   
   
-  bool ShouldStaticClone() const {
-    return !IsUAWidget() || IsStaticUAWidget();
-  }
+  bool ShouldStaticClone() const { return !IsUAWidget() || IsStaticUAWidget(); }
 
   void SetIsUAWidget() {
     MOZ_ASSERT(!HasChildren());
