@@ -21,11 +21,11 @@
 
 #include "jstypes.h"  
 
-#include "js/HeapAPI.h"        
-#include "js/RootingAPI.h"     
+#include "js/HeapAPI.h"     
+#include "js/RootingAPI.h"  
 #include "js/shadow/String.h"  
-#include "js/TypeDecls.h"      
-#include "js/Vector.h"         
+#include "js/TypeDecls.h"   
+#include "js/Vector.h"      
 
 class JSLinearString;
 

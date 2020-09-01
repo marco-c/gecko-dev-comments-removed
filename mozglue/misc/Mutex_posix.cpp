@@ -164,13 +164,13 @@ void mozilla::detail::MutexImpl::lock() {
         break;
       }
       
-#  ifdef __x86_64__
-#    define SPIN_HINT "pause"
-#  elif defined(__aarch64__)
-#    define SPIN_HINT "yield"
-#  endif
+#ifdef __x86_64__
+#  define SPIN_HINT "pause"
+#elif defined(__aarch64__)
+#  define SPIN_HINT "yield"
+#endif
       asm volatile(SPIN_HINT ::: "memory");
-#  undef SPIN_HINT
+#undef SPIN_HINT
       count++;
     } while (!mutexTryLock());
 
