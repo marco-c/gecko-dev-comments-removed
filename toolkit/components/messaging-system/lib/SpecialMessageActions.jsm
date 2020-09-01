@@ -156,8 +156,10 @@ const SpecialMessageActions = {
         });
         break;
       case "SHOW_FIREFOX_ACCOUNTS":
+        const data = action.data;
         const url = await FxAccounts.config.promiseConnectAccountURI(
-          (action.data && action.data.entrypoint) || "snippets"
+          (data && data.entrypoint) || "snippets",
+          (data && data.extraParams) || {}
         );
         
         window.openLinkIn(url, "current", {
