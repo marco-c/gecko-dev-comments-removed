@@ -5,6 +5,7 @@
 #include "PreloaderBase.h"
 
 #include "mozilla/dom/Document.h"
+#include "mozilla/Telemetry.h"
 #include "nsContentUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"
@@ -115,6 +116,8 @@ void PreloaderBase::NotifyOpen(const PreloadHashKey& aKey,
     NS_NewTimerWithCallback(getter_AddRefs(mUsageTimer), callback, 10000,
                             nsITimer::TYPE_ONE_SHOT);
   }
+
+  ReportUsageTelemetry();
 }
 
 void PreloaderBase::NotifyOpen(const PreloadHashKey& aKey, nsIChannel* aChannel,
@@ -155,6 +158,7 @@ void PreloaderBase::NotifyUsage(LoadBackground aLoadBackground) {
   }
 
   mIsUsed = true;
+  ReportUsageTelemetry();
   CancelUsageTimer();
 }
 
@@ -270,6 +274,27 @@ void PreloaderBase::CancelUsageTimer() {
   }
 }
 
+void PreloaderBase::ReportUsageTelemetry() {
+  if (mUsageTelementryReported) {
+    return;
+  }
+  mUsageTelementryReported = true;
+
+  if (mKey.As() == PreloadHashKey::ResourceType::NONE) {
+    return;
+  }
+
+  
+  
+  auto index = (static_cast<uint32_t>(mKey.As()) - 1) * 2;
+  if (!mIsUsed) {
+    ++index;
+  }
+
+  auto label = static_cast<Telemetry::LABELS_REL_PRELOAD_MISS_RATIO>(index);
+  Telemetry::AccumulateCategorical(label);
+}
+
 nsresult PreloaderBase::AsyncConsume(nsIStreamListener* aListener) {
   
   
@@ -308,6 +333,8 @@ NS_IMETHODIMP PreloaderBase::UsageTimer::Notify(nsITimer* aTimer) {
     
     return NS_OK;
   }
+
+  mPreload->ReportUsageTelemetry();
 
   
   

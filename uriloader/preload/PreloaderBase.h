@@ -142,6 +142,8 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
   void NotifyNodeEvent(nsINode* aNode);
   void CancelUsageTimer();
 
+  void ReportUsageTelemetry();
+
   
   
   
@@ -204,6 +206,9 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
 
   
   bool mIsUsed = false;
+
+  
+  bool mUsageTelementryReported = false;
 
   
   
