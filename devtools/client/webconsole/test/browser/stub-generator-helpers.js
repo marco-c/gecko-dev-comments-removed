@@ -466,7 +466,38 @@ function getStubFile(fileName) {
   return require(CHROME_PREFIX + STUBS_FOLDER + fileName);
 }
 
-function getSerializedPacket(packet) {
+function sortObjectKeys(obj) {
+  const isArray = Array.isArray(obj);
+  const isObject = Object.prototype.toString.call(obj) === "[object Object]";
+  const isFront = obj?._grip;
+
+  if (isObject && !isFront) {
+    
+    const sortedKeys = Object.keys(obj).sort((k1, k2) => k1.localeCompare(k2));
+    const withSortedKeys = {};
+    sortedKeys.forEach(k => {
+      withSortedKeys[k] = k !== "stacktrace" ? sortObjectKeys(obj[k]) : obj[k];
+    });
+    return withSortedKeys;
+  } else if (isArray) {
+    return obj.map(item => sortObjectKeys(item));
+  }
+  return obj;
+}
+
+
+
+
+
+
+
+
+
+function getSerializedPacket(packet, { sortKeys = false } = {}) {
+  if (sortKeys) {
+    packet = sortObjectKeys(packet);
+  }
+
   return JSON.stringify(
     packet,
     function(_, value) {
