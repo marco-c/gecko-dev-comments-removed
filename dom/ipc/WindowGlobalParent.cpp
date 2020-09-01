@@ -741,14 +741,6 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
   }
 
   
-  
-  nsTArray<RefPtr<dom::BrowsingContext>> toDiscard;
-  toDiscard.AppendElements(Children());
-  for (auto& context : toDiscard) {
-    context->Detach( true);
-  }
-
-  
   WindowContext::Discard();
 
   ContentParent* cp = nullptr;

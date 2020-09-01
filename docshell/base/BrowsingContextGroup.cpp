@@ -172,20 +172,6 @@ void BrowsingContextGroup::Unsubscribe(ContentParent* aProcess) {
   MOZ_DIAGNOSTIC_ASSERT(!hostEntry || hostEntry.Data() != aProcess,
                         "Unsubscribing existing host entry");
 #endif
-
-  
-  
-  
-  
-  nsTArray<RefPtr<BrowsingContext>> toDiscard;
-  for (auto& context : mToplevels) {
-    if (context->Canonical()->IsEmbeddedInProcess(aProcess->ChildID())) {
-      toDiscard.AppendElement(context);
-    }
-  }
-  for (auto& context : toDiscard) {
-    context->Detach( true);
-  }
 }
 
 ContentParent* BrowsingContextGroup::GetHostProcess(

@@ -193,6 +193,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return GetFromWindow(aProxy);
   }
 
+  static void DiscardFromContentParent(ContentParent* aCP);
+
   
   
   
