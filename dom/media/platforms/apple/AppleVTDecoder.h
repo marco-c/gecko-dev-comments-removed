@@ -10,6 +10,7 @@
 #include <CoreFoundation/CFDictionary.h>  
 #include <CoreMedia/CoreMedia.h>          
 #include <VideoToolbox/VideoToolbox.h>    
+
 #include "AppleDecoderModule.h"
 #include "PlatformDecoderModule.h"
 #include "ReorderQueue.h"
@@ -24,7 +25,7 @@ DDLoggedTypeDeclNameAndBase(AppleVTDecoder, MediaDataDecoder);
 class AppleVTDecoder : public MediaDataDecoder,
                        public DecoderDoctorLifeLogger<AppleVTDecoder> {
  public:
-  AppleVTDecoder(const VideoInfo& aConfig, TaskQueue* aTaskQueue,
+  AppleVTDecoder(const VideoInfo& aConfig,
                  layers::ImageContainer* aImageContainer,
                  CreateDecoderParams::OptionSet aOptions,
                  layers::KnowsCompositor* aKnowsCompositor);
@@ -79,9 +80,7 @@ class AppleVTDecoder : public MediaDataDecoder,
   void ProcessDecode(MediaRawData* aSample);
   void MaybeResolveBufferedFrames();
 
-  void AssertOnTaskQueueThread() {
-    MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
-  }
+  void AssertOnTaskQueue() { MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn()); }
 
   AppleFrameRef* CreateAppleFrameRef(const MediaRawData* aSample);
   CFDictionaryRef CreateOutputConfiguration();
@@ -108,7 +107,6 @@ class AppleVTDecoder : public MediaDataDecoder,
   const RefPtr<layers::KnowsCompositor> mKnowsCompositor;
   const bool mUseSoftwareImages;
 
-  
   
   
   Atomic<bool> mIsFlushing;

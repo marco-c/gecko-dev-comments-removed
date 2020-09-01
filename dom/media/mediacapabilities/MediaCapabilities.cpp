@@ -247,7 +247,7 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
           
           
           CreateDecoderParams params{
-              *config, taskQueue, compositor,
+              *config, compositor,
               CreateDecoderParams::VideoFrameRate(frameRate),
               TrackInfo::kVideoTrack};
           

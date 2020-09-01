@@ -198,7 +198,6 @@ AllocationWrapper::CreateDecoder(const CreateDecoderParams& aParams,
   
   
   const TrackInfo* config = &aParams.mConfig;
-  RefPtr<TaskQueue> taskQueue = aParams.mTaskQueue;
   DecoderDoctorDiagnostics* diagnostics = aParams.mDiagnostics;
   RefPtr<layers::ImageContainer> imageContainer = aParams.mImageContainer;
   RefPtr<layers::KnowsCompositor> knowsCompositor = aParams.mKnowsCompositor;
@@ -227,7 +226,6 @@ AllocationWrapper::CreateDecoder(const CreateDecoderParams& aParams,
                                                 TrackTypeToStr(type)));
                 RefPtr<PDMFactory> pdm = new PDMFactory();
                 CreateDecoderParams params{*config,
-                                           taskQueue,
                                            diagnostics,
                                            imageContainer,
                                            &result,

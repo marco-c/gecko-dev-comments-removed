@@ -37,7 +37,6 @@ class ImageContainer;
 class GpuDecoderModule;
 class MediaDataDecoder;
 class RemoteDecoderModule;
-class TaskQueue;
 class CDMProxy;
 
 static LazyLogModule sPDMLog("PlatformDecoderModule");
@@ -105,7 +104,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   }
 
   const TrackInfo& mConfig;
-  TaskQueue* mTaskQueue = nullptr;
   DecoderDoctorDiagnostics* mDiagnostics = nullptr;
   layers::ImageContainer* mImageContainer = nullptr;
   MediaResult* mError = nullptr;
@@ -119,7 +117,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   VideoFrameRate mRate;
 
  private:
-  void Set(TaskQueue* aTaskQueue) { mTaskQueue = aTaskQueue; }
   void Set(DecoderDoctorDiagnostics* aDiagnostics) {
     mDiagnostics = aDiagnostics;
   }
@@ -274,6 +271,8 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataDecoder)
 
+  
+  
   
   
   
