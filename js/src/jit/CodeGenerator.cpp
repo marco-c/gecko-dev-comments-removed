@@ -13309,15 +13309,15 @@ void CodeGenerator::visitGuardElementNotHole(LGuardElementNotHole* lir) {
 }
 
 void CodeGenerator::visitInstanceOfO(LInstanceOfO* ins) {
-  emitInstanceOf(ins, ins->mir()->prototypeObject());
+  emitInstanceOf(ins, ins->rhs());
 }
 
 void CodeGenerator::visitInstanceOfV(LInstanceOfV* ins) {
-  emitInstanceOf(ins, ins->mir()->prototypeObject());
+  emitInstanceOf(ins, ins->rhs());
 }
 
 void CodeGenerator::emitInstanceOf(LInstruction* ins,
-                                   JSObject* prototypeObject) {
+                                   const LAllocation* prototypeObject) {
   
   
 
@@ -13338,6 +13338,14 @@ void CodeGenerator::emitInstanceOf(LInstruction* ins,
     objReg = ToRegister(ins->toInstanceOfO()->lhs());
   }
 
+  mozilla::Maybe<ImmGCPtr> protoPtr;
+  mozilla::Maybe<Register> protoReg;
+  if (prototypeObject->isConstant()) {
+    protoPtr.emplace(&prototypeObject->toConstant()->toObject());
+  } else {
+    protoReg.emplace(ToRegister(prototypeObject));
+  }
+
   
   
   
@@ -13352,8 +13360,13 @@ void CodeGenerator::emitInstanceOf(LInstruction* ins,
 
     
     Label notPrototypeObject;
-    masm.branchPtr(Assembler::NotEqual, output, ImmGCPtr(prototypeObject),
-                   &notPrototypeObject);
+    if (protoPtr) {
+      masm.branchPtr(Assembler::NotEqual, output, *protoPtr,
+                     &notPrototypeObject);
+    } else {
+      masm.branchPtr(Assembler::NotEqual, output, *protoReg,
+                     &notPrototypeObject);
+    }
     masm.mov(ImmWord(1), output);
     masm.jump(&done);
     masm.bind(&notPrototypeObject);
@@ -13376,8 +13389,14 @@ void CodeGenerator::emitInstanceOf(LInstruction* ins,
   
 
   using Fn = bool (*)(JSContext*, HandleObject, JSObject*, bool*);
-  OutOfLineCode* ool = oolCallVM<Fn, IsPrototypeOf>(
-      ins, ArgList(ImmGCPtr(prototypeObject), objReg), StoreRegisterTo(output));
+  OutOfLineCode* ool;
+  if (protoPtr) {
+    ool = oolCallVM<Fn, IsPrototypeOf>(ins, ArgList(*protoPtr, objReg),
+                                       StoreRegisterTo(output));
+  } else {
+    ool = oolCallVM<Fn, IsPrototypeOf>(ins, ArgList(*protoReg, objReg),
+                                       StoreRegisterTo(output));
+  }
 
   
   Label regenerate, *lazyEntry;
