@@ -268,7 +268,7 @@ let RemotePageAccessManager = {
 
   checkAllowAccessToFeature(aPrincipal, aFeature, aDocument) {
     let spec;
-    if (aPrincipal.isNullPrincipal) {
+    if (!aPrincipal.isContentPrincipal) {
       
       
       
