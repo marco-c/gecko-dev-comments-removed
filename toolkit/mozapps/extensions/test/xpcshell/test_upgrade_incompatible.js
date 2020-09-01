@@ -35,10 +35,10 @@ add_task(async function test_upgrade_incompatible() {
 
   
   let path = OS.Path.join(gProfD.path, "extensions", `${ID}.xpi`);
-  let sb = await OS.File.stat(path);
-  let timestamp = sb.lastModificationDate.valueOf();
+  let fileInfo = await IOUtils.stat(path);
+  let timestamp = fileInfo.lastModified;
 
-  await OS.File.move(newfile.path, path);
+  await IOUtils.move(newfile.path, path);
   await promiseSetExtensionModifiedTime(path, timestamp);
   Services.obs.notifyObservers(new FileUtils.File(path), "flush-cache-entry");
 
@@ -60,7 +60,7 @@ add_task(async function test_upgrade_incompatible() {
   });
 
   
-  await OS.File.move(file.path, path);
+  await IOUtils.move(file.path, path);
   await promiseSetExtensionModifiedTime(path, timestamp);
   Services.obs.notifyObservers(new FileUtils.File(path), "flush-cache-entry");
 
