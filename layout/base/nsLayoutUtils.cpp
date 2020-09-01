@@ -9282,6 +9282,10 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
             : layoutScrollOffset;
     metrics.SetVisualScrollOffset(visualScrollOffset);
     metrics.SetBaseScrollOffset(apzScrollPosition);
+    
+    
+    
+    metrics.SetVisualDestination(visualScrollOffset);
 
     if (aIsRootContent) {
       if (aLayerManager->GetIsFirstPaint() &&
@@ -9294,7 +9298,7 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
 
       if (const Maybe<PresShell::VisualScrollUpdate>& visualUpdate =
               presShell->GetPendingVisualScrollUpdate()) {
-        metrics.SetVisualScrollOffset(
+        metrics.SetVisualDestination(
             CSSPoint::FromAppUnits(visualUpdate->mVisualScrollOffset));
         metrics.SetVisualScrollUpdateType(visualUpdate->mUpdateType);
         presShell->AcknowledgePendingVisualScrollUpdate();
