@@ -300,7 +300,7 @@ class Documentation(MachCommandBase):
             
             
             
-            if version and prefix.endswith(version):
+            if (version and prefix.endswith(version)) or prefix == unique_id:
                 continue
 
             if prefix:
