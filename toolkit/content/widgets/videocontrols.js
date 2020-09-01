@@ -1323,6 +1323,14 @@ this.VideoControlsImplWidget = class {
         }
         this.bufferBar.max = duration;
         this.bufferBar.value = endTime;
+        
+        
+        
+        
+        
+        
+        this.bufferA11yVal.textContent =
+          (this.bufferBar.position * 100).toFixed() + "%";
       },
 
       _controlsHiddenByTimeout: false,
@@ -2375,6 +2383,7 @@ this.VideoControlsImplWidget = class {
         this.volumeControl = this.shadowRoot.getElementById("volumeControl");
         this.progressBar = this.shadowRoot.getElementById("progressBar");
         this.bufferBar = this.shadowRoot.getElementById("bufferBar");
+        this.bufferA11yVal = this.shadowRoot.getElementById("bufferA11yVal");
         this.scrubberStack = this.shadowRoot.getElementById("scrubberStack");
         this.scrubber = this.shadowRoot.getElementById("scrubber");
         this.durationLabel = this.shadowRoot.getElementById("durationLabel");
@@ -2741,7 +2750,11 @@ this.VideoControlsImplWidget = class {
               <div id="scrubberStack" class="scrubberStack progressContainer" role="none">
                 <div class="progressBackgroundBar stackItem" role="none">
                   <div class="progressStack" role="none">
-                    <progress id="bufferBar" class="bufferBar" value="0" max="100" tabindex="-1"></progress>
+                    <progress id="bufferBar" class="bufferBar" value="0" max="100" aria-hidden="true"></progress>
+                    <span class="a11y-only" role="status" aria-live="off">
+                      <span data-l10n-id="videocontrols-buffer-bar-label"></span>
+                      <span id="bufferA11yVal"></span>
+                    </span>
                     <progress id="progressBar" class="progressBar" value="0" max="100" aria-hidden="true"></progress>
                   </div>
                 </div>
