@@ -1115,7 +1115,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
       }
       case ValType::Ref: {
         switch (fe.funcType().args()[i].refTypeKind()) {
-          case RefType::Any: {
+          case RefType::Extern: {
             ScratchTagScope tag(masm, scratchV);
             masm.splitTagForTest(scratchV, tag);
 
@@ -1290,7 +1290,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
         switch (results[0].refTypeKind()) {
           case RefType::Func:
             
-          case RefType::Any:
+          case RefType::Extern:
             
             
             GenerateJitEntryLoadTls(masm,  0);
@@ -1586,7 +1586,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
         switch (results[0].refTypeKind()) {
           case wasm::RefType::Func:
             
-          case wasm::RefType::Any:
+          case wasm::RefType::Extern:
             
             
             UnboxAnyrefIntoValueReg(masm, WasmTlsReg, ReturnReg,
@@ -2116,7 +2116,7 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
                       funcImportIndex);
             GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
             break;
-          case RefType::Any:
+          case RefType::Extern:
             masm.call(SymbolicAddress::CallImport_AnyRef);
             masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg,
                               throwLabel);
@@ -2354,7 +2354,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
         break;
       case ValType::Ref:
         switch (results[0].refTypeKind()) {
-          case RefType::Any:
+          case RefType::Extern:
             BoxValueIntoAnyref(masm, JSReturnOperand, ReturnReg, &oolConvert);
             GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
             break;
@@ -2458,7 +2458,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
           break;
         case ValType::Ref:
           switch (results[0].refTypeKind()) {
-            case RefType::Any:
+            case RefType::Extern:
               masm.call(SymbolicAddress::BoxValue_Anyref);
               masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg,
                                 throwLabel);
