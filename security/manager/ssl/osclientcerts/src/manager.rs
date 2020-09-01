@@ -19,6 +19,15 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 
+
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum SlotType {
+    Modern,
+    Legacy,
+}
+
+
 type ManagerArgumentsSender = Sender<ManagerArguments>;
 
 type ManagerReturnValueReceiver = Receiver<ManagerReturnValue>;
@@ -27,9 +36,9 @@ type ManagerReturnValueReceiver = Receiver<ManagerReturnValue>;
 
 
 enum ManagerArguments {
-    OpenSession,
+    OpenSession(SlotType),
     CloseSession(CK_SESSION_HANDLE),
-    CloseAllSessions,
+    CloseAllSessions(SlotType),
     StartSearch(CK_SESSION_HANDLE, Vec<(CK_ATTRIBUTE_TYPE, Vec<u8>)>),
     Search(CK_SESSION_HANDLE, usize),
     ClearSearch(CK_SESSION_HANDLE),
@@ -103,14 +112,16 @@ impl ManagerProxy {
                     }
                 };
                 let results = match arguments {
-                    ManagerArguments::OpenSession => {
-                        ManagerReturnValue::OpenSession(real_manager.open_session())
+                    ManagerArguments::OpenSession(slot_type) => {
+                        ManagerReturnValue::OpenSession(real_manager.open_session(slot_type))
                     }
                     ManagerArguments::CloseSession(session_handle) => {
                         ManagerReturnValue::CloseSession(real_manager.close_session(session_handle))
                     }
-                    ManagerArguments::CloseAllSessions => {
-                        ManagerReturnValue::CloseAllSessions(real_manager.close_all_sessions())
+                    ManagerArguments::CloseAllSessions(slot_type) => {
+                        ManagerReturnValue::CloseAllSessions(
+                            real_manager.close_all_sessions(slot_type),
+                        )
                     }
                     ManagerArguments::StartSearch(session, attrs) => {
                         ManagerReturnValue::StartSearch(real_manager.start_search(session, &attrs))
@@ -185,10 +196,10 @@ impl ManagerProxy {
         Ok(result)
     }
 
-    pub fn open_session(&mut self) -> Result<CK_SESSION_HANDLE, ()> {
+    pub fn open_session(&mut self, slot_type: SlotType) -> Result<CK_SESSION_HANDLE, ()> {
         manager_proxy_fn_impl!(
             self,
-            ManagerArguments::OpenSession,
+            ManagerArguments::OpenSession(slot_type),
             ManagerReturnValue::OpenSession
         )
     }
@@ -201,10 +212,10 @@ impl ManagerProxy {
         )
     }
 
-    pub fn close_all_sessions(&mut self) -> Result<(), ()> {
+    pub fn close_all_sessions(&mut self, slot_type: SlotType) -> Result<(), ()> {
         manager_proxy_fn_impl!(
             self,
-            ManagerArguments::CloseAllSessions,
+            ManagerArguments::CloseAllSessions(slot_type),
             ManagerReturnValue::CloseAllSessions
         )
     }
@@ -342,7 +353,8 @@ fn search_is_for_all_certificates_or_keys(
 
 struct Manager {
     
-    sessions: BTreeSet<CK_SESSION_HANDLE>,
+    
+    sessions: BTreeMap<CK_SESSION_HANDLE, SlotType>,
     
     searches: BTreeMap<CK_SESSION_HANDLE, Vec<CK_OBJECT_HANDLE>>,
     
@@ -367,7 +379,7 @@ struct Manager {
 impl Manager {
     pub fn new() -> Manager {
         let mut manager = Manager {
-            sessions: BTreeSet::new(),
+            sessions: BTreeMap::new(),
             searches: BTreeMap::new(),
             signs: BTreeMap::new(),
             objects: BTreeMap::new(),
@@ -420,23 +432,29 @@ impl Manager {
         }
     }
 
-    pub fn open_session(&mut self) -> Result<CK_SESSION_HANDLE, ()> {
+    pub fn open_session(&mut self, slot_type: SlotType) -> Result<CK_SESSION_HANDLE, ()> {
         let next_session = self.next_session;
         self.next_session += 1;
-        self.sessions.insert(next_session);
+        self.sessions.insert(next_session, slot_type);
         Ok(next_session)
     }
 
     pub fn close_session(&mut self, session: CK_SESSION_HANDLE) -> Result<(), ()> {
-        if self.sessions.remove(&session) {
-            Ok(())
-        } else {
-            Err(())
-        }
+        self.sessions.remove(&session).ok_or(()).map(|_| ())
     }
 
-    pub fn close_all_sessions(&mut self) -> Result<(), ()> {
-        self.sessions.clear();
+    pub fn close_all_sessions(&mut self, slot_type: SlotType) -> Result<(), ()> {
+        let mut to_remove = Vec::new();
+        for (session, open_slot_type) in self.sessions.iter() {
+            if slot_type == *open_slot_type {
+                to_remove.push(*session);
+            }
+        }
+        for session in to_remove {
+            if self.sessions.remove(&session).is_none() {
+                return Err(());
+            }
+        }
         Ok(())
     }
 
@@ -455,9 +473,10 @@ impl Manager {
         session: CK_SESSION_HANDLE,
         attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)],
     ) -> Result<(), ()> {
-        if self.searches.contains_key(&session) {
-            return Err(());
-        }
+        let slot_type = match self.sessions.get(&session) {
+            Some(slot_type) => *slot_type,
+            None => return Err(()),
+        };
         
         
         for (attr, _) in attrs {
@@ -476,7 +495,7 @@ impl Manager {
         }
         let mut handles = Vec::new();
         for (handle, object) in &self.objects {
-            if object.matches(attrs) {
+            if object.matches(slot_type, attrs) {
                 handles.push(*handle);
             }
         }
