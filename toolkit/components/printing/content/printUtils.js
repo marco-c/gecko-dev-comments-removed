@@ -147,7 +147,9 @@ var PrintUtils = {
 
 
 
-  _openTabModalPrint(aBrowsingContext, aExistingPreviewBrowser) {
+
+
+  async _openTabModalPrint(aBrowsingContext, aExistingPreviewBrowser) {
     let sourceBrowser = aBrowsingContext.top.embedderElement;
     let previewBrowser = this.getPreviewBrowser(sourceBrowser);
     if (previewBrowser) {
@@ -159,7 +161,7 @@ var PrintUtils = {
       if (aExistingPreviewBrowser) {
         aExistingPreviewBrowser.remove();
       }
-      return;
+      return Promise.reject();
     }
 
     
@@ -167,7 +169,7 @@ var PrintUtils = {
       previewBrowser: aExistingPreviewBrowser,
     });
     let dialogBox = gBrowser.getTabDialogBox(sourceBrowser);
-    dialogBox.open(
+    return dialogBox.open(
       `chrome://global/content/print.html?browsingContextId=${aBrowsingContext.id}`,
       "resizable=no",
       args,
@@ -216,7 +218,7 @@ var PrintUtils = {
       !PRINT_ALWAYS_SILENT &&
       (!aOpenWindowInfo || aOpenWindowInfo.isForPrintPreview)
     ) {
-      this._openTabModalPrint(aBrowsingContext, browser);
+      this._openTabModalPrint(aBrowsingContext, browser).catch(() => {});
       return browser;
     }
 
@@ -322,8 +324,7 @@ var PrintUtils = {
 
   printPreview(aListenerObj) {
     if (PRINT_TAB_MODAL) {
-      this._openTabModalPrint(gBrowser.selectedBrowser.browsingContext);
-      return;
+      return this._openTabModalPrint(gBrowser.selectedBrowser.browsingContext);
     }
 
     
@@ -369,6 +370,11 @@ var PrintUtils = {
     let PPROMPTSVC = Cc[
       "@mozilla.org/embedcomp/printingprompt-service;1"
     ].getService(Ci.nsIPrintingPromptService);
+
+    let promise = new Promise((resolve, reject) => {
+      this._onEntered.push({ resolve, reject });
+    });
+
     
     
     try {
@@ -394,6 +400,7 @@ var PrintUtils = {
     } catch (e) {
       this._enterPrintPreview();
     }
+    return promise;
   },
 
   
@@ -608,6 +615,8 @@ var PrintUtils = {
     this._shouldSimplify = shouldSimplify;
   },
 
+  _onEntered: [],
+
   
 
 
@@ -706,7 +715,14 @@ var PrintUtils = {
 
     let onEntered = message => {
       mm.removeMessageListener("Printing:Preview:Entered", onEntered);
-
+      for (let { resolve, reject } of this._onEntered) {
+        if (message.data.failed) {
+          reject();
+        } else {
+          resolve();
+        }
+      }
+      this._onEntered = [];
       if (message.data.failed) {
         
         
