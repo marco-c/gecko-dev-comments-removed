@@ -2618,7 +2618,8 @@ class HTMLEditor final : public TextEditor,
   HandleDeleteCollapsedSelectionAtAtomicContent(
       nsIEditor::EDirection aDirectionAndAmount,
       nsIEditor::EStripWrappers aStripWrappers, nsIContent& aAtomicContent,
-      const EditorDOMPoint& aCaretPoint, WSRunScanner& aWSRunScannerAtCaret);
+      const EditorDOMPoint& aCaretPoint,
+      const WSRunScanner& aWSRunScannerAtCaret);
 
   class MOZ_STACK_CLASS AutoEmptyBlockAncestorDeleter final {
    public:
@@ -3050,10 +3051,16 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteAroundCollapsedRanges(nsIEditor::EDirection aDirectionAndAmount,
-                                    nsIEditor::EStripWrappers aStripWrappers,
-                                    AutoRangeArray& aRangesToDelete);
+  HandleDeleteAroundCollapsedRanges(
+      nsIEditor::EDirection aDirectionAndAmount,
+      nsIEditor::EStripWrappers aStripWrappers, AutoRangeArray& aRangesToDelete,
+      const WSRunScanner& aWSRunScannerAtCaret,
+      const WSScanResult& aScanFromCaretPointResult);
 
   
 
