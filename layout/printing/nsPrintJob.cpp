@@ -770,7 +770,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
           if (printSilently) {
             Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_SILENT_PRINT, 1);
           } else {
-            if (mIsDoingPrintPreview) {
+            if (mCreatedForPrintPreview) {
               Telemetry::ScalarAdd(
                   Telemetry::ScalarID::PRINTING_DIALOG_OPENED_VIA_PREVIEW, 1);
             } else {
@@ -794,7 +794,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
           if (rv == NS_ERROR_ABORT) {
             
             
-            if (mIsDoingPrintPreview) {
+            if (mCreatedForPrintPreview) {
               Telemetry::ScalarAdd(
                   Telemetry::ScalarID::PRINTING_DIALOG_VIA_PREVIEW_CANCELLED,
                   1);
@@ -1540,7 +1540,7 @@ nsresult nsPrintJob::ReflowDocList(const UniquePtr<nsPrintObject>& aPO,
 void nsPrintJob::FirePrintPreviewUpdateEvent() {
   
   
-  if (mIsDoingPrintPreview && !mIsDoingPrinting) {
+  if (mCreatedForPrintPreview && !mIsDoingPrinting) {
     nsCOMPtr<nsIContentViewer> cv = do_QueryInterface(mDocViewerPrint);
     (new AsyncEventDispatcher(cv->GetDocument(), u"printPreviewUpdate"_ns,
                               CanBubble::eYes, ChromeOnlyDispatch::eYes))
@@ -2391,7 +2391,7 @@ void nsPrintJob::SetIsPrinting(bool aIsPrinting) {
   }
   
   
-  if (!mIsDoingPrintPreview && mDocViewerPrint) {
+  if (!mCreatedForPrintPreview && mDocViewerPrint) {
     mDocViewerPrint->SetIsPrinting(aIsPrinting);
   }
   if (mPrt && aIsPrinting) {
@@ -2401,7 +2401,7 @@ void nsPrintJob::SetIsPrinting(bool aIsPrinting) {
 
 
 void nsPrintJob::SetIsPrintPreview(bool aIsPrintPreview) {
-  mIsDoingPrintPreview = aIsPrintPreview;
+  mCreatedForPrintPreview = aIsPrintPreview;
 
   if (mDocViewerPrint) {
     mDocViewerPrint->SetIsPrintPreview(aIsPrintPreview);
