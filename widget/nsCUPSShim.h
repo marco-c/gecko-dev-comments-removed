@@ -21,9 +21,7 @@ struct PRLibrary;
 
 class nsCUPSShim {
  public:
-  bool EnsureInitialized() {
-    return mInited || Init();
-  }
+  bool EnsureInitialized() { return mInited || Init(); }
 
   
 
@@ -75,9 +73,9 @@ class nsCUPSShim {
   
   
   
-  mozilla::Atomic<bool, mozilla::ReleaseAcquire> mInited {false};
+  mozilla::Atomic<bool, mozilla::ReleaseAcquire> mInited{false};
 #ifdef CUPS_SHIM_RUNTIME_LINK
-  mozilla::OffTheBooksMutex mInitMutex {"nsCUPSShim::mInitMutex"};
+  mozilla::OffTheBooksMutex mInitMutex{"nsCUPSShim::mInitMutex"};
   PRLibrary* mCupsLib;
 #endif
 };
