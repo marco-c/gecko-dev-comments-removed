@@ -8981,6 +8981,8 @@ Document* Document::Open(const Optional<nsAString>& ,
   
   SetReadyStateInternal(READYSTATE_UNINITIALIZED,
                          false);
+  
+  mSetCompleteAfterDOMContentLoaded = false;
 
   
   SetCompatibilityMode(eCompatibility_FullStandards);
