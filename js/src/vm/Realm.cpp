@@ -4,6 +4,7 @@
 
 
 
+#include "js/shadow/Realm.h"  
 #include "vm/Realm-inl.h"
 
 #include "mozilla/MemoryReporting.h"
