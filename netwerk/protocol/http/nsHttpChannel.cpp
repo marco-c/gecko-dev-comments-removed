@@ -9599,19 +9599,10 @@ void nsHttpChannel::SetOriginHeader() {
   Unused << mRequestHead.GetHeader(nsHttp::Origin, existingHeader);
   if (!existingHeader.IsEmpty()) {
     LOG(("nsHttpChannel::SetOriginHeader Origin header already present"));
-    Unused << mRequestHead.GetHeader(nsHttp::Origin, existingHeader);
-    auto const shouldNullifyOriginHeader =
-        [&existingHeader](nsHttpChannel* self) {
-          if (self->mTaintedOriginFlag) {
-            return true;
-          }
-
-          nsCOMPtr<nsIURI> uri;
-          return NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), existingHeader)) &&
-                 ReferrerInfo::ShouldSetNullOriginHeader(self, uri);
-        };
-
-    if (shouldNullifyOriginHeader(this)) {
+    nsCOMPtr<nsIURI> uri;
+    rv = NS_NewURI(getter_AddRefs(uri), existingHeader);
+    if (NS_SUCCEEDED(rv) &&
+        ReferrerInfo::ShouldSetNullOriginHeader(this, uri)) {
       LOG(("nsHttpChannel::SetOriginHeader null Origin by Referrer-Policy"));
       rv = mRequestHead.SetHeader(nsHttp::Origin, "null"_ns, false );
       MOZ_ASSERT(NS_SUCCEEDED(rv));
@@ -9619,27 +9610,33 @@ void nsHttpChannel::SetOriginHeader() {
     return;
   }
 
+  if (StaticPrefs::network_http_sendOriginHeader() == 0) {
+    
+    return;
+  }
+
   nsCOMPtr<nsIURI> referrer;
   auto* basePrin = BasePrincipal::Cast(mLoadInfo->TriggeringPrincipal());
   basePrin->GetURI(getter_AddRefs(referrer));
+  if (!referrer || !dom::ReferrerInfo::IsReferrerSchemeAllowed(referrer)) {
+    return;
+  }
 
   nsAutoCString origin("null");
+  nsContentUtils::GetASCIIOrigin(referrer, origin);
 
-  if (StaticPrefs::network_http_sendOriginHeader() != 0 && referrer &&
-      ReferrerInfo::IsReferrerSchemeAllowed(referrer) &&
-      !ReferrerInfo::ShouldSetNullOriginHeader(this, referrer) &&
-      !mTaintedOriginFlag) {
-    nsContentUtils::GetASCIIOrigin(referrer, origin);
-
-    
-    if (StaticPrefs::network_http_sendOriginHeader() == 1) {
-      nsAutoCString currentOrigin;
-      nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
-      if (!origin.EqualsIgnoreCase(currentOrigin.get())) {
-        
-        origin.AssignLiteral("null");
-      }
+  
+  if (StaticPrefs::network_http_sendOriginHeader() == 1) {
+    nsAutoCString currentOrigin;
+    nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
+    if (!origin.EqualsIgnoreCase(currentOrigin.get())) {
+      
+      return;
     }
+  }
+
+  if (ReferrerInfo::ShouldSetNullOriginHeader(this, referrer)) {
+    origin.AssignLiteral("null");
   }
 
   rv = mRequestHead.SetHeader(nsHttp::Origin, origin, false );
@@ -10258,8 +10255,7 @@ void nsHttpChannel::ReEvaluateReferrerAfterTrackingStatusIsKnown() {
               ReferrerInfo::GetDefaultReferrerPolicy(nullptr, nullptr,
                                                      isPrivate)) {
         nsCOMPtr<nsIReferrerInfo> newReferrerInfo =
-            referrerInfo->CloneWithNewPolicy(
-                ReferrerInfo::GetDefaultReferrerPolicy(this, mURI, isPrivate));
+            referrerInfo->CloneWithNewPolicy(ReferrerPolicy::_empty);
         
         
         
