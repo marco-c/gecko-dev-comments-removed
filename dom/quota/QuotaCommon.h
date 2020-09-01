@@ -383,32 +383,42 @@
 
 #define QM_PROPAGATE MOZ_UNIQUE_VAR(tryResult).propagateErr()
 
+
+
+
 #define QM_MISSING_ARGS(...)                           \
   do {                                                 \
     static_assert(false, "Did you forget arguments?"); \
   } while (0)
 
+#ifdef DEBUG
+#  define QM_HANDLE_ERROR(expr) \
+    HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), __LINE__)
+#else
+#  define QM_HANDLE_ERROR(expr)                                              \
+    HandleError(nsLiteralCString("Unavailable"), nsLiteralCString(__FILE__), \
+                __LINE__)
+#endif
 
 
 
 
 
-#define QM_TRY_PROPAGATE_ERR(ns, expr)                                   \
-  auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr);            \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                 \
-    ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
-                    __LINE__);                                           \
-    return QM_PROPAGATE;                                                 \
+
+#define QM_TRY_PROPAGATE_ERR(ns, expr)                        \
+  auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr); \
+  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {      \
+    ns::QM_HANDLE_ERROR(expr);                                \
+    return QM_PROPAGATE;                                      \
   }
 
 
 
-#define QM_TRY_CUSTOM_RET_VAL(ns, expr, customRetVal)                    \
-  auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr);            \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                 \
-    ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
-                    __LINE__);                                           \
-    return customRetVal;                                                 \
+#define QM_TRY_CUSTOM_RET_VAL(ns, expr, customRetVal)         \
+  auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr); \
+  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {      \
+    ns::QM_HANDLE_ERROR(expr);                                \
+    return customRetVal;                                      \
   }
 
 
@@ -416,8 +426,7 @@
 #define QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(ns, expr, customRetVal, cleanup) \
   auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr);               \
   if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                    \
-    ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__),    \
-                    __LINE__);                                              \
+    ns::QM_HANDLE_ERROR(expr);                                              \
     cleanup();                                                              \
     return customRetVal;                                                    \
   }
@@ -445,24 +454,22 @@
 
 
 
-#define QM_TRY_VAR_PROPAGATE_ERR(ns, target, expr)                       \
-  auto MOZ_UNIQUE_VAR(tryResult) = (expr);                               \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                 \
-    ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
-                    __LINE__);                                           \
-    return QM_PROPAGATE;                                                 \
-  }                                                                      \
+#define QM_TRY_VAR_PROPAGATE_ERR(ns, target, expr)       \
+  auto MOZ_UNIQUE_VAR(tryResult) = (expr);               \
+  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) { \
+    ns::QM_HANDLE_ERROR(expr);                           \
+    return QM_PROPAGATE;                                 \
+  }                                                      \
   MOZ_REMOVE_PAREN(target) = MOZ_UNIQUE_VAR(tryResult).unwrap();
 
 
 
-#define QM_TRY_VAR_CUSTOM_RET_VAL(ns, target, expr, customRetVal)        \
-  auto MOZ_UNIQUE_VAR(tryResult) = (expr);                               \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                 \
-    ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
-                    __LINE__);                                           \
-    return customRetVal;                                                 \
-  }                                                                      \
+#define QM_TRY_VAR_CUSTOM_RET_VAL(ns, target, expr, customRetVal) \
+  auto MOZ_UNIQUE_VAR(tryResult) = (expr);                        \
+  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {          \
+    ns::QM_HANDLE_ERROR(expr);                                    \
+    return customRetVal;                                          \
+  }                                                               \
   MOZ_REMOVE_PAREN(target) = MOZ_UNIQUE_VAR(tryResult).unwrap();
 
 
@@ -471,8 +478,7 @@
                                                cleanup)                        \
   auto MOZ_UNIQUE_VAR(tryResult) = (expr);                                     \
   if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                       \
-    ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__),       \
-                    __LINE__);                                                 \
+    ns::QM_HANDLE_ERROR(expr);                                                 \
     cleanup();                                                                 \
     return customRetVal;                                                       \
   }                                                                            \
@@ -502,17 +508,15 @@
 
 
 
-#define QM_FAIL_RET_VAL(ns, retVal)                                        \
-  ns::HandleError(nsLiteralCString("Failure"), nsLiteralCString(__FILE__), \
-                  __LINE__);                                               \
+#define QM_FAIL_RET_VAL(ns, retVal) \
+  ns::QM_HANDLE_ERROR(Failure);     \
   return retVal;
 
 
 
-#define QM_FAIL_RET_VAL_WITH_CLEANUP(ns, retVal, cleanup)                  \
-  ns::HandleError(nsLiteralCString("Failure"), nsLiteralCString(__FILE__), \
-                  __LINE__);                                               \
-  cleanup();                                                               \
+#define QM_FAIL_RET_VAL_WITH_CLEANUP(ns, retVal, cleanup) \
+  ns::QM_HANDLE_ERROR(Failure);                           \
+  cleanup();                                              \
   return retVal;
 
 
