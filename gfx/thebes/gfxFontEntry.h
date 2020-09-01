@@ -12,7 +12,6 @@
 #include "gfxFontFeatures.h"
 #include "gfxFontUtils.h"
 #include "gfxFontVariations.h"
-#include "gfxPlatform.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "mozilla/HashFunctions.h"
@@ -255,15 +254,6 @@ class gfxFontEntry {
                           const mozilla::gfx::DeviceColor& aDefaultColor,
                           nsTArray<uint16_t>& layerGlyphs,
                           nsTArray<mozilla::gfx::DeviceColor>& layerColors);
-  bool HasColorLayersForGlyph(uint32_t aGlyphId) {
-    MOZ_ASSERT(mCOLR);
-    return gfxFontUtils::HasColorLayersForGlyph(mCOLR, aGlyphId);
-  }
-
-  bool HasColorBitmapTable() {
-    return HasFontTable(TRUETYPE_TAG('C', 'B', 'D', 'T')) ||
-           HasFontTable(TRUETYPE_TAG('s', 'b', 'i', 'x'));
-  }
 
   
   
@@ -762,23 +752,17 @@ inline bool gfxFontEntry::SupportsBold() {
 
 
 struct GlobalFontMatch {
-  GlobalFontMatch(uint32_t aCharacter, uint32_t aNextCh,
-                  const gfxFontStyle& aStyle, eFontPresentation aPresentation)
-      : mStyle(aStyle),
-        mCh(aCharacter),
-        mNextCh(aNextCh),
-        mPresentation(aPresentation) {}
+  GlobalFontMatch(const uint32_t aCharacter, const gfxFontStyle& aStyle)
+      : mStyle(aStyle), mCh(aCharacter) {}
 
   RefPtr<gfxFontEntry> mBestMatch;       
   RefPtr<gfxFontFamily> mMatchedFamily;  
   mozilla::fontlist::Family* mMatchedSharedFamily = nullptr;
-  const gfxFontStyle& mStyle;  
-  const uint32_t mCh;          
-  const uint32_t mNextCh;      
-  eFontPresentation mPresentation;
-  uint32_t mCount = 0;               
-  uint32_t mCmapsTested = 0;         
-  double mMatchDistance = INFINITY;  
+  const gfxFontStyle& mStyle;       
+  const uint32_t mCh;               
+  uint32_t mCount = 0;              
+  uint32_t mCmapsTested = 0;        
+  float mMatchDistance = INFINITY;  
 };
 
 

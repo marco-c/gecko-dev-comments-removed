@@ -97,10 +97,6 @@ enum eGfxLog {
 };
 
 
-
-enum class eFontPresentation : uint8_t { Any = 0, Text = 1, Emoji = 2 };
-
-
 const uint32_t kMaxLenPrefLangList = 32;
 
 #define UNINITIALIZED_VALUE (-1)
@@ -479,8 +475,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   
   
-  virtual void GetCommonFallbackFonts(uint32_t , Script ,
-                                      eFontPresentation ,
+  virtual void GetCommonFallbackFonts(uint32_t , uint32_t ,
+                                      Script ,
                                       nsTArray<const char*>& ) {
     
   }

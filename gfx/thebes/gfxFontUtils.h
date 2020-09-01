@@ -1159,7 +1159,6 @@ class gfxFontUtils {
       const mozilla::gfx::DeviceColor& aDefaultColor,
       nsTArray<uint16_t>& aGlyphs,
       nsTArray<mozilla::gfx::DeviceColor>& aColors);
-  static bool HasColorLayersForGlyph(hb_blob_t* aCOLR, uint32_t aGlyphId);
 
   
   
@@ -1204,16 +1203,6 @@ class gfxFontUtils {
   static const mozilla::Encoding* gISOFontNameCharsets[];
   static const mozilla::Encoding* gMSFontNameCharsets[];
 };
-
-
-
-
-
-
-constexpr double kPresentationMismatch = 1.0e12;
-constexpr double kStretchFactor = 1.0e8;
-constexpr double kStyleFactor = 1.0e4;
-constexpr double kWeightFactor = 1.0e0;
 
 
 static inline double StyleDistance(const mozilla::SlantStyleRange& aRange,
