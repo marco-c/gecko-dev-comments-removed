@@ -236,6 +236,19 @@ void FocusManager::ProcessDOMFocus(nsINode* aTarget) {
   Accessible* target =
       document->GetAccessibleEvenIfNotInMapOrContainer(aTarget);
   if (target) {
+    if (target->IsOuterDoc()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return;
+    }
+
     
     
     nsINode* focusedNode = FocusedDOMNode();
@@ -369,20 +382,12 @@ nsINode* FocusManager::FocusedDOMNode() const {
   nsFocusManager* DOMFocusManager = nsFocusManager::GetFocusManager();
   nsIContent* focusedElm = DOMFocusManager->GetFocusedElement();
 
+  
+  
+  
   if (focusedElm) {
     
-    
-    
-    
-    if (EventStateManager::IsTopLevelRemoteTarget(focusedElm) &&
-        focusedElm->AsElement()->HasAttribute(u"printpreview"_ns)) {
-      return focusedElm;
-    }
-    
-    
-    
-    
-    if (EventStateManager::IsRemoteTarget(focusedElm)) {
+    if (EventStateManager::IsTopLevelRemoteTarget(focusedElm)) {
       return nullptr;
     }
     return focusedElm;
