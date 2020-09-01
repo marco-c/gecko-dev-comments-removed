@@ -1067,22 +1067,12 @@ nsresult ContentChild::ProvideWindowCommon(
     newChild->SetMaxTouchPoints(maxTouchPoints);
     newChild->SetHasSiblings(hasSiblings);
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    if (nsCOMPtr<nsPIDOMWindowOuter> outer =
-            do_GetInterface(newChild->WebNavigation())) {
-      BrowsingContext* bc = outer->GetBrowsingContext();
-      auto parentBC = parent ? parent->Id() : 0;
-
-      if (aForceNoOpener) {
-        MOZ_DIAGNOSTIC_ASSERT(!*aWindowIsNew || !bc->HadOriginalOpener());
-        MOZ_DIAGNOSTIC_ASSERT(bc->GetOpenerId() == 0);
-      } else {
-        MOZ_DIAGNOSTIC_ASSERT(!*aWindowIsNew ||
-                              bc->HadOriginalOpener() == !!parentBC);
-        MOZ_DIAGNOSTIC_ASSERT(bc->GetOpenerId() == parentBC);
-      }
+    if (aForceNoOpener || !parent) {
+      MOZ_DIAGNOSTIC_ASSERT(!browsingContext->HadOriginalOpener());
+      MOZ_DIAGNOSTIC_ASSERT(browsingContext->GetOpenerId() == 0);
+    } else {
+      MOZ_DIAGNOSTIC_ASSERT(browsingContext->HadOriginalOpener());
     }
-#endif
 
     
     
