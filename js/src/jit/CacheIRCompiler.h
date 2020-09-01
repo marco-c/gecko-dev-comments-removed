@@ -901,11 +901,6 @@ class MOZ_RAII CacheIRCompiler {
 #endif
 
  public:
-  
-  
-  
-  static const uint32_t MAX_ARGS_ARRAY_LENGTH = 16;
-
   void callVMInternal(MacroAssembler& masm, VMFunctionId id);
   template <typename Fn, Fn fn>
   void callVM(MacroAssembler& masm);

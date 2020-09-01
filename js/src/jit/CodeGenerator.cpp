@@ -6366,17 +6366,11 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
 }
 
 void CodeGenerator::visitApplyArgsGeneric(LApplyArgsGeneric* apply) {
-  
-  
-  
-  
-  
-
   LSnapshot* snapshot = apply->snapshot();
   Register argcreg = ToRegister(apply->getArgc());
 
-  uint32_t limit = 3000 / sizeof(Value);
-  bailoutCmp32(Assembler::Above, argcreg, Imm32(limit), snapshot);
+  
+  bailoutCmp32(Assembler::Above, argcreg, Imm32(JIT_ARGS_LENGTH_MAX), snapshot);
 
   emitApplyGeneric(apply);
 }
@@ -6390,9 +6384,7 @@ void CodeGenerator::visitApplyArrayGeneric(LApplyArrayGeneric* apply) {
   masm.load32(length, tmp);
 
   
-
-  uint32_t limit = 3000 / sizeof(Value);
-  bailoutCmp32(Assembler::Above, tmp, Imm32(limit), snapshot);
+  bailoutCmp32(Assembler::Above, tmp, Imm32(JIT_ARGS_LENGTH_MAX), snapshot);
 
   
 
@@ -6413,9 +6405,7 @@ void CodeGenerator::visitConstructArrayGeneric(LConstructArrayGeneric* lir) {
   masm.load32(length, tmp);
 
   
-
-  uint32_t limit = 3000 / sizeof(Value);
-  bailoutCmp32(Assembler::Above, tmp, Imm32(limit), snapshot);
+  bailoutCmp32(Assembler::Above, tmp, Imm32(JIT_ARGS_LENGTH_MAX), snapshot);
 
   
 
