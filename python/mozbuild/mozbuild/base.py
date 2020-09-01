@@ -875,7 +875,7 @@ class MachCommandBase(MozbuildObject):
     without having to change everything that inherits from it.
     """
 
-    def __init__(self, context, virtualenv_name):
+    def __init__(self, context, virtualenv_name=None):
         
         
         topsrcdir = context.topdir
