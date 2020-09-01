@@ -284,10 +284,12 @@ def bootstrap(topsrcdir, mozilla_dir=None):
 
     def should_skip_telemetry_submission(handler):
         
-        if handler.name in ('bootstrap', 'doctor', 'mach-commands', 'vcs-setup',
-                            
-                            
-                            'environment'):
+        if handler.name in (
+                'bootstrap', 'doctor', 'mach-commands', 'vcs-setup',
+                'create-mach-environment',
+                
+                
+                'environment'):
             return True
 
         
