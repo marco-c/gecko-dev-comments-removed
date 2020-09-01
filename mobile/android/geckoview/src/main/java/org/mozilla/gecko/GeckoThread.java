@@ -14,6 +14,7 @@ import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.GeckoResult;
+import org.mozilla.gecko.GeckoJavaSampler;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -418,6 +419,10 @@ public class GeckoThread extends Thread {
         
         maybeWaitForJavaDebugger(context, env);
 
+        
+        
+        maybeStartGeckoProfiler(env);
+
         GeckoLoader.loadMozGlue(context);
         setState(State.MOZGLUE_READY);
 
@@ -487,6 +492,78 @@ public class GeckoThread extends Thread {
                     }
                 }
             }
+        }
+    }
+
+    
+    
+    
+    private static void maybeStartGeckoProfiler(final @NonNull List<String> env) {
+        final String startupEnv = "MOZ_PROFILER_STARTUP=";
+        final String intervalEnv = "MOZ_PROFILER_STARTUP_INTERVAL=";
+        final String capacityEnv = "MOZ_PROFILER_STARTUP_ENTRIES=";
+        boolean isStartupProfiling = false;
+        
+        
+        int interval = 1;
+        
+        int capacity = 8 * 1024 * 1024;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        final int minCapacity = 65536;
+
+        
+        for (final String envItem : env) {
+            if (envItem == null) {
+                continue;
+            }
+
+            if (envItem.startsWith(startupEnv)) {
+                
+                String value = envItem.substring(startupEnv.length());
+                if (value.isEmpty() || value.equals("0") || value.equals("n") || value.equals("N")) {
+                    
+                    
+                    
+                    break;
+                }
+
+                isStartupProfiling = true;
+            } else if (envItem.startsWith(intervalEnv)) {
+                
+                String value = envItem.substring(intervalEnv.length());
+
+                try {
+                    int intValue = Integer.parseInt(value);
+                    interval = Math.max(intValue, interval);
+                } catch (NumberFormatException err) {
+                    
+                }
+            } else if (envItem.startsWith(capacityEnv)) {
+                
+                String value = envItem.substring(capacityEnv.length());
+
+                try {
+                    int intValue = Integer.parseInt(value);
+                    
+                    capacity = Math.max(intValue, minCapacity);
+                } catch (NumberFormatException err) {
+                    
+                }
+            }
+        }
+
+        if (isStartupProfiling) {
+            GeckoJavaSampler.start(interval, capacity);
         }
     }
 

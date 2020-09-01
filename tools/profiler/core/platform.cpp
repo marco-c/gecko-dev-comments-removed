@@ -746,6 +746,8 @@ class ActivePS {
   
   constexpr static uint32_t scMinimumBufferSize =
       scMinimumNumberOfChunks * scMinimumChunkSize;
+  
+  
   constexpr static uint32_t scMinimumBufferEntries =
       scMinimumBufferSize / scBytesPerEntry;
 

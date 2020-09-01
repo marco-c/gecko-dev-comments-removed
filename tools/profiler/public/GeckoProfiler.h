@@ -332,6 +332,8 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_ENTRIES =
 
 
 
+
+
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  if !defined(GP_PLAT_arm_android)
     mozilla::MakePowerOfTwo32<64 * 1024 * 1024>();  
@@ -340,6 +342,8 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  endif
 
 #  define PROFILER_DEFAULT_DURATION 20 /* seconds, for tests only */
+
+
 #  define PROFILER_DEFAULT_INTERVAL 1  /* millisecond */
 #  define PROFILER_MAX_INTERVAL 5000   /* milliseconds */
 
