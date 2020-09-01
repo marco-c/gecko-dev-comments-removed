@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  get #m() {}
+  set #m(_) {}
+}
+
+reportCompare(0, 0);
