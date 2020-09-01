@@ -6460,20 +6460,14 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
   
   if (storageVersion == kHackyPreDowngradeStorageVersion) {
     storageVersion = kHackyPostDowngradeStorageVersion;
-    
-    
-    nsresult rv = connection->SetSchemaVersion(storageVersion);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_ASSERT(false, "Downgrade didn't take.");
-      return rv;
-    }
+    QM_TRY(connection->SetSchemaVersion(storageVersion), QM_PROPAGATE,
+           []() { MOZ_ASSERT(false, "Downgrade didn't take."); });
   }
 
-  if (GetMajorStorageVersion(storageVersion) > kMajorStorageVersion) {
-    
-    NS_WARNING("Unable to initialize storage, version is too high!");
-    return NS_ERROR_FAILURE;
-  }
+  QM_TRY(OkIf(GetMajorStorageVersion(storageVersion) <= kMajorStorageVersion),
+         NS_ERROR_FAILURE, []() {
+           NS_WARNING("Unable to initialize storage, version is too high!");
+         });
 
   if (storageVersion < kStorageVersion) {
     const bool newDatabase = !storageVersion;
