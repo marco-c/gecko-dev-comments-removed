@@ -100,8 +100,7 @@ def test_only_important_manifests(params, full_task_graph, filter_tasks):
         ),
     ),
 )
-def test_tasks_are_not_scheduled(tgg, filter_tasks, func):
-    optimized_task_graph = tgg.optimized_task_graph
+def test_tasks_are_not_scheduled(optimized_task_graph, filter_tasks, func):
     
     
     
