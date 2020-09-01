@@ -636,6 +636,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
  private:
   
+  bool ShouldTaintReplacementChannelOrigin(nsIURI* aNewURI);
+
+  
   void ReleaseMainThreadOnlyReferences();
 
   void ExplicitSetUploadStreamLength(uint64_t aContentLength,
@@ -820,6 +823,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   
   uint32_t mHasNonEmptySandboxingFlag : 1;
+
+  
+  uint32_t mTaintedOriginFlag : 1;
 
   
   
