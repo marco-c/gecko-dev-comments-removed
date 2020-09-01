@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+input[type="number"],
+input[type="text"] {
+  -moz-appearance: textfield;
+}

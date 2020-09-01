@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+#article-show-more-button > * {
+  pointer-events: none;
+}
