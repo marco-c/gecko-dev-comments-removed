@@ -2618,7 +2618,6 @@ class HTMLEditor final : public TextEditor,
     RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
   };
 
-  enum class SelectionWasCollapsed { Yes, No };
   
 
 
