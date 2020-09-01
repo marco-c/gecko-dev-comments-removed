@@ -171,9 +171,7 @@ var ModuleManager = {
     
     
     
-    const { history } = await this.getActor("GeckoViewContent").sendQuery(
-      "CollectSessionState"
-    );
+    const { history } = await this.getActor("GeckoViewContent").collectState();
     
     
     const sessionState = { history };
@@ -236,11 +234,7 @@ var ModuleManager = {
       module.enabled = true;
     });
 
-    this.getActor("GeckoViewContent").sendAsyncMessage(
-      "GeckoView:RestoreState",
-      sessionState
-    );
-
+    this.getActor("GeckoViewContent").restoreState(sessionState);
     this.browser.focus();
     return true;
   },
@@ -543,10 +537,14 @@ function startup() {
         resource: "resource://gre/modules/GeckoViewContent.jsm",
         actors: {
           GeckoViewContent: {
+            parent: {
+              moduleURI: "resource:///actors/GeckoViewContentParent.jsm",
+            },
             child: {
               moduleURI: "resource:///actors/GeckoViewContentChild.jsm",
               events: {
                 mozcaretstatechanged: { capture: true, mozSystemGroup: true },
+                pageshow: { mozSystemGroup: true },
               },
             },
             allFrames: true,

@@ -155,8 +155,7 @@ class GeckoViewContent extends GeckoViewModule {
         }
         break;
       case "GeckoView:RestoreState":
-        
-        this.actor.sendAsyncMessage("GeckoView:RestoreState", aData);
+        this.actor.restoreState(aData);
         break;
     }
   }
