@@ -28,95 +28,106 @@
 
 
 
+#if defined(__arm__) || defined(_M_ARM)
+#include <fficonfig.h>
 #include <ffi.h>
 #include <ffi_common.h>
-
+#include <stdint.h>
 #include <stdlib.h>
+#include "internal.h"
+
+#if defined(_MSC_VER) && defined(_M_ARM)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
+#if FFI_EXEC_TRAMPOLINE_TABLE
+
+#ifdef __MACH__
+#include <mach/machine/vm_param.h>
+#endif
+
+#else
+#ifndef _M_ARM
+extern unsigned int ffi_arm_trampoline[2] FFI_HIDDEN;
+#else
+extern unsigned int ffi_arm_trampoline[3] FFI_HIDDEN;
+#endif
+#endif
 
 
-static int vfp_type_p (ffi_type *);
+static int vfp_type_p (const ffi_type *);
 static void layout_vfp_args (ffi_cif *);
 
-int ffi_prep_args_SYSV(char *stack, extended_cif *ecif, float *vfp_space);
-int ffi_prep_args_VFP(char *stack, extended_cif *ecif, float *vfp_space);
-
-static char* ffi_align(ffi_type **p_arg, char *argp)
+static void *
+ffi_align (ffi_type *ty, void *p)
 {
   
-  register size_t alignment = (*p_arg)->alignment;
-  if (alignment < 4)
-  {
-    alignment = 4;
-  }
+  size_t alignment;
 #ifdef _WIN32_WCE
-  if (alignment > 4)
-  {
+  alignment = 4;
+#else
+  alignment = ty->alignment;
+  if (alignment < 4)
     alignment = 4;
-  }
 #endif
-  if ((alignment - 1) & (unsigned) argp)
-  {
-    argp = (char *) ALIGN(argp, alignment);
-  }
-
-  if ((*p_arg)->type == FFI_TYPE_STRUCT)
-  {
-    argp = (char *) ALIGN(argp, 4);
-  }
-  return argp;
+  return (void *) FFI_ALIGN (p, alignment);
 }
 
-static size_t ffi_put_arg(ffi_type **arg_type, void **arg, char *stack)
+static size_t
+ffi_put_arg (ffi_type *ty, void *src, void *dst)
 {
-	register char* argp = stack;
-	register ffi_type **p_arg = arg_type;
-	register void **p_argv = arg;
-	register size_t z = (*p_arg)->size;
-  if (z < sizeof(int))
-    {
-		z = sizeof(int);
-		switch ((*p_arg)->type)
-      {
-      case FFI_TYPE_SINT8:
-        *(signed int *) argp = (signed int)*(SINT8 *)(* p_argv);
-        break;
-        
-      case FFI_TYPE_UINT8:
-        *(unsigned int *) argp = (unsigned int)*(UINT8 *)(* p_argv);
-        break;
-        
-      case FFI_TYPE_SINT16:
-        *(signed int *) argp = (signed int)*(SINT16 *)(* p_argv);
-        break;
-        
-      case FFI_TYPE_UINT16:
-        *(unsigned int *) argp = (unsigned int)*(UINT16 *)(* p_argv);
-        break;
-        
-      case FFI_TYPE_STRUCT:
-        memcpy(argp, *p_argv, (*p_arg)->size);
-        break;
+  size_t z = ty->size;
 
-      default:
-        FFI_ASSERT(0);
-      }
-    }
-  else if (z == sizeof(int))
+  switch (ty->type)
     {
-		if ((*p_arg)->type == FFI_TYPE_FLOAT)
-			*(float *) argp = *(float *)(* p_argv);
-		else
-			*(unsigned int *) argp = (unsigned int)*(UINT32 *)(* p_argv);
+    case FFI_TYPE_SINT8:
+      *(UINT32 *)dst = *(SINT8 *)src;
+      break;
+    case FFI_TYPE_UINT8:
+      *(UINT32 *)dst = *(UINT8 *)src;
+      break;
+    case FFI_TYPE_SINT16:
+      *(UINT32 *)dst = *(SINT16 *)src;
+      break;
+    case FFI_TYPE_UINT16:
+      *(UINT32 *)dst = *(UINT16 *)src;
+      break;
+
+    case FFI_TYPE_INT:
+    case FFI_TYPE_SINT32:
+    case FFI_TYPE_UINT32:
+    case FFI_TYPE_POINTER:
+#ifndef _MSC_VER
+    case FFI_TYPE_FLOAT:
+#endif
+      *(UINT32 *)dst = *(UINT32 *)src;
+      break;
+
+#ifdef _MSC_VER
+    
+    case FFI_TYPE_FLOAT:
+        *(uintptr_t *)dst = 0;
+        *(float *)dst = *(float *)src;
+        break;
+#endif
+
+    case FFI_TYPE_SINT64:
+    case FFI_TYPE_UINT64:
+    case FFI_TYPE_DOUBLE:
+      *(UINT64 *)dst = *(UINT64 *)src;
+      break;
+
+    case FFI_TYPE_STRUCT:
+    case FFI_TYPE_COMPLEX:
+      memcpy (dst, src, z);
+      break;
+
+    default:
+      abort();
     }
-	else if (z == sizeof(double) && (*p_arg)->type == FFI_TYPE_DOUBLE)
-		{
-			*(double *) argp = *(double *)(* p_argv);
-		}
-  else
-    {
-      memcpy(argp, *p_argv, z);
-    }
-  return z;
+
+  return FFI_ALIGN (z, 4);
 }
 
 
@@ -125,759 +136,670 @@ static size_t ffi_put_arg(ffi_type **arg_type, void **arg, char *stack)
 
 
 
-int ffi_prep_args_SYSV(char *stack, extended_cif *ecif, float *vfp_space)
+
+static void
+ffi_prep_args_SYSV (ffi_cif *cif, int flags, void *rvalue,
+		    void **avalue, char *argp)
 {
-  register unsigned int i;
-  register void **p_argv;
-  register char *argp;
-  register ffi_type **p_arg;
-  argp = stack;
-  
+  ffi_type **arg_types = cif->arg_types;
+  int i, n;
 
-  if ( ecif->cif->flags == FFI_TYPE_STRUCT ) {
-    *(void **) argp = ecif->rvalue;
-    argp += 4;
-  }
-
-  p_argv = ecif->avalue;
-
-  for (i = ecif->cif->nargs, p_arg = ecif->cif->arg_types;
-       (i != 0);
-       i--, p_arg++, p_argv++)
+  if (flags == ARM_TYPE_STRUCT)
     {
-    argp = ffi_align(p_arg, argp);
-    argp += ffi_put_arg(p_arg, p_argv, argp);
+      *(void **) argp = rvalue;
+      argp += 4;
     }
 
-  return 0;
+  for (i = 0, n = cif->nargs; i < n; i++)
+    {
+      ffi_type *ty = arg_types[i];
+      argp = ffi_align (ty, argp);
+      argp += ffi_put_arg (ty, avalue[i], argp);
+    }
 }
 
-int ffi_prep_args_VFP(char *stack, extended_cif *ecif, float *vfp_space)
+static void
+ffi_prep_args_VFP (ffi_cif *cif, int flags, void *rvalue,
+                   void **avalue, char *stack, char *vfp_space)
 {
-  
-  FFI_ASSERT(ecif->cif->abi == FFI_VFP);
-
-  register unsigned int i, vi = 0;
-  register void **p_argv;
-  register char *argp, *regp, *eo_regp;
-  register ffi_type **p_arg;
+  ffi_type **arg_types = cif->arg_types;
+  int i, n, vi = 0;
+  char *argp, *regp, *eo_regp;
   char stack_used = 0;
   char done_with_regs = 0;
-  char is_vfp_type;
 
   
 
   regp = stack;
   eo_regp = argp = regp + 16;
-  
 
   
 
-  if ( ecif->cif->flags == FFI_TYPE_STRUCT ) {
-    *(void **) regp = ecif->rvalue;
-    regp += 4;
-  }
-
-  p_argv = ecif->avalue;
-
-  for (i = ecif->cif->nargs, p_arg = ecif->cif->arg_types;
-       (i != 0);
-       i--, p_arg++, p_argv++)
+  if (flags == ARM_TYPE_STRUCT)
     {
-      is_vfp_type = vfp_type_p (*p_arg);
+      *(void **) regp = rvalue;
+      regp += 4;
+    }
+
+  for (i = 0, n = cif->nargs; i < n; i++)
+    {
+      ffi_type *ty = arg_types[i];
+      void *a = avalue[i];
+      int is_vfp_type = vfp_type_p (ty);
 
       
-      if(vi < ecif->cif->vfp_nargs && is_vfp_type)
-        {
-          char *vfp_slot = (char *)(vfp_space + ecif->cif->vfp_args[vi++]);
-          ffi_put_arg(p_arg, p_argv, vfp_slot);
-          continue;
-        }
+      if (vi < cif->vfp_nargs && is_vfp_type)
+	{
+	  char *vfp_slot = vfp_space + cif->vfp_args[vi++] * 4;
+	  ffi_put_arg (ty, a, vfp_slot);
+	  continue;
+	}
       
       else if (!done_with_regs && !is_vfp_type)
-        {
-          char *tregp = ffi_align(p_arg, regp);
-          size_t size = (*p_arg)->size; 
-          size = (size < 4)? 4 : size; 
-          
+	{
+	  char *tregp = ffi_align (ty, regp);
+	  size_t size = ty->size;
+	  size = (size < 4) ? 4 : size;	
+	  
 
-          if(tregp + size <= eo_regp)
-            {
-              regp = tregp + ffi_put_arg(p_arg, p_argv, tregp);
-              done_with_regs = (regp == argp);
-              
-              FFI_ASSERT(regp <= argp);
-              continue;
-            }
-          
+	  if (tregp + size <= eo_regp)
+	    {
+	      regp = tregp + ffi_put_arg (ty, a, tregp);
+	      done_with_regs = (regp == argp);
+	      
+	      FFI_ASSERT (regp <= argp);
+	      continue;
+	    }
+	  
 
 
-          else if (!stack_used) 
-            {
-              stack_used = 1;
-              done_with_regs = 1;
-              argp = tregp + ffi_put_arg(p_arg, p_argv, tregp);
-              FFI_ASSERT(eo_regp < argp);
-              continue;
-            }
-        }
+	  else if (!stack_used)
+	    {
+	      stack_used = 1;
+	      done_with_regs = 1;
+	      argp = tregp + ffi_put_arg (ty, a, tregp);
+	      FFI_ASSERT (eo_regp < argp);
+	      continue;
+	    }
+	}
       
       stack_used = 1;
-      argp = ffi_align(p_arg, argp);
-      argp += ffi_put_arg(p_arg, p_argv, argp);
+      argp = ffi_align (ty, argp);
+      argp += ffi_put_arg (ty, a, argp);
     }
-  
-  return ecif->cif->vfp_used;
 }
 
 
-ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
+ffi_status FFI_HIDDEN
+ffi_prep_cif_machdep (ffi_cif *cif)
 {
-  int type_code;
+  int flags = 0, cabi = cif->abi;
+  size_t bytes = cif->bytes;
+
   
 
 
-  cif->bytes = (cif->bytes + 7) & ~7;
+
+  if (cabi == FFI_VFP)
+    layout_vfp_args (cif);
 
   
   switch (cif->rtype->type)
     {
     case FFI_TYPE_VOID:
-    case FFI_TYPE_FLOAT:
-    case FFI_TYPE_DOUBLE:
-      cif->flags = (unsigned) cif->rtype->type;
+      flags = ARM_TYPE_VOID;
+      break;
+
+    case FFI_TYPE_INT:
+    case FFI_TYPE_UINT8:
+    case FFI_TYPE_SINT8:
+    case FFI_TYPE_UINT16:
+    case FFI_TYPE_SINT16:
+    case FFI_TYPE_UINT32:
+    case FFI_TYPE_SINT32:
+    case FFI_TYPE_POINTER:
+      flags = ARM_TYPE_INT;
       break;
 
     case FFI_TYPE_SINT64:
     case FFI_TYPE_UINT64:
-      cif->flags = (unsigned) FFI_TYPE_SINT64;
+      flags = ARM_TYPE_INT64;
+      break;
+
+    case FFI_TYPE_FLOAT:
+      flags = (cabi == FFI_VFP ? ARM_TYPE_VFP_S : ARM_TYPE_INT);
+      break;
+    case FFI_TYPE_DOUBLE:
+      flags = (cabi == FFI_VFP ? ARM_TYPE_VFP_D : ARM_TYPE_INT64);
       break;
 
     case FFI_TYPE_STRUCT:
-      if (cif->abi == FFI_VFP
-	  && (type_code = vfp_type_p (cif->rtype)) != 0)
+    case FFI_TYPE_COMPLEX:
+      if (cabi == FFI_VFP)
 	{
-	  
+	  int h = vfp_type_p (cif->rtype);
 
-	  cif->flags = (unsigned) type_code;
+	  flags = ARM_TYPE_VFP_N;
+	  if (h == 0x100 + FFI_TYPE_FLOAT)
+	    flags = ARM_TYPE_VFP_S;
+	  if (h == 0x100 + FFI_TYPE_DOUBLE)
+	    flags = ARM_TYPE_VFP_D;
+	  if (h != 0)
+	      break;
 	}
-      else if (cif->rtype->size <= 4)
-	
-	cif->flags = (unsigned)FFI_TYPE_INT;
+
+      
+
+
+
+      if (cif->rtype->size <= 4)
+	flags = ARM_TYPE_INT;
       else
-	
-
-
-	cif->flags = (unsigned)FFI_TYPE_STRUCT;
+	{
+	  flags = ARM_TYPE_STRUCT;
+	  bytes += 4;
+	}
       break;
 
     default:
-      cif->flags = FFI_TYPE_INT;
-      break;
+      abort();
     }
 
   
 
 
-  if (cif->abi == FFI_VFP)
-    layout_vfp_args (cif);
+  bytes = FFI_ALIGN (bytes, 8);
+
+  
+  if (bytes < 4*4)
+    bytes = 4*4;
+
+  cif->bytes = bytes;
+  cif->flags = flags;
 
   return FFI_OK;
 }
 
 
-ffi_status ffi_prep_cif_machdep_var(ffi_cif *cif,
-				    unsigned int nfixedargs,
-				    unsigned int ntotalargs)
+ffi_status FFI_HIDDEN
+ffi_prep_cif_machdep_var (ffi_cif * cif,
+			  unsigned int nfixedargs, unsigned int ntotalargs)
 {
   
   if (cif->abi == FFI_VFP)
-	cif->abi = FFI_SYSV;
+    cif->abi = FFI_SYSV;
 
-  return ffi_prep_cif_machdep(cif);
+  return ffi_prep_cif_machdep (cif);
 }
 
 
-extern void ffi_call_SYSV (void (*fn)(void), extended_cif *, unsigned, unsigned, unsigned *);
-extern void ffi_call_VFP (void (*fn)(void), extended_cif *, unsigned, unsigned, unsigned *);
 
-void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
+struct call_frame
 {
-  extended_cif ecif;
-
-  int small_struct = (cif->flags == FFI_TYPE_INT 
-		      && cif->rtype->type == FFI_TYPE_STRUCT);
-  int vfp_struct = (cif->flags == FFI_TYPE_STRUCT_VFP_FLOAT
-		    || cif->flags == FFI_TYPE_STRUCT_VFP_DOUBLE);
-
-  unsigned int temp;
-  
-  ecif.cif = cif;
-  ecif.avalue = avalue;
-
-  
-  
-
-  if ((rvalue == NULL) && 
-      (cif->flags == FFI_TYPE_STRUCT))
-    {
-      ecif.rvalue = alloca(cif->rtype->size);
-    }
-  else if (small_struct)
-    ecif.rvalue = &temp;
-  else if (vfp_struct)
-    {
-      
-      ecif.rvalue = alloca(32);
-    }
-  else
-    ecif.rvalue = rvalue;
-
-  switch (cif->abi) 
-    {
-    case FFI_SYSV:
-      ffi_call_SYSV (fn, &ecif, cif->bytes, cif->flags, ecif.rvalue);
-      break;
-
-    case FFI_VFP:
-#ifdef __ARM_EABI__
-      ffi_call_VFP (fn, &ecif, cif->bytes, cif->flags, ecif.rvalue);
-      break;
-#endif
-
-    default:
-      FFI_ASSERT(0);
-      break;
-    }
-  if (small_struct)
-    {
-      FFI_ASSERT(rvalue != NULL);
-      memcpy (rvalue, &temp, cif->rtype->size);
-    }
-    
-  else if (vfp_struct)
-    {
-      FFI_ASSERT(rvalue != NULL);
-      memcpy (rvalue, ecif.rvalue, cif->rtype->size);
-    }
-    
-}
-
-
-
-static void ffi_prep_incoming_args_SYSV (char *stack, void **ret,
-					 void** args, ffi_cif* cif, float *vfp_stack);
-
-static void ffi_prep_incoming_args_VFP (char *stack, void **ret,
-					 void** args, ffi_cif* cif, float *vfp_stack);
-
-void ffi_closure_SYSV (ffi_closure *);
-
-void ffi_closure_VFP (ffi_closure *);
-
-
-
-unsigned int FFI_HIDDEN
-ffi_closure_inner (ffi_closure *closure, 
-		   void **respp, void *args, void *vfp_args)
-{
-  
-  ffi_cif       *cif;
-  void         **arg_area;
-
-  cif         = closure->cif;
-  arg_area    = (void**) alloca (cif->nargs * sizeof (void*));  
-
-  
-
-
-
-
-  if (cif->abi == FFI_VFP)
-    ffi_prep_incoming_args_VFP(args, respp, arg_area, cif, vfp_args);
-  else
-    ffi_prep_incoming_args_SYSV(args, respp, arg_area, cif, vfp_args);
-
-  (closure->fun) (cif, *respp, arg_area, closure->user_data);
-
-  return cif->flags;
-}
-
-
-static void 
-ffi_prep_incoming_args_SYSV(char *stack, void **rvalue,
-			    void **avalue, ffi_cif *cif,
-			    
-			    float *vfp_stack)
-
-{
-  register unsigned int i;
-  register void **p_argv;
-  register char *argp;
-  register ffi_type **p_arg;
-
-  argp = stack;
-
-  if ( cif->flags == FFI_TYPE_STRUCT ) {
-    *rvalue = *(void **) argp;
-    argp += 4;
-  }
-
-  p_argv = avalue;
-
-  for (i = cif->nargs, p_arg = cif->arg_types; (i != 0); i--, p_arg++)
-    {
-      size_t z;
-
-      argp = ffi_align(p_arg, argp);
-
-      z = (*p_arg)->size;
-
-      
-
-      *p_argv = (void*) argp;
-
-      p_argv++;
-      argp += z;
-    }
-  
-  return;
-}
-
-
-static void 
-ffi_prep_incoming_args_VFP(char *stack, void **rvalue,
-			    void **avalue, ffi_cif *cif,
-			    
-			    float *vfp_stack)
-
-{
-  register unsigned int i, vi = 0;
-  register void **p_argv;
-  register char *argp, *regp, *eo_regp;
-  register ffi_type **p_arg;
-  char done_with_regs = 0;
-  char stack_used = 0;
-  char is_vfp_type;
-
-  FFI_ASSERT(cif->abi == FFI_VFP);
-  regp = stack;
-  eo_regp = argp = regp + 16;
-
-  if ( cif->flags == FFI_TYPE_STRUCT ) {
-    *rvalue = *(void **) regp;
-    regp += 4;
-  }
-
-  p_argv = avalue;
-
-  for (i = cif->nargs, p_arg = cif->arg_types; (i != 0); i--, p_arg++)
-    {
-    size_t z;
-    is_vfp_type = vfp_type_p (*p_arg); 
-
-    if(vi < cif->vfp_nargs && is_vfp_type)
-      {
-        *p_argv++ = (void*)(vfp_stack + cif->vfp_args[vi++]);
-        continue;
-      }
-    else if (!done_with_regs && !is_vfp_type)
-      {
-        char* tregp = ffi_align(p_arg, regp);
-
-        z = (*p_arg)->size; 
-        z = (z < 4)? 4 : z; 
-        
-        
-
-        if(tregp + z <= eo_regp || !stack_used) 
-          {
-          
-          *p_argv = (void*) tregp;
-
-          p_argv++;
-          regp = tregp + z;
-          
-          
-          if(regp > eo_regp)
-            {
-            if(stack_used)
-              {
-                abort(); 
-                         
-              }
-            argp = regp;
-            }
-          if(regp >= eo_regp)
-            {
-            done_with_regs = 1;
-            stack_used = 1;
-            }
-          continue;
-          }
-      }
-    stack_used = 1;
-
-    argp = ffi_align(p_arg, argp);
-
-    z = (*p_arg)->size;
-
-    
-
-    *p_argv = (void*) argp;
-
-    p_argv++;
-    argp += z;
-    }
-  
-  return;
-}
-
-
-
-extern unsigned int ffi_arm_trampoline[3];
-
-#if FFI_EXEC_TRAMPOLINE_TABLE
-
-#include <mach/mach.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-extern void *ffi_closure_trampoline_table_page;
-
-typedef struct ffi_trampoline_table ffi_trampoline_table;
-typedef struct ffi_trampoline_table_entry ffi_trampoline_table_entry;
-
-struct ffi_trampoline_table {
-  
-  vm_address_t config_page;
-  vm_address_t trampoline_page;
-
-  
-  uint16_t free_count;
-  ffi_trampoline_table_entry *free_list;
-  ffi_trampoline_table_entry *free_list_pool;
-
-  ffi_trampoline_table *prev;
-  ffi_trampoline_table *next;
+  void *fp;
+  void *lr;
+  void *rvalue;
+  int flags;
+  void *closure;
 };
 
-struct ffi_trampoline_table_entry {
-  void *(*trampoline)();
-  ffi_trampoline_table_entry *next;
-};
+extern void ffi_call_SYSV (void *stack, struct call_frame *,
+			   void (*fn) (void)) FFI_HIDDEN;
+extern void ffi_call_VFP (void *vfp_space, struct call_frame *,
+			   void (*fn) (void), unsigned vfp_used) FFI_HIDDEN;
 
-
-
-#undef FFI_TRAMPOLINE_SIZE
-#define FFI_TRAMPOLINE_SIZE 12
-
-
-#define FFI_TRAMPOLINE_CODELOC_CONFIG(codeloc) ((void **) (((uint8_t *) codeloc) - 4080));
-
-
-#define FFI_TRAMPOLINE_CONFIG_PAGE_OFFSET 16
-
-
-#define FFI_TRAMPOLINE_COUNT ((PAGE_SIZE - FFI_TRAMPOLINE_CONFIG_PAGE_OFFSET) / FFI_TRAMPOLINE_SIZE)
-
-static pthread_mutex_t ffi_trampoline_lock = PTHREAD_MUTEX_INITIALIZER;
-static ffi_trampoline_table *ffi_trampoline_tables = NULL;
-
-static ffi_trampoline_table *
-ffi_trampoline_table_alloc ()
+static void
+ffi_call_int (ffi_cif * cif, void (*fn) (void), void *rvalue,
+	      void **avalue, void *closure)
 {
-  ffi_trampoline_table *table = NULL;
+  int flags = cif->flags;
+  ffi_type *rtype = cif->rtype;
+  size_t bytes, rsize, vfp_size;
+  char *stack, *vfp_space, *new_rvalue;
+  struct call_frame *frame;
 
-  
-  while (table == NULL) {
-    vm_address_t config_page = 0x0;
-    kern_return_t kt;
-
-    
-    kt = vm_allocate (mach_task_self (), &config_page, PAGE_SIZE*2, VM_FLAGS_ANYWHERE);
-    if (kt != KERN_SUCCESS) {
-      fprintf(stderr, "vm_allocate() failure: %d at %s:%d\n", kt, __FILE__, __LINE__);
-      break;
-    }
-
-    
-    vm_address_t trampoline_page = config_page+PAGE_SIZE;
-    kt = vm_deallocate (mach_task_self (), trampoline_page, PAGE_SIZE);
-    if (kt != KERN_SUCCESS) {
-      fprintf(stderr, "vm_deallocate() failure: %d at %s:%d\n", kt, __FILE__, __LINE__);
-      break;
-    }
-
-    
-    vm_prot_t cur_prot;
-    vm_prot_t max_prot;
-
-    kt = vm_remap (mach_task_self (), &trampoline_page, PAGE_SIZE, 0x0, FALSE, mach_task_self (), (vm_address_t) &ffi_closure_trampoline_table_page, FALSE, &cur_prot, &max_prot, VM_INHERIT_SHARE);
-
-    
-    if (kt != KERN_SUCCESS) {
+  rsize = 0;
+  if (rvalue == NULL)
+    {
       
-      if (kt != KERN_NO_SPACE) {
-        fprintf(stderr, "vm_remap() failure: %d at %s:%d\n", kt, __FILE__, __LINE__);
-      }
 
-      vm_deallocate (mach_task_self (), config_page, PAGE_SIZE);
-      continue;
+
+      if (flags == ARM_TYPE_STRUCT)
+	rsize = rtype->size;
+      else
+	flags = ARM_TYPE_VOID;
+    }
+  else if (flags == ARM_TYPE_VFP_N)
+    {
+      
+      rsize = 32;
+    }
+  else if (flags == ARM_TYPE_INT && rtype->type == FFI_TYPE_STRUCT)
+    rsize = 4;
+
+  
+  vfp_size = (cif->abi == FFI_VFP && cif->vfp_used ? 8*8: 0);
+
+  bytes = cif->bytes;
+  stack = alloca (vfp_size + bytes + sizeof(struct call_frame) + rsize);
+
+  vfp_space = NULL;
+  if (vfp_size)
+    {
+      vfp_space = stack;
+      stack += vfp_size;
     }
 
-    
-    table = calloc (1, sizeof(ffi_trampoline_table));
-    table->free_count = FFI_TRAMPOLINE_COUNT;
-    table->config_page = config_page;
-    table->trampoline_page = trampoline_page;
+  frame = (struct call_frame *)(stack + bytes);
 
-    
-    table->free_list_pool = calloc(FFI_TRAMPOLINE_COUNT, sizeof(ffi_trampoline_table_entry));
+  new_rvalue = rvalue;
+  if (rsize)
+    new_rvalue = (void *)(frame + 1);
 
-    uint16_t i;
-    for (i = 0; i < table->free_count; i++) {
-      ffi_trampoline_table_entry *entry = &table->free_list_pool[i];
-      entry->trampoline = (void *) (table->trampoline_page + (i * FFI_TRAMPOLINE_SIZE));
+  frame->rvalue = new_rvalue;
+  frame->flags = flags;
+  frame->closure = closure;
 
-      if (i < table->free_count - 1)
-        entry->next = &table->free_list_pool[i+1];
+  if (vfp_space)
+    {
+      ffi_prep_args_VFP (cif, flags, new_rvalue, avalue, stack, vfp_space);
+      ffi_call_VFP (vfp_space, frame, fn, cif->vfp_used);
+    }
+  else
+    {
+      ffi_prep_args_SYSV (cif, flags, new_rvalue, avalue, stack);
+      ffi_call_SYSV (stack, frame, fn);
     }
 
-    table->free_list = table->free_list_pool;
-  }
-
-  return table;
-}
-
-void *
-ffi_closure_alloc (size_t size, void **code)
-{
-  
-  ffi_closure *closure = malloc(size);
-  if (closure == NULL)
-    return NULL;
-
-  pthread_mutex_lock(&ffi_trampoline_lock);
-
-  
-  ffi_trampoline_table *table = ffi_trampoline_tables;
-  if (table == NULL || table->free_list == NULL) {
-    table = ffi_trampoline_table_alloc ();
-    if (table == NULL) {
-      free(closure);
-      return NULL;
-    }
-
-    
-    table->next = ffi_trampoline_tables;
-    if (table->next != NULL)
-        table->next->prev = table;
-
-    ffi_trampoline_tables = table;
-  }
-
-  
-  ffi_trampoline_table_entry *entry = ffi_trampoline_tables->free_list;
-  ffi_trampoline_tables->free_list = entry->next;
-  ffi_trampoline_tables->free_count--;
-  entry->next = NULL;
-
-  pthread_mutex_unlock(&ffi_trampoline_lock);
-
-  
-  *code = entry->trampoline;
-  closure->trampoline_table = table;
-  closure->trampoline_table_entry = entry;
-
-  return closure;
+  if (rvalue && rvalue != new_rvalue)
+    memcpy (rvalue, new_rvalue, rtype->size);
 }
 
 void
-ffi_closure_free (void *ptr)
+ffi_call (ffi_cif *cif, void (*fn) (void), void *rvalue, void **avalue)
 {
-  ffi_closure *closure = ptr;
-
-  pthread_mutex_lock(&ffi_trampoline_lock);
-
-  
-  ffi_trampoline_table *table = closure->trampoline_table;
-  ffi_trampoline_table_entry *entry = closure->trampoline_table_entry;
-
-  
-  entry->next = table->free_list;
-  table->free_list = entry;
-  table->free_count++;
-
-  
-
-  if (table->free_count == FFI_TRAMPOLINE_COUNT && ffi_trampoline_tables != table) {
-    
-    if (table->prev != NULL)
-      table->prev->next = table->next;
-
-    if (table->next != NULL)
-      table->next->prev = table->prev;
-
-    
-    kern_return_t kt;
-    kt = vm_deallocate (mach_task_self (), table->config_page, PAGE_SIZE);
-    if (kt != KERN_SUCCESS)
-      fprintf(stderr, "vm_deallocate() failure: %d at %s:%d\n", kt, __FILE__, __LINE__);
-
-    kt = vm_deallocate (mach_task_self (), table->trampoline_page, PAGE_SIZE);
-    if (kt != KERN_SUCCESS)
-      fprintf(stderr, "vm_deallocate() failure: %d at %s:%d\n", kt, __FILE__, __LINE__);
-
-    
-    free (table->free_list_pool);
-    free (table);
-  } else if (ffi_trampoline_tables != table) {
-    
-    table->prev = NULL;
-    table->next = ffi_trampoline_tables;
-    if (ffi_trampoline_tables != NULL)
-      ffi_trampoline_tables->prev = table;
-
-    ffi_trampoline_tables = table;
-  }
-
-  pthread_mutex_unlock (&ffi_trampoline_lock);
-
-  
-  free (closure);
+  ffi_call_int (cif, fn, rvalue, avalue, NULL);
 }
 
-#else
+void
+ffi_call_go (ffi_cif *cif, void (*fn) (void), void *rvalue,
+	     void **avalue, void *closure)
+{
+  ffi_call_int (cif, fn, rvalue, avalue, closure);
+}
 
-#define FFI_INIT_TRAMPOLINE(TRAMP,FUN,CTX)				\
-({ unsigned char *__tramp = (unsigned char*)(TRAMP);			\
-   unsigned int  __fun = (unsigned int)(FUN);				\
-   unsigned int  __ctx = (unsigned int)(CTX);				\
-   unsigned char *insns = (unsigned char *)(CTX);                       \
-   memcpy (__tramp, ffi_arm_trampoline, sizeof ffi_arm_trampoline);     \
-   *(unsigned int*) &__tramp[12] = __ctx;				\
-   *(unsigned int*) &__tramp[16] = __fun;				\
-   __clear_cache((&__tramp[0]), (&__tramp[19])); /* Clear data mapping.  */ \
-   __clear_cache(insns, insns + 3 * sizeof (unsigned int));             \
-                                                 /* Clear instruction   \
-                                                    mapping.  */        \
- })
+static void *
+ffi_prep_incoming_args_SYSV (ffi_cif *cif, void *rvalue,
+			     char *argp, void **avalue)
+{
+  ffi_type **arg_types = cif->arg_types;
+  int i, n;
 
-#endif
+  if (cif->flags == ARM_TYPE_STRUCT)
+    {
+      rvalue = *(void **) argp;
+      argp += 4;
+    }
+  else
+    {
+      if (cif->rtype->size && cif->rtype->size < 4)
+        *(uint32_t *) rvalue = 0;
+    }
+
+  for (i = 0, n = cif->nargs; i < n; i++)
+    {
+      ffi_type *ty = arg_types[i];
+      size_t z = ty->size;
+
+      argp = ffi_align (ty, argp);
+      avalue[i] = (void *) argp;
+      argp += z;
+    }
+
+  return rvalue;
+}
+
+static void *
+ffi_prep_incoming_args_VFP (ffi_cif *cif, void *rvalue, char *stack,
+			    char *vfp_space, void **avalue)
+{
+  ffi_type **arg_types = cif->arg_types;
+  int i, n, vi = 0;
+  char *argp, *regp, *eo_regp;
+  char done_with_regs = 0;
+  char stack_used = 0;
+
+  regp = stack;
+  eo_regp = argp = regp + 16;
+
+  if (cif->flags == ARM_TYPE_STRUCT)
+    {
+      rvalue = *(void **) regp;
+      regp += 4;
+    }
+
+  for (i = 0, n = cif->nargs; i < n; i++)
+    {
+      ffi_type *ty = arg_types[i];
+      int is_vfp_type = vfp_type_p (ty);
+      size_t z = ty->size;
+
+      if (vi < cif->vfp_nargs && is_vfp_type)
+	{
+	  avalue[i] = vfp_space + cif->vfp_args[vi++] * 4;
+	  continue;
+	}
+      else if (!done_with_regs && !is_vfp_type)
+	{
+	  char *tregp = ffi_align (ty, regp);
+
+	  z = (z < 4) ? 4 : z;	
+
+	  
+
+	  if (tregp + z <= eo_regp || !stack_used)
+	    {
+	      
+	      avalue[i] = (void *) tregp;
+	      regp = tregp + z;
+
+	      
+
+
+	      if (regp > eo_regp)
+		{
+		  FFI_ASSERT (!stack_used);
+		  argp = regp;
+		}
+	      if (regp >= eo_regp)
+		{
+		  done_with_regs = 1;
+		  stack_used = 1;
+		}
+	      continue;
+	    }
+	}
+
+      stack_used = 1;
+      argp = ffi_align (ty, argp);
+      avalue[i] = (void *) argp;
+      argp += z;
+    }
+
+  return rvalue;
+}
+
+struct closure_frame
+{
+  char vfp_space[8*8] __attribute__((aligned(8)));
+  char result[8*4];
+  char argp[];
+};
+
+int FFI_HIDDEN
+ffi_closure_inner_SYSV (ffi_cif *cif,
+		        void (*fun) (ffi_cif *, void *, void **, void *),
+		        void *user_data,
+		        struct closure_frame *frame)
+{
+  void **avalue = (void **) alloca (cif->nargs * sizeof (void *));
+  void *rvalue = ffi_prep_incoming_args_SYSV (cif, frame->result,
+					      frame->argp, avalue);
+  fun (cif, rvalue, avalue, user_data);
+  return cif->flags;
+}
+
+int FFI_HIDDEN
+ffi_closure_inner_VFP (ffi_cif *cif,
+		       void (*fun) (ffi_cif *, void *, void **, void *),
+		       void *user_data,
+		       struct closure_frame *frame)
+{
+  void **avalue = (void **) alloca (cif->nargs * sizeof (void *));
+  void *rvalue = ffi_prep_incoming_args_VFP (cif, frame->result, frame->argp,
+					     frame->vfp_space, avalue);
+  fun (cif, rvalue, avalue, user_data);
+  return cif->flags;
+}
+
+void ffi_closure_SYSV (void) FFI_HIDDEN;
+void ffi_closure_VFP (void) FFI_HIDDEN;
+void ffi_go_closure_SYSV (void) FFI_HIDDEN;
+void ffi_go_closure_VFP (void) FFI_HIDDEN;
 
 
 
 ffi_status
-ffi_prep_closure_loc (ffi_closure* closure,
-		      ffi_cif* cif,
-		      void (*fun)(ffi_cif*,void*,void**,void*),
-		      void *user_data,
-		      void *codeloc)
+ffi_prep_closure_loc (ffi_closure * closure,
+		      ffi_cif * cif,
+		      void (*fun) (ffi_cif *, void *, void **, void *),
+		      void *user_data, void *codeloc)
 {
-  void (*closure_func)(ffi_closure*) = NULL;
+  void (*closure_func) (void) = ffi_closure_SYSV;
 
-  if (cif->abi == FFI_SYSV)
-    closure_func = &ffi_closure_SYSV;
-#ifdef __ARM_EABI__
-  else if (cif->abi == FFI_VFP)
-    closure_func = &ffi_closure_VFP;
-#endif
-  else
+  if (cif->abi == FFI_VFP)
+    {
+      
+      if (cif->vfp_used)
+	closure_func = ffi_closure_VFP;
+    }
+  else if (cif->abi != FFI_SYSV)
     return FFI_BAD_ABI;
 
 #if FFI_EXEC_TRAMPOLINE_TABLE
-  void **config = FFI_TRAMPOLINE_CODELOC_CONFIG(codeloc);
+  void **config = (void **)((uint8_t *)codeloc - PAGE_MAX_SIZE);
   config[0] = closure;
   config[1] = closure_func;
 #else
-  FFI_INIT_TRAMPOLINE (&closure->tramp[0], \
-		       closure_func,  \
-		       codeloc);
+
+#ifndef _M_ARM
+  memcpy(closure->tramp, ffi_arm_trampoline, 8);
+#else
+  
+  memcpy(closure->tramp, (void*)((uintptr_t)ffi_arm_trampoline & 0xFFFFFFFE), FFI_TRAMPOLINE_CLOSURE_OFFSET);
 #endif
 
-  closure->cif  = cif;
+#if defined (__QNX__)
+  msync(closure->tramp, 8, 0x1000000);	
+  msync(codeloc, 8, 0x1000000);	
+#elif defined(_MSC_VER)
+  FlushInstructionCache(GetCurrentProcess(), closure->tramp, FFI_TRAMPOLINE_SIZE);
+#else
+  __clear_cache(closure->tramp, closure->tramp + 8);	
+  __clear_cache(codeloc, codeloc + 8);			
+#endif
+#ifdef _M_ARM
+  *(void(**)(void))(closure->tramp + FFI_TRAMPOLINE_CLOSURE_FUNCTION) = closure_func;
+#else
+  *(void (**)(void))(closure->tramp + 8) = closure_func;
+#endif
+#endif
+
+  closure->cif = cif;
+  closure->fun = fun;
   closure->user_data = user_data;
-  closure->fun  = fun;
+
+  return FFI_OK;
+}
+
+ffi_status
+ffi_prep_go_closure (ffi_go_closure *closure, ffi_cif *cif,
+		     void (*fun) (ffi_cif *, void *, void **, void *))
+{
+  void (*closure_func) (void) = ffi_go_closure_SYSV;
+
+  if (cif->abi == FFI_VFP)
+    {
+      
+      if (cif->vfp_used)
+	closure_func = ffi_go_closure_VFP;
+    }
+  else if (cif->abi != FFI_SYSV)
+    return FFI_BAD_ABI;
+
+  closure->tramp = closure_func;
+  closure->cif = cif;
+  closure->fun = fun;
 
   return FFI_OK;
 }
 
 
 
-static int rec_vfp_type_p (ffi_type *t, int *elt, int *elnum)
+
+
+
+
+static int
+is_hfa0 (const ffi_type *ty)
 {
-  switch (t->type)
+  ffi_type **elements = ty->elements;
+  int i, ret = -1;
+
+  if (elements != NULL)
+    for (i = 0; elements[i]; ++i)
+      {
+        ret = elements[i]->type;
+        if (ret == FFI_TYPE_STRUCT || ret == FFI_TYPE_COMPLEX)
+          {
+            ret = is_hfa0 (elements[i]);
+            if (ret < 0)
+              continue;
+          }
+        break;
+      }
+
+  return ret;
+}
+
+
+
+
+static int
+is_hfa1 (const ffi_type *ty, int candidate)
+{
+  ffi_type **elements = ty->elements;
+  int i;
+
+  if (elements != NULL)
+    for (i = 0; elements[i]; ++i)
+      {
+        int t = elements[i]->type;
+        if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_COMPLEX)
+          {
+            if (!is_hfa1 (elements[i], candidate))
+              return 0;
+          }
+        else if (t != candidate)
+          return 0;
+      }
+
+  return 1;
+}
+
+
+
+
+
+
+
+
+static int
+vfp_type_p (const ffi_type *ty)
+{
+  ffi_type **elements;
+  int candidate, i;
+  size_t size, ele_count;
+
+  
+  candidate = ty->type;
+  switch (ty->type)
     {
+    default:
+      return 0;
     case FFI_TYPE_FLOAT:
     case FFI_TYPE_DOUBLE:
-      *elt = (int) t->type;
-      *elnum = 1;
-      return 1;
-
-    case FFI_TYPE_STRUCT_VFP_FLOAT:
-      *elt = FFI_TYPE_FLOAT;
-      *elnum = t->size / sizeof (float);
-      return 1;
-
-    case FFI_TYPE_STRUCT_VFP_DOUBLE:
-      *elt = FFI_TYPE_DOUBLE;
-      *elnum = t->size / sizeof (double);
-      return 1;
-
-    case FFI_TYPE_STRUCT:;
-      {
-	int base_elt = 0, total_elnum = 0;
-	ffi_type **el = t->elements;
-	while (*el)
-	  {
-	    int el_elt = 0, el_elnum = 0;
-	    if (! rec_vfp_type_p (*el, &el_elt, &el_elnum)
-		|| (base_elt && base_elt != el_elt)
-		|| total_elnum + el_elnum > 4)
-	      return 0;
-	    base_elt = el_elt;
-	    total_elnum += el_elnum;
-	    el++;
-	  }
-	*elnum = total_elnum;
-	*elt = base_elt;
-	return 1;
-      }
-    default: ;
+      ele_count = 1;
+      goto done;
+    case FFI_TYPE_COMPLEX:
+      candidate = ty->elements[0]->type;
+      if (candidate != FFI_TYPE_FLOAT && candidate != FFI_TYPE_DOUBLE)
+	return 0;
+      ele_count = 2;
+      goto done;
+    case FFI_TYPE_STRUCT:
+      break;
     }
-  return 0;
-}
 
-static int vfp_type_p (ffi_type *t)
-{
-  int elt, elnum;
-  if (rec_vfp_type_p (t, &elt, &elnum))
+  
+  size = ty->size;
+  if (size < 4 || size > 32)
+    return 0;
+
+  
+  elements = ty->elements;
+  candidate = elements[0]->type;
+  if (candidate == FFI_TYPE_STRUCT || candidate == FFI_TYPE_COMPLEX)
     {
-      if (t->type == FFI_TYPE_STRUCT)
-	{
-	  if (elnum == 1)
-	    t->type = elt;
-	  else
-	    t->type = (elt == FFI_TYPE_FLOAT
-		       ? FFI_TYPE_STRUCT_VFP_FLOAT
-		       : FFI_TYPE_STRUCT_VFP_DOUBLE);
-	}
-      return (int) t->type;
+      for (i = 0; ; ++i)
+        {
+          candidate = is_hfa0 (elements[i]);
+          if (candidate >= 0)
+            break;
+        }
     }
-  return 0;
+
+  
+
+  switch (candidate)
+    {
+    case FFI_TYPE_FLOAT:
+      ele_count = size / sizeof(float);
+      if (size != ele_count * sizeof(float))
+        return 0;
+      break;
+    case FFI_TYPE_DOUBLE:
+      ele_count = size / sizeof(double);
+      if (size != ele_count * sizeof(double))
+        return 0;
+      break;
+    default:
+      return 0;
+    }
+  if (ele_count > 4)
+    return 0;
+
+  
+  for (i = 0; elements[i]; ++i)
+    {
+      int t = elements[i]->type;
+      if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_COMPLEX)
+        {
+          if (!is_hfa1 (elements[i], candidate))
+            return 0;
+        }
+      else if (t != candidate)
+        return 0;
+    }
+
+  
+ done:
+  return (ele_count << 8) | candidate;
 }
 
-static int place_vfp_arg (ffi_cif *cif, ffi_type *t)
+static int
+place_vfp_arg (ffi_cif *cif, int h)
 {
-  short reg = cif->vfp_reg_free;
-  int nregs = t->size / sizeof (float);
-  int align = ((t->type == FFI_TYPE_STRUCT_VFP_FLOAT
-		|| t->type == FFI_TYPE_FLOAT) ? 1 : 2);
+  unsigned short reg = cif->vfp_reg_free;
+  int align = 1, nregs = h >> 8;
+
+  if ((h & 0xff) == FFI_TYPE_DOUBLE)
+    align = 2, nregs *= 2;
+
   
   if ((reg & 1) && align == 2)
     reg++;
+
   while (reg + nregs <= 16)
     {
       int s, new_used = 0;
@@ -892,7 +814,7 @@ static int place_vfp_arg (ffi_cif *cif, ffi_type *t)
 	}
       
       cif->vfp_used |= new_used;
-      cif->vfp_args[cif->vfp_nargs++] = reg;
+      cif->vfp_args[cif->vfp_nargs++] = (signed char)reg;
 
       
       if (cif->vfp_used & (1 << cif->vfp_reg_free))
@@ -903,7 +825,7 @@ static int place_vfp_arg (ffi_cif *cif, ffi_type *t)
 	  cif->vfp_reg_free = reg;
 	}
       return 0;
-    next_reg: ;
+    next_reg:;
     }
   
   cif->vfp_reg_free = 16;
@@ -911,21 +833,22 @@ static int place_vfp_arg (ffi_cif *cif, ffi_type *t)
   return 1;
 }
 
-static void layout_vfp_args (ffi_cif *cif)
+static void
+layout_vfp_args (ffi_cif * cif)
 {
-  int i;
+  unsigned int i;
   
   cif->vfp_used = 0;
   cif->vfp_nargs = 0;
   cif->vfp_reg_free = 0;
-  memset (cif->vfp_args, -1, 16); 
+  memset (cif->vfp_args, -1, 16);	
 
   for (i = 0; i < cif->nargs; i++)
     {
-      ffi_type *t = cif->arg_types[i];
-      if (vfp_type_p (t) && place_vfp_arg (cif, t) == 1)
-        {
-          break;
-        }
+      int h = vfp_type_p (cif->arg_types[i]);
+      if (h && place_vfp_arg (cif, h) == 1)
+	break;
     }
 }
+
+#endif 

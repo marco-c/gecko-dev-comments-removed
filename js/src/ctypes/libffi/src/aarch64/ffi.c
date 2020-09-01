@@ -19,31 +19,28 @@
 
 
 
+#if defined(__aarch64__) || defined(__arm64__)|| defined (_M_ARM64)
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <stdint.h>
+#include <fficonfig.h>
 #include <ffi.h>
 #include <ffi_common.h>
-
-#include <stdlib.h>
-
-#if defined(_WIN32)
-#if !defined(WIN32_LEAN_AND_MEAN)
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
+#include "internal.h"
+#ifdef _M_ARM64
+#include <windows.h> 
 #endif
 
 
-#if defined (__APPLE__)
-#define AARCH64_STACK_ALIGN 1
+
+#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
+# if FFI_TYPE_LONGDOUBLE != 4
+#  error FFI_TYPE_LONGDOUBLE out of date
+# endif
 #else
-#define AARCH64_STACK_ALIGN 16
+# undef FFI_TYPE_LONGDOUBLE
+# define FFI_TYPE_LONGDOUBLE 4
 #endif
-
-#define N_X_ARG_REG 8
-#define N_V_ARG_REG 8
-
-#define AARCH64_FFI_WITH_V (1 << AARCH64_FFI_WITH_V_BIT)
 
 union _d
 {
@@ -51,364 +48,196 @@ union _d
   UINT32 s[2];
 };
 
-struct call_context
+struct _v
 {
-  UINT64 x [AARCH64_N_XREG];
-  struct
-  {
-    union _d d[2];
-  } v [AARCH64_N_VREG];
+  union _d d[2] __attribute__((aligned(16)));
 };
 
+struct call_context
+{
+  struct _v v[N_V_ARG_REG];
+  UINT64 x[N_X_ARG_REG];
+};
+
+#if FFI_EXEC_TRAMPOLINE_TABLE
+
+#ifdef __MACH__
+#include <mach/vm_param.h>
+#endif
+
+#else
+
 #if defined (__clang__) && defined (__APPLE__)
-extern void
-sys_icache_invalidate (void *start, size_t len);
+extern void sys_icache_invalidate (void *start, size_t len);
 #endif
 
 static inline void
 ffi_clear_cache (void *start, void *end)
 {
 #if defined (__clang__) && defined (__APPLE__)
-	sys_icache_invalidate (start, (char *)end - (char *)start);
+  sys_icache_invalidate (start, (char *)end - (char *)start);
 #elif defined (__GNUC__)
-	__builtin___clear_cache (start, end);
-#elif defined (_WIN32)
-	FlushInstructionCache (GetCurrentProcess (), start,
-			       (char*)end - (char*)start);
+  __builtin___clear_cache (start, end);
+#elif defined (_M_ARM64)
+  FlushInstructionCache(GetCurrentProcess(), start, (char*)end - (char*)start);
 #else
 #error "Missing builtin to flush instruction cache"
 #endif
 }
 
-static void *
-get_x_addr (struct call_context *context, unsigned n)
-{
-  return &context->x[n];
-}
-
-static void *
-get_s_addr (struct call_context *context, unsigned n)
-{
-#if defined __AARCH64EB__
-  return &context->v[n].d[1].s[1];
-#else
-  return &context->v[n].d[0].s[0];
 #endif
+
+
+
+
+
+static int
+is_hfa0 (const ffi_type *ty)
+{
+  ffi_type **elements = ty->elements;
+  int i, ret = -1;
+
+  if (elements != NULL)
+    for (i = 0; elements[i]; ++i)
+      {
+        ret = elements[i]->type;
+        if (ret == FFI_TYPE_STRUCT || ret == FFI_TYPE_COMPLEX)
+          {
+            ret = is_hfa0 (elements[i]);
+            if (ret < 0)
+              continue;
+          }
+        break;
+      }
+
+  return ret;
 }
 
-static void *
-get_d_addr (struct call_context *context, unsigned n)
+
+
+
+static int
+is_hfa1 (const ffi_type *ty, int candidate)
 {
-#if defined __AARCH64EB__
-  return &context->v[n].d[1];
-#else
-  return &context->v[n].d[0];
-#endif
+  ffi_type **elements = ty->elements;
+  int i;
+
+  if (elements != NULL)
+    for (i = 0; elements[i]; ++i)
+      {
+        int t = elements[i]->type;
+        if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_COMPLEX)
+          {
+            if (!is_hfa1 (elements[i], candidate))
+              return 0;
+          }
+        else if (t != candidate)
+          return 0;
+      }
+
+  return 1;
 }
 
-static void *
-get_v_addr (struct call_context *context, unsigned n)
+
+
+
+
+
+
+
+
+static int
+is_vfp_type (const ffi_type *ty)
 {
-  return &context->v[n];
-}
+  ffi_type **elements;
+  int candidate, i;
+  size_t size, ele_count;
 
-
-
-
-static void *
-get_basic_type_addr (unsigned short type, struct call_context *context,
-		     unsigned n)
-{
-  switch (type)
+  
+  candidate = ty->type;
+  switch (candidate)
     {
-    case FFI_TYPE_FLOAT:
-      return get_s_addr (context, n);
-    case FFI_TYPE_DOUBLE:
-      return get_d_addr (context, n);
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
-    case FFI_TYPE_LONGDOUBLE:
-      return get_v_addr (context, n);
-#endif
-    case FFI_TYPE_UINT8:
-    case FFI_TYPE_SINT8:
-    case FFI_TYPE_UINT16:
-    case FFI_TYPE_SINT16:
-    case FFI_TYPE_UINT32:
-    case FFI_TYPE_SINT32:
-    case FFI_TYPE_INT:
-    case FFI_TYPE_POINTER:
-    case FFI_TYPE_UINT64:
-    case FFI_TYPE_SINT64:
-      return get_x_addr (context, n);
-    case FFI_TYPE_VOID:
-      return NULL;
     default:
-      FFI_ASSERT (0);
-      return NULL;
-    }
-}
-
-
-
-static size_t
-get_basic_type_alignment (unsigned short type)
-{
-  switch (type)
-    {
-    case FFI_TYPE_FLOAT:
-    case FFI_TYPE_DOUBLE:
-      return sizeof (UINT64);
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
-    case FFI_TYPE_LONGDOUBLE:
-      return sizeof (long double);
-#endif
-    case FFI_TYPE_UINT8:
-    case FFI_TYPE_SINT8:
-#if defined (__APPLE__)
-	  return sizeof (UINT8);
-#endif
-    case FFI_TYPE_UINT16:
-    case FFI_TYPE_SINT16:
-#if defined (__APPLE__)
-	  return sizeof (UINT16);
-#endif
-    case FFI_TYPE_UINT32:
-    case FFI_TYPE_INT:
-    case FFI_TYPE_SINT32:
-#if defined (__APPLE__)
-	  return sizeof (UINT32);
-#endif
-    case FFI_TYPE_POINTER:
-    case FFI_TYPE_UINT64:
-    case FFI_TYPE_SINT64:
-      return sizeof (UINT64);
-
-    default:
-      FFI_ASSERT (0);
       return 0;
-    }
-}
-
-
-
-static size_t
-get_basic_type_size (unsigned short type)
-{
-  switch (type)
-    {
     case FFI_TYPE_FLOAT:
-      return sizeof (UINT32);
     case FFI_TYPE_DOUBLE:
-      return sizeof (UINT64);
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
     case FFI_TYPE_LONGDOUBLE:
-      return sizeof (long double);
-#endif
-    case FFI_TYPE_UINT8:
-      return sizeof (UINT8);
-    case FFI_TYPE_SINT8:
-      return sizeof (SINT8);
-    case FFI_TYPE_UINT16:
-      return sizeof (UINT16);
-    case FFI_TYPE_SINT16:
-      return sizeof (SINT16);
-    case FFI_TYPE_UINT32:
-      return sizeof (UINT32);
-    case FFI_TYPE_INT:
-    case FFI_TYPE_SINT32:
-      return sizeof (SINT32);
-    case FFI_TYPE_POINTER:
-    case FFI_TYPE_UINT64:
-      return sizeof (UINT64);
-    case FFI_TYPE_SINT64:
-      return sizeof (SINT64);
-
-    default:
-      FFI_ASSERT (0);
-      return 0;
-    }
-}
-
-
-
-
-
-extern void
-ffi_call_SYSV (unsigned (*)(struct call_context *context, unsigned char *,
-			    extended_cif *),
-               struct call_context *context,
-               extended_cif *,
-               size_t,
-               void (*fn)(void));
-
-extern void
-ffi_closure_SYSV (ffi_closure *);
-
-
-
-static unsigned
-is_floating_type (unsigned short type)
-{
-  return (type == FFI_TYPE_FLOAT || type == FFI_TYPE_DOUBLE
-	  || type == FFI_TYPE_LONGDOUBLE);
-}
-
-
-
-static unsigned short
-get_homogeneous_type (ffi_type *ty)
-{
-  if (ty->type == FFI_TYPE_STRUCT && ty->elements)
-    {
-      unsigned i;
-      unsigned short candidate_type
-	= get_homogeneous_type (ty->elements[0]);
-      for (i =1; ty->elements[i]; i++)
+      ele_count = 1;
+      goto done;
+    case FFI_TYPE_COMPLEX:
+      candidate = ty->elements[0]->type;
+      switch (candidate)
 	{
-	  unsigned short iteration_type = 0;
-	  
-
-
-	  if (ty->elements[i]->type == FFI_TYPE_STRUCT
-	      && ty->elements[i]->elements)
-	    {
-	      iteration_type = get_homogeneous_type (ty->elements[i]);
-	    }
-	  else
-	    {
-	      iteration_type = ty->elements[i]->type;
-	    }
-
-	  
-	  if (candidate_type != iteration_type)
-	    return FFI_TYPE_STRUCT;
+	case FFI_TYPE_FLOAT:
+	case FFI_TYPE_DOUBLE:
+	case FFI_TYPE_LONGDOUBLE:
+	  ele_count = 2;
+	  goto done;
 	}
-      return candidate_type;
+      return 0;
+    case FFI_TYPE_STRUCT:
+      break;
+    }
+
+  
+  size = ty->size;
+  if (size < 4 || size > 64)
+    return 0;
+
+  
+  elements = ty->elements;
+  candidate = elements[0]->type;
+  if (candidate == FFI_TYPE_STRUCT || candidate == FFI_TYPE_COMPLEX)
+    {
+      for (i = 0; ; ++i)
+        {
+          candidate = is_hfa0 (elements[i]);
+          if (candidate >= 0)
+            break;
+        }
     }
 
   
 
-  return ty->type;
-}
-
-
-
-
-
-
-
-static unsigned
-element_count (ffi_type *ty)
-{
-  if (ty->type == FFI_TYPE_STRUCT && ty->elements)
+  switch (candidate)
     {
-      unsigned n;
-      unsigned elems = 0;
-      for (n = 0; ty->elements[n]; n++)
-	{
-	  if (ty->elements[n]->type == FFI_TYPE_STRUCT
-	      && ty->elements[n]->elements)
-	    elems += element_count (ty->elements[n]);
-	  else
-	    elems++;
-	}
-      return elems;
-    }
-  return 0;
-}
-
-
-
-
-
-
-
-
-static int
-is_hfa (ffi_type *ty)
-{
-  if (ty->type == FFI_TYPE_STRUCT
-      && ty->elements[0]
-      && is_floating_type (get_homogeneous_type (ty)))
-    {
-      unsigned n = element_count (ty);
-      return n >= 1 && n <= 4;
-    }
-  return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-static int
-is_register_candidate (ffi_type *ty)
-{
-  switch (ty->type)
-    {
-    case FFI_TYPE_VOID:
     case FFI_TYPE_FLOAT:
+      ele_count = size / sizeof(float);
+      if (size != ele_count * sizeof(float))
+        return 0;
+      break;
     case FFI_TYPE_DOUBLE:
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
+      ele_count = size / sizeof(double);
+      if (size != ele_count * sizeof(double))
+        return 0;
+      break;
     case FFI_TYPE_LONGDOUBLE:
-#endif
-    case FFI_TYPE_UINT8:
-    case FFI_TYPE_UINT16:
-    case FFI_TYPE_UINT32:
-    case FFI_TYPE_UINT64:
-    case FFI_TYPE_POINTER:
-    case FFI_TYPE_SINT8:
-    case FFI_TYPE_SINT16:
-    case FFI_TYPE_SINT32:
-    case FFI_TYPE_INT:
-    case FFI_TYPE_SINT64:
-      return 1;
-
-    case FFI_TYPE_STRUCT:
-      if (is_hfa (ty))
-        {
-          return 1;
-        }
-      else if (ty->size > 16)
-        {
-          
-
-
-
-          return 0;
-        }
-      else
-        {
-          
-
-          return (ty->size + 7) / 8 < N_X_ARG_REG;
-        }
+      ele_count = size / sizeof(long double);
+      if (size != ele_count * sizeof(long double))
+        return 0;
       break;
-
     default:
-      FFI_ASSERT (0);
-      break;
+      return 0;
+    }
+  if (ele_count > 4)
+    return 0;
+
+  
+  for (i = 0; elements[i]; ++i)
+    {
+      int t = elements[i]->type;
+      if (t == FFI_TYPE_STRUCT || t == FFI_TYPE_COMPLEX)
+        {
+          if (!is_hfa1 (elements[i], candidate))
+            return 0;
+        }
+      else if (t != candidate)
+        return 0;
     }
 
-  return 0;
-}
-
-
-
-
-static int
-is_v_register_candidate (ffi_type *ty)
-{
-  return is_floating_type (ty->type)
-	   || (ty->type == FFI_TYPE_STRUCT && is_hfa (ty));
+  
+ done:
+  return candidate * 4 + (4 - (int)ele_count);
 }
 
 
@@ -430,254 +259,362 @@ struct arg_state
 
 
 static void
-arg_init (struct arg_state *state, size_t call_frame_size)
+arg_init (struct arg_state *state)
 {
   state->ngrn = 0;
   state->nsrn = 0;
   state->nsaa = 0;
-
 #if defined (__APPLE__)
   state->allocating_variadic = 0;
 #endif
 }
 
 
-
-
-static unsigned
-available_x (struct arg_state *state)
-{
-  return N_X_ARG_REG - state->ngrn;
-}
-
-
-
-
-static unsigned
-available_v (struct arg_state *state)
-{
-  return N_V_ARG_REG - state->nsrn;
-}
-
 static void *
-allocate_to_x (struct call_context *context, struct arg_state *state)
+allocate_to_stack (struct arg_state *state, void *stack,
+		   size_t alignment, size_t size)
 {
-  FFI_ASSERT (state->ngrn < N_X_ARG_REG);
-  return get_x_addr (context, (state->ngrn)++);
-}
-
-static void *
-allocate_to_s (struct call_context *context, struct arg_state *state)
-{
-  FFI_ASSERT (state->nsrn < N_V_ARG_REG);
-  return get_s_addr (context, (state->nsrn)++);
-}
-
-static void *
-allocate_to_d (struct call_context *context, struct arg_state *state)
-{
-  FFI_ASSERT (state->nsrn < N_V_ARG_REG);
-  return get_d_addr (context, (state->nsrn)++);
-}
-
-static void *
-allocate_to_v (struct call_context *context, struct arg_state *state)
-{
-  FFI_ASSERT (state->nsrn < N_V_ARG_REG);
-  return get_v_addr (context, (state->nsrn)++);
-}
-
-
-static void *
-allocate_to_stack (struct arg_state *state, void *stack, size_t alignment,
-		   size_t size)
-{
-  void *allocation;
+  size_t nsaa = state->nsaa;
 
   
 
-  state->nsaa = ALIGN (state->nsaa, alignment);
-  state->nsaa = ALIGN (state->nsaa, alignment);
 #if defined (__APPLE__)
-  if (state->allocating_variadic)
-    state->nsaa = ALIGN (state->nsaa, 8);
+  if (state->allocating_variadic && alignment < 8)
+    alignment = 8;
 #else
-  state->nsaa = ALIGN (state->nsaa, 8);
+  if (alignment < 8)
+    alignment = 8;
 #endif
+    
+  nsaa = FFI_ALIGN (nsaa, alignment);
+  state->nsaa = nsaa + size;
 
-  allocation = (char*)stack + state->nsaa;
-
-  state->nsaa += size;
-  return allocation;
+  return (char *)stack + nsaa;
 }
 
-static void
-copy_basic_type (void *dest, void *source, unsigned short type)
+static ffi_arg
+extend_integer_type (void *source, int type)
 {
-  
-
   switch (type)
     {
-    case FFI_TYPE_FLOAT:
-      *(float *) dest = *(float *) source;
-      break;
-    case FFI_TYPE_DOUBLE:
-      *(double *) dest = *(double *) source;
-      break;
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
-    case FFI_TYPE_LONGDOUBLE:
-      *(long double *) dest = *(long double *) source;
-      break;
-#endif
     case FFI_TYPE_UINT8:
-      *(ffi_arg *) dest = *(UINT8 *) source;
-      break;
+      return *(UINT8 *) source;
     case FFI_TYPE_SINT8:
-      *(ffi_sarg *) dest = *(SINT8 *) source;
-      break;
+      return *(SINT8 *) source;
     case FFI_TYPE_UINT16:
-      *(ffi_arg *) dest = *(UINT16 *) source;
-      break;
+      return *(UINT16 *) source;
     case FFI_TYPE_SINT16:
-      *(ffi_sarg *) dest = *(SINT16 *) source;
-      break;
+      return *(SINT16 *) source;
     case FFI_TYPE_UINT32:
-      *(ffi_arg *) dest = *(UINT32 *) source;
-      break;
+      return *(UINT32 *) source;
     case FFI_TYPE_INT:
     case FFI_TYPE_SINT32:
-      *(ffi_sarg *) dest = *(SINT32 *) source;
+      return *(SINT32 *) source;
+    case FFI_TYPE_UINT64:
+    case FFI_TYPE_SINT64:
+      return *(UINT64 *) source;
       break;
     case FFI_TYPE_POINTER:
-    case FFI_TYPE_UINT64:
-      *(ffi_arg *) dest = *(UINT64 *) source;
+      return *(uintptr_t *) source;
+    default:
+      abort();
+    }
+}
+
+#if defined(_MSC_VER)
+void extend_hfa_type (void *dest, void *src, int h);
+#else
+static void
+extend_hfa_type (void *dest, void *src, int h)
+{
+  ssize_t f = h - AARCH64_RET_S4;
+  void *x0;
+
+  asm volatile (
+	"adr	%0, 0f\n"
+"	add	%0, %0, %1\n"
+"	br	%0\n"
+"0:	ldp	s16, s17, [%3]\n"	
+"	ldp	s18, s19, [%3, #8]\n"
+"	b	4f\n"
+"	ldp	s16, s17, [%3]\n"	
+"	ldr	s18, [%3, #8]\n"
+"	b	3f\n"
+"	ldp	s16, s17, [%3]\n"	
+"	b	2f\n"
+"	nop\n"
+"	ldr	s16, [%3]\n"		
+"	b	1f\n"
+"	nop\n"
+"	ldp	d16, d17, [%3]\n"	
+"	ldp	d18, d19, [%3, #16]\n"
+"	b	4f\n"
+"	ldp	d16, d17, [%3]\n"	
+"	ldr	d18, [%3, #16]\n"
+"	b	3f\n"
+"	ldp	d16, d17, [%3]\n"	
+"	b	2f\n"
+"	nop\n"
+"	ldr	d16, [%3]\n"		
+"	b	1f\n"
+"	nop\n"
+"	ldp	q16, q17, [%3]\n"	
+"	ldp	q18, q19, [%3, #32]\n"
+"	b	4f\n"
+"	ldp	q16, q17, [%3]\n"	
+"	ldr	q18, [%3, #32]\n"
+"	b	3f\n"
+"	ldp	q16, q17, [%3]\n"	
+"	b	2f\n"
+"	nop\n"
+"	ldr	q16, [%3]\n"		
+"	b	1f\n"
+"4:	str	q19, [%2, #48]\n"
+"3:	str	q18, [%2, #32]\n"
+"2:	str	q17, [%2, #16]\n"
+"1:	str	q16, [%2]"
+    : "=&r"(x0)
+    : "r"(f * 12), "r"(dest), "r"(src)
+    : "memory", "v16", "v17", "v18", "v19");
+}
+#endif
+
+#if defined(_MSC_VER)
+void* compress_hfa_type (void *dest, void *src, int h);
+#else
+static void *
+compress_hfa_type (void *dest, void *reg, int h)
+{
+  switch (h)
+    {
+    case AARCH64_RET_S1:
+      if (dest == reg)
+	{
+#ifdef __AARCH64EB__
+	  dest += 12;
+#endif
+	}
+      else
+	*(float *)dest = *(float *)reg;
       break;
-    case FFI_TYPE_SINT64:
-      *(ffi_sarg *) dest = *(SINT64 *) source;
+    case AARCH64_RET_S2:
+      asm ("ldp q16, q17, [%1]\n\t"
+	   "st2 { v16.s, v17.s }[0], [%0]"
+	   : : "r"(dest), "r"(reg) : "memory", "v16", "v17");
       break;
-    case FFI_TYPE_VOID:
+    case AARCH64_RET_S3:
+      asm ("ldp q16, q17, [%1]\n\t"
+	   "ldr q18, [%1, #32]\n\t"
+	   "st3 { v16.s, v17.s, v18.s }[0], [%0]"
+	   : : "r"(dest), "r"(reg) : "memory", "v16", "v17", "v18");
+      break;
+    case AARCH64_RET_S4:
+      asm ("ldp q16, q17, [%1]\n\t"
+	   "ldp q18, q19, [%1, #32]\n\t"
+	   "st4 { v16.s, v17.s, v18.s, v19.s }[0], [%0]"
+	   : : "r"(dest), "r"(reg) : "memory", "v16", "v17", "v18", "v19");
+      break;
+
+    case AARCH64_RET_D1:
+      if (dest == reg)
+	{
+#ifdef __AARCH64EB__
+	  dest += 8;
+#endif
+	}
+      else
+	*(double *)dest = *(double *)reg;
+      break;
+    case AARCH64_RET_D2:
+      asm ("ldp q16, q17, [%1]\n\t"
+	   "st2 { v16.d, v17.d }[0], [%0]"
+	   : : "r"(dest), "r"(reg) : "memory", "v16", "v17");
+      break;
+    case AARCH64_RET_D3:
+      asm ("ldp q16, q17, [%1]\n\t"
+	   "ldr q18, [%1, #32]\n\t"
+	   "st3 { v16.d, v17.d, v18.d }[0], [%0]"
+	   : : "r"(dest), "r"(reg) : "memory", "v16", "v17", "v18");
+      break;
+    case AARCH64_RET_D4:
+      asm ("ldp q16, q17, [%1]\n\t"
+	   "ldp q18, q19, [%1, #32]\n\t"
+	   "st4 { v16.d, v17.d, v18.d, v19.d }[0], [%0]"
+	   : : "r"(dest), "r"(reg) : "memory", "v16", "v17", "v18", "v19");
       break;
 
     default:
-      FFI_ASSERT (0);
+      if (dest != reg)
+	return memcpy (dest, reg, 16 * (4 - (h & 3)));
+      break;
     }
+  return dest;
 }
-
-static void
-copy_hfa_to_reg_or_stack (void *memory,
-			  ffi_type *ty,
-			  struct call_context *context,
-			  unsigned char *stack,
-			  struct arg_state *state)
-{
-  unsigned elems = element_count (ty);
-  if (available_v (state) < elems)
-    {
-      
-
-
-      state->nsrn = N_V_ARG_REG;
-      memcpy (allocate_to_stack (state, stack, ty->alignment, ty->size),
-	      memory,
-	      ty->size);
-    }
-  else
-    {
-      int i;
-      unsigned short type = get_homogeneous_type (ty);
-      for (i = 0; i < elems; i++)
-	{
-	  void *reg = allocate_to_v (context, state);
-	  copy_basic_type (reg, memory, type);
-	  memory = (char*)memory + get_basic_type_size (type);
-	}
-    }
-}
+#endif
 
 
 
 
 
 static void *
-allocate_to_register_or_stack (struct call_context *context,
-			       unsigned char *stack,
-			       struct arg_state *state,
-			       unsigned short type)
+allocate_int_to_reg_or_stack (struct call_context *context,
+			      struct arg_state *state,
+			      void *stack, size_t size)
 {
-  size_t alignment = get_basic_type_alignment (type);
-  size_t size = alignment;
-  switch (type)
-    {
-    case FFI_TYPE_FLOAT:
-      
+  if (state->ngrn < N_X_ARG_REG)
+    return &context->x[state->ngrn++];
 
-      size = sizeof (UINT32);
-      
-    case FFI_TYPE_DOUBLE:
-      if (state->nsrn < N_V_ARG_REG)
-	return allocate_to_d (context, state);
-      state->nsrn = N_V_ARG_REG;
-      break;
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
-    case FFI_TYPE_LONGDOUBLE:
-      if (state->nsrn < N_V_ARG_REG)
-	return allocate_to_v (context, state);
-      state->nsrn = N_V_ARG_REG;
-      break;
-#endif
-    case FFI_TYPE_UINT8:
-    case FFI_TYPE_SINT8:
-    case FFI_TYPE_UINT16:
-    case FFI_TYPE_SINT16:
-    case FFI_TYPE_UINT32:
-    case FFI_TYPE_SINT32:
-    case FFI_TYPE_INT:
-    case FFI_TYPE_POINTER:
-    case FFI_TYPE_UINT64:
-    case FFI_TYPE_SINT64:
-      if (state->ngrn < N_X_ARG_REG)
-	return allocate_to_x (context, state);
-      state->ngrn = N_X_ARG_REG;
-      break;
-    default:
-      FFI_ASSERT (0);
-    }
-
-    return allocate_to_stack (state, stack, alignment, size);
+  state->ngrn = N_X_ARG_REG;
+  return allocate_to_stack (state, stack, size, size);
 }
 
+ffi_status FFI_HIDDEN
+ffi_prep_cif_machdep (ffi_cif *cif)
+{
+  ffi_type *rtype = cif->rtype;
+  size_t bytes = cif->bytes;
+  int flags, i, n;
+
+  switch (rtype->type)
+    {
+    case FFI_TYPE_VOID:
+      flags = AARCH64_RET_VOID;
+      break;
+    case FFI_TYPE_UINT8:
+      flags = AARCH64_RET_UINT8;
+      break;
+    case FFI_TYPE_UINT16:
+      flags = AARCH64_RET_UINT16;
+      break;
+    case FFI_TYPE_UINT32:
+      flags = AARCH64_RET_UINT32;
+      break;
+    case FFI_TYPE_SINT8:
+      flags = AARCH64_RET_SINT8;
+      break;
+    case FFI_TYPE_SINT16:
+      flags = AARCH64_RET_SINT16;
+      break;
+    case FFI_TYPE_INT:
+    case FFI_TYPE_SINT32:
+      flags = AARCH64_RET_SINT32;
+      break;
+    case FFI_TYPE_SINT64:
+    case FFI_TYPE_UINT64:
+      flags = AARCH64_RET_INT64;
+      break;
+    case FFI_TYPE_POINTER:
+      flags = (sizeof(void *) == 4 ? AARCH64_RET_UINT32 : AARCH64_RET_INT64);
+      break;
+
+    case FFI_TYPE_FLOAT:
+    case FFI_TYPE_DOUBLE:
+    case FFI_TYPE_LONGDOUBLE:
+    case FFI_TYPE_STRUCT:
+    case FFI_TYPE_COMPLEX:
+      flags = is_vfp_type (rtype);
+      if (flags == 0)
+	{
+	  size_t s = rtype->size;
+	  if (s > 16)
+	    {
+	      flags = AARCH64_RET_VOID | AARCH64_RET_IN_MEM;
+	      bytes += 8;
+	    }
+	  else if (s == 16)
+	    flags = AARCH64_RET_INT128;
+	  else if (s == 8)
+	    flags = AARCH64_RET_INT64;
+	  else
+	    flags = AARCH64_RET_INT128 | AARCH64_RET_NEED_COPY;
+	}
+      break;
+
+    default:
+      abort();
+    }
+
+  for (i = 0, n = cif->nargs; i < n; i++)
+    if (is_vfp_type (cif->arg_types[i]))
+      {
+	flags |= AARCH64_FLAG_ARG_V;
+	break;
+      }
+
+  
+  cif->bytes = (unsigned) FFI_ALIGN(bytes, 16);
+  cif->flags = flags;
+#if defined (__APPLE__)
+  cif->aarch64_nfixedargs = 0;
+#endif
+
+  return FFI_OK;
+}
+
+#if defined (__APPLE__)
+
+ffi_status FFI_HIDDEN
+ffi_prep_cif_machdep_var(ffi_cif *cif, unsigned int nfixedargs,
+			 unsigned int ntotalargs)
+{
+  ffi_status status = ffi_prep_cif_machdep (cif);
+  cif->aarch64_nfixedargs = nfixedargs;
+  return status;
+}
+#endif 
+
+extern void ffi_call_SYSV (struct call_context *context, void *frame,
+			   void (*fn)(void), void *rvalue, int flags,
+			   void *closure) FFI_HIDDEN;
 
 
 
 static void
-copy_to_register_or_stack (struct call_context *context,
-			   unsigned char *stack,
-			   struct arg_state *state,
-			   void *value,
-			   unsigned short type)
+ffi_call_int (ffi_cif *cif, void (*fn)(void), void *orig_rvalue,
+	      void **avalue, void *closure)
 {
-  copy_basic_type (
-	  allocate_to_register_or_stack (context, stack, state, type),
-	  value,
-	  type);
-}
-
-
-
-
-static unsigned
-aarch64_prep_args (struct call_context *context, unsigned char *stack,
-		   extended_cif *ecif)
-{
-  int i;
+  struct call_context *context;
+  void *stack, *frame, *rvalue;
   struct arg_state state;
+  size_t stack_bytes, rtype_size, rsize;
+  int i, nargs, flags;
+  ffi_type *rtype;
 
-  arg_init (&state, ALIGN(ecif->cif->bytes, 16));
+  flags = cif->flags;
+  rtype = cif->rtype;
+  rtype_size = rtype->size;
+  stack_bytes = cif->bytes;
 
-  for (i = 0; i < ecif->cif->nargs; i++)
+  
+
+
+  rsize = 0;
+  if (flags & AARCH64_RET_IN_MEM)
     {
-      ffi_type *ty = ecif->cif->arg_types[i];
-      switch (ty->type)
+      if (orig_rvalue == NULL)
+	rsize = rtype_size;
+    }
+  else if (orig_rvalue == NULL)
+    flags &= AARCH64_FLAG_ARG_V;
+  else if (flags & AARCH64_RET_NEED_COPY)
+    rsize = 16;
+
+  
+  context = alloca (sizeof(struct call_context) + stack_bytes + 32 + rsize);
+  stack = context + 1;
+  frame = (void*)((uintptr_t)stack + (uintptr_t)stack_bytes);
+  rvalue = (rsize ? (void*)((uintptr_t)frame + 32) : orig_rvalue);
+
+  arg_init (&state);
+  for (i = 0, nargs = cif->nargs; i < nargs; i++)
+    {
+      ffi_type *ty = cif->arg_types[i];
+      size_t s = ty->size;
+      void *a = avalue[i];
+      int h, t;
+
+      t = ty->type;
+      switch (t)
 	{
 	case FFI_TYPE_VOID:
 	  FFI_ASSERT (0);
@@ -685,251 +622,156 @@ aarch64_prep_args (struct call_context *context, unsigned char *stack,
 
 	
 
-	case FFI_TYPE_FLOAT:
-	case FFI_TYPE_DOUBLE:
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
-	case FFI_TYPE_LONGDOUBLE:
-#endif
+	case FFI_TYPE_INT:
 	case FFI_TYPE_UINT8:
 	case FFI_TYPE_SINT8:
 	case FFI_TYPE_UINT16:
 	case FFI_TYPE_SINT16:
 	case FFI_TYPE_UINT32:
-	case FFI_TYPE_INT:
 	case FFI_TYPE_SINT32:
-	case FFI_TYPE_POINTER:
 	case FFI_TYPE_UINT64:
 	case FFI_TYPE_SINT64:
-	  copy_to_register_or_stack (context, stack, &state,
-				     ecif->avalue[i], ty->type);
+	case FFI_TYPE_POINTER:
+	do_pointer:
+	  {
+	    ffi_arg ext = extend_integer_type (a, t);
+	    if (state.ngrn < N_X_ARG_REG)
+	      context->x[state.ngrn++] = ext;
+	    else
+	      {
+		void *d = allocate_to_stack (&state, stack, ty->alignment, s);
+		state.ngrn = N_X_ARG_REG;
+		
+
+
+#ifdef __APPLE__
+		memcpy(d, a, s);
+#else
+		*(ffi_arg *)d = ext;
+#endif
+	      }
+	  }
 	  break;
 
+	case FFI_TYPE_FLOAT:
+	case FFI_TYPE_DOUBLE:
+	case FFI_TYPE_LONGDOUBLE:
 	case FFI_TYPE_STRUCT:
-	  if (is_hfa (ty))
-	    {
-	      copy_hfa_to_reg_or_stack (ecif->avalue[i], ty, context,
-					stack, &state);
-	    }
-	  else if (ty->size > 16)
-	    {
-	      
+	case FFI_TYPE_COMPLEX:
+	  {
+	    void *dest;
+
+	    h = is_vfp_type (ty);
+	    if (h)
+	      {
+		int elems = 4 - (h & 3);
+#ifdef _M_ARM64 
+                if (cif->is_variadic)
+                  {
+                    if (state.ngrn + elems <= N_X_ARG_REG)
+                      {
+                        dest = &context->x[state.ngrn];
+                        state.ngrn += elems;
+                        extend_hfa_type(dest, a, h);
+                        break;
+                      }
+                    state.nsrn = N_X_ARG_REG;
+                    dest = allocate_to_stack(&state, stack, ty->alignment, s);
+                  }
+                else
+                  {
+#endif
+	        if (state.nsrn + elems <= N_V_ARG_REG)
+		  {
+		    dest = &context->v[state.nsrn];
+		    state.nsrn += elems;
+		    extend_hfa_type (dest, a, h);
+		    break;
+		  }
+		state.nsrn = N_V_ARG_REG;
+		dest = allocate_to_stack (&state, stack, ty->alignment, s);
+#ifdef _M_ARM64 
+	      }
+#endif 
+	      }
+	    else if (s > 16)
+	      {
+		
+
+
+		a = &avalue[i];
+		t = FFI_TYPE_POINTER;
+		s = sizeof (void *);
+		goto do_pointer;
+	      }
+	    else
+	      {
+		size_t n = (s + 7) / 8;
+		if (state.ngrn + n <= N_X_ARG_REG)
+		  {
+		    
 
 
 
-	      copy_to_register_or_stack (context, stack, &state,
-					 &(ecif->avalue[i]), FFI_TYPE_POINTER);
-	    }
-	  else if (available_x (&state) >= (ty->size + 7) / 8)
-	    {
-	      
+		    dest = &context->x[state.ngrn];
+                    state.ngrn += (unsigned int)n;
+		  }
+		else
+		  {
+		    
 
 
 
-	      int j;
-	      for (j = 0; j < (ty->size + 7) / 8; j++)
-		{
-		  memcpy (allocate_to_x (context, &state),
-			  &(((UINT64 *) ecif->avalue[i])[j]),
-			  sizeof (UINT64));
+		    state.ngrn = N_X_ARG_REG;
+		    dest = allocate_to_stack (&state, stack, ty->alignment, s);
+		  }
 		}
-	    }
-	  else
-	    {
-	      
-
-
-
-	      state.ngrn = N_X_ARG_REG;
-
-	      memcpy (allocate_to_stack (&state, stack, ty->alignment,
-					 ty->size), ecif->avalue + i, ty->size);
+	      memcpy (dest, a, s);
 	    }
 	  break;
 
 	default:
-	  FFI_ASSERT (0);
-	  break;
+	  abort();
 	}
 
 #if defined (__APPLE__)
-      if (i + 1 == ecif->cif->aarch64_nfixedargs)
+      if (i + 1 == cif->aarch64_nfixedargs)
 	{
 	  state.ngrn = N_X_ARG_REG;
 	  state.nsrn = N_V_ARG_REG;
-
 	  state.allocating_variadic = 1;
 	}
 #endif
     }
 
-  return ecif->cif->aarch64_flags;
+  ffi_call_SYSV (context, frame, fn, rvalue, flags, closure);
+
+  if (flags & AARCH64_RET_NEED_COPY)
+    memcpy (orig_rvalue, rvalue, rtype_size);
 }
-
-ffi_status
-ffi_prep_cif_machdep (ffi_cif *cif)
-{
-  
-  cif->bytes =
-    (cif->bytes + (AARCH64_STACK_ALIGN - 1)) & ~ (AARCH64_STACK_ALIGN - 1);
-
-  
-
-
-
-  cif->aarch64_flags = 0;
-
-  if (is_v_register_candidate (cif->rtype))
-    {
-      cif->aarch64_flags |= AARCH64_FFI_WITH_V;
-    }
-  else
-    {
-      int i;
-      for (i = 0; i < cif->nargs; i++)
-        if (is_v_register_candidate (cif->arg_types[i]))
-          {
-            cif->aarch64_flags |= AARCH64_FFI_WITH_V;
-            break;
-          }
-    }
-
-  return FFI_OK;
-}
-
-#if defined (__APPLE__)
-
-
-ffi_status ffi_prep_cif_machdep_var(ffi_cif *cif,
-				    unsigned int nfixedargs,
-				    unsigned int ntotalargs)
-{
-  cif->aarch64_nfixedargs = nfixedargs;
-
-  return ffi_prep_cif_machdep(cif);
-}
-
-#endif
-
-
 
 void
-ffi_call (ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
+ffi_call (ffi_cif *cif, void (*fn) (void), void *rvalue, void **avalue)
 {
-  extended_cif ecif;
-
-  ecif.cif = cif;
-  ecif.avalue = avalue;
-  ecif.rvalue = rvalue;
-
-  switch (cif->abi)
-    {
-    case FFI_SYSV:
-      {
-        struct call_context context;
-	size_t stack_bytes;
-
-	
-
-
-
-	stack_bytes = ALIGN(cif->bytes, 16);
-
-	memset (&context, 0, sizeof (context));
-        if (is_register_candidate (cif->rtype))
-          {
-            ffi_call_SYSV (aarch64_prep_args, &context, &ecif, stack_bytes, fn);
-            switch (cif->rtype->type)
-              {
-              case FFI_TYPE_VOID:
-              case FFI_TYPE_FLOAT:
-              case FFI_TYPE_DOUBLE:
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
-              case FFI_TYPE_LONGDOUBLE:
-#endif
-              case FFI_TYPE_UINT8:
-              case FFI_TYPE_SINT8:
-              case FFI_TYPE_UINT16:
-              case FFI_TYPE_SINT16:
-              case FFI_TYPE_UINT32:
-              case FFI_TYPE_SINT32:
-              case FFI_TYPE_POINTER:
-              case FFI_TYPE_UINT64:
-              case FFI_TYPE_INT:
-              case FFI_TYPE_SINT64:
-		{
-		  void *addr = get_basic_type_addr (cif->rtype->type,
-						    &context, 0);
-		  copy_basic_type (rvalue, addr, cif->rtype->type);
-		  break;
-		}
-
-              case FFI_TYPE_STRUCT:
-                if (is_hfa (cif->rtype))
-		  {
-		    int j;
-		    unsigned short type = get_homogeneous_type (cif->rtype);
-		    unsigned elems = element_count (cif->rtype);
-		    for (j = 0; j < elems; j++)
-		      {
-			void *reg = get_basic_type_addr (type, &context, j);
-			copy_basic_type (rvalue, reg, type);
-			rvalue = (char*)rvalue + get_basic_type_size (type);
-		      }
-		  }
-                else if ((cif->rtype->size + 7) / 8 < N_X_ARG_REG)
-                  {
-                    size_t size = ALIGN (cif->rtype->size, sizeof (UINT64));
-                    memcpy (rvalue, get_x_addr (&context, 0), size);
-                  }
-                else
-                  {
-                    FFI_ASSERT (0);
-                  }
-                break;
-
-              default:
-                FFI_ASSERT (0);
-                break;
-              }
-          }
-        else
-          {
-            memcpy (get_x_addr (&context, 8), &rvalue, sizeof (UINT64));
-            ffi_call_SYSV (aarch64_prep_args, &context, &ecif,
-			   stack_bytes, fn);
-          }
-        break;
-      }
-
-    default:
-      FFI_ASSERT (0);
-      break;
-    }
+  ffi_call_int (cif, fn, rvalue, avalue, NULL);
 }
 
-static unsigned char trampoline [] =
-{ 0x70, 0x00, 0x00, 0x58,	
-  0x91, 0x00, 0x00, 0x10,	
-  0x00, 0x02, 0x1f, 0xd6	
-};
+#ifdef FFI_GO_CLOSURES
+void
+ffi_call_go (ffi_cif *cif, void (*fn) (void), void *rvalue,
+	     void **avalue, void *closure)
+{
+  ffi_call_int (cif, fn, rvalue, avalue, closure);
+}
+#endif 
 
 
 
-#define FFI_INIT_TRAMPOLINE(TRAMP,FUN,CTX,FLAGS)			\
-  do {									\
-    unsigned char *__tramp = (unsigned char*)(TRAMP);			\
-    UINT64  __fun = (UINT64)(FUN);					\
-    UINT64  __ctx = (UINT64)(CTX);					\
-    UINT64  __flags = (UINT64)(FLAGS);					\
-    memcpy (__tramp, trampoline, sizeof (trampoline));			\
-    memcpy (__tramp + 12, &__fun, sizeof (__fun));			\
-    memcpy (__tramp + 20, &__ctx, sizeof (__ctx));			\
-    memcpy (__tramp + 28, &__flags, sizeof (__flags));			\
-    ffi_clear_cache(__tramp, __tramp + FFI_TRAMPOLINE_SIZE);		\
-  } while(0)
+extern void ffi_closure_SYSV (void) FFI_HIDDEN;
+extern void ffi_closure_SYSV_V (void) FFI_HIDDEN;
 
 ffi_status
-ffi_prep_closure_loc (ffi_closure* closure,
+ffi_prep_closure_loc (ffi_closure *closure,
                       ffi_cif* cif,
                       void (*fun)(ffi_cif*,void*,void**,void*),
                       void *user_data,
@@ -938,246 +780,230 @@ ffi_prep_closure_loc (ffi_closure* closure,
   if (cif->abi != FFI_SYSV)
     return FFI_BAD_ABI;
 
-  FFI_INIT_TRAMPOLINE (&closure->tramp[0], &ffi_closure_SYSV, codeloc,
-		       cif->aarch64_flags);
+  void (*start)(void);
+  
+  if (cif->flags & AARCH64_FLAG_ARG_V)
+    start = ffi_closure_SYSV_V;
+  else
+    start = ffi_closure_SYSV;
 
-  closure->cif  = cif;
+#if FFI_EXEC_TRAMPOLINE_TABLE
+#ifdef __MACH__
+  void **config = (void **)((uint8_t *)codeloc - PAGE_MAX_SIZE);
+  config[0] = closure;
+  config[1] = start;
+#endif
+#else
+  static const unsigned char trampoline[16] = {
+    0x90, 0x00, 0x00, 0x58,	
+    0xf1, 0xff, 0xff, 0x10,	
+    0x00, 0x02, 0x1f, 0xd6	
+  };
+  char *tramp = closure->tramp;
+  
+  memcpy (tramp, trampoline, sizeof(trampoline));
+  
+  *(UINT64 *)(tramp + 16) = (uintptr_t)start;
+
+  ffi_clear_cache(tramp, tramp + FFI_TRAMPOLINE_SIZE);
+
+  
+#ifdef _M_ARM64
+  
+  
+  unsigned char *tramp_code = tramp;
+  #else
+  unsigned char *tramp_code = ffi_data_to_code_pointer (tramp);
+  #endif
+  ffi_clear_cache (tramp_code, tramp_code + FFI_TRAMPOLINE_SIZE);
+#endif
+
+  closure->cif = cif;
+  closure->fun = fun;
   closure->user_data = user_data;
-  closure->fun  = fun;
 
   return FFI_OK;
 }
 
+#ifdef FFI_GO_CLOSURES
+extern void ffi_go_closure_SYSV (void) FFI_HIDDEN;
+extern void ffi_go_closure_SYSV_V (void) FFI_HIDDEN;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void FFI_HIDDEN
-ffi_closure_SYSV_inner (ffi_closure *closure, struct call_context *context,
-			void *stack)
+ffi_status
+ffi_prep_go_closure (ffi_go_closure *closure, ffi_cif* cif,
+                     void (*fun)(ffi_cif*,void*,void**,void*))
 {
-  ffi_cif *cif = closure->cif;
+  void (*start)(void);
+
+  if (cif->abi != FFI_SYSV)
+    return FFI_BAD_ABI;
+
+  if (cif->flags & AARCH64_FLAG_ARG_V)
+    start = ffi_go_closure_SYSV_V;
+  else
+    start = ffi_go_closure_SYSV;
+
+  closure->tramp = start;
+  closure->cif = cif;
+  closure->fun = fun;
+
+  return FFI_OK;
+}
+#endif 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int FFI_HIDDEN
+ffi_closure_SYSV_inner (ffi_cif *cif,
+			void (*fun)(ffi_cif*,void*,void**,void*),
+			void *user_data,
+			struct call_context *context,
+			void *stack, void *rvalue, void *struct_rvalue)
+{
   void **avalue = (void**) alloca (cif->nargs * sizeof (void*));
-  void *rvalue = NULL;
-  int i;
+  int i, h, nargs, flags;
   struct arg_state state;
 
-  arg_init (&state, ALIGN(cif->bytes, 16));
+  arg_init (&state);
 
-  for (i = 0; i < cif->nargs; i++)
+  for (i = 0, nargs = cif->nargs; i < nargs; i++)
     {
       ffi_type *ty = cif->arg_types[i];
+      int t = ty->type;
+      size_t n, s = ty->size;
 
-      switch (ty->type)
+      switch (t)
 	{
 	case FFI_TYPE_VOID:
 	  FFI_ASSERT (0);
 	  break;
 
+	case FFI_TYPE_INT:
 	case FFI_TYPE_UINT8:
 	case FFI_TYPE_SINT8:
 	case FFI_TYPE_UINT16:
 	case FFI_TYPE_SINT16:
 	case FFI_TYPE_UINT32:
 	case FFI_TYPE_SINT32:
-	case FFI_TYPE_INT:
-	case FFI_TYPE_POINTER:
 	case FFI_TYPE_UINT64:
 	case FFI_TYPE_SINT64:
-	case  FFI_TYPE_FLOAT:
-	case  FFI_TYPE_DOUBLE:
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
-	case  FFI_TYPE_LONGDOUBLE:
-	  avalue[i] = allocate_to_register_or_stack (context, stack,
-						     &state, ty->type);
+	case FFI_TYPE_POINTER:
+	  avalue[i] = allocate_int_to_reg_or_stack (context, &state, stack, s);
 	  break;
-#endif
 
+	case FFI_TYPE_FLOAT:
+	case FFI_TYPE_DOUBLE:
+	case FFI_TYPE_LONGDOUBLE:
 	case FFI_TYPE_STRUCT:
-	  if (is_hfa (ty))
+	case FFI_TYPE_COMPLEX:
+	  h = is_vfp_type (ty);
+	  if (h)
 	    {
-	      unsigned n = element_count (ty);
-	      if (available_v (&state) < n)
-		{
-		  state.nsrn = N_V_ARG_REG;
-		  avalue[i] = allocate_to_stack (&state, stack, ty->alignment,
-						 ty->size);
-		}
-	      else
-		{
-		  switch (get_homogeneous_type (ty))
-		    {
-		    case FFI_TYPE_FLOAT:
-		      {
-			
+	      n = 4 - (h & 3);
+#ifdef _M_ARM64  
+              if (cif->is_variadic)
+                {
+                  if (state.ngrn + n <= N_X_ARG_REG)
+                    {
+                      void *reg = &context->x[state.ngrn];
+                      state.ngrn += (unsigned int)n;
+    
+                      
 
 
 
 
 
 
-
-
-
-			int j;
-			UINT32 *p = avalue[i] = alloca (ty->size);
-			for (j = 0; j < element_count (ty); j++)
-			  memcpy (&p[j],
-				  allocate_to_s (context, &state),
-				  sizeof (*p));
-			break;
-		      }
-
-		    case FFI_TYPE_DOUBLE:
-		      {
-			
-
-
-
-
-
-
-
-
-
-			int j;
-			UINT64 *p = avalue[i] = alloca (ty->size);
-			for (j = 0; j < element_count (ty); j++)
-			  memcpy (&p[j],
-				  allocate_to_d (context, &state),
-				  sizeof (*p));
-			break;
-		      }
-
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
-		    case FFI_TYPE_LONGDOUBLE:
-			  memcpy (&avalue[i],
-				  allocate_to_v (context, &state),
-				  sizeof (*avalue));
-		      break;
+                      avalue[i] = compress_hfa_type(reg, reg, h);
+                    }
+                  else
+                    {
+                      state.ngrn = N_X_ARG_REG;
+                      state.nsrn = N_V_ARG_REG;
+                      avalue[i] = allocate_to_stack(&state, stack,
+                             ty->alignment, s);
+                    }
+                }
+              else
+                {
 #endif
-
-		    default:
-		      FFI_ASSERT (0);
-		      break;
-		    }
-		}
-	    }
-	  else if (ty->size > 16)
-	    {
-	      
-
-	      memcpy (&avalue[i],
-		      allocate_to_register_or_stack (context, stack,
-						     &state, FFI_TYPE_POINTER),
-		      sizeof (avalue[i]));
-	    }
-	  else if (available_x (&state) >= (ty->size + 7) / 8)
-	    {
-	      avalue[i] = get_x_addr (context, state.ngrn);
-	      state.ngrn += (ty->size + 7) / 8;
-	    }
-	  else
-	    {
-	      state.ngrn = N_X_ARG_REG;
-
-	      avalue[i] = allocate_to_stack (&state, stack, ty->alignment,
-					     ty->size);
-	    }
-	  break;
-
-	default:
-	  FFI_ASSERT (0);
-	  break;
-	}
-    }
-
-  
-
-
-
-  if (is_register_candidate (cif->rtype))
-    {
-      
-
-      
-
-
-
-      rvalue = alloca (cif->rtype->size);
-      (closure->fun) (cif, rvalue, avalue, closure->user_data);
-
-      
-
-      switch (cif->rtype->type)
-        {
-        case FFI_TYPE_VOID:
-          break;
-
-        case FFI_TYPE_UINT8:
-        case FFI_TYPE_UINT16:
-        case FFI_TYPE_UINT32:
-        case FFI_TYPE_POINTER:
-        case FFI_TYPE_UINT64:
-        case FFI_TYPE_SINT8:
-        case FFI_TYPE_SINT16:
-        case FFI_TYPE_INT:
-        case FFI_TYPE_SINT32:
-        case FFI_TYPE_SINT64:
-        case FFI_TYPE_FLOAT:
-        case FFI_TYPE_DOUBLE:
-#if FFI_TYPE_DOUBLE != FFI_TYPE_LONGDOUBLE
-        case FFI_TYPE_LONGDOUBLE:
-#endif
-	  {
-	    void *addr = get_basic_type_addr (cif->rtype->type, context, 0);
-	    copy_basic_type (addr, rvalue, cif->rtype->type);
-            break;
-	  }
-        case FFI_TYPE_STRUCT:
-          if (is_hfa (cif->rtype))
-	    {
-	      int j;
-	      unsigned short type = get_homogeneous_type (cif->rtype);
-	      unsigned elems = element_count (cif->rtype);
-	      for (j = 0; j < elems; j++)
-		{
-		  void *reg = get_basic_type_addr (type, context, j);
-		  copy_basic_type (reg, rvalue, type);
-		  rvalue = (char*)rvalue + get_basic_type_size (type);
-		}
-	    }
-          else if ((cif->rtype->size + 7) / 8 < N_X_ARG_REG)
+                  if (state.nsrn + n <= N_V_ARG_REG)
+                    {
+                      void *reg = &context->v[state.nsrn];
+                      state.nsrn += (unsigned int)n;
+                      avalue[i] = compress_hfa_type(reg, reg, h);
+                    }
+                  else
+                    {
+                      state.nsrn = N_V_ARG_REG;
+                      avalue[i] = allocate_to_stack(&state, stack,
+                                                   ty->alignment, s);
+                    }
+#ifdef _M_ARM64  
+                }
+#endif  
+            }
+          else if (s > 16)
             {
-              size_t size = ALIGN (cif->rtype->size, sizeof (UINT64)) ;
-              memcpy (get_x_addr (context, 0), rvalue, size);
+              
+
+              avalue[i] = *(void **)
+              allocate_int_to_reg_or_stack (context, &state, stack,
+                                         sizeof (void *));
             }
           else
             {
-              FFI_ASSERT (0);
+              n = (s + 7) / 8;
+              if (state.ngrn + n <= N_X_ARG_REG)
+                {
+                  avalue[i] = &context->x[state.ngrn];
+                  state.ngrn += (unsigned int)n;
+                }
+              else
+                {
+                  state.ngrn = N_X_ARG_REG;
+                  avalue[i] = allocate_to_stack(&state, stack,
+                                           ty->alignment, s);
+                }
             }
           break;
+
         default:
-          FFI_ASSERT (0);
-          break;
-        }
+          abort();
+      }
+
+#if defined (__APPLE__)
+      if (i + 1 == cif->aarch64_nfixedargs)
+	{
+	  state.ngrn = N_X_ARG_REG;
+	  state.nsrn = N_V_ARG_REG;
+	  state.allocating_variadic = 1;
+	}
+#endif
     }
-  else
-    {
-      memcpy (&rvalue, get_x_addr (context, 8), sizeof (UINT64));
-      (closure->fun) (cif, rvalue, avalue, closure->user_data);
-    }
+
+  flags = cif->flags;
+  if (flags & AARCH64_RET_IN_MEM)
+    rvalue = struct_rvalue;
+
+  fun (cif, rvalue, avalue, user_data);
+
+  return flags;
 }
 
+#endif
