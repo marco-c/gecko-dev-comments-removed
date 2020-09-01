@@ -104,7 +104,7 @@ class nsColumnSetFrame final : public nsContainerFrame {
     
     
     
-    nscoord mColMaxBSize = NS_UNCONSTRAINEDSIZE;
+    nscoord mColBSize = NS_UNCONSTRAINEDSIZE;
 
     
     bool mIsBalancing = false;
