@@ -920,6 +920,9 @@ child:
     async HistoryCommitIndexAndLength(MaybeDiscardedBrowsingContext aContext,
                                       uint32_t aIndex, uint32_t aLength,
                                       nsID aChangeID);
+
+   async DispatchLocationChangeEvent(MaybeDiscardedBrowsingContext aContext);
+
 parent:
     
 
@@ -1691,6 +1694,9 @@ parent:
         MaybeDiscardedBrowsingContext aContext, SessionHistoryInfo info);
 
     async RemoveDynEntriesFromActiveSessionHistoryEntry(
+        MaybeDiscardedBrowsingContext aContext);
+
+    async RemoveFromSessionHistory(
         MaybeDiscardedBrowsingContext aContext);
 
 both:
