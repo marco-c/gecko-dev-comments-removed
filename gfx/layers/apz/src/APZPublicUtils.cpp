@@ -7,6 +7,7 @@
 #include "mozilla/layers/APZPublicUtils.h"
 
 #include "AsyncPanZoomController.h"
+#include "mozilla/StaticPrefs_general.h"
 
 namespace mozilla {
 namespace layers {
@@ -22,6 +23,33 @@ namespace apz {
     const FrameMetrics& aFrameMetrics, const ParentLayerPoint& aVelocity) {
   return AsyncPanZoomController::CalculatePendingDisplayPort(aFrameMetrics,
                                                              aVelocity);
+}
+
+ std::pair<int32_t, int32_t> GetMouseWheelAnimationDurations() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  int32_t minMS = StaticPrefs::general_smoothScroll_mouseWheel_durationMinMS();
+  int32_t maxMS = StaticPrefs::general_smoothScroll_mouseWheel_durationMaxMS();
+
+  const int32_t oldMin = 200;
+  const int32_t oldMax = 400;
+
+  int32_t migration =
+      StaticPrefs::general_smoothScroll_mouseWheel_migrationPercent();
+  migration = clamped(migration, 0, 100);
+
+  minMS = ((oldMin * (100 - migration)) + (minMS * migration)) / 100;
+  maxMS = ((oldMax * (100 - migration)) + (maxMS * migration)) / 100;
+
+  return std::make_pair(minMS, maxMS);
 }
 
 }  

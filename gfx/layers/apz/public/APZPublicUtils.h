@@ -12,6 +12,7 @@
 
 #include <stdint.h>  
 #include <type_traits>
+#include <utility>
 #include "gfxTypes.h"
 #include "FrameMetrics.h"
 #include "LayersTypes.h"
@@ -72,6 +73,15 @@ void InitializeGlobalState();
 
 const ScreenMargin CalculatePendingDisplayPort(
     const FrameMetrics& aFrameMetrics, const ParentLayerPoint& aVelocity);
+
+
+
+
+
+
+
+
+std::pair<int32_t, int32_t> GetMouseWheelAnimationDurations();
 
 }  
 
