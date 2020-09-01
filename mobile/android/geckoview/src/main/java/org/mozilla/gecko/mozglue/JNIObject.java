@@ -3,7 +3,8 @@ package org.mozilla.gecko.mozglue;
 
 public abstract class JNIObject {
     
-    private long mHandle;
+    
+    private volatile long mHandle;
 
     
     
