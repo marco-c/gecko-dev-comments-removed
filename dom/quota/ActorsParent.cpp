@@ -2416,10 +2416,6 @@ bool FileAlreadyExists(nsresult aValue) {
   return aValue == NS_ERROR_FILE_ALREADY_EXISTS;
 }
 
-bool FileCorrupted(nsresult aValue) {
-  return aValue == NS_ERROR_FILE_CORRUPTED;
-}
-
 nsresult EnsureDirectory(nsIFile* aDirectory, bool* aCreated) {
   AssertIsOnIOThread();
 
@@ -6130,28 +6126,29 @@ nsresult QuotaManager::CreateLocalStorageArchiveConnectionFromWebAppsStore(
   return NS_OK;
 }
 
-Result<std::pair<nsCOMPtr<mozIStorageConnection>, bool>, nsresult>
-QuotaManager::CreateLocalStorageArchiveConnection() {
+nsresult QuotaManager::CreateLocalStorageArchiveConnection(
+    mozIStorageConnection** aConnection, bool& aNewlyCreated) {
   AssertIsOnIOThread();
   MOZ_ASSERT(CachedNextGenLocalStorageEnabled());
+  MOZ_ASSERT(aConnection);
 
   nsCOMPtr<nsIFile> lsArchiveTmpFile;
   nsresult rv = GetLocalStorageArchiveTmpFile(mStoragePath,
                                               getter_AddRefs(lsArchiveTmpFile));
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
+    return rv;
   }
 
   bool exists;
   rv = lsArchiveTmpFile->Exists(&exists);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
+    return rv;
   }
 
   if (exists) {
     rv = lsArchiveTmpFile->Remove(false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
+      return rv;
     }
   }
 
@@ -6159,12 +6156,12 @@ QuotaManager::CreateLocalStorageArchiveConnection() {
   nsCOMPtr<nsIFile> lsArchiveFile;
   rv = GetLocalStorageArchiveFile(mStoragePath, getter_AddRefs(lsArchiveFile));
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
+    return rv;
   }
 
   rv = lsArchiveFile->Exists(&exists);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
+    return rv;
   }
 
   if (exists) {
@@ -6173,13 +6170,13 @@ QuotaManager::CreateLocalStorageArchiveConnection() {
     bool isDirectory;
     rv = lsArchiveFile->IsDirectory(&isDirectory);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
+      return rv;
     }
 
     if (isDirectory) {
       rv = lsArchiveFile->Remove(true);
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Err(rv);
+        return rv;
       }
 
       removed = true;
@@ -6188,7 +6185,7 @@ QuotaManager::CreateLocalStorageArchiveConnection() {
     nsCOMPtr<mozIStorageService> ss =
         do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID, &rv);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
+      return rv;
     }
 
     nsCOMPtr<mozIStorageConnection> connection;
@@ -6196,7 +6193,7 @@ QuotaManager::CreateLocalStorageArchiveConnection() {
     if (!removed && rv == NS_ERROR_FILE_CORRUPTED) {
       rv = lsArchiveFile->Remove(false);
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Err(rv);
+        return rv;
       }
 
       removed = true;
@@ -6204,45 +6201,49 @@ QuotaManager::CreateLocalStorageArchiveConnection() {
       rv = ss->OpenUnsharedDatabase(lsArchiveFile, getter_AddRefs(connection));
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
+      return rv;
     }
 
     rv = StorageDBUpdater::Update(connection);
     if (!removed && NS_FAILED(rv)) {
       rv = connection->Close();
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Err(rv);
+        return rv;
       }
 
       rv = lsArchiveFile->Remove(false);
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Err(rv);
+        return rv;
       }
 
       removed = true;
 
       rv = ss->OpenUnsharedDatabase(lsArchiveFile, getter_AddRefs(connection));
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Err(rv);
+        return rv;
       }
 
       rv = StorageDBUpdater::Update(connection);
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return Err(rv);
+      return rv;
     }
 
-    return std::pair{std::move(connection), removed};
+    connection.forget(aConnection);
+    aNewlyCreated = removed;
+    return NS_OK;
   }
 
   nsCOMPtr<mozIStorageConnection> connection;
   rv = CreateLocalStorageArchiveConnectionFromWebAppsStore(
       getter_AddRefs(connection));
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
+    return rv;
   }
 
-  return std::pair{std::move(connection), true};
+  connection.forget(aConnection);
+  aNewlyCreated = true;
+  return NS_OK;
 }
 
 nsresult QuotaManager::RecreateLocalStorageArchive(
@@ -6363,23 +6364,40 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
       Initialization::Storage,
       [&self = *this] { return static_cast<bool>(self.mStorageConnection); });
 
-  QM_TRY_VAR(auto storageFile, QM_NewLocalFile(mBasePath));
+  auto storageFileOrErr = QM_NewLocalFile(mBasePath);
+  if (NS_WARN_IF(storageFileOrErr.isErr())) {
+    return storageFileOrErr.unwrapErr();
+  }
 
-  QM_TRY(storageFile->Append(mStorageName + kSQLiteSuffix));
+  nsCOMPtr<nsIFile> storageFile = storageFileOrErr.unwrap();
 
-  QM_TRY_VAR(const auto storageFileExists,
-             MOZ_TO_RESULT_INVOKE(storageFile, Exists));
+  nsresult rv = storageFile->Append(mStorageName + kSQLiteSuffix);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-  if (!storageFileExists) {
-    QM_TRY_VAR(auto indexedDBDir, QM_NewLocalFile(mIndexedDBPath));
+  bool exists;
+  rv = storageFile->Exists(&exists);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-    QM_TRY_VAR(const auto indexedDBDirExists,
-               MOZ_TO_RESULT_INVOKE(indexedDBDir, Exists));
+  if (!exists) {
+    auto indexedDBDirOrErr = QM_NewLocalFile(mIndexedDBPath);
+    if (NS_WARN_IF(indexedDBDirOrErr.isErr())) {
+      return indexedDBDirOrErr.unwrapErr();
+    }
+
+    nsCOMPtr<nsIFile> indexedDBDir = indexedDBDirOrErr.unwrap();
+
+    bool indexedDBDirExists;
+    rv = indexedDBDir->Exists(&indexedDBDirExists);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
     if (indexedDBDirExists) {
-      
-      
-      nsresult rv = UpgradeFromIndexedDBDirectoryToPersistentStorageDirectory(
+      rv = UpgradeFromIndexedDBDirectoryToPersistentStorageDirectory(
           indexedDBDir);
       mInitializationInfo.RecordFirstInitializationAttempt(
           Initialization::UpgradeFromIndexedDBDirectory, rv);
@@ -6388,20 +6406,28 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
       }
     }
 
-    QM_TRY_VAR(auto persistentStorageDir, QM_NewLocalFile(mStoragePath));
+    auto persistentStorageDirOrErr = QM_NewLocalFile(mStoragePath);
+    if (NS_WARN_IF(persistentStorageDirOrErr.isErr())) {
+      return persistentStorageDirOrErr.unwrapErr();
+    }
 
-    QM_TRY(persistentStorageDir->Append(
-        nsLiteralString(PERSISTENT_DIRECTORY_NAME)));
+    nsCOMPtr<nsIFile> persistentStorageDir = persistentStorageDirOrErr.unwrap();
 
-    QM_TRY_VAR(const auto persistentStorageDirExists,
-               MOZ_TO_RESULT_INVOKE(persistentStorageDir, Exists));
+    rv = persistentStorageDir->Append(
+        nsLiteralString(PERSISTENT_DIRECTORY_NAME));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    bool persistentStorageDirExists;
+    rv = persistentStorageDir->Exists(&persistentStorageDirExists);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
     if (persistentStorageDirExists) {
-      
-      
-      nsresult rv =
-          UpgradeFromPersistentStorageDirectoryToDefaultStorageDirectory(
-              persistentStorageDir);
+      rv = UpgradeFromPersistentStorageDirectoryToDefaultStorageDirectory(
+          persistentStorageDir);
       mInitializationInfo.RecordFirstInitializationAttempt(
           Initialization::UpgradeFromPersistentStorageDirectory, rv);
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -6410,51 +6436,46 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
     }
   }
 
-  
-  nsCOMPtr<mozIStorageService> ss;
-  {
-    nsresult rv;
-    ss = do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID, &rv);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+  nsCOMPtr<mozIStorageService> ss =
+      do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
   nsCOMPtr<mozIStorageConnection> connection;
-
-  
-  
-  
-  QM_TRY_VAR(const auto corrupted,
-             ToResult(ss->OpenUnsharedDatabase(storageFile,
-                                               getter_AddRefs(connection)),
-                      FileCorrupted));
-
-  if (corrupted) {
+  rv = ss->OpenUnsharedDatabase(storageFile, getter_AddRefs(connection));
+  if (rv == NS_ERROR_FILE_CORRUPTED) {
     
-    QM_TRY(storageFile->Remove(false));
+    rv = storageFile->Remove(false);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
-    
-    QM_TRY_VAR(connection,
-               ToResultInvoke<nsCOMPtr<mozIStorageConnection>>(
-                   std::mem_fn(&mozIStorageService::OpenUnsharedDatabase), ss,
-                   storageFile));
+    rv = ss->OpenUnsharedDatabase(storageFile, getter_AddRefs(connection));
+  }
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
   
-  QM_TRY(connection->ExecuteSimpleSQL("PRAGMA synchronous = EXTRA;"_ns));
+  rv = connection->ExecuteSimpleSQL("PRAGMA synchronous = EXTRA;"_ns);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
-  QM_TRY_VAR(auto storageVersion,
-             MOZ_TO_RESULT_INVOKE(connection, GetSchemaVersion));
+  int32_t storageVersion;
+  rv = connection->GetSchemaVersion(&storageVersion);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   
   if (storageVersion == kHackyPreDowngradeStorageVersion) {
     storageVersion = kHackyPostDowngradeStorageVersion;
-    
-    
-    nsresult rv = connection->SetSchemaVersion(storageVersion);
+    rv = connection->SetSchemaVersion(storageVersion);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       MOZ_ASSERT(false, "Downgrade didn't take.");
       return rv;
@@ -6462,7 +6483,6 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
   }
 
   if (GetMajorStorageVersion(storageVersion) > kMajorStorageVersion) {
-    
     NS_WARNING("Unable to initialize storage, version is too high!");
     return NS_ERROR_FAILURE;
   }
@@ -6470,18 +6490,28 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
   if (storageVersion < kStorageVersion) {
     const bool newDatabase = !storageVersion;
 
-    QM_TRY_VAR(auto storageDir, QM_NewLocalFile(mStoragePath));
+    auto storageDirOrErr = QM_NewLocalFile(mStoragePath);
+    if (NS_WARN_IF(storageDirOrErr.isErr())) {
+      return storageDirOrErr.unwrapErr();
+    }
 
-    QM_TRY_VAR(const auto storageDirExists,
-               MOZ_TO_RESULT_INVOKE(storageDir, Exists));
+    nsCOMPtr<nsIFile> storageDir = storageDirOrErr.unwrap();
 
-    const bool newDirectory = !storageDirExists;
+    rv = storageDir->Exists(&exists);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    const bool newDirectory = !exists;
 
     if (newDatabase) {
       
       if (kSQLitePageSizeOverride) {
-        QM_TRY(connection->ExecuteSimpleSQL(nsPrintfCString(
-            "PRAGMA page_size = %" PRIu32 ";", kSQLitePageSizeOverride)));
+        rv = connection->ExecuteSimpleSQL(nsPrintfCString(
+            "PRAGMA page_size = %" PRIu32 ";", kSQLitePageSizeOverride));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     }
 
@@ -6492,23 +6522,26 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
     
     
     if (newDatabase && newDirectory) {
-      QM_TRY(CreateTables(connection));
+      rv = CreateTables(connection);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       MOZ_ASSERT(NS_SUCCEEDED(connection->GetSchemaVersion(&storageVersion)));
       MOZ_ASSERT(storageVersion == kStorageVersion);
 
-      QM_TRY(connection->ExecuteSimpleSQL(
+      rv = connection->ExecuteSimpleSQL(
           nsLiteralCString("INSERT INTO database (cache_version) "
-                           "VALUES (0)")));
+                           "VALUES (0)"));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     } else {
       
       static_assert(kStorageVersion == int32_t((2 << 16) + 3),
                     "Upgrade function needed due to storage version increase.");
 
       while (storageVersion != kStorageVersion) {
-        
-        
-        nsresult rv;
         if (storageVersion == 0) {
           rv = UpgradeStorageFrom0_0To1_0(connection);
           mInitializationInfo.RecordFirstInitializationAttempt(
@@ -6530,7 +6563,6 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
           mInitializationInfo.RecordFirstInitializationAttempt(
               Initialization::UpgradeStorageFrom2_2To2_3, rv);
         } else {
-          
           NS_WARNING(
               "Unable to initialize storage, no upgrade path is "
               "available!");
@@ -6541,46 +6573,68 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
           return rv;
         }
 
-        QM_TRY_VAR(storageVersion,
-                   MOZ_TO_RESULT_INVOKE(connection, GetSchemaVersion));
+        rv = connection->GetSchemaVersion(&storageVersion);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
 
       MOZ_ASSERT(storageVersion == kStorageVersion);
     }
 
-    QM_TRY(transaction.Commit());
+    rv = transaction.Commit();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   if (CachedNextGenLocalStorageEnabled()) {
-    QM_TRY_VAR((auto [connection, newlyCreatedOrRecreated]),
-               CreateLocalStorageArchiveConnection());
+    nsCOMPtr<mozIStorageConnection> connection;
+    bool newlyCreated;
+    rv = CreateLocalStorageArchiveConnection(getter_AddRefs(connection),
+                                             newlyCreated);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
     uint32_t version = 0;
 
-    if (!newlyCreatedOrRecreated) {
-      
+    if (!newlyCreated) {
       bool initialized;
-      QM_TRY(IsLocalStorageArchiveInitialized(connection, initialized));
+      rv = IsLocalStorageArchiveInitialized(connection, initialized);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       if (initialized) {
-        
-        QM_TRY(LoadLocalStorageArchiveVersion(connection, version));
+        rv = LoadLocalStorageArchiveVersion(connection, version);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     }
 
     if (version > kLocalStorageArchiveVersion) {
-      QM_TRY(DowngradeLocalStorageArchive(connection));
+      rv = DowngradeLocalStorageArchive(connection);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
-      
-      QM_TRY(LoadLocalStorageArchiveVersion(connection, version));
+      rv = LoadLocalStorageArchiveVersion(connection, version);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       MOZ_ASSERT(version == kLocalStorageArchiveVersion);
     } else if (version != kLocalStorageArchiveVersion) {
-      if (newlyCreatedOrRecreated) {
+      if (newlyCreated) {
         MOZ_ASSERT(version == 0);
 
-        QM_TRY(InitializeLocalStorageArchive(connection,
-                                             kLocalStorageArchiveVersion));
+        rv = InitializeLocalStorageArchive(connection,
+                                           kLocalStorageArchiveVersion);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       } else {
         static_assert(kLocalStorageArchiveVersion == 4,
                       "Upgrade function needed due to LocalStorage archive "
@@ -6588,34 +6642,44 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
 
         while (version != kLocalStorageArchiveVersion) {
           if (version < 4) {
-            QM_TRY(UpgradeLocalStorageArchiveFromLessThan4To4(connection));
+            rv = UpgradeLocalStorageArchiveFromLessThan4To4(connection);
           } 
 
 
           else {
-            
             QM_WARNING(
                 "Unable to initialize LocalStorage archive, no upgrade path is "
                 "available!");
             return NS_ERROR_FAILURE;
           }
 
-          
-          QM_TRY(LoadLocalStorageArchiveVersion(connection, version));
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
+
+          rv = LoadLocalStorageArchiveVersion(connection, version);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
         }
 
         MOZ_ASSERT(version == kLocalStorageArchiveVersion);
       }
     }
   } else {
-    QM_TRY(MaybeRemoveLocalStorageData());
+    rv = MaybeRemoveLocalStorageData();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   bool cacheUsable = true;
 
-  
   int32_t cacheVersion;
-  QM_TRY(LoadCacheVersion(connection, cacheVersion));
+  rv = LoadCacheVersion(connection, cacheVersion);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   if (cacheVersion > kCacheVersion) {
     cacheUsable = false;
@@ -6626,14 +6690,20 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
         connection, false, mozIStorageConnection::TRANSACTION_IMMEDIATE);
 
     if (newCache) {
-      QM_TRY(CreateCacheTables(connection));
+      rv = CreateCacheTables(connection);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       MOZ_ASSERT(NS_SUCCEEDED(LoadCacheVersion(connection, cacheVersion)));
       MOZ_ASSERT(cacheVersion == kCacheVersion);
 
-      QM_TRY(connection->ExecuteSimpleSQL(
+      rv = connection->ExecuteSimpleSQL(
           nsLiteralCString("INSERT INTO cache (valid, build_id) "
-                           "VALUES (0, '')")));
+                           "VALUES (0, '')"));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       nsCOMPtr<mozIStorageStatement> insertStmt;
 
@@ -6641,21 +6711,30 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
         if (insertStmt) {
           MOZ_ALWAYS_SUCCEEDS(insertStmt->Reset());
         } else {
-          
-          QM_TRY_VAR(insertStmt,
-                     ToResultInvoke<nsCOMPtr<mozIStorageStatement>>(
-                         std::mem_fn(&mozIStorageConnection::CreateStatement),
-                         connection,
-                         nsLiteralCString("INSERT INTO repository (id, name) "
-                                          "VALUES (:id, :name)")));
+          rv = connection->CreateStatement(
+              nsLiteralCString("INSERT INTO repository (id, name) "
+                               "VALUES (:id, :name)"),
+              getter_AddRefs(insertStmt));
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
         }
 
-        QM_TRY(insertStmt->BindInt32ByName("id"_ns, persistenceType));
+        rv = insertStmt->BindInt32ByName("id"_ns, persistenceType);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
 
-        QM_TRY(insertStmt->BindUTF8StringByName(
-            "name"_ns, PersistenceTypeToString(persistenceType)));
+        rv = insertStmt->BindUTF8StringByName(
+            "name"_ns, PersistenceTypeToString(persistenceType));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
 
-        QM_TRY(insertStmt->Execute());
+        rv = insertStmt->Execute();
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     } else {
       
@@ -6667,24 +6746,35 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
 
 
         {
-          
           QM_WARNING(
               "Unable to initialize cache, no upgrade path is available!");
           return NS_ERROR_FAILURE;
         }
 
-        
-        QM_TRY(LoadCacheVersion(connection, cacheVersion));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+
+        rv = LoadCacheVersion(connection, cacheVersion);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
 
       MOZ_ASSERT(cacheVersion == kCacheVersion);
     }
 
-    QM_TRY(transaction.Commit());
+    rv = transaction.Commit();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   if (cacheUsable && gInvalidateQuotaCache) {
-    QM_TRY(InvalidateCache(connection));
+    rv = InvalidateCache(connection);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
     gInvalidateQuotaCache = false;
   }

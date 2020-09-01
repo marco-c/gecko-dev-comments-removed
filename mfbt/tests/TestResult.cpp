@@ -179,118 +179,33 @@ static void MapTest() {
   };
 
   
-  {
-    Result<int, MyError> res(5);
-    bool invoked = false;
-    auto res2 = res.map([&invoked](int x) {
-      MOZ_RELEASE_ASSERT(x == 5);
-      invoked = true;
-      return 6;
-    });
-    MOZ_RELEASE_ASSERT(res2.isOk());
-    MOZ_RELEASE_ASSERT(invoked);
-    MOZ_RELEASE_ASSERT(res2.unwrap() == 6);
-  }
+  Result<int, MyError> res(5);
+  bool invoked = false;
+  auto res2 = res.map([&invoked](int x) {
+    MOZ_RELEASE_ASSERT(x == 5);
+    invoked = true;
+    return "hello";
+  });
+  MOZ_RELEASE_ASSERT(res2.isOk());
+  MOZ_RELEASE_ASSERT(invoked);
+  MOZ_RELEASE_ASSERT(strcmp(res2.unwrap(), "hello") == 0);
 
   
-  {
-    Result<int, MyError> res(5);
-    bool invoked = false;
-    auto res2 = res.map([&invoked](int x) {
-      MOZ_RELEASE_ASSERT(x == 5);
-      invoked = true;
-      return "hello";
-    });
-    MOZ_RELEASE_ASSERT(res2.isOk());
-    MOZ_RELEASE_ASSERT(invoked);
-    MOZ_RELEASE_ASSERT(strcmp(res2.unwrap(), "hello") == 0);
-  }
+  MyError err(1);
+  Result<char, MyError> res3(err);
+  MOZ_RELEASE_ASSERT(res3.isErr());
+  Result<char, MyError> res4 = res3.map([](int x) {
+    MOZ_RELEASE_ASSERT(false);
+    return 'a';
+  });
+  MOZ_RELEASE_ASSERT(res4.isErr());
+  MOZ_RELEASE_ASSERT(res4.unwrapErr().x == err.x);
 
   
-  {
-    MyError err(1);
-    Result<char, MyError> res(err);
-    MOZ_RELEASE_ASSERT(res.isErr());
-    Result<char, MyError> res2 = res.map([](int x) {
-      MOZ_RELEASE_ASSERT(false);
-      return 'a';
-    });
-    MOZ_RELEASE_ASSERT(res2.isErr());
-    MOZ_RELEASE_ASSERT(res2.unwrapErr().x == err.x);
-  }
-
-  
-  {
-    Result<const char*, MyError> res("hello");
-    auto res2 = res.map(strlen);
-    MOZ_RELEASE_ASSERT(res2.isOk());
-    MOZ_RELEASE_ASSERT(res2.unwrap() == 5);
-  }
-}
-
-static void MapErrTest() {
-  struct MyError {
-    int x;
-
-    explicit MyError(int y) : x(y) {}
-  };
-
-  struct MyError2 {
-    int a;
-
-    explicit MyError2(int b) : a(b) {}
-  };
-
-  
-  {
-    MyError err(1);
-    Result<char, MyError> res(err);
-    MOZ_RELEASE_ASSERT(res.isErr());
-    bool invoked = false;
-    auto res2 = res.mapErr([&invoked](const auto err) {
-      MOZ_RELEASE_ASSERT(err.x == 1);
-      invoked = true;
-      return MyError(2);
-    });
-    MOZ_RELEASE_ASSERT(res2.isErr());
-    MOZ_RELEASE_ASSERT(invoked);
-    MOZ_RELEASE_ASSERT(res2.unwrapErr().x == 2);
-  }
-
-  
-  {
-    MyError err(1);
-    Result<char, MyError> res(err);
-    MOZ_RELEASE_ASSERT(res.isErr());
-    bool invoked = false;
-    auto res2 = res.mapErr([&invoked](const auto err) {
-      MOZ_RELEASE_ASSERT(err.x == 1);
-      invoked = true;
-      return MyError2(2);
-    });
-    MOZ_RELEASE_ASSERT(res2.isErr());
-    MOZ_RELEASE_ASSERT(invoked);
-    MOZ_RELEASE_ASSERT(res2.unwrapErr().a == 2);
-  }
-
-  
-  {
-    Result<int, MyError> res(5);
-    auto res2 = res.mapErr([](const auto err) {
-      MOZ_RELEASE_ASSERT(false);
-      return MyError(1);
-    });
-    MOZ_RELEASE_ASSERT(res2.isOk());
-    MOZ_RELEASE_ASSERT(res2.unwrap() == 5);
-  }
-
-  
-  {
-    Result<Ok, const char*> res("hello");
-    auto res2 = res.mapErr(strlen);
-    MOZ_RELEASE_ASSERT(res2.isErr());
-    MOZ_RELEASE_ASSERT(res2.unwrapErr() == 5);
-  }
+  Result<const char*, MyError> res5("hello");
+  auto res6 = res5.map(strlen);
+  MOZ_RELEASE_ASSERT(res6.isOk());
+  MOZ_RELEASE_ASSERT(res6.unwrap() == 5);
 }
 
 static void AndThenTest() {
@@ -383,7 +298,6 @@ int main() {
   EmptyValueTest();
   ReferenceTest();
   MapTest();
-  MapErrTest();
   AndThenTest();
   UniquePtrTest();
   return 0;
