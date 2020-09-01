@@ -28,7 +28,7 @@ def run_process(cmd):
 
 def run_mozlint(hooktype, args):
     if isinstance(hooktype, six.binary_type):
-        hooktype = hooktype.decode('UTF-8', 'replace')
+        hooktype = hooktype.decode("UTF-8", "replace")
     
     python = find_executable("python3")
     if not python:
