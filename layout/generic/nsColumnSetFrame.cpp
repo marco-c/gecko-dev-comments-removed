@@ -562,19 +562,24 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
         aConfig.mIsBalancing;
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool skipIncremental =
-        !aReflowInput.ShouldReflowAllKids() && !child->IsSubtreeDirty() &&
-        child->GetNextSibling() && !isMeasuringFeasibleContentBSize &&
-        !child->GetNextSibling()->IsSubtreeDirty();
+    bool reflowChild =
+        
+        aReflowInput.ShouldReflowAllKids() ||
+        
+        child->IsSubtreeDirty() ||
+        
+        
+        !child->GetNextSibling() ||
+        
+        
+        child->GetNextSibling()->IsSubtreeDirty() ||
+        
+        
+        
+        
+        
+        
+        isMeasuringFeasibleContentBSize;
 
     
     
@@ -585,10 +590,10 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     
     
     
-    if (skipIncremental && changingBSize &&
+    if (!reflowChild && changingBSize &&
         (StyleColumn()->mColumnFill == StyleColumnFill::Auto ||
          computedBSize != NS_UNCONSTRAINEDSIZE)) {
-      skipIncremental = false;
+      reflowChild = true;
     }
     
     
@@ -598,22 +603,22 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     
     
     
-    if (skipIncremental && shrinkingBSize) {
+    if (!reflowChild && shrinkingBSize) {
       switch (wm.GetBlockDir()) {
         case WritingMode::eBlockTB:
           if (child->ScrollableOverflowRect().YMost() > aConfig.mColBSize) {
-            skipIncremental = false;
+            reflowChild = true;
           }
           break;
         case WritingMode::eBlockLR:
           if (child->ScrollableOverflowRect().XMost() > aConfig.mColBSize) {
-            skipIncremental = false;
+            reflowChild = true;
           }
           break;
         case WritingMode::eBlockRL:
           
           
-          skipIncremental = false;
+          reflowChild = true;
           break;
         default:
           MOZ_ASSERT_UNREACHABLE("unknown block direction");
@@ -622,7 +627,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     }
 
     nscoord childContentBEnd = 0;
-    if (!reflowNext && skipIncremental) {
+    if (!reflowNext && !reflowChild) {
       
       MoveChildTo(child, childOrigin, wm, containerSize);
 
@@ -640,9 +645,8 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       }
       childContentBEnd = nsLayoutUtils::CalculateContentBEnd(wm, child);
 
-      COLUMN_SET_LOG("%s: Skipping child #%d %p (incremental %d): status=%s",
-                     __func__, colData.mColCount, child, skipIncremental,
-                     ToString(aStatus).c_str());
+      COLUMN_SET_LOG("%s: Skipping child #%d %p: status=%s", __func__,
+                     colData.mColCount, child, ToString(aStatus).c_str());
     } else {
       LogicalSize availSize(wm, aConfig.mColISize, aConfig.mColBSize);
       if (isMeasuringFeasibleContentBSize) {
