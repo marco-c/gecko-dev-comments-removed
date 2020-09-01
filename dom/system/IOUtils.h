@@ -94,9 +94,6 @@ class IOUtils final {
       GlobalObject& aGlobal, const nsAString& aPath,
       const Optional<int64_t>& aModification);
 
-  static already_AddRefed<Promise> GetChildren(GlobalObject& aGlobal,
-                                               const nsAString& aPath);
-
   static bool IsAbsolutePath(const nsAString& aPath);
 
  private:
@@ -328,17 +325,6 @@ class IOUtils final {
 
   static Result<int64_t, IOError> TouchSync(const nsAString& aPath,
                                             const Maybe<int64_t>& aNewModTime);
-
-  
-
-
-
-
-
-
-
-  static Result<nsTArray<nsString>, IOError> GetChildrenSync(
-      const nsAString& aPath);
 };
 
 
