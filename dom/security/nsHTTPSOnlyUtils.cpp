@@ -198,10 +198,8 @@ bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsIChannel* aChannel,
   }
 
   
-  
   uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT ||
-      httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UNINITIALIZED) {
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
     return false;
   }
 
