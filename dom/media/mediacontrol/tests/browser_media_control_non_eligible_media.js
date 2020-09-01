@@ -10,6 +10,10 @@ Services.scriptloader.loadSubScript(
 );
 
 
+
+requestLongerTimeout(2);
+
+
 const gNonEligibleElementIds = [
   "muted",
   "volume-0",
