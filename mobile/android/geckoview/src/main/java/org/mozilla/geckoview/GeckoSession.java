@@ -1210,6 +1210,18 @@ public class GeckoSession implements Parcelable {
 
             return res;
         }
+
+        @WrapForJNI(calledFrom = "ui")
+        private void passExternalWebResponse(final WebResponse response) {
+            GeckoSession session = mOwner.get();
+            if (session == null) {
+                return;
+            }
+            ContentDelegate delegate = session.getContentDelegate();
+            if (delegate != null) {
+                delegate.onExternalResponse(session, response);
+            }
+        }
     }
 
     private class Listener implements BundleEventListener {
@@ -3293,12 +3305,21 @@ public class GeckoSession implements Parcelable {
 
 
 
+        @Deprecated 
+        @SuppressWarnings("checkstyle:javadocmethod")
+        @UiThread
+        default void onExternalResponse(@NonNull GeckoSession session,
+                                        @NonNull WebResponseInfo response) {}
+
+        
+
+
 
 
 
         @UiThread
         default void onExternalResponse(@NonNull GeckoSession session,
-                                        @NonNull WebResponseInfo response) {}
+                                        @NonNull WebResponse response) {}
 
         
 
