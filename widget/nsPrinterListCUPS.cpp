@@ -95,7 +95,9 @@ Maybe<PrinterInfo> nsPrinterListCUPS::NamedPrinter(
       const char* const displayName = sCupsShim.cupsGetOption(
           "printer-info", printers[i].num_options, printers[i].options);
       if (printerName == displayName) {
-        sCupsShim.cupsCopyDest(printers, i, &printer);
+        
+        
+        sCupsShim.cupsCopyDest(printers + i, 0, &printer);
         break;
       }
     }
