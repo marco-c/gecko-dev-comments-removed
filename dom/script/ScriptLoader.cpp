@@ -2766,12 +2766,17 @@ class MOZ_RAII AutoSetProcessingScriptTag {
 
 static nsresult ExecuteCompiledScript(JSContext* aCx,
                                       ScriptLoadRequest* aRequest,
-                                      nsJSUtils::ExecutionContext& aExec) {
-  JS::Rooted<JSScript*> script(aCx, aExec.MaybeGetScript());
+                                      nsJSUtils::ExecutionContext& aExec,
+                                      ClassicScript* aLoaderScript) {
+  JS::Rooted<JSScript*> script(aCx, aExec.GetScript());
   if (!script) {
     
     
     return NS_OK;
+  }
+
+  if (JS::GetScriptPrivate(script).isUndefined()) {
+    aLoaderScript->AssociateWithScript(script);
   }
 
   return aExec.ExecScript();
@@ -2919,8 +2924,7 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
           if (rv == NS_OK) {
             AUTO_PROFILER_TEXT_MARKER_DOCSHELL(
                 "ScriptExecution", profilerLabelString, JS, docShell);
-
-            rv = ExecuteCompiledScript(cx, aRequest, exec);
+            rv = ExecuteCompiledScript(cx, aRequest, exec, classicScript);
           }
 
           
@@ -2981,12 +2985,9 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
 
             if (rv == NS_OK) {
               script = exec.GetScript();
-              if (script && JS::GetScriptPrivate(script).isUndefined()) {
-                classicScript->AssociateWithScript(script);
-              }
               AUTO_PROFILER_TEXT_MARKER_DOCSHELL(
                   "ScriptExecution", profilerLabelString, JS, docShell);
-              rv = ExecuteCompiledScript(cx, aRequest, exec);
+              rv = ExecuteCompiledScript(cx, aRequest, exec, classicScript);
             }
           }
 
