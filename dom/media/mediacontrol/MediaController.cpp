@@ -176,6 +176,16 @@ bool MediaController::IsPlaying() const { return IsMediaPlaying(); }
 
 bool MediaController::IsActive() const { return mIsActive; };
 
+bool MediaController::ShouldPropagateActionToAllContexts(
+    const MediaControlAction& aAction) const {
+  
+  
+  
+  return aAction.mKey == MediaControlKey::Play ||
+         aAction.mKey == MediaControlKey::Pause ||
+         aAction.mKey == MediaControlKey::Stop;
+}
+
 void MediaController::UpdateMediaControlActionToContentMediaIfNeeded(
     const MediaControlAction& aAction) {
   
@@ -183,15 +193,25 @@ void MediaController::UpdateMediaControlActionToContentMediaIfNeeded(
   if (!mIsActive || mShutdown) {
     return;
   }
+
   
   
   
   
-  RefPtr<BrowsingContext> context =
-      mActiveMediaSessionContextId
-          ? BrowsingContext::Get(*mActiveMediaSessionContextId)
-          : BrowsingContext::Get(Id());
-  if (context && !context->IsDiscarded()) {
+  const bool propateToAll = ShouldPropagateActionToAllContexts(aAction);
+  const uint64_t targetContextId = propateToAll || !mActiveMediaSessionContextId
+                                       ? Id()
+                                       : *mActiveMediaSessionContextId;
+  RefPtr<BrowsingContext> context = BrowsingContext::Get(targetContextId);
+  if (!context || context->IsDiscarded()) {
+    return;
+  }
+
+  if (propateToAll) {
+    context->PreOrderWalk([&](BrowsingContext* bc) {
+      bc->Canonical()->UpdateMediaControlAction(aAction);
+    });
+  } else {
     context->Canonical()->UpdateMediaControlAction(aAction);
   }
 }
