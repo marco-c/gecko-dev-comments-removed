@@ -40,6 +40,7 @@ class nsSharedPageData {
   nsFont mHeadFootFont;
 
   
+  
   int32_t mTotNumPages = 0;
 
   
@@ -90,7 +91,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   nsresult PrintNextPage();
   void ResetPrintCanvasList();
   int32_t GetCurrentPageNum() const { return mPageNum; }
-  int32_t GetNumPages() const { return mTotalPages; }
+  int32_t GetNumPages() const { return mPageData->mTotNumPages; }
   bool IsDoingPrintRange() const { return mDoingPageRange; }
   void GetPrintRange(int32_t* aFromPage, int32_t* aToPage) const;
   nsresult DoPageEnd();
@@ -154,7 +155,6 @@ class nsPageSequenceFrame final : public nsContainerFrame {
 
   
   int32_t mPageNum;
-  int32_t mTotalPages;
   int32_t mFromPageNum;
   int32_t mToPageNum;
 

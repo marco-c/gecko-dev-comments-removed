@@ -52,7 +52,6 @@ nsPageSequenceFrame::nsPageSequenceFrame(ComputedStyle* aStyle,
     : nsContainerFrame(aStyle, aPresContext, kClassID),
       mMaxSheetSize(mWritingMode),
       mScrollportSize(mWritingMode),
-      mTotalPages(-1),
       mCalledBeginPage(false),
       mCurrentCanvasListSetup(false) {
   mPageData = MakeUnique<nsSharedPageData>();
@@ -406,10 +405,8 @@ nsresult nsPageSequenceFrame::StartPrint(nsPresContext* aPresContext,
 
   
   
-  mTotalPages = mFrames.GetLength();
-
   if (mDoingPageRange) {
-    if (mFromPageNum > mTotalPages) {
+    if (mFromPageNum > mPageData->mTotNumPages) {
       return NS_ERROR_INVALID_ARG;
     }
   }
