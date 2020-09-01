@@ -8,8 +8,6 @@
 #include "ffitest.h"
 #include "float.h"
 
-#include <math.h>
-
 typedef union
 {
   double d;
@@ -49,7 +47,7 @@ int main (void)
 
   
 
-  CHECK(fabs(result[0].d - dblit(f)) < DBL_EPSILON);
+  CHECK(result[0].d - dblit(f) < DBL_EPSILON);
 
   
   for (i = 0; i < sizeof (double); ++i)

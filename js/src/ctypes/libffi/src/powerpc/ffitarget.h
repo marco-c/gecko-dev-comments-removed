@@ -91,19 +91,15 @@ typedef enum ffi_abi {
   
   FFI_LINUX_STRUCT_ALIGN = 1,
   FFI_LINUX_LONG_DOUBLE_128 = 2,
-  FFI_LINUX_LONG_DOUBLE_IEEE128 = 4,
   FFI_DEFAULT_ABI = (FFI_LINUX
 #  ifdef __STRUCT_PARM_ALIGN__
 		     | FFI_LINUX_STRUCT_ALIGN
 #  endif
 #  ifdef __LONG_DOUBLE_128__
 		     | FFI_LINUX_LONG_DOUBLE_128
-#   ifdef __LONG_DOUBLE_IEEE128__
-		     | FFI_LINUX_LONG_DOUBLE_IEEE128
-#   endif
 #  endif
 		     ),
-  FFI_LAST_ABI = 16
+  FFI_LAST_ABI = 12
 
 # else
   
@@ -142,40 +138,23 @@ typedef enum ffi_abi {
 #define FFI_CLOSURES 1
 #define FFI_NATIVE_RAW_API 0
 #if defined (POWERPC) || defined (POWERPC_FREEBSD)
-# define FFI_GO_CLOSURES 1
 # define FFI_TARGET_SPECIFIC_VARIADIC 1
 # define FFI_EXTRA_CIF_FIELDS unsigned nfixedargs
 #endif
-#if defined (POWERPC_AIX)
-# define FFI_GO_CLOSURES 1
-#endif
-
-
-#define FFI_PPC_TYPE_LAST FFI_TYPE_POINTER
 
 
 
 
 
-
-#if !(FFI_TYPE_LAST == FFI_PPC_TYPE_LAST		\
-      || (FFI_TYPE_LAST == FFI_TYPE_COMPLEX		\
-	  && !defined FFI_TARGET_HAS_COMPLEX_TYPE))
-# error "You likely have a broken powerpc libffi"
-#endif
+#define FFI_TYPE_UINT128 (FFI_TYPE_LAST + 1)
 
 
-#define FFI_TYPE_UINT128 (FFI_PPC_TYPE_LAST + 1)
+#define FFI_SYSV_TYPE_SMALL_STRUCT (FFI_TYPE_LAST + 2)
 
 
-#define FFI_SYSV_TYPE_SMALL_STRUCT (FFI_PPC_TYPE_LAST + 2)
-
-
-#define FFI_V2_TYPE_VECTOR		(FFI_PPC_TYPE_LAST + 1)
-#define FFI_V2_TYPE_VECTOR_HOMOG	(FFI_PPC_TYPE_LAST + 2)
-#define FFI_V2_TYPE_FLOAT_HOMOG		(FFI_PPC_TYPE_LAST + 3)
-#define FFI_V2_TYPE_DOUBLE_HOMOG	(FFI_PPC_TYPE_LAST + 4)
-#define FFI_V2_TYPE_SMALL_STRUCT	(FFI_PPC_TYPE_LAST + 5)
+#define FFI_V2_TYPE_FLOAT_HOMOG		(FFI_TYPE_LAST + 1)
+#define FFI_V2_TYPE_DOUBLE_HOMOG	(FFI_TYPE_LAST + 2)
+#define FFI_V2_TYPE_SMALL_STRUCT	(FFI_TYPE_LAST + 3)
 
 #if _CALL_ELF == 2
 # define FFI_TRAMPOLINE_SIZE 32

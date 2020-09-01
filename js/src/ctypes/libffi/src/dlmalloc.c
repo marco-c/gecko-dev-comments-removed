@@ -438,11 +438,6 @@
 
 
 
-#if defined __linux__ && !defined _GNU_SOURCE
-
-#define _GNU_SOURCE 1
-#endif
-
 #ifndef WIN32
 #ifdef _WIN32
 #define WIN32 1
@@ -2296,7 +2291,7 @@ static size_t traverse_and_check(mstate m);
 #define treebin_at(M,i)     (&((M)->treebins[i]))
 
 
-#if defined(__GNUC__) && defined(__i386__)
+#if defined(__GNUC__) && defined(i386)
 #define compute_tree_index(S, I)\
 {\
   size_t X = S >> TREEBIN_SHIFT;\
@@ -2361,7 +2356,7 @@ static size_t traverse_and_check(mstate m);
 
 
 
-#if defined(__GNUC__) && defined(__i386__)
+#if defined(__GNUC__) && defined(i386)
 #define compute_bit2idx(X, I)\
 {\
   unsigned int J;\

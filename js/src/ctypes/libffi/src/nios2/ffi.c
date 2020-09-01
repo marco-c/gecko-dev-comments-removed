@@ -101,7 +101,7 @@ void ffi_prep_args (char *stack, extended_cif *ecif)
 
       
       if ((alignment - 1) & (unsigned) argp)
-	argp = (char *) FFI_ALIGN (argp, alignment);
+	argp = (char *) ALIGN (argp, alignment);
 
       
 
@@ -230,7 +230,7 @@ ffi_closure_helper (unsigned char *args,
 
       
       if ((alignment - 1) & (unsigned) argp)
-	argp = (char *) FFI_ALIGN (argp, alignment);
+	argp = (char *) ALIGN (argp, alignment);
 
       
       if (size < sizeof (int))

@@ -93,7 +93,7 @@
 
 
 #ifdef PROF
-#define EFFI_ALIGN(name, alignt, words)					      \
+#define EALIGN(name, alignt, words)					      \
   ASM_GLOBAL_DIRECTIVE C_SYMBOL_NAME(name);				      \
   ASM_TYPE_DIRECTIVE (C_SYMBOL_NAME(name),@function)			      \
   .align ALIGNARG(2);							      \
@@ -104,7 +104,7 @@
   EALIGN_W_##words;							      \
   0:
 #else 
-#define EFFI_ALIGN(name, alignt, words)					      \
+#define EALIGN(name, alignt, words)					      \
   ASM_GLOBAL_DIRECTIVE C_SYMBOL_NAME(name);				      \
   ASM_TYPE_DIRECTIVE (C_SYMBOL_NAME(name),@function)			      \
   .align ALIGNARG(alignt);						      \

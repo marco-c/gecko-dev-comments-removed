@@ -108,7 +108,7 @@ ffi_prep_args (extended_cif *ecif, void *stack)
 
 	  
 	  if ((sizeof(int) - 1) & z)
-	    z = FFI_ALIGN(z, sizeof(int));
+	    z = ALIGN(z, sizeof(int));
 	}
 
       p_argv++;
@@ -215,7 +215,7 @@ ffi_prep_closure_elfbsd (ffi_cif *cif, void **avalue, char *stackp)
 
       
       if ((sizeof (int) - 1) & z)
-	z = FFI_ALIGN(z, sizeof (int));
+	z = ALIGN(z, sizeof (int));
 
       p_argv++;
       stackp += z;
