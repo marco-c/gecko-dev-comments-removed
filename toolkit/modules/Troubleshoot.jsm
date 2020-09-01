@@ -22,10 +22,6 @@ const { FeatureGate } = ChromeUtils.import(
   "resource://featuregates/FeatureGate.jsm"
 );
 
-let { Subprocess } = ChromeUtils.import(
-  "resource://gre/modules/Subprocess.jsm"
-);
-
 XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser"]);
 
 
@@ -441,6 +437,16 @@ var dataProviders = {
   },
 
   async environmentVariables(done) {
+    let Subprocess;
+    try {
+      
+      Subprocess = ChromeUtils.import("resource://gre/modules/Subprocess.jsm")
+        .Subprocess;
+    } catch (ex) {
+      done({});
+      return;
+    }
+
     let environment = Subprocess.getEnvironment();
     let filteredEnvironment = {};
     
