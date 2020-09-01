@@ -72,6 +72,9 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
 
   
   async listen() {
+    
+    this.target = this.targetList.targetFront;
+
     this._workersListener.addListener(this._onRegistrationListChanged);
 
     
