@@ -9871,12 +9871,6 @@ bool nsIFrame::IsFocusable(int32_t* aTabIndex, bool aWithMouse) {
   }
   bool isFocusable = false;
 
-  
-  if (!IsPrimaryFrameOfRootOrBodyElement() &&
-      PresContext()->Type() == nsPresContext::eContext_PrintPreview) {
-    return false;
-  }
-
   if (mContent && mContent->IsElement() && IsVisibleConsideringAncestors() &&
       Style()->GetPseudoType() != PseudoStyleType::anonymousFlexItem &&
       Style()->GetPseudoType() != PseudoStyleType::anonymousGridItem &&
