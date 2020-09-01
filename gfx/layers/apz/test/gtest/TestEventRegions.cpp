@@ -338,11 +338,11 @@ TEST_F(APZEventRegionsTester, HandledByRootApzcFlag) {
   APZEventResult result =
       TouchDown(manager, ScreenIntPoint(50, 25), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 25), mcc->Time());
-  EXPECT_TRUE(result.mHandledByRootApzc);
+  EXPECT_EQ(result.mHandledByRootApzc, Some(true));
 
   
   
   result = TouchDown(manager, ScreenIntPoint(50, 75), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 75), mcc->Time());
-  EXPECT_FALSE(result.mHandledByRootApzc);
+  EXPECT_EQ(result.mHandledByRootApzc, Nothing());
 }

@@ -1540,7 +1540,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
 
         
         hit.mTargetApzc->GetGuid(&result.mTargetGuid);
-        result.mHandledByRootApzc = hit.TargetIsConfirmedRoot();
+        result.mHandledByRootApzc = hit.HandledByRoot();
 
         if (!hitScrollbar) {
           
@@ -1625,7 +1625,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
 
         
         hit.mTargetApzc->GetGuid(&result.mTargetGuid);
-        result.mHandledByRootApzc = hit.TargetIsConfirmedRoot();
+        result.mHandledByRootApzc = hit.HandledByRoot();
         wheelInput.mOrigin = *untransformedOrigin;
       }
       break;
@@ -1684,7 +1684,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
 
         
         hit.mTargetApzc->GetGuid(&result.mTargetGuid);
-        result.mHandledByRootApzc = hit.TargetIsConfirmedRoot();
+        result.mHandledByRootApzc = hit.HandledByRoot();
         panInput.mPanStartPoint = *untransformedStartPoint;
         panInput.mPanDisplacement = *untransformedDisplacement;
 
@@ -1733,7 +1733,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
 
         
         hit.mTargetApzc->GetGuid(&result.mTargetGuid);
-        result.mHandledByRootApzc = hit.TargetIsConfirmedRoot();
+        result.mHandledByRootApzc = hit.HandledByRoot();
         pinchInput.mFocusPoint = *untransformedFocusPoint;
       }
       break;
@@ -1763,7 +1763,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
 
         
         hit.mTargetApzc->GetGuid(&result.mTargetGuid);
-        result.mHandledByRootApzc = hit.TargetIsConfirmedRoot();
+        result.mHandledByRootApzc = hit.HandledByRoot();
         tapInput.mPoint = *untransformedPoint;
       }
       break;
@@ -2034,7 +2034,7 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
                  CompositorHitTestInvisibleToHit);
 
       mTouchBlockHitResult.mTargetApzc->GetGuid(&result.mTargetGuid);
-      result.mHandledByRootApzc = mTouchBlockHitResult.TargetIsConfirmedRoot();
+      result.mHandledByRootApzc = mTouchBlockHitResult.HandledByRoot();
       result.mStatus = mInputQueue->ReceiveInputEvent(
           mTouchBlockHitResult.mTargetApzc,
           TargetConfirmationFlags{mTouchBlockHitResult.mHitResult}, aInput,
@@ -2137,7 +2137,7 @@ APZEventResult APZCTreeManager::ProcessTouchInputForScrollbarDrag(
   }
 
   mTouchBlockHitResult.mTargetApzc->GetGuid(&result.mTargetGuid);
-  result.mHandledByRootApzc = mTouchBlockHitResult.TargetIsConfirmedRoot();
+  result.mHandledByRootApzc = mTouchBlockHitResult.HandledByRoot();
 
   
   
@@ -3939,9 +3939,19 @@ APZCTreeManager::StickyPositionInfo::StickyPositionInfo(
   mStickyScrollRangeOuter = aNode->GetStickyScrollRangeOuter();
 }
 
-bool APZCTreeManager::HitTestResult::TargetIsConfirmedRoot() const {
-  return (mHitResult & CompositorHitTestDispatchToContent).isEmpty() &&
-         mTargetApzc->IsRootContent();
+Maybe<bool> APZCTreeManager::HitTestResult::HandledByRoot() const {
+  if (!mTargetApzc->IsRootContent()) {
+    
+    
+    
+    return Some(false);
+  } else if ((mHitResult & CompositorHitTestDispatchToContent).isEmpty()) {
+    
+    
+    return Some(true);
+  }
+  
+  return Nothing();
 }
 
 }  

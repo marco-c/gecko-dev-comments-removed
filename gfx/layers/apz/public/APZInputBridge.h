@@ -63,7 +63,10 @@ struct APZEventResult {
 
 
 
-  bool mHandledByRootApzc;
+
+
+
+  Maybe<bool> mHandledByRootApzc;
   
 
 
