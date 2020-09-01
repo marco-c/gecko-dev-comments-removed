@@ -496,29 +496,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
-  
-  
-  void NotifyUserGestureActivation();
-
-  
-  
-  void NotifyResetUserGestureActivation();
-
-  
-  
-  bool HasBeenUserGestureActivated();
-
-  
-  
-  
-  bool HasValidTransientUserGestureActivation();
-
-  
-  
-  
-  bool ConsumeTransientUserGestureActivation();
-
-  
   inline JSObject* GetWindowProxy() const { return mWindowProxy; }
   inline JSObject* GetUnbarrieredWindowProxy() const {
     return mWindowProxy.unbarrieredGet();
@@ -731,7 +708,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return true;
   }
 
-  void DidSet(FieldIndex<IDX_UserActivationState>);
   void DidSet(FieldIndex<IDX_IsActive>, bool aOldValue);
 
   

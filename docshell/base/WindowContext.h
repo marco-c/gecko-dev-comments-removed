@@ -12,6 +12,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MaybeDiscarded.h"
 #include "mozilla/dom/SyncedContext.h"
+#include "mozilla/dom/UserActivation.h"
 #include "nsILoadInfo.h"
 #include "nsWrapperCache.h"
 
@@ -54,6 +55,9 @@ class BrowsingContextGroup;
   /* Whether the user has overriden the mixed content blocker to allow \
    * mixed content loads to happen */                                  \
   FIELD(AllowMixedContent, bool)                                       \
+  /* Controls whether the WindowContext is currently considered to be  \
+   * activated by a gesture */                                         \
+  FIELD(UserActivationState, UserActivation::State)                    \
   FIELD(EmbedderPolicy, nsILoadInfo::CrossOriginEmbedderPolicy)        \
   /* True if this document tree contained an HTMLMediaElement that     \
    * played audibly. This should only be set on top level context. */  \
@@ -131,6 +135,28 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   
   void AddMixedContentSecurityState(uint32_t aStateFlags);
 
+  
+  
+  void NotifyUserGestureActivation();
+
+  
+  
+  void NotifyResetUserGestureActivation();
+
+  
+  
+  bool HasBeenUserGestureActivated();
+
+  
+  
+  
+  bool HasValidTransientUserGestureActivation();
+
+  
+  
+  
+  bool ConsumeTransientUserGestureActivation();
+
   bool CanShowPopup();
 
  protected:
@@ -199,6 +225,12 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_DelegatedExactHostMatchPermissions>,
               const PermissionDelegateHandler::DelegatedPermissionList& aValue,
               ContentParent* aSource);
+  bool CanSet(FieldIndex<IDX_UserActivationState>,
+              const UserActivation::State& aUserActivationState,
+              ContentParent* aSource) {
+    return true;
+  }
+
   bool CanSet(FieldIndex<IDX_HasReportedShadowDOMUsage>, const bool& aValue,
               ContentParent* aSource) {
     return true;
@@ -213,6 +245,7 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   void DidSet(FieldIndex<I>) {}
   template <size_t I, typename T>
   void DidSet(FieldIndex<I>, T&& aOldValue) {}
+  void DidSet(FieldIndex<IDX_UserActivationState>);
 
   uint64_t mInnerWindowId;
   uint64_t mOuterWindowId;
@@ -226,6 +259,10 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   bool mIsDiscarded = false;
   bool mInProcess = false;
+
+  
+  
+  TimeStamp mUserGestureStart;
 };
 
 using WindowContextTransaction = WindowContext::BaseTransaction;
