@@ -855,38 +855,46 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   int8_t mInternalRedirectCount;
 
-  bool mAsyncOpenTimeOverriden;
-  bool mForcePending;
+  bool mAsyncOpenTimeOverriden : 1;
+  bool mForcePending : 1;
 
   
-  bool mDeliveringAltData;
+  bool mDeliveringAltData : 1;
 
-  bool mCorsIncludeCredentials;
-
-  
-  
-  bool mOnStartRequestCalled;
-  bool mOnStopRequestCalled;
+  bool mCorsIncludeCredentials : 1;
 
   
   
-  bool mAfterOnStartRequestBegun;
-
-  bool mRequireCORSPreflight;
-
-  
-  
-  bool mAltDataForChild;
+  bool mOnStartRequestCalled : 1;
+  bool mOnStopRequestCalled : 1;
 
   
   
-  
-  bool mDisableAltDataCache;
+  bool mAfterOnStartRequestBegun : 1;
 
-  bool mForceMainDocumentChannel;
+  bool mRequireCORSPreflight : 1;
+
   
   
-  bool mPendingInputStreamLengthOperation;
+  bool mAltDataForChild : 1;
+
+  
+  
+  
+  bool mDisableAltDataCache : 1;
+
+  bool mForceMainDocumentChannel : 1;
+  
+  
+  bool mPendingInputStreamLengthOperation : 1;
+
+  
+  
+  bool mListenerRequiresContentConversion : 1;
+
+  
+  
+  uint32_t mHasCrossOriginOpenerPolicyMismatch : 1;
 
   bool EnsureRequestContextID();
   bool EnsureRequestContext();
@@ -898,10 +906,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   void RemoveAsNonTailRequest();
 
   void EnsureTopLevelOuterContentWindowId();
-
-  
-  
-  uint32_t mHasCrossOriginOpenerPolicyMismatch : 1;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpBaseChannel, HTTP_BASE_CHANNEL_IID)

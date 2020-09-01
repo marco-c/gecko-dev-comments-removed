@@ -2083,7 +2083,14 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   
   
-  if (!unknownDecoderStarted) {
+  
+  
+  
+  
+  
+  
+  
+  if (!unknownDecoderStarted || mListenerRequiresContentConversion) {
     nsCOMPtr<nsIStreamListener> listener;
     rv =
         DoApplyContentConversions(mListener, getter_AddRefs(listener), nullptr);
