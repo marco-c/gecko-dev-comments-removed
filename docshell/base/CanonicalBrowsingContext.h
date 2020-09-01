@@ -100,7 +100,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   UniquePtr<LoadingSessionHistoryInfo> CreateLoadingSessionHistoryEntryForLoad(
       nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
-  void SessionHistoryCommit(uint64_t aLoadId, const nsID& aChangeID);
+  void SessionHistoryCommit(uint64_t aSessionHistoryEntryId,
+                            const nsID& aChangeID);
 
   
   
@@ -283,11 +284,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   RefPtr<net::DocumentLoadListener> mCurrentLoad;
 
-  struct LoadingSessionHistoryEntry {
-    uint64_t mLoadId = 0;
-    RefPtr<SessionHistoryEntry> mEntry;
-  };
-  nsTArray<LoadingSessionHistoryEntry> mLoadingEntries;
+  nsTArray<RefPtr<SessionHistoryEntry>> mLoadingEntries;
   RefPtr<SessionHistoryEntry> mActiveEntry;
 
   RefPtr<nsSecureBrowserUI> mSecureBrowserUI;

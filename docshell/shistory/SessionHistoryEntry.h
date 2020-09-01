@@ -24,7 +24,6 @@ namespace mozilla {
 namespace dom {
 
 struct LoadingSessionHistoryInfo;
-class SessionHistoryEntry;
 class SHEntrySharedParentState;
 
 
@@ -32,6 +31,7 @@ class SHEntrySharedParentState;
 class SessionHistoryInfo {
  public:
   SessionHistoryInfo() = default;
+  explicit SessionHistoryInfo(uint64_t aExistingId);
   SessionHistoryInfo(nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
 
   bool operator==(const SessionHistoryInfo& aInfo) const {
@@ -58,6 +58,8 @@ class SessionHistoryInfo {
   nsIURI* GetURI() const { return mURI; }
 
   bool GetURIWasModified() const { return mURIWasModified; }
+
+  uint64_t Id() const { return mId; }
 
   nsILayoutHistoryState* GetLayoutHistoryState() { return mLayoutHistoryState; }
 
@@ -91,6 +93,7 @@ class SessionHistoryInfo {
   
   uint32_t mCacheKey = 0;
 
+  uint64_t mId = 0;
   bool mLoadReplace = false;
   bool mURIWasModified = false;
   bool mIsSrcdocEntry = false;
@@ -100,11 +103,9 @@ class SessionHistoryInfo {
 
 struct LoadingSessionHistoryInfo {
   LoadingSessionHistoryInfo() = default;
-  explicit LoadingSessionHistoryInfo(SessionHistoryEntry* aEntry);
+  explicit LoadingSessionHistoryInfo(const SessionHistoryInfo& aInfo);
 
   SessionHistoryInfo mInfo;
-
-  uint64_t mLoadId = 0;
 
   
   
@@ -148,14 +149,11 @@ class SessionHistoryEntry : public nsISHEntry {
   bool ReplaceChild(SessionHistoryEntry* aNewChild);
 
   
-  
-  static SessionHistoryEntry* GetByLoadId(uint64_t aLoadId);
-  static void RemoveLoadId(uint64_t aLoadId);
+  static SessionHistoryEntry* GetByInfoId(uint64_t aId);
 
   static void MaybeSynchronizeSharedStateToInfo(nsISHEntry* aEntry);
 
  private:
-  friend struct LoadingSessionHistoryInfo;
   virtual ~SessionHistoryEntry();
 
   const nsID& DocshellID() const;
@@ -166,7 +164,7 @@ class SessionHistoryEntry : public nsISHEntry {
   uint32_t mID;
   nsTArray<RefPtr<SessionHistoryEntry>> mChildren;
 
-  static nsDataHashtable<nsUint64HashKey, SessionHistoryEntry*>* sLoadIdToEntry;
+  static nsDataHashtable<nsUint64HashKey, SessionHistoryEntry*>* sInfoIdToEntry;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(SessionHistoryEntry, NS_SESSIONHISTORYENTRY_IID)
