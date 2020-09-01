@@ -80,9 +80,15 @@ class MakeBackend(CommonBackend):
                 if tier and not needs_AB_rCD:
                     
                     
-                    double_colon_tiers = ('export', 'pre-compile', 'libs', 'misc')
-                    ret.append('%s%s %s' % (
-                        tier, '::' if tier in double_colon_tiers else ':', stub_file))
+
+                    
+                    
+                    
+                    if tier in ('export', 'pre-compile', 'libs', 'misc'):
+                        dep = '%s_TARGETS' % tier.replace('-', '_').upper()
+                        ret.append('%s += %s' % (dep, stub_file))
+                    else:
+                        ret.append('%s: %s' % (tier, stub_file))
             for output in outputs:
                 ret.append('%s: %s ;' % (output, stub_file))
                 ret.append('GARBAGE += %s' % output)
