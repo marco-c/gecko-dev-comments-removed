@@ -1341,7 +1341,16 @@ static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
             mday = mon;
             mon = action;
           } else if (year < 0) {
-            year = mon;
+            if (mday > 0) {
+              
+              
+              
+              
+              year = mday;
+              mday = mon;
+            } else {
+              year = mon;
+            }
             mon = action;
           } else {
             return false;
@@ -1396,7 +1405,7 @@ static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
       return false;
     }
 
-    if (year > 0 && (mday == 0 || mday > year) && !seenFullYear) {
+    if (year > 0 && (mday == 0 || mday > 31) && !seenFullYear) {
       int temp = year;
       year = mday;
       mday = temp;
