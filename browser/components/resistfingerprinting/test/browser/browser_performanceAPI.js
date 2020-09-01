@@ -192,13 +192,20 @@ add_task(async function runRTPTests() {
     content.performance.measure("Test-Measure", "Test", "Test-End");
 
     
+    await new Promise(resolve => {
+      const paintObserver = new content.PerformanceObserver(() => {
+        resolve();
+      });
+      paintObserver.observe({ type: "paint", buffered: true });
+    });
+
     is(
       content.performance.getEntries().length,
-      4,
+      5,
       "For reduceTimerPrecision, there should be 4 entries for performance.getEntries()"
       
     );
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < 5; i++) {
       let startTime = content.performance.getEntries()[i].startTime;
       let duration = content.performance.getEntries()[i].duration;
       ok(
