@@ -10305,7 +10305,7 @@ BigIntLiteral* Parser<FullParseHandler, Unit>::newBigInt() {
 
   
   
-  return handler_.newBigInt(index, this->getCompilationInfo(), pos());
+  return handler_.newBigInt(index, this->getCompilationInfo().stencil, pos());
 }
 
 template <typename Unit>

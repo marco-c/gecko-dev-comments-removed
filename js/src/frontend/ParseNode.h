@@ -59,6 +59,7 @@ namespace frontend {
 
 class ParseContext;
 struct CompilationInfo;
+struct CompilationStencil;
 class ParserSharedBase;
 class FullParseHandler;
 
@@ -1557,14 +1558,14 @@ class NumericLiteral : public ParseNode {
 };
 
 class BigIntLiteral : public ParseNode {
-  CompilationInfo& compilationInfo_;
+  CompilationStencil& stencil_;
   BigIntIndex index_;
 
  public:
-  BigIntLiteral(BigIntIndex index, CompilationInfo& compilationInfo,
+  BigIntLiteral(BigIntIndex index, CompilationStencil& stencil,
                 const TokenPos& pos)
       : ParseNode(ParseNodeKind::BigIntExpr, pos),
-        compilationInfo_(compilationInfo),
+        stencil_(stencil),
         index_(index) {}
 
   static bool test(const ParseNode& node) {
