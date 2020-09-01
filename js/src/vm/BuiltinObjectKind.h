@@ -17,6 +17,10 @@ class JS_PUBLIC_API JSObject;
 
 namespace js {
 
+namespace frontend {
+class ParserAtom;
+}  
+
 class GlobalObject;
 
 
@@ -50,13 +54,15 @@ enum class BuiltinObjectKind : uint8_t {
 
 
 
-BuiltinObjectKind BuiltinConstructorForName(JSContext* cx, JSAtom* name);
+BuiltinObjectKind BuiltinConstructorForName(JSContext* cx,
+                                            const frontend::ParserAtom* name);
 
 
 
 
 
-BuiltinObjectKind BuiltinPrototypeForName(JSContext* cx, JSAtom* name);
+BuiltinObjectKind BuiltinPrototypeForName(JSContext* cx,
+                                          const frontend::ParserAtom* name);
 
 
 

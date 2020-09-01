@@ -45,6 +45,12 @@ class JS_FRIEND_API AutoStableStringChars;
 
 namespace js {
 
+namespace frontend {
+
+class ParserAtom;
+
+}  
+
 class StaticStrings;
 class PropertyName;
 
@@ -1469,6 +1475,9 @@ static inline UniqueChars StringToNewUTF8CharsZ(JSContext* maybecx,
           : JS::CharsToNewUTF8CharsZ(maybecx, linear->twoByteRange(nogc))
                 .c_str());
 }
+
+UniqueChars ParserAtomToNewUTF8CharsZ(JSContext* maybecx,
+                                      const js::frontend::ParserAtom* atom);
 
 
 

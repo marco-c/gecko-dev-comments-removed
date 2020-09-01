@@ -12,10 +12,11 @@
 #include "mozilla/Range.h"          
 #include "mozilla/Variant.h"        
 
-#include "ds/LifoAlloc.h"  
-#include "js/HashTable.h"  
-#include "js/UniquePtr.h"  
-#include "js/Vector.h"     
+#include "ds/LifoAlloc.h"    
+#include "js/GCPolicyAPI.h"  
+#include "js/HashTable.h"    
+#include "js/UniquePtr.h"    
+#include "js/Vector.h"       
 #include "vm/CommonPropertyNames.h"
 #include "vm/StringType.h"  
 
@@ -179,7 +180,6 @@ class alignas(alignof(void*)) ParserAtomEntry {
     }
   }
 
- public:
  private:
   
   ContentPtrVariant variant_;
@@ -200,6 +200,8 @@ class alignas(alignof(void*)) ParserAtomEntry {
   mutable JSAtom* jsatom_ = nullptr;
 
  public:
+  static const uint32_t MAX_LENGTH = JSString::MAX_LENGTH;
+
   template <typename CharT>
   ParserAtomEntry(mozilla::UniquePtr<CharT[], JS::FreePolicy> chars,
                   uint32_t length, HashNumber hash)
@@ -460,9 +462,8 @@ class ParserAtomsTable {
 
   JS::Result<const ParserAtom*, OOM&> internJSAtom(JSContext* cx, JSAtom* atom);
 
-  JS::Result<const ParserAtom*, OOM&> concatAtoms(JSContext* cx,
-                                                  const ParserAtom* prefix,
-                                                  const ParserAtom* suffix);
+  JS::Result<const ParserAtom*, OOM&> concatAtoms(
+      JSContext* cx, mozilla::Range<const ParserAtom*> atoms);
 };
 
 template <typename CharT>
@@ -513,5 +514,12 @@ inline bool ParserAtomEntry::equalsSeq(
 
 } 
 } 
+
+namespace JS {
+
+template <>
+struct GCPolicy<const js::frontend::ParserAtom*>
+    : IgnoreGCPolicy<const js::frontend::ParserAtom*> {};
+}  
 
 #endif  

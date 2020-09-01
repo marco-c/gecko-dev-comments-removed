@@ -16,11 +16,10 @@
 #include "ds/Nestable.h"               
 #include "frontend/BytecodeSection.h"  
 #include "frontend/JumpList.h"         
+#include "frontend/ParserAtom.h"       
 #include "frontend/SharedContext.h"  
 #include "frontend/TDZCheckCache.h"  
-#include "gc/Rooting.h"              
 #include "vm/StencilEnums.h"         
-#include "vm/StringType.h"           
 
 namespace js {
 namespace frontend {
@@ -71,15 +70,16 @@ inline bool NestableControl::is<BreakableControl>() const {
 }
 
 class LabelControl : public BreakableControl {
-  RootedAtom label_;
+  const ParserAtom* label_;
 
   
   BytecodeOffset startOffset_;
 
  public:
-  LabelControl(BytecodeEmitter* bce, JSAtom* label, BytecodeOffset startOffset);
+  LabelControl(BytecodeEmitter* bce, const ParserAtom* label,
+               BytecodeOffset startOffset);
 
-  HandleAtom label() const { return label_; }
+  const ParserAtom* label() const { return label_; }
 
   BytecodeOffset startOffset() const { return startOffset_; }
 };

@@ -9,6 +9,7 @@
 
 #include <type_traits>
 
+#include "frontend/ParserAtom.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/Scope.h"
 
@@ -353,7 +354,7 @@ class NameLocation {
 };
 
 
-using AtomVector = Vector<JSAtom*, 24, SystemAllocPolicy>;
+using AtomVector = Vector<const ParserAtom*, 24, SystemAllocPolicy>;
 
 class FunctionBox;
 

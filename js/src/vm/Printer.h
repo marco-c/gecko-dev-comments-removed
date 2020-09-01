@@ -20,6 +20,12 @@
 
 namespace js {
 
+namespace frontend {
+
+class ParserAtom;
+
+}  
+
 class LifoAlloc;
 
 
@@ -201,8 +207,18 @@ extern JS::UniqueChars QuoteString(JSContext* cx, JSString* str,
                                    char quote = '\0');
 
 
+extern JS::UniqueChars QuoteString(JSContext* cx,
+                                   const frontend::ParserAtom* ent,
+                                   char quote = '\0');
+
+
 
 extern bool QuoteString(Sprinter* sp, JSString* str, char quote = '\0');
+
+
+
+bool QuoteString(Sprinter* sp, const frontend::ParserAtom* ent,
+                 char quote = '\0');
 
 
 extern bool JSONQuoteString(Sprinter* sp, JSString* str);

@@ -48,6 +48,19 @@ class ScriptStencil;
 class RegExpStencil;
 class BigIntStencil;
 
+using BaseParserScopeData = AbstractBaseScopeData<const ParserAtom>;
+
+template <typename Scope>
+using ParserScopeData = typename Scope::template AbstractData<const ParserAtom>;
+using ParserGlobalScopeData = ParserScopeData<GlobalScope>;
+using ParserEvalScopeData = ParserScopeData<EvalScope>;
+using ParserLexicalScopeData = ParserScopeData<LexicalScope>;
+using ParserFunctionScopeData = ParserScopeData<FunctionScope>;
+using ParserModuleScopeData = ParserScopeData<ModuleScope>;
+using ParserVarScopeData = ParserScopeData<VarScope>;
+
+using ParserBindingIter = AbstractBindingIter<const ParserAtom>;
+
 
 
 
@@ -164,13 +177,16 @@ class ScopeStencil {
   
   
   
-  UniquePtr<BaseScopeData> data_;
+  
+  
+  
+  BaseParserScopeData* data_;
 
  public:
   ScopeStencil(ScopeKind kind, mozilla::Maybe<ScopeIndex> enclosing,
                uint32_t firstFrameSlot,
                mozilla::Maybe<uint32_t> numEnvironmentSlots,
-               UniquePtr<BaseScopeData> data = {},
+               BaseParserScopeData* data = {},
                mozilla::Maybe<FunctionIndex> functionIndex = mozilla::Nothing(),
                bool isArrow = false)
       : enclosing_(enclosing),
@@ -179,21 +195,22 @@ class ScopeStencil {
         numEnvironmentSlots_(numEnvironmentSlots),
         functionIndex_(functionIndex),
         isArrow_(isArrow),
-        data_(std::move(data)) {}
+        data_(data) {}
 
   static bool createForFunctionScope(
       JSContext* cx, CompilationInfo& compilationInfo,
-      Handle<FunctionScope::Data*> dataArg, bool hasParameterExprs,
+      ParserFunctionScopeData* dataArg, bool hasParameterExprs,
       bool needsEnvironment, FunctionIndex functionIndex, bool isArrow,
       mozilla::Maybe<ScopeIndex> enclosing, ScopeIndex* index);
 
   static bool createForLexicalScope(
       JSContext* cx, CompilationInfo& compilationInfo, ScopeKind kind,
-      Handle<LexicalScope::Data*> dataArg, uint32_t firstFrameSlot,
+      ParserLexicalScopeData* dataArg, uint32_t firstFrameSlot,
       mozilla::Maybe<ScopeIndex> enclosing, ScopeIndex* index);
 
-  static bool createForVarScope(JSContext* cx, CompilationInfo& compilationInfo,
-                                ScopeKind kind, Handle<VarScope::Data*> dataArg,
+  static bool createForVarScope(JSContext* cx,
+                                frontend::CompilationInfo& compilationInfo,
+                                ScopeKind kind, ParserVarScopeData* dataArg,
                                 uint32_t firstFrameSlot, bool needsEnvironment,
                                 mozilla::Maybe<ScopeIndex> enclosing,
                                 ScopeIndex* index);
@@ -201,19 +218,18 @@ class ScopeStencil {
   static bool createForGlobalScope(JSContext* cx,
                                    CompilationInfo& compilationInfo,
                                    ScopeKind kind,
-                                   Handle<GlobalScope::Data*> dataArg,
+                                   ParserGlobalScopeData* dataArg,
                                    ScopeIndex* index);
 
   static bool createForEvalScope(JSContext* cx,
                                  CompilationInfo& compilationInfo,
-                                 ScopeKind kind,
-                                 Handle<EvalScope::Data*> dataArg,
+                                 ScopeKind kind, ParserEvalScopeData* dataArg,
                                  mozilla::Maybe<ScopeIndex> enclosing,
                                  ScopeIndex* index);
 
   static bool createForModuleScope(JSContext* cx,
                                    CompilationInfo& compilationInfo,
-                                   Handle<ModuleScope::Data*> dataArg,
+                                   ParserModuleScopeData* dataArg,
                                    mozilla::Maybe<ScopeIndex> enclosing,
                                    ScopeIndex* index);
 
@@ -250,15 +266,19 @@ class ScopeStencil {
  private:
   
   template <typename SpecificScopeType>
-  typename SpecificScopeType::Data& data() const {
-    MOZ_ASSERT(data_.get());
-    return *static_cast<typename SpecificScopeType::Data*>(data_.get());
+  typename SpecificScopeType::template AbstractData<const ParserAtom>& data()
+      const {
+    using Data =
+        typename SpecificScopeType ::template AbstractData<const ParserAtom>;
+
+    MOZ_ASSERT(data_);
+    return *static_cast<Data*>(data_);
   }
 
   
   template <typename SpecificScopeType>
-  UniquePtr<typename SpecificScopeType::Data> releaseData(
-      CompilationInfo& compilationInfo);
+  UniquePtr<typename SpecificScopeType::Data> createSpecificScopeData(
+      JSContext* cx, CompilationInfo& compilationInfo);
 
   template <typename SpecificScopeType>
   uint32_t nextFrameSlot() const {
@@ -302,10 +322,10 @@ class StencilModuleEntry {
   
   
   
-  JSAtom* specifier = nullptr;
-  JSAtom* localName = nullptr;
-  JSAtom* importName = nullptr;
-  JSAtom* exportName = nullptr;
+  const ParserAtom* specifier = nullptr;
+  const ParserAtom* localName = nullptr;
+  const ParserAtom* importName = nullptr;
+  const ParserAtom* exportName = nullptr;
 
   
   
@@ -319,17 +339,18 @@ class StencilModuleEntry {
       : lineno(lineno), column(column) {}
 
  public:
-  static StencilModuleEntry moduleRequest(JSAtom* specifier, uint32_t lineno,
-                                          uint32_t column) {
+  static StencilModuleEntry moduleRequest(const ParserAtom* specifier,
+                                          uint32_t lineno, uint32_t column) {
     MOZ_ASSERT(specifier);
     StencilModuleEntry entry(lineno, column);
     entry.specifier = specifier;
     return entry;
   }
 
-  static StencilModuleEntry importEntry(JSAtom* specifier, JSAtom* localName,
-                                        JSAtom* importName, uint32_t lineno,
-                                        uint32_t column) {
+  static StencilModuleEntry importEntry(const ParserAtom* specifier,
+                                        const ParserAtom* localName,
+                                        const ParserAtom* importName,
+                                        uint32_t lineno, uint32_t column) {
     MOZ_ASSERT(specifier && localName && importName);
     StencilModuleEntry entry(lineno, column);
     entry.specifier = specifier;
@@ -338,7 +359,8 @@ class StencilModuleEntry {
     return entry;
   }
 
-  static StencilModuleEntry exportAsEntry(JSAtom* localName, JSAtom* exportName,
+  static StencilModuleEntry exportAsEntry(const ParserAtom* localName,
+                                          const ParserAtom* exportName,
                                           uint32_t lineno, uint32_t column) {
     MOZ_ASSERT(localName && exportName);
     StencilModuleEntry entry(lineno, column);
@@ -347,10 +369,10 @@ class StencilModuleEntry {
     return entry;
   }
 
-  static StencilModuleEntry exportFromEntry(JSAtom* specifier,
-                                            JSAtom* importName,
-                                            JSAtom* exportName, uint32_t lineno,
-                                            uint32_t column) {
+  static StencilModuleEntry exportFromEntry(const ParserAtom* specifier,
+                                            const ParserAtom* importName,
+                                            const ParserAtom* exportName,
+                                            uint32_t lineno, uint32_t column) {
     
     MOZ_ASSERT(specifier && importName);
     StencilModuleEntry entry(lineno, column);
@@ -385,7 +407,8 @@ class StencilModuleMetadata {
         starExportEntries(cx),
         functionDecls(cx) {}
 
-  bool initModule(JSContext* cx, JS::Handle<ModuleObject*> module);
+  bool initModule(JSContext* cx, CompilationInfo& compilationInfo,
+                  JS::Handle<ModuleObject*> module);
 
   void trace(JSTracer* trc);
 
@@ -399,7 +422,8 @@ class StencilModuleMetadata {
 
 
 class NullScriptThing {};
-using ScriptAtom = JSAtom*;
+
+using ScriptAtom = const ParserAtom*;
 
 
 
@@ -443,7 +467,7 @@ class ScriptStencil {
 
   
   
-  JSAtom* functionAtom = nullptr;
+  const ParserAtom* functionAtom = nullptr;
 
   
   FunctionFlags functionFlags = {};

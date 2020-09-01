@@ -7,6 +7,7 @@
 #include "frontend/FoldConstants.h"
 
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/Range.h"
 
 #include "jslibmath.h"
 #include "jsnum.h"
@@ -16,6 +17,7 @@
 #include "frontend/Parser.h"
 #include "js/Conversions.h"
 #include "js/friend/StackLimits.h"  
+#include "js/Vector.h"
 #include "vm/StringType.h"
 
 using namespace js;
@@ -462,7 +464,7 @@ static bool FoldType(FoldInfo info, ParseNode** pnp, ParseNodeKind kind) {
       case ParseNodeKind::NumberExpr:
         if (pn->isKind(ParseNodeKind::StringExpr)) {
           double d;
-          if (!StringToNumber(info.cx(), pn->as<NameNode>().atom(), &d)) {
+          if (!pn->as<NameNode>().atom()->toNumber(info.cx(), &d)) {
             return false;
           }
           if (!TryReplaceNode(
@@ -474,7 +476,8 @@ static bool FoldType(FoldInfo info, ParseNode** pnp, ParseNodeKind kind) {
 
       case ParseNodeKind::StringExpr:
         if (pn->isKind(ParseNodeKind::NumberExpr)) {
-          JSAtom* atom = pn->as<NumericLiteral>().toAtom(info.cx());
+          const ParserAtom* atom =
+              pn->as<NumericLiteral>().toAtom(info.compilationInfo);
           if (!atom) {
             return false;
           }
@@ -576,21 +579,21 @@ static bool FoldTypeOfExpr(FoldInfo info, ParseNode** nodePtr) {
   ParseNode* expr = node->kid();
 
   
-  RootedPropertyName result(info.cx());
+  const ParserName* result = nullptr;
   if (expr->isKind(ParseNodeKind::StringExpr) ||
       expr->isKind(ParseNodeKind::TemplateStringExpr)) {
-    result = info.cx()->names().string;
+    result = info.cx()->parserNames().string;
   } else if (expr->isKind(ParseNodeKind::NumberExpr)) {
-    result = info.cx()->names().number;
+    result = info.cx()->parserNames().number;
   } else if (expr->isKind(ParseNodeKind::BigIntExpr)) {
-    result = info.cx()->names().bigint;
+    result = info.cx()->parserNames().bigint;
   } else if (expr->isKind(ParseNodeKind::NullExpr)) {
-    result = info.cx()->names().object;
+    result = info.cx()->parserNames().object;
   } else if (expr->isKind(ParseNodeKind::TrueExpr) ||
              expr->isKind(ParseNodeKind::FalseExpr)) {
-    result = info.cx()->names().boolean;
+    result = info.cx()->parserNames().boolean;
   } else if (expr->is<FunctionNode>()) {
-    result = info.cx()->names().function;
+    result = info.cx()->parserNames().function;
   }
 
   if (result) {
@@ -1081,9 +1084,9 @@ static bool FoldElement(FoldInfo info, ParseNode** nodePtr) {
 
   ParseNode* expr = &elem->expression();
   ParseNode* key = &elem->key();
-  PropertyName* name = nullptr;
+  const ParserName* name = nullptr;
   if (key->isKind(ParseNodeKind::StringExpr)) {
-    JSAtom* atom = key->as<NameNode>().atom();
+    const ParserAtom* atom = key->as<NameNode>().atom();
     uint32_t index;
 
     if (atom->isIndex(&index)) {
@@ -1096,7 +1099,7 @@ static bool FoldElement(FoldInfo info, ParseNode** nodePtr) {
       }
       key = &elem->key();
     } else {
-      name = atom->asPropertyName();
+      name = atom->asName();
     }
   } else if (key->isKind(ParseNodeKind::NumberExpr)) {
     auto* numeric = &key->as<NumericLiteral>();
@@ -1105,11 +1108,11 @@ static bool FoldElement(FoldInfo info, ParseNode** nodePtr) {
       
       
       
-      JSAtom* atom = numeric->toAtom(info.cx());
+      const ParserAtom* atom = numeric->toAtom(info.compilationInfo);
       if (!atom) {
         return false;
       }
-      name = atom->asPropertyName();
+      name = atom->asName();
     }
   }
 
@@ -1202,15 +1205,16 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
       break;
     }
 
-    RootedString combination(info.cx());
-    RootedString tmp(info.cx());
+    Vector<const ParserAtom*, 8> accum(info.cx());
     do {
-      
-      
       
       MOZ_ASSERT((*current)->isKind(ParseNodeKind::StringExpr));
 
-      combination = (*current)->as<NameNode>().atom();
+      accum.clear();
+      const ParserAtom* atom = (*current)->as<NameNode>().atom();
+      if (!accum.append(atom)) {
+        return false;
+      }
 
       do {
         
@@ -1224,9 +1228,8 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
         }
 
         
-        tmp = (*next)->as<NameNode>().atom();
-        combination = ConcatStrings<CanGC>(info.cx(), combination, tmp);
-        if (!combination) {
+        const ParserAtom* nextAtom = (*next)->as<NameNode>().atom();
+        if (!accum.append(nextAtom)) {
           return false;
         }
 
@@ -1237,12 +1240,18 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
       } while (*next);
 
       
-      MOZ_ASSERT((*current)->isKind(ParseNodeKind::StringExpr));
-      combination = AtomizeString(info.cx(), combination);
+      const ParserAtom* combination =
+          info.compilationInfo.parserAtoms
+              .concatAtoms(info.cx(),
+                           mozilla::Range(accum.begin(), accum.length()))
+              .unwrapOr(nullptr);
       if (!combination) {
         return false;
       }
-      (*current)->as<NameNode>().setAtom(&combination->asAtom());
+
+      
+      MOZ_ASSERT((*current)->isKind(ParseNodeKind::StringExpr));
+      (*current)->as<NameNode>().setAtom(combination);
 
       
       if (!*next) {
