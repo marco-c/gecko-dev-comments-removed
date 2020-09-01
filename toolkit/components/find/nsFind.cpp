@@ -614,12 +614,11 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
   
   
   bool inWhitespace = false;
-  
-  bool wordBreakPrev = false;
 
   
   Text* matchAnchorNode = nullptr;
   int32_t matchAnchorOffset = 0;
+  char32_t matchAnchorChar = 0;
 
   
   nsINode* endNode = aEndPoint->GetEndContainer();
@@ -627,18 +626,19 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
 
   char32_t c = 0;
   char32_t patc = 0;
-  char32_t prevChar = 0;
   char32_t prevCharInMatch = 0;
 
   State state(mFindBackward, *root, *aStartPoint);
   Text* current = nullptr;
 
-  auto EndPartialMatch = [&] {
+  auto EndPartialMatch = [&]() -> bool {
+    bool hadAnchorNode = !!matchAnchorNode;
     
     
     if (matchAnchorNode) {  
       findex = matchAnchorOffset;
       state.mIterOffset = matchAnchorOffset;
+      c = matchAnchorChar;
       
 
       
@@ -653,10 +653,13 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
     }
     matchAnchorNode = nullptr;
     matchAnchorOffset = 0;
+    matchAnchorChar = 0;
     inWhitespace = false;
+    prevCharInMatch = 0;
     pindex = mFindBackward ? patLen : 0;
     DEBUG_FIND_PRINTF("Setting findex back to %d, pindex to %d\n", findex,
                       pindex);
+    return hadAnchorNode;
   };
 
   while (true) {
@@ -667,8 +670,7 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
       current = state.GetNextNode(!!matchAnchorNode);
       if (!current) {
         DEBUG_FIND_PRINTF("Reached the end, matching: %d\n", !!matchAnchorNode);
-        if (matchAnchorNode) {
-          EndPartialMatch();
+        if (EndPartialMatch()) {
           continue;
         }
         return NS_OK;
@@ -678,14 +680,12 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
       
       if (state.ForcedBreak()) {
         DEBUG_FIND_PRINTF("Forced break!\n");
+        if (EndPartialMatch()) {
+          continue;
+        }
         
-        matchAnchorNode = nullptr;
-        matchAnchorOffset = 0;
+        
         c = 0;
-        prevChar = 0;
-        prevCharInMatch = 0;
-        pindex = (mFindBackward ? patLen : 0);
-        inWhitespace = false;
       }
 
       frag = &current->TextFragment();
@@ -759,7 +759,7 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
     }
 
     
-    prevChar = c;
+    char32_t prevChar = c;
     
     
     
@@ -844,9 +844,12 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
       }
     }
 
-    wordBreakPrev = false;
+    
+    bool wordBreakPrev = false;
     if (mWordBreaker) {
-      if (prevChar == NBSP_CHARCODE) prevChar = CHAR_TO_UNICHAR(' ');
+      if (prevChar == NBSP_CHARCODE) {
+        prevChar = CHAR_TO_UNICHAR(' ');
+      }
       wordBreakPrev = BreakInBetween(prevChar, c);
     }
 
@@ -870,7 +873,10 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
       if (!matchAnchorNode) {
         matchAnchorNode = state.GetCurrentNode();
         matchAnchorOffset = findex;
-        if (!IS_IN_BMP(c)) matchAnchorOffset -= incr;
+        if (!IS_IN_BMP(c)) {
+          matchAnchorOffset -= incr;
+        }
+        matchAnchorChar = c;
       }
 
       
@@ -895,7 +901,9 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
             nextChar = PeekNextChar(state, !!matchAnchorNode);
           }
 
-          if (nextChar == NBSP_CHARCODE) nextChar = CHAR_TO_UNICHAR(' ');
+          if (nextChar == NBSP_CHARCODE) {
+            nextChar = CHAR_TO_UNICHAR(' ');
+          }
 
           
           if (!BreakInBetween(c, nextChar)) {
