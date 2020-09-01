@@ -61,6 +61,9 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   
   static void RemoveDataEntry(const nsACString& aUri,
                               bool aBroadcastToOTherProcesses = true);
+  
+  static bool RemoveDataEntry(const nsACString& aUri, nsIPrincipal* aPrincipal,
+                              const Maybe<nsID>& aAgentClusterId);
 
   static void RemoveDataEntries();
 
@@ -73,8 +76,6 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
                            const Maybe<nsID>& blobAgentClusterId,
                            bool aAlsoIfRevoked = false);
 
-  static nsIPrincipal* GetDataEntryPrincipal(const nsACString& aUri,
-                                             bool aAlsoIfRevoked = false);
   static void Traverse(const nsACString& aUri,
                        nsCycleCollectionTraversalCallback& aCallback);
 
