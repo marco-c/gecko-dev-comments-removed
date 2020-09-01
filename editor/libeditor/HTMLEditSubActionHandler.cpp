@@ -2678,8 +2678,7 @@ EditActionResult HTMLEditor::HandleDeleteAroundCollapsedRanges(
   }
 
   if (aScanFromCaretPointResult.ReachedSpecialContent() ||
-      aScanFromCaretPointResult.ReachedBRElement() ||
-      aScanFromCaretPointResult.ReachedHRElement()) {
+      aScanFromCaretPointResult.ReachedBRElement()) {
     if (aScanFromCaretPointResult.GetContent() ==
         aWSRunScannerAtCaret.GetEditingHost()) {
       return EditActionHandled();
@@ -2691,6 +2690,21 @@ EditActionResult HTMLEditor::HandleDeleteAroundCollapsedRanges(
     NS_WARNING_ASSERTION(
         result.Succeeded(),
         "HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent() failed");
+    return result;
+  }
+
+  if (aScanFromCaretPointResult.ReachedHRElement()) {
+    if (aScanFromCaretPointResult.GetContent() ==
+        aWSRunScannerAtCaret.GetEditingHost()) {
+      return EditActionHandled();
+    }
+    EditActionResult result = HandleDeleteCollapsedSelectionAtHRElement(
+        aDirectionAndAmount, aStripWrappers,
+        MOZ_KnownLive(*aScanFromCaretPointResult.ElementPtr()),
+        aWSRunScannerAtCaret.ScanStartRef(), aWSRunScannerAtCaret);
+    NS_WARNING_ASSERTION(
+        result.Succeeded(),
+        "HTMLEditor::HandleDeleteCollapsedSelectionAtHRElement() failed");
     return result;
   }
 
@@ -2978,6 +2992,107 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtVisibleChar(
   return EditActionHandled();
 }
 
+EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtHRElement(
+    nsIEditor::EDirection aDirectionAndAmount,
+    nsIEditor::EStripWrappers aStripWrappers, Element& aHRElement,
+    const EditorDOMPoint& aCaretPoint,
+    const WSRunScanner& aWSRunScannerAtCaret) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(aHRElement.IsHTMLElement(nsGkAtoms::hr));
+  MOZ_ASSERT(&aHRElement != aWSRunScannerAtCaret.GetEditingHost());
+
+  if (aDirectionAndAmount != nsIEditor::ePrevious) {
+    EditActionResult result = HandleDeleteCollapsedSelectionAtAtomicContent(
+        aDirectionAndAmount, aStripWrappers, aHRElement, aCaretPoint,
+        aWSRunScannerAtCaret);
+    NS_WARNING_ASSERTION(
+        result.Succeeded(),
+        "HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent() failed");
+    return result;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  EditorRawDOMPoint atHRElement(&aHRElement);
+
+  ErrorResult error;
+  bool interLineIsRight = SelectionRefPtr()->GetInterlinePosition(error);
+  if (error.Failed()) {
+    NS_WARNING("Selection::GetInterlinePosition() failed");
+    return EditActionResult(error.StealNSResult());
+  }
+
+  if (aCaretPoint.GetContainer() == atHRElement.GetContainer() &&
+      aCaretPoint.Offset() - 1 == atHRElement.Offset() && !interLineIsRight) {
+    EditActionResult result = HandleDeleteCollapsedSelectionAtAtomicContent(
+        aDirectionAndAmount, aStripWrappers, aHRElement, aCaretPoint,
+        aWSRunScannerAtCaret);
+    NS_WARNING_ASSERTION(
+        result.Succeeded(),
+        "HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent() failed");
+    return result;
+  }
+
+  
+  
+  EditorDOMPoint atNextOfHRElement(EditorDOMPoint::After(aHRElement));
+  NS_WARNING_ASSERTION(atNextOfHRElement.IsSet(),
+                       "Failed to set after <hr> element");
+
+  {
+    AutoEditorDOMPointChildInvalidator lockOffset(atNextOfHRElement);
+
+    nsresult rv = CollapseSelectionTo(atNextOfHRElement);
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+  }
+
+  IgnoredErrorResult ignoredError;
+  SelectionRefPtr()->SetInterlinePosition(false, ignoredError);
+  NS_WARNING_ASSERTION(
+      !ignoredError.Failed(),
+      "Selection::SetInterlinePosition(false) failed, but ignored");
+  TopLevelEditSubActionDataRef().mDidExplicitlySetInterLine = true;
+
+  
+  
+
+  WSScanResult forwardScanFromCaretResult =
+      aWSRunScannerAtCaret.ScanNextVisibleNodeOrBlockBoundaryFrom(aCaretPoint);
+  if (!forwardScanFromCaretResult.ReachedBRElement()) {
+    return EditActionHandled();
+  }
+
+  
+  nsresult rv =
+      WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
+          *this, MOZ_KnownLive(*forwardScanFromCaretResult.BRElementPtr()),
+          aCaretPoint);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "WhiteSpaceVisibilityKeeper::"
+                       "DeleteContentNodeAndJoinTextNodesAroundIt() failed");
+  return EditActionHandled(rv);
+}
+
 EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent(
     nsIEditor::EDirection aDirectionAndAmount,
     nsIEditor::EStripWrappers aStripWrappers, nsIContent& aAtomicContent,
@@ -2987,92 +3102,6 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent(
   MOZ_ASSERT_IF(aAtomicContent.IsHTMLElement(nsGkAtoms::br),
                 IsVisibleBRElement(&aAtomicContent));
   MOZ_ASSERT(&aAtomicContent != aWSRunScannerAtCaret.GetEditingHost());
-
-  
-  if (aDirectionAndAmount == nsIEditor::ePrevious &&
-      aAtomicContent.IsHTMLElement(nsGkAtoms::hr)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool moveOnly = true;
-
-    EditorRawDOMPoint atHRElement(&aAtomicContent);
-
-    ErrorResult error;
-    bool interLineIsRight = SelectionRefPtr()->GetInterlinePosition(error);
-    if (error.Failed()) {
-      NS_WARNING("Selection::GetInterlinePosition() failed");
-      return EditActionResult(error.StealNSResult());
-    }
-
-    if (aCaretPoint.GetContainer() == atHRElement.GetContainer() &&
-        aCaretPoint.Offset() - 1 == atHRElement.Offset() && !interLineIsRight) {
-      moveOnly = false;
-    }
-
-    if (moveOnly) {
-      
-      
-      EditorDOMPoint atNextOfHRElement(EditorDOMPoint::After(aAtomicContent));
-      NS_WARNING_ASSERTION(atNextOfHRElement.IsSet(),
-                           "Failed to set after <hr> element");
-
-      {
-        AutoEditorDOMPointChildInvalidator lockOffset(atNextOfHRElement);
-
-        nsresult rv = CollapseSelectionTo(atNextOfHRElement);
-        if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-          return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-        }
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rv),
-            "HTMLEditor::CollapseSelectionTo() failed, but ignored");
-      }
-
-      IgnoredErrorResult ignoredError;
-      SelectionRefPtr()->SetInterlinePosition(false, ignoredError);
-      NS_WARNING_ASSERTION(
-          !ignoredError.Failed(),
-          "Selection::SetInterlinePosition(false) failed, but ignored");
-      TopLevelEditSubActionDataRef().mDidExplicitlySetInterLine = true;
-
-      
-      
-
-      WSScanResult forwardScanFromCaretResult =
-          aWSRunScannerAtCaret.ScanNextVisibleNodeOrBlockBoundaryFrom(
-              aCaretPoint);
-      if (!forwardScanFromCaretResult.ReachedBRElement()) {
-        return EditActionHandled();
-      }
-
-      
-      nsresult rv =
-          WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
-              *this, MOZ_KnownLive(*forwardScanFromCaretResult.BRElementPtr()),
-              aCaretPoint);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "WhiteSpaceVisibilityKeeper::"
-          "DeleteContentNodeAndJoinTextNodesAroundIt() failed");
-      return EditActionHandled(rv);
-    }
-    
-  }
 
   nsresult rv =
       WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
