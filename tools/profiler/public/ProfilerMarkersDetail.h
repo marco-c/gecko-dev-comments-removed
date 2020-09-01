@@ -23,6 +23,20 @@
 
 #  include "mozilla/ProfileBufferEntrySerializationGeckoExtensions.h"
 
+
+mozilla::ProfileChunkedBuffer& profiler_get_core_buffer();
+
+namespace profiler_markers_detail {
+
+
+
+inline mozilla::ProfileChunkedBuffer& CachedCoreBuffer() {
+  static mozilla::ProfileChunkedBuffer& coreBuffer = profiler_get_core_buffer();
+  return coreBuffer;
+}
+
+}  
+
 #endif  
 
 #endif  
