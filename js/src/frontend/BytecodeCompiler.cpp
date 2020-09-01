@@ -458,6 +458,13 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
 
   JSContext* cx = compilationInfo.cx;
 
+  
+  MOZ_ASSERT(compilationInfo.scriptData.length() ==
+             CompilationInfo::TopLevelIndex);
+  if (!compilationInfo.scriptData.emplaceBack(cx)) {
+    return nullptr;
+  }
+
   ParseNode* pn;
   {
     AutoGeckoProfilerEntry pseudoFrame(cx, "script parsing",
@@ -519,6 +526,13 @@ ModuleObject* frontend::ModuleCompiler<Unit>::compile(
     return nullptr;
   }
   JSContext* cx = compilationInfo.cx;
+
+  
+  MOZ_ASSERT(compilationInfo.scriptData.length() ==
+             CompilationInfo::TopLevelIndex);
+  if (!compilationInfo.scriptData.emplaceBack(cx)) {
+    return nullptr;
+  }
 
   ModuleBuilder builder(cx, parser.ptr());
   StencilModuleMetadata& moduleMetadata = compilationInfo.moduleMetadata;
@@ -622,7 +636,7 @@ JSFunction* frontend::StandaloneFunctionCompiler<Unit>::compile(
     
     
     
-    compilationInfo.topLevel.extent =
+    compilationInfo.scriptData[CompilationInfo::TopLevelIndex].extent =
         SourceExtent{ 0,
                      sourceBuffer_.length(),
                      funbox->extent().toStringStart,
@@ -634,15 +648,15 @@ JSFunction* frontend::StandaloneFunctionCompiler<Unit>::compile(
     
     MOZ_ASSERT(funbox->isAsmJSModule());
     MOZ_ASSERT(compilationInfo.asmJS.has(funbox->index()));
-    MOZ_ASSERT(compilationInfo.topLevel.functionFlags.isAsmJSNative());
+    MOZ_ASSERT(compilationInfo.scriptData[CompilationInfo::TopLevelIndex]
+                   .functionFlags.isAsmJSNative());
   }
 
   if (!compilationInfo.instantiateStencils()) {
     return nullptr;
   }
 
-  JSFunction* fun =
-      compilationInfo.functions[CompilationInfo::TopLevelFunctionIndex];
+  JSFunction* fun = compilationInfo.functions[CompilationInfo::TopLevelIndex];
   MOZ_ASSERT(fun->hasBytecode() || IsAsmJSModule(fun));
 
   

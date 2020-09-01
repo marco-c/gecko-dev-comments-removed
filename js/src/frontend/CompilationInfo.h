@@ -106,16 +106,11 @@ class ScriptStencilIterable {
   };
 
   class Iterator {
-    enum class State {
-      TopLevel,
-      Functions,
-    };
-    State state_ = State::TopLevel;
     size_t index_ = 0;
     CompilationInfo* compilationInfo_;
 
-    Iterator(CompilationInfo* compilationInfo, State state, size_t index)
-        : state_(state), index_(index), compilationInfo_(compilationInfo) {
+    Iterator(CompilationInfo* compilationInfo, size_t index)
+        : index_(index), compilationInfo_(compilationInfo) {
       skipNonFunctions();
     }
 
@@ -136,7 +131,7 @@ class ScriptStencilIterable {
     inline void skipNonFunctions();
 
     bool operator!=(const Iterator& other) const {
-      return state_ != other.state_ || index_ != other.index_;
+      return index_ != other.index_;
     }
 
     inline ScriptAndFunction operator*();
@@ -158,7 +153,7 @@ class ScriptStencilIterable {
 
 
 struct MOZ_RAII CompilationInfo {
-  static constexpr FunctionIndex TopLevelFunctionIndex = FunctionIndex(0);
+  static constexpr FunctionIndex TopLevelIndex = FunctionIndex(0);
 
   JSContext* cx;
   const JS::ReadOnlyCompileOptions& options;
@@ -194,16 +189,12 @@ struct MOZ_RAII CompilationInfo {
   
   
   JS::RootedVector<JSFunction*> functions;
-  Vector<ScriptStencil> funcData;
+  Vector<ScriptStencil> scriptData;
 
   
   
   
   JS::Rooted<Scope*> enclosingScope;
-
-  
-  
-  ScriptStencil topLevel;
 
   
   
@@ -231,7 +222,7 @@ struct MOZ_RAII CompilationInfo {
   
   
   struct RewindToken {
-    size_t funcDataLength = 0;
+    size_t scriptDataLength = 0;
     size_t asmJSCount = 0;
   };
 
@@ -258,9 +249,8 @@ struct MOZ_RAII CompilationInfo {
         bigIntData(cx),
         objLiteralData(cx),
         functions(cx),
-        funcData(cx),
+        scriptData(cx),
         enclosingScope(cx),
-        topLevel(cx),
         scopes(cx),
         scopeData(cx),
         moduleMetadata(cx),
@@ -321,28 +311,14 @@ struct MOZ_RAII CompilationInfo {
 };
 
 inline void ScriptStencilIterable::Iterator::next() {
-  if (state_ == State::TopLevel) {
-    state_ = State::Functions;
-  } else {
-    MOZ_ASSERT(index_ < compilationInfo_->funcData.length());
-    index_++;
-  }
+  MOZ_ASSERT(index_ < compilationInfo_->scriptData.length());
+  index_++;
 }
 
 inline void ScriptStencilIterable::Iterator::skipNonFunctions() {
-  if (state_ == State::TopLevel) {
-    if (compilationInfo_->topLevel.isFunction()) {
-      return;
-    }
-
-    next();
-  }
-
-  size_t length = compilationInfo_->funcData.length();
+  size_t length = compilationInfo_->scriptData.length();
   while (index_ < length) {
-    
-    
-    if (compilationInfo_->funcData[index_].isFunction()) {
+    if (compilationInfo_->scriptData[index_].isFunction()) {
       return;
     }
 
@@ -352,21 +328,16 @@ inline void ScriptStencilIterable::Iterator::skipNonFunctions() {
 
 inline ScriptStencilIterable::ScriptAndFunction
 ScriptStencilIterable::Iterator::operator*() {
-  ScriptStencil& stencil = state_ == State::TopLevel
-                               ? compilationInfo_->topLevel
-                               : compilationInfo_->funcData[index_];
+  ScriptStencil& stencil = compilationInfo_->scriptData[index_];
 
-  FunctionIndex functionIndex = FunctionIndex(
-      state_ == State::TopLevel ? CompilationInfo::TopLevelFunctionIndex
-                                : index_);
+  FunctionIndex functionIndex = FunctionIndex(index_);
   return ScriptAndFunction(stencil, compilationInfo_->functions[functionIndex],
                            functionIndex);
 }
 
  inline ScriptStencilIterable::Iterator
 ScriptStencilIterable::Iterator::end(CompilationInfo* compilationInfo) {
-  return Iterator(compilationInfo, State::Functions,
-                  compilationInfo->funcData.length());
+  return Iterator(compilationInfo, compilationInfo->scriptData.length());
 }
 
 }  

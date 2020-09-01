@@ -254,7 +254,7 @@ static bool InstantiateScriptSourceObject(JSContext* cx,
 
 static bool MaybeInstantiateModule(JSContext* cx,
                                    CompilationInfo& compilationInfo) {
-  if (compilationInfo.topLevel.isModule()) {
+  if (compilationInfo.scriptData[CompilationInfo::TopLevelIndex].isModule()) {
     compilationInfo.module = ModuleObject::create(cx);
     if (!compilationInfo.module) {
       return false;
@@ -411,10 +411,11 @@ static bool InstantiateScriptStencils(JSContext* cx,
 
 static bool InstantiateTopLevel(JSContext* cx,
                                 CompilationInfo& compilationInfo) {
-  ScriptStencil& stencil = compilationInfo.topLevel;
+  ScriptStencil& stencil =
+      compilationInfo.scriptData[CompilationInfo::TopLevelIndex];
   RootedFunction fun(cx);
   if (stencil.isFunction()) {
-    fun = compilationInfo.functions[CompilationInfo::TopLevelFunctionIndex];
+    fun = compilationInfo.functions[CompilationInfo::TopLevelIndex];
   }
 
   
@@ -528,7 +529,7 @@ static void FunctionsFromExistingLazy(CompilationInfo& compilationInfo) {
 }
 
 bool CompilationInfo::instantiateStencils() {
-  if (!functions.resize(funcData.length())) {
+  if (!functions.resize(scriptData.length())) {
     return false;
   }
 
@@ -1196,15 +1197,11 @@ void CompilationInfo::dumpStencil() {
 void CompilationInfo::dumpStencil(js::JSONPrinter& json) {
   json.beginObject();
 
-  json.beginObjectProperty("topLevel");
-  topLevel.dumpFields(json);
-  json.endObject();
-
   
 
-  json.beginListProperty("funcData");
-  for (size_t i = 0; i < funcData.length(); i++) {
-    funcData[i].dump(json);
+  json.beginListProperty("scriptData");
+  for (auto& data : scriptData) {
+    data.dump(json);
   }
   json.endList();
 
@@ -1232,7 +1229,7 @@ void CompilationInfo::dumpStencil(js::JSONPrinter& json) {
   }
   json.endList();
 
-  if (topLevel.isModule()) {
+  if (scriptData[CompilationInfo::TopLevelIndex].isModule()) {
     json.beginObjectProperty("moduleMetadata");
     moduleMetadata.dumpFields(json);
     json.endObject();
