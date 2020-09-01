@@ -551,7 +551,15 @@ class JSObject
 
 
   template <class T>
-  T* maybeUnwrapAs();
+  inline T* maybeUnwrapAs();
+
+  
+
+
+
+
+
+  inline JSObject* maybeUnwrapAs(const JSClass* clasp);
 
   
 
@@ -645,7 +653,7 @@ T& JSObject::unwrapAs() {
 }
 
 template <class T>
-T* JSObject::maybeUnwrapAs() {
+inline T* JSObject::maybeUnwrapAs() {
   static_assert(!std::is_convertible_v<T*, js::Wrapper*>,
                 "T can't be a Wrapper type; this function discards wrappers");
 
@@ -660,6 +668,23 @@ T* JSObject::maybeUnwrapAs() {
 
   if (MOZ_LIKELY(unwrapped->is<T>())) {
     return &unwrapped->as<T>();
+  }
+
+  MOZ_CRASH("Invalid object. Dead wrapper?");
+}
+
+inline JSObject* JSObject::maybeUnwrapAs(const JSClass* clasp) {
+  if (hasClass(clasp)) {
+    return this;
+  }
+
+  JSObject* unwrapped = js::CheckedUnwrapStatic(this);
+  if (!unwrapped) {
+    return nullptr;
+  }
+
+  if (MOZ_LIKELY(unwrapped->hasClass(clasp))) {
+    return unwrapped;
   }
 
   MOZ_CRASH("Invalid object. Dead wrapper?");
