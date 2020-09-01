@@ -11305,7 +11305,7 @@ bool BaseCompiler::emitInstanceCall(uint32_t lineOrBytecode,
         t = ValType::I64;
         break;
       case MIRType::RefOrNull:
-        t = RefType::any();
+        t = RefType::extern_();
         break;
       case MIRType::Pointer:
         
@@ -12612,13 +12612,13 @@ bool BaseCompiler::emitStructNarrow() {
 
   
 
-  MOZ_ASSERT(inputType.isAnyRef() || env_.isStructType(inputType));
-  MOZ_ASSERT(outputType.isAnyRef() || env_.isStructType(outputType));
-  MOZ_ASSERT_IF(outputType.isAnyRef(), inputType.isAnyRef());
+  MOZ_ASSERT(inputType.isExternRef() || env_.isStructType(inputType));
+  MOZ_ASSERT(outputType.isExternRef() || env_.isStructType(outputType));
+  MOZ_ASSERT_IF(outputType.isExternRef(), inputType.isExternRef());
 
   
 
-  if (inputType.isAnyRef() && outputType.isAnyRef()) {
+  if (inputType.isExternRef() && outputType.isExternRef()) {
     return true;
   }
 
@@ -12626,7 +12626,7 @@ bool BaseCompiler::emitStructNarrow() {
 
   
 
-  bool mustUnboxAnyref = inputType.isAnyRef();
+  bool mustUnboxAnyref = inputType.isExternRef();
 
   
   const StructType& outputStruct =
@@ -14309,7 +14309,7 @@ bool BaseCompiler::emitBody() {
         if (!env_.gcTypesEnabled()) {
           return iter_.unrecognizedOpcode(&op);
         }
-        CHECK_NEXT(dispatchComparison(emitCompareRef, RefType::any(),
+        CHECK_NEXT(dispatchComparison(emitCompareRef, RefType::extern_(),
                                       Assembler::Equal));
 #endif
 #ifdef ENABLE_WASM_REFTYPES

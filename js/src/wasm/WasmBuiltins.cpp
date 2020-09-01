@@ -621,7 +621,7 @@ static int32_t CoerceInPlace_JitEntry(int funcExportIndex, TlsData* tlsData,
       }
       case ValType::Ref: {
         switch (fe.funcType().args()[i].refTypeKind()) {
-          case RefType::Any:
+          case RefType::Extern:
             
             
             if (!arg.isObjectOrNull()) {
