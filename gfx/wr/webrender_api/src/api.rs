@@ -311,14 +311,6 @@ impl Transaction {
     
     
     
-    pub fn scroll(&mut self, scroll_location: ScrollLocation, cursor: WorldPoint) {
-        self.frame_ops.push(FrameMsg::Scroll(scroll_location, cursor));
-    }
-
-    
-    
-    
-    
     
     
     
@@ -751,17 +743,6 @@ pub struct HitTestResult {
     pub items: Vec<HitTestItem>,
 }
 
-bitflags! {
-    #[derive(Deserialize, MallocSizeOf, Serialize)]
-    ///
-    pub struct HitTestFlags: u8 {
-        ///
-        const FIND_ALL = 0b00000001;
-        ///
-        const POINT_RELATIVE_TO_PIPELINE_VIEWPORT = 0b00000010;
-    }
-}
-
 
 
 
@@ -826,13 +807,11 @@ pub enum FrameMsg {
     
     UpdateEpoch(PipelineId, Epoch),
     
-    HitTest(Option<PipelineId>, WorldPoint, HitTestFlags, Sender<HitTestResult>),
+    HitTest(Option<PipelineId>, WorldPoint, Sender<HitTestResult>),
     
     RequestHitTester(Sender<Arc<dyn ApiHitTester>>),
     
     SetPan(DeviceIntPoint),
-    
-    Scroll(ScrollLocation, WorldPoint),
     
     ScrollNodeWithId(LayoutPoint, di::ExternalScrollId, ScrollClamping),
     
@@ -868,7 +847,6 @@ impl fmt::Debug for FrameMsg {
             FrameMsg::HitTest(..) => "FrameMsg::HitTest",
             FrameMsg::RequestHitTester(..) => "FrameMsg::RequestHitTester",
             FrameMsg::SetPan(..) => "FrameMsg::SetPan",
-            FrameMsg::Scroll(..) => "FrameMsg::Scroll",
             FrameMsg::ScrollNodeWithId(..) => "FrameMsg::ScrollNodeWithId",
             FrameMsg::GetScrollNodeState(..) => "FrameMsg::GetScrollNodeState",
             FrameMsg::UpdateDynamicProperties(..) => "FrameMsg::UpdateDynamicProperties",
@@ -1676,18 +1654,16 @@ impl RenderApi {
     
     
     
-    
     pub fn hit_test(&self,
-                    document_id: DocumentId,
-                    pipeline_id: Option<PipelineId>,
-                    point: WorldPoint,
-                    flags: HitTestFlags)
-                    -> HitTestResult {
+        document_id: DocumentId,
+        pipeline_id: Option<PipelineId>,
+        point: WorldPoint,
+    ) -> HitTestResult {
         let (tx, rx) = single_msg_channel();
 
         self.send_frame_msg(
             document_id,
-            FrameMsg::HitTest(pipeline_id, point, flags, tx)
+            FrameMsg::HitTest(pipeline_id, point, tx)
         );
         rx.recv().unwrap()
     }
@@ -2062,8 +2038,7 @@ pub trait ApiHitTester: Send + Sync {
     
     
     
-    
-    fn hit_test(&self, pipeline_id: Option<PipelineId>, point: WorldPoint, flags: HitTestFlags) -> HitTestResult;
+    fn hit_test(&self, pipeline_id: Option<PipelineId>, point: WorldPoint) -> HitTestResult;
 }
 
 impl Drop for NotificationRequest {
