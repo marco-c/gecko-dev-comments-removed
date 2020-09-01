@@ -42,6 +42,10 @@ class ContentDelegateChild extends GeckoViewActorChild {
   
   handleEvent(aEvent) {
     debug`handleEvent: ${aEvent.type}`;
+    if (!this.isContentWindow) {
+      
+      return;
+    }
 
     switch (aEvent.type) {
       case "contextmenu": {

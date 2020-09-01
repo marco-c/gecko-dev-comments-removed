@@ -22,34 +22,6 @@ var EXPORTED_SYMBOLS = ["LoadURIDelegateChild"];
 
 class LoadURIDelegateChild extends GeckoViewActorChild {
   
-  get isContentWindow() {
-    if (!this.docShell) {
-      return false;
-    }
-
-    
-    
-    
-    const browser = this.browsingContext.top.embedderElement;
-    if (browser) {
-      const viewType = browser.getAttribute("webextension-view-type");
-      if (viewType) {
-        debug`webextension-view-type: ${viewType}`;
-        return false;
-      }
-      const debugTarget = browser.getAttribute(
-        "webextension-addon-debug-target"
-      );
-      if (debugTarget) {
-        debug`webextension-addon-debug-target: ${debugTarget}`;
-        return false;
-      }
-    }
-
-    return this.docShell.itemType == this.docShell.typeContent;
-  }
-
-  
   loadURI(aUri, aWhere, aFlags, aTriggeringPrincipal) {
     debug`loadURI: uri=${aUri && aUri.spec}
                     where=${aWhere} flags=0x${aFlags.toString(16)}
