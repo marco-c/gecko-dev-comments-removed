@@ -175,8 +175,8 @@ bool IsSharedWasmMemoryObject(JSObject* obj);
 
 
 
-MOZ_MUST_USE bool CheckRefType(JSContext* cx, RefType::Kind targetTypeKind,
-                               HandleValue v, MutableHandleFunction fnval,
+MOZ_MUST_USE bool CheckRefType(JSContext* cx, RefType targetType, HandleValue v,
+                               MutableHandleFunction fnval,
                                MutableHandleAnyRef refval);
 
 }  

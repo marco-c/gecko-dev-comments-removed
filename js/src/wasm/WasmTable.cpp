@@ -56,6 +56,9 @@ Table::Table(JSContext* cx, const TableDesc& desc,
 
 SharedTable Table::create(JSContext* cx, const TableDesc& desc,
                           HandleWasmTableObject maybeObject) {
+  
+  MOZ_RELEASE_ASSERT(desc.elemType.isNullable());
+
   switch (desc.elemType.tableRepr()) {
     case TableRepr::Func: {
       UniqueFuncRefArray functions(
