@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import bisect
 import codecs
 import errno
 import inspect
@@ -15,11 +16,12 @@ import stat
 import subprocess
 import uuid
 import mozbuild.makeutil as makeutil
-from itertools import chain
+from itertools import chain, takewhile
 from mozbuild.preprocessor import Preprocessor
 from mozbuild.util import (
     FileAvoidWrite,
     ensure_unicode,
+    memoize
 )
 from mozpack.executables import (
     is_executable,
@@ -1238,3 +1240,39 @@ class MercurialRevisionFinder(BaseFinder):
             self._files[path] = f
 
         return f
+
+
+class FileListFinder(BaseFinder):
+    """Finder for a literal list of file names."""
+
+    def __init__(self, files):
+        """files must be a sorted list."""
+        self._files = files
+
+    @memoize
+    def _match(self, pattern):
+        """Return a sorted list of all files matching the given pattern."""
+        
+        
+        
+        ret = []
+        
+        
+        components = pattern.split('/')
+        prefix = '/'.join(takewhile(lambda s: '*' not in s, components))
+        start = bisect.bisect_left(self._files, prefix)
+        for i in six.moves.range(start, len(self._files)):
+            f = self._files[i]
+            if not f.startswith(prefix):
+                break
+            
+            if '/.' in f[len(prefix):]:
+                continue
+            if mozpath.match(f, pattern):
+                ret.append(f)
+        return ret
+
+    def find(self, pattern):
+        pattern = pattern.strip('/')
+        for path in self._match(pattern):
+            yield path, File(path)
