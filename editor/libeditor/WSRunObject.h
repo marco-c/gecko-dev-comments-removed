@@ -1393,6 +1393,17 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  DeleteContentNodeAndJoinTextNodesAroundIt(HTMLEditor& aHTMLEditor,
+                                            nsIContent& aContentToDelete,
+                                            const EditorDOMPoint& aCaretPoint);
+
+  
+
+
+
   template <typename EditorDOMPointType>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
   NormalizeVisibleWhiteSpacesAt(HTMLEditor& aHTMLEditor,

@@ -3080,63 +3080,16 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent(
     
   }
 
-  
-  
-  nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToDeleteNode(
-      *this, MOZ_KnownLive(&aAtomicContent));
-  if (NS_WARN_IF(Destroyed())) {
-    return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+  nsresult rv =
+      WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
+          *this, aAtomicContent, aCaretPoint);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt("
+        ") failed");
+    return EditActionHandled(rv);
   }
-  if (NS_FAILED(rv)) {
-    NS_WARNING("WhiteSpaceVisibilityKeeper::PrepareToDeleteNode() failed");
-    return EditActionResult(rv);
-  }
-  
-  nsCOMPtr<nsIContent> previousEditableSibling =
-      GetPriorHTMLSibling(&aAtomicContent);
-  
-  rv = DeleteNodeWithTransaction(aAtomicContent);
-  if (NS_WARN_IF(Destroyed())) {
-    return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-  }
-  if (NS_FAILED(rv)) {
-    NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-    return EditActionResult(rv);
-  }
-  
-  nsCOMPtr<nsINode> nextEditableSibling;
-  if (previousEditableSibling) {
-    nextEditableSibling = GetNextHTMLSibling(previousEditableSibling);
-  }
-  
-  
-  
-  if (aCaretPoint.GetContainer() == nextEditableSibling &&
-      aCaretPoint.GetContainerAsText() &&
-      previousEditableSibling->GetAsText()) {
-    EditorDOMPoint atFirstChildOfRightNode;
-    nsresult rv = JoinNearestEditableNodesWithTransaction(
-        *previousEditableSibling,
-        MOZ_KnownLive(*aCaretPoint.GetContainerAsContent()),
-        &atFirstChildOfRightNode);
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "HTMLEditor::JoinNearestEditableNodesWithTransaction() failed");
-      return EditActionHandled(rv);
-    }
-    if (!atFirstChildOfRightNode.IsSet()) {
-      NS_WARNING(
-          "HTMLEditor::JoinNearestEditableNodesWithTransaction() didn't return "
-          "right node position");
-      return EditActionHandled(NS_ERROR_FAILURE);
-    }
-    
-    rv = CollapseSelectionTo(atFirstChildOfRightNode);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::CollapseSelectionTo() failed");
-      return EditActionHandled(rv);
-    }
-  }
+
   rv = InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
       EditorBase::GetStartPoint(*SelectionRefPtr()));
   NS_WARNING_ASSERTION(
