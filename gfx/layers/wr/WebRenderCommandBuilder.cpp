@@ -758,11 +758,12 @@ struct DIGroup {
     
     
 
-    aBuilder.SetHitTestInfo(mScrollId, hitInfo, SideBits::eNone);
+    aBuilder.PushHitTest(dest, dest, !backfaceHidden, mScrollId, hitInfo,
+                         SideBits::eNone);
+
     aBuilder.PushImage(dest, dest, !backfaceHidden,
                        wr::ToImageRendering(sampleFilter),
                        wr::AsImageKey(*mKey));
-    aBuilder.ClearHitTestInfo();
   }
 
   void PaintItemRange(Grouper* aGrouper, nsDisplayItem* aStartItem,

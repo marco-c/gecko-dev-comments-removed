@@ -73,10 +73,6 @@ pub struct CommonItemProperties {
     
     pub spatial_id: SpatialId,
     
-    
-    
-    pub hit_info: Option<ItemTag>,
-    
     pub flags: PrimitiveFlags,
 }
 
@@ -90,7 +86,6 @@ impl CommonItemProperties {
             clip_rect,
             spatial_id: space_and_clip.spatial_id,
             clip_id: space_and_clip.clip_id,
-            hit_info: None,
             flags: PrimitiveFlags::default(),
         }
     }
@@ -342,6 +337,7 @@ pub struct ClearRectangleDisplayItem {
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct HitTestDisplayItem {
     pub common: CommonItemProperties,
+    pub tag: ItemTag,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
