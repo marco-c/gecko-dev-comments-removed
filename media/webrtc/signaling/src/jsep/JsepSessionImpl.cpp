@@ -489,6 +489,27 @@ JsepSession::Result JsepSessionImpl::CreateAnswer(
     NS_ENSURE_SUCCESS(rv, dom::PCError::OperationError);
   }
 
+  
+  
+  
+  groupAttr.reset(new SdpGroupAttributeList);
+  std::vector<SdpGroupAttributeList::Group> bundleGroups;
+  mSdpHelper.GetBundleGroups(*sdp, &bundleGroups);
+  for (auto& group : bundleGroups) {
+    for (auto& mid : group.tags) {
+      const SdpMediaSection* msection =
+          mSdpHelper.FindMsectionByMid(offer, mid);
+
+      if (msection && !msection->GetAttributeList().HasAttribute(
+                          SdpAttribute::kBundleOnlyAttribute)) {
+        std::swap(group.tags[0], mid);
+        groupAttr->mGroups.push_back(group);
+        break;
+      }
+    }
+  }
+  sdp->GetAttributeList().SetAttribute(groupAttr.release());
+
   if (mCurrentLocalDescription) {
     
     rv = CopyPreviousTransportParams(*GetAnswer(), *mCurrentRemoteDescription,
