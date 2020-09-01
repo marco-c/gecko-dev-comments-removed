@@ -646,8 +646,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
 
   
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin)) {
+  if (nsHTTPSOnlyUtils::IsSafeToAcceptCORSOrMixedContent(aLoadInfo)) {
     *aDecision = ACCEPT;
     return NS_OK;
   }
