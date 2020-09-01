@@ -75,6 +75,11 @@ bool ContentPlaybackController::IsMediaSessionActionSupported(
                  : false;
 }
 
+Maybe<uint64_t> ContentPlaybackController::GetActiveMediaSessionId() const {
+  RefPtr<WindowContext> wc = mBC->GetTopWindowContext();
+  return wc ? wc->GetActiveMediaSessionContextId() : Nothing();
+}
+
 void ContentPlaybackController::Focus() {
   
   
@@ -85,9 +90,17 @@ void ContentPlaybackController::Focus() {
 
 void ContentPlaybackController::Play() {
   const MediaSessionAction action = MediaSessionAction::Play;
+  RefPtr<MediaSession> session = GetMediaSession();
   if (IsMediaSessionActionSupported(action)) {
     NotifyMediaSession(action);
-  } else {
+  }
+  
+  
+  
+  
+  
+  
+  else if (!GetActiveMediaSessionId() || (session && session->IsActive())) {
     NotifyContentMediaControlKeyReceiver(MediaControlKey::Play);
   }
 }
