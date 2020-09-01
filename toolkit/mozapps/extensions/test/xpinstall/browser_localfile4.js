@@ -2,11 +2,6 @@
 
 
 function test() {
-  
-  SpecialPowers.pushPrefEnv({
-    set: [["extensions.postDownloadThirdPartyPrompt", false]],
-  });
-
   Harness.installBlockedCallback = allow_blocked;
   Harness.installsCompletedCallback = finish_test;
   Harness.setup();
