@@ -2322,7 +2322,7 @@ impl<'a> SceneBuilder<'a> {
                         
                         
                         
-                        let blur_filter = Filter::Blur(std_deviation);
+                        let blur_filter = Filter::Blur(std_deviation, std_deviation);
                         let composite_mode = if blur_filter.is_noop() {
                             None
                         } else {
