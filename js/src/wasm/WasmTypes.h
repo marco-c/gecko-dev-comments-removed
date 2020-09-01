@@ -373,6 +373,11 @@ static inline bool IsReferenceType(PackedTypeCode ptc) {
 
 
 
+enum class TableRepr { Ref, Func };
+
+
+
+
 class RefType {
  public:
   enum Kind {
@@ -430,6 +435,22 @@ class RefType {
 
   static RefType extern_() { return RefType(Extern); }
   static RefType func() { return RefType(Func); }
+
+  bool isExtern() const { return kind() == RefType::Extern; }
+  bool isFunc() const { return kind() == RefType::Func; }
+  bool isTypeIndex() const { return kind() == RefType::TypeIndex; }
+
+  TableRepr tableRepr() const {
+    switch (kind()) {
+      case RefType::Extern:
+        return TableRepr::Ref;
+      case RefType::Func:
+        return TableRepr::Func;
+      case RefType::TypeIndex:
+        MOZ_CRASH("NYI");
+    }
+    MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("switch is exhaustive");
+  }
 
   bool operator==(const RefType& that) const { return ptc_ == that.ptc_; }
   bool operator!=(const RefType& that) const { return ptc_ != that.ptc_; }
@@ -1968,7 +1989,7 @@ struct ElemSegment : AtomicRefCounted<ElemSegment> {
 
   Kind kind;
   uint32_t tableIndex;
-  ValType elementType;
+  RefType elemType;
   Maybe<InitExpr> offsetIfActive;
   Uint32Vector elemFuncIndices;  
 
@@ -1977,8 +1998,6 @@ struct ElemSegment : AtomicRefCounted<ElemSegment> {
   InitExpr offset() const { return *offsetIfActive; }
 
   size_t length() const { return elemFuncIndices.length(); }
-
-  ValType elemType() const { return elementType; }
 
   WASM_DECLARE_SERIALIZABLE(ElemSegment)
 };
@@ -2798,43 +2817,28 @@ struct Limits {
 
 
 
-enum class TableKind { AnyRef, FuncRef, AsmJS };
-
-static inline ValType ToElemValType(TableKind tk) {
-  switch (tk) {
-    case TableKind::AnyRef:
-      return RefType::extern_();
-    case TableKind::FuncRef:
-      return RefType::func();
-    case TableKind::AsmJS:
-      break;
-  }
-  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("switch is exhaustive");
-}
 
 struct TableDesc {
-  TableKind kind;
+  RefType elemType;
   bool importedOrExported;
+  bool isAsmJS;
   uint32_t globalDataOffset;
   uint32_t initialLength;
   Maybe<uint32_t> maximumLength;
 
   TableDesc() = default;
-  TableDesc(TableKind kind, uint32_t initialLength,
-            Maybe<uint32_t> maximumLength, bool importedOrExported = false)
-      : kind(kind),
+  TableDesc(RefType elemType, uint32_t initialLength,
+            Maybe<uint32_t> maximumLength, bool isAsmJS,
+            bool importedOrExported = false)
+      : elemType(elemType),
         importedOrExported(importedOrExported),
+        isAsmJS(isAsmJS),
         globalDataOffset(UINT32_MAX),
         initialLength(initialLength),
         maximumLength(maximumLength) {}
 };
 
 typedef Vector<TableDesc, 0, SystemAllocPolicy> TableDescVector;
-
-
-
-
-enum class TableRepr { Ref, Func };
 
 
 
