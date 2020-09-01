@@ -2004,6 +2004,10 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLMediaElement,
     }
     if (tmp->mMediaStreamRenderer) {
       tmp->mMediaStreamRenderer->Shutdown();
+      
+      
+      
+      tmp->mMediaStreamRenderer = nullptr;
     }
     if (tmp->mMediaStreamTrackListener) {
       tmp->mSrcStream->UnregisterTrackListener(
