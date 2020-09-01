@@ -3206,7 +3206,11 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
   
   
   
-  if (gfxPlatformFontList::PlatformFontList()->SkipFontFallbackForChar(aCh)) {
+  
+  
+  
+  if (gfxPlatformFontList::PlatformFontList()->SkipFontFallbackForChar(aCh) ||
+      GetGeneralCategory(aCh) == HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED) {
     return nullptr;
   }
 
