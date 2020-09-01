@@ -1457,17 +1457,16 @@ bool BaselineCacheIRCompiler::emitArrayPush(ObjOperandId objId,
   return true;
 }
 
-bool BaselineCacheIRCompiler::emitArrayJoinResult(ObjOperandId objId) {
+bool BaselineCacheIRCompiler::emitArrayJoinResult(ObjOperandId objId,
+                                                  StringOperandId sepId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
   AutoOutputRegister output(*this);
   Register obj = allocator.useRegister(masm, objId);
-  AutoScratchRegister scratch(allocator, masm);
+  Register sep = allocator.useRegister(masm, sepId);
+  AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
 
-  FailurePath* failure;
-  if (!addFailurePath(&failure)) {
-    return false;
-  }
+  allocator.discardStack(masm);
 
   
   masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
@@ -1485,19 +1484,40 @@ bool BaselineCacheIRCompiler::emitArrayJoinResult(ObjOperandId objId) {
     masm.bind(&arrayNotEmpty);
   }
 
+  Label vmCall;
+
   
-  masm.branch32(Assembler::NotEqual, lengthAddr, Imm32(1), failure->label());
+  masm.branch32(Assembler::NotEqual, lengthAddr, Imm32(1), &vmCall);
 
   
   Address initLength(scratch, ObjectElements::offsetOfInitializedLength());
-  masm.branch32(Assembler::NotEqual, initLength, Imm32(1), failure->label());
+  masm.branch32(Assembler::NotEqual, initLength, Imm32(1), &vmCall);
 
   
   Address elementAddr(scratch, 0);
-  masm.branchTestString(Assembler::NotEqual, elementAddr, failure->label());
+  masm.branchTestString(Assembler::NotEqual, elementAddr, &vmCall);
 
   
   masm.loadValue(elementAddr, output.valueReg());
+  masm.jump(&finished);
+
+  
+  {
+    masm.bind(&vmCall);
+
+    AutoStubFrame stubFrame(*this);
+    stubFrame.enter(masm, scratch);
+
+    masm.Push(sep);
+    masm.Push(obj);
+
+    using Fn = JSString* (*)(JSContext*, HandleObject, HandleString);
+    callVM<Fn, jit::ArrayJoin>(masm);
+
+    stubFrame.leave(masm);
+
+    masm.tagValue(JSVAL_TYPE_STRING, ReturnReg, output.valueReg());
+  }
 
   masm.bind(&finished);
 

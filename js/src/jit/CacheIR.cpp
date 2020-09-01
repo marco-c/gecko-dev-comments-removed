@@ -5127,35 +5127,14 @@ AttachDecision CallIRGenerator::tryAttachArrayJoin(HandleFunction callee) {
   }
 
   
-  if (!thisval_.isObject()) {
+  if (!thisval_.isObject() || !thisval_.toObject().is<ArrayObject>()) {
     return AttachDecision::NoAction;
   }
 
   
-  JSObject* thisobj = &thisval_.toObject();
-  if (!thisobj->is<ArrayObject>()) {
+  if (argc_ > 0 && !args_[0].isString()) {
     return AttachDecision::NoAction;
   }
-
-  auto* thisarray = &thisobj->as<ArrayObject>();
-
-  
-  if (thisarray->length() > 1) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  if (thisarray->getDenseInitializedLength() != thisarray->length()) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  if (thisarray->length() == 1 && !thisarray->getDenseElement(0).isString()) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  
 
   
 
@@ -5165,21 +5144,24 @@ AttachDecision CallIRGenerator::tryAttachArrayJoin(HandleFunction callee) {
   
   emitNativeCalleeGuard(callee);
 
-  if (argc_ == 1) {
-    
-    ValOperandId argValId =
-        writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-    writer.guardToString(argValId);
-  }
-
   
   ValOperandId thisValId =
       writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
   ObjOperandId thisObjId = writer.guardToObject(thisValId);
   writer.guardClass(thisObjId, GuardClassKind::Array);
 
+  StringOperandId sepId;
+  if (argc_ == 1) {
+    
+    ValOperandId argValId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+    sepId = writer.guardToString(argValId);
+  } else {
+    sepId = writer.loadConstantString(cx_->names().comma);
+  }
+
   
-  writer.arrayJoinResult(thisObjId);
+  writer.arrayJoinResult(thisObjId, sepId);
 
   writer.returnFromIC();
 
