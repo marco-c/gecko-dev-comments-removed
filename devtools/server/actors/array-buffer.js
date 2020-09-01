@@ -28,9 +28,11 @@ const ArrayBufferActor = protocol.ActorClassWithSpec(arrayBufferSpec, {
 
   form: function() {
     return {
-      typeName: this.typeName,
-      length: this.bufferLength,
       actor: this.actorID,
+      length: this.bufferLength,
+      
+      
+      typeName: this.typeName,
     };
   },
 
