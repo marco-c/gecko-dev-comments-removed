@@ -193,9 +193,8 @@ def setup(app):
     
     
     topsrcdir = manager.topsrcdir
-    ve = VirtualenvManager(topsrcdir,
-                           os.path.join(app.outdir, '_venv'),
-                           sys.stderr,
-                           os.path.join(topsrcdir, 'build', 'virtualenv_packages.txt'))
+    ve = VirtualenvManager(
+        topsrcdir, os.path.join(app.outdir, '_venv'), sys.stderr,
+        os.path.join(topsrcdir, 'build', 'build_virtualenv_packages.txt'))
     ve.ensure()
     ve.activate()
