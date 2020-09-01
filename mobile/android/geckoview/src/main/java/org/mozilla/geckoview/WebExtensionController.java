@@ -177,6 +177,52 @@ public class WebExtensionController {
     }
 
     
+     DelegateController delegateFor(final WebExtension extension) {
+        return new DelegateController(extension);
+    }
+
+    
+
+
+    @Deprecated
+    public interface TabDelegate {
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        @Nullable
+        default GeckoResult<GeckoSession> onNewTab(@Nullable WebExtension source, @Nullable String uri) {
+            return null;
+        }
+        
+
+
+
+
+
+
+
+
+
+        @UiThread
+        @NonNull
+        default GeckoResult<AllowOrDeny> onCloseTab(@Nullable WebExtension source, @NonNull GeckoSession session)  {
+            return GeckoResult.DENY;
+        }
+    }
+
+    
 
 
 

@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 
 
@@ -54,7 +55,8 @@ public class WebExtension {
     public final @WebExtensionFlags long flags;
 
     
-    public final @NonNull MetaData metaData;
+    
+    public final @Nullable MetaData metaData;
 
     
 
@@ -119,6 +121,70 @@ public class WebExtension {
         } else {
             metaData = null;
         }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @Deprecated
+    public WebExtension(final @NonNull String location, final @NonNull String id,
+                        final @WebExtensionFlags long flags,
+                        final @NonNull WebExtensionController controller) {
+        setDelegateController(controller.delegateFor(this));
+        this.location = location;
+        this.id = id;
+        this.flags = flags;
+
+        
+        this.isBuiltIn = false;
+        this.metaData = null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @Deprecated
+    public WebExtension(final @NonNull String location,
+                        final @NonNull WebExtensionController controller) {
+        this(location, "{" + UUID.randomUUID().toString() + "}", Flags.NONE, controller);
     }
 
     
@@ -398,6 +464,7 @@ public class WebExtension {
 
     public interface SessionTabDelegate {
         
+
 
 
 
