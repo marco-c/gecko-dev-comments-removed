@@ -23,16 +23,25 @@ namespace mozilla {
 
 class AudioThreadRegistry final {
  public:
-  AudioThreadRegistry() : mThreadIds("AudioThreadId") {}
+  AudioThreadRegistry()
+#ifdef MOZ_GECKO_PROFILER
+      : mThreadIds("AudioThreadId")
+#endif  
+  {
+  }
+
+#ifdef MOZ_GECKO_PROFILER
   ~AudioThreadRegistry() {
     
     
     
   }
+#endif  
 
   
   
   void Register(int aThreadId) {
+#ifdef MOZ_GECKO_PROFILER
     auto threadIds = mThreadIds.Lock();
     for (uint32_t i = 0; i < threadIds->Length(); i++) {
       if ((*threadIds)[i].mId == aThreadId) {
@@ -45,10 +54,12 @@ class AudioThreadRegistry final {
     tuc.mUserCount = 1;
     threadIds->AppendElement(tuc);
     PROFILER_REGISTER_THREAD("NativeAudioCallback");
+#endif  
   }
 
   
   void Unregister(int aThreadId) {
+#ifdef MOZ_GECKO_PROFILER
     auto threadIds = mThreadIds.Lock();
     for (uint32_t i = 0; i < threadIds->Length(); i++) {
       if ((*threadIds)[i].mId == aThreadId) {
@@ -63,6 +74,7 @@ class AudioThreadRegistry final {
       }
     }
     MOZ_ASSERT(false);
+#endif  
   }
 
  private:
@@ -71,11 +83,13 @@ class AudioThreadRegistry final {
   AudioThreadRegistry(AudioThreadRegistry&&) = delete;
   AudioThreadRegistry& operator=(AudioThreadRegistry&&) = delete;
 
+#ifdef MOZ_GECKO_PROFILER
   struct ThreadUserCount {
     int mId;  
     int mUserCount;
   };
   DataMutex<nsTArray<ThreadUserCount>> mThreadIds;
+#endif  
 };
 
 }  

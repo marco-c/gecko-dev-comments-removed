@@ -25,6 +25,8 @@
 
 #ifndef MOZ_GECKO_PROFILER
 
+#  include "mozilla/UniquePtr.h"
+
 
 
 
@@ -60,19 +62,22 @@
 
 #  define AUTO_PROFILER_STATS(name)
 
-using UniqueProfilerBacktrace =
-    UniquePtr<ProfilerBacktrace, ProfilerBacktraceDestructor>;
+namespace mozilla {
+class ProfileChunkedBuffer;
+
+namespace baseprofiler {
+struct ProfilerBacktrace {};
+using UniqueProfilerBacktrace = UniquePtr<ProfilerBacktrace>;
 static inline UniqueProfilerBacktrace profiler_get_backtrace() {
   return nullptr;
 }
 
-namespace mozilla {
-class ProfileChunkedBuffer;
-}  
 static inline bool profiler_capture_backtrace(
     ProfileChunkedBuffer& aChunkedBuffer) {
   return false;
 }
+}  
+}  
 
 #else  
 
