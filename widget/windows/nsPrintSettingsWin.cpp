@@ -7,7 +7,10 @@
 #include "mozilla/ArrayUtils.h"
 #include "nsCRT.h"
 #include "nsDeviceContextSpecWin.h"
+#include "nsPrintSettingsImpl.h"
 #include "WinUtils.h"
+
+using namespace mozilla;
 
 
 
@@ -160,37 +163,76 @@ nsPrintSettingsWin::nsPrintSettingsWin(const nsPrintSettingsWin& aPS)
   *this = aPS;
 }
 
+void nsPrintSettingsWin::InitWithInitializer(
+    const PrintSettingsInitializer& aSettings) {
+  nsPrintSettings::InitWithInitializer(aSettings);
+
+  if (aSettings.mDevmodeWStorage.Length() < sizeof(DEVMODEW)) {
+    MOZ_DIAGNOSTIC_ASSERT(false, "Why did nsPrinterWin::DefaultSettings fail?");
+    return;
+  }
+
+  const DEVMODEW* devmode =
+      reinterpret_cast<const DEVMODEW*>(aSettings.mDevmodeWStorage.Elements());
+
+  if (devmode->dmFields & DM_ORIENTATION) {
+    SetOrientation(devmode->dmOrientation == DMORIENT_PORTRAIT
+                       ? kPortraitOrientation
+                       : kLandscapeOrientation);
+  }
+
+  if (devmode->dmFields & DM_COPIES) {
+    SetNumCopies(devmode->dmCopies);
+  }
+
+  if (devmode->dmFields & DM_SCALE) {
+    double scale = double(devmode->dmScale) / 100.0f;
+    if (mScaling == 1.0 || scale != 1.0) {
+      SetScaling(scale);
+    }
+  }
+
+  if (devmode->dmFields & DM_PAPERSIZE) {
+    SetPaperData(devmode->dmPaperSize);
+    if (devmode->dmPaperSize > 0 &&
+        devmode->dmPaperSize < int32_t(mozilla::ArrayLength(kPaperSizeUnits))) {
+      SetPaperSizeUnit(kPaperSizeUnits[mPaperData]);
+    }
+  } else {
+    SetPaperData(-1);
+  }
+
+  
+  double pointsToSizeUnit =
+      mPaperSizeUnit == kPaperSizeInches ? 1.0 / 72.0 : 25.4 / 72.0;
+  SetPaperWidth(aSettings.mPaperInfo.mSize.width * pointsToSizeUnit);
+  SetPaperHeight(aSettings.mPaperInfo.mSize.height * pointsToSizeUnit);
+
+  double printableWidthInPoints = aSettings.mPaperInfo.mSize.width;
+  double printableHeightInPoints = aSettings.mPaperInfo.mSize.height;
+  if (aSettings.mPaperInfo.mUnwriteableMargin.isSome()) {
+    const auto& margin = aSettings.mPaperInfo.mUnwriteableMargin.value();
+    printableWidthInPoints -= (margin.top + margin.bottom);
+    printableHeightInPoints -= (margin.left + margin.right);
+  }
+
+  
+  
+  if (mOrientation == kPortraitOrientation) {
+    mPrintableWidthInInches = printableWidthInPoints / POINTS_PER_INCH_FLOAT;
+    mPrintableHeightInInches = printableHeightInPoints / POINTS_PER_INCH_FLOAT;
+  } else {
+    mPrintableHeightInInches = printableWidthInPoints / POINTS_PER_INCH_FLOAT;
+    mPrintableWidthInInches = printableHeightInPoints / POINTS_PER_INCH_FLOAT;
+  }
+
+  SetDevMode(const_cast<DEVMODEW*>(devmode));  
+}
+
 already_AddRefed<nsIPrintSettings> CreatePlatformPrintSettings(
     const PrintSettingsInitializer& aSettings) {
   auto settings = MakeRefPtr<nsPrintSettingsWin>();
   settings->InitWithInitializer(aSettings);
-
-  
-  int16_t outputFormat;
-  settings->GetOutputFormat(&outputFormat);
-  if (outputFormat == nsIPrintSettings::kOutputFormatPDF) {
-    return settings.forget();
-  }
-
-  RefPtr<nsDeviceContextSpecWin> devSpecWin = new nsDeviceContextSpecWin();
-
-  nsString name;
-  settings->GetPrinterName(name);
-  devSpecWin->GetDataFromPrinter(name);
-
-  LPDEVMODEW devmode;
-  devSpecWin->GetDevMode(devmode);
-  if (NS_WARN_IF(!devmode)) {
-    return settings.forget();
-  }
-
-  
-  
-  
-  
-  
-  
-
   return settings.forget();
 }
 

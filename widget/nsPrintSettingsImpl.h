@@ -29,6 +29,10 @@ struct PrintSettingsInitializer {
   nsString mPrinter;
   PaperInfo mPaperInfo;
   bool mPrintInColor = false;
+  int mResolution = 0;
+#ifdef XP_WIN
+  nsTArray<uint8_t> mDevmodeWStorage;
+#endif
 };
 
 }  
@@ -47,7 +51,7 @@ class nsPrintSettings : public nsIPrintSettings {
 
 
 
-  void InitWithInitializer(const PrintSettingsInitializer& aSettings);
+  virtual void InitWithInitializer(const PrintSettingsInitializer& aSettings);
 
   nsPrintSettings& operator=(const nsPrintSettings& rhs);
 
