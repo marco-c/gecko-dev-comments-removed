@@ -200,7 +200,7 @@ function forEachWebxrObject(callback) {
 
 
 async function loadChromiumResources() {
-  let chromiumResources = [
+  const chromiumResources = [
     '/gen/mojo/public/mojom/base/time.mojom.js',
     '/gen/mojo/public/mojom/base/shared_memory.mojom.js',
     '/gen/mojo/public/mojom/base/unguessable_token.mojom.js',
@@ -217,22 +217,26 @@ async function loadChromiumResources() {
     '/gen/ui/display/mojom/display.mojom.js',
     '/gen/device/gamepad/public/mojom/gamepad.mojom.js',
     '/gen/device/vr/public/mojom/vr_service.mojom.js',
+  ];
+
+  let extraResources = [
     '/resources/chromium/webxr-test-math-helper.js',
     '/resources/chromium/webxr-test.js',
-    
     '/resources/testdriver.js',
     '/resources/testdriver-vendor.js',
   ];
-
   
   
   
   
   if (typeof(additionalChromiumResources) !== 'undefined') {
-    chromiumResources = chromiumResources.concat(additionalChromiumResources);
+    extraResources = extraResources.concat(additionalChromiumResources);
   }
 
   await loadMojoResources(chromiumResources);
+  for (const path of extraResources) {
+    await loadScript(path);
+  }
 
   xr_debug = navigator.xr.test.Debug;
 }

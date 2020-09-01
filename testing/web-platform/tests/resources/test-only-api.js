@@ -51,7 +51,6 @@ function loadScript(path) {
 
 
 
-
 async function loadMojoResources(resources) {
   if (!isChromiumBased) {
     throw new Error('MojoJS not enabled; start Chrome with --enable-blink-features=MojoJS,MojoJSTest');
@@ -66,18 +65,20 @@ async function loadMojoResources(resources) {
     genPrefix = 'file://';
   }
 
-  
-  if (resources.some(p => p.endsWith('/mojo_bindings.js'))) {
-    throw new Error('Do not load mojo_bindings.js explicitly.');
+  for (const path of resources) {
+    
+    if (path.endsWith('/mojo_bindings.js')) {
+      throw new Error('Do not load mojo_bindings.js explicitly.');
+    }
+    if (! /^\/gen\/.*\.mojom\.js$/.test(path)) {
+      throw new Error(`Unrecognized resource path: ${path}`);
+    }
   }
+
   await loadScript(genPrefix + '/gen/layout_test_data/mojo/public/js/mojo_bindings.js');
   mojo.config.autoLoadMojomDeps = false;
 
   for (const path of resources) {
-    if (path.startsWith('/gen/')) {
-      await loadScript(genPrefix + path);
-    } else {
-      await loadScript(path);
-    }
+    await loadScript(genPrefix + path);
   }
 }
