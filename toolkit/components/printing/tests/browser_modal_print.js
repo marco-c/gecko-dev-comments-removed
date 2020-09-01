@@ -1,12 +1,10 @@
+
+
+
+
 function assertExpectedPrintPage(helper) {
-  let printBrowser = helper.win.PrintEventHandler.sourceBrowser;
   is(
-    printBrowser,
-    gBrowser.selectedBrowser,
-    "The current browser is being printed"
-  );
-  is(
-    printBrowser.currentURI.spec,
+    helper.sourceURI,
     PrintHelper.defaultTestPageUrl,
     "The URL of the browser is the one we expect"
   );

@@ -8913,7 +8913,8 @@ class TabDialogBox {
 
 
 
-  open(aURL, aFeatures = null, aParams = null) {
+
+  open(aURL, aFeatures = null, aParams = null, aOpenOptions = {}) {
     return new Promise(resolve => {
       if (!this._dialogManager.hasDialogs) {
         this._onFirstDialogOpen();
@@ -8931,7 +8932,8 @@ class TabDialogBox {
           }
         },
         
-        resolve
+        resolve,
+        aOpenOptions
       );
     });
   }

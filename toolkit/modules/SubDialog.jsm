@@ -108,8 +108,13 @@ SubDialog.prototype = {
     aFeatures = null,
     aParams = null,
     aClosingCallback = null,
-    aClosedCallback = null
+    aClosedCallback = null,
+    aOptions = {}
   ) {
+    if (aOptions.sizeTo == "available") {
+      this._box.setAttribute("sizeto", "available");
+    }
+
     
     this._dialogReady = new Promise(resolve => {
       this._resolveDialogReady = resolve;
@@ -418,7 +423,10 @@ SubDialog.prototype = {
     let frameWidth = docEl.getAttribute("width")
       ? docEl.getAttribute("width") + "px"
       : frameMinWidth;
-    this._frame.style.width = frameWidth;
+
+    if (this._box.getAttribute("sizeto") != "available") {
+      this._frame.style.width = frameWidth;
+    }
 
     let boxMinWidth = `calc(${boxHorizontalBorder +
       frameHorizontalMargin}px + ${frameMinWidth})`;
@@ -479,6 +487,13 @@ SubDialog.prototype = {
     let frameRect = this._frame.getBoundingClientRect();
     let frameSizeDifference =
       frameRect.top - boxRect.top + (boxRect.bottom - frameRect.bottom);
+
+    if (this._box.getAttribute("sizeto") == "available") {
+      
+      
+      this._box.style.setProperty("--box-top-px", `${boxRect.top}px`);
+      return;
+    }
 
     
     
@@ -818,7 +833,8 @@ class SubDialogManager {
     aFeatures = null,
     aParams = null,
     aClosingCallback = null,
-    aClosedCallback = null
+    aClosedCallback = null,
+    aOpenOptions
   ) {
     
     if (!this._allowDuplicateDialogs && this._topDialog?._openedURL == aURL) {
@@ -855,7 +871,8 @@ class SubDialogManager {
       aFeatures,
       aParams,
       aClosingCallback,
-      aClosedCallback
+      aClosedCallback,
+      aOpenOptions
     );
     this._dialogs.push(this._preloadDialog);
 
