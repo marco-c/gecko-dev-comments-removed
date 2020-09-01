@@ -192,9 +192,6 @@ class nsWindow final : public nsBaseWidget {
   
   NativePtr<mozilla::a11y::SessionAccessibility> mSessionAccessibility;
 
-  class MediaSessionSupport;
-  NativePtr<MediaSessionSupport> mMediaSessionSupport;
-
   class GeckoViewSupport;
   
   
