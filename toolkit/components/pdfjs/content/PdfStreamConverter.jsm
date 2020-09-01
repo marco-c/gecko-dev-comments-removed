@@ -306,6 +306,21 @@ class ChromeActions {
       filename = "document.pdf";
     }
     var blobUri = NetUtil.newURI(blobUrl);
+
+    
+    
+    if (data.sourceEventType == "save") {
+      let actor = getActor(this.domWindow);
+      actor.sendAsyncMessage("PDFJS:Parent:saveURL", {
+        blobUrl,
+        filename,
+      });
+      return;
+    }
+
+    
+    
+    
     var extHelperAppSvc = Cc[
       "@mozilla.org/uriloader/external-helper-app-service;1"
     ].getService(Ci.nsIExternalHelperAppService);

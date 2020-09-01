@@ -91,30 +91,8 @@ function saveBrowser(aBrowser, aSkipPrompt, aBrowsingContext = null) {
   let persistable = aBrowser.frameLoader;
   
   
-  if (
-    aBrowser.contentPrincipal.spec == "resource://pdf.js/web/viewer.html" &&
-    aBrowser.currentURI.schemeIs("file")
-  ) {
-    let correctPrincipal = Services.scriptSecurityManager.createContentPrincipal(
-      aBrowser.currentURI,
-      aBrowser.contentPrincipal.originAttributes
-    );
-    internalSave(
-      aBrowser.currentURI.spec,
-      null ,
-      null ,
-      null ,
-      "application/pdf",
-      false ,
-      null ,
-      null ,
-      null ,
-      null ,
-      aSkipPrompt ,
-      null ,
-      PrivateBrowsingUtils.isWindowPrivate(aBrowser.ownerGlobal),
-      correctPrincipal
-    );
+  if (aBrowser.contentPrincipal.spec == "resource://pdf.js/web/viewer.html") {
+    aBrowser.sendMessageToActor("PDFJS:Save", {}, "Pdfjs");
     return;
   }
   let stack = Components.stack.caller;

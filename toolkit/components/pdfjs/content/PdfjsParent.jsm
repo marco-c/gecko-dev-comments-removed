@@ -21,10 +21,18 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 ChromeUtils.defineModuleGetter(
   this,
   "SetClipboardSearchString",
   "resource://gre/modules/Finder.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
 
 var Svc = {};
@@ -74,6 +82,8 @@ class PdfjsParent extends JSWindowActorParent {
         return this._updateMatchesCount(aMsg);
       case "PDFJS:Parent:addEventListener":
         return this._addEventListener();
+      case "PDFJS:Parent:saveURL":
+        return this._saveURL(aMsg);
     }
     return undefined;
   }
@@ -84,6 +94,23 @@ class PdfjsParent extends JSWindowActorParent {
 
   get browser() {
     return this.browsingContext.top.embedderElement;
+  }
+
+  _saveURL(aMsg) {
+    const data = aMsg.data;
+    this.browser.ownerGlobal.saveURL(
+      data.blobUrl ,
+      data.filename ,
+      null ,
+      true ,
+      false ,
+      null ,
+      null ,
+      PrivateBrowsingUtils.isBrowserPrivate(
+        this.browser
+      ) ,
+      Services.scriptSecurityManager.getSystemPrincipal() 
+    );
   }
 
   _updateControlState(aMsg) {
