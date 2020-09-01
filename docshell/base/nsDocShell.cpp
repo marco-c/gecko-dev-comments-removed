@@ -9724,12 +9724,15 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                          Maybe<mozilla::dom::ServiceWorkerDescriptor>(),
                          sandboxFlags);
 
+  if (mLoadType != LOAD_ERROR_PAGE &&
+      mBrowsingContext->HasValidTransientUserGestureActivation()) {
+    aLoadState->SetHasValidUserGestureActivation(true);
+  }
+
   
   
   
-  if ((mLoadType != LOAD_ERROR_PAGE &&
-       mBrowsingContext->HasValidTransientUserGestureActivation()) ||
-      aLoadState->HasValidUserGestureActivation() ||
+  if (aLoadState->HasValidUserGestureActivation() ||
       aLoadState->HasLoadFlags(LOAD_FLAGS_FROM_EXTERNAL)) {
     loadInfo->SetHasValidUserGestureActivation(true);
   }
