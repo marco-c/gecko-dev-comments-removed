@@ -173,6 +173,7 @@ var PrintEventHandler = {
     });
     printPreviewBrowser.classList.add("printPreviewBrowser");
     printPreviewBrowser.setAttribute("flex", "1");
+    printPreviewBrowser.setAttribute("printpreview", "true");
 
     
     let ourBrowser = window.docShell.chromeEventHandler;

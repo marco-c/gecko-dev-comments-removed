@@ -374,6 +374,14 @@ nsINode* FocusManager::FocusedDOMNode() const {
     
     
     
+    if (EventStateManager::IsTopLevelRemoteTarget(focusedElm) &&
+        focusedElm->AsElement()->HasAttribute(u"printpreview"_ns)) {
+      return focusedElm;
+    }
+    
+    
+    
+    
     if (EventStateManager::IsRemoteTarget(focusedElm)) {
       return nullptr;
     }
