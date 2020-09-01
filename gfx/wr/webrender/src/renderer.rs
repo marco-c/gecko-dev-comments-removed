@@ -3623,6 +3623,12 @@ impl Renderer {
             compositor.begin_frame();
         }
 
+        if let Some(device_size) = device_size {
+            
+            
+            self.update_debug_overlay(device_size);
+        }
+
         profile_timers.cpu_time.profile(|| {
             
             let mut active_documents = mem::replace(&mut self.active_documents, Vec::default());
@@ -3699,10 +3705,6 @@ impl Renderer {
         });
 
         if let Some(device_size) = device_size {
-            
-            
-            self.update_debug_overlay(device_size);
-
             
             self.bind_debug_overlay();
 
@@ -5130,9 +5132,11 @@ impl Renderer {
         let mut partial_present_mode = None;
 
         if max_partial_present_rects > 0 {
-            
-            
-            if composite_state.dirty_rects_are_valid && !self.force_redraw {
+            let can_use_partial_present = composite_state.dirty_rects_are_valid &&
+                                          !self.force_redraw &&
+                                          !self.debug_overlay_state.is_enabled;
+
+            if can_use_partial_present {
                 let mut combined_dirty_rect = DeviceRect::zero();
 
                 
