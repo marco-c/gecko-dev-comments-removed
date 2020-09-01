@@ -4080,8 +4080,7 @@ static nscoord GetLargestLineMainSize(nsTArray<FlexLine>& aLines) {
 
 nscoord nsFlexContainerFrame::ComputeMainSize(
     const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker,
-    nscoord aTentativeMainSize, nscoord aAvailableBSizeForContent,
-    nsTArray<FlexLine>& aLines, nsReflowStatus& aStatus) const {
+    nscoord aTentativeMainSize, nsTArray<FlexLine>& aLines) const {
   if (aAxisTracker.IsRowOriented()) {
     
     
@@ -4090,29 +4089,10 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
 
   if (aTentativeMainSize != NS_UNCONSTRAINEDSIZE) {
     
-    if (aAvailableBSizeForContent == NS_UNCONSTRAINEDSIZE ||
-        aTentativeMainSize < aAvailableBSizeForContent) {
-      
-      
-      
-      
-      return aTentativeMainSize;
-    }
-
     
     
     
-    
-    
-    
-    
-    aStatus.SetIncomplete();
-    nscoord largestLineOuterSize = GetLargestLineMainSize(aLines);
-
-    if (largestLineOuterSize <= aAvailableBSizeForContent) {
-      return aAvailableBSizeForContent;
-    }
-    return std::min(aTentativeMainSize, largestLineOuterSize);
+    return aTentativeMainSize;
   }
 
   
@@ -4124,7 +4104,6 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
   
   
   
-  
   nscoord largestLineOuterSize = GetLargestLineMainSize(aLines);
   return NS_CSS_MINMAX(largestLineOuterSize, aReflowInput.ComputedMinBSize(),
                        aReflowInput.ComputedMaxBSize());
@@ -4132,8 +4111,7 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
 
 nscoord nsFlexContainerFrame::ComputeCrossSize(
     const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker,
-    nscoord aSumLineCrossSizes, nscoord aAvailableBSizeForContent,
-    bool* aIsDefinite, nsReflowStatus& aStatus) const {
+    nscoord aSumLineCrossSizes, bool* aIsDefinite) const {
   MOZ_ASSERT(aIsDefinite, "outparam pointer must be non-null");
 
   if (aAxisTracker.IsColumnOriented()) {
@@ -4151,27 +4129,11 @@ nscoord nsFlexContainerFrame::ComputeCrossSize(
   if (effectiveComputedBSize != NS_UNCONSTRAINEDSIZE) {
     
     *aIsDefinite = true;
-    if (aAvailableBSizeForContent == NS_UNCONSTRAINEDSIZE ||
-        effectiveComputedBSize < aAvailableBSizeForContent) {
-      
-      
-      
-      
-      return effectiveComputedBSize;
-    }
 
     
     
     
-    
-    
-    
-    
-    aStatus.SetIncomplete();
-    if (aSumLineCrossSizes <= aAvailableBSizeForContent) {
-      return aAvailableBSizeForContent;
-    }
-    return std::min(effectiveComputedBSize, aSumLineCrossSizes);
+    return effectiveComputedBSize;
   }
 
   
@@ -4181,7 +4143,6 @@ nscoord nsFlexContainerFrame::ComputeCrossSize(
     return aReflowInput.ComputedMinBSize();
   }
 
-  
   
   
   
@@ -4422,23 +4383,17 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    
-    
-    const nscoord availableBSizeForContent = NS_UNCONSTRAINEDSIZE;
-
-    DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize, contentBoxCrossSize,
-                 flexContainerAscent, availableBSizeForContent, lines, struts,
-                 placeholders, axisTracker, mainGapSize, crossGapSize,
-                 hasLineClampEllipsis, containerInfo);
+    DoFlexLayout(aReflowInput, contentBoxMainSize, contentBoxCrossSize,
+                 flexContainerAscent, lines, struts, placeholders, axisTracker,
+                 mainGapSize, crossGapSize, hasLineClampEllipsis,
+                 containerInfo);
 
     if (!struts.IsEmpty()) {
       
-      aStatus.Reset();
       lines.Clear();
       placeholders.Clear();
-      DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize,
-                   contentBoxCrossSize, flexContainerAscent,
-                   availableBSizeForContent, lines, struts, placeholders,
+      DoFlexLayout(aReflowInput, contentBoxMainSize, contentBoxCrossSize,
+                   flexContainerAscent, lines, struts, placeholders,
                    axisTracker, mainGapSize, crossGapSize, hasLineClampEllipsis,
                    containerInfo);
     }
@@ -4457,24 +4412,6 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   const nscoord consumedBSize = ConsumedBSize(wm);
   const nscoord effectiveContentBSize =
       contentBoxSize.BSize(wm) - consumedBSize;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(
-      aStatus.IsEmpty(),
-      "DoFlexLayout shouldn't modify aStatus if it is given unconstrained "
-      "page size!");
 
   
   
@@ -4878,14 +4815,12 @@ bool nsFlexContainerFrame::IsUsedFlexBasisContent(
 }
 
 void nsFlexContainerFrame::DoFlexLayout(
-    const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
-    nscoord& aContentBoxMainSize, nscoord& aContentBoxCrossSize,
-    nscoord& aFlexContainerAscent, nscoord aAvailableBSizeForContent,
+    const ReflowInput& aReflowInput, nscoord& aContentBoxMainSize,
+    nscoord& aContentBoxCrossSize, nscoord& aFlexContainerAscent,
     nsTArray<FlexLine>& aLines, nsTArray<StrutInfo>& aStruts,
     nsTArray<nsIFrame*>& aPlaceholders, const FlexboxAxisTracker& aAxisTracker,
     nscoord aMainGapSize, nscoord aCrossGapSize, bool aHasLineClampEllipsis,
     ComputedFlexContainerInfo* const aContainerInfo) {
-  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   MOZ_ASSERT(aLines.IsEmpty(), "Caller should pass an empty array for lines!");
   MOZ_ASSERT(aPlaceholders.IsEmpty(),
              "Caller should pass an empty array for placeholders!");
@@ -4924,8 +4859,7 @@ void nsFlexContainerFrame::DoFlexLayout(
   }
 
   aContentBoxMainSize =
-      ComputeMainSize(aReflowInput, aAxisTracker, aContentBoxMainSize,
-                      aAvailableBSizeForContent, aLines, aStatus);
+      ComputeMainSize(aReflowInput, aAxisTracker, aContentBoxMainSize, aLines);
 
   uint32_t lineIndex = 0;
   for (FlexLine& line : aLines) {
@@ -4989,8 +4923,7 @@ void nsFlexContainerFrame::DoFlexLayout(
 
   bool isCrossSizeDefinite;
   aContentBoxCrossSize = ComputeCrossSize(
-      aReflowInput, aAxisTracker, sumLineCrossSizes, aAvailableBSizeForContent,
-      &isCrossSizeDefinite, aStatus);
+      aReflowInput, aAxisTracker, sumLineCrossSizes, &isCrossSizeDefinite);
 
   
   

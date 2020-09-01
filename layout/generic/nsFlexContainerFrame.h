@@ -314,20 +314,10 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-
-
-
-
-
-
-
-
-
-  void DoFlexLayout(const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
+  void DoFlexLayout(const ReflowInput& aReflowInput,
                     nscoord& aContentBoxMainSize, nscoord& aContentBoxCrossSize,
-                    nscoord& aFlexContainerAscent,
-                    nscoord aAvailableBSizeForContent,
-                    nsTArray<FlexLine>& aLines, nsTArray<StrutInfo>& aStruts,
+                    nscoord& aFlexContainerAscent, nsTArray<FlexLine>& aLines,
+                    nsTArray<StrutInfo>& aStruts,
                     nsTArray<nsIFrame*>& aPlaceholders,
                     const FlexboxAxisTracker& aAxisTracker,
                     nscoord aMainGapSize, nscoord aCrossGapSize,
@@ -477,18 +467,17 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+
+
+
   nscoord ComputeMainSize(const ReflowInput& aReflowInput,
                           const FlexboxAxisTracker& aAxisTracker,
                           nscoord aTentativeMainSize,
-                          nscoord aAvailableBSizeForContent,
-                          nsTArray<FlexLine>& aLines,
-                          nsReflowStatus& aStatus) const;
+                          nsTArray<FlexLine>& aLines) const;
 
   nscoord ComputeCrossSize(const ReflowInput& aReflowInput,
                            const FlexboxAxisTracker& aAxisTracker,
-                           nscoord aSumLineCrossSizes,
-                           nscoord aAvailableBSizeForContent, bool* aIsDefinite,
-                           nsReflowStatus& aStatus) const;
+                           nscoord aSumLineCrossSizes, bool* aIsDefinite) const;
 
   
 
