@@ -382,7 +382,7 @@ static double GetContextScale(const gfxMatrix& aMatrix) {
 
 
 struct TextRenderedRun {
-  typedef gfxTextRun::Range Range;
+  using Range = gfxTextRun::Range;
 
   
 
@@ -1934,7 +1934,7 @@ TextRenderedRun TextRenderedRunIterator::First() {
 
 
 class CharIterator {
-  typedef gfxTextRun::Range Range;
+  using Range = gfxTextRun::Range;
 
  public:
   
@@ -2391,7 +2391,7 @@ bool CharIterator::MatchesFilter() const {
 
 
 class SVGTextDrawPathCallbacks final : public nsTextFrame::DrawPathCallbacks {
-  typedef mozilla::image::imgDrawingParams imgDrawingParams;
+  using imgDrawingParams = image::imgDrawingParams;
 
  public:
   

@@ -187,7 +187,7 @@ class SVGPathData {
   
 
  protected:
-  typedef float* iterator;
+  using iterator = float*;
 
   
 

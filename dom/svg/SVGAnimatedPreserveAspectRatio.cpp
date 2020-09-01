@@ -199,8 +199,8 @@ UniquePtr<SMILAttr> SVGAnimatedPreserveAspectRatio::ToSMILAttr(
 }
 
 
-typedef SVGAnimatedPreserveAspectRatio::SMILPreserveAspectRatio
-    SMILPreserveAspectRatio;
+using SMILPreserveAspectRatio =
+    SVGAnimatedPreserveAspectRatio::SMILPreserveAspectRatio;
 
 nsresult SMILPreserveAspectRatio::ValueFromString(
     const nsAString& aStr, const SVGAnimationElement* ,

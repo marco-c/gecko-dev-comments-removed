@@ -145,7 +145,7 @@ struct MotionSegment {
   } mU;
 };
 
-typedef FallibleTArray<MotionSegment> MotionSegmentArray;
+using MotionSegmentArray = FallibleTArray<MotionSegment>;
 
 
 static MotionSegmentArray& ExtractMotionSegmentArray(SMILValue& aValue) {
