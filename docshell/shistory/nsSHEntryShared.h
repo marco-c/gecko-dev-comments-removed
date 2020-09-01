@@ -47,13 +47,56 @@ class Document;
 
 
 
-class SHEntrySharedParentState {
+struct SHEntrySharedState {
+  SHEntrySharedState() = default;
+  SHEntrySharedState(const SHEntrySharedState& aState) = default;
+  SHEntrySharedState(uint64_t aId, nsIPrincipal* aTriggeringPrincipal,
+                     nsIPrincipal* aPrincipalToInherit,
+                     nsIPrincipal* aPartitionedPrincipalToInherit,
+                     nsIContentSecurityPolicy* aCsp,
+                     const nsACString& aContentType)
+      : mId(aId),
+        mTriggeringPrincipal(aTriggeringPrincipal),
+        mPrincipalToInherit(aPrincipalToInherit),
+        mPartitionedPrincipalToInherit(aPartitionedPrincipalToInherit),
+        mCsp(aCsp),
+        mContentType(aContentType) {}
+
+  
+  
+  uint64_t mId = 0;
+
+  
+  
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+  nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
+  nsCOMPtr<nsIPrincipal> mPartitionedPrincipalToInherit;
+  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  nsCString mContentType;
+  
+  
+  nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
+  uint32_t mCacheKey = 0;
+};
+
+
+
+
+
+class SHEntrySharedParentState : public SHEntrySharedState {
  public:
-  uint64_t GetID() const { return mID; }
+  friend class SessionHistoryInfo;
+
+  uint64_t GetID() const { return mId; }
 
   void NotifyListenersContentViewerEvicted();
 
-  SHEntrySharedParentState();
+  SHEntrySharedParentState() = default;
+  SHEntrySharedParentState(nsIPrincipal* aTriggeringPrincipal,
+                           nsIPrincipal* aPrincipalToInherit,
+                           nsIPrincipal* aPartitionedPrincipalToInherit,
+                           nsIContentSecurityPolicy* aCsp,
+                           const nsACString& aContentType);
 
  protected:
   virtual ~SHEntrySharedParentState();
@@ -66,34 +109,24 @@ class SHEntrySharedParentState {
 
   
   
-  nsID mDocShellID;
-  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
-  nsCOMPtr<nsIPrincipal> mPartitionedPrincipalToInherit;
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
-  
-  
-  nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
-  nsCString mContentType;
+  nsID mDocShellID{};
 
-  nsIntRect mViewerBounds;
+  nsIntRect mViewerBounds{0, 0, 0, 0};
 
-  uint32_t mCacheKey;
-  uint32_t mLastTouched;
+  uint32_t mLastTouched = 0;
 
   
   
-  uint64_t mID;
   nsWeakPtr mSHistory;
 
-  bool mIsFrameNavigation;
-  bool mSticky;
-  bool mDynamicallyCreated;
+  bool mIsFrameNavigation = false;
+  bool mSticky = true;
+  bool mDynamicallyCreated = false;
 
   
-  bool mExpired;
+  bool mExpired = false;
 
-  bool mSaveLayoutState;
+  bool mSaveLayoutState = true;
 };
 
 
