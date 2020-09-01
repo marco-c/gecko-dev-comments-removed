@@ -502,8 +502,8 @@ void Family::SetupFamilyCharMap(FontList* aList) {
     }
     auto faceMap = static_cast<SharedBitSet*>(f->mCharacterMap.ToPtr(aList));
     if (!faceMap) {
-      return;  
-               
+      continue;  
+                 
     }
     if (!firstMap) {
       firstMap = faceMap;
@@ -516,10 +516,14 @@ void Family::SetupFamilyCharMap(FontList* aList) {
       familyMap.Union(*faceMap);
     }
   }
-  if (merged) {
+  
+  
+  
+  if (merged || firstMapShmPointer.IsNull()) {
     mCharacterMap =
         gfxPlatformFontList::PlatformFontList()->GetShmemCharMap(&familyMap);
   } else {
+    
     mCharacterMap = firstMapShmPointer;
   }
 }
