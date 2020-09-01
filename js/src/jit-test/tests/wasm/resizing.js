@@ -127,6 +127,10 @@ assertEq(mem.buffer.byteLength, 2 * 64*1024);
 
 
 
+(new WebAssembly.Memory({initial: 1, maximum: 65536})).grow(1)
+
+
+
 
 
 
