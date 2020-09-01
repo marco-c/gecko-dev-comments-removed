@@ -82,6 +82,14 @@ strong {
 
 
 
+#webconsole-input-evaluationsButton > .tooltip-panel {
+  
+  overflow-y: auto;
+}
+
+
+
+
 .devtools-tooltip-inactive-css,
 .devtools-tooltip-css-compatibility {
   color: var(--theme-arrowpanel-color);
