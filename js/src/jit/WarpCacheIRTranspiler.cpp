@@ -171,20 +171,13 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   
   enum class CallKind { Native, Scripted };
 
-  
-  
-  
-  
-  enum class ArgumentLocation { OOM, Standard, FunApplyArgs };
-
-  MOZ_MUST_USE ArgumentLocation updateCallInfo(MDefinition* callee,
-                                               CallFlags flags);
+  MOZ_MUST_USE bool updateCallInfo(MDefinition* callee, CallFlags flags);
 
   MOZ_MUST_USE bool emitCallFunction(ObjOperandId calleeId,
                                      Int32OperandId argcId, CallFlags flags,
                                      CallKind kind);
-  MOZ_MUST_USE bool emitFunApplyArgs(MDefinition* callee, CallFlags flags,
-                                     CallKind kind);
+  MOZ_MUST_USE bool emitFunApplyArgs(WrappedFunction* wrappedTarget,
+                                     CallFlags flags);
 
   WrappedFunction* maybeWrappedFunction(MDefinition* callee, CallKind kind,
                                         uint16_t nargs, FunctionFlags flags);
@@ -3081,8 +3074,8 @@ WrappedFunction* WarpCacheIRTranspiler::maybeCallTarget(MDefinition* callee,
 
 
 
-WarpCacheIRTranspiler::ArgumentLocation WarpCacheIRTranspiler::updateCallInfo(
-    MDefinition* callee, CallFlags flags) {
+bool WarpCacheIRTranspiler::updateCallInfo(MDefinition* callee,
+                                           CallFlags flags) {
   
   
   
@@ -3090,11 +3083,13 @@ WarpCacheIRTranspiler::ArgumentLocation WarpCacheIRTranspiler::updateCallInfo(
 
   switch (flags.getArgFormat()) {
     case CallFlags::Standard:
-      return ArgumentLocation::Standard;
+      MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
+      break;
     case CallFlags::FunCall:
       
       
       MOZ_ASSERT(!callInfo_->constructing());
+      MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
 
       if (callInfo_->argc() == 0) {
         
@@ -3107,26 +3102,30 @@ WarpCacheIRTranspiler::ArgumentLocation WarpCacheIRTranspiler::updateCallInfo(
         
         callInfo_->removeArg(0);
       }
-      return ArgumentLocation::Standard;
+      break;
     case CallFlags::FunApplyArgs:
-      
-      
       MOZ_ASSERT(!callInfo_->constructing());
+      MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
+
+      
+      
       if (const CallInfo* outerCallInfo = builder_->inlineCallInfo()) {
         MDefinition* argFunc = callInfo_->thisArg();
         MDefinition* argThis = callInfo_->getArg(0);
 
         if (!callInfo_->replaceArgs(outerCallInfo->argv())) {
-          return ArgumentLocation::OOM;
+          return false;
         }
         callInfo_->setCallee(argFunc);
         callInfo_->setThis(argThis);
-        return ArgumentLocation::Standard;
+      } else {
+        callInfo_->setArgFormat(CallInfo::ArgFormat::FunApplyArgs);
       }
-      return ArgumentLocation::FunApplyArgs;
+      break;
     default:
       MOZ_CRASH("Unsupported arg format");
   }
+  return true;
 }
 
 bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
@@ -3139,13 +3138,8 @@ bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
              static_cast<int32_t>(callInfo_->argc()));
 #endif
 
-  switch (updateCallInfo(callee, flags)) {
-    case ArgumentLocation::Standard:
-      break;
-    case ArgumentLocation::FunApplyArgs:
-      return emitFunApplyArgs(callee, flags, kind);
-    case ArgumentLocation::OOM:
-      return false;
+  if (!updateCallInfo(callee, flags)) {
+    return false;
   }
 
   WrappedFunction* wrappedTarget = maybeCallTarget(callee, kind);
@@ -3188,27 +3182,33 @@ bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
     }
   }
 
-  MCall* call = makeCall(*callInfo_, needsThisCheck, wrappedTarget);
-  if (!call) {
-    return false;
+  switch (callInfo_->argFormat()) {
+    case CallInfo::ArgFormat::Standard: {
+      MCall* call = makeCall(*callInfo_, needsThisCheck, wrappedTarget);
+      if (!call) {
+        return false;
+      }
+
+      if (flags.isSameRealm()) {
+        call->setNotCrossRealm();
+      }
+
+      addEffectful(call);
+      pushResult(call);
+
+      return resumeAfter(call);
+    }
+    case CallInfo::ArgFormat::FunApplyArgs: {
+      return emitFunApplyArgs(wrappedTarget, flags);
+    }
   }
-
-  if (flags.isSameRealm()) {
-    call->setNotCrossRealm();
-  }
-
-  addEffectful(call);
-  pushResult(call);
-
-  return resumeAfter(call);
+  MOZ_CRASH("unreachable");
 }
 
-bool WarpCacheIRTranspiler::emitFunApplyArgs(MDefinition* callee,
-                                             CallFlags flags, CallKind kind) {
+bool WarpCacheIRTranspiler::emitFunApplyArgs(WrappedFunction* wrappedTarget,
+                                             CallFlags flags) {
   MOZ_ASSERT(!callInfo_->constructing());
   MOZ_ASSERT(!builder_->inlineCallInfo());
-
-  WrappedFunction* wrappedTarget = maybeCallTarget(callee, kind);
 
   MDefinition* argFunc = callInfo_->thisArg();
   MDefinition* argThis = callInfo_->getArg(0);
@@ -3265,13 +3265,14 @@ bool WarpCacheIRTranspiler::emitCallInlinedFunction(ObjOperandId calleeId,
     
     
     MDefinition* callee = getOperand(calleeId);
-    switch (updateCallInfo(callee, flags)) {
-      case ArgumentLocation::Standard:
+    if (!updateCallInfo(callee, flags)) {
+      return false;
+    }
+    switch (callInfo_->argFormat()) {
+      case CallInfo::ArgFormat::Standard:
         break;
-      case ArgumentLocation::OOM:
-        return false;
       default:
-        MOZ_CRASH("Unsupported argument location");
+        MOZ_CRASH("Unsupported arg format");
     }
     return true;
   }
