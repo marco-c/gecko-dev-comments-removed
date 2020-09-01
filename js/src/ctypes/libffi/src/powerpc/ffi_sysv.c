@@ -36,7 +36,7 @@
 
 
 
-#define ASM_NEEDS_REGISTERS 4
+#define ASM_NEEDS_REGISTERS 6
 #define NUM_GPR_ARG_REGISTERS 8
 #define NUM_FPR_ARG_REGISTERS 8
 
@@ -93,7 +93,7 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 {
   ffi_type **ptr;
   unsigned bytes;
-  unsigned i, fparg_count = 0, intarg_count = 0;
+  unsigned i, fpr_count = 0, gpr_count = 0, stack_count = 0;
   unsigned flags = cif->flags;
   unsigned struct_copy_size = 0;
   unsigned type = cif->rtype->type;
@@ -155,7 +155,7 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 	  flags |= FLAG_RETURNS_SMST;
 	  break;
 	}
-      intarg_count++;
+      gpr_count++;
       flags |= FLAG_RETVAL_REFERENCE;
       
     case FFI_TYPE_VOID:
@@ -182,24 +182,41 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 	{
 #if FFI_TYPE_LONGDOUBLE != FFI_TYPE_DOUBLE
 	case FFI_TYPE_LONGDOUBLE:
-	  fparg_count++;
-	  
+	  if (fpr_count >= NUM_FPR_ARG_REGISTERS - 1)
+	    {
+	      fpr_count = NUM_FPR_ARG_REGISTERS;
+	      
+	      stack_count += stack_count & 1;
+	      stack_count += 4;
+	    }
+	  else
+	    fpr_count += 2;
+#ifdef __NO_FPRS__
+	  return FFI_BAD_ABI;
 #endif
-	case FFI_TYPE_DOUBLE:
-	  fparg_count++;
-	  
+	  break;
+#endif
 
-	  if (fparg_count > NUM_FPR_ARG_REGISTERS
-	      && intarg_count >= NUM_GPR_ARG_REGISTERS
-	      && intarg_count % 2 != 0)
-	    intarg_count++;
+	case FFI_TYPE_DOUBLE:
+	  if (fpr_count >= NUM_FPR_ARG_REGISTERS)
+	    {
+	      
+	      stack_count += stack_count & 1;
+	      stack_count += 2;
+	    }
+	  else
+	    fpr_count += 1;
 #ifdef __NO_FPRS__
 	  return FFI_BAD_ABI;
 #endif
 	  break;
 
 	case FFI_TYPE_FLOAT:
-	  fparg_count++;
+	  if (fpr_count >= NUM_FPR_ARG_REGISTERS)
+	    
+	    stack_count += 1;
+	  else
+	    fpr_count += 1;
 #ifdef __NO_FPRS__
 	  return FFI_BAD_ABI;
 #endif
@@ -209,10 +226,12 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 	  
 
 
-	  if (intarg_count >= NUM_GPR_ARG_REGISTERS - 3
-	      && intarg_count < NUM_GPR_ARG_REGISTERS)
-	    intarg_count = NUM_GPR_ARG_REGISTERS;
-	  intarg_count += 4;
+	  if (gpr_count >= NUM_GPR_ARG_REGISTERS - 3)
+	    gpr_count = NUM_GPR_ARG_REGISTERS;
+	  if (gpr_count >= NUM_GPR_ARG_REGISTERS)
+	    stack_count += 4;
+	  else
+	    gpr_count += 4;
 	  break;
 
 	case FFI_TYPE_UINT64:
@@ -225,10 +244,14 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 
 
 
-	  if (intarg_count == NUM_GPR_ARG_REGISTERS-1
-	      || intarg_count % 2 != 0)
-	    intarg_count++;
-	  intarg_count += 2;
+	  gpr_count += gpr_count & 1;
+	  if (gpr_count >= NUM_GPR_ARG_REGISTERS)
+	    {
+	      stack_count += stack_count & 1;
+	      stack_count += 2;
+	    }
+	  else
+	    gpr_count += 2;
 	  break;
 
 	case FFI_TYPE_STRUCT:
@@ -249,7 +272,10 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 	case FFI_TYPE_SINT8:
 	  
 
-	  intarg_count++;
+	  if (gpr_count >= NUM_GPR_ARG_REGISTERS)
+	    stack_count += 1;
+	  else
+	    gpr_count += 1;
 	  break;
 
 	default:
@@ -257,22 +283,19 @@ ffi_prep_cif_sysv_core (ffi_cif *cif)
 	}
     }
 
-  if (fparg_count != 0)
+  if (fpr_count != 0)
     flags |= FLAG_FP_ARGUMENTS;
-  if (intarg_count > 4)
+  if (gpr_count > 4)
     flags |= FLAG_4_GPR_ARGUMENTS;
   if (struct_copy_size != 0)
     flags |= FLAG_ARG_NEEDS_COPY;
 
   
-  if (fparg_count != 0)
+  if (fpr_count != 0)
     bytes += NUM_FPR_ARG_REGISTERS * sizeof (double);
 
   
-  if (intarg_count > NUM_GPR_ARG_REGISTERS)
-    bytes += (intarg_count - NUM_GPR_ARG_REGISTERS) * sizeof (int);
-  if (fparg_count > NUM_FPR_ARG_REGISTERS)
-    bytes += (fparg_count - NUM_FPR_ARG_REGISTERS) * sizeof (double);
+  bytes += stack_count * sizeof (int);
 
   
   bytes = (bytes + 15) & ~0xF;
@@ -367,13 +390,13 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
   
 
   valp gpr_base;
-  int intarg_count;
+  valp gpr_end;
 
 #ifndef __NO_FPRS__
   
 
   valp fpr_base;
-  int fparg_count;
+  valp fpr_end;
 #endif
 
   
@@ -405,11 +428,11 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
   unsigned gprvalue;
 
   stacktop.c = (char *) stack + bytes;
-  gpr_base.u = stacktop.u - ASM_NEEDS_REGISTERS - NUM_GPR_ARG_REGISTERS;
-  intarg_count = 0;
+  gpr_end.u = stacktop.u - ASM_NEEDS_REGISTERS;
+  gpr_base.u = gpr_end.u - NUM_GPR_ARG_REGISTERS;
 #ifndef __NO_FPRS__
-  fpr_base.d = gpr_base.d - NUM_FPR_ARG_REGISTERS;
-  fparg_count = 0;
+  fpr_end.d = gpr_base.d;
+  fpr_base.d = fpr_end.d - NUM_FPR_ARG_REGISTERS;
   copy_space.c = ((flags & FLAG_FP_ARGUMENTS) ? fpr_base.c : gpr_base.c);
 #else
   copy_space.c = gpr_base.c;
@@ -425,10 +448,7 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 
   
   if (flags & FLAG_RETVAL_REFERENCE)
-    {
-      *gpr_base.u++ = (unsigned long) (char *) ecif->rvalue;
-      intarg_count++;
-    }
+    *gpr_base.u++ = (unsigned) (char *) ecif->rvalue;
 
   
   p_argv.v = ecif->avalue;
@@ -448,14 +468,11 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 	case FFI_TYPE_LONGDOUBLE:
 	  double_tmp = (*p_argv.d)[0];
 
-	  if (fparg_count >= NUM_FPR_ARG_REGISTERS - 1)
+	  if (fpr_base.d >= fpr_end.d - 1)
 	    {
-	      if (intarg_count >= NUM_GPR_ARG_REGISTERS
-		  && intarg_count % 2 != 0)
-		{
-		  intarg_count++;
-		  next_arg.u++;
-		}
+	      fpr_base.d = fpr_end.d;
+	      if (((next_arg.u - stack) & 1) != 0)
+		next_arg.u += 1;
 	      *next_arg.d = double_tmp;
 	      next_arg.u += 2;
 	      double_tmp = (*p_argv.d)[1];
@@ -468,42 +485,33 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 	      double_tmp = (*p_argv.d)[1];
 	      *fpr_base.d++ = double_tmp;
 	    }
-
-	  fparg_count += 2;
 	  FFI_ASSERT (flags & FLAG_FP_ARGUMENTS);
 	  break;
 # endif
 	case FFI_TYPE_DOUBLE:
 	  double_tmp = **p_argv.d;
 
-	  if (fparg_count >= NUM_FPR_ARG_REGISTERS)
+	  if (fpr_base.d >= fpr_end.d)
 	    {
-	      if (intarg_count >= NUM_GPR_ARG_REGISTERS
-		  && intarg_count % 2 != 0)
-		{
-		  intarg_count++;
-		  next_arg.u++;
-		}
+	      if (((next_arg.u - stack) & 1) != 0)
+		next_arg.u += 1;
 	      *next_arg.d = double_tmp;
 	      next_arg.u += 2;
 	    }
 	  else
 	    *fpr_base.d++ = double_tmp;
-	  fparg_count++;
 	  FFI_ASSERT (flags & FLAG_FP_ARGUMENTS);
 	  break;
 
 	case FFI_TYPE_FLOAT:
 	  double_tmp = **p_argv.f;
-	  if (fparg_count >= NUM_FPR_ARG_REGISTERS)
+	  if (fpr_base.d >= fpr_end.d)
 	    {
 	      *next_arg.f = (float) double_tmp;
 	      next_arg.u += 1;
-	      intarg_count++;
 	    }
 	  else
 	    *fpr_base.d++ = double_tmp;
-	  fparg_count++;
 	  FFI_ASSERT (flags & FLAG_FP_ARGUMENTS);
 	  break;
 #endif 
@@ -513,42 +521,34 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 
 
 
-	  {
-	    unsigned int int_tmp;
-	    unsigned int ii;
-	    if (intarg_count >= NUM_GPR_ARG_REGISTERS - 3)
-	      {
-		if (intarg_count < NUM_GPR_ARG_REGISTERS)
-		  intarg_count = NUM_GPR_ARG_REGISTERS;
-		for (ii = 0; ii < 4; ii++)
-		  {
-		    int_tmp = (*p_argv.ui)[ii];
-		    *next_arg.u++ = int_tmp;
-		  }
-	      }
-	    else
-	      {
-		for (ii = 0; ii < 4; ii++)
-		  {
-		    int_tmp = (*p_argv.ui)[ii];
-		    *gpr_base.u++ = int_tmp;
-		  }
-	      }
-	    intarg_count += 4;
-	    break;
-	  }
+	  if (gpr_base.u >= gpr_end.u - 3)
+	    {
+	      unsigned int ii;
+	      gpr_base.u = gpr_end.u;
+	      for (ii = 0; ii < 4; ii++)
+		{
+		  unsigned int int_tmp = (*p_argv.ui)[ii];
+		  *next_arg.u++ = int_tmp;
+		}
+	    }
+	  else
+	    {
+	      unsigned int ii;
+	      for (ii = 0; ii < 4; ii++)
+		{
+		  unsigned int int_tmp = (*p_argv.ui)[ii];
+		  *gpr_base.u++ = int_tmp;
+		}
+	    }
+	  break;
 
 	case FFI_TYPE_UINT64:
 	case FFI_TYPE_SINT64:
-	  if (intarg_count == NUM_GPR_ARG_REGISTERS-1)
-	    intarg_count++;
-	  if (intarg_count >= NUM_GPR_ARG_REGISTERS)
+	  if (gpr_base.u >= gpr_end.u - 1)
 	    {
-	      if (intarg_count % 2 != 0)
-		{
-		  intarg_count++;
-		  next_arg.u++;
-		}
+	      gpr_base.u = gpr_end.u;
+	      if (((next_arg.u - stack) & 1) != 0)
+		next_arg.u++;
 	      *next_arg.ll = **p_argv.ll;
 	      next_arg.u += 2;
 	    }
@@ -559,14 +559,10 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 
 
 
-	      if (intarg_count % 2 != 0)
-		{
-		  intarg_count ++;
-		  gpr_base.u++;
-		}
+	      if (((gpr_end.u - gpr_base.u) & 1) != 0)
+		gpr_base.u++;
 	      *gpr_base.ll++ = **p_argv.ll;
 	    }
-	  intarg_count += 2;
 	  break;
 
 	case FFI_TYPE_STRUCT:
@@ -601,29 +597,22 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
 	  gprvalue = **p_argv.ui;
 
 	putgpr:
-	  if (intarg_count >= NUM_GPR_ARG_REGISTERS)
+	  if (gpr_base.u >= gpr_end.u)
 	    *next_arg.u++ = gprvalue;
 	  else
 	    *gpr_base.u++ = gprvalue;
-	  intarg_count++;
 	  break;
 	}
     }
 
   
   FFI_ASSERT (copy_space.c >= next_arg.c);
-  FFI_ASSERT (gpr_base.u <= stacktop.u - ASM_NEEDS_REGISTERS);
-  
-
-
-
+  FFI_ASSERT (gpr_base.u <= gpr_end.u);
 #ifndef __NO_FPRS__
-  if (fparg_count > NUM_FPR_ARG_REGISTERS)
-    intarg_count -= fparg_count - NUM_FPR_ARG_REGISTERS;
-  FFI_ASSERT (fpr_base.u
-	      <= stacktop.u - ASM_NEEDS_REGISTERS - NUM_GPR_ARG_REGISTERS);
+  FFI_ASSERT (fpr_base.u <= fpr_end.u);
 #endif
-  FFI_ASSERT (flags & FLAG_4_GPR_ARGUMENTS || intarg_count <= 4);
+  FFI_ASSERT (((flags & FLAG_4_GPR_ARGUMENTS) != 0)
+	      == (gpr_end.u - gpr_base.u < 4));
 }
 
 #define MIN_CACHE_LINE_SIZE 8
@@ -654,18 +643,18 @@ ffi_prep_closure_loc_sysv (ffi_closure *closure,
 
   tramp = (unsigned int *) &closure->tramp[0];
   tramp[0] = 0x7c0802a6;  
-  tramp[1] = 0x4800000d;  
-  tramp[4] = 0x7d6802a6;  
-  tramp[5] = 0x7c0803a6;  
-  tramp[6] = 0x800b0000;  
-  tramp[7] = 0x816b0004;  
-  tramp[8] = 0x7c0903a6;  
-  tramp[9] = 0x4e800420;  
-  *(void **) &tramp[2] = (void *) ffi_closure_SYSV; 
-  *(void **) &tramp[3] = codeloc;                   
+  tramp[1] = 0x429f0005;  
+  tramp[2] = 0x7d6802a6;  
+  tramp[3] = 0x7c0803a6;  
+  tramp[4] = 0x800b0018;  
+  tramp[5] = 0x816b001c;  
+  tramp[6] = 0x7c0903a6;  
+  tramp[7] = 0x4e800420;  
+  *(void **) &tramp[8] = (void *) ffi_closure_SYSV; 
+  *(void **) &tramp[9] = codeloc;                   
 
   
-  flush_icache ((char *)tramp, (char *)codeloc, FFI_TRAMPOLINE_SIZE);
+  flush_icache ((char *)tramp, (char *)codeloc, 8 * 4);
 
   closure->cif = cif;
   closure->fun = fun;
@@ -682,8 +671,12 @@ ffi_prep_closure_loc_sysv (ffi_closure *closure,
 
 
 int
-ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
-			 unsigned long *pgr, ffi_dblfl *pfr,
+ffi_closure_helper_SYSV (ffi_cif *cif,
+			 void (*fun) (ffi_cif *, void *, void **, void *),
+			 void *user_data,
+			 void *rvalue,
+			 unsigned long *pgr,
+			 ffi_dblfl *pfr,
 			 unsigned long *pst)
 {
   
@@ -699,7 +692,6 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
 #endif
   long             ng = 0;   
 
-  ffi_cif *cif = closure->cif;
   unsigned       size     = cif->rtype->size;
   unsigned short rtypenum = cif->rtype->type;
 
@@ -915,7 +907,7 @@ ffi_closure_helper_SYSV (ffi_closure *closure, void *rvalue,
     i++;
   }
 
-  (closure->fun) (cif, rvalue, avalue, closure->user_data);
+  (*fun) (cif, rvalue, avalue, user_data);
 
   
 

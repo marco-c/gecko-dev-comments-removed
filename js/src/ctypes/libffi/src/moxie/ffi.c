@@ -100,7 +100,7 @@ void *ffi_prep_args(char *stack, extended_cif *ecif)
       count += z;
     }
 
-  return (stack + ((count > 24) ? 24 : ALIGN_DOWN(count, 8)));
+  return (stack + ((count > 24) ? 24 : FFI_ALIGN_DOWN(count, 8)));
 }
 
 
@@ -111,7 +111,7 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
   else
     cif->flags = cif->rtype->size;
 
-  cif->bytes = ALIGN (cif->bytes, 8);
+  cif->bytes = FFI_ALIGN (cif->bytes, 8);
 
   return FFI_OK;
 }
@@ -215,7 +215,18 @@ void ffi_closure_eabi (unsigned arg1, unsigned arg2, unsigned arg3,
 	  break;
 	default:
 	  
-	  avalue[i] = ptr;
+	  if (ptr == (char *) &register_args[5])
+	    {
+	      
+	      unsigned *ip = alloca(8);
+	      avalue[i] = ip;
+	      ip[0] = *(unsigned *) ptr;
+	      ip[1] = *(unsigned *) stack_args;
+	    }
+	  else
+	    {
+	      avalue[i] = ptr;
+	    }
 	  ptr += 4;
 	  break;
 	}
@@ -223,8 +234,10 @@ void ffi_closure_eabi (unsigned arg1, unsigned arg2, unsigned arg3,
 
       
 
-      if (ptr == &register_args[6])
+      if (ptr == (char *) &register_args[6])
 	ptr = stack_args;
+      else if (ptr == (char *) &register_args[7])
+	ptr = stack_args + 4;
     }
 
   
