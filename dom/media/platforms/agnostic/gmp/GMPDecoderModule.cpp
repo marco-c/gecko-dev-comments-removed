@@ -4,8 +4,9 @@
 
 
 
-#include "DecoderDoctorDiagnostics.h"
 #include "GMPDecoderModule.h"
+
+#include "DecoderDoctorDiagnostics.h"
 #include "GMPService.h"
 #include "GMPUtils.h"
 #include "GMPVideoDecoder.h"
@@ -32,7 +33,7 @@ static already_AddRefed<MediaDataDecoderProxy> CreateDecoderWrapper() {
   if (!s) {
     return nullptr;
   }
-  RefPtr<AbstractThread> thread(s->GetAbstractGMPThread());
+  nsCOMPtr<nsISerialEventTarget> thread(s->GetGMPThread());
   if (!thread) {
     return nullptr;
   }

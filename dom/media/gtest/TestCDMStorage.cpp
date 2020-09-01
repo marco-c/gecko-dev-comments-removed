@@ -4,15 +4,13 @@
 
 
 
+#include "ChromiumCDMCallback.h"
+#include "GMPServiceParent.h"
+#include "GMPTestMonitor.h"
+#include "MediaResult.h"
 #include "gtest/gtest.h"
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/SchedulerGroup.h"
-
-#include "ChromiumCDMCallback.h"
-#include "GMPTestMonitor.h"
-#include "GMPServiceParent.h"
-#include "MediaResult.h"
 #include "nsIFile.h"
 #include "nsNSSComponent.h"  
 #include "nsThreadUtils.h"
@@ -28,11 +26,6 @@ static already_AddRefed<nsIThread> GetGMPThread() {
   return thread.forget();
 }
 
-static RefPtr<AbstractThread> GetAbstractGMPThread() {
-  RefPtr<GeckoMediaPluginService> service =
-      GeckoMediaPluginService::GetGeckoMediaPluginService();
-  return service->GetAbstractGMPThread();
-}
 
 
 
@@ -396,7 +389,7 @@ class CDMStorageTest {
     RefPtr<CDMStorageTest> self = this;
     RefPtr<gmp::GetCDMParentPromise> promise =
         service->GetCDM(aNodeId, std::move(tags), nullptr);
-    auto thread = GetAbstractGMPThread();
+    nsCOMPtr<nsISerialEventTarget> thread = GetGMPThread();
     promise->Then(
         thread, __func__,
         [self, updates = std::move(aUpdates),
