@@ -50,7 +50,7 @@ async function verify_results_from_sandboxed_child_window(test) {
 
   const second_message_event = await event_watcher.wait_for('message');
   assert_equals(second_message_event.data,
-    'getOriginPrivateDirectory(): REJECTED: SecurityError');
+    'navigator.storage.getDirectory(): REJECTED: SecurityError');
 }
 
 promise_test(async test => {
@@ -67,7 +67,7 @@ promise_test(
       add_iframe(test, kSandboxWindowUrl,  'allow-scripts');
       await verify_results_from_sandboxed_child_window(test);
     },
-    'getOriginPrivateDirectory() and ' +
+    'navigator.storage.getDirectory() and ' +
         'showDirectoryPicker() must reject in a sandboxed iframe.');
 
 promise_test(
@@ -82,5 +82,5 @@ promise_test(
 
       await verify_results_from_sandboxed_child_window(test);
     },
-    'getOriginPrivateDirectory() and ' +
+    'navigator.storage.getDirectory() and ' +
         'showDirectoryPicker() must reject in a sandboxed opened window.');

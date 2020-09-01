@@ -84,8 +84,7 @@ function add_message_event_handlers(receiver, target, target_origin) {
 
         case 'create-file':
           
-          const directory =
-            await self.getOriginPrivateDirectory();
+          const directory = await navigator.storage.getDirectory();
           const file_handle =
             await directory.getFileHandle('temp-file', { create: true });
           message_source.postMessage(
@@ -95,8 +94,7 @@ function add_message_event_handlers(receiver, target, target_origin) {
 
         case 'create-directory':
           
-          const parent_directory =
-            await self.getOriginPrivateDirectory();
+          const parent_directory = await navigator.storage.getDirectory();
           const directory_handle =
             await parent_directory.getDirectoryHandle('temp-directory',
               { create: true });

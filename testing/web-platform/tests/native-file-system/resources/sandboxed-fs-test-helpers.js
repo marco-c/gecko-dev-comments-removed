@@ -7,8 +7,7 @@
 
 
 async function cleanupSandboxedFileSystem() {
-  const dir =
-      await self.getOriginPrivateDirectory();
+  const dir = await navigator.storage.getDirectory();
   for await (let entry of dir.values())
     await dir.removeEntry(entry.name, {recursive: entry.kind === 'directory'});
 }
@@ -18,8 +17,7 @@ function directory_test(func, description) {
     
     await cleanupSandboxedFileSystem();
 
-    const dir =
-        await self.getOriginPrivateDirectory();
+    const dir = await navigator.storage.getDirectory();
     await func(t, dir);
   }, description);
 }
