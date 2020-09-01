@@ -37,6 +37,10 @@ var ChromeMigrationUtils = {
   
   _extensionLocaleStrings: {},
 
+  get supportsLoginsForPlatform() {
+    return ["macosx", "win"].includes(AppConstants.platform);
+  },
+
   
 
 
@@ -369,6 +373,11 @@ var ChromeMigrationUtils = {
 
   _importableLoginsCache: null,
   async getImportableLogins(formOrigin) {
+    
+    if (!this.supportsLoginsForPlatform) {
+      return undefined;
+    }
+
     
     if (!this._importableLoginsCache) {
       this._importableLoginsCache = new Map();
