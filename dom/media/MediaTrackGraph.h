@@ -195,7 +195,6 @@ class AudioNodeEngine;
 class AudioNodeExternalInputTrack;
 class AudioNodeTrack;
 class DirectMediaTrackListener;
-class MediaInputPort;
 class MediaTrackGraphImpl;
 class MediaTrackListener;
 class ProcessedMediaTrack;
@@ -798,13 +797,14 @@ class MediaInputPort final {
  private:
   
   
-  MediaInputPort(MediaTrack* aSource, ProcessedMediaTrack* aDest,
-                 uint16_t aInputNumber, uint16_t aOutputNumber)
+  MediaInputPort(MediaTrackGraphImpl* aGraph, MediaTrack* aSource,
+                 ProcessedMediaTrack* aDest, uint16_t aInputNumber,
+                 uint16_t aOutputNumber)
       : mSource(aSource),
         mDest(aDest),
         mInputNumber(aInputNumber),
         mOutputNumber(aOutputNumber),
-        mGraph(nullptr) {
+        mGraph(aGraph) {
     MOZ_COUNT_CTOR(MediaInputPort);
   }
 
@@ -815,26 +815,25 @@ class MediaInputPort final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaInputPort)
 
   
-  
-  void Init();
-  
-  void Disconnect();
-
-  
-  
 
 
 
   void Destroy();
 
   
+  
+
+  void Init();
+  
+  
+  void Disconnect();
+
   MediaTrack* GetSource() const { return mSource; }
   ProcessedMediaTrack* GetDestination() const { return mDest; }
 
   uint16_t InputNumber() const { return mInputNumber; }
   uint16_t OutputNumber() const { return mOutputNumber; }
 
-  
   struct InputInterval {
     GraphTime mStart;
     GraphTime mEnd;
@@ -849,8 +848,8 @@ class MediaInputPort final {
   
 
 
-  MediaTrackGraphImpl* GraphImpl();
-  MediaTrackGraph* Graph();
+  MediaTrackGraphImpl* GraphImpl() const;
+  MediaTrackGraph* Graph() const;
 
   
 
@@ -882,8 +881,6 @@ class MediaInputPort final {
   }
 
  private:
-  friend class MediaTrackGraphImpl;
-  friend class MediaTrack;
   friend class ProcessedMediaTrack;
   
   MediaTrack* mSource;

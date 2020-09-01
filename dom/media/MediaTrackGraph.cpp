@@ -414,10 +414,10 @@ void MediaTrackGraphImpl::UpdateTrackOrder() {
       
       
       for (uint32_t i = inputs.Length(); i--;) {
-        if (inputs[i]->mSource->IsSuspended()) {
+        if (inputs[i]->GetSource()->IsSuspended()) {
           continue;
         }
-        auto input = inputs[i]->mSource->AsProcessedTrack();
+        auto input = inputs[i]->GetSource()->AsProcessedTrack();
         if (input && input->mCycleMarker == NOT_VISITED) {
           
           
@@ -440,10 +440,10 @@ void MediaTrackGraphImpl::UpdateTrackOrder() {
     
     uint32_t cycleStackMarker = 0;
     for (uint32_t i = inputs.Length(); i--;) {
-      if (inputs[i]->mSource->IsSuspended()) {
+      if (inputs[i]->GetSource()->IsSuspended()) {
         continue;
       }
-      auto input = inputs[i]->mSource->AsProcessedTrack();
+      auto input = inputs[i]->GetSource()->AsProcessedTrack();
       if (input) {
         cycleStackMarker = std::max(cycleStackMarker, input->mCycleMarker);
       }
@@ -2885,6 +2885,7 @@ float SourceMediaTrack::GetVolumeLocked() {
 SourceMediaTrack::~SourceMediaTrack() = default;
 
 void MediaInputPort::Init() {
+  mGraph->AssertOnGraphThreadOrNotRunning();
   LOG(LogLevel::Debug, ("%p: Adding MediaInputPort %p (from %p to %p)",
                         mSource->GraphImpl(), this, mSource, mDest));
   
@@ -2897,17 +2898,20 @@ void MediaInputPort::Init() {
 }
 
 void MediaInputPort::Disconnect() {
-  GraphImpl()->AssertOnGraphThreadOrNotRunning();
+  mGraph->AssertOnGraphThreadOrNotRunning();
   NS_ASSERTION(!mSource == !mDest,
-               "mSource must either both be null or both non-null");
-  if (!mSource) return;
+               "mSource and mDest must either both be null or both non-null");
+
+  if (!mSource) {
+    return;
+  }
 
   mSource->RemoveConsumer(this);
   mDest->RemoveInput(this);
   mSource = nullptr;
   mDest = nullptr;
 
-  GraphImpl()->SetTrackOrderDirty();
+  mGraph->SetTrackOrderDirty();
 }
 
 MediaInputPort::InputInterval MediaInputPort::GetNextInputInterval(
@@ -2918,6 +2922,7 @@ MediaInputPort::InputInterval MediaInputPort::GetNextInputInterval(
     result.mInputIsBlocked = true;
     return result;
   }
+  aPort->mGraph->AssertOnGraphThreadOrNotRunning();
   if (aTime >= aPort->mDest->mStartBlocking) {
     return result;
   }
@@ -2930,9 +2935,15 @@ MediaInputPort::InputInterval MediaInputPort::GetNextInputInterval(
   return result;
 }
 
-void MediaInputPort::Suspended() { mDest->InputSuspended(this); }
+void MediaInputPort::Suspended() {
+  mGraph->AssertOnGraphThreadOrNotRunning();
+  mDest->InputSuspended(this);
+}
 
-void MediaInputPort::Resumed() { mDest->InputResumed(this); }
+void MediaInputPort::Resumed() {
+  mGraph->AssertOnGraphThreadOrNotRunning();
+  mDest->InputResumed(this);
+}
 
 void MediaInputPort::Destroy() {
   class Message : public ControlMessage {
@@ -2950,17 +2961,25 @@ void MediaInputPort::Destroy() {
   };
   
   
-  RefPtr<MediaTrackGraphImpl> graph = GraphImpl();
+  RefPtr<MediaTrackGraphImpl> graph = mGraph;
   graph->AppendMessage(MakeUnique<Message>(this));
   --graph->mMainThreadPortCount;
 }
 
-MediaTrackGraphImpl* MediaInputPort::GraphImpl() { return mGraph; }
+MediaTrackGraphImpl* MediaInputPort::GraphImpl() const {
+  mGraph->AssertOnGraphThreadOrNotRunning();
+  return mGraph;
+}
 
-MediaTrackGraph* MediaInputPort::Graph() { return mGraph; }
+MediaTrackGraph* MediaInputPort::Graph() const {
+  mGraph->AssertOnGraphThreadOrNotRunning();
+  return mGraph;
+}
 
 void MediaInputPort::SetGraphImpl(MediaTrackGraphImpl* aGraph) {
   MOZ_ASSERT(!mGraph || !aGraph, "Should only be set once");
+  DebugOnly<MediaTrackGraphImpl*> graph = mGraph ? mGraph : aGraph;
+  MOZ_ASSERT(graph->OnGraphThreadOrNotRunning());
   mGraph = aGraph;
 }
 
@@ -2988,12 +3007,13 @@ already_AddRefed<MediaInputPort> ProcessedMediaTrack::AllocateInputPort(
     
     
     
-    port = new MediaInputPort(nullptr, nullptr, aInputNumber, aOutputNumber);
+    port = new MediaInputPort(GraphImpl(), nullptr, nullptr, aInputNumber,
+                              aOutputNumber);
   } else {
     MOZ_ASSERT(aTrack->GraphImpl() == GraphImpl());
-    port = new MediaInputPort(aTrack, this, aInputNumber, aOutputNumber);
+    port = new MediaInputPort(GraphImpl(), aTrack, this, aInputNumber,
+                              aOutputNumber);
   }
-  port->SetGraphImpl(GraphImpl());
   ++GraphImpl()->mMainThreadPortCount;
   GraphImpl()->AppendMessage(MakeUnique<Message>(port));
   return port.forget();
