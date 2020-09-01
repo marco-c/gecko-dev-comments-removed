@@ -222,7 +222,7 @@ struct CompilationStencil {
   
   ParserAtomsTable parserAtoms;
 
-  explicit CompilationStencil(JSContext* cx) : parserAtoms(cx) {}
+  explicit CompilationStencil(JSRuntime* rt) : parserAtoms(rt) {}
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
@@ -362,7 +362,7 @@ struct CompilationInfo {
 
   
   CompilationInfo(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
-      : cx(cx), input(options), stencil(cx) {}
+      : cx(cx), input(options), stencil(cx->runtime()) {}
 
   MOZ_MUST_USE bool instantiateStencils(CompilationGCOutput& gcOutput);
 
