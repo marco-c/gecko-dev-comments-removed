@@ -77,7 +77,7 @@ dictionary BundleGenerator {
 
 
 
-[ChromeOnly, Exposed=Window]
+[Func="IsChromeOrUAWidget", Exposed=Window]
 interface Localization {
   
 
