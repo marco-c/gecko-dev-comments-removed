@@ -105,6 +105,6 @@ foreignObject {
 
 
 circle, ellipse, line, mesh, path, polygon, polyline, rect {
-  -moz-user-select: none;
+  user-select: none;
 }
 
