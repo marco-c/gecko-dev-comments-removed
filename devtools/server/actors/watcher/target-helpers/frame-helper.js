@@ -180,10 +180,7 @@ function getFilteredRemoteBrowsingContext(browserElement) {
   return getAllRemoteBrowsingContexts(
     browserElement?.browsingContext
   ).filter(browsingContext =>
-    shouldNotifyWindowGlobal(
-      browsingContext.currentWindowGlobal,
-      browserElement?.browserId
-    )
+    shouldNotifyWindowGlobal(browsingContext, browserElement?.browserId)
   );
 }
 
@@ -250,8 +247,13 @@ function getAllRemoteBrowsingContexts(topBrowsingContext) {
 
 
 
-function shouldNotifyWindowGlobal(windowGlobal, watchedBrowserId) {
-  const browsingContext = windowGlobal.browsingContext;
+function shouldNotifyWindowGlobal(browsingContext, watchedBrowserId) {
+  const windowGlobal = browsingContext.currentWindowGlobal;
+  
+  
+  if (!windowGlobal) {
+    return false;
+  }
   
   if (browsingContext.currentRemoteType == "extension") {
     return false;
