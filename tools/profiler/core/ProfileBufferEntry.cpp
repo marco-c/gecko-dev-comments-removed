@@ -6,8 +6,10 @@
 
 #include "ProfileBufferEntry.h"
 
+#include "mozilla/ProfilerMarkers.h"
 #include "platform.h"
 #include "ProfileBuffer.h"
+#include "ProfilerBacktrace.h"
 #include "ProfilerMarkerPayload.h"
 
 #include "jsapi.h"
@@ -781,6 +783,7 @@ class EntryGetter {
 
 
 
+
 #define ERROR_AND_CONTINUE(msg)                            \
   {                                                        \
     fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
@@ -1181,51 +1184,83 @@ void ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
     MOZ_ASSERT(static_cast<ProfileBufferEntry::KindUnderlyingType>(type) <
                static_cast<ProfileBufferEntry::KindUnderlyingType>(
                    ProfileBufferEntry::Kind::MODERN_LIMIT));
-    if (type == ProfileBufferEntry::Kind::MarkerData &&
-        aER.ReadObject<int>() == aThreadId) {
-      aWriter.StartArrayElement();
-      {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        auto name = aER.ReadObject<std::string>();
-        auto startTime = aER.ReadObject<double>();
-        auto endTime = aER.ReadObject<double>();
-        auto phase = aER.ReadObject<uint8_t>();
-        const JS::ProfilingCategoryPairInfo& info =
-            GetProfilingCategoryPairInfo(static_cast<JS::ProfilingCategoryPair>(
-                aER.ReadObject<uint32_t>()));
-        auto payload = aER.ReadObject<UniquePtr<ProfilerMarkerPayload>>();
-
-        MOZ_ASSERT(aER.RemainingBytes() == 0);
-
-        
-        
-        aUniqueStacks.mUniqueStrings->WriteElement(aWriter, name.c_str());
-        aWriter.DoubleElement(startTime);
-        aWriter.DoubleElement(endTime);
-        aWriter.IntElement(phase);
-        aWriter.IntElement(unsigned(info.mCategory));
-        if (payload) {
-          aWriter.StartObjectElement(SpliceableJSONWriter::SingleLineStyle);
-          { payload->StreamPayload(aWriter, aProcessStartTime, aUniqueStacks); }
-          aWriter.EndObject();
+    
+    
+    
+    
+    switch (type) {
+      case ProfileBufferEntry::Kind::MarkerData:
+        if (aER.ReadObject<int>() != aThreadId) {
+          break;  
         }
-      }
-      aWriter.EndArray();
-    } else {
-      aER.SetRemainingBytes(0);
+        aWriter.StartArrayElement();
+        {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          auto name = aER.ReadObject<std::string>();
+          auto startTime = aER.ReadObject<double>();
+          auto endTime = aER.ReadObject<double>();
+          auto phase = aER.ReadObject<uint8_t>();
+          const JS::ProfilingCategoryPairInfo& info =
+              GetProfilingCategoryPairInfo(
+                  static_cast<JS::ProfilingCategoryPair>(
+                      aER.ReadObject<uint32_t>()));
+          auto payload = aER.ReadObject<UniquePtr<ProfilerMarkerPayload>>();
+
+          MOZ_ASSERT(aER.RemainingBytes() == 0);
+
+          
+          
+          aUniqueStacks.mUniqueStrings->WriteElement(aWriter, name.c_str());
+          aWriter.DoubleElement(startTime);
+          aWriter.DoubleElement(endTime);
+          aWriter.IntElement(phase);
+          aWriter.IntElement(unsigned(info.mCategory));
+          if (payload) {
+            aWriter.StartObjectElement(SpliceableJSONWriter::SingleLineStyle);
+            {
+              payload->StreamPayload(aWriter, aProcessStartTime, aUniqueStacks);
+            }
+            aWriter.EndObject();
+          }
+        }
+        aWriter.EndArray();
+        return;  
+
+      case ProfileBufferEntry::Kind::Marker:
+        if (mozilla::base_profiler_markers_detail::
+                DeserializeAfterKindAndStream(
+                    aER, aWriter, aThreadId,
+                    [&](const mozilla::ProfilerString8View& aName) {
+                      aUniqueStacks.mUniqueStrings->WriteElement(
+                          aWriter, aName.String().c_str());
+                    },
+                    [&](ProfileChunkedBuffer& aChunkedBuffer) {
+                      ProfilerBacktrace backtrace("", aThreadId,
+                                                  &aChunkedBuffer);
+                      backtrace.StreamJSON(aWriter, aProcessStartTime,
+                                           aUniqueStacks);
+                    })) {
+          return;  
+        }
+        break;  
+
+      default:
+        break;  
     }
+
+    aER.SetRemainingBytes(0);
   });
 }
 
