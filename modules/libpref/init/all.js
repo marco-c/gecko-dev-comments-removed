@@ -352,13 +352,6 @@ pref("print.use_simplify_page", false);
 
 
 #ifdef EARLY_BETA_OR_EARLIER
-  pref("print.tab_modal.enabled", true);
-#else
-  pref("print.tab_modal.enabled", false);
-#endif
-
-
-#ifdef EARLY_BETA_OR_EARLIER
   pref("pdfjs.renderInteractiveForms", true);
 #else
   pref("pdfjs.renderInteractiveForms", false);

@@ -148,6 +148,7 @@ var PrintUtils = {
     );
     if (container.querySelector(".printDialogContainer")) {
       
+      aBrowsingContext.isAwaitingPrint = false;
       return;
     }
 
@@ -166,7 +167,7 @@ var PrintUtils = {
 
     
     dialog._overlay._dialog = dialog;
-    let sourceBrowser = aBrowsingContext.embedderElement;
+    let sourceBrowser = aBrowsingContext.top.embedderElement;
     let printPreviewBrowser = gBrowser.createBrowser({
       remoteType: sourceBrowser.remoteType,
       initialBrowsingContextGroupId: aBrowsingContext.group.id,
@@ -206,7 +207,12 @@ var PrintUtils = {
 
 
 
-  updatePrintPreview(sourceBrowser, printPreviewBrowser, printSettings) {
+
+  updatePrintPreview(
+    sourceBrowsingContext,
+    printPreviewBrowser,
+    printSettings
+  ) {
     let stack = printPreviewBrowser.parentElement;
     stack.setAttribute("isRendering", true);
 
@@ -231,7 +237,7 @@ var PrintUtils = {
           changingBrowsers: false,
           lastUsedPrinterName: printSettings.printerName,
           simplifiedMode: false,
-          windowID: sourceBrowser.outerWindowID,
+          browsingContextId: sourceBrowsingContext.id,
           outputFormat: printSettings.outputFormat,
         }
       );
@@ -239,6 +245,8 @@ var PrintUtils = {
   },
 
   
+
+
 
 
 
@@ -661,7 +669,7 @@ var PrintUtils = {
 
     let sendEnterPreviewMessage = function(browser, simplified) {
       mm.sendAsyncMessage("Printing:Preview:Enter", {
-        windowID: browser.outerWindowID,
+        browsingContextId: browser.browsingContext.id,
         simplifiedMode: simplified,
         changingBrowsers: changingPrintPreviewBrowsers,
         lastUsedPrinterName,
