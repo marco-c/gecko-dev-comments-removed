@@ -113,7 +113,12 @@ pub enum ExternalSurfaceDependency {
 
 
 pub struct ExternalSurfaceDescriptor {
+    
     pub local_rect: PictureRect,
+    
+    
+    pub surface_rect: DeviceRect,
+    
     pub device_rect: DeviceRect,
     pub local_clip_rect: PictureRect,
     pub clip_rect: DeviceRect,
@@ -707,19 +712,12 @@ impl CompositeState {
                 },
             }
 
-            
-            
-            let tile_clip = if self.compositor_kind.supports_transforms() {
-                external_surface.device_rect
-            } else {
-                clip_rect
-            };
             let tile = CompositeTile {
                 surface,
-                rect: external_surface.device_rect,
+                rect: external_surface.surface_rect,
                 valid_rect: external_surface.device_rect.translate(-external_surface.device_rect.origin.to_vector()),
                 dirty_rect: external_surface.device_rect.translate(-external_surface.device_rect.origin.to_vector()),
-                clip_rect: tile_clip,
+                clip_rect,
                 z_id: external_surface.z_id,
             };
 
