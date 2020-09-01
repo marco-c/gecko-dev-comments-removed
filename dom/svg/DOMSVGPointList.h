@@ -10,12 +10,19 @@
 #include "mozAutoDocUpdate.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
-#include "SVGElement.h"
 #include "nsTArray.h"
 #include "SVGPointList.h"  
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
+
+
+#define MOZILLA_DOMSVGPOINTLIST_IID                  \
+  {                                                  \
+    0x61812ad1, 0xc078, 0x4cd1, {                    \
+      0x87, 0xe6, 0xbc, 0x1c, 0x1b, 0x8d, 0x72, 0x84 \
+    }                                                \
+  }
 
 namespace mozilla {
 
@@ -24,30 +31,36 @@ class SVGAnimatedPointList;
 namespace dom {
 
 class DOMSVGPoint;
-class nsISVGPoint;
+class SVGElement;
 
 
 
 
 
 template <class T>
-class MOZ_RAII AutoChangePointListNotifier : public mozAutoDocUpdate {
+class MOZ_RAII AutoChangePointListNotifier {
  public:
-  explicit AutoChangePointListNotifier(T* aValue)
-      : mozAutoDocUpdate(aValue->Element()->GetComposedDoc(), true),
-        mValue(aValue) {
+  explicit AutoChangePointListNotifier(T* aValue) : mValue(aValue) {
     MOZ_ASSERT(mValue, "Expecting non-null value");
-    mEmptyOrOldValue = mValue->Element()->WillChangePointList(*this);
+    if (mValue->IsInList()) {
+      mUpdateBatch.emplace(mValue->Element()->GetComposedDoc(), true);
+      mEmptyOrOldValue =
+          mValue->Element()->WillChangePointList(mUpdateBatch.ref());
+    }
   }
 
   ~AutoChangePointListNotifier() {
-    mValue->Element()->DidChangePointList(mEmptyOrOldValue, *this);
-    if (mValue->AttrIsAnimating()) {
-      mValue->Element()->AnimationNeedsResample();
+    if (mValue->IsInList()) {
+      mValue->Element()->DidChangePointList(mEmptyOrOldValue,
+                                            mUpdateBatch.ref());
+      if (mValue->AttrIsAnimating()) {
+        mValue->Element()->AnimationNeedsResample();
+      }
     }
   }
 
  private:
+  Maybe<mozAutoDocUpdate> mUpdateBatch;
   T* const mValue;
   nsAttrValue mEmptyOrOldValue;
 };
@@ -80,10 +93,10 @@ class MOZ_RAII AutoChangePointListNotifier : public mozAutoDocUpdate {
 class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
   template <class T>
   friend class AutoChangePointListNotifier;
-  friend class nsISVGPoint;
   friend class DOMSVGPoint;
 
  public:
+  NS_DECLARE_STATIC_IID_ACCESSOR(MOZILLA_DOMSVGPOINTLIST_IID)
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGPointList)
 
@@ -152,7 +165,14 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
 
 
 
+  bool IsInList() const { return true; }
+
+  
+
+
+
   bool AttrIsAnimating() const;
+
   
 
 
@@ -165,20 +185,20 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
     return LengthNoFlush();
   }
   void Clear(ErrorResult& aError);
-  already_AddRefed<nsISVGPoint> Initialize(nsISVGPoint& aNewItem,
+  already_AddRefed<DOMSVGPoint> Initialize(DOMSVGPoint& aNewItem,
                                            ErrorResult& aError);
-  already_AddRefed<nsISVGPoint> GetItem(uint32_t index, ErrorResult& error);
-  already_AddRefed<nsISVGPoint> IndexedGetter(uint32_t index, bool& found,
+  already_AddRefed<DOMSVGPoint> GetItem(uint32_t index, ErrorResult& error);
+  already_AddRefed<DOMSVGPoint> IndexedGetter(uint32_t index, bool& found,
                                               ErrorResult& error);
-  already_AddRefed<nsISVGPoint> InsertItemBefore(nsISVGPoint& aNewItem,
+  already_AddRefed<DOMSVGPoint> InsertItemBefore(DOMSVGPoint& aNewItem,
                                                  uint32_t aIndex,
                                                  ErrorResult& aError);
-  already_AddRefed<nsISVGPoint> ReplaceItem(nsISVGPoint& aNewItem,
+  already_AddRefed<DOMSVGPoint> ReplaceItem(DOMSVGPoint& aNewItem,
                                             uint32_t aIndex,
                                             ErrorResult& aError);
-  already_AddRefed<nsISVGPoint> RemoveItem(uint32_t aIndex,
+  already_AddRefed<DOMSVGPoint> RemoveItem(uint32_t aIndex,
                                            ErrorResult& aError);
-  already_AddRefed<nsISVGPoint> AppendItem(nsISVGPoint& aNewItem,
+  already_AddRefed<DOMSVGPoint> AppendItem(DOMSVGPoint& aNewItem,
                                            ErrorResult& aError) {
     return InsertItemBefore(aNewItem, LengthNoFlush(), aError);
   }
@@ -214,7 +234,7 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
   SVGAnimatedPointList& InternalAList() const;
 
   
-  already_AddRefed<nsISVGPoint> GetItemAt(uint32_t aIndex);
+  already_AddRefed<DOMSVGPoint> GetItemAt(uint32_t aIndex);
 
   void MaybeInsertNullInAnimValListAt(uint32_t aIndex);
   void MaybeRemoveItemFromAnimValListAt(uint32_t aIndex);
@@ -223,7 +243,7 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
 
   
   
-  FallibleTArray<nsISVGPoint*> mItems;
+  FallibleTArray<DOMSVGPoint*> mItems;
 
   
   
@@ -231,6 +251,8 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
 
   bool mIsAnimValList;
 };
+
+NS_DEFINE_STATIC_IID_ACCESSOR(DOMSVGPointList, MOZILLA_DOMSVGPOINTLIST_IID)
 
 }  
 }  

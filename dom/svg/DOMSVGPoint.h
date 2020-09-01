@@ -8,18 +8,21 @@
 #define DOM_SVG_DOMSVGPOINT_H_
 
 #include "DOMSVGPointList.h"
-#include "mozilla/gfx/2D.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
-#include "nsISVGPoint.h"
 #include "SVGPoint.h"
+#include "nsWrapperCache.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/dom/SVGSVGElement.h"
+#include "mozilla/gfx/2D.h"
+
+#define MOZ_SVG_LIST_INDEX_BIT_COUNT 30
 
 namespace mozilla {
 
 namespace dom {
 struct DOMMatrix2DInit;
-class SVGElement;
 
 
 
@@ -35,7 +38,7 @@ class SVGElement;
 
 
 
-class DOMSVGPoint final : public nsISVGPoint {
+class DOMSVGPoint final : public nsWrapperCache {
   template <class T>
   friend class AutoChangePointListNotifier;
 
@@ -46,52 +49,142 @@ class DOMSVGPoint final : public nsISVGPoint {
 
 
   DOMSVGPoint(DOMSVGPointList* aList, uint32_t aListIndex, bool aIsAnimValItem)
-      : nsISVGPoint() {
-    mList = aList;
-    mListIndex = aListIndex;
-    mIsAnimValItem = aIsAnimValItem;
-
+      : mVal(nullptr),
+        mOwner(aList),
+        mListIndex(aListIndex),
+        mIsAnimValItem(aIsAnimValItem),
+        mIsTranslatePoint(false) {
     
     MOZ_ASSERT(aList && aListIndex <= MaxListIndex(), "bad arg");
 
     MOZ_ASSERT(IndexIsValid(), "Bad index for DOMSVGPoint!");
   }
 
-  explicit DOMSVGPoint(const DOMSVGPoint* aPt = nullptr) : nsISVGPoint() {
-    if (aPt) {
-      mPt = aPt->ToSVGPoint();
-    }
+  
+  explicit DOMSVGPoint(const Point& aPt)
+      : mListIndex(0), mIsAnimValItem(false), mIsTranslatePoint(false) {
+    
+    mVal = new SVGPoint(aPt.x, aPt.y);
   }
 
-  explicit DOMSVGPoint(const Point& aPt) : nsISVGPoint() {
-    mPt.mX = aPt.x;
-    mPt.mY = aPt.y;
-    NS_ASSERTION(IsFinite(mPt.mX) && IsFinite(mPt.mY),
-                 "DOMSVGPoint coords are not finite");
+ private:
+  
+  DOMSVGPoint(SVGPoint* aPt, SVGSVGElement* aSVGSVGElement)
+      : mVal(aPt),
+        mOwner(ToSupports(aSVGSVGElement)),
+        mListIndex(0),
+        mIsAnimValItem(false),
+        mIsTranslatePoint(true) {}
+
+  virtual ~DOMSVGPoint() { CleanupWeakRefs(); }
+
+ public:
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGPoint)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(DOMSVGPoint)
+
+  static already_AddRefed<DOMSVGPoint> GetTranslateTearOff(
+      SVGPoint* aVal, SVGSVGElement* aSVGSVGElement);
+
+  bool IsInList() const { return HasOwner() && !IsTranslatePoint(); }
+
+  
+
+
+
+
+  bool HasOwner() const { return !!mOwner; }
+
+  bool IsTranslatePoint() const { return mIsTranslatePoint; }
+
+  void DidChangeTranslate();
+
+  
+
+
+
+
+
+
+
+
+  void InsertingIntoList(DOMSVGPointList* aList, uint32_t aListIndex,
+                         bool aIsAnimValItem);
+
+  static uint32_t MaxListIndex() {
+    return (1U << MOZ_SVG_LIST_INDEX_BIT_COUNT) - 1;
   }
 
   
-  virtual float X() override;
-  virtual void SetX(float aX, ErrorResult& rv) override;
-  virtual float Y() override;
-  virtual void SetY(float aY, ErrorResult& rv) override;
-  virtual already_AddRefed<nsISVGPoint> MatrixTransform(
-      const DOMMatrix2DInit& aMatrix, ErrorResult& aRv) override;
-  nsISupports* GetParentObject() override { return mList; }
+  void UpdateListIndex(uint32_t aListIndex) { mListIndex = aListIndex; }
 
   
 
 
 
-  bool AttrIsAnimating() const { return mList && mList->AttrIsAnimating(); }
 
-  virtual DOMSVGPoint* Copy() override { return new DOMSVGPoint(this); }
 
- protected:
-  SVGElement* Element() { return mList->Element(); }
+  void RemovingFromList();
+
+  SVGPoint ToSVGPoint() { return InternalItem(); }
+
+  
+  float X();
+  void SetX(float aX, ErrorResult& rv);
+  float Y();
+  void SetY(float aY, ErrorResult& rv);
+  already_AddRefed<DOMSVGPoint> MatrixTransform(const DOMMatrix2DInit& aMatrix,
+                                                ErrorResult& aRv);
+
+  nsISupports* GetParentObject() { return Element(); }
+
+  
+
+
+
+  bool AttrIsAnimating() const;
+
+  JSObject* WrapObject(JSContext* cx,
+                       JS::Handle<JSObject*> aGivenProto) override;
+
+  DOMSVGPoint* Copy() { return new DOMSVGPoint(InternalItem()); }
+
+ private:
+#ifdef DEBUG
+  bool IndexIsValid();
+#endif
+
+  SVGElement* Element();
+
+  
+
+
+
+
+  void CleanupWeakRefs();
+
+  
+
+
+
+  SVGPoint& InternalItem();
+
+  SVGPoint* mVal;              
+                               
+  RefPtr<nsISupports> mOwner;  
+                               
+                               
+
+  
+  
+
+  uint32_t mListIndex : MOZ_SVG_LIST_INDEX_BIT_COUNT;
+  uint32_t mIsAnimValItem : 1;     
+  uint32_t mIsTranslatePoint : 1;  
 };
 
 }  
 }  
+
+#undef MOZ_SVG_LIST_INDEX_BIT_COUNT
 
 #endif  

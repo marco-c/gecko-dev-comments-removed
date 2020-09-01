@@ -23,7 +23,6 @@ namespace mozilla {
 namespace dom {
 class DOMSVGPoint;
 class DOMSVGPointList;
-class nsISVGPoint;
 }  
 
 
@@ -36,7 +35,6 @@ class nsISVGPoint;
 
 
 class SVGPointList {
-  friend class dom::nsISVGPoint;
   friend class SVGAnimatedPointList;
   friend class dom::DOMSVGPointList;
   friend class dom::DOMSVGPoint;
