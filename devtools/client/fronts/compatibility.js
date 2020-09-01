@@ -10,9 +10,26 @@ const {
 } = require("devtools/shared/protocol");
 const { compatibilitySpec } = require("devtools/shared/specs/compatibility");
 
+const PREF_TARGET_BROWSERS = "devtools.inspector.compatibility.target-browsers";
+
 class CompatibilityFront extends FrontClassWithSpec(compatibilitySpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
+    this.client = client;
+  }
+
+  async initialize() {
+    
+    
+    const preferenceFront = await this.client.mainRoot.getFront("preference");
+    try {
+      await preferenceFront.getCharPref(PREF_TARGET_BROWSERS);
+    } catch (e) {
+      
+      
+      
+      await preferenceFront.setCharPref(PREF_TARGET_BROWSERS, "");
+    }
   }
 
   
