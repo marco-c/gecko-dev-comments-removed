@@ -265,7 +265,7 @@ def bootstrap(topsrcdir, mozilla_dir=None):
         
         
         
-        if handler.category == 'testing':
+        if handler.category == 'testing' and not handler.ok_if_tests_disabled:
             from mozbuild.base import BuildEnvironmentNotFoundException
             try:
                 from mozbuild.base import MozbuildObject
