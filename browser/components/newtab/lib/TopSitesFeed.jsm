@@ -196,14 +196,44 @@ this.TopSitesFeed = class TopSitesFeed {
       return;
     }
 
+    
     let sites;
     try {
       sites = Services.prefs.getStringPref(REMOTE_SETTING_OVERRIDE_PREF);
-    } catch (e) {
-      
-      sites = "https://mozilla.org/#%YYYYMMDDHH%,https://firefox.com";
+    } catch (e) {}
+    if (sites) {
+      this.refreshDefaults(sites);
+      return;
     }
-    this.refreshDefaults(sites);
+
+    
+    
+    let remoteSettingData = [
+      {
+        title: "Mozilla!",
+        url: "https://mozilla.org/#%YYYYMMDDHH%",
+        send_attribution_request: true,
+      },
+      {
+        url: "https://firefox.com",
+      },
+    ];
+
+    
+    DEFAULT_TOP_SITES.length = 0;
+
+    for (let siteData of remoteSettingData) {
+      let link = {
+        isDefault: true,
+        url: siteData.url,
+        hostname: shortURL(siteData),
+        sendTopSiteAttributionRequest: !!siteData.send_attribution_request,
+      };
+      if (siteData.title) {
+        link.label = siteData.title;
+      }
+      DEFAULT_TOP_SITES.push(link);
+    }
   }
 
   refreshDefaults(sites) {
@@ -376,8 +406,6 @@ this.TopSitesFeed = class TopSitesFeed {
       if (this._useRemoteSetting) {
         link = {
           ...link,
-          
-          sendTopSiteAttributionRequest: link.isDefault,
           url: link.url.replace("%YYYYMMDDHH%", yyyymmddhh),
         };
       }
