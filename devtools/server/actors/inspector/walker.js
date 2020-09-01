@@ -208,8 +208,11 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       targetActor.chromeEventHandler
     );
 
+    
+    
     this.isOverflowDebuggingEnabled = Services.prefs.getBoolPref(
-      "devtools.overflow.debugging.enabled"
+      "devtools.overflow.debugging.enabled",
+      false
     );
 
     
