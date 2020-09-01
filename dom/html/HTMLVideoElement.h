@@ -152,6 +152,8 @@ class HTMLVideoElement final : public HTMLMediaElement {
   void OnSecondaryVideoContainerInstalled(
       const RefPtr<VideoFrameContainer>& aSecondaryContainer) override;
 
+  void OnSecondaryVideoOutputFirstFrameRendered();
+
  protected:
   virtual ~HTMLVideoElement();
 
@@ -175,6 +177,8 @@ class HTMLVideoElement final : public HTMLMediaElement {
 
   bool mIsOrientationLocked;
 
+  WatchManager<HTMLVideoElement> mVideoWatchManager;
+
  private:
   bool SetVisualCloneTarget(
       RefPtr<HTMLVideoElement> aVisualCloneTarget,
@@ -196,7 +200,7 @@ class HTMLVideoElement final : public HTMLMediaElement {
   
   
   
-  RefPtr<SecondaryVideoOutput> mSecondaryVideoOutput;
+  RefPtr<FirstFrameVideoOutput> mSecondaryVideoOutput;
   
   
   

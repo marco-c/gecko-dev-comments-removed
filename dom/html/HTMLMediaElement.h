@@ -50,6 +50,7 @@ class ChannelMediaDecoder;
 class DecoderDoctorDiagnostics;
 class DOMMediaStream;
 class ErrorResult;
+class FirstFrameVideoOutput;
 class MediaResource;
 class MediaDecoder;
 class MediaInputPort;
@@ -58,6 +59,7 @@ class MediaTrackGraph;
 class MediaStreamWindowCapturer;
 struct SharedDummyTrack;
 class VideoFrameContainer;
+class VideoOutput;
 namespace dom {
 class MediaKeys;
 class TextTrack;
@@ -1352,6 +1354,15 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  
+  
+  
+  void SetSecondaryMediaStreamRenderer(
+      VideoFrameContainer* aContainer,
+      FirstFrameVideoOutput* aFirstFrameOutput = nullptr);
+
+  
+  
   void UpdateMediaControlAfterPictureInPictureModeChanged();
 
   
@@ -1383,6 +1394,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   RefPtr<MediaStreamRenderer> mMediaStreamRenderer;
+
+  
+  
+  RefPtr<MediaStreamRenderer> mSecondaryMediaStreamRenderer;
 
   
   
