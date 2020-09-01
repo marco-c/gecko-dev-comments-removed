@@ -60,9 +60,20 @@ struct ScopeContext {
   
   mozilla::Maybe<MemberInitializers> memberInitializers = {};
 
-  explicit ScopeContext(Scope* scope, JSObject* enclosingEnv = nullptr) {
+  
+  
+  
+  
+  
+  
+  
+  JS::Rooted<Scope*> effectiveScope;
+
+  explicit ScopeContext(JSContext* cx, Scope* scope,
+                        JSObject* enclosingEnv = nullptr)
+      : effectiveScope(cx, determineEffectiveScope(scope, enclosingEnv)) {
     computeAllowSyntax(scope);
-    computeThisBinding(scope, enclosingEnv);
+    computeThisBinding(effectiveScope);
     computeInWith(scope);
     computeExternalInitializers(scope);
     computeInClass(scope);
@@ -70,10 +81,12 @@ struct ScopeContext {
 
  private:
   void computeAllowSyntax(Scope* scope);
-  void computeThisBinding(Scope* scope, JSObject* environment = nullptr);
+  void computeThisBinding(Scope* scope);
   void computeInWith(Scope* scope);
   void computeExternalInitializers(Scope* scope);
   void computeInClass(Scope* scope);
+
+  static Scope* determineEffectiveScope(Scope* scope, JSObject* environment);
 };
 
 struct CompilationInfo;
@@ -241,7 +254,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
         keepAtoms(cx),
         parserAtoms(cx),
         directives(options.forceStrictMode()),
-        scopeContext(enclosingScope, enclosingEnv),
+        scopeContext(cx, enclosingScope, enclosingEnv),
         script(cx),
         lazy(cx),
         module(cx),

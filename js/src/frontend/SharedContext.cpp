@@ -98,40 +98,9 @@ void ScopeContext::computeAllowSyntax(Scope* scope) {
   }
 }
 
-void ScopeContext::computeThisBinding(Scope* scope, JSObject* environment) {
+void ScopeContext::computeThisBinding(Scope* scope) {
   
-  
-  Scope* effectiveScope = scope;
-
-  
-  
-  
-  
-  
-  
-  
-  if (environment && scope->hasOnChain(ScopeKind::NonSyntactic)) {
-    JSObject* env = environment;
-    while (env) {
-      
-      
-      JSObject* unwrapped = env;
-      if (env->is<DebugEnvironmentProxy>()) {
-        unwrapped = &env->as<DebugEnvironmentProxy>().environment();
-      }
-
-      if (unwrapped->is<CallObject>()) {
-        JSFunction* callee = &unwrapped->as<CallObject>().callee();
-        effectiveScope = callee->nonLazyScript()->bodyScope();
-        break;
-      }
-
-      env = env->enclosingEnvironment();
-    }
-  }
-
-  
-  for (ScopeIter si(effectiveScope); si; si++) {
+  for (ScopeIter si(scope); si; si++) {
     if (si.kind() == ScopeKind::Module) {
       thisBinding = ThisBinding::Module;
       return;
@@ -199,6 +168,33 @@ void ScopeContext::computeExternalInitializers(Scope* scope) {
       break;
     }
   }
+}
+
+
+Scope* ScopeContext::determineEffectiveScope(Scope* scope,
+                                             JSObject* environment) {
+  
+  
+  if (environment && scope->hasOnChain(ScopeKind::NonSyntactic)) {
+    JSObject* env = environment;
+    while (env) {
+      
+      
+      JSObject* unwrapped = env;
+      if (env->is<DebugEnvironmentProxy>()) {
+        unwrapped = &env->as<DebugEnvironmentProxy>().environment();
+      }
+
+      if (unwrapped->is<CallObject>()) {
+        JSFunction* callee = &unwrapped->as<CallObject>().callee();
+        return callee->nonLazyScript()->bodyScope();
+      }
+
+      env = env->enclosingEnvironment();
+    }
+  }
+
+  return scope;
 }
 
 EvalSharedContext::EvalSharedContext(JSContext* cx,

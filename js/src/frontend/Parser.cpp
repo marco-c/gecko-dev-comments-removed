@@ -1495,11 +1495,16 @@ bool PerHandlerParser<ParseHandler>::checkForUndefinedPrivateFields(
     return false;
   };
 
-  RootedScope enclosingScope(cx_, this->getCompilationInfo().enclosingScope);
   
   
   for (UnboundPrivateName unboundName : unboundPrivateNames) {
-    if (!verifyPrivateName(cx_, this, enclosingScope, unboundName)) {
+    
+    
+    
+    
+    if (!verifyPrivateName(
+            cx_, this, this->getCompilationInfo().scopeContext.effectiveScope,
+            unboundName)) {
       return false;
     }
   }
