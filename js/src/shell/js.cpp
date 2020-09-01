@@ -4689,6 +4689,15 @@ static bool SetJitCompilerOption(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
+  if (opt == JSJITCOMPILER_WARP_ENABLE &&
+      bool(number) != jit::JitOptions.warpBuilder) {
+    JS_ReportErrorASCII(
+        cx, "Enabling or disabling Warp at runtime is not supported.");
+    return false;
+  }
+
+  
+  
   if ((opt == JSJITCOMPILER_BASELINE_ENABLE ||
        opt == JSJITCOMPILER_ION_ENABLE) &&
       number == 0) {
