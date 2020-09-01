@@ -372,7 +372,6 @@ void DCLayerTree::AddSurface(wr::NativeSurfaceId aId,
   gfx::Rect clip = transform.Inverse().TransformBounds(
       gfx::Rect(aClipRect.origin.x, aClipRect.origin.y, aClipRect.size.width,
                 aClipRect.size.height));
-  clip.Round();
   
   
   visual->SetClip(D2DRect(clip));
