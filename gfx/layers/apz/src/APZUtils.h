@@ -7,6 +7,11 @@
 #ifndef mozilla_layers_APZUtils_h
 #define mozilla_layers_APZUtils_h
 
+
+
+
+
+
 #include <stdint.h>  
 #include <type_traits>
 #include "gfxTypes.h"
@@ -21,31 +26,7 @@
 
 namespace mozilla {
 
-struct ExternalPixel;
-
-template <>
-struct IsPixel<ExternalPixel> : std::true_type {};
-
-typedef gfx::CoordTyped<ExternalPixel> ExternalCoord;
-typedef gfx::IntCoordTyped<ExternalPixel> ExternalIntCoord;
-typedef gfx::PointTyped<ExternalPixel> ExternalPoint;
-typedef gfx::IntPointTyped<ExternalPixel> ExternalIntPoint;
-typedef gfx::SizeTyped<ExternalPixel> ExternalSize;
-typedef gfx::IntSizeTyped<ExternalPixel> ExternalIntSize;
-typedef gfx::RectTyped<ExternalPixel> ExternalRect;
-typedef gfx::IntRectTyped<ExternalPixel> ExternalIntRect;
-typedef gfx::MarginTyped<ExternalPixel> ExternalMargin;
-typedef gfx::IntMarginTyped<ExternalPixel> ExternalIntMargin;
-typedef gfx::IntRegionTyped<ExternalPixel> ExternalIntRegion;
-
-typedef gfx::Matrix4x4Typed<ExternalPixel, ParentLayerPixel>
-    ExternalToParentLayerMatrix4x4;
-
-struct ExternalPixel {};
-
 namespace layers {
-
-class AsyncPanZoomController;
 
 enum CancelAnimationFlags : uint32_t {
   Default = 0x0,             
@@ -78,11 +59,6 @@ enum class ScrollSource {
   
   Keyboard,
 };
-
-MOZ_DEFINE_ENUM_CLASS_WITH_BASE(APZWheelAction, uint8_t, (
-    Scroll,
-    PinchZoom
-))
 
 
 
@@ -137,22 +113,6 @@ constexpr AsyncTransformComponents LayoutAndVisual(
     AsyncTransformComponent::eLayout, AsyncTransformComponent::eVisual);
 
 namespace apz {
-
-
-
-
-
-
-
-void InitializeGlobalState();
-
-
-
-
-
-
-const ScreenMargin CalculatePendingDisplayPort(
-    const FrameMetrics& aFrameMetrics, const ParentLayerPoint& aVelocity);
 
 
 
