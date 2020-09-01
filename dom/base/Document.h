@@ -2156,9 +2156,7 @@ class Document : public nsINode,
     
     
     
-    if (aIsTopLevelContentDocument) {
-      SetAllowPaymentRequest(true);
-    }
+    SetAllowPaymentRequest(aIsTopLevelContentDocument);
   }
 
   bool IsContentDocument() const { return mIsContentDocument; }
