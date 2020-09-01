@@ -16,6 +16,7 @@
 #ifdef MOZ_GECKO_PROFILER
 
 #  include "mozilla/ProfileChunkedBuffer.h"
+#  include "mozilla/TimeStamp.h"
 
 #  include <string_view>
 #  include <string>
@@ -277,6 +278,116 @@ class MarkerThreadId {
 
  private:
   int mThreadId = 0;
+};
+
+
+
+
+
+
+class MarkerTiming {
+ public:
+  
+  
+
+  static MarkerTiming InstantAt(const TimeStamp& aTime) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an instant marker.");
+    return MarkerTiming{aTime, TimeStamp{}, MarkerTiming::Phase::Instant};
+  }
+
+  static MarkerTiming InstantNow() {
+    return InstantAt(TimeStamp::NowUnfuzzed());
+  }
+
+  static MarkerTiming Interval(const TimeStamp& aStartTime,
+                               const TimeStamp& aEndTime) {
+    MOZ_ASSERT(!aStartTime.IsNull(),
+               "Start time is null for an interval marker.");
+    MOZ_ASSERT(!aEndTime.IsNull(), "End time is null for an interval marker.");
+    return MarkerTiming{aStartTime, aEndTime, MarkerTiming::Phase::Interval};
+  }
+
+  static MarkerTiming IntervalUntilNowFrom(const TimeStamp& aStartTime) {
+    return Interval(aStartTime, TimeStamp::NowUnfuzzed());
+  }
+
+  static MarkerTiming IntervalStart(
+      const TimeStamp& aTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an interval start marker.");
+    return MarkerTiming{aTime, TimeStamp{}, MarkerTiming::Phase::IntervalStart};
+  }
+
+  static MarkerTiming IntervalEnd(
+      const TimeStamp& aTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an interval end marker.");
+    return MarkerTiming{TimeStamp{}, aTime, MarkerTiming::Phase::IntervalEnd};
+  }
+
+  [[nodiscard]] const TimeStamp& StartTime() const { return mStartTime; }
+  [[nodiscard]] const TimeStamp& EndTime() const { return mEndTime; }
+
+  enum class Phase : uint8_t {
+    Instant = 0,
+    Interval = 1,
+    IntervalStart = 2,
+    IntervalEnd = 3,
+  };
+
+  [[nodiscard]] Phase MarkerPhase() const {
+    MOZ_ASSERT(!IsUnspecified());
+    return mPhase;
+  }
+
+  
+  
+  [[nodiscard]] double GetStartTime() const {
+    MOZ_ASSERT(!IsUnspecified());
+    
+    
+    return MarkerTiming::timeStampToDouble(mStartTime);
+  }
+
+  [[nodiscard]] double GetEndTime() const {
+    MOZ_ASSERT(!IsUnspecified());
+    
+    
+    return MarkerTiming::timeStampToDouble(mEndTime);
+  }
+
+  [[nodiscard]] uint8_t GetPhase() const {
+    MOZ_ASSERT(!IsUnspecified());
+    return static_cast<uint8_t>(mPhase);
+  }
+
+ private:
+  friend ProfileBufferEntryWriter::Serializer<MarkerTiming>;
+  friend ProfileBufferEntryReader::Deserializer<MarkerTiming>;
+
+  
+  
+  constexpr MarkerTiming() = default;
+
+  
+  [[nodiscard]] bool IsUnspecified() const {
+    return mStartTime.IsNull() && mEndTime.IsNull();
+  }
+
+  
+  constexpr MarkerTiming(const TimeStamp& aStartTime, const TimeStamp& aEndTime,
+                         Phase aPhase)
+      : mStartTime(aStartTime), mEndTime(aEndTime), mPhase(aPhase) {}
+
+  static double timeStampToDouble(const TimeStamp& time) {
+    if (time.IsNull()) {
+      
+      return 0;
+    }
+    return (time - TimeStamp::ProcessCreation()).ToMilliseconds();
+  }
+
+  TimeStamp mStartTime;
+  TimeStamp mEndTime;
+  Phase mPhase = Phase::Instant;
 };
 
 }  
