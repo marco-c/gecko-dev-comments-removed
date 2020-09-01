@@ -68,21 +68,10 @@
 }
 
 .controlsContainer [hidden],
-.controlBar[hidden] .progressBar,
-.controlBar[hidden] .bufferBar,
+.controlBar[hidden],
 .pictureInPictureToggleButton[hidden],
 .videocontrols[inDOMFullscreen] > .controlsContainer > .controlsOverlay > .pictureInPictureToggleButton {
   display: none;
-}
-
-
-
-
-
-.controlBar[hidden] {
-  display: flex;
-  opacity: 0;
-  pointer-events: none;
 }
 
 .controlBar[size="hidden"] {
