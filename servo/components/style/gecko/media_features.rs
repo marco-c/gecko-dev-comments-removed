@@ -313,8 +313,8 @@ fn eval_prefers_reduced_motion(device: &Device, query_value: Option<PrefersReduc
 #[repr(u8)]
 #[allow(missing_docs)]
 enum PrefersContrast {
-    High,
-    Low,
+    More,
+    Less,
     NoPreference,
     Forced,
 }
@@ -328,10 +328,9 @@ enum PrefersContrast {
 pub enum ContrastPref {
     
     
-    High,
+    More,
     
-    
-    Low,
+    Less,
     
     NoPreference,
 }
@@ -344,8 +343,8 @@ fn eval_prefers_contrast(device: &Device, query_value: Option<PrefersContrast>) 
     if let Some(query_value) = query_value {
         match query_value {
             PrefersContrast::Forced => forced_colors,
-            PrefersContrast::High => contrast_pref == ContrastPref::High,
-            PrefersContrast::Low => contrast_pref == ContrastPref::Low,
+            PrefersContrast::More => contrast_pref == ContrastPref::More,
+            PrefersContrast::Less => contrast_pref == ContrastPref::Less,
             PrefersContrast::NoPreference => contrast_pref == ContrastPref::NoPreference,
         }
     } else {
