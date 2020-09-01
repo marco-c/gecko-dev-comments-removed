@@ -1273,6 +1273,9 @@ class HeapBase<JS::Value, Wrapper>
   }
 };
 
+MOZ_HAVE_NORETURN MOZ_COLD MOZ_NEVER_INLINE void ReportBadValueTypeAndCrash(
+    const JS::Value& val);
+
 
 
 template <typename F>
@@ -1314,7 +1317,7 @@ auto MapGCThingTyped(const JS::Value& val, F&& f) {
     }
   }
 
-  MOZ_CRASH("no missing return");
+  ReportBadValueTypeAndCrash(val);
 }
 
 
