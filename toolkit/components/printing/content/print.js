@@ -110,10 +110,12 @@ var PrintEventHandler = {
     
     let {
       destinations,
+      defaultSystemPrinter,
       selectedPrinter,
       printersByName,
     } = await this.getPrintDestinations();
     PrintSettingsViewProxy.availablePrinters = printersByName;
+    PrintSettingsViewProxy.defaultSystemPrinter = defaultSystemPrinter;
 
     document.addEventListener("print", e => this.print());
     document.addEventListener("update-print-settings", e =>
@@ -125,7 +127,13 @@ var PrintEventHandler = {
       
 
       
-      let settings = this.settings.clone();
+      
+      
+      
+      let settings =
+        this.settings.printerName == PrintUtils.SAVE_TO_PDF_PRINTER
+          ? PrintUtils.getPrintSettings(this.viewSettings.defaultSystemPrinter)
+          : this.settings.clone();
       const PRINTPROMPTSVC = Cc[
         "@mozilla.org/embedcomp/printingprompt-service;1"
       ].getService(Ci.nsIPrintingPromptService);
@@ -458,7 +466,7 @@ var PrintEventHandler = {
     const printersByName = {};
 
     let lastUsedPrinter;
-    let defaultPrinter;
+    let defaultSystemPrinter;
 
     let saveToPdfPrinter = {
       nameId: "printui-destination-pdf-label",
@@ -485,16 +493,22 @@ var PrintEventHandler = {
           lastUsedPrinter = destination;
         }
         if (name == defaultPrinterName) {
-          defaultPrinter = destination;
+          defaultSystemPrinter = destination;
         }
 
         return destination;
       }),
     ];
 
-    let selectedPrinter = lastUsedPrinter || defaultPrinter || saveToPdfPrinter;
+    let selectedPrinter =
+      lastUsedPrinter || defaultSystemPrinter || saveToPdfPrinter;
 
-    return { destinations, selectedPrinter, printersByName };
+    return {
+      destinations,
+      selectedPrinter,
+      printersByName,
+      defaultSystemPrinter,
+    };
   },
 
   getMarginPresets(marginSize) {
@@ -638,6 +652,13 @@ const PrintSettingsViewProxy = {
           !this.get(target, "supportsColor") ||
           (target.printerName != PrintUtils.SAVE_TO_PDF_PRINTER &&
             AppConstants.platform !== "macosx")
+        );
+      case "defaultSystemPrinter":
+        return (
+          this.defaultSystemPrinter?.value ||
+          Object.getOwnPropertyNames(this.availablePrinters).find(
+            p => p.name != PrintUtils.SAVE_TO_PDF_PRINTER
+          )?.value
         );
     }
     return target[name];
@@ -878,9 +899,13 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
   }
 
   update(settings) {
+    
+    
+    
+    
     this.querySelector("#system-print").hidden =
-      settings.printerName == PrintUtils.SAVE_TO_PDF_PRINTER &&
-      AppConstants.platform != "macosx";
+      !settings.defaultSystemPrinter && AppConstants.platform !== "macosx";
+
     this.querySelector("#copies").hidden = settings.willSaveToFile;
   }
 
