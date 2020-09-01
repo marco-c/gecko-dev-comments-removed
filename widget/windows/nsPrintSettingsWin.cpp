@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "nsPrintSettingsWin.h"
 
 #include "mozilla/ArrayUtils.h"
@@ -12,152 +12,152 @@
 
 using namespace mozilla;
 
-
-
-
+// Using paper sizes from wingdi.h and the units given there, plus a little
+// extra research for the ones it doesn't give. Looks like the list hasn't
+// changed since Windows 2000, so should be fairly stable now.
 const short kPaperSizeUnits[] = {
-    nsIPrintSettings::kPaperSizeMillimeters,  
-                                              
-                                              
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
+    nsIPrintSettings::kPaperSizeMillimeters,  // Not Used default to mm as
+                                              // DEVMODE uses tenths of mm, just
+                                              // in case
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LETTER
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LETTERSMALL
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_TABLOID
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LEDGER
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LEGAL
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_STATEMENT
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_EXECUTIVE
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A3
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A4
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A4SMALL
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A5
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_B4
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_B5
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_FOLIO
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_QUARTO
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_10X14
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_11X17
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_NOTE
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_ENV_9
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_ENV_10
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_ENV_11
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_ENV_12
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_ENV_14
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_CSHEET
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_DSHEET
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_ESHEET
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_DL
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_C5
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_C3
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_C4
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_C6
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_C65
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_B4
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_B5
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_B6
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_ITALY
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_ENV_MONARCH
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_ENV_PERSONAL
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_FANFOLD_US
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_FANFOLD_STD_GERMAN
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_FANFOLD_LGL_GERMAN
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ISO_B4
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JAPANESE_POSTCARD
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_9X11
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_10X11
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_15X11
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_ENV_INVITE
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_RESERVED_48
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_RESERVED_49
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LETTER_EXTRA
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LEGAL_EXTRA
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_TABLOID_EXTRA
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_A4_EXTRA
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LETTER_TRANSVERSE
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A4_TRANSVERSE
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LETTER_EXTRA_TRANSVERSE
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A_PLUS
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_B_PLUS
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LETTER_PLUS
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A4_PLUS
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A5_TRANSVERSE
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_B5_TRANSVERSE
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A3_EXTRA
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A5_EXTRA
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_B5_EXTRA
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A2
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A3_TRANSVERSE
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A3_EXTRA_TRANSVERSE
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_DBL_JAPANESE_POSTCARD
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A6
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_KAKU2
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_KAKU3
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_CHOU3
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_CHOU4
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_LETTER_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A3_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A4_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A5_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_B4_JIS_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_B5_JIS_ROTATED
     nsIPrintSettings::
-        kPaperSizeMillimeters,  
+        kPaperSizeMillimeters,  // DMPAPER_JAPANESE_POSTCARD_ROTATED
     nsIPrintSettings::
-        kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeInches,       
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
-    nsIPrintSettings::kPaperSizeMillimeters,  
+        kPaperSizeMillimeters,  // DMPAPER_DBL_JAPANESE_POSTCARD_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_A6_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_KAKU2_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_KAKU3_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_CHOU3_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_CHOU4_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_B6_JIS
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_B6_JIS_ROTATED
+    nsIPrintSettings::kPaperSizeInches,       // DMPAPER_12X11
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_YOU4
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_JENV_YOU4_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_P16K
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_P32K
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_P32KBIG
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_1
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_2
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_3
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_4
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_5
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_6
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_7
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_8
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_9
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_10
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_P16K_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_P32K_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_P32KBIG_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_1_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_2_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_3_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_4_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_5_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_6_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_7_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_8_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_9_ROTATED
+    nsIPrintSettings::kPaperSizeMillimeters,  // DMPAPER_PENV_10_ROTATED
 };
 
 NS_IMPL_ISUPPORTS_INHERITED(nsPrintSettingsWin, nsPrintSettings,
                             nsIPrintSettingsWin)
 
-
-
-
-
+/** ---------------------------------------------------
+ *  See documentation in nsPrintSettingsWin.h
+ *	@update
+ */
 nsPrintSettingsWin::nsPrintSettingsWin()
     : nsPrintSettings(),
       mDeviceName(nullptr),
       mDriverName(nullptr),
       mDevMode(nullptr) {}
 
-
-
-
-
+/** ---------------------------------------------------
+ *  See documentation in nsPrintSettingsWin.h
+ *	@update
+ */
 nsPrintSettingsWin::nsPrintSettingsWin(const nsPrintSettingsWin& aPS)
     : mDevMode(nullptr) {
   *this = aPS;
@@ -172,7 +172,7 @@ void nsPrintSettingsWin::InitWithInitializer(
     return;
   }
 
-  
+  // SetDevMode copies the DEVMODE.
   SetDevMode(const_cast<DEVMODEW*>(reinterpret_cast<const DEVMODEW*>(
       aSettings.mDevmodeWStorage.Elements())));
 
@@ -187,7 +187,7 @@ void nsPrintSettingsWin::InitWithInitializer(
   }
 
   if (mDevMode->dmFields & DM_SCALE) {
-    
+    // Since we do the scaling, grab the DEVMODE value and reset it back to 100.
     double scale = double(mDevMode->dmScale) / 100.0f;
     if (mScaling == 1.0 || scale != 1.0) {
       SetScaling(scale);
@@ -209,7 +209,24 @@ void nsPrintSettingsWin::InitWithInitializer(
     SetPrintInColor(mDevMode->dmColor == DMCOLOR_COLOR);
   }
 
-  
+  if (mDevMode->dmFields & DM_DUPLEX) {
+    switch (mDevMode->dmDuplex) {
+      default:
+        MOZ_ASSERT_UNREACHABLE("bad value for dmDuplex field");
+        [[fallthrough]];
+      case DMDUP_SIMPLEX:
+        SetDuplex(kSimplex);
+        break;
+      case DMDUP_HORIZONTAL:
+        SetDuplex(kDuplexHorizontal);
+        break;
+      case DMDUP_VERTICAL:
+        SetDuplex(kDuplexVertical);
+        break;
+    }
+  }
+
+  // Set the paper sizes to match the unit.
   double pointsToSizeUnit =
       mPaperSizeUnit == kPaperSizeInches ? 1.0 / 72.0 : 25.4 / 72.0;
   SetPaperWidth(aSettings.mPaperInfo.mSize.width * pointsToSizeUnit);
@@ -223,8 +240,8 @@ void nsPrintSettingsWin::InitWithInitializer(
     printableHeightInPoints -= (margin.left + margin.right);
   }
 
-  
-  
+  // Keep these values in portrait format, so we can reflect our own changes
+  // to mOrientation.
   if (mOrientation == kPortraitOrientation) {
     mPrintableWidthInInches = printableWidthInPoints / POINTS_PER_INCH_FLOAT;
     mPrintableHeightInInches = printableHeightInPoints / POINTS_PER_INCH_FLOAT;
@@ -241,10 +258,10 @@ already_AddRefed<nsIPrintSettings> CreatePlatformPrintSettings(
   return settings.forget();
 }
 
-
-
-
-
+/** ---------------------------------------------------
+ *  See documentation in nsPrintSettingsWin.h
+ *	@update
+ */
 nsPrintSettingsWin::~nsPrintSettingsWin() {
   if (mDevMode) ::HeapFree(::GetProcessHeap(), 0, mDevMode);
 }
@@ -331,7 +348,7 @@ nsPrintSettingsWin::SetPrintableHeightInInches(
 
 NS_IMETHODIMP
 nsPrintSettingsWin::GetEffectivePageSize(double* aWidth, double* aHeight) {
-  
+  // If printable page size not set, fall back to nsPrintSettings.
   if (mPrintableWidthInInches == 0l || mPrintableHeightInInches == 0l) {
     return nsPrintSettings::GetEffectivePageSize(aWidth, aHeight);
   }
@@ -388,7 +405,7 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
     }
   }
 
-  
+  // Since we do the scaling, grab their value and reset back to 100.
   if (aDevMode->dmFields & DM_SCALE) {
     double scale = double(aDevMode->dmScale) / 100.0f;
     if (mScaling == 1.0 || scale != 1.0) {
@@ -399,7 +416,7 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
 
   if (aDevMode->dmFields & DM_PAPERSIZE) {
     mPaperData = aDevMode->dmPaperSize;
-    
+    // If not a paper size we know about, the unit will be the last one saved.
     if (mPaperData > 0 &&
         mPaperData < int32_t(mozilla::ArrayLength(kPaperSizeUnits))) {
       mPaperSizeUnit = kPaperSizeUnits[mPaperData];
@@ -414,7 +431,7 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
 
   InitUnwriteableMargin(aHdc);
 
-  
+  // The length and width in DEVMODE are always in tenths of a millimeter.
   double sizeUnitToTenthsOfAmm =
       10L * (mPaperSizeUnit == kPaperSizeInches ? MM_PER_INCH_FLOAT : 1L);
   if (aDevMode->dmFields & DM_PAPERLENGTH) {
@@ -429,14 +446,14 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
     mPaperWidth = -1l;
   }
 
-  
-  
+  // Note: we only scale the printing using the LOGPIXELSY, so we use that
+  // when calculating the surface width as well as the height.
   int32_t printableWidthInDots = GetDeviceCaps(aHdc, PHYSICALWIDTH);
   int32_t printableHeightInDots = GetDeviceCaps(aHdc, PHYSICALHEIGHT);
   int32_t heightDPI = GetDeviceCaps(aHdc, LOGPIXELSY);
 
-  
-  
+  // Keep these values in portrait format, so we can reflect our own changes
+  // to mOrientation.
   if (mOrientation == kPortraitOrientation) {
     mPrintableWidthInInches = double(printableWidthInDots) / heightDPI;
     mPrintableHeightInInches = double(printableHeightInDots) / heightDPI;
@@ -445,7 +462,7 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
     mPrintableWidthInInches = double(printableHeightInDots) / heightDPI;
   }
 
-  
+  // Using Y to match existing code for print scaling calculations.
   mResolution = heightDPI;
 }
 
@@ -463,12 +480,12 @@ void nsPrintSettingsWin::CopyToNative(DEVMODEW* aDevMode) {
   aDevMode->dmFields |= DM_COLOR;
   aDevMode->dmColor = mPrintInColor ? DMCOLOR_COLOR : DMCOLOR_MONOCHROME;
 
-  
+  // The length and width in DEVMODE are always in tenths of a millimeter.
   double sizeUnitToTenthsOfAmm =
       10L * (mPaperSizeUnit == kPaperSizeInches ? MM_PER_INCH_FLOAT : 1L);
 
-  
-  
+  // Note: small page sizes can be required here for sticker, label and slide
+  // printers etc. see bug 1271900.
   if (mPaperHeight > 0) {
     aDevMode->dmPaperLength = mPaperHeight * sizeUnitToTenthsOfAmm;
     aDevMode->dmFields |= DM_PAPERLENGTH;
@@ -485,17 +502,17 @@ void nsPrintSettingsWin::CopyToNative(DEVMODEW* aDevMode) {
     aDevMode->dmFields &= ~DM_PAPERWIDTH;
   }
 
-  
+  // Setup Orientation
   aDevMode->dmOrientation = mOrientation == kPortraitOrientation
                                 ? DMORIENT_PORTRAIT
                                 : DMORIENT_LANDSCAPE;
   aDevMode->dmFields |= DM_ORIENTATION;
 
-  
+  // Setup Number of Copies
   aDevMode->dmCopies = mNumCopies;
   aDevMode->dmFields |= DM_COPIES;
 
-  
+  // Setup Simplex/Duplex mode
   switch (mDuplex) {
     case kSimplex:
       aDevMode->dmDuplex = DMDUP_SIMPLEX;
@@ -515,14 +532,14 @@ void nsPrintSettingsWin::CopyToNative(DEVMODEW* aDevMode) {
   }
 }
 
-
+//-------------------------------------------
 nsresult nsPrintSettingsWin::_Clone(nsIPrintSettings** _retval) {
   RefPtr<nsPrintSettingsWin> printSettings = new nsPrintSettingsWin(*this);
   printSettings.forget(_retval);
   return NS_OK;
 }
 
-
+//-------------------------------------------
 nsPrintSettingsWin& nsPrintSettingsWin::operator=(
     const nsPrintSettingsWin& rhs) {
   if (this == &rhs) {
@@ -531,7 +548,7 @@ nsPrintSettingsWin& nsPrintSettingsWin::operator=(
 
   ((nsPrintSettings&)*this) = rhs;
 
-  
+  // Use free because we used the native malloc to create the memory
   if (mDevMode) {
     ::HeapFree(::GetProcessHeap(), 0, mDevMode);
   }
@@ -551,17 +568,17 @@ nsPrintSettingsWin& nsPrintSettingsWin::operator=(
   return *this;
 }
 
-
+//-------------------------------------------
 nsresult nsPrintSettingsWin::_Assign(nsIPrintSettings* aPS) {
   nsPrintSettingsWin* psWin = static_cast<nsPrintSettingsWin*>(aPS);
   *this = *psWin;
   return NS_OK;
 }
 
-
-
-
-
+//----------------------------------------------------------------------
+// Testing of assign and clone
+// This define turns on the testing module below
+// so at start up it writes and reads the prefs.
 #ifdef DEBUG_rodsX
 #  include "nsIPrintSettingsService.h"
 #  include "nsIServiceManager.h"
