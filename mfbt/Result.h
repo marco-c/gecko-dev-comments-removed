@@ -447,6 +447,8 @@ class MOZ_MUST_USE_TYPE Result final {
 
 
 
+
+
   template <typename F>
   auto map(F f) -> Result<decltype(f(*((V*)nullptr))), E> {
     using RetResult = Result<decltype(f(*((V*)nullptr))), E>;
@@ -478,13 +480,17 @@ class MOZ_MUST_USE_TYPE Result final {
 
 
 
+
+
   template <typename F>
   auto mapErr(F f) -> Result<V, std::result_of_t<F(E)>> {
     using RetResult = Result<V, std::result_of_t<F(E)>>;
-    return isOk() ? RetResult(unwrap()) : RetResult(f(unwrapErr()));
+    return MOZ_UNLIKELY(isErr()) ? RetResult(f(unwrapErr()))
+                                 : RetResult(unwrap());
   }
 
   
+
 
 
 
