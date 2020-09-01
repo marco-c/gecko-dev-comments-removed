@@ -108,22 +108,6 @@ var SearchTestUtils = Object.freeze({
     }
   },
 
-  async useMochitestEngines(testDir) {
-    
-    
-    let resProt = Services.io
-      .getProtocolHandler("resource")
-      .QueryInterface(Ci.nsIResProtocolHandler);
-    let originalSubstitution = resProt.getSubstitution("search-extensions");
-    resProt.setSubstitution(
-      "search-extensions",
-      Services.io.newURI("file://" + testDir.path)
-    );
-    gTestGlobals.registerCleanupFunction(() => {
-      resProt.setSubstitution("search-extensions", originalSubstitution);
-    });
-  },
-
   
 
 
@@ -304,10 +288,6 @@ var SearchTestUtils = Object.freeze({
 
 
   async updateRemoteSettingsConfig(config) {
-    if (!config) {
-      let settings = RemoteSettings(SearchUtils.SETTINGS_KEY);
-      config = await settings.get();
-    }
     const reloadObserved = SearchTestUtils.promiseSearchNotification(
       "engines-reloaded"
     );

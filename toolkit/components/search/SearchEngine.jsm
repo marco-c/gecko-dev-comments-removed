@@ -596,8 +596,6 @@ class SearchEngine {
   
   __searchForm = null;
   
-  _sendAttributionRequest = false;
-  
   _updateInterval = null;
   
   _updateURL = null;
@@ -622,9 +620,6 @@ class SearchEngine {
   _definedAliases = [];
   
   _urls = [];
-  
-  
-  _searchUrlQueryParamName = null;
 
   
 
@@ -978,8 +973,6 @@ class SearchEngine {
     this._telemetryId = configuration.telemetryId;
     this._name = searchProvider.name.trim();
     this._regionParams = configuration.regionParams;
-    this._sendAttributionRequest =
-      configuration.sendAttributionRequest ?? false;
 
     if (shortName) {
       this._shortName = shortName;
@@ -1402,10 +1395,6 @@ class SearchEngine {
     return this._getSearchFormWithPurpose();
   }
 
-  get sendAttributionRequest() {
-    return this._sendAttributionRequest;
-  }
-
   _getSearchFormWithPurpose(purpose) {
     
     var searchFormURL = this._getURLOfType(
@@ -1507,32 +1496,6 @@ class SearchEngine {
       );
     }
     return url.getSubmission(submissionData, this, purpose);
-  }
-
-  get searchUrlQueryParamName() {
-    if (this._searchUrlQueryParamName != null) {
-      return this._searchUrlQueryParamName;
-    }
-
-    let submission = this.getSubmission(
-      "{searchTerms}",
-      SearchUtils.URL_TYPE.SEARCH
-    );
-
-    if (submission.postData) {
-      Cu.reportError("searchUrlQueryParamName can't handle POST urls.");
-      return (this._searchUrlQueryParamName = "");
-    }
-
-    let queryParams = new URLSearchParams(submission.uri.query);
-    let searchUrlQueryParamName = "";
-    for (let [key, value] of queryParams) {
-      if (value == "{searchTerms}") {
-        searchUrlQueryParamName = key;
-      }
-    }
-
-    return (this._searchUrlQueryParamName = searchUrlQueryParamName);
   }
 
   

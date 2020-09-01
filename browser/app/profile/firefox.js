@@ -1313,8 +1313,7 @@ pref("prompts.tab_modal.enabled", true);
 pref("prompts.defaultModalType", 3);
 
 pref("browser.topsites.useRemoteSetting", false);
-
-pref("browser.partnerlink.attributionURL", "https://topsites.mozilla.io/cid/amzn_2020_a1");
+pref("browser.topsites.attributionURL", "");
 
 
 

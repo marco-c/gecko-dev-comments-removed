@@ -23,7 +23,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   CustomizableUI: "resource:///modules/CustomizableUI.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PageActions: "resource:///modules/PageActions.jsm",
-  PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   SearchTelemetry: "resource:///modules/SearchTelemetry.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -605,11 +604,7 @@ let BrowserUsageTelemetry = {
     this._handleSearchAction(engine, source, details);
   },
 
-  _recordSearch(engine, url, source, action = null) {
-    PartnerLinkAttribution.makeSearchEngineRequest(engine, url).catch(
-      Cu.reportError
-    );
-
+  _recordSearch(engine, source, action = null) {
     let scalarKey = action ? "search_" + action : "search";
     Services.telemetry.keyedScalarAdd(
       "browser.engagement.navigation." + source,
@@ -631,15 +626,15 @@ let BrowserUsageTelemetry = {
         this._handleSearchAndUrlbar(engine, source, details);
         break;
       case "abouthome":
-        this._recordSearch(engine, details.url, "about_home", "enter");
+        this._recordSearch(engine, "about_home", "enter");
         break;
       case "newtab":
-        this._recordSearch(engine, details.url, "about_newtab", "enter");
+        this._recordSearch(engine, "about_newtab", "enter");
         break;
       case "contextmenu":
       case "system":
       case "webextension":
-        this._recordSearch(engine, details.url, source);
+        this._recordSearch(engine, source);
         break;
     }
   },
@@ -670,27 +665,27 @@ let BrowserUsageTelemetry = {
       }
 
       
-      this._recordSearch(engine, details.url, sourceName, "oneoff");
+      this._recordSearch(engine, sourceName, "oneoff");
       return;
     }
 
     
     if (details.isFormHistory) {
       
-      this._recordSearch(engine, details.url, sourceName, "formhistory");
+      this._recordSearch(engine, sourceName, "formhistory");
       return;
     } else if (details.isSuggestion) {
       
-      this._recordSearch(engine, details.url, sourceName, "suggestion");
+      this._recordSearch(engine, sourceName, "suggestion");
       return;
     } else if (details.alias) {
       
-      this._recordSearch(engine, details.url, sourceName, "alias");
+      this._recordSearch(engine, sourceName, "alias");
       return;
     }
 
     
-    this._recordSearch(engine, details.url, sourceName, "enter");
+    this._recordSearch(engine, sourceName, "enter");
   },
 
   
