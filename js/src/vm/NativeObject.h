@@ -21,6 +21,7 @@
 #include "gc/MaybeRooted.h"
 #include "gc/ZoneAllocator.h"
 #include "js/shadow/Object.h"  
+#include "js/shadow/Zone.h"    
 #include "js/Value.h"
 #include "vm/JSObject.h"
 #include "vm/Shape.h"

@@ -5,6 +5,7 @@
 
 
 #include "gc/Zone-inl.h"
+#include "js/shadow/Zone.h"  
 
 #include <type_traits>
 
