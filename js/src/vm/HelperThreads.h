@@ -28,6 +28,7 @@
 #include "js/SourceText.h"
 #include "js/TypeDecls.h"
 #include "threading/ConditionVariable.h"
+#include "threading/Thread.h"
 #include "vm/JSContext.h"
 #include "vm/MutexIDs.h"
 #include "vm/OffThreadPromiseRuntimeState.h"  
@@ -42,7 +43,6 @@ namespace js {
 class AutoLockHelperThreadState;
 class AutoUnlockHelperThreadState;
 class CompileError;
-struct HelperThread;
 struct ParseTask;
 struct PromiseHelperTask;
 
@@ -104,17 +104,17 @@ class GlobalHelperThreadState {
   typedef Vector<PromiseHelperTask*, 0, SystemAllocPolicy>
       PromiseHelperTaskVector;
   typedef Vector<JSContext*, 0, SystemAllocPolicy> ContextVector;
-
-  
-  
-  using HelperThreadVector = Vector<HelperThread, 0, SystemAllocPolicy>;
-  UniquePtr<HelperThreadVector> threads;
+  using HelperThreadVector =
+      Vector<UniquePtr<HelperThread>, 0, SystemAllocPolicy>;
 
   WriteOnceData<JS::RegisterThreadCallback> registerThread;
   WriteOnceData<JS::UnregisterThreadCallback> unregisterThread;
 
  private:
   
+
+  
+  HelperThreadVector threads_;
 
   
   IonCompileTaskVector ionWorklist_, ionFinishedList_, ionFreeList_;
@@ -171,10 +171,18 @@ class GlobalHelperThreadState {
 
   GlobalHelperThreadState();
 
+  HelperThreadVector& threads(const AutoLockHelperThreadState& lock) {
+    return threads_;
+  }
+  const HelperThreadVector& threads(
+      const AutoLockHelperThreadState& lock) const {
+    return threads_;
+  }
+
   bool ensureInitialized();
-  bool ensureThreadCount(size_t minimumThreadCount);
+  bool ensureThreadCount(size_t count);
   void finish();
-  void finishThreads(HelperThreadVector& threads);
+  void finishThreads();
 
   MOZ_MUST_USE bool ensureContextList(size_t count);
   JSContext* getFirstUnusedContext(AutoLockHelperThreadState& locked);
@@ -346,7 +354,13 @@ class GlobalHelperThreadState {
   void waitForAllThreadsLocked(AutoLockHelperThreadState&);
 
   template <typename T>
-  bool checkTaskThreadLimit(size_t maxThreads, bool isMaster = false) const;
+  bool checkTaskThreadLimit(size_t maxThreads, bool isMaster,
+                            const AutoLockHelperThreadState& lock) const;
+  template <typename T>
+  bool checkTaskThreadLimit(size_t maxThreads,
+                            const AutoLockHelperThreadState& lock) const {
+    return checkTaskThreadLimit<T>(maxThreads,  false, lock);
+  }
 
   void triggerFreeUnusedMemory();
 
@@ -386,19 +400,38 @@ typedef mozilla::Variant<jit::IonCompileTask*, wasm::CompileTask*,
     HelperTaskUnion;
 
 
-struct HelperThread {
-  mozilla::Maybe<Thread> thread;
-
-  
-
-
-
-  bool terminate;
+class HelperThread {
+  Thread thread;
 
   
   mozilla::Maybe<HelperTaskUnion> currentTask;
 
+  
+
+
+
+
+
+  ProfilingStack* profilingStack = nullptr;
+
+  
+
+
+
+  bool terminate = false;
+
+ public:
+  HelperThread();
+  MOZ_MUST_USE bool init();
+
+  ThreadId threadId() { return thread.get_id(); }
+
   bool idle() const { return currentTask.isNothing(); }
+
+  template <typename T>
+  bool hasTask() const {
+    return !idle() && currentTask->is<T>();
+  }
 
   
   jit::IonCompileTask* ionCompileTask() {
@@ -445,14 +478,6 @@ struct HelperThread {
    private:
     ProfilingStack* profilingStack;
   };
-
-  
-
-
-
-
-
-  ProfilingStack* profilingStack;
 
   struct TaskSpec {
     using Selector =
@@ -506,9 +531,6 @@ bool EnsureHelperThreadsInitialized();
 
 
 bool SetFakeCPUCount(size_t count);
-
-
-HelperThread* CurrentHelperThread();
 
 
 bool StartOffThreadWasmCompile(wasm::CompileTask* task, wasm::CompileMode mode);
@@ -801,7 +823,7 @@ extern bool OffThreadParsingMustWaitForGC(JSRuntime* rt);
 
 
 class SourceCompressionTask : public RunnableTask {
-  friend struct HelperThread;
+  friend class HelperThread;
   friend class ScriptSource;
 
   

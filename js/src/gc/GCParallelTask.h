@@ -29,7 +29,7 @@ class GCRuntime;
 }
 
 class AutoLockHelperThreadState;
-struct HelperThread;
+class HelperThread;
 
 
 
@@ -185,7 +185,7 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
 
   void runTask() override;
 
-  friend struct HelperThread;
+  friend class HelperThread;
   void runFromHelperThread(AutoLockHelperThreadState& locked);
 };
 
