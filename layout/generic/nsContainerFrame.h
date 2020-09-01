@@ -634,7 +634,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
   void DestroyOverflowList() {
-    nsFrameList* list = RemovePropTableFrames(OverflowProperty());
+    nsFrameList* list = TakeProperty(OverflowProperty());
     MOZ_ASSERT(list && list->IsEmpty());
     list->Delete(PresShell());
   }
@@ -806,27 +806,6 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
   nsIFrame* PullNextInFlowChild(ContinuationTraversingState& aState);
-
-  
-  
-
-
-
-
-  
-
-
-
-  nsFrameList* GetPropTableFrames(FrameListPropertyDescriptor aProperty) const;
-
-  
-
-
-
-
-
-  [[nodiscard]] nsFrameList* RemovePropTableFrames(
-      FrameListPropertyDescriptor aProperty);
 
   
 
