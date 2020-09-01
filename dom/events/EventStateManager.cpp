@@ -649,7 +649,8 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       
       
-      if (mouseEvent->mExitFrom.value() != WidgetMouseEvent::eTopLevel) {
+      if (mouseEvent->mExitFrom.value() != WidgetMouseEvent::eTopLevel &&
+          mouseEvent->mExitFrom.value() != WidgetMouseEvent::ePuppet) {
         
         
         
@@ -657,6 +658,10 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         mouseEvent->mReason = WidgetMouseEvent::eSynthesized;
         
       } else {
+        MOZ_ASSERT_IF(XRE_IsParentProcess(), mouseEvent->mExitFrom.value() ==
+                                                 WidgetMouseEvent::eTopLevel);
+        MOZ_ASSERT_IF(XRE_IsContentProcess(), mouseEvent->mExitFrom.value() ==
+                                                  WidgetMouseEvent::ePuppet);
         
         GeneratePointerEnterExit(ePointerLeave, mouseEvent);
         GenerateMouseEnterExit(mouseEvent);
@@ -4224,7 +4229,7 @@ nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
         UniquePtr<WidgetMouseEvent> remoteEvent =
             CreateMouseOrPointerWidgetEvent(aMouseEvent, eMouseExitFromWidget,
                                             relatedContent);
-        remoteEvent->mExitFrom = Some(WidgetMouseEvent::eTopLevel);
+        remoteEvent->mExitFrom = Some(WidgetMouseEvent::ePuppet);
 
         
         
