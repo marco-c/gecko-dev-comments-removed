@@ -63,6 +63,21 @@ class ChromeXRTest {
   }
 
   simulateUserActivation(callback) {
+    if (window.top !== window) {
+      
+      
+      
+      
+      
+      
+      xr_debug('simulateUserActivation', 'use eventSender');
+      document.addEventListener('click', callback);
+      eventSender.mouseMoveTo(0, 0);
+      eventSender.mouseDown();
+      eventSender.mouseUp();
+      document.removeEventListener('click', callback);
+      return;
+    }
     const button = document.createElement('button');
     button.textContent = 'click to continue test';
     button.style.display = 'block';
