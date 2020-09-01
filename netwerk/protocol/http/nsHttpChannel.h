@@ -739,6 +739,9 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   uint32_t mUseHTTPSSVC : 1;
   uint32_t mWaitHTTPSSVCRecord : 1;
+  
+  
+  uint32_t mHTTPSSVCTelemetryReported : 1;
 
   
   
