@@ -640,6 +640,12 @@ InputBlockState* InputQueue::GetBlockForId(uint64_t aInputBlockId) {
   return FindBlockForId(aInputBlockId, nullptr);
 }
 
+void InputQueue::AddInputBlockCallback(uint64_t aInputBlockId,
+                                       InputBlockCallback&& aCallback) {
+  mInputBlockCallbacks.insert(
+      InputBlockCallbackMap::value_type(aInputBlockId, std::move(aCallback)));
+}
+
 InputBlockState* InputQueue::FindBlockForId(uint64_t aInputBlockId,
                                             InputData** aOutFirstInput) {
   for (const auto& queuedInput : mQueuedInputs) {
@@ -821,6 +827,18 @@ void InputQueue::ProcessQueue() {
         curBlock, cancelable && cancelable->IsDefaultPrevented(),
         curBlock->ShouldDropEvents(), curBlock->GetTargetApzc().get());
     RefPtr<AsyncPanZoomController> target = curBlock->GetTargetApzc();
+
+    
+    
+    auto it = mInputBlockCallbacks.find(curBlock->GetBlockId());
+    if (it != mInputBlockCallbacks.end()) {
+      bool handledByRootApzc =
+          !curBlock->ShouldDropEvents() && target && target->IsRootContent();
+      it->second(curBlock->GetBlockId(), handledByRootApzc);
+      
+      mInputBlockCallbacks.erase(it);
+    }
+
     
     
     if (target) {
