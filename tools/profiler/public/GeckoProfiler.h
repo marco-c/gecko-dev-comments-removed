@@ -18,10 +18,15 @@
 
 
 
+#include "BaseProfiler.h"
 #include "mozilla/ProfilerCounts.h"
+
+
+
 
 #ifndef MOZ_GECKO_PROFILER
 
+#  include "mozilla/ProfilerMarkers.h"
 #  include "mozilla/UniquePtr.h"
 
 
@@ -93,7 +98,6 @@ static inline bool profiler_capture_backtrace(
 
 #else  
 
-#  include "BaseProfiler.h"
 #  include "js/AllocationRecording.h"
 #  include "js/ProfilingFrameIterator.h"
 #  include "js/ProfilingStack.h"
@@ -734,6 +738,10 @@ struct ProfilerBufferInfo {
 
 
 mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
+
+
+
+#  include "mozilla/ProfilerMarkers.h"
 
 
 
