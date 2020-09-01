@@ -36,6 +36,7 @@ class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
 class nsIPrincipal;
 class nsOuterWindowProxy;
+struct nsPoint;
 class PickleIterator;
 
 namespace IPC {
@@ -63,6 +64,9 @@ class ContentParent;
 class Element;
 template <typename>
 struct Nullable;
+template <typename T>
+class Sequence;
+class SessionHistoryInfo;
 class SessionStorageManager;
 class StructuredCloneHolder;
 class WindowContext;
@@ -630,6 +634,24 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   bool IsPopupAllowed();
+
+  
+  
+  
+  void SetActiveSessionHistoryEntryForTop(
+      const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
+      uint32_t aLoadType);
+
+  
+  
+  
+  void SetActiveSessionHistoryEntryForFrame(
+      const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
+      int32_t aChildOffset);
+
+  
+  
+  void ReplaceActiveSessionHistoryEntry(SessionHistoryInfo* aInfo);
 
  protected:
   virtual ~BrowsingContext();

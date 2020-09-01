@@ -35,12 +35,35 @@ class SessionHistoryInfo {
   SessionHistoryInfo() = default;
   SessionHistoryInfo(const SessionHistoryInfo& aInfo) = default;
   SessionHistoryInfo(nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
+  SessionHistoryInfo(const SessionHistoryInfo& aSharedStateFrom, nsIURI* aURI,
+                     const nsID& aDocShellID);
+  SessionHistoryInfo(nsIURI* aURI, const nsID& aDocShellID,
+                     nsIPrincipal* aTriggeringPrincipal,
+                     nsIContentSecurityPolicy* aCsp,
+                     const nsACString& aContentType);
+
+  void Reset(nsIURI* aURI, const nsID& aDocShellID, bool aDynamicCreation,
+             nsIPrincipal* aTriggeringPrincipal,
+             nsIPrincipal* aPrincipalToInherit,
+             nsIPrincipal* aPartitionedPrincipalToInherit,
+             nsIContentSecurityPolicy* aCsp, const nsACString& aContentType);
 
   bool operator==(const SessionHistoryInfo& aInfo) const {
     return false;  
   }
 
+  nsIURI* GetURI() const { return mURI; }
+  void SetURI(nsIURI* aURI) { mURI = aURI; }
+
+  void SetOriginalURI(nsIURI* aOriginalURI) { mOriginalURI = aOriginalURI; }
+
+  void SetResultPrincipalURI(nsIURI* aResultPrincipalURI) {
+    mResultPrincipalURI = aResultPrincipalURI;
+  }
+
   nsIInputStream* GetPostData() const { return mPostData; }
+  void SetPostData(nsIInputStream* aPostData) { mPostData = aPostData; }
+
   void GetScrollPosition(int32_t* aScrollPositionX, int32_t* aScrollPositionY) {
     *aScrollPositionX = mScrollPositionX;
     *aScrollPositionY = mScrollPositionY;
@@ -55,16 +78,29 @@ class SessionHistoryInfo {
     mScrollRestorationIsManual = aIsManual;
   }
 
-  nsIURI* GetURI() const { return mURI; }
+  void SetStateData(nsStructuredCloneContainer* aStateData) {
+    mStateData = aStateData;
+  }
 
+  void SetLoadReplace(bool aLoadReplace) { mLoadReplace = aLoadReplace; }
+
+  void SetURIWasModified(bool aURIWasModified) {
+    mURIWasModified = aURIWasModified;
+  }
   bool GetURIWasModified() const { return mURIWasModified; }
+
+  uint64_t SharedId() const;
 
   nsILayoutHistoryState* GetLayoutHistoryState();
   void SetLayoutHistoryState(nsILayoutHistoryState* aState);
 
+  bool SharesDocumentWith(const SessionHistoryInfo& aOther) const {
+    return SharedId() == aOther.SharedId();
+  }
+
  private:
   friend class SessionHistoryEntry;
-  friend struct mozilla::ipc::IPDLParamTraits<LoadingSessionHistoryInfo>;
+  friend struct mozilla::ipc::IPDLParamTraits<SessionHistoryInfo>;
 
   void MaybeUpdateTitleFromURI();
 
@@ -136,6 +172,9 @@ struct LoadingSessionHistoryInfo {
   
   int32_t mRequestedIndex = -1;
   int32_t mSessionHistoryLength = 0;
+  
+  
+  bool mLoadingCurrentActiveEntry = false;
 };
 
 
@@ -152,6 +191,7 @@ class SessionHistoryEntry : public nsISHEntry {
  public:
   SessionHistoryEntry(nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
   SessionHistoryEntry();
+  explicit SessionHistoryEntry(SessionHistoryInfo* aInfo);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSISHENTRY
@@ -168,6 +208,8 @@ class SessionHistoryEntry : public nsISHEntry {
   
   
   bool ReplaceChild(SessionHistoryEntry* aNewChild);
+
+  void SetInfo(SessionHistoryInfo* aInfo);
 
   
   
@@ -193,6 +235,15 @@ NS_DEFINE_STATIC_IID_ACCESSOR(SessionHistoryEntry, NS_SESSIONHISTORYENTRY_IID)
 }  
 
 namespace ipc {
+
+
+template <>
+struct IPDLParamTraits<dom::SessionHistoryInfo> {
+  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+                    const dom::SessionHistoryInfo& aParam);
+  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                   IProtocol* aActor, dom::SessionHistoryInfo* aResult);
+};
 
 
 template <>

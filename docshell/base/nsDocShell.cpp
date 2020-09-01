@@ -44,6 +44,7 @@
 #include "mozilla/StartupTimeline.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/Tuple.h"
 #include "mozilla/Unused.h"
 #include "mozilla/WidgetUtils.h"
 
@@ -8360,46 +8361,64 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
     }
   }
 
-  if (mOSHE && aLoadState->LoadIsFromSessionHistory()) {
-    
-
-    mOSHE->SharesDocumentWith(aLoadState->SHEntry(),
-                              &aState.mHistoryNavBetweenSameDoc);
-
-#ifdef DEBUG
-    if (aState.mHistoryNavBetweenSameDoc) {
-      nsCOMPtr<nsIInputStream> currentPostData;
-      if (StaticPrefs::fission_sessionHistoryInParent()) {
-        currentPostData = mActiveEntry->GetPostData();
-      } else {
-        currentPostData = mOSHE->GetPostData();
-      }
-      NS_ASSERTION(currentPostData == aLoadState->PostDataStream(),
-                   "Different POST data for entries for the same page?");
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    if (mActiveEntry && aLoadState->LoadIsFromSessionHistory()) {
+      aState.mHistoryNavBetweenSameDoc = mActiveEntry->SharesDocumentWith(
+          aLoadState->GetLoadingSessionHistoryInfo()->mInfo);
     }
-#endif
+  } else {
+    if (mOSHE && aLoadState->LoadIsFromSessionHistory()) {
+      
+
+      mOSHE->SharesDocumentWith(aLoadState->SHEntry(),
+                                &aState.mHistoryNavBetweenSameDoc);
+    }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool doSameDocumentNavigation =
-      (aState.mHistoryNavBetweenSameDoc && mOSHE != aLoadState->SHEntry()) ||
-      (!aLoadState->SHEntry() && !aLoadState->PostDataStream() &&
-       aState.mSameExceptHashes && aState.mNewURIHasRef);
+#ifdef DEBUG
+  if (aState.mHistoryNavBetweenSameDoc) {
+    nsCOMPtr<nsIInputStream> currentPostData;
+    if (StaticPrefs::fission_sessionHistoryInParent()) {
+      currentPostData = mActiveEntry->GetPostData();
+    } else {
+      currentPostData = mOSHE->GetPostData();
+    }
+    NS_ASSERTION(currentPostData == aLoadState->PostDataStream(),
+                 "Different POST data for entries for the same page?");
+  }
+#endif
 
-  return doSameDocumentNavigation;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!StaticPrefs::fission_sessionHistoryInParent()) {
+    bool doSameDocumentNavigation =
+        (aState.mHistoryNavBetweenSameDoc && mOSHE != aLoadState->SHEntry()) ||
+        (!aLoadState->SHEntry() && !aLoadState->PostDataStream() &&
+         aState.mSameExceptHashes && aState.mNewURIHasRef);
+
+    return doSameDocumentNavigation;
+  }
+
+  if (aState.mHistoryNavBetweenSameDoc &&
+      !aLoadState->GetLoadingSessionHistoryInfo()->mLoadingCurrentActiveEntry) {
+    return true;
+  }
+
+  return !aLoadState->LoadIsFromSessionHistory() &&
+         !aLoadState->PostDataStream() && aState.mSameExceptHashes &&
+         aState.mNewURIHasRef;
 }
 
 nsresult nsDocShell::HandleSameDocumentNavigation(
@@ -8522,10 +8541,12 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
   
   if (aLoadState->LoadIsFromSessionHistory()) {
-    DebugOnly<nsresult> rv =
-        aLoadState->SHEntry()->GetScrollRestorationIsManual(
-            &scrollRestorationIsManual);
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "Didn't expect this to fail.");
+    if (StaticPrefs::fission_sessionHistoryInParent()) {
+      scrollRestorationIsManual = mActiveEntry->GetScrollRestorationIsManual();
+    } else {
+      scrollRestorationIsManual =
+          aLoadState->SHEntry()->GetScrollRestorationIsManual();
+    }
   }
 
   
@@ -10250,6 +10271,10 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
   
   
+  
+  
+  
+  
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   if (!rootSH) {
     updateSHistory = false;
@@ -10617,6 +10642,23 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
   NS_ENSURE_TRUE(mOSHE || aReplace, NS_ERROR_FAILURE);
   nsCOMPtr<nsISHEntry> oldOSHE = mOSHE;
 
+  
+  
+  
+  
+  bool sameExceptHashes = true;
+  aNewURI->EqualsExceptRef(aCurrentURI, &sameExceptHashes);
+  bool uriWasModified;
+  if (sameExceptHashes) {
+    if (StaticPrefs::fission_sessionHistoryInParent()) {
+      uriWasModified = mActiveEntry && mActiveEntry->GetURIWasModified();
+    } else {
+      uriWasModified = oldOSHE && oldOSHE->GetURIWasModified();
+    }
+  } else {
+    uriWasModified = true;
+  }
+
   mLoadType = LOAD_PUSHSTATE;
 
   nsCOMPtr<nsISHEntry> newSHEntry;
@@ -10630,49 +10672,63 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
       shistory->RemovePendingHistoryNavigations();
     }
 
-    
     nsPoint scrollPos = GetCurScrollPos();
-    mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
 
     bool scrollRestorationIsManual;
     if (StaticPrefs::fission_sessionHistoryInParent()) {
       scrollRestorationIsManual = mActiveEntry->GetScrollRestorationIsManual();
     } else {
+      
+      mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
+
       scrollRestorationIsManual = mOSHE->GetScrollRestorationIsManual();
     }
 
     nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
 
-    
-    
-    nsresult rv = AddToSessionHistory(
-        aNewURI, nullptr,
-        aDocument->NodePrincipal(),  
-        nullptr, nullptr, csp, true, getter_AddRefs(newSHEntry));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    NS_ENSURE_TRUE(newSHEntry, NS_ERROR_FAILURE);
-
-    
-    
-    newSHEntry->SetScrollRestorationIsManual(scrollRestorationIsManual);
-
-    
-    
-    NS_ENSURE_SUCCESS(newSHEntry->AdoptBFCacheEntry(oldOSHE), NS_ERROR_FAILURE);
-
-    
-    nsString title;
     if (StaticPrefs::fission_sessionHistoryInParent()) {
-      title = mActiveEntry->GetTitle();
+      nsString title(mActiveEntry->GetTitle());
+      UpdateActiveEntry(false,
+                         Some(scrollPos), aNewURI,
+                         nullptr,
+                         aDocument->NodePrincipal(),
+                        csp, title, Some(scrollRestorationIsManual), aData,
+                        uriWasModified);
     } else {
-      mOSHE->GetTitle(title);
-    }
-    newSHEntry->SetTitle(title);
+      
+      
+      nsresult rv = AddToSessionHistory(
+          aNewURI, nullptr,
+          aDocument->NodePrincipal(),  
+          nullptr, nullptr, csp, true, getter_AddRefs(newSHEntry));
+      NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    mOSHE = newSHEntry;
+      NS_ENSURE_TRUE(newSHEntry, NS_ERROR_FAILURE);
+
+      
+      
+      newSHEntry->SetScrollRestorationIsManual(scrollRestorationIsManual);
+
+      nsString title;
+      mOSHE->GetTitle(title);
+
+      
+      newSHEntry->SetTitle(title);
+
+      
+      
+      NS_ENSURE_SUCCESS(newSHEntry->AdoptBFCacheEntry(oldOSHE),
+                        NS_ERROR_FAILURE);
+
+      
+      
+      mOSHE = newSHEntry;
+    }
+  } else if (StaticPrefs::fission_sessionHistoryInParent()) {
+    UpdateActiveEntry(
+        true,  Nothing(), aNewURI, aNewURI,
+        aDocument->NodePrincipal(), aDocument->GetCsp(), EmptyString(),
+         Nothing(), aData, uriWasModified);
   } else {
     
     newSHEntry = mOSHE;
@@ -10688,6 +10744,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
       NS_ENSURE_SUCCESS(rv, rv);
       mOSHE = newSHEntry;
     }
+
     newSHEntry->SetURI(aNewURI);
     newSHEntry->SetOriginalURI(aNewURI);
     
@@ -10697,31 +10754,26 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     newSHEntry->SetLoadReplace(false);
   }
 
-  
-  
-  newSHEntry->SetStateData(aData);
-  newSHEntry->SetPostData(nullptr);
+  if (!StaticPrefs::fission_sessionHistoryInParent()) {
+    
+    
+    newSHEntry->SetStateData(aData);
+    newSHEntry->SetPostData(nullptr);
 
-  
-  
-  
-  
-  bool sameExceptHashes = true;
-  aNewURI->EqualsExceptRef(aCurrentURI, &sameExceptHashes);
-  bool oldURIWasModified = oldOSHE && oldOSHE->GetURIWasModified();
-  newSHEntry->SetURIWasModified(!sameExceptHashes || oldURIWasModified);
+    newSHEntry->SetURIWasModified(uriWasModified);
 
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
-  if (rootSH) {
-    rootSH->LegacySHistory()->EvictContentViewersOrReplaceEntry(newSHEntry,
-                                                                aReplace);
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
+    if (rootSH) {
+      rootSH->LegacySHistory()->EvictContentViewersOrReplaceEntry(newSHEntry,
+                                                                  aReplace);
+    }
   }
 
   
@@ -10830,6 +10882,7 @@ void nsDocShell::SetCacheKeyOnHistoryEntry(nsISHEntry* aSHEntry,
     }
   }
 }
+
 
 bool nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel) {
   
@@ -11084,6 +11137,58 @@ nsresult nsDocShell::AddToSessionHistory(
   }
 
   return rv;
+}
+
+void nsDocShell::UpdateActiveEntry(
+    bool aReplace, const Maybe<nsPoint>& aPreviousScrollPos, nsIURI* aURI,
+    nsIURI* aOriginalURI, nsIPrincipal* aTriggeringPrincipal,
+    nsIContentSecurityPolicy* aCsp, const nsAString& aTitle,
+    const Maybe<bool>& aScrollRestorationIsManual,
+    nsIStructuredCloneContainer* aData, bool aURIWasModified) {
+  MOZ_ASSERT(StaticPrefs::fission_sessionHistoryInParent());
+  MOZ_ASSERT(aURI, "uri is null");
+  MOZ_ASSERT(mLoadType == LOAD_PUSHSTATE,
+             "This code only deals with pushState");
+  MOZ_ASSERT_IF(aPreviousScrollPos.isSome(), !aReplace);
+
+  if (!aReplace || !mActiveEntry) {
+    if (mActiveEntry) {
+      
+      mActiveEntry =
+          MakeUnique<SessionHistoryInfo>(*mActiveEntry, aURI, HistoryID());
+    } else {
+      mActiveEntry = MakeUnique<SessionHistoryInfo>(
+          aURI, HistoryID(), aTriggeringPrincipal, aCsp, mContentTypeHint);
+    }
+    mActiveEntry->SetTitle(aTitle);
+    mActiveEntry->SetStateData(static_cast<nsStructuredCloneContainer*>(aData));
+    mActiveEntry->SetURIWasModified(aURIWasModified);
+    if (aScrollRestorationIsManual.isSome()) {
+      mActiveEntry->SetScrollRestorationIsManual(
+          aScrollRestorationIsManual.value());
+    }
+    if (mBrowsingContext->IsTop()) {
+      mBrowsingContext->SetActiveSessionHistoryEntryForTop(
+          aPreviousScrollPos, mActiveEntry.get(), mLoadType);
+      
+    } else {
+      
+      
+      mBrowsingContext->SetActiveSessionHistoryEntryForFrame(
+          aPreviousScrollPos, mActiveEntry.get(), mChildOffset);
+    }
+  } else {
+    mActiveEntry->SetResultPrincipalURI(nullptr);
+    mActiveEntry->SetLoadReplace(false);
+    mActiveEntry->SetStateData(static_cast<nsStructuredCloneContainer*>(aData));
+    mActiveEntry->SetPostData(nullptr);
+    mActiveEntry->SetURIWasModified(aURIWasModified);
+    if (aScrollRestorationIsManual.isSome()) {
+      mActiveEntry->SetScrollRestorationIsManual(
+          aScrollRestorationIsManual.value());
+    }
+    mBrowsingContext->ReplaceActiveSessionHistoryEntry(mActiveEntry.get());
+  }
 }
 
 nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {

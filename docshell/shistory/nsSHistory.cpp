@@ -1730,7 +1730,21 @@ void nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
   loadState->SetLoadType(aLoadType);
 
   loadState->SetSHEntry(aFrameEntry);
-  loadState->SetLoadIsFromSessionHistory(mRequestedIndex, Length());
+
+  
+  
+  
+  bool loadingFromActiveEntry;
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    loadingFromActiveEntry =
+        aFrameBC->Canonical()->GetActiveSessionHistoryEntry() == aFrameEntry;
+  } else {
+    loadingFromActiveEntry =
+        aFrameBC->GetDocShell() &&
+        nsDocShell::Cast(aFrameBC->GetDocShell())->IsOSHE(aFrameEntry);
+  }
+  loadState->SetLoadIsFromSessionHistory(mRequestedIndex, Length(),
+                                         loadingFromActiveEntry);
 
   nsCOMPtr<nsIURI> originalURI = aFrameEntry->GetOriginalURI();
   loadState->SetOriginalURI(originalURI);

@@ -502,6 +502,10 @@ class nsDocShell final : public nsDocLoader,
   void SetLoadingSessionHistoryInfo(
       const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo);
 
+  static bool ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel);
+
+  bool IsOSHE(nsISHEntry* aEntry) const { return mOSHE == aEntry; }
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;
@@ -594,8 +598,6 @@ class nsDocShell final : public nsDocLoader,
   
   
 
-  bool ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel);
-
   
   
   
@@ -613,6 +615,13 @@ class nsDocShell final : public nsDocLoader,
                                nsIPrincipal* aPartitionedPrincipalToInherit,
                                nsIContentSecurityPolicy* aCsp,
                                bool aCloneChildren, nsISHEntry** aNewEntry);
+
+  void UpdateActiveEntry(
+      bool aReplace, const mozilla::Maybe<nsPoint>& aPreviousScrollPos,
+      nsIURI* aURI, nsIURI* aOriginalURI, nsIPrincipal* aTriggeringPrincipal,
+      nsIContentSecurityPolicy* aCsp, const nsAString& aTitle,
+      const mozilla::Maybe<bool>& aScrollRestorationIsManual,
+      nsIStructuredCloneContainer* aData, bool aURIWasModified);
 
   nsresult AddChildSHEntryToParent(nsISHEntry* aNewEntry, int32_t aChildOffset,
                                    bool aCloneChildren);
