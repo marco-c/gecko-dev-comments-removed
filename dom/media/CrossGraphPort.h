@@ -25,7 +25,7 @@ namespace mozilla {
 
 
 
-class CrossGraphTransmitter : public ForwardedInputTrack {
+class CrossGraphTransmitter : public ProcessedMediaTrack {
  public:
   CrossGraphTransmitter(TrackRate aSampleRate,
                         RefPtr<CrossGraphReceiver> aReceiver);
