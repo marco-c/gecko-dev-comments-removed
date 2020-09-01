@@ -259,7 +259,7 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   
   
   void CreateAudioParam(RefPtr<AudioParam>& aParam, uint32_t aIndex,
-                        const char16_t* aName, float aDefaultValue,
+                        const nsAString& aName, float aDefaultValue,
                         float aMinValue = std::numeric_limits<float>::lowest(),
                         float aMaxValue = std::numeric_limits<float>::max());
 
