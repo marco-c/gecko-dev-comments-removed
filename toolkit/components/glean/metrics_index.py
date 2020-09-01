@@ -1,0 +1,17 @@
+# -*- coding: utf-8 -*-
+
+
+
+
+
+
+
+METRICS = [
+    'toolkit/components/glean/metrics.yaml',
+]
+
+
+
+PINGS = [
+    'toolkit/components/glean/pings.yaml',
+]
