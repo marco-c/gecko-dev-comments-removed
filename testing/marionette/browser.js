@@ -239,26 +239,6 @@ browser.Context = class {
 
 
 
-
-
-
-  get currentTitle() {
-    
-    
-    if (this.contentBrowser) {
-      return this.contentBrowser.contentTitle;
-    }
-    throw new NoSuchWindowError(
-      "Current window does not have a content browser"
-    );
-  }
-
-  
-
-
-
-
-
   get rect() {
     return {
       x: this.window.screenX,

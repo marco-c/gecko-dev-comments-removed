@@ -208,19 +208,17 @@ Object.defineProperty(GeckoDriver.prototype, "currentURL", {
   },
 });
 
+
+
+
+
+
+
+
 Object.defineProperty(GeckoDriver.prototype, "title", {
   get() {
-    switch (this.context) {
-      case Context.Chrome:
-        let chromeWin = this.getCurrentWindow();
-        return chromeWin.document.documentElement.getAttribute("title");
-
-      case Context.Content:
-        return this.curBrowser.currentTitle;
-
-      default:
-        throw new TypeError(`Unknown context: ${this.context}`);
-    }
+    const browsingContext = this.getBrowsingContext({ top: true });
+    return browsingContext.currentWindowGlobal.documentTitle;
   },
 });
 
