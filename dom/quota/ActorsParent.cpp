@@ -8618,7 +8618,7 @@ RecordQuotaInfoLoadTimeHelper::Run() {
       
       
       if (*mStartTime > *mEndTime) {
-        return "TimeStampError1"_ns;
+        return "TimeStampErr1"_ns;
       }
 
       if (*mInitializedTime > gLastOSWake) {
