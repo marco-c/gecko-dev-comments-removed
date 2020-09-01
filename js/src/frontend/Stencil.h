@@ -417,7 +417,7 @@ using ScriptThingVariant =
                      EmptyGlobalScopeType>;
 
 
-using ScriptThingsVector = Vector<ScriptThingVariant>;
+using ScriptThingsVector = Vector<ScriptThingVariant, 0, js::SystemAllocPolicy>;
 
 
 class ScriptStencil {
@@ -482,9 +482,8 @@ class ScriptStencil {
 
   
 
-  explicit ScriptStencil(JSContext* cx)
-      : gcThings(cx),
-        isStandaloneFunction(false),
+  ScriptStencil()
+      : isStandaloneFunction(false),
         wasFunctionEmitted(false),
         isSingletonFunction(false) {}
 
