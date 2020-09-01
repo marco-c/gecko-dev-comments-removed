@@ -111,3 +111,24 @@ MCall* WarpBuilderShared::makeCall(CallInfo& callInfo, bool needsThisCheck,
 
   return call;
 }
+
+MInstruction* WarpBuilderShared::makeSpreadCall(CallInfo& callInfo,
+                                                bool isSameRealm,
+                                                WrappedFunction* target) {
+  
+  MOZ_ASSERT(!callInfo.constructing());
+
+  
+  MElements* elements = MElements::New(alloc(), callInfo.arrayArg());
+  current->add(elements);
+
+  auto* apply = MApplyArray::New(alloc(), target, callInfo.callee(), elements,
+                                 callInfo.thisArg());
+  if (callInfo.ignoresReturnValue()) {
+    apply->setIgnoresReturnValue();
+  }
+  if (isSameRealm) {
+    apply->setNotCrossRealm();
+  }
+  return apply;
+}

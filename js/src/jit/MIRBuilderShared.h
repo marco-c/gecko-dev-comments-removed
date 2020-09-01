@@ -128,6 +128,7 @@ class MOZ_STACK_CLASS CallInfo {
   
   enum class ArgFormat {
     Standard,
+    Array,
     FunApplyArgs,
   };
 
@@ -339,6 +340,13 @@ class MOZ_STACK_CLASS CallInfo {
 
   ArgFormat argFormat() const { return argFormat_; }
   void setArgFormat(ArgFormat argFormat) { argFormat_ = argFormat; }
+
+  MDefinition* arrayArg() const {
+    MOZ_ASSERT(argFormat_ == ArgFormat::Array);
+    MOZ_ASSERT_IF(!apply_, argc() == 1 + uint32_t(constructing_));
+    MOZ_ASSERT_IF(apply_, argc() == 2 && !constructing_);
+    return getArg(argc() - 1 - constructing_);
+  }
 };
 
 class AutoAccumulateReturns {
