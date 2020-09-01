@@ -3451,6 +3451,7 @@ void MediaManager::OnNavigation(uint64_t aWindowID) {
 void MediaManager::OnCameraMute(bool aMute) {
   MOZ_ASSERT(NS_IsMainThread());
   LOG("OnCameraMute for all windows");
+  mCamerasMuted = aMute;
   
   
   for (auto iter = mActiveWindows.Iter(); !iter.Done(); iter.Next()) {
@@ -3470,6 +3471,7 @@ void MediaManager::AddWindowID(uint64_t aWindowId,
     return;
   }
 
+  aListener->MuteOrUnmuteCameras(mCamerasMuted);
   GetActiveWindows()->Put(aWindowId, std::move(aListener));
 }
 
