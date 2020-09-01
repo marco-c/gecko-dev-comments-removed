@@ -159,7 +159,7 @@ class MediaKeys final : public nsIDocumentActivity,
   
   
   
-  already_AddRefed<CDMProxy> CreateCDMProxy(nsISerialEventTarget* aMainThread);
+  already_AddRefed<CDMProxy> CreateCDMProxy();
 
   
   already_AddRefed<DetailedPromise> RetrievePromise(PromiseId aId);
