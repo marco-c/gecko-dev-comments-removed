@@ -35,48 +35,25 @@
 
 
 
-static inline void alloc_word(uint64_t* &ireg_args,
-                              uint64_t* &stack_args,
-                              uint64_t* end,
-                              uint64_t  data)
+
+
+
+
+template<typename T>
+static inline void alloc_arg(uint64_t* &reg_args,
+                             uint64_t* reg_args_end,
+                             uint64_t* &stack_args,
+                             T*     data)
 {
-    if (ireg_args < end) {
-        *ireg_args = data;
-        ireg_args++;
+    if (reg_args < reg_args_end) {
+        memcpy(reg_args, data, sizeof(T));
+        reg_args++;
     } else {
-        *stack_args = data;
+        memcpy(stack_args, data, sizeof(T));
+        
         stack_args++;
     }
 }
-
-static inline void alloc_double(double* &freg_args,
-                                uint64_t* &stack_args,
-                                double* end,
-                                double  data)
-{
-    if (freg_args < end) {
-        *freg_args = data;
-        freg_args++;
-    } else {
-        memcpy(stack_args, &data, sizeof(data));
-        stack_args++;
-    }
-}
-
-static inline void alloc_float(double* &freg_args,
-                               uint64_t* &stack_args,
-                               double* end,
-                               float  data)
-{
-    if (freg_args < end) {
-        memcpy(freg_args, &data, sizeof(data));
-        freg_args++;
-    } else {
-        memcpy(stack_args, &data, sizeof(data));
-        stack_args++;
-    }
-}
-
 
 extern "C" void
 invoke_copy_to_stack(uint64_t* stk, uint64_t *end,
@@ -84,9 +61,10 @@ invoke_copy_to_stack(uint64_t* stk, uint64_t *end,
 {
     uint64_t *ireg_args = stk;
     uint64_t *ireg_end  = ireg_args + 8;
-    double *freg_args = (double *)ireg_end;
-    double *freg_end  = freg_args + 8;
-    uint64_t *stack_args = (uint64_t *)freg_end;
+    
+    uint64_t *freg_args = ireg_end;
+    uint64_t *freg_end  = freg_args + 8;
+    uint64_t *stack_args = freg_end;
 
     
     ++ireg_args;
@@ -102,10 +80,10 @@ invoke_copy_to_stack(uint64_t* stk, uint64_t *end,
             
             switch (s->type) {
                 case nsXPTType::T_FLOAT:
-                    alloc_float(freg_args, stack_args, freg_end, s->val.f);
+                    alloc_arg(freg_args, freg_end, stack_args, &s->val.f);
                     continue;
                 case nsXPTType::T_DOUBLE:
-                    alloc_double(freg_args, stack_args, freg_end, s->val.d);
+                    alloc_arg(freg_args, freg_end, stack_args, &s->val.d);
                     continue;
                 case nsXPTType::T_I8:    word = s->val.i8;  break;
                 case nsXPTType::T_I16:   word = s->val.i16; break;
@@ -125,7 +103,7 @@ invoke_copy_to_stack(uint64_t* stk, uint64_t *end,
             }
         }
 
-        alloc_word(ireg_args, stack_args, ireg_end, word);
+        alloc_arg(ireg_args, ireg_end, stack_args, &word);
     }
 }
 
