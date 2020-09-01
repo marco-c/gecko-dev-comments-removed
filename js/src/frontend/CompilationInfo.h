@@ -99,7 +99,7 @@ struct CompilationInput {
   
   
   
-  JS::GCVector<JSAtom*> atoms;
+  JS::GCVector<JSAtom*, 0, js::SystemAllocPolicy> atoms;
 
   BaseScript* lazy = nullptr;
 
@@ -111,7 +111,7 @@ struct CompilationInput {
   Scope* enclosingScope = nullptr;
 
   CompilationInput(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
-      : options(options), atoms(cx) {}
+      : options(options) {}
 
  private:
   bool initScriptSource(JSContext* cx);
