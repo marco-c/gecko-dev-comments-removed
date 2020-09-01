@@ -159,14 +159,9 @@ static bool URIUsesDocChannel(nsIURI* aURI) {
          !spec.EqualsLiteral("about:crashcontent");
 }
 
-bool DocumentChannel::CanUseDocumentChannel(nsIURI* aURI, uint32_t aLoadFlags) {
+bool DocumentChannel::CanUseDocumentChannel(nsIURI* aURI) {
   
-  
-  
-  
-  
-  return !(aLoadFlags & nsDocShell::INTERNAL_LOAD_FLAGS_IS_SRCDOC) &&
-         URIUsesDocChannel(aURI);
+  return URIUsesDocChannel(aURI);
 }
 
 
