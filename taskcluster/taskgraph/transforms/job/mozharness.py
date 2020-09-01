@@ -116,7 +116,7 @@ mozharness_run_schema = Schema({
     Required('comm-checkout'): bool,
 
     
-    Required('workdir'): text_type,
+    Optional('workdir'): text_type,
 })
 
 
