@@ -13,7 +13,6 @@
 #include <utility>
 
 #include "mozilla/RefPtr.h"
-#include "mozilla/RWLock.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
@@ -123,170 +122,23 @@ namespace jni {
 
 namespace detail {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename, typename = std::void_t<>>
-struct HasWeakNonIntrusiveDetach : std::false_type {};
-
-template <typename T>
-struct HasWeakNonIntrusiveDetach<
-    T, std::void_t<decltype(std::declval<T>().OnWeakNonIntrusiveDetach(
-           std::declval<already_AddRefed<nsIRunnable>>()))>> : std::true_type {
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename, typename = std::void_t<>>
-struct IsRefCounted : std::false_type {};
-
-template <typename T>
-struct IsRefCounted<T, std::void_t<decltype(std::declval<T>().AddRef(),
-                                            std::declval<T>().Release())>>
-    : std::true_type {};
-
-
-
-
-
-
-enum class NativePtrInternalType : size_t {
-  OWNING = 1,
-  WEAK = 2,
-  REFPTR = 3,
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <class Impl>
-class NativePtrInternalPicker {
-  
-  template <class I>
-  static std::enable_if_t<
-      std::is_base_of<SupportsWeakPtr, I>::value,
-      char (&)[static_cast<size_t>(NativePtrInternalType::WEAK)]>
-  Test(char);
-
-  
-  template <class I, typename = decltype(&I::AddRef, &I::Release)>
-  static char (&Test(int))[static_cast<size_t>(NativePtrInternalType::REFPTR)];
-
-  
-  
-  
-  template <class>
-  static char (&Test(...))[static_cast<size_t>(NativePtrInternalType::OWNING)];
-
- public:
-  
-  
-  static const NativePtrInternalType value = static_cast<NativePtrInternalType>(
-      sizeof(Test<Impl>('\0')) / sizeof(char));
-};
-
-
-
-
-
-
-
-
-
-
-
-
-enum class NativePtrType : size_t {
-  OWNING = 1,
-  WEAK_INTRUSIVE = 2,
-  WEAK_NON_INTRUSIVE = 3,
-  REFPTR = 4,
-};
-
-
-
-
-
-
-
-
-
-
-
-
+enum NativePtrType { OWNING, WEAK, REFPTR };
 
 template <class Impl>
 class NativePtrPicker {
-  
-  template <NativePtrType PtrType>
-  using ResultTypeT = char (&)[static_cast<size_t>(PtrType)];
+  template <class I>
+  static std::enable_if_t<std::is_base_of<SupportsWeakPtr, I>::value,
+                          char (&)[NativePtrType::WEAK]>
+  Test(char);
 
-  
-  template <typename I>
-  static auto Test(void*)
-      -> std::enable_if_t<std::is_base_of<SupportsWeakPtr, I>::value,
-                          ResultTypeT<NativePtrType::WEAK_INTRUSIVE>>;
+  template <class I, typename = decltype(&I::AddRef, &I::Release)>
+  static char (&Test(int))[NativePtrType::REFPTR];
 
-  
-  
-  template <typename I>
-  static auto Test(void*)
-      -> std::enable_if_t<HasWeakNonIntrusiveDetach<I>::value,
-                          ResultTypeT<NativePtrType::WEAK_NON_INTRUSIVE>>;
-
-  
-  
-  
-  template <typename I>
-  static auto Test(void*) -> std::enable_if_t<
-      std::conjunction_v<IsRefCounted<I>,
-                         std::negation<HasWeakNonIntrusiveDetach<I>>>,
-      ResultTypeT<NativePtrType::REFPTR>>;
-
-  
-  
-  
-  template <typename>
-  static char (&Test(...))[static_cast<size_t>(NativePtrType::OWNING)];
+  template <class>
+  static char (&Test(...))[NativePtrType::OWNING];
 
  public:
-  
-  
-  static const NativePtrType value =
-      static_cast<NativePtrType>(sizeof(Test<Impl>(nullptr)));
+  static const int value = sizeof(Test<Impl>('\0')) / sizeof(char);
 };
 
 template <class Impl>
@@ -301,59 +153,20 @@ inline uintptr_t CheckNativeHandle(JNIEnv* env, uintptr_t handle) {
   return handle;
 }
 
-
-
-
-
-
-
-
-template <class Impl, NativePtrType Type = NativePtrPicker<Impl>::value>
-struct NativePtrTraits;
+template <class Impl, int Type = NativePtrPicker<Impl>::value>
+struct NativePtr;
 
 template <class Impl>
-struct NativePtrTraits<Impl,  NativePtrType::OWNING> {
-  using AccessorType =
-      Impl*;  
-              
-  using HandleType = Impl*;  
-  using RefType = Impl*;     
-
-  
-
-
-
-  static RefType Get(JNIEnv* env, jobject instance) {
-    static_assert(
-        std::is_same<HandleType, RefType>::value,
-        "HandleType and RefType must be identical for owning pointers");
-    return reinterpret_cast<HandleType>(
+struct NativePtr<Impl,  NativePtrType::OWNING> {
+  static Impl* Get(JNIEnv* env, jobject instance) {
+    return reinterpret_cast<Impl*>(
         CheckNativeHandle<Impl>(env, GetNativeHandle(env, instance)));
   }
 
-  
-
-
-
   template <class LocalRef>
-  static RefType Get(const LocalRef& instance) {
+  static Impl* Get(const LocalRef& instance) {
     return Get(instance.Env(), instance.Get());
   }
-
-  
-
-
-
-  static AccessorType Access(RefType aImpl, JNIEnv* aEnv = nullptr) {
-    static_assert(
-        std::is_same<AccessorType, RefType>::value,
-        "AccessorType and RefType must be identical for owning pointers");
-    return aImpl;
-  }
-
-  
-
-
 
   template <class LocalRef>
   static void Set(const LocalRef& instance, UniquePtr<Impl>&& ptr) {
@@ -363,12 +176,9 @@ struct NativePtrTraits<Impl,  NativePtrType::OWNING> {
     MOZ_CATCH_JNI_EXCEPTION(instance.Env());
   }
 
-  
-
-
   template <class LocalRef>
   static void Clear(const LocalRef& instance) {
-    UniquePtr<Impl> ptr(reinterpret_cast<RefType>(
+    UniquePtr<Impl> ptr(reinterpret_cast<Impl*>(
         GetNativeHandle(instance.Env(), instance.Get())));
     MOZ_CATCH_JNI_EXCEPTION(instance.Env());
 
@@ -380,31 +190,25 @@ struct NativePtrTraits<Impl,  NativePtrType::OWNING> {
 };
 
 template <class Impl>
-struct NativePtrTraits<Impl,  NativePtrType::WEAK_INTRUSIVE> {
-  using AccessorType = Impl*;
-  using HandleType = WeakPtr<Impl>*;
-  using RefType = WeakPtr<Impl>;
-
-  static RefType Get(JNIEnv* env, jobject instance) {
-    const auto ptr = reinterpret_cast<HandleType>(
+struct NativePtr<Impl,  NativePtrType::WEAK> {
+  static Impl* Get(JNIEnv* env, jobject instance) {
+    const auto ptr = reinterpret_cast<WeakPtr<Impl>*>(
         CheckNativeHandle<Impl>(env, GetNativeHandle(env, instance)));
-    return *ptr;
-  }
+    if (!ptr) {
+      return nullptr;
+    }
 
-  template <class LocalRef>
-  static RefType Get(const LocalRef& instance) {
-    return Get(instance.Env(), instance.Get());
-  }
-
-  static AccessorType Access(RefType aPtr, JNIEnv* aEnv = nullptr) {
-    AccessorType const impl = *aPtr;
+    Impl* const impl = *ptr;
     if (!impl) {
-      JNIEnv* env = aEnv ? aEnv : mozilla::jni::GetEnvForThread();
       ThrowException(env, "java/lang/NullPointerException",
                      NullWeakPtr<Impl>().str);
     }
-
     return impl;
+  }
+
+  template <class LocalRef>
+  static Impl* Get(const LocalRef& instance) {
+    return Get(instance.Env(), instance.Get());
   }
 
   template <class LocalRef>
@@ -420,7 +224,7 @@ struct NativePtrTraits<Impl,  NativePtrType::WEAK_INTRUSIVE> {
 
   template <class LocalRef>
   static void Clear(const LocalRef& instance) {
-    const auto ptr = reinterpret_cast<HandleType>(
+    const auto ptr = reinterpret_cast<WeakPtr<Impl>*>(
         GetNativeHandle(instance.Env(), instance.Get()));
     MOZ_CATCH_JNI_EXCEPTION(instance.Env());
 
@@ -433,13 +237,9 @@ struct NativePtrTraits<Impl,  NativePtrType::WEAK_INTRUSIVE> {
 };
 
 template <class Impl>
-struct NativePtrTraits<Impl,  NativePtrType::REFPTR> {
-  using AccessorType = Impl*;
-  using HandleType = RefPtr<Impl>*;
-  using RefType = Impl*;
-
-  static RefType Get(JNIEnv* env, jobject instance) {
-    const auto ptr = reinterpret_cast<HandleType>(
+struct NativePtr<Impl,  NativePtrType::REFPTR> {
+  static Impl* Get(JNIEnv* env, jobject instance) {
+    const auto ptr = reinterpret_cast<RefPtr<Impl>*>(
         CheckNativeHandle<Impl>(env, GetNativeHandle(env, instance)));
     if (!ptr) {
       return nullptr;
@@ -450,18 +250,12 @@ struct NativePtrTraits<Impl,  NativePtrType::REFPTR> {
   }
 
   template <class LocalRef>
-  static RefType Get(const LocalRef& instance) {
+  static Impl* Get(const LocalRef& instance) {
     return Get(instance.Env(), instance.Get());
   }
 
-  static AccessorType Access(RefType aImpl, JNIEnv* aEnv = nullptr) {
-    static_assert(std::is_same<AccessorType, RefType>::value,
-                  "AccessorType and RefType must be identical for refpointers");
-    return aImpl;
-  }
-
   template <class LocalRef>
-  static void Set(const LocalRef& instance, RefType ptr) {
+  static void Set(const LocalRef& instance, Impl* ptr) {
     
     
     const uintptr_t handle = reinterpret_cast<uintptr_t>(new RefPtr<Impl>(ptr));
@@ -472,7 +266,7 @@ struct NativePtrTraits<Impl,  NativePtrType::REFPTR> {
 
   template <class LocalRef>
   static void Clear(const LocalRef& instance) {
-    const auto ptr = reinterpret_cast<HandleType>(
+    const auto ptr = reinterpret_cast<RefPtr<Impl>*>(
         GetNativeHandle(instance.Env(), instance.Get()));
     MOZ_CATCH_JNI_EXCEPTION(instance.Env());
 
@@ -482,591 +276,6 @@ struct NativePtrTraits<Impl,  NativePtrType::REFPTR> {
       delete ptr;
     }
   }
-};
-
-}  
-
-
-template <typename NativeImpl>
-class NativeWeakPtr;
-template <typename NativeImpl>
-class NativeWeakPtrHolder;
-
-namespace detail {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <
-    typename NativeImpl,
-    NativePtrInternalType PtrType =
-        ::mozilla::jni::detail::NativePtrInternalPicker<NativeImpl>::value>
-struct NativeWeakPtrControlBlockStorageTraits;
-
-template <typename NativeImpl>
-struct NativeWeakPtrControlBlockStorageTraits<
-    NativeImpl, ::mozilla::jni::detail::NativePtrInternalType::OWNING> {
-  using Type = UniquePtr<NativeImpl>;
-
-  static NativeImpl* AsRaw(const Type& aStorage) { return aStorage.get(); }
-};
-
-template <typename NativeImpl>
-struct NativeWeakPtrControlBlockStorageTraits<
-    NativeImpl, ::mozilla::jni::detail::NativePtrInternalType::REFPTR> {
-  using Type = RefPtr<NativeImpl>;
-
-  static NativeImpl* AsRaw(const Type& aStorage) { return aStorage.get(); }
-};
-
-
-template <typename NativeImpl>
-class Accessor;
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename NativeImpl>
-class MOZ_HEAP_CLASS NativeWeakPtrControlBlock final {
- public:
-  using StorageTraits = NativeWeakPtrControlBlockStorageTraits<NativeImpl>;
-  using StorageType = typename StorageTraits::Type;
-
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NativeWeakPtrControlBlock)
-
-  NativeWeakPtrControlBlock(const NativeWeakPtrControlBlock&) = delete;
-  NativeWeakPtrControlBlock(NativeWeakPtrControlBlock&&) = delete;
-  NativeWeakPtrControlBlock& operator=(const NativeWeakPtrControlBlock&) =
-      delete;
-  NativeWeakPtrControlBlock& operator=(NativeWeakPtrControlBlock&&) = delete;
-
-  
-  mozilla::jni::Object::WeakRef GetJavaOwner() const { return mJavaOwner; }
-
- private:
-  NativeWeakPtrControlBlock(::mozilla::jni::Object::Param aJavaOwner,
-                            StorageType&& aNativeImpl)
-      : mJavaOwner(aJavaOwner),
-        mLock("mozilla::jni::detail::NativeWeakPtrControlBlock"),
-        mNativeImpl(std::move(aNativeImpl)) {}
-
-  ~NativeWeakPtrControlBlock() {
-    
-    MOZ_ASSERT(!(*this));
-  }
-
-  
-
-
-
-
-
-
-  StorageType Clear() {
-    StorageType nativeImpl(nullptr);
-
-    {  
-      AutoWriteLock lock(mLock);
-      std::swap(mNativeImpl, nativeImpl);
-    }
-
-    return nativeImpl;
-  }
-
-  void Lock() const { mLock.ReadLock(); }
-
-  void Unlock() const { mLock.ReadUnlock(); }
-
-#if defined(DEBUG)
-  
-  explicit operator bool() const {
-    AutoReadLock lock(mLock);
-    return !!mNativeImpl;
-  }
-#endif  
-
- private:
-  friend class Accessor<NativeImpl>;
-  friend class NativeWeakPtr<NativeImpl>;
-  friend class NativeWeakPtrHolder<NativeImpl>;
-
- private:
-  const mozilla::jni::Object::WeakRef mJavaOwner;
-  mutable RWLock mLock;  
-  StorageType mNativeImpl;
-};
-
-
-
-
-
-
-
-
-
-template <typename NativeImpl>
-class NativeWeakPtrDetachRunnable final : public Runnable {
- public:
-  NativeWeakPtrDetachRunnable(
-      already_AddRefed<detail::NativeWeakPtrControlBlock<NativeImpl>> aCtlBlock,
-      const Object::LocalRef& aOwner,
-      typename NativeWeakPtrControlBlockStorageTraits<NativeImpl>::Type
-          aNativeImpl)
-      : Runnable("mozilla::jni::detail::NativeWeakPtrDetachRunnable"),
-        mCtlBlock(aCtlBlock),
-        mOwner(aOwner),
-        mNativeImpl(std::move(aNativeImpl)),
-        mHasRun(false) {
-    MOZ_RELEASE_ASSERT(!!mCtlBlock);
-    MOZ_RELEASE_ASSERT(!!mNativeImpl);
-  }
-
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(NativeWeakPtrDetachRunnable, Runnable)
-
-  NS_IMETHOD Run() override {
-    mHasRun = true;
-
-    if (!NS_IsMainThread()) {
-      NS_DispatchToMainThread(this);
-      return NS_OK;
-    }
-
-    
-    auto owner = ToLocalRef(mOwner);
-    auto attachedNativeImpl = NativePtrTraits<NativeImpl>::Get(owner);
-    MOZ_RELEASE_ASSERT(!!attachedNativeImpl);
-
-    
-    
-    
-    if (attachedNativeImpl->IsSame(mCtlBlock)) {
-      NativePtrTraits<NativeImpl>::ClearFinish(owner);
-    }
-
-    
-    mNativeImpl = nullptr;
-    return NS_OK;
-  }
-
- private:
-  ~NativeWeakPtrDetachRunnable() {
-    
-    MOZ_RELEASE_ASSERT(mHasRun, "You must run/dispatch this runnable!");
-  }
-
- private:
-  RefPtr<detail::NativeWeakPtrControlBlock<NativeImpl>> mCtlBlock;
-  Object::GlobalRef mOwner;
-  typename NativeWeakPtrControlBlockStorageTraits<NativeImpl>::Type mNativeImpl;
-  bool mHasRun;
-};
-
-
-
-
-
-
-template <typename NativeImpl>
-class MOZ_STACK_CLASS Accessor final {
- public:
-  ~Accessor() {
-    if (mCtlBlock) {
-      mCtlBlock->Unlock();
-    }
-  }
-
-  
-  explicit operator bool() const { return mCtlBlock && mCtlBlock->mNativeImpl; }
-
-  
-  NativeImpl* operator->() const {
-    return NativeWeakPtrControlBlockStorageTraits<NativeImpl>::AsRaw(
-        mCtlBlock->mNativeImpl);
-  }
-
-  
-  template <typename Member>
-  auto operator->*(Member aMember) const {
-    NativeImpl* impl =
-        NativeWeakPtrControlBlockStorageTraits<NativeImpl>::AsRaw(
-            mCtlBlock->mNativeImpl);
-    return [impl, member = aMember](auto&&... aArgs) {
-      return (impl->*member)(std::forward<decltype(aArgs)>(aArgs)...);
-    };
-  }
-
-  
-  
-  
-  template <typename I = NativeImpl>
-  auto AsRefPtr() const -> std::enable_if_t<IsRefCounted<I>::value, RefPtr<I>> {
-    MOZ_ASSERT(I::HasThreadSafeRefCnt::value || NS_IsMainThread());
-    return mCtlBlock->mNativeImpl;
-  }
-
-  Accessor(const Accessor&) = delete;
-  Accessor(Accessor&&) = delete;
-  Accessor& operator=(const Accessor&) = delete;
-  Accessor& operator=(Accessor&&) = delete;
-
- private:
-  explicit Accessor(
-      const RefPtr<detail::NativeWeakPtrControlBlock<NativeImpl>>& aCtlBlock)
-      : mCtlBlock(aCtlBlock) {
-    if (aCtlBlock) {
-      aCtlBlock->Lock();
-    }
-  }
-
- private:
-  friend class NativeWeakPtr<NativeImpl>;
-  friend class NativeWeakPtrHolder<NativeImpl>;
-
- private:
-  const RefPtr<NativeWeakPtrControlBlock<NativeImpl>> mCtlBlock;
-};
-
-}  
-
-
-
-
-
-
-
-
-template <typename NativeImpl>
-class NativeWeakPtr {
- public:
-  using Accessor = detail::Accessor<NativeImpl>;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Accessor Access() const { return Accessor(mCtlBlock); }
-
-  
-
-
-
-  void Detach() {
-    if (!IsAttached()) {
-      
-      return;
-    }
-
-    auto native = mCtlBlock->Clear();
-    if (!native) {
-      
-      return;
-    }
-
-    Object::LocalRef owner(mCtlBlock->GetJavaOwner());
-    MOZ_RELEASE_ASSERT(!!owner);
-
-    
-    
-    
-    NativeImpl* rawImpl =
-        detail::NativeWeakPtrControlBlock<NativeImpl>::StorageTraits::AsRaw(
-            native);
-    rawImpl->OnWeakNonIntrusiveDetach(
-        do_AddRef(new NativeWeakPtrDetachRunnable<NativeImpl>(
-            mCtlBlock.forget(), owner, std::move(native))));
-  }
-
-  
-
-
-
-  bool IsAttached() const { return !!mCtlBlock; }
-
-  
-
-
-
-  bool IsSame(const Accessor& aAccessor) const {
-    return mCtlBlock == aAccessor.mCtlBlock;
-  }
-
-  
-
-
-
-  bool IsSame(const RefPtr<detail::NativeWeakPtrControlBlock<NativeImpl>>&
-                  aOther) const {
-    return mCtlBlock == aOther;
-  }
-
-  NativeWeakPtr() = default;
-  MOZ_IMPLICIT NativeWeakPtr(decltype(nullptr)) {}
-  NativeWeakPtr(const NativeWeakPtr& aOther) = default;
-  NativeWeakPtr(NativeWeakPtr&& aOther) = default;
-  NativeWeakPtr& operator=(const NativeWeakPtr& aOther) = default;
-  NativeWeakPtr& operator=(NativeWeakPtr&& aOther) = default;
-
-  NativeWeakPtr& operator=(decltype(nullptr)) {
-    mCtlBlock = nullptr;
-    return *this;
-  }
-
- protected:
-  
-  explicit NativeWeakPtr(
-      already_AddRefed<detail::NativeWeakPtrControlBlock<NativeImpl>> aCtlBlock)
-      : mCtlBlock(aCtlBlock) {}
-
- private:
-  
-  explicit NativeWeakPtr(
-      const RefPtr<detail::NativeWeakPtrControlBlock<NativeImpl>>& aCtlBlock)
-      : mCtlBlock(aCtlBlock) {}
-
-  friend class NativeWeakPtrHolder<NativeImpl>;
-
- protected:
-  RefPtr<detail::NativeWeakPtrControlBlock<NativeImpl>> mCtlBlock;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename NativeImpl>
-class MOZ_HEAP_CLASS NativeWeakPtrHolder final
-    : public NativeWeakPtr<NativeImpl> {
-  using Base = NativeWeakPtr<NativeImpl>;
-
- public:
-  using Accessor = typename Base::Accessor;
-  using StorageTraits =
-      typename detail::NativeWeakPtrControlBlock<NativeImpl>::StorageTraits;
-  using StorageType = typename StorageTraits::Type;
-
-  
-
-
-
-
-
-  template <typename Cls, typename JNIType, typename... Args>
-  static NativeWeakPtr<NativeImpl> Attach(const Ref<Cls, JNIType>& aJavaObject,
-                                          Args&&... aArgs) {
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-    StorageType nativeImpl(new NativeImpl(std::forward<Args>(aArgs)...));
-    return AttachInternal(aJavaObject, std::move(nativeImpl));
-  }
-
-  
-
-
-
-
-
-  template <typename Cls, typename JNIType>
-  static NativeWeakPtr<NativeImpl> AttachExisting(
-      const Ref<Cls, JNIType>& aJavaObject,
-      already_AddRefed<NativeImpl> aNativeImpl) {
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-    StorageType nativeImpl(aNativeImpl);
-    return AttachInternal(aJavaObject, std::move(nativeImpl));
-  }
-
-  ~NativeWeakPtrHolder() = default;
-
-  MOZ_IMPLICIT NativeWeakPtrHolder(decltype(nullptr)) = delete;
-  NativeWeakPtrHolder(const NativeWeakPtrHolder&) = delete;
-  NativeWeakPtrHolder(NativeWeakPtrHolder&&) = delete;
-  NativeWeakPtrHolder& operator=(const NativeWeakPtrHolder&) = delete;
-  NativeWeakPtrHolder& operator=(NativeWeakPtrHolder&&) = delete;
-  NativeWeakPtrHolder& operator=(decltype(nullptr)) = delete;
-
- private:
-  template <typename Cls>
-  NativeWeakPtrHolder(const LocalRef<Cls>& aJavaObject,
-                      StorageType&& aNativeImpl)
-      : NativeWeakPtr<NativeImpl>(
-            do_AddRef(new NativeWeakPtrControlBlock<NativeImpl>(
-                aJavaObject, std::move(aNativeImpl)))) {}
-
-  
-
-
-
-  template <typename Cls, typename JNIType>
-  static NativeWeakPtr<NativeImpl> AttachInternal(
-      const Ref<Cls, JNIType>& aJavaObject, StorageType&& aPtr) {
-    auto localJavaObject = ToLocalRef(aJavaObject);
-    NativeWeakPtrHolder<NativeImpl>* holder =
-        new NativeWeakPtrHolder<NativeImpl>(localJavaObject, std::move(aPtr));
-    static_assert(
-        NativePtrPicker<NativeImpl>::value == NativePtrType::WEAK_NON_INTRUSIVE,
-        "This type is not compatible with mozilla::jni::NativeWeakPtr");
-    NativePtrTraits<NativeImpl>::Set(localJavaObject, holder);
-    return NativeWeakPtr<NativeImpl>(holder->mCtlBlock);
-  }
-};
-
-namespace detail {
-
-
-
-
-template <class Impl>
-struct NativePtrTraits<Impl,  NativePtrType::WEAK_NON_INTRUSIVE> {
-  using AccessorType = typename NativeWeakPtrHolder<Impl>::Accessor;
-  using HandleType = NativeWeakPtrHolder<Impl>*;
-  using RefType = NativeWeakPtrHolder<Impl>* const;
-
-  static RefType Get(JNIEnv* env, jobject instance) {
-    return GetHandle(env, instance);
-  }
-
-  template <typename Cls>
-  static RefType Get(const LocalRef<Cls>& instance) {
-    return GetHandle(instance.Env(), instance.Get());
-  }
-
-  static AccessorType Access(RefType aPtr) { return aPtr->Access(); }
-
-  template <typename Cls>
-  static void Set(const LocalRef<Cls>& instance, HandleType ptr) {
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    const uintptr_t handle = reinterpret_cast<uintptr_t>(ptr);
-    Clear(instance);
-    SetNativeHandle(instance.Env(), instance.Get(), handle);
-    MOZ_CATCH_JNI_EXCEPTION(instance.Env());
-  }
-
-  template <typename Cls>
-  static void Clear(const LocalRef<Cls>& instance) {
-    auto ptr = reinterpret_cast<HandleType>(
-        GetNativeHandle(instance.Env(), instance.Get()));
-    MOZ_CATCH_JNI_EXCEPTION(instance.Env());
-
-    if (!ptr) {
-      return;
-    }
-
-    ptr->Detach();
-  }
-
-  
-  
-  
-  template <typename Cls>
-  static void ClearFinish(const LocalRef<Cls>& instance) {
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    JNIEnv* const env = instance.Env();
-    auto ptr =
-        reinterpret_cast<HandleType>(GetNativeHandle(env, instance.Get()));
-    MOZ_CATCH_JNI_EXCEPTION(env);
-    MOZ_RELEASE_ASSERT(!!ptr);
-
-    SetNativeHandle(env, instance.Get(), 0);
-    MOZ_CATCH_JNI_EXCEPTION(env);
-    
-  }
-
-  
-  
-  
-  
-  
-  template <class LocalRef>
-  static bool IsStale(const LocalRef& instance) {
-    JNIEnv* const env = mozilla::jni::GetEnvForThread();
-
-    auto holder = Get(env, instance.Get());
-    if (!holder || !holder->IsAttached()) {
-      return false;
-    }
-
-    auto acc(holder->Access());
-    return !acc;
-  }
-
- private:
-  static HandleType GetHandle(JNIEnv* env, jobject instance) {
-    return reinterpret_cast<HandleType>(
-        CheckNativeHandle<Impl>(env, GetNativeHandle(env, instance)));
-  }
-
-  template <typename Cls>
-  static HandleType GetHandle(const LocalRef<Cls>& instance) {
-    return GetHandle(instance.Env(), instance.Get());
-  }
-
-  friend class NativeWeakPtrHolder<Impl>;
 };
 
 }  
@@ -1192,7 +401,7 @@ class ProxyNativeCall {
   std::enable_if_t<!Static && ThisArg, void> Call(
       const typename Owner::LocalRef& inst,
       std::index_sequence<Indices...>) const {
-    auto impl = NativePtrTraits<Impl>::Access(NativePtrTraits<Impl>::Get(inst));
+    Impl* const impl = NativePtr<Impl>::Get(inst);
     MOZ_CATCH_JNI_EXCEPTION(inst.Env());
     (impl->*mNativeCall)(inst, mozilla::Get<Indices>(mArgs)...);
   }
@@ -1201,7 +410,7 @@ class ProxyNativeCall {
   std::enable_if_t<!Static && !ThisArg, void> Call(
       const typename Owner::LocalRef& inst,
       std::index_sequence<Indices...>) const {
-    auto impl = NativePtrTraits<Impl>::Access(NativePtrTraits<Impl>::Get(inst));
+    Impl* const impl = NativePtr<Impl>::Get(inst);
     MOZ_CATCH_JNI_EXCEPTION(inst.Env());
     (impl->*mNativeCall)(mozilla::Get<Indices>(mArgs)...);
   }
@@ -1212,13 +421,10 @@ class ProxyNativeCall {
     mozilla::Unused << dummy;
   }
 
-  static decltype(auto) GetNativeObject(Class::Param thisArg) {
-    return nullptr;
-  }
+  static Impl* GetNativeObject(Class::Param thisArg) { return nullptr; }
 
-  static decltype(auto) GetNativeObject(typename Owner::Param thisArg) {
-    return NativePtrTraits<Impl>::Access(
-        NativePtrTraits<Impl>::Get(GetEnvForThread(), thisArg.Get()));
+  static Impl* GetNativeObject(typename Owner::Param thisArg) {
+    return NativePtr<Impl>::Get(GetEnvForThread(), thisArg.Get());
   }
 
  public:
@@ -1242,7 +448,7 @@ class ProxyNativeCall {
 
   
   
-  decltype(auto) GetNativeObject() const { return GetNativeObject(mThisArg); }
+  Impl* GetNativeObject() const { return GetNativeObject(mThisArg); }
 
   
   
@@ -1382,8 +588,7 @@ class NativeStub<Traits, Impl, jni::Args<Args...>> {
        typename TypeAdapter<Args>::JNIType... args) {
     MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
 
-    auto impl = NativePtrTraits<Impl>::Access(
-        NativePtrTraits<Impl>::Get(env, instance));
+    Impl* const impl = NativePtr<Impl>::Get(env, instance);
     if (!impl) {
       
       return ReturnJNIType();
@@ -1400,8 +605,7 @@ class NativeStub<Traits, Impl, jni::Args<Args...>> {
        typename TypeAdapter<Args>::JNIType... args) {
     MOZ_ASSERT_JNI_THREAD(Traits::callingThread);
 
-    auto impl = NativePtrTraits<Impl>::Access(
-        NativePtrTraits<Impl>::Get(env, instance));
+    Impl* const impl = NativePtr<Impl>::Get(env, instance);
     if (!impl) {
       
       return ReturnJNIType();
@@ -1425,8 +629,7 @@ class NativeStub<Traits, Impl, jni::Args<Args...>> {
       return;
     }
 
-    auto impl = NativePtrTraits<Impl>::Access(
-        NativePtrTraits<Impl>::Get(env, instance));
+    Impl* const impl = NativePtr<Impl>::Get(env, instance);
     if (!impl) {
       
       return;
@@ -1447,8 +650,7 @@ class NativeStub<Traits, Impl, jni::Args<Args...>> {
       return;
     }
 
-    auto impl = NativePtrTraits<Impl>::Access(
-        NativePtrTraits<Impl>::Get(env, instance));
+    Impl* const impl = NativePtr<Impl>::Get(env, instance);
     if (!impl) {
       
       return;
@@ -1566,32 +768,32 @@ class NativeImpl {
   
   static void AttachNative(const typename Cls::LocalRef& instance,
                            SupportsWeakPtr* ptr) {
-    static_assert(NativePtrPicker<Impl>::value == NativePtrType::WEAK_INTRUSIVE,
+    static_assert(NativePtrPicker<Impl>::value == NativePtrType::WEAK,
                   "Use another AttachNative for non-WeakPtr usage");
-    return NativePtrTraits<Impl>::Set(instance, static_cast<Impl*>(ptr));
+    return NativePtr<Impl>::Set(instance, static_cast<Impl*>(ptr));
   }
 
   static void AttachNative(const typename Cls::LocalRef& instance,
                            UniquePtr<Impl>&& ptr) {
     static_assert(NativePtrPicker<Impl>::value == NativePtrType::OWNING,
                   "Use another AttachNative for WeakPtr or RefPtr usage");
-    return NativePtrTraits<Impl>::Set(instance, std::move(ptr));
+    return NativePtr<Impl>::Set(instance, std::move(ptr));
   }
 
   static void AttachNative(const typename Cls::LocalRef& instance, Impl* ptr) {
     static_assert(NativePtrPicker<Impl>::value == NativePtrType::REFPTR,
                   "Use another AttachNative for non-RefPtr usage");
-    return NativePtrTraits<Impl>::Set(instance, ptr);
+    return NativePtr<Impl>::Set(instance, ptr);
   }
 
   
   
-  static decltype(auto) GetNative(const typename Cls::LocalRef& instance) {
-    return NativePtrTraits<Impl>::Get(instance);
+  static Impl* GetNative(const typename Cls::LocalRef& instance) {
+    return NativePtr<Impl>::Get(instance);
   }
 
   static void DisposeNative(const typename Cls::LocalRef& instance) {
-    NativePtrTraits<Impl>::Clear(instance);
+    NativePtr<Impl>::Clear(instance);
   }
 
   NativeImpl() {
