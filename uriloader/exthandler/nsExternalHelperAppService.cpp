@@ -487,7 +487,7 @@ static const nsExtraMimeTypeEntry extraMimeEntries[] = {
     {IMAGE_BMP, "bmp", "BMP Image"},
     {IMAGE_GIF, "gif", "GIF Image"},
     {IMAGE_ICO, "ico,cur", "ICO Image"},
-    {IMAGE_JPEG, "jpeg,jpg,jfif,pjpeg,pjp", "JPEG Image"},
+    {IMAGE_JPEG, "jpg,jpeg,jfif,pjpeg,pjp", "JPEG Image"},
     {IMAGE_PNG, "png", "PNG Image"},
     {IMAGE_APNG, "apng", "APNG Image"},
     {IMAGE_TIFF, "tiff,tif", "TIFF Image"},
@@ -527,6 +527,9 @@ static const nsExtraMimeTypeEntry extraMimeEntries[] = {
     {AUDIO_FLAC, "flac", "FLAC Audio"},
     {AUDIO_MIDI, "mid", "Standard MIDI Audio"},
     {APPLICATION_WASM, "wasm", "WebAssembly Module"}};
+
+static const nsDefaultMimeTypeEntry sForbiddenPrimaryExtensions[] = {
+    {IMAGE_JPEG, "jfif"}};
 
 
 
@@ -2633,6 +2636,18 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
 
   
   
+  
+  nsAutoCString primaryExtension;
+  (*_retval)->GetPrimaryExtension(primaryExtension);
+  if (!primaryExtension.LowerCaseEqualsASCII(
+          PromiseFlatCString(aFileExt).get())) {
+    if (MaybeReplacePrimaryExtension(primaryExtension, *_retval)) {
+      (*_retval)->GetPrimaryExtension(primaryExtension);
+    }
+  }
+
+  
+  
   if (!aFileExt.IsEmpty()) {
     bool matches = false;
     (*_retval)->ExtensionExists(aFileExt, &matches);
@@ -2642,6 +2657,7 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
       nsAutoCString fileExt;
       ToLowerCase(aFileExt, fileExt);
       (*_retval)->SetPrimaryExtension(fileExt);
+      primaryExtension = fileExt;
     }
   }
 
@@ -2649,8 +2665,6 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
   
   
   
-  nsAutoCString primaryExtension;
-  rv = (*_retval)->GetPrimaryExtension(primaryExtension);
   if (NS_SUCCEEDED(rv)) {
     for (const char* ext : descriptionOverwriteExtensions) {
       if (primaryExtension.Equals(ext)) {
@@ -2680,10 +2694,8 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
     nsAutoCString type;
     (*_retval)->GetMIMEType(type);
 
-    nsAutoCString ext;
-    (*_retval)->GetPrimaryExtension(ext);
     LOG(("MIME Info Summary: Type '%s', Primary Ext '%s'\n", type.get(),
-         ext.get()));
+         primaryExtension.get()));
   }
 
   return NS_OK;
@@ -2888,6 +2900,26 @@ nsresult nsExternalHelperAppService::FillMIMEInfoForExtensionFromExtras(
   bool found = GetTypeFromExtras(aExtension, type);
   if (!found) return NS_ERROR_NOT_AVAILABLE;
   return FillMIMEInfoForMimeTypeFromExtras(type, true, aMIMEInfo);
+}
+
+bool nsExternalHelperAppService::MaybeReplacePrimaryExtension(
+    const nsACString& aPrimaryExtension, nsIMIMEInfo* aMIMEInfo) {
+  for (const auto& entry : sForbiddenPrimaryExtensions) {
+    if (aPrimaryExtension.LowerCaseEqualsASCII(entry.mFileExtension)) {
+      nsDependentCString mime(entry.mMimeType);
+      for (const auto& extraEntry : extraMimeEntries) {
+        if (mime.LowerCaseEqualsASCII(extraEntry.mMimeType)) {
+          nsDependentCString goodExts(extraEntry.mFileExtensions);
+          int32_t commaPos = goodExts.FindChar(',');
+          commaPos = commaPos == kNotFound ? goodExts.Length() : commaPos;
+          auto goodExt = Substring(goodExts, 0, commaPos);
+          aMIMEInfo->SetPrimaryExtension(goodExt);
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 bool nsExternalHelperAppService::GetTypeFromExtras(const nsACString& aExtension,
