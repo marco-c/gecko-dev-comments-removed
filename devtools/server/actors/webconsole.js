@@ -1448,16 +1448,14 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       ConsoleAPIStorage.clearEvents(id);
     });
 
-    
-    
-    
-    
-    if (this.parentActor.isRootActor) {
+    if (this.parentActor.isRootActor || !this.global) {
+      
+      
       Services.console.reset();
-    } else if (this.consoleServiceListener) {
-      
-      
-      this.consoleServiceListener.clearCachedMessages();
+    } else {
+      WebConsoleUtils.getInnerWindowIDsForFrames(this.global).forEach(id =>
+        Services.console.resetWindow(id)
+      );
     }
   },
 

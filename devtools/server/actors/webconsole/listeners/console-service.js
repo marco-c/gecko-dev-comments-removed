@@ -164,18 +164,6 @@ class ConsoleServiceListener {
     });
   }
 
-  clearCachedMessages() {
-    
-    
-    if (!this.window) {
-      Services.console.reset();
-    } else {
-      WebConsoleUtils.getInnerWindowIDsForFrames(this.window).forEach(id =>
-        Services.console.resetWindow(id)
-      );
-    }
-  }
-
   
 
 
