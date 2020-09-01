@@ -87,7 +87,7 @@ var BrowserUtils = {
     }
     let contentPrincipal = browser.contentPrincipal;
     
-    if (contentPrincipal.isContentPrincipal) {
+    if (contentPrincipal.URI) {
       
       
       
@@ -109,7 +109,7 @@ var BrowserUtils = {
       ) {
         return true;
       }
-      return contentPrincipal.equalsURI(uri);
+      return contentPrincipal.URI.equals(uri);
     }
     
     
