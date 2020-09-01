@@ -1953,6 +1953,9 @@ class LogTaskBase {
 class MicroTaskRunnable;
 class Task;  
 class PresShell;
+namespace dom {
+class FrameRequestCallback;
+}  
 
 
 template <>
@@ -1971,6 +1974,7 @@ typedef LogTaskBase<IPC::Message> LogIPCMessage;
 typedef LogTaskBase<nsTimerImpl> LogTimerEvent;
 typedef LogTaskBase<Task> LogTask;
 typedef LogTaskBase<PresShell> LogPresShellObserver;
+typedef LogTaskBase<dom::FrameRequestCallback> LogFrameRequestCallback;
 
 
 
