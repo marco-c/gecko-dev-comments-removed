@@ -11,6 +11,7 @@
 use crate::approxeq::ApproxEq;
 use crate::num::Zero;
 use crate::scale::Scale;
+use crate::approxord::{max, min};
 
 use crate::num::One;
 use core::cmp::Ordering;
@@ -83,14 +84,14 @@ impl<T, U> Length<T, U> {
 
 impl<T: Clone, U> Length<T, U> {
     
-    pub fn get(&self) -> T {
-        self.0.clone()
+    pub fn get(self) -> T {
+        self.0
     }
 
     
     #[inline]
-    pub fn cast_unit<V>(&self) -> Length<T, V> {
-        Length::new(self.0.clone())
+    pub fn cast_unit<V>(self) -> Length<T, V> {
+        Length::new(self.0)
     }
 
     
@@ -110,7 +111,7 @@ impl<T: Clone, U> Length<T, U> {
     
     
     #[inline]
-    pub fn lerp(&self, other: Self, t: T) -> Self
+    pub fn lerp(self, other: Self, t: T) -> Self
     where
         T: One + Sub<Output = T> + Mul<Output = T> + Add<Output = T>,
     {
@@ -119,26 +120,34 @@ impl<T: Clone, U> Length<T, U> {
     }
 }
 
+impl<T: PartialOrd, U> Length<T, U> {
+    
+    #[inline]
+    pub fn min(self, other: Self) -> Self {
+        min(self, other)
+    }
+
+    
+    #[inline]
+    pub fn max(self, other: Self) -> Self {
+        max(self, other)
+    }
+}
+
 impl<T: NumCast + Clone, U> Length<T, U> {
     
     #[inline]
-    pub fn cast<NewT: NumCast>(&self) -> Length<NewT, U> {
+    pub fn cast<NewT: NumCast>(self) -> Length<NewT, U> {
         self.try_cast().unwrap()
     }
 
     
-    pub fn try_cast<NewT: NumCast>(&self) -> Option<Length<NewT, U>> {
-        NumCast::from(self.get()).map(Length::new)
+    pub fn try_cast<NewT: NumCast>(self) -> Option<Length<NewT, U>> {
+        NumCast::from(self.0).map(Length::new)
     }
 }
 
 impl<T: fmt::Debug, U> fmt::Debug for Length<T, U> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-impl<T: fmt::Display, U> fmt::Display for Length<T, U> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
@@ -356,19 +365,6 @@ mod tests {
 
         assert_eq!(one_foot.get(), 12.0);
         assert_eq!(variable_length.get(), 24.0);
-    }
-
-    #[test]
-    fn test_get_clones_length_value() {
-        
-        
-        let mut length: Length<Vec<i32>, Inch> = Length::new(vec![1, 2, 3]);
-
-        let value = length.get();
-        length.0.push(4);
-
-        assert_eq!(value, vec![1, 2, 3]);
-        assert_eq!(length.get(), vec![1, 2, 3, 4]);
     }
 
     #[test]
