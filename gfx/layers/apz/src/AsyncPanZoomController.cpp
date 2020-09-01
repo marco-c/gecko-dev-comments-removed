@@ -4589,7 +4589,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
   bool needContentRepaint = false;
   RepaintUpdateType contentRepaintType = RepaintUpdateType::eNone;
-  bool viewportUpdated = false;
+  bool viewportSizeUpdated = false;
 
   if ((aIsFirstPaint && aThisLayerTreeUpdated) || isDefault) {
     
@@ -4628,7 +4628,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       Metrics().SetLayoutViewport(layoutViewport);
 
       needContentRepaint = true;
-      viewportUpdated = true;
+      viewportSizeUpdated = true;
     }
 
     
@@ -4637,7 +4637,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
                             aLayerMetrics.GetCompositionBounds().Width()) &&
         Metrics().GetDevPixelsPerCSSPixel() ==
             aLayerMetrics.GetDevPixelsPerCSSPixel() &&
-        !viewportUpdated && !aScrollMetadata.IsResolutionUpdated()) {
+        !viewportSizeUpdated && !aScrollMetadata.IsResolutionUpdated()) {
       
       
       
@@ -4852,7 +4852,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     ScheduleComposite();
   }
 
-  if (viewportUpdated) {
+  if (viewportSizeUpdated) {
     
     
     
