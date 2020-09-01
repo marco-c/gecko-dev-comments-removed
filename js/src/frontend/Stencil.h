@@ -299,7 +299,8 @@ class EmptyGlobalScopeType {};
 
 
 using FunctionDeclaration = GCThingIndex;
-using FunctionDeclarationVector = Vector<FunctionDeclaration>;
+using FunctionDeclarationVector =
+    Vector<FunctionDeclaration, 0, js::SystemAllocPolicy>;
 
 
 
@@ -390,7 +391,7 @@ class StencilModuleMetadata {
   EntryVector starExportEntries;
   FunctionDeclarationVector functionDecls;
 
-  explicit StencilModuleMetadata(JSContext* cx) : functionDecls(cx) {}
+  explicit StencilModuleMetadata(JSContext* cx) {}
 
   bool initModule(JSContext* cx, CompilationInfo& compilationInfo,
                   JS::Handle<ModuleObject*> module);
