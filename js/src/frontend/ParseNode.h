@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "jstypes.h"  
+
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/NameAnalysisTypes.h"   
 #include "frontend/Stencil.h"
@@ -1118,12 +1120,7 @@ class ListNode : public ParseNode {
   
 
   
-  static constexpr uint32_t hasTopLevelFunctionDeclarationsBit = 0x01;
-
-  
-  
-  
-  static constexpr uint32_t hasArrayHoleOrSpreadBit = 0x02;
+  static constexpr uint32_t hasTopLevelFunctionDeclarationsBit = Bit(0);
 
   
   
@@ -1136,10 +1133,10 @@ class ListNode : public ParseNode {
   
   
   
-  static constexpr uint32_t hasNonConstInitializerBit = 0x04;
+  static constexpr uint32_t hasNonConstInitializerBit = Bit(1);
 
   
-  static constexpr uint32_t emittedTopLevelFunctionDeclarationsBit = 0x08;
+  static constexpr uint32_t emittedTopLevelFunctionDeclarationsBit = Bit(2);
 
  public:
   ListNode(ParseNodeKind kind, const TokenPos& pos) : ParseNode(kind, pos) {
@@ -1215,11 +1212,6 @@ class ListNode : public ParseNode {
     return xflags & emittedTopLevelFunctionDeclarationsBit;
   }
 
-  MOZ_MUST_USE bool hasArrayHoleOrSpread() const {
-    MOZ_ASSERT(isKind(ParseNodeKind::ArrayExpr));
-    return xflags & hasArrayHoleOrSpreadBit;
-  }
-
   MOZ_MUST_USE bool hasNonConstInitializer() const {
     MOZ_ASSERT(isKind(ParseNodeKind::ArrayExpr) ||
                isKind(ParseNodeKind::ObjectExpr));
@@ -1235,11 +1227,6 @@ class ListNode : public ParseNode {
     MOZ_ASSERT(isKind(ParseNodeKind::StatementList));
     MOZ_ASSERT(hasTopLevelFunctionDeclarations());
     xflags |= emittedTopLevelFunctionDeclarationsBit;
-  }
-
-  void setHasArrayHoleOrSpread() {
-    MOZ_ASSERT(isKind(ParseNodeKind::ArrayExpr));
-    xflags |= hasArrayHoleOrSpreadBit;
   }
 
   void setHasNonConstInitializer() {

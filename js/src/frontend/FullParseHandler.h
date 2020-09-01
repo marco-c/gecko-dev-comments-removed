@@ -310,7 +310,6 @@ class FullParseHandler {
       return false;
     }
     addList( literal,  elision);
-    literal->setHasArrayHoleOrSpread();
     literal->setHasNonConstInitializer();
     return true;
   }
@@ -324,7 +323,6 @@ class FullParseHandler {
       return false;
     }
     addList( literal,  spread);
-    literal->setHasArrayHoleOrSpread();
     literal->setHasNonConstInitializer();
     return true;
   }
