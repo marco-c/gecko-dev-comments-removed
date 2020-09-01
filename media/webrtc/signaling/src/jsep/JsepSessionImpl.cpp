@@ -241,10 +241,17 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
 
   
   
+  
   if (mSdpHelper.HasRtcp(msection->GetProtocol())) {
     
     msection->GetAttributeList().SetAttribute(
         new SdpFlagAttribute(SdpAttribute::kRtcpMuxAttribute));
+    
+    if (msection->GetMediaType() == SdpMediaSection::MediaType::kVideo &&
+        Preferences::GetBool("media.navigator.video.offer_rtcp_rsize", false)) {
+      msection->GetAttributeList().SetAttribute(
+          new SdpFlagAttribute(SdpAttribute::kRtcpRsizeAttribute));
+    }
   }
 
   nsresult rv = AddTransportAttributes(msection, SdpSetupAttribute::kActpass);
