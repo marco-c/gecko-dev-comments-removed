@@ -397,8 +397,6 @@ GeckoDriver.prototype.getBrowsingContext = function(options = {}) {
     browsingContext = browsingContext.top;
   }
 
-  logger.trace(`Using browsing context with id: ${browsingContext.id}`);
-
   return browsingContext;
 };
 
@@ -499,6 +497,8 @@ GeckoDriver.prototype.addBrowser = function(win) {
 
 GeckoDriver.prototype.startBrowser = function(window, isNewSession = false) {
   this.mainFrame = window;
+  this.chromeBrowsingContext = this.mainFrame.browsingContext;
+  this.contentBrowsingContext = null;
 
   this.addBrowser(window);
   this.whenBrowserStarted(window, isNewSession);
@@ -592,7 +592,8 @@ GeckoDriver.prototype.registerBrowser = function(id, be) {
     this.curBrowser.register(id, be);
   }
 
-  this.wins.set(id, BrowsingContext.get(id).currentWindowGlobal);
+  this.contentBrowsingContext = BrowsingContext.get(id);
+  this.wins.set(id, this.contentBrowsingContext.currentWindowGlobal);
 
   return id;
 };
@@ -866,12 +867,10 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   }
 
   if (this.mainFrame) {
-    this.chromeBrowsingContext = this.mainFrame.browsingContext;
     this.mainFrame.focus();
   }
 
   if (this.curBrowser.tab) {
-    this.contentBrowsingContext = this.curBrowser.contentBrowser.browsingContext;
     this.curBrowser.contentBrowser.focus();
   }
 
@@ -1708,8 +1707,6 @@ GeckoDriver.prototype.setWindowHandle = async function(
 
     this.startBrowser(winProperties.win, false );
 
-    this.chromeBrowsingContext = this.mainFrame.browsingContext;
-
     if (registerBrowsers && browserListening) {
       await registerBrowsers;
       const id = await browserListening;
@@ -1719,6 +1716,8 @@ GeckoDriver.prototype.setWindowHandle = async function(
     
     this.curBrowser = this.browsers[winProperties.id];
     this.mainFrame = this.curBrowser.window;
+
+    this.chromeBrowsingContext = this.mainFrame.browsingContext;
 
     
     let tab = null;
@@ -1730,7 +1729,6 @@ GeckoDriver.prototype.setWindowHandle = async function(
       );
     }
 
-    this.chromeBrowsingContext = this.mainFrame.browsingContext;
     this.contentBrowsingContext = tab?.linkedBrowser.browsingContext;
   }
 
@@ -3539,21 +3537,6 @@ GeckoDriver.prototype.receiveMessage = function(message) {
 
     case "Marionette:ListenersAttached":
       if (message.json.frameId === this.curBrowser.curFrameId) {
-        const browsingContext = BrowsingContext.get(message.json.frameId);
-
-        
-        
-        
-        if (
-          browsingContext.browserId == this.contentBrowsingContext?.browserId
-        ) {
-          logger.trace(
-            "Detected remoteness change. New browsing context: " +
-              browsingContext.id
-          );
-          this.contentBrowsingContext = browsingContext;
-        }
-
         this.curBrowser.flushPendingCommands();
       }
       break;
