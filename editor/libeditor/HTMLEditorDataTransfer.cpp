@@ -296,6 +296,8 @@ class MOZ_STACK_CLASS
   static bool FindTargetNodeOfContextForPastedHTMLAndRemoveInsertionCookie(
       nsINode& aStart, nsCOMPtr<nsINode>& aResult);
 
+  static bool IsInsertionCookie(const nsIContent& aContent);
+
   
 
 
@@ -3096,6 +3098,20 @@ void HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
 }
 
 
+bool HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
+    IsInsertionCookie(const nsIContent& aContent) {
+  
+  if (const auto* comment = Comment::FromNode(&aContent)) {
+    nsAutoString data;
+    comment->GetData(data);
+
+    return data.EqualsLiteral(kInsertCookie);
+  }
+
+  return false;
+}
+
+
 
 
 
@@ -3119,20 +3135,14 @@ bool HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
 
   for (nsCOMPtr<nsIContent> child = firstChild; child;
        child = child->GetNextSibling()) {
-    
-    if (auto* comment = Comment::FromNode(child)) {
-      nsAutoString data;
-      comment->GetData(data);
+    if (FragmentFromPasteCreator::IsInsertionCookie(*child)) {
+      
+      
+      aResult = &aStart;
 
-      if (data.EqualsLiteral(kInsertCookie)) {
-        
-        
-        aResult = &aStart;
+      child->Remove();
 
-        child->Remove();
-
-        return true;
-      }
+      return true;
     }
 
     if (FindTargetNodeOfContextForPastedHTMLAndRemoveInsertionCookie(*child,
@@ -3343,6 +3353,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
     FragmentFromPasteCreator::
         FindTargetNodeOfContextForPastedHTMLAndRemoveInsertionCookie(
             *documentFragmentForContext, aParentNodeOfPastedHTMLInContext);
+    MOZ_ASSERT(aParentNodeOfPastedHTMLInContext);
   }
 
   nsCOMPtr<nsIContent> parentContentOfPastedHTMLInContext =
