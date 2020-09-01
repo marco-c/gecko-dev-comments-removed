@@ -18,9 +18,14 @@ namespace layers {
 const ScrollableLayerGuid::ViewID ScrollableLayerGuid::NULL_SCROLL_ID = 0;
 
 void FrameMetrics::RecalculateLayoutViewportOffset() {
+  
+  
   if (!mIsRootContent) {
+    mLayoutViewport.MoveTo(mScrollOffset);
     return;
   }
+  
+  
   KeepLayoutViewportEnclosingVisualViewport(GetVisualViewport(),
                                             mScrollableRect, mLayoutViewport);
 }

@@ -4621,11 +4621,14 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
     if (Metrics().GetLayoutViewport().Size() !=
         aLayerMetrics.GetLayoutViewport().Size()) {
+      CSSRect layoutViewport = Metrics().GetLayoutViewport();
+      
+      
+      layoutViewport.SizeTo(aLayerMetrics.GetLayoutViewport().Size());
+      Metrics().SetLayoutViewport(layoutViewport);
+
       needContentRepaint = true;
       viewportUpdated = true;
-    }
-    if (viewportUpdated || scrollOffsetUpdated) {
-      Metrics().SetLayoutViewport(aLayerMetrics.GetLayoutViewport());
     }
 
     
