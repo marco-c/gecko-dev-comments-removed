@@ -14,6 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
+  ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ReaderMode: "resource://gre/modules/ReaderMode.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -95,6 +96,7 @@ class UrlbarInput {
     this.valueIsTyped = false;
     this.formHistoryName = DEFAULT_FORM_HISTORY_NAME;
     this.lastQueryContextPromise = Promise.resolve();
+    this.searchMode = null;
     this._actionOverrideKeyCount = 0;
     this._autofillPlaceholder = "";
     this._lastSearchString = "";
@@ -286,7 +288,8 @@ class UrlbarInput {
 
 
 
-  setURI(uri, updatePopupNotifications) {
+
+  setURI(uri = null, dueToTabSwitch = false) {
     let value = this.window.gBrowser.userTypedValue;
     let valid = false;
 
@@ -339,10 +342,21 @@ class UrlbarInput {
       this.selectionStart = this.selectionEnd = 0;
     }
 
-    this.setPageProxyState(
-      valid ? "valid" : "invalid",
-      updatePopupNotifications
-    );
+    
+    
+    this.setPageProxyState(valid ? "valid" : "invalid", dueToTabSwitch);
+
+    
+    
+    
+    if (dueToTabSwitch) {
+      let searchMode = this._searchModesByBrowser.get(
+        this.window.gBrowser.selectedBrowser
+      );
+      this.setSearchMode(searchMode || {});
+    } else if (valid) {
+      this.setSearchMode({});
+    }
   }
 
   
@@ -1189,6 +1203,18 @@ class UrlbarInput {
       source = null;
     }
 
+    
+    
+    
+    
+    
+    if (
+      (!this.searchMode && !engineName && !source) ||
+      ObjectUtils.deepEqual(this.searchMode, { engineName, source })
+    ) {
+      return;
+    }
+
     this._searchModeIndicatorTitle.textContent = "";
     this._searchModeLabel.textContent = "";
     this._searchModeIndicatorTitle.removeAttribute("data-l10n-id");
@@ -1458,12 +1484,6 @@ class UrlbarInput {
     this._gotFocusChange = this._gotTabSelect = false;
 
     this._resetSearchState();
-
-    
-    let searchMode = this._searchModesByBrowser.get(
-      this.window.gBrowser.selectedBrowser
-    );
-    this.setSearchMode(searchMode || {});
 
     
     
@@ -1995,8 +2015,6 @@ class UrlbarInput {
     
     
     browser.focus();
-
-    this.setSearchMode({});
 
     if (openUILinkWhere != "current") {
       this.handleRevert();
