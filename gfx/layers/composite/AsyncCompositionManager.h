@@ -7,20 +7,21 @@
 #ifndef GFX_ASYNCCOMPOSITIONMANAGER_H
 #define GFX_ASYNCCOMPOSITIONMANAGER_H
 
-#include "Units.h"                                 
-#include "FrameMetrics.h"                          
-#include "mozilla/layers/LayerManagerComposite.h"  
-#include "mozilla/Attributes.h"                    
-#include "mozilla/RefPtr.h"                        
-#include "mozilla/TimeStamp.h"                     
-#include "mozilla/gfx/BasePoint.h"                 
-#include "mozilla/gfx/Matrix.h"                    
-#include "mozilla/HalScreenConfiguration.h"        
-#include "mozilla/layers/FrameUniformityData.h"    
-#include "mozilla/layers/LayersMessages.h"         
-#include "mozilla/RefPtr.h"                        
-#include "nsISupportsImpl.h"         
-#include "CompositorBridgeParent.h"  
+#include "Units.h"                                  
+#include "FrameMetrics.h"                           
+#include "mozilla/layers/APZUtils.h"                
+#include "mozilla/layers/CompositorBridgeParent.h"  
+#include "mozilla/layers/LayerManagerComposite.h"   
+#include "mozilla/Attributes.h"                     
+#include "mozilla/RefPtr.h"                         
+#include "mozilla/TimeStamp.h"                      
+#include "mozilla/gfx/BasePoint.h"                  
+#include "mozilla/gfx/Matrix.h"                     
+#include "mozilla/HalScreenConfiguration.h"         
+#include "mozilla/layers/FrameUniformityData.h"     
+#include "mozilla/layers/LayersMessages.h"          
+#include "mozilla/RefPtr.h"                         
+#include "nsISupportsImpl.h"  
 
 namespace mozilla {
 namespace layers {
