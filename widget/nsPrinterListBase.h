@@ -10,6 +10,7 @@
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
+#include "nsPaper.h"
 #include "nsString.h"
 
 class nsPrinterListBase : public nsIPrinterList {
@@ -26,6 +27,7 @@ class nsPrinterListBase : public nsIPrinterList {
                              Promise** aResult) final;
   NS_IMETHOD GetNamedOrDefaultPrinter(const nsAString& aPrinterName,
                                       JSContext* aCx, Promise** aResult) final;
+  NS_IMETHOD GetFallbackPaperList(JSContext*, Promise**) final;
 
   struct PrinterInfo {
     
@@ -60,6 +62,10 @@ class nsPrinterListBase : public nsIPrinterList {
   
   
   virtual nsresult SystemDefaultPrinterName(nsAString&) const = 0;
+
+  
+  
+  nsTArray<RefPtr<nsPaper>> FallbackPaperList() const;
 
   RefPtr<Promise> mPrintersPromise;
 };

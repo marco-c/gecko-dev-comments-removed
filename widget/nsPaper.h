@@ -58,11 +58,15 @@ class nsPaper final : public nsIPaper {
   NS_DECL_NSIPAPER
 
   nsPaper() = delete;
+  explicit nsPaper(const mozilla::PaperInfo&);
   nsPaper(nsPrinterBase&, const mozilla::PaperInfo&);
 
  private:
   ~nsPaper();
+
+  
   RefPtr<nsPrinterBase> mPrinter;
+
   RefPtr<Promise> mMarginPromise;
   const mozilla::PaperInfo mInfo;
 };
