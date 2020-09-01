@@ -51,6 +51,23 @@ typedef struct _FILE_ID_INFO {
 #  define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 #endif  
 
+
+
+
+
+#if defined(_X86_)
+#  define SAFECALL_URLMON_FUNC(FuncName, ...)                                  \
+    do {                                                                       \
+      static const mozilla::StaticDynamicallyLinkedFunctionPtr<decltype(       \
+          &::FuncName)>                                                        \
+          func(L"urlmon.dll", #FuncName);                                      \
+      hr =                                                                     \
+          func ? func(__VA_ARGS__) : HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND); \
+    } while (0)
+#else
+#  define SAFECALL_URLMON_FUNC(FuncName, ...) hr = ::FuncName(__VA_ARGS__)
+#endif
+
 namespace mozilla {
 
 class WindowsError final {
