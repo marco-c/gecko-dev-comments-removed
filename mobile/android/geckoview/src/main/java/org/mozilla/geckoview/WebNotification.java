@@ -77,7 +77,10 @@ public class WebNotification {
     
 
 
-    public final @NonNull String source;
+
+
+
+    public final @Nullable String source;
 
     @WrapForJNI
      WebNotification(@Nullable final String title, @NonNull final String tag,
@@ -93,7 +96,7 @@ public class WebNotification {
         this.textDirection = textDirection;
         this.lang = lang;
         this.requireInteraction = requireInteraction;
-        this.source = source;
+        this.source = "".equals(source) ? null : source;
     }
 
     
