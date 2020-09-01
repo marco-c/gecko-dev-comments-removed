@@ -215,13 +215,15 @@ struct CompilationStencil {
   StencilModuleMetadata moduleMetadata;
 
   
-  HashMap<FunctionIndex, RefPtr<const JS::WasmModule>> asmJS;
+  HashMap<FunctionIndex, RefPtr<const JS::WasmModule>,
+          mozilla::DefaultHasher<FunctionIndex>, js::SystemAllocPolicy>
+      asmJS;
 
   
   ParserAtomsTable parserAtoms;
 
   explicit CompilationStencil(JSContext* cx)
-      : moduleMetadata(cx), asmJS(cx), parserAtoms(cx) {}
+      : moduleMetadata(cx), parserAtoms(cx) {}
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
