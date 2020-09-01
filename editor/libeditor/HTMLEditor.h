@@ -4561,10 +4561,18 @@ class HTMLEditor final : public TextEditor,
     return aNode.IsText() && IsEmptyNode(aNode);
   }
 
-  MOZ_CAN_RUN_SCRIPT bool IsSimpleModifiableNode(nsIContent* aContent,
-                                                 nsAtom* aProperty,
-                                                 nsAtom* aAttribute,
-                                                 const nsAString* aValue);
+  
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<bool, nsresult>
+  ElementIsGoodContainerForTheStyle(Element& aElement, nsAtom* aProperty,
+                                    nsAtom* aAttribute,
+                                    const nsAString* aValue);
+
   MOZ_CAN_RUN_SCRIPT nsresult
   SetInlinePropertyOnNodeImpl(nsIContent& aNode, nsAtom& aProperty,
                               nsAtom* aAttribute, const nsAString& aValue);
