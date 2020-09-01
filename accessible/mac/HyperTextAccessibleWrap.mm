@@ -28,7 +28,19 @@ class HyperTextIterator {
 
   bool Next();
 
-  bool Normalize();
+  
+  
+  
+  
+  
+  bool NormalizeForward();
+
+  
+  
+  
+  
+  
+  bool NormalizeBackward();
 
   HyperTextAccessible* mCurrentContainer;
   int32_t mCurrentStartOffset;
@@ -41,7 +53,7 @@ class HyperTextIterator {
   int32_t mEndOffset;
 };
 
-bool HyperTextIterator::Normalize() {
+bool HyperTextIterator::NormalizeForward() {
   if (mCurrentStartOffset == nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT ||
       mCurrentStartOffset >= static_cast<int32_t>(mCurrentContainer->CharacterCount())) {
     
@@ -52,17 +64,12 @@ bool HyperTextIterator::Normalize() {
     }
     uint32_t endOffset = mCurrentContainer->EndOffset();
     if (endOffset != 0) {
-      Accessible* parent = mCurrentContainer->Parent();
-      if (!parent->IsLink()) {
-        
-        return false;
-      }
-      mCurrentContainer = parent->AsHyperText();
+      mCurrentContainer = mCurrentContainer->Parent()->AsHyperText();
       mCurrentStartOffset = endOffset;
 
       
       
-      Normalize();
+      NormalizeForward();
       return true;
     }
   } else {
@@ -76,7 +83,43 @@ bool HyperTextIterator::Normalize() {
 
       
       
-      Normalize();
+      NormalizeForward();
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool HyperTextIterator::NormalizeBackward() {
+  if (mCurrentStartOffset == 0) {
+    
+    
+    if (!mCurrentContainer->IsLink()) {
+      
+      return false;
+    }
+
+    uint32_t startOffset = mCurrentContainer->StartOffset();
+    mCurrentContainer = mCurrentContainer->Parent()->AsHyperText();
+    mCurrentStartOffset = startOffset;
+
+    
+    
+    NormalizeBackward();
+    return true;
+  } else {
+    Accessible* link = mCurrentContainer->GetChildAtOffset(mCurrentStartOffset - 1);
+
+    
+    
+    if (link && link->IsHyperText()) {
+      mCurrentContainer = link->AsHyperText();
+      mCurrentStartOffset = mCurrentContainer->CharacterCount();
+
+      
+      
+      NormalizeBackward();
       return true;
     }
   }
@@ -104,7 +147,7 @@ bool HyperTextIterator::Next() {
     return false;
   } else {
     mCurrentStartOffset = mCurrentEndOffset;
-    Normalize();
+    NormalizeForward();
   }
 
   int32_t nextLinkOffset = NextLinkOffset();
@@ -176,7 +219,8 @@ void HyperTextAccessibleWrap::RightWordAt(int32_t aOffset, HyperTextAccessible**
                                           int32_t* aEndOffset) {
   TextPoint here(this, aOffset);
   TextPoint end = FindTextPoint(aOffset, eDirNext, eSelectWord, eEndWord);
-  if (!end.mContainer) {
+  if (!end.mContainer || end < here) {
+    
     return;
   }
 
@@ -204,9 +248,14 @@ void HyperTextAccessibleWrap::RightWordAt(int32_t aOffset, HyperTextAccessible**
 
 void HyperTextAccessibleWrap::NextClusterAt(int32_t aOffset, HyperTextAccessible** aNextContainer,
                                             int32_t* aNextOffset) {
+  TextPoint here(this, aOffset);
   TextPoint next = FindTextPoint(aOffset, eDirNext, eSelectCluster, eDefaultBehavior);
 
-  if (next.mOffset == nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT && next.mContainer == Document()) {
+  if ((next.mOffset == nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT &&
+       next.mContainer == Document()) ||
+      (next < here)) {
+    
+    
     *aNextContainer = this;
     *aNextOffset = aOffset;
   } else {
@@ -229,7 +278,11 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(int32_t aOffset, nsDirection aD
   
   
   HyperTextIterator iter(this, aOffset, this, CharacterCount());
-  iter.Normalize();
+  if (aDirection == eDirNext) {
+    iter.NormalizeForward();
+  } else {
+    iter.NormalizeBackward();
+  }
 
   
   HyperTextAccessible* text = iter.mCurrentContainer;
@@ -248,6 +301,17 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(int32_t aOffset, nsDirection aD
     }
 
     child = text->GetChildAt(childIdx);
+    if (child->IsHyperText() && !child->ChildCount()) {
+      
+      
+      
+      if (aDirection == eDirPrevious && childIdx > 0) {
+        child = text->GetChildAt(--childIdx);
+      } else if (aDirection == eDirNext &&
+                 childIdx + 1 < static_cast<int32_t>(text->ChildCount())) {
+        child = text->GetChildAt(++childIdx);
+      }
+    }
 
     innerOffset -= text->GetChildOffset(childIdx);
 
