@@ -244,13 +244,11 @@ bool ClientTiledPaintedLayer::IsScrollingOnCompositor(
   
   float COORDINATE_EPSILON = 1.f;
 
-  
-  
   return !FuzzyEqualsAdditive(compositorMetrics.GetVisualScrollOffset().x,
-                              aParentMetrics.GetLayoutScrollOffset().x,
+                              aParentMetrics.GetVisualScrollOffset().x,
                               COORDINATE_EPSILON) ||
          !FuzzyEqualsAdditive(compositorMetrics.GetVisualScrollOffset().y,
-                              aParentMetrics.GetLayoutScrollOffset().y,
+                              aParentMetrics.GetVisualScrollOffset().y,
                               COORDINATE_EPSILON);
 }
 
