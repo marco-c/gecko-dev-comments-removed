@@ -681,9 +681,7 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
 #ifdef EARLY_BETA_OR_EARLIER
       
       APPEND_DEVICE(0x98e4);
-#endif
 
-#if defined(NIGHTLY_BUILD)
       
       APPEND_RANGE(0x6840, 0x684b);
       APPEND_RANGE(0x6850, 0x685f);
