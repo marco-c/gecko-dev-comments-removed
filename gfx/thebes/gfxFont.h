@@ -1864,6 +1864,8 @@ class gfxFont {
   
   gfxFont* GetSubSuperscriptFont(int32_t aAppUnitsPerDevPixel);
 
+  bool HasColorGlyphFor(uint32_t aCh, uint32_t aNextCh);
+
  protected:
   virtual const Metrics& GetHorizontalMetrics() = 0;
 

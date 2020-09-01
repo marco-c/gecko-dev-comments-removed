@@ -209,11 +209,12 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   void GetFontFamilyList(nsTArray<RefPtr<gfxFontFamily>>& aFamilyArray);
 
-  gfxFontEntry* SystemFindFontForChar(uint32_t aCh, uint32_t aNextCh,
-                                      Script aRunScript,
-                                      const gfxFontStyle* aStyle,
-                                      FontVisibility* aVisibility,
-                                      FontMatchingStats* aFontMatchingStats);
+  gfxFont* SystemFindFontForChar(uint32_t aCh, uint32_t aNextCh,
+                                 Script aRunScript,
+                                 eFontPresentation aPresentation,
+                                 const gfxFontStyle* aStyle,
+                                 FontVisibility* aVisibility,
+                                 FontMatchingStats* aFontMatchingStats);
 
   
   
@@ -622,17 +623,17 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   }
 
   
-  gfxFontEntry* CommonFontFallback(uint32_t aCh, uint32_t aNextCh,
-                                   Script aRunScript,
-                                   const gfxFontStyle* aMatchStyle,
-                                   FontFamily& aMatchedFamily);
+  gfxFont* CommonFontFallback(uint32_t aCh, uint32_t aNextCh, Script aRunScript,
+                              eFontPresentation aPresentation,
+                              const gfxFontStyle* aMatchStyle,
+                              FontFamily& aMatchedFamily);
 
   
-  gfxFontEntry* GlobalFontFallback(const uint32_t aCh, Script aRunScript,
-                                   const gfxFontStyle* aMatchStyle,
-                                   uint32_t& aCmapCount,
-                                   FontFamily& aMatchedFamily,
-                                   FontMatchingStats* aFontMatchingStats);
+  gfxFont* GlobalFontFallback(uint32_t aCh, uint32_t aNextCh, Script aRunScript,
+                              eFontPresentation aPresentation,
+                              const gfxFontStyle* aMatchStyle,
+                              uint32_t& aCmapCount, FontFamily& aMatchedFamily,
+                              FontMatchingStats* aFontMatchingStats);
 
   
   
