@@ -186,11 +186,6 @@ class FrameProperties {
 
 
 
-
-
-
-
-
   template <typename T>
   bool Has(Descriptor<T> aProperty) const {
     return mProperties.Contains(aProperty, PropertyComparator());
