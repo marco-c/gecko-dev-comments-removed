@@ -678,6 +678,8 @@ class BackgroundCursorChild final : public BackgroundCursorChildBase {
   [[nodiscard]] RefPtr<IDBCursor> HandleIndividualCursorResponse(
       bool aUseAsCurrentResult, Args&&... aArgs);
 
+  SafeRefPtr<BackgroundCursorChild> SafeRefPtrFromThis();
+
  public:
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
