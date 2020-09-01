@@ -9522,6 +9522,10 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
         
         
         if (PopupBlocker::GetPopupControlState() <= PopupBlocker::openBlocked) {
+          
+          
+          
+          
           nsCOMPtr<nsINode> loadingNode =
               mScriptGlobal->GetFrameElementInternal();
           popupBlocked = !PopupBlocker::TryUsePopupOpeningToken(
@@ -9530,12 +9534,11 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                    PopupBlocker::ConsumeTimerTokenForExternalProtocolIframe()) {
           popupBlocked = false;
         } else {
-          nsCOMPtr<nsINode> loadingNode =
-              mScriptGlobal->GetFrameElementInternal();
-          if (loadingNode) {
-            popupBlocked = !PopupBlocker::CanShowPopupByPermission(
-                loadingNode->NodePrincipal());
-          }
+          
+          WindowContext* parentContext =
+              mBrowsingContext->GetParentWindowContext();
+          MOZ_ASSERT(parentContext);
+          popupBlocked = !parentContext->CanShowPopup();
         }
 
         
