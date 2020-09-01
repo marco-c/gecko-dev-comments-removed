@@ -94,19 +94,17 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
 
     
     
-    nsIFrame* pageNextInFlow = pageFrame->GetNextInFlow();
+    
+    
+    
+    NS_ASSERTION(!pageFrame->GetNextInFlow(), "bad child flow list");
+
+    
+    
     if (status.IsFullyComplete()) {
       
       
       mPD->mRawNumPages = pageFrame->GetPageNum();
-
-      
-      
-      
-      
-      
-      
-      NS_ASSERTION(!pageNextInFlow, "bad child flow list");
     } else {
       
       
@@ -114,17 +112,14 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
       
       aStatus.SetIncomplete();
 
-      if (!pageNextInFlow) {
-        
-        
-        
-        
-        nsIFrame* continuingPage =
-            PresShell()->FrameConstructor()->CreateContinuingFrame(pageFrame,
-                                                                   this);
-        mFrames.InsertFrame(nullptr, pageFrame, continuingPage);
-        PushChildrenToOverflow(continuingPage, pageFrame);
-      }
+      
+      
+      
+      nsIFrame* continuingPage =
+          PresShell()->FrameConstructor()->CreateContinuingFrame(pageFrame,
+                                                                 this);
+      mFrames.InsertFrame(nullptr, pageFrame, continuingPage);
+      PushChildrenToOverflow(continuingPage, pageFrame);
     }
   }
 
