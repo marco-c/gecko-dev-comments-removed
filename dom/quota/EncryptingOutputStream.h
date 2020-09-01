@@ -55,7 +55,6 @@ class EncryptingOutputStream final : public EncryptingOutputStreamBase {
   
   explicit EncryptingOutputStream(nsCOMPtr<nsIOutputStream> aBaseStream,
                                   size_t aBlockSize,
-                                  CipherStrategy aCipherStrategy,
                                   typename CipherStrategy::KeyType aKey);
 
  private:
@@ -65,8 +64,7 @@ class EncryptingOutputStream final : public EncryptingOutputStreamBase {
 
   bool EnsureBuffers();
 
-  const CipherStrategy mCipherStrategy;
-  const typename CipherStrategy::KeyType mKey;
+  CipherStrategy mCipherStrategy;
 
   
   

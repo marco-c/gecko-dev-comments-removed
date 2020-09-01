@@ -86,11 +86,11 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
   
   
   DecryptingInputStream(MovingNotNull<nsCOMPtr<nsIInputStream>> aBaseStream,
-                        size_t aBlockSize, CipherStrategy aCipherStrategy,
+                        size_t aBlockSize,
                         typename CipherStrategy::KeyType aKey);
 
   
-  explicit DecryptingInputStream(CipherStrategy aCipherStrategy);
+  explicit DecryptingInputStream();
 
   NS_IMETHOD Close() override;
   NS_IMETHOD Available(uint64_t* _retval) override;
@@ -137,7 +137,7 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
 
   bool EnsureBuffers();
 
-  const CipherStrategy mCipherStrategy;
+  CipherStrategy mCipherStrategy;
   LazyInitializedOnce<const typename CipherStrategy::KeyType> mKey;
 
   
