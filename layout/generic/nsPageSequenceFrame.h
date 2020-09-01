@@ -38,8 +38,7 @@ class nsSharedPageData {
 
   
   
-  
-  int32_t mTotNumPages = 0;
+  int32_t mRawNumPages = 0;
 
   
   
@@ -89,7 +88,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   nsresult PrintNextPage();
   void ResetPrintCanvasList();
   int32_t GetCurrentPageNum() const { return mPageNum; }
-  int32_t GetRawNumPages() const { return mPageData->mTotNumPages; }
+  int32_t GetRawNumPages() const { return mPageData->mRawNumPages; }
   bool IsDoingPrintRange() const { return mDoingPageRange; }
   void GetPrintRange(int32_t* aFromPage, int32_t* aToPage) const;
   nsresult DoPageEnd();

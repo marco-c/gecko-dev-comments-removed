@@ -406,7 +406,7 @@ nsresult nsPageSequenceFrame::StartPrint(nsPresContext* aPresContext,
   
   
   if (mDoingPageRange) {
-    if (mFromPageNum > mPageData->mTotNumPages) {
+    if (mFromPageNum > mPageData->mRawNumPages) {
       return NS_ERROR_INVALID_ARG;
     }
   }

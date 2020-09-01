@@ -98,7 +98,7 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
     if (status.IsFullyComplete()) {
       
       
-      mPD->mTotNumPages = pageFrame->GetPageNum();
+      mPD->mRawNumPages = pageFrame->GetPageNum();
 
       
       
