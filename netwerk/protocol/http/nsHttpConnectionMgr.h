@@ -94,6 +94,12 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
                                nsHttpConnectionInfo* wildcardCI,
                                HttpConnectionBase* conn);
 
+  
+  
+  
+  bool MoveTransToHTTPSSVCConnEntry(nsHttpTransaction* aTrans,
+                                    nsHttpConnectionInfo* aNewCI);
+
   [[nodiscard]] bool ProcessPendingQForEntry(nsHttpConnectionInfo*);
 
   

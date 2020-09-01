@@ -120,6 +120,10 @@ extern const nsCString kHttp3Versions[];
 
 #define NS_HTTP_DISALLOW_HTTP3 (1 << 22)
 
+
+
+#define NS_HTTP_WAIT_HTTPSSVC_RESULT (1 << 23)
+
 #define NS_HTTP_TRR_FLAGS_FROM_MODE(x) ((static_cast<uint32_t>(x) & 3) << 19)
 
 #define NS_HTTP_TRR_MODE_FROM_FLAGS(x) \

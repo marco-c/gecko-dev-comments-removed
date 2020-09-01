@@ -415,4 +415,10 @@ interface nsIHttpChannelInternal : nsISupports
 
     [noscript, notxpcom, nostdcall]
     void DoDiagnosticAssertWhenOnStopNotCalledOnDestroy();
+
+    
+
+
+
+    [must_use] void setWaitForHTTPSSVCRecord();
 };
