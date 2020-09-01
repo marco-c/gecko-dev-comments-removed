@@ -4103,7 +4103,7 @@ CreateStorageConnection(nsIFile& aDBFile, nsIFile& aFMDirectory,
       
       
       if (aName.IsVoid()) {
-        return Err(rv);
+        return connectionOrErr.propagateErr();
       }
 
       
