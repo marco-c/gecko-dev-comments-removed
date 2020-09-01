@@ -98,13 +98,6 @@ interface nsIPrintSettings : nsISupports
   
 
 
-  const short kSimplex          = 0;
-  const short kDuplexHorizontal = 1;
-  const short kDuplexVertical   = 2;
-
-  
-
-
   void SetPrintOptions(in int32_t aType, in boolean aTurnOnOff);
 
   
