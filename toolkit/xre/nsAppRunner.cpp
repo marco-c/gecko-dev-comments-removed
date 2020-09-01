@@ -4343,27 +4343,6 @@ nsresult XREMain::XRE_mainRun() {
 #  endif  
 #endif    
 
-#ifdef NS_FUNCTION_TIMER
-  
-  
-  
-  {
-    nsCOMPtr<nsISupports> comp;
-
-    comp = do_GetService("@mozilla.org/preferences-service;1");
-
-    comp = do_GetService("@mozilla.org/network/socket-transport-service;1");
-
-    comp = do_GetService("@mozilla.org/network/dns-service;1");
-
-    comp = do_GetService("@mozilla.org/network/io-service;1");
-
-    comp = do_GetService("@mozilla.org/chrome/chrome-registry;1");
-
-    comp = do_GetService("@mozilla.org/focus-event-suppressor-service;1");
-  }
-#endif
-
   rv = mScopedXPCOM->SetWindowCreator(mNativeApp);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
