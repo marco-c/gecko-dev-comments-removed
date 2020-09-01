@@ -139,22 +139,14 @@ class VideoFrameConverter {
                   ("VideoFrameConverter Track is now %s",
                    aTrackEnabled ? "enabled" : "disabled"));
           mTrackEnabled = aTrackEnabled;
-          if (!aTrackEnabled) {
+          if (!aTrackEnabled && mLastFrameConverted) {
             
             
-            if (mLastFrameConverted) {
-              
-              
-              ProcessVideoFrame(
-                  FrameToProcess{nullptr, TimeStamp::Now(),
-                                 gfx::IntSize(mLastFrameConverted->width(),
-                                              mLastFrameConverted->height()),
-                                 true});
-            } else {
-              
-              ProcessVideoFrame(FrameToProcess{nullptr, TimeStamp::Now(),
-                                               gfx::IntSize(640, 480), true});
-            }
+            ProcessVideoFrame(
+                FrameToProcess{nullptr, TimeStamp::Now(),
+                               gfx::IntSize(mLastFrameConverted->width(),
+                                            mLastFrameConverted->height()),
+                               true});
           }
         }));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
