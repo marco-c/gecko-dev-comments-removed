@@ -1,7 +1,5 @@
 use cc;
 
-use std::env;
-
 
 
 fn configure(build: &mut cc::Build) -> &mut cc::Build {
@@ -20,19 +18,15 @@ fn configure(build: &mut cc::Build) -> &mut cc::Build {
         build.define("HAVE_TIMESPEC_GET", None);
     }
 
+    
+    build.define("MOZ_INCLUDE_MOZALLOC_H", None);
+    
+    build.define("mozilla_throw_gcc_h", None);
+
     build
 }
 
 fn main() {
-    
-    
-    
-    let target = env::var("TARGET").unwrap();
-    env::remove_var(format!("CFLAGS_{}", &target));
-    env::remove_var(format!("CXXFLAGS_{}", &target));
-    env::remove_var(format!("CFLAGS_{}", target.replace("-", "_")));
-    env::remove_var(format!("CXXFLAGS_{}", target.replace("-", "_")));
-
     configure(&mut cc::Build::new())
         .warnings(false)
         .include("glsl-optimizer/include")
