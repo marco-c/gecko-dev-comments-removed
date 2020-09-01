@@ -1116,6 +1116,8 @@ void MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest,
     return;
   }
 
+  ScratchSimd128Scope scratch(*this);
+
   
   
   MOZ_ASSERT(dest.size() == 8);
@@ -1129,11 +1131,11 @@ void MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest,
   
   
   vmovd(src.low, dest128);
-  vmovd(src.high, ScratchSimd128Reg);
+  vmovd(src.high, scratch);
 
   
   
-  vpunpckldq(ScratchSimd128Reg, dest128, dest128);
+  vpunpckldq(scratch, dest128, dest128);
 
   
   
@@ -1149,8 +1151,8 @@ void MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest,
       0x0,
   };
 
-  loadConstantSimd128Int(SimdConstant::CreateX4(CST1), ScratchSimd128Reg);
-  vpunpckldq(ScratchSimd128Reg, dest128, dest128);
+  loadConstantSimd128Int(SimdConstant::CreateX4(CST1), scratch);
+  vpunpckldq(scratch, dest128, dest128);
 
   
   
@@ -1167,8 +1169,8 @@ void MacroAssembler::convertUInt64ToDouble(Register64 src, FloatRegister dest,
       0x45300000,
   };
 
-  loadConstantSimd128Int(SimdConstant::CreateX4(CST2), ScratchSimd128Reg);
-  vsubpd(ScratchSimd128Reg, dest128, dest128);
+  loadConstantSimd128Int(SimdConstant::CreateX4(CST2), scratch);
+  vsubpd(scratch, dest128, dest128);
 
   
   
