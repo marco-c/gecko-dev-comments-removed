@@ -240,14 +240,26 @@ class ImportableLearnMoreAutocompleteItem extends AutocompleteItem {
 }
 
 class ImportableLoginsAutocompleteItem extends AutocompleteItem {
-  constructor(browserId, hostname) {
+  constructor(browserId, hostname, actor) {
     super("importableLogins");
     this.label = browserId;
     this.comment = hostname;
+    this._actor = actor;
+
+    
+    
+    this._actor.sendAsyncMessage(
+      "PasswordManager:decreaseSuggestImportCount",
+      1
+    );
   }
 
   removeFromStorage() {
     Services.telemetry.recordEvent("exp_import", "event", "delete", this.label);
+    this._actor.sendAsyncMessage(
+      "PasswordManager:decreaseSuggestImportCount",
+      100
+    );
   }
 }
 
@@ -364,7 +376,8 @@ function LoginAutoCompleteResult(
     if (!logins.length && importableBrowsers) {
       this._rows.push(
         ...importableBrowsers.map(
-          browserId => new ImportableLoginsAutocompleteItem(browserId, hostname)
+          browserId =>
+            new ImportableLoginsAutocompleteItem(browserId, hostname, actor)
         )
       );
       this._rows.push(new ImportableLearnMoreAutocompleteItem());
