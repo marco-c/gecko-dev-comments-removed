@@ -5386,51 +5386,58 @@ QuotaManager::UpgradeFromIndexedDBDirectoryToPersistentStorageDirectory(
   AssertIsOnIOThread();
   MOZ_ASSERT(aIndexedDBDir);
 
-  bool isDirectory;
-  QM_TRY(aIndexedDBDir->IsDirectory(&isDirectory));
+  auto rv = [this, &aIndexedDBDir]() -> nsresult {
+    bool isDirectory;
+    QM_TRY(aIndexedDBDir->IsDirectory(&isDirectory));
 
-  if (!isDirectory) {
-    NS_WARNING("indexedDB entry is not a directory!");
-    return NS_OK;
-  }
-
-  auto persistentStorageDirOrErr = QM_NewLocalFile(mStoragePath);
-  if (NS_WARN_IF(persistentStorageDirOrErr.isErr())) {
-    return persistentStorageDirOrErr.unwrapErr();
-  }
-
-  nsCOMPtr<nsIFile> persistentStorageDir = persistentStorageDirOrErr.unwrap();
-
-  QM_TRY(
-      persistentStorageDir->Append(nsLiteralString(PERSISTENT_DIRECTORY_NAME)));
-
-  bool exists;
-  QM_TRY(persistentStorageDir->Exists(&exists));
-
-  if (exists) {
-    QM_WARNING("Deleting old <profile>/indexedDB directory!");
-
-    nsresult rv = aIndexedDBDir->Remove( true);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    if (!isDirectory) {
+      NS_WARNING("indexedDB entry is not a directory!");
+      return NS_OK;
     }
 
+    auto persistentStorageDirOrErr = QM_NewLocalFile(mStoragePath);
+    if (NS_WARN_IF(persistentStorageDirOrErr.isErr())) {
+      return persistentStorageDirOrErr.unwrapErr();
+    }
+
+    nsCOMPtr<nsIFile> persistentStorageDir = persistentStorageDirOrErr.unwrap();
+
+    QM_TRY(persistentStorageDir->Append(
+        nsLiteralString(PERSISTENT_DIRECTORY_NAME)));
+
+    bool exists;
+    QM_TRY(persistentStorageDir->Exists(&exists));
+
+    if (exists) {
+      QM_WARNING("Deleting old <profile>/indexedDB directory!");
+
+      nsresult rv = aIndexedDBDir->Remove( true);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      return NS_OK;
+    }
+
+    nsCOMPtr<nsIFile> storageDir;
+    QM_TRY(persistentStorageDir->GetParent(getter_AddRefs(storageDir)));
+
+    
+    
+    
+    
+    
+    
+    QM_TRY(aIndexedDBDir->MoveTo(storageDir,
+                                 nsLiteralString(PERSISTENT_DIRECTORY_NAME)));
+
     return NS_OK;
-  }
+  }();
 
-  nsCOMPtr<nsIFile> storageDir;
-  QM_TRY(persistentStorageDir->GetParent(getter_AddRefs(storageDir)));
+  mInitializationInfo.RecordFirstInitializationAttempt(
+      Initialization::UpgradeFromIndexedDBDirectory, rv);
 
-  
-  
-  
-  
-  
-  
-  QM_TRY(aIndexedDBDir->MoveTo(storageDir,
-                               nsLiteralString(PERSISTENT_DIRECTORY_NAME)));
-
-  return NS_OK;
+  return rv;
 }
 
 nsresult
@@ -6377,15 +6384,8 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
                ToResultInvoke(indexedDBDir, &nsIFile::Exists));
 
     if (indexedDBDirExists) {
-      
-      
-      nsresult rv = UpgradeFromIndexedDBDirectoryToPersistentStorageDirectory(
-          indexedDBDir);
-      mInitializationInfo.RecordFirstInitializationAttempt(
-          Initialization::UpgradeFromIndexedDBDirectory, rv);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+      QM_TRY(UpgradeFromIndexedDBDirectoryToPersistentStorageDirectory(
+          indexedDBDir));
     }
 
     QM_TRY_VAR(auto persistentStorageDir, QM_NewLocalFile(mStoragePath));
