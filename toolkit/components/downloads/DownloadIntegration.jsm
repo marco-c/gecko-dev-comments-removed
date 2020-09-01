@@ -707,6 +707,21 @@ var DownloadIntegration = {
 
 
 
+  shouldViewDownloadInternally(aMimeType, aExtension) {
+    
+    
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -794,8 +809,6 @@ var DownloadIntegration = {
       return;
     }
 
-    const PDF_CONTENT_TYPE = "application/pdf";
-
     if (!useSystemDefault && mimeInfo) {
       useSystemDefault = mimeInfo.preferredAction == mimeInfo.useSystemDefault;
     }
@@ -804,8 +817,7 @@ var DownloadIntegration = {
       if (
         aDownload.handleInternally ||
         (mimeInfo &&
-          (mimeInfo.type == PDF_CONTENT_TYPE ||
-            fileExtension?.toLowerCase() == "pdf") &&
+          this.shouldViewDownloadInternally(mimeInfo.type, fileExtension) &&
           !mimeInfo.alwaysAskBeforeHandling &&
           mimeInfo.preferredAction === Ci.nsIHandlerInfo.handleInternally &&
           !aDownload.launchWhenSucceeded)
