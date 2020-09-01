@@ -105,6 +105,9 @@ class ShadowRoot final : public DocumentFragment,
   nsresult Bind();
 
  private:
+  bool IsStaticUAWidget() const { return mIsStaticUAWidget; }
+
+
   void InsertSheetIntoAuthorData(size_t aIndex, StyleSheet&,
                                  const nsTArray<RefPtr<StyleSheet>>&);
 
@@ -200,10 +203,22 @@ class ShadowRoot final : public DocumentFragment,
 
   bool IsUAWidget() const { return mIsUAWidget; }
 
+  
+  
+  
+  bool ShouldStaticClone() const {
+    return !IsUAWidget() || IsStaticUAWidget();
+  }
+
   void SetIsUAWidget() {
     MOZ_ASSERT(!HasChildren());
     SetFlags(NODE_HAS_BEEN_IN_UA_WIDGET);
     mIsUAWidget = true;
+  }
+
+  void SetIsStaticUAWidget() {
+    MOZ_ASSERT(IsUAWidget());
+    mIsStaticUAWidget = true;
   }
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
@@ -274,7 +289,10 @@ class ShadowRoot final : public DocumentFragment,
   
   nsTArray<const Element*> mParts;
 
-  bool mIsUAWidget;
+  bool mIsUAWidget : 1;
+  
+  
+  bool mIsStaticUAWidget : 1;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 };
