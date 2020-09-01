@@ -62,13 +62,10 @@ class PictureInPictureToggleParent extends JSWindowActorParent {
 
 class PictureInPictureParent extends JSWindowActorParent {
   receiveMessage(aMessage) {
-    let browsingContext = aMessage.target.browsingContext;
-    let browser = browsingContext.top.embedderElement;
-
     switch (aMessage.name) {
       case "PictureInPicture:Request": {
         let videoData = aMessage.data;
-        PictureInPicture.handlePictureInPictureRequest(browser, videoData);
+        PictureInPicture.handlePictureInPictureRequest(this.manager, videoData);
         break;
       }
       case "PictureInPicture:Resize": {
@@ -224,10 +221,12 @@ var PictureInPicture = {
 
 
 
-  async handlePictureInPictureRequest(browser, videoData) {
+
+  async handlePictureInPictureRequest(wgp, videoData) {
     
     await this.closePipWindow({ reason: "new-pip" });
 
+    let browser = wgp.browsingContext.top.embedderElement;
     let parentWin = browser.ownerGlobal;
     this.browser = browser;
     let win = await this.openPipWindow(parentWin, videoData);
@@ -239,7 +238,7 @@ var PictureInPicture = {
     let tab = parentWin.gBrowser.getTabForBrowser(browser);
     tab.setAttribute("pictureinpicture", true);
 
-    win.setupPlayer(gNextWindowID.toString(), browser);
+    win.setupPlayer(gNextWindowID.toString(), wgp);
     gNextWindowID++;
 
     Services.prefs.setBoolPref(

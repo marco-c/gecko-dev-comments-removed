@@ -31,8 +31,8 @@ const RESIZE_DEBOUNCE_RATE_MS = 500;
 
 
 
-function setupPlayer(id, originatingBrowser) {
-  Player.init(id, originatingBrowser);
+function setupPlayer(id, wgp) {
+  Player.init(id, wgp);
 }
 
 
@@ -102,7 +102,7 @@ let Player = {
 
 
 
-  init(id, originatingBrowser) {
+  init(id, wgp) {
     this.id = id;
 
     let holder = document.querySelector(".player-holder");
@@ -115,12 +115,10 @@ let Player = {
     
     
     
-    
-    
-    browser.setAttribute("remoteType", originatingBrowser.remoteType);
+    browser.setAttribute("remoteType", wgp.domProcess.remoteType);
     browser.setAttribute(
       "initialBrowsingContextGroupId",
-      originatingBrowser.browsingContext.group.id
+      wgp.browsingContext.group.id
     );
     holder.appendChild(browser);
 
