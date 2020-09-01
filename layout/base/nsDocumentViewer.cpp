@@ -699,7 +699,11 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
              "InitPresentationStuff must only be called when scripts are "
              "blocked");
 
-  if (GetIsPrintPreview()) return NS_OK;
+  
+  
+  if (mPrintJob) {
+    return NS_OK;
+  }
 
   NS_ASSERTION(!mPresShell, "Someone should have destroyed the presshell!");
 
