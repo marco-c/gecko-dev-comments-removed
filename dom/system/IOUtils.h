@@ -8,6 +8,7 @@
 #define mozilla_dom_IOUtils__
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/Buffer.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -16,6 +17,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/Result.h"
 #include "nsStringFwd.h"
+#include "nsTArray.h"
 #include "nspr/prio.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISerialEventTarget.h"
@@ -56,10 +58,11 @@ class IOUtils final {
 
   static already_AddRefed<Promise> Read(GlobalObject& aGlobal,
                                         const nsAString& aPath,
-                                        const Optional<uint32_t>& aMaxBytes);
+                                        const ReadOptions& aOptions);
 
   static already_AddRefed<Promise> ReadUTF8(GlobalObject& aGlobal,
-                                            const nsAString& aPath);
+                                            const nsAString& aPath,
+                                            const ReadUTF8Options& aOptions);
 
   static already_AddRefed<Promise> WriteAtomic(
       GlobalObject& aGlobal, const nsAString& aPath, const Uint8Array& aData,
@@ -105,6 +108,7 @@ class IOUtils final {
   friend class IOUtilsShutdownBlocker;
   struct InternalFileInfo;
   struct InternalWriteAtomicOpts;
+  class MozLZ4;
 
   static StaticDataMutex<StaticRefPtr<nsISerialEventTarget>>
       sBackgroundEventTarget;
@@ -173,8 +177,12 @@ class IOUtils final {
 
 
 
+
+
+
   static Result<nsTArray<uint8_t>, IOError> ReadSync(
-      const nsAString& aPath, const Maybe<uint32_t>& aMaxBytes);
+      const nsAString& aPath, const Maybe<uint32_t>& aMaxBytes,
+      const bool aDecompress);
 
   
 
@@ -183,7 +191,11 @@ class IOUtils final {
 
 
 
-  static Result<nsString, IOError> ReadUTF8Sync(const nsAString& aPath);
+
+
+
+  static Result<nsString, IOError> ReadUTF8Sync(const nsAString& aPath,
+                                                const bool aDecompress);
 
   
 
@@ -409,6 +421,7 @@ struct IOUtils::InternalWriteAtomicOpts {
   bool mFlush;
   bool mNoOverwrite;
   Maybe<nsString> mTmpPath;
+  bool mCompress;
 
   static inline InternalWriteAtomicOpts FromBinding(
       const WriteAtomicOptions& aOptions) {
@@ -421,8 +434,43 @@ struct IOUtils::InternalWriteAtomicOpts {
     if (aOptions.mTmpPath.WasPassed()) {
       opts.mTmpPath.emplace(aOptions.mTmpPath.Value());
     }
+    opts.mCompress = aOptions.mCompress;
     return opts;
   }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IOUtils::MozLZ4 {
+ public:
+  static constexpr std::array<uint8_t, 8> MAGIC_NUMBER{
+      {'m', 'o', 'z', 'L', 'z', '4', '0', '\0'}};
+
+  static const uint32_t HEADER_SIZE = 8 + sizeof(uint32_t);
+
+  
+
+
+
+  static Result<nsTArray<uint8_t>, IOError> Compress(
+      Span<const uint8_t> aUncompressed);
+
+  
+
+
+
+  static Result<nsTArray<uint8_t>, IOError> Decompress(
+      Span<const uint8_t> aFileContents);
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
