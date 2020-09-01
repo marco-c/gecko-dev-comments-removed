@@ -4,9 +4,6 @@
 
 
 
-#include <algorithm>
-
-#include "ErrorList.h"
 #include "mozilla/dom/IOUtils.h"
 #include "mozilla/dom/IOUtilsBinding.h"
 #include "mozilla/dom/Promise.h"
@@ -17,6 +14,7 @@
 #include "nspr/prio.h"
 #include "nspr/private/pprio.h"
 #include "nspr/prtypes.h"
+#include "nspr/prtime.h"
 #include "nsIFile.h"
 #include "nsIGlobalObject.h"
 #include "nsReadableUtils.h"
@@ -370,6 +368,24 @@ already_AddRefed<Promise> IOUtils::Copy(GlobalObject& aGlobal,
 }
 
 
+already_AddRefed<Promise> IOUtils::Touch(
+    GlobalObject& aGlobal, const nsAString& aPath,
+    const Optional<int64_t>& aModification) {
+  RefPtr<Promise> promise = CreateJSPromise(aGlobal);
+  NS_ENSURE_TRUE(!!promise, nullptr);
+
+  REJECT_IF_RELATIVE_PATH(aPath, promise);
+  nsAutoString path(aPath);
+
+  Maybe<int64_t> newTime = Nothing();
+  if (aModification.WasPassed()) {
+    newTime = Some(aModification.Value());
+  }
+
+  return RunOnBackgroundThread<int64_t>(promise, &TouchSync, path, newTime);
+}
+
+
 already_AddRefed<nsISerialEventTarget> IOUtils::GetBackgroundEventTarget() {
   if (sShutdownStarted) {
     return nullptr;
@@ -483,6 +499,11 @@ void IOUtils::RejectJSPromise(const RefPtr<Promise>& aPromise,
     case NS_ERROR_FILE_DIR_NOT_EMPTY:
       aPromise->MaybeRejectWithOperationError(
           errMsg.refOr("Target directory is not empty"_ns));
+      break;
+    case NS_ERROR_ILLEGAL_INPUT:
+    case NS_ERROR_ILLEGAL_VALUE:
+      aPromise->MaybeRejectWithDataError(
+          errMsg.refOr("Argument is not allowed"_ns));
       break;
     default:
       aPromise->MaybeRejectWithUnknownError(
@@ -1029,6 +1050,54 @@ Result<IOUtils::InternalFileInfo, IOUtils::IOError> IOUtils::StatSync(
   info.mLastModified = static_cast<int64_t>(lastModified);
 
   return info;
+}
+
+
+Result<int64_t, IOUtils::IOError> IOUtils::TouchSync(
+    const nsAString& aPath, const Maybe<int64_t>& aNewModTime) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  RefPtr<nsLocalFile> file = new nsLocalFile();
+  MOZ_TRY(file->InitWithPath(aPath));
+
+  int64_t now = aNewModTime.valueOrFrom([]() {
+    
+    
+    
+    
+    int64_t nowMicros = PR_Now();
+    int64_t nowMillis = nowMicros / PR_USEC_PER_MSEC;
+    return nowMillis;
+  });
+
+  
+  
+  
+  
+  
+  
+  
+  if (now == 0) {
+    return Err(
+        IOError(NS_ERROR_ILLEGAL_VALUE)
+            .WithMessage(
+                "Refusing to set the modification time of file(%s) to 0.\n"
+                "To use the current system time, call `touch` with no "
+                "arguments"));
+  }
+
+  nsresult rv = file->SetLastModifiedTime(now);
+
+  if (NS_FAILED(rv)) {
+    IOError err(rv);
+    if (IsFileNotFound(rv)) {
+      return Err(
+          err.WithMessage("Could not touch file(%s) because it does not exist",
+                          NS_ConvertUTF16toUTF8(aPath).get()));
+    }
+    return Err(err);
+  }
+  return now;
 }
 
 NS_IMPL_ISUPPORTS(IOUtilsShutdownBlocker, nsIAsyncShutdownBlocker);
