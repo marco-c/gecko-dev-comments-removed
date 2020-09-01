@@ -13,7 +13,7 @@
 #include "nsTArray.h"
 #include "EventDispatcher.h"
 #include "mozilla/EventForwards.h"
-#include "mozilla/java/GeckoBundleWrappers.h"
+#include "mozilla/java/GeckoSessionNatives.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
@@ -33,7 +33,11 @@ class UiCompositorControllerChild;
 }  
 
 namespace widget {
+class AndroidView;
 class GeckoEditableSupport;
+class GeckoViewSupport;
+class LayerViewSupport;
+class NPZCSupport;
 }  
 
 namespace ipc {
@@ -42,7 +46,7 @@ class Shmem;
 
 namespace a11y {
 class SessionAccessibility;
-}
+}  
 }  
 
 class nsWindow final : public nsBaseWidget {
@@ -67,140 +71,36 @@ class nsWindow final : public nsBaseWidget {
  private:
   uint32_t mScreenId;
 
-  
-  template <typename Lambda, bool IsStatic = Lambda::isStatic,
-            typename InstanceType = typename Lambda::ThisArgType,
-            class Impl = typename Lambda::TargetClass>
-  class WindowEvent;
-
- public:
-  
-  
-  
-  
-  template <class Impl>
-  class WindowPtr;
-
-  
-  
-  template <class Impl>
-  class NativePtr final {
-    friend WindowPtr<Impl>;
-    friend nsWindow;
-
-    static const char sName[];
-
-    WindowPtr<Impl>* mPtr;
-    Impl* mImpl;
-    mozilla::Mutex mImplLock;
-
-    NativePtr() : mPtr(nullptr), mImpl(nullptr), mImplLock(sName) {}
-    ~NativePtr() { MOZ_ASSERT(!mPtr); }
-
-   public:
-    class Locked;
-
-    operator Impl*() const {
-      MOZ_ASSERT(NS_IsMainThread());
-      return mImpl;
-    }
-
-    Impl* operator->() const { return operator Impl*(); }
-
-    template <class Cls, typename... Args>
-    void Attach(const mozilla::jni::LocalRef<Cls>& aInstance, nsWindow* aWindow,
-                Args&&... aArgs);
-    template <class Cls, typename T>
-    void Detach(const mozilla::jni::Ref<Cls, T>& aInstance);
-  };
-
-  template <class Impl>
-  class WindowPtr final {
-    friend NativePtr<Impl>;
-
-    NativePtr<Impl>* mPtr;
-    nsWindow* mWindow;
-    mozilla::Mutex mWindowLock;
-
-   public:
-    class Locked final : private mozilla::MutexAutoLock {
-      nsWindow* const mWindow;
-
-     public:
-      explicit Locked(WindowPtr<Impl>& aPtr)
-          : mozilla::MutexAutoLock(aPtr.mWindowLock), mWindow(aPtr.mWindow) {}
-
-      operator nsWindow*() const { return mWindow; }
-      nsWindow* operator->() const { return mWindow; }
-    };
-
-    WindowPtr(NativePtr<Impl>* aPtr, nsWindow* aWindow);
-
-    ~WindowPtr() {
-      MOZ_ASSERT(NS_IsMainThread());
-      if (!mPtr) {
-        return;
-      }
-      mPtr->mPtr = nullptr;
-      mPtr->mImpl = nullptr;
-    }
-
-    operator nsWindow*() const {
-      MOZ_ASSERT(NS_IsMainThread());
-      return mWindow;
-    }
-
-    nsWindow* operator->() const { return operator nsWindow*(); }
-  };
-
  private:
-  class AndroidView final : public nsIAndroidView {
-    virtual ~AndroidView() {}
-
-   public:
-    const RefPtr<mozilla::widget::EventDispatcher> mEventDispatcher{
-        new mozilla::widget::EventDispatcher()};
-
-    AndroidView() {}
-
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIANDROIDVIEW
-
-    NS_FORWARD_NSIANDROIDEVENTDISPATCHER(mEventDispatcher->)
-
-    mozilla::java::GeckoBundle::GlobalRef mInitData;
-  };
-
-  RefPtr<AndroidView> mAndroidView;
-
-  class LayerViewSupport;
-  
-  
-  NativePtr<LayerViewSupport> mLayerViewSupport;
-
-  class NPZCSupport;
-  
-  
-  NativePtr<NPZCSupport> mNPZCSupport;
+  RefPtr<mozilla::widget::AndroidView> mAndroidView;
 
   
   
-  NativePtr<mozilla::widget::GeckoEditableSupport> mEditableSupport;
+  mozilla::jni::NativeWeakPtr<mozilla::widget::LayerViewSupport>
+      mLayerViewSupport;
+
+  
+  
+  mozilla::jni::NativeWeakPtr<mozilla::widget::NPZCSupport> mNPZCSupport;
+
+  
+  
+  mozilla::jni::NativeWeakPtr<mozilla::widget::GeckoEditableSupport>
+      mEditableSupport;
   mozilla::jni::Object::GlobalRef mEditableParent;
 
   
   
-  NativePtr<mozilla::a11y::SessionAccessibility> mSessionAccessibility;
+  mozilla::jni::NativeWeakPtr<mozilla::a11y::SessionAccessibility>
+      mSessionAccessibility;
 
   class MediaSessionSupport;
   NativePtr<MediaSessionSupport> mMediaSessionSupport;
 
-  class GeckoViewSupport;
   
   
-  
-  
-  mozilla::UniquePtr<GeckoViewSupport> mGeckoViewSupport;
+  mozilla::jni::NativeWeakPtr<mozilla::widget::GeckoViewSupport>
+      mGeckoViewSupport;
 
   mozilla::Atomic<bool, mozilla::ReleaseAcquire> mContentDocumentDisplayed;
 
@@ -221,14 +121,11 @@ class nsWindow final : public nsBaseWidget {
   void UpdateOverscrollVelocity(const float aX, const float aY);
   void UpdateOverscrollOffset(const float aX, const float aY);
 
-  mozilla::widget::EventDispatcher* GetEventDispatcher() const {
-    if (mAndroidView) {
-      return mAndroidView->mEventDispatcher;
-    }
-    return nullptr;
-  }
+  mozilla::widget::EventDispatcher* GetEventDispatcher() const;
 
   void NotifyDisablingWebRender();
+
+  void DetachNatives();
 
   
   
@@ -321,9 +218,7 @@ class nsWindow final : public nsBaseWidget {
 
   mozilla::jni::Object::Ref& GetEditableParent() { return mEditableParent; }
 
-  mozilla::a11y::SessionAccessibility* GetSessionAccessibility() {
-    return mSessionAccessibility;
-  }
+  RefPtr<mozilla::a11y::SessionAccessibility> GetSessionAccessibility();
 
   void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) override;
   void UpdateRootFrameMetrics(const ScreenPoint& aScrollOffset,
@@ -375,25 +270,10 @@ class nsWindow final : public nsBaseWidget {
   mozilla::layers::LayersId GetRootLayerId() const;
   RefPtr<mozilla::layers::UiCompositorControllerChild>
   GetUiCompositorControllerChild();
+
+  friend class mozilla::widget::GeckoViewSupport;
+  friend class mozilla::widget::LayerViewSupport;
+  friend class mozilla::widget::NPZCSupport;
 };
-
-
-template <>
-const char nsWindow::NativePtr<nsWindow::LayerViewSupport>::sName[];
-template <>
-const char nsWindow::NativePtr<mozilla::widget::GeckoEditableSupport>::sName[];
-template <>
-const char nsWindow::NativePtr<mozilla::a11y::SessionAccessibility>::sName[];
-template <>
-const char nsWindow::NativePtr<nsWindow::NPZCSupport>::sName[];
-
-template <class Impl>
-nsWindow::WindowPtr<Impl>::WindowPtr(NativePtr<Impl>* aPtr, nsWindow* aWindow)
-    : mPtr(aPtr), mWindow(aWindow), mWindowLock(NativePtr<Impl>::sName) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (mPtr) {
-    mPtr->mPtr = this;
-  }
-}
 
 #endif 
