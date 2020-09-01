@@ -5243,9 +5243,30 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
     }
   }
 
+  nsCOMPtr<nsIPrintSettingsService> printSettingsService =
+      do_GetService("@mozilla.org/gfx/printsettings-service;1");
+  if (!printSettingsService) {
+    
+    aError.ThrowNotSupportedError("No print settings service");
+    return;
+  }
+
+  nsCOMPtr<nsIPrintSettings> settings;
+  aError = printSettingsService->GetDefaultPrintSettingsForPrinting(
+      getter_AddRefs(settings));
+  if (aError.Failed()) {
+    return;
+  }
+
   const bool isPreview = StaticPrefs::print_tab_modal_enabled() &&
                          !StaticPrefs::print_always_print_silent();
-  Print(nullptr, nullptr, nullptr, isPreview, aError);
+  if (isPreview) {
+    
+    
+    settings->SetShowPrintProgress(false);
+  }
+
+  Print(settings, nullptr, nullptr, isPreview, aError);
 }
 
 Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
