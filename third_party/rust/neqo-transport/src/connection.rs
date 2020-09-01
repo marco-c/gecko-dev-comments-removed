@@ -547,6 +547,7 @@ impl Connection {
             u64::try_from(LOCAL_IDLE_TIMEOUT.as_millis()).unwrap(),
         );
         tps.set_empty(tparams::DISABLE_MIGRATION);
+        tps.set_empty(tparams::GREASE_QUIC_BIT);
     }
 
     fn new(
@@ -1460,6 +1461,7 @@ impl Connection {
         tx: &CryptoDxState,
         retry_info: &Option<RetryInfo>,
         quic_version: QuicVersion,
+        grease_quic_bit: bool,
     ) -> (PacketType, PacketNumber, PacketBuilder) {
         let pt = match space {
             PNSpace::Initial => PacketType::Initial,
@@ -1491,6 +1493,7 @@ impl Connection {
                 path.local_cid(),
             )
         };
+        builder.scramble(grease_quic_bit);
         if pt == PacketType::Initial {
             builder.initial_token(if let Some(info) = retry_info {
                 &info.token
@@ -1504,8 +1507,20 @@ impl Connection {
         (pt, pn, builder)
     }
 
+    fn can_grease_quic_bit(&self) -> bool {
+        let tph = self.tps.borrow();
+        if let Some(r) = &tph.remote {
+            r.get_empty(tparams::GREASE_QUIC_BIT)
+        } else if let Some(r) = &tph.remote_0rtt {
+            r.get_empty(tparams::GREASE_QUIC_BIT)
+        } else {
+            false
+        }
+    }
+
     fn output_close(&mut self, path: &Path, frame: &Frame) -> Res<SendOption> {
         let mut encoder = Encoder::with_capacity(path.mtu());
+        let grease_quic_bit = self.can_grease_quic_bit();
         for space in PNSpace::iter() {
             let tx = if let Some(tx_state) = self.crypto.states.tx(*space) {
                 tx_state
@@ -1518,8 +1533,15 @@ impl Connection {
                 continue;
             }
 
-            let (_, _, mut builder) =
-                Self::build_packet_header(path, *space, encoder, tx, &None, self.quic_version);
+            let (_, _, mut builder) = Self::build_packet_header(
+                path,
+                *space,
+                encoder,
+                tx,
+                &None,
+                self.quic_version,
+                grease_quic_bit,
+            );
             
             if *space == PNSpace::ApplicationData {
                 frame.marshal(&mut builder);
@@ -1595,6 +1617,7 @@ impl Connection {
     fn output_path(&mut self, path: &mut Path, now: Instant) -> Res<SendOption> {
         let mut initial_sent = None;
         let mut needs_padding = false;
+        let grease_quic_bit = self.can_grease_quic_bit();
 
         
         let profile = self.loss_recovery.send_profile(now, path.mtu());
@@ -1619,18 +1642,20 @@ impl Connection {
                 tx,
                 &self.retry_info,
                 self.quic_version,
+                grease_quic_bit,
             );
             let payload_start = builder.len();
 
             
-            if builder.len() + tx.expansion() > profile.limit() {
+            let aead_expansion = tx.expansion();
+            if builder.len() + aead_expansion > profile.limit() {
                 
                 encoder = builder.abort();
                 continue;
             }
 
             
-            let limit = profile.limit() - tx.expansion();
+            let limit = profile.limit() - aead_expansion;
             let (tokens, ack_eliciting) =
                 self.add_frames(&mut builder, *space, limit, &profile, now);
             if builder.is_empty() {
@@ -1644,7 +1669,7 @@ impl Connection {
                 &mut self.qlog,
                 pt,
                 pn,
-                builder.len(),
+                builder.len() - header_start + aead_expansion,
                 &builder[payload_start..],
             );
 
@@ -4597,7 +4622,7 @@ mod tests {
             
             
             
-            let most = c_tx_dgrams.len() - usize::try_from(MAX_UNACKED_PKTS + 1).unwrap();
+            let most = c_tx_dgrams.len() - MAX_UNACKED_PKTS - 1;
             let (s_tx_dgram, _) = ack_bytes(&mut server, 0, c_tx_dgrams.drain(..most), now);
             for dgram in s_tx_dgram {
                 assert_eq!(client.loss_recovery.cwnd(), expected_cwnd);
@@ -5850,7 +5875,9 @@ mod tests {
         let dgram = Datagram::new(d.source(), d.destination(), corrupted);
         server.process_input(dgram, now());
         
-        assert_ne!(server.stats().packets_rx, 0);
-        assert_eq!(server.stats().packets_rx, server.stats().dropped_rx);
+        
+        assert_eq!(server.stats().packets_rx, 2);
+        assert_eq!(server.stats().dropped_rx, 1);
+        
     }
 }

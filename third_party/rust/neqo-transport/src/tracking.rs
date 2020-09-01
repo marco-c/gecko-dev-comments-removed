@@ -123,7 +123,7 @@ impl std::fmt::Debug for PNSpaceSet {
 #[derive(Debug, Clone)]
 pub struct SentPacket {
     pub pt: PacketType,
-    pub pn: u64,
+    pub pn: PacketNumber,
     ack_eliciting: bool,
     pub time_sent: Instant,
     pub tokens: Rc<Vec<RecoveryToken>>,
@@ -138,7 +138,7 @@ pub struct SentPacket {
 impl SentPacket {
     pub fn new(
         pt: PacketType,
-        pn: u64,
+        pn: PacketNumber,
         time_sent: Instant,
         ack_eliciting: bool,
         tokens: Rc<Vec<RecoveryToken>>,
@@ -223,6 +223,13 @@ impl std::fmt::Display for PNSpace {
     }
 }
 
+
+pub enum InsertionResult {
+    Largest,
+    Smallest,
+    NotInserted,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct PacketRange {
     largest: PacketNumber,
@@ -232,7 +239,7 @@ pub struct PacketRange {
 
 impl PacketRange {
     
-    pub fn new(pn: u64) -> Self {
+    pub fn new(pn: PacketNumber) -> Self {
         Self {
             largest: pn,
             smallest: pn,
@@ -251,36 +258,38 @@ impl PacketRange {
     }
 
     
-    pub fn contains(&self, pn: u64) -> bool {
+    pub fn contains(&self, pn: PacketNumber) -> bool {
         (pn >= self.smallest) && (pn <= self.largest)
     }
 
     
-    pub fn add(&mut self, pn: u64) -> bool {
+    
+    
+    pub fn add(&mut self, pn: PacketNumber) -> InsertionResult {
         assert!(!self.contains(pn));
         
         if (self.largest + 1) == pn {
             qtrace!([self], "Adding largest {}", pn);
             self.largest += 1;
             self.ack_needed = true;
-            true
+            InsertionResult::Largest
         } else if self.smallest == (pn + 1) {
             qtrace!([self], "Adding smallest {}", pn);
             self.smallest -= 1;
             self.ack_needed = true;
-            true
+            InsertionResult::Smallest
         } else {
-            false
+            InsertionResult::NotInserted
         }
     }
 
     
-    pub fn merge_smaller(&mut self, other: &Self) {
+    fn merge_larger(&mut self, other: &Self) {
         qinfo!([self], "Merging {}", other);
         
-        assert_eq!(self.smallest - 1, other.largest);
+        assert_eq!(self.largest + 1, other.smallest);
 
-        self.smallest = other.smallest;
+        self.largest = other.largest;
         self.ack_needed = self.ack_needed || other.ack_needed;
     }
 
@@ -357,37 +366,31 @@ impl RecvdPackets {
     
     
     
-    fn add(&mut self, pn: u64) -> usize {
+    fn add(&mut self, pn: PacketNumber) {
         for i in 0..self.ranges.len() {
-            if self.ranges[i].add(pn) {
-                
-                let nxt = i + 1;
-                if (nxt < self.ranges.len()) && (pn - 1 == self.ranges[nxt].largest) {
-                    let smaller = self.ranges.remove(nxt).unwrap();
-                    self.ranges[i].merge_smaller(&smaller);
+            match self.ranges[i].add(pn) {
+                InsertionResult::Largest => return,
+                InsertionResult::Smallest => {
+                    
+                    let nxt = i + 1;
+                    if (nxt < self.ranges.len()) && (pn - 1 == self.ranges[nxt].largest) {
+                        let larger = self.ranges.remove(i).unwrap();
+                        self.ranges[i].merge_larger(&larger);
+                    }
+                    return;
                 }
-                return i;
-            }
-            if self.ranges[i].largest < pn {
-                self.ranges.insert(i, PacketRange::new(pn));
-                return i;
+                InsertionResult::NotInserted => {
+                    if self.ranges[i].largest < pn {
+                        self.ranges.insert(i, PacketRange::new(pn));
+                        return;
+                    }
+                }
             }
         }
         self.ranges.push_back(PacketRange::new(pn));
-        self.ranges.len() - 1
     }
 
-    
-    pub fn set_received(&mut self, now: Instant, pn: u64, ack_eliciting: bool) {
-        let next_in_order_pn = self.ranges.front().map_or(0, |pr| pr.largest + 1);
-        qdebug!([self], "next in order pn: {}", next_in_order_pn);
-        let i = self.add(pn);
-
-        
-        if i == 0 && pn == self.ranges[0].largest {
-            self.largest_pn_time = Some(now);
-        }
-
+    fn trim_ranges(&mut self) {
         
         if self.ranges.len() > MAX_TRACKED_RANGES {
             let oldest = self.ranges.pop_back().unwrap();
@@ -398,6 +401,25 @@ impl RecvdPackets {
                 qdebug!([self], "Drop ACK range: {}", oldest);
             }
             self.min_tracked = oldest.largest + 1;
+        }
+    }
+
+    
+    pub fn set_received(&mut self, now: Instant, pn: PacketNumber, ack_eliciting: bool) {
+        let next_in_order_pn = self.ranges.front().map_or(0, |pr| pr.largest + 1);
+        qdebug!(
+            [self],
+            "received {}, next in order pn: {}",
+            pn,
+            next_in_order_pn
+        );
+
+        self.add(pn);
+        self.trim_ranges();
+
+        
+        if pn >= next_in_order_pn {
+            self.largest_pn_time = Some(now);
         }
 
         if ack_eliciting {
