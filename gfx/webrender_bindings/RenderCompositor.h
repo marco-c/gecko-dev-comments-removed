@@ -136,6 +136,10 @@ class RenderCompositor {
                              bool* aNeedsYFlip) {
     return false;
   }
+  virtual bool MaybeGrabScreenshot(const gfx::IntSize& aWindowSize) {
+    return false;
+  }
+  virtual bool MaybeProcessScreenshotQueue() { return false; }
 
  protected:
   
