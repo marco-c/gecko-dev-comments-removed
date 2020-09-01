@@ -18,7 +18,6 @@ ChromeUtils.defineModuleGetter(this, "WindowsVersionInfo", "resource://gre/modul
 ChromeUtils.defineModuleGetter(this, "NormandyUtils", "resource://normandy/lib/NormandyUtils.jsm");
 
 
-
 var EXPORTED_SYMBOLS = ["ClientEnvironmentBase"];
 
 
@@ -81,6 +80,10 @@ class ClientEnvironmentBase {
       get(target, prop, receiver) {
         if (prop == "main") {
           return target.main;
+        }
+        if (prop == "then") {
+          
+          return undefined;
         }
         throw new Error(
           `Live telemetry only includes the main ping, not the ${prop} ping`
