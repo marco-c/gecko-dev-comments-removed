@@ -4,6 +4,11 @@
 
 "use strict";
 
+
+
+
+
+
 const EXPORTED_SYMBOLS = ["ExperimentAPI"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -39,13 +44,13 @@ const ExperimentAPI = {
 
 
 
-  getExperiment({ slug, group } = {}) {
+  getExperiment({ slug, featureId } = {}) {
     if (slug) {
       return this._store.get(slug);
-    } else if (group) {
-      return this._store.getExperimentForGroup(group);
+    } else if (featureId) {
+      return this._store.getExperimentForFeature(featureId);
     }
-    throw new Error("getExperiment(options) must include a slug or a group.");
+    throw new Error("getExperiment(options) must include a slug or a feature.");
   },
 
   
@@ -53,10 +58,17 @@ const ExperimentAPI = {
 
 
 
+  isFeatureEnabled(featureId) {
+    return this._store.getFeature(featureId)?.enabled;
+  },
+
+  
 
 
-  getValue(options) {
-    return this.getExperiment(options)?.branch.value;
+
+
+  getFeatureValue(featureId) {
+    return this._store.getFeature(featureId)?.value;
   },
 
   

@@ -8,6 +8,7 @@
 
 
 
+
 const EXPORTED_SYMBOLS = ["ExperimentStore"];
 
 const { SharedDataMap } = ChromeUtils.import(
@@ -29,14 +30,25 @@ class ExperimentStore extends SharedDataMap {
 
 
 
+  getExperimentForFeature(featureId) {
+    return this.getAllActive().find(
+      experiment => experiment.branch.feature?.featureId === featureId
+    );
+  }
 
-  getExperimentForGroup(group) {
-    for (const experiment of this.getAll()) {
-      if (experiment.active && experiment.branch.groups?.includes(group)) {
-        return experiment;
+  
+
+
+
+
+  getFeature(featureId) {
+    for (let { branch } of this.getAllActive()) {
+      if (branch.feature?.featureId === featureId) {
+        return branch.feature;
       }
     }
-    return undefined;
+
+    return null;
   }
 
   
@@ -46,15 +58,12 @@ class ExperimentStore extends SharedDataMap {
 
 
 
-  hasExperimentForGroups(groups) {
-    if (!groups || !groups.length) {
+  hasExperimentForFeature(featureId) {
+    if (!featureId) {
       return false;
     }
-    for (const experiment of this.getAll()) {
-      if (
-        experiment.active &&
-        experiment.branch.groups?.filter(g => groups.includes(g)).length
-      ) {
+    for (const { branch } of this.getAllActive()) {
+      if (branch.feature?.featureId === featureId) {
         return true;
       }
     }

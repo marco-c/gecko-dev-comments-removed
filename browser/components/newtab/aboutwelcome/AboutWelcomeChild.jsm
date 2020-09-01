@@ -232,7 +232,7 @@ class AboutWelcomeChild extends JSWindowActorChild {
       
       
       experimentData = ExperimentAPI.getExperiment({
-        group: "aboutwelcome",
+        featureId: "aboutwelcome",
       });
     } catch (e) {
       Cu.reportError(e);
