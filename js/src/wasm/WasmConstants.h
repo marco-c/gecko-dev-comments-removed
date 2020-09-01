@@ -66,7 +66,10 @@ enum class TypeCode {
   ExternRef = 0x6f,  
 
   
-  OptRef = 0x6c,
+  NullableRef = 0x6c,  
+
+  
+  Ref = 0x6b,  
 
   
   Func = 0x60,  
@@ -90,6 +93,11 @@ static constexpr TypeCode LowestPrimitiveTypeCode = TypeCode::V128;
 
 
 static constexpr TypeCode AbstractReferenceTypeCode = TypeCode::ExternRef;
+
+
+
+
+static constexpr TypeCode AbstractReferenceTypeIndexCode = TypeCode::Ref;
 
 enum class FuncTypeIdDescKind { None, Immediate, Global };
 

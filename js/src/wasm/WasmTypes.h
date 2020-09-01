@@ -299,23 +299,43 @@ enum class PackedTypeCode : uint32_t {};
 static_assert(std::is_pod_v<PackedTypeCode>,
               "must be POD to be simply serialized/deserialized");
 
-const uint32_t NoTypeCode = 0xFF;          
-const uint32_t NoRefTypeIndex = 0x3FFFFF;  
 
-static inline PackedTypeCode PackTypeCode(TypeCode tc, uint32_t refTypeIndex) {
-  MOZ_ASSERT(uint32_t(tc) <= 0xFF);
-  MOZ_ASSERT_IF(tc != TypeCode::OptRef, refTypeIndex == NoRefTypeIndex);
-  MOZ_ASSERT_IF(tc == TypeCode::OptRef, refTypeIndex <= MaxTypes);
-  
-  
-  
-  
-  static_assert(MaxTypes < (1 << (30 - 8)), "enough bits");
-  return PackedTypeCode((refTypeIndex << 8) | uint32_t(tc));
+
+
+
+const uint32_t PointerTagBits = 2;
+const uint32_t TypeCodeBits = 8;
+const uint32_t NullableBits = 1;
+const uint32_t TypeIndexBits =
+    32 - PointerTagBits - TypeCodeBits - NullableBits;
+static_assert(MaxTypes < (1 << TypeIndexBits), "enough bits");
+
+constexpr uint32_t PackedTypeCodeMask = (1 << TypeCodeBits) - 1;
+constexpr uint32_t PackedTypeIndexShift = TypeCodeBits;
+constexpr uint32_t PackedTypeIndexMask = (1 << TypeIndexBits) - 1;
+constexpr uint32_t PackedTypeNullableShift = TypeCodeBits + TypeIndexBits;
+
+
+constexpr uint32_t NoTypeCode = PackedTypeCodeMask;
+constexpr uint32_t NoRefTypeIndex = PackedTypeIndexMask;
+
+static inline PackedTypeCode PackTypeCode(TypeCode tc, uint32_t refTypeIndex,
+                                          bool isNullable) {
+  MOZ_ASSERT(uint32_t(tc) <= PackedTypeCodeMask);
+  MOZ_ASSERT_IF(tc != AbstractReferenceTypeIndexCode,
+                refTypeIndex == NoRefTypeIndex);
+  MOZ_ASSERT_IF(tc == AbstractReferenceTypeIndexCode, refTypeIndex <= MaxTypes);
+  uint32_t shiftedTypeIndex = refTypeIndex << PackedTypeIndexShift;
+  uint32_t shiftedNullable = uint32_t(isNullable) << PackedTypeNullableShift;
+  return PackedTypeCode(shiftedNullable | shiftedTypeIndex | uint32_t(tc));
+}
+
+static inline PackedTypeCode PackTypeCode(TypeCode tc, bool nullable) {
+  return PackTypeCode(tc, NoRefTypeIndex, nullable);
 }
 
 static inline PackedTypeCode PackTypeCode(TypeCode tc) {
-  return PackTypeCode(tc, NoRefTypeIndex);
+  return PackTypeCode(tc, NoRefTypeIndex, false);
 }
 
 static inline PackedTypeCode InvalidPackedTypeCode() {
@@ -323,11 +343,13 @@ static inline PackedTypeCode InvalidPackedTypeCode() {
 }
 
 static inline PackedTypeCode PackedTypeCodeFromBits(uint32_t bits) {
-  return PackTypeCode(TypeCode(bits & 255), bits >> 8);
+  return PackTypeCode(TypeCode(bits & PackedTypeCodeMask),
+                      (bits >> PackedTypeIndexShift) & PackedTypeIndexMask,
+                      bits >> PackedTypeNullableShift);
 }
 
 static inline bool IsValid(PackedTypeCode ptc) {
-  return (uint32_t(ptc) & 255) != NoTypeCode;
+  return (uint32_t(ptc) & PackedTypeCodeMask) != NoTypeCode;
 }
 
 static inline uint32_t PackedTypeCodeToBits(PackedTypeCode ptc) {
@@ -336,16 +358,20 @@ static inline uint32_t PackedTypeCodeToBits(PackedTypeCode ptc) {
 
 static inline TypeCode UnpackTypeCodeType(PackedTypeCode ptc) {
   MOZ_ASSERT(IsValid(ptc));
-  return TypeCode(uint32_t(ptc) & 255);
+  return TypeCode(uint32_t(ptc) & PackedTypeCodeMask);
 }
 
 static inline uint32_t UnpackTypeCodeIndex(PackedTypeCode ptc) {
-  MOZ_ASSERT(UnpackTypeCodeType(ptc) == TypeCode::OptRef);
-  return uint32_t(ptc) >> 8;
+  MOZ_ASSERT(UnpackTypeCodeType(ptc) == AbstractReferenceTypeIndexCode);
+  return (uint32_t(ptc) >> PackedTypeIndexShift) & PackedTypeIndexMask;
 }
 
 static inline uint32_t UnpackTypeCodeIndexUnchecked(PackedTypeCode ptc) {
-  return uint32_t(ptc) >> 8;
+  return (uint32_t(ptc) >> PackedTypeIndexShift) & PackedTypeIndexMask;
+}
+
+static inline bool UnpackTypeCodeNullable(PackedTypeCode ptc) {
+  return (uint32_t(ptc) >> PackedTypeNullableShift) == 1;
 }
 
 
@@ -383,7 +409,7 @@ class RefType {
   enum Kind {
     Extern = uint8_t(TypeCode::ExternRef),
     Func = uint8_t(TypeCode::FuncRef),
-    TypeIndex = uint8_t(TypeCode::OptRef)
+    TypeIndex = uint8_t(AbstractReferenceTypeIndexCode)
   };
 
  private:
@@ -396,7 +422,7 @@ class RefType {
       case TypeCode::ExternRef:
         MOZ_ASSERT(UnpackTypeCodeIndexUnchecked(ptc_) == NoRefTypeIndex);
         return true;
-      case TypeCode::OptRef:
+      case AbstractReferenceTypeIndexCode:
         MOZ_ASSERT(UnpackTypeCodeIndexUnchecked(ptc_) != NoRefTypeIndex);
         return true;
       default:
@@ -404,13 +430,14 @@ class RefType {
     }
   }
 #endif
-  explicit RefType(Kind kind) : ptc_(PackTypeCode(TypeCode(kind))) {
+  RefType(Kind kind, bool nullable)
+      : ptc_(PackTypeCode(TypeCode(kind), nullable)) {
     MOZ_ASSERT(isValid());
   }
 
-  
-  explicit RefType(uint32_t refTypeIndex)
-      : ptc_(PackTypeCode(TypeCode::OptRef, refTypeIndex)) {
+  RefType(uint32_t refTypeIndex, bool nullable)
+      : ptc_(PackTypeCode(AbstractReferenceTypeIndexCode, refTypeIndex,
+                          nullable)) {
     MOZ_ASSERT(isValid());
   }
 
@@ -418,13 +445,13 @@ class RefType {
   RefType() : ptc_(InvalidPackedTypeCode()) {}
   explicit RefType(PackedTypeCode ptc) : ptc_(ptc) { MOZ_ASSERT(isValid()); }
 
-  static RefType fromTypeCode(TypeCode tc) {
-    MOZ_ASSERT(tc != TypeCode::OptRef);
-    return RefType(Kind(tc));
+  static RefType fromTypeCode(TypeCode tc, bool nullable) {
+    MOZ_ASSERT(tc != AbstractReferenceTypeIndexCode);
+    return RefType(Kind(tc), nullable);
   }
 
-  static RefType fromTypeIndex(uint32_t refTypeIndex) {
-    return RefType(refTypeIndex);
+  static RefType fromTypeIndex(uint32_t refTypeIndex, bool nullable) {
+    return RefType(refTypeIndex, nullable);
   }
 
   Kind kind() const { return Kind(UnpackTypeCodeType(ptc_)); }
@@ -433,12 +460,14 @@ class RefType {
 
   PackedTypeCode packed() const { return ptc_; }
 
-  static RefType extern_() { return RefType(Extern); }
-  static RefType func() { return RefType(Func); }
+  static RefType extern_() { return RefType(Extern, true); }
+  static RefType func() { return RefType(Func, true); }
 
   bool isExtern() const { return kind() == RefType::Extern; }
   bool isFunc() const { return kind() == RefType::Func; }
   bool isTypeIndex() const { return kind() == RefType::TypeIndex; }
+
+  bool isNullable() const { return UnpackTypeCodeNullable(ptc_); }
 
   TableRepr tableRepr() const {
     switch (kind()) {
@@ -473,7 +502,7 @@ class ValType {
       case TypeCode::V128:
       case TypeCode::ExternRef:
       case TypeCode::FuncRef:
-      case TypeCode::OptRef:
+      case AbstractReferenceTypeIndexCode:
         return true;
       default:
         return false;
@@ -493,7 +522,7 @@ class ValType {
 
  private:
   explicit ValType(TypeCode c) : tc_(PackTypeCode(c)) {
-    MOZ_ASSERT(c != TypeCode::OptRef);
+    MOZ_ASSERT(c != AbstractReferenceTypeIndexCode);
     MOZ_ASSERT(isValid());
   }
 
@@ -582,12 +611,12 @@ class ValType {
 
   bool isNullable() const {
     MOZ_ASSERT(isReference());
-    return true;
+    return refType().isNullable();
   }
 
   bool isTypeIndex() const {
     MOZ_ASSERT(isValid());
-    return UnpackTypeCodeType(tc_) == TypeCode::OptRef;
+    return UnpackTypeCodeType(tc_) == AbstractReferenceTypeIndexCode;
   }
 
   bool isReference() const {
@@ -1207,7 +1236,8 @@ class FuncType {
   
   bool temporarilyUnsupportedReftypeForEntry() const {
     for (ValType arg : args()) {
-      if (arg.isReference() && !arg.isExternRef()) {
+      if (arg.isReference() &&
+          (!arg.isExternRef() || !arg.isNullable())) {
         return true;
       }
     }
@@ -1223,7 +1253,8 @@ class FuncType {
   
   bool temporarilyUnsupportedReftypeForInlineEntry() const {
     for (ValType arg : args()) {
-      if (arg.isReference() && !arg.isExternRef()) {
+      if (arg.isReference() &&
+          (!arg.isExternRef() || !arg.isNullable())) {
         return true;
       }
     }
@@ -1244,7 +1275,9 @@ class FuncType {
       }
     }
     for (ValType result : results()) {
-      if (result.isReference() && !result.isExternRef()) {
+      if (result.isReference() &&
+          (!result.isExternRef() ||
+           !result.isNullable())) {
         return true;
       }
     }
