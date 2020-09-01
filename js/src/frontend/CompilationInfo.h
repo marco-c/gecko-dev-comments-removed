@@ -209,7 +209,7 @@ struct CompilationStencil {
   
   
   
-  Vector<ScopeStencil> scopeData;
+  Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
 
   
   StencilModuleMetadata moduleMetadata;
@@ -221,7 +221,7 @@ struct CompilationStencil {
   ParserAtomsTable parserAtoms;
 
   explicit CompilationStencil(JSContext* cx)
-      : scopeData(cx), moduleMetadata(cx), asmJS(cx), parserAtoms(cx) {}
+      : moduleMetadata(cx), asmJS(cx), parserAtoms(cx) {}
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
