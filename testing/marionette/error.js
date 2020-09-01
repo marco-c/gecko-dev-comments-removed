@@ -45,14 +45,11 @@ const BUILTIN_ERRORS = new Set([
   "URIError",
 ]);
 
-this.EXPORTED_SYMBOLS = ["error", "stack"].concat(Array.from(ERRORS));
+this.EXPORTED_SYMBOLS = ["error"];
 
 
-this.error = {};
-
-
-
-
+this.error = {
+  
 
 
 
@@ -72,21 +69,25 @@ this.error = {};
 
 
 
-error.isError = function(val) {
-  if (val === null || typeof val != "object") {
-    return false;
-  } else if (val instanceof Ci.nsIException) {
-    return true;
-  }
+
+
+  isError(val) {
+    if (val === null || typeof val != "object") {
+      return false;
+    } else if (val instanceof Ci.nsIException) {
+      return true;
+    }
+
+    
+    try {
+      let proto = Object.getPrototypeOf(val);
+      return BUILTIN_ERRORS.has(proto.toString());
+    } catch (e) {
+      return false;
+    }
+  },
 
   
-  try {
-    let proto = Object.getPrototypeOf(val);
-    return BUILTIN_ERRORS.has(proto.toString());
-  } catch (e) {
-    return false;
-  }
-};
 
 
 
@@ -97,11 +98,11 @@ error.isError = function(val) {
 
 
 
+  isWebDriverError(obj) {
+    return error.isError(obj) && "name" in obj && ERRORS.has(obj.name);
+  },
 
-
-error.isWebDriverError = function(obj) {
-  return error.isError(obj) && "name" in obj && ERRORS.has(obj.name);
-};
+  
 
 
 
@@ -115,49 +116,48 @@ error.isWebDriverError = function(obj) {
 
 
 
-
-
-error.wrap = function(err) {
-  if (error.isWebDriverError(err)) {
-    return err;
-  }
-  return new UnknownError(err);
-};
-
-
-
-
-
-error.report = function(err) {
-  let msg = "Marionette threw an error: " + error.stringify(err);
-  dump(msg + "\n");
-  if (Cu.reportError) {
-    Cu.reportError(msg);
-  }
-};
-
-
-
-
-error.stringify = function(err) {
-  try {
-    let s = err.toString();
-    if ("stack" in err) {
-      s += "\n" + err.stack;
+  wrap(err) {
+    if (error.isWebDriverError(err)) {
+      return err;
     }
-    return s;
-  } catch (e) {
-    return "<unprintable error>";
-  }
-};
+    return new UnknownError(err);
+  },
+
+  
 
 
-this.stack = function() {
-  let trace = new Error().stack;
-  let sa = trace.split("\n");
-  sa = sa.slice(1);
-  let rv = "stacktrace:\n" + sa.join("\n");
-  return rv.trimEnd();
+
+  report(err) {
+    let msg = "Marionette threw an error: " + error.stringify(err);
+    dump(msg + "\n");
+    if (Cu.reportError) {
+      Cu.reportError(msg);
+    }
+  },
+
+  
+
+
+  stringify(err) {
+    try {
+      let s = err.toString();
+      if ("stack" in err) {
+        s += "\n" + err.stack;
+      }
+      return s;
+    } catch (e) {
+      return "<unprintable error>";
+    }
+  },
+
+  
+  stack() {
+    let trace = new Error().stack;
+    let sa = trace.split("\n");
+    sa = sa.slice(1);
+    let rv = "stacktrace:\n" + sa.join("\n");
+    return rv.trimEnd();
+  },
 };
 
 
@@ -528,5 +528,5 @@ const STATUSES = new Map([
 
 
 for (let cls of STATUSES.values()) {
-  this[cls.name] = cls;
+  error[cls.name] = cls;
 }
