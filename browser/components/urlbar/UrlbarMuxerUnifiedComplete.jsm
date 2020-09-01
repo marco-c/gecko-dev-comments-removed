@@ -30,19 +30,19 @@ function groupFromResult(result) {
   }
   switch (result.type) {
     case UrlbarUtils.RESULT_TYPE.SEARCH:
-      return result.payload.suggestion
-        ? UrlbarUtils.RESULT_GROUP.SUGGESTION
-        : UrlbarUtils.RESULT_GROUP.GENERAL;
+      if (result.payload.suggestion) {
+        return UrlbarUtils.RESULT_GROUP.SUGGESTION;
+      }
+      break;
     case UrlbarUtils.RESULT_TYPE.OMNIBOX:
       return UrlbarUtils.RESULT_GROUP.EXTENSION;
-    default:
-      return UrlbarUtils.RESULT_GROUP.GENERAL;
   }
+  return UrlbarUtils.RESULT_GROUP.GENERAL;
 }
 
 
 
-const heuristicOrder = [
+const HEURISTIC_ORDER = [
   
   
   "UrlbarProviderSearchTips",
@@ -52,6 +52,7 @@ const heuristicOrder = [
   "TokenAliasEngines",
   "HeuristicFallback",
 ];
+
 
 
 
@@ -66,12 +67,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
   }
 
   
-  
-
-
-
-
-
 
 
 
@@ -86,11 +81,288 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
 
     
-    let topHeuristicRank = Infinity;
-    for (let result of context.allHeuristicResults) {
+    let state = {
+      context,
+      resultsByGroup: new Map(),
+      totalResultCount: 0,
+      topHeuristicRank: Infinity,
+      strippedUrlToTopPrefixAndTitle: new Map(),
+      canShowPrivateSearch: context.results.length > 1,
+      canShowTailSuggestions: true,
+      formHistorySuggestions: new Set(),
+    };
+
+    let resultsWithSuggestedIndex = [];
+
+    
+    for (let result of context.results) {
+      
+      if (result.suggestedIndex >= 0) {
+        resultsWithSuggestedIndex.push(result);
+        continue;
+      }
+
       
       
-      let heuristicRank = heuristicOrder.indexOf(result.providerName) + 2;
+      let group = groupFromResult(result);
+      let results = state.resultsByGroup.get(group);
+      if (!results) {
+        results = [];
+        state.resultsByGroup.set(group, results);
+      }
+      results.push(result);
+
+      
+      this._updateStatePreAdd(result, state);
+    }
+
+    if (
+      context.heuristicResult?.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      context.heuristicResult?.payload.query
+    ) {
+      state.heuristicResultQuery = context.heuristicResult.payload.query.toLocaleLowerCase();
+    }
+
+    
+    
+    let buckets =
+      context.heuristicResult?.type == UrlbarUtils.RESULT_TYPE.SEARCH
+        ? UrlbarPrefs.get("matchBucketsSearch")
+        : UrlbarPrefs.get("matchBuckets");
+    logger.debug(`Buckets: ${buckets}`);
+
+    
+    
+    let resultsByBucketIndex = [];
+    for (let [group, maxResultCount] of buckets) {
+      let results = this._addResults(group, maxResultCount, state);
+      resultsByBucketIndex.push(results);
+    }
+
+    
+    let sortedResults = [];
+    let remainingCount = context.maxResults;
+    for (let i = 0; i < resultsByBucketIndex.length && remainingCount; i++) {
+      let results = resultsByBucketIndex[i];
+      let count = Math.min(remainingCount, results.length);
+      sortedResults.push(...results.slice(0, count));
+      remainingCount -= count;
+    }
+
+    
+    
+    resultsWithSuggestedIndex.sort(
+      (a, b) => a.suggestedIndex - b.suggestedIndex
+    );
+    
+    
+    for (let result of resultsWithSuggestedIndex) {
+      this._updateStatePreAdd(result, state);
+      this._updateStatePostAdd(result, state);
+    }
+    
+    for (let result of resultsWithSuggestedIndex) {
+      if (this._canAddResult(result, state)) {
+        let index =
+          result.suggestedIndex <= sortedResults.length
+            ? result.suggestedIndex
+            : sortedResults.length;
+        sortedResults.splice(index, 0, result);
+      }
+    }
+
+    context.results = sortedResults;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  _addResults(group, maxResultCount, state) {
+    let addedResults = [];
+    let groupResults = state.resultsByGroup.get(group);
+    while (
+      groupResults?.length &&
+      addedResults.length < maxResultCount &&
+      state.totalResultCount < state.context.maxResults
+    ) {
+      
+      
+      
+      
+      let result = groupResults.shift();
+      if (this._canAddResult(result, state)) {
+        addedResults.push(result);
+        state.totalResultCount++;
+        this._updateStatePostAdd(result, state);
+      }
+    }
+    return addedResults;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  _canAddResult(result, state) {
+    
+    if (result.heuristic && result != state.context.heuristicResult) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      !result.heuristic &&
+      result.type == UrlbarUtils.RESULT_TYPE.URL &&
+      result.payload.url
+    ) {
+      let [strippedUrl, prefix] = UrlbarUtils.stripPrefixAndTrim(
+        result.payload.url,
+        {
+          stripHttp: true,
+          stripHttps: true,
+          stripWww: true,
+          trimEmptyQuery: true,
+        }
+      );
+      let topPrefixData = state.strippedUrlToTopPrefixAndTitle.get(strippedUrl);
+      
+      
+      
+      if (topPrefixData && prefix != topPrefixData.prefix) {
+        let prefixRank = UrlbarUtils.getPrefixRank(prefix);
+        if (
+          prefixRank < topPrefixData.rank &&
+          (prefix.endsWith("www.") == topPrefixData.prefix.endsWith("www.") ||
+            result.payload?.title == topPrefixData.title)
+        ) {
+          return false;
+        }
+      }
+    }
+
+    
+    if (
+      state.context.heuristicResult &&
+      state.context.heuristicResult.providerName == "Autofill" &&
+      result.providerName != "Autofill" &&
+      state.context.heuristicResult.payload?.url == result.payload.url &&
+      state.context.heuristicResult.type == result.type
+    ) {
+      return false;
+    }
+
+    
+    if (
+      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.payload.inPrivateWindow &&
+      !state.canShowPrivateSearch
+    ) {
+      return false;
+    }
+
+    
+    if (
+      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+      result.payload.lowerCaseSuggestion === state.heuristicResultQuery
+    ) {
+      return false;
+    }
+
+    
+    if (
+      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.source == UrlbarUtils.RESULT_SOURCE.SEARCH &&
+      result.payload.lowerCaseSuggestion &&
+      result.payload.lowerCaseSuggestion === state.heuristicResultQuery
+    ) {
+      return false;
+    }
+
+    
+    if (
+      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.payload.tail &&
+      !state.canShowTailSuggestions
+    ) {
+      return false;
+    }
+
+    
+    
+    if (
+      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+      result.type == UrlbarUtils.RESULT_TYPE.URL
+    ) {
+      let submission = Services.search.parseSubmissionURL(result.payload.url);
+      if (submission) {
+        let resultQuery = submission.terms.toLocaleLowerCase();
+        if (
+          state.heuristicResultQuery === resultQuery ||
+          state.formHistorySuggestions.has(resultQuery)
+        ) {
+          
+          
+          
+          let [newSerpURL] = UrlbarUtils.getSearchQueryUrl(
+            submission.engine,
+            resultQuery
+          );
+          if (this._serpURLsHaveSameParams(newSerpURL, result.payload.url)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    
+    return true;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _updateStatePreAdd(result, state) {
+    
+    if (result.heuristic) {
+      
+      
+      let heuristicRank = HEURISTIC_ORDER.indexOf(result.providerName) + 2;
       
       
       if (result.providerType == UrlbarUtils.PROVIDER_TYPE.EXTENSION) {
@@ -104,285 +376,79 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       }
       
       
-      if (heuristicRank <= topHeuristicRank) {
-        topHeuristicRank = heuristicRank;
-        context.heuristicResult = result;
+      if (heuristicRank <= state.topHeuristicRank) {
+        state.topHeuristicRank = heuristicRank;
+        state.context.heuristicResult = result;
       }
     }
 
-    let heuristicResultQuery;
-    if (context.heuristicResult) {
-      if (
-        context.heuristicResult.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-        context.heuristicResult.payload.query
-      ) {
-        heuristicResultQuery = context.heuristicResult.payload.query.toLocaleLowerCase();
-      }
-    }
-
-    let canShowPrivateSearch = context.results.length > 1;
-    let canShowTailSuggestions = true;
-    let resultsWithSuggestedIndex = [];
-    let formHistoryResults = new Set();
-    let formHistorySuggestions = new Set();
     
-    
-    let strippedUrlToTopPrefixAndTitle = new Map();
-    let maxFormHistoryCount = Math.min(
-      UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
-      context.maxResults
-    );
-
-    
-    
-    for (let result of context.results) {
-      
-      
-      
-      if (
-        canShowPrivateSearch &&
-        (result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
-          result.payload.keywordOffer ||
-          (result.heuristic && result.payload.keyword))
-      ) {
-        canShowPrivateSearch = false;
-      }
-
-      
-      
-      
-      
-      if (
-        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-        result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
-        formHistoryResults.size < maxFormHistoryCount &&
-        result.payload.lowerCaseSuggestion &&
-        result.payload.lowerCaseSuggestion != heuristicResultQuery
-      ) {
-        formHistoryResults.add(result);
-        formHistorySuggestions.add(result.payload.lowerCaseSuggestion);
-      }
-
-      
-      
-      
-      if (
-        canShowTailSuggestions &&
-        !result.heuristic &&
-        (result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
-          (!result.payload.inPrivateWindow && !result.payload.tail))
-      ) {
-        canShowTailSuggestions = false;
-      }
-
-      if (result.type == UrlbarUtils.RESULT_TYPE.URL && result.payload.url) {
-        let [strippedUrl, prefix] = UrlbarUtils.stripPrefixAndTrim(
-          result.payload.url,
-          {
-            stripHttp: true,
-            stripHttps: true,
-            stripWww: true,
-            trimEmptyQuery: true,
-          }
-        );
-        let prefixRank = UrlbarUtils.getPrefixRank(prefix);
-        let topPrefixData = strippedUrlToTopPrefixAndTitle.get(strippedUrl);
-        let topPrefixRank = topPrefixData ? topPrefixData.rank : -1;
-        if (topPrefixRank < prefixRank) {
-          strippedUrlToTopPrefixAndTitle.set(strippedUrl, {
-            prefix,
-            title: result.payload.title,
-            rank: prefixRank,
-          });
+    if (result.type == UrlbarUtils.RESULT_TYPE.URL && result.payload.url) {
+      let [strippedUrl, prefix] = UrlbarUtils.stripPrefixAndTrim(
+        result.payload.url,
+        {
+          stripHttp: true,
+          stripHttps: true,
+          stripWww: true,
+          trimEmptyQuery: true,
         }
-      }
-    }
-
-    
-    let unsortedResults = [];
-    for (let result of context.results) {
-      
-      if (result.heuristic && result != context.heuristicResult) {
-        continue;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (
-        !result.heuristic &&
-        result.type == UrlbarUtils.RESULT_TYPE.URL &&
-        result.payload.url
-      ) {
-        let [strippedUrl, prefix] = UrlbarUtils.stripPrefixAndTrim(
-          result.payload.url,
-          {
-            stripHttp: true,
-            stripHttps: true,
-            stripWww: true,
-            trimEmptyQuery: true,
-          }
-        );
-        let topPrefixData = strippedUrlToTopPrefixAndTitle.get(strippedUrl);
+      );
+      let prefixRank = UrlbarUtils.getPrefixRank(prefix);
+      let topPrefixData = state.strippedUrlToTopPrefixAndTitle.get(strippedUrl);
+      let topPrefixRank = topPrefixData ? topPrefixData.rank : -1;
+      if (topPrefixRank < prefixRank) {
         
-        
-        
-        if (topPrefixData && prefix != topPrefixData.prefix) {
-          let prefixRank = UrlbarUtils.getPrefixRank(prefix);
-          if (
-            topPrefixData.rank > prefixRank &&
-            prefix.endsWith("www.") == topPrefixData.prefix.endsWith("www.")
-          ) {
-            continue;
-          } else if (
-            topPrefixData.rank > prefixRank &&
-            result.payload?.title == topPrefixData.title
-          ) {
-            continue;
-          }
-        }
-      }
-
-      
-      if (
-        context.heuristicResult &&
-        context.heuristicResult.providerName == "Autofill" &&
-        result.providerName != "Autofill" &&
-        context.heuristicResult.payload?.url == result.payload.url &&
-        context.heuristicResult.type == result.type
-      ) {
-        continue;
-      }
-
-      
-      if (
-        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-        result.payload.inPrivateWindow &&
-        !canShowPrivateSearch
-      ) {
-        continue;
-      }
-
-      
-      if (result.suggestedIndex >= 0) {
-        resultsWithSuggestedIndex.push(result);
-        continue;
-      }
-
-      
-      if (
-        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-        result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
-        !formHistoryResults.has(result)
-      ) {
-        continue;
-      }
-
-      
-      
-      
-      if (
-        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-        result.source == UrlbarUtils.RESULT_SOURCE.SEARCH &&
-        result.payload.lowerCaseSuggestion &&
-        result.payload.lowerCaseSuggestion === heuristicResultQuery
-      ) {
-        continue;
-      }
-
-      
-      if (
-        !canShowTailSuggestions &&
-        groupFromResult(result) == UrlbarUtils.RESULT_GROUP.SUGGESTION &&
-        result.payload.tail
-      ) {
-        continue;
-      }
-
-      
-      
-      if (
-        result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
-        result.type == UrlbarUtils.RESULT_TYPE.URL
-      ) {
-        let submission = Services.search.parseSubmissionURL(result.payload.url);
-        if (submission) {
-          let resultQuery = submission.terms.toLocaleLowerCase();
-          if (
-            heuristicResultQuery === resultQuery ||
-            formHistorySuggestions.has(resultQuery)
-          ) {
-            
-            
-            
-            let [newSerpURL] = UrlbarUtils.getSearchQueryUrl(
-              submission.engine,
-              resultQuery
-            );
-            if (this._serpURLsHaveSameParams(newSerpURL, result.payload.url)) {
-              continue;
-            }
-          }
-        }
-      }
-
-      
-      unsortedResults.push(result);
-    }
-
-    
-    
-    let buckets =
-      context.heuristicResult &&
-      context.heuristicResult.type == UrlbarUtils.RESULT_TYPE.SEARCH
-        ? UrlbarPrefs.get("matchBucketsSearch")
-        : UrlbarPrefs.get("matchBuckets");
-    logger.debug(`Buckets: ${buckets}`);
-
-    
-    let sortedResults = [];
-    let handledResults = new Set();
-    let count = Math.min(unsortedResults.length, context.maxResults);
-    for (let b = 0; handledResults.size < count && b < buckets.length; b++) {
-      let [group, slotCount] = buckets[b];
-      
-      for (
-        let i = 0;
-        slotCount && handledResults.size < count && i < unsortedResults.length;
-        i++
-      ) {
-        let result = unsortedResults[i];
-        if (!handledResults.has(result) && group == groupFromResult(result)) {
-          sortedResults.push(result);
-          handledResults.add(result);
-          slotCount--;
-        }
+        state.strippedUrlToTopPrefixAndTitle.set(strippedUrl, {
+          prefix,
+          title: result.payload.title,
+          rank: prefixRank,
+        });
       }
     }
 
     
     
     
-    resultsWithSuggestedIndex.sort(
-      (a, b) => a.suggestedIndex - b.suggestedIndex
-    );
-    for (let result of resultsWithSuggestedIndex) {
-      let index =
-        result.suggestedIndex <= sortedResults.length
-          ? result.suggestedIndex
-          : sortedResults.length;
-      sortedResults.splice(index, 0, result);
+    if (
+      state.canShowTailSuggestions &&
+      !result.heuristic &&
+      (result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+        (!result.payload.inPrivateWindow && !result.payload.tail))
+    ) {
+      state.canShowTailSuggestions = false;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _updateStatePostAdd(result, state) {
+    
+    
+    
+    if (
+      state.canShowPrivateSearch &&
+      (result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+        result.payload.keywordOffer ||
+        (result.heuristic && result.payload.keyword))
+    ) {
+      state.canShowPrivateSearch = false;
     }
 
-    context.results = sortedResults;
+    
+    if (
+      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY
+    ) {
+      state.formHistorySuggestions.add(result.payload.lowerCaseSuggestion);
+    }
   }
 
   

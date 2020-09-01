@@ -210,12 +210,15 @@ SearchSuggestionController.prototype = {
 
 
 
+
+
   fetch(
     searchTerm,
     privateMode,
     engine,
     userContextId = 0,
-    restrictToEngine = false
+    restrictToEngine = false,
+    dedupeRemoteAndLocal = true
   ) {
     
     
@@ -281,7 +284,7 @@ SearchSuggestionController.prototype = {
       return null;
     }
     return Promise.all(promises).then(
-      this._dedupeAndReturnResults.bind(this),
+      results => this._dedupeAndReturnResults(results, dedupeRemoteAndLocal),
       handleRejection
     );
   },
@@ -560,7 +563,9 @@ SearchSuggestionController.prototype = {
 
 
 
-  _dedupeAndReturnResults(suggestResults) {
+
+
+  _dedupeAndReturnResults(suggestResults, dedupeRemoteAndLocal) {
     if (this._searchString === null) {
       
       
@@ -612,7 +617,7 @@ SearchSuggestionController.prototype = {
 
     
     
-    if (results.remote.length && results.local.length) {
+    if (results.remote.length && results.local.length && dedupeRemoteAndLocal) {
       for (let i = 0; i < results.local.length; ++i) {
         let dupIndex = results.remote.findIndex(e =>
           e.equals(results.local[i])

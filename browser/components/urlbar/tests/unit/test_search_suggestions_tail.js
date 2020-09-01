@@ -190,6 +190,49 @@ add_task(async function mixed_suggestions() {
 
 
 
+
+
+add_task(async function mixed_suggestions_tail_first() {
+  setSuggestionsFn(searchStr => {
+    let suffixes = ["toronto", "tunisia"];
+    return [
+      "what time is it in t",
+      suffixes
+        .map(s => searchStr + s.slice(1))
+        .concat(["what is the time today texas"]),
+      [],
+      {
+        "google:irrelevantparameter": [],
+        "google:suggestdetail": suffixes
+          .map(s => ({
+            mp: "… ",
+            t: s,
+          }))
+          .concat([{}]),
+      },
+    ];
+  });
+
+  const query = "what time is it in t";
+  let context = createContext(query, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, { engineName: ENGINE_NAME, heuristic: true }),
+      makeSearchResult(context, {
+        engineName: ENGINE_NAME,
+        suggestion: "what is the time today texas",
+        tail: undefined,
+      }),
+    ],
+  });
+  await cleanUpSuggestions();
+});
+
+
+
+
+
 add_task(async function mixed_results() {
   await PlacesTestUtils.addVisits([
     {

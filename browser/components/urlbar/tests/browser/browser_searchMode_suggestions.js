@@ -9,9 +9,13 @@
 
 const DEFAULT_ENGINE_NAME = "Test";
 const SUGGESTIONS_ENGINE_NAME = "searchSuggestionEngine.xml";
+const MAX_HISTORICAL_SEARCH_SUGGESTIONS = UrlbarPrefs.get(
+  "maxHistoricalSearchSuggestions"
+);
 
 let suggestionsEngine;
 let defaultEngine;
+let expectedFormHistoryResults = [];
 
 add_task(async function setup() {
   suggestionsEngine = await SearchTestUtils.promiseNewSearchEngine(
@@ -32,9 +36,27 @@ add_task(async function setup() {
   await PlacesUtils.bookmarks.eraseEverything();
 
   
+  
+  
+  for (let i = 0; i < MAX_HISTORICAL_SEARCH_SUGGESTIONS + 1; i++) {
+    let value = `hello formHistory ${i}`;
+    await UrlbarTestUtils.formHistory.add([
+      { value, source: suggestionsEngine.name },
+    ]);
+    expectedFormHistoryResults.push({
+      heuristic: false,
+      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      searchParams: {
+        isSearchHistory: true,
+        suggestion: value,
+        engine: suggestionsEngine.name,
+      },
+    });
+  }
+
+  
   await UrlbarTestUtils.formHistory.add([
-    { value: "hello formHistory 1", source: suggestionsEngine.name },
-    { value: "hello formHistory 2", source: suggestionsEngine.name },
     { value: "hello formHistory global" },
     { value: "hello formHistory other", source: "other engine" },
   ]);
@@ -64,29 +86,7 @@ add_task(async function emptySearch() {
     Assert.equal(gURLBar.value, "", "Urlbar value should be cleared.");
     
     
-    await checkResults([
-      {
-        heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-        searchParams: {
-          isSearchHistory: true,
-          suggestion: "hello formHistory 1",
-          engine: suggestionsEngine.name,
-        },
-      },
-      {
-        heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-        searchParams: {
-          isSearchHistory: true,
-          suggestion: "hello formHistory 2",
-          engine: suggestionsEngine.name,
-        },
-      },
-    ]);
-
+    await checkResults(expectedFormHistoryResults);
     await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
     await UrlbarTestUtils.promisePopupClose(window);
   });
@@ -113,26 +113,7 @@ add_task(async function nonEmptySearch() {
           engine: suggestionsEngine.name,
         },
       },
-      {
-        heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-        searchParams: {
-          isSearchHistory: true,
-          suggestion: "hello formHistory 1",
-          engine: suggestionsEngine.name,
-        },
-      },
-      {
-        heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
-        searchParams: {
-          isSearchHistory: true,
-          suggestion: "hello formHistory 2",
-          engine: suggestionsEngine.name,
-        },
-      },
+      ...expectedFormHistoryResults.slice(0, 2),
       {
         heuristic: false,
         type: UrlbarUtils.RESULT_TYPE.SEARCH,
@@ -155,6 +136,7 @@ add_task(async function nonEmptySearch() {
           engine: suggestionsEngine.name,
         },
       },
+      ...expectedFormHistoryResults.slice(2, 4),
     ]);
 
     await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });

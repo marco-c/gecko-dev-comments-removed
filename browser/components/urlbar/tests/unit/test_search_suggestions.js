@@ -20,6 +20,7 @@ const PRIVATE_SEARCH_PREF = "browser.search.separatePrivateDefault.ui.enabled";
 const MAX_RICH_RESULTS_PREF = "browser.urlbar.maxRichResults";
 const MAX_FORM_HISTORY_PREF = "browser.urlbar.maxHistoricalSearchSuggestions";
 const SEARCH_STRING = "hello";
+const MATCH_BUCKETS_VALUE = "general:5,suggestion:Infinity";
 
 var suggestionsFn;
 var previousSuggestionsFn;
@@ -106,7 +107,7 @@ function makeExpectedSuggestionResults(
 add_task(async function setup() {
   Services.prefs.setCharPref(
     "browser.urlbar.matchBuckets",
-    "general:5,suggestion:Infinity"
+    MATCH_BUCKETS_VALUE
   );
 
   let engine = await addTestSuggestionsEngine(searchStr => {
@@ -721,7 +722,7 @@ add_task(async function mixup_frecency() {
 
   Services.prefs.setCharPref(
     "browser.urlbar.matchBuckets",
-    "general:5,suggestion:Infinity"
+    MATCH_BUCKETS_VALUE
   );
   Services.prefs.clearUserPref("browser.urlbar.matchBucketsSearch");
   Services.prefs.clearUserPref(MAX_RICH_RESULTS_PREF);
@@ -1430,6 +1431,7 @@ add_task(async function formHistory() {
     matches: [
       makeSearchResult(context, { engineName: ENGINE_NAME, heuristic: true }),
       ...makeExpectedRemoteSuggestionResults(context),
+      ...makeExpectedFormHistoryResults(context, 2),
     ],
   });
 
@@ -1439,8 +1441,9 @@ add_task(async function formHistory() {
     context,
     matches: [
       makeSearchResult(context, { engineName: ENGINE_NAME, heuristic: true }),
-      ...makeExpectedFormHistoryResults(context).slice(0, 1),
+      ...makeExpectedFormHistoryResults(context, 2).slice(0, 1),
       ...makeExpectedRemoteSuggestionResults(context),
+      ...makeExpectedFormHistoryResults(context, 2).slice(1),
     ],
   });
 
@@ -1450,7 +1453,7 @@ add_task(async function formHistory() {
     context,
     matches: [
       makeSearchResult(context, { engineName: ENGINE_NAME, heuristic: true }),
-      ...makeExpectedFormHistoryResults(context).slice(0, 2),
+      ...makeExpectedFormHistoryResults(context, 2),
       ...makeExpectedRemoteSuggestionResults(context),
     ],
   });
@@ -1490,12 +1493,16 @@ add_task(async function formHistory() {
         suggestion: "foobar",
         engineName: ENGINE_NAME,
       }),
+      ...makeExpectedRemoteSuggestionResults(context, {
+        suggestionPrefix: "foo",
+      }),
+      
+      
+      
+      
       makeFormHistoryResult(context, {
         suggestion: "fooquux",
         engineName: ENGINE_NAME,
-      }),
-      ...makeExpectedRemoteSuggestionResults(context, {
-        suggestionPrefix: "foo",
       }),
     ],
   });
@@ -1524,6 +1531,10 @@ add_task(async function formHistory() {
       ...makeExpectedRemoteSuggestionResults(context, {
         suggestionPrefix: "foo",
       }),
+      makeFormHistoryResult(context, {
+        suggestion: "fooquux",
+        engineName: ENGINE_NAME,
+      }),
     ],
   });
   await PlacesUtils.history.clear();
@@ -1537,6 +1548,12 @@ add_task(async function formHistory() {
   let [serpURL1] = UrlbarUtils.getSearchQueryUrl(engine, "foobar");
   let [serpURL2] = UrlbarUtils.getSearchQueryUrl(engine, "food");
   await PlacesTestUtils.addVisits([serpURL1, serpURL2]);
+
+  
+  
+  
+  
+  
   context = createContext("foo", { isPrivate: false });
   await check_results({
     context,
@@ -1546,19 +1563,62 @@ add_task(async function formHistory() {
         uri: "http://localhost:9000/search?terms=food",
         title: "test visit for http://localhost:9000/search?terms=food",
       }),
-      makeFormHistoryResult(context, {
-        suggestion: "foobar",
-        engineName: ENGINE_NAME,
+      makeVisitResult(context, {
+        uri: "http://localhost:9000/search?terms=foobar",
+        title: "test visit for http://localhost:9000/search?terms=foobar",
       }),
       makeFormHistoryResult(context, {
-        suggestion: "fooquux",
+        suggestion: "foobar",
         engineName: ENGINE_NAME,
       }),
       ...makeExpectedRemoteSuggestionResults(context, {
         suggestionPrefix: "foo",
       }),
+      makeFormHistoryResult(context, {
+        suggestion: "fooquux",
+        engineName: ENGINE_NAME,
+      }),
     ],
   });
+
+  
+  
+  
+  Services.prefs.setCharPref(
+    "browser.urlbar.matchBuckets",
+    "suggestion:4,general:Infinity"
+  );
+  context = createContext("foo", { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, { engineName: ENGINE_NAME, heuristic: true }),
+      
+      
+      
+      
+      makeFormHistoryResult(context, {
+        suggestion: "foobar",
+        engineName: ENGINE_NAME,
+      }),
+      ...makeExpectedRemoteSuggestionResults(context, {
+        suggestionPrefix: "foo",
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "fooquux",
+        engineName: ENGINE_NAME,
+      }),
+      makeVisitResult(context, {
+        uri: "http://localhost:9000/search?terms=food",
+        title: "test visit for http://localhost:9000/search?terms=food",
+      }),
+    ],
+  });
+  Services.prefs.setCharPref(
+    "browser.urlbar.matchBuckets",
+    MATCH_BUCKETS_VALUE
+  );
+
   await PlacesUtils.history.clear();
 
   await UrlbarTestUtils.formHistory.remove(formHistoryStrings);

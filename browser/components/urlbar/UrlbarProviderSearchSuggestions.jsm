@@ -96,8 +96,9 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     }
 
     return (
-      this._getFormHistoryCount(queryContext) ||
-      this._allowRemoteSuggestions(queryContext)
+      this._allowSuggestions(queryContext) &&
+      (UrlbarPrefs.get("maxHistoricalSearchSuggestions") ||
+        this._allowRemoteSuggestions(queryContext))
     );
   }
 
@@ -123,8 +124,6 @@ class ProviderSearchSuggestions extends UrlbarProvider {
   }
 
   
-
-
 
 
 
@@ -162,11 +161,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     searchString = queryContext.searchString
   ) {
     
-    if (
-      !this._allowSuggestions(queryContext) ||
-      
-      !searchString.trim()
-    ) {
+    if (!searchString.trim()) {
       return false;
     }
 
@@ -316,45 +311,6 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-  _getFormHistoryCount(queryContext, searchString = queryContext.searchString) {
-    if (!this._allowSuggestions(queryContext)) {
-      return 0;
-    }
-
-    
-    
-    let count = UrlbarPrefs.get("maxHistoricalSearchSuggestions");
-    if (!count) {
-      return 0;
-    }
-
-    
-    
-    
-    
-    if (!searchString) {
-      return queryContext.maxResults;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    return count + 1;
-  }
-
   async _fetchSearchSuggestions(queryContext, engine, searchString, alias) {
     if (!engine) {
       return null;
@@ -362,17 +318,19 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
     this._suggestionsController = new SearchSuggestionController();
     this._suggestionsController.formHistoryParam = queryContext.formHistoryName;
-    this._suggestionsController.maxLocalResults = this._getFormHistoryCount(
-      queryContext,
-      searchString
-    );
 
+    
+    
+    
+    
+    
+    
+    
+    this._suggestionsController.maxLocalResults = queryContext.maxResults + 1;
+
+    
+    
     let allowRemote = this._allowRemoteSuggestions(queryContext, searchString);
-
-    
-    
-    
-    
     this._suggestionsController.maxRemoteResults = allowRemote
       ? queryContext.maxResults + 1
       : 0;
@@ -382,7 +340,8 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       queryContext.isPrivate,
       engine,
       queryContext.userContextId,
-      this._isTokenOrRestrictionPresent(queryContext)
+      this._isTokenOrRestrictionPresent(queryContext),
+      false
     );
 
     
@@ -395,19 +354,20 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
     let results = [];
 
-    for (let entry of fetchData.local) {
-      results.push(
-        new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.SEARCH,
-          UrlbarUtils.RESULT_SOURCE.HISTORY,
-          ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-            engine: engine.name,
-            isSearchHistory: true,
-            suggestion: [entry.value, UrlbarUtils.HIGHLIGHT.SUGGESTED],
-            lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
-          })
-        )
-      );
+    
+    let seenSuggestions = new Set();
+
+    
+    
+    
+    
+    let maxInitialFormHistory = UrlbarPrefs.get(
+      "maxHistoricalSearchSuggestions"
+    );
+    while (results.length < maxInitialFormHistory && fetchData.local.length) {
+      let entry = fetchData.local.shift();
+      results.push(makeFormHistoryResult(queryContext, engine, entry));
+      seenSuggestions.add(entry.value);
     }
 
     
@@ -432,7 +392,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     });
 
     for (let entry of fetchData.remote) {
-      if (looksLikeUrl(entry.value)) {
+      if (looksLikeUrl(entry.value) || seenSuggestions.has(entry.value)) {
         continue;
       }
 
@@ -475,9 +435,21 @@ class ProviderSearchSuggestions extends UrlbarProvider {
             })
           )
         );
+        seenSuggestions.add(entry.value);
       } catch (err) {
         Cu.reportError(err);
         continue;
+      }
+    }
+
+    
+    while (
+      results.length < queryContext.maxResults + 1 &&
+      fetchData.local.length
+    ) {
+      let entry = fetchData.local.shift();
+      if (!seenSuggestions.has(entry.value)) {
+        results.push(makeFormHistoryResult(queryContext, engine, entry));
       }
     }
 
@@ -531,6 +503,19 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
     return null;
   }
+}
+
+function makeFormHistoryResult(queryContext, engine, entry) {
+  return new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarUtils.RESULT_SOURCE.HISTORY,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+      engine: engine.name,
+      isSearchHistory: true,
+      suggestion: [entry.value, UrlbarUtils.HIGHLIGHT.SUGGESTED],
+      lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
+    })
+  );
 }
 
 var UrlbarProviderSearchSuggestions = new ProviderSearchSuggestions();
