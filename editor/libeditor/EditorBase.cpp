@@ -3695,9 +3695,29 @@ nsresult EditorBase::DeleteSelectionAsAction(
 
   
   
-  
-  
-  
+  if (IsHTMLEditor() && editActionData.NeedsToDispatchBeforeInputEvent()) {
+    AutoRangeArray rangesToDelete(*SelectionRefPtr());
+    if (!rangesToDelete.Ranges().IsEmpty()) {
+      nsresult rv = MOZ_KnownLive(AsHTMLEditor())
+                        ->ComputeTargetRanges(aDirectionAndAmount,
+                                              aStripWrappers, rangesToDelete);
+      if (rv == NS_ERROR_EDITOR_DESTROYED) {
+        NS_WARNING("HTMLEditor::ComputeTargetRanges() destroyed the editor");
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "HTMLEditor::ComputeTargetRanges() failed, but ignored");
+      for (auto& range : rangesToDelete.Ranges()) {
+        RefPtr<StaticRange> staticRange =
+            StaticRange::Create(range, IgnoreErrors());
+        if (NS_WARN_IF(!staticRange)) {
+          continue;
+        }
+        editActionData.AppendTargetRange(*staticRange);
+      }
+    }
+  }
 
   nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
   if (NS_FAILED(rv)) {
@@ -5245,22 +5265,15 @@ void EditorBase::AutoEditActionDataSetter::AppendTargetRange(
   mTargetRanges.AppendElement(aTargetRange);
 }
 
-nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent() {
-  MOZ_ASSERT(!HasTriedToDispatchBeforeInputEvent(),
-             "We've already handled beforeinput event");
-  MOZ_ASSERT(CanHandle());
-  MOZ_ASSERT(NeedsToDispatchBeforeInputEvent());
-
-  mHasTriedToDispatchBeforeInputEvent = true;
-
+bool EditorBase::AutoEditActionDataSetter::IsBeforeInputEventEnabled() const {
   if (!StaticPrefs::dom_input_events_beforeinput_enabled()) {
-    return NS_OK;
+    return false;
   }
 
   
   
   if (mEditorBase.IsSuppressingDispatchingInputEvent()) {
-    return NS_OK;
+    return false;
   }
 
   
@@ -5272,8 +5285,23 @@ nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent() {
     
     
     if (!mPrincipal->GetIsAddonOrExpandedAddonPrincipal()) {
-      return NS_OK;
+      return false;
     }
+  }
+
+  return true;
+}
+
+nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent() {
+  MOZ_ASSERT(!HasTriedToDispatchBeforeInputEvent(),
+             "We've already handled beforeinput event");
+  MOZ_ASSERT(CanHandle());
+  MOZ_ASSERT(!IsBeforeInputEventEnabled() || NeedsToDispatchBeforeInputEvent());
+
+  mHasTriedToDispatchBeforeInputEvent = true;
+
+  if (!IsBeforeInputEventEnabled()) {
+    return NS_OK;
   }
 
   
