@@ -520,7 +520,25 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
       mMissingFonts = nullptr;
     }
   }
-  if (prefName.EqualsLiteral("font.internaluseonly.changed")) {
+  if (prefName.EqualsLiteral("font.internaluseonly.changed") &&
+      !IsPrintingOrPrintPreview()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     mChangeHintForPrefChange |= nsChangeHint_ReconstructFrame;
   } else if (StringBeginsWith(prefName, "font."_ns) ||
              
