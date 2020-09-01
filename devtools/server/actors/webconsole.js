@@ -197,8 +197,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
     this.traits = {
       
-      newCacheStructure: true,
-      
       blockedUrls: true,
     };
   },

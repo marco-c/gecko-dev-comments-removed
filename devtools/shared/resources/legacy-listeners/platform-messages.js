@@ -29,19 +29,7 @@ module.exports = async function({ targetList, targetFront, onAvailable }) {
 
   
   
-  
-  
-  let { messages } = await webConsoleFront.getCachedMessages([
-    webConsoleFront.traits.newCacheStructure ? "LogMessage" : "PageError",
-  ]);
-
-  
-  
-  messages = messages.filter(message => {
-    return (
-      webConsoleFront.traits.newCacheStructure || message._type === "LogMessage"
-    );
-  });
+  const { messages } = await webConsoleFront.getCachedMessages(["LogMessage"]);
 
   for (const message of messages) {
     

@@ -44,28 +44,12 @@ module.exports = async function({
   let { messages } = await webConsoleFront.getCachedMessages(["PageError"]);
 
   
-  
-  
-  messages = messages.filter(message => {
-    return (
-      (webConsoleFront.traits.newCacheStructure ||
-        !message._type ||
-        message._type == "PageError") &&
-      message.pageError.category !== MESSAGE_CATEGORY.CSS_PARSER
-    );
-  });
+  messages = messages.filter(
+    message => message.pageError.category !== MESSAGE_CATEGORY.CSS_PARSER
+  );
 
-  messages = messages.map(message => {
-    
-    
-    if (message._type) {
-      return {
-        pageError: message,
-        resourceType: ResourceWatcher.TYPES.ERROR_MESSAGE,
-      };
-    }
+  messages.forEach(message => {
     message.resourceType = ResourceWatcher.TYPES.ERROR_MESSAGE;
-    return message;
   });
   
   
