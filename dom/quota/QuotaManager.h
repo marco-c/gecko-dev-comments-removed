@@ -535,8 +535,10 @@ class QuotaManager final : public BackgroundThreadObject {
   nsresult CreateLocalStorageArchiveConnectionFromWebAppsStore(
       mozIStorageConnection** aConnection);
 
-  nsresult CreateLocalStorageArchiveConnection(
-      mozIStorageConnection** aConnection, bool& aNewlyCreated);
+  
+  
+  Result<std::pair<nsCOMPtr<mozIStorageConnection>, bool>, nsresult>
+  CreateLocalStorageArchiveConnection();
 
   nsresult RecreateLocalStorageArchive(
       nsCOMPtr<mozIStorageConnection>& aConnection);
