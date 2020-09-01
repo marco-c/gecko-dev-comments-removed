@@ -1148,7 +1148,15 @@ void CompositorBridgeParent::AllocateAPZCTreeManagerParent(
 
 PAPZParent* CompositorBridgeParent::AllocPAPZParent(const LayersId& aLayersId) {
   
-  MOZ_ASSERT(!aLayersId.IsValid());
+  
+  
+  MOZ_RELEASE_ASSERT(XRE_IsGPUProcess());
+
+  
+  MOZ_RELEASE_ASSERT(mOptions.UseAPZ());
+
+  
+  MOZ_RELEASE_ASSERT(!aLayersId.IsValid());
 
   RemoteContentController* controller = new RemoteContentController();
 
@@ -1159,7 +1167,7 @@ PAPZParent* CompositorBridgeParent::AllocPAPZParent(const LayersId& aLayersId) {
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state =
       sIndirectLayerTrees[mRootLayerTreeID];
-  MOZ_ASSERT(!state.mController);
+  MOZ_RELEASE_ASSERT(!state.mController);
   state.mController = controller;
 
   return controller;
