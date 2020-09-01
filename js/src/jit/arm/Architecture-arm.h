@@ -704,8 +704,21 @@ inline bool hasUnaliasedDouble() { return Has32DP(); }
 
 inline bool hasMultiAlias() { return true; }
 
-bool ParseARMHwCapFlags(const char* armHwCap);
+
+
+
+
+
+
+
 void InitARMFlags();
+
+
+
+
+bool ParseARMHwCapFlags(const char* armHwCap);
+
+
 uint32_t GetARMFlags();
 
 

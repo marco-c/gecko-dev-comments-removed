@@ -153,6 +153,7 @@ static bool forceDoubleCacheFlush = false;
 
 
 
+
 volatile uint32_t armHwCapFlags = HWCAP_UNINITIALIZED;
 
 bool ParseARMHwCapFlags(const char* armHwCap) {

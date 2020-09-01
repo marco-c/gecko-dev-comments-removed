@@ -147,12 +147,16 @@ bool jit::InitializeJit() {
 #endif
 
   
-  JitOptions.supportsFloatingPoint = MacroAssembler::SupportsFloatingPoint();
-  JitOptions.supportsUnalignedAccesses =
-      MacroAssembler::SupportsUnalignedAccesses();
+  ComputeJitSupportFlags();
 
   CheckPerf();
   return true;
+}
+
+void jit::ComputeJitSupportFlags() {
+  JitOptions.supportsFloatingPoint = MacroAssembler::SupportsFloatingPoint();
+  JitOptions.supportsUnalignedAccesses =
+      MacroAssembler::SupportsUnalignedAccesses();
 }
 
 bool jit::JitSupportsWasmSimd() {

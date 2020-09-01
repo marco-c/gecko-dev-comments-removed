@@ -3,7 +3,6 @@
 
 
 
-setARMHwCapFlags('vfp,armv7');
 
 
 assertEq(typeof WebAssembly, "object");

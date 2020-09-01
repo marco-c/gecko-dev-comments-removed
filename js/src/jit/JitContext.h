@@ -131,6 +131,10 @@ class JitContext {
 MOZ_MUST_USE bool InitializeJit();
 
 
+
+void ComputeJitSupportFlags();
+
+
 JitContext* GetJitContext();
 JitContext* MaybeGetJitContext();
 
