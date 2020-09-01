@@ -2592,7 +2592,7 @@ pref("browser.tabs.remote.autostart", false);
 
 
 
-#ifdef RELEASE_OR_BETA
+#if defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_ANDROID)
   pref("fission.autostart", false, locked);
 #else
   pref("fission.autostart", false);
