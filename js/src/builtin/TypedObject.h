@@ -750,8 +750,6 @@ class InlineTypedObject : public TypedObject {
     return inlineTypedMem();
   }
 
-  uint8_t* inlineTypedMemForGC() const { return inlineTypedMem(); }
-
   static void obj_trace(JSTracer* trace, JSObject* object);
   static size_t obj_moved(JSObject* dst, JSObject* src);
 

@@ -1617,50 +1617,22 @@ void js::GCMarker::lazilyMarkChildren(ObjectGroup* group) {
 
 void JS::BigInt::traceChildren(JSTracer* trc) {}
 
-template <typename Functor>
-static void VisitTraceList(const Functor& f, const uint32_t* traceList,
-                           uint8_t* memory);
 
-
-
-enum class CheckGeneration { DoChecks, NoChecks };
-template <typename Functor>
-static inline NativeObject* CallTraceHook(Functor&& f, JSTracer* trc,
-                                          JSObject* obj,
-                                          CheckGeneration check) {
+static inline void CallTraceHook(JSTracer* trc, JSObject* obj) {
   const JSClass* clasp = obj->getClass();
   MOZ_ASSERT(clasp);
   MOZ_ASSERT(obj->isNative() == clasp->isNative());
 
-  if (!clasp->hasTrace()) {
-    return &obj->as<NativeObject>();
+  if (clasp->hasTrace()) {
+    AutoSetTracingSource asts(trc, obj);
+    clasp->doTrace(trc, obj);
   }
-
-  if (clasp->isTrace(InlineTypedObject::obj_trace)) {
-    Shape** pshape = obj->as<InlineTypedObject>().addressOfShapeFromGC();
-    f(pshape);
-
-    InlineTypedObject& tobj = obj->as<InlineTypedObject>();
-    if (tobj.typeDescr().hasTraceList()) {
-      VisitTraceList(f, tobj.typeDescr().traceList(),
-                     tobj.inlineTypedMemForGC());
-    }
-
-    return nullptr;
-  }
-
-  AutoSetTracingSource asts(trc, obj);
-  clasp->doTrace(trc, obj);
-
-  if (!clasp->isNative()) {
-    return nullptr;
-  }
-  return &obj->as<NativeObject>();
 }
 
 template <typename Functor>
-static void VisitTraceList(const Functor& f, const uint32_t* traceList,
-                           uint8_t* memory) {
+static void VisitTraceListWithFunctor(const Functor& f,
+                                      const uint32_t* traceList,
+                                      uint8_t* memory) {
   size_t stringCount = *traceList++;
   size_t objectCount = *traceList++;
   size_t valueCount = *traceList++;
@@ -1679,6 +1651,36 @@ static void VisitTraceList(const Functor& f, const uint32_t* traceList,
     f(reinterpret_cast<Value*>(memory + *traceList));
     traceList++;
   }
+}
+
+
+
+
+
+
+
+
+void js::gc::VisitTraceList(JSTracer* trc, JSObject* obj,
+                            const uint32_t* traceList, uint8_t* memory) {
+  if (trc->isMarkingTracer()) {
+    auto* marker = GCMarker::fromTracer(trc);
+    VisitTraceListWithFunctor(
+        [=](auto thingp) { marker->traverseEdge(obj, *thingp); }, traceList,
+        memory);
+    return;
+  }
+
+  if (trc->isTenuringTracer()) {
+    auto* ttrc = static_cast<TenuringTracer*>(trc);
+    VisitTraceListWithFunctor([=](auto thingp) { ttrc->traverse(thingp); },
+                              traceList, memory);
+    return;
+  }
+
+  VisitTraceListWithFunctor(
+      [=](auto thingp) { TraceEdgeInternal(trc, thingp, "TypedObject edge"); },
+      traceList, memory);
+  return;
 }
 
 
@@ -2067,13 +2069,13 @@ scan_obj : {
   markImplicitEdges(obj);
   traverseEdge(obj, obj->groupRaw());
 
-  NativeObject* nobj = CallTraceHook(
-      [this, obj](auto thingp) { this->traverseEdge(obj, *thingp); }, this, obj,
-      CheckGeneration::DoChecks);
-  if (!nobj) {
+  CallTraceHook(this, obj);
+
+  if (!obj->isNative()) {
     return;
   }
 
+  NativeObject* nobj = &obj->as<NativeObject>();
   Shape* shape = nobj->lastProperty();
   traverseEdge(obj, shape);
 
@@ -3348,15 +3350,15 @@ void js::gc::StoreBuffer::ValueEdge::trace(TenuringTracer& mover) const {
 
 
 void js::TenuringTracer::traceObject(JSObject* obj) {
-  NativeObject* nobj =
-      CallTraceHook([this](auto thingp) { this->traverse(thingp); }, this, obj,
-                    CheckGeneration::NoChecks);
-  if (!nobj) {
+  CallTraceHook(this, obj);
+
+  if (!obj->isNative()) {
     return;
   }
 
   
   
+  NativeObject* nobj = &obj->as<NativeObject>();
   if (!nobj->hasEmptyElements() && !nobj->denseElementsAreCopyOnWrite() &&
       ObjectDenseElementsMayBeMarkable(nobj)) {
     HeapSlotArray elements = nobj->getDenseElements();
