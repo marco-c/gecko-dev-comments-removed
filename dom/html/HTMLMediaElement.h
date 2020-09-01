@@ -1411,9 +1411,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
       mOutputTrackSources;
 
   
-  
-  RefPtr<FirstFrameListener> mFirstFrameListener;
-  
   RefPtr<VideoStreamTrack> mSelectedVideoStreamTrack;
 
   const RefPtr<ShutdownObserver> mShutdownObserver;
