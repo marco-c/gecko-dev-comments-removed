@@ -37,11 +37,6 @@
   background-color: var(--arrowpanel-dimmed);
 }
 
-
-#PopupAutoComplete > richlistbox > .autocomplete-richlistitem:hover {
-  background-color: hsla(0,0%,80%,.35); 
-}
-
 .autocomplete-richlistitem[selected] {
   background-color: Highlight;
   color: HighlightText;
