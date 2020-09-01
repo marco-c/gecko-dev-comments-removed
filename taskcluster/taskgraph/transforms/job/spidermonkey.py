@@ -29,7 +29,7 @@ sm_run_schema = Schema({
     Optional('spidermonkey-platform'): text_type,
 
     
-    Required('workdir'): text_type,
+    Optional('workdir'): text_type,
 
     Required('tooltool-downloads'): Any(
         False,
