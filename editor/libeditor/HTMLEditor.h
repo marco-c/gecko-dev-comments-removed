@@ -2951,9 +2951,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
+      EditActionResult Prepare();
 
-
-
+      
 
 
 
