@@ -1001,6 +1001,12 @@ async function pickFileName(contentTitle, currentURI) {
       filename = url.hostname;
     }
   }
+  if (!filename.endsWith(".pdf")) {
+    
+    
+    
+    filename += ".pdf";
+  }
   filename = DownloadPaths.sanitize(filename);
 
   picker.init(
@@ -1010,9 +1016,7 @@ async function pickFileName(contentTitle, currentURI) {
   );
   picker.appendFilter("PDF", "*.pdf");
   picker.defaultExtension = "pdf";
-  
-  
-  picker.defaultString = filename + ".pdf";
+  picker.defaultString = filename;
 
   let retval = await new Promise(resolve => picker.open(resolve));
 
