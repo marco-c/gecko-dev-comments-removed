@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "GLLibraryEGL.h"
 
@@ -40,19 +40,19 @@
 #    include <gdk/gdkwayland.h>
 #    include <dlfcn.h>
 #    include "mozilla/widget/nsWaylandDisplay.h"
-#  endif  // MOZ_WIDGET_GTK
-#endif    // MOZ_WAYLAND
+#  endif  
+#endif    
 
 namespace mozilla {
 namespace gl {
 
-// should match the order of EGLExtensions, and be null-terminated.
+
 static const char* sEGLLibraryExtensionNames[] = {
     "EGL_ANDROID_get_native_client_buffer", "EGL_ANGLE_device_creation",
     "EGL_ANGLE_device_creation_d3d11", "EGL_ANGLE_platform_angle",
     "EGL_ANGLE_platform_angle_d3d"};
 
-// should match the order of EGLExtensions, and be null-terminated.
+
 static const char* sEGLExtensionNames[] = {
     "EGL_KHR_image_base",
     "EGL_KHR_image_pixmap",
@@ -61,6 +61,7 @@ static const char* sEGLExtensionNames[] = {
     "EGL_EXT_create_context_robustness",
     "EGL_KHR_image",
     "EGL_KHR_fence_sync",
+    "EGL_KHR_wait_sync",
     "EGL_ANDROID_native_fence_sync",
     "EGL_ANDROID_image_crop",
     "EGL_ANGLE_d3d_share_handle_client_buffer",
@@ -81,15 +82,15 @@ PRLibrary* LoadApitraceLibrary() {
   const char* path = nullptr;
 
 #ifdef ANDROID
-  // We only need to explicitly dlopen egltrace
-  // on android as we can use LD_PRELOAD or other tricks
-  // on other platforms. We look for it in /data/local
-  // as that's writeable by all users.
+  
+  
+  
+  
   path = "/data/local/tmp/egltrace.so";
 #endif
   if (!path) return nullptr;
 
-  // Initialization of gfx prefs here is only needed during the unit tests...
+  
   if (!StaticPrefs::gfx_apitrace_enabled_AtStartup()) {
     return nullptr;
   }
@@ -103,14 +104,14 @@ PRLibrary* LoadApitraceLibrary() {
     logFile = "firefox.trace";
   }
 
-  // The firefox process can't write to /data/local, but it can write
-  // to $GRE_HOME/
+  
+  
   nsAutoCString logPath;
   logPath.AppendPrintf("%s/%s", getenv("GRE_HOME"), logFile.get());
 
-#ifndef XP_WIN  // Windows is missing setenv and forbids PR_LoadLibrary.
-  // apitrace uses the TRACE_FILE environment variable to determine where
-  // to log trace output to
+#ifndef XP_WIN  
+  
+  
   printf_stderr("Logging GL tracing output to %s", logPath.get());
   setenv("TRACE_FILE", logPath.get(), false);
 
@@ -122,7 +123,7 @@ PRLibrary* LoadApitraceLibrary() {
 }
 
 #ifdef XP_WIN
-// see the comment in GLLibraryEGL::EnsureInitialized() for the rationale here.
+
 static PRLibrary* LoadLibraryForEGLOnWindows(const nsAString& filename) {
   nsAutoString path(gfx::gfxVars::GREDirectory());
   path.Append(PR_GetDirectorySeparator());
@@ -134,7 +135,7 @@ static PRLibrary* LoadLibraryForEGLOnWindows(const nsAString& filename) {
   return PR_LoadLibraryWithFlags(lspec, PR_LD_LAZY | PR_LD_LOCAL);
 }
 
-#endif  // XP_WIN
+#endif  
 
 static std::shared_ptr<EglDisplay> GetAndInitDisplay(GLLibraryEGL& egl,
                                                      void* displayType) {
@@ -147,7 +148,7 @@ static std::shared_ptr<EglDisplay> GetAndInitWARPDisplay(GLLibraryEGL& egl,
                                                          void* displayType) {
   const EGLint attrib_list[] = {LOCAL_EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE,
                                 LOCAL_EGL_PLATFORM_ANGLE_DEVICE_TYPE_WARP_ANGLE,
-                                // Requires:
+                                
                                 LOCAL_EGL_PLATFORM_ANGLE_TYPE_ANGLE,
                                 LOCAL_EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE,
                                 LOCAL_EGL_NONE};
@@ -174,7 +175,7 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplay(
     gfxCriticalNote << "Failed to get EGLDeviceEXT of D3D11Device";
     return nullptr;
   }
-  // Create an EGLDisplay using the EGLDevice
+  
   const EGLint attrib_list[] = {LOCAL_EGL_NONE};
   const auto display = fGetPlatformDisplayEXT(LOCAL_EGL_PLATFORM_DEVICE_EXT,
                                               eglDevice, attrib_list);
@@ -209,8 +210,8 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplay(
 static bool IsAccelAngleSupported(const nsCOMPtr<nsIGfxInfo>& gfxInfo,
                                   nsACString* const out_failureId) {
   if (wr::RenderThread::IsInRenderThread()) {
-    // We can only enter here with WebRender, so assert that this is a
-    // WebRender-enabled build.
+    
+    
     return true;
   }
   int32_t angleSupport;
@@ -218,8 +219,8 @@ static bool IsAccelAngleSupported(const nsCOMPtr<nsIGfxInfo>& gfxInfo,
   gfxUtils::ThreadSafeGetFeatureStatus(gfxInfo, nsIGfxInfo::FEATURE_WEBGL_ANGLE,
                                        failureId, &angleSupport);
   if (failureId.IsEmpty() && angleSupport != nsIGfxInfo::FEATURE_STATUS_OK) {
-    // This shouldn't happen, if we see this it's because we've missed
-    // some failure paths
+    
+    
     failureId = "FEATURE_FAILURE_ACCL_ANGLE_NOT_OK"_ns;
   }
   if (out_failureId->IsEmpty()) {
@@ -231,7 +232,7 @@ static bool IsAccelAngleSupported(const nsCOMPtr<nsIGfxInfo>& gfxInfo,
 class AngleErrorReporting {
  public:
   AngleErrorReporting() : mFailureId(nullptr) {
-    // No static constructor
+    
   }
 
   void SetFailureId(nsACString* const aFailureId) { mFailureId = aFailureId; }
@@ -244,8 +245,8 @@ class AngleErrorReporting {
     nsCString str(errorMessage);
     Tokenizer tokenizer(str);
 
-    // Parse "ANGLE Display::initialize error " << error.getID() << ": "
-    //       << error.getMessage()
+    
+    
     nsCString currWord;
     Tokenizer::Token intToken;
     if (tokenizer.CheckWord("ANGLE") && tokenizer.CheckWhite() &&
@@ -286,9 +287,9 @@ static std::shared_ptr<EglDisplay> GetAndInitDisplayForAccelANGLE(
 
   auto guardShutdown = mozilla::MakeScopeExit([&] {
     gAngleErrorReporter.SetFailureId(nullptr);
-    // NOTE: Ideally we should be calling ANGLEPlatformShutdown after the
-    //       ANGLE display is destroyed. However gAngleErrorReporter
-    //       will live longer than the ANGLE display so we're fine.
+    
+    
+    
   });
 
   if (gfx::gfxConfig::IsForcedOnByUser(gfx::Feature::D3D11_HW_ANGLE)) {
@@ -311,7 +312,7 @@ static std::shared_ptr<EglDisplay> GetAndInitDisplayForAccelANGLE(
   return ret;
 }
 
-// -
+
 
 #if defined(XP_UNIX)
 #  define GLES2_LIB "libGLESv2.so"
@@ -328,9 +329,9 @@ Maybe<SymbolLoader> GLLibraryEGL::GetSymbolLoader() const {
   return Some(ret);
 }
 
-// -
 
-/* static */
+
+
 RefPtr<GLLibraryEGL> GLLibraryEGL::Create(nsACString* const out_failureId) {
   RefPtr<GLLibraryEGL> ret = new GLLibraryEGL;
   if (!ret->Init(out_failureId)) {
@@ -346,19 +347,19 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
 
 #ifdef XP_WIN
   if (!mEGLLibrary) {
-    // On Windows, the GLESv2, EGL and DXSDK libraries are shipped with libxul
-    // and we should look for them there. We have to load the libs in this
-    // order, because libEGL.dll depends on libGLESv2.dll which depends on the
-    // DXSDK libraries. This matters especially for WebRT apps which are in a
-    // different directory. See bug 760323 and bug 749459
+    
+    
+    
+    
+    
 
-    // Also note that we intentionally leak the libs we load.
+    
 
     do {
-      // Windows 8.1+ has d3dcompiler_47.dll in the system directory.
-      // Try it first. Note that _46 will never be in the system
-      // directory. So there is no point trying _46 in the system
-      // directory.
+      
+      
+      
+      
 
       if (LoadLibrarySystem32(L"d3dcompiler_47.dll")) break;
 
@@ -376,10 +377,10 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
     mEGLLibrary = LoadLibraryForEGLOnWindows(u"libEGL.dll"_ns);
   }
 
-#else  // !Windows
+#else  
 
-  // On non-Windows (Android) we use system copies of libEGL. We look for
-  // the APITrace lib, libEGL.so, and libEGL.so.1 in that order.
+  
+  
 
 #  if defined(ANDROID)
   if (!mEGLLibrary) mEGLLibrary = LoadApitraceLibrary();
@@ -410,7 +411,7 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
   }
 #  endif
 
-#endif  // !Windows
+#endif  
 
   if (!mEGLLibrary || !mGLLibrary) {
     NS_WARNING("Couldn't load EGL LIB.");
@@ -479,7 +480,7 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
     }
   }
 
-  // -
+  
 
   InitLibExtensions();
 
@@ -492,10 +493,10 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
     return false;
   };
 
-  // Check the ANGLE support the system has
+  
   mIsANGLE = IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle);
 
-  // Client exts are ready. (But not display exts!)
+  
 
   if (mIsANGLE) {
     MOZ_ASSERT(IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle_d3d));
@@ -515,8 +516,8 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
     }
   }
 
-  // ANDROID_get_native_client_buffer isn't necessarily enumerated in lib exts,
-  // but it is one.
+  
+  
   {
     const SymLoadStruct symbols[] = {SYMBOL(GetNativeClientBufferANDROID),
                                      END_OF_SYMBOLS};
@@ -526,8 +527,8 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
     }
   }
 
-  // -
-  // Load possible display ext symbols.
+  
+  
 
   {
     const SymLoadStruct symbols[] = {SYMBOL(QuerySurfacePointerANGLE),
@@ -543,6 +544,10 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
   {
     const SymLoadStruct symbols[] = {SYMBOL(CreateImageKHR),
                                      SYMBOL(DestroyImageKHR), END_OF_SYMBOLS};
+    (void)fnLoadSymbols(symbols);
+  }
+  {
+    const SymLoadStruct symbols[] = {SYMBOL(WaitSyncKHR), END_OF_SYMBOLS};
     (void)fnLoadSymbols(symbols);
   }
   {
@@ -598,7 +603,7 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
   return true;
 }
 
-// -
+
 
 template <size_t N>
 static void MarkExtensions(const char* rawExtString, bool shouldDumpExts,
@@ -619,13 +624,13 @@ static void MarkExtensions(const char* rawExtString, bool shouldDumpExts,
   MarkBitfieldByStrings(extList, shouldDumpExts, names, out);
 }
 
-// -
 
-// static
+
+
 std::shared_ptr<EglDisplay> EglDisplay::Create(GLLibraryEGL& lib,
                                                const EGLDisplay display,
                                                const bool isWarp) {
-  // Retrieve the EglDisplay if it already exists
+  
   {
     const auto itr = lib.mActiveDisplays.find(display);
     if (itr != lib.mActiveDisplays.end()) {
@@ -659,7 +664,7 @@ EglDisplay::EglDisplay(const PrivateUseOnly&, GLLibraryEGL& lib,
   MarkExtensions(rawExtString, shouldDumpExts, "display", sEGLExtensionNames,
                  &mAvailableExtensions);
 
-  // -
+  
 
   if (!HasKHRImageBase()) {
     MarkExtensionUnsupported(EGLExtension::KHR_image_pixmap);
@@ -669,11 +674,11 @@ EglDisplay::EglDisplay(const PrivateUseOnly&, GLLibraryEGL& lib,
     const auto vendor =
         (const char*)mLib->fQueryString(mDisplay, LOCAL_EGL_VENDOR);
 
-    // Bug 1464610: Mali T720 (Amazon Fire 8 HD) claims to support this
-    // extension, but if you actually eglMakeCurrent() with EGL_NO_SURFACE, it
-    // fails to render anything when a real surface is provided later on. We
-    // only have the EGL vendor available here, so just avoid using this
-    // extension on all Mali devices.
+    
+    
+    
+    
+    
     if (strcmp(vendor, "ARM") == 0) {
       MarkExtensionUnsupported(EGLExtension::KHR_surfaceless_context);
     }
@@ -685,7 +690,7 @@ EglDisplay::~EglDisplay() {
   mLib->mActiveDisplays.erase(mDisplay);
 }
 
-// -
+
 
 std::shared_ptr<EglDisplay> GLLibraryEGL::DefaultDisplay(
     nsACString* const out_failureId) {
@@ -708,9 +713,9 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplay(
     bool accelAngleSupport =
         IsAccelAngleSupported(gfxInfo, &accelAngleFailureId);
     bool shouldTryAccel = forceAccel || accelAngleSupport;
-    bool shouldTryWARP = !forceAccel;  // Only if ANGLE not supported or fails
+    bool shouldTryWARP = !forceAccel;  
 
-    // If WARP preferred, will override ANGLE support
+    
     if (StaticPrefs::webgl_angle_force_warp()) {
       shouldTryWARP = true;
       shouldTryAccel = false;
@@ -719,12 +724,12 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplay(
       }
     }
 
-    // Hardware accelerated ANGLE path (supported or force accel)
+    
     if (shouldTryAccel) {
       ret = GetAndInitDisplayForAccelANGLE(*this, out_failureId);
     }
 
-    // Report the acceleration status to telemetry
+    
     if (!ret) {
       if (accelAngleFailureId.IsEmpty()) {
         Telemetry::Accumulate(Telemetry::CANVAS_WEBGL_ACCL_FAILURE_ID,
@@ -738,7 +743,7 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplay(
                             "SUCCESS"_ns);
     }
 
-    // Fallback to a WARP display if ANGLE fails, or if WARP is forced
+    
     if (!ret && shouldTryWARP) {
       ret = GetAndInitWARPDisplay(*this, EGL_DEFAULT_DISPLAY);
       if (!ret) {
@@ -752,7 +757,7 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplay(
   } else {
     void* nativeDisplay = EGL_DEFAULT_DISPLAY;
 #ifdef MOZ_WAYLAND
-    // Some drivers doesn't support EGL_DEFAULT_DISPLAY
+    
     GdkDisplay* gdkDisplay = gdk_display_get_default();
     if (gdkDisplay && !GDK_IS_X11_DISPLAY(gdkDisplay)) {
       nativeDisplay = widget::WaylandDisplayGetWLDisplay(gdkDisplay);
@@ -782,10 +787,10 @@ void GLLibraryEGL::InitLibExtensions() {
   const char* rawExtString = nullptr;
 
 #ifndef ANDROID
-  // Bug 1209612: Crashes on a number of android drivers.
-  // Ideally we would only blocklist this there, but for now we don't need the
-  // client extension list on ANDROID (we mostly need it on ANGLE), and we'd
-  // rather not crash.
+  
+  
+  
+  
   rawExtString = (const char*)fQueryString(nullptr, LOCAL_EGL_EXTENSIONS);
 #endif
 
@@ -881,5 +886,5 @@ void AfterEGLCall(const char* glFunction) {
   }
 }
 
-} /* namespace gl */
-} /* namespace mozilla */
+} 
+} 

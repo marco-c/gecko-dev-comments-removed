@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #ifndef GLLIBRARYEGL_H_
 #define GLLIBRARYEGL_H_
@@ -57,13 +57,13 @@ void BeforeEGLCall(const char* funcName);
 void AfterEGLCall(const char* funcName);
 
 class EglDisplay;
-/**
- * Known GL extensions that can be queried by
- * IsExtensionSupported.  The results of this are cached, and as
- * such it's safe to use this even in performance critical code.
- * If you add to this array, remember to add to the string names
- * in GLLibraryEGL.cpp.
- */
+
+
+
+
+
+
+
 enum class EGLLibExtension {
   ANDROID_get_native_client_buffer,
   ANGLE_device_creation,
@@ -73,13 +73,13 @@ enum class EGLLibExtension {
   Max
 };
 
-/**
- * Known GL extensions that can be queried by
- * IsExtensionSupported.  The results of this are cached, and as
- * such it's safe to use this even in performance critical code.
- * If you add to this array, remember to add to the string names
- * in GLLibraryEGL.cpp.
- */
+
+
+
+
+
+
+
 enum class EGLExtension {
   KHR_image_base,
   KHR_image_pixmap,
@@ -88,6 +88,7 @@ enum class EGLExtension {
   EXT_create_context_robustness,
   KHR_image,
   KHR_fence_sync,
+  KHR_wait_sync,
   ANDROID_native_fence_sync,
   EGL_ANDROID_image_crop,
   ANGLE_d3d_share_handle_client_buffer,
@@ -106,7 +107,7 @@ enum class EGLExtension {
   Max
 };
 
-// -
+
 
 class GLLibraryEGL final {
   friend class EglDisplay;
@@ -149,8 +150,8 @@ class GLLibraryEGL final {
 
   bool IsANGLE() const { return mIsANGLE; }
 
-  // -
-  // PFN wrappers
+  
+  
 
 #ifdef MOZ_WIDGET_ANDROID
 #  define PROFILE_CALL AUTO_PROFILER_LABEL(__func__, GRAPHICS);
@@ -166,7 +167,7 @@ class GLLibraryEGL final {
 #  else
 #    define MOZ_FUNCTION_NAME \
       __func__  // defined in C99, supported in various C++ compilers. Just raw
-                // function name.
+                
 #  endif
 #endif
 
@@ -211,7 +212,7 @@ class GLLibraryEGL final {
     WRAP(fGetProcAddress(procname));
   }
 
-  // ANGLE_device_creation
+  
   EGLDeviceEXT fCreateDeviceANGLE(EGLint device_type, void* native_device,
                                   const EGLAttrib* attrib_list) const {
     WRAP(fCreateDeviceANGLE(device_type, native_device, attrib_list));
@@ -221,7 +222,7 @@ class GLLibraryEGL final {
     WRAP(fReleaseDeviceANGLE(device));
   }
 
-  // ANDROID_get_native_client_buffer
+  
   EGLClientBuffer fGetNativeClientBufferANDROID(
       const struct AHardwareBuffer* buffer) {
     WRAP(fGetNativeClientBufferANDROID(buffer));
@@ -369,11 +370,15 @@ class GLLibraryEGL final {
     WRAP(fGetSyncAttribKHR(dpy, sync, attribute, value));
   }
 
+  EGLint fWaitSync(EGLDisplay dpy, EGLSync sync, EGLint flags) const {
+    WRAP(fWaitSyncKHR(dpy, sync, flags));
+  }
+
   EGLint fDupNativeFenceFDANDROID(EGLDisplay dpy, EGLSync sync) const {
     WRAP(fDupNativeFenceFDANDROID(dpy, sync));
   }
 
-  // KHR_stream
+  
   EGLStreamKHR fCreateStreamKHR(EGLDisplay dpy,
                                 const EGLint* attrib_list) const {
     WRAP(fCreateStreamKHR(dpy, attrib_list));
@@ -388,7 +393,7 @@ class GLLibraryEGL final {
     WRAP(fQueryStreamKHR(dpy, stream, attribute, value));
   }
 
-  // KHR_stream_consumer_gltexture
+  
   EGLBoolean fStreamConsumerGLTextureExternalKHR(EGLDisplay dpy,
                                                  EGLStreamKHR stream) const {
     WRAP(fStreamConsumerGLTextureExternalKHR(dpy, stream));
@@ -404,7 +409,7 @@ class GLLibraryEGL final {
     WRAP(fStreamConsumerReleaseKHR(dpy, stream));
   }
 
-  // EXT_device_query
+  
   EGLBoolean fQueryDisplayAttribEXT(EGLDisplay dpy, EGLint attribute,
                                     EGLAttrib* value) const {
     WRAP(fQueryDisplayAttribEXT(dpy, attribute, value));
@@ -417,13 +422,13 @@ class GLLibraryEGL final {
   }
 
  private:
-  // NV_stream_consumer_gltexture_yuv
+  
   EGLBoolean fStreamConsumerGLTextureExternalAttribsNV(
       EGLDisplay dpy, EGLStreamKHR stream, const EGLAttrib* attrib_list) const {
     WRAP(fStreamConsumerGLTextureExternalAttribsNV(dpy, stream, attrib_list));
   }
 
-  // ANGLE_stream_producer_d3d_texture
+  
   EGLBoolean fCreateStreamProducerD3DTextureANGLE(
       EGLDisplay dpy, EGLStreamKHR stream, const EGLAttrib* attrib_list) const {
     WRAP(fCreateStreamProducerD3DTextureANGLE(dpy, stream, attrib_list));
@@ -435,7 +440,7 @@ class GLLibraryEGL final {
     WRAP(fStreamPostD3DTextureANGLE(dpy, stream, texture, attrib_list));
   }
 
-  // EGL_EXT_swap_buffers_with_damage / EGL_KHR_swap_buffers_with_damage
+  
   EGLBoolean fSwapBuffersWithDamage(EGLDisplay dpy, EGLSurface surface,
                                     const EGLint* rects, EGLint n_rects) {
     WRAP(fSwapBuffersWithDamage(dpy, surface, rects, n_rects));
@@ -447,7 +452,7 @@ class GLLibraryEGL final {
 #undef AFTER_CALL
 #undef MOZ_FUNCTION_NAME
 
-  ////
+  
 
  private:
   struct {
@@ -523,43 +528,45 @@ class GLLibraryEGL final {
                                            EGLint flags, EGLTime timeout);
     EGLBoolean(GLAPIENTRY* fGetSyncAttribKHR)(EGLDisplay dpy, EGLSync sync,
                                               EGLint attribute, EGLint* value);
+    EGLint(GLAPIENTRY* fWaitSyncKHR)(EGLDisplay dpy, EGLSync sync,
+                                     EGLint flags);
     EGLint(GLAPIENTRY* fDupNativeFenceFDANDROID)(EGLDisplay dpy, EGLSync sync);
-    // KHR_stream
+    
     EGLStreamKHR(GLAPIENTRY* fCreateStreamKHR)(EGLDisplay dpy,
                                                const EGLint* attrib_list);
     EGLBoolean(GLAPIENTRY* fDestroyStreamKHR)(EGLDisplay dpy,
                                               EGLStreamKHR stream);
     EGLBoolean(GLAPIENTRY* fQueryStreamKHR)(EGLDisplay dpy, EGLStreamKHR stream,
                                             EGLenum attribute, EGLint* value);
-    // KHR_stream_consumer_gltexture
+    
     EGLBoolean(GLAPIENTRY* fStreamConsumerGLTextureExternalKHR)(
         EGLDisplay dpy, EGLStreamKHR stream);
     EGLBoolean(GLAPIENTRY* fStreamConsumerAcquireKHR)(EGLDisplay dpy,
                                                       EGLStreamKHR stream);
     EGLBoolean(GLAPIENTRY* fStreamConsumerReleaseKHR)(EGLDisplay dpy,
                                                       EGLStreamKHR stream);
-    // EXT_device_query
+    
     EGLBoolean(GLAPIENTRY* fQueryDisplayAttribEXT)(EGLDisplay dpy,
                                                    EGLint attribute,
                                                    EGLAttrib* value);
     EGLBoolean(GLAPIENTRY* fQueryDeviceAttribEXT)(EGLDeviceEXT device,
                                                   EGLint attribute,
                                                   EGLAttrib* value);
-    // NV_stream_consumer_gltexture_yuv
+    
     EGLBoolean(GLAPIENTRY* fStreamConsumerGLTextureExternalAttribsNV)(
         EGLDisplay dpy, EGLStreamKHR stream, const EGLAttrib* attrib_list);
-    // ANGLE_stream_producer_d3d_texture
+    
     EGLBoolean(GLAPIENTRY* fCreateStreamProducerD3DTextureANGLE)(
         EGLDisplay dpy, EGLStreamKHR stream, const EGLAttrib* attrib_list);
     EGLBoolean(GLAPIENTRY* fStreamPostD3DTextureANGLE)(
         EGLDisplay dpy, EGLStreamKHR stream, void* texture,
         const EGLAttrib* attrib_list);
-    // ANGLE_device_creation
+    
     EGLDeviceEXT(GLAPIENTRY* fCreateDeviceANGLE)(EGLint device_type,
                                                  void* native_device,
                                                  const EGLAttrib* attrib_list);
     EGLBoolean(GLAPIENTRY* fReleaseDeviceANGLE)(EGLDeviceEXT device);
-    // EGL_EXT_swap_buffers_with_damage / EGL_KHR_swap_buffers_with_damage
+    
     EGLBoolean(GLAPIENTRY* fSwapBuffersWithDamage)(EGLDisplay dpy,
                                                    EGLSurface surface,
                                                    const EGLint* rects,
@@ -584,7 +591,7 @@ class EglDisplay final {
   static std::shared_ptr<EglDisplay> Create(GLLibraryEGL&, EGLDisplay,
                                             bool isWarp);
 
-  // Only `public` for make_shared.
+  
   EglDisplay(const PrivateUseOnly&, GLLibraryEGL&, EGLDisplay, bool isWarp);
 
  public:
@@ -603,7 +610,7 @@ class EglDisplay final {
 
   void Shutdown();
 
-  // -
+  
 
   bool HasKHRImageBase() const {
     return IsExtensionSupported(EGLExtension::KHR_image) ||
@@ -615,7 +622,7 @@ class EglDisplay final {
            IsExtensionSupported(EGLExtension::KHR_image_pixmap);
   }
 
-  // -
+  
 
   EGLBoolean fTerminate() { return mLib->fTerminate(mDisplay); }
 
@@ -731,18 +738,23 @@ class EglDisplay final {
     return mLib->fGetSyncAttrib(mDisplay, sync, attribute, value);
   }
 
+  EGLint fWaitSync(EGLSync sync, EGLint flags) const {
+    MOZ_ASSERT(IsExtensionSupported(EGLExtension::KHR_wait_sync));
+    return mLib->fWaitSync(mDisplay, sync, flags);
+  }
+
   EGLint fDupNativeFenceFDANDROID(EGLSync sync) const {
     MOZ_ASSERT(IsExtensionSupported(EGLExtension::ANDROID_native_fence_sync));
     return mLib->fDupNativeFenceFDANDROID(mDisplay, sync);
   }
 
-  // EXT_device_query
+  
   EGLBoolean fQueryDisplayAttribEXT(EGLint attribute, EGLAttrib* value) const {
     MOZ_ASSERT(IsExtensionSupported(EGLExtension::EXT_device_query));
     return mLib->fQueryDisplayAttribEXT(mDisplay, attribute, value);
   }
 
-  // KHR_stream
+  
   EGLStreamKHR fCreateStreamKHR(const EGLint* attrib_list) const {
     MOZ_ASSERT(IsExtensionSupported(EGLExtension::KHR_stream));
     return mLib->fCreateStreamKHR(mDisplay, attrib_list);
@@ -759,7 +771,7 @@ class EglDisplay final {
     return mLib->fQueryStreamKHR(mDisplay, stream, attribute, value);
   }
 
-  // KHR_stream_consumer_gltexture
+  
   EGLBoolean fStreamConsumerGLTextureExternalKHR(EGLStreamKHR stream) const {
     MOZ_ASSERT(
         IsExtensionSupported(EGLExtension::KHR_stream_consumer_gltexture));
@@ -778,7 +790,7 @@ class EglDisplay final {
     return mLib->fStreamConsumerReleaseKHR(mDisplay, stream);
   }
 
-  // NV_stream_consumer_gltexture_yuv
+  
   EGLBoolean fStreamConsumerGLTextureExternalAttribsNV(
       EGLStreamKHR stream, const EGLAttrib* attrib_list) const {
     MOZ_ASSERT(
@@ -787,7 +799,7 @@ class EglDisplay final {
                                                            attrib_list);
   }
 
-  // ANGLE_stream_producer_d3d_texture
+  
   EGLBoolean fCreateStreamProducerD3DTextureANGLE(
       EGLStreamKHR stream, const EGLAttrib* attrib_list) const {
     MOZ_ASSERT(
@@ -804,7 +816,7 @@ class EglDisplay final {
                                             attrib_list);
   }
 
-  // EGL_EXT_swap_buffers_with_damage / EGL_KHR_swap_buffers_with_damage
+  
   EGLBoolean fSwapBuffersWithDamage(EGLSurface surface, const EGLint* rects,
                                     EGLint n_rects) {
     MOZ_ASSERT(
@@ -814,7 +826,7 @@ class EglDisplay final {
   }
 };
 
-} /* namespace gl */
-} /* namespace mozilla */
+} 
+} 
 
-#endif /* GLLIBRARYEGL_H_ */
+#endif 
