@@ -5169,8 +5169,7 @@ bool nsBlockFrame::DrainOverflowLines() {
       
       
       auto HasOverflowContainers = [this]() -> bool {
-        return GetOverflowContainers() ||
-               GetPropTableFrames(ExcessOverflowContainersProperty());
+        return GetOverflowContainers() || GetExcessOverflowContainers();
       };
       nsFrameList ocContinuations;
       if (HasOverflowContainers()) {
