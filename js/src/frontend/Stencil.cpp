@@ -410,8 +410,12 @@ static bool InstantiateScopes(JSContext* cx, CompilationInfo& compilationInfo) {
 
 
 
-static bool SetTypeForExposedFunctions(JSContext* cx,
-                                       CompilationInfo& compilationInfo) {
+
+
+
+
+static bool SetTypeAndNameForExposedFunctions(
+    JSContext* cx, CompilationInfo& compilationInfo) {
   for (auto item : compilationInfo.functionScriptStencils()) {
     auto& stencil = item.stencil;
     auto& fun = item.function;
@@ -428,6 +432,18 @@ static bool SetTypeForExposedFunctions(JSContext* cx,
     if (!JSFunction::setTypeForScriptedFunction(cx, fun,
                                                 stencil.isSingletonFunction)) {
       return false;
+    }
+
+    
+    
+    if (fun->displayAtom() == nullptr) {
+      if (stencil.functionFlags.hasInferredName()) {
+        fun->setInferredName(stencil.functionAtom);
+      }
+
+      if (stencil.functionFlags.hasGuessedAtom()) {
+        fun->setGuessedAtom(stencil.functionAtom);
+      }
     }
   }
 
@@ -541,18 +557,6 @@ static void UpdateEmittedInnerFunctions(CompilationInfo& compilationInfo) {
         script->setMemberInitializers(*stencil.memberInitializers);
       }
     }
-
-    
-    
-    if (fun->displayAtom() == nullptr) {
-      if (stencil.functionFlags.hasInferredName()) {
-        fun->setInferredName(stencil.functionAtom);
-      }
-
-      if (stencil.functionFlags.hasGuessedAtom()) {
-        fun->setGuessedAtom(stencil.functionAtom);
-      }
-    }
   }
 }
 
@@ -626,7 +630,7 @@ bool CompilationInfo::instantiateStencils() {
     return false;
   }
 
-  if (!SetTypeForExposedFunctions(cx, *this)) {
+  if (!SetTypeAndNameForExposedFunctions(cx, *this)) {
     return false;
   }
 
