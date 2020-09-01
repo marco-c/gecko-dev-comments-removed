@@ -31,7 +31,9 @@
 
 
 
-SK_API extern SkTypeface* SkCreateTypefaceFromCTFont(CTFontRef, CFTypeRef = NULL);
+SK_API extern SkTypeface* SkCreateTypefaceFromCTFont(CTFontRef, CFTypeRef = NULL,
+                                                     const SkFontStyle* = nullptr,
+                                                     const CTFontSymbolicTraits* = nullptr);
 
 
 
