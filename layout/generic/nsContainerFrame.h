@@ -832,13 +832,6 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  void SetPropTableFrames(nsFrameList* aFrameList,
-                          FrameListPropertyDescriptor aProperty);
-
-  
-
-
-
 
   void SafelyDestroyFrameListProp(nsIFrame* aDestructRoot,
                                   PostDestroyData& aPostDestroyData,
