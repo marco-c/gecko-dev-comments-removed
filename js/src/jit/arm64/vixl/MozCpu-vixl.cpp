@@ -94,6 +94,11 @@ void CPU::EnsureIAndDCacheCoherency(void *address, size_t length) {
   
   
   
+  
+  
+  
+  
+  
   using js::jit::SimulatorProcess;
   js::jit::AutoLockSimulatorCache alsc;
   if (length > 0) {
