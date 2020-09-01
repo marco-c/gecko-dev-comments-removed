@@ -9,7 +9,6 @@
 
 #include "chrome/common/ipc_channel.h"
 
-#include <queue>
 #include <string>
 
 #include "base/message_loop.h"
@@ -17,6 +16,7 @@
 #include "nsISupportsImpl.h"
 
 #include "mozilla/Maybe.h"
+#include "mozilla/Queue.h"
 #include "mozilla/UniquePtr.h"
 
 namespace IPC {
@@ -85,7 +85,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   Listener* listener_;
 
   
-  std::queue<mozilla::UniquePtr<Message>> output_queue_;
+  mozilla::Queue<mozilla::UniquePtr<Message>, 64> output_queue_;
 
   
   

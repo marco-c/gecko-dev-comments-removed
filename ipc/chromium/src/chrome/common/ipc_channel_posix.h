@@ -11,7 +11,6 @@
 
 #include <sys/socket.h>  
 
-#include <queue>
 #include <string>
 #include <vector>
 #include <list>
@@ -21,6 +20,7 @@
 #include "chrome/common/file_descriptor_set_posix.h"
 
 #include "mozilla/Maybe.h"
+#include "mozilla/Queue.h"
 #include "mozilla/UniquePtr.h"
 
 namespace IPC {
@@ -97,7 +97,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   Listener* listener_;
 
   
-  std::queue<mozilla::UniquePtr<Message>> output_queue_;
+  mozilla::Queue<mozilla::UniquePtr<Message>, 64> output_queue_;
 
   
   size_t input_buf_offset_;
