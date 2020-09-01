@@ -76,10 +76,7 @@ inline bool NativeTemplateObject::hasDynamicSlots() const {
 }
 
 inline uint32_t NativeTemplateObject::numDynamicSlots() const {
-  
-  
-  return NativeObject::dynamicSlotsCount(numFixedSlots(), slotSpan(),
-                                         obj_->getClass());
+  return asNative().numDynamicSlots();
 }
 
 inline uint32_t NativeTemplateObject::numUsedFixedSlots() const {

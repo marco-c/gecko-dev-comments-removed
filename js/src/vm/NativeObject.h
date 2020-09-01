@@ -897,6 +897,8 @@ class NativeObject : public JSObject {
   bool hasDynamicSlots() const { return !!slots_; }
 
   
+  MOZ_ALWAYS_INLINE uint32_t calculateDynamicSlots() const;
+
   MOZ_ALWAYS_INLINE uint32_t numDynamicSlots() const;
 
   bool empty() const { return lastProperty()->isEmptyShape(); }
@@ -1198,12 +1200,10 @@ class NativeObject : public JSObject {
 
 
 
-
-
-  static MOZ_ALWAYS_INLINE uint32_t dynamicSlotsCount(uint32_t nfixed,
-                                                      uint32_t span,
-                                                      const JSClass* clasp);
-  static MOZ_ALWAYS_INLINE uint32_t dynamicSlotsCount(Shape* shape);
+  static MOZ_ALWAYS_INLINE uint32_t calculateDynamicSlots(uint32_t nfixed,
+                                                          uint32_t span,
+                                                          const JSClass* clasp);
+  static MOZ_ALWAYS_INLINE uint32_t calculateDynamicSlots(Shape* shape);
 
   ObjectSlots* getSlotsHeader() const { return ObjectSlots::fromSlots(slots_); }
 
