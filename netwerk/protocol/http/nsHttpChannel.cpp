@@ -1931,8 +1931,6 @@ nsresult nsHttpChannel::CallOnStartRequest() {
     return mStatus;
   }
 
-  mTracingEnabled = false;
-
   
   
   auto onStartGuard = MakeScopeExit([&] {
@@ -2031,6 +2029,7 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   
   
+  bool mustRunStreamFilterInParent = false;
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(this, parentChannel);
   RefPtr<DocumentLoadListener> docListener = do_QueryObject(parentChannel);
@@ -2050,10 +2049,38 @@ nsresult nsHttpChannel::CallOnStartRequest() {
                                         getter_AddRefs(fromListener));
         if (NS_SUCCEEDED(rv)) {
           mListener = fromListener;
+          mustRunStreamFilterInParent = true;
         }
       }
     }
   }
+
+  
+  
+  
+  
+  
+  
+  for (StreamFilterRequest& request : mStreamFilterRequests) {
+    if (mustRunStreamFilterInParent) {
+      mozilla::ipc::Endpoint<extensions::PStreamFilterParent> parent;
+      mozilla::ipc::Endpoint<extensions::PStreamFilterChild> child;
+      nsresult rv = extensions::PStreamFilter::CreateEndpoints(
+          base::GetCurrentProcId(), request.mChildProcessId, &parent, &child);
+      if (NS_FAILED(rv)) {
+        request.mPromise->Reject(false, __func__);
+      } else {
+        extensions::StreamFilterParent::Attach(this, std::move(parent));
+        request.mPromise->Resolve(std::move(child), __func__);
+      }
+    } else {
+      docListener->AttachStreamFilter(request.mChildProcessId)
+          ->ChainTo(request.mPromise.forget(), __func__);
+    }
+    request.mPromise = nullptr;
+  }
+  mStreamFilterRequests.Clear();
+  mTracingEnabled = false;
 
   if (mResponseHead && !mResponseHead->HasContentCharset())
     mResponseHead->SetContentCharset(mContentCharsetHint);
@@ -7172,15 +7199,23 @@ auto nsHttpChannel::AttachStreamFilter(base::ProcessId aChildProcessId)
   LOG(("nsHttpChannel::AttachStreamFilter [this=%p]", this));
   MOZ_ASSERT(!mOnStartRequestCalled);
 
+  if (!ProcessId()) {
+    return ChildEndpointPromise::CreateAndReject(false, __func__);
+  }
+
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(this, parentChannel);
 
+  
+  
+  
+  
+  
   if (RefPtr<DocumentLoadListener> docParent = do_QueryObject(parentChannel)) {
-    return docParent->AttachStreamFilter(aChildProcessId);
-  }
-
-  if (!ProcessId()) {
-    return ChildEndpointPromise::CreateAndReject(false, __func__);
+    StreamFilterRequest* request = mStreamFilterRequests.AppendElement();
+    request->mPromise = new ChildEndpointPromise::Private(__func__);
+    request->mChildProcessId = aChildProcessId;
+    return request->mPromise;
   }
 
   mozilla::ipc::Endpoint<extensions::PStreamFilterParent> parent;
