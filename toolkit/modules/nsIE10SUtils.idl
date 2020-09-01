@@ -15,6 +15,11 @@ interface nsIURI;
 
 [scriptable, uuid(1e18680e-052d-4509-a17e-678f5c495e02)]
 interface nsIE10SUtils : nsISupports {
+  cenum RemoteWorkerType: 8 {
+    REMOTE_WORKER_TYPE_SHARED,
+    REMOTE_WORKER_TYPE_SERVICE,
+  };
+
   
 
 
@@ -39,4 +44,28 @@ interface nsIE10SUtils : nsISupports {
                                         in AUTF8String aPreferredRemoteType,
                                         in nsIPrincipal aCurrentPrincipal,
                                         in boolean aIsSubframe);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  AUTF8String getRemoteTypeForWorkerPrincipal(in nsIPrincipal aPrincipal,
+                                              in nsIE10SUtils_RemoteWorkerType aWorkerType,
+                                              in boolean aIsMultiProcess,
+                                              in boolean aIsFission,
+                                              in AUTF8String aPreferredRemoteType);
 };

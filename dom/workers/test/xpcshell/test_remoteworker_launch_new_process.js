@@ -21,9 +21,7 @@ do_get_profile(true);
 
 AddonTestUtils.init(this);
 
-const server = createHttpServer({
-  hosts: ["localhost", "example.org"],
-});
+const server = createHttpServer({ hosts: ["localhost"] });
 
 server.registerPathHandler("/sw.js", (request, response) => {
   info(`/sw.js is being requested: ${JSON.stringify(request)}`);
@@ -41,23 +39,8 @@ add_task(async function setup_prefs() {
   
   Services.prefs.setBoolPref("dom.serviceWorkers.testing.enabled", true);
 
-  
-  
-  Services.prefs.setBoolPref(
-    "browser.tabs.remote.separatePrivilegedMozillaWebContentProcess",
-    true
-  );
-  Services.prefs.setCharPref(
-    "browser.tabs.remote.separatedMozillaDomains",
-    "example.org"
-  );
-
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("dom.serviceWorkers.testing.enabled");
-    Services.prefs.clearUserPref(
-      "browser.tabs.remote.separatePrivilegedMozillaWebContentProcess"
-    );
-    Services.prefs.clearUserPref("browser.tabs.remote.separatedMozillaDomains");
   });
 });
 
@@ -96,24 +79,9 @@ add_task(async function launch_remoteworkers_in_new_processes() {
     })}`
   );
 
-  
-  const swRegInfoPriv = await swm.registerForTest(
-    ssm.createContentPrincipal(Services.io.newURI("http://example.org"), {}),
-    "http://example.org/scope",
-    "http://example.org/sw.js"
-  );
-  swRegInfoPriv.QueryInterface(Ci.nsIServiceWorkerRegistrationInfo);
-
-  info(
-    `privilegedmozilla service worker registered: ${JSON.stringify({
-      principal: swRegInfoPriv.principal.spec,
-      scope: swRegInfoPriv.scope,
-    })}`
-  );
-
   info("Wait new process to be launched");
   await TestUtils.waitForCondition(() => {
-    return Services.ppmm.childCount - initialChildCount >= 2;
+    return Services.ppmm.childCount - initialChildCount >= 1;
   }, "wait for a new child processes to be started");
 
   
@@ -122,13 +90,7 @@ add_task(async function launch_remoteworkers_in_new_processes() {
   
   info("Wait for webcontent worker to become active");
   await TestUtils.waitForCondition(
-    () => swRegInfoPriv.activeWorker,
-    `wait workers for scope ${swRegInfoPriv.scope} to be active`
-  );
-
-  info("Wait for privilegedmozille worker to become active");
-  await TestUtils.waitForCondition(
-    () => swRegInfoPriv.activeWorker,
-    `wait workers for scope ${swRegInfoPriv.scope} to be active`
+    () => swRegInfoWeb.activeWorker,
+    `wait workers for scope ${swRegInfoWeb.scope} to be active`
   );
 });

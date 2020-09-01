@@ -165,7 +165,8 @@ function validatedWebRemoteType(
   aTargetUri,
   aCurrentUri,
   aResultPrincipal,
-  aRemoteSubframes
+  aRemoteSubframes,
+  aIsWorker = false
 ) {
   
   
@@ -185,6 +186,15 @@ function validatedWebRemoteType(
   
   
   if (aRemoteSubframes && hasPotentiallyWebHandledScheme(aTargetUri)) {
+    
+    
+    if (aIsWorker) {
+      throw Components.Exception(
+        "Unexpected remote worker with a web handled scheme",
+        Cr.NS_ERROR_UNEXPECTED
+      );
+    }
+
     if (
       Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT &&
       Services.appinfo.remoteType.startsWith(FISSION_WEB_REMOTE_TYPE + "=")
@@ -194,6 +204,7 @@ function validatedWebRemoteType(
       
       return Services.appinfo.remoteType;
     }
+
     
     
     
@@ -218,7 +229,7 @@ function validatedWebRemoteType(
   
   
   const sm = Services.scriptSecurityManager;
-  if (sm.inFileURIAllowlist(aTargetUri)) {
+  if (!aIsWorker && sm.inFileURIAllowlist(aTargetUri)) {
     return FILE_REMOTE_TYPE;
   }
 
@@ -260,7 +271,11 @@ function validatedWebRemoteType(
     return aPreferredRemoteType;
   }
 
-  if (aPreferredRemoteType == FILE_REMOTE_TYPE && !aRemoteSubframes) {
+  if (
+    aPreferredRemoteType == FILE_REMOTE_TYPE &&
+    !aRemoteSubframes &&
+    !aIsWorker
+  ) {
     E10SUtils.log().debug("checking allowLinkedWebInFileUriProcess");
     if (!aCurrentUri) {
       E10SUtils.log().debug("No aCurrentUri");
@@ -290,6 +305,12 @@ function validatedWebRemoteType(
   return WEB_REMOTE_TYPE;
 }
 
+
+const SYSTEM_WORKERS_REMOTE_TYPES_ALLOWED = [
+  NOT_REMOTE,
+  PRIVILEGEDABOUT_REMOTE_TYPE,
+];
+
 var E10SUtils = {
   DEFAULT_REMOTE_TYPE,
   NOT_REMOTE,
@@ -300,6 +321,7 @@ var E10SUtils = {
   PRIVILEGEDABOUT_REMOTE_TYPE,
   PRIVILEGEDMOZILLA_REMOTE_TYPE,
   LARGE_ALLOCATION_REMOTE_TYPE,
+  FISSION_WEB_REMOTE_TYPE,
 
   useCrossOriginOpenerPolicy() {
     return useCrossOriginOpenerPolicy;
@@ -425,7 +447,8 @@ var E10SUtils = {
     aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
     aCurrentUri = null,
     aResultPrincipal = null,
-    aIsSubframe = false
+    aIsSubframe = false,
+    aIsWorker = false
   ) {
     if (!aMultiProcess) {
       return NOT_REMOTE;
@@ -523,6 +546,15 @@ var E10SUtils = {
         
         
         if (aURI.scheme.startsWith("ext+")) {
+          
+          
+          if (aIsWorker) {
+            throw Components.Exception(
+              "Unexpected remote worker with extension handled scheme",
+              Cr.NS_ERROR_UNEXPECTED
+            );
+          }
+
           return WebExtensionPolicy.useRemoteWebExtensions
             ? EXTENSION_REMOTE_TYPE
             : NOT_REMOTE;
@@ -536,6 +568,15 @@ var E10SUtils = {
         
         
         if (aURI instanceof Ci.nsINestedURI) {
+          
+          
+          if (aIsWorker) {
+            throw Components.Exception(
+              "Unexpected worker with a NestedURI",
+              Cr.NS_ERROR_UNEXPECTED
+            );
+          }
+
           let innerURI = aURI.QueryInterface(Ci.nsINestedURI).innerURI;
           return this.getRemoteTypeForURIObject(
             innerURI,
@@ -557,7 +598,8 @@ var E10SUtils = {
           aURI,
           aCurrentUri,
           aResultPrincipal,
-          aRemoteSubframes
+          aRemoteSubframes,
+          aIsWorker
         );
         log.debug(`  validatedWebRemoteType() returning: ${remoteType}`);
         return remoteType;
@@ -627,6 +669,90 @@ var E10SUtils = {
       currentURI,
       aPrincipal,
       aIsSubframe
+    );
+  },
+
+  getRemoteTypeForWorkerPrincipal(
+    aPrincipal,
+    aWorkerType,
+    aIsMultiProcess,
+    aIsFission,
+    aPreferredRemoteType = DEFAULT_REMOTE_TYPE
+  ) {
+    if (aPrincipal.isExpandedPrincipal) {
+      
+      
+      
+      throw new Error("Unexpected expanded principal worker");
+    }
+
+    if (
+      aWorkerType === Ci.nsIE10SUtils.REMOTE_WORKER_TYPE_SERVICE &&
+      !aPrincipal.isContentPrincipal
+    ) {
+      
+      throw new Error("Unexpected system or null principal service worker");
+    }
+
+    if (!aIsMultiProcess) {
+      
+      return NOT_REMOTE;
+    }
+
+    if (
+      
+      
+      
+      aPreferredRemoteType === LARGE_ALLOCATION_REMOTE_TYPE ||
+      
+      
+      
+      
+      aPreferredRemoteType?.startsWith(WEB_REMOTE_COOP_COEP_TYPE_PREFIX)
+    ) {
+      aPreferredRemoteType = DEFAULT_REMOTE_TYPE;
+    }
+
+    
+    
+    
+    if (
+      aPrincipal.isSystemPrincipal &&
+      SYSTEM_WORKERS_REMOTE_TYPES_ALLOWED.includes(aPreferredRemoteType)
+    ) {
+      return aPreferredRemoteType;
+    }
+
+    
+    
+    
+    if (aPrincipal.isNullPrincipal) {
+      return aPreferredRemoteType === NOT_REMOTE
+        ? DEFAULT_REMOTE_TYPE
+        : aPreferredRemoteType;
+    }
+
+    
+    if (aPrincipal.isContentPrincipal) {
+      
+      
+      
+      
+      return E10SUtils.getRemoteTypeForURIObject(
+        aPrincipal.URI,
+        aIsMultiProcess,
+        aIsFission,
+        aPreferredRemoteType,
+        null,
+        aPrincipal,
+        false, 
+        true 
+      );
+    }
+
+    
+    throw new Error(
+      "Failed to get a remoteType for a non content principal worker"
     );
   },
 
