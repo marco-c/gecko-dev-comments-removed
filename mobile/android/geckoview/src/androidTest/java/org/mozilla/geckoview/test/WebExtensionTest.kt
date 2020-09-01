@@ -120,15 +120,15 @@ class WebExtensionTest : BaseSessionTest() {
         }
 
         assertThat("enabled should match",
-                extension.metaData!!.enabled, equalTo(enabled))
+                extension.metaData.enabled, equalTo(enabled))
         assertThat("userDisabled should match",
-                extension.metaData!!.disabledFlags and DisabledFlags.USER > 0,
+                extension.metaData.disabledFlags and DisabledFlags.USER > 0,
                 equalTo(userDisabled))
         assertThat("appDisabled should match",
-                extension.metaData!!.disabledFlags and DisabledFlags.APP > 0,
+                extension.metaData.disabledFlags and DisabledFlags.APP > 0,
                 equalTo(appDisabled))
         assertThat("blocklistDisabled should match",
-                extension.metaData!!.disabledFlags and DisabledFlags.BLOCKLIST > 0,
+                extension.metaData.disabledFlags and DisabledFlags.BLOCKLIST > 0,
                 equalTo(blocklistDisabled))
     }
 
@@ -190,15 +190,15 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
             @AssertCalled
             override fun onInstallPrompt(extension: WebExtension): GeckoResult<AllowOrDeny> {
-                assertEquals(extension.metaData!!.description,
+                assertEquals(extension.metaData.description,
                         "Adds a red border to all webpages matching example.com.")
-                assertEquals(extension.metaData!!.name, "Borderify")
-                assertEquals(extension.metaData!!.version, "1.0")
+                assertEquals(extension.metaData.name, "Borderify")
+                assertEquals(extension.metaData.version, "1.0")
                 assertEquals(extension.isBuiltIn, false)
-                assertEquals(extension.metaData!!.enabled, false)
-                assertEquals(extension.metaData!!.signedState,
+                assertEquals(extension.metaData.enabled, false)
+                assertEquals(extension.metaData.signedState,
                         WebExtension.SignedStateFlags.SIGNED)
-                assertEquals(extension.metaData!!.blocklistState,
+                assertEquals(extension.metaData.blocklistState,
                         WebExtension.BlocklistStateFlags.NOT_BLOCKED)
 
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW)
@@ -254,14 +254,14 @@ class WebExtensionTest : BaseSessionTest() {
 
         
         assertTrue(mainSession.settings.usePrivateMode)
-        assertFalse(borderify.metaData!!.allowedInPrivateBrowsing)
+        assertFalse(borderify.metaData.allowedInPrivateBrowsing)
         
         assertBodyBorderEqualTo("")
 
         borderify = sessionRule.waitForResult(
                 controller.setAllowedInPrivateBrowsing(borderify, true))
 
-        assertTrue(borderify.metaData!!.allowedInPrivateBrowsing)
+        assertTrue(borderify.metaData.allowedInPrivateBrowsing)
         
         
         mainSession.reload();
@@ -271,7 +271,7 @@ class WebExtensionTest : BaseSessionTest() {
         borderify = sessionRule.waitForResult(
                 controller.setAllowedInPrivateBrowsing(borderify, false))
 
-        assertFalse(borderify.metaData!!.allowedInPrivateBrowsing)
+        assertFalse(borderify.metaData.allowedInPrivateBrowsing)
         
         
         mainSession.reload();
@@ -302,7 +302,7 @@ class WebExtensionTest : BaseSessionTest() {
         val dummy = sessionRule.waitForResult(
                 controller.install("resource://android/assets/web_extensions/dummy.xpi"))
 
-        val metadata = dummy.metaData!!
+        val metadata = dummy.metaData
         assertTrue((metadata.optionsPageUrl ?: "").matches("^moz-extension://[0-9a-f\\-]*/options.html$".toRegex()));
         assertEquals(metadata.openOptionsPageInTab, true);
         assertTrue(metadata.baseUrl.matches("^moz-extension://[0-9a-f\\-]*/$".toRegex()))
@@ -404,11 +404,11 @@ class WebExtensionTest : BaseSessionTest() {
         val borderify = sessionRule.waitForResult(controller.install(
                 "resource://android/assets/web_extensions/borderify-unsigned.xpi")
                 .then { extension ->
-                    assertEquals(extension!!.metaData!!.signedState,
+                    assertEquals(extension!!.metaData.signedState,
                             WebExtension.SignedStateFlags.MISSING)
-                    assertEquals(extension.metaData!!.blocklistState,
+                    assertEquals(extension.metaData.blocklistState,
                             WebExtension.BlocklistStateFlags.NOT_BLOCKED)
-                    assertEquals(extension.metaData!!.name, "Borderify")
+                    assertEquals(extension.metaData.name, "Borderify")
                     GeckoResult.fromValue(extension)
                 })
 
@@ -1202,7 +1202,7 @@ class WebExtensionTest : BaseSessionTest() {
                 "extension-page-update@tests.mozilla.org"))
 
         assertThat("ID match", ensure.id, equalTo(extension.id))
-        assertThat("version match", ensure.metaData!!.version, equalTo(extension.metaData!!.version))
+        assertThat("version match", ensure.metaData.version, equalTo(extension.metaData.version))
 
         
         sessionRule.waitForResult(pageStop)
@@ -1219,7 +1219,7 @@ class WebExtensionTest : BaseSessionTest() {
                 { mainSession.webExtensionController.setTabDelegate(extension, null) },
                 object : WebExtension.SessionTabDelegate {})
 
-        val unregister = controller.uninstall(extension)
+        val uninstall = controller.uninstall(extension)
 
         sessionRule.waitUntilCalled(object : WebExtension.SessionTabDelegate {
             @AssertCalled
@@ -1231,7 +1231,7 @@ class WebExtensionTest : BaseSessionTest() {
             }
         })
 
-        sessionRule.waitForResult(unregister)
+        sessionRule.waitForResult(uninstall)
     }
 
     @Test
@@ -1298,7 +1298,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
             @AssertCalled
             override fun onInstallPrompt(extension: WebExtension): GeckoResult<AllowOrDeny> {
-                assertEquals(extension.metaData!!.version, "1.0")
+                assertEquals(extension.metaData.version, "1.0")
 
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW)
             }
@@ -1314,7 +1314,7 @@ class WebExtensionTest : BaseSessionTest() {
         assertBodyBorderEqualTo("red")
 
         val update2 = sessionRule.waitForResult(controller.update(update1));
-        assertEquals(update2.metaData!!.version, "2.0")
+        assertEquals(update2.metaData.version, "2.0")
 
         mainSession.reload()
         sessionRule.waitForPageStop()
@@ -1350,7 +1350,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
             @AssertCalled
             override fun onInstallPrompt(extension: WebExtension): GeckoResult<AllowOrDeny> {
-                assertEquals(extension.metaData!!.version, "1.0")
+                assertEquals(extension.metaData.version, "1.0")
 
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW)
             }
@@ -1371,8 +1371,8 @@ class WebExtensionTest : BaseSessionTest() {
                                         updatedExtension: WebExtension,
                                         newPermissions: Array<String>,
                                         newOrigins: Array<String>): GeckoResult<AllowOrDeny> {
-                assertEquals(currentlyInstalled.metaData!!.version, "1.0")
-                assertEquals(updatedExtension.metaData!!.version, "2.0")
+                assertEquals(currentlyInstalled.metaData.version, "1.0")
+                assertEquals(updatedExtension.metaData.version, "2.0")
                 assertEquals(newPermissions.size, 1)
                 assertEquals(newPermissions[0], "tabs")
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW);
@@ -1380,7 +1380,7 @@ class WebExtensionTest : BaseSessionTest() {
         })
 
         val update2 = sessionRule.waitForResult(controller.update(update1));
-        assertEquals(update2.metaData!!.version, "2.0")
+        assertEquals(update2.metaData.version, "2.0")
 
         mainSession.reload()
         sessionRule.waitForPageStop()
@@ -1416,7 +1416,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
             @AssertCalled
             override fun onInstallPrompt(extension: WebExtension): GeckoResult<AllowOrDeny> {
-                assertEquals(extension.metaData!!.version, "2.0")
+                assertEquals(extension.metaData.version, "2.0")
 
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW)
             }
@@ -1462,7 +1462,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
             @AssertCalled
             override fun onInstallPrompt(extension: WebExtension): GeckoResult<AllowOrDeny> {
-                assertEquals(extension.metaData!!.version, "1.0")
+                assertEquals(extension.metaData.version, "1.0")
 
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW)
             }
@@ -1483,8 +1483,8 @@ class WebExtensionTest : BaseSessionTest() {
                                         updatedExtension: WebExtension,
                                         newPermissions: Array<String>,
                                         newOrigins: Array<String>): GeckoResult<AllowOrDeny> {
-                assertEquals(currentlyInstalled.metaData!!.version, "1.0")
-                assertEquals(updatedExtension.metaData!!.version, "2.0")
+                assertEquals(currentlyInstalled.metaData.version, "1.0")
+                assertEquals(updatedExtension.metaData.version, "2.0")
                 return GeckoResult.fromValue(AllowOrDeny.DENY);
             }
         })
@@ -1560,7 +1560,7 @@ class WebExtensionTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebExtensionController.PromptDelegate {
             @AssertCalled
             override fun onInstallPrompt(extension: WebExtension): GeckoResult<AllowOrDeny> {
-                assertEquals(extension.metaData!!.version, "1.0")
+                assertEquals(extension.metaData.version, "1.0")
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW)
             }
         })
@@ -1688,7 +1688,7 @@ class WebExtensionTest : BaseSessionTest() {
             @AssertCalled(count = 1)
             override fun onOpenOptionsPage(source: WebExtension) {
                 assertThat(
-                    source.metaData!!.optionsPageUrl,
+                    source.metaData.optionsPageUrl,
                     endsWith("options.html"))
                 assertEquals(optionsExtension!!.id, source.id)
                 openOptionsPageResult.complete(null)
