@@ -184,7 +184,7 @@ class MOZ_RAII BaseAutoLock {
   
   
   void AssertOwns(const T& aMutex) const {
-    MOZ_ASSERT(&aMutex == &aMutex);
+    MOZ_ASSERT(&aMutex == &mLock);
     mLock.AssertCurrentThreadOwns();
   }
 
