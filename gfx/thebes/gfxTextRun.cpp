@@ -2990,7 +2990,7 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
   
   
   if (aPrevMatchedFont && IsClusterExtender(aCh)) {
-    if (aPrevMatchedFont->HasCharacter(aCh)) {
+    if (aPrevMatchedFont->HasCharacter(aCh) || IsDefaultIgnorable(aCh)) {
       return aPrevMatchedFont;
     }
     
