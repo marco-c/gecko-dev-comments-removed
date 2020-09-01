@@ -1179,33 +1179,20 @@ void GlobalHelperThreadState::finishThreads() {
 }
 
 bool GlobalHelperThreadState::ensureContextListForThreadCount() {
+  AutoLockHelperThreadState lock;
+
   if (helperContexts_.length() >= threadCount) {
     return true;
   }
-  AutoLockHelperThreadState lock;
 
-  
-  
-  
   while (helperContexts_.length() < threadCount) {
-    UniquePtr<JSContext> cx =
-        js::MakeUnique<JSContext>(nullptr, JS::ContextOptions());
-    if (!cx) {
-      return false;
-    }
-
-    
-    
-    
-    cx->setHelperThread(lock);
-    if (!cx->init(ContextKind::HelperThread)) {
-      return false;
-    }
-    cx->clearHelperThread(lock);
-    if (!helperContexts_.append(cx.release())) {
+    auto cx = js::MakeUnique<JSContext>(nullptr, JS::ContextOptions());
+    if (!cx || !cx->init(ContextKind::HelperThread) ||
+        !helperContexts_.append(cx.release())) {
       return false;
     }
   }
+
   return true;
 }
 
@@ -1222,11 +1209,7 @@ JSContext* GlobalHelperThreadState::getFirstUnusedContext(
 void GlobalHelperThreadState::destroyHelperContexts(
     AutoLockHelperThreadState& lock) {
   while (helperContexts_.length() > 0) {
-    JSContext* cx = helperContexts_.popCopy();
-    
-    
-    cx->setHelperThread(lock);
-    js_delete(cx);
+    js_delete(helperContexts_.popCopy());
   }
 }
 
