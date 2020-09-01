@@ -3432,6 +3432,7 @@ nsDocumentViewer::GetCurrentSheetFrameAndPageNumber() const {
 
   
   auto [seqFrame, pageCount] = mPrintJob->GetSeqFrameAndCountPages();
+  Unused << pageCount;
   if (!seqFrame) {
     return {nullptr, 0};
   }
