@@ -167,60 +167,6 @@ var PrintUtils = {
 
 
 
-
-
-
-
-
-
-  updatePrintPreview(
-    sourceBrowsingContext,
-    printPreviewBrowser,
-    printSettings
-  ) {
-    let stack = printPreviewBrowser.parentElement;
-    stack.setAttribute("rendering", true);
-
-    return new Promise(resolve => {
-      printPreviewBrowser.messageManager.addMessageListener(
-        "Printing:Preview:UpdatePageCount",
-        function done(message) {
-          printPreviewBrowser.messageManager.removeMessageListener(
-            "Printing:Preview:UpdatePageCount",
-            done
-          );
-
-          stack.removeAttribute("rendering");
-
-          resolve(message.data.numPages);
-        }
-      );
-
-      printPreviewBrowser.messageManager.sendAsyncMessage(
-        "Printing:Preview:Enter",
-        {
-          changingBrowsers: false,
-          lastUsedPrinterName: printSettings.printerName,
-          simplifiedMode: false,
-          browsingContextId: sourceBrowsingContext.id,
-          outputFormat: printSettings.outputFormat,
-          startPageRange: printSettings.startPageRange,
-          endPageRange: printSettings.endPageRange,
-          printRange: printSettings.printRange,
-        }
-      );
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
   startPrintWindow(aBrowsingContext) {
     if (PRINT_TAB_MODAL && !PRINT_ALWAYS_SILENT) {
       this._openTabModalPrint(aBrowsingContext);
