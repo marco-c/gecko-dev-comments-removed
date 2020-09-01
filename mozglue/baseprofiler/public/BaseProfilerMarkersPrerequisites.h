@@ -15,6 +15,7 @@
 
 #ifdef MOZ_GECKO_PROFILER
 
+#  include "BaseProfilingCategory.h"
 #  include "mozilla/ProfileChunkedBuffer.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/UniquePtr.h"
@@ -225,6 +226,11 @@ class MarkerCategory {
     return mCategory;
   }
 
+  
+  
+  template <typename... Options>
+  MarkerOptions WithOptions(Options&&... aOptions) const;
+
  private:
   
   
@@ -363,6 +369,7 @@ class MarkerTiming {
  private:
   friend ProfileBufferEntryWriter::Serializer<MarkerTiming>;
   friend ProfileBufferEntryReader::Deserializer<MarkerTiming>;
+  friend MarkerOptions;
 
   
   
@@ -555,6 +562,74 @@ class MarkerInnerWindowId {
   static constexpr uint64_t scNoId = 0;
   uint64_t mInnerWindowId = scNoId;
 };
+
+
+
+
+
+
+
+class MarkerOptions {
+ public:
+  
+  constexpr MOZ_IMPLICIT MarkerOptions(const MarkerCategory& aCategory)
+      : mCategory(aCategory) {}
+
+  
+  template <typename... Options>
+  explicit MarkerOptions(const MarkerCategory& aCategory, Options&&... aOptions)
+      : mCategory(aCategory) {
+    (Set(std::forward<Options>(aOptions)), ...);
+  }
+
+  
+  MarkerOptions(const MarkerOptions&) = delete;
+  MarkerOptions& operator=(const MarkerOptions&) = delete;
+
+  
+  MarkerOptions(MarkerOptions&&) = default;
+  MarkerOptions& operator=(MarkerOptions&&) = default;
+
+  
+  [[nodiscard]] bool IsTimingUnspecified() const {
+    return mTiming.IsUnspecified();
+  }
+
+  
+  
+#  define FUNCTION_ON_MEMBER(NAME)                       \
+    MarkerOptions&& Set(Marker##NAME&& a##NAME) {        \
+      m##NAME = std::move(a##NAME);                      \
+      return std::move(*this);                           \
+    }                                                    \
+                                                         \
+    const Marker##NAME& NAME() const { return m##NAME; } \
+    Marker##NAME& NAME() { return m##NAME; }
+
+  FUNCTION_ON_MEMBER(Category);
+  FUNCTION_ON_MEMBER(ThreadId);
+  FUNCTION_ON_MEMBER(Timing);
+  FUNCTION_ON_MEMBER(Stack);
+  FUNCTION_ON_MEMBER(InnerWindowId);
+#  undef FUNCTION_ON_MEMBER
+
+ private:
+  friend ProfileBufferEntryReader::Deserializer<MarkerOptions>;
+
+  
+  constexpr MarkerOptions() = default;
+
+  MarkerCategory mCategory;
+  MarkerThreadId mThreadId;
+  MarkerTiming mTiming;
+  MarkerStack mStack;
+  MarkerInnerWindowId mInnerWindowId;
+};
+
+template <typename... Options>
+MarkerOptions MarkerCategory::WithOptions(Options&&... aOptions) const {
+  return MarkerOptions(*this, std::forward<Options>(aOptions)...);
+}
 
 }  
 
