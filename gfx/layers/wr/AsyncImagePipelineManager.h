@@ -245,15 +245,10 @@ class AsyncImagePipelineManager final {
 
   nsTArray<ImageCompositeNotificationInfo> mImageCompositeNotifications;
 
-  typedef std::vector<RefPtr<const wr::WebRenderPipelineInfo>>
-      PipelineInfoVector;
-
   
   
-  PipelineInfoVector mPendingUpdates;
-  
-  
-  std::vector<std::pair<wr::RenderedFrameId, PipelineInfoVector>>
+  std::vector<
+      std::pair<wr::RenderedFrameId, RefPtr<const wr::WebRenderPipelineInfo>>>
       mRenderSubmittedUpdates;
   Mutex mRenderSubmittedUpdatesLock;
 

@@ -539,9 +539,6 @@ void AsyncImagePipelineManager::NotifyPipelinesUpdated(
   MOZ_ASSERT(mLastCompletedFrameId <= aLastCompletedFrameId.mId);
   MOZ_ASSERT(aLatestFrameId.IsValid());
 
-  
-  
-  mPendingUpdates.push_back(std::move(aInfo));
   mLastCompletedFrameId = aLastCompletedFrameId.mId;
 
   {
@@ -550,9 +547,7 @@ void AsyncImagePipelineManager::NotifyPipelinesUpdated(
     MutexAutoLock lock(mRenderSubmittedUpdatesLock);
 
     
-    
-    mRenderSubmittedUpdates.emplace_back(aLatestFrameId,
-                                         std::move(mPendingUpdates));
+    mRenderSubmittedUpdates.emplace_back(aLatestFrameId, std::move(aInfo));
   }
 
   
@@ -569,7 +564,8 @@ void AsyncImagePipelineManager::ProcessPipelineUpdates() {
     return;
   }
 
-  std::vector<std::pair<wr::RenderedFrameId, PipelineInfoVector>>
+  std::vector<
+      std::pair<wr::RenderedFrameId, RefPtr<const wr::WebRenderPipelineInfo>>>
       submittedUpdates;
   {
     
@@ -581,15 +577,13 @@ void AsyncImagePipelineManager::ProcessPipelineUpdates() {
   
   
   for (auto update : submittedUpdates) {
-    for (auto pipelineInfo : update.second) {
-      auto& info = pipelineInfo->Raw();
+    auto& info = update.second->Raw();
 
-      for (auto& epoch : info.epochs) {
-        ProcessPipelineRendered(epoch.pipeline_id, epoch.epoch, update.first);
-      }
-      for (auto& removedPipeline : info.removed_pipelines) {
-        ProcessPipelineRemoved(removedPipeline, update.first);
-      }
+    for (auto& epoch : info.epochs) {
+      ProcessPipelineRendered(epoch.pipeline_id, epoch.epoch, update.first);
+    }
+    for (auto& removedPipeline : info.removed_pipelines) {
+      ProcessPipelineRemoved(removedPipeline, update.first);
     }
   }
   CheckForTextureHostsNotUsedByGPU();
