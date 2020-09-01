@@ -583,13 +583,6 @@ function synthesizeNativeMouseEvent(aTarget, aX, aY, aType, aObserver = null) {
   return true;
 }
 
-
-function promiseNativeMouseEvent(aTarget, aX, aY, aType) {
-  return new Promise(resolve => {
-    synthesizeNativeMouseEvent(aTarget, aX, aY, aType, resolve);
-  });
-}
-
 function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
   var pt = coordinatesRelativeToScreen(aX, aY, aElement);
   var utils = SpecialPowers.getDOMWindowUtils(
@@ -652,8 +645,7 @@ function moveMouseAndScrollWheelOver(
   dx,
   dy,
   testDriver,
-  waitForScroll = true,
-  scrollDelta = 10
+  waitForScroll = true
 ) {
   return synthesizeNativeMouseMoveAndWaitForMoveEvent(
     target,
@@ -666,7 +658,7 @@ function moveMouseAndScrollWheelOver(
           dx,
           dy,
           0,
-          -scrollDelta,
+          -10,
           testDriver
         );
       } else {
@@ -675,7 +667,7 @@ function moveMouseAndScrollWheelOver(
           dx,
           dy,
           0,
-          -scrollDelta,
+          -10,
           testDriver
         );
       }
@@ -690,18 +682,10 @@ function promiseMoveMouseAndScrollWheelOver(
   target,
   dx,
   dy,
-  waitForScroll = true,
-  scrollDelta = 10
+  waitForScroll = true
 ) {
   return new Promise(resolve => {
-    moveMouseAndScrollWheelOver(
-      target,
-      dx,
-      dy,
-      resolve,
-      waitForScroll,
-      scrollDelta
-    );
+    moveMouseAndScrollWheelOver(target, dx, dy, resolve, waitForScroll);
   });
 }
 
@@ -788,75 +772,6 @@ function* dragVerticalScrollbar(
       mouseY + distance,
       nativeMouseUpEventMsg(),
       testDriver
-    );
-  };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function promiseNativeMouseDrag(
-  target,
-  mouseX,
-  mouseY,
-  distanceX = 20,
-  distanceY = 20,
-  steps = 20
-) {
-  var targetElement = elementForTarget(target);
-  dump(
-    "Starting drag at " +
-      mouseX +
-      ", " +
-      mouseY +
-      " from top-left of #" +
-      targetElement.id +
-      "\n"
-  );
-
-  
-  await promiseNativeMouseEvent(
-    target,
-    mouseX,
-    mouseY,
-    nativeMouseMoveEventMsg()
-  );
-  
-  await promiseNativeMouseEvent(
-    target,
-    mouseX,
-    mouseY,
-    nativeMouseDownEventMsg()
-  );
-  
-  for (var s = 1; s <= steps; s++) {
-    let dx = distanceX * (s / steps);
-    let dy = distanceY * (s / steps);
-    dump(`Dragging to ${mouseX + dx}, ${mouseY + dy} from target\n`);
-    await promiseNativeMouseEvent(
-      target,
-      mouseX + dx,
-      mouseY + dy,
-      nativeMouseMoveEventMsg()
-    );
-  }
-
-  
-  return function() {
-    return promiseNativeMouseEvent(
-      target,
-      mouseX + distanceX,
-      mouseY + distanceY,
-      nativeMouseUpEventMsg()
     );
   };
 }

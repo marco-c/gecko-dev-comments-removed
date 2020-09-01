@@ -9296,9 +9296,7 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
         presShell->ScrollToVisual(presShell->GetVisualViewportOffset(),
                                   FrameMetrics::eRestore, ScrollMode::Instant);
       }
-    }
 
-    if (scrollableFrame->IsRootScrollFrameOfDocument()) {
       if (const Maybe<PresShell::VisualScrollUpdate>& visualUpdate =
               presShell->GetPendingVisualScrollUpdate()) {
         metrics.SetVisualDestination(
@@ -9306,9 +9304,6 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
         metrics.SetVisualScrollUpdateType(visualUpdate->mUpdateType);
         presShell->AcknowledgePendingVisualScrollUpdate();
       }
-    }
-
-    if (aIsRootContent) {
       
       
       
