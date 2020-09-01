@@ -16,6 +16,7 @@
 #include "frontend/BytecodeOffset.h"  
 #include "frontend/EmitterScope.h"    
 #include "frontend/NameOpEmitter.h"   
+#include "frontend/ParseNode.h"       
 #include "frontend/TDZCheckCache.h"   
 #include "js/RootingAPI.h"            
 #include "vm/BytecodeUtil.h"          
@@ -145,12 +146,6 @@ class MOZ_STACK_CLASS PropertyEmitter {
   
   
   
-  
-  
-  
-  
-  
-  
   enum class PropertyState {
     
     Start,
@@ -185,7 +180,6 @@ class MOZ_STACK_CLASS PropertyEmitter {
     
     SpreadOperand,
 
-    
     
     
     Init,
@@ -241,17 +235,9 @@ class MOZ_STACK_CLASS PropertyEmitter {
 
   
   
-  MOZ_MUST_USE bool emitInitProp(JS::Handle<JSAtom*> key);
-  MOZ_MUST_USE bool emitInitGetter(JS::Handle<JSAtom*> key);
-  MOZ_MUST_USE bool emitInitSetter(JS::Handle<JSAtom*> key);
+  MOZ_MUST_USE bool emitInit(AccessorType accessorType, HandleAtom key);
 
-  MOZ_MUST_USE bool emitInitIndexProp();
-  MOZ_MUST_USE bool emitInitIndexGetter();
-  MOZ_MUST_USE bool emitInitIndexSetter();
-
-  MOZ_MUST_USE bool emitInitComputedProp();
-  MOZ_MUST_USE bool emitInitComputedGetter();
-  MOZ_MUST_USE bool emitInitComputedSetter();
+  MOZ_MUST_USE bool emitInitIndexOrComputed(AccessorType accessorType);
 
  private:
   MOZ_MUST_USE MOZ_ALWAYS_INLINE bool prepareForProp(
