@@ -2560,14 +2560,16 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
           
           
           
-          nsresult rv = DeleteNodeWithTransaction(
-              MOZ_KnownLive(*scanFromCaretPointResult.BRElementPtr()));
-          if (NS_WARN_IF(Destroyed())) {
-            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-          }
+          nsresult rv = WhiteSpaceVisibilityKeeper::
+              DeleteContentNodeAndJoinTextNodesAroundIt(
+                  *this,
+                  MOZ_KnownLive(*scanFromCaretPointResult.BRElementPtr()),
+                  caretPoint);
           if (NS_FAILED(rv)) {
-            NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-            return EditActionResult(rv);
+            NS_WARNING(
+                "WhiteSpaceVisibilityKeeper::"
+                "DeleteContentNodeAndJoinTextNodesAroundIt() failed");
+            return EditActionHandled(rv);
           }
           if (SelectionRefPtr()->RangeCount() != 1) {
             NS_WARNING(
