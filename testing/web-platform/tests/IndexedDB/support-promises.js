@@ -196,7 +196,19 @@ const createBooksStore = (testCase, database) => {
       { keyPath: 'isbn', autoIncrement: true });
   store.createIndex('by_author', 'author');
   store.createIndex('by_title', 'title', { unique: true });
-  for (let record of BOOKS_RECORD_DATA)
+  for (const record of BOOKS_RECORD_DATA)
+      store.put(record);
+  return store;
+}
+
+
+
+const createBooksStoreWithoutAutoIncrement = (testCase, database) => {
+  const store = database.createObjectStore('books',
+      { keyPath: 'isbn' });
+  store.createIndex('by_author', 'author');
+  store.createIndex('by_title', 'title', { unique: true });
+  for (const record of BOOKS_RECORD_DATA)
       store.put(record);
   return store;
 }
