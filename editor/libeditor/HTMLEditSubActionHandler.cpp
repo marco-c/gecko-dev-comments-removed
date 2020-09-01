@@ -2569,12 +2569,39 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
             NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
             return EditActionResult(rv);
           }
-          if (!SelectionRefPtr()->RangeCount()) {
-            return EditActionHandled();
+          if (SelectionRefPtr()->RangeCount() != 1) {
+            NS_WARNING(
+                "Selection was unexpected after removing an invisible `<br>` "
+                "element");
+            return EditActionHandled(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
           }
-          
-          
           AutoRangeArray rangesToDelete(*SelectionRefPtr());
+          caretPoint = aRangesToDelete.GetStartPointOfFirstRange();
+          if (!caretPoint.IsSet()) {
+            NS_WARNING(
+                "New selection after deleting invisible `<br>` element was "
+                "invalid");
+            return EditActionHandled(NS_ERROR_FAILURE);
+          }
+          if (MaybeHasMutationEventListeners(
+                  NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED |
+                  NS_EVENT_BITS_MUTATION_NODEREMOVED |
+                  NS_EVENT_BITS_MUTATION_NODEREMOVEDFROMDOCUMENT)) {
+            
+            
+            WSRunScanner wsRunScannerAtCaret(*this, caretPoint);
+            WSScanResult scanFromCaretPointResult =
+                aDirectionAndAmount == nsIEditor::eNext
+                    ? wsRunScannerAtCaret
+                          .ScanNextVisibleNodeOrBlockBoundaryFrom(caretPoint)
+                    : wsRunScannerAtCaret
+                          .ScanPreviousVisibleNodeOrBlockBoundaryFrom(
+                              caretPoint);
+            if (scanFromCaretPointResult.ReachedBRElement() &&
+                !IsVisibleBRElement(scanFromCaretPointResult.BRElementPtr())) {
+              return EditActionHandled(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+            }
+          }
           EditActionResult result = HandleDeleteSelectionInternal(
               aDirectionAndAmount, aStripWrappers, rangesToDelete);
           NS_WARNING_ASSERTION(
