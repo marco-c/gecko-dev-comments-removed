@@ -203,26 +203,43 @@ class ResourceWatcher {
 
 
   async _onTargetAvailable({ targetFront, isTargetSwitching }) {
+    const resources = [];
     if (isTargetSwitching) {
       this._onWillNavigate(targetFront);
+      
+      
+      
+      
+      
+      
+      
+      for (const resourceType of this._listenerCount.keys()) {
+        await this._stopListening(resourceType, { bypassListenerCount: true });
+        resources.push(resourceType);
+      }
     }
 
     targetFront.on("will-navigate", () => this._onWillNavigate(targetFront));
 
     
-    for (const resourceType of Object.values(ResourceWatcher.TYPES)) {
+    
+    if (!isTargetSwitching) {
       
-      if (!this._listenerCount.get(resourceType)) {
-        continue;
+      for (const resourceType of Object.values(ResourceWatcher.TYPES)) {
+        
+        if (!this._listenerCount.get(resourceType)) {
+          continue;
+        }
+        
+        
+        
+        if (this._hasWatcherSupport(resourceType)) {
+          continue;
+        }
+        await this._watchResourcesForTarget(targetFront, resourceType);
       }
-      
-      
-      
-      if (this._hasWatcherSupport(resourceType)) {
-        continue;
-      }
-      await this._watchResourcesForTarget(targetFront, resourceType);
     }
+
     
     
     
@@ -239,6 +256,12 @@ class ResourceWatcher {
       "resource-destroyed-form",
       this._onResourceDestroyed.bind(this, { targetFront })
     );
+
+    if (isTargetSwitching) {
+      for (const resourceType of resources) {
+        await this._startListening(resourceType, { bypassListenerCount: true });
+      }
+    }
   }
 
   
@@ -424,13 +447,20 @@ class ResourceWatcher {
 
 
 
-  async _startListening(resourceType) {
-    let listeners = this._listenerCount.get(resourceType) || 0;
-    listeners++;
-    this._listenerCount.set(resourceType, listeners);
 
-    if (listeners > 1) {
-      return;
+
+
+
+
+  async _startListening(resourceType, { bypassListenerCount = false } = {}) {
+    if (!bypassListenerCount) {
+      let listeners = this._listenerCount.get(resourceType) || 0;
+      listeners++;
+      this._listenerCount.set(resourceType, listeners);
+
+      if (listeners > 1) {
+        return;
+      }
     }
 
     
@@ -486,17 +516,21 @@ class ResourceWatcher {
 
 
 
-  _stopListening(resourceType) {
-    let listeners = this._listenerCount.get(resourceType);
-    if (!listeners || listeners <= 0) {
-      throw new Error(
-        `Stopped listening for resource '${resourceType}' that isn't being listened to`
-      );
-    }
-    listeners--;
-    this._listenerCount.set(resourceType, listeners);
-    if (listeners > 0) {
-      return;
+
+
+  _stopListening(resourceType, { bypassListenerCount = false } = {}) {
+    if (!bypassListenerCount) {
+      let listeners = this._listenerCount.get(resourceType);
+      if (!listeners || listeners <= 0) {
+        throw new Error(
+          `Stopped listening for resource '${resourceType}' that isn't being listened to`
+        );
+      }
+      listeners--;
+      this._listenerCount.set(resourceType, listeners);
+      if (listeners > 0) {
+        return;
+      }
     }
 
     
