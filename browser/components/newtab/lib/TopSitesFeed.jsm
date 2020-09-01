@@ -105,7 +105,8 @@ for (let searchProvider of ["amazon", "google"]) {
 }
 
 const REMOTE_SETTING_DEFAULTS_PREF = "browser.topsites.useRemoteSetting";
-const REMOTE_SETTING_OVERRIDE_PREF = "browser.topsites.default";
+const DEFAULT_SITES_POLICY_PREF =
+  "browser.newtabpage.activity-stream.default.sites";
 
 function getShortURLForCurrentSearch() {
   const url = shortURL({ url: Services.search.defaultEngine.searchForm });
@@ -145,7 +146,7 @@ this.TopSitesFeed = class TopSitesFeed {
       Services.prefs.addObserver(pref, this);
     }
     Services.prefs.addObserver(REMOTE_SETTING_DEFAULTS_PREF, this);
-    Services.prefs.addObserver(REMOTE_SETTING_OVERRIDE_PREF, this);
+    Services.prefs.addObserver(DEFAULT_SITES_POLICY_PREF, this);
   }
 
   uninit() {
@@ -155,7 +156,7 @@ this.TopSitesFeed = class TopSitesFeed {
       Services.prefs.removeObserver(pref, this);
     }
     Services.prefs.removeObserver(REMOTE_SETTING_DEFAULTS_PREF, this);
-    Services.prefs.removeObserver(REMOTE_SETTING_OVERRIDE_PREF, this);
+    Services.prefs.removeObserver(DEFAULT_SITES_POLICY_PREF, this);
   }
 
   observe(subj, topic, data) {
@@ -175,7 +176,7 @@ this.TopSitesFeed = class TopSitesFeed {
       case "nsPref:changed":
         if (
           data === REMOTE_SETTING_DEFAULTS_PREF ||
-          data === REMOTE_SETTING_OVERRIDE_PREF
+          data === DEFAULT_SITES_POLICY_PREF
         ) {
           this._readDefaults();
         } else if (SEARCH_TILE_OVERRIDE_PREFS.has(data)) {
@@ -206,13 +207,16 @@ this.TopSitesFeed = class TopSitesFeed {
     }
 
     
-    let sites;
-    try {
-      sites = Services.prefs.getStringPref(REMOTE_SETTING_OVERRIDE_PREF);
-    } catch (e) {}
-    if (sites) {
-      this.refreshDefaults(sites, { isStartup });
-      return;
+    
+    if (Services.prefs.prefIsLocked(DEFAULT_SITES_POLICY_PREF)) {
+      let sites;
+      try {
+        sites = Services.prefs.getStringPref(DEFAULT_SITES_POLICY_PREF);
+      } catch (e) {}
+      if (sites) {
+        this.refreshDefaults(sites, { isStartup });
+        return;
+      }
     }
 
     
