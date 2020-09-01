@@ -832,7 +832,8 @@ bool PerHandlerParser<ParseHandler>::
       
       
       
-      auto mbNameId = compilationInfo_.parserAtoms.internJSAtom(cx_, name);
+      auto mbNameId = compilationInfo_.parserAtoms.internJSAtom(
+          cx_, this->getCompilationInfo(), name);
       if (mbNameId.isErr()) {
         return false;
       }

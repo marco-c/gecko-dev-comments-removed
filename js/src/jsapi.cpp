@@ -465,8 +465,6 @@ JS_PUBLIC_API bool JS::InitSelfHostedCode(JSContext* cx) {
     return false;
   }
 
-  
-  
   if (!rt->initializeParserAtoms(cx)) {
     return false;
   }

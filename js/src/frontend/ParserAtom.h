@@ -9,19 +9,22 @@
 
 #include "mozilla/DebugOnly.h"      
 #include "mozilla/HashFunctions.h"  
+#include "mozilla/MaybeOneOf.h"     
 #include "mozilla/Range.h"          
 #include "mozilla/Variant.h"        
 
-#include "ds/LifoAlloc.h"  
-#include "js/HashTable.h"  
-#include "js/UniquePtr.h"  
-#include "js/Vector.h"     
+#include "ds/LifoAlloc.h"         
+#include "frontend/TypedIndex.h"  
+#include "js/HashTable.h"         
+#include "js/UniquePtr.h"         
+#include "js/Vector.h"            
 #include "vm/CommonPropertyNames.h"
 #include "vm/StringType.h"  
 
 namespace js {
 namespace frontend {
 
+struct CompilationInfo;
 class ParserAtom;
 class ParserName;
 
@@ -31,6 +34,25 @@ class SpecificParserAtomLookup;
 class ParserAtomsTable;
 
 mozilla::GenericErrorResult<OOM&> RaiseParserAtomsOOMError(JSContext* cx);
+
+
+
+using AtomIndex = TypedIndex<JSAtom*>;
+
+
+
+
+
+
+enum class WellKnownAtomId : uint32_t {
+#define ENUM_ENTRY_(idpart, id, text) id,
+  FOR_EACH_COMMON_PROPERTYNAME(ENUM_ENTRY_)
+#undef ENUM_ENTRY_
+
+#define ENUM_ENTRY_(name, clasp) name,
+      JS_FOR_EACH_PROTOTYPE(ENUM_ENTRY_)
+#undef ENUM_ENTRY_
+};
 
 
 
@@ -196,7 +218,7 @@ class alignas(alignof(void*)) ParserAtomEntry {
   
   
   
-  mutable JSAtom* jsatom_ = nullptr;
+  mutable mozilla::MaybeOneOf<AtomIndex, WellKnownAtomId> atomIndex_;
 
  public:
   static const uint32_t MAX_LENGTH = JSString::MAX_LENGTH;
@@ -276,19 +298,18 @@ class alignas(alignof(void*)) ParserAtomEntry {
   template <typename CharT>
   bool equalsSeq(HashNumber hash, InflatedChar16Sequence<CharT> seq) const;
 
-  void setAtom(JSAtom* atom) const {
-    MOZ_ASSERT(atom != nullptr);
-    if (jsatom_ != nullptr) {
-      MOZ_ASSERT(jsatom_ == atom);
-      return;
-    }
-    MOZ_ASSERT(equalsJSAtom(atom));
-    jsatom_ = atom;
+  void setAtomIndex(AtomIndex index) const {
+    atomIndex_.construct<AtomIndex>(index);
+  }
+
+  void setWellKnownAtomId(WellKnownAtomId kind) const {
+    atomIndex_.construct<WellKnownAtomId>(kind);
   }
 
   
   
-  JS::Result<JSAtom*, OOM&> toJSAtom(JSContext* cx) const;
+  JS::Result<JSAtom*, OOM&> toJSAtom(JSContext* cx,
+                                     CompilationInfo& compilationInfo) const;
 
   
   bool toNumber(JSContext* cx, double* result) const;
@@ -368,7 +389,7 @@ class WellKnownParserAtoms {
   EntrySet entrySet_;
 
   bool initSingle(JSContext* cx, const ParserName** name, const char* str,
-                  JSAtom* jsatom);
+                  WellKnownAtomId kind);
 
  public:
   explicit WellKnownParserAtoms(JSContext* cx) : entrySet_(cx) {}
@@ -459,7 +480,8 @@ class ParserAtomsTable {
   JS::Result<const ParserAtom*, OOM&> internUtf8(
       JSContext* cx, const mozilla::Utf8Unit* utf8Ptr, uint32_t length);
 
-  JS::Result<const ParserAtom*, OOM&> internJSAtom(JSContext* cx, JSAtom* atom);
+  JS::Result<const ParserAtom*, OOM&> internJSAtom(
+      JSContext* cx, CompilationInfo& compilationInfo, JSAtom* atom);
 
   JS::Result<const ParserAtom*, OOM&> concatAtoms(
       JSContext* cx, mozilla::Range<const ParserAtom*> atoms);
