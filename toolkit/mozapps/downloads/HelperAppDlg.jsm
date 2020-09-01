@@ -1080,9 +1080,7 @@ nsUnknownContentTypeDialog.prototype = {
       
       if (
         needUpdate &&
-        !["application/octet-stream", "binary/octet-stream"].includes(
-          this.mLauncher.MIMEInfo.MIMEType
-        )
+        this.mLauncher.MIMEInfo.MIMEType != "application/octet-stream"
       ) {
         this.updateHelperAppPref();
       }
