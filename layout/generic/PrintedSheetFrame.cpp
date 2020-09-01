@@ -6,8 +6,9 @@
 
 
 
-#include "PrintedSheetFrame.h"
+#include "mozilla/PrintedSheetFrame.h"
 
+#include "mozilla/StaticPrefs_print.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsPageFrame.h"
 #include "nsPageSequenceFrame.h"
@@ -38,8 +39,35 @@ void PrintedSheetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   
   for (auto* frame : mFrames) {
-    BuildDisplayListForChild(aBuilder, frame, aLists);
+    if (!frame->HasAnyStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE)) {
+      BuildDisplayListForChild(aBuilder, frame, aLists);
+    }
   }
+}
+
+
+
+
+static bool TagIfSkippedByCustomRange(nsPageFrame* aPageFrame, int32_t aPageNum,
+                                      nsSharedPageData* aPD) {
+  
+  
+  
+  if (!StaticPrefs::print_tab_modal_enabled() ||
+      !aPageFrame->PresContext()->IsScreen()) {
+    return false;
+  }
+
+  if (!aPD->mDoingPageRange ||
+      (aPD->mFromPageNum <= aPageNum && aPD->mToPageNum >= aPageNum)) {
+    MOZ_ASSERT(!aPageFrame->HasAnyStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE),
+               "page frames in print range shouldn't be tagged with the"
+               "NS_PAGE_SKIPPED_BY_CUSTOM_RANGE state bit");
+    return false;
+  }
+
+  aPageFrame->AddStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE);
+  return true;
 }
 
 void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
@@ -63,9 +91,19 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  MOZ_ASSERT(mFrames.GetLength() == 1,
-             "how did we get more than one page per sheet");
-  for (auto* childFrame : mFrames) {
+  
+  
+  uint32_t numPagesOnThisSheet = 0;
+
+  
+  
+  static const uint32_t kDesiredPagesPerSheet = 1;
+
+  
+  
+  
+  for (auto* childFrame = mFrames.FirstChild(); childFrame;
+       childFrame = childFrame->GetNextSibling()) {
     MOZ_ASSERT(childFrame->IsPageFrame(),
                "we're only expecting page frames as children");
     auto* pageFrame = static_cast<nsPageFrame*>(childFrame);
@@ -74,6 +112,10 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
     
     pageFrame->SetSharedPageData(mPD);
     pageFrame->DeterminePageNum();
+
+    if (!TagIfSkippedByCustomRange(pageFrame, pageFrame->GetPageNum(), mPD)) {
+      numPagesOnThisSheet++;  
+    }
 
     ReflowInput pageReflowInput(aPresContext, aReflowInput, pageFrame,
                                 pageSize);
@@ -109,19 +151,38 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      
-      aStatus.SetIncomplete();
-
-      
-      
-      
       nsIFrame* continuingPage =
           PresShell()->FrameConstructor()->CreateContinuingFrame(pageFrame,
                                                                  this);
       mFrames.InsertFrame(nullptr, pageFrame, continuingPage);
-      PushChildrenToOverflow(continuingPage, pageFrame);
+      const bool isContinuingPageSkipped =
+          TagIfSkippedByCustomRange(static_cast<nsPageFrame*>(continuingPage),
+                                    pageFrame->GetPageNum() + 1, mPD);
+
+      
+      
+      
+      
+      
+      
+      if (numPagesOnThisSheet == kDesiredPagesPerSheet &&
+          !isContinuingPageSkipped) {
+        PushChildrenToOverflow(continuingPage, pageFrame);
+        aStatus.SetIncomplete();
+      }
     }
   }
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(numPagesOnThisSheet > 0 &&
+             "Shouldn't create a sheet with no displayable pages on it");
+  MOZ_ASSERT(numPagesOnThisSheet <= kDesiredPagesPerSheet,
+             "Shouldn't have more than desired number of displayable pages "
+             "on this sheet");
 
   
   

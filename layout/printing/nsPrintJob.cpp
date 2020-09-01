@@ -772,7 +772,9 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         [self](nsresult aResult) { self->PageDone(aResult); });
   }
 
-  if (mIsCreatingPrintPreview) {
+  if (!mozilla::StaticPrefs::print_tab_modal_enabled() &&
+      mIsCreatingPrintPreview) {
+    
     
     
     printData->mPrintSettings->SetPrintRange(nsIPrintSettings::kRangeAllPages);
