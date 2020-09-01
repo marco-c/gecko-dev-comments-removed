@@ -83,6 +83,23 @@ class MobileTabBrowser {
   get selectedTab() {
     return this.window.tab;
   }
+
+  set selectedTab(tab) {
+    if (tab != this.selectedTab) {
+      throw new Error("GeckoView only supports a single tab");
+    }
+
+    
+    
+    const event = this.window.CustomEvent("TabSelect", {
+      bubbles: true,
+      cancelable: false,
+      detail: {
+        previousTab: this.selectedTab,
+      },
+    });
+    this.window.document.dispatchEvent(event);
+  }
 }
 
 
@@ -113,13 +130,11 @@ browser.getBrowserForTab = function(tab) {
 
 browser.getTabBrowser = function(window) {
   
-  if ("gBrowser" in window) {
-    return window.gBrowser;
-
-    
-  } else if ("browser" in window) {
+  if (Services.androidBridge) {
     return new MobileTabBrowser(window);
-
+    
+  } else if ("gBrowser" in window) {
+    return window.gBrowser;
     
   } else if (window.document.getElementById("tabmail")) {
     return window.document.getElementById("tabmail");
@@ -463,19 +478,9 @@ browser.Context = class {
     }
 
     if (focus && this.tab != currentTab) {
-      let tabSelected = waitForEvent(this.window, "TabSelect");
-
-      switch (this.driver.appName) {
-        case "firefox":
-          this.tabBrowser.selectedTab = this.tab;
-          await tabSelected;
-          break;
-
-        default:
-          throw new error.UnsupportedOperationError(
-            `switchToTab() not supported in ${this.driver.appName}`
-          );
-      }
+      const tabSelected = waitForEvent(this.window, "TabSelect");
+      this.tabBrowser.selectedTab = this.tab;
+      await tabSelected;
     }
 
     
