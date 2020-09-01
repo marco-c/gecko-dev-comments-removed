@@ -3539,6 +3539,21 @@ GeckoDriver.prototype.receiveMessage = function(message) {
 
     case "Marionette:ListenersAttached":
       if (message.json.frameId === this.curBrowser.curFrameId) {
+        const browsingContext = BrowsingContext.get(message.json.frameId);
+
+        
+        
+        
+        if (
+          browsingContext.browserId == this.contentBrowsingContext?.browserId
+        ) {
+          logger.trace(
+            "Detected remoteness change. New browsing context: " +
+              browsingContext.id
+          );
+          this.contentBrowsingContext = browsingContext;
+        }
+
         this.curBrowser.flushPendingCommands();
       }
       break;
