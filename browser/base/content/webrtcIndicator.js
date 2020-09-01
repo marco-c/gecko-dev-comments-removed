@@ -266,10 +266,6 @@ const WebRTCIndicator = {
         this.onClick(event);
         break;
       }
-      case "change": {
-        this.onChange(event);
-        break;
-      }
       case "MozUpdateWindowPos": {
         if (!this.updatingIndicatorState) {
           
@@ -293,7 +289,6 @@ const WebRTCIndicator = {
     this.updateIndicatorState();
 
     window.addEventListener("click", this);
-    window.addEventListener("change", this);
     window.addEventListener("sizemodechange", this);
     window.windowRoot.addEventListener("MozUpdateWindowPos", this);
 
@@ -310,10 +305,6 @@ const WebRTCIndicator = {
   },
 
   onUnload() {
-    Services.ppmm.sharedData.set("WebRTC:GlobalCameraMute", false);
-    Services.ppmm.sharedData.set("WebRTC:GlobalMicrophoneMute", false);
-    Services.ppmm.sharedData.flush();
-
     if (this.macOSIndicator) {
       this.macOSIndicator.close();
       this.macOSIndicator = null;
@@ -362,6 +353,18 @@ const WebRTCIndicator = {
         );
         break;
       }
+      case "microphone-button":
+      
+      case "camera-button": {
+        
+        let activeStreams = webrtcUI.getActiveStreams(
+          true ,
+          true ,
+          false 
+        );
+        this.showSharingDoorhanger(activeStreams);
+        break;
+      }
       case "minimize": {
         window.minimize();
         break;
@@ -369,53 +372,21 @@ const WebRTCIndicator = {
     }
   },
 
-  onChange(event) {
-    switch (event.target.id) {
-      case "microphone-mute-toggle": {
-        this.toggleMicrophoneMute(event.target);
-        break;
-      }
-      case "camera-mute-toggle": {
-        this.toggleCameraMute(event.target);
-        break;
-      }
+  
+
+
+
+
+
+
+
+  showSharingDoorhanger(activeStreams) {
+    if (!activeStreams.length) {
+      return;
     }
-  },
 
-  
-
-
-
-
-
-
-
-
-  toggleMicrophoneMute(toggleEl) {
-    Services.ppmm.sharedData.set(
-      "WebRTC:GlobalMicrophoneMute",
-      toggleEl.checked
-    );
-    Services.ppmm.sharedData.flush();
-    let l10nId =
-      "webrtc-microphone-" + (toggleEl.checked ? "muted" : "unmuted");
-    document.l10n.setAttributes(toggleEl, l10nId);
-  },
-
-  
-
-
-
-
-
-
-
-
-  toggleCameraMute(toggleEl) {
-    Services.ppmm.sharedData.set("WebRTC:GlobalCameraMute", toggleEl.checked);
-    Services.ppmm.sharedData.flush();
-    let l10nId = "webrtc-camera-" + (toggleEl.checked ? "muted" : "unmuted");
-    document.l10n.setAttributes(toggleEl, l10nId);
+    let index = activeStreams.length - 1;
+    webrtcUI.showSharingDoorhanger(activeStreams[index]);
   },
 
   

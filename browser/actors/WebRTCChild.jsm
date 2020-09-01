@@ -22,58 +22,6 @@ XPCOMUtils.defineLazyServiceGetter(
 
 const kBrowserURL = AppConstants.BROWSER_CHROME_URL;
 
-
-
-
-
-
-
-const GlobalMuteListener = {
-  _initted: false,
-
-  
-
-
-
-
-  init() {
-    if (!this._initted) {
-      Services.cpmm.sharedData.addEventListener("change", this);
-      this._updateCameraMuteState();
-      this._updateMicrophoneMuteState();
-      this._initted = true;
-    }
-  },
-
-  handleEvent(event) {
-    if (event.changedKeys.includes("WebRTC:GlobalCameraMute")) {
-      this._updateCameraMuteState();
-    }
-    if (event.changedKeys.includes("WebRTC:GlobalMicrophoneMute")) {
-      this._updateMicrophoneMuteState();
-    }
-  },
-
-  _updateCameraMuteState() {
-    let shouldMute = Services.cpmm.sharedData.get("WebRTC:GlobalCameraMute");
-    let topic = shouldMute
-      ? "getUserMedia:muteVideo"
-      : "getUserMedia:unmuteVideo";
-    Services.obs.notifyObservers(null, topic);
-  },
-
-  _updateMicrophoneMuteState() {
-    let shouldMute = Services.cpmm.sharedData.get(
-      "WebRTC:GlobalMicrophoneMute"
-    );
-    let topic = shouldMute
-      ? "getUserMedia:muteAudio"
-      : "getUserMedia:unmuteAudio";
-
-    Services.obs.notifyObservers(null, topic);
-  },
-};
-
 class WebRTCChild extends JSWindowActorChild {
   actorCreated() {
     
@@ -188,20 +136,6 @@ class WebRTCChild extends JSWindowActorChild {
           aMessage.data
         );
         break;
-      case "webrtc:MuteMicrophone":
-        Services.obs.notifyObservers(
-          null,
-          "getUserMedia:muteAudio",
-          aMessage.data
-        );
-        break;
-      case "webrtc:UnmuteMicrophone":
-        Services.obs.notifyObservers(
-          null,
-          "getUserMedia:unmuteAudio",
-          aMessage.data
-        );
-        break;
     }
   }
 }
@@ -257,13 +191,6 @@ function handleGUMStop(aSubject, aTopic, aData) {
 }
 
 function handleGUMRequest(aSubject, aTopic, aData) {
-  
-  
-  
-  
-  
-  GlobalMuteListener.init();
-
   let constraints = aSubject.getConstraints();
   let secure = aSubject.isSecure;
   let isHandlingUserInput = aSubject.isHandlingUserInput;

@@ -409,7 +409,6 @@ class SourceListener : public SupportsWeakPtr {
 
 
   void MuteOrUnmuteCamera(bool aMute);
-  void MuteOrUnmuteMicrophone(bool aMute);
 
   MediaDevice* GetAudioDevice() const {
     return mAudioDeviceState ? mAudioDeviceState->mDevice.get() : nullptr;
@@ -530,7 +529,7 @@ class GetUserMediaWindowListener {
     mInactiveListeners.RemoveElement(aListener);
     aListener->Activate(std::move(aAudioDevice), std::move(aAudioTrackSource),
                         std::move(aVideoDevice), std::move(aVideoTrackSource),
-                        mCamerasAreMuted, mMicrophonesAreMuted);
+                        mCamerasAreMuted,  false);
     mActiveListeners.AppendElement(std::move(aListener));
   }
 
@@ -676,7 +675,6 @@ class GetUserMediaWindowListener {
   void StopRawID(const nsString& removedDeviceID);
 
   void MuteOrUnmuteCameras(bool aMute);
-  void MuteOrUnmuteMicrophones(bool aMute);
 
   
 
@@ -757,7 +755,6 @@ class GetUserMediaWindowListener {
   
   
   bool mCamerasAreMuted = false;
-  bool mMicrophonesAreMuted = false;
 };
 
 class LocalTrackSource : public MediaStreamTrackSource {
@@ -2054,8 +2051,8 @@ MediaManager* MediaManager::Get() {
       obs->AddObserver(sSingleton, "getUserMedia:revoke", false);
       obs->AddObserver(sSingleton, "getUserMedia:muteVideo", false);
       obs->AddObserver(sSingleton, "getUserMedia:unmuteVideo", false);
-      obs->AddObserver(sSingleton, "getUserMedia:muteAudio", false);
-      obs->AddObserver(sSingleton, "getUserMedia:unmuteAudio", false);
+      obs->AddObserver(sSingleton, "application-background", false);
+      obs->AddObserver(sSingleton, "application-foreground", false);
     }
     
     nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
@@ -3464,17 +3461,6 @@ void MediaManager::OnCameraMute(bool aMute) {
   }
 }
 
-void MediaManager::OnMicrophoneMute(bool aMute) {
-  MOZ_ASSERT(NS_IsMainThread());
-  LOG("OnMicrophoneMute for all windows");
-  mMicrophonesMuted = aMute;
-  
-  
-  for (auto iter = mActiveWindows.Iter(); !iter.Done(); iter.Next()) {
-    iter.UserData()->MuteOrUnmuteMicrophones(aMute);
-  }
-}
-
 void MediaManager::AddWindowID(uint64_t aWindowId,
                                RefPtr<GetUserMediaWindowListener> aListener) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -3488,7 +3474,6 @@ void MediaManager::AddWindowID(uint64_t aWindowId,
   }
 
   aListener->MuteOrUnmuteCameras(mCamerasMuted);
-  aListener->MuteOrUnmuteMicrophones(mMicrophonesMuted);
   GetActiveWindows()->Put(aWindowId, std::move(aListener));
 }
 
@@ -3606,8 +3591,6 @@ void MediaManager::Shutdown() {
   obs->RemoveObserver(this, "getUserMedia:revoke");
   obs->RemoveObserver(this, "getUserMedia:muteVideo");
   obs->RemoveObserver(this, "getUserMedia:unmuteVideo");
-  obs->RemoveObserver(this, "getUserMedia:muteAudio");
-  obs->RemoveObserver(this, "getUserMedia:unmuteAudio");
   obs->RemoveObserver(this, "application-background");
   obs->RemoveObserver(this, "application-foreground");
 
@@ -3895,10 +3878,6 @@ nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
              !strcmp(aTopic, "getUserMedia:unmuteVideo")) {
     OnCameraMute(!strcmp(aTopic, "getUserMedia:muteVideo"));
     return NS_OK;
-  } else if (!strcmp(aTopic, "getUserMedia:muteAudio") ||
-             !strcmp(aTopic, "getUserMedia:unmuteAudio")) {
-    OnMicrophoneMute(!strcmp(aTopic, "getUserMedia:muteAudio"));
-    return NS_OK;
   } else if ((!strcmp(aTopic, "application-background") ||
               !strcmp(aTopic, "application-foreground")) &&
              StaticPrefs::media_getusermedia_camera_background_mute_enabled()) {
@@ -3910,8 +3889,8 @@ nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
     
     
     OnCameraMute(!strcmp(aTopic, "application-background"));
+    return NS_OK;
   }
-
   return NS_OK;
 }
 
@@ -4695,22 +4674,6 @@ void SourceListener::MuteOrUnmuteCamera(bool aMute) {
   }
 }
 
-void SourceListener::MuteOrUnmuteMicrophone(bool aMute) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (mStopped) {
-    return;
-  }
-
-  MOZ_RELEASE_ASSERT(mWindowListener);
-  LOG("SourceListener %p MuteOrUnmuteMicrophone", this);
-
-  if (mAudioDeviceState && (mAudioDeviceState->mDevice->GetMediaSource() ==
-                            MediaSourceEnum::Microphone)) {
-    SetMutedFor(mAudioDeviceState->mTrackSource, aMute);
-  }
-}
-
 bool SourceListener::CapturingVideo() const {
   MOZ_ASSERT(NS_IsMainThread());
   return Activated() && mVideoDeviceState && !mVideoDeviceState->mStopped &&
@@ -4871,21 +4834,6 @@ void GetUserMediaWindowListener::MuteOrUnmuteCameras(bool aMute) {
   for (auto& source : mActiveListeners) {
     if (source->GetVideoDevice()) {
       source->MuteOrUnmuteCamera(aMute);
-    }
-  }
-}
-
-void GetUserMediaWindowListener::MuteOrUnmuteMicrophones(bool aMute) {
-  MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
-
-  if (mMicrophonesAreMuted == aMute) {
-    return;
-  }
-  mMicrophonesAreMuted = aMute;
-
-  for (auto& source : mActiveListeners) {
-    if (source->GetAudioDevice()) {
-      source->MuteOrUnmuteMicrophone(aMute);
     }
   }
 }
