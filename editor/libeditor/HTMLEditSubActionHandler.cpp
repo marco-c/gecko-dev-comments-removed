@@ -2690,8 +2690,10 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
+
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
     Run(HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+        nsIEditor::EStripWrappers aStripWrappers,
         const EditorDOMPoint& aCaretPoint, AutoRangeArray& aRangesToDelete) {
       switch (mMode) {
         case Mode::JoinCurrentBlock: {
@@ -2707,7 +2709,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         case Mode::JoinOtherBlock: {
           EditActionResult result =
               HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
-                  aHTMLEditor, aCaretPoint, aRangesToDelete);
+                  aHTMLEditor, aDirectionAndAmount, aStripWrappers, aCaretPoint,
+                  aRangesToDelete);
           NS_WARNING_ASSERTION(
               result.Succeeded(),
               "AutoBlockElementsJoiner::"
@@ -2805,8 +2808,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint);
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
     HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
-        HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint,
-        AutoRangeArray& aRangesToDelete);
+        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+        nsIEditor::EStripWrappers aStripWrappers,
+        const EditorDOMPoint& aCaretPoint, AutoRangeArray& aRangesToDelete);
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
     JoinBlockElementsInSameParent(HTMLEditor& aHTMLEditor,
                                   nsIEditor::EDirection aDirectionAndAmount,
@@ -3381,42 +3385,11 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
       return EditActionCanceled();
     }
     EditActionResult result =
-        joiner.Run(aHTMLEditor, aDirectionAndAmount,
+        joiner.Run(aHTMLEditor, aDirectionAndAmount, aStripWrappers,
                    aWSRunScannerAtCaret.ScanStartRef(), aRangesToDelete);
-    if (result.Failed()) {
-      NS_WARNING(
-          "AutoBlockElementsJoiner::Run() failed (other block boundary)");
-      return result;
-    }
-    if (result.Handled() || result.Canceled()) {
-      return result;
-    }
-    
-    
-    
-    
-    EditorRawDOMPoint newCaretPoint =
-        aDirectionAndAmount == nsIEditor::ePrevious
-            ? EditorRawDOMPoint::AtEndOf(
-                  *joiner.GetLeafContentInOtherBlockElement())
-            : EditorRawDOMPoint(joiner.GetLeafContentInOtherBlockElement(), 0);
-    nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPoint);
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-    }
-    if (!aHTMLEditor.SelectionRefPtr()->RangeCount()) {
-      NS_WARNING("Failed to put caret to new position");
-      return EditActionHandled(rv);
-    }
     NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
-    AutoRangeArray rangesToDelete(*aHTMLEditor.SelectionRefPtr());
-    AutoDeleteRangesHandler anotherHandler(this);
-    result = anotherHandler.Run(aHTMLEditor, aDirectionAndAmount,
-                                aStripWrappers, rangesToDelete);
-    NS_WARNING_ASSERTION(result.Succeeded(),
-                         "Recursive AutoDeleteRangesHandler::Run() failed");
+        result.Succeeded(),
+        "AutoBlockElementsJoiner::Run() failed (other block boundary)");
     return result;
   }
 
@@ -3432,7 +3405,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
       return EditActionCanceled();
     }
     EditActionResult result =
-        joiner.Run(aHTMLEditor, aDirectionAndAmount,
+        joiner.Run(aHTMLEditor, aDirectionAndAmount, aStripWrappers,
                    aWSRunScannerAtCaret.ScanStartRef(), aRangesToDelete);
     NS_WARNING_ASSERTION(
         result.Succeeded(),
@@ -3899,8 +3872,9 @@ HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::DeleteBRElement(
 
 EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
-        HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint,
-        AutoRangeArray& aRangesToDelete) {
+        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+        nsIEditor::EStripWrappers aStripWrappers,
+        const EditorDOMPoint& aCaretPoint, AutoRangeArray& aRangesToDelete) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(aCaretPoint.IsSetAndValid());
   MOZ_ASSERT(mLeftContent);
@@ -3948,9 +3922,34 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   
   
   
-  if (!result.Handled() && !result.Canceled() &&
+  if (result.Ignored() &&
       mLeafContentInOtherBlock != aCaretPoint.GetContainer()) {
-    return EditActionIgnored();
+    
+    
+    
+    
+    EditorRawDOMPoint newCaretPoint =
+        aDirectionAndAmount == nsIEditor::ePrevious
+            ? EditorRawDOMPoint::AtEndOf(*mLeafContentInOtherBlock)
+            : EditorRawDOMPoint(mLeafContentInOtherBlock, 0);
+    nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPoint);
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (!aHTMLEditor.SelectionRefPtr()->RangeCount()) {
+      NS_WARNING("Failed to put caret to new position");
+      return EditActionHandled(rv);
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+    AutoRangeArray rangesToDelete(*aHTMLEditor.SelectionRefPtr());
+    AutoDeleteRangesHandler anotherHandler(&mDeleteRangesHandler);
+    result = anotherHandler.Run(aHTMLEditor, aDirectionAndAmount,
+                                aStripWrappers, rangesToDelete);
+    NS_WARNING_ASSERTION(result.Succeeded(),
+                         "Recursive AutoDeleteRangesHandler::Run() failed");
+    return result;
   }
 
   
