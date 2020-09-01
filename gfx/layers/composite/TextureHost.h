@@ -11,13 +11,14 @@
 #include <stddef.h>  
 #include <stdint.h>  
 #include "gfxTypes.h"
-#include "mozilla/Assertions.h"         
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/2D.h"             
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Types.h"          
-#include "mozilla/layers/Compositor.h"  
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/RefPtr.h"      
+#include "mozilla/gfx/2D.h"      
+#include "mozilla/gfx/Point.h"   
+#include "mozilla/gfx/Types.h"   
+#include "mozilla/ipc/FileDescriptor.h"
+#include "mozilla/layers/Compositor.h"       
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/layers/LayersSurfaces.h"
@@ -47,6 +48,8 @@ class TransactionBuilder;
 
 namespace layers {
 
+class AndroidHardwareBuffer;
+class AndroidHardwareBufferTextureHost;
 class BufferDescriptor;
 class BufferTextureHost;
 class Compositor;
@@ -646,6 +649,10 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   }
   virtual WebRenderTextureHost* AsWebRenderTextureHost() { return nullptr; }
   virtual SurfaceTextureHost* AsSurfaceTextureHost() { return nullptr; }
+  virtual AndroidHardwareBufferTextureHost*
+  AsAndroidHardwareBufferTextureHost() {
+    return nullptr;
+  }
 
   
   
@@ -701,6 +708,20 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   virtual bool IsDirectMap() { return false; }
 
   virtual bool NeedsYFlip() const;
+
+  TextureSourceProvider* GetProvider() const { return mProvider; }
+
+  virtual void SetAcquireFence(mozilla::ipc::FileDescriptor&& aFenceFd) {}
+
+  virtual void SetReleaseFence(mozilla::ipc::FileDescriptor&& aFenceFd) {}
+
+  virtual mozilla::ipc::FileDescriptor GetAndResetReleaseFence() {
+    return mozilla::ipc::FileDescriptor();
+  }
+
+  virtual AndroidHardwareBuffer* GetAndroidHardwareBuffer() const {
+    return nullptr;
+  }
 
  protected:
   virtual void ReadUnlock();

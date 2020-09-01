@@ -19,6 +19,7 @@
 #include "mozilla/gfx/2D.h"     
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/gfx/Types.h"  
+#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/Shmem.h"  
 #include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 #include "mozilla/layers/CompositorTypes.h"  
@@ -47,7 +48,7 @@ namespace mozilla {
 
 namespace layers {
 
-class AsyncTransactionWaiter;
+class AndroidHardwareBufferTextureData;
 class BufferTextureData;
 class CompositableForwarder;
 class KnowsCompositor;
@@ -311,6 +312,23 @@ class TextureData {
   virtual BufferTextureData* AsBufferTextureData() { return nullptr; }
 
   virtual GPUVideoTextureData* AsGPUVideoTextureData() { return nullptr; }
+
+  virtual AndroidHardwareBufferTextureData*
+  AsAndroidHardwareBufferTextureData() {
+    return nullptr;
+  }
+
+  
+  
+  
+  virtual Maybe<uint64_t> GetBufferId() const { return Nothing(); }
+
+  
+  
+  
+  virtual mozilla::ipc::FileDescriptor GetAcquireFence() {
+    return mozilla::ipc::FileDescriptor();
+  }
 
  protected:
   MOZ_COUNTED_DEFAULT_CTOR(TextureData)

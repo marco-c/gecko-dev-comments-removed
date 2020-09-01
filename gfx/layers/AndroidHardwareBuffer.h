@@ -8,12 +8,16 @@
 #define MOZILLA_LAYERS_ANDROID_HARDWARE_BUFFER
 
 #include <android/hardware_buffer.h>
+#include <atomic>
+#include <unordered_map>
 
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 
 namespace mozilla {
 namespace layers {
@@ -78,38 +82,147 @@ class AndroidHardwareBufferApi final {
 
 
 
-class AndroidHardwareBuffer {
+
+
+class AndroidHardwareBuffer
+    : public SupportsThreadSafeWeakPtr<AndroidHardwareBuffer> {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AndroidHardwareBuffer)
+  MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(AndroidHardwareBuffer)
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(AndroidHardwareBuffer)
 
   static already_AddRefed<AndroidHardwareBuffer> Create(
       gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
 
+  
+  
+  
   static already_AddRefed<AndroidHardwareBuffer> FromFileDescriptor(
-      ipc::FileDescriptor& aFileDescriptor, gfx::IntSize aSize,
-      gfx::SurfaceFormat aFormat);
+      ipc::FileDescriptor& aFileDescriptor, uint64_t aBufferId,
+      gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
 
-  int Lock(uint64_t aUsage, int32_t aFence, const ARect* aRect,
-           void** aOutVirtualAddress);
+  virtual ~AndroidHardwareBuffer();
+
+  int Lock(uint64_t aUsage, const ARect* aRect, void** aOutVirtualAddress);
   int Unlock(int32_t* aFence);
 
   int SendHandleToUnixSocket(int aSocketFd);
 
-  gfx::IntSize GetSize() const;
-  gfx::SurfaceFormat GetSurfaceFormat() const;
-
   AHardwareBuffer* GetNativeBuffer() const { return mNativeBuffer; }
+
+  
+  
+  bool WaitForBufferOwnership();
+
+  
+  bool IsWaitingForBufferOwnership();
+
+  void SetAcquireFence(ipc::FileDescriptor&& aFenceFd);
+
+  void SetReleaseFence(ipc::FileDescriptor&& aFenceFd);
+
+  ipc::FileDescriptor GetAndResetReleaseFence();
+
+  ipc::FileDescriptor GetAndResetAcquireFence();
+
+  ipc::FileDescriptor GetAcquireFence();
 
   const gfx::IntSize mSize;
   const uint32_t mStride;
   const gfx::SurfaceFormat mFormat;
+  const uint64_t mId;
 
  protected:
   AndroidHardwareBuffer(AHardwareBuffer* aNativeBuffer, gfx::IntSize aSize,
-                        uint32_t aStride, gfx::SurfaceFormat aFormat);
-  ~AndroidHardwareBuffer();
+                        uint32_t aStride, gfx::SurfaceFormat aFormat,
+                        uint64_t aId);
+
+  void SetLastFwdTransactionId(uint64_t aFwdTransactionId,
+                               bool aUsesImageBridge,
+                               const MonitorAutoLock& aAutoLock);
+
+  uint64_t GetLastFwdTransactionId(const MonitorAutoLock& aAutoLock);
+
+  void SetReleaseFence(ipc::FileDescriptor&& aFenceFd,
+                       const MonitorAutoLock& aAutoLock);
+
+  struct FwdTransactionId {
+    FwdTransactionId(uint64_t aFwdTransactionId, bool aUsesImageBridge)
+        : mId(aFwdTransactionId), mUsesImageBridge(aUsesImageBridge) {}
+    uint64_t mId;
+    bool mUsesImageBridge;
+  };
 
   AHardwareBuffer* mNativeBuffer;
+
+  
+  
+  bool mIsRegistered;
+
+  
+
+  Maybe<FwdTransactionId> mTransactionId;
+
+  
+  
+  
+  ipc::FileDescriptor mReleaseFenceFd;
+
+  
+  
+  
+  ipc::FileDescriptor mAcquireFenceFd;
+
+  static uint64_t GetNextId();
+
+  friend class AndroidHardwareBufferManager;
+};
+
+
+
+
+
+
+class AndroidHardwareBufferManager {
+ public:
+  static void Init();
+  static void Shutdown();
+
+  AndroidHardwareBufferManager();
+
+  static AndroidHardwareBufferManager* Get() { return sInstance; }
+
+  void Register(RefPtr<AndroidHardwareBuffer> aBuffer);
+
+  void Unregister(AndroidHardwareBuffer* aBuffer);
+
+  already_AddRefed<AndroidHardwareBuffer> GetBuffer(uint64_t aBufferId);
+
+  bool WaitForBufferOwnership(AndroidHardwareBuffer* aBuffer);
+
+  bool IsWaitingForBufferOwnership(AndroidHardwareBuffer* aBuffer);
+
+  void HoldUntilNotifyNotUsed(uint64_t aBufferId, uint64_t aFwdTransactionId,
+                              bool aUsesImageBridge);
+
+  void NotifyNotUsed(ipc::FileDescriptor&& aFenceFd, uint64_t aBufferId,
+                     uint64_t aTransactionId, bool aUsesImageBridge);
+
+  Monitor& GetMonitor() { return mMonitor; }
+
+ private:
+  Monitor mMonitor;
+  std::unordered_map<uint64_t, ThreadSafeWeakPtr<AndroidHardwareBuffer>>
+      mBuffers;
+
+  
+
+
+
+
+  std::unordered_map<uint64_t, RefPtr<AndroidHardwareBuffer>>
+      mWaitingNotifyNotUsed;
+
+  static StaticAutoPtr<AndroidHardwareBufferManager> sInstance;
 };
 
 }  

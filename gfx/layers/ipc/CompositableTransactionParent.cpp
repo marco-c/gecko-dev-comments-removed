@@ -27,6 +27,10 @@
 #include "nsDebug.h"   
 #include "nsRegion.h"  
 
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/layers/AndroidHardwareBuffer.h"
+#endif
+
 namespace mozilla {
 namespace layers {
 
@@ -227,6 +231,16 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
       if (UsesImageBridge()) {
         ScheduleComposition(aCompositable);
       }
+      break;
+    }
+    case CompositableOperationDetail::TOpDeliverAcquireFence: {
+      const OpDeliverAcquireFence& op = aDetail.get_OpDeliverAcquireFence();
+      RefPtr<TextureHost> tex = TextureHost::AsTextureHost(op.textureParent());
+      MOZ_ASSERT(tex.get());
+      MOZ_ASSERT(tex->AsAndroidHardwareBufferTextureHost());
+
+      auto fenceFd = op.fenceFd();
+      tex->SetAcquireFence(std::move(fenceFd));
       break;
     }
     default: {

@@ -12,20 +12,21 @@
 #include <unordered_set>
 
 #include "gfx2DGlue.h"
-#include "GLContextTypes.h"             
-#include "GLDefs.h"                     
-#include "OGLShaderConfig.h"            
-#include "Units.h"                      
-#include "mozilla/Assertions.h"         
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/2D.h"             
-#include "mozilla/gfx/BaseSize.h"       
-#include "mozilla/gfx/MatrixFwd.h"      
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/gfx/Triangle.h"       
-#include "mozilla/gfx/Types.h"          
+#include "GLContextTypes.h"         
+#include "GLDefs.h"                 
+#include "OGLShaderConfig.h"        
+#include "Units.h"                  
+#include "mozilla/Assertions.h"     
+#include "mozilla/Attributes.h"     
+#include "mozilla/RefPtr.h"         
+#include "mozilla/gfx/2D.h"         
+#include "mozilla/gfx/BaseSize.h"   
+#include "mozilla/gfx/MatrixFwd.h"  
+#include "mozilla/gfx/Point.h"      
+#include "mozilla/gfx/Rect.h"       
+#include "mozilla/gfx/Triangle.h"   
+#include "mozilla/gfx/Types.h"      
+#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersTypes.h"
@@ -262,6 +263,8 @@ class CompositorOGL final : public Compositor {
   
   void RegisterTextureSource(TextureSource* aTextureSource);
   void UnregisterTextureSource(TextureSource* aTextureSource);
+
+  ipc::FileDescriptor GetReleaseFence();
 
  private:
   template <typename Geometry>
@@ -500,6 +503,12 @@ class CompositorOGL final : public Compositor {
   
   std::unordered_set<TextureSource*> mRegisteredTextureSources;
 #endif
+
+  
+  
+  
+  
+  ipc::FileDescriptor mReleaseFenceFd;
 
   bool mDestroyed;
 
