@@ -37,6 +37,7 @@
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"  
 #include "vm/JSContext-inl.h"  
 #include "vm/JSObject-inl.h"   
+#include "vm/Realm-inl.h"      
 
 using mozilla::Maybe;
 using mozilla::Nothing;
@@ -1110,6 +1111,38 @@ static MOZ_MUST_USE bool StartPiping(JSContext* cx, Handle<PipeToState*> state,
 
 
 
+static MOZ_MUST_USE bool PerformAbortAlgorithm(JSContext* cx,
+                                               Handle<PipeToState*> state) {
+  cx->check(state);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                            "abortAlgorithm steps");
+  return false;
+}
+
+
+
+
+
+
+
  PipeToState* PipeToState::create(
     JSContext* cx, Handle<PromiseObject*> promise,
     Handle<ReadableStream*> unwrappedSource,
@@ -1127,7 +1160,6 @@ static MOZ_MUST_USE bool StartPiping(JSContext* cx, Handle<PipeToState*> state,
   
   MOZ_ASSERT(state->getFixedSlot(Slot_Signal).isUndefined());
   if (signal) {
-    
     
     state->initFixedSlot(Slot_Signal, ObjectValue(*signal));
   }
@@ -1188,9 +1220,40 @@ static MOZ_MUST_USE bool StartPiping(JSContext* cx, Handle<PipeToState*> state,
 
   
   
+  
   if (signal) {
+    
+    
+    bool aborted;
+    {
+      
+      
+      JSObject* unwrappedSignal = UnwrapSignalFromPipeToState(cx, state);
+      if (!unwrappedSignal) {
+        return nullptr;
+      }
+
+      JSRuntime* rt = cx->runtime();
+      MOZ_ASSERT(unwrappedSignal->hasClass(rt->maybeAbortSignalClass()));
+
+      AutoRealm ar(cx, unwrappedSignal);
+      aborted = rt->abortSignalIsAborted(unwrappedSignal);
+    }
+    if (aborted) {
+      if (!PerformAbortAlgorithm(cx, state)) {
+        return nullptr;
+      }
+
+      
+      
+      return state;
+    }
+
+    
+    
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAM_PIPETO_BAD_SIGNAL);
+                              JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                              "adding abortAlgorithm to signal");
     return nullptr;
   }
 
