@@ -1,30 +1,34 @@
-#[allow(deprecated, unused_imports)]
-use std::ascii::AsciiExt;
-use std::borrow::Cow;
-use std::cmp;
-use std::cmp::Ordering::{self, Equal, Greater, Less};
-use std::default::Default;
-use std::fmt;
-use std::iter::{Product, Sum};
-use std::mem;
-use std::ops::{
+#[cfg(feature = "quickcheck")]
+use crate::std_alloc::Box;
+use crate::std_alloc::{Cow, String, Vec};
+use core::cmp;
+use core::cmp::Ordering::{self, Equal, Greater, Less};
+#[cfg(has_try_from)]
+use core::convert::TryFrom;
+use core::default::Default;
+use core::fmt;
+use core::hash;
+use core::iter::{Product, Sum};
+use core::mem;
+use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
-    Mul, MulAssign, Neg, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
+    Mul, MulAssign, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
-use std::str::{self, FromStr};
-use std::{f32, f64};
-use std::{u64, u8};
+use core::str::{self, FromStr};
+use core::{f32, f64};
+use core::{u32, u64, u8};
 
 #[cfg(feature = "serde")]
 use serde;
 
-use integer::{Integer, Roots};
-use traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Float, FromPrimitive, Num, One, Pow,
-    ToPrimitive, Unsigned, Zero,
+use num_integer::{Integer, Roots};
+use num_traits::float::FloatCore;
+use num_traits::{
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Num, One, Pow, ToPrimitive,
+    Unsigned, Zero,
 };
 
-use big_digit::{self, BigDigit};
+use crate::big_digit::{self, BigDigit};
 
 #[path = "algorithms.rs"]
 mod algorithms;
@@ -38,40 +42,64 @@ use self::algorithms::{div_rem, div_rem_digit, div_rem_ref, rem_digit};
 use self::algorithms::{mac_with_carry, mul3, scalar_mul};
 use self::monty::monty_modpow;
 
-use UsizePromotion;
+use crate::UsizePromotion;
 
-use ParseBigIntError;
+use crate::ParseBigIntError;
+#[cfg(has_try_from)]
+use crate::TryFromBigIntError;
 
 #[cfg(feature = "quickcheck")]
 use quickcheck::{Arbitrary, Gen};
 
 
-#[derive(Clone, Debug, Hash)]
+#[derive(Debug)]
 pub struct BigUint {
     data: Vec<BigDigit>,
+}
+
+
+
+impl Clone for BigUint {
+    #[inline]
+    fn clone(&self) -> Self {
+        BigUint {
+            data: self.data.clone(),
+        }
+    }
+
+    #[inline]
+    fn clone_from(&mut self, other: &Self) {
+        self.data.clone_from(&other.data);
+    }
 }
 
 #[cfg(feature = "quickcheck")]
 impl Arbitrary for BigUint {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         
-        Self::new(Vec::<u32>::arbitrary(g))
+        biguint_from_vec(Vec::<BigDigit>::arbitrary(g))
     }
 
-    #[allow(bare_trait_objects)] 
-    fn shrink(&self) -> Box<Iterator<Item = Self>> {
+    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
         
-        Box::new(self.data.shrink().map(|x| BigUint::new(x)))
+        Box::new(self.data.shrink().map(biguint_from_vec))
+    }
+}
+
+impl hash::Hash for BigUint {
+    #[inline]
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        debug_assert!(self.data.last() != Some(&0));
+        self.data.hash(state);
     }
 }
 
 impl PartialEq for BigUint {
     #[inline]
     fn eq(&self, other: &BigUint) -> bool {
-        match self.cmp(other) {
-            Equal => true,
-            _ => false,
-        }
+        debug_assert!(self.data.last() != Some(&0));
+        debug_assert!(other.data.last() != Some(&0));
+        self.data == other.data
     }
 }
 impl Eq for BigUint {}
@@ -98,19 +126,19 @@ impl Default for BigUint {
 }
 
 impl fmt::Display for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "", &self.to_str_radix(10))
     }
 }
 
 impl fmt::LowerHex for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0x", &self.to_str_radix(16))
     }
 }
 
 impl fmt::UpperHex for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut s = self.to_str_radix(16);
         s.make_ascii_uppercase();
         f.pad_integral(true, "0x", &s)
@@ -118,13 +146,13 @@ impl fmt::UpperHex for BigUint {
 }
 
 impl fmt::Binary for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0b", &self.to_str_radix(2))
     }
 }
 
 impl fmt::Octal for BigUint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad_integral(true, "0o", &self.to_str_radix(8))
     }
 }
@@ -140,14 +168,14 @@ impl FromStr for BigUint {
 
 
 
-fn from_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
+fn from_bitwise_digits_le(v: &[u8], bits: u8) -> BigUint {
     debug_assert!(!v.is_empty() && bits <= 8 && big_digit::BITS % bits == 0);
     debug_assert!(v.iter().all(|&c| BigDigit::from(c) < (1 << bits)));
 
     let digits_per_big_digit = big_digit::BITS / bits;
 
     let data = v
-        .chunks(digits_per_big_digit)
+        .chunks(digits_per_big_digit.into())
         .map(|chunk| {
             chunk
                 .iter()
@@ -156,16 +184,20 @@ fn from_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
         })
         .collect();
 
-    BigUint::new(data)
+    biguint_from_vec(data)
 }
 
 
 
-fn from_inexact_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
+fn from_inexact_bitwise_digits_le(v: &[u8], bits: u8) -> BigUint {
     debug_assert!(!v.is_empty() && bits <= 8 && big_digit::BITS % bits != 0);
     debug_assert!(v.iter().all(|&c| BigDigit::from(c) < (1 << bits)));
 
-    let big_digits = (v.len() * bits + big_digit::BITS - 1) / big_digit::BITS;
+    let big_digits = (v.len() as u64)
+        .saturating_mul(bits.into())
+        .div_ceil(&big_digit::BITS.into())
+        .to_usize()
+        .unwrap_or(core::usize::MAX);
     let mut data = Vec::with_capacity(big_digits);
 
     let mut d = 0;
@@ -191,7 +223,7 @@ fn from_inexact_bitwise_digits_le(v: &[u8], bits: usize) -> BigUint {
         data.push(d as BigDigit);
     }
 
-    BigUint::new(data)
+    biguint_from_vec(data)
 }
 
 
@@ -199,12 +231,17 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
     debug_assert!(!v.is_empty() && !radix.is_power_of_two());
     debug_assert!(v.iter().all(|&c| u32::from(c) < radix));
 
-    
-    let bits = f64::from(radix).log2() * v.len() as f64;
-    let big_digits = (bits / big_digit::BITS as f64).ceil();
-    let mut data = Vec::with_capacity(big_digits as usize);
+    #[cfg(feature = "std")]
+    let radix_log2 = f64::from(radix).log2();
+    #[cfg(not(feature = "std"))]
+    let radix_log2 = ilog2(radix.next_power_of_two()) as f64;
 
-    let (base, power) = get_radix_base(radix);
+    
+    let bits = radix_log2 * v.len() as f64;
+    let big_digits = (bits / big_digit::BITS as f64).ceil();
+    let mut data = Vec::with_capacity(big_digits.to_usize().unwrap_or(0));
+
+    let (base, power) = get_radix_base(radix, big_digit::BITS);
     let radix = radix as BigDigit;
 
     let r = v.len() % power;
@@ -234,7 +271,7 @@ fn from_radix_digits_be(v: &[u8], radix: u32) -> BigUint {
         add2(&mut data, &[n]);
     }
 
-    BigUint::new(data)
+    biguint_from_vec(data)
 }
 
 impl Num for BigUint {
@@ -263,11 +300,10 @@ impl Num for BigUint {
         
         let mut v = Vec::with_capacity(s.len());
         for b in s.bytes() {
-            #[allow(unknown_lints, ellipsis_inclusive_range_patterns)]
             let d = match b {
-                b'0'...b'9' => b - b'0',
-                b'a'...b'z' => b - b'a' + 10,
-                b'A'...b'Z' => b - b'A' + 10,
+                b'0'..=b'9' => b - b'0',
+                b'a'..=b'z' => b - b'a' + 10,
+                b'A'..=b'Z' => b - b'A' + 10,
                 b'_' => continue,
                 _ => u8::MAX,
             };
@@ -384,60 +420,91 @@ impl<'a> BitXorAssign<&'a BigUint> for BigUint {
     }
 }
 
-impl Shl<usize> for BigUint {
-    type Output = BigUint;
+macro_rules! impl_shift {
+    (@ref $Shx:ident :: $shx:ident, $ShxAssign:ident :: $shx_assign:ident, $rhs:ty) => {
+        impl<'b> $Shx<&'b $rhs> for BigUint {
+            type Output = BigUint;
 
-    #[inline]
-    fn shl(self, rhs: usize) -> BigUint {
-        biguint_shl(Cow::Owned(self), rhs)
-    }
+            #[inline]
+            fn $shx(self, rhs: &'b $rhs) -> BigUint {
+                $Shx::$shx(self, *rhs)
+            }
+        }
+        impl<'a, 'b> $Shx<&'b $rhs> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn $shx(self, rhs: &'b $rhs) -> BigUint {
+                $Shx::$shx(self, *rhs)
+            }
+        }
+        impl<'b> $ShxAssign<&'b $rhs> for BigUint {
+            #[inline]
+            fn $shx_assign(&mut self, rhs: &'b $rhs) {
+                $ShxAssign::$shx_assign(self, *rhs);
+            }
+        }
+    };
+    ($($rhs:ty),+) => {$(
+        impl Shl<$rhs> for BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn shl(self, rhs: $rhs) -> BigUint {
+                biguint_shl(Cow::Owned(self), rhs)
+            }
+        }
+        impl<'a> Shl<$rhs> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn shl(self, rhs: $rhs) -> BigUint {
+                biguint_shl(Cow::Borrowed(self), rhs)
+            }
+        }
+        impl ShlAssign<$rhs> for BigUint {
+            #[inline]
+            fn shl_assign(&mut self, rhs: $rhs) {
+                let n = mem::replace(self, BigUint::zero());
+                *self = n << rhs;
+            }
+        }
+        impl_shift! { @ref Shl::shl, ShlAssign::shl_assign, $rhs }
+
+        impl Shr<$rhs> for BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn shr(self, rhs: $rhs) -> BigUint {
+                biguint_shr(Cow::Owned(self), rhs)
+            }
+        }
+        impl<'a> Shr<$rhs> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn shr(self, rhs: $rhs) -> BigUint {
+                biguint_shr(Cow::Borrowed(self), rhs)
+            }
+        }
+        impl ShrAssign<$rhs> for BigUint {
+            #[inline]
+            fn shr_assign(&mut self, rhs: $rhs) {
+                let n = mem::replace(self, BigUint::zero());
+                *self = n >> rhs;
+            }
+        }
+        impl_shift! { @ref Shr::shr, ShrAssign::shr_assign, $rhs }
+    )*};
 }
-impl<'a> Shl<usize> for &'a BigUint {
-    type Output = BigUint;
 
-    #[inline]
-    fn shl(self, rhs: usize) -> BigUint {
-        biguint_shl(Cow::Borrowed(self), rhs)
-    }
-}
-
-impl ShlAssign<usize> for BigUint {
-    #[inline]
-    fn shl_assign(&mut self, rhs: usize) {
-        let n = mem::replace(self, BigUint::zero());
-        *self = n << rhs;
-    }
-}
-
-impl Shr<usize> for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn shr(self, rhs: usize) -> BigUint {
-        biguint_shr(Cow::Owned(self), rhs)
-    }
-}
-impl<'a> Shr<usize> for &'a BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn shr(self, rhs: usize) -> BigUint {
-        biguint_shr(Cow::Borrowed(self), rhs)
-    }
-}
-
-impl ShrAssign<usize> for BigUint {
-    #[inline]
-    fn shr_assign(&mut self, rhs: usize) {
-        let n = mem::replace(self, BigUint::zero());
-        *self = n >> rhs;
-    }
-}
+impl_shift! { u8, u16, u32, u64, u128, usize }
+impl_shift! { i8, i16, i32, i64, i128, isize }
 
 impl Zero for BigUint {
     #[inline]
     fn zero() -> BigUint {
-        BigUint::new(Vec::new())
+        BigUint { data: Vec::new() }
     }
 
     #[inline]
@@ -454,7 +521,7 @@ impl Zero for BigUint {
 impl One for BigUint {
     #[inline]
     fn one() -> BigUint {
-        BigUint::new(vec![1])
+        BigUint { data: vec![1] }
     }
 
     #[inline]
@@ -471,25 +538,18 @@ impl One for BigUint {
 
 impl Unsigned for BigUint {}
 
-impl<'a> Pow<BigUint> for &'a BigUint {
+impl<'b> Pow<&'b BigUint> for BigUint {
     type Output = BigUint;
 
     #[inline]
-    fn pow(self, exp: BigUint) -> Self::Output {
-        self.pow(&exp)
-    }
-}
-
-impl<'a, 'b> Pow<&'b BigUint> for &'a BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn pow(self, exp: &BigUint) -> Self::Output {
+    fn pow(self, exp: &BigUint) -> BigUint {
         if self.is_one() || exp.is_zero() {
             BigUint::one()
         } else if self.is_zero() {
             BigUint::zero()
         } else if let Some(exp) = exp.to_u64() {
+            self.pow(exp)
+        } else if let Some(exp) = exp.to_u128() {
             self.pow(exp)
         } else {
             
@@ -499,17 +559,49 @@ impl<'a, 'b> Pow<&'b BigUint> for &'a BigUint {
     }
 }
 
+impl Pow<BigUint> for BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn pow(self, exp: BigUint) -> BigUint {
+        Pow::pow(self, &exp)
+    }
+}
+
+impl<'a, 'b> Pow<&'b BigUint> for &'a BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn pow(self, exp: &BigUint) -> BigUint {
+        if self.is_one() || exp.is_zero() {
+            BigUint::one()
+        } else if self.is_zero() {
+            BigUint::zero()
+        } else {
+            self.clone().pow(exp)
+        }
+    }
+}
+
+impl<'a> Pow<BigUint> for &'a BigUint {
+    type Output = BigUint;
+
+    #[inline]
+    fn pow(self, exp: BigUint) -> BigUint {
+        Pow::pow(self, &exp)
+    }
+}
+
 macro_rules! pow_impl {
     ($T:ty) => {
-        impl<'a> Pow<$T> for &'a BigUint {
+        impl Pow<$T> for BigUint {
             type Output = BigUint;
 
-            #[inline]
-            fn pow(self, mut exp: $T) -> Self::Output {
+            fn pow(self, mut exp: $T) -> BigUint {
                 if exp == 0 {
                     return BigUint::one();
                 }
-                let mut base = self.clone();
+                let mut base = self;
 
                 while exp & 1 == 0 {
                     base = &base * &base;
@@ -532,12 +624,33 @@ macro_rules! pow_impl {
             }
         }
 
+        impl<'b> Pow<&'b $T> for BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: &$T) -> BigUint {
+                Pow::pow(self, *exp)
+            }
+        }
+
+        impl<'a> Pow<$T> for &'a BigUint {
+            type Output = BigUint;
+
+            #[inline]
+            fn pow(self, exp: $T) -> BigUint {
+                if exp == 0 {
+                    return BigUint::one();
+                }
+                Pow::pow(self.clone(), exp)
+            }
+        }
+
         impl<'a, 'b> Pow<&'b $T> for &'a BigUint {
             type Output = BigUint;
 
             #[inline]
-            fn pow(self, exp: &$T) -> Self::Output {
-                self.pow(*exp)
+            fn pow(self, exp: &$T) -> BigUint {
+                Pow::pow(self, *exp)
             }
         }
     };
@@ -548,7 +661,6 @@ pow_impl!(u16);
 pow_impl!(u32);
 pow_impl!(u64);
 pow_impl!(usize);
-#[cfg(has_i128)]
 pow_impl!(u128);
 
 forward_all_binop_to_val_ref_commutative!(impl Add for BigUint, add);
@@ -583,7 +695,6 @@ promote_unsigned_scalars!(impl Add for BigUint, add);
 promote_unsigned_scalars_assign!(impl AddAssign for BigUint, add_assign);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<u32> for BigUint, add);
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<u64> for BigUint, add);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val_commutative!(impl Add<u128> for BigUint, add);
 
 impl Add<u32> for BigUint {
@@ -600,7 +711,7 @@ impl AddAssign<u32> for BigUint {
     #[inline]
     fn add_assign(&mut self, other: u32) {
         if other != 0 {
-            if self.data.len() == 0 {
+            if self.data.is_empty() {
                 self.data.push(0);
             }
 
@@ -623,6 +734,7 @@ impl Add<u64> for BigUint {
 }
 
 impl AddAssign<u64> for BigUint {
+    #[cfg(not(u64_digit))]
     #[inline]
     fn add_assign(&mut self, other: u64) {
         let (hi, lo) = big_digit::from_doublebigdigit(other);
@@ -639,9 +751,23 @@ impl AddAssign<u64> for BigUint {
             }
         }
     }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn add_assign(&mut self, other: u64) {
+        if other != 0 {
+            if self.data.is_empty() {
+                self.data.push(0);
+            }
+
+            let carry = __add2(&mut self.data, &[other as BigDigit]);
+            if carry != 0 {
+                self.data.push(carry);
+            }
+        }
+    }
 }
 
-#[cfg(has_i128)]
 impl Add<u128> for BigUint {
     type Output = BigUint;
 
@@ -652,8 +778,8 @@ impl Add<u128> for BigUint {
     }
 }
 
-#[cfg(has_i128)]
 impl AddAssign<u128> for BigUint {
+    #[cfg(not(u64_digit))]
     #[inline]
     fn add_assign(&mut self, other: u128) {
         if other <= u128::from(u64::max_value()) {
@@ -673,6 +799,24 @@ impl AddAssign<u128> for BigUint {
                 __add2(&mut self.data, &[d, c, b])
             };
 
+            if carry != 0 {
+                self.data.push(carry);
+            }
+        }
+    }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn add_assign(&mut self, other: u128) {
+        let (hi, lo) = big_digit::from_doublebigdigit(other);
+        if hi == 0 {
+            *self += lo;
+        } else {
+            while self.data.len() < 2 {
+                self.data.push(0);
+            }
+
+            let carry = __add2(&mut self.data, &[lo, hi]);
             if carry != 0 {
                 self.data.push(carry);
             }
@@ -721,7 +865,6 @@ promote_unsigned_scalars!(impl Sub for BigUint, sub);
 promote_unsigned_scalars_assign!(impl SubAssign for BigUint, sub_assign);
 forward_all_scalar_binop_to_val_val!(impl Sub<u32> for BigUint, sub);
 forward_all_scalar_binop_to_val_val!(impl Sub<u64> for BigUint, sub);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Sub<u128> for BigUint, sub);
 
 impl Sub<u32> for BigUint {
@@ -733,6 +876,7 @@ impl Sub<u32> for BigUint {
         self
     }
 }
+
 impl SubAssign<u32> for BigUint {
     fn sub_assign(&mut self, other: u32) {
         sub2(&mut self.data[..], &[other as BigDigit]);
@@ -743,9 +887,21 @@ impl SubAssign<u32> for BigUint {
 impl Sub<BigUint> for u32 {
     type Output = BigUint;
 
+    #[cfg(not(u64_digit))]
     #[inline]
     fn sub(self, mut other: BigUint) -> BigUint {
         if other.data.len() == 0 {
+            other.data.push(self);
+        } else {
+            sub2rev(&[self], &mut other.data[..]);
+        }
+        other.normalized()
+    }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn sub(self, mut other: BigUint) -> BigUint {
+        if other.data.is_empty() {
             other.data.push(self as BigDigit);
         } else {
             sub2rev(&[self as BigDigit], &mut other.data[..]);
@@ -765,10 +921,18 @@ impl Sub<u64> for BigUint {
 }
 
 impl SubAssign<u64> for BigUint {
+    #[cfg(not(u64_digit))]
     #[inline]
     fn sub_assign(&mut self, other: u64) {
         let (hi, lo) = big_digit::from_doublebigdigit(other);
         sub2(&mut self.data[..], &[lo, hi]);
+        self.normalize();
+    }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn sub_assign(&mut self, other: u64) {
+        sub2(&mut self.data[..], &[other as BigDigit]);
         self.normalize();
     }
 }
@@ -776,6 +940,7 @@ impl SubAssign<u64> for BigUint {
 impl Sub<BigUint> for u64 {
     type Output = BigUint;
 
+    #[cfg(not(u64_digit))]
     #[inline]
     fn sub(self, mut other: BigUint) -> BigUint {
         while other.data.len() < 2 {
@@ -786,9 +951,19 @@ impl Sub<BigUint> for u64 {
         sub2rev(&[lo, hi], &mut other.data[..]);
         other.normalized()
     }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn sub(self, mut other: BigUint) -> BigUint {
+        if other.data.is_empty() {
+            other.data.push(self);
+        } else {
+            sub2rev(&[self], &mut other.data[..]);
+        }
+        other.normalized()
+    }
 }
 
-#[cfg(has_i128)]
 impl Sub<u128> for BigUint {
     type Output = BigUint;
 
@@ -798,19 +973,29 @@ impl Sub<u128> for BigUint {
         self
     }
 }
-#[cfg(has_i128)]
+
 impl SubAssign<u128> for BigUint {
+    #[cfg(not(u64_digit))]
+    #[inline]
     fn sub_assign(&mut self, other: u128) {
         let (a, b, c, d) = u32_from_u128(other);
         sub2(&mut self.data[..], &[d, c, b, a]);
         self.normalize();
     }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn sub_assign(&mut self, other: u128) {
+        let (hi, lo) = big_digit::from_doublebigdigit(other);
+        sub2(&mut self.data[..], &[lo, hi]);
+        self.normalize();
+    }
 }
 
-#[cfg(has_i128)]
 impl Sub<BigUint> for u128 {
     type Output = BigUint;
 
+    #[cfg(not(u64_digit))]
     #[inline]
     fn sub(self, mut other: BigUint) -> BigUint {
         while other.data.len() < 4 {
@@ -819,6 +1004,18 @@ impl Sub<BigUint> for u128 {
 
         let (a, b, c, d) = u32_from_u128(self);
         sub2rev(&[d, c, b, a], &mut other.data[..]);
+        other.normalized()
+    }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn sub(self, mut other: BigUint) -> BigUint {
+        while other.data.len() < 2 {
+            other.data.push(0);
+        }
+
+        let (hi, lo) = big_digit::from_doublebigdigit(self);
+        sub2rev(&[lo, hi], &mut other.data[..]);
         other.normalized()
     }
 }
@@ -845,7 +1042,6 @@ promote_unsigned_scalars!(impl Mul for BigUint, mul);
 promote_unsigned_scalars_assign!(impl MulAssign for BigUint, mul_assign);
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u32> for BigUint, mul);
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u64> for BigUint, mul);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val_commutative!(impl Mul<u128> for BigUint, mul);
 
 impl Mul<u32> for BigUint {
@@ -881,6 +1077,7 @@ impl Mul<u64> for BigUint {
     }
 }
 impl MulAssign<u64> for BigUint {
+    #[cfg(not(u64_digit))]
     #[inline]
     fn mul_assign(&mut self, other: u64) {
         if other == 0 {
@@ -892,9 +1089,21 @@ impl MulAssign<u64> for BigUint {
             *self = mul3(&self.data[..], &[lo, hi])
         }
     }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn mul_assign(&mut self, other: u64) {
+        if other == 0 {
+            self.data.clear();
+        } else {
+            let carry = scalar_mul(&mut self.data[..], other as BigDigit);
+            if carry != 0 {
+                self.data.push(carry);
+            }
+        }
+    }
 }
 
-#[cfg(has_i128)]
 impl Mul<u128> for BigUint {
     type Output = BigUint;
 
@@ -904,8 +1113,9 @@ impl Mul<u128> for BigUint {
         self
     }
 }
-#[cfg(has_i128)]
+
 impl MulAssign<u128> for BigUint {
+    #[cfg(not(u64_digit))]
     #[inline]
     fn mul_assign(&mut self, other: u128) {
         if other == 0 {
@@ -915,6 +1125,19 @@ impl MulAssign<u128> for BigUint {
         } else {
             let (a, b, c, d) = u32_from_u128(other);
             *self = mul3(&self.data[..], &[d, c, b, a])
+        }
+    }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn mul_assign(&mut self, other: u128) {
+        if other == 0 {
+            self.data.clear();
+        } else if other <= BigDigit::max_value() as u128 {
+            *self *= other as BigDigit
+        } else {
+            let (hi, lo) = big_digit::from_doublebigdigit(other);
+            *self = mul3(&self.data[..], &[lo, hi])
         }
     }
 }
@@ -953,7 +1176,6 @@ promote_unsigned_scalars!(impl Div for BigUint, div);
 promote_unsigned_scalars_assign!(impl DivAssign for BigUint, div_assign);
 forward_all_scalar_binop_to_val_val!(impl Div<u32> for BigUint, div);
 forward_all_scalar_binop_to_val_val!(impl Div<u64> for BigUint, div);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Div<u128> for BigUint, div);
 
 impl Div<u32> for BigUint {
@@ -978,7 +1200,7 @@ impl Div<BigUint> for u32 {
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
-            0 => panic!(),
+            0 => panic!("attempt to divide by zero"),
             1 => From::from(self as BigDigit / other.data[0]),
             _ => Zero::zero(),
         }
@@ -1006,18 +1228,28 @@ impl DivAssign<u64> for BigUint {
 impl Div<BigUint> for u64 {
     type Output = BigUint;
 
+    #[cfg(not(u64_digit))]
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
-            0 => panic!(),
+            0 => panic!("attempt to divide by zero"),
             1 => From::from(self / u64::from(other.data[0])),
             2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
             _ => Zero::zero(),
         }
     }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn div(self, other: BigUint) -> BigUint {
+        match other.data.len() {
+            0 => panic!("attempt to divide by zero"),
+            1 => From::from(self / other.data[0]),
+            _ => Zero::zero(),
+        }
+    }
 }
 
-#[cfg(has_i128)]
 impl Div<u128> for BigUint {
     type Output = BigUint;
 
@@ -1027,7 +1259,7 @@ impl Div<u128> for BigUint {
         q
     }
 }
-#[cfg(has_i128)]
+
 impl DivAssign<u128> for BigUint {
     #[inline]
     fn div_assign(&mut self, other: u128) {
@@ -1035,14 +1267,14 @@ impl DivAssign<u128> for BigUint {
     }
 }
 
-#[cfg(has_i128)]
 impl Div<BigUint> for u128 {
     type Output = BigUint;
 
+    #[cfg(not(u64_digit))]
     #[inline]
     fn div(self, other: BigUint) -> BigUint {
         match other.data.len() {
-            0 => panic!(),
+            0 => panic!("attempt to divide by zero"),
             1 => From::from(self / u128::from(other.data[0])),
             2 => From::from(
                 self / u128::from(big_digit::to_doublebigdigit(other.data[1], other.data[0])),
@@ -1051,6 +1283,17 @@ impl Div<BigUint> for u128 {
             4 => From::from(
                 self / u32_to_u128(other.data[3], other.data[2], other.data[1], other.data[0]),
             ),
+            _ => Zero::zero(),
+        }
+    }
+
+    #[cfg(u64_digit)]
+    #[inline]
+    fn div(self, other: BigUint) -> BigUint {
+        match other.data.len() {
+            0 => panic!("attempt to divide by zero"),
+            1 => From::from(self / other.data[0] as u128),
+            2 => From::from(self / big_digit::to_doublebigdigit(other.data[1], other.data[0])),
             _ => Zero::zero(),
         }
     }
@@ -1065,8 +1308,12 @@ impl Rem<BigUint> for BigUint {
 
     #[inline]
     fn rem(self, other: BigUint) -> BigUint {
-        let (_, r) = div_rem(self, other);
-        r
+        if let Some(other) = other.to_u32() {
+            &self % other
+        } else {
+            let (_, r) = div_rem(self, other);
+            r
+        }
     }
 }
 
@@ -1075,8 +1322,12 @@ impl<'a, 'b> Rem<&'b BigUint> for &'a BigUint {
 
     #[inline]
     fn rem(self, other: &BigUint) -> BigUint {
-        let (_, r) = self.div_rem(other);
-        r
+        if let Some(other) = other.to_u32() {
+            self % other
+        } else {
+            let (_, r) = self.div_rem(other);
+            r
+        }
     }
 }
 impl<'a> RemAssign<&'a BigUint> for BigUint {
@@ -1090,7 +1341,6 @@ promote_unsigned_scalars!(impl Rem for BigUint, rem);
 promote_unsigned_scalars_assign!(impl RemAssign for BigUint, rem_assign);
 forward_all_scalar_binop_to_ref_val!(impl Rem<u32> for BigUint, rem);
 forward_all_scalar_binop_to_val_val!(impl Rem<u64> for BigUint, rem);
-#[cfg(has_i128)]
 forward_all_scalar_binop_to_val_val!(impl Rem<u128> for BigUint, rem);
 
 impl<'a> Rem<u32> for &'a BigUint {
@@ -1098,7 +1348,7 @@ impl<'a> Rem<u32> for &'a BigUint {
 
     #[inline]
     fn rem(self, other: u32) -> BigUint {
-        From::from(rem_digit(self, other as BigDigit))
+        rem_digit(self, other as BigDigit).into()
     }
 }
 impl RemAssign<u32> for BigUint {
@@ -1126,7 +1376,7 @@ macro_rules! impl_rem_assign_scalar {
             fn rem_assign(&mut self, other: &BigUint) {
                 *self = match other.$to_scalar() {
                     None => *self,
-                    Some(0) => panic!(),
+                    Some(0) => panic!("attempt to divide by zero"),
                     Some(v) => *self % v
                 };
             }
@@ -1134,14 +1384,13 @@ macro_rules! impl_rem_assign_scalar {
     }
 }
 
-#[cfg(has_i128)]
+
 impl_rem_assign_scalar!(u128, to_u128);
 impl_rem_assign_scalar!(usize, to_usize);
 impl_rem_assign_scalar!(u64, to_u64);
 impl_rem_assign_scalar!(u32, to_u32);
 impl_rem_assign_scalar!(u16, to_u16);
 impl_rem_assign_scalar!(u8, to_u8);
-#[cfg(has_i128)]
 impl_rem_assign_scalar!(i128, to_i128);
 impl_rem_assign_scalar!(isize, to_isize);
 impl_rem_assign_scalar!(i64, to_i64);
@@ -1175,7 +1424,6 @@ impl Rem<BigUint> for u64 {
     }
 }
 
-#[cfg(has_i128)]
 impl Rem<u128> for BigUint {
     type Output = BigUint;
 
@@ -1185,7 +1433,7 @@ impl Rem<u128> for BigUint {
         r
     }
 }
-#[cfg(has_i128)]
+
 impl RemAssign<u128> for BigUint {
     #[inline]
     fn rem_assign(&mut self, other: u128) {
@@ -1193,7 +1441,6 @@ impl RemAssign<u128> for BigUint {
     }
 }
 
-#[cfg(has_i128)]
 impl Rem<BigUint> for u128 {
     type Output = BigUint;
 
@@ -1204,28 +1451,10 @@ impl Rem<BigUint> for u128 {
     }
 }
 
-impl Neg for BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn neg(self) -> BigUint {
-        panic!()
-    }
-}
-
-impl<'a> Neg for &'a BigUint {
-    type Output = BigUint;
-
-    #[inline]
-    fn neg(self) -> BigUint {
-        panic!()
-    }
-}
-
 impl CheckedAdd for BigUint {
     #[inline]
     fn checked_add(&self, v: &BigUint) -> Option<BigUint> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 }
 
@@ -1243,7 +1472,7 @@ impl CheckedSub for BigUint {
 impl CheckedMul for BigUint {
     #[inline]
     fn checked_mul(&self, v: &BigUint) -> Option<BigUint> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 }
 
@@ -1253,7 +1482,7 @@ impl CheckedDiv for BigUint {
         if v.is_zero() {
             return None;
         }
-        return Some(self.div(v));
+        Some(self.div(v))
     }
 }
 
@@ -1280,14 +1509,24 @@ impl Integer for BigUint {
         div_rem_ref(self, other)
     }
 
+    #[inline]
+    fn div_ceil(&self, other: &BigUint) -> BigUint {
+        let (d, m) = div_rem_ref(self, other);
+        if m.is_zero() {
+            d
+        } else {
+            d + 1u32
+        }
+    }
+
     
     
     
     #[inline]
     fn gcd(&self, other: &Self) -> Self {
         #[inline]
-        fn twos(x: &BigUint) -> usize {
-            trailing_zeros(x).unwrap_or(0)
+        fn twos(x: &BigUint) -> u64 {
+            x.trailing_zeros().unwrap_or(0)
         }
 
         
@@ -1329,6 +1568,19 @@ impl Integer for BigUint {
     }
 
     
+    
+    #[inline]
+    fn gcd_lcm(&self, other: &Self) -> (Self, Self) {
+        let gcd = self.gcd(other);
+        let lcm = if gcd.is_zero() {
+            Self::zero()
+        } else {
+            self / &gcd * other
+        };
+        (gcd, lcm)
+    }
+
+    
     #[inline]
     fn divides(&self, other: &BigUint) -> bool {
         self.is_multiple_of(other)
@@ -1355,10 +1607,26 @@ impl Integer for BigUint {
     fn is_odd(&self) -> bool {
         !self.is_even()
     }
+
+    
+    #[inline]
+    fn next_multiple_of(&self, other: &Self) -> Self {
+        let m = self.mod_floor(other);
+        if m.is_zero() {
+            self.clone()
+        } else {
+            self + (other - m)
+        }
+    }
+    
+    #[inline]
+    fn prev_multiple_of(&self, other: &Self) -> Self {
+        self - self.mod_floor(other)
+    }
 }
 
 #[inline]
-fn fixpoint<F>(mut x: BigUint, max_bits: usize, f: F) -> BigUint
+fn fixpoint<F>(mut x: BigUint, max_bits: u64, f: F) -> BigUint
 where
     F: Fn(&BigUint) -> BigUint,
 {
@@ -1409,7 +1677,8 @@ impl Roots for BigUint {
 
         
         let bits = self.bits();
-        if bits <= n as usize {
+        let n64 = u64::from(n);
+        if bits <= n64 {
             return BigUint::one();
         }
 
@@ -1418,24 +1687,27 @@ impl Roots for BigUint {
             return x.nth_root(n).into();
         }
 
-        let max_bits = bits / n as usize + 1;
+        let max_bits = bits / n64 + 1;
 
+        #[cfg(feature = "std")]
         let guess = if let Some(f) = self.to_f64() {
             
             BigUint::from_f64((f.ln() / f64::from(n)).exp()).unwrap()
         } else {
             
             
-            let nsz = n as usize;
-            let extra_bits = bits - (f64::MAX_EXP as usize - 1);
-            let root_scale = (extra_bits + (nsz - 1)) / nsz;
-            let scale = root_scale * nsz;
-            if scale < bits && bits - scale > nsz {
+            let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
+            let root_scale = extra_bits.div_ceil(&n64);
+            let scale = root_scale * n64;
+            if scale < bits && bits - scale > n64 {
                 (self >> scale).nth_root(n) << root_scale
             } else {
                 BigUint::one() << max_bits
             }
         };
+
+        #[cfg(not(feature = "std"))]
+        let guess = BigUint::one() << max_bits;
 
         let n_min_1 = n - 1;
         fixpoint(guess, max_bits, move |s| {
@@ -1458,19 +1730,23 @@ impl Roots for BigUint {
         }
 
         let bits = self.bits();
-        let max_bits = bits / 2 as usize + 1;
+        let max_bits = bits / 2 + 1;
 
+        #[cfg(feature = "std")]
         let guess = if let Some(f) = self.to_f64() {
             
             BigUint::from_f64(f.sqrt()).unwrap()
         } else {
             
             
-            let extra_bits = bits - (f64::MAX_EXP as usize - 1);
+            let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
             let root_scale = (extra_bits + 1) / 2;
             let scale = root_scale * 2;
             (self >> scale).sqrt() << root_scale
         };
+
+        #[cfg(not(feature = "std"))]
+        let guess = BigUint::one() << max_bits;
 
         fixpoint(guess, max_bits, move |s| {
             let q = self / s;
@@ -1490,19 +1766,23 @@ impl Roots for BigUint {
         }
 
         let bits = self.bits();
-        let max_bits = bits / 3 as usize + 1;
+        let max_bits = bits / 3 + 1;
 
+        #[cfg(feature = "std")]
         let guess = if let Some(f) = self.to_f64() {
             
             BigUint::from_f64(f.cbrt()).unwrap()
         } else {
             
             
-            let extra_bits = bits - (f64::MAX_EXP as usize - 1);
+            let extra_bits = bits - (f64::MAX_EXP as u64 - 1);
             let root_scale = (extra_bits + 2) / 3;
             let scale = root_scale * 3;
             (self >> scale).cbrt() << root_scale
         };
+
+        #[cfg(not(feature = "std"))]
+        let guess = BigUint::one() << max_bits;
 
         fixpoint(guess, max_bits, move |s| {
             let q = self / (s * s);
@@ -1522,7 +1802,7 @@ fn high_bits_to_u64(v: &BigUint) -> u64 {
             let mut ret_bits = 0;
 
             for d in v.data.iter().rev() {
-                let digit_bits = (bits - 1) % big_digit::BITS + 1;
+                let digit_bits = (bits - 1) % u64::from(big_digit::BITS) + 1;
                 let bits_want = cmp::min(64 - ret_bits, digit_bits);
 
                 if bits_want != 64 {
@@ -1549,7 +1829,6 @@ impl ToPrimitive for BigUint {
     }
 
     #[inline]
-    #[cfg(has_i128)]
     fn to_i128(&self) -> Option<i128> {
         self.to_u128().as_ref().and_then(u128::to_i128)
     }
@@ -1572,7 +1851,6 @@ impl ToPrimitive for BigUint {
     }
 
     #[inline]
-    #[cfg(has_i128)]
     fn to_u128(&self) -> Option<u128> {
         let mut ret: u128 = 0;
         let mut bits = 0;
@@ -1592,9 +1870,9 @@ impl ToPrimitive for BigUint {
     #[inline]
     fn to_f32(&self) -> Option<f32> {
         let mantissa = high_bits_to_u64(self);
-        let exponent = self.bits() - fls(mantissa);
+        let exponent = self.bits() - u64::from(fls(mantissa));
 
-        if exponent > f32::MAX_EXP as usize {
+        if exponent > f32::MAX_EXP as u64 {
             None
         } else {
             let ret = (mantissa as f32) * 2.0f32.powi(exponent as i32);
@@ -1609,9 +1887,9 @@ impl ToPrimitive for BigUint {
     #[inline]
     fn to_f64(&self) -> Option<f64> {
         let mantissa = high_bits_to_u64(self);
-        let exponent = self.bits() - fls(mantissa);
+        let exponent = self.bits() - u64::from(fls(mantissa));
 
-        if exponent > f64::MAX_EXP as usize {
+        if exponent > f64::MAX_EXP as u64 {
             None
         } else {
             let ret = (mantissa as f64) * 2.0f64.powi(exponent as i32);
@@ -1624,6 +1902,44 @@ impl ToPrimitive for BigUint {
     }
 }
 
+macro_rules! impl_try_from_biguint {
+    ($T:ty, $to_ty:path) => {
+        #[cfg(has_try_from)]
+        impl TryFrom<&BigUint> for $T {
+            type Error = TryFromBigIntError<()>;
+
+            #[inline]
+            fn try_from(value: &BigUint) -> Result<$T, TryFromBigIntError<()>> {
+                $to_ty(value).ok_or(TryFromBigIntError::new(()))
+            }
+        }
+
+        #[cfg(has_try_from)]
+        impl TryFrom<BigUint> for $T {
+            type Error = TryFromBigIntError<BigUint>;
+
+            #[inline]
+            fn try_from(value: BigUint) -> Result<$T, TryFromBigIntError<BigUint>> {
+                <$T>::try_from(&value).map_err(|_| TryFromBigIntError::new(value))
+            }
+        }
+    };
+}
+
+impl_try_from_biguint!(u8, ToPrimitive::to_u8);
+impl_try_from_biguint!(u16, ToPrimitive::to_u16);
+impl_try_from_biguint!(u32, ToPrimitive::to_u32);
+impl_try_from_biguint!(u64, ToPrimitive::to_u64);
+impl_try_from_biguint!(usize, ToPrimitive::to_usize);
+impl_try_from_biguint!(u128, ToPrimitive::to_u128);
+
+impl_try_from_biguint!(i8, ToPrimitive::to_i8);
+impl_try_from_biguint!(i16, ToPrimitive::to_i16);
+impl_try_from_biguint!(i32, ToPrimitive::to_i32);
+impl_try_from_biguint!(i64, ToPrimitive::to_i64);
+impl_try_from_biguint!(isize, ToPrimitive::to_isize);
+impl_try_from_biguint!(i128, ToPrimitive::to_i128);
+
 impl FromPrimitive for BigUint {
     #[inline]
     fn from_i64(n: i64) -> Option<BigUint> {
@@ -1635,7 +1951,6 @@ impl FromPrimitive for BigUint {
     }
 
     #[inline]
-    #[cfg(has_i128)]
     fn from_i128(n: i128) -> Option<BigUint> {
         if n >= 0 {
             Some(BigUint::from(n as u128))
@@ -1650,7 +1965,6 @@ impl FromPrimitive for BigUint {
     }
 
     #[inline]
-    #[cfg(has_i128)]
     fn from_u128(n: u128) -> Option<BigUint> {
         Some(BigUint::from(n))
     }
@@ -1670,17 +1984,17 @@ impl FromPrimitive for BigUint {
             return Some(BigUint::zero());
         }
 
-        let (mantissa, exponent, sign) = Float::integer_decode(n);
+        let (mantissa, exponent, sign) = FloatCore::integer_decode(n);
 
         if sign == -1 {
             return None;
         }
 
         let mut ret = BigUint::from(mantissa);
-        if exponent > 0 {
-            ret = ret << exponent as usize;
-        } else if exponent < 0 {
-            ret = ret >> (-exponent) as usize;
+        match exponent.cmp(&0) {
+            Greater => ret <<= exponent as usize,
+            Equal => {}
+            Less => ret >>= (-exponent) as usize,
         }
         Some(ret)
     }
@@ -1701,7 +2015,6 @@ impl From<u64> for BigUint {
     }
 }
 
-#[cfg(has_i128)]
 impl From<u128> for BigUint {
     #[inline]
     fn from(mut n: u128) -> Self {
@@ -1732,6 +2045,27 @@ impl_biguint_from_uint!(u16);
 impl_biguint_from_uint!(u32);
 impl_biguint_from_uint!(usize);
 
+macro_rules! impl_biguint_try_from_int {
+    ($T:ty, $from_ty:path) => {
+        #[cfg(has_try_from)]
+        impl TryFrom<$T> for BigUint {
+            type Error = TryFromBigIntError<()>;
+
+            #[inline]
+            fn try_from(value: $T) -> Result<BigUint, TryFromBigIntError<()>> {
+                $from_ty(value).ok_or(TryFromBigIntError::new(()))
+            }
+        }
+    };
+}
+
+impl_biguint_try_from_int!(i8, FromPrimitive::from_i8);
+impl_biguint_try_from_int!(i16, FromPrimitive::from_i16);
+impl_biguint_try_from_int!(i32, FromPrimitive::from_i32);
+impl_biguint_try_from_int!(i64, FromPrimitive::from_i64);
+impl_biguint_try_from_int!(isize, FromPrimitive::from_isize);
+impl_biguint_try_from_int!(i128, FromPrimitive::from_i128);
+
 
 pub trait ToBigUint {
     
@@ -1761,7 +2095,6 @@ impl_to_biguint!(i8, FromPrimitive::from_i8);
 impl_to_biguint!(i16, FromPrimitive::from_i16);
 impl_to_biguint!(i32, FromPrimitive::from_i32);
 impl_to_biguint!(i64, FromPrimitive::from_i64);
-#[cfg(has_i128)]
 impl_to_biguint!(i128, FromPrimitive::from_i128);
 
 impl_to_biguint!(usize, FromPrimitive::from_usize);
@@ -1769,20 +2102,23 @@ impl_to_biguint!(u8, FromPrimitive::from_u8);
 impl_to_biguint!(u16, FromPrimitive::from_u16);
 impl_to_biguint!(u32, FromPrimitive::from_u32);
 impl_to_biguint!(u64, FromPrimitive::from_u64);
-#[cfg(has_i128)]
 impl_to_biguint!(u128, FromPrimitive::from_u128);
 
 impl_to_biguint!(f32, FromPrimitive::from_f32);
 impl_to_biguint!(f64, FromPrimitive::from_f64);
 
 
-fn to_bitwise_digits_le(u: &BigUint, bits: usize) -> Vec<u8> {
+fn to_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     debug_assert!(!u.is_zero() && bits <= 8 && big_digit::BITS % bits == 0);
 
     let last_i = u.data.len() - 1;
     let mask: BigDigit = (1 << bits) - 1;
     let digits_per_big_digit = big_digit::BITS / bits;
-    let digits = (u.bits() + bits - 1) / bits;
+    let digits = u
+        .bits()
+        .div_ceil(&u64::from(bits))
+        .to_usize()
+        .unwrap_or(core::usize::MAX);
     let mut res = Vec::with_capacity(digits);
 
     for mut r in u.data[..last_i].iter().cloned() {
@@ -1802,11 +2138,15 @@ fn to_bitwise_digits_le(u: &BigUint, bits: usize) -> Vec<u8> {
 }
 
 
-fn to_inexact_bitwise_digits_le(u: &BigUint, bits: usize) -> Vec<u8> {
+fn to_inexact_bitwise_digits_le(u: &BigUint, bits: u8) -> Vec<u8> {
     debug_assert!(!u.is_zero() && bits <= 8 && big_digit::BITS % bits != 0);
 
     let mask: BigDigit = (1 << bits) - 1;
-    let digits = (u.bits() + bits - 1) / bits;
+    let digits = u
+        .bits()
+        .div_ceil(&u64::from(bits))
+        .to_usize()
+        .unwrap_or(core::usize::MAX);
     let mut res = Vec::with_capacity(digits);
 
     let mut r = 0;
@@ -1845,12 +2185,18 @@ fn to_inexact_bitwise_digits_le(u: &BigUint, bits: usize) -> Vec<u8> {
 fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     debug_assert!(!u.is_zero() && !radix.is_power_of_two());
 
+    #[cfg(feature = "std")]
+    let radix_log2 = f64::from(radix).log2();
+    #[cfg(not(feature = "std"))]
+    let radix_log2 = ilog2(radix) as f64;
+
     
-    let radix_digits = ((u.bits() as f64) / f64::from(radix).log2()).ceil();
-    let mut res = Vec::with_capacity(radix_digits as usize);
+    let radix_digits = ((u.bits() as f64) / radix_log2).ceil();
+    let mut res = Vec::with_capacity(radix_digits.to_usize().unwrap_or(0));
+
     let mut digits = u.clone();
 
-    let (base, power) = get_radix_base(radix);
+    let (base, power) = get_radix_base(radix, big_digit::HALF_BITS);
     let radix = radix as BigDigit;
 
     while digits.data.len() > 1 {
@@ -1871,7 +2217,7 @@ fn to_radix_digits_le(u: &BigUint, radix: u32) -> Vec<u8> {
     res
 }
 
-pub fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {
+pub(crate) fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {
     if u.is_zero() {
         vec![0]
     } else if radix.is_power_of_two() {
@@ -1891,7 +2237,7 @@ pub fn to_radix_le(u: &BigUint, radix: u32) -> Vec<u8> {
     }
 }
 
-pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
+pub(crate) fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
     assert!(2 <= radix && radix <= 36, "The radix must be within 2...36");
 
     if u.is_zero() {
@@ -1912,13 +2258,32 @@ pub fn to_str_radix_reversed(u: &BigUint, radix: u32) -> Vec<u8> {
     res
 }
 
+
+
+
+#[inline]
+pub(crate) fn biguint_from_vec(digits: Vec<BigDigit>) -> BigUint {
+    BigUint { data: digits }.normalized()
+}
+
 impl BigUint {
     
     
     
     #[inline]
     pub fn new(digits: Vec<u32>) -> BigUint {
-        BigUint { data: digits }.normalized()
+        let mut big = BigUint::zero();
+
+        #[cfg(not(u64_digit))]
+        {
+            big.data = digits;
+            big.normalize();
+        }
+
+        #[cfg(u64_digit)]
+        big.assign_from_slice(&digits);
+
+        big
     }
 
     
@@ -1926,7 +2291,9 @@ impl BigUint {
     
     #[inline]
     pub fn from_slice(slice: &[u32]) -> BigUint {
-        BigUint::new(slice.to_vec())
+        let mut big = BigUint::zero();
+        big.assign_from_slice(slice);
+        big
     }
 
     
@@ -1934,8 +2301,21 @@ impl BigUint {
     
     #[inline]
     pub fn assign_from_slice(&mut self, slice: &[u32]) {
-        self.data.resize(slice.len(), 0);
-        self.data.clone_from_slice(slice);
+        self.data.clear();
+
+        #[cfg(not(u64_digit))]
+        self.data.extend_from_slice(slice);
+
+        #[cfg(u64_digit)]
+        self.data.extend(slice.chunks(2).map(|chunk| {
+            
+            let mut digit = BigDigit::from(chunk[0]);
+            if let Some(&hi) = chunk.get(1) {
+                digit |= BigDigit::from(hi) << 32;
+            }
+            digit
+        }));
+
         self.normalize();
     }
 
@@ -1998,9 +2378,8 @@ impl BigUint {
     
     #[inline]
     pub fn parse_bytes(buf: &[u8], radix: u32) -> Option<BigUint> {
-        str::from_utf8(buf)
-            .ok()
-            .and_then(|s| BigUint::from_str_radix(s, radix).ok())
+        let s = str::from_utf8(buf).ok()?;
+        BigUint::from_str_radix(s, radix).ok()
     }
 
     
@@ -2136,6 +2515,47 @@ impl BigUint {
     
     
     
+    
+    
+    #[inline]
+    pub fn to_u32_digits(&self) -> Vec<u32> {
+        let mut digits = Vec::new();
+
+        #[cfg(not(u64_digit))]
+        digits.clone_from(&self.data);
+
+        #[cfg(u64_digit)]
+        {
+            if let Some((&last, data)) = self.data.split_last() {
+                let last_lo = last as u32;
+                let last_hi = (last >> 32) as u32;
+                let u32_len = data.len() * 2 + 1 + (last_hi != 0) as usize;
+                digits.reserve_exact(u32_len);
+                for &x in data {
+                    digits.push(x as u32);
+                    digits.push((x >> 32) as u32);
+                }
+                digits.push(last_lo);
+                if last_hi != 0 {
+                    digits.push(last_hi);
+                }
+            }
+        }
+
+        digits
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn to_str_radix(&self, radix: u32) -> String {
         let mut v = to_str_radix_reversed(self, radix);
@@ -2185,12 +2605,12 @@ impl BigUint {
 
     
     #[inline]
-    pub fn bits(&self) -> usize {
+    pub fn bits(&self) -> u64 {
         if self.is_zero() {
             return 0;
         }
-        let zeros = self.data.last().unwrap().leading_zeros();
-        return self.data.len() * big_digit::BITS - zeros as usize;
+        let zeros: u64 = self.data.last().unwrap().leading_zeros().into();
+        self.data.len() as u64 * u64::from(big_digit::BITS) - zeros
     }
 
     
@@ -2210,10 +2630,18 @@ impl BigUint {
     }
 
     
+    pub fn pow(&self, exponent: u32) -> Self {
+        Pow::pow(self, exponent)
+    }
+
+    
     
     
     pub fn modpow(&self, exponent: &Self, modulus: &Self) -> Self {
-        assert!(!modulus.is_zero(), "divide by zero!");
+        assert!(
+            !modulus.is_zero(),
+            "attempt to calculate with zero modulus!"
+        );
 
         if modulus.is_odd() {
             
@@ -2241,17 +2669,28 @@ impl BigUint {
     pub fn nth_root(&self, n: u32) -> Self {
         Roots::nth_root(self, n)
     }
+
+    
+    
+    pub fn trailing_zeros(&self) -> Option<u64> {
+        let i = self.data.iter().position(|&digit| digit != 0)?;
+        let zeros: u64 = self.data[i].trailing_zeros().into();
+        Some(i as u64 * u64::from(big_digit::BITS) + zeros)
+    }
 }
 
 fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> BigUint {
-    assert!(!modulus.is_zero(), "divide by zero!");
+    assert!(
+        !modulus.is_zero(),
+        "attempt to calculate with zero modulus!"
+    );
 
     let i = match exp_data.iter().position(|&r| r != 0) {
         None => return BigUint::one(),
         Some(i) => i,
     };
 
-    let mut base = base.clone();
+    let mut base = base % modulus;
     for _ in 0..i {
         for _ in 0..big_digit::BITS {
             base = &base * &base % modulus;
@@ -2259,7 +2698,7 @@ fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> Big
     }
 
     let mut r = exp_data[i];
-    let mut b = 0usize;
+    let mut b = 0u8;
     while r.is_even() {
         base = &base * &base % modulus;
         r >>= 1;
@@ -2312,7 +2751,7 @@ fn plain_modpow(base: &BigUint, exp_data: &[BigDigit], modulus: &BigUint) -> Big
 
 #[test]
 fn test_plain_modpow() {
-    let two = BigUint::from(2u32);
+    let two = &BigUint::from(2u32);
     let modulus = BigUint::from(0x1100u32);
 
     let exp = vec![0, 0b1];
@@ -2342,20 +2781,10 @@ fn test_plain_modpow() {
     );
 }
 
-
-
-pub fn trailing_zeros(u: &BigUint) -> Option<usize> {
-    u.data
-        .iter()
-        .enumerate()
-        .find(|&(_, &digit)| digit != 0)
-        .map(|(i, digit)| i * big_digit::BITS + digit.trailing_zeros() as usize)
-}
-
 impl_sum_iter_type!(BigUint);
 impl_product_iter_type!(BigUint);
 
-pub trait IntDigits {
+pub(crate) trait IntDigits {
     fn digits(&self) -> &[BigDigit];
     fn digits_mut(&mut self) -> &mut Vec<BigDigit>;
     fn normalize(&mut self);
@@ -2387,14 +2816,14 @@ impl IntDigits for BigUint {
 }
 
 
-#[cfg(has_i128)]
+#[cfg(any(test, not(u64_digit)))]
 #[inline]
 fn u32_to_u128(a: u32, b: u32, c: u32, d: u32) -> u128 {
     u128::from(d) | (u128::from(c) << 32) | (u128::from(b) << 64) | (u128::from(a) << 96)
 }
 
 
-#[cfg(has_i128)]
+#[cfg(any(test, not(u64_digit)))]
 #[inline]
 fn u32_from_u128(n: u128) -> (u32, u32, u32, u32) {
     (
@@ -2407,6 +2836,7 @@ fn u32_from_u128(n: u128) -> (u32, u32, u32, u32) {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for BigUint {
+    #[cfg(not(u64_digit))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -2414,8 +2844,34 @@ impl serde::Serialize for BigUint {
         
         
         
-        let data: &Vec<u32> = &self.data;
+        let data: &[u32] = &self.data;
         data.serialize(serializer)
+    }
+
+    #[cfg(u64_digit)]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeSeq;
+        if let Some((&last, data)) = self.data.split_last() {
+            let last_lo = last as u32;
+            let last_hi = (last >> 32) as u32;
+            let u32_len = data.len() * 2 + 1 + (last_hi != 0) as usize;
+            let mut seq = serializer.serialize_seq(Some(u32_len))?;
+            for &x in data {
+                seq.serialize_element(&(x as u32))?;
+                seq.serialize_element(&((x >> 32) as u32))?;
+            }
+            seq.serialize_element(&last_lo)?;
+            if last_hi != 0 {
+                seq.serialize_element(&last_hi)?;
+            }
+            seq.end()
+        } else {
+            let data: &[u32] = &[];
+            data.serialize(serializer)
+        }
     }
 }
 
@@ -2425,609 +2881,126 @@ impl<'de> serde::Deserialize<'de> for BigUint {
     where
         D: serde::Deserializer<'de>,
     {
-        let data: Vec<u32> = Vec::deserialize(deserializer)?;
-        Ok(BigUint::new(data))
+        use serde::de::{SeqAccess, Visitor};
+
+        struct U32Visitor;
+
+        impl<'de> Visitor<'de> for U32Visitor {
+            type Value = BigUint;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a sequence of unsigned 32-bit numbers")
+            }
+
+            #[cfg(not(u64_digit))]
+            fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
+            where
+                S: SeqAccess<'de>,
+            {
+                let len = seq.size_hint().unwrap_or(0);
+                let mut data = Vec::with_capacity(len);
+
+                while let Some(value) = seq.next_element::<u32>()? {
+                    data.push(value);
+                }
+
+                Ok(biguint_from_vec(data))
+            }
+
+            #[cfg(u64_digit)]
+            fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
+            where
+                S: SeqAccess<'de>,
+            {
+                let u32_len = seq.size_hint().unwrap_or(0);
+                let len = u32_len.div_ceil(&2);
+                let mut data = Vec::with_capacity(len);
+
+                while let Some(lo) = seq.next_element::<u32>()? {
+                    let mut value = BigDigit::from(lo);
+                    if let Some(hi) = seq.next_element::<u32>()? {
+                        value |= BigDigit::from(hi) << 32;
+                        data.push(value);
+                    } else {
+                        data.push(value);
+                        break;
+                    }
+                }
+
+                Ok(biguint_from_vec(data))
+            }
+        }
+
+        deserializer.deserialize_seq(U32Visitor)
     }
 }
 
 
 #[inline]
-fn get_radix_base(radix: u32) -> (BigDigit, usize) {
+fn get_radix_base(radix: u32, bits: u8) -> (BigDigit, usize) {
+    mod gen {
+        include! { concat!(env!("OUT_DIR"), "/radix_bases.rs") }
+    }
+
     debug_assert!(
         2 <= radix && radix <= 256,
         "The radix must be within 2...256"
     );
     debug_assert!(!radix.is_power_of_two());
+    debug_assert!(bits <= big_digit::BITS);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    match big_digit::BITS {
+    match bits {
+        16 => {
+            let (base, power) = gen::BASES_16[radix as usize];
+            (base as BigDigit, power)
+        }
         32 => {
-            const BASES: [(u32, usize); 257] = [
-                (0, 0),
-                (0, 0),
-                (0, 0),           
-                (3486784401, 20), 
-                (0, 0),           
-                (1220703125, 13), 
-                (2176782336, 12), 
-                (1977326743, 11), 
-                (0, 0),           
-                (3486784401, 10), 
-                (1000000000, 9),  
-                (2357947691, 9),  
-                (429981696, 8),   
-                (815730721, 8),   
-                (1475789056, 8),  
-                (2562890625, 8),  
-                (0, 0),           
-                (410338673, 7),   
-                (612220032, 7),   
-                (893871739, 7),   
-                (1280000000, 7),  
-                (1801088541, 7),  
-                (2494357888, 7),  
-                (3404825447, 7),  
-                (191102976, 6),   
-                (244140625, 6),   
-                (308915776, 6),   
-                (387420489, 6),   
-                (481890304, 6),   
-                (594823321, 6),   
-                (729000000, 6),   
-                (887503681, 6),   
-                (0, 0),           
-                (1291467969, 6),  
-                (1544804416, 6),  
-                (1838265625, 6),  
-                (2176782336, 6),  
-                (2565726409, 6),  
-                (3010936384, 6),  
-                (3518743761, 6),  
-                (4096000000, 6),  
-                (115856201, 5),   
-                (130691232, 5),   
-                (147008443, 5),   
-                (164916224, 5),   
-                (184528125, 5),   
-                (205962976, 5),   
-                (229345007, 5),   
-                (254803968, 5),   
-                (282475249, 5),   
-                (312500000, 5),   
-                (345025251, 5),   
-                (380204032, 5),   
-                (418195493, 5),   
-                (459165024, 5),   
-                (503284375, 5),   
-                (550731776, 5),   
-                (601692057, 5),   
-                (656356768, 5),   
-                (714924299, 5),   
-                (777600000, 5),   
-                (844596301, 5),   
-                (916132832, 5),   
-                (992436543, 5),   
-                (0, 0),           
-                (1160290625, 5),  
-                (1252332576, 5),  
-                (1350125107, 5),  
-                (1453933568, 5),  
-                (1564031349, 5),  
-                (1680700000, 5),  
-                (1804229351, 5),  
-                (1934917632, 5),  
-                (2073071593, 5),  
-                (2219006624, 5),  
-                (2373046875, 5),  
-                (2535525376, 5),  
-                (2706784157, 5),  
-                (2887174368, 5),  
-                (3077056399, 5),  
-                (3276800000, 5),  
-                (3486784401, 5),  
-                (3707398432, 5),  
-                (3939040643, 5),  
-                (4182119424, 5),  
-                (52200625, 4),    
-                (54700816, 4),    
-                (57289761, 4),    
-                (59969536, 4),    
-                (62742241, 4),    
-                (65610000, 4),    
-                (68574961, 4),    
-                (71639296, 4),    
-                (74805201, 4),    
-                (78074896, 4),    
-                (81450625, 4),    
-                (84934656, 4),    
-                (88529281, 4),    
-                (92236816, 4),    
-                (96059601, 4),    
-                (100000000, 4),   
-                (104060401, 4),   
-                (108243216, 4),   
-                (112550881, 4),   
-                (116985856, 4),   
-                (121550625, 4),   
-                (126247696, 4),   
-                (131079601, 4),   
-                (136048896, 4),   
-                (141158161, 4),   
-                (146410000, 4),   
-                (151807041, 4),   
-                (157351936, 4),   
-                (163047361, 4),   
-                (168896016, 4),   
-                (174900625, 4),   
-                (181063936, 4),   
-                (187388721, 4),   
-                (193877776, 4),   
-                (200533921, 4),   
-                (207360000, 4),   
-                (214358881, 4),   
-                (221533456, 4),   
-                (228886641, 4),   
-                (236421376, 4),   
-                (244140625, 4),   
-                (252047376, 4),   
-                (260144641, 4),   
-                (0, 0),           
-                (276922881, 4),   
-                (285610000, 4),   
-                (294499921, 4),   
-                (303595776, 4),   
-                (312900721, 4),   
-                (322417936, 4),   
-                (332150625, 4),   
-                (342102016, 4),   
-                (352275361, 4),   
-                (362673936, 4),   
-                (373301041, 4),   
-                (384160000, 4),   
-                (395254161, 4),   
-                (406586896, 4),   
-                (418161601, 4),   
-                (429981696, 4),   
-                (442050625, 4),   
-                (454371856, 4),   
-                (466948881, 4),   
-                (479785216, 4),   
-                (492884401, 4),   
-                (506250000, 4),   
-                (519885601, 4),   
-                (533794816, 4),   
-                (547981281, 4),   
-                (562448656, 4),   
-                (577200625, 4),   
-                (592240896, 4),   
-                (607573201, 4),   
-                (623201296, 4),   
-                (639128961, 4),   
-                (655360000, 4),   
-                (671898241, 4),   
-                (688747536, 4),   
-                (705911761, 4),   
-                (723394816, 4),   
-                (741200625, 4),   
-                (759333136, 4),   
-                (777796321, 4),   
-                (796594176, 4),   
-                (815730721, 4),   
-                (835210000, 4),   
-                (855036081, 4),   
-                (875213056, 4),   
-                (895745041, 4),   
-                (916636176, 4),   
-                (937890625, 4),   
-                (959512576, 4),   
-                (981506241, 4),   
-                (1003875856, 4),  
-                (1026625681, 4),  
-                (1049760000, 4),  
-                (1073283121, 4),  
-                (1097199376, 4),  
-                (1121513121, 4),  
-                (1146228736, 4),  
-                (1171350625, 4),  
-                (1196883216, 4),  
-                (1222830961, 4),  
-                (1249198336, 4),  
-                (1275989841, 4),  
-                (1303210000, 4),  
-                (1330863361, 4),  
-                (1358954496, 4),  
-                (1387488001, 4),  
-                (1416468496, 4),  
-                (1445900625, 4),  
-                (1475789056, 4),  
-                (1506138481, 4),  
-                (1536953616, 4),  
-                (1568239201, 4),  
-                (1600000000, 4),  
-                (1632240801, 4),  
-                (1664966416, 4),  
-                (1698181681, 4),  
-                (1731891456, 4),  
-                (1766100625, 4),  
-                (1800814096, 4),  
-                (1836036801, 4),  
-                (1871773696, 4),  
-                (1908029761, 4),  
-                (1944810000, 4),  
-                (1982119441, 4),  
-                (2019963136, 4),  
-                (2058346161, 4),  
-                (2097273616, 4),  
-                (2136750625, 4),  
-                (2176782336, 4),  
-                (2217373921, 4),  
-                (2258530576, 4),  
-                (2300257521, 4),  
-                (2342560000, 4),  
-                (2385443281, 4),  
-                (2428912656, 4),  
-                (2472973441, 4),  
-                (2517630976, 4),  
-                (2562890625, 4),  
-                (2608757776, 4),  
-                (2655237841, 4),  
-                (2702336256, 4),  
-                (2750058481, 4),  
-                (2798410000, 4),  
-                (2847396321, 4),  
-                (2897022976, 4),  
-                (2947295521, 4),  
-                (2998219536, 4),  
-                (3049800625, 4),  
-                (3102044416, 4),  
-                (3154956561, 4),  
-                (3208542736, 4),  
-                (3262808641, 4),  
-                (3317760000, 4),  
-                (3373402561, 4),  
-                (3429742096, 4),  
-                (3486784401, 4),  
-                (3544535296, 4),  
-                (3603000625, 4),  
-                (3662186256, 4),  
-                (3722098081, 4),  
-                (3782742016, 4),  
-                (3844124001, 4),  
-                (3906250000, 4),  
-                (3969126001, 4),  
-                (4032758016, 4),  
-                (4097152081, 4),  
-                (4162314256, 4),  
-                (4228250625, 4),  
-                (0, 0),           
-            ];
-
-            let (base, power) = BASES[radix as usize];
+            let (base, power) = gen::BASES_32[radix as usize];
             (base as BigDigit, power)
         }
         64 => {
-            const BASES: [(u64, usize); 257] = [
-                (0, 0),
-                (0, 0),
-                (9223372036854775808, 63),  
-                (12157665459056928801, 40), 
-                (4611686018427387904, 31),  
-                (7450580596923828125, 27),  
-                (4738381338321616896, 24),  
-                (3909821048582988049, 22),  
-                (9223372036854775808, 21),  
-                (12157665459056928801, 20), 
-                (10000000000000000000, 19), 
-                (5559917313492231481, 18),  
-                (2218611106740436992, 17),  
-                (8650415919381337933, 17),  
-                (2177953337809371136, 16),  
-                (6568408355712890625, 16),  
-                (1152921504606846976, 15),  
-                (2862423051509815793, 15),  
-                (6746640616477458432, 15),  
-                (15181127029874798299, 15), 
-                (1638400000000000000, 14),  
-                (3243919932521508681, 14),  
-                (6221821273427820544, 14),  
-                (11592836324538749809, 14), 
-                (876488338465357824, 13),   
-                (1490116119384765625, 13),  
-                (2481152873203736576, 13),  
-                (4052555153018976267, 13),  
-                (6502111422497947648, 13),  
-                (10260628712958602189, 13), 
-                (15943230000000000000, 13), 
-                (787662783788549761, 12),   
-                (1152921504606846976, 12),  
-                (1667889514952984961, 12),  
-                (2386420683693101056, 12),  
-                (3379220508056640625, 12),  
-                (4738381338321616896, 12),  
-                (6582952005840035281, 12),  
-                (9065737908494995456, 12),  
-                (12381557655576425121, 12), 
-                (16777216000000000000, 12), 
-                (550329031716248441, 11),   
-                (717368321110468608, 11),   
-                (929293739471222707, 11),   
-                (1196683881290399744, 11),  
-                (1532278301220703125, 11),  
-                (1951354384207722496, 11),  
-                (2472159215084012303, 11),  
-                (3116402981210161152, 11),  
-                (3909821048582988049, 11),  
-                (4882812500000000000, 11),  
-                (6071163615208263051, 11),  
-                (7516865509350965248, 11),  
-                (9269035929372191597, 11),  
-                (11384956040305711104, 11), 
-                (13931233916552734375, 11), 
-                (16985107389382393856, 11), 
-                (362033331456891249, 10),   
-                (430804206899405824, 10),   
-                (511116753300641401, 10),   
-                (604661760000000000, 10),   
-                (713342911662882601, 10),   
-                (839299365868340224, 10),   
-                (984930291881790849, 10),   
-                (1152921504606846976, 10),  
-                (1346274334462890625, 10),  
-                (1568336880910795776, 10),  
-                (1822837804551761449, 10),  
-                (2113922820157210624, 10),  
-                (2446194060654759801, 10),  
-                (2824752490000000000, 10),  
-                (3255243551009881201, 10),  
-                (3743906242624487424, 10),  
-                (4297625829703557649, 10),  
-                (4923990397355877376, 10),  
-                (5631351470947265625, 10),  
-                (6428888932339941376, 10),  
-                (7326680472586200649, 10),  
-                (8335775831236199424, 10),  
-                (9468276082626847201, 10),  
-                (10737418240000000000, 10), 
-                (12157665459056928801, 10), 
-                (13744803133596058624, 10), 
-                (15516041187205853449, 10), 
-                (17490122876598091776, 10), 
-                (231616946283203125, 9),    
-                (257327417311663616, 9),    
-                (285544154243029527, 9),    
-                (316478381828866048, 9),    
-                (350356403707485209, 9),    
-                (387420489000000000, 9),    
-                (427929800129788411, 9),    
-                (472161363286556672, 9),    
-                (520411082988487293, 9),    
-                (572994802228616704, 9),    
-                (630249409724609375, 9),    
-                (692533995824480256, 9),    
-                (760231058654565217, 9),    
-                (833747762130149888, 9),    
-                (913517247483640899, 9),    
-                (1000000000000000000, 9),   
-                (1093685272684360901, 9),   
-                (1195092568622310912, 9),   
-                (1304773183829244583, 9),   
-                (1423311812421484544, 9),   
-                (1551328215978515625, 9),   
-                (1689478959002692096, 9),   
-                (1838459212420154507, 9),   
-                (1999004627104432128, 9),   
-                (2171893279442309389, 9),   
-                (2357947691000000000, 9),   
-                (2558036924386500591, 9),   
-                (2773078757450186752, 9),   
-                (3004041937984268273, 9),   
-                (3251948521156637184, 9),   
-                (3517876291919921875, 9),   
-                (3802961274698203136, 9),   
-                (4108400332687853397, 9),   
-                (4435453859151328768, 9),   
-                (4785448563124474679, 9),   
-                (5159780352000000000, 9),   
-                (5559917313492231481, 9),   
-                (5987402799531080192, 9),   
-                (6443858614676334363, 9),   
-                (6930988311686938624, 9),   
-                (7450580596923828125, 9),   
-                (8004512848309157376, 9),   
-                (8594754748609397887, 9),   
-                (9223372036854775808, 9),   
-                (9892530380752880769, 9),   
-                (10604499373000000000, 9),  
-                (11361656654439817571, 9),  
-                (12166492167065567232, 9),  
-                (13021612539908538853, 9),  
-                (13929745610903012864, 9),  
-                (14893745087865234375, 9),  
-                (15916595351771938816, 9),  
-                (17001416405572203977, 9),  
-                (18151468971815029248, 9),  
-                (139353667211683681, 8),    
-                (147578905600000000, 8),    
-                (156225851787813921, 8),    
-                (165312903998914816, 8),    
-                (174859124550883201, 8),    
-                (184884258895036416, 8),    
-                (195408755062890625, 8),    
-                (206453783524884736, 8),    
-                (218041257467152161, 8),    
-                (230193853492166656, 8),    
-                (242935032749128801, 8),    
-                (256289062500000000, 8),    
-                (270281038127131201, 8),    
-                (284936905588473856, 8),    
-                (300283484326400961, 8),    
-                (316348490636206336, 8),    
-                (333160561500390625, 8),    
-                (350749278894882816, 8),    
-                (369145194573386401, 8),    
-                (388379855336079616, 8),    
-                (408485828788939521, 8),    
-                (429496729600000000, 8),    
-                (451447246258894081, 8),    
-                (474373168346071296, 8),    
-                (498311414318121121, 8),    
-                (523300059815673856, 8),    
-                (549378366500390625, 8),    
-                (576586811427594496, 8),    
-                (604967116961135041, 8),    
-                (634562281237118976, 8),    
-                (665416609183179841, 8),    
-                (697575744100000000, 8),    
-                (731086699811838561, 8),    
-                (765997893392859136, 8),    
-                (802359178476091681, 8),    
-                (840221879151902976, 8),    
-                (879638824462890625, 8),    
-                (920664383502155776, 8),    
-                (963354501121950081, 8),    
-                (1007766734259732736, 8),   
-                (1053960288888713761, 8),   
-                (1101996057600000000, 8),   
-                (1151936657823500641, 8),   
-                (1203846470694789376, 8),   
-                (1257791680575160641, 8),   
-                (1313840315232157696, 8),   
-                (1372062286687890625, 8),   
-                (1432529432742502656, 8),   
-                (1495315559180183521, 8),   
-                (1560496482665168896, 8),   
-                (1628150074335205281, 8),   
-                (1698356304100000000, 8),   
-                (1771197285652216321, 8),   
-                (1846757322198614016, 8),   
-                (1925122952918976001, 8),   
-                (2006383000160502016, 8),   
-                (2090628617375390625, 8),   
-                (2177953337809371136, 8),   
-                (2268453123948987361, 8),   
-                (2362226417735475456, 8),   
-                (2459374191553118401, 8),   
-                (2560000000000000000, 8),   
-                (2664210032449121601, 8),   
-                (2772113166407885056, 8),   
-                (2883821021683985761, 8),   
-                (2999448015365799936, 8),   
-                (3119111417625390625, 8),   
-                (3242931408352297216, 8),   
-                (3371031134626313601, 8),   
-                (3503536769037500416, 8),   
-                (3640577568861717121, 8),   
-                (3782285936100000000, 8),   
-                (3928797478390152481, 8),   
-                (4080251070798954496, 8),   
-                (4236788918503437921, 8),   
-                (4398556620369715456, 8),   
-                (4565703233437890625, 8),   
-                (4738381338321616896, 8),   
-                (4916747105530914241, 8),   
-                (5100960362726891776, 8),   
-                (5291184662917065441, 8),   
-                (5487587353600000000, 8),   
-                (5690339646868044961, 8),   
-                (5899616690476974336, 8),   
-                (6115597639891380481, 8),   
-                (6338465731314712576, 8),   
-                (6568408355712890625, 8),   
-                (6805617133840466176, 8),   
-                (7050287992278341281, 8),   
-                (7302621240492097536, 8),   
-                (7562821648920027361, 8),   
-                (7831098528100000000, 8),   
-                (8107665808844335041, 8),   
-                (8392742123471896576, 8),   
-                (8686550888106661441, 8),   
-                (8989320386052055296, 8),   
-                (9301283852250390625, 8),   
-                (9622679558836781056, 8),   
-                (9953750901796946721, 8),   
-                (10294746488738365696, 8),  
-                (10645920227784266881, 8),  
-                (11007531417600000000, 8),  
-                (11379844838561358721, 8),  
-                (11763130845074473216, 8),  
-                (12157665459056928801, 8),  
-                (12563730464589807616, 8),  
-                (12981613503750390625, 8),  
-                (13411608173635297536, 8),  
-                (13854014124583882561, 8),  
-                (14309137159611744256, 8),  
-                (14777289335064248001, 8),  
-                (15258789062500000000, 8),  
-                (15753961211814252001, 8),  
-                (16263137215612256256, 8),  
-                (16786655174842630561, 8),  
-                (17324859965700833536, 8),  
-                (17878103347812890625, 8),  
-                (72057594037927936, 7),     
-            ];
-
-            let (base, power) = BASES[radix as usize];
+            let (base, power) = gen::BASES_64[radix as usize];
             (base as BigDigit, power)
         }
         _ => panic!("Invalid bigdigit size"),
     }
 }
 
+#[cfg(not(u64_digit))]
 #[test]
 fn test_from_slice() {
-    fn check(slice: &[BigDigit], data: &[BigDigit]) {
-        assert!(BigUint::from_slice(slice).data == data);
+    fn check(slice: &[u32], data: &[BigDigit]) {
+        assert_eq!(BigUint::from_slice(slice).data, data);
     }
     check(&[1], &[1]);
     check(&[0, 0, 0], &[]);
     check(&[1, 2, 0, 0], &[1, 2]);
     check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
     check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
-    check(&[-1i32 as BigDigit], &[-1i32 as BigDigit]);
+    check(&[-1i32 as u32], &[-1i32 as BigDigit]);
 }
 
+#[cfg(u64_digit)]
 #[test]
-fn test_assign_from_slice() {
-    fn check(slice: &[BigDigit], data: &[BigDigit]) {
-        let mut p = BigUint::from_slice(&[2627_u32, 0_u32, 9182_u32, 42_u32]);
-        p.assign_from_slice(slice);
-        assert!(p.data == data);
+fn test_from_slice() {
+    fn check(slice: &[u32], data: &[BigDigit]) {
+        assert_eq!(
+            BigUint::from_slice(slice).data,
+            data,
+            "from {:?}, to {:?}",
+            slice,
+            data
+        );
     }
     check(&[1], &[1]);
     check(&[0, 0, 0], &[]);
-    check(&[1, 2, 0, 0], &[1, 2]);
-    check(&[0, 0, 1, 2], &[0, 0, 1, 2]);
-    check(&[0, 0, 1, 2, 0, 0], &[0, 0, 1, 2]);
-    check(&[-1i32 as BigDigit], &[-1i32 as BigDigit]);
+    check(&[1, 2], &[8_589_934_593]);
+    check(&[1, 2, 0, 0], &[8_589_934_593]);
+    check(&[0, 0, 1, 2], &[0, 8_589_934_593]);
+    check(&[0, 0, 1, 2, 0, 0], &[0, 8_589_934_593]);
+    check(&[-1i32 as u32], &[(-1i32 as u32) as BigDigit]);
 }
 
-#[cfg(has_i128)]
 #[test]
 fn test_u32_u128() {
     assert_eq!(u32_from_u128(0u128), (0, 0, 0, 0));
@@ -3059,7 +3032,6 @@ fn test_u32_u128() {
     assert_eq!(u32_from_u128(36_893_488_151_714_070_528), (0, 2, 1, 0));
 }
 
-#[cfg(has_i128)]
 #[test]
 fn test_u128_u32_roundtrip() {
     

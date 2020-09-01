@@ -75,23 +75,47 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/num-bigint/0.2")]
 
 
-#![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "rand")]
-extern crate rand;
-#[cfg(feature = "serde")]
-extern crate serde;
 
-extern crate num_integer as integer;
-extern crate num_traits as traits;
-#[cfg(feature = "quickcheck")]
-extern crate quickcheck;
 
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/num-bigint/0.3")]
+#![no_std]
+
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate std;
+
+#[cfg(feature = "std")]
+mod std_alloc {
+    pub(crate) use std::borrow::Cow;
+    #[cfg(feature = "quickcheck")]
+    pub(crate) use std::boxed::Box;
+    pub(crate) use std::string::String;
+    pub(crate) use std::vec::Vec;
+}
+
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+mod std_alloc {
+    pub(crate) use alloc::borrow::Cow;
+    #[cfg(feature = "quickcheck")]
+    pub(crate) use alloc::boxed::Box;
+    pub(crate) use alloc::string::String;
+    pub(crate) use alloc::vec::Vec;
+}
+
+use core::fmt;
+#[cfg(feature = "std")]
 use std::error::Error;
-use std::fmt;
 
 #[macro_use]
 mod macros;
@@ -125,7 +149,7 @@ enum BigIntErrorKind {
 
 impl ParseBigIntError {
     fn __description(&self) -> &str {
-        use BigIntErrorKind::*;
+        use crate::BigIntErrorKind::*;
         match self.kind {
             Empty => "cannot parse integer from empty string",
             InvalidDigit => "invalid digit found in string",
@@ -146,42 +170,102 @@ impl ParseBigIntError {
 }
 
 impl fmt::Display for ParseBigIntError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.__description().fmt(f)
     }
 }
 
+#[cfg(feature = "std")]
 impl Error for ParseBigIntError {
     fn description(&self) -> &str {
         self.__description()
     }
 }
 
-pub use biguint::BigUint;
-pub use biguint::ToBigUint;
 
-pub use bigint::BigInt;
-pub use bigint::Sign;
-pub use bigint::ToBigInt;
+#[cfg(has_try_from)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct TryFromBigIntError<T> {
+    original: T,
+}
+
+#[cfg(has_try_from)]
+impl<T> TryFromBigIntError<T> {
+    fn new(original: T) -> Self {
+        TryFromBigIntError { original }
+    }
+
+    fn __description(&self) -> &str {
+        "out of range conversion regarding big integer attempted"
+    }
+
+    
+    
+    
+    
+    
+    pub fn into_original(self) -> T {
+        self.original
+    }
+}
+
+#[cfg(all(feature = "std", has_try_from))]
+impl<T> std::error::Error for TryFromBigIntError<T>
+where
+    T: fmt::Debug,
+{
+    fn description(&self) -> &str {
+        self.__description()
+    }
+}
+
+#[cfg(has_try_from)]
+impl<T> fmt::Display for TryFromBigIntError<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.__description().fmt(f)
+    }
+}
+
+pub use crate::biguint::BigUint;
+pub use crate::biguint::ToBigUint;
+
+pub use crate::bigint::BigInt;
+pub use crate::bigint::Sign;
+pub use crate::bigint::ToBigInt;
 
 #[cfg(feature = "rand")]
-pub use bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
+pub use crate::bigrand::{RandBigInt, RandomBits, UniformBigInt, UniformBigUint};
 
 mod big_digit {
     
-    pub type BigDigit = u32;
+    #[cfg(not(u64_digit))]
+    pub(crate) type BigDigit = u32;
+    #[cfg(u64_digit)]
+    pub(crate) type BigDigit = u64;
 
     
     
-    pub type DoubleBigDigit = u64;
+    #[cfg(not(u64_digit))]
+    pub(crate) type DoubleBigDigit = u64;
+    #[cfg(u64_digit)]
+    pub(crate) type DoubleBigDigit = u128;
 
     
-    pub type SignedDoubleBigDigit = i64;
+    #[cfg(not(u64_digit))]
+    pub(crate) type SignedDoubleBigDigit = i64;
+    #[cfg(u64_digit)]
+    pub(crate) type SignedDoubleBigDigit = i128;
 
     
-    pub const BITS: usize = 32;
+    #[cfg(not(u64_digit))]
+    pub(crate) const BITS: u8 = 32;
+    #[cfg(u64_digit)]
+    pub(crate) const BITS: u8 = 64;
 
-    const LO_MASK: DoubleBigDigit = (-1i32 as DoubleBigDigit) >> BITS;
+    pub(crate) const HALF_BITS: u8 = BITS / 2;
+    pub(crate) const HALF: BigDigit = (1 << HALF_BITS) - 1;
+
+    const LO_MASK: DoubleBigDigit = (1 << BITS) - 1;
 
     #[inline]
     fn get_hi(n: DoubleBigDigit) -> BigDigit {
@@ -194,13 +278,13 @@ mod big_digit {
 
     
     #[inline]
-    pub fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
+    pub(crate) fn from_doublebigdigit(n: DoubleBigDigit) -> (BigDigit, BigDigit) {
         (get_hi(n), get_lo(n))
     }
 
     
     #[inline]
-    pub fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
+    pub(crate) fn to_doublebigdigit(hi: BigDigit, lo: BigDigit) -> DoubleBigDigit {
         DoubleBigDigit::from(lo) | (DoubleBigDigit::from(hi) << BITS)
     }
 }
