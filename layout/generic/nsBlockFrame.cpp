@@ -1858,7 +1858,10 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
         ComputeFinalBSize(aReflowInput, aState.mReflowStatus,
                           aState.mBCoord + nonCarriedOutBDirMargin,
                           borderPadding, aState.mConsumedBSize);
-
+    
+    
+    
+    
     
     aMetrics.mCarriedOutBEndMargin.Zero();
   } else if (!IsComboboxControlFrame() &&
@@ -3343,6 +3346,10 @@ static inline bool IsNonAutoNonZeroBSize(const StyleSize& aCoord) {
   return true;
 }
 
+static bool BehavesLikeInitialValueOnBlockAxis(const StyleSize& aCoord) {
+  return aCoord.IsAuto() || aCoord.IsExtremumLength();
+}
+
 
 bool nsBlockFrame::IsSelfEmpty() {
   
@@ -3357,6 +3364,15 @@ bool nsBlockFrame::IsSelfEmpty() {
 
   if (IsNonAutoNonZeroBSize(position->MinBSize(wm)) ||
       IsNonAutoNonZeroBSize(position->BSize(wm))) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (BehavesLikeInitialValueOnBlockAxis(position->BSize(wm)) &&
+      position->mAspectRatio.HasFiniteRatio()) {
     return false;
   }
 
