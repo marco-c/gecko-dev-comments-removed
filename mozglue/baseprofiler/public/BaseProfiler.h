@@ -23,12 +23,8 @@
 
 #include "mozilla/BaseProfilerCounts.h"
 
-
-
-
 #ifndef MOZ_GECKO_PROFILER
 
-#  include "mozilla/BaseProfilerMarkers.h"
 #  include "mozilla/UniquePtr.h"
 
 
@@ -66,29 +62,19 @@
 
 #  define AUTO_PROFILER_STATS(name)
 
-
-
 namespace mozilla {
 class ProfileChunkedBuffer;
 
 namespace baseprofiler {
 struct ProfilerBacktrace {};
 using UniqueProfilerBacktrace = UniquePtr<ProfilerBacktrace>;
-
-
-
-
 static inline UniqueProfilerBacktrace profiler_get_backtrace() {
   return nullptr;
 }
 
-static inline bool profiler_capture_backtrace_into(
+static inline bool profiler_capture_backtrace(
     ProfileChunkedBuffer& aChunkedBuffer) {
   return false;
-}
-
-static inline UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
-  return nullptr;
 }
 }  
 }  
@@ -551,20 +537,8 @@ using UniqueProfilerBacktrace =
 
 
 
-
-MFBT_API bool profiler_capture_backtrace_into(
-    ProfileChunkedBuffer& aChunkedBuffer);
-
-
-
-
-MFBT_API UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace();
-
-
-
-
-
 MFBT_API UniqueProfilerBacktrace profiler_get_backtrace();
+MFBT_API bool profiler_capture_backtrace(ProfileChunkedBuffer& aChunkedBuffer);
 
 struct ProfilerStats {
   unsigned n = 0;
@@ -701,16 +675,6 @@ class MOZ_RAII AutoProfilerStats {
 #    define AUTO_PROFILER_STATS(name)
 
 #  endif  
-
-}  
-}  
-
-
-
-#  include "mozilla/BaseProfilerMarkers.h"
-
-namespace mozilla {
-namespace baseprofiler {
 
 
 
