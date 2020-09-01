@@ -394,6 +394,10 @@ class RefTest(object):
         prefs['reftest.suite'] = options.suite
         prefs['gfx.font_rendering.ahem_antialias_none'] = True
         
+        
+        prefs['gfx.font_loader.delay'] = 0
+        prefs['gfx.font_loader.interval'] = 0
+        
         prefs['widget.disable-dark-scrollbar'] = True
         prefs['reftest.isCoverageBuild'] = mozinfo.info.get('ccov', False)
 
