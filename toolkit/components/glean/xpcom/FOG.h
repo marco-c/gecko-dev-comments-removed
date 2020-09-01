@@ -1,0 +1,26 @@
+
+
+
+
+
+#ifndef mozilla_FOG_h
+#define mozilla_FOG_h
+
+#include "nsIFOG.h"
+
+namespace mozilla {
+class FOG final : public nsIFOG {
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIFOG
+
+ public:
+  FOG() = default;
+  static already_AddRefed<FOG> GetSingleton();
+
+ private:
+  ~FOG() = default;
+};
+
+};  
+
+#endif  
