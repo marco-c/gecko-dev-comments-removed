@@ -351,7 +351,7 @@ def make_task_description(config, jobs):
 
     for job in jobs:
         
-        if job['run']['using'] != 'always-optimized':
+        if job['worker']['implementation'] == 'docker-worker':
             job['run'].setdefault('workdir', '/builds/worker')
 
         taskdesc = copy.deepcopy(job)
