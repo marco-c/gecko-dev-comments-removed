@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files('**'):
     BUG_COMPONENT = ('Core', 'General')
@@ -15,7 +15,10 @@ EXPORTS.brotli += [
 ]
 
 UNIFIED_SOURCES += [
+    'common/constants.c',
+    'common/context.c',
     'common/dictionary.c',
+    'common/platform.c',
     'common/transform.c',
     'dec/bit_reader.c',
     'dec/decode.c',
@@ -23,7 +26,7 @@ UNIFIED_SOURCES += [
     'dec/state.c',
 ]
 
-# We allow warnings for third-party code that can be updated from upstream.
+
 AllowCompilerWarnings()
 
 CFLAGS += ['-DBROTLI_BUILD_PORTABLE']
@@ -41,12 +44,14 @@ HOST_SOURCES += [
     'enc/block_splitter.c',
     'enc/brotli_bit_stream.c',
     'enc/cluster.c',
+    'enc/command.c',
     'enc/compress_fragment.c',
     'enc/compress_fragment_two_pass.c',
     'enc/dictionary_hash.c',
     'enc/encode.c',
     'enc/encoder_dict.c',
     'enc/entropy_encode.c',
+    'enc/fast_log.c',
     'enc/histogram.c',
     'enc/literal_cost.c',
     'enc/memory.c',
@@ -58,5 +63,5 @@ HOST_SOURCES += [
 
 if CONFIG['HOST_CC_TYPE'] != 'clang-cl':
     HOST_OS_LIBS += [
-        'm' # for log2() function used by Brotli encoder
+        'm' 
     ]

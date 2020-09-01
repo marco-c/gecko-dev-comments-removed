@@ -201,7 +201,23 @@ typedef enum BrotliEncoderParameter {
 
 
 
-  BROTLI_PARAM_NDIRECT = 8
+  BROTLI_PARAM_NDIRECT = 8,
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  BROTLI_PARAM_STREAM_OFFSET = 9
 } BrotliEncoderParameter;
 
 
@@ -264,6 +280,11 @@ BROTLI_ENC_API void BrotliEncoderDestroyInstance(BrotliEncoderState* state);
 
 
 BROTLI_ENC_API size_t BrotliEncoderMaxCompressedSize(size_t input_size);
+
+
+
+
+
 
 
 

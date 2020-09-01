@@ -21,6 +21,95 @@
 extern "C" {
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef enum {
   BROTLI_STATE_UNINITED,
   BROTLI_STATE_LARGE_WINDOW_BITS,
@@ -39,6 +128,7 @@ typedef enum {
   BROTLI_STATE_METABLOCK_DONE,
   BROTLI_STATE_COMMAND_POST_WRITE_1,
   BROTLI_STATE_COMMAND_POST_WRITE_2,
+  BROTLI_STATE_BEFORE_COMPRESSED_METABLOCK_HEADER,
   BROTLI_STATE_HUFFMAN_CODE_0,
   BROTLI_STATE_HUFFMAN_CODE_1,
   BROTLI_STATE_HUFFMAN_CODE_2,
@@ -46,6 +136,7 @@ typedef enum {
   BROTLI_STATE_CONTEXT_MAP_1,
   BROTLI_STATE_CONTEXT_MAP_2,
   BROTLI_STATE_TREE_GROUP,
+  BROTLI_STATE_BEFORE_COMPRESSED_METABLOCK_BODY,
   BROTLI_STATE_DONE
 } BrotliRunningState;
 
@@ -98,6 +189,50 @@ typedef enum {
   BROTLI_STATE_READ_BLOCK_LENGTH_SUFFIX
 } BrotliRunningReadBlockLengthState;
 
+typedef struct BrotliMetablockHeaderArena {
+  BrotliRunningTreeGroupState substate_tree_group;
+  BrotliRunningContextMapState substate_context_map;
+  BrotliRunningHuffmanState substate_huffman;
+
+  uint32_t sub_loop_counter;
+
+  uint32_t repeat_code_len;
+  uint32_t prev_code_len;
+
+  
+  uint32_t symbol;
+  uint32_t repeat;
+  uint32_t space;
+
+  
+  HuffmanCode table[32];
+  
+  uint16_t* symbol_lists;
+  
+  uint16_t symbols_lists_array[BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1 +
+                               BROTLI_NUM_COMMAND_SYMBOLS];
+  
+  int next_symbol[32];
+  uint8_t code_length_code_lengths[BROTLI_CODE_LENGTH_CODES];
+  
+  uint16_t code_length_histo[16];
+
+  
+  int htree_index;
+  HuffmanCode* next;
+
+  
+  uint32_t context_index;
+  uint32_t max_run_length_prefix;
+  uint32_t code;
+  HuffmanCode context_map_table[BROTLI_HUFFMAN_MAX_SIZE_272];
+} BrotliMetablockHeaderArena;
+
+typedef struct BrotliMetablockBodyArena {
+  uint8_t dist_extra_bits[544];
+  uint32_t dist_offset[544];
+} BrotliMetablockBodyArena;
+
 struct BrotliDecoderStateStruct {
   BrotliRunningState state;
 
@@ -111,6 +246,7 @@ struct BrotliDecoderStateStruct {
   void* memory_manager_opaque;
 
   
+
   union {
     uint64_t u64;
     uint8_t u8[8];
@@ -125,7 +261,6 @@ struct BrotliDecoderStateStruct {
   int dist_rb_idx;
   int dist_rb[4];
   int error_code;
-  uint32_t sub_loop_counter;
   uint8_t* ringbuffer;
   uint8_t* ringbuffer_end;
   HuffmanCode* htree_command;
@@ -153,13 +288,10 @@ struct BrotliDecoderStateStruct {
   uint32_t block_type_rb[6];
   uint32_t distance_postfix_bits;
   uint32_t num_direct_distance_codes;
-  int distance_postfix_mask;
   uint32_t num_dist_htrees;
   uint8_t* dist_context_map;
   HuffmanCode* literal_htree;
   uint8_t dist_htree_index;
-  uint32_t repeat_code_len;
-  uint32_t prev_code_len;
 
   int copy_length;
   int distance_code;
@@ -169,33 +301,6 @@ struct BrotliDecoderStateStruct {
   size_t partial_pos_out;  
 
   
-  uint32_t symbol;
-  uint32_t repeat;
-  uint32_t space;
-
-  HuffmanCode table[32];
-  
-  uint16_t* symbol_lists;
-  
-  uint16_t symbols_lists_array[BROTLI_HUFFMAN_MAX_CODE_LENGTH + 1 +
-                               BROTLI_NUM_COMMAND_SYMBOLS];
-  
-  int next_symbol[32];
-  uint8_t code_length_code_lengths[BROTLI_CODE_LENGTH_CODES];
-  
-  uint16_t code_length_histo[16];
-
-  
-  int htree_index;
-  HuffmanCode* next;
-
-  
-  uint32_t context_index;
-  uint32_t max_run_length_prefix;
-  uint32_t code;
-  HuffmanCode context_map_table[BROTLI_HUFFMAN_MAX_SIZE_272];
-
-  
   uint32_t mtf_upper_bound;
   uint32_t mtf[64 + 1];
 
@@ -203,10 +308,7 @@ struct BrotliDecoderStateStruct {
 
   
   BrotliRunningMetablockHeaderState substate_metablock_header;
-  BrotliRunningTreeGroupState substate_tree_group;
-  BrotliRunningContextMapState substate_context_map;
   BrotliRunningUncompressedState substate_uncompressed;
-  BrotliRunningHuffmanState substate_huffman;
   BrotliRunningDecodeUint8State substate_decode_uint8;
   BrotliRunningReadBlockLengthState substate_read_block_length;
 
@@ -229,6 +331,11 @@ struct BrotliDecoderStateStruct {
   const BrotliTransforms* transforms;
 
   uint32_t trivial_literal_contexts[8];  
+
+  union {
+    BrotliMetablockHeaderArena header;
+    BrotliMetablockBodyArena body;
+  } arena;
 };
 
 typedef struct BrotliDecoderStateStruct BrotliDecoderStateInternal;
@@ -241,8 +348,8 @@ BROTLI_INTERNAL void BrotliDecoderStateMetablockBegin(BrotliDecoderState* s);
 BROTLI_INTERNAL void BrotliDecoderStateCleanupAfterMetablock(
     BrotliDecoderState* s);
 BROTLI_INTERNAL BROTLI_BOOL BrotliDecoderHuffmanTreeGroupInit(
-    BrotliDecoderState* s, HuffmanTreeGroup* group, uint32_t alphabet_size,
-    uint32_t max_symbol, uint32_t ntrees);
+    BrotliDecoderState* s, HuffmanTreeGroup* group, uint32_t alphabet_size_max,
+    uint32_t alphabet_size_limit, uint32_t ntrees);
 
 #define BROTLI_DECODER_ALLOC(S, L) S->alloc_func(S->memory_manager_opaque, L)
 

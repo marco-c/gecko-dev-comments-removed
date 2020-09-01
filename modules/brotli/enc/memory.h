@@ -56,6 +56,18 @@ BROTLI_INTERNAL void BrotliFree(MemoryManager* m, void* p);
 #define BROTLI_IS_OOM(M) (!!(M)->is_oom)
 #endif  
 
+
+
+
+
+
+
+#if defined(__clang_analyzer__) && !defined(BROTLI_ENCODER_EXIT_ON_OOM)
+#define BROTLI_IS_NULL(A) ((A) == nullptr)
+#else  
+#define BROTLI_IS_NULL(A) (!!0)
+#endif  
+
 BROTLI_INTERNAL void BrotliWipeOutMemoryManager(MemoryManager* m);
 
 
@@ -66,18 +78,18 @@ BROTLI_INTERNAL void BrotliWipeOutMemoryManager(MemoryManager* m);
 
 
 
-#define BROTLI_ENSURE_CAPACITY(M, T, A, C, R) {  \
-  if (C < (R)) {                                 \
-    size_t _new_size = (C == 0) ? (R) : C;       \
-    T* new_array;                                \
-    while (_new_size < (R)) _new_size *= 2;      \
-    new_array = BROTLI_ALLOC((M), T, _new_size); \
-    if (!BROTLI_IS_OOM(M) && C != 0)             \
-      memcpy(new_array, A, C * sizeof(T));       \
-    BROTLI_FREE((M), A);                         \
-    A = new_array;                               \
-    C = _new_size;                               \
-  }                                              \
+#define BROTLI_ENSURE_CAPACITY(M, T, A, C, R) {                    \
+  if (C < (R)) {                                                   \
+    size_t _new_size = (C == 0) ? (R) : C;                         \
+    T* new_array;                                                  \
+    while (_new_size < (R)) _new_size *= 2;                        \
+    new_array = BROTLI_ALLOC((M), T, _new_size);                   \
+    if (!BROTLI_IS_OOM(M) && !BROTLI_IS_NULL(new_array) && C != 0) \
+      memcpy(new_array, A, C * sizeof(T));                         \
+    BROTLI_FREE((M), A);                                           \
+    A = new_array;                                                 \
+    C = _new_size;                                                 \
+  }                                                                \
 }
 
 

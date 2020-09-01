@@ -37,6 +37,8 @@ enum BrotliWordTransformType {
   BROTLI_TRANSFORM_OMIT_FIRST_7 = 18,
   BROTLI_TRANSFORM_OMIT_FIRST_8 = 19,
   BROTLI_TRANSFORM_OMIT_FIRST_9 = 20,
+  BROTLI_TRANSFORM_SHIFT_FIRST = 21,
+  BROTLI_TRANSFORM_SHIFT_ALL = 22,
   BROTLI_NUM_TRANSFORM_TYPES  
 };
 
@@ -50,6 +52,9 @@ typedef struct BrotliTransforms {
   uint32_t num_transforms;
   
   const uint8_t* transforms;
+  
+
+  const uint8_t* params;
   
 
 

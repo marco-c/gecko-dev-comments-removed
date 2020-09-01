@@ -19,13 +19,15 @@ extern "C" {
 
 typedef struct BrotliEncoderDictionary {
   const BrotliDictionary* words;
+  uint32_t num_transforms;
 
   
   uint32_t cutoffTransformsCount;
   uint64_t cutoffTransforms;
 
   
-  const uint16_t* hash_table;
+  const uint16_t* hash_table_words;
+  const uint8_t* hash_table_lengths;
 
   
   const uint16_t* buckets;

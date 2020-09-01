@@ -24,12 +24,11 @@
 #define BROTLI_COMMON_PLATFORM_H_
 
 #include <string.h>  
-#include <stdlib.h>  
 
 #include <brotli/port.h>
 #include <brotli/types.h>
 
-#if defined(OS_LINUX) || defined(OS_CYGWIN)
+#if defined(OS_LINUX) || defined(OS_CYGWIN) || defined(__EMSCRIPTEN__)
 #include <endian.h>
 #elif defined(OS_FREEBSD)
 #include <machine/endian.h>
@@ -39,6 +38,10 @@
 #define BROTLI_X_BYTE_ORDER BYTE_ORDER
 #define BROTLI_X_LITTLE_ENDIAN LITTLE_ENDIAN
 #define BROTLI_X_BIG_ENDIAN BIG_ENDIAN
+#endif
+
+#if BROTLI_MSVC_VERSION_CHECK(12, 0, 0)
+#include <intrin.h>
 #endif
 
 #if defined(BROTLI_ENABLE_LOG) || defined(BROTLI_DEBUG)
@@ -308,8 +311,7 @@ static BROTLI_INLINE void BrotliUnalignedWrite64(void* p, uint64_t v) {
 }
 #else  
 
-#if defined(ADDRESS_SANITIZER) || defined(THREAD_SANITIZER) || \
-    defined(MEMORY_SANITIZER)
+#if BROTLI_SANITIZED
 
 
 
@@ -356,7 +358,7 @@ static BROTLI_INLINE void BrotliUnalignedWrite64(void* p, uint64_t v) {
 typedef BROTLI_ALIGNED(1) uint64_t brotli_unaligned_uint64_t;
 
 static BROTLI_INLINE uint64_t BrotliUnalignedRead64(const void* p) {
-  return (uint64_t) ((brotli_unaligned_uint64_t*) p)[0];
+  return (uint64_t) ((const brotli_unaligned_uint64_t*) p)[0];
 }
 static BROTLI_INLINE void BrotliUnalignedWrite64(void* p, uint64_t v) {
   brotli_unaligned_uint64_t* dwords = (brotli_unaligned_uint64_t*) p;
@@ -466,20 +468,20 @@ static BROTLI_INLINE void BROTLI_UNALIGNED_STORE64LE(void* p, uint64_t v) {
 #endif
 
 #if defined(BROTLI_ENABLE_LOG)
-#define BROTLI_DCHECK(x) assert(x)
 #define BROTLI_LOG(x) printf x
 #else
-#define BROTLI_DCHECK(x)
 #define BROTLI_LOG(x)
 #endif
 
 #if defined(BROTLI_DEBUG) || defined(BROTLI_ENABLE_LOG)
+#define BROTLI_DCHECK(x) assert(x)
 static BROTLI_INLINE void BrotliDump(const char* f, int l, const char* fn) {
   fprintf(stderr, "%s:%d (%s)\n", f, l, fn);
   fflush(stderr);
 }
 #define BROTLI_DUMP() BrotliDump(__FILE__, __LINE__, __FUNCTION__)
 #else
+#define BROTLI_DCHECK(x)
 #define BROTLI_DUMP() (void)(0)
 #endif
 
@@ -523,17 +525,41 @@ BROTLI_MIN_MAX(size_t) BROTLI_MIN_MAX(uint32_t) BROTLI_MIN_MAX(uint8_t)
   (A)[(J)] = __brotli_swap_tmp;   \
 }
 
-
-static void* BrotliDefaultAllocFunc(void* opaque, size_t size) {
-  BROTLI_UNUSED(opaque);
-  return malloc(size);
+#if BROTLI_64_BITS
+#if BROTLI_GNUC_HAS_BUILTIN(__builtin_ctzll, 3, 4, 0) || \
+    BROTLI_INTEL_VERSION_CHECK(16, 0, 0)
+#define BROTLI_TZCNT64 __builtin_ctzll
+#elif BROTLI_MSVC_VERSION_CHECK(12, 0, 0)
+#if defined(BROTLI_TARGET_X64)
+#define BROTLI_TZCNT64 _tzcnt_u64
+#else 
+static BROTLI_INLINE uint32_t BrotliBsf64Msvc(uint64_t x) {
+  uint32_t lsb;
+  _BitScanForward64(&lsb, x);
+  return lsb;
 }
+#define BROTLI_TZCNT64 BrotliBsf64Msvc
+#endif 
+#endif 
+#endif 
 
-
-static void BrotliDefaultFreeFunc(void* opaque, void* address) {
-  BROTLI_UNUSED(opaque);
-  free(address);
+#if BROTLI_GNUC_HAS_BUILTIN(__builtin_clz, 3, 4, 0) || \
+    BROTLI_INTEL_VERSION_CHECK(16, 0, 0)
+#define BROTLI_BSR32(x) (31u ^ (uint32_t)__builtin_clz(x))
+#elif BROTLI_MSVC_VERSION_CHECK(12, 0, 0)
+static BROTLI_INLINE uint32_t BrotliBsr32Msvc(uint32_t x) {
+  unsigned long msb;
+  _BitScanReverse(&msb, x);
+  return (uint32_t)msb;
 }
+#define BROTLI_BSR32 BrotliBsr32Msvc
+#endif 
+
+
+BROTLI_COMMON_API void* BrotliDefaultAllocFunc(void* opaque, size_t size);
+
+
+BROTLI_COMMON_API void BrotliDefaultFreeFunc(void* opaque, void* address);
 
 BROTLI_UNUSED_FUNCTION void BrotliSuppressUnusedFunctions(void) {
   BROTLI_UNUSED(&BrotliSuppressUnusedFunctions);

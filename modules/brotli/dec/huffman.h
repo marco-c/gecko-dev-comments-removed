@@ -19,12 +19,6 @@ extern "C" {
 #define BROTLI_HUFFMAN_MAX_CODE_LENGTH 15
 
 
-
-static const uint16_t kMaxHuffmanTableSize[] = {
-  256, 402, 436, 468, 500, 534, 566, 598, 630, 662, 694, 726, 758, 790, 822,
-  854, 886, 920, 952, 984, 1016, 1048, 1080, 1112, 1144, 1176, 1208, 1240, 1272,
-  1304, 1336, 1368, 1400, 1432, 1464, 1496, 1528};
-
 #define BROTLI_HUFFMAN_MAX_SIZE_26 396
 
 #define BROTLI_HUFFMAN_MAX_SIZE_258 632
@@ -82,7 +76,7 @@ typedef BROTLI_ALIGNED(4) uint32_t HuffmanCode;
 
 static BROTLI_INLINE HuffmanCode ConstructHuffmanCode(const uint8_t bits,
     const uint16_t value) {
-  return ((value & 0xFFFF) << 16) | (bits & 0xFF);
+  return (HuffmanCode) ((value & 0xFFFF) << 16) | (bits & 0xFF);
 }
 
 #define BROTLI_HC_MARK_TABLE_FOR_FAST_LOAD(H) uint32_t __fastload_##H = (*H)
@@ -100,7 +94,7 @@ BROTLI_INTERNAL void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* root_table,
 
 
 BROTLI_INTERNAL uint32_t BrotliBuildHuffmanTable(HuffmanCode* root_table,
-    int root_bits, const uint16_t* const symbol_lists, uint16_t* count_arg);
+    int root_bits, const uint16_t* const symbol_lists, uint16_t* count);
 
 
 
@@ -115,8 +109,8 @@ BROTLI_INTERNAL uint32_t BrotliBuildSimpleHuffmanTable(HuffmanCode* table,
 typedef struct {
   HuffmanCode** htrees;
   HuffmanCode* codes;
-  uint16_t alphabet_size;
-  uint16_t max_symbol;
+  uint16_t alphabet_size_max;
+  uint16_t alphabet_size_limit;
   uint16_t num_htrees;
 } HuffmanTreeGroup;
 
