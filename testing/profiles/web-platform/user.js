@@ -25,6 +25,9 @@ user_pref("places.history.enabled", false);
 
 user_pref("toolkit.startup.max_resumed_crashes", -1);
 
+user_pref("gfx.font_loader.delay", 0);
+user_pref("gfx.font_loader.interval", 0);
+
 user_pref("gfx.font_rendering.ahem_antialias_none", true);
 
 user_pref("network.http.phishy-userpass-length", 255);
