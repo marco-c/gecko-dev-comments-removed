@@ -314,9 +314,7 @@ StyleEditorUI.prototype = {
 
 
   _addStyleSheet: function(resource) {
-    const { styleSheet } = resource;
-
-    if (!this._seenSheets.has(styleSheet)) {
+    if (!this._seenSheets.has(resource)) {
       const promise = (async () => {
         let editor = await this._addStyleSheetEditor(resource);
 
@@ -335,7 +333,7 @@ StyleEditorUI.prototype = {
           actorID: id,
           sourceMapURL,
           sourceMapBaseURL,
-        } = resource.styleSheet;
+        } = resource;
         const sources = await sourceMapService.getOriginalURLs({
           id,
           url: href || nodeHref,
@@ -357,22 +355,19 @@ StyleEditorUI.prototype = {
             );
 
             
-            original.styleSheetIndex = styleSheet.styleSheetIndex;
-            original.relatedStyleSheet = styleSheet;
+            original.styleSheetIndex = resource.styleSheetIndex;
+            original.relatedStyleSheet = resource;
             original.relatedEditorName = parentEditorName;
-
-            const dummyResource = Object.assign({}, resource, {
-              styleSheet: original,
-            });
-            await this._addStyleSheetEditor(dummyResource);
+            original.resourceId = resource.resourceId;
+            await this._addStyleSheetEditor(original);
           }
         }
 
         return editor;
       })();
-      this._seenSheets.set(styleSheet, promise);
+      this._seenSheets.set(resource, promise);
     }
-    return this._seenSheets.get(styleSheet);
+    return this._seenSheets.get(resource);
   },
 
   _getInlineStyleSheetsCount() {
@@ -417,7 +412,7 @@ StyleEditorUI.prototype = {
       this._window,
       this._walker,
       this._highlighter,
-      this._getNextFriendlyIndex(resource.styleSheet)
+      this._getNextFriendlyIndex(resource)
     );
 
     editor.on("property-change", this._summaryChange.bind(this, editor));
@@ -431,7 +426,7 @@ StyleEditorUI.prototype = {
     await editor.fetchSource();
     this._sourceLoaded(editor);
 
-    if (resource.styleSheet.fileName) {
+    if (resource.fileName) {
       this.emit("test:editor-updated", editor);
     }
 
@@ -1179,19 +1174,18 @@ StyleEditorUI.prototype = {
   async _handleStyleSheetResource(resource) {
     try {
       
-      const { styleSheet } = resource;
-      const { fileName } = resource.styleSheet;
+      const { fileName } = resource;
       let file = fileName ? new FileUtils.File(fileName) : null;
 
       
       if (!file) {
-        const identifier = this.getStyleSheetIdentifier(styleSheet);
+        const identifier = this.getStyleSheetIdentifier(resource);
         const savedFile = this.savedLocations[identifier];
         if (savedFile) {
           file = savedFile;
         }
       }
-      styleSheet.file = file;
+      resource.file = file;
 
       await this._addStyleSheet(resource);
     } catch (e) {
@@ -1242,6 +1236,14 @@ StyleEditorUI.prototype = {
       switch (update.updateType) {
         case "style-applied": {
           editor.onStyleApplied();
+          break;
+        }
+        case "property-change": {
+          for (const [property, value] of Object.entries(
+            update.resourceUpdates
+          )) {
+            editor.onPropertyChange(property, value);
+          }
           break;
         }
       }
