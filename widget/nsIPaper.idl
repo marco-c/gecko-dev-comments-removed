@@ -16,12 +16,20 @@ interface nsIPaper : nsISupports
   
 
 
+
   readonly attribute double width;
 
   
 
 
+
   readonly attribute double height;
+
+  
+
+
+
+
 
   [implicit_jscontext] readonly attribute Promise unwriteableMargin;
 };
