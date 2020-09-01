@@ -384,7 +384,7 @@ typename ParseHandler::ListNodeType GeneralParser<ParseHandler, Unit>::parse() {
     
     
     if (!pc_->useAsmOrInsideUseAsm()) {
-      if (!FoldConstants(cx_, &node, &handler_)) {
+      if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
         return null();
       }
     }
@@ -1561,7 +1561,7 @@ LexicalScopeNode* Parser<FullParseHandler, Unit>::evalBody(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
       return null();
     }
   }
@@ -1621,7 +1621,7 @@ ListNode* Parser<FullParseHandler, Unit>::globalBody(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
       return null();
     }
   }
@@ -1732,7 +1732,7 @@ ModuleNode* Parser<FullParseHandler, Unit>::moduleBody(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
       return null();
     }
   }
@@ -2121,7 +2121,7 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
       return null();
     }
   }
@@ -3195,7 +3195,7 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
       return null();
     }
   }
