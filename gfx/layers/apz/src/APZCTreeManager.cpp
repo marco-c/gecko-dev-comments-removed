@@ -899,14 +899,13 @@ bool APZCTreeManager::AdvanceAnimations(const SampleTime& aSampleTime) {
 ParentLayerRect APZCTreeManager::ComputeClippedCompositionBounds(
     const MutexAutoLock& aProofOfMapLock, ClippedCompositionBoundsMap& aDestMap,
     ScrollableLayerGuid aGuid) {
-  auto insertResult = aDestMap.insert(std::make_pair(aGuid, ParentLayerRect()));
-  if (!insertResult.second) {
+  if (auto iter = aDestMap.find(aGuid); iter != aDestMap.end()) {
     
     
     
     
     
-    return insertResult.first->second;
+    return iter->second;
   }
 
   ParentLayerRect bounds = mApzcMap[aGuid].apzc->GetCompositionBounds();
@@ -916,7 +915,7 @@ ParentLayerRect APZCTreeManager::ComputeClippedCompositionBounds(
     
     
     
-    insertResult.first->second = bounds;
+    aDestMap.emplace(aGuid, bounds);
     return bounds;
   }
 
@@ -950,7 +949,7 @@ ParentLayerRect APZCTreeManager::ComputeClippedCompositionBounds(
                                PixelCastJustification::MovingDownToChildren));
 
   
-  insertResult.first->second = bounds;
+  aDestMap.emplace(aGuid, bounds);
   return bounds;
 }
 
