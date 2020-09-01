@@ -184,11 +184,15 @@ void RunWatchdog(void* arg) {
     
     if (!sShutdownNotified) {
       const char* lastStep = nullptr;
-      for (size_t i = 0; i < ArrayLength(sShutdownSteps); ++i) {
-        if (sShutdownSteps[i].mTicks == -1) {
+      
+      
+      
+      
+      for (int i = ArrayLength(sShutdownSteps) - 1; i >= 0; --i) {
+        if (sShutdownSteps[i].mTicks > -1) {
+          lastStep = sShutdownSteps[i].mTopic;
           break;
         }
-        lastStep = sShutdownSteps[i].mTopic;
       }
 
       if (lastStep) {
@@ -497,7 +501,7 @@ nsTerminator::Observe(nsISupports*, const char* aTopic, const char16_t*) {
 void nsTerminator::UpdateHeartbeat(const char* aTopic) {
   
   uint32_t ticks = gHeartbeat.exchange(0);
-  if (mCurrentStep > 0) {
+  if (mCurrentStep >= 0) {
     sShutdownSteps[mCurrentStep].mTicks = ticks;
   }
 
