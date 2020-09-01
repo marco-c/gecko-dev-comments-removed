@@ -802,16 +802,18 @@ nsDocShellTreeOwner::AddChromeListeners() {
     }
   }
 
-  
   nsCOMPtr<EventTarget> target;
   GetDOMEventTarget(mWebBrowser, getter_AddRefs(target));
 
-  EventListenerManager* elmP = target->GetOrCreateListenerManager();
-  if (elmP) {
-    elmP->AddEventListenerByType(this, u"dragover"_ns,
-                                 TrustedEventsAtSystemGroupBubble());
-    elmP->AddEventListenerByType(this, u"drop"_ns,
-                                 TrustedEventsAtSystemGroupBubble());
+  
+  MOZ_ASSERT(target, "how does this happen? (see bug 1659758)");
+  if (target) {
+    if (EventListenerManager* elmP = target->GetOrCreateListenerManager()) {
+      elmP->AddEventListenerByType(this, u"dragover"_ns,
+                                   TrustedEventsAtSystemGroupBubble());
+      elmP->AddEventListenerByType(this, u"drop"_ns,
+                                   TrustedEventsAtSystemGroupBubble());
+    }
   }
 
   return rv;
