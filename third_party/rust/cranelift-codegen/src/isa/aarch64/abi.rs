@@ -124,10 +124,18 @@ impl ABIMachineImpl for AArch64MachineImpl {
         let mut next_stack: u64 = 0;
         let mut ret = vec![];
 
-        let max_reg_vals = match (args_or_rets, is_baldrdash) {
-            (ArgsOrRets::Args, _) => 8,     
-            (ArgsOrRets::Rets, false) => 8, 
-            (ArgsOrRets::Rets, true) => 1,  
+        
+        
+        
+        
+        
+        
+        
+
+        let (max_per_class_reg_vals, mut remaining_reg_vals) = match (args_or_rets, is_baldrdash) {
+            (ArgsOrRets::Args, _) => (8, 16),     
+            (ArgsOrRets::Rets, false) => (8, 16), 
+            (ArgsOrRets::Rets, true) => (1, 1),   
         };
 
         for i in 0..params.len() {
@@ -167,7 +175,7 @@ impl ABIMachineImpl for AArch64MachineImpl {
             if let Some(param) = try_fill_baldrdash_reg(call_conv, param) {
                 assert!(rc == RegClass::I64);
                 ret.push(param);
-            } else if *next_reg < max_reg_vals {
+            } else if *next_reg < max_per_class_reg_vals && remaining_reg_vals > 0 {
                 let reg = match rc {
                     RegClass::I64 => xreg(*next_reg),
                     RegClass::V128 => vreg(*next_reg),
@@ -179,6 +187,7 @@ impl ABIMachineImpl for AArch64MachineImpl {
                     param.extension,
                 ));
                 *next_reg += 1;
+                remaining_reg_vals -= 1;
             } else {
                 
                 
@@ -202,7 +211,7 @@ impl ABIMachineImpl for AArch64MachineImpl {
 
         let extra_arg = if add_ret_area_ptr {
             debug_assert!(args_or_rets == ArgsOrRets::Args);
-            if next_xreg < max_reg_vals {
+            if next_xreg < max_per_class_reg_vals && remaining_reg_vals > 0 {
                 ret.push(ABIArg::Reg(
                     xreg(next_xreg).to_real_reg(),
                     I64,
