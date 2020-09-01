@@ -32,11 +32,6 @@ interface nsIPrintSettingsService : nsISupports
   
 
 
-
-
-
-
-
   readonly attribute nsIPrintSettings globalPrintSettings;
 
   
