@@ -3202,7 +3202,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 96;
+    const UI_VERSION = 97;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -3788,6 +3788,46 @@ BrowserGlue.prototype = {
         oldPrefValue
       );
       Services.prefs.clearUserPref(oldPrefName);
+    }
+
+    if (currentUIVersion < 97) {
+      let userCustomizedWheelMax = Services.prefs.prefHasUserValue(
+        "general.smoothScroll.mouseWheel.durationMaxMS"
+      );
+      let userCustomizedWheelMin = Services.prefs.prefHasUserValue(
+        "general.smoothScroll.mouseWheel.durationMinMS"
+      );
+
+      if (!userCustomizedWheelMin && !userCustomizedWheelMax) {
+        
+        
+        
+        Services.prefs.setIntPref(
+          "general.smoothScroll.mouseWheel.migrationPercent",
+          0
+        );
+      } else if (userCustomizedWheelMin && !userCustomizedWheelMax) {
+        
+        
+        
+        
+        
+        
+        Services.prefs.setIntPref(
+          "general.smoothScroll.mouseWheel.durationMaxMS",
+          400
+        );
+      } else if (!userCustomizedWheelMin && userCustomizedWheelMax) {
+        
+        Services.prefs.setIntPref(
+          "general.smoothScroll.mouseWheel.durationMinMS",
+          200
+        );
+      } else {
+        
+        
+        
+      }
     }
 
     
