@@ -620,27 +620,41 @@ nsNSSCertificateDB::DeleteCertificate(nsIX509Cert* aCert) {
   if (!cert) {
     return NS_ERROR_FAILURE;
   }
-  SECStatus srv = SECSuccess;
 
-  uint32_t certType;
-  aCert->GetCertType(&certType);
-  if (NS_FAILED(aCert->MarkForPermDeletion())) {
-    return NS_ERROR_FAILURE;
+  
+  
+  if (cert->slot) {
+    uint32_t certType;
+    nsresult rv = aCert->GetCertType(&certType);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    if (certType == nsIX509Cert::USER_CERT) {
+      SECStatus srv = PK11_Authenticate(cert->slot, true, nullptr);
+      if (srv != SECSuccess) {
+        return NS_ERROR_FAILURE;
+      }
+      srv = PK11_DeleteTokenCertAndKey(cert.get(), nullptr);
+      if (srv != SECSuccess) {
+        return NS_ERROR_FAILURE;
+      }
+    } else {
+      
+      
+      nsNSSCertTrust trust(0, 0);
+      SECStatus srv = ChangeCertTrustWithPossibleAuthentication(
+          cert, trust.GetTrust(), nullptr);
+      if (srv != SECSuccess) {
+        return NS_ERROR_FAILURE;
+      }
+      if (!PK11_IsReadOnly(cert->slot)) {
+        srv = SEC_DeletePermCertificate(cert.get());
+        if (srv != SECSuccess) {
+          return NS_ERROR_FAILURE;
+        }
+      }
+    }
   }
-
-  if (cert->slot && certType != nsIX509Cert::USER_CERT) {
-    
-    
-    
-    
-    
-    
-    
-    nsNSSCertTrust trust(0, 0);
-    srv = ChangeCertTrustWithPossibleAuthentication(cert, trust.GetTrust(),
-                                                    nullptr);
-  }
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("cert deleted: %d", srv));
 
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
@@ -649,7 +663,7 @@ nsNSSCertificateDB::DeleteCertificate(nsIX509Cert* aCert) {
                                      nullptr);
   }
 
-  return (srv) ? NS_ERROR_FAILURE : NS_OK;
+  return NS_OK;
 }
 
 NS_IMETHODIMP

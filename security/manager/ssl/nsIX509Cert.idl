@@ -228,13 +228,6 @@ interface nsIX509Cert : nsISupports {
   [notxpcom, noscript, must_use]
   CERTCertificatePtr getCert();
 
-  
-
-
-
-  [must_use]
-  void markForPermDeletion();
-
   [notxpcom, noscript]
   void SerializeToIPC(in IpcMessagePtr aMsg);
 
