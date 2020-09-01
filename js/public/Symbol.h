@@ -8,6 +8,8 @@
 #ifndef js_Symbol_h
 #define js_Symbol_h
 
+#include "js/shadow/Symbol.h"  
+
 #include <stddef.h>  
 #include <stdint.h>  
 
@@ -72,9 +74,7 @@ enum class SymbolCode : uint32_t {
       JS_DEFINE_SYMBOL_ENUM)  
 #undef JS_DEFINE_SYMBOL_ENUM
   Limit,
-  WellKnownAPILimit =
-      0x80000000,  
-                   
+  WellKnownAPILimit = JS::shadow::Symbol::WellKnownAPILimit,
   PrivateNameSymbol = 0xfffffffd,  
   InSymbolRegistry =
       0xfffffffe,            
