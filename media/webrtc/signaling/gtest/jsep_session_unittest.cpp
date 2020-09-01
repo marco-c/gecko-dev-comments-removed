@@ -2557,21 +2557,40 @@ TEST_P(JsepSessionTest, RenegotiationAnswererDisablesBundleTransport) {
   ASSERT_EQ(0U, ot0->mTransport.mComponents);
   ASSERT_EQ(0U, at0->mTransport.mComponents);
 
+  
+  
+  
+  
+  
+  
+  Maybe<size_t> fallbackTransport;
+  for (size_t level = 1; level != types.size(); ++level) {
+    if (types[level] != types[0]) {
+      fallbackTransport = Some(level);
+      break;
+    }
+  }
+
   for (size_t i = 1; i < newOffererTransceivers.size(); ++i) {
     JsepTransceiver* ot = GetTransceiverByLevel(newOffererTransceivers, i);
     JsepTransceiver* at = GetTransceiverByLevel(newAnswererTransceivers, i);
-    JsepTransceiver* ot1 = GetTransceiverByLevel(newOffererTransceivers, 1);
-    JsepTransceiver* at1 = GetTransceiverByLevel(newAnswererTransceivers, 1);
+    
+    
+    size_t expectedBundleLevel = fallbackTransport.valueOr(0);
+    JsepTransceiver* otWithTransport =
+        GetTransceiverByLevel(newOffererTransceivers, expectedBundleLevel);
+    JsepTransceiver* atWithTransport =
+        GetTransceiverByLevel(newAnswererTransceivers, expectedBundleLevel);
     ASSERT_TRUE(ot->HasBundleLevel());
     ASSERT_TRUE(at->HasBundleLevel());
-    ASSERT_EQ(1U, ot->BundleLevel());
-    ASSERT_EQ(1U, at->BundleLevel());
+    ASSERT_EQ(expectedBundleLevel, ot->BundleLevel());
+    ASSERT_EQ(expectedBundleLevel, at->BundleLevel());
     
     
     
     
-    ASSERT_TRUE(Equals(ot1->mTransport, ot->mTransport));
-    ASSERT_TRUE(Equals(at1->mTransport, at->mTransport));
+    ASSERT_TRUE(Equals(otWithTransport->mTransport, ot->mTransport));
+    ASSERT_TRUE(Equals(atWithTransport->mTransport, at->mTransport));
   }
 }
 
