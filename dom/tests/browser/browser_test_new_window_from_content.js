@@ -39,7 +39,6 @@ const kContentDoc =
   "http://www.example.com/browser/dom/tests/browser/test_new_window_from_content_child.html";
 const kNewWindowPrefKey = "browser.link.open_newwindow";
 const kNewWindowRestrictionPrefKey = "browser.link.open_newwindow.restriction";
-const kSameTab = "same tab";
 const kNewWin = "new window";
 const kNewTab = "new tab";
 
@@ -60,19 +59,16 @@ const kWinOpenDefault = {
   
   
   
-  1: [kSameTab, kNewWin, kSameTab],
   2: [kNewWin, kNewWin, kNewWin],
   3: [kNewTab, kNewWin, kNewTab],
 };
 
 const kWinOpenNonDefault = {
-  1: [kSameTab, kNewWin, kNewWin],
   2: [kNewWin, kNewWin, kNewWin],
   3: [kNewTab, kNewWin, kNewWin],
 };
 
 const kTargetBlank = {
-  1: [kSameTab, kSameTab, kSameTab],
   2: [kNewWin, kNewWin, kNewWin],
   3: [kNewTab, kNewTab, kNewTab],
 };
@@ -111,14 +107,6 @@ registerCleanupFunction(function() {
 function prepareForResult(aBrowser, aExpectation) {
   let expectedSpec = kContentDoc.replace(/[^\/]*$/, "dummy.html");
   switch (aExpectation) {
-    case kSameTab:
-      return (async function() {
-        await BrowserTestUtils.browserLoaded(aBrowser);
-        is(aBrowser.currentURI.spec, expectedSpec, "Should be at dummy.html");
-        
-        await BrowserTestUtils.loadURI(aBrowser, kContentDoc);
-        await BrowserTestUtils.browserLoaded(aBrowser);
-      })();
     case kNewWin:
       return (async function() {
         let newWin = await BrowserTestUtils.waitForNewWindow({
