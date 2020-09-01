@@ -10370,23 +10370,26 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
     ClearFrameHistory(mOSHE);
   }
 
-  if (updateSHistory) {
-    
-    if (!mLSHE && (mItemType == typeContent) && mURIResultedInDocument) {
+  if (!StaticPrefs::fission_sessionHistoryInParent()) {
+    if (updateSHistory) {
+      
+      if (!mLSHE && (mItemType == typeContent) && mURIResultedInDocument) {
+        
+
+
+
+        (void)AddToSessionHistory(aURI, aChannel, aTriggeringPrincipal,
+                                  aPrincipalToInherit,
+                                  aPartitionedPrincipalToInherit, aCsp,
+                                  aCloneSHChildren, getter_AddRefs(mLSHE));
+      }
+    } else if (GetSessionHistory() && mLSHE && mURIResultedInDocument) {
+      
       
 
-
-
-      (void)AddToSessionHistory(aURI, aChannel, aTriggeringPrincipal,
-                                aPrincipalToInherit,
-                                aPartitionedPrincipalToInherit, aCsp,
-                                aCloneSHChildren, getter_AddRefs(mLSHE));
+      GetSessionHistory()->LegacySHistory()->EnsureCorrectEntryAtCurrIndex(
+          mLSHE);
     }
-  } else if (GetSessionHistory() && mLSHE && mURIResultedInDocument) {
-    
-    
-
-    GetSessionHistory()->LegacySHistory()->EnsureCorrectEntryAtCurrIndex(mLSHE);
   }
 
   
