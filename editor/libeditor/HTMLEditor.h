@@ -2761,10 +2761,19 @@ class HTMLEditor final : public TextEditor,
         const EditorDOMPoint& aCaretPoint,
         const WSRunScanner& aWSRunScannerAtCaret);
 
-    bool PrepareToDeleteNonCollapsedRanges() {
-      mMode = Mode::DeleteNonCollapsedRanges;
-      return true;
-    }
+    
+
+
+
+
+
+
+
+
+
+
+    bool PrepareToDeleteNonCollapsedRanges(
+        const HTMLEditor& aHTMLEditor, const AutoRangeArray& aRangesToDelete);
 
     
 
