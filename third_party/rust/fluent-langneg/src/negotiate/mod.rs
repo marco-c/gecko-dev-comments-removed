@@ -181,7 +181,7 @@ pub fn filter_matches<'a, R: 'a + AsRef<LanguageIdentifier>, A: 'a + AsRef<Langu
 
         
         
-        if req.language.is_empty() {
+        if req.language() == "und" {
             continue;
         }
 
@@ -195,13 +195,13 @@ pub fn filter_matches<'a, R: 'a + AsRef<LanguageIdentifier>, A: 'a + AsRef<Langu
         test_strategy!(true, true);
 
         
-        req.region = None;
+        req.clear_region();
         if req.maximize() {
             test_strategy!(true, false);
         }
 
         
-        req.region = None;
+        req.clear_region();
         test_strategy!(true, true);
     }
 
