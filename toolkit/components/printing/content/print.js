@@ -16,12 +16,12 @@ ChromeUtils.defineModuleGetter(
 );
 
 const INPUT_DELAY_MS = 500;
+const ourBrowser = window.docShell.chromeEventHandler;
 
 document.addEventListener(
   "DOMContentLoaded",
   e => {
-    document.mozSubdialogReady = PrintEventHandler.init();
-    let ourBrowser = window.docShell.chromeEventHandler;
+    PrintEventHandler.init();
     ourBrowser.setAttribute("flex", "0");
     ourBrowser.classList.add("printSettingsBrowser");
     ourBrowser.closest(".dialogBox").classList.add("printDialogBox");
@@ -107,6 +107,9 @@ var PrintEventHandler = {
       sourceBrowsingContext.currentWindowContext.documentURI.spec;
 
     
+    await ourBrowser._dialogReady;
+
+    
     
     let {
       destinations,
@@ -166,6 +169,12 @@ var PrintEventHandler = {
     await document.l10n.translateElements([this.previewBrowser]);
 
     document.body.removeAttribute("loading");
+
+    window.requestAnimationFrame(() => {
+      window.focus();
+      
+      document.getElementById("printer-picker").focus();
+    });
   },
 
   unload() {
@@ -188,7 +197,6 @@ var PrintEventHandler = {
     document.l10n.setAttributes(printPreviewBrowser, "printui-preview-label");
 
     
-    let ourBrowser = window.docShell.chromeEventHandler;
     let doc = ourBrowser.ownerDocument;
     let previewStack = doc.importNode(
       doc.getElementById("printPreviewStackTemplate").content,

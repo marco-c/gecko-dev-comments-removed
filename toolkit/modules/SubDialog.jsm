@@ -119,6 +119,7 @@ SubDialog.prototype = {
     this._dialogReady = new Promise(resolve => {
       this._resolveDialogReady = resolve;
     });
+    this._frame._dialogReady = this._dialogReady;
 
     
     await this._frameCreated;
@@ -756,7 +757,17 @@ SubDialog.prototype = {
 
   focus() {
     let fm = Services.focus;
-    fm.moveFocus(this._frame.contentWindow, null, fm.MOVEFOCUS_FIRST, 0);
+    let focusedElement = fm.moveFocus(
+      this._frame.contentWindow,
+      null,
+      fm.MOVEFOCUS_FIRST,
+      0
+    );
+    if (!focusedElement) {
+      
+      
+      this._frame.contentWindow.focus();
+    }
   },
 
   _trapFocus() {
