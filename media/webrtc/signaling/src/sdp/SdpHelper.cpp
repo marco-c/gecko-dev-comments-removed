@@ -83,17 +83,13 @@ bool SdpHelper::AreOldTransportParamsValid(const Sdp& oldAnswer,
     return false;
   }
 
-  if (!HasOwnTransport(oldAnswer, level)) {
+  if (!OwnsTransport(oldAnswer, level, sdp::kAnswer)) {
     
     
     return false;
   }
 
-  if (newOffer.GetMediaSection(level).GetAttributeList().HasAttribute(
-          SdpAttribute::kBundleOnlyAttribute) &&
-      !HasOwnTransport(newOffer, level)) {
-    
-    
+  if (!OwnsTransport(newOffer, level, sdp::kOffer)) {
     return false;
   }
 
@@ -236,14 +232,9 @@ nsresult SdpHelper::GetBundledMids(const Sdp& sdp, BundledMids* bundledMids) {
   return NS_OK;
 }
 
-bool SdpHelper::HasOwnTransport(const Sdp& sdp, uint16_t level) {
+bool SdpHelper::OwnsTransport(const Sdp& sdp, uint16_t level,
+                              sdp::SdpType type) {
   auto& msection = sdp.GetMediaSection(level);
-
-  if (!msection.GetAttributeList().HasAttribute(SdpAttribute::kMidAttribute)) {
-    
-    return true;
-  }
-  std::string mid(msection.GetAttributeList().GetMid());
 
   BundledMids bundledMids;
   nsresult rv = GetBundledMids(sdp, &bundledMids);
@@ -253,9 +244,25 @@ bool SdpHelper::HasOwnTransport(const Sdp& sdp, uint16_t level) {
     return true;
   }
 
-  if (bundledMids.count(mid) && level != bundledMids[mid]->GetLevel()) {
+  return OwnsTransport(msection, bundledMids, type);
+}
+
+bool SdpHelper::OwnsTransport(const SdpMediaSection& msection,
+                              const BundledMids& bundledMids,
+                              sdp::SdpType type) {
+  if (!msection.GetAttributeList().HasAttribute(SdpAttribute::kMidAttribute)) {
     
-    return false;
+    return true;
+  }
+  std::string mid(msection.GetAttributeList().GetMid());
+  if (type != sdp::kOffer || msection.GetAttributeList().HasAttribute(
+                                 SdpAttribute::kBundleOnlyAttribute)) {
+    
+    
+    if (bundledMids.count(mid) && &msection != bundledMids.at(mid)) {
+      
+      return false;
+    }
   }
 
   return true;
