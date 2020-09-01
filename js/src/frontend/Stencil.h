@@ -18,7 +18,6 @@
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ObjLiteral.h"          
 #include "frontend/TypedIndex.h"          
-#include "js/GCVariant.h"                 
 #include "js/RegExpFlags.h"               
 #include "js/RootingAPI.h"                
 #include "js/TypeDecls.h"                 
@@ -34,8 +33,6 @@
 #include "vm/ScopeKind.h"      
 #include "vm/SharedStencil.h"  
 #include "vm/StencilEnums.h"   
-
-class JS_PUBLIC_API JSTracer;
 
 namespace js {
 
@@ -102,8 +99,6 @@ class RegExpStencil {
     flags_ = flags;
     return true;
   }
-
-  MOZ_MUST_USE bool init(JSContext* cx, JSAtom* pattern, JS::RegExpFlags flags);
 
   RegExpObject* createRegExp(JSContext* cx) const;
 
@@ -250,8 +245,6 @@ class ScopeStencil {
 
   Scope* createScope(JSContext* cx, CompilationInfo& compilationInfo);
 
-  void trace(JSTracer* trc);
-
   uint32_t nextFrameSlot() const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
@@ -378,16 +371,12 @@ class StencilModuleEntry {
     entry.exportName = exportName;
     return entry;
   }
-
-  
-  
-  void trace(JSTracer* trc);
 };
 
 
 class StencilModuleMetadata {
  public:
-  using EntryVector = JS::GCVector<StencilModuleEntry>;
+  using EntryVector = Vector<StencilModuleEntry>;
 
   EntryVector requestedModules;
   EntryVector importEntries;
@@ -406,8 +395,6 @@ class StencilModuleMetadata {
 
   bool initModule(JSContext* cx, CompilationInfo& compilationInfo,
                   JS::Handle<ModuleObject*> module);
-
-  void trace(JSTracer* trc);
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
@@ -500,10 +487,6 @@ class ScriptStencil {
         isStandaloneFunction(false),
         wasFunctionEmitted(false),
         isSingletonFunction(false) {}
-
-  
-  
-  void trace(JSTracer* trc);
 
   bool isFunction() const {
     bool result = functionFlags.toRaw() != 0x0000;

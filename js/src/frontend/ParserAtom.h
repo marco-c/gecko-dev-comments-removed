@@ -12,11 +12,10 @@
 #include "mozilla/Range.h"          
 #include "mozilla/Variant.h"        
 
-#include "ds/LifoAlloc.h"    
-#include "js/GCPolicyAPI.h"  
-#include "js/HashTable.h"    
-#include "js/UniquePtr.h"    
-#include "js/Vector.h"       
+#include "ds/LifoAlloc.h"  
+#include "js/HashTable.h"  
+#include "js/UniquePtr.h"  
+#include "js/Vector.h"     
 #include "vm/CommonPropertyNames.h"
 #include "vm/StringType.h"  
 
@@ -514,12 +513,5 @@ inline bool ParserAtomEntry::equalsSeq(
 
 } 
 } 
-
-namespace JS {
-
-template <>
-struct GCPolicy<const js::frontend::ParserAtom*>
-    : IgnoreGCPolicy<const js::frontend::ParserAtom*> {};
-}  
 
 #endif  

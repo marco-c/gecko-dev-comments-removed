@@ -157,7 +157,7 @@ class ScriptStencilIterable {
 
 
 
-struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
+struct MOZ_RAII CompilationInfo {
   static constexpr FunctionIndex TopLevelFunctionIndex = FunctionIndex(0);
 
   JSContext* cx;
@@ -173,10 +173,6 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   Directives directives;
 
   ScopeContext scopeContext;
-
-  
-  
-  FunctionBox* traceListHead = nullptr;
 
   
   
@@ -198,7 +194,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   
   
   JS::RootedVector<JSFunction*> functions;
-  JS::RootedVector<ScriptStencil> funcData;
+  Vector<ScriptStencil> funcData;
 
   
   
@@ -207,7 +203,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
 
   
   
-  JS::Rooted<ScriptStencil> topLevel;
+  ScriptStencil topLevel;
 
   
   
@@ -219,10 +215,10 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   
   
   JS::RootedVector<js::Scope*> scopes;
-  JS::RootedVector<ScopeStencil> scopeData;
+  Vector<ScopeStencil> scopeData;
 
   
-  JS::Rooted<StencilModuleMetadata> moduleMetadata;
+  StencilModuleMetadata moduleMetadata;
 
   
   HashMap<FunctionIndex, RefPtr<const JS::WasmModule>> asmJS;
@@ -235,7 +231,6 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   
   
   struct RewindToken {
-    FunctionBox* funbox = nullptr;
     size_t funcDataLength = 0;
     size_t asmJSCount = 0;
   };
@@ -248,8 +243,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
                   const JS::ReadOnlyCompileOptions& options,
                   Scope* enclosingScope = nullptr,
                   JSObject* enclosingEnv = nullptr)
-      : JS::CustomAutoRooter(cx),
-        cx(cx),
+      : cx(cx),
         options(options),
         keepAtoms(cx),
         parserAtoms(cx),
@@ -301,8 +295,6 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
 
   MOZ_MUST_USE bool instantiateStencils();
 
-  void trace(JSTracer* trc) final;
-
   JSAtom* liftParserAtomToJSAtom(const ParserAtom* parserAtom) {
     return parserAtom->toJSAtom(cx).unwrapOr(nullptr);
   }
@@ -339,7 +331,7 @@ inline void ScriptStencilIterable::Iterator::next() {
 
 inline void ScriptStencilIterable::Iterator::skipNonFunctions() {
   if (state_ == State::TopLevel) {
-    if (compilationInfo_->topLevel.get().isFunction()) {
+    if (compilationInfo_->topLevel.isFunction()) {
       return;
     }
 
@@ -350,7 +342,7 @@ inline void ScriptStencilIterable::Iterator::skipNonFunctions() {
   while (index_ < length) {
     
     
-    if (compilationInfo_->funcData[index_].get().isFunction()) {
+    if (compilationInfo_->funcData[index_].isFunction()) {
       return;
     }
 
@@ -361,8 +353,8 @@ inline void ScriptStencilIterable::Iterator::skipNonFunctions() {
 inline ScriptStencilIterable::ScriptAndFunction
 ScriptStencilIterable::Iterator::operator*() {
   ScriptStencil& stencil = state_ == State::TopLevel
-                               ? compilationInfo_->topLevel.get()
-                               : compilationInfo_->funcData[index_].get();
+                               ? compilationInfo_->topLevel
+                               : compilationInfo_->funcData[index_];
 
   FunctionIndex functionIndex = FunctionIndex(
       state_ == State::TopLevel ? CompilationInfo::TopLevelFunctionIndex

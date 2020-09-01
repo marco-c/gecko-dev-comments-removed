@@ -84,7 +84,7 @@ class AbstractScopePtr {
   bool isScopeStencil() const { return scope_.is<Deferred>(); }
 
   
-  MutableHandle<frontend::ScopeStencil> scopeData() const;
+  frontend::ScopeStencil& scopeData() const;
   frontend::CompilationInfo& compilationInfo() const;
 
   

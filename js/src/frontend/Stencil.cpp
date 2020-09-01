@@ -15,19 +15,18 @@
 #include "gc/AllocKind.h"   
 #include "js/CallArgs.h"    
 #include "js/RootingAPI.h"  
-#include "js/TracingAPI.h"  
 #include "js/Value.h"       
 #include "js/WasmModule.h"  
 #include "vm/EnvironmentObject.h"
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/JSContext.h"              
 #include "vm/JSFunction.h"  
-#include "vm/JSObject.h"     
-#include "vm/JSONPrinter.h"  
-#include "vm/JSScript.h"     
-#include "vm/ObjectGroup.h"  
-#include "vm/Printer.h"      
-#include "vm/Scope.h"  
+#include "vm/JSObject.h"      
+#include "vm/JSONPrinter.h"   
+#include "vm/JSScript.h"      
+#include "vm/ObjectGroup.h"   
+#include "vm/Printer.h"       
+#include "vm/Scope.h"         
 #include "vm/StencilEnums.h"  
 #include "vm/StringType.h"    
 #include "wasm/AsmJS.h"       
@@ -35,18 +34,6 @@
 
 using namespace js;
 using namespace js::frontend;
-
-bool frontend::RegExpStencil::init(JSContext* cx, JSAtom* pattern,
-                                   JS::RegExpFlags flags) {
-  length_ = pattern->length();
-  buf_ = cx->make_pod_array<char16_t>(length_);
-  if (!buf_) {
-    return false;
-  }
-  js::CopyChars(buf_.get(), *pattern);
-  flags_ = flags;
-  return true;
-}
 
 AbstractScopePtr ScopeStencil::enclosing(CompilationInfo& compilationInfo) {
   if (enclosing_) {
@@ -119,11 +106,6 @@ Scope* ScopeStencil::createScope(JSContext* cx,
   return scope;
 }
 
-void ScopeStencil::trace(JSTracer* trc) {
-  
-  
-}
-
 uint32_t ScopeStencil::nextFrameSlot() const {
   switch (kind()) {
     case ScopeKind::Function:
@@ -158,18 +140,6 @@ uint32_t ScopeStencil::nextFrameSlot() const {
   }
   MOZ_CRASH("Not an enclosing intra-frame scope");
 }
-
-void StencilModuleEntry::trace(JSTracer* trc) {}
-
-void StencilModuleMetadata::trace(JSTracer* trc) {
-  requestedModules.trace(trc);
-  importEntries.trace(trc);
-  localExportEntries.trace(trc);
-  indirectExportEntries.trace(trc);
-  starExportEntries.trace(trc);
-}
-
-void ScriptStencil::trace(JSTracer* trc) {}
 
 static bool CreateLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
                              ScriptStencil& stencil, HandleFunction function) {
@@ -284,14 +254,14 @@ static bool InstantiateScriptSourceObject(JSContext* cx,
 
 static bool MaybeInstantiateModule(JSContext* cx,
                                    CompilationInfo& compilationInfo) {
-  if (compilationInfo.topLevel.get().isModule()) {
+  if (compilationInfo.topLevel.isModule()) {
     compilationInfo.module = ModuleObject::create(cx);
     if (!compilationInfo.module) {
       return false;
     }
 
-    if (!compilationInfo.moduleMetadata.get().initModule(
-            cx, compilationInfo, compilationInfo.module)) {
+    if (!compilationInfo.moduleMetadata.initModule(cx, compilationInfo,
+                                                   compilationInfo.module)) {
       return false;
     }
   }
@@ -441,7 +411,7 @@ static bool InstantiateScriptStencils(JSContext* cx,
 
 static bool InstantiateTopLevel(JSContext* cx,
                                 CompilationInfo& compilationInfo) {
-  ScriptStencil& stencil = compilationInfo.topLevel.get();
+  ScriptStencil& stencil = compilationInfo.topLevel;
   RootedFunction fun(cx);
   if (stencil.isFunction()) {
     fun = compilationInfo.functions[CompilationInfo::TopLevelFunctionIndex];
@@ -1227,14 +1197,14 @@ void CompilationInfo::dumpStencil(js::JSONPrinter& json) {
   json.beginObject();
 
   json.beginObjectProperty("topLevel");
-  topLevel.get().dumpFields(json);
+  topLevel.dumpFields(json);
   json.endObject();
 
   
 
   json.beginListProperty("funcData");
   for (size_t i = 0; i < funcData.length(); i++) {
-    funcData[i].get().dump(json);
+    funcData[i].dump(json);
   }
   json.endList();
 
@@ -1262,9 +1232,9 @@ void CompilationInfo::dumpStencil(js::JSONPrinter& json) {
   }
   json.endList();
 
-  if (topLevel.get().isModule()) {
+  if (topLevel.isModule()) {
     json.beginObjectProperty("moduleMetadata");
-    moduleMetadata.get().dumpFields(json);
+    moduleMetadata.dumpFields(json);
     json.endObject();
   }
 

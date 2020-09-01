@@ -2478,7 +2478,7 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
   }
 
   
-  return intoScriptStencil(&compilationInfo.topLevel.get());
+  return intoScriptStencil(&compilationInfo.topLevel);
 }
 
 js::UniquePtr<ImmutableScriptData> BytecodeEmitter::createImmutableScriptData(
