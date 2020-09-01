@@ -590,6 +590,7 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
   
 
 
+
   void SetMuted(bool aMuted) { mMuted = aMuted; }
 
   virtual void Destroy();
