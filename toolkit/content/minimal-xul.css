@@ -34,11 +34,7 @@
 
 
 @supports -moz-bool-pref("layout.css.cached-scrollbar-styles.enabled") {
-  scrollcorner:-moz-native-anonymous-no-specificity,
-  resizer:-moz-native-anonymous-no-specificity,
-  scrollbar:-moz-native-anonymous-no-specificity,
-  scrollbarbutton:-moz-native-anonymous-no-specificity,
-  slider:-moz-native-anonymous-no-specificity {
+  :is(scrollcorner, resizer, scrollbar, scrollbarbutton, slider):where(:-moz-native-anonymous) {
     
 
 
@@ -98,9 +94,7 @@
 
 
 
-  scrollbarbutton:-moz-native-anonymous-no-specificity,
-  slider:-moz-native-anonymous-no-specificity,
-  thumb:-moz-native-anonymous-no-specificity {
+  :is(scrollbarbutton, slider, thumb):where(:-moz-native-anonymous) {
     direction: inherit;
     cursor: inherit;
   }

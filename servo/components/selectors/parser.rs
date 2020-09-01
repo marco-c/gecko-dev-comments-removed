@@ -53,9 +53,6 @@ pub trait NonTSPseudoClass: Sized + ToCss {
     
     fn is_user_action_state(&self) -> bool;
 
-    
-    fn has_zero_specificity(&self) -> bool;
-
     fn visit<V>(&self, _visitor: &mut V) -> bool
     where
         V: SelectorVisitor<Impl = Self::Impl>,
@@ -2563,11 +2560,6 @@ pub mod tests {
         #[inline]
         fn is_user_action_state(&self) -> bool {
             self.is_active_or_hover()
-        }
-
-        #[inline]
-        fn has_zero_specificity(&self) -> bool {
-            false
         }
     }
 
