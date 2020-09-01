@@ -356,6 +356,7 @@ public class GeckoSession implements Parcelable {
                 "GeckoView:FullScreenExit",
                 "GeckoView:WebAppManifest",
                 "GeckoView:FirstContentfulPaint",
+                "GeckoView:PaintStatusReset",
             }
         ) {
             @Override
@@ -413,6 +414,8 @@ public class GeckoSession implements Parcelable {
                     }
                 } else if ("GeckoView:FirstContentfulPaint".equals(event)) {
                     delegate.onFirstContentfulPaint(GeckoSession.this);
+                } else if ("GeckoView:PaintStatusReset".equals(event)) {
+                    delegate.onPaintStatusReset(GeckoSession.this);
                 }
             }
         };
@@ -3342,8 +3345,24 @@ public class GeckoSession implements Parcelable {
 
 
 
+
         @UiThread
         default void onFirstContentfulPaint(@NonNull GeckoSession session) {}
+
+        
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default void onPaintStatusReset(@NonNull GeckoSession session) {}
 
         
 
