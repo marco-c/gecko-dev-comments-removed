@@ -29,8 +29,7 @@
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/layers/APZUpdater.h"      
 #include "mozilla/layers/APZUtils.h"        
-#include "mozilla/layers/AsyncCompositionManager.h"  
-#include "mozilla/layers/AsyncDragMetrics.h"         
+#include "mozilla/layers/AsyncDragMetrics.h"        
 #include "mozilla/layers/CompositorBridgeParent.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h"
 #include "mozilla/layers/MatrixMessage.h"
@@ -837,9 +836,8 @@ void APZCTreeManager::SampleForWebRender(
     
     if (info.mScrollDirection == ScrollDirection::eHorizontal) {
       ScreenPoint translation =
-          AsyncCompositionManager::ComputeFixedMarginsOffset(
-              GetCompositorFixedLayerMargins(lock), SideBits::eBottom,
-              ScreenMargin());
+          apz::ComputeFixedMarginsOffset(GetCompositorFixedLayerMargins(lock),
+                                         SideBits::eBottom, ScreenMargin());
 
       LayerToParentLayerMatrix4x4 transform =
           LayerToParentLayerMatrix4x4::Translation(ViewAs<ParentLayerPixel>(
@@ -856,10 +854,9 @@ void APZCTreeManager::SampleForWebRender(
       continue;
     }
 
-    ScreenPoint translation =
-        AsyncCompositionManager::ComputeFixedMarginsOffset(
-            GetCompositorFixedLayerMargins(lock), info.mFixedPosSides,
-            mGeckoFixedLayerMargins);
+    ScreenPoint translation = apz::ComputeFixedMarginsOffset(
+        GetCompositorFixedLayerMargins(lock), info.mFixedPosSides,
+        mGeckoFixedLayerMargins);
 
     LayerToParentLayerMatrix4x4 transform =
         LayerToParentLayerMatrix4x4::Translation(ViewAs<ParentLayerPixel>(
@@ -876,13 +873,12 @@ void APZCTreeManager::SampleForWebRender(
       continue;
     }
 
-    ScreenPoint translation =
-        AsyncCompositionManager::ComputeFixedMarginsOffset(
-            GetCompositorFixedLayerMargins(lock), sides,
-            
-            
-            
-            ScreenMargin());
+    ScreenPoint translation = apz::ComputeFixedMarginsOffset(
+        GetCompositorFixedLayerMargins(lock), sides,
+        
+        
+        
+        ScreenMargin());
 
     LayerToParentLayerMatrix4x4 transform =
         LayerToParentLayerMatrix4x4::Translation(ViewAs<ParentLayerPixel>(
@@ -2089,11 +2085,9 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
         touchData.mScreenPoint = *untransformedScreenPoint;
         if (mTouchBlockHitResult.mFixedPosSides != SideBits::eNone) {
           MutexAutoLock lock(mMapLock);
-          touchData.mScreenPoint -=
-              RoundedToInt(AsyncCompositionManager::ComputeFixedMarginsOffset(
-                  GetCompositorFixedLayerMargins(lock),
-                  mTouchBlockHitResult.mFixedPosSides,
-                  mGeckoFixedLayerMargins));
+          touchData.mScreenPoint -= RoundedToInt(apz::ComputeFixedMarginsOffset(
+              GetCompositorFixedLayerMargins(lock),
+              mTouchBlockHitResult.mFixedPosSides, mGeckoFixedLayerMargins));
         }
       }
     }
@@ -3381,10 +3375,9 @@ Maybe<ScreenIntPoint> APZCTreeManager::ConvertToGecko(
   if (geckoPoint) {
     if (mTouchBlockHitResult.mFixedPosSides != SideBits::eNone) {
       MutexAutoLock mapLock(mMapLock);
-      *geckoPoint -=
-          RoundedToInt(AsyncCompositionManager::ComputeFixedMarginsOffset(
-              GetCompositorFixedLayerMargins(mapLock),
-              mTouchBlockHitResult.mFixedPosSides, mGeckoFixedLayerMargins));
+      *geckoPoint -= RoundedToInt(apz::ComputeFixedMarginsOffset(
+          GetCompositorFixedLayerMargins(mapLock),
+          mTouchBlockHitResult.mFixedPosSides, mGeckoFixedLayerMargins));
     }
   }
   return geckoPoint;
@@ -3582,7 +3575,7 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForNode(
     {
       MutexAutoLock mapLock(mMapLock);
       translation = ViewAs<ParentLayerPixel>(
-          AsyncCompositionManager::ComputeFixedMarginsOffset(
+          apz::ComputeFixedMarginsOffset(
               GetCompositorFixedLayerMargins(mapLock),
               aNode->GetFixedPosSides(), mGeckoFixedLayerMargins),
           PixelCastJustification::ScreenIsParentLayerForRoot);
@@ -3597,7 +3590,7 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForNode(
     {
       MutexAutoLock mapLock(mMapLock);
       translation = ViewAs<ParentLayerPixel>(
-          AsyncCompositionManager::ComputeFixedMarginsOffset(
+          apz::ComputeFixedMarginsOffset(
               GetCompositorFixedLayerMargins(mapLock), sides,
               
               

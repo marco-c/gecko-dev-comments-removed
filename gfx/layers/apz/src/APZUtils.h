@@ -159,6 +159,14 @@ bool IsStuckAtBottom(gfxFloat aTranslation,
 bool IsStuckAtTop(gfxFloat aTranslation, const LayerRectAbsolute& aInnerRange,
                   const LayerRectAbsolute& aOuterRange);
 
+
+
+
+
+ScreenPoint ComputeFixedMarginsOffset(
+    const ScreenMargin& aCompositorFixedLayerMargins, SideBits aFixedSides,
+    const ScreenMargin& aGeckoFixedLayerMargins);
+
 }  
 
 }  
