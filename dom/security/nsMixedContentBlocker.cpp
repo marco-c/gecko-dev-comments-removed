@@ -241,7 +241,8 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
   }
 
   using namespace mozilla::net;
-  NetAddr addr(&tempAddr);
+  NetAddr addr;
+  PRNetAddrToNetAddr(&tempAddr, &addr);
 
   
   
