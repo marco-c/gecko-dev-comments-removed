@@ -3341,17 +3341,40 @@ nsDocumentViewer::GetPrintPreviewCurrentPageNumber(int32_t* aNumber) {
   }
 
   nsPoint currentScrollPosition = sf->GetScrollPosition();
+  float halfwayPoint =
+      currentScrollPosition.y + float(sf->GetScrollPortRect().height) / 2.0f;
+  float lastDistanceFromHalfwayPoint = std::numeric_limits<float>::max();
   *aNumber = 0;
   float previewScale = seqFrame->GetPrintPreviewScale();
   for (const nsIFrame* sheetFrame : seqFrame->PrincipalChildList()) {
+    nsRect sheetRect = sheetFrame->GetRect();
     (*aNumber)++;
-    nsRect pageRect = sheetFrame->GetRect();
-    if (pageRect.YMost() * previewScale > currentScrollPosition.y) {
+
+    float bottomOfSheet = sheetRect.YMost() * previewScale;
+    if (bottomOfSheet < halfwayPoint) {
       
+      
+      
+      lastDistanceFromHalfwayPoint = halfwayPoint - bottomOfSheet;
+      continue;
+    }
+
+    float topOfSheet = sheetRect.Y() * previewScale;
+    if (topOfSheet <= halfwayPoint) {
       
       
       break;
     }
+
+    
+    
+    if ((topOfSheet - halfwayPoint) >= lastDistanceFromHalfwayPoint) {
+      
+      
+      (*aNumber)--;
+      MOZ_ASSERT(*aNumber > 0);
+    }
+    break;
   }
 
   MOZ_ASSERT(*aNumber <= pageCount);
