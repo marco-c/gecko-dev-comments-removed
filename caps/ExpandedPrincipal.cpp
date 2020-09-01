@@ -298,15 +298,13 @@ nsresult ExpandedPrincipal::PopulateJSONObject(Json::Value& aObject) {
     BasePrincipal::Cast(principal)->ToJSON(JSON);
     
     
-    nsAutoCString result;
-    nsresult rv;
-    rv = Base64Encode(JSON, result);
-    NS_ENSURE_SUCCESS(rv, rv);
-    
-    
     principalList.Append(sep);
-    principalList.Append(result);
     sep = ',';
+    
+    
+    nsresult rv;
+    rv = Base64EncodeAppend(JSON, principalList);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
   aObject[std::to_string(eSpecs)] = principalList.get();
 

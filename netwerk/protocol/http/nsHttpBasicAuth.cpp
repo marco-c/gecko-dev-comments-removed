@@ -85,11 +85,9 @@ nsHttpBasicAuth::GenerateCredentials(
   userpass.Append(':');  
   AppendUTF16toUTF8(mozilla::MakeStringSpan(password), userpass);
 
-  nsAutoCString authString;
-  nsresult rv = Base64Encode(userpass, authString);
+  nsAutoCString authString{"Basic "_ns};
+  nsresult rv = Base64EncodeAppend(userpass, authString);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  authString.InsertLiteral("Basic ", 0);
 
   *creds = ToNewCString(authString);
   return NS_OK;
