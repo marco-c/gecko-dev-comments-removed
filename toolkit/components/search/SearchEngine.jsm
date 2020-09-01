@@ -622,6 +622,9 @@ class SearchEngine {
   _definedAliases = [];
   
   _urls = [];
+  
+  
+  _searchUrlQueryParamName = null;
 
   
 
@@ -1504,6 +1507,32 @@ class SearchEngine {
       );
     }
     return url.getSubmission(submissionData, this, purpose);
+  }
+
+  get searchUrlQueryParamName() {
+    if (this._searchUrlQueryParamName != null) {
+      return this._searchUrlQueryParamName;
+    }
+
+    let submission = this.getSubmission(
+      "{searchTerms}",
+      SearchUtils.URL_TYPE.SEARCH
+    );
+
+    if (submission.postData) {
+      Cu.reportError("searchUrlQueryParamName can't handle POST urls.");
+      return (this._searchUrlQueryParamName = "");
+    }
+
+    let queryParams = new URLSearchParams(submission.uri.query);
+    let searchUrlQueryParamName = "";
+    for (let [key, value] of queryParams) {
+      if (value == "{searchTerms}") {
+        searchUrlQueryParamName = key;
+      }
+    }
+
+    return (this._searchUrlQueryParamName = searchUrlQueryParamName);
   }
 
   
