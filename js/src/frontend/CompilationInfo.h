@@ -344,6 +344,9 @@ class ScriptStencilIterable {
 struct CompilationInfo {
   static constexpr FunctionIndex TopLevelIndex = FunctionIndex(0);
 
+  
+  
+  
   JSContext* cx;
 
   CompilationInput input;
