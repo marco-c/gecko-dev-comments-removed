@@ -1041,8 +1041,8 @@ var gSync = {
       addTargetDevice(target.id, target.name, type, lastModified);
     }
 
-    
     if (targets.length > 1) {
+      
       const separator = createDeviceNodeFn();
       separator.classList.add("sync-menuitem");
       fragment.appendChild(separator);
@@ -1050,6 +1050,27 @@ var gSync = {
         "sendToAllDevices.menuitem"
       );
       addTargetDevice("", allDevicesLabel, "");
+
+      
+      const manageDevicesLabel = this.fxaStrings.GetStringFromName(
+        "manageDevices.menuitem"
+      );
+      
+      
+      const targetDevice = createDeviceNodeFn(
+        null,
+        manageDevicesLabel,
+        null,
+        null
+      );
+      targetDevice.addEventListener(
+        "command",
+        () => gSync.openDevicesManagementPage("sendtab"),
+        true
+      );
+      targetDevice.classList.add("sync-menuitem", "sendtab-target");
+      targetDevice.setAttribute("label", manageDevicesLabel);
+      fragment.appendChild(targetDevice);
     }
   },
 
