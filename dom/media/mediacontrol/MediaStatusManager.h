@@ -185,7 +185,7 @@ class MediaStatusManager : public IMediaInfoUpdater {
   }
 
   
-  MediaSessionPlaybackState GetState() const;
+  MediaSessionPlaybackState PlaybackState() const;
 
  protected:
   ~MediaStatusManager() = default;
