@@ -262,6 +262,122 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define QM_VOID
 
 #define QM_PROPAGATE MOZ_UNIQUE_VAR(tryResult).propagateErr()
@@ -380,6 +496,35 @@
 
 
 #define QM_TRY_VAR(...) QM_TRY_VAR_META(mozilla::dom::quota, ##__VA_ARGS__)
+
+
+
+
+
+#define QM_FAIL_RET_VAL(ns, retVal)                                        \
+  ns::HandleError(nsLiteralCString("Failure"), nsLiteralCString(__FILE__), \
+                  __LINE__);                                               \
+  return retVal;
+
+
+
+#define QM_FAIL_RET_VAL_WITH_CLEANUP(ns, retVal, cleanup)                  \
+  ns::HandleError(nsLiteralCString("Failure"), nsLiteralCString(__FILE__), \
+                  __LINE__);                                               \
+  cleanup();                                                               \
+  return retVal;
+
+
+
+#define QM_FAIL_META(...)                                               \
+  MOZ_ARG_5(, ##__VA_ARGS__, QM_FAIL_RET_VAL_WITH_CLEANUP(__VA_ARGS__), \
+            QM_FAIL_RET_VAL(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__))
+
+
+
+
+
+#define QM_FAIL(...) QM_FAIL_META(mozilla::dom::quota, ##__VA_ARGS__)
 
 
 #ifdef NIGHTLY_BUILD

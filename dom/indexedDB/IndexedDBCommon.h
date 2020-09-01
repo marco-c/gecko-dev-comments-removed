@@ -15,6 +15,9 @@
 
 #define IDB_TRY_VAR(...) QM_TRY_VAR_META(mozilla::dom::indexedDB, ##__VA_ARGS__)
 
+
+#define IDB_FAIL(...) QM_FAIL_META(mozilla::dom::indexedDB, ##__VA_ARGS__)
+
 namespace mozilla::dom::indexedDB {
 
 void HandleError(const nsLiteralCString& aExpr,

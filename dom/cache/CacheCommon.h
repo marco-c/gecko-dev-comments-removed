@@ -15,6 +15,9 @@
 
 #define CACHE_TRY_VAR(...) QM_TRY_VAR_META(mozilla::dom::cache, ##__VA_ARGS__)
 
+
+#define CACHE_FAIL(...) QM_FAIL_META(mozilla::dom::cache, ##__VA_ARGS__)
+
 namespace mozilla::dom::cache {
 
 void HandleError(const nsLiteralCString& aExpr,

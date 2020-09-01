@@ -15,6 +15,9 @@
 
 #define SDB_TRY_VAR(...) QM_TRY_VAR_META(mozilla::dom::simpledb, ##__VA_ARGS__)
 
+
+#define SDB_FAIL(...) QM_FAIL_META(mozilla::dom::simpledb, ##__VA_ARGS__)
+
 namespace mozilla {
 namespace dom {
 
