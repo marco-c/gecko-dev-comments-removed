@@ -2922,6 +2922,34 @@ class HTMLEditor final : public TextEditor,
                                  nsIContent& aLeftContent,
                                  nsIContent& aRightContent);
 
+    
+
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT Result<bool, nsresult>
+    DeleteNodesEntirelyInRangeButKeepTableStructure(
+        HTMLEditor& aHTMLEditor, nsRange& aRange,
+        HTMLEditor::SelectionWasCollapsed aSelectionWasCollapsed);
+
+    
+
+
+
+
+
+
+
+
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+    DeleteContentButKeepTableStructure(HTMLEditor& aHTMLEditor,
+                                       nsIContent& aContent);
+
     enum class Mode {
       NotInitialized,
       JoinCurrentBlock,
@@ -3029,20 +3057,6 @@ class HTMLEditor final : public TextEditor,
                                  nsIEditor::EStripWrappers aStripWrappers,
                                  AutoRangeArray& aRangesToDelete,
                                  SelectionWasCollapsed aSelectionWasCollapsed);
-
-  
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  DeleteElementsExceptTableRelatedElements(nsINode& aNode);
 
   
 
