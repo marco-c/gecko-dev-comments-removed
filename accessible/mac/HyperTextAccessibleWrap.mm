@@ -410,9 +410,16 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(
   }
 
   nsIFrame* frameAtOffset = childFrame;
-  int32_t unusedOffsetInFrame = 0;
-  childFrame->GetChildFrameContainingOffset(
-      innerContentOffset, true, &unusedOffsetInFrame, &frameAtOffset);
+  int32_t offsetInFrame = 0;
+  childFrame->GetChildFrameContainingOffset(innerContentOffset, true,
+                                            &offsetInFrame, &frameAtOffset);
+  if (aDirection == eDirPrevious && offsetInFrame == 0) {
+    
+    
+    if (nsIFrame* prevInContinuation = frameAtOffset->GetPrevContinuation()) {
+      frameAtOffset = prevInContinuation;
+    }
+  }
 
   const bool kIsJumpLinesOk = true;       
   const bool kIsScrollViewAStop = false;  
