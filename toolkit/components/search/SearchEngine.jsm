@@ -596,6 +596,8 @@ class SearchEngine {
   
   __searchForm = null;
   
+  _sendAttributionRequest = false;
+  
   _updateInterval = null;
   
   _updateURL = null;
@@ -973,6 +975,8 @@ class SearchEngine {
     this._telemetryId = configuration.telemetryId;
     this._name = searchProvider.name.trim();
     this._regionParams = configuration.regionParams;
+    this._sendAttributionRequest =
+      configuration.sendAttributionRequest ?? false;
 
     if (shortName) {
       this._shortName = shortName;
@@ -1393,6 +1397,10 @@ class SearchEngine {
 
   get searchForm() {
     return this._getSearchFormWithPurpose();
+  }
+
+  get sendAttributionRequest() {
+    return this._sendAttributionRequest;
   }
 
   _getSearchFormWithPurpose(purpose) {
