@@ -26,19 +26,22 @@ class ScriptSourceObject;
 
 namespace frontend {
 
-class GlobalScriptInfo;
+struct CompilationInfo;
+struct CompilationGCOutput;
+struct CompilationState;
 
 
 
 class Smoosh {
  public:
   static bool compileGlobalScript(CompilationInfo& compilationInfo,
+                                  CompilationState& compilationState,
                                   JS::SourceText<mozilla::Utf8Unit>& srcBuf,
                                   CompilationGCOutput& gcOutput,
                                   bool* unimplemented);
 
   static bool compileGlobalScriptToStencil(
-      CompilationInfo& compilationInfo,
+      CompilationInfo& compilationInfo, CompilationState& compilationState,
       JS::SourceText<mozilla::Utf8Unit>& srcBuf, bool* unimplemented);
 };
 

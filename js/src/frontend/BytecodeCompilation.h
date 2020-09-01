@@ -17,7 +17,7 @@
 
 #include "jstypes.h"  
 
-#include "frontend/CompilationInfo.h"
+#include "frontend/CompilationInfo.h"  
 #include "frontend/ParseContext.h"  
 #include "frontend/SharedContext.h"  
 #include "js/CompileOptions.h"  
@@ -46,16 +46,19 @@ template <typename Unit>
 class StandaloneFunctionCompiler;
 
 extern bool CompileGlobalScript(CompilationInfo& compilationInfo,
+                                CompilationState& compilationState,
                                 GlobalSharedContext& globalsc,
                                 JS::SourceText<char16_t>& srcBuf,
                                 CompilationGCOutput& gcOutput);
 
 extern bool CompileGlobalScript(CompilationInfo& compilationInfo,
+                                CompilationState& compilationState,
                                 GlobalSharedContext& globalsc,
                                 JS::SourceText<mozilla::Utf8Unit>& srcBuf,
                                 CompilationGCOutput& gcOutput);
 
 extern bool CompileEvalScript(CompilationInfo& compilationInfo,
+                              CompilationState& compilationState,
                               EvalSharedContext& evalsc,
                               JS::SourceText<char16_t>& srcBuf,
                               CompilationGCOutput& gcOutput);

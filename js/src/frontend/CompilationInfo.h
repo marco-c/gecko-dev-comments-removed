@@ -158,7 +158,8 @@ struct MOZ_RAII CompilationState {
 
   CompilationState(JSContext* cx, LifoAllocScope& alloc,
                    const JS::ReadOnlyCompileOptions& options,
-                   Scope* enclosingScope, JSObject* enclosingEnv)
+                   Scope* enclosingScope = nullptr,
+                   JSObject* enclosingEnv = nullptr)
       : keepAtoms(cx),
         directives(options.forceStrictMode()),
         scopeContext(cx, enclosingScope, enclosingEnv),
@@ -321,15 +322,12 @@ class ScriptStencilIterable {
 };
 
 
-
-
 struct MOZ_RAII CompilationInfo {
   static constexpr FunctionIndex TopLevelIndex = FunctionIndex(0);
 
   JSContext* cx;
 
   CompilationInput input;
-  CompilationState state;
   CompilationStencil stencil;
 
   
@@ -344,14 +342,8 @@ struct MOZ_RAII CompilationInfo {
   void rewind(const RewindToken& pos);
 
   
-  CompilationInfo(JSContext* cx, LifoAllocScope& alloc,
-                  const JS::ReadOnlyCompileOptions& options,
-                  Scope* enclosingScope = nullptr,
-                  JSObject* enclosingEnv = nullptr)
-      : cx(cx),
-        input(cx, options),
-        state(cx, alloc, options, enclosingScope, enclosingEnv),
-        stencil(cx) {}
+  CompilationInfo(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
+      : cx(cx), input(cx, options), stencil(cx) {}
 
   MOZ_MUST_USE bool instantiateStencils(CompilationGCOutput& gcOutput);
 

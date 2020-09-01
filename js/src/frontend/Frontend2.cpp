@@ -115,9 +115,7 @@ void CopyBindingNames(JSContext* cx, CVec<COption<SmooshBindingName>>& from,
 
 bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
                          Vector<const ParserAtom*>& allAtoms,
-                         CompilationInfo& compilationInfo) {
-  auto& alloc = compilationInfo.state.allocScope.alloc();
-
+                         CompilationInfo& compilationInfo, LifoAlloc& alloc) {
   for (size_t i = 0; i < result.scopes.len; i++) {
     SmooshScopeData& scopeData = result.scopes.data[i];
     ScopeIndex index;
@@ -504,6 +502,7 @@ void ReportSmooshCompileError(JSContext* cx, ErrorMetadata&& metadata,
 
 
 bool Smoosh::compileGlobalScriptToStencil(CompilationInfo& compilationInfo,
+                                          CompilationState& compilationState,
                                           JS::SourceText<Utf8Unit>& srcBuf,
                                           bool* unimplemented) {
   
@@ -546,7 +545,8 @@ bool Smoosh::compileGlobalScriptToStencil(CompilationInfo& compilationInfo,
     return false;
   }
 
-  if (!ConvertScopeStencil(cx, result, allAtoms, compilationInfo)) {
+  auto& alloc = compilationState.allocScope.alloc();
+  if (!ConvertScopeStencil(cx, result, allAtoms, compilationInfo, alloc)) {
     return false;
   }
 
@@ -581,10 +581,12 @@ bool Smoosh::compileGlobalScriptToStencil(CompilationInfo& compilationInfo,
 
 
 bool Smoosh::compileGlobalScript(CompilationInfo& compilationInfo,
+                                 CompilationState& compilationState,
                                  JS::SourceText<Utf8Unit>& srcBuf,
                                  CompilationGCOutput& gcOutput,
                                  bool* unimplemented) {
-  if (!compileGlobalScriptToStencil(compilationInfo, srcBuf, unimplemented)) {
+  if (!compileGlobalScriptToStencil(compilationInfo, compilationState, srcBuf,
+                                    unimplemented)) {
     return false;
   }
 
