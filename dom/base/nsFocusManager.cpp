@@ -2727,11 +2727,13 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
       return;
     }
   } else {
+    BrowsingContext* bc = aWindow->GetBrowsingContext();
     
     
-    
-    
-    if (aWindow->GetBrowsingContext() == GetActiveBrowsingContext()) {
+    if (bc == GetActiveBrowsingContext()) {
+      return;
+    }
+    if (bc == GetFocusedBrowsingContext()) {
       return;
     }
   }
