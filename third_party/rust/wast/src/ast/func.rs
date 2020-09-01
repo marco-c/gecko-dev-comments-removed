@@ -20,7 +20,7 @@ pub struct Func<'a> {
     
     pub kind: FuncKind<'a>,
     
-    pub ty: ast::TypeUse<'a, ast::FunctionType<'a>>,
+    pub ty: ast::TypeUse<'a>,
 }
 
 
@@ -31,12 +31,19 @@ pub enum FuncKind<'a> {
     
     
     
-    Import(ast::InlineImport<'a>),
+    Import {
+        
+        module: &'a str,
+        
+        field: &'a str,
+    },
 
     
     Inline {
         
-        locals: Vec<Local<'a>>,
+        
+        
+        locals: Vec<(Option<ast::Id<'a>>, Option<ast::NameAnnotation<'a>>, ast::ValType<'a>)>,
 
         
         expression: ast::Expression<'a>,
@@ -50,11 +57,32 @@ impl<'a> Parse<'a> for Func<'a> {
         let name = parser.parse()?;
         let exports = parser.parse()?;
 
-        let (ty, kind) = if let Some(import) = parser.parse()? {
-            (parser.parse()?, FuncKind::Import(import))
+        let (ty, kind) = if parser.peek2::<kw::import>() {
+            let (module, field) = parser.parens(|p| {
+                p.parse::<kw::import>()?;
+                Ok((p.parse()?, p.parse()?))
+            })?;
+            (parser.parse()?, FuncKind::Import { module, field })
         } else {
             let ty = parser.parse()?;
-            let locals = Local::parse_remainder(parser)?;
+            let mut locals = Vec::new();
+            while parser.peek2::<kw::local>() {
+                parser.parens(|p| {
+                    p.parse::<kw::local>()?;
+                    if p.is_empty() {
+                        return Ok(());
+                    }
+                    let id: Option<_> = p.parse()?;
+                    let name: Option<_> = p.parse()?;
+                    let ty = p.parse()?;
+                    let parse_more = id.is_none() && name.is_none();
+                    locals.push((id, name, ty));
+                    while parse_more && !p.is_empty() {
+                        locals.push((None, None, p.parse()?));
+                    }
+                    Ok(())
+                })?;
+            }
             (
                 ty,
                 FuncKind::Inline {
@@ -72,44 +100,5 @@ impl<'a> Parse<'a> for Func<'a> {
             ty,
             kind,
         })
-    }
-}
-
-
-
-
-
-#[derive(Debug)]
-pub struct Local<'a> {
-    
-    
-    pub id: Option<ast::Id<'a>>,
-    
-    pub name: Option<ast::NameAnnotation<'a>>,
-    
-    pub ty: ast::ValType<'a>,
-}
-
-impl<'a> Local<'a> {
-    pub(crate) fn parse_remainder(parser: Parser<'a>) -> Result<Vec<Local<'a>>> {
-        let mut locals = Vec::new();
-        while parser.peek2::<kw::local>() {
-            parser.parens(|p| {
-                p.parse::<kw::local>()?;
-                if p.is_empty() {
-                    return Ok(());
-                }
-                let id: Option<_> = p.parse()?;
-                let name: Option<_> = p.parse()?;
-                let ty = p.parse()?;
-                let parse_more = id.is_none() && name.is_none();
-                locals.push(Local { id, name, ty });
-                while parse_more && !p.is_empty() {
-                    locals.push(Local { id: None, name: None, ty: p.parse()? });
-                }
-                Ok(())
-            })?;
-        }
-        Ok(locals)
     }
 }

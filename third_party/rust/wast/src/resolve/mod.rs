@@ -1,88 +1,9 @@
 use crate::ast::*;
 use crate::Error;
 
-mod deinline_import_export;
 mod expand;
-mod gensym;
 mod names;
-
-#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
-pub enum Ns {
-    Func,
-    Table,
-    Global,
-    Memory,
-    Module,
-    Instance,
-    Event,
-    Type,
-}
-
-impl Ns {
-    fn from_item(item: &ItemSig<'_>) -> Ns {
-        match item.kind {
-            ItemKind::Func(_) => Ns::Func,
-            ItemKind::Table(_) => Ns::Table,
-            ItemKind::Memory(_) => Ns::Memory,
-            ItemKind::Global(_) => Ns::Global,
-            ItemKind::Instance(_) => Ns::Instance,
-            ItemKind::Module(_) => Ns::Module,
-            ItemKind::Event(_) => Ns::Event,
-        }
-    }
-
-    fn from_export<'a>(kind: &ExportKind<'a>) -> (Index<'a>, Ns) {
-        match *kind {
-            ExportKind::Func(f) => (f, Ns::Func),
-            ExportKind::Table(f) => (f, Ns::Table),
-            ExportKind::Global(f) => (f, Ns::Global),
-            ExportKind::Memory(f) => (f, Ns::Memory),
-            ExportKind::Instance(f) => (f, Ns::Instance),
-            ExportKind::Module(f) => (f, Ns::Module),
-            ExportKind::Event(f) => (f, Ns::Event),
-            ExportKind::Type(f) => (f, Ns::Type),
-        }
-    }
-
-    fn from_export_mut<'a, 'b>(kind: &'b mut ExportKind<'a>) -> (&'b mut Index<'a>, Ns) {
-        match kind {
-            ExportKind::Func(f) => (f, Ns::Func),
-            ExportKind::Table(f) => (f, Ns::Table),
-            ExportKind::Global(f) => (f, Ns::Global),
-            ExportKind::Memory(f) => (f, Ns::Memory),
-            ExportKind::Instance(f) => (f, Ns::Instance),
-            ExportKind::Module(f) => (f, Ns::Module),
-            ExportKind::Event(f) => (f, Ns::Event),
-            ExportKind::Type(f) => (f, Ns::Type),
-        }
-    }
-
-    fn to_export_kind<'a>(&self, index: Index<'a>) -> ExportKind<'a> {
-        match self {
-            Ns::Func => ExportKind::Func(index),
-            Ns::Table => ExportKind::Table(index),
-            Ns::Global => ExportKind::Global(index),
-            Ns::Memory => ExportKind::Memory(index),
-            Ns::Module => ExportKind::Module(index),
-            Ns::Instance => ExportKind::Instance(index),
-            Ns::Event => ExportKind::Event(index),
-            Ns::Type => ExportKind::Type(index),
-        }
-    }
-
-    fn desc(&self) -> &'static str {
-        match self {
-            Ns::Func => "func",
-            Ns::Table => "table",
-            Ns::Global => "global",
-            Ns::Memory => "memory",
-            Ns::Module => "module",
-            Ns::Instance => "instance",
-            Ns::Event => "event",
-            Ns::Type => "type",
-        }
-    }
-}
+mod tyexpand;
 
 pub fn resolve<'a>(module: &mut Module<'a>) -> Result<Names<'a>, Error> {
     let fields = match &mut module.kind {
@@ -92,17 +13,22 @@ pub fn resolve<'a>(module: &mut Module<'a>) -> Result<Names<'a>, Error> {
 
     
     
-    gensym::reset();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let mut expander = expand::Expander::default();
+    expander.process(fields, expand::Expander::deinline_import);
+    expander.process(fields, expand::Expander::deinline_export);
 
-    
-    
-    
-    
-    
-    deinline_import_export::run(fields);
-
-    
-    
     for i in 1..fields.len() {
         let span = match &fields[i] {
             ModuleField::Import(i) => i.span,
@@ -121,12 +47,50 @@ pub fn resolve<'a>(module: &mut Module<'a>) -> Result<Names<'a>, Error> {
     
     
     
-    expand::run(fields)?;
+    
+    
+    
+    
+    let mut cur = 0;
+    let mut expander = tyexpand::Expander::default();
+    move_types_first(fields);
+    while cur < fields.len() {
+        expander.expand(&mut fields[cur]);
+        for new in expander.to_prepend.drain(..) {
+            fields.insert(cur, new);
+            cur += 1;
+        }
+        cur += 1;
+    }
 
     
     
-    let resolver = names::resolve(fields)?;
+    
+    
+    
+    move_imports_first(fields);
+    let mut resolver = names::Resolver::default();
+    for field in fields.iter_mut() {
+        resolver.register(field)?;
+    }
+    for field in fields.iter_mut() {
+        resolver.resolve(field)?;
+    }
     Ok(Names { resolver })
+}
+
+fn move_imports_first(fields: &mut [ModuleField<'_>]) {
+    fields.sort_by_key(|f| match f {
+        ModuleField::Import(_) => false,
+        _ => true,
+    });
+}
+
+fn move_types_first(fields: &mut [ModuleField<'_>]) {
+    fields.sort_by_key(|f| match f {
+        ModuleField::Type(_) => false,
+        _ => true,
+    });
 }
 
 
@@ -146,8 +110,7 @@ impl<'a> Names<'a> {
     
     
     pub fn resolve_func(&self, idx: &mut Index<'a>) -> Result<(), Error> {
-        self.resolver.module().resolve(idx, Ns::Func)?;
-        Ok(())
+        self.resolver.resolve_idx(idx, names::Ns::Func)
     }
 
     
@@ -156,8 +119,7 @@ impl<'a> Names<'a> {
     
     
     pub fn resolve_memory(&self, idx: &mut Index<'a>) -> Result<(), Error> {
-        self.resolver.module().resolve(idx, Ns::Memory)?;
-        Ok(())
+        self.resolver.resolve_idx(idx, names::Ns::Memory)
     }
 
     
@@ -166,8 +128,7 @@ impl<'a> Names<'a> {
     
     
     pub fn resolve_table(&self, idx: &mut Index<'a>) -> Result<(), Error> {
-        self.resolver.module().resolve(idx, Ns::Table)?;
-        Ok(())
+        self.resolver.resolve_idx(idx, names::Ns::Table)
     }
 
     
@@ -176,7 +137,6 @@ impl<'a> Names<'a> {
     
     
     pub fn resolve_global(&self, idx: &mut Index<'a>) -> Result<(), Error> {
-        self.resolver.module().resolve(idx, Ns::Global)?;
-        Ok(())
+        self.resolver.resolve_idx(idx, names::Ns::Global)
     }
 }

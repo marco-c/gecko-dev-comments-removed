@@ -253,16 +253,6 @@ pub trait Peek {
 
     
     
-    fn peek2(mut cursor: Cursor<'_>) -> bool {
-        if cursor.advance_token().is_some() {
-            Self::peek(cursor)
-        } else {
-            false
-        }
-    }
-
-    
-    
     fn display() -> &'static str;
 }
 
@@ -283,7 +273,6 @@ pub struct ParseBuffer<'a> {
     input: &'a str,
     cur: Cell<usize>,
     known_annotations: RefCell<HashMap<String, usize>>,
-    depth: Cell<usize>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -343,7 +332,6 @@ impl ParseBuffer<'_> {
         let ret = ParseBuffer {
             tokens: tokens.into_boxed_slice(),
             cur: Cell::new(0),
-            depth: Cell::new(0),
             input,
             known_annotations: Default::default(),
         };
@@ -660,7 +648,6 @@ impl<'a> Parser<'a> {
     
     
     pub fn parens<T>(self, f: impl FnOnce(Parser<'a>) -> Result<T>) -> Result<T> {
-        self.buf.depth.set(self.buf.depth.get() + 1);
         let before = self.buf.cur.get();
         let res = self.step(|cursor| {
             let mut cursor = match cursor.lparen() {
@@ -675,19 +662,10 @@ impl<'a> Parser<'a> {
                 None => Err(cursor.error("expected `)`")),
             }
         });
-        self.buf.depth.set(self.buf.depth.get() - 1);
         if res.is_err() {
             self.buf.cur.set(before);
         }
         return res;
-    }
-
-    
-    
-    
-    
-    pub fn parens_depth(&self) -> usize {
-        self.buf.depth.get()
     }
 
     fn cursor(self) -> Cursor<'a> {
@@ -729,11 +707,6 @@ impl<'a> Parser<'a> {
     
     pub fn cur_span(&self) -> Span {
         self.cursor().cur_span()
-    }
-
-    
-    pub fn prev_span(&self) -> Span {
-        self.cursor().prev_span().unwrap_or(Span::from_offset(0))
     }
 
     
@@ -898,16 +871,6 @@ impl<'a> Cursor<'a> {
             None => self.parser.buf.input.len(),
         };
         Span { offset }
-    }
-
-    
-    
-    
-    pub(crate) fn prev_span(&self) -> Option<Span> {
-        let (token, _) = self.parser.buf.tokens.get(self.cur.checked_sub(1)?)?;
-        Some(Span {
-            offset: self.parser.buf.input_pos(token.src()),
-        })
     }
 
     

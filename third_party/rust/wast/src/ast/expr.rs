@@ -1,4 +1,4 @@
-use crate::ast::{self, kw, HeapType};
+use crate::ast::{self, kw, RefType};
 use crate::parser::{Parse, Parser, Result};
 use std::mem;
 
@@ -57,13 +57,6 @@ enum Level<'a> {
     
     
     IfArm,
-
-    
-    
-    Try(Try<'a>),
-
-    
-    TryArm,
 }
 
 
@@ -75,17 +68,6 @@ enum If<'a> {
     Then(Instruction<'a>),
     
     Else,
-    
-    
-    End,
-}
-
-
-enum Try<'a> {
-    
-    Do(Instruction<'a>),
-    
-    Catch,
     
     
     End,
@@ -105,12 +87,11 @@ impl<'a> ExpressionParser<'a> {
             
             
             
-            if let Some(Level::If(_)) | Some(Level::Try(_)) = self.stack.last() {
+            if let Some(Level::If(_)) = self.stack.last() {
                 if !parser.is_empty() && !parser.peek::<ast::LParen>() {
                     return Err(parser.error("expected `(`"));
                 }
             }
-
 
             match self.paren(parser)? {
                 
@@ -132,18 +113,11 @@ impl<'a> ExpressionParser<'a> {
                     if self.handle_if_lparen(parser)? {
                         continue;
                     }
-                    
-                    
-                    if self.handle_try_lparen(parser)? {
-                        continue;
-                    }
                     match parser.parse()? {
                         
                         
                         
-                        i @ Instruction::Block(_)
-                        | i @ Instruction::Loop(_)
-                        | i @ Instruction::Let(_) => {
+                        i @ Instruction::Block(_) | i @ Instruction::Loop(_) => {
                             self.instrs.push(i);
                             self.stack.push(Level::EndWith(Instruction::End(None)));
                         }
@@ -153,12 +127,6 @@ impl<'a> ExpressionParser<'a> {
                         
                         i @ Instruction::If(_) => {
                             self.stack.push(Level::If(If::Clause(i)));
-                        }
-
-                        
-                        
-                        i @ Instruction::Try(_) => {
-                            self.stack.push(Level::Try(Try::Do(i)));
                         }
 
                         
@@ -174,7 +142,6 @@ impl<'a> ExpressionParser<'a> {
                 Paren::Right => match self.stack.pop().unwrap() {
                     Level::EndWith(i) => self.instrs.push(i),
                     Level::IfArm => {}
-                    Level::TryArm => {}
 
                     
                     
@@ -187,19 +154,6 @@ impl<'a> ExpressionParser<'a> {
                         return Err(parser.error("previous `if` had no `then`"));
                     }
                     Level::If(_) => {
-                        self.instrs.push(Instruction::End(None));
-                    }
-
-                    
-                    
-                    
-                    Level::Try(Try::Do(_)) => {
-                        return Err(parser.error("previous `try` had no `do`"));
-                    }
-                    Level::Try(Try::Catch) => {
-                        return Err(parser.error("previous `try` had no `catch`"));
-                    }
-                    Level::Try(_) => {
                         self.instrs.push(Instruction::End(None));
                     }
                 },
@@ -301,57 +255,6 @@ impl<'a> ExpressionParser<'a> {
         
         Err(parser.error("too many payloads inside of `(if)`"))
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn handle_try_lparen(&mut self, parser: Parser<'a>) -> Result<bool> {
-        
-        let i = match self.stack.last_mut() {
-            Some(Level::Try(i)) => i,
-            _ => return Ok(false),
-        };
-
-        
-        if let Try::Do(try_instr) = i {
-            let instr = mem::replace(try_instr, Instruction::End(None));
-            self.instrs.push(instr);
-            if parser.parse::<Option<kw::r#do>>()?.is_some() {
-                
-                
-                *i = Try::Catch;
-                self.stack.push(Level::TryArm);
-                return Ok(true);
-            }
-            
-            
-            
-            return Ok(false);
-        }
-
-        
-        if let Try::Catch = i {
-            self.instrs.push(Instruction::Catch);
-            if parser.parse::<Option<kw::catch>>()?.is_some() {
-                *i = Try::End;
-                self.stack.push(Level::TryArm);
-                return Ok(true);
-            }
-            return Ok(false);
-        }
-
-        Err(parser.error("too many payloads inside of `(try)`"))
-    }
 }
 
 
@@ -416,7 +319,7 @@ macro_rules! instructions {
         }
     );
 
-    (@ty MemArg<$amt:tt>) => (MemArg<'a>);
+    (@ty MemArg<$amt:tt>) => (MemArg);
     (@ty $other:ty) => ($other);
 
     (@first $first:ident $($t:tt)*) => ($first);
@@ -457,8 +360,7 @@ instructions! {
         
         CallRef : [0x14] : "call_ref",
         ReturnCallRef : [0x15] : "return_call_ref",
-        FuncBind(FuncBindType<'a>) : [0x16] : "func.bind",
-        Let(LetType<'a>) : [0x17] : "let",
+        FuncBind(ast::Index<'a>) : [0x16] : "func.bind",
 
         Drop : [0x1a] : "drop",
         Select(SelectTypes<'a>) : [] : "select",
@@ -496,11 +398,11 @@ instructions! {
         I64Store32(MemArg<4>) : [0x3e] : "i64.store32",
 
         
-        MemorySize(MemoryArg<'a>) : [0x3f] : "memory.size" | "current_memory",
-        MemoryGrow(MemoryArg<'a>) : [0x40] : "memory.grow" | "grow_memory",
+        MemorySize : [0x3f, 0x00] : "memory.size" | "current_memory",
+        MemoryGrow : [0x40, 0x00] : "memory.grow" | "grow_memory",
         MemoryInit(MemoryInit<'a>) : [0xfc, 0x08] : "memory.init",
-        MemoryCopy(MemoryCopy<'a>) : [0xfc, 0x0a] : "memory.copy",
-        MemoryFill(MemoryArg<'a>) : [0xfc, 0x0b] : "memory.fill",
+        MemoryCopy : [0xfc, 0x0a, 0x00, 0x00] : "memory.copy",
+        MemoryFill : [0xfc, 0x0b, 0x00] : "memory.fill",
         DataDrop(ast::Index<'a>) : [0xfc, 0x09] : "data.drop",
         ElemDrop(ast::Index<'a>) : [0xfc, 0x0d] : "elem.drop",
         TableInit(TableInit<'a>) : [0xfc, 0x0c] : "table.init",
@@ -509,7 +411,7 @@ instructions! {
         TableSize(TableArg<'a>) : [0xfc, 0x10] : "table.size",
         TableGrow(TableArg<'a>) : [0xfc, 0x0f] : "table.grow",
 
-        RefNull(HeapType<'a>) : [0xd0] : "ref.null",
+        RefNull(RefType<'a>) : [0xd0] : "ref.null",
         RefIsNull : [0xd1] : "ref.is_null",
         RefExtern(u32) : [0xff] : "ref.extern", 
         RefFunc(ast::Index<'a>) : [0xd2] : "ref.func",
@@ -522,22 +424,19 @@ instructions! {
         RefEq : [0xd5] : "ref.eq",
 
         
-        StructNew(ast::Index<'a>) : [0xfb, 0x0] : "struct.new",
-
-        
-        StructNewWithRtt(ast::Index<'a>) : [0xfb, 0x01] : "struct.new_with_rtt",
-        StructNewDefaultWithRtt(ast::Index<'a>) : [0xfb, 0x02] : "struct.new_default_with_rtt",
+        StructNew(ast::Index<'a>) : [0xfb, 0x00] : "struct.new",
+        StructNewSub(ast::Index<'a>) : [0xfb, 0x01] : "struct.new_sub",
+        StructNewDefault(ast::Index<'a>) : [0xfb, 0x02] : "struct.new_default",
         StructGet(StructAccess<'a>) : [0xfb, 0x03] : "struct.get",
         StructGetS(StructAccess<'a>) : [0xfb, 0x04] : "struct.get_s",
         StructGetU(StructAccess<'a>) : [0xfb, 0x05] : "struct.get_u",
         StructSet(StructAccess<'a>) : [0xfb, 0x06] : "struct.set",
-
-        
         StructNarrow(StructNarrow<'a>) : [0xfb, 0x07] : "struct.narrow",
 
         
-        ArrayNewWithRtt(ast::Index<'a>) : [0xfb, 0x11] : "array.new_with_rtt",
-        ArrayNewDefaultWithRtt(ast::Index<'a>) : [0xfb, 0x12] : "array.new_default_with_rtt",
+        ArrayNew(ast::Index<'a>) : [0xfb, 0x10] : "array.new",
+        ArrayNewSub(ast::Index<'a>) : [0xfb, 0x11] : "array.new_sub",
+        ArrayNewDefault(ast::Index<'a>) : [0xfb, 0x12] : "array.new_default",
         ArrayGet(ast::Index<'a>) : [0xfb, 0x13] : "array.get",
         ArrayGetS(ast::Index<'a>) : [0xfb, 0x14] : "array.get_s",
         ArrayGetU(ast::Index<'a>) : [0xfb, 0x15] : "array.get_u",
@@ -550,11 +449,11 @@ instructions! {
         I31GetU : [0xfb, 0x22] : "i31.get_u",
 
         
-        RTTCanon(HeapType<'a>) : [0xfb, 0x30] : "rtt.canon",
-        RTTSub(RTTSub<'a>) : [0xfb, 0x31] : "rtt.sub",
-        RefTest(RefTest<'a>) : [0xfb, 0x40] : "ref.test",
-        RefCast(RefTest<'a>) : [0xfb, 0x41] : "ref.cast",
-        BrOnCast(BrOnCast<'a>) : [0xfb, 0x42] : "br_on_cast",
+        RTTGet(ast::Index<'a>) : [0xfb, 0x30] : "rtt.get",
+        RTTSub(ast::Index<'a>) : [0xfb, 0x31] : "rtt.sub",
+        RefTest : [0xfb, 0x40] : "ref.test",
+        RefCast : [0xfb, 0x41] : "ref.cast",
+        BrOnCast(ast::Index<'a>) : [0xfb, 0x42] : "br_on_cast",
 
         I32Const(i32) : [0x41] : "i32.const",
         I64Const(i64) : [0x42] : "i64.const",
@@ -998,50 +897,14 @@ instructions! {
 #[allow(missing_docs)]
 pub struct BlockType<'a> {
     pub label: Option<ast::Id<'a>>,
-    pub ty: ast::TypeUse<'a, ast::FunctionType<'a>>,
+    pub ty: ast::TypeUse<'a>,
 }
 
 impl<'a> Parse<'a> for BlockType<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         Ok(BlockType {
             label: parser.parse()?,
-            ty: parser
-                .parse::<ast::TypeUse<'a, ast::FunctionTypeNoNames<'a>>>()?
-                .into(),
-        })
-    }
-}
-
-
-#[derive(Debug)]
-#[allow(missing_docs)]
-pub struct FuncBindType<'a> {
-    pub ty: ast::TypeUse<'a, ast::FunctionType<'a>>,
-}
-
-impl<'a> Parse<'a> for FuncBindType<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        Ok(FuncBindType {
-            ty: parser
-                .parse::<ast::TypeUse<'a, ast::FunctionTypeNoNames<'a>>>()?
-                .into(),
-        })
-    }
-}
-
-
-#[derive(Debug)]
-#[allow(missing_docs)]
-pub struct LetType<'a> {
-    pub block: BlockType<'a>,
-    pub locals: Vec<ast::Local<'a>>,
-}
-
-impl<'a> Parse<'a> for LetType<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        Ok(LetType {
-            block: parser.parse()?,
-            locals: ast::Local::parse_remainder(parser)?,
+            ty: ast::TypeUse::parse_no_names(parser)?,
         })
     }
 }
@@ -1069,7 +932,7 @@ impl<'a> Parse<'a> for BrTableIndices<'a> {
 
 
 #[derive(Debug)]
-pub struct MemArg<'a> {
+pub struct MemArg {
     
     
     
@@ -1077,12 +940,10 @@ pub struct MemArg<'a> {
     pub align: u32,
     
     pub offset: u32,
-    
-    pub memory: ast::Index<'a>,
 }
 
-impl<'a> MemArg<'a> {
-    fn parse(parser: Parser<'a>, default_align: u32) -> Result<Self> {
+impl MemArg {
+    fn parse(parser: Parser<'_>, default_align: u32) -> Result<Self> {
         fn parse_field(name: &str, parser: Parser<'_>) -> Result<Option<u32>> {
             parser.step(|c| {
                 let (kw, rest) = match c.keyword() {
@@ -1112,9 +973,6 @@ impl<'a> MemArg<'a> {
                 Ok((Some(num), rest))
             })
         }
-        let memory = parser
-            .parse::<Option<_>>()?
-            .unwrap_or(ast::Index::Num(0, parser.prev_span()));
         let offset = parse_field("offset", parser)?.unwrap_or(0);
         let align = match parse_field("align", parser)? {
             Some(n) if !n.is_power_of_two() => {
@@ -1123,11 +981,7 @@ impl<'a> MemArg<'a> {
             n => n.unwrap_or(default_align),
         };
 
-        Ok(MemArg {
-            offset,
-            align,
-            memory,
-        })
+        Ok(MemArg { offset, align })
     }
 }
 
@@ -1137,14 +991,13 @@ pub struct CallIndirect<'a> {
     
     pub table: ast::Index<'a>,
     
-    pub ty: ast::TypeUse<'a, ast::FunctionType<'a>>,
+    pub ty: ast::TypeUse<'a>,
 }
 
 impl<'a> Parse<'a> for CallIndirect<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        let prev_span = parser.prev_span();
         let mut table: Option<_> = parser.parse()?;
-        let ty = parser.parse::<ast::TypeUse<'a, ast::FunctionTypeNoNames<'a>>>()?;
+        let ty = ast::TypeUse::parse_no_names(parser)?;
         
         
         
@@ -1152,8 +1005,8 @@ impl<'a> Parse<'a> for CallIndirect<'a> {
             table = parser.parse()?;
         }
         Ok(CallIndirect {
-            table: table.unwrap_or(ast::Index::Num(0, prev_span)),
-            ty: ty.into(),
+            table: table.unwrap_or(ast::Index::Num(0)),
+            ty,
         })
     }
 }
@@ -1169,11 +1022,10 @@ pub struct TableInit<'a> {
 
 impl<'a> Parse<'a> for TableInit<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        let prev_span = parser.prev_span();
         let table_or_elem = parser.parse()?;
         let (table, elem) = match parser.parse()? {
             Some(elem) => (table_or_elem, elem),
-            None => (ast::Index::Num(0, prev_span), table_or_elem),
+            None => (ast::Index::Num(0), table_or_elem),
         };
         Ok(TableInit { table, elem })
     }
@@ -1193,8 +1045,7 @@ impl<'a> Parse<'a> for TableCopy<'a> {
         let (dst, src) = if let Some(dst) = parser.parse()? {
             (dst, parser.parse()?)
         } else {
-            let span = parser.prev_span();
-            (ast::Index::Num(0, span), ast::Index::Num(0, span))
+            (ast::Index::Num(0), ast::Index::Num(0))
         };
         Ok(TableCopy { dst, src })
     }
@@ -1212,27 +1063,9 @@ impl<'a> Parse<'a> for TableArg<'a> {
         let dst = if let Some(dst) = parser.parse()? {
             dst
         } else {
-            ast::Index::Num(0, parser.prev_span())
+            ast::Index::Num(0)
         };
         Ok(TableArg { dst })
-    }
-}
-
-
-#[derive(Debug)]
-pub struct MemoryArg<'a> {
-    
-    pub mem: ast::Index<'a>,
-}
-
-impl<'a> Parse<'a> for MemoryArg<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let mem = if let Some(mem) = parser.parse()? {
-            mem
-        } else {
-            ast::Index::Num(0, parser.prev_span())
-        };
-        Ok(MemoryArg { mem })
     }
 }
 
@@ -1241,39 +1074,13 @@ impl<'a> Parse<'a> for MemoryArg<'a> {
 pub struct MemoryInit<'a> {
     
     pub data: ast::Index<'a>,
-    
-    pub mem: ast::Index<'a>,
 }
 
 impl<'a> Parse<'a> for MemoryInit<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        let data = parser.parse()?;
-        let mem = parser
-            .parse::<Option<_>>()?
-            .unwrap_or(ast::Index::Num(0, parser.prev_span()));
-        Ok(MemoryInit { data, mem })
-    }
-}
-
-
-#[derive(Debug)]
-pub struct MemoryCopy<'a> {
-    
-    pub src: ast::Index<'a>,
-    
-    pub dst: ast::Index<'a>,
-}
-
-impl<'a> Parse<'a> for MemoryCopy<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let (src, dst) = match parser.parse()? {
-            Some(dst) => (parser.parse()?, dst),
-            None => {
-                let idx = ast::Index::Num(0, parser.prev_span());
-                (idx, idx)
-            }
-        };
-        Ok(MemoryCopy { src, dst })
+        Ok(MemoryInit {
+            data: parser.parse()?,
+        })
     }
 }
 
@@ -1550,61 +1357,5 @@ impl<'a> Parse<'a> for BrOnExn<'a> {
         let label = parser.parse()?;
         let exn = parser.parse()?;
         Ok(BrOnExn { label, exn })
-    }
-}
-
-
-#[derive(Debug)]
-#[allow(missing_docs)]
-pub struct BrOnCast<'a> {
-    pub label: ast::Index<'a>,
-    pub val: HeapType<'a>,
-    pub rtt: HeapType<'a>,
-}
-
-impl<'a> Parse<'a> for BrOnCast<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let label = parser.parse()?;
-        let val = parser.parse()?;
-        let rtt = parser.parse()?;
-        Ok(BrOnCast { label, val, rtt })
-    }
-}
-
-
-#[derive(Debug)]
-#[allow(missing_docs)]
-pub struct RTTSub<'a> {
-    pub depth: u32,
-    pub input_rtt: HeapType<'a>,
-    pub output_rtt: HeapType<'a>,
-}
-
-impl<'a> Parse<'a> for RTTSub<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let depth = parser.parse()?;
-        let input_rtt = parser.parse()?;
-        let output_rtt = parser.parse()?;
-        Ok(RTTSub {
-            depth,
-            input_rtt,
-            output_rtt,
-        })
-    }
-}
-
-
-#[derive(Debug)]
-#[allow(missing_docs)]
-pub struct RefTest<'a> {
-    pub val: HeapType<'a>,
-    pub rtt: HeapType<'a>,
-}
-
-impl<'a> Parse<'a> for RefTest<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let val = parser.parse()?;
-        let rtt = parser.parse()?;
-        Ok(RefTest { val, rtt })
     }
 }

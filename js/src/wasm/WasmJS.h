@@ -175,8 +175,8 @@ bool IsSharedWasmMemoryObject(JSObject* obj);
 
 
 
-MOZ_MUST_USE bool CheckRefType(JSContext* cx, RefType targetType, HandleValue v,
-                               MutableHandleFunction fnval,
+MOZ_MUST_USE bool CheckRefType(JSContext* cx, RefType::Kind targetTypeKind,
+                               HandleValue v, MutableHandleFunction fnval,
                                MutableHandleAnyRef refval);
 
 }  
@@ -450,7 +450,7 @@ class WasmTableObject : public NativeObject {
 
   static WasmTableObject* create(JSContext* cx, uint32_t initialLength,
                                  mozilla::Maybe<uint32_t> maximumLength,
-                                 wasm::RefType tableType, HandleObject proto);
+                                 wasm::TableKind tableKind, HandleObject proto);
   wasm::Table& table() const;
 };
 

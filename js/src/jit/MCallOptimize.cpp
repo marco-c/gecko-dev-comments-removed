@@ -4042,7 +4042,7 @@ IonBuilder::InliningResult IonBuilder::inlineWasmCall(CallInfo& callInfo,
         MOZ_CRASH("impossible per above check");
       case wasm::ValType::Ref:
         switch (sig.args()[i].refTypeKind()) {
-          case wasm::RefType::Extern:
+          case wasm::RefType::Any:
             
             
             

@@ -36,7 +36,7 @@ var index = 0;
 
 
 
-function js_externref_regarg(p) {
+function js_anyref_regarg(p) {
     if (p !== objs[index])
         throw new Error("Bad argument at " + index);
 }
@@ -47,26 +47,26 @@ function js_externref_regarg(p) {
 
 
 
-function js_externref_stackarg(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, p) {
+function js_anyref_stackarg(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, p) {
     if (p !== objs[index])
         throw new Error("Bad argument at " + index);
 }
 
 var ins1 = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(
     `(module
-       (import "" "f" (func $f (param externref)))
+       (import "" "f" (func $f (param anyref)))
        (import "" "g" (func $g (param i32) (param i32) (param i32) (param i32) (param i32)
                                (param i32) (param i32) (param i32) (param i32) (param i32)
-                               (param externref)))
-       (func (export "run1") (param externref) (result externref)
+                               (param anyref)))
+       (func (export "run1") (param anyref) (result anyref)
          (call $f (local.get 0))
          (local.get 0))
-       (func (export "run2") (param externref) (result externref)
+       (func (export "run2") (param anyref) (result anyref)
          (call $g (i32.const 0) (i32.const 1) (i32.const 2) (i32.const 3) (i32.const 4)
                   (i32.const 5) (i32.const 6) (i32.const 7) (i32.const 8) (i32.const 9)
                   (local.get 0))
          (local.get 0)))`)),
-                                   {"":{f: js_externref_regarg, g: js_externref_stackarg}});
+                                   {"":{f: js_anyref_regarg, g: js_anyref_stackarg}});
 
 index = 0;
 for ( let i=0; i < iter; i++ ) {
@@ -91,20 +91,20 @@ for ( let i=0; i < iter; i++ ) {
 
 
 
-function js_returns_externref(p) {
+function js_returns_anyref(p) {
     return objs[index];
 }
 
 var ins2 = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(
     `(module
-       (import "" "f" (func $f (result externref)))
-       (import "" "g" (func $g (param externref)))
-       (func (export "run1") (result externref)
-         (local $tmp externref)
+       (import "" "f" (func $f (result anyref)))
+       (import "" "g" (func $g (param anyref)))
+       (func (export "run1") (result anyref)
+         (local $tmp anyref)
          (local.set $tmp (call $f))
          (call $g (local.get $tmp))
          (local.get $tmp)))`)),
-                                    {"":{f: js_returns_externref, g: js_externref_regarg}});
+                                    {"":{f: js_returns_anyref, g: js_anyref_regarg}});
 
 index = 0;
 for ( let i=0; i < iter; i++ ) {

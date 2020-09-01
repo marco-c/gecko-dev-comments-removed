@@ -10,8 +10,10 @@ pub enum ValType<'a> {
     F32,
     F64,
     V128,
+    I8,
+    I16,
     Ref(RefType<'a>),
-    Rtt(u32, ast::Index<'a>),
+    Rtt(ast::Index<'a>),
 }
 
 impl<'a> Parse<'a> for ValType<'a> {
@@ -32,52 +34,68 @@ impl<'a> Parse<'a> for ValType<'a> {
         } else if l.peek::<kw::v128>() {
             parser.parse::<kw::v128>()?;
             Ok(ValType::V128)
-        } else if l.peek::<RefType>() {
-            Ok(ValType::Ref(parser.parse()?))
+        } else if l.peek::<kw::i8>() {
+            parser.parse::<kw::i8>()?;
+            Ok(ValType::I8)
+        } else if l.peek::<kw::i16>() {
+            parser.parse::<kw::i16>()?;
+            Ok(ValType::I16)
+        } else if l.peek::<kw::funcref>() {
+            parser.parse::<kw::funcref>()?;
+            Ok(ValType::Ref(RefType::Func))
+        } else if l.peek::<kw::anyfunc>() {
+            parser.parse::<kw::anyfunc>()?;
+            Ok(ValType::Ref(RefType::Func))
+        } else if l.peek::<kw::externref>() {
+            parser.parse::<kw::externref>()?;
+            Ok(ValType::Ref(RefType::Extern))
+        } else if l.peek::<kw::anyref>() {
+            
+            
+            parser.parse::<kw::anyref>()?;
+            Ok(ValType::Ref(RefType::Extern))
         } else if l.peek::<ast::LParen>() {
             parser.parens(|p| {
-                let mut l = p.lookahead1();
-                if l.peek::<kw::rtt>() {
+                let mut l = parser.lookahead1();
+                if l.peek::<kw::r#ref>() {
+                    p.parse::<kw::r#ref>()?;
+                    Ok(ValType::Ref(p.parse()?))
+                } else if l.peek::<kw::optref>() {
+                    p.parse::<kw::optref>()?;
+                    Ok(ValType::Ref(RefType::OptType(parser.parse()?)))
+                } else if l.peek::<kw::rtt>() {
                     p.parse::<kw::rtt>()?;
-                    Ok(ValType::Rtt(p.parse()?, p.parse()?))
+                    Ok(ValType::Rtt(parser.parse()?))
                 } else {
                     Err(l.error())
                 }
             })
+        } else if l.peek::<kw::exnref>() {
+            parser.parse::<kw::exnref>()?;
+            Ok(ValType::Ref(RefType::Exn))
+        } else if l.peek::<kw::eqref>() {
+            parser.parse::<kw::eqref>()?;
+            Ok(ValType::Ref(RefType::Eq))
+        } else if l.peek::<kw::i31ref>() {
+            parser.parse::<kw::i31ref>()?;
+            Ok(ValType::Ref(RefType::I31))
         } else {
             Err(l.error())
         }
     }
 }
 
-impl<'a> Peek for ValType<'a> {
-    fn peek(cursor: Cursor<'_>) -> bool {
-        kw::i32::peek(cursor)
-            || kw::i64::peek(cursor)
-            || kw::f32::peek(cursor)
-            || kw::f64::peek(cursor)
-            || kw::v128::peek(cursor)
-            || (ast::LParen::peek(cursor) && kw::rtt::peek2(cursor))
-            || RefType::peek(cursor)
-    }
-    fn display() -> &'static str {
-        "valtype"
-    }
-}
-
 
 #[allow(missing_docs)]
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
-pub enum HeapType<'a> {
+pub enum RefType<'a> {
     
     
     Func,
     
     
+    
     Extern,
-    
-    
-    Any,
     
     
     Exn,
@@ -89,107 +107,18 @@ pub enum HeapType<'a> {
     I31,
     
     
-    Index(ast::Index<'a>),
+    Type(ast::Index<'a>),
+    
+    
+    OptType(ast::Index<'a>),
 }
 
-impl<'a> Parse<'a> for HeapType<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let mut l = parser.lookahead1();
-        if l.peek::<kw::func>() {
-            parser.parse::<kw::func>()?;
-            Ok(HeapType::Func)
-        } else if l.peek::<kw::r#extern>() {
-            parser.parse::<kw::r#extern>()?;
-            Ok(HeapType::Extern)
-        } else if l.peek::<kw::r#any>() {
-            parser.parse::<kw::r#any>()?;
-            Ok(HeapType::Any)
-        } else if l.peek::<kw::exn>() {
-            parser.parse::<kw::exn>()?;
-            Ok(HeapType::Exn)
-        } else if l.peek::<kw::eq>() {
-            parser.parse::<kw::eq>()?;
-            Ok(HeapType::Eq)
-        } else if l.peek::<kw::i31>() {
-            parser.parse::<kw::i31>()?;
-            Ok(HeapType::I31)
-        } else if l.peek::<ast::Index>() {
-            Ok(HeapType::Index(parser.parse()?))
-        } else {
-            Err(l.error())
-        }
-    }
-}
-
-impl<'a> Peek for HeapType<'a> {
-    fn peek(cursor: Cursor<'_>) -> bool {
-        kw::func::peek(cursor)
-            || kw::r#extern::peek(cursor)
-            || kw::any::peek(cursor)
-            || kw::exn::peek(cursor)
-            || kw::eq::peek(cursor)
-            || kw::i31::peek(cursor)
-            || (ast::LParen::peek(cursor) && kw::r#type::peek2(cursor))
-    }
-    fn display() -> &'static str {
-        "heaptype"
-    }
-}
-
-
-#[allow(missing_docs)]
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
-pub struct RefType<'a> {
-    pub nullable: bool,
-    pub heap: HeapType<'a>,
-}
-
-impl<'a> RefType<'a> {
-    
-    pub fn func() -> Self {
-        RefType {
-            nullable: true,
-            heap: HeapType::Func,
-        }
-    }
-
-    
-    pub fn r#extern() -> Self {
-        RefType {
-            nullable: true,
-            heap: HeapType::Extern,
-        }
-    }
-
-    
-    pub fn any() -> Self {
-        RefType {
-            nullable: true,
-            heap: HeapType::Any,
-        }
-    }
-
-    
-    pub fn exn() -> Self {
-        RefType {
-            nullable: true,
-            heap: HeapType::Exn,
-        }
-    }
-
-    
-    pub fn eq() -> Self {
-        RefType {
-            nullable: true,
-            heap: HeapType::Eq,
-        }
-    }
-
-    
-    pub fn i31() -> Self {
-        RefType {
-            nullable: true,
-            heap: HeapType::I31,
+impl<'a> From<TableElemType> for RefType<'a> {
+    fn from(elem: TableElemType) -> Self {
+        match elem {
+            TableElemType::Funcref => RefType::Func,
+            TableElemType::Externref => RefType::Extern,
+            TableElemType::Exnref => RefType::Exn,
         }
     }
 }
@@ -197,89 +126,26 @@ impl<'a> RefType<'a> {
 impl<'a> Parse<'a> for RefType<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let mut l = parser.lookahead1();
-        if l.peek::<kw::funcref>() {
-            parser.parse::<kw::funcref>()?;
-            Ok(RefType::func())
-        } else if l.peek::<kw::anyfunc>() {
-            parser.parse::<kw::anyfunc>()?;
-            Ok(RefType::func())
-        } else if l.peek::<kw::externref>() {
-            parser.parse::<kw::externref>()?;
-            Ok(RefType::r#extern())
-        } else if l.peek::<kw::anyref>() {
-            parser.parse::<kw::anyref>()?;
-            Ok(RefType::any())
-        } else if l.peek::<kw::exnref>() {
-            parser.parse::<kw::exnref>()?;
-            Ok(RefType::exn())
-        } else if l.peek::<kw::eqref>() {
-            parser.parse::<kw::eqref>()?;
-            Ok(RefType::eq())
-        } else if l.peek::<kw::i31ref>() {
-            parser.parse::<kw::i31ref>()?;
-            Ok(RefType::i31())
-        } else if l.peek::<ast::LParen>() {
-            parser.parens(|p| {
-                let mut l = parser.lookahead1();
-                if l.peek::<kw::r#ref>() {
-                    p.parse::<kw::r#ref>()?;
-
-                    let mut nullable = false;
-                    if parser.peek::<kw::null>() {
-                        parser.parse::<kw::null>()?;
-                        nullable = true;
-                    }
-
-                    Ok(RefType {
-                        nullable,
-                        heap: parser.parse()?,
-                    })
-                } else {
-                    Err(l.error())
-                }
-            })
-        } else {
-            Err(l.error())
-        }
-    }
-}
-
-impl<'a> Peek for RefType<'a> {
-    fn peek(cursor: Cursor<'_>) -> bool {
-        kw::funcref::peek(cursor)
-            ||  kw::anyfunc::peek(cursor)
-            || kw::externref::peek(cursor)
-            || kw::anyref::peek(cursor)
-            || kw::exnref::peek(cursor)
-            || kw::eqref::peek(cursor)
-            || kw::i31ref::peek(cursor)
-            || (ast::LParen::peek(cursor) && kw::r#ref::peek2(cursor))
-    }
-    fn display() -> &'static str {
-        "reftype"
-    }
-}
-
-
-#[allow(missing_docs)]
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
-pub enum StorageType<'a> {
-    I8,
-    I16,
-    Val(ValType<'a>),
-}
-
-impl<'a> Parse<'a> for StorageType<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let mut l = parser.lookahead1();
-        if l.peek::<kw::i8>() {
-            parser.parse::<kw::i8>()?;
-            Ok(StorageType::I8)
-        } else if l.peek::<kw::i16>() {
-            parser.parse::<kw::i16>()?;
-            Ok(StorageType::I16)
-        } else if l.peek::<ValType>() {
-            Ok(StorageType::Val(parser.parse()?))
+        if l.peek::<kw::func>() {
+            parser.parse::<kw::func>()?;
+            Ok(RefType::Func)
+        } else if l.peek::<kw::r#extern>() {
+            parser.parse::<kw::r#extern>()?;
+            Ok(RefType::Extern)
+        } else if l.peek::<kw::exn>() {
+            parser.parse::<kw::exn>()?;
+            Ok(RefType::Exn)
+        } else if l.peek::<kw::eq>() {
+            parser.parse::<kw::eq>()?;
+            Ok(RefType::Eq)
+        } else if l.peek::<kw::i31>() {
+            parser.parse::<kw::i31>()?;
+            Ok(RefType::I31)
+        } else if l.peek::<kw::opt>() {
+            parser.parse::<kw::opt>()?;
+            Ok(RefType::OptType(parser.parse()?))
+        } else if l.peek::<ast::Index>() {
+            Ok(RefType::Type(parser.parse()?))
         } else {
             Err(l.error())
         }
@@ -287,7 +153,7 @@ impl<'a> Parse<'a> for StorageType<'a> {
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug)]
 pub struct GlobalType<'a> {
     
     pub ty: ValType<'a>,
@@ -315,7 +181,59 @@ impl<'a> Parse<'a> for GlobalType<'a> {
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug)]
+pub enum TableElemType {
+    
+    Funcref,
+    
+    Externref,
+    
+    Exnref,
+}
+
+impl<'a> Parse<'a> for TableElemType {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        
+        if parser.peek::<kw::anyfunc>() {
+            parser.parse::<kw::anyfunc>()?;
+            return Ok(TableElemType::Funcref);
+        }
+        let mut l = parser.lookahead1();
+        if l.peek::<kw::funcref>() {
+            parser.parse::<kw::funcref>()?;
+            Ok(TableElemType::Funcref)
+        } else if l.peek::<kw::anyref>() {
+            
+            
+            parser.parse::<kw::anyref>()?;
+            Ok(TableElemType::Externref)
+        } else if l.peek::<kw::externref>() {
+            parser.parse::<kw::externref>()?;
+            Ok(TableElemType::Externref)
+        } else if l.peek::<kw::exnref>() {
+            parser.parse::<kw::exnref>()?;
+            Ok(TableElemType::Exnref)
+        } else {
+            Err(l.error())
+        }
+    }
+}
+
+impl Peek for TableElemType {
+    fn peek(cursor: Cursor<'_>) -> bool {
+        kw::funcref::peek(cursor)
+            || kw::anyref::peek(cursor)
+            || kw::externref::peek(cursor)
+            ||  kw::anyfunc::peek(cursor)
+            || kw::exnref::peek(cursor)
+    }
+    fn display() -> &'static str {
+        "table element type"
+    }
+}
+
+
+#[derive(Copy, Clone, Debug)]
 pub struct Limits {
     
     pub min: u32,
@@ -336,36 +254,15 @@ impl<'a> Parse<'a> for Limits {
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Limits64 {
-    
-    pub min: u64,
-    
-    pub max: Option<u64>,
-}
-
-impl<'a> Parse<'a> for Limits64 {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let min = parser.parse()?;
-        let max = if parser.peek::<u64>() {
-            Some(parser.parse()?)
-        } else {
-            None
-        };
-        Ok(Limits64 { min, max })
-    }
-}
-
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct TableType<'a> {
+#[derive(Copy, Clone, Debug)]
+pub struct TableType {
     
     pub limits: Limits,
     
-    pub elem: RefType<'a>,
+    pub elem: TableElemType,
 }
 
-impl<'a> Parse<'a> for TableType<'a> {
+impl<'a> Parse<'a> for TableType {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         Ok(TableType {
             limits: parser.parse()?,
@@ -375,47 +272,28 @@ impl<'a> Parse<'a> for TableType<'a> {
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum MemoryType {
+#[derive(Copy, Clone, Debug)]
+pub struct MemoryType {
     
-    B32 {
-        
-        limits: Limits,
-        
-        shared: bool,
-    },
+    pub limits: Limits,
     
-    B64 {
-        
-        limits: Limits64,
-    },
+    pub shared: bool,
 }
 
 impl<'a> Parse<'a> for MemoryType {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        if parser.peek::<kw::i64>() {
-            parser.parse::<kw::i64>()?;
-            let limits = parser.parse()?;
-            Ok(MemoryType::B64 { limits })
-        } else {
-            parser.parse::<Option<kw::i32>>()?;
-            let limits = parser.parse()?;
-            let shared = parser.parse::<Option<kw::shared>>()?.is_some();
-            Ok(MemoryType::B32 { limits, shared })
-        }
+        let limits: Limits = parser.parse()?;
+        let shared = parser.parse::<Option<kw::shared>>()?.is_some();
+        Ok(MemoryType { limits, shared })
     }
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct FunctionType<'a> {
     
     
-    pub params: Vec<(
-        Option<ast::Id<'a>>,
-        Option<ast::NameAnnotation<'a>>,
-        ValType<'a>,
-    )>,
+    pub params: Vec<(Option<ast::Id<'a>>, Option<ast::NameAnnotation<'a>>, ValType<'a>)>,
     
     pub results: Vec<ValType<'a>>,
 }
@@ -464,60 +342,13 @@ impl<'a> FunctionType<'a> {
 
 impl<'a> Parse<'a> for FunctionType<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
+        parser.parse::<kw::func>()?;
         let mut ret = FunctionType {
             params: Vec::new(),
             results: Vec::new(),
         };
         ret.finish_parse(true, parser)?;
         Ok(ret)
-    }
-}
-
-impl<'a> Peek for FunctionType<'a> {
-    fn peek(cursor: Cursor<'_>) -> bool {
-        if let Some(next) = cursor.lparen() {
-            match next.keyword() {
-                Some(("param", _)) | Some(("result", _)) => return true,
-                _ => {}
-            }
-        }
-
-        false
-    }
-
-    fn display() -> &'static str {
-        "function type"
-    }
-}
-
-
-#[derive(Clone, Debug, Default)]
-pub struct FunctionTypeNoNames<'a>(pub FunctionType<'a>);
-
-impl<'a> Parse<'a> for FunctionTypeNoNames<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let mut ret = FunctionType {
-            params: Vec::new(),
-            results: Vec::new(),
-        };
-        ret.finish_parse(false, parser)?;
-        Ok(FunctionTypeNoNames(ret))
-    }
-}
-
-impl<'a> Peek for FunctionTypeNoNames<'a> {
-    fn peek(cursor: Cursor<'_>) -> bool {
-        FunctionType::peek(cursor)
-    }
-
-    fn display() -> &'static str {
-        FunctionType::display()
-    }
-}
-
-impl<'a> From<FunctionTypeNoNames<'a>> for FunctionType<'a> {
-    fn from(ty: FunctionTypeNoNames<'a>) -> FunctionType<'a> {
-        ty.0
     }
 }
 
@@ -530,7 +361,10 @@ pub struct StructType<'a> {
 
 impl<'a> Parse<'a> for StructType<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        let mut ret = StructType { fields: Vec::new() };
+        parser.parse::<kw::r#struct>()?;
+        let mut ret = StructType {
+            fields: Vec::new(),
+        };
         while !parser.is_empty() {
             let field = if parser.peek2::<kw::field>() {
                 parser.parens(|parser| {
@@ -554,12 +388,16 @@ pub struct StructField<'a> {
     
     pub mutable: bool,
     
-    pub ty: StorageType<'a>,
+    pub ty: ValType<'a>,
 }
 
 impl<'a> StructField<'a> {
     fn parse(parser: Parser<'a>, with_id: bool) -> Result<Self> {
-        let id = if with_id { parser.parse()? } else { None };
+        let id = if with_id {
+            parser.parse()?
+        } else {
+            None
+        };
         let (ty, mutable) = if parser.peek2::<kw::r#mut>() {
             let ty = parser.parens(|parser| {
                 parser.parse::<kw::r#mut>()?;
@@ -567,9 +405,13 @@ impl<'a> StructField<'a> {
             })?;
             (ty, true)
         } else {
-            (parser.parse::<StorageType<'a>>()?, false)
+            (parser.parse::<ValType<'a>>()?, false)
         };
-        Ok(StructField { id, mutable, ty })
+        Ok(StructField {
+            id,
+            mutable,
+            ty,
+        })
     }
 }
 
@@ -579,11 +421,12 @@ pub struct ArrayType<'a> {
     
     pub mutable: bool,
     
-    pub ty: StorageType<'a>,
+    pub ty: ValType<'a>,
 }
 
 impl<'a> Parse<'a> for ArrayType<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
+        parser.parse::<kw::array>()?;
         let (ty, mutable) = if parser.peek2::<kw::r#mut>() {
             let ty = parser.parens(|parser| {
                 parser.parse::<kw::r#mut>()?;
@@ -591,118 +434,12 @@ impl<'a> Parse<'a> for ArrayType<'a> {
             })?;
             (ty, true)
         } else {
-            (parser.parse::<StorageType<'a>>()?, false)
+            (parser.parse::<ValType<'a>>()?, false)
         };
-        Ok(ArrayType { mutable, ty })
-    }
-}
-
-
-#[derive(Clone, Debug, Default)]
-pub struct ModuleType<'a> {
-    
-    pub imports: Vec<ast::Import<'a>>,
-    
-    pub exports: Vec<ExportType<'a>>,
-    
-    pub instance_exports: Vec<(ast::Span, ast::Id<'a>)>,
-}
-
-impl<'a> Parse<'a> for ModuleType<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let mut imports = Vec::new();
-        while parser.peek2::<kw::import>() {
-            imports.push(parser.parens(|p| p.parse())?);
-        }
-        let mut exports = Vec::new();
-        let mut instance_exports = Vec::new();
-        while parser.peek2::<kw::export>() {
-            parser.parens(|p| {
-                if p.peek2::<ast::Index>() {
-                    let span = p.parse::<kw::export>()?.0;
-                    instance_exports.push((span, p.parse()?));
-                } else {
-                    exports.push(p.parse()?);
-                }
-                Ok(())
-            })?;
-        }
-        Ok(ModuleType {
-            imports,
-            exports,
-            instance_exports,
+        Ok(ArrayType {
+            mutable,
+            ty
         })
-    }
-}
-
-impl<'a> Peek for ModuleType<'a> {
-    fn peek(cursor: Cursor<'_>) -> bool {
-        if let Some(next) = cursor.lparen() {
-            match next.keyword() {
-                Some(("import", _)) | Some(("export", _)) => return true,
-                _ => {}
-            }
-        }
-
-        false
-    }
-
-    fn display() -> &'static str {
-        "module type"
-    }
-}
-
-
-#[derive(Clone, Debug, Default)]
-pub struct InstanceType<'a> {
-    
-    pub exports: Vec<ExportType<'a>>,
-}
-
-impl<'a> Parse<'a> for InstanceType<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let mut exports = Vec::new();
-        while !parser.is_empty() {
-            exports.push(parser.parens(|p| p.parse())?);
-        }
-        Ok(InstanceType { exports })
-    }
-}
-
-impl<'a> Peek for InstanceType<'a> {
-    fn peek(cursor: Cursor<'_>) -> bool {
-        if let Some(next) = cursor.lparen() {
-            match next.keyword() {
-                Some(("export", _)) => return true,
-                _ => {}
-            }
-        }
-
-        false
-    }
-
-    fn display() -> &'static str {
-        "instance type"
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct ExportType<'a> {
-    
-    pub span: ast::Span,
-    
-    pub name: &'a str,
-    
-    pub item: ast::ItemSig<'a>,
-}
-
-impl<'a> Parse<'a> for ExportType<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let span = parser.parse::<kw::export>()?.0;
-        let name = parser.parse()?;
-        let item = parser.parens(|p| p.parse())?;
-        Ok(ExportType { span, name, item })
     }
 }
 
@@ -715,17 +452,11 @@ pub enum TypeDef<'a> {
     Struct(StructType<'a>),
     
     Array(ArrayType<'a>),
-    
-    Module(ModuleType<'a>),
-    
-    Instance(InstanceType<'a>),
 }
 
 
 #[derive(Debug)]
 pub struct Type<'a> {
-    
-    pub span: ast::Span,
     
     
     pub id: Option<ast::Id<'a>>,
@@ -735,74 +466,77 @@ pub struct Type<'a> {
 
 impl<'a> Parse<'a> for Type<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        let span = parser.parse::<kw::r#type>()?.0;
+        parser.parse::<kw::r#type>()?;
         let id = parser.parse()?;
         let def = parser.parens(|parser| {
             let mut l = parser.lookahead1();
             if l.peek::<kw::func>() {
-                parser.parse::<kw::func>()?;
                 Ok(TypeDef::Func(parser.parse()?))
             } else if l.peek::<kw::r#struct>() {
-                parser.parse::<kw::r#struct>()?;
                 Ok(TypeDef::Struct(parser.parse()?))
             } else if l.peek::<kw::array>() {
-                parser.parse::<kw::array>()?;
                 Ok(TypeDef::Array(parser.parse()?))
-            } else if l.peek::<kw::module>() {
-                parser.parse::<kw::module>()?;
-                Ok(TypeDef::Module(parser.parse()?))
-            } else if l.peek::<kw::instance>() {
-                parser.parse::<kw::instance>()?;
-                Ok(TypeDef::Instance(parser.parse()?))
             } else {
                 Err(l.error())
             }
         })?;
-        Ok(Type { span, id, def })
+        Ok(Type { id, def })
     }
 }
+
+
+
+
 
 
 #[derive(Clone, Debug)]
-pub struct TypeUse<'a, T> {
+pub struct TypeUse<'a> {
+    
+    pub index_span: Option<ast::Span>,
     
     pub index: Option<ast::Index<'a>>,
     
-    pub inline: Option<T>,
+    
+    pub func_ty: ast::FunctionType<'a>,
 }
 
-impl<'a, T> TypeUse<'a, T> {
+impl<'a> TypeUse<'a> {
     
-    
-    pub fn new_with_index(index: ast::Index<'a>) -> TypeUse<'a, T> {
-        TypeUse {
-            index: Some(index),
-            inline: None,
-        }
+    pub fn parse_no_names(parser: Parser<'a>) -> Result<Self> {
+        TypeUse::parse_allow_names(parser, false)
     }
-}
 
-impl<'a, T: Peek + Parse<'a>> Parse<'a> for TypeUse<'a, T> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
+    fn parse_allow_names(parser: Parser<'a>, allow_names: bool) -> Result<Self> {
         let index = if parser.peek2::<kw::r#type>() {
             Some(parser.parens(|parser| {
                 parser.parse::<kw::r#type>()?;
-                Ok(parser.parse()?)
+                Ok((parser.cur_span(), parser.parse()?))
             })?)
         } else {
             None
         };
-        let inline = parser.parse()?;
+        let (index_span, index) = match index {
+            Some((a, b)) => (Some(a), Some(b)),
+            None => (None, None),
+        };
+        let mut func_ty = FunctionType {
+            params: Vec::new(),
+            results: Vec::new(),
+        };
+        if parser.peek2::<kw::param>() || parser.peek2::<kw::result>() {
+            func_ty.finish_parse(allow_names, parser)?;
+        }
 
-        Ok(TypeUse { index, inline })
+        Ok(TypeUse {
+            index,
+            index_span,
+            func_ty,
+        })
     }
 }
 
-impl<'a> From<TypeUse<'a, FunctionTypeNoNames<'a>>> for TypeUse<'a, FunctionType<'a>> {
-    fn from(src: TypeUse<'a, FunctionTypeNoNames<'a>>) -> TypeUse<'a, FunctionType<'a>> {
-        TypeUse {
-            index: src.index,
-            inline: src.inline.map(|x| x.into()),
-        }
+impl<'a> Parse<'a> for TypeUse<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        TypeUse::parse_allow_names(parser, true)
     }
 }

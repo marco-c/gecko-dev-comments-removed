@@ -388,7 +388,8 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata,
     
     
     
-    bool isAsmJS = seg->active() && env_->tables[seg->tableIndex].isAsmJS;
+    bool isAsmJS =
+        seg->active() && env_->tables[seg->tableIndex].kind == TableKind::AsmJS;
     if (!isAsmJS) {
       for (uint32_t funcIndex : seg->elemFuncIndices) {
         if (funcIndex != NullFuncIndex) {

@@ -1,39 +1,15 @@
 use crate::ast::{self, kw};
-use crate::parser::{Cursor, Parse, Parser, Peek, Result};
+use crate::parser::{Parse, Parser, Result};
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Import<'a> {
     
     pub span: ast::Span,
     
     pub module: &'a str,
     
-    pub field: Option<&'a str>,
-    
-    pub item: ItemSig<'a>,
-}
-
-impl<'a> Parse<'a> for Import<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        let span = parser.parse::<kw::import>()?.0;
-        let module = parser.parse()?;
-        let field = parser.parse()?;
-        let item = parser.parens(|p| p.parse())?;
-        Ok(Import {
-            span,
-            module,
-            field,
-            item,
-        })
-    }
-}
-
-#[derive(Debug, Clone)]
-#[allow(missing_docs)]
-pub struct ItemSig<'a> {
-    
-    pub span: ast::Span,
+    pub field: &'a str,
     
     
     pub id: Option<ast::Id<'a>>,
@@ -41,136 +17,57 @@ pub struct ItemSig<'a> {
     
     pub name: Option<ast::NameAnnotation<'a>>,
     
-    pub kind: ItemKind<'a>,
+    pub kind: ImportKind<'a>,
 }
 
-#[derive(Debug, Clone)]
+
+#[derive(Debug)]
 #[allow(missing_docs)]
-pub enum ItemKind<'a> {
-    Func(ast::TypeUse<'a, ast::FunctionType<'a>>),
-    Table(ast::TableType<'a>),
+pub enum ImportKind<'a> {
+    Func(ast::TypeUse<'a>),
+    Table(ast::TableType),
     Memory(ast::MemoryType),
     Global(ast::GlobalType<'a>),
     Event(ast::EventType<'a>),
-    Module(ast::TypeUse<'a, ast::ModuleType<'a>>),
-    Instance(ast::TypeUse<'a, ast::InstanceType<'a>>),
 }
 
-impl<'a> Parse<'a> for ItemSig<'a> {
+impl<'a> Parse<'a> for Import<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        let mut l = parser.lookahead1();
-        if l.peek::<kw::func>() {
-            let span = parser.parse::<kw::func>()?.0;
-            Ok(ItemSig {
-                span,
-                id: parser.parse()?,
-                name: parser.parse()?,
-                kind: ItemKind::Func(parser.parse()?),
-            })
-        } else if l.peek::<kw::table>() {
-            let span = parser.parse::<kw::table>()?.0;
-            Ok(ItemSig {
-                span,
-                id: parser.parse()?,
-                name: None,
-                kind: ItemKind::Table(parser.parse()?),
-            })
-        } else if l.peek::<kw::memory>() {
-            let span = parser.parse::<kw::memory>()?.0;
-            Ok(ItemSig {
-                span,
-                id: parser.parse()?,
-                name: None,
-                kind: ItemKind::Memory(parser.parse()?),
-            })
-        } else if l.peek::<kw::global>() {
-            let span = parser.parse::<kw::global>()?.0;
-            Ok(ItemSig {
-                span,
-                id: parser.parse()?,
-                name: None,
-                kind: ItemKind::Global(parser.parse()?),
-            })
-        } else if l.peek::<kw::event>() {
-            let span = parser.parse::<kw::event>()?.0;
-            Ok(ItemSig {
-                span,
-                id: parser.parse()?,
-                name: None,
-                kind: ItemKind::Event(parser.parse()?),
-            })
-        } else if l.peek::<kw::module>() {
-            let span = parser.parse::<kw::module>()?.0;
-            Ok(ItemSig {
-                span,
-                id: parser.parse()?,
-                name: None,
-                kind: ItemKind::Module(parser.parse()?),
-            })
-        } else if l.peek::<kw::instance>() {
-            let span = parser.parse::<kw::instance>()?.0;
-            Ok(ItemSig {
-                span,
-                id: parser.parse()?,
-                name: None,
-                kind: ItemKind::Instance(parser.parse()?),
-            })
-        } else {
-            Err(l.error())
-        }
-    }
-}
-
-
-
-
-
-
-
-#[derive(Debug, Copy, Clone)]
-#[allow(missing_docs)]
-pub struct InlineImport<'a> {
-    pub module: &'a str,
-    pub field: Option<&'a str>,
-}
-
-impl<'a> Parse<'a> for InlineImport<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        parser.parens(|p| {
-            p.parse::<kw::import>()?;
-            Ok(InlineImport {
-                module: p.parse()?,
-                field: p.parse()?,
-            })
+        let span = parser.parse::<kw::import>()?.0;
+        let module = parser.parse()?;
+        let field = parser.parse()?;
+        let (id, name, kind) = parser.parens(|parser| {
+            let mut l = parser.lookahead1();
+            if l.peek::<kw::func>() {
+                parser.parse::<kw::func>()?;
+                Ok((
+                    parser.parse()?,
+                    parser.parse()?,
+                    ImportKind::Func(parser.parse()?),
+                ))
+            } else if l.peek::<kw::table>() {
+                parser.parse::<kw::table>()?;
+                Ok((parser.parse()?, None, ImportKind::Table(parser.parse()?)))
+            } else if l.peek::<kw::memory>() {
+                parser.parse::<kw::memory>()?;
+                Ok((parser.parse()?, None, ImportKind::Memory(parser.parse()?)))
+            } else if l.peek::<kw::global>() {
+                parser.parse::<kw::global>()?;
+                Ok((parser.parse()?, None, ImportKind::Global(parser.parse()?)))
+            } else if l.peek::<kw::event>() {
+                parser.parse::<kw::event>()?;
+                Ok((parser.parse()?, None, ImportKind::Event(parser.parse()?)))
+            } else {
+                Err(l.error())
+            }
+        })?;
+        Ok(Import {
+            span,
+            module,
+            field,
+            id,
+            kind,
+            name,
         })
-    }
-}
-
-impl Peek for InlineImport<'_> {
-    fn peek(cursor: Cursor<'_>) -> bool {
-        let cursor = match cursor.lparen() {
-            Some(cursor) => cursor,
-            None => return false,
-        };
-        let cursor = match cursor.keyword() {
-            Some(("import", cursor)) => cursor,
-            _ => return false,
-        };
-        let cursor = match cursor.string() {
-            Some((_, cursor)) => cursor,
-            None => return false,
-        };
-
-        
-        let cursor = match cursor.string() {
-            Some((_, cursor)) => cursor,
-            None => cursor,
-        };
-
-        cursor.rparen().is_some()
-    }
-
-    fn display() -> &'static str {
-        "inline import"
     }
 }

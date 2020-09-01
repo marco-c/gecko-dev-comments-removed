@@ -21,7 +21,8 @@ pub enum MemoryKind<'a> {
     
     #[allow(missing_docs)]
     Import {
-        import: ast::InlineImport<'a>,
+        module: &'a str,
+        field: &'a str,
         ty: ast::MemoryType,
     },
 
@@ -29,12 +30,7 @@ pub enum MemoryKind<'a> {
     Normal(ast::MemoryType),
 
     
-    Inline {
-        
-        is_32: bool,
-        
-        data: Vec<&'a [u8]>,
-    },
+    Inline(Vec<&'a [u8]>),
 }
 
 impl<'a> Parse<'a> for Memory<'a> {
@@ -49,29 +45,36 @@ impl<'a> Parse<'a> for Memory<'a> {
         
         
         let mut l = parser.lookahead1();
-        let kind = if let Some(import) = parser.parse()? {
-            MemoryKind::Import {
-                import,
-                ty: parser.parse()?,
+        let kind = if l.peek::<ast::LParen>() {
+            enum Which<'a, T> {
+                Inline(Vec<T>),
+                Import(&'a str, &'a str),
             }
-        } else if l.peek::<ast::LParen>() || parser.peek2::<ast::LParen>() {
-            let is_32 = if parser.parse::<Option<kw::i32>>()?.is_some() {
-                true
-            } else if parser.parse::<Option<kw::i64>>()?.is_some() {
-                false
-            } else {
-                true
-            };
-            let data = parser.parens(|parser| {
-                parser.parse::<kw::data>()?;
-                let mut data = Vec::new();
-                while !parser.is_empty() {
-                    data.push(parser.parse()?);
+            let result = parser.parens(|parser| {
+                let mut l = parser.lookahead1();
+                if l.peek::<kw::data>() {
+                    parser.parse::<kw::data>()?;
+                    let mut data = Vec::new();
+                    while !parser.is_empty() {
+                        data.push(parser.parse()?);
+                    }
+                    Ok(Which::Inline(data))
+                } else if l.peek::<kw::import>() {
+                    parser.parse::<kw::import>()?;
+                    Ok(Which::Import(parser.parse()?, parser.parse()?))
+                } else {
+                    Err(l.error())
                 }
-                Ok(data)
             })?;
-            MemoryKind::Inline { data, is_32 }
-        } else if l.peek::<u32>() || l.peek::<kw::i32>() || l.peek::<kw::i64>() {
+            match result {
+                Which::Inline(data) => MemoryKind::Inline(data),
+                Which::Import(module, field) => MemoryKind::Import {
+                    module,
+                    field,
+                    ty: parser.parse()?,
+                },
+            }
+        } else if l.peek::<u32>() {
             MemoryKind::Normal(parser.parse()?)
         } else {
             return Err(l.error());
@@ -153,7 +156,7 @@ impl<'a> Parse<'a> for Data<'a> {
                 parser.parse()
             })?;
             DataKind::Active {
-                memory: memory.unwrap_or(ast::Index::Num(0, span)),
+                memory: memory.unwrap_or(ast::Index::Num(0)),
                 offset,
             }
         };
