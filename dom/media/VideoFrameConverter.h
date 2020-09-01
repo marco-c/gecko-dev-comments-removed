@@ -145,9 +145,8 @@ class VideoFrameConverter {
             if (mLastFrameQueuedForProcessing.Serial() != -2) {
               
               
-              FrameToProcess f = mLastFrameQueuedForProcessing;
-              f.mTime = TimeStamp::Now();
-              ProcessVideoFrame(f);
+              QueueForProcessing(nullptr, TimeStamp::Now(),
+                                 mLastFrameQueuedForProcessing.mSize, true);
             } else {
               
               QueueForProcessing(nullptr, TimeStamp::Now(),
