@@ -195,8 +195,8 @@ def get_repo_params(repo):
 
 
 def get_partners(manifestRepo, token):
-    """ Given the url to a manifest repository, retieve the default.xml and parse it into a
-    list of parter repos.
+    """ Given the url to a manifest repository, retrieve the default.xml and parse it into a
+    list of partner repos.
     """
     log.debug("Querying for manifest in %s", manifestRepo)
     owner, repo = get_repo_params(manifestRepo)
@@ -335,9 +335,8 @@ def get_partner_config_by_kind(config, kind):
     
     if partner_subset:
         
-        for partner in kind_config.keys():
-            if partner not in partner_subset:
-                del(kind_config[partner])
+        for partner in [p for p in kind_config.keys() if p not in partner_subset]:
+            del(kind_config[partner])
 
     return kind_config
 
