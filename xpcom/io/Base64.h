@@ -22,6 +22,11 @@ namespace mozilla {
                                                uint32_t aCount,
                                                uint32_t aOffset = 0);
 
+
+
+[[nodiscard]] nsresult Base64EncodeAppend(const char* aBinary,
+                                          uint32_t aBinaryLen,
+                                          nsAString& aBase64);
 [[nodiscard]] nsresult Base64Encode(const char* aBinary, uint32_t aBinaryLen,
                                     char** aBase64);
 [[nodiscard]] nsresult Base64Encode(const nsACString& aBinary,
