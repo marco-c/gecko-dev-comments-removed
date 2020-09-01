@@ -27,6 +27,10 @@ add_task(async function setup() {
 
   
   
+  await PlacesUtils.history.clear();
+
+  
+  
   await SpecialPowers.pushPrefEnv({
     set: [
       [
