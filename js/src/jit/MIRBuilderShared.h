@@ -173,6 +173,12 @@ class MOZ_STACK_CLASS CallInfo {
     return true;
   }
 
+  void initForGetterCall(MDefinition* callee, MDefinition* thisVal) {
+    MOZ_ASSERT(args_.empty());
+    setCallee(callee);
+    setThis(thisVal);
+  }
+
   
   
   MOZ_MUST_USE bool savePriorCallStack(MIRGenerator* mir, MBasicBlock* current,
