@@ -3563,6 +3563,28 @@ class MAssertClass : public MUnaryInstruction, public NoTypePolicy::Data {
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 
+class MAssertShape : public MUnaryInstruction, public NoTypePolicy::Data {
+  CompilerShape shape_;
+
+  MAssertShape(MDefinition* obj, Shape* shape)
+      : MUnaryInstruction(classOpcode, obj), shape_(shape) {
+    MOZ_ASSERT(obj->type() == MIRType::Object);
+
+    setGuard();
+    setResultType(MIRType::None);
+  }
+
+ public:
+  INSTRUCTION_HEADER(AssertShape)
+  TRIVIAL_NEW_WRAPPERS
+
+  const Shape* shape() const { return shape_; }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+  bool appendRoots(MRootList& roots) const override {
+    return roots.append(shape_);
+  }
+};
+
 
 
 
