@@ -191,6 +191,18 @@ const startupPhases = {
       ignoreIfUnused: true,
       maxCount: 1,
     },
+    {
+      name: "PContent::Reply_BeginDriverCrashGuard",
+      condition: WIN,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
+      name: "PContent::Reply_EndDriverCrashGuard",
+      condition: WIN,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
   ],
 
   
@@ -255,6 +267,12 @@ const startupPhases = {
     {
       name: "PWebRenderBridge::Msg_GetSnapshot",
       condition: WIN && WEBRENDER,
+      ignoreIfUnused: true,
+      maxCount: 1,
+    },
+    {
+      name: "PCompositorBridge::Msg_MakeSnapshot",
+      condition: WIN,
       ignoreIfUnused: true,
       maxCount: 1,
     },
