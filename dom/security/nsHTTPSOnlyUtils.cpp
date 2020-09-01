@@ -361,11 +361,7 @@ bool nsHTTPSOnlyUtils::LoopbackOrLocalException(nsIURI* aURI) {
     return false;
   }
 
-  
-  
-  mozilla::net::NetAddr addr;  
-  PRNetAddrToNetAddr(&tempAddr, &addr);
-
+  mozilla::net::NetAddr addr(&tempAddr);
   
   if (IsLoopBackAddress(&addr)) {
     return true;
