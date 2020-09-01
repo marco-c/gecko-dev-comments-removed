@@ -13,6 +13,8 @@ const HAS_THREAD_NAMES =
   AppConstants.isPlatformAndVersionAtLeast("win", 10);
 const isFissionEnabled = Services.prefs.getBoolPref("fission.autostart");
 
+const SAMPLE_SIZE = 10;
+
 add_task(async function test_proc_info() {
   waitForExplicitFinish();
   await BrowserTestUtils.withNewTab(
@@ -20,7 +22,9 @@ add_task(async function test_proc_info() {
     async function(browser) {
       let cpuThreads = 0;
       let cpuUser = 0;
-      for (let z = 0; z < 10; z++) {
+
+      
+      for (let z = 0; z < SAMPLE_SIZE; z++) {
         let parentProc = await ChromeUtils.requestProcInfo();
         cpuUser += parentProc.cpuUser;
 
@@ -42,6 +46,31 @@ add_task(async function test_proc_info() {
           );
         }
 
+        Assert.ok(
+          parentProc.residentUniqueSize > 0,
+          "Resident-unique-size was set"
+        );
+        Assert.ok(
+          parentProc.residentUniqueSize <= parentProc.residentSetSize,
+          `Resident-unique-size should be bounded by resident-set-size ${parentProc.residentUniqueSize} <= ${parentProc.residentSetSize}`
+        );
+
+        if (AppConstants.platform != "win") {
+          
+          
+          
+          Assert.ok(
+            parentProc.residentUniqueSize <= parentProc.virtualMemorySize,
+            `Resident-unique-size should be bounded by virtual ${parentProc.residentUniqueSize} <= ${parentProc.virtualMemorySize}`
+          );
+        }
+
+        
+        
+        
+        
+        
+        
         for (var i = 0; i < parentProc.children.length; i++) {
           let childProc = parentProc.children[i];
           Assert.notEqual(
@@ -77,6 +106,42 @@ add_task(async function test_proc_info() {
           }
           cpuUser += childProc.cpuUser;
         }
+
+        
+        
+        
+        
+        var hasSocketProcess = false;
+        for (i = 0; i < parentProc.children.length; i++) {
+          let childProc = parentProc.children[i];
+          if (childProc.type != "privilegedabout") {
+            continue;
+          }
+          hasSocketProcess = true;
+          Assert.ok(
+            childProc.residentUniqueSize > 0,
+            "Resident-unique-size was set"
+          );
+          Assert.ok(
+            childProc.residentUniqueSize <= childProc.residentSetSize,
+            `Resident-unique-size should be bounded by resident-set-size ${childProc.residentUniqueSize} <= ${childProc.residentSetSize}`
+          );
+
+          if (AppConstants.platform != "win") {
+            
+            
+            
+            Assert.ok(
+              childProc.residentUniqueSize <= childProc.virtualMemorySize,
+              `Resident-unique-size should be bounded by virtual memory size ${childProc.residentUniqueSize} <= ${childProc.virtualMemorySize}`
+            );
+          }
+
+          
+          break;
+        }
+
+        Assert.ok(hasSocketProcess, "We have found the socket process");
       }
       
       if (!MAC) {

@@ -10,6 +10,7 @@
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "nsAutoRef.h"
 #include "nsLocalFile.h"
+#include "nsMemoryReporterManager.h"
 #include "nsNetCID.h"
 #include "nsWhitespaceTokenizer.h"
 
@@ -240,6 +241,13 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
             
             continue;
           }
+          
+          
+          
+          
+          info.residentUniqueSize =
+              nsMemoryReporterManager::ResidentUnique(request.pid);
+
           
           info.pid = request.pid;
           info.childId = request.childId;

@@ -8,6 +8,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 
+#include "nsMemoryReporterManager.h"
 #include "nsNetCID.h"
 
 #include <cstdio>
@@ -66,7 +67,6 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
           info.cpuUser = pti.pti_total_user;
           info.cpuKernel = pti.pti_total_system;
 
-          
           mach_port_t selectedTask;
           
           if (request.childTask == MACH_PORT_NULL) {
@@ -74,6 +74,14 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
           } else {
             selectedTask = request.childTask;
           }
+          
+          
+          
+          
+          info.residentUniqueSize = nsMemoryReporterManager::ResidentUnique(selectedTask);
+
+          
+
           
           
           
