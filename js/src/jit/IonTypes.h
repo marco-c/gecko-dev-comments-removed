@@ -183,6 +183,9 @@ enum class BailoutKind : uint8_t {
   NotArrayBufferMaybeSharedGuard,
 
   
+  MegamorphicAccess,
+
+  
   ArrayPopShift,
 
   
@@ -288,6 +291,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::NotDOMProxyGuard";
     case BailoutKind::NotArrayBufferMaybeSharedGuard:
       return "BailoutKind::NotArrayBufferMaybeSharedGuard";
+    case BailoutKind::MegamorphicAccess:
+      return "BailoutKind::MegamorphicAccess";
     case BailoutKind::ArrayPopShift:
       return "BailoutKind::ArrayPopShift";
     case BailoutKind::ArraySlice:

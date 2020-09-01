@@ -1100,6 +1100,10 @@ void GetPropIRGenerator::attachMegamorphicNativeSlot(ObjOperandId objId,
 
   
   
+  
+  if (!IsTypeInferenceEnabled()) {
+    handleMissing = true;
+  }
 
   if (cacheKind_ == CacheKind::GetProp ||
       cacheKind_ == CacheKind::GetPropSuper) {
