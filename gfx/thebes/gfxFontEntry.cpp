@@ -1556,7 +1556,8 @@ static inline double WeightStyleStretchDistance(
   
   
   
-  return stretchDist * 1.0e8 + styleDist * 1.0e4 + weightDist;
+  return stretchDist * kStretchFactor + styleDist * kStyleFactor +
+         weightDist * kWeightFactor;
 }
 
 void gfxFontFamily::FindAllFontsForStyle(
@@ -1794,6 +1795,18 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
 
       fe = e;
       distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
+      if (aMatchData->mPresentation != eFontPresentation::Any) {
+        RefPtr<gfxFont> font = fe->FindOrMakeFont(&aMatchData->mStyle);
+        if (!font) {
+          continue;
+        }
+        bool hasColorGlyph =
+            font->HasColorGlyphFor(aMatchData->mCh, aMatchData->mNextCh);
+        if (hasColorGlyph !=
+            (aMatchData->mPresentation == eFontPresentation::Emoji)) {
+          distance += kPresentationMismatch;
+        }
+      }
       break;
     }
   }
@@ -1802,7 +1815,8 @@ void gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData) {
     
     
     
-    GlobalFontMatch data(aMatchData->mCh, aMatchData->mStyle);
+    GlobalFontMatch data(aMatchData->mCh, aMatchData->mNextCh,
+                         aMatchData->mStyle, aMatchData->mPresentation);
     SearchAllFontsForChar(&data);
     if (!data.mBestMatch) {
       return;
@@ -1836,6 +1850,18 @@ void gfxFontFamily::SearchAllFontsForChar(GlobalFontMatch* aMatchData) {
     gfxFontEntry* fe = mAvailableFonts[i];
     if (fe && fe->HasCharacter(aMatchData->mCh)) {
       float distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
+      if (aMatchData->mPresentation != eFontPresentation::Any) {
+        RefPtr<gfxFont> font = fe->FindOrMakeFont(&aMatchData->mStyle);
+        if (!font) {
+          continue;
+        }
+        bool hasColorGlyph =
+            font->HasColorGlyphFor(aMatchData->mCh, aMatchData->mNextCh);
+        if (hasColorGlyph !=
+            (aMatchData->mPresentation == eFontPresentation::Emoji)) {
+          distance += kPresentationMismatch;
+        }
+      }
       if (distance < aMatchData->mMatchDistance ||
           (distance == aMatchData->mMatchDistance &&
            Compare(fe->Name(), aMatchData->mBestMatch->Name()) > 0)) {
