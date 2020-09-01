@@ -129,9 +129,6 @@ var State = {
       
       totalCpuKernel: cur.cpuKernel,
       slopeCpuKernel: null,
-      
-      totalCpu: cur.cpuUser + cur.cpuKernel,
-      slopeCpu: null,
     };
     if (!prev) {
       return result;
@@ -141,7 +138,6 @@ var State = {
     }
     result.slopeCpuUser = (cur.cpuUser - prev.cpuUser) / deltaT;
     result.slopeCpuKernel = (cur.cpuKernel - prev.cpuKernel) / deltaT;
-    result.slopeCpu = result.slopeCpuKernel + result.slopeCpuUser;
     return result;
   },
 
@@ -164,8 +160,6 @@ var State = {
       slopeCpuUser: null,
       totalCpuKernel: cur.cpuKernel,
       slopeCpuKernel: null,
-      totalCpu: cur.cpuUser + cur.cpuKernel,
-      slopeCpu: null,
       type: cur.type,
       origin: cur.origin || "",
       threads: null,
@@ -197,7 +191,6 @@ var State = {
     result.deltaResidentSize = cur.residentSetSize - prev.residentSetSize;
     result.slopeCpuUser = (cur.cpuUser - prev.cpuUser) / deltaT;
     result.slopeCpuKernel = (cur.cpuKernel - prev.cpuKernel) / deltaT;
-    result.slopeCpu = result.slopeCpuUser + result.slopeCpuKernel;
     result.threads = threads;
     return result;
   },
@@ -271,10 +264,9 @@ var View = {
 
     
     {
-      let content = data.origin ? `${data.origin} (${data.type})` : data.type;
       let elt = this._addCell(row, {
-        content,
-        classes: ["type"],
+        content: data.pid,
+        classes: ["pid", "root"],
       });
 
       if (data.threads.length) {
@@ -285,6 +277,15 @@ var View = {
         }
         elt.insertBefore(img, elt.firstChild);
       }
+    }
+
+    
+    {
+      let content = data.origin ? `${data.origin} (${data.type})` : data.type;
+      this._addCell(row, {
+        content,
+        classes: ["type"],
+      });
     }
 
     
@@ -304,21 +305,27 @@ var View = {
 
     
     {
-      let slope = this._formatPercentage(data.slopeCpu);
+      let slope = this._formatPercentage(data.slopeCpuUser);
       let content = `${slope} (${(
-        data.totalCpu / MS_PER_NS
+        data.totalCpuUser / MS_PER_NS
       ).toLocaleString(undefined, { maximumFractionDigits: 0 })}ms)`;
       this._addCell(row, {
         content,
-        classes: ["cpu"],
+        classes: ["cpuUser"],
       });
     }
 
     
-    this._addCell(row, {
-      content: data.pid,
-      classes: ["pid", "root"],
-    });
+    {
+      let slope = this._formatPercentage(data.slopeCpuKernel);
+      let content = `${slope} (${(
+        data.totalCpuKernel / MS_PER_NS
+      ).toLocaleString(undefined, { maximumFractionDigits: 0 })}ms)`;
+      this._addCell(row, {
+        content,
+        classes: ["cpuKernel"],
+      });
+    }
 
     
     this._addCell(row, {
@@ -342,8 +349,14 @@ var View = {
 
     
     this._addCell(row, {
+      content: data.tid,
+      classes: ["tid", "indent"],
+    });
+
+    
+    this._addCell(row, {
       content: data.name,
-      classes: ["name", "indent"],
+      classes: ["name"],
     });
 
     
@@ -354,21 +367,27 @@ var View = {
 
     
     {
-      let slope = this._formatPercentage(data.slopeCpu);
+      let slope = this._formatPercentage(data.slopeCpuUser);
       let text = `${slope} (${(
-        data.totalCpu / MS_PER_NS
+        data.totalCpuUser / MS_PER_NS
       ).toLocaleString(undefined, { maximumFractionDigits: 0 })} ms)`;
       this._addCell(row, {
         content: text,
-        classes: ["cpu"],
+        classes: ["cpuUser"],
       });
     }
 
     
-    this._addCell(row, {
-      content: data.tid,
-      classes: ["tid"],
-    });
+    {
+      let slope = this._formatPercentage(data.slopeCpuKernel);
+      let text = `${slope} (${(
+        data.totalCpuKernel / MS_PER_NS
+      ).toLocaleString(undefined, { maximumFractionDigits: 0 })} ms)`;
+      this._addCell(row, {
+        content: text,
+        classes: ["cpuKernel"],
+      });
+    }
 
     
     this._addCell(row, {
@@ -717,13 +736,18 @@ var Control = {
         case "column-name":
           order = a.name.localeCompare(b.name);
           break;
-        case "column-cpu-total":
-          order = b.totalCpu - a.totalCpu;
+        case "column-cpu-user":
+          order = b.slopeCpuUser - a.slopeCpuUser;
           if (order == 0) {
-            order = b.totalCpu - a.totalCpu;
+            order = b.totalCpuUser - a.totalCpuUser;
           }
           break;
-
+        case "column-cpu-kernel":
+          order = b.slopeCpuKernel - a.slopeCpuKernel;
+          if (order == 0) {
+            order = b.totalCpuKernel - a.totalCpuKernel;
+          }
+          break;
         case "column-cpu-threads":
         case "column-memory-resident":
         case "column-type":
@@ -756,10 +780,16 @@ var Control = {
         case "column-name":
           order = String(a.name).localeCompare(b.name);
           break;
-        case "column-cpu-total":
-          order = b.totalCpu - a.totalCpu;
+        case "column-cpu-user":
+          order = b.slopeCpuUser - a.slopeCpuUser;
           if (order == 0) {
-            order = b.totalCpu - a.totalCpu;
+            order = b.totalCpuUser - a.totalCpuUser;
+          }
+          break;
+        case "column-cpu-kernel":
+          order = b.slopeCpuKernel - a.slopeCpuKernel;
+          if (order == 0) {
+            order = b.totalCpuKernel - a.totalCpuKernel;
           }
           break;
         case "column-cpu-threads":
