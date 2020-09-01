@@ -1,3 +1,7 @@
+
+
+
+
 function assertExpectedPrintPage(helper) {
   let printBrowser = helper.win.PrintEventHandler.sourceBrowser;
   is(
