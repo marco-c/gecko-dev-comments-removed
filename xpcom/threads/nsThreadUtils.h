@@ -1923,6 +1923,8 @@ class LogTaskBase {
 
   
   static void LogDispatch(T* aEvent);
+  
+  static void LogDispatch(T* aEvent, void* aContext);
 
   
   
@@ -1936,6 +1938,7 @@ class LogTaskBase {
    public:
     Run() = delete;
     explicit Run(T* aEvent, bool aWillRunAgain = false);
+    explicit Run(T* aEvent, void* aContext, bool aWillRunAgain = false);
     ~Run();
 
     
@@ -1949,6 +1952,7 @@ class LogTaskBase {
 
 class MicroTaskRunnable;
 class Task;  
+class PresShell;
 
 
 template <>
@@ -1966,6 +1970,7 @@ typedef LogTaskBase<MicroTaskRunnable> LogMicroTaskRunnable;
 typedef LogTaskBase<IPC::Message> LogIPCMessage;
 typedef LogTaskBase<nsTimerImpl> LogTimerEvent;
 typedef LogTaskBase<Task> LogTask;
+typedef LogTaskBase<PresShell> LogPresShellObserver;
 
 
 
