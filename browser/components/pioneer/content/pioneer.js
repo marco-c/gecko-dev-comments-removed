@@ -5,16 +5,19 @@
 const { AddonManager } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 const { RemoteSettings } = ChromeUtils.import(
   "resource://services-settings/remote-settings.js"
 );
 
-const { TelemetryController } = ChromeUtils.import(
-  "resource://gre/modules/TelemetryController.jsm"
-);
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  FileUtils: "resource://gre/modules/FileUtils.jsm",
+});
 
 const PREF_PIONEER_ID = "toolkit.telemetry.pioneerId";
 const PREF_PIONEER_NEW_STUDIES_AVAILABLE =
@@ -52,15 +55,19 @@ function showEnrollmentStatus() {
 async function toggleEnrolled(studyAddonId, cachedAddons) {
   let addon;
   let install;
+  let cachedAddon;
 
-  const cachedAddon = cachedAddons.find(a => a.addon_id == studyAddonId);
+  for (cachedAddon of cachedAddons) {
+    if (studyAddonId == cachedAddon.addon_id) {
+      break;
+    }
+  }
 
   if (Cu.isInAutomation) {
+    let testAddons = Services.prefs.getStringPref(PREF_TEST_ADDONS, "[]");
+    testAddons = JSON.parse(testAddons);
     install = {
       install: () => {
-        let testAddons = Services.prefs.getStringPref(PREF_TEST_ADDONS, "[]");
-        testAddons = JSON.parse(testAddons);
-
         testAddons.push(studyAddonId);
         Services.prefs.setStringPref(
           PREF_TEST_ADDONS,
@@ -68,19 +75,12 @@ async function toggleEnrolled(studyAddonId, cachedAddons) {
         );
       },
     };
-
-    let testAddons = Services.prefs.getStringPref(PREF_TEST_ADDONS, "[]");
-    testAddons = JSON.parse(testAddons);
-
     for (const testAddon of testAddons) {
       if (testAddon == studyAddonId) {
         addon = {};
         addon.install = () => {};
         addon.uninstall = () => {
-          Services.prefs.setStringPref(
-            PREF_TEST_ADDONS,
-            JSON.stringify(testAddons.filter(a => a.id != testAddon.id))
-          );
+          Services.prefs.setStringPref(PREF_TEST_ADDONS, "[]");
         };
       }
     }
@@ -400,43 +400,27 @@ async function setup(cachedAddons) {
   document
     .getElementById("leave-pioneer-accept-dialog-button")
     .addEventListener("click", async event => {
-      const completedStudies = Services.prefs.getStringPref(
-        PREF_PIONEER_COMPLETED_STUDIES,
-        "{}"
-      );
-      const studies = JSON.parse(completedStudies);
-
-      
-      for (const studyAddonId in studies) {
-        await sendDeletionPing(studyAddonId);
-      }
-
-      for (const cachedAddon of cachedAddons) {
-        const addon = await AddonManager.getAddonByID(cachedAddon.addon_id);
-        if (addon) {
-          
-          await sendDeletionPing(addon.id);
-          await addon.uninstall();
-        }
-
-        const study = document.getElementById(cachedAddon.addon_id);
-        if (study) {
-          await updateStudy(cachedAddon.addon_id);
-        }
-      }
-
       Services.prefs.clearUserPref(PREF_PIONEER_ID);
       Services.prefs.clearUserPref(PREF_PIONEER_COMPLETED_STUDIES);
 
       for (const cachedAddon of cachedAddons) {
         
         if ("studyEnded" in cachedAddon && cachedAddon.studyEnded === true) {
+          const completedStudies = Services.prefs.getStringPref(
+            PREF_PIONEER_COMPLETED_STUDIES,
+            "{}"
+          );
+          const studies = JSON.parse(completedStudies);
           studies[cachedAddon.addon_id] = STUDY_LEAVE_REASONS.STUDY_ENDED;
 
           Services.prefs.setStringPref(
             PREF_PIONEER_COMPLETED_STUDIES,
             JSON.stringify(studies)
           );
+        }
+        const addon = await AddonManager.getAddonByID(cachedAddon.addon_id);
+        if (addon) {
+          await addon.uninstall();
         }
 
         const study = document.getElementById(cachedAddon.addon_id);
@@ -584,36 +568,6 @@ document.addEventListener("DOMContentLoaded", async domEvent => {
   await setup(cachedAddons);
   await showAvailableStudies(cachedAddons);
 });
-
-async function sendDeletionPing(studyAddonId) {
-  const type = "pioneer-study";
-
-  const options = {
-    studyName: studyAddonId,
-    addPioneerId: true,
-    useEncryption: true,
-    
-    
-    
-    
-    encryptionKeyId: "debug",
-    publicKey: {
-      crv: "P-256",
-      kty: "EC",
-      x: "XLkI3NaY3-AF2nRMspC63BT1u0Y3moXYSfss7VuQ0mk",
-      y: "SB0KnIW-pqk85OIEYZenoNkEyOOp5GeWQhS1KeRtEUE",
-    },
-    schemaName: "deletion-request",
-    schemaVersion: 1,
-    schemaNamespace: "pioneer-debug",
-  };
-
-  const payload = {
-    encryptedData: "",
-  };
-
-  await TelemetryController.submitExternalPing(type, payload, options);
-}
 
 
 
