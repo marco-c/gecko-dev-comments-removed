@@ -705,23 +705,6 @@ class HTMLEditor final : public TextEditor,
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  DeleteParentBlocksWithTransactionIfEmpty(const EditorDOMPoint& aPoint);
-
-  
-
-
   MOZ_CAN_RUN_SCRIPT virtual nsresult InsertTextWithTransaction(
       Document& aDocument, const nsAString& aStringToInsert,
       const EditorRawDOMPoint& aPointToInsert,
@@ -2018,13 +2001,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  DeleteNodeIfInvisibleAndEditableTextNode(nsIContent& aContent);
-
-  
-
-
-
   enum class TreatEmptyTextNodes {
     
     
@@ -2617,28 +2593,6 @@ class HTMLEditor final : public TextEditor,
 
     RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
   };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  DeleteUnnecessaryNodesAndCollapseSelection(
-      nsIEditor::EDirection aDirectionAndAmount,
-      const EditorDOMPoint& aSelectionStartPoint,
-      const EditorDOMPoint& aSelectionEndPoint);
 
   
 
