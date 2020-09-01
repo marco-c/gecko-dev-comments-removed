@@ -1434,6 +1434,9 @@ class L10NCommands(MachCommandBase):
         locales = list(sorted(locales))
 
         append_env = {
+            
+            
+            'GRADLE_INVOKED_WITHIN_MACH_BUILD': '1',
             'MOZ_CHROME_MULTILOCALE': ' '.join(locales),
         }
 
