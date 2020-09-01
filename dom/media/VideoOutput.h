@@ -194,8 +194,17 @@ class VideoOutput : public DirectMediaTrackListener {
       
       
       
+      
+      
       for (auto& idChunkPair : mFrames) {
         idChunkPair.first = mVideoFrameContainer->NewFrameID();
+      }
+      if (mFrames.IsEmpty()) {
+        VideoSegment v;
+        v.AppendFrame(nullptr, gfx::IntSize(640, 480), PRINCIPAL_HANDLE_NONE,
+                      true, TimeStamp::Now());
+        mFrames.AppendElement(std::make_pair(mVideoFrameContainer->NewFrameID(),
+                                             *v.GetLastChunk()));
       }
       SendFramesEnsureLocked();
     }
