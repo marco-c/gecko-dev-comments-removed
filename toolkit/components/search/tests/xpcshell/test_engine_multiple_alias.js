@@ -2,7 +2,6 @@
 
 
 SearchTestUtils.initXPCShellAddonManager(this);
-SearchTestUtils.init(Assert, registerCleanupFunction);
 
 const NAME = "Test Alias Engine";
 
