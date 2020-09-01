@@ -626,7 +626,9 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
 
   
   
-  return IntrinsicSize(CSSPixel::ToAppUnits(300), CSSPixel::ToAppUnits(150));
+  
+  return IntrinsicSize(CSSPixel::ToAppUnits(REPLACED_ELEM_FALLBACK_PX_WIDTH),
+                       CSSPixel::ToAppUnits(REPLACED_ELEM_FALLBACK_PX_HEIGHT));
 }
 
 
