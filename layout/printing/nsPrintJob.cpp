@@ -901,18 +901,12 @@ void nsPrintJob::ShowPrintProgress(bool aIsForPrinting, bool& aDoNotify,
   aDoNotify = false;
 
   
-  bool showProgresssDialog = false;
-
-  
-  
-  if (!mProgressDialogIsShown) {
-    showProgresssDialog = Preferences::GetBool("print.show_print_progress");
-  }
-
-  
   
   
   RefPtr<nsPrintData> printData = mPrt;
+
+  bool showProgresssDialog =
+      !mProgressDialogIsShown && StaticPrefs::print_show_print_progress();
 
   
   
