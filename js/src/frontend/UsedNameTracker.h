@@ -178,9 +178,16 @@ class UsedNameTracker {
   
   uint32_t scopeCounter_;
 
+  
+  
+  bool hasPrivateNames_;
+
  public:
   explicit UsedNameTracker(JSContext* cx)
-      : map_(cx), scriptCounter_(0), scopeCounter_(0) {}
+      : map_(cx),
+        scriptCounter_(0),
+        scopeCounter_(0),
+        hasPrivateNames_(false) {}
 
   uint32_t nextScriptId() {
     MOZ_ASSERT(scriptCounter_ != UINT32_MAX,

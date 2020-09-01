@@ -74,6 +74,12 @@ bool UsedNameTracker::noteUse(JSContext* cx, const ParserAtom* name,
     
     MOZ_ASSERT(tokenPosition.isSome() ==
                (visibility == NameVisibility::Private));
+
+    if (visibility == NameVisibility::Private) {
+      
+      hasPrivateNames_ = true;
+    }
+
     UsedNameInfo info(cx, visibility, tokenPosition);
 
     if (!info.noteUsedInScope(scriptId, scopeId)) {
@@ -89,6 +95,11 @@ bool UsedNameTracker::noteUse(JSContext* cx, const ParserAtom* name,
 
 bool UsedNameTracker::getUnboundPrivateNames(
     Vector<UnboundPrivateName, 8>& unboundPrivateNames) {
+  
+  if (!hasPrivateNames_) {
+    return true;
+  }
+
   for (auto iter = map_.iter(); !iter.done(); iter.next()) {
     
     if (iter.get().value().isPublic()) {
@@ -118,13 +129,17 @@ bool UsedNameTracker::getUnboundPrivateNames(
 
 bool UsedNameTracker::hasUnboundPrivateNames(
     JSContext* cx, mozilla::Maybe<UnboundPrivateName>& maybeUnboundName) {
+  
+  if (!hasPrivateNames_) {
+    return true;
+  }
+
   Vector<UnboundPrivateName, 8> unboundPrivateNames(cx);
   if (!getUnboundPrivateNames(unboundPrivateNames)) {
     return false;
   }
 
   if (unboundPrivateNames.empty()) {
-    maybeUnboundName = mozilla::Nothing();
     return true;
   }
 
