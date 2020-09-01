@@ -972,7 +972,7 @@ impl TextureCache {
 
         
         
-        while self.current_memory_estimate() > self.eviction_threshold_bytes && eviction_count < self.max_evictions_per_frame {
+        while self.should_continue_evicting(eviction_count) {
             match self.lru_cache.pop_oldest() {
                 Some(entry) => {
                     entry.evict();
@@ -991,12 +991,28 @@ impl TextureCache {
     }
 
     
-    
-    
-    
-    
-    fn current_memory_estimate(&self) -> usize {
-        self.standalone_bytes_allocated + self.shared_bytes_allocated
+    fn should_continue_evicting(
+        &self,
+        eviction_count: usize,
+    ) -> bool {
+        
+        
+        
+        let current_memory_estimate = self.standalone_bytes_allocated + self.shared_bytes_allocated;
+
+        
+        if current_memory_estimate < self.eviction_threshold_bytes {
+            return false;
+        }
+
+        
+        if current_memory_estimate > 4 * self.eviction_threshold_bytes {
+            return true;
+        }
+
+        
+        
+        eviction_count < self.max_evictions_per_frame
     }
 
     
