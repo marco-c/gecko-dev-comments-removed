@@ -93,6 +93,11 @@ struct MarkerTypeSerialization {
       std::tuple_element_t<i, StreamFunctionUserParametersTuple>;
 };
 
+template <>
+struct MarkerTypeSerialization<::mozilla::baseprofiler::markers::NoPayload> {
+  
+};
+
 }  
 
 namespace mozilla {
