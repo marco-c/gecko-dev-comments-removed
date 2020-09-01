@@ -17,10 +17,10 @@ from six.moves import cStringIO as StringIO
 from .base import Browser, ExecutorBrowser, require_arg
 from .base import get_timeout_multiplier   
 from ..executors import executor_kwargs as base_executor_kwargs
-from ..executors.executorselenium import (SeleniumTestharnessExecutor,
-                                          SeleniumRefTestExecutor)
+from ..executors.executorselenium import (SeleniumTestharnessExecutor,  
+                                          SeleniumRefTestExecutor)  
 
-here = os.path.split(__file__)[0]
+here = os.path.dirname(__file__)
 
 
 sc_poll_period = 1

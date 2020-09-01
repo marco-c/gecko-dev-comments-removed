@@ -8,7 +8,7 @@ from ..executors.executorservo import (ServoCrashtestExecutor,
                                        ServoRefTestExecutor,  
                                        ServoWdspecExecutor)  
 
-here = os.path.join(os.path.split(__file__)[0])
+here = os.path.dirname(__file__)
 
 __wptrunner__ = {
     "product": "servo",
