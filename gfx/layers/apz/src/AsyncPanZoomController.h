@@ -539,6 +539,9 @@ class AsyncPanZoomController {
   
   bool UpdateRootFrameMetricsIfChanged(GeckoViewMetrics& aMetrics);
 
+  
+  SampleTime GetFrameTime() const;
+
  private:
   
   
@@ -549,9 +552,6 @@ class AsyncPanZoomController {
  protected:
   
   virtual ~AsyncPanZoomController();
-
-  
-  SampleTime GetFrameTime() const;
 
   
 
