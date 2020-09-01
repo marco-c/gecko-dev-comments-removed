@@ -304,17 +304,6 @@ static double private_mem[PRIVATE_mem], *pmem_next = private_mem;
 
 #else 
 #include "float.h"
-
-
-
-
-
-
-#if defined(XP_MACOSX) && (!defined(MAC_OS_X_VERSION_10_2) || \
-    MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_2)
-#undef FLT_ROUNDS
-#define FLT_ROUNDS 1
-#endif 
 #endif 
 
 #ifndef __MATH_H__
