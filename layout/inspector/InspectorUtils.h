@@ -133,7 +133,8 @@ class InspectorUtils {
   
   
   
-  static void ColorToRGBA(GlobalObject& aGlobal, const nsACString& aColorString,
+  static void ColorToRGBA(GlobalObject&, const nsACString& aColorString,
+                          const Document*,
                           Nullable<InspectorRGBATuple>& aResult);
 
   
