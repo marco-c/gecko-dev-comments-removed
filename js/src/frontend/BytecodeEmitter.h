@@ -303,7 +303,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                    unsigned errorNumber, ...);
 
   
-  bool intoScriptStencil(ScriptStencil* stencil);
+  bool intoScriptStencil(ScriptStencil* script);
 
   
   
