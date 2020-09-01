@@ -272,7 +272,7 @@ void RemoteWorkerManager::RegisterActor(RemoteWorkerServiceParent* aActor) {
   mChildActors.AppendElement(aActor);
 
   if (!mPendings.IsEmpty()) {
-    const auto& remoteType = GetRemoteTypeForActor(aActor);
+    const auto& processRemoteType = aActor->GetRemoteType();
     nsTArray<Pending> unlaunched;
 
     
@@ -283,7 +283,7 @@ void RemoteWorkerManager::RegisterActor(RemoteWorkerServiceParent* aActor) {
 
       const auto& workerRemoteType = p.mData.remoteType();
 
-      if (MatchRemoteType(remoteType, workerRemoteType)) {
+      if (MatchRemoteType(processRemoteType, workerRemoteType)) {
         LOG(("RegisterActor - Launch Pending, workerRemoteType=%s",
              workerRemoteType.get()));
         LaunchInternal(p.mController, aActor, p.mData);
@@ -350,7 +350,9 @@ void RemoteWorkerManager::Launch(RemoteWorkerController* aController,
 
 
 
-  LaunchInternal(aController, targetActor, aData, IsServiceWorker(aData));
+
+
+  LaunchInternal(aController, targetActor, aData, true);
 }
 
 void RemoteWorkerManager::LaunchInternal(
@@ -388,34 +390,26 @@ void RemoteWorkerManager::AsyncCreationFailed(
   NS_DispatchToCurrentThread(r.forget());
 }
 
-
-nsCString RemoteWorkerManager::GetRemoteTypeForActor(
-    const RemoteWorkerServiceParent* aActor) {
-  AssertIsInMainProcess();
-  AssertIsOnBackgroundThread();
-
-  MOZ_ASSERT(aActor);
-
-  RefPtr<ContentParent> contentParent =
-      BackgroundParent::GetContentParent(aActor->Manager());
-  auto scopeExit =
-      MakeScopeExit([&] { NS_ReleaseOnMainThread(contentParent.forget()); });
-
-  if (NS_WARN_IF(!contentParent)) {
-    return EmptyCString();
-  }
-
-  nsCString aRemoteType(contentParent->GetRemoteType());
-
-  return aRemoteType;
-}
-
 template <typename Callback>
-void RemoteWorkerManager::ForEachActor(Callback&& aCallback) const {
+void RemoteWorkerManager::ForEachActor(
+    Callback&& aCallback, const nsACString& aRemoteType,
+    Maybe<base::ProcessId> aProcessId) const {
   AssertIsOnBackgroundThread();
 
   const auto length = mChildActors.Length();
-  const auto end = static_cast<uint32_t>(rand()) % length;
+
+  auto end = static_cast<uint32_t>(rand()) % length;
+  if (aProcessId) {
+    
+    
+    for (auto j = length - 1; j > 0; j--) {
+      if (mChildActors[j]->OtherPid() == *aProcessId) {
+        end = j;
+        break;
+      }
+    }
+  }
+
   uint32_t i = end;
 
   nsTArray<RefPtr<ContentParent>> proxyReleaseArray;
@@ -424,14 +418,16 @@ void RemoteWorkerManager::ForEachActor(Callback&& aCallback) const {
     MOZ_ASSERT(i < mChildActors.Length());
     RemoteWorkerServiceParent* actor = mChildActors[i];
 
-    RefPtr<ContentParent> contentParent =
-        BackgroundParent::GetContentParent(actor->Manager());
+    if (MatchRemoteType(actor->GetRemoteType(), aRemoteType)) {
+      RefPtr<ContentParent> contentParent =
+          BackgroundParent::GetContentParent(actor->Manager());
 
-    auto scopeExit = MakeScopeExit(
-        [&]() { proxyReleaseArray.AppendElement(std::move(contentParent)); });
+      auto scopeExit = MakeScopeExit(
+          [&]() { proxyReleaseArray.AppendElement(std::move(contentParent)); });
 
-    if (!aCallback(actor, std::move(contentParent))) {
-      break;
+      if (!aCallback(actor, std::move(contentParent))) {
+        break;
+      }
     }
 
     i = (i + 1) % length;
@@ -475,40 +471,54 @@ RemoteWorkerManager::SelectTargetActorForServiceWorker(
 
   const auto& workerRemoteType = aData.remoteType();
 
-  ForEachActor([&](RemoteWorkerServiceParent* aActor,
-                   RefPtr<ContentParent>&& aContentParent) {
-    const auto& remoteType = aContentParent->GetRemoteType();
-
-    if (MatchRemoteType(remoteType, workerRemoteType)) {
-      auto lock = aContentParent->mRemoteWorkerActorData.Lock();
-
-      if (lock->mCount || !lock->mShutdownStarted) {
-        ++lock->mCount;
+  ForEachActor(
+      [&](RemoteWorkerServiceParent* aActor,
+          RefPtr<ContentParent>&& aContentParent) {
+        auto lock = aContentParent->mRemoteWorkerActorData.Lock();
 
         
         
-        
-        nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-            __func__, [contentParent = std::move(aContentParent),
-                       principalInfo = aData.principalInfo()] {
-              TransmitPermissionsAndBlobURLsForPrincipalInfo(contentParent,
-                                                             principalInfo);
-            });
+        if (lock->mCount || !lock->mShutdownStarted) {
+          ++lock->mCount;
 
-        MOZ_ALWAYS_SUCCEEDS(
-            SchedulerGroup::Dispatch(TaskCategory::Other, r.forget()));
+          
+          
+          
+          nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+              __func__, [contentParent = std::move(aContentParent),
+                         principalInfo = aData.principalInfo()] {
+                TransmitPermissionsAndBlobURLsForPrincipalInfo(contentParent,
+                                                               principalInfo);
+              });
 
-        actor = aActor;
-        return false;
-      }
-    }
+          MOZ_ALWAYS_SUCCEEDS(
+              SchedulerGroup::Dispatch(TaskCategory::Other, r.forget()));
 
-    MOZ_ASSERT(!actor);
-    return true;
-  });
+          actor = aActor;
+          return false;
+        }
+
+        MOZ_ASSERT(!actor);
+        return true;
+      },
+      workerRemoteType);
 
   return actor;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 RemoteWorkerServiceParent*
 RemoteWorkerManager::SelectTargetActorForSharedWorker(
@@ -518,26 +528,31 @@ RemoteWorkerManager::SelectTargetActorForSharedWorker(
 
   RemoteWorkerServiceParent* actor = nullptr;
 
-  ForEachActor([&](RemoteWorkerServiceParent* aActor,
-                   RefPtr<ContentParent>&& aContentParent) {
-    bool matchRemoteType =
-        MatchRemoteType(aContentParent->GetRemoteType(), aData.remoteType());
+  const auto& workerRemoteType = aData.remoteType();
 
-    if (!matchRemoteType) {
-      return true;
-    }
+  ForEachActor(
+      [&](RemoteWorkerServiceParent* aActor,
+          RefPtr<ContentParent>&& aContentParent) {
+        
+        
+        
+        
+        
+        
+        
+        
+        auto lock = aContentParent->mRemoteWorkerActorData.Lock();
+        if ((lock->mCount || !lock->mShutdownStarted) &&
+            (aActor->OtherPid() == aProcessId || !actor)) {
+          ++lock->mCount;
+          actor = aActor;
+          return false;
+        }
 
-    if (aActor->OtherPid() == aProcessId) {
-      actor = aActor;
-      return false;
-    }
-
-    if (!actor) {
-      actor = aActor;
-    }
-
-    return true;
-  });
+        MOZ_ASSERT(!actor);
+        return true;
+      },
+      workerRemoteType, Some(aProcessId));
 
   return actor;
 }

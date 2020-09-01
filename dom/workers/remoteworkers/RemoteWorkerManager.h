@@ -75,9 +75,8 @@ class RemoteWorkerManager final {
 
   void AsyncCreationFailed(RemoteWorkerController* aController);
 
-  static nsCString GetRemoteTypeForActor(
-      const RemoteWorkerServiceParent* aActor);
-
+  
+  
   
   
   
@@ -91,7 +90,8 @@ class RemoteWorkerManager final {
   
   
   template <typename Callback>
-  void ForEachActor(Callback&& aCallback) const;
+  void ForEachActor(Callback&& aCallback, const nsACString& aRemoteType,
+                    Maybe<base::ProcessId> aProcessId = Nothing()) const;
 
   
   
