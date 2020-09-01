@@ -15,11 +15,11 @@ pub struct Event<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum EventType<'a> {
     
     
-    Exception(ast::TypeUse<'a>),
+    Exception(ast::TypeUse<'a, ast::FunctionType<'a>>),
 }
 
 impl<'a> Parse<'a> for Event<'a> {
