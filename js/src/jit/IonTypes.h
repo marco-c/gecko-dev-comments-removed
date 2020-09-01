@@ -204,6 +204,9 @@ enum class BailoutKind : uint8_t {
   TagNotEqualGuard,
 
   
+  FunctionKindGuard,
+
+  
   UninitializedLexical,
 
   
@@ -305,6 +308,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::NullOrUndefinedGuard";
     case BailoutKind::TagNotEqualGuard:
       return "BailoutKind::TagNotEqualGuard";
+    case BailoutKind::FunctionKindGuard:
+      return "BailoutKind::FunctionKindGuard";
     case BailoutKind::UninitializedLexical:
       return "BailoutKind::UninitializedLexical";
     case BailoutKind::IonExceptionDebugMode:
