@@ -531,8 +531,13 @@ class AsyncPanZoomController {
   FrameMetrics& Metrics();
 
   
+
+
+  GeckoViewMetrics GetGeckoViewMetrics() const;
+
   
-  bool UpdateRootFrameMetricsIfChanged(FrameMetrics& aMetrics);
+  
+  bool UpdateRootFrameMetricsIfChanged(GeckoViewMetrics& aMetrics);
 
  private:
   

@@ -134,6 +134,16 @@ using AsyncTransformComponents = EnumSet<AsyncTransformComponent>;
 constexpr AsyncTransformComponents LayoutAndVisual(
     AsyncTransformComponent::eLayout, AsyncTransformComponent::eVisual);
 
+
+
+
+
+
+struct GeckoViewMetrics {
+  CSSPoint mVisualScrollOffset;
+  CSSToParentLayerScale2D mZoom;
+};
+
 namespace apz {
 
 

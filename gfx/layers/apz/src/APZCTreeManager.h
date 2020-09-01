@@ -18,6 +18,7 @@
 #include "mozilla/gfx/Matrix.h"               
 #include "mozilla/layers/APZInputBridge.h"    
 #include "mozilla/layers/APZTestData.h"       
+#include "mozilla/layers/APZUtils.h"          
 #include "mozilla/layers/IAPZCTreeManager.h"  
 #include "mozilla/layers/LayerAttributes.h"
 #include "mozilla/layers/LayersTypes.h"
@@ -1018,7 +1019,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 #if defined(MOZ_WIDGET_ANDROID)
  private:
   
-  FrameMetrics mLastRootMetrics;
+  GeckoViewMetrics mLastRootMetrics;
 #endif  
 };
 

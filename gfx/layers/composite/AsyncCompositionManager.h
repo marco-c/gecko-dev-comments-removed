@@ -230,10 +230,10 @@ class AsyncCompositionManager final {
 #ifdef MOZ_WIDGET_ANDROID
  private:
   
-  bool FrameMetricsHaveUpdated(const FrameMetrics& aMetrics);
+  bool GeckoViewMetricsHaveUpdated(const GeckoViewMetrics& aMetrics);
   
   
-  FrameMetrics mLastMetrics;
+  GeckoViewMetrics mLastMetrics;
   
   
   
