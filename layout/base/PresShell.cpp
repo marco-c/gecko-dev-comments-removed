@@ -6259,6 +6259,9 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
   
   
   if (mIsFirstPaint && !mPaintingSuppressed) {
+    MOZ_LOG(gLog, LogLevel::Debug,
+            ("PresShell::Paint, first paint, this=%p", this));
+
     layerManager->SetIsFirstPaint();
     mIsFirstPaint = false;
   }
