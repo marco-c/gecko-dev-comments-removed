@@ -77,7 +77,7 @@ class DOMSVGLength final : public nsWrapperCache {
   DOMSVGLength(SVGAnimatedLength* aVal, dom::SVGElement* aSVGElement,
                bool aAnimVal);
 
-  ~DOMSVGLength();
+  ~DOMSVGLength() { CleanupWeakRefs(); }
 
  public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGLength)
@@ -105,26 +105,16 @@ class DOMSVGLength final : public nsWrapperCache {
 
   DOMSVGLength* Copy();
 
-  bool IsInList() const { return !!mList; }
-
   
 
 
-  bool IsAnimating() const { return mList && mList->IsAnimating(); }
-
-  
-
-
-
-  bool HasOwner() const { return !!mList; }
+  bool IsAnimating() const;
 
   
 
 
 
-
-
-  bool IsReflectingAttribute() const { return mVal; }
+  bool HasOwner() const { return !!mOwner; }
 
   
 
@@ -166,24 +156,15 @@ class DOMSVGLength final : public nsWrapperCache {
   void NewValueSpecifiedUnits(uint16_t aUnit, float aValue, ErrorResult& aRv);
   void ConvertToSpecifiedUnits(uint16_t aUnit, ErrorResult& aRv);
 
-  nsISupports* GetParentObject() const {
-    auto svgElement = mList ? Element() : mSVGElement.get();
-    return svgElement;
-  }
+  nsISupports* GetParentObject() { return mOwner; }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
  private:
-  dom::SVGElement* Element() const { return mList->Element(); }
+  dom::SVGElement* Element();
 
   uint8_t AttrEnum() const { return mAttrEnum; }
-
-  
-
-
-
-  uint8_t Axis() const { return mList->Axis(); }
 
   
 
@@ -207,7 +188,8 @@ class DOMSVGLength final : public nsWrapperCache {
 
   void CleanupWeakRefs();
 
-  RefPtr<DOMSVGLengthList> mList;
+  RefPtr<nsISupports> mOwner;  
+                               
 
   
   
@@ -219,11 +201,7 @@ class DOMSVGLength final : public nsWrapperCache {
   
   uint32_t mUnit : 5;  
                        
-  float mValue;
-
-  
-  SVGAnimatedLength* mVal;  
-  RefPtr<dom::SVGElement> mSVGElement;
+  float mValue = 0.0f;
 };
 
 }  

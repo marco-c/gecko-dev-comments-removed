@@ -27,6 +27,14 @@
 #include "nsStyledElement.h"
 #include "gfxMatrix.h"
 
+
+#define MOZILLA_SVGELEMENT_IID                       \
+  {                                                  \
+    0x70db954d, 0xe452, 0x4be3, {                    \
+      0x82, 0xaa, 0xf5, 0x4a, 0x51, 0xcf, 0x78, 0x90 \
+    }                                                \
+  }
+
 nsresult NS_NewSVGElement(mozilla::dom::Element** aResult,
                           already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
@@ -81,10 +89,13 @@ class SVGElement : public SVGElementBase
   
   nsresult CopyInnerTo(mozilla::dom::Element* aDest);
 
+  NS_DECLARE_STATIC_IID_ACCESSOR(MOZILLA_SVGELEMENT_IID)
   
   NS_INLINE_DECL_REFCOUNTING_INHERITED(SVGElement, SVGElementBase)
 
   NS_DECL_ADDSIZEOFEXCLUDINGTHIS
+
+  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
   void DidAnimateClass();
 
@@ -271,6 +282,7 @@ class SVGElement : public SVGElementBase
     DO_ALLOCATE = 0x1
   };
 
+  SVGAnimatedLength* GetAnimatedLength(uint8_t aAttrEnum);
   SVGAnimatedLength* GetAnimatedLength(const nsAtom* aAttrName);
   void GetAnimatedLengthValues(float* aFirst, ...);
   void GetAnimatedNumberValues(float* aFirst, ...);
@@ -627,6 +639,8 @@ class SVGElement : public SVGElementBase
   UniquePtr<nsAttrValue> mClassAnimAttr;
   RefPtr<mozilla::DeclarationBlock> mContentDeclarationBlock;
 };
+
+NS_DEFINE_STATIC_IID_ACCESSOR(SVGElement, MOZILLA_SVGELEMENT_IID)
 
 
 

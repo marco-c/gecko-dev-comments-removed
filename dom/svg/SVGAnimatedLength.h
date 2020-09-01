@@ -152,6 +152,8 @@ class SVGAnimatedLength {
   
   bool IsExplicitlySet() const { return mIsAnimated || mIsBaseSet; }
 
+  bool IsAnimated() const { return mIsAnimated; }
+
   already_AddRefed<dom::DOMSVGAnimatedLength> ToDOMAnimatedLength(
       SVGElement* aSVGElement);
 
