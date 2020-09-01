@@ -67,13 +67,35 @@ enum class ScrollSource {
 
 
 
-const float COORDINATE_EPSILON = 0.01f;
+const float COORDINATE_EPSILON = 0.02f;
 
 template <typename Units>
 static bool IsZero(const gfx::PointTyped<Units>& aPoint) {
   return FuzzyEqualsAdditive(aPoint.x, 0.0f, COORDINATE_EPSILON) &&
          FuzzyEqualsAdditive(aPoint.y, 0.0f, COORDINATE_EPSILON);
 }
+
+
+struct AsyncTransform {
+  explicit AsyncTransform(
+      LayerToParentLayerScale aScale = LayerToParentLayerScale(),
+      ParentLayerPoint aTranslation = ParentLayerPoint())
+      : mScale(aScale), mTranslation(aTranslation) {}
+
+  operator AsyncTransformComponentMatrix() const {
+    return AsyncTransformComponentMatrix::Scaling(mScale.scale, mScale.scale, 1)
+        .PostTranslate(mTranslation.x, mTranslation.y, 0);
+  }
+
+  bool operator==(const AsyncTransform& rhs) const {
+    return mTranslation == rhs.mTranslation && mScale == rhs.mScale;
+  }
+
+  bool operator!=(const AsyncTransform& rhs) const { return !(*this == rhs); }
+
+  LayerToParentLayerScale mScale;
+  ParentLayerPoint mTranslation;
+};
 
 
 

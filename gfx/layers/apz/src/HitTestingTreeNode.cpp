@@ -9,7 +9,6 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/gfx/Point.h"        
 #include "mozilla/layers/APZUtils.h"  
-#include "mozilla/layers/AsyncCompositionManager.h"  
 #include "mozilla/layers/AsyncDragMetrics.h"  
 #include "nsPrintfCString.h"                  
 #include "UnitTransforms.h"                   
