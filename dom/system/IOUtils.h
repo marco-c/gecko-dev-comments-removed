@@ -79,6 +79,10 @@ class IOUtils final {
                                         const nsAString& aDestPath,
                                         const CopyOptions& aOptions);
 
+  static already_AddRefed<Promise> Touch(
+      GlobalObject& aGlobal, const nsAString& aPath,
+      const Optional<int64_t>& aModification);
+
   static bool IsAbsolutePath(const nsAString& aPath);
 
  private:
@@ -285,6 +289,18 @@ class IOUtils final {
 
   static Result<IOUtils::InternalFileInfo, IOError> StatSync(
       const nsAString& aPath);
+
+  
+
+
+
+
+
+
+
+
+  static Result<int64_t, IOError> TouchSync(const nsAString& aPath,
+                                            const Maybe<int64_t>& aNewModTime);
 };
 
 
