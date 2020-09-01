@@ -533,6 +533,12 @@ interface nsIPrincipal : nsISerializable
 
 
     [infallible] readonly attribute boolean isIpAddress;
+
+    
+
+
+    [infallible] readonly attribute boolean isLocalIpAddress;
+
 };
 
 
