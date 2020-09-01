@@ -39,8 +39,6 @@ class nsSharedPageData {
   nsString mDocURL;
   nsFont mHeadFootFont;
 
-  nsSize mReflowSize;
-  nsMargin mReflowMargin;
   
   
   
@@ -132,8 +130,6 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   void DetermineWhetherToPrintPage();
   nsIFrame* GetCurrentPageFrame();
 
-  nsMargin mMargin;
-
   nsSize mSize;
 
   
@@ -156,7 +152,6 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   
   int32_t mPageNum;
   int32_t mTotalPages;
-  int32_t mPrintRangeType;
   int32_t mFromPageNum;
   int32_t mToPageNum;
 
