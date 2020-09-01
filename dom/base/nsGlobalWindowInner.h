@@ -106,6 +106,7 @@ class DocGroup;
 class External;
 class Function;
 class Gamepad;
+class ContentMediaController;
 enum class ImageBitmapFormat : uint8_t;
 class IdleRequest;
 class IdleRequestCallback;
@@ -1241,6 +1242,12 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   void HintIsLoading(bool aIsLoading);
+
+ public:
+  mozilla::dom::ContentMediaController* GetContentMediaController();
+
+ private:
+  RefPtr<mozilla::dom::ContentMediaController> mContentMediaController;
 
  protected:
   

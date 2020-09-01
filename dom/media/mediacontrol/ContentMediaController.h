@@ -17,10 +17,6 @@ class BrowsingContext;
 
 
 
-
-
-
-
 class ContentMediaControlKeyReceiver {
  public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
@@ -33,9 +29,6 @@ class ContentMediaControlKeyReceiver {
 
   virtual bool IsPlaying() const = 0;
 };
-
-
-
 
 
 
@@ -88,17 +81,6 @@ class ContentMediaAgent : public IMediaInfoUpdater {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 class ContentMediaController final : public ContentMediaAgent,
                                      public ContentMediaControlKeyReceiver {
  public:
@@ -121,7 +103,6 @@ class ContentMediaController final : public ContentMediaAgent,
   void PauseOrStopMedia();
 
   nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mReceivers;
-  uint64_t mTopLevelBrowsingContextId;
 };
 
 }  
