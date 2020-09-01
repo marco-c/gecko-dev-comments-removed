@@ -493,7 +493,8 @@ class VirtualenvManager(object):
         
 
         try:
-            output = subprocess.check_output(program, cwd=directory, stderr=subprocess.STDOUT)
+            output = subprocess.check_output(program, cwd=directory, stderr=subprocess.STDOUT,
+                                             universal_newlines=True)
             print(output)
         except subprocess.CalledProcessError as e:
             if 'Python.h: No such file or directory' in e.output:
