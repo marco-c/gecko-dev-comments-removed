@@ -420,6 +420,12 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   GraphTime StartTime() const { return mStartTime; }
   bool Ended() const { return mEnded; }
 
+  
+  
+  virtual DisabledTrackMode CombinedDisabledMode() const {
+    return mDisabledMode;
+  }
+
   template <class SegmentType>
   SegmentType* GetData() const {
     if (!mSegment) {
@@ -525,6 +531,10 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
     mEndedNotificationSent = true;
     return true;
   }
+
+  
+  
+  void NotifyIfDisabledModeChangedFrom(DisabledTrackMode aOldMode);
 
   
   
@@ -960,6 +970,9 @@ class ProcessedMediaTrack : public MediaTrack {
   
   
   bool InMutedCycle() const { return mCycleMarker; }
+
+  
+  virtual void OnInputDisabledModeChanged(DisabledTrackMode aMode) {}
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override {
     size_t amount = MediaTrack::SizeOfExcludingThis(aMallocSizeOf);
