@@ -4686,6 +4686,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
   
   
   
+  
   writer.guardGroup(objId, oldGroup);
 
   
