@@ -6982,9 +6982,7 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
   WidgetMouseEvent* mouseEvent = aGUIEvent->AsMouseEvent();
   bool isWindowLevelMouseExit =
       (aGUIEvent->mMessage == eMouseExitFromWidget) &&
-      (mouseEvent &&
-       (mouseEvent->mExitFrom.value() == WidgetMouseEvent::eTopLevel ||
-        mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePuppet));
+      (mouseEvent && mouseEvent->mExitFrom == WidgetMouseEvent::eTopLevel);
 
   
   
@@ -7606,8 +7604,7 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
              (aGUIEvent->mMessage == eMouseUp ||
               
               
-              aGUIEvent->mMessage == eContextMenu ||
-              aGUIEvent->mMessage == eMouseExitFromWidget)) {
+              aGUIEvent->mMessage == eContextMenu)) {
     UniquePtr<DelayedMouseEvent> delayedMouseEvent =
         MakeUnique<DelayedMouseEvent>(aGUIEvent->AsMouseEvent());
     PushDelayedEventIntoQueue(std::move(delayedMouseEvent));

@@ -456,14 +456,6 @@ class nsContentUtils {
 
 
 
-  static mozilla::dom::BrowserParent* GetCommonBrowserParentAncestor(
-      mozilla::dom::BrowserParent* aBrowserParent1,
-      mozilla::dom::BrowserParent* aBrowserParent2);
-
-  
-
-
-
 
 
 

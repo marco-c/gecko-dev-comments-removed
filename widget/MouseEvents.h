@@ -190,18 +190,14 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     eControlClick
   };
 
-  typedef uint8_t ExitFromType;
-  enum ExitFrom : ExitFromType {
-    eChild,
-    eTopLevel,
-    ePuppet,
-    ePuppetParentToPuppetChild
-  };
+  typedef bool ExitFromType;
+  enum ExitFrom : ExitFromType { eChild, eTopLevel };
 
  protected:
   WidgetMouseEvent()
       : mReason(eReal),
         mContextMenuTrigger(eNormal),
+        mExitFrom(eChild),
         mIgnoreRootScrollFrame(false),
         mClickCount(0),
         mUseLegacyNonPrimaryDispatch(false) {}
@@ -211,6 +207,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
       : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, aEventClassID),
         mReason(aReason),
         mContextMenuTrigger(eNormal),
+        mExitFrom(eChild),
         mIgnoreRootScrollFrame(false),
         mClickCount(0),
         mUseLegacyNonPrimaryDispatch(false) {}
@@ -224,6 +221,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
       : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, eMouseEventClass),
         mReason(aReason),
         mContextMenuTrigger(aContextMenuTrigger),
+        mExitFrom(eChild),
         mIgnoreRootScrollFrame(false),
         mClickCount(0),
         mUseLegacyNonPrimaryDispatch(false) {
@@ -274,7 +272,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   
   
   
-  Maybe<ExitFrom> mExitFrom;
+  ExitFrom mExitFrom;
 
   
   bool mIgnoreRootScrollFrame;
@@ -292,7 +290,6 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent,  true);
 
-    mExitFrom = aEvent.mExitFrom;
     mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
     mClickCount = aEvent.mClickCount;
     mUseLegacyNonPrimaryDispatch = aEvent.mUseLegacyNonPrimaryDispatch;
