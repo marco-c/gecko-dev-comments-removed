@@ -512,6 +512,15 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  RootedObject options(cx);
+  if (args.hasDefined(1)) {
+    options = ToObject(cx, args[1]);
+    if (!options) {
+      return false;
+    }
+  }
+
+  
   LanguageTag tag(cx);
   if (!LanguageTagParser::parse(cx, tagLinearStr, tag)) {
     return false;
@@ -521,13 +530,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  
-  if (args.hasDefined(1)) {
-    RootedObject options(cx, ToObject(cx, args[1]));
-    if (!options) {
-      return false;
-    }
-
+  if (options) {
     
     if (!ApplyOptionsToTag(cx, tag, options)) {
       return false;

@@ -1,0 +1,10 @@
+
+
+
+
+assertThrowsInstanceOf(() => {
+  new Intl.Locale("invalid_tag", null);
+}, TypeError);
+
+if (typeof reportCompare === "function")
+  reportCompare(0, 0);
