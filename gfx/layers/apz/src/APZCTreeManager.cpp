@@ -3790,7 +3790,7 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
       
 
       asyncScrollY -= ((aMetrics.GetLayoutViewport().TopLeft() -
-                        aMetrics.GetVisualViewportOffset()) *
+                        aMetrics.GetVisualScrollOffset()) *
                        effectiveZoom)
                           .y;
     }
@@ -3839,7 +3839,7 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
 
     if (gfxPlatform::UseDesktopZoomingScrollbars()) {
       asyncScrollX -= ((aMetrics.GetLayoutViewport().TopLeft() -
-                        aMetrics.GetVisualViewportOffset()) *
+                        aMetrics.GetVisualScrollOffset()) *
                        effectiveZoom)
                           .x;
     }
