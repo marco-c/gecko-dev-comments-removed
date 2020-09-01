@@ -51,8 +51,8 @@ class nsContentSecurityUtils {
   static void PerformCSPFrameAncestorAndXFOCheck(nsIChannel* aChannel);
 
   
-  static long ClassifyDownload(nsIChannel* aChannel,
-                               const nsAutoCString& aMimeTypeGuess);
+  static bool IsDownloadAllowed(nsIChannel* aChannel,
+                                const nsAutoCString& aMimeTypeGuess);
 
 #if defined(DEBUG)
   static void AssertAboutPageHasCSP(mozilla::dom::Document* aDocument);
@@ -60,6 +60,10 @@ class nsContentSecurityUtils {
 
   static bool ValidateScriptFilename(const char* aFilename,
                                      bool aIsSystemRealm);
+  
+
+
+  static bool IsDownloadAllowed(nsIChannel* aChannel);
   
   static void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg);
 };
