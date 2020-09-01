@@ -57,6 +57,7 @@
 #include "nsUnicharUtils.h"
 #include "mozilla/Preferences.h"
 #include "nsSandboxFlags.h"
+#include "nsQueryObject.h"
 
 
 #include "nsFrameLoader.h"
@@ -955,6 +956,46 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
     return NS_BINDING_ABORTED;
   }
 
+  nsCOMPtr<nsIChannel> chan(do_QueryInterface(aRequest));
+  NS_ASSERTION(chan, "Why is our request not a channel?");
+
+  nsresult status = NS_OK;
+  bool success = IsSuccessfulRequest(aRequest, &status);
+
+  
+  
+  
+  
+  if (mType == eType_Document) {
+    if (!mFinalListener) {
+      MOZ_ASSERT_UNREACHABLE(
+          "Already are eType_Document, but don't have final listener yet?");
+      return NS_BINDING_ABORTED;
+    }
+
+    
+    
+    
+    
+    
+    if (success) {
+      LOG(("OBJLC [%p]: OnStartRequest: DocumentChannel request succeeded\n",
+           this));
+      nsCString channelType;
+      MOZ_ALWAYS_SUCCEEDS(mChannel->GetContentType(channelType));
+
+      if (GetTypeOfContent(channelType, mSkipFakePlugins) != eType_Document) {
+        MOZ_CRASH("DocumentChannel request with non-document MIME");
+      }
+      mContentType = channelType;
+
+      MOZ_ALWAYS_SUCCEEDS(
+          NS_GetFinalChannelURI(mChannel, getter_AddRefs(mURI)));
+    }
+
+    return mFinalListener->OnStartRequest(aRequest);
+  }
+
   
   if (mType != eType_Loading) {
     MOZ_ASSERT_UNREACHABLE("Should be type loading at this point");
@@ -964,12 +1005,6 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
   NS_ASSERTION(!mFinalListener, "mFinalListener exists already?");
 
   mChannelLoaded = true;
-
-  nsCOMPtr<nsIChannel> chan(do_QueryInterface(aRequest));
-  NS_ASSERTION(chan, "Why is our request not a channel?");
-
-  nsresult status = NS_OK;
-  bool success = IsSuccessfulRequest(aRequest, &status);
 
   if (status == NS_ERROR_BLOCKED_URI) {
     nsCOMPtr<nsIConsoleService> console(
@@ -1183,6 +1218,12 @@ ObjectInterfaceRequestorShim::GetInterface(const nsIID& aIID, void** aResult) {
     NS_ADDREF(sink);
     return NS_OK;
   }
+  if (aIID.Equals(NS_GET_IID(nsIObjectLoadingContent))) {
+    nsIObjectLoadingContent* olc = mContent;
+    *aResult = olc;
+    NS_ADDREF(olc);
+    return NS_OK;
+  }
   return NS_NOINTERFACE;
 }
 
@@ -1198,6 +1239,20 @@ nsObjectLoadingContent::AsyncOnChannelRedirect(
   }
 
   mChannel = aNewChannel;
+
+  if (mFinalListener) {
+    nsCOMPtr<nsIChannelEventSink> sink(do_QueryInterface(mFinalListener));
+    MOZ_RELEASE_ASSERT(sink, "mFinalListener isn't nsIChannelEventSink?");
+    if (mType != eType_Document) {
+      MOZ_ASSERT_UNREACHABLE(
+          "Not a DocumentChannel load, but we're getting a "
+          "AsyncOnChannelRedirect with a mFinalListener?");
+      return NS_BINDING_ABORTED;
+    }
+
+    return sink->AsyncOnChannelRedirect(aOldChannel, aNewChannel, aFlags, cb);
+  }
+
   cb->OnRedirectVerifyCallback(NS_OK);
   return NS_OK;
 }
@@ -1585,7 +1640,20 @@ nsObjectLoadingContent::UpdateObjectParameters() {
   
   bool newChannel = useChannel && mType == eType_Loading;
 
-  if (newChannel && mChannel) {
+  RefPtr<DocumentChannel> documentChannel = do_QueryObject(mChannel);
+  if (newChannel && documentChannel) {
+    
+    
+    
+    
+    
+    
+    newMime = TEXT_HTML;
+
+    MOZ_DIAGNOSTIC_ASSERT(
+        GetTypeOfContent(newMime, mSkipFakePlugins) == eType_Document,
+        "How is text/html not eType_Document?");
+  } else if (newChannel && mChannel) {
     nsCString channelType;
     rv = mChannel->GetContentType(channelType);
     if (NS_FAILED(rv)) {
@@ -2135,6 +2203,8 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
       rv = uriLoader->OpenChannel(mChannel, nsIURILoader::DONT_RETARGET, req,
                                   getter_AddRefs(finalListener));
       
+      
+      
     } break;
     case eType_Loading:
       
@@ -2224,7 +2294,17 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     NS_ASSERTION(mType != eType_Null && mType != eType_Loading,
                  "We should not have a final listener with a non-loaded type");
     mFinalListener = finalListener;
-    rv = finalListener->OnStartRequest(mChannel);
+
+    
+    
+    RefPtr<DocumentChannel> documentChannel = do_QueryObject(mChannel);
+    if (documentChannel) {
+      MOZ_ASSERT(
+          mType == eType_Document,
+          "We have a DocumentChannel here but aren't loading a document?");
+    } else {
+      rv = finalListener->OnStartRequest(mChannel);
+    }
   }
 
   if (NS_FAILED(rv) && mIsLoading) {
@@ -2994,6 +3074,49 @@ nsObjectLoadingContent::SkipFakePlugins() {
     return LoadObject(true, true);
   }
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsObjectLoadingContent::UpgradeLoadToDocument(
+    nsIChannel* aRequest, BrowsingContext** aBrowsingContext) {
+  AUTO_PROFILER_LABEL("nsObjectLoadingContent::UpgradeLoadToDocument", NETWORK);
+
+  LOG(("OBJLC [%p]: UpgradeLoadToDocument", this));
+
+  if (aRequest != mChannel || !aRequest) {
+    
+    return NS_BINDING_ABORTED;
+  }
+
+  
+  if (mType != eType_Loading) {
+    MOZ_ASSERT_UNREACHABLE("Should be type loading at this point");
+    return NS_BINDING_ABORTED;
+  }
+  MOZ_ASSERT(!mChannelLoaded, "mChannelLoaded set already?");
+  MOZ_ASSERT(!mFinalListener, "mFinalListener exists already?");
+
+  mChannelLoaded = true;
+
+  
+  
+  
+  
+
+  
+  
+  nsresult rv = LoadObject(true, false, aRequest);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  RefPtr<BrowsingContext> bc = GetBrowsingContext();
+  if (!bc) {
+    return NS_ERROR_FAILURE;
+  }
+
+  bc.forget(aBrowsingContext);
   return NS_OK;
 }
 

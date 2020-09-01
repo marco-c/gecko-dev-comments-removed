@@ -9,6 +9,7 @@
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/Variant.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/net/NeckoCommon.h"
@@ -119,6 +120,21 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                      true >
       OpenPromise;
 
+  
+  
+  
+  struct ObjectUpgradeHandler : public SupportsWeakPtr {
+    using ObjectUpgradePromise =
+        MozPromise<RefPtr<dom::CanonicalBrowsingContext>, nsresult,
+                   true >;
+
+    
+    
+    
+    
+    virtual RefPtr<ObjectUpgradePromise> UpgradeObjectLoad() = 0;
+  };
+
  private:
   
   
@@ -150,7 +166,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
       nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
       uint64_t aInnerWindowId, nsLoadFlags aLoadFlags,
       nsContentPolicyType aContentPolicyType, bool aUrgentStart,
-      base::ProcessId aPid, nsresult* aRv);
+      base::ProcessId aPid, ObjectUpgradeHandler* aUpgradeHandler,
+      nsresult* aRv);
 
   
   
@@ -295,6 +312,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   bool MaybeTriggerProcessSwitch(bool* aWillSwitchToRemote);
+  void TriggerProcessSwitch(dom::CanonicalBrowsingContext* aContext,
+                            const nsCString& aRemoteType,
+                            bool aReplaceBrowsingContext,
+                            uint64_t aSpecificGroupId);
 
   
   
@@ -319,6 +340,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   dom::CanonicalBrowsingContext* GetDocumentBrowsingContext() const;
   dom::CanonicalBrowsingContext* GetTopBrowsingContext() const;
+
+  
+  
+  dom::WindowGlobalParent* GetParentWindowContext() const;
 
   void AddURIVisit(nsIChannel* aChannel, uint32_t aLoadFlags);
   bool HasCrossOriginOpenerPolicyMismatch() const;
@@ -454,6 +479,13 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   
+  
+  
+  
+  WeakPtr<ObjectUpgradeHandler> mObjectUpgradeHandler;
+
+  
+  
   bool mHaveVisibleRedirect = false;
 
   nsTArray<StreamFilterRequest> mStreamFilterRequests;
@@ -463,6 +495,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo>
       mLoadingSessionHistoryInfo;
+
+  RefPtr<dom::WindowGlobalParent> mParentWindowContext;
 
   
   
