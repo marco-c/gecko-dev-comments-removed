@@ -32,8 +32,6 @@ typedef enum {
   
   DMABUF_TEXTURE = 1 << 1,
   
-  DMABUF_CREATE_WL_BUFFER = 1 << 2,
-  
   
   
   DMABUF_USE_MODIFIERS = 1 << 3,
@@ -170,7 +168,6 @@ class DMABufSurfaceRGBA : public DMABufSurface {
 
   DMABufSurfaceRGBA* GetAsDMABufSurfaceRGBA() { return this; }
 
-  bool Resize(int aWidth, int aHeight);
   void Clear();
 
   void ReleaseSurface();
@@ -201,12 +198,6 @@ class DMABufSurfaceRGBA : public DMABufSurface {
 
   uint32_t GetTextureCount() { return 1; };
 
-  void SetWLBuffer(struct wl_buffer* aWLBuffer);
-  wl_buffer* GetWLBuffer();
-  void WLBufferDetach() { mWLBufferAttached = false; };
-  bool WLBufferIsAttached() { return mWLBufferAttached; };
-  void WLBufferSetAttached() { mWLBufferAttached = true; };
-
   DMABufSurfaceRGBA();
 
  private:
@@ -215,7 +206,6 @@ class DMABufSurfaceRGBA : public DMABufSurface {
   bool Create(int aWidth, int aHeight, int aDMABufSurfaceFlags);
   bool Create(const mozilla::layers::SurfaceDescriptor& aDesc);
 
-  bool CreateWLBuffer();
   void ImportSurfaceDescriptor(const mozilla::layers::SurfaceDescriptor& aDesc);
 
  private:
@@ -225,13 +215,9 @@ class DMABufSurfaceRGBA : public DMABufSurface {
   int mHeight;
   mozilla::widget::GbmFormat* mGmbFormat;
 
-  wl_buffer* mWLBuffer;
   EGLImageKHR mEGLImage;
   GLuint mTexture;
   uint32_t mGbmBufferFlags;
-
-  bool mWLBufferAttached;
-  bool mFastWLBufferCreation;
 };
 
 class DMABufSurfaceYUV : public DMABufSurface {
