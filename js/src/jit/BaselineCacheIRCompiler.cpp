@@ -2630,10 +2630,8 @@ bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
   return true;
 }
 
-bool BaselineCacheIRCompiler::emitGuardFunApply(Int32OperandId argcId,
-                                                CallFlags flags) {
+bool BaselineCacheIRCompiler::emitGuardFunApplyArray() {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-  Register argcReg = allocator.useRegister(masm, argcId);
   AutoScratchRegister scratch(allocator, masm);
   AutoScratchRegister scratch2(allocator, masm);
 
@@ -2643,74 +2641,53 @@ bool BaselineCacheIRCompiler::emitGuardFunApply(Int32OperandId argcId,
   }
 
   
-  masm.branch32(Assembler::NotEqual, argcReg, Imm32(2), failure->label());
-
-  
   
   
   
   
 
+  
   Address argsAddr = allocator.addressOf(masm, BaselineFrameSlot(0));
-  switch (flags.getArgFormat()) {
-    case CallFlags::FunApplyArgs: {
-      
-      masm.branchTestMagic(Assembler::NotEqual, argsAddr, failure->label());
+  masm.fallibleUnboxObject(argsAddr, scratch, failure->label());
+  const JSClass* clasp = &ArrayObject::class_;
+  masm.branchTestObjClass(Assembler::NotEqual, scratch, clasp, scratch2,
+                          scratch, failure->label());
 
-      
-      Address flagAddr(BaselineFrameReg, BaselineFrame::reverseOffsetOfFlags());
-      masm.branchTest32(Assembler::NonZero, flagAddr,
-                        Imm32(BaselineFrame::HAS_ARGS_OBJ), failure->label());
-    } break;
-    case CallFlags::FunApplyArray: {
-      
-      masm.fallibleUnboxObject(argsAddr, scratch, failure->label());
-      const JSClass* clasp = &ArrayObject::class_;
-      masm.branchTestObjClass(Assembler::NotEqual, scratch, clasp, scratch2,
-                              scratch, failure->label());
+  
+  Register elementsReg = scratch;
+  masm.loadPtr(Address(scratch, NativeObject::offsetOfElements()), elementsReg);
+  Register calleeArgcReg = scratch2;
+  masm.load32(Address(elementsReg, ObjectElements::offsetOfLength()),
+              calleeArgcReg);
 
-      
-      Register elementsReg = scratch;
-      masm.loadPtr(Address(scratch, NativeObject::offsetOfElements()),
-                   elementsReg);
-      Register calleeArgcReg = scratch2;
-      masm.load32(Address(elementsReg, ObjectElements::offsetOfLength()),
-                  calleeArgcReg);
+  
+  
+  
+  
+  masm.branch32(Assembler::Above, calleeArgcReg,
+                Imm32(CacheIRCompiler::MAX_ARGS_ARRAY_LENGTH),
+                failure->label());
 
-      
-      
-      
-      
-      masm.branch32(Assembler::Above, calleeArgcReg,
-                    Imm32(CacheIRCompiler::MAX_ARGS_ARRAY_LENGTH),
-                    failure->label());
+  
+  Address initLenAddr(elementsReg, ObjectElements::offsetOfInitializedLength());
+  masm.branch32(Assembler::NotEqual, initLenAddr, calleeArgcReg,
+                failure->label());
 
-      
-      Address initLenAddr(elementsReg,
-                          ObjectElements::offsetOfInitializedLength());
-      masm.branch32(Assembler::NotEqual, initLenAddr, calleeArgcReg,
-                    failure->label());
+  
+  Register start = elementsReg;
+  Register end = scratch2;
+  BaseValueIndex endAddr(elementsReg, calleeArgcReg);
+  masm.computeEffectiveAddress(endAddr, end);
 
-      
-      Register start = elementsReg;
-      Register end = scratch2;
-      BaseValueIndex endAddr(elementsReg, calleeArgcReg);
-      masm.computeEffectiveAddress(endAddr, end);
+  Label loop;
+  Label endLoop;
+  masm.bind(&loop);
+  masm.branchPtr(Assembler::AboveOrEqual, start, end, &endLoop);
+  masm.branchTestMagic(Assembler::Equal, Address(start, 0), failure->label());
+  masm.addPtr(Imm32(sizeof(Value)), start);
+  masm.jump(&loop);
+  masm.bind(&endLoop);
 
-      Label loop;
-      Label endLoop;
-      masm.bind(&loop);
-      masm.branchPtr(Assembler::AboveOrEqual, start, end, &endLoop);
-      masm.branchTestMagic(Assembler::Equal, Address(start, 0),
-                           failure->label());
-      masm.addPtr(Imm32(sizeof(Value)), start);
-      masm.jump(&loop);
-      masm.bind(&endLoop);
-    } break;
-    default:
-      MOZ_CRASH("Invalid arg format");
-      break;
-  }
   return true;
 }
 
