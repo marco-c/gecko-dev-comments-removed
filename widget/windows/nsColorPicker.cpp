@@ -154,6 +154,17 @@ void AsyncColorChooser::Update(COLORREF aColor) {
     return 0;
   }
 
+  if (aMsg == WM_INITDIALOG) {
+    
+    
+    
+    
+    
+    
+    
+    return 1;
+  }
+
   if (aMsg == WM_CTLCOLORSTATIC) {
     
     
@@ -164,6 +175,7 @@ void AsyncColorChooser::Update(COLORREF aColor) {
     }
   }
 
+  
   return 0;
 }
 
