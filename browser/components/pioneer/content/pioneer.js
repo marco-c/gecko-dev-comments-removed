@@ -217,9 +217,9 @@ async function showAvailableStudies(cachedAddons) {
       for (const line of cachedAddon[`${joinOrLeave}StudyConsent`].split(
         "\n"
       )) {
-        const p = document.createElement("p");
-        p.textContent = line;
-        consentText.appendChild(p);
+        const li = document.createElement("li");
+        li.textContent = line;
+        consentText.appendChild(li);
       }
 
       dialog.showModal();
@@ -318,7 +318,7 @@ async function updateStudy(studyAddonId) {
       document.l10n.setAttributes(joinBtn, "pioneer-join-study");
     }
   } else {
-    document.l10n.setAttributes(joinBtn, "pioneer-join-study");
+    document.l10n.setAttributes(joinBtn, "pioneer-study-prompt");
     study.style.opacity = 0.5;
     joinBtn.disabled = true;
   }
@@ -488,24 +488,27 @@ function removeBadge() {
 function updateContents(contents) {
   for (const section of [
     "title",
-    "summary",
-    "details",
     "joinPioneerConsent",
     "leavePioneerConsent",
   ]) {
     if (contents && section in contents) {
       
+      
+      let tagType = "li";
+      if (section === "title") {
+        tagType = "p";
+      }
+
       const domId = section
         .split(/(?=[A-Z])/)
         .join("-")
         .toLowerCase();
       
       document.getElementById(domId).textContent = "";
-      contents[section].textContent = "";
       for (const line of contents[section].split("\n")) {
-        const p = document.createElement("p");
-        p.textContent = line;
-        document.getElementById(domId).appendChild(p);
+        const entry = document.createElement(tagType);
+        entry.textContent = line;
+        document.getElementById(domId).appendChild(entry);
       }
     }
   }
@@ -519,6 +522,12 @@ document.addEventListener("DOMContentLoaded", async domEvent => {
 
   document.addEventListener("focus", removeBadge);
   removeBadge();
+
+  const privacyPolicyLink = document.getElementById("privacy-policy");
+  const privacyPolicyFormattedLink = Services.urlFormatter.formatURL(
+    privacyPolicyLink.href
+  );
+  privacyPolicyLink.href = privacyPolicyFormattedLink;
 
   let cachedContent;
   let cachedAddons;
@@ -568,111 +577,3 @@ document.addEventListener("DOMContentLoaded", async domEvent => {
   await setup(cachedAddons);
   await showAvailableStudies(cachedAddons);
 });
-
-
-
-
-
-class TrappedDialog extends HTMLDialogElement {
-  static get observedAttributes() {
-    return ["open"];
-  }
-
-  attributeChangedCallback(name, oldVal, newVal) {
-    if (name == "open") {
-      if (newVal != null) {
-        this.trapFocus();
-      } else {
-        this.untrapFocus();
-      }
-    }
-  }
-
-  trapFocus() {
-    if (!this.trapped) {
-      this.trapped = true;
-      document.addEventListener("focusin", this);
-      document.addEventListener("keydown", this);
-    }
-  }
-
-  untrapFocus() {
-    document.removeEventListener("focusin", this);
-    document.removeEventListener("keydown", this);
-    this.trapped = false;
-  }
-
-  handleEvent(e) {
-    if (
-      e.type == "focusin" &&
-      
-      
-      
-      !this.contains(e.target)
-    ) {
-      
-      e.preventDefault();
-      this.focusWalker.currentNode = this;
-
-      
-      this.focusWalker.nextNode();
-    } else if (
-      e.type == "keydown" &&
-      e.keyCode == e.DOM_VK_TAB &&
-      !e.ctrlKey &&
-      !e.altKey &&
-      !e.metaKey &&
-      (!this.contains(e.target) || e.target == this)
-    ) {
-      
-      e.preventDefault();
-      let parentWin = window.docShell.chromeEventHandler.ownerGlobal;
-      let fm = Services.focus;
-
-      if (e.shiftKey) {
-        
-
-        
-        this.focusWalker.currentNode = document;
-        
-
-        
-        fm.moveFocus(parentWin, null, fm.MOVEFOCUS_BACKWARD, fm.FLAG_BYKEY);
-      } else if (e.target == document.documentElement) {
-        
-        this.focusWalker.currentNode = this;
-        this.focusWalker.nextNode();
-      } else {
-        fm.moveFocus(parentWin, null, fm.MOVEFOCUS_ROOT, fm.FLAG_BYKEY);
-      }
-    }
-  }
-
-  get focusWalker() {
-    if (!this._focusWalker) {
-      this._focusWalker = document.createTreeWalker(
-        this,
-        NodeFilter.SHOW_ELEMENT,
-        {
-          acceptNode: node => {
-            
-            if (node.hidden) {
-              return NodeFilter.FILTER_REJECT;
-            }
-
-            
-            node.focus();
-            if (node === document.activeElement) {
-              return NodeFilter.FILTER_ACCEPT;
-            }
-
-            
-            return NodeFilter.FILTER_SKIP;
-          },
-        }
-      );
-    }
-    return this._focusWalker;
-  }
-}
-customElements.define("trapped-dialog", TrappedDialog, { extends: "dialog" });
