@@ -73,12 +73,9 @@ const EMIT_MEDIA_RULES_THROTTLING = 500;
 
 
 
-
-
 function StyleSheetEditor(
   resource,
   win,
-  targetList,
   walker,
   highlighter,
   styleSheetFriendlyIndex
@@ -86,7 +83,6 @@ function StyleSheetEditor(
   EventEmitter.decorate(this);
 
   this._resource = resource;
-  this._targetList = targetList;
   this._inputElement = null;
   this.sourceEditor = null;
   this._window = win;
@@ -280,26 +276,34 @@ StyleSheetEditor.prototype = {
 
 
 
-  _getSourceTextAndPrettify: function() {
-    return this.styleSheet
-      .getText()
-      .then(longStr => {
-        return longStr.string();
-      })
-      .then(source => {
-        const ruleCount = this.styleSheet.ruleCount;
-        if (!this.styleSheet.isOriginalSource) {
-          const { result, mappings } = prettifyCSS(source, ruleCount);
-          source = result;
-          
-          
-          
-          this._mappings = mappings;
-        }
+  async _getSourceTextAndPrettify() {
+    const styleSheetsFront = await this._getStyleSheetsFront();
 
-        this._state.text = source;
-        return source;
-      });
+    let longStr = null;
+    if (this.styleSheet.isOriginalSource) {
+      
+      
+      longStr = await this.styleSheet.getText();
+    } else if (!styleSheetsFront.traits.supportResourceRequests) {
+      
+      longStr = await this.styleSheet.getText();
+    } else {
+      longStr = await styleSheetsFront.getText(this.resourceId);
+    }
+
+    let source = await longStr.string();
+    const ruleCount = this.styleSheet.ruleCount;
+    if (!this.styleSheet.isOriginalSource) {
+      const { result, mappings } = prettifyCSS(source, ruleCount);
+      source = result;
+      
+      
+      
+      this._mappings = mappings;
+    }
+
+    this._state.text = source;
+    return source;
   },
 
   
@@ -851,7 +855,7 @@ StyleSheetEditor.prototype = {
   },
 
   _getStyleSheetsFront() {
-    return this._targetList.targetFront.getFront("stylesheets");
+    return this._resource.targetFront.getFront("stylesheets");
   },
 
   
