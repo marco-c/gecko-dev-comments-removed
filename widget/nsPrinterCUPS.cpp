@@ -94,10 +94,15 @@ void nsPrinterCUPS::GetPrinterName(nsAString& aName) const {
 
 const char* nsPrinterCUPS::LocalizeMediaName(http_t& aConnection,
                                              cups_size_t& aMedia) const {
+
+#ifdef XP_MACOSX
   
   
   return mShim.cupsLocalizeDestMedia(&aConnection, mPrinter, mPrinterInfo,
                                      CUPS_MEDIA_FLAGS_DEFAULT, &aMedia);
+#else
+  return nullptr;
+#endif
 }
 
 bool nsPrinterCUPS::SupportsDuplex() const {

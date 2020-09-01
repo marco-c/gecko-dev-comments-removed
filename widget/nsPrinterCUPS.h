@@ -44,6 +44,7 @@ class nsPrinterCUPS final : public nsPrinterBase {
   
 
 
+
   const char* LocalizeMediaName(http_t& aConnection, cups_size_t& aMedia) const;
 
   void GetPrinterName(nsAString& aName) const;
