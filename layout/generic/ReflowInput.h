@@ -327,6 +327,13 @@ struct SizeComputationInput {
     
     
     bool mMovedBlockFragments : 1;
+
+    
+    
+    
+    
+    
+    bool mBSizeIsSetByAspectRatio : 1;
   };
 
 #ifdef DEBUG
@@ -620,6 +627,10 @@ struct ReflowInput : public SizeComputationInput {
                   ht == NS_UNCONSTRAINEDSIZE
                       ? 0
                       : ht + ComputedPhysicalBorderPadding().TopBottom());
+  }
+
+  bool ComputedBSizeIsSetByAspectRatio() const {
+    return mFlags.mBSizeIsSetByAspectRatio;
   }
 
  private:

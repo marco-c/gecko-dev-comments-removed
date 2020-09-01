@@ -5981,6 +5981,16 @@ static nscoord ComputeBlockSizeFromAspectRatio(
          aBoxSizingAdjustment.BSize(aWM);
 }
 
+static bool ShouldApplyAutomaticMinimumOnInlineAxis(
+    WritingMode aWM, const nsStyleDisplay* aDisplay,
+    const nsStylePosition* aPosition) {
+  
+  
+  
+  
+  return !aDisplay->IsScrollableOverflow() && aPosition->MinISize(aWM).IsAuto();
+}
+
 
 nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
@@ -5994,6 +6004,8 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
       ComputeAutoSize(aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
                       aBorder, aPadding, aFlags);
   const nsStylePosition* stylePos = StylePosition();
+  const nsStyleDisplay* disp = StyleDisplay();
+  auto aspectRatioUsage = AspectRatioUsage::None;
 
   LogicalSize boxSizingAdjust(aWM);
   if (stylePos->mBoxSizing == StyleBoxSizing::Border) {
@@ -6083,6 +6095,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
         blockStyleCoord->AsLengthPercentage());
     result.ISize(aWM) = ComputeInlineSizeFromAspectRatio(
         aWM, stylePos->mAspectRatio, bSize, boxSizingAdjust);
+    aspectRatioUsage = AspectRatioUsage::ToComputeISize;
   } else if (MOZ_UNLIKELY(isGridItem) && !IS_TRUE_OVERFLOW_CONTAINER(this)) {
     
     
@@ -6144,6 +6157,17 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
                                    aBorder.ISize(aWM) - aMargin.ISize(aWM));
       minISize = std::min(minISize, maxMinISize);
     }
+  } else if (aspectRatioUsage == AspectRatioUsage::ToComputeISize &&
+             ShouldApplyAutomaticMinimumOnInlineAxis(aWM, disp, stylePos)) {
+    
+    
+    
+    MOZ_ASSERT(!IsFrameOfType(eReplaced),
+               "aspect-ratio minimums should not apply to replaced elements");
+    
+    minISize = ComputeISizeValue(
+        aRenderingContext, aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
+        boxSizingToMarginEdgeISize, StyleExtremumLength::MinContent, aFlags);
   } else {
     
     
@@ -6167,6 +6191,8 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
                result.ISize(aWM) != NS_UNCONSTRAINEDSIZE) {
       result.BSize(aWM) = ComputeBlockSizeFromAspectRatio(
           aWM, stylePos->mAspectRatio, result.ISize(aWM), boxSizingAdjust);
+      MOZ_ASSERT(aspectRatioUsage == AspectRatioUsage::None);
+      aspectRatioUsage = AspectRatioUsage::ToComputeBSize;
     } else if (MOZ_UNLIKELY(isGridItem) && blockStyleCoord->IsAuto() &&
                !IS_TRUE_OVERFLOW_CONTAINER(this) &&
                !alignCB->IsMasonry(isOrthogonal ? eLogicalAxisInline
@@ -6219,7 +6245,6 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     }
   }
 
-  const nsStyleDisplay* disp = StyleDisplay();
   if (IsThemed(disp)) {
     LayoutDeviceIntSize widget;
     bool canOverride = true;
@@ -6247,7 +6272,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   result.ISize(aWM) = std::max(0, result.ISize(aWM));
   result.BSize(aWM) = std::max(0, result.BSize(aWM));
 
-  return {result, AspectRatioUsage::None};
+  return {result, aspectRatioUsage};
 }
 
 nsRect nsIFrame::ComputeTightBounds(DrawTarget* aDrawTarget) const {
