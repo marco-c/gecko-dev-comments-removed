@@ -739,7 +739,7 @@ public class GeckoView extends FrameLayout {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(final MotionEvent event) {
-        mSession.getPanZoomController().onTouchEventForResult(event);
+        onTouchEventForResult(event);
         return true;
     }
 
@@ -751,40 +751,48 @@ public class GeckoView extends FrameLayout {
 
 
 
-
-
-
-
-    public @NonNull GeckoResult<Integer> onTouchEventForResult(final @NonNull MotionEvent event) {
+    public @PanZoomController.InputResult int onTouchEventForResult(final @NonNull MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             requestFocus();
         }
 
         if (mSession == null) {
-            return GeckoResult.fromValue(PanZoomController.INPUT_RESULT_UNHANDLED);
+            return PanZoomController.INPUT_RESULT_UNHANDLED;
         }
 
         
         
-        return mSession.getPanZoomController().onTouchEventForResult(event);
+        return mSession.getPanZoomController().onTouchEvent(event);
     }
 
     @Override
     public boolean onGenericMotionEvent(final MotionEvent event) {
+        onGenericMotionEventForResult(event);
+        return true;
+    }
+
+    
+
+
+
+
+
+
+
+    public @PanZoomController.InputResult int onGenericMotionEventForResult(final @NonNull MotionEvent event) {
         if (AndroidGamepadManager.handleMotionEvent(event)) {
-            return true;
+            return PanZoomController.INPUT_RESULT_HANDLED;
         }
 
         if (mSession == null) {
-            return true;
+            return PanZoomController.INPUT_RESULT_UNHANDLED;
         }
 
         if (mSession.getAccessibility().onMotionEvent(event)) {
-            return true;
+            return PanZoomController.INPUT_RESULT_HANDLED;
         }
 
-        mSession.getPanZoomController().onMotionEvent(event);
-        return true;
+        return mSession.getPanZoomController().onMotionEvent(event);
     }
 
     @Override

@@ -7,7 +7,6 @@
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
-#include "mozilla/layers/LayersTypes.h"
 
 class APZEventRegionsTester : public APZCTreeManagerTester {
  protected:
@@ -313,7 +312,7 @@ TEST_F(APZEventRegionsTester, Bug1117712) {
 
 
 
-TEST_F(APZEventRegionsTester, HandledByRootApzcFlag) {
+TEST_F(APZEventRegionsTester, ApzAwareListenersFlag) {
   
   
   const char* layerTreeSyntax = "c";
@@ -323,8 +322,6 @@ TEST_F(APZEventRegionsTester, HandledByRootApzcFlag) {
   root = CreateLayerTree(layerTreeSyntax, layerVisibleRegions, nullptr, lm,
                          layers);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID);
-  ModifyFrameMetrics(
-      root, [](FrameMetrics& metrics) { metrics.SetIsRootContent(true); });
   
   EventRegions regions(nsIntRegion(IntRect(0, 0, 100, 100)));
   
@@ -339,48 +336,11 @@ TEST_F(APZEventRegionsTester, HandledByRootApzcFlag) {
   APZEventResult result =
       TouchDown(manager, ScreenIntPoint(50, 25), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 25), mcc->Time());
-  EXPECT_EQ(result.mHandledByRootApzc, Some(true));
+  EXPECT_FALSE(result.mHitRegionWithApzAwareListeners);
 
   
   
   result = TouchDown(manager, ScreenIntPoint(50, 75), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 75), mcc->Time());
-  EXPECT_EQ(result.mHandledByRootApzc, Nothing());
-
-  
-  
-  Maybe<bool> delayedAnswer;
-  manager->AddInputBlockCallback(result.mInputBlockId,
-                                 [&](uint64_t id, bool answer) {
-                                   EXPECT_EQ(id, result.mInputBlockId);
-                                   delayedAnswer = Some(answer);
-                                 });
-
-  
-  
-  manager->SetAllowedTouchBehavior(result.mInputBlockId,
-                                   {AllowedTouchBehavior::VERTICAL_PAN});
-  manager->SetTargetAPZC(result.mInputBlockId, {result.mTargetGuid});
-  manager->ContentReceivedInputBlock(result.mInputBlockId,
-                                     false);
-
-  
-  EXPECT_EQ(delayedAnswer, Some(true));
-
-  
-  
-  result = TouchDown(manager, ScreenIntPoint(50, 75), mcc->Time());
-  TouchUp(manager, ScreenIntPoint(50, 75), mcc->Time());
-  EXPECT_EQ(result.mHandledByRootApzc, Nothing());
-  manager->AddInputBlockCallback(result.mInputBlockId,
-                                 [&](uint64_t id, bool answer) {
-                                   EXPECT_EQ(id, result.mInputBlockId);
-                                   delayedAnswer = Some(answer);
-                                 });
-  manager->SetAllowedTouchBehavior(result.mInputBlockId,
-                                   {AllowedTouchBehavior::VERTICAL_PAN});
-  manager->SetTargetAPZC(result.mInputBlockId, {result.mTargetGuid});
-  manager->ContentReceivedInputBlock(result.mInputBlockId,
-                                     true);
-  EXPECT_EQ(delayedAnswer, Some(false));
+  EXPECT_TRUE(result.mHitRegionWithApzAwareListeners);
 }

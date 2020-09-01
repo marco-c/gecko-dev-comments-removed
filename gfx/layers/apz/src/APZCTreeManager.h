@@ -424,9 +424,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   APZInputBridge* InputBridge() override { return this; }
 
-  void AddInputBlockCallback(uint64_t aInputBlockId,
-                             InputBlockCallback&& aCallback) override;
-
   
   
 
@@ -560,7 +557,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     
     HitTestResult(HitTestResult&&) = default;
     HitTestResult& operator=(HitTestResult&&) = default;
-    Maybe<bool> HandledByRoot() const;
+    bool TargetIsConfirmedRoot() const;
   };
 
   
