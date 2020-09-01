@@ -22,7 +22,6 @@
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/ShellHeaderOnlyUtils.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/UrlmonHeaderOnlyUtils.h"
 #include "mozilla/UniquePtrExtensions.h"
 
@@ -74,20 +73,16 @@ nsresult nsMIMEInfoWin::ShellExecuteWithIFile(nsIFile* aExecutable, int aArgc,
   
   
   
-  {
-    Telemetry::AutoTimer<Telemetry::SHELLEXECUTEBYEXPLORER_DURATION_MS> timer;
-    mozilla::LauncherVoidResult shellExecuteOk =
-        mozilla::ShellExecuteByExplorer(execPathBStr, assembledArgs.get(),
-                                        verbDefault, workingDir, showCmd);
-    if (shellExecuteOk.isOk()) {
-      return NS_OK;
-    }
+  mozilla::LauncherVoidResult shellExecuteOk = mozilla::ShellExecuteByExplorer(
+      execPathBStr, assembledArgs.get(), verbDefault, workingDir, showCmd);
+  if (shellExecuteOk.isErr()) {
+    
+    
+    return LaunchWithIProcess(aExecutable, aArgc,
+                              reinterpret_cast<const char16_t**>(aArgv));
   }
 
-  
-  
-  return LaunchWithIProcess(aExecutable, aArgc,
-                            reinterpret_cast<const char16_t**>(aArgv));
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -327,14 +322,11 @@ nsresult nsMIMEInfoWin::LoadUriInternal(nsIURI* aURL) {
     
     
 #ifndef MOZ_THUNDERBIRD
-    {
-      Telemetry::AutoTimer<Telemetry::SHELLEXECUTEBYEXPLORER_DURATION_MS> timer;
-      mozilla::LauncherVoidResult shellExecuteOk =
-          mozilla::ShellExecuteByExplorer(validatedUri.inspect(), args, verb,
-                                          workingDir, showCmd);
-      if (shellExecuteOk.isOk()) {
-        return NS_OK;
-      }
+    mozilla::LauncherVoidResult shellExecuteOk =
+        mozilla::ShellExecuteByExplorer(validatedUri.inspect(), args, verb,
+                                        workingDir, showCmd);
+    if (shellExecuteOk.isOk()) {
+      return NS_OK;
     }
 #endif  
 
