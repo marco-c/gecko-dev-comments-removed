@@ -132,7 +132,9 @@ function wrapPrivileged(obj, win) {
   let { windowID, proxies, handler } = perWindowInfo.get(win) || {};
   
   
-  let currentID = win.windowUtils ? win.windowUtils.currentInnerWindowID : 0;
+  let currentID = win.windowGlobalChild
+    ? win.windowGlobalChild.innerWindowId
+    : 0;
   
   if (windowID !== currentID) {
     windowID = currentID;

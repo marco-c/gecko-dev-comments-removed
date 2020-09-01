@@ -91,7 +91,7 @@ var WebConsoleUtils = {
     
     
     try {
-      return window.windowUtils.currentInnerWindowID;
+      return window.windowGlobalChild.innerWindowId;
     } catch (e) {
       return null;
     }
@@ -546,7 +546,7 @@ WebConsoleCommands._registerOriginal("cd", function(owner, window) {
     0,
     1,
     "content javascript",
-    owner.window.windowUtils.currentInnerWindowID
+    owner.window.windowGlobalChild.innerWindowId
   );
   const Services = require("Services");
   Services.console.logMessage(scriptError);
