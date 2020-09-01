@@ -2602,19 +2602,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteSelectionInternal(nsIEditor::EDirection aDirectionAndAmount,
-                                nsIEditor::EStripWrappers aStripWrappers,
-                                AutoRangeArray& aRangesToDelete);
-
-  
-
-
-
-
-
-
-
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult
   HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
