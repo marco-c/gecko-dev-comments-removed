@@ -336,6 +336,13 @@ class nsExternalAppHandler final : public nsIStreamListener,
   
 
 
+
+
+  int32_t mDownloadClassification;
+
+  
+
+
   bool mTempFileIsExecutable;
 
   PRTime mTimeDownloadStarted;
