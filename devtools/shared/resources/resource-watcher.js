@@ -339,32 +339,60 @@ class ResourceWatcher {
 
 
 
-  async _onResourceUpdated({ targetFront, watcherFront }, resources) {
-    for (const resource of resources) {
-      const { resourceType, resourceId } = resource;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _onResourceUpdated({ targetFront, watcherFront }, updates) {
+    for (const update of updates) {
+      const { resourceType, resourceId, resourceUpdates } = update;
+
+      const existingResource = this._cache.find(
+        cachedResource =>
+          cachedResource.resourceType === resourceType &&
+          cachedResource.resourceId === resourceId
+      );
+
+      if (!existingResource) {
+        continue;
+      }
 
       if (watcherFront) {
-        targetFront = await this._getTargetForWatcherResource(resource);
+        targetFront = await this._getTargetForWatcherResource(existingResource);
         if (!targetFront) {
           continue;
         }
       }
 
-      if (resourceId) {
-        const index = this._cache.findIndex(
-          cachedResource =>
-            cachedResource.resourceType == resourceType &&
-            cachedResource.resourceId == resourceId
-        );
-        if (index != -1) {
-          this._cache.splice(index, 1, resource);
-        }
+      if (resourceUpdates) {
+        Object.assign(existingResource, resourceUpdates);
       }
 
       this._updatedListeners.emit(resourceType, {
         resourceType,
         targetFront,
-        resource,
+        resource: existingResource,
+        update,
       });
     }
   }

@@ -537,6 +537,11 @@ function messages(
     case constants.NETWORK_MESSAGE_UPDATE:
       const updatedState = {
         ...state,
+        
+        messagesById: new Map(messagesById).set(
+          action.message.id,
+          action.message
+        ),
         networkMessagesUpdateById: {
           ...networkMessagesUpdateById,
           [action.message.id]: action.message,
