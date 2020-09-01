@@ -1197,6 +1197,16 @@ nsresult TRR::DohDecode(nsCString& aHost) {
     LOG(("TRR: No entries were stored!\n"));
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  
+  
+  if (mResult.is<TypeRecordHTTPSSVC>()) {
+    auto& results = mResult.as<TypeRecordHTTPSSVC>();
+    results.Sort();
+  }
+
   return NS_OK;
 }
 
