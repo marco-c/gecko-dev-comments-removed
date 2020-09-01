@@ -381,6 +381,12 @@ SubDialog.prototype = {
     
     this._overlay.style.visibility = "visible";
     this._overlay.style.opacity = "0.01";
+
+    
+    const a11yDoc =
+      this._frame.contentDocument.body ||
+      this._frame.contentDocument.documentElement;
+    a11yDoc.setAttribute("role", "dialog");
   },
 
   async _onLoad(aEvent) {
