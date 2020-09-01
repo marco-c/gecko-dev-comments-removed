@@ -73,26 +73,20 @@ const EMIT_MEDIA_RULES_THROTTLING = 500;
 
 
 
-
-
-
-
 function StyleSheetEditor(
-  styleSheet,
+  resource,
   win,
-  file,
-  isNew,
   walker,
   highlighter,
   styleSheetFriendlyIndex
 ) {
   EventEmitter.decorate(this);
 
-  this.styleSheet = styleSheet;
+  this.styleSheet = resource.styleSheet;
   this._inputElement = null;
   this.sourceEditor = null;
   this._window = win;
-  this._isNew = isNew;
+  this._isNew = this.styleSheet.isNew;
   this.walker = walker;
   this.highlighter = highlighter;
   this.styleSheetFriendlyIndex = styleSheetFriendlyIndex;
@@ -114,7 +108,7 @@ function StyleSheetEditor(
 
   this._styleSheetFilePath = null;
   if (
-    styleSheet.href &&
+    this.styleSheet.href &&
     Services.io.extractScheme(this.styleSheet.href) == "file"
   ) {
     this._styleSheetFilePath = this.styleSheet.href;
@@ -148,7 +142,7 @@ function StyleSheetEditor(
   }
   this.cssSheet.on("media-rules-changed", this._onMediaRulesChanged);
   this.cssSheet.on("style-applied", this._onStyleApplied);
-  this.savedFile = file;
+  this.savedFile = this.styleSheet.file;
   this.linkCSSFile();
 }
 

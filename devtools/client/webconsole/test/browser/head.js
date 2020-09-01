@@ -897,6 +897,14 @@ async function openNetMonitor(tab) {
 async function openConsole(tab) {
   const target = await TargetFactory.forTab(tab || gBrowser.selectedTab);
   const toolbox = await gDevTools.showToolbox(target, "webconsole");
+
+  
+  
+  
+  
+  toolbox.sourceMapURLService._ensureAllSourcesPopulated();
+  await toolbox.sourceMapURLService.waitForPendingSources();
+
   return toolbox.getCurrentPanel().hud;
 }
 

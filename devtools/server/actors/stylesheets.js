@@ -617,10 +617,6 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     return this.window.document;
   },
 
-  form: function() {
-    return { actor: this.actorID };
-  },
-
   initialize: function(conn, targetActor) {
     protocol.Actor.prototype.initialize.call(this, targetActor.conn);
 
@@ -639,11 +635,15 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
       this._onApplicableStateChanged,
       true
     );
+  },
 
-    
-    
-    
-    this._nextStyleSheetIsNew = false;
+  getTraits() {
+    return {
+      traits: {
+        
+        isFileNameSupported: true,
+      },
+    };
   },
 
   destroy: function() {
@@ -682,9 +682,16 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
   _onNewStyleSheetActor: function(actor) {
+    const info = this._addingStyleSheetInfo?.get(actor.rawSheet);
+    this._addingStyleSheetInfo?.delete(actor.rawSheet);
+
     
-    this.emit("stylesheet-added", actor, this._nextStyleSheetIsNew);
-    this._nextStyleSheetIsNew = false;
+    this.emit(
+      "stylesheet-added",
+      actor,
+      info ? info.isNew : false,
+      info ? info.fileName : null
+    );
   },
 
   
@@ -863,14 +870,9 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  addStyleSheet: function(text) {
-    
-    
-    
-    
-    
-    this._nextStyleSheetIsNew = true;
 
+
+  addStyleSheet: function(text, fileName = null) {
     const parent = this.document.documentElement;
     const style = this.document.createElementNS(
       "http://www.w3.org/1999/xhtml",
@@ -882,6 +884,16 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
       style.appendChild(this.document.createTextNode(text));
     }
     parent.appendChild(style);
+
+    
+    
+    
+    
+    
+    if (!this._addingStyleSheetInfo) {
+      this._addingStyleSheetInfo = new WeakMap();
+    }
+    this._addingStyleSheetInfo.set(style.sheet, { isNew: true, fileName });
 
     const actor = this.parentActor.createStyleSheetActor(style.sheet);
     return actor;

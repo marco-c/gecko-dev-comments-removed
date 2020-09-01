@@ -417,6 +417,16 @@ class SourceMapURLService {
     }
   }
 
+  
+
+
+
+
+
+  waitForPendingSources() {
+    return this._sourcesLoading;
+  }
+
   _ensureAllSourcesPopulated() {
     if (!this._prefValue) {
       return null;

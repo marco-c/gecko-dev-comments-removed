@@ -10,6 +10,7 @@ const { loader, require } = ChromeUtils.import(
   "resource://devtools/shared/Loader.jsm"
 );
 const Services = require("Services");
+const { FileUtils } = require("resource://gre/modules/FileUtils.jsm");
 const { NetUtil } = require("resource://gre/modules/NetUtil.jsm");
 const { OS } = require("resource://gre/modules/osfile.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -308,13 +309,12 @@ StyleEditorUI.prototype = {
 
 
 
+  _addStyleSheet: function(resource) {
+    const { styleSheet } = resource;
 
-
-
-  _addStyleSheet: function(styleSheet, isNew) {
     if (!this._seenSheets.has(styleSheet)) {
       const promise = (async () => {
-        let editor = await this._addStyleSheetEditor(styleSheet, isNew);
+        let editor = await this._addStyleSheetEditor(resource);
 
         const sourceMapService = this._toolbox.sourceMapService;
 
@@ -331,7 +331,7 @@ StyleEditorUI.prototype = {
           actorID: id,
           sourceMapURL,
           sourceMapBaseURL,
-        } = styleSheet;
+        } = resource.styleSheet;
         const sources = await sourceMapService.getOriginalURLs({
           id,
           url: href || nodeHref,
@@ -356,7 +356,11 @@ StyleEditorUI.prototype = {
             original.styleSheetIndex = styleSheet.styleSheetIndex;
             original.relatedStyleSheet = styleSheet;
             original.relatedEditorName = parentEditorName;
-            await this._addStyleSheetEditor(original);
+
+            const dummyResource = Object.assign({}, resource, {
+              styleSheet: original,
+            });
+            await this._addStyleSheetEditor(dummyResource);
           }
         }
 
@@ -385,14 +389,12 @@ StyleEditorUI.prototype = {
 
 
 
-
-
-  _getNextFriendlyIndex: function(styleSheet, isNew) {
+  _getNextFriendlyIndex: function(styleSheet) {
     if (styleSheet.href) {
       return undefined;
     }
 
-    return isNew
+    return styleSheet.isNew
       ? this._getNewStyleSheetsCount()
       : this._getInlineStyleSheetsCount();
   },
@@ -405,25 +407,13 @@ StyleEditorUI.prototype = {
 
 
 
-
-
-  async _addStyleSheetEditor(styleSheet, isNew) {
-    
-    let file = null;
-    const identifier = this.getStyleSheetIdentifier(styleSheet);
-    const savedFile = this.savedLocations[identifier];
-    if (savedFile) {
-      file = savedFile;
-    }
-
+  async _addStyleSheetEditor(resource) {
     const editor = new StyleSheetEditor(
-      styleSheet,
+      resource,
       this._window,
-      file,
-      isNew,
       this._walker,
       this._highlighter,
-      this._getNextFriendlyIndex(styleSheet, isNew)
+      this._getNextFriendlyIndex(resource.styleSheet)
     );
 
     editor.on("property-change", this._summaryChange.bind(this, editor));
@@ -436,6 +426,10 @@ StyleEditorUI.prototype = {
 
     await editor.fetchSource();
     this._sourceLoaded(editor);
+
+    if (resource.styleSheet.fileName) {
+      this.emit("test:editor-updated", editor);
+    }
 
     return editor;
   },
@@ -478,13 +472,20 @@ StyleEditorUI.prototype = {
           const stylesheetsFront = await this.currentTarget.getFront(
             "stylesheets"
           );
-          const styleSheet = await stylesheetsFront.addStyleSheet(source);
-          const editor = await this._addStyleSheet(styleSheet, true);
-          if (editor) {
-            editor.savedFile = selectedFile;
+
+          if (stylesheetsFront.traits.isFileNameSupported) {
+            
+            stylesheetsFront.addStyleSheet(source, selectedFile.path);
+          } else {
+            const styleSheet = await stylesheetsFront.addStyleSheet(source);
+            styleSheet.isNew = true;
+            const editor = await this._addStyleSheet({ styleSheet });
+            if (editor) {
+              editor.savedFile = selectedFile;
+            }
+            
+            this.emit("test:editor-updated", editor);
           }
-          
-          this.emit("test:editor-updated", editor);
         }
       );
     };
@@ -1171,9 +1172,24 @@ StyleEditorUI.prototype = {
     this._root.classList.remove("loading");
   },
 
-  async _handleStyleSheetResource({ styleSheet, isNew }) {
+  async _handleStyleSheetResource(resource) {
     try {
-      await this._addStyleSheet(styleSheet, isNew);
+      
+      const { styleSheet } = resource;
+      const { fileName } = resource.styleSheet;
+      let file = fileName ? new FileUtils.File(fileName) : null;
+
+      
+      if (!file) {
+        const identifier = this.getStyleSheetIdentifier(styleSheet);
+        const savedFile = this.savedLocations[identifier];
+        if (savedFile) {
+          file = savedFile;
+        }
+      }
+      styleSheet.file = file;
+
+      await this._addStyleSheet(resource);
     } catch (e) {
       console.error(e);
       this.emit("error", { key: LOAD_ERROR, level: "warning" });
