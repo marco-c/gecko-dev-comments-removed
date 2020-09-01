@@ -701,18 +701,6 @@ bool BacktrackingAllocator::buildLivenessInfo() {
           
           
           
-          if (ins->isCall() && use->usedAtStart()) {
-            for (size_t i = 0; i < ins->numTemps(); i++) {
-              MOZ_ASSERT_IF(
-                  !ins->getTemp(i)->isBogusTemp(),
-                  vreg(ins->getTemp(i)).type() != vreg(use).type() ||
-                      (use->isFixedRegister() && ins->getTemp(i)->isFixed()));
-            }
-          }
-
-          
-          
-          
           if (use->policy() == LUse::REGISTER) {
             if (use->usedAtStart()) {
               if (!IsInputReused(*ins, use)) {
