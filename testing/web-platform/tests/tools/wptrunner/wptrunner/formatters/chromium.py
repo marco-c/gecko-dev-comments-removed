@@ -38,6 +38,9 @@ class ChromiumFormatter(base.BaseFormatter):
         
         self.tests_with_subtest_fails = set()
 
+        
+        self.test_log = []
+
     def _append_test_message(self, test, subtest, status, expected, message):
         """
         Appends the message data for a test.
@@ -90,6 +93,9 @@ class ChromiumFormatter(base.BaseFormatter):
             self._append_artifact(cur_dict, "wpt_subtest_failure", "true")
         if wpt_actual != actual:
             self._append_artifact(cur_dict, "wpt_actual_status", wpt_actual)
+        if wpt_actual == 'CRASH':
+            for line in self.test_log:
+                self._append_artifact(cur_dict, "wpt_crash_log", line)
         for message in messages:
             self._append_artifact(cur_dict, "log", message)
 
@@ -129,13 +135,9 @@ class ChromiumFormatter(base.BaseFormatter):
             return "SKIP"
         if status == "EXTERNAL-TIMEOUT":
             return "TIMEOUT"
-        if status in ("ERROR", "CRASH", "PRECONDITION_FAILED"):
-            
-            
+        if status in ("ERROR", "PRECONDITION_FAILED"):
             return "FAIL"
         if status == "INTERNAL-ERROR":
-            
-            
             return "CRASH"
         
         return status
@@ -218,6 +220,9 @@ class ChromiumFormatter(base.BaseFormatter):
         
         self.num_failures_by_status[actual_status] += 1
 
+        
+        self.test_log = []
+
     def suite_end(self, data):
         
         final_result = {
@@ -230,3 +235,7 @@ class ChromiumFormatter(base.BaseFormatter):
             "tests": self.tests
         }
         return json.dumps(final_result)
+
+    def process_output(self, data):
+        if 'command' in data and 'chromedriver' in data['command']:
+            self.test_log.append(data['data'])
