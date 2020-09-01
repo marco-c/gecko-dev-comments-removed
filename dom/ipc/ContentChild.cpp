@@ -1260,7 +1260,10 @@ void ContentChild::InitXPCOM(
 
   ClientManager::Startup();
 
-  RemoteWorkerService::Initialize();
+  
+  
+  
+  
 
   nsCOMPtr<nsIConsoleService> svc(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
   if (!svc) {
@@ -2632,6 +2635,13 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
   
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RemoteType,
                                      remoteTypePrefix);
+
+  
+  
+  
+  if (mRemoteType != PREALLOC_REMOTE_TYPE) {
+    RemoteWorkerService::Initialize();
+  }
 
   return IPC_OK();
 }
