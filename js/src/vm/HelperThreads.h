@@ -744,6 +744,10 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   JS::OwningCompileOptions options;
 
   
+  
+  JSRuntime* runtime = nullptr;
+
+  
   JSObject* parseGlobal;
 
   
@@ -774,9 +778,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   void activate(JSRuntime* rt);
   virtual void parse(JSContext* cx) = 0;
 
-  bool runtimeMatches(JSRuntime* rt) {
-    return parseGlobal->runtimeFromAnyThread() == rt;
-  }
+  bool runtimeMatches(JSRuntime* rt) { return runtime == rt; }
 
   void trace(JSTracer* trc);
 
