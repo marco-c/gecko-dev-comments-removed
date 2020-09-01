@@ -144,6 +144,22 @@ var PrintUtils = {
 
 
 
+  updatePrintPreviewMenuHiddenState() {
+    let printPreviewMenuItem = document.getElementById("menu_printPreview");
+    if (printPreviewMenuItem) {
+      printPreviewMenuItem.hidden = PRINT_TAB_MODAL;
+    }
+    let pageSetupMenuItem = document.getElementById("menu_printSetup");
+    if (pageSetupMenuItem) {
+      pageSetupMenuItem.hidden = PRINT_TAB_MODAL;
+    }
+  },
+
+  
+
+
+
+
 
 
 
