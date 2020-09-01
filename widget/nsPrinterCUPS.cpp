@@ -6,8 +6,23 @@
 #include "nsPrinterCUPS.h"
 #include "nsPaper.h"
 #include "nsPrinterBase.h"
+#include "nsPrintSettingsImpl.h"
 
 #include "plstr.h"
+
+static PaperInfo MakePaperInfo(const char* aName, const cups_size_t& aMedia) {
+  
+  NS_ConvertUTF8toUTF16 name(aName ? aName : aMedia.media);
+  const double kPointsPerHundredthMillimeter = 0.0283465;
+  return PaperInfo(
+      name,
+      {aMedia.width * kPointsPerHundredthMillimeter,
+       aMedia.length * kPointsPerHundredthMillimeter},
+      Some(MarginDouble{aMedia.top * kPointsPerHundredthMillimeter,
+                        aMedia.right * kPointsPerHundredthMillimeter,
+                        aMedia.bottom * kPointsPerHundredthMillimeter,
+                        aMedia.left * kPointsPerHundredthMillimeter}));
+}
 
 nsPrinterCUPS::~nsPrinterCUPS() {
   if (mPrinterInfo) {
@@ -20,15 +35,69 @@ nsPrinterCUPS::~nsPrinterCUPS() {
   }
 }
 
+PrintSettingsInitializer nsPrinterCUPS::DefaultSettings() const {
+  nsString printerName;
+  GetPrinterName(printerName);
+
+  cups_size_t media;
+
+  bool hasDefaultMedia =
+      mShim.cupsGetDestMediaDefault(CUPS_HTTP_DEFAULT, mPrinter, mPrinterInfo,
+                                    CUPS_MEDIA_FLAGS_DEFAULT, &media);
+
+  if (!hasDefaultMedia) {
+    Nothing();
+    return PrintSettingsInitializer{
+        std::move(printerName),
+        PaperInfo(),
+        SupportsColor(),
+    };
+  }
+
+  const char* localizedName = nullptr;
+
+  
+  http_t* connection = mShim.cupsConnectDest(mPrinter, CUPS_DEST_FLAGS_NONE,
+                                              5000,
+                                              nullptr,
+                                              nullptr,
+                                              0,
+                                              nullptr,
+                                              nullptr);
+
+  if (connection) {
+    localizedName = LocalizeMediaName(*connection, media);
+    mShim.httpClose(connection);
+  }
+
+  return PrintSettingsInitializer{
+      std::move(printerName),
+      MakePaperInfo(localizedName, media),
+      SupportsColor(),
+  };
+}
+
 NS_IMETHODIMP
 nsPrinterCUPS::GetName(nsAString& aName) {
+  GetPrinterName(aName);
+  return NS_OK;
+}
+
+void nsPrinterCUPS::GetPrinterName(nsAString& aName) const {
   if (mDisplayName.IsEmpty()) {
     aName.Truncate();
     CopyUTF8toUTF16(MakeStringSpan(mPrinter->name), aName);
   } else {
     aName = mDisplayName;
   }
-  return NS_OK;
+}
+
+const char* nsPrinterCUPS::LocalizeMediaName(http_t& aConnection,
+                                             cups_size_t& aMedia) const {
+  
+  
+  return mShim.cupsLocalizeDestMedia(&aConnection, mPrinter, mPrinterInfo,
+                                     CUPS_MEDIA_FLAGS_DEFAULT, &aMedia);
 }
 
 bool nsPrinterCUPS::SupportsDuplex() const {
@@ -81,37 +150,17 @@ nsTArray<PaperInfo> nsPrinterCUPS::PaperList() const {
 
   nsTArray<PaperInfo> paperList;
   for (int i = 0; i < paperCount; ++i) {
-    cups_size_t info;
+    cups_size_t media;
     int getInfoSucceded =
         mShim.cupsGetDestMediaByIndex(CUPS_HTTP_DEFAULT, mPrinter, mPrinterInfo,
-                                      i, CUPS_MEDIA_FLAGS_DEFAULT, &info);
+                                      i, CUPS_MEDIA_FLAGS_DEFAULT, &media);
 
     if (!getInfoSucceded) {
       continue;
     }
 
-    
-    
-    const char* localizedName = mShim.cupsLocalizeDestMedia(
-        connection, mPrinter, mPrinterInfo, CUPS_MEDIA_FLAGS_DEFAULT, &info);
-
-    if (!localizedName) {
-      continue;
-    }
-
-    
-    NS_ConvertUTF8toUTF16 name(localizedName);
-    const double kPointsPerHundredthMillimeter = 0.0283465;
-
-    paperList.AppendElement(PaperInfo{
-        std::move(name),
-        {info.width * kPointsPerHundredthMillimeter,
-         info.length * kPointsPerHundredthMillimeter},
-        Some(MarginDouble{info.top * kPointsPerHundredthMillimeter,
-                          info.right * kPointsPerHundredthMillimeter,
-                          info.bottom * kPointsPerHundredthMillimeter,
-                          info.left * kPointsPerHundredthMillimeter}),
-    });
+    paperList.AppendElement(
+        MakePaperInfo(LocalizeMediaName(*connection, media), media));
   }
 
   mShim.httpClose(connection);
