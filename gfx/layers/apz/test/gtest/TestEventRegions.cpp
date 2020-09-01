@@ -312,7 +312,7 @@ TEST_F(APZEventRegionsTester, Bug1117712) {
 
 
 
-TEST_F(APZEventRegionsTester, ApzAwareListenersFlag) {
+TEST_F(APZEventRegionsTester, HandledByRootApzcFlag) {
   
   
   const char* layerTreeSyntax = "c";
@@ -322,6 +322,8 @@ TEST_F(APZEventRegionsTester, ApzAwareListenersFlag) {
   root = CreateLayerTree(layerTreeSyntax, layerVisibleRegions, nullptr, lm,
                          layers);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID);
+  ModifyFrameMetrics(
+      root, [](FrameMetrics& metrics) { metrics.SetIsRootContent(true); });
   
   EventRegions regions(nsIntRegion(IntRect(0, 0, 100, 100)));
   
@@ -336,11 +338,11 @@ TEST_F(APZEventRegionsTester, ApzAwareListenersFlag) {
   APZEventResult result =
       TouchDown(manager, ScreenIntPoint(50, 25), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 25), mcc->Time());
-  EXPECT_FALSE(result.mHitRegionWithApzAwareListeners);
+  EXPECT_TRUE(result.mHandledByRootApzc);
 
   
   
   result = TouchDown(manager, ScreenIntPoint(50, 75), mcc->Time());
   TouchUp(manager, ScreenIntPoint(50, 75), mcc->Time());
-  EXPECT_TRUE(result.mHitRegionWithApzAwareListeners);
+  EXPECT_FALSE(result.mHandledByRootApzc);
 }
