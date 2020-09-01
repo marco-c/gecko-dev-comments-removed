@@ -532,7 +532,7 @@ class AsyncPanZoomController {
 
   
   
-  bool UpdateRootFrameMetricsIfChanged(FrameMetrics& metrics);
+  bool UpdateRootFrameMetricsIfChanged(FrameMetrics& aMetrics);
 
  private:
   
