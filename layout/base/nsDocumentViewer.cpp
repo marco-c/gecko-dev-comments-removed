@@ -464,12 +464,6 @@ class nsDocumentViewer final : public nsIContentViewer,
   unsigned mClosingWhilePrinting : 1;
 
 #  if NS_PRINT_PREVIEW
-  
-  unsigned mPrintIsPending : 1;
-  unsigned mPrintDocIsFullyLoaded : 1;
-  nsCOMPtr<nsIPrintSettings> mCachedPrintSettings;
-  nsCOMPtr<nsIWebProgressListener> mCachedPrintWebProgressListner;
-
   RefPtr<nsPrintJob> mPrintJob;
 #  endif  
 
@@ -515,8 +509,6 @@ void nsDocumentViewer::PrepareToStartLoad() {
   mDeferredWindowClose = false;
 
 #ifdef NS_PRINTING
-  mPrintIsPending = false;
-  mPrintDocIsFullyLoaded = false;
   mClosingWhilePrinting = false;
 
   
@@ -542,11 +534,7 @@ nsDocumentViewer::nsDocumentViewer()
       mInPermitUnloadPrompt(false),
 #ifdef NS_PRINTING
       mClosingWhilePrinting(false),
-#  if NS_PRINT_PREVIEW
-      mPrintIsPending(false),
-      mPrintDocIsFullyLoaded(false),
-#  endif  
-#endif    
+#endif  
       mHintCharsetSource(kCharsetUninitialized),
       mHintCharset(nullptr),
       mIsPageMode(false),
@@ -1177,12 +1165,16 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
 
 #ifdef NS_PRINTING
   
-  if (mPrintIsPending) {
-    mPrintIsPending = false;
-    mPrintDocIsFullyLoaded = true;
-    Print(mCachedPrintSettings, mCachedPrintWebProgressListner);
-    mCachedPrintSettings = nullptr;
-    mCachedPrintWebProgressListner = nullptr;
+  if (window) {
+    auto* outerWin = nsGlobalWindowOuter::Cast(window);
+    outerWin->StopDelayingPrintingUntilAfterLoad();
+    if (outerWin->DelayedPrintUntilAfterLoad()) {
+      
+      
+      if (RefPtr<nsPIDOMWindowInner> inner = window->GetCurrentInnerWindow()) {
+        nsGlobalWindowInner::Cast(inner)->Print(IgnoreErrors());
+      }
+    }
   }
 #endif
 
@@ -2224,14 +2216,15 @@ nsDocumentViewer::SetSticky(bool aSticky) {
 }
 
 NS_IMETHODIMP
-nsDocumentViewer::RequestWindowClose(bool* aCanClose) {
+nsDocumentViewer::RequestWindowClose(bool aIsPrintPending, bool* aCanClose) {
+  *aCanClose = true;
+
 #ifdef NS_PRINTING
-  if (mPrintIsPending || (mPrintJob && mPrintJob->GetIsPrinting())) {
+  if (aIsPrintPending || (mPrintJob && mPrintJob->GetIsPrinting())) {
     *aCanClose = false;
     mDeferredWindowClose = true;
-  } else
+  }
 #endif
-    *aCanClose = true;
 
   return NS_OK;
 }
@@ -3111,25 +3104,6 @@ nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
   if (!mContainer) {
     PR_PL(("Container was destroyed yet we are still trying to use it!"));
     return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsIDocShell> docShell(mContainer);
-  NS_ENSURE_STATE(docShell);
-
-  
-  
-  
-  auto busyFlags = docShell->GetBusyFlags();
-  if (busyFlags != nsIDocShell::BUSY_FLAGS_NONE &&
-      busyFlags & nsIDocShell::BUSY_FLAGS_PAGE_LOADING &&
-      !mPrintDocIsFullyLoaded) {
-    if (!mPrintIsPending) {
-      mCachedPrintSettings = aPrintSettings;
-      mCachedPrintWebProgressListner = aWebProgressListener;
-      mPrintIsPending = true;
-    }
-    PR_PL(("Printing Stopped - document is still busy!"));
-    return NS_ERROR_GFX_PRINTER_DOC_IS_BUSY;
   }
 
   if (!mDocument || !mDeviceContext) {

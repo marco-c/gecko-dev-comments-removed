@@ -1041,6 +1041,14 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   bool IsOnlyTopLevelDocumentInSHistory();
 
  public:
+  bool DelayedPrintUntilAfterLoad() const {
+    return mDelayedPrintUntilAfterLoad;
+  }
+
+  void StopDelayingPrintingUntilAfterLoad() {
+    mShouldDelayPrintUntilAfterLoad = false;
+  }
+
   
   virtual nsresult Dispatch(mozilla::TaskCategory aCategory,
                             already_AddRefed<nsIRunnable>&& aRunnable) override;
@@ -1087,6 +1095,11 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   
   bool mStorageAccessPermissionGranted : 1;
+
+  
+  bool mDelayedPrintUntilAfterLoad : 1;
+  
+  bool mShouldDelayPrintUntilAfterLoad : 1;
 
   nsCOMPtr<nsIScriptContext> mContext;
   nsCOMPtr<nsIControllers> mControllers;
