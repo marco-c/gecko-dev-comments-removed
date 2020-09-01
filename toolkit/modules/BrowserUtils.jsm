@@ -838,6 +838,40 @@ var BrowserUtils = {
     });
   },
 
+  computeSiteOriginCount(aWindows, aIsGeckoView) {
+    
+    
+    
+    
+    let tabs = [];
+    if (aIsGeckoView) {
+      
+      tabs = aWindows;
+    } else {
+      for (const win of aWindows) {
+        tabs = tabs.concat(win.gBrowser.tabs);
+      }
+    }
+
+    let topLevelBCs = [];
+
+    for (const tab of tabs) {
+      let browser;
+      if (aIsGeckoView) {
+        browser = tab.browser;
+      } else {
+        browser = tab.linkedBrowser;
+      }
+
+      if (browser.browsingContext) {
+        
+        topLevelBCs.push(browser.browsingContext);
+      }
+    }
+
+    return CanonicalBrowsingContext.countSiteOrigins(topLevelBCs);
+  },
+
   _recordSiteOriginTelemetry(aWindows, aIsGeckoView) {
     let currentTime = Date.now();
 
@@ -863,41 +897,9 @@ var BrowserUtils = {
 
     this._lastRecordSiteOrigin = currentTime;
 
-    
-    
-    
-    
-    let tabs = [];
-    if (aIsGeckoView) {
-      
-      tabs = aWindows;
-    } else {
-      for (const win of aWindows) {
-        tabs = tabs.concat(win.gBrowser.tabs);
-      }
-    }
-
-    let topLevelBC = [];
-
-    for (const tab of tabs) {
-      let browser;
-      if (aIsGeckoView) {
-        browser = tab.browser;
-      } else {
-        browser = tab.linkedBrowser;
-      }
-
-      if (browser.browsingContext) {
-        
-        topLevelBC.push(browser.browsingContext);
-      }
-    }
-
-    const count = CanonicalBrowsingContext.countSiteOrigins(topLevelBC);
-
     Services.telemetry
       .getHistogramById("FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_ALL_TABS")
-      .add(count);
+      .add(this.computeSiteOriginCount(aWindows, aIsGeckoView));
   },
 
   
