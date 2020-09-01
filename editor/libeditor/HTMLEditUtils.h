@@ -480,6 +480,32 @@ class HTMLEditUtils final {
   
 
 
+  enum class InvisibleWhiteSpaces {
+    Ignore,    
+               
+    Preserve,  
+               
+               
+  };
+  enum class TableBoundary {
+    Ignore,                  
+    NoCrossTableElement,     
+    NoCrossAnyTableElement,  
+  };
+  template <typename EditorDOMPointType>
+  static EditorDOMPointType GetPreviousEditablePoint(
+      nsIContent& aContent, const Element* aAncestorLimiter,
+      InvisibleWhiteSpaces aInvisibleWhiteSpaces,
+      TableBoundary aHowToTreatTableBoundary);
+  template <typename EditorDOMPointType>
+  static EditorDOMPointType GetNextEditablePoint(
+      nsIContent& aContent, const Element* aAncestorLimiter,
+      InvisibleWhiteSpaces aInvisibleWhiteSpaces,
+      TableBoundary aHowToTreatTableBoundary);
+
+  
+
+
 
 
   static Element* GetAncestorBlockElement(
@@ -776,6 +802,16 @@ class HTMLEditUtils final {
  private:
   static bool CanNodeContain(nsHTMLTag aParentTagId, nsHTMLTag aChildTagId);
   static bool IsContainerNode(nsHTMLTag aTagId);
+
+  static bool CanCrossContentBoundary(nsIContent& aContent,
+                                      TableBoundary aHowToTreatTableBoundary) {
+    const bool cannotCrossBoundary =
+        (aHowToTreatTableBoundary == TableBoundary::NoCrossAnyTableElement &&
+         HTMLEditUtils::IsAnyTableElement(&aContent)) ||
+        (aHowToTreatTableBoundary == TableBoundary::NoCrossTableElement &&
+         aContent.IsHTMLElement(nsGkAtoms::table));
+    return !cannotCrossBoundary;
+  }
 };
 
 
