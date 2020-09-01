@@ -13,6 +13,7 @@
 
 #include "jstypes.h"
 
+#include "js/shadow/Function.h"        
 #include "vm/FunctionFlags.h"          
 #include "vm/FunctionPrefixKind.h"     
 #include "vm/GeneratorAndAsyncKind.h"  
@@ -693,7 +694,7 @@ class JSFunction : public js::NativeObject {
   }
 };
 
-static_assert(sizeof(JSFunction) == sizeof(js::shadow::Function),
+static_assert(sizeof(JSFunction) == sizeof(JS::shadow::Function),
               "shadow interface must match actual interface");
 
 extern JSString* fun_toStringHelper(JSContext* cx, js::HandleObject obj,

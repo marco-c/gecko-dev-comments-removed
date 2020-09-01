@@ -19,6 +19,7 @@
 #include "js/Exception.h"
 #include "js/friend/ErrorMessages.h"
 #include "js/HeapAPI.h"
+#include "js/shadow/Function.h"     
 #include "js/shadow/Object.h"       
 #include "js/shadow/ObjectGroup.h"  
 #include "js/shadow/String.h"  
@@ -363,26 +364,6 @@ extern JS_FRIEND_API bool CompartmentHasLiveGlobal(JS::Compartment* comp);
 
 
 extern JS_FRIEND_API bool IsSharableCompartment(JS::Compartment* comp);
-
-
-
-
-
-
-
-namespace shadow {
-
-struct Function {
-  JS::shadow::Object base;
-  uint16_t nargs;
-  uint16_t flags;
-  
-  JSNative native;
-  const JSJitInfo* jitinfo;
-  void* _1;
-};
-
-} 
 
 
 
@@ -1261,10 +1242,10 @@ struct JSTypedMethodJitInfo {
 
 namespace js {
 
-static MOZ_ALWAYS_INLINE shadow::Function* FunctionObjectToShadowFunction(
+static MOZ_ALWAYS_INLINE JS::shadow::Function* FunctionObjectToShadowFunction(
     JSObject* fun) {
   MOZ_ASSERT(GetObjectClass(fun) == FunctionClassPtr);
-  return reinterpret_cast<shadow::Function*>(fun);
+  return reinterpret_cast<JS::shadow::Function*>(fun);
 }
 
 
@@ -1291,7 +1272,7 @@ static MOZ_ALWAYS_INLINE const JSJitInfo* FUNCTION_VALUE_TO_JITINFO(
 
 static MOZ_ALWAYS_INLINE void SET_JITINFO(JSFunction* func,
                                           const JSJitInfo* info) {
-  js::shadow::Function* fun = reinterpret_cast<js::shadow::Function*>(func);
+  auto* fun = reinterpret_cast<JS::shadow::Function*>(func);
   MOZ_ASSERT(!(fun->flags & js::JS_FUNCTION_INTERPRETED_BITS));
   fun->jitinfo = info;
 }
