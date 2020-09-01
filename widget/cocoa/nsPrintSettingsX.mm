@@ -123,6 +123,17 @@ NS_IMETHODIMP nsPrintSettingsX::InitAdjustedPaperSize() {
   mAdjustedPaperWidth = paperRect.right - paperRect.left;
   mAdjustedPaperHeight = paperRect.bottom - paperRect.top;
 
+  int32_t orientation;
+  GetOrientation(&orientation);
+  if (kLandscapeOrientation == orientation) {
+    
+    
+    
+    
+    
+    std::swap(mAdjustedPaperWidth, mAdjustedPaperHeight);
+  }
+
   return NS_OK;
 
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
@@ -250,7 +261,9 @@ nsPrintSettingsX::GetEffectivePageSize(double* aWidth, double* aHeight) {
     *aWidth = NS_MILLIMETERS_TO_TWIPS(mAdjustedPaperWidth / mWidthScale);
     *aHeight = NS_MILLIMETERS_TO_TWIPS(mAdjustedPaperHeight / mHeightScale);
   }
-  if (kLandscapeOrientation == mOrientation) {
+  int32_t orientation;
+  GetOrientation(&orientation);
+  if (kLandscapeOrientation == orientation) {
     std::swap(*aWidth, *aHeight);
   }
   return NS_OK;
