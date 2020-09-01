@@ -490,7 +490,7 @@ import_sibling_modules()
 
 
 register_strategy('build', args=('skip-unless-schedules',))(Alias)
-register_strategy('build-fuzzing', args=('backstop-10-pushes-2-hours',))(Alias)
+register_strategy('build-fuzzing', args=('push-interval-10', 'backstop'))(All)
 register_strategy('test', args=('skip-unless-schedules',))(Alias)
 register_strategy('test-inclusive', args=('skip-unless-schedules',))(Alias)
 
@@ -502,14 +502,11 @@ class project(object):
     """Strategies that should be applied per-project."""
 
     
-    register_strategy('full-backstop', args=('backstop-20-pushes-4-hours',))(Alias)
-
-    
     
     register_strategy(
         'optimized-backstop',
         args=(
-            'backstop-10-pushes-2-hours',
+            'push-interval-10',
             Any(
                 'skip-unless-schedules',
                 Any(
@@ -530,12 +527,12 @@ class project(object):
     
     autoland = {
         'test': All(
-            'full-backstop',
+            'backstop',
             'optimized-backstop',
             Any('skip-unless-schedules', 'bugbug-reduced-fallback', split_args=split_bugbug_arg),
         ),
         'build': All(
-            'backstop-10-pushes-2-hours',
+            'push-interval-10',
             Any(
                 'skip-unless-schedules',
                 'bugbug-reduced-fallback',
