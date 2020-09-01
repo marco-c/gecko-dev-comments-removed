@@ -35,6 +35,7 @@ RenderCompositorNative::RenderCompositorNative(
 }
 
 RenderCompositorNative::~RenderCompositorNative() {
+  mProfilerScreenshotGrabber.Destroy();
   mNativeLayerRoot->SetLayers({});
   mNativeLayerForEntireWindow = nullptr;
   mNativeLayerRootSnapshotter = nullptr;
@@ -119,6 +120,39 @@ bool RenderCompositorNative::MaybeReadback(
   }
 
   return success;
+}
+
+bool RenderCompositorNative::MaybeGrabScreenshot(
+    const gfx::IntSize& aWindowSize) {
+  if (!ShouldUseNativeCompositor()) {
+    return false;
+  }
+
+  if (!mNativeLayerRootSnapshotter) {
+    mNativeLayerRootSnapshotter = mNativeLayerRoot->CreateSnapshotter();
+  }
+  mNativeLayerRootSnapshotter->MaybeGrabProfilerScreenshot(
+      &mProfilerScreenshotGrabber, aWindowSize);
+
+  
+  
+  MakeCurrent();
+
+  return true;
+}
+
+bool RenderCompositorNative::MaybeProcessScreenshotQueue() {
+  if (!ShouldUseNativeCompositor()) {
+    return false;
+  }
+
+  mProfilerScreenshotGrabber.MaybeProcessQueue();
+
+  
+  
+  MakeCurrent();
+
+  return true;
 }
 
 uint32_t RenderCompositorNative::GetMaxUpdateRects() {
