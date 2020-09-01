@@ -1061,6 +1061,12 @@ class LoginManagerPrompter {
       return [];
     }
 
+    
+    
+    if (!Services.logins.isLoggedIn) {
+      return [];
+    }
+
     let baseDomainLogins = await Services.logins.searchLoginsAsync({
       origin: login.origin,
       schemeUpgrades: LoginHelper.schemeUpgrades,
