@@ -25,7 +25,6 @@ let nightly = !release_or_beta;
 
 let nightlyOnlyFeatures = [
   ['gc', wasmGcEnabled(), `(module (type $s (struct)) (func (param (ref null $s))))`],
-  ['simd', wasmSimdSupported(), `(module (memory 1 1) (func i32.const 0 i8x16.splat drop))`],
 ];
 
 for (let [name, enabled, test] of nightlyOnlyFeatures) {
@@ -34,6 +33,26 @@ for (let [name, enabled, test] of nightlyOnlyFeatures) {
     wasmEvalText(test);
   } else {
     assertErrorMessage(() => wasmEvalText(test), WebAssembly.CompileError, /./);
+  }
+}
+
+
+
+
+
+
+let releasedFeaturesMaybeDisabledAnyway = [
+  
+  ['simd', wasmSimdSupported(), `(module (func (result v128) i32.const 0 i8x16.splat))`]
+];
+
+for (let [name, enabled, test] of releasedFeaturesMaybeDisabledAnyway) {
+  if (release_or_beta) {
+    if (enabled) {
+      wasmEvalText(test);
+    } else {
+      assertErrorMessage(() => wasmEvalText(test), WebAssembly.CompileError, /./);
+    }
   }
 }
 
