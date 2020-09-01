@@ -90,7 +90,6 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
     }
 
     
-    
     if (UrlbarPrefs.get("autoFill") && queryContext.allowAutofill) {
       let result = this._getAutofillResult(queryContext);
       if (result) {
@@ -157,14 +156,14 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
   }
 
   _getAutofillResult(queryContext) {
-    let token = queryContext.tokens[0];
     
     for (let { engine, tokenAliases } of this._engines) {
       for (let alias of tokenAliases) {
-        if (alias.startsWith(token.lowerCaseValue)) {
+        if (alias.startsWith(queryContext.searchString.toLowerCase())) {
           
           let aliasPreservingUserCase =
-            token.value + alias.substr(token.value.length);
+            queryContext.searchString +
+            alias.substr(queryContext.searchString.length);
           
           
           let value =

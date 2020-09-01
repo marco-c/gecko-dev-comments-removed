@@ -84,6 +84,26 @@ add_task(async function restrictionCharBeforeAlias() {
 });
 
 
+add_task(async function spaceWhileTypingAlias() {
+  let value = ALIAS.substring(0, ALIAS.length - 1);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value,
+    selectionStart: value.length,
+    selectionEnd: value.length,
+  });
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
+
+  gURLBar.value = value + " ";
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+  UrlbarTestUtils.fireInputEvent(window);
+  await searchPromise;
+
+  await assertAlias(false);
+});
+
+
 
 
 add_task(async function aliasCase() {
