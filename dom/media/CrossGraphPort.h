@@ -91,7 +91,7 @@ class CrossGraphPort final {
   RefPtr<CrossGraphReceiver> GetReceiver();
 
   
-  RefPtr<MediaInputPort> mSourcePort;
+  const RefPtr<MediaInputPort> mSourcePort;
   RefPtr<CrossGraphTransmitter> mTransmitter;
 };
 
