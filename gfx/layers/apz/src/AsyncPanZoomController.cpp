@@ -4710,11 +4710,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
         aScrollMetadata.GetOverscrollBehavior());
 
     if (scrollOffsetUpdated) {
-      
-      
-      
-      
-      
       Maybe<CSSPoint> relativeDelta;
       if (StaticPrefs::apz_relative_update_enabled() &&
           aLayerMetrics.IsRelative()) {
@@ -4748,6 +4743,12 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       for (auto& sampledState : mSampledState) {
         sampledState.UpdateScrollProperties(Metrics());
       }
+
+      
+      
+      
+      
+      
       mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
 
       
