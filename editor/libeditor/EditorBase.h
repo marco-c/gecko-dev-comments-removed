@@ -30,6 +30,7 @@
 #include "mozilla/dom/Document.h"
 #include "nsIContentInlines.h"       
 #include "nsIEditor.h"               
+#include "nsIFrame.h"                
 #include "nsISelectionController.h"  
 #include "nsISelectionListener.h"    
 #include "nsISupportsImpl.h"         
@@ -1835,14 +1836,42 @@ class EditorBase : public nsIEditor,
 
 
 
+  class MOZ_RAII AutoCaretBidiLevelManager final {
+   public:
+    
 
 
 
 
-  template <typename PT, typename CT>
-  EditActionResult SetCaretBidiLevelForDeletion(
-      const EditorDOMPointBase<PT, CT>& aPointAtCaret,
-      nsIEditor::EDirection aDirectionAndAmount) const;
+    template <typename PT, typename CT>
+    AutoCaretBidiLevelManager(const EditorBase& aEditorBase,
+                              nsIEditor::EDirection aDirectionAndAmount,
+                              const EditorDOMPointBase<PT, CT>& aPointAtCaret);
+
+    
+
+
+
+    bool Failed() const { return mFailed; }
+
+    
+
+
+
+
+    bool Canceled() const { return mCanceled; }
+
+    
+
+
+
+    void MaybeUpdateCaretBidiLevel(const EditorBase& aEditorBase) const;
+
+   private:
+    Maybe<nsBidiLevel> mNewCaretBidiLevel;
+    bool mFailed = false;
+    bool mCanceled = false;
+  };
 
   
 
