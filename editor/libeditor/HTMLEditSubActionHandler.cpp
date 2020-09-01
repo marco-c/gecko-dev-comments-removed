@@ -2452,6 +2452,7 @@ EditActionResult HTMLEditor::HandleDeleteSelectionInternal(
   
   
   
+  
   SelectionWasCollapsed selectionWasCollapsed = aRangesToDelete.IsCollapsed()
                                                     ? SelectionWasCollapsed::Yes
                                                     : SelectionWasCollapsed::No;
@@ -3215,10 +3216,11 @@ EditActionResult HTMLEditor::AutoBlockElementsJoiner::
   EditorDOMPoint pointToPutCaret(aCaretPoint);
   {
     AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &pointToPutCaret);
-    result |= aHTMLEditor.TryToJoinBlocksWithTransaction(
-        MOZ_KnownLive(*mLeftContent), MOZ_KnownLive(*mRightContent));
+    AutoInclusiveAncestorBlockElementsJoiner joiner;
+    result |= joiner.Run(aHTMLEditor, MOZ_KnownLive(*mLeftContent),
+                         MOZ_KnownLive(*mRightContent));
     if (result.Failed()) {
-      NS_WARNING("HTMLEditor::TryToJoinBlocksWithTransaction() failed");
+      NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
       return result;
     }
   }
@@ -3287,14 +3289,15 @@ EditActionResult HTMLEditor::AutoBlockElementsJoiner::
   EditorDOMPoint pointToPutCaret(aCaretPoint);
   {
     AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &pointToPutCaret);
-    result |= aHTMLEditor.TryToJoinBlocksWithTransaction(
-        MOZ_KnownLive(*mLeftContent), MOZ_KnownLive(*mRightContent));
+    AutoInclusiveAncestorBlockElementsJoiner joiner;
+    result |= joiner.Run(aHTMLEditor, MOZ_KnownLive(*mLeftContent),
+                         MOZ_KnownLive(*mRightContent));
     
     
     
     result.MarkAsHandled();
     if (result.Failed()) {
-      NS_WARNING("HTMLEditor::TryToJoinBlocksWithTransaction() failed");
+      NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
       return result;
     }
   }
@@ -3696,10 +3699,11 @@ HTMLEditor::AutoBlockElementsJoiner::HandleDeleteNonCollapsedRanges(
     }
 
     if (joinInclusiveAncestorBlockElements) {
-      result |= aHTMLEditor.TryToJoinBlocksWithTransaction(
-          MOZ_KnownLive(*mLeftContent), MOZ_KnownLive(*mRightContent));
+      AutoInclusiveAncestorBlockElementsJoiner joiner;
+      result |= joiner.Run(aHTMLEditor, MOZ_KnownLive(*mLeftContent),
+                           MOZ_KnownLive(*mRightContent));
       if (result.Failed()) {
-        NS_WARNING("HTMLEditor::TryToJoinBlocksWithTransaction() failed");
+        NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
         return result;
       }
 
@@ -4595,9 +4599,11 @@ HTMLEditor::AutoBlockElementsJoiner::JoinNodesDeepWithTransaction(
   return ret;
 }
 
-EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
-    nsIContent& aLeftContentInBlock, nsIContent& aRightContentInBlock) {
-  MOZ_ASSERT(IsEditActionDataAvailable());
+EditActionResult HTMLEditor::AutoBlockElementsJoiner::
+    AutoInclusiveAncestorBlockElementsJoiner::Run(
+        HTMLEditor& aHTMLEditor, nsIContent& aLeftContentInBlock,
+        nsIContent& aRightContentInBlock) {
+  MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
 
   RefPtr<Element> leftBlockElement =
       HTMLEditUtils::GetInclusiveAncestorBlockElement(aLeftContentInBlock);
@@ -4682,8 +4688,8 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
                                   &atRightBlockChild)) {
     EditActionResult result = WhiteSpaceVisibilityKeeper::
         MergeFirstLineOfRightBlockElementIntoDescendantLeftBlockElement(
-            *this, *leftBlockElement, *rightBlockElement, atRightBlockChild,
-            newListElementTagNameOfRightListElement);
+            aHTMLEditor, *leftBlockElement, *rightBlockElement,
+            atRightBlockChild, newListElementTagNameOfRightListElement);
     NS_WARNING_ASSERTION(result.Succeeded(),
                          "WhiteSpaceVisibilityKeeper::"
                          "MergeFirstLineOfRightBlockElementIntoDescendantLeftBl"
@@ -4704,8 +4710,9 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
                                   &atLeftBlockChild)) {
     EditActionResult result = WhiteSpaceVisibilityKeeper::
         MergeFirstLineOfRightBlockElementIntoAncestorLeftBlockElement(
-            *this, *leftBlockElement, *rightBlockElement, atLeftBlockChild,
-            aLeftContentInBlock, newListElementTagNameOfRightListElement);
+            aHTMLEditor, *leftBlockElement, *rightBlockElement,
+            atLeftBlockChild, aLeftContentInBlock,
+            newListElementTagNameOfRightListElement);
     NS_WARNING_ASSERTION(result.Succeeded(),
                          "WhiteSpaceVisibilityKeeper::"
                          "MergeFirstLineOfRightBlockElementIntoAncestorLeftBloc"
@@ -4719,7 +4726,7 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   
   EditActionResult result = WhiteSpaceVisibilityKeeper::
       MergeFirstLineOfRightBlockElementIntoLeftBlockElement(
-          *this, *leftBlockElement, *rightBlockElement,
+          aHTMLEditor, *leftBlockElement, *rightBlockElement,
           newListElementTagNameOfRightListElement);
   NS_WARNING_ASSERTION(
       result.Succeeded(),

@@ -2373,27 +2373,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  TryToJoinBlocksWithTransaction(nsIContent& aLeftContentInBlock,
-                                 nsIContent& aRightContentInBlock);
-
-  
-
-
-
-
-
-
-
-
-
   EditorDOMPoint GetGoodCaretPointFor(
       nsIContent& aContent, nsIEditor::EDirection aDirectionAndAmount) const;
 
@@ -2956,6 +2935,30 @@ class HTMLEditor final : public TextEditor,
 
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
     DeleteTextAtStartAndEndOfRange(HTMLEditor& aHTMLEditor, nsRange& aRange);
+
+    class MOZ_STACK_CLASS AutoInclusiveAncestorBlockElementsJoiner final {
+     public:
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+      Run(HTMLEditor& aHTMLEditor, nsIContent& aLeftContentInBlock,
+          nsIContent& aRightContentInBlock);
+    };
 
     enum class Mode {
       NotInitialized,
