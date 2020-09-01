@@ -1544,13 +1544,15 @@ static MOZ_MUST_USE bool CopyProxyValuesBeforeSwap(
   gc::StoreBuffer& sb = cx->runtime()->gc.storeBuffer();
 
   
-  if (!values.reserve(1 + proxy->numReservedSlots())) {
+  if (!values.reserve(2 + proxy->numReservedSlots())) {
     return false;
   }
 
   js::detail::ProxyValueArray* valArray =
       js::detail::GetProxyDataLayout(proxy)->values();
+  sb.unputValue(&valArray->expandoSlot);
   sb.unputValue(&valArray->privateSlot);
+  values.infallibleAppend(valArray->expandoSlot);
   values.infallibleAppend(valArray->privateSlot);
 
   for (size_t i = 0; i < proxy->numReservedSlots(); i++) {
@@ -1568,7 +1570,7 @@ bool ProxyObject::initExternalValueArrayAfterSwap(
   size_t nreserved = numReservedSlots();
 
   
-  MOZ_ASSERT(values.length() == 1 + nreserved);
+  MOZ_ASSERT(values.length() == 2 + nreserved);
 
   size_t nbytes = js::detail::ProxyValueArray::sizeOf(nreserved);
 
@@ -1578,10 +1580,11 @@ bool ProxyObject::initExternalValueArrayAfterSwap(
     return false;
   }
 
-  valArray->privateSlot = values[0];
+  valArray->expandoSlot = values[0];
+  valArray->privateSlot = values[1];
 
   for (size_t i = 0; i < nreserved; i++) {
-    valArray->reservedSlots.slots[i] = values[i + 1];
+    valArray->reservedSlots.slots[i] = values[i + 2];
   }
 
   
