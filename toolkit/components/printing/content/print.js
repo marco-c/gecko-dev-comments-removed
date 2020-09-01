@@ -897,9 +897,23 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
     } else if (e.type == "change" || e.type == "input") {
       let isValid = this.checkValidity();
       let section = e.target.closest(".section-block");
-      document
-        .querySelector("#sheet-count")
-        .toggleAttribute("loading", !isValid);
+      const sheetCount = document.querySelector("#sheet-count");
+      sheetCount.toggleAttribute("loading", !isValid);
+      if (isValid) {
+        
+        
+        
+        
+        
+        
+        
+        
+        sheetCount.parentNode.setAttribute("aria-live", "polite");
+      } else {
+        
+        
+        document.body.removeAttribute("aria-describedby");
+      }
       for (let element of this.elements) {
         
         
@@ -1221,6 +1235,10 @@ class PageCount extends PrintUIControlMixin(HTMLElement) {
       sheetCount: this.numPages * this.numCopies,
     });
     this.removeAttribute("loading");
+    if (this.id) {
+      
+      document.body.setAttribute("aria-describedby", this.id);
+    }
   }
 
   handleEvent(e) {
