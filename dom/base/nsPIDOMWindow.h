@@ -356,6 +356,10 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   
+  bool RemoveFromBFCacheSync();
+
+  
+  
   
   
   virtual bool IsSuspended() const = 0;

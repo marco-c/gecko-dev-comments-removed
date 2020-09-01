@@ -239,6 +239,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   bool IsDiscarded() const { return mIsDiscarded; }
 
+  
+  
+  bool AncestorsAreCurrent() const;
+
   bool Windowless() const { return mWindowless; }
 
   
@@ -292,6 +296,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                    bool aSetNavigating = false);
 
   nsresult InternalLoad(nsDocShellLoadState* aLoadState);
+
+  
+  
+  bool RemoveRootFromBFCacheSync();
 
   
   

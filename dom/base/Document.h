@@ -1157,6 +1157,10 @@ class Document : public nsINode,
   nsIBFCacheEntry* GetBFCacheEntry() const { return mBFCacheEntry; }
 
   
+  
+  bool RemoveFromBFCacheSync();
+
+  
 
 
 
