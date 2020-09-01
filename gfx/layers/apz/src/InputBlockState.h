@@ -500,6 +500,7 @@ class TouchBlockState : public CancelableBlockState {
 
   bool UpdateSlopState(const MultiTouchInput& aInput,
                        bool aApzcCanConsumeEvents);
+  bool IsInSlop() const;
 
   
 

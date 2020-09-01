@@ -179,7 +179,8 @@ class InputQueue {
   
 
 
-  void MaybeRequestContentResponse(
+
+  bool MaybeRequestContentResponse(
       const RefPtr<AsyncPanZoomController>& aTarget,
       CancelableBlockState* aBlock);
 
@@ -222,6 +223,7 @@ class InputQueue {
   void ScheduleMainThreadTimeout(const RefPtr<AsyncPanZoomController>& aTarget,
                                  CancelableBlockState* aBlock);
   void MainThreadTimeout(uint64_t aInputBlockId);
+  void MaybeLongTapTimeout(uint64_t aInputBlockId);
   void ProcessQueue();
   bool CanDiscardBlock(InputBlockState* aBlock);
   void UpdateActiveApzc(const RefPtr<AsyncPanZoomController>& aNewActive);

@@ -66,6 +66,7 @@ class GestureEventListener final {
 
 
   static void SetLongTapEnabled(bool aLongTapEnabled);
+  static bool IsLongTapEnabled();
 
  private:
   

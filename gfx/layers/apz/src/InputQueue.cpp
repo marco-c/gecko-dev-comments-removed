@@ -86,6 +86,7 @@ nsEventStatus InputQueue::ReceiveTouchInput(
     uint64_t* aOutInputBlockId,
     const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors) {
   TouchBlockState* block = nullptr;
+  bool waitingForContentResponse = false;
   if (aEvent.mType == MultiTouchInput::MULTITOUCH_START) {
     nsTArray<TouchBehaviorFlags> currentBehaviors;
     bool haveBehaviors = false;
@@ -134,7 +135,7 @@ nsEventStatus InputQueue::ReceiveTouchInput(
 
     CancelAnimationsForNewBlock(block);
 
-    MaybeRequestContentResponse(aTarget, block);
+    waitingForContentResponse = MaybeRequestContentResponse(aTarget, block);
   } else {
     
     
@@ -182,6 +183,28 @@ nsEventStatus InputQueue::ReceiveTouchInput(
   }
   mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
   ProcessQueue();
+
+  
+  
+  
+  
+  
+  
+  
+  int32_t longTapTimeout = StaticPrefs::ui_click_hold_context_menus_delay();
+  int32_t contentTimeout = StaticPrefs::apz_content_response_timeout();
+  if (waitingForContentResponse && longTapTimeout < contentTimeout &&
+      block->IsInSlop() && GestureEventListener::IsLongTapEnabled()) {
+    MOZ_ASSERT(aEvent.mType == MultiTouchInput::MULTITOUCH_START);
+    MOZ_ASSERT(!block->IsDuringFastFling());
+    RefPtr<Runnable> maybeLongTap = NewRunnableMethod<uint64_t>(
+        "layers::InputQueue::MaybeLongTapTimeout", this,
+        &InputQueue::MaybeLongTapTimeout, block->GetBlockId());
+    INPQ_LOG("scheduling maybe-long-tap timeout for target %p\n",
+             aTarget.get());
+    aTarget->PostDelayedTask(maybeLongTap.forget(), longTapTimeout);
+  }
+
   return result;
 }
 
@@ -483,7 +506,7 @@ void InputQueue::CancelAnimationsForNewBlock(InputBlockState* aBlock,
   }
 }
 
-void InputQueue::MaybeRequestContentResponse(
+bool InputQueue::MaybeRequestContentResponse(
     const RefPtr<AsyncPanZoomController>& aTarget,
     CancelableBlockState* aBlock) {
   bool waitForMainThread = false;
@@ -506,6 +529,7 @@ void InputQueue::MaybeRequestContentResponse(
     
     ScheduleMainThreadTimeout(aTarget, aBlock);
   }
+  return waitForMainThread;
 }
 
 uint64_t InputQueue::InjectNewTouchBlock(AsyncPanZoomController* aTarget) {
@@ -715,6 +739,27 @@ void InputQueue::MainThreadTimeout(uint64_t aInputBlockId) {
   }
   if (success) {
     ProcessQueue();
+  }
+}
+
+void InputQueue::MaybeLongTapTimeout(uint64_t aInputBlockId) {
+  
+  
+  if (!APZThreadUtils::IsControllerThreadAlive()) {
+    return;
+  }
+  APZThreadUtils::AssertOnControllerThread();
+
+  INPQ_LOG("got a maybe-long-tap timeout; block=%" PRIu64 "\n", aInputBlockId);
+
+  InputBlockState* inputBlock = FindBlockForId(aInputBlockId, nullptr);
+  MOZ_ASSERT(!inputBlock || inputBlock->AsTouchBlock());
+  if (inputBlock && inputBlock->AsTouchBlock()->IsInSlop()) {
+    
+    
+    
+    
+    MainThreadTimeout(aInputBlockId);
   }
 }
 
