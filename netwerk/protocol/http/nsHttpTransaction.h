@@ -240,6 +240,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   RefPtr<nsAHttpConnection> mConnection;
   RefPtr<nsHttpConnectionInfo> mConnInfo;
+  
+  
+  
+  RefPtr<nsHttpConnectionInfo> mFallbackConnInfo;
   nsHttpRequestHead* mRequestHead;    
   nsHttpResponseHead* mResponseHead;  
 
