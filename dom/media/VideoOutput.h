@@ -185,12 +185,20 @@ class VideoOutput : public DirectMediaTrackListener {
                                  bool aEnabled) override {
     MutexAutoLock lock(mMutex);
     mEnabled = aEnabled;
-    
-    
-    for (auto& idChunkPair : mFrames) {
-      idChunkPair.first = mVideoFrameContainer->NewFrameID();
+    DropPastFrames();
+    if (!mEnabled || mFrames.Length() > 1) {
+      
+      
+      
+      
+      
+      
+      
+      for (auto& idChunkPair : mFrames) {
+        idChunkPair.first = mVideoFrameContainer->NewFrameID();
+      }
+      SendFramesEnsureLocked();
     }
-    SendFramesEnsureLocked();
   }
 
   Mutex mMutex;
