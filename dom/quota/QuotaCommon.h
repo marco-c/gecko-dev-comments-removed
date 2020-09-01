@@ -279,7 +279,7 @@
 
 
 
-#define QM_TRY_CUSTOM_RET_VAR(ns, expr, customRetVal)                    \
+#define QM_TRY_CUSTOM_RET_VAL(ns, expr, customRetVal)                    \
   auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr);            \
   if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                 \
     ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
@@ -289,7 +289,7 @@
 
 
 
-#define QM_TRY_CUSTOM_RET_VAR_WITH_CLEANUP(ns, expr, customRetVal, cleanup) \
+#define QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(ns, expr, customRetVal, cleanup) \
   auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr);               \
   if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                    \
     ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__),    \
@@ -301,8 +301,8 @@
 
 
 #define QM_TRY_META(...)                                                      \
-  MOZ_ARG_6(, ##__VA_ARGS__, QM_TRY_CUSTOM_RET_VAR_WITH_CLEANUP(__VA_ARGS__), \
-            QM_TRY_CUSTOM_RET_VAR(__VA_ARGS__),                               \
+  MOZ_ARG_6(, ##__VA_ARGS__, QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__), \
+            QM_TRY_CUSTOM_RET_VAL(__VA_ARGS__),                               \
             QM_TRY_PROPAGATE_ERR(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__),  \
             QM_MISSING_ARGS(__VA_ARGS__))
 
@@ -332,7 +332,7 @@
 
 
 
-#define QM_TRY_VAR_CUSTOM_RET_VAR(ns, target, expr, customRetVal)        \
+#define QM_TRY_VAR_CUSTOM_RET_VAL(ns, target, expr, customRetVal)        \
   auto MOZ_UNIQUE_VAR(tryResult) = (expr);                               \
   if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                 \
     ns::HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), \
@@ -343,7 +343,7 @@
 
 
 
-#define QM_TRY_VAR_CUSTOM_RET_VAR_WITH_CLEANUP(ns, target, expr, customRetVal, \
+#define QM_TRY_VAR_CUSTOM_RET_VAL_WITH_CLEANUP(ns, target, expr, customRetVal, \
                                                cleanup)                        \
   auto MOZ_UNIQUE_VAR(tryResult) = (expr);                                     \
   if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                       \
@@ -358,8 +358,8 @@
 
 #define QM_TRY_VAR_META(...)                                                \
   MOZ_ARG_7(                                                                \
-      , ##__VA_ARGS__, QM_TRY_VAR_CUSTOM_RET_VAR_WITH_CLEANUP(__VA_ARGS__), \
-      QM_TRY_VAR_CUSTOM_RET_VAR(__VA_ARGS__),                               \
+      , ##__VA_ARGS__, QM_TRY_VAR_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__), \
+      QM_TRY_VAR_CUSTOM_RET_VAL(__VA_ARGS__),                               \
       QM_TRY_VAR_PROPAGATE_ERR(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__),  \
       QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__))
 
