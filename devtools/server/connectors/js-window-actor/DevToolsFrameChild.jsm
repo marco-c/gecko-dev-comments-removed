@@ -387,7 +387,14 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     
     if (!targetActor && this.manager.browsingContext.browserId == browserId) {
-      targetActor = TargetActorRegistry.getTargetActor(browserId);
+      
+      
+      
+      const connectionPrefix = watcherActorID.replace(/watcher\d+$/, "");
+      targetActor = TargetActorRegistry.getTargetActor(
+        browserId,
+        connectionPrefix
+      );
     }
     return targetActor;
   }
