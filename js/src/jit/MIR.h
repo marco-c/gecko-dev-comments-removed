@@ -11012,7 +11012,8 @@ class MHasOwnCache : public MBinaryInstruction,
 };
 
 
-class MInstanceOf : public MUnaryInstruction, public InstanceOfPolicy::Data {
+class MInstanceOf : public MUnaryInstruction,
+                    public BoxExceptPolicy<0, MIRType::Object>::Data {
   CompilerObject protoObj_;
 
   MInstanceOf(MDefinition* obj, JSObject* proto)
