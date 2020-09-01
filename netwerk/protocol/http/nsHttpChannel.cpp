@@ -8010,6 +8010,7 @@ nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
       mTransactionTimings.domainLookupStart = mDNSPrefetch->StartTimestamp();
       mTransactionTimings.domainLookupEnd = mDNSPrefetch->EndTimestamp();
     }
+    mDNSPrefetch = nullptr;
 
     
     if (authRetry) {
@@ -9228,20 +9229,6 @@ nsHttpChannel::OnLookupComplete(nsICancelable* request, nsIDNSRecord* rec,
        static_cast<uint32_t>(status), !!httpSSVCRecord));
 
   if (!httpSSVCRecord) {
-    
-    
-    
-    if (mDNSPrefetch && mDNSPrefetch->TimingsValid() && mTransaction) {
-      TimeStamp connectStart = mTransaction->GetConnectStart();
-      TimeStamp requestStart = mTransaction->GetRequestStart();
-      
-      
-      if (requestStart.IsNull() && connectStart.IsNull()) {
-        mTransaction->SetDomainLookupStart(mDNSPrefetch->StartTimestamp());
-        mTransaction->SetDomainLookupEnd(mDNSPrefetch->EndTimestamp());
-      }
-    }
-
     
     if (mCaps & NS_HTTP_REFRESH_DNS) {
       mCaps &= ~NS_HTTP_REFRESH_DNS;

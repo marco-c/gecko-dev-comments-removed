@@ -481,7 +481,7 @@ DOMHighResTimeStamp PerformanceTimingData::SecureConnectionStartHighRes(
                
   }
   if (mSecureConnectionStart.IsNull()) {
-    return mZeroTime;
+    return ConnectStartHighRes(aPerformance);
   }
   DOMHighResTimeStamp rawValue =
       TimeStampToDOMHighRes(aPerformance, mSecureConnectionStart);
