@@ -442,23 +442,24 @@ JSObject* js::Nursery::allocateObject(JSContext* cx, size_t size,
   }
 
   
-  HeapSlot* slots = nullptr;
+  ObjectSlots* slotsHeader = nullptr;
   if (nDynamicSlots) {
     MOZ_ASSERT(clasp->isNative());
-    slots = static_cast<HeapSlot*>(
-        allocateBuffer(cx->zone(), nDynamicSlots * sizeof(HeapSlot)));
-    if (!slots) {
+    void* allocation =
+        allocateBuffer(cx->zone(), ObjectSlots::allocSize(nDynamicSlots));
+    if (!allocation) {
       
       
       return nullptr;
     }
+    slotsHeader = new (allocation) ObjectSlots(nDynamicSlots);
   }
 
   
   
   
   if (nDynamicSlots) {
-    static_cast<NativeObject*>(obj)->initSlots(slots);
+    static_cast<NativeObject*>(obj)->initSlots(slotsHeader->slots());
   }
 
   gcprobes::NurseryAlloc(obj, size);
