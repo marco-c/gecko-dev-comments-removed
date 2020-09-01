@@ -134,6 +134,11 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool privateClassMethods = false;
 
   
+  
+  
+  bool useOffThreadParseGlobal = true;
+
+  
 
 
 
