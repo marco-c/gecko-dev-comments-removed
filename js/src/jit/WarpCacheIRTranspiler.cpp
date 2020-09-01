@@ -171,6 +171,15 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   
   enum class CallKind { Native, Scripted };
 
+  
+  
+  
+  
+  enum class ArgumentLocation { OOM, Standard, FunApplyArgs };
+
+  MOZ_MUST_USE ArgumentLocation updateCallInfo(MDefinition* callee,
+                                               CallFlags flags);
+
   MOZ_MUST_USE bool emitCallFunction(ObjOperandId calleeId,
                                      Int32OperandId argcId, CallFlags flags,
                                      CallKind kind);
@@ -3026,6 +3035,56 @@ WrappedFunction* WarpCacheIRTranspiler::maybeCallTarget(MDefinition* callee,
   return wrappedTarget;
 }
 
+
+
+WarpCacheIRTranspiler::ArgumentLocation WarpCacheIRTranspiler::updateCallInfo(
+    MDefinition* callee, CallFlags flags) {
+  
+  
+  
+  callInfo_->setCallee(callee);
+
+  switch (flags.getArgFormat()) {
+    case CallFlags::Standard:
+      return ArgumentLocation::Standard;
+    case CallFlags::FunCall:
+      
+      
+      MOZ_ASSERT(!callInfo_->constructing());
+
+      if (callInfo_->argc() == 0) {
+        
+        auto* undef = constant(UndefinedValue());
+        callInfo_->setThis(undef);
+      } else {
+        
+        callInfo_->setThis(callInfo_->getArg(0));
+
+        
+        callInfo_->removeArg(0);
+      }
+      return ArgumentLocation::Standard;
+    case CallFlags::FunApplyArgs:
+      
+      
+      MOZ_ASSERT(!callInfo_->constructing());
+      if (const CallInfo* outerCallInfo = builder_->inlineCallInfo()) {
+        MDefinition* argFunc = callInfo_->thisArg();
+        MDefinition* argThis = callInfo_->getArg(0);
+
+        if (!callInfo_->replaceArgs(outerCallInfo->argv())) {
+          return ArgumentLocation::OOM;
+        }
+        callInfo_->setCallee(argFunc);
+        callInfo_->setThis(argThis);
+        return ArgumentLocation::Standard;
+      }
+      return ArgumentLocation::FunApplyArgs;
+    default:
+      MOZ_CRASH("Unsupported arg format");
+  }
+}
+
 bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
                                              Int32OperandId argcId,
                                              CallFlags flags, CallKind kind) {
@@ -3036,36 +3095,13 @@ bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
              static_cast<int32_t>(callInfo_->argc()));
 #endif
 
-  
-  
-  
-  callInfo_->setCallee(callee);
-
-  MOZ_ASSERT(flags.getArgFormat() == CallFlags::Standard ||
-             flags.getArgFormat() == CallFlags::FunCall ||
-             flags.getArgFormat() == CallFlags::FunApplyArgs);
-
-  if (flags.getArgFormat() == CallFlags::FunApplyArgs) {
-    return emitFunApplyArgs(callee, flags, kind);
-  }
-
-  if (flags.getArgFormat() == CallFlags::FunCall) {
-    MOZ_ASSERT(!callInfo_->constructing());
-
-    
-    
-
-    if (callInfo_->argc() == 0) {
-      
-      auto* undef = constant(UndefinedValue());
-      callInfo_->setThis(undef);
-    } else {
-      
-      callInfo_->setThis(callInfo_->getArg(0));
-
-      
-      callInfo_->removeArg(0);
-    }
+  switch (updateCallInfo(callee, flags)) {
+    case ArgumentLocation::Standard:
+      break;
+    case ArgumentLocation::FunApplyArgs:
+      return emitFunApplyArgs(callee, flags, kind);
+    case ArgumentLocation::OOM:
+      return false;
   }
 
   WrappedFunction* wrappedTarget = maybeCallTarget(callee, kind);
@@ -3126,56 +3162,30 @@ bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
 bool WarpCacheIRTranspiler::emitFunApplyArgs(MDefinition* callee,
                                              CallFlags flags, CallKind kind) {
   MOZ_ASSERT(!callInfo_->constructing());
+  MOZ_ASSERT(!builder_->inlineCallInfo());
+
   WrappedFunction* wrappedTarget = maybeCallTarget(callee, kind);
 
   MDefinition* argFunc = callInfo_->thisArg();
   MDefinition* argThis = callInfo_->getArg(0);
 
-  MInstruction* result = nullptr;
+  MArgumentsLength* numArgs = MArgumentsLength::New(alloc());
+  current->add(numArgs);
 
-  
-  
-  if (const CallInfo* outerCallInfo = builder_->inlineCallInfo()) {
-    CallInfo newCallInfo(alloc(), loc_.toRawBytecode(), false,
-                         loc_.resultIsPopped());
+  MApplyArgs* apply =
+      MApplyArgs::New(alloc(), wrappedTarget, argFunc, numArgs, argThis);
 
-    if (!newCallInfo.setArgs(outerCallInfo->argv())) {
-      return false;
-    }
-
-    newCallInfo.setCallee(argFunc);
-    newCallInfo.setThis(argThis);
-
-    bool needsThisCheck = false;
-    MCall* call = makeCall(newCallInfo, needsThisCheck, wrappedTarget);
-    if (!call) {
-      return false;
-    }
-
-    if (flags.isSameRealm()) {
-      call->setNotCrossRealm();
-    }
-    result = call;
-  } else {
-    MArgumentsLength* numArgs = MArgumentsLength::New(alloc());
-    current->add(numArgs);
-
-    MApplyArgs* apply =
-        MApplyArgs::New(alloc(), wrappedTarget, argFunc, numArgs, argThis);
-
-    if (flags.isSameRealm()) {
-      apply->setNotCrossRealm();
-    }
-    if (callInfo_->ignoresReturnValue()) {
-      apply->setIgnoresReturnValue();
-    }
-    result = apply;
+  if (flags.isSameRealm()) {
+    apply->setNotCrossRealm();
+  }
+  if (callInfo_->ignoresReturnValue()) {
+    apply->setIgnoresReturnValue();
   }
 
-  addEffectful(result);
-  pushResult(result);
+  addEffectful(apply);
+  pushResult(apply);
 
-  return resumeAfter(result);
+  return resumeAfter(apply);
 }
 
 #ifndef JS_SIMULATOR
