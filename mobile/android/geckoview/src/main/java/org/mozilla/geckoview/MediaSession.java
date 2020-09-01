@@ -404,10 +404,12 @@ public class MediaSession {
 
 
 
+
         default void onFullscreen(
                 @NonNull GeckoSession session,
                 @NonNull MediaSession mediaSession,
-                boolean enabled) {}
+                boolean enabled,
+                @Nullable ElementMetadata meta) {}
 
         
 
@@ -423,6 +425,78 @@ public class MediaSession {
                 boolean enabled) {}
     }
 
+
+    
+
+
+    public static class ElementMetadata {
+        
+
+
+        public final @Nullable String source;
+
+        
+
+
+        public final double duration;
+
+        
+
+
+        public final long width;
+
+        
+
+
+        public final long height;
+
+        
+
+
+        public final int audioTrackCount;
+
+        
+
+
+        public final int videoTrackCount;
+
+        
+
+
+
+
+
+
+
+
+
+        public ElementMetadata(
+                @Nullable final String source,
+                final double duration,
+                final long width,
+                final long height,
+                final int audioTrackCount,
+                final int videoTrackCount) {
+            this.source = source;
+            this.duration = duration;
+            this.width = width;
+            this.height = height;
+            this.audioTrackCount = audioTrackCount;
+            this.videoTrackCount = videoTrackCount;
+        }
+
+         static @NonNull ElementMetadata fromBundle(
+                final GeckoBundle bundle) {
+            
+            return new ElementMetadata(
+                    bundle.getString("src"),
+                    bundle.getDouble("duration", 0.0),
+                    bundle.getLong("width", 0),
+                    bundle.getLong("height", 0),
+                    bundle.getInt("audioTrackCount", 0),
+                    bundle.getInt("videoTrackCount", 0));
+        }
+    }
 
     
 
@@ -750,7 +824,10 @@ public class MediaSession {
                 delegate.onFeatures(mSession, mMediaSession, features);
             } else if (FULLSCREEN_EVENT.equals(event)) {
                 final boolean enabled = message.getBoolean("enabled");
-                delegate.onFullscreen(mSession, mMediaSession, enabled);
+                final ElementMetadata meta =
+                        ElementMetadata.fromBundle(
+                                message.getBundle("metadata"));
+                delegate.onFullscreen(mSession, mMediaSession, enabled, meta);
             } else if (PICTURE_IN_PICTURE_EVENT.equals(event)) {
                 final boolean enabled = message.getBoolean("enabled");
                 delegate.onPictureInPicture(mSession, mMediaSession, enabled);
