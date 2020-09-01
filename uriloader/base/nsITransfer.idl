@@ -15,13 +15,7 @@ webidl BrowsingContext;
 [scriptable, uuid(37ec75d3-97ad-4da8-afaa-eabe5b4afd73)]
 interface nsITransfer : nsIWebProgressListener2 {
 
-    const unsigned long DOWNLOAD_ACCEPTABLE = 0;
-    const unsigned long DOWNLOAD_FORBIDDEN = 1;
-    const unsigned long DOWNLOAD_POTENTIALLY_UNSAFE = 2;
-
     
-
-
 
 
 
@@ -65,8 +59,7 @@ interface nsITransfer : nsIWebProgressListener2 {
               in PRTime startTime,
               in nsIFile aTempFile,
               in nsICancelable aCancelable,
-              in boolean aIsPrivate,
-              in long aDownloadClassification);
+              in boolean aIsPrivate);
 
     
 
@@ -86,7 +79,6 @@ interface nsITransfer : nsIWebProgressListener2 {
                                  in nsIFile aTempFile,
                                  in nsICancelable aCancelable,
                                  in boolean aIsPrivate,
-                                 in long aDownloadClassification,
                                  in BrowsingContext aBrowsingContext,
                                  in boolean aHandleInternally);
 
