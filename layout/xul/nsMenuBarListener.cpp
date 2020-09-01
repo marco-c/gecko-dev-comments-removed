@@ -210,6 +210,13 @@ nsresult nsMenuBarListener::KeyUp(Event* aKeyEvent) {
     }
     mAccessKeyDown = false;
     mAccessKeyDownCanceled = false;
+
+    bool active = !Destroyed() && mMenuBarFrame->IsActive();
+    if (active) {
+      keyEvent->StopPropagation();
+      keyEvent->PreventDefault();
+      return NS_OK;  
+    }
   }
 
   return NS_OK;  
