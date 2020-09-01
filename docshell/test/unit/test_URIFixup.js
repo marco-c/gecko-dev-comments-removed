@@ -56,7 +56,11 @@ var data = [
 var len = data.length;
 
 add_task(async function setup() {
-  await Services.search.init();
+  await setupSearchService();
+  
+  
+  
+  Services.search.wrappedJSObject._engines.clear();
 });
 
 
