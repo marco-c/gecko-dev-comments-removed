@@ -683,6 +683,13 @@ EglDisplay::EglDisplay(const PrivateUseOnly&, GLLibraryEGL& lib,
       MarkExtensionUnsupported(EGLExtension::KHR_surfaceless_context);
     }
   }
+
+  
+  
+  if (mLib->mSymbols.fDupNativeFenceFDANDROID) {
+    mAvailableExtensions[UnderlyingValue(
+        EGLExtension::ANDROID_native_fence_sync)] = true;
+  }
 }
 
 EglDisplay::~EglDisplay() {
