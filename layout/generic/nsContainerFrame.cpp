@@ -2250,15 +2250,13 @@ nsFrameList* nsContainerFrame::DrainExcessOverflowContainersList(
 
   if (!overflowContainers) {
     
-    nsContainerFrame* prev = (nsContainerFrame*)GetPrevInFlow();
-    if (prev) {
-      nsFrameList* excessFrames =
-          prev->RemovePropTableFrames(ExcessOverflowContainersProperty());
+    if (auto* prev = static_cast<nsContainerFrame*>(GetPrevInFlow())) {
+      AutoFrameListPtr excessFrames(PresContext(),
+                                    prev->StealExcessOverflowContainers());
       if (excessFrames) {
         excessFrames->ApplySetParent(this);
         nsContainerFrame::ReparentFrameViewList(*excessFrames, prev, this);
-        overflowContainers = excessFrames;
-        SetPropTableFrames(overflowContainers, OverflowContainersProperty());
+        overflowContainers = SetOverflowContainers(std::move(*excessFrames));
       }
     }
   }
@@ -2267,8 +2265,8 @@ nsFrameList* nsContainerFrame::DrainExcessOverflowContainersList(
   
   
   
-  nsFrameList* selfExcessOCFrames =
-      RemovePropTableFrames(ExcessOverflowContainersProperty());
+  AutoFrameListPtr selfExcessOCFrames(PresContext(),
+                                      StealExcessOverflowContainers());
   if (selfExcessOCFrames) {
     nsFrameList toMove;
     auto child = selfExcessOCFrames->FirstChild();
@@ -2282,28 +2280,18 @@ nsFrameList* nsContainerFrame::DrainExcessOverflowContainersList(
       }
       child = next;
     }
-    if (toMove.IsEmpty()) {
-      SetPropTableFrames(selfExcessOCFrames,
-                         ExcessOverflowContainersProperty());
-    } else if (overflowContainers) {
-      aMergeFunc(*overflowContainers, toMove, this);
-      if (selfExcessOCFrames->IsEmpty()) {
-        selfExcessOCFrames->Delete(PresShell());
+
+    
+    if (selfExcessOCFrames->NotEmpty()) {
+      SetExcessOverflowContainers(std::move(*selfExcessOCFrames));
+    }
+
+    if (toMove.NotEmpty()) {
+      if (overflowContainers) {
+        aMergeFunc(*overflowContainers, toMove, this);
       } else {
-        SetPropTableFrames(selfExcessOCFrames,
-                           ExcessOverflowContainersProperty());
+        overflowContainers = SetOverflowContainers(std::move(toMove));
       }
-    } else {
-      if (selfExcessOCFrames->IsEmpty()) {
-        *selfExcessOCFrames = toMove;
-        overflowContainers = selfExcessOCFrames;
-      } else {
-        SetPropTableFrames(selfExcessOCFrames,
-                           ExcessOverflowContainersProperty());
-        auto shell = PresShell();
-        overflowContainers = new (shell) nsFrameList(toMove);
-      }
-      SetPropTableFrames(overflowContainers, OverflowContainersProperty());
     }
   }
 
