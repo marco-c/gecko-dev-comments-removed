@@ -619,14 +619,4 @@ const ToolbarButtonGTKMetrics* GetToolbarButtonMetrics(
 
 size_t GetGtkHeaderBarButtonLayout(mozilla::Span<ButtonLayout>,
                                    bool* aReversedButtonsPlacement);
-
-
-
-
-
-
-
-
-GtkBorder GetCSDDecorationSize(bool aIsPopup);
-
 #endif
