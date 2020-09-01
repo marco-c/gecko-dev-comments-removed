@@ -607,7 +607,7 @@
          Type.negativeone_or_fd,
         Type.path,
          Type.int,
-        "..."
+        Type.int
       );
 
       if (OS.Constants.Sys.Name == "NetBSD") {

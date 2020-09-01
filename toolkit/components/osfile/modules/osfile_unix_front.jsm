@@ -349,7 +349,7 @@
           flags |= Const.O_APPEND;
         }
       }
-      return error_or_file(UnixFile.open(path, flags, ctypes.int(omode)), path);
+      return error_or_file(UnixFile.open(path, flags, omode), path);
     };
 
     
@@ -702,7 +702,7 @@
 
       
       if (options.noOverwrite) {
-        let fd = UnixFile.open(destPath, Const.O_RDONLY);
+        let fd = UnixFile.open(destPath, Const.O_RDONLY, 0);
         if (fd != -1) {
           fd.dispose();
           
