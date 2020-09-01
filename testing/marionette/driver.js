@@ -380,11 +380,14 @@ GeckoDriver.prototype.getActor = function() {
 
 
 
+
+
+
 GeckoDriver.prototype.getBrowsingContext = function(options = {}) {
-  const { top = false } = options;
+  const { context = this.context, top = false } = options;
 
   let browsingContext = null;
-  if (this.context === Context.Chrome) {
+  if (context === Context.Chrome) {
     browsingContext = this.chromeBrowsingContext;
   } else {
     browsingContext = this.contentBrowsingContext;
