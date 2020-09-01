@@ -2938,6 +2938,15 @@ class HTMLEditor final : public TextEditor,
 
     class MOZ_STACK_CLASS AutoInclusiveAncestorBlockElementsJoiner final {
      public:
+      AutoInclusiveAncestorBlockElementsJoiner() = delete;
+      AutoInclusiveAncestorBlockElementsJoiner(
+          nsIContent& aInclusiveDescendantOfLeftBlockElement,
+          nsIContent& aInclusiveDescendantOfRightBlockElement)
+          : mInclusiveDescendantOfLeftBlockElement(
+                aInclusiveDescendantOfLeftBlockElement),
+            mInclusiveDescendantOfRightBlockElement(
+                aInclusiveDescendantOfRightBlockElement) {}
+
       
 
 
@@ -2956,8 +2965,11 @@ class HTMLEditor final : public TextEditor,
 
 
       [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-      Run(HTMLEditor& aHTMLEditor, nsIContent& aLeftContentInBlock,
-          nsIContent& aRightContentInBlock);
+      Run(HTMLEditor& aHTMLEditor);
+
+     private:
+      OwningNonNull<nsIContent> mInclusiveDescendantOfLeftBlockElement;
+      OwningNonNull<nsIContent> mInclusiveDescendantOfRightBlockElement;
     };
 
     enum class Mode {
