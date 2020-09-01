@@ -207,15 +207,6 @@ impl Device {
     }
 
     
-    pub fn is_print_preview(&self) -> bool {
-        let pc = match self.pres_context() {
-            Some(pc) => pc,
-            None => return false,
-        };
-        pc.mType == structs::nsPresContext_nsPresContextType_eContext_PrintPreview
-    }
-
-    
     pub fn media_type(&self) -> MediaType {
         let pc = match self.pres_context() {
             Some(pc) => pc,
