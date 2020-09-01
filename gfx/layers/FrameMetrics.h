@@ -270,13 +270,7 @@ struct FrameMetrics {
            aContentFrameMetrics.GetVisualScrollOffset();
   }
 
-  void ApplyScrollUpdateFrom(const FrameMetrics& aOther) {
-    
-    
-    
-    SetVisualScrollOffset(aOther.GetLayoutScrollOffset());
-    mScrollGeneration = aOther.mScrollGeneration;
-  }
+  void ApplyScrollUpdateFrom(const FrameMetrics& aContentMetrics);
 
   void ApplySmoothScrollUpdateFrom(const FrameMetrics& aOther) {
     mSmoothScrollOffset = aOther.mSmoothScrollOffset;

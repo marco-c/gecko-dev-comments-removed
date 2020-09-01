@@ -93,6 +93,21 @@ void FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
   aLayoutViewport = aLayoutViewport.MoveInsideAndClamp(aScrollableRect);
 }
 
+void FrameMetrics::ApplyScrollUpdateFrom(const FrameMetrics& aContentMetrics) {
+  
+  
+  CSSPoint relativeOffset = GetVisualScrollOffset() - GetLayoutScrollOffset();
+  MOZ_ASSERT(IsRootContent() || relativeOffset == CSSPoint());
+  
+  
+  
+  SetLayoutScrollOffset(aContentMetrics.GetLayoutScrollOffset());
+  ClampAndSetVisualScrollOffset(aContentMetrics.GetLayoutScrollOffset() +
+                                relativeOffset);
+
+  mScrollGeneration = aContentMetrics.mScrollGeneration;
+}
+
 ScrollSnapInfo::ScrollSnapInfo()
     : mScrollSnapStrictnessX(StyleScrollSnapStrictness::None),
       mScrollSnapStrictnessY(StyleScrollSnapStrictness::None) {}
