@@ -3342,9 +3342,9 @@ static const nsIFrame* GetTargetPageFrame(int32_t aTargetPageNum,
 
 
 
-static nscoord ScrollPositionForFrame(
-    const nsIFrame* aFrame, nsIScrollableFrame* aScrollable,
-    float aPreviewScale) {
+static nscoord ScrollPositionForFrame(const nsIFrame* aFrame,
+                                      nsIScrollableFrame* aScrollable,
+                                      float aPreviewScale) {
   
   
   return nscoord(aPreviewScale * aFrame->GetRect().Center().y -
@@ -3577,6 +3577,15 @@ nsDocumentViewer::ExitPrintPreview() {
 #  endif  
 
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDocumentViewer::GetRawNumPages(int32_t* aRawNumPages) {
+  NS_ENSURE_ARG_POINTER(aRawNumPages);
+  NS_ENSURE_TRUE(mPrintJob, NS_ERROR_FAILURE);
+
+  *aRawNumPages = mPrintJob->GetRawNumPages();
+  return *aRawNumPages > 0 ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP

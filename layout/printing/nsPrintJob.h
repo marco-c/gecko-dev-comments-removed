@@ -122,6 +122,7 @@ class nsPrintJob final : public nsIObserver,
   bool CreatedForPrintPreview() const { return mCreatedForPrintPreview; }
   bool HasEverPrinted() const { return mHasEverPrinted; }
   
+  int32_t GetRawNumPages() const;
   int32_t GetPrintPreviewNumPages();
   already_AddRefed<nsIPrintSettings> GetCurrentPrintSettings();
 
