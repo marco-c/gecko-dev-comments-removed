@@ -205,7 +205,8 @@ struct Family {
              bool aBundled = false,       
                                           
              bool aBadUnderline = false,  
-             bool aForceClassic = false   
+             bool aForceClassic = false,  
+             bool aAltLocale = false      
              )
         : mKey(aKey),
           mName(aName),
@@ -213,7 +214,8 @@ struct Family {
           mVisibility(aVisibility),
           mBundled(aBundled),
           mBadUnderline(aBadUnderline),
-          mForceClassic(aForceClassic) {}
+          mForceClassic(aForceClassic),
+          mAltLocale(aAltLocale) {}
     bool operator<(const InitData& aRHS) const { return mKey < aRHS.mKey; }
     bool operator==(const InitData& aRHS) const {
       return mKey == aRHS.mKey && mName == aRHS.mName &&
@@ -227,6 +229,7 @@ struct Family {
     bool mBundled;
     bool mBadUnderline;
     bool mForceClassic;
+    bool mAltLocale;
   };
 
   
@@ -276,6 +279,7 @@ struct Family {
   bool IsBadUnderlineFamily() const { return mIsBadUnderlineFamily; }
   bool IsForceClassic() const { return mIsForceClassic; }
   bool IsSimple() const { return mIsSimple; }
+  bool IsAltLocaleFamily() const { return mIsAltLocale; }
 
   
   
@@ -302,10 +306,11 @@ struct Family {
   Pointer mFaces;         
   uint32_t mIndex;        
   FontVisibility mVisibility;
-  bool mIsBadUnderlineFamily;
-  bool mIsForceClassic;
   bool mIsSimple;  
                    
+  bool mIsBadUnderlineFamily : 1;
+  bool mIsForceClassic : 1;
+  bool mIsAltLocale : 1;
 };
 
 
