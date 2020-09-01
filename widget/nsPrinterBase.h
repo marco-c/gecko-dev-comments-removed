@@ -55,8 +55,6 @@ class nsPrinterBase : public nsIPrinter {
 
  private:
   enum class AsyncAttribute {
-    
-    
     SupportsDuplex = 0,
     SupportsColor,
     SupportsCollation,
