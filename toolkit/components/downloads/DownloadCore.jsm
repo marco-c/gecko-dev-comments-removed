@@ -2231,6 +2231,9 @@ DownloadCopySaver.prototype = {
             uri: download.source.url,
             contentPolicyType: Ci.nsIContentPolicy.TYPE_SAVEAS_DOWNLOAD,
             loadingPrincipal: download.source.loadingPrincipal,
+            
+            
+            triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
             securityFlags:
               Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
           });
@@ -2257,6 +2260,9 @@ DownloadCopySaver.prototype = {
         
         if (channel instanceof Ci.nsIHttpChannelInternal) {
           channel.channelIsForDownload = true;
+
+          
+          channel.forceAllowThirdPartyCookie = true;
         }
 
         if (
