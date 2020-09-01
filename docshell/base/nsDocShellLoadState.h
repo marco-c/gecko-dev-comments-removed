@@ -144,6 +144,8 @@ class nsDocShellLoadState final {
   void SetLoadingSessionHistoryInfo(
       const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo);
 
+  bool LoadIsFromSessionHistory() const;
+
   const nsString& Target() const;
 
   void SetTarget(const nsAString& aTarget);
@@ -280,6 +282,7 @@ class nsDocShellLoadState final {
 
   void SetLoadIsFromSessionHistory(int32_t aRequestedIndex,
                                    int32_t aSessionHistoryLength);
+  void ClearLoadIsFromSessionHistory();
 
  protected:
   

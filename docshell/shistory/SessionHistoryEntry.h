@@ -111,7 +111,7 @@ struct LoadingSessionHistoryInfo {
   
   
   
-  bool mIsLoadFromSessionHistory = false;
+  bool mLoadIsFromSessionHistory = false;
   
   
   int32_t mRequestedIndex = -1;
