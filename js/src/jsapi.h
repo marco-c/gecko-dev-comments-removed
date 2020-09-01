@@ -248,6 +248,9 @@ extern JS_PUBLIC_API bool JS_IsBuiltinFunctionConstructor(JSFunction* fun);
 
 
 
+
+
+
 extern JS_PUBLIC_API JSContext* JS_NewContext(
     uint32_t maxbytes, JSRuntime* parentRuntime = nullptr);
 
