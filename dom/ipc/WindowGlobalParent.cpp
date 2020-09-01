@@ -139,8 +139,6 @@ void WindowGlobalParent::Init() {
     Unused << otherContent->SendCreateWindowContext(ipcinit);
   });
 
-  
-  
   if (!BrowsingContext()->IsDiscarded()) {
     MOZ_ALWAYS_SUCCEEDS(
         BrowsingContext()->SetCurrentInnerWindowId(InnerWindowId()));

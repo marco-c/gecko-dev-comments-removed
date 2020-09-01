@@ -2432,7 +2432,10 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
   
   RefPtr<BrowsingContext> bc = GetBrowsingContext();
-  MOZ_ALWAYS_SUCCEEDS(bc->SetCurrentInnerWindowId(mInnerWindow->WindowID()));
+
+  if (bc->IsOwnedByProcess()) {
+    MOZ_ALWAYS_SUCCEEDS(bc->SetCurrentInnerWindowId(mInnerWindow->WindowID()));
+  }
 
   
   

@@ -186,6 +186,11 @@ CanonicalBrowsingContext* BrowsingContext::Canonical() {
   return CanonicalBrowsingContext::Cast(this);
 }
 
+bool BrowsingContext::IsOwnedByProcess() const {
+  return mIsInProcess && mDocShell &&
+         !nsDocShell::Cast(mDocShell)->WillChangeProcess();
+}
+
 bool BrowsingContext::SameOriginWithTop() {
   MOZ_ASSERT(IsInProcess());
   
@@ -2309,6 +2314,8 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_CurrentInnerWindowId>,
         aSource->ChildID() != Canonical()->GetInFlightProcessId()) {
       return false;
     }
+  } else if (XRE_IsContentProcess() && !IsOwnedByProcess()) {
+    return false;
   }
 
   

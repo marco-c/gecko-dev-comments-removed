@@ -176,7 +176,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   static void Init();
   static LogModule* GetLog();
-  static void CleanupContexts(uint64_t aProcessId);
 
   
   static already_AddRefed<BrowsingContext> Get(uint64_t aId);
@@ -226,6 +225,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   bool IsInProcess() const { return mIsInProcess; }
+
+  bool IsOwnedByProcess() const;
 
   bool CanHaveRemoteOuterProxies() const {
     return !mIsInProcess || mDanglingRemoteOuterProxies;
