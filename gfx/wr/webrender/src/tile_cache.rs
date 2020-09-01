@@ -111,7 +111,7 @@ impl TileCacheBuilder {
         let requires_own_slice = is_scrollbar_container || is_clear_prim;
 
         
-        let mut new_tile_cache = self.need_new_tile_cache || requires_own_slice;
+        let mut want_new_tile_cache = self.need_new_tile_cache || requires_own_slice;
 
         
         let scroll_root = self.find_scroll_root(spatial_node_index, spatial_tree);
@@ -120,7 +120,7 @@ impl TileCacheBuilder {
             .map(|p| p.params.spatial_node_index)
             .unwrap_or(ROOT_SPATIAL_NODE_INDEX);
 
-        new_tile_cache |= match (current_scroll_root, scroll_root) {
+        want_new_tile_cache |= match (current_scroll_root, scroll_root) {
             (ROOT_SPATIAL_NODE_INDEX, ROOT_SPATIAL_NODE_INDEX) => {
                 
                 false
@@ -164,44 +164,79 @@ impl TileCacheBuilder {
             }
         };
 
-        if new_tile_cache {
+        if want_new_tile_cache {
+            
+            
+            
+            
+            
+            
+            
+            const MAX_CACHE_SLICES: usize = 12;
             let slice = self.pending_tile_caches.len();
 
-            let slice_flags = if is_scrollbar_container {
-                SliceFlags::IS_SCROLLBAR
-            } else {
-                SliceFlags::empty()
-            };
+            
+            
+            if slice < MAX_CACHE_SLICES {
+                
+                
+                
+                
+                
+                
+                
+                
+                let params = if slice == MAX_CACHE_SLICES-1 {
+                    TileCacheParams {
+                        slice,
+                        slice_flags: SliceFlags::empty(),
+                        spatial_node_index: ROOT_SPATIAL_NODE_INDEX,
+                        background_color: None,
+                        shared_clips: Vec::new(),
+                        shared_clip_chain: ClipChainId::NONE,
+                        virtual_surface_size: config.compositor_kind.get_virtual_surface_size(),
+                    }
+                } else {
+                    let slice_flags = if is_scrollbar_container {
+                        SliceFlags::IS_SCROLLBAR
+                    } else {
+                        SliceFlags::empty()
+                    };
 
-            let background_color = if slice == 0 {
-                config.background_color
-            } else {
-                None
-            };
+                    let background_color = if slice == 0 {
+                        config.background_color
+                    } else {
+                        None
+                    };
 
-            let mut shared_clips = Vec::new();
-            add_clips(
-                prim_instance.clip_set.clip_chain_id,
-                &mut shared_clips,
-                clip_store,
-                interners,
-            );
+                    let mut shared_clips = Vec::new();
+                    add_clips(
+                        prim_instance.clip_set.clip_chain_id,
+                        &mut shared_clips,
+                        clip_store,
+                        interners,
+                    );
 
-            self.pending_tile_caches.push(PendingTileCache {
-                prim_list: PrimitiveList::empty(),
-                params: TileCacheParams {
-                    slice,
-                    slice_flags,
-                    spatial_node_index: scroll_root,
-                    background_color,
-                    shared_clips,
-                    shared_clip_chain: ClipChainId::NONE,
-                    virtual_surface_size: config.compositor_kind.get_virtual_surface_size(),
-                },
-            });
+                    self.last_checked_clip_chain = prim_instance.clip_set.clip_chain_id;
 
-            self.last_checked_clip_chain = prim_instance.clip_set.clip_chain_id;
-            self.need_new_tile_cache = requires_own_slice;
+                    TileCacheParams {
+                        slice,
+                        slice_flags,
+                        spatial_node_index: scroll_root,
+                        background_color,
+                        shared_clips,
+                        shared_clip_chain: ClipChainId::NONE,
+                        virtual_surface_size: config.compositor_kind.get_virtual_surface_size(),
+                    }
+                };
+
+                self.pending_tile_caches.push(PendingTileCache {
+                    prim_list: PrimitiveList::empty(),
+                    params,
+                });
+
+                self.need_new_tile_cache = requires_own_slice;
+            }
         }
 
         let pending_tile_cache = self.pending_tile_caches.last_mut().unwrap();
@@ -248,29 +283,14 @@ impl TileCacheBuilder {
         let mut result = TileCacheConfig::new(self.pending_tile_caches.len());
         let mut root_prim_list = PrimitiveList::empty();
 
-        
-        
-        
-        
-        
-        
-        
-        const MAX_CACHE_SLICES: usize = 10;
-
-        if self.pending_tile_caches.len() > MAX_CACHE_SLICES {
-            let mut combined_prim_list = PrimitiveList::empty();
-
-            for pending_tile_cache in self.pending_tile_caches {
-                combined_prim_list.extend(pending_tile_cache.prim_list);
-            }
-
+        for pending_tile_cache in self.pending_tile_caches {
             let prim_instance = create_tile_cache(
-                0,
-                SliceFlags::empty(),
-                ROOT_SPATIAL_NODE_INDEX,
-                combined_prim_list,
-                config.background_color,
-                Vec::new(),
+                pending_tile_cache.params.slice,
+                pending_tile_cache.params.slice_flags,
+                pending_tile_cache.params.spatial_node_index,
+                pending_tile_cache.prim_list,
+                pending_tile_cache.params.background_color,
+                pending_tile_cache.params.shared_clips,
                 interners,
                 prim_store,
                 clip_store,
@@ -282,33 +302,9 @@ impl TileCacheBuilder {
             root_prim_list.add_prim(
                 prim_instance,
                 LayoutRect::zero(),
-                ROOT_SPATIAL_NODE_INDEX,
+                pending_tile_cache.params.spatial_node_index,
                 PrimitiveFlags::IS_BACKFACE_VISIBLE,
             );
-        } else {
-            for pending_tile_cache in self.pending_tile_caches {
-                let prim_instance = create_tile_cache(
-                    pending_tile_cache.params.slice,
-                    pending_tile_cache.params.slice_flags,
-                    pending_tile_cache.params.spatial_node_index,
-                    pending_tile_cache.prim_list,
-                    pending_tile_cache.params.background_color,
-                    pending_tile_cache.params.shared_clips,
-                    interners,
-                    prim_store,
-                    clip_store,
-                    &mut result.picture_cache_spatial_nodes,
-                    config,
-                    &mut result.tile_caches,
-                );
-
-                root_prim_list.add_prim(
-                    prim_instance,
-                    LayoutRect::zero(),
-                    pending_tile_cache.params.spatial_node_index,
-                    PrimitiveFlags::IS_BACKFACE_VISIBLE,
-                );
-            }
         }
 
         (result, root_prim_list)
