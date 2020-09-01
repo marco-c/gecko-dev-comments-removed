@@ -4715,8 +4715,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       
       
       
-      
-      
       Maybe<CSSPoint> relativeDelta;
       if (StaticPrefs::apz_relative_update_enabled() &&
           aLayerMetrics.IsRelative()) {
