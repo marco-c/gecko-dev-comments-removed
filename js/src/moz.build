@@ -254,6 +254,7 @@ EXPORTS.js.friend += [
 
 
 EXPORTS.js.shadow += [
+    '../public/shadow/Object.h',
     '../public/shadow/ObjectGroup.h',
     '../public/shadow/Shape.h',
     '../public/shadow/String.h',
