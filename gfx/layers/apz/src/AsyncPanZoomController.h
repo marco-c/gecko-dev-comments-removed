@@ -689,13 +689,13 @@ class AsyncPanZoomController {
   
 
 
-  void SetScrollOffset(const CSSPoint& aOffset);
+  void SetVisualScrollOffset(const CSSPoint& aOffset);
 
   
 
 
 
-  void ClampAndSetScrollOffset(const CSSPoint& aOffset);
+  void ClampAndSetVisualScrollOffset(const CSSPoint& aOffset);
 
   
 

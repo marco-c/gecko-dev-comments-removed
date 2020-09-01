@@ -24,7 +24,7 @@ class SampledAPZCState {
   bool operator!=(const SampledAPZCState& aOther) const;
 
   CSSRect GetLayoutViewport() const { return mLayoutViewport; }
-  CSSPoint GetScrollOffset() const { return mScrollOffset; }
+  CSSPoint GetVisualScrollOffset() const { return mVisualScrollOffset; }
   CSSToParentLayerScale2D GetZoom() const { return mZoom; }
   Maybe<CompositionPayload> TakeScrollPayload();
 
@@ -39,7 +39,7 @@ class SampledAPZCState {
 
 
 
-  void ClampScrollOffset(const FrameMetrics& aMetrics);
+  void ClampVisualScrollOffset(const FrameMetrics& aMetrics);
 
   void ZoomBy(const gfxSize& aScale);
 
@@ -47,7 +47,7 @@ class SampledAPZCState {
   
   
   CSSRect mLayoutViewport;
-  CSSPoint mScrollOffset;
+  CSSPoint mVisualScrollOffset;
   CSSToParentLayerScale2D mZoom;
   
   Maybe<CompositionPayload> mScrollPayload;
