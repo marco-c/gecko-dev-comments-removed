@@ -55,28 +55,20 @@ struct APZEventResult {
   
 
 
+
+
+
   ScrollableLayerGuid mTargetGuid;
   
 
 
 
-  bool mTargetIsRoot;
+  bool mHandledByRootApzc;
   
 
 
 
   uint64_t mInputBlockId;
-  
-
-
-
-
-
-
-
-
-
-  bool mHitRegionWithApzAwareListeners;
 };
 
 
