@@ -259,15 +259,15 @@ AccessibleCaret::PositionChangedResult AccessibleCaret::SetPosition(
       mImaginaryCaretRectInContainerFrame);
   const bool isSameZoomLevel = FuzzyEqualsMultiplicative(zoomLevel, mZoomLevel);
 
+  
+  
+  mImaginaryCaretRect = imaginaryCaretRectInFrame;
+  nsLayoutUtils::TransformRect(aFrame, RootFrame(), mImaginaryCaretRect);
+
   if (isSamePosition && isSameZoomLevel) {
     return PositionChangedResult::NotChanged;
   }
 
-  nsRect imaginaryCaretRect = imaginaryCaretRectInFrame;
-  nsLayoutUtils::TransformRect(aFrame, RootFrame(), imaginaryCaretRect);
-
-  
-  mImaginaryCaretRect = imaginaryCaretRect;
   mImaginaryCaretRectInContainerFrame = imaginaryCaretRectInContainerFrame;
   mImaginaryCaretReferenceFrame = aFrame;
   mZoomLevel = zoomLevel;

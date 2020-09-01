@@ -206,6 +206,7 @@ class AccessibleCaret {
   RefPtr<dom::AnonymousContent> mCaretElementHolder;
 
   
+  
   nsRect mImaginaryCaretRect;
 
   
