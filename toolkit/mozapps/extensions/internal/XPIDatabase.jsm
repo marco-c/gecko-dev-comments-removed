@@ -955,6 +955,15 @@ AddonWrapper = class {
     return this.recommendationStates.includes("recommended");
   }
 
+  get canBypassThirdParyInstallPrompt() {
+    
+    
+    return (
+      this.signedState >= AddonManager.SIGNEDSTATE_SIGNED &&
+      this.recommendationStates.length
+    );
+  }
+
   get applyBackgroundUpdates() {
     return addonFor(this).applyBackgroundUpdates;
   }

@@ -42,6 +42,8 @@ const PREF_MIN_WEBEXT_PLATFORM_VERSION =
   "extensions.webExtensionsMinPlatformVersion";
 const PREF_WEBAPI_TESTING = "extensions.webapi.testing";
 const PREF_WEBEXT_PERM_PROMPTS = "extensions.webextPermissionPrompts";
+const PREF_EM_POSTDOWNLOAD_THIRD_PARTY =
+  "extensions.postDownloadThirdPartyPrompt";
 
 const UPDATE_REQUEST_VERSION = 2;
 
@@ -91,6 +93,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "WEBEXT_PERMISSION_PROMPTS",
   PREF_WEBEXT_PERM_PROMPTS,
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "WEBEXT_POSTDOWNLOAD_THIRD_PARTY",
+  PREF_EM_POSTDOWNLOAD_THIRD_PARTY,
   false
 );
 
@@ -2057,13 +2066,21 @@ var AddonManagerInternal = {
     return !explicit;
   },
 
-  installNotifyObservers(aTopic, aBrowser, aUri, aInstall, aInstallFn) {
+  installNotifyObservers(
+    aTopic,
+    aBrowser,
+    aUri,
+    aInstall,
+    aInstallFn,
+    aCancelFn
+  ) {
     let info = {
       wrappedJSObject: {
         browser: aBrowser,
         originatingURI: aUri,
         installs: [aInstall],
         install: aInstallFn,
+        cancel: aCancelFn,
       },
     };
     Services.obs.notifyObservers(info, aTopic);
@@ -2334,7 +2351,7 @@ var AddonManagerInternal = {
           aInstallingPrincipal.URI,
           aInstall
         );
-      } else {
+      } else if (!WEBEXT_POSTDOWNLOAD_THIRD_PARTY) {
         
         this.installNotifyObservers(
           "addon-install-blocked",
@@ -2343,6 +2360,10 @@ var AddonManagerInternal = {
           aInstall,
           () => startInstall("other")
         );
+      } else {
+        
+        
+        startInstall("other");
       }
     } catch (e) {
       
@@ -3093,6 +3114,31 @@ var AddonManagerInternal = {
     return aValue;
   },
 
+  _verifyThirdPartyInstall(browser, url, install, info, source) {
+    
+    
+    
+    
+    if (
+      !WEBEXT_POSTDOWNLOAD_THIRD_PARTY ||
+      ["AMO", "local"].includes(source) ||
+      info.addon.canBypassThirdParyInstallPrompt
+    ) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      this.installNotifyObservers(
+        "addon-install-blocked",
+        browser,
+        url,
+        install,
+        resolve,
+        reject
+      );
+    });
+  },
+
   setupPromptHandler(browser, url, install, requireConfirm, source) {
     install.promptHandler = info =>
       new Promise((resolve, _reject) => {
@@ -3106,76 +3152,89 @@ var AddonManagerInternal = {
           _reject();
         };
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (info.addon.userPermissions && WEBEXT_PERMISSION_PROMPTS) {
-          let subject = {
-            wrappedJSObject: {
-              target: browser,
-              info: Object.assign({ resolve, reject, source }, info),
-            },
-          };
-          subject.wrappedJSObject.info.permissions = info.addon.userPermissions;
-          Services.obs.notifyObservers(
-            subject,
-            "webextension-permission-prompt"
-          );
-        } else if (requireConfirm) {
-          
-          
-          
-          
-          
-          
-          
-          let proxy = new Proxy(install, {
-            get(target, property) {
-              if (property == "install") {
-                return resolve;
-              } else if (property == "cancel") {
-                return reject;
-              } else if (property == "wrapped") {
-                return target;
+        this._verifyThirdPartyInstall(browser, url, install, info, source)
+          .then(() => {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if (info.addon.userPermissions && WEBEXT_PERMISSION_PROMPTS) {
+              let subject = {
+                wrappedJSObject: {
+                  target: browser,
+                  info: Object.assign({ resolve, reject, source }, info),
+                },
+              };
+              subject.wrappedJSObject.info.permissions =
+                info.addon.userPermissions;
+              Services.obs.notifyObservers(
+                subject,
+                "webextension-permission-prompt"
+              );
+            } else if (requireConfirm) {
+              
+              
+              
+              
+              
+              
+              
+              let proxy = new Proxy(install, {
+                get(target, property) {
+                  if (property == "install") {
+                    return resolve;
+                  } else if (property == "cancel") {
+                    return reject;
+                  } else if (property == "wrapped") {
+                    return target;
+                  }
+                  let result = target[property];
+                  return typeof result == "function"
+                    ? result.bind(target)
+                    : result;
+                },
+              });
+
+              
+              
+              if ("@mozilla.org/addons/web-install-prompt;1" in Cc) {
+                try {
+                  let prompt = Cc[
+                    "@mozilla.org/addons/web-install-prompt;1"
+                  ].getService(Ci.amIWebInstallPrompt);
+                  prompt.confirm(browser, url, [proxy]);
+                  return;
+                } catch (e) {}
               }
-              let result = target[property];
-              return typeof result == "function" ? result.bind(target) : result;
-            },
+
+              this.installNotifyObservers(
+                "addon-install-confirmation",
+                browser,
+                url,
+                proxy
+              );
+            } else {
+              resolve();
+            }
+          })
+          .catch(e => {
+            
+            if (e) {
+              Cu.reportError(`Install prompt handler error: ${e}`);
+            }
+            reject();
           });
-
-          
-          
-          if ("@mozilla.org/addons/web-install-prompt;1" in Cc) {
-            try {
-              let prompt = Cc[
-                "@mozilla.org/addons/web-install-prompt;1"
-              ].getService(Ci.amIWebInstallPrompt);
-              prompt.confirm(browser, url, [proxy]);
-              return;
-            } catch (e) {}
-          }
-
-          this.installNotifyObservers(
-            "addon-install-confirmation",
-            browser,
-            url,
-            proxy
-          );
-        } else {
-          resolve();
-        }
       });
   },
 

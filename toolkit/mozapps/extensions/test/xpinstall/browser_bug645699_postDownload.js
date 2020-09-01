@@ -3,14 +3,14 @@
 
 
 function test() {
-  
-  SpecialPowers.pushPrefEnv({
-    set: [["extensions.postDownloadThirdPartyPrompt", false]],
-  });
-
   Harness.installConfirmCallback = confirm_install;
   Harness.installBlockedCallback = allow_blocked;
   Harness.installsCompletedCallback = finish_test;
+  
+  Harness.downloadCancelledCallback = () => {
+    return false;
+  };
+
   Harness.setup();
 
   PermissionTestUtils.add(
