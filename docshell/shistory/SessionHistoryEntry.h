@@ -233,6 +233,11 @@ class SessionHistoryEntry : public nsISHEntry {
 
   void SetInfo(SessionHistoryInfo* aInfo);
 
+  bool ForInitialLoad() { return mForInitialLoad; }
+  void SetForInitialLoad(bool aForInitialLoad) {
+    mForInitialLoad = aForInitialLoad;
+  }
+
   
   
   static SessionHistoryEntry* GetByLoadId(uint64_t aLoadId);
@@ -248,6 +253,8 @@ class SessionHistoryEntry : public nsISHEntry {
   nsISHEntry* mParent = nullptr;
   uint32_t mID;
   nsTArray<RefPtr<SessionHistoryEntry>> mChildren;
+
+  bool mForInitialLoad = false;
 
   static nsDataHashtable<nsUint64HashKey, SessionHistoryEntry*>* sLoadIdToEntry;
 };

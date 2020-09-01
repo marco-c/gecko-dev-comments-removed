@@ -429,24 +429,24 @@ nsresult nsSHistory::WalkHistoryEntries(nsISHEntry* aRootEntry,
       for (BrowsingContext* child : aBC->Children()) {
         
         
-        bool shouldBreak = false;
+        bool foundChild = false;
         if (StaticPrefs::fission_sessionHistoryInParent() &&
             XRE_IsParentProcess()) {
           if (child->Canonical()->HasHistoryEntry(childEntry)) {
             childBC = child;
-            shouldBreak = true;
+            foundChild = true;
           }
         }
 
         nsDocShell* docshell = static_cast<nsDocShell*>(child->GetDocShell());
         if (docshell && docshell->HasHistoryEntry(childEntry)) {
           childBC = docshell->GetBrowsingContext();
-          shouldBreak = true;
+          foundChild = true;
         }
 
         
         
-        if (shouldBreak) {
+        if (foundChild) {
           break;
         }
       }
@@ -635,6 +635,8 @@ void nsSHistory::HandleEntriesToSwapInDocShell(
     if (docshell) {
       docshell->SwapHistoryEntries(aOldEntry, aNewEntry);
     }
+  } else {
+    
   }
 
   
