@@ -54,8 +54,15 @@ class IOUtils final {
                                         const nsAString& aPath,
                                         const Optional<uint32_t>& aMaxBytes);
 
+  static already_AddRefed<Promise> ReadUTF8(GlobalObject& aGlobal,
+                                            const nsAString& aPath);
+
   static already_AddRefed<Promise> WriteAtomic(
       GlobalObject& aGlobal, const nsAString& aPath, const Uint8Array& aData,
+      const WriteAtomicOptions& aOptions);
+
+  static already_AddRefed<Promise> WriteAtomicUTF8(
+      GlobalObject& aGlobal, const nsAString& aPath, const nsAString& aString,
       const WriteAtomicOptions& aOptions);
 
   static already_AddRefed<Promise> Move(GlobalObject& aGlobal,
@@ -169,13 +176,26 @@ class IOUtils final {
 
 
 
+  static Result<nsString, IOError> ReadUTF8Sync(const nsAString& aPath);
+
+  
+
+
+
+
+
+
 
 
 
 
 
   static Result<uint32_t, IOError> WriteAtomicSync(
-      const nsAString& aDestPath, const Buffer<uint8_t>& aByteArray,
+      const nsAString& aDestPath, const Span<const uint8_t>& aByteArray,
+      const InternalWriteAtomicOpts& aOptions);
+
+  static Result<uint32_t, IOError> WriteAtomicUTF8Sync(
+      const nsAString& aDestPath, const nsCString& aUTF8String,
       const InternalWriteAtomicOpts& aOptions);
 
   
@@ -190,7 +210,7 @@ class IOUtils final {
 
   static Result<uint32_t, IOError> WriteSync(PRFileDesc* aFd,
                                              const nsACString& aPath,
-                                             const Buffer<uint8_t>& aBytes);
+                                             const Span<const uint8_t>& aBytes);
 
   
 
@@ -371,6 +391,20 @@ struct IOUtils::InternalWriteAtomicOpts {
   bool mFlush;
   bool mNoOverwrite;
   Maybe<nsString> mTmpPath;
+
+  static inline InternalWriteAtomicOpts FromBinding(
+      const WriteAtomicOptions& aOptions) {
+    InternalWriteAtomicOpts opts;
+    opts.mFlush = aOptions.mFlush;
+    opts.mNoOverwrite = aOptions.mNoOverwrite;
+    if (aOptions.mBackupFile.WasPassed()) {
+      opts.mBackupFile.emplace(aOptions.mBackupFile.Value());
+    }
+    if (aOptions.mTmpPath.WasPassed()) {
+      opts.mTmpPath.emplace(aOptions.mTmpPath.Value());
+    }
+    return opts;
+  }
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
