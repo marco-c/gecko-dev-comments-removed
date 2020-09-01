@@ -2120,7 +2120,8 @@ pub struct RegToRangesMaps {
     
     
     
-    pub rreg_to_rlrs_map: Vec< Vec<RealRangeIx>>,
+    
+    pub rreg_to_rlrs_map: Vec< SmallVec<[RealRangeIx; 6]>>,
 
     
     
