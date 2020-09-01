@@ -1166,7 +1166,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
     if (controls) {
       
       controlBar = controls.parentNode.getElementById("controlBar");
-      controlBarShown = controlBar ? !!controlBar.clientHeight : false;
+      controlBarShown = controlBar ? !controlBar.hidden : false;
     } else {
       
       

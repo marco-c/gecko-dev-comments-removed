@@ -1525,6 +1525,8 @@ this.VideoControlsImplWidget = class {
         if (fadeIn) {
           if (element == this.controlBar) {
             this.controlsSpacer.removeAttribute("hideCursor");
+            
+            this.fullscreenButton.removeAttribute("tabindex");
           }
 
           
@@ -1541,12 +1543,14 @@ this.VideoControlsImplWidget = class {
           
           element.hidden = false;
         } else {
-          if (
-            element == this.controlBar &&
-            !this.hasError() &&
-            this.isVideoInFullScreen
-          ) {
-            this.controlsSpacer.setAttribute("hideCursor", true);
+          if (element == this.controlBar) {
+            if (!this.hasError() && this.isVideoInFullScreen) {
+              this.controlsSpacer.setAttribute("hideCursor", true);
+            }
+            
+            
+            
+            this.fullscreenButton.setAttribute("tabindex", "-1");
           }
 
           
