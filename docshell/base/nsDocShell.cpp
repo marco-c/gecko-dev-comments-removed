@@ -10456,8 +10456,9 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
   
   
   
-  if (rootSH && ((mLoadType & (LOAD_CMD_HISTORY | LOAD_CMD_RELOAD)) ||
-                 mLoadType == LOAD_NORMAL_REPLACE)) {
+  if (!StaticPrefs::fission_sessionHistoryInParent() && rootSH &&
+      ((mLoadType & (LOAD_CMD_HISTORY | LOAD_CMD_RELOAD)) ||
+       mLoadType == LOAD_NORMAL_REPLACE)) {
     mPreviousEntryIndex = rootSH->Index();
     rootSH->LegacySHistory()->UpdateIndex();
     mLoadedEntryIndex = rootSH->Index();

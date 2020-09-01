@@ -923,6 +923,9 @@ nsSHEntry::SyncTreesForSubframeNavigation(
   
   
   
+  
+  
+  
   nsCOMPtr<nsISHEntry> newRootEntry = nsSHistory::GetRootSHEntry(aEntry);
   if (newRootEntry) {
     

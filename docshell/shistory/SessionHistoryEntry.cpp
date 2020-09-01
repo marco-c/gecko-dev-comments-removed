@@ -907,7 +907,7 @@ SessionHistoryEntry::HasBFCacheEntry(nsIBFCacheEntry* aEntry) {
 
 NS_IMETHODIMP
 SessionHistoryEntry::AdoptBFCacheEntry(nsISHEntry* aEntry) {
-  MOZ_CRASH("This lives in the child process");
+  NS_WARNING("This lives in the child process");
   return NS_ERROR_FAILURE;
 }
 
@@ -1142,7 +1142,28 @@ NS_IMETHODIMP_(void)
 SessionHistoryEntry::SyncTreesForSubframeNavigation(
     nsISHEntry* aEntry, mozilla::dom::BrowsingContext* aTopBC,
     mozilla::dom::BrowsingContext* aIgnoreBC) {
-  NS_WARNING("Need to implement this");
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsISHEntry> newRootEntry = nsSHistory::GetRootSHEntry(aEntry);
+  if (newRootEntry) {
+    
+    
+
+    
+    
+    nsCOMPtr<nsISHEntry> oldRootEntry = nsSHistory::GetRootSHEntry(this);
+
+    if (oldRootEntry) {
+      nsSHistory::SwapEntriesData data = {aIgnoreBC, newRootEntry, nullptr};
+      nsSHistory::SetChildHistoryEntry(oldRootEntry, aTopBC, 0, &data);
+    }
+  }
 }
 
 SHEntrySharedParentState* SessionHistoryEntry::SharedInfo() const {

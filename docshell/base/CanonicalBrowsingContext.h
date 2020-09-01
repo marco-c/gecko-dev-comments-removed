@@ -215,6 +215,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   void ReplacedBy(CanonicalBrowsingContext* aNewContext);
 
+  bool HasHistoryEntry(nsISHEntry* aEntry);
+
+  void SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry);
+
  protected:
   
   void CanonicalDiscard();

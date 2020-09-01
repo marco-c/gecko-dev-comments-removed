@@ -285,6 +285,20 @@ SessionHistoryEntry* CanonicalBrowsingContext::GetActiveSessionHistoryEntry() {
   return mActiveEntry;
 }
 
+bool CanonicalBrowsingContext::HasHistoryEntry(nsISHEntry* aEntry) {
+  
+  return aEntry && mActiveEntry == aEntry;
+}
+
+void CanonicalBrowsingContext::SwapHistoryEntries(nsISHEntry* aOldEntry,
+                                                  nsISHEntry* aNewEntry) {
+  
+  if (mActiveEntry == aOldEntry) {
+    nsCOMPtr<SessionHistoryEntry> newEntry = do_QueryInterface(aNewEntry);
+    mActiveEntry = newEntry;
+  }
+}
+
 UniquePtr<LoadingSessionHistoryInfo>
 CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
     nsDocShellLoadState* aLoadState, nsIChannel* aChannel) {
@@ -295,6 +309,7 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
     entry = SessionHistoryEntry::GetByLoadId(existingLoadingInfo->mLoadId);
   } else {
     entry = new SessionHistoryEntry(aLoadState, aChannel);
+    entry->SetDocshellID(GetHistoryID());
   }
   MOZ_DIAGNOSTIC_ASSERT(entry);
 
@@ -322,15 +337,22 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
         return;
       }
 
-      RefPtr<SessionHistoryEntry> oldActiveEntry = mActiveEntry.forget();
-      mActiveEntry = mLoadingEntries[i].mEntry;
+      RefPtr<SessionHistoryEntry> oldActiveEntry = mActiveEntry;
+      RefPtr<SessionHistoryEntry> newActiveEntry = mLoadingEntries[i].mEntry;
+
+      bool loadFromSessionHistory = false;
+      nsCOMPtr<nsISHistory> existingHistory = newActiveEntry->GetShistory();
+      loadFromSessionHistory = (existingHistory == shistory);
+      if (!loadFromSessionHistory) {
+        newActiveEntry->SetShistory(shistory);
+      }
 
       SessionHistoryEntry::RemoveLoadId(aLoadId);
       mLoadingEntries.RemoveElementAt(i);
       if (IsTop()) {
-        nsCOMPtr<nsISHistory> existingSHistory = mActiveEntry->GetShistory();
-        if (existingSHistory) {
-          MOZ_ASSERT(existingSHistory == shistory);
+        mActiveEntry = newActiveEntry;
+        if (loadFromSessionHistory) {
+          
           shistory->UpdateIndex();
         } else {
           shistory->AddEntry(mActiveEntry,
@@ -341,16 +363,24 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
         
         
         
-        
-        
-        if (oldActiveEntry) {
+        if (loadFromSessionHistory) {
+          oldActiveEntry->SyncTreesForSubframeNavigation(newActiveEntry, Top(),
+                                                         this);
+          mActiveEntry = newActiveEntry;
+          shistory->UpdateIndex();
+        } else if (oldActiveEntry) {
           
-          shistory->AddChildSHEntryHelper(oldActiveEntry, mActiveEntry, Top(),
+          
+          shistory->AddChildSHEntryHelper(oldActiveEntry, newActiveEntry, Top(),
                                           true);
+          mActiveEntry = newActiveEntry;
         } else {
           SessionHistoryEntry* parentEntry =
               static_cast<CanonicalBrowsingContext*>(GetParent())->mActiveEntry;
+          
+          
           if (parentEntry) {
+            mActiveEntry = newActiveEntry;
             
             
             
