@@ -2641,6 +2641,14 @@ class HTMLEditor final : public TextEditor,
       const EditorDOMPoint& aCaretPoint,
       const WSRunScanner& aWSRunScannerAtCaret);
 
+  
+
+
+
+  Result<bool, nsresult> ShouldDeleteHRElement(
+      nsIEditor::EDirection aDirectionAndAmount, Element& aHRElement,
+      const EditorDOMPoint& aCaretPoint) const;
+
   class MOZ_STACK_CLASS AutoEmptyBlockAncestorDeleter final {
    public:
     
