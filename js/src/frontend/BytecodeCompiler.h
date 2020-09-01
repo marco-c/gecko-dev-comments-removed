@@ -104,6 +104,7 @@ class ScriptSourceObject;
 
 namespace frontend {
 
+struct CompilationGCOutput;
 class ErrorReporter;
 class FunctionBox;
 class ParseNode;
@@ -119,14 +120,12 @@ ModuleObject* CompileModule(JSContext* cx,
 
 
 
-ModuleObject* ParseModule(JSContext* cx,
-                          const JS::ReadOnlyCompileOptions& options,
-                          JS::SourceText<char16_t>& srcBuf,
-                          ScriptSourceObject** sourceObjectOut);
-ModuleObject* ParseModule(JSContext* cx,
-                          const JS::ReadOnlyCompileOptions& options,
-                          JS::SourceText<mozilla::Utf8Unit>& srcBuf,
-                          ScriptSourceObject** sourceObjectOut);
+bool ParseModule(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+                 JS::SourceText<char16_t>& srcBuf,
+                 CompilationGCOutput& gcOutput);
+bool ParseModule(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+                 JS::SourceText<mozilla::Utf8Unit>& srcBuf,
+                 CompilationGCOutput& gcOutput);
 
 
 

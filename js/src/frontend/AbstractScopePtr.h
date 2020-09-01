@@ -26,6 +26,7 @@ class GCMarker;
 
 namespace frontend {
 struct CompilationInfo;
+struct CompilationGCOutput;
 class ScopeStencil;
 }  
 
@@ -89,7 +90,7 @@ class AbstractScopePtr {
 
   
   
-  Scope* existingScope() const;
+  Scope* existingScope(frontend::CompilationGCOutput& gcOutput) const;
 
   
   

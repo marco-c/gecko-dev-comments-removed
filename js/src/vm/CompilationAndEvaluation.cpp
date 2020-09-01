@@ -18,10 +18,10 @@
 #include "jstypes.h"      
 
 #include "frontend/BytecodeCompilation.h"  
-#include "frontend/CompilationInfo.h"      
-#include "frontend/FullParseHandler.h"     
-#include "frontend/ParseContext.h"         
-#include "frontend/Parser.h"       
+#include "frontend/CompilationInfo.h"  
+#include "frontend/FullParseHandler.h"  
+#include "frontend/ParseContext.h"      
+#include "frontend/Parser.h"            
 #include "js/CharacterEncoding.h"  
 #include "js/RootingAPI.h"         
 #include "js/SourceText.h"         
@@ -77,7 +77,13 @@ static JSScript* CompileSourceBuffer(JSContext* cx,
       srcBuf.length(), options.lineno, options.column);
   frontend::GlobalSharedContext globalsc(
       cx, scopeKind, compilationInfo, compilationInfo.state.directives, extent);
-  return frontend::CompileGlobalScript(compilationInfo, globalsc, srcBuf);
+  frontend::CompilationGCOutput gcOutput(cx);
+  if (!frontend::CompileGlobalScript(compilationInfo, globalsc, srcBuf,
+                                     gcOutput)) {
+    return nullptr;
+  }
+
+  return gcOutput.script;
 }
 
 JSScript* JS::Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
@@ -489,10 +495,12 @@ static bool EvaluateSourceBuffer(JSContext* cx, ScopeKind scopeKind,
     frontend::GlobalSharedContext globalsc(cx, scopeKind, compilationInfo,
                                            compilationInfo.state.directives,
                                            extent);
-    script = frontend::CompileGlobalScript(compilationInfo, globalsc, srcBuf);
-    if (!script) {
+    frontend::CompilationGCOutput gcOutput(cx);
+    if (!frontend::CompileGlobalScript(compilationInfo, globalsc, srcBuf,
+                                       gcOutput)) {
       return false;
     }
+    script = gcOutput.script;
   }
 
   return Execute(cx, script, env, rval);

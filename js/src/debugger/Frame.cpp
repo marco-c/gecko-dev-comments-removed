@@ -33,44 +33,45 @@
 #include "debugger/Object.h"               
 #include "debugger/Script.h"               
 #include "frontend/BytecodeCompilation.h"  
-#include "frontend/SharedContext.h"        
-#include "gc/Barrier.h"                    
-#include "gc/FreeOp.h"                     
-#include "gc/GC.h"                         
-#include "gc/Marking.h"                    
-#include "gc/Rooting.h"                    
-#include "gc/Tracer.h"                     
-#include "gc/ZoneAllocator.h"              
-#include "jit/JSJitFrameIter.h"            
-#include "jit/RematerializedFrame.h"       
-#include "js/Proxy.h"                      
-#include "js/SourceText.h"                 
-#include "js/StableStringChars.h"          
-#include "vm/ArgumentsObject.h"            
-#include "vm/ArrayObject.h"                
-#include "vm/AsyncFunction.h"              
-#include "vm/AsyncIteration.h"             
-#include "vm/BytecodeUtil.h"               
-#include "vm/Compartment.h"                
-#include "vm/EnvironmentObject.h"          
-#include "vm/GeneratorObject.h"            
-#include "vm/GlobalObject.h"               
-#include "vm/Interpreter.h"                
-#include "vm/JSAtom.h"                     
-#include "vm/JSContext.h"                  
-#include "vm/JSFunction.h"                 
-#include "vm/JSObject.h"                   
-#include "vm/JSScript.h"                   
-#include "vm/NativeObject.h"               
-#include "vm/Realm.h"                      
-#include "vm/Runtime.h"                    
-#include "vm/Scope.h"                      
-#include "vm/Stack.h"                      
-#include "vm/StringType.h"                 
-#include "wasm/WasmDebug.h"                
-#include "wasm/WasmInstance.h"             
-#include "wasm/WasmJS.h"                   
-#include "wasm/WasmTypes.h"                
+#include "frontend/CompilationInfo.h"  
+#include "frontend/SharedContext.h"    
+#include "gc/Barrier.h"                
+#include "gc/FreeOp.h"                 
+#include "gc/GC.h"                     
+#include "gc/Marking.h"                
+#include "gc/Rooting.h"                
+#include "gc/Tracer.h"                 
+#include "gc/ZoneAllocator.h"          
+#include "jit/JSJitFrameIter.h"        
+#include "jit/RematerializedFrame.h"  
+#include "js/Proxy.h"                 
+#include "js/SourceText.h"            
+#include "js/StableStringChars.h"     
+#include "vm/ArgumentsObject.h"       
+#include "vm/ArrayObject.h"           
+#include "vm/AsyncFunction.h"         
+#include "vm/AsyncIteration.h"        
+#include "vm/BytecodeUtil.h"          
+#include "vm/Compartment.h"           
+#include "vm/EnvironmentObject.h"     
+#include "vm/GeneratorObject.h"       
+#include "vm/GlobalObject.h"          
+#include "vm/Interpreter.h"           
+#include "vm/JSAtom.h"                
+#include "vm/JSContext.h"             
+#include "vm/JSFunction.h"            
+#include "vm/JSObject.h"              
+#include "vm/JSScript.h"              
+#include "vm/NativeObject.h"          
+#include "vm/Realm.h"                 
+#include "vm/Runtime.h"               
+#include "vm/Scope.h"                 
+#include "vm/Stack.h"                 
+#include "vm/StringType.h"            
+#include "wasm/WasmDebug.h"           
+#include "wasm/WasmInstance.h"        
+#include "wasm/WasmJS.h"              
+#include "wasm/WasmTypes.h"           
 
 #include "debugger/Debugger-inl.h"  
 #include "gc/WeakMap-inl.h"         
@@ -964,10 +965,12 @@ static bool EvaluateInEnv(JSContext* cx, Handle<Env*> env,
 
     frontend::EvalSharedContext evalsc(
         cx, compilationInfo, compilationInfo.state.directives, extent);
-    script = frontend::CompileEvalScript(compilationInfo, evalsc, srcBuf);
-    if (!script) {
+    frontend::CompilationGCOutput gcOutput(cx);
+    if (!frontend::CompileEvalScript(compilationInfo, evalsc, srcBuf,
+                                     gcOutput)) {
       return false;
     }
+    script = gcOutput.script;
   } else {
     
     
@@ -986,10 +989,12 @@ static bool EvaluateInEnv(JSContext* cx, Handle<Env*> env,
     frontend::GlobalSharedContext globalsc(cx, scopeKind, compilationInfo,
                                            compilationInfo.state.directives,
                                            extent);
-    script = frontend::CompileGlobalScript(compilationInfo, globalsc, srcBuf);
-    if (!script) {
+    frontend::CompilationGCOutput gcOutput(cx);
+    if (!frontend::CompileGlobalScript(compilationInfo, globalsc, srcBuf,
+                                       gcOutput)) {
       return false;
     }
+    script = gcOutput.script;
   }
 
   
