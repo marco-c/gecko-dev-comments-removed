@@ -72,6 +72,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "PromptUtils",
+  "resource://gre/modules/SharedPromptUtils.jsm"
+);
+
 var gFocusedElement = null;
 
 var PrintUtils = {
@@ -139,21 +145,32 @@ var PrintUtils = {
 
 
 
-  async _openTabModalPrint(aBrowsingContext) {
-    let sourceBrowser = aBrowsingContext.embedderElement;
-    let previewBrowser = this.getPreviewBrowser(sourceBrowser);
 
+
+  _openTabModalPrint(aBrowsingContext, aExistingPreviewBrowser) {
+    let sourceBrowser = aBrowsingContext.top.embedderElement;
+    let previewBrowser = this.getPreviewBrowser(sourceBrowser);
     if (previewBrowser) {
       
-      aBrowsingContext.isAwaitingPrint = false;
+      
+      
+      
+      
+      if (aExistingPreviewBrowser) {
+        aExistingPreviewBrowser.remove();
+      }
       return;
     }
 
+    
+    let args = PromptUtils.objectToPropBag({
+      previewBrowser: aExistingPreviewBrowser,
+    });
     let dialogBox = gBrowser.getTabDialogBox(sourceBrowser);
     dialogBox.open(
       `chrome://global/content/print.html?browsingContextId=${aBrowsingContext.id}`,
       "resizable=no",
-      null,
+      args,
       { sizeTo: "available" }
     );
   },
@@ -167,12 +184,50 @@ var PrintUtils = {
 
 
 
-  startPrintWindow(aBrowsingContext) {
-    if (PRINT_TAB_MODAL && !PRINT_ALWAYS_SILENT) {
-      this._openTabModalPrint(aBrowsingContext);
-    } else {
-      this.printWindow(aBrowsingContext);
+
+
+
+
+  startPrintWindow(aBrowsingContext, aOpenWindowInfo) {
+    let browser = null;
+    if (aOpenWindowInfo) {
+      browser = gBrowser.createBrowser({
+        remoteType: aBrowsingContext.currentRemoteType,
+        openWindowInfo: aOpenWindowInfo,
+        skipLoad: false,
+      });
+      
+      
+      
+      
+      browser.addEventListener("DOMWindowClose", function(e) {
+        if (browser.isConnected) {
+          browser.remove();
+        }
+        e.stopPropagation();
+        e.preventDefault();
+      });
+      browser.style.visibility = "collapse";
+      document.documentElement.appendChild(browser);
     }
+
+    if (
+      PRINT_TAB_MODAL &&
+      !PRINT_ALWAYS_SILENT &&
+      (!aOpenWindowInfo || aOpenWindowInfo.isForPrintPreview)
+    ) {
+      this._openTabModalPrint(aBrowsingContext, browser);
+      return browser;
+    }
+
+    if (browser) {
+      
+      
+      return browser;
+    }
+
+    this.printWindow(aBrowsingContext, null);
+    return null;
   },
 
   

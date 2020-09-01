@@ -62,59 +62,13 @@ nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
   NS_ENSURE_STATE(aDocShell);
   NS_ENSURE_STATE(aDoc);
 
-  if (aForPrintPreview) {
-    nsCOMPtr<nsIContentViewer> viewer;
-    aDocShell->GetContentViewer(getter_AddRefs(viewer));
-    if (viewer && viewer->GetDocument() && viewer->GetDocument()->IsShowing()) {
-      
-      
-      viewer->GetDocument()->OnPageHide(false, nullptr);
-    }
-    mDocShell = aDocShell;
-  } else {
-    
-    
+  MOZ_ASSERT(aDoc->IsStaticDocument());
 
-    
-    RefPtr<BrowsingContext> bc = BrowsingContext::CreateIndependent(
-        nsDocShell::Cast(aDocShell)->GetBrowsingContext()->GetType());
-
-    
-    mDocShell = nsDocShell::Create(bc);
-    NS_ENSURE_TRUE(mDocShell, NS_ERROR_OUT_OF_MEMORY);
-
-    mDidCreateDocShell = true;
-    MOZ_ASSERT(mDocShell->ItemType() == aDocShell->ItemType());
-
-    mTreeOwner = do_GetInterface(aDocShell);
-    mDocShell->SetTreeOwner(mTreeOwner);
-
-    
-    mozilla::Unused << nsDocShell::Cast(mDocShell)->GetDocument();
-  }
+  mDocShell = aDocShell;
+  mDocument = aDoc;
 
   
-  
-  
-  BrowsingContext* targetBC = mDocShell->GetBrowsingContext();
-  BrowsingContext* sourceBC = aDoc->GetBrowsingContext();
-  NS_ENSURE_STATE(sourceBC);
-  if (targetBC != sourceBC) {
-    MOZ_ASSERT(targetBC->IsTopContent());
-    
-    
-    
-    MOZ_ALWAYS_SUCCEEDS(
-        targetBC->SetOpenerPolicy(sourceBC->Top()->GetOpenerPolicy()));
-  }
-
-  mDocument = aDoc->CreateStaticClone(mDocShell);
-  NS_ENSURE_STATE(mDocument);
-
-  nsCOMPtr<nsIContentViewer> viewer;
-  mDocShell->GetContentViewer(getter_AddRefs(viewer));
-  NS_ENSURE_STATE(viewer);
-  viewer->SetDocument(mDocument);
+  DestroyPresentation();
 
   return NS_OK;
 }
@@ -141,20 +95,22 @@ nsresult nsPrintObject::InitAsNestedObject(nsIDocShell* aDocShell,
     
     mFrameType = eIFrame;
   }
-
   return NS_OK;
 }
 
 
 
 void nsPrintObject::DestroyPresentation() {
-  if (mPresShell) {
-    mPresShell->EndObservingDocument();
-    nsAutoScriptBlocker scriptBlocker;
-    RefPtr<PresShell> presShell = mPresShell;
-    mPresShell = nullptr;
-    presShell->Destroy();
+  if (mDocument) {
+    if (RefPtr<PresShell> ps = mDocument->GetPresShell()) {
+      MOZ_DIAGNOSTIC_ASSERT(!mPresShell || ps == mPresShell);
+      mPresShell = nullptr;
+      nsAutoScriptBlocker scriptBlocker;
+      ps->EndObservingDocument();
+      ps->Destroy();
+    }
   }
+  mPresShell = nullptr;
   mPresContext = nullptr;
   mViewManager = nullptr;
 }

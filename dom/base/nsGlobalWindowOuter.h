@@ -68,6 +68,7 @@ class nsIScriptTimeoutHandler;
 class nsIBrowserChild;
 class nsITimeoutHandler;
 class nsIWebBrowserChrome;
+class nsIWebProgressListener;
 class mozIDOMWindowProxy;
 
 class nsDocShellLoadState;
@@ -578,7 +579,12 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   void PromptOuter(const nsAString& aMessage, const nsAString& aInitial,
                    nsAString& aReturn, nsIPrincipal& aSubjectPrincipal,
                    mozilla::ErrorResult& aError);
+
   void PrintOuter(mozilla::ErrorResult& aError);
+
+  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Print(
+      nsIPrintSettings*, nsIWebProgressListener*, nsIDocShell*, bool aIsPreview,
+      mozilla::ErrorResult&);
   mozilla::dom::Selection* GetSelectionOuter();
   already_AddRefed<mozilla::dom::Selection> GetSelection() override;
   nsScreen* GetScreen();
@@ -737,7 +743,12 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
  private:
   explicit nsGlobalWindowOuter(uint64_t aWindowID);
 
+  enum class PrintKind : uint8_t { None, Print, PrintPreview };
+
   
+
+
+
 
 
 
@@ -792,6 +803,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
                         bool aDoJSFixups, bool aNavigate, nsIArray* argv,
                         nsISupports* aExtraArgument,
                         nsDocShellLoadState* aLoadState, bool aForceNoOpener,
+                        PrintKind aPrintKind,
                         mozilla::dom::BrowsingContext** aReturn);
 
  public:

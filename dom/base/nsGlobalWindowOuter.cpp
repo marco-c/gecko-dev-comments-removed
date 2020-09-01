@@ -4,6 +4,8 @@
 
 
 
+#include "mozilla/Assertions.h"
+#include "mozilla/ScopeExit.h"
 #include "nsGlobalWindow.h"
 
 #include <algorithm>
@@ -183,6 +185,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
 #include "nsFrameLoader.h"
+#include "nsFrameLoaderOwner.h"
 #include "nsXPCOMCID.h"
 #include "mozilla/Logging.h"
 #include "prenv.h"
@@ -2745,6 +2748,10 @@ void nsGlobalWindowOuter::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 }
 
 bool nsGlobalWindowOuter::ShouldPromptToBlockDialogs() {
+  if (!nsContentUtils::GetCurrentJSContext()) {
+    return false;  
+  }
+
   nsGlobalWindowOuter* topWindowOuter = GetInProcessScriptableTopInternal();
   if (!topWindowOuter) {
     NS_ASSERTION(!mDocShell,
@@ -5172,56 +5179,219 @@ void nsGlobalWindowOuter::StopOuter(ErrorResult& aError) {
   }
 }
 
+static CallState CollectDocuments(Document& aDoc,
+                                  nsTArray<nsCOMPtr<Document>>& aDocs) {
+  aDocs.AppendElement(&aDoc);
+  auto recurse = [&aDocs](Document& aSubDoc) {
+    return CollectDocuments(aSubDoc, aDocs);
+  };
+  aDoc.EnumerateSubDocuments(recurse);
+  return CallState::Continue;
+}
+
+static void DispatchPrintEventToWindowTree(
+    Document& aDoc, const nsAString& aEvent) {
+  if (aDoc.IsStaticDocument()) {
+    return;
+  }
+
+  nsTArray<nsCOMPtr<Document>> targets;
+  CollectDocuments(aDoc, targets);
+  for (nsCOMPtr<Document>& doc : targets) {
+    nsContentUtils::DispatchTrustedEvent(doc, doc->GetWindow(), aEvent,
+                                         CanBubble::eNo, Cancelable::eNo,
+                                         nullptr);
+  }
+}
+
 void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
-#ifdef NS_PRINTING
   if (!AreDialogsEnabled()) {
     
     
-    aError.Throw(NS_ERROR_NOT_AVAILABLE);
-    return;
+    return aError.ThrowNotSupportedError("Dialogs not enabled for this window");
   }
 
   if (ShouldPromptToBlockDialogs() && !ConfirmDialogIfNeeded()) {
-    aError.Throw(NS_ERROR_NOT_AVAILABLE);
-    return;
+    return aError.ThrowNotAllowedError("Prompt was canceled by the user");
   }
 
-  RefPtr kungFuDeathGrip = this;
-  nsAutoSyncOperation sync(mDoc);
+  const bool isPreview = StaticPrefs::print_tab_modal_enabled() &&
+                         !StaticPrefs::print_always_print_silent();
+  Print(nullptr, nullptr, nullptr, isPreview, aError);
+}
+
+Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
+    nsIPrintSettings* aPrintSettings, nsIWebProgressListener* aListener,
+    nsIDocShell* aDocShellToCloneInto, bool aIsPreview, ErrorResult& aError) {
+#ifdef NS_PRINTING
+  nsCOMPtr<nsIPrintSettingsService> printSettingsService =
+      do_GetService("@mozilla.org/gfx/printsettings-service;1");
+  if (!printSettingsService) {
+    
+    aError.ThrowNotSupportedError("No print settings service");
+    return nullptr;
+  }
+
+  RefPtr<Document> docToPrint = mDoc;
+  MOZ_DIAGNOSTIC_ASSERT(docToPrint,
+                        "This gets forwarded from the inner when "
+                        "we have an active window, so there should "
+                        "be a document");
+  if (!docToPrint) {
+    aError.ThrowNotSupportedError("Document is gone");
+    return nullptr;
+  }
+
+  RefPtr<BrowsingContext> sourceBC = docToPrint->GetBrowsingContext();
+  MOZ_DIAGNOSTIC_ASSERT(sourceBC);
+  if (!sourceBC) {
+    aError.ThrowNotSupportedError("No browsing context");
+    return nullptr;
+  }
+
+  nsAutoSyncOperation sync(docToPrint);
   EnterModalState();
-  auto leave = MakeScopeExit([&] { LeaveModalState(); });
+  auto exitModal = MakeScopeExit([&] { LeaveModalState(); });
 
-  if (StaticPrefs::print_tab_modal_enabled()) {
-    RefPtr<BrowsingContext> bc = GetBrowsingContext();
-    if (!bc || bc->IsDiscarded()) {
-      return;
+  nsCOMPtr<nsIContentViewer> cv;
+  RefPtr<BrowsingContext> bc;
+  if (docToPrint->IsStaticDocument() && aIsPreview) {
+    
+    
+    
+    
+    
+    
+    bc = sourceBC;
+    nsCOMPtr<nsIDocShell> docShell = bc->GetDocShell();
+    if (!docShell) {
+      aError.ThrowNotSupportedError("No docshell");
+      return nullptr;
     }
-
-    if (bc->IsAwaitingPrint()) {
-      
-      return;
+    
+    if (aDocShellToCloneInto && aDocShellToCloneInto != docShell) {
+      aError.ThrowNotSupportedError(
+          "We don't handle cloning a print preview doc into a different "
+          "docshell");
+      return nullptr;
     }
-
-    MOZ_ALWAYS_SUCCEEDS(bc->SetIsAwaitingPrint(true));
-    SpinEventLoopUntil(
-        [&] { return bc->IsDiscarded() || !bc->IsAwaitingPrint(); });
+    docShell->GetContentViewer(getter_AddRefs(cv));
+    MOZ_DIAGNOSTIC_ASSERT(cv);
   } else {
-    nsCOMPtr<nsIPrintSettingsService> printSettingsService =
-        do_GetService("@mozilla.org/gfx/printsettings-service;1");
-    if (!printSettingsService) {
-      
-      aError.Throw(NS_ERROR_NOT_AVAILABLE);
-      return;
+    if (aDocShellToCloneInto) {
+      bc = aDocShellToCloneInto->GetBrowsingContext();
+    } else {
+      AutoNoJSAPI nojsapi;
+      auto printKind = aIsPreview ? PrintKind::PrintPreview : PrintKind::Print;
+      aError = OpenInternal(EmptyString(), EmptyString(), EmptyString(),
+                            false,             
+                            false,             
+                            true,              
+                            false,             
+                            true,              
+                            nullptr, nullptr,  
+                            nullptr,           
+                            false,             
+                            printKind, getter_AddRefs(bc));
+      if (NS_WARN_IF(aError.Failed())) {
+        return nullptr;
+      }
+    }
+    if (!bc) {
+      aError.ThrowNotAllowedError("No browsing context");
+      return nullptr;
+    }
+    nsCOMPtr<nsIDocShell> cloneDocShell = bc->GetDocShell();
+    MOZ_DIAGNOSTIC_ASSERT(cloneDocShell);
+    cloneDocShell->GetContentViewer(getter_AddRefs(cv));
+    MOZ_DIAGNOSTIC_ASSERT(cv);
+    if (!cv) {
+      aError.ThrowNotSupportedError("Didn't end up with a content viewer");
+      return nullptr;
     }
 
-    nsCOMPtr<nsIWebBrowserPrint> webBrowserPrint =
-        do_GetInterface(static_cast<nsIInterfaceRequestor*>(this));
-    if (!webBrowserPrint) {
-      aError.Throw(NS_ERROR_NOT_AVAILABLE);
-      return;
+    if (bc != sourceBC) {
+      MOZ_ASSERT(bc->IsTopContent());
+      
+      
+      
+      
+      
+      
+      MOZ_ALWAYS_SUCCEEDS(
+          bc->SetOpenerPolicy(sourceBC->Top()->GetOpenerPolicy()));
     }
-    webBrowserPrint->Print(nullptr, nullptr);
+
+    if (RefPtr<Document> doc = cv->GetDocument()) {
+      if (doc->IsShowing()) {
+        
+        
+        
+        doc->OnPageHide(false, nullptr);
+      }
+    }
+
+    
+    DispatchPrintEventToWindowTree(*docToPrint, u"beforeprint"_ns);
+    auto dispatchAfterPrint = MakeScopeExit(
+        [&] { DispatchPrintEventToWindowTree(*docToPrint, u"afterprint"_ns); });
+
+    RefPtr<Document> clone;
+    {
+      nsAutoScriptBlocker blockScripts;
+      clone = docToPrint->CreateStaticClone(cloneDocShell);
+      if (!clone) {
+        aError.ThrowNotSupportedError("Clone operation for printing failed");
+        return nullptr;
+      }
+
+      
+      
+      aError = cv->SetDocument(clone);
+      if (aError.Failed()) {
+        return nullptr;
+      }
+
+      auto pendingFrameClones = clone->TakePendingFrameStaticClones();
+      for (const auto& clone : pendingFrameClones) {
+        RefPtr<Element> element = do_QueryObject(clone.mElement);
+        RefPtr<nsFrameLoader> frameLoader =
+            nsFrameLoader::Create(element,  false);
+
+        if (NS_WARN_IF(!frameLoader)) {
+          continue;
+        }
+
+        clone.mElement->SetFrameLoader(frameLoader);
+
+        nsCOMPtr<nsIDocShell> docshell;
+        RefPtr<Document> doc;
+        nsresult rv = frameLoader->FinishStaticClone(clone.mStaticCloneOf,
+                                                     getter_AddRefs(docshell),
+                                                     getter_AddRefs(doc));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          continue;
+        }
+      }
+    }
   }
+
+  nsCOMPtr<nsIWebBrowserPrint> webBrowserPrint = do_QueryInterface(cv);
+  if (!webBrowserPrint) {
+    aError.ThrowNotSupportedError(
+        "Content viewer didn't implement nsIWebBrowserPrint");
+    return nullptr;
+  }
+
+  if (aIsPreview) {
+    aError = webBrowserPrint->PrintPreview(aPrintSettings, aListener);
+  } else {
+    
+    webBrowserPrint->Print(aPrintSettings, aListener);
+  }
+  return WindowProxyHolder(std::move(bc));
+#else
+  return nullptr;
 #endif  
 }
 
@@ -5634,7 +5804,7 @@ nsresult nsGlobalWindowOuter::Open(const nsAString& aUrl,
                       false,             
                       true,              
                       nullptr, nullptr,  
-                      aLoadState, aForceNoOpener, _retval);
+                      aLoadState, aForceNoOpener, PrintKind::None, _retval);
 }
 
 nsresult nsGlobalWindowOuter::OpenJS(const nsAString& aUrl,
@@ -5650,7 +5820,7 @@ nsresult nsGlobalWindowOuter::OpenJS(const nsAString& aUrl,
                       nullptr, nullptr,  
                       nullptr,           
                       false,             
-                      _retval);
+                      PrintKind::None, _retval);
 }
 
 
@@ -5669,7 +5839,7 @@ nsresult nsGlobalWindowOuter::OpenDialog(const nsAString& aUrl,
                       nullptr, aExtraArgument,  
                       nullptr,                  
                       false,                    
-                      _retval);
+                      PrintKind::None, _retval);
 }
 
 
@@ -5687,7 +5857,7 @@ nsresult nsGlobalWindowOuter::OpenNoNavigate(const nsAString& aUrl,
                       nullptr, nullptr,  
                       nullptr,           
                       false,             
-                      _retval);
+                      PrintKind::None, _retval);
 }
 
 Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenDialogOuter(
@@ -5712,7 +5882,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenDialogOuter(
                         argvArray, nullptr,  
                         nullptr,             
                         false,               
-                        getter_AddRefs(dialog));
+                        PrintKind::None, getter_AddRefs(dialog));
   if (!dialog) {
     return nullptr;
   }
@@ -6900,7 +7070,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     const nsAString& aUrl, const nsAString& aName, const nsAString& aOptions,
     bool aDialog, bool aContentModal, bool aCalledNoScript, bool aDoJSFixups,
     bool aNavigate, nsIArray* argv, nsISupports* aExtraArgument,
-    nsDocShellLoadState* aLoadState, bool aForceNoOpener,
+    nsDocShellLoadState* aLoadState, bool aForceNoOpener, PrintKind aPrintKind,
     BrowsingContext** aReturn) {
 #ifdef DEBUG
   uint32_t argc = 0;
@@ -7051,6 +7221,19 @@ nsresult nsGlobalWindowOuter::OpenInternal(
   bool isPopupSpamWindow =
       checkForPopup && (abuseLevel >= PopupBlocker::openControlled);
 
+  const auto wwPrintKind = [&] {
+    switch (aPrintKind) {
+      case PrintKind::None:
+        return nsPIWindowWatcher::PRINT_NONE;
+      case PrintKind::Print:
+        return nsPIWindowWatcher::PRINT_REGULAR;
+      case PrintKind::PrintPreview:
+        return nsPIWindowWatcher::PRINT_PREVIEW;
+    }
+    MOZ_ASSERT_UNREACHABLE("Wat");
+    return nsPIWindowWatcher::PRINT_NONE;
+  }();
+
   {
     
     
@@ -7063,8 +7246,8 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       rv = pwwatch->OpenWindow2(this, url, name, options,
                                  true, aDialog,
                                 aNavigate, argv, isPopupSpamWindow,
-                                forceNoOpener, forceNoReferrer, aLoadState,
-                                getter_AddRefs(domReturn));
+                                forceNoOpener, forceNoReferrer, wwPrintKind,
+                                aLoadState, getter_AddRefs(domReturn));
     } else {
       
       
@@ -7083,8 +7266,8 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       rv = pwwatch->OpenWindow2(this, url, name, options,
                                  false, aDialog,
                                 aNavigate, aExtraArgument, isPopupSpamWindow,
-                                forceNoOpener, forceNoReferrer, aLoadState,
-                                getter_AddRefs(domReturn));
+                                forceNoOpener, forceNoReferrer, wwPrintKind,
+                                aLoadState, getter_AddRefs(domReturn));
     }
   }
 

@@ -2033,60 +2033,6 @@ void BrowsingContext::DidSet(FieldIndex<IDX_IsActive>, bool aOldValue) {
   }
 }
 
-
-
-
-
-void BrowsingContext::DidSet(FieldIndex<IDX_IsAwaitingPrint>, bool aOldValue) {
-  if (!GetIsAwaitingPrint() || aOldValue == GetIsAwaitingPrint()) {
-    return;
-  }
-
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
-  auto unsetFlagOnFailure = MakeScopeExit([&] {
-    
-    
-    
-    
-    
-    Unused << SetIsAwaitingPrint(false);
-  });
-
-  RefPtr<Element> el = Top()->GetEmbedderElement();
-  if (NS_WARN_IF(!el)) {
-    return;
-  }
-
-  nsCOMPtr<nsPIDOMWindowOuter> outerWin = el->OwnerDoc()->GetWindow();
-  if (NS_WARN_IF(!outerWin)) {
-    return;
-  }
-
-  nsCOMPtr<nsIDOMChromeWindow> chromeWin = do_QueryInterface(outerWin);
-  if (NS_WARN_IF(!chromeWin)) {
-    return;
-  }
-
-  nsCOMPtr<nsIBrowserDOMWindow> browserDOMWin;
-  chromeWin->GetBrowserDOMWindow(getter_AddRefs(browserDOMWin));
-  if (NS_WARN_IF(!browserDOMWin)) {
-    return;
-  }
-
-  
-  
-  
-  
-  if (NS_FAILED(browserDOMWin->Print(this))) {
-    return;
-  }
-  
-  unsetFlagOnFailure.release();
-}
-
 void BrowsingContext::DidSet(FieldIndex<IDX_Muted>) {
   MOZ_ASSERT(!GetParent(), "Set muted flag on non top-level context!");
   USER_ACTIVATION_LOG("Set audio muted %d for %s browsing context 0x%08" PRIx64,

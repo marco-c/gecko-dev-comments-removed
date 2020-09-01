@@ -83,11 +83,27 @@ var PrintEventHandler = {
     
     
     let sourceBrowsingContext = this.getSourceBrowsingContext();
+    this.previewBrowser = this._createPreviewBrowser(sourceBrowsingContext);
+
+    
+    
+    
+    
+    let existingBrowser = window.arguments[0].getProperty("previewBrowser");
+    if (existingBrowser) {
+      sourceBrowsingContext = existingBrowser.browsingContext;
+      this.previewBrowser.swapDocShells(existingBrowser);
+      existingBrowser.remove();
+    } else {
+      this.previewBrowser.loadURI("about:printpreview", {
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      });
+    }
+
     this.originalSourceContentTitle =
       sourceBrowsingContext.currentWindowContext.documentTitle;
     this.originalSourceCurrentURI =
       sourceBrowsingContext.currentWindowContext.documentURI.spec;
-    this.previewBrowser = this._createPreviewBrowser(sourceBrowsingContext);
 
     
     
@@ -167,10 +183,6 @@ var PrintEventHandler = {
 
     previewStack.append(printPreviewBrowser);
     ourBrowser.parentElement.prepend(previewStack);
-
-    printPreviewBrowser.loadURI("about:printpreview", {
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    });
 
     return printPreviewBrowser;
   },

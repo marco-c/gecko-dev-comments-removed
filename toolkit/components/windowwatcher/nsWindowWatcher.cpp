@@ -295,7 +295,7 @@ nsWindowWatcher::OpenWindow(mozIDOMWindowProxy* aParent, const nsACString& aUrl,
                               true, argv,
                               false,
                               false,
-                              false,
+                              false, PRINT_NONE,
                               nullptr, getter_AddRefs(bc)));
   if (bc) {
     nsCOMPtr<mozIDOMWindowProxy> win(bc->GetDOMWindow());
@@ -355,7 +355,7 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent,
                              bool aCalledFromScript, bool aDialog,
                              bool aNavigate, nsISupports* aArguments,
                              bool aIsPopupSpam, bool aForceNoOpener,
-                             bool aForceNoReferrer,
+                             bool aForceNoReferrer, PrintKind aPrintKind,
                              nsDocShellLoadState* aLoadState,
                              BrowsingContext** aResult) {
   nsCOMPtr<nsIArray> argv = ConvertArgsToArray(aArguments);
@@ -375,8 +375,8 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent,
 
   return OpenWindowInternal(aParent, aUrl, aName, aFeatures, aCalledFromScript,
                             dialog, aNavigate, argv, aIsPopupSpam,
-                            aForceNoOpener, aForceNoReferrer, aLoadState,
-                            aResult);
+                            aForceNoOpener, aForceNoReferrer, aPrintKind,
+                            aLoadState, aResult);
 }
 
 
@@ -587,8 +587,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     mozIDOMWindowProxy* aParent, const nsACString& aUrl,
     const nsACString& aName, const nsACString& aFeatures, bool aCalledFromJS,
     bool aDialog, bool aNavigate, nsIArray* aArgv, bool aIsPopupSpam,
-    bool aForceNoOpener, bool aForceNoReferrer, nsDocShellLoadState* aLoadState,
-    BrowsingContext** aResult) {
+    bool aForceNoOpener, bool aForceNoReferrer, PrintKind aPrintKind,
+    nsDocShellLoadState* aLoadState, BrowsingContext** aResult) {
   MOZ_ASSERT_IF(aForceNoReferrer, aForceNoOpener);
 
   nsresult rv = NS_OK;
@@ -775,6 +775,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     openWindowInfo = new nsOpenWindowInfo();
     openWindowInfo->mForceNoOpener = aForceNoOpener;
     openWindowInfo->mParent = parentBC;
+    openWindowInfo->mIsForPrinting = aPrintKind != PRINT_NONE;
+    openWindowInfo->mIsForPrintPreview = aPrintKind == PRINT_PREVIEW;
 
     
     
@@ -2437,8 +2439,13 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
 int32_t nsWindowWatcher::GetWindowOpenLocation(nsPIDOMWindowOuter* aParent,
                                                uint32_t aChromeFlags,
                                                bool aCalledFromJS,
-                                               bool aWidthSpecified) {
-  bool isFullScreen = aParent->GetFullScreen();
+                                               bool aWidthSpecified,
+                                               bool aIsForPrinting) {
+  
+  
+  if (aIsForPrinting) {
+    return nsIBrowserDOMWindow::OPEN_PRINT_BROWSER;
+  }
 
   
   int32_t containerPref;
@@ -2449,8 +2456,9 @@ int32_t nsWindowWatcher::GetWindowOpenLocation(nsPIDOMWindowOuter* aParent,
   }
 
   bool isDisabledOpenNewWindow =
-      isFullScreen && Preferences::GetBool(
-                          "browser.link.open_newwindow.disabled_in_fullscreen");
+      aParent->GetFullScreen() &&
+      Preferences::GetBool(
+          "browser.link.open_newwindow.disabled_in_fullscreen");
 
   if (isDisabledOpenNewWindow &&
       (containerPref == nsIBrowserDOMWindow::OPEN_NEWWINDOW)) {

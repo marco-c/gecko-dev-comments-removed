@@ -360,16 +360,14 @@ class PrintingChild extends ActorChild {
           this.mm.sendAsyncMessage("Printing:Preview:Entered", {
             failed: true,
           });
-          browsingContext.isAwaitingPrint = false;
           return;
         }
+
         try {
           let listener = new PrintingListener(this.mm);
 
           this.printPreviewInitializingInfo = { changingBrowsers };
-          docShell
-            .initOrReusePrintPreviewViewer()
-            .printPreview(printSettings, contentWindow, listener);
+          contentWindow.printPreview(printSettings, listener, docShell);
         } catch (error) {
           
           
@@ -379,8 +377,6 @@ class PrintingChild extends ActorChild {
             failed: true,
           });
         }
-
-        browsingContext.isAwaitingPrint = false;
       };
 
       
@@ -400,27 +396,26 @@ class PrintingChild extends ActorChild {
       
       Cu.reportError(error);
       this.mm.sendAsyncMessage("Printing:Preview:Entered", { failed: true });
-      browsingContext.isAwaitingPrint = false;
     }
   }
 
   exitPrintPreview(glo) {
     this.printPreviewInitializingInfo = null;
-    this.docShell.initOrReusePrintPreviewViewer().exitPrintPreview();
+    this.docShell.exitPrintPreview();
   }
 
   updatePageCount() {
-    let numPages = this.docShell.initOrReusePrintPreviewViewer()
-      .printPreviewNumPages;
+    let cv = this.docShell.contentViewer;
+    cv.QueryInterface(Ci.nsIWebBrowserPrint);
     this.mm.sendAsyncMessage("Printing:Preview:UpdatePageCount", {
-      numPages,
+      numPages: cv.printPreviewNumPages,
     });
   }
 
   navigate(navType, pageNum) {
-    this.docShell
-      .initOrReusePrintPreviewViewer()
-      .printPreviewScrollToPage(navType, pageNum);
+    let cv = this.docShell.contentViewer;
+    cv.QueryInterface(Ci.nsIWebBrowserPrint);
+    cv.printPreviewScrollToPage(navType, pageNum);
   }
 }
 

@@ -11,6 +11,7 @@
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/Telemetry.h"
+#include "nsThreadUtils.h"
 #include "nscore.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
@@ -3174,14 +3175,11 @@ nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
 
 NS_IMETHODIMP
 nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
-                               mozIDOMWindowProxy* aChildDOMWin,
                                nsIWebProgressListener* aWebProgressListener) {
 #  ifdef NS_PRINT_PREVIEW
-  MOZ_ASSERT(IsInitializedForPrintPreview(),
-             "For print preview nsIWebBrowserPrint must be from "
-             "docshell.initOrReusePrintPreviewViewer!");
+  RefPtr<Document> doc = mDocument.get();
+  NS_ENSURE_STATE(doc);
 
-  NS_ENSURE_ARG_POINTER(aChildDOMWin);
   if (GetIsPrinting()) {
     nsPrintJob::CloseProgressDialog(aWebProgressListener);
     return NS_ERROR_FAILURE;
@@ -3192,11 +3190,6 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
     PR_PL(("Can't Print Preview without device context and docshell"));
     return NS_ERROR_FAILURE;
   }
-
-  nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryInterface(aChildDOMWin);
-  MOZ_ASSERT(window);
-  nsCOMPtr<Document> doc = window->GetDoc();
-  NS_ENSURE_STATE(doc);
 
   NS_ENSURE_STATE(!GetIsPrinting());
   
@@ -3714,11 +3707,10 @@ void nsDocumentViewer::SetIsPrinting(bool aIsPrinting) {
 
 bool nsDocumentViewer::GetIsPrintPreview() const {
 #ifdef NS_PRINTING
-  if (mPrintJob) {
-    return mPrintJob->CreatedForPrintPreview();
-  }
-#endif
+  return mPrintJob && mPrintJob->CreatedForPrintPreview();
+#else
   return false;
+#endif
 }
 
 
@@ -3788,7 +3780,12 @@ void nsDocumentViewer::OnDonePrinting() {
     }
 
     
-    if (mDeferredWindowClose) {
+    
+    
+    
+    
+    
+    if (mDeferredWindowClose || !printJob->CreatedForPrintPreview()) {
       mDeferredWindowClose = false;
       if (mContainer) {
         if (nsCOMPtr<nsPIDOMWindowOuter> win = mContainer->GetWindow()) {
@@ -3908,14 +3905,6 @@ void nsDocumentViewer::InvalidatePotentialSubDocDisplayItem() {
 void nsDocumentViewer::DestroyPresContext() {
   InvalidatePotentialSubDocDisplayItem();
   mPresContext = nullptr;
-}
-
-bool nsDocumentViewer::IsInitializedForPrintPreview() {
-  return mInitializedForPrintPreview;
-}
-
-void nsDocumentViewer::InitializeForPrintPreview() {
-  mInitializedForPrintPreview = true;
 }
 
 void nsDocumentViewer::SetPrintPreviewPresentation(nsViewManager* aViewManager,

@@ -144,10 +144,6 @@ class BrowserDOMWindow {
     throw Components.Exception("", Cr.NS_ERROR_FAILURE);
   }
 
-  print(aBrowsingContext) {
-    PrintUtils.startPrintWindow(aBrowsingContext);
-  }
-
   
 
 
@@ -170,6 +166,12 @@ class BrowserDOMWindow {
     
     
     
+    if (where == Ci.nsIBrowserDOMWindow.OPEN_PRINT_BROWSER) {
+      return PrintUtils.startPrintWindow(
+        params.openWindowInfo.parent,
+        params.openWindowInfo
+      );
+    }
 
     
     if (gSSB.canLoad(uri)) {

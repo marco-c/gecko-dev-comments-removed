@@ -498,14 +498,6 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 
   
-  print(aBrowsingContext) {
-    aBrowsingContext.isAwaitingPrint = false;
-    throw new Error(
-      "window.print() is not exposed on android so this should not be reachable"
-    );
-  }
-
-  
   openURIInFrame(aUri, aParams, aWhere, aFlags, aNextRemoteTabId, aName) {
     const browser = this.handleOpenUri(
       aUri,
