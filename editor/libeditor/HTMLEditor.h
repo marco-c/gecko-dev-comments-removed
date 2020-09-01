@@ -2534,66 +2534,6 @@ class HTMLEditor final : public TextEditor,
       const CharPointData& aPreviousCharPointData,
       const CharPointData& aNextCharPointData);
 
-  class MOZ_STACK_CLASS AutoEmptyBlockAncestorDeleter final {
-   public:
-    
-
-
-
-
-
-
-
-
-    [[nodiscard]] Element* ScanEmptyBlockInclusiveAncestor(
-        const HTMLEditor& aHTMLEditor, nsIContent& aStartContent,
-        Element& aEditingHostElement);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-    Run(HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount);
-
-   private:
-    
-
-
-
-
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
-    MaybeInsertBRElementBeforeEmptyListItemElement(HTMLEditor& aHTMLEditor);
-
-    
-
-
-
-    [[nodiscard]] Result<EditorDOMPoint, nsresult> GetNewCaretPoisition(
-        const HTMLEditor& aHTMLEditor,
-        nsIEditor::EDirection aDirectionAndAmount) const;
-
-    RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
-  };
-
   
 
 

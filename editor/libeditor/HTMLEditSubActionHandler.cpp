@@ -2886,7 +2886,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       RefPtr<Element> mLeftBlockElement;
       RefPtr<Element> mRightBlockElement;
       Maybe<nsAtom*> mNewListElementTagNameOfRightListElement;
-    };
+    };  
+        
 
     enum class Mode {
       NotInitialized,
@@ -2904,8 +2905,68 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     RefPtr<dom::HTMLBRElement> mBRElement;
     Mode mMode = Mode::NotInitialized;
     bool mNeedsToFallbackToDeleteSelectionWithTransaction = false;
-  };
-};
+  };  
+
+  class MOZ_STACK_CLASS AutoEmptyBlockAncestorDeleter final {
+   public:
+    
+
+
+
+
+
+
+
+
+    [[nodiscard]] Element* ScanEmptyBlockInclusiveAncestor(
+        const HTMLEditor& aHTMLEditor, nsIContent& aStartContent,
+        Element& aEditingHostElement);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+    Run(HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount);
+
+   private:
+    
+
+
+
+
+
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
+    MaybeInsertBRElementBeforeEmptyListItemElement(HTMLEditor& aHTMLEditor);
+
+    
+
+
+
+    [[nodiscard]] Result<EditorDOMPoint, nsresult> GetNewCaretPoisition(
+        const HTMLEditor& aHTMLEditor,
+        nsIEditor::EDirection aDirectionAndAmount) const;
+
+    RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
+  };  
+};    
 
 EditActionResult HTMLEditor::HandleDeleteSelection(
     nsIEditor::EDirection aDirectionAndAmount,
@@ -8774,10 +8835,10 @@ nsresult HTMLEditor::AlignBlockContentsWithDivElement(
   return NS_OK;
 }
 
-Element*
-HTMLEditor::AutoEmptyBlockAncestorDeleter::ScanEmptyBlockInclusiveAncestor(
-    const HTMLEditor& aHTMLEditor, nsIContent& aStartContent,
-    Element& aEditingHostElement) {
+Element* HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
+    ScanEmptyBlockInclusiveAncestor(const HTMLEditor& aHTMLEditor,
+                                    nsIContent& aStartContent,
+                                    Element& aEditingHostElement) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
 
   
@@ -8814,7 +8875,8 @@ HTMLEditor::AutoEmptyBlockAncestorDeleter::ScanEmptyBlockInclusiveAncestor(
   return mEmptyInclusiveAncestorBlockElement;
 }
 
-Result<RefPtr<Element>, nsresult> HTMLEditor::AutoEmptyBlockAncestorDeleter::
+Result<RefPtr<Element>, nsresult>
+HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
     MaybeInsertBRElementBeforeEmptyListItemElement(HTMLEditor& aHTMLEditor) {
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement);
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement->GetParentElement());
@@ -8853,10 +8915,10 @@ Result<RefPtr<Element>, nsresult> HTMLEditor::AutoEmptyBlockAncestorDeleter::
   return brElement;
 }
 
-Result<EditorDOMPoint, nsresult>
-HTMLEditor::AutoEmptyBlockAncestorDeleter::GetNewCaretPoisition(
-    const HTMLEditor& aHTMLEditor,
-    nsIEditor::EDirection aDirectionAndAmount) const {
+Result<EditorDOMPoint, nsresult> HTMLEditor::AutoDeleteRangesHandler::
+    AutoEmptyBlockAncestorDeleter::GetNewCaretPoisition(
+        const HTMLEditor& aHTMLEditor,
+        nsIEditor::EDirection aDirectionAndAmount) const {
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement);
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement->GetParentElement());
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
@@ -8917,7 +8979,8 @@ HTMLEditor::AutoEmptyBlockAncestorDeleter::GetNewCaretPoisition(
   }
 }
 
-EditActionResult HTMLEditor::AutoEmptyBlockAncestorDeleter::Run(
+EditActionResult
+HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::Run(
     HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount) {
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement);
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement->GetParentElement());
