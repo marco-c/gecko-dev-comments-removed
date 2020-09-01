@@ -150,7 +150,7 @@ nsDocShell* DocumentChannel::GetDocShell() {
 
 
 static bool URIUsesDocChannel(nsIURI* aURI) {
-  if (SchemeIsJavascript(aURI) || NS_IsAboutBlank(aURI)) {
+  if (SchemeIsJavascript(aURI)) {
     return false;
   }
 
