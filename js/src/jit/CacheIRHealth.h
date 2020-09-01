@@ -43,8 +43,8 @@ class CacheIRHealth {
                                         ICEntry* entry);
   
   
-  uint32_t spewJSOpForCacheIRHealth(AutoStructuredSpewer& spew,
-                                    unsigned pcOffset, jsbytecode next);
+  void spewJSOpAndCacheIRHealth(AutoStructuredSpewer& spew, HandleScript script,
+                                jit::ICEntry* entry, jsbytecode* pc, JSOp op);
   
   
   bool rateMyCacheIR(JSContext* cx, HandleScript script);
