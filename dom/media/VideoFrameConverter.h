@@ -139,14 +139,20 @@ class VideoFrameConverter {
                   ("VideoFrameConverter Track is now %s",
                    aTrackEnabled ? "enabled" : "disabled"));
           mTrackEnabled = aTrackEnabled;
-          if (!aTrackEnabled && mLastFrameConverted) {
+          if (!aTrackEnabled) {
             
             
-            ProcessVideoFrame(
-                FrameToProcess{nullptr, TimeStamp::Now(),
-                               gfx::IntSize(mLastFrameConverted->width(),
-                                            mLastFrameConverted->height()),
-                               true});
+            if (mLastFrameQueuedForProcessing.Serial() != -2) {
+              
+              
+              FrameToProcess f = mLastFrameQueuedForProcessing;
+              f.mTime = TimeStamp::Now();
+              ProcessVideoFrame(f);
+            } else {
+              
+              QueueForProcessing(nullptr, TimeStamp::Now(),
+                                 gfx::IntSize(640, 480), true);
+            }
           }
         }));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
