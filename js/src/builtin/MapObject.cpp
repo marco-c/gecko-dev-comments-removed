@@ -468,6 +468,9 @@ static void TraceKey(Range& r, const HashableValue& key, JSTracer* trc) {
     
     r.rekeyFront(newKey);
   }
+
+  
+  newKey.unsafeClear();
 }
 
 void MapObject::trace(JSTracer* trc, JSObject* obj) {
