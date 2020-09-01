@@ -198,7 +198,7 @@ struct CompilationStencil {
   
   
   
-  Vector<ScriptStencil> scriptData;
+  Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
 
   
   
@@ -221,11 +221,7 @@ struct CompilationStencil {
   ParserAtomsTable parserAtoms;
 
   explicit CompilationStencil(JSContext* cx)
-      : scriptData(cx),
-        scopeData(cx),
-        moduleMetadata(cx),
-        asmJS(cx),
-        parserAtoms(cx) {}
+      : scopeData(cx), moduleMetadata(cx), asmJS(cx), parserAtoms(cx) {}
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
