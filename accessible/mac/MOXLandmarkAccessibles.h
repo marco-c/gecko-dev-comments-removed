@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+#import "mozAccessible.h"
+
+@interface MOXLandmarkAccessible : mozAccessible
+
+- (NSString*)moxTitle;
+
+@end

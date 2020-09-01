@@ -6,6 +6,12 @@
 
 
 #import "mozSelectableElements.h"
+#import "nsCocoaUtils.h"
+#import "MacUtils.h"
+
+#include "Accessible-inl.h"
+
+using namespace mozilla::a11y;
 
 @implementation mozSelectableAccessible
 

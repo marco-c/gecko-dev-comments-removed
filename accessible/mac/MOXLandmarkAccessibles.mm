@@ -1,0 +1,15 @@
+
+
+
+
+
+
+#import "MOXLandmarkAccessibles.h"
+
+@implementation MOXLandmarkAccessible
+
+- (NSString*)moxTitle {
+  return @"";
+}
+
+@end
