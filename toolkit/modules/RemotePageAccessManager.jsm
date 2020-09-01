@@ -267,25 +267,25 @@ let RemotePageAccessManager = {
 
 
   checkAllowAccessToFeature(aPrincipal, aFeature, aDocument) {
-    let uri;
-    if (aPrincipal.isNullPrincipal || !aPrincipal.URI) {
+    let spec;
+    if (aPrincipal.isNullPrincipal) {
       
       
       
       if (!aDocument) {
         return null;
       }
-
-      uri = aDocument.documentURIObject;
+      if (!aDocument.documentURIObject.schemeIs("about")) {
+        return null;
+      }
+      spec =
+        aDocument.documentURIObject.prePath +
+        aDocument.documentURIObject.filePath;
     } else {
-      uri = aPrincipal.URI;
-    }
-
-    
-    let spec = uri.prePath + uri.filePath;
-
-    if (!uri.schemeIs("about")) {
-      return null;
+      if (!aPrincipal.schemeIs("about")) {
+        return null;
+      }
+      spec = aPrincipal.prepath + aPrincipal.filePath;
     }
 
     
