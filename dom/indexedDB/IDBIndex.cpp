@@ -526,12 +526,13 @@ RefPtr<IDBRequest> IDBIndex::OpenCursorInternal(bool aKeysOnly, JSContext* aCx,
         IDB_LOG_STRINGIFY(aDirection));
   }
 
-  BackgroundCursorChildBase* const actor =
-      aKeysOnly ? static_cast<BackgroundCursorChildBase*>(
-                      new BackgroundCursorChild<IDBCursorType::IndexKey>(
-                          request, this, aDirection))
-                : new BackgroundCursorChild<IDBCursorType::Index>(request, this,
-                                                                  aDirection);
+  const auto actor =
+      aKeysOnly
+          ? static_cast<SafeRefPtr<BackgroundCursorChildBase>>(
+                MakeSafeRefPtr<BackgroundCursorChild<IDBCursorType::IndexKey>>(
+                    request, this, aDirection))
+          : MakeSafeRefPtr<BackgroundCursorChild<IDBCursorType::Index>>(
+                request, this, aDirection);
 
   auto& mutableTransaction = mObjectStore->MutableTransactionRef();
 
@@ -540,7 +541,7 @@ RefPtr<IDBRequest> IDBIndex::OpenCursorInternal(bool aKeysOnly, JSContext* aCx,
   
   mutableTransaction.InvalidateCursorCaches();
 
-  mutableTransaction.OpenCursor(actor, params);
+  mutableTransaction.OpenCursor(*actor, params);
 
   return request;
 }
