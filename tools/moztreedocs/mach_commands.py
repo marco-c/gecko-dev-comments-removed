@@ -347,6 +347,13 @@ class Documentation(MachCommandBase):
         
         
         
+        import fcntl
+
+        fcntl.fcntl(1, fcntl.F_SETFL, 0)
+
+        
+        
+        
         
         
         
