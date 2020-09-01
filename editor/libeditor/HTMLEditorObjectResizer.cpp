@@ -1166,7 +1166,8 @@ void HTMLEditor::SetFinalSize(int32_t aX, int32_t aY) {
                  : 0);
 
   
-  AutoPlaceholderBatch treatAsOneTransaction(*this);
+  AutoPlaceholderBatch treatAsOneTransaction(*this,
+                                             ScrollSelectionIntoView::Yes);
   RefPtr<Element> resizedObject(mResizedObject);
 
   if (mResizedObjectIsAbsolutelyPositioned) {

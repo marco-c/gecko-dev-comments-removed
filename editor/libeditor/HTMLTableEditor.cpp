@@ -237,7 +237,8 @@ nsresult HTMLEditor::InsertTableCellsWithTransaction(
       MOZ_ASSERT_UNREACHABLE("Invalid InsertPosition");
   }
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
   
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertNode, nsIEditor::eNext, ignoredError);
@@ -484,7 +485,8 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
   
   MOZ_ASSERT(!tableSize.IsEmpty());
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
   
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertNode, nsIEditor::eNext, ignoredError);
@@ -718,7 +720,8 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
   
   MOZ_ASSERT(!tableSize.IsEmpty());
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
   
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertNode, nsIEditor::eNext, ignoredError);
@@ -974,7 +977,8 @@ NS_IMETHODIMP HTMLEditor::DeleteTable() {
     return NS_ERROR_FAILURE;
   }
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
   rv = DeleteTableElementAndChildrenWithTransaction(*table);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rv),
@@ -1020,7 +1024,8 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
     return NS_OK;
   }
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
   
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
@@ -1323,7 +1328,8 @@ nsresult HTMLEditor::DeleteTableCellContentsWithTransaction() {
     return NS_OK;
   }
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
   
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
@@ -1427,7 +1433,8 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
     return error.StealNSResult();
   }
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
 
   
   IgnoredErrorResult ignoredError;
@@ -1685,7 +1692,8 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
     return error.StealNSResult();
   }
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
 
   
   IgnoredErrorResult ignoredError;
@@ -2315,7 +2323,8 @@ NS_IMETHODIMP HTMLEditor::SplitTableCell() {
     return NS_OK;
   }
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
   
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
@@ -2590,7 +2599,8 @@ NS_IMETHODIMP HTMLEditor::SwitchTableCellHeaderType(Element* aSourceCell,
     return EditorBase::ToGenericNSResult(rv);
   }
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this);
+  AutoPlaceholderBatch treatAsOneTransaction(*this,
+                                             ScrollSelectionIntoView::Yes);
   
   
   IgnoredErrorResult ignoredError;
@@ -2658,7 +2668,8 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
     return NS_OK;
   }
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
   
   AutoTransactionsConserveSelection dontChangeSelection(*this);
 
@@ -3330,7 +3341,8 @@ nsresult HTMLEditor::NormalizeTableInternal(Element& aTableOrElementInTable) {
   
   AutoSelectionRestorer restoreSelectionLater(*this);
 
-  AutoPlaceholderBatch treateAsOneTransaction(*this);
+  AutoPlaceholderBatch treateAsOneTransaction(*this,
+                                              ScrollSelectionIntoView::Yes);
   
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(

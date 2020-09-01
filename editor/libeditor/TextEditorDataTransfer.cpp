@@ -170,7 +170,8 @@ nsresult TextEditor::InsertTextFromTransferable(
       
       nsContentUtils::PlatformToDOMLineBreaks(stuffToPaste);
 
-      AutoPlaceholderBatch treatAsOneTransaction(*this);
+      AutoPlaceholderBatch treatAsOneTransaction(*this,
+                                                 ScrollSelectionIntoView::Yes);
       nsresult rv = InsertTextAsSubAction(stuffToPaste);
       if (NS_FAILED(rv)) {
         NS_WARNING("EditorBase::InsertTextAsSubAction() failed");
@@ -322,7 +323,8 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   }
 
   
-  AutoPlaceholderBatch treatAsOneTransaction(*this);
+  AutoPlaceholderBatch treatAsOneTransaction(*this,
+                                             ScrollSelectionIntoView::Yes);
 
   
   SelectionBatcher selectionBatcher(SelectionRefPtr());
@@ -543,7 +545,7 @@ nsresult TextEditor::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
   
   Maybe<AutoPlaceholderBatch> treatAsOneTransaction;
   if (requestedByAnotherEditor) {
-    treatAsOneTransaction.emplace(*this);
+    treatAsOneTransaction.emplace(*this, ScrollSelectionIntoView::Yes);
   }
 
   rv = DeleteSelectionAsSubAction(nsIEditor::eNone, IsTextEditor()
