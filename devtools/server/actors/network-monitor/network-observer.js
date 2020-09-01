@@ -368,25 +368,18 @@ NetworkObserver.prototype = {
 
     const httpActivity = this.createOrGetActivityObject(channel);
     const serverTimings = this._extractServerTimings(channel);
-    if (!httpActivity.owner) {
-      
-      
-      
-
-      
-      
-      
-      
-      if (reason || id) {
-        this._createNetworkEvent(subject, {
-          blockedReason: reason,
-          blockingExtension: id,
-        });
-      }
-    } else {
+    if (httpActivity.owner) {
       
       
       httpActivity.owner.addSeverTimings(serverTimings);
+    } else {
+      
+      
+      
+      this._createNetworkEvent(subject, {
+        blockedReason: reason,
+        blockingExtension: id,
+      });
     }
   },
 
