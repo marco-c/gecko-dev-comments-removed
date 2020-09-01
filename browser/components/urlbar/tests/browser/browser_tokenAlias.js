@@ -462,6 +462,38 @@ add_task(async function enterAutofillsAlias_legacy() {
 });
 
 
+add_task(async function enterAutofillsAlias() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", true]],
+  });
+  for (let value of [ALIAS.substring(0, ALIAS.length - 1), ALIAS]) {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value,
+      selectionStart: value.length,
+      selectionEnd: value.length,
+    });
+    let testEngineItem = await UrlbarTestUtils.waitForAutocompleteResultAt(
+      window,
+      0
+    );
+
+    let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+    EventUtils.synthesizeKey("KEY_Enter");
+    await searchPromise;
+
+    await UrlbarTestUtils.assertSearchMode(window, {
+      engineName: testEngineItem.result.payload.engine,
+    });
+
+    gURLBar.setSearchMode({});
+  }
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
 
 add_task(async function enterAutofillsAlias() {
   await SpecialPowers.pushPrefEnv({
@@ -479,10 +511,7 @@ add_task(async function enterAutofillsAlias() {
       0
     );
 
-    
-    let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-    EventUtils.synthesizeKey("KEY_Enter");
-    await searchPromise;
+    EventUtils.synthesizeKey("KEY_ArrowRight");
 
     await UrlbarTestUtils.assertSearchMode(window, {
       engineName: testEngineItem.result.payload.engine,

@@ -1486,6 +1486,21 @@ class UrlbarInput {
 
   
 
+
+
+
+  maybePromoteKeywordToSearchMode(result = this._resultForCurrentValue) {
+    let searchMode = this._searchModeForResult(result);
+    if (searchMode && this.value.trim() == result.payload.keyword.trim()) {
+      this.setSearchMode(searchMode);
+      this.value = "";
+      return true;
+    }
+    return false;
+  }
+
+  
+
   _getURIFixupInfo(searchString) {
     let flags =
       Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
@@ -2445,13 +2460,7 @@ class UrlbarInput {
     
     let enteredSearchMode = false;
     if (event.data == " ") {
-      let result = this.view.selectedResult;
-      let searchMode = this._searchModeForResult(result);
-      if (searchMode && this.value.trim() == result.payload.keyword.trim()) {
-        this.setSearchMode(searchMode);
-        this.value = "";
-        enteredSearchMode = true;
-      }
+      enteredSearchMode = this.maybePromoteKeywordToSearchMode();
     }
 
     let value = this.value;
