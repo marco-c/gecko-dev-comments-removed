@@ -4,7 +4,11 @@ add_task(async function test_BrowsingContext_structured_clone() {
   let browser = Services.appShell.createWindowlessBrowser(false);
 
   let frame = browser.document.createElement("iframe");
-  browser.document.body.appendChild(frame);
+
+  await new Promise(r => {
+    frame.onload = () => r();
+    browser.document.body.appendChild(frame);
+  });
 
   let { browsingContext } = frame;
 
@@ -39,11 +43,6 @@ add_task(async function test_BrowsingContext_structured_clone() {
   
   
   
-  
-  
-  
-  
-  
 
   frame.remove();
   frame = null;
@@ -52,13 +51,11 @@ add_task(async function test_BrowsingContext_structured_clone() {
   browser.document.location.reload();
   browser.close();
 
-  Cu.forceGC();
-
   
   
-  await new Promise(executeSoon);
-
-  Cu.forceCC();
+  
+  
+  await schedulePreciseGCAndForceCC(3);
 
   
   
