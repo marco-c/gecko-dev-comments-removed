@@ -896,6 +896,10 @@ pref("devtools.performance.recording.objdirs.remote", "[]");
 pref("devtools.performance.popup.intro-displayed", false);
 
 
+
+pref("devtools.inspector.compatibility.target-browsers", "");
+
+
 pref("view_source.editor.path", "");
 
 
