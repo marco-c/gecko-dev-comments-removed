@@ -18,7 +18,7 @@
 #include "jstypes.h"  
 
 #include "frontend/CompilationInfo.h"  
-#include "frontend/ParseContext.h"  
+#include "frontend/ParseContext.h"     
 #include "frontend/SharedContext.h"  
 #include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"      
@@ -29,7 +29,11 @@
 class JS_PUBLIC_API JSFunction;
 class JS_PUBLIC_API JSObject;
 
+class JSObject;
+
 namespace js {
+
+class Scope;
 
 namespace frontend {
 
@@ -46,21 +50,18 @@ template <typename Unit>
 class StandaloneFunctionCompiler;
 
 extern bool CompileGlobalScript(CompilationInfo& compilationInfo,
-                                CompilationState& compilationState,
-                                GlobalSharedContext& globalsc,
                                 JS::SourceText<char16_t>& srcBuf,
+                                ScopeKind scopeKind,
                                 CompilationGCOutput& gcOutput);
 
 extern bool CompileGlobalScript(CompilationInfo& compilationInfo,
-                                CompilationState& compilationState,
-                                GlobalSharedContext& globalsc,
                                 JS::SourceText<mozilla::Utf8Unit>& srcBuf,
+                                ScopeKind scopeKind,
                                 CompilationGCOutput& gcOutput);
 
 extern bool CompileEvalScript(CompilationInfo& compilationInfo,
-                              CompilationState& compilationState,
-                              EvalSharedContext& evalsc,
                               JS::SourceText<char16_t>& srcBuf,
+                              js::Scope* enclosingScope, JSObject* enclosingEnv,
                               CompilationGCOutput& gcOutput);
 
 extern MOZ_MUST_USE bool CompileLazyFunction(JSContext* cx,

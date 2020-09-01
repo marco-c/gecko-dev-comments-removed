@@ -502,7 +502,6 @@ void ReportSmooshCompileError(JSContext* cx, ErrorMetadata&& metadata,
 
 
 bool Smoosh::compileGlobalScriptToStencil(CompilationInfo& compilationInfo,
-                                          CompilationState& compilationState,
                                           JS::SourceText<Utf8Unit>& srcBuf,
                                           bool* unimplemented) {
   
@@ -545,7 +544,8 @@ bool Smoosh::compileGlobalScriptToStencil(CompilationInfo& compilationInfo,
     return false;
   }
 
-  auto& alloc = compilationState.allocScope.alloc();
+  LifoAllocScope allocScope(&cx->tempLifoAlloc());
+  auto& alloc = allocScope.alloc();
   if (!ConvertScopeStencil(cx, result, allAtoms, compilationInfo, alloc)) {
     return false;
   }
@@ -581,12 +581,10 @@ bool Smoosh::compileGlobalScriptToStencil(CompilationInfo& compilationInfo,
 
 
 bool Smoosh::compileGlobalScript(CompilationInfo& compilationInfo,
-                                 CompilationState& compilationState,
                                  JS::SourceText<Utf8Unit>& srcBuf,
                                  CompilationGCOutput& gcOutput,
                                  bool* unimplemented) {
-  if (!compileGlobalScriptToStencil(compilationInfo, compilationState, srcBuf,
-                                    unimplemented)) {
+  if (!compileGlobalScriptToStencil(compilationInfo, srcBuf, unimplemented)) {
     return false;
   }
 
