@@ -335,49 +335,15 @@ static nsresult EnsureSettingsHasPrinterNameSet(
 #endif
 }
 
-static nsresult GetGlobalPrintSettings(
-    nsIPrintSettings** aGlobalPrintSettings) {
-  *aGlobalPrintSettings = nullptr;
+static nsresult GetDefaultPrintSettings(nsIPrintSettings** aSettings) {
+  *aSettings = nullptr;
 
   nsresult rv = NS_ERROR_FAILURE;
   nsCOMPtr<nsIPrintSettingsService> printSettingsService =
       do_GetService(sPrintSettingsServiceContractID, &rv);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsIPrintSettings> settings;
-  rv = printSettingsService->GetGlobalPrintSettings(getter_AddRefs(settings));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsAutoString printerName;
-  settings->GetPrinterName(printerName);
-
-  bool shouldGetLastUsedPrinterName = printerName.IsEmpty();
-#ifdef MOZ_X11
-  
-  
-  
-  
-  
-  
-  if (!XRE_IsParentProcess()) {
-    shouldGetLastUsedPrinterName = false;
-  }
-#endif
-  if (shouldGetLastUsedPrinterName) {
-    printSettingsService->GetLastUsedPrinterName(printerName);
-    settings->SetPrinterName(printerName);
-  }
-  printSettingsService->InitPrintSettingsFromPrinter(printerName, settings);
-  printSettingsService->InitPrintSettingsFromPrefs(
-      settings, true, nsIPrintSettings::kInitSaveAll);
-
-  *aGlobalPrintSettings = settings.forget().take();
-
-  return NS_OK;
+  return printSettingsService->GetDefaultPrintSettingsForPrinting(aSettings);
 }
 
 
@@ -630,7 +596,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   printData->mPrintSettings = aPrintSettings;
   if (!printData->mPrintSettings) {
-    MOZ_TRY(GetGlobalPrintSettings(getter_AddRefs(printData->mPrintSettings)));
+    MOZ_TRY(GetDefaultPrintSettings(getter_AddRefs(printData->mPrintSettings)));
   }
 
   MOZ_TRY(EnsureSettingsHasPrinterNameSet(printData->mPrintSettings));

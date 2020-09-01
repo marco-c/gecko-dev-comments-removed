@@ -42,6 +42,11 @@ interface nsIPrintSettingsService : nsISupports
   
 
 
+  [noscript] readonly attribute nsIPrintSettings defaultPrintSettingsForPrinting;
+
+  
+
+
 
 
 
