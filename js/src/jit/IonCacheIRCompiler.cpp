@@ -1886,11 +1886,42 @@ bool IonCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
   masm.loadStringChar(str, index, scratch1, scratch2, failure->label());
 
   
+  Label vmCall;
   masm.boundsCheck32PowerOfTwo(scratch1, StaticStrings::UNIT_STATIC_LIMIT,
-                               failure->label());
+                               &vmCall);
   masm.movePtr(ImmPtr(&cx_->staticStrings().unitStaticTable), scratch2);
   masm.loadPtr(BaseIndex(scratch2, scratch1, ScalePointer), scratch2);
 
+  Label done;
+  masm.jump(&done);
+
+  {
+    masm.bind(&vmCall);
+
+    
+    
+    
+
+    LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(),
+                                 liveVolatileFloatRegs());
+    volatileRegs.takeUnchecked(scratch1);
+    volatileRegs.takeUnchecked(scratch2);
+    volatileRegs.takeUnchecked(output);
+    masm.PushRegsInMask(volatileRegs);
+
+    masm.setupUnalignedABICall(scratch2);
+    masm.loadJSContext(scratch2);
+    masm.passABIArg(scratch2);
+    masm.passABIArg(scratch1);
+    masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, jit::StringFromCharCodeNoGC));
+    masm.storeCallPointerResult(scratch2);
+
+    masm.PopRegsInMask(volatileRegs);
+
+    masm.branchPtr(Assembler::Equal, scratch2, ImmWord(0), failure->label());
+  }
+
+  masm.bind(&done);
   masm.tagValue(JSVAL_TYPE_STRING, scratch2, output.valueReg());
   return true;
 }
