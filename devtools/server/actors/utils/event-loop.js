@@ -118,33 +118,47 @@ EventLoop.prototype = {
 
 
   getAllWindowDebuggees() {
-    return (
-      this._thread.dbg
-        .getDebuggees()
-        .filter(debuggee => {
-          
-          
-          return debuggee.class == "Window";
-        })
-        .map(debuggee => {
-          
-          return debuggee.unsafeDereference();
-        })
+    return this._thread.dbg
+      .getDebuggees()
+      .filter(debuggee => {
         
         
-        .filter(window => {
-          try {
-            return window.top === window;
-          } catch (e) {
-            
-            
-            if (!Cu.isDeadWrapper(window) && !/not initialized/.test(e)) {
-              console.warn(`Exception in getAllWindowDebuggees: ${e}`);
-            }
-            return false;
+        return debuggee.class == "Window";
+      })
+      .map(debuggee => {
+        
+        return debuggee.unsafeDereference();
+      })
+
+      .filter(window => {
+        
+        
+        if (Cu.isDeadWrapper(window)) {
+          return false;
+        }
+        
+        
+        if (Cu.isRemoteProxy(window)) {
+          return false;
+        }
+        
+        
+        if (Cu.isRemoteProxy(window.parent) && !Cu.isRemoteProxy(window)) {
+          return true;
+        }
+        try {
+          
+          
+          return window.top === window;
+        } catch (e) {
+          
+          
+          if (!/not initialized/.test(e)) {
+            console.warn(`Exception in getAllWindowDebuggees: ${e}`);
           }
-        })
-    );
+          return false;
+        }
+      });
   },
 
   
