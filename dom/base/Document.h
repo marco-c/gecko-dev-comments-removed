@@ -180,6 +180,7 @@ class ImageTracker;
 class HTMLAllCollection;
 class HTMLBodyElement;
 class HTMLMetaElement;
+class HTMLDialogElement;
 class HTMLSharedElement;
 class HTMLImageElement;
 struct LifecycleCallbackArgs;
@@ -1868,6 +1869,10 @@ class Document : public nsINode,
 
   
   void TryCancelDialog();
+
+  void SetBlockedByModalDialog(HTMLDialogElement&);
+
+  void UnsetBlockedByModalDialog(HTMLDialogElement&);
 
   
 
