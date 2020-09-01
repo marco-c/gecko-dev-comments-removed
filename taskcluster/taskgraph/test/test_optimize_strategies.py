@@ -312,7 +312,7 @@ def test_bugbug_fallback(monkeypatch, responses, params):
 
 def test_backstop(responses, params):
     all_labels = {t.label for t in default_tasks}
-    opt = Backstop(10, 60, {'try'})  
+    opt = Backstop(10, 60)  
 
     responses.add(
         responses.GET,
@@ -356,15 +356,6 @@ def test_backstop(responses, params):
     params['pushdate'] += 3600
     scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
     assert scheduled == all_labels
-
-    
-    params['project'] = 'mozilla-central'
-    scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
-    assert scheduled == all_labels
-
-    params['project'] = 'try'
-    scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
-    assert scheduled == set()
 
 
 if __name__ == '__main__':
