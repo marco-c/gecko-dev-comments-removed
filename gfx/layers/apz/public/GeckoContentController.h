@@ -39,8 +39,7 @@ class GeckoContentController {
 
 
 
-  virtual void NotifyLayerTransforms(
-      const nsTArray<MatrixMessage>& aTransforms) = 0;
+  virtual void NotifyLayerTransforms(nsTArray<MatrixMessage>&& aTransforms) = 0;
 
   
 
