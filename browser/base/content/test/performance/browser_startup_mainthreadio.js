@@ -33,6 +33,8 @@ const LINUX = AppConstants.platform == "linux";
 const WIN = AppConstants.platform == "win";
 const MAC = AppConstants.platform == "macosx";
 
+const kSharedFontList = SpecialPowers.getBoolPref("gfx.e10s.font-list.shared");
+
 
 
 
@@ -261,7 +263,7 @@ const startupPhases = {
       
       
       path: "*ld.so.conf*",
-      condition: LINUX && !AppConstants.MOZ_CODE_COVERAGE,
+      condition: LINUX && !AppConstants.MOZ_CODE_COVERAGE && !kSharedFontList,
       read: 22,
       close: 11,
     },
