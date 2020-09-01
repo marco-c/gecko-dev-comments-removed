@@ -4603,78 +4603,76 @@ EditActionResult HTMLEditor::AutoBlockElementsJoiner::
     AutoInclusiveAncestorBlockElementsJoiner::Run(HTMLEditor& aHTMLEditor) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
 
-  RefPtr<Element> leftBlockElement =
-      HTMLEditUtils::GetInclusiveAncestorBlockElement(
-          mInclusiveDescendantOfLeftBlockElement);
-  RefPtr<Element> rightBlockElement =
-      HTMLEditUtils::GetInclusiveAncestorBlockElement(
-          mInclusiveDescendantOfRightBlockElement);
+  mLeftBlockElement = HTMLEditUtils::GetInclusiveAncestorBlockElement(
+      mInclusiveDescendantOfLeftBlockElement);
+  mRightBlockElement = HTMLEditUtils::GetInclusiveAncestorBlockElement(
+      mInclusiveDescendantOfRightBlockElement);
 
   
-  if (NS_WARN_IF(!leftBlockElement) || NS_WARN_IF(!rightBlockElement)) {
+  if (NS_WARN_IF(!mLeftBlockElement) || NS_WARN_IF(!mRightBlockElement)) {
     return EditActionIgnored(NS_ERROR_NULL_POINTER);
   }
-  if (NS_WARN_IF(leftBlockElement == rightBlockElement)) {
+  if (NS_WARN_IF(mLeftBlockElement == mRightBlockElement)) {
     return EditActionIgnored(NS_ERROR_UNEXPECTED);
   }
 
-  if (HTMLEditUtils::IsAnyTableElement(leftBlockElement) ||
-      HTMLEditUtils::IsAnyTableElement(rightBlockElement)) {
+  if (HTMLEditUtils::IsAnyTableElement(mLeftBlockElement) ||
+      HTMLEditUtils::IsAnyTableElement(mRightBlockElement)) {
     
     return EditActionCanceled();
   }
 
   
   
-  if (leftBlockElement->IsHTMLElement(nsGkAtoms::hr)) {
-    leftBlockElement =
-        HTMLEditUtils::GetAncestorBlockElement(*leftBlockElement);
-    if (NS_WARN_IF(!leftBlockElement)) {
+  if (mLeftBlockElement->IsHTMLElement(nsGkAtoms::hr)) {
+    mLeftBlockElement =
+        HTMLEditUtils::GetAncestorBlockElement(*mLeftBlockElement);
+    if (NS_WARN_IF(!mLeftBlockElement)) {
       return EditActionIgnored(NS_ERROR_UNEXPECTED);
     }
   }
-  if (rightBlockElement->IsHTMLElement(nsGkAtoms::hr)) {
-    rightBlockElement =
-        HTMLEditUtils::GetAncestorBlockElement(*rightBlockElement);
-    if (NS_WARN_IF(!rightBlockElement)) {
+  if (mRightBlockElement->IsHTMLElement(nsGkAtoms::hr)) {
+    mRightBlockElement =
+        HTMLEditUtils::GetAncestorBlockElement(*mRightBlockElement);
+    if (NS_WARN_IF(!mRightBlockElement)) {
       return EditActionIgnored(NS_ERROR_UNEXPECTED);
     }
   }
 
   
-  if (leftBlockElement == rightBlockElement) {
+  if (mLeftBlockElement == mRightBlockElement) {
     return EditActionIgnored();
   }
 
   
-  if (HTMLEditUtils::IsAnyListElement(leftBlockElement) &&
-      HTMLEditUtils::IsListItem(rightBlockElement) &&
-      rightBlockElement->GetParentNode() == leftBlockElement) {
+  if (HTMLEditUtils::IsAnyListElement(mLeftBlockElement) &&
+      HTMLEditUtils::IsListItem(mRightBlockElement) &&
+      mRightBlockElement->GetParentNode() == mLeftBlockElement) {
     return EditActionHandled();
   }
 
   
   
   Maybe<nsAtom*> newListElementTagNameOfRightListElement;
-  if (HTMLEditUtils::IsListItem(leftBlockElement) &&
-      HTMLEditUtils::IsListItem(rightBlockElement)) {
+  if (HTMLEditUtils::IsListItem(mLeftBlockElement) &&
+      HTMLEditUtils::IsListItem(mRightBlockElement)) {
     
-    Element* leftListElement = leftBlockElement->GetParentElement();
-    Element* rightListElement = rightBlockElement->GetParentElement();
+    Element* leftListElement = mLeftBlockElement->GetParentElement();
+    Element* rightListElement = mRightBlockElement->GetParentElement();
     EditorDOMPoint atChildInBlock;
     if (leftListElement && rightListElement &&
         leftListElement != rightListElement &&
-        !EditorUtils::IsDescendantOf(*leftListElement, *rightBlockElement,
+        !EditorUtils::IsDescendantOf(*leftListElement, *mRightBlockElement,
                                      &atChildInBlock) &&
-        !EditorUtils::IsDescendantOf(*rightListElement, *leftBlockElement,
+        !EditorUtils::IsDescendantOf(*rightListElement, *mLeftBlockElement,
                                      &atChildInBlock)) {
       
       
       
       
       MOZ_DIAGNOSTIC_ASSERT(!atChildInBlock.IsSet());
-      leftBlockElement = leftListElement;
-      rightBlockElement = rightListElement;
+      mLeftBlockElement = leftListElement;
+      mRightBlockElement = rightListElement;
       newListElementTagNameOfRightListElement =
           Some(leftListElement->NodeInfo()->NameAtom());
     }
@@ -4684,12 +4682,13 @@ EditActionResult HTMLEditor::AutoBlockElementsJoiner::
   
   
   EditorDOMPoint atRightBlockChild;
-  if (EditorUtils::IsDescendantOf(*leftBlockElement, *rightBlockElement,
+  if (EditorUtils::IsDescendantOf(*mLeftBlockElement, *mRightBlockElement,
                                   &atRightBlockChild)) {
     EditActionResult result = WhiteSpaceVisibilityKeeper::
         MergeFirstLineOfRightBlockElementIntoDescendantLeftBlockElement(
-            aHTMLEditor, *leftBlockElement, *rightBlockElement,
-            atRightBlockChild, newListElementTagNameOfRightListElement);
+            aHTMLEditor, MOZ_KnownLive(*mLeftBlockElement),
+            MOZ_KnownLive(*mRightBlockElement), atRightBlockChild,
+            newListElementTagNameOfRightListElement);
     NS_WARNING_ASSERTION(result.Succeeded(),
                          "WhiteSpaceVisibilityKeeper::"
                          "MergeFirstLineOfRightBlockElementIntoDescendantLeftBl"
@@ -4706,12 +4705,12 @@ EditActionResult HTMLEditor::AutoBlockElementsJoiner::
   
   
   EditorDOMPoint atLeftBlockChild;
-  if (EditorUtils::IsDescendantOf(*rightBlockElement, *leftBlockElement,
+  if (EditorUtils::IsDescendantOf(*mRightBlockElement, *mLeftBlockElement,
                                   &atLeftBlockChild)) {
     EditActionResult result = WhiteSpaceVisibilityKeeper::
         MergeFirstLineOfRightBlockElementIntoAncestorLeftBlockElement(
-            aHTMLEditor, *leftBlockElement, *rightBlockElement,
-            atLeftBlockChild,
+            aHTMLEditor, MOZ_KnownLive(*mLeftBlockElement),
+            MOZ_KnownLive(*mRightBlockElement), atLeftBlockChild,
             MOZ_KnownLive(*mInclusiveDescendantOfLeftBlockElement),
             newListElementTagNameOfRightListElement);
     NS_WARNING_ASSERTION(result.Succeeded(),
@@ -4727,7 +4726,8 @@ EditActionResult HTMLEditor::AutoBlockElementsJoiner::
   
   EditActionResult result = WhiteSpaceVisibilityKeeper::
       MergeFirstLineOfRightBlockElementIntoLeftBlockElement(
-          aHTMLEditor, *leftBlockElement, *rightBlockElement,
+          aHTMLEditor, MOZ_KnownLive(*mLeftBlockElement),
+          MOZ_KnownLive(*mRightBlockElement),
           newListElementTagNameOfRightListElement);
   NS_WARNING_ASSERTION(
       result.Succeeded(),
