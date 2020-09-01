@@ -15,6 +15,7 @@
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundParent.h"
+#include "mozilla/StaticPrefs_extensions.h"
 #include "nsCOMPtr.h"
 #include "nsIXULRuntime.h"
 #include "nsTArray.h"
@@ -152,6 +153,17 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
 }
 
 
+bool RemoteWorkerManager::HasExtensionPrincipal(const RemoteWorkerData& aData) {
+  auto principalInfo = aData.principalInfo();
+  return principalInfo.type() == PrincipalInfo::TContentPrincipalInfo &&
+         
+         
+         
+         StringBeginsWith(principalInfo.get_ContentPrincipalInfo().spec(),
+                          "moz-extension://"_ns);
+}
+
+
 bool RemoteWorkerManager::IsRemoteTypeAllowed(const RemoteWorkerData& aData) {
   AssertIsOnMainThread();
 
@@ -169,7 +181,11 @@ bool RemoteWorkerManager::IsRemoteTypeAllowed(const RemoteWorkerData& aData) {
   if (!contentChild) {
     
     
-    return principalInfo.type() == PrincipalInfo::TSystemPrincipalInfo;
+    
+    return principalInfo.type() == PrincipalInfo::TSystemPrincipalInfo ||
+           (!StaticPrefs::extensions_webextensions_remote() &&
+            aData.remoteType().Equals(NOT_REMOTE_TYPE) &&
+            HasExtensionPrincipal(aData));
   }
 
   auto principalOrErr = PrincipalInfoToPrincipal(principalInfo);
@@ -507,6 +523,16 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActor(
 
   
   if (aData.principalInfo().type() == PrincipalInfo::TSystemPrincipalInfo) {
+    MOZ_ASSERT(mParentActor);
+    return mParentActor;
+  }
+
+  
+  
+  if (aProcessId == base::GetCurrentProcId() &&
+      aData.remoteType().Equals(NOT_REMOTE_TYPE) &&
+      !StaticPrefs::extensions_webextensions_remote() &&
+      HasExtensionPrincipal(aData)) {
     MOZ_ASSERT(mParentActor);
     return mParentActor;
   }
