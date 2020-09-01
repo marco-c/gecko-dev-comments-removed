@@ -578,6 +578,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(
 #ifdef NIGHTLY_BUILD
       
       isUnblocked |= gpu.Find("Adreno (TM) 5",  true) >= 0;
+
+      
+      isUnblocked |= gpu.Find("Mali-G",  true) >= 0;
 #endif
       
       isUnblocked |=
