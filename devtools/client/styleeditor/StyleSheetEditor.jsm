@@ -73,9 +73,12 @@ const EMIT_MEDIA_RULES_THROTTLING = 500;
 
 
 
+
+
 function StyleSheetEditor(
   resource,
   win,
+  targetList,
   walker,
   highlighter,
   styleSheetFriendlyIndex
@@ -83,6 +86,7 @@ function StyleSheetEditor(
   EventEmitter.decorate(this);
 
   this._resource = resource;
+  this._targetList = targetList;
   this._inputElement = null;
   this.sourceEditor = null;
   this._window = win;
@@ -563,8 +567,13 @@ StyleSheetEditor.prototype = {
   
 
 
-  toggleDisabled: function() {
-    this.styleSheet.toggleDisabled().catch(console.error);
+  async toggleDisabled() {
+    const styleSheetsFront = await this._getStyleSheetsFront();
+    if (styleSheetsFront.traits.supportResourceRequests) {
+      styleSheetsFront.toggleDisabled(this.resourceId).catch(console.error);
+    } else {
+      this.styleSheet.toggleDisabled().catch(console.error);
+    }
   },
 
   
@@ -839,6 +848,10 @@ StyleSheetEditor.prototype = {
     bindings.Esc = false;
 
     return bindings;
+  },
+
+  _getStyleSheetsFront() {
+    return this._targetList.targetFront.getFront("stylesheets");
   },
 
   
