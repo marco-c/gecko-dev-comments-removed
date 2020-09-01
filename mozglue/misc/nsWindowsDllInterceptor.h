@@ -438,6 +438,9 @@ class WindowsDllInterceptor final
 
       bool isKernel32Dll = (mModule == ::GetModuleHandleW(L"kernel32.dll"));
 
+      bool isDuplicateHandle = (reinterpret_cast<void*>(aProc) ==
+                                reinterpret_cast<void*>(&::DuplicateHandle));
+
       
       needs10BytePatch |= isWin8Or81 && isKernel32Dll &&
                           (reinterpret_cast<void*>(aProc) ==
@@ -447,11 +450,16 @@ class WindowsDllInterceptor final
       needs10BytePatch |= isWin8 && isKernel32Dll &&
                           ((reinterpret_cast<void*>(aProc) ==
                             reinterpret_cast<void*>(&::CreateFileA)) ||
-                           (reinterpret_cast<void*>(aProc) ==
-                            reinterpret_cast<void*>(&::DuplicateHandle)));
+                           isDuplicateHandle);
 
       if (needs10BytePatch) {
         flags |= DetourFlags::eEnable10BytePatch;
+      }
+
+      if (isWin8 && isDuplicateHandle) {
+        
+        
+        flags |= DetourFlags::eDontResolveRedirection;
       }
 #endif  
 
