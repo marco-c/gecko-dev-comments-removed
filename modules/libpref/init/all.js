@@ -1789,9 +1789,6 @@ pref("network.dns.offline-localhost", true);
 pref("network.dns.resolver-thread-extra-idle-time-seconds", 60);
 
 
-pref("network.dns.skipTRR-when-parental-control-enabled", true);
-
-
 pref("network.ftp.idleConnectionTimeout", 300);
 
 
@@ -4087,17 +4084,6 @@ pref("network.trr.resolvers", "[{ \"name\": \"Cloudflare\", \"url\": \"https://m
 pref("network.trr.credentials", "");
 pref("network.trr.custom_uri", "");
 
-#if defined(ANDROID)
-  
-  pref("network.trr.wait-for-portal", false);
-#else
-  pref("network.trr.wait-for-portal", false);
-#endif
-
-pref("network.trr.allow-rfc1918", false);
-
-pref("network.trr.useGET", false);
-
 
 pref("network.trr.confirmationNS", "example.com");
 
@@ -4107,23 +4093,8 @@ pref("network.trr.bootstrapAddress", "");
 
 pref("network.trr.blacklist-duration", 60);
 
-pref("network.trr.early-AAAA", false);
-
-pref("network.trr.skip-AAAA-when-not-supported", true);
-
-
-
-pref("network.trr.wait-for-A-and-AAAA", true);
-
-pref("network.trr.disable-ECS", true);
-
-pref("network.trr.max-fails", 5);
-
 pref("network.trr.excluded-domains", "");
 pref("network.trr.builtin-excluded-domains", "localhost,local");
-
-
-pref("network.trr.clear-cache-on-pref-change", true);
 
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");

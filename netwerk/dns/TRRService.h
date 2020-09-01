@@ -39,16 +39,7 @@ class TRRService : public TRRServiceBase,
   bool Enabled(nsIRequest::TRRMode aMode = nsIRequest::TRR_FIRST_MODE);
   bool IsConfirmed() { return mConfirmationState == CONFIRM_OK; }
 
-  bool AllowRFC1918() { return mRfc1918; }
-  bool UseGET() { return mUseGET; }
-  bool EarlyAAAA() { return mEarlyAAAA; }
-  bool CheckIPv6Connectivity() { return mCheckIPv6Connectivity; }
-  bool WaitForAllResponses() { return mWaitForAllResponses; }
   bool DisableIPv6() { return mDisableIPv6; }
-  bool DisableECS() { return mDisableECS; }
-  bool SkipTRRWhenParentalControlEnabled() {
-    return mSkipTRRWhenParentalControlEnabled;
-  }
   nsresult GetURI(nsACString& result);
   nsresult GetCredentials(nsCString& result);
   uint32_t GetRequestTimeout();
@@ -120,21 +111,9 @@ class TRRService : public TRRServiceBase,
   nsCString mConfirmationNS;
   nsCString mBootstrapAddr;
 
-  Atomic<bool, Relaxed> mWaitForCaptive;  
-                                          
   Atomic<bool, Relaxed>
-      mRfc1918;  
-  Atomic<bool, Relaxed>
-      mCaptiveIsPassed;           
-  Atomic<bool, Relaxed> mUseGET;  
-  Atomic<bool, Relaxed> mEarlyAAAA;  
-  Atomic<bool, Relaxed> mCheckIPv6Connectivity;  
-  Atomic<bool, Relaxed> mWaitForAllResponses;  
-  Atomic<bool, Relaxed> mDisableIPv6;          
-  Atomic<bool, Relaxed> mDisableECS;  
-  Atomic<bool, Relaxed> mSkipTRRWhenParentalControlEnabled;
-  Atomic<uint32_t, Relaxed>
-      mDisableAfterFails;  
+      mCaptiveIsPassed;  
+  Atomic<bool, Relaxed> mDisableIPv6;  
 
   
   
