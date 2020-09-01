@@ -3159,9 +3159,9 @@ NSEvent* gLastDragMouseDownEvent = nil;
   EventMessage msg = aEnter ? eMouseEnterIntoWidget : eMouseExitFromWidget;
   WidgetMouseEvent event(true, msg, mGeckoChild, WidgetMouseEvent::eReal);
   event.mRefPoint = mGeckoChild->CocoaPointsToDevPixels(localEventLocation);
-
-  event.mExitFrom = aExitFrom;
-
+  if (event.mMessage == eMouseExitFromWidget) {
+    event.mExitFrom = Some(aExitFrom);
+  }
   nsEventStatus status;  
   mGeckoChild->DispatchEvent(&event, status);
 }
