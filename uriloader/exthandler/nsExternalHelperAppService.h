@@ -148,14 +148,6 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
 
 
-  bool MaybeReplacePrimaryExtension(const nsACString& aPrimaryExtension,
-                                    nsIMIMEInfo* aMIMEInfo);
-
-  
-
-
-
-
 
   bool GetTypeFromExtras(const nsACString& aExtension, nsACString& aMIMEType);
 
