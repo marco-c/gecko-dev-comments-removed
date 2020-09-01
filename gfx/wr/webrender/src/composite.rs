@@ -847,8 +847,13 @@ pub struct CompositorCapabilities {
 }
 
 
-pub struct CompositorSurfacePixel;
-pub type CompositorSurfaceTransform = Transform3D<f32, CompositorSurfacePixel, DevicePixel>;
+
+
+
+
+
+
+pub type CompositorSurfaceTransform = Transform3D<f32, DevicePixel, DevicePixel>;
 
 
 
