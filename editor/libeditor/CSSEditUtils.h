@@ -133,8 +133,9 @@ class CSSEditUtils final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult RemoveCSSInlineStyle(
-      nsINode& aNode, nsAtom* aProperty, const nsAString& aPropertyValue);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveCSSInlineStyleWithTransaction(
+      nsStyledElement& aStyledElement, nsAtom* aProperty,
+      const nsAString& aPropertyValue);
 
   
 
