@@ -10,6 +10,7 @@
 
 #include "nsCSSFrameConstructor.h"
 #include "nsPageFrame.h"
+#include "nsPageSequenceFrame.h"
 
 using namespace mozilla;
 
@@ -70,7 +71,9 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
     auto* pageFrame = static_cast<nsPageFrame*>(childFrame);
 
     
+    
     pageFrame->SetSharedPageData(mPD);
+    pageFrame->DeterminePageNum();
 
     ReflowInput pageReflowInput(aPresContext, aReflowInput, pageFrame,
                                 pageSize);
@@ -93,6 +96,10 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
     
     nsIFrame* pageNextInFlow = pageFrame->GetNextInFlow();
     if (status.IsFullyComplete()) {
+      
+      
+      mPD->mTotNumPages = pageFrame->GetPageNum();
+
       
       
       

@@ -42,7 +42,9 @@ class nsPageFrame final : public nsContainerFrame {
   
 
   
-  void SetPageNumInfo(int32_t aPageNumber, int32_t aTotalPages);
+  
+  void DeterminePageNum();
+  int32_t GetPageNum() { return mPageNum; }
 
   void SetSharedPageData(nsSharedPageData* aPD);
   nsSharedPageData* GetSharedPageData() const { return mPD; }
@@ -88,9 +90,7 @@ class nsPageFrame final : public nsContainerFrame {
   void ProcessSpecialCodes(const nsString& aStr, nsString& aNewStr);
 
   static constexpr int32_t kPageNumUnset = -1;
-
   int32_t mPageNum = kPageNumUnset;
-  int32_t mTotNumPages = kPageNumUnset;
 
   
   

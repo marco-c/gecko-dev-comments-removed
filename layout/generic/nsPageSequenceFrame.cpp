@@ -307,31 +307,6 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  int32_t pageTot = mFrames.GetLength();
-
-  
-  int32_t pageNum = 1;
-  for (nsIFrame* sheetFrame : mFrames) {
-    MOZ_ASSERT(sheetFrame->IsPrintedSheetFrame(),
-               "only expecting PrintedSheetFrame children");
-    for (nsIFrame* pageFrame : sheetFrame->PrincipalChildList()) {
-      MOZ_ASSERT(
-          pageFrame->IsPageFrame(),
-          "only expecting nsPageFrame grandchildren. Other types will make "
-          "this static_cast bogus & probably violate other assumptions");
-      static_cast<nsPageFrame*>(pageFrame)->SetPageNumInfo(pageNum, pageTot);
-      
-      
-      pageNum++;
-    }
-  }
-
   nsAutoString formattedDateString;
   PRTime now = PR_Now();
   if (NS_SUCCEEDED(DateTimeFormat::FormatPRTime(
