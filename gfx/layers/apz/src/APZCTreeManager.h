@@ -425,6 +425,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   APZInputBridge* InputBridge() override { return this; }
 
+  void AddInputBlockCallback(uint64_t aInputBlockId,
+                             InputBlockCallback&& aCallback) override;
+
   
   
 
