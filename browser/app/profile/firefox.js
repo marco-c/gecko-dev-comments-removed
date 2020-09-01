@@ -389,11 +389,6 @@ pref("browser.download.alwaysOpenInSystemViewerContextMenuItem", true);
 
 
 
-pref("browser.download.viewableInternally.enabledTypes", "xml,svg,webp,avif");
-
-
-
-
 pref("browser.download.autohideButton", true);
 
 #ifndef XP_MACOSX

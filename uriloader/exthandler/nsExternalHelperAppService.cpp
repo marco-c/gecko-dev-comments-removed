@@ -539,16 +539,6 @@ static const nsDefaultMimeTypeEntry nonDecodableExtensions[] = {
     {APPLICATION_COMPRESS, "z"},
     {APPLICATION_GZIP, "svgz"}};
 
-
-
-
-
-
-
-static const char* descriptionOverwriteExtensions[] = {
-    "avif", "pdf", "svg", "webp", "xml",
-};
-
 static StaticRefPtr<nsExternalHelperAppService> sExtHelperAppSvcSingleton;
 
 
@@ -2579,6 +2569,28 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
   
   
   
+  if (aFileExt.LowerCaseEqualsASCII("pdf") ||
+      aFileExt.LowerCaseEqualsASCII(".pdf")) {
+    nsCOMPtr<nsIStringBundleService> bundleService =
+        do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIStringBundle> unknownContentTypeBundle;
+    rv = bundleService->CreateBundle(
+        "chrome://mozapps/locale/downloads/unknownContentType.properties",
+        getter_AddRefs(unknownContentTypeBundle));
+    if (NS_SUCCEEDED(rv)) {
+      nsAutoString pdfHandlerDescription;
+      rv = unknownContentTypeBundle->GetStringFromName("pdfHandlerDescription",
+                                                       pdfHandlerDescription);
+      if (NS_SUCCEEDED(rv)) {
+        (*_retval)->SetDescription(pdfHandlerDescription);
+      }
+    }
+  }
+
+  
+  
+  
   nsCOMPtr<nsIHandlerService> handlerSvc =
       do_GetService(NS_HANDLERSERVICE_CONTRACTID);
   if (handlerSvc) {
@@ -2642,37 +2654,6 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
       nsAutoCString fileExt;
       ToLowerCase(aFileExt, fileExt);
       (*_retval)->SetPrimaryExtension(fileExt);
-    }
-  }
-
-  
-  
-  
-  
-  nsAutoCString primaryExtension;
-  rv = (*_retval)->GetPrimaryExtension(primaryExtension);
-  if (NS_SUCCEEDED(rv)) {
-    for (const char* ext : descriptionOverwriteExtensions) {
-      if (primaryExtension.Equals(ext)) {
-        nsCOMPtr<nsIStringBundleService> bundleService =
-            do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-        nsCOMPtr<nsIStringBundle> unknownContentTypeBundle;
-        rv = bundleService->CreateBundle(
-            "chrome://mozapps/locale/downloads/unknownContentType.properties",
-            getter_AddRefs(unknownContentTypeBundle));
-        if (NS_SUCCEEDED(rv)) {
-          nsAutoCString stringName(ext);
-          stringName.AppendLiteral("ExtHandlerDescription");
-          nsAutoString handlerDescription;
-          rv = unknownContentTypeBundle->GetStringFromName(stringName.get(),
-                                                           handlerDescription);
-          if (NS_SUCCEEDED(rv)) {
-            (*_retval)->SetDescription(handlerDescription);
-          }
-        }
-        break;
-      }
     }
   }
 
