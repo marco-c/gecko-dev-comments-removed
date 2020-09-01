@@ -4,8 +4,14 @@
 
 
 
-SOURCES += ['GeckoViewExternalAppService.cpp']
-EXPORTS += ['GeckoViewExternalAppService.h']
+SOURCES += [
+    'GeckoViewExternalAppService.cpp',
+    'GeckoViewStreamListener.cpp'
+]
+EXPORTS += [
+    'GeckoViewExternalAppService.h',
+    'GeckoViewStreamListener.h'
+]
 
 if CONFIG['MOZ_ANDROID_HISTORY']:
     EXPORTS += [
