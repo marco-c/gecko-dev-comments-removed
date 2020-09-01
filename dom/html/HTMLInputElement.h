@@ -1591,7 +1591,6 @@ class HTMLInputElement final : public TextControlElement,
   
 
 
-
   static bool IsDateTimeTypeSupported(uint8_t aDateTimeInputType);
 
   struct nsFilePickerFilter {
