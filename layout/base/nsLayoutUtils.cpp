@@ -3450,7 +3450,9 @@ FrameMetrics nsLayoutUtils::CalculateBasicFrameMetrics(
   PresShell* presShell = presContext->PresShell();
   CSSToLayoutDeviceScale deviceScale = presContext->CSSToDevPixelScale();
   float resolution = 1.0f;
-  if (frame == presShell->GetRootScrollFrame()) {
+  bool isRcdRsf = aScrollFrame->IsRootScrollFrameOfDocument() &&
+                  presContext->IsRootContentDocumentCrossProcess();
+  if (isRcdRsf) {
     
     
     resolution = presShell->GetResolution();
@@ -3496,8 +3498,12 @@ FrameMetrics nsLayoutUtils::CalculateBasicFrameMetrics(
   metrics.SetRootCompositionSize(
       nsLayoutUtils::CalculateRootCompositionSize(frame, false, metrics));
 
+  metrics.SetLayoutViewport(
+      CSSRect::FromAppUnits(nsRect(aScrollFrame->GetScrollPosition(),
+                                   aScrollFrame->GetScrollPortRect().Size())));
   metrics.SetScrollOffset(
-      CSSPoint::FromAppUnits(aScrollFrame->GetScrollPosition()));
+      isRcdRsf ? CSSPoint::FromAppUnits(presShell->GetVisualViewportOffset())
+               : metrics.GetLayoutViewport().TopLeft());
 
   metrics.SetScrollableRect(CSSRect::FromAppUnits(
       nsLayoutUtils::CalculateScrollableRectForFrame(aScrollFrame, nullptr)));

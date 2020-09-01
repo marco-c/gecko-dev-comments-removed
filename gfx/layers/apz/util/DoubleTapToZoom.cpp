@@ -126,9 +126,9 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
 
   FrameMetrics metrics =
       nsLayoutUtils::CalculateBasicFrameMetrics(rootScrollFrame);
-  CSSRect compositedArea(
-      CSSPoint::FromAppUnits(presShell->GetVisualViewportOffset()),
-      metrics.CalculateCompositedSizeInCssPixels());
+  CSSPoint visualScrollOffset = metrics.GetVisualScrollOffset();
+  CSSRect compositedArea(visualScrollOffset,
+                         metrics.CalculateCompositedSizeInCssPixels());
   const CSSCoord margin = 15;
   CSSRect rect =
       nsLayoutUtils::GetBoundingContentRect(element, rootScrollFrame);
@@ -174,7 +174,7 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
   
   
   
-  CSSCoord cssTapY = metrics.GetScrollOffset().y + aPoint.y;
+  CSSCoord cssTapY = visualScrollOffset.y + aPoint.y;
   if ((rect.Height() > rounded.Height()) &&
       (cssTapY > rounded.Y() + (rounded.Height() * 1.2))) {
     rounded.MoveToY(cssTapY - (rounded.Height() / 2));
