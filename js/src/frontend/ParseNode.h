@@ -682,6 +682,17 @@ class ParseNode {
 
 
 
+ protected:
+  
+  
+  
+  
+  
+  
+  
+  
+  bool pn_synthetic_computed : 1;
+
   ParseNode(const ParseNode& other) = delete;
   void operator=(const ParseNode& other) = delete;
 
@@ -690,6 +701,7 @@ class ParseNode {
       : pn_type(kind),
         pn_parens(false),
         pn_rhs_anon_fun(false),
+        pn_synthetic_computed(false),
         pn_pos(0, 0),
         pn_next(nullptr) {
     JS_PARSE_NODE_ASSERT(ParseNodeKind::Start <= kind);
@@ -700,6 +712,7 @@ class ParseNode {
       : pn_type(kind),
         pn_parens(false),
         pn_rhs_anon_fun(false),
+        pn_synthetic_computed(false),
         pn_pos(pos),
         pn_next(nullptr) {
     JS_PARSE_NODE_ASSERT(ParseNodeKind::Start <= kind);
@@ -952,6 +965,12 @@ class UnaryNode : public ParseNode {
 
   
   ParseNode** unsafeKidReference() { return &kid_; }
+
+  void setSyntheticComputedName() { pn_synthetic_computed = true; }
+  bool isSyntheticComputedName() {
+    MOZ_ASSERT(isKind(ParseNodeKind::ComputedName));
+    return pn_synthetic_computed;
+  }
 };
 
 class BinaryNode : public ParseNode {
