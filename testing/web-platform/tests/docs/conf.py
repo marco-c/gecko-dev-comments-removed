@@ -16,6 +16,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../tools/wptserve'))
+sys.path.insert(0, os.path.abspath('../tools/third_party/pywebsocket3'))
 sys.path.insert(0, os.path.abspath('../tools'))
 import localpaths
 
@@ -44,7 +45,9 @@ extensions = [
     'recommonmark',
     'sphinxarg.ext',
     'sphinx.ext.autodoc',
-    'sphinx.ext.intersphinx'
+    'sphinx.ext.intersphinx',
+    
+    'sphinx.ext.napoleon',
 ]
 
 
@@ -61,8 +64,21 @@ master_doc = 'index'
 
 
 
-
-nitpick_ignore = [('py:class', 'Callable'), ('py:obj', 'None')]
+nitpick_ignore = [
+    
+    ('py:class', 'Callable'),
+    ('py:obj', 'None'),
+    
+    ('py:exc', 'AbortedByUserException'),
+    ('py:exc', 'HandshakeException'),
+    ('py:exc', 'InvalidFrameException'),
+    ('py:exc', 'UnsupportedFrameException'),
+    ('py:exc', 'InvalidUTF8Exception'),
+    ('py:exc', 'ConnectionTerminatedException'),
+    ('py:exc', 'BadOperationException'),
+    ('py:exc', 'Exception'),
+    ('py:exc', 'ValueError'),
+]
 
 
 
