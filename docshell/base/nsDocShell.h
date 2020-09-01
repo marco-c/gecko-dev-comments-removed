@@ -799,7 +799,8 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  nsresult SetDocCurrentStateObj(nsISHEntry* aShEntry);
+  void SetDocCurrentStateObj(nsISHEntry* aShEntry,
+                             mozilla::dom::SessionHistoryInfo* aInfo);
 
   
   

@@ -1316,8 +1316,14 @@ bool nsDocShell::SetCurrentURI(nsIURI* aURI, nsIRequest* aRequest,
   bool isRoot = mBrowsingContext->IsTop();
   bool isSubFrame = false;  
 
-  if (mLSHE) {
-    isSubFrame = mLSHE->GetIsSubFrame();
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    if (mLoadingEntry) {
+      isSubFrame = mLoadingEntry->mInfo.IsSubFrame();
+    }
+  } else {
+    if (mLSHE) {
+      isSubFrame = mLSHE->GetIsSubFrame();
+    }
   }
 
   if (!isSubFrame && !isRoot) {
@@ -5418,7 +5424,8 @@ nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
       ReattachEditorToWindow(mLSHE);
     }
     
-    SetDocCurrentStateObj(mLSHE);
+    SetDocCurrentStateObj(mLSHE,
+                          mLoadingEntry ? &mLoadingEntry->mInfo : nullptr);
 
     SetHistoryEntryAndUpdateBC(Nothing(), Some<nsISHEntry*>(mLSHE));
   }
@@ -7947,23 +7954,30 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
   return NS_OK;
 }
 
-nsresult nsDocShell::SetDocCurrentStateObj(nsISHEntry* aShEntry) {
-  NS_ENSURE_STATE(mContentViewer);
+void nsDocShell::SetDocCurrentStateObj(nsISHEntry* aShEntry,
+                                       SessionHistoryInfo* aInfo) {
+  NS_ENSURE_TRUE_VOID(mContentViewer);
+
   RefPtr<Document> document = GetDocument();
-  NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE_VOID(document);
 
   nsCOMPtr<nsIStructuredCloneContainer> scContainer;
-  if (aShEntry) {
-    scContainer = aShEntry->GetStateData();
-
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
     
+    if (aInfo) {
+      scContainer = aInfo->GetStateData();
+    }
+  } else {
+    if (aShEntry) {
+      scContainer = aShEntry->GetStateData();
+
+      
+    }
   }
 
   
   
   document->SetStateObject(scContainer);
-
-  return NS_OK;
 }
 
 nsresult nsDocShell::CheckLoadingPermissions() {
@@ -8477,12 +8491,21 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   nsCOMPtr<nsIPrincipal> newURITriggeringPrincipal, newURIPrincipalToInherit,
       newURIPartitionedPrincipalToInherit;
   nsCOMPtr<nsIContentSecurityPolicy> newCsp;
-  if (mOSHE) {
-    newURITriggeringPrincipal = mOSHE->GetTriggeringPrincipal();
-    newURIPrincipalToInherit = mOSHE->GetPrincipalToInherit();
-    newURIPartitionedPrincipalToInherit =
-        mOSHE->GetPartitionedPrincipalToInherit();
-    newCsp = mOSHE->GetCsp();
+  if (StaticPrefs::fission_sessionHistoryInParent() ? !!mActiveEntry
+                                                    : !!mOSHE) {
+    if (StaticPrefs::fission_sessionHistoryInParent()) {
+      newURITriggeringPrincipal = mActiveEntry->GetTriggeringPrincipal();
+      newURIPrincipalToInherit = mActiveEntry->GetPrincipalToInherit();
+      newURIPartitionedPrincipalToInherit =
+          mActiveEntry->GetPartitionedPrincipalToInherit();
+      newCsp = mActiveEntry->GetCsp();
+    } else {
+      newURITriggeringPrincipal = mOSHE->GetTriggeringPrincipal();
+      newURIPrincipalToInherit = mOSHE->GetPrincipalToInherit();
+      newURIPartitionedPrincipalToInherit =
+          mOSHE->GetPartitionedPrincipalToInherit();
+      newCsp = mOSHE->GetCsp();
+    }
   } else {
     newURITriggeringPrincipal = aLoadState->TriggeringPrincipal();
     newURIPrincipalToInherit = doc->NodePrincipal();
@@ -8505,12 +8528,14 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   uint32_t cacheKey = 0;
 
   bool scrollRestorationIsManual = false;
-  if (mOSHE) {
-    
-    mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
+  if (StaticPrefs::fission_sessionHistoryInParent() ? !!mActiveEntry
+                                                    : !!mOSHE) {
     if (StaticPrefs::fission_sessionHistoryInParent()) {
+      
       scrollRestorationIsManual = mActiveEntry->GetScrollRestorationIsManual();
     } else {
+      
+      mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
       scrollRestorationIsManual = mOSHE->GetScrollRestorationIsManual();
     }
     
@@ -8520,8 +8545,13 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     
     
     if (aLoadState->LoadType() & LOAD_CMD_NORMAL) {
-      postData = mOSHE->GetPostData();
-      cacheKey = mOSHE->GetCacheKey();
+      if (StaticPrefs::fission_sessionHistoryInParent()) {
+        postData = mActiveEntry->GetPostData();
+        cacheKey = mActiveEntry->GetCacheKey();
+      } else {
+        postData = mOSHE->GetPostData();
+        cacheKey = mOSHE->GetCacheKey();
+      }
 
       
       
@@ -8549,7 +8579,8 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   
   if (aLoadState->LoadIsFromSessionHistory()) {
     if (StaticPrefs::fission_sessionHistoryInParent()) {
-      scrollRestorationIsManual = mActiveEntry->GetScrollRestorationIsManual();
+      scrollRestorationIsManual = aLoadState->GetLoadingSessionHistoryInfo()
+                                      ->mInfo.GetScrollRestorationIsManual();
     } else {
       scrollRestorationIsManual =
           aLoadState->SHEntry()->GetScrollRestorationIsManual();
@@ -8597,7 +8628,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
   UpdateGlobalHistoryTitle(aLoadState->URI());
 
-  SetDocCurrentStateObj(mOSHE);
+  SetDocCurrentStateObj(mOSHE, mActiveEntry.get());
 
   
   
@@ -8623,7 +8654,8 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   nscoord bx = 0;
   nscoord by = 0;
   bool needsScrollPosUpdate = false;
-  if (mOSHE &&
+  if ((StaticPrefs::fission_sessionHistoryInParent() ? !!mActiveEntry
+                                                     : !!mOSHE) &&
       (aLoadState->LoadType() == LOAD_HISTORY ||
        aLoadState->LoadType() == LOAD_RELOAD_NORMAL) &&
       !scrollRestorationIsManual) {
@@ -9764,10 +9796,18 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
 
   
   uint32_t cacheKey = 0;
-  if (mLSHE) {
-    cacheKey = mLSHE->GetCacheKey();
-  } else if (mOSHE) {  
-    cacheKey = mOSHE->GetCacheKey();
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    if (mLoadingEntry) {
+      cacheKey = mLoadingEntry->mInfo.GetCacheKey();
+    } else if (mActiveEntry) {  
+      cacheKey = mActiveEntry->GetCacheKey();
+    }
+  } else {
+    if (mLSHE) {
+      cacheKey = mLSHE->GetCacheKey();
+    } else if (mOSHE) {  
+      cacheKey = mOSHE->GetCacheKey();
+    }
   }
 
   bool uriModified;
@@ -10692,6 +10732,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
 
     bool scrollRestorationIsManual;
     if (StaticPrefs::fission_sessionHistoryInParent()) {
+      
       scrollRestorationIsManual = mActiveEntry->GetScrollRestorationIsManual();
     } else {
       
@@ -11819,10 +11860,17 @@ nsDocShell::GetIsExecutingOnLoadHandler(bool* aResult) {
 
 NS_IMETHODIMP
 nsDocShell::GetLayoutHistoryState(nsILayoutHistoryState** aLayoutHistoryState) {
-  if (mOSHE) {
-    nsCOMPtr<nsILayoutHistoryState> state = mOSHE->GetLayoutHistoryState();
-    state.forget(aLayoutHistoryState);
+  nsCOMPtr<nsILayoutHistoryState> state;
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    if (mActiveEntry) {
+      state = mActiveEntry->GetLayoutHistoryState();
+    }
+  } else {
+    if (mOSHE) {
+      state = mOSHE->GetLayoutHistoryState();
+    }
   }
+  state.forget(aLayoutHistoryState);
   return NS_OK;
 }
 
