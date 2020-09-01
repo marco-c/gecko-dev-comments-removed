@@ -292,6 +292,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent,  true);
 
+    mExitFrom = aEvent.mExitFrom;
     mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
     mClickCount = aEvent.mClickCount;
     mUseLegacyNonPrimaryDispatch = aEvent.mUseLegacyNonPrimaryDispatch;
