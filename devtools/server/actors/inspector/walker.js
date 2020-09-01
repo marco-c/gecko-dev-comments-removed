@@ -206,7 +206,10 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     this.customElementWatcher = new CustomElementWatcher(
       targetActor.chromeEventHandler
     );
-    this.overflowCausingElementsSet = new Set();
+
+    
+    
+    this.overflowCausingElementsMap = new Map();
 
     this.showAllAnonymousContent = options.showAllAnonymousContent;
 
@@ -364,6 +367,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       traits: {
         
         supportsNodePicker: true,
+        
+        supportsOverflowDebugging: true,
       },
     };
   },
@@ -419,8 +424,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       this.clearPseudoClassLocks();
       this._activePseudoClassLocks = null;
 
-      this.overflowCausingElementsSet.clear();
-      this.overflowCausingElementsSet = null;
+      this.overflowCausingElementsMap.clear();
+      this.overflowCausingElementsMap = null;
 
       this._hoveredNode = null;
       this.rootWin = null;
@@ -574,7 +579,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     const displayTypeChanges = [];
     const scrollableStateChanges = [];
 
-    const currentOverflowCausingElementsSet = new Set();
+    const currentOverflowCausingElementsMap = new Map();
 
     for (const [node, actor] of this._nodeActorsMap) {
       if (Cu.isDeadWrapper(node)) {
@@ -601,26 +606,27 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         actor.wasScrollable = isScrollable;
       }
 
-      this.updateOverflowCausingElements(
-        node,
-        actor,
-        currentOverflowCausingElementsSet
-      );
+      if (isScrollable) {
+        this.updateOverflowCausingElements(
+          actor,
+          currentOverflowCausingElementsMap
+        );
+      }
     }
 
     
     
-    const overflowStateChanges = [...currentOverflowCausingElementsSet]
-      .filter(node => !this.overflowCausingElementsSet.has(node))
+    const overflowStateChanges = [...currentOverflowCausingElementsMap.keys()]
+      .filter(node => !this.overflowCausingElementsMap.has(node))
       .concat(
-        [...this.overflowCausingElementsSet].filter(
-          node => !currentOverflowCausingElementsSet.has(node)
+        [...this.overflowCausingElementsMap.keys()].filter(
+          node => !currentOverflowCausingElementsMap.has(node)
         )
       )
       .filter(node => this.hasNode(node))
       .map(node => this.getNode(node));
 
-    this.overflowCausingElementsSet = currentOverflowCausingElementsSet;
+    this.overflowCausingElementsMap = currentOverflowCausingElementsMap;
 
     if (displayTypeChanges.length) {
       this.emit("display-change", displayTypeChanges);
@@ -2869,23 +2875,61 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-  updateOverflowCausingElements: function(node, actor, set) {
-    if (node.nodeType !== Node.ELEMENT_NODE || !actor.isScrollable) {
+  updateOverflowCausingElements: function(scrollableNode, map) {
+    if (scrollableNode.rawNode.nodeType !== Node.ELEMENT_NODE) {
       return;
     }
 
     const overflowCausingChildren = [
-      ...InspectorUtils.getOverflowingChildrenOfElement(node),
+      ...InspectorUtils.getOverflowingChildrenOfElement(scrollableNode.rawNode),
     ];
 
-    for (let child of overflowCausingChildren) {
+    for (let overflowCausingChild of overflowCausingChildren) {
       
       
-      if (child.nodeType !== Node.ELEMENT_NODE) {
-        child = child.parentElement;
+      if (overflowCausingChild.nodeType !== Node.ELEMENT_NODE) {
+        overflowCausingChild = overflowCausingChild.parentElement;
       }
-      set.add(child);
+      map.set(overflowCausingChild, scrollableNode);
     }
+  },
+
+  
+
+
+
+
+  getOverflowCausingElements: function(node) {
+    if (node.rawNode.nodeType !== Node.ELEMENT_NODE || !node.isScrollable) {
+      return [];
+    }
+
+    const overflowCausingElements = [
+      ...InspectorUtils.getOverflowingChildrenOfElement(node.rawNode),
+    ].map(overflowCausingChild => {
+      if (overflowCausingChild.nodeType !== Node.ELEMENT_NODE) {
+        overflowCausingChild = overflowCausingChild.parentElement;
+      }
+
+      this.attachElement(overflowCausingChild);
+
+      return overflowCausingChild;
+    });
+
+    return new NodeListActor(this, overflowCausingElements);
+  },
+
+  
+
+
+
+
+  getScrollableAncestorNode: function(overflowCausingNode) {
+    if (!this.overflowCausingElementsMap.has(overflowCausingNode.rawNode)) {
+      return null;
+    }
+
+    return this.overflowCausingElementsMap.get(overflowCausingNode.rawNode);
   },
 });
 
