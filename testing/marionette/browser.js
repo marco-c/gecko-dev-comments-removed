@@ -459,6 +459,9 @@ browser.Context = class {
 
 
 
+
+
+
   async switchToTab(index, window = undefined, focus = true) {
     let currentTab = this.tabBrowser.selectedTab;
 
@@ -468,7 +471,7 @@ browser.Context = class {
     }
 
     if (!this.tabBrowser) {
-      return;
+      return null;
     }
 
     if (typeof index == "undefined") {
@@ -486,6 +489,8 @@ browser.Context = class {
     
     
     this.eventObserver = new WebElementEventTarget(this.messageManager);
+
+    return this.tab;
   }
 
   
