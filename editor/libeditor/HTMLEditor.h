@@ -2395,20 +2395,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-  bool ExtendRangeToIncludeInvisibleNodes(
-      const nsFrameSelection* aFrameSelection, nsRange& aRange);
-
-  
-
-
-
-
-
-
-
-
-
   enum class DeleteDirection {
     Forward,
     Backward,
@@ -2571,83 +2557,6 @@ class HTMLEditor final : public TextEditor,
       nsAString& aResult, uint32_t aLength,
       const CharPointData& aPreviousCharPointData,
       const CharPointData& aNextCharPointData);
-
-  
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteCollapsedSelectionAtWhiteSpaces(
-      nsIEditor::EDirection aDirectionAndAmount,
-      const EditorDOMPoint& aPointToDelete);
-
-  
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteCollapsedSelectionAtVisibleChar(
-      nsIEditor::EDirection aDirectionAndAmount,
-      const EditorDOMPoint& aPointToDelete);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteCollapsedSelectionAtAtomicContent(
-      nsIContent& aAtomicContent, const EditorDOMPoint& aCaretPoint,
-      const WSRunScanner& aWSRunScannerAtCaret);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteCollapsedSelectionAtHRElement(
-      nsIEditor::EDirection aDirectionAndAmount, Element& aHRElement,
-      const EditorDOMPoint& aCaretPoint,
-      const WSRunScanner& aWSRunScannerAtCaret);
-
-  
-
-
-
-  Result<bool, nsresult> ShouldDeleteHRElement(
-      nsIEditor::EDirection aDirectionAndAmount, Element& aHRElement,
-      const EditorDOMPoint& aCaretPoint) const;
 
   class MOZ_STACK_CLASS AutoEmptyBlockAncestorDeleter final {
    public:
@@ -3041,87 +2950,12 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
-      nsIEditor::EDirection aDirectionAndAmount,
-      nsIEditor::EStripWrappers aStripWrappers, Element& aOtherBlockElement,
-      const EditorDOMPoint& aCaretPoint, WSRunScanner& aWSRunScannerAtCaret);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   DeleteUnnecessaryNodesAndCollapseSelection(
       nsIEditor::EDirection aDirectionAndAmount,
       const EditorDOMPoint& aSelectionStartPoint,
       const EditorDOMPoint& aSelectionEndPoint);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteAroundCollapsedRanges(
-      nsIEditor::EDirection aDirectionAndAmount,
-      nsIEditor::EStripWrappers aStripWrappers, AutoRangeArray& aRangesToDelete,
-      const WSRunScanner& aWSRunScannerAtCaret,
-      const WSScanResult& aScanFromCaretPointResult);
-
-  
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteTextAroundCollapsedSelection(
-      nsIEditor::EDirection aDirectionAndAmount,
-      const EditorDOMPoint& aCaretPosition);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteNonCollapsedRanges(nsIEditor::EDirection aDirectionAndAmount,
-                                 nsIEditor::EStripWrappers aStripWrappers,
-                                 AutoRangeArray& aRangesToDelete,
-                                 SelectionWasCollapsed aSelectionWasCollapsed);
 
   
 
@@ -3148,6 +2982,8 @@ class HTMLEditor final : public TextEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult
   HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
                         nsIEditor::EStripWrappers aStripWrappers) final;
+
+  class AutoDeleteRangesHandler;
 
   
 
