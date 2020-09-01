@@ -30,7 +30,7 @@ mach_schema = Schema({
     Required('comm-checkout'): bool,
 
     
-    Optional('workdir'): text_type,
+    Required('workdir'): text_type,
 })
 
 
