@@ -19,6 +19,11 @@ ChromeUtils.defineModuleGetter(
   "Downloads",
   "resource://gre/modules/Downloads.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "DownloadError",
+  "resource://gre/modules/DownloadCore.jsm"
+);
 
 
 
@@ -269,7 +274,8 @@ DownloadLegacyTransfer.prototype = {
     aStartTime,
     aTempFile,
     aCancelable,
-    aIsPrivate
+    aIsPrivate,
+    aDownloadClassification
   ) {
     return this._nsITransferInitInternal(
       aSource,
@@ -279,7 +285,8 @@ DownloadLegacyTransfer.prototype = {
       aStartTime,
       aTempFile,
       aCancelable,
-      aIsPrivate
+      aIsPrivate,
+      aDownloadClassification
     );
   },
 
@@ -293,6 +300,7 @@ DownloadLegacyTransfer.prototype = {
     aTempFile,
     aCancelable,
     aIsPrivate,
+    aDownloadClassification,
     aBrowsingContext,
     aHandleInternally
   ) {
@@ -313,6 +321,7 @@ DownloadLegacyTransfer.prototype = {
       aTempFile,
       aCancelable,
       aIsPrivate,
+      aDownloadClassification,
       userContextId,
       browsingContextId,
       aHandleInternally
@@ -328,11 +337,16 @@ DownloadLegacyTransfer.prototype = {
     aTempFile,
     aCancelable,
     isPrivate,
+    aDownloadClassification,
     userContextId = 0,
     browsingContextId = 0,
     handleInternally = false
   ) {
-    this._cancelable = aCancelable;
+    if (aDownloadClassification == Ci.nsITransfer.DOWNLOAD_ACCEPTABLE) {
+      
+      
+      this._cancelable = aCancelable;
+    }
 
     let launchWhenSucceeded = false,
       contentType = null,
@@ -351,11 +365,10 @@ DownloadLegacyTransfer.prototype = {
         launcherPath = appHandler.executable.path;
       }
     }
-
     
     
     
-    Downloads.createDownload({
+    let serialisedDownload = {
       source: {
         url: aSource.spec,
         isPrivate,
@@ -371,8 +384,20 @@ DownloadLegacyTransfer.prototype = {
       contentType,
       launcherPath,
       handleInternally,
-    })
-      .then(aDownload => {
+    };
+
+    
+    
+    
+    if (aDownloadClassification == Ci.nsITransfer.DOWNLOAD_POTENTIALLY_UNSAFE) {
+      serialisedDownload.errorObj = {
+        becauseBlockedByReputationCheck: true,
+        reputationCheckVerdict: DownloadError.BLOCK_VERDICT_INSECURE,
+      };
+    }
+
+    Downloads.createDownload(serialisedDownload)
+      .then(async aDownload => {
         
         if (aTempFile) {
           aDownload.tryToKeepPartialData = true;
@@ -386,9 +411,14 @@ DownloadLegacyTransfer.prototype = {
         this._resolveDownload(aDownload);
 
         
-        return Downloads.getList(Downloads.ALL).then(list =>
-          list.add(aDownload)
-        );
+        await (await Downloads.getList(Downloads.ALL)).add(aDownload);
+        if (serialisedDownload.errorObj) {
+          
+          
+          
+          
+          aDownload._notifyChange();
+        }
       })
       .catch(Cu.reportError);
   },
