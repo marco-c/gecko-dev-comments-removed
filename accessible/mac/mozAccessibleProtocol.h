@@ -3,6 +3,8 @@
 
 
 
+
+
 #import <Cocoa/Cocoa.h>
 
 #import "mozView.h"
@@ -22,6 +24,7 @@
 
 
 - (BOOL)isRoot;
+
 
 
 

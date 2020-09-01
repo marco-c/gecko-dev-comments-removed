@@ -3,6 +3,8 @@
 
 
 
+
+
 #import <Cocoa/Cocoa.h>
 
 #import "MOXAccessibleProtocol.h"
@@ -66,7 +68,8 @@
 - (id)moxPreviousTextMarkerForTextMarker:(id)textMarker;
 
 
-- (NSAttributedString*)moxAttributedStringForTextMarkerRange:(id)textMarkerRange;
+- (NSAttributedString*)moxAttributedStringForTextMarkerRange:
+    (id)textMarkerRange;
 
 
 - (NSValue*)moxBoundsForTextMarkerRange:(id)textMarkerRange;

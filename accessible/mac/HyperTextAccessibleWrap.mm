@@ -3,6 +3,8 @@
 
 
 
+
+
 #include "HyperTextAccessibleWrap.h"
 
 #include "Accessible-inl.h"
@@ -35,10 +37,8 @@ class HyperTextIterator {
   
   
   
-  
   bool NormalizeForward();
 
-  
   
   
   
@@ -60,7 +60,8 @@ class HyperTextIterator {
 
 bool HyperTextIterator::NormalizeForward() {
   if (mCurrentStartOffset == nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT ||
-      mCurrentStartOffset >= static_cast<int32_t>(mCurrentContainer->CharacterCount())) {
+      mCurrentStartOffset >=
+          static_cast<int32_t>(mCurrentContainer->CharacterCount())) {
     
     
     if (!mCurrentContainer->IsLink()) {
@@ -78,8 +79,8 @@ bool HyperTextIterator::NormalizeForward() {
       return true;
     }
   } else {
-    Accessible* link =
-        mCurrentContainer->LinkAt(mCurrentContainer->LinkIndexAtOffset(mCurrentStartOffset));
+    Accessible* link = mCurrentContainer->LinkAt(
+        mCurrentContainer->LinkIndexAtOffset(mCurrentStartOffset));
 
     
     if (link && link->IsHyperText()) {
@@ -119,7 +120,8 @@ bool HyperTextIterator::NormalizeBackward() {
     NormalizeBackward();
     return true;
   } else {
-    Accessible* link = mCurrentContainer->GetChildAtOffset(mCurrentStartOffset - 1);
+    Accessible* link =
+        mCurrentContainer->GetChildAtOffset(mCurrentStartOffset - 1);
 
     
     
@@ -168,55 +170,68 @@ bool HyperTextIterator::Next() {
   }
 
   int32_t nextLinkOffset = NextLinkOffset();
-  if (mCurrentContainer == mEndContainer && (nextLinkOffset == -1 || nextLinkOffset > mEndOffset)) {
-    mCurrentEndOffset = mEndOffset < 0 ? mEndContainer->CharacterCount() : mEndOffset;
+  if (mCurrentContainer == mEndContainer &&
+      (nextLinkOffset == -1 || nextLinkOffset > mEndOffset)) {
+    mCurrentEndOffset =
+        mEndOffset < 0 ? mEndContainer->CharacterCount() : mEndOffset;
   } else {
-    mCurrentEndOffset = nextLinkOffset < 0 ? mCurrentContainer->CharacterCount() : nextLinkOffset;
+    mCurrentEndOffset = nextLinkOffset < 0 ? mCurrentContainer->CharacterCount()
+                                           : nextLinkOffset;
   }
 
   return mCurrentStartOffset != mCurrentEndOffset;
 }
 
-void HyperTextAccessibleWrap::TextForRange(nsAString& aText, int32_t aStartOffset,
-                                           HyperTextAccessible* aEndContainer, int32_t aEndOffset) {
+void HyperTextAccessibleWrap::TextForRange(nsAString& aText,
+                                           int32_t aStartOffset,
+                                           HyperTextAccessible* aEndContainer,
+                                           int32_t aEndOffset) {
   HyperTextIterator iter(this, aStartOffset, aEndContainer, aEndOffset);
   while (iter.Next()) {
     nsAutoString text;
-    iter.mCurrentContainer->TextSubstring(iter.mCurrentStartOffset, iter.mCurrentEndOffset, text);
+    iter.mCurrentContainer->TextSubstring(iter.mCurrentStartOffset,
+                                          iter.mCurrentEndOffset, text);
     aText.Append(text);
   }
 }
 
-nsIntRect HyperTextAccessibleWrap::BoundsForRange(int32_t aStartOffset,
-                                                  HyperTextAccessible* aEndContainer,
-                                                  int32_t aEndOffset) {
+nsIntRect HyperTextAccessibleWrap::BoundsForRange(
+    int32_t aStartOffset, HyperTextAccessible* aEndContainer,
+    int32_t aEndOffset) {
   nsIntRect rect;
   HyperTextIterator iter(this, aStartOffset, aEndContainer, aEndOffset);
   while (iter.Next()) {
-    nsIntRect stringRect =
-        iter.mCurrentContainer->TextBounds(iter.mCurrentStartOffset, iter.mCurrentEndOffset);
+    nsIntRect stringRect = iter.mCurrentContainer->TextBounds(
+        iter.mCurrentStartOffset, iter.mCurrentEndOffset);
     rect.UnionRect(rect, stringRect);
   }
 
   return rect;
 }
 
-void HyperTextAccessibleWrap::LeftWordAt(int32_t aOffset, HyperTextAccessible** aStartContainer,
-                                         int32_t* aStartOffset, HyperTextAccessible** aEndContainer,
+void HyperTextAccessibleWrap::LeftWordAt(int32_t aOffset,
+                                         HyperTextAccessible** aStartContainer,
+                                         int32_t* aStartOffset,
+                                         HyperTextAccessible** aEndContainer,
                                          int32_t* aEndOffset) {
   TextPoint here(this, aOffset);
-  TextPoint start = FindTextPoint(aOffset, eDirPrevious, eSelectWord, eStartWord);
+  TextPoint start =
+      FindTextPoint(aOffset, eDirPrevious, eSelectWord, eStartWord);
   if (!start.mContainer) {
     return;
   }
 
-  if ((NativeState() & states::EDITABLE) && !(start.mContainer->NativeState() & states::EDITABLE)) {
+  if ((NativeState() & states::EDITABLE) &&
+      !(start.mContainer->NativeState() & states::EDITABLE)) {
     
-    return EditableRoot()->RightWordAt(0, aStartContainer, aStartOffset, aEndContainer, aEndOffset);
+    
+    return EditableRoot()->RightWordAt(0, aStartContainer, aStartOffset,
+                                       aEndContainer, aEndOffset);
   }
 
-  TextPoint end = static_cast<HyperTextAccessibleWrap*>(start.mContainer)
-                      ->FindTextPoint(start.mOffset, eDirNext, eSelectWord, eEndWord);
+  TextPoint end =
+      static_cast<HyperTextAccessibleWrap*>(start.mContainer)
+          ->FindTextPoint(start.mOffset, eDirNext, eSelectWord, eEndWord);
   if (end < here) {
     *aStartContainer = end.mContainer;
     *aEndContainer = here.mContainer;
@@ -230,7 +245,8 @@ void HyperTextAccessibleWrap::LeftWordAt(int32_t aOffset, HyperTextAccessible** 
   }
 }
 
-void HyperTextAccessibleWrap::RightWordAt(int32_t aOffset, HyperTextAccessible** aStartContainer,
+void HyperTextAccessibleWrap::RightWordAt(int32_t aOffset,
+                                          HyperTextAccessible** aStartContainer,
                                           int32_t* aStartOffset,
                                           HyperTextAccessible** aEndContainer,
                                           int32_t* aEndOffset) {
@@ -238,17 +254,22 @@ void HyperTextAccessibleWrap::RightWordAt(int32_t aOffset, HyperTextAccessible**
   TextPoint end = FindTextPoint(aOffset, eDirNext, eSelectWord, eEndWord);
   if (!end.mContainer || end < here) {
     
+    
     return;
   }
 
-  if ((NativeState() & states::EDITABLE) && !(end.mContainer->NativeState() & states::EDITABLE)) {
+  if ((NativeState() & states::EDITABLE) &&
+      !(end.mContainer->NativeState() & states::EDITABLE)) {
     
-    return EditableRoot()->LeftWordAt(nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT, aStartContainer,
-                                      aStartOffset, aEndContainer, aEndOffset);
+    
+    return EditableRoot()->LeftWordAt(
+        nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT, aStartContainer,
+        aStartOffset, aEndContainer, aEndOffset);
   }
 
-  TextPoint start = static_cast<HyperTextAccessibleWrap*>(end.mContainer)
-                        ->FindTextPoint(end.mOffset, eDirPrevious, eSelectWord, eStartWord);
+  TextPoint start =
+      static_cast<HyperTextAccessibleWrap*>(end.mContainer)
+          ->FindTextPoint(end.mOffset, eDirPrevious, eSelectWord, eStartWord);
 
   if (here < start) {
     *aStartContainer = here.mContainer;
@@ -263,10 +284,12 @@ void HyperTextAccessibleWrap::RightWordAt(int32_t aOffset, HyperTextAccessible**
   }
 }
 
-void HyperTextAccessibleWrap::NextClusterAt(int32_t aOffset, HyperTextAccessible** aNextContainer,
-                                            int32_t* aNextOffset) {
+void HyperTextAccessibleWrap::NextClusterAt(
+    int32_t aOffset, HyperTextAccessible** aNextContainer,
+    int32_t* aNextOffset) {
   TextPoint here(this, aOffset);
-  TextPoint next = FindTextPoint(aOffset, eDirNext, eSelectCluster, eDefaultBehavior);
+  TextPoint next =
+      FindTextPoint(aOffset, eDirNext, eSelectCluster, eDefaultBehavior);
 
   if ((next.mOffset == nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT &&
        next.mContainer == Document()) ||
@@ -281,17 +304,18 @@ void HyperTextAccessibleWrap::NextClusterAt(int32_t aOffset, HyperTextAccessible
   }
 }
 
-void HyperTextAccessibleWrap::PreviousClusterAt(int32_t aOffset,
-                                                HyperTextAccessible** aPrevContainer,
-                                                int32_t* aPrevOffset) {
-  TextPoint prev = FindTextPoint(aOffset, eDirPrevious, eSelectCluster, eDefaultBehavior);
+void HyperTextAccessibleWrap::PreviousClusterAt(
+    int32_t aOffset, HyperTextAccessible** aPrevContainer,
+    int32_t* aPrevOffset) {
+  TextPoint prev =
+      FindTextPoint(aOffset, eDirPrevious, eSelectCluster, eDefaultBehavior);
   *aPrevContainer = prev.mContainer;
   *aPrevOffset = prev.mOffset;
 }
 
-TextPoint HyperTextAccessibleWrap::FindTextPoint(int32_t aOffset, nsDirection aDirection,
-                                                 nsSelectionAmount aAmount,
-                                                 EWordMovementType aWordMovementType) {
+TextPoint HyperTextAccessibleWrap::FindTextPoint(
+    int32_t aOffset, nsDirection aDirection, nsSelectionAmount aAmount,
+    EWordMovementType aWordMovementType) {
   
   
   HyperTextIterator iter(this, aOffset, this, CharacterCount(), true);
@@ -349,16 +373,17 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(int32_t aOffset, nsDirection aD
 
   nsIFrame* frameAtOffset = childFrame;
   int32_t unusedOffsetInFrame = 0;
-  childFrame->GetChildFrameContainingOffset(innerContentOffset, true, &unusedOffsetInFrame,
-                                            &frameAtOffset);
+  childFrame->GetChildFrameContainingOffset(
+      innerContentOffset, true, &unusedOffsetInFrame, &frameAtOffset);
 
   const bool kIsJumpLinesOk = true;       
   const bool kIsScrollViewAStop = false;  
   const bool kIsKeyboardSelect = true;    
   const bool kIsVisualBidi = false;       
-  nsPeekOffsetStruct pos(aAmount, aDirection, innerContentOffset, nsPoint(0, 0), kIsJumpLinesOk,
-                         kIsScrollViewAStop, kIsKeyboardSelect, kIsVisualBidi, false,
-                         nsPeekOffsetStruct::ForceEditableRegion::No, aWordMovementType, false);
+  nsPeekOffsetStruct pos(
+      aAmount, aDirection, innerContentOffset, nsPoint(0, 0), kIsJumpLinesOk,
+      kIsScrollViewAStop, kIsKeyboardSelect, kIsVisualBidi, false,
+      nsPeekOffsetStruct::ForceEditableRegion::No, aWordMovementType, false);
   nsresult rv = frameAtOffset->PeekOffset(&pos);
 
   
@@ -372,14 +397,17 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(int32_t aOffset, nsDirection aD
   }
 
   if (aDirection == eDirNext &&
-      nsContentUtils::PositionIsBefore(pos.mResultContent, mContent, nullptr, nullptr)) {
+      nsContentUtils::PositionIsBefore(pos.mResultContent, mContent, nullptr,
+                                       nullptr)) {
     
     return TextPoint(Document(), nsIAccessibleText::TEXT_OFFSET_END_OF_TEXT);
   }
 
-  HyperTextAccessible* container = nsAccUtils::GetTextContainer(pos.mResultContent);
-  int32_t offset = container ? container->DOMPointToOffset(pos.mResultContent, pos.mContentOffset,
-                                                           aDirection == eDirNext)
+  HyperTextAccessible* container =
+      nsAccUtils::GetTextContainer(pos.mResultContent);
+  int32_t offset = container ? container->DOMPointToOffset(
+                                   pos.mResultContent, pos.mContentOffset,
+                                   aDirection == eDirNext)
                              : 0;
   return TextPoint(container, offset);
 }

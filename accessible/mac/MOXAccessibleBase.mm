@@ -3,6 +3,8 @@
 
 
 
+
+
 #import "MOXAccessibleBase.h"
 
 #import "MacSelectorMap.h"
@@ -48,7 +50,8 @@ mozilla::LogModule* GetMacAccessibilityLog() {
 }
 
 - (BOOL)hasMOXAccessibles {
-  return [self isKindOfClass:[NSArray class]] && [[(NSArray*)self firstObject] isMOXAccessible];
+  return [self isKindOfClass:[NSArray class]] &&
+         [[(NSArray*)self firstObject] isMOXAccessible];
 }
 
 @end
@@ -151,7 +154,8 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   if ([value isMOXAccessible]) {
     
     
-    value = [value isAccessibilityElement] ? GetObjectOrRepresentedView(value) : nil;
+    value = [value isAccessibilityElement] ? GetObjectOrRepresentedView(value)
+                                           : nil;
   }
 
   if ([value hasMOXAccessibles]) {
@@ -171,8 +175,10 @@ mozilla::LogModule* GetMacAccessibilityLog() {
 
   if (MOZ_LOG_TEST(GetMacAccessibilityLog(), LogLevel::Debug)) {
     if (MOZ_LOG_TEST(GetMacAccessibilityLog(), LogLevel::Verbose)) {
-      LOG(LogLevel::Verbose, @"[%@] attributeValue %@ => %@", self, attribute, value);
-    } else if (![attribute isEqualToString:@"AXParent"] && ![attribute isEqualToString:@"AXRole"] &&
+      LOG(LogLevel::Verbose, @"[%@] attributeValue %@ => %@", self, attribute,
+          value);
+    } else if (![attribute isEqualToString:@"AXParent"] &&
+               ![attribute isEqualToString:@"AXRole"] &&
                ![attribute isEqualToString:@"AXChildren"]) {
       LOG(LogLevel::Debug, @"[%@] attributeValue %@", self, attribute);
     }
@@ -284,7 +290,8 @@ mozilla::LogModule* GetMacAccessibilityLog() {
 
   
   if ([self moxTextMarkerDelegate]) {
-    [attributeNames addObjectsFromArray:[mac::ParameterizedTextAttributeGetters() allKeys]];
+    [attributeNames
+        addObjectsFromArray:[mac::ParameterizedTextAttributeGetters() allKeys]];
   }
 
   return attributeNames;
@@ -292,7 +299,8 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-- (id)accessibilityAttributeValue:(NSString*)attribute forParameter:(id)parameter {
+- (id)accessibilityAttributeValue:(NSString*)attribute
+                     forParameter:(id)parameter {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
   if ([self isExpired]) {
@@ -315,14 +323,15 @@ mozilla::LogModule* GetMacAccessibilityLog() {
     if (textMarkerGetters[attribute]) {
       SEL selector = NSSelectorFromString(textMarkerGetters[attribute]);
       if ([textMarkerDelegate respondsToSelector:selector]) {
-        value = [textMarkerDelegate performSelector:selector withObject:parameter];
+        value = [textMarkerDelegate performSelector:selector
+                                         withObject:parameter];
       }
     }
   }
 
   if (MOZ_LOG_TEST(GetMacAccessibilityLog(), LogLevel::Verbose)) {
-    LOG(LogLevel::Verbose, @"[%@] attributeValueForParam %@(%@) => %@", self, attribute, parameter,
-        value);
+    LOG(LogLevel::Verbose, @"[%@] attributeValueForParam %@(%@) => %@", self,
+        attribute, parameter, value);
   } else {
     LOG(LogLevel::Debug, @"[%@] attributeValueForParam %@", self, attribute);
   }
@@ -379,7 +388,8 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   [self moxPostNotification:notification withUserInfo:nil];
 }
 
-- (void)moxPostNotification:(NSString*)notification withUserInfo:(NSDictionary*)userInfo {
+- (void)moxPostNotification:(NSString*)notification
+               withUserInfo:(NSDictionary*)userInfo {
   if (MOZ_LOG_TEST(GetMacAccessibilityLog(), LogLevel::Verbose)) {
     LOG(LogLevel::Verbose, @"[%@] notify %@ %@", self, notification, userInfo);
   } else {
@@ -401,10 +411,11 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   }
 
   if (userInfo) {
-    NSAccessibilityPostNotificationWithUserInfo(GetObjectOrRepresentedView(self), notification,
-                                                userInfo);
+    NSAccessibilityPostNotificationWithUserInfo(
+        GetObjectOrRepresentedView(self), notification, userInfo);
   } else {
-    NSAccessibilityPostNotification(GetObjectOrRepresentedView(self), notification);
+    NSAccessibilityPostNotification(GetObjectOrRepresentedView(self),
+                                    notification);
   }
 }
 
@@ -425,7 +436,8 @@ mozilla::LogModule* GetMacAccessibilityLog() {
       
       
       
-      [unignoredChildren addObjectsFromArray:[nativeChild moxUnignoredChildren]];
+      [unignoredChildren
+          addObjectsFromArray:[nativeChild moxUnignoredChildren]];
     } else {
       [unignoredChildren addObject:nativeChild];
     }
@@ -477,7 +489,8 @@ mozilla::LogModule* GetMacAccessibilityLog() {
 #pragma mark - Private
 
 - (BOOL)isSelectorSupported:(SEL)selector {
-  return [self respondsToSelector:selector] && ![self moxBlockSelector:selector];
+  return
+      [self respondsToSelector:selector] && ![self moxBlockSelector:selector];
 }
 
 @end

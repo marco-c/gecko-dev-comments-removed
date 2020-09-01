@@ -4,6 +4,7 @@
 
 
 
+
 #import <Cocoa/Cocoa.h>
 
 #import "MOXTextMarkerDelegate.h"
@@ -34,7 +35,8 @@ void PlatformShutdown() {}
 
 void ProxyCreated(ProxyAccessible* aProxy, uint32_t) {
   ProxyAccessible* parent = aProxy->Parent();
-  if ((parent && nsAccUtils::MustPrune(parent)) || aProxy->Role() == roles::WHITESPACE) {
+  if ((parent && nsAccUtils::MustPrune(parent)) ||
+      aProxy->Role() == roles::WHITESPACE) {
     
     
     
@@ -88,18 +90,21 @@ void ProxyEvent(ProxyAccessible* aProxy, uint32_t aEventType) {
   }
 }
 
-void ProxyStateChangeEvent(ProxyAccessible* aProxy, uint64_t aState, bool aEnabled) {
+void ProxyStateChangeEvent(ProxyAccessible* aProxy, uint64_t aState,
+                           bool aEnabled) {
   mozAccessible* wrapper = GetNativeFromGeckoAccessible(aProxy);
   if (wrapper) {
     [wrapper stateChanged:aState isEnabled:aEnabled];
   }
 }
 
-void ProxyCaretMoveEvent(ProxyAccessible* aTarget, int32_t aOffset, bool aIsSelectionCollapsed) {
+void ProxyCaretMoveEvent(ProxyAccessible* aTarget, int32_t aOffset,
+                         bool aIsSelectionCollapsed) {
   mozAccessible* wrapper = GetNativeFromGeckoAccessible(aTarget);
   if (aIsSelectionCollapsed) {
     
-    MOXTextMarkerDelegate* delegate = [MOXTextMarkerDelegate getOrCreateForDoc:aTarget->Document()];
+    MOXTextMarkerDelegate* delegate =
+        [MOXTextMarkerDelegate getOrCreateForDoc:aTarget->Document()];
     [delegate setSelectionFrom:aTarget at:aOffset to:aTarget at:aOffset];
   }
 
@@ -108,8 +113,9 @@ void ProxyCaretMoveEvent(ProxyAccessible* aTarget, int32_t aOffset, bool aIsSele
   }
 }
 
-void ProxyTextChangeEvent(ProxyAccessible* aTarget, const nsString& aStr, int32_t aStart,
-                          uint32_t aLen, bool aIsInsert, bool aFromUser) {
+void ProxyTextChangeEvent(ProxyAccessible* aTarget, const nsString& aStr,
+                          int32_t aStart, uint32_t aLen, bool aIsInsert,
+                          bool aFromUser) {
   ProxyAccessible* acc = aTarget;
   
   while (acc && GetTypeFromRole(acc->Role()) != [mozTextAccessible class]) {
@@ -124,7 +130,8 @@ void ProxyTextChangeEvent(ProxyAccessible* aTarget, const nsString& aStr, int32_
 
 void ProxyShowHideEvent(ProxyAccessible*, ProxyAccessible*, bool, bool) {}
 
-void ProxySelectionEvent(ProxyAccessible* aTarget, ProxyAccessible* aWidget, uint32_t aEventType) {
+void ProxySelectionEvent(ProxyAccessible* aTarget, ProxyAccessible* aWidget,
+                         uint32_t aEventType) {
   mozAccessible* wrapper = GetNativeFromGeckoAccessible(aWidget);
   if (wrapper) {
     [wrapper handleAccessibleEvent:aEventType];
@@ -134,9 +141,11 @@ void ProxySelectionEvent(ProxyAccessible* aTarget, ProxyAccessible* aWidget, uin
 void ProxyTextSelectionChangeEvent(ProxyAccessible* aTarget,
                                    const nsTArray<TextRangeData>& aSelection) {
   if (aSelection.Length()) {
-    MOXTextMarkerDelegate* delegate = [MOXTextMarkerDelegate getOrCreateForDoc:aTarget->Document()];
+    MOXTextMarkerDelegate* delegate =
+        [MOXTextMarkerDelegate getOrCreateForDoc:aTarget->Document()];
     DocAccessibleParent* doc = aTarget->Document();
-    ProxyAccessible* startContainer = doc->GetAccessible(aSelection[0].StartID());
+    ProxyAccessible* startContainer =
+        doc->GetAccessible(aSelection[0].StartID());
     ProxyAccessible* endContainer = doc->GetAccessible(aSelection[0].EndID());
     
     [delegate setSelectionFrom:startContainer
@@ -147,7 +156,8 @@ void ProxyTextSelectionChangeEvent(ProxyAccessible* aTarget,
 
   mozAccessible* wrapper = GetNativeFromGeckoAccessible(aTarget);
   if (wrapper) {
-    [wrapper handleAccessibleEvent:nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED];
+    [wrapper
+        handleAccessibleEvent:nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED];
   }
 }
 

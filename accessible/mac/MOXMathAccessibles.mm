@@ -3,6 +3,8 @@
 
 
 
+
+
 #import "MOXMathAccessibles.h"
 
 #import "MacUtils.h"
@@ -57,7 +59,8 @@ using namespace mozilla::a11y;
   
   
   if (NSString* thickness = utils::GetAccAttr(self, "thickness")) {
-    NSNumberFormatter* formatter = [[[NSNumberFormatter alloc] init] autorelease];
+    NSNumberFormatter* formatter =
+        [[[NSNumberFormatter alloc] init] autorelease];
     NSNumber* value = [formatter numberFromString:thickness];
     return [NSNumber numberWithBool:[value boolValue]];
   } else {

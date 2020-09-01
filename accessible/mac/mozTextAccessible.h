@@ -2,6 +2,9 @@
 
 
 
+
+
+
 #import "mozAccessible.h"
 
 @interface mozTextAccessible : mozAccessible
@@ -71,7 +74,9 @@
 
 - (void)handleAccessibleTextChangeEvent:(NSString*)change
                                inserted:(BOOL)isInserted
-                            inContainer:(const mozilla::a11y::AccessibleOrProxy&)container
+                            inContainer:
+                                (const mozilla::a11y::AccessibleOrProxy&)
+                                    container
                                      at:(int32_t)start;
 
 

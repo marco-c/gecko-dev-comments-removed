@@ -14,15 +14,17 @@
 
 - (NSArray*)selectableChildren {
   return [[self moxUnignoredChildren]
-      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(mozAccessible* child,
-                                                                        NSDictionary* bindings) {
+      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(
+                                                   mozAccessible* child,
+                                                   NSDictionary* bindings) {
         return [child isKindOfClass:[mozSelectableChildAccessible class]];
       }]];
 }
 
 - (void)moxSetSelectedChildren:(NSArray*)selectedChildren {
   for (id child in [self selectableChildren]) {
-    BOOL selected = [selectedChildren indexOfObjectIdenticalTo:child] != NSNotFound;
+    BOOL selected =
+        [selectedChildren indexOfObjectIdenticalTo:child] != NSNotFound;
     [child moxSetSelected:@(selected)];
   }
 }
@@ -32,8 +34,10 @@
 
 - (NSArray*)moxSelectedChildren {
   return [[self moxUnignoredChildren]
-      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(mozAccessible* child,
-                                                                        NSDictionary* bindings) {
+      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(
+                                                   mozAccessible* child,
+                                                   NSDictionary* bindings) {
+        
         
         return [child isKindOfClass:[mozSelectableChildAccessible class]] &&
                [[(mozSelectableChildAccessible*)child moxSelected] boolValue];
@@ -50,7 +54,8 @@
 
 - (void)moxSetSelected:(NSNumber*)selected {
   
-  uint64_t state = [self stateWithMask:(states::SELECTABLE | states::UNAVAILABLE)];
+  uint64_t state =
+      [self stateWithMask:(states::SELECTABLE | states::UNAVAILABLE)];
   if ((state & states::SELECTABLE) == 0 || (state & states::UNAVAILABLE) != 0) {
     
     return;
@@ -174,13 +179,15 @@
 
 - (NSString*)moxMenuItemMarkChar {
   Accessible* acc = mGeckoAccessible.AsAccessible();
-  if (acc && acc->IsContent() && acc->GetContent()->IsXULElement(nsGkAtoms::menuitem)) {
+  if (acc && acc->IsContent() &&
+      acc->GetContent()->IsXULElement(nsGkAtoms::menuitem)) {
     
     
     
     
     
-    if (acc->ChildCount() == 1 && acc->FirstChild()->Role() == roles::STATICTEXT) {
+    if (acc->ChildCount() == 1 &&
+        acc->FirstChild()->Role() == roles::STATICTEXT) {
       nsAutoString marker;
       acc->FirstChild()->Name(marker);
       if (marker.Length() == 1) {
@@ -202,7 +209,8 @@
     case nsIAccessibleEvent::EVENT_FOCUS:
       
       mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
-      [parent moxPostNotification:NSAccessibilitySelectedChildrenChangedNotification];
+      [parent moxPostNotification:
+                  NSAccessibilitySelectedChildrenChangedNotification];
       break;
   }
 

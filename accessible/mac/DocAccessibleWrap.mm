@@ -3,6 +3,8 @@
 
 
 
+
+
 #include "DocAccessibleWrap.h"
 
 #import "mozAccessible.h"
@@ -11,7 +13,8 @@
 using namespace mozilla;
 using namespace mozilla::a11y;
 
-DocAccessibleWrap::DocAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell)
+DocAccessibleWrap::DocAccessibleWrap(dom::Document* aDocument,
+                                     PresShell* aPresShell)
     : DocAccessible(aDocument, aPresShell) {}
 
 void DocAccessibleWrap::Shutdown() {

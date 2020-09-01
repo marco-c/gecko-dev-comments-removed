@@ -3,6 +3,8 @@
 
 
 
+
+
 #include "RootAccessibleWrap.h"
 
 #import "mozRootAccessible.h"
@@ -14,8 +16,10 @@
 
 using namespace mozilla::a11y;
 
-static id<mozAccessible, mozView> getNativeViewFromRootAccessible(Accessible* aAccessible) {
-  RootAccessibleWrap* root = static_cast<RootAccessibleWrap*>(aAccessible->AsRoot());
+static id<mozAccessible, mozView> getNativeViewFromRootAccessible(
+    Accessible* aAccessible) {
+  RootAccessibleWrap* root =
+      static_cast<RootAccessibleWrap*>(aAccessible->AsRoot());
   id<mozAccessible, mozView> nativeView = nil;
   root->GetNativeWidget((void**)&nativeView);
   return nativeView;
@@ -49,10 +53,12 @@ static id<mozAccessible, mozView> getNativeViewFromRootAccessible(Accessible* aA
 - (id)moxUnignoredParent {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  if (!mParallelView) mParallelView = (id<mozView, mozAccessible>)[self representedView];
+  if (!mParallelView)
+    mParallelView = (id<mozView, mozAccessible>)[self representedView];
 
   if (mParallelView)
-    return [mParallelView accessibilityAttributeValue:NSAccessibilityParentAttribute];
+    return [mParallelView
+        accessibilityAttributeValue:NSAccessibilityParentAttribute];
 
   MOZ_ASSERT(mParallelView, "we're a root accessible w/o native view?");
   return [super moxUnignoredParent];
@@ -68,7 +74,8 @@ static id<mozAccessible, mozView> getNativeViewFromRootAccessible(Accessible* aA
 - (id)representedView {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  MOZ_ASSERT(mParallelView, "root accessible does not have a native parallel view.");
+  MOZ_ASSERT(mParallelView,
+             "root accessible does not have a native parallel view.");
 
   return mParallelView;
 

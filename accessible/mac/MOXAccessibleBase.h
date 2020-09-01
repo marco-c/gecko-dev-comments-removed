@@ -3,6 +3,8 @@
 
 
 
+
+
 #import <Cocoa/Cocoa.h>
 
 #import "mozAccessibleProtocol.h"
@@ -67,7 +69,8 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 - (NSArray*)accessibilityParameterizedAttributeNames;
 
 
-- (id)accessibilityAttributeValue:(NSString*)attribute forParameter:(id)parameter;
+- (id)accessibilityAttributeValue:(NSString*)attribute
+                     forParameter:(id)parameter;
 
 
 - (id)accessibilityHitTest:(NSPoint)point;
@@ -93,7 +96,8 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 - (void)moxPostNotification:(NSString*)notification;
 
 
-- (void)moxPostNotification:(NSString*)notification withUserInfo:(NSDictionary*)userInfo;
+- (void)moxPostNotification:(NSString*)notification
+               withUserInfo:(NSDictionary*)userInfo;
 
 
 - (BOOL)moxBlockSelector:(SEL)selector;

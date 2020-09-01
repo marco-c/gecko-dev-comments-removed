@@ -4,6 +4,7 @@
 
 
 
+
 #ifndef _MacUtils_H_
 #define _MacUtils_H_
 
@@ -17,6 +18,7 @@ namespace utils {
 
 
 NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray);
+
 
 
 NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray);

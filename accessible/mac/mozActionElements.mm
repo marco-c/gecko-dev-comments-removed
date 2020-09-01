@@ -3,6 +3,8 @@
 
 
 
+
+
 #import "mozActionElements.h"
 
 #import "MacUtils.h"
@@ -77,7 +79,9 @@ enum CheckboxValue {
 
 - (BOOL)moxIgnoreWithParent:(mozAccessible*)parent {
   if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
-    if (acc->IsContent() && acc->GetContent()->IsXULElement(nsGkAtoms::menulist)) {
+    if (acc->IsContent() &&
+        acc->GetContent()->IsXULElement(nsGkAtoms::menulist)) {
+      
       
       
       
@@ -112,7 +116,8 @@ enum CheckboxValue {
       return radioSiblings;
     } else {
       ProxyAccessible* proxy = mGeckoAccessible.AsProxy();
-      nsTArray<ProxyAccessible*> accs = proxy->RelationByType(RelationType::MEMBER_OF);
+      nsTArray<ProxyAccessible*> accs =
+          proxy->RelationByType(RelationType::MEMBER_OF);
       return utils::ConvertToNSArray(accs);
     }
   }
@@ -128,7 +133,8 @@ enum CheckboxValue {
 
 - (int)isChecked {
   
-  uint64_t state = [self stateWithMask:(states::CHECKED | states::PRESSED | states::MIXED)];
+  uint64_t state =
+      [self stateWithMask:(states::CHECKED | states::PRESSED | states::MIXED)];
   if (state & (states::CHECKED | states::PRESSED)) {
     return kChecked;
   }
@@ -155,18 +161,22 @@ enum CheckboxValue {
 - (NSArray*)moxChildren {
   if (!mGeckoAccessible.AsAccessible()) return nil;
 
-  nsDeckFrame* deckFrame = do_QueryFrame(mGeckoAccessible.AsAccessible()->GetFrame());
+  nsDeckFrame* deckFrame =
+      do_QueryFrame(mGeckoAccessible.AsAccessible()->GetFrame());
   nsIFrame* selectedFrame = deckFrame ? deckFrame->GetSelectedBox() : nullptr;
 
   Accessible* selectedAcc = nullptr;
   if (selectedFrame) {
     nsINode* node = selectedFrame->GetContent();
-    selectedAcc = mGeckoAccessible.AsAccessible()->Document()->GetAccessible(node);
+    selectedAcc =
+        mGeckoAccessible.AsAccessible()->Document()->GetAccessible(node);
   }
 
   if (selectedAcc) {
     mozAccessible* curNative = GetNativeFromGeckoAccessible(selectedAcc);
-    if (curNative) return [NSArray arrayWithObjects:GetObjectOrRepresentedView(curNative), nil];
+    if (curNative)
+      return
+          [NSArray arrayWithObjects:GetObjectOrRepresentedView(curNative), nil];
   }
 
   return nil;

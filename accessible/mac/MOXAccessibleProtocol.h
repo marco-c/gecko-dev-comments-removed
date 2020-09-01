@@ -3,7 +3,10 @@
 
 
 
+
+
 @protocol MOXTextMarkerSupport;
+
 
 
 
@@ -319,13 +322,16 @@
 - (NSValue* _Nullable)moxStyleRangeForIndex:(NSNumber* _Nonnull)index;
 
 
-- (NSAttributedString* _Nullable)moxAttributedStringForRange:(NSValue* _Nonnull)range;
+- (NSAttributedString* _Nullable)moxAttributedStringForRange:
+    (NSValue* _Nonnull)range;
 
 
-- (NSArray* _Nullable)moxUIElementsForSearchPredicate:(NSDictionary* _Nonnull)searchPredicate;
+- (NSArray* _Nullable)moxUIElementsForSearchPredicate:
+    (NSDictionary* _Nonnull)searchPredicate;
 
 
-- (NSNumber* _Nullable)moxUIElementCountForSearchPredicate:(NSDictionary* _Nonnull)searchPredicate;
+- (NSNumber* _Nullable)moxUIElementCountForSearchPredicate:
+    (NSDictionary* _Nonnull)searchPredicate;
 
 
 - (id _Nullable)moxCellForColumnAndRow:(NSArray* _Nonnull)columnAndRow;
@@ -356,16 +362,19 @@
 - (NSString* _Nullable)moxStringForTextMarkerRange:(id _Nonnull)textMarkerRange;
 
 
-- (id _Nullable)moxTextMarkerRangeForUnorderedTextMarkers:(NSArray* _Nonnull)textMarkers;
+- (id _Nullable)moxTextMarkerRangeForUnorderedTextMarkers:
+    (NSArray* _Nonnull)textMarkers;
 
 
 - (id _Nullable)moxLeftWordTextMarkerRangeForTextMarker:(id _Nonnull)textMarker;
 
 
-- (id _Nullable)moxRightWordTextMarkerRangeForTextMarker:(id _Nonnull)textMarker;
+- (id _Nullable)moxRightWordTextMarkerRangeForTextMarker:
+    (id _Nonnull)textMarker;
 
 
-- (id _Nullable)moxStartTextMarkerForTextMarkerRange:(id _Nonnull)textMarkerRange;
+- (id _Nullable)moxStartTextMarkerForTextMarkerRange:
+    (id _Nonnull)textMarkerRange;
 
 
 - (id _Nullable)moxEndTextMarkerForTextMarkerRange:(id _Nonnull)textMarkerRange;
@@ -377,7 +386,8 @@
 - (id _Nullable)moxPreviousTextMarkerForTextMarker:(id _Nonnull)textMarker;
 
 
-- (NSAttributedString* _Nullable)moxAttributedStringForTextMarkerRange:(id _Nonnull)textMarkerRange;
+- (NSAttributedString* _Nullable)moxAttributedStringForTextMarkerRange:
+    (id _Nonnull)textMarkerRange;
 
 
 - (NSValue* _Nullable)moxBoundsForTextMarkerRange:(id _Nonnull)textMarkerRange;

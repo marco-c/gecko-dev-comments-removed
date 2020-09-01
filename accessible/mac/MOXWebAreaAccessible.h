@@ -59,7 +59,8 @@ class PivotRule;
   BOOL mImmediateDescendantsOnly;
 }
 
-- (id)initWithParameters:(NSDictionary*)params andRoot:(mozilla::a11y::AccessibleOrProxy)root;
+- (id)initWithParameters:(NSDictionary*)params
+                 andRoot:(mozilla::a11y::AccessibleOrProxy)root;
 
 - (NSMutableArray*)getMatchesForRule:(mozilla::a11y::PivotRule&)rule;
 

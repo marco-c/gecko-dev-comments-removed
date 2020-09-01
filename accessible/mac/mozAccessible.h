@@ -3,6 +3,8 @@
 
 
 
+
+
 #include "AccessibleWrap.h"
 #include "ProxyAccessible.h"
 #include "AccessibleOrProxy.h"
@@ -23,7 +25,8 @@
 namespace mozilla {
 namespace a11y {
 
-inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrProxy aAccOrProxy) {
+inline mozAccessible* GetNativeFromGeckoAccessible(
+    mozilla::a11y::AccessibleOrProxy aAccOrProxy) {
   MOZ_ASSERT(!aAccOrProxy.IsNull(), "Cannot get native from null accessible");
   if (Accessible* acc = aAccOrProxy.AsAccessible()) {
     mozAccessible* native = nil;
@@ -78,7 +81,9 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 
 - (void)handleAccessibleTextChangeEvent:(NSString*)change
                                inserted:(BOOL)isInserted
-                            inContainer:(const mozilla::a11y::AccessibleOrProxy&)container
+                            inContainer:
+                                (const mozilla::a11y::AccessibleOrProxy&)
+                                    container
                                      at:(int32_t)start;
 
 

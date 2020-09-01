@@ -4,6 +4,7 @@
 
 
 
+
 #import "MacUtils.h"
 
 #include "Accessible.h"
@@ -24,11 +25,13 @@ NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
   for (size_t i = 0; i < totalCount; i++) {
     Accessible* curAccessible = aArray.ElementAt(i);
     mozAccessible* curNative = GetNativeFromGeckoAccessible(curAccessible);
-    if (curNative) [nativeArray addObject:GetObjectOrRepresentedView(curNative)];
+    if (curNative)
+      [nativeArray addObject:GetObjectOrRepresentedView(curNative)];
   }
 
   return nativeArray;
 }
+
 
 
 NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray) {
@@ -39,7 +42,8 @@ NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray) {
   for (size_t i = 0; i < totalCount; i++) {
     ProxyAccessible* curAccessible = aArray.ElementAt(i);
     mozAccessible* curNative = GetNativeFromGeckoAccessible(curAccessible);
-    if (curNative) [nativeArray addObject:GetObjectOrRepresentedView(curNative)];
+    if (curNative)
+      [nativeArray addObject:GetObjectOrRepresentedView(curNative)];
   }
 
   return nativeArray;
@@ -62,7 +66,8 @@ NSString* GetAccAttr(mozAccessible* aNativeAccessible, const char* aAttrName) {
   if (Accessible* acc = [aNativeAccessible geckoAccessible].AsAccessible()) {
     nsCOMPtr<nsIPersistentProperties> attributes = acc->Attributes();
     attributes->GetStringProperty(nsCString(aAttrName), result);
-  } else if (ProxyAccessible* proxy = [aNativeAccessible geckoAccessible].AsProxy()) {
+  } else if (ProxyAccessible* proxy =
+                 [aNativeAccessible geckoAccessible].AsProxy()) {
     AutoTArray<Attribute, 10> attrs;
     proxy->Attributes(&attrs);
     for (size_t i = 0; i < attrs.Length(); i++) {

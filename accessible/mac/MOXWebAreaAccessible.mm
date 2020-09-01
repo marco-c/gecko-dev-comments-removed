@@ -3,6 +3,8 @@
 
 
 
+
+
 #import "MOXWebAreaAccessible.h"
 
 #include "nsCocoaUtils.h"
@@ -52,6 +54,7 @@ using namespace mozilla::a11y;
   if ([self stateWithMask:states::STALE] != 0) {
     
     
+    
     return @0.0;
   }
 
@@ -70,24 +73,33 @@ using namespace mozilla::a11y;
   
   
   
-  MOXSearchInfo* search = [[MOXSearchInfo alloc] initWithParameters:searchPredicate
-                                                            andRoot:mGeckoAccessible];
+  MOXSearchInfo* search =
+      [[MOXSearchInfo alloc] initWithParameters:searchPredicate
+                                        andRoot:mGeckoAccessible];
 
   return [search performSearch];
 }
 
-- (NSNumber*)moxUIElementCountForSearchPredicate:(NSDictionary*)searchPredicate {
-  return [NSNumber numberWithDouble:[[self moxUIElementsForSearchPredicate:searchPredicate] count]];
+- (NSNumber*)moxUIElementCountForSearchPredicate:
+    (NSDictionary*)searchPredicate {
+  return [NSNumber
+      numberWithDouble:[[self moxUIElementsForSearchPredicate:searchPredicate]
+                           count]];
 }
 
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE:
-      [self moxPostNotification:NSAccessibilityFocusedUIElementChangedNotification];
+      [self moxPostNotification:
+                NSAccessibilityFocusedUIElementChangedNotification];
       if ((mGeckoAccessible.IsProxy() && mGeckoAccessible.AsProxy()->IsDoc() &&
            mGeckoAccessible.AsProxy()->AsDoc()->IsTopLevel()) ||
-          (mGeckoAccessible.IsAccessible() && !mGeckoAccessible.AsAccessible()->IsRoot() &&
-           mGeckoAccessible.AsAccessible()->AsDoc()->ParentDocument()->IsRoot())) {
+          (mGeckoAccessible.IsAccessible() &&
+           !mGeckoAccessible.AsAccessible()->IsRoot() &&
+           mGeckoAccessible.AsAccessible()
+               ->AsDoc()
+               ->ParentDocument()
+               ->IsRoot())) {
         
         [self moxPostNotification:@"AXLoadComplete"];
       } else {
@@ -107,8 +119,9 @@ using namespace mozilla::a11y;
 
 - (id)initWithParameters:(NSDictionary*)params andRoot:(AccessibleOrProxy)root {
   if (id searchKeyParam = [params objectForKey:@"AXSearchKey"]) {
-    mSearchKeys =
-        [searchKeyParam isKindOfClass:[NSString class]] ? @[ searchKeyParam ] : searchKeyParam;
+    mSearchKeys = [searchKeyParam isKindOfClass:[NSString class]]
+                      ? @[ searchKeyParam ]
+                      : searchKeyParam;
   }
 
   if (id startElemParam = [params objectForKey:@"AXStartElement"]) {
@@ -116,15 +129,18 @@ using namespace mozilla::a11y;
   } else {
     mStartElem = root;
   }
-  MOZ_ASSERT(!mStartElem.IsNull(), "Performing search with null gecko accessible!");
+  MOZ_ASSERT(!mStartElem.IsNull(),
+             "Performing search with null gecko accessible!");
 
   mWebArea = root;
 
   mResultLimit = [[params objectForKey:@"AXResultsLimit"] intValue];
 
-  mSearchForward = [[params objectForKey:@"AXDirection"] isEqualToString:@"AXDirectionNext"];
+  mSearchForward =
+      [[params objectForKey:@"AXDirection"] isEqualToString:@"AXDirectionNext"];
 
-  mImmediateDescendantsOnly = [[params objectForKey:@"AXImmediateDescendantsOnly"] boolValue];
+  mImmediateDescendantsOnly =
+      [[params objectForKey:@"AXImmediateDescendantsOnly"] boolValue];
 
   return [super init];
 }
@@ -133,7 +149,8 @@ using namespace mozilla::a11y;
   int resultLimit = mResultLimit;
   NSMutableArray* matches = [[NSMutableArray alloc] init];
   Pivot p = Pivot(mWebArea);
-  AccessibleOrProxy match = mSearchForward ? p.Next(mStartElem, rule) : p.Prev(mStartElem, rule);
+  AccessibleOrProxy match =
+      mSearchForward ? p.Next(mStartElem, rule) : p.Prev(mStartElem, rule);
   while (!match.IsNull() && resultLimit != 0) {
     
     
@@ -157,20 +174,23 @@ using namespace mozilla::a11y;
 
   for (id key in mSearchKeys) {
     if ([key isEqualToString:@"AXAnyTypeSearchKey"]) {
-      PivotMatchAllRule rule =
-          mImmediateDescendantsOnly ? PivotMatchAllRule(mStartElem) : PivotMatchAllRule();
+      PivotMatchAllRule rule = mImmediateDescendantsOnly
+                                   ? PivotMatchAllRule(mStartElem)
+                                   : PivotMatchAllRule();
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
 
     if ([key isEqualToString:@"AXHeadingSearchKey"]) {
-      PivotRoleRule rule = mImmediateDescendantsOnly ? PivotRoleRule(roles::HEADING, mStartElem)
-                                                     : PivotRoleRule(roles::HEADING);
+      PivotRoleRule rule = mImmediateDescendantsOnly
+                               ? PivotRoleRule(roles::HEADING, mStartElem)
+                               : PivotRoleRule(roles::HEADING);
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
 
     if ([key isEqualToString:@"AXArticleSearchKey"]) {
-      PivotRoleRule rule = mImmediateDescendantsOnly ? PivotRoleRule(roles::ARTICLE, mStartElem)
-                                                     : PivotRoleRule(roles::ARTICLE);
+      PivotRoleRule rule = mImmediateDescendantsOnly
+                               ? PivotRoleRule(roles::ARTICLE, mStartElem)
+                               : PivotRoleRule(roles::ARTICLE);
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
   }
