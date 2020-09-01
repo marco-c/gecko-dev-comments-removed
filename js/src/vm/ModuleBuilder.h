@@ -13,7 +13,6 @@
 #include "builtin/ModuleObject.h"  
 #include "frontend/CompilationInfo.h"  
 #include "frontend/EitherParser.h"     
-#include "frontend/ParserAtom.h"       
 #include "frontend/Stencil.h"          
 #include "js/GCHashTable.h"            
 #include "js/GCVector.h"               
@@ -48,7 +47,7 @@ class MOZ_STACK_CLASS ModuleBuilder {
   bool processExport(frontend::ParseNode* exportNode);
   bool processExportFrom(frontend::BinaryNode* exportNode);
 
-  bool hasExportedName(const frontend::ParserAtom* name) const;
+  bool hasExportedName(JSAtom* name) const;
 
   bool buildTables(frontend::StencilModuleMetadata& metadata);
 
@@ -59,10 +58,9 @@ class MOZ_STACK_CLASS ModuleBuilder {
 
  private:
   using RequestedModuleVector = JS::GCVector<frontend::StencilModuleEntry>;
-  using AtomSet = JS::GCHashSet<const frontend::ParserAtom*>;
+  using AtomSet = JS::GCHashSet<JSAtom*>;
   using ExportEntryVector = GCVector<frontend::StencilModuleEntry>;
-  using ImportEntryMap =
-      JS::GCHashMap<const frontend::ParserAtom*, frontend::StencilModuleEntry>;
+  using ImportEntryMap = JS::GCHashMap<JSAtom*, frontend::StencilModuleEntry>;
   using RootedExportEntryVector = JS::Rooted<ExportEntryVector>;
   using RootedRequestedModuleVector = JS::Rooted<RequestedModuleVector>;
   using RootedAtomSet = JS::Rooted<AtomSet>;
@@ -81,23 +79,22 @@ class MOZ_STACK_CLASS ModuleBuilder {
   
   frontend::FunctionDeclarationVector functionDecls_;
 
-  frontend::StencilModuleEntry* importEntryFor(
-      const frontend::ParserAtom* localName) const;
+  frontend::StencilModuleEntry* importEntryFor(JSAtom* localName) const;
 
   bool processExportBinding(frontend::ParseNode* pn);
   bool processExportArrayBinding(frontend::ListNode* array);
   bool processExportObjectBinding(frontend::ListNode* obj);
 
-  bool appendExportEntry(const frontend::ParserAtom* exportName,
-                         const frontend::ParserAtom* localName,
+  bool appendExportEntry(JS::Handle<JSAtom*> exportName,
+                         JS::Handle<JSAtom*> localName,
                          frontend::ParseNode* node = nullptr);
 
-  bool appendExportFromEntry(const frontend::ParserAtom* exportName,
-                             const frontend::ParserAtom* moduleRequest,
-                             const frontend::ParserAtom* importName,
+  bool appendExportFromEntry(JS::Handle<JSAtom*> exportName,
+                             JS::Handle<JSAtom*> moduleRequest,
+                             JS::Handle<JSAtom*> importName,
                              frontend::ParseNode* node);
 
-  bool maybeAppendRequestedModule(const frontend::ParserAtom* specifier,
+  bool maybeAppendRequestedModule(JS::Handle<JSAtom*> specifier,
                                   frontend::ParseNode* node);
 };
 

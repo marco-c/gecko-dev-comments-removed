@@ -134,7 +134,7 @@ struct RecyclableAtomMapValueWrapper {
   const Wrapped* operator->() const { return &wrapped; }
 };
 
-struct NameMapHasher : public DefaultHasher<const ParserAtom*> {
+struct NameMapHasher : public DefaultHasher<JSAtom*> {
   static inline HashNumber hash(const Lookup& l) {
     
     
@@ -147,7 +147,7 @@ struct NameMapHasher : public DefaultHasher<const ParserAtom*> {
 
 template <typename MapValue>
 using RecyclableNameMap =
-    InlineMap<const ParserAtom*, RecyclableAtomMapValueWrapper<MapValue>, 24,
+    InlineMap<JSAtom*, RecyclableAtomMapValueWrapper<MapValue>, 24,
               NameMapHasher, SystemAllocPolicy>;
 
 using DeclaredNameMap = RecyclableNameMap<DeclaredNameInfo>;

@@ -18,7 +18,6 @@
 
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/NameAnalysisTypes.h"   
-#include "frontend/ParserAtom.h"
 #include "frontend/Stencil.h"
 #include "frontend/Token.h"
 #include "js/RootingAPI.h"
@@ -26,6 +25,13 @@
 #include "vm/Scope.h"
 #include "vm/ScopeKind.h"
 #include "vm/StringType.h"
+
+
+
+
+
+
+
 
 
 
@@ -61,14 +67,7 @@ class ParseContext;
 struct CompilationInfo;
 class ParserSharedBase;
 class FullParseHandler;
-
 class FunctionBox;
-
-
-using ParserBindingName = AbstractBindingName<const ParserAtom>;
-
-template <typename Scope>
-using ParserScopeData = typename Scope::template AbstractData<const ParserAtom>;
 
 #define FOR_EACH_PARSE_NODE_KIND(F)                              \
   F(EmptyStmt, NullaryNode)                                      \
@@ -748,7 +747,7 @@ class ParseNode {
     return ParseNodeKind::BinOpFirst <= kind &&
            kind <= ParseNodeKind::BinOpLast;
   }
-  inline bool isName(const ParserName* name) const;
+  inline bool isName(PropertyName* name) const;
 
   
   bool isInParens() const { return pn_parens; }
@@ -851,11 +850,11 @@ class NullaryNode : public ParseNode {
 };
 
 class NameNode : public ParseNode {
-  const ParserAtom* atom_; 
+  JSAtom* atom_; 
   PrivateNameKind privateNameKind_ = PrivateNameKind::None;
 
  public:
-  NameNode(ParseNodeKind kind, const ParserAtom* atom, const TokenPos& pos)
+  NameNode(ParseNodeKind kind, JSAtom* atom, const TokenPos& pos)
       : ParseNode(kind, pos), atom_(atom) {
     MOZ_ASSERT(is<NameNode>());
   }
@@ -875,15 +874,15 @@ class NameNode : public ParseNode {
   void dumpImpl(GenericPrinter& out, int indent);
 #endif
 
-  const ParserAtom* atom() const { return atom_; }
+  JSAtom* atom() const { return atom_; }
 
-  const ParserName* name() const {
+  PropertyName* name() const {
     MOZ_ASSERT(isKind(ParseNodeKind::Name) ||
                isKind(ParseNodeKind::PrivateName));
-    return atom()->asName();
+    return atom()->asPropertyName();
   }
 
-  void setAtom(const ParserAtom* atom) { atom_ = atom; }
+  void setAtom(JSAtom* atom) { atom_ = atom; }
 
   void setPrivateNameKind(PrivateNameKind privateNameKind) {
     privateNameKind_ = privateNameKind;
@@ -892,7 +891,7 @@ class NameNode : public ParseNode {
   PrivateNameKind privateNameKind() { return privateNameKind_; }
 };
 
-inline bool ParseNode::isName(const ParserName* name) const {
+inline bool ParseNode::isName(PropertyName* name) const {
   return getKind() == ParseNodeKind::Name && as<NameNode>().name() == name;
 }
 
@@ -941,7 +940,7 @@ class UnaryNode : public ParseNode {
 
 
 
-  const ParserAtom* isStringExprStatement() const {
+  JSAtom* isStringExprStatement() const {
     if (isKind(ParseNodeKind::ExpressionStmt)) {
       if (kid()->isKind(ParseNodeKind::StringExpr) && !kid()->isInParens()) {
         return kid()->as<NameNode>().atom();
@@ -1553,7 +1552,7 @@ class NumericLiteral : public ParseNode {
   void setDecimalPoint(DecimalPoint d) { decimalPoint_ = d; }
 
   
-  const ParserAtom* toAtom(CompilationInfo& compilationInfo) const;
+  JSAtom* toAtom(JSContext* cx) const;
 };
 
 class BigIntLiteral : public ParseNode {
@@ -1591,12 +1590,12 @@ class BigIntLiteral : public ParseNode {
 };
 
 class LexicalScopeNode : public ParseNode {
-  ParserScopeData<LexicalScope>* bindings;
+  LexicalScope::Data* bindings;
   ParseNode* body;
   ScopeKind kind_;
 
  public:
-  LexicalScopeNode(ParserScopeData<LexicalScope>* bindings, ParseNode* body,
+  LexicalScopeNode(LexicalScope::Data* bindings, ParseNode* body,
                    ScopeKind kind = ScopeKind::Lexical)
       : ParseNode(ParseNodeKind::LexicalScope, body->pn_pos),
         bindings(bindings),
@@ -1618,11 +1617,11 @@ class LexicalScopeNode : public ParseNode {
   void dumpImpl(GenericPrinter& out, int indent);
 #endif
 
-  ParserScopeData<LexicalScope>* scopeBindings() const {
+  Handle<LexicalScope::Data*> scopeBindings() const {
     MOZ_ASSERT(!isEmptyScope());
     
     
-    return bindings;
+    return Handle<LexicalScope::Data*>::fromMarkedLocation(&bindings);
   }
 
   ParseNode* scopeBody() const { return body; }
@@ -1638,12 +1637,12 @@ class LabeledStatement : public NameNode {
   ParseNode* statement_;
 
  public:
-  LabeledStatement(const ParserName* label, ParseNode* stmt, uint32_t begin)
+  LabeledStatement(PropertyName* label, ParseNode* stmt, uint32_t begin)
       : NameNode(ParseNodeKind::LabelStmt, label,
                  TokenPos(begin, stmt->pn_pos.end)),
         statement_(stmt) {}
 
-  const ParserName* label() const { return atom()->asName(); }
+  PropertyName* label() const { return atom()->asPropertyName(); }
 
   ParseNode* statement() const { return statement_; }
 
@@ -1689,10 +1688,10 @@ class CaseClause : public BinaryNode {
 };
 
 class LoopControlStatement : public ParseNode {
-  const ParserName* label_; 
+  PropertyName* label_; 
 
  protected:
-  LoopControlStatement(ParseNodeKind kind, const ParserName* label,
+  LoopControlStatement(ParseNodeKind kind, PropertyName* label,
                        const TokenPos& pos)
       : ParseNode(kind, pos), label_(label) {
     MOZ_ASSERT(kind == ParseNodeKind::BreakStmt ||
@@ -1702,7 +1701,7 @@ class LoopControlStatement : public ParseNode {
 
  public:
   
-  const ParserName* label() const { return label_; }
+  PropertyName* label() const { return label_; }
 
 #ifdef DEBUG
   void dumpImpl(GenericPrinter& out, int indent);
@@ -1723,7 +1722,7 @@ class LoopControlStatement : public ParseNode {
 
 class BreakStatement : public LoopControlStatement {
  public:
-  BreakStatement(const ParserName* label, const TokenPos& pos)
+  BreakStatement(PropertyName* label, const TokenPos& pos)
       : LoopControlStatement(ParseNodeKind::BreakStmt, label, pos) {}
 
   static bool test(const ParseNode& node) {
@@ -1735,7 +1734,7 @@ class BreakStatement : public LoopControlStatement {
 
 class ContinueStatement : public LoopControlStatement {
  public:
-  ContinueStatement(const ParserName* label, const TokenPos& pos)
+  ContinueStatement(PropertyName* label, const TokenPos& pos)
       : LoopControlStatement(ParseNodeKind::ContinueStmt, label, pos) {}
 
   static bool test(const ParseNode& node) {
@@ -1923,8 +1922,8 @@ class PropertyAccessBase : public BinaryNode {
 
   void setExpression(ParseNode* pn) { *unsafeLeftReference() = pn; }
 
-  const ParserName* name() const {
-    return right()->as<NameNode>().atom()->asName();
+  PropertyName& name() const {
+    return *right()->as<NameNode>().atom()->asPropertyName();
   }
 };
 

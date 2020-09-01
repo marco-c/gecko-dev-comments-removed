@@ -16,13 +16,6 @@
 
 namespace js {
 
-namespace frontend {
-
-class ParserAtom;
-struct CompilationInfo;
-
-}  
-
 class StringBufferAllocPolicy {
   TempAllocPolicy impl_;
 
@@ -243,7 +236,6 @@ class StringBuffer {
                                            size_t len);
   inline MOZ_MUST_USE bool appendSubstring(JSLinearString* base, size_t off,
                                            size_t len);
-  MOZ_MUST_USE bool append(const frontend::ParserAtom* atom);
 
   MOZ_MUST_USE bool append(const char* chars, size_t len) {
     return append(reinterpret_cast<const Latin1Char*>(chars), len);
@@ -319,8 +311,6 @@ class StringBuffer {
 
   
   JSAtom* finishAtom();
-  const frontend::ParserAtom* finishParserAtom(
-      frontend::CompilationInfo& compilationInfo);
 
   
 

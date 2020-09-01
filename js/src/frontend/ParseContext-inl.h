@@ -63,7 +63,7 @@ inline ParseContext::VarScope::VarScope(JSContext* cx, ParseContext* pc,
 }
 
 inline JS::Result<Ok, ParseContext::BreakStatementError>
-ParseContext::checkBreakStatement(const ParserName* label) {
+ParseContext::checkBreakStatement(PropertyName* label) {
   
   
   
@@ -91,7 +91,7 @@ ParseContext::checkBreakStatement(const ParserName* label) {
 }
 
 inline JS::Result<Ok, ParseContext::ContinueStatementError>
-ParseContext::checkContinueStatement(const ParserName* label) {
+ParseContext::checkContinueStatement(PropertyName* label) {
   
   
   

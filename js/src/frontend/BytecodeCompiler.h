@@ -107,7 +107,6 @@ namespace frontend {
 class ErrorReporter;
 class FunctionBox;
 class ParseNode;
-class ParserAtom;
 
 
 ModuleObject* CompileModule(JSContext* cx,
@@ -175,10 +174,8 @@ MOZ_MUST_USE JSFunction* CompileStandaloneAsyncGenerator(
 
 
 bool IsIdentifier(JSLinearString* str);
-bool IsIdentifier(const ParserAtom* atom);
 
 bool IsIdentifierNameOrPrivateName(JSLinearString* str);
-bool IsIdentifierNameOrPrivateName(const ParserAtom* atom);
 
 
 
@@ -190,7 +187,6 @@ bool IsIdentifierNameOrPrivateName(const Latin1Char* chars, size_t length);
 bool IsIdentifierNameOrPrivateName(const char16_t* chars, size_t length);
 
 
-bool IsKeyword(const ParserAtom* atom);
 bool IsKeyword(JSLinearString* str);
 
 class MOZ_STACK_CLASS AutoFrontendTraceLog {

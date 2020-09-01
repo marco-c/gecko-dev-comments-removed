@@ -18,7 +18,9 @@
 #include "frontend/NameOpEmitter.h"   
 #include "frontend/ParseNode.h"       
 #include "frontend/TDZCheckCache.h"   
+#include "js/RootingAPI.h"            
 #include "vm/BytecodeUtil.h"          
+#include "vm/JSAtom.h"                
 #include "vm/NativeObject.h"          
 #include "vm/Scope.h"                 
 
@@ -233,7 +235,7 @@ class MOZ_STACK_CLASS PropertyEmitter {
 
   
   
-  MOZ_MUST_USE bool emitInit(AccessorType accessorType, const ParserAtom* key);
+  MOZ_MUST_USE bool emitInit(AccessorType accessorType, HandleAtom key);
 
   MOZ_MUST_USE bool emitInitIndexOrComputed(AccessorType accessorType);
 
@@ -245,7 +247,7 @@ class MOZ_STACK_CLASS PropertyEmitter {
   
   
   
-  MOZ_MUST_USE bool emitInit(JSOp op, const ParserAtom* key);
+  MOZ_MUST_USE bool emitInit(JSOp op, JS::Handle<JSAtom*> key);
   MOZ_MUST_USE bool emitInitIndexOrComputed(JSOp op);
 
   MOZ_MUST_USE bool emitPopClassConstructor();
@@ -753,8 +755,8 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   size_t numInitializers_ = 0;
 #endif
 
-  const ParserAtom* name_;
-  const ParserAtom* nameForAnonymousClass_;
+  JS::Rooted<JSAtom*> name_;
+  JS::Rooted<JSAtom*> nameForAnonymousClass_;
   bool hasNameOnStack_ = false;
   mozilla::Maybe<NameOpEmitter> initializersAssignment_;
   size_t initializerIndex_ = 0;
@@ -762,8 +764,9 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
  public:
   explicit ClassEmitter(BytecodeEmitter* bce);
 
-  bool emitScope(ParserLexicalScopeData* scopeBindings);
-  bool emitBodyScope(ParserLexicalScopeData* scopeBindings);
+  bool emitScope(JS::Handle<LexicalScope::Data*> scopeBindings);
+
+  bool emitBodyScope(JS::Handle<LexicalScope::Data*> scopeBindings);
 
   
   
@@ -771,11 +774,11 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   
   
   
-  MOZ_MUST_USE bool emitClass(const ParserAtom* name,
-                              const ParserAtom* nameForAnonymousClass,
+  MOZ_MUST_USE bool emitClass(JS::Handle<JSAtom*> name,
+                              JS::Handle<JSAtom*> nameForAnonymousClass,
                               bool hasNameOnStack);
-  MOZ_MUST_USE bool emitDerivedClass(const ParserAtom* name,
-                                     const ParserAtom* nameForAnonymousClass,
+  MOZ_MUST_USE bool emitDerivedClass(JS::Handle<JSAtom*> name,
+                                     JS::Handle<JSAtom*> nameForAnonymousClass,
                                      bool hasNameOnStack);
 
   

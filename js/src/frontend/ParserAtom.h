@@ -9,14 +9,12 @@
 
 #include "mozilla/DebugOnly.h"      
 #include "mozilla/HashFunctions.h"  
-#include "mozilla/Range.h"          
 #include "mozilla/Variant.h"        
 
-#include "ds/LifoAlloc.h"    
-#include "js/GCPolicyAPI.h"  
-#include "js/HashTable.h"    
-#include "js/UniquePtr.h"    
-#include "js/Vector.h"       
+#include "ds/LifoAlloc.h"  
+#include "js/HashTable.h"  
+#include "js/UniquePtr.h"  
+#include "js/Vector.h"     
 #include "vm/CommonPropertyNames.h"
 #include "vm/StringType.h"  
 
@@ -180,6 +178,7 @@ class alignas(alignof(void*)) ParserAtomEntry {
     }
   }
 
+ public:
  private:
   
   ContentPtrVariant variant_;
@@ -193,15 +192,9 @@ class alignas(alignof(void*)) ParserAtomEntry {
   
   
   
-  
-  
-  
-  
   mutable JSAtom* jsatom_ = nullptr;
 
  public:
-  static const uint32_t MAX_LENGTH = JSString::MAX_LENGTH;
-
   template <typename CharT>
   ParserAtomEntry(mozilla::UniquePtr<CharT[], JS::FreePolicy> chars,
                   uint32_t length, HashNumber hash)
@@ -255,12 +248,6 @@ class alignas(alignof(void*)) ParserAtomEntry {
   const char16_t* twoByteChars() const {
     MOZ_ASSERT(hasTwoByteChars());
     return variant_.getUnchecked<char16_t>();
-  }
-  mozilla::Range<const Latin1Char> latin1Range() const {
-    return mozilla::Range(latin1Chars(), length_);
-  }
-  mozilla::Range<const char16_t> twoByteRange() const {
-    return mozilla::Range(twoByteChars(), length_);
   }
 
   bool isIndex(uint32_t* indexp) const;
@@ -368,8 +355,7 @@ class WellKnownParserAtoms {
                            TempAllocPolicy>;
   EntrySet entrySet_;
 
-  bool initSingle(JSContext* cx, const ParserName** name, const char* str,
-                  JSAtom* jsatom);
+  bool initSingle(JSContext* cx, const ParserName** name, const char* str);
 
  public:
   explicit WellKnownParserAtoms(JSContext* cx) : entrySet_(cx) {}
@@ -462,8 +448,9 @@ class ParserAtomsTable {
 
   JS::Result<const ParserAtom*, OOM&> internJSAtom(JSContext* cx, JSAtom* atom);
 
-  JS::Result<const ParserAtom*, OOM&> concatAtoms(
-      JSContext* cx, mozilla::Range<const ParserAtom*> atoms);
+  JS::Result<const ParserAtom*, OOM&> concatAtoms(JSContext* cx,
+                                                  const ParserAtom* prefix,
+                                                  const ParserAtom* suffix);
 };
 
 template <typename CharT>
@@ -514,12 +501,5 @@ inline bool ParserAtomEntry::equalsSeq(
 
 } 
 } 
-
-namespace JS {
-
-template <>
-struct GCPolicy<const js::frontend::ParserAtom*>
-    : IgnoreGCPolicy<const js::frontend::ParserAtom*> {};
-}  
 
 #endif  

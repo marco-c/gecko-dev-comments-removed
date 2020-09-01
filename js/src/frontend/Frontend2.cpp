@@ -21,22 +21,27 @@
 #include "frontend/BytecodeSection.h"   
 #include "frontend/CompilationInfo.h"   
 #include "frontend/Parser.h"  
-#include "frontend/ParserAtom.h"        
 #include "frontend/smoosh_generated.h"  
 #include "frontend/SourceNotes.h"       
 #include "frontend/Stencil.h"  
 #include "frontend/TokenStream.h"  
+#include "gc/Rooting.h"            
 #include "irregexp/RegExpAPI.h"    
 #include "js/CharacterEncoding.h"  
 #include "js/GCAPI.h"              
+#include "js/GCVector.h"           
 #include "js/HeapAPI.h"            
 #include "js/RegExpFlags.h"        
 #include "js/RootingAPI.h"         
-#include "js/UniquePtr.h"          
-#include "js/Utility.h"            
-#include "vm/JSScript.h"           
-#include "vm/ScopeKind.h"          
+#include "js/TypeDecls.h"  
+#include "js/UniquePtr.h"  
+#include "js/Utility.h"    
+#include "vm/JSAtom.h"     
+#include "vm/JSScript.h"   
+#include "vm/Scope.h"      
+#include "vm/ScopeKind.h"  
 #include "vm/SharedStencil.h"  
+#include "vm/StringType.h"  
 
 #include "vm/JSContext-inl.h"  
 
@@ -54,7 +59,7 @@ namespace frontend {
 
 bool ConvertAtoms(JSContext* cx, const SmooshResult& result,
                   CompilationInfo& compilationInfo,
-                  Vector<const ParserAtom*>& allAtoms) {
+                  JS::MutableHandleVector<JSAtom*> allAtoms) {
   size_t numAtoms = result.all_atoms_len;
 
   if (!allAtoms.reserve(numAtoms)) {
@@ -62,11 +67,9 @@ bool ConvertAtoms(JSContext* cx, const SmooshResult& result,
   }
 
   for (size_t i = 0; i < numAtoms; i++) {
-    auto s = reinterpret_cast<const mozilla::Utf8Unit*>(
-        smoosh_get_atom_at(result, i));
+    auto s = smoosh_get_atom_at(result, i);
     auto len = smoosh_get_atom_len_at(result, i);
-    const ParserAtom* atom =
-        compilationInfo.parserAtoms.internUtf8(cx, s, len).unwrapOr(nullptr);
+    JSAtom* atom = AtomizeUTF8Chars(cx, s, len);
     if (!atom) {
       return false;
     }
@@ -77,22 +80,20 @@ bool ConvertAtoms(JSContext* cx, const SmooshResult& result,
 }
 
 void CopyBindingNames(JSContext* cx, CVec<SmooshBindingName>& from,
-                      Vector<const ParserAtom*>& allAtoms,
-                      ParserBindingName* to) {
+                      JS::HandleVector<JSAtom*> allAtoms, BindingName* to) {
   
   JS::AutoCheckCannotGC nogc(cx);
 
   size_t numBindings = from.len;
   for (size_t i = 0; i < numBindings; i++) {
     SmooshBindingName& name = from.data[i];
-    new (mozilla::KnownNotNull, &to[i]) ParserBindingName(
+    new (mozilla::KnownNotNull, &to[i]) BindingName(
         allAtoms[name.name], name.is_closed_over, name.is_top_level_function);
   }
 }
 
 void CopyBindingNames(JSContext* cx, CVec<COption<SmooshBindingName>>& from,
-                      Vector<const ParserAtom*>& allAtoms,
-                      ParserBindingName* to) {
+                      JS::HandleVector<JSAtom*> allAtoms, BindingName* to) {
   
   JS::AutoCheckCannotGC nogc(cx);
 
@@ -101,11 +102,10 @@ void CopyBindingNames(JSContext* cx, CVec<COption<SmooshBindingName>>& from,
     COption<SmooshBindingName>& maybeName = from.data[i];
     if (maybeName.IsSome()) {
       SmooshBindingName& name = maybeName.AsSome();
-      new (mozilla::KnownNotNull, &to[i]) ParserBindingName(
+      new (mozilla::KnownNotNull, &to[i]) BindingName(
           allAtoms[name.name], name.is_closed_over, name.is_top_level_function);
     } else {
-      new (mozilla::KnownNotNull, &to[i])
-          ParserBindingName(nullptr, false, false);
+      new (mozilla::KnownNotNull, &to[i]) BindingName(nullptr, false, false);
     }
   }
 }
@@ -113,7 +113,7 @@ void CopyBindingNames(JSContext* cx, CVec<COption<SmooshBindingName>>& from,
 
 
 bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
-                         Vector<const ParserAtom*>& allAtoms,
+                         JS::HandleVector<JSAtom*> allAtoms,
                          CompilationInfo& compilationInfo) {
   auto& alloc = compilationInfo.allocScope.alloc();
 
@@ -126,8 +126,8 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         auto& global = scopeData.AsGlobal();
 
         size_t numBindings = global.bindings.len;
-        ParserGlobalScopeData* data =
-            NewEmptyGlobalScopeData(cx, alloc, numBindings);
+        JS::Rooted<GlobalScope::Data*> data(
+            cx, NewEmptyGlobalScopeData(cx, alloc, numBindings));
         if (!data) {
           return false;
         }
@@ -150,8 +150,8 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
 
         size_t numBindings = var.bindings.len;
 
-        ParserVarScopeData* data = NewEmptyVarScopeData(cx, alloc, numBindings);
-        ;
+        JS::Rooted<VarScope::Data*> data(
+            cx, NewEmptyVarScopeData(cx, alloc, numBindings));
         if (!data) {
           return false;
         }
@@ -177,8 +177,8 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         auto& lexical = scopeData.AsLexical();
 
         size_t numBindings = lexical.bindings.len;
-        ParserLexicalScopeData* data =
-            NewEmptyLexicalScopeData(cx, alloc, numBindings);
+        JS::Rooted<LexicalScope::Data*> data(
+            cx, NewEmptyLexicalScopeData(cx, alloc, numBindings));
         if (!data) {
           return false;
         }
@@ -205,8 +205,8 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         auto& function = scopeData.AsFunction();
 
         size_t numBindings = function.bindings.len;
-        ParserFunctionScopeData* data =
-            NewEmptyFunctionScopeData(cx, alloc, numBindings);
+        JS::Rooted<FunctionScope::Data*> data(
+            cx, NewEmptyFunctionScopeData(cx, alloc, numBindings));
         if (!data) {
           return false;
         }
@@ -343,7 +343,7 @@ UniquePtr<ImmutableScriptData> ConvertImmutableScriptData(
 
 bool ConvertGCThings(JSContext* cx, const SmooshResult& result,
                      const SmooshScriptStencil& smooshStencil,
-                     Vector<const ParserAtom*>& allAtoms,
+                     JS::HandleVector<JSAtom*> allAtoms,
                      MutableHandle<ScriptStencil> stencil) {
   auto& gcThings = stencil.get().gcThings;
 
@@ -361,7 +361,8 @@ bool ConvertGCThings(JSContext* cx, const SmooshResult& result,
         break;
       }
       case SmooshGCThing::Tag::Atom: {
-        gcThings.infallibleAppend(mozilla::AsVariant(allAtoms[item.AsAtom()]));
+        gcThings.infallibleAppend(
+            mozilla::AsVariant(allAtoms[item.AsAtom()].get()));
         break;
       }
       case SmooshGCThing::Tag::Function: {
@@ -392,7 +393,7 @@ bool ConvertGCThings(JSContext* cx, const SmooshResult& result,
 
 bool ConvertScriptStencil(JSContext* cx, const SmooshResult& result,
                           const SmooshScriptStencil& smooshStencil,
-                          Vector<const ParserAtom*>& allAtoms,
+                          JS::HandleVector<JSAtom*> allAtoms,
                           CompilationInfo& compilationInfo,
                           MutableHandle<ScriptStencil> stencil) {
   using ImmutableFlags = js::ImmutableScriptFlagsEnum;
@@ -539,8 +540,8 @@ bool Smoosh::compileGlobalScriptToStencil(CompilationInfo& compilationInfo,
 
   *unimplemented = false;
 
-  Vector<const ParserAtom*> allAtoms(cx);
-  if (!ConvertAtoms(cx, result, compilationInfo, allAtoms)) {
+  JS::RootedVector<JSAtom*> allAtoms(cx);
+  if (!ConvertAtoms(cx, result, compilationInfo, &allAtoms)) {
     return false;
   }
 

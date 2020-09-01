@@ -14,10 +14,6 @@
 
 namespace js {
 
-namespace frontend {
-class ParserAtom;
-}
-
 
 
 
@@ -49,7 +45,6 @@ PropertyName* GetClonedSelfHostedFunctionNameOffMainThread(JSFunction* fun);
 
 
 bool IsExtendedUnclonedSelfHostedFunctionName(JSAtom* name);
-bool IsExtendedUnclonedSelfHostedFunctionName(const frontend::ParserAtom* id);
 
 bool IsCallSelfHostedNonGenericMethod(NativeImpl impl);
 

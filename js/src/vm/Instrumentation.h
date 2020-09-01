@@ -12,11 +12,6 @@
 
 namespace js {
 
-namespace frontend {
-struct CompilationInfo;
-class ParserAtom;
-}  
-
 
 
 #define FOR_EACH_INSTRUMENTATION_KIND(MACRO)
@@ -69,8 +64,8 @@ class RealmInstrumentation {
   static uint32_t getInstrumentationKinds(GlobalObject* global);
 
   
-  static const frontend::ParserAtom* getInstrumentationKindName(
-      frontend::CompilationInfo& compilationInfo, InstrumentationKind kind);
+  static JSAtom* getInstrumentationKindName(JSContext* cx,
+                                            InstrumentationKind kind);
 
   static bool getScriptId(JSContext* cx, Handle<GlobalObject*> global,
                           HandleScript script, int32_t* id);
