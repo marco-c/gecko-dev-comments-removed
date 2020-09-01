@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 
 usb_test(() => getFakeDevice()

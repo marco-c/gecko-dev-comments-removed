@@ -1,5 +1,6 @@
 
 
+
 'use strict';
 
 let usbDevice, devicesFirstTime, fakeDevice, removedDevice;
