@@ -44,16 +44,16 @@ tr {
 }
 
 
-
-
-
-td:nth-child(2) {
-  width:  15%;
+td:nth-child(1) {
+  width:  16%;
 }
 
 
+
+
+
 td:nth-child(3) {
-    width: 15%;
+    width: 10%;
 }
 
 
@@ -63,7 +63,11 @@ td:nth-child(4) {
 
 
 td:nth-child(5) {
-  width: 5%;
+  width: 10%;
+}
+
+td:nth-child(6) {
+  width: 2%;
 }
 
 #process-thead > tr {
