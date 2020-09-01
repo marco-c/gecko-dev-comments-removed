@@ -92,6 +92,12 @@ const processes = {
       ignoreIfUnused: true,
       stat: 1,
     },
+    {
+      path: "*ShaderCache*", 
+      condition: WIN,
+      ignoreIfUnused: true,
+      stat: 3,
+    },
   ],
   "Privileged Content": [
     {
