@@ -856,6 +856,10 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
                 if (CompositorBridgeParent* bridge =
                         compositor->GetCompositorBridgeParent()) {
                   LayersId rootLayerTreeId = bridge->RootLayerTreeId();
+                  
+                  
+                  
+                  
                   if (mIsFirstPaint || FrameMetricsHaveUpdated(metrics)) {
                     if (RefPtr<UiCompositorControllerParent> uiController =
                             UiCompositorControllerParent::
@@ -1114,12 +1118,8 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
 #if defined(MOZ_WIDGET_ANDROID)
 bool AsyncCompositionManager::FrameMetricsHaveUpdated(
     const FrameMetrics& aMetrics) {
-  
-  
-  
-  
-  return RoundedToInt(mLastMetrics.GetScrollOffset()) !=
-             RoundedToInt(aMetrics.GetScrollOffset()) ||
+  return RoundedToInt(mLastMetrics.GetVisualScrollOffset()) !=
+             RoundedToInt(aMetrics.GetVisualScrollOffset()) ||
          mLastMetrics.GetZoom() != aMetrics.GetZoom();
 }
 #endif
