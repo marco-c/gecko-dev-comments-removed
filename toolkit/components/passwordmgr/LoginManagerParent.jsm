@@ -296,6 +296,17 @@ class LoginManagerParent extends JSWindowActorParent {
         break;
       }
 
+      case "PasswordManager:OpenImportableLearnMore": {
+        let window = this.getRootBrowser().ownerGlobal;
+        window.openTrustedLinkIn(
+          Services.urlFormatter.formatURLPref("app.support.baseURL") +
+            "password-import",
+          "tab",
+          { relatedToCurrent: true }
+        );
+        break;
+      }
+
       case "PasswordManager:OpenMigrationWizard": {
         
         let window = this.getRootBrowser().ownerGlobal;

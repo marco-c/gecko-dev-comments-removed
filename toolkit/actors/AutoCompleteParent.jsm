@@ -334,6 +334,11 @@ class AutoCompleteParent extends JSWindowActorParent {
     
     results.reduce((accumulated, r) => {
       
+      if (r.style === "importableLearnMore") {
+        return accumulated;
+      }
+
+      
       
       
       let truncatedStyle = r.style.substring(
