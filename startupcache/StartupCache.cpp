@@ -206,7 +206,6 @@ StartupCache::StartupCache()
     : mLock("StartupCache::mLock"),
       mDirty(false),
       mWrittenOnce(false),
-      mStartupFinished(false),
       mCurTableReferenced(false),
       mLoaded(false),
       mFullyInitialized(false),
@@ -821,16 +820,21 @@ Result<Ok, nsresult> StartupCache::DecompressEntry(StartupCacheEntry& aEntry) {
 bool StartupCache::HasEntry(const char* id) {
   AUTO_PROFILER_LABEL("StartupCache::HasEntry", OTHER);
 
-  if (mStartupFinished) {
-    return false;
-  }
-
-  MutexAutoLock lock(mLock);
-
   MOZ_ASSERT(
       strnlen(id, kStartupCacheKeyLengthCap) + 1 < kStartupCacheKeyLengthCap,
       "StartupCache key too large or not terminated.");
-  return mTable.has(id);
+
+  
+  
+  
+  
+  Maybe<MutexAutoLock> tryLock;
+  if (!MutexAutoLock::TryMake(mLock, tryLock)) {
+    return false;
+  }
+
+  bool result = mTable.has(id);
+  return result;
 }
 
 nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
@@ -842,11 +846,13 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
 
   
   
-  if (mStartupFinished) {
+  
+  
+  Maybe<MutexAutoLock> tryLock;
+  if (!MutexAutoLock::TryMake(mLock, tryLock)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  MutexAutoLock lock(mLock);
   if (!mLoaded) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -914,10 +920,6 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
 
 nsresult StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
                                  uint32_t len, bool isFromChildProcess) {
-  if (mStartupFinished) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   
   MOZ_RELEASE_ASSERT(
       inbuf || isFromChildProcess,
@@ -927,7 +929,21 @@ nsresult StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  MutexAutoLock lock(mLock);
+  
+  
+  if (mWrittenOnce) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  
+  
+  
+  
+  Maybe<MutexAutoLock> tryLock;
+  if (!MutexAutoLock::TryMake(mLock, tryLock)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   if (!mLoaded) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -1354,11 +1370,6 @@ void StartupCache::MaybeWriteOffMainThread() {
   if (!XRE_IsParentProcess()) {
     return;
   }
-
-  
-  
-  
-  mStartupFinished = true;
 
   if (mWrittenOnce) {
     return;
