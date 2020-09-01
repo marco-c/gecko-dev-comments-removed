@@ -24,6 +24,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TargetingContext: "resource://messaging-system/targeting/Targeting.jsm",
   fxAccounts: "resource://gre/modules/FxAccounts.jsm",
   Region: "resource://gre/modules/Region.jsm",
+  TelemetrySession: "resource://gre/modules/TelemetrySession.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -558,6 +559,13 @@ const TargetingGetters = {
   },
   get userId() {
     return ClientEnvironment.userId;
+  },
+  get profileRestartCount() {
+    
+    
+    return (
+      TelemetrySession.getMetadata("targeting").profileSubsessionCounter - 1
+    );
   },
 };
 
