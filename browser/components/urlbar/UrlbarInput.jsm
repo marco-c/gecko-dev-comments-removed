@@ -1166,6 +1166,32 @@ class UrlbarInput {
 
 
 
+
+
+
+
+
+  searchWithAlias(alias, value = "") {
+    alias = alias.trim();
+    if (UrlbarPrefs.get("update2")) {
+      
+      let engine = Services.search.getEngineByAlias(alias);
+      if (engine) {
+        this.setSearchMode({ engineName: engine.name });
+        this.search(value);
+      } else {
+        this.search(`${alias} ${value}`);
+      }
+    } else {
+      
+      this.search(`${alias} ${value}`);
+    }
+  }
+
+  
+
+
+
   setHiddenFocus() {
     this._hideFocus = true;
     if (this.focused) {

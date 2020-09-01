@@ -193,9 +193,26 @@ test_newtab({
       gURLBar.focused,
       "We clicked a search topsite the focus should be in location bar"
     );
-    ok(
-      gURLBar.value.includes(searchTopSiteTag),
-      "Should contain the tag of the search topsite clicked"
-    );
+    if (!Services.prefs.getBoolPref("browser.urlbar.update2")) {
+      ok(
+        gURLBar.value.includes(searchTopSiteTag),
+        "Should contain the tag of the search topsite clicked"
+      );
+    } else {
+      let engineName = Services.search.getEngineByAlias(searchTopSiteTag).name;
+      
+      
+      ok(
+        ObjectUtils.deepEqual(
+          gURLBar.searchMode,
+          { engineName },
+          "The Urlbar is in search mode."
+        )
+      );
+      ok(
+        gURLBar.hasAttribute("searchmode"),
+        "The Urlbar has the searchmode attribute."
+      );
+    }
   },
 });
