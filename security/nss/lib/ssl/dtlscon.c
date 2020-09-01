@@ -270,12 +270,6 @@ SECStatus
 dtls_HandleHandshake(sslSocket *ss, DTLSEpoch epoch, sslSequenceNumber seqNum,
                      sslBuffer *origBuf)
 {
-    
-
-
-
-
-
     sslBuffer buf = *origBuf;
     SECStatus rv = SECSuccess;
     PRBool discarded = PR_FALSE;
@@ -310,7 +304,8 @@ dtls_HandleHandshake(sslSocket *ss, DTLSEpoch epoch, sslSequenceNumber seqNum,
         if (message_length > MAX_HANDSHAKE_MSG_LEN) {
             (void)ssl3_DecodeError(ss);
             PORT_SetError(SSL_ERROR_RX_MALFORMED_HANDSHAKE);
-            return SECFailure;
+            rv = SECFailure;
+            goto loser;
         }
 #undef MAX_HANDSHAKE_MSG_LEN
 
@@ -485,7 +480,7 @@ dtls_HandleHandshake(sslSocket *ss, DTLSEpoch epoch, sslSequenceNumber seqNum,
     }
 
     
-    if (rv == SECFailure) {
+    if (rv != SECSuccess) {
         PORT_Assert(0);
         goto loser;
     }
@@ -505,9 +500,6 @@ dtls_HandleHandshake(sslSocket *ss, DTLSEpoch epoch, sslSequenceNumber seqNum,
 
 loser:
     origBuf->len = 0; 
-
-    
-
     return rv;
 }
 

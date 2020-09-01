@@ -6856,9 +6856,9 @@ sftk_DeriveEncrypt(SFTKCipher encrypt, void *cipherInfo,
 
 CK_RV
 sftk_HKDF(CK_HKDF_PARAMS_PTR params, CK_SESSION_HANDLE hSession,
-          SFTKObject *sourceKey, unsigned char *sourceKeyBytes,
-          int sourceKeyLen, SFTKObject *key, int keySize,
-          PRBool canBeData, PRBool isFIPS)
+          SFTKObject *sourceKey, const unsigned char *sourceKeyBytes,
+          int sourceKeyLen, SFTKObject *key, unsigned char *outKeyBytes,
+          int keySize, PRBool canBeData, PRBool isFIPS)
 {
     SFTKSession *session;
     SFTKAttribute *saltKey_att = NULL;
@@ -6869,9 +6869,9 @@ sftk_HKDF(CK_HKDF_PARAMS_PTR params, CK_SESSION_HANDLE hSession,
     unsigned char keyBlock[9 * SFTK_MAX_MAC_LENGTH];
     unsigned char *keyBlockAlloc = NULL;    
     unsigned char *keyBlockData = keyBlock; 
-    unsigned char *prk;                     
+    const unsigned char *prk;               
     CK_ULONG prkLen;
-    unsigned char *okm; 
+    const unsigned char *okm; 
     HASH_HashType hashType = GetHashTypeFromMechanism(params->prfHashMechanism);
     SFTKObject *saltKey = NULL;
     CK_RV crv = CKR_OK;
@@ -6896,9 +6896,14 @@ sftk_HKDF(CK_HKDF_PARAMS_PTR params, CK_SESSION_HANDLE hSession,
         (params->bExpand && keySize > 255 * hashLen)) {
         return CKR_TEMPLATE_INCONSISTENT;
     }
-    crv = sftk_DeriveSensitiveCheck(sourceKey, key, canBeData);
-    if (crv != CKR_OK)
-        return crv;
+
+    
+
+    if (sourceKey != NULL) {
+        crv = sftk_DeriveSensitiveCheck(sourceKey, key, canBeData);
+        if (crv != CKR_OK)
+            return crv;
+    }
 
     
     if (params->bExtract) {
@@ -7015,11 +7020,17 @@ sftk_HKDF(CK_HKDF_PARAMS_PTR params, CK_SESSION_HANDLE hSession,
         okm = &keyBlockData[0];
     }
     
-    crv = sftk_forceAttribute(key, CKA_VALUE, okm, keySize);
-    PORT_Memset(okm, 0, genLen);
+    crv = CKR_OK;
+    if (key) {
+        crv = sftk_forceAttribute(key, CKA_VALUE, okm, keySize);
+    } else {
+        PORT_Assert(outKeyBytes != NULL);
+        PORT_Memcpy(outKeyBytes, okm, keySize);
+    }
+    PORT_Memset(keyBlockData, 0, genLen);
     PORT_Memset(hashbuf, 0, sizeof(hashbuf));
     PORT_Free(keyBlockAlloc);
-    return CKR_OK;
+    return crv;
 }
 
 
@@ -8568,7 +8579,7 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
 
             crv = sftk_HKDF(&hkdfParams, hSession, sourceKey,
                             att->attrib.pValue, att->attrib.ulValueLen,
-                            key, keySize, PR_FALSE, isFIPS);
+                            key, NULL, keySize, PR_FALSE, isFIPS);
         } break;
         case CKM_HKDF_DERIVE:
         case CKM_HKDF_DATA: 
@@ -8579,7 +8590,7 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             }
             crv = sftk_HKDF((CK_HKDF_PARAMS_PTR)pMechanism->pParameter,
                             hSession, sourceKey, att->attrib.pValue,
-                            att->attrib.ulValueLen, key, keySize, PR_TRUE,
+                            att->attrib.ulValueLen, key, NULL, keySize, PR_TRUE,
                             isFIPS);
             break;
         case CKM_NSS_JPAKE_ROUND2_SHA1:

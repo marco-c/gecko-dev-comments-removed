@@ -1330,7 +1330,7 @@ TEST_F(TlsConnectDatagram13, AuthCompleteBeforeFinished) {
 
 
 
-TEST_F(TlsConnectDatagram13, AuthCompleteAfterFinished) {
+TEST_P(TlsConnectTls13, AuthCompleteAfterFinished) {
   SetDeferredAuthCertificateCallback(client_, 0);  
   Connect();
 }

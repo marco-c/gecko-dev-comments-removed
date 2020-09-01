@@ -414,7 +414,6 @@ dtls13_HandleOutOfEpochRecord(sslSocket *ss, const ssl3CipherSpec *spec,
 
 
 
-
             if (rType == ssl_ct_handshake) {
                 if ((ss->sec.isServer) &&
                     (ss->ssl3.hs.ws == idle_handshake)) {

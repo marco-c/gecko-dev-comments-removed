@@ -656,8 +656,6 @@ typedef struct SSL3HandshakeStateStr {
 
 
     sslRestartTarget restartTarget;
-    
-    PRBool cacheSID;
 
     PRBool canFalseStart; 
     
