@@ -329,7 +329,7 @@ class LoginManagerParent extends JSWindowActorParent {
       
       
       case "PasswordManager:formProcessed": {
-        let topActor = this.browsingContext.currentWindowGlobal.getActor(
+        let topActor = this.browsingContext.top.currentWindowGlobal.getActor(
           "LoginManager"
         );
         topActor.sendAsyncMessage("PasswordManager:formProcessed", {
