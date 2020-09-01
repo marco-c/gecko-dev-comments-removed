@@ -1894,7 +1894,12 @@ bool WasmInstanceObject::getExportedFunction(
     
     
     
-    if (funcExport.hasEagerStubs() && funcExport.canHaveJitEntry()) {
+    
+    if (funcExport.canHaveJitEntry()) {
+      if (!funcExport.hasEagerStubs()) {
+        void* interpStub = cx->runtime()->jitRuntime()->interpreterStub().value;
+        instance.code().setJitEntry(funcIndex, interpStub);
+      }
       fun->setWasmJitEntry(instance.code().getAddressOfJitEntry(funcIndex));
     } else {
       fun->setWasmFuncIndex(funcIndex);
