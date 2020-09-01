@@ -4,16 +4,18 @@
 
 use bindings::{GeckoProfilerThreadListener, WrCompositor};
 use gleam::{gl, gl::GLenum, gl::Gl};
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::collections::hash_map::HashMap;
 use std::os::raw::c_void;
 use std::ptr;
 use std::rc::Rc;
-use std::sync::{mpsc, Arc, Condvar, Mutex};
+use std::sync::atomic::{AtomicU32, AtomicU8, AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::thread;
 use webrender::{
-    api::units::*, api::ExternalImageId, api::ImageRendering, api::YuvColorSpace, Compositor, CompositorCapabilities,
-    CompositorSurfaceTransform, NativeSurfaceId, NativeSurfaceInfo, NativeTileId, ThreadListener,
+    api::channel, api::units::*, api::ExternalImageId, api::ImageRendering, api::YuvColorSpace, Compositor,
+    CompositorCapabilities, CompositorSurfaceTransform, NativeSurfaceId, NativeSurfaceInfo, NativeTileId,
+    ThreadListener,
 };
 
 #[no_mangle]
@@ -127,6 +129,8 @@ pub struct SwTile {
     overlaps: Cell<u32>,
     
     invalid: Cell<bool>,
+    
+    graph_node: Arc<SwCompositeGraphNode>,
 }
 
 impl SwTile {
@@ -142,6 +146,7 @@ impl SwTile {
             valid_rect: DeviceIntRect::zero(),
             overlaps: Cell::new(0),
             invalid: Cell::new(false),
+            graph_node: SwCompositeGraphNode::new(),
         }
     }
 
@@ -410,6 +415,7 @@ impl DrawTileHelper {
 
 
 
+#[derive(Clone)]
 enum SwCompositeSource {
     BGRA(swgl::LockedResource),
     YUV(
@@ -425,6 +431,7 @@ unsafe impl Send for SwCompositeSource {}
 
 
 
+#[derive(Clone)]
 struct SwCompositeJob {
     
     locked_src: SwCompositeSource,
@@ -435,6 +442,154 @@ struct SwCompositeJob {
     opaque: bool,
     flip_y: bool,
     filter: ImageRendering,
+    
+    num_bands: u8,
+}
+
+impl SwCompositeJob {
+    
+    fn process(&self, band_index: u8) {
+        
+        
+        let band_index = band_index as i32;
+        let num_bands = self.num_bands as i32;
+        let band_offset = (self.dst_rect.size.height * band_index) / num_bands;
+        let band_height = (self.dst_rect.size.height * (band_index + 1)) / num_bands - band_offset;
+        match self.locked_src {
+            SwCompositeSource::BGRA(ref resource) => {
+                self.locked_dst.composite(
+                    resource,
+                    self.src_rect.origin.x,
+                    self.src_rect.origin.y,
+                    self.src_rect.size.width,
+                    self.src_rect.size.height,
+                    self.dst_rect.origin.x,
+                    self.dst_rect.origin.y,
+                    self.dst_rect.size.width,
+                    self.dst_rect.size.height,
+                    self.opaque,
+                    self.flip_y,
+                    image_rendering_to_gl_filter(self.filter),
+                    band_offset,
+                    band_height,
+                );
+            },
+            SwCompositeSource::YUV(ref y, ref u, ref v, color_space) => {
+                let swgl_color_space = match color_space {
+                    YuvColorSpace::Rec601 => swgl::YUVColorSpace::Rec601,
+                    YuvColorSpace::Rec709 => swgl::YUVColorSpace::Rec709,
+                    YuvColorSpace::Rec2020 => swgl::YUVColorSpace::Rec2020,
+                    YuvColorSpace::Identity => swgl::YUVColorSpace::Identity,
+                };
+                self.locked_dst.composite_yuv(
+                    y,
+                    u,
+                    v,
+                    swgl_color_space,
+                    self.src_rect.origin.x,
+                    self.src_rect.origin.y,
+                    self.src_rect.size.width,
+                    self.src_rect.size.height,
+                    self.dst_rect.origin.x,
+                    self.dst_rect.origin.y,
+                    self.dst_rect.size.width,
+                    self.dst_rect.size.height,
+                    self.flip_y,
+                    band_offset,
+                    band_height,
+                );
+            },
+        }
+    }
+}
+
+
+
+
+struct SwCompositeGraphNode {
+    
+    job: RefCell<Option<SwCompositeJob>>,
+    
+    num_bands: AtomicU8,
+    
+    band_index: AtomicU8,
+    
+    parents: AtomicU32,
+    
+    children: RefCell<Vec<Arc<SwCompositeGraphNode>>>,
+}
+
+unsafe impl Sync for SwCompositeGraphNode {}
+
+impl SwCompositeGraphNode {
+    fn new() -> Arc<SwCompositeGraphNode> {
+        Arc::new(SwCompositeGraphNode {
+            job: RefCell::new(None),
+            num_bands: AtomicU8::new(0),
+            band_index: AtomicU8::new(0),
+            parents: AtomicU32::new(0),
+            children: RefCell::new(Vec::new()),
+        })
+    }
+
+    
+    fn reset(&self) {
+        self.job.replace(None);
+        self.num_bands.store(0, Ordering::SeqCst);
+        self.band_index.store(0, Ordering::SeqCst);
+        
+        
+        self.parents.store(1, Ordering::SeqCst);
+        self.children.borrow_mut().clear();
+    }
+
+    
+    fn add_child(&self, child: Arc<SwCompositeGraphNode>) {
+        child.parents.fetch_add(1, Ordering::SeqCst);
+        self.children.borrow_mut().push(child);
+    }
+
+    
+    
+    fn set_job(&self, job: SwCompositeJob, num_bands: u8) -> bool {
+        self.job.replace(Some(job));
+        self.num_bands.store(num_bands, Ordering::SeqCst);
+        
+        
+        self.parents.fetch_sub(1, Ordering::SeqCst) <= 1
+    }
+
+    
+    fn process_job(&self) {
+        unsafe {
+            
+            
+            if let Ok(Some(ref job)) = self.job.try_borrow_unguarded() {
+                let band_index = self.band_index.fetch_add(1, Ordering::SeqCst);
+                job.process(band_index);
+            }
+        }
+    }
+
+    
+    
+    fn unblock_children(&self, sender: &channel::Sender<Arc<SwCompositeGraphNode>>) {
+        if self.num_bands.fetch_sub(1, Ordering::SeqCst) > 1 {
+            return;
+        }
+        
+        self.job.replace(None);
+        for child in self.children.borrow().iter() {
+            
+            
+            if child.parents.fetch_sub(1, Ordering::SeqCst) <= 1 {
+                let num_bands = child.num_bands.load(Ordering::SeqCst);
+                for _ in 0..num_bands {
+                    sender.send(child.clone()).expect("Failed sending SwComposite job");
+                }
+            }
+        }
+    }
 }
 
 
@@ -442,11 +597,12 @@ struct SwCompositeJob {
 
 struct SwCompositeThread {
     
-    job_queue: mpsc::Sender<SwCompositeJob>,
+    job_sender: channel::Sender<Arc<SwCompositeGraphNode>>,
+    job_receiver: channel::Receiver<Arc<SwCompositeGraphNode>>,
     
-    job_count: Mutex<usize>,
+    job_count: AtomicUsize,
     
-    done_cond: Condvar,
+    jobs_completed: channel::Receiver<()>,
 }
 
 
@@ -457,11 +613,13 @@ impl SwCompositeThread {
     
     
     fn new() -> Arc<SwCompositeThread> {
-        let (job_queue, job_rx) = mpsc::channel();
+        let (job_sender, job_receiver) = channel::unbounded_channel();
+        let (notify_completed, jobs_completed) = channel::fast_channel(1);
         let info = Arc::new(SwCompositeThread {
-            job_queue,
-            job_count: Mutex::new(0),
-            done_cond: Condvar::new(),
+            job_sender,
+            job_receiver,
+            job_count: AtomicUsize::new(0),
+            jobs_completed,
         });
         let result = info.clone();
         let thread_name = "SwComposite";
@@ -473,62 +631,29 @@ impl SwCompositeThread {
                 
                 
                 
-                while let Ok(job) = job_rx.recv() {
-                    match job.locked_src {
-                        SwCompositeSource::BGRA(ref resource) => {
-                            job.locked_dst.composite(
-                                resource,
-                                job.src_rect.origin.x,
-                                job.src_rect.origin.y,
-                                job.src_rect.size.width,
-                                job.src_rect.size.height,
-                                job.dst_rect.origin.x,
-                                job.dst_rect.origin.y,
-                                job.dst_rect.size.width,
-                                job.dst_rect.size.height,
-                                job.opaque,
-                                job.flip_y,
-                                image_rendering_to_gl_filter(job.filter),
-                            );
-                        },
-                        SwCompositeSource::YUV(ref y, ref u, ref v, color_space) => {
-                            let swgl_color_space = match color_space {
-                                YuvColorSpace::Rec601 => swgl::YUVColorSpace::Rec601,
-                                YuvColorSpace::Rec709 => swgl::YUVColorSpace::Rec709,
-                                YuvColorSpace::Rec2020 => swgl::YUVColorSpace::Rec2020,
-                                YuvColorSpace::Identity => swgl::YUVColorSpace::Identity,
-                            };
-                            job.locked_dst.composite_yuv(
-                                y,
-                                u,
-                                v,
-                                swgl_color_space,
-                                job.src_rect.origin.x,
-                                job.src_rect.origin.y,
-                                job.src_rect.size.width,
-                                job.src_rect.size.height,
-                                job.dst_rect.origin.x,
-                                job.dst_rect.origin.y,
-                                job.dst_rect.size.width,
-                                job.dst_rect.size.height,
-                                job.flip_y,
-                            );
-                        },
-                    }
-                    
-                    drop(job);
-                    
-                    
-                    let mut count = info.job_count.lock().unwrap();
-                    *count -= 1;
-                    if *count <= 0 {
-                        info.done_cond.notify_all();
+                while let Ok(graph_node) = info.job_receiver.recv() {
+                    if info.process_job(graph_node) {
+                        
+                        let _ = notify_completed.try_send(());
                     }
                 }
                 thread_listener.thread_stopped(thread_name);
             })
             .expect("Failed creating SwComposite thread");
         result
+    }
+
+    
+    
+    
+    
+    fn process_job(&self, graph_node: Arc<SwCompositeGraphNode>) -> bool {
+        
+        graph_node.process_job();
+        
+        graph_node.unblock_children(&self.job_sender);
+        
+        self.job_count.fetch_sub(1, Ordering::SeqCst) <= 1
     }
 
     
@@ -541,30 +666,73 @@ impl SwCompositeThread {
         opaque: bool,
         flip_y: bool,
         filter: ImageRendering,
+        graph_node: &Arc<SwCompositeGraphNode>,
     ) {
         
-        *self.job_count.lock().unwrap() += 1;
-        self.job_queue
-            .send(SwCompositeJob {
-                locked_src,
-                locked_dst,
-                src_rect,
-                dst_rect,
-                opaque,
-                flip_y,
-                filter,
-            })
-            .expect("Failing queuing SwComposite job");
+        
+        let num_bands = if dst_rect.size.width >= 64 && dst_rect.size.height >= 64 {
+            (dst_rect.size.height / 64).min(4) as u8
+        } else {
+            1
+        };
+        let job = SwCompositeJob {
+            locked_src,
+            locked_dst,
+            src_rect,
+            dst_rect,
+            opaque,
+            flip_y,
+            filter,
+            num_bands,
+        };
+        self.job_count.fetch_add(num_bands as usize, Ordering::SeqCst);
+        if graph_node.set_job(job, num_bands) {
+            for _ in 0..num_bands {
+                self.job_sender
+                    .send(graph_node.clone())
+                    .expect("Failed sending SwComposite job");
+            }
+        }
+    }
+
+    fn start_compositing(&self) {
+        
+        
+        
+        self.job_count.store(1, Ordering::SeqCst);
+        
+        while self.jobs_completed.try_recv().is_ok() {}
     }
 
     
+    
+    
     fn wait_for_composites(&self) {
-        let mut jobs = self.job_count.lock().unwrap();
-        while *jobs > 0 {
-            jobs = self.done_cond.wait(jobs).unwrap();
+        
+        
+        
+        
+        if self.job_count.fetch_sub(1, Ordering::SeqCst) <= 1 {
+            return;
+        }
+        
+        loop {
+            channel::select! {
+                // Steal jobs from the SwComposite thread if it is busy.
+                recv(self.job_receiver) -> graph_node => if let Ok(graph_node) = graph_node {
+                    if self.process_job(graph_node) {
+                        // If this was the final job, then just exit.
+                        break;
+                    }
+                },
+                // If all jobs have been completed, it is safe to exit.
+                recv(self.jobs_completed) -> _ => break,
+            }
         }
     }
 }
+
+
 
 pub struct SwCompositor {
     gl: swgl::Context,
@@ -651,6 +819,7 @@ impl SwCompositor {
             for tile in &mut surface.tiles {
                 tile.overlaps.set(0);
                 tile.invalid.set(false);
+                tile.graph_node.reset();
             }
         }
     }
@@ -667,8 +836,20 @@ impl SwCompositor {
     
     
     
-    fn get_overlaps(&self, overlap_rect: &DeviceIntRect) -> u32 {
-        let mut overlaps = 0;
+    fn init_overlaps(
+        &self,
+        overlap_surface: &SwSurface,
+        overlap_tile: &SwTile,
+        overlap_transform: &CompositorSurfaceTransform,
+        overlap_clip_rect: &DeviceIntRect,
+    ) {
+        let overlap_rect = match overlap_tile.overlap_rect(overlap_surface, overlap_transform, overlap_clip_rect) {
+            Some(overlap_rect) => overlap_rect,
+            None => return,
+        };
+        
+        
+        let mut overlaps = if overlap_tile.invalid.get() { 1 } else { 0 };
         for &(ref id, ref transform, ref clip_rect, _) in &self.frame_surfaces {
             
             
@@ -679,13 +860,21 @@ impl SwCompositor {
                 for tile in &surface.tiles {
                     
                     
-                    if tile.overlaps.get() > 0 && tile.may_overlap(surface, transform, clip_rect, overlap_rect) {
-                        overlaps += 1;
+                    if tile.may_overlap(surface, transform, clip_rect, &overlap_rect) {
+                        if tile.overlaps.get() > 0 {
+                            overlaps += 1;
+                        }
+                        
+                        
+                        tile.graph_node.add_child(overlap_tile.graph_node.clone());
                     }
                 }
             }
         }
-        overlaps
+        if overlaps > 0 {
+            
+            overlap_tile.overlaps.set(overlaps);
+        }
     }
 
     
@@ -736,27 +925,15 @@ impl SwCompositor {
                     surface.is_opaque,
                     flip_y,
                     filter,
+                    &tile.graph_node,
                 );
             }
         }
     }
 
     
-    
-    
-    
-    fn init_composites(
-        &mut self,
-        id: &NativeSurfaceId,
-        transform: &CompositorSurfaceTransform,
-        clip_rect: &DeviceIntRect,
-        filter: ImageRendering,
-    ) {
-        if self.composite_thread.is_none() {
-            return;
-        }
-
-        if let Some(surface) = self.surfaces.get_mut(&id) {
+    fn try_lock_composite_surface(&mut self, id: &NativeSurfaceId) {
+        if let Some(surface) = self.surfaces.get_mut(id) {
             if let Some(external_image) = surface.external_image {
                 
                 
@@ -778,22 +955,16 @@ impl SwCompositor {
                 }
             }
         }
+    }
 
-        if let Some(surface) = self.surfaces.get(&id) {
-            for tile in &surface.tiles {
-                if let Some(overlap_rect) = tile.overlap_rect(surface, transform, clip_rect) {
-                    let mut overlaps = self.get_overlaps(&overlap_rect);
-                    
-                    
-                    if tile.invalid.get() {
-                        overlaps += 1;
-                    }
-                    if overlaps == 0 {
-                        
-                        self.queue_composite(surface, transform, clip_rect, filter, tile);
-                    } else {
-                        
-                        tile.overlaps.set(overlaps);
+    
+    fn unlock_composite_surfaces(&mut self) {
+        for &(ref id, _, _, _) in &self.frame_surfaces {
+            if let Some(surface) = self.surfaces.get_mut(id) {
+                if let Some(external_image) = surface.external_image {
+                    if surface.composite_surface.is_some() {
+                        unsafe { wr_swgl_unlock_composite_surface(self.gl.into(), external_image) };
+                        surface.composite_surface = None;
                     }
                 }
             }
@@ -1214,10 +1385,38 @@ impl Compositor for SwCompositor {
             compositor.add_surface(id, transform, clip_rect, filter);
         }
 
-        
-        self.init_composites(&id, &transform, &clip_rect, filter);
+        if self.composite_thread.is_some() {
+            
+            self.try_lock_composite_surface(&id);
+
+            
+            if let Some(surface) = self.surfaces.get(&id) {
+                for tile in &surface.tiles {
+                    self.init_overlaps(surface, tile, &transform, &clip_rect);
+                }
+            }
+        }
 
         self.frame_surfaces.push((id, transform, clip_rect, filter));
+    }
+
+    
+    
+    fn start_compositing(&mut self) {
+        if let Some(ref composite_thread) = self.composite_thread {
+            composite_thread.start_compositing();
+            
+            for &(ref id, ref transform, ref clip_rect, filter) in &self.frame_surfaces {
+                if let Some(surface) = self.surfaces.get(id) {
+                    for tile in &surface.tiles {
+                        if tile.overlaps.get() == 0 {
+                            
+                            self.queue_composite(surface, transform, clip_rect, filter, tile);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fn end_frame(&mut self) {
@@ -1266,17 +1465,7 @@ impl Compositor for SwCompositor {
             composite_thread.wait_for_composites();
             self.locked_framebuffer = None;
 
-            
-            for &(ref id, _, _, _) in &self.frame_surfaces {
-                if let Some(surface) = self.surfaces.get_mut(id) {
-                    if let Some(external_image) = surface.external_image {
-                        if surface.composite_surface.is_some() {
-                            unsafe { wr_swgl_unlock_composite_surface(self.gl.into(), external_image) };
-                            surface.composite_surface = None;
-                        }
-                    }
-                }
-            }
+            self.unlock_composite_surfaces();
         }
     }
 

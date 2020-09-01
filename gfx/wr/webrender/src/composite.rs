@@ -967,6 +967,11 @@ pub trait Compositor {
     
     
     
+    fn start_compositing(&mut self) {}
+
+    
+    
+    
     fn end_frame(&mut self);
 
     
