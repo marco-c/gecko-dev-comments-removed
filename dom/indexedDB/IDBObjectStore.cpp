@@ -1647,21 +1647,19 @@ RefPtr<IDBRequest> IDBObjectStore::OpenCursorInternal(
         IDB_LOG_STRINGIFY(keyRange), IDB_LOG_STRINGIFY(aDirection));
   }
 
-  const auto actor =
-      aKeysOnly
-          ? static_cast<SafeRefPtr<BackgroundCursorChildBase>>(
-                MakeSafeRefPtr<
-                    BackgroundCursorChild<IDBCursorType::ObjectStoreKey>>(
-                    request, this, aDirection))
-          : MakeSafeRefPtr<BackgroundCursorChild<IDBCursorType::ObjectStore>>(
-                request, this, aDirection);
+  BackgroundCursorChildBase* const actor =
+      aKeysOnly ? static_cast<BackgroundCursorChildBase*>(
+                      new BackgroundCursorChild<IDBCursorType::ObjectStoreKey>(
+                          request, this, aDirection))
+                : new BackgroundCursorChild<IDBCursorType::ObjectStore>(
+                      request, this, aDirection);
 
   
   
   
   mTransaction->InvalidateCursorCaches();
 
-  mTransaction->OpenCursor(*actor, params);
+  mTransaction->OpenCursor(actor, params);
 
   return request;
 }
