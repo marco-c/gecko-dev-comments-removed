@@ -217,6 +217,10 @@ this.TopSitesFeed = class TopSitesFeed {
       {
         url: "https://firefox.com",
       },
+      {
+        url: "https://foobar.com",
+        keyword: "@foobar",
+      },
     ];
 
     
@@ -231,6 +235,10 @@ this.TopSitesFeed = class TopSitesFeed {
       };
       if (siteData.title) {
         link.label = siteData.title;
+      }
+      if (siteData.keyword) {
+        link.searchTopSite = true;
+        link.label = siteData.keyword;
       }
       DEFAULT_TOP_SITES.push(link);
     }
@@ -433,12 +441,18 @@ this.TopSitesFeed = class TopSitesFeed {
     }
 
     
+    if (this._useRemoteSetting) {
+      this.disableSearchImprovements();
+    }
     let plainPinned = await this.pinnedCache.request();
 
     
     
     
-    if (await this._maybeInsertSearchShortcuts(plainPinned)) {
+    if (
+      !this._useRemoteSetting &&
+      (await this._maybeInsertSearchShortcuts(plainPinned))
+    ) {
       this.pinnedCache.expire();
       plainPinned = await this.pinnedCache.request();
     }
