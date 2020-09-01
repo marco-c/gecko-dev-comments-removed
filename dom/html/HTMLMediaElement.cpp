@@ -763,63 +763,6 @@ class HTMLMediaElement::MediaStreamTrackListener
 
 
 
-class HTMLMediaElement::FirstFrameListener : public VideoOutput {
- public:
-  FirstFrameListener(VideoFrameContainer* aContainer,
-                     AbstractThread* aMainThread)
-      : VideoOutput(aContainer, aMainThread) {
-    MOZ_ASSERT(NS_IsMainThread());
-  }
-
-  
-  
-  
-  void NotifyRealtimeTrackData(MediaTrackGraph* aGraph, TrackTime aTrackOffset,
-                               const MediaSegment& aMedia) override {
-    MOZ_ASSERT(aMedia.GetType() == MediaSegment::VIDEO);
-
-    if (mInitialSizeFound) {
-      return;
-    }
-
-    const VideoSegment& video = static_cast<const VideoSegment&>(aMedia);
-    for (VideoSegment::ConstChunkIterator c(video); !c.IsEnded(); c.Next()) {
-      if (c->mFrame.GetIntrinsicSize() != gfx::IntSize(0, 0)) {
-        mInitialSizeFound = true;
-
-        mMainThread->Dispatch(NS_NewRunnableFunction(
-            "HTMLMediaElement::FirstFrameListener::FirstFrameRenderedSetter",
-            [self = RefPtr<FirstFrameListener>(this), this] {
-              mFirstFrameRendered = true;
-            }));
-
-        
-        VideoSegment segment;
-        segment.AppendFrame(do_AddRef(c->mFrame.GetImage()),
-                            c->mFrame.GetIntrinsicSize(),
-                            c->mFrame.GetPrincipalHandle(),
-                            c->mFrame.GetForceBlack(), c->mTimeStamp);
-        VideoOutput::NotifyRealtimeTrackData(aGraph, aTrackOffset, segment);
-        return;
-      }
-    }
-  }
-
-  
-  Watchable<bool> mFirstFrameRendered = {
-      false, "HTMLMediaElement::FirstFrameListener::mFirstFrameRendered"};
-
- private:
-  
-  
-  
-  bool mInitialSizeFound = false;
-};
-
-
-
-
-
 
 class HTMLMediaElement::MediaStreamRenderer
     : public DOMMediaStream::TrackListener {
@@ -832,11 +775,12 @@ class HTMLMediaElement::MediaStreamRenderer
       : mVideoContainer(aVideoContainer),
         mAudioOutputKey(aAudioOutputKey),
         mWatchManager(this, aMainThread),
-        mFirstFrameListener(aVideoContainer ? MakeAndAddRef<FirstFrameListener>(
-                                                  aVideoContainer, aMainThread)
-                                            : nullptr) {
-    if (mFirstFrameListener) {
-      mWatchManager.Watch(mFirstFrameListener->mFirstFrameRendered,
+        mFirstFrameVideoOutput(aVideoContainer
+                                   ? MakeAndAddRef<FirstFrameVideoOutput>(
+                                         aVideoContainer, aMainThread)
+                                   : nullptr) {
+    if (mFirstFrameVideoOutput) {
+      mWatchManager.Watch(mFirstFrameVideoOutput->mFirstFrameRendered,
                           &MediaStreamRenderer::SetFirstFrameRendered);
     }
   }
@@ -851,7 +795,7 @@ class HTMLMediaElement::MediaStreamRenderer
       RemoveTrack(mVideoTrack->AsVideoStreamTrack());
     }
     mWatchManager.Shutdown();
-    mFirstFrameListener = nullptr;
+    mFirstFrameVideoOutput = nullptr;
   }
 
   void UpdateGraphTime() {
@@ -860,15 +804,16 @@ class HTMLMediaElement::MediaStreamRenderer
   }
 
   void SetFirstFrameRendered() {
-    if (!mFirstFrameListener) {
+    if (!mFirstFrameVideoOutput) {
       return;
     }
     if (mVideoTrack) {
-      mVideoTrack->AsVideoStreamTrack()->RemoveVideoOutput(mFirstFrameListener);
+      mVideoTrack->AsVideoStreamTrack()->RemoveVideoOutput(
+          mFirstFrameVideoOutput);
     }
-    mWatchManager.Unwatch(mFirstFrameListener->mFirstFrameRendered,
+    mWatchManager.Unwatch(mFirstFrameVideoOutput->mFirstFrameRendered,
                           &MediaStreamRenderer::SetFirstFrameRendered);
-    mFirstFrameListener = nullptr;
+    mFirstFrameVideoOutput = nullptr;
   }
 
   void SetProgressingCurrentTime(bool aProgress) {
@@ -913,9 +858,9 @@ class HTMLMediaElement::MediaStreamRenderer
     }
 
     if (mVideoTrack) {
-      if (mFirstFrameListener) {
+      if (mFirstFrameVideoOutput) {
         mVideoTrack->AsVideoStreamTrack()->RemoveVideoOutput(
-            mFirstFrameListener);
+            mFirstFrameVideoOutput);
       }
       mVideoTrack->AsVideoStreamTrack()->AddVideoOutput(mVideoContainer);
     }
@@ -940,8 +885,9 @@ class HTMLMediaElement::MediaStreamRenderer
 
     if (mVideoTrack) {
       mVideoTrack->AsVideoStreamTrack()->RemoveVideoOutput(mVideoContainer);
-      if (mFirstFrameListener) {
-        mVideoTrack->AsVideoStreamTrack()->AddVideoOutput(mFirstFrameListener);
+      if (mFirstFrameVideoOutput) {
+        mVideoTrack->AsVideoStreamTrack()->AddVideoOutput(
+            mFirstFrameVideoOutput);
       }
     }
   }
@@ -1016,8 +962,8 @@ class HTMLMediaElement::MediaStreamRenderer
     EnsureGraphTimeDummy();
     if (mRendering) {
       aTrack->AddVideoOutput(mVideoContainer);
-    } else if (mFirstFrameListener) {
-      aTrack->AddVideoOutput(mFirstFrameListener);
+    } else if (mFirstFrameVideoOutput) {
+      aTrack->AddVideoOutput(mFirstFrameVideoOutput);
     }
   }
 
@@ -1035,8 +981,8 @@ class HTMLMediaElement::MediaStreamRenderer
     }
     if (mRendering) {
       aTrack->RemoveVideoOutput(mVideoContainer);
-    } else if (mFirstFrameListener) {
-      aTrack->RemoveVideoOutput(mFirstFrameListener);
+    } else if (mFirstFrameVideoOutput) {
+      aTrack->RemoveVideoOutput(mFirstFrameVideoOutput);
     }
     mVideoTrack = nullptr;
   }
@@ -1125,7 +1071,7 @@ class HTMLMediaElement::MediaStreamRenderer
   
   
   
-  RefPtr<FirstFrameListener> mFirstFrameListener;
+  RefPtr<FirstFrameVideoOutput> mFirstFrameVideoOutput;
 };
 
 class HTMLMediaElement::MediaElementTrackSource
