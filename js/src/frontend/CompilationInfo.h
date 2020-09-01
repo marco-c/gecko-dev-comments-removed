@@ -222,8 +222,7 @@ struct CompilationStencil {
   
   ParserAtomsTable parserAtoms;
 
-  explicit CompilationStencil(JSContext* cx)
-      : moduleMetadata(cx), parserAtoms(cx) {}
+  explicit CompilationStencil(JSContext* cx) : parserAtoms(cx) {}
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
