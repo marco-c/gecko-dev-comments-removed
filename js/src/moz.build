@@ -239,6 +239,24 @@ EXPORTS.js.friend += [
     '../public/friend/WindowProxy.h',
 ]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+EXPORTS.js.shadow += [
+    '../public/shadow/String.h',
+]
+
 UNIFIED_SOURCES += [
     'builtin/Array.cpp',
     'builtin/AtomicsObject.cpp',
