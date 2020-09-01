@@ -93,6 +93,12 @@ function ElementEditor(container, node) {
     "devtools.overflow.debugging.enabled"
   );
 
+  
+  
+  this.highlightingOverflowCausingElements = this.node.isScrollable
+    ? false
+    : null;
+
   this.attrElements = new Map();
   this.animationTimers = {};
 
@@ -105,6 +111,7 @@ function ElementEditor(container, node) {
 
   this.onCustomBadgeClick = this.onCustomBadgeClick.bind(this);
   this.onDisplayBadgeClick = this.onDisplayBadgeClick.bind(this);
+  this.onScrollableBadgeClick = this.onScrollableBadgeClick.bind(this);
   this.onExpandBadgeClick = this.onExpandBadgeClick.bind(this);
   this.onFlexboxHighlighterChange = this.onFlexboxHighlighterChange.bind(this);
   this.onGridHighlighterChange = this.onGridHighlighterChange.bind(this);
@@ -317,6 +324,7 @@ ElementEditor.prototype = {
     this.updateScrollableBadge();
     this.updateTextEditor();
     this.updateOverflowBadge();
+    this.updateOverflowHighlight();
   },
 
   updateEventBadge: function() {
@@ -355,14 +363,33 @@ ElementEditor.prototype = {
   },
 
   _createScrollableBadge: function() {
+    const isInteractive =
+      this.isOverflowDebuggingEnabled &&
+      this.node.walkerFront.traits.supportsOverflowDebugging &&
+      
+      
+      !this.node.isDocumentElement;
+
     this._scrollableBadge = this.doc.createElement("div");
-    this._scrollableBadge.className = "inspector-badge scrollable-badge";
+    this._scrollableBadge.className = `inspector-badge scrollable-badge ${
+      isInteractive ? "interactive" : ""
+    }`;
+
     this._scrollableBadge.textContent = INSPECTOR_L10N.getStr(
       "markupView.scrollableBadge.label"
     );
     this._scrollableBadge.title = INSPECTOR_L10N.getStr(
-      "markupView.scrollableBadge.tooltip"
+      isInteractive
+        ? "markupView.scrollableBadge.interactive.tooltip"
+        : "markupView.scrollableBadge.tooltip"
     );
+
+    if (isInteractive) {
+      this._scrollableBadge.addEventListener(
+        "click",
+        this.onScrollableBadgeClick
+      );
+    }
     this.elt.insertBefore(this._scrollableBadge, this._customBadge);
   },
 
@@ -469,6 +496,53 @@ ElementEditor.prototype = {
     this._customBadge.addEventListener("click", this.onCustomBadgeClick);
     
     this.elt.appendChild(this._customBadge);
+  },
+
+  
+
+
+
+  updateOverflowHighlight: async function() {
+    if (
+      !this.isOverflowDebuggingEnabled ||
+      !this.node.walkerFront.traits.supportsOverflowDebugging
+    ) {
+      return;
+    }
+
+    let showOverflowHighlight = false;
+
+    if (this.node.causesOverflow) {
+      try {
+        const scrollableAncestor = await this.node.walkerFront.getScrollableAncestorNode(
+          this.node
+        );
+        const markupContainer = scrollableAncestor
+          ? this.markup.getContainer(scrollableAncestor)
+          : null;
+
+        showOverflowHighlight = !!markupContainer?.editor
+          .highlightingOverflowCausingElements;
+      } catch (e) {
+        
+        
+        return;
+      }
+    }
+
+    this.setOverflowHighlight(showOverflowHighlight);
+  },
+
+  
+
+
+
+
+  setOverflowHighlight: function(showOverflowHighlight) {
+    this.container.tagState.classList.toggle(
+      "overflow-causing-highlighted",
+      showOverflowHighlight
+    );
   },
 
   
@@ -944,6 +1018,33 @@ ElementEditor.prototype = {
 
 
 
+  onScrollableBadgeClick: async function() {
+    this.highlightingOverflowCausingElements = this._scrollableBadge.classList.toggle(
+      "active"
+    );
+
+    const overflowCausingElements = await this.node.walkerFront.getOverflowCausingElements(
+      this.node
+    );
+    const overflowCausingElementsList = await overflowCausingElements.items();
+
+    for (const element of overflowCausingElementsList) {
+      if (this.highlightingOverflowCausingElements) {
+        await this.markup.showNode(element);
+      }
+
+      const markupContainer = this.markup.getContainer(element);
+
+      markupContainer.editor.setOverflowHighlight(
+        this.highlightingOverflowCausingElements
+      );
+    }
+  },
+
+  
+
+
+
 
   onFlexboxHighlighterChange: function() {
     if (!this._displayBadge) {
@@ -1007,6 +1108,13 @@ ElementEditor.prototype = {
 
     if (this._customBadge) {
       this._customBadge.removeEventListener("click", this.onCustomBadgeClick);
+    }
+
+    if (this._scrollableBadge) {
+      this._scrollableBadge.removeEventListener(
+        "click",
+        this.onScrollableBadgeClick
+      );
     }
 
     this.expandBadge.removeEventListener("click", this.onExpandBadgeClick);
