@@ -26,9 +26,7 @@ class ForwardedInputTrack : public ProcessedMediaTrack {
   void RemoveInput(MediaInputPort* aPort) override;
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
 
-  DisabledTrackMode CombinedDisabledMode() const override;
-  void SetDisabledTrackModeImpl(DisabledTrackMode aMode) override;
-  void OnInputDisabledModeChanged(DisabledTrackMode aInputMode) override;
+  void SetEnabledImpl(DisabledTrackMode aMode) override;
 
   friend class MediaTrackGraphImpl;
 
@@ -54,11 +52,6 @@ class ForwardedInputTrack : public ProcessedMediaTrack {
   
   
   MediaInputPort* mInputPort = nullptr;
-
-  
-  
-  
-  DisabledTrackMode mInputDisabledMode = DisabledTrackMode::ENABLED;
 };
 
 }  
