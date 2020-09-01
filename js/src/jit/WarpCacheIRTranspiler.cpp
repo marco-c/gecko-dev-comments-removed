@@ -2983,7 +2983,6 @@ bool WarpCacheIRTranspiler::emitLoadValueTruthyResult(ValOperandId inputId) {
 bool WarpCacheIRTranspiler::emitLoadArgumentSlot(ValOperandId resultId,
                                                  uint32_t slotIndex) {
   
-  MOZ_ASSERT(!loc_.isSpreadOp());
 
   
   
@@ -3084,6 +3083,9 @@ bool WarpCacheIRTranspiler::updateCallInfo(MDefinition* callee,
   switch (flags.getArgFormat()) {
     case CallFlags::Standard:
       MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
+      break;
+    case CallFlags::Spread:
+      MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Array);
       break;
     case CallFlags::FunCall:
       

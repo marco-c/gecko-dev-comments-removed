@@ -186,6 +186,25 @@ class MOZ_STACK_CLASS CallInfo {
     return true;
   }
 
+  void initForSpreadCall(MBasicBlock* current) {
+    MOZ_ASSERT(args_.empty());
+
+    if (constructing()) {
+      setNewTarget(current->pop());
+    }
+
+    
+    static_assert(decltype(args_)::InlineLength >= 1,
+                  "Appending one argument should be infallible");
+    MOZ_ALWAYS_TRUE(args_.append(current->pop()));
+
+    
+    setThis(current->pop());
+    setCallee(current->pop());
+
+    argFormat_ = ArgFormat::Array;
+  }
+
   void initForGetterCall(MDefinition* callee, MDefinition* thisVal) {
     MOZ_ASSERT(args_.empty());
     setCallee(callee);
