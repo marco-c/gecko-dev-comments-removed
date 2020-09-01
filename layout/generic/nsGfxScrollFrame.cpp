@@ -2926,23 +2926,6 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
       FrameLayerBuilder::GetPaintedLayerScaleForFrame(mScrolledFrame);
   nsPoint curPos = GetScrollPosition();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool suppressScrollOriginChange = false;
-  if (StaticPrefs::apz_allow_zooming() && aPt == curPos) {
-    suppressScrollOriginChange = true;
-  }
-
   nsPoint alignWithPos = mScrollPosForLayerPixelAlignment == nsPoint(-1, -1)
                              ? curPos
                              : mScrollPosForLayerPixelAlignment;
@@ -3026,8 +3009,7 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   
   
   allowScrollOriginChange =
-      (mAllowScrollOriginDowngrade || !isScrollOriginDowngrade) &&
-      !suppressScrollOriginChange;
+      (mAllowScrollOriginDowngrade || !isScrollOriginDowngrade);
 
   if (allowScrollOriginChange) {
     mLastScrollOrigin = aOrigin;
