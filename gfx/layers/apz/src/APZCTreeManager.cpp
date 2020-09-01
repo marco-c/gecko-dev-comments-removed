@@ -2514,6 +2514,12 @@ void APZCTreeManager::ClearTree() {
   }
   mRootNode = nullptr;
 
+  {
+    
+    MutexAutoLock lock(mMapLock);
+    mApzcMap.clear();
+  }
+
   RefPtr<APZCTreeManager> self(this);
   NS_DispatchToMainThread(
       NS_NewRunnableFunction("layers::APZCTreeManager::ClearTree", [self] {
