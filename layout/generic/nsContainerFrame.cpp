@@ -1302,9 +1302,26 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
       }
       continue;
     }
+
+    auto ScrollableOverflowExceedsAvailableBSize =
+        [this, &aReflowInput](nsIFrame* aFrame) {
+          if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
+            return false;
+          }
+          const auto parentWM = GetWritingMode();
+          const nscoord scrollableOverflowRectBEnd =
+              LogicalRect(parentWM,
+                          aFrame->ScrollableOverflowRectRelativeToParent(),
+                          GetSize())
+                  .BEnd(parentWM);
+          return scrollableOverflowRectBEnd > aReflowInput.AvailableBSize();
+        };
+
     
     
-    if (shouldReflowAllKids || frame->IsSubtreeDirty()) {
+    
+    if (shouldReflowAllKids || frame->IsSubtreeDirty() ||
+        ScrollableOverflowExceedsAvailableBSize(frame)) {
       
       nsIFrame* prevInFlow = frame->GetPrevInFlow();
       NS_ASSERTION(prevInFlow,
