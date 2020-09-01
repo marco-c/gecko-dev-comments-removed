@@ -207,20 +207,22 @@ void GamepadPlatformService::AddChannelParent(
   MOZ_ASSERT(!mChannelParents.Contains(aParent));
 
   
-  MutexAutoLock autoLock(mMutex);
-  mChannelParents.AppendElement(aParent);
+  {
+    MutexAutoLock autoLock(mMutex);
+    mChannelParents.AppendElement(aParent);
 
-  
-  
-  if (mChannelParents.Length() > 1) {
-    for (const auto& evt : mGamepadAdded) {
-      GamepadChangeEventBody body(evt.second);
-      GamepadChangeEvent e(evt.first, GamepadServiceType::Standard, body);
-      aParent->DispatchUpdateEvent(e);
+    
+    
+    if (mChannelParents.Length() > 1) {
+      for (const auto& evt : mGamepadAdded) {
+        GamepadChangeEventBody body(evt.second);
+        GamepadChangeEvent e(evt.first, GamepadServiceType::Standard, body);
+        aParent->DispatchUpdateEvent(e);
+      }
     }
-  }
 
-  FlushPendingEvents();
+    FlushPendingEvents();
+  }
 
   StartGamepadMonitoring();
 }
