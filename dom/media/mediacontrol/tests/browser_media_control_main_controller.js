@@ -296,6 +296,9 @@ async function setMediaMetadataForTabs(tabs) {
         );
       }
     );
+    
+    
+    
     await Promise.all([spawn, waitUntilControllerMetadataChanged()]);
   }
 }
