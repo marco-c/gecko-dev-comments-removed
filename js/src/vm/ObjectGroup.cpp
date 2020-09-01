@@ -559,7 +559,8 @@ ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx, const JSClass* clasp,
     
     
     
-    if (protoObj->is<PlainObject>() && !protoObj->isSingleton()) {
+    if (protoObj->is<PlainObject>() && !protoObj->isSingleton() &&
+        IsTypeInferenceEnabled()) {
       if (!JSObject::changeToSingleton(cx, protoObj)) {
         return nullptr;
       }
