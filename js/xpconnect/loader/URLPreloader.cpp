@@ -436,8 +436,8 @@ void URLPreloader::BeginBackgroundRead() {
   }
 }
 
-Result<const nsCString, nsresult> URLPreloader::ReadInternal(
-    const CacheKey& key, ReadType readType) {
+Result<nsCString, nsresult> URLPreloader::ReadInternal(const CacheKey& key,
+                                                       ReadType readType) {
   if (mStartupFinished) {
     URLEntry entry(key);
 
@@ -451,16 +451,16 @@ Result<const nsCString, nsresult> URLPreloader::ReadInternal(
   return entry->ReadOrWait(readType);
 }
 
-Result<const nsCString, nsresult> URLPreloader::ReadURIInternal(
-    nsIURI* uri, ReadType readType) {
+Result<nsCString, nsresult> URLPreloader::ReadURIInternal(nsIURI* uri,
+                                                          ReadType readType) {
   CacheKey key;
   MOZ_TRY_VAR(key, ResolveURI(uri));
 
   return ReadInternal(key, readType);
 }
 
- Result<const nsCString, nsresult> URLPreloader::Read(
-    const CacheKey& key, ReadType readType) {
+ Result<nsCString, nsresult> URLPreloader::Read(const CacheKey& key,
+                                                            ReadType readType) {
   
   
   
@@ -472,7 +472,7 @@ Result<const nsCString, nsresult> URLPreloader::ReadURIInternal(
   return GetSingleton().ReadInternal(key, readType);
 }
 
- Result<const nsCString, nsresult> URLPreloader::ReadURI(
+ Result<nsCString, nsresult> URLPreloader::ReadURI(
     nsIURI* uri, ReadType readType) {
   if (!sInitialized) {
     return Err(NS_ERROR_NOT_INITIALIZED);
@@ -481,12 +481,12 @@ Result<const nsCString, nsresult> URLPreloader::ReadURIInternal(
   return GetSingleton().ReadURIInternal(uri, readType);
 }
 
- Result<const nsCString, nsresult> URLPreloader::ReadFile(
+ Result<nsCString, nsresult> URLPreloader::ReadFile(
     nsIFile* file, ReadType readType) {
   return Read(CacheKey(file), readType);
 }
 
- Result<const nsCString, nsresult> URLPreloader::Read(
+ Result<nsCString, nsresult> URLPreloader::Read(
     FileLocation& location, ReadType readType) {
   if (location.IsZip()) {
     if (location.GetBaseZip()) {
@@ -501,7 +501,7 @@ Result<const nsCString, nsresult> URLPreloader::ReadURIInternal(
   return ReadFile(file, readType);
 }
 
- Result<const nsCString, nsresult> URLPreloader::ReadZip(
+ Result<nsCString, nsresult> URLPreloader::ReadZip(
     CacheAwareZipReader* archive, const nsACString& path, ReadType readType) {
   
   
@@ -592,7 +592,7 @@ Result<FileLocation, nsresult> URLPreloader::CacheKey::ToFileLocation() {
   return FileLocation(zip, mPath.get());
 }
 
-Result<const nsCString, nsresult> URLPreloader::URLEntry::Read() {
+Result<nsCString, nsresult> URLPreloader::URLEntry::Read() {
   FileLocation location;
   MOZ_TRY_VAR(location, ToFileLocation());
 
@@ -600,8 +600,8 @@ Result<const nsCString, nsresult> URLPreloader::URLEntry::Read() {
   return mData;
 }
 
- Result<const nsCString, nsresult>
-URLPreloader::URLEntry::ReadLocation(FileLocation& location) {
+ Result<nsCString, nsresult> URLPreloader::URLEntry::ReadLocation(
+    FileLocation& location) {
   FileLocation::Data data;
   MOZ_TRY(location.GetData(data));
 
@@ -615,7 +615,7 @@ URLPreloader::URLEntry::ReadLocation(FileLocation& location) {
   return std::move(result);
 }
 
-Result<const nsCString, nsresult> URLPreloader::URLEntry::ReadOrWait(
+Result<nsCString, nsresult> URLPreloader::URLEntry::ReadOrWait(
     ReadType readType) {
   auto now = TimeStamp::Now();
   LOG(Info, "Reading %s\n", mPath.get());

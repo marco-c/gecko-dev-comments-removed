@@ -320,8 +320,20 @@ auto ToResult(Result<V, E>&& aValue)
 
 
 
+
+
+
+
+
+
+
+
 template <typename V, typename E>
 class MOZ_MUST_USE_TYPE Result final {
+  
+  static_assert(!std::is_const_v<V>);
+  static_assert(!std::is_const_v<E>);
+
   using Impl = typename detail::SelectResultImpl<V, E>::Type;
 
   Impl mImpl;

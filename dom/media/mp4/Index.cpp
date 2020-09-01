@@ -298,7 +298,7 @@ CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry() {
                                         : &entries->ElementAt(groupIndex - 1);
 }
 
-Result<CryptoScheme, const nsCString> SampleIterator::GetEncryptionScheme() {
+Result<CryptoScheme, nsCString> SampleIterator::GetEncryptionScheme() {
   
   MoofParser* moofParser = mIndex->mMoofParser.get();
   if (!moofParser) {

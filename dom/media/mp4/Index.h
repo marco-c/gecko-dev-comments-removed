@@ -45,7 +45,7 @@ class SampleIterator {
   
   
   
-  Result<CryptoScheme, const nsCString> GetEncryptionScheme();
+  Result<CryptoScheme, nsCString> GetEncryptionScheme();
 
   void Next();
   RefPtr<Index> mIndex;
