@@ -589,12 +589,6 @@ pref("dom.disable_open_during_load",              true);
 pref("javascript.options.showInConsole",          true);
 
 
-
-
-
-
-pref("dom.disable_window_open_feature.location",  true);
-
 pref("dom.disable_window_move_resize",            false);
 
 pref("dom.disable_window_flip",                   true);
