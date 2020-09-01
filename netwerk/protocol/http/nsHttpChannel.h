@@ -36,6 +36,7 @@
 class nsDNSPrefetch;
 class nsICancelable;
 class nsIDNSRecord;
+class nsIDNSHTTPSSVCRecord;
 class nsIHttpChannelAuthProvider;
 class nsInputStreamPump;
 class nsITransportSecurityInfo;
@@ -736,6 +737,9 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   uint32_t mDataSentToChildProcess : 1;
 
+  uint32_t mUseHTTPSSVC : 1;
+  uint32_t mWaitHTTPSSVCRecord : 1;
+
   
   
   nsCString mTopWindowOrigin;
@@ -812,6 +816,9 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsresult TriggerNetworkWithDelay(uint32_t aDelay);
   nsresult TriggerNetwork();
   void CancelNetworkRequest(nsresult aStatus);
+
+  void SetHTTPSSVCRecord(nsIDNSHTTPSSVCRecord* aRecord);
+
   
   
   nsCOMPtr<nsITimer> mNetworkTriggerTimer;
@@ -844,6 +851,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   int32_t mProxyConnectResponseCode;
+
+  
+  
+  nsCOMPtr<nsIDNSHTTPSSVCRecord> mHTTPSSVCRecord;
 
  protected:
   virtual void DoNotifyListenerCleanup() override;

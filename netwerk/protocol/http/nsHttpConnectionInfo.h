@@ -29,6 +29,8 @@
 
 
 
+class nsISVCBRecord;
+
 namespace mozilla {
 namespace net {
 
@@ -83,6 +85,12 @@ class nsHttpConnectionInfo final : public ARefBase {
 
   
   already_AddRefed<nsHttpConnectionInfo> Clone() const;
+  
+  
+  
+  
+  already_AddRefed<nsHttpConnectionInfo> CloneAndAdoptHTTPSSVCRecord(
+      nsISVCBRecord* aRecord) const;
   void CloneAsDirectRoute(nsHttpConnectionInfo** outParam);
   [[nodiscard]] nsresult CreateWildCard(nsHttpConnectionInfo** outParam);
 

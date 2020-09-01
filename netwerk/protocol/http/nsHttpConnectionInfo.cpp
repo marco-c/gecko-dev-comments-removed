@@ -17,8 +17,10 @@
 
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/NeckoChannelParams.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsComponentManagerUtils.h"
 #include "nsICryptoHash.h"
+#include "nsIDNSByTypeRecord.h"
 #include "nsIProtocolProxyService.h"
 #include "nsNetCID.h"
 #include "nsProxyInfo.h"
@@ -336,6 +338,53 @@ already_AddRefed<nsHttpConnectionInfo> nsHttpConnectionInfo::Clone() const {
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
   MOZ_ASSERT(clone->Equals(this));
+
+  return clone.forget();
+}
+
+already_AddRefed<nsHttpConnectionInfo>
+nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
+    nsISVCBRecord* aRecord) const {
+  MOZ_ASSERT(aRecord);
+
+  
+  
+  nsAutoCString name;
+  aRecord->GetName(name);
+
+  
+  
+  Maybe<uint16_t> port = aRecord->GetPort();
+  Maybe<nsCString> alpn = aRecord->GetAlpn();
+
+  LOG(("HTTPSSVC: use new routed host (%s) and new npnToken (%s)", name.get(),
+       alpn ? alpn->get() : "None"));
+
+  RefPtr<nsHttpConnectionInfo> clone;
+  if (name.IsEmpty()) {
+    clone = new nsHttpConnectionInfo(
+        mOrigin, mOriginPort, alpn ? *alpn : EmptyCString(), mUsername,
+        mTopWindowOrigin, mProxyInfo, mOriginAttributes, mEndToEndSSL,
+        mIsolated, mIsHttp3);
+  } else {
+    MOZ_ASSERT(mEndToEndSSL);
+    clone = new nsHttpConnectionInfo(
+        mOrigin, mOriginPort, alpn ? *alpn : EmptyCString(), mUsername,
+        mTopWindowOrigin, mProxyInfo, mOriginAttributes, name,
+        port ? *port : mRoutedPort, mIsolated, mIsHttp3);
+  }
+
+  
+  clone->SetAnonymous(GetAnonymous());
+  clone->SetPrivate(GetPrivate());
+  clone->SetInsecureScheme(GetInsecureScheme());
+  clone->SetNoSpdy(GetNoSpdy());
+  clone->SetBeConservative(GetBeConservative());
+  clone->SetTlsFlags(GetTlsFlags());
+  clone->SetIsTrrServiceChannel(GetIsTrrServiceChannel());
+  clone->SetTRRMode(GetTRRMode());
+  clone->SetIPv4Disabled(GetIPv4Disabled());
+  clone->SetIPv6Disabled(GetIPv6Disabled());
 
   return clone.forget();
 }

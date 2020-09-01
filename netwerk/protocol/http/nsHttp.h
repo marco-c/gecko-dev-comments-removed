@@ -347,6 +347,12 @@ void LogHeaders(const char* lineStart);
 
 nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode);
 
+
+
+
+nsCString SelectAlpnFromAlpnList(const nsACString& aAlpnList, bool aNoHttp2,
+                                 bool aNoHttp3);
+
 }  
 }  
 
