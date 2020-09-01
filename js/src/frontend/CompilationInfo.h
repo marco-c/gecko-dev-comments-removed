@@ -150,38 +150,57 @@ class ScriptStencilIterable {
 };
 
 
-
-
-struct MOZ_RAII CompilationInfo {
-  static constexpr FunctionIndex TopLevelIndex = FunctionIndex(0);
-
-  JSContext* cx;
+struct MOZ_RAII CompilationInput {
   const JS::ReadOnlyCompileOptions& options;
 
   
   
-  AutoKeepAtoms keepAtoms;
+  
+  
+  
+  JS::RootedVector<JSAtom*> atoms;
+
+  JS::Rooted<BaseScript*> lazy;
+
+  JS::Rooted<ScriptSourceHolder> source_;
 
   
-  ParserAtomsTable parserAtoms;
+  
+  
+  JS::Rooted<Scope*> enclosingScope;
 
-  JS::RootedVector<JSAtom*> atoms;
+  CompilationInput(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
+      : options(options),
+        atoms(cx),
+        lazy(cx),
+        source_(cx),
+        enclosingScope(cx) {}
+};
+
+struct MOZ_RAII CompilationState {
+  
+  
+  AutoKeepAtoms keepAtoms;
 
   Directives directives;
 
   ScopeContext scopeContext;
 
-  
-  
-  JS::Rooted<JSScript*> script;
-  JS::Rooted<BaseScript*> lazy;
-
-  
-  JS::Rooted<ModuleObject*> module;
-
   UsedNameTracker usedNames;
   LifoAllocScope& allocScope;
 
+  CompilationState(JSContext* cx, LifoAllocScope& alloc,
+                   const JS::ReadOnlyCompileOptions& options,
+                   Scope* enclosingScope, JSObject* enclosingEnv)
+      : keepAtoms(cx),
+        directives(options.forceStrictMode()),
+        scopeContext(cx, enclosingScope, enclosingEnv),
+        usedNames(cx),
+        allocScope(alloc) {}
+};
+
+
+struct MOZ_RAII CompilationStencil {
   
   
   Vector<RegExpStencil> regExpData;
@@ -190,24 +209,18 @@ struct MOZ_RAII CompilationInfo {
 
   
   
-  JS::RootedVector<JSFunction*> functions;
+  
   Vector<ScriptStencil> scriptData;
 
   
   
   
-  JS::Rooted<Scope*> enclosingScope;
-
   
   
   
   
   
   
-  
-  
-  
-  JS::RootedVector<js::Scope*> scopes;
   Vector<ScopeStencil> scopeData;
 
   
@@ -217,8 +230,57 @@ struct MOZ_RAII CompilationInfo {
   HashMap<FunctionIndex, RefPtr<const JS::WasmModule>> asmJS;
 
   
-  JS::Rooted<ScriptSourceHolder> source_;
+  ParserAtomsTable parserAtoms;
+
+  explicit CompilationStencil(JSContext* cx)
+      : regExpData(cx),
+        bigIntData(cx),
+        objLiteralData(cx),
+        scriptData(cx),
+        scopeData(cx),
+        moduleMetadata(cx),
+        asmJS(cx),
+        parserAtoms(cx) {}
+};
+
+
+struct MOZ_RAII CompilationGCOutput {
+  
+  
+  JS::Rooted<JSScript*> script;
+
+  
+  JS::Rooted<ModuleObject*> module;
+
+  
+  
+  
+  
+  JS::RootedVector<JSFunction*> functions;
+
+  
+  
+  JS::RootedVector<js::Scope*> scopes;
+
+  
   JS::Rooted<ScriptSourceObject*> sourceObject;
+
+  explicit CompilationGCOutput(JSContext* cx)
+      : script(cx), module(cx), functions(cx), scopes(cx), sourceObject(cx) {}
+};
+
+
+
+
+struct MOZ_RAII CompilationInfo {
+  static constexpr FunctionIndex TopLevelIndex = FunctionIndex(0);
+
+  JSContext* cx;
+
+  CompilationInput input;
+  CompilationState state;
+  CompilationStencil stencil;
+  CompilationGCOutput gcOutput;
 
   
   
@@ -237,29 +299,10 @@ struct MOZ_RAII CompilationInfo {
                   Scope* enclosingScope = nullptr,
                   JSObject* enclosingEnv = nullptr)
       : cx(cx),
-        options(options),
-        keepAtoms(cx),
-        parserAtoms(cx),
-        atoms(cx),
-        directives(options.forceStrictMode()),
-        scopeContext(cx, enclosingScope, enclosingEnv),
-        script(cx),
-        lazy(cx),
-        module(cx),
-        usedNames(cx),
-        allocScope(alloc),
-        regExpData(cx),
-        bigIntData(cx),
-        objLiteralData(cx),
-        functions(cx),
-        scriptData(cx),
-        enclosingScope(cx),
-        scopes(cx),
-        scopeData(cx),
-        moduleMetadata(cx),
-        asmJS(cx),
-        source_(cx),
-        sourceObject(cx) {}
+        input(cx, options),
+        state(cx, alloc, options, enclosingScope, enclosingEnv),
+        stencil(cx),
+        gcOutput(cx) {}
 
   bool init(JSContext* cx);
 
@@ -267,23 +310,23 @@ struct MOZ_RAII CompilationInfo {
     if (!init(cx)) {
       return false;
     }
-    this->enclosingScope = enclosingScope;
+    input.enclosingScope = enclosingScope;
     return true;
   }
 
   void initFromLazy(BaseScript* lazy) {
-    this->lazy = lazy;
-    this->enclosingScope = lazy->function()->enclosingScope();
+    input.lazy = lazy;
+    input.enclosingScope = lazy->function()->enclosingScope();
   }
 
-  void setEnclosingScope(Scope* scope) { enclosingScope = scope; }
+  void setEnclosingScope(Scope* scope) { input.enclosingScope = scope; }
 
-  ScriptSource* source() { return source_.get().get(); }
-  void setSource(ScriptSource* ss) { return source_.get().reset(ss); }
+  ScriptSource* source() { return input.source_.get().get(); }
+  void setSource(ScriptSource* ss) { return input.source_.get().reset(ss); }
 
   template <typename Unit>
   MOZ_MUST_USE bool assignSource(JS::SourceText<Unit>& sourceBuffer) {
-    return source()->assignSource(cx, options, sourceBuffer);
+    return source()->assignSource(cx, input.options, sourceBuffer);
   }
 
   MOZ_MUST_USE bool instantiateStencils();
@@ -292,7 +335,7 @@ struct MOZ_RAII CompilationInfo {
     return parserAtom->toJSAtom(cx, *this).unwrapOr(nullptr);
   }
   const ParserAtom* lowerJSAtomToParserAtom(JSAtom* atom) {
-    auto result = parserAtoms.internJSAtom(cx, *this, atom);
+    auto result = stencil.parserAtoms.internJSAtom(cx, *this, atom);
     return result.unwrapOr(nullptr);
   }
 
@@ -314,14 +357,14 @@ struct MOZ_RAII CompilationInfo {
 };
 
 inline void ScriptStencilIterable::Iterator::next() {
-  MOZ_ASSERT(index_ < compilationInfo_->scriptData.length());
+  MOZ_ASSERT(index_ < compilationInfo_->stencil.scriptData.length());
   index_++;
 }
 
 inline void ScriptStencilIterable::Iterator::skipNonFunctions() {
-  size_t length = compilationInfo_->scriptData.length();
+  size_t length = compilationInfo_->stencil.scriptData.length();
   while (index_ < length) {
-    if (compilationInfo_->scriptData[index_].isFunction()) {
+    if (compilationInfo_->stencil.scriptData[index_].isFunction()) {
       return;
     }
 
@@ -331,16 +374,18 @@ inline void ScriptStencilIterable::Iterator::skipNonFunctions() {
 
 inline ScriptStencilIterable::ScriptAndFunction
 ScriptStencilIterable::Iterator::operator*() {
-  ScriptStencil& script = compilationInfo_->scriptData[index_];
+  ScriptStencil& script = compilationInfo_->stencil.scriptData[index_];
 
   FunctionIndex functionIndex = FunctionIndex(index_);
-  return ScriptAndFunction(script, compilationInfo_->functions[functionIndex],
+  return ScriptAndFunction(script,
+                           compilationInfo_->gcOutput.functions[functionIndex],
                            functionIndex);
 }
 
  inline ScriptStencilIterable::Iterator
 ScriptStencilIterable::Iterator::end(CompilationInfo* compilationInfo) {
-  return Iterator(compilationInfo, compilationInfo->scriptData.length());
+  return Iterator(compilationInfo,
+                  compilationInfo->stencil.scriptData.length());
 }
 
 }  
