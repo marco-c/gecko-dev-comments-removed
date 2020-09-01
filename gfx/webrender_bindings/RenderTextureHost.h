@@ -57,7 +57,7 @@ class RenderTextureHost {
   
   
   
-  virtual void NofityForUse() {}
+  virtual void NotifyForUse() {}
   
   
   

@@ -208,7 +208,9 @@ class RenderThread final {
   void NotifyNotUsed(uint64_t aExternalImageId);
 
   
-  void NofityForUse(uint64_t aExternalImageId);
+  void NotifyForUse(uint64_t aExternalImageId);
+
+  void HandleRenderTextureOps();
 
   
   void UnregisterExternalImageDuringShutdown(uint64_t aExternalImageId);
@@ -268,9 +270,6 @@ class RenderThread final {
   bool IsHandlingWebRenderError();
 
   
-  void HandlePrepareForUse();
-
-  
   bool SyncObjectNeeded();
 
   size_t RendererCount();
@@ -287,6 +286,12 @@ class RenderThread final {
   static void MaybeEnableGLDebugMessage(gl::GLContext* aGLContext);
 
  private:
+  enum class RenderTextureOp {
+    PrepareForUse,
+    NotifyForUse,
+    NotifyNotUsed,
+  };
+
   explicit RenderThread(base::Thread* aThread);
 
   void DeferredRenderTextureHostDestroy();
@@ -295,6 +300,8 @@ class RenderThread final {
 
   void DoAccumulateMemoryReport(MemoryReport,
                                 const RefPtr<MemoryReportPromise::Private>&);
+
+  void AddRenderTextureOp(RenderTextureOp aOp, uint64_t aExternalImageId);
 
   ~RenderThread();
 
@@ -337,10 +344,9 @@ class RenderThread final {
   std::unordered_map<uint64_t, RefPtr<RenderTextureHost>> mRenderTextures;
   std::unordered_map<uint64_t, RefPtr<RenderTextureHost>>
       mSyncObjectNeededRenderTextures;
-  
-  
-  
-  std::list<RefPtr<RenderTextureHost>> mRenderTexturesPrepareForUse;
+  std::list<std::pair<RenderTextureOp, RefPtr<RenderTextureHost>>>
+      mRenderTextureOps;
+
   
   
   
