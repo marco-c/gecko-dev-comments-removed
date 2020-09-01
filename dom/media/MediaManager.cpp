@@ -212,7 +212,13 @@ struct DeviceState {
 
   
   
+  
   bool mDeviceEnabled = false;
+
+  
+  
+  
+  bool mDeviceMuted = false;
 
   
   
@@ -382,7 +388,26 @@ class SourceListener : public SupportsWeakPtr {
 
 
 
+
+
+
+
+
+
+
+
+  void SetMutedFor(LocalTrackSource* aTrackSource, bool aMuted);
+
+  
+
+
+
   void StopSharing();
+
+  
+
+
+  void MuteOrUnmuteCamera(bool aMute);
 
   MediaDevice* GetAudioDevice() const {
     return mAudioDeviceState ? mAudioDeviceState->mDevice.get() : nullptr;
@@ -410,6 +435,15 @@ class SourceListener : public SupportsWeakPtr {
 
  private:
   virtual ~SourceListener() = default;
+
+  using DeviceOperationPromise =
+      MozPromise<nsresult, bool,  true>;
+
+  
+
+
+
+  RefPtr<DeviceOperationPromise> UpdateDevice(MediaTrack* aTrack, bool aOn);
 
   
 
@@ -638,6 +672,8 @@ class GetUserMediaWindowListener {
 
   void StopRawID(const nsString& removedDeviceID);
 
+  void MuteOrUnmuteCameras(bool aMute);
+
   
 
 
@@ -770,6 +806,10 @@ class LocalTrackSource : public MediaStreamTrackSource {
       mListener->SetEnabledFor(mTrack, true);
     }
   }
+
+  void Mute() { MutedChanged(true); }
+
+  void Unmute() { MutedChanged(false); }
 
   const MediaSourceEnum mSource;
   const RefPtr<MediaTrack> mTrack;
@@ -1995,6 +2035,8 @@ MediaManager* MediaManager::Get() {
       obs->AddObserver(sSingleton, "getUserMedia:response:noOSPermission",
                        false);
       obs->AddObserver(sSingleton, "getUserMedia:revoke", false);
+      obs->AddObserver(sSingleton, "getUserMedia:muteVideo", false);
+      obs->AddObserver(sSingleton, "getUserMedia:unmuteVideo", false);
     }
     
     nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
@@ -3392,6 +3434,16 @@ void MediaManager::OnNavigation(uint64_t aWindowID) {
   MOZ_ASSERT(!GetWindowListener(aWindowID));
 }
 
+void MediaManager::OnCameraMute(bool aMute) {
+  MOZ_ASSERT(NS_IsMainThread());
+  LOG("OnCameraMute for all windows");
+  
+  
+  for (auto iter = mActiveWindows.Iter(); !iter.Done(); iter.Next()) {
+    iter.UserData()->MuteOrUnmuteCameras(aMute);
+  }
+}
+
 void MediaManager::AddWindowID(uint64_t aWindowId,
                                RefPtr<GetUserMediaWindowListener> aListener) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -3519,6 +3571,8 @@ void MediaManager::Shutdown() {
   obs->RemoveObserver(this, "getUserMedia:response:deny");
   obs->RemoveObserver(this, "getUserMedia:response:noOSPermission");
   obs->RemoveObserver(this, "getUserMedia:revoke");
+  obs->RemoveObserver(this, "getUserMedia:muteVideo");
+  obs->RemoveObserver(this, "getUserMedia:unmuteVideo");
 
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
   if (prefs) {
@@ -3670,6 +3724,23 @@ bool IsGUMResponseNoAccess(const char* aTopic,
   return false;
 }
 
+static MediaSourceEnum ParseScreenColonWindowID(const char16_t* aData,
+                                                uint64_t* aWindowIDOut) {
+  MOZ_ASSERT(aWindowIDOut);
+  
+  const nsDependentString data(aData);
+  if (Substring(data, 0, strlen("screen:")).EqualsLiteral("screen:")) {
+    nsresult rv;
+    *aWindowIDOut = Substring(data, strlen("screen:")).ToInteger64(&rv);
+    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
+    return MediaSourceEnum::Screen;
+  }
+  nsresult rv;
+  *aWindowIDOut = data.ToInteger64(&rv);
+  MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
+  return MediaSourceEnum::Camera;
+}
+
 nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
                                const char16_t* aData) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -3774,28 +3845,20 @@ nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
 
   } else if (!strcmp(aTopic, "getUserMedia:revoke")) {
-    nsresult rv;
-    
-    const nsDependentString data(aData);
-    if (Substring(data, 0, strlen("screen:")).EqualsLiteral("screen:")) {
-      uint64_t windowID = Substring(data, strlen("screen:")).ToInteger64(&rv);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
-      if (NS_SUCCEEDED(rv)) {
-        LOG("Revoking Screen/windowCapture access for window %" PRIu64,
-            windowID);
-        StopScreensharing(windowID);
-      }
+    uint64_t windowID;
+    if (ParseScreenColonWindowID(aData, &windowID) == MediaSourceEnum::Screen) {
+      LOG("Revoking ScreenCapture access for window %" PRIu64, windowID);
+      StopScreensharing(windowID);
     } else {
-      uint64_t windowID = data.ToInteger64(&rv);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
-      if (NS_SUCCEEDED(rv)) {
-        LOG("Revoking MediaCapture access for window %" PRIu64, windowID);
-        OnNavigation(windowID);
-      }
+      LOG("Revoking MediaCapture access for window %" PRIu64, windowID);
+      OnNavigation(windowID);
     }
     return NS_OK;
+  } else if (!strcmp(aTopic, "getUserMedia:muteVideo") ||
+             !strcmp(aTopic, "getUserMedia:unmuteVideo")) {
+    OnCameraMute(!strcmp(aTopic, "getUserMedia:muteVideo"));
+    return NS_OK;
   }
-
   return NS_OK;
 }
 
@@ -4275,6 +4338,80 @@ void SourceListener::GetSettingsFor(MediaTrack* aTrack,
   }
 }
 
+static bool SameGroupAsCurrentAudioOutput(const nsString& aGroupId) {
+  CubebDeviceEnumerator* enumerator = CubebDeviceEnumerator::GetInstance();
+  
+  
+  RefPtr<AudioDeviceInfo> outputDevice =
+      enumerator->DefaultDevice(CubebDeviceEnumerator::Side::OUTPUT);
+  return outputDevice && outputDevice->GroupID().Equals(aGroupId);
+}
+
+auto SourceListener::UpdateDevice(MediaTrack* aTrack, bool aOn)
+    -> RefPtr<DeviceOperationPromise> {
+  MOZ_ASSERT(NS_IsMainThread());
+  RefPtr<SourceListener> self = this;
+  DeviceState& state = GetDeviceStateFor(aTrack);
+  nsString groupId;
+  state.mDevice->GetRawGroupId(groupId);
+
+  return MediaManager::Dispatch<DeviceOperationPromise>(
+             __func__,
+             [self, device = state.mDevice, aOn,
+              groupId](MozPromiseHolder<DeviceOperationPromise>& h) {
+               if (device->mKind == dom::MediaDeviceKind::Audioinput && !aOn &&
+                   SameGroupAsCurrentAudioOutput(groupId)) {
+                 
+                 
+                 
+                 
+                 
+                 
+                 LOG("Not turning device off, as it matches audio output (%s)",
+                     NS_ConvertUTF16toUTF8(groupId).get());
+                 h.Resolve(NS_OK, __func__);
+                 return;
+               }
+               LOG("Turning %s device (%s)", aOn ? "on" : "off",
+                   NS_ConvertUTF16toUTF8(groupId).get());
+               h.Resolve(aOn ? device->Start() : device->Stop(), __func__);
+             })
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [self, this, &state, track = RefPtr<MediaTrack>(aTrack),
+           aOn](nsresult aResult) {
+            if (state.mStopped) {
+              
+              return DeviceOperationPromise::CreateAndResolve(aResult,
+                                                              __func__);
+            }
+            LOG("SourceListener %p turning %s %s input device for track %p %s",
+                this, aOn ? "on" : "off",
+                &state == mAudioDeviceState.get() ? "audio" : "video",
+                track.get(), NS_SUCCEEDED(aResult) ? "succeeded" : "failed");
+
+            if (NS_FAILED(aResult) && aResult != NS_ERROR_ABORT) {
+              
+              
+              
+              if (aOn) {
+                
+                
+                
+                StopTrack(track);
+              } else {
+                
+                MOZ_ASSERT_UNREACHABLE("The device should be stoppable");
+              }
+            }
+            return DeviceOperationPromise::CreateAndResolve(aResult, __func__);
+          },
+          []() {
+            MOZ_ASSERT_UNREACHABLE("Unexpected and unhandled reject");
+            return DeviceOperationPromise::CreateAndReject(false, __func__);
+          });
+}
+
 void SourceListener::SetEnabledFor(MediaTrack* aTrack, bool aEnable) {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
   MOZ_ASSERT(Activated(), "No device to set enabled state for");
@@ -4327,8 +4464,6 @@ void SourceListener::SetEnabledFor(MediaTrack* aTrack, bool aEnable) {
     timerPromise = state.mDisableTimer->WaitFor(delay, __func__);
   }
 
-  typedef MozPromise<nsresult, bool,  true>
-      DeviceOperationPromise;
   RefPtr<SourceListener> self = this;
   timerPromise
       ->Then(
@@ -4357,53 +4492,14 @@ void SourceListener::SetEnabledFor(MediaTrack* aTrack, bool aEnable) {
             if (mWindowListener) {
               mWindowListener->ChromeAffectingStateChanged();
             }
-            if (!state.mOffWhileDisabled) {
+            if (!state.mOffWhileDisabled || state.mDeviceMuted) {
+              
               
               
               
               return DeviceOperationPromise::CreateAndResolve(NS_OK, __func__);
             }
-
-            nsString inputDeviceGroupId;
-            state.mDevice->GetRawGroupId(inputDeviceGroupId);
-
-            return MediaManager::Dispatch<DeviceOperationPromise>(
-                __func__,
-                [self, device = state.mDevice, aEnable, inputDeviceGroupId](
-                    MozPromiseHolder<DeviceOperationPromise>& h) {
-                  
-                  
-                  
-                  
-                  if (device->mKind == dom::MediaDeviceKind::Audioinput &&
-                      !aEnable) {
-                    
-                    
-                    CubebDeviceEnumerator* enumerator =
-                        CubebDeviceEnumerator::GetInstance();
-                    
-                    
-                    RefPtr<AudioDeviceInfo> outputDevice =
-                        enumerator->DefaultDevice(
-                            CubebDeviceEnumerator::Side::OUTPUT);
-                    if (outputDevice &&
-                        outputDevice->GroupID().Equals(inputDeviceGroupId)) {
-                      LOG("Device group id match when %s, "
-                          "not turning the input device off (%s)",
-                          aEnable ? "unmuting" : "muting",
-                          NS_ConvertUTF16toUTF8(outputDevice->GroupID()).get());
-                      h.Resolve(NS_OK, __func__);
-                      return;
-                    }
-                  }
-
-                  LOG("Device group id don't match when %s, "
-                      "not turning the audio input device off (%s)",
-                      aEnable ? "unmuting" : "muting",
-                      NS_ConvertUTF16toUTF8(inputDeviceGroupId).get());
-                  h.Resolve(aEnable ? device->Start() : device->Stop(),
-                            __func__);
-                });
+            return UpdateDevice(track, aEnable);
           },
           []() {
             
@@ -4425,28 +4521,10 @@ void SourceListener::SetEnabledFor(MediaTrack* aTrack, bool aEnable) {
               return;
             }
 
-            LOG("SourceListener %p %s %s track for track %p %s", this,
-                aEnable ? "enabling" : "disabling",
-                &state == mAudioDeviceState.get() ? "audio" : "video",
-                track.get(), NS_SUCCEEDED(aResult) ? "succeeded" : "failed");
-
-            if (NS_FAILED(aResult) && aResult != NS_ERROR_ABORT) {
+            if (NS_FAILED(aResult) && aResult != NS_ERROR_ABORT && !aEnable) {
               
               
-              
-              if (aEnable) {
-                
-                
-                
-                StopTrack(track);
-              } else {
-                
-                MOZ_ASSERT_UNREACHABLE("The device should be stoppable");
-
-                
-                
-                state.mOffWhileDisabled = false;
-              }
+              state.mOffWhileDisabled = false;
               return;
             }
 
@@ -4456,20 +4534,56 @@ void SourceListener::SetEnabledFor(MediaTrack* aTrack, bool aEnable) {
             
             
 
-            if (state.mTrackEnabled == state.mDeviceEnabled) {
+            if (state.mTrackEnabled != state.mDeviceEnabled) {
               
-              
-              return;
-            }
-
-            
-            if (state.mTrackEnabled) {
-              SetEnabledFor(track, true);
-            } else {
-              SetEnabledFor(track, false);
+              SetEnabledFor(track, state.mTrackEnabled);
             }
           },
           []() { MOZ_ASSERT_UNREACHABLE("Unexpected and unhandled reject"); });
+}
+
+void SourceListener::SetMutedFor(LocalTrackSource* aTrackSource, bool aMute) {
+  MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
+  MOZ_ASSERT(Activated(), "No device to set muted state for");
+
+  MediaTrack* track = aTrackSource->mTrack;
+  DeviceState& state = GetDeviceStateFor(track);
+
+  LOG("SourceListener %p %s %s track for track %p", this,
+      aMute ? "muting" : "unmuting",
+      &state == mAudioDeviceState.get() ? "audio" : "video", track);
+
+  if (state.mStopped) {
+    
+    return;
+  }
+
+  if (state.mDeviceMuted == aMute) {
+    
+    return;
+  }
+
+  LOG("SourceListener %p %s %s track for track %p - starting device operation",
+      this, aMute ? "muting" : "unmuting",
+      &state == mAudioDeviceState.get() ? "audio" : "video", track);
+
+  state.mDeviceMuted = aMute;
+
+  if (mWindowListener) {
+    mWindowListener->ChromeAffectingStateChanged();
+  }
+  
+  if (aMute) {
+    aTrackSource->Mute();
+  } else {
+    aTrackSource->Unmute();
+  }
+  if (state.mOffWhileDisabled && !state.mDeviceEnabled &&
+      state.mDevice->mKind == dom::MediaDeviceKind::Videoinput) {
+    
+    return;
+  }
+  UpdateDevice(track, !aMute);
 }
 
 void SourceListener::StopSharing() {
@@ -4496,6 +4610,22 @@ void SourceListener::StopSharing() {
                                MediaSourceEnum::AudioCapture) {
     static_cast<AudioCaptureTrackSource*>(mAudioDeviceState->mTrackSource.get())
         ->Stop();
+  }
+}
+
+void SourceListener::MuteOrUnmuteCamera(bool aMute) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mStopped) {
+    return;
+  }
+
+  MOZ_RELEASE_ASSERT(mWindowListener);
+  LOG("SourceListener %p MuteOrUnmuteCamera", this);
+
+  if (mVideoDeviceState && (mVideoDeviceState->mDevice->GetMediaSource() ==
+                            MediaSourceEnum::Camera)) {
+    SetMutedFor(mVideoDeviceState->mTrackSource, aMute);
   }
 }
 
@@ -4542,7 +4672,7 @@ CaptureState SourceListener::CapturingSource(MediaSourceEnum aSource) const {
 
   
 
-  if (state.mDeviceEnabled) {
+  if (state.mDeviceEnabled && !state.mDeviceMuted) {
     return CaptureState::Enabled;
   }
 
@@ -4644,6 +4774,16 @@ void GetUserMediaWindowListener::StopRawID(const nsString& removedDeviceID) {
       if (removedDeviceID.Equals(id)) {
         source->StopVideoTrack();
       }
+    }
+  }
+}
+
+void GetUserMediaWindowListener::MuteOrUnmuteCameras(bool aMute) {
+  MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
+
+  for (auto& source : mActiveListeners) {
+    if (source->GetVideoDevice()) {
+      source->MuteOrUnmuteCamera(aMute);
     }
   }
 }
