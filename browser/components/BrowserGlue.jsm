@@ -3756,12 +3756,12 @@ BrowserGlue.prototype = {
 
   _maybeShowDefaultBrowserPrompt() {
     DefaultBrowserCheck.willCheckDefaultBrowser( true).then(
-      willPrompt => {
+      async willPrompt => {
         let win = BrowserWindowTracker.getTopWindow();
         if (!willPrompt) {
           
           
-          win.DefaultBrowserNotificationOnNewTabPage.init();
+          await win.DefaultBrowserNotificationOnNewTabPage.init();
           return;
         }
         DefaultBrowserCheck.prompt(win);

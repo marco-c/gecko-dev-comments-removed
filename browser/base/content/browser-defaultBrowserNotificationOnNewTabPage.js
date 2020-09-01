@@ -7,17 +7,22 @@
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AboutNewTab: "resource:///modules/AboutNewTab.jsm",
-  ShellService: "resource:///modules/ShellService.jsm",
 });
 
 var DefaultBrowserNotificationOnNewTabPage = {
-  init() {
-    this.willCheckDefaultBrowser().then(willPrompt => {
-      if (!willPrompt) {
-        return;
-      }
+  _eventListenerAdded: false,
+  async init() {
+    
+    
+
+    let willPrompt = await this.willCheckDefaultBrowser();
+    if (!willPrompt) {
+      return;
+    }
+    if (!this._eventListenerAdded) {
       window.addEventListener("TabSelect", this);
-    });
+      this._eventListenerAdded = true;
+    }
   },
 
   closePrompt(aNode) {
@@ -33,6 +38,7 @@ var DefaultBrowserNotificationOnNewTabPage = {
     ) {
       DefaultBrowserNotificationOnNewTabPage.prompt(event.target.linkedBrowser);
       window.removeEventListener("TabSelect", this);
+      this._eventListenerAdded = false;
     }
   },
 
@@ -53,7 +59,7 @@ var DefaultBrowserNotificationOnNewTabPage = {
         "l10n-id": "default-browser-notification-button",
         primary: true,
         callback: () => {
-          ShellService.setAsDefault();
+          window.getShellService().setAsDefault();
           this.closePrompt();
         },
       },
@@ -107,7 +113,7 @@ var DefaultBrowserNotificationOnNewTabPage = {
     
     let isDefault = false;
     try {
-      isDefault = ShellService.isDefaultBrowser(false, false);
+      isDefault = window.getShellService().isDefaultBrowser(false, false);
     } catch (ex) {}
 
     if (!isDefault) {
