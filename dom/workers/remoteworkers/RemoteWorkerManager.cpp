@@ -460,12 +460,17 @@ void RemoteWorkerManager::ForEachActor(
 
 
 
-RemoteWorkerServiceParent*
-RemoteWorkerManager::SelectTargetActorForServiceWorker(
-    const RemoteWorkerData& aData) const {
+
+
+
+
+
+
+
+RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActorInternal(
+    const RemoteWorkerData& aData, base::ProcessId aProcessId) const {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!mChildActors.IsEmpty());
-  MOZ_ASSERT(IsServiceWorker(aData));
 
   RemoteWorkerServiceParent* actor = nullptr;
 
@@ -474,11 +479,18 @@ RemoteWorkerManager::SelectTargetActorForServiceWorker(
   ForEachActor(
       [&](RemoteWorkerServiceParent* aActor,
           RefPtr<ContentParent>&& aContentParent) {
+        
+        
+        
+        
+        
+        
+        
+        
         auto lock = aContentParent->mRemoteWorkerActorData.Lock();
 
-        
-        
-        if (lock->mCount || !lock->mShutdownStarted) {
+        if ((lock->mCount || !lock->mShutdownStarted) &&
+            (aActor->OtherPid() == aProcessId || !actor)) {
           ++lock->mCount;
 
           
@@ -501,58 +513,7 @@ RemoteWorkerManager::SelectTargetActorForServiceWorker(
         MOZ_ASSERT(!actor);
         return true;
       },
-      workerRemoteType);
-
-  return actor;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-RemoteWorkerServiceParent*
-RemoteWorkerManager::SelectTargetActorForSharedWorker(
-    base::ProcessId aProcessId, const RemoteWorkerData& aData) const {
-  AssertIsOnBackgroundThread();
-  MOZ_ASSERT(!mChildActors.IsEmpty());
-
-  RemoteWorkerServiceParent* actor = nullptr;
-
-  const auto& workerRemoteType = aData.remoteType();
-
-  ForEachActor(
-      [&](RemoteWorkerServiceParent* aActor,
-          RefPtr<ContentParent>&& aContentParent) {
-        
-        
-        
-        
-        
-        
-        
-        
-        auto lock = aContentParent->mRemoteWorkerActorData.Lock();
-        if ((lock->mCount || !lock->mShutdownStarted) &&
-            (aActor->OtherPid() == aProcessId || !actor)) {
-          ++lock->mCount;
-          actor = aActor;
-          return false;
-        }
-
-        MOZ_ASSERT(!actor);
-        return true;
-      },
-      workerRemoteType, Some(aProcessId));
+      workerRemoteType, IsServiceWorker(aData) ? Nothing() : Some(aProcessId));
 
   return actor;
 }
@@ -591,9 +552,7 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActor(
     return nullptr;
   }
 
-  return IsServiceWorker(aData)
-             ? SelectTargetActorForServiceWorker(aData)
-             : SelectTargetActorForSharedWorker(aProcessId, aData);
+  return SelectTargetActorInternal(aData, aProcessId);
 }
 
 void RemoteWorkerManager::LaunchNewContentProcess(
@@ -611,18 +570,15 @@ void RemoteWorkerManager::LaunchNewContentProcess(
   
   
   
-  auto processLaunchCallback = [isServiceWorker = IsServiceWorker(aData),
-                                principalInfo = aData.principalInfo(),
+  auto processLaunchCallback = [principalInfo = aData.principalInfo(),
                                 bgEventTarget = std::move(bgEventTarget),
                                 self = RefPtr<RemoteWorkerManager>(this)](
                                    const CallbackParamType& aValue,
                                    const nsCString& remoteType) mutable {
     if (aValue.IsResolve()) {
       LOG(("LaunchNewContentProcess: successfully got child process"));
-      if (isServiceWorker) {
-        TransmitPermissionsAndBlobURLsForPrincipalInfo(aValue.ResolveValue(),
-                                                       principalInfo);
-      }
+      TransmitPermissionsAndBlobURLsForPrincipalInfo(aValue.ResolveValue(),
+                                                     principalInfo);
 
       
       
