@@ -1502,14 +1502,14 @@ nsTableFrame::IntrinsicISizeOffsets(nscoord aPercentageBasis) {
 }
 
 
-LogicalSize nsTableFrame::ComputeSize(
+nsIFrame::SizeComputationResult nsTableFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
     nscoord aAvailableISize, const LogicalSize& aMargin,
     const LogicalSize& aBorder, const LogicalSize& aPadding,
     ComputeSizeFlags aFlags) {
-  LogicalSize result = nsContainerFrame::ComputeSize(
-      aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin, aBorder,
-      aPadding, aFlags);
+  auto result = nsContainerFrame::ComputeSize(aRenderingContext, aWM, aCBSize,
+                                              aAvailableISize, aMargin, aBorder,
+                                              aPadding, aFlags);
 
   
   
@@ -1524,8 +1524,8 @@ LogicalSize nsTableFrame::ComputeSize(
 
   
   nscoord minISize = GetMinISize(aRenderingContext);
-  if (minISize > result.ISize(aWM)) {
-    result.ISize(aWM) = minISize;
+  if (minISize > result.mLogicalSize.ISize(aWM)) {
+    result.mLogicalSize.ISize(aWM) = minISize;
   }
 
   return result;

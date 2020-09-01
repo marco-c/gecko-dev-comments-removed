@@ -123,7 +123,7 @@ nscoord nsFirstLetterFrame::GetPrefISize(gfxContext* aRenderingContext) {
 }
 
 
-LogicalSize nsFirstLetterFrame::ComputeSize(
+nsIFrame::SizeComputationResult nsFirstLetterFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
     nscoord aAvailableISize, const LogicalSize& aMargin,
     const LogicalSize& aBorder, const LogicalSize& aPadding,
@@ -131,7 +131,8 @@ LogicalSize nsFirstLetterFrame::ComputeSize(
   if (GetPrevInFlow()) {
     
     
-    return LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+    return {LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE),
+            AspectRatioUsage::None};
   }
   return nsContainerFrame::ComputeSize(aRenderingContext, aWM, aCBSize,
                                        aAvailableISize, aMargin, aBorder,

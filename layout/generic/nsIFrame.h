@@ -2748,8 +2748,23 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual mozilla::LogicalSize ComputeSize(
-      gfxContext* aRenderingContext, mozilla::WritingMode aWritingMode,
+
+
+
+
+
+
+  enum class AspectRatioUsage : uint8_t {
+    None,
+    ToComputeISize,
+    ToComputeBSize,
+  };
+  struct SizeComputationResult {
+    mozilla::LogicalSize mLogicalSize;
+    AspectRatioUsage mAspectRatioUsage = AspectRatioUsage::None;
+  };
+  virtual SizeComputationResult ComputeSize(
+      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
       const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags);

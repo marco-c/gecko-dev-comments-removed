@@ -304,7 +304,7 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() {
 }
 
 
-LogicalSize SVGOuterSVGFrame::ComputeSize(
+nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWritingMode,
     const LogicalSize& aCBSize, nscoord aAvailableISize,
     const LogicalSize& aMargin, const LogicalSize& aBorder,
@@ -315,7 +315,7 @@ LogicalSize SVGOuterSVGFrame::ComputeSize(
     
     
     
-    return aCBSize;
+    return {aCBSize, AspectRatioUsage::None};
   }
 
   LogicalSize cbSize = aCBSize;
@@ -368,9 +368,10 @@ LogicalSize SVGOuterSVGFrame::ComputeSize(
                "we lack an intrinsic height or width.");
   }
 
-  return ComputeSizeWithIntrinsicDimensions(
-      aRenderingContext, aWritingMode, intrinsicSize, GetIntrinsicRatio(),
-      cbSize, aMargin, aBorder, aPadding, aFlags);
+  return {ComputeSizeWithIntrinsicDimensions(
+              aRenderingContext, aWritingMode, intrinsicSize,
+              GetIntrinsicRatio(), cbSize, aMargin, aBorder, aPadding, aFlags),
+          AspectRatioUsage::None};
 }
 
 void SVGOuterSVGFrame::Reflow(nsPresContext* aPresContext,
