@@ -5,6 +5,7 @@
 
 
 #include "GestureEventListener.h"
+#include <algorithm>                 
 #include <math.h>                    
 #include <stddef.h>                  
 #include "AsyncPanZoomController.h"  
@@ -614,8 +615,16 @@ void GestureEventListener::CreateLongTapTimeoutTask() {
       &GestureEventListener::HandleInputTimeoutLongTap);
 
   mLongTapTimeoutTask = task;
-  mAsyncPanZoomController->PostDelayedTask(
-      task.forget(), StaticPrefs::ui_click_hold_context_menus_delay());
+
+  TouchBlockState* block =
+      mAsyncPanZoomController->GetInputQueue()->GetCurrentTouchBlock();
+  MOZ_ASSERT(block);
+  long alreadyElapsed =
+      static_cast<long>(block->GetTimeSinceBlockStart().ToMilliseconds());
+  long remainingDelay =
+      StaticPrefs::ui_click_hold_context_menus_delay() - alreadyElapsed;
+  mAsyncPanZoomController->PostDelayedTask(task.forget(),
+                                           std::max(0L, remainingDelay));
 }
 
 void GestureEventListener::CancelMaxTapTimeoutTask() {
@@ -642,8 +651,12 @@ void GestureEventListener::CreateMaxTapTimeoutTask() {
       block->IsDuringFastFling());
 
   mMaxTapTimeoutTask = task;
+
+  long alreadyElapsed =
+      static_cast<long>(block->GetTimeSinceBlockStart().ToMilliseconds());
+  long remainingDelay = StaticPrefs::apz_max_tap_time() - alreadyElapsed;
   mAsyncPanZoomController->PostDelayedTask(task.forget(),
-                                           StaticPrefs::apz_max_tap_time());
+                                           std::max(0L, remainingDelay));
 }
 
 }  
