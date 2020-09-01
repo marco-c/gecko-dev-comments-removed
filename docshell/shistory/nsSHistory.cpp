@@ -329,6 +329,11 @@ uint32_t nsSHistory::CalcMaxTotalViewers() {
 
 void nsSHistory::UpdatePrefs() {
   Preferences::GetInt(PREF_SHISTORY_SIZE, &gHistoryMaxSize);
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    sHistoryMaxTotalViewers = 0;
+    return;
+  }
+
   Preferences::GetInt(PREF_SHISTORY_MAX_TOTAL_VIEWERS,
                       &sHistoryMaxTotalViewers);
   
