@@ -69,6 +69,14 @@ class MediaSession final : public nsISupports, public nsWrapperCache {
 
   void Shutdown();
 
+  
+  
+  
+  
+  
+  
+  bool IsActive() const;
+
  private:
   
   

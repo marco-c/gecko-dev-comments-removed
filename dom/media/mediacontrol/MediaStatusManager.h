@@ -228,6 +228,8 @@ class MediaStatusManager : public IMediaInfoUpdater {
   
   CopyableTArray<MediaSessionAction> GetSupportedActions() const;
 
+  void StoreMediaSessionContextIdOnWindowContext();
+
   
   
   void SetGuessedPlayState(MediaSessionPlaybackState aState);
