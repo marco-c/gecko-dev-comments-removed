@@ -1,15 +1,27 @@
 
 
 
-async function setCameraMuted(mute) {
+function setCameraMuted(mute) {
+  return sendObserverNotification(
+    mute ? "getUserMedia:muteVideo" : "getUserMedia:unmuteVideo"
+  );
+}
+
+function setMicrophoneMuted(mute) {
+  return sendObserverNotification(
+    mute ? "getUserMedia:muteAudio" : "getUserMedia:unmuteAudio"
+  );
+}
+
+function sendObserverNotification(topic) {
   const windowId = gBrowser.selectedBrowser.innerWindowID;
   return SpecialPowers.spawn(
     gBrowser.selectedBrowser,
-    [{ mute, windowId }],
+    [{ topic, windowId }],
     function(args) {
       Services.obs.notifyObservers(
         content.window,
-        args.mute ? "getUserMedia:muteVideo" : "getUserMedia:unmuteVideo",
+        args.topic,
         JSON.stringify(args.windowId)
       );
     }
@@ -45,6 +57,22 @@ async function getVideoTrackEvents() {
     gBrowser.selectedBrowser,
     [],
     () => content.wrappedJSObject.gVideoEvents
+  );
+}
+
+async function getAudioTrackMuted() {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [],
+    () => content.wrappedJSObject.gStreams[0].getAudioTracks()[0].muted
+  );
+}
+
+async function getAudioTrackEvents() {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [],
+    () => content.wrappedJSObject.gAudioEvents
   );
 }
 
@@ -358,7 +386,7 @@ var gTests = [
   {
     desc:
       "getUserMedia audio+video: muting the camera shows the muted indicator",
-    run: async function checkMuted() {
+    run: async function checkCameraMuted() {
       let observerPromise = expectObserverCalled("getUserMedia:request");
       let promise = promisePopupNotificationShown("webRTC-shareDevices");
       await promiseRequestDevice(true, true);
@@ -436,6 +464,94 @@ var gTests = [
       is(await getVideoTrackMuted(), false, "video track is unmuted");
       Assert.deepEqual(
         await getVideoTrackEvents(),
+        ["mute", "unmute"],
+        "unmute fired"
+      );
+      await closeStream();
+    },
+  },
+
+  {
+    desc:
+      "getUserMedia audio+video: muting the microphone shows the muted indicator",
+    run: async function checkMicrophoneMuted() {
+      let observerPromise = expectObserverCalled("getUserMedia:request");
+      let promise = promisePopupNotificationShown("webRTC-shareDevices");
+      await promiseRequestDevice(true, true);
+      await promise;
+      await observerPromise;
+      checkDeviceSelectors(true, true);
+
+      let indicator = promiseIndicatorWindow();
+      let observerPromise1 = expectObserverCalled(
+        "getUserMedia:response:allow"
+      );
+      let observerPromise2 = expectObserverCalled("recording-device-events");
+      await promiseMessage("ok", () => {
+        PopupNotifications.panel.firstElementChild.button.click();
+      });
+      await observerPromise1;
+      await observerPromise2;
+      Assert.deepEqual(
+        await getMediaCaptureState(),
+        { audio: true, video: true },
+        "expected camera and microphone to be shared"
+      );
+      await indicator;
+      await checkSharingUI({
+        video: STATE_CAPTURE_ENABLED,
+        audio: STATE_CAPTURE_ENABLED,
+      });
+      is(await getAudioTrackMuted(), false, "audio track starts unmuted");
+      Assert.deepEqual(
+        await getAudioTrackEvents(),
+        [],
+        "no audio track events fired yet"
+      );
+
+      
+      observerPromise = expectObserverCalled("recording-device-events");
+      await setMicrophoneMuted(true);
+
+      
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          window.gIdentityHandler._sharingState.webRTC.microphone ==
+          STATE_CAPTURE_DISABLED,
+        "audio should be muted"
+      );
+
+      await observerPromise;
+
+      
+      await checkSharingUI({
+        video: STATE_CAPTURE_ENABLED,
+        audio: STATE_CAPTURE_DISABLED,
+      });
+      is(await getAudioTrackMuted(), true, "audio track is muted");
+      Assert.deepEqual(await getAudioTrackEvents(), ["mute"], "mute fired");
+
+      
+      observerPromise = expectObserverCalled("recording-device-events");
+      await setMicrophoneMuted(false);
+
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          window.gIdentityHandler._sharingState.webRTC.microphone ==
+          STATE_CAPTURE_ENABLED,
+        "audio should be enabled"
+      );
+
+      await observerPromise;
+
+      
+      await checkSharingUI({
+        video: STATE_CAPTURE_ENABLED,
+        audio: STATE_CAPTURE_ENABLED,
+      });
+      is(await getAudioTrackMuted(), false, "audio track is unmuted");
+      Assert.deepEqual(
+        await getAudioTrackEvents(),
         ["mute", "unmute"],
         "unmute fired"
       );
@@ -653,6 +769,224 @@ var gTests = [
       is(await getVideoTrackMuted(), false, "video track remains unmuted");
       Assert.deepEqual(
         await getVideoTrackEvents(),
+        ["mute", "unmute", "mute", "unmute"],
+        "no new events fired"
+      );
+      await closeStream();
+    },
+  },
+
+  {
+    desc:
+      "getUserMedia audio+video: disabling & muting microphone in combination",
+    
+    
+    
+    
+    
+    
+    
+    
+    run: async function checkDisabledMutedCombination() {
+      let observerPromise = expectObserverCalled("getUserMedia:request");
+      let promise = promisePopupNotificationShown("webRTC-shareDevices");
+      await promiseRequestDevice(true, true);
+      await promise;
+      await observerPromise;
+      checkDeviceSelectors(true, true);
+
+      let indicator = promiseIndicatorWindow();
+      let observerPromise1 = expectObserverCalled(
+        "getUserMedia:response:allow"
+      );
+      let observerPromise2 = expectObserverCalled("recording-device-events");
+      await promiseMessage("ok", () => {
+        PopupNotifications.panel.firstElementChild.button.click();
+      });
+      await observerPromise1;
+      await observerPromise2;
+      Assert.deepEqual(
+        await getMediaCaptureState(),
+        { audio: true, video: true },
+        "expected camera and microphone to be shared"
+      );
+      await indicator;
+      await checkSharingUI({
+        video: STATE_CAPTURE_ENABLED,
+        audio: STATE_CAPTURE_ENABLED,
+      });
+
+      
+      observerPromise = expectObserverCalled("recording-device-events");
+      await setTrackEnabled(false, null);
+
+      
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          window.gIdentityHandler._sharingState.webRTC.microphone ==
+          STATE_CAPTURE_DISABLED,
+        "audio should be disabled"
+      );
+
+      await observerPromise;
+
+      
+      await checkSharingUI({
+        video: STATE_CAPTURE_ENABLED,
+        audio: STATE_CAPTURE_DISABLED,
+      });
+      is(await getAudioTrackMuted(), false, "audio track still unmuted");
+      Assert.deepEqual(
+        await getAudioTrackEvents(),
+        [],
+        "no audio track events fired yet"
+      );
+
+      
+      observerPromise = expectObserverCalled("recording-device-events", 2);
+      await setMicrophoneMuted(true);
+      await setTrackEnabled(null, false);
+
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          window.gIdentityHandler._sharingState.webRTC.camera ==
+          STATE_CAPTURE_DISABLED,
+        "camera should be disabled"
+      );
+
+      await observerPromise;
+
+      
+      await checkSharingUI({
+        video: STATE_CAPTURE_DISABLED,
+        audio: STATE_CAPTURE_DISABLED,
+      });
+      is(await getAudioTrackMuted(), true, "audio track is muted");
+      Assert.deepEqual(
+        await getAudioTrackEvents(),
+        ["mute"],
+        "mute is still fired even though track was disabled"
+      );
+
+      
+      observerPromise = expectObserverCalled("recording-device-events", 2);
+      await setTrackEnabled(true, true);
+
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          window.gIdentityHandler._sharingState.webRTC.camera ==
+          STATE_CAPTURE_ENABLED,
+        "video should be enabled"
+      );
+
+      await observerPromise;
+
+      
+      await checkSharingUI({
+        video: STATE_CAPTURE_ENABLED,
+        audio: STATE_CAPTURE_DISABLED,
+      });
+      is(await getAudioTrackMuted(), true, "audio track is still muted");
+      Assert.deepEqual(await getAudioTrackEvents(), ["mute"], "no new events");
+
+      
+      observerPromise = expectObserverCalled("recording-device-events");
+      await setMicrophoneMuted(false);
+
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          window.gIdentityHandler._sharingState.webRTC.microphone ==
+          STATE_CAPTURE_ENABLED,
+        "audio should be enabled"
+      );
+
+      await observerPromise;
+
+      
+      await checkSharingUI({
+        video: STATE_CAPTURE_ENABLED,
+        audio: STATE_CAPTURE_ENABLED,
+      });
+      is(await getAudioTrackMuted(), false, "audio track is unmuted");
+      Assert.deepEqual(
+        await getAudioTrackEvents(),
+        ["mute", "unmute"],
+        "unmute fired"
+      );
+
+      
+      observerPromise = expectObserverCalled("recording-device-events", 3);
+      await setMicrophoneMuted(true);
+      await setTrackEnabled(false, false);
+
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          window.gIdentityHandler._sharingState.webRTC.microphone ==
+          STATE_CAPTURE_DISABLED,
+        "audio should be disabled"
+      );
+
+      await observerPromise;
+
+      
+      await checkSharingUI({
+        video: STATE_CAPTURE_DISABLED,
+        audio: STATE_CAPTURE_DISABLED,
+      });
+      is(await getAudioTrackMuted(), true, "audio track is muted");
+      Assert.deepEqual(
+        await getAudioTrackEvents(),
+        ["mute", "unmute", "mute"],
+        "mute fired again"
+      );
+
+      
+      observerPromise = expectObserverCalled("recording-device-events", 2);
+      await setMicrophoneMuted(false);
+      await setTrackEnabled(null, true);
+
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          window.gIdentityHandler._sharingState.webRTC.camera ==
+          STATE_CAPTURE_ENABLED,
+        "video should be enabled"
+      );
+
+      await observerPromise;
+
+      
+      await checkSharingUI({
+        video: STATE_CAPTURE_ENABLED,
+        audio: STATE_CAPTURE_DISABLED,
+      });
+      is(await getAudioTrackMuted(), false, "audio track is unmuted");
+      Assert.deepEqual(
+        await getAudioTrackEvents(),
+        ["mute", "unmute", "mute", "unmute"],
+        "unmute fired even though track is disabled"
+      );
+
+      
+      observerPromise = expectObserverCalled("recording-device-events");
+      await setTrackEnabled(true, null);
+
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          window.gIdentityHandler._sharingState.webRTC.microphone ==
+          STATE_CAPTURE_ENABLED,
+        "audio should be enabled"
+      );
+
+      await observerPromise;
+
+      
+      await checkSharingUI({
+        video: STATE_CAPTURE_ENABLED,
+        audio: STATE_CAPTURE_ENABLED,
+      });
+      is(await getAudioTrackMuted(), false, "audio track remains unmuted");
+      Assert.deepEqual(
+        await getAudioTrackEvents(),
         ["mute", "unmute", "mute", "unmute"],
         "no new events fired"
       );
