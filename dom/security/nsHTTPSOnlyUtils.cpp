@@ -198,8 +198,18 @@ bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsIChannel* aChannel,
   }
 
   
+  
+  
   uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UNINITIALIZED &&
+      !XRE_IsParentProcess() && aError == NS_ERROR_NET_TIMEOUT) {
+    return true;
+  }
+
+  
+  
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT ||
+      httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UNINITIALIZED) {
     return false;
   }
 
