@@ -9,6 +9,7 @@
 
 use super::UnknownUnit;
 use crate::approxord::{max, min};
+use crate::nonempty::NonEmpty;
 use crate::num::*;
 use crate::point::{point2, Point2D};
 use crate::rect::Rect;
@@ -26,14 +27,6 @@ use core::cmp::PartialOrd;
 use core::fmt;
 use core::hash::{Hash, Hasher};
 use core::ops::{Add, Div, DivAssign, Mul, MulAssign, Sub};
-
-
-
-
-
-
-
-
 
 
 
@@ -99,6 +92,16 @@ impl<T: fmt::Debug, U> fmt::Debug for Box2D<T, U> {
     }
 }
 
+impl<T: fmt::Display, U> fmt::Display for Box2D<T, U> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Box2D(")?;
+        fmt::Display::fmt(&self.min, f)?;
+        write!(f, ", ")?;
+        fmt::Display::fmt(&self.max, f)?;
+        write!(f, ")")
+    }
+}
+
 impl<T, U> Box2D<T, U> {
     
     #[inline]
@@ -122,7 +125,7 @@ where
 
     
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub fn is_empty_or_negative(&self) -> bool {
         !(self.max.x > self.min.x && self.max.y > self.min.y)
     }
 
@@ -148,7 +151,7 @@ where
     
     #[inline]
     pub fn contains_box(&self, other: &Self) -> bool {
-        other.is_empty()
+        other.is_empty_or_negative()
             || (self.min.x <= other.min.x
                 && other.max.x <= self.max.x
                 && self.min.y <= other.min.y
@@ -161,38 +164,34 @@ where
     T: Copy + PartialOrd,
 {
     #[inline]
-    pub fn to_non_empty(&self) -> Option<Self> {
-        if self.is_empty() {
+    pub fn to_non_empty(&self) -> Option<NonEmpty<Self>> {
+        if self.is_empty_or_negative() {
             return None;
         }
 
-        Some(*self)
+        Some(NonEmpty(*self))
     }
-
-    
-    #[inline]
-    pub fn intersection(&self, other: &Self) -> Option<Self> {
-        let b = self.intersection_unchecked(other);
-
-        if b.is_empty() {
-            return None;
-        }
-
-        Some(b)
-    }
-
-    
-    
-    
     
     
     
     #[inline]
-    pub fn intersection_unchecked(&self, other: &Self) -> Self {
+    pub fn intersection(&self, other: &Self) -> Self {
         Box2D {
             min: point2(max(self.min.x, other.min.x), max(self.min.y, other.min.y)),
             max: point2(min(self.max.x, other.max.x), min(self.max.y, other.max.y)),
         }
+    }
+
+    
+    #[inline]
+    pub fn try_intersection(&self, other: &Self) -> Option<NonEmpty<Self>> {
+        let intersection = self.intersection(other);
+
+        if intersection.is_negative() {
+            return None;
+        }
+
+        Some(NonEmpty(intersection))
     }
 
     #[inline]
@@ -373,68 +372,79 @@ where
     }
 }
 
-impl<T: Copy + Mul, U> Mul<T> for Box2D<T, U> {
+impl<T, U> Box2D<T, U>
+where
+    T: PartialEq,
+{
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.min.x == self.max.x || self.min.y == self.max.y
+    }
+}
+
+impl<T: Clone + Mul, U> Mul<T> for Box2D<T, U> {
     type Output = Box2D<T::Output, U>;
 
     #[inline]
     fn mul(self, scale: T) -> Self::Output {
-        Box2D::new(self.min * scale, self.max * scale)
+        Box2D::new(self.min * scale.clone(), self.max * scale)
     }
 }
 
-impl<T: Copy + MulAssign, U> MulAssign<T> for Box2D<T, U> {
+impl<T: Clone + MulAssign, U> MulAssign<T> for Box2D<T, U> {
     #[inline]
     fn mul_assign(&mut self, scale: T) {
         *self *= Scale::new(scale);
     }
 }
 
-impl<T: Copy + Div, U> Div<T> for Box2D<T, U> {
+impl<T: Clone + Div, U> Div<T> for Box2D<T, U> {
     type Output = Box2D<T::Output, U>;
 
     #[inline]
     fn div(self, scale: T) -> Self::Output {
-        Box2D::new(self.min / scale, self.max / scale)
+        Box2D::new(self.min / scale.clone(), self.max / scale)
     }
 }
 
-impl<T: Copy + DivAssign, U> DivAssign<T> for Box2D<T, U> {
+impl<T: Clone + DivAssign, U> DivAssign<T> for Box2D<T, U> {
     #[inline]
     fn div_assign(&mut self, scale: T) {
         *self /= Scale::new(scale);
     }
 }
 
-impl<T: Copy + Mul, U1, U2> Mul<Scale<T, U1, U2>> for Box2D<T, U1> {
+impl<T: Clone + Mul, U1, U2> Mul<Scale<T, U1, U2>> for Box2D<T, U1> {
     type Output = Box2D<T::Output, U2>;
 
     #[inline]
     fn mul(self, scale: Scale<T, U1, U2>) -> Self::Output {
-        Box2D::new(self.min * scale, self.max * scale)
+        Box2D::new(self.min * scale.clone(), self.max * scale)
     }
 }
 
-impl<T: Copy + MulAssign, U> MulAssign<Scale<T, U, U>> for Box2D<T, U> {
+impl<T: Clone + MulAssign, U> MulAssign<Scale<T, U, U>> for Box2D<T, U> {
     #[inline]
     fn mul_assign(&mut self, scale: Scale<T, U, U>) {
-        self.min *= scale;
+        self.min *= scale.clone();
         self.max *= scale;
     }
 }
 
-impl<T: Copy + Div, U1, U2> Div<Scale<T, U1, U2>> for Box2D<T, U2> {
+impl<T: Clone + Div, U1, U2> Div<Scale<T, U1, U2>> for Box2D<T, U2> {
     type Output = Box2D<T::Output, U1>;
 
     #[inline]
     fn div(self, scale: Scale<T, U1, U2>) -> Self::Output {
-        Box2D::new(self.min / scale, self.max / scale)
+        Box2D::new(self.min / scale.clone(), self.max / scale)
     }
 }
 
-impl<T: Copy + DivAssign, U> DivAssign<Scale<T, U, U>> for Box2D<T, U> {
+impl<T: Clone + DivAssign, U> DivAssign<Scale<T, U, U>> for Box2D<T, U> {
     #[inline]
     fn div_assign(&mut self, scale: Scale<T, U, U>) {
-        self.min /= scale;
+        self.min /= scale.clone();
         self.max /= scale;
     }
 }
@@ -663,7 +673,7 @@ mod tests {
     #[test]
     fn test_round() {
         let b = Box2D::from_points(&[point2(-25.5, -40.4), point2(60.3, 36.5)]).round();
-        assert_eq!(b.min.x, -25.0);
+        assert_eq!(b.min.x, -26.0);
         assert_eq!(b.min.y, -40.0);
         assert_eq!(b.max.x, 60.0);
         assert_eq!(b.max.y, 37.0);
@@ -732,10 +742,10 @@ mod tests {
     }
 
     #[test]
-    fn test_intersection_unchecked() {
+    fn test_intersection() {
         let b1 = Box2D::from_points(&[point2(-15.0, -20.0), point2(10.0, 20.0)]);
         let b2 = Box2D::from_points(&[point2(-10.0, 20.0), point2(15.0, -20.0)]);
-        let b = b1.intersection_unchecked(&b2);
+        let b = b1.intersection(&b2);
         assert_eq!(b.max.x, 10.0);
         assert_eq!(b.max.y, 20.0);
         assert_eq!(b.min.x, -10.0);
@@ -743,14 +753,14 @@ mod tests {
     }
 
     #[test]
-    fn test_intersection() {
+    fn test_try_intersection() {
         let b1 = Box2D::from_points(&[point2(-15.0, -20.0), point2(10.0, 20.0)]);
         let b2 = Box2D::from_points(&[point2(-10.0, 20.0), point2(15.0, -20.0)]);
-        assert!(b1.intersection(&b2).is_some());
+        assert!(b1.try_intersection(&b2).is_some());
 
         let b1 = Box2D::from_points(&[point2(-15.0, -20.0), point2(-10.0, 20.0)]);
         let b2 = Box2D::from_points(&[point2(10.0, 20.0), point2(15.0, -20.0)]);
-        assert!(b1.intersection(&b2).is_none());
+        assert!(b1.try_intersection(&b2).is_none());
     }
 
     #[test]
@@ -808,11 +818,11 @@ mod tests {
     }
 
     #[test]
-    fn test_nan_empty() {
+    fn test_nan_empty_or_negative() {
         use std::f32::NAN;
-        assert!(Box2D { min: point2(NAN, 2.0), max: point2(1.0, 3.0) }.is_empty());
-        assert!(Box2D { min: point2(0.0, NAN), max: point2(1.0, 2.0) }.is_empty());
-        assert!(Box2D { min: point2(1.0, -2.0), max: point2(NAN, 2.0) }.is_empty());
-        assert!(Box2D { min: point2(1.0, -2.0), max: point2(0.0, NAN) }.is_empty());
+        assert!(Box2D { min: point2(NAN, 2.0), max: point2(1.0, 3.0) }.is_empty_or_negative());
+        assert!(Box2D { min: point2(0.0, NAN), max: point2(1.0, 2.0) }.is_empty_or_negative());
+        assert!(Box2D { min: point2(1.0, -2.0), max: point2(NAN, 2.0) }.is_empty_or_negative());
+        assert!(Box2D { min: point2(1.0, -2.0), max: point2(0.0, NAN) }.is_empty_or_negative());
     }
 }

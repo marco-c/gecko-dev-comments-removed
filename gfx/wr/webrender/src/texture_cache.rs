@@ -1222,7 +1222,7 @@ impl TextureCache {
         &mut self,
         params: &CacheAllocParams,
     ) -> CacheEntry {
-        assert!(!params.descriptor.size.is_empty());
+        assert!(!params.descriptor.size.is_empty_or_negative());
 
         
         
