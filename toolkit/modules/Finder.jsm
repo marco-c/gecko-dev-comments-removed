@@ -3,7 +3,11 @@
 
 
 
-var EXPORTED_SYMBOLS = ["Finder", "GetClipboardSearchString"];
+var EXPORTED_SYMBOLS = [
+  "Finder",
+  "GetClipboardSearchString",
+  "SetClipboardSearchString",
+];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -143,14 +147,7 @@ Finder.prototype = {
   },
 
   set clipboardSearchString(aSearchString) {
-    if (!aSearchString || !Clipboard.supportsFindClipboard()) {
-      return;
-    }
-
-    ClipboardHelper.copyStringToClipboard(
-      aSearchString,
-      Ci.nsIClipboard.kFindClipboard
-    );
+    SetClipboardSearchString(aSearchString);
   },
 
   set caseSensitive(aSensitive) {
@@ -825,4 +822,15 @@ function GetClipboardSearchString(aLoadContext) {
   } catch (ex) {}
 
   return searchString;
+}
+
+function SetClipboardSearchString(aSearchString) {
+  if (!aSearchString || !Clipboard.supportsFindClipboard()) {
+    return;
+  }
+
+  ClipboardHelper.copyStringToClipboard(
+    aSearchString,
+    Ci.nsIClipboard.kFindClipboard
+  );
 }
