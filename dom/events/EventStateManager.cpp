@@ -1284,6 +1284,40 @@ bool EventStateManager::WalkESMTreeToHandleAccessKey(
   return false;
 }  
 
+static BrowserParent* GetBrowserParentAncestor(BrowserParent* aBrowserParent) {
+  MOZ_ASSERT(aBrowserParent);
+
+  BrowserBridgeParent* bbp = aBrowserParent->GetBrowserBridgeParent();
+  if (!bbp) {
+    return nullptr;
+  }
+
+  return bbp->Manager();
+}
+
+static void DispatchCrossProcessMouseExitEvents(WidgetMouseEvent* aMouseEvent,
+                                                BrowserParent* aRemoteTarget,
+                                                BrowserParent* aStopAncestor,
+                                                bool aIsReallyExit) {
+  MOZ_ASSERT(aMouseEvent);
+  MOZ_ASSERT(aRemoteTarget);
+  MOZ_ASSERT(aRemoteTarget != aStopAncestor);
+  MOZ_ASSERT_IF(aStopAncestor, nsContentUtils::GetCommonBrowserParentAncestor(
+                                   aRemoteTarget, aStopAncestor));
+
+  while (aRemoteTarget != aStopAncestor) {
+    UniquePtr<WidgetMouseEvent> mouseExitEvent =
+        CreateMouseOrPointerWidgetEvent(aMouseEvent, eMouseExitFromWidget,
+                                        aMouseEvent->mRelatedTarget);
+    mouseExitEvent->mExitFrom =
+        Some(aIsReallyExit ? WidgetMouseEvent::ePuppet
+                           : WidgetMouseEvent::ePuppetParentToPuppetChild);
+    aRemoteTarget->SendRealMouseEvent(*mouseExitEvent);
+
+    aRemoteTarget = GetBrowserParentAncestor(aRemoteTarget);
+  }
+}
+
 void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
                                                   BrowserParent* aRemoteTarget,
                                                   nsEventStatus* aStatus) {
@@ -1317,23 +1351,66 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
 
   switch (aEvent->mClass) {
     case eMouseEventClass: {
-      
-      
-      
-      
-      
-      
-      
-      
       BrowserParent* oldRemote = BrowserParent::GetLastMouseRemoteTarget();
+
+      
+      
+      
+      if (mouseEvent->mMessage == eMouseExitFromWidget) {
+        MOZ_ASSERT(mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePuppet);
+        MOZ_ASSERT(mouseEvent->mReason == WidgetMouseEvent::eReal);
+        MOZ_ASSERT(!mouseEvent->mLayersId.IsValid());
+        MOZ_ASSERT(remote->GetBrowserHost());
+
+        if (oldRemote && oldRemote != remote) {
+          MOZ_ASSERT(nsContentUtils::GetCommonBrowserParentAncestor(
+                         remote, oldRemote) == remote);
+          remote = oldRemote;
+        }
+
+        DispatchCrossProcessMouseExitEvents(mouseEvent, remote, nullptr, true);
+        return;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
       if (mouseEvent->mReason == WidgetMouseEvent::eReal &&
           remote != oldRemote) {
+        MOZ_ASSERT(mouseEvent->mMessage != eMouseExitFromWidget);
         if (oldRemote) {
-          UniquePtr<WidgetMouseEvent> mouseExitEvent =
-              CreateMouseOrPointerWidgetEvent(mouseEvent, eMouseExitFromWidget,
-                                              mouseEvent->mRelatedTarget);
-          mouseExitEvent->mExitFrom = Some(WidgetMouseEvent::eChild);
-          oldRemote->SendRealMouseEvent(*mouseExitEvent);
+          BrowserParent* commonAncestor =
+              nsContentUtils::GetCommonBrowserParentAncestor(remote, oldRemote);
+          if (commonAncestor == oldRemote) {
+            
+            DispatchCrossProcessMouseExitEvents(
+                mouseEvent, GetBrowserParentAncestor(remote),
+                GetBrowserParentAncestor(commonAncestor), false);
+          } else if (commonAncestor == remote) {
+            
+            DispatchCrossProcessMouseExitEvents(mouseEvent, oldRemote,
+                                                commonAncestor, true);
+          } else {
+            
+            
+            
+            DispatchCrossProcessMouseExitEvents(mouseEvent, oldRemote,
+                                                commonAncestor, true);
+            if (commonAncestor) {
+              UniquePtr<WidgetMouseEvent> mouseExitEvent =
+                  CreateMouseOrPointerWidgetEvent(mouseEvent,
+                                                  eMouseExitFromWidget,
+                                                  mouseEvent->mRelatedTarget);
+              mouseExitEvent->mExitFrom =
+                  Some(WidgetMouseEvent::ePuppetParentToPuppetChild);
+              commonAncestor->SendRealMouseEvent(*mouseExitEvent);
+            }
+          }
         }
 
         if (mouseEvent->mMessage != eMouseExitFromWidget &&
