@@ -306,6 +306,8 @@ extern "C" {
         opaque: GLboolean,
         flip: GLboolean,
         filter: GLenum,
+        band_offset: GLint,
+        band_height: GLsizei,
     );
     fn CompositeYUV(
         locked_dst: *mut LockedTexture,
@@ -322,6 +324,8 @@ extern "C" {
         dst_width: GLsizei,
         dst_height: GLsizei,
         flip: GLboolean,
+        band_offset: GLint,
+        band_height: GLsizei,
     );
     fn CreateContext() -> *mut c_void;
     fn ReferenceContext(ctx: *mut c_void);
@@ -2319,6 +2323,8 @@ pub enum YUVColorSpace {
 
 impl LockedResource {
     
+    
+    
     pub fn composite(
         &self,
         locked_src: &LockedResource,
@@ -2333,6 +2339,8 @@ impl LockedResource {
         opaque: bool,
         flip: bool,
         filter: GLenum,
+        band_offset: GLint,
+        band_height: GLsizei,
     ) {
         unsafe {
             Composite(
@@ -2349,6 +2357,8 @@ impl LockedResource {
                 opaque as GLboolean,
                 flip as GLboolean,
                 filter,
+                band_offset,
+                band_height,
             );
         }
     }
@@ -2369,6 +2379,8 @@ impl LockedResource {
         dst_width: GLsizei,
         dst_height: GLsizei,
         flip: bool,
+        band_offset: GLint,
+        band_height: GLsizei,
     ) {
         unsafe {
             CompositeYUV(
@@ -2386,6 +2398,8 @@ impl LockedResource {
                 dst_width,
                 dst_height,
                 flip as GLboolean,
+                band_offset,
+                band_height,
             );
         }
     }
