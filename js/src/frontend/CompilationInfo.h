@@ -192,7 +192,7 @@ struct CompilationStencil {
   
   
   Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
-  Vector<BigIntStencil> bigIntData;
+  Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
   Vector<ObjLiteralStencil> objLiteralData;
 
   
@@ -221,8 +221,7 @@ struct CompilationStencil {
   ParserAtomsTable parserAtoms;
 
   explicit CompilationStencil(JSContext* cx)
-      : bigIntData(cx),
-        objLiteralData(cx),
+      : objLiteralData(cx),
         scriptData(cx),
         scopeData(cx),
         moduleMetadata(cx),
