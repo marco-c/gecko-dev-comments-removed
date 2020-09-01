@@ -140,6 +140,15 @@ iframe {
 }
 
 
+
+browser {
+  align-self: stretch;
+  justify-self: stretch;
+  min-height: 0;
+  min-width: 0;
+}
+
+
 popupnotification {
   -moz-box-orient: vertical;
 }
