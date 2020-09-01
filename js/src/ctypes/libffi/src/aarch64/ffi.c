@@ -645,10 +645,11 @@ ffi_call_int (ffi_cif *cif, void (*fn)(void), void *orig_rvalue,
 
 
 #ifdef __APPLE__
-		memcpy(d, a, s);
-#else
-		*(ffi_arg *)d = ext;
+		if (!state.allocating_variadic)
+		  memcpy(d, a, s);
+		else
 #endif
+		  *(ffi_arg *)d = ext;
 	      }
 	  }
 	  break;
