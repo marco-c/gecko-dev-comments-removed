@@ -44,6 +44,16 @@ struct HoldDropJSObjectsHelper<T, true> {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
 template <class T>
 void HoldJSObjects(T* aHolder) {
   HoldDropJSObjectsHelper<T>::Hold(aHolder);
