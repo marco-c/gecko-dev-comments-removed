@@ -9,6 +9,7 @@
 
 #include "mozilla/DebugOnly.h"      
 #include "mozilla/HashFunctions.h"  
+#include "mozilla/Range.h"          
 #include "mozilla/Variant.h"        
 
 #include "ds/LifoAlloc.h"  
@@ -192,6 +193,10 @@ class alignas(alignof(void*)) ParserAtomEntry {
   
   
   
+  
+  
+  
+  
   mutable JSAtom* jsatom_ = nullptr;
 
  public:
@@ -248,6 +253,12 @@ class alignas(alignof(void*)) ParserAtomEntry {
   const char16_t* twoByteChars() const {
     MOZ_ASSERT(hasTwoByteChars());
     return variant_.getUnchecked<char16_t>();
+  }
+  mozilla::Range<const Latin1Char> latin1Range() const {
+    return mozilla::Range(latin1Chars(), length_);
+  }
+  mozilla::Range<const char16_t> twoByteRange() const {
+    return mozilla::Range(twoByteChars(), length_);
   }
 
   bool isIndex(uint32_t* indexp) const;
@@ -355,7 +366,8 @@ class WellKnownParserAtoms {
                            TempAllocPolicy>;
   EntrySet entrySet_;
 
-  bool initSingle(JSContext* cx, const ParserName** name, const char* str);
+  bool initSingle(JSContext* cx, const ParserName** name, const char* str,
+                  JSAtom* jsatom);
 
  public:
   explicit WellKnownParserAtoms(JSContext* cx) : entrySet_(cx) {}
