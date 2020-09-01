@@ -32,5 +32,18 @@ interface nsIPrinterList : nsISupports
   
 
 
+
+  [implicit_jscontext] Promise getNamedPrinter(in AString aPrinterName);
+
+  
+
+
+
+
+  [implicit_jscontext] Promise getNamedOrDefaultPrinter(in AString aPrinterName);
+
+  
+
+
   [implicit_jscontext] readonly attribute Promise printers;
 };

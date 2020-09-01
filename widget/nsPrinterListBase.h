@@ -18,7 +18,14 @@ class nsPrinterListBase : public nsIPrinterList {
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(nsPrinterListBase)
+  NS_IMETHOD GetSystemDefaultPrinterName(nsAString& aName) final {
+    return SystemDefaultPrinterName(aName);
+  }
   NS_IMETHOD GetPrinters(JSContext*, Promise**) final;
+  NS_IMETHOD GetNamedPrinter(const nsAString& aPrinterName, JSContext* aCx,
+                             Promise** aResult) final;
+  NS_IMETHOD GetNamedOrDefaultPrinter(const nsAString& aPrinterName,
+                                      JSContext* aCx, Promise** aResult) final;
 
   struct PrinterInfo {
     
@@ -35,6 +42,8 @@ class nsPrinterListBase : public nsIPrinterList {
   
   virtual RefPtr<nsIPrinter> CreatePrinter(PrinterInfo) const = 0;
 
+  Maybe<PrinterInfo> NamedOrDefaultPrinter(nsString aName) const;
+
   
   nsPrinterListBase(const nsPrinterListBase&) = delete;
   nsPrinterListBase(nsPrinterListBase&&) = delete;
@@ -42,6 +51,14 @@ class nsPrinterListBase : public nsIPrinterList {
  protected:
   nsPrinterListBase();
   virtual ~nsPrinterListBase();
+
+  
+  
+  
+  virtual Maybe<PrinterInfo> NamedPrinter(nsString aName) const;
+  
+  
+  virtual nsresult SystemDefaultPrinterName(nsAString&) const = 0;
 
   RefPtr<Promise> mPrintersPromise;
 };
