@@ -57,9 +57,6 @@
         );
       }
 
-      let messageManager = window.getGroupMessageManager("browsers");
-      messageManager.addMessageListener("RefreshBlocker:Blocked", this);
-
       this._setFindbarData();
 
       XPCOMUtils.defineLazyModuleGetters(this, {
@@ -5125,76 +5122,6 @@
       }
     },
 
-    receiveMessage(aMessage) {
-      let data = aMessage.data;
-      let browser = aMessage.target;
-
-      switch (aMessage.name) {
-        case "RefreshBlocker:Blocked": {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-
-          let brandBundle = document.getElementById("bundle_brand");
-          let brandShortName = brandBundle.getString("brandShortName");
-          let message = gNavigatorBundle.getFormattedString(
-            "refreshBlocked." +
-              (data.sameURI ? "refreshLabel" : "redirectLabel"),
-            [brandShortName]
-          );
-
-          let notificationBox = this.getNotificationBox(browser);
-          let notification = notificationBox.getNotificationWithValue(
-            "refresh-blocked"
-          );
-
-          if (notification) {
-            notification.label = message;
-          } else {
-            let refreshButtonText = gNavigatorBundle.getString(
-              "refreshBlocked.goButton"
-            );
-            let refreshButtonAccesskey = gNavigatorBundle.getString(
-              "refreshBlocked.goButton.accesskey"
-            );
-
-            let buttons = [
-              {
-                label: refreshButtonText,
-                accessKey: refreshButtonAccesskey,
-                callback() {
-                  if (browser.messageManager) {
-                    browser.messageManager.sendAsyncMessage(
-                      "RefreshBlocker:Refresh",
-                      data
-                    );
-                  }
-                },
-              },
-            ];
-
-            notificationBox.appendNotification(
-              message,
-              "refresh-blocked",
-              "chrome://browser/skin/notification-icons/popup.svg",
-              notificationBox.PRIORITY_INFO_MEDIUM,
-              buttons
-            );
-          }
-          break;
-        }
-      }
-      return undefined;
-    },
-
     observe(aSubject, aTopic, aData) {
       switch (aTopic) {
         case "contextual-identity-updated": {
@@ -5206,6 +5133,58 @@
           }
           break;
         }
+      }
+    },
+
+    refreshBlocked(actor, browser, data) {
+      
+      
+      
+      
+      
+      
+      
+      
+
+      let brandBundle = document.getElementById("bundle_brand");
+      let brandShortName = brandBundle.getString("brandShortName");
+      let message = gNavigatorBundle.getFormattedString(
+        "refreshBlocked." + (data.sameURI ? "refreshLabel" : "redirectLabel"),
+        [brandShortName]
+      );
+
+      let notificationBox = this.getNotificationBox(browser);
+      let notification = notificationBox.getNotificationWithValue(
+        "refresh-blocked"
+      );
+
+      if (notification) {
+        notification.label = message;
+      } else {
+        let refreshButtonText = gNavigatorBundle.getString(
+          "refreshBlocked.goButton"
+        );
+        let refreshButtonAccesskey = gNavigatorBundle.getString(
+          "refreshBlocked.goButton.accesskey"
+        );
+
+        let buttons = [
+          {
+            label: refreshButtonText,
+            accessKey: refreshButtonAccesskey,
+            callback() {
+              actor.sendAsyncMessage("RefreshBlocker:Refresh", data);
+            },
+          },
+        ];
+
+        notificationBox.appendNotification(
+          message,
+          "refresh-blocked",
+          "chrome://browser/skin/notification-icons/popup.svg",
+          notificationBox.PRIORITY_INFO_MEDIUM,
+          buttons
+        );
       }
     },
 
