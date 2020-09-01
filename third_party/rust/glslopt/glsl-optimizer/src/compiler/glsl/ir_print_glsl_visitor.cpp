@@ -1462,7 +1462,7 @@ void print_float (string_buffer& buffer, float f)
 		strcpy(tmp, "(-1.0/0.0)");
 	
 	
-	if (isnan(f))
+	if (f != f)
 		strcpy(tmp, "(0.0/0.0)");
 
 	#if _MSC_VER

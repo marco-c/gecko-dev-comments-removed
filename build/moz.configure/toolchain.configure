@@ -539,18 +539,7 @@ def check_compiler(compiler, language, target):
     
     has_target = False
     if info.type == 'clang':
-        
-        
-        
-        
-        
-        
-        if target.os == 'OSX' and target.cpu == 'aarch64':
-            if '--target=arm64-apple-darwin' not in compiler:
-                flags.append('--target=arm64-apple-darwin')
-            has_target = True
-
-        elif not info.kernel or info.kernel != target.kernel or \
+        if not info.kernel or info.kernel != target.kernel or \
                 not info.endianness or info.endianness != target.endianness:
             flags.append('--target=%s' % target.toolchain)
             has_target = True
