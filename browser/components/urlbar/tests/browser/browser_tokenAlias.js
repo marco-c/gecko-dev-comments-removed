@@ -297,9 +297,11 @@ add_task(async function clickAndFillAlias() {
   }
 
   
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   EventUtils.synthesizeMouseAtCenter(testEngineItem, {});
+  await searchPromise;
 
-  UrlbarTestUtils.assertSearchMode(window, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: testEngineItem.result.payload.engine,
   });
 
@@ -389,9 +391,11 @@ add_task(async function enterAndFillAlias() {
 
   
   EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index });
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   EventUtils.synthesizeKey("KEY_Enter");
+  await searchPromise;
 
-  UrlbarTestUtils.assertSearchMode(window, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: details.searchParams.engine,
   });
 
@@ -456,9 +460,11 @@ add_task(async function enterAutofillsAlias() {
     );
 
     
+    let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
     EventUtils.synthesizeKey("KEY_Enter");
+    await searchPromise;
 
-    UrlbarTestUtils.assertSearchMode(window, {
+    await UrlbarTestUtils.assertSearchMode(window, {
       engineName: testEngineItem.result.payload.engine,
     });
 

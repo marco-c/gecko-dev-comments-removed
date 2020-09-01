@@ -46,20 +46,20 @@ add_task(async function switchTabs() {
 
   
   await BrowserTestUtils.switchTab(gBrowser, tabs[1]);
-  UrlbarTestUtils.assertSearchMode(window, null);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   
   
   let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
-  UrlbarTestUtils.assertSearchMode(window, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
   });
 
   
   await BrowserTestUtils.switchTab(gBrowser, tabs[2]);
-  UrlbarTestUtils.assertSearchMode(window, null);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   
   
@@ -76,19 +76,19 @@ add_task(async function switchTabs() {
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
-  UrlbarTestUtils.assertSearchMode(window, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
   });
 
   
   await BrowserTestUtils.switchTab(gBrowser, tabs[1]);
-  UrlbarTestUtils.assertSearchMode(window, null);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   await BrowserTestUtils.switchTab(gBrowser, tabs[2]);
   await searchPromise;
-  UrlbarTestUtils.assertSearchMode(window, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.TABS,
   });
 
@@ -99,7 +99,7 @@ add_task(async function switchTabs() {
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
-  UrlbarTestUtils.assertSearchMode(window, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
   });
 
@@ -108,13 +108,13 @@ add_task(async function switchTabs() {
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   await BrowserTestUtils.switchTab(gBrowser, tabs[2]);
   await searchPromise;
-  UrlbarTestUtils.assertSearchMode(window, null);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
-  UrlbarTestUtils.assertSearchMode(window, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
   });
 
@@ -126,14 +126,14 @@ add_task(async function switchTabs() {
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   await BrowserTestUtils.switchTab(gBrowser, tabs[2]);
   await searchPromise;
-  UrlbarTestUtils.assertSearchMode(window, null);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   
   
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
-  UrlbarTestUtils.assertSearchMode(window, null);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   await UrlbarTestUtils.promisePopupClose(window);
   for (let tab of tabs) {

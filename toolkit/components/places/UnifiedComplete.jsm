@@ -492,7 +492,7 @@ function Search(
     this._maxResults = queryContext.maxResults;
     this._userContextId = queryContext.userContextId;
     this._currentPage = queryContext.currentPage;
-    this._engineName = queryContext.searchMode?.engineName;
+    this._searchModeEngine = queryContext.searchMode?.engineName;
   } else {
     let params = new Set(searchParam.split(" "));
     this._enableActions = params.has("enable-actions");
@@ -789,8 +789,8 @@ Search.prototype = {
 
     
     
-    if (this._engineName && !this._keywordSubstitute) {
-      let engine = Services.search.getEngineByName(this._engineName);
+    if (this._searchModeEngine && !this._keywordSubstitute) {
+      let engine = Services.search.getEngineByName(this._searchModeEngine);
       this._keywordSubstitute = {
         host: engine.getResultDomain(),
         keyword: null,
@@ -1587,6 +1587,10 @@ Search.prototype = {
   
   
   _addAdaptiveQueryMatch(row) {
+    
+    if (this._searchModeEngine) {
+      return;
+    }
     
     
     
