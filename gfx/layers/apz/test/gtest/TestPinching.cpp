@@ -21,7 +21,7 @@ class APZCPinchTester : public APZCBasicTester {
     FrameMetrics fm;
     fm.SetCompositionBounds(ParentLayerRect(0, 0, 100, 200));
     fm.SetScrollableRect(CSSRect(0, 0, 980, 1000));
-    fm.SetScrollOffset(CSSPoint(300, 300));
+    fm.SetVisualScrollOffset(CSSPoint(300, 300));
     fm.SetLayoutViewport(CSSRect(300, 300, 100, 200));
     fm.SetZoom(CSSToParentLayerScale2D(2.0, 2.0));
     
@@ -60,20 +60,20 @@ class APZCPinchTester : public APZCBasicTester {
       
       
       EXPECT_EQ(2.5f, fm.GetZoom().ToScaleFactor().scale);
-      EXPECT_EQ(325, fm.GetScrollOffset().x);
-      EXPECT_EQ(330, fm.GetScrollOffset().y);
+      EXPECT_EQ(325, fm.GetVisualScrollOffset().x);
+      EXPECT_EQ(330, fm.GetVisualScrollOffset().y);
     } else {
       
       
       EXPECT_EQ(2.0f, fm.GetZoom().ToScaleFactor().scale);
-      EXPECT_EQ(300, fm.GetScrollOffset().x);
-      EXPECT_EQ(300, fm.GetScrollOffset().y);
+      EXPECT_EQ(300, fm.GetVisualScrollOffset().x);
+      EXPECT_EQ(300, fm.GetVisualScrollOffset().y);
     }
 
     
     
     fm.SetZoom(CSSToParentLayerScale2D(2.0, 2.0));
-    fm.SetScrollOffset(CSSPoint(930, 5));
+    fm.SetVisualScrollOffset(CSSPoint(930, 5));
     apzc->SetFrameMetrics(fm);
     
 
@@ -94,12 +94,12 @@ class APZCPinchTester : public APZCBasicTester {
       
       
       EXPECT_EQ(1.0f, fm.GetZoom().ToScaleFactor().scale);
-      EXPECT_EQ(805, fm.GetScrollOffset().x);
-      EXPECT_EQ(0, fm.GetScrollOffset().y);
+      EXPECT_EQ(805, fm.GetVisualScrollOffset().x);
+      EXPECT_EQ(0, fm.GetVisualScrollOffset().y);
     } else {
       EXPECT_EQ(2.0f, fm.GetZoom().ToScaleFactor().scale);
-      EXPECT_EQ(930, fm.GetScrollOffset().x);
-      EXPECT_EQ(5, fm.GetScrollOffset().y);
+      EXPECT_EQ(930, fm.GetVisualScrollOffset().x);
+      EXPECT_EQ(5, fm.GetVisualScrollOffset().y);
     }
   }
 };
@@ -127,8 +127,10 @@ class APZCPinchGestureDetectorTester : public APZCPinchTester {
     
     FrameMetrics fm = apzc->GetFrameMetrics();
     EXPECT_EQ(originalMetrics.GetZoom(), fm.GetZoom());
-    EXPECT_EQ(originalMetrics.GetScrollOffset().x, fm.GetScrollOffset().x);
-    EXPECT_EQ(originalMetrics.GetScrollOffset().y, fm.GetScrollOffset().y);
+    EXPECT_EQ(originalMetrics.GetVisualScrollOffset().x,
+              fm.GetVisualScrollOffset().x);
+    EXPECT_EQ(originalMetrics.GetVisualScrollOffset().y,
+              fm.GetVisualScrollOffset().y);
 
     apzc->AssertStateIsReset();
   }
@@ -202,10 +204,11 @@ class APZCPinchLockingTester : public APZCPinchTester {
         nullptr);
 
     FrameMetrics result = apzc->GetFrameMetrics();
-    bool lockActive =
-        originalMetrics.GetZoom() == result.GetZoom() &&
-        originalMetrics.GetScrollOffset().x == result.GetScrollOffset().x &&
-        originalMetrics.GetScrollOffset().y == result.GetScrollOffset().y;
+    bool lockActive = originalMetrics.GetZoom() == result.GetZoom() &&
+                      originalMetrics.GetVisualScrollOffset().x ==
+                          result.GetVisualScrollOffset().x &&
+                      originalMetrics.GetVisualScrollOffset().y ==
+                          result.GetVisualScrollOffset().y;
 
     
     apzc->SetFrameMetrics(originalMetrics);
@@ -348,8 +351,8 @@ TEST_F(APZCPinchTester, Panning_TwoFinger_ZoomDisabled) {
   
   
   
-  EXPECT_EQ(325, fm.GetScrollOffset().x);
-  EXPECT_EQ(325, fm.GetScrollOffset().y);
+  EXPECT_EQ(325, fm.GetVisualScrollOffset().x);
+  EXPECT_EQ(325, fm.GetVisualScrollOffset().y);
   EXPECT_EQ(2.0, fm.GetZoom().ToScaleFactor().scale);
 }
 
@@ -363,8 +366,8 @@ TEST_F(APZCPinchTester, Panning_Beyond_LayoutViewport) {
   
   
   
-  EXPECT_EQ(300, fm.GetScrollOffset().x);
-  EXPECT_EQ(325, fm.GetScrollOffset().y);
+  EXPECT_EQ(300, fm.GetVisualScrollOffset().x);
+  EXPECT_EQ(325, fm.GetVisualScrollOffset().y);
   EXPECT_EQ(300, fm.GetLayoutViewport().X());
   EXPECT_EQ(300, fm.GetLayoutViewport().Y());
 
@@ -376,8 +379,8 @@ TEST_F(APZCPinchTester, Panning_Beyond_LayoutViewport) {
   
   
   
-  EXPECT_EQ(300, fm.GetScrollOffset().x);
-  EXPECT_EQ(425, fm.GetScrollOffset().y);
+  EXPECT_EQ(300, fm.GetVisualScrollOffset().x);
+  EXPECT_EQ(425, fm.GetVisualScrollOffset().y);
   EXPECT_EQ(300, fm.GetLayoutViewport().X());
   EXPECT_EQ(325, fm.GetLayoutViewport().Y());
 
@@ -388,8 +391,8 @@ TEST_F(APZCPinchTester, Panning_Beyond_LayoutViewport) {
   
   
   
-  EXPECT_EQ(300, fm.GetScrollOffset().x);
-  EXPECT_EQ(250, fm.GetScrollOffset().y);
+  EXPECT_EQ(300, fm.GetVisualScrollOffset().x);
+  EXPECT_EQ(250, fm.GetVisualScrollOffset().y);
   EXPECT_EQ(300, fm.GetLayoutViewport().X());
   EXPECT_EQ(250, fm.GetLayoutViewport().Y());
 
@@ -401,8 +404,8 @@ TEST_F(APZCPinchTester, Panning_Beyond_LayoutViewport) {
   
   
   
-  EXPECT_EQ(200, fm.GetScrollOffset().x);
-  EXPECT_EQ(250, fm.GetScrollOffset().y);
+  EXPECT_EQ(200, fm.GetVisualScrollOffset().x);
+  EXPECT_EQ(250, fm.GetVisualScrollOffset().y);
   EXPECT_EQ(200, fm.GetLayoutViewport().X());
   EXPECT_EQ(250, fm.GetLayoutViewport().Y());
 
@@ -414,8 +417,8 @@ TEST_F(APZCPinchTester, Panning_Beyond_LayoutViewport) {
   
   
   
-  EXPECT_EQ(300, fm.GetScrollOffset().x);
-  EXPECT_EQ(250, fm.GetScrollOffset().y);
+  EXPECT_EQ(300, fm.GetVisualScrollOffset().x);
+  EXPECT_EQ(250, fm.GetVisualScrollOffset().y);
   EXPECT_EQ(250, fm.GetLayoutViewport().X());
   EXPECT_EQ(250, fm.GetLayoutViewport().Y());
 
@@ -429,8 +432,8 @@ TEST_F(APZCPinchTester, Panning_Beyond_LayoutViewport) {
   
   
   
-  EXPECT_EQ(400, fm.GetScrollOffset().x);
-  EXPECT_EQ(150, fm.GetScrollOffset().y);
+  EXPECT_EQ(400, fm.GetVisualScrollOffset().x);
+  EXPECT_EQ(150, fm.GetVisualScrollOffset().y);
   EXPECT_EQ(350, fm.GetLayoutViewport().X());
   EXPECT_EQ(150, fm.GetLayoutViewport().Y());
 }
@@ -467,8 +470,10 @@ TEST_F(APZCPinchGestureDetectorTester, Pinch_APZZoom_Disabled) {
   
   FrameMetrics fm = apzc->GetFrameMetrics();
   EXPECT_EQ(originalMetrics.GetZoom(), fm.GetZoom());
-  EXPECT_EQ(originalMetrics.GetScrollOffset().x, fm.GetScrollOffset().x);
-  EXPECT_EQ(originalMetrics.GetScrollOffset().y, fm.GetScrollOffset().y);
+  EXPECT_EQ(originalMetrics.GetVisualScrollOffset().x,
+            fm.GetVisualScrollOffset().x);
+  EXPECT_EQ(originalMetrics.GetVisualScrollOffset().y,
+            fm.GetVisualScrollOffset().y);
 
   apzc->AssertStateIsReset();
 }
@@ -541,8 +546,10 @@ TEST_F(APZCPinchGestureDetectorTester, Pinch_NoSpan) {
 
   FrameMetrics fm = apzc->GetFrameMetrics();
   EXPECT_EQ(originalMetrics.GetZoom(), fm.GetZoom());
-  EXPECT_EQ(originalMetrics.GetScrollOffset().x, fm.GetScrollOffset().x);
-  EXPECT_EQ(originalMetrics.GetScrollOffset().y + 50, fm.GetScrollOffset().y);
+  EXPECT_EQ(originalMetrics.GetVisualScrollOffset().x,
+            fm.GetVisualScrollOffset().x);
+  EXPECT_EQ(originalMetrics.GetVisualScrollOffset().y + 50,
+            fm.GetVisualScrollOffset().y);
 
   apzc->AssertStateIsReset();
 }

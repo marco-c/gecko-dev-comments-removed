@@ -105,8 +105,8 @@ static AsyncTransform ComputeViewTransform(
   
   
 
-  ParentLayerPoint translation = (aCompositorMetrics.GetScrollOffset() -
-                                  aContentMetrics.GetScrollOffset()) *
+  ParentLayerPoint translation = (aCompositorMetrics.GetVisualScrollOffset() -
+                                  aContentMetrics.GetLayoutScrollOffset()) *
                                  aCompositorMetrics.GetZoom();
   return AsyncTransform(aCompositorMetrics.GetAsyncZoom(), -translation);
 }
@@ -166,10 +166,15 @@ bool SharedFrameMetricsHelper::UpdateFromCompositorFrameMetrics(
   
   
   
-  if (fabsf(contentMetrics.GetScrollOffset().x -
-            compositorMetrics.GetScrollOffset().x) <= 2 &&
-      fabsf(contentMetrics.GetScrollOffset().y -
-            compositorMetrics.GetScrollOffset().y) <= 2 &&
+  
+  
+  
+  
+  
+  if (fabsf(contentMetrics.GetLayoutScrollOffset().x -
+            compositorMetrics.GetVisualScrollOffset().x) <= 2 &&
+      fabsf(contentMetrics.GetLayoutScrollOffset().y -
+            compositorMetrics.GetVisualScrollOffset().y) <= 2 &&
       fabsf(contentMetrics.GetDisplayPort().X() -
             compositorMetrics.GetDisplayPort().X()) <= 2 &&
       fabsf(contentMetrics.GetDisplayPort().Y() -
@@ -223,13 +228,13 @@ bool SharedFrameMetricsHelper::AboutToCheckerboard(
   CSSRect painted = (aContentMetrics.GetCriticalDisplayPort().IsEmpty()
                          ? aContentMetrics.GetDisplayPort()
                          : aContentMetrics.GetCriticalDisplayPort()) +
-                    aContentMetrics.GetScrollOffset();
+                    aContentMetrics.GetLayoutScrollOffset();
   painted.Inflate(CSSMargin::FromAppUnits(nsMargin(1, 1, 1, 1)));
 
   
   
   CSSRect showing =
-      CSSRect(aCompositorMetrics.GetScrollOffset(),
+      CSSRect(aCompositorMetrics.GetVisualScrollOffset(),
               aCompositorMetrics.CalculateBoundedCompositedSizeInCssPixels());
   showing.Inflate(LayerSize(StaticPrefs::apz_danger_zone_x(),
                             StaticPrefs::apz_danger_zone_y()) /

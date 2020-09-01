@@ -1114,10 +1114,13 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
 #if defined(MOZ_WIDGET_ANDROID)
 bool AsyncCompositionManager::FrameMetricsHaveUpdated(
     const FrameMetrics& aMetrics) {
+  
+  
+  
+  
   return RoundedToInt(mLastMetrics.GetScrollOffset()) !=
              RoundedToInt(aMetrics.GetScrollOffset()) ||
          mLastMetrics.GetZoom() != aMetrics.GetZoom();
-  ;
 }
 #endif
 

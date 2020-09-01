@@ -209,8 +209,8 @@ TEST_F(APZScrollHandoffTester, DeferredInputEventProcessing) {
   childApzc->ConfirmTarget(blockId);
 
   
-  EXPECT_EQ(50, childApzc->GetFrameMetrics().GetScrollOffset().y);
-  EXPECT_EQ(10, rootApzc->GetFrameMetrics().GetScrollOffset().y);
+  EXPECT_EQ(50, childApzc->GetFrameMetrics().GetVisualScrollOffset().y);
+  EXPECT_EQ(10, rootApzc->GetFrameMetrics().GetVisualScrollOffset().y);
 }
 #endif
 
@@ -253,9 +253,9 @@ TEST_F(APZScrollHandoffTester, LayerStructureChangesWhileEventsArePending) {
 
   
   
-  EXPECT_EQ(50, childApzc->GetFrameMetrics().GetScrollOffset().y);
-  EXPECT_EQ(10, rootApzc->GetFrameMetrics().GetScrollOffset().y);
-  EXPECT_EQ(0, middleApzc->GetFrameMetrics().GetScrollOffset().y);
+  EXPECT_EQ(50, childApzc->GetFrameMetrics().GetVisualScrollOffset().y);
+  EXPECT_EQ(10, rootApzc->GetFrameMetrics().GetVisualScrollOffset().y);
+  EXPECT_EQ(0, middleApzc->GetFrameMetrics().GetVisualScrollOffset().y);
 
   
   childApzc->ContentReceivedInputBlock(secondBlockId, false);
@@ -263,9 +263,9 @@ TEST_F(APZScrollHandoffTester, LayerStructureChangesWhileEventsArePending) {
 
   
   
-  EXPECT_EQ(0, childApzc->GetFrameMetrics().GetScrollOffset().y);
-  EXPECT_EQ(10, rootApzc->GetFrameMetrics().GetScrollOffset().y);
-  EXPECT_EQ(-10, middleApzc->GetFrameMetrics().GetScrollOffset().y);
+  EXPECT_EQ(0, childApzc->GetFrameMetrics().GetVisualScrollOffset().y);
+  EXPECT_EQ(10, rootApzc->GetFrameMetrics().GetVisualScrollOffset().y);
+  EXPECT_EQ(-10, middleApzc->GetFrameMetrics().GetVisualScrollOffset().y);
 }
 #endif
 
@@ -544,8 +544,8 @@ TEST_F(APZScrollHandoffTester, Scrollgrab) {
   Pan(childApzc, 80, 45);
 
   
-  EXPECT_EQ(20, rootApzc->GetFrameMetrics().GetScrollOffset().y);
-  EXPECT_EQ(15, childApzc->GetFrameMetrics().GetScrollOffset().y);
+  EXPECT_EQ(20, rootApzc->GetFrameMetrics().GetVisualScrollOffset().y);
+  EXPECT_EQ(15, childApzc->GetFrameMetrics().GetVisualScrollOffset().y);
 }
 #endif
 
@@ -602,15 +602,15 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Pan) {
   Pan(childApzc, 60, 5);
 
   
-  EXPECT_EQ(50, childApzc->GetFrameMetrics().GetScrollOffset().y);
-  EXPECT_EQ(0, parentApzc->GetFrameMetrics().GetScrollOffset().y);
+  EXPECT_EQ(50, childApzc->GetFrameMetrics().GetVisualScrollOffset().y);
+  EXPECT_EQ(0, parentApzc->GetFrameMetrics().GetVisualScrollOffset().y);
 
   
   
   Pan(childApzc, 60, 50);
 
   
-  EXPECT_EQ(10, parentApzc->GetFrameMetrics().GetScrollOffset().y);
+  EXPECT_EQ(10, parentApzc->GetFrameMetrics().GetVisualScrollOffset().y);
 }
 
 #ifndef MOZ_WIDGET_ANDROID  
@@ -635,9 +635,9 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Fling) {
   
   
   
-  ASSERT_NEAR(50, childApzc->GetFrameMetrics().GetScrollOffset().y,
+  ASSERT_NEAR(50, childApzc->GetFrameMetrics().GetVisualScrollOffset().y,
               COORDINATE_EPSILON);
-  EXPECT_EQ(0, parentApzc->GetFrameMetrics().GetScrollOffset().y);
+  EXPECT_EQ(0, parentApzc->GetFrameMetrics().GetVisualScrollOffset().y);
 
   
   
@@ -648,7 +648,7 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Fling) {
   parentApzc->AdvanceAnimationsUntilEnd();
 
   
-  EXPECT_GT(parentApzc->GetFrameMetrics().GetScrollOffset().y, 10);
+  EXPECT_GT(parentApzc->GetFrameMetrics().GetVisualScrollOffset().y, 10);
 }
 #endif
 

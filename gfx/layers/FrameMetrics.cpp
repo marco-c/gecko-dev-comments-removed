@@ -21,7 +21,7 @@ void FrameMetrics::RecalculateLayoutViewportOffset() {
   
   
   if (!mIsRootContent) {
-    mLayoutViewport.MoveTo(mScrollOffset);
+    mLayoutViewport.MoveTo(GetVisualScrollOffset());
     return;
   }
   

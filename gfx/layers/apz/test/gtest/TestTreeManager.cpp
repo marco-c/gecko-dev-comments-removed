@@ -241,7 +241,7 @@ TEST_F(APZCTreeManagerTester, Bug1551582) {
 
   
   ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
-    aMetrics.SetScrollOffset(CSSPoint(300, 300));
+    aMetrics.SetLayoutScrollOffset(CSSPoint(300, 300));
     aMetrics.SetScrollGeneration(1);
     aMetrics.SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
   });
@@ -273,7 +273,7 @@ TEST_F(APZCTreeManagerTester, Bug1557424) {
 
   
   ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
-    aMetrics.SetScrollOffset(CSSPoint(300, 300));
+    aMetrics.SetLayoutScrollOffset(CSSPoint(300, 300));
     aMetrics.SetScrollGeneration(1);
     aMetrics.SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
   });

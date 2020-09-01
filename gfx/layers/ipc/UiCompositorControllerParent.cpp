@@ -213,6 +213,10 @@ void UiCompositorControllerParent::NotifyFirstPaint() {
 
 void UiCompositorControllerParent::NotifyUpdateScreenMetrics(
     const FrameMetrics& aMetrics) {
+  
+  
+  
+  
 #if defined(MOZ_WIDGET_ANDROID)
   CSSToScreenScale scale = ViewTargetAs<ScreenPixel>(
       aMetrics.GetZoom().ToScaleFactor(),
