@@ -3,8 +3,18 @@
 
 
 
+
 #include "SandboxTestingChild.h"
 #include "SandboxTestingThread.h"
+
+#include "nsXULAppAPI.h"
+
+#ifdef XP_UNIX
+#  include <fcntl.h>
+#  include <sys/stat.h>
+#  include <sys/types.h>
+#  include <unistd.h>
+#endif
 
 namespace mozilla {
 
@@ -50,11 +60,28 @@ void SandboxTestingChild::Bind(Endpoint<PSandboxTestingChild>&& aEndpoint) {
   DebugOnly<bool> ok = aEndpoint.Bind(this);
   MOZ_ASSERT(ok);
 
-  
-  
-  SendReportTestResults(nsCString("testId1"), true ,
-                        true ,
-                        nsCString("These are some test results!"));
+  if (XRE_IsContentProcess()) {
+#ifdef XP_UNIX
+    struct stat st;
+    static const char kAllowedPath[] = "/usr/lib";
+
+    ErrnoTest("fstatat_as_stat"_ns, true,
+              [&] { return fstatat(AT_FDCWD, kAllowedPath, &st, 0); });
+    ErrnoTest("fstatat_as_lstat"_ns, true, [&] {
+      return fstatat(AT_FDCWD, kAllowedPath, &st, AT_SYMLINK_NOFOLLOW);
+    });
+#  ifdef XP_LINUX
+    ErrnoTest("fstatat_as_fstat"_ns, true,
+              [&] { return fstatat(0, "", &st, AT_EMPTY_PATH); });
+#  endif  
+#else     
+    SendReportTestResults("dummy_test"_ns,
+                           true,
+                           true,
+                          "The test framework fails if there are no cases."_ns);
+#endif    
+  }
+
   
   SendTestCompleted();
 }
@@ -76,5 +103,27 @@ bool SandboxTestingChild::RecvShutDown() {
   Close();
   return true;
 }
+
+#ifdef XP_UNIX
+template <typename F>
+void SandboxTestingChild::ErrnoTest(const nsCString& aName, bool aExpectSuccess,
+                                    F&& aFunction) {
+  int status = aFunction() >= 0 ? 0 : errno;
+  PosixTest(aName, aExpectSuccess, status);
+}
+
+void SandboxTestingChild::PosixTest(const nsCString& aName, bool aExpectSuccess,
+                                    int aStatus) {
+  bool succeeded = aStatus == 0;
+  nsAutoCString message;
+  if (succeeded) {
+    message = "Succeeded"_ns;
+  } else {
+    message.AppendPrintf("Error: %s", strerror(aStatus));
+  }
+
+  SendReportTestResults(aName, aExpectSuccess, succeeded, message);
+}
+#endif  
 
 }  
