@@ -358,6 +358,13 @@ pref("print.use_simplify_page", false);
 #endif
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("pdfjs.renderInteractiveForms", true);
+#else
+  pref("pdfjs.renderInteractiveForms", false);
+#endif
+
+
 pref("mathml.disabled",    false);
 
 
