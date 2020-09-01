@@ -517,6 +517,66 @@ class MOZ_MUST_USE_TYPE Result final {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename F>
+  auto orElse(F f) -> Result<V, typename std::result_of_t<F(E)>::err_type> {
+    return MOZ_UNLIKELY(isErr()) ? f(unwrapErr()) : unwrap();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   template <typename F, typename = std::enable_if_t<detail::IsResult<
                             decltype((*((F*)nullptr))(*((V*)nullptr)))>::value>>
   auto andThen(F f) -> decltype(f(*((V*)nullptr))) {
