@@ -26,6 +26,8 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContextBinding.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentFrameMessageManager.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/EventTarget.h"
@@ -5119,14 +5121,22 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType) {
   
   
   
-  nsCOMPtr<nsIDocShellTreeItem> parentDsti;
-  mDocShell->GetInProcessParent(getter_AddRefs(parentDsti));
-
-  
-  nsCOMPtr<nsPIDOMWindowOuter> parent =
-      parentDsti ? parentDsti->GetWindow() : nullptr;
+  RefPtr<BrowsingContext> parent;
+  BrowsingContext* bc = GetBrowsingContext();
+  if (bc) {
+    parent = bc->GetParent();
+    if (!parent && XRE_IsParentProcess()) {
+      parent = bc->Canonical()->GetParentCrossChromeBoundary();
+    }
+  }
   if (parent) {
-    nsCOMPtr<Document> parentdoc = parent->GetDoc();
+    if (!parent->IsInProcess()) {
+      ContentChild* contentChild = ContentChild::GetSingleton();
+      MOZ_ASSERT(contentChild);
+      contentChild->SendFinalizeFocusOuter(bc, canFocus, aCallerType);
+      return;
+    }
+    nsCOMPtr<Document> parentdoc = parent->GetDocument();
     if (!parentdoc) {
       return;
     }
