@@ -6508,15 +6508,6 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
     mCurrentLoadPlayTime.Pause();
     ReportTelemetry();
 
-    
-    
-    
-    
-    
-    if (mMediaKeys) {
-      nsAutoString keySystem;
-      mMediaKeys->GetKeySystem(keySystem);
-    }
     if (mDecoder) {
       mDecoder->Pause();
       mDecoder->Suspend();
