@@ -22,6 +22,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "prenv.h"
+#include "GeckoProfiler.h"
 
 namespace base {
 
@@ -168,8 +169,16 @@ bool SharedMemory::CreateInternal(size_t size, bool freezeable) {
     
     
     
-    int rv =
-        HANDLE_RV_EINTR(posix_fallocate(fd.get(), 0, static_cast<off_t>(size)));
+    int rv;
+    {
+      
+      
+      
+      
+      AUTO_PROFILER_THREAD_SLEEP;
+      rv = HANDLE_RV_EINTR(
+          posix_fallocate(fd.get(), 0, static_cast<off_t>(size)));
+    }
     if (rv != 0) {
       if (rv == EOPNOTSUPP || rv == EINVAL || rv == ENODEV) {
         
