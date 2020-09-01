@@ -433,50 +433,16 @@ inline Result<Ok, NotOk> OkIf(bool aValue) {
 }
 
 
+template <auto SuccessValue>
+auto OkToOk(Ok) -> Result<decltype(SuccessValue), nsresult> {
+  return SuccessValue;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Okish {
-  const bool mEnforced;
-
- public:
-  explicit Okish(bool aEnforced) : mEnforced(aEnforced) {}
-
-  MOZ_IMPLICIT operator bool() const { return mEnforced; }
-};
-
-template <typename SuccessEnforcer>
-Result<Okish, nsresult> ToResult(nsresult aValue,
-                                 const SuccessEnforcer& aSuccessEnforcer) {
-  if (NS_SUCCEEDED(aValue)) {
-    return Okish( false);
-  }
-  if (aSuccessEnforcer(aValue)) {
-    return Okish( true);
+template <nsresult ErrorValue, auto SuccessValue,
+          typename V = decltype(SuccessValue)>
+auto ErrToOkOrErr(nsresult aValue) -> Result<V, nsresult> {
+  if (aValue == ErrorValue) {
+    return V{SuccessValue};
   }
   return Err(aValue);
 }

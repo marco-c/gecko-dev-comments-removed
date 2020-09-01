@@ -2400,20 +2400,14 @@ int64_t GetLastModifiedTime(nsIFile* aFile, bool aPersistent) {
   return timestamp;
 }
 
-bool FileAlreadyExists(nsresult aValue) {
-  return aValue == NS_ERROR_FILE_ALREADY_EXISTS;
-}
-
-bool FileCorrupted(nsresult aValue) {
-  return aValue == NS_ERROR_FILE_CORRUPTED;
-}
-
 nsresult EnsureDirectory(nsIFile* aDirectory, bool* aCreated) {
   AssertIsOnIOThread();
 
-  QM_TRY_VAR(const bool exists,
-             ToResult(aDirectory->Create(nsIFile::DIRECTORY_TYPE, 0755),
-                      FileAlreadyExists));
+  
+  QM_TRY_VAR(const auto exists,
+             ToResult(aDirectory->Create(nsIFile::DIRECTORY_TYPE, 0755))
+                 .andThen(OkToOk<false>)
+                 .orElse(ErrToOkOrErr<NS_ERROR_FILE_ALREADY_EXISTS, true>));
 
   if (exists) {
     bool isDirectory;
@@ -6442,17 +6436,14 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
     }
   }
 
-  nsCOMPtr<mozIStorageConnection> connection;
+  QM_TRY_VAR(auto connection,
+             ToResultInvoke<nsCOMPtr<mozIStorageConnection>>(
+                 std::mem_fn(&mozIStorageService::OpenUnsharedDatabase), ss,
+                 storageFile)
+                 .orElse(ErrToOkOrErr<NS_ERROR_FILE_CORRUPTED, nullptr,
+                                      nsCOMPtr<mozIStorageConnection>>));
 
-  
-  
-  
-  QM_TRY_VAR(const auto corrupted,
-             ToResult(ss->OpenUnsharedDatabase(storageFile,
-                                               getter_AddRefs(connection)),
-                      FileCorrupted));
-
-  if (corrupted) {
+  if (!connection) {
     
     QM_TRY(storageFile->Remove(false));
 
