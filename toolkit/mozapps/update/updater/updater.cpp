@@ -1979,8 +1979,6 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
 
   WCHAR exefile[MAX_PATH + 1];
   WCHAR exearg[MAX_PATH + 1];
-  WCHAR exeasync[10];
-  bool async = true;
   if (!GetPrivateProfileStringW(L"PostUpdateWin", L"ExeRelPath", nullptr,
                                 exefile, MAX_PATH + 1, inifile)) {
     return false;
@@ -1988,12 +1986,6 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
 
   if (!GetPrivateProfileStringW(L"PostUpdateWin", L"ExeArg", nullptr, exearg,
                                 MAX_PATH + 1, inifile)) {
-    return false;
-  }
-
-  if (!GetPrivateProfileStringW(
-          L"PostUpdateWin", L"ExeAsync", L"TRUE", exeasync,
-          sizeof(exeasync) / sizeof(exeasync[0]), inifile)) {
     return false;
   }
 
@@ -2057,11 +2049,6 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
   wcsncpy(cmdline, dummyArg, len);
   wcscat(cmdline, exearg);
 
-  if (sUsingService || !_wcsnicmp(exeasync, L"false", 6) ||
-      !_wcsnicmp(exeasync, L"0", 2)) {
-    async = false;
-  }
-
   
   
   
@@ -2080,9 +2067,7 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
                            workingDirectory, &si, &pi);
   free(cmdline);
   if (ok) {
-    if (!async) {
-      WaitForSingleObject(pi.hProcess, INFINITE);
-    }
+    WaitForSingleObject(pi.hProcess, INFINITE);
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
   }
@@ -3318,26 +3303,6 @@ int NS_main(int argc, NS_tchar** argv) {
         return 0;
       }
 
-#  ifdef MOZ_MAINTENANCE_SERVICE
-      
-      
-      
-      
-      
-      
-      if (useService && !sStagedUpdate) {
-        bool updateStatusSucceeded = false;
-        if (IsSecureUpdateStatusSucceeded(updateStatusSucceeded) &&
-            updateStatusSucceeded) {
-          if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
-            fprintf(stderr,
-                    "The post update process which runs as the user"
-                    " for service update could not be launched.");
-          }
-        }
-      }
-#  endif
-
       
       
       
@@ -3397,6 +3362,19 @@ int NS_main(int argc, NS_tchar** argv) {
       
       
       
+      
+      
+      if (!sStagedUpdate) {
+        bool updateStatusSucceeded = false;
+        if (IsSecureUpdateStatusSucceeded(updateStatusSucceeded) &&
+            updateStatusSucceeded) {
+          if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
+            fprintf(stderr,
+                    "The post update process which runs as the user"
+                    " for service update could not be launched.");
+          }
+        }
+      }
 
       CloseHandle(elevatedFileHandle);
 
