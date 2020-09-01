@@ -3835,8 +3835,13 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   
   
   
-  const char* useXI2 = PR_GetEnv("MOZ_USE_XINPUT2");
-  if (!useXI2 || (*useXI2 == '0')) gdk_disable_multidevice();
+  const char* useXI2env = PR_GetEnv("MOZ_USE_XINPUT2");
+  const bool disableXI2ByPref = (useXI2env && (*useXI2env == '0'));
+  const bool enabledXI2ByPref = (useXI2env && (*useXI2env == '1'));
+  if (!enabledXI2ByPref &&
+      (gtk_check_version(3, 24, 0) != nullptr || disableXI2ByPref)) {
+    gdk_disable_multidevice();
+  }
 #  endif
 
   
