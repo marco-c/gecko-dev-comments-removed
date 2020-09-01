@@ -1229,12 +1229,6 @@ class WhiteSpaceVisibilityKeeper final {
   
   
   
-  MOZ_CAN_RUN_SCRIPT static nsresult PrepareToDeleteNode(
-      HTMLEditor& aHTMLEditor, nsIContent* aContent);
-
-  
-  
-  
   
   
   MOZ_CAN_RUN_SCRIPT static nsresult PrepareToSplitAcrossBlocks(
