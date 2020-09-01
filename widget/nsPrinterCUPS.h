@@ -7,7 +7,6 @@
 #define nsPrinterCUPS_h___
 
 #include "nsPrinterBase.h"
-#include "nsPrintSettingsImpl.h"
 #include "nsCUPSShim.h"
 #include "nsString.h"
 
@@ -17,7 +16,6 @@
 class nsPrinterCUPS final : public nsPrinterBase {
  public:
   NS_IMETHOD GetName(nsAString& aName) override;
-  PrintSettingsInitializer DefaultSettings() const final;
   bool SupportsDuplex() const final;
   bool SupportsColor() const final;
   bool SupportsCollation() const final;
@@ -40,13 +38,6 @@ class nsPrinterCUPS final : public nsPrinterBase {
 
  private:
   ~nsPrinterCUPS();
-
-  
-
-
-  const char* LocalizeMediaName(http_t& aConnection, cups_size_t& aMedia) const;
-
-  void GetPrinterName(nsAString& aName) const;
 
   
   bool Supports(const char* option, const char* value) const;

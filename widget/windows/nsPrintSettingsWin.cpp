@@ -6,7 +6,6 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "nsCRT.h"
-#include "nsDeviceContextSpecWin.h"
 #include "WinUtils.h"
 
 
@@ -158,40 +157,6 @@ nsPrintSettingsWin::nsPrintSettingsWin()
 nsPrintSettingsWin::nsPrintSettingsWin(const nsPrintSettingsWin& aPS)
     : mDevMode(nullptr) {
   *this = aPS;
-}
-
-already_AddRefed<nsIPrintSettings> CreatePlatformPrintSettings(
-    const PrintSettingsInitializer& aSettings) {
-  auto settings = MakeRefPtr<nsPrintSettingsWin>();
-  settings->InitWithInitializer(aSettings);
-
-  
-  int16_t outputFormat;
-  settings->GetOutputFormat(&outputFormat);
-  if (outputFormat == nsIPrintSettings::kOutputFormatPDF) {
-    return settings.forget();
-  }
-
-  RefPtr<nsDeviceContextSpecWin> devSpecWin = new nsDeviceContextSpecWin();
-
-  nsString name;
-  settings->GetPrinterName(name);
-  devSpecWin->GetDataFromPrinter(name);
-
-  LPDEVMODEW devmode;
-  devSpecWin->GetDevMode(devmode);
-  if (NS_WARN_IF(!devmode)) {
-    return settings.forget();
-  }
-
-  
-  
-  
-  
-  
-  
-
-  return settings.forget();
 }
 
 

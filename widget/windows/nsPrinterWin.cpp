@@ -24,14 +24,6 @@ already_AddRefed<nsPrinterWin> nsPrinterWin::Create(const nsAString& aName) {
   return do_AddRef(new nsPrinterWin(aName));
 }
 
-
-
-
-PrintSettingsInitializer nsPrinterWin::DefaultSettings() const {
-  PrintSettingsInitializer settings;
-  return settings;
-}
-
 template <class T>
 static nsTArray<T> GetDeviceCapabilityArray(const LPWSTR aPrinterName,
                                             WORD aCapabilityID) {
@@ -127,8 +119,12 @@ nsTArray<mozilla::PaperInfo> nsPrinterWin::PaperList() const {
     
     
     nsDependentSubstring name(paperNames[i].cbegin(), nameLength);
-    paperList.AppendElement(mozilla::PaperInfo(nsString(name), {width, height},
-                                               Nothing(), paperIds[i]));
+    paperList.AppendElement(mozilla::PaperInfo{
+        nsString(name),
+        {width, height},
+        Nothing(),
+        paperIds[i],
+    });
   }
 
   return paperList;

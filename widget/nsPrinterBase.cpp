@@ -7,7 +7,6 @@
 #include "nsPaperMargin.h"
 #include <utility>
 #include "nsPaper.h"
-#include "nsIPrintSettings.h"
 #include "PrintBackgroundTask.h"
 #include "mozilla/dom/Promise.h"
 
@@ -54,13 +53,6 @@ void ResolveOrReject(Promise& aPromise, nsPrinterBase& aPrinter,
   aPromise.MaybeResolve(result);
 }
 
-template <>
-void ResolveOrReject(Promise& aPromise, nsPrinterBase& aPrinter,
-                     const PrintSettingsInitializer& aResult) {
-  aPromise.MaybeResolve(
-      RefPtr<nsIPrintSettings>(CreatePlatformPrintSettings(aResult)));
-}
-
 }  
 
 template <typename T, typename... Args>
@@ -71,14 +63,6 @@ nsresult nsPrinterBase::AsyncPromiseAttributeGetter(
   return mozilla::AsyncPromiseAttributeGetter(
       *this, mAsyncAttributePromises[aAttribute], aCx, aResultPromise,
       aBackgroundTask, std::forward<Args>(aArgs)...);
-}
-
-NS_IMETHODIMP nsPrinterBase::CreateDefaultSettings(JSContext* aCx,
-                                                   Promise** aResultPromise) {
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  return PrintBackgroundTaskPromise(*this, aCx, aResultPromise,
-                                    &nsPrinterBase::DefaultSettings);
 }
 
 NS_IMETHODIMP nsPrinterBase::GetSupportsDuplex(JSContext* aCx,

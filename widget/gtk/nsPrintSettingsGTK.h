@@ -31,7 +31,6 @@ class nsPrintSettingsGTK : public nsPrintSettings {
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PRINTSETTINGSGTK_IID)
 
   nsPrintSettingsGTK();
-  explicit nsPrintSettingsGTK(const PrintSettingsInitializer& aSettings);
 
   
   

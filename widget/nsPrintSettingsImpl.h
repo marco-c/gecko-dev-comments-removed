@@ -10,7 +10,6 @@
 #include "nsIPrintSettings.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsMargin.h"
-#include "nsPaper.h"
 #include "nsString.h"
 
 #define NUM_HEAD_FOOT 3
@@ -19,40 +18,15 @@
 
 
 
-namespace mozilla {
-
-
-
-
-
-struct PrintSettingsInitializer {
-  nsString mPrinter;
-  PaperInfo mPaperInfo;
-  bool mPrintInColor = false;
-};
-
-}  
-
 class nsPrintSettings : public nsIPrintSettings {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRINTSETTINGS
-  using PrintSettingsInitializer = mozilla::PrintSettingsInitializer;
 
   nsPrintSettings();
   nsPrintSettings(const nsPrintSettings& aPS);
 
-  
-
-
-
-
-  void InitWithInitializer(const PrintSettingsInitializer& aSettings);
-
   nsPrintSettings& operator=(const nsPrintSettings& rhs);
-
-  
-  void SetDefaultFileName();
 
  protected:
   virtual ~nsPrintSettings();
