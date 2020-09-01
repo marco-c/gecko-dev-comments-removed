@@ -1,7 +1,7 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 package org.mozilla.geckoview.test.util
 
@@ -13,6 +13,7 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.ContentDelegate.ContextElement
 import org.mozilla.geckoview.GeckoSession.NavigationDelegate.LoadRequest
 import org.mozilla.geckoview.MediaElement
+import org.mozilla.geckoview.MediaSession
 import org.mozilla.geckoview.WebRequestError
 
 import android.view.inputmethod.CursorAnchorInfo
@@ -24,7 +25,7 @@ class Callbacks private constructor() {
     object Default : All
 
     interface All : AutofillDelegate, ContentBlockingDelegate, ContentDelegate,
-                    HistoryDelegate, MediaDelegate,
+                    HistoryDelegate, MediaDelegate, MediaSessionDelegate,
                     NavigationDelegate, PermissionDelegate, ProgressDelegate,
                     PromptDelegate, ScrollDelegate, SelectionActionDelegate,
                     TextInputDelegate
@@ -40,6 +41,7 @@ class Callbacks private constructor() {
     interface SelectionActionDelegate : GeckoSession.SelectionActionDelegate {}
     interface MediaDelegate: GeckoSession.MediaDelegate {}
     interface HistoryDelegate : GeckoSession.HistoryDelegate {}
+    interface MediaSessionDelegate: MediaSession.Delegate {}
 
     interface TextInputDelegate : GeckoSession.TextInputDelegate {
         override fun restartInput(session: GeckoSession, reason: Int) {
