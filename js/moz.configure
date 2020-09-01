@@ -81,12 +81,6 @@ set_define('JS_NUNBOX32', depends(target)(lambda t: t.bitness == 32 or None))
 
 
 
-
-set_define('JS_PARSER_ATOMS', None)
-
-
-
-
 js_option('--disable-shared-js', when=js_standalone,
           help='{Create|Do not create} a shared library')
 

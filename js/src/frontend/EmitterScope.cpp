@@ -34,7 +34,7 @@ bool EmitterScope::ensureCache(BytecodeEmitter* bce) {
 }
 
 bool EmitterScope::checkSlotLimits(BytecodeEmitter* bce,
-                                   const BindingIter& bi) {
+                                   const ParserBindingIter& bi) {
   if (bi.nextFrameSlot() >= LOCALNO_LIMIT ||
       bi.nextEnvironmentSlot() >= ENVCOORD_SLOT_LIMIT) {
     bce->reportError(nullptr, JSMSG_TOO_MANY_LOCALS);
@@ -61,7 +61,7 @@ bool EmitterScope::checkEnvironmentChainLength(BytecodeEmitter* bce) {
 }
 
 void EmitterScope::updateFrameFixedSlots(BytecodeEmitter* bce,
-                                         const BindingIter& bi) {
+                                         const ParserBindingIter& bi) {
   nextFrameSlot_ = bi.nextFrameSlot();
   if (nextFrameSlot_ > bce->maxFixedSlots) {
     bce->maxFixedSlots = nextFrameSlot_;
@@ -72,7 +72,7 @@ void EmitterScope::updateFrameFixedSlots(BytecodeEmitter* bce,
       bce->maxFixedSlots == 0);
 }
 
-bool EmitterScope::putNameInCache(BytecodeEmitter* bce, JSAtom* name,
+bool EmitterScope::putNameInCache(BytecodeEmitter* bce, const ParserAtom* name,
                                   NameLocation loc) {
   NameLocationMap& cache = *nameCache_;
   NameLocationMap::AddPtr p = cache.lookupForAdd(name);
@@ -85,7 +85,7 @@ bool EmitterScope::putNameInCache(BytecodeEmitter* bce, JSAtom* name,
 }
 
 Maybe<NameLocation> EmitterScope::lookupInCache(BytecodeEmitter* bce,
-                                                JSAtom* name) {
+                                                const ParserAtom* name) {
   if (NameLocationMap::Ptr p = nameCache_->lookup(name)) {
     return Some(p->value().wrapped);
   }
@@ -128,7 +128,7 @@ mozilla::Maybe<ScopeIndex> EmitterScope::enclosingScopeIndex(
 }
 
 
-bool EmitterScope::nameCanBeFree(BytecodeEmitter* bce, JSAtom* name) {
+bool EmitterScope::nameCanBeFree(BytecodeEmitter* bce, const ParserAtom* name) {
   
   return name != bce->cx->parserNames().dotGenerator;
 }
@@ -168,6 +168,9 @@ static bool NameIsOnEnvironment(Scope* scope, JSAtom* name) {
 
 NameLocation EmitterScope::searchInEnclosingScope(JSAtom* name, Scope* scope,
                                                   uint8_t hops) {
+  
+  
+
   for (ScopeIter si(scope); si; si++) {
     MOZ_ASSERT(NameIsOnEnvironment(si.scope(), name));
 
@@ -284,7 +287,8 @@ NameLocation EmitterScope::searchInEnclosingScope(JSAtom* name, Scope* scope,
   MOZ_CRASH("Malformed scope chain");
 }
 
-NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce, JSAtom* name) {
+NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,
+                                          const ParserAtom* name) {
   Maybe<NameLocation> loc;
   uint8_t hops = hasEnvironment() ? 1 : 0;
   DebugOnly<bool> inCurrentScript = enclosingInFrame();
@@ -313,9 +317,25 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce, JSAtom* name) {
   
   
   if (!loc) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    JSAtom* jsname = bce->compilationInfo.liftParserAtomToJSAtom(name);
+    if (!jsname) {
+      oomUnsafe.crash("EmitterScope::searchAndCache");
+    }
+
     inCurrentScript = false;
-    loc = Some(searchInEnclosingScope(name, bce->compilationInfo.enclosingScope,
-                                      hops));
+    loc = Some(searchInEnclosingScope(
+        jsname, bce->compilationInfo.enclosingScope, hops));
   }
 
   
@@ -413,7 +433,7 @@ void EmitterScope::dump(BytecodeEmitter* bce) {
   for (NameLocationMap::Range r = nameCache_->all(); !r.empty(); r.popFront()) {
     const NameLocation& l = r.front().value();
 
-    UniqueChars bytes = AtomToPrintableString(bce->cx, r.front().key());
+    UniqueChars bytes = ParserAtomToPrintableString(bce->cx, r.front().key());
     if (!bytes) {
       return;
     }
@@ -461,7 +481,7 @@ void EmitterScope::dump(BytecodeEmitter* bce) {
 }
 
 bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
-                                Handle<LexicalScope::Data*> bindings) {
+                                ParserLexicalScopeData* bindings) {
   MOZ_ASSERT(kind != ScopeKind::NamedLambda &&
              kind != ScopeKind::StrictNamedLambda);
   MOZ_ASSERT(this == bce->innermostEmitterScopeNoCheck());
@@ -473,7 +493,7 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
   
   TDZCheckCache* tdzCache = bce->innermostTDZCheckCache;
   uint32_t firstFrameSlot = frameSlotStart();
-  BindingIter bi(*bindings, firstFrameSlot,  false);
+  ParserBindingIter bi(*bindings, firstFrameSlot,  false);
   for (; bi; bi++) {
     if (!checkSlotLimits(bce, bi)) {
       return false;
@@ -534,8 +554,8 @@ bool EmitterScope::enterNamedLambda(BytecodeEmitter* bce, FunctionBox* funbox) {
     return false;
   }
 
-  BindingIter bi(*funbox->namedLambdaBindings(), LOCALNO_LIMIT,
-                  true);
+  ParserBindingIter bi(*funbox->namedLambdaBindings(), LOCALNO_LIMIT,
+                        true);
   MOZ_ASSERT(bi.kind() == BindingKind::NamedLambdaCallee);
 
   
@@ -582,7 +602,7 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
   if (bindings) {
     NameLocationMap& cache = *nameCache_;
 
-    BindingIter bi(*bindings, funbox->hasParameterExprs);
+    ParserBindingIter bi(*bindings, funbox->hasParameterExprs);
     for (; bi; bi++) {
       if (!checkSlotLimits(bce, bi)) {
         return false;
@@ -624,7 +644,7 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
   
   if (funbox->hasParameterExprs && nextFrameSlot_) {
     uint32_t paramFrameSlotEnd = 0;
-    for (BindingIter bi(*bindings, true); bi; bi++) {
+    for (ParserBindingIter bi(*bindings, true); bi; bi++) {
       if (!BindingKindIsLexical(bi.kind())) {
         break;
       }
@@ -675,7 +695,7 @@ bool EmitterScope::enterFunctionExtraBodyVar(BytecodeEmitter* bce,
   
   uint32_t firstFrameSlot = frameSlotStart();
   if (auto bindings = funbox->extraVarScopeBindings()) {
-    BindingIter bi(*bindings, firstFrameSlot);
+    ParserBindingIter bi(*bindings, firstFrameSlot);
     for (; bi; bi++) {
       if (!checkSlotLimits(bce, bi)) {
         return false;
@@ -728,13 +748,13 @@ bool EmitterScope::enterFunctionExtraBodyVar(BytecodeEmitter* bce,
   return checkEnvironmentChainLength(bce);
 }
 
-class DynamicBindingIter : public BindingIter {
+class DynamicBindingIter : public ParserBindingIter {
  public:
   explicit DynamicBindingIter(GlobalSharedContext* sc)
-      : BindingIter(*sc->bindings) {}
+      : ParserBindingIter(*sc->bindings) {}
 
   explicit DynamicBindingIter(EvalSharedContext* sc)
-      : BindingIter(*sc->bindings,  false) {
+      : ParserBindingIter(*sc->bindings,  false) {
     MOZ_ASSERT(!sc->strict());
   }
 
@@ -755,6 +775,11 @@ class DynamicBindingIter : public BindingIter {
 bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
                                GlobalSharedContext* globalsc) {
   MOZ_ASSERT(this == bce->innermostEmitterScopeNoCheck());
+
+  
+  
+  
+  
 
   bce->setVarEmitterScope(this);
 
@@ -800,7 +825,7 @@ bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
 
     for (DynamicBindingIter bi(globalsc); bi; bi++) {
       NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
-      JSAtom* name = bi.name();
+      const ParserAtom* name = bi.name();
       if (!putNameInCache(bce, name, loc)) {
         return false;
       }
@@ -910,8 +935,8 @@ bool EmitterScope::enterModule(BytecodeEmitter* bce,
   
   TDZCheckCache* tdzCache = bce->innermostTDZCheckCache;
   Maybe<uint32_t> firstLexicalFrameSlot;
-  if (ModuleScope::Data* bindings = modulesc->bindings) {
-    BindingIter bi(*bindings);
+  if (ParserModuleScopeData* bindings = modulesc->bindings) {
+    ParserBindingIter bi(*bindings);
     for (; bi; bi++) {
       if (!checkSlotLimits(bce, bi)) {
         return false;
@@ -1067,14 +1092,15 @@ mozilla::Maybe<ScopeIndex> EmitterScope::scopeIndex(
   return bce->perScriptData().gcThingList().getScopeIndex(index());
 }
 
-NameLocation EmitterScope::lookup(BytecodeEmitter* bce, JSAtom* name) {
+NameLocation EmitterScope::lookup(BytecodeEmitter* bce,
+                                  const ParserAtom* name) {
   if (Maybe<NameLocation> loc = lookupInCache(bce, name)) {
     return *loc;
   }
   return searchAndCache(bce, name);
 }
 
-Maybe<NameLocation> EmitterScope::locationBoundInScope(JSAtom* name,
+Maybe<NameLocation> EmitterScope::locationBoundInScope(const ParserAtom* name,
                                                        EmitterScope* target) {
   
   

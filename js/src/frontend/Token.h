@@ -16,9 +16,9 @@
 
 #include <stdint.h>  
 
-#include "frontend/TokenKind.h"  
-#include "js/RegExpFlags.h"      
-#include "vm/StringType.h"       
+#include "frontend/ParserAtom.h"  
+#include "frontend/TokenKind.h"   
+#include "js/RegExpFlags.h"       
 
 namespace js {
 
@@ -144,10 +144,10 @@ struct Token {
     friend struct Token;
 
     
-    PropertyName* name;
+    const ParserName* name;
 
     
-    JSAtom* atom;
+    const ParserAtom* atom;
 
     struct {
       
@@ -168,12 +168,12 @@ struct Token {
 
   
 
-  void setName(PropertyName* name) {
+  void setName(const ParserName* name) {
     MOZ_ASSERT(type == TokenKind::Name || type == TokenKind::PrivateName);
     u.name = name;
   }
 
-  void setAtom(JSAtom* atom) {
+  void setAtom(const ParserAtom* atom) {
     MOZ_ASSERT(type == TokenKind::String || type == TokenKind::TemplateHead ||
                type == TokenKind::NoSubsTemplate);
     u.atom = atom;
@@ -192,12 +192,12 @@ struct Token {
 
   
 
-  PropertyName* name() const {
+  const ParserName* name() const {
     MOZ_ASSERT(type == TokenKind::Name || type == TokenKind::PrivateName);
-    return u.name->JSAtom::asPropertyName();  
+    return u.name->asName();  
   }
 
-  JSAtom* atom() const {
+  const ParserAtom* atom() const {
     MOZ_ASSERT(type == TokenKind::String || type == TokenKind::TemplateHead ||
                type == TokenKind::NoSubsTemplate);
     return u.atom;
