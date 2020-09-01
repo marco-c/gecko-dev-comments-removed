@@ -18,6 +18,8 @@ function xr_promise_test(name, func, properties) {
     
     xr_debug(name, 'setup');
 
+    assert_implements(navigator.xr, 'missing navigator.xr');
+
     
     if (!navigator.xr.test) {
       
@@ -37,8 +39,6 @@ function xr_promise_test(name, func, properties) {
       } else if (isWebKitBased) {
         
         await setupWebKitWebXRTestAPI();
-      } else {
-        assert_implements(false, "missing navigator.xr.test");
       }
     }
 
@@ -47,11 +47,7 @@ function xr_promise_test(name, func, properties) {
     
     
     
-    if (!navigator.xr.test) {
-      
-      
-      return Promise.reject("No navigator.xr.test object found, even after attempted load");
-    }
+    assert_implements(navigator.xr.test, 'missing navigator.xr.test, even after attempted load');
 
     
     
