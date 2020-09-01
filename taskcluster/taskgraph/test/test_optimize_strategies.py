@@ -11,7 +11,7 @@ import pytest
 from mozunit import main
 
 from taskgraph.optimize import registry
-from taskgraph.optimize.backstop import Backstop
+from taskgraph.optimize.backstop import Backstop, PushInterval
 from taskgraph.optimize.bugbug import (
     BugBugPushSchedules,
     DisperseGroups,
@@ -310,50 +310,29 @@ def test_bugbug_fallback(monkeypatch, responses, params):
     assert not opt.should_remove_task(default_tasks[1], params, None)
 
 
-def test_backstop(responses, params):
+def test_backstop(params):
     all_labels = {t.label for t in default_tasks}
-    opt = Backstop(10, 60)  
+    opt = Backstop()
 
-    responses.add(
-        responses.GET,
-        "https://hg.mozilla.org/integration/autoland/json-pushes/?version=2&startID=6&endID=7",  
-        json={"pushes": {"7": {}}},
-        status=200,
-    )
+    params['backstop'] = False
+    scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
+    assert scheduled == set()
 
-    
-    params['pushlog_id'] = 8
+    params['backstop'] = True
     scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
     assert scheduled == all_labels
 
-    responses.add(
-        responses.GET,
-        "https://hg.mozilla.org/integration/autoland/json-pushes/?version=2&startID=7&endID=8",  
-        json={"pushes": {"8": {"date": params['pushdate']}}},
-        status=200,
-    )
+
+def test_push_interval(params):
+    all_labels = {t.label for t in default_tasks}
+    opt = PushInterval(10)  
 
     
     params['pushlog_id'] = 9
-    params['pushdate'] += 3599
     scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
     assert scheduled == set()
 
     params['pushlog_id'] = 10
-    params['pushdate'] += 1
-    scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
-    assert scheduled == all_labels
-
-    responses.add(
-        responses.GET,
-        "https://hg.mozilla.org/integration/autoland/json-pushes/?version=2&startID=9&endID=10",  
-        json={"pushes": {"10": {"date": params['pushdate']}}},
-        status=200,
-    )
-
-    
-    params['pushlog_id'] = 11
-    params['pushdate'] += 3600
     scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
     assert scheduled == all_labels
 
