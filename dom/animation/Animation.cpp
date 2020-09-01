@@ -702,7 +702,8 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   }
 
   
-  nsCOMPtr<nsStyledElement> styledElement = do_QueryInterface(target.mElement);
+  RefPtr<nsStyledElement> styledElement =
+      nsStyledElement::FromNodeOrNull(target.mElement);
   if (!styledElement) {
     return aRv.ThrowNoModificationAllowedError(
         "Target is not capable of having a style attribute");

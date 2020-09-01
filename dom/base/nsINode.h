@@ -525,6 +525,11 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
+  virtual bool IsStyledElement() const { return false; }
+
+  
+
+
 
 
 

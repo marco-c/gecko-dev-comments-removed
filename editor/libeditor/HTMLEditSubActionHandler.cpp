@@ -8663,6 +8663,8 @@ nsresult HTMLEditor::AlignNodesAndDescendants(
         HTMLEditUtils::IsAnyListElement(content)) {
       Element* listOrListItemElement = content->AsElement();
       AutoEditorDOMPointOffsetInvalidator lockChild(atContent);
+      
+      
       nsresult rv = RemoveAlignFromDescendants(
           MOZ_KnownLive(*listOrListItemElement), aAlignType,
           EditTarget::OnlyDescendantsExceptTable);
@@ -8674,12 +8676,14 @@ nsresult HTMLEditor::AlignNodesAndDescendants(
       }
 
       if (useCSS) {
-        if (nsCOMPtr<nsStyledElement> styledListOrListItemElement =
-                do_QueryInterface(listOrListItemElement)) {
+        if (nsStyledElement* styledListOrListItemElement =
+                nsStyledElement::FromNode(listOrListItemElement)) {
+          
+          
           Result<int32_t, nsresult> result =
               mCSSEditUtils->SetCSSEquivalentToHTMLStyleWithTransaction(
-                  *styledListOrListItemElement, nullptr, nsGkAtoms::align,
-                  &aAlignType);
+                  MOZ_KnownLive(*styledListOrListItemElement), nullptr,
+                  nsGkAtoms::align, &aAlignType);
           if (result.isErr()) {
             if (result.inspectErr() == NS_ERROR_EDITOR_DESTROYED) {
               NS_WARNING(
@@ -8697,6 +8701,8 @@ nsresult HTMLEditor::AlignNodesAndDescendants(
       }
 
       if (HTMLEditUtils::IsAnyListElement(atContent.GetContainer())) {
+        
+        
         
         
         
@@ -12746,14 +12752,17 @@ nsresult HTMLEditor::RemoveAlignFromDescendants(Element& aElement,
           return rv;
         }
       } else {
-        nsCOMPtr<nsStyledElement> styledBlockOrHRElement =
-            do_QueryInterface(blockOrHRElement);
+        nsStyledElement* styledBlockOrHRElement =
+            nsStyledElement::FromNode(blockOrHRElement);
         if (NS_WARN_IF(!styledBlockOrHRElement)) {
           return NS_ERROR_FAILURE;
         }
+        
+        
         nsAutoString dummyCssValue;
         nsresult rv = mCSSEditUtils->RemoveCSSInlineStyleWithTransaction(
-            *styledBlockOrHRElement, nsGkAtoms::textAlign, dummyCssValue);
+            MOZ_KnownLive(*styledBlockOrHRElement), nsGkAtoms::textAlign,
+            dummyCssValue);
         if (NS_FAILED(rv)) {
           NS_WARNING(
               "CSSEditUtils::RemoveCSSInlineStyleWithTransaction(nsGkAtoms::"
@@ -12924,13 +12933,16 @@ nsresult HTMLEditor::ChangeMarginStart(Element& aElement,
   }
 
   if (0 < f) {
-    if (nsCOMPtr<nsStyledElement> styledElement =
-            do_QueryInterface(&aElement)) {
+    if (nsStyledElement* styledElement = nsStyledElement::FromNode(&aElement)) {
       nsAutoString newValue;
       newValue.AppendFloat(f);
       newValue.Append(nsDependentAtomString(unit));
+      
+      
+      
       nsresult rv = mCSSEditUtils->SetCSSPropertyWithTransaction(
-          *styledElement, MOZ_KnownLive(marginProperty), newValue);
+          MOZ_KnownLive(*styledElement), MOZ_KnownLive(marginProperty),
+          newValue);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
             "CSSEditUtils::SetCSSPropertyWithTransaction() destroyed the "
@@ -12944,9 +12956,12 @@ nsresult HTMLEditor::ChangeMarginStart(Element& aElement,
     return NS_OK;
   }
 
-  if (nsCOMPtr<nsStyledElement> styledElement = do_QueryInterface(&aElement)) {
+  if (nsStyledElement* styledElement = nsStyledElement::FromNode(&aElement)) {
+    
+    
+    
     nsresult rv = mCSSEditUtils->RemoveCSSPropertyWithTransaction(
-        *styledElement, MOZ_KnownLive(marginProperty), value);
+        MOZ_KnownLive(*styledElement), MOZ_KnownLive(marginProperty), value);
     if (rv == NS_ERROR_EDITOR_DESTROYED) {
       NS_WARNING(
           "CSSEditUtils::RemoveCSSPropertyWithTransaction() destroyed the "
@@ -13508,8 +13523,8 @@ EditActionResult HTMLEditor::AddZIndexAsSubAction(int32_t aChange) {
     return EditActionHandled(NS_ERROR_FAILURE);
   }
 
-  nsCOMPtr<nsStyledElement> absolutelyPositionedStyledElement =
-      do_QueryInterface(absolutelyPositionedElement);
+  nsStyledElement* absolutelyPositionedStyledElement =
+      nsStyledElement::FromNode(absolutelyPositionedElement);
   if (NS_WARN_IF(!absolutelyPositionedStyledElement)) {
     return EditActionHandled(NS_ERROR_FAILURE);
   }
@@ -13517,8 +13532,10 @@ EditActionResult HTMLEditor::AddZIndexAsSubAction(int32_t aChange) {
   {
     AutoSelectionRestorer restoreSelectionLater(*this);
 
-    Result<int32_t, nsresult> result =
-        AddZIndexWithTransaction(*absolutelyPositionedStyledElement, aChange);
+    
+    
+    Result<int32_t, nsresult> result = AddZIndexWithTransaction(
+        MOZ_KnownLive(*absolutelyPositionedStyledElement), aChange);
     if (result.isErr()) {
       NS_WARNING("HTMLEditor::AddZIndexWithTransaction() failed");
       return EditActionHandled(result.unwrapErr());
