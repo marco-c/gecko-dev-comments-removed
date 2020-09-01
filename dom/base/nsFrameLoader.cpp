@@ -2317,6 +2317,10 @@ nsresult nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI) {
 }
 
 nsresult nsFrameLoader::GetWindowDimensions(nsIntRect& aRect) {
+  if (!mOwnerContent) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   Document* doc = mOwnerContent->GetComposedDoc();
   if (!doc) {
