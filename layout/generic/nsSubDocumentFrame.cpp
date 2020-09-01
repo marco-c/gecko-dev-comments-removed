@@ -633,12 +633,24 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
 
 
 AspectRatio nsSubDocumentFrame::GetIntrinsicRatio() {
+  const auto& aspectRatio = StylePosition()->mAspectRatio;
+  if (!aspectRatio.auto_) {
+    return aspectRatio.ratio.AsRatio().ToLayoutRatio();
+  }
+
   
   
   
   if (nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame()) {
-    return subDocRoot->GetIntrinsicRatio();
+    if (AspectRatio subDocRatio = subDocRoot->GetIntrinsicRatio()) {
+      return subDocRatio;
+    }
   }
+
+  if (aspectRatio.HasRatio()) {
+    return aspectRatio.ratio.AsRatio().ToLayoutRatio();
+  }
+
   
   
   
