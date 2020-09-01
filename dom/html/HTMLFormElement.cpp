@@ -1694,8 +1694,12 @@ nsresult HTMLFormElement::GetActionURL(nsIURI** aActionURL,
   
   
   
-  bool isHttpScheme = actionURL->SchemeIs("http");
-  if (isHttpScheme && document->GetUpgradeInsecureRequests(false)) {
+  
+  bool needsUpgrade =
+      actionURL->SchemeIs("http") &&
+      !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(actionURL) &&
+      document->GetUpgradeInsecureRequests(false);
+  if (needsUpgrade) {
     
     AutoTArray<nsString, 2> params;
     nsAutoCString spec;
