@@ -84,6 +84,15 @@ class PipeToState : public NativeObject {
 
     Slot_LastWriteRequest,
 
+    
+
+
+
+
+
+
+    Slot_Signal,
+
     SlotCount,
   };
 
@@ -199,6 +208,12 @@ class PipeToState : public NativeObject {
   void updateLastWriteRequest(PromiseObject* writeRequest) {
     MOZ_ASSERT(writeRequest != nullptr);
     setFixedSlot(Slot_LastWriteRequest, JS::ObjectValue(*writeRequest));
+  }
+
+  bool hasSignal() const {
+    JS::Value v = getFixedSlot(Slot_Signal);
+    MOZ_ASSERT(v.isObject() || v.isUndefined());
+    return v.isObject();
   }
 
   bool shuttingDown() const { return flags() & Flag_ShuttingDown; }

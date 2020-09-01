@@ -23,6 +23,8 @@
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 
+struct JSClass;
+
 namespace JS {
 
 
@@ -499,6 +501,26 @@ class JS_PUBLIC_API WritableStreamUnderlyingSink {
 
   virtual void finalize() = 0;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void InitAbortSignalHandling(const JSClass* clasp,
+                                                  JSContext* cx);
 
 }  
 

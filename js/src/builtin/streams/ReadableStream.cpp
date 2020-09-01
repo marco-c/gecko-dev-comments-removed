@@ -37,7 +37,7 @@
 #include "vm/Runtime.h"           
 #include "vm/StringType.h"        
 
-#include "vm/Compartment-inl.h"   
+#include "vm/Compartment-inl.h"  
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
 
@@ -58,6 +58,7 @@ using js::ReturnPromiseRejectedWithPendingError;
 using js::ToString;
 using js::UnwrapAndTypeCheckArgument;
 using js::UnwrapAndTypeCheckThis;
+using js::UnwrapAndTypeCheckValue;
 using js::WritableStream;
 
 using JS::CallArgs;
@@ -414,22 +415,18 @@ static bool ReadableStream_pipeTo(JSContext* cx, unsigned argc, Value* vp) {
   
   
   Rooted<JSObject*> signal(cx, nullptr);
-  do {
-    if (signalVal.isUndefined()) {
-      break;
+  if (!signalVal.isUndefined()) {
+    if (!UnwrapAndTypeCheckValue(
+            cx, signalVal, cx->runtime()->maybeAbortSignalClass(), [cx] {
+              JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                        JSMSG_READABLESTREAM_PIPETO_BAD_SIGNAL);
+            })) {
+      return ReturnPromiseRejectedWithPendingError(cx, args);
     }
 
-    if (signalVal.isObject()) {
-      
-      
-
-      signal = &signalVal.toObject();
-    }
-
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAM_PIPETO_BAD_SIGNAL);
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  } while (false);
+    
+    signal = &signalVal.toObject();
+  }
 
   
   

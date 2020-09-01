@@ -35,6 +35,7 @@
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "vm/Compartment-inl.h"  
+#include "vm/JSContext-inl.h"    
 #include "vm/JSObject-inl.h"  
 #include "vm/Realm-inl.h"     
 
@@ -619,6 +620,8 @@ PromiseObject* js::ReadableStreamPipeTo(JSContext* cx,
                                         bool preventClose, bool preventAbort,
                                         bool preventCancel,
                                         Handle<JSObject*> signal) {
+  cx->check(signal);
+
   
   
   

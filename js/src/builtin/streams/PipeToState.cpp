@@ -6,7 +6,7 @@
 
 
 
-#include "builtin/streams/PipeToState.h"
+#include "builtin/streams/PipeToState-inl.h"
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
@@ -27,7 +27,9 @@
 #include "js/Promise.h"     
 #include "js/RootingAPI.h"  
 #include "js/Value.h"  
+#include "vm/JSContext.h"      
 #include "vm/PromiseObject.h"  
+#include "vm/Runtime.h"        
 
 #include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
@@ -1114,25 +1116,27 @@ static MOZ_MUST_USE bool StartPiping(JSContext* cx, Handle<PipeToState*> state,
     Handle<WritableStream*> unwrappedDest, bool preventClose, bool preventAbort,
     bool preventCancel, Handle<JSObject*> signal) {
   cx->check(promise);
+  cx->check(signal);
+
+  Rooted<PipeToState*> state(cx, NewBuiltinClassInstance<PipeToState>(cx));
+  if (!state) {
+    return nullptr;
+  }
 
   
   
-#ifdef DEBUG
+  MOZ_ASSERT(state->getFixedSlot(Slot_Signal).isUndefined());
   if (signal) {
     
+    
+    state->initFixedSlot(Slot_Signal, ObjectValue(*signal));
   }
-#endif
 
   
   MOZ_ASSERT(!unwrappedSource->locked());
 
   
   MOZ_ASSERT(!unwrappedDest->isLocked());
-
-  Rooted<PipeToState*> state(cx, NewBuiltinClassInstance<PipeToState>(cx));
-  if (!state) {
-    return nullptr;
-  }
 
   MOZ_ASSERT(state->getFixedSlot(Slot_Promise).isUndefined());
   state->initFixedSlot(Slot_Promise, ObjectValue(*promise));
@@ -1184,6 +1188,11 @@ static MOZ_MUST_USE bool StartPiping(JSContext* cx, Handle<PipeToState*> state,
 
   
   
+  if (signal) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_READABLESTREAM_PIPETO_BAD_SIGNAL);
+    return nullptr;
+  }
 
   
   
