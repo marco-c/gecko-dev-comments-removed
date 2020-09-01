@@ -150,6 +150,8 @@ class NativeLayerRootCA : public NativeLayerRoot {
   bool mCommitPending = false;
 };
 
+class RenderSourceNLRS;
+
 class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
  public:
   static UniquePtr<NativeLayerRootSnapshotterCA> Create(
@@ -159,16 +161,20 @@ class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
   bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
                       gfx::SurfaceFormat aReadbackFormat,
                       const Range<uint8_t>& aReadbackBuffer) override;
+  void MaybeGrabProfilerScreenshot(ScreenshotGrabber* aScreenshotGrabber,
+                                   const gfx::IntSize& aWindowSize) override;
 
  protected:
   NativeLayerRootSnapshotterCA(NativeLayerRootCA* aLayerRoot,
                                RefPtr<gl::GLContext>&& aGL,
                                CALayer* aRootCALayer);
+  void UpdateSnapshot(const gfx::IntSize& aSize);
 
   RefPtr<NativeLayerRootCA> mLayerRoot;
   RefPtr<gl::GLContext> mGL;
-  UniquePtr<gl::MozFramebuffer>
-      mFB;  
+
+  
+  RefPtr<RenderSourceNLRS> mSnapshot;
   CARenderer* mRenderer = nullptr;  
 };
 

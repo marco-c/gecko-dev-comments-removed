@@ -30,6 +30,7 @@ namespace layers {
 class NativeLayer;
 class NativeLayerCA;
 class NativeLayerRootSnapshotter;
+class ScreenshotGrabber;
 class SurfacePoolHandle;
 
 
@@ -91,6 +92,12 @@ class NativeLayerRootSnapshotter {
   virtual bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
                               gfx::SurfaceFormat aReadbackFormat,
                               const Range<uint8_t>& aReadbackBuffer) = 0;
+
+  
+  
+  virtual void MaybeGrabProfilerScreenshot(
+      ScreenshotGrabber* aScreenshotGrabber,
+      const gfx::IntSize& aWindowSize) = 0;
 };
 
 
