@@ -265,7 +265,8 @@ def _try_option_syntax(full_task_graph, parameters, graph_config):
             task.attributes['task_duplicates'] = options.talos_trigger_tests
 
         
-        if options.raptor_trigger_tests > 1 and task.attributes.get('unittest_suite') == 'raptor':
+        if options.raptor_trigger_tests and options.raptor_trigger_tests > 1 and \
+                task.attributes.get('unittest_suite') == 'raptor':
             task.attributes['task_duplicates'] = options.raptor_trigger_tests
 
         task.attributes.update(attributes)
