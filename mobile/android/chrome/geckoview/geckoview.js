@@ -337,6 +337,15 @@ class ModuleInfo {
     this._manager = manager;
     this._name = name;
 
+    
+    
+    
+    if (onInit?.resource !== undefined && onEnable?.resource !== undefined) {
+      throw new Error(
+        "Only one main process script is allowed for each module."
+      );
+    }
+
     this._impl = null;
     this._contentModuleLoaded = false;
     this._enabled = false;
