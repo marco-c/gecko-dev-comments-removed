@@ -449,6 +449,14 @@ const startupPhases = {
       stat: 1,
       close: 1,
     },
+    {
+      
+      path: "ProfD:wmfvpxvideo.guard",
+      condition: WIN,
+      ignoreIfUnused: true,
+      stat: 1,
+      close: 1,
+    },
   ],
 
   
