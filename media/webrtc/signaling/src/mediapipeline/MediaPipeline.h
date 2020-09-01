@@ -310,7 +310,6 @@ class MediaPipelineTransmit : public MediaPipeline {
 
   
   class PipelineListener;
-  class PipelineListenerTrackConsumer;
   class VideoFrameFeeder;
 
  protected:
@@ -323,9 +322,6 @@ class MediaPipelineTransmit : public MediaPipeline {
 
   const bool mIsVideo;
   const RefPtr<PipelineListener> mListener;
-  
-  
-  const nsMainThreadPtrHandle<PipelineListenerTrackConsumer> mTrackConsumer;
   const RefPtr<VideoFrameFeeder> mFeeder;
   RefPtr<AudioProxyThread> mAudioProcessing;
   RefPtr<VideoFrameConverter> mConverter;
