@@ -26,6 +26,15 @@ ChromeUtils.defineModuleGetter(
   "CloudStorage",
   "resource://gre/modules/CloudStorage.jsm"
 );
+var { Integration } = ChromeUtils.import(
+  "resource://gre/modules/Integration.jsm"
+);
+
+Integration.downloads.defineModuleGetter(
+  this,
+  "DownloadIntegration",
+  "resource://gre/modules/DownloadIntegration.jsm"
+);
 ChromeUtils.defineModuleGetter(
   this,
   "SelectionChangedMenulist",
@@ -1949,7 +1958,18 @@ var gMainPane = {
 
 
   _loadInternalHandlers() {
-    var internalHandlers = [new PDFHandlerInfoWrapper()];
+    let internalHandlers = [new PDFHandlerInfoWrapper()];
+
+    let enabledHandlers = Services.prefs
+      .getCharPref("browser.download.viewableInternally.enabledTypes", "")
+      .trim();
+    if (enabledHandlers) {
+      for (let ext of enabledHandlers.split(",")) {
+        internalHandlers.push(
+          new ViewableInternallyHandlerInfoWrapper(ext.trim())
+        );
+      }
+    }
     for (let internalHandler of internalHandlers) {
       if (internalHandler.enabled) {
         this._handledTypes[internalHandler.type] = internalHandler;
@@ -2542,7 +2562,7 @@ var gMainPane = {
 
 
   filter() {
-    this._rebuildView();
+    this._rebuildView(); 
   },
 
   focusFilterBox() {
@@ -3632,8 +3652,9 @@ class HandlerInfoWrapper {
 
 
 class InternalHandlerInfoWrapper extends HandlerInfoWrapper {
-  constructor(mimeType) {
-    super(mimeType, gMIMEService.getFromTypeAndExtension(mimeType, null));
+  constructor(mimeType, extension) {
+    let type = gMIMEService.getFromTypeAndExtension(mimeType, extension);
+    super(mimeType || type.type, type);
   }
 
   
@@ -3645,22 +3666,24 @@ class InternalHandlerInfoWrapper extends HandlerInfoWrapper {
   get enabled() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
-
-  get description() {
-    return { id: this._appPrefLabel };
-  }
 }
 
 class PDFHandlerInfoWrapper extends InternalHandlerInfoWrapper {
   constructor() {
-    super(TYPE_PDF);
-  }
-
-  get _appPrefLabel() {
-    return "applications-type-pdf";
+    super(TYPE_PDF, null);
   }
 
   get enabled() {
     return !Services.prefs.getBoolPref(PREF_PDFJS_DISABLED);
+  }
+}
+
+class ViewableInternallyHandlerInfoWrapper extends InternalHandlerInfoWrapper {
+  constructor(extension) {
+    super(null, extension);
+  }
+
+  get enabled() {
+    return DownloadIntegration.shouldViewDownloadInternally(this.type);
   }
 }
