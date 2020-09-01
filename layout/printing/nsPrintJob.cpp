@@ -183,6 +183,7 @@ static CallState CollectDocuments(Document& aDoc,
   return CallState::Continue;
 }
 
+MOZ_CAN_RUN_SCRIPT
 static void DispatchEventToWindowTree(Document& aDoc, const nsAString& aEvent) {
   nsTArray<nsCOMPtr<Document>> targets;
   CollectDocuments(aDoc, targets);
@@ -655,6 +656,9 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     
     
     DispatchEventToWindowTree(*aSourceDoc, u"beforeprint"_ns);
+    if (mIsDestroying) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   {
