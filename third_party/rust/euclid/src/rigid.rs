@@ -114,7 +114,7 @@ impl<T: Float + ApproxEq<T>, Src, Dst> RigidTransform3D<T, Src, Dst> {
     
     
     #[inline]
-    pub fn post_transform<Dst2>(
+    pub fn then<Dst2>(
         &self,
         other: &RigidTransform3D<T, Dst, Dst2>,
     ) -> RigidTransform3D<T, Src, Dst2> {
@@ -131,24 +131,12 @@ impl<T: Float + ApproxEq<T>, Src, Dst> RigidTransform3D<T, Src, Dst> {
         
 
         let t_prime = other.rotation.transform_vector3d(self.translation);
-        let r_prime = self.rotation.post_rotate(&other.rotation);
+        let r_prime = self.rotation.then(&other.rotation);
         let t_prime2 = t_prime + other.translation;
         RigidTransform3D {
             rotation: r_prime,
             translation: t_prime2,
         }
-    }
-
-    
-    
-    
-    
-    #[inline]
-    pub fn pre_transform<Src2>(
-        &self,
-        other: &RigidTransform3D<T, Src2, Src>,
-    ) -> RigidTransform3D<T, Src2, Dst> {
-        other.post_transform(&self)
     }
 
     
@@ -173,9 +161,7 @@ impl<T: Float + ApproxEq<T>, Src, Dst> RigidTransform3D<T, Src, Dst> {
     where
         T: Trig,
     {
-        self.translation
-            .to_transform()
-            .pre_transform(&self.rotation.to_transform())
+        self.rotation.to_transform().then(&self.translation.to_transform())
     }
 
     
@@ -223,16 +209,12 @@ mod test {
 
         let rigid = RigidTransform3D::new(rotation, translation);
         assert!(rigid.to_transform().approx_eq(
-            &translation
-                .to_transform()
-                .pre_transform(&rotation.to_transform())
+            &rotation.to_transform().then(&translation.to_transform())
         ));
 
         let rigid = RigidTransform3D::new_from_reversed(translation, rotation);
         assert!(rigid.to_transform().approx_eq(
-            &translation
-                .to_transform()
-                .post_transform(&rotation.to_transform())
+            &translation.to_transform().then(&rotation.to_transform())
         ));
     }
 
@@ -245,7 +227,7 @@ mod test {
         let (t2, r2) = rigid.decompose_reversed();
         assert!(rigid
             .to_transform()
-            .approx_eq(&t2.to_transform().post_transform(&r2.to_transform())));
+            .approx_eq(&t2.to_transform().then(&r2.to_transform())));
     }
 
     #[test]
@@ -256,7 +238,7 @@ mod test {
         let rigid = RigidTransform3D::new(rotation, translation);
         let inverse = rigid.inverse();
         assert!(rigid
-            .post_transform(&inverse)
+            .then(&inverse)
             .to_transform()
             .approx_eq(&Transform3D::identity()));
         assert!(inverse
@@ -274,12 +256,12 @@ mod test {
         let rigid2 = RigidTransform3D::new(rotation2, translation2);
 
         assert!(rigid
-            .post_transform(&rigid2)
+            .then(&rigid2)
             .to_transform()
-            .approx_eq(&rigid.to_transform().post_transform(&rigid2.to_transform())));
-        assert!(rigid
-            .pre_transform(&rigid2)
+            .approx_eq(&rigid.to_transform().then(&rigid2.to_transform())));
+        assert!(rigid2
+            .then(&rigid)
             .to_transform()
-            .approx_eq(&rigid.to_transform().pre_transform(&rigid2.to_transform())));
+            .approx_eq(&rigid2.to_transform().then(&rigid.to_transform())));
     }
 }
