@@ -898,7 +898,10 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
 
   
   
-  nsEventStatus status = aEventStatus ? *aEventStatus : nsEventStatus_eIgnore;
+  nsEventStatus status =
+      aDOMEvent && aDOMEvent->DefaultPrevented()
+          ? nsEventStatus_eConsumeNoDefault
+          : aEventStatus ? *aEventStatus : nsEventStatus_eIgnore;
   nsCOMPtr<EventTarget> targetForPreVisitor = aEvent->mTarget;
   EventChainPreVisitor preVisitor(aPresContext, aEvent, aDOMEvent, status,
                                   isInAnon, targetForPreVisitor);
