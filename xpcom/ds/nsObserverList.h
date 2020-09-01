@@ -39,7 +39,7 @@ class nsObserverList : public nsCharPtrHashKey {
 
   
   
-  void FillObserverArray(nsCOMArray<nsIObserver>& aArray);
+  nsCOMArray<nsIObserver> ReverseCloneObserverArray();
 
   
   void AppendStrongObservers(nsCOMArray<nsIObserver>& aArray);
