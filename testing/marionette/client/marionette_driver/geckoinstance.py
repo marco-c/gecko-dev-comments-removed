@@ -45,8 +45,13 @@ class GeckoInstance(object):
 
         
         "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
+        "datareporting.healthreport.logging.consoleEnabled": False,
+        "datareporting.healthreport.service.enabled": False,
+        "datareporting.healthreport.service.firstRun": False,
+        "datareporting.healthreport.uploadEnabled": False,
 
         
+        "datareporting.policy.dataSubmissionEnabled": False,
         "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
 
         
@@ -131,9 +136,6 @@ class GeckoInstance(object):
 
         
         "toolkit.startup.max_resumed_crashes": -1,
-
-        
-        "toolkit.telemetry.server": "https://%(server)s/dummy/telemetry/",
 
         
         "dom.file.createInChild": True,
