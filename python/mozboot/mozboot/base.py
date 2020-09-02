@@ -129,7 +129,9 @@ ac_add_options --enable-artifact-builds
 '''.strip()
 
 
-MODERN_MERCURIAL_VERSION = LooseVersion('4.8')
+
+
+MODERN_MERCURIAL_VERSION = LooseVersion('4.9')
 
 MODERN_PYTHON2_VERSION = LooseVersion('2.7.3')
 MODERN_PYTHON3_VERSION = LooseVersion('3.6.0')
