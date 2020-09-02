@@ -23,8 +23,12 @@
 
 #include "mozilla/BaseProfilerCounts.h"
 
+
+
+
 #ifndef MOZ_GECKO_PROFILER
 
+#  include "mozilla/BaseProfilerMarkers.h"
 #  include "mozilla/UniquePtr.h"
 
 
@@ -675,6 +679,16 @@ class MOZ_RAII AutoProfilerStats {
 #    define AUTO_PROFILER_STATS(name)
 
 #  endif  
+
+}  
+}  
+
+
+
+#  include "mozilla/BaseProfilerMarkers.h"
+
+namespace mozilla {
+namespace baseprofiler {
 
 
 

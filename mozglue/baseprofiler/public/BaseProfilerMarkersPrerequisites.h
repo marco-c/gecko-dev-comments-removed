@@ -1,0 +1,14 @@
+
+
+
+
+
+
+#ifndef BaseProfilerMarkersPrerequisites_h
+#define BaseProfilerMarkersPrerequisites_h
+
+#ifdef MOZ_GECKO_PROFILER
+
+#endif  
+
+#endif  
