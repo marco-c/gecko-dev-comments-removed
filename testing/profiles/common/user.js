@@ -26,8 +26,6 @@ user_pref("browser.pagethumbnails.capturing_disabled", true);
 
 user_pref("browser.search.region", "US");
 
-user_pref("browser.search.geoSpecificDefaults", false);
-
 user_pref("browser.webapps.checkForUpdates", 0);
 
 

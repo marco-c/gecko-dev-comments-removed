@@ -11,7 +11,6 @@ add_task(async function() {
   
   
   Services.prefs.setCharPref("browser.search.region", "US");
-  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
 
   Services.search.restoreDefaultEngines();
   Services.search.resetToOriginalDefaultEngine();
