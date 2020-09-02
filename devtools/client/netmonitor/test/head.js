@@ -742,23 +742,6 @@ function verifyRequestItemTarget(
 
 
 
-
-
-function waitFor(subject, eventName) {
-  return new Promise(resolve => {
-    subject.once(eventName, resolve);
-  });
-}
-
-
-
-
-
-
-
-
-
-
 function waitForDispatch(store, type) {
   return new Promise(resolve => {
     store.dispatch({

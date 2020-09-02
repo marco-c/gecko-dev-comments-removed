@@ -30,7 +30,7 @@ add_task(async function() {
   
   
   toolbox.topWindow.document.querySelector("menuitem[label='GPRS']").click();
-  await waitFor(monitor.panelWin.api, TEST_EVENTS.THROTTLING_CHANGED);
+  await monitor.panelWin.api.once(TEST_EVENTS.THROTTLING_CHANGED);
 
   
   checkTelemetryEvent(
