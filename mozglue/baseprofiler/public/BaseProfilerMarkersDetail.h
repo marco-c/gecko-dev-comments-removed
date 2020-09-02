@@ -21,6 +21,7 @@
 
 
 #  include "mozilla/JSONWriter.h"
+#  include "mozilla/ProfileBufferEntryKinds.h"
 
 #  include <limits>
 #  include <tuple>
@@ -91,12 +92,124 @@ struct MarkerTypeSerialization {
   template <size_t i>
   using StreamFunctionParameter =
       std::tuple_element_t<i, StreamFunctionUserParametersTuple>;
+
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <size_t i = 0, typename... Args>
+  static void DeserializeArguments(ProfileBufferEntryReader& aEntryReader,
+                                   JSONWriter& aWriter, const Args&... aArgs) {
+    static_assert(sizeof...(Args) == i,
+                  "We should have collected `i` arguments so far");
+    if constexpr (i < scStreamFunctionParameterCount) {
+      
+      auto argument = aEntryReader.ReadObject<StreamFunctionParameter<i>>();
+      
+      DeserializeArguments<i + 1>(aEntryReader, aWriter, aArgs..., argument);
+    } else {
+      
+      
+      
+      
+      MarkerType::StreamJSONMarkerData(aWriter, aArgs...);
+    }
+  }
+
+ public:
+  static void Deserialize(ProfileBufferEntryReader& aEntryReader,
+                          JSONWriter& aWriter) {
+    aWriter.StringProperty("type", MarkerType::MarkerTypeName());
+    DeserializeArguments(aEntryReader, aWriter);
+  }
 };
 
 template <>
 struct MarkerTypeSerialization<::mozilla::baseprofiler::markers::NoPayload> {
   
 };
+
+template <typename NameCallback, typename StackCallback>
+[[nodiscard]] bool DeserializeAfterKindAndStream(
+    ProfileBufferEntryReader& aEntryReader, JSONWriter& aWriter,
+    int aThreadIdOrZero, NameCallback&& aNameCallback,
+    StackCallback&& aStackCallback) {
+  
+  
+  
+  
+  
+  const MarkerOptions options = aEntryReader.ReadObject<MarkerOptions>();
+  if (aThreadIdOrZero != 0 &&
+      options.ThreadId().ThreadId() != aThreadIdOrZero) {
+    
+    return false;
+  }
+  
+  
+  aWriter.StartArrayElement();
+  {
+    std::forward<NameCallback>(aNameCallback)(
+        aEntryReader.ReadObject<mozilla::ProfilerString8View>());
+
+    const double startTime = options.Timing().GetStartTime();
+    aWriter.DoubleElement(startTime);
+
+    const double endTime = options.Timing().GetEndTime();
+    aWriter.DoubleElement(endTime);
+
+    aWriter.IntElement(static_cast<int64_t>(options.Timing().MarkerPhase()));
+
+    aWriter.IntElement(static_cast<int64_t>(options.Category().Category()));
+
+    if (const auto tag =
+            aEntryReader.ReadObject<mozilla::base_profiler_markers_detail::
+                                        Streaming::DeserializerTag>();
+        tag != 0) {
+      aWriter.StartObjectElement(JSONWriter::SingleLineStyle);
+      {
+        
+
+        
+        if (!options.InnerWindowId().IsUnspecified()) {
+          
+          
+          
+          
+          
+          aWriter.DoubleProperty(
+              "innerWindowID",
+              static_cast<double>(options.InnerWindowId().Id()));
+        }
+
+        
+        if (ProfileChunkedBuffer* chunkedBuffer =
+                options.Stack().GetChunkedBuffer();
+            chunkedBuffer) {
+          aWriter.StartObjectProperty("stack");
+          { std::forward<StackCallback>(aStackCallback)(*chunkedBuffer); }
+          aWriter.EndObject();
+        }
+
+        
+        mozilla::base_profiler_markers_detail::Streaming::Deserializer
+            deserializer = mozilla::base_profiler_markers_detail::Streaming::
+                DeserializerForTag(tag);
+        MOZ_RELEASE_ASSERT(deserializer);
+        deserializer(aEntryReader, aWriter);
+      }
+      aWriter.EndObject();
+    }
+  }
+  aWriter.EndArray();
+  return true;
+}
 
 }  
 
