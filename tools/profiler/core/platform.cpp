@@ -695,11 +695,6 @@ class CorePS {
 
 CorePS* CorePS::sInstance = nullptr;
 
-ProfileChunkedBuffer& profiler_get_core_buffer() {
-  MOZ_ASSERT(CorePS::Exists());
-  return CorePS::CoreBuffer();
-}
-
 class SamplerThread;
 
 static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
@@ -1588,6 +1583,80 @@ void ProfilingStackOwner::DumpStackAndCrash() const {
 
 static const char* const kMainThreadName = "GeckoMain";
 
+enum class MarkerPhase : uint8_t {
+  Instant = 0,
+  Interval = 1,
+  IntervalStart = 2,
+  IntervalEnd = 3,
+};
+
+
+
+
+
+class MarkerTiming {
+ public:
+  
+  
+  static MarkerTiming Instant(
+      const TimeStamp& aTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an instant marker.");
+    return MarkerTiming{aTime, TimeStamp{}, MarkerPhase::Instant};
+  }
+
+  static MarkerTiming Interval(
+      const TimeStamp& aStartTime,
+      const TimeStamp& aEndTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aStartTime.IsNull(),
+               "Start time is null for an interval marker.");
+    MOZ_ASSERT(!aEndTime.IsNull(), "End time is null for an interval marker.");
+    return MarkerTiming{aStartTime, aEndTime, MarkerPhase::Interval};
+  }
+
+  static MarkerTiming IntervalStart(
+      const TimeStamp& aTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an interval start marker.");
+    return MarkerTiming{aTime, TimeStamp{}, MarkerPhase::IntervalStart};
+  }
+
+  static MarkerTiming IntervalEnd(
+      const TimeStamp& aTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an interval end marker.");
+    return MarkerTiming{TimeStamp{}, aTime, MarkerPhase::IntervalEnd};
+  }
+
+  
+  
+  double GetStartTime() const {
+    return MarkerTiming::timeStampToDouble(mStartTime);
+  }
+
+  double GetEndTime() const {
+    return MarkerTiming::timeStampToDouble(mEndTime);
+  }
+
+  uint8_t GetMarkerPhase() const { return static_cast<uint8_t>(mMarkerPhase); }
+
+ private:
+  MarkerTiming(TimeStamp aStartTime, TimeStamp aEndTime,
+               MarkerPhase aMarkerPhase)
+      : mStartTime(aStartTime),
+        mEndTime(aEndTime),
+        mMarkerPhase(aMarkerPhase) {}
+
+  static double timeStampToDouble(TimeStamp time) {
+    if (time.IsNull()) {
+      
+      return 0;
+    }
+    return (time - CorePS::ProcessStartTime()).ToMilliseconds();
+  }
+
+  TimeStamp mStartTime;
+  TimeStamp mEndTime;
+  MarkerPhase mMarkerPhase;
+};
+
 
 
 
@@ -1599,7 +1668,7 @@ MarkerTiming get_marker_timing_from_payload(
   if (start.IsNull()) {
     if (end.IsNull()) {
       
-      return MarkerTiming::InstantAt(TimeStamp::NowUnfuzzed());
+      return MarkerTiming::Instant(TimeStamp::NowUnfuzzed());
     }
     return MarkerTiming::IntervalEnd(end);
   }
@@ -1607,7 +1676,7 @@ MarkerTiming get_marker_timing_from_payload(
     return MarkerTiming::IntervalStart(start);
   }
   if (start == end) {
-    return MarkerTiming::InstantAt(start);
+    return MarkerTiming::Instant(start);
   }
   return MarkerTiming::Interval(start, end);
 }
@@ -1619,11 +1688,12 @@ static void StoreMarker(ProfileChunkedBuffer& aChunkedBuffer, int aThreadId,
                         const MarkerTiming& aMarkerTiming,
                         JS::ProfilingCategoryPair aCategoryPair,
                         const ProfilerMarkerPayload* aPayload) {
-  aChunkedBuffer.PutObjects(
-      ProfileBufferEntry::Kind::MarkerData, aThreadId,
-      WrapProfileBufferUnownedCString(aMarkerName),
-      aMarkerTiming.GetStartTime(), aMarkerTiming.GetEndTime(),
-      aMarkerTiming.GetPhase(), static_cast<uint32_t>(aCategoryPair), aPayload);
+  aChunkedBuffer.PutObjects(ProfileBufferEntry::Kind::MarkerData, aThreadId,
+                            WrapProfileBufferUnownedCString(aMarkerName),
+                            aMarkerTiming.GetStartTime(),
+                            aMarkerTiming.GetEndTime(),
+                            aMarkerTiming.GetMarkerPhase(),
+                            static_cast<uint32_t>(aCategoryPair), aPayload);
 }
 
 
@@ -2713,7 +2783,7 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
                             : CorePS::ProcessStartTime() +
                                   TimeDuration::FromMilliseconds(endTimeMs);
     MarkerTiming timing = endTimeMs == 0
-                              ? MarkerTiming::InstantAt(startTime)
+                              ? MarkerTiming::Instant(startTime)
                               : MarkerTiming::Interval(startTime, endTime);
 
     if (!text) {
@@ -5279,7 +5349,65 @@ double profiler_time() {
   return delta.ToMilliseconds();
 }
 
-bool profiler_capture_backtrace_into(ProfileChunkedBuffer& aChunkedBuffer) {
+static void locked_profiler_fill_backtrace(PSLockRef aLock,
+                                           RegisteredThread& aRegisteredThread,
+                                           ProfileBuffer& aProfileBuffer) {
+  Registers regs;
+#if defined(HAVE_NATIVE_UNWIND)
+  regs.SyncPopulate();
+#else
+  regs.Clear();
+#endif
+
+  DoSyncSample(aLock, aRegisteredThread, TimeStamp::NowUnfuzzed(), regs,
+               aProfileBuffer);
+}
+
+static UniqueProfilerBacktrace locked_profiler_get_backtrace(PSLockRef aLock) {
+  if (!ActivePS::Exists(aLock)) {
+    return nullptr;
+  }
+
+  RegisteredThread* registeredThread =
+      TLSRegisteredThread::RegisteredThread(aLock);
+  if (!registeredThread) {
+    
+    
+    
+    
+    return nullptr;
+  }
+
+  auto bufferManager = MakeUnique<ProfileChunkedBuffer>(
+      ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
+      MakeUnique<ProfileBufferChunkManagerSingle>(scExpectedMaximumStackSize));
+  ProfileBuffer buffer(*bufferManager);
+
+  locked_profiler_fill_backtrace(aLock, *registeredThread, buffer);
+
+  return UniqueProfilerBacktrace(
+      new ProfilerBacktrace("SyncProfile", registeredThread->Info()->ThreadId(),
+                            std::move(bufferManager)));
+}
+
+UniqueProfilerBacktrace profiler_get_backtrace() {
+  MOZ_RELEASE_ASSERT(CorePS::Exists());
+
+  
+  if (!profiler_is_active()) {
+    return nullptr;
+  }
+
+  PSAutoLock lock(gPSMutex);
+
+  return locked_profiler_get_backtrace(lock);
+}
+
+void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {
+  delete aBacktrace;
+}
+
+bool profiler_capture_backtrace(ProfileChunkedBuffer& aChunkedBuffer) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -5291,60 +5419,15 @@ bool profiler_capture_backtrace_into(ProfileChunkedBuffer& aChunkedBuffer) {
   RegisteredThread* registeredThread =
       TLSRegisteredThread::RegisteredThread(lock);
   if (!registeredThread) {
-    
-    
-    
-    
+    MOZ_ASSERT(registeredThread);
     return false;
   }
 
   ProfileBuffer profileBuffer(aChunkedBuffer);
 
-  Registers regs;
-#if defined(HAVE_NATIVE_UNWIND)
-  regs.SyncPopulate();
-#else
-  regs.Clear();
-#endif
-
-  DoSyncSample(lock, *registeredThread, TimeStamp::NowUnfuzzed(), regs,
-               profileBuffer);
+  locked_profiler_fill_backtrace(lock, *registeredThread, profileBuffer);
 
   return true;
-}
-
-UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  
-  if (!profiler_is_active()) {
-    return nullptr;
-  }
-
-  auto buffer = MakeUnique<ProfileChunkedBuffer>(
-      ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
-      MakeUnique<ProfileBufferChunkManagerSingle>(scExpectedMaximumStackSize));
-
-  if (!profiler_capture_backtrace_into(*buffer)) {
-    return nullptr;
-  }
-
-  return buffer;
-}
-
-UniqueProfilerBacktrace profiler_get_backtrace() {
-  UniquePtr<ProfileChunkedBuffer> buffer = profiler_capture_backtrace();
-
-  if (!buffer) {
-    return nullptr;
-  }
-
-  return UniqueProfilerBacktrace(new ProfilerBacktrace(
-      "SyncProfile", profiler_current_thread_id(), std::move(buffer)));
-}
-
-void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {
-  delete aBacktrace;
 }
 
 static void racy_profiler_add_marker(const char* aMarkerName,
@@ -5369,7 +5452,7 @@ static void racy_profiler_add_marker(const char* aMarkerName,
 
   const MarkerTiming markerTiming =
       aPayload ? get_marker_timing_from_payload(*aPayload)
-               : MarkerTiming::InstantNow();
+               : MarkerTiming::Instant();
 
   StoreMarker(CorePS::CoreBuffer(), racyRegisteredThread->ThreadId(),
               aMarkerName, markerTiming, aCategoryPair, aPayload);
@@ -5522,17 +5605,18 @@ bool profiler_add_native_allocation_marker(int aMainThreadId, int64_t aSize,
   
   
   
-  if (gPSMutex.IsLockedOnCurrentThread()) {
+  PSAutoTryLock tryLock(gPSMutex);
+  if (!tryLock.IsLocked()) {
     return false;
   }
 
   AUTO_PROFILER_STATS(add_marker_with_NativeAllocationMarkerPayload);
   maybelocked_profiler_add_marker_for_thread(
       aMainThreadId, JS::ProfilingCategoryPair::OTHER, "Native allocation",
-      NativeAllocationMarkerPayload(TimeStamp::Now(), aSize, aMemoryAddress,
-                                    profiler_current_thread_id(),
-                                    profiler_get_backtrace()),
-      nullptr);
+      NativeAllocationMarkerPayload(
+          TimeStamp::Now(), aSize, aMemoryAddress, profiler_current_thread_id(),
+          locked_profiler_get_backtrace(tryLock.LockRef())),
+      &tryLock.LockRef());
   return true;
 }
 
