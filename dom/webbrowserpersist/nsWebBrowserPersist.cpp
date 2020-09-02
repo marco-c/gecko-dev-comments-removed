@@ -889,8 +889,30 @@ NS_IMETHODIMP nsWebBrowserPersist::OnStopRequest(nsIRequest* request,
       SendErrorStatusChange(true, status, request, data->mFile);
     }
 
-    MutexAutoLock lock(mOutputMapMutex);
     
+    {
+      MutexAutoLock lock(data->mStreamMutex);
+      if (data->mStream) {
+        if (!mBackgroundQueue) {
+          nsresult rv = NS_CreateBackgroundTaskQueue(
+              "WebBrowserPersist", getter_AddRefs(mBackgroundQueue));
+          if (NS_FAILED(rv)) {
+            return rv;
+          }
+        }
+        
+        
+        
+        mFileClosePromises.AppendElement(InvokeAsync(
+            mBackgroundQueue, __func__, [stream = std::move(data->mStream)]() {
+              nsresult rv = stream->Close();
+              
+              
+              return ClosePromise::CreateAndResolve(rv, __func__);
+            }));
+      }
+    }
+    MutexAutoLock lock(mOutputMapMutex);
     mOutputMap.Remove(keyPtr);
   } else {
     
@@ -2275,7 +2297,14 @@ void nsWebBrowserPersist::EndDownload(nsresult aResult) {
   if (NS_SUCCEEDED(mPersistResult) && NS_FAILED(aResult)) {
     mPersistResult = aResult;
   }
+  ClosePromise::All(GetCurrentSerialEventTarget(), mFileClosePromises)
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this}, aResult]() {
+               self->EndDownloadInternal(aResult);
+             });
+}
 
+void nsWebBrowserPersist::EndDownloadInternal(nsresult aResult) {
   
   
   mCompleted = true;
