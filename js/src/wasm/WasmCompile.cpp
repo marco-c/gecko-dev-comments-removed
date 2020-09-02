@@ -89,7 +89,7 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
   
   
   
-  bool debug = cx->realm()->debuggerObservesAsmJS();
+  bool debug = cx->realm() && cx->realm()->debuggerObservesAsmJS();
 
   bool forceTiering =
       cx->options().testWasmAwaitTier2() || JitOptions.wasmDelayTier2;
