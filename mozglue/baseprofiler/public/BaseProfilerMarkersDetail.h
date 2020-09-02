@@ -23,6 +23,7 @@
 #  include "mozilla/JSONWriter.h"
 
 #  include <limits>
+#  include <tuple>
 
 namespace mozilla::baseprofiler {
 
@@ -57,6 +58,39 @@ struct Streaming {
 
   
   MFBT_API static Deserializer DeserializerForTag(DeserializerTag aTag);
+};
+
+
+
+template <typename T>
+struct StreamFunctionTypeHelper;
+
+
+
+
+template <typename R, typename... As>
+struct StreamFunctionTypeHelper<R(JSONWriter&, As...)> {
+  constexpr static size_t scArity = sizeof...(As);
+  using TupleType =
+      std::tuple<std::remove_cv_t<std::remove_reference_t<As>>...>;
+};
+
+
+
+
+template <typename MarkerType>
+struct MarkerTypeSerialization {
+  
+  
+  using StreamFunctionType =
+      StreamFunctionTypeHelper<decltype(MarkerType::StreamJSONMarkerData)>;
+  constexpr static size_t scStreamFunctionParameterCount =
+      StreamFunctionType::scArity;
+  using StreamFunctionUserParametersTuple =
+      typename StreamFunctionType::TupleType;
+  template <size_t i>
+  using StreamFunctionParameter =
+      std::tuple_element_t<i, StreamFunctionUserParametersTuple>;
 };
 
 }  
