@@ -8,30 +8,36 @@ import os
 import sys
 
 
-
-
-
-def relativize(path):
+def relativize(path, base=None):
+    
+    
+    
     if path.startswith('/'):
-        return os.path.relpath(path)
-    return path
+        return os.path.relpath(path, base)
+    
+    
+    if os.path.isabs(path) or path.startswith('-'):
+        return path
+    
+    
+    return os.path.relpath(path, base)
 
 
 def midl(out, input, *flags):
     out.avoid_writing_to_file()
     midl = buildconfig.substs['MIDL']
     wine = buildconfig.substs.get('WINE')
+    base = os.path.dirname(out.name) or '.'
     if midl.lower().endswith('.exe') and wine:
         command = [wine, midl]
     else:
         command = [midl]
     command.extend(buildconfig.substs['MIDL_FLAGS'])
-    command.extend([relativize(f) for f in flags])
+    command.extend([relativize(f, base) for f in flags])
     command.append('-Oicf')
-    command.extend(['-out', relativize(os.path.dirname(out.name) or '.')])
-    command.append(relativize(input))
+    command.append(relativize(input, base))
     print('Executing:', ' '.join(command))
-    result = subprocess.run(command)
+    result = subprocess.run(command, cwd=base)
     return result.returncode
 
 
