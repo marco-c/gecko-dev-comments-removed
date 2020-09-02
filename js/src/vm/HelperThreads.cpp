@@ -612,9 +612,13 @@ void ScriptParseTask<Unit>::parse(JSContext* cx) {
     return;
   }
 
+  if (!frontend::CompileGlobalScriptToStencil(compilationInfo.get(), data,
+                                              scopeKind)) {
+    return;
+  }
+
   frontend::CompilationGCOutput gcOutput(cx);
-  bool result = frontend::CompileGlobalScript(compilationInfo.get(), data,
-                                              scopeKind, gcOutput);
+  bool result = frontend::InstantiateStencils(compilationInfo.get(), gcOutput);
 
   
   
@@ -628,9 +632,8 @@ void ScriptParseTask<Unit>::parse(JSContext* cx) {
     return;
   }
 
-  if (gcOutput.script) {
-    scripts.infallibleAppend(gcOutput.script);
-  }
+  MOZ_ASSERT(gcOutput.script);
+  scripts.infallibleAppend(gcOutput.script);
 }
 
 template <typename Unit>
