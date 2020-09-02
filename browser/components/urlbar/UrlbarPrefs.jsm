@@ -165,6 +165,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  ["update2.disableOneOffsHorizontalKeyNavigation", false],
+
+  
+  
   ["update2.localOneOffs", false],
 
   

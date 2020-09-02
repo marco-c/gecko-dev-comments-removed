@@ -341,12 +341,16 @@ pref("browser.urlbar.richSuggestions.tail", true);
 pref("browser.urlbar.update2", true);
 
 
+pref("browser.urlbar.update2.disableOneOffsHorizontalKeyNavigation", true);
+
+
 pref("browser.urlbar.update2.localOneOffs", true);
 
 
 pref("browser.urlbar.update2.oneOffsRefresh", true);
 #else
 pref("browser.urlbar.update2", false);
+pref("browser.urlbar.update2.disableOneOffsHorizontalKeyNavigation", false);
 pref("browser.urlbar.update2.localOneOffs", false);
 pref("browser.urlbar.update2.oneOffsRefresh", false);
 #endif

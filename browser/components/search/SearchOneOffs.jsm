@@ -963,7 +963,11 @@ class SearchOneOffs {
     }
 
     if (event.keyCode == KeyboardEvent.DOM_VK_LEFT) {
-      if (this.selectedButton && (this.compact || this.selectedButton.engine)) {
+      if (
+        this.selectedButton &&
+        (this.compact || this.selectedButton.engine) &&
+        !this.disableOneOffsHorizontalKeyNavigation
+      ) {
         
         this.advanceSelection(false, this.compact, true);
         return true;
@@ -972,7 +976,11 @@ class SearchOneOffs {
     }
 
     if (event.keyCode == KeyboardEvent.DOM_VK_RIGHT) {
-      if (this.selectedButton && (this.compact || this.selectedButton.engine)) {
+      if (
+        this.selectedButton &&
+        (this.compact || this.selectedButton.engine) &&
+        !this.disableOneOffsHorizontalKeyNavigation
+      ) {
         
         this.advanceSelection(true, this.compact, true);
         return true;
