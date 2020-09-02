@@ -9,6 +9,9 @@
 
 <script>
   const submitButton = document.getElementById("submit");
+  const wrapper = document.createElement("span");
+  wrapper.id = "wrapper-un-and-pw";
+  const shadow = wrapper.attachShadow({mode: "closed"});
   const fields = ["username", "password"];
   for (let field of fields) {
     const inputEle = document.createElement("input");
@@ -17,12 +20,9 @@
     if (field === "password") {
       inputEle.type = field;
     }
-    const wrapper = document.createElement("span");
-    wrapper.id = `wrapper-${field}`;
-    const shadow = wrapper.attachShadow({mode: "closed"});
     shadow.append(inputEle);
-    submitButton.before(wrapper);
   }
+  submitButton.before(wrapper);
 </script>
 
 </body></html>

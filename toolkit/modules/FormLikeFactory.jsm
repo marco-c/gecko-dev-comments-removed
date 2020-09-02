@@ -111,13 +111,35 @@ let FormLikeFactory = {
 
 
 
+  closestFormIgnoringShadowRoots(aField) {
+    let form = aField.closest("form");
+    let current = aField;
+    while (!form) {
+      let shadowRoot = current.getRootNode();
+      if (ChromeUtils.getClassName(shadowRoot) !== "ShadowRoot") {
+        break;
+      }
+      let host = shadowRoot.host;
+      form = host.closest("form");
+      current = host;
+    }
+    return form;
+  },
+
+  
+
+
+
+
+
 
 
 
 
   findRootForField(aField) {
-    if (aField.form) {
-      return aField.form;
+    let form = aField.form || this.closestFormIgnoringShadowRoots(aField);
+    if (form) {
+      return form;
     }
 
     return aField.ownerDocument.documentElement;
