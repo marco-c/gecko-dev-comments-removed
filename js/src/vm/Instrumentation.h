@@ -70,7 +70,8 @@ class RealmInstrumentation {
 
   
   static const frontend::ParserAtom* getInstrumentationKindName(
-      frontend::CompilationInfo& compilationInfo, InstrumentationKind kind);
+      JSContext* cx, frontend::CompilationInfo& compilationInfo,
+      InstrumentationKind kind);
 
   static bool getScriptId(JSContext* cx, Handle<GlobalObject*> global,
                           HandleScript script, int32_t* id);
