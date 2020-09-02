@@ -42,35 +42,6 @@ function logThreadEvents(dbg, event) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-async function waitFor(
-  condition,
-  message = "waitFor",
-  interval = 10,
-  maxTries = 500
-) {
-  await BrowserTestUtils.waitForCondition(
-    condition,
-    message,
-    interval,
-    maxTries
-  );
-  return condition();
-}
-
-
-
-
-
 function waitForNextDispatch(store, actionType) {
   return new Promise(resolve => {
     store.dispatch({

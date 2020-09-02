@@ -346,35 +346,6 @@ function keyboardExecuteAndWaitForMessage(
 
 
 
-
-
-
-async function waitFor(
-  condition,
-  message = "waitFor",
-  interval = 10,
-  maxTries = 500
-) {
-  await BrowserTestUtils.waitForCondition(
-    condition,
-    message,
-    interval,
-    maxTries
-  );
-  return condition();
-}
-
-
-
-
-
-
-
-
-
-
-
-
 function findMessage(hud, text, selector = ".message") {
   const elements = findMessages(hud, text, selector);
   return elements.pop();
