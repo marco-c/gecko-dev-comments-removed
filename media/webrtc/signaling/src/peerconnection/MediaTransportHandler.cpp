@@ -809,13 +809,27 @@ void MediaTransportHandlerSTS::RemoveTransportsExcept(
       mStsThread, __func__,
       [=, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
         for (auto it = mTransports.begin(); it != mTransports.end();) {
-          if (!aTransportIds.count(it->first)) {
+          const std::string transportId(it->first);
+          if (!aTransportIds.count(transportId)) {
             if (it->second.mFlow) {
-              OnStateChange(it->first, TransportLayer::TS_NONE);
-              OnRtcpStateChange(it->first, TransportLayer::TS_NONE);
+              OnStateChange(transportId, TransportLayer::TS_NONE);
+              OnRtcpStateChange(transportId, TransportLayer::TS_NONE);
             }
-            mIceCtx->DestroyStream(it->first);
+            
+            
+            
             it = mTransports.erase(it);
+            
+            
+            
+            
+            
+            
+            
+            mStsThread->Dispatch(NS_NewRunnableFunction(
+                __func__, [iceCtx = RefPtr<NrIceCtx>(mIceCtx), transportId] {
+                  iceCtx->DestroyStream(transportId);
+                }));
           } else {
             MOZ_ASSERT(it->second.mFlow);
             ++it;
