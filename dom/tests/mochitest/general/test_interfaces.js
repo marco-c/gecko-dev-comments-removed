@@ -979,6 +979,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "RTCDataChannelEvent", insecureContext: true },
   
+  { name: "RTCDtlsTransport", insecureContext: true },
+  
   { name: "RTCDTMFSender", insecureContext: true },
   
   { name: "RTCDTMFToneChangeEvent", insecureContext: true },
