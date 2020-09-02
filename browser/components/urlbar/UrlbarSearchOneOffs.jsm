@@ -287,4 +287,22 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
       source: button.source,
     });
   }
+
+  
+
+
+
+
+
+
+  _on_contextmenu(event) {
+    
+    let target = event.originalTarget;
+    if (!target.engine) {
+      event.preventDefault();
+      return;
+    }
+
+    super._on_contextmenu(event);
+  }
 }
