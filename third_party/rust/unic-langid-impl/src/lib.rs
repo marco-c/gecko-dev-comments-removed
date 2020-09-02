@@ -4,14 +4,15 @@ mod layout_table;
 pub mod likelysubtags;
 #[doc(hidden)]
 pub mod parser;
-#[cfg(feature = "serde")]
-mod serde;
-pub mod subtags;
+mod subtags;
 
 pub use crate::errors::LanguageIdentifierError;
+use layout_table::CHARACTER_DIRECTION_RTL;
 use std::fmt::Write;
 use std::iter::Peekable;
 use std::str::FromStr;
+
+use tinystr::{TinyStr4, TinyStr8};
 
 
 #[derive(Debug, PartialEq)]
@@ -26,12 +27,7 @@ pub enum CharacterDirection {
     LTR,
 }
 
-type PartsTuple = (
-    subtags::Language,
-    Option<subtags::Script>,
-    Option<subtags::Region>,
-    Vec<subtags::Variant>,
-);
+type RawPartsTuple = (Option<u64>, Option<u32>, Option<u32>, Option<Box<[u64]>>);
 
 
 
@@ -78,10 +74,12 @@ type PartsTuple = (
 
 #[derive(Default, Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct LanguageIdentifier {
-    pub language: subtags::Language,
-    pub script: Option<subtags::Script>,
-    pub region: Option<subtags::Region>,
-    variants: Option<Box<[subtags::Variant]>>,
+    language: Option<TinyStr8>,
+    script: Option<TinyStr4>,
+    region: Option<TinyStr4>,
+    
+    
+    variants: Option<Box<[TinyStr8]>>,
 }
 
 impl LanguageIdentifier {
@@ -115,49 +113,46 @@ impl LanguageIdentifier {
     
     
     
-    
-    
-    
-    
-    pub fn from_parts(
-        language: subtags::Language,
-        script: Option<subtags::Script>,
-        region: Option<subtags::Region>,
-        variants: &[subtags::Variant],
-    ) -> Self {
-        let variants = if !variants.is_empty() {
-            let mut v = variants.to_vec();
-            v.sort_unstable();
-            v.dedup();
-            Some(v.into_boxed_slice())
+    pub fn from_parts<S: AsRef<[u8]>>(
+        language: Option<S>,
+        script: Option<S>,
+        region: Option<S>,
+        variants: &[S],
+    ) -> Result<Self, LanguageIdentifierError> {
+        let language = if let Some(subtag) = language {
+            subtags::parse_language_subtag(subtag.as_ref())?
+        } else {
+            None
+        };
+        let script = if let Some(subtag) = script {
+            Some(subtags::parse_script_subtag(subtag.as_ref())?)
+        } else {
+            None
+        };
+        let region = if let Some(subtag) = region {
+            Some(subtags::parse_region_subtag(subtag.as_ref())?)
         } else {
             None
         };
 
-        Self {
-            language,
-            script,
-            region,
-            variants,
-        }
-    }
+        let variants = if !variants.is_empty() {
+            let mut vars = variants
+                .iter()
+                .map(|v| subtags::parse_variant_subtag(v.as_ref()))
+                .collect::<Result<Vec<TinyStr8>, parser::errors::ParserError>>()?;
+            vars.sort_unstable();
+            vars.dedup();
+            Some(vars.into_boxed_slice())
+        } else {
+            None
+        };
 
-    
-    
-    
-    
-    pub const fn from_raw_parts_unchecked(
-        language: subtags::Language,
-        script: Option<subtags::Script>,
-        region: Option<subtags::Region>,
-        variants: Option<Box<[subtags::Variant]>>,
-    ) -> Self {
-        Self {
+        Ok(Self {
             language,
             script,
             region,
             variants,
-        }
+        })
     }
 
     #[doc(hidden)]
@@ -201,13 +196,54 @@ impl LanguageIdentifier {
     
     
     
-    pub fn into_parts(self) -> PartsTuple {
+    pub fn into_raw_parts(self) -> RawPartsTuple {
         (
-            self.language,
-            self.script,
-            self.region,
-            self.variants.map_or_else(Vec::new, |v| v.to_vec()),
+            self.language.map(|l| l.into()),
+            self.script.map(|s| s.into()),
+            self.region.map(|r| r.into()),
+            self.variants
+                .map(|v| v.iter().map(|v| (*v).into()).collect()),
         )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub const fn from_raw_parts_unchecked(
+        language: Option<TinyStr8>,
+        script: Option<TinyStr4>,
+        region: Option<TinyStr4>,
+        variants: Option<Box<[TinyStr8]>>,
+    ) -> Self {
+        Self {
+            language,
+            script,
+            region,
+            variants,
+        }
     }
 
     
@@ -241,9 +277,12 @@ impl LanguageIdentifier {
         other_as_range: bool,
     ) -> bool {
         let other = other.as_ref();
-        self.language
-            .matches(&other.language, self_as_range, other_as_range)
-            && subtag_matches(&self.script, &other.script, self_as_range, other_as_range)
+        subtag_matches(
+            &self.language,
+            &other.language,
+            self_as_range,
+            other_as_range,
+        ) && subtag_matches(&self.script, &other.script, self_as_range, other_as_range)
             && subtag_matches(&self.region, &other.region, self_as_range, other_as_range)
             && subtags_match(
                 &self.variants,
@@ -270,13 +309,10 @@ impl LanguageIdentifier {
     
     
     
-    pub fn variants(&self) -> impl ExactSizeIterator<Item = &subtags::Variant> {
-        let variants: &[_] = match self.variants {
-            Some(ref v) => &**v,
-            None => &[],
-        };
-
-        variants.iter()
+    
+    
+    pub fn language(&self) -> &str {
+        self.language.as_ref().map(|s| s.as_ref()).unwrap_or("und")
     }
 
     
@@ -293,8 +329,202 @@ impl LanguageIdentifier {
     
     
     
-    pub fn set_variants(&mut self, variants: &[subtags::Variant]) {
-        let mut v = variants.to_vec();
+    
+    pub fn set_language<S: AsRef<[u8]>>(
+        &mut self,
+        language: S,
+    ) -> Result<(), LanguageIdentifierError> {
+        self.language = subtags::parse_language_subtag(language.as_ref())?;
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn clear_language(&mut self) {
+        self.language = None;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn script(&self) -> Option<&str> {
+        self.script.as_ref().map(|s| s.as_ref())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_script<S: AsRef<[u8]>>(&mut self, script: S) -> Result<(), LanguageIdentifierError> {
+        self.script = Some(subtags::parse_script_subtag(script.as_ref())?);
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn clear_script(&mut self) {
+        self.script = None;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn region(&self) -> Option<&str> {
+        self.region.as_ref().map(|s| s.as_ref())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_region<S: AsRef<[u8]>>(&mut self, region: S) -> Result<(), LanguageIdentifierError> {
+        self.region = Some(subtags::parse_region_subtag(region.as_ref())?);
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn clear_region(&mut self) {
+        self.region = None;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn variants(&self) -> impl ExactSizeIterator<Item = &str> {
+        let variants: &[_] = match self.variants {
+            Some(ref v) => &**v,
+            None => &[],
+        };
+
+        variants.iter().map(|s| s.as_ref())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_variants<S: AsRef<[u8]>>(
+        &mut self,
+        variants: impl IntoIterator<Item = S>,
+    ) -> Result<(), LanguageIdentifierError> {
+        let mut v = variants
+            .into_iter()
+            .map(|v| subtags::parse_variant_subtag(v.as_ref()))
+            .collect::<Result<Vec<_>, _>>()?;
 
         if v.is_empty() {
             self.variants = None;
@@ -303,6 +533,7 @@ impl LanguageIdentifier {
             v.dedup();
             self.variants = Some(v.into_boxed_slice());
         }
+        Ok(())
     }
 
     
@@ -318,11 +549,12 @@ impl LanguageIdentifier {
     
     
     
-    pub fn has_variant(&self, variant: subtags::Variant) -> bool {
+    pub fn has_variant<S: AsRef<[u8]>>(&self, variant: S) -> Result<bool, LanguageIdentifierError> {
+        let variant = subtags::parse_variant_subtag(variant.as_ref())?;
         if let Some(variants) = &self.variants {
-            variants.contains(&variant)
+            Ok(variants.contains(&variant))
         } else {
-            false
+            Ok(false)
         }
     }
 
@@ -412,13 +644,8 @@ impl LanguageIdentifier {
     
     
     pub fn character_direction(&self) -> CharacterDirection {
-        match (self.language.into(), self.script) {
-            (_, Some(script))
-                if layout_table::SCRIPTS_CHARACTER_DIRECTION_RTL.contains(&script.into()) =>
-            {
-                CharacterDirection::RTL
-            }
-            (Some(lang), _) if layout_table::LANGS_CHARACTER_DIRECTION_RTL.contains(&lang) => {
+        match self.language {
+            Some(lang) if CHARACTER_DIRECTION_RTL.contains(&(lang.into())) => {
                 CharacterDirection::RTL
             }
             _ => CharacterDirection::LTR,
@@ -443,28 +670,26 @@ impl AsRef<LanguageIdentifier> for LanguageIdentifier {
 
 impl std::fmt::Display for LanguageIdentifier {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.language.fmt(f)?;
+        if let Some(ref lang) = self.language {
+            f.write_str(lang)?;
+        } else {
+            f.write_str("und")?;
+        }
         if let Some(ref script) = self.script {
             f.write_char('-')?;
-            script.fmt(f)?;
+            f.write_str(script)?;
         }
         if let Some(ref region) = self.region {
             f.write_char('-')?;
-            region.fmt(f)?;
+            f.write_str(region)?;
         }
         if let Some(variants) = &self.variants {
             for variant in variants.iter() {
                 f.write_char('-')?;
-                variant.fmt(f)?;
+                f.write_str(variant)?;
             }
         }
         Ok(())
-    }
-}
-
-impl PartialEq<&str> for LanguageIdentifier {
-    fn eq(&self, other: &&str) -> bool {
-        self.to_string().as_str() == *other
     }
 }
 
