@@ -56,18 +56,6 @@ const SEARCH_DEFAULT_UPDATE_INTERVAL = 7;
 const REINIT_IDLE_TIME_SEC = 5 * 60;
 
 
-var ensureKnownRegion = async function(ss) {
-  
-  
-  
-  Services.obs.notifyObservers(
-    null,
-    SearchUtils.TOPIC_SEARCH_SERVICE,
-    "ensure-known-region-done"
-  );
-};
-
-
 
 
 
@@ -149,8 +137,6 @@ SearchService.prototype = {
 
   
   _engineSelector: null,
-
-  _ensureKnownRegionPromise: null,
 
   
 
@@ -298,13 +284,6 @@ SearchService.prototype = {
 
       
       let cache = await this._cache.get();
-
-      
-      
-      
-      this._ensureKnownRegionPromise = ensureKnownRegion(this)
-        .catch(ex => logConsole.error("_init: failure determining region:", ex))
-        .finally(() => (this._ensureKnownRegionPromise = null));
 
       this._setupRemoteSettings().catch(Cu.reportError);
 
@@ -1024,14 +1003,6 @@ SearchService.prototype = {
         );
 
         let cache = await this._cache.get(origin);
-        
-        
-        
-        this._ensureKnownRegionPromise = ensureKnownRegion(this)
-          .catch(ex =>
-            logConsole.error("_reInit: failure determining region:", ex)
-          )
-          .finally(() => (this._ensureKnownRegionPromise = null));
 
         await this._loadEngines(cache);
 
@@ -2715,9 +2686,7 @@ SearchService.prototype = {
       case Region.REGION_TOPIC:
         if (verb == Region.REGION_UPDATED) {
           logConsole.debug("Region updated:", Region.home);
-          ensureKnownRegion(this)
-            .then(this._maybeReloadEngines.bind(this))
-            .catch(Cu.reportError);
+          this._maybeReloadEngines().catch(Cu.reportError);
         }
         break;
     }
