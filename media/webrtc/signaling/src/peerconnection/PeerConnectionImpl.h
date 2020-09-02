@@ -396,7 +396,7 @@ class PeerConnectionImpl final
   
   dom::RTCSignalingState GetSignalingState() const;
 
-  void OnSetDescriptionSuccess(bool rollback, bool remote);
+  void OnSetDescriptionSuccess(JsepSdpType sdpType, bool remote);
 
   bool IsClosed() const;
   

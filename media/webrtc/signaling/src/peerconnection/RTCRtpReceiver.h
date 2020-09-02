@@ -23,6 +23,7 @@ class MediaPipelineReceive;
 class MediaSessionConduit;
 class MediaTransportHandler;
 class JsepTransceiver;
+class TransceiverImpl;
 
 namespace dom {
 class MediaStreamTrack;
@@ -41,7 +42,8 @@ class RTCRtpReceiver : public nsISupports,
                           JsepTransceiver* aJsepTransceiver,
                           nsISerialEventTarget* aMainThread,
                           nsISerialEventTarget* aStsThread,
-                          MediaSessionConduit* aConduit);
+                          MediaSessionConduit* aConduit,
+                          TransceiverImpl* aTransceiverImpl);
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -52,7 +54,7 @@ class RTCRtpReceiver : public nsISupports,
 
   
   MediaStreamTrack* Track() const { return mTrack; }
-  RTCDtlsTransport* GetTransport() const { return nullptr; }
+  RTCDtlsTransport* GetTransport() const;
   already_AddRefed<Promise> GetStats();
   void GetContributingSources(
       nsTArray<dom::RTCRtpContributingSource>& aSources);
@@ -122,6 +124,7 @@ class RTCRtpReceiver : public nsISupports,
   RefPtr<dom::MediaStreamTrack> mTrack;
   RefPtr<MediaPipelineReceive> mPipeline;
   RefPtr<MediaTransportHandler> mTransportHandler;
+  RefPtr<TransceiverImpl> mTransceiverImpl;
   
   
   

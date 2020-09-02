@@ -1335,7 +1335,7 @@ PeerConnectionImpl::SetLocalDescription(int32_t aAction, const char* aSDP) {
       RecordIceRestartStatistics(sdpType);
     }
 
-    OnSetDescriptionSuccess(sdpType == mozilla::kJsepSdpRollback, false);
+    OnSetDescriptionSuccess(sdpType, false);
   }
 
   appendHistory();
@@ -1476,7 +1476,7 @@ PeerConnectionImpl::SetRemoteDescription(int32_t action, const char* aSDP) {
       RecordIceRestartStatistics(sdpType);
     }
 
-    OnSetDescriptionSuccess(sdpType == kJsepSdpRollback, true);
+    OnSetDescriptionSuccess(sdpType, true);
   }
 
   appendHistory();
@@ -2153,16 +2153,29 @@ DOMMediaStream* PeerConnectionImpl::CreateReceiveStream(
   return mReceiveStreams.LastElement();
 }
 
-void PeerConnectionImpl::OnSetDescriptionSuccess(bool rollback, bool remote) {
+void PeerConnectionImpl::OnSetDescriptionSuccess(JsepSdpType sdpType,
+                                                 bool remote) {
   
   auto newSignalingState = GetSignalingState();
 
   mThread->Dispatch(NS_NewRunnableFunction(
       __func__, [this, self = RefPtr<PeerConnectionImpl>(this),
-                 newSignalingState, remote] {
+                 newSignalingState, sdpType, remote] {
         if (IsClosed()) {
           return;
         }
+
+        if (HasMedia()) {
+          
+          
+          
+          
+          if (sdpType != mozilla::kJsepSdpRollback &&
+              !(remote && sdpType == mozilla::kJsepSdpOffer)) {
+            mMedia->UpdateRTCDtlsTransports();
+          }
+        }
+
         JSErrorResult jrv;
         mPCObserver->SyncTransceivers(jrv);
         if (NS_WARN_IF(jrv.Failed())) {
@@ -2281,7 +2294,7 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(bool rollback, bool remote) {
     
   }
 
-  if (!rollback) {
+  if (sdpType != kJsepSdpRollback) {
     InitializeDataChannel();
     mMedia->StartIceChecks(*mJsepSession);
   }

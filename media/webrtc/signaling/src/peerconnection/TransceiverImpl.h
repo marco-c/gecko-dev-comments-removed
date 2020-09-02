@@ -12,6 +12,7 @@
 #include "mozilla/dom/MediaStreamTrack.h"
 #include "ErrorList.h"
 #include "signaling/src/jsep/JsepTransceiver.h"
+#include "transportlayer.h"  
 
 class nsIPrincipal;
 
@@ -47,7 +48,9 @@ class RTCRtpReceiver;
 
 
 
-class TransceiverImpl : public nsISupports, public nsWrapperCache {
+class TransceiverImpl : public nsISupports,
+                        public nsWrapperCache,
+                        public sigslot::has_slots<> {
  public:
   
 
@@ -96,12 +99,16 @@ class TransceiverImpl : public nsISupports, public nsWrapperCache {
   void SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver, ErrorResult& aRv);
   dom::RTCRtpReceiver* Receiver() const { return mReceiver; }
   dom::RTCDTMFSender* GetDtmf() const { return mDtmf; }
-  dom::RTCDtlsTransport* GetDtlsTransport() const { return nullptr; }
+  dom::RTCDtlsTransport* GetDtlsTransport() const { return mDtlsTransport; }
 
   bool CanSendDTMF() const;
 
   
   RefPtr<MediaPipelineTransmit> GetSendPipeline();
+
+  void UpdateDtlsTransportState(const std::string& aTransportId,
+                                TransportLayer::State aState);
+  void SetDtlsTransport(dom::RTCDtlsTransport* aDtlsTransport);
 
   std::string GetTransportId() const {
     return mJsepTransceiver->mTransport.mTransportId;
@@ -159,6 +166,10 @@ class TransceiverImpl : public nsISupports, public nsWrapperCache {
   RefPtr<WebRtcCallWrapper> mCallWrapper;
   RefPtr<MediaSessionConduit> mConduit;
   RefPtr<MediaPipelineTransmit> mTransmitPipeline;
+  
+  
+  
+  RefPtr<dom::RTCDtlsTransport> mDtlsTransport;
   RefPtr<dom::RTCRtpReceiver> mReceiver;
   
   RefPtr<dom::RTCDTMFSender> mDtmf;

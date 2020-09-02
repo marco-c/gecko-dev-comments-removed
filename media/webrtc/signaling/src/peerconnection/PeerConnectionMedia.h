@@ -23,8 +23,9 @@ namespace mozilla {
 class DataChannel;
 class PeerIdentity;
 namespace dom {
+class RTCDtlsTransport;
 class MediaStreamTrack;
-}
+}  
 }  
 
 #include "nriceresolver.h"
@@ -56,6 +57,10 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   void EnsureTransports(const JsepSession& aSession);
+
+  void UpdateRTCDtlsTransports();
+  void RemoveRTCDtlsTransportsExcept(
+      const std::set<std::string>& aTransportIds);
 
   
   
@@ -193,6 +198,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   std::string mParentName;
 
   std::vector<RefPtr<TransceiverImpl>> mTransceivers;
+  std::map<std::string, RefPtr<RTCDtlsTransport>>
+      mTransportIdToRTCDtlsTransport;
 
   
   nsCOMPtr<nsIThread> mMainThread;
