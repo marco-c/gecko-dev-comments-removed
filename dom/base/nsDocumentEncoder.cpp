@@ -469,6 +469,12 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
         int32_t aDepth) const;
 
     bool HasInvisibleParentAndShouldBeSkipped(nsINode& aNode) const;
+
+    nsresult SerializeNodePartiallyContainedInRange(
+        nsINode* aNode, nsIContent* content,
+        const StartAndEndContent& startAndEndContent, const nsRange* aRange,
+        int32_t aDepth);
+
     nsresult SerializeTextNode(nsINode& aNode, const nsIContent& aContent,
                                const StartAndEndContent& aStartAndEndContent,
                                const nsRange& aRange) const;
@@ -1069,78 +1075,91 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeNodes(
         aNode, NodeSerializer::SerializeRoot::eYes);
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
-    
-    
-    
-    if (IsTextNode(aNode)) {
-      rv = SerializeTextNode(*aNode, *content, startAndEndContent, *aRange);
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-      if (aNode != mClosestCommonInclusiveAncestorOfRange) {
-        if (mRangeContextSerializer.mRangeNodeContext.IncludeInContext(
-                *aNode)) {
-          
-          
-          mHaltRangeHint = true;
-        }
-        if ((startAndEndContent.mStart == content) && !mHaltRangeHint) {
-          ++mContextInfoDepth.mStart;
-        }
-        if ((startAndEndContent.mEnd == content) && !mHaltRangeHint) {
-          ++mContextInfoDepth.mEnd;
-        }
-
-        
-        rv = mNodeSerializer.SerializeNodeStart(*aNode, 0, -1);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
-
-      const auto& inclusiveAncestorsOffsetsOfStart =
-          mRangeBoundariesInclusiveAncestorsAndOffsets
-              .mInclusiveAncestorsOffsetsOfStart;
-      const auto& inclusiveAncestorsOffsetsOfEnd =
-          mRangeBoundariesInclusiveAncestorsAndOffsets
-              .mInclusiveAncestorsOffsetsOfEnd;
-      
-      
-      int32_t startOffset = 0, endOffset = -1;
-      if (startAndEndContent.mStart == content && mStartRootIndex >= aDepth) {
-        startOffset =
-            inclusiveAncestorsOffsetsOfStart[mStartRootIndex - aDepth];
-      }
-      if (startAndEndContent.mEnd == content && mEndRootIndex >= aDepth) {
-        endOffset = inclusiveAncestorsOffsetsOfEnd[mEndRootIndex - aDepth];
-      }
-      
-      uint32_t childCount = content->GetChildCount();
-
-      if (startOffset == -1) startOffset = 0;
-      if (endOffset == -1)
-        endOffset = childCount;
-      else {
-        
-        
-        
-        
-        
-        
-        if (aNode != aRange->GetEndContainer()) {
-          endOffset++;
-        }
-      }
-
-      if (endOffset) {
-        rv = SerializeChildrenOfContent(*content, startOffset, endOffset,
-                                        aRange, aDepth);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
-      
-      if (aNode != mClosestCommonInclusiveAncestorOfRange) {
-        rv = mNodeSerializer.SerializeNodeEnd(*aNode);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+    rv = SerializeNodePartiallyContainedInRange(
+        aNode, content, startAndEndContent, aRange, aDepth);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
+  return NS_OK;
+}
+
+nsresult
+nsDocumentEncoder::RangeSerializer::SerializeNodePartiallyContainedInRange(
+    nsINode* aNode, nsIContent* content,
+    const StartAndEndContent& startAndEndContent, const nsRange* aRange,
+    const int32_t aDepth) {
+  
+  
+  
+  if (IsTextNode(aNode)) {
+    nsresult rv =
+        SerializeTextNode(*aNode, *content, startAndEndContent, *aRange);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else {
+    if (aNode != mClosestCommonInclusiveAncestorOfRange) {
+      if (mRangeContextSerializer.mRangeNodeContext.IncludeInContext(*aNode)) {
+        
+        
+        mHaltRangeHint = true;
+      }
+      if ((startAndEndContent.mStart == content) && !mHaltRangeHint) {
+        ++mContextInfoDepth.mStart;
+      }
+      if ((startAndEndContent.mEnd == content) && !mHaltRangeHint) {
+        ++mContextInfoDepth.mEnd;
+      }
+
+      
+      nsresult rv = mNodeSerializer.SerializeNodeStart(*aNode, 0, -1);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    const auto& inclusiveAncestorsOffsetsOfStart =
+        mRangeBoundariesInclusiveAncestorsAndOffsets
+            .mInclusiveAncestorsOffsetsOfStart;
+    const auto& inclusiveAncestorsOffsetsOfEnd =
+        mRangeBoundariesInclusiveAncestorsAndOffsets
+            .mInclusiveAncestorsOffsetsOfEnd;
+    
+    
+    int32_t startOffset = 0, endOffset = -1;
+    if (startAndEndContent.mStart == content && mStartRootIndex >= aDepth) {
+      startOffset = inclusiveAncestorsOffsetsOfStart[mStartRootIndex - aDepth];
+    }
+    if (startAndEndContent.mEnd == content && mEndRootIndex >= aDepth) {
+      endOffset = inclusiveAncestorsOffsetsOfEnd[mEndRootIndex - aDepth];
+    }
+    
+    uint32_t childCount = content->GetChildCount();
+
+    if (startOffset == -1) startOffset = 0;
+    if (endOffset == -1)
+      endOffset = childCount;
+    else {
+      
+      
+      
+      
+      
+      
+      if (aNode != aRange->GetEndContainer()) {
+        endOffset++;
+      }
+    }
+
+    if (endOffset) {
+      nsresult rv = SerializeChildrenOfContent(*content, startOffset, endOffset,
+                                               aRange, aDepth);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+    
+    if (aNode != mClosestCommonInclusiveAncestorOfRange) {
+      nsresult rv = mNodeSerializer.SerializeNodeEnd(*aNode);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  }
+
   return NS_OK;
 }
 
