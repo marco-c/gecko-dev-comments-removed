@@ -108,6 +108,9 @@ struct CompilationInput {
   
   
   
+  
+  
+  
   Scope* enclosingScope = nullptr;
 
   explicit CompilationInput(const JS::ReadOnlyCompileOptions& options)
@@ -140,7 +143,7 @@ struct CompilationInput {
     if (!initScriptSource(cx)) {
       return false;
     }
-    enclosingScope = &cx->global()->emptyGlobalScope();
+    
     return true;
   }
 

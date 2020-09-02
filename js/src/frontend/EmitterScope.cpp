@@ -47,8 +47,17 @@ bool EmitterScope::checkEnvironmentChainLength(BytecodeEmitter* bce) {
   uint32_t hops;
   if (EmitterScope* emitterScope = enclosing(&bce)) {
     hops = emitterScope->environmentChainLength_;
-  } else {
+  } else if (bce->compilationInfo.input.enclosingScope) {
     hops = bce->compilationInfo.input.enclosingScope->environmentChainLength();
+  } else {
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(bce->sc->isModule());
+    hops = ModuleScope::EnclosingEnvironmentChainLength;
   }
 
   if (hops >= ENVCOORD_HOPS_LIMIT - 1) {
@@ -168,6 +177,7 @@ static bool NameIsOnEnvironment(Scope* scope, JSAtom* name) {
 
 NameLocation EmitterScope::searchInEnclosingScope(JSAtom* name, Scope* scope,
                                                   uint8_t hops) {
+  MOZ_ASSERT(scope);
   
   
 
