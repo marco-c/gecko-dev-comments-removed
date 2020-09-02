@@ -211,6 +211,10 @@ var PrintEventHandler = {
 
   async refreshSettings(printerName) {
     this.settings = PrintUtils.getPrintSettings(printerName);
+    
+    
+    
+    this.settings.isInitializedFromPrinter = true;
     this.defaultSettings = PrintUtils.getPrintSettings(printerName, true);
     
     for (let key of Object.keys(this._nonFlaggedChangedSettings)) {

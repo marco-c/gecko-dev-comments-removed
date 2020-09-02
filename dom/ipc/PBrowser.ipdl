@@ -151,6 +151,16 @@ struct WebProgressLocationChangeData
 
 
 
+struct PrintPreviewResultInfo
+{
+  uint32_t sheetCount;
+  uint32_t totalPageCount;
+};
+
+
+
+
+
 
 
 
@@ -954,6 +964,26 @@ child:
 
     async HandledWindowedPluginKeyEvent(NativeEventData aKeyEventData,
                                         bool aIsConsumed);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    async PrintPreview(PrintData aPrintData,
+                       uint64_t? aSourceOuterWindowID) returns (PrintPreviewResultInfo aInfo);
+
+    
+
+
+    async ExitPrintPreview();
 
     
 
