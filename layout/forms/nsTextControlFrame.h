@@ -155,8 +155,6 @@ class nsTextControlFrame : public nsContainerFrame,
       nsISelectionController** aSelCon) override;
   nsFrameSelection* GetOwnedFrameSelection() override;
 
-  void PlaceholderChanged(const nsAttrValue* aOld, const nsAttrValue* aNew);
-
   
 
 
@@ -331,7 +329,6 @@ class nsTextControlFrame : public nsContainerFrame,
 
   nsresult CreateRootNode();
   void CreatePlaceholderIfNeeded();
-  void UpdatePlaceholderText(nsString&, bool aNotify);
   void CreatePreviewIfNeeded();
   already_AddRefed<Element> MakeAnonElement(
       mozilla::PseudoStyleType, Element* aParent = nullptr,

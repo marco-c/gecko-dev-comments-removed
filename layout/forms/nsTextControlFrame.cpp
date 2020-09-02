@@ -361,11 +361,11 @@ already_AddRefed<Element> nsTextControlFrame::MakeAnonElement(
 
 already_AddRefed<Element> nsTextControlFrame::MakeAnonDivWithTextNode(
     PseudoStyleType aPseudoType) const {
-  RefPtr<Element> div = MakeAnonElement(aPseudoType);
+  RefPtr<Element> divElement = MakeAnonElement(aPseudoType);
 
   
-  nsNodeInfoManager* nim = div->OwnerDoc()->NodeInfoManager();
-  RefPtr<nsTextNode> textNode = new (nim) nsTextNode(nim);
+  RefPtr<nsTextNode> textNode = new (divElement->OwnerDoc()->NodeInfoManager())
+      nsTextNode(divElement->OwnerDoc()->NodeInfoManager());
   
   
   
@@ -377,8 +377,8 @@ already_AddRefed<Element> nsTextControlFrame::MakeAnonDivWithTextNode(
       textNode->MarkAsMaybeMasked();
     }
   }
-  div->AppendChildTo(textNode, false);
-  return div.forget();
+  divElement->AppendChildTo(textNode, false);
+  return divElement.forget();
 }
 
 nsresult nsTextControlFrame::CreateAnonymousContent(
@@ -476,38 +476,21 @@ void nsTextControlFrame::CreatePlaceholderIfNeeded() {
   MOZ_ASSERT(!mPlaceholderDiv);
 
   
-  nsAutoString placeholder;
-  if (!mContent->AsElement()->GetAttr(nsGkAtoms::placeholder, placeholder)) {
+  nsAutoString placeholderTxt;
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::placeholder,
+                                 placeholderTxt);
+  if (IsTextArea()) {  
+    nsContentUtils::PlatformToDOMLineBreaks(placeholderTxt);
+  } else {  
+    nsContentUtils::RemoveNewlines(placeholderTxt);
+  }
+
+  if (placeholderTxt.IsEmpty()) {
     return;
   }
 
   mPlaceholderDiv = MakeAnonDivWithTextNode(PseudoStyleType::placeholder);
-  UpdatePlaceholderText(placeholder, false);
-}
-
-void nsTextControlFrame::PlaceholderChanged(const nsAttrValue* aOld,
-                                            const nsAttrValue* aNew) {
-  if (!aOld || !aNew) {
-    return;  
-  }
-
-  nsAutoString placeholder;
-  aNew->ToString(placeholder);
-  UpdatePlaceholderText(placeholder, true);
-}
-
-void nsTextControlFrame::UpdatePlaceholderText(nsString& aPlaceholder,
-                                               bool aNotify) {
-  MOZ_ASSERT(mPlaceholderDiv);
-  MOZ_ASSERT(mPlaceholderDiv->GetFirstChild());
-
-  if (IsTextArea()) {  
-    nsContentUtils::PlatformToDOMLineBreaks(aPlaceholder);
-  } else {  
-    nsContentUtils::RemoveNewlines(aPlaceholder);
-  }
-
-  mPlaceholderDiv->GetFirstChild()->AsText()->SetText(aPlaceholder, aNotify);
+  mPlaceholderDiv->GetFirstChild()->AsText()->SetText(placeholderTxt, false);
 }
 
 void nsTextControlFrame::CreatePreviewIfNeeded() {
