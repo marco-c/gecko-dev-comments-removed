@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#ifndef ProfilerMarkers_h
+#define ProfilerMarkers_h
+
+#include "mozilla/BaseProfilerMarkers.h"
+#include "mozilla/ProfilerMarkersDetail.h"
+
+#ifndef MOZ_GECKO_PROFILER
+
+#else  
+
+#endif  
+
+#endif  

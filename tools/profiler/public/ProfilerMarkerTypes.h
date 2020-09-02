@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#ifndef ProfilerMarkerTypes_h
+#define ProfilerMarkerTypes_h
+
+#include "mozilla/BaseProfilerMarkerTypes.h"
+#include "mozilla/ProfilerMarkers.h"
+
+#ifdef MOZ_GECKO_PROFILER
+
+#endif  
+
+#endif  
