@@ -22,6 +22,11 @@
 #  include <type_traits>
 #  include <utility>
 
+namespace mozilla::baseprofiler {
+
+MFBT_API int profiler_current_thread_id();
+}  
+
 namespace mozilla {
 
 
@@ -249,6 +254,30 @@ MOZ_PROFILING_CATEGORY_LIST(CATEGORY_ENUM_BEGIN_CATEGORY,
 #  undef CATEGORY_ENUM_SUBCATEGORY
 #  undef CATEGORY_ENUM_END_CATEGORY
 }  
+
+
+
+
+class MarkerThreadId {
+ public:
+  
+  constexpr MarkerThreadId() = default;
+
+  
+  constexpr explicit MarkerThreadId(int aThreadId) : mThreadId(aThreadId) {}
+
+  
+  static MarkerThreadId CurrentThread() {
+    return MarkerThreadId(baseprofiler::profiler_current_thread_id());
+  }
+
+  [[nodiscard]] constexpr int ThreadId() const { return mThreadId; }
+
+  [[nodiscard]] constexpr bool IsUnspecified() const { return mThreadId == 0; }
+
+ private:
+  int mThreadId = 0;
+};
 
 }  
 
