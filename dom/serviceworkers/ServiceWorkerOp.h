@@ -61,6 +61,10 @@ class ServiceWorkerOp : public RemoteWorkerChild::Op {
   
   virtual RefPtr<WorkerRunnable> GetRunnable(WorkerPrivate* aWorkerPrivate);
 
+  
+  
+  
+  
   virtual bool Exec(JSContext* aCx, WorkerPrivate* aWorkerPrivate) = 0;
 
   
