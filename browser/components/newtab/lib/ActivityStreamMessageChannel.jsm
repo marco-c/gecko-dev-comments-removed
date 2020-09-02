@@ -288,12 +288,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
   onNewTabLoad(msg) {
     let { browser } = msg.target;
-    if (
-      this.isPreloadedBrowser(browser) &&
-      browser.ownerGlobal.windowState !== browser.ownerGlobal.STATE_MINIMIZED &&
-      !browser.ownerGlobal.isFullyOccluded
-    ) {
-      
+    if (this.isPreloadedBrowser(browser)) {
       
       
       

@@ -103,13 +103,10 @@ let NewTabPagePreloading = {
   maybeCreatePreloadedBrowser(window) {
     
     
-    
     if (
       !this.enabled ||
       window.gBrowser.preloadedBrowser ||
-      !window.toolbar.visible ||
-      window.windowState == window.STATE_MINIMIZED ||
-      window.isFullyOccluded
+      !window.toolbar.visible
     ) {
       return;
     }
