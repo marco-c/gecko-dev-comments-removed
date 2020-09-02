@@ -53,10 +53,10 @@ nsresult nsPrintSettingsServiceX::SerializeToPrintDataParent(nsIPrintSettings* a
     return NS_ERROR_FAILURE;
   }
 
-  NSString* printerName = [dict objectForKey:NSPrintPrinterName];
-  if (printerName) {
-    nsCocoaUtils::GetStringForNSString(printerName, data->printerName());
-  }
+  
+  
+  
+  
 
   NSString* faxNumber = [dict objectForKey:NSPrintFaxNumber];
   if (faxNumber) {
