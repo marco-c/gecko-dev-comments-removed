@@ -822,12 +822,6 @@ static ModuleObject* CompileModuleImpl(
     return nullptr;
   }
 
-  
-  
-  if (!ModuleObject::Freeze(cx, gcOutput.module)) {
-    return nullptr;
-  }
-
   assertException.reset();
   return gcOutput.module;
 }

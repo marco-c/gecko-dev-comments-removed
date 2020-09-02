@@ -458,6 +458,14 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInfo& compilationInfo,
     if (!ModuleObject::createEnvironment(cx, gcOutput.module)) {
       return false;
     }
+
+    
+    
+    if (!cx->isHelperThreadContext()) {
+      if (!ModuleObject::Freeze(cx, gcOutput.module)) {
+        return false;
+      }
+    }
   }
 
   return true;
