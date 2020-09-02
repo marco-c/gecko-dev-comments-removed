@@ -98,7 +98,24 @@ enum eGfxLog {
 
 
 
-enum class eFontPresentation : uint8_t { Any = 0, Text = 1, Emoji = 2 };
+enum class eFontPresentation : uint8_t {
+  
+  
+  Any = 0,
+  
+  
+  Text = 1,
+  
+  
+  EmojiDefault = 2,
+  
+  
+  EmojiExplicit = 3
+};
+
+inline bool PrefersColor(eFontPresentation aPresentation) {
+  return aPresentation >= eFontPresentation::EmojiDefault;
+}
 
 
 const uint32_t kMaxLenPrefLangList = 32;

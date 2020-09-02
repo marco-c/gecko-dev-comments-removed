@@ -3059,11 +3059,18 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
     
     
     if (aNextCh == kVariationSelector16 ||
-        (emojiPresentation == EmojiPresentation::EmojiDefault &&
-         aNextCh != kVariationSelector15) ||
         (aNextCh >= kEmojiSkinToneFirst && aNextCh <= kEmojiSkinToneLast)) {
-      presentation = eFontPresentation::Emoji;
+      
+      
+      presentation = eFontPresentation::EmojiExplicit;
+    } else if (emojiPresentation == EmojiPresentation::EmojiDefault &&
+               aNextCh != kVariationSelector15) {
+      
+      
+      
+      presentation = eFontPresentation::EmojiDefault;
     } else if (aNextCh == kVariationSelector15) {
+      
       presentation = eFontPresentation::Text;
     }
   }
@@ -3136,7 +3143,9 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
   
   auto CheckCandidate = [&](gfxFont* f, FontMatchType t) -> bool {
     
-    if (presentation == eFontPresentation::Any) {
+    if (presentation == eFontPresentation::Any ||
+        (presentation == eFontPresentation::EmojiDefault &&
+         f->GetFontEntry()->IsUserFont())) {
       RefPtr<gfxFont> autoRefDeref(candidateFont);
       *aMatchType = t;
       return true;
@@ -3144,7 +3153,7 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
     
     bool hasColorGlyph = f->HasColorGlyphFor(aCh, aNextCh);
     
-    if (hasColorGlyph == (presentation == eFontPresentation::Emoji)) {
+    if (hasColorGlyph == PrefersColor(presentation)) {
       RefPtr<gfxFont> autoRefDeref(candidateFont);
       *aMatchType = t;
       return true;
@@ -3595,7 +3604,7 @@ gfxFont* gfxFontGroup::WhichPrefFontSupportsChar(
   eFontPrefLang charLang;
   gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
 
-  if (aPresentation == eFontPresentation::Emoji) {
+  if (PrefersColor(aPresentation)) {
     charLang = eFontPrefLang_Emoji;
   } else {
     
