@@ -137,13 +137,13 @@ class ProfilingStackFrame {
   
   
   
-  mozilla::Atomic<int32_t, mozilla::ReleaseAcquire> pcOffsetIfJS_;
+  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> realmID_;
 
   
   
   
   
-  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> realmID_;
+  mozilla::Atomic<int32_t, mozilla::ReleaseAcquire> pcOffsetIfJS_;
 
   
   mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> flagsAndCategoryPair_;
