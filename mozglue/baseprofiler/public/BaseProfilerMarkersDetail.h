@@ -74,6 +74,21 @@ struct StreamFunctionTypeHelper<R(JSONWriter&, As...)> {
   constexpr static size_t scArity = sizeof...(As);
   using TupleType =
       std::tuple<std::remove_cv_t<std::remove_reference_t<As>>...>;
+
+  
+  
+  
+  
+  
+  static ProfileBufferBlockIndex Serialize(
+      ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
+      MarkerOptions&& aOptions, Streaming::DeserializerTag aDeserializerTag,
+      const As&... aAs) {
+    
+    
+    return aBuffer.PutObjects(ProfileBufferEntryKind::Marker, aOptions, aName,
+                              aDeserializerTag, aAs...);
+  }
 };
 
 
@@ -92,6 +107,28 @@ struct MarkerTypeSerialization {
   template <size_t i>
   using StreamFunctionParameter =
       std::tuple_element_t<i, StreamFunctionUserParametersTuple>;
+
+  template <typename... Ts>
+  static ProfileBufferBlockIndex Serialize(ProfileChunkedBuffer& aBuffer,
+                                           const ProfilerString8View& aName,
+                                           MarkerOptions&& aOptions,
+                                           const Ts&... aTs) {
+    static_assert(!std::is_same_v<MarkerType,
+                                  ::mozilla::baseprofiler::markers::NoPayload>,
+                  "NoPayload should have been handled in the caller.");
+    
+    
+    
+    
+    
+    
+    
+    
+    static const Streaming::DeserializerTag tag =
+        Streaming::TagForDeserializer(Deserialize);
+    return StreamFunctionType::Serialize(aBuffer, aName, std::move(aOptions),
+                                         tag, aTs...);
+  }
 
  private:
   
@@ -134,6 +171,67 @@ template <>
 struct MarkerTypeSerialization<::mozilla::baseprofiler::markers::NoPayload> {
   
 };
+
+template <typename MarkerType, typename... Ts>
+static ProfileBufferBlockIndex AddMarkerWithOptionalStackToBuffer(
+    ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
+    MarkerOptions&& aOptions, const Ts&... aTs) {
+  if constexpr (std::is_same_v<MarkerType,
+                               ::mozilla::baseprofiler::markers::NoPayload>) {
+    static_assert(sizeof...(Ts) == 0,
+                  "NoPayload does not accept any payload arguments.");
+    
+    
+    return aBuffer.PutObjects(
+        ProfileBufferEntryKind::Marker, std::move(aOptions), aName,
+        base_profiler_markers_detail::Streaming::DeserializerTag(0));
+  } else {
+    return MarkerTypeSerialization<MarkerType>::Serialize(
+        aBuffer, aName, std::move(aOptions), aTs...);
+  }
+}
+
+
+
+using BacktraceCaptureFunction = bool (*)(ProfileChunkedBuffer&);
+
+
+
+
+template <typename MarkerType, typename... Ts>
+ProfileBufferBlockIndex AddMarkerToBuffer(
+    ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
+    MarkerOptions&& aOptions,
+    BacktraceCaptureFunction aBacktraceCaptureFunction, const Ts&... aTs) {
+  if (aOptions.ThreadId().IsUnspecified()) {
+    
+    aOptions.Set(MarkerThreadId::CurrentThread());
+  }
+
+  if (aOptions.IsTimingUnspecified()) {
+    
+    aOptions.Set(MarkerTiming::InstantNow());
+  }
+
+  if (aOptions.Stack().IsCaptureNeeded()) {
+    
+    
+    
+    
+    
+    ProfileBufferChunkManagerSingle chunkManager(64 * 1024);
+    ProfileChunkedBuffer chunkedBuffer(
+        ProfileChunkedBuffer::ThreadSafety::WithoutMutex, chunkManager);
+    aOptions.Stack().UseRequestedBacktrace(
+        aBacktraceCaptureFunction(chunkedBuffer) ? &chunkedBuffer : nullptr);
+    
+    return AddMarkerWithOptionalStackToBuffer<MarkerType>(
+        aBuffer, aName, std::move(aOptions), aTs...);
+  }
+
+  return AddMarkerWithOptionalStackToBuffer<MarkerType>(
+      aBuffer, aName, std::move(aOptions), aTs...);
+}
 
 template <typename NameCallback, typename StackCallback>
 [[nodiscard]] bool DeserializeAfterKindAndStream(
