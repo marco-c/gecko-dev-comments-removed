@@ -25,9 +25,6 @@ add_task(async function setup() {
   cacheTemplate = readJSONFile(cacheTemplateFile);
   cacheTemplate.buildID = getAppInfo().platformBuildID;
 
-  
-  cacheTemplate.visibleDefaultEngines = getDefaultEngineList(false);
-
   await promiseSaveCacheData(cacheTemplate);
 });
 
