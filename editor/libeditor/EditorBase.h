@@ -1769,7 +1769,7 @@ class EditorBase : public nsIEditor,
   
 
 
-  nsresult CollapseSelectionToEnd();
+  nsresult CollapseSelectionToEnd() const;
 
   
 
@@ -1820,7 +1820,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  EditorRawDOMPoint FindBetterInsertionPoint(const EditorRawDOMPoint& aPoint);
+  EditorRawDOMPoint FindBetterInsertionPoint(
+      const EditorRawDOMPoint& aPoint) const;
 
   
 
@@ -2168,7 +2169,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual void InitializeSelectionAncestorLimit(nsIContent& aAncestorLimit);
+  virtual void InitializeSelectionAncestorLimit(
+      nsIContent& aAncestorLimit) const;
 
   
 

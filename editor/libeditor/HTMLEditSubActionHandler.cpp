@@ -106,7 +106,7 @@ static bool IsStyleCachePreservingSubAction(EditSubAction aEditSubAction) {
 
 class MOZ_RAII AutoSetTemporaryAncestorLimiter final {
  public:
-  AutoSetTemporaryAncestorLimiter(HTMLEditor& aHTMLEditor,
+  AutoSetTemporaryAncestorLimiter(const HTMLEditor& aHTMLEditor,
                                   Selection& aSelection,
                                   nsINode& aStartPointNode,
                                   AutoRangeArray* aRanges = nullptr) {
@@ -3171,6 +3171,33 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
     }
     if (bidiLevelManager.Canceled()) {
       return NS_SUCCESS_DOM_NO_OPERATION;
+    }
+
+    
+    
+    
+    
+    AutoSetTemporaryAncestorLimiter autoSetter(
+        aHTMLEditor, *aHTMLEditor.SelectionRefPtr(), *startPoint.GetContainer(),
+        &aRangesToDelete);
+
+    Result<nsIEditor::EDirection, nsresult> extendResult =
+        aRangesToDelete.ExtendAnchorFocusRangeFor(aHTMLEditor,
+                                                  aDirectionAndAmount);
+    if (extendResult.isErr()) {
+      NS_WARNING("AutoRangeArray::ExtendAnchorFocusRangeFor() failed");
+      return extendResult.unwrapErr();
+    }
+    aDirectionAndAmount = extendResult.unwrap();
+
+    if (aDirectionAndAmount == nsIEditor::eNone) {
+      MOZ_ASSERT(aRangesToDelete.Ranges().Length() == 1);
+      if (!CanFallbackToDeleteRangesWithTransaction(aRangesToDelete)) {
+        
+        return NS_SUCCESS_DOM_NO_OPERATION;
+      }
+      
+      return NS_OK;
     }
   }
 
