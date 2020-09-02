@@ -788,6 +788,7 @@ bool RegExpShared::initializeNamedCaptures(JSContext* cx, HandleRegExpShared re,
   
   
   
+  MOZ_ASSERT(namedCaptures->getDenseInitializedLength() % 2 == 0);
   uint32_t numNamedCaptures = namedCaptures->getDenseInitializedLength() / 2;
 
   
