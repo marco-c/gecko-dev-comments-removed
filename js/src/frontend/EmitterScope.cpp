@@ -338,7 +338,7 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,
     
     
     AutoEnterOOMUnsafeRegion oomUnsafe;
-    JSAtom* jsname = bce->compilationInfo.liftParserAtomToJSAtom(name);
+    JSAtom* jsname = bce->compilationInfo.liftParserAtomToJSAtom(bce->cx, name);
     if (!jsname) {
       oomUnsafe.crash("EmitterScope::searchAndCache");
     }
