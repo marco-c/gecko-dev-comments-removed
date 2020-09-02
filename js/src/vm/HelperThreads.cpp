@@ -657,8 +657,21 @@ template <typename Unit>
 void ModuleParseTask<Unit>::parse(JSContext* cx) {
   MOZ_ASSERT(cx->isHelperThreadContext());
 
+  CompileOptions moduleOptions(cx, options);
+  moduleOptions.setModule();
+
+  Rooted<frontend::CompilationInfo> compilationInfo(
+      cx, frontend::CompilationInfo(cx, moduleOptions));
+  if (!compilationInfo.get().input.initForModule(cx)) {
+    return;
+  }
+
+  if (!frontend::ParseModuleToStencil(compilationInfo.get(), data)) {
+    return;
+  }
+
   frontend::CompilationGCOutput gcOutput(cx);
-  bool result = frontend::ParseModule(cx, options, data, gcOutput);
+  bool result = frontend::InstantiateStencils(compilationInfo.get(), gcOutput);
 
   
   
@@ -672,9 +685,9 @@ void ModuleParseTask<Unit>::parse(JSContext* cx) {
     return;
   }
 
-  if (gcOutput.module) {
-    scripts.infallibleAppend(gcOutput.module->script());
-  }
+  MOZ_ASSERT(gcOutput.module);
+  MOZ_ASSERT(gcOutput.module->script());
+  scripts.infallibleAppend(gcOutput.module->script());
 }
 
 ScriptDecodeTask::ScriptDecodeTask(JSContext* cx,
