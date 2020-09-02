@@ -587,6 +587,11 @@ class ProfileChunkedBuffer {
     return {mRangeStart, mRangeEnd, mPushedBlockCount, mClearedBlockCount};
   }
 
+  [[nodiscard]] bool IsEmpty() const {
+    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
+    return mRangeStart == mRangeEnd;
+  }
+
   
   
   
@@ -1733,6 +1738,33 @@ struct ProfileBufferEntryWriter::Serializer<UniquePtr<ProfileChunkedBuffer>> {
 
   static void Write(ProfileBufferEntryWriter& aEW,
                     const UniquePtr<ProfileChunkedBuffer>& aBufferUPtr) {
+    if (!aBufferUPtr) {
+      
+      aEW.WriteULEB128<Length>(0);
+      return;
+    }
+    
+    
+    aEW.WriteObject(*aBufferUPtr);
+  }
+};
+
+
+
+template <>
+struct ProfileBufferEntryWriter::Serializer<ProfileChunkedBuffer*> {
+  static Length Bytes(ProfileChunkedBuffer* aBufferUPtr) {
+    if (!aBufferUPtr) {
+      
+      return ULEB128Size<Length>(0);
+    }
+    
+    
+    return SumBytes(*aBufferUPtr);
+  }
+
+  static void Write(ProfileBufferEntryWriter& aEW,
+                    ProfileChunkedBuffer* aBufferUPtr) {
     if (!aBufferUPtr) {
       
       aEW.WriteULEB128<Length>(0);
