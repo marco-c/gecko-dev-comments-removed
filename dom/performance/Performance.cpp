@@ -88,6 +88,19 @@ Performance::Performance(nsPIDOMWindowInner* aWindow, bool aSystemPrincipal)
 
 Performance::~Performance() = default;
 
+DOMHighResTimeStamp Performance::TimeStampToDOMHighResForRendering(
+    TimeStamp aTimeStamp) const {
+  DOMHighResTimeStamp stamp = GetDOMTiming()->TimeStampToDOMHighRes(aTimeStamp);
+  if (!IsSystemPrincipal()) {
+    
+    
+    
+    
+    return nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(stamp, 0);
+  }
+  return stamp;
+}
+
 DOMHighResTimeStamp Performance::Now() {
   DOMHighResTimeStamp rawTime = NowUnclamped();
 
