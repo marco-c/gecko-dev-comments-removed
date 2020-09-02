@@ -1639,8 +1639,6 @@ class LexicalScopeNode : public ParseNode {
 
   ParserScopeData<LexicalScope>* scopeBindings() const {
     MOZ_ASSERT(!isEmptyScope());
-    
-    
     return bindings;
   }
 

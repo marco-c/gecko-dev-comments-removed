@@ -1035,7 +1035,7 @@ class Type {
 
 static const unsigned VALIDATION_LIFO_DEFAULT_CHUNK_SIZE = 4 * 1024;
 
-class MOZ_STACK_CLASS JS_HAZ_ROOTED ModuleValidatorShared {
+class MOZ_STACK_CLASS ModuleValidatorShared {
  public:
   class Func {
     const ParserName* name_;
@@ -1850,18 +1850,8 @@ class MOZ_STACK_CLASS JS_HAZ_ROOTED ModuleValidatorShared {
 
 
 
-
-
-
-
-
-
-
-
-
 template <typename Unit>
-class MOZ_STACK_CLASS JS_HAZ_ROOTED ModuleValidator
-    : public ModuleValidatorShared {
+class MOZ_STACK_CLASS ModuleValidator : public ModuleValidatorShared {
  private:
   AsmJSParser<Unit>& parser_;
 

@@ -39,17 +39,6 @@ class SyntaxParseHandler {
   const ParserAtom* lastAtom;
   TokenPos lastStringPos;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
  public:
   enum Node {
     NodeFailure = 0,
@@ -736,7 +725,7 @@ class SyntaxParseHandler {
   }
 
   void setPrivateNameKind(Node node, PrivateNameKind kind) {}
-} JS_HAZ_ROOTED;  
+};
 
 }  
 }  

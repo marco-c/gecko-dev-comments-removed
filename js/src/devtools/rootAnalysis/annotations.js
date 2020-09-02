@@ -394,10 +394,6 @@ function extraRootedGCThings()
 function extraRootedPointers()
 {
     return [
-        
-        
-        'js::frontend::TokenStream',
-        'js::frontend::TokenStreamAnyChars',
     ];
 }
 

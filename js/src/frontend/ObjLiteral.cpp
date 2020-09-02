@@ -92,7 +92,7 @@ static JSObject* InterpretObjLiteralObj(
       if (!jsatom) {
         return nullptr;
       }
-      propId = AtomToId(compilationInfo.liftParserAtomToJSAtom(atom));
+      propId = AtomToId(jsatom);
     }
 
     JS::Value propVal;

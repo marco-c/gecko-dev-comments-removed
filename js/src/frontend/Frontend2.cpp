@@ -38,8 +38,6 @@
 #include "vm/ScopeKind.h"          
 #include "vm/SharedStencil.h"  
 
-#include "vm/JSContext-inl.h"  
-
 using mozilla::Utf8Unit;
 
 using namespace js::gc;
