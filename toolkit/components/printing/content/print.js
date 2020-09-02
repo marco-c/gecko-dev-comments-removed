@@ -194,6 +194,10 @@ var PrintEventHandler = {
     printPreviewBrowser.classList.add("printPreviewBrowser");
     printPreviewBrowser.setAttribute("flex", "1");
     printPreviewBrowser.setAttribute("printpreview", "true");
+    
+    
+    
+    printPreviewBrowser.setAttribute("oncontextmenu", "return false;");
     document.l10n.setAttributes(printPreviewBrowser, "printui-preview-label");
 
     
