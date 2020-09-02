@@ -53,7 +53,7 @@ const SEARCH_DEFAULT_UPDATE_INTERVAL = 7;
 
 
 
-const REINIT_IDLE_TIME_SEC = 5 * 60;
+const RECONFIG_IDLE_TIME_SEC = 5 * 60;
 
 
 
@@ -395,7 +395,7 @@ SearchService.prototype = {
     
     
     if (engineRemoved && !this._engines.size) {
-      this._reInit();
+      this._maybeReloadEngines().catch(Cu.reportError);
     }
   },
 
@@ -519,7 +519,7 @@ SearchService.prototype = {
 
     this._queuedIdle = true;
 
-    this.idleService.addIdleObserver(this, REINIT_IDLE_TIME_SEC);
+    this.idleService.addIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
   },
 
   get _sortedEngines() {
@@ -752,18 +752,12 @@ SearchService.prototype = {
             return;
           }
           delete this._maybeReloadDebounce;
-          this._maybeReloadEngines();
+          this._maybeReloadEngines().catch(Cu.reportError);
         }, 10000);
       });
       logConsole.debug(
         "Post-poning maybeReloadEngines() as we're currently initializing."
       );
-      return;
-    }
-    
-    
-    if (!gInitialized) {
-      logConsole.debug("Ignoring maybeReloadEngines() as inside init()");
       return;
     }
     logConsole.debug("Running maybeReloadEngines");
@@ -2651,7 +2645,7 @@ SearchService.prototype = {
         break;
 
       case "idle": {
-        this.idleService.removeIdleObserver(this, REINIT_IDLE_TIME_SEC);
+        this.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
         this._queuedIdle = false;
         logConsole.debug(
           "Reloading engines after idle due to configuration change"
@@ -2676,10 +2670,8 @@ SearchService.prototype = {
         
         
         Services.tm.dispatchToMainThread(() => {
-          
-          
           if (!Services.startup.shuttingDown) {
-            this._reInit(verb);
+            this._maybeReloadEngines().catch(Cu.reportError);
           }
         });
         break;
@@ -2804,7 +2796,7 @@ SearchService.prototype = {
       delete this._ignoreListListener;
     }
     if (this._queuedIdle) {
-      this.idleService.removeIdleObserver(this, REINIT_IDLE_TIME_SEC);
+      this.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
       this._queuedIdle = false;
     }
 
