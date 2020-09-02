@@ -921,6 +921,9 @@ RefPtr<gfx::SourceSurface> ClientWebGLContext::GetFrontBufferSnapshot(
     const auto format = nonPremultSurf->GetFormat();
     snapshot =
         gfx::Factory::CreateDataSourceSurface(size, format, false);
+    if (!snapshot) {
+      gfxCriticalNote << "CreateDataSourceSurface failed for size " << size;
+    }
     gfxUtils::PremultiplyDataSurface(nonPremultSurf, snapshot);
   }
 
