@@ -121,9 +121,9 @@ ModuleObject* CompileModule(JSContext* cx,
 
 
 
-bool ParseModuleToStencil(CompilationInfo& compilationInfo,
+bool ParseModuleToStencil(JSContext* cx, CompilationInfo& compilationInfo,
                           JS::SourceText<char16_t>& srcBuf);
-bool ParseModuleToStencil(CompilationInfo& compilationInfo,
+bool ParseModuleToStencil(JSContext* cx, CompilationInfo& compilationInfo,
                           JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
 
