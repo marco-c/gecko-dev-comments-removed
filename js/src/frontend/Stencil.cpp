@@ -40,14 +40,6 @@ AbstractScopePtr ScopeStencil::enclosing(CompilationInfo& compilationInfo) {
     return AbstractScopePtr(compilationInfo, *enclosing_);
   }
 
-  
-  
-  
-  if (compilationInfo.input.options.selfHostingMode) {
-    MOZ_ASSERT(compilationInfo.input.enclosingScope == nullptr);
-    return AbstractScopePtr(&compilationInfo.cx->global()->emptyGlobalScope());
-  }
-
   return AbstractScopePtr(compilationInfo.input.enclosingScope);
 }
 

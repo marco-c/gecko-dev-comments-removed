@@ -111,6 +111,10 @@ struct CompilationInput {
   
   
   
+  
+  
+  
+  
   Scope* enclosingScope = nullptr;
 
   explicit CompilationInput(const JS::ReadOnlyCompileOptions& options)
@@ -121,6 +125,21 @@ struct CompilationInput {
 
  public:
   bool initForGlobal(JSContext* cx) { return initScriptSource(cx); }
+
+  bool initForSelfHostingGlobal(JSContext* cx) {
+    if (!initScriptSource(cx)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    enclosingScope = &cx->global()->emptyGlobalScope();
+    return true;
+  }
 
   bool initForStandaloneFunction(JSContext* cx,
                                  HandleScope functionEnclosingScope) {
