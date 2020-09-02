@@ -156,7 +156,7 @@ class PerftestTests(MachCommandBase):
 
             
             if not ON_TRY and not skip_linters:
-                pypis.append("black")
+                pypis.append("black==19.10b0")
 
             
             for dep in pypis:
