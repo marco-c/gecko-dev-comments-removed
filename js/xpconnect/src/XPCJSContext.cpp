@@ -1304,6 +1304,12 @@ nsresult XPCJSContext::Initialize() {
   Preferences::RegisterCallback(ReloadPrefsCallback, "fuzzing.enabled", this);
 #endif
 
+  
+  
+  if (!nsContentUtils::InitJSBytecodeMimeType()) {
+    NS_ABORT_OOM(0);  
+  }
+
   if (!JS::InitSelfHostedCode(cx)) {
     
     if (!JS_IsExceptionPending(cx) || JS_IsThrowingOutOfMemory(cx)) {

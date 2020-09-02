@@ -60,6 +60,25 @@ extern JS_PUBLIC_API void SetProcessBuildIdOp(BuildIdOp buildIdOp);
 extern MOZ_MUST_USE JS_PUBLIC_API bool GetOptimizedEncodingBuildId(
     BuildIdCharVector* buildId);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE JS_PUBLIC_API bool GetScriptTranscodingBuildId(
+    BuildIdCharVector* buildId);
+
 }  
 
 #endif 

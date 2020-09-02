@@ -21,6 +21,7 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "js/Array.h"  
+#include "js/BuildId.h"
 #include "js/ArrayBuffer.h"  
 #include "js/JSON.h"
 #include "js/RegExp.h"  
@@ -675,9 +676,6 @@ nsresult nsContentUtils::Init() {
   sBypassCSSOMOriginCheck = getenv("MOZ_BYPASS_CSSOM_ORIGIN_CHECK");
 #endif
 
-  nsDependentCString buildID(mozilla::PlatformBuildID());
-  sJSBytecodeMimeType = new nsCString("javascript/moz-bytecode-"_ns + buildID);
-
   Element::InitCCCallbacks();
 
   Unused << nsRFPService::GetOrCreate();
@@ -700,6 +698,21 @@ nsresult nsContentUtils::Init() {
   sInitialized = true;
 
   return NS_OK;
+}
+
+bool nsContentUtils::InitJSBytecodeMimeType() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!sJSBytecodeMimeType);
+
+  JS::BuildIdCharVector jsBuildId;
+  if (!JS::GetScriptTranscodingBuildId(&jsBuildId)) {
+    return false;
+  }
+
+  nsDependentCSubstring jsBuildIdStr(jsBuildId.begin(), jsBuildId.length());
+  sJSBytecodeMimeType =
+      new nsCString("javascript/moz-bytecode-"_ns + jsBuildIdStr);
+  return true;
 }
 
 void nsContentUtils::GetShiftText(nsAString& text) {
