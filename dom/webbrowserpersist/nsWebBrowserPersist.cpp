@@ -39,6 +39,7 @@
 #include "nsIAuthPrompt.h"
 #include "nsIPrompt.h"
 #include "nsIFormControl.h"
+#include "nsIThreadRetargetableRequest.h"
 #include "nsContentUtils.h"
 
 #include "ftpCore.h"
@@ -53,6 +54,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLSharedElement.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/Printf.h"
 #include "ReferrerInfo.h"
 
@@ -97,10 +99,21 @@ struct nsWebBrowserPersist::URIData {
 };
 
 
+
+
+
+
+
+
+
+
+
+
 struct nsWebBrowserPersist::OutputData {
   nsCOMPtr<nsIURI> mFile;
   nsCOMPtr<nsIURI> mOriginalLocation;
   nsCOMPtr<nsIOutputStream> mStream;
+  Mutex mStreamMutex;
   int64_t mSelfProgress;
   int64_t mSelfProgressMax;
   bool mCalcFileExt;
@@ -108,10 +121,16 @@ struct nsWebBrowserPersist::OutputData {
   OutputData(nsIURI* aFile, nsIURI* aOriginalLocation, bool aCalcFileExt)
       : mFile(aFile),
         mOriginalLocation(aOriginalLocation),
+        mStreamMutex("nsWebBrowserPersist::OutputData::mStreamMutex"),
         mSelfProgress(0),
         mSelfProgressMax(10000),
         mCalcFileExt(aCalcFileExt) {}
   ~OutputData() {
+    
+    
+    
+    
+    MutexAutoLock lock(mStreamMutex);
     if (mStream) {
       mStream->Close();
     }
@@ -267,6 +286,7 @@ const char* kWebBrowserPersistStringBundle =
 nsWebBrowserPersist::nsWebBrowserPersist()
     : mCurrentDataPathIsRelative(false),
       mCurrentThingsToPersist(0),
+      mOutputMapMutex("nsWebBrowserPersist::mOutputMapMutex"),
       mFirstAndOnlyUse(true),
       mSavingDocument(false),
       mCancel(false),
@@ -298,6 +318,7 @@ NS_INTERFACE_MAP_BEGIN(nsWebBrowserPersist)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
   NS_INTERFACE_MAP_ENTRY(nsIStreamListener)
+  NS_INTERFACE_MAP_ENTRY(nsIThreadRetargetableStreamListener)
   NS_INTERFACE_MAP_ENTRY(nsIRequestObserver)
   NS_INTERFACE_MAP_ENTRY(nsIProgressEventSink)
 NS_INTERFACE_MAP_END
@@ -785,6 +806,20 @@ NS_IMETHODIMP nsWebBrowserPersist::OnStartRequest(nsIRequest* request) {
   }
 
   if (data && data->mFile) {
+    nsCOMPtr<nsIThreadRetargetableRequest> r = do_QueryInterface(request);
+    
+    nsCOMPtr<nsIFile> localFile;
+    GetLocalFileFromURI(data->mFile, getter_AddRefs(localFile));
+    if (r && localFile) {
+      if (!mBackgroundQueue) {
+        NS_CreateBackgroundTaskQueue("WebBrowserPersist",
+                                     getter_AddRefs(mBackgroundQueue));
+      }
+      if (mBackgroundQueue) {
+        r->RetargetDeliveryTo(mBackgroundQueue);
+      }
+    }
+
     
     
     
@@ -830,8 +865,11 @@ NS_IMETHODIMP nsWebBrowserPersist::OnStartRequest(nsIRequest* request) {
     bool isEqual = false;
     if (NS_SUCCEEDED(data->mFile->Equals(data->mOriginalLocation, &isEqual)) &&
         isEqual) {
-      
-      mOutputMap.Remove(keyPtr);
+      {
+        MutexAutoLock lock(mOutputMapMutex);
+        
+        mOutputMap.Remove(keyPtr);
+      }
 
       
       
@@ -851,6 +889,7 @@ NS_IMETHODIMP nsWebBrowserPersist::OnStopRequest(nsIRequest* request,
       SendErrorStatusChange(true, status, request, data->mFile);
     }
 
+    MutexAutoLock lock(mOutputMapMutex);
     
     mOutputMap.Remove(keyPtr);
   } else {
@@ -880,6 +919,14 @@ NS_IMETHODIMP nsWebBrowserPersist::OnStopRequest(nsIRequest* request,
 
 
 
+
+
+
+
+
+
+
+
 NS_IMETHODIMP
 nsWebBrowserPersist::OnDataAvailable(nsIRequest* request,
                                      nsIInputStream* aIStream, uint64_t aOffset,
@@ -892,6 +939,7 @@ nsWebBrowserPersist::OnDataAvailable(nsIRequest* request,
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
     NS_ENSURE_TRUE(channel, NS_ERROR_FAILURE);
 
+    MutexAutoLock lock(mOutputMapMutex);
     nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(request);
     OutputData* data = mOutputMap.Get(keyPtr);
     if (!data) {
@@ -902,6 +950,7 @@ nsWebBrowserPersist::OnDataAvailable(nsIRequest* request,
 
     bool readError = true;
 
+    MutexAutoLock streamLock(data->mStreamMutex);
     
     if (!data->mStream) {
       rv = MakeOutputStream(data->mFile, getter_AddRefs(data->mStream));
@@ -973,6 +1022,8 @@ nsWebBrowserPersist::OnDataAvailable(nsIRequest* request,
           data->mStream->Close();
           data->mStream =
               nullptr;  
+          MOZ_ASSERT(NS_IsMainThread(),
+                     "Uploads should be on the main thread.");
           rv = StartUpload(storStream, data->mFile, contentType);
           if (NS_FAILED(rv)) {
             readError = false;
@@ -984,18 +1035,33 @@ nsWebBrowserPersist::OnDataAvailable(nsIRequest* request,
 
     
     if (cancel) {
-      SendErrorStatusChange(readError, rv, readError ? request : nullptr,
-                            data->mFile);
+      RefPtr<nsIRequest> req = readError ? request : nullptr;
+      nsCOMPtr<nsIURI> file = data->mFile;
+      RefPtr<Runnable> errorOnMainThread = NS_NewRunnableFunction(
+          "nsWebBrowserPersist::SendErrorStatusChange",
+          [self = RefPtr{this}, req, file, readError, rv]() {
+            self->SendErrorStatusChange(readError, rv, req, file);
+          });
+      NS_DispatchToMainThread(errorOnMainThread);
     }
   }
 
   
   if (cancel) {
-    EndDownload(NS_BINDING_ABORTED);
+    nsCOMPtr<nsIRunnable> endOnMainThread = NewRunnableMethod<nsresult>(
+        "nsWebBrowserPersist::EndDownload", this,
+        &nsWebBrowserPersist::EndDownload, NS_BINDING_ABORTED);
+    NS_DispatchToMainThread(endOnMainThread);
   }
 
-  return NS_OK;
+  return cancel ? NS_BINDING_ABORTED : NS_OK;
 }
+
+
+
+
+
+NS_IMETHODIMP nsWebBrowserPersist::CheckListenerChain() { return NS_OK; }
 
 
 
@@ -1391,6 +1457,7 @@ nsresult nsWebBrowserPersist::SaveChannelInternal(nsIChannel* aChannel,
     return NS_SUCCESS_DONT_FIXUP;
   }
 
+  MutexAutoLock lock(mOutputMapMutex);
   
   nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(aChannel);
   mOutputMap.Put(keyPtr, new OutputData(aFile, mURI, aCalcFileExt));
@@ -1712,13 +1779,18 @@ void nsWebBrowserPersist::FinishSaveDocumentInternal(nsIURI* aFile,
 
 void nsWebBrowserPersist::Cleanup() {
   mURIMap.Clear();
-  for (auto iter = mOutputMap.Iter(); !iter.Done(); iter.Next()) {
+  nsClassHashtable<nsISupportsHashKey, OutputData> outputMapCopy;
+  {
+    MutexAutoLock lock(mOutputMapMutex);
+    mOutputMap.SwapElements(outputMapCopy);
+  }
+  for (auto iter = outputMapCopy.Iter(); !iter.Done(); iter.Next()) {
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(iter.Key());
     if (channel) {
       channel->Cancel(NS_BINDING_ABORTED);
     }
   }
-  mOutputMap.Clear();
+  outputMapCopy.Clear();
 
   for (auto iter = mUploadList.Iter(); !iter.Done(); iter.Next()) {
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(iter.Key());
@@ -2122,6 +2194,7 @@ nsresult nsWebBrowserPersist::CalculateAndAppendFileExt(
   return NS_OK;
 }
 
+
 nsresult nsWebBrowserPersist::MakeOutputStream(
     nsIURI* aURI, nsIOutputStream** aOutputStream) {
   nsresult rv;
@@ -2164,7 +2237,18 @@ nsresult nsWebBrowserPersist::MakeOutputStreamFromFile(
     }
     cleanupData->mFile = aFile;
     cleanupData->mIsDirectory = false;
-    mCleanupList.AppendElement(cleanupData);
+    if (NS_IsMainThread()) {
+      mCleanupList.AppendElement(cleanupData);
+    } else {
+      
+      
+      RefPtr<Runnable> addCleanup = NS_NewRunnableFunction(
+          "nsWebBrowserPersist::AddCleanupToList",
+          [self = RefPtr{this}, cleanup = std::move(cleanupData)]() {
+            self->mCleanupList.AppendElement(cleanup);
+          });
+      NS_DispatchToMainThread(addCleanup);
+    }
   }
 
   return NS_OK;
@@ -2244,6 +2328,9 @@ nsresult nsWebBrowserPersist::FixRedirectedChannelEntry(
   }
 
   if (matchingKey) {
+    
+    
+    MutexAutoLock lock(mOutputMapMutex);
     
     
     mozilla::UniquePtr<OutputData> outputData;
