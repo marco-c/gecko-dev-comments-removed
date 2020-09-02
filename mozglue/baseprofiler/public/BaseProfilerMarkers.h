@@ -71,6 +71,16 @@ ProfileBufferBlockIndex AddMarker(const ProfilerString8View& aName,
       std::move(aOptions), aTs...);
 }
 
+
+
+inline void WritePropertyTime(JSONWriter& aWriter, const char* aName,
+                              const TimeStamp& aTime) {
+  if (!aTime.IsNull()) {
+    aWriter.DoubleProperty(
+        aName, (aTime - TimeStamp::ProcessCreation()).ToMilliseconds());
+  }
+}
+
 }  
 
 #  define BASE_PROFILER_MARKER_UNTYPED(markerName, options)        \
