@@ -108,7 +108,8 @@ class TransceiverImpl : public nsISupports,
 
   void UpdateDtlsTransportState(const std::string& aTransportId,
                                 TransportLayer::State aState);
-  void SetDtlsTransport(dom::RTCDtlsTransport* aDtlsTransport);
+  void SetDtlsTransport(dom::RTCDtlsTransport* aDtlsTransport, bool aStable);
+  void RollbackToStableDtlsTransport();
 
   std::string GetTransportId() const {
     return mJsepTransceiver->mTransport.mTransportId;
@@ -170,6 +171,10 @@ class TransceiverImpl : public nsISupports,
   
   
   RefPtr<dom::RTCDtlsTransport> mDtlsTransport;
+  
+  
+  
+  RefPtr<dom::RTCDtlsTransport> mLastStableDtlsTransport;
   RefPtr<dom::RTCRtpReceiver> mReceiver;
   
   RefPtr<dom::RTCDTMFSender> mDtmf;

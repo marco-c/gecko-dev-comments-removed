@@ -58,7 +58,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   void EnsureTransports(const JsepSession& aSession);
 
-  void UpdateRTCDtlsTransports();
+  void UpdateRTCDtlsTransports(bool aMarkAsStable);
+  void RollbackRTCDtlsTransports();
   void RemoveRTCDtlsTransportsExcept(
       const std::set<std::string>& aTransportIds);
 

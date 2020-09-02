@@ -2167,12 +2167,17 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(JsepSdpType sdpType,
 
         if (HasMedia()) {
           
-          
-          
-          
-          if (sdpType != mozilla::kJsepSdpRollback &&
-              !(remote && sdpType == mozilla::kJsepSdpOffer)) {
-            mMedia->UpdateRTCDtlsTransports();
+          if (sdpType == mozilla::kJsepSdpRollback) {
+            
+            mMedia->RollbackRTCDtlsTransports();
+          } else if (!(remote && sdpType == mozilla::kJsepSdpOffer)) {
+            
+            
+            
+            
+            bool markAsStable = sdpType == kJsepSdpOffer &&
+                                mSignalingState == RTCSignalingState::Stable;
+            mMedia->UpdateRTCDtlsTransports(markAsStable);
           }
         }
 
