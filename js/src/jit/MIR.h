@@ -9932,6 +9932,31 @@ class MGuardSpecificSymbol : public MUnaryInstruction,
   }
 };
 
+class MGuardStringToIndex : public MUnaryInstruction,
+                            public StringPolicy<0>::Data {
+  explicit MGuardStringToIndex(MDefinition* str)
+      : MUnaryInstruction(classOpcode, str) {
+    
+    
+    
+    setGuard();
+    setMovable();
+    setResultType(MIRType::Int32);
+  }
+
+ public:
+  INSTRUCTION_HEADER(GuardStringToIndex)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, string))
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+
+  MDefinition* foldsTo(TempAllocator& alloc) override;
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+};
+
 class MGuardNoDenseElements : public MUnaryInstruction,
                               public ObjectPolicy<0>::Data {
   explicit MGuardNoDenseElements(MDefinition* obj)
