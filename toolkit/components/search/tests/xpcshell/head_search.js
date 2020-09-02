@@ -63,44 +63,6 @@ Services.prefs.setBoolPref(
 
 SearchCache.CACHE_INVALIDATION_DELAY = 250;
 
-
-
-
-
-
-
-
-
-
-
-
-
-async function useTestEngines(
-  folder = "data",
-  subFolder = null,
-  config = null
-) {
-  let url = `resource://test/${folder}/`;
-  if (subFolder) {
-    url += `${subFolder}/`;
-  }
-  let resProt = Services.io
-    .getProtocolHandler("resource")
-    .QueryInterface(Ci.nsIResProtocolHandler);
-  resProt.setSubstitution("search-extensions", Services.io.newURI(url));
-
-  const settings = await RemoteSettings(SearchUtils.SETTINGS_KEY);
-  if (config) {
-    return sinon.stub(settings, "get").returns(config);
-  }
-  let chan = NetUtil.newChannel({
-    uri: "resource://search-extensions/engines.json",
-    loadUsingSystemPrincipal: true,
-  });
-  let json = parseJsonFromStream(chan.open());
-  return sinon.stub(settings, "get").returns(json.data);
-}
-
 async function promiseCacheData() {
   let path = OS.Path.join(OS.Constants.Path.profileDir, CACHE_FILENAME);
   let bytes = await OS.File.read(path, { compression: "lz4" });

@@ -9,7 +9,7 @@
 
 
 add_task(async function test_searchDefaultEngineUS() {
-  await useTestEngines("data1");
+  await SearchTestUtils.useTestEngines("data1");
 
   Services.prefs.setBoolPref(
     SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",

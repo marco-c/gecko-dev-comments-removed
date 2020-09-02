@@ -11,7 +11,7 @@
 add_task(async function setup() {
   
   
-  await useTestEngines();
+  await SearchTestUtils.useTestEngines();
 
   await AddonTestUtils.promiseStartupManager();
   await Services.search.init();

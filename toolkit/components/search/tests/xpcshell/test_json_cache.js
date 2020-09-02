@@ -23,7 +23,7 @@ var cacheTemplate, appPluginsPath, profPlugins;
 
 
 add_task(async function setup() {
-  await useTestEngines("data1");
+  await SearchTestUtils.useTestEngines("data1");
   await AddonTestUtils.promiseStartupManager();
 });
 

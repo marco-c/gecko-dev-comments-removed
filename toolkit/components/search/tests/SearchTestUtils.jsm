@@ -88,6 +88,8 @@ var SearchTestUtils = Object.freeze({
 
 
 
+
+
   async useTestEngines(folder = "data", subFolder = null, config = null) {
     let url = `resource://test/${folder}/`;
     if (subFolder) {
@@ -100,12 +102,12 @@ var SearchTestUtils = Object.freeze({
 
     const settings = await RemoteSettings(SearchUtils.SETTINGS_KEY);
     if (config) {
-      sinon.stub(settings, "get").returns(config);
-    } else {
-      let response = await fetch(`resource://search-extensions/engines.json`);
-      let json = await response.json();
-      sinon.stub(settings, "get").returns(json.data);
+      return sinon.stub(settings, "get").returns(config);
     }
+
+    let response = await fetch(`resource://search-extensions/engines.json`);
+    let json = await response.json();
+    return sinon.stub(settings, "get").returns(json.data);
   },
 
   async useMochitestEngines(testDir) {
