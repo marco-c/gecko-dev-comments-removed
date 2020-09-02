@@ -10,7 +10,7 @@
 add_task(async function setup() {
   Region._setHomeRegion("an", false);
   await AddonTestUtils.promiseStartupManager();
-  await SearchTestUtils.useTestEngines("test-extensions");
+  await useTestEngines("test-extensions");
 });
 
 function promiseDefaultNotification() {
@@ -21,11 +21,20 @@ function promiseDefaultNotification() {
 }
 
 add_task(async function test_originalDefaultEngine() {
-  await Promise.all([Services.search.init(), promiseAfterCache()]);
-  Assert.equal(
-    Services.search.originalDefaultEngine.name,
-    "Multilocale AN",
-    "Should have returned the correct original default engine"
+  await withGeoServer(
+    async requests => {
+      await Promise.all([
+        Services.search.init(true),
+        SearchTestUtils.promiseSearchNotification("ensure-known-region-done"),
+        promiseAfterCache(),
+      ]);
+      Assert.equal(
+        Services.search.originalDefaultEngine.name,
+        "Multilocale AN",
+        "Should have returned the correct original default engine"
+      );
+    },
+    { searchDefault: "Multilocale AN" }
   );
 });
 
@@ -36,7 +45,12 @@ add_task(async function test_changeRegion() {
   
   
   
-  await promiseSetHomeRegion("tr");
+  let reInitPromise = SearchTestUtils.promiseSearchNotification(
+    "reinit-complete"
+  );
+  Region._setHomeRegion("tr", false);
+  Services.search.reInit();
+  await reInitPromise;
 
   Assert.equal(
     Services.search.originalDefaultEngine.name,

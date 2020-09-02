@@ -22,6 +22,13 @@ const BinaryInputStream = Components.Constructor(
   "setInputStream"
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gModernConfig",
+  SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
+  false
+);
+
 XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
   return console.createInstance({
     prefix: "SearchEngine",
@@ -1182,7 +1189,7 @@ class SearchEngine {
   toJSON() {
     
     
-    if (this._isAppProvided) {
+    if (gModernConfig && this._isAppProvided) {
       return {
         _name: this.name,
         _isAppProvided: true,
@@ -1358,7 +1365,29 @@ class SearchEngine {
   }
 
   get isAppProvided() {
-    return !!(this._extensionID && this._isAppProvided);
+    
+    
+    if (gModernConfig) {
+      return !!(this._extensionID && this._isAppProvided);
+    }
+
+    if (this._extensionID) {
+      return this._isAppProvided || this._isDistribution;
+    }
+
+    
+    
+    if (!this._shortName) {
+      return false;
+    }
+
+    
+    
+    if (/^(?:jar:)?(?:\[app\]|\[distribution\])/.test(this._loadPath)) {
+      return true;
+    }
+
+    return false;
   }
 
   get _hasUpdates() {

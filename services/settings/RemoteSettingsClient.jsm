@@ -12,7 +12,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
   ClientEnvironmentBase:
     "resource://gre/modules/components-utils/ClientEnvironment.jsm",
   Database: "resource://services-settings/Database.jsm",
@@ -262,7 +261,7 @@ class RemoteSettingsClient extends EventEmitter {
 
     
     
-    this.verifySignature = AppConstants.REMOTE_SETTINGS_VERIFY_SIGNATURE;
+    this.verifySignature = true;
 
     
     

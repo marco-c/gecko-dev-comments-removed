@@ -15,6 +15,24 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gGeoSpecificDefaultsEnabled",
+  SearchUtils.BROWSER_SEARCH_PREF + "geoSpecificDefaults",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gModernConfig",
+  SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
+  false,
+  () => {
+    
+    Services.search.reInit();
+  }
+);
+
 XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
   return console.createInstance({
     prefix: "SearchCache",
@@ -52,6 +70,13 @@ class SearchCache {
   _batchTask = null;
 
   
+
+
+
+
+
+
+
 
 
 
@@ -105,6 +130,15 @@ class SearchCache {
       json = JSON.parse(new TextDecoder().decode(bytes));
       if (!json.engines || !json.engines.length) {
         throw new Error("no engine in the file");
+      }
+      
+      if (
+        !gModernConfig &&
+        json.appVersion != Services.appinfo.version &&
+        gGeoSpecificDefaultsEnabled &&
+        json.metaData
+      ) {
+        json.metaData.searchDefaultExpir = 0;
       }
     } catch (ex) {
       logConsole.error("_readCacheFile: Error reading cache file:", ex);
@@ -173,6 +207,7 @@ class SearchCache {
     let cache = {};
     let locale = Services.locale.requestedLocale;
     let buildID = Services.appinfo.platformBuildID;
+    let appVersion = Services.appinfo.version;
 
     
     cache.version = SearchUtils.CACHE_VERSION;
@@ -182,8 +217,15 @@ class SearchCache {
     
     
     cache.buildID = buildID;
+    
+    cache.appVersion = appVersion;
     cache.locale = locale;
-    cache.builtInEngineList = this._searchService._searchOrder;
+
+    if (gModernConfig) {
+      cache.builtInEngineList = this._searchService._searchOrder;
+    } else {
+      cache.visibleDefaultEngines = this._searchService._visibleDefaultEngines;
+    }
     cache.engines = [...this._searchService._engines.values()];
     cache.metaData = this._metaData;
 
@@ -208,6 +250,19 @@ class SearchCache {
     } catch (ex) {
       logConsole.error("_buildCache: Could not write to cache file:", ex);
     }
+  }
+
+  
+
+
+
+
+
+
+
+  setAttribute(name, val) {
+    this._metaData[name] = val;
+    this._delayedWrite();
   }
 
   
@@ -256,7 +311,7 @@ class SearchCache {
         SearchUtils.getVerificationHash(val)
     ) {
       logConsole.warn("getVerifiedGlobalAttr, invalid hash for", name);
-      return undefined;
+      return "";
     }
     return val;
   }
@@ -318,6 +373,7 @@ class SearchCache {
       case SearchUtils.TOPIC_SEARCH_SERVICE:
         switch (verb) {
           case "init-complete":
+          case "reinit-complete":
           case "engines-reloaded":
             this._delayedWrite();
             break;

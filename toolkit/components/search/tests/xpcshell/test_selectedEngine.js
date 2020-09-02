@@ -1,11 +1,11 @@
 
 
 
-const kDefaultEngineName = "engine1";
+const kSelectedEnginePref = "browser.search.selectedEngine";
 
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
-  await SearchTestUtils.useTestEngines("data1");
+  await useTestEngines("data1");
   Assert.ok(!Services.search.isInitialized);
 });
 
@@ -14,11 +14,34 @@ add_task(async function test_defaultEngine() {
   await Services.search.init();
   await installTestEngine();
 
-  Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
+  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName());
+});
+
+
+add_task(async function test_selectedEngine() {
+  let defaultEngineName = getDefaultEngineName();
+  
+  Services.prefs.setCharPref(kSelectedEnginePref, kTestEngineName);
+
+  Services.search.wrappedJSObject.reset();
+  await Services.search.init(true);
+  Assert.equal(Services.search.defaultEngine.name, defaultEngineName);
+
+  Services.prefs.clearUserPref(kSelectedEnginePref);
+
+  
+  Services.prefs.setCharPref(kDefaultenginenamePref, kTestEngineName);
+
+  Services.search.wrappedJSObject.reset();
+  await Services.search.init(true);
+  Assert.equal(Services.search.defaultEngine.name, defaultEngineName);
+
+  Services.prefs.clearUserPref(kDefaultenginenamePref);
 });
 
 
 add_task(async function test_persistAcrossRestarts() {
+  await installTestEngine();
   
   await Services.search.setDefault(
     Services.search.getEngineByName(kTestEngineName)
@@ -37,7 +60,7 @@ add_task(async function test_persistAcrossRestarts() {
 
   
   Services.search.resetToOriginalDefaultEngine();
-  Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
+  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName());
 });
 
 
@@ -57,7 +80,7 @@ add_task(async function test_ignoreInvalidHash() {
   
   Services.search.wrappedJSObject.reset();
   await Services.search.init(true);
-  Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
+  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName());
 });
 
 
@@ -75,7 +98,7 @@ add_task(async function test_settingToDefault() {
 
   
   await Services.search.setDefault(
-    Services.search.getEngineByName(kDefaultEngineName)
+    Services.search.getEngineByName(getDefaultEngineName())
   );
   await promiseAfterCache();
 
@@ -85,7 +108,8 @@ add_task(async function test_settingToDefault() {
 });
 
 add_task(async function test_resetToOriginalDefaultEngine() {
-  Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
+  let defaultName = getDefaultEngineName();
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
 
   await Services.search.setDefault(
     Services.search.getEngineByName(kTestEngineName)
@@ -94,16 +118,17 @@ add_task(async function test_resetToOriginalDefaultEngine() {
   await promiseAfterCache();
 
   Services.search.resetToOriginalDefaultEngine();
-  Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
   await promiseAfterCache();
 });
 
 add_task(async function test_fallback_kept_after_restart() {
   
   let builtInEngines = await Services.search.getDefaultEngines();
+  let defaultName = getDefaultEngineName();
   let nonDefaultBuiltInEngine;
   for (let engine of builtInEngines) {
-    if (engine.name != kDefaultEngineName) {
+    if (engine.name != defaultName) {
       nonDefaultBuiltInEngine = engine;
       break;
     }
@@ -123,17 +148,17 @@ add_task(async function test_fallback_kept_after_restart() {
 
   
   
-  Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
 
   
   
   Services.search.restoreDefaultEngines();
   Assert.ok(!nonDefaultBuiltInEngine.hidden);
-  Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
   await promiseAfterCache();
 
   
   Services.search.wrappedJSObject.reset();
   await Services.search.init(true);
-  Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
+  Assert.equal(Services.search.defaultEngine.name, defaultName);
 });

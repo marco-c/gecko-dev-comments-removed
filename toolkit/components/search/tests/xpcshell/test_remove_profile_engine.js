@@ -4,11 +4,6 @@
 
 
 
-add_task(async function setup() {
-  await SearchTestUtils.useTestEngines("data1");
-  await AddonTestUtils.promiseStartupManager();
-});
-
 add_task(async function run_test() {
   
   let dir = do_get_profile().clone();
@@ -16,31 +11,42 @@ add_task(async function run_test() {
   if (!dir.exists()) {
     dir.create(dir.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
   }
-  do_get_file("data/engine-override.xml").copyTo(dir, "test-search-engine.xml");
+  do_get_file("data/engine-override.xml").copyTo(dir, "basic.xml");
 
   let file = dir.clone();
-  file.append("test-search-engine.xml");
+  file.append("basic.xml");
   Assert.ok(file.exists());
 
-  let data = await readJSONFile(do_get_file("data/search-legacy.json"));
+  await AddonTestUtils.promiseStartupManager();
+  let cacheWrittenPromise = promiseAfterCache();
+  await Services.search.init();
+  await cacheWrittenPromise;
 
+  
+  useHttpServer();
+  cacheWrittenPromise = promiseAfterCache();
+  await addTestEngines([{ name: "basic", xmlFileName: "engine-override.xml" }]);
+  await cacheWrittenPromise;
+  let data = await promiseCacheData();
   
   
   for (let engine of data.engines) {
-    if (engine._name == "Test search engine") {
+    if (engine._name == "basic") {
       engine.filePath = file.path;
     }
   }
 
   await promiseSaveCacheData(data);
 
-  await Services.search.init();
+  cacheWrittenPromise = promiseAfterCache();
+  await asyncReInit();
+  await cacheWrittenPromise;
 
   
-  let engine = Services.search.getEngineByName("Test search engine");
-  Assert.notEqual(engine, null, "Should have found the engine");
+  let engine = Services.search.getEngineByName("basic");
+  Assert.notEqual(engine, null);
 
   
   await Services.search.removeEngine(engine);
-  Assert.ok(!file.exists(), "Should have removed the file.");
+  Assert.ok(!file.exists());
 });
