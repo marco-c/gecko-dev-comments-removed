@@ -336,6 +336,15 @@ def test_push_interval(params):
     scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
     assert scheduled == all_labels
 
+    
+    params['project'] = 'mozilla-central'
+    scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
+    assert scheduled == all_labels
+
+    params['project'] = 'try'
+    scheduled = {t.label for t in default_tasks if not opt.should_remove_task(t, params, None)}
+    assert scheduled == set()
+
 
 if __name__ == '__main__':
     main()
