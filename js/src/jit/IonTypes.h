@@ -125,6 +125,9 @@ enum class BailoutKind : uint8_t {
   StringToIndexGuard,
 
   
+  StringToInt32Guard,
+
+  
   NonInt32Input,
   NonNumericInput,  
   NonBooleanInput,
@@ -261,6 +264,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::SpecificSymbolGuard";
     case BailoutKind::StringToIndexGuard:
       return "BailoutKind::StringToIndexGuard";
+    case BailoutKind::StringToInt32Guard:
+      return "BailoutKind::StringToInt32Guard";
     case BailoutKind::NonInt32Input:
       return "BailoutKind::NonInt32Input";
     case BailoutKind::NonNumericInput:

@@ -2129,53 +2129,9 @@ bool CacheIRCompiler::emitGuardStringToInt32(StringOperandId strId,
     return false;
   }
 
-  Label vmCall, done;
-  
-  masm.loadStringIndexValue(str, output, &vmCall);
-  masm.jump(&done);
-  {
-    masm.bind(&vmCall);
-
-    
-    masm.reserveStack(sizeof(int32_t));
-    masm.moveStackPtrTo(output);
-
-    
-    
-    
-    LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(),
-                                 liveVolatileFloatRegs());
-    masm.PushRegsInMask(volatileRegs);
-
-    masm.setupUnalignedABICall(scratch);
-    masm.loadJSContext(scratch);
-    masm.passABIArg(scratch);
-    masm.passABIArg(str);
-    masm.passABIArg(output);
-    masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, GetInt32FromStringPure));
-    masm.mov(ReturnReg, scratch);
-
-    LiveRegisterSet ignore;
-    ignore.add(scratch);
-    masm.PopRegsInMaskIgnore(volatileRegs, ignore);
-
-    Label ok;
-    masm.branchIfTrueBool(scratch, &ok);
-    {
-      
-      
-      
-      
-      
-      masm.addToStackPtr(Imm32(sizeof(int32_t)));
-      masm.jump(failure->label());
-    }
-    masm.bind(&ok);
-
-    masm.load32(Address(output, 0), output);
-    masm.freeStack(sizeof(int32_t));
-  }
-  masm.bind(&done);
+  LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(),
+                               liveVolatileFloatRegs());
+  masm.guardStringToInt32(str, output, scratch, volatileRegs, failure->label());
   return true;
 }
 
