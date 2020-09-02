@@ -971,21 +971,13 @@ static bool EvaluateInEnv(JSContext* cx, Handle<Env*> env,
     
     
 
-    Rooted<frontend::CompilationInfo> compilationInfo(
-        cx, frontend::CompilationInfo(cx, options));
-    if (!compilationInfo.get().input.initForGlobal(cx)) {
-      return false;
-    }
-
     MOZ_ASSERT(scopeKind == ScopeKind::Global ||
                scopeKind == ScopeKind::NonSyntactic);
 
-    frontend::CompilationGCOutput gcOutput(cx);
-    if (!frontend::CompileGlobalScript(compilationInfo.get(), srcBuf, scopeKind,
-                                       gcOutput)) {
+    script = frontend::CompileGlobalScript(cx, options, srcBuf, scopeKind);
+    if (!script) {
       return false;
     }
-    script = gcOutput.script;
   }
 
   
