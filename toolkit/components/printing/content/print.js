@@ -214,19 +214,17 @@ var PrintEventHandler = {
   },
 
   async refreshSettings(printerName) {
-    this.settings = PrintUtils.getPrintSettings(printerName);
-    
-    
-    
-    this.settings.isInitializedFromPrinter = true;
-    this.defaultSettings = PrintUtils.getPrintSettings(printerName, true);
+    let currentPrinter = await PrintSettingsViewProxy.resolvePropertiesForPrinter(
+      printerName
+    );
+    this.settings = currentPrinter.settings;
+    this.defaultSettings = currentPrinter.defaultSettings;
     
     for (let key of Object.keys(this._nonFlaggedChangedSettings)) {
       if (key in this.settings) {
         this.settings[key] = this._nonFlaggedChangedSettings[key];
       }
     }
-    await PrintSettingsViewProxy.resolvePropertiesForPrinter(printerName);
 
     
     
@@ -602,14 +600,48 @@ const PrintSettingsViewProxy = {
 
   async resolvePropertiesForPrinter(printerName) {
     
-    let printer = this.availablePrinters[printerName];
-    
-    if (printer.printer) {
-      [printer.supportsColor, printer.paperList] = await Promise.all([
-        printer.printer.supportsColor,
-        printer.printer.paperList,
-      ]);
+    let printerInfo = this.availablePrinters[printerName];
+    if (printerInfo._resolved) {
+      return printerInfo;
     }
+
+    const PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
+      Ci.nsIPrintSettingsService
+    );
+
+    
+    if (printerInfo.printer) {
+      [
+        printerInfo.supportsColor,
+        printerInfo.paperList,
+        printerInfo.defaultSettings,
+      ] = await Promise.all([
+        printerInfo.printer.supportsColor,
+        printerInfo.printer.paperList,
+        
+        printerInfo.printer.createDefaultSettings(printerName),
+      ]);
+      printerInfo.defaultSettings.QueryInterface(Ci.nsIPrintSettings);
+    } else if (printerName == PrintUtils.SAVE_TO_PDF_PRINTER) {
+      
+      printerInfo.defaultSettings = PSSVC.newPrintSettings;
+      printerInfo.defaultSettings.printerName = printerName;
+    }
+    printerInfo.settings = printerInfo.defaultSettings.clone();
+    
+    PSSVC.initPrintSettingsFromPrefs(
+      printerInfo.settings,
+      true,
+      printerInfo.settings.kInitSaveAll
+    );
+    
+    
+    
+    printerInfo.settings.isInitializedFromPrinter = true;
+
+    
+    printerInfo._resolved;
+    return printerInfo;
   },
 
   get(target, name) {
