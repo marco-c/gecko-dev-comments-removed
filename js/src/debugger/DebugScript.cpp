@@ -14,30 +14,32 @@
 
 #include "jsapi.h"
 
-#include "debugger/DebugAPI.h"  
-#include "debugger/Debugger.h"  
-#include "gc/Barrier.h"         
-#include "gc/Cell.h"            
-#include "gc/FreeOp.h"          
-#include "gc/GCEnum.h"          
-#include "gc/Marking.h"         
-#include "gc/Zone.h"            
-#include "gc/ZoneAllocator.h"   
-#include "jit/BaselineJIT.h"    
-#include "vm/JSContext.h"       
-#include "vm/JSScript.h"        
-#include "vm/NativeObject.h"    
-#include "vm/Realm.h"           
-#include "vm/Runtime.h"         
-#include "vm/Stack.h"           
+#include "debugger/DebugAPI.h"    
+#include "debugger/Debugger.h"    
+#include "gc/Barrier.h"           
+#include "gc/Cell.h"              
+#include "gc/FreeOp.h"            
+#include "gc/GCEnum.h"            
+#include "gc/Marking.h"           
+#include "gc/Zone.h"              
+#include "gc/ZoneAllocator.h"     
+#include "jit/BaselineJIT.h"      
+#include "vm/BytecodeIterator.h"  
+#include "vm/JSContext.h"         
+#include "vm/JSScript.h"          
+#include "vm/NativeObject.h"      
+#include "vm/Realm.h"             
+#include "vm/Runtime.h"           
+#include "vm/Stack.h"             
 
-#include "gc/FreeOp-inl.h"     
-#include "gc/GC-inl.h"         
-#include "gc/Marking-inl.h"    
-#include "gc/WeakMap-inl.h"    
-#include "vm/JSContext-inl.h"  
-#include "vm/JSScript-inl.h"   
-#include "vm/Realm-inl.h"      
+#include "gc/FreeOp-inl.h"            
+#include "gc/GC-inl.h"                
+#include "gc/Marking-inl.h"           
+#include "gc/WeakMap-inl.h"           
+#include "vm/BytecodeIterator-inl.h"  
+#include "vm/JSContext-inl.h"         
+#include "vm/JSScript-inl.h"          
+#include "vm/Realm-inl.h"             
 
 namespace js {
 
@@ -169,8 +171,9 @@ void DebugScript::clearBreakpointsIn(JSFreeOp* fop, JSScript* script,
     return;
   }
 
-  for (jsbytecode* pc = script->code(); pc < script->codeEnd(); pc++) {
-    JSBreakpointSite* site = getBreakpointSite(script, pc);
+  AllBytecodesIterable iter(script);
+  for (BytecodeLocation loc : iter) {
+    JSBreakpointSite* site = getBreakpointSite(script, loc.toRawBytecode());
     if (site) {
       Breakpoint* nextbp;
       for (Breakpoint* bp = site->firstBreakpoint(); bp; bp = nextbp) {
