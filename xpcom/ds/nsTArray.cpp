@@ -14,7 +14,7 @@
 
 
 
-alignas(8) nsTArrayHeader sEmptyTArrayHeader = {0, 0, 0};
+alignas(8) const nsTArrayHeader sEmptyTArrayHeader = {0, 0, 0};
 
 bool IsTwiceTheRequiredBytesRepresentableAsUint32(size_t aCapacity,
                                                   size_t aElemSize) {
