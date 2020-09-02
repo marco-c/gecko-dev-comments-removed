@@ -118,6 +118,8 @@ class BaselineICFallbackCode {
   }
 };
 
+enum class ArgumentsRectifierKind { Normal, TrialInlining };
+
 enum class DebugTrapHandlerKind { Interpreter, Compiler, Count };
 
 using EnterJitCode = void (*)(void*, unsigned int, Value*, InterpreterFrame*,
@@ -163,7 +165,9 @@ class JitRuntime {
 
   
   
+  
   WriteOnceData<uint32_t> argumentsRectifierOffset_{0};
+  WriteOnceData<uint32_t> trialInliningArgumentsRectifierOffset_{0};
   WriteOnceData<uint32_t> argumentsRectifierReturnOffset_{0};
 
   
@@ -258,7 +262,8 @@ class JitRuntime {
                                  Label* profilerExitTail);
   void generateBailoutTailStub(MacroAssembler& masm, Label* bailoutTail);
   void generateEnterJIT(JSContext* cx, MacroAssembler& masm);
-  void generateArgumentsRectifier(MacroAssembler& masm);
+  void generateArgumentsRectifier(MacroAssembler& masm,
+                                  ArgumentsRectifierKind kind);
   BailoutTable generateBailoutTable(MacroAssembler& masm, Label* bailoutTail,
                                     uint32_t frameClass);
   void generateBailoutHandler(MacroAssembler& masm, Label* bailoutTail);
@@ -355,7 +360,11 @@ class JitRuntime {
   TrampolinePtr getBailoutTable(const FrameSizeClass& frameClass) const;
   uint32_t getBailoutTableSize(const FrameSizeClass& frameClass) const;
 
-  TrampolinePtr getArgumentsRectifier() const {
+  TrampolinePtr getArgumentsRectifier(
+      ArgumentsRectifierKind kind = ArgumentsRectifierKind::Normal) const {
+    if (kind == ArgumentsRectifierKind::TrialInlining) {
+      return trampolineCode(trialInliningArgumentsRectifierOffset_);
+    }
     return trampolineCode(argumentsRectifierOffset_);
   }
 
