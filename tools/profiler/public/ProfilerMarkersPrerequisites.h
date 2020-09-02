@@ -17,6 +17,14 @@
 
 #ifdef MOZ_GECKO_PROFILER
 
+namespace profilermarkers {
+
+
+
+using NoPayload = ::mozilla::baseprofiler::markers::NoPayload;
+
+}  
+
 #endif  
 
 #endif  

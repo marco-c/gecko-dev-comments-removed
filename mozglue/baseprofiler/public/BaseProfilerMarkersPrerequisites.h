@@ -633,6 +633,14 @@ MarkerOptions MarkerCategory::WithOptions(Options&&... aOptions) const {
 
 }  
 
+namespace mozilla::baseprofiler::markers {
+
+
+
+struct NoPayload final {};
+
+}  
+
 #endif  
 
 #endif  
