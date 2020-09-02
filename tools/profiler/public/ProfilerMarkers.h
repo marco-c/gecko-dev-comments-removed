@@ -80,11 +80,11 @@ mozilla::ProfileBufferBlockIndex profiler_add_marker(
 #  define PROFILER_MARKER(markerName, options, MarkerType, ...)           \
     do {                                                                  \
       AUTO_PROFILER_STATS(add_marker_v2_with_##MarkerType);               \
-      ::profiler_add_marker<::profilermarkers::MarkerType>(               \
+      ::profiler_add_marker<::geckoprofiler::markers::MarkerType>(        \
           markerName, ::geckoprofiler::category::options, ##__VA_ARGS__); \
     } while (false)
 
-namespace profilermarkers {
+namespace geckoprofiler::markers {
 
 using Text = ::mozilla::baseprofiler::markers::Text;
 }  
