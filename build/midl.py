@@ -49,7 +49,7 @@ def merge_dlldata(out, *inputs):
     inputs = [open(i) for i in inputs]
     read_a_line = [True] * len(inputs)
     while True:
-        lines = [f.readline() if read_a_line[n] else '\n' for n, f in enumerate(inputs)]
+        lines = [f.readline() if read_a_line[n] else lines[n] for n, f in enumerate(inputs)]
         unique_lines = set(lines)
         if len(unique_lines) == 1:
             
@@ -57,14 +57,21 @@ def merge_dlldata(out, *inputs):
                 break
             out.write(lines[0])
             read_a_line = [True] * len(inputs)
-        elif len(unique_lines) == 2 and '\n' in unique_lines:
+        elif len(unique_lines) == 2 and len([l for l in unique_lines if '#define' in l]) == 1:
             
             
             
             
-            unique_lines.remove('\n')
-            out.write(unique_lines.pop())
-            read_a_line = [l != '\n' for l in lines]
+            
+            
+            
+            
+            a = unique_lines.pop()
+            if '#define' in a:
+                out.write(a)
+            else:
+                out.write(unique_lines.pop())
+            read_a_line = ['#define' in l for l in lines]
         elif len(unique_lines) != len(lines):
             
             
