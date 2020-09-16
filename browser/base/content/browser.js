@@ -8902,9 +8902,17 @@ class TabDialogBox {
 
 
 
+
+
+
   open(
     aURL,
-    { features = null, allowDuplicateDialogs = true, sizeTo } = {},
+    {
+      features = null,
+      allowDuplicateDialogs = true,
+      sizeTo,
+      keepOpenSameOriginNav,
+    } = {},
     ...aParams
   ) {
     return new Promise(resolve => {
@@ -8919,7 +8927,7 @@ class TabDialogBox {
       };
 
       
-      this._dialogManager.open(
+      let dialog = this._dialogManager.open(
         aURL,
         {
           features,
@@ -8930,6 +8938,13 @@ class TabDialogBox {
         },
         ...aParams
       );
+
+      
+      
+      
+      if (dialog) {
+        dialog._keepOpenSameOriginNav = keepOpenSameOriginNav;
+      }
     });
   }
 
@@ -8937,8 +8952,11 @@ class TabDialogBox {
     
     this.browser.setAttribute("tabDialogShowing", true);
     UpdatePopupNotificationsVisibility();
+
     
+    this._lastPrincipal = this.browser.contentPrincipal;
     this.browser.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_LOCATION);
+
     this.tab?.addEventListener("TabClose", this);
   }
 
@@ -8946,8 +8964,11 @@ class TabDialogBox {
     
     this.browser.removeAttribute("tabDialogShowing");
     UpdatePopupNotificationsVisibility();
+
     
     this.browser.removeProgressListener(this);
+    this._lastPrincipal = null;
+
     this.tab?.removeEventListener("TabClose", this);
   }
 
@@ -8959,7 +8980,7 @@ class TabDialogBox {
   }
 
   abortAllDialogs() {
-    this._dialogManager.abortAll();
+    this._dialogManager.abortDialogs();
   }
 
   focus() {
@@ -8977,7 +8998,23 @@ class TabDialogBox {
     ) {
       return;
     }
-    this.abortAllDialogs();
+
+    
+    let filterFn;
+
+    
+    if (
+      this._lastPrincipal?.isSameOrigin(
+        aLocation,
+        this.browser.browsingContext.usePrivateBrowsing
+      )
+    ) {
+      filterFn = dialog => !dialog._keepOpenSameOriginNav;
+    }
+
+    this._lastPrincipal = this.browser.contentPrincipal;
+
+    this._dialogManager.abortDialogs(filterFn);
   }
 
   get tab() {
