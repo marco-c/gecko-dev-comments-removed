@@ -259,7 +259,7 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument() {
     
     
 
-    if (GtkPrinter* printer = mPrintSettings->GetGtkPrinter()) {
+    if (mPrintSettings->GetGtkPrinter()) {
       
       StartPrintJob();
     } else {
