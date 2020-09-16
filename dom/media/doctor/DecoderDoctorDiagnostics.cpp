@@ -237,6 +237,7 @@ enum class ReportParam : uint8_t {
 
 struct NotificationAndReportStringId {
   
+  
   dom::DecoderDoctorNotificationType mNotificationType;
   
   const char* mReportStringId;

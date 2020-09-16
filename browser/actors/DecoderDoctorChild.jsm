@@ -1,0 +1,32 @@
+
+
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["DecoderDoctorChild"];
+
+class DecoderDoctorChild extends JSWindowActorChild {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  observe(aSubject, aTopic, aData) {
+    this.sendAsyncMessage("DecoderDoctor:Notification", aData);
+  }
+}
