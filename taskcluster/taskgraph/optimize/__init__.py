@@ -503,7 +503,7 @@ import_sibling_modules()
 
 
 register_strategy('build', args=('skip-unless-schedules',))(Alias)
-register_strategy('build-fuzzing', args=('push-interval-10', 'backstop'))(All)
+register_strategy('build-fuzzing', args=('push-interval-10', 'skip-unless-backstop'))(All)
 register_strategy('test', args=('skip-unless-schedules',))(Alias)
 register_strategy('test-inclusive', args=('skip-unless-schedules',))(Alias)
 register_strategy('test-verify', args=('skip-unless-schedules',))(Alias)
@@ -516,35 +516,57 @@ register_strategy('upload-symbols', args=('never',))(Alias)
 class project(object):
     """Strategies that should be applied per-project."""
 
-    
-    
-    register_strategy(
-        'optimized-backstop',
-        args=(
-            'push-interval-10',
-            Any(
-                'skip-unless-schedules',
-                Any(
-                    'bugbug-reduced-manifests-fallback-last-10-pushes',
-                    'platform-disperse',
-                ),
-                split_args=split_bugbug_arg,
-            ),
-        ),
-    )(Any)
-
-    
-    
-    
-    
-    
-    
-    
     autoland = {
-        'test': All(
-            'backstop',
-            'optimized-backstop',
-            Any('skip-unless-schedules', 'bugbug-reduced-fallback', split_args=split_bugbug_arg),
+        'test': Any(
+            
+            
+
+            
+            All(
+                
+                
+                
+                
+                
+                
+                
+                
+
+                
+                'skip-unless-backstop',
+                Not('skip-unless-expanded'),
+
+                
+                Any(
+                    'skip-unless-schedules',
+                    Any(
+                        'bugbug-reduced-manifests-fallback-last-10-pushes',
+                        'platform-disperse',
+                    ),
+                    split_args=split_bugbug_arg,
+                ),
+            ),
+
+            
+            
+            All(
+                
+                
+                
+                
+                
+                
+                
+
+                
+                'skip-unless-expanded',
+
+                
+                Any(
+                    'skip-unless-schedules',
+                    'bugbug-reduced-fallback',
+                ),
+            ),
         ),
         'build': All(
             'push-interval-10',
