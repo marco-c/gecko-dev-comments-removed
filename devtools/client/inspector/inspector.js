@@ -1300,21 +1300,17 @@ Inspector.prototype = {
     }
   },
 
-  onResourceAvailable: function(resources) {
-    for (const resource of resources) {
-      if (
-        resource.resourceType === this.toolbox.resourceWatcher.TYPES.ROOT_NODE
-      ) {
-        const isTopLevelTarget = !!resource.targetFront.isTopLevel;
-        if (resource.isTopLevelDocument && isTopLevelTarget) {
-          
-          
-          
-          
-          this.onRootNodeAvailable();
-        } else {
-          this.emit("frame-root-available", resource);
-        }
+  onResourceAvailable: function({ resourceType, targetFront, resource }) {
+    if (resourceType === this.toolbox.resourceWatcher.TYPES.ROOT_NODE) {
+      const isTopLevelTarget = !!targetFront.isTopLevel;
+      if (resource.isTopLevelDocument && isTopLevelTarget) {
+        
+        
+        
+        
+        this.onRootNodeAvailable();
+      } else {
+        this.emit("frame-root-available", resource);
       }
     }
   },

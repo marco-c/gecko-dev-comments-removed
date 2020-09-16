@@ -80,10 +80,8 @@ async function generatePlatformMessagesStubs() {
   
   let handlePlatformMessage = function() {};
 
-  const onPlatformMessageAvailable = resources => {
-    for (const resource of resources) {
-      handlePlatformMessage(resource);
-    }
+  const onPlatformMessageAvailable = ({ resource }) => {
+    handlePlatformMessage(resource);
   };
   await resourceWatcher.watchResources(
     [resourceWatcher.TYPES.PLATFORM_MESSAGE],

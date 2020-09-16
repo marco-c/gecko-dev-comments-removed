@@ -119,22 +119,20 @@ class ChangesView {
     );
   }
 
-  onResourceAvailable(resources) {
-    for (const resource of resources) {
-      if (resource.resourceType === this.resourceWatcher.TYPES.CSS_CHANGE) {
-        this.onAddChange(resource);
-        continue;
-      }
+  onResourceAvailable({ resource }) {
+    if (resource.resourceType === this.resourceWatcher.TYPES.CSS_CHANGE) {
+      this.onAddChange(resource);
+      return;
+    }
 
-      if (resource.name === "dom-loading" && resource.targetFront.isTopLevel) {
-        
-        
-        
-        
-        
-        
-        this.onClearChanges();
-      }
+    if (resource.name === "dom-loading" && resource.targetFront.isTopLevel) {
+      
+      
+      
+      
+      
+      
+      this.onClearChanges();
     }
   }
 

@@ -32,11 +32,9 @@ add_task(async function() {
   
   
   const receivedMessages = [];
-  const onAvailable = resources => {
-    for (const resource of resources) {
-      if (resource.resourceType === CONSOLE_MESSAGE) {
-        receivedMessages.push(resource);
-      }
+  const onAvailable = ({ resource, resourceType }) => {
+    if (resourceType === CONSOLE_MESSAGE) {
+      receivedMessages.push(resource);
     }
   };
 

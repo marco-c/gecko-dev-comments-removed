@@ -81,10 +81,13 @@ add_task(async function navigateFrameNotExpandedInMarkupView() {
   
   
   
-  const { resource } = await navigateIframeTo(inspector, EXAMPLE_COM_URI);
+  const { resource, targetFront } = await navigateIframeTo(
+    inspector,
+    EXAMPLE_COM_URI
+  );
 
   is(
-    resource.resourceType,
+    resource?.resourceType,
     resourceWatcher.TYPES.ROOT_NODE,
     "A resource with resourceType ROOT_NODE was received when navigating"
   );
@@ -105,7 +108,7 @@ add_task(async function navigateFrameNotExpandedInMarkupView() {
   
   
   todo(
-    !resource.targetFront.getCachedFront("inspector"),
+    !targetFront.getCachedFront("inspector"),
     "The inspector front for the new target should not be initialized"
   );
 });
