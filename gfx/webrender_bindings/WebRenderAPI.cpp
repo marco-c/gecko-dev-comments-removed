@@ -84,10 +84,11 @@ class NewRenderer : public RendererEvent {
     layers::AutoCompleteTask complete(mTask);
 
     UniquePtr<RenderCompositor> compositor =
-        RenderCompositor::Create(std::move(mCompositorWidget));
+        RenderCompositor::Create(std::move(mCompositorWidget), *mError);
     if (!compositor) {
-      
-      
+      if (!mError->IsEmpty()) {
+        gfxCriticalNote << mError->BeginReading();
+      }
       return;
     }
 
