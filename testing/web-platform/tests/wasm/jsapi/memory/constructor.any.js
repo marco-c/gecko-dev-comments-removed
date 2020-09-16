@@ -72,7 +72,16 @@ test(() => {
       assert_unreached(`Should not call [[HasProperty]] with ${x}`);
     },
     get(o, x) {
-      return 0;
+      
+      switch (x) {
+        case "shared":
+          return false;
+        case "minimum":
+        case "maximum":
+          return 0;
+        default:
+          return undefined;
+      }
     },
   });
   new WebAssembly.Memory(proxy);
