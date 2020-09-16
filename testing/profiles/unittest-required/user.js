@@ -216,6 +216,7 @@ user_pref("toolkit.telemetry.firstShutdownPing.enabled", false);
 user_pref("toolkit.telemetry.newProfilePing.enabled", false);
 
 user_pref("toolkit.telemetry.server", "https://{server}/telemetry-dummy/");
+user_pref("telemetry.fog.test.localhost_port", 1337);
 
 
 
