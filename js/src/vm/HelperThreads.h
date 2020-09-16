@@ -18,7 +18,6 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Utf8.h"  
-#include "mozilla/Variant.h"
 
 #include "jsapi.h"
 
@@ -317,18 +316,25 @@ class GlobalHelperThreadState {
     return helperTasks_;
   }
 
-  bool canStartWasmCompile(const AutoLockHelperThreadState& lock,
-                           wasm::CompileMode mode);
+  HelperThreadTask* maybeGetWasmCompile(const AutoLockHelperThreadState& lock,
+                                        wasm::CompileMode mode);
 
-  bool canStartWasmTier1Compile(const AutoLockHelperThreadState& lock);
-  bool canStartWasmTier2Compile(const AutoLockHelperThreadState& lock);
-  bool canStartWasmTier2Generator(const AutoLockHelperThreadState& lock);
-  bool canStartPromiseHelperTask(const AutoLockHelperThreadState& lock);
-  bool canStartIonCompile(const AutoLockHelperThreadState& lock);
-  bool canStartIonFreeTask(const AutoLockHelperThreadState& lock);
-  bool canStartParseTask(const AutoLockHelperThreadState& lock);
-  bool canStartCompressionTask(const AutoLockHelperThreadState& lock);
-  bool canStartGCParallelTask(const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetWasmTier1CompileTask(
+      const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetWasmTier2CompileTask(
+      const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetWasmTier2GeneratorTask(
+      const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetPromiseHelperTask(
+      const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetIonCompileTask(
+      const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetIonFreeTask(const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetParseTask(const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetCompressionTask(
+      const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetGCParallelTask(
+      const AutoLockHelperThreadState& lock);
 
   enum class ScheduleCompressionTask { GC, API };
 
@@ -432,17 +438,9 @@ static inline GlobalHelperThreadState& HelperThreadState() {
   return *gHelperThreadState;
 }
 
-typedef mozilla::Variant<jit::IonCompileTask*, wasm::CompileTask*,
-                         wasm::Tier2GeneratorTask*, PromiseHelperTask*,
-                         ParseTask*, SourceCompressionTask*, GCParallelTask*>
-    HelperTaskUnion;
-
 
 class HelperThread {
   Thread thread;
-
-  
-  mozilla::Maybe<HelperTaskUnion> currentTask;
 
   
 
@@ -464,40 +462,6 @@ class HelperThread {
 
   ThreadId threadId() { return thread.get_id(); }
 
-  bool idle() const { return currentTask.isNothing(); }
-
-  template <typename T>
-  bool hasTask() const {
-    return !idle() && currentTask->is<T>();
-  }
-
-  
-  jit::IonCompileTask* ionCompileTask() {
-    return maybeCurrentTaskAs<jit::IonCompileTask*>();
-  }
-
-  
-  wasm::CompileTask* wasmTask() {
-    return maybeCurrentTaskAs<wasm::CompileTask*>();
-  }
-
-  wasm::Tier2GeneratorTask* wasmTier2GeneratorTask() {
-    return maybeCurrentTaskAs<wasm::Tier2GeneratorTask*>();
-  }
-
-  
-  ParseTask* parseTask() { return maybeCurrentTaskAs<ParseTask*>(); }
-
-  
-  SourceCompressionTask* compressionTask() {
-    return maybeCurrentTaskAs<SourceCompressionTask*>();
-  }
-
-  
-  GCParallelTask* gcParallelTask() {
-    return maybeCurrentTaskAs<GCParallelTask*>();
-  }
-
   void setTerminate(const AutoLockHelperThreadState& lock);
   void join();
 
@@ -517,42 +481,12 @@ class HelperThread {
     ProfilingStack* profilingStack;
   };
 
-  struct TaskSpec {
-    using Selector =
-        bool (GlobalHelperThreadState::*)(const AutoLockHelperThreadState&);
-    using Handler = void (HelperThread::*)(AutoLockHelperThreadState&);
+  using Selector = HelperThreadTask* (
+      GlobalHelperThreadState::*)(const AutoLockHelperThreadState&);
+  static const Selector selectors[];
 
-    js::ThreadType type;
-    Selector canStart;
-    Handler handleWorkload;
-  };
-
-  static const TaskSpec taskSpecs[];
-
-  const TaskSpec* findHighestPriorityTask(
+  HelperThreadTask* findHighestPriorityTask(
       const AutoLockHelperThreadState& locked);
-
-  template <typename T>
-  T maybeCurrentTaskAs() {
-    if (currentTask.isSome() && currentTask->is<T>()) {
-      return currentTask->as<T>();
-    }
-
-    return nullptr;
-  }
-
-  void handleWasmWorkload(AutoLockHelperThreadState& locked,
-                          wasm::CompileMode mode);
-
-  void handleWasmTier1Workload(AutoLockHelperThreadState& locked);
-  void handleWasmTier2Workload(AutoLockHelperThreadState& locked);
-  void handleWasmTier2GeneratorWorkload(AutoLockHelperThreadState& locked);
-  void handlePromiseHelperTaskWorkload(AutoLockHelperThreadState& locked);
-  void handleIonWorkload(AutoLockHelperThreadState& locked);
-  void handleIonFreeWorkload(AutoLockHelperThreadState& locked);
-  void handleParseWorkload(AutoLockHelperThreadState& locked);
-  void handleCompressionWorkload(AutoLockHelperThreadState& locked);
-  void handleGCParallelWorkload(AutoLockHelperThreadState& locked);
 };
 
 
