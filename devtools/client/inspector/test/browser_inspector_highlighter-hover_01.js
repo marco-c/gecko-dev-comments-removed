@@ -7,7 +7,6 @@
 
 
 
-
 const TEST_URL =
   "data:text/html;charset=utf-8," + "<p>It's going to be legen....</p>";
 
@@ -22,22 +21,12 @@ add_task(async function() {
   info("selecting the <p> line by clicking in the markup-view");
   await clickContainer("p", inspector);
 
-  await testActor.setProperty("p", "textContent", "wait for it ....");
   info(
     "wait and see if the highlighter stays visible even after the node " +
       "was selected"
   );
-  await waitForTheBrieflyShowBoxModelTimeout();
 
   await testActor.setProperty("p", "textContent", "dary!!!!");
   isVisible = await testActor.isHighlighting();
   ok(isVisible, "the highlighter is still visible");
 });
-
-function waitForTheBrieflyShowBoxModelTimeout() {
-  
-  
-  return new Promise(resolve => {
-    setTimeout(resolve, 1500);
-  });
-}

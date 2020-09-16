@@ -210,9 +210,15 @@ async function getBrowsingContextForNestedFrame(selectorArray = []) {
 
 
 
-function selectAndHighlightNode(selector, inspector) {
+async function selectAndHighlightNode(selector, inspector) {
+  const { waitForHighlighterTypeShown } = getHighlighterTestHelpers(inspector);
   info("Highlighting and selecting the node " + selector);
-  return selectNode(selector, inspector, "test-highlight");
+  const onHighlighterShown = waitForHighlighterTypeShown(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
+
+  await selectNode(selector, inspector, "test-highlight");
+  await onHighlighterShown;
 }
 
 
@@ -421,18 +427,21 @@ var getContainerForSelector = async function(
 
 
 var hoverContainer = async function(selector, inspector) {
+  const { waitForHighlighterTypeShown } = getHighlighterTestHelpers(inspector);
   info("Hovering over the markup-container for node " + selector);
 
   const nodeFront = await getNodeFront(selector, inspector);
   const container = getContainerForNodeFront(nodeFront, inspector);
 
-  const highlit = inspector.highlighter.once("node-highlight");
+  const onHighlighterShown = waitForHighlighterTypeShown(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
   EventUtils.synthesizeMouseAtCenter(
     container.tagLine,
     { type: "mousemove" },
     inspector.markup.doc.defaultView
   );
-  return highlit;
+  await onHighlighterShown;
 };
 
 

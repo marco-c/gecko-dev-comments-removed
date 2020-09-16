@@ -151,18 +151,6 @@ function openChangesView() {
 
 function openLayoutView() {
   return openInspectorSidebarTab("layoutview").then(data => {
-    
-    
-    function mockHighlighter({ highlighter }) {
-      highlighter.showBoxModel = function() {
-        return promise.resolve();
-      };
-      highlighter.hideBoxModel = function() {
-        return promise.resolve();
-      };
-    }
-    mockHighlighter(data.inspector);
-
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,

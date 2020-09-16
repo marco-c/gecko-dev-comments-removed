@@ -34,6 +34,12 @@ loader.lazyRequireGetter(
   "flexboxReducer",
   "devtools/client/inspector/flexbox/reducers/flexbox"
 );
+loader.lazyRequireGetter(
+  this,
+  "deepEqual",
+  "devtools/shared/DevToolsUtils",
+  true
+);
 
 const DEFAULT_HIGHLIGHTER_COLOR = "#9400FF";
 const SUBGRID_PARENT_ALPHA = 0.5;
@@ -269,24 +275,38 @@ class HighlightersOverlay {
   async showHighlighterTypeForNode(type, nodeFront, options) {
     if (this._activeHighlighters.has(type)) {
       const {
-        highlighter: activeHighlighter,
         nodeFront: activeNodeFront,
+        options: activeOptions,
+        timer: activeTimer,
       } = this._activeHighlighters.get(type);
 
-      if (activeHighlighter) {
-        if (nodeFront == activeNodeFront) {
-          console.log(`Duplicate call to show ${type}`);
-          return;
-        }
-
-        
+      
+      
+      
+      
+      if (nodeFront !== activeNodeFront) {
         await this.hideHighlighterType(type);
+      } else if (deepEqual(options, activeOptions)) {
+        return;
       }
+
+      
+      
+      
+      
+      clearTimeout(activeTimer);
     }
 
     const highlighter = await this._getHighlighterTypeForNode(type, nodeFront);
     
-    this._activeHighlighters.set(type, { nodeFront, highlighter });
+    const timer = this.scheduleAutoHideHighlighterType(type, options?.duration);
+    
+    this._activeHighlighters.set(type, {
+      nodeFront,
+      highlighter,
+      options,
+      timer,
+    });
     await highlighter.show(nodeFront, options);
 
     
@@ -304,13 +324,40 @@ class HighlightersOverlay {
 
 
 
+
+
+
+
+  scheduleAutoHideHighlighterType(type, duration) {
+    if (!duration) {
+      return undefined;
+    }
+
+    const timer = setTimeout(async () => {
+      await this.hideHighlighterType(type);
+      clearTimeout(timer);
+    }, duration);
+
+    return timer;
+  }
+
+  
+
+
+
+
+
+
   async hideHighlighterType(type) {
     if (!this._activeHighlighters.has(type)) {
       return;
     }
 
-    const { highlighter, nodeFront } = this._activeHighlighters.get(type);
+    const { highlighter, nodeFront, timer } = this._activeHighlighters.get(
+      type
+    );
     
+    clearTimeout(timer);
     this._activeHighlighters.delete(type);
     await highlighter.hide();
 
@@ -1613,8 +1660,9 @@ class HighlightersOverlay {
     }
 
     
-    for (const { highlighter } of this._activeHighlighters.values()) {
+    for (const { highlighter, timer } of this._activeHighlighters.values()) {
       highlighter.finalize();
+      clearTimeout(timer);
     }
 
     this._activeHighlighters.clear();
@@ -1671,8 +1719,10 @@ class HighlightersOverlay {
 
 
   destroyHighlighters() {
-    for (const { highlighter } of this._activeHighlighters.values()) {
+    
+    for (const { highlighter, timer } of this._activeHighlighters.values()) {
       highlighter.finalize();
+      clearTimeout(timer);
     }
 
     this._activeHighlighters.clear();

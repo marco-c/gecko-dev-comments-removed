@@ -23,6 +23,13 @@ loader.lazyRequireGetter(
   true
 );
 
+loader.lazyRequireGetter(
+  this,
+  "ObjectUtils",
+  "resource://gre/modules/ObjectUtils.jsm",
+  true
+);
+
 
 
 var DevToolsUtils = exports;
@@ -949,3 +956,16 @@ function getTopWindow(win) {
 }
 
 exports.getTopWindow = getTopWindow;
+
+
+
+
+
+
+
+
+
+
+exports.deepEqual = (a, b) => {
+  return ObjectUtils.deepEqual(a, b);
+};

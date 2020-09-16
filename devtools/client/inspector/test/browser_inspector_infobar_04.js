@@ -24,7 +24,10 @@ add_task(async function() {
 
 async function testInfobar(test, inspector, testActor) {
   info(`Testing ${test.selector}`);
-
+  
+  await inspector.highlighters.hideHighlighterType(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
   await selectAndHighlightNode(test.selector, inspector);
 
   
