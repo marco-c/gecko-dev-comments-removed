@@ -35,16 +35,21 @@ namespace jit {
 
 
 class CacheIRHealth {
+  enum Happiness : uint8_t { Sad, MediumSad, MediumHappy, Happy };
+
  public:
   
-  bool spewStubHealth(AutoStructuredSpewer& spew, ICStub* stub);
+  Happiness determineStubHappiness(uint32_t stubHealthScore);
   
-  bool spewHealthForStubsInCacheIREntry(AutoStructuredSpewer& spew,
-                                        ICEntry* entry);
+  Happiness spewStubHealth(AutoStructuredSpewer& spew, ICStub* stub);
+  
+  Happiness spewHealthForStubsInCacheIREntry(AutoStructuredSpewer& spew,
+                                             ICEntry* entry);
   
   
-  void spewJSOpAndCacheIRHealth(AutoStructuredSpewer& spew, HandleScript script,
-                                jit::ICEntry* entry, jsbytecode* pc, JSOp op);
+  Happiness spewJSOpAndCacheIRHealth(AutoStructuredSpewer& spew,
+                                     HandleScript script, jit::ICEntry* entry,
+                                     jsbytecode* pc, JSOp op);
   
   
   bool rateMyCacheIR(JSContext* cx, Handle<ScriptVector> scripts);
