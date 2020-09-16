@@ -580,6 +580,10 @@ let BrowserUsageTelemetry = {
         
         if (["urlbar", "searchbar"].includes(source)) {
           histogram.add(countIdSource);
+          PartnerLinkAttribution.makeSearchEngineRequest(
+            engine,
+            details.url
+          ).catch(Cu.reportError);
           return;
         }
         throw new Error("Unknown source for one-off search: " + source);
@@ -606,9 +610,16 @@ let BrowserUsageTelemetry = {
   },
 
   _recordSearch(engine, url, source, action = null) {
-    PartnerLinkAttribution.makeSearchEngineRequest(engine, url).catch(
-      Cu.reportError
-    );
+    
+    
+    
+    
+    
+    if (!(action == "oneoff" && !url)) {
+      PartnerLinkAttribution.makeSearchEngineRequest(engine, url).catch(
+        Cu.reportError
+      );
+    }
 
     let scalarKey = action ? "search_" + action : "search";
     Services.telemetry.keyedScalarAdd(
