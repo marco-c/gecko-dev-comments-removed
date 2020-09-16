@@ -140,6 +140,7 @@ use std::ptr;
 
 use crate::bindings::{CompiledFunc, FuncCompileInput, ModuleEnvironment, StaticEnvironment};
 use crate::compile::BatchCompiler;
+use cranelift_codegen::CodegenError;
 
 
 
@@ -218,9 +219,21 @@ pub unsafe extern "C" fn cranelift_compile_function(
     };
 
     if let Err(e) = compiler.compile(data.stackmaps()) {
-        error!("Cranelift compilation error: {}\n", e);
-        info!("Compiled function: {}", compiler);
-        return false;
+        
+        
+        
+        match e {
+            CodegenError::Verifier(verifier_error) => {
+                panic!("Cranelift verifier error: {}", verifier_error);
+            }
+            CodegenError::ImplLimitExceeded
+            | CodegenError::CodeTooLarge
+            | CodegenError::Unsupported(_) => {
+                error!("Cranelift compilation error: {}\n", e);
+                info!("Compiled function: {}", compiler);
+                return false;
+            }
+        }
     };
 
     
