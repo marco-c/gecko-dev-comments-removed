@@ -397,12 +397,9 @@
   } while (0)
 
 #ifdef DEBUG
-#  define QM_HANDLE_ERROR(expr) \
-    HandleError(nsLiteralCString(#expr), nsLiteralCString(__FILE__), __LINE__)
+#  define QM_HANDLE_ERROR(expr) HandleError(#  expr, __FILE__, __LINE__)
 #else
-#  define QM_HANDLE_ERROR(expr)                                              \
-    HandleError(nsLiteralCString("Unavailable"), nsLiteralCString(__FILE__), \
-                __LINE__)
+#  define QM_HANDLE_ERROR(expr) HandleError("Unavailable", __FILE__, __LINE__)
 #endif
 
 
@@ -834,8 +831,8 @@ nsAutoCString GetIntCString(const int64_t aInteger);
 
 nsDependentCSubstring GetLeafName(const nsACString& aPath);
 
-void LogError(const nsLiteralCString& aModule, const nsLiteralCString& aExpr,
-              const nsLiteralCString& aSourceFile, int32_t aSourceLine);
+void LogError(const nsLiteralCString& aModule, const nsACString& aExpr,
+              const nsACString& aSourceFile, int32_t aSourceLine);
 
 #ifdef DEBUG
 Result<bool, nsresult> WarnIfFileIsUnknown(nsIFile& aFile,
@@ -847,8 +844,13 @@ Result<bool, nsresult> WarnIfFileIsUnknown(nsIFile& aFile,
 
 
 
-MOZ_NEVER_INLINE void HandleError(const nsLiteralCString& aExpr,
-                                  const nsLiteralCString& aSourceFile,
+
+
+
+
+
+
+MOZ_NEVER_INLINE void HandleError(const char* aExpr, const char* aSourceFile,
                                   int32_t aSourceLine);
 
 }  
