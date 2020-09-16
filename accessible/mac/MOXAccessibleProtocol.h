@@ -398,10 +398,4 @@
 
 - (id _Nullable)moxTextMarkerForIndex:(NSNumber* _Nonnull)index;
 
-
-- (id _Nullable)moxUIElementForTextMarker:(id _Nonnull)textMarker;
-
-
-- (id _Nullable)moxTextMarkerRangeForUIElement:(id _Nonnull)element;
-
 @end
