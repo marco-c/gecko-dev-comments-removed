@@ -100,25 +100,67 @@ class ResultImplementation<V, E&, PackingStrategy::Variant> {
 
 
 
+template <typename V>
+struct EmptyWrapper : V {
+  const V* addr() const { return this; }
+  V* addr() { return this; }
+};
+
+template <typename V>
+using AlignedStorageOrEmpty =
+    std::conditional_t<std::is_empty_v<V>, EmptyWrapper<V>, AlignedStorage2<V>>;
+
 
 
 
 
 template <typename V, typename E>
 class ResultImplementation<V, E&, PackingStrategy::NullIsOk> {
-  CompactPair<V, E*> mValue;
+  CompactPair<AlignedStorageOrEmpty<V>, E*> mValue;
 
  public:
   explicit ResultImplementation(const V& aSuccessValue)
-      : mValue(aSuccessValue, nullptr) {}
+      : mValue(std::piecewise_construct, std::tuple(), std::tuple(nullptr)) {
+    if constexpr (!std::is_empty_v<V>) {
+      new (mValue.first().addr()) V(aSuccessValue);
+    }
+  }
   explicit ResultImplementation(V&& aSuccessValue)
-      : mValue(std::move(aSuccessValue), nullptr) {}
-  explicit ResultImplementation(E& aErrorValue) : mValue(V{}, &aErrorValue) {}
+      : mValue(std::piecewise_construct, std::tuple(), std::tuple(nullptr)) {
+    if constexpr (!std::is_empty_v<V>) {
+      new (mValue.first().addr()) V(std::move(aSuccessValue));
+    }
+  }
+  explicit ResultImplementation(E& aErrorValue)
+      : mValue(std::piecewise_construct, std::tuple(),
+               std::tuple(&aErrorValue)) {}
+
+  ResultImplementation(ResultImplementation&& aOther)
+      : mValue(std::piecewise_construct, std::tuple(),
+               std::tuple(std::move(aOther.mValue.second()))) {
+    if constexpr (!std::is_empty_v<V>) {
+      if (isOk()) {
+        new (mValue.first().addr()) V(std::move(*aOther.mValue.first().addr()));
+      }
+    }
+  }
+  ResultImplementation& operator=(ResultImplementation&& aOther) {
+    if constexpr (!std::is_empty_v<V>) {
+      if (isOk()) {
+        mValue.first().addr()->~V();
+      }
+      if (aOther.isOk()) {
+        new (mValue.first().addr()) V(std::move(*aOther.mValue.first().addr()));
+      }
+    }
+    mValue.second() = std::move(aOther.mValue.second());
+    return *this;
+  }
 
   bool isOk() const { return mValue.second() == nullptr; }
 
-  const V& inspect() const { return mValue.first(); }
-  V unwrap() { return std::move(mValue.first()); }
+  const V& inspect() const { return *mValue.first().addr(); }
+  V unwrap() { return std::move(*mValue.first().addr()); }
 
   const E& inspectErr() const { return *mValue.second(); }
   E& unwrapErr() { return *mValue.second(); }
@@ -133,23 +175,55 @@ template <typename V, typename E>
 class ResultImplementation<V, E, PackingStrategy::NullIsOk> {
   static constexpr E NullValue = E(0);
 
-  CompactPair<V, E> mValue;
+  CompactPair<AlignedStorageOrEmpty<V>, E> mValue;
 
   static_assert(std::is_trivially_copyable_v<E>);
 
  public:
   explicit ResultImplementation(const V& aSuccessValue)
-      : mValue(aSuccessValue, NullValue) {}
+      : mValue(std::piecewise_construct, std::tuple(), std::tuple(NullValue)) {
+    if constexpr (!std::is_empty_v<V>) {
+      new (mValue.first().addr()) V(aSuccessValue);
+    }
+  }
   explicit ResultImplementation(V&& aSuccessValue)
-      : mValue(std::move(aSuccessValue), NullValue) {}
-  explicit ResultImplementation(E aErrorValue) : mValue(V{}, aErrorValue) {
+      : mValue(std::piecewise_construct, std::tuple(), std::tuple(NullValue)) {
+    if constexpr (!std::is_empty_v<V>) {
+      new (mValue.first().addr()) V(std::move(aSuccessValue));
+    }
+  }
+  explicit ResultImplementation(E aErrorValue)
+      : mValue(std::piecewise_construct, std::tuple(),
+               std::tuple(aErrorValue)) {
     MOZ_ASSERT(aErrorValue != NullValue);
+  }
+
+  ResultImplementation(ResultImplementation&& aOther)
+      : mValue(std::piecewise_construct, std::tuple(),
+               std::tuple(std::move(aOther.mValue.second()))) {
+    if constexpr (!std::is_empty_v<V>) {
+      if (isOk()) {
+        new (mValue.first().addr()) V(std::move(*aOther.mValue.first().addr()));
+      }
+    }
+  }
+  ResultImplementation& operator=(ResultImplementation&& aOther) {
+    if constexpr (!std::is_empty_v<V>) {
+      if (isOk()) {
+        mValue.first().addr()->~V();
+      }
+      if (aOther.isOk()) {
+        new (mValue.first().addr()) V(std::move(*aOther.mValue.first().addr()));
+      }
+    }
+    mValue.second() = std::move(aOther.mValue.second());
+    return *this;
   }
 
   bool isOk() const { return mValue.second() == NullValue; }
 
-  const V& inspect() const { return mValue.first(); }
-  V unwrap() { return std::move(mValue.first()); }
+  const V& inspect() const { return *mValue.first().addr(); }
+  V unwrap() { return std::move(*mValue.first().addr()); }
 
   const E& inspectErr() const { return mValue.second(); }
   E unwrapErr() { return std::move(mValue.second()); }
@@ -283,8 +357,7 @@ struct SelectResultImpl {
   static const PackingStrategy value =
       (HasFreeLSB<V>::value && HasFreeLSB<E>::value)
           ? PackingStrategy::LowBitTagIsError
-          : (std::is_trivially_default_constructible_v<V> &&
-             UnusedZero<E>::value && sizeof(E) <= sizeof(uintptr_t))
+          : (UnusedZero<E>::value && sizeof(E) <= sizeof(uintptr_t))
                 ? PackingStrategy::NullIsOk
                 : (std::is_default_constructible_v<V> &&
                    std::is_default_constructible_v<E> &&
