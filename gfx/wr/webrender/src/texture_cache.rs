@@ -506,20 +506,19 @@ pub struct TextureCache {
     
     
     standalone_bytes_allocated: usize,
-
-    
-    
-    
-    eviction_threshold_bytes: usize,
-
-    
-    
-    
-    
-    max_evictions_per_frame: usize,
 }
 
 impl TextureCache {
+    
+    
+    const EVICTION_THRESHOLD_SIZE: usize = 64 * 1024 * 1024;
+
+    
+    
+    
+    
+    const MAX_EVICTIONS_PER_FRAME: usize = 32;
+
     pub fn new(
         max_texture_size: i32,
         mut max_texture_layers: usize,
@@ -527,8 +526,6 @@ impl TextureCache {
         initial_size: DeviceIntSize,
         color_formats: TextureFormatPair<ImageFormat>,
         swizzle: Option<SwizzleSettings>,
-        eviction_threshold_bytes: usize,
-        max_evictions_per_frame: usize,
     ) -> Self {
         
         
@@ -589,8 +586,6 @@ impl TextureCache {
             standalone_bytes_allocated: 0,
             picture_cache_handles: Vec::new(),
             manual_handles: Vec::new(),
-            eviction_threshold_bytes,
-            max_evictions_per_frame,
         }
     }
 
@@ -610,8 +605,6 @@ impl TextureCache {
             DeviceIntSize::zero(),
             TextureFormatPair::from(image_format),
             None,
-            64 * 1024 * 1024,
-            32,
         );
         let mut now = FrameStamp::first(DocumentId::new(IdNamespace(1), 1));
         now.advance();
@@ -745,16 +738,6 @@ impl TextureCache {
     #[cfg(feature = "replay")]
     pub fn swizzle_settings(&self) -> Option<SwizzleSettings> {
         self.swizzle
-    }
-
-    #[cfg(feature = "replay")]
-    pub fn eviction_threshold_bytes(&self) -> usize {
-        self.eviction_threshold_bytes
-    }
-
-    #[cfg(feature = "replay")]
-    pub fn max_evictions_per_frame(&self) -> usize {
-        self.max_evictions_per_frame
     }
 
     pub fn pending_updates(&mut self) -> TextureUpdateList {
@@ -1001,18 +984,18 @@ impl TextureCache {
         let current_memory_estimate = self.standalone_bytes_allocated + self.shared_bytes_allocated;
 
         
-        if current_memory_estimate < self.eviction_threshold_bytes {
+        if current_memory_estimate < Self::EVICTION_THRESHOLD_SIZE {
             return false;
         }
 
         
-        if current_memory_estimate > 4 * self.eviction_threshold_bytes {
+        if current_memory_estimate > 4 * Self::EVICTION_THRESHOLD_SIZE {
             return true;
         }
 
         
         
-        eviction_count < self.max_evictions_per_frame
+        eviction_count < Self::MAX_EVICTIONS_PER_FRAME
     }
 
     
