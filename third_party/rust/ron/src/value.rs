@@ -2,32 +2,151 @@
 
 use serde::{
     de::{
-        DeserializeOwned, DeserializeSeed, Deserializer, Error as SerdeError, MapAccess, SeqAccess, Visitor,
+        DeserializeOwned, DeserializeSeed, Deserializer, Error as SerdeError, MapAccess, SeqAccess,
+        Visitor,
     },
-    forward_to_deserialize_any,
+    forward_to_deserialize_any, Deserialize, Serialize,
 };
 use std::{
     cmp::{Eq, Ordering},
-    collections::BTreeMap,
     hash::{Hash, Hasher},
+    iter::FromIterator,
+    ops::{Index, IndexMut},
 };
 
 use crate::de::{Error as RonError, Result};
 
 
 
-#[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
-pub struct Number(f64);
 
-impl Number {
+
+
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct Map(MapInner);
+
+impl Map {
     
+    pub fn new() -> Map {
+        Default::default()
+    }
+
+    
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    
+    pub fn is_empty(&self) -> usize {
+        self.0.len()
+    }
+
+    
+    
+    pub fn insert(&mut self, key: Value, value: Value) -> Option<Value> {
+        self.0.insert(key, value)
+    }
+
+    
+    pub fn remove(&mut self, key: &Value) -> Option<Value> {
+        self.0.remove(key)
+    }
+
+    
+    pub fn iter(&self) -> impl Iterator<Item = (&Value, &Value)> + DoubleEndedIterator {
+        self.0.iter()
+    }
+
+    
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&Value, &mut Value)> + DoubleEndedIterator {
+        self.0.iter_mut()
+    }
+
+    
+    pub fn keys(&self) -> impl Iterator<Item = &Value> + DoubleEndedIterator {
+        self.0.keys()
+    }
+
+    
+    pub fn values(&self) -> impl Iterator<Item = &Value> + DoubleEndedIterator {
+        self.0.values()
+    }
+
+    
+    pub fn values_mut(&mut self) -> impl Iterator<Item = &mut Value> + DoubleEndedIterator {
+        self.0.values_mut()
+    }
+}
+
+impl FromIterator<(Value, Value)> for Map {
+    fn from_iter<T: IntoIterator<Item = (Value, Value)>>(iter: T) -> Self {
+        Map(MapInner::from_iter(iter))
+    }
+}
+
+
+impl Eq for Map {}
+
+impl Hash for Map {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.iter().for_each(|x| x.hash(state));
+    }
+}
+
+impl Index<&Value> for Map {
+    type Output = Value;
+
+    fn index(&self, index: &Value) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl IndexMut<&Value> for Map {
+    fn index_mut(&mut self, index: &Value) -> &mut Self::Output {
+        self.0.get_mut(index).expect("no entry found for key")
+    }
+}
+
+impl Ord for Map {
+    fn cmp(&self, other: &Map) -> Ordering {
+        self.iter().cmp(other.iter())
+    }
+}
+
+
+impl PartialEq for Map {
+    fn eq(&self, other: &Map) -> bool {
+        self.iter().zip(other.iter()).all(|(a, b)| a == b)
+    }
+}
+
+impl PartialOrd for Map {
+    fn partial_cmp(&self, other: &Map) -> Option<Ordering> {
+        self.iter().partial_cmp(other.iter())
+    }
+}
+
+#[cfg(not(feature = "indexmap"))]
+type MapInner = std::collections::BTreeMap<Value, Value>;
+#[cfg(feature = "indexmap")]
+type MapInner = indexmap::IndexMap<Value, Value>;
+
+
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Hash, Ord)]
+pub enum Number {
+    Integer(i64),
+    Float(Float),
+}
+
+
+
+#[derive(Copy, Clone, Debug)]
+pub struct Float(f64);
+
+impl Float {
     
     pub fn new(v: f64) -> Self {
-        if !v.is_finite() {
-            panic!("Tried to create Number with a NaN / infinity");
-        }
-
-        Number(v)
+        Float(v)
     }
 
     
@@ -36,15 +155,160 @@ impl Number {
     }
 }
 
-impl Eq for Number {}
+impl Number {
+    
+    pub fn new(v: impl Into<Number>) -> Self {
+        v.into()
+    }
 
-impl Hash for Number {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_f64(self) -> f64 {
+        self.map_to(|i| i as f64, |f| f)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_f64(self) -> Option<f64> {
+        self.map_to(|_| None, Some)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_i64(self) -> Option<i64> {
+        self.map_to(Some, |_| None)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn map_to<T>(
+        self,
+        integer_fn: impl FnOnce(i64) -> T,
+        float_fn: impl FnOnce(f64) -> T,
+    ) -> T {
+        match self {
+            Number::Integer(i) => integer_fn(i),
+            Number::Float(Float(f)) => float_fn(f),
+        }
+    }
+}
+
+impl From<f64> for Number {
+    fn from(f: f64) -> Number {
+        Number::Float(Float(f))
+    }
+}
+
+impl From<i64> for Number {
+    fn from(i: i64) -> Number {
+        Number::Integer(i)
+    }
+}
+
+impl From<i32> for Number {
+    fn from(i: i32) -> Number {
+        Number::Integer(i as i64)
+    }
+}
+
+
+
+
+impl From<u64> for Number {
+    fn from(i: u64) -> Number {
+        if i as i64 as u64 == i {
+            Number::Integer(i as i64)
+        } else {
+            Number::new(i as f64)
+        }
+    }
+}
+
+
+
+
+
+impl PartialEq for Float {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.is_nan() && other.0.is_nan() || self.0 == other.0
+    }
+}
+
+
+
+
+
+impl Eq for Float {}
+
+impl Hash for Float {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u64(self.0 as u64);
     }
 }
 
-impl Ord for Number {
+
+
+
+
+
+
+
+
+
+impl PartialOrd for Float {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self.0.is_nan(), other.0.is_nan()) {
+            (true, true) => Some(Ordering::Equal),
+            (true, false) => Some(Ordering::Less),
+            (false, true) => Some(Ordering::Greater),
+            _ => self.0.partial_cmp(&other.0),
+        }
+    }
+}
+
+
+
+
+
+
+impl Ord for Float {
     fn cmp(&self, other: &Self) -> Ordering {
         self.partial_cmp(other).expect("Bug: Contract violation")
     }
@@ -54,7 +318,7 @@ impl Ord for Number {
 pub enum Value {
     Bool(bool),
     Char(char),
-    Map(BTreeMap<Value, Value>),
+    Map(Map),
     Number(Number),
     Option(Option<Box<Value>>),
     String(String),
@@ -90,11 +354,12 @@ impl<'de> Deserializer<'de> for Value {
         match self {
             Value::Bool(b) => visitor.visit_bool(b),
             Value::Char(c) => visitor.visit_char(c),
-            Value::Map(m) => visitor.visit_map(Map {
+            Value::Map(m) => visitor.visit_map(MapAccessor {
                 keys: m.keys().cloned().rev().collect(),
                 values: m.values().cloned().rev().collect(),
             }),
-            Value::Number(n) => visitor.visit_f64(n.get()),
+            Value::Number(Number::Float(ref f)) => visitor.visit_f64(f.get()),
+            Value::Number(Number::Integer(i)) => visitor.visit_i64(i),
             Value::Option(Some(o)) => visitor.visit_some(*o),
             Value::Option(None) => visitor.visit_none(),
             Value::String(s) => visitor.visit_string(s),
@@ -132,7 +397,7 @@ impl<'de> Deserializer<'de> for Value {
         V: Visitor<'de>,
     {
         match self {
-            Value::Number(n) => visitor.visit_i64(n.get() as i64),
+            Value::Number(Number::Integer(i)) => visitor.visit_i64(i),
             v => Err(RonError::custom(format!("Expected a number, got {:?}", v))),
         }
     }
@@ -163,18 +428,18 @@ impl<'de> Deserializer<'de> for Value {
         V: Visitor<'de>,
     {
         match self {
-            Value::Number(n) => visitor.visit_u64(n.get() as u64),
+            Value::Number(Number::Integer(i)) => visitor.visit_u64(i as u64),
             v => Err(RonError::custom(format!("Expected a number, got {:?}", v))),
         }
     }
 }
 
-struct Map {
+struct MapAccessor {
     keys: Vec<Value>,
     values: Vec<Value>,
 }
 
-impl<'de> MapAccess<'de> for Map {
+impl<'de> MapAccess<'de> for MapAccessor {
     type Error = RonError;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
@@ -221,7 +486,7 @@ impl<'de> SeqAccess<'de> for Seq {
 mod tests {
     use super::*;
     use serde::Deserialize;
-    use std::fmt::Debug;
+    use std::{collections::BTreeMap, fmt::Debug};
 
     fn assert_same<'de, T>(s: &'de str)
     where
