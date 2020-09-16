@@ -12,11 +12,29 @@
 
 #define SDB_TRY(...) QM_TRY_META(mozilla::dom::simpledb, ##__VA_ARGS__)
 
+#ifdef DEBUG
+#  define SDB_DEBUG_TRY(...) SDB_TRY(__VA_ARGS__)
+#else
+#  define SDB_DEBUG_TRY(...)
+#endif
+
 
 #define SDB_TRY_VAR(...) QM_TRY_VAR_META(mozilla::dom::simpledb, ##__VA_ARGS__)
 
+#ifdef DEBUG
+#  define SDB_DEBUG_TRY_VAR(...) SDB_TRY_VAR(__VA_ARGS__)
+#else
+#  define SDB_DEBUG_TRY_VAR(...)
+#endif
+
 
 #define SDB_FAIL(...) QM_FAIL_META(mozilla::dom::simpledb, ##__VA_ARGS__)
+
+#ifdef DEBUG
+#  define SDB_DEBUG_FAIL(...) SDB_FAIL(__VA_ARGS__)
+#else
+#  define SDB_DEBUG_FAIL(...)
+#endif
 
 namespace mozilla {
 namespace dom {

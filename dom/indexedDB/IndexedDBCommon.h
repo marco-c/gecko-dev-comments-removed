@@ -12,11 +12,29 @@
 
 #define IDB_TRY(...) QM_TRY_META(mozilla::dom::indexedDB, ##__VA_ARGS__)
 
+#ifdef DEBUG
+#  define IDB_DEBUG_TRY(...) IDB_TRY(__VA_ARGS__)
+#else
+#  define IDB_DEBUG_TRY(...)
+#endif
+
 
 #define IDB_TRY_VAR(...) QM_TRY_VAR_META(mozilla::dom::indexedDB, ##__VA_ARGS__)
 
+#ifdef DEBUG
+#  define IDB_DEBUG_TRY_VAR(...) IDB_TRY_VAR(__VA_ARGS__)
+#else
+#  define IDB_DEBUG_TRY_VAR(...)
+#endif
+
 
 #define IDB_FAIL(...) QM_FAIL_META(mozilla::dom::indexedDB, ##__VA_ARGS__)
+
+#ifdef DEBUG
+#  define IDB_DEBUG_FAIL(...) IDB_FAIL(__VA_ARGS__)
+#else
+#  define IDB_DEBUG_FAIL(...)
+#endif
 
 namespace mozilla::dom::indexedDB {
 

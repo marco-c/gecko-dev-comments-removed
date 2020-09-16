@@ -189,12 +189,30 @@
 
 #define LS_TRY(...) QM_TRY_META(mozilla::dom::localstorage, ##__VA_ARGS__)
 
+#ifdef DEBUG
+#  define LS_DEBUG_TRY(...) LS_TRY(__VA_ARGS__)
+#else
+#  define LS_DEBUG_TRY(...)
+#endif
+
 
 #define LS_TRY_VAR(...) \
   QM_TRY_VAR_META(mozilla::dom::localstorage, ##__VA_ARGS__)
 
+#ifdef DEBUG
+#  define LS_DEBUG_TRY_VAR(...) LS_TRY_VAR(__VA_ARGS__)
+#else
+#  define LS_DEBUG_TRY_VAR(...)
+#endif
+
 
 #define LS_FAIL(...) QM_FAIL_META(mozilla::dom::localstorage, ##__VA_ARGS__)
+
+#ifdef DEBUG
+#  define LS_DEBUG_FAIL(...) LS_FAIL(__VA_ARGS__)
+#else
+#  define LS_DEBUG_FAIL(...)
+#endif
 
 namespace mozilla {
 

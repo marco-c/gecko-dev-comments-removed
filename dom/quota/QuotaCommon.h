@@ -453,6 +453,16 @@
 
 
 
+#ifdef DEBUG
+#  define QM_DEBUG_TRY(...) QM_TRY(__VA_ARGS__)
+#else
+#  define QM_DEBUG_TRY(...)
+#endif
+
+
+
+
+
 
 #define QM_TRY_VAR_PROPAGATE_ERR(ns, target, expr)       \
   auto MOZ_UNIQUE_VAR(tryResult) = (expr);               \
@@ -508,6 +518,16 @@
 
 
 
+#ifdef DEBUG
+#  define QM_DEBUG_TRY_VAR(...) QM_TRY_VAR(__VA_ARGS__)
+#else
+#  define QM_DEBUG_TRY_VAR(...)
+#endif
+
+
+
+
+
 #define QM_FAIL_RET_VAL(ns, retVal) \
   ns::QM_HANDLE_ERROR(Failure);     \
   return retVal;
@@ -530,6 +550,16 @@
 
 
 #define QM_FAIL(...) QM_FAIL_META(mozilla::dom::quota, ##__VA_ARGS__)
+
+
+
+
+
+#ifdef DEBUG
+#  define QM_DEBUG_FAIL(...) QM_FAIL(__VA_ARGS__)
+#else
+#  define QM_DEBUG_FAIL(...)
+#endif
 
 
 #ifdef NIGHTLY_BUILD
