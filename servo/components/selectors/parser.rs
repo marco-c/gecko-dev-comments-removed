@@ -252,11 +252,6 @@ pub trait Parser<'i> {
     }
 
     
-    fn is_and_where_error_recovery(&self) -> ParseErrorRecovery {
-        ParseErrorRecovery::IgnoreInvalidSelector
-    }
-
-    
     fn is_is_alias(&self, _name: &str) -> bool {
         false
     }
@@ -334,17 +329,6 @@ pub struct SelectorList<Impl: SelectorImpl>(
     #[shmem(field_bound)] pub SmallVec<[Selector<Impl>; 1]>,
 );
 
-
-pub enum ParseErrorRecovery {
-    
-    
-    DiscardList,
-    
-    
-    
-    IgnoreInvalidSelector,
-}
-
 impl<Impl: SelectorImpl> SelectorList<Impl> {
     
     
@@ -357,42 +341,26 @@ impl<Impl: SelectorImpl> SelectorList<Impl> {
     where
         P: Parser<'i, Impl = Impl>,
     {
-        Self::parse_with_state(parser, input, SelectorParsingState::empty(), ParseErrorRecovery::DiscardList)
+        Self::parse_with_state(parser, input, SelectorParsingState::empty())
     }
 
-    #[inline]
     fn parse_with_state<'i, 't, P>(
         parser: &P,
         input: &mut CssParser<'i, 't>,
         state: SelectorParsingState,
-        recovery: ParseErrorRecovery,
     ) -> Result<Self, ParseError<'i, P::Error>>
     where
         P: Parser<'i, Impl = Impl>,
     {
         let mut values = SmallVec::new();
         loop {
-            let selector = input.parse_until_before(Delimiter::Comma, |input| {
+            values.push(input.parse_until_before(Delimiter::Comma, |input| {
                 parse_selector(parser, input, state)
-            });
-
-            let was_ok = selector.is_ok();
-            match selector {
-                Ok(selector) => values.push(selector),
-                Err(err) => match recovery {
-                    ParseErrorRecovery::DiscardList => return Err(err),
-                    ParseErrorRecovery::IgnoreInvalidSelector => {},
-                },
-            }
-
-            loop {
-                match input.next() {
-                    Err(_) => return Ok(SelectorList(values)),
-                    Ok(&Token::Comma) => break,
-                    Ok(_) => {
-                        debug_assert!(!was_ok, "Shouldn't have got a selector if getting here");
-                    }
-                }
+            })?);
+            match input.next() {
+                Err(_) => return Ok(SelectorList(values)),
+                Ok(&Token::Comma) => continue,
+                Ok(_) => unreachable!(),
             }
         }
     }
@@ -1283,18 +1251,18 @@ impl<Impl: SelectorImpl> Debug for LocalName<Impl> {
     }
 }
 
-fn serialize_selector_list<'a, Impl, I, W>(iter: I, dest: &mut W) -> fmt::Result
+fn serialize_selector_list<'a, Impl, I, W>(mut iter: I, dest: &mut W) -> fmt::Result
 where
     Impl: SelectorImpl,
     I: Iterator<Item = &'a Selector<Impl>>,
     W: fmt::Write,
 {
-    let mut first = true;
+    let first = iter
+        .next()
+        .expect("Empty SelectorList, should contain at least one selector");
+    first.to_css(dest)?;
     for selector in iter {
-        if !first {
-            dest.write_str(", ")?;
-        }
-        first = false;
+        dest.write_str(", ")?;
         selector.to_css(dest)?;
     }
     Ok(())
@@ -2298,7 +2266,6 @@ where
         parser,
         input,
         state | SelectorParsingState::DISALLOW_PSEUDOS,
-        parser.is_and_where_error_recovery(),
     )?;
     Ok(component(inner.0.into_vec().into_boxed_slice()))
 }
@@ -2689,10 +2656,6 @@ pub mod tests {
 
         fn parse_is_and_where(&self) -> bool {
             true
-        }
-
-        fn is_and_where_error_recovery(&self) -> ParseErrorRecovery {
-            ParseErrorRecovery::DiscardList
         }
 
         fn parse_part(&self) -> bool {
