@@ -357,11 +357,6 @@ pref("browser.urlbar.update2.oneOffsRefresh", false);
 
 
 
-
-
-pref("browser.urlbar.update2.emptySearchBehavior", 2),
-
-
 pref("browser.urlbar.update2.tabToComplete", false);
 
 pref("browser.urlbar.eventTelemetry.enabled", false);
