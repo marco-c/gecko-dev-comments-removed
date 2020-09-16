@@ -25,6 +25,7 @@
 #include "jit/IonIC.h"
 #include "jit/SharedICHelpers.h"
 #include "jit/SharedICRegisters.h"
+#include "js/friend/DOMProxy.h"     
 #include "js/friend/XrayJitInfo.h"  
 #include "js/ScalarType.h"  
 #include "proxy/Proxy.h"
@@ -46,6 +47,8 @@ using namespace js::jit;
 
 using mozilla::BitwiseCast;
 using mozilla::Maybe;
+
+using JS::ExpandoAndGeneration;
 
 ValueOperand CacheRegisterAllocator::useValueRegister(MacroAssembler& masm,
                                                       ValOperandId op) {

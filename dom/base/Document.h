@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_dom_Document_h___
 #define mozilla_dom_Document_h___
 
@@ -55,6 +56,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include <bitset>  
+#include "js/friend/DOMProxy.h"  
 
 
 
@@ -5084,7 +5086,7 @@ class Document : public nsINode,
 
  public:
   
-  js::ExpandoAndGeneration mExpandoAndGeneration;
+  JS::ExpandoAndGeneration mExpandoAndGeneration;
 
   bool HasPendingInitialTranslation();
 
