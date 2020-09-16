@@ -4332,24 +4332,10 @@ struct Internals {
   template <typename T>
   static void UpdateMirror(const char* aPref, void* aMirror) {
     StripAtomic<T> value;
-    nsresult rv = GetPrefValue(aPref, &value, PrefValueKind::User);
-    if (NS_SUCCEEDED(rv)) {
-      *static_cast<T*>(aMirror) = value;
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      NS_WARNING(nsPrintfCString("VarChanged failure: %s\n", aPref).get());
-      MOZ_ASSERT(false);
-    }
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(GetPrefValue(aPref, &value, PrefValueKind::User));
+    *static_cast<T*>(aMirror) = value;
   }
 
   template <typename T>
@@ -5072,85 +5058,6 @@ static MOZ_NEVER_INLINE void AddMirror(T* aMirror, const nsACString& aPref,
                                        StripAtomic<T> aDefault) {
   *aMirror = Internals::GetPref(PromiseFlatCString(aPref).get(), aDefault);
   AddMirrorCallback(aMirror, aPref);
-}
-
-
-void Preferences::AddBoolVarCache(bool* aCache, const nsACString& aPref,
-                                  bool aDefault) {
-  AddMirror(aCache, aPref, aDefault);
-}
-
-template <MemoryOrdering Order>
-
-void Preferences::AddAtomicBoolVarCache(Atomic<bool, Order>* aCache,
-                                        const nsACString& aPref,
-                                        bool aDefault) {
-  AddMirror(aCache, aPref, aDefault);
-}
-
-
-void Preferences::AddIntVarCache(int32_t* aCache, const nsACString& aPref,
-                                 int32_t aDefault) {
-  AddMirror(aCache, aPref, aDefault);
-}
-
-template <MemoryOrdering Order>
-
-void Preferences::AddAtomicIntVarCache(Atomic<int32_t, Order>* aCache,
-                                       const nsACString& aPref,
-                                       int32_t aDefault) {
-  AddMirror(aCache, aPref, aDefault);
-}
-
-
-void Preferences::AddUintVarCache(uint32_t* aCache, const nsACString& aPref,
-                                  uint32_t aDefault) {
-  AddMirror(aCache, aPref, aDefault);
-}
-
-template <MemoryOrdering Order>
-
-void Preferences::AddAtomicUintVarCache(Atomic<uint32_t, Order>* aCache,
-                                        const nsACString& aPref,
-                                        uint32_t aDefault) {
-  AddMirror(aCache, aPref, aDefault);
-}
-
-
-
-
-template void Preferences::AddAtomicBoolVarCache(Atomic<bool, Relaxed>*,
-                                                 const nsACString&, bool);
-
-template void Preferences::AddAtomicBoolVarCache(Atomic<bool, ReleaseAcquire>*,
-                                                 const nsACString&, bool);
-
-template void Preferences::AddAtomicBoolVarCache(
-    Atomic<bool, SequentiallyConsistent>*, const nsACString&, bool);
-
-template void Preferences::AddAtomicIntVarCache(Atomic<int32_t, Relaxed>*,
-                                                const nsACString&, int32_t);
-
-template void Preferences::AddAtomicUintVarCache(Atomic<uint32_t, Relaxed>*,
-                                                 const nsACString&, uint32_t);
-
-template void Preferences::AddAtomicUintVarCache(
-    Atomic<uint32_t, ReleaseAcquire>*, const nsACString&, uint32_t);
-
-template void Preferences::AddAtomicUintVarCache(
-    Atomic<uint32_t, SequentiallyConsistent>*, const nsACString&, uint32_t);
-
-
-void Preferences::AddFloatVarCache(float* aCache, const nsACString& aPref,
-                                   float aDefault) {
-  AddMirror(aCache, aPref, aDefault);
-}
-
-
-void Preferences::AddAtomicFloatVarCache(std::atomic<float>* aCache,
-                                         const nsACString& aPref,
-                                         float aDefault) {
-  AddMirror(aCache, aPref, aDefault);
 }
 
 

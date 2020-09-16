@@ -35,7 +35,7 @@ ExtensionTestUtils.init(this);
 const { prefs } = Services;
 const defaultPrefs = prefs.getDefaultBranch("");
 
-add_task(async function test_sharedMap_var_caches() {
+add_task(async function test_sharedMap_static_prefs() {
   equal(
     prefs.getBoolPref(PREF1_NAME),
     PREF1_VALUE,
