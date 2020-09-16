@@ -42,6 +42,9 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     
     
     
+    
+    
+    
     this.on("root-available", this._onRootNodeAvailable);
     this.on("root-destroyed", this._onRootNodeDestroyed);
   }
