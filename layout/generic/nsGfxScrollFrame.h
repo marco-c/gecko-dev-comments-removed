@@ -453,14 +453,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
   void HandleScrollbarStyleSwitching();
 
   ScrollOrigin LastScrollOrigin() const { return mLastScrollOrigin; }
-  ScrollOrigin LastSmoothScrollOrigin() const {
-    return mLastSmoothScrollOrigin;
-  }
   bool IsApzAnimationInProgress() const { return mApzAnimationInProgress; }
   uint32_t CurrentScrollGeneration() const { return mScrollGeneration; }
   nsPoint LastScrollDestination() const { return mDestination; }
   nsTArray<ScrollPositionUpdate> GetScrollUpdates() const;
 
+  bool IsLastScrollUpdateAnimating() const;
   using IncludeApzAnimation = nsIScrollableFrame::IncludeApzAnimation;
   bool IsScrollAnimating(IncludeApzAnimation = IncludeApzAnimation::Yes) const;
 
@@ -553,7 +551,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
   RefPtr<ScrollbarActivity> mScrollbarActivity;
   nsTArray<nsIScrollPositionListener*> mListeners;
   ScrollOrigin mLastScrollOrigin;
-  ScrollOrigin mLastSmoothScrollOrigin;
   Maybe<nsPoint> mApzSmoothScrollDestination;
   uint32_t mScrollGeneration;
 
@@ -573,10 +570,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   nsPoint mDestination;
-
-  
-  
-  Maybe<nsPoint> mRelativeOffset;
 
   
   
@@ -715,6 +708,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   bool mApzAnimationInProgress : 1;
+  
+  
+  
+  
+  
+  bool mApzAnimationRequested : 1;
 
   mozilla::layout::ScrollVelocityQueue mVelocityQueue;
 
