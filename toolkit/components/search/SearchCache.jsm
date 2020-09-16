@@ -173,7 +173,6 @@ class SearchCache {
     let cache = {};
     let locale = Services.locale.requestedLocale;
     let buildID = Services.appinfo.platformBuildID;
-    let appVersion = Services.appinfo.version;
 
     
     cache.version = SearchUtils.CACHE_VERSION;
@@ -183,8 +182,6 @@ class SearchCache {
     
     
     cache.buildID = buildID;
-    
-    cache.appVersion = appVersion;
     cache.locale = locale;
     cache.builtInEngineList = this._searchService._searchOrder;
     cache.engines = [...this._searchService._engines.values()];
@@ -211,19 +208,6 @@ class SearchCache {
     } catch (ex) {
       logConsole.error("_buildCache: Could not write to cache file:", ex);
     }
-  }
-
-  
-
-
-
-
-
-
-
-  setAttribute(name, val) {
-    this._metaData[name] = val;
-    this._delayedWrite();
   }
 
   
@@ -272,7 +256,7 @@ class SearchCache {
         SearchUtils.getVerificationHash(val)
     ) {
       logConsole.warn("getVerifiedGlobalAttr, invalid hash for", name);
-      return "";
+      return undefined;
     }
     return val;
   }
