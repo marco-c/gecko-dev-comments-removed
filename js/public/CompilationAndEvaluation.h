@@ -181,19 +181,6 @@ extern JS_PUBLIC_API JSScript* CompileUtf8File(
 extern JS_PUBLIC_API JSScript* CompileUtf8Path(
     JSContext* cx, const ReadOnlyCompileOptions& options, const char* filename);
 
-extern JS_PUBLIC_API JSScript* CompileForNonSyntacticScope(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<char16_t>& srcBuf);
-
-
-
-
-
-
-extern JS_PUBLIC_API JSScript* CompileForNonSyntacticScope(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<mozilla::Utf8Unit>& srcBuf);
-
 
 
 

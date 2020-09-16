@@ -67,29 +67,10 @@ bool testCompile(bool nonSyntactic) {
   JS::SourceText<char16_t> buf16;
   CHECK(buf16.init(cx, src_16, length, JS::SourceOwnership::Borrowed));
 
-  JS::RootedScript script(cx);
-
-  
-  
-  script = CompileForNonSyntacticScope(cx, options, buf16);
-  CHECK(script);
-  CHECK_EQUAL(script->hasNonSyntacticScope(), true);
-
   JS::SourceText<mozilla::Utf8Unit> buf8;
   CHECK(buf8.init(cx, src, length, JS::SourceOwnership::Borrowed));
 
-  script = CompileForNonSyntacticScope(cx, options, buf8);
-  CHECK(script);
-  CHECK_EQUAL(script->hasNonSyntacticScope(), true);
-
-  {
-    JS::SourceText<char16_t> srcBuf;
-    CHECK(srcBuf.init(cx, src_16, length, JS::SourceOwnership::Borrowed));
-
-    script = CompileForNonSyntacticScope(cx, options, srcBuf);
-    CHECK(script);
-    CHECK_EQUAL(script->hasNonSyntacticScope(), true);
-  }
+  JS::RootedScript script(cx);
 
   script = Compile(cx, options, buf16);
   CHECK(script);

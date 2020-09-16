@@ -138,15 +138,16 @@ static JSScript* PrepareScript(nsIURI* uri, JSContext* cx,
   
   options.setSourceIsLazy(true);
 
+  if (!wantGlobalScript) {
+    options.setNonSyntacticScope(true);
+  }
+
   JS::SourceText<Utf8Unit> srcBuf;
   if (!srcBuf.init(cx, buf, len, JS::SourceOwnership::Borrowed)) {
     return nullptr;
   }
 
-  if (wantGlobalScript) {
-    return JS::Compile(cx, options, srcBuf);
-  }
-  return JS::CompileForNonSyntacticScope(cx, options, srcBuf);
+  return JS::Compile(cx, options, srcBuf);
 }
 
 static bool EvalScript(JSContext* cx, HandleObject targetObj,
