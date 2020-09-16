@@ -81,14 +81,40 @@ inline LauncherVoidResult RestoreImportDirectory(
 
   nt::DataDirectoryEntry toWrite = realImportDirectory.unwrap();
 
-  void* remoteAddress =
-      nt::PEHeaders::HModuleToBaseAddr<char*>(aRemoteExeImage) +
-      importDirEntryRva;
+  do {  
+    void* remoteAddress =
+        nt::PEHeaders::HModuleToBaseAddr<char*>(aRemoteExeImage) +
+        importDirEntryRva;
 
-  {  
     AutoVirtualProtect prot(remoteAddress, sizeof(IMAGE_DATA_DIRECTORY),
                             PAGE_READWRITE, aTargetProcess);
     if (!prot) {
+#if defined(NIGHTLY_BUILD)
+      if (prot.GetError() ==
+          WindowsError::FromWin32Error(ERROR_INVALID_ADDRESS)) {
+        
+        
+        
+        
+        
+        LauncherResult<HMODULE> remoteImageBase =
+            nt::GetProcessExeModule(aTargetProcess);
+        if (remoteImageBase.isErr()) {
+          return remoteImageBase.propagateErr();
+        }
+
+        if (remoteImageBase.unwrap() == aRemoteExeImage) {
+          
+          
+          
+          return LAUNCHER_ERROR_GENERIC();
+        }
+
+        
+        aRemoteExeImage = remoteImageBase.unwrap();
+        continue;
+      }
+#endif  
       return LAUNCHER_ERROR_FROM_MOZ_WINDOWS_ERROR(prot.GetError());
     }
 
@@ -98,7 +124,9 @@ inline LauncherVoidResult RestoreImportDirectory(
         bytesWritten != sizeof(IMAGE_DATA_DIRECTORY)) {
       return LAUNCHER_ERROR_FROM_LAST();
     }
-  }
+
+    break;
+  } while (1);
 
   return Ok();
 }
