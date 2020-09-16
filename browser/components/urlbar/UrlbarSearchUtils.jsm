@@ -81,12 +81,9 @@ class SearchUtils {
     await this.init();
     let tokenAliasEngines = [];
     for (let engine of await Services.search.getVisibleEngines()) {
-      let tokenAliases = engine.aliases.map(alias => {
-        if (!alias.startsWith("@")) {
-          alias = "@" + alias;
-        }
-        return alias;
-      });
+      let tokenAliases = this._aliasesForEngine(engine).filter(a =>
+        a.startsWith("@")
+      );
       if (tokenAliases.length) {
         tokenAliasEngines.push({ engine, tokenAliases });
       }
@@ -107,11 +104,36 @@ class SearchUtils {
     this._enginesByAlias = new Map();
     for (let engine of await Services.search.getVisibleEngines()) {
       if (!engine.hidden) {
-        for (let alias of engine.aliases) {
-          this._enginesByAlias.set(alias.toLocaleLowerCase(), engine);
+        for (let alias of this._aliasesForEngine(engine)) {
+          this._enginesByAlias.set(alias, engine);
         }
       }
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  _aliasesForEngine(engine) {
+    return engine.aliases.reduce((aliases, aliasWithCase) => {
+      
+      let alias = aliasWithCase.toLocaleLowerCase();
+      aliases.push(alias);
+      if (!alias.startsWith("@")) {
+        aliases.push("@" + alias);
+      }
+      return aliases;
+    }, []);
   }
 
   observe(subject, topic, data) {

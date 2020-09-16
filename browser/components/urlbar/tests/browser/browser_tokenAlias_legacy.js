@@ -3,23 +3,14 @@
 
 
 
+
+
 "use strict";
 
 const ALIAS = "@test";
 const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
 
-let testEngine;
-
 add_task(async function init() {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.update2", true],
-      ["browser.urlbar.update2.localOneOffs", true],
-      ["browser.urlbar.update2.oneOffsRefresh", true],
-    ],
-  });
-
   
   
   let defaultEngine = await SearchTestUtils.promiseNewSearchEngine(
@@ -28,19 +19,23 @@ add_task(async function init() {
   defaultEngine.alias = "@default";
   let oldDefaultEngine = await Services.search.getDefault();
   Services.search.setDefault(defaultEngine);
-  testEngine = await Services.search.addEngineWithDetails("Test", {
+  let engine = await Services.search.addEngineWithDetails("Test", {
     alias: ALIAS,
     template: "http://example.com/?search={searchTerms}",
   });
   registerCleanupFunction(async function() {
-    await Services.search.removeEngine(testEngine);
+    await Services.search.removeEngine(engine);
     Services.search.setDefault(oldDefaultEngine);
   });
 
-  
-  
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.searches", true]],
+    set: [
+      
+      ["browser.urlbar.update2", false],
+      
+      
+      ["browser.urlbar.suggest.searches", true],
+    ],
   });
 });
 
@@ -67,13 +62,10 @@ async function doSimpleTest(revertBetweenSteps) {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: ALIAS.substr(0, ALIAS.length - 1),
+    fireInputEvent: true,
   });
-  await UrlbarTestUtils.assertSearchMode(window, null);
-  Assert.equal(
-    gURLBar.value,
-    ALIAS.substr(0, ALIAS.length - 1),
-    "value should be alias substring"
-  );
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(false);
 
   if (revertBetweenSteps) {
     gURLBar.handleRevert();
@@ -84,28 +76,10 @@ async function doSimpleTest(revertBetweenSteps) {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: ALIAS,
+    fireInputEvent: true,
   });
-  await UrlbarTestUtils.assertSearchMode(window, null);
-  Assert.equal(gURLBar.value, ALIAS, "value should be alias");
-
-  if (revertBetweenSteps) {
-    gURLBar.handleRevert();
-    gURLBar.blur();
-  }
-
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: ALIAS + " ",
-  });
-  
-  await UrlbarTestUtils.promiseSearchComplete(window);
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: testEngine.name,
-    entry: "typed",
-  });
-  Assert.equal(gURLBar.value, "", "value should be empty");
-  await UrlbarTestUtils.exitSearchMode(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
 
   if (revertBetweenSteps) {
     gURLBar.handleRevert();
@@ -116,34 +90,10 @@ async function doSimpleTest(revertBetweenSteps) {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: ALIAS + " foo",
+    fireInputEvent: true,
   });
-  
-  await UrlbarTestUtils.promiseSearchComplete(window);
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: testEngine.name,
-    entry: "typed",
-  });
-  Assert.equal(gURLBar.value, "foo", "value should be query");
-  await UrlbarTestUtils.exitSearchMode(window);
-
-  if (revertBetweenSteps) {
-    gURLBar.handleRevert();
-    gURLBar.blur();
-  }
-
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: ALIAS + " ",
-  });
-  
-  await UrlbarTestUtils.promiseSearchComplete(window);
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: testEngine.name,
-    entry: "typed",
-  });
-  Assert.equal(gURLBar.value, "", "value should be empty");
-  await UrlbarTestUtils.exitSearchMode(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
 
   if (revertBetweenSteps) {
     gURLBar.handleRevert();
@@ -154,9 +104,10 @@ async function doSimpleTest(revertBetweenSteps) {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: ALIAS,
+    fireInputEvent: true,
   });
-  await UrlbarTestUtils.assertSearchMode(window, null);
-  Assert.equal(gURLBar.value, ALIAS, "value should be alias");
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
 
   if (revertBetweenSteps) {
     gURLBar.handleRevert();
@@ -167,13 +118,10 @@ async function doSimpleTest(revertBetweenSteps) {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: ALIAS.substr(0, ALIAS.length - 1),
+    fireInputEvent: true,
   });
-  await UrlbarTestUtils.assertSearchMode(window, null);
-  Assert.equal(
-    gURLBar.value,
-    ALIAS.substr(0, ALIAS.length - 1),
-    "value should be alias substring"
-  );
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(false);
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
@@ -185,36 +133,22 @@ async function doSimpleTest(revertBetweenSteps) {
 
 
 add_task(async function spacesBeforeAlias() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "     " + ALIAS + " ",
-  });
-  
+  gURLBar.search("     " + ALIAS);
   await UrlbarTestUtils.promiseSearchComplete(window);
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: testEngine.name,
-    entry: "typed",
-  });
-  Assert.equal(gURLBar.value, "", "value should be empty");
-  await UrlbarTestUtils.exitSearchMode(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
+
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
 });
-
 
 
 add_task(async function charsBeforeAlias() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "not an alias " + ALIAS + " ",
-  });
-  await UrlbarTestUtils.assertSearchMode(window, null);
-  Assert.equal(
-    gURLBar.value,
-    "not an alias " + ALIAS + " ",
-    "value should be unchanged"
-  );
+  gURLBar.search("not an alias " + ALIAS);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(false);
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
@@ -222,32 +156,13 @@ add_task(async function charsBeforeAlias() {
 });
 
 
-add_task(async function alreadyInSearchMode() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "",
-  });
-  await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
-  });
 
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: ALIAS + " ",
-  });
+add_task(async function restrictionCharBeforeAlias() {
+  gURLBar.search(UrlbarTokenizer.RESTRICT.BOOKMARK + " " + ALIAS);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(false);
 
-  
-  await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
-    entry: "oneoff",
-  });
-  Assert.equal(gURLBar.value, ALIAS + " ", "value should be unchanged");
-
-  
-  
-  gURLBar.value = "";
-
-  await UrlbarTestUtils.exitSearchMode(window);
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
@@ -262,55 +177,83 @@ add_task(async function spaceWhileTypingAlias() {
     selectionStart: value.length,
     selectionEnd: value.length,
   });
-  Assert.equal(gURLBar.value, ALIAS + " ", "Alias should be autofilled");
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
 
+  gURLBar.value = value + " ";
   let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-  EventUtils.synthesizeKey(" ");
+  UrlbarTestUtils.fireInputEvent(window);
   await searchPromise;
 
-  Assert.equal(gURLBar.value, value + " ", "Alias should not be autofilled");
-  await UrlbarTestUtils.assertSearchMode(window, null);
-
-  await UrlbarTestUtils.promisePopupClose(window);
+  await assertAlias(false);
 });
+
 
 
 
 add_task(async function aliasCase() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "@TeSt ",
-  });
-  
+  let alias = "@TeSt";
+  gURLBar.search(alias);
   await UrlbarTestUtils.promiseSearchComplete(window);
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: testEngine.name,
-    entry: "typed",
-  });
-  Assert.equal(gURLBar.value, "", "value should be empty");
-  await UrlbarTestUtils.exitSearchMode(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true, alias);
+
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
 });
 
 
-add_task(async function aliasCase_query() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "@tEsT query",
-  });
+
+
+
+
+
+add_task(async function inputDoesntMatchHeuristicResult() {
   
+  let searchString = `${ALIAS} aaa`;
+  gURLBar.search(searchString);
   await UrlbarTestUtils.promiseSearchComplete(window);
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: testEngine.name,
-    entry: "typed",
-  });
-  Assert.equal(gURLBar.value, "query", "value should be query");
-  await UrlbarTestUtils.exitSearchMode(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
+
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
+
+  
+  
+  let value = `${ALIAS}xxx`;
+  gURLBar.value = `${ALIAS}xxx`;
+
+  
+  Assert.equal(gURLBar.untrimmedValue, value);
+  Assert.ok(gURLBar.untrimmedValue.includes(ALIAS));
+  assertHighlighted(false, ALIAS);
+
+  
+  searchString = `${ALIAS} bbb`;
+  gURLBar.search(searchString);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
+
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
+
+  
+  
+  value = `bbb ${ALIAS}`;
+  gURLBar.value = `bbb ${ALIAS}`;
+
+  
+  Assert.equal(gURLBar.untrimmedValue, value);
+  Assert.ok(gURLBar.untrimmedValue.includes(ALIAS));
+  assertHighlighted(false, ALIAS);
+
+  
+  gURLBar.search("");
 });
 
 
@@ -341,10 +284,8 @@ add_task(async function nonHeuristicAliases() {
 
   
   
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "@",
-  });
+  gURLBar.search("@");
+  await UrlbarTestUtils.promiseSearchComplete(window);
   await UrlbarTestUtils.waitForAutocompleteResultAt(
     window,
     tokenEngines.length - 1
@@ -363,13 +304,31 @@ add_task(async function nonHeuristicAliases() {
 });
 
 
+add_task(async function nonTokenAlias() {
+  let alias = "nontokenalias";
+  let engine = Services.search.getEngineByName("Test");
+  engine.alias = "nontokenalias";
+  Assert.equal(engine.alias, alias);
 
-add_task(async function clickAndFillAlias() {
+  gURLBar.search(alias);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertFirstResultIsAlias(true, alias);
+  assertHighlighted(false);
+
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
+
+  engine.alias = ALIAS;
+});
+
+
+
+add_task(async function clickAndFillAlias_legacy() {
   
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "@",
-  });
+  gURLBar.search("@");
+  await UrlbarTestUtils.promiseSearchComplete(window);
 
   
   
@@ -385,16 +344,29 @@ add_task(async function clickAndFillAlias() {
   }
 
   
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   EventUtils.synthesizeMouseAtCenter(testEngineItem, {});
-  await searchPromise;
 
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: testEngineItem.result.payload.engine,
-    entry: "keywordoffer",
-  });
+  
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
 
-  await UrlbarTestUtils.exitSearchMode(window);
+  
+  
+  Assert.equal(gURLBar.value, `${ALIAS} `);
+
+  
+  
+  
+  
+  for (let i = 0; i < 2; i++) {
+    EventUtils.synthesizeKey("KEY_Enter");
+    await UrlbarTestUtils.promiseSearchComplete(window);
+    await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+    await assertAlias(true);
+    Assert.equal(gURLBar.value, `${ALIAS} `);
+  }
+
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
@@ -402,19 +374,16 @@ add_task(async function clickAndFillAlias() {
 
 
 
-add_task(async function enterAndFillAlias() {
+add_task(async function enterAndFillAlias_legacy() {
   
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "@",
-  });
+  gURLBar.search("@");
+  await UrlbarTestUtils.promiseSearchComplete(window);
 
   
   
-  let details;
   let index = 0;
   for (; ; index++) {
-    details = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
     if (details.searchParams && details.searchParams.keyword == ALIAS) {
       index++;
       break;
@@ -423,23 +392,38 @@ add_task(async function enterAndFillAlias() {
 
   
   EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index });
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   EventUtils.synthesizeKey("KEY_Enter");
-  await searchPromise;
 
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: details.searchParams.engine,
-    entry: "keywordoffer",
-  });
+  
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
 
-  await UrlbarTestUtils.exitSearchMode(window);
+  
+  
+  Assert.equal(gURLBar.value, `${ALIAS} `);
+
+  
+  
+  
+  
+  for (let i = 0; i < 2; i++) {
+    EventUtils.synthesizeKey("KEY_Enter");
+    await UrlbarTestUtils.promiseSearchComplete(window);
+    await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+    await assertAlias(true);
+    Assert.equal(gURLBar.value, `${ALIAS} `);
+  }
+
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
 });
 
 
-add_task(async function enterAutofillsAlias() {
+
+add_task(async function enterAutofillsAlias_legacy() {
+  let expectedString = `${ALIAS} `;
   for (let value of [ALIAS.substring(0, ALIAS.length - 1), ALIAS]) {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -447,46 +431,19 @@ add_task(async function enterAutofillsAlias() {
       selectionStart: value.length,
       selectionEnd: value.length,
     });
+    await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
 
     
-    let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
     EventUtils.synthesizeKey("KEY_Enter");
-    await searchPromise;
+    await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
 
-    await UrlbarTestUtils.assertSearchMode(window, {
-      engineName: testEngine.name,
-      entry: "keywordoffer",
-    });
-
-    await UrlbarTestUtils.exitSearchMode(window);
+    
+    
+    Assert.equal(gURLBar.value, expectedString);
+    Assert.equal(gURLBar.selectionStart, expectedString.length);
+    Assert.equal(gURLBar.selectionEnd, expectedString.length);
+    await assertAlias(true);
   }
-  await UrlbarTestUtils.promisePopupClose(window, () =>
-    EventUtils.synthesizeKey("KEY_Escape")
-  );
-});
-
-
-add_task(async function rightEntersSearchMode() {
-  for (let value of [ALIAS.substring(0, ALIAS.length - 1), ALIAS]) {
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value,
-      selectionStart: value.length,
-      selectionEnd: value.length,
-    });
-
-    let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-    EventUtils.synthesizeKey("KEY_ArrowRight");
-    await searchPromise;
-
-    await UrlbarTestUtils.assertSearchMode(window, {
-      engineName: testEngine.name,
-      entry: "typed",
-    });
-    Assert.equal(gURLBar.value, "", "value should be empty");
-    await UrlbarTestUtils.exitSearchMode(window);
-  }
-
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
@@ -597,6 +554,11 @@ add_task(async function nonPrefixedKeyword() {
 
   await Services.search.removeEngine(engine);
 });
+
+async function assertAlias(aliasPresent, expectedAlias = ALIAS) {
+  await assertFirstResultIsAlias(aliasPresent, expectedAlias);
+  assertHighlighted(aliasPresent, expectedAlias);
+}
 
 async function assertFirstResultIsAlias(isAlias, expectedAlias) {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);

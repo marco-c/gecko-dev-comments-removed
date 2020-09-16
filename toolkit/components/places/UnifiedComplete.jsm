@@ -404,22 +404,6 @@ function makeKeyForMatch(match) {
 
 
 
-
-
-function substringAfter(sourceStr, targetStr) {
-  let index = sourceStr.indexOf(targetStr);
-  return index < 0 ? "" : sourceStr.substr(index + targetStr.length);
-}
-
-
-
-
-
-
-
-
-
-
 function makeActionUrl(type, params) {
   let encodedParams = {};
   for (let key in params) {
@@ -493,6 +477,7 @@ function Search(
     this._userContextId = queryContext.userContextId;
     this._currentPage = queryContext.currentPage;
     this._searchModeEngine = queryContext.searchMode?.engineName;
+    this._searchMode = queryContext.searchMode;
   } else {
     let params = new Set(searchParam.split(" "));
     this._enableActions = params.has("enable-actions");
@@ -1009,6 +994,11 @@ Search.prototype = {
   },
 
   async _matchFirstHeuristicResult(conn) {
+    if (this._searchMode) {
+      
+      return false;
+    }
+
     
     
 
@@ -1047,7 +1037,7 @@ Search.prototype = {
       return false;
     }
 
-    let searchString = substringAfter(
+    let searchString = UrlbarUtils.substringAfter(
       this._originalSearchString,
       keyword
     ).trim();
@@ -1106,11 +1096,18 @@ Search.prototype = {
       return false;
     }
 
+    let query = UrlbarUtils.substringAfter(this._originalSearchString, alias);
+
+    
+    
+    if (UrlbarPrefs.get("update2") && !query.startsWith(" ")) {
+      return false;
+    }
+
     this._searchEngineAliasMatch = {
       engine,
       alias,
-      query: substringAfter(this._originalSearchString, alias).trim(),
-      isTokenAlias: alias.startsWith("@"),
+      query: query.trimStart(),
     };
     this._addSearchEngineMatch(this._searchEngineAliasMatch);
     if (!this._keywordSubstitute) {

@@ -2,9 +2,17 @@
 
 
 
-const { UrlbarTestUtils } = ChromeUtils.import(
-  "resource://testing-common/UrlbarTestUtils.jsm"
-);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
+});
+
+XPCOMUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
+  const { UrlbarTestUtils: module } = ChromeUtils.import(
+    "resource://testing-common/UrlbarTestUtils.jsm"
+  );
+  module.init(this);
+  return module;
+});
 
 
 
@@ -94,6 +102,70 @@ add_task(async function test_search_icon() {
 
 
 add_task(async function test_search_handoff_on_keydown() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", true]],
+  });
+
+  let { win, tab } = await openAboutPrivateBrowsing();
+
+  await SpecialPowers.spawn(tab, [], async function() {
+    let btn = content.document.getElementById("search-handoff-button");
+    btn.click();
+    ok(btn.classList.contains("focused"), "in-content search has focus styles");
+  });
+  ok(urlBarHasHiddenFocus(win), "url bar has hidden focused");
+
+  
+  
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(win, 2);
+
+  await new Promise(r => EventUtils.synthesizeKey("f", {}, win, r));
+  await SpecialPowers.spawn(tab, [], async function() {
+    ok(
+      content.document
+        .getElementById("search-handoff-button")
+        .classList.contains("hidden"),
+      "in-content search is hidden"
+    );
+  });
+  await searchPromise;
+  ok(urlBarHasNormalFocus(win), "url bar has normal focused");
+  await UrlbarTestUtils.assertSearchMode(win, {
+    engineName: "DuckDuckGo",
+    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    entry: "typed",
+  });
+  is(win.gURLBar.value, "f", "url bar has search text");
+
+  
+  await UrlbarTestUtils.exitSearchMode(win);
+  await UrlbarTestUtils.promisePopupClose(win);
+
+  
+  await new Promise(r => EventUtils.synthesizeKey("KEY_Escape", {}, win, r));
+  await SpecialPowers.spawn(tab, [], async function() {
+    ok(
+      !content.document
+        .getElementById("search-handoff-button")
+        .classList.contains("hidden"),
+      "in-content search is not hidden"
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+add_task(async function test_search_handoff_on_keydown_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", false]],
+  });
+
   let { win, tab } = await openAboutPrivateBrowsing();
 
   await SpecialPowers.spawn(tab, [], async function() {
@@ -129,6 +201,7 @@ add_task(async function test_search_handoff_on_keydown() {
   });
 
   await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -153,6 +226,53 @@ add_task(async function test_search_handoff_on_composition_start() {
 
 
 add_task(async function test_search_handoff_on_paste() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", true]],
+  });
+
+  let { win, tab } = await openAboutPrivateBrowsing();
+
+  await SpecialPowers.spawn(tab, [], async function() {
+    content.document.getElementById("search-handoff-button").click();
+  });
+  ok(urlBarHasHiddenFocus(win), "url bar has hidden focused");
+  var helper = SpecialPowers.Cc[
+    "@mozilla.org/widget/clipboardhelper;1"
+  ].getService(SpecialPowers.Ci.nsIClipboardHelper);
+  helper.copyString("words");
+
+  
+  
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(win, 2);
+
+  await new Promise(r =>
+    EventUtils.synthesizeKey("v", { accelKey: true }, win, r)
+  );
+
+  await searchPromise;
+
+  ok(urlBarHasNormalFocus(win), "url bar has normal focused");
+  await UrlbarTestUtils.assertSearchMode(win, {
+    engineName: "DuckDuckGo",
+    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    entry: "typed",
+  });
+  is(win.gURLBar.value, "words", "url bar has search text");
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+
+
+add_task(async function test_search_handoff_on_paste_legacy() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.update2", false]],
+  });
+
   let { win, tab } = await openAboutPrivateBrowsing();
 
   await SpecialPowers.spawn(tab, [], async function() {
@@ -177,4 +297,5 @@ add_task(async function test_search_handoff_on_paste() {
   );
 
   await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
 });

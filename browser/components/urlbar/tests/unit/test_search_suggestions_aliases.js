@@ -6,176 +6,338 @@
 
 
 
+const DEFAULT_ENGINE_NAME = "TestDefaultEngine";
 const SUGGESTIONS_ENGINE_NAME = "engine-suggestions.xml";
 const SUGGEST_PREF = "browser.urlbar.suggest.searches";
 const SUGGEST_ENABLED_PREF = "browser.search.suggest.enabled";
+const HISTORY_TITLE = "fire";
 
 let engine;
 
 add_task(async function setup() {
   engine = await addTestSuggestionsEngine();
-});
 
-add_task(async function engineWithSuggestions() {
   
   
-  let historyTitle = "fire";
+  Services.search.defaultEngine = await Services.search.addEngineWithDetails(
+    DEFAULT_ENGINE_NAME,
+    { template: "http://example.com/?s=%S" }
+  );
+
+  
+  
   await PlacesTestUtils.addVisits({
     uri: engine.searchForm,
-    title: historyTitle,
+    title: HISTORY_TITLE,
   });
-
-  
-  for (let private of [false, true]) {
-    
-    
-    for (let alias of ["moz", "@moz"]) {
-      engine.alias = alias;
-      Assert.equal(engine.alias, alias);
-
-      
-      let context = createContext(`${alias}`, { isPrivate: private });
-      let expectedMatches = [
-        makeSearchResult(context, {
-          engineName: SUGGESTIONS_ENGINE_NAME,
-          alias,
-          query: "",
-          heuristic: true,
-        }),
-      ];
-      if (alias[0] != "@") {
-        expectedMatches.push(
-          makeVisitResult(context, {
-            uri: "http://localhost:9000/search?terms=",
-            title: historyTitle,
-          })
-        );
-      }
-
-      await check_results({
-        context,
-        matches: expectedMatches,
-      });
-
-      
-      context = createContext(`${alias} `, { isPrivate: private });
-      expectedMatches = [
-        makeSearchResult(context, {
-          engineName: SUGGESTIONS_ENGINE_NAME,
-          alias,
-          query: "",
-          heuristic: true,
-        }),
-      ];
-      if (alias[0] != "@") {
-        expectedMatches.push(
-          makeVisitResult(context, {
-            uri: "http://localhost:9000/search?terms=",
-            title: historyTitle,
-          })
-        );
-      }
-      await check_results({
-        context,
-        matches: expectedMatches,
-      });
-
-      
-      
-      
-      
-      context = createContext(`${alias} ${historyTitle}`, {
-        isPrivate: private,
-      });
-      expectedMatches = [
-        makeSearchResult(context, {
-          engineName: SUGGESTIONS_ENGINE_NAME,
-          alias,
-          query: historyTitle,
-          heuristic: true,
-        }),
-      ];
-      
-      
-      if (!private) {
-        expectedMatches.push(
-          makeSearchResult(context, {
-            engineName: SUGGESTIONS_ENGINE_NAME,
-            alias,
-            query: historyTitle,
-            suggestion: `${historyTitle} foo`,
-          }),
-          makeSearchResult(context, {
-            engineName: SUGGESTIONS_ENGINE_NAME,
-            alias,
-            query: historyTitle,
-            suggestion: `${historyTitle} bar`,
-          })
-        );
-      }
-      if (alias[0] != "@") {
-        expectedMatches.push(
-          makeVisitResult(context, {
-            uri: "http://localhost:9000/search?terms=",
-            title: historyTitle,
-          })
-        );
-      }
-      await check_results({
-        context,
-        matches: expectedMatches,
-      });
-    }
-  }
-
-  engine.alias = "";
-  await PlacesUtils.bookmarks.eraseEverything();
-  await PlacesUtils.history.clear();
 });
 
-add_task(async function disabled_urlbarSuggestions() {
+
+
+add_task(async function nonTokenAlias_noTrailingSpace() {
+  Services.prefs.setBoolPref("browser.urlbar.update2", true);
+  let alias = "moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  let context = createContext(alias, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: DEFAULT_ENGINE_NAME,
+        query: alias,
+        heuristic: true,
+      }),
+      makeSearchResult(context, {
+        engineName: DEFAULT_ENGINE_NAME,
+        query: alias,
+        heuristic: false,
+        inPrivateWindow: true,
+        isPrivateEngine: false,
+      }),
+    ],
+  });
+  Services.prefs.clearUserPref("browser.urlbar.update2");
+});
+
+
+
+add_task(async function nonTokenAlias_noTrailingSpace_legacy() {
+  Services.prefs.setBoolPref("browser.urlbar.update2", false);
+  let alias = "moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  for (let isPrivate of [false, true]) {
+    let context = createContext(alias, { isPrivate });
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: SUGGESTIONS_ENGINE_NAME,
+          alias,
+          query: "",
+          heuristic: true,
+        }),
+        makeVisitResult(context, {
+          uri: "http://localhost:9000/search?terms=",
+          title: HISTORY_TITLE,
+        }),
+      ],
+    });
+  }
+  Services.prefs.clearUserPref("browser.urlbar.update2");
+});
+
+
+
+add_task(async function nonTokenAlias_trailingSpace() {
+  let alias = "moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  for (let isPrivate of [false, true]) {
+    let context = createContext(alias + " ", { isPrivate });
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: SUGGESTIONS_ENGINE_NAME,
+          alias,
+          query: "",
+          heuristic: true,
+        }),
+        makeVisitResult(context, {
+          uri: "http://localhost:9000/search?terms=",
+          title: HISTORY_TITLE,
+        }),
+      ],
+    });
+  }
+});
+
+
+
+add_task(async function nonTokenAlias_history_nonPrivate() {
+  let alias = "moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  let context = createContext(`${alias} ${HISTORY_TITLE}`, {
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: HISTORY_TITLE,
+        heuristic: true,
+      }),
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: HISTORY_TITLE,
+        suggestion: `${HISTORY_TITLE} foo`,
+      }),
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: HISTORY_TITLE,
+        suggestion: `${HISTORY_TITLE} bar`,
+      }),
+      makeVisitResult(context, {
+        uri: "http://localhost:9000/search?terms=",
+        title: HISTORY_TITLE,
+      }),
+    ],
+  });
+});
+
+
+
+add_task(async function nonTokenAlias_history_private() {
+  let alias = "moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  let context = createContext(`${alias} ${HISTORY_TITLE}`, {
+    isPrivate: true,
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: HISTORY_TITLE,
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "http://localhost:9000/search?terms=",
+        title: HISTORY_TITLE,
+      }),
+    ],
+  });
+});
+
+
+
+add_task(async function tokenAlias_noTrailingSpace() {
+  let alias = "@moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  for (let isPrivate of [false, true]) {
+    let context = createContext(alias, { isPrivate });
+    await check_results({
+      context,
+      autofilled: alias + " ",
+      matches: [
+        makeSearchResult(context, {
+          engineName: SUGGESTIONS_ENGINE_NAME,
+          alias,
+          keywordOffer: UrlbarUtils.KEYWORD_OFFER.HIDE,
+          query: "",
+          heuristic: true,
+        }),
+      ],
+    });
+  }
+});
+
+
+
+add_task(async function tokenAlias_trailingSpace() {
+  Services.prefs.setBoolPref("browser.urlbar.update2", true);
+  let alias = "@moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  for (let isPrivate of [false, true]) {
+    let context = createContext(alias + " ", { isPrivate });
+    await check_results({
+      context,
+      matches: [
+        makeSearchResult(context, {
+          engineName: SUGGESTIONS_ENGINE_NAME,
+          alias,
+          query: "",
+          heuristic: true,
+        }),
+      ],
+    });
+  }
+  Services.prefs.clearUserPref("browser.urlbar.update2");
+});
+
+
+
+add_task(async function tokenAlias_history_nonPrivate() {
+  let alias = "@moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  let context = createContext(`${alias} ${HISTORY_TITLE}`, {
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: HISTORY_TITLE,
+        heuristic: true,
+      }),
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: HISTORY_TITLE,
+        suggestion: `${HISTORY_TITLE} foo`,
+      }),
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: HISTORY_TITLE,
+        suggestion: `${HISTORY_TITLE} bar`,
+      }),
+    ],
+  });
+});
+
+
+
+add_task(async function tokenAlias_history_private() {
+  let alias = "@moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  let context = createContext(`${alias} ${HISTORY_TITLE}`, {
+    isPrivate: true,
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: HISTORY_TITLE,
+        heuristic: true,
+      }),
+    ],
+  });
+});
+
+
+
+add_task(async function suggestionsDisabled_nonPrivate() {
   Services.prefs.setBoolPref(SUGGEST_PREF, false);
   Services.prefs.setBoolPref(SUGGEST_ENABLED_PREF, true);
   let alias = "@moz";
   engine.alias = alias;
   Assert.equal(engine.alias, alias);
-
-  for (let private of [false, true]) {
-    let context = createContext(`${alias} term`, { isPrivate: private });
-    let expectedMatches = [
+  let context = createContext(`${alias} term`, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
       makeSearchResult(context, {
         engineName: SUGGESTIONS_ENGINE_NAME,
         alias,
         query: "term",
         heuristic: true,
       }),
-    ];
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: "term",
+        suggestion: "term foo",
+      }),
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: "term",
+        suggestion: "term bar",
+      }),
+    ],
+  });
+  Services.prefs.clearUserPref(SUGGEST_PREF);
+  Services.prefs.clearUserPref(SUGGEST_ENABLED_PREF);
+});
 
-    if (!private) {
-      expectedMatches.push(
-        makeSearchResult(context, {
-          engineName: SUGGESTIONS_ENGINE_NAME,
-          alias,
-          query: "term",
-          suggestion: "term foo",
-        })
-      );
-      expectedMatches.push(
-        makeSearchResult(context, {
-          engineName: SUGGESTIONS_ENGINE_NAME,
-          alias,
-          query: "term",
-          suggestion: "term bar",
-        })
-      );
-    }
-    await check_results({
-      context,
-      matches: expectedMatches,
-    });
-  }
 
-  engine.alias = "";
+
+add_task(async function suggestionsDisabled_private() {
+  Services.prefs.setBoolPref(SUGGEST_PREF, false);
+  Services.prefs.setBoolPref(SUGGEST_ENABLED_PREF, true);
+  let alias = "@moz";
+  engine.alias = alias;
+  Assert.equal(engine.alias, alias);
+  let context = createContext(`${alias} term`, { isPrivate: true });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        alias,
+        query: "term",
+        heuristic: true,
+      }),
+    ],
+  });
   Services.prefs.clearUserPref(SUGGEST_PREF);
   Services.prefs.clearUserPref(SUGGEST_ENABLED_PREF);
 });

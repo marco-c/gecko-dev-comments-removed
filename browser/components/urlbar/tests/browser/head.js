@@ -88,9 +88,10 @@ async function updateTopSites(condition, searchShortcuts = false) {
 
 
 
+
 function getAutofillSearchString(val) {
   if (!val.startsWith("@")) {
     return val;
   }
-  return val + (UrlbarPrefs.get("update2") ? "" : " ");
+  return val + " ";
 }

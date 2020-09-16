@@ -426,12 +426,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
               lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
               tailPrefix,
               tail: [tail, UrlbarUtils.HIGHLIGHT.SUGGESTED],
-              tailOffsetIndex: entry.tailOffsetIndex,
+              tailOffsetIndex: tail ? entry.tailOffsetIndex : undefined,
               keyword: [alias ? alias : undefined, UrlbarUtils.HIGHLIGHT.TYPED],
               query: [searchString.trim(), UrlbarUtils.HIGHLIGHT.NONE],
-              isSearchHistory: false,
-              icon: [engine.iconURI && !entry.value ? engine.iconURI.spec : ""],
-              keywordOffer: UrlbarUtils.KEYWORD_OFFER.NONE,
+              icon: !entry.value ? engine.iconURI?.spec : undefined,
             })
           )
         );
@@ -469,21 +467,26 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
 
   async _maybeGetAlias(queryContext) {
-    if (
-      queryContext.restrictSource &&
-      queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH &&
-      queryContext.searchMode?.engineName &&
-      !queryContext.searchString.startsWith("@")
-    ) {
-      
+    if (queryContext.searchMode) {
       
       return null;
     }
 
-    let possibleAlias = queryContext.tokens[0]?.value.trim();
+    let possibleAlias = queryContext.tokens[0]?.value;
     
     
     if (!possibleAlias || possibleAlias == "@") {
+      return null;
+    }
+
+    let query = UrlbarUtils.substringAfter(
+      queryContext.searchString,
+      possibleAlias
+    );
+
+    
+    
+    if (UrlbarPrefs.get("update2") && !query.startsWith(" ")) {
       return null;
     }
 
@@ -493,11 +496,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       return {
         engine: engineMatch,
         alias: possibleAlias,
-        query: UrlbarUtils.substringAfter(
-          queryContext.searchString,
-          possibleAlias
-        ).trim(),
-        isTokenAlias: possibleAlias.startsWith("@"),
+        query: query.trim(),
       };
     }
 
@@ -511,7 +510,6 @@ function makeFormHistoryResult(queryContext, engine, entry) {
     UrlbarUtils.RESULT_SOURCE.HISTORY,
     ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
       engine: engine.name,
-      isSearchHistory: true,
       suggestion: [entry.value, UrlbarUtils.HIGHLIGHT.SUGGESTED],
       lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
     })

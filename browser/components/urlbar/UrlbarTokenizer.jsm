@@ -77,6 +77,9 @@ var UrlbarTokenizer = {
   },
 
   
+  SEARCH_MODE_RESTRICT: new Set(["HISTORY", "BOOKMARK", "OPENPAGE"]),
+
+  
 
 
 

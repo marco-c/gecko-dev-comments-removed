@@ -71,10 +71,15 @@ var UrlbarTestUtils = {
 
 
 
-  async promiseSearchComplete(win) {
-    return this.promisePopupOpen(win, () => {}).then(
+
+  async promiseSearchComplete(win, count = 1) {
+    let promise = this.promisePopupOpen(win, () => {}).then(
       () => win.gURLBar.lastQueryContextPromise
     );
+    if (--count > 0) {
+      promise = promise.then(() => this.promiseSearchComplete(win, count));
+    }
+    return promise;
   },
 
   
@@ -138,7 +143,7 @@ var UrlbarTestUtils = {
   async waitForAutocompleteResultAt(win, index) {
     
     await this.promiseSearchComplete(win);
-    if (index >= win.gURLBar.view._rows.length) {
+    if (index >= win.gURLBar.view._rows.children.length) {
       throw new Error("Not enough results");
     }
     return win.gURLBar.view._rows.children[index];
@@ -210,7 +215,6 @@ var UrlbarTestUtils = {
         keyword: result.payload.keyword,
         query: result.payload.query,
         suggestion: result.payload.suggestion,
-        isSearchHistory: result.payload.isSearchHistory,
         inPrivateWindow: result.payload.inPrivateWindow,
         isPrivateEngine: result.payload.isPrivateEngine,
       };
@@ -511,6 +515,7 @@ var UrlbarTestUtils = {
 
 
 
+
   async enterSearchMode(window, searchMode = null) {
     
     await this.promiseSearchComplete(window);
@@ -568,7 +573,7 @@ var UrlbarTestUtils = {
 
   async exitSearchMode(
     window,
-    { backspace, clickClose, waitForSearch = true }
+    { backspace, clickClose, waitForSearch = true } = {}
   ) {
     let urlbar = window.gURLBar;
     
@@ -583,6 +588,10 @@ var UrlbarTestUtils = {
         urlbar.setSearchMode({});
       }
       return;
+    }
+
+    if (!backspace && !clickClose) {
+      backspace = true;
     }
 
     if (backspace) {
@@ -661,6 +670,9 @@ var UrlbarTestUtils = {
         {
           input: {
             isPrivate: false,
+            onFirstResult() {
+              return false;
+            },
             window: {
               location: {
                 href: AppConstants.BROWSER_CHROME_URL,

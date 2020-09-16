@@ -144,7 +144,7 @@ class ProviderTopSites extends UrlbarProvider {
       
       
       title: link.label || link.title || link.hostname || "",
-      favicon: link.smallFavicon || link.favicon || null,
+      favicon: link.smallFavicon || link.favicon || undefined,
       sendAttributionRequest: link.sendAttributionRequest,
     }));
 

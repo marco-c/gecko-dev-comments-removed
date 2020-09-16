@@ -256,7 +256,9 @@ add_task(async function spaceToEnterSearchMode() {
       value: engine.alias,
     });
 
-    let searchPromise = UrlbarTestUtils.promiseSearchComplete(win);
+    
+    
+    let searchPromise = UrlbarTestUtils.promiseSearchComplete(win, 2);
     EventUtils.synthesizeKey(" ", {}, win);
     await searchPromise;
 

@@ -50,7 +50,11 @@ function assertSearchModeScalar(entry, key) {
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.update2", true]],
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.localOneOffs", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+    ],
   });
 
   
@@ -291,9 +295,12 @@ add_task(async function test_keywordoffer() {
   );
 
   
+  
+  
+  let alias = "@" + ENGINE_ALIAS;
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    value: ENGINE_ALIAS,
+    value: alias,
   });
   let keywordOfferResult = await UrlbarTestUtils.getDetailsOfResultAt(
     window,
@@ -301,7 +308,7 @@ add_task(async function test_keywordoffer() {
   );
   Assert.equal(
     keywordOfferResult.searchParams.keyword,
-    ENGINE_ALIAS,
+    alias,
     "The first result should be a keyword search result with the correct alias."
   );
 

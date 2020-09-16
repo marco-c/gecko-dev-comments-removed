@@ -992,7 +992,7 @@ class UrlbarInput {
 
 
 
-  autofillFirstResult(result) {
+  _autofillFirstResult(result) {
     if (!result.autofill) {
       return;
     }
@@ -1023,14 +1023,31 @@ class UrlbarInput {
 
 
 
+
+
+
+
+
   onFirstResult(firstResult) {
     
     
-    
-    
     if (
+      firstResult.heuristic &&
+      firstResult.payload.keyword &&
+      !firstResult.payload.keywordOffer &&
+      this.maybePromoteKeywordToSearchMode(firstResult, false)
+    ) {
+      return true;
+    }
+
+    
+    
+    
+    
+    if (firstResult.autofill) {
+      this._autofillFirstResult(firstResult);
+    } else if (
       this._autofillPlaceholder &&
-      !firstResult.autofill &&
       
       !this.value.endsWith(" ")
     ) {
@@ -1043,6 +1060,8 @@ class UrlbarInput {
     } else if (firstResult.heuristic) {
       this._resultForCurrentValue = firstResult;
     }
+
+    return false;
   }
 
   
@@ -1515,14 +1534,30 @@ class UrlbarInput {
 
 
 
-  maybePromoteKeywordToSearchMode(result = this._resultForCurrentValue) {
-    let searchMode = this._searchModeForResult(result, "typed");
-    if (searchMode && this.value.trim() == result.payload.keyword.trim()) {
-      this.setSearchMode(searchMode);
-      this.value = "";
-      return true;
+
+
+
+
+
+
+
+  maybePromoteKeywordToSearchMode(
+    result = this._resultForCurrentValue,
+    checkValue = true
+  ) {
+    if (checkValue && this.value.trim() != result.payload.keyword?.trim()) {
+      return false;
     }
-    return false;
+
+    let searchMode = this._searchModeForResult(result, "typed");
+    if (!searchMode) {
+      return false;
+    }
+
+    this.setSearchMode(searchMode);
+    this._setValue(result.payload.query?.trimStart() || "", false);
+    this.startQuery({ allowAutofill: false });
+    return true;
   }
 
   
@@ -2243,30 +2278,46 @@ class UrlbarInput {
     }
 
     
-    
-    if (
-      result &&
-      result.payload.keywordOffer &&
-      (!result.payload.originalEngine ||
-        result.payload.engine == result.payload.originalEngine)
-    ) {
-      let searchModeEntry;
+    if (!result.payload.keyword) {
+      return null;
+    }
+
+    let searchMode = null;
+    switch (result.payload.keyword) {
+      case UrlbarTokenizer.RESTRICT.BOOKMARK:
+        searchMode = { source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS };
+        break;
+      case UrlbarTokenizer.RESTRICT.HISTORY:
+        searchMode = { source: UrlbarUtils.RESULT_SOURCE.HISTORY };
+        break;
+      case UrlbarTokenizer.RESTRICT.OPENPAGE:
+        searchMode = { source: UrlbarUtils.RESULT_SOURCE.TABS };
+        break;
+      default:
+        
+        
+        if (
+          result.payload.engine &&
+          (!result.payload.originalEngine ||
+            result.payload.engine == result.payload.originalEngine)
+        ) {
+          searchMode = { engineName: result.payload.engine };
+        }
+        break;
+    }
+
+    if (searchMode) {
       if (entry) {
-        searchModeEntry = entry;
+        searchMode.entry = entry;
       } else {
-        searchModeEntry =
+        searchMode.entry =
           result.providerName == "UrlbarProviderTopSites"
             ? "topsites_urlbar"
             : "keywordoffer";
       }
-
-      return {
-        engineName: result.payload.engine,
-        entry: searchModeEntry,
-      };
     }
 
-    return null;
+    return searchMode;
   }
 
   
@@ -2505,13 +2556,6 @@ class UrlbarInput {
   }
 
   _on_input(event) {
-    
-    
-    let enteredSearchMode = false;
-    if (event.data == " ") {
-      enteredSearchMode = this.maybePromoteKeywordToSearchMode();
-    }
-
     let value = this.value;
     this.valueIsTyped = true;
     this._untrimmedValue = value;
@@ -2549,7 +2593,7 @@ class UrlbarInput {
 
     if (!this.view.isOpen) {
       this.view.clear();
-    } else if (!value && !canShowTopSites && !enteredSearchMode) {
+    } else if (!value && !canShowTopSites) {
       this.view.clear();
       if (!this.searchMode) {
         this.view.close();

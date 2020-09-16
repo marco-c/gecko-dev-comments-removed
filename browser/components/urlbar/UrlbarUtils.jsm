@@ -161,8 +161,9 @@ var UrlbarUtils = {
   
   
   
+  
+  
   KEYWORD_OFFER: {
-    NONE: 0,
     SHOW: 1,
     HIDE: 2,
   },
@@ -464,12 +465,15 @@ var UrlbarUtils = {
             : null,
         };
       case UrlbarUtils.RESULT_TYPE.SEARCH: {
-        const engine = Services.search.getEngineByName(result.payload.engine);
-        let [url, postData] = this.getSearchQueryUrl(
-          engine,
-          result.payload.suggestion || result.payload.query
-        );
-        return { url, postData };
+        if (result.payload.engine) {
+          const engine = Services.search.getEngineByName(result.payload.engine);
+          let [url, postData] = this.getSearchQueryUrl(
+            engine,
+            result.payload.suggestion || result.payload.query
+          );
+          return { url, postData };
+        }
+        break;
       }
       case UrlbarUtils.RESULT_TYPE.TIP: {
         
@@ -905,9 +909,6 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
         type: "boolean",
       },
       isPrivateEngine: {
-        type: "boolean",
-      },
-      isSearchHistory: {
         type: "boolean",
       },
       keyword: {
