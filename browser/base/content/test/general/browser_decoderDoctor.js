@@ -20,6 +20,115 @@ async function test_decoder_doctor_notification(
   accessKey,
   tabChecker
 ) {
+  const TEST_URL = "https://example.org";
+  
+  
+  
+  
+  async function create_tab_and_test(test_cross_origin) {
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url: TEST_URL },
+      async function(browser) {
+        let awaitNotificationBar = BrowserTestUtils.waitForNotificationBar(
+          gBrowser,
+          browser,
+          "decoder-doctor-notification"
+        );
+
+        await SpecialPowers.spawn(
+          browser,
+          [data, test_cross_origin],
+          
+          async function(data, test_cross_origin) {
+            if (!test_cross_origin) {
+              
+              Services.obs.notifyObservers(
+                content.window,
+                "decoder-doctor-notification",
+                JSON.stringify(data)
+              );
+              return;
+              
+            }
+
+            
+            const CROSS_ORIGIN_URL = "https://example.com";
+            let frame = content.document.createElement("iframe");
+            frame.src = CROSS_ORIGIN_URL;
+            await new Promise(resolve => {
+              frame.addEventListener("load", () => {
+                resolve();
+              });
+              content.document.body.appendChild(frame);
+            });
+
+            await content.SpecialPowers.spawn(frame, [data], async function(
+              
+              data
+            ) {
+              Services.obs.notifyObservers(
+                content.window,
+                "decoder-doctor-notification",
+                JSON.stringify(data)
+              );
+            });
+            
+          }
+        );
+
+        if (!notificationMessage) {
+          ok(
+            true,
+            "Tested notifying observers with a nonsensical message, no effects expected"
+          );
+          return;
+        }
+
+        let notification;
+        try {
+          notification = await awaitNotificationBar;
+        } catch (ex) {
+          ok(false, ex);
+          return;
+        }
+        ok(notification, "Got decoder-doctor-notification notification");
+
+        is(
+          notification.messageText.textContent,
+          notificationMessage,
+          "notification message should match expectation"
+        );
+
+        let button = notification.querySelector("button");
+        if (!label) {
+          ok(!button, "There should not be button");
+          return;
+        }
+
+        is(
+          button.getAttribute("label"),
+          label,
+          `notification button should be '${label}'`
+        );
+        is(
+          button.getAttribute("accesskey"),
+          accessKey,
+          "notification button should have accesskey"
+        );
+
+        if (!tabChecker) {
+          ok(false, "Test implementation error: Missing tabChecker");
+          return;
+        }
+        let awaitNewTab = BrowserTestUtils.waitForNewTab(gBrowser);
+        button.click();
+        let openedTab = await awaitNewTab;
+        tabChecker(openedTab);
+        BrowserTestUtils.removeTab(openedTab);
+      }
+    );
+  }
+
   if (typeof data.type === "undefined") {
     ok(false, "Test implementation error: data.type must be provided");
     return;
@@ -28,71 +137,11 @@ async function test_decoder_doctor_notification(
   if (typeof data.decoderDoctorReportId === "undefined") {
     data.decoderDoctorReportId = "testReportId";
   }
-  await BrowserTestUtils.withNewTab({ gBrowser }, async function(browser) {
-    let awaitNotificationBar = BrowserTestUtils.waitForNotificationBar(
-      gBrowser,
-      browser,
-      "decoder-doctor-notification"
-    );
 
-    await SpecialPowers.spawn(browser, [data], async function(aData) {
-      Services.obs.notifyObservers(
-        content.window,
-        "decoder-doctor-notification",
-        JSON.stringify(aData)
-      );
-    });
-
-    if (!notificationMessage) {
-      ok(
-        true,
-        "Tested notifying observers with a nonsensical message, no effects expected"
-      );
-      return;
-    }
-
-    let notification;
-    try {
-      notification = await awaitNotificationBar;
-    } catch (ex) {
-      ok(false, ex);
-      return;
-    }
-    ok(notification, "Got decoder-doctor-notification notification");
-
-    is(
-      notification.messageText.textContent,
-      notificationMessage,
-      "notification message should match expectation"
-    );
-
-    let button = notification.querySelector("button");
-    if (!label) {
-      ok(!button, "There should not be button");
-      return;
-    }
-
-    is(
-      button.getAttribute("label"),
-      label,
-      `notification button should be '${label}'`
-    );
-    is(
-      button.getAttribute("accesskey"),
-      accessKey,
-      "notification button should have accesskey"
-    );
-
-    if (!tabChecker) {
-      ok(false, "Test implementation error: Missing tabChecker");
-      return;
-    }
-    let awaitNewTab = BrowserTestUtils.waitForNewTab(gBrowser);
-    button.click();
-    let openedTab = await awaitNewTab;
-    tabChecker(openedTab);
-    BrowserTestUtils.removeTab(openedTab);
-  });
+  
+  await create_tab_and_test(false);
+  
+  await create_tab_and_test(true);
 }
 
 function tab_checker_for_sumo(expectedPath) {
