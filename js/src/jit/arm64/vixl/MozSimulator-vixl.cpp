@@ -26,8 +26,8 @@
 
 #include "mozilla/DebugOnly.h"
 
-#include "jit/arm64/MozCachingDecoder.h"
 #include "jit/arm64/vixl/Debugger-vixl.h"
+#include "jit/arm64/vixl/MozCachingDecoder.h"
 #include "jit/arm64/vixl/Simulator-vixl.h"
 #include "jit/IonTypes.h"
 #include "js/UniquePtr.h"
@@ -39,21 +39,23 @@ js::jit::SimulatorProcess* js::jit::SimulatorProcess::singleton_ = nullptr;
 
 namespace vixl {
 
+using mozilla::DebugOnly;
 using js::jit::ABIFunctionType;
 using js::jit::JitActivation;
 using js::jit::SimulatorProcess;
-using mozilla::DebugOnly;
 
 Simulator::Simulator(Decoder* decoder, FILE* stream)
-    : stream_(nullptr),
-      print_disasm_(nullptr),
-      instrumentation_(nullptr),
-      stack_(nullptr),
-      stack_limit_(nullptr),
-      decoder_(nullptr),
-      oom_(false) {
-  this->init(decoder, stream);
+  : stream_(nullptr)
+  , print_disasm_(nullptr)
+  , instrumentation_(nullptr)
+  , stack_(nullptr)
+  , stack_limit_(nullptr)
+  , decoder_(nullptr)
+  , oom_(false)
+{
+    this->init(decoder, stream);
 }
+
 
 Simulator::~Simulator() {
   js_free(stack_);
@@ -72,6 +74,7 @@ Simulator::~Simulator() {
     instrumentation_ = nullptr;
   }
 }
+
 
 void Simulator::ResetState() {
   
@@ -94,6 +97,7 @@ void Simulator::ResetState() {
   
   set_lr(kEndOfSimAddress);
 }
+
 
 void Simulator::init(Decoder* decoder, FILE* stream) {
   
@@ -126,7 +130,7 @@ void Simulator::init(Decoder* decoder, FILE* stream) {
   stack_limit_ = stack_ + stack_protection_size_;
   
   
-  byte* tos = stack_ + stack_size_;
+  byte * tos = stack_ + stack_size_;
   
   tos -= stack_protection_size_;
   
@@ -148,6 +152,7 @@ void Simulator::init(Decoder* decoder, FILE* stream) {
   print_exclusive_access_warning_ = true;
 }
 
+
 Simulator* Simulator::Current() {
   JSContext* cx = js::TlsContext.get();
   if (!cx) {
@@ -161,13 +166,12 @@ Simulator* Simulator::Current() {
   return cx->simulator();
 }
 
-Simulator* Simulator::Create() {
-  Decoder* decoder = js_new<Decoder>();
-  if (!decoder) {
-    return nullptr;
-  }
 
-  
+Simulator* Simulator::Create() {
+  Decoder *decoder = js_new<Decoder>();
+  if (!decoder)
+    return nullptr;
+
   
   
   
@@ -195,49 +199,61 @@ Simulator* Simulator::Create() {
   return sim.release();
 }
 
-void Simulator::Destroy(Simulator* sim) { js_delete(sim); }
+
+void Simulator::Destroy(Simulator* sim) {
+  js_delete(sim);
+}
+
 
 void Simulator::ExecuteInstruction() {
   
   VIXL_ASSERT(IsWordAligned(pc_));
   if (pendingCacheRequests) {
-    
-    
-    
-    
-    
-    
-    js::jit::AutoLockSimulatorCache alsc;
-    FlushICache();
+      
+      
+      
+      
+      
+      
+      js::jit::AutoLockSimulatorCache alsc;
+      FlushICache();
   }
   decoder_->Decode(pc_);
   increment_pc();
 }
 
+
 uintptr_t Simulator::stackLimit() const {
   return reinterpret_cast<uintptr_t>(stack_limit_);
 }
+
 
 uintptr_t* Simulator::addressOfStackLimit() {
   return (uintptr_t*)&stack_limit_;
 }
 
+
 bool Simulator::overRecursed(uintptr_t newsp) const {
-  if (newsp) newsp = get_sp();
+  if (newsp)
+    newsp = get_sp();
   return newsp <= stackLimit();
 }
+
 
 bool Simulator::overRecursedWithExtra(uint32_t extra) const {
   uintptr_t newsp = get_sp() - extra;
   return newsp <= stackLimit();
 }
 
-JS::ProfilingFrameIterator::RegisterState Simulator::registerState() {
+
+JS::ProfilingFrameIterator::RegisterState
+Simulator::registerState()
+{
   JS::ProfilingFrameIterator::RegisterState state;
-  state.pc = (uint8_t*)get_pc();
-  state.fp = (uint8_t*)get_fp();
-  state.lr = (uint8_t*)get_lr();
-  state.sp = (uint8_t*)get_sp();
+  state.pc = (uint8_t*) get_pc();
+  state.fp = (uint8_t*) get_fp();
+  state.lr = (uint8_t*) get_lr();
+  state.sp = (uint8_t*) get_sp();
   return state;
 }
 
@@ -252,32 +268,32 @@ int64_t Simulator::call(uint8_t* entry, int argument_count, ...) {
   
   
   if (argument_count == 8) {
-    
-    set_xreg(0, va_arg(parameters, int64_t));
-    
-    set_xreg(1, va_arg(parameters, unsigned));
-    
-    set_xreg(2, va_arg(parameters, int64_t));
-    
-    set_xreg(3, va_arg(parameters, int64_t));
-    
-    set_xreg(4, va_arg(parameters, int64_t));
-    
-    set_xreg(5, va_arg(parameters, int64_t));
-    
-    set_xreg(6, va_arg(parameters, unsigned));
-    
-    set_xreg(7, va_arg(parameters, int64_t));
+      
+      set_xreg(0, va_arg(parameters, int64_t));
+      
+      set_xreg(1, va_arg(parameters, unsigned));
+      
+      set_xreg(2, va_arg(parameters, int64_t));
+      
+      set_xreg(3, va_arg(parameters, int64_t));
+      
+      set_xreg(4, va_arg(parameters, int64_t));
+      
+      set_xreg(5, va_arg(parameters, int64_t));
+      
+      set_xreg(6, va_arg(parameters, unsigned));
+      
+      set_xreg(7, va_arg(parameters, int64_t));
   } else if (argument_count == 2) {
-    
-    set_xreg(0, va_arg(parameters, int64_t));
-    
-    set_xreg(1, va_arg(parameters, int64_t));
-  } else if (argument_count == 1) {  
-    
-    set_xreg(0, va_arg(parameters, int64_t));
+      
+      set_xreg(0, va_arg(parameters, int64_t));
+      
+      set_xreg(1, va_arg(parameters, int64_t));
+  } else if (argument_count == 1) { 
+      
+      set_xreg(0, va_arg(parameters, int64_t));
   } else {
-    MOZ_CRASH("Unknown number of arguments");
+      MOZ_CRASH("Unknown number of arguments");
   }
 
   va_end(parameters);
@@ -292,7 +308,8 @@ int64_t Simulator::call(uint8_t* entry, int argument_count, ...) {
   VIXL_ASSERT(entryStack == exitStack);
 
   int64_t result = xreg(0);
-  if (getenv("USE_DEBUGGER")) printf("LEAVE\n");
+  if (getenv("USE_DEBUGGER"))
+      printf("LEAVE\n");
   return result;
 }
 
@@ -302,11 +319,16 @@ int64_t Simulator::call(uint8_t* entry, int argument_count, ...) {
 
 
 
-class Redirection {
+
+class Redirection
+{
   friend class Simulator;
 
   Redirection(void* nativeFunction, ABIFunctionType type)
-      : nativeFunction_(nativeFunction), type_(type), next_(nullptr) {
+    : nativeFunction_(nativeFunction),
+    type_(type),
+    next_(nullptr)
+  {
     next_ = SimulatorProcess::redirection();
     SimulatorProcess::setRedirection(this);
 
@@ -336,16 +358,15 @@ class Redirection {
     
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
     Redirection* redir = js_pod_malloc<Redirection>(1);
-    if (!redir) oomUnsafe.crash("Simulator redirection");
-    new (redir) Redirection(nativeFunction, type);
+    if (!redir)
+        oomUnsafe.crash("Simulator redirection");
+    new(redir) Redirection(nativeFunction, type);
     return redir;
   }
 
-  static const Redirection* FromSvcInstruction(
-      const Instruction* svcInstruction) {
+  static const Redirection* FromSvcInstruction(const Instruction* svcInstruction) {
     const uint8_t* addrOfSvc = reinterpret_cast<const uint8_t*>(svcInstruction);
-    const uint8_t* addrOfRedirection =
-        addrOfSvc - offsetof(Redirection, svcInstruction_);
+    const uint8_t* addrOfRedirection = addrOfSvc - offsetof(Redirection, svcInstruction_);
     return reinterpret_cast<const Redirection*>(addrOfRedirection);
   }
 
@@ -356,8 +377,10 @@ class Redirection {
   Redirection* next_;
 };
 
-void* Simulator::RedirectNativeFunction(void* nativeFunction,
-                                        ABIFunctionType type) {
+
+
+
+void* Simulator::RedirectNativeFunction(void* nativeFunction, ABIFunctionType type) {
   Redirection* redirection = Redirection::Get(nativeFunction, type);
   return redirection->addressOfSvcInstruction();
 }
@@ -374,7 +397,7 @@ void Simulator::VisitException(const Instruction* instr) {
 
   switch (instr->Mask(ExceptionMask)) {
     case BRK: {
-      int lowbit = ImmException_offset;
+      int lowbit  = ImmException_offset;
       int highbit = ImmException_offset + ImmException_width - 1;
       HostBreakpoint(instr->Bits(highbit, lowbit));
       break;
@@ -422,44 +445,49 @@ void Simulator::VisitException(const Instruction* instr) {
   }
 }
 
-void Simulator::setGPR32Result(int32_t result) { set_wreg(0, result); }
 
-void Simulator::setGPR64Result(int64_t result) { set_xreg(0, result); }
+void Simulator::setGPR32Result(int32_t result) {
+    set_wreg(0, result);
+}
 
-void Simulator::setFP32Result(float result) { set_sreg(0, result); }
 
-void Simulator::setFP64Result(double result) { set_dreg(0, result); }
+void Simulator::setGPR64Result(int64_t result) {
+    set_xreg(0, result);
+}
+
+
+void Simulator::setFP32Result(float result) {
+    set_sreg(0, result);
+}
+
+
+void Simulator::setFP64Result(double result) {
+    set_dreg(0, result);
+}
+
 
 typedef int64_t (*Prototype_General0)();
 typedef int64_t (*Prototype_General1)(int64_t arg0);
 typedef int64_t (*Prototype_General2)(int64_t arg0, int64_t arg1);
 typedef int64_t (*Prototype_General3)(int64_t arg0, int64_t arg1, int64_t arg2);
-typedef int64_t (*Prototype_General4)(int64_t arg0, int64_t arg1, int64_t arg2,
-                                      int64_t arg3);
-typedef int64_t (*Prototype_General5)(int64_t arg0, int64_t arg1, int64_t arg2,
-                                      int64_t arg3, int64_t arg4);
-typedef int64_t (*Prototype_General6)(int64_t arg0, int64_t arg1, int64_t arg2,
-                                      int64_t arg3, int64_t arg4, int64_t arg5);
-typedef int64_t (*Prototype_General7)(int64_t arg0, int64_t arg1, int64_t arg2,
-                                      int64_t arg3, int64_t arg4, int64_t arg5,
-                                      int64_t arg6);
-typedef int64_t (*Prototype_General8)(int64_t arg0, int64_t arg1, int64_t arg2,
-                                      int64_t arg3, int64_t arg4, int64_t arg5,
-                                      int64_t arg6, int64_t arg7);
-typedef int64_t (*Prototype_GeneralGeneralGeneralInt64)(int64_t arg0,
-                                                        int64_t arg1,
-                                                        int64_t arg2,
+typedef int64_t (*Prototype_General4)(int64_t arg0, int64_t arg1, int64_t arg2, int64_t arg3);
+typedef int64_t (*Prototype_General5)(int64_t arg0, int64_t arg1, int64_t arg2, int64_t arg3,
+                                      int64_t arg4);
+typedef int64_t (*Prototype_General6)(int64_t arg0, int64_t arg1, int64_t arg2, int64_t arg3,
+                                      int64_t arg4, int64_t arg5);
+typedef int64_t (*Prototype_General7)(int64_t arg0, int64_t arg1, int64_t arg2, int64_t arg3,
+                                      int64_t arg4, int64_t arg5, int64_t arg6);
+typedef int64_t (*Prototype_General8)(int64_t arg0, int64_t arg1, int64_t arg2, int64_t arg3,
+                                      int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg7);
+typedef int64_t (*Prototype_GeneralGeneralGeneralInt64)(int64_t arg0, int64_t arg1, int64_t arg2,
                                                         int64_t arg3);
-typedef int64_t (*Prototype_GeneralGeneralInt64Int64)(int64_t arg0,
-                                                      int64_t arg1,
-                                                      int64_t arg2,
+typedef int64_t (*Prototype_GeneralGeneralInt64Int64)(int64_t arg0, int64_t arg1, int64_t arg2,
                                                       int64_t arg3);
 
 typedef int64_t (*Prototype_Int_Double)(double arg0);
 typedef int64_t (*Prototype_Int_IntDouble)(int64_t arg0, double arg1);
 typedef int64_t (*Prototype_Int_DoubleInt)(double arg0, int64_t arg1);
-typedef int64_t (*Prototype_Int_DoubleIntInt)(double arg0, uint64_t arg1,
-                                              uint64_t arg2);
+typedef int64_t (*Prototype_Int_DoubleIntInt)(double arg0, uint64_t arg1, uint64_t arg2);
 typedef int64_t (*Prototype_Int_IntDoubleIntInt)(uint64_t arg0, double arg1,
                                                  uint64_t arg2, uint64_t arg3);
 
@@ -472,44 +500,68 @@ typedef double (*Prototype_Double_Int)(int64_t arg0);
 typedef double (*Prototype_Double_DoubleInt)(double arg0, int64_t arg1);
 typedef double (*Prototype_Double_IntDouble)(int64_t arg0, double arg1);
 typedef double (*Prototype_Double_DoubleDouble)(double arg0, double arg1);
-typedef double (*Prototype_Double_DoubleDoubleDouble)(double arg0, double arg1,
-                                                      double arg2);
-typedef double (*Prototype_Double_DoubleDoubleDoubleDouble)(double arg0,
-                                                            double arg1,
-                                                            double arg2,
-                                                            double arg3);
+typedef double (*Prototype_Double_DoubleDoubleDouble)(double arg0, double arg1, double arg2);
+typedef double (*Prototype_Double_DoubleDoubleDoubleDouble)(double arg0, double arg1,
+                                                            double arg2, double arg3);
 
 typedef int32_t (*Prototype_Int32_General)(int64_t);
 typedef int32_t (*Prototype_Int32_GeneralInt32)(int64_t, int32_t);
 typedef int32_t (*Prototype_Int32_GeneralInt32Int32)(int64_t, int32_t, int32_t);
-typedef int32_t (*Prototype_Int32_GeneralInt32Int32Int32Int32)(int64_t, int32_t,
-                                                               int32_t, int32_t,
+typedef int32_t (*Prototype_Int32_GeneralInt32Int32Int32Int32)(int64_t,
+                                                               int32_t,
+                                                               int32_t,
+                                                               int32_t,
                                                                int32_t);
-typedef int32_t (*Prototype_Int32_GeneralInt32Int32Int32Int32Int32)(
-    int64_t, int32_t, int32_t, int32_t, int32_t, int32_t);
-typedef int32_t (*Prototype_Int32_GeneralInt32Int32Int32General)(
-    int64_t, int32_t, int32_t, int32_t, int64_t);
-typedef int32_t (*Prototype_Int32_GeneralInt32Int32Int64)(int64_t, int32_t,
-                                                          int32_t, int64_t);
-typedef int32_t (*Prototype_Int32_GeneralInt32Int32General)(int64_t, int32_t,
-                                                            int32_t, int64_t);
-typedef int32_t (*Prototype_Int32_GeneralInt32Int64Int64)(int64_t, int32_t,
-                                                          int64_t, int64_t);
-typedef int32_t (*Prototype_Int32_GeneralInt32GeneralInt32)(int64_t, int32_t,
-                                                            int64_t, int32_t);
-typedef int32_t (*Prototype_Int32_GeneralInt32GeneralInt32Int32)(
-    int64_t, int32_t, int64_t, int32_t, int32_t);
+typedef int32_t (*Prototype_Int32_GeneralInt32Int32Int32Int32Int32)(int64_t,
+                                                                    int32_t,
+                                                                    int32_t,
+                                                                    int32_t,
+                                                                    int32_t,
+                                                                    int32_t);
+typedef int32_t (*Prototype_Int32_GeneralInt32Int32Int32General)(int64_t,
+                                                                 int32_t,
+                                                                 int32_t,
+                                                                 int32_t,
+                                                                 int64_t);
+typedef int32_t (*Prototype_Int32_GeneralInt32Int32Int64)(int64_t,
+                                                          int32_t,
+                                                          int32_t,
+                                                          int64_t);
+typedef int32_t (*Prototype_Int32_GeneralInt32Int32General)(int64_t,
+                                                            int32_t,
+                                                            int32_t,
+                                                            int64_t);
+typedef int32_t (*Prototype_Int32_GeneralInt32Int64Int64)(int64_t,
+                                                          int32_t,
+                                                          int64_t,
+                                                          int64_t);
+typedef int32_t (*Prototype_Int32_GeneralInt32GeneralInt32)(int64_t,
+                                                            int32_t,
+                                                            int64_t,
+                                                            int32_t);
+typedef int32_t (*Prototype_Int32_GeneralInt32GeneralInt32Int32)(int64_t,
+                                                                 int32_t,
+                                                                 int64_t,
+                                                                 int32_t,
+                                                                 int32_t);
 typedef int32_t (*Prototype_Int32_GeneralGeneral)(int64_t, int64_t);
-typedef int32_t (*Prototype_Int32_GeneralGeneralInt32Int32)(int64_t, int64_t,
-                                                            int32_t, int32_t);
+typedef int32_t (*Prototype_Int32_GeneralGeneralInt32Int32)(int64_t,
+                                                            int64_t,
+                                                            int32_t,
+                                                            int32_t);
 typedef int64_t (*Prototype_General_GeneralInt32)(int64_t, int32_t);
-typedef int64_t (*Prototype_General_GeneralInt32Int32)(int64_t, int32_t,
+typedef int64_t (*Prototype_General_GeneralInt32Int32)(int64_t,
+                                                       int32_t,
                                                        int32_t);
-typedef int64_t (*Prototype_General_GeneralInt32Int32General)(int64_t, int32_t,
-                                                              int32_t, int64_t);
+typedef int64_t (*Prototype_General_GeneralInt32Int32General)(int64_t,
+                                                              int32_t,
+                                                              int32_t,
+                                                              int64_t);
 
 
-void Simulator::VisitCallRedirection(const Instruction* instr) {
+void
+Simulator::VisitCallRedirection(const Instruction* instr)
+{
   VIXL_ASSERT(instr->Mask(ExceptionMask) == SVC);
   VIXL_ASSERT(instr->ImmException() == kCallRtRedirected);
 
@@ -581,49 +633,41 @@ void Simulator::VisitCallRedirection(const Instruction* instr) {
       break;
     }
     case js::jit::Args_General4: {
-      int64_t ret =
-          reinterpret_cast<Prototype_General4>(nativeFn)(x0, x1, x2, x3);
+      int64_t ret = reinterpret_cast<Prototype_General4>(nativeFn)(x0, x1, x2, x3);
       setGPR64Result(ret);
       break;
     }
     case js::jit::Args_General5: {
-      int64_t ret =
-          reinterpret_cast<Prototype_General5>(nativeFn)(x0, x1, x2, x3, x4);
+      int64_t ret = reinterpret_cast<Prototype_General5>(nativeFn)(x0, x1, x2, x3, x4);
       setGPR64Result(ret);
       break;
     }
     case js::jit::Args_General6: {
-      int64_t ret = reinterpret_cast<Prototype_General6>(nativeFn)(x0, x1, x2,
-                                                                   x3, x4, x5);
+      int64_t ret = reinterpret_cast<Prototype_General6>(nativeFn)(x0, x1, x2, x3, x4, x5);
       setGPR64Result(ret);
       break;
     }
     case js::jit::Args_General7: {
-      int64_t ret = reinterpret_cast<Prototype_General7>(nativeFn)(
-          x0, x1, x2, x3, x4, x5, x6);
+      int64_t ret = reinterpret_cast<Prototype_General7>(nativeFn)(x0, x1, x2, x3, x4, x5, x6);
       setGPR64Result(ret);
       break;
     }
     case js::jit::Args_General8: {
-      int64_t ret = reinterpret_cast<Prototype_General8>(nativeFn)(
-          x0, x1, x2, x3, x4, x5, x6, x7);
+      int64_t ret = reinterpret_cast<Prototype_General8>(nativeFn)(x0, x1, x2, x3, x4, x5, x6, x7);
       setGPR64Result(ret);
       break;
     }
     case js::jit::Args_Int_GeneralGeneralGeneralInt64: {
-      int64_t ret = reinterpret_cast<Prototype_GeneralGeneralGeneralInt64>(
-          nativeFn)(x0, x1, x2, x3);
+      int64_t ret = reinterpret_cast<Prototype_GeneralGeneralGeneralInt64>(nativeFn)(x0, x1, x2, x3);
       setGPR64Result(ret);
       break;
     }
     case js::jit::Args_Int_GeneralGeneralInt64Int64: {
-      int64_t ret = reinterpret_cast<Prototype_GeneralGeneralInt64Int64>(
-          nativeFn)(x0, x1, x2, x3);
+      int64_t ret = reinterpret_cast<Prototype_GeneralGeneralInt64Int64>(nativeFn)(x0, x1, x2, x3);
       setGPR64Result(ret);
       break;
     }
 
-    
     
     case js::jit::Args_Int_Double: {
       int64_t ret = reinterpret_cast<Prototype_Int_Double>(nativeFn)(d0);
@@ -643,15 +687,13 @@ void Simulator::VisitCallRedirection(const Instruction* instr) {
     }
 
     case js::jit::Args_Int_IntDoubleIntInt: {
-      int64_t ret = reinterpret_cast<Prototype_Int_IntDoubleIntInt>(nativeFn)(
-          x0, d0, x1, x2);
+      int64_t ret = reinterpret_cast<Prototype_Int_IntDoubleIntInt>(nativeFn)(x0, d0, x1, x2);
       setGPR64Result(ret);
       break;
     }
 
     case js::jit::Args_Int_DoubleIntInt: {
-      int64_t ret =
-          reinterpret_cast<Prototype_Int_DoubleIntInt>(nativeFn)(d0, x0, x1);
+      int64_t ret = reinterpret_cast<Prototype_Int_DoubleIntInt>(nativeFn)(d0, x0, x1);
       setGPR64Result(ret);
       break;
     }
@@ -663,8 +705,7 @@ void Simulator::VisitCallRedirection(const Instruction* instr) {
       break;
     }
     case js::jit::Args_Float32_Float32Float32: {
-      float ret =
-          reinterpret_cast<Prototype_Float32_Float32Float32>(nativeFn)(s0, s1);
+      float ret = reinterpret_cast<Prototype_Float32_Float32Float32>(nativeFn)(s0, s1);
       setFP32Result(ret);
       break;
     }
@@ -686,33 +727,28 @@ void Simulator::VisitCallRedirection(const Instruction* instr) {
       break;
     }
     case js::jit::Args_Double_DoubleInt: {
-      double ret =
-          reinterpret_cast<Prototype_Double_DoubleInt>(nativeFn)(d0, x0);
+      double ret = reinterpret_cast<Prototype_Double_DoubleInt>(nativeFn)(d0, x0);
       setFP64Result(ret);
       break;
     }
     case js::jit::Args_Double_DoubleDouble: {
-      double ret =
-          reinterpret_cast<Prototype_Double_DoubleDouble>(nativeFn)(d0, d1);
+      double ret = reinterpret_cast<Prototype_Double_DoubleDouble>(nativeFn)(d0, d1);
       setFP64Result(ret);
       break;
     }
     case js::jit::Args_Double_DoubleDoubleDouble: {
-      double ret = reinterpret_cast<Prototype_Double_DoubleDoubleDouble>(
-          nativeFn)(d0, d1, d2);
+      double ret = reinterpret_cast<Prototype_Double_DoubleDoubleDouble>(nativeFn)(d0, d1, d2);
       setFP64Result(ret);
       break;
     }
     case js::jit::Args_Double_DoubleDoubleDoubleDouble: {
-      double ret = reinterpret_cast<Prototype_Double_DoubleDoubleDoubleDouble>(
-          nativeFn)(d0, d1, d2, d3);
+      double ret = reinterpret_cast<Prototype_Double_DoubleDoubleDoubleDouble>(nativeFn)(d0, d1, d2, d3);
       setFP64Result(ret);
       break;
     }
 
     case js::jit::Args_Double_IntDouble: {
-      double ret =
-          reinterpret_cast<Prototype_Double_IntDouble>(nativeFn)(x0, d0);
+      double ret = reinterpret_cast<Prototype_Double_IntDouble>(nativeFn)(x0, d0);
       setFP64Result(ret);
       break;
     }
@@ -848,11 +884,14 @@ void Simulator::VisitCallRedirection(const Instruction* instr) {
   
   set_lr(savedLR);
   set_pc((Instruction*)savedLR);
-  if (getenv("USE_DEBUGGER")) printf("SVCRET\n");
+  if (getenv("USE_DEBUGGER"))
+    printf("SVCRET\n");
 }
 
 #ifdef JS_CACHE_SIMULATOR_ARM64
-void Simulator::FlushICache() {
+void
+Simulator::FlushICache()
+{
   
   
   auto& vec = SimulatorProcess::getICacheFlushes(this);
@@ -885,19 +924,19 @@ void CachingDecoder::Decode(const Instruction* instr) {
   }
 
   switch (state) {
-    case InstDecodedKind::NotDecodedYet: {
-      cachingDecoder_.setDecodePtr(lastPage_->decodePtr(instr));
-      this->Decoder::Decode(instr);
-      break;
-    }
-#  define CASE(A)              \
-    case InstDecodedKind::A: { \
-      Visit##A(instr);         \
-      break;                   \
-    }
+  case InstDecodedKind::NotDecodedYet: {
+    cachingDecoder_.setDecodePtr(lastPage_->decodePtr(instr));
+    this->Decoder::Decode(instr);
+    break;
+  }
+#define CASE(A) \
+  case InstDecodedKind::A: { \
+    Visit##A(instr); \
+    break; \
+  }
 
-      VISITOR_LIST(CASE)
-#  undef CASE
+  VISITOR_LIST(CASE)
+#undef CASE
   }
 }
 
@@ -947,8 +986,7 @@ void SimulatorProcess::membarrier() {
   }
 }
 
-SimulatorProcess::ICacheFlushes& SimulatorProcess::getICacheFlushes(
-    Simulator* sim) {
+SimulatorProcess::ICacheFlushes& SimulatorProcess::getICacheFlushes(Simulator* sim) {
   MOZ_ASSERT(singleton_->lock_.ownedByCurrentThread());
   for (auto& s : singleton_->pendingFlushes_) {
     if (s.thread == sim) {
@@ -975,9 +1013,11 @@ void SimulatorProcess::unregisterSimulator(Simulator* sim) {
   }
   MOZ_CRASH("Simulator is not registered in the SimulatorProcess");
 }
-#endif  
+#endif 
 
-}  
-}  
+} 
+} 
 
-vixl::Simulator* JSContext::simulator() const { return simulator_; }
+vixl::Simulator* JSContext::simulator() const {
+  return simulator_;
+}
