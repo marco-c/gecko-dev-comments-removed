@@ -1,5 +1,6 @@
 #include "gdb-tests.h"
 #include "jsapi.h"  
+#include "jsfriendapi.h"  
 
 #include "jit/JitOptions.h"               
 #include "js/CallArgs.h"                  
