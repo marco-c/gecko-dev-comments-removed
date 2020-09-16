@@ -25,11 +25,14 @@ wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay) {
 
 
 
+#define MAX_DISPLAY_CONNECTIONS 5
 
-static nsTArray<RefPtr<nsWaylandDisplay>> gWaylandDisplays;
-static StaticMutex gWaylandDisplayArrayWriteMutex;
+static nsWaylandDisplay* gWaylandDisplays[MAX_DISPLAY_CONNECTIONS];
+static StaticMutex gWaylandDisplayArrayMutex;
+static StaticMutex gWaylandThreadLoopMutex;
 
 void WaylandDisplayShutdown() {
+  StaticMutexAutoLock lock(gWaylandDisplayArrayMutex);
   for (auto& display : gWaylandDisplays) {
     if (display) {
       display->ShutdownThreadLoop();
@@ -37,17 +40,16 @@ void WaylandDisplayShutdown() {
   }
 }
 
-static void DispatchDisplay(RefPtr<nsWaylandDisplay> aDisplay) {
-  
-  
-  
-  for (auto& display : gWaylandDisplays) {
-    if (display == aDisplay) {
-      aDisplay->DispatchEventQueue();
-      return;
-    }
+static void ReleaseDisplaysAtExit() {
+  StaticMutexAutoLock lock(gWaylandDisplayArrayMutex);
+  for (int i = 0; i < MAX_DISPLAY_CONNECTIONS; i++) {
+    delete gWaylandDisplays[i];
+    gWaylandDisplays[i] = nullptr;
   }
-  NS_WARNING("DispatchDisplay was called for released display!");
+}
+
+static void DispatchDisplay(nsWaylandDisplay* aDisplay) {
+  aDisplay->DispatchEventQueue();
 }
 
 
@@ -58,8 +60,10 @@ static void DispatchDisplay(RefPtr<nsWaylandDisplay> aDisplay) {
 
 
 void WaylandDispatchDisplays() {
+  StaticMutexAutoLock arrayLock(gWaylandDisplayArrayMutex);
   for (auto& display : gWaylandDisplays) {
     if (display) {
+      StaticMutexAutoLock loopLock(gWaylandThreadLoopMutex);
       MessageLoop* loop = display->GetThreadLoop();
       if (loop) {
         loop->PostTask(NewRunnableFunction("WaylandDisplayDispatch",
@@ -69,17 +73,10 @@ void WaylandDispatchDisplays() {
   }
 }
 
-void WaylandDisplayRelease() {
-  StaticMutexAutoLock lock(gWaylandDisplayArrayWriteMutex);
-  gWaylandDisplays.Clear();
-}
 
-
-RefPtr<nsWaylandDisplay> WaylandDisplayGet(GdkDisplay* aGdkDisplay) {
+static nsWaylandDisplay* WaylandDisplayGetLocked(GdkDisplay* aGdkDisplay,
+                                                 const StaticMutexAutoLock&) {
   wl_display* waylandDisplay = WaylandDisplayGetWLDisplay(aGdkDisplay);
-  if (!waylandDisplay) {
-    return nullptr;
-  }
 
   
   for (auto& display : gWaylandDisplays) {
@@ -88,9 +85,28 @@ RefPtr<nsWaylandDisplay> WaylandDisplayGet(GdkDisplay* aGdkDisplay) {
     }
   }
 
-  StaticMutexAutoLock arrayLock(gWaylandDisplayArrayWriteMutex);
-  gWaylandDisplays.AppendElement(new nsWaylandDisplay(waylandDisplay));
-  return gWaylandDisplays[gWaylandDisplays.Length() - 1];
+  for (auto& display : gWaylandDisplays) {
+    if (display == nullptr) {
+      display = new nsWaylandDisplay(waylandDisplay);
+      atexit(ReleaseDisplaysAtExit);
+      return display;
+    }
+  }
+
+  MOZ_CRASH("There's too many wayland display conections!");
+  return nullptr;
+}
+
+nsWaylandDisplay* WaylandDisplayGet(GdkDisplay* aGdkDisplay) {
+  if (!aGdkDisplay) {
+    aGdkDisplay = gdk_display_get_default();
+    if (!aGdkDisplay || GDK_IS_X11_DISPLAY(aGdkDisplay)) {
+      return nullptr;
+    }
+  }
+
+  StaticMutexAutoLock lock(gWaylandDisplayArrayMutex);
+  return WaylandDisplayGetLocked(aGdkDisplay, lock);
 }
 
 void nsWaylandDisplay::SetShm(wl_shm* aShm) { mShm = aShm; }
@@ -342,7 +358,10 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay, bool aLighWrapper)
   }
 }
 
-void nsWaylandDisplay::ShutdownThreadLoop() { mThreadLoop = nullptr; }
+void nsWaylandDisplay::ShutdownThreadLoop() {
+  StaticMutexAutoLock lock(gWaylandThreadLoopMutex);
+  mThreadLoop = nullptr;
+}
 
 nsWaylandDisplay::~nsWaylandDisplay() {
   wl_registry_destroy(mRegistry);
