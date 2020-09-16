@@ -57,9 +57,7 @@ nsresult nsEffectiveTLDService::Init() {
 
   nsresult rv;
   mIDNService = do_GetService(NS_IDNSERVICE_CONTRACTID, &rv);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  if (NS_FAILED(rv)) return rv;
 
   gService = this;
   RegisterWeakMemoryReporter(this);
@@ -210,9 +208,7 @@ nsEffectiveTLDService::GetPublicSuffixFromHost(const nsACString& aHostname,
   
   nsAutoCString normHostname(aHostname);
   nsresult rv = NormalizeHostname(normHostname);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  if (NS_FAILED(rv)) return rv;
 
   return GetBaseDomainInternal(normHostname, 0, false, aPublicSuffix);
 }
@@ -224,9 +220,7 @@ nsEffectiveTLDService::GetKnownPublicSuffixFromHost(const nsACString& aHostname,
   
   nsAutoCString normHostname(aHostname);
   nsresult rv = NormalizeHostname(normHostname);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  if (NS_FAILED(rv)) return rv;
 
   return GetBaseDomainInternal(normHostname, 0, true, aPublicSuffix);
 }
@@ -244,9 +238,7 @@ nsEffectiveTLDService::GetBaseDomainFromHost(const nsACString& aHostname,
   
   nsAutoCString normHostname(aHostname);
   nsresult rv = NormalizeHostname(normHostname);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  if (NS_FAILED(rv)) return rv;
 
   return GetBaseDomainInternal(normHostname, aAdditionalParts + 1, false,
                                aBaseDomain);
@@ -275,21 +267,16 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(
   const int kExceptionRule = 1;
   const int kWildcardRule = 2;
 
-  if (aHostname.IsEmpty()) {
-    return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
-  }
+  if (aHostname.IsEmpty()) return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
 
   
   bool trailingDot = aHostname.Last() == '.';
-  if (trailingDot) {
-    aHostname.Truncate(aHostname.Length() - 1);
-  }
+  if (trailingDot) aHostname.Truncate(aHostname.Length() - 1);
 
   
   
-  if (aHostname.IsEmpty() || aHostname.Last() == '.') {
+  if (aHostname.IsEmpty() || aHostname.Last() == '.')
     return NS_ERROR_INVALID_ARG;
-  }
 
   
   
@@ -363,7 +350,7 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(
         eTLD = prevDomain;
         break;
       }
-      if (result != kExceptionRule || !nextDot) {
+      if ((result == kWildcardRule || result != kExceptionRule) || !nextDot) {
         
         eTLD = currDomain;
         break;
@@ -396,9 +383,8 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(
     NS_ASSERTION(aAdditionalParts == -1,
                  "aAdditionalParts can't be negative and different from -1");
 
-    for (iter = aHostname.get(); iter != eTLD && *iter != '.'; iter++) {
+    for (iter = aHostname.get(); iter != eTLD && *iter != '.'; iter++)
       ;
-    }
 
     if (iter != eTLD) {
       iter++;
@@ -412,9 +398,7 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(
     iter = eTLD;
 
     while (true) {
-      if (iter == begin) {
-        break;
-      }
+      if (iter == begin) break;
 
       if (*(--iter) == '.' && aAdditionalParts-- == 0) {
         ++iter;
@@ -442,9 +426,7 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(
   }
 
   
-  if (trailingDot) {
-    aBaseDomain.Append('.');
-  }
+  if (trailingDot) aBaseDomain.Append('.');
 
   return NS_OK;
 }
@@ -455,9 +437,7 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(
 nsresult nsEffectiveTLDService::NormalizeHostname(nsCString& aHostname) {
   if (!IsAscii(aHostname)) {
     nsresult rv = mIDNService->ConvertUTF8toACE(aHostname, aHostname);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
+    if (NS_FAILED(rv)) return rv;
   }
 
   ToLowerCase(aHostname);

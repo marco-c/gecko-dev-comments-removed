@@ -452,8 +452,8 @@ class AHostResolver {
 
 
 class nsHostResolver : public nsISupports, public AHostResolver {
-  using CondVar = mozilla::CondVar;
-  using Mutex = mozilla::Mutex;
+  typedef mozilla::CondVar CondVar;
+  typedef mozilla::Mutex Mutex;
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -464,7 +464,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   static nsresult Create(uint32_t maxCacheEntries,  
                          uint32_t defaultCacheEntryLifetime,  
                          uint32_t defaultGracePeriod,         
-                         nsHostResolver** result);
+                         nsHostResolver** resolver);
 
   
 
@@ -486,7 +486,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
 
 
 
-  nsresult ResolveHost(const nsACString& aHost, const nsACString& trrServer,
+  nsresult ResolveHost(const nsACString& hostname, const nsACString& trrServer,
                        uint16_t type,
                        const mozilla::OriginAttributes& aOriginAttributes,
                        uint16_t flags, uint16_t af,
@@ -574,7 +574,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
 
   
   nsresult NameLookup(nsHostRecord*);
-  bool GetHostToLookup(AddrHostRecord** result);
+  bool GetHostToLookup(AddrHostRecord** m);
 
   
   
