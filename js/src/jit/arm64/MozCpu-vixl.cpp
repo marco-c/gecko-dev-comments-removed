@@ -34,27 +34,26 @@
 #endif
 
 #if defined(__aarch64__) && !defined(_MSC_VER) && !defined(XP_DARWIN)
-#   if defined(__linux__)
+#  if defined(__linux__)
 #    include <linux/membarrier.h>
 #    include <sys/syscall.h>
 #    include <sys/utsname.h>
-#   elif defined(__ANDROID__)
+#  elif defined(__ANDROID__)
 #    include <sys/syscall.h>
 #    include <unistd.h>
-#   else
+#  else
 #    error "Missing platform-specific declarations for membarrier syscall!"
-#   endif 
+#  endif  
 
-#  include "vm/JSContext.h" 
+#  include "vm/JSContext.h"  
 
 static int membarrier(int cmd, int flags) {
-    return syscall(__NR_membarrier, cmd, flags);
+  return syscall(__NR_membarrier, cmd, flags);
 }
 
-#endif 
+#endif  
 
 namespace vixl {
-
 
 
 void CPU::SetUp() {
@@ -87,13 +86,12 @@ void CPU::SetUp() {
   icache_line_size_ = std::min(icache_line_size_, conservative_line_size);
 }
 
-
 uint32_t CPU::GetCacheType() {
 #if defined(__aarch64__) && !defined(_MSC_VER) && !defined(XP_DARWIN)
   uint64_t cache_type_register;
   
-  __asm__ __volatile__ ("mrs %[ctr], ctr_el0"  
-                        : [ctr] "=r" (cache_type_register));
+  __asm__ __volatile__("mrs %[ctr], ctr_el0"  
+                       : [ ctr ] "=r"(cache_type_register));
   VIXL_ASSERT(IsUint32(cache_type_register));
   return static_cast<uint32_t>(cache_type_register);
 #else
@@ -121,9 +119,10 @@ bool CPU::CanFlushICacheFromBackgroundThreads() {
     struct utsname uts;
     int major, minor;
     kernelHasMembarrier = uname(&uts) == 0 &&
-        strcmp(uts.sysname, "Linux") == 0 &&
-        sscanf(uts.release, "%d.%d", &major, &minor) == 2 &&
-        major >= kRequiredMajor && (major != kRequiredMajor || minor >= kRequiredMinor);
+                          strcmp(uts.sysname, "Linux") == 0 &&
+                          sscanf(uts.release, "%d.%d", &major, &minor) == 2 &&
+                          major >= kRequiredMajor &&
+                          (major != kRequiredMajor || minor >= kRequiredMinor);
     computed = true;
   }
 
@@ -140,11 +139,13 @@ bool CPU::CanFlushICacheFromBackgroundThreads() {
   return true;
 #else
   
+  
   return true;
 #endif
 }
 
-void CPU::EnsureIAndDCacheCoherency(void *address, size_t length, bool codeIsThreadLocal) {
+void CPU::EnsureIAndDCacheCoherency(void* address, size_t length,
+                                    bool codeIsThreadLocal) {
 #if defined(JS_SIMULATOR_ARM64) && defined(JS_CACHE_SIMULATOR_ARM64)
   
   
@@ -202,67 +203,71 @@ void CPU::EnsureIAndDCacheCoherency(void *address, size_t length, bool codeIsThr
   uintptr_t end = start + length;
 
   do {
-    __asm__ __volatile__ (
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      "   dc    civac, %[dline]\n"
-      :
-      : [dline] "r" (dline)
-      
-      
-      : "memory");
+    __asm__ __volatile__(
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        "   dc    civac, %[dline]\n"
+        :
+        : [ dline ] "r"(dline)
+        
+        
+        : "memory");
     dline += dsize;
   } while (dline < end);
 
-  __asm__ __volatile__ (
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    "   dsb   ish\n"
-    : : : "memory");
+  __asm__ __volatile__(
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      "   dsb   ish\n"
+      :
+      :
+      : "memory");
 
   do {
-    __asm__ __volatile__ (
-      
-      
-      
-      
-      
-      
-      "   ic   ivau, %[iline]\n"
-      :
-      : [iline] "r" (iline)
-      : "memory");
+    __asm__ __volatile__(
+        
+        
+        
+        
+        
+        
+        "   ic   ivau, %[iline]\n"
+        :
+        : [ iline ] "r"(iline)
+        : "memory");
     iline += isize;
   } while (iline < end);
 
-  __asm__ __volatile__ (
-    
-    
-    "   dsb  ish\n"
+  __asm__ __volatile__(
+      
+      
+      "   dsb  ish\n"
 
-    
-    
-    
-    "   isb\n"
-    : : : "memory");
+      
+      
+      
+      "   isb\n"
+      :
+      :
+      : "memory");
 
   if (!codeIsThreadLocal) {
     
