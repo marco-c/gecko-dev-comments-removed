@@ -1182,6 +1182,7 @@ nsresult TRR::DohDecode(nsCString& aHost) {
     nsAutoCString qname;
     rv = GetQname(qname, index);
     if (NS_FAILED(rv)) {
+      LOG(("Bad qname for additional record"));
       return rv;
     }
 
@@ -1189,28 +1190,32 @@ nsresult TRR::DohDecode(nsCString& aHost) {
       return NS_ERROR_ILLEGAL_VALUE;
     }
     uint16_t type = get16bit(mResponse, index);
-    index += 2;  
+    index += 2;
+    
+    
     uint16_t cls = get16bit(mResponse, index);
-    index += 2;  
+    index += 2;
+    
+    
     uint32_t ttl = get32bit(mResponse, index);
-    index += 4;  
+    index += 4;
+    
 
     
     if (mBodySize < (index + 2)) {
+      LOG(("Record too small"));
       return NS_ERROR_ILLEGAL_VALUE;
     }
 
     uint16_t rdlength = get16bit(mResponse, index);
     index += 2;
     if (mBodySize < (index + rdlength)) {
+      LOG(("rdlength too big"));
       return NS_ERROR_ILLEGAL_VALUE;
     }
 
     auto parseRecord = [&]() {
-      if (kDNS_CLASS_IN != cls) {
-        return;
-      }
-
+      LOG(("Parsing additional record type: %u", type));
       auto& entry = additionalRecords.GetOrInsert(qname);
       if (!entry) {
         entry.reset(new DOHresp());
@@ -1218,6 +1223,10 @@ nsresult TRR::DohDecode(nsCString& aHost) {
 
       switch (type) {
         case TRRTYPE_A:
+          if (kDNS_CLASS_IN != cls) {
+            LOG(("NOT IN - returning"));
+            return;
+          }
           if (rdlength != 4) {
             LOG(("TRR bad length for A (%u)\n", rdlength));
             return;
@@ -1231,6 +1240,10 @@ nsresult TRR::DohDecode(nsCString& aHost) {
           }
           break;
         case TRRTYPE_AAAA:
+          if (kDNS_CLASS_IN != cls) {
+            LOG(("NOT IN - returning"));
+            return;
+          }
           if (rdlength != 16) {
             LOG(("TRR bad length for AAAA (%u)\n", rdlength));
             return;
@@ -1241,6 +1254,47 @@ nsresult TRR::DohDecode(nsCString& aHost) {
             return;
           }
           break;
+        case TRRTYPE_OPT: {  
+          LOG(("Parsing opt rdlen: %u", rdlength));
+          unsigned int offset = 0;
+          while (offset + 2 <= rdlength) {
+            uint16_t optCode = get16bit(mResponse, index + offset);
+            LOG(("optCode: %u", optCode));
+            offset += 2;
+            if (offset + 2 > rdlength) {
+              break;
+            }
+            uint16_t optLen = get16bit(mResponse, index + offset);
+            LOG(("optLen: %u", optLen));
+            offset += 2;
+            if (offset + optLen > rdlength) {
+              LOG(("offset: %u, optLen: %u, rdlen: %u", offset, optLen,
+                   rdlength));
+              break;
+            }
+
+            LOG(("OPT: code: %u len:%u", optCode, optLen));
+
+            if (optCode != 15) {
+              offset += optLen;
+              continue;
+            }
+
+            
+
+            if (offset + 2 > rdlength || optLen < 2) {
+              break;
+            }
+            mExtendedError = get16bit(mResponse, index + offset);
+
+            LOG((
+                "Extended error code: %u message: %s", mExtendedError,
+                nsAutoCString((char*)mResponse + index + offset + 2, optLen - 2)
+                    .get()));
+            offset += optLen;
+          }
+          break;
+        }
         default:
           break;
       }
@@ -1496,6 +1550,31 @@ nsresult TRR::ReturnData(nsIChannel* aChannel) {
   return NS_OK;
 }
 
+
+
+
+
+bool hardFail(uint16_t code) {
+  const uint16_t noFallbackErrors[] = {
+      4,   
+      6,   
+      7,   
+      8,   
+      9,   
+      10,  
+      11,  
+      12,  
+      17,  
+  };
+
+  for (const auto& err : noFallbackErrors) {
+    if (code == err) {
+      return true;
+    }
+  }
+  return false;
+}
+
 nsresult TRR::FailData(nsresult error) {
   if (!mHostResolver) {
     return NS_ERROR_FAILURE;
@@ -1503,6 +1582,10 @@ nsresult TRR::FailData(nsresult error) {
 
   
   RecordReason(nsHostRecord::TRR_FAILED);
+
+  if (mExtendedError != UINT16_MAX && hardFail(mExtendedError)) {
+    error = NS_ERROR_DEFINITIVE_UNKNOWN_HOST;
+  }
 
   if (mType == TRRTYPE_TXT || mType == TRRTYPE_HTTPSSVC) {
     TypeRecordResultType empty(Nothing{});
