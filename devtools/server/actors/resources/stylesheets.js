@@ -61,6 +61,8 @@ class StyleSheetWatcher {
     this._styleSheetMap = new Map();
     
     this._mqlList = [];
+
+    this._onApplicableStateChanged = this._onApplicableStateChanged.bind(this);
   }
 
   
@@ -75,7 +77,15 @@ class StyleSheetWatcher {
 
   async watch(targetActor, { onAvailable, onUpdated }) {
     this._targetActor = targetActor;
+    this._onAvailable = onAvailable;
     this._onUpdated = onUpdated;
+
+    
+    this._targetActor.chromeEventHandler.addEventListener(
+      "StyleSheetApplicableStateChanged",
+      this._onApplicableStateChanged,
+      true
+    );
 
     const styleSheets = [];
 
@@ -87,7 +97,7 @@ class StyleSheetWatcher {
       styleSheets.push(...(await this._getStyleSheets(window)));
     }
 
-    onAvailable(
+    this._onAvailable(
       await Promise.all(
         styleSheets.map(styleSheet => this._toResource(styleSheet))
       )
@@ -450,6 +460,42 @@ class StyleSheetWatcher {
     });
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _onApplicableStateChanged({ applicable, stylesheet: styleSheet }) {
+    for (const existing of this._styleSheetMap.values()) {
+      if (styleSheet === existing.styleSheet) {
+        return;
+      }
+    }
+
+    if (
+      
+      applicable &&
+      
+      styleSheet.ownerNode &&
+      this._shouldListSheet(styleSheet) &&
+      !this._haveAncestorWithSameURL(styleSheet)
+    ) {
+      this._onAvailable([await this._toResource(styleSheet)]);
+    }
+  }
+
   _shouldListSheet(styleSheet) {
     
     
@@ -494,7 +540,17 @@ class StyleSheetWatcher {
     ]);
   }
 
-  destroy() {}
+  destroy() {
+    if (!this._targetActor.docShell) {
+      return;
+    }
+
+    this._targetActor.chromeEventHandler.removeEventListener(
+      "StyleSheetApplicableStateChanged",
+      this._onApplicableStateChanged,
+      true
+    );
+  }
 }
 
 module.exports = StyleSheetWatcher;
