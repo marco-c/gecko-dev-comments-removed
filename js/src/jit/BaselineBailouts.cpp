@@ -156,6 +156,10 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
                                     bool* fixedUp);
   MOZ_MUST_USE bool buildExpressionStack();
 
+#ifdef DEBUG
+  MOZ_MUST_USE bool validateFrame();
+#endif
+
  private:
   JSScript* script() const {
     MOZ_ASSERT(cx_->suppressGC);
@@ -903,6 +907,56 @@ bool BaselineStackBuilder::envChainSlotCanBeOptimized() {
   return true;
 }
 
+bool BaselineStackBuilder::validateFrame() {
+  const uint32_t frameSize = framePushed();
+  blFrame()->setDebugFrameSize(frameSize);
+  JitSpew(JitSpew_BaselineBailouts, "      FrameSize=%u", frameSize);
+
+  
+  MOZ_ASSERT(blFrame()->debugNumValueSlots() >= script()->nfixed());
+  MOZ_ASSERT(blFrame()->debugNumValueSlots() <= script()->nslots());
+
+  uint32_t expectedDepth;
+  bool reachablePC;
+  jsbytecode* pcForStackDepth = resumeAfter() ? GetNextPc(pc_) : pc_;
+  if (!ReconstructStackDepth(cx_, script(), pcForStackDepth, &expectedDepth,
+                             &reachablePC)) {
+    return false;
+  }
+  if (!reachablePC) {
+    return true;
+  }
+
+  
+  
+  
+  
+  if (op_ == JSOp::FunApply && iter_.moreFrames() && !resumeAfter()) {
+    return true;
+  }
+  if (op_ == JSOp::FunCall) {
+    
+    
+    
+    MOZ_ASSERT(expectedDepth - exprStackSlots() <= 1);
+  } else if (iter_.moreFrames() && IsIonInlinableGetterOrSetterOp(op_)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(exprStackSlots() - expectedDepth == (IsGetElemOp(op_) ? 0 : 1));
+  } else {
+    MOZ_ASSERT(exprStackSlots() == expectedDepth);
+  }
+  return true;
+}
+
 static inline bool IsInlinableFallback(ICFallbackStub* icEntry) {
   return icEntry->isCall_Fallback() || icEntry->isGetProp_Fallback() ||
          icEntry->isSetProp_Fallback() || icEntry->isGetElem_Fallback();
@@ -1154,58 +1208,15 @@ static bool InitFromBailout(JSContext* cx, HandleFunction fun,
     return false;
   }
 
-  
-  
-  const uint32_t frameSize = builder.framePushed();
 #ifdef DEBUG
-  builder.blFrame()->setDebugFrameSize(frameSize);
-#endif
-  JitSpew(JitSpew_BaselineBailouts, "      FrameSize=%u", frameSize);
-
-  
-  MOZ_ASSERT(builder.blFrame()->debugNumValueSlots() >= script->nfixed());
-  MOZ_ASSERT(builder.blFrame()->debugNumValueSlots() <= script->nslots());
-
-  const uint32_t pcOff = script->pcToOffset(pc);
-  JitScript* jitScript = script->jitScript();
-
-#ifdef DEBUG
-  uint32_t expectedDepth;
-  bool reachablePC;
-  if (!ReconstructStackDepth(cx, script, resumeAfter ? GetNextPc(pc) : pc,
-                             &expectedDepth, &reachablePC)) {
+  if (!builder.validateFrame()) {
     return false;
   }
-
-  if (reachablePC) {
-    if (op != JSOp::FunApply || !iter.moreFrames() || resumeAfter) {
-      if (op == JSOp::FunCall) {
-        
-        
-        
-        MOZ_ASSERT(expectedDepth - exprStackSlots <= 1);
-      } else if (iter.moreFrames() && IsIonInlinableGetterOrSetterOp(op)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(exprStackSlots - expectedDepth == (IsGetElemOp(op) ? 0 : 1));
-      } else {
-        
-        
-        
-        
-        MOZ_ASSERT(exprStackSlots == expectedDepth);
-      }
-    }
-  }
 #endif
+
+  const uint32_t frameSize = builder.framePushed();
+  const uint32_t pcOff = script->pcToOffset(pc);
+  JitScript* jitScript = script->jitScript();
 
 #ifdef JS_JITSPEW
   JitSpew(JitSpew_BaselineBailouts,
