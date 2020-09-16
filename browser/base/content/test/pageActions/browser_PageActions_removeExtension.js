@@ -27,12 +27,8 @@ add_task(async function init() {
     url: "http://example.com/",
   });
 
-  
-  let { prompt } = Services;
-
   registerCleanupFunction(async () => {
     BrowserTestUtils.removeTab(tab);
-    Services.prompt = prompt;
   });
 });
 
@@ -294,6 +290,8 @@ function promiseAddonUninstalled(addonId) {
 }
 
 function mockPromptService() {
+  let { prompt } = Services;
+
   let promptService = {
     
     _response: 0,
@@ -302,6 +300,10 @@ function mockPromptService() {
   };
 
   Services.prompt = promptService;
+
+  registerCleanupFunction(() => {
+    Services.prompt = prompt;
+  });
 
   return promptService;
 }

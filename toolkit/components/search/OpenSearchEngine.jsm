@@ -29,6 +29,9 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
   });
 });
 
+const SEARCH_BUNDLE = "chrome://global/locale/search/search.properties";
+const BRAND_BUNDLE = "chrome://branding/locale/brand.properties";
+
 const OPENSEARCH_NS_10 = "http://a9.com/-/spec/opensearch/1.0/";
 const OPENSEARCH_NS_11 = "http://a9.com/-/spec/opensearch/1.1/";
 
@@ -73,6 +76,9 @@ function ENSURE_WARN(assertion, message, resultCode) {
 class OpenSearchEngine extends SearchEngine {
   
   _data = null;
+  
+  
+  _installCallback = null;
 
   
 
@@ -144,10 +150,7 @@ class OpenSearchEngine extends SearchEngine {
 
 
 
-
-
-
-  _initFromURIAndLoad(uri, callback) {
+  _initFromURIAndLoad(uri) {
     let loadURI = uri instanceof Ci.nsIURI ? uri : SearchUtils.makeURI(uri);
     ENSURE_WARN(
       loadURI,
@@ -169,11 +172,7 @@ class OpenSearchEngine extends SearchEngine {
       }
     }
     this._uri = loadURI;
-
-    var listener = new SearchUtils.LoadListener(
-      chan,
-      this._onLoad.bind(this, callback)
-    );
+    var listener = new SearchUtils.LoadListener(chan, this, this._onLoad);
     chan.notificationCallbacks = listener;
     chan.asyncOpen(listener);
   }
@@ -235,81 +234,118 @@ class OpenSearchEngine extends SearchEngine {
 
 
 
-  _onLoad(callback, bytes) {
-    let onError = errorCode => {
-      if (this._engineToUpdate) {
-        logConsole.warn("Failed to update", this._engineToUpdate.name);
+  _onLoad(bytes, engine) {
+    
+
+
+
+
+
+
+    function onError(errorCode = Ci.nsISearchService.ERROR_UNKNOWN_FAILURE) {
+      
+      if (engine._installCallback) {
+        engine._installCallback(errorCode);
       }
-      callback?.(errorCode);
-    };
+    }
+
+    function promptError(strings = {}, error = undefined) {
+      onError(error);
+
+      if (engine._engineToUpdate) {
+        
+        logConsole.warn("Failed to update", engine._engineToUpdate.name);
+        return;
+      }
+      var brandBundle = Services.strings.createBundle(BRAND_BUNDLE);
+      var brandName = brandBundle.GetStringFromName("brandShortName");
+
+      var searchBundle = Services.strings.createBundle(SEARCH_BUNDLE);
+      var msgStringName = strings.error || "error_loading_engine_msg2";
+      var titleStringName = strings.title || "error_loading_engine_title";
+      var title = searchBundle.GetStringFromName(titleStringName);
+      var text = searchBundle.formatStringFromName(msgStringName, [
+        brandName,
+        engine._location,
+      ]);
+
+      Services.ww.getNewPrompter(null).alert(title, text);
+    }
 
     if (!bytes) {
-      onError(Ci.nsISearchService.ERROR_DOWNLOAD_FAILURE);
+      promptError();
       return;
     }
 
     var parser = new DOMParser();
     var doc = parser.parseFromBuffer(bytes, "text/xml");
-    this._data = doc.documentElement;
+    engine._data = doc.documentElement;
 
     try {
-      this._initFromData();
+      
+      engine._initFromData();
     } catch (ex) {
       logConsole.error("_onLoad: Failed to init engine!", ex);
-
+      
       if (ex.result == Cr.NS_ERROR_FILE_CORRUPTED) {
-        onError(Ci.nsISearchService.ERROR_ENGINE_CORRUPTED);
+        promptError({
+          error: "error_invalid_engine_msg2",
+          title: "error_invalid_format_title",
+        });
       } else {
-        onError(Ci.nsISearchService.ERROR_DOWNLOAD_FAILURE);
+        promptError();
       }
       return;
     }
 
-    if (this._engineToUpdate) {
-      let engineToUpdate = this._engineToUpdate.wrappedJSObject;
+    if (engine._engineToUpdate) {
+      let engineToUpdate = engine._engineToUpdate.wrappedJSObject;
 
       
       Object.keys(engineToUpdate._metaData).forEach(key => {
-        this.setAttr(key, engineToUpdate.getAttr(key));
+        engine.setAttr(key, engineToUpdate.getAttr(key));
       });
-      this._loadPath = engineToUpdate._loadPath;
+      engine._loadPath = engineToUpdate._loadPath;
 
       
       
-      this.setAttr("updatelastmodified", new Date().toUTCString());
+      engine.setAttr("updatelastmodified", new Date().toUTCString());
 
       
-      if (!this._iconURI && engineToUpdate._iconURI) {
-        this._iconURI = engineToUpdate._iconURI;
+      if (!engine._iconURI && engineToUpdate._iconURI) {
+        engine._iconURI = engineToUpdate._iconURI;
       }
     } else {
       
       
-      if (Services.search.getEngineByName(this.name)) {
+      if (Services.search.getEngineByName(engine.name)) {
         onError(Ci.nsISearchService.ERROR_DUPLICATE_ENGINE);
         logConsole.debug("_onLoad: duplicate engine found, bailing");
         return;
       }
 
-      this._loadPath = OpenSearchEngine.getAnonymizedLoadPath(
-        SearchUtils.sanitizeName(this.name),
+      engine._loadPath = OpenSearchEngine.getAnonymizedLoadPath(
+        SearchUtils.sanitizeName(engine.name),
         null,
-        this._uri
+        engine._uri
       );
-      if (this._extensionID) {
-        this._loadPath += ":" + this._extensionID;
+      if (engine._extensionID) {
+        engine._loadPath += ":" + engine._extensionID;
       }
-      this.setAttr(
+      engine.setAttr(
         "loadPathHash",
-        SearchUtils.getVerificationHash(this._loadPath)
+        SearchUtils.getVerificationHash(engine._loadPath)
       );
     }
 
     
     
-    SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.LOADED);
+    SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.LOADED);
 
-    callback?.();
+    
+    if (engine._installCallback) {
+      engine._installCallback();
+    }
   }
 
   

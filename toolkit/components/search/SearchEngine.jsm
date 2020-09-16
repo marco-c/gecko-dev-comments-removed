@@ -772,10 +772,10 @@ class SearchEngine {
       case "ftp":
         var chan = SearchUtils.makeChannel(uri);
 
-        let iconLoadCallback = function(byteArray) {
+        let iconLoadCallback = function(byteArray, engine) {
           
           
-          if (this._hasPreferredIcon && !isPreferred) {
+          if (engine._hasPreferredIcon && !isPreferred) {
             return;
           }
 
@@ -804,24 +804,27 @@ class SearchEngine {
             ";base64," +
             btoa(String.fromCharCode.apply(null, byteArray));
 
-          this._iconURI = SearchUtils.makeURI(dataURL);
+          engine._iconURI = SearchUtils.makeURI(dataURL);
 
           if (width && height) {
-            this._addIconToMap(width, height, dataURL);
+            engine._addIconToMap(width, height, dataURL);
           }
 
-          if (this._engineAddedToStore) {
-            SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
+          if (engine._engineAddedToStore) {
+            SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.CHANGED);
           }
-          this._hasPreferredIcon = isPreferred;
+          engine._hasPreferredIcon = isPreferred;
         };
+
+        
+        
+        
+        var engineToSet = this._engineToUpdate || this;
 
         var listener = new SearchUtils.LoadListener(
           chan,
-          
-          
-          
-          iconLoadCallback.bind(this._engineToUpdate || this)
+          engineToSet,
+          iconLoadCallback
         );
         chan.notificationCallbacks = listener;
         chan.asyncOpen(listener);
