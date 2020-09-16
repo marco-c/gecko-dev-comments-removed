@@ -64,9 +64,6 @@ add_task(async function test_setup() {
   fakeIntlReady();
 
   
-  await Services.search.init();
-
-  
   await setEmptyPrefWatchlist();
 
   
@@ -79,6 +76,11 @@ add_task(async function test_setup() {
 });
 
 add_task(async function test_firstRun() {
+  if (AppConstants.IS_ANDROID) {
+    return;
+  }
+  await Services.search.init();
+
   const FIRST_RUN_TIMEOUT_MSEC = 60 * 1000; 
   const OTHER_RUNS_TIMEOUT_MSEC = 10 * 1000; 
 
