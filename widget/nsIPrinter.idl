@@ -49,5 +49,12 @@ interface nsIPrinter : nsISupports
 
 
   [implicit_jscontext]
+  readonly attribute Promise supportsMonochrome;
+
+  
+
+
+
+  [implicit_jscontext]
   readonly attribute Promise supportsCollation;
 };
