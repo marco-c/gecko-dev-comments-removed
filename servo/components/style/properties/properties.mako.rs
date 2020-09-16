@@ -2975,6 +2975,27 @@ impl ComputedValues {
         self.custom_properties.as_ref()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn custom_properties_equal(&self, other: &Self) -> bool {
+        match (self.custom_properties(), other.custom_properties()) {
+            (Some(l), Some(r)) => {
+                l.len() == r.len() && l.iter().zip(r.iter()).all(|((k1, v1), (k2, v2))| k1 == k2 && v1 == v2)
+            },
+            (None, None) => true,
+            _ => false,
+        }
+    }
+
 % for prop in data.longhands:
     
     #[inline(always)]
