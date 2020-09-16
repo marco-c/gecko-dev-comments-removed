@@ -294,7 +294,10 @@ add_task(async function testAboutProcesses() {
   info("Looking at the contents of about:processes");
   
   let row = tbody.firstChild;
-  while (row && row.children[0].textContent != "browser") {
+  while (row) {
+    if (row.process && row.process.type == "browser") {
+      break;
+    }
     row = row.nextSibling;
   }
 
