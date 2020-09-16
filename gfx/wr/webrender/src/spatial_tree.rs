@@ -605,6 +605,31 @@ impl SpatialTree {
     }
 
     
+    pub fn is_ancestor(
+        &self,
+        maybe_parent: SpatialNodeIndex,
+        maybe_child: SpatialNodeIndex,
+    ) -> bool {
+        
+        if maybe_parent == maybe_child {
+            return false;
+        }
+
+        let mut current_node = maybe_child;
+
+        while current_node != ROOT_SPATIAL_NODE_INDEX {
+            let node = &self.spatial_nodes[current_node.0 as usize];
+            current_node = node.parent.expect("bug: no parent");
+
+            if current_node == maybe_parent {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    
     
     
     pub fn find_scroll_root(
@@ -961,4 +986,64 @@ fn test_cst_translation_rotate() {
     cst.update_tree(WorldPoint::zero(), DevicePixelScale::new(1.0), &SceneProperties::new());
 
     test_pt(100.0, 0.0, &cst, child1, root, 0.0, -100.0);
+}
+
+#[test]
+fn test_is_ancestor1() {
+    let mut st = SpatialTree::new();
+
+    let root = add_reference_frame(
+        &mut st,
+        None,
+        LayoutTransform::identity(),
+        LayoutVector2D::zero(),
+    );
+
+    let child1_0 = add_reference_frame(
+        &mut st,
+        Some(root),
+        LayoutTransform::identity(),
+        LayoutVector2D::zero(),
+    );
+
+    let child1_1 = add_reference_frame(
+        &mut st,
+        Some(child1_0),
+        LayoutTransform::identity(),
+        LayoutVector2D::zero(),
+    );
+
+    let child2 = add_reference_frame(
+        &mut st,
+        Some(root),
+        LayoutTransform::identity(),
+        LayoutVector2D::zero(),
+    );
+
+    st.update_tree(
+        WorldPoint::zero(),
+        DevicePixelScale::new(1.0),
+        &SceneProperties::new(),
+    );
+
+    assert!(!st.is_ancestor(root, root));
+    assert!(!st.is_ancestor(child1_0, child1_0));
+    assert!(!st.is_ancestor(child1_1, child1_1));
+    assert!(!st.is_ancestor(child2, child2));
+
+    assert!(st.is_ancestor(root, child1_0));
+    assert!(st.is_ancestor(root, child1_1));
+    assert!(st.is_ancestor(child1_0, child1_1));
+
+    assert!(!st.is_ancestor(child1_0, root));
+    assert!(!st.is_ancestor(child1_1, root));
+    assert!(!st.is_ancestor(child1_1, child1_0));
+
+    assert!(st.is_ancestor(root, child2));
+    assert!(!st.is_ancestor(child2, root));
+
+    assert!(!st.is_ancestor(child1_0, child2));
+    assert!(!st.is_ancestor(child1_1, child2));
+    assert!(!st.is_ancestor(child2, child1_0));
+    assert!(!st.is_ancestor(child2, child1_1));
 }
