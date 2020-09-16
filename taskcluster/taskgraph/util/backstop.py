@@ -34,8 +34,10 @@ def is_backstop(
     pushid = int(params["pushlog_id"])
     pushdate = int(params["pushdate"])
 
-    if project != "autoland":
+    if project == "try":
         return False
+    elif project != "autoland":
+        return True
 
     
     if pushid % push_interval == 0:
