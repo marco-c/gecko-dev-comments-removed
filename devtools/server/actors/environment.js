@@ -43,7 +43,7 @@ const EnvironmentActor = ActorClassWithSpec(environmentSpec, {
 
     
     if (this.obj.type == "declarative") {
-      form.type = this.obj.callee ? "function" : "block";
+      form.type = this.obj.calleeScript ? "function" : "block";
     } else {
       form.type = this.obj.type;
     }
@@ -67,12 +67,12 @@ const EnvironmentActor = ActorClassWithSpec(environmentSpec, {
     }
 
     
-    if (this.obj.callee) {
-      form.function = createValueGrip(
-        this.obj.callee,
-        this.getParent(),
-        this.threadActor.objectGrip
-      );
+    if (this.obj.calleeScript) {
+      
+      
+      
+      
+      form.function = { displayName: this.obj.calleeScript.displayName };
     }
 
     
@@ -98,8 +98,8 @@ const EnvironmentActor = ActorClassWithSpec(environmentSpec, {
     }
 
     let parameterNames;
-    if (this.obj.callee) {
-      parameterNames = this.obj.callee.parameterNames;
+    if (this.obj.calleeScript) {
+      parameterNames = this.obj.calleeScript.parameterNames;
     } else {
       parameterNames = [];
     }

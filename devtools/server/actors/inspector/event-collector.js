@@ -613,11 +613,11 @@ class JQueryLiveEventCollector extends MainEventCollector {
       
       
       
-      const calleeDO = funcDO.environment.callee;
-      if (!calleeDO) {
+      const calleeDS = funcDO.environment.calleeScript;
+      if (!calleeDS) {
         return false;
       }
-      const calleeName = calleeDO.displayName;
+      const calleeName = calleeDS.displayName;
       return calleeName == "proxy";
     }
 

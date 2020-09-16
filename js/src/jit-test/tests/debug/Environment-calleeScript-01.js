@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 var g = newGlobal({newCompartment: true});
 var dbg = new Debugger;
 var gw = dbg.addDebuggee(g);
@@ -16,7 +12,7 @@ function check(code, expectedType, expectedCallee) {
     hits++;
     var env = frame.environment;
     assertEq(env.type, expectedType);
-    assertEq(env.callee, expectedCallee);
+    assertEq(env.calleeScript, expectedCallee ? expectedCallee.script : null);
   };
   hits = 0;
   g.eval(code);

@@ -31,7 +31,7 @@ dbg.onDebuggerStatement = function (frame) {
     
     let env = frame.environment;
     assertEq(env.type, 'declarative');
-    assertEq(env.callee, null);
+    assertEq(env.calleeScript, null);
 
     
     assertArrayEq(env.names().sort(), ['a', 'b', 'c', 'x', 'y', 'z']);
