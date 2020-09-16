@@ -1478,14 +1478,16 @@ static nscoord MainSizeFromAspectRatio(nscoord aCrossSize,
 
 
 
+
+
+
 static nscoord PartiallyResolveAutoMinSize(
     const FlexItem& aFlexItem, const ReflowInput& aItemReflowInput,
     const FlexboxAxisTracker& aAxisTracker) {
   MOZ_ASSERT(aFlexItem.NeedsMinSizeAutoResolution(),
              "only call for FlexItems that need min-size auto resolution");
 
-  nscoord minMainSize = nscoord_MAX;  
-                                      
+  nscoord specifiedSizeSuggestion = nscoord_MAX;
 
   
   
@@ -1495,7 +1497,8 @@ static nscoord PartiallyResolveAutoMinSize(
     
     
     
-    minMainSize = std::min(minMainSize, aFlexItem.FlexBaseSize());
+    specifiedSizeSuggestion =
+        std::min(specifiedSizeSuggestion, aFlexItem.FlexBaseSize());
   }
 
   
@@ -1503,7 +1506,7 @@ static nscoord PartiallyResolveAutoMinSize(
       aAxisTracker, aFlexItem.GetWritingMode(),
       aItemReflowInput.ComputedMaxISize(), aItemReflowInput.ComputedMaxBSize());
   if (maxSize != NS_UNCONSTRAINEDSIZE) {
-    minMainSize = std::min(minMainSize, maxSize);
+    specifiedSizeSuggestion = std::min(specifiedSizeSuggestion, maxSize);
   }
 
   
@@ -1512,18 +1515,18 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   
+  nscoord transferredSizeSuggestion = nscoord_MAX;
   if (aFlexItem.IntrinsicRatio()) {
     
     const bool useMinSizeIfCrossSizeIsIndefinite = true;
     nscoord crossSizeToUseWithRatio = CrossSizeToUseWithRatio(
         aFlexItem, aItemReflowInput, useMinSizeIfCrossSizeIsIndefinite,
         aAxisTracker);
-    nscoord minMainSizeFromRatio = MainSizeFromAspectRatio(
+    transferredSizeSuggestion = MainSizeFromAspectRatio(
         crossSizeToUseWithRatio, aFlexItem.IntrinsicRatio(), aAxisTracker);
-    minMainSize = std::min(minMainSize, minMainSizeFromRatio);
   }
 
-  return minMainSize;
+  return std::min(specifiedSizeSuggestion, transferredSizeSuggestion);
 }
 
 
