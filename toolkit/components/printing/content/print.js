@@ -332,6 +332,7 @@ var PrintEventHandler = {
         );
       } catch (e) {
         
+        window.close();
         return;
       }
     }
