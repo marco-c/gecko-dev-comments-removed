@@ -718,7 +718,7 @@ async function sendDeletionPing(studyAddonId) {
     
     
     
-    encryptionKeyId: "debug",
+    encryptionKeyId: "discarded",
     publicKey: {
       crv: "P-256",
       kty: "EC",
@@ -727,7 +727,9 @@ async function sendDeletionPing(studyAddonId) {
     },
     schemaName: "deletion-request",
     schemaVersion: 1,
-    schemaNamespace: "pioneer-debug",
+    
+    
+    schemaNamespace: studyAddonId,
   };
 
   const payload = {
@@ -748,13 +750,14 @@ async function sendDeletionPing(studyAddonId) {
 
 async function sendEnrollmentPing(studyAddonId) {
   let options = {
+    studyName: "pioneer-meta",
     addPioneerId: true,
     useEncryption: true,
     
     
     
     
-    encryptionKeyId: "debug",
+    encryptionKeyId: "discarded",
     publicKey: {
       crv: "P-256",
       kty: "EC",
@@ -776,7 +779,7 @@ async function sendEnrollmentPing(studyAddonId) {
     options.studyName = studyAddonId;
     
     
-    options.schemaNamespace = "pioneer-debug";
+    options.schemaNamespace = studyAddonId;
   }
 
   await TelemetryController.submitExternalPing("pioneer-study", {}, options);
