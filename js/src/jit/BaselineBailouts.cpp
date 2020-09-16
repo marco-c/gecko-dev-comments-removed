@@ -482,9 +482,10 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   }
 };
 
-BaselineStackBuilder::BaselineStackBuilder(
-    JSContext* cx, const JSJitFrameIter& frameIter, SnapshotIterator& iter,
-    const ExceptionBailoutInfo* excInfo)
+BaselineStackBuilder::BaselineStackBuilder(JSContext* cx,
+                                           const JSJitFrameIter& frameIter,
+                                           SnapshotIterator& iter,
+                                           const ExceptionBailoutInfo* excInfo)
     : cx_(cx),
       frame_(static_cast<JitFrameLayout*>(frameIter.current())),
       iter_(iter),
@@ -799,7 +800,7 @@ bool BaselineStackBuilder::fixUpCallerArgs(
   if (op_ == JSOp::FunCall) {
     
     
-    inlinedArgs += GET_ARGC(pc_) - 1;
+    inlinedArgs += GET_ARGC(pc_) > 0 ? GET_ARGC(pc_) - 1 : 0;
   } else if (op_ == JSOp::FunApply) {
     
     
@@ -842,13 +843,26 @@ bool BaselineStackBuilder::fixUpCallerArgs(
     if (!writeValue(UndefinedValue(), "StackValue")) {
       return false;
     }
-    JitSpew(JitSpew_BaselineBailouts, "      pushing %u expression stack slots",
-            inlinedArgs);
-    for (uint32_t i = 0; i < inlinedArgs; i++) {
-      Value arg = iter_.read();
-      if (!writeValue(arg, "StackValue")) {
+    if (GET_ARGC(pc_) > 0) {
+      JitSpew(JitSpew_BaselineBailouts,
+              "      pushing %u expression stack slots", inlinedArgs);
+      for (uint32_t i = 0; i < inlinedArgs; i++) {
+        Value arg = iter_.read();
+        if (!writeValue(arg, "StackValue")) {
+          return false;
+        }
+      }
+    } else {
+      
+      
+      
+      JitSpew(JitSpew_BaselineBailouts, "      pushing target of funcall");
+      Value target = iter_.read();
+      if (!writeValue(target, "StackValue")) {
         return false;
       }
+      
+      iter_.skip();
     }
   } else if (op_ == JSOp::FunApply) {
     
@@ -1048,23 +1062,45 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
         return false;
       }
     }
+  } else if (op_ == JSOp::FunCall && GET_ARGC(pc_) == 0) {
+    
+    
+    MOZ_ASSERT(!pushedNewTarget);
+    actualArgc = 0;
+    
+    size_t afterFrameSize = sizeof(Value) + JitFrameLayout::Size();
+    if (!maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
+      return false;
+    }
+    
+    if (!writeValue(UndefinedValue(), "ThisValue")) {
+      return false;
+    }
+    size_t calleeSlot = blFrame()->numValueSlots(frameSize) - 1;
+    callee = *blFrame()->valueSlot(calleeSlot);
+
   } else {
     actualArgc = GET_ARGC(pc_);
     if (op_ == JSOp::FunCall) {
+      
       MOZ_ASSERT(actualArgc > 0);
       actualArgc--;
     }
 
     
-    size_t afterFrameSize = (actualArgc + 1 + pushedNewTarget) * sizeof(Value) +
-                            JitFrameLayout::Size();
+    
+    uint32_t numArguments = actualArgc + 1 + pushedNewTarget;
+
+    
+    size_t afterFrameSize =
+        numArguments * sizeof(Value) + JitFrameLayout::Size();
     if (!maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
       return false;
     }
 
     
     size_t valueSlot = blFrame()->numValueSlots(frameSize) - 1;
-    size_t calleeSlot = valueSlot - actualArgc - 1 - pushedNewTarget;
+    size_t calleeSlot = valueSlot - numArguments;
 
     for (size_t i = valueSlot; i > calleeSlot; i--) {
       Value v = *blFrame()->valueSlot(i);
