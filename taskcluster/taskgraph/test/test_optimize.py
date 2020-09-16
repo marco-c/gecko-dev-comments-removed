@@ -8,7 +8,7 @@ from functools import partial
 
 import pytest
 from taskgraph import graph, optimize
-from taskgraph.optimize import OptimizationStrategy, All, Any
+from taskgraph.optimize import OptimizationStrategy, All, Any, Not
 from taskgraph.taskgraph import TaskGraph
 from taskgraph.task import Task
 from mozunit import main
@@ -148,6 +148,18 @@ def make_triangle(deps=True, **opts):
 
         
         pytest.param(
+            make_graph(
+                make_task('t1', {'not-never': None}),
+                make_task('t2', {'not-remove': None}),
+            ),
+            {"strategies": lambda: {"not-never": Not("never"), "not-remove": Not("remove")}},
+            
+            {"t1"},
+            id="composite_strategies_not",
+        ),
+
+        
+        pytest.param(
             make_triangle(
                 t1={'remove': None},
                 t3={'remove': None},
@@ -272,9 +284,11 @@ def test_remove_tasks(monkeypatch, graph, kwargs, exp_removed):
     
     strategies = default_strategies()
     monkeypatch.setattr(optimize, "registry", strategies)
-    strategies = kwargs.pop('strategies', None) or strategies
-    if callable(strategies):
-        strategies = strategies()
+    extra = kwargs.pop('strategies', None)
+    if extra:
+        if callable(extra):
+            extra = extra()
+        strategies.update(extra)
 
     kwargs.setdefault("params", {})
     kwargs.setdefault("do_not_optimize", set())
