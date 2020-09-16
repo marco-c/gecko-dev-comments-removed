@@ -632,14 +632,12 @@ nsRect nsImageFrame::SourceRectToDest(const nsIntRect& aRect) {
   return r;
 }
 
-
-
-
-
-#define BAD_STATES (NS_EVENT_STATE_BROKEN | NS_EVENT_STATE_USERDISABLED)
-
 static bool ImageOk(EventStates aState) {
-  return !aState.HasAtLeastOneOfStates(BAD_STATES);
+  
+  
+  
+  
+  return !aState.HasState(NS_EVENT_STATE_BROKEN);
 }
 
 static bool HasAltText(const Element& aElement) {

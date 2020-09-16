@@ -92,8 +92,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
     
     eFallbackSuppressed = nsIObjectLoadingContent::PLUGIN_SUPPRESSED,
     
-    eFallbackUserDisabled = nsIObjectLoadingContent::PLUGIN_USER_DISABLED,
-    
     
     
     

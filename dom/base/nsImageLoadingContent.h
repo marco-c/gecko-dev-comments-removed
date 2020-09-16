@@ -128,6 +128,7 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
+
   mozilla::EventStates ImageState() const;
 
   
@@ -575,7 +576,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   bool mLoading : 1;
   bool mBroken : 1;
-  bool mUserDisabled : 1;
   bool mSuppressed : 1;
 
  protected:
