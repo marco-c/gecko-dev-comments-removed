@@ -60,18 +60,8 @@ public class MainActivity extends AppCompatActivity {
         };
 
         
-        sRuntime.getWebExtensionController().list().then(extensionList -> {
-            for (WebExtension extension : extensionList) {
-                if (extension.id.equals(EXTENSION_ID)
-                        && extension.metaData.version.equals(EXTENSION_VERSION)) {
-                    
-                    return GeckoResult.fromValue(extension);
-                }
-            }
-
-            
-            return sRuntime.getWebExtensionController().installBuiltIn(EXTENSION_LOCATION);
-        }).accept(
+        sRuntime.getWebExtensionController()
+                .ensureBuiltIn(EXTENSION_LOCATION, "messaging@example.com").accept(
                 
                 extension -> session.getWebExtensionController()
                         .setMessageDelegate(extension, messageDelegate, "browser"),
