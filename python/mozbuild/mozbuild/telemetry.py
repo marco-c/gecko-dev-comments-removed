@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import division, absolute_import, print_function, unicode_literals
 
 '''
 This file contains a voluptuous schema definition for build system telemetry, and functions
@@ -28,9 +28,7 @@ from voluptuous import (
 from voluptuous.validators import Datetime
 
 import mozpack.path as mozpath
-from .base import (
-    BuildEnvironmentNotFoundException,
-)
+from .base import BuildEnvironmentNotFoundException
 from .configure.constants import CompilerType
 
 schema = Schema({
@@ -173,34 +171,49 @@ def get_cpu_brand():
     }.get(platform.system(), lambda: None)()
 
 
+def get_os_name():
+    return {
+        'Linux': 'linux',
+        'Windows': 'windows',
+        'Darwin': 'macos',
+    }.get(platform.system(), 'other')
+
+
+def get_psutil_stats():
+    '''Return whether psutil exists and its associated stats.
+
+    @returns (bool, int, int, int) whether psutil exists, the logical CPU count,
+        physical CPU count, and total number of bytes of memory.
+    '''
+    try:
+        import psutil
+
+        return (
+            True,
+            psutil.cpu_count(),
+            psutil.cpu_count(logical=False),
+            psutil.virtual_memory().total)
+    except ImportError:
+        return False, None, None, None
+
+
 def get_system_info():
     '''
     Gather info to fill the `system` keys in the schema.
     '''
     
+    has_psutil, logical_cores, physical_cores, memory_total = get_psutil_stats()
     info = {
-        'os': {
-            'Linux': 'linux',
-            'Windows': 'windows',
-            'Darwin': 'macos',
-        }.get(platform.system(), 'other')
+        'os': get_os_name(),
     }
-    try:
-        import psutil
-
-        info['logical_cores'] = psutil.cpu_count()
-        physical_cores = psutil.cpu_count(logical=False)
+    if has_psutil:
+        
+        
+        
+        info['memory_gb'] = int(math.ceil(float(memory_total) / (1024 * 1024 * 1024)))
+        info['logical_cores'] = logical_cores
         if physical_cores is not None:
             info['physical_cores'] = physical_cores
-        
-        
-        
-        info['memory_gb'] = int(
-            math.ceil(float(psutil.virtual_memory().total) / (1024 * 1024 * 1024)))
-    except ImportError:
-        
-        
-        pass
     cpu_brand = get_cpu_brand()
     if cpu_brand is not None:
         info['cpu_brand'] = cpu_brand
@@ -249,14 +262,23 @@ def get_build_attrs(attrs):
     return res
 
 
-def filter_args(command, argv, paths):
+def filter_args(command, argv, instance):
     '''
     Given the full list of command-line arguments, remove anything up to and including `command`,
     and attempt to filter absolute pathnames out of any arguments after that.
-
-    `paths` is a dict whose keys are pathnames and values are sigils that should be used to
-    replace those pathnames.
     '''
+
+    
+    paths = {
+        instance.topsrcdir: '$topsrcdir/',
+        instance.topobjdir: '$topobjdir/',
+        mozpath.normpath(os.path.expanduser('~')): '$HOME/',
+        
+        
+        
+        mozpath.normpath(os.getcwd()): '',
+    }
+
     args = list(argv)
     while args:
         a = args.pop(0)
@@ -273,24 +295,26 @@ def filter_args(command, argv, paths):
     return [filter_path(arg) for arg in args]
 
 
-def gather_telemetry(command='', success=False, start_time=None, end_time=None,
-                     mach_context=None, substs={}, paths={}, command_attrs=None):
+def gather_telemetry(command, success, start_time, end_time, mach_context,
+                     instance, command_attrs):
     '''
     Gather telemetry about the build and the user's system and pass it to the telemetry
     handler to be stored for later submission.
 
-    `paths` is a dict whose keys are pathnames and values are sigils that should be used to
-    replace those pathnames.
-
-    Any absolute paths on the command line will be made relative to `paths` or replaced
-    with a placeholder to avoid including paths from developer's machines.
+    Any absolute paths on the command line will be made relative to a relevant base path
+    or replaced with a placeholder to avoid including paths from developer's machines.
     '''
+    try:
+        substs = instance.substs
+    except BuildEnvironmentNotFoundException:
+        substs = {}
+
     data = {
         'client_id': get_client_id(mach_context.state_dir),
         
         'time': datetime.utcfromtimestamp(start_time).strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
         'command': command,
-        'argv': filter_args(command, sys.argv, paths),
+        'argv': filter_args(command, sys.argv, instance),
         'success': success,
         
         'duration_ms': int((end_time - start_time) * 1000),
@@ -340,14 +364,3 @@ def verify_statedir(statedir):
         os.mkdir(submitted)
 
     return outgoing, submitted, telemetry_log
-
-
-def is_telemetry_enabled(settings):
-    
-    if os.environ.get('DISABLE_TELEMETRY') == '1':
-        return False
-
-    try:
-        return settings.build.telemetry
-    except (AttributeError, KeyError):
-        return False

@@ -296,6 +296,10 @@ class LoggingManager(object):
         ``terminal`` and ``json`` determine which log handlers to operate
         on. By default, all known handlers are operated on.
         """
+
+        
+        logging.getLogger('glean').setLevel(logging.CRITICAL)
+
         
         
         for logger in self.root_logger.manager.loggerDict.values():
