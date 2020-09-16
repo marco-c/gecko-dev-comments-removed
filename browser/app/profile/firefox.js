@@ -1,3 +1,4 @@
+#filter dumbComments emptyLines substitution
 
 
 
@@ -11,7 +12,6 @@
 
 
 
-#filter substitution
 
 #ifdef XP_UNIX
   #ifndef XP_MACOSX

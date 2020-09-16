@@ -1,3 +1,4 @@
+#filter dumbComments emptyLines substitution
 
 
 
@@ -11,7 +12,6 @@
 
 
 
-#filter substitution
 
 #include mobile.js
 
