@@ -67,8 +67,6 @@
 #include "mozilla/gfx/ScaleFactor.h"        
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/layers/APZUtils.h"        
-#include "mozilla/layers/AxisPhysicsModel.h"      
-#include "mozilla/layers/AxisPhysicsMSDModel.h"   
 #include "mozilla/layers/CompositorController.h"  
 #include "mozilla/layers/DirectionUtils.h"  
 #include "mozilla/layers/LayerTransactionParent.h"  
@@ -90,6 +88,7 @@
 #include "SharedMemoryBasic.h"       
 #include "ScrollSnap.h"              
 #include "ScrollAnimationPhysics.h"  
+#include "SmoothMsdScrollAnimation.h"
 #include "WheelScrollAnimation.h"
 #include "KeyboardScrollAnimation.h"
 #if defined(MOZ_WIDGET_ANDROID)
@@ -667,136 +666,6 @@ class ZoomAnimation : public AsyncPanZoomAnimation {
   
   CSSPoint mEndOffset;
   CSSToParentLayerScale2D mEndZoom;
-};
-
-class SmoothMsdScrollAnimation : public AsyncPanZoomAnimation {
- public:
-  SmoothMsdScrollAnimation(AsyncPanZoomController& aApzc,
-                           const CSSPoint& aInitialPosition,
-                           const CSSPoint& aInitialVelocity,
-                           const CSSPoint& aDestination, double aSpringConstant,
-                           double aDampingRatio)
-      : mApzc(aApzc),
-        mXAxisModel(aInitialPosition.x, aDestination.x, aInitialVelocity.x,
-                    aSpringConstant, aDampingRatio),
-        mYAxisModel(aInitialPosition.y, aDestination.y, aInitialVelocity.y,
-                    aSpringConstant, aDampingRatio) {}
-
-  
-
-
-
-
-
-  bool DoSample(FrameMetrics& aFrameMetrics,
-                const TimeDuration& aDelta) override {
-    CSSPoint oneParentLayerPixel =
-        ParentLayerPoint(1, 1) / aFrameMetrics.GetZoom();
-    if (mXAxisModel.IsFinished(oneParentLayerPixel.x) &&
-        mYAxisModel.IsFinished(oneParentLayerPixel.y)) {
-      
-      
-      
-      
-      mApzc.ClampAndSetVisualScrollOffset(
-          CSSPoint(mXAxisModel.GetDestination(), mYAxisModel.GetDestination()));
-      return false;
-    }
-
-    mXAxisModel.Simulate(aDelta);
-    mYAxisModel.Simulate(aDelta);
-
-    CSSPoint position =
-        CSSPoint(mXAxisModel.GetPosition(), mYAxisModel.GetPosition());
-    CSSPoint css_velocity =
-        CSSPoint(mXAxisModel.GetVelocity(), mYAxisModel.GetVelocity());
-
-    
-    ParentLayerPoint velocity =
-        ParentLayerPoint(css_velocity.x, css_velocity.y) / 1000.0f;
-
-    
-    
-    if (mXAxisModel.IsFinished(oneParentLayerPixel.x)) {
-      mApzc.mX.SetVelocity(0);
-    } else {
-      mApzc.mX.SetVelocity(velocity.x);
-    }
-    if (mYAxisModel.IsFinished(oneParentLayerPixel.y)) {
-      mApzc.mY.SetVelocity(0);
-    } else {
-      mApzc.mY.SetVelocity(velocity.y);
-    }
-    
-    
-    CSSToParentLayerScale2D zoom = aFrameMetrics.GetZoom();
-    ParentLayerPoint displacement =
-        (position - aFrameMetrics.GetVisualScrollOffset()) * zoom;
-
-    ParentLayerPoint overscroll;
-    ParentLayerPoint adjustedOffset;
-    mApzc.mX.AdjustDisplacement(displacement.x, adjustedOffset.x, overscroll.x);
-    mApzc.mY.AdjustDisplacement(displacement.y, adjustedOffset.y, overscroll.y);
-
-    mApzc.ScrollBy(adjustedOffset / zoom);
-
-    
-    
-    
-    
-    
-    if (!IsZero(overscroll)) {
-      
-      
-
-      
-      
-      
-      if (FuzzyEqualsAdditive(overscroll.x, 0.0f, COORDINATE_EPSILON)) {
-        velocity.x = 0;
-      } else if (FuzzyEqualsAdditive(overscroll.y, 0.0f, COORDINATE_EPSILON)) {
-        velocity.y = 0;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      mDeferredTasks.AppendElement(NewRunnableMethod<ParentLayerPoint>(
-          "layers::AsyncPanZoomController::HandleSmoothScrollOverscroll",
-          &mApzc, &AsyncPanZoomController::HandleSmoothScrollOverscroll,
-          velocity));
-      return false;
-    }
-
-    return true;
-  }
-
-  void SetDestination(const CSSPoint& aNewDestination) {
-    mXAxisModel.SetDestination(aNewDestination.x);
-    mYAxisModel.SetDestination(aNewDestination.y);
-  }
-
-  CSSPoint GetDestination() const {
-    return CSSPoint(mXAxisModel.GetDestination(), mYAxisModel.GetDestination());
-  }
-
-  SmoothMsdScrollAnimation* AsSmoothMsdScrollAnimation() override {
-    return this;
-  }
-
- private:
-  AsyncPanZoomController& mApzc;
-  AxisPhysicsMSDModel mXAxisModel, mYAxisModel;
 };
 
 
