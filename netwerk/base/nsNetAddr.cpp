@@ -37,12 +37,12 @@ NS_IMETHODIMP nsNetAddr::GetAddress(nsACString& aAddress) {
     
     case AF_INET:
       aAddress.SetLength(kIPv4CStrBufSize);
-      mAddr.ToStringBuffer(aAddress.BeginWriting(), kIPv4CStrBufSize);
+      NetAddrToString(&mAddr, aAddress.BeginWriting(), kIPv4CStrBufSize);
       aAddress.SetLength(strlen(aAddress.BeginReading()));
       break;
     case AF_INET6:
       aAddress.SetLength(kIPv6CStrBufSize);
-      mAddr.ToStringBuffer(aAddress.BeginWriting(), kIPv6CStrBufSize);
+      NetAddrToString(&mAddr, aAddress.BeginWriting(), kIPv6CStrBufSize);
       aAddress.SetLength(strlen(aAddress.BeginReading()));
       break;
 #if defined(XP_UNIX)

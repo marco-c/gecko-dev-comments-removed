@@ -380,14 +380,14 @@ bool nsHTTPSOnlyUtils::LoopbackOrLocalException(nsIURI* aURI) {
 
   mozilla::net::NetAddr addr(&tempAddr);
   
-  if (addr.IsLoopbackAddr()) {
+  if (IsLoopBackAddress(&addr)) {
     return true;
   }
 
   
   bool upgradeLocal =
       mozilla::StaticPrefs::dom_security_https_only_mode_upgrade_local();
-  return (!upgradeLocal && addr.IsIPAddrLocal());
+  return (!upgradeLocal && IsIPAddrLocal(&addr));
 }
 
 
