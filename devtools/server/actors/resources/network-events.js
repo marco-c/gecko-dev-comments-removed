@@ -33,7 +33,7 @@ class NetworkEventWatcher {
 
 
 
-  constructor(watcherActor, { onAvailable, onUpdated, onDestroyed }) {
+  async watch(watcherActor, { onAvailable, onUpdated, onDestroyed }) {
     this.networkEvents = new Map();
     this.watcherActor = watcherActor;
     this.onNetworkEventAvailable = onAvailable;

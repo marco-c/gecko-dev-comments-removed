@@ -30,8 +30,8 @@ class CSSMessageWatcher extends nsIConsoleListenerWatcher {
 
 
 
-  constructor(targetActor, { onAvailable }) {
-    super(targetActor, { onAvailable });
+  async watch(targetActor, { onAvailable }) {
+    super.watch(targetActor, { onAvailable });
 
     
     

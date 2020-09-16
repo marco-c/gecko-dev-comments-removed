@@ -11,18 +11,18 @@ const {
   DocumentEventsListener,
 } = require("devtools/server/actors/webconsole/listeners/document-events");
 
-
-
-
-
-
-
-
-
-
-
 class DocumentEventWatcher {
-  constructor(targetActor, { onAvailable }) {
+  
+
+
+
+
+
+
+
+
+
+  async watch(targetActor, { onAvailable }) {
     if (isWorker) {
       return;
     }

@@ -20,9 +20,12 @@ const TrackChangeEmitter = require("devtools/server/actors/utils/track-change-em
 
 
 class CSSChangeWatcher {
-  constructor(targetActor, { onAvailable }) {
-    this.onAvailable = onAvailable;
+  constructor() {
     this.onTrackChange = this.onTrackChange.bind(this);
+  }
+
+  async watch(targetActor, { onAvailable }) {
+    this.onAvailable = onAvailable;
     TrackChangeEmitter.on("track-change", this.onTrackChange);
   }
 

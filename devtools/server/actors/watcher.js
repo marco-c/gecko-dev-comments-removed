@@ -246,7 +246,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   async watchResources(resourceTypes) {
     
     
-    Resources.watchResources(
+    await Resources.watchResources(
       this,
       Resources.getParentProcessResourceTypes(resourceTypes)
     );

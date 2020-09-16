@@ -37,7 +37,7 @@ const {
 
 
 class ConsoleMessageWatcher {
-  constructor(targetActor, { onAvailable }) {
+  async watch(targetActor, { onAvailable }) {
     
     
     

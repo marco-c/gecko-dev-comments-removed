@@ -26,7 +26,7 @@ class nsIConsoleListenerWatcher {
 
 
 
-  constructor(targetActor, { onAvailable }) {
+  async watch(targetActor, { onAvailable }) {
     if (!this.shouldHandleTarget(targetActor)) {
       return;
     }

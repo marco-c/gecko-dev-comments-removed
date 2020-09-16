@@ -21,9 +21,7 @@ add_task(
         lastExpression = expression;
       },
     };
-    
-    
-    Resources.watchResources(targetActor, [Resources.TYPES.CONSOLE_MESSAGE]);
+
     
     
     
@@ -32,6 +30,12 @@ add_task(
         lastMessage = resources[0].message;
       }
     });
+
+    
+    
+    await Resources.watchResources(targetActor, [
+      Resources.TYPES.CONSOLE_MESSAGE,
+    ]);
 
     const packet = await executeOnNextTickAndWaitForPause(
       () => evalCode(debuggee),

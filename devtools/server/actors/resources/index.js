@@ -127,7 +127,7 @@ function getResourceTypeEntry(watcherOrTargetActor, resourceType) {
 
 
 
-function watchResources(watcherOrTargetActor, resourceTypes) {
+async function watchResources(watcherOrTargetActor, resourceTypes) {
   
   
   const { targetType } = watcherOrTargetActor;
@@ -145,7 +145,8 @@ function watchResources(watcherOrTargetActor, resourceTypes) {
       continue;
     }
 
-    const watcher = new WatcherClass(watcherOrTargetActor, {
+    const watcher = new WatcherClass();
+    await watcher.watch(watcherOrTargetActor, {
       onAvailable: watcherOrTargetActor.notifyResourceAvailable,
       onDestroyed: watcherOrTargetActor.notifyResourceDestroyed,
       onUpdated: watcherOrTargetActor.notifyResourceUpdated,
