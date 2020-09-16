@@ -181,3 +181,22 @@ bool Gecko_OnHighSierraOrLater() { return nsCocoaFeatures::OnHighSierraOrLater()
                                                     int32_t aBugFix) {
   return macOSVersion() >= GetVersion(aMajor, aMinor, aBugFix);
 }
+
+
+
+
+
+
+
+
+ bool nsCocoaFeatures::ProcessIsRosettaTranslated() {
+  int ret = 0;
+  size_t size = sizeof(ret);
+  if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1) {
+    if (errno != ENOENT) {
+      fprintf(stderr, "Failed to check for translation environment\n");
+    }
+    return false;
+  }
+  return (ret == 1);
+}
