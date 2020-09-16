@@ -365,6 +365,23 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+  static EditorDOMRange GetRangesForDeletingAtomicContent(
+      const HTMLEditor& aHTMLEditor, const nsIContent& aAtomicContent);
+
+  
+
+
+
+
+  static Result<bool, nsresult> ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
+      const HTMLEditor& aHTMLEditor, nsRange& aRange,
+      const Element* aEditingHost);
+
+  
+
+
+
+
 
   template <typename EditorDOMPointType>
   MOZ_NEVER_INLINE_DEBUG static HTMLBRElement*
@@ -868,6 +885,13 @@ class MOZ_STACK_CLASS WSRunScanner final {
         const EditorDOMPointInText& aPointAtASCIIWhiteSpace) const;
     EditorDOMPointInText GetFirstASCIIWhiteSpacePointCollapsedTo(
         const EditorDOMPointInText& aPointAtASCIIWhiteSpace) const;
+
+    
+
+
+
+    EditorDOMRangeInTexts GetNonCollapsedRangeInTexts(
+        const EditorDOMRange& aRange) const;
 
     
 

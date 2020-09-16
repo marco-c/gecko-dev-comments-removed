@@ -815,6 +815,24 @@ class MOZ_STACK_CLASS AutoRangeArray final {
   
 
 
+
+
+
+  enum class IfSelectingOnlyOneAtomicContent {
+    Collapse,  
+               
+               
+               
+    KeepSelecting,  
+  };
+  Result<bool, nsresult> ShrinkRangesIfStartFromOrEndAfterAtomicContent(
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      IfSelectingOnlyOneAtomicContent aIfSelectingOnlyOneAtomicContent,
+      const dom::Element* aEditingHost);
+
+  
+
+
   bool IsCollapsed() const {
     return mRanges.IsEmpty() ||
            (mRanges.Length() == 1 && mRanges[0]->Collapsed());
