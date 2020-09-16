@@ -125,7 +125,6 @@ cfg_if! {
     }
 }
 
-const DEFAULT_BATCH_LOOKBACK_COUNT: usize = 10;
 const VERTEX_TEXTURE_EXTRA_ROWS: i32 = 10;
 
 
@@ -2615,7 +2614,7 @@ impl Renderer {
             gpu_supports_fast_clears: options.gpu_supports_fast_clears,
             gpu_supports_advanced_blend: ext_blend_equation_advanced,
             advanced_blend_is_coherent: ext_blend_equation_advanced_coherent,
-            batch_lookback_count: options.batch_lookback_count,
+            batch_lookback_count: RendererOptions::BATCH_LOOKBACK_COUNT,
             background_color: options.clear_color,
             compositor_kind,
             tile_size_override: None,
@@ -7163,9 +7162,6 @@ pub struct RendererOptions {
     pub allow_texture_swizzling: bool,
     
     
-    pub batch_lookback_count: usize,
-    
-    
     
     
     pub clear_caches_with_quads: bool,
@@ -7195,6 +7191,12 @@ pub struct RendererOptions {
     
     
     pub max_instance_buffer_size: usize,
+}
+
+impl RendererOptions {
+    
+    
+    const BATCH_LOOKBACK_COUNT: usize = 10;
 }
 
 impl Default for RendererOptions {
@@ -7238,7 +7240,6 @@ impl Default for RendererOptions {
             allow_pixel_local_storage_support: false,
             allow_texture_storage_support: true,
             allow_texture_swizzling: true,
-            batch_lookback_count: DEFAULT_BATCH_LOOKBACK_COUNT,
             clear_caches_with_quads: true,
             
             
