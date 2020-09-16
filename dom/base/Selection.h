@@ -190,19 +190,16 @@ class Selection final : public nsSupportsWeakReference,
  public:
   nsresult RemoveCollapsedRanges();
   nsresult Clear(nsPresContext* aPresContext);
-  nsresult CollapseInLimiter(nsINode* aContainer, int32_t aOffset) {
+  nsresult Collapse(nsINode* aContainer, int32_t aOffset) {
     if (!aContainer) {
       return NS_ERROR_INVALID_ARG;
     }
-    return CollapseInLimiter(RawRangeBoundary(aContainer, aOffset));
+    return Collapse(RawRangeBoundary(aContainer, aOffset));
   }
-  nsresult CollapseInLimiter(const RawRangeBoundary& aPoint) {
+  nsresult Collapse(const RawRangeBoundary& aPoint) {
     ErrorResult result;
-    CollapseInLimiter(aPoint, result);
+    Collapse(aPoint, result);
     return result.StealNSResult();
-  }
-  void CollapseInLimiter(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
-    CollapseInternal(InLimiter::eYes, aPoint, aRv);
   }
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -438,29 +435,17 @@ class Selection final : public nsSupportsWeakReference,
 
   
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void CollapseInLimiter(nsINode& aContainer,
-                                                     uint32_t aOffset,
-                                                     ErrorResult& aRv) {
-    CollapseInternal(InLimiter::eYes, RawRangeBoundary(&aContainer, aOffset),
-                     aRv);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Collapse(nsINode& aContainer,
+                                            uint32_t aOffset,
+                                            ErrorResult& aRv) {
+    Collapse(RawRangeBoundary(&aContainer, aOffset), aRv);
   }
 
- private:
-  enum class InLimiter {
-    
-    
-    eYes,
-    
-    
-    eNo,
-  };
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void CollapseInternal(InLimiter aInLimiter, const RawRangeBoundary& aPoint,
-                        ErrorResult& aRv);
+  void Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv);
 
- public:
   
 
 
@@ -657,6 +642,14 @@ class Selection final : public nsSupportsWeakReference,
   nsresult GetCachedFrameOffset(nsIFrame* aFrame, int32_t inOffset,
                                 nsPoint& aPoint);
 
+  enum class InLimiter {
+    
+    
+    eYes,
+    
+    
+    eNo,
+  };
   MOZ_CAN_RUN_SCRIPT
   void SetStartAndEndInternal(InLimiter aInLimiter,
                               const RawRangeBoundary& aStartRef,
