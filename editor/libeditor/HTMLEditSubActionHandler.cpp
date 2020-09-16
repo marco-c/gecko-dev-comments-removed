@@ -2524,11 +2524,15 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteCollapsedSelectionAtHRElement(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult HandleDeleteHRElement(
       HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
       Element& aHRElement, const EditorDOMPoint& aCaretPoint,
       const WSRunScanner& aWSRunScannerAtCaret);
+  nsresult ComputeRangesToDeleteHRElement(
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      Element& aHRElement, const EditorDOMPoint& aCaretPoint,
+      const WSRunScanner& aWSRunScannerAtCaret,
+      AutoRangeArray& aRangesToDelete) const;
 
   
 
@@ -3569,6 +3573,22 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
     return rv;
   }
 
+  if (aScanFromCaretPointResult.ReachedHRElement()) {
+    if (aScanFromCaretPointResult.GetContent() ==
+        aWSRunScannerAtCaret.GetEditingHost()) {
+      return NS_OK;
+    }
+    nsresult rv =
+        ComputeRangesToDeleteHRElement(aHTMLEditor, aDirectionAndAmount,
+                                       *aScanFromCaretPointResult.ElementPtr(),
+                                       aWSRunScannerAtCaret.ScanStartRef(),
+                                       aWSRunScannerAtCaret, aRangesToDelete);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "AutoDeleteRangesHandler::ComputeRangesToDeleteHRElement() failed");
+    return rv;
+  }
+
   return NS_OK;
 }
 
@@ -3646,13 +3666,13 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
         aWSRunScannerAtCaret.GetEditingHost()) {
       return EditActionHandled();
     }
-    EditActionResult result = HandleDeleteCollapsedSelectionAtHRElement(
+    EditActionResult result = HandleDeleteHRElement(
         aHTMLEditor, aDirectionAndAmount,
         MOZ_KnownLive(*aScanFromCaretPointResult.ElementPtr()),
         aWSRunScannerAtCaret.ScanStartRef(), aWSRunScannerAtCaret);
-    NS_WARNING_ASSERTION(result.Succeeded(),
-                         "AutoDeleteRangesHandler::"
-                         "HandleDeleteCollapsedSelectionAtHRElement() failed");
+    NS_WARNING_ASSERTION(
+        result.Succeeded(),
+        "AutoDeleteRangesHandler::HandleDeleteHRElement() failed");
     return result;
   }
 
@@ -3958,6 +3978,10 @@ HTMLEditor::AutoDeleteRangesHandler::ShouldDeleteHRElement(
     Element& aHRElement, const EditorDOMPoint& aCaretPoint) const {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
 
+  if (StaticPrefs::editor_hr_element_allow_to_delete_from_following_line()) {
+    return true;
+  }
+
   if (aDirectionAndAmount != nsIEditor::ePrevious) {
     return true;
   }
@@ -3995,8 +4019,50 @@ HTMLEditor::AutoDeleteRangesHandler::ShouldDeleteHRElement(
          aCaretPoint.Offset() - 1 == atHRElement.Offset();
 }
 
-EditActionResult
-HTMLEditor::AutoDeleteRangesHandler::HandleDeleteCollapsedSelectionAtHRElement(
+nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteHRElement(
+    const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+    Element& aHRElement, const EditorDOMPoint& aCaretPoint,
+    const WSRunScanner& aWSRunScannerAtCaret,
+    AutoRangeArray& aRangesToDelete) const {
+  MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
+  MOZ_ASSERT(aHRElement.IsHTMLElement(nsGkAtoms::hr));
+  MOZ_ASSERT(&aHRElement != aWSRunScannerAtCaret.GetEditingHost());
+
+  Result<bool, nsresult> canDeleteHRElement = ShouldDeleteHRElement(
+      aHTMLEditor, aDirectionAndAmount, aHRElement, aCaretPoint);
+  if (canDeleteHRElement.isErr()) {
+    NS_WARNING("AutoDeleteRangesHandler::ShouldDeleteHRElement() failed");
+    return canDeleteHRElement.unwrapErr();
+  }
+  if (canDeleteHRElement.inspect()) {
+    nsresult rv = ComputeRangesToDeleteAtomicContent(aHTMLEditor, aHRElement,
+                                                     aRangesToDelete);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "AutoDeleteRangesHandler::ComputeRangesToDeleteAtomicContent() failed");
+    return rv;
+  }
+
+  WSScanResult forwardScanFromCaretResult =
+      aWSRunScannerAtCaret.ScanNextVisibleNodeOrBlockBoundaryFrom(aCaretPoint);
+  if (!forwardScanFromCaretResult.ReachedBRElement()) {
+    
+    nsresult rv = aRangesToDelete.Collapse(aCaretPoint);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::Collapse() failed");
+    return rv;
+  }
+
+  
+  
+  nsresult rv = ComputeRangesToDeleteAtomicContent(
+      aHTMLEditor, *forwardScanFromCaretResult.ElementPtr(), aRangesToDelete);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "AutoDeleteRangesHandler::ComputeRangesToDeleteAtomicContent() failed");
+  return rv;
+}
+
+EditActionResult HTMLEditor::AutoDeleteRangesHandler::HandleDeleteHRElement(
     HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
     Element& aHRElement, const EditorDOMPoint& aCaretPoint,
     const WSRunScanner& aWSRunScannerAtCaret) {
