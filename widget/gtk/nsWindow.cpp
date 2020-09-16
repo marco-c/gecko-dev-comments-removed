@@ -4167,7 +4167,7 @@ bool nsWindow::IsMainWindowTransparent() {
             Preferences::GetBool("mozilla.widget.use-argb-visuals");
       } else {
         sTransparentMainWindow =
-            (gfxPlatformGtk::GetPlatform()->IsWaylandDisplay() &&
+            (gfxPlatformGtk::GetPlatform()->IsWaylandDisplay() ||
              GetSystemCSDSupportLevel() != CSD_SUPPORT_NONE);
       }
     }
@@ -7781,7 +7781,7 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel(bool aIsPopup) {
     } else if (strstr(currentDesktop, "LXQt") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
     } else if (strstr(currentDesktop, "Deepin") != nullptr) {
-      sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
+      sCSDSupportLevel = CSD_SUPPORT_CLIENT;
     } else {
 
 
@@ -7846,15 +7846,37 @@ bool nsWindow::HideTitlebarByDefault() {
     return hideTitlebar;
   }
 
+  
+  hideTitlebar = true;
+
+  
+  GdkScreen* screen = gdk_screen_get_default();
+  if (!gdk_screen_is_composited(screen) && !TitlebarCanUseShapeMask()) {
+    hideTitlebar = false;
+    return hideTitlebar;
+  }
+  
   const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
-  hideTitlebar =
-      (currentDesktop && GetSystemCSDSupportLevel() != CSD_SUPPORT_NONE);
+  if (!currentDesktop || GetSystemCSDSupportLevel() == CSD_SUPPORT_NONE) {
+    hideTitlebar = false;
+    return hideTitlebar;
+  }
 
-  GdkScreen* screen;
-  hideTitlebar = ((screen = gdk_screen_get_default()) &&
-                  gdk_screen_is_composited(screen)) ||
-                 TitlebarCanUseShapeMask();
+  
+  if ((strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
+       strstr(currentDesktop, "GNOME") != nullptr ||
+       strstr(currentDesktop, "Pantheon") != nullptr)) {
+    return hideTitlebar;
+  }
 
+  
+  if (gtk_check_version(3, 24, 0) == nullptr &&
+      strstr(currentDesktop, "KDE") != nullptr) {
+    return hideTitlebar;
+  }
+
+  
+  hideTitlebar = false;
   return hideTitlebar;
 }
 
