@@ -740,16 +740,6 @@ class ContentParent final
       sJSPluginContentParents;
   static UniquePtr<LinkedList<ContentParent>> sContentParents;
 
-  
-
-
-
-
-
-
-
-  static StaticRefPtr<ContentParent> sRecycledE10SProcess;
-
   void AddShutdownBlockers();
   void RemoveShutdownBlockers();
 
@@ -827,14 +817,6 @@ class ContentParent final
 
 
 
-
-
-  void StopRecycling(bool aForeground = true);
-
-  
-
-
-
   void RemoveFromList();
 
   
@@ -852,21 +834,13 @@ class ContentParent final
 
 
 
-  void MarkAsDead();
+  void MarkAsTroubled();
 
   
 
 
 
-
-
-
-
-
-
-
-  void MaybeBeginShutDown(uint32_t aExpectedBrowserCount = 0,
-                          bool aSendShutDown = true);
+  void MarkAsDead();
 
   
 

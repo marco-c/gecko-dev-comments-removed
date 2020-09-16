@@ -37,8 +37,6 @@ class PreallocatedProcessManager final {
  public:
   static PreallocatedProcessManagerImpl* GetPPMImpl();
 
-  static bool Enabled();
-
   
 
 
@@ -55,12 +53,18 @@ class PreallocatedProcessManager final {
 
 
 
+
+
+
   static already_AddRefed<ContentParent> Take(const nsACString& aRemoteType);
 
   
 
 
 
+
+
+  static bool Provide(ContentParent* aParent);
   static void Erase(ContentParent* aParent);
 
  private:
