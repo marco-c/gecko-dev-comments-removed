@@ -252,7 +252,7 @@ class StackMaps {
 
 template <class T>
 static inline size_t StackArgAreaSizeUnaligned(const T& argTypes) {
-  WasmABIArgIter<const T> i(argTypes);
+  ABIArgIter<const T> i(argTypes);
   while (!i.done()) {
     i++;
   }
