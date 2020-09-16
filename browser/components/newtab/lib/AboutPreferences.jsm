@@ -165,7 +165,7 @@ this.AboutPreferences = class AboutPreferences {
       
       const iconUrl = !icon.search(/^(chrome|moz-extension|resource):/)
         ? icon
-        : `resource://activity-stream/data/content/assets/glyph-${icon}-16.svg`;
+        : `chrome://activity-stream/content/data/content/assets/glyph-${icon}-16.svg`;
 
       
       const sectionVbox = createAppend("vbox", contentsGroup);

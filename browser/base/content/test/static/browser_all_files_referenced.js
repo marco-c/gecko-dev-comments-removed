@@ -34,10 +34,10 @@ var gExceptionPaths = [
   "resource://payments/",
 
   
-  "resource://activity-stream/data/content/tippytop/images/",
-  "resource://activity-stream/data/content/tippytop/favicons/",
+  "chrome://activity-stream/content/data/content/tippytop/images/",
+  "chrome://activity-stream/content/data/content/tippytop/favicons/",
   
-  "resource://activity-stream/data/content/assets/remote/",
+  "chrome://activity-stream/content/data/content/assets/remote/",
 
   
   "resource://pdf.js/web/images/",
