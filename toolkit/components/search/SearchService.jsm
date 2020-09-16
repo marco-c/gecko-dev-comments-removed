@@ -2306,6 +2306,8 @@ SearchService.prototype = {
 
   _onSeparateDefaultPrefChanged() {
     
+    this.__sortedEngines = null;
+    
     
     if (this.defaultEngine != this._getEngineDefault(true)) {
       SearchUtils.notifyAction(
