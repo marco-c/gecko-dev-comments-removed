@@ -4945,21 +4945,22 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
                       true);
 #endif
   auto wm = aChild->GetWritingMode();
-  uint32_t riFlags = ReflowInput::COMPUTE_SIZE_USE_AUTO_BSIZE;
+  ComputeSizeFlags csFlags = ComputeSizeFlag::UseAutoBSize;
   if (aAvailableSize.ISize(wm) == INFINITE_ISIZE_COORD) {
-    riFlags |= ReflowInput::COMPUTE_SIZE_SHRINK_WRAP;
+    csFlags += ComputeSizeFlag::ShrinkWrap;
   }
   if (aIMinSizeClamp != NS_MAXSIZE) {
-    riFlags |= ReflowInput::I_CLAMP_MARGIN_BOX_MIN_SIZE;
+    csFlags += ComputeSizeFlag::IClampMarginBoxMinSize;
   }
   if (aBMinSizeClamp != NS_MAXSIZE) {
-    riFlags |= ReflowInput::B_CLAMP_MARGIN_BOX_MIN_SIZE;
+    csFlags += ComputeSizeFlag::BClampMarginBoxMinSize;
     aChild->SetProperty(nsIFrame::BClampMarginBoxMinSizeProperty(),
                         aBMinSizeClamp);
   } else {
     aChild->RemoveProperty(nsIFrame::BClampMarginBoxMinSizeProperty());
   }
-  ReflowInput childRI(pc, *rs, aChild, aAvailableSize, Some(aCBSize), riFlags);
+  ReflowInput childRI(pc, *rs, aChild, aAvailableSize, Some(aCBSize), 0,
+                      csFlags);
 
   
   
@@ -4998,19 +4999,19 @@ static void PostReflowStretchChild(
     LogicalAxis aChildAxis, const nscoord aNewContentBoxSize,
     nscoord aIMinSizeClamp = NS_MAXSIZE, nscoord aBMinSizeClamp = NS_MAXSIZE) {
   nsPresContext* pc = aChild->PresContext();
-  uint32_t riFlags = 0U;
+  ComputeSizeFlags csFlags;
   if (aIMinSizeClamp != NS_MAXSIZE) {
-    riFlags |= ReflowInput::I_CLAMP_MARGIN_BOX_MIN_SIZE;
+    csFlags += ComputeSizeFlag::IClampMarginBoxMinSize;
   }
   if (aBMinSizeClamp != NS_MAXSIZE) {
-    riFlags |= ReflowInput::B_CLAMP_MARGIN_BOX_MIN_SIZE;
+    csFlags += ComputeSizeFlag::BClampMarginBoxMinSize;
     aChild->SetProperty(nsIFrame::BClampMarginBoxMinSizeProperty(),
                         aBMinSizeClamp);
   } else {
     aChild->RemoveProperty(nsIFrame::BClampMarginBoxMinSizeProperty());
   }
-  ReflowInput ri(pc, aReflowInput, aChild, aAvailableSize, Some(aCBSize),
-                 riFlags);
+  ReflowInput ri(pc, aReflowInput, aChild, aAvailableSize, Some(aCBSize), 0,
+                 csFlags);
   if (aChildAxis == eLogicalAxisBlock) {
     ri.SetComputedBSize(ri.ApplyMinMaxBSize(aNewContentBoxSize));
   } else {
@@ -7166,7 +7167,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
   LogicalSize childCBSize = reflowSize.ConvertTo(childWM, wm);
 
   
-  uint32_t flags = 0;
+  ComputeSizeFlags csFlags;
   if (aGridItemInfo) {
     
     
@@ -7185,16 +7186,16 @@ void nsGridContainerFrame::ReflowInFlowChild(
     if (stretch[childIAxis]) {
       if (aGridItemInfo->mState[childIAxis] &
           ItemState::eClampMarginBoxMinSize) {
-        flags |= ReflowInput::I_CLAMP_MARGIN_BOX_MIN_SIZE;
+        csFlags += ComputeSizeFlag::IClampMarginBoxMinSize;
       }
     } else {
-      flags |= ReflowInput::COMPUTE_SIZE_SHRINK_WRAP;
+      csFlags += ComputeSizeFlag::ShrinkWrap;
     }
 
     auto childBAxis = GetOrthogonalAxis(childIAxis);
     if (stretch[childBAxis] &&
         aGridItemInfo->mState[childBAxis] & ItemState::eClampMarginBoxMinSize) {
-      flags |= ReflowInput::B_CLAMP_MARGIN_BOX_MIN_SIZE;
+      csFlags += ComputeSizeFlag::BClampMarginBoxMinSize;
       aChild->SetProperty(BClampMarginBoxMinSizeProperty(),
                           childCBSize.BSize(childWM));
     } else {
@@ -7202,7 +7203,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
     }
 
     if ((aGridItemInfo->mState[childIAxis] & ItemState::eApplyAutoMinSize)) {
-      flags |= ReflowInput::I_APPLY_AUTO_MIN_SIZE;
+      csFlags += ComputeSizeFlag::IApplyAutoMinSize;
     }
   }
 
@@ -7211,7 +7212,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
   }
   LogicalSize percentBasis(cb.Size(wm).ConvertTo(childWM, wm));
   ReflowInput childRI(pc, *aState.mReflowInput, aChild, childCBSize,
-                      Some(percentBasis), flags);
+                      Some(percentBasis), 0, csFlags);
   childRI.mFlags.mIsTopOfPage =
       aFragmentainer ? aFragmentainer->mIsTopOfPage : false;
 

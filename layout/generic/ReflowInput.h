@@ -270,22 +270,7 @@ struct SizeComputationInput {
     bool mMustReflowPlaceholders : 1;
 
     
-    bool mShrinkWrap : 1;
-
-    
-    bool mUseAutoBSize : 1;
-
-    
     bool mStaticPosIsCBOrigin : 1;
-
-    
-    bool mIClampMarginBoxMinSize : 1;
-
-    
-    bool mBClampMarginBoxMinSize : 1;
-
-    
-    bool mApplyAutoMinSize : 1;
 
     
     
@@ -378,7 +363,8 @@ struct SizeComputationInput {
 
  protected:
   void InitOffsets(mozilla::WritingMode aWM, nscoord aPercentBasis,
-                   mozilla::LayoutFrameType aFrameType, ReflowInputFlags aFlags,
+                   mozilla::LayoutFrameType aFrameType,
+                   mozilla::ComputeSizeFlags aFlags = {},
                    const nsMargin* aBorder = nullptr,
                    const nsMargin* aPadding = nullptr,
                    const nsStyleDisplay* aDisplay = nullptr);
@@ -719,6 +705,7 @@ struct ReflowInput : public SizeComputationInput {
   nsIFrame** mDiscoveredClearance = nullptr;
 
   ReflowInputFlags mFlags;
+  mozilla::ComputeSizeFlags mComputeSizeFlags;
 
   
   
@@ -800,12 +787,15 @@ struct ReflowInput : public SizeComputationInput {
 
 
 
+
+
   ReflowInput(nsPresContext* aPresContext,
               const ReflowInput& aParentReflowInput, nsIFrame* aFrame,
               const mozilla::LogicalSize& aAvailableSpace,
               const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
                   mozilla::Nothing(),
-              uint32_t aFlags = 0);
+              uint32_t aFlags = 0,
+              mozilla::ComputeSizeFlags aComputeSizeFlags = {});
 
   
   enum {
@@ -819,28 +809,11 @@ struct ReflowInput : public SizeComputationInput {
 
     
     
-    COMPUTE_SIZE_SHRINK_WRAP = (1 << 2),
-
-    
-    
-    COMPUTE_SIZE_USE_AUTO_BSIZE = (1 << 3),
-
-    
-    
     
     
     
     
     STATIC_POS_IS_CB_ORIGIN = (1 << 4),
-
-    
-    I_CLAMP_MARGIN_BOX_MIN_SIZE = (1 << 5),
-
-    
-    B_CLAMP_MARGIN_BOX_MIN_SIZE = (1 << 6),
-
-    
-    I_APPLY_AUTO_MIN_SIZE = (1 << 7),
   };
 
   
