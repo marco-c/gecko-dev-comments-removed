@@ -275,6 +275,7 @@ let JSWINDOWACTORS = {
       },
     },
     matches: ["about:welcome"],
+    remoteTypes: ["privilegedabout"],
 
     
     
