@@ -80,7 +80,6 @@ const WarpOpSnapshot* WarpBuilder::getOpSnapshotImpl(
 void WarpBuilder::initBlock(MBasicBlock* block) {
   graph().addBlock(block);
 
-  
   block->setLoopDepth(loopDepth());
 
   current = block;
@@ -754,7 +753,6 @@ bool WarpBuilder::build_True(BytecodeLocation) {
 
 bool WarpBuilder::build_Pop(BytecodeLocation) {
   current->pop();
-  
   return true;
 }
 
@@ -971,9 +969,6 @@ bool WarpBuilder::build_SetArg(BytecodeLocation loc) {
              "arguments aliases formals when an arguments binding is present "
              "and the arguments object is mapped");
 
-  
-  
-
   MOZ_ASSERT(info().needsArgsObj(),
              "unexpected JSOp::SetArg with lazy arguments");
 
@@ -994,12 +989,6 @@ bool WarpBuilder::build_ToNumeric(BytecodeLocation loc) {
   return buildUnaryOp(loc);
 }
 
-bool WarpBuilder::build_Pos(BytecodeLocation loc) {
-  
-  
-  return buildUnaryOp(loc);
-}
-
 bool WarpBuilder::buildUnaryOp(BytecodeLocation loc) {
   MDefinition* value = current->pop();
   return buildIC(loc, CacheKind::UnaryArith, {value});
@@ -1008,6 +997,8 @@ bool WarpBuilder::buildUnaryOp(BytecodeLocation loc) {
 bool WarpBuilder::build_Inc(BytecodeLocation loc) { return buildUnaryOp(loc); }
 
 bool WarpBuilder::build_Dec(BytecodeLocation loc) { return buildUnaryOp(loc); }
+
+bool WarpBuilder::build_Pos(BytecodeLocation loc) { return buildUnaryOp(loc); }
 
 bool WarpBuilder::build_Neg(BytecodeLocation loc) { return buildUnaryOp(loc); }
 
@@ -1319,8 +1310,6 @@ bool WarpBuilder::build_LoopHead(BytecodeLocation loc) {
 
   MInterruptCheck* check = MInterruptCheck::New(alloc());
   current->add(check);
-
-  
 
   return true;
 }
@@ -1796,7 +1785,6 @@ bool WarpBuilder::buildCallOp(BytecodeLocation loc) {
     return buildInlinedCall(loc, inliningSnapshot, callInfo);
   }
 
-  
   if (auto* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc)) {
     return TranspileCacheIRToMIR(this, loc, cacheIRSnapshot, callInfo);
   }
@@ -1805,8 +1793,6 @@ bool WarpBuilder::buildCallOp(BytecodeLocation loc) {
     callInfo.setImplicitlyUsedUnchecked();
     return buildBailoutForColdIC(loc, CacheKind::Call);
   }
-
-  
 
   bool needsThisCheck = false;
   if (callInfo.constructing()) {
