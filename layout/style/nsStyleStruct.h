@@ -1224,7 +1224,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
  public:
   mozilla::StyleAppearance mDefaultAppearance;
-  mozilla::StyleButtonAppearance mButtonAppearance;
   mozilla::StylePositionProperty mPosition;
 
   mozilla::StyleFloat mFloat;
@@ -1334,6 +1333,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleAppearance EffectiveAppearance() const {
     switch (mAppearance) {
       case mozilla::StyleAppearance::Auto:
+      case mozilla::StyleAppearance::Button:
       case mozilla::StyleAppearance::Searchfield:
       case mozilla::StyleAppearance::Textarea:
       case mozilla::StyleAppearance::Checkbox:
@@ -1366,14 +1366,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
         
         
         return mDefaultAppearance;
-      case mozilla::StyleAppearance::Button:
-        
-        
-        
-        if (mButtonAppearance == mozilla::StyleButtonAppearance::Disallow) {
-          return mDefaultAppearance;
-        }
-        return mAppearance;
       default:
         return mAppearance;
     }
