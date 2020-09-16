@@ -607,13 +607,35 @@ class AnimationInspector {
 
 
   async setHighlightedNode(nodeFront) {
-    await this.inspector.highlighters.hideBoxModelHighlighter();
+    await this.inspector.highlighters.hideHighlighterType(
+      this.inspector.highlighters.TYPES.SELECTOR
+    );
 
     if (nodeFront) {
-      await this.inspector.highlighters.showBoxModelHighlighter(nodeFront, {
-        hideInfoBar: true,
-        hideGuides: true,
-      });
+      const selector = await nodeFront.getUniqueSelector();
+      if (!selector) {
+        console.warn(
+          `Couldn't get unique selector for NodeFront: ${nodeFront.actorID}`
+        );
+        return;
+      }
+
+      
+
+
+
+
+
+
+      await this.inspector.highlighters.showHighlighterTypeForNode(
+        this.inspector.highlighters.TYPES.SELECTOR,
+        nodeFront,
+        {
+          hideInfoBar: true,
+          hideGuides: true,
+          selector,
+        }
+      );
     }
 
     this.inspector.store.dispatch(updateHighlightedNode(nodeFront));
