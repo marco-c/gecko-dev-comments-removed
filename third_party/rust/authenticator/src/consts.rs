@@ -5,7 +5,7 @@
 
 #![allow(dead_code)]
 
-pub const HID_RPT_SIZE: usize = 64;
+pub const MAX_HID_RPT_SIZE: usize = 64;
 pub const U2FAPDUHEADER_SIZE: usize = 7;
 pub const CID_BROADCAST: [u8; 4] = [0xff, 0xff, 0xff, 0xff];
 pub const TYPE_MASK: u8 = 0x80;
@@ -13,9 +13,9 @@ pub const TYPE_INIT: u8 = 0x80;
 pub const TYPE_CONT: u8 = 0x80;
 
 
-pub const INIT_DATA_SIZE: usize = HID_RPT_SIZE - 7;
+pub const INIT_HEADER_SIZE: usize = 7;
 
-pub const CONT_DATA_SIZE: usize = HID_RPT_SIZE - 5;
+pub const CONT_HEADER_SIZE: usize = 5;
 
 pub const PARAMETER_SIZE: usize = 32;
 
@@ -44,6 +44,8 @@ pub const U2F_VENDOR_LAST: u8 = TYPE_INIT | 0x7f;
 pub const U2F_REGISTER: u8 = 0x01; 
 pub const U2F_AUTHENTICATE: u8 = 0x02; 
 pub const U2F_VERSION: u8 = 0x03; 
+
+pub const YKPIV_INS_GET_VERSION: u8 = 0xfd; 
 
 
 pub const U2F_REGISTER_ID: u8 = 0x05; 

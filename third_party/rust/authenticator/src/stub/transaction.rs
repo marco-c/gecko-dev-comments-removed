@@ -2,21 +2,27 @@
 
 
 
-use util::OnceCallback;
+use crate::errors;
+use crate::statecallback::StateCallback;
 
 pub struct Transaction {}
 
 impl Transaction {
     pub fn new<F, T>(
         timeout: u64,
-        callback: OnceCallback<T>,
+        callback: StateCallback<crate::Result<T>>,
         new_device_cb: F,
-    ) -> Result<Self, ::Error>
+    ) -> crate::Result<Self>
     where
-        F: Fn(String, &Fn() -> bool),
+        F: Fn(String, &dyn Fn() -> bool),
     {
-        callback.call(Err(::Error::NotSupported));
-        Err(::Error::NotSupported)
+        callback.call(Err(errors::AuthenticatorError::U2FToken(
+            errors::U2FTokenError::NotSupported,
+        )));
+
+        Err(errors::AuthenticatorError::U2FToken(
+            errors::U2FTokenError::NotSupported,
+        ))
     }
 
     pub fn cancel(&mut self) {

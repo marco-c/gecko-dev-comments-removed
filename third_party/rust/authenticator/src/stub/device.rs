@@ -2,9 +2,9 @@
 
 
 
+use crate::u2ftypes::{U2FDevice, U2FDeviceInfo};
 use std::io;
 use std::io::{Read, Write};
-use u2ftypes::U2FDevice;
 
 pub struct Device {}
 
@@ -41,5 +41,25 @@ impl U2FDevice for Device {
 
     fn set_cid(&mut self, cid: [u8; 4]) {
         panic!("not implemented");
+    }
+
+    fn in_rpt_size(&self) -> usize {
+        panic!("not implemented");
+    }
+
+    fn out_rpt_size(&self) -> usize {
+        panic!("not implemented");
+    }
+
+    fn get_property(&self, prop_name: &str) -> io::Result<String> {
+        panic!("not implemented")
+    }
+
+    fn get_device_info(&self) -> U2FDeviceInfo {
+        panic!("not implemented")
+    }
+
+    fn set_device_info(&mut self, dev_info: U2FDeviceInfo) {
+        panic!("not implemented")
     }
 }

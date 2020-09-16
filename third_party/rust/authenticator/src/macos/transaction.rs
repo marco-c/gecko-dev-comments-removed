@@ -4,13 +4,14 @@
 
 extern crate libc;
 
+use crate::errors;
+use crate::platform::iokit::{CFRunLoopEntryObserver, IOHIDDeviceRef, SendableRunLoop};
+use crate::platform::monitor::Monitor;
+use crate::statecallback::StateCallback;
 use core_foundation::runloop::*;
-use platform::iokit::{CFRunLoopEntryObserver, IOHIDDeviceRef, SendableRunLoop};
-use platform::monitor::Monitor;
 use std::os::raw::c_void;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
-use util::OnceCallback;
 
 
 
@@ -24,9 +25,9 @@ pub struct Transaction {
 impl Transaction {
     pub fn new<F, T>(
         timeout: u64,
-        callback: OnceCallback<T>,
+        callback: StateCallback<crate::Result<T>>,
         new_device_cb: F,
-    ) -> Result<Self, ::Error>
+    ) -> crate::Result<Self>
     where
         F: Fn((IOHIDDeviceRef, Receiver<Vec<u8>>), &dyn Fn() -> bool) + Sync + Send + 'static,
         T: 'static,
@@ -47,7 +48,8 @@ impl Transaction {
 
                 
                 let mut monitor = Monitor::new(new_device_cb);
-                try_or!(monitor.start(), |_| callback.call(Err(::Error::Unknown)));
+                try_or!(monitor.start(), |_| callback
+                    .call(Err(errors::AuthenticatorError::Platform)));
 
                 
                 unsafe { CFRunLoopRunInMode(kCFRunLoopDefaultMode, timeout, 0) };
@@ -56,12 +58,16 @@ impl Transaction {
                 monitor.stop();
 
                 
-                callback.call(Err(::Error::NotAllowed));
+                callback.call(Err(errors::AuthenticatorError::U2FToken(
+                    errors::U2FTokenError::NotAllowed,
+                )));
             })
-            .map_err(|_| ::Error::Unknown)?;
+            .map_err(|_| errors::AuthenticatorError::Platform)?;
 
         
-        let runloop = rx.recv().map_err(|_| ::Error::Unknown)?;
+        let runloop = rx
+            .recv()
+            .map_err(|_| errors::AuthenticatorError::Platform)?;
 
         Ok(Self {
             runloop: Some(runloop),

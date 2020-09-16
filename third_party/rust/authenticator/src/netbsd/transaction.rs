@@ -2,11 +2,11 @@
 
 
 
+use crate::errors;
+use crate::platform::fd::Fd;
+use crate::platform::monitor::Monitor;
+use crate::statecallback::StateCallback;
 use runloop::RunLoop;
-use util::OnceCallback;
-
-use platform::fd::Fd;
-use platform::monitor::Monitor;
 
 pub struct Transaction {
     
@@ -16,9 +16,9 @@ pub struct Transaction {
 impl Transaction {
     pub fn new<F, T>(
         timeout: u64,
-        callback: OnceCallback<T>,
+        callback: StateCallback<crate::Result<T>>,
         new_device_cb: F,
-    ) -> Result<Self, ::Error>
+    ) -> crate::Result<Self>
     where
         F: Fn(Fd, &dyn Fn() -> bool) + Sync + Send + 'static,
         T: 'static,
@@ -29,14 +29,17 @@ impl Transaction {
                 let mut monitor = Monitor::new(new_device_cb);
 
                 
-                try_or!(monitor.run(alive), |_| callback.call(Err(::Error::Unknown)));
+                try_or!(monitor.run(alive), |_| callback
+                    .call(Err(errors::AuthenticatorError::Platform)));
 
                 
-                callback.call(Err(::Error::NotAllowed));
+                callback.call(Err(errors::AuthenticatorError::U2FToken(
+                    errors::U2FTokenError::NotAllowed,
+                )));
             },
             timeout,
         )
-        .map_err(|_| ::Error::Unknown)?;
+        .map_err(|_| errors::AuthenticatorError::Platform)?;
 
         Ok(Self {
             thread: Some(thread),
