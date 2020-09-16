@@ -1584,7 +1584,25 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
       return false;
     }
 
-    if (!frontend::CompileLazyFunction(cx, lazy, units.get(), sourceLength)) {
+    JS::CompileOptions options(cx);
+    frontend::FillCompileOptionsForLazyFunction(options, lazy);
+
+    Rooted<frontend::CompilationInfo> compilationInfo(
+        cx, frontend::CompilationInfo(cx, options));
+    compilationInfo.get().input.initFromLazy(lazy);
+
+    if (!frontend::CompileLazyFunctionToStencil(cx, compilationInfo.get(), lazy,
+                                                units.get(), sourceLength)) {
+      
+      
+      MOZ_ASSERT(fun->baseScript() == lazy);
+      MOZ_ASSERT(lazy->isReadyForDelazification());
+      return false;
+    }
+
+    
+
+    if (!frontend::InstantiateStencilsForDelazify(cx, compilationInfo.get())) {
       
       
       MOZ_ASSERT(fun->baseScript() == lazy);
