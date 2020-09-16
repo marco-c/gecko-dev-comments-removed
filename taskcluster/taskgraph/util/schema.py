@@ -229,8 +229,8 @@ OptimizationSchema = voluptuous.Any(
     
     {'never': None},
     
-    {'push-interval-10': None},
-    {'push-interval-20': None},
+    {'skip-unless-expanded': None},
+    {'skip-unless-backstop': None},
     
     {'skip-unless-changed': [text_type]},
     
