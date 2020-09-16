@@ -189,8 +189,10 @@ bool SharedFrameMetricsHelper::UpdateFromCompositorFrameMetrics(
   
   
   if (!aLowPrecision && !mProgressiveUpdateWasInDanger) {
-    bool scrollUpdatePending = contentMetrics.GetScrollOffsetUpdated() &&
-                               contentMetrics.GetScrollGeneration() !=
+    const nsTArray<ScrollPositionUpdate>& scrollUpdates =
+        aLayer.Metadata().GetScrollUpdates();
+    bool scrollUpdatePending = !scrollUpdates.IsEmpty() &&
+                               scrollUpdates.LastElement().GetGeneration() >
                                    compositorMetrics.GetScrollGeneration();
     
     
