@@ -709,11 +709,13 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
              "InitPresentationStuff must only be called when scripts are "
              "blocked");
 
+#ifdef NS_PRINTING
   
   
   if (mPrintJob) {
     return NS_OK;
   }
+#endif
 
   NS_ASSERTION(!mPresShell, "Someone should have destroyed the presshell!");
 
@@ -1612,10 +1614,8 @@ nsDocumentViewer::Destroy() {
   
   
   
-  if (mPrintJob) {
-    if (mPrintJob->CheckBeforeDestroy()) {
-      return NS_OK;
-    }
+  if (mPrintJob && mPrintJob->CheckBeforeDestroy()) {
+    return NS_OK;
   }
 #endif
 
