@@ -2747,26 +2747,6 @@ class LModD : public LBinaryMath<1> {
   MMod* mir() const { return mir_->toMod(); }
 };
 
-class LWasmBuiltinModD : public LInstructionHelper<1, 3, 0> {
- public:
-  LIR_HEADER(WasmBuiltinModD)
-
-  LWasmBuiltinModD(const LAllocation& lhs, const LAllocation& rhs,
-                   const LAllocation& tls)
-      : LInstructionHelper(classOpcode) {
-    setOperand(0, lhs);
-    setOperand(1, rhs);
-    setOperand(2, tls);
-    setIsCall();
-  }
-
-  const LAllocation* lhs() { return this->getOperand(0); }
-  const LAllocation* rhs() { return this->getOperand(1); }
-  const LAllocation* tls() { return this->getOperand(2); }
-
-  MWasmBuiltinModD* mir() const { return mir_->toWasmBuiltinModD(); }
-};
-
 
 class LConcat : public LInstructionHelper<1, 2, 5> {
  public:
@@ -3122,27 +3102,6 @@ class LTruncateDToInt32 : public LInstructionHelper<1, 1, 1> {
 
 
 
-class LWasmBuiltinTruncateDToInt32 : public LInstructionHelper<1, 2, 1> {
- public:
-  LIR_HEADER(WasmBuiltinTruncateDToInt32)
-
-  LWasmBuiltinTruncateDToInt32(const LAllocation& in, const LAllocation& tls,
-                               const LDefinition& temp)
-      : LInstructionHelper(classOpcode) {
-    setOperand(0, in);
-    setOperand(1, tls);
-    setTemp(0, temp);
-  }
-
-  const LDefinition* tempFloat() { return getTemp(0); }
-
-  MWasmBuiltinTruncateToInt32* mir() const {
-    return mir_->toWasmBuiltinTruncateToInt32();
-  }
-};
-
-
-
 
 class LTruncateFToInt32 : public LInstructionHelper<1, 1, 1> {
  public:
@@ -3157,27 +3116,6 @@ class LTruncateFToInt32 : public LInstructionHelper<1, 1, 1> {
   const LDefinition* tempFloat() { return getTemp(0); }
 
   MTruncateToInt32* mir() const { return mir_->toTruncateToInt32(); }
-};
-
-
-
-class LWasmBuiltinTruncateFToInt32 : public LInstructionHelper<1, 2, 1> {
- public:
-  LIR_HEADER(WasmBuiltinTruncateFToInt32)
-
-  LWasmBuiltinTruncateFToInt32(const LAllocation& in, const LAllocation& tls,
-                               const LDefinition& temp)
-      : LInstructionHelper(classOpcode) {
-    setOperand(0, in);
-    setOperand(1, tls);
-    setTemp(0, temp);
-  }
-
-  const LDefinition* tempFloat() { return getTemp(0); }
-
-  MWasmBuiltinTruncateToInt32* mir() const {
-    return mir_->toWasmBuiltinTruncateToInt32();
-  }
 };
 
 class LWasmTruncateToInt32 : public LInstructionHelper<1, 1, 0> {

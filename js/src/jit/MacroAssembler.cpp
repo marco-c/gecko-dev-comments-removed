@@ -2431,8 +2431,7 @@ void MacroAssembler::convertValueToFloatingPoint(ValueOperand value,
 void MacroAssembler::outOfLineTruncateSlow(FloatRegister src, Register dest,
                                            bool widenFloatToDouble,
                                            bool compilingWasm,
-                                           wasm::BytecodeOffset callOffset,
-                                           mozilla::Maybe<int32_t> tlsOffset) {
+                                           wasm::BytecodeOffset callOffset) {
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
     defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
   ScratchDoubleScope fpscratch(*this);
@@ -2459,7 +2458,7 @@ void MacroAssembler::outOfLineTruncateSlow(FloatRegister src, Register dest,
   if (compilingWasm) {
     setupWasmABICall();
     passABIArg(src, MoveOp::DOUBLE);
-    callWithABI(callOffset, wasm::SymbolicAddress::ToInt32, tlsOffset);
+    callWithABI(callOffset, wasm::SymbolicAddress::ToInt32, mozilla::Nothing());
   } else {
     setupUnalignedABICall(dest);
     passABIArg(src, MoveOp::DOUBLE);
@@ -3126,19 +3125,30 @@ CodeOffset MacroAssembler::callWithABI(wasm::BytecodeOffset bytecode,
                                        MoveOp::Type result) {
   MOZ_ASSERT(wasm::NeedsBuiltinThunk(imm));
 
+  
+  
+  Push(WasmTlsReg);
+
   uint32_t stackAdjust;
   callWithABIPre(&stackAdjust,  true);
 
   
+  
+  
+
   if (tlsOffset) {
-    loadPtr(Address(getStackPointer(), *tlsOffset + stackAdjust), WasmTlsReg);
+    
+    *tlsOffset += stackAdjust + sizeof(void*);
+    loadPtr(Address(getStackPointer(), *tlsOffset), WasmTlsReg);
   } else {
-    MOZ_CRASH("This can be only for an unsupported architecture.");
+    loadWasmTlsRegFromFrame();
   }
   CodeOffset raOffset = call(
       wasm::CallSiteDesc(bytecode.offset(), wasm::CallSite::Symbolic), imm);
 
   callWithABIPost(stackAdjust, result,  true);
+
+  Pop(WasmTlsReg);
 
   return raOffset;
 }
