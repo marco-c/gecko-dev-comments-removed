@@ -789,7 +789,7 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
         node = anchorFocusRange->GetEndContainer();
         offset = anchorFocusRange->EndOffset();
       }
-      sel->Collapse(node, offset);
+      sel->CollapseInLimiter(node, offset);
     }
     sel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
                         ScrollAxis(), ScrollAxis(), scrollFlags);
@@ -873,7 +873,7 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
     
     
     bool isBRFrame = frame->IsBrFrame();
-    sel->Collapse(sel->GetFocusNode(), sel->FocusOffset());
+    sel->CollapseInLimiter(sel->GetFocusNode(), sel->FocusOffset());
     
     if (!isBRFrame) {
       mCaret.mHint = CARET_ASSOCIATE_BEFORE;  
@@ -1419,7 +1419,7 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
         bool oldDesiredPosSet =
             mDesiredCaretPos.mIsSet;  
                                       
-        mDomSelections[index]->Collapse(aNewFocus, aContentOffset);
+        mDomSelections[index]->CollapseInLimiter(aNewFocus, aContentOffset);
         mDesiredCaretPos.mIsSet =
             oldDesiredPosSet;  
         mBatching = saveBatching;
@@ -2574,7 +2574,7 @@ nsresult nsFrameSelection::TableSelection::HandleMouseUpOrDown(
             
             
             
-            return aNormalSelection.Collapse(aChildContent, 0);
+            return aNormalSelection.CollapseInLimiter(aChildContent, 0);
           }
 #ifdef DEBUG_TABLE_SELECTION
           printf(

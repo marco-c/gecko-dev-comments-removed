@@ -598,9 +598,10 @@ nsresult TextEditor::SetTextAsSubAction(const nsAString& aString) {
     
     nsresult rv;
     if (IsEmpty()) {
-      rv = SelectionRefPtr()->Collapse(rootElement, 0);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Selection::Collapse() failed, but ignored");
+      rv = SelectionRefPtr()->CollapseInLimiter(rootElement, 0);
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "Selection::CollapseInLimiter() failed, but ignored");
     } else {
       
       
@@ -1545,8 +1546,9 @@ nsresult TextEditor::SelectEntireDocument() {
   
   
   if (IsEmpty()) {
-    nsresult rv = SelectionRefPtr()->Collapse(anonymousDivElement, 0);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Selection::Collapse() failed");
+    nsresult rv = SelectionRefPtr()->CollapseInLimiter(anonymousDivElement, 0);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "Selection::CollapseInLimiter() failed");
     return rv;
   }
 

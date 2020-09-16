@@ -179,8 +179,8 @@ NS_IMETHODIMP CompositionTransaction::UndoTransaction() {
   }
 
   
-  nsresult rv = selection->Collapse(textNode, mOffset);
-  NS_ASSERTION(NS_SUCCEEDED(rv), "Selection::Collapse() failed");
+  nsresult rv = selection->CollapseInLimiter(textNode, mOffset);
+  NS_ASSERTION(NS_SUCCEEDED(rv), "Selection::CollapseInLimiter() failed");
   return rv;
 }
 
@@ -299,10 +299,10 @@ nsresult CompositionTransaction::SetIMESelection(
           std::min(textRange.mStartOffset, aLengthOfCompositionString));
       MOZ_ASSERT(caretOffset >= 0 &&
                  static_cast<uint32_t>(caretOffset) <= maxOffset);
-      rv = selection->Collapse(aTextNode, caretOffset);
+      rv = selection->CollapseInLimiter(aTextNode, caretOffset);
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rv),
-          "Selection::Collapse() failed, but might be ignored");
+          "Selection::CollapseInLimiter() failed, but might be ignored");
       setCaret = setCaret || NS_SUCCEEDED(rv);
       if (!setCaret) {
         continue;
@@ -372,8 +372,9 @@ nsresult CompositionTransaction::SetIMESelection(
         static_cast<int32_t>(aOffsetInNode + aLengthOfCompositionString);
     MOZ_ASSERT(caretOffset >= 0 &&
                static_cast<uint32_t>(caretOffset) <= maxOffset);
-    rv = selection->Collapse(aTextNode, caretOffset);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Selection::Collapse() failed");
+    rv = selection->CollapseInLimiter(aTextNode, caretOffset);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "Selection::CollapseInLimiter() failed");
 
     
     
