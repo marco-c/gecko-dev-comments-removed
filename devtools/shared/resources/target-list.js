@@ -466,7 +466,7 @@ class TargetList extends EventEmitter {
 
 
 
-  async unwatchTargets(types, onAvailable, onDestroy) {
+  unwatchTargets(types, onAvailable, onDestroy) {
     if (typeof onAvailable != "function") {
       throw new Error(
         "TargetList.unwatchTargets expects a function as second argument"
