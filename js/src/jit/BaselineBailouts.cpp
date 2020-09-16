@@ -152,6 +152,11 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   MOZ_MUST_USE bool finishLastFrame();
 
   MOZ_MUST_USE bool prepareForNextFrame(HandleValueVector savedCallerArgs);
+  MOZ_MUST_USE bool finishOuterFrame(uint32_t frameSize);
+  MOZ_MUST_USE bool buildStubFrame(uint32_t frameSize,
+                                   HandleValueVector savedCallerArgs);
+  MOZ_MUST_USE bool buildRectifierFrame(uint32_t actualArgc,
+                                        size_t endOfBaselineStubArgs);
 
 #ifdef DEBUG
   MOZ_MUST_USE bool validateFrame();
@@ -928,6 +933,16 @@ bool BaselineStackBuilder::prepareForNextFrame(
     HandleValueVector savedCallerArgs) {
   const uint32_t frameSize = framePushed();
 
+  
+  
+  if (!finishOuterFrame(frameSize)) {
+    return false;
+  }
+
+  return buildStubFrame(frameSize, savedCallerArgs);
+}
+
+bool BaselineStackBuilder::finishOuterFrame(uint32_t frameSize) {
   const BaselineInterpreter& baselineInterp =
       cx_->runtime()->jitRuntime()->baselineInterpreter();
 
@@ -940,17 +955,12 @@ bool BaselineStackBuilder::prepareForNextFrame(
     return false;
   }
 
-  
-  
-  uint32_t pcOff = script_->pcToOffset(pc_);
-  ICEntry& icEntry = script_->jitScript()->icEntryFromPCOffset(pcOff);
-  MOZ_ASSERT(IsInlinableFallback(icEntry.fallbackStub()));
-
   uint8_t* retAddr = baselineInterp.retAddrForIC(op_);
-  if (!writePtr(retAddr, "ReturnAddr")) {
-    return false;
-  }
+  return writePtr(retAddr, "ReturnAddr");
+}
 
+bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
+                                          HandleValueVector savedCallerArgs) {
   
   
   
@@ -981,6 +991,8 @@ bool BaselineStackBuilder::prepareForNextFrame(
   size_t startOfBaselineStubFrame = framePushed();
 
   
+  uint32_t pcOff = script_->pcToOffset(pc_);
+  ICEntry& icEntry = script_->jitScript()->icEntryFromPCOffset(pcOff);
   MOZ_ASSERT(IsInlinableFallback(icEntry.fallbackStub()));
   if (!writePtr(icEntry.fallbackStub(), "StubPtr")) {
     return false;
@@ -1103,11 +1115,16 @@ bool BaselineStackBuilder::prepareForNextFrame(
   MOZ_ASSERT(framePushed() % JitStackAlignment == 0);
 
   
-  
-  if (actualArgc >= calleeFun->nargs()) {
-    return true;
+  if (actualArgc < calleeFun->nargs() &&
+      !buildRectifierFrame(actualArgc, endOfBaselineStubArgs)) {
+    return false;
   }
 
+  return true;
+}
+
+bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
+                                               size_t endOfBaselineStubArgs) {
   
   
   
@@ -1136,24 +1153,25 @@ bool BaselineStackBuilder::prepareForNextFrame(
   
 
   JitSpew(JitSpew_BaselineBailouts, "      [RECTIFIER FRAME]");
+  bool pushedNewTarget = IsConstructPC(pc_);
 
   size_t startOfRectifierFrame = framePushed();
 
   
 #if defined(JS_CODEGEN_X86)
-  if (!writePtr(prevFramePtr, "PrevFramePtr-X86Only")) {
+  if (!writePtr(prevFramePtr(), "PrevFramePtr-X86Only")) {
     return false;
   }
   
-  prevFramePtr = virtualPointerAtStackOffset(0);
-  if (!writePtr(prevFramePtr, "Padding-X86Only")) {
+  prevFramePtr_ = virtualPointerAtStackOffset(0);
+  if (!writePtr(prevFramePtr(), "Padding-X86Only")) {
     return false;
   }
 #endif
 
   
   size_t afterFrameSize =
-      (calleeFun->nargs() + 1 + pushedNewTarget) * sizeof(Value) +
+      (nextCallee()->nargs() + 1 + pushedNewTarget) * sizeof(Value) +
       RectifierFrameLayout::Size();
   if (!maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
     return false;
@@ -1170,7 +1188,7 @@ bool BaselineStackBuilder::prepareForNextFrame(
   }
 
   
-  for (unsigned i = 0; i < (calleeFun->nargs() - actualArgc); i++) {
+  for (unsigned i = 0; i < (nextCallee()->nargs() - actualArgc); i++) {
     if (!writeValue(UndefinedValue(), "FillerVal")) {
       return false;
     }
@@ -1198,7 +1216,7 @@ bool BaselineStackBuilder::prepareForNextFrame(
   }
 
   
-  if (!writePtr(CalleeToToken(calleeFun, pushedNewTarget), "CalleeToken")) {
+  if (!writePtr(CalleeToToken(nextCallee(), pushedNewTarget), "CalleeToken")) {
     return false;
   }
 
