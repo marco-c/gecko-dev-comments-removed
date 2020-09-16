@@ -1066,7 +1066,12 @@ enum Role {
 
   CODE = 182,
 
-  LAST_ROLE = CODE
+  
+
+
+  TIME_EDITOR = 183,
+
+  LAST_ROLE = TIME_EDITOR
 };
 
 }  
