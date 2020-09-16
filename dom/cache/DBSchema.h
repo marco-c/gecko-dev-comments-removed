@@ -40,11 +40,6 @@ nsresult DeleteCacheId(mozIStorageConnection* aConn, CacheId aCacheId,
                        nsTArray<nsID>& aDeletedBodyIdListOut,
                        int64_t* aDeletedPaddingSizeOut);
 
-
-
-nsresult IsCacheOrphaned(mozIStorageConnection* aConn, CacheId aCacheId,
-                         bool* aOrphanedOut);
-
 nsresult FindOrphanedCacheIds(mozIStorageConnection* aConn,
                               nsTArray<CacheId>& aOrphanedListOut);
 
