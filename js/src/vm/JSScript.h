@@ -1564,6 +1564,10 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
  protected:
   
   
+  ScriptWarmUpData warmUpData_ = {};
+
+  
+  
   
   const GCPtrObject functionOrGlobal_ = {};
 
@@ -1598,10 +1602,6 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
   
   RefPtr<js::RuntimeScriptData> sharedData_ = {};
-
-  
-  
-  ScriptWarmUpData warmUpData_ = {};
 
   
 

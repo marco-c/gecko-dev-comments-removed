@@ -230,8 +230,15 @@ struct SelfHostedLazyScript {
   
   uint8_t* jitCodeRaw_ = nullptr;
 
+  
+  
+  ScriptWarmUpData warmUpData_ = {};
+
   static constexpr size_t offsetOfJitCodeRaw() {
     return offsetof(SelfHostedLazyScript, jitCodeRaw_);
+  }
+  static constexpr size_t offsetOfWarmUpData() {
+    return offsetof(SelfHostedLazyScript, warmUpData_);
   }
 };
 
