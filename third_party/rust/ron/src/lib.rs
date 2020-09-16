@@ -57,9 +57,19 @@
 
 
 
+#![doc(html_root_url = "https://docs.rs/ron/0.6.0")]
+
 pub mod de;
 pub mod ser;
+
+pub mod error;
 pub mod value;
-pub use crate::value::Value;
+
+pub mod extensions;
+
+pub use de::{from_str, Deserializer};
+pub use error::{Error, Result};
+pub use ser::{to_string, Serializer};
+pub use value::{Map, Number, Value};
 
 mod parse;
