@@ -73,8 +73,6 @@ function getLocalizedPref(prefName, defaultValue) {
   return defaultValue;
 }
 
-var gInitialized = false;
-
 
 function ParseSubmissionResult(
   engine,
@@ -133,6 +131,10 @@ SearchService.prototype = {
 
   
   _initStarted: null,
+
+  
+  
+  _initialized: false,
 
   
   _engineSelector: null,
@@ -211,7 +213,7 @@ SearchService.prototype = {
   
   
   _ensureInitialized() {
-    if (gInitialized) {
+    if (this._initialized) {
       if (!Components.isSuccessCode(this._initRV)) {
         logConsole.debug("_ensureInitialized: failure");
         throw Components.Exception(
@@ -295,7 +297,7 @@ SearchService.prototype = {
       this._initRV = ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
       logConsole.error("_init: failure initializing search:", ex.result);
     }
-    gInitialized = true;
+    this._initialized = true;
     if (Components.isSuccessCode(this._initRV)) {
       this._initObservers.resolve(this._initRV);
     } else {
@@ -719,7 +721,7 @@ SearchService.prototype = {
 
 
   async _maybeReloadEngines() {
-    if (!gInitialized) {
+    if (!this._initialized) {
       if (this._maybeReloadDebounce) {
         logConsole.debug(
           "We're already waiting for init to finish and reload engines after."
@@ -949,7 +951,7 @@ SearchService.prototype = {
 
 
   reset() {
-    gInitialized = false;
+    this._initialized = false;
     this._initObservers = PromiseUtils.defer();
     this._initStarted = null;
     this._startupExtensions = new Set();
@@ -1358,7 +1360,7 @@ SearchService.prototype = {
   },
 
   get isInitialized() {
-    return gInitialized;
+    return this._initialized;
   },
 
   async getEngines() {
@@ -1553,7 +1555,7 @@ SearchService.prototype = {
     
     
     
-    if (!gInitialized && !isAppProvided && !initEngine) {
+    if (!this._initialized && !isAppProvided && !initEngine) {
       await this.init();
     }
     let existingEngine = this._engines.get(name);
@@ -1619,7 +1621,7 @@ SearchService.prototype = {
 
     if (extension.isAppProvided) {
       let inConfig = this._searchOrder.filter(el => el.id == extension.id);
-      if (gInitialized && inConfig.length) {
+      if (this._initialized && inConfig.length) {
         return this._installExtensionEngine(
           extension,
           inConfig.map(el => el.locale)
@@ -1631,7 +1633,7 @@ SearchService.prototype = {
 
     
     
-    if (!gInitialized) {
+    if (!this._initialized) {
       this._startupExtensions.add(extension);
       return [];
     }
@@ -2414,7 +2416,7 @@ SearchService.prototype = {
   },
 
   parseSubmissionURL(url) {
-    if (!gInitialized) {
+    if (!this._initialized) {
       
       
       
@@ -2675,7 +2677,7 @@ SearchService.prototype = {
           
           
           
-          if (!gInitialized) {
+          if (!this._initialized) {
             logConsole.warn(
               "not saving cache on shutdown due to initializing."
             );
