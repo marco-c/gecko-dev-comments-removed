@@ -90,13 +90,17 @@ var PointerlockFsWarning = {
       textElem.setAttribute("hidden", true);
     } else {
       textElem.removeAttribute("hidden");
-      let hostElem = this._element.querySelector(
-        ".pointerlockfswarning-domain"
-      );
       
       let utils = {};
       ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm", utils);
-      hostElem.textContent = utils.DownloadUtils.getURIHost(uri.spec)[0];
+      let displayHost = utils.DownloadUtils.getURIHost(uri.spec)[0];
+      let l10nString = {
+        "fullscreen-warning": "fullscreen-warning-domain",
+        "pointerlock-warning": "pointerlock-warning-domain",
+      }[elementId];
+      document.l10n.setAttributes(textElem, l10nString, {
+        domain: displayHost,
+      });
     }
 
     this._element.dataset.identity =
@@ -124,6 +128,10 @@ var PointerlockFsWarning = {
     this._timeoutShow.cancel();
     
     this._state = "hidden";
+    
+    this._element
+      .querySelector(".pointerlockfswarning-domain-text")
+      .removeAttribute("data-l10n-id");
     this._element.setAttribute("hidden", true);
     
     this._element.removeEventListener("transitionend", this);
