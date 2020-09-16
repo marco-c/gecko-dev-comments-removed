@@ -1172,6 +1172,12 @@ class Element : public FragmentOrElement {
 
   void GetElementsWithGrid(nsTArray<RefPtr<Element>>& aElements);
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT bool HasVisibleScrollbars();
+
  private:
   
 
