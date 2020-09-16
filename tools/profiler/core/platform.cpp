@@ -1453,17 +1453,34 @@ Atomic<uint32_t, MemoryOrdering::Relaxed> RacyFeatures::sActiveAndFeatures(0);
 
 class TLSRegisteredThread {
  public:
-  static bool Init() {
-    
-    
-    static const bool ok = AutoProfilerLabel::ProfilingStackOwnerTLS::Init() &&
-                           sRegisteredThread.init();
-    return ok;
+  
+  
+  
+  static void Init() {
+    MOZ_ASSERT(sState == State::Uninitialized, "Already initialized");
+    AutoProfilerLabel::ProfilingStackOwnerTLS::Init();
+    MOZ_ASSERT(
+        AutoProfilerLabel::ProfilingStackOwnerTLS::sState !=
+            AutoProfilerLabel::ProfilingStackOwnerTLS::State::Uninitialized,
+        "Unexpected ProfilingStackOwnerTLS::sState after "
+        "ProfilingStackOwnerTLS::Init()");
+    sState =
+        (AutoProfilerLabel::ProfilingStackOwnerTLS::sState ==
+             AutoProfilerLabel::ProfilingStackOwnerTLS::State::Initialized &&
+         sRegisteredThread.init())
+            ? State::Initialized
+            : State::Unavailable;
+  }
+
+  static bool IsTLSInited() {
+    MOZ_ASSERT(sState != State::Uninitialized,
+               "TLSRegisteredThread should only be accessed after Init()");
+    return sState == State::Initialized;
   }
 
   
   static class RegisteredThread* RegisteredThread(PSLockRef) {
-    if (!Init()) {
+    if (!IsTLSInited()) {
       return nullptr;
     }
     return sRegisteredThread.get();
@@ -1471,7 +1488,7 @@ class TLSRegisteredThread {
 
   
   static class RacyRegisteredThread* RacyRegisteredThread() {
-    if (!Init()) {
+    if (!IsTLSInited()) {
       return nullptr;
     }
     class RegisteredThread* registeredThread = sRegisteredThread.get();
@@ -1483,7 +1500,7 @@ class TLSRegisteredThread {
   
   
   static ProfilingStack* Stack() {
-    if (!Init()) {
+    if (!IsTLSInited()) {
       return nullptr;
     }
     ProfilingStackOwner* profilingStackOwner =
@@ -1496,7 +1513,7 @@ class TLSRegisteredThread {
 
   static void SetRegisteredThreadAndAutoProfilerLabelProfilingStack(
       PSLockRef, class RegisteredThread* aRegisteredThread) {
-    if (!Init()) {
+    if (!IsTLSInited()) {
       return;
     }
     MOZ_RELEASE_ASSERT(
@@ -1513,7 +1530,7 @@ class TLSRegisteredThread {
   
   
   static void ResetRegisteredThread(PSLockRef) {
-    if (!Init()) {
+    if (!IsTLSInited()) {
       return;
     }
     sRegisteredThread.set(nullptr);
@@ -1522,7 +1539,7 @@ class TLSRegisteredThread {
   
   
   static void ResetAutoProfilerLabelProfilingStack(PSLockRef) {
-    if (!Init()) {
+    if (!IsTLSInited()) {
       return;
     }
     MOZ_RELEASE_ASSERT(
@@ -1536,11 +1553,31 @@ class TLSRegisteredThread {
   
   
   
+  enum class State { Uninitialized = 0, Initialized, Unavailable };
+  static State sState;
+
+  
+  
+  
   
   static MOZ_THREAD_LOCAL(class RegisteredThread*) sRegisteredThread;
 };
 
+
+
+TLSRegisteredThread::State TLSRegisteredThread::sState;
+
+
 MOZ_THREAD_LOCAL(RegisteredThread*) TLSRegisteredThread::sRegisteredThread;
+
+
+
+
+
+
+AutoProfilerLabel::ProfilingStackOwnerTLS::State
+    AutoProfilerLabel::ProfilingStackOwnerTLS::sState;
+
 
 
 
@@ -1565,6 +1602,13 @@ MOZ_THREAD_LOCAL(RegisteredThread*) TLSRegisteredThread::sRegisteredThread;
 
 MOZ_THREAD_LOCAL(ProfilingStackOwner*)
 AutoProfilerLabel::ProfilingStackOwnerTLS::sProfilingStackOwnerTLS;
+
+
+void AutoProfilerLabel::ProfilingStackOwnerTLS::Init() {
+  MOZ_ASSERT(sState == State::Uninitialized, "Already initialized");
+  sState =
+      sProfilingStackOwnerTLS.init() ? State::Initialized : State::Unavailable;
+}
 
 void ProfilingStackOwner::DumpStackAndCrash() const {
   fprintf(stderr,
@@ -3768,7 +3812,7 @@ static ProfilingStack* locked_register_thread(PSLockRef aLock,
 
   VTUNE_REGISTER_THREAD(aName);
 
-  if (!TLSRegisteredThread::Init()) {
+  if (!TLSRegisteredThread::IsTLSInited()) {
     return nullptr;
   }
 
@@ -3922,6 +3966,9 @@ void profiler_init(void* aStackTop) {
   if (getenv("MOZ_PROFILER_HELP")) {
     PrintUsageThenExit(1);  
   }
+
+  
+  TLSRegisteredThread::Init();
 
   SharedLibraryInfo::Initialize();
 
@@ -5039,7 +5086,7 @@ ProfilingStack* profiler_register_thread(const char* aName,
         TextMarkerPayload(text, TimeStamp::NowUnfuzzed()), &lock);
 
     MOZ_RELEASE_ASSERT(
-        TLSRegisteredThread::Init(),
+        TLSRegisteredThread::IsTLSInited(),
         "Thread should not have already been registered without TLS::Init()");
     MOZ_RELEASE_ASSERT(TLSRegisteredThread::RegisteredThread(lock),
                        "TLS should be set when re-registering thread");
@@ -5073,7 +5120,7 @@ void profiler_unregister_thread() {
           FindCurrentThreadRegisteredThread(lock);
       registeredThread) {
     MOZ_RELEASE_ASSERT(
-        TLSRegisteredThread::Init(),
+        TLSRegisteredThread::IsTLSInited(),
         "Thread should not have been registered without TLS::Init()");
     MOZ_RELEASE_ASSERT(TLSRegisteredThread::RegisteredThread(lock),
                        "TLS should be set when un-registering thread");
