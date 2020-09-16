@@ -54,8 +54,6 @@ interface nsIObjectLoadingContent : nsISupports
   
   const unsigned long PLUGIN_CRASHED              = 5;
   
-  const unsigned long PLUGIN_SUPPRESSED           = 6;
-  
   
   
   

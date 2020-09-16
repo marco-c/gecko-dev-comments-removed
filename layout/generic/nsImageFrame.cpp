@@ -633,10 +633,6 @@ nsRect nsImageFrame::SourceRectToDest(const nsIntRect& aRect) {
 }
 
 static bool ImageOk(EventStates aState) {
-  
-  
-  
-  
   return !aState.HasState(NS_EVENT_STATE_BROKEN);
 }
 

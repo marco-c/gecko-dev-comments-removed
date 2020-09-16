@@ -3503,8 +3503,7 @@ nsCSSFrameConstructor::FindObjectData(const Element& aElement,
   
   
   uint32_t type;
-  if (aElement.State().HasAtLeastOneOfStates(NS_EVENT_STATE_BROKEN |
-                                             NS_EVENT_STATE_SUPPRESSED)) {
+  if (aElement.State().HasState(NS_EVENT_STATE_BROKEN)) {
     type = nsIObjectLoadingContent::TYPE_NULL;
   } else {
     nsCOMPtr<nsIObjectLoadingContent> objContent =
