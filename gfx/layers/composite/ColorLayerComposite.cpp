@@ -14,6 +14,7 @@
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/Effects.h"          
 #include "mozilla/mozalloc.h"                
+#include "UnitTransforms.h"                  
 
 namespace mozilla {
 namespace layers {
