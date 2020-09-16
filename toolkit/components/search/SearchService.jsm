@@ -74,7 +74,6 @@ function getLocalizedPref(prefName, defaultValue) {
 }
 
 var gInitialized = false;
-var gReinitializing = false;
 
 
 function ParseSubmissionResult(
@@ -962,86 +961,6 @@ SearchService.prototype = {
     logConsole.debug("maybeReloadEngines complete");
   },
 
-  _reInit(origin) {
-    logConsole.debug("_reInit");
-    
-    if (gReinitializing) {
-      logConsole.debug("_reInit: already re-initializing, bailing out.");
-      return;
-    }
-    gReinitializing = true;
-
-    
-    gInitialized = false;
-
-    
-    Services.obs.notifyObservers(
-      null,
-      SearchUtils.TOPIC_SEARCH_SERVICE,
-      "reinit-started"
-    );
-
-    (async () => {
-      try {
-        this._initObservers = PromiseUtils.defer();
-
-        
-        this._resetLocalData();
-
-        
-        
-        Services.obs.notifyObservers(
-          null,
-          SearchUtils.TOPIC_SEARCH_SERVICE,
-          "uninit-complete"
-        );
-
-        let cache = await this._cache.get(origin);
-
-        await this._loadEngines(cache);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (Services.startup.shuttingDown) {
-          logConsole.warn("_reInit: abandoning reInit due to shutting down");
-          this._initObservers.reject(Cr.NS_ERROR_ABORT);
-          return;
-        }
-
-        
-        
-        gInitialized = true;
-        this._initObservers.resolve();
-        Services.obs.notifyObservers(
-          null,
-          SearchUtils.TOPIC_SEARCH_SERVICE,
-          "init-complete"
-        );
-      } catch (err) {
-        logConsole.error("Reinit failed:", err);
-        Services.obs.notifyObservers(
-          null,
-          SearchUtils.TOPIC_SEARCH_SERVICE,
-          "reinit-failed"
-        );
-      } finally {
-        gReinitializing = false;
-        Services.obs.notifyObservers(
-          null,
-          SearchUtils.TOPIC_SEARCH_SERVICE,
-          "reinit-complete"
-        );
-      }
-    })();
-  },
-
   
 
 
@@ -1449,11 +1368,6 @@ SearchService.prototype = {
 
   get isInitialized() {
     return gInitialized;
-  },
-
-  
-  async reInit() {
-    return this._reInit("test");
   },
 
   async getEngines() {
@@ -2771,7 +2685,7 @@ SearchService.prototype = {
           
           
           
-          if (!gInitialized || gReinitializing) {
+          if (!gInitialized) {
             logConsole.warn(
               "not saving cache on shutdown due to initializing."
             );

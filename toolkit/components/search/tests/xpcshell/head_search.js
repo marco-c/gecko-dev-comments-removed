@@ -13,6 +13,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
   SearchCache: "resource://gre/modules/SearchCache.jsm",
   SearchEngineSelector: "resource://gre/modules/SearchEngineSelector.jsm",
+  SearchService: "resource://gre/modules/SearchService.jsm",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
@@ -160,6 +161,32 @@ function promiseAfterCache() {
 
 
 
+async function promiseSetHomeRegion(region) {
+  let promise = SearchTestUtils.promiseSearchNotification("engines-reloaded");
+  Region._setHomeRegion(region);
+  await promise;
+}
+
+
+
+
+
+
+
+
+async function promiseSetLocale(locale) {
+  let promise = SearchTestUtils.promiseSearchNotification("engines-reloaded");
+  Services.locale.availableLocales = [locale];
+  Services.locale.requestedLocales = [locale];
+  await promise;
+}
+
+
+
+
+
+
+
 
 
 
@@ -286,14 +313,6 @@ var addTestEngines = async function(aItems) {
 function installTestEngine() {
   useHttpServer();
   return addTestEngines([{ name: kTestEngineName, xmlFileName: "engine.xml" }]);
-}
-
-async function asyncReInit({ awaitRegionFetch = false } = {}) {
-  let promise = SearchTestUtils.promiseSearchNotification("reinit-complete");
-
-  Services.search.reInit();
-
-  return promise;
 }
 
 

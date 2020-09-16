@@ -36,12 +36,7 @@ add_task(async function test_changeRegion() {
   
   
   
-  let reInitPromise = SearchTestUtils.promiseSearchNotification(
-    "reinit-complete"
-  );
-  Region._setHomeRegion("tr", false);
-  Services.search.reInit();
-  await reInitPromise;
+  await promiseSetHomeRegion("tr");
 
   Assert.equal(
     Services.search.originalDefaultEngine.name,
