@@ -209,6 +209,9 @@ class nsHttpConnectionInfo final : public ARefBase {
 
   bool IsHttp3() const { return mIsHttp3; }
 
+  void SetHasIPHintAddress(bool aHasIPHint) { mHasIPHintAddress = aHasIPHint; }
+  bool HasIPHintAddress() const { return mHasIPHintAddress; }
+
  private:
   
   
@@ -259,6 +262,8 @@ class nsHttpConnectionInfo final : public ARefBase {
                         
                         
   bool mIsHttp3;
+
+  bool mHasIPHintAddress = false;
 
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo, override)
