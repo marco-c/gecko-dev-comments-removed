@@ -421,25 +421,14 @@ class CreditCardResult extends ProfileAutoCompleteResult {
           primaryAffix = affix;
           primary = label;
         }
-        const secondary = this._getSecondaryLabel(
-          focusedFieldName,
-          allFieldNames,
-          profile
-        );
-        
-        
-        
-        const ccTypeName = FormAutofillUtils.stringBundle.GetStringFromName(
-          `cardNetwork.${profile["cc-type"]}`
-        );
-        const ariaLabel = [ccTypeName, primaryAffix, primary, secondary]
-          .filter(chunk => !!chunk) 
-          .join(" ");
         return {
           primaryAffix,
           primary,
-          secondary,
-          ariaLabel,
+          secondary: this._getSecondaryLabel(
+            focusedFieldName,
+            allFieldNames,
+            profile
+          ),
         };
       });
     
