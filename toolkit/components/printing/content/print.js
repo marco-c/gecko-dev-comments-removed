@@ -382,10 +382,10 @@ var PrintEventHandler = {
     }
     
     
-    let { totalPageCount } = await previewBrowser.frameLoader.printPreview(
-      settings,
-      sourceWinId
-    );
+    let {
+      totalPageCount,
+      hasSelection,
+    } = await previewBrowser.frameLoader.printPreview(settings, sourceWinId);
 
     if (this._queuedPreviewUpdatePromise) {
       
@@ -398,6 +398,11 @@ var PrintEventHandler = {
       if (settings.printRange == Ci.nsIPrintSettings.kRangeSpecifiedPageRange) {
         numPages = settings.endPageRange - settings.startPageRange + 1;
       }
+      
+      settings.SetPrintOptions(
+        Ci.nsIPrintSettings.kEnableSelectionRB,
+        hasSelection
+      );
       document.dispatchEvent(
         new CustomEvent("page-count", {
           detail: { numPages, totalPages: totalPageCount },

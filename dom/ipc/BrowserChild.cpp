@@ -2244,7 +2244,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvPrintPreview(
   
   auto sendCallbackError = MakeScopeExit([&] {
     if (aCallback) {
-      aCallback(PrintPreviewResultInfo(0, 0));  
+      aCallback(PrintPreviewResultInfo(0, 0, false));  
     }
   });
 
