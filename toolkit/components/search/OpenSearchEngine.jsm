@@ -73,9 +73,6 @@ function ENSURE_WARN(assertion, message, resultCode) {
 class OpenSearchEngine extends SearchEngine {
   
   _data = null;
-  
-  
-  _installCallback = null;
 
   
 
@@ -147,7 +144,10 @@ class OpenSearchEngine extends SearchEngine {
 
 
 
-  _initFromURIAndLoad(uri) {
+
+
+
+  _initFromURIAndLoad(uri, callback) {
     let loadURI = uri instanceof Ci.nsIURI ? uri : SearchUtils.makeURI(uri);
     ENSURE_WARN(
       loadURI,
@@ -169,7 +169,11 @@ class OpenSearchEngine extends SearchEngine {
       }
     }
     this._uri = loadURI;
-    var listener = new SearchUtils.LoadListener(chan, this, this._onLoad);
+
+    var listener = new SearchUtils.LoadListener(
+      chan,
+      this._onLoad.bind(this, callback)
+    );
     chan.notificationCallbacks = listener;
     chan.asyncOpen(listener);
   }
@@ -231,23 +235,13 @@ class OpenSearchEngine extends SearchEngine {
 
 
 
-  _onLoad(bytes, engine) {
-    
-
-
-
-
-
-
-    function onError(errorCode) {
-      if (engine._engineToUpdate) {
-        logConsole.warn("Failed to update", engine._engineToUpdate.name);
+  _onLoad(callback, bytes) {
+    let onError = errorCode => {
+      if (this._engineToUpdate) {
+        logConsole.warn("Failed to update", this._engineToUpdate.name);
       }
-      
-      if (engine._installCallback) {
-        engine._installCallback(errorCode);
-      }
-    }
+      callback?.(errorCode);
+    };
 
     if (!bytes) {
       onError(Ci.nsISearchService.ERROR_DOWNLOAD_FAILURE);
@@ -256,14 +250,13 @@ class OpenSearchEngine extends SearchEngine {
 
     var parser = new DOMParser();
     var doc = parser.parseFromBuffer(bytes, "text/xml");
-    engine._data = doc.documentElement;
+    this._data = doc.documentElement;
 
     try {
-      
-      engine._initFromData();
+      this._initFromData();
     } catch (ex) {
       logConsole.error("_onLoad: Failed to init engine!", ex);
-      
+
       if (ex.result == Cr.NS_ERROR_FILE_CORRUPTED) {
         onError(Ci.nsISearchService.ERROR_ENGINE_CORRUPTED);
       } else {
@@ -272,54 +265,51 @@ class OpenSearchEngine extends SearchEngine {
       return;
     }
 
-    if (engine._engineToUpdate) {
-      let engineToUpdate = engine._engineToUpdate.wrappedJSObject;
+    if (this._engineToUpdate) {
+      let engineToUpdate = this._engineToUpdate.wrappedJSObject;
 
       
       Object.keys(engineToUpdate._metaData).forEach(key => {
-        engine.setAttr(key, engineToUpdate.getAttr(key));
+        this.setAttr(key, engineToUpdate.getAttr(key));
       });
-      engine._loadPath = engineToUpdate._loadPath;
+      this._loadPath = engineToUpdate._loadPath;
 
       
       
-      engine.setAttr("updatelastmodified", new Date().toUTCString());
+      this.setAttr("updatelastmodified", new Date().toUTCString());
 
       
-      if (!engine._iconURI && engineToUpdate._iconURI) {
-        engine._iconURI = engineToUpdate._iconURI;
+      if (!this._iconURI && engineToUpdate._iconURI) {
+        this._iconURI = engineToUpdate._iconURI;
       }
     } else {
       
       
-      if (Services.search.getEngineByName(engine.name)) {
+      if (Services.search.getEngineByName(this.name)) {
         onError(Ci.nsISearchService.ERROR_DUPLICATE_ENGINE);
         logConsole.debug("_onLoad: duplicate engine found, bailing");
         return;
       }
 
-      engine._loadPath = OpenSearchEngine.getAnonymizedLoadPath(
-        SearchUtils.sanitizeName(engine.name),
+      this._loadPath = OpenSearchEngine.getAnonymizedLoadPath(
+        SearchUtils.sanitizeName(this.name),
         null,
-        engine._uri
+        this._uri
       );
-      if (engine._extensionID) {
-        engine._loadPath += ":" + engine._extensionID;
+      if (this._extensionID) {
+        this._loadPath += ":" + this._extensionID;
       }
-      engine.setAttr(
+      this.setAttr(
         "loadPathHash",
-        SearchUtils.getVerificationHash(engine._loadPath)
+        SearchUtils.getVerificationHash(this._loadPath)
       );
     }
 
     
     
-    SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.LOADED);
+    SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.LOADED);
 
-    
-    if (engine._installCallback) {
-      engine._installCallback();
-    }
+    callback?.();
   }
 
   

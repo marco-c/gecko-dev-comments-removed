@@ -1800,21 +1800,14 @@ SearchService.prototype = {
       });
       engine._setIcon(iconURL, false);
       errCode = await new Promise(resolve => {
-        engine._installCallback = function(errorCode) {
+        engine._initFromURIAndLoad(engineURL, errorCode => {
           resolve(errorCode);
-          
-          engine._installCallback = null;
-        };
-        engine._initFromURIAndLoad(engineURL);
+        });
       });
       if (errCode) {
         throw errCode;
       }
     } catch (ex) {
-      
-      if (engine) {
-        engine._installCallback = null;
-      }
       throw Components.Exception(
         "addEngine: Error adding engine:\n" + ex,
         errCode || Cr.NS_ERROR_FAILURE
