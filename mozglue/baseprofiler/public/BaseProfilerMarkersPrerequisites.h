@@ -613,21 +613,34 @@ class MarkerOptions {
 
   
   
-#  define FUNCTION_ON_MEMBER(NAME)                       \
-    MarkerOptions&& Set(Marker##NAME&& a##NAME) {        \
+  
+  
+  
+  
+  
+  
+  
+#  define FUNCTIONS_ON_MEMBER(NAME)                      \
+    MarkerOptions& Set(Marker##NAME&& a##NAME)& {        \
+      m##NAME = std::move(a##NAME);                      \
+      return *this;                                      \
+    }                                                    \
+                                                         \
+    MarkerOptions&& Set(Marker##NAME&& a##NAME)&& {      \
       m##NAME = std::move(a##NAME);                      \
       return std::move(*this);                           \
     }                                                    \
                                                          \
     const Marker##NAME& NAME() const { return m##NAME; } \
-    Marker##NAME& NAME() { return m##NAME; }
+                                                         \
+    Marker##NAME& NAME##Ref() { return m##NAME; }
 
-  FUNCTION_ON_MEMBER(Category);
-  FUNCTION_ON_MEMBER(ThreadId);
-  FUNCTION_ON_MEMBER(Timing);
-  FUNCTION_ON_MEMBER(Stack);
-  FUNCTION_ON_MEMBER(InnerWindowId);
-#  undef FUNCTION_ON_MEMBER
+  FUNCTIONS_ON_MEMBER(Category);
+  FUNCTIONS_ON_MEMBER(ThreadId);
+  FUNCTIONS_ON_MEMBER(Timing);
+  FUNCTIONS_ON_MEMBER(Stack);
+  FUNCTIONS_ON_MEMBER(InnerWindowId);
+#  undef FUNCTIONS_ON_MEMBER
 
  private:
   friend ProfileBufferEntryReader::Deserializer<MarkerOptions>;
