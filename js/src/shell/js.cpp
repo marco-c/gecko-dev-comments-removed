@@ -81,6 +81,7 @@
 #include "frontend/Parser.h"
 #include "frontend/SourceNotes.h"  
 #include "gc/PublicIterators.h"
+#include "gc/GC-inl.h"  
 #ifdef JS_SIMULATOR_ARM
 #  include "jit/arm/Simulator-arm.h"
 #endif
@@ -3643,26 +3644,38 @@ static bool DisassWithSrc(JSContext* cx, unsigned argc, Value* vp) {
 #ifdef JS_CACHEIR_SPEW
 static bool RateMyCacheIR(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
+  Rooted<ScriptVector> scripts(cx, ScriptVector(cx));
 
-  RootedScript script(cx);
   if (!argc) {
     
-    script = GetTopScript(cx);
+    
+    for (auto base = cx->zone()->cellIter<BaseScript>(); !base.done();
+         base.next()) {
+      if (!base->hasJitScript() || base->selfHosted()) {
+        continue;
+      }
+
+      if (!scripts.append(base->asJSScript())) {
+        return false;
+      }
+    }
   } else {
     RootedValue value(cx, args.get(0));
+    RootedScript script(cx);
+
     if (value.isObject() && value.toObject().is<ModuleObject>()) {
-      script = value.toObject().as<ModuleObject>().maybeScript();
+      script.set(value.toObject().as<ModuleObject>().maybeScript());
     } else {
-      script = TestingFunctionArgumentToScript(cx, args.get(0));
+      script.set(TestingFunctionArgumentToScript(cx, args.get(0)));
+    }
+
+    if (!script || !scripts.append(script)) {
+      return false;
     }
   }
 
-  if (!script) {
-    return false;
-  }
-
   js::jit::CacheIRHealth cih;
-  if (!cih.rateMyCacheIR(cx, script)) {
+  if (!cih.rateMyCacheIR(cx, scripts)) {
     return false;
   }
 
