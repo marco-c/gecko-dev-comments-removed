@@ -21,19 +21,14 @@
 
 #include "jstypes.h"  
 
-#include "js/HeapAPI.h"        
-#include "js/RootingAPI.h"     
-#include "js/shadow/String.h"  
-#include "js/TypeDecls.h"      
-#include "js/Vector.h"         
+#include "js/RootingAPI.h"  
+#include "js/String.h"      
+#include "js/TypeDecls.h"   
+#include "js/Vector.h"      
 
 class JSLinearString;
 
 namespace JS {
-
-MOZ_ALWAYS_INLINE size_t GetStringLength(JSString* s) {
-  return reinterpret_cast<shadow::String*>(s)->length();
-}
 
 
 

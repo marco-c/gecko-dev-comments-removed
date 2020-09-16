@@ -2148,9 +2148,6 @@ extern JS_PUBLIC_API size_t JS_GetStringLength(JSString* str);
 
 extern JS_PUBLIC_API bool JS_StringIsLinear(JSString* str);
 
-
-extern JS_PUBLIC_API bool JS_StringHasLatin1Chars(JSString* str);
-
 extern JS_PUBLIC_API const JS::Latin1Char* JS_GetLatin1StringCharsAndLength(
     JSContext* cx, const JS::AutoRequireNoGC& nogc, JSString* str,
     size_t* length);
@@ -2161,9 +2158,6 @@ extern JS_PUBLIC_API const char16_t* JS_GetTwoByteStringCharsAndLength(
 
 extern JS_PUBLIC_API bool JS_GetStringCharAt(JSContext* cx, JSString* str,
                                              size_t index, char16_t* res);
-
-extern JS_PUBLIC_API char16_t JS_GetLinearStringCharAt(JSLinearString* str,
-                                                       size_t index);
 
 extern JS_PUBLIC_API const char16_t* JS_GetTwoByteExternalStringChars(
     JSString* str);
@@ -2182,12 +2176,6 @@ extern JS_PUBLIC_API JS::UniqueTwoByteChars JS_CopyStringCharsZ(JSContext* cx,
 
 extern JS_PUBLIC_API JSLinearString* JS_EnsureLinearString(JSContext* cx,
                                                            JSString* str);
-
-extern JS_PUBLIC_API const JS::Latin1Char* JS_GetLatin1LinearStringChars(
-    const JS::AutoRequireNoGC& nogc, JSLinearString* str);
-
-extern JS_PUBLIC_API const char16_t* JS_GetTwoByteLinearStringChars(
-    const JS::AutoRequireNoGC& nogc, JSLinearString* str);
 
 static MOZ_ALWAYS_INLINE JSLinearString* JSID_TO_LINEAR_STRING(jsid id) {
   MOZ_ASSERT(JSID_IS_STRING(id));

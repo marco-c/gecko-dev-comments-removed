@@ -65,6 +65,7 @@
 #include "js/RegExpFlags.h"  
 #include "js/SourceText.h"
 #include "js/StableStringChars.h"
+#include "js/String.h"  
 #include "js/StructuredClone.h"
 #include "js/UbiNode.h"
 #include "js/UbiNodeBreadthFirst.h"
@@ -5789,11 +5790,12 @@ JSScript* js::TestingFunctionArgumentToScript(
     JSContext* cx, HandleValue v, JSFunction** funp ) {
   if (v.isString()) {
     
-    RootedLinearString linearStr(cx, StringToLinearString(cx, v.toString()));
+    RootedLinearString linearStr(cx,
+                                 JS::StringToLinearString(cx, v.toString()));
     if (!linearStr) {
       return nullptr;
     }
-    size_t len = GetLinearStringLength(linearStr);
+    size_t len = JS::GetLinearStringLength(linearStr);
     AutoStableStringChars linearChars(cx);
     if (!linearChars.initTwoByte(cx, linearStr)) {
       return nullptr;

@@ -23,6 +23,7 @@
 #include "js/MemoryFunctions.h"           
 #include "js/RootingAPI.h"                
 #include "js/SourceText.h"                
+#include "js/String.h"  
 #include "js/UniquePtr.h"                 
 #include "js/Utility.h"                   
 #include "js/Value.h"  
@@ -185,11 +186,11 @@ static bool IsExpectedFunctionString(JS::Handle<JSString*> str,
   };
 
   bool hasExpectedContents;
-  if (JS_StringHasLatin1Chars(str)) {
-    const JS::Latin1Char* chars = JS_GetLatin1LinearStringChars(nogc, lstr);
+  if (JS::StringHasLatin1Chars(str)) {
+    const JS::Latin1Char* chars = JS::GetLatin1LinearStringChars(nogc, lstr);
     hasExpectedContents = CheckContents(chars);
   } else {
-    const char16_t* chars = JS_GetTwoByteLinearStringChars(nogc, lstr);
+    const char16_t* chars = JS::GetTwoByteLinearStringChars(nogc, lstr);
     hasExpectedContents = CheckContents(chars);
   }
 

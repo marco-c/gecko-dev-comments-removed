@@ -27,6 +27,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
+#include "js/String.h"  
 
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
@@ -567,7 +568,7 @@ bool XPCConvert::JSData2Native(JSContext* cx, void* d, HandleValue s,
       }
 
 #ifdef DEBUG
-      if (JS_StringHasLatin1Chars(str)) {
+      if (JS::StringHasLatin1Chars(str)) {
         size_t len;
         AutoCheckCannotGC nogc;
         const Latin1Char* chars =

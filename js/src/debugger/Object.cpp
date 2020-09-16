@@ -36,6 +36,7 @@
 #include "js/Promise.h"             
 #include "js/Proxy.h"               
 #include "js/StableStringChars.h"        
+#include "js/String.h"                   
 #include "proxy/ScriptedProxyHandler.h"  
 #include "vm/ArgumentsObject.h"          
 #include "vm/ArrayObject.h"              
@@ -1243,7 +1244,7 @@ bool DebuggerObject::CallData::createSource() {
   JS::CompileOptions compileOptions(cx);
   compileOptions.lineno = startLine;
 
-  if (!JS_StringHasLatin1Chars(url)) {
+  if (!JS::StringHasLatin1Chars(url)) {
     JS_ReportErrorASCII(cx, "URL must be a narrow string");
     return false;
   }

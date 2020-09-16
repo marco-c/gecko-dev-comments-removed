@@ -15,7 +15,6 @@
 #include <type_traits>  
 
 #include "jsapi.h"
-#include "jsfriendapi.h"
 
 #include "gc/Allocator.h"
 #include "gc/Barrier.h"
@@ -27,6 +26,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/RootingAPI.h"
 #include "js/shadow/String.h"  
+#include "js/String.h"         
 #include "js/UniquePtr.h"
 #include "util/Text.h"
 #include "vm/Printer.h"
@@ -312,7 +312,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   
   static const uint32_t IN_STRING_TO_ATOM_CACHE = js::Bit(12);
 
-  static const uint32_t MAX_LENGTH = js::MaxStringLength;
+  static const uint32_t MAX_LENGTH = JS::MaxStringLength;
 
   static const JS::Latin1Char MAX_LATIN1_CHAR = 0xff;
 
