@@ -262,13 +262,7 @@ struct FrameMetrics {
            aContentFrameMetrics.GetVisualScrollOffset();
   }
 
-  void ApplyScrollUpdateFrom(const FrameMetrics& aContentMetrics);
-
-  void ApplySmoothScrollUpdateFrom(const FrameMetrics& aOther) {
-    mSmoothScrollOffset = aOther.mSmoothScrollOffset;
-    mScrollGeneration = aOther.mScrollGeneration;
-    mDoSmoothScroll = aOther.mDoSmoothScroll;
-  }
+  void ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate);
 
   
 
@@ -277,46 +271,12 @@ struct FrameMetrics {
 
 
 
-  CSSPoint ApplyRelativeScrollUpdateFrom(const FrameMetrics& aOther) {
-    MOZ_ASSERT(aOther.IsRelative());
+  CSSPoint ApplyRelativeScrollUpdateFrom(const ScrollPositionUpdate& aUpdate) {
+    MOZ_ASSERT(aUpdate.GetType() == ScrollUpdateType::Relative);
     CSSPoint origin = GetVisualScrollOffset();
-    CSSPoint delta =
-        (aOther.GetLayoutScrollOffset() - aOther.mBaseScrollOffset);
+    CSSPoint delta = (aUpdate.GetDestination() - aUpdate.GetSource());
     ClampAndSetVisualScrollOffset(origin + delta);
-    mScrollGeneration = aOther.mScrollGeneration;
     return GetVisualScrollOffset() - origin;
-  }
-
-  
-
-
-
-
-
-  void ApplyRelativeSmoothScrollUpdateFrom(
-      const FrameMetrics& aOther, const Maybe<CSSPoint>& aExistingDestination) {
-    MOZ_ASSERT(aOther.IsRelative());
-    CSSPoint delta = (aOther.mSmoothScrollOffset - aOther.mBaseScrollOffset);
-    ClampAndSetSmoothScrollOffset(
-        aExistingDestination.valueOr(GetVisualScrollOffset()) + delta);
-    mScrollGeneration = aOther.mScrollGeneration;
-    mDoSmoothScroll = aOther.mDoSmoothScroll;
-  }
-
-  void ApplyPureRelativeSmoothScrollUpdateFrom(
-      const FrameMetrics& aOther, const Maybe<CSSPoint>& aExistingDestination,
-      bool aApplyToSmoothScroll) {
-    MOZ_ASSERT(aOther.IsPureRelative() && aOther.mPureRelativeOffset.isSome());
-    
-    
-    
-    ClampAndSetSmoothScrollOffset(
-        (aApplyToSmoothScroll
-             ? mSmoothScrollOffset
-             : aExistingDestination.valueOr(GetVisualScrollOffset())) +
-        *aOther.mPureRelativeOffset);
-    mScrollGeneration = aOther.mScrollGeneration;
-    mDoSmoothScroll = true;
   }
 
   void UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {
@@ -1030,6 +990,10 @@ struct ScrollMetadata {
 
   void SetScrollUpdates(const nsTArray<ScrollPositionUpdate>& aUpdates) {
     mScrollUpdates = aUpdates;
+  }
+
+  const nsTArray<ScrollPositionUpdate>& GetScrollUpdates() const {
+    return mScrollUpdates;
   }
 
   void UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {

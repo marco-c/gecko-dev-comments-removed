@@ -4554,30 +4554,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   
   
   
-  bool scrollOffsetUpdated =
-      aLayerMetrics.GetScrollOffsetUpdated() &&
-      (aLayerMetrics.GetScrollGeneration() != Metrics().GetScrollGeneration());
-
-  if (scrollOffsetUpdated && userScrolled &&
-      aLayerMetrics.GetScrollUpdateType() == FrameMetrics::eRestore) {
-    APZC_LOG(
-        "%p dropping scroll update of type eRestore because of user scroll\n",
-        this);
-    scrollOffsetUpdated = false;
-  }
-
-  bool smoothScrollRequested =
-      aLayerMetrics.GetDoSmoothScroll() &&
-      (aLayerMetrics.GetScrollGeneration() != Metrics().GetScrollGeneration());
-
-  bool pureRelativeSmoothScrollRequested =
-      aLayerMetrics.IsPureRelative() &&
-      (aLayerMetrics.GetScrollGeneration() != Metrics().GetScrollGeneration());
-
-  
-  
-  
-  
   
   
   
@@ -4589,10 +4565,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   bool visualScrollOffsetUpdated =
       isDefault ||
       aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eNone;
-  if ((aLayerMetrics.GetScrollUpdateType() == FrameMetrics::eMainThread &&
-       aLayerMetrics.GetVisualScrollUpdateType() !=
-           FrameMetrics::eMainThread) ||
-      smoothScrollRequested || pureRelativeSmoothScrollRequested) {
+  if (aLayerMetrics.GetScrollUpdateType() == FrameMetrics::eMainThread &&
+      aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eMainThread) {
     visualScrollOffsetUpdated = false;
   }
 
@@ -4602,13 +4576,19 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   bool needContentRepaint = false;
   RepaintUpdateType contentRepaintType = RepaintUpdateType::eNone;
   bool viewportSizeUpdated = false;
+  bool needToReclampScroll = false;
 
   if ((aIsFirstPaint && aThisLayerTreeUpdated) || isDefault) {
     
     
     CancelAnimation();
 
+    
+    
+    
+    uint32_t oldScrollGeneration = Metrics().GetScrollGeneration();
     mScrollMetadata = aScrollMetadata;
+    Metrics().SetScrollGeneration(oldScrollGeneration);
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
     ShareCompositorFrameMetrics();
 
@@ -4679,18 +4659,16 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       Metrics().SetDevPixelsPerCSSPixel(
           aLayerMetrics.GetDevPixelsPerCSSPixel());
     }
-    bool scrollableRectChanged = false;
-    bool compositionBoundsChanged = false;
     if (!Metrics().GetScrollableRect().IsEqualEdges(
             aLayerMetrics.GetScrollableRect())) {
       Metrics().SetScrollableRect(aLayerMetrics.GetScrollableRect());
       needContentRepaint = true;
-      scrollableRectChanged = true;
+      needToReclampScroll = true;
     }
     if (!Metrics().GetCompositionBounds().IsEqualEdges(
             aLayerMetrics.GetCompositionBounds())) {
       Metrics().SetCompositionBounds(aLayerMetrics.GetCompositionBounds());
-      compositionBoundsChanged = true;
+      needToReclampScroll = true;
     }
     Metrics().SetRootCompositionSize(aLayerMetrics.GetRootCompositionSize());
     Metrics().SetPresShellResolution(aLayerMetrics.GetPresShellResolution());
@@ -4714,123 +4692,147 @@ void AsyncPanZoomController::NotifyLayersUpdated(
         aScrollMetadata.GetDisregardedDirection());
     mScrollMetadata.SetOverscrollBehavior(
         aScrollMetadata.GetOverscrollBehavior());
+  }
 
-    if (scrollOffsetUpdated) {
-      Maybe<CSSPoint> relativeDelta;
+  bool scrollOffsetUpdated = false;
+  for (const auto& scrollUpdate : aScrollMetadata.GetScrollUpdates()) {
+    APZC_LOG("%p processing scroll update %s\n", this,
+             Stringify(scrollUpdate).c_str());
+    if (scrollUpdate.GetGeneration() <= Metrics().GetScrollGeneration()) {
+      
+      
+      
+      APZC_LOG("%p scrollupdate generation stale, dropping\n", this);
+      continue;
+    }
+    Metrics().SetScrollGeneration(scrollUpdate.GetGeneration());
+
+    MOZ_ASSERT(scrollUpdate.GetOrigin() != ScrollOrigin::Apz);
+    if (userScrolled &&
+        !nsLayoutUtils::CanScrollOriginClobberApz(scrollUpdate.GetOrigin())) {
+      APZC_LOG("%p scrollupdate cannot clobber APZ userScrolled\n", this);
+      continue;
+    }
+    
+    
+    
+    
+
+    scrollOffsetUpdated = true;
+
+    if (scrollUpdate.GetMode() == ScrollMode::Smooth ||
+        scrollUpdate.GetMode() == ScrollMode::SmoothMsd) {
+      
+      
+      
+      
+      
+      visualScrollOffsetUpdated = false;
+
+      
+      
+      
+      CSSPoint base = GetCurrentAnimationDestination(lock).valueOr(
+          Metrics().GetVisualScrollOffset());
+
       if (StaticPrefs::apz_relative_update_enabled() &&
-          aLayerMetrics.IsRelative()) {
-        APZC_LOG("%p relative updating scroll offset from %s by %s\n", this,
-                 ToString(Metrics().GetVisualScrollOffset()).c_str(),
-                 ToString(aLayerMetrics.GetLayoutScrollOffset() -
-                          aLayerMetrics.GetBaseScrollOffset())
-                     .c_str());
-
-        
-        
-        
-        
-        
-        if (Metrics().HasPendingScroll(aLayerMetrics)) {
-          needContentRepaint = true;
-          contentRepaintType = RepaintUpdateType::eUserAction;
-        }
-
-        relativeDelta =
-            Some(Metrics().ApplyRelativeScrollUpdateFrom(aLayerMetrics));
+          scrollUpdate.GetType() == ScrollUpdateType::Relative) {
+        CSSPoint delta =
+            scrollUpdate.GetDestination() - scrollUpdate.GetSource();
+        APZC_LOG("%p relative smooth scrolling from %s by %s\n", this,
+                 ToString(base).c_str(), ToString(delta).c_str());
+        Metrics().ClampAndSetSmoothScrollOffset(base + delta);
+      } else if (scrollUpdate.GetType() == ScrollUpdateType::PureRelative) {
+        CSSPoint delta = scrollUpdate.GetDelta();
+        APZC_LOG("%p pure-relative smooth scrolling from %s by %s\n", this,
+                 ToString(base).c_str(), ToString(delta).c_str());
+        Metrics().ClampAndSetSmoothScrollOffset(base + delta);
       } else {
-        APZC_LOG("%p updating scroll offset from %s to %s\n", this,
-                 ToString(Metrics().GetVisualScrollOffset()).c_str(),
-                 ToString(aLayerMetrics.GetLayoutScrollOffset()).c_str());
-        Metrics().ApplyScrollUpdateFrom(aLayerMetrics);
+        APZC_LOG("%p smooth scrolling to %s\n", this,
+                 ToString(scrollUpdate.GetDestination()).c_str());
+        Metrics().SetSmoothScrollOffset(scrollUpdate.GetDestination());
       }
 
+      SmoothScrollTo(Metrics().GetSmoothScrollOffset());
+      continue;
+    }
+
+    MOZ_ASSERT(scrollUpdate.GetMode() == ScrollMode::Instant ||
+               scrollUpdate.GetMode() == ScrollMode::Normal);
+
+    Maybe<CSSPoint> relativeDelta;
+
+    if (StaticPrefs::apz_relative_update_enabled() &&
+        scrollUpdate.GetType() == ScrollUpdateType::Relative) {
+      APZC_LOG(
+          "%p relative updating scroll offset from %s by %s\n", this,
+          ToString(Metrics().GetVisualScrollOffset()).c_str(),
+          ToString(scrollUpdate.GetDestination() - scrollUpdate.GetSource())
+              .c_str());
+
+      
+      
+      
+      
+      
+      if (Metrics().HasPendingScroll(aLayerMetrics)) {
+        needContentRepaint = true;
+        contentRepaintType = RepaintUpdateType::eUserAction;
+      }
+
+      relativeDelta =
+          Some(Metrics().ApplyRelativeScrollUpdateFrom(scrollUpdate));
       Metrics().RecalculateLayoutViewportOffset();
+    } else {
+      APZC_LOG("%p updating scroll offset from %s to %s\n", this,
+               ToString(Metrics().GetVisualScrollOffset()).c_str(),
+               ToString(scrollUpdate.GetDestination()).c_str());
+      Metrics().ApplyScrollUpdateFrom(scrollUpdate);
+      Metrics().RecalculateLayoutViewportOffset();
+    }
 
-      for (auto& sampledState : mSampledState) {
-        sampledState.UpdateScrollProperties(Metrics());
-      }
-
+    
+    
+    
+    if (ShouldCancelAnimationForScrollUpdate(relativeDelta)) {
       
       
       
-      
-      
-      mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
-
-      
-      
-      
-      if (ShouldCancelAnimationForScrollUpdate(relativeDelta)) {
-        
-        
-        
-        CancelAnimation();
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      needContentRepaint = true;
-      
-      
-      ScheduleComposite();
-    } else if (scrollableRectChanged || compositionBoundsChanged) {
-      
-      
-      
-      ClampAndSetVisualScrollOffset(Metrics().GetVisualScrollOffset());
-      for (auto& sampledState : mSampledState) {
-        sampledState.ClampVisualScrollOffset(Metrics());
-      }
+      CancelAnimation();
     }
   }
 
-  if (smoothScrollRequested || pureRelativeSmoothScrollRequested) {
-    
-    
-    
-
-    APZC_LOG("%p smooth scrolling from %s to %s in state %d\n", this,
-             Stringify(Metrics().GetVisualScrollOffset()).c_str(),
-             Stringify(aLayerMetrics.GetSmoothScrollOffset()).c_str(), mState);
-
-    
-    
-    Maybe<CSSPoint> destination = GetCurrentAnimationDestination(lock);
-
-    if (smoothScrollRequested) {
-      
-      
-      if (StaticPrefs::apz_relative_update_enabled() &&
-          aLayerMetrics.IsRelative()) {
-        Metrics().ApplyRelativeSmoothScrollUpdateFrom(aLayerMetrics,
-                                                      destination);
-      } else {
-        Metrics().ApplySmoothScrollUpdateFrom(aLayerMetrics);
-      }
+  if (scrollOffsetUpdated) {
+    for (auto& sampledState : mSampledState) {
+      sampledState.UpdateScrollProperties(Metrics());
     }
 
-    if (pureRelativeSmoothScrollRequested) {
-      MOZ_ASSERT(aLayerMetrics.IsPureRelative());
-      MOZ_ASSERT(gfxPlatform::UseDesktopZoomingScrollbars());
-      
-      
-      
-      
-      
-      
-      Metrics().ApplyPureRelativeSmoothScrollUpdateFrom(
-          aLayerMetrics, destination, smoothScrollRequested);
-    }
-
-    needContentRepaint = true;
+    
+    
+    
+    
+    
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
 
-    SmoothScrollTo(Metrics().GetSmoothScrollOffset());
+    
+    
+    
+    
+    
+    
+    
+    needContentRepaint = true;
+    
+    
+    ScheduleComposite();
+  } else if (needToReclampScroll) {
+    
+    
+    
+    ClampAndSetVisualScrollOffset(Metrics().GetVisualScrollOffset());
+    for (auto& sampledState : mSampledState) {
+      sampledState.ClampVisualScrollOffset(Metrics());
+    }
   }
 
   if (visualScrollOffsetUpdated) {
@@ -4840,6 +4842,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     Metrics().ClampAndSetVisualScrollOffset(
         aLayerMetrics.GetVisualDestination());
 
+    
     
     
     Metrics().RecalculateLayoutViewportOffset();
