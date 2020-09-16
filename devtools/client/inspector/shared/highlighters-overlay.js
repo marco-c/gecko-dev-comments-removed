@@ -5,6 +5,7 @@
 "use strict";
 
 const Services = require("Services");
+const { safeAsyncMethod } = require("devtools/shared/async-utils");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {
   VIEW_NODE_VALUE_TYPE,
@@ -37,6 +38,55 @@ loader.lazyRequireGetter(
 const DEFAULT_HIGHLIGHTER_COLOR = "#9400FF";
 const SUBGRID_PARENT_ALPHA = 0.5;
 
+const TYPES = {
+  BOXMODEL: "BoxModelHighlighter",
+  FLEXBOX: "FlexboxHighlighter",
+  GEOMETRY: "GeometryEditorHighlighter",
+  GRID: "CssGridHighlighter",
+  SHAPES: "ShapesHighlighter",
+  TRANSFORM: "CssTransformHighlighter",
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const HIGHLIGHTER_EVENTS = {
+  [TYPES.BOXMODEL]: {
+    shown: "box-model-highlighter-shown",
+    hidden: "box-model-highlighter-hidden",
+  },
+  [TYPES.GRID]: {
+    shown: "grid-highlighter-shown",
+    hidden: "grid-highlighter-hidden",
+  },
+  [TYPES.FLEXBOX]: {
+    shown: "flexbox-highlighter-shown",
+    hidden: "flexbox-highlighter-hidden",
+  },
+  [TYPES.GEOMETRY]: {
+    shown: "geometry-editor-highlighter-shown",
+    hidden: "geometry-editor-highlighter-hidden",
+  },
+  [TYPES.SHAPES]: {
+    shown: "shapes-highlighter-shown",
+    hidden: "shapes-highlighter-hidden",
+  },
+  [TYPES.TRANSFORM]: {
+    shown: "highlighter-shown",
+    hidden: "highlighter-hidden",
+  },
+};
+
 
 
 
@@ -56,6 +106,11 @@ class HighlightersOverlay {
       "devtools.gridinspector.maxHighlighters"
     );
 
+    
+    
+    
+    
+    this._activeHighlighters = new Map();
     
     
     this.highlighters = {};
@@ -119,6 +174,16 @@ class HighlightersOverlay {
     this.onShapesHighlighterHidden = this.onShapesHighlighterHidden.bind(this);
 
     
+    this.hideHighlighterType = safeAsyncMethod(
+      this.hideHighlighterType.bind(this),
+      () => this.destroyed
+    );
+    this.showHighlighterTypeForNode = safeAsyncMethod(
+      this.showHighlighterTypeForNode.bind(this),
+      () => this.destroyed
+    );
+
+    
     this.inspector.on("markupmutation", this.onMarkupMutation);
 
     this.resourceWatcher = this.inspector.toolbox.resourceWatcher;
@@ -131,6 +196,130 @@ class HighlightersOverlay {
     this.walker.on("display-change", this.onDisplayChange);
 
     EventEmitter.decorate(this);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async _getHighlighterTypeForNode(type, nodeFront) {
+    const { inspectorFront } = nodeFront;
+    const highlighter = await inspectorFront.getOrCreateHighlighterByType(type);
+    return highlighter;
+  }
+
+  
+
+
+
+
+
+
+
+
+  getActiveHighlighter(type) {
+    if (!this._activeHighlighters.has(type)) {
+      return null;
+    }
+
+    const { highlighter } = this._activeHighlighters.get(type);
+    return highlighter;
+  }
+
+  
+
+
+
+
+
+
+
+
+  getNodeForActiveHighlighter(type) {
+    if (!this._activeHighlighters.has(type)) {
+      return null;
+    }
+
+    const { nodeFront } = this._activeHighlighters.get(type);
+    return nodeFront;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async showHighlighterTypeForNode(type, nodeFront, options) {
+    if (this._activeHighlighters.has(type)) {
+      const {
+        highlighter: activeHighlighter,
+        nodeFront: activeNodeFront,
+      } = this._activeHighlighters.get(type);
+
+      if (activeHighlighter) {
+        if (nodeFront == activeNodeFront) {
+          console.log(`Duplicate call to show ${type}`);
+          return;
+        }
+
+        
+        await this.hideHighlighterType(type);
+      }
+    }
+
+    const highlighter = await this._getHighlighterTypeForNode(type, nodeFront);
+    
+    this._activeHighlighters.set(type, { nodeFront, highlighter });
+    await highlighter.show(nodeFront, options);
+
+    
+    
+    if (HIGHLIGHTER_EVENTS[type]?.shown) {
+      this.emit(HIGHLIGHTER_EVENTS[type].shown, nodeFront, options);
+    }
+    this.emit("highlighter-shown", { type, highlighter, nodeFront, options });
+  }
+
+  
+
+
+
+
+
+
+  async hideHighlighterType(type) {
+    if (!this._activeHighlighters.has(type)) {
+      return;
+    }
+
+    const { highlighter, nodeFront } = this._activeHighlighters.get(type);
+    
+    this._activeHighlighters.delete(type);
+    await highlighter.hide();
+
+    
+    
+    if (HIGHLIGHTER_EVENTS[type]?.hidden) {
+      this.emit(HIGHLIGHTER_EVENTS[type].hidden, nodeFront);
+    }
+    this.emit("highlighter-hidden", { type, highlighter, nodeFront });
   }
 
   async canGetParentGridNode() {
@@ -990,6 +1179,12 @@ class HighlightersOverlay {
     return highlighter;
   }
 
+  
+
+
+
+
+
   _handleRejection(error) {
     if (!this.destroyed) {
       console.error(error);
@@ -1417,6 +1612,12 @@ class HighlightersOverlay {
       this.extraGridHighlighterPool.push(highlighter);
     }
 
+    
+    for (const { highlighter } of this._activeHighlighters.values()) {
+      highlighter.finalize();
+    }
+
+    this._activeHighlighters.clear();
     this.gridHighlighters.clear();
     this.parentGridHighlighters.clear();
     this.subgridToParentMap.clear();
@@ -1470,6 +1671,12 @@ class HighlightersOverlay {
 
 
   destroyHighlighters() {
+    for (const { highlighter } of this._activeHighlighters.values()) {
+      highlighter.finalize();
+    }
+
+    this._activeHighlighters.clear();
+
     for (const type in this.highlighters) {
       if (this.highlighters[type]) {
         this.highlighters[type].finalize();
@@ -1522,5 +1729,7 @@ class HighlightersOverlay {
     this.destroyed = true;
   }
 }
+
+HighlightersOverlay.TYPES = HighlightersOverlay.prototype.TYPES = TYPES;
 
 module.exports = HighlightersOverlay;

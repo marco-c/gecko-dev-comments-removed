@@ -253,6 +253,8 @@ Inspector.prototype = {
 
   async initInspectorFront(targetFront) {
     this.inspectorFront = await targetFront.getFront("inspector");
+    
+    
     this.highlighter = this.inspectorFront.highlighter;
     this.walker = this.inspectorFront.walker;
   },
