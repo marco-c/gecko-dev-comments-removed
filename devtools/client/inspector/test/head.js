@@ -90,14 +90,18 @@ var startEyeDropper = async function(toolbox) {
 
 
 
-
-
-function pickElement(inspector, testActor, selector, x, y) {
+function pickElement(inspector, selector, x, y) {
   info("Waiting for element " + selector + " to be picked");
   
   
   const onNewNodeFront = inspector.selection.once("new-node-front");
-  testActor.synthesizeMouse({ selector, x, y, options: {} });
+  BrowserTestUtils.synthesizeMouse(
+    selector,
+    x,
+    y,
+    {},
+    gBrowser.selectedTab.linkedBrowser
+  );
   return onNewNodeFront;
 }
 
@@ -117,11 +121,83 @@ function pickElement(inspector, testActor, selector, x, y) {
 
 
 
-function hoverElement(inspector, testActor, selector, x, y) {
+
+
+
+
+async function hoverElement(inspector, selector, x, y) {
   info("Waiting for element " + selector + " to be hovered");
   const onHovered = inspector.toolbox.nodePicker.once("picker-node-hovered");
-  testActor.synthesizeMouse({ selector, x, y, options: { type: "mousemove" } });
-  return onHovered;
+  const onHighlighterShown = inspector.highlighters.once(
+    "box-model-highlighter-shown"
+  );
+
+  
+  let browsingContext = gBrowser.selectedTab.linkedBrowser;
+
+  if (Array.isArray(selector)) {
+    
+    
+    browsingContext = await getBrowsingContextForNestedFrame(
+      selector.slice(0, selector.length - 1)
+    );
+    
+    
+    selector = selector[selector.length - 1];
+  }
+
+  if (isNaN(x) || isNaN(y)) {
+    BrowserTestUtils.synthesizeMouseAtCenter(
+      selector,
+      { type: "mousemove" },
+      browsingContext
+    );
+  } else {
+    BrowserTestUtils.synthesizeMouse(
+      selector,
+      x,
+      y,
+      { type: "mousemove" },
+      browsingContext
+    );
+  }
+
+  return Promise.all([onHighlighterShown, onHovered]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function getBrowsingContextForNestedFrame(selectorArray = []) {
+  
+  let browsingContext = gBrowser.selectedTab.linkedBrowser;
+
+  
+  if (!Array.isArray(selectorArray)) {
+    return browsingContext;
+  }
+
+  
+  while (selectorArray.length) {
+    browsingContext = await SpecialPowers.spawn(
+      browsingContext,
+      [selectorArray.shift()],
+      function(selector) {
+        const iframe = content.document.querySelector(selector);
+        return iframe.browsingContext;
+      }
+    );
+  }
+
+  return browsingContext;
 }
 
 

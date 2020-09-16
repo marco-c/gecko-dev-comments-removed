@@ -848,12 +848,38 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
   }
 
   async initialize() {
+    
+    
     const inspectorFront = await this.targetFront.getFront("inspector");
-    this.highlighter = inspectorFront.highlighter;
+    this._highlighter = inspectorFront.highlighter;
   }
 
-  setHighlighter(highlighter) {
-    this.highlighter = highlighter;
+  
+
+
+
+
+
+  set highlighter(_customHighlighterGetter) {
+    if (typeof _customHighlighterGetter === "function") {
+      this._customHighlighterGetter = _customHighlighterGetter;
+    } else {
+      this._customHighlighterGetter = null;
+      this._highlighter = _customHighlighterGetter;
+    }
+  }
+
+  
+
+
+
+
+
+  get highlighter() {
+    if (this._customHighlighterGetter) {
+      return this._customHighlighterGetter();
+    }
+    return this._highlighter;
   }
 
   
@@ -903,6 +929,12 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
 
 
   isHighlighting() {
+    
+    
+    if (!this.highlighter) {
+      return false;
+    }
+
     return this.getHighlighterNodeAttribute(
       "box-model-elements",
       "hidden"

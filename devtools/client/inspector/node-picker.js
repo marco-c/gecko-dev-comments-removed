@@ -122,12 +122,6 @@ class NodePicker extends EventEmitter {
 
 
   async cancel() {
-    
-    Promise.all(
-      this._currentInspectorFronts.map(({ highlighter }) =>
-        highlighter.hideBoxModel()
-      )
-    ).catch(e => console.error);
     await this.stop();
     this.emit("picker-node-canceled");
   }
@@ -138,24 +132,8 @@ class NodePicker extends EventEmitter {
 
 
 
-  async _onHovered(data) {
+  _onHovered(data) {
     this.emit("picker-node-hovered", data.node);
-
-    
-    await data.node.highlighterFront.showBoxModel(data.node);
-
-    
-    
-    
-    
-    
-    const unmatchedInspectors = this._currentInspectorFronts.filter(
-      ({ highlighter }) => highlighter !== data.node.highlighterFront
-    );
-
-    Promise.all(
-      unmatchedInspectors.map(({ highlighter }) => highlighter.hideBoxModel())
-    ).catch(e => console.error);
   }
 
   
@@ -176,11 +154,8 @@ class NodePicker extends EventEmitter {
 
 
 
-  async _onPreviewed(data) {
+  _onPreviewed(data) {
     this.emit("picker-node-previewed", data.node);
-
-    
-    await data.node.highlighterFront.showBoxModel(data.node);
   }
 
   
