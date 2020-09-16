@@ -373,6 +373,31 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static EditorDOMRange GetRangeForDeletingBlockElementBoundaries(
+      const HTMLEditor& aHTMLEditor, const Element& aLeftBlockElement,
+      const Element& aRightBlockElement,
+      const EditorDOMPoint& aPointContainingTheOtherBlock);
+
+  
+
+
+
+
   static Result<bool, nsresult> ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
       const HTMLEditor& aHTMLEditor, nsRange& aRange,
       const Element* aEditingHost);
