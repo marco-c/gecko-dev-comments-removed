@@ -4,7 +4,11 @@ import docs from "content-src/asrouter/docs/targeting-attributes.md";
 
 const SKIP_DOCS = [];
 
-const MESSAGE_CONTEXT_ATTRIBUTES = ["previousSessionEnd", "trailheadTriplet"];
+const MESSAGE_CONTEXT_ATTRIBUTES = [
+  "previousSessionEnd",
+  "trailheadInterrupt",
+  "trailheadTriplet",
+];
 
 function getHeadingsFromDocs() {
   const re = /### `(\w+)`/g;
