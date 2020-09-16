@@ -794,7 +794,7 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   MOZ_ASSERT(loc.opHasIC());
 
   
-  if (info_->isAnalysis()) {
+  if (info_->isAnalysis() || JitOptions.forceInlineCaches) {
     return Ok();
   }
 
