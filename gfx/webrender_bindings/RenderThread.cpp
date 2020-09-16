@@ -503,7 +503,11 @@ void RenderThread::UpdateAndRender(
     }
   }
 
+  ipc::FileDescriptor fenceFd;
+
   if (latestFrameId.IsValid()) {
+    fenceFd = renderer->GetAndResetReleaseFence();
+
     
     
     
@@ -528,8 +532,8 @@ void RenderThread::UpdateAndRender(
   
   
   MOZ_ASSERT(pipelineMgr);
-  pipelineMgr->NotifyPipelinesUpdated(info, latestFrameId,
-                                      lastCompletedFrameId);
+  pipelineMgr->NotifyPipelinesUpdated(info, latestFrameId, lastCompletedFrameId,
+                                      std::move(fenceFd));
 }
 
 void RenderThread::Pause(wr::WindowId aWindowId) {

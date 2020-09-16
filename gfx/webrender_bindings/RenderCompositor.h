@@ -7,6 +7,7 @@
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_H
 
+#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
@@ -140,6 +141,14 @@ class RenderCompositor {
     return false;
   }
   virtual bool MaybeProcessScreenshotQueue() { return false; }
+
+  
+  
+  
+  
+  virtual ipc::FileDescriptor GetAndResetReleaseFence() {
+    return ipc::FileDescriptor();
+  }
 
  protected:
   

@@ -67,6 +67,9 @@ class RendererOGL {
   void WaitForGPU();
 
   
+  ipc::FileDescriptor GetAndResetReleaseFence();
+
+  
   RenderedFrameId GetLastCompletedFrameId();
 
   

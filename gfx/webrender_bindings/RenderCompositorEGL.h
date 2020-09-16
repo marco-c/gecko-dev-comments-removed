@@ -43,6 +43,8 @@ class RenderCompositorEGL : public RenderCompositor {
   uint32_t GetMaxPartialPresentRects() override;
   bool ShouldDrawPreviousPartialPresentRegions() override;
 
+  ipc::FileDescriptor GetAndResetReleaseFence() override;
+
  protected:
   EGLSurface CreateEGLSurface();
 
@@ -55,6 +57,12 @@ class RenderCompositorEGL : public RenderCompositor {
 #endif
 
   EGLint mBufferAge;
+
+  
+  
+  
+  
+  ipc::FileDescriptor mReleaseFenceFd;
 };
 
 }  
