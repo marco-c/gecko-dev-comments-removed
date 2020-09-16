@@ -1042,23 +1042,6 @@ extern JS_FRIEND_API void SetRealmValidAccessPtr(JSContext* cx,
 
 extern JS_FRIEND_API bool SystemZoneAvailable(JSContext* cx);
 
-using LogCtorDtor = void (*)(void*, const char*, uint32_t);
-
-
-
-
-
-extern JS_FRIEND_API void SetLogCtorDtorFunctions(LogCtorDtor ctor,
-                                                  LogCtorDtor dtor);
-
-extern JS_FRIEND_API void LogCtor(void* self, const char* type, uint32_t sz);
-
-extern JS_FRIEND_API void LogDtor(void* self, const char* type, uint32_t sz);
-
-#define JS_COUNT_CTOR(Class) LogCtor((void*)this, #Class, sizeof(Class))
-
-#define JS_COUNT_DTOR(Class) LogDtor((void*)this, #Class, sizeof(Class))
-
 
 
 
