@@ -13,8 +13,9 @@
 #include "NamespaceImports.h"
 
 #include "frontend/FunctionSyntaxKind.h"
-#include "js/CompileOptions.h"
+#include "js/CompileOptions.h"  
 #include "js/SourceText.h"
+#include "js/UniquePtr.h"  
 #include "vm/Scope.h"
 #include "vm/TraceLogging.h"
 
@@ -125,6 +126,13 @@ bool ParseModuleToStencil(JSContext* cx, CompilationInfo& compilationInfo,
                           JS::SourceText<char16_t>& srcBuf);
 bool ParseModuleToStencil(JSContext* cx, CompilationInfo& compilationInfo,
                           JS::SourceText<mozilla::Utf8Unit>& srcBuf);
+
+UniquePtr<CompilationInfo> ParseModuleToStencil(
+    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+    JS::SourceText<char16_t>& srcBuf);
+UniquePtr<CompilationInfo> ParseModuleToStencil(
+    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+    JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
 
 
