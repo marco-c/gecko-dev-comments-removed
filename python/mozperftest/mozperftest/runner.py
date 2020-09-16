@@ -133,7 +133,7 @@ def run_tests(mach_cmd, **kwargs):
                 
                 
                 if flavor == "doc":
-                    from mozperftest.script import ScriptInfo
+                    from mozperftest.test.browsertime.script import ScriptInfo
 
                     for test in kwargs["tests"]:
                         print(ScriptInfo(test))
