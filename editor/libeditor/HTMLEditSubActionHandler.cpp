@@ -2916,7 +2916,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
           : mInclusiveDescendantOfLeftBlockElement(
                 aInclusiveDescendantOfLeftBlockElement),
             mInclusiveDescendantOfRightBlockElement(
-                aInclusiveDescendantOfRightBlockElement) {}
+                aInclusiveDescendantOfRightBlockElement),
+            mCanJoinBlocks(false) {}
 
       bool IsSet() const { return mLeftBlockElement && mRightBlockElement; }
       bool IsSameBlockElement() const {
@@ -2927,7 +2928,12 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
-      EditActionResult Prepare();
+      Result<bool, nsresult> Prepare();
+
+      
+
+
+      bool CanJoinBlocks() const { return mCanJoinBlocks; }
 
       
 
@@ -2949,6 +2955,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       RefPtr<Element> mLeftBlockElement;
       RefPtr<Element> mRightBlockElement;
       Maybe<nsAtom*> mNewListElementTagNameOfRightListElement;
+      bool mCanJoinBlocks;
     };  
         
 
@@ -4308,17 +4315,23 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &pointToPutCaret);
     AutoInclusiveAncestorBlockElementsJoiner joiner(*mLeftContent,
                                                     *mRightContent);
-    result |= joiner.Prepare();
-    if (result.Failed()) {
+    Result<bool, nsresult> canJoinThem = joiner.Prepare();
+    if (canJoinThem.isErr()) {
       NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Prepare() failed");
-      return result;
+      return EditActionResult(canJoinThem.unwrapErr());
     }
-    if (!result.Canceled() && !result.Handled()) {
-      result |= joiner.Run(aHTMLEditor);
-      if (result.Failed()) {
-        NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
-        return result;
+    if (canJoinThem.inspect()) {
+      if (joiner.CanJoinBlocks()) {
+        result |= joiner.Run(aHTMLEditor);
+        if (result.Failed()) {
+          NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
+          return result;
+        }
+      } else {
+        result.MarkAsHandled();
       }
+    } else {
+      result.MarkAsCanceled();
     }
   }
 
@@ -4413,17 +4426,23 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &pointToPutCaret);
     AutoInclusiveAncestorBlockElementsJoiner joiner(*mLeftContent,
                                                     *mRightContent);
-    result |= joiner.Prepare();
-    if (result.Failed()) {
+    Result<bool, nsresult> canJoinThem = joiner.Prepare();
+    if (canJoinThem.isErr()) {
       NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Prepare() failed");
-      return result;
+      return EditActionResult(canJoinThem.unwrapErr());
     }
-    if (!result.Canceled() && !result.Handled()) {
-      result |= joiner.Run(aHTMLEditor);
-      if (result.Failed()) {
-        NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
-        return result;
+    if (canJoinThem.inspect()) {
+      if (joiner.CanJoinBlocks()) {
+        result |= joiner.Run(aHTMLEditor);
+        if (result.Failed()) {
+          NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
+          return result;
+        }
+      } else {
+        result.MarkAsHandled();
       }
+    } else {
+      result.MarkAsCanceled();
     }
     
     
@@ -4839,19 +4858,25 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     if (joinInclusiveAncestorBlockElements) {
       AutoInclusiveAncestorBlockElementsJoiner joiner(*mLeftContent,
                                                       *mRightContent);
-      EditActionResult preparationResult = joiner.Prepare();
-      result |= preparationResult;
-      if (result.Failed()) {
+      Result<bool, nsresult> canJoinThem = joiner.Prepare();
+      if (canJoinThem.isErr()) {
         NS_WARNING(
             "AutoInclusiveAncestorBlockElementsJoiner::Prepare() failed");
-        return result;
+        return EditActionResult(canJoinThem.unwrapErr());
       }
-      if (!preparationResult.Canceled() && !preparationResult.Handled()) {
-        result |= joiner.Run(aHTMLEditor);
-        if (result.Failed()) {
-          NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
-          return result;
+      if (canJoinThem.inspect()) {
+        if (joiner.CanJoinBlocks()) {
+          result |= joiner.Run(aHTMLEditor);
+          if (result.Failed()) {
+            NS_WARNING(
+                "AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
+            return result;
+          }
+        } else {
+          result.MarkAsHandled();
         }
+      } else {
+        result.Canceled();
       }
 
       
@@ -5861,7 +5886,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   return ret;
 }
 
-EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
+Result<bool, nsresult>
+HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     AutoInclusiveAncestorBlockElementsJoiner::Prepare() {
   mLeftBlockElement =
       HTMLEditUtils::GetInclusiveAncestorBlockElementExceptHRElement(
@@ -5871,25 +5897,29 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
           mInclusiveDescendantOfRightBlockElement);
 
   if (NS_WARN_IF(!IsSet())) {
-    return EditActionIgnored(NS_ERROR_UNEXPECTED);
+    mCanJoinBlocks = false;
+    return Err(NS_ERROR_UNEXPECTED);
   }
 
   if (HTMLEditUtils::IsAnyTableElement(mLeftBlockElement) ||
       HTMLEditUtils::IsAnyTableElement(mRightBlockElement)) {
     
-    return EditActionCanceled();
+    mCanJoinBlocks = false;
+    return false;
   }
 
   
   if (IsSameBlockElement()) {
-    return EditActionIgnored();
+    mCanJoinBlocks = true;  
+    return true;
   }
 
   
   if (HTMLEditUtils::IsAnyListElement(mLeftBlockElement) &&
       HTMLEditUtils::IsListItem(mRightBlockElement) &&
       mRightBlockElement->GetParentNode() == mLeftBlockElement) {
-    return EditActionHandled();
+    mCanJoinBlocks = false;
+    return true;
   }
 
   
@@ -5918,7 +5948,8 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     }
   }
 
-  return EditActionIgnored();
+  mCanJoinBlocks = true;
+  return true;
 }
 
 EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
@@ -5929,6 +5960,10 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
 
   if (IsSameBlockElement()) {
     return EditActionIgnored();
+  }
+
+  if (!mCanJoinBlocks) {
+    return EditActionHandled();
   }
 
   
