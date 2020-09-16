@@ -179,7 +179,7 @@ static nsresult LockedGetPaddingSizeFromDB(nsIFile* aDir,
   
   
   
-  rv = mozilla::dom::cache::db::CreateOrMigrateSchema(conn);
+  rv = mozilla::dom::cache::db::CreateOrMigrateSchema(*conn);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
