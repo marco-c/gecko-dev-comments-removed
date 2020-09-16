@@ -25,6 +25,18 @@ document.addEventListener("DOMContentLoaded", function() {
     );
 
   
+  const vpnPromoUrl = RPMGetFormatURLPref(
+    "browser.privatebrowsing.vpnpromourl"
+  );
+  if (vpnPromoUrl) {
+    document
+      .getElementById("private-browsing-vpn-link")
+      .setAttribute("href", vpnPromoUrl);
+  } else {
+    document.getElementById("private-browsing-vpn-banner").remove();
+  }
+
+  
   const privateSearchBanner = document.getElementById("search-banner");
 
   RPMSendQuery("ShouldShowSearchBanner", {}).then(engineName => {
