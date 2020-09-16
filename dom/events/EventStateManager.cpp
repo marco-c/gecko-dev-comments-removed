@@ -5230,7 +5230,7 @@ nsresult EventStateManager::HandleMiddleClickPaste(
     
     
     
-    DebugOnly<nsresult> rv = selection->Collapse(container, offset);
+    DebugOnly<nsresult> rv = selection->CollapseInLimiter(container, offset);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Failed to collapse Selection at middle clicked");
   }
