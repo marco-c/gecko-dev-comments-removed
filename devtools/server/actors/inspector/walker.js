@@ -2536,6 +2536,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       if (
         this.rootDoc &&
+        this.rootDoc !== window.document &&
         !Cu.isDeadWrapper(this.rootDoc) &&
         this.rootDoc.defaultView
       ) {

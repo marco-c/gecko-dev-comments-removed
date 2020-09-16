@@ -30,12 +30,16 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     
     this.autoCleanup = true;
 
-    this._rootNodeWatchers = 0;
+    this._rootNodePromise = new Promise(
+      r => (this._rootNodePromiseResolve = r)
+    );
+
     this._onRootNodeAvailable = this._onRootNodeAvailable.bind(this);
     this._onRootNodeDestroyed = this._onRootNodeDestroyed.bind(this);
 
     this.before("new-mutations", this.onMutations.bind(this));
 
+    
     
     
     this.on("root-available", this._onRootNodeAvailable);
@@ -62,23 +66,9 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
 
 
   async getRootNode() {
-    
-    
-    
-    
-    this._rootNodeWatchers++;
-    if (this._rootNodeWatchers === 1) {
-      await super.watchRootNode();
-    }
-
     let rootNode = this.rootNode;
     if (!rootNode) {
-      rootNode = await this.once("root-available");
-    }
-
-    this._rootNodeWatchers--;
-    if (this._rootNodeWatchers === 0) {
-      super.unwatchRootNode();
+      rootNode = await this._rootNodePromise;
     }
 
     return rootNode;
@@ -554,37 +544,27 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
   _onRootNodeAvailable(rootNode) {
     if (this._isTopLevelRootNode(rootNode)) {
       this.rootNode = rootNode;
+      this._rootNodePromiseResolve(this.rootNode);
     }
   }
 
   _onRootNodeDestroyed(rootNode) {
-    this._releaseFront(rootNode, true);
     if (this._isTopLevelRootNode(rootNode)) {
+      this._rootNodePromise = new Promise(
+        r => (this._rootNodePromiseResolve = r)
+      );
       this.rootNode = null;
     }
   }
 
   _isTopLevelRootNode(rootNode) {
-    
-    
-    const { supportsIsTopLevelDocument } = rootNode.traits;
-    return supportsIsTopLevelDocument ? rootNode.isTopLevelDocument : true;
-  }
-
-  async watchRootNode(onRootNodeAvailable) {
-    this.on("root-available", onRootNodeAvailable);
-
-    this._rootNodeWatchers++;
-    if (this._rootNodeWatchers === 1) {
-      await super.watchRootNode();
-    } else if (this.rootNode) {
+    if (!rootNode.traits.supportsIsTopLevelDocument) {
       
       
-      
-      
-      
-      await onRootNodeAvailable(this.rootNode);
+      return true;
     }
+
+    return rootNode.isTopLevelDocument;
   }
 
   
@@ -625,15 +605,6 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     }
 
     return super.cancelPick();
-  }
-
-  unwatchRootNode(onRootNodeAvailable) {
-    this.off("root-available", onRootNodeAvailable);
-
-    this._rootNodeWatchers--;
-    if (this._rootNodeWatchers === 0) {
-      super.unwatchRootNode();
-    }
   }
 }
 
