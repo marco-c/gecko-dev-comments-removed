@@ -1452,7 +1452,8 @@ class HTMLEditor final : public TextEditor,
 
   template <typename PT, typename RT>
   EditorDOMPoint GetCurrentHardLineStartPoint(
-      const RangeBoundaryBase<PT, RT>& aPoint, EditSubAction aEditSubAction);
+      const RangeBoundaryBase<PT, RT>& aPoint,
+      EditSubAction aEditSubAction) const;
 
   
 
@@ -1466,7 +1467,7 @@ class HTMLEditor final : public TextEditor,
 
   template <typename PT, typename RT>
   EditorDOMPoint GetCurrentHardLineEndPoint(
-      const RangeBoundaryBase<PT, RT>& aPoint);
+      const RangeBoundaryBase<PT, RT>& aPoint) const;
 
   
 
@@ -1498,11 +1499,13 @@ class HTMLEditor final : public TextEditor,
 
 
   already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
-      const dom::AbstractRange& aAbstractRange, EditSubAction aEditSubAction);
+      const dom::AbstractRange& aAbstractRange,
+      EditSubAction aEditSubAction) const;
   template <typename SPT, typename SRT, typename EPT, typename ERT>
   already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
       const RangeBoundaryBase<SPT, SRT>& aStartRef,
-      const RangeBoundaryBase<EPT, ERT>& aEndRef, EditSubAction aEditSubAction);
+      const RangeBoundaryBase<EPT, ERT>& aEndRef,
+      EditSubAction aEditSubAction) const;
 
   
 
@@ -1609,7 +1612,7 @@ class HTMLEditor final : public TextEditor,
   template <typename SPT, typename SRT, typename EPT, typename ERT>
   void SelectBRElementIfCollapsedInEmptyBlock(
       RangeBoundaryBase<SPT, SRT>& aStartRef,
-      RangeBoundaryBase<EPT, ERT>& aEndRef);
+      RangeBoundaryBase<EPT, ERT>& aEndRef) const;
 
   
 
@@ -2203,6 +2206,15 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  Result<bool, nsresult> CanMoveNodeOrChildren(
+      const nsIContent& aContent, const nsINode& aNewContainer) const;
+
+  
+
+
+
+
+
 
 
 
@@ -2210,6 +2222,14 @@ class HTMLEditor final : public TextEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult MoveChildrenWithTransaction(
       Element& aElement, const EditorDOMPoint& aPointToInsert);
+
+  
+
+
+
+
+  Result<bool, nsresult> CanMoveChildren(const Element& aElement,
+                                         const nsINode& aNewContainer) const;
 
   
 
@@ -2288,6 +2308,18 @@ class HTMLEditor final : public TextEditor,
       const EditorDOMPoint& aPointInHardLine,
       const EditorDOMPoint& aPointToInsert,
       MoveToEndOfContainer aMoveToEndOfContainer = MoveToEndOfContainer::No);
+
+  
+
+
+
+
+
+
+
+  template <typename PT, typename CT>
+  Result<bool, nsresult> CanMoveOrDeleteSomethingInHardLine(
+      const EditorDOMPointBase<PT, CT>& aPointInHardLine) const;
 
   
 
