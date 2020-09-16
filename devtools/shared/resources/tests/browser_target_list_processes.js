@@ -29,7 +29,7 @@ add_task(async function() {
 
   await testProcesses(targetList, mainProcess);
 
-  await targetList.stopListening();
+  await targetList.destroy();
   
   await Promise.all(
     targetList

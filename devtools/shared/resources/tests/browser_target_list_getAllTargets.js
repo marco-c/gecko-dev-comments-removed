@@ -94,7 +94,7 @@ add_task(async function() {
     "getAllTargets(TYPES.ALL_TYPES) returned the expected targets"
   );
 
-  targetList.stopListening();
+  targetList.destroy();
 
   
   await Promise.all(
