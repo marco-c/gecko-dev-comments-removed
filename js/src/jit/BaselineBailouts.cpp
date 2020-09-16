@@ -88,6 +88,7 @@ class BufferPointer {
 class MOZ_STACK_CLASS BaselineStackBuilder {
   JSContext* cx_;
   JitFrameLayout* frame_ = nullptr;
+  SnapshotIterator& iter_;
 
   size_t bufferTotal_ = 0;
   size_t bufferAvail_ = 0;
@@ -96,9 +97,17 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
 
   UniquePtr<BaselineBailoutInfo> header_;
 
+  JSScript* script_ = nullptr;
+  JSFunction* fun_ = nullptr;
+  const ExceptionBailoutInfo* excInfo_ = nullptr;
+
+  uint32_t exprStackSlots_ = 0;
+  void* prevFramePtr_ = nullptr;
+
  public:
-  BaselineStackBuilder(JSContext* cx, JitFrameLayout* frame, size_t initialSize)
-      : cx_(cx), frame_(frame), bufferTotal_(initialSize) {
+  BaselineStackBuilder(JSContext* cx, JitFrameLayout* frame,
+                       SnapshotIterator& iter, size_t initialSize)
+      : cx_(cx), frame_(frame), iter_(iter), bufferTotal_(initialSize) {
     MOZ_ASSERT(bufferTotal_ >= sizeof(BaselineBailoutInfo));
   }
 
@@ -118,6 +127,26 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     header_->copyStackBottom = header_->copyStackTop;
     return true;
   }
+
+  MOZ_MUST_USE bool initFrame(JSScript* script, JSFunction* fun,
+                              const ExceptionBailoutInfo* excInfo);
+
+ private:
+  JSScript* script() const {
+    MOZ_ASSERT(cx_->suppressGC);
+    return script_;
+  }
+  JSFunction* fun() const {
+    MOZ_ASSERT(cx_->suppressGC);
+    return fun_;
+  }
+
+ public:
+  uint32_t exprStackSlots() const { return exprStackSlots_; }
+  bool catchingException() const {
+    return excInfo_ && excInfo_->catchingException();
+  }
+  void* prevFramePtr() const { return prevFramePtr_; }
 
   MOZ_MUST_USE bool enlarge() {
     MOZ_ASSERT(header_ != nullptr);
@@ -393,6 +422,51 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   }
 };
 
+bool BaselineStackBuilder::initFrame(JSScript* frameScript,
+                                     JSFunction* frameFun,
+                                     const ExceptionBailoutInfo* excInfo) {
+  
+  
+  MOZ_ASSERT(cx_->suppressGC);
+
+  
+  MOZ_ASSERT(script_->hasBaselineScript());
+  script_ = frameScript;
+  fun_ = frameFun;
+  excInfo_ = excInfo;
+
+  
+  
+  
+  
+  if (catchingException()) {
+    exprStackSlots_ = excInfo->numExprSlots();
+  } else {
+    uint32_t totalFrameSlots = iter_.numAllocations();
+    uint32_t fixedSlots = script()->nfixed();
+    uint32_t argSlots = CountArgSlots(script(), fun());
+    exprStackSlots_ = totalFrameSlots - fixedSlots - argSlots;
+  }
+
+  resetFramePushed();
+
+  JitSpew(JitSpew_BaselineBailouts, "      Unpacking %s:%u:%u",
+          script()->filename(), script()->lineno(), script()->column());
+  JitSpew(JitSpew_BaselineBailouts, "      [BASELINE-JS FRAME]");
+
+  
+  
+  
+  
+  void* prevFramePtr = calculatePrevFramePtr();
+  if (!writePtr(prevFramePtr, "PrevFramePtr")) {
+    return false;
+  }
+  prevFramePtr_ = virtualPointerAtStackOffset(0);
+
+  return true;
+}
+
 #ifdef DEBUG
 static inline bool IsInlinableFallback(ICFallbackStub* icEntry) {
   return icEntry->isCall_Fallback() || icEntry->isGetProp_Fallback() ||
@@ -589,66 +663,37 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
                             MutableHandleFunction nextCallee,
                             ICScript** icScriptPtr,
                             const ExceptionBailoutInfo* excInfo) {
-  
-  
-  MOZ_ASSERT(cx->suppressGC);
-
-  MOZ_ASSERT(script->hasBaselineScript());
-
-  
-  bool catchingException = excInfo && excInfo->catchingException();
-
-  
-  
-  
-  
-  uint32_t exprStackSlots;
-  if (catchingException) {
-    exprStackSlots = excInfo->numExprSlots();
-  } else {
-    exprStackSlots =
-        iter.numAllocations() - (script->nfixed() + CountArgSlots(script, fun));
-  }
-
-  builder.resetFramePushed();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  JitSpew(JitSpew_BaselineBailouts, "      Unpacking %s:%u:%u",
-          script->filename(), script->lineno(), script->column());
-  JitSpew(JitSpew_BaselineBailouts, "      [BASELINE-JS FRAME]");
-
-  
-  
-  
-  
-  void* prevFramePtr = builder.calculatePrevFramePtr();
-  if (!builder.writePtr(prevFramePtr, "PrevFramePtr")) {
+  if (!builder.initFrame(script, fun, excInfo)) {
     return false;
   }
-  prevFramePtr = builder.virtualPointerAtStackOffset(0);
+
+  uint32_t exprStackSlots = builder.exprStackSlots();
+  bool catchingException = builder.catchingException();
+  void* prevFramePtr = builder.prevFramePtr();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   if (!builder.subtract(BaselineFrame::Size(), "BaselineFrame")) {
@@ -1523,15 +1568,6 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
   iter.script()->updateJitCodeRaw(cx->runtime());
 
   
-  JitFrameLayout* frame = static_cast<JitFrameLayout*>(iter.current());
-  BaselineStackBuilder builder(cx, frame, 1024);
-  if (!builder.init()) {
-    return false;
-  }
-  JitSpew(JitSpew_BaselineBailouts, "  Incoming frame ptr = %p",
-          builder.startFrame());
-
-  
   
   
   MaybeReadFallback recoverBailout(cx, activation, &iter,
@@ -1549,6 +1585,14 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
 #ifdef TRACK_SNAPSHOTS
   snapIter.spewBailingFrom();
 #endif
+
+  JitFrameLayout* frame = static_cast<JitFrameLayout*>(iter.current());
+  BaselineStackBuilder builder(cx, frame, snapIter, 1024);
+  if (!builder.init()) {
+    return false;
+  }
+  JitSpew(JitSpew_BaselineBailouts, "  Incoming frame ptr = %p",
+          builder.startFrame());
 
   RootedFunction callee(cx, iter.maybeCallee());
   RootedScript scr(cx, iter.script());
