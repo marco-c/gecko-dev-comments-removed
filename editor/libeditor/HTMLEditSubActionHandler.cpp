@@ -4317,22 +4317,28 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     return EditActionResult(canJoinThem.unwrapErr());
   }
 
+  if (!canJoinThem.inspect()) {
+    nsresult rv = aHTMLEditor.CollapseSelectionTo(aCaretPoint);
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+    return EditActionCanceled();
+  }
+
   EditActionResult result(NS_OK);
   EditorDOMPoint pointToPutCaret(aCaretPoint);
-  if (canJoinThem.inspect()) {
-    if (joiner.CanJoinBlocks()) {
-      AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(),
-                                &pointToPutCaret);
-      result |= joiner.Run(aHTMLEditor);
-      if (result.Failed()) {
-        NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
-        return result;
-      }
-    } else {
-      result.MarkAsHandled();
+  if (joiner.CanJoinBlocks()) {
+    AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &pointToPutCaret);
+    result |= joiner.Run(aHTMLEditor);
+    if (result.Failed()) {
+      NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
+      return result;
     }
   } else {
-    result.MarkAsCanceled();
+    result.MarkAsHandled();
   }
 
   
@@ -4428,22 +4434,28 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     return EditActionResult(canJoinThem.unwrapErr());
   }
 
+  if (!canJoinThem.inspect()) {
+    nsresult rv = aHTMLEditor.CollapseSelectionTo(aCaretPoint);
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+    return EditActionCanceled();
+  }
+
   EditActionResult result(NS_OK);
   EditorDOMPoint pointToPutCaret(aCaretPoint);
-  if (canJoinThem.inspect()) {
-    if (joiner.CanJoinBlocks()) {
-      AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(),
-                                &pointToPutCaret);
-      result |= joiner.Run(aHTMLEditor);
-      if (result.Failed()) {
-        NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
-        return result;
-      }
-    } else {
-      result.MarkAsHandled();
+  if (joiner.CanJoinBlocks()) {
+    AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &pointToPutCaret);
+    result |= joiner.Run(aHTMLEditor);
+    if (result.Failed()) {
+      NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
+      return result;
     }
   } else {
-    result.MarkAsCanceled();
+    result.MarkAsHandled();
   }
   
   
@@ -4825,7 +4837,7 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   
   EditActionResult result(NS_OK);
   result.MarkAsHandled();
-  {
+  while (true) {
     AutoTrackDOMRange firstRangeTracker(aHTMLEditor.RangeUpdaterRef(),
                                         &aRangesToDelete.FirstRangeRef());
 
@@ -4856,45 +4868,48 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       return EditActionHandled(rv);
     }
 
-    if (joinInclusiveAncestorBlockElements) {
-      AutoInclusiveAncestorBlockElementsJoiner joiner(*mLeftContent,
-                                                      *mRightContent);
-      Result<bool, nsresult> canJoinThem = joiner.Prepare();
-      if (canJoinThem.isErr()) {
-        NS_WARNING(
-            "AutoInclusiveAncestorBlockElementsJoiner::Prepare() failed");
-        return EditActionResult(canJoinThem.unwrapErr());
-      }
-      if (canJoinThem.inspect()) {
-        if (joiner.CanJoinBlocks()) {
-          result |= joiner.Run(aHTMLEditor);
-          if (result.Failed()) {
-            NS_WARNING(
-                "AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
-            return result;
-          }
-        } else {
-          result.MarkAsHandled();
-        }
-      } else {
-        result.Canceled();
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (aDirectionAndAmount == nsIEditor::eNext) {
-        aDirectionAndAmount = nsIEditor::ePrevious;
-      } else {
-        aDirectionAndAmount = nsIEditor::eNext;
-      }
+    if (!joinInclusiveAncestorBlockElements) {
+      break;
     }
+
+    AutoInclusiveAncestorBlockElementsJoiner joiner(*mLeftContent,
+                                                    *mRightContent);
+    Result<bool, nsresult> canJoinThem = joiner.Prepare();
+    if (canJoinThem.isErr()) {
+      NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Prepare() failed");
+      return EditActionResult(canJoinThem.unwrapErr());
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aDirectionAndAmount == nsIEditor::eNext) {
+      aDirectionAndAmount = nsIEditor::ePrevious;
+    } else {
+      aDirectionAndAmount = nsIEditor::eNext;
+    }
+
+    if (!canJoinThem.inspect()) {
+      result.MarkAsCanceled();
+      break;
+    }
+
+    if (joiner.CanJoinBlocks()) {
+      result |= joiner.Run(aHTMLEditor);
+      if (result.Failed()) {
+        NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
+        return result;
+      }
+    } else {
+      result.MarkAsHandled();
+    }
+    break;
   }
 
   nsresult rv = mDeleteRangesHandler.DeleteUnnecessaryNodesAndCollapseSelection(
