@@ -127,7 +127,9 @@ enum punycode_status punycode_encode(punycode_uint input_length,
 
   for (j = 0; j < input_length; ++j) {
     if (basic(input[j])) {
-      if (max_out - out < 2) return punycode_big_output;
+      if (max_out - out < 2) {
+        return punycode_big_output;
+      }
       output[out++] =
           case_flags ? encode_basic(input[j], case_flags[j]) : (char)input[j];
     }
@@ -141,7 +143,9 @@ enum punycode_status punycode_encode(punycode_uint input_length,
   
   
 
-  if (b > 0) output[out++] = delimiter;
+  if (b > 0) {
+    output[out++] = delimiter;
+  }
 
   
 
@@ -152,30 +156,40 @@ enum punycode_status punycode_encode(punycode_uint input_length,
     for (m = maxint, j = 0; j < input_length; ++j) {
       
       
-      if (input[j] >= n && input[j] < m) m = input[j];
+      if (input[j] >= n && input[j] < m) {
+        m = input[j];
+      }
     }
 
     
     
 
-    if (m - n > (maxint - delta) / (h + 1)) return punycode_overflow;
+    if (m - n > (maxint - delta) / (h + 1)) {
+      return punycode_overflow;
+    }
     delta += (m - n) * (h + 1);
     n = m;
 
     for (j = 0; j < input_length; ++j) {
       
       if (input[j] < n ) {
-        if (++delta == 0) return punycode_overflow;
+        if (++delta == 0) {
+          return punycode_overflow;
+        }
       }
 
       if (input[j] == n) {
         
 
         for (q = delta, k = base;; k += base) {
-          if (out >= max_out) return punycode_big_output;
+          if (out >= max_out) {
+            return punycode_big_output;
+          }
           t = k <= bias  ? tmin : 
                   k >= bias + tmax ? tmax : k - bias;
-          if (q < t) break;
+          if (q < t) {
+            break;
+          }
           output[out++] = encode_digit(t + (q - t) % (base - t), 0);
           q = (q - t) / (base - t);
         }
@@ -224,11 +238,17 @@ enum punycode_status punycode_decode(punycode_uint input_length,
       break;
     }
   }
-  if (b > max_out) return punycode_big_output;
+  if (b > max_out) {
+    return punycode_big_output;
+  }
 
   for (j = 0; j < b; ++j) {
-    if (case_flags) case_flags[out] = flagged(input[j]);
-    if (!basic(input[j])) return punycode_bad_input;
+    if (case_flags) {
+      case_flags[out] = flagged(input[j]);
+    }
+    if (!basic(input[j])) {
+      return punycode_bad_input;
+    }
     output[out++] = input[j];
   }
 
@@ -245,15 +265,25 @@ enum punycode_status punycode_decode(punycode_uint input_length,
     
 
     for (oldi = i, w = 1, k = base;; k += base) {
-      if (in >= input_length) return punycode_bad_input;
+      if (in >= input_length) {
+        return punycode_bad_input;
+      }
       digit = decode_digit(input[in++]);
-      if (digit >= base) return punycode_bad_input;
-      if (digit > (maxint - i) / w) return punycode_overflow;
+      if (digit >= base) {
+        return punycode_bad_input;
+      }
+      if (digit > (maxint - i) / w) {
+        return punycode_overflow;
+      }
       i += digit * w;
       t = k <= bias  ? tmin : 
               k >= bias + tmax ? tmax : k - bias;
-      if (digit < t) break;
-      if (w > maxint / (base - t)) return punycode_overflow;
+      if (digit < t) {
+        break;
+      }
+      if (w > maxint / (base - t)) {
+        return punycode_overflow;
+      }
       w *= (base - t);
     }
 
@@ -262,7 +292,9 @@ enum punycode_status punycode_decode(punycode_uint input_length,
     
     
 
-    if (i / (out + 1) > maxint - n) return punycode_overflow;
+    if (i / (out + 1) > maxint - n) {
+      return punycode_overflow;
+    }
     n += i / (out + 1);
     i %= (out + 1);
 
@@ -270,7 +302,9 @@ enum punycode_status punycode_decode(punycode_uint input_length,
 
     
     
-    if (out >= max_out) return punycode_big_output;
+    if (out >= max_out) {
+      return punycode_big_output;
+    }
 
     if (case_flags) {
       memmove(case_flags + i + 1, case_flags + i, out - i);
