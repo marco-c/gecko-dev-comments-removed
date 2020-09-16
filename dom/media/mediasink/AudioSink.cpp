@@ -66,26 +66,10 @@ AudioSink::AudioSink(AbstractThread* aThread,
       mOwnerThread(aThread),
       mProcessedQueueLength(0),
       mFramesParsed(0),
-      mIsAudioDataAudible(false),
-      mAudioQueue(aAudioQueue) {
-  bool resampling = StaticPrefs::media_resampling_enabled();
-
-  if (resampling) {
-    mOutputRate = 48000;
-  } else if (mInfo.mRate == 44100 || mInfo.mRate == 48000) {
-    
-    
-    
-    
-    mOutputRate = mInfo.mRate;
-  } else {
-    
-    mOutputRate = AudioStream::GetPreferredRate();
-  }
-  MOZ_DIAGNOSTIC_ASSERT(mOutputRate, "output rate can't be 0.");
-
-  mOutputChannels = DecideAudioPlaybackChannels(mInfo);
-}
+      mOutputRate(DecideAudioPlaybackSampleRate(aInfo)),
+      mOutputChannels(DecideAudioPlaybackChannels(aInfo)),
+      mAudioQueue(aAudioQueue)
+  { }
 
 AudioSink::~AudioSink() = default;
 
