@@ -44,6 +44,10 @@ add_task(async function setup() {
     set: [
       
       ["browser.discovery.enabled", true],
+      
+      
+      ["toolkit.telemetry.server", "https://localhost:1337"],
+      ["telemetry.fog.test.localhost_port", -1],
       ["datareporting.healthreport.uploadEnabled", true],
       ["extensions.getAddons.discovery.api_url", `${serverBaseUrl}discoapi`],
       ["app.support.baseURL", `${serverBaseUrl}sumo/`],

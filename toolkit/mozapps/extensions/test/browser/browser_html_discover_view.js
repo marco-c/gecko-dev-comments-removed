@@ -829,6 +829,10 @@ add_task(async function checkDiscopaneNotice() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.discovery.enabled", true],
+      
+      
+      ["toolkit.telemetry.server", "https://localhost:1337"],
+      ["telemetry.fog.test.localhost_port", -1],
       ["datareporting.healthreport.uploadEnabled", true],
       ["extensions.htmlaboutaddons.recommendations.enabled", true],
       ["extensions.recommendations.hideNotice", false],
