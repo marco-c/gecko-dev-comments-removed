@@ -5312,7 +5312,9 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
 
   nsCOMPtr<nsIContentViewer> cv;
   RefPtr<BrowsingContext> bc;
-  if (docToPrint->IsStaticDocument() && bool(aIsPreview)) {
+  bool hasPrintCallbacks = false;
+  if (docToPrint->IsStaticDocument() && aIsPreview == IsPreview::Yes) {
+    MOZ_DIAGNOSTIC_ASSERT(aBlockUntilDone == BlockUntilDone::No);
     
     
     
@@ -5339,8 +5341,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
       bc = aDocShellToCloneInto->GetBrowsingContext();
     } else {
       AutoNoJSAPI nojsapi;
-      auto printKind =
-          bool(aIsPreview) ? PrintKind::PrintPreview : PrintKind::Print;
+      auto printKind = aIsPreview == IsPreview::Yes ? PrintKind::PrintPreview
+                                                    : PrintKind::Print;
       aError = OpenInternal(EmptyString(), EmptyString(), EmptyString(),
                             false,             
                             false,             
@@ -5403,6 +5405,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
         return nullptr;
       }
 
+      hasPrintCallbacks |= clone->HasPrintCallbacks();
+
       
       
       aError = cv->SetDocument(clone);
@@ -5430,6 +5434,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
         if (NS_WARN_IF(NS_FAILED(rv))) {
           continue;
         }
+
+        hasPrintCallbacks |= doc && doc->HasPrintCallbacks();
       }
     }
   }
@@ -5441,7 +5447,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     return nullptr;
   }
 
-  if (bool(aIsPreview)) {
+  if (aIsPreview == IsPreview::Yes) {
     aError = webBrowserPrint->PrintPreview(aPrintSettings, aListener,
                                            std::move(aPrintPreviewCallback));
     if (aError.Failed()) {
@@ -5452,8 +5458,13 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     webBrowserPrint->Print(aPrintSettings, aListener);
   }
 
-  if (bool(aBlockUntilDone)) {
-    
+  
+  
+  
+  
+  
+  
+  if (aBlockUntilDone == BlockUntilDone::Yes && !hasPrintCallbacks) {
     SpinEventLoopUntil([&] { return bc->IsDiscarded(); });
   }
 
