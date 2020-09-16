@@ -218,8 +218,9 @@ static const nsIContent* GetBlockParent(const Text& aNode) {
   return nullptr;
 }
 
-static bool NodeForcesBreak(const nsIContent& aContent) {
-  nsIFrame* frame = aContent.GetPrimaryFrame();
+static bool NonTextNodeForcesBreak(const nsINode& aNode) {
+  nsIFrame* frame =
+      aNode.IsContent() ? aNode.AsContent()->GetPrimaryFrame() : nullptr;
   
   
   return frame && frame->IsBrFrame();
@@ -270,25 +271,43 @@ struct nsFind::State final {
   
   void Initialize();
 
-  static bool ValidTextNode(const nsINode& aNode, const Text* aPrev,
-                            bool aAlreadyMatching) {
+  
+  static bool AnalyzeNode(const nsINode& aNode, const Text* aPrev,
+                          bool aAlreadyMatching, bool* aForcedBreak) {
     if (!aNode.IsText()) {
+      *aForcedBreak = *aForcedBreak || NonTextNodeForcesBreak(aNode);
       return false;
     }
     if (SkipNode(aNode.AsText())) {
       return false;
     }
+    *aForcedBreak = *aForcedBreak ||
+                    (aPrev && ForceBreakBetweenText(*aPrev, *aNode.AsText()));
+    if (*aForcedBreak) {
+      
+      
+      
+      
+      return true;
+    }
+
     
     
     
     if (aAlreadyMatching && aPrev &&
         !nsContentUtils::IsInSameAnonymousTree(&aNode, aPrev)) {
-      DEBUG_FIND_PRINTF("Skipping due to different anon subtrees: ");
-      DumpNode(aPrev);
-      DEBUG_FIND_PRINTF("Next: ");
-      DumpNode(&aNode);
+      
+      
+      
+      
+      if (aPrev->IsInNativeAnonymousSubtree()) {
+        *aForcedBreak = true;
+        return true;
+      }
+      
       return false;
     }
+
     return true;
   }
 
@@ -324,12 +343,9 @@ void nsFind::State::Advance(Initializing aInitializing, bool aAlreadyMatching) {
     if (!current) {
       return;
     }
-    if (ValidTextNode(*current, prev, aAlreadyMatching)) {
-      mFoundBreak = mFoundBreak ||
-                    (prev && ForceBreakBetweenText(*prev, *current->AsText()));
-      return;
+    if (AnalyzeNode(*current, prev, aAlreadyMatching, &mFoundBreak)) {
+      break;
     }
-    mFoundBreak = mFoundBreak || NodeForcesBreak(*current);
   }
 }
 
@@ -363,7 +379,7 @@ void nsFind::State::Initialize() {
   }
 
   const bool kAlreadyMatching = false;
-  if (!ValidTextNode(*current, nullptr, kAlreadyMatching)) {
+  if (!AnalyzeNode(*current, nullptr, kAlreadyMatching, &mFoundBreak)) {
     Advance(Initializing::Yes, kAlreadyMatching);
     current = mIterator.GetCurrent();
     if (!current) {
