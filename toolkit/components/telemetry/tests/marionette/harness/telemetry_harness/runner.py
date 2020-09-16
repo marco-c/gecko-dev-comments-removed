@@ -32,7 +32,6 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
                 
                 "browser.cache.disk.smart_size.enabled": False,
                 "toolkit.telemetry.server": "{}/pings".format(SERVER_URL),
-                "telemetry.fog.test.localhost_port": 1337,
                 "toolkit.telemetry.initDelay": 1,
                 "toolkit.telemetry.minSubsessionLength": 0,
                 "datareporting.healthreport.uploadEnabled": True,
