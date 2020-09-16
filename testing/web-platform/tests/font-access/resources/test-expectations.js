@@ -228,6 +228,23 @@ const WIN_FONTS = [
   },
 ];
 
+const LINUX_FONTS = [
+  {
+    postscriptName: 'Ahem',
+    fullName: 'Ahem',
+    family: 'Ahem',
+    label: TEST_SIZE_CATEGORY.small,
+    expectedTables: [
+      
+      'cvt ',
+      'glyf',
+      'loca',
+      'prep',
+      'gasp',
+    ],
+  },
+];
+
 
 
 
@@ -266,6 +283,9 @@ function getEnumerationTestSet(options) {
     output = MAC_FONTS;
   } else if (platform === 'win') {
     output = WIN_FONTS;
+  } else if (platform === 'linux') {
+    
+    output = LINUX_FONTS;
   }
 
   if (options.labelFilter.length && output.length) {
@@ -429,7 +449,9 @@ function promiseDocumentReady() {
 }
 
 function isPlatformSupported() {
-  if (navigator.platform.indexOf('Mac') != -1 || navigator.platform.indexOf('Win') != -1) {
+  if (navigator.platform.indexOf('Mac') != -1 ||
+      navigator.platform.indexOf('Win') != -1 ||
+      navigator.platform.indexOf('Linux') != -1) {
     return true;
   }
   return false;
