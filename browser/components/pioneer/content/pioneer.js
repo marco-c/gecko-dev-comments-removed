@@ -144,6 +144,10 @@ async function toggleEnrolled(studyAddonId, cachedAddons) {
     await install.install();
     document.l10n.setAttributes(joinBtn, "pioneer-leave-study");
     joinBtn.disabled = false;
+
+    
+    
+    await sendEnrollmentPing(studyAddonId);
   }
 
   await updateStudy(cachedAddon.addon_id);
@@ -467,6 +471,10 @@ async function setup(cachedAddons) {
         }
         document.querySelector("dialog").close();
       }
+      
+      
+      await sendEnrollmentPing();
+
       showEnrollmentStatus();
     });
 
@@ -727,4 +735,49 @@ async function sendDeletionPing(studyAddonId) {
   };
 
   await TelemetryController.submitExternalPing(type, payload, options);
+}
+
+
+
+
+
+
+
+
+
+
+async function sendEnrollmentPing(studyAddonId) {
+  let options = {
+    addPioneerId: true,
+    useEncryption: true,
+    
+    
+    
+    
+    encryptionKeyId: "debug",
+    publicKey: {
+      crv: "P-256",
+      kty: "EC",
+      x: "XLkI3NaY3-AF2nRMspC63BT1u0Y3moXYSfss7VuQ0mk",
+      y: "SB0KnIW-pqk85OIEYZenoNkEyOOp5GeWQhS1KeRtEUE",
+    },
+    schemaName: "pioneer-enrollment",
+    schemaVersion: 1,
+    
+    
+    
+    schemaNamespace: "pioneer-meta",
+  };
+
+  
+  
+  
+  if (typeof studyAddonId != "undefined") {
+    options.studyName = studyAddonId;
+    
+    
+    options.schemaNamespace = "pioneer-debug";
+  }
+
+  await TelemetryController.submitExternalPing("pioneer-study", {}, options);
 }
