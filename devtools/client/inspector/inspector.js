@@ -1889,8 +1889,9 @@ Inspector.prototype = {
     
     
     
-    
-    await this.highlighter.hideBoxModel();
+    await this.highlighters.hideHighlighterType(
+      this.highlighters.TYPES.BOXMODEL
+    );
 
     const clipboardEnabled = Services.prefs.getBoolPref(
       "devtools.screenshot.clipboard.enabled"
