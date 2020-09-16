@@ -229,7 +229,6 @@ OptimizationSchema = voluptuous.Any(
     
     {'never': None},
     
-    {'push-interval-5': None},
     {'push-interval-10': None},
     {'push-interval-20': None},
     
