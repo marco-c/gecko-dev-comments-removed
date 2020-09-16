@@ -926,7 +926,7 @@ class GlobalObject : public NativeObject {
   }
   void clearSourceURLSHolder() {
     
-    getSlotRef(SOURCE_URLS).unsafeSet(UndefinedValue());
+    getSlotRef(SOURCE_URLS).unbarrieredSet(UndefinedValue());
   }
 
   

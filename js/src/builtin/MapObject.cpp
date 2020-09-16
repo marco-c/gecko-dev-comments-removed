@@ -470,7 +470,7 @@ static void TraceKey(Range& r, const HashableValue& key, JSTracer* trc) {
   }
 
   
-  newKey.unsafeClear();
+  newKey.unbarrieredClear();
 }
 
 void MapObject::trace(JSTracer* trc, JSObject* obj) {

@@ -123,13 +123,12 @@ inline JSFunction* CloneFunctionObjectIfNotSingleton(
   
   MOZ_MAKE_MEM_UNDEFINED(&fun->u, sizeof(u));
 
-  
-  fun->atom_.unsafeSet(nullptr);
+  fun->atom_.init(nullptr);
 
   if (kind == js::gc::AllocKind::FUNCTION_EXTENDED) {
     fun->setFlags(FunctionFlags::EXTENDED);
     for (js::GCPtrValue& extendedSlot : fun->toExtended()->extendedSlots) {
-      extendedSlot.unsafeSet(JS::UndefinedValue());
+      extendedSlot.init(JS::UndefinedValue());
     }
   } else {
     fun->setFlags(0);

@@ -58,7 +58,7 @@ class HashableValue {
   void trace(JSTracer* trc) { TraceEdge(trc, &value, "HashableValue"); }
 
   
-  void unsafeClear() { value.unsafeSet(UndefinedValue()); }
+  void unbarrieredClear() { value.unbarrieredSet(UndefinedValue()); }
 };
 
 template <typename Wrapper>

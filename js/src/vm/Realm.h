@@ -840,10 +840,9 @@ inline js::Handle<js::GlobalObject*> JSContext::global() const {
 
 
 
-
   MOZ_ASSERT(realm_, "Caller needs to enter a realm first");
   return js::Handle<js::GlobalObject*>::fromMarkedLocation(
-      realm_->global_.unsafeGet());
+      realm_->global_.unbarrieredAddress());
 }
 
 namespace js {
