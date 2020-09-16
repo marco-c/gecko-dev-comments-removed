@@ -2011,7 +2011,9 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
 
       if (NS_FAILED(addrRec->mFirstTRRresult) && NS_FAILED(status) &&
           (addrRec->mFirstTRRresult != NS_ERROR_UNKNOWN_HOST) &&
-          (status != NS_ERROR_UNKNOWN_HOST)) {
+          (status != NS_ERROR_UNKNOWN_HOST) &&
+          (addrRec->mFirstTRRresult != NS_ERROR_DEFINITIVE_UNKNOWN_HOST) &&
+          (status != NS_ERROR_DEFINITIVE_UNKNOWN_HOST)) {
         
         
         
@@ -2038,7 +2040,8 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
       }
 
       if (!addrRec->mTRRSuccess &&
-          addrRec->mEffectiveTRRMode == nsIRequest::TRR_FIRST_MODE) {
+          addrRec->mEffectiveTRRMode == nsIRequest::TRR_FIRST_MODE &&
+          addrRec->mFirstTRRresult != NS_ERROR_DEFINITIVE_UNKNOWN_HOST) {
         MOZ_ASSERT(!addrRec->mResolving);
         NativeLookup(addrRec);
         MOZ_ASSERT(addrRec->mResolving);

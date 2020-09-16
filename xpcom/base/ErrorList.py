@@ -382,6 +382,10 @@ with modules["NETWORK"]:
     
     
     errors["NS_ERROR_UNKNOWN_PROXY_HOST"] = FAILURE(42)
+    
+    
+    
+    errors["NS_ERROR_DEFINITIVE_UNKNOWN_HOST"] = FAILURE(43)
 
     
 
