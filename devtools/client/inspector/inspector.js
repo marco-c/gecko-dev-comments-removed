@@ -1926,7 +1926,11 @@ Inspector.prototype = {
 
 
   onShowBoxModelHighlighterForNode(nodeFront, options) {
-    nodeFront.highlighterFront.highlight(nodeFront, options);
+    this.highlighters.showHighlighterTypeForNode(
+      this.highlighters.TYPES.BOXMODEL,
+      nodeFront,
+      options
+    );
   },
 
   onPickerCanceled() {

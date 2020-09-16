@@ -21,25 +21,6 @@ registerCleanupFunction(() => {
 
 
 
-
-
-
-
-
-
-async function selectAndHighlightNode(selectorOrNodeFront, inspector) {
-  info("Highlighting and selecting the node " + selectorOrNodeFront);
-  const nodeFront = await getNodeFront(selectorOrNodeFront, inspector);
-  const onHovered = inspector.toolbox.nodePicker.once("picker-node-hovered");
-  inspector.selection.setNodeFront(nodeFront, { reason: "test-highlight" });
-  await onHovered;
-}
-
-
-
-
-
-
 function isNodeVisible(node) {
   return !!node.getClientRects().length;
 }
@@ -53,7 +34,17 @@ function isNodeVisible(node) {
 
 
 
-function waitForUpdate(inspector, waitForSelectionUpdate) {
+async function waitForUpdate(inspector, waitForSelectionUpdate) {
+  
+
+
+
+
+
+  await inspector.highlighters.hideHighlighterType(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
+
   return new Promise(resolve => {
     inspector.on("boxmodel-view-updated", function onUpdate(reasons) {
       
