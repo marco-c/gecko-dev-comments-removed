@@ -42,7 +42,7 @@ function cancelDeferredTasks() {
 document.addEventListener(
   "DOMContentLoaded",
   e => {
-    PrintEventHandler.init();
+    window._initialized = PrintEventHandler.init();
     ourBrowser.setAttribute("flex", "0");
     ourBrowser.classList.add("printSettingsBrowser");
     ourBrowser.closest(".dialogBox")?.classList.add("printDialogBox");
@@ -194,14 +194,16 @@ var PrintEventHandler = {
     await this.refreshSettings(selectedPrinter.value);
 
     
+    let initialPreviewDone = this._updatePrintPreview(sourceBrowsingContext);
+    
+    sourceBrowsingContext = undefined;
+
+    
     
     this._updatePrintPreviewTask = createDeferredTask(async () => {
-      await this._updatePrintPreview(sourceBrowsingContext);
-      
-      
-      sourceBrowsingContext = undefined;
+      await initialPreviewDone;
+      await this._updatePrintPreview();
     }, 0);
-    this.updatePrintPreview();
 
     document.dispatchEvent(
       new CustomEvent("available-destinations", {
@@ -219,11 +221,13 @@ var PrintEventHandler = {
 
     document.body.removeAttribute("loading");
 
-    window.requestAnimationFrame(() => {
-      window.focus();
-      
-      document.getElementById("printer-picker").focus();
-    });
+    await new Promise(resolve => window.requestAnimationFrame(resolve));
+
+    
+    window.focus();
+    document.getElementById("printer-picker").focus();
+
+    await initialPreviewDone;
   },
 
   unload() {
@@ -472,32 +476,25 @@ var PrintEventHandler = {
       hasSelection,
     } = await previewBrowser.frameLoader.printPreview(settings, sourceWinId);
 
-    if (this._queuedPreviewUpdatePromise) {
-      
-      this._previewUpdatingPromise = this._queuedPreviewUpdatePromise;
-      this._queuedPreviewUpdatePromise = null;
-    } else {
-      
-      let numPages = totalPageCount;
-      
-      if (settings.printRange == Ci.nsIPrintSettings.kRangeSpecifiedPageRange) {
-        numPages = settings.endPageRange - settings.startPageRange + 1;
-      }
-      
-      settings.SetPrintOptions(
-        Ci.nsIPrintSettings.kEnableSelectionRB,
-        hasSelection
-      );
-      document.dispatchEvent(
-        new CustomEvent("page-count", {
-          detail: { numPages, totalPages: totalPageCount },
-        })
-      );
-
-      stack.removeAttribute("rendering");
-      document.body.removeAttribute("rendering");
-      this._previewUpdatingPromise = null;
+    
+    let numPages = totalPageCount;
+    
+    if (settings.printRange == Ci.nsIPrintSettings.kRangeSpecifiedPageRange) {
+      numPages = settings.endPageRange - settings.startPageRange + 1;
     }
+    
+    settings.SetPrintOptions(
+      Ci.nsIPrintSettings.kEnableSelectionRB,
+      hasSelection
+    );
+    document.dispatchEvent(
+      new CustomEvent("page-count", {
+        detail: { numPages, totalPages: totalPageCount },
+      })
+    );
+
+    stack.removeAttribute("rendering");
+    document.body.removeAttribute("rendering");
   },
 
   getSourceBrowsingContext() {

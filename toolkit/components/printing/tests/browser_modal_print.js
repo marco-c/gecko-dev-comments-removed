@@ -84,9 +84,6 @@ add_task(async function testTabOrder() {
       "Initial focus on printer picker"
     );
 
-    
-    
-    await helper.win.PrintEventHandler._previewUpdatingPromise;
     const previewBrowser = document.querySelector(".printPreviewBrowser");
     ok(previewBrowser, "Got the print preview browser");
     let focused = BrowserTestUtils.waitForEvent(previewBrowser, "focus");
