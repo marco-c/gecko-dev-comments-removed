@@ -64,8 +64,6 @@
 
 #  define PROFILER_ADD_MARKER_WITH_PAYLOAD(markerName, categoryPair, \
                                            PayloadType, payloadArgs)
-#  define PROFILER_ADD_TEXT_MARKER(markerName, text, categoryPair, startTime, \
-                                   endTime, ...)
 
 #  define PROFILER_TRACING_MARKER(categoryString, markerName, categoryPair, \
                                   kind)
@@ -74,12 +72,6 @@
 #  define AUTO_PROFILER_TRACING_MARKER(categoryString, markerName, categoryPair)
 #  define AUTO_PROFILER_TRACING_MARKER_DOCSHELL(categoryString, markerName, \
                                                 categoryPair, docShell)
-#  define AUTO_PROFILER_TEXT_MARKER_CAUSE(markerName, text, categoryPair, \
-                                          innerWindowID, cause)
-#  define AUTO_PROFILER_TEXT_MARKER_DOCSHELL(markerName, text, categoryPair, \
-                                             docShell)
-#  define AUTO_PROFILER_TEXT_MARKER_DOCSHELL_CAUSE( \
-      markerName, text, categoryPair, docShell, cause)
 
 
 
@@ -957,6 +949,16 @@ enum TracingKind {
 mozilla::Maybe<uint64_t> profiler_get_inner_window_id_from_docshell(
     nsIDocShell* aDocshell);
 
+inline mozilla::MarkerInnerWindowId MarkerInnerWindowIdFromDocShell(
+    nsIDocShell* aDocshell) {
+  mozilla::Maybe<uint64_t> id =
+      profiler_get_inner_window_id_from_docshell(aDocshell);
+  if (!id) {
+    return mozilla::MarkerInnerWindowId::NoId();
+  }
+  return mozilla::MarkerInnerWindowId(*id);
+}
+
 
 
 #  define PROFILER_TRACING_MARKER(categoryString, markerName, categoryPair, \
@@ -990,69 +992,6 @@ void profiler_tracing_marker(
     mozilla::AutoProfilerTracing PROFILER_RAII(                              \
         categoryString, markerName, JS::ProfilingCategoryPair::categoryPair, \
         profiler_get_inner_window_id_from_docshell(docShell))
-
-
-
-
-
-
-
-void profiler_add_text_marker(
-    const char* aMarkerName, const nsACString& aText,
-    JS::ProfilingCategoryPair aCategoryPair,
-    const mozilla::TimeStamp& aStartTime, const mozilla::TimeStamp& aEndTime,
-    const mozilla::Maybe<uint64_t>& aInnerWindowID = mozilla::Nothing(),
-    UniqueProfilerBacktrace aCause = nullptr);
-
-#  define PROFILER_ADD_TEXT_MARKER(markerName, text, categoryPair, startTime, \
-                                   endTime, ...)                              \
-    profiler_add_text_marker(markerName, text, categoryPair, startTime,       \
-                             endTime, ##__VA_ARGS__)
-class MOZ_RAII AutoProfilerTextMarker {
- public:
-  AutoProfilerTextMarker(const char* aMarkerName, const nsACString& aText,
-                         JS::ProfilingCategoryPair aCategoryPair,
-                         const mozilla::Maybe<uint64_t>& aInnerWindowID,
-                         UniqueProfilerBacktrace&& aCause = nullptr)
-      : mMarkerName(aMarkerName),
-        mText(aText),
-        mCategoryPair(aCategoryPair),
-        mStartTime(mozilla::TimeStamp::NowUnfuzzed()),
-        mCause(std::move(aCause)),
-        mInnerWindowID(aInnerWindowID) {}
-
-  ~AutoProfilerTextMarker() {
-    profiler_add_text_marker(mMarkerName, mText, mCategoryPair, mStartTime,
-                             mozilla::TimeStamp::NowUnfuzzed(), mInnerWindowID,
-                             std::move(mCause));
-  }
-
- protected:
-  const char* mMarkerName;
-  nsCString mText;
-  const JS::ProfilingCategoryPair mCategoryPair;
-  mozilla::TimeStamp mStartTime;
-  UniqueProfilerBacktrace mCause;
-  const mozilla::Maybe<uint64_t> mInnerWindowID;
-};
-
-#  define AUTO_PROFILER_TEXT_MARKER_CAUSE(markerName, text, categoryPair, \
-                                          innerWindowID, cause)           \
-    AutoProfilerTextMarker PROFILER_RAII(                                 \
-        markerName, text, JS::ProfilingCategoryPair::categoryPair,        \
-        innerWindowID, cause)
-
-#  define AUTO_PROFILER_TEXT_MARKER_DOCSHELL(markerName, text, categoryPair, \
-                                             docShell)                       \
-    AutoProfilerTextMarker PROFILER_RAII(                                    \
-        markerName, text, JS::ProfilingCategoryPair::categoryPair,           \
-        profiler_get_inner_window_id_from_docshell(docShell))
-
-#  define AUTO_PROFILER_TEXT_MARKER_DOCSHELL_CAUSE(                \
-      markerName, text, categoryPair, docShell, cause)             \
-    AutoProfilerTextMarker PROFILER_RAII(                          \
-        markerName, text, JS::ProfilingCategoryPair::categoryPair, \
-        profiler_get_inner_window_id_from_docshell(docShell), cause)
 
 
 

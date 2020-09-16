@@ -338,6 +338,14 @@ class MarkerTiming {
     return MarkerTiming{TimeStamp{}, aTime, MarkerTiming::Phase::IntervalEnd};
   }
 
+  
+  
+  void SetIntervalEnd(const TimeStamp& aTime = TimeStamp::NowUnfuzzed()) {
+    MOZ_ASSERT(!aTime.IsNull(), "Time is null for an interval end marker.");
+    mEndTime = aTime;
+    mPhase = mStartTime.IsNull() ? Phase::IntervalEnd : Phase::Interval;
+  }
+
   [[nodiscard]] const TimeStamp& StartTime() const { return mStartTime; }
   [[nodiscard]] const TimeStamp& EndTime() const { return mEndTime; }
 
