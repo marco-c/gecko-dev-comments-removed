@@ -17,11 +17,9 @@
 #include "nsIFile.h"
 #include "nsISupportsImpl.h"  
 #include "mozilla/ArenaAllocator.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/FileLocation.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/RWLock.h"
 
 class nsZipFind;
 struct PRFileDesc;
@@ -86,22 +84,6 @@ class nsZipArchive final {
   
   ~nsZipArchive();
 
-  
-
-
-
-
-  struct LazyOpenArchiveParams {
-    nsCOMPtr<nsIFile> mFile;
-    mozilla::Span<const uint8_t> mCachedCentral;
-
-    LazyOpenArchiveParams(nsIFile* aFile,
-                          mozilla::Span<const uint8_t> aCachedCentral)
-        : mFile(nullptr), mCachedCentral(aCachedCentral) {
-      aFile->Clone(getter_AddRefs(mFile));
-    }
-  };
-
  public:
   static const char* sFileCorruptedReason;
 
@@ -119,12 +101,7 @@ class nsZipArchive final {
 
 
 
-
-
-
-  nsresult OpenArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd = nullptr,
-                       mozilla::Span<const uint8_t> aCachedCentral =
-                           mozilla::Span<const uint8_t>());
+  nsresult OpenArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd = nullptr);
 
   
 
@@ -134,44 +111,7 @@ class nsZipArchive final {
 
 
 
-
-
-  nsresult OpenArchive(nsIFile* aFile,
-                       mozilla::Span<const uint8_t> aCachedCentral =
-                           mozilla::Span<const uint8_t>());
-
-  
-
-
-
-
-
-
-
-
-  nsresult EnsureArchiveOpenedOnDisk();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult LazyOpenArchive(nsIFile* aFile,
-                           mozilla::Span<const uint8_t> aCachedCentral) {
-    mozilla::AutoWriteLock lock(mLazyOpenLock);
-    mLazyOpenParams.emplace(aFile, aCachedCentral);
-    return NS_OK;
-  }
+  nsresult OpenArchive(nsIFile* aFile);
 
   
 
@@ -232,21 +172,6 @@ class nsZipArchive final {
 
 
 
-  void GetURIString(nsACString& result);
-
-  
-
-
-
-
-
-  already_AddRefed<nsIFile> GetBaseFile();
-
-  
-
-
-
-
   uint32_t GetDataOffset(nsZipItem* aItem);
 
   
@@ -255,17 +180,6 @@ class nsZipArchive final {
 
 
   const uint8_t* GetData(nsZipItem* aItem);
-
-  
-
-
-
-
-
-
-
-
-  mozilla::UniquePtr<uint8_t[]> CopyCentralDirectoryBuffer(size_t* aSize);
 
   bool GetComment(nsACString& aComment);
 
@@ -290,19 +204,13 @@ class nsZipArchive final {
   mozilla::ArenaAllocator<1024, sizeof(void*)> mArena;
 
   const char* mCommentPtr;
-  size_t mZipCentralOffset;
-  size_t mZipCentralSize;
   uint16_t mCommentLen;
 
   
   bool mBuiltSynthetics;
-  bool mBuiltFileList;
 
   
   RefPtr<nsZipHandle> mFd;
-
-  mozilla::Maybe<LazyOpenArchiveParams> mLazyOpenParams;
-  mozilla::RWLock mLazyOpenLock;
 
   
   nsCString mURI;
@@ -315,9 +223,7 @@ class nsZipArchive final {
   
   nsZipItem* CreateZipItem();
   nsresult BuildFileList(PRFileDesc* aFd = nullptr);
-  nsresult BuildFileListFromBuffer(const uint8_t* aBuf, const uint8_t* aEnd);
   nsresult BuildSynthetics();
-  nsresult EnsureFileListBuilt();
 
   nsZipArchive& operator=(const nsZipArchive& rhs) = delete;
   nsZipArchive(const nsZipArchive& rhs) = delete;

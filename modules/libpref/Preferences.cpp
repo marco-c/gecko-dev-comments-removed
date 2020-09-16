@@ -81,6 +81,7 @@
 #include "nsXPCOMCID.h"
 #include "nsXPCOM.h"
 #include "nsXULAppAPI.h"
+#include "nsZipArchive.h"
 #include "plbase64.h"
 #include "PLDHashTable.h"
 #include "plstr.h"
@@ -4218,7 +4219,7 @@ static nsresult pref_LoadPrefsInDir(nsIFile* aDir,
   return rv;
 }
 
-static nsresult pref_ReadPrefFromJar(CacheAwareZipReader* aJarReader,
+static nsresult pref_ReadPrefFromJar(nsZipArchive* aJarReader,
                                      const char* aName) {
   nsCString manifest;
   MOZ_TRY_VAR(manifest,
@@ -4232,8 +4233,8 @@ static nsresult pref_ReadPrefFromJar(CacheAwareZipReader* aJarReader,
   return NS_OK;
 }
 
-static nsresult pref_ReadDefaultPrefs(
-    const RefPtr<CacheAwareZipReader>& jarReader, const char* path) {
+static nsresult pref_ReadDefaultPrefs(const RefPtr<nsZipArchive> jarReader,
+                                      const char* path) {
   UniquePtr<nsZipFind> find;
   nsTArray<nsCString> prefEntries;
   const char* entryName;
@@ -4398,7 +4399,7 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
   const char* entryName;
   uint16_t entryNameLen;
 
-  RefPtr<CacheAwareZipReader> jarReader = Omnijar::GetReader(Omnijar::GRE);
+  RefPtr<nsZipArchive> jarReader = Omnijar::GetReader(Omnijar::GRE);
   if (jarReader) {
 #ifdef MOZ_WIDGET_ANDROID
     
@@ -4480,7 +4481,7 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
 
   
   
-  RefPtr<CacheAwareZipReader> appJarReader = Omnijar::GetReader(Omnijar::APP);
+  RefPtr<nsZipArchive> appJarReader = Omnijar::GetReader(Omnijar::APP);
 
   
   

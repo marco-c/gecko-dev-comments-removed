@@ -22,7 +22,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/friend/JSMEnvironment.h"  
-#include "js/Object.h"  
+#include "js/Object.h"                 
 #include "js/Printf.h"
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  
@@ -54,7 +54,6 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/MacroForEach.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Omnijar.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/ScriptPreloader.h"
 #include "mozilla/ScopeExit.h"
@@ -665,10 +664,6 @@ JSObject* mozJSComponentLoader::PrepareObjectForLocation(
 
 static mozilla::Result<nsCString, nsresult> ReadScript(
     ComponentLoaderInfo& aInfo) {
-  
-  
-  AutoSuspendStartupCacheWrites suspendScache;
-
   MOZ_TRY(aInfo.EnsureScriptChannel());
 
   nsCOMPtr<nsIInputStream> scriptStream;
@@ -730,15 +725,7 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   
 
   bool writeToCache = false;
-
-  
-  
-  
-  
-  
-  
-  StartupCache* cache =
-      XRE_IsParentProcess() ? StartupCache::GetSingleton() : nullptr;
+  StartupCache* cache = StartupCache::GetSingleton();
 
   aInfo.EnsureResolvedURI();
 

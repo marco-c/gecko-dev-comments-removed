@@ -8,9 +8,7 @@
 #define mozilla_Mutex_h
 
 #include "mozilla/BlockingResourceBase.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/PlatformMutex.h"
-#include "mozilla/Unused.h"
 
 
 
@@ -161,25 +159,6 @@ class MOZ_RAII BaseAutoLock {
   ~BaseAutoLock(void) { mLock.Unlock(); }
 
   
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] static bool TryMake(T aLock,
-                                    Maybe<BaseAutoLock<T>>& aOutAutoLock) {
-    if (aLock.TryLock()) {
-      aOutAutoLock.emplace(aLock,  true);
-      return true;
-    }
-    return false;
-  }
-
-  
   
   
   
@@ -215,17 +194,7 @@ class MOZ_RAII BaseAutoLock {
   BaseAutoLock& operator=(BaseAutoLock&);
   static void* operator new(size_t) noexcept(true);
 
-  
-  
-  
-  BaseAutoLock(T aLock, bool aPlaceholder) : mLock(aLock) {
-    Unused << aPlaceholder;
-  }
-
   friend class BaseAutoUnlock<T>;
-
-  
-  friend class Maybe<BaseAutoLock<T>>;
 
   T mLock;
 };
