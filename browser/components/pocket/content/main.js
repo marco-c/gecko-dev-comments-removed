@@ -72,6 +72,13 @@ var pktUI = (function() {
   var overflowMenuHeight = 475;
   var savePanelWidth = 350;
   var savePanelHeights = { collapsed: 153, expanded: 272 };
+  var onSaveRecsEnabledPref = Services.prefs.getBoolPref(
+    "extensions.pocket.onSaveRecs",
+    false
+  );
+  var onSaveRecsLocalesPref = Services.prefs.getStringPref(
+    "extensions.pocket.onSaveRecs.locales"
+  );
 
   
 
@@ -166,6 +173,23 @@ var pktUI = (function() {
   
 
 
+  function getAndShowRecsForItem(item, options) {
+    var onSaveRecsEnabled =
+      onSaveRecsEnabledPref && onSaveRecsLocalesPref.includes(getUILocale());
+
+    if (
+      onSaveRecsEnabled &&
+      item &&
+      item.resolved_id &&
+      item.resolved_id !== "0"
+    ) {
+      pktApi.getRecsForItem(item.resolved_id, options);
+    }
+  }
+
+  
+
+
   function saveAndShowConfirmation(url, title) {
     
     if (typeof url !== "undefined" && url.startsWith("about:reader?url=")) {
@@ -252,6 +276,16 @@ var pktUI = (function() {
                   successResponse
                 );
                 getPanelFrame().setAttribute("itemAdded", "true");
+
+                getAndShowRecsForItem(item, {
+                  success(data) {
+                    pktUIMessaging.sendMessageToPanel(
+                      panelId,
+                      "renderItemRecs",
+                      data
+                    );
+                  },
+                });
               },
               error(error, request) {
                 
@@ -742,6 +776,7 @@ var pktUI = (function() {
 
     openTabWithUrl,
 
+    getAndShowRecsForItem,
     tryToSaveUrl,
     tryToSaveCurrentPage,
   };
