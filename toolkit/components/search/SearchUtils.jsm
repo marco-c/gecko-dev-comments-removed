@@ -248,7 +248,7 @@ var SearchUtils = {
 
 
 
-  get CACHE_VERSION() {
+  get SETTINGS_VERSION() {
     return 5;
   },
 

@@ -7,17 +7,11 @@
 
 "use strict";
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
 const { getAppInfo } = ChromeUtils.import(
   "resource://testing-common/AppInfo.jsm"
 );
-const { SearchService } = ChromeUtils.import(
-  "resource://gre/modules/SearchService.jsm"
-);
 
-var cacheTemplate, appPluginsPath, profPlugins;
+var settingsTemplate;
 
 
 
@@ -27,14 +21,14 @@ add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
 });
 
-async function loadCacheFile(cacheFile) {
-  cacheTemplate = await readJSONFile(do_get_file(cacheFile));
-  cacheTemplate.buildID = getAppInfo().platformBuildID;
-  cacheTemplate.version = SearchUtils.CACHE_VERSION;
+async function loadSettingsFile(settingsFile) {
+  settingsTemplate = await readJSONFile(do_get_file(settingsFile));
+  settingsTemplate.buildID = getAppInfo().platformBuildID;
+  settingsTemplate.version = SearchUtils.SETTINGS_VERSION;
 
-  delete cacheTemplate.visibleDefaultEngines;
+  delete settingsTemplate.visibleDefaultEngines;
 
-  await promiseSaveCacheData(cacheTemplate);
+  await promiseSaveSettingsData(settingsTemplate);
 }
 
 
@@ -43,19 +37,19 @@ async function loadCacheFile(cacheFile) {
 
 
 
-async function checkLoadCachedProperties(cacheFile) {
+async function checkLoadSettingProperties(settingsFile) {
   info("init search service");
 
-  await loadCacheFile(cacheFile);
+  await loadSettingsFile(settingsFile);
 
-  const cacheFileWritten = promiseAfterCache();
+  const settingsFileWritten = promiseAfterSettings();
   let ss = new SearchService();
   let result = await ss.init();
 
   info("init'd search service");
   Assert.ok(Components.isSuccessCode(result));
 
-  await cacheFileWritten;
+  await settingsFileWritten;
 
   let engines = await ss.getEngines();
 
@@ -81,66 +75,66 @@ async function checkLoadCachedProperties(cacheFile) {
   Assert.ok(!!engineFromSS);
   isSubObjectOf(EXPECTED_ENGINE.engine, engineFromSS);
 
-  removeCacheFile();
+  removeSettingsFile();
   ss._removeObservers();
 }
 
-add_task(async function test_legacy_cached_engine_properties() {
-  await checkLoadCachedProperties("data/search-legacy.json");
+add_task(async function test_legacy_setting_engine_properties() {
+  await checkLoadSettingProperties("data/search-legacy.json");
 });
 
-add_task(async function test_current_cached_engine_properties() {
-  await checkLoadCachedProperties("data/search.json");
+add_task(async function test_current_setting_engine_properties() {
+  await checkLoadSettingProperties("data/search.json");
 });
 
 
 
 
-add_task(async function test_cache_write() {
-  info("test cache writing");
+add_task(async function test_settings_write() {
+  info("test settings writing");
 
-  await loadCacheFile("data/search.json");
+  await loadSettingsFile("data/search.json");
 
-  const cacheFileWritten = promiseAfterCache();
+  const settingsFileWritten = promiseAfterSettings();
   await Services.search.init();
-  await cacheFileWritten;
-  removeCacheFile();
+  await settingsFileWritten;
+  removeSettingsFile();
 
-  let cache = do_get_profile().clone();
-  cache.append(CACHE_FILENAME);
-  Assert.ok(!cache.exists());
+  let settings = do_get_profile().clone();
+  settings.append(SETTINGS_FILENAME);
+  Assert.ok(!settings.exists());
 
   info("Next step is forcing flush");
   
   
-  let cacheWritePromise = promiseAfterCache();
+  let settingsWritePromise = promiseAfterSettings();
 
   Services.tm.dispatchToMainThread(() => {
     
     
-    Services.search.wrappedJSObject._cache
+    Services.search.wrappedJSObject._settings
       .QueryInterface(Ci.nsIObserver)
       .observe(null, "browser-search-engine-modified", "engine-removed");
   });
 
-  await cacheWritePromise;
+  await settingsWritePromise;
 
-  info("Cache write complete");
-  Assert.ok(cache.exists());
+  info("Settings write complete");
+  Assert.ok(settings.exists());
   
 
-  let cacheData = await promiseCacheData();
+  let settingsData = await promiseSettingsData();
   info("Check search.json.mozlz4");
 
   
   
   
-  for (let engine of cacheTemplate.engines) {
+  for (let engine of settingsTemplate.engines) {
     if ("_shortName" in engine) {
       delete engine._shortName;
     }
   }
-  isSubObjectOf(cacheTemplate, cacheData, (prop, value) => {
+  isSubObjectOf(settingsTemplate, settingsData, (prop, value) => {
     if (prop != "_iconURL" && prop != "{}") {
       return false;
     }

@@ -19,9 +19,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
   Region: "resource://gre/modules/Region.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
-  SearchCache: "resource://gre/modules/SearchCache.jsm",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   SearchEngineSelector: "resource://gre/modules/SearchEngineSelector.jsm",
+  SearchSettings: "resource://gre/modules/SearchSettings.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -119,7 +119,7 @@ const gEmptyParseSubmissionResult = Object.freeze(
 function SearchService() {
   this._initObservers = PromiseUtils.defer();
   this._engines = new Map();
-  this._cache = new SearchCache(this);
+  this._settings = new SearchSettings(this);
 }
 
 SearchService.prototype = {
@@ -268,11 +268,11 @@ SearchService.prototype = {
       );
 
       
-      let cache = await this._cache.get();
+      let settings = await this._settings.get();
 
       this._setupRemoteSettings().catch(Cu.reportError);
 
-      await this._loadEngines(cache);
+      await this._loadEngines(settings);
 
       
       
@@ -291,7 +291,7 @@ SearchService.prototype = {
       }
 
       
-      logConsole.debug("_init: engines loaded, writing cache");
+      logConsole.debug("_init: engines loaded, writing settings");
       this._addObservers();
     } catch (ex) {
       this._initRV = ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
@@ -580,7 +580,7 @@ SearchService.prototype = {
 
 
 
-  async _loadEngines(cache, isReload) {
+  async _loadEngines(settings, isReload) {
     logConsole.debug("_loadEngines: start");
     let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
     this._setDefaultAndOrdersFromSelector(engines, privateDefault);
@@ -590,14 +590,14 @@ SearchService.prototype = {
     
     
     let majorChange =
-      !cache.engines ||
-      cache.version != SearchUtils.CACHE_VERSION ||
-      cache.locale != Services.locale.requestedLocale ||
-      cache.buildID != Services.appinfo.platformBuildID;
+      !settings.engines ||
+      settings.version != SearchUtils.SETTINGS_VERSION ||
+      settings.locale != Services.locale.requestedLocale ||
+      settings.buildID != Services.appinfo.platformBuildID;
 
     if (!majorChange) {
-      const engineInCacheList = engine => {
-        return cache.builtInEngineList.find(details => {
+      const engineInSettingsList = engine => {
+        return settings.builtInEngineList.find(details => {
           return (
             engine.webExtension.id == details.id &&
             engine.webExtension.locale == details.locale
@@ -608,12 +608,12 @@ SearchService.prototype = {
       if (
         
         
-        cache.builtInEngineList &&
-        cache.builtInEngineList.length == engines.length &&
-        engines.every(engineInCacheList) &&
+        settings.builtInEngineList &&
+        settings.builtInEngineList.length == engines.length &&
+        engines.every(engineInSettingsList) &&
         
-        cache.engines.filter(e => e._isAppProvided).length !=
-          cache.builtInEngineList.length
+        settings.engines.filter(e => e._isAppProvided).length !=
+          settings.builtInEngineList.length
       ) {
         
         enginesCorrupted = true;
@@ -644,9 +644,9 @@ SearchService.prototype = {
     }
     this._startupExtensions.clear();
 
-    this._loadEnginesFromCache(cache.engines);
+    this._loadEnginesFromSettings(settings.engines);
 
-    this._loadEnginesMetadataFromCache(cache.engines);
+    this._loadEnginesMetadataFromSettings(settings.engines);
 
     logConsole.debug("_loadEngines: done");
   },
@@ -1034,16 +1034,16 @@ SearchService.prototype = {
     }
   },
 
-  _loadEnginesMetadataFromCache(cacheEngines) {
-    if (!cacheEngines) {
+  _loadEnginesMetadataFromSettings(engines) {
+    if (!engines) {
       return;
     }
 
-    for (let engine of cacheEngines) {
+    for (let engine of engines) {
       let name = engine._name;
       if (this._engines.has(name)) {
         logConsole.debug(
-          "_loadEnginesMetadataFromCache, transfering metadata for",
+          "_loadEnginesMetadataFromSettings, transfering metadata for",
           name
         );
         let eng = this._engines.get(name);
@@ -1058,19 +1058,19 @@ SearchService.prototype = {
     }
   },
 
-  _loadEnginesFromCache(cacheEngines) {
-    if (!cacheEngines) {
+  _loadEnginesFromSettings(engines) {
+    if (!engines) {
       return;
     }
 
     logConsole.debug(
-      "_loadEnginesFromCache: Loading",
-      cacheEngines.length,
-      "engines from cache"
+      "_loadEnginesFromSettings: Loading",
+      engines.length,
+      "engines from settings"
     );
 
     let skippedEngines = 0;
-    for (let engine of cacheEngines) {
+    for (let engine of engines) {
       
       
       if (engine._isAppProvided || engine._isBuiltin) {
@@ -1078,19 +1078,19 @@ SearchService.prototype = {
         continue;
       }
 
-      this._loadEngineFromCache(engine);
+      this._loadEngineFromSettings(engine);
     }
 
     if (skippedEngines) {
       logConsole.debug(
-        "_loadEnginesFromCache: skipped",
+        "_loadEnginesFromSettings: skipped",
         skippedEngines,
         "built-in engines."
       );
     }
   },
 
-  _loadEngineFromCache(json) {
+  _loadEngineFromSettings(json) {
     try {
       let engine = new SearchEngine({
         
@@ -1101,7 +1101,7 @@ SearchService.prototype = {
       engine._initWithJSON(json);
       this._addEngineToStore(engine);
     } catch (ex) {
-      logConsole.error("Failed to load", json._name, "from cache:", ex);
+      logConsole.error("Failed to load", json._name, "from settings:", ex);
       logConsole.debug("Engine JSON:", json.toSource());
     }
   },
@@ -1766,7 +1766,7 @@ SearchService.prototype = {
       });
       if (engine) {
         logConsole.debug(
-          "Engine already loaded via cache, skipping due to APP_STARTUP:",
+          "Engine already loaded via settings, skipping due to APP_STARTUP:",
           extension.id
         );
         return engine;
@@ -2006,12 +2006,12 @@ SearchService.prototype = {
       : "_currentEngine";
     if (!this[currentEngine]) {
       const attributeName = privateMode ? "private" : "current";
-      let name = this._cache.getAttribute(attributeName);
+      let name = this._settings.getAttribute(attributeName);
       let engine = this.getEngineByName(name);
       if (
         engine &&
         (engine.isAppProvided ||
-          this._cache.getVerifiedAttribute(attributeName))
+          this._settings.getVerifiedAttribute(attributeName))
       ) {
         
         
@@ -2141,7 +2141,7 @@ SearchService.prototype = {
       newName = "";
     }
 
-    this._cache.setVerifiedAttribute(
+    this._settings.setVerifiedAttribute(
       privateMode ? "private" : "current",
       newName
     );
@@ -2646,7 +2646,7 @@ SearchService.prototype = {
     Services.obs.addObserver(this, QUIT_APPLICATION_TOPIC);
     Services.obs.addObserver(this, TOPIC_LOCALES_CHANGE);
 
-    this._cache.addObservers();
+    this._settings.addObservers();
 
     
     
@@ -2671,13 +2671,13 @@ SearchService.prototype = {
           
           if (!this._initialized) {
             logConsole.warn(
-              "not saving cache on shutdown due to initializing."
+              "not saving settings on shutdown due to initializing."
             );
             return;
           }
 
           try {
-            await this._cache.shutdown(shutdownState);
+            await this._settings.shutdown(shutdownState);
           } catch (ex) {
             
             
@@ -2700,7 +2700,7 @@ SearchService.prototype = {
       this._queuedIdle = false;
     }
 
-    this._cache.removeObservers();
+    this._settings.removeObservers();
 
     Services.obs.removeObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED);
     Services.obs.removeObserver(this, QUIT_APPLICATION_TOPIC);

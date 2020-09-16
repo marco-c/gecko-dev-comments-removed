@@ -1,0 +1,51 @@
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function setup() {
+  useHttpServer();
+  await AddonTestUtils.promiseStartupManager();
+});
+
+add_task(async function test_nosettings() {
+  let search = Services.search;
+
+  let afterSettingsPromise = promiseAfterSettings();
+
+  await search.init();
+
+  
+  await afterSettingsPromise;
+
+  
+  let settingsFile = do_get_profile().clone();
+  settingsFile.append(SETTINGS_FILENAME);
+  Assert.ok(settingsFile.exists());
+
+  
+  await addTestEngines([
+    { name: "Test search engine", xmlFileName: "engine.xml" },
+  ]);
+
+  info("Engine has been added, let's wait for the settings to be built");
+  await promiseAfterSettings();
+
+  info("Searching test engine in settings");
+  let settings = await promiseSettingsData();
+  let found = false;
+  for (let engine of settings.engines) {
+    if (engine._name == "Test search engine") {
+      found = true;
+      break;
+    }
+  }
+  Assert.ok(found);
+});

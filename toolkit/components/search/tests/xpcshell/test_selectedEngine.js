@@ -24,7 +24,7 @@ add_task(async function test_persistAcrossRestarts() {
     Services.search.getEngineByName(kTestEngineName)
   );
   Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
-  await promiseAfterCache();
+  await promiseAfterSettings();
 
   
   let metadata = await promiseGlobalMetadata();
@@ -47,7 +47,7 @@ add_task(async function test_ignoreInvalidHash() {
     Services.search.getEngineByName(kTestEngineName)
   );
   Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
-  await promiseAfterCache();
+  await promiseAfterSettings();
 
   
   let metadata = await promiseGlobalMetadata();
@@ -67,7 +67,7 @@ add_task(async function test_settingToDefault() {
     Services.search.getEngineByName(kTestEngineName)
   );
   Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
-  await promiseAfterCache();
+  await promiseAfterSettings();
 
   
   let metadata = await promiseGlobalMetadata();
@@ -77,7 +77,7 @@ add_task(async function test_settingToDefault() {
   await Services.search.setDefault(
     Services.search.getEngineByName(kDefaultEngineName)
   );
-  await promiseAfterCache();
+  await promiseAfterSettings();
 
   
   metadata = await promiseGlobalMetadata();
@@ -91,11 +91,11 @@ add_task(async function test_resetToOriginalDefaultEngine() {
     Services.search.getEngineByName(kTestEngineName)
   );
   Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
-  await promiseAfterCache();
+  await promiseAfterSettings();
 
   Services.search.resetToOriginalDefaultEngine();
   Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
-  await promiseAfterCache();
+  await promiseAfterSettings();
 });
 
 add_task(async function test_fallback_kept_after_restart() {
@@ -113,7 +113,7 @@ add_task(async function test_fallback_kept_after_restart() {
     Services.search.defaultEngine.name,
     nonDefaultBuiltInEngine.name
   );
-  await promiseAfterCache();
+  await promiseAfterSettings();
 
   
   await Services.search.removeEngine(nonDefaultBuiltInEngine);
@@ -130,7 +130,7 @@ add_task(async function test_fallback_kept_after_restart() {
   Services.search.restoreDefaultEngines();
   Assert.ok(!nonDefaultBuiltInEngine.hidden);
   Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
-  await promiseAfterCache();
+  await promiseAfterSettings();
 
   
   Services.search.wrappedJSObject.reset();

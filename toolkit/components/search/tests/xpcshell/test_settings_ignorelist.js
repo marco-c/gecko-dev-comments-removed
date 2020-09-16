@@ -11,7 +11,7 @@ var { getAppInfo } = ChromeUtils.import(
   "resource://testing-common/AppInfo.jsm"
 );
 
-var cacheTemplate, appPluginsPath, profPlugins;
+var settingsTemplate;
 
 
 
@@ -21,18 +21,18 @@ add_task(async function setup() {
 
   await setupRemoteSettings();
 
-  cacheTemplate = await readJSONFile(
+  settingsTemplate = await readJSONFile(
     do_get_file("data/search_ignorelist.json")
   );
-  cacheTemplate.buildID = getAppInfo().platformBuildID;
+  settingsTemplate.buildID = getAppInfo().platformBuildID;
 
-  await promiseSaveCacheData(cacheTemplate);
+  await promiseSaveSettingsData(settingsTemplate);
 });
 
 
 
 
-add_task(async function test_cache_rest() {
+add_task(async function test_settings_rest() {
   info("init search service");
 
   let updatePromise = SearchTestUtils.promiseSearchNotification(
@@ -58,5 +58,5 @@ add_task(async function test_cache_rest() {
     "Should have more than one engine in the list"
   );
 
-  removeCacheFile();
+  removeSettingsFile();
 });

@@ -32,7 +32,7 @@ add_task(async function run_test() {
     }
   }
 
-  await promiseSaveCacheData(data);
+  await promiseSaveSettingsData(data);
 
   await Services.search.init();
 

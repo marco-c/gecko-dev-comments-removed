@@ -11,7 +11,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Region: "resource://gre/modules/Region.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
   RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
-  SearchCache: "resource://gre/modules/SearchCache.jsm",
+  SearchSettings: "resource://gre/modules/SearchSettings.jsm",
   SearchEngineSelector: "resource://gre/modules/SearchEngineSelector.jsm",
   SearchService: "resource://gre/modules/SearchService.jsm",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.jsm",
@@ -33,7 +33,7 @@ const { ExtensionTestUtils } = ChromeUtils.import(
 
 SearchTestUtils.init(Assert, registerCleanupFunction);
 
-const CACHE_FILENAME = "search.json.mozlz4";
+const SETTINGS_FILENAME = "search.json.mozlz4";
 
 
 
@@ -61,39 +61,39 @@ Services.prefs.setBoolPref(
 
 
 
-SearchCache.CACHE_INVALIDATION_DELAY = 250;
+SearchSettings.SETTNGS_INVALIDATION_DELAY = 250;
 
-async function promiseCacheData() {
-  let path = OS.Path.join(OS.Constants.Path.profileDir, CACHE_FILENAME);
+async function promiseSettingsData() {
+  let path = OS.Path.join(OS.Constants.Path.profileDir, SETTINGS_FILENAME);
   let bytes = await OS.File.read(path, { compression: "lz4" });
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
-function promiseSaveCacheData(data) {
+function promiseSaveSettingsData(data) {
   return OS.File.writeAtomic(
-    OS.Path.join(OS.Constants.Path.profileDir, CACHE_FILENAME),
+    OS.Path.join(OS.Constants.Path.profileDir, SETTINGS_FILENAME),
     new TextEncoder().encode(JSON.stringify(data)),
     { compression: "lz4" }
   );
 }
 
 async function promiseEngineMetadata() {
-  let cache = await promiseCacheData();
+  let settings = await promiseSettingsData();
   let data = {};
-  for (let engine of cache.engines) {
+  for (let engine of settings.engines) {
     data[engine._name] = engine._metaData;
   }
   return data;
 }
 
 async function promiseGlobalMetadata() {
-  return (await promiseCacheData()).metaData;
+  return (await promiseSettingsData()).metaData;
 }
 
 async function promiseSaveGlobalMetadata(globalData) {
-  let data = await promiseCacheData();
+  let data = await promiseSettingsData();
   data.metaData = globalData;
-  await promiseSaveCacheData(data);
+  await promiseSaveSettingsData(data);
 }
 
 function promiseDefaultNotification(type = "normal") {
@@ -111,9 +111,9 @@ function promiseDefaultNotification(type = "normal") {
 
 
 
-function removeCacheFile() {
+function removeSettingsFile() {
   let file = do_get_profile().clone();
-  file.append(CACHE_FILENAME);
+  file.append(SETTINGS_FILENAME);
   if (file.exists()) {
     file.remove(false);
     return true;
@@ -149,9 +149,9 @@ const kTestEngineName = "Test search engine";
 
 
 
-function promiseAfterCache() {
+function promiseAfterSettings() {
   return SearchTestUtils.promiseSearchNotification(
-    "write-cache-to-disk-complete"
+    "write-settings-to-disk-complete"
   );
 }
 

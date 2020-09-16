@@ -2,7 +2,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["SearchCache"];
+var EXPORTED_SYMBOLS = ["SearchSettings"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
   return console.createInstance({
-    prefix: "SearchCache",
+    prefix: "SearchSettings",
     maxLogLevel: SearchUtils.loggingEnabled ? "Debug" : "Warn",
   });
 });
@@ -27,7 +27,7 @@ XPCOMUtils.defineLazyGetter(this, "gEncoder", function() {
   return new TextEncoder();
 });
 
-const CACHE_FILENAME = "search.json.mozlz4";
+const SETTINGS_FILENAME = "search.json.mozlz4";
 
 
 
@@ -35,8 +35,7 @@ const CACHE_FILENAME = "search.json.mozlz4";
 
 
 
-
-class SearchCache {
+class SearchSettings {
   constructor(searchService) {
     this._searchService = searchService;
   }
@@ -44,7 +43,7 @@ class SearchCache {
   QueryInterface = ChromeUtils.generateQI([Ci.nsIObserver]);
 
   
-  static CACHE_INVALIDATION_DELAY = 1000;
+  static SETTINGS_INVALIDATION_DELAY = 1000;
 
   
 
@@ -97,17 +96,17 @@ class SearchCache {
     let json;
     await this._ensurePendingWritesCompleted(origin);
     try {
-      let cacheFilePath = OS.Path.join(
+      let settingsFilePath = OS.Path.join(
         OS.Constants.Path.profileDir,
-        CACHE_FILENAME
+        SETTINGS_FILENAME
       );
-      let bytes = await OS.File.read(cacheFilePath, { compression: "lz4" });
+      let bytes = await OS.File.read(settingsFilePath, { compression: "lz4" });
       json = JSON.parse(new TextDecoder().decode(bytes));
       if (!json.engines || !json.engines.length) {
         throw new Error("no engine in the file");
       }
     } catch (ex) {
-      logConsole.error("_readCacheFile: Error reading cache file:", ex);
+      logConsole.error("get: Error reading settings file:", ex);
       json = {};
     }
     if (json.metaData) {
@@ -126,12 +125,12 @@ class SearchCache {
       this._batchTask.disarm();
     } else {
       let task = async () => {
-        logConsole.debug("batchTask: Invalidating engine cache");
+        logConsole.debug("batchTask: Invalidating engine settings");
         await this._write();
       };
       this._batchTask = new DeferredTask(
         task,
-        SearchCache.CACHE_INVALIDATION_DELAY
+        SearchSettings.SETTINGS_INVALIDATION_DELAY
       );
     }
     this._batchTask.arm();
@@ -170,43 +169,43 @@ class SearchCache {
       this._batchTask.disarm();
     }
 
-    let cache = {};
+    let settings = {};
     let locale = Services.locale.requestedLocale;
     let buildID = Services.appinfo.platformBuildID;
 
     
-    cache.version = SearchUtils.CACHE_VERSION;
+    settings.version = SearchUtils.SETTINGS_VERSION;
     
     
     
     
     
-    cache.buildID = buildID;
-    cache.locale = locale;
-    cache.builtInEngineList = this._searchService._searchOrder;
-    cache.engines = [...this._searchService._engines.values()];
-    cache.metaData = this._metaData;
+    settings.buildID = buildID;
+    settings.locale = locale;
+    settings.builtInEngineList = this._searchService._searchOrder;
+    settings.engines = [...this._searchService._engines.values()];
+    settings.metaData = this._metaData;
 
     try {
-      if (!cache.engines.length) {
+      if (!settings.engines.length) {
         throw new Error("cannot write without any engine.");
       }
 
-      logConsole.debug("_buildCache: Writing to cache file.");
-      let path = OS.Path.join(OS.Constants.Path.profileDir, CACHE_FILENAME);
-      let data = gEncoder.encode(JSON.stringify(cache));
+      logConsole.debug("_write: Writing to settings file.");
+      let path = OS.Path.join(OS.Constants.Path.profileDir, SETTINGS_FILENAME);
+      let data = gEncoder.encode(JSON.stringify(settings));
       await OS.File.writeAtomic(path, data, {
         compression: "lz4",
         tmpPath: path + ".tmp",
       });
-      logConsole.debug("_buildCache: cache file written to disk.");
+      logConsole.debug("_write: settings file written to disk.");
       Services.obs.notifyObservers(
         null,
         SearchUtils.TOPIC_SEARCH_SERVICE,
-        "write-cache-to-disk-complete"
+        "write-settings-to-disk-complete"
       );
     } catch (ex) {
-      logConsole.error("_buildCache: Could not write to cache file:", ex);
+      logConsole.error("_write: Could not write to settings file:", ex);
     }
   }
 
