@@ -631,13 +631,6 @@ class SearchEngine {
 
 
 
-
-
-
-
-
-
-
   constructor(options = {}) {
     if (!("isAppProvided" in options)) {
       throw new Error("isAppProvided missing from options.");
@@ -647,14 +640,6 @@ class SearchEngine {
     }
     this._isAppProvided = options.isAppProvided;
     this._loadPath = options.loadPath;
-
-    if ("name" in options) {
-      this._shortName = SearchUtils.sanitizeName(options.name);
-    } else if ("shortName" in options) {
-      this._shortName = options.shortName;
-    } else {
-      throw new Error("'name' or 'shortName' missing from options.");
-    }
   }
 
   get _searchForm() {
@@ -954,29 +939,27 @@ class SearchEngine {
         extensionBaseURI.resolve(IconDetails.getPreferredIcon(icons).icon);
     }
 
-    let shortName = extensionID.split("@")[0];
-    if (locale != SearchUtils.DEFAULT_TAG) {
-      shortName += "-" + locale;
-    }
     
     
-    
-    if ("telemetryId" in configuration && configuration.telemetryId) {
-      shortName = configuration.telemetryId;
+    if (this._isAppProvided) {
+      if (configuration.telemetryId) {
+        this._telemetryId = configuration.telemetryId;
+      } else {
+        let telemetryId = extensionID.split("@")[0];
+        if (locale != SearchUtils.DEFAULT_TAG) {
+          telemetryId += "-" + locale;
+        }
+        this._telemetryId = telemetryId;
+      }
     }
 
     this._extensionID = extensionID;
     this._locale = locale;
     this._orderHint = configuration.orderHint;
-    this._telemetryId = configuration.telemetryId;
     this._name = searchProvider.name.trim();
     this._regionParams = configuration.regionParams;
     this._sendAttributionRequest =
       configuration.sendAttributionRequest ?? false;
-
-    if (shortName) {
-      this._shortName = shortName;
-    }
 
     this._definedAliases = [];
     if (Array.isArray(searchProvider.keyword)) {
@@ -1138,7 +1121,6 @@ class SearchEngine {
 
   _initWithJSON(json) {
     this._name = json._name;
-    this._shortName = json._shortName;
     this._description = json.description;
     this._hasPreferredIcon = json._hasPreferredIcon == undefined;
     this._queryCharset = json.queryCharset || SearchUtils.DEFAULT_QUERY_CHARSET;
@@ -1150,7 +1132,6 @@ class SearchEngine {
     this._iconMapObj = json._iconMapObj;
     this._metaData = json._metaData || {};
     this._orderHint = json._orderHint || null;
-    this._telemetryId = json._telemetryId || null;
     this._definedAliases = json._definedAliases || [];
     
     
@@ -1192,7 +1173,6 @@ class SearchEngine {
 
     const fieldsToCopy = [
       "_name",
-      "_shortName",
       "_loadPath",
       "description",
       "__searchForm",
@@ -1288,8 +1268,7 @@ class SearchEngine {
 
 
   get telemetryId() {
-    let telemetryId =
-      this._telemetryId || this.identifier || `other-${this.name}`;
+    let telemetryId = this._telemetryId || `other-${this.name}`;
     if (this.getAttr("overriddenBy")) {
       return telemetryId + "-addon";
     }
@@ -1304,7 +1283,7 @@ class SearchEngine {
 
   get identifier() {
     
-    return this.isAppProvided ? this._shortName : null;
+    return this.isAppProvided ? this._telemetryId : null;
   }
 
   get description() {

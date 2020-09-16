@@ -21,11 +21,6 @@ add_task(async function() {
         return engine.name;
       });
 
-      
-      Object.defineProperty(engine.wrappedJSObject, "identifier", {
-        value: "org.mozilla.testsearchsuggestions",
-      });
-
       await SpecialPowers.spawn(
         browser,
         [{ expectedName: engine.name }],
@@ -42,7 +37,7 @@ add_task(async function() {
 
       let numSearchesBefore = 0;
       
-      let histogramKey = engine.identifier + ".abouthome";
+      let histogramKey = `other-${engine.name}.abouthome`;
       try {
         let hs = Services.telemetry
           .getKeyedHistogramById("SEARCH_COUNTS")

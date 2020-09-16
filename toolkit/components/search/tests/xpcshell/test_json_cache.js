@@ -131,12 +131,21 @@ add_task(async function test_cache_write() {
 
   let cacheData = await promiseCacheData();
   info("Check search.json.mozlz4");
+
+  
+  
+  
+  for (let engine of cacheTemplate.engines) {
+    if ("_shortName" in engine) {
+      delete engine._shortName;
+    }
+  }
   isSubObjectOf(cacheTemplate, cacheData, (prop, value) => {
-    
-    
     if (prop != "_iconURL" && prop != "{}") {
       return false;
     }
+    
+    
     return value.startsWith("moz-extension://");
   });
 });

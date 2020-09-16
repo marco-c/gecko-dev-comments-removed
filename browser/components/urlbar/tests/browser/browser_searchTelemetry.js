@@ -194,16 +194,10 @@ async function compareCounts(clickCallback) {
   
 
   let engine = await Services.search.getDefault();
-  let engineID = "org.mozilla.testsearchsuggestions";
 
-  let histogramKey = engineID + ".urlbar";
+  let histogramKey = `other-${engine.name}.urlbar`;
   let histogram = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
   histogram.clear();
-
-  
-  Object.defineProperty(engine.wrappedJSObject, "identifier", {
-    value: engineID,
-  });
 
   gURLBar.focus();
   await clickCallback();
