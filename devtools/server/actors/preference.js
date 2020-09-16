@@ -28,6 +28,21 @@ function ensurePrefType(name, expectedType) {
 
 
 var PreferenceActor = protocol.ActorClassWithSpec(preferenceSpec, {
+  getTraits: function() {
+    
+    
+    
+    
+    return {
+      
+      
+      overflowDebuggingPref: true,
+      
+      
+      targetBrowsersPref: true,
+    };
+  },
+
   getBoolPref: function(name) {
     ensurePrefType(name, PREF_BOOL);
     return Services.prefs.getBoolPref(name);

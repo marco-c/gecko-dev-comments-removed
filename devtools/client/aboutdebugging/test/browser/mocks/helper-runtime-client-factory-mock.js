@@ -19,8 +19,34 @@ function enableRuntimeClientFactoryMock(mock) {
     mock,
     "devtools/client/aboutdebugging/src/modules/runtime-client-factory"
   );
+
+  
+  
+  mockRuntimeDefaultPreferences();
 }
 
+
+const mockRuntimeDefaultPreferences = function() {
+  const {
+    removeMockedModule,
+    setMockedModule,
+  } = require("devtools/client/shared/browser-loader-mocks");
+
+  const mock = {
+    setDefaultPreferencesIfNeeded: () => {},
+    DEFAULT_PREFERENCES: [],
+  };
+  setMockedModule(
+    mock,
+    "devtools/client/aboutdebugging/src/modules/runtime-default-preferences"
+  );
+
+  registerCleanupFunction(() => {
+    removeMockedModule(
+      "devtools/client/aboutdebugging/src/modules/runtime-default-preferences"
+    );
+  });
+};
 
 
 
