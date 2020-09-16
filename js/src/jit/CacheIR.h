@@ -13,11 +13,11 @@
 
 #include "NamespaceImports.h"
 
+#include "builtin/TypedObject.h"
 #include "gc/Rooting.h"
 #include "jit/CacheIROpsGenerated.h"
 #include "jit/CompactBuffer.h"
 #include "jit/ICState.h"
-#include "jit/MacroAssembler.h"
 #include "jit/Simulator.h"
 #include "js/friend/XrayJitInfo.h"  
 #include "js/ScalarType.h"          
@@ -29,6 +29,10 @@ namespace jit {
 
 enum class BaselineCacheIRStubKind;
 enum class InlinableNative : uint16_t;
+
+class ICStub;
+class Label;
+class MacroAssembler;
 
 
 
