@@ -2023,18 +2023,18 @@ freebl_fipsPowerUpSelfTest(unsigned int tests)
 
         if (rv != SECSuccess)
             return rv;
-
-        
-        rv = freebl_fips_RNG_PowerUpSelfTest();
-
-        if (rv != SECSuccess)
-            return rv;
     }
 
     
 
 
     if (tests & DO_REST) {
+
+        
+        rv = freebl_fips_RNG_PowerUpSelfTest();
+
+        if (rv != SECSuccess)
+            return rv;
 
         
         rv = freebl_fips_DES3_PowerUpSelfTest();
