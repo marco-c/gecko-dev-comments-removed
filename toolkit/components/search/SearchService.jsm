@@ -137,6 +137,12 @@ SearchService.prototype = {
   _initialized: false,
 
   
+  _maybeReloadDebounce: false,
+
+  
+  _reloadingEngines: false,
+
+  
   _engineSelector: null,
 
   
@@ -721,32 +727,40 @@ SearchService.prototype = {
 
 
   async _maybeReloadEngines() {
-    if (!this._initialized) {
-      if (this._maybeReloadDebounce) {
-        logConsole.debug(
-          "We're already waiting for init to finish and reload engines after."
-        );
-        return;
-      }
+    if (this._maybeReloadDebounce) {
+      logConsole.debug("We're already waiting to reload engines.");
+      return;
+    }
+
+    if (!this._initialized || this._reloadingEngines) {
       this._maybeReloadDebounce = true;
       
-      
-      this._initObservers.promise.then(() => {
-        Services.tm.idleDispatchToMainThread(() => {
-          if (!this._maybeReloadDebounce) {
-            return;
-          }
-          delete this._maybeReloadDebounce;
-          this._maybeReloadEngines().catch(Cu.reportError);
-        }, 10000);
-      });
+      Services.tm.idleDispatchToMainThread(() => {
+        if (!this._maybeReloadDebounce) {
+          return;
+        }
+        this._maybeReloadDebounce = false;
+        this._maybeReloadEngines().catch(Cu.reportError);
+      }, 10000);
       logConsole.debug(
         "Post-poning maybeReloadEngines() as we're currently initializing."
       );
       return;
     }
-    logConsole.debug("Running maybeReloadEngines");
 
+    logConsole.debug("Running maybeReloadEngines");
+    this._reloadingEngines = true;
+
+    try {
+      await this._reloadEngines();
+    } catch (ex) {
+      logConsole.error("maybeReloadEngines failed", ex);
+    }
+    this._reloadingEngines = false;
+    logConsole.debug("maybeReloadEngines complete");
+  },
+
+  async _reloadEngines() {
     
     const prevCurrentEngine = this._currentEngine;
     const prevPrivateEngine = this._currentPrivateEngine;
@@ -944,7 +958,6 @@ SearchService.prototype = {
       SearchUtils.TOPIC_SEARCH_SERVICE,
       "engines-reloaded"
     );
-    logConsole.debug("maybeReloadEngines complete");
   },
 
   
