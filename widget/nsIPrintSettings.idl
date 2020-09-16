@@ -152,6 +152,7 @@ interface nsIPrintSettings : nsISupports
 
 
 
+
   attribute double  edgeTop;     
   attribute double  edgeLeft;
   attribute double  edgeBottom;
@@ -162,12 +163,12 @@ interface nsIPrintSettings : nsISupports
 
 
 
+
   attribute double  marginTop;     
   attribute double  marginLeft;
   attribute double  marginBottom;
   attribute double  marginRight;
   
-
 
 
   attribute double  unwriteableMarginTop;     

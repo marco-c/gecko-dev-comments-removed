@@ -224,9 +224,9 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   int32_t threeInches = NS_INCHES_TO_INT_TWIPS(3.0);
   edgeTwips.EnsureAtMost(
       nsIntMargin(threeInches, threeInches, threeInches, threeInches));
+  edgeTwips.EnsureAtLeast(unwriteableTwips);
 
-  mPageData->mEdgePaperMargin =
-      nsPresContext::CSSTwipsToAppUnits(edgeTwips + unwriteableTwips);
+  mPageData->mEdgePaperMargin = nsPresContext::CSSTwipsToAppUnits(edgeTwips);
 
   
   mPageData->mPrintSettings->GetStartPageRange(&mPageData->mFromPageNum);
