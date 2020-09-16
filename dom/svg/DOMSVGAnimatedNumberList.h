@@ -37,13 +37,12 @@ class DOMSVGNumberList;
 
 
 
-class DOMSVGAnimatedNumberList final : public nsISupports,
-                                       public nsWrapperCache {
+class DOMSVGAnimatedNumberList final : public nsWrapperCache {
   friend class DOMSVGNumberList;
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGAnimatedNumberList)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGAnimatedNumberList)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(DOMSVGAnimatedNumberList)
 
   
 

@@ -50,9 +50,9 @@ class DOMSVGTransform final : public nsWrapperCache {
 
 
 
-  explicit DOMSVGTransform();
+  DOMSVGTransform();
   explicit DOMSVGTransform(const gfxMatrix& aMatrix);
-  explicit DOMSVGTransform(const DOMMatrix2DInit& aMatrix, ErrorResult& rv);
+  DOMSVGTransform(const DOMMatrix2DInit& aMatrix, ErrorResult& rv);
 
   
 
