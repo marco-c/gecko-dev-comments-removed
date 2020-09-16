@@ -4,24 +4,23 @@
 
 <html>
   <meta charset="utf-8">
-  <title>CSS Shape Test: float right, circle()</title>
+  <title>CSS Shape Test: float left, circle(50% at left top)</title>
   <link rel="author" title="Ting-Yu Lin" href="mailto:tlin@mozilla.com">
   <link rel="author" title="Mozilla" href="http://www.mozilla.org/">
   <link rel="help" href="https://drafts.csswg.org/css-shapes-1/#supported-basic-shapes">
-  <link rel="match" href="shape-outside-circle-042-ref.html">
+  <link rel="match" href="reference/shape-outside-circle-032-ref.html">
   <meta name="flags" content="">
-  <meta name="assert" content="Test the boxes are wrapping around the right float shape defined by the basic shape circle() value.">
+  <meta name="assert" content="Test the boxes are wrapping around the left float shape defined by the basic shape circle(50% at left top) value.">
   <style>
   .container {
-    direction: rtl;
     width: 200px;
     line-height: 0;
   }
 
   .shape {
-    float: right;
-    shape-outside: circle();
-    clip-path: circle();
+    float: left;
+    shape-outside: circle(50% at left top);
+    clip-path: circle(50% at left top);
     box-sizing: content-box;
     height: 40px;
     width: 40px;
@@ -32,16 +31,22 @@
 
   .box {
     display: inline-block;
-    width: 60px;
+    width: 120px;
     background-color: blue;
+  }
+
+  .long {
+    width: 200px;
   }
   </style>
 
   <main class="container">
     <div class="shape"></div>
-    <div class="box" style="height: 12px;"></div> 
-    <div class="box" style="height: 12px;"></div> 
+    <div class="shape"></div>
     <div class="box" style="height: 36px;"></div>
+    <div class="box" style="height: 12px;"></div> 
+    <div class="box" style="height: 12px;"></div> 
+    <div class="long box" style="height: 60px;"></div> 
     <div class="box" style="height: 36px;"></div>
     <div class="box" style="height: 12px;"></div> 
     <div class="box" style="height: 12px;"></div> 
