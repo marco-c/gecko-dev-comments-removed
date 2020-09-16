@@ -1003,6 +1003,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "RTCTrackEvent", insecureContext: true },
   
+  { name: "Sanitizer" },
+  
   { name: "Screen", insecureContext: true },
   
   { name: "ScreenOrientation", insecureContext: true },
