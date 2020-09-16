@@ -556,13 +556,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       fileName.get(), trimmedScript.get());
 #endif
 
-#ifdef EARLY_BETA_OR_EARLIER
-  
-  
   return false;
-#else
-  return true;
-#endif
 }
 
 
