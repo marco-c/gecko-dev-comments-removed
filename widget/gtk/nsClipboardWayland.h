@@ -139,7 +139,7 @@ class nsRetrievalContextWayland : public nsRetrievalContext {
 
  private:
   bool mInitialized;
-  mozilla::widget::nsWaylandDisplay* mDisplay;
+  RefPtr<mozilla::widget::nsWaylandDisplay> mDisplay;
 
   
   GHashTable* mActiveOffers;
