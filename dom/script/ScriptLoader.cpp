@@ -2127,7 +2127,8 @@ nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
   }
 
   
-  if (aRequest->IsAsyncScript() || aRequest->IsBlockingScript()) {
+  if ((aRequest->IsAsyncScript() || aRequest->IsBlockingScript()) &&
+      !aRequest->isInList()) {
     return ProcessRequest(aRequest);
   }
 
