@@ -3219,6 +3219,23 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
       if (!scanFromCaretPointResult.GetContent()) {
         return NS_SUCCESS_DOM_NO_OPERATION;
       }
+
+      if (scanFromCaretPointResult.ReachedBRElement()) {
+        if (scanFromCaretPointResult.BRElementPtr() ==
+            wsRunScannerAtCaret.GetEditingHost()) {
+          return NS_OK;
+        }
+        if (!EditorUtils::IsEditableContent(
+                *scanFromCaretPointResult.BRElementPtr(), EditorType::HTML)) {
+          return NS_SUCCESS_DOM_NO_OPERATION;
+        }
+        if (!aHTMLEditor.IsVisibleBRElement(
+                scanFromCaretPointResult.BRElementPtr())) {
+          
+          
+          return NS_OK;
+        }
+      }
     }
   }
 
