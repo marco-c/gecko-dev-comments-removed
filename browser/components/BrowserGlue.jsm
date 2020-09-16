@@ -2220,7 +2220,7 @@ BrowserGlue.prototype = {
   },
 
   _monitorPioneerStudies() {
-    const STUDY_ADDON_COLLECTION_KEY = "pioneer-study-addons";
+    const STUDY_ADDON_COLLECTION_KEY = "pioneer-study-addons-v1";
     const PREF_PIONEER_NEW_STUDIES_AVAILABLE =
       "toolkit.telemetry.pioneer-new-studies-available";
 
@@ -2256,12 +2256,19 @@ BrowserGlue.prototype = {
       onCloseWindow() {},
     };
 
+    
     Services.prefs.addObserver(PREF_PIONEER_NEW_STUDIES_AVAILABLE, _badgeIcon);
+
+    
+    if (Services.prefs.getBoolPref(PREF_PIONEER_NEW_STUDIES_AVAILABLE, false)) {
+      _badgeIcon();
+    }
 
     RemoteSettings(STUDY_ADDON_COLLECTION_KEY).on("sync", async event => {
       Services.prefs.setBoolPref(PREF_PIONEER_NEW_STUDIES_AVAILABLE, true);
     });
 
+    
     Services.wm.addListener(windowListener);
   },
 
