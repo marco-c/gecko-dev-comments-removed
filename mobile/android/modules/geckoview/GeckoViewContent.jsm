@@ -198,6 +198,16 @@ class GeckoViewContent extends GeckoViewModule {
           title: this.browser.contentTitle,
         });
         break;
+      case "DOMWindowClose":
+        
+        
+        
+        aEvent.preventDefault();
+
+        this.eventDispatcher.sendRequest({
+          type: "GeckoView:DOMWindowClose",
+        });
+        break;
     }
   }
 
