@@ -240,7 +240,6 @@ AbortReasonOr<WarpEnvironment> WarpScriptOracle::createEnvironment() {
   }
 
   
-  
   if (fun->needsExtraBodyVarEnvironment()) {
     return abort(AbortReason::Disable, "Extra var environment unsupported");
   }
@@ -849,10 +848,6 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     return Ok();
   }
 
-  
-  
-  
-
   const CacheIRStubInfo* stubInfo = stub->cacheIRStubInfo();
   const uint8_t* stubData = stub->cacheIRStubData();
 
@@ -922,18 +917,21 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   
   
   
+  uint8_t* stubDataCopy = nullptr;
   size_t bytesNeeded = stubInfo->stubDataSize();
-  uint8_t* stubDataCopy = alloc_.allocateArray<uint8_t>(bytesNeeded);
-  if (!stubDataCopy) {
-    return abort(AbortReason::Alloc);
-  }
+  if (bytesNeeded > 0) {
+    stubDataCopy = alloc_.allocateArray<uint8_t>(bytesNeeded);
+    if (!stubDataCopy) {
+      return abort(AbortReason::Alloc);
+    }
 
-  
-  
-  std::copy_n(stubData, bytesNeeded, stubDataCopy);
+    
+    
+    std::copy_n(stubData, bytesNeeded, stubDataCopy);
 
-  if (!replaceNurseryPointers(stub, stubInfo, stubDataCopy)) {
-    return abort(AbortReason::Alloc);
+    if (!replaceNurseryPointers(stub, stubInfo, stubDataCopy)) {
+      return abort(AbortReason::Alloc);
+    }
   }
 
   JitCode* jitCode = stub->jitCode();
