@@ -146,19 +146,17 @@ pub struct GlyphCache {
     glyph_key_caches: FastHashMap<FontInstance, GlyphKeyCache>,
     current_frame: FrameId,
     bytes_used: usize,
-    max_bytes_used: usize,
 }
 
 impl GlyphCache {
     
-    pub const DEFAULT_MAX_BYTES_USED: usize = 6 * 1024 * 1024;
+    pub const MAX_BYTES_USED: usize = 6 * 1024 * 1024;
 
-    pub fn new(max_bytes_used: usize) -> Self {
+    pub fn new() -> Self {
         GlyphCache {
             glyph_key_caches: FastHashMap::default(),
             current_frame: Default::default(),
             bytes_used: 0,
-            max_bytes_used,
         }
     }
 
@@ -235,7 +233,7 @@ impl GlyphCache {
         texture_cache: &mut TextureCache,
         render_task_cache: &RenderTaskCache,
     ) {
-        if self.bytes_used < self.max_bytes_used {
+        if self.bytes_used < GlyphCache::MAX_BYTES_USED {
             return;
         }
         
@@ -245,11 +243,11 @@ impl GlyphCache {
         });
         
         for cache in caches {
-            if self.bytes_used < self.max_bytes_used {
+            if self.bytes_used < GlyphCache::MAX_BYTES_USED {
                 break;
             }
             let recent = cache.is_recently_used(self.current_frame);
-            let excess = self.bytes_used - self.max_bytes_used;
+            let excess = self.bytes_used - GlyphCache::MAX_BYTES_USED;
             if !recent && excess >= cache.user_data.bytes_used {
                 
                 self.bytes_used -= cache.clear_glyphs();
