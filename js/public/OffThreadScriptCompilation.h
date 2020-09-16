@@ -74,8 +74,19 @@ extern JS_PUBLIC_API bool CompileOffThread(
     SourceText<mozilla::Utf8Unit>& srcBuf, OffThreadCompileCallback callback,
     void* callbackData, OffThreadToken** tokenOut = nullptr);
 
+
+
 extern JS_PUBLIC_API JSScript* FinishOffThreadScript(JSContext* cx,
                                                      OffThreadToken* token);
+
+
+
+
+
+
+
+
+
 
 extern JS_PUBLIC_API JSScript* FinishOffThreadScriptAndStartIncrementalEncoding(
     JSContext* cx, OffThreadToken* token);

@@ -56,9 +56,11 @@ enum TranscodeResult : uint8_t {
   TranscodeResult_Throw = 0x20
 };
 
+
 extern JS_PUBLIC_API TranscodeResult EncodeScript(JSContext* cx,
                                                   TranscodeBuffer& buffer,
                                                   Handle<JSScript*> script);
+
 
 extern JS_PUBLIC_API TranscodeResult
 DecodeScript(JSContext* cx, TranscodeBuffer& buffer,
@@ -74,14 +76,20 @@ DecodeScript(JSContext* cx, const TranscodeRange& range,
 
 
 
+extern JS_PUBLIC_API TranscodeResult DecodeScriptAndStartIncrementalEncoding(
+    JSContext* cx, TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
+    size_t cursorIndex = 0);
 
 
 
 
 
 
-extern JS_PUBLIC_API bool StartIncrementalEncoding(JSContext* cx,
-                                                   Handle<JSScript*> script);
+
+
+
+
+
 
 extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
                                                     Handle<JSScript*> script,
