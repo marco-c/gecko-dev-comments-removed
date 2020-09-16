@@ -153,7 +153,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
       { targets, connectionPrefix, browserId, resources },
     ] of watchedDataByWatcherActor) {
       if (
-        targets.has("frame") &&
+        targets.includes("frame") &&
         shouldNotifyWindowGlobal(this.manager, browserId)
       ) {
         this._createTargetActor(watcherActorID, connectionPrefix, resources);
@@ -207,8 +207,8 @@ class DevToolsFrameChild extends JSWindowActorChild {
     });
 
     
-    if (initialWatchedResources.size > 0) {
-      targetActor.watchTargetResources([...initialWatchedResources]);
+    if (initialWatchedResources.length > 0) {
+      targetActor.watchTargetResources(initialWatchedResources);
     }
 
     
