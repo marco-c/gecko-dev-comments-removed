@@ -18,6 +18,7 @@
 #include "jit/InlinableNatives.h"
 #include "jit/Ion.h"  
 #include "jit/JitContext.h"
+#include "js/experimental/JitInfo.h"  
 #include "js/friend/WindowProxy.h"  
 #include "js/friend/XrayJitInfo.h"  
 #include "js/ScalarType.h"  

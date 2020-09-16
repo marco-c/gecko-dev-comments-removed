@@ -16,6 +16,7 @@
 #include "jit/LIR.h"
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
+#include "js/experimental/JitInfo.h"  
 #include "util/Memory.h"
 
 #include "jit/shared/Lowering-shared-inl.h"

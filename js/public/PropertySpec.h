@@ -23,7 +23,7 @@
 #include "js/Value.h"               
 
 struct JS_PUBLIC_API JSContext;
-struct JSJitInfo;
+class JSJitInfo;
 
 
 

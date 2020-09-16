@@ -20,6 +20,7 @@
 #include "jit/Lowering.h"
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
+#include "js/experimental/JitInfo.h"  
 #include "js/RegExpFlags.h"  
 #include "js/ScalarType.h"   
 #include "vm/ArgumentsObject.h"

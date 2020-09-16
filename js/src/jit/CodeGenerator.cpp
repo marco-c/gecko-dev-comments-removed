@@ -48,6 +48,7 @@
 #include "jit/StackSlotAllocator.h"
 #include "jit/VMFunctions.h"
 #include "jit/WarpSnapshot.h"
+#include "js/experimental/JitInfo.h"  
 #include "js/RegExpFlags.h"  
 #include "js/ScalarType.h"   
 #include "util/CheckedArithmetic.h"

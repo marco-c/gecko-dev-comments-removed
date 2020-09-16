@@ -11,10 +11,13 @@
 
 #include <stdint.h>  
 
+#include "jstypes.h"  
+
 #include "js/CallArgs.h"       
 #include "js/shadow/Object.h"  
 
-struct JSJitInfo;
+class JS_PUBLIC_API JSFunction;
+class JSJitInfo;
 
 namespace JS {
 
@@ -29,6 +32,14 @@ struct Function {
   const JSJitInfo* jitinfo;
   void* _1;
 };
+
+inline Function* AsShadowFunction(JSFunction* fun) {
+  return reinterpret_cast<Function*>(fun);
+}
+
+inline const Function* AsShadowFunction(const JSFunction* fun) {
+  return reinterpret_cast<const Function*>(fun);
+}
 
 }  
 

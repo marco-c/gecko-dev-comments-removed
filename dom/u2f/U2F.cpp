@@ -20,6 +20,8 @@
 
 using namespace mozilla::ipc;
 
+class JSJitInfo;
+
 
 
 class nsHTMLDocument {
