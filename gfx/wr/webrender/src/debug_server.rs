@@ -2,9 +2,10 @@
 
 
 
-use api::{ApiMsg, DebugCommand, DebugFlags};
 use api::units::DeviceIntSize;
 use api::crossbeam_channel::{bounded, Sender, Receiver};
+use api::DebugFlags;
+use crate::render_api::{ApiMsg, DebugCommand};
 use crate::print_tree::PrintTreePrinter;
 use crate::renderer;
 use std::thread;
