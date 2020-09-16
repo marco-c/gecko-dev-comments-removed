@@ -25,7 +25,7 @@ class WindowSurfaceWayland;
 
 class WaylandShmPool {
  public:
-  WaylandShmPool(nsWaylandDisplay* aDisplay, int aSize);
+  WaylandShmPool(RefPtr<nsWaylandDisplay> aDisplay, int aSize);
   ~WaylandShmPool();
 
   bool Resize(int aSize);
@@ -72,7 +72,7 @@ class WindowBackBuffer {
 
   static gfx::SurfaceFormat GetSurfaceFormat() { return mFormat; }
 
-  nsWaylandDisplay* GetWaylandDisplay();
+  RefPtr<nsWaylandDisplay> GetWaylandDisplay();
 
   WindowBackBuffer(WindowSurfaceWayland* aWindowSurfaceWayland)
       : mWindowSurfaceWayland(aWindowSurfaceWayland){};
@@ -183,7 +183,7 @@ class WindowSurfaceWayland : public WindowSurface {
   
   void CommitWaylandBuffer();
 
-  nsWaylandDisplay* GetWaylandDisplay() { return mWaylandDisplay; };
+  RefPtr<nsWaylandDisplay> GetWaylandDisplay() { return mWaylandDisplay; };
 
   
   typedef enum {
@@ -229,7 +229,7 @@ class WindowSurfaceWayland : public WindowSurface {
   
   
   LayoutDeviceIntRect mWLBufferRect;
-  nsWaylandDisplay* mWaylandDisplay;
+  RefPtr<nsWaylandDisplay> mWaylandDisplay;
 
   
   

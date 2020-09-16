@@ -25,14 +25,14 @@ namespace widget {
 
 
 
-
 class nsWaylandDisplay {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsWaylandDisplay)
+
   
   
   
   explicit nsWaylandDisplay(wl_display* aDisplay, bool aLighWrapper = false);
-  virtual ~nsWaylandDisplay();
 
   bool DispatchEventQueue();
 
@@ -77,6 +77,8 @@ class nsWaylandDisplay {
   bool IsExplicitSyncEnabled() { return mExplicitSync; }
 
  private:
+  ~nsWaylandDisplay();
+
   MessageLoop* mThreadLoop;
   PRThread* mThreadId;
   wl_display* mDisplay;
@@ -96,7 +98,9 @@ class nsWaylandDisplay {
 
 void WaylandDispatchDisplays();
 void WaylandDisplayShutdown();
-nsWaylandDisplay* WaylandDisplayGet(GdkDisplay* aGdkDisplay = nullptr);
+void WaylandDisplayRelease();
+
+RefPtr<nsWaylandDisplay> WaylandDisplayGet(GdkDisplay* aGdkDisplay = nullptr);
 wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay = nullptr);
 
 }  
