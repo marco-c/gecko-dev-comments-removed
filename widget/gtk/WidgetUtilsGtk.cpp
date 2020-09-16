@@ -4,7 +4,7 @@
 
 
 #include "WidgetUtilsGtk.h"
-
+#include "nsWindow.h"
 #include <gtk/gtk.h>
 
 namespace mozilla {
@@ -42,6 +42,8 @@ int32_t WidgetUtilsGTK::IsTouchDeviceSupportPresent() {
 
   return result;
 }
+
+bool IsMainWindowTransparent() { return nsWindow::IsMainWindowTransparent(); }
 
 }  
 

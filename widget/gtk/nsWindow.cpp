@@ -265,6 +265,7 @@ static SystemTimeConverter<guint32>& TimeConverter() {
 }
 
 nsWindow::CSDSupportLevel nsWindow::sCSDSupportLevel = CSD_SUPPORT_UNKNOWN;
+bool nsWindow::sTransparentMainWindow = false;
 
 namespace mozilla {
 
@@ -4144,6 +4145,33 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
   return TRUE;
 }
 
+bool nsWindow::IsMainWindowTransparent() {
+  static bool transparencyConfigured = false;
+
+  if (!transparencyConfigured) {
+    GdkScreen* screen = gdk_screen_get_default();
+    if (gdk_screen_is_composited(screen)) {
+      
+      
+      
+      
+      
+      if (Preferences::HasUserValue("mozilla.widget.use-argb-visuals")) {
+        
+        sTransparentMainWindow =
+            Preferences::GetBool("mozilla.widget.use-argb-visuals");
+      } else {
+        sTransparentMainWindow =
+            (gfxPlatformGtk::GetPlatform()->IsWaylandDisplay() &&
+             GetSystemCSDSupportLevel() != CSD_SUPPORT_NONE);
+      }
+    }
+    transparencyConfigured = true;
+  }
+
+  return sTransparentMainWindow;
+}
+
 static GdkWindow* CreateGdkWindow(GdkWindow* parent, GtkWidget* widget) {
   GdkWindowAttr attributes;
   gint attributes_mask = GDK_WA_VISUAL;
@@ -4290,26 +4318,10 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         mCSDSupportLevel = GetSystemCSDSupportLevel(isPopup);
       }
 
+      
       if (mWindowType == eWindowType_toplevel && !mIsPIPWindow) {
-        
-        
-        
-        GdkScreen* screen = gdk_screen_get_default();
-        if (gdk_screen_is_composited(screen)) {
-          
-          
-          
-          
-          
-          if (Preferences::HasUserValue("mozilla.widget.use-argb-visuals")) {
-            
-            needsAlphaVisual =
-                Preferences::GetBool("mozilla.widget.use-argb-visuals");
-          } else if (!mIsX11Display || mCSDSupportLevel != CSD_SUPPORT_NONE) {
-            needsAlphaVisual = true;
-          }
-        } else {
-          
+        needsAlphaVisual = IsMainWindowTransparent();
+        if (!needsAlphaVisual && mCSDSupportLevel != CSD_SUPPORT_NONE) {
           mTransparencyBitmapForTitlebar = TitlebarCanUseShapeMask();
         }
       }
@@ -7799,7 +7811,7 @@ bool nsWindow::TitlebarCanUseShapeMask() {
   if (canUseShapeMask != -1) {
     return canUseShapeMask;
   }
-  canUseShapeMask = true;
+  canUseShapeMask = gfxPlatformGtk::GetPlatform()->IsX11Display();
 
   const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
   if (!currentDesktop) {
