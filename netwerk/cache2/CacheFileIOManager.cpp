@@ -544,11 +544,17 @@ class ShutdownEvent : public Runnable {
   void PostAndWait() {
     MonitorAutoLock mon(mMonitor);
 
-    DebugOnly<nsresult> rv;
-    rv = CacheFileIOManager::gInstance->mIOThread->Dispatch(
+    nsresult rv = CacheFileIOManager::gInstance->mIOThread->Dispatch(
         this,
         CacheIOThread::WRITE);  
     MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    
+    
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Posting ShutdownEvent task failed");
+      return;
+    }
 
     TimeDuration waitTime = TimeDuration::FromSeconds(1);
     while (!mNotified) {
