@@ -1053,6 +1053,27 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
   mFile->GetNativeLeafName(leafName);
   tmpFile->SetNativeLeafName(leafName + "-tmp"_ns);
 
+  auto cleanup = MakeScopeExit([&]() {
+    mDirty = false;
+    mWrittenOnce = true;
+    mCacheData.reset();
+
+    
+    if (AppShutdown::IsShuttingDown()) {
+      return;
+    }
+
+    
+    
+    
+    for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
+      auto& value = iter.get().value();
+      if (!value.mFlags.contains(StartupCacheEntryFlags::DoNotFree)) {
+        value.mData = nullptr;
+      }
+    }
+  });
+
   {
     AutoFDClose fd;
     MOZ_TRY(tmpFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
@@ -1183,25 +1204,7 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
     MOZ_TRY(Write(fd, buf.Get(), buf.cursor()));
   }
 
-  mDirty = false;
-  mWrittenOnce = true;
-  mCacheData.reset();
   tmpFile->MoveToNative(nullptr, leafName);
-
-  
-  if (AppShutdown::IsShuttingDown()) {
-    return Ok();
-  }
-
-  
-  
-  
-  for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
-    auto& value = iter.get().value();
-    if (!value.mFlags.contains(StartupCacheEntryFlags::DoNotFree)) {
-      value.mData = nullptr;
-    }
-  }
 
   return Ok();
 }
