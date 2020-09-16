@@ -6959,6 +6959,57 @@ AttachDecision CallIRGenerator::tryAttachMathFunction(HandleFunction callee,
   return AttachDecision::Attach;
 }
 
+StringOperandId EmitToStringGuard(CacheIRWriter& writer, ValOperandId id,
+                                  HandleValue v) {
+  if (v.isString()) {
+    return writer.guardToString(id);
+  }
+  if (v.isInt32()) {
+    Int32OperandId intId = writer.guardToInt32(id);
+    return writer.callInt32ToString(intId);
+  }
+  
+  
+  MOZ_ASSERT(v.isNumber());
+  NumberOperandId numId = writer.guardIsNumber(id);
+  return writer.callNumberToString(numId);
+}
+
+AttachDecision CallIRGenerator::tryAttachNumberToString(HandleFunction callee) {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isNumber()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+
+  
+  StringOperandId strId = EmitToStringGuard(writer, thisValId, thisval_);
+
+  
+  writer.loadStringResult(strId);
+
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("NumberToString");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachReflectGetPrototypeOf(
     HandleFunction callee) {
   
@@ -8706,6 +8757,10 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachGuardToClass(callee, native);
     case InlinableNative::IntrinsicGetNextMapEntryForIterator:
       return tryAttachGetNextMapSetEntryForIterator(callee,  true);
+
+    
+    case InlinableNative::NumberToString:
+      return tryAttachNumberToString(callee);
 
     
     case InlinableNative::Object:
@@ -10616,23 +10671,8 @@ AttachDecision BinaryArithIRGenerator::tryAttachStringNumberConcat() {
   ValOperandId lhsId(writer.setInputOperandId(0));
   ValOperandId rhsId(writer.setInputOperandId(1));
 
-  auto guardToString = [&](ValOperandId id, HandleValue v) {
-    if (v.isString()) {
-      return writer.guardToString(id);
-    }
-    if (v.isInt32()) {
-      Int32OperandId intId = writer.guardToInt32(id);
-      return writer.callInt32ToString(intId);
-    }
-    
-    
-    MOZ_ASSERT(v.isNumber());
-    NumberOperandId numId = writer.guardIsNumber(id);
-    return writer.callNumberToString(numId);
-  };
-
-  StringOperandId lhsStrId = guardToString(lhsId, lhs_);
-  StringOperandId rhsStrId = guardToString(rhsId, rhs_);
+  StringOperandId lhsStrId = EmitToStringGuard(writer, lhsId, lhs_);
+  StringOperandId rhsStrId = EmitToStringGuard(writer, rhsId, rhs_);
 
   writer.callStringConcatResult(lhsStrId, rhsStrId);
 
