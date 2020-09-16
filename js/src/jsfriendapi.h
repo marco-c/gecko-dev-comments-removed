@@ -34,10 +34,6 @@ class Heap;
 class ExceptionStack;
 } 
 
-namespace js {
-class JS_FRIEND_API BaseProxyHandler;
-} 
-
 extern JS_FRIEND_API void JS_SetGrayGCRootsTracer(JSContext* cx,
                                                   JSTraceDataOp traceOp,
                                                   void* data);
@@ -727,32 +723,6 @@ inline bool DOMProxyIsShadowing(DOMProxyShadowsResult result) {
 const void* GetDOMRemoteProxyHandlerFamily();
 
 extern JS_FRIEND_API bool IsDOMRemoteProxyObject(JSObject* object);
-
-
-
-struct XrayJitInfo {
-  
-  
-  bool (*isCrossCompartmentXray)(const BaseProxyHandler* handler);
-
-  
-  
-  bool (*compartmentHasExclusiveExpandos)(JSObject* obj);
-
-  
-  
-  size_t xrayHolderSlot;
-
-  
-  size_t holderExpandoSlot;
-
-  
-  size_t expandoProtoSlot;
-};
-
-JS_FRIEND_API void SetXrayJitInfo(XrayJitInfo* info);
-
-XrayJitInfo* GetXrayJitInfo();
 
 
 

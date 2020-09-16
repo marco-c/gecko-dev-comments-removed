@@ -19,6 +19,7 @@
 #include "jit/ICState.h"
 #include "jit/MacroAssembler.h"
 #include "jit/Simulator.h"
+#include "js/friend/XrayJitInfo.h"  
 #include "js/ScalarType.h"  
 #include "vm/Iteration.h"
 #include "vm/Shape.h"
@@ -1961,6 +1962,9 @@ inline ReferenceType ReferenceTypeFromSimpleTypeDescrKey(uint32_t key) {
 
 
 extern bool IsWindowProxyForScriptGlobal(JSScript* script, JSObject* obj);
+
+
+extern JS::XrayJitInfo* GetXrayJitInfo();
 
 }  
 }  

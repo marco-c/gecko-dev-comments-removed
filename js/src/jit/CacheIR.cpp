@@ -19,6 +19,7 @@
 #include "jit/Ion.h"  
 #include "jit/JitContext.h"
 #include "js/friend/WindowProxy.h"  
+#include "js/friend/XrayJitInfo.h"  
 #include "js/ScalarType.h"  
 #include "js/Wrapper.h"
 #include "util/Unicode.h"
@@ -1354,7 +1355,7 @@ AttachDecision GetPropIRGenerator::tryAttachXrayCrossCompartmentWrapper(
     return AttachDecision::NoAction;
   }
 
-  XrayJitInfo* info = GetXrayJitInfo();
+  JS::XrayJitInfo* info = GetXrayJitInfo();
   if (!info || !info->isCrossCompartmentXray(GetProxyHandler(obj))) {
     return AttachDecision::NoAction;
   }

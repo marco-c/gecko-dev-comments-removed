@@ -21,6 +21,7 @@
 #include "jsapi.h"
 #include "js/experimental/TypedData.h"  
 #include "js/friend/WindowProxy.h"      
+#include "js/friend/XrayJitInfo.h"      
 #include "js/PropertySpec.h"
 #include "nsJSUtils.h"
 #include "nsPrintfCString.h"
@@ -2343,7 +2344,7 @@ static bool IsCrossCompartmentXrayCallback(
   return handler == &PermissiveXrayDOM::singleton;
 }
 
-js::XrayJitInfo gXrayJitInfo = {
+JS::XrayJitInfo gXrayJitInfo = {
     IsCrossCompartmentXrayCallback, CompartmentHasExclusiveExpandos,
     JSSLOT_XRAY_HOLDER, XrayTraits::HOLDER_SLOT_EXPANDO,
     JSSLOT_EXPANDO_PROTOTYPE};
