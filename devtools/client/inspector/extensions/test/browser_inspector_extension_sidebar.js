@@ -339,16 +339,39 @@ add_task(async function testSidebarDOMNodeOpenInspector() {
 
   
   
-  const onNodeHighlight = inspector.highlighter.once("node-highlight");
-  const onNodeUnhighlight = inspector.highlighter.once("node-unhighlight");
+  
+  const HIGHLIGHTER_AUTOHIDE_TIMER = inspector.HIGHLIGHTER_AUTOHIDE_TIMER;
+  inspector.HIGHLIGHTER_AUTOHIDE_TIMER = 1000;
+  registerCleanupFunction(() => {
+    
+    inspector.HIGHLIGHTER_AUTOHIDE_TIMER = HIGHLIGHTER_AUTOHIDE_TIMER;
+  });
+
+  const {
+    waitForHighlighterTypeShown,
+    waitForHighlighterTypeHidden,
+  } = getHighlighterTestHelpers(inspector);
+
+  
+  
+  const onNodeHighlight = waitForHighlighterTypeShown(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
+  const onNodeUnhighlight = waitForHighlighterTypeHidden(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
   onceNewNodeFront = inspector.selection.once("new-node-front");
 
   clickOpenInspectorIcon(sidebarPanelContent);
 
   nodeFront = await onceNewNodeFront;
   is(nodeFront.displayName, "body", "The correct node has been selected");
-  nodeFront = await onNodeHighlight;
-  is(nodeFront.displayName, "body", "The correct node was highlighted");
+  const { nodeFront: highlightedNodeFront } = await onNodeHighlight;
+  is(
+    highlightedNodeFront.displayName,
+    "body",
+    "The correct node was highlighted"
+  );
 
   await onNodeUnhighlight;
 });
