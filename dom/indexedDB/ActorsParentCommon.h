@@ -69,10 +69,12 @@ struct IndexDataValue final {
 
 JSObject* GetSandbox(JSContext* aCx);
 
-nsresult MakeCompressedIndexDataValues(
-    const nsTArray<IndexDataValue>& aIndexValues,
-    UniqueFreePtr<uint8_t>& aCompressedIndexDataValues,
-    uint32_t* aCompressedIndexDataValuesLength);
+
+
+
+
+Result<std::pair<UniqueFreePtr<uint8_t>, uint32_t>, nsresult>
+MakeCompressedIndexDataValues(const nsTArray<IndexDataValue>& aIndexValues);
 
 
 nsresult ReadCompressedIndexDataValues(
