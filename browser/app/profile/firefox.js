@@ -1893,15 +1893,22 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 
 pref("extensions.formautofill.available", "detect");
-pref("extensions.formautofill.creditCards.available", true);
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", false);
+#ifdef NIGHTLY_BUILD
+pref("extensions.formautofill.creditCards.available", true);
 pref("extensions.formautofill.creditCards.enabled", true);
+
+pref("services.sync.engine.creditcards.available", true);
+#else
+pref("extensions.formautofill.creditCards.available", false);
+pref("extensions.formautofill.creditCards.enabled", false);
+
+pref("services.sync.engine.creditcards.available", false);
+#endif
 
 
 pref("extensions.formautofill.creditCards.hideui", false);
-
-pref("services.sync.engine.creditcards.available", true);
 
 
 
