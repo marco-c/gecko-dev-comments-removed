@@ -1379,6 +1379,10 @@ class ContentParent final
   mozilla::ipc::IPCResult RecvRemoveFromSessionHistory(
       const MaybeDiscarded<BrowsingContext>& aContext);
 
+  mozilla::ipc::IPCResult RecvHistoryReload(
+      const MaybeDiscarded<BrowsingContext>& aContext,
+      const uint32_t aReloadFlags);
+
   
   
   void MaybeEnableRemoteInputEventQueue();
