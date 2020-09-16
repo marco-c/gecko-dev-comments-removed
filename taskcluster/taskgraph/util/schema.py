@@ -227,7 +227,7 @@ OptimizationSchema = voluptuous.Any(
     
     {'index-search': [text_type]},
     {'push-interval-10': None},
-    {'push-interval-25': None},
+    {'push-interval-20': None},
     
     {'skip-unless-changed': [text_type]},
     
