@@ -7833,19 +7833,10 @@ bool nsWindow::HideTitlebarByDefault() {
   hideTitlebar =
       (currentDesktop && GetSystemCSDSupportLevel() != CSD_SUPPORT_NONE);
 
-  
-  
-  if (hideTitlebar) {
-    hideTitlebar =
-        (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
-         strstr(currentDesktop, "GNOME") != nullptr ||
-         strstr(currentDesktop, "Pantheon") != nullptr);
-  }
-
-  
-  if (hideTitlebar) {
-    hideTitlebar = TitlebarCanUseShapeMask();
-  }
+  GdkScreen* screen;
+  hideTitlebar = ((screen = gdk_screen_get_default()) &&
+                  gdk_screen_is_composited(screen)) ||
+                 TitlebarCanUseShapeMask();
 
   return hideTitlebar;
 }
