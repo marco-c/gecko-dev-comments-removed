@@ -4,10 +4,6 @@
 
 
 
-DIRS += [
-	'images',
-]
-
 DevToolsModules(
     'reps.js',
 )
