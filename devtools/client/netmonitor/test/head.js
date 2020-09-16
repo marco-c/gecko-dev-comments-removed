@@ -314,13 +314,6 @@ function initNetMonitor(url, { requestCount, enableCache = false }) {
     const toolbox = await gDevTools.showToolbox(target, "netmonitor");
     info("Network monitor pane shown successfully.");
 
-    
-    
-    
-    
-    toolbox.sourceMapURLService._ensureAllSourcesPopulated();
-    await toolbox.sourceMapURLService.waitForPendingSources();
-
     const monitor = toolbox.getCurrentPanel();
 
     startNetworkEventUpdateObserver(monitor.panelWin);

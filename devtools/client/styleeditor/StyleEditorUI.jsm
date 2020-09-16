@@ -478,7 +478,8 @@ StyleEditorUI.prototype = {
             "stylesheets"
           );
 
-          if (stylesheetsFront.traits.isFileNameSupported) {
+          const traits = await stylesheetsFront.getTraits();
+          if (traits.isFileNameSupported) {
             
             stylesheetsFront.addStyleSheet(source, selectedFile.path);
           } else {
