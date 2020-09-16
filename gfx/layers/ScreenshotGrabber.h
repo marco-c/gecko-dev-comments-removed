@@ -46,8 +46,7 @@ class ScreenshotGrabber final {
   
   
   
-  void MaybeGrabScreenshot(profiler_screenshots::Window& aWindow,
-                           const gfx::IntSize& aWindowSize);
+  void MaybeGrabScreenshot(profiler_screenshots::Window& aWindow);
 
   
   
@@ -72,8 +71,7 @@ namespace profiler_screenshots {
 
 class Window {
  public:
-  virtual already_AddRefed<RenderSource> GetWindowContents(
-      const gfx::IntSize& aWindowSize) = 0;
+  virtual already_AddRefed<RenderSource> GetWindowContents() = 0;
   virtual already_AddRefed<DownscaleTarget> CreateDownscaleTarget(
       const gfx::IntSize& aSize) = 0;
   virtual already_AddRefed<AsyncReadbackBuffer> CreateAsyncReadbackBuffer(
