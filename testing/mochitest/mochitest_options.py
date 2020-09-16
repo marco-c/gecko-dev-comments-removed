@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 from argparse import ArgumentParser, SUPPRESS
@@ -32,7 +32,7 @@ except ImportError:
     conditions = None
 
 
-
+# Maps test flavors to data needed to run them
 ALL_FLAVORS = {
     'mochitest': {
         'suite': 'plain',
@@ -73,21 +73,21 @@ CANONICAL_FLAVORS = sorted([f['aliases'][0] for f in ALL_FLAVORS.values()])
 
 
 def get_default_valgrind_suppression_files():
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    # We are trying to locate files in the source tree.  So if we
+    # don't know where the source tree is, we must give up.
+    #
+    # When this is being run by |mach mochitest --valgrind ...|, it is
+    # expected that |build_obj| is not None, and so the logic below will
+    # select the correct suppression files.
+    #
+    # When this is run from mozharness, |build_obj| is None, and we expect
+    # that testing/mozharness/configs/unittests/linux_unittests.py will
+    # select the correct suppression files (and paths to them) and
+    # will specify them using the --valgrind-supp-files= flag.  Hence this
+    # function will not get called when running from mozharness.
+    #
+    # Note: keep these Valgrind .sup file names consistent with those
+    # in testing/mozharness/configs/unittests/linux_unittest.py.
     if build_obj is None or build_obj.topsrcdir is None:
         return []
 
@@ -503,7 +503,7 @@ class MochitestArguments(ArgumentContainer):
           }],
         [["--xre-path"],
          {"dest": "xrePath",
-          "default": None,    
+          "default": None,    # individual scripts will set a sane default
           "help": "Absolute path to directory containing XRE (probably xulrunner).",
           "suppress": True,
           }],
@@ -632,25 +632,25 @@ class MochitestArguments(ArgumentContainer):
     ]
 
     defaults = {
-        
-        
+        # Bug 1065098 - The gmplugin process fails to produce a leak
+        # log for some reason.
         'ignoreMissingLeaks': ["gmplugin"],
         'extensionsToExclude': ['specialpowers'],
-        
+        # Set server information on the args object
         'webServer': '127.0.0.1',
         'httpPort': DEFAULT_PORTS['http'],
         'sslPort': DEFAULT_PORTS['https'],
         'webSocketPort': '9988',
-        
-        
-        
-        
+        # The default websocket port is incorrect in mozprofile; it is
+        # set to the SSL proxy setting. See:
+        # see https://bugzilla.mozilla.org/show_bug.cgi?id=916517
+        # args.webSocketPort = DEFAULT_PORTS['ws']
     }
 
     def validate(self, parser, options, context):
         """Validate generic options."""
 
-        
+        # and android doesn't use 'app' the same way, so skip validation
         if parser.app != 'android':
             if options.app is None:
                 if build_obj:
@@ -681,7 +681,7 @@ class MochitestArguments(ArgumentContainer):
                 break
 
         if options.gmp_path is None and options.app and build_obj:
-            
+            # Need to fix the location of gmp_fake which might not be shipped in the binary
             gmp_modules = (
                 ('gmp-fake', '1.0'),
                 ('gmp-clearkey', '0.1'),
@@ -710,8 +710,8 @@ class MochitestArguments(ArgumentContainer):
                 "can only use one of --chunk-by-dir or --chunk-by-runtime")
 
         if options.xrePath is None:
-            
-            
+            # default xrePath to the app path if not provided
+            # but only if an app path was explicitly provided
             if options.app != parser.get_default('app'):
                 options.xrePath = os.path.dirname(options.app)
                 if mozinfo.isMac:
@@ -720,13 +720,13 @@ class MochitestArguments(ArgumentContainer):
                             options.xrePath),
                         "Resources")
             elif build_obj is not None:
-                
+                # otherwise default to dist/bin
                 options.xrePath = build_obj.bindir
             else:
                 parser.error(
                     "could not find xre directory, --xre-path must be specified")
 
-        
+        # allow relative paths
         if options.xrePath:
             options.xrePath = self.get_full_path(options.xrePath, parser.oldcwd)
 
@@ -759,8 +759,8 @@ class MochitestArguments(ArgumentContainer):
                 "--debugger-args requires --debugger.")
 
         if options.valgrind or options.debugger:
-            
-            
+            # valgrind and some debuggers may cause Gecko to start slowly. Make sure
+            # marionette waits long enough to connect.
             options.marionette_startup_timeout = 900
             options.marionette_socket_timeout = 540
 
@@ -779,7 +779,7 @@ class MochitestArguments(ArgumentContainer):
                     "data." % options.jscov_dir_prefix)
 
         if options.testingModulesDir is None:
-            
+            # Try to guess the testing modules directory.
             possible = [os.path.join(here, os.path.pardir, 'modules')]
             if build_obj:
                 possible.insert(0, os.path.join(build_obj.topobjdir, '_tests', 'modules'))
@@ -789,7 +789,7 @@ class MochitestArguments(ArgumentContainer):
                     options.testingModulesDir = p
                     break
 
-        
+        # Paths to specialpowers and mochijar from the tests archive.
         options.stagedAddons = [
             os.path.join(here, 'extensions', 'specialpowers'),
             os.path.join(here, 'mochijar'),
@@ -805,8 +805,8 @@ class MochitestArguments(ArgumentContainer):
             if os.path.isdir(plugins_dir) and plugins_dir not in options.extraProfileFiles:
                 options.extraProfileFiles.append(plugins_dir)
 
-        
-        
+        # Even if buildbot is updated, we still want this, as the path we pass in
+        # to the app must be absolute and have proper slashes.
         if options.testingModulesDir is not None:
             options.testingModulesDir = os.path.normpath(
                 options.testingModulesDir)
@@ -857,7 +857,7 @@ class MochitestArguments(ArgumentContainer):
                     'Missing binary pactl required for '
                     '--use-test-media-devices')
 
-        
+        # The a11y and chrome flavors can't run with e10s.
         if options.flavor in ('a11y', 'chrome') and options.e10s:
             parser.error("mochitest-{} does not support e10s, try again with "
                          "--disable-e10s.".format(options.flavor))
@@ -870,21 +870,22 @@ class MochitestArguments(ArgumentContainer):
             "default": options.defaultLeakThreshold,
             "tab": options.defaultLeakThreshold,
             "forkserver": options.defaultLeakThreshold,
-            
+            # GMP rarely gets a log, but when it does, it leaks a little.
             "gmplugin": 20000,
             "rdd": 400,
         }
 
-        
+        # See the dependencies of bug 1401764.
         if mozinfo.isWin:
             options.leakThresholds["tab"] = 1000
+            options.leakThresholds["rdd"] = 4000  # Bug 1653060
 
-        
-        
-        
-        
+        # XXX We can't normalize test_paths in the non build_obj case here,
+        # because testRoot depends on the flavor, which is determined by the
+        # mach command and therefore not finalized yet. Conversely, test paths
+        # need to be normalized here for the mach case.
         if options.test_paths and build_obj:
-            
+            # Normalize test paths so they are relative to test root
             options.test_paths = [build_obj._wrap_path_argument(p).relpath()
                                   for p in options.test_paths]
 
@@ -952,9 +953,9 @@ class AndroidArguments(ArgumentContainer):
     ]
 
     defaults = {
-        
+        # we don't want to exclude specialpowers on android just yet
         'extensionsToExclude': [],
-        
+        # mochijar doesn't get installed via marionette on android
         'extensionsToInstall': [os.path.join(here, 'mochijar')],
         'logFile': 'mochitest.log',
         'utilityPath': None,
@@ -988,7 +989,7 @@ class AndroidArguments(ArgumentContainer):
         if build_obj and 'MOZ_HOST_BIN' in os.environ:
             options.xrePath = os.environ['MOZ_HOST_BIN']
 
-        
+        # Only reset the xrePath if it wasn't provided
         if options.xrePath is None:
             options.xrePath = options.utilityPath
 
@@ -1015,8 +1016,8 @@ class AndroidArguments(ArgumentContainer):
                     "The directory for the coverage output does not exist: %s" %
                     parent_dir)
 
-        
-        
+        # allow us to keep original application around for cleanup while
+        # running tests
         options.remoteappname = options.app
         return options
 
@@ -1042,8 +1043,8 @@ class MochitestArgumentParser(ArgumentParser):
             if conditions.is_android(build_obj):
                 self.app = 'android'
         if not self.app:
-            
-            
+            # platform can't be determined and app wasn't specified explicitly,
+            # so just use generic arguments and hope for the best
             self.app = 'generic'
 
         if self.app not in container_map:
@@ -1056,8 +1057,8 @@ class MochitestArgumentParser(ArgumentParser):
             group = self.add_argument_group(container.__class__.__name__, container.__doc__)
 
             for cli, kwargs in container.args:
-                
-                
+                # Allocate new lists so references to original don't get mutated.
+                # allowing multiple uses within a single process.
                 if "default" in kwargs and isinstance(kwargs['default'], list):
                     kwargs["default"] = []
 
