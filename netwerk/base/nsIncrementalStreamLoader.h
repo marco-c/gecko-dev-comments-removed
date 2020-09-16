@@ -47,7 +47,8 @@ class nsIncrementalStreamLoader final
   mozilla::Vector<uint8_t, 0> mData;
 
   
-  size_t mBytesConsumed;
+  
+  mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed> mBytesRead;
 };
 
 #endif  

@@ -45,6 +45,8 @@ class nsStreamLoader final : public nsIStreamLoader,
   nsCOMPtr<nsIRequest> mRequest;
   nsCOMPtr<nsIRequestObserver> mRequestObserver;
 
+  mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed> mBytesRead;
+
   
   
   mozilla::Vector<uint8_t, 0> mData;
