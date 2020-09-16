@@ -76,7 +76,7 @@ public class IOUtils {
                 bPointer += lastRead;
 
                 
-                if (bPointer == buffer.length) {
+                if (bPointer > buffer.length) {
                     int newBufferSize = bufferSize * 2;
                     byte[] newBuffer = new byte[newBufferSize];
 
