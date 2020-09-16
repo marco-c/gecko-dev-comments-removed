@@ -195,6 +195,7 @@ class nsHttpResponseHead {
 
   bool NoCache_locked() const {
     
+    MOZ_ASSERT_IF(mCacheControlNoCache, mHasCacheControl);
     return mHasCacheControl ? mCacheControlNoCache : mPragmaNoCache;
   }
 
