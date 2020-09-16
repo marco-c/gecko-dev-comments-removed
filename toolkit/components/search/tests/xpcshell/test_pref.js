@@ -14,7 +14,7 @@ const baseURL = "https://www.google.com/search?q=foo";
 add_task(async function setup() {
   
   
-  await useTestEngines();
+  await SearchTestUtils.useTestEngines();
 });
 
 add_task(async function test_pref_initial_value() {
