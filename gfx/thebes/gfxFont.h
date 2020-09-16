@@ -768,6 +768,10 @@ class gfxShapedText {
 
     
     
+    void ClearGlyphInfo() { mValue &= ~FLAGS_CAN_BREAK_BEFORE; }
+
+    
+    
     
     
 

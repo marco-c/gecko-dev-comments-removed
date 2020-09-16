@@ -123,8 +123,6 @@ nsTransformingTextRunFactory::MakeTextRun(
 void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
                               const bool* aCharsToMerge,
                               const bool* aDeletedChars) {
-  aDest->ResetGlyphRuns();
-
   gfxTextRun::GlyphRunIterator iter(aSrc, gfxTextRun::Range(aSrc));
   uint32_t offset = 0;
   AutoTArray<gfxTextRun::DetailedGlyph, 2> glyphs;
@@ -176,14 +174,21 @@ void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
           !aCharsToMerge[mergeRunStart],
           "unable to merge across a glyph run boundary, glyph(s) discarded");
       if (!aCharsToMerge[mergeRunStart]) {
-        if (anyMissing) {
-          mergedGlyph.SetMissing(glyphs.Length());
+        
+        if (mergedGlyph.IsSimpleGlyph() && glyphs.Length() == 1) {
+          
         } else {
-          mergedGlyph.SetComplex(mergedGlyph.IsClusterStart(),
-                                 mergedGlyph.IsLigatureGroupStart(),
-                                 glyphs.Length());
+          
+          destGlyphs[offset].ClearGlyphInfo();
+          if (anyMissing) {
+            mergedGlyph.SetMissing(glyphs.Length());
+          } else {
+            mergedGlyph.SetComplex(mergedGlyph.IsClusterStart(),
+                                   mergedGlyph.IsLigatureGroupStart(),
+                                   glyphs.Length());
+          }
+          aDest->SetDetailedGlyphs(offset, glyphs.Length(), glyphs.Elements());
         }
-        aDest->SetDetailedGlyphs(offset, glyphs.Length(), glyphs.Elements());
         destGlyphs[offset++] = mergedGlyph;
 
         while (offset < aDest->GetLength() && aDeletedChars[offset]) {
@@ -854,6 +859,7 @@ void nsCaseTransformTextRunFactory::RebuildTextRun(
     transformedChild->FinishSettingProperties(aRefDrawTarget, aMFR);
   }
 
+  aTextRun->ResetGlyphRuns();
   if (mergeNeeded) {
     
     
@@ -867,7 +873,6 @@ void nsCaseTransformTextRunFactory::RebuildTextRun(
     
     
     
-    aTextRun->ResetGlyphRuns();
     aTextRun->CopyGlyphDataFrom(child, gfxTextRun::Range(child), 0);
   }
 }
