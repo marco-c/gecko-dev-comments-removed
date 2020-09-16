@@ -117,6 +117,9 @@ class GLContextEGL final : public GLContext {
   static EGLSurface CreateEGLSurfaceForCompositorWidget(
       widget::CompositorWidget* aCompositorWidget, const EGLConfig aConfig);
 
+  static bool FindVisual(bool aUseWebRender, bool useAlpha,
+                         int* const out_visualId);
+
  protected:
   friend class GLContextProviderEGL;
   friend class GLContextEGLFactory;
@@ -157,8 +160,9 @@ class GLContextEGL final : public GLContext {
 
 
 
+
 bool CreateConfig(EglDisplay&, EGLConfig* aConfig, int32_t depth,
-                  bool aEnableDepthBuffer, bool aUseGles);
+                  bool aEnableDepthBuffer, bool aUseGles, int aVisual = 0);
 
 }  
 }  
