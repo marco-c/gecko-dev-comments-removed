@@ -172,8 +172,11 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
     this.input.setSearchMode(searchMode);
     this.selectedButton = null;
+    
     this.input.startQuery({
-      allowAutofill: false,
+      allowAutofill:
+        !searchMode.engineName &&
+        searchMode.source != UrlbarUtils.RESULT_SOURCE.SEARCH,
       event,
     });
   }

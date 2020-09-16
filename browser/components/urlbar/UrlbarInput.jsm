@@ -1287,6 +1287,7 @@ class UrlbarInput {
         
         this.searchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
       }
+      
       this._searchModeIndicatorTitle.textContent = engineName;
       this._searchModeLabel.textContent = engineName;
       this.document.l10n.setAttributes(
@@ -1329,6 +1330,10 @@ class UrlbarInput {
         this.searchMode.entry = entry;
       }
       this.toggleAttribute("searchmode", true);
+      
+      if (this._autofillPlaceholder && this.window.gBrowser.userTypedValue) {
+        this.value = this.window.gBrowser.userTypedValue;
+      }
       
       if (this.getAttribute("pageproxystate") == "valid") {
         this.value = "";
@@ -1710,7 +1715,11 @@ class UrlbarInput {
 
 
   _maybeAutofillOnInput(value) {
-    let allowAutofill = this.selectionEnd == value.length && !this.searchMode;
+    
+    let allowAutofill =
+      this.selectionEnd == value.length &&
+      !this.searchMode?.engineName &&
+      this.searchMode?.source != UrlbarUtils.RESULT_SOURCE.SEARCH;
 
     
     
