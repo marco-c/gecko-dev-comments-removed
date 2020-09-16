@@ -332,7 +332,14 @@ function checkUnmodifiedForm(formNum) {
   }
 }
 
-function registerRunTests() {
+
+
+
+
+
+
+
+function registerRunTests(existingPasswordFieldsCount = 0) {
   return new Promise(resolve => {
     function onDOMContentLoaded() {
       var form = document.createElement("form");
@@ -345,8 +352,15 @@ function registerRunTests() {
       password.type = "password";
       form.appendChild(password);
 
+      let foundForcer = false;
       var observer = SpecialPowers.wrapCallback(function(subject, topic, data) {
-        if (data !== "observerforcer") {
+        if (data === "observerforcer") {
+          foundForcer = true;
+        } else {
+          existingPasswordFieldsCount--;
+        }
+
+        if (!foundForcer || existingPasswordFieldsCount > 0) {
           return;
         }
 
