@@ -1967,41 +1967,6 @@ async function checkDefaultSearch(privateOn, reInitSearchService) {
     );
   }
 
-  if (!Services.prefs.getBoolPref("browser.search.modernConfig")) {
-    
-    for (let engine of await Services.search.getEngines()) {
-      await Services.search.removeEngine(engine);
-    }
-    
-    
-    
-    Services.obs.notifyObservers(
-      null,
-      "browser-search-engine-modified",
-      "engine-default"
-    );
-    if (privateOn) {
-      Services.obs.notifyObservers(
-        null,
-        "browser-search-engine-modified",
-        "engine-default-private"
-      );
-    }
-    await promiseNextTick();
-
-    
-    data = TelemetryEnvironment.currentEnvironment;
-    checkEnvironmentData(data);
-    Assert.equal(data.settings.defaultSearchEngine, "NONE");
-    Assert.deepEqual(data.settings.defaultSearchEngineData, { name: "NONE" });
-    if (privateOn) {
-      Assert.equal(data.settings.defaultPrivateSearchEngine, "NONE");
-      Assert.deepEqual(data.settings.defaultPrivateSearchEngineData, {
-        name: "NONE",
-      });
-    }
-  }
-
   
   const SEARCH_ENGINE_ID = "telemetry_default";
   const SEARCH_ENGINE_URL = `http://www.example.org/${

@@ -14,7 +14,6 @@ const { PromiseUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   AddonManager: "resource://gre/modules/AddonManager.jsm",
-  clearTimeout: "resource://gre/modules/Timer.jsm",
   IgnoreLists: "resource://gre/modules/IgnoreLists.jsm",
   OpenSearchEngine: "resource://gre/modules/OpenSearchEngine.jsm",
   OS: "resource://gre/modules/osfile.jsm",
@@ -26,19 +25,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
-  setTimeout: "resource://gre/modules/Timer.jsm",
 });
-
-XPCOMUtils.defineLazyServiceGetters(this, {
-  gEnvironment: ["@mozilla.org/process/environment;1", "nsIEnvironment"],
-});
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gGeoSpecificDefaultsEnabled",
-  SearchUtils.BROWSER_SEARCH_PREF + "geoSpecificDefaults",
-  false
-);
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
@@ -50,33 +37,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   }
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gModernConfig",
-  SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
-  false,
-  () => {
-    
-    Services.search.reInit();
-  }
-);
-
 XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
   return console.createInstance({
     prefix: "SearchService",
     maxLogLevel: SearchUtils.loggingEnabled ? "Debug" : "Warn",
   });
 });
-
-
-const NS_APP_DISTRIBUTION_SEARCH_DIR_LIST = "SrchPluginsDistDL";
-
-
-
-const EXT_SEARCH_PREFIX = "resource://search-extensions/";
-
-
-const EXT_SIGNING_ADDRESS = "search.mozilla.org";
 
 const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
 const QUIT_APPLICATION_TOPIC = "quit-application";
@@ -87,212 +53,19 @@ const SEARCH_DEFAULT_UPDATE_INTERVAL = 7;
 
 
 
-
-const SEARCH_GEO_DEFAULT_UPDATE_INTERVAL = 2592000; 
-
-
-
 const REINIT_IDLE_TIME_SEC = 5 * 60;
 
 
-
-
-const MULTI_LOCALE_ENGINES = [
-  "amazon",
-  "amazondotcom",
-  "bolcom",
-  "ebay",
-  "google",
-  "marktplaats",
-  "mercadolibre",
-  "wikipedia",
-  "wiktionary",
-  "yandex",
-  "multilocale",
-];
-
-
 var ensureKnownRegion = async function(ss) {
-  try {
-    if (gGeoSpecificDefaultsEnabled && !gModernConfig) {
-      
-      let expired =
-        (ss._cache.getAttribute("searchDefaultExpir") || 0) <= Date.now();
-      
-      
-      
-      let defaultEngine = ss._cache.getVerifiedAttribute("searchDefault");
-      let visibleDefaultEngines = ss._cache.getVerifiedAttribute(
-        "visibleDefaultEngines"
-      );
-      let hasValidHashes =
-        (defaultEngine || defaultEngine === undefined) &&
-        (visibleDefaultEngines || visibleDefaultEngines === undefined);
-      if (expired || !hasValidHashes) {
-        await new Promise(resolve => {
-          let timeoutMS = Services.prefs.getIntPref(
-            "geo.provider.network.timeToWaitBeforeSending"
-          );
-          let timerId = setTimeout(() => {
-            timerId = null;
-            resolve();
-          }, timeoutMS);
-
-          let callback = () => {
-            clearTimeout(timerId);
-            resolve();
-          };
-          fetchRegionDefault(ss)
-            .then(callback)
-            .catch(err => {
-              Cu.reportError(err);
-              callback();
-            });
-        });
-      }
-    }
-  } catch (ex) {
-    Cu.reportError(ex);
-  } finally {
-    
-    
-    
-    Services.obs.notifyObservers(
-      null,
-      SearchUtils.TOPIC_SEARCH_SERVICE,
-      "ensure-known-region-done"
-    );
-  }
+  
+  
+  
+  Services.obs.notifyObservers(
+    null,
+    SearchUtils.TOPIC_SEARCH_SERVICE,
+    "ensure-known-region-done"
+  );
 };
-
-
-
-
-function convertGoogleEngines(engineNames) {
-  let overrides = {
-    google: "google-b-d",
-    "google-2018": "google-b-1-d",
-  };
-
-  for (let engine in overrides) {
-    let index = engineNames.indexOf(engine);
-    if (index > -1) {
-      engineNames[index] = overrides[engine];
-    }
-  }
-  return engineNames;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-var fetchRegionDefault = ss =>
-  new Promise(resolve => {
-    let urlTemplate = Services.prefs
-      .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
-      .getCharPref("geoSpecificDefaults.url");
-    let endpoint = Services.urlFormatter.formatURL(urlTemplate);
-
-    
-    if (!endpoint) {
-      resolve();
-      return;
-    }
-
-    
-    const cohortPref = "browser.search.cohort";
-    let cohort = Services.prefs.getCharPref(cohortPref, "");
-    if (cohort) {
-      endpoint += "/" + cohort;
-    }
-
-    logConsole.debug("fetchRegionDefault starting with endpoint ", endpoint);
-
-    let startTime = Date.now();
-    let request = new XMLHttpRequest();
-    request.timeout = 100000; 
-    request.onload = function(event) {
-      let took = Date.now() - startTime;
-
-      let status = event.target.status;
-      if (status != 200) {
-        logConsole.debug("fetchRegionDefault failed with HTTP code ", status);
-        let retryAfter = request.getResponseHeader("retry-after");
-        if (retryAfter) {
-          ss._cache.setAttribute(
-            "searchDefaultExpir",
-            Date.now() + retryAfter * 1000
-          );
-        }
-        resolve();
-        return;
-      }
-
-      let response = event.target.response || {};
-      logConsole.debug("received", response.toSource());
-
-      if (response.cohort) {
-        Services.prefs.setCharPref(cohortPref, response.cohort);
-      } else {
-        Services.prefs.clearUserPref(cohortPref);
-      }
-
-      if (response.settings && response.settings.searchDefault) {
-        let defaultEngine = response.settings.searchDefault;
-        ss._cache.setVerifiedAttribute("searchDefault", defaultEngine);
-        logConsole.debug(
-          "fetchRegionDefault saved searchDefault:",
-          defaultEngine
-        );
-      }
-
-      if (response.settings && response.settings.visibleDefaultEngines) {
-        let visibleDefaultEngines = response.settings.visibleDefaultEngines;
-        let string = visibleDefaultEngines.join(",");
-        ss._cache.setVerifiedAttribute("visibleDefaultEngines", string);
-        logConsole.debug(
-          "fetchRegionDefault saved visibleDefaultEngines:",
-          string
-        );
-      }
-
-      let interval = response.interval || SEARCH_GEO_DEFAULT_UPDATE_INTERVAL;
-      let milliseconds = interval * 1000; 
-      ss._cache.setAttribute("searchDefaultExpir", Date.now() + milliseconds);
-
-      logConsole.debug(
-        "fetchRegionDefault got success response in",
-        took,
-        "ms"
-      );
-      
-      
-      ss._maybeReloadEngines().finally(resolve);
-    };
-    request.ontimeout = function(event) {
-      logConsole.debug("fetchRegionDefault: XHR finally timed-out");
-      resolve();
-    };
-    request.onerror = function(event) {
-      logConsole.debug(
-        "fetchRegionDefault: failed to retrieve territory default information"
-      );
-      resolve();
-    };
-    request.open("GET", endpoint, true);
-    request.setRequestHeader("Content-Type", "application/json");
-    request.responseType = "json";
-    request.send();
-  });
 
 
 
@@ -412,16 +185,6 @@ SearchService.prototype = {
 
 
 
-
-
-
-  _visibleDefaultEngines: [],
-
-  
-
-
-
-
   _searchDefault: null,
 
   
@@ -432,9 +195,6 @@ SearchService.prototype = {
   _searchPrivateDefault: null,
 
   
-
-
-
 
 
 
@@ -471,7 +231,6 @@ SearchService.prototype = {
     this.__sortedEngines = null;
     this._currentEngine = null;
     this._currentPrivateEngine = null;
-    this._visibleDefaultEngines = [];
     this._searchDefault = null;
     this._searchPrivateDefault = null;
     this._searchOrder = [];
@@ -532,12 +291,10 @@ SearchService.prototype = {
     Services.obs.addObserver(this, Region.REGION_TOPIC);
 
     try {
-      if (gModernConfig) {
-        
-        this._engineSelector = new SearchEngineSelector(
-          this._handleConfigurationUpdated.bind(this)
-        );
-      }
+      
+      this._engineSelector = new SearchEngineSelector(
+        this._handleConfigurationUpdated.bind(this)
+      );
 
       
       let cache = await this._cache.get();
@@ -786,8 +543,6 @@ SearchService.prototype = {
     this.idleService.addIdleObserver(this, REINIT_IDLE_TIME_SEC);
   },
 
-  _listJSONURL: `${EXT_SEARCH_PREFIX}list.json`,
-
   get _sortedEngines() {
     if (!this.__sortedEngines) {
       return this._buildSortedEngineList();
@@ -806,87 +561,25 @@ SearchService.prototype = {
 
 
   _originalDefaultEngine(privateMode = false) {
-    
-    
-    
-    if (gModernConfig) {
-      let defaultEngine = this._getEngineByWebExtensionDetails(
-        privateMode && this._searchPrivateDefault
-          ? this._searchPrivateDefault
-          : this._searchDefault
-      );
-
-      if (defaultEngine) {
-        return defaultEngine;
-      }
-
-      if (privateMode) {
-        
-        
-        return this._originalDefaultEngine(false);
-      }
-
-      
-      
-      return this._getSortedEngines(false)[0];
-    }
-
-    
-
-    let defaultEngineName = this._cache.getVerifiedAttribute(
-      privateMode ? "searchDefaultPrivate" : "searchDefault"
+    let defaultEngine = this._getEngineByWebExtensionDetails(
+      privateMode && this._searchPrivateDefault
+        ? this._searchPrivateDefault
+        : this._searchDefault
     );
-    if (!defaultEngineName) {
-      
-      
-      
-      if (SearchUtils.distroID && !privateMode) {
-        let defaultPrefB = Services.prefs.getDefaultBranch(
-          SearchUtils.BROWSER_SEARCH_PREF
-        );
-        try {
-          defaultEngineName = defaultPrefB.getComplexValue(
-            "defaultenginename",
-            Ci.nsIPrefLocalizedString
-          ).data;
-        } catch (ex) {
-          
-          
-          
-          
-          
-          defaultEngineName = this._searchDefault;
-        }
-      } else {
-        defaultEngineName = privateMode
-          ? this._searchPrivateDefault
-          : this._searchDefault;
-      }
+
+    if (defaultEngine) {
+      return defaultEngine;
     }
 
-    if (!defaultEngineName && privateMode) {
+    if (privateMode) {
+      
       
       return this._originalDefaultEngine(false);
     }
 
-    let defaultEngine = this.getEngineByName(defaultEngineName);
-    if (!defaultEngine) {
-      
-      
-      
-      defaultEngineName = privateMode
-        ? this._searchPrivateDefault
-        : this._searchDefault;
-      defaultEngine = this.getEngineByName(defaultEngineName);
-
-      if (!defaultEngine) {
-        
-        
-        return this._getSortedEngines(false)[0];
-      }
-    }
-
-    return defaultEngine;
+    
+    
+    return this._getSortedEngines(false)[0];
   },
 
   
@@ -924,11 +617,6 @@ SearchService.prototype = {
 
 
   async _loadEngines(cache, isReload) {
-    if (!gModernConfig) {
-      await this._loadEnginesLegacy(cache, isReload);
-      return;
-    }
-
     logConsole.debug("_loadEngines: start");
     let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
     this._setDefaultAndOrdersFromSelector(engines, privateDefault);
@@ -992,109 +680,11 @@ SearchService.prototype = {
     }
     this._startupExtensions.clear();
 
-    this._loadEnginesFromCache(cache, true);
+    this._loadEnginesFromCache(cache);
 
     this._loadEnginesMetadataFromCache(cache);
 
     logConsole.debug("_loadEngines: done");
-  },
-
-  
-
-
-
-
-
-
-
-  async _loadEnginesLegacy(cache, isReload) {
-    logConsole.debug("_loadEnginesLegacy: start");
-    let engines = await this._findEnginesLegacy();
-
-    let buildID = Services.appinfo.platformBuildID;
-    let rebuildCache =
-      gEnvironment.get("RELOAD_ENGINES") ||
-      !cache.engines ||
-      cache.version != SearchUtils.CACHE_VERSION ||
-      cache.locale != Services.locale.requestedLocale ||
-      cache.buildID != buildID;
-
-    let enginesCorrupted = false;
-    if (!rebuildCache) {
-      function notInCacheVisibleEngines(engineName) {
-        return !cache.visibleDefaultEngines.includes(engineName);
-      }
-      
-      rebuildCache =
-        cache.visibleDefaultEngines.length !=
-          this._visibleDefaultEngines.length ||
-        this._visibleDefaultEngines.some(notInCacheVisibleEngines);
-
-      
-      
-      if (
-        !rebuildCache &&
-        SearchUtils.distroID == "" &&
-        cache.engines.filter(e => e._isAppProvided).length !=
-          cache.visibleDefaultEngines.length
-      ) {
-        rebuildCache = true;
-        enginesCorrupted = true;
-      }
-    }
-
-    Services.telemetry.scalarSet(
-      "browser.searchinit.engines_cache_corrupted",
-      enginesCorrupted
-    );
-
-    if (!rebuildCache) {
-      logConsole.debug("_loadEnginesLegacy: loading from cache directories");
-      this._loadEnginesFromCache(cache);
-      if (this._engines.size) {
-        logConsole.debug("_loadEnginesLegacy: done using existing cache");
-        return;
-      }
-      logConsole.debug(
-        "_loadEnginesLegacy: No valid engines found in cache. Loading engines from disk."
-      );
-    }
-
-    logConsole.debug(
-      "_loadEnginesLegacy: Absent or outdated cache. Loading engines from disk."
-    );
-    let distDirs = await this._getDistibutionEngineDirectories();
-    for (let loadDir of distDirs) {
-      let enginesFromDir = await this._loadEnginesFromDir(loadDir);
-      enginesFromDir.forEach(this._addEngineToStore, this);
-    }
-
-    let engineList = this._enginesToLocales(engines);
-    for (let [id, locales] of engineList) {
-      await this.ensureBuiltinExtension(id, locales, isReload);
-    }
-
-    logConsole.debug(
-      "_loadEnginesLegacy: loading",
-      this._startupExtensions.size,
-      "engines reported by AddonManager startup"
-    );
-    for (let extension of this._startupExtensions) {
-      await this._installExtensionEngine(
-        extension,
-        [SearchUtils.DEFAULT_TAG],
-        true
-      );
-    }
-
-    logConsole.debug(
-      "_loadEnginesLegacy: loading user-installed engines from the obsolete cache"
-    );
-    this._loadEnginesFromCache(cache, true);
-
-    this._loadEnginesMetadataFromCache(cache);
-
-    logConsole.debug("_loadEnginesLegacy: done using rebuilt cache");
   },
 
   
@@ -1125,61 +715,6 @@ SearchService.prototype = {
       }
     }
     return engines;
-  },
-
-  
-
-
-
-
-
-  async _getDistibutionEngineDirectories() {
-    if (gModernConfig) {
-      throw new Error(
-        "_getDistibutionEngineDirectories is obsolete for modern config."
-      );
-    }
-    
-    let distDirs = [];
-    let locations;
-    try {
-      locations = Services.dirsvc.get(
-        NS_APP_DISTRIBUTION_SEARCH_DIR_LIST,
-        Ci.nsISimpleEnumerator
-      );
-    } catch (e) {
-      
-      
-      locations = [];
-    }
-    for (let dir of locations) {
-      let iterator = new OS.File.DirectoryIterator(dir.path, {
-        winPattern: "*.xml",
-      });
-      try {
-        
-        let { done } = await iterator.next();
-        if (!done) {
-          distDirs.push(dir);
-        }
-      } catch (ex) {
-        if (!(ex instanceof OS.File.Error)) {
-          throw ex;
-        }
-        if (ex.becauseAccessDenied) {
-          Cu.reportError(
-            "Not loading distribution files because access was denied."
-          );
-        } else if (!ex.becauseNoSuchFile) {
-          throw ex;
-        }
-      } finally {
-        
-        
-        iterator.close().catch(Cu.reportError);
-      }
-    }
-    return distDirs;
   },
 
   
@@ -1221,49 +756,6 @@ SearchService.prototype = {
 
 
 
-
-
-
-
-  _enginesToLocales(engines) {
-    let engineLocales = new Map();
-    for (let engine of engines) {
-      let [extensionName, locale] = this._parseEngineName(engine);
-      let id = extensionName + "@" + EXT_SIGNING_ADDRESS;
-      let locales = engineLocales.get(id) || new Set();
-      locales.add(locale);
-      engineLocales.set(id, locales);
-    }
-    return engineLocales;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _parseEngineName(engineName) {
-    let [name, locale] = engineName.split(/-(.+)/);
-
-    if (!MULTI_LOCALE_ENGINES.includes(name)) {
-      return [engineName, SearchUtils.DEFAULT_TAG];
-    }
-
-    if (!locale) {
-      locale = SearchUtils.DEFAULT_TAG;
-    }
-    return [name, locale];
-  },
-
-  
-
-
-
   async _maybeReloadEngines() {
     if (!gInitialized) {
       if (this._maybeReloadDebounce) {
@@ -1296,56 +788,6 @@ SearchService.prototype = {
       return;
     }
     logConsole.debug("Running maybeReloadEngines");
-
-    
-    if (!gModernConfig) {
-      
-      const prevCurrentEngine = this._currentEngine;
-      const prevPrivateEngine = this._currentPrivateEngine;
-      
-      this._currentEngine = null;
-      this._currentPrivateEngine = null;
-      this._dontSetUseDBForOrder = true;
-      
-      
-      
-      this.__sortedEngines = null;
-      await this._loadEngines(await this._cache.get(), true);
-
-      
-      
-      if (prevCurrentEngine && this.defaultEngine !== prevCurrentEngine) {
-        SearchUtils.notifyAction(
-          this._currentEngine,
-          SearchUtils.MODIFIED_TYPE.DEFAULT
-        );
-        
-        
-        if (!this._separatePrivateDefault) {
-          SearchUtils.notifyAction(
-            this._currentEngine,
-            SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
-          );
-        }
-      }
-      if (
-        this._separatePrivateDefault &&
-        prevPrivateEngine &&
-        this.defaultPrivateEngine !== prevPrivateEngine
-      ) {
-        SearchUtils.notifyAction(
-          this._currentPrivateEngine,
-          SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
-        );
-      }
-      Services.obs.notifyObservers(
-        null,
-        SearchUtils.TOPIC_SEARCH_SERVICE,
-        "engines-reloaded"
-      );
-      logConsole.debug("maybeReloadEngines complete");
-      return;
-    }
 
     
     const prevCurrentEngine = this._currentEngine;
@@ -1568,14 +1010,6 @@ SearchService.prototype = {
 
     (async () => {
       try {
-        
-        
-        if (gModernConfig && !this._engineSelector) {
-          this._engineSelector = new SearchEngineSelector(
-            this._handleConfigurationUpdated.bind(this)
-          );
-        }
-
         this._initObservers = PromiseUtils.defer();
 
         
@@ -1747,9 +1181,7 @@ SearchService.prototype = {
     }
   },
 
-  
-  
-  _loadEnginesFromCache(cache, skipAppProvided) {
+  _loadEnginesFromCache(cache) {
     if (!cache.engines) {
       return;
     }
@@ -1764,7 +1196,7 @@ SearchService.prototype = {
     for (let engine of cache.engines) {
       
       
-      if (skipAppProvided && (engine._isAppProvided || engine._isBuiltin)) {
+      if (engine._isAppProvided || engine._isBuiltin) {
         ++skippedEngines;
         continue;
       }
@@ -1796,60 +1228,6 @@ SearchService.prototype = {
       logConsole.error("Failed to load", json._name, "from cache:", ex);
       logConsole.debug("Engine JSON:", json.toSource());
     }
-  },
-
-  
-
-
-
-
-
-
-
-  async _loadEnginesFromDir(dir) {
-    logConsole.debug(
-      "_loadEnginesFromDir: Searching in",
-      dir.path,
-      "for search engines."
-    );
-
-    let iterator = new OS.File.DirectoryIterator(dir.path);
-
-    let osfiles = await iterator.nextBatch();
-    iterator.close();
-
-    let engines = [];
-    for (let osfile of osfiles) {
-      if (osfile.isDir || osfile.isSymLink) {
-        continue;
-      }
-
-      let fileInfo = await OS.File.stat(osfile.path);
-      if (fileInfo.size == 0) {
-        continue;
-      }
-
-      let parts = osfile.path.split(".");
-      if (parts.length <= 1 || parts.pop().toLowerCase() != "xml") {
-        
-        continue;
-      }
-
-      let addedEngine = null;
-      try {
-        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-        file.initWithPath(osfile.path);
-        addedEngine = new OpenSearchEngine({
-          fileURI: file,
-          isAppProvided: true,
-        });
-        await addedEngine._initFromFile(file);
-        engines.push(addedEngine);
-      } catch (ex) {
-        logConsole.error("Failed to load", osfile.path, ex);
-      }
-    }
-    return engines;
   },
 
   async _fetchEngineSelectorEngines() {
@@ -1899,238 +1277,6 @@ SearchService.prototype = {
         locale: privateDefault.webExtension.locale,
       };
     }
-  },
-
-  
-
-
-
-
-
-  async _findEnginesLegacy() {
-    logConsole.debug("_findEnginesLegacy: looking for engines in list.json");
-
-    let chan = SearchUtils.makeChannel(this._listJSONURL);
-    if (!chan) {
-      logConsole.debug(
-        "_findEnginesLegacy:",
-        this._listJSONURL,
-        "isn't registered"
-      );
-      return [];
-    }
-
-    
-    let request = new XMLHttpRequest();
-    request.overrideMimeType("text/plain");
-    let list = await new Promise(resolve => {
-      request.onload = function(event) {
-        resolve(event.target.responseText);
-      };
-      request.onerror = function(event) {
-        logConsole.debug(
-          "_findEnginesLegacy: failed to read",
-          this._listJSONURL
-        );
-        resolve();
-      };
-      request.open("GET", Services.io.newURI(this._listJSONURL).spec, true);
-      request.send();
-    });
-
-    return this._parseListJSON(list);
-  },
-
-  
-
-
-
-
-
-
-
-  async _parseListJSON(list) {
-    let json;
-    try {
-      json = JSON.parse(list);
-    } catch (ex) {
-      logConsole.error("parseListJSON: Failed to parse list.json:", ex);
-      return [];
-    }
-
-    let searchRegion = Region.home;
-
-    let searchSettings;
-    let locale = Services.locale.appLocaleAsBCP47;
-    if ("locales" in json && locale in json.locales) {
-      searchSettings = json.locales[locale];
-    } else {
-      
-      
-      if (!("default" in json)) {
-        Cu.reportError("parseListJSON: Missing default in list.json");
-        dump("parseListJSON: Missing default in list.json\n");
-        return [];
-      }
-      searchSettings = json;
-    }
-
-    
-    
-    
-    let engineNames;
-    let visibleDefaultEngines = this._cache.getVerifiedAttribute(
-      "visibleDefaultEngines"
-    );
-    if (visibleDefaultEngines) {
-      let jarNames = new Set();
-      for (let region in searchSettings) {
-        
-        
-        if (!("visibleDefaultEngines" in searchSettings[region])) {
-          continue;
-        }
-        for (let engine of searchSettings[region].visibleDefaultEngines) {
-          jarNames.add(engine);
-        }
-        if ("regionOverrides" in json && searchRegion in json.regionOverrides) {
-          for (let engine in json.regionOverrides[searchRegion]) {
-            jarNames.add(json.regionOverrides[searchRegion][engine]);
-          }
-        }
-      }
-
-      engineNames = visibleDefaultEngines.split(",");
-      
-      
-      engineNames = convertGoogleEngines(engineNames);
-
-      for (let engineName of engineNames) {
-        
-        
-        
-        
-        
-        
-        if (!jarNames.has(engineName)) {
-          logConsole.debug(
-            "_parseListJSON: ignoring visibleDefaultEngines value because",
-            engineName,
-            "is not in the jar engines we have found"
-          );
-          engineNames = null;
-          break;
-        }
-      }
-    }
-
-    
-    if (!engineNames || !engineNames.length) {
-      if (
-        searchRegion &&
-        searchRegion in searchSettings &&
-        "visibleDefaultEngines" in searchSettings[searchRegion]
-      ) {
-        engineNames = searchSettings[searchRegion].visibleDefaultEngines;
-      } else {
-        engineNames = searchSettings.default.visibleDefaultEngines;
-      }
-    }
-
-    
-    
-    let branch = Services.prefs.getDefaultBranch(
-      SearchUtils.BROWSER_SEARCH_PREF
-    );
-    if (
-      SearchUtils.isPartnerBuild() &&
-      branch.getPrefType("ignoredJAREngines") == branch.PREF_STRING
-    ) {
-      let ignoredJAREngines = branch
-        .getCharPref("ignoredJAREngines")
-        .split(",");
-      let filteredEngineNames = engineNames.filter(
-        e => !ignoredJAREngines.includes(e)
-      );
-      
-      if (filteredEngineNames.length) {
-        engineNames = filteredEngineNames;
-      }
-    }
-
-    if ("regionOverrides" in json && searchRegion in json.regionOverrides) {
-      for (let engine in json.regionOverrides[searchRegion]) {
-        let index = engineNames.indexOf(engine);
-        if (index > -1) {
-          engineNames[index] = json.regionOverrides[searchRegion][engine];
-        }
-      }
-    }
-
-    
-    if (AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")) {
-      let esrOverrides = {
-        "google-b-d": "google-b-e",
-        "google-b-1-d": "google-b-1-e",
-      };
-
-      for (let engine in esrOverrides) {
-        let index = engineNames.indexOf(engine);
-        if (index > -1) {
-          engineNames[index] = esrOverrides[engine];
-        }
-      }
-    }
-
-    
-    this._visibleDefaultEngines = engineNames;
-
-    if (
-      searchRegion &&
-      searchRegion in searchSettings &&
-      "searchDefault" in searchSettings[searchRegion]
-    ) {
-      this._searchDefault = searchSettings[searchRegion].searchDefault;
-    } else if ("searchDefault" in searchSettings.default) {
-      this._searchDefault = searchSettings.default.searchDefault;
-    } else {
-      this._searchDefault = json.default.searchDefault;
-    }
-
-    if (!this._searchDefault) {
-      Cu.reportError("parseListJSON: No searchDefault");
-    }
-
-    if (
-      searchRegion &&
-      searchRegion in searchSettings &&
-      "searchPrivateDefault" in searchSettings[searchRegion]
-    ) {
-      this._searchPrivateDefault =
-        searchSettings[searchRegion].searchPrivateDefault;
-    } else if ("searchPrivateDefault" in searchSettings.default) {
-      this._searchPrivateDefault = searchSettings.default.searchPrivateDefault;
-    } else {
-      this._searchPrivateDefault = json.default.searchPrivateDefault;
-    }
-
-    if (!this._searchPrivateDefault) {
-      
-      this._searchPrivateDefault = this._searchDefault;
-    }
-
-    if (
-      searchRegion &&
-      searchRegion in searchSettings &&
-      "searchOrder" in searchSettings[searchRegion]
-    ) {
-      this._searchOrder = searchSettings[searchRegion].searchOrder;
-    } else if ("searchOrder" in searchSettings.default) {
-      this._searchOrder = searchSettings.default.searchOrder;
-    } else if ("searchOrder" in json.default) {
-      this._searchOrder = json.default.searchOrder;
-    }
-    return [...engineNames];
   },
 
   _saveSortedEngineList() {
@@ -2243,34 +1389,6 @@ SearchService.prototype = {
       addedEngines.add(engine.name);
     }
 
-    if (!gModernConfig && SearchUtils.distroID) {
-      try {
-        var extras = Services.prefs.getChildList(
-          SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
-        );
-
-        
-        
-        extras.sort();
-
-        for (const prefName of extras) {
-          const engineName = Services.prefs.getCharPref(prefName);
-          maybeAddEngineToSort(engines.find(e => e.name == engineName));
-        }
-      } catch (e) {}
-
-      let i = 0;
-      while (++i) {
-        const prefName = `${SearchUtils.BROWSER_SEARCH_PREF}order.${i}`;
-        const engineName = getLocalizedPref(prefName);
-        if (!engineName) {
-          break;
-        }
-
-        maybeAddEngineToSort(engines.find(e => e.name == engineName));
-      }
-    }
-
     
     
     const originalDefault = this.originalDefaultEngine;
@@ -2286,42 +1404,25 @@ SearchService.prototype = {
     let remainingEngines;
     const collator = new Intl.Collator();
 
-    if (gModernConfig) {
-      remainingEngines = engines.filter(e => !addedEngines.has(e.name));
+    remainingEngines = engines.filter(e => !addedEngines.has(e.name));
 
-      
-      remainingEngines.sort((a, b) => {
-        if (a._orderHint && b._orderHint) {
-          if (a._orderHint == b._orderHint) {
-            return collator.compare(a.name, b.name);
-          }
-          return b._orderHint - a._orderHint;
+    
+    remainingEngines.sort((a, b) => {
+      if (a._orderHint && b._orderHint) {
+        if (a._orderHint == b._orderHint) {
+          return collator.compare(a.name, b.name);
         }
-        if (a._orderHint) {
-          return -1;
-        }
-        if (b._orderHint) {
-          return 1;
-        }
-        return collator.compare(a.name, b.name);
-      });
-    } else {
-      for (let engineName of this._searchOrder) {
-        maybeAddEngineToSort(engines.find(e => e.name == engineName));
+        return b._orderHint - a._orderHint;
       }
-
-      remainingEngines = [];
-
-      for (let engine of engines.values()) {
-        if (!addedEngines.has(engine.name)) {
-          remainingEngines.push(engine);
-        }
+      if (a._orderHint) {
+        return -1;
       }
+      if (b._orderHint) {
+        return 1;
+      }
+      return collator.compare(a.name, b.name);
+    });
 
-      remainingEngines.sort((a, b) => {
-        return collator.compare(a.name, b.name);
-      });
-    }
     return [...sortedEngines, ...remainingEngines];
   },
 
@@ -2586,18 +1687,6 @@ SearchService.prototype = {
       await this.init();
     }
     let existingEngine = this._engines.get(name);
-    
-    
-    if (
-      !gModernConfig &&
-      existingEngine &&
-      existingEngine._loadPath.startsWith("[distribution]")
-    ) {
-      throw Components.Exception(
-        "Not loading engine due to having a distribution engine with the same name",
-        Cr.NS_ERROR_FILE_ALREADY_EXISTS
-      );
-    }
     if (!isReload && existingEngine) {
       if (
         extensionID &&
@@ -2687,25 +1776,6 @@ SearchService.prototype = {
 
 
   async _upgradeExtensionEngine(extension) {
-    if (!gModernConfig) {
-      let extensionEngines = await this.getEnginesByExtensionID(extension.id);
-
-      for (let engine of extensionEngines) {
-        let manifest = extension.manifest;
-        let locale = engine._locale || SearchUtils.DEFAULT_TAG;
-        if (locale != SearchUtils.DEFAULT_TAG) {
-          manifest = await extension.getLocalizedManifest(locale);
-        }
-        engine._updateFromManifest(
-          extension.id,
-          extension.baseURI,
-          manifest,
-          locale
-        );
-      }
-      return extensionEngines;
-    }
-
     let { engines } = await this._fetchEngineSelectorEngines();
     let extensionEngines = await this.getEnginesByExtensionID(extension.id);
 
