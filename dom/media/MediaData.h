@@ -377,6 +377,10 @@ class AudioData : public MediaData {
 
   
   
+  bool IsAudible() const;
+
+  
+  
   bool AdjustForStartTime(const media::TimeUnit& aStartTime) override;
 
   const uint32_t mChannels;
