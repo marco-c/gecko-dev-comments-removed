@@ -1450,19 +1450,54 @@ bool MinidumpGenerator::WriteCVRecord(MDRawModule *module, int cpu_type, int cpu
   
   unsigned char identifier[16];
   bool result = false;
-  if (in_memory) {
-    MacFileUtilities::MachoID macho(module_path,
-        reinterpret_cast<void *>(module->base_of_image),
-        static_cast<size_t>(module->size_of_image));
-    result = macho.UUIDCommand(cpu_type, cpu_subtype, identifier);
-    if (!result)
-      result = macho.MD5(cpu_type, cpu_subtype, identifier);
-  }
+  bool in_memory_changed = false;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  while (true) {
+    if (in_memory) {
+      MacFileUtilities::MachoID macho(module_path,
+          reinterpret_cast<void *>(module->base_of_image),
+          static_cast<size_t>(module->size_of_image));
+      result = macho.UUIDCommand(cpu_type, cpu_subtype, identifier);
+      if (!result)
+        result = macho.MD5(cpu_type, cpu_subtype, identifier);
+      if (result || in_memory_changed)
+        break;
+    }
 
-  if (!result) {
-     FileID file_id(module_path);
-     result = file_id.MachoIdentifier(cpu_type, cpu_subtype,
-                                      identifier);
+    if (!result) {
+       FileID file_id(module_path);
+       result = file_id.MachoIdentifier(cpu_type, cpu_subtype,
+                                        identifier);
+    }
+    if (result)
+      break;
+
+    if (!in_memory) {
+      in_memory = true;
+      in_memory_changed = true;
+    } else
+      break;
   }
 
   if (result) {
