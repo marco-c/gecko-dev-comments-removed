@@ -42,6 +42,13 @@ bool nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(bool aFromPrivateWindow) {
 
 void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
     mozilla::net::DocumentLoadListener* aDocumentLoadListener) {
+  
+  
+  if (!mozilla::StaticPrefs::
+          dom_security_https_only_mode_send_http_background_request()) {
+    return;
+  }
+
   nsCOMPtr<nsIChannel> channel = aDocumentLoadListener->GetChannel();
   if (!channel) {
     return;
@@ -491,12 +498,25 @@ TestHTTPAnswerRunnable::Notify(nsITimer* aTimer) {
       nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
 
   
+  
+  nsCOMPtr<nsIURI> backgroundChannelURI;
+  nsAutoCString prePathStr;
+  nsresult rv = mURI->GetPrePath(prePathStr);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  rv = NS_NewURI(getter_AddRefs(backgroundChannelURI), prePathStr);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
   nsCOMPtr<nsIChannel> testHTTPChannel;
-  nsresult rv =
-      NS_NewChannel(getter_AddRefs(testHTTPChannel), mURI, nullPrincipal,
-                    nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-                    nsIContentPolicy::TYPE_OTHER, nullptr, nullptr, nullptr,
-                    nullptr, loadFlags);
+  rv = NS_NewChannel(getter_AddRefs(testHTTPChannel), backgroundChannelURI,
+                     nullPrincipal,
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+                     nsIContentPolicy::TYPE_OTHER, nullptr, nullptr, nullptr,
+                     nullptr, loadFlags);
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
