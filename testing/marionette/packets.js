@@ -6,29 +6,33 @@
 
 const EXPORTED_SYMBOLS = ["RawPacket", "Packet", "JSONPacket", "BulkPacket"];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const { StreamUtils } = ChromeUtils.import(
-  "chrome://marionette/content/stream-utils.js"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  StreamUtils: "chrome://marionette/content/stream-utils.js",
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const unicodeConverter = Cc[
   "@mozilla.org/intl/scriptableunicodeconverter"
