@@ -4331,47 +4331,50 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   EditActionResult result(NS_OK);
   EditorDOMPoint pointToPutCaret(aCaretPoint);
   if (joiner.CanJoinBlocks()) {
-    AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &pointToPutCaret);
-    result |= joiner.Run(aHTMLEditor);
-    if (result.Failed()) {
-      NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
+    {
+      AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(),
+                                &pointToPutCaret);
+      result |= joiner.Run(aHTMLEditor);
+      if (result.Failed()) {
+        NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
+        return result;
+      }
+    }
+
+    
+    
+    
+    if (result.Ignored() &&
+        mLeafContentInOtherBlock != aCaretPoint.GetContainer()) {
+      
+      
+      
+      
+      EditorRawDOMPoint newCaretPoint =
+          aDirectionAndAmount == nsIEditor::ePrevious
+              ? EditorRawDOMPoint::AtEndOf(*mLeafContentInOtherBlock)
+              : EditorRawDOMPoint(mLeafContentInOtherBlock, 0);
+      nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPoint);
+      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (!aHTMLEditor.SelectionRefPtr()->RangeCount()) {
+        NS_WARNING("Failed to put caret to new position");
+        return EditActionHandled(rv);
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+      AutoRangeArray rangesToDelete(*aHTMLEditor.SelectionRefPtr());
+      AutoDeleteRangesHandler anotherHandler(&mDeleteRangesHandler);
+      result = anotherHandler.Run(aHTMLEditor, aDirectionAndAmount,
+                                  aStripWrappers, rangesToDelete);
+      NS_WARNING_ASSERTION(result.Succeeded(),
+                           "Recursive AutoDeleteRangesHandler::Run() failed");
       return result;
     }
   } else {
     result.MarkAsHandled();
-  }
-
-  
-  
-  
-  if (result.Ignored() &&
-      mLeafContentInOtherBlock != aCaretPoint.GetContainer()) {
-    
-    
-    
-    
-    EditorRawDOMPoint newCaretPoint =
-        aDirectionAndAmount == nsIEditor::ePrevious
-            ? EditorRawDOMPoint::AtEndOf(*mLeafContentInOtherBlock)
-            : EditorRawDOMPoint(mLeafContentInOtherBlock, 0);
-    nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPoint);
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return result.SetResult(NS_ERROR_EDITOR_DESTROYED);
-    }
-    if (!aHTMLEditor.SelectionRefPtr()->RangeCount()) {
-      NS_WARNING("Failed to put caret to new position");
-      return EditActionHandled(rv);
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "HTMLEditor::CollapseSelectionTo() failed, but ignored");
-    AutoRangeArray rangesToDelete(*aHTMLEditor.SelectionRefPtr());
-    AutoDeleteRangesHandler anotherHandler(&mDeleteRangesHandler);
-    result = anotherHandler.Run(aHTMLEditor, aDirectionAndAmount,
-                                aStripWrappers, rangesToDelete);
-    NS_WARNING_ASSERTION(result.Succeeded(),
-                         "Recursive AutoDeleteRangesHandler::Run() failed");
-    return result;
   }
 
   
@@ -4454,8 +4457,6 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
       return result;
     }
-  } else {
-    result.MarkAsHandled();
   }
   
   
@@ -4836,7 +4837,6 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
 
   
   EditActionResult result(NS_OK);
-  result.MarkAsHandled();
   while (true) {
     AutoTrackDOMRange firstRangeTracker(aHTMLEditor.RangeUpdaterRef(),
                                         &aRangesToDelete.FirstRangeRef());
@@ -4850,7 +4850,7 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
         NS_WARNING(
             "AutoBlockElementsJoiner::"
             "DeleteNodesEntirelyInRangeButKeepTableStructure() failed");
-        return result.SetResult(deleteResult.unwrapErr());
+        return EditActionResult(deleteResult.unwrapErr());
       }
       
       joinInclusiveAncestorBlockElements &= deleteResult.unwrap();
@@ -4900,14 +4900,14 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       break;
     }
 
-    if (joiner.CanJoinBlocks()) {
-      result |= joiner.Run(aHTMLEditor);
-      if (result.Failed()) {
-        NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
-        return result;
-      }
-    } else {
-      result.MarkAsHandled();
+    if (!joiner.CanJoinBlocks()) {
+      break;
+    }
+
+    result |= joiner.Run(aHTMLEditor);
+    if (result.Failed()) {
+      NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
+      return result;
     }
     break;
   }
@@ -4916,10 +4916,14 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       aHTMLEditor, aDirectionAndAmount,
       EditorDOMPoint(aRangesToDelete.FirstRangeRef()->StartRef()),
       EditorDOMPoint(aRangesToDelete.FirstRangeRef()->EndRef()));
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "AutoDeleteRangesHandler::"
-                       "DeleteUnnecessaryNodesAndCollapseSelection() failed");
-  return result.SetResult(rv);
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        "AutoDeleteRangesHandler::DeleteUnnecessaryNodesAndCollapseSelection() "
+        "failed");
+    return EditActionResult(rv);
+  }
+
+  return result.MarkAsHandled();
 }
 
 nsresult
