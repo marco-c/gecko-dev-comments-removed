@@ -4,60 +4,39 @@
 
 #![deny(missing_docs)]
 
-extern crate serde_bytes;
-
-use peek_poke::PeekPoke;
 use std::cell::Cell;
 use std::fmt;
 use std::marker::PhantomData;
-use std::os::raw::c_void;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::u32;
 use time::precise_time_ns;
 
-use crate::{display_item as di, font};
-use crate::channel::{Sender, Receiver, single_msg_channel, unbounded_channel};
-use crate::color::{ColorU, ColorF};
-use crate::display_list::BuiltDisplayList;
-use crate::font::SharedFontInstanceMap;
-use crate::image::{BlobImageData, BlobImageKey, ImageData, ImageDescriptor, ImageKey};
-use crate::image::{BlobImageParams, BlobImageRequest, BlobImageResult, AsyncBlobImageRasterizer, BlobImageHandler};
-use crate::image::DEFAULT_TILE_SIZE;
-use crate::resources::ApiResources;
-use crate::units::*;
+use crate::api::channel::{Sender, single_msg_channel, unbounded_channel};
+use crate::api::{ColorF, BuiltDisplayList, IdNamespace, ExternalScrollId};
+use crate::api::{SharedFontInstanceMap, FontKey, FontInstanceKey, NativeFontHandle, ZoomFactor};
+use crate::api::{BlobImageData, BlobImageKey, ImageData, ImageDescriptor, ImageKey, Epoch, QualitySettings};
+use crate::api::{BlobImageParams, BlobImageRequest, BlobImageResult, AsyncBlobImageRasterizer, BlobImageHandler};
+use crate::api::{DocumentId, PipelineId, PropertyBindingId, PropertyBindingKey, ExternalEvent, DocumentLayer};
+use crate::api::{HitTestResult, HitTesterRequest, ApiHitTester, PropertyValue, DynamicProperties};
+use crate::api::{ScrollClamping, TileSize, NotificationRequest, DebugFlags, ScrollNodeState};
+use crate::api::{GlyphDimensionRequest, GlyphIndexRequest, GlyphIndex, GlyphDimensions};
+use crate::api::{FontInstanceOptions, FontInstancePlatformOptions, FontVariation};
+use crate::api::DEFAULT_TILE_SIZE;
+use crate::api::units::*;
+use crate::api_resources::ApiResources;
+use crate::intern::InterningMemoryReport;
 
-
-pub type TileSize = u16;
-
-
-pub type DocumentLayer = i8;
-
-
-
-#[derive(Copy, Clone, Deserialize, Serialize)]
-pub struct QualitySettings {
-    
-    
-    
-    
-    pub force_subpixel_aa_where_possible: bool,
-}
-
-impl Default for QualitySettings {
-    fn default() -> Self {
-        QualitySettings {
-            
-            
-            force_subpixel_aa_where_possible: false,
-        }
-    }
-}
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(any(feature = "serde"), derive(Deserialize, Serialize))]
+struct ResourceId(pub u32);
 
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
+#[cfg_attr(any(feature = "serde"), derive(Deserialize, Serialize))]
 pub enum ResourceUpdate {
     
     AddImage(AddImage),
@@ -84,7 +63,7 @@ pub enum ResourceUpdate {
     
     
     
-    DeleteFont(font::FontKey),
+    DeleteFont(FontKey),
     
     AddFontInstance(AddFontInstance),
     
@@ -92,7 +71,7 @@ pub enum ResourceUpdate {
     
     
     
-    DeleteFontInstance(font::FontInstanceKey),
+    DeleteFontInstance(FontInstanceKey),
 }
 
 impl fmt::Debug for ResourceUpdate {
@@ -223,6 +202,7 @@ impl Transaction {
     
     
     
+    
     pub fn set_root_pipeline(&mut self, pipeline_id: PipelineId) {
         self.scene_ops.push(SceneMsg::SetRootPipeline(pipeline_id));
     }
@@ -321,7 +301,7 @@ impl Transaction {
     pub fn scroll_node_with_id(
         &mut self,
         origin: LayoutPoint,
-        id: di::ExternalScrollId,
+        id: ExternalScrollId,
         clamp: ScrollClamping,
     ) {
         self.frame_ops.push(FrameMsg::ScrollNodeWithId(origin, id, clamp));
@@ -497,31 +477,31 @@ impl Transaction {
     }
 
     
-    pub fn add_raw_font(&mut self, key: font::FontKey, bytes: Vec<u8>, index: u32) {
+    pub fn add_raw_font(&mut self, key: FontKey, bytes: Vec<u8>, index: u32) {
         self.resource_updates
             .push(ResourceUpdate::AddFont(AddFont::Raw(key, Arc::new(bytes), index)));
     }
 
     
-    pub fn add_native_font(&mut self, key: font::FontKey, native_handle: font::NativeFontHandle) {
+    pub fn add_native_font(&mut self, key: FontKey, native_handle: NativeFontHandle) {
         self.resource_updates
             .push(ResourceUpdate::AddFont(AddFont::Native(key, native_handle)));
     }
 
     
-    pub fn delete_font(&mut self, key: font::FontKey) {
+    pub fn delete_font(&mut self, key: FontKey) {
         self.resource_updates.push(ResourceUpdate::DeleteFont(key));
     }
 
     
     pub fn add_font_instance(
         &mut self,
-        key: font::FontInstanceKey,
-        font_key: font::FontKey,
+        key: FontInstanceKey,
+        font_key: FontKey,
         glyph_size: f32,
-        options: Option<font::FontInstanceOptions>,
-        platform_options: Option<font::FontInstancePlatformOptions>,
-        variations: Vec<font::FontVariation>,
+        options: Option<FontInstanceOptions>,
+        platform_options: Option<FontInstancePlatformOptions>,
+        variations: Vec<FontVariation>,
     ) {
         self.resource_updates
             .push(ResourceUpdate::AddFontInstance(AddFontInstance {
@@ -535,7 +515,7 @@ impl Transaction {
     }
 
     
-    pub fn delete_font_instance(&mut self, key: font::FontInstanceKey) {
+    pub fn delete_font_instance(&mut self, key: FontInstanceKey) {
         self.resource_updates.push(ResourceUpdate::DeleteFontInstance(key));
     }
 
@@ -629,7 +609,8 @@ impl TransactionMsg {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
+#[cfg_attr(any(feature = "serde"), derive(Deserialize, Serialize))]
 pub struct AddImage {
     
     pub key: ImageKey,
@@ -646,7 +627,8 @@ pub struct AddImage {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
+#[cfg_attr(any(feature = "serde"), derive(Deserialize, Serialize))]
 pub struct UpdateImage {
     
     pub key: ImageKey,
@@ -664,7 +646,8 @@ pub struct UpdateImage {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
+#[cfg_attr(any(feature = "serde"), derive(Deserialize, Serialize))]
 pub struct AddBlobImage {
     
     pub key: BlobImageKey,
@@ -690,7 +673,8 @@ pub struct AddBlobImage {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
+#[cfg_attr(any(feature = "serde"), derive(Deserialize, Serialize))]
 pub struct UpdateBlobImage {
     
     pub key: BlobImageKey,
@@ -709,58 +693,34 @@ pub struct UpdateBlobImage {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
+#[cfg_attr(any(feature = "serde"), derive(Deserialize, Serialize))]
 pub enum AddFont {
     
-    Raw(font::FontKey, Arc<Vec<u8>>, u32),
+    Raw(FontKey, Arc<Vec<u8>>, u32),
     
-    Native(font::FontKey, font::NativeFontHandle),
-}
-
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct HitTestItem {
-    
-    pub pipeline: PipelineId,
-
-    
-    pub tag: di::ItemTag,
-
-    
-    
-    
-    pub point_in_viewport: LayoutPoint,
-
-    
-    
-    pub point_relative_to_item: LayoutPoint,
-}
-
-
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct HitTestResult {
-    
-    pub items: Vec<HitTestItem>,
+    Native(FontKey, NativeFontHandle),
 }
 
 
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
+#[cfg_attr(any(feature = "serde"), derive(Deserialize, Serialize))]
 pub struct AddFontInstance {
     
-    pub key: font::FontInstanceKey,
+    pub key: FontInstanceKey,
     
-    pub font_key: font::FontKey,
+    pub font_key: FontKey,
     
     pub glyph_size: f32,
     
-    pub options: Option<font::FontInstanceOptions>,
+    pub options: Option<FontInstanceOptions>,
     
-    pub platform_options: Option<font::FontInstancePlatformOptions>,
+    pub platform_options: Option<FontInstancePlatformOptions>,
     
-    pub variations: Vec<font::FontVariation>,
+    pub variations: Vec<FontVariation>,
 }
 
 
@@ -813,7 +773,7 @@ pub enum FrameMsg {
     
     SetPan(DeviceIntPoint),
     
-    ScrollNodeWithId(LayoutPoint, di::ExternalScrollId, ScrollClamping),
+    ScrollNodeWithId(LayoutPoint, ExternalScrollId, ScrollClamping),
     
     GetScrollNodeState(Sender<Vec<ScrollNodeState>>),
     
@@ -949,9 +909,9 @@ pub enum DebugCommand {
 
 pub enum ApiMsg {
     
-    GetGlyphDimensions(font::GlyphDimensionRequest),
+    GetGlyphDimensions(GlyphDimensionRequest),
     
-    GetGlyphIndices(font::GlyphIndexRequest),
+    GetGlyphIndices(GlyphIndexRequest),
     
     CloneApi(Sender<IdNamespace>),
     
@@ -1008,235 +968,6 @@ impl fmt::Debug for ApiMsg {
             ApiMsg::FlushSceneBuilder(..) => "ApiMsg::FlushSceneBuilder",
         })
     }
-}
-
-
-
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct Epoch(pub u32);
-
-impl Epoch {
-    
-    pub fn invalid() -> Epoch {
-        Epoch(u32::MAX)
-    }
-}
-
-
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Eq, MallocSizeOf, PartialEq, Hash, Ord, PartialOrd, PeekPoke)]
-#[derive(Deserialize, Serialize)]
-pub struct IdNamespace(pub u32);
-
-
-
-
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
-pub struct DocumentId {
-    
-    pub namespace_id: IdNamespace,
-    
-    pub id: u32,
-}
-
-impl DocumentId {
-    
-    pub fn new(namespace_id: IdNamespace, id: u32) -> Self {
-        DocumentId {
-            namespace_id,
-            id,
-        }
-    }
-
-    
-    pub const INVALID: DocumentId = DocumentId { namespace_id: IdNamespace(0), id: 0 };
-}
-
-
-
-
-
-pub type PipelineSourceId = u32;
-
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
-pub struct PipelineId(pub PipelineSourceId, pub u32);
-
-impl Default for PipelineId {
-    fn default() -> Self {
-        PipelineId::dummy()
-    }
-}
-
-impl PipelineId {
-    
-    pub fn dummy() -> Self {
-        PipelineId(0, 0)
-    }
-}
-
-
-#[derive(Copy, Clone, Debug, MallocSizeOf, Serialize, Deserialize)]
-pub enum ClipIntern {}
-
-
-#[derive(Copy, Clone, Debug, MallocSizeOf, Serialize, Deserialize)]
-pub enum FilterDataIntern {}
-
-
-
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
-pub enum PrimitiveKeyKind {
-    
-    Clear,
-    
-    Rectangle {
-        
-        color: PropertyBinding<ColorU>,
-    },
-}
-
-
-
-
-
-
-
-#[macro_export]
-macro_rules! enumerate_interners {
-    ($macro_name: ident) => {
-        $macro_name! {
-            clip: ClipIntern,
-            prim: PrimitiveKeyKind,
-            normal_border: NormalBorderPrim,
-            image_border: ImageBorder,
-            image: Image,
-            yuv_image: YuvImage,
-            line_decoration: LineDecoration,
-            linear_grad: LinearGradient,
-            radial_grad: RadialGradient,
-            conic_grad: ConicGradient,
-            picture: Picture,
-            text_run: TextRun,
-            filter_data: FilterDataIntern,
-            backdrop: Backdrop,
-        }
-    }
-}
-
-macro_rules! declare_interning_memory_report {
-    ( $( $name:ident: $ty:ident, )+ ) => {
-        ///
-        #[repr(C)]
-        #[derive(AddAssign, Clone, Debug, Default)]
-        pub struct InternerSubReport {
-            $(
-                ///
-                pub $name: usize,
-            )+
-        }
-    }
-}
-
-enumerate_interners!(declare_interning_memory_report);
-
-
-/// cbindgen:derive-eq=false
-#[repr(C)]
-#[derive(Clone, Debug, Default)]
-pub struct InterningMemoryReport {
-    
-    pub interners: InternerSubReport,
-    
-    pub data_stores: InternerSubReport,
-}
-
-impl ::std::ops::AddAssign for InterningMemoryReport {
-    fn add_assign(&mut self, other: InterningMemoryReport) {
-        self.interners += other.interners;
-        self.data_stores += other.data_stores;
-    }
-}
-
-
-/// cbindgen:derive-eq=false
-#[repr(C)]
-#[allow(missing_docs)]
-#[derive(AddAssign, Clone, Debug, Default)]
-pub struct MemoryReport {
-    
-    
-    
-    pub clip_stores: usize,
-    pub gpu_cache_metadata: usize,
-    pub gpu_cache_cpu_mirror: usize,
-    pub render_tasks: usize,
-    pub hit_testers: usize,
-    pub fonts: usize,
-    pub images: usize,
-    pub rasterized_blobs: usize,
-    pub shader_cache: usize,
-    pub interning: InterningMemoryReport,
-    pub display_list: usize,
-
-    
-    
-    
-    pub gpu_cache_textures: usize,
-    pub vertex_data_textures: usize,
-    pub render_target_textures: usize,
-    pub texture_cache_textures: usize,
-    pub depth_target_textures: usize,
-    pub swap_chain: usize,
-}
-
-
-
-
-
-pub type VoidPtrToSizeFn = unsafe extern "C" fn(ptr: *const c_void) -> usize;
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-struct ResourceId(pub u32);
-
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct ExternalEvent {
-    raw: usize,
-}
-
-unsafe impl Send for ExternalEvent {}
-
-impl ExternalEvent {
-    
-    pub fn from_raw(raw: usize) -> Self {
-        ExternalEvent { raw }
-    }
-    
-    pub fn unwrap(self) -> usize {
-        self.raw
-    }
-}
-
-
-#[derive(Clone, Deserialize, Serialize)]
-pub enum ScrollClamping {
-    
-    ToContentBounds,
-    
-    NoClamping,
 }
 
 
@@ -1311,90 +1042,6 @@ impl RenderApiSender {
     }
 }
 
-bitflags! {
-    /// Flags to enable/disable various builtin debugging tools.
-    #[repr(C)]
-    #[derive(Default, Deserialize, MallocSizeOf, Serialize)]
-    pub struct DebugFlags: u32 {
-        /// Display the frame profiler on screen.
-        const PROFILER_DBG          = 1 << 0;
-        /// Display intermediate render targets on screen.
-        const RENDER_TARGET_DBG     = 1 << 1;
-        /// Display all texture cache pages on screen.
-        const TEXTURE_CACHE_DBG     = 1 << 2;
-        /// Display GPU timing results.
-        const GPU_TIME_QUERIES      = 1 << 3;
-        /// Query the number of pixels that pass the depth test divided and show it
-        /// in the profiler as a percentage of the number of pixels in the screen
-        /// (window width times height).
-        const GPU_SAMPLE_QUERIES    = 1 << 4;
-        /// Render each quad with their own draw call.
-        ///
-        /// Terrible for performance but can help with understanding the drawing
-        /// order when inspecting renderdoc or apitrace recordings.
-        const DISABLE_BATCHING      = 1 << 5;
-        /// Display the pipeline epochs.
-        const EPOCHS                = 1 << 6;
-        /// Reduce the amount of information displayed by the profiler so that
-        /// it occupies less screen real-estate.
-        const COMPACT_PROFILER      = 1 << 7;
-        /// Print driver messages to stdout.
-        const ECHO_DRIVER_MESSAGES  = 1 << 8;
-        /// Show an indicator that moves every time a frame is rendered.
-        const NEW_FRAME_INDICATOR   = 1 << 9;
-        /// Show an indicator that moves every time a scene is built.
-        const NEW_SCENE_INDICATOR   = 1 << 10;
-        /// Show an overlay displaying overdraw amount.
-        const SHOW_OVERDRAW         = 1 << 11;
-        /// Display the contents of GPU cache.
-        const GPU_CACHE_DBG         = 1 << 12;
-        /// Show a red bar that moves each time a slow frame is detected.
-        const SLOW_FRAME_INDICATOR  = 1 << 13;
-        /// Clear evicted parts of the texture cache for debugging purposes.
-        const TEXTURE_CACHE_DBG_CLEAR_EVICTED = 1 << 14;
-        /// Show picture caching debug overlay
-        const PICTURE_CACHING_DBG   = 1 << 15;
-        /// Highlight all primitives with colors based on kind.
-        const PRIMITIVE_DBG = 1 << 16;
-        /// Draw a zoom widget showing part of the framebuffer zoomed in.
-        const ZOOM_DBG = 1 << 17;
-        /// Scale the debug renderer down for a smaller screen. This will disrupt
-        /// any mapping between debug display items and page content, so shouldn't
-        /// be used with overlays like the picture caching or primitive display.
-        const SMALL_SCREEN = 1 << 18;
-        /// Disable various bits of the WebRender pipeline, to help narrow
-        /// down where slowness might be coming from.
-        const DISABLE_OPAQUE_PASS = 1 << 19;
-        ///
-        const DISABLE_ALPHA_PASS = 1 << 20;
-        ///
-        const DISABLE_CLIP_MASKS = 1 << 21;
-        ///
-        const DISABLE_TEXT_PRIMS = 1 << 22;
-        ///
-        const DISABLE_GRADIENT_PRIMS = 1 << 23;
-        ///
-        const OBSCURE_IMAGES = 1 << 24;
-        /// Taint the transparent area of the glyphs with a random opacity to easily
-        /// see when glyphs are re-rasterized.
-        const GLYPH_FLASHING = 1 << 25;
-        /// The profiler only displays information that is out of the ordinary.
-        const SMART_PROFILER        = 1 << 26;
-        /// Dynamically control whether picture caching is enabled.
-        const DISABLE_PICTURE_CACHING = 1 << 27;
-        /// If set, dump picture cache invalidation debug to console.
-        const INVALIDATION_DBG = 1 << 28;
-        /// Log tile cache to memory for later saving as part of wr-capture
-        const TILE_CACHE_LOGGING_DBG   = 1 << 29;
-        /// For debugging, force-disable automatic scaling of establishes_raster_root
-        /// pictures that are too large (ie go back to old behavior that prevents those
-        /// large pictures from establishing a raster root).
-        const DISABLE_RASTER_ROOT_SCALING = 1 << 30;
-        /// Collect and dump profiler statistics to captures.
-        const PROFILER_CAPTURE = (1 as u32) << 31; // need "as u32" until we have cbindgen#556
-    }
-}
-
 
 pub struct RenderApi {
     api_sender: Sender<ApiMsg>,
@@ -1450,15 +1097,15 @@ impl RenderApi {
     }
 
     
-    pub fn generate_font_key(&self) -> font::FontKey {
+    pub fn generate_font_key(&self) -> FontKey {
         let new_id = self.next_unique_id();
-        font::FontKey::new(self.namespace_id, new_id)
+        FontKey::new(self.namespace_id, new_id)
     }
 
     
-    pub fn generate_font_instance_key(&self) -> font::FontInstanceKey {
+    pub fn generate_font_instance_key(&self) -> FontInstanceKey {
         let new_id = self.next_unique_id();
-        font::FontInstanceKey::new(self.namespace_id, new_id)
+        FontInstanceKey::new(self.namespace_id, new_id)
     }
 
     
@@ -1468,11 +1115,11 @@ impl RenderApi {
     
     pub fn get_glyph_dimensions(
         &self,
-        key: font::FontInstanceKey,
-        glyph_indices: Vec<font::GlyphIndex>,
-    ) -> Vec<Option<font::GlyphDimensions>> {
+        key: FontInstanceKey,
+        glyph_indices: Vec<GlyphIndex>,
+    ) -> Vec<Option<GlyphDimensions>> {
         let (sender, rx) = single_msg_channel();
-        let msg = ApiMsg::GetGlyphDimensions(font::GlyphDimensionRequest {
+        let msg = ApiMsg::GetGlyphDimensions(GlyphDimensionRequest {
             key,
             glyph_indices,
             sender
@@ -1483,9 +1130,9 @@ impl RenderApi {
 
     
     
-    pub fn get_glyph_indices(&self, key: font::FontKey, text: &str) -> Vec<Option<u32>> {
+    pub fn get_glyph_indices(&self, key: FontKey, text: &str) -> Vec<Option<u32>> {
         let (sender, rx) = single_msg_channel();
-        let msg = ApiMsg::GetGlyphIndices(font::GlyphIndexRequest {
+        let msg = ApiMsg::GetGlyphIndices(GlyphIndexRequest {
             key,
             text: text.to_string(),
             sender,
@@ -1771,322 +1418,6 @@ impl Drop for RenderApi {
 }
 
 
-
-
-pub struct HitTesterRequest {
-    rx: Receiver<Arc<dyn ApiHitTester>>,
-}
-
-impl HitTesterRequest {
-    
-    pub fn resolve(self) -> Arc<dyn ApiHitTester> {
-        self.rx.recv().unwrap()
-    }
-}
-
-
-#[derive(Clone)]
-pub struct ScrollNodeState {
-    
-    pub id: di::ExternalScrollId,
-    
-    pub scroll_offset: LayoutVector2D,
-}
-
-
-#[derive(Clone, Copy, Debug)]
-pub enum ScrollLocation {
-    
-    Delta(LayoutVector2D),
-    
-    Start,
-    
-    End,
-}
-
-
-#[derive(Clone, Copy, Debug)]
-pub struct ZoomFactor(f32);
-
-impl ZoomFactor {
-    
-    pub fn new(scale: f32) -> Self {
-        ZoomFactor(scale)
-    }
-
-    
-    pub fn get(self) -> f32 {
-        self.0
-    }
-}
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Deserialize, MallocSizeOf, PartialEq, Serialize, Eq, Hash, PeekPoke)]
-pub struct PropertyBindingId {
-    namespace: IdNamespace,
-    uid: u32,
-}
-
-impl PropertyBindingId {
-    
-    pub fn new(value: u64) -> Self {
-        PropertyBindingId {
-            namespace: IdNamespace((value >> 32) as u32),
-            uid: value as u32,
-        }
-    }
-}
-
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
-pub struct PropertyBindingKey<T> {
-    
-    pub id: PropertyBindingId,
-    _phantom: PhantomData<T>,
-}
-
-
-impl<T: Copy> PropertyBindingKey<T> {
-    
-    pub fn with(self, value: T) -> PropertyValue<T> {
-        PropertyValue { key: self, value }
-    }
-}
-
-impl<T> PropertyBindingKey<T> {
-    
-    pub fn new(value: u64) -> Self {
-        PropertyBindingKey {
-            id: PropertyBindingId::new(value),
-            _phantom: PhantomData,
-        }
-    }
-}
-
-
-
-
-
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
-pub enum PropertyBinding<T> {
-    
-    Value(T),
-    
-    Binding(PropertyBindingKey<T>, T),
-}
-
-impl<T: Default> Default for PropertyBinding<T> {
-    fn default() -> Self {
-        PropertyBinding::Value(Default::default())
-    }
-}
-
-impl<T> From<T> for PropertyBinding<T> {
-    fn from(value: T) -> PropertyBinding<T> {
-        PropertyBinding::Value(value)
-    }
-}
-
-impl From<PropertyBindingKey<ColorF>> for PropertyBindingKey<ColorU> {
-    fn from(key: PropertyBindingKey<ColorF>) -> PropertyBindingKey<ColorU> {
-        PropertyBindingKey {
-            id: key.id.clone(),
-            _phantom: PhantomData,
-        }
-    }
-}
-
-impl From<PropertyBindingKey<ColorU>> for PropertyBindingKey<ColorF> {
-    fn from(key: PropertyBindingKey<ColorU>) -> PropertyBindingKey<ColorF> {
-        PropertyBindingKey {
-            id: key.id.clone(),
-            _phantom: PhantomData,
-        }
-    }
-}
-
-impl From<PropertyBinding<ColorF>> for PropertyBinding<ColorU> {
-    fn from(value: PropertyBinding<ColorF>) -> PropertyBinding<ColorU> {
-        match value {
-            PropertyBinding::Value(value) => PropertyBinding::Value(value.into()),
-            PropertyBinding::Binding(k, v) => {
-                PropertyBinding::Binding(k.into(), v.into())
-            }
-        }
-    }
-}
-
-impl From<PropertyBinding<ColorU>> for PropertyBinding<ColorF> {
-    fn from(value: PropertyBinding<ColorU>) -> PropertyBinding<ColorF> {
-        match value {
-            PropertyBinding::Value(value) => PropertyBinding::Value(value.into()),
-            PropertyBinding::Binding(k, v) => {
-                PropertyBinding::Binding(k.into(), v.into())
-            }
-        }
-    }
-}
-
-
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
-pub struct PropertyValue<T> {
-    
-    pub key: PropertyBindingKey<T>,
-    
-    pub value: T,
-}
-
-
-
-
-#[derive(Clone, Deserialize, Serialize, Debug, PartialEq, Default)]
-pub struct DynamicProperties {
-    
-    pub transforms: Vec<PropertyValue<LayoutTransform>>,
-    
-    pub floats: Vec<PropertyValue<f32>>,
-    
-    pub colors: Vec<PropertyValue<ColorF>>,
-}
-
-
-pub trait RenderNotifier: Send {
-    
-    fn clone(&self) -> Box<dyn RenderNotifier>;
-    
-    
-    fn wake_up(&self);
-    
-    fn new_frame_ready(&self, _: DocumentId, scrolled: bool, composite_needed: bool, render_time_ns: Option<u64>);
-    
-    
-    
-    fn external_event(&self, _evt: ExternalEvent) {
-        unimplemented!()
-    }
-    
-    
-    fn shut_down(&self) {}
-}
-
-
-#[repr(u32)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Checkpoint {
-    
-    SceneBuilt,
-    
-    FrameBuilt,
-    
-    FrameTexturesUpdated,
-    
-    FrameRendered,
-    
-    
-    TransactionDropped,
-}
-
-
-
-pub trait NotificationHandler : Send + Sync {
-    
-    fn notify(&self, when: Checkpoint);
-}
-
-
-
-
-
-
-pub struct NotificationRequest {
-    handler: Option<Box<dyn NotificationHandler>>,
-    when: Checkpoint,
-}
-
-impl NotificationRequest {
-    
-    pub fn new(when: Checkpoint, handler: Box<dyn NotificationHandler>) -> Self {
-        NotificationRequest {
-            handler: Some(handler),
-            when,
-        }
-    }
-
-    
-    pub fn when(&self) -> Checkpoint { self.when }
-
-    
-    pub fn notify(mut self) {
-        if let Some(handler) = self.handler.take() {
-            handler.notify(self.when);
-        }
-    }
-}
-
-
-
-pub trait ApiHitTester: Send + Sync {
-    
-    
-    
-    
-    
-    fn hit_test(&self, pipeline_id: Option<PipelineId>, point: WorldPoint) -> HitTestResult;
-}
-
-impl Drop for NotificationRequest {
-    fn drop(&mut self) {
-        if let Some(ref mut handler) = self.handler {
-            handler.notify(Checkpoint::TransactionDropped);
-        }
-    }
-}
-
-
-
-
-
-
-
-impl Clone for NotificationRequest {
-    fn clone(&self) -> Self {
-        NotificationRequest {
-            when: self.when,
-            handler: None,
-        }
-    }
-}
-
-
-bitflags! {
-    /// Each bit of the edge AA mask is:
-    /// 0, when the edge of the primitive needs to be considered for AA
-    /// 1, when the edge of the segment needs to be considered for AA
-    ///
-    /// *Note*: the bit values have to match the shader logic in
-    /// `write_transform_vertex()` function.
-    #[cfg_attr(feature = "serialize", derive(Serialize))]
-    #[cfg_attr(feature = "deserialize", derive(Deserialize))]
-    #[derive(MallocSizeOf)]
-    pub struct EdgeAaSegmentMask: u8 {
-        ///
-        const LEFT = 0x1;
-        ///
-        const TOP = 0x2;
-        ///
-        const RIGHT = 0x4;
-        ///
-        const BOTTOM = 0x8;
-    }
-}
-
 fn window_size_sanity_check(size: DeviceIntSize) {
     
     
@@ -2094,4 +1425,36 @@ fn window_size_sanity_check(size: DeviceIntSize) {
     if size.width > MAX_SIZE || size.height > MAX_SIZE {
         panic!("Attempting to create a {}x{} window/document", size.width, size.height);
     }
+}
+
+
+/// cbindgen:derive-eq=false
+#[repr(C)]
+#[allow(missing_docs)]
+#[derive(AddAssign, Clone, Debug, Default)]
+pub struct MemoryReport {
+    
+    
+    
+    pub clip_stores: usize,
+    pub gpu_cache_metadata: usize,
+    pub gpu_cache_cpu_mirror: usize,
+    pub render_tasks: usize,
+    pub hit_testers: usize,
+    pub fonts: usize,
+    pub images: usize,
+    pub rasterized_blobs: usize,
+    pub shader_cache: usize,
+    pub interning: InterningMemoryReport,
+    pub display_list: usize,
+
+    
+    
+    
+    pub gpu_cache_textures: usize,
+    pub vertex_data_textures: usize,
+    pub render_target_textures: usize,
+    pub texture_cache_textures: usize,
+    pub depth_target_textures: usize,
+    pub swap_chain: usize,
 }

@@ -2,10 +2,11 @@
 
 
 
-use api::{ColorF, DebugCommand, DocumentId, ExternalImageData, ExternalImageId, PrimitiveFlags};
+use api::{ColorF, DocumentId, ExternalImageData, ExternalImageId, PrimitiveFlags};
 use api::{ImageFormat, NotificationRequest, Shadow, FilterOp};
 use api::units::*;
 use api;
+use crate::render_api::DebugCommand;
 use crate::composite::NativeSurfaceOperation;
 use crate::device::TextureFilter;
 use crate::renderer::PipelineInfo;
