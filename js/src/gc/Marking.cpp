@@ -1841,10 +1841,6 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
   
   AutoSetMarkColor autoSetBlack(*this, MarkColor::Black);
 
-  
-  
-  auto svr = mozilla::MakeScopeExit([&] { saveValueRanges(); });
-
   for (;;) {
     while (hasBlackEntries()) {
       MOZ_ASSERT(markColor() == MarkColor::Black);
@@ -1960,19 +1956,54 @@ inline void GCMarker::processMarkStackTop(SliceBudget& budget) {
 
 
 
-  HeapSlot* vp;
-  HeapSlot* end;
-  JSObject* obj;
+
+
+
+
+
+  JSObject* obj;   
+  RangeKind kind;  
+  HeapSlot* base;  
+  size_t index;    
+  size_t end;      
 
   gc::MarkStack& stack = currentStack();
 
   switch (stack.peekTag()) {
-    case MarkStack::ValueArrayTag: {
-      auto array = stack.popValueArray();
-      obj = array.ptr.asValueArrayObject();
-      vp = array.start;
-      end = array.end;
-      goto scan_value_array;
+    case MarkStack::SlotsRangeTag: {
+      auto range = stack.popSlotsOrElementsRange();
+      obj = range.ptr.asSlotsRangeObject();
+      NativeObject* nobj = &obj->as<NativeObject>();
+      size_t nfixed = nobj->numFixedSlots();
+      size_t nslots = nobj->slotSpan();
+      if (range.start < nfixed) {
+        kind = RangeKind::FixedSlots;
+        base = nobj->fixedSlots();
+        index = range.start;
+        end = std::min(nfixed, nslots);
+      } else {
+        kind = RangeKind::DynamicSlots;
+        base = nobj->slots_;
+        index = range.start - nfixed;
+        end = std::max(nslots, nfixed) - nfixed;
+      }
+      goto scan_value_range;
+    }
+
+    case MarkStack::ElementsRangeTag: {
+      auto range = stack.popSlotsOrElementsRange();
+      obj = range.ptr.asElementsRangeObject();
+      NativeObject* nobj = &obj->as<NativeObject>();
+      kind = RangeKind::Elements;
+      base = nobj->getDenseElementsAllowCopyOnWrite();
+
+      
+      size_t numShifted = nobj->getElementsHeader()->numShiftedElements();
+      size_t initlen = nobj->getDenseInitializedLength();
+      index = std::max(range.start, numShifted) - numShifted;
+      end = initlen;
+
+      goto scan_value_range;
     }
 
     case MarkStack::ObjectTag: {
@@ -1998,32 +2029,22 @@ inline void GCMarker::processMarkStackTop(SliceBudget& budget) {
       return script->traceChildren(this);
     }
 
-    case MarkStack::SavedValueArrayTag: {
-      auto savedArray = stack.popSavedValueArray();
-      JSObject* obj = savedArray.ptr.asSavedValueArrayObject();
-      if (restoreValueArray(savedArray, &vp, &end)) {
-        pushValueArray(obj, vp, end);
-      } else {
-        repush(obj);
-      }
-      return;
-    }
-
     default:
       MOZ_CRASH("Invalid tag in mark stack");
   }
   return;
 
-scan_value_array:
-  MOZ_ASSERT(vp <= end);
-  while (vp != end) {
+scan_value_range:
+  while (index < end) {
     budget.step();
     if (budget.isOverBudget()) {
-      pushValueArray(obj, vp, end);
+      pushValueRange(obj, kind, index, end);
       return;
     }
 
-    const Value& v = *vp++;
+    const Value& v = base[index];
+    index++;
+
     if (v.isString()) {
       traverseEdge(obj, v.toString());
     } else if (v.isObject()) {
@@ -2032,8 +2053,8 @@ scan_value_array:
       if (!obj2) {
         fprintf(stderr,
                 "processMarkStackTop found ObjectValue(nullptr) "
-                "at %zu Values from end of array in object:\n",
-                size_t(end - (vp - 1)));
+                "at %zu Values from end of range in object:\n",
+                size_t(end - (index - 1)));
         DumpObject(obj);
       }
 #endif
@@ -2041,7 +2062,7 @@ scan_value_array:
       if (mark(obj2)) {
         
         
-        pushValueArray(obj, vp, end);
+        pushValueRange(obj, kind, index, end);
         obj = obj2;
         goto scan_obj;
       }
@@ -2098,168 +2119,48 @@ scan_obj : {
       break;
     }
 
-    vp = nobj->getDenseElementsAllowCopyOnWrite();
-    end = vp + nobj->getDenseInitializedLength();
+    base = nobj->getDenseElementsAllowCopyOnWrite();
+    kind = RangeKind::Elements;
+    index = 0;
+    end = nobj->getDenseInitializedLength();
 
     if (!nslots) {
-      goto scan_value_array;
+      goto scan_value_range;
     }
-    pushValueArray(nobj, vp, end);
+    pushValueRange(nobj, kind, index, end);
   } while (false);
 
-  vp = nobj->fixedSlots();
-  if (nobj->slots_) {
-    unsigned nfixed = nobj->numFixedSlots();
-    if (nslots > nfixed) {
-      pushValueArray(nobj, vp, vp + nfixed);
-      vp = nobj->slots_;
-      end = vp + (nslots - nfixed);
-      goto scan_value_array;
-    }
+  unsigned nfixed = nobj->numFixedSlots();
+
+  base = nobj->fixedSlots();
+  kind = RangeKind::FixedSlots;
+  index = 0;
+
+  if (nslots > nfixed) {
+    pushValueRange(nobj, kind, index, nfixed);
+    kind = RangeKind::DynamicSlots;
+    base = nobj->slots_;
+    end = nslots - nfixed;
+    goto scan_value_range;
   }
+
   MOZ_ASSERT(nslots <= nobj->numFixedSlots());
-  end = vp + nslots;
-  goto scan_value_array;
+  end = nslots;
+  goto scan_value_range;
 }
-}
-
-
-
-
-
-
-
-
-
-
-void GCMarker::saveValueRanges() {
-  gc::MarkStack* stacks[2] = {&stack, &auxStack};
-  for (auto& stack : stacks) {
-    MarkStackIter iter(*stack);
-    while (!iter.done()) {
-      auto tag = iter.peekTag();
-      if (tag == MarkStack::ValueArrayTag) {
-        const auto& array = iter.peekValueArray();
-        auto savedArray = saveValueRange(array);
-        iter.saveValueArray(savedArray);
-        iter.nextArray();
-      } else if (tag == MarkStack::SavedValueArrayTag) {
-        iter.nextArray();
-      } else {
-        iter.nextPtr();
-      }
-    }
-
-    
-    stack->poisonUnused();
-  }
-}
-
-bool GCMarker::restoreValueArray(const MarkStack::SavedValueArray& savedArray,
-                                 HeapSlot** vpp, HeapSlot** endp) {
-  JSObject* objArg = savedArray.ptr.asSavedValueArrayObject();
-  if (!objArg->isNative()) {
-    return false;
-  }
-
-  auto array = restoreValueArray(savedArray);
-  *vpp = array.start;
-  *endp = array.end;
-  return true;
-}
-
-MarkStack::SavedValueArray GCMarker::saveValueRange(
-    const MarkStack::ValueArray& array) {
-  NativeObject* obj = &array.ptr.asValueArrayObject()->as<NativeObject>();
-  MOZ_ASSERT(obj->isNative());
-
-  uintptr_t index;
-  HeapSlot::Kind kind;
-  HeapSlot* vp = obj->getDenseElementsAllowCopyOnWrite();
-  if (array.end == vp + obj->getDenseInitializedLength()) {
-    MOZ_ASSERT(array.start >= vp);
-    
-    
-    
-    index = obj->unshiftedIndex(array.start - vp);
-    kind = HeapSlot::Element;
-  } else {
-    HeapSlot* vp = obj->fixedSlots();
-    unsigned nfixed = obj->numFixedSlots();
-    if (array.start == array.end) {
-      index = obj->slotSpan();
-    } else if (array.start >= vp && array.start < vp + nfixed) {
-      MOZ_ASSERT(array.end == vp + std::min(nfixed, obj->slotSpan()));
-      index = array.start - vp;
-    } else {
-      MOZ_ASSERT(array.start >= obj->slots_ &&
-                 array.end == obj->slots_ + obj->slotSpan() - nfixed);
-      index = (array.start - obj->slots_) + nfixed;
-    }
-    kind = HeapSlot::Slot;
-  }
-
-  return MarkStack::SavedValueArray(obj, index, kind);
-}
-
-MarkStack::ValueArray GCMarker::restoreValueArray(
-    const MarkStack::SavedValueArray& savedArray) {
-  NativeObject* obj =
-      &savedArray.ptr.asSavedValueArrayObject()->as<NativeObject>();
-  HeapSlot* start = nullptr;
-  HeapSlot* end = nullptr;
-
-  uintptr_t index = savedArray.index;
-  if (savedArray.kind == HeapSlot::Element) {
-    uint32_t initlen = obj->getDenseInitializedLength();
-
-    
-    uint32_t numShifted = obj->getElementsHeader()->numShiftedElements();
-    index = (numShifted < index) ? index - numShifted : 0;
-
-    HeapSlot* vp = obj->getDenseElementsAllowCopyOnWrite();
-    if (index < initlen) {
-      start = vp + index;
-      end = vp + initlen;
-    } else {
-      
-      start = end = vp;
-    }
-  } else {
-    MOZ_ASSERT(savedArray.kind == HeapSlot::Slot);
-    HeapSlot* vp = obj->fixedSlots();
-    unsigned nfixed = obj->numFixedSlots();
-    unsigned nslots = obj->slotSpan();
-    if (index < nslots) {
-      if (index < nfixed) {
-        start = vp + index;
-        end = vp + std::min(nfixed, nslots);
-      } else {
-        start = obj->slots_ + index - nfixed;
-        end = obj->slots_ + nslots - nfixed;
-      }
-    } else {
-      
-      start = end = vp;
-    }
-  }
-
-  return MarkStack::ValueArray(obj, start, end);
 }
 
 
 
 static_assert(sizeof(MarkStack::TaggedPtr) == sizeof(uintptr_t),
               "A TaggedPtr should be the same size as a pointer");
-static_assert(sizeof(MarkStack::ValueArray) ==
-                  sizeof(MarkStack::SavedValueArray),
-              "ValueArray and SavedValueArray should be the same size");
-static_assert(
-    (sizeof(MarkStack::ValueArray) % sizeof(uintptr_t)) == 0,
-    "ValueArray and SavedValueArray should be multiples of the pointer size");
+static_assert((sizeof(MarkStack::SlotsOrElementsRange) % sizeof(uintptr_t)) ==
+                  0,
+              "SlotsOrElementsRange size should be a multiple of "
+              "the pointer size");
 
-static const size_t ValueArrayWords =
-    sizeof(MarkStack::ValueArray) / sizeof(uintptr_t);
+static const size_t ValueRangeWords =
+    sizeof(MarkStack::SlotsOrElementsRange) / sizeof(uintptr_t);
 
 template <typename T>
 struct MapTypeToMarkStackTag {};
@@ -2280,9 +2181,8 @@ struct MapTypeToMarkStackTag<BaseScript*> {
   static const auto value = MarkStack::ScriptTag;
 };
 
-static inline bool TagIsArrayTag(MarkStack::Tag tag) {
-  return tag == MarkStack::ValueArrayTag ||
-         tag == MarkStack::SavedValueArrayTag;
+static inline bool TagIsRangeTag(MarkStack::Tag tag) {
+  return tag == MarkStack::SlotsRangeTag || tag == MarkStack::ElementsRangeTag;
 }
 
 inline MarkStack::TaggedPtr::TaggedPtr(Tag tag, Cell* ptr)
@@ -2313,52 +2213,33 @@ inline T* MarkStack::TaggedPtr::as() const {
   return static_cast<T*>(ptr());
 }
 
-inline JSObject* MarkStack::TaggedPtr::asValueArrayObject() const {
-  MOZ_ASSERT(tag() == ValueArrayTag);
+inline JSObject* MarkStack::TaggedPtr::asSlotsRangeObject() const {
+  MOZ_ASSERT(tag() == SlotsRangeTag);
   MOZ_ASSERT(ptr()->isTenured());
-  MOZ_ASSERT(ptr()->is<JSObject>());
-  return static_cast<JSObject*>(ptr());
+  return ptr()->as<JSObject>();
 }
 
-inline JSObject* MarkStack::TaggedPtr::asSavedValueArrayObject() const {
-  MOZ_ASSERT(tag() == SavedValueArrayTag);
+inline JSObject* MarkStack::TaggedPtr::asElementsRangeObject() const {
+  MOZ_ASSERT(tag() == ElementsRangeTag);
   MOZ_ASSERT(ptr()->isTenured());
-  MOZ_ASSERT(ptr()->is<JSObject>());
-  return static_cast<JSObject*>(ptr());
+  return ptr()->as<JSObject>();
 }
 
 inline JSRope* MarkStack::TaggedPtr::asTempRope() const {
   MOZ_ASSERT(tag() == TempRopeTag);
-  MOZ_ASSERT(ptr()->is<JSString>());
-  return static_cast<JSRope*>(ptr());
+  return &ptr()->as<JSString>()->asRope();
 }
 
-inline MarkStack::ValueArray::ValueArray(JSObject* obj, HeapSlot* startArg,
-                                         HeapSlot* endArg)
-    : end(endArg), start(startArg), ptr(ValueArrayTag, obj) {
+inline MarkStack::SlotsOrElementsRange::SlotsOrElementsRange(Tag tag,
+                                                             JSObject* obj,
+                                                             size_t startArg)
+    : start(startArg), ptr(tag, obj) {
   assertValid();
 }
 
-inline void MarkStack::ValueArray::assertValid() const {
+inline void MarkStack::SlotsOrElementsRange::assertValid() const {
   ptr.assertValid();
-  MOZ_ASSERT(ptr.tag() == MarkStack::ValueArrayTag);
-  MOZ_ASSERT(start);
-  MOZ_ASSERT(end);
-  MOZ_ASSERT(uintptr_t(start) <= uintptr_t(end));
-  MOZ_ASSERT((uintptr_t(end) - uintptr_t(start)) % sizeof(Value) == 0);
-}
-
-inline MarkStack::SavedValueArray::SavedValueArray(JSObject* obj,
-                                                   size_t indexArg,
-                                                   HeapSlot::Kind kindArg)
-    : kind(kindArg), index(indexArg), ptr(SavedValueArrayTag, obj) {
-  assertValid();
-}
-
-inline void MarkStack::SavedValueArray::assertValid() const {
-  ptr.assertValid();
-  MOZ_ASSERT(ptr.tag() == MarkStack::SavedValueArrayTag);
-  MOZ_ASSERT(kind == HeapSlot::Slot || kind == HeapSlot::Element);
+  MOZ_ASSERT(TagIsRangeTag(ptr.tag()));
 }
 
 MarkStack::MarkStack(size_t maxCapacity)
@@ -2447,35 +2328,25 @@ inline bool MarkStack::pushTempRope(JSRope* rope) {
   return pushTaggedPtr(TempRopeTag, rope);
 }
 
-inline bool MarkStack::push(JSObject* obj, HeapSlot* start, HeapSlot* end) {
-  return push(ValueArray(obj, start, end));
+inline bool MarkStack::push(JSObject* obj, HeapSlot::Kind kind, size_t start) {
+  if (kind == HeapSlot::Slot) {
+    return push(SlotsOrElementsRange(SlotsRangeTag, obj, start));
+  }
+
+  return push(SlotsOrElementsRange(ElementsRangeTag, obj, start));
 }
 
-inline bool MarkStack::push(const ValueArray& array) {
+inline bool MarkStack::push(const SlotsOrElementsRange& array) {
   array.assertValid();
 
-  if (!ensureSpace(ValueArrayWords)) {
+  if (!ensureSpace(ValueRangeWords)) {
     return false;
   }
 
-  *reinterpret_cast<ValueArray*>(topPtr()) = array;
-  topIndex_ += ValueArrayWords;
+  *reinterpret_cast<SlotsOrElementsRange*>(topPtr()) = array;
+  topIndex_ += ValueRangeWords;
   MOZ_ASSERT(position() <= capacity());
-  MOZ_ASSERT(peekTag() == ValueArrayTag);
-  return true;
-}
-
-inline bool MarkStack::push(const SavedValueArray& array) {
-  array.assertValid();
-
-  if (!ensureSpace(ValueArrayWords)) {
-    return false;
-  }
-
-  *reinterpret_cast<SavedValueArray*>(topPtr()) = array;
-  topIndex_ += ValueArrayWords;
-  MOZ_ASSERT(position() <= capacity());
-  MOZ_ASSERT(peekTag() == SavedValueArrayTag);
+  MOZ_ASSERT(TagIsRangeTag(peekTag()));
   return true;
 }
 
@@ -2487,28 +2358,18 @@ inline MarkStack::Tag MarkStack::peekTag() const { return peekPtr().tag(); }
 
 inline MarkStack::TaggedPtr MarkStack::popPtr() {
   MOZ_ASSERT(!isEmpty());
-  MOZ_ASSERT(!TagIsArrayTag(peekTag()));
+  MOZ_ASSERT(!TagIsRangeTag(peekTag()));
   peekPtr().assertValid();
   topIndex_--;
   return *topPtr();
 }
 
-inline MarkStack::ValueArray MarkStack::popValueArray() {
-  MOZ_ASSERT(peekTag() == ValueArrayTag);
-  MOZ_ASSERT(position() >= ValueArrayWords);
+inline MarkStack::SlotsOrElementsRange MarkStack::popSlotsOrElementsRange() {
+  MOZ_ASSERT(TagIsRangeTag(peekTag()));
+  MOZ_ASSERT(position() >= ValueRangeWords);
 
-  topIndex_ -= ValueArrayWords;
-  const auto& array = *reinterpret_cast<ValueArray*>(topPtr());
-  array.assertValid();
-  return array;
-}
-
-inline MarkStack::SavedValueArray MarkStack::popSavedValueArray() {
-  MOZ_ASSERT(peekTag() == SavedValueArrayTag);
-  MOZ_ASSERT(position() >= ValueArrayWords);
-
-  topIndex_ -= ValueArrayWords;
-  const auto& array = *reinterpret_cast<SavedValueArray*>(topPtr());
+  topIndex_ -= ValueRangeWords;
+  const auto& array = *reinterpret_cast<SlotsOrElementsRange*>(topPtr());
   array.assertValid();
   return array;
 }
@@ -2579,24 +2440,14 @@ inline MarkStack::TaggedPtr MarkStackIter::peekPtr() const {
 
 inline MarkStack::Tag MarkStackIter::peekTag() const { return peekPtr().tag(); }
 
-inline MarkStack::ValueArray MarkStackIter::peekValueArray() const {
-  MOZ_ASSERT(peekTag() == MarkStack::ValueArrayTag);
-  MOZ_ASSERT(position() >= ValueArrayWords);
-
-  const MarkStack::TaggedPtr* ptr = &stack_.stack()[pos_ - ValueArrayWords];
-  const auto& array = *reinterpret_cast<const MarkStack::ValueArray*>(ptr);
-  array.assertValid();
-  return array;
-}
-
 inline void MarkStackIter::nextPtr() {
   MOZ_ASSERT(!done());
-  MOZ_ASSERT(!TagIsArrayTag(peekTag()));
+  MOZ_ASSERT(!TagIsRangeTag(peekTag()));
   pos_--;
 }
 
 inline void MarkStackIter::next() {
-  if (TagIsArrayTag(peekTag())) {
+  if (TagIsRangeTag(peekTag())) {
     nextArray();
   } else {
     nextPtr();
@@ -2604,22 +2455,9 @@ inline void MarkStackIter::next() {
 }
 
 inline void MarkStackIter::nextArray() {
-  MOZ_ASSERT(TagIsArrayTag(peekTag()));
-  MOZ_ASSERT(position() >= ValueArrayWords);
-  pos_ -= ValueArrayWords;
-}
-
-void MarkStackIter::saveValueArray(
-    const MarkStack::SavedValueArray& savedArray) {
-  MOZ_ASSERT(peekTag() == MarkStack::ValueArrayTag);
-  MOZ_ASSERT(peekPtr().asValueArrayObject() ==
-             savedArray.ptr.asSavedValueArrayObject());
-  MOZ_ASSERT(position() >= ValueArrayWords);
-
-  MarkStack::TaggedPtr* ptr = &stack_.stack()[pos_ - ValueArrayWords];
-  auto* dest = reinterpret_cast<MarkStack::SavedValueArray*>(ptr);
-  *dest = savedArray;
-  MOZ_ASSERT(peekTag() == MarkStack::SavedValueArrayTag);
+  MOZ_ASSERT(TagIsRangeTag(peekTag()));
+  MOZ_ASSERT(position() >= ValueRangeWords);
+  pos_ -= ValueRangeWords;
 }
 
 
@@ -2753,14 +2591,25 @@ void GCMarker::pushTaggedPtr(T* ptr) {
   }
 }
 
-void GCMarker::pushValueArray(JSObject* obj, HeapSlot* start, HeapSlot* end) {
+void GCMarker::pushValueRange(JSObject* obj, RangeKind kind, size_t start,
+                              size_t end) {
   checkZone(obj);
+  MOZ_ASSERT(obj->is<NativeObject>());
+  MOZ_ASSERT(start <= end);
 
   if (start == end) {
     return;
   }
 
-  if (!currentStack().push(obj, start, end)) {
+  if (kind == RangeKind::DynamicSlots) {
+    uint32_t nfixed = obj->as<NativeObject>().numFixedSlots();
+    start += nfixed;
+  }
+
+  HeapSlot::Kind slotsOrElements =
+      kind == RangeKind::Elements ? HeapSlot::Element : HeapSlot::Slot;
+
+  if (!currentStack().push(obj, slotsOrElements, start)) {
     delayMarkingChildren(obj);
   }
 }
