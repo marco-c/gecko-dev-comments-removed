@@ -250,6 +250,7 @@ namespace baseprofiler::category {
 
 
 
+
 #  define CATEGORY_ENUM_BEGIN_CATEGORY(name, labelAsString, color)
 #  define CATEGORY_ENUM_SUBCATEGORY(supercategory, name, labelAsString) \
     static constexpr MarkerCategory name{ProfilingCategoryPair::name,   \
@@ -261,6 +262,13 @@ MOZ_PROFILING_CATEGORY_LIST(CATEGORY_ENUM_BEGIN_CATEGORY,
 #  undef CATEGORY_ENUM_BEGIN_CATEGORY
 #  undef CATEGORY_ENUM_SUBCATEGORY
 #  undef CATEGORY_ENUM_END_CATEGORY
+
+
+
+
+
+using MarkerCategory = ::mozilla::MarkerCategory;
+
 }  
 
 
@@ -630,6 +638,16 @@ template <typename... Options>
 MarkerOptions MarkerCategory::WithOptions(Options&&... aOptions) const {
   return MarkerOptions(*this, std::forward<Options>(aOptions)...);
 }
+
+namespace baseprofiler::category {
+
+
+
+
+
+using MarkerOptions = ::mozilla::MarkerOptions;
+
+}  
 
 }  
 
