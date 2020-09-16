@@ -24,6 +24,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
+#include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/widget/nsAutoRollup.h"
 #include "nsCOMPtr.h"
 #include "nsDocShell.h"
@@ -301,14 +302,20 @@ void APZEventState::ProcessLongTapUp(PresShell* aPresShell,
 #endif
 }
 
-void APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
-                                      const ScrollableLayerGuid& aGuid,
-                                      uint64_t aInputBlockId,
-                                      nsEventStatus aApzResponse,
-                                      nsEventStatus aContentResponse) {
+void APZEventState::ProcessTouchEvent(
+    const WidgetTouchEvent& aEvent, const ScrollableLayerGuid& aGuid,
+    uint64_t aInputBlockId, nsEventStatus aApzResponse,
+    nsEventStatus aContentResponse,
+    nsTArray<TouchBehaviorFlags>&& aAllowedTouchBehaviors) {
   if (aEvent.mMessage == eTouchStart && aEvent.mTouches.Length() > 0) {
     mActiveElementManager->SetTargetElement(aEvent.mTouches[0]->GetTarget());
     mLastTouchIdentifier = aEvent.mTouches[0]->Identifier();
+  }
+  if (aEvent.mMessage == eTouchStart) {
+    
+    
+    
+    mTouchBlockAllowedBehaviors = std::move(aAllowedTouchBehaviors);
   }
 
   bool isTouchPrevented = aContentResponse == nsEventStatus_eConsumeNoDefault;
@@ -385,7 +392,8 @@ void APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
 
   if (sentContentResponse && !isTouchPrevented &&
       aApzResponse == nsEventStatus_eConsumeDoDefault &&
-      StaticPrefs::dom_w3c_pointer_events_enabled()) {
+      StaticPrefs::dom_w3c_pointer_events_enabled() &&
+      MainThreadAgreesEventsAreConsumableByAPZ()) {
     WidgetTouchEvent cancelEvent(aEvent);
     cancelEvent.mMessage = eTouchPointerCancel;
     cancelEvent.mFlags.mCancelable = false;  
@@ -396,6 +404,48 @@ void APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
     }
     nsEventStatus status;
     cancelEvent.mWidget->DispatchEvent(&cancelEvent, status);
+  }
+}
+
+bool APZEventState::MainThreadAgreesEventsAreConsumableByAPZ() const {
+  
+  
+  
+  
+  
+
+  switch (mTouchBlockAllowedBehaviors.Length()) {
+    case 0:
+      
+      
+      return true;
+
+    case 1: {
+      
+      
+      
+      
+      
+      TouchBehaviorFlags flags = mTouchBlockAllowedBehaviors[0];
+      return (flags & AllowedTouchBehavior::HORIZONTAL_PAN) ||
+             (flags & AllowedTouchBehavior::VERTICAL_PAN);
+    }
+
+    case 2: {
+      
+      
+      for (const auto& allowed : mTouchBlockAllowedBehaviors) {
+        if (!(allowed & AllowedTouchBehavior::PINCH_ZOOM)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    default:
+      
+      
+      return false;
   }
 }
 

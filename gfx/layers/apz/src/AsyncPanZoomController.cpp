@@ -973,6 +973,12 @@ bool AsyncPanZoomController::ArePointerEventsConsumable(
   
   
   
+  
+  
+  
+  
+  
+  
 
   bool pannableX = aBlock->TouchActionAllowsPanningX() &&
                    aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(

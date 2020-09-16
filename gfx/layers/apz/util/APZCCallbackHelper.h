@@ -149,7 +149,8 @@ class APZCCallbackHelper {
 
   
 
-  static void SendSetAllowedTouchBehaviorNotification(
+
+  static nsTArray<TouchBehaviorFlags> SendSetAllowedTouchBehaviorNotification(
       nsIWidget* aWidget, mozilla::dom::Document* aDocument,
       const WidgetTouchEvent& aEvent, uint64_t aInputBlockId,
       const SetAllowedTouchBehaviorCallback& aCallback);
