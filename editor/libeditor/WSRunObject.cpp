@@ -655,14 +655,14 @@ nsresult WhiteSpaceVisibilityKeeper::ReplaceText(
   RefPtr<Element> editingHost = aHTMLEditor.GetActiveEditingHost();
   TextFragmentData textFragmentDataAtStart(aRangeToBeReplaced.StartRef(),
                                            editingHost);
-  const bool insertionPointEqualsOrIsBeforeStartOfText =
+  const bool isInsertionPointEqualsOrIsBeforeStartOfText =
       aRangeToBeReplaced.StartRef().EqualsOrIsBefore(
           textFragmentDataAtStart.StartRef());
   TextFragmentData textFragmentDataAtEnd =
       aRangeToBeReplaced.Collapsed()
           ? textFragmentDataAtStart
           : TextFragmentData(aRangeToBeReplaced.EndRef(), editingHost);
-  const bool insertionPointAfterEndOfText =
+  const bool isInsertionPointEqualsOrAfterEndOfText =
       textFragmentDataAtEnd.EndRef().EqualsOrIsBefore(
           aRangeToBeReplaced.EndRef());
 
@@ -821,7 +821,7 @@ nsresult WhiteSpaceVisibilityKeeper::ReplaceText(
     
     
     else if (textFragmentDataAtStart.StartsFromHardLineBreak() &&
-             insertionPointEqualsOrIsBeforeStartOfText) {
+             isInsertionPointEqualsOrIsBeforeStartOfText) {
       theString.SetCharAt(kNBSP, 0);
     }
   }
@@ -838,12 +838,12 @@ nsresult WhiteSpaceVisibilityKeeper::ReplaceText(
     
     
     
-    if (pointPositionWithVisibleWhiteSpacesAtStart ==
+    if (pointPositionWithVisibleWhiteSpacesAtEnd ==
             PointPosition::StartOfFragment ||
-        pointPositionWithVisibleWhiteSpacesAtStart ==
+        pointPositionWithVisibleWhiteSpacesAtEnd ==
             PointPosition::MiddleOfFragment) {
       EditorDOMPointInText atNextChar =
-          textFragmentDataAtStart.GetInclusiveNextEditableCharPoint(
+          textFragmentDataAtEnd.GetInclusiveNextEditableCharPoint(
               pointToInsert);
       if (atNextChar.IsSet() && !atNextChar.IsEndOfContainer() &&
           atNextChar.IsCharASCIISpace()) {
@@ -854,7 +854,7 @@ nsresult WhiteSpaceVisibilityKeeper::ReplaceText(
     
     
     else if (textFragmentDataAtEnd.EndsByBlockBoundary() &&
-             insertionPointAfterEndOfText) {
+             isInsertionPointEqualsOrAfterEndOfText) {
       theString.SetCharAt(kNBSP, lastCharIndex);
     }
   }
