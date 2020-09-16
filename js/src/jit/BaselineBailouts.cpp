@@ -32,6 +32,8 @@
 using namespace js;
 using namespace js::jit;
 
+using mozilla::Maybe;
+
 
 
 
@@ -100,9 +102,11 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   JSScript* script_ = nullptr;
   JSFunction* fun_ = nullptr;
   const ExceptionBailoutInfo* excInfo_ = nullptr;
+  ICScript* icScript_ = nullptr;
 
   uint32_t exprStackSlots_ = 0;
   void* prevFramePtr_ = nullptr;
+  Maybe<BufferPointer<BaselineFrame>> blFrame_;
 
  public:
   BaselineStackBuilder(JSContext* cx, JitFrameLayout* frame,
@@ -129,7 +133,9 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   }
 
   MOZ_MUST_USE bool initFrame(JSScript* script, JSFunction* fun,
-                              const ExceptionBailoutInfo* excInfo);
+                              const ExceptionBailoutInfo* excInfo,
+                              ICScript* icScript);
+  MOZ_MUST_USE bool buildBaselineFrame();
 
  private:
   JSScript* script() const {
@@ -140,6 +146,9 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     MOZ_ASSERT(cx_->suppressGC);
     return fun_;
   }
+#ifdef DEBUG
+  bool envChainSlotCanBeOptimized();
+#endif
 
  public:
   uint32_t exprStackSlots() const { return exprStackSlots_; }
@@ -147,6 +156,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     return excInfo_ && excInfo_->catchingException();
   }
   void* prevFramePtr() const { return prevFramePtr_; }
+  BufferPointer<BaselineFrame>& blFrame() { return blFrame_.ref(); }
 
   MOZ_MUST_USE bool enlarge() {
     MOZ_ASSERT(header_ != nullptr);
@@ -424,16 +434,18 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
 
 bool BaselineStackBuilder::initFrame(JSScript* frameScript,
                                      JSFunction* frameFun,
-                                     const ExceptionBailoutInfo* excInfo) {
+                                     const ExceptionBailoutInfo* excInfo,
+                                     ICScript* icScript) {
   
   
   MOZ_ASSERT(cx_->suppressGC);
 
   
-  MOZ_ASSERT(script_->hasBaselineScript());
+  MOZ_ASSERT(frameScript->hasBaselineScript());
   script_ = frameScript;
   fun_ = frameFun;
   excInfo_ = excInfo;
+  icScript_ = icScript;
 
   
   
@@ -467,7 +479,157 @@ bool BaselineStackBuilder::initFrame(JSScript* frameScript,
   return true;
 }
 
+
+bool BaselineStackBuilder::buildBaselineFrame() {
+  if (!subtract(BaselineFrame::Size(), "BaselineFrame")) {
+    return false;
+  }
+  blFrame_.reset();
+  blFrame_.emplace(pointerAtStackOffset<BaselineFrame>(0));
+
+  uint32_t flags = BaselineFrame::RUNNING_IN_INTERPRETER;
+
+  
+  
+  
+  if (script()->isDebuggee()) {
+    flags |= BaselineFrame::DEBUGGEE;
+  }
+
+  JSObject* envChain = nullptr;
+  Value returnValue = UndefinedValue();
+  ArgumentsObject* argsObj = nullptr;
+
+  BailoutKind bailoutKind = iter_.bailoutKind();
+  if (bailoutKind == BailoutKind::ArgumentCheck) {
+    
+    
+    
+    
+    JitSpew(JitSpew_BaselineBailouts,
+            "      BailoutKind::ArgumentCheck! Using function's environment");
+    envChain = fun()->environment();
+
+    
+    iter_.skip();
+
+    
+    iter_.skip();
+
+    
+    
+    if (script()->argumentsHasVarBinding()) {
+      JitSpew(JitSpew_BaselineBailouts,
+              "      BailoutKind::ArgumentCheck for script with "
+              "argumentsHasVarBinding! "
+              "Using empty arguments object");
+      iter_.skip();
+    }
+  } else {
+    
+    Value envChainSlot = iter_.read();
+    if (envChainSlot.isObject()) {
+      
+      
+      envChain = &envChainSlot.toObject();
+
+      
+      if (fun() && fun()->needsFunctionEnvironmentObjects()) {
+        MOZ_ASSERT(fun()->nonLazyScript()->initialEnvironmentShape());
+        MOZ_ASSERT(!fun()->needsExtraBodyVarEnvironment());
+        flags |= BaselineFrame::HAS_INITIAL_ENV;
+      }
+    } else {
+      MOZ_ASSERT(envChainSlot.isUndefined() ||
+                 envChainSlot.isMagic(JS_OPTIMIZED_OUT));
+      MOZ_ASSERT(envChainSlotCanBeOptimized());
+
+      
+      
+      if (fun()) {
+        envChain = fun()->environment();
+      } else if (script()->module()) {
+        envChain = script()->module()->environment();
+      } else {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(!script()->isForEval());
+        MOZ_ASSERT(!script()->hasNonSyntacticScope());
+        envChain = &(script()->global().lexicalEnvironment());
+      }
+    }
+
+    
+    if (script()->noScriptRval()) {
+      
+      
+      iter_.skip();
+    } else {
+      returnValue = iter_.read();
+      flags |= BaselineFrame::HAS_RVAL;
+    }
+
+    
+    if (script()->argumentsHasVarBinding()) {
+      Value maybeArgsObj = iter_.read();
+      MOZ_ASSERT(maybeArgsObj.isObject() || maybeArgsObj.isUndefined() ||
+                 maybeArgsObj.isMagic(JS_OPTIMIZED_OUT));
+      if (maybeArgsObj.isObject()) {
+        argsObj = &maybeArgsObj.toObject().as<ArgumentsObject>();
+      }
+    }
+  }
+  MOZ_ASSERT(envChain);
+
+  
+  JitSpew(JitSpew_BaselineBailouts, "      EnvChain=%p", envChain);
+  blFrame()->setEnvironmentChain(envChain);
+
+  
+  JitSpew(JitSpew_BaselineBailouts, "      ReturnValue=%016" PRIx64,
+          *((uint64_t*)&returnValue));
+  blFrame()->setReturnValue(returnValue);
+
+  
+
+  
+  blFrame()->setFlags(flags);
+
+  
+  if (JitOptions.warpBuilder) {
+    JitSpew(JitSpew_BaselineBailouts, "      ICScript=%p", icScript_);
+    blFrame()->setICScript(icScript_);
+  }
+
+  
+  if (argsObj) {
+    blFrame()->initArgsObjUnchecked(*argsObj);
+  }
+  return true;
+}
+
 #ifdef DEBUG
+
+
+
+
+
+bool BaselineStackBuilder::envChainSlotCanBeOptimized() {
+  jsbytecode* pc = script()->offsetToPC(iter_.pcOffset());
+  Scope* scopeIter = script()->innermostScope(pc);
+  while (scopeIter != script()->bodyScope()) {
+    if (!scopeIter || scopeIter->hasEnvironment()) {
+      return false;
+    }
+    scopeIter = scopeIter->enclosing();
+  }
+  return true;
+}
+
 static inline bool IsInlinableFallback(ICFallbackStub* icEntry) {
   return icEntry->isCall_Fallback() || icEntry->isGetProp_Fallback() ||
          icEntry->isSetProp_Fallback() || icEntry->isGetElem_Fallback();
@@ -663,7 +825,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
                             MutableHandleFunction nextCallee,
                             ICScript** icScriptPtr,
                             const ExceptionBailoutInfo* excInfo) {
-  if (!builder.initFrame(script, fun, excInfo)) {
+  if (!builder.initFrame(script, fun, excInfo, *icScriptPtr)) {
     return false;
   }
 
@@ -695,139 +857,8 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   
 
-  
-  if (!builder.subtract(BaselineFrame::Size(), "BaselineFrame")) {
+  if (!builder.buildBaselineFrame()) {
     return false;
-  }
-  BufferPointer<BaselineFrame> blFrame =
-      builder.pointerAtStackOffset<BaselineFrame>(0);
-
-  uint32_t flags = BaselineFrame::RUNNING_IN_INTERPRETER;
-
-  
-  
-  
-  if (script->isDebuggee()) {
-    flags |= BaselineFrame::DEBUGGEE;
-  }
-
-  
-  JSObject* envChain = nullptr;
-  Value returnValue = UndefinedValue();
-  ArgumentsObject* argsObj = nullptr;
-  BailoutKind bailoutKind = iter.bailoutKind();
-  if (bailoutKind == BailoutKind::ArgumentCheck) {
-    
-    
-    
-    
-    JitSpew(JitSpew_BaselineBailouts,
-            "      BailoutKind::ArgumentCheck! (using function's environment)");
-    iter.skip();
-    envChain = fun->environment();
-
-    
-    iter.skip();
-
-    
-    if (script->argumentsHasVarBinding()) {
-      JitSpew(JitSpew_BaselineBailouts,
-              "      BailoutKind::ArgumentCheck for script with "
-              "argumentsHasVarBinding!"
-              "Using empty arguments object");
-      iter.skip();
-    }
-  } else {
-    Value v = iter.read();
-    if (v.isObject()) {
-      envChain = &v.toObject();
-
-      
-      
-      
-      if (fun && fun->needsFunctionEnvironmentObjects()) {
-        MOZ_ASSERT(fun->nonLazyScript()->initialEnvironmentShape());
-        MOZ_ASSERT(!fun->needsExtraBodyVarEnvironment());
-        flags |= BaselineFrame::HAS_INITIAL_ENV;
-      }
-    } else {
-      MOZ_ASSERT(v.isUndefined() || v.isMagic(JS_OPTIMIZED_OUT));
-
-#ifdef DEBUG
-      
-      
-      
-      
-      
-      jsbytecode* pc = script->offsetToPC(iter.pcOffset());
-      Scope* scopeIter = script->innermostScope(pc);
-      while (scopeIter != script->bodyScope()) {
-        MOZ_ASSERT(scopeIter);
-        MOZ_ASSERT(!scopeIter->hasEnvironment());
-        scopeIter = scopeIter->enclosing();
-      }
-#endif
-
-      
-      if (fun) {
-        envChain = fun->environment();
-      } else if (script->module()) {
-        envChain = script->module()->environment();
-      } else {
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!script->isForEval());
-        MOZ_ASSERT(!script->hasNonSyntacticScope());
-        envChain = &(script->global().lexicalEnvironment());
-      }
-    }
-
-    if (script->noScriptRval()) {
-      
-      
-      iter.skip();
-    } else {
-      
-      
-      flags |= BaselineFrame::HAS_RVAL;
-      returnValue = iter.read();
-    }
-
-    
-    if (script->argumentsHasVarBinding()) {
-      v = iter.read();
-      MOZ_ASSERT(v.isObject() || v.isUndefined() ||
-                 v.isMagic(JS_OPTIMIZED_OUT));
-      if (v.isObject()) {
-        argsObj = &v.toObject().as<ArgumentsObject>();
-      }
-    }
-  }
-
-  MOZ_ASSERT(envChain);
-
-  JitSpew(JitSpew_BaselineBailouts, "      EnvChain=%p", envChain);
-  blFrame->setEnvironmentChain(envChain);
-  JitSpew(JitSpew_BaselineBailouts, "      ReturnValue=%016" PRIx64,
-          *((uint64_t*)&returnValue));
-  blFrame->setReturnValue(returnValue);
-
-  
-  blFrame->setFlags(flags);
-
-  ICScript* icScript = *icScriptPtr;
-  if (JitOptions.warpBuilder) {
-    JitSpew(JitSpew_BaselineBailouts, "      ICScript=%p", icScript);
-    blFrame->setICScript(icScript);
-  }
-
-  
-  if (argsObj) {
-    blFrame->initArgsObjUnchecked(*argsObj);
   }
 
   if (fun) {
@@ -922,7 +953,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     if (op == JSOp::FunCall) {
       inlined_args = 2 + GET_ARGC(pc) - 1;
     } else if (op == JSOp::FunApply) {
-      inlined_args = 2 + blFrame->numActualArgs();
+      inlined_args = 2 + builder.blFrame()->numActualArgs();
     } else {
       MOZ_ASSERT(IsIonInlinableGetterOrSetterOp(op));
       inlined_args = 2 + IsSetPropOp(op);
@@ -1051,13 +1082,13 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   const uint32_t frameSize = builder.framePushed();
 #ifdef DEBUG
-  blFrame->setDebugFrameSize(frameSize);
+  builder.blFrame()->setDebugFrameSize(frameSize);
 #endif
   JitSpew(JitSpew_BaselineBailouts, "      FrameSize=%u", frameSize);
 
   
-  MOZ_ASSERT(blFrame->debugNumValueSlots() >= script->nfixed());
-  MOZ_ASSERT(blFrame->debugNumValueSlots() <= script->nslots());
+  MOZ_ASSERT(builder.blFrame()->debugNumValueSlots() >= script->nfixed());
+  MOZ_ASSERT(builder.blFrame()->debugNumValueSlots() <= script->nslots());
 
   const uint32_t pcOff = script->pcToOffset(pc);
   JitScript* jitScript = script->jitScript();
@@ -1107,7 +1138,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
           PCToLineNumber(script, pc), script->filename(), script->lineno(),
           script->column());
   JitSpew(JitSpew_BaselineBailouts, "      Bailout kind: %s",
-          BailoutKindString(bailoutKind));
+          BailoutKindString(iter.bailoutKind()));
 #endif
 
   const BaselineInterpreter& baselineInterp =
@@ -1125,7 +1156,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     if (IsPrologueBailout(iter, excInfo)) {
       JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
       MOZ_ASSERT(pc == script->code());
-      blFrame->setInterpreterFieldsForPrologue(script);
+      builder.blFrame()->setInterpreterFieldsForPrologue(script);
       resumeAddr = baselineInterp.bailoutPrologueEntryAddr();
     } else if (excInfo && excInfo->propagatingIonExceptionForDebugMode()) {
       
@@ -1133,7 +1164,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
       
       
       jsbytecode* throwPC = script->offsetToPC(iter.pcOffset());
-      blFrame->setInterpreterFields(script, throwPC);
+      builder.blFrame()->setInterpreterFields(script, throwPC);
       resumeAddr = baselineInterp.interpretOpAddr().value;
     } else {
       
@@ -1142,7 +1173,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
         builder.setMonitorPC(pc);
       }
       jsbytecode* resumePC = GetResumePC(script, pc, resumeAfter);
-      blFrame->setInterpreterFields(script, resumePC);
+      builder.blFrame()->setInterpreterFields(script, resumePC);
       resumeAddr = baselineInterp.interpretOpAddr().value;
     }
     builder.setResumeAddr(resumeAddr);
@@ -1161,9 +1192,9 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
         return false;
       }
       snprintf(buf.get(), len, "%s %s %s on line %u of %s:%u",
-               BailoutKindString(bailoutKind), resumeAfter ? "after" : "at",
-               CodeName(op), PCToLineNumber(script, pc), filename,
-               script->lineno());
+               BailoutKindString(iter.bailoutKind()),
+               resumeAfter ? "after" : "at", CodeName(op),
+               PCToLineNumber(script, pc), filename, script->lineno());
       cx->runtime()->geckoProfiler().markEvent(buf.get());
     }
 
@@ -1172,7 +1203,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
 
   
 
-  blFrame->setInterpreterFields(script, pc);
+  builder.blFrame()->setInterpreterFields(script, pc);
 
   
   size_t baselineFrameDescr = MakeFrameDescriptor(
@@ -1244,7 +1275,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     
     
     if (op == JSOp::FunApply) {
-      actualArgc = blFrame->numActualArgs();
+      actualArgc = builder.blFrame()->numActualArgs();
     } else {
       actualArgc = IsSetPropOp(op);
     }
@@ -1283,17 +1314,17 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     }
 
     
-    size_t valueSlot = blFrame->numValueSlots(frameSize) - 1;
+    size_t valueSlot = builder.blFrame()->numValueSlots(frameSize) - 1;
     size_t calleeSlot = valueSlot - actualArgc - 1 - pushedNewTarget;
 
     for (size_t i = valueSlot; i > calleeSlot; i--) {
-      Value v = *blFrame->valueSlot(i);
+      Value v = *builder.blFrame()->valueSlot(i);
       if (!builder.writeValue(v, "ArgVal")) {
         return false;
       }
     }
 
-    callee = *blFrame->valueSlot(calleeSlot);
+    callee = *builder.blFrame()->valueSlot(calleeSlot);
   }
 
   
@@ -1324,6 +1355,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   nextCallee.set(calleeFun);
 
   
+  ICScript* icScript = *icScriptPtr;
   if (JitOptions.warpBuilder) {
     *icScriptPtr = icScript->findInlinedChild(pcOff);
   }
