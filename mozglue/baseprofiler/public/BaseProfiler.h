@@ -69,9 +69,13 @@
 
 
 namespace mozilla {
-class ProfileChunkedBuffer;
+
+
+class ProfileChunkedBuffer {};
 
 namespace baseprofiler {
+
+
 struct ProfilerBacktrace {};
 using UniqueProfilerBacktrace = UniquePtr<ProfilerBacktrace>;
 

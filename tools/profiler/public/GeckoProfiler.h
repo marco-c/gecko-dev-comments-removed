@@ -84,6 +84,8 @@
 
 
 
+
+
 struct ProfilerBacktrace {};
 using UniqueProfilerBacktrace = mozilla::UniquePtr<int>;
 
@@ -94,9 +96,6 @@ static inline UniqueProfilerBacktrace profiler_get_backtrace() {
   return nullptr;
 }
 
-namespace mozilla {
-class ProfileChunkedBuffer;
-}  
 static inline bool profiler_capture_backtrace_into(
     mozilla::ProfileChunkedBuffer& aChunkedBuffer) {
   return false;
