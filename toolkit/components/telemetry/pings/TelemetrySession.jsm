@@ -1186,16 +1186,35 @@ var Impl = {
       
       Telemetry.scalarSet("fog.eval.user_active", aUserActive);
       let error = false;
+      let inactiveError = false;
       if (aUserActive) {
+        
+        
+        if (this._fogFirstActivityChange === false) {
+          inactiveError = !TelemetryStopwatch.finish(
+            "FOG_EVAL_USER_INACTIVE_S"
+          );
+        }
         error = !TelemetryStopwatch.start("FOG_EVAL_USER_ACTIVE_S", null, {
           inSeconds: true,
         });
       } else {
+        inactiveError = !TelemetryStopwatch.start(
+          "FOG_EVAL_USER_INACTIVE_S",
+          null,
+          {
+            inSeconds: true,
+          }
+        );
         error = !TelemetryStopwatch.finish("FOG_EVAL_USER_ACTIVE_S");
       }
       if (error) {
         Telemetry.scalarAdd("fog.eval.user_active_error", 1);
       }
+      if (inactiveError) {
+        Telemetry.scalarAdd("fog.eval.user_inactive_error", 1);
+      }
+      this._fogFirstActivityChange = false;
     }
   },
 
