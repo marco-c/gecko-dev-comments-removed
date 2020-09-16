@@ -613,6 +613,33 @@ class ArenaCellSet {
   static size_t offsetOfBits() { return offsetof(ArenaCellSet, bits); }
 };
 
+
+
+template <typename T>
+MOZ_ALWAYS_INLINE void WriteBarrierPostImpl(void* cellp, T* prev, T* next) {
+  MOZ_ASSERT(cellp);
+
+  
+  js::gc::StoreBuffer* buffer;
+  if (next && (buffer = next->storeBuffer())) {
+    
+    
+    
+    
+    if (prev && prev->storeBuffer()) {
+      return;
+    }
+    buffer->putCell(static_cast<T**>(cellp));
+    return;
+  }
+
+  
+  
+  if (prev && (buffer = prev->storeBuffer())) {
+    buffer->unputCell(static_cast<T**>(cellp));
+  }
+}
+
 } 
 } 
 

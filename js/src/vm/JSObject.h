@@ -287,10 +287,10 @@ class JSObject
   MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZoneFromAnyThread() const {
     return JS::shadow::Zone::from(zoneFromAnyThread());
   }
-  static MOZ_ALWAYS_INLINE void readBarrier(JSObject* obj);
-  static MOZ_ALWAYS_INLINE void writeBarrierPre(JSObject* obj);
   static MOZ_ALWAYS_INLINE void writeBarrierPost(void* cellp, JSObject* prev,
-                                                 JSObject* next);
+                                                 JSObject* next) {
+    js::gc::WriteBarrierPostImpl<JSObject>(cellp, prev, next);
+  }
 
   
   js::gc::AllocKind allocKindForTenure(const js::Nursery& nursery) const;
@@ -743,44 +743,6 @@ struct JSObject_Slots16 : JSObject {
   void* data[2];
   js::Value fslots[16];
 };
-
- MOZ_ALWAYS_INLINE void JSObject::readBarrier(JSObject* obj) {
-  if (obj && obj->isTenured()) {
-    obj->asTenured().readBarrier(&obj->asTenured());
-  }
-}
-
- MOZ_ALWAYS_INLINE void JSObject::writeBarrierPre(JSObject* obj) {
-  if (obj && obj->isTenured()) {
-    obj->asTenured().writeBarrierPre(&obj->asTenured());
-  }
-}
-
- MOZ_ALWAYS_INLINE void JSObject::writeBarrierPost(void* cellp,
-                                                               JSObject* prev,
-                                                               JSObject* next) {
-  MOZ_ASSERT(cellp);
-
-  
-  js::gc::StoreBuffer* buffer;
-  if (next && (buffer = next->storeBuffer())) {
-    
-    
-    
-    
-    if (prev && prev->storeBuffer()) {
-      return;
-    }
-    buffer->putCell(static_cast<JSObject**>(cellp));
-    return;
-  }
-
-  
-  
-  if (prev && (buffer = prev->storeBuffer())) {
-    buffer->unputCell(static_cast<JSObject**>(cellp));
-  }
-}
 
 namespace js {
 
