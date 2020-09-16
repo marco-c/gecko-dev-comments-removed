@@ -48,8 +48,8 @@ add_task(async () => {
       
       
       
-      let toggleLeft = toggleClientRect.left + 2;
-      let toggleTop = toggleClientRect.top + 2;
+      let toggleLeft = toggleClientRect.left + 15;
+      let toggleTop = toggleClientRect.top + 15;
 
       info(
         "Clicking on toggle, and expecting a Picture-in-Picture window to open"
