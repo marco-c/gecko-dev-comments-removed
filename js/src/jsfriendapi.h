@@ -886,67 +886,6 @@ extern JS_FRIEND_API bool ExecuteInFrameScriptEnvironment(
     JSContext* cx, JS::HandleObject obj, JS::HandleScript script,
     JS::MutableHandleObject scope);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_FRIEND_API JSObject* NewJSMEnvironment(JSContext* cx);
-
-
-
-
-
-
-extern JS_FRIEND_API bool ExecuteInJSMEnvironment(JSContext* cx,
-                                                  JS::HandleScript script,
-                                                  JS::HandleObject jsmEnv);
-
-
-
-
-
-
-extern JS_FRIEND_API bool ExecuteInJSMEnvironment(
-    JSContext* cx, JS::HandleScript script, JS::HandleObject jsmEnv,
-    JS::HandleObjectVector targetObj);
-
-
-
-
-
-
-
-extern JS_FRIEND_API JSObject* GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
-
-
-
-
-
-extern JS_FRIEND_API bool IsJSMEnvironment(JSObject* obj);
-
 extern JS_FRIEND_API bool IsSavedFrame(JSObject* obj);
 
 
