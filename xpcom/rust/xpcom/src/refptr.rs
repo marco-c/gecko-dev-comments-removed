@@ -2,6 +2,9 @@
 
 
 
+use crate::interfaces::nsrefcnt;
+use libc;
+use nserror::{nsresult, NS_OK};
 use std::cell::Cell;
 use std::fmt;
 use std::marker::PhantomData;
@@ -9,13 +12,6 @@ use std::mem;
 use std::ops::Deref;
 use std::ptr;
 use std::sync::atomic::{self, AtomicUsize, Ordering};
-
-use nserror::{nsresult, NS_OK};
-
-use libc;
-
-use interfaces::nsrefcnt;
-
 use threadbound::ThreadBound;
 
 

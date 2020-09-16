@@ -2,8 +2,6 @@
 
 
 
-extern crate nsstring;
-
 use nsstring::{nsACString, nsCString};
 use std::error::Error;
 use std::fmt;

@@ -11,18 +11,8 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
-extern crate libc;
-extern crate nserror;
-extern crate nsstring;
-extern crate thin_vec;
-extern crate threadbound;
 
-
-#[macro_use]
-#[allow(unused_imports)]
-extern crate xpcom_macros;
-#[doc(hidden)]
-pub use xpcom_macros::*;
+pub use xpcom_macros::xpcom;
 
 
 mod base;

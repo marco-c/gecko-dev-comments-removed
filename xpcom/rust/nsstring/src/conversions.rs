@@ -2,19 +2,13 @@
 
 
 
-extern crate encoding_rs;
-
+use crate::{
+    nsACString, nsAString, nsCStringLike, BulkWriteOk, Gecko_FallibleAssignCString,
+    Latin1StringLike,
+};
+use encoding_rs::mem::*;
+use encoding_rs::Encoding;
 use std::slice;
-
-use super::nsACString;
-use super::nsAString;
-use super::nsCStringLike;
-use super::BulkWriteOk;
-use super::Gecko_FallibleAssignCString;
-use super::Latin1StringLike;
-
-use conversions::encoding_rs::mem::*;
-use conversions::encoding_rs::Encoding;
 
 
 

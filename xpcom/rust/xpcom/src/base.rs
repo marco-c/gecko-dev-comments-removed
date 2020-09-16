@@ -2,8 +2,8 @@
 
 
 
-use interfaces::{nsIInterfaceRequestor, nsISupports};
-use {GetterAddrefs, RefCounted, RefPtr};
+use crate::interfaces::{nsIInterfaceRequestor, nsISupports};
+use crate::{GetterAddrefs, RefCounted, RefPtr};
 
 #[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq)]

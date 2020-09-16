@@ -2,8 +2,6 @@
 
 
 
-extern crate nserror;
-
 use nserror::{nsresult, NS_ERROR_NULL_POINTER};
 
 
@@ -219,7 +217,7 @@ macro_rules! xpcom_method {
 
 #[doc(hidden)]
 pub trait Ensure<T> {
-    unsafe fn ensure(T) -> Self;
+    unsafe fn ensure(value: T) -> Self;
 }
 
 impl<'a, T: 'a> Ensure<*const T> for Result<&'a T, nsresult> {
