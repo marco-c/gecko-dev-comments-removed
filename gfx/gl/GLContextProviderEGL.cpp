@@ -65,6 +65,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/gfx/BuildConstants.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsDebug.h"
@@ -903,6 +904,8 @@ bool CreateConfig(EglDisplay& egl, EGLConfig* aConfig, int32_t depth,
     return false;
   }
 
+  Maybe<EGLConfig> fallbackConfig;
+
   for (int j = 0; j < ncfg; ++j) {
     EGLConfig config = configs[j];
     EGLint r, g, b, a;
@@ -920,19 +923,29 @@ bool CreateConfig(EglDisplay& egl, EGLConfig* aConfig, int32_t depth,
           continue;
         }
       }
-#if defined(MOZ_X11)
-      if (aVisual) {
+      if (kIsX11 && aVisual) {
         int vis;
         if (!egl.fGetConfigAttrib(config, LOCAL_EGL_NATIVE_VISUAL_ID, &vis) ||
             aVisual != vis) {
+          if (!fallbackConfig) {
+            fallbackConfig = Some(config);
+          }
           continue;
         }
       }
-#endif
       *aConfig = config;
       return true;
     }
   }
+
+  
+  
+  
+  if (kIsX11 && fallbackConfig) {
+    *aConfig = fallbackConfig.value();
+    return true;
+  }
+
   return false;
 }
 
