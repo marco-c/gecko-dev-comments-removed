@@ -11,6 +11,9 @@ const { getAppInfo } = ChromeUtils.import(
   "resource://testing-common/AppInfo.jsm"
 );
 
+const legacyUseSavedOrderPrefName =
+  SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder";
+
 var settingsTemplate;
 
 
@@ -21,10 +24,12 @@ add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
 });
 
-async function loadSettingsFile(settingsFile) {
+async function loadSettingsFile(settingsFile, setVersion) {
   settingsTemplate = await readJSONFile(do_get_file(settingsFile));
   settingsTemplate.buildID = getAppInfo().platformBuildID;
-  settingsTemplate.version = SearchUtils.SETTINGS_VERSION;
+  if (setVersion) {
+    settingsTemplate.version = SearchUtils.SETTINGS_VERSION;
+  }
 
   delete settingsTemplate.visibleDefaultEngines;
 
@@ -37,10 +42,18 @@ async function loadSettingsFile(settingsFile) {
 
 
 
-async function checkLoadSettingProperties(settingsFile) {
+
+
+
+
+async function checkLoadSettingProperties(
+  settingsFile,
+  setVersion,
+  expectedUseDBValue
+) {
   info("init search service");
 
-  await loadSettingsFile(settingsFile);
+  await loadSettingsFile(settingsFile, setVersion);
 
   const settingsFileWritten = promiseAfterSettings();
   let ss = new SearchService();
@@ -75,16 +88,29 @@ async function checkLoadSettingProperties(settingsFile) {
   Assert.ok(!!engineFromSS);
   isSubObjectOf(EXPECTED_ENGINE.engine, engineFromSS);
 
+  Assert.equal(
+    ss._settings.getAttribute("useSavedOrder"),
+    expectedUseDBValue,
+    "Should have set the useSavedOrder metadata correctly."
+  );
+
   removeSettingsFile();
   ss._removeObservers();
 }
 
 add_task(async function test_legacy_setting_engine_properties() {
-  await checkLoadSettingProperties("data/search-legacy.json");
+  Services.prefs.setBoolPref(legacyUseSavedOrderPrefName, true);
+
+  await checkLoadSettingProperties("data/search-legacy.json", false, true);
+
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(legacyUseSavedOrderPrefName),
+    "Should have cleared the legacy pref."
+  );
 });
 
 add_task(async function test_current_setting_engine_properties() {
-  await checkLoadSettingProperties("data/search.json");
+  await checkLoadSettingProperties("data/search.json", true, false);
 });
 
 
@@ -123,8 +149,8 @@ add_task(async function test_settings_write() {
   Assert.ok(settings.exists());
   
 
-  let settingsData = await promiseSettingsData();
   info("Check search.json.mozlz4");
+  let settingsData = await promiseSettingsData();
 
   
   
@@ -134,6 +160,10 @@ add_task(async function test_settings_write() {
       delete engine._shortName;
     }
   }
+  
+  
+  settingsTemplate.version = SearchUtils.SETTINGS_VERSION;
+
   isSubObjectOf(settingsTemplate, settingsData, (prop, value) => {
     if (prop != "_iconURL" && prop != "{}") {
       return false;

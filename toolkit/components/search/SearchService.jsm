@@ -165,7 +165,7 @@ SearchService.prototype = {
 
 
 
-  _dontSetUseDBForOrder: false,
+  _dontSetUseSavedOrder: false,
 
   
 
@@ -753,7 +753,7 @@ SearchService.prototype = {
 
     
     
-    this._dontSetUseDBForOrder = true;
+    this._dontSetUseSavedOrder = true;
 
     
     
@@ -936,7 +936,7 @@ SearchService.prototype = {
       SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.REMOVED);
     }
 
-    this._dontSetUseDBForOrder = false;
+    this._dontSetUseSavedOrder = false;
     
     this.__sortedEngines = null;
     Services.obs.notifyObservers(
@@ -1016,7 +1016,7 @@ SearchService.prototype = {
       
       
       
-      if (this.__sortedEngines && !this._dontSetUseDBForOrder) {
+      if (this.__sortedEngines && !this._dontSetUseSavedOrder) {
         this.__sortedEngines.push(engine);
         this._saveSortedEngineList();
       }
@@ -1160,10 +1160,7 @@ SearchService.prototype = {
 
     
     
-    Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder",
-      true
-    );
+    this._settings.setAttribute("useSavedOrder", true);
 
     var engines = this._getSortedEngines(true);
 
@@ -1181,13 +1178,8 @@ SearchService.prototype = {
 
     
     
-    if (
-      Services.prefs.getBoolPref(
-        SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder",
-        false
-      )
-    ) {
-      logConsole.debug("_buildSortedEngineList: using db for order");
+    if (this._settings.getAttribute("useSavedOrder")) {
+      logConsole.debug("_buildSortedEngineList: using saved order");
       let addedEngines = {};
 
       
@@ -1882,7 +1874,7 @@ SearchService.prototype = {
       this._internalRemoveEngine(engineToRemove);
 
       
-      if (!this._dontSetUseDBForOrder) {
+      if (!this._dontSetUseSavedOrder) {
         this._saveSortedEngineList();
       }
     }

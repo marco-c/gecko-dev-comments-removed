@@ -112,6 +112,17 @@ class SearchSettings {
     if (json.metaData) {
       this._metaData = json.metaData;
     }
+    
+    
+    if (json.version < 6 || !("useSavedOrder" in this._metaData)) {
+      const prefName = SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder";
+      let useSavedOrder = Services.prefs.getBoolPref(prefName, false);
+
+      this.setAttribute("useSavedOrder", useSavedOrder);
+
+      
+      Services.prefs.clearUserPref(prefName);
+    }
 
     return json;
   }
@@ -217,6 +228,19 @@ class SearchSettings {
 
 
 
+  setAttribute(name, val) {
+    this._metaData[name] = val;
+    this._delayedWrite();
+  }
+
+  
+
+
+
+
+
+
+
 
   setVerifiedAttribute(name, val) {
     this._metaData[name] = val;
@@ -235,7 +259,7 @@ class SearchSettings {
 
 
   getAttribute(name) {
-    return this._metaData[name] || undefined;
+    return this._metaData[name] ?? undefined;
   }
 
   

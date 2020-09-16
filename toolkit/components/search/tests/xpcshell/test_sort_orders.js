@@ -61,8 +61,8 @@ add_task(async function test_engine_sort_with_non_builtins_sort() {
 
   
   
-  Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder",
+  Services.search.wrappedJSObject._settings.setAttribute(
+    "useSavedOrder",
     false
   );
 
