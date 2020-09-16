@@ -9,6 +9,7 @@
 
 use neqo_common::qinfo;
 
+mod addr_valid;
 mod cc;
 mod cid;
 mod connection;
@@ -39,7 +40,6 @@ pub use self::packet::QuicVersion;
 pub use self::stats::Stats;
 pub use self::stream_id::StreamId;
 
-const LOCAL_IDLE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30); 
 pub use self::recv_stream::RECV_BUFFER_SIZE;
 pub use self::send_stream::SEND_BUFFER_SIZE;
 
@@ -79,11 +79,12 @@ pub enum Error {
     InvalidResumptionToken,
     InvalidRetry,
     InvalidStreamId,
+    KeysDiscarded,
     
     
     KeysExhausted,
     
-    KeysNotFound,
+    KeysPending(crypto::CryptoSpace),
     
     
     KeyUpdateBlocked,

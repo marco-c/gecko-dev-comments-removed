@@ -25,6 +25,8 @@ pub struct Stats {
     pub dups_rx: usize,
     
     pub dropped_rx: usize,
+    
+    pub saved_datagrams: usize,
 
     
     pub packets_tx: usize,
@@ -61,8 +63,8 @@ impl Debug for Stats {
         writeln!(f, "stats for {}", self.info)?;
         writeln!(
             f,
-            "  rx: {} drop {} dup {}",
-            self.packets_rx, self.dropped_rx, self.dups_rx
+            "  rx: {} drop {} dup {} saved {}",
+            self.packets_rx, self.dropped_rx, self.dups_rx, self.saved_datagrams
         )?;
         writeln!(
             f,

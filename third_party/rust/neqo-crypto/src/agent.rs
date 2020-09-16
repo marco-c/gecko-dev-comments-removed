@@ -33,6 +33,9 @@ use std::ptr::{null, null_mut, NonNull};
 use std::rc::Rc;
 use std::time::Instant;
 
+
+const MAX_TICKETS: usize = 4;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum HandshakeState {
     New,
@@ -685,11 +688,12 @@ impl ::std::fmt::Display for SecretAgent {
 
 
 #[derive(Debug)]
+#[allow(clippy::box_vec)] 
 pub struct Client {
     agent: SecretAgent,
 
     
-    resumption: Pin<Box<Option<Vec<u8>>>>,
+    resumption: Pin<Box<Vec<Vec<u8>>>>,
 }
 
 impl Client {
@@ -704,7 +708,7 @@ impl Client {
         agent.ready(false)?;
         let mut client = Self {
             agent,
-            resumption: Box::pin(None),
+            resumption: Box::pin(Vec::new()),
         };
         client.ready()?;
         Ok(client)
@@ -716,7 +720,7 @@ impl Client {
         len: c_uint,
         arg: *mut c_void,
     ) -> ssl::SECStatus {
-        let resumption_ptr = arg as *mut Option<Vec<u8>>;
+        let resumption_ptr = arg as *mut Vec<Vec<u8>>;
         let resumption = resumption_ptr.as_mut().unwrap();
         let len = usize::try_from(len).unwrap();
         let mut v = Vec::with_capacity(len);
@@ -726,7 +730,10 @@ impl Client {
             "Got resumption token {}",
             hex_snip_middle(&v)
         );
-        *resumption = Some(v);
+        if resumption.len() >= MAX_TICKETS {
+            resumption.remove(0);
+        }
+        resumption.push(v);
         ssl::SECSuccess
     }
 
@@ -743,8 +750,8 @@ impl Client {
 
     
     #[must_use]
-    pub fn resumption_token(&self) -> Option<&Vec<u8>> {
-        (*self.resumption).as_ref()
+    pub fn resumption_token(&mut self) -> Option<Vec<u8>> {
+        (*self.resumption).pop()
     }
 
     
@@ -752,7 +759,7 @@ impl Client {
     
     
     
-    pub fn set_resumption_token(&mut self, token: &[u8]) -> Res<()> {
+    pub fn enable_resumption(&mut self, token: &[u8]) -> Res<()> {
         unsafe {
             ssl::SSL_SetResumptionToken(
                 self.agent.fd,
