@@ -232,6 +232,11 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   
   uint32_t NaturalWidth();
   uint32_t NaturalHeight();
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT mozilla::CSSIntSize GetWidthHeightForImage();
 
   
 

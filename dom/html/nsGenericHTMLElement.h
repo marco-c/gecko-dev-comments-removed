@@ -261,15 +261,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
  public:
   
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  nsSize GetWidthHeightForImage(RefPtr<imgRequestProxy>& aImageRequest);
-
- public:
-  
   virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
   virtual void UnbindFromTree(bool aNullParent = true) override;
 
