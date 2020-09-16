@@ -524,12 +524,18 @@ function Search(
   
   
   
+  this._searchTokens = queryContext.shouldFilterRestrictionTokens
+    ? this.filterTokens(tokens)
+    : tokens;
+
+  
+  
+  
   if (
     queryContext &&
     queryContext.restrictSource &&
     sourceToBehaviorMap.has(queryContext.restrictSource)
   ) {
-    this._searchTokens = tokens;
     this._behavior = 0;
     this.setBehavior("restrict");
     let behavior = sourceToBehaviorMap.get(queryContext.restrictSource);
@@ -539,7 +545,6 @@ function Search(
     
     this._heuristicToken = null;
   } else {
-    this._searchTokens = this.filterTokens(tokens);
     
     
     
