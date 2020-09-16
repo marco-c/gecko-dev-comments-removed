@@ -78,9 +78,23 @@ void TrialInliner::replaceICStub(const ICEntry& entry, CacheIRWriter& writer,
 }
 
 ICStub* TrialInliner::maybeSingleStub(const ICEntry& entry) {
+  
+  
+  
+  
   ICStub* stub = entry.firstStub();
-  if (stub->isFallback() || !stub->next()->isFallback()) {
+  if (stub->isFallback()) {
     return nullptr;
+  }
+  ICStub* next = stub->next();
+  if (next->getEnteredCount() != 0) {
+    return nullptr;
+  }
+  if (!next->isFallback()) {
+    ICStub* nextNext = next->next();
+    if (!nextNext->isFallback() || nextNext->getEnteredCount() != 0) {
+      return nullptr;
+    }
   }
   return stub;
 }
