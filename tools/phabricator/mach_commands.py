@@ -40,13 +40,13 @@ class PhabricatorCommandProvider(MachCommandBase):
         
         
         
-        
         if not shutil.which("pip3"):
             self.log(
                 logging.ERROR,
                 "pip3_not_installed",
                 {},
-                "`pip3` is not installed. Try running `mach bootstrap`.",
+                "`pip3` is not installed. Try installing it with your system "
+                "package manager.",
             )
             sys.exit(1)
 
