@@ -164,6 +164,10 @@ var PrintEventHandler = {
           ? PrintUtils.getPrintSettings(this.viewSettings.defaultSystemPrinter)
           : this.settings.clone();
       settings.showPrintProgress = true;
+      
+      
+      
+      settings.title = this.previewBrowser.browsingContext.embedderElement.contentTitle;
       const PRINTPROMPTSVC = Cc[
         "@mozilla.org/embedcomp/printingprompt-service;1"
       ].getService(Ci.nsIPrintingPromptService);
