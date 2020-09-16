@@ -104,7 +104,9 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   JSFunction* fun_ = nullptr;
   const ExceptionBailoutInfo* excInfo_ = nullptr;
   ICScript* icScript_ = nullptr;
+  jsbytecode* pc_ = nullptr;
 
+  JSOp op_ = JSOp::Nop;
   uint32_t exprStackSlots_ = 0;
   void* prevFramePtr_ = nullptr;
   Maybe<BufferPointer<BaselineFrame>> blFrame_;
@@ -151,6 +153,8 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   MOZ_MUST_USE bool buildBaselineFrame();
   MOZ_MUST_USE bool buildArguments();
   MOZ_MUST_USE bool buildFixedSlots();
+  MOZ_MUST_USE bool fixUpCallerArgs(MutableHandleValueVector savedCallerArgs,
+                                    bool* fixedUp);
 
  private:
   JSScript* script() const {
@@ -178,6 +182,16 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
 
   size_t frameNo() const { return frameNo_; }
   bool isOutermostFrame() const { return frameNo_ == 0; }
+
+  jsbytecode* pc() const { return pc_; }
+  JSOp op() const { return op_; }
+  bool resumeAfter() const {
+    return !catchingException() && iter_.resumeAfter();
+  }
+
+  bool needToSaveCallerArgs() const {
+    return op_ == JSOp::FunApply || IsIonInlinableGetterOrSetterOp(op_);
+  }
 
   MOZ_MUST_USE bool enlarge() {
     MOZ_ASSERT(header_ != nullptr);
@@ -497,6 +511,23 @@ bool BaselineStackBuilder::initFrame(JSScript* frameScript,
   }
   prevFramePtr_ = virtualPointerAtStackOffset(0);
 
+  
+  
+  pc_ = catchingException() ? excInfo_->resumePC()
+                            : script()->offsetToPC(iter_.pcOffset());
+  op_ = JSOp(*pc_);
+
+  
+  
+  
+  
+  
+  
+  
+  if (!JitOptions.disablePgo && script()->hasScriptCounts()) {
+    script()->incHitCount(pc_);
+  }
+
   return true;
 }
 
@@ -692,6 +723,116 @@ bool BaselineStackBuilder::buildFixedSlots() {
       return false;
     }
   }
+  return true;
+}
+
+
+
+bool BaselineStackBuilder::fixUpCallerArgs(
+    MutableHandleValueVector savedCallerArgs, bool* fixedUp) {
+  MOZ_ASSERT(!*fixedUp);
+
+  
+  MOZ_ASSERT(!IsSpreadOp(op_));
+
+  if (op_ != JSOp::FunCall && !needToSaveCallerArgs()) {
+    return true;
+  }
+
+  
+  
+  uint32_t inlinedArgs = 2;
+  if (op_ == JSOp::FunCall) {
+    
+    
+    inlinedArgs += GET_ARGC(pc_) - 1;
+  } else if (op_ == JSOp::FunApply) {
+    
+    
+    
+    inlinedArgs += blFrame()->numActualArgs();
+  } else {
+    MOZ_ASSERT(IsIonInlinableGetterOrSetterOp(op_));
+    
+    if (IsSetPropOp(op_)) {
+      inlinedArgs++;
+    }
+  }
+
+  
+  
+  MOZ_ASSERT(inlinedArgs <= exprStackSlots());
+  uint32_t liveStackSlots = exprStackSlots() - inlinedArgs;
+
+  JitSpew(JitSpew_BaselineBailouts,
+          "      pushing %u expression stack slots before fixup",
+          liveStackSlots);
+  for (uint32_t i = 0; i < liveStackSlots; i++) {
+    Value v = iter_.read();
+    if (!writeValue(v, "StackValue")) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  
+  if (op_ == JSOp::FunCall) {
+    
+    
+    
+    
+    JitSpew(JitSpew_BaselineBailouts,
+            "      pushing undefined to fixup funcall");
+    if (!writeValue(UndefinedValue(), "StackValue")) {
+      return false;
+    }
+    JitSpew(JitSpew_BaselineBailouts, "      pushing %u expression stack slots",
+            inlinedArgs);
+    for (uint32_t i = 0; i < inlinedArgs; i++) {
+      Value arg = iter_.read();
+      if (!writeValue(arg, "StackValue")) {
+        return false;
+      }
+    }
+  } else if (op_ == JSOp::FunApply) {
+    
+    
+    
+    
+    JitSpew(JitSpew_BaselineBailouts,
+            "      pushing 4x undefined to fixup funapply");
+    if (!writeValue(UndefinedValue(), "StackValue") ||
+        !writeValue(UndefinedValue(), "StackValue") ||
+        !writeValue(UndefinedValue(), "StackValue") ||
+        !writeValue(UndefinedValue(), "StackValue")) {
+      return false;
+    }
+  }
+
+  if (needToSaveCallerArgs()) {
+    
+    if (!savedCallerArgs.resize(inlinedArgs)) {
+      return false;
+    }
+    for (uint32_t i = 0; i < inlinedArgs; i++) {
+      savedCallerArgs[i].set(iter_.read());
+    }
+
+    if (IsSetPropOp(op_)) {
+      
+      
+      Value initialArg = savedCallerArgs[inlinedArgs - 1];
+      JitSpew(JitSpew_BaselineBailouts,
+              "     pushing setter's initial argument");
+      if (!writeValue(initialArg, "StackValue")) {
+        return false;
+      }
+    }
+  }
+
+  *fixedUp = true;
   return true;
 }
 
@@ -951,125 +1092,18 @@ static bool InitFromBailout(JSContext* cx, HandleFunction fun,
     return false;
   }
 
-  
-  
-  jsbytecode* const pc = catchingException
-                             ? excInfo->resumePC()
-                             : script->offsetToPC(iter.pcOffset());
-  const bool resumeAfter = catchingException ? false : iter.resumeAfter();
+  jsbytecode* const pc = builder.pc();
+  const bool resumeAfter = builder.resumeAfter();
+  const JSOp op = builder.op();
 
-  
-  
-  
-  
-  
-  
-  
-  if (!JitOptions.disablePgo && script->hasScriptCounts()) {
-    script->incHitCount(pc);
-  }
-
-  const JSOp op = JSOp(*pc);
-
-  
-  MOZ_ASSERT_IF(IsSpreadOp(op), !iter.moreFrames());
-
-  
-  
-  
-  uint32_t pushedSlots = 0;
+  bool fixedUp = false;
   RootedValueVector savedCallerArgs(cx);
-  bool needToSaveArgs =
-      op == JSOp::FunApply || IsIonInlinableGetterOrSetterOp(op);
-  if (iter.moreFrames() && (op == JSOp::FunCall || needToSaveArgs)) {
-    uint32_t inlined_args = 0;
-    if (op == JSOp::FunCall) {
-      inlined_args = 2 + GET_ARGC(pc) - 1;
-    } else if (op == JSOp::FunApply) {
-      inlined_args = 2 + builder.blFrame()->numActualArgs();
-    } else {
-      MOZ_ASSERT(IsIonInlinableGetterOrSetterOp(op));
-      inlined_args = 2 + IsSetPropOp(op);
-    }
-
-    MOZ_ASSERT(exprStackSlots >= inlined_args);
-    pushedSlots = exprStackSlots - inlined_args;
-
-    JitSpew(JitSpew_BaselineBailouts,
-            "      pushing %u expression stack slots before fixup",
-            pushedSlots);
-    for (uint32_t i = 0; i < pushedSlots; i++) {
-      Value v = iter.read();
-      if (!builder.writeValue(v, "StackValue")) {
-        return false;
-      }
-    }
-
-    if (op == JSOp::FunCall) {
-      
-      
-      
-      
-      
-      JitSpew(JitSpew_BaselineBailouts,
-              "      pushing undefined to fixup funcall");
-      if (!builder.writeValue(UndefinedValue(), "StackValue")) {
-        return false;
-      }
-    }
-
-    if (needToSaveArgs) {
-      
-      
-      
-
-      
-      
-      
-      
-      
-      
-      
-      if (op == JSOp::FunApply) {
-        JitSpew(JitSpew_BaselineBailouts,
-                "      pushing 4x undefined to fixup funapply");
-        if (!builder.writeValue(UndefinedValue(), "StackValue")) {
-          return false;
-        }
-        if (!builder.writeValue(UndefinedValue(), "StackValue")) {
-          return false;
-        }
-        if (!builder.writeValue(UndefinedValue(), "StackValue")) {
-          return false;
-        }
-        if (!builder.writeValue(UndefinedValue(), "StackValue")) {
-          return false;
-        }
-      }
-      
-      
-      if (!savedCallerArgs.resize(inlined_args)) {
-        return false;
-      }
-      for (uint32_t i = 0; i < inlined_args; i++) {
-        savedCallerArgs[i].set(iter.read());
-      }
-
-      if (IsSetPropOp(op)) {
-        
-        
-        
-        
-        Value initialArg = savedCallerArgs[inlined_args - 1];
-        JitSpew(JitSpew_BaselineBailouts,
-                "     pushing setter's initial argument");
-        if (!builder.writeValue(initialArg, "StackValue")) {
-          return false;
-        }
-      }
-      pushedSlots = exprStackSlots;
-    }
+  if (iter.moreFrames() &&
+      !builder.fixUpCallerArgs(&savedCallerArgs, &fixedUp)) {
+    return false;
   }
+
+  uint32_t pushedSlots = fixedUp ? exprStackSlots : 0;
 
   JitSpew(JitSpew_BaselineBailouts, "      pushing %u expression stack slots",
           exprStackSlots - pushedSlots);
@@ -1304,7 +1338,7 @@ static bool InitFromBailout(JSContext* cx, HandleFunction fun,
   bool pushedNewTarget = IsConstructPC(pc);
   unsigned actualArgc;
   Value callee;
-  if (needToSaveArgs) {
+  if (builder.needToSaveCallerArgs()) {
     
     
     if (op == JSOp::FunApply) {
