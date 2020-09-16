@@ -36,6 +36,10 @@ loader.lazyRequireGetter(
   "devtools/shared/layout/utils",
   true
 );
+const {
+  TYPES,
+  getResourceWatcher,
+} = require("devtools/server/actors/resources/index");
 
 var TRANSITION_PSEUDO_CLASS = ":-moz-styleeditor-transitioning";
 var TRANSITION_DURATION_MS = 500;
@@ -905,12 +909,33 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     return this.parentActor._targetScopedActorPool.getActorByID(resourceId);
   },
 
+  _getStyleSheetsWatcher() {
+    return getResourceWatcher(this.parentActor, TYPES.STYLESHEET);
+  },
+
   toggleDisabled(resourceId) {
+    const styleSheetsWatcher = this._getStyleSheetsWatcher();
+    if (styleSheetsWatcher) {
+      return styleSheetsWatcher.toggleDisabled(resourceId);
+    }
+
+    
+    
+    
     const actor = this._getStyleSheetActor(resourceId);
     return actor.toggleDisabled();
   },
 
-  getText(resourceId) {
+  async getText(resourceId) {
+    const styleSheetsWatcher = this._getStyleSheetsWatcher();
+    if (styleSheetsWatcher) {
+      const text = await styleSheetsWatcher.getText(resourceId);
+      return new LongStringActor(this.conn, text || "");
+    }
+
+    
+    
+    
     const actor = this._getStyleSheetActor(resourceId);
     return actor.getText();
   },
