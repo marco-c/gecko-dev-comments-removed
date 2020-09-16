@@ -1018,6 +1018,11 @@ function makeDReportMap(aJSONReports, aForgetIsolation) {
     );
 
     
+    if (path.startsWith("address-space")) {
+      path = path.replace(/\(segments=\d+\)/g, "(segments=NNNN)");
+    }
+
+    
     path = path.replace(
       /jar:file:\\\\\\(.+)\\omni.ja!/,
       "jar:file:\\\\\\...\\omni.ja!"
