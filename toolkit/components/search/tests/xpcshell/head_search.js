@@ -197,77 +197,7 @@ function isUSTimezone() {
   return UTCOffset >= 150 && UTCOffset <= 600;
 }
 
-const kDefaultenginenamePref = "browser.search.defaultenginename";
 const kTestEngineName = "Test search engine";
-const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
-
-
-
-
-
-
-
-
-
-
-
-
-function getDefaultEngineName(isUS = false, privateMode = false) {
-  
-  let chan = NetUtil.newChannel({
-    uri: "resource://search-extensions/list.json",
-    loadUsingSystemPrincipal: true,
-  });
-  const settingName = privateMode ? "searchPrivateDefault" : "searchDefault";
-  let searchSettings = parseJsonFromStream(chan.open());
-  let defaultEngineName = searchSettings.default[settingName];
-
-  if (!isUS) {
-    isUS = Services.locale.requestedLocale == "en-US" && isUSTimezone();
-  }
-
-  if (isUS && "US" in searchSettings && settingName in searchSettings.US) {
-    defaultEngineName = searchSettings.US[settingName];
-  }
-  return defaultEngineName;
-}
-
-function getDefaultEngineList(isUS) {
-  
-  let chan = NetUtil.newChannel({
-    uri: "resource://search-extensions/list.json",
-    loadUsingSystemPrincipal: true,
-  });
-  let json = parseJsonFromStream(chan.open());
-  let visibleDefaultEngines = json.default.visibleDefaultEngines;
-
-  if (isUS === undefined) {
-    isUS = Services.locale.requestedLocale == "en-US" && isUSTimezone();
-  }
-
-  if (isUS) {
-    let searchSettings = json.locales["en-US"];
-    if (
-      "US" in searchSettings &&
-      "visibleDefaultEngines" in searchSettings.US
-    ) {
-      visibleDefaultEngines = searchSettings.US.visibleDefaultEngines;
-    }
-    
-    let searchRegion = "US";
-    if ("regionOverrides" in json && searchRegion in json.regionOverrides) {
-      for (let engine in json.regionOverrides[searchRegion]) {
-        let index = visibleDefaultEngines.indexOf(engine);
-        if (index > -1) {
-          visibleDefaultEngines[index] =
-            json.regionOverrides[searchRegion][engine];
-        }
-      }
-    }
-  }
-
-  return visibleDefaultEngines;
-}
 
 
 
