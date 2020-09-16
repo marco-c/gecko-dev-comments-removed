@@ -10276,7 +10276,7 @@ nsresult nsIFrame::DoXULLayout(nsBoxLayoutState& aState) {
     ReflowInput reflowInput(aState.PresContext(), this,
                             aState.GetRenderingContext(),
                             LogicalSize(ourWM, ISize(), NS_UNCONSTRAINEDSIZE),
-                            ReflowInput::DUMMY_PARENT_REFLOW_INPUT);
+                            ReflowInput::InitFlag::DummyParentReflowInput);
 
     AddStateBits(NS_FRAME_IN_REFLOW);
     
@@ -10378,9 +10378,10 @@ void nsIFrame::BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
 
     nsIFrame* parentFrame = GetParent();
     WritingMode parentWM = parentFrame->GetWritingMode();
-    ReflowInput parentReflowInput(aPresContext, parentFrame, aRenderingContext,
-                                  LogicalSize(parentWM, parentSize),
-                                  ReflowInput::DUMMY_PARENT_REFLOW_INPUT);
+    ReflowInput parentReflowInput(
+        aPresContext, parentFrame, aRenderingContext,
+        LogicalSize(parentWM, parentSize),
+        ReflowInput::InitFlag::DummyParentReflowInput);
 
     
     if (parentSize.width != NS_UNCONSTRAINEDSIZE)
@@ -10418,7 +10419,8 @@ void nsIFrame::BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
     LogicalSize logicalSize(wm, nsSize(aWidth, aHeight));
     logicalSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
     ReflowInput reflowInput(aPresContext, *parentRI, this, logicalSize,
-                            Nothing(), ReflowInput::DUMMY_PARENT_REFLOW_INPUT);
+                            Nothing(),
+                            ReflowInput::InitFlag::DummyParentReflowInput);
 
     
     

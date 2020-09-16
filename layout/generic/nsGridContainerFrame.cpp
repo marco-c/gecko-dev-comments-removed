@@ -4936,7 +4936,7 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
     dummyParentState.emplace(
         pc, parent, aRC,
         LogicalSize(parent->GetWritingMode(), 0, NS_UNCONSTRAINEDSIZE),
-        ReflowInput::DUMMY_PARENT_REFLOW_INPUT);
+        ReflowInput::InitFlag::DummyParentReflowInput);
     rs = dummyParentState.ptr();
   }
 #ifdef DEBUG
@@ -4959,7 +4959,7 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
   } else {
     aChild->RemoveProperty(nsIFrame::BClampMarginBoxMinSizeProperty());
   }
-  ReflowInput childRI(pc, *rs, aChild, aAvailableSize, Some(aCBSize), 0,
+  ReflowInput childRI(pc, *rs, aChild, aAvailableSize, Some(aCBSize), {},
                       csFlags);
 
   
@@ -5010,7 +5010,7 @@ static void PostReflowStretchChild(
   } else {
     aChild->RemoveProperty(nsIFrame::BClampMarginBoxMinSizeProperty());
   }
-  ReflowInput ri(pc, aReflowInput, aChild, aAvailableSize, Some(aCBSize), 0,
+  ReflowInput ri(pc, aReflowInput, aChild, aAvailableSize, Some(aCBSize), {},
                  csFlags);
   if (aChildAxis == eLogicalAxisBlock) {
     ri.SetComputedBSize(ri.ApplyMinMaxBSize(aNewContentBoxSize));
@@ -7212,7 +7212,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
   }
   LogicalSize percentBasis(cb.Size(wm).ConvertTo(childWM, wm));
   ReflowInput childRI(pc, *aState.mReflowInput, aChild, childCBSize,
-                      Some(percentBasis), 0, csFlags);
+                      Some(percentBasis), {}, csFlags);
   childRI.mFlags.mIsTopOfPage =
       aFragmentainer ? aFragmentainer->mIsTopOfPage : false;
 

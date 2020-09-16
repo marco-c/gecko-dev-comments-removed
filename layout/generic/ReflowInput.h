@@ -12,6 +12,7 @@
 #include "nsMargin.h"
 #include "nsStyleConsts.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/WritingModes.h"
 #include "LayoutConstants.h"
@@ -750,6 +751,26 @@ struct ReflowInput : public SizeComputationInput {
   void SetBResize(bool aValue) { mFlags.mIsBResize = aValue; }
 
   
+  enum class InitFlag : uint8_t {
+    
+    
+    DummyParentReflowInput,
+
+    
+    
+    CallerWillInit,
+
+    
+    
+    
+    
+    
+    
+    StaticPosIsCBOrigin,
+  };
+  using InitFlags = mozilla::EnumSet<InitFlag>;
+
+  
   
   
 
@@ -767,7 +788,8 @@ struct ReflowInput : public SizeComputationInput {
 
   ReflowInput(nsPresContext* aPresContext, nsIFrame* aFrame,
               gfxContext* aRenderingContext,
-              const mozilla::LogicalSize& aAvailableSpace, uint32_t aFlags = 0);
+              const mozilla::LogicalSize& aAvailableSpace,
+              InitFlags aFlags = {});
 
   
 
@@ -793,27 +815,8 @@ struct ReflowInput : public SizeComputationInput {
               const mozilla::LogicalSize& aAvailableSpace,
               const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
                   mozilla::Nothing(),
-              uint32_t aFlags = 0,
+              InitFlags aFlags = {},
               mozilla::ComputeSizeFlags aComputeSizeFlags = {});
-
-  
-  enum {
-    
-    
-    DUMMY_PARENT_REFLOW_INPUT = (1 << 0),
-
-    
-    
-    CALLER_WILL_INIT = (1 << 1),
-
-    
-    
-    
-    
-    
-    
-    STATIC_POS_IS_CB_ORIGIN = (1 << 4),
-  };
 
   
   
