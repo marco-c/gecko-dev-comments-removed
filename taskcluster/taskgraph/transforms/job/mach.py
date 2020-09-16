@@ -23,6 +23,11 @@ mach_schema = Schema({
 
     
     
+    
+    Optional('python-version'): Any(text_type, int, float),
+
+    
+    
     Optional('sparse-profile'): Any(text_type, None),
 
     
@@ -43,6 +48,7 @@ defaults = {
 @run_job_using("generic-worker", "mach", schema=mach_schema, defaults=defaults)
 def configure_mach(config, job, taskdesc):
     run = job['run']
+    worker = job['worker']
 
     additional_prefix = []
     if job['worker-type'].endswith('1014'):
@@ -50,6 +56,25 @@ def configure_mach(config, job, taskdesc):
             'LC_ALL=en_US.UTF-8',
             'LANG=en_US.UTF-8'
         ]
+
+    python = run.get('python-version')
+    if python:
+        del run['python-version']
+
+        if worker['os'] == 'macosx' and python == 3:
+            
+            python = '/tools/python37/bin/python3.7'
+            if job['worker-type'].endswith('1014'):
+                python = '/usr/local/bin/python3'
+
+        python = str(python)
+        try:
+            float(python)
+            python = "python" + python
+        except ValueError:
+            pass
+
+        additional_prefix.append(python)
 
     command_prefix = ' '.join(additional_prefix + ['./mach '])
 
