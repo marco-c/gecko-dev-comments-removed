@@ -22,21 +22,26 @@ let AVAILABLE_PIP_OVERRIDES;
     
     
 
-    
-    "https://www.instagram.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+    instagram: {
+      "https://www.instagram.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+    },
 
-    
-    "https://*.laracasts.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+    laracasts: {
+      "https://*.laracasts.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+    },
 
-    
-    "https://*.netflix.com/browse": TOGGLE_POLICIES.HIDDEN,
+    netflix: {
+      "https://*.netflix.com/browse": TOGGLE_POLICIES.HIDDEN,
+    },
 
-    
-    "https://*.twitch.tv/*": TOGGLE_POLICIES.ONE_QUARTER,
-    "https://*.twitch.tech/*": TOGGLE_POLICIES.ONE_QUARTER,
-    "https://*.twitch.a2z.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+    twitch: {
+      "https://*.twitch.tv/*": TOGGLE_POLICIES.ONE_QUARTER,
+      "https://*.twitch.tech/*": TOGGLE_POLICIES.ONE_QUARTER,
+      "https://*.twitch.a2z.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+    },
 
-    
-    "https://*.udemy.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+    udemy: {
+      "https://*.udemy.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+    },
   };
 }
