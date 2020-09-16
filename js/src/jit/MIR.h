@@ -4369,6 +4369,41 @@ class MTruncateToInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
 };
 
 
+class MWasmBuiltinTruncateToInt32 : public MAryInstruction<2>,
+                                    public ToInt32Policy::Data {
+  wasm::BytecodeOffset bytecodeOffset_;
+
+  MWasmBuiltinTruncateToInt32(
+      MDefinition* def, MDefinition* tls,
+      wasm::BytecodeOffset bytecodeOffset = wasm::BytecodeOffset())
+      : MAryInstruction(classOpcode), bytecodeOffset_(bytecodeOffset) {
+    initOperand(0, def);
+    initOperand(1, tls);
+    setResultType(MIRType::Int32);
+    setMovable();
+
+    
+    if (MTruncateToInt32::mightHaveSideEffects(def)) {
+      setGuard();
+    }
+  }
+
+ public:
+  INSTRUCTION_HEADER(WasmBuiltinTruncateToInt32)
+  NAMED_OPERANDS((0, input), (1, tls))
+  TRIVIAL_NEW_WRAPPERS
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  wasm::BytecodeOffset bytecodeOffset() const { return bytecodeOffset_; }
+
+  ALLOW_CLONE(MWasmBuiltinTruncateToInt32)
+};
+
+
 
 class MToBigInt : public MUnaryInstruction, public ToBigIntPolicy::Data {
  private:
