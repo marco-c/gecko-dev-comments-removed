@@ -19,7 +19,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   modal: "chrome://marionette/content/modal.js",
 });
 
-XPCOMUtils.defineLazyGetter(this, "log", Log.get);
+XPCOMUtils.defineLazyGetter(this, "logger", Log.get);
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "uuidgen",
@@ -147,7 +147,7 @@ proxy.AsyncMessageChannel = class {
       
       
       this.closeHandler = async ({ type, target }) => {
-        log.trace(`Received DOM event ${type} for ${target}`);
+        logger.trace(`Received DOM event ${type} for ${target}`);
 
         let messageManager;
         switch (type) {
