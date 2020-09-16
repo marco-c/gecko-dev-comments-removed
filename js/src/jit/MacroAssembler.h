@@ -232,6 +232,11 @@ enum class CheckUnsafeCallWithABI {
 
 enum class CharEncoding { Latin1, TwoByte };
 
+constexpr uint32_t WasmCallerTLSOffsetBeforeCall =
+    wasm::FrameWithTls::callerTLSOffset() + ShadowStackSpace;
+constexpr uint32_t WasmCalleeTLSOffsetBeforeCall =
+    wasm::FrameWithTls::calleeTLSOffset() + ShadowStackSpace;
+
 
 
 
