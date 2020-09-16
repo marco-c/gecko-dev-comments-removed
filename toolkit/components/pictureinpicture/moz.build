@@ -4,8 +4,6 @@
 
 
 
-SPHINX_TREES['pictureinpicture'] = 'docs'
-
 JAR_MANIFESTS += ['jar.mn']
 
 EXTRA_JS_MODULES += [
