@@ -782,7 +782,6 @@ var gPrivacyPane = {
 
 
   initContentBlocking() {
-    setEventListener("changeBlockListLink", "click", this.showBlockLists);
     setEventListener(
       "contentBlockingTrackingProtectionCheckbox",
       "command",
