@@ -1,7 +1,7 @@
-#!/usr/bin/env -S python3 -B
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this file,
-# You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
 
 import argparse
 import enum
@@ -95,8 +95,8 @@ package_name = '{}.tar.xz'.format(version)
 package_file = dist_dir / package_name
 tar_opts = ['-Jcf']
 
-# Given there might be some external program that reads the following output,
-# use raw `print`, instead of logging.
+
+
 print('Environment:')
 print('    TAR = {}'.format(tar))
 print('    RSYNC = {}'.format(rsync))
@@ -176,7 +176,9 @@ rsync_filter_list = """
 
 + /layout/tools/reftest/reftest/**
 
++ /testing/moz.build
 + /testing/mozbase/**
++ /testing/performance/**
 + /testing/web-platform/tests/streams/**
 
 + /toolkit/crashreporter/tools/symbolstore.py
@@ -264,7 +266,7 @@ def create_target_dir():
 
 
 def sync_files():
-    # Output of the command should directly go to stdout/stderr.
+    
     p = subprocess.Popen([str(rsync),
                           '--delete-excluded',
                           '--prune-empty-dirs',
