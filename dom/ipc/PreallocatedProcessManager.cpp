@@ -38,7 +38,6 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
   void AddBlocker(ContentParent* aParent);
   void RemoveBlocker(ContentParent* aParent);
   already_AddRefed<ContentParent> Take(const nsACString& aRemoteType);
-  bool Provide(ContentParent* aParent);
   void Erase(ContentParent* aParent);
 
  private:
@@ -75,7 +74,6 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
   bool mLaunchInProgress;
   uint32_t mNumberPreallocs;
   std::deque<RefPtr<ContentParent>> mPreallocatedProcesses;
-  RefPtr<ContentParent> mPreallocatedE10SProcess;  
   
   
   static uint32_t sNumBlockers;
@@ -195,49 +193,20 @@ already_AddRefed<ContentParent> PreallocatedProcessManagerImpl::Take(
     return nullptr;
   }
   RefPtr<ContentParent> process;
-  if (aRemoteType == DEFAULT_REMOTE_TYPE) {
-    
-    process = mPreallocatedE10SProcess.forget();
-    if (process) {
-      MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-              ("Reuse web process %p", process.get()));
-    }
-  }
-  if (!process && !mPreallocatedProcesses.empty()) {
+  if (!mPreallocatedProcesses.empty()) {
     process = mPreallocatedProcesses.front().forget();
     mPreallocatedProcesses.pop_front();  
+
+    ProcessPriorityManager::SetProcessPriority(process,
+                                               PROCESS_PRIORITY_FOREGROUND);
+
     
     
     AllocateOnIdle();
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("Use prealloc process %p", process.get()));
   }
-  if (process) {
-    ProcessPriorityManager::SetProcessPriority(process,
-                                               PROCESS_PRIORITY_FOREGROUND);
-  }
   return process.forget();
-}
-
-bool PreallocatedProcessManagerImpl::Provide(ContentParent* aParent) {
-  MOZ_DIAGNOSTIC_ASSERT(aParent->GetRemoteType() == DEFAULT_REMOTE_TYPE);
-
-  
-  
-  
-  if (mEnabled && !sShutdown && !mPreallocatedE10SProcess) {
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("Store for reuse web process %p", aParent));
-    ProcessPriorityManager::SetProcessPriority(aParent,
-                                               PROCESS_PRIORITY_BACKGROUND);
-    mPreallocatedE10SProcess = aParent;
-    return true;
-  }
-
-  
-  
-  
-  return aParent == mPreallocatedE10SProcess;
 }
 
 void PreallocatedProcessManagerImpl::Erase(ContentParent* aParent) {
@@ -248,9 +217,6 @@ void PreallocatedProcessManagerImpl::Erase(ContentParent* aParent) {
       mPreallocatedProcesses.erase(it);
       break;
     }
-  }
-  if (mPreallocatedE10SProcess == aParent) {
-    mPreallocatedE10SProcess = nullptr;
   }
 }
 
@@ -272,9 +238,6 @@ void PreallocatedProcessManagerImpl::AddBlocker(ContentParent* aParent) {
 }
 
 void PreallocatedProcessManagerImpl::RemoveBlocker(ContentParent* aParent) {
-  
-  
-  
   
   
   
@@ -394,11 +357,6 @@ void PreallocatedProcessManagerImpl::CloseProcesses() {
     process->ShutDownProcess(ContentParent::SEND_SHUTDOWN_MESSAGE);
     
   }
-  if (mPreallocatedE10SProcess) {
-    mPreallocatedE10SProcess->ShutDownProcess(
-        ContentParent::SEND_SHUTDOWN_MESSAGE);
-    mPreallocatedE10SProcess = nullptr;
-  }
 }
 
 inline PreallocatedProcessManagerImpl*
@@ -440,14 +398,6 @@ already_AddRefed<ContentParent> PreallocatedProcessManager::Take(
     return impl->Take(aRemoteType);
   }
   return nullptr;
-}
-
-
-bool PreallocatedProcessManager::Provide(ContentParent* aParent) {
-  if (auto impl = GetPPMImpl()) {
-    return impl->Provide(aParent);
-  }
-  return false;  
 }
 
 

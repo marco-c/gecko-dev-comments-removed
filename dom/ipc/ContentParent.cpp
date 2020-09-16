@@ -590,6 +590,7 @@ UniquePtr<nsDataHashtable<nsUint32HashKey, ContentParent*>>
     ContentParent::sJSPluginContentParents;
 UniquePtr<nsTArray<ContentParent*>> ContentParent::sPrivateContent;
 UniquePtr<LinkedList<ContentParent>> ContentParent::sContentParents;
+StaticRefPtr<ContentParent> ContentParent::sRecycledE10SProcess;
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 UniquePtr<SandboxBrokerPolicyFactory>
     ContentParent::sSandboxBrokerPolicyFactory;
@@ -924,25 +925,41 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
 
   
   
-  
-  
   RefPtr<ContentParent> p;
-  bool preallocated = false;
+  if (aRemoteType == DEFAULT_REMOTE_TYPE &&
+      (p = sRecycledE10SProcess.forget())) {
+    MOZ_DIAGNOSTIC_ASSERT(p->GetRemoteType() == DEFAULT_REMOTE_TYPE);
+    p->AssertAlive();
+
+#ifdef MOZ_GECKO_PROFILER
+    if (profiler_thread_is_being_profiled()) {
+      nsPrintfCString marker("Recycled process %u (%p)",
+                             (unsigned int)p->ChildID(), p.get());
+      TimeStamp now = TimeStamp::Now();
+      PROFILER_ADD_MARKER_WITH_PAYLOAD("Process", DOM, TextMarkerPayload,
+                                       (marker, now, now));
+    }
+#endif
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+            ("Recycled process %p", p.get()));
+
+    return p.forget();
+  }
+
+  
+  
+  
+  
   if (aRemoteType != FILE_REMOTE_TYPE &&
       aRemoteType != EXTENSION_REMOTE_TYPE &&  
       (p = PreallocatedProcessManager::Take(aRemoteType)) &&
       !p->mShutdownPending) {
+    MOZ_DIAGNOSTIC_ASSERT(p->GetRemoteType() == PREALLOC_REMOTE_TYPE);
     p->AssertAlive();
 
-    
-    
-    
-    preallocated = p->mRemoteType == PREALLOC_REMOTE_TYPE;
-    
 #ifdef MOZ_GECKO_PROFILER
     if (profiler_thread_is_being_profiled()) {
-      nsPrintfCString marker("Assigned %s process %u",
-                             preallocated ? "preallocated" : "reused web",
+      nsPrintfCString marker("Assigned preallocated process %u",
                              (unsigned int)p->ChildID());
       TimeStamp now = TimeStamp::Now();
       PROFILER_ADD_MARKER_WITH_PAYLOAD("Process", DOM, TextMarkerPayload,
@@ -950,30 +967,23 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     }
 #endif
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("Adopted %s process %p for type %s",
-             preallocated ? "preallocated" : "reused web", p.get(),
+            ("Adopted preallocated process %p for type %s", p.get(),
              PromiseFlatCString(aRemoteType).get()));
+
+    
     p->mActivateTS = TimeStamp::Now();
     p->AddToPool(aContentParents);
-    if (preallocated) {
-      p->mRemoteType.Assign(aRemoteType);
-      
-      Unused << p->SendRemoteType(p->mRemoteType);
 
-      nsCOMPtr<nsIObserverService> obs =
-          mozilla::services::GetObserverService();
+    p->mRemoteType.Assign(aRemoteType);
+    Unused << p->SendRemoteType(p->mRemoteType);
 
-      if (obs) {
-        nsAutoString cpId;
-        cpId.AppendInt(static_cast<uint64_t>(p->ChildID()));
-        obs->NotifyObservers(static_cast<nsIObserver*>(p), "process-type-set",
-                             cpId.get());
-        p->AssertAlive();
-      }
-    } else {
-      
-      MOZ_RELEASE_ASSERT(p->mRemoteType == DEFAULT_REMOTE_TYPE &&
-                         aRemoteType == DEFAULT_REMOTE_TYPE);
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      nsAutoString cpId;
+      cpId.AppendInt(static_cast<uint64_t>(p->ChildID()));
+      obs->NotifyObservers(static_cast<nsIObserver*>(p), "process-type-set",
+                           cpId.get());
+      p->AssertAlive();
     }
     return p.forget();
   }
@@ -1543,7 +1553,7 @@ void ContentParent::MaybeAsyncSendShutDownMessage() {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("MaybeAsyncSendShutDownMessage %p", this));
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!TryToRecycle());
+  MOZ_ASSERT(sRecycledE10SProcess != this);
 
 #ifdef DEBUG
   
@@ -1664,6 +1674,7 @@ void ContentParent::AssertNotInPool() {
   MOZ_RELEASE_ASSERT(!mIsInPool);
 
   MOZ_RELEASE_ASSERT(!sPrivateContent || !sPrivateContent->Contains(this));
+  MOZ_RELEASE_ASSERT(sRecycledE10SProcess != this);
   if (IsForJSPlugin()) {
     MOZ_RELEASE_ASSERT(!sJSPluginContentParents ||
                        !sJSPluginContentParents->Get(mJSPluginID));
@@ -1716,6 +1727,10 @@ void ContentParent::RemoveFromList() {
   
   for (auto& group : mGroups) {
     group.GetKey()->RemoveHostProcess(this);
+  }
+
+  if (sRecycledE10SProcess == this) {
+    sRecycledE10SProcess = nullptr;
   }
 
   if (sBrowserContentParents) {
@@ -1964,6 +1979,7 @@ bool ContentParent::TryToRecycle() {
   if (mRemoteType != DEFAULT_REMOTE_TYPE) {
     return false;
   }
+
   
   
 
@@ -1978,28 +1994,35 @@ bool ContentParent::TryToRecycle() {
   if (mShutdownPending || mCalledKillHard || !IsAlive() ||
       (TimeStamp::Now() - mActivateTS).ToSeconds() > kMaxLifeSpan) {
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("TryToRecycle did not take ownership of %p", this));
+            ("TryToRecycle did not recycle %p", this));
+
     
     
     
-    
-    
-    PreallocatedProcessManager::Erase(this);
+    if (sRecycledE10SProcess == this) {
+      sRecycledE10SProcess = nullptr;
+    }
     return false;
   }
-  
-  
-  
-  
-  bool retval = PreallocatedProcessManager::Provide(this);
-  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("Provide did %stake ownership of %p", retval ? "" : "not ", this));
-  if (retval) {
-    
-    
-    RemoveFromList();
+
+  if (!sRecycledE10SProcess) {
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+            ("TryToRecycle began recycling %p", this));
+    sRecycledE10SProcess = this;
+    return true;
   }
-  return retval;
+
+  if (sRecycledE10SProcess == this) {
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+            ("TryToRecycle continue recycling %p", this));
+    return true;
+  }
+
+  
+  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+          ("TryToRecycle did not recycle %p (already recycling %p)", this,
+           sRecycledE10SProcess.get()));
+  return false;
 }
 
 bool ContentParent::HasActiveWorkerOrJSPlugin() {
