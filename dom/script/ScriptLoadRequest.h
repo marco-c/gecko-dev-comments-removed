@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_ScriptLoadRequest_h
 #define mozilla_dom_ScriptLoadRequest_h
 
+#include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/Element.h"
@@ -323,6 +324,10 @@ class ScriptLoadRequest
 
   JS::OffThreadToken* mOffThreadToken;  
   Maybe<nsString> mSourceMapURL;  
+
+  Atomic<Runnable*> mRunnable;  
+                                
+                                
 
   
   
