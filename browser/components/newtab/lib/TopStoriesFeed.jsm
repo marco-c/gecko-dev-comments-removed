@@ -54,6 +54,7 @@ const DISCOVERY_STREAM_PREF_ENABLED_PATH =
   "browser.newtabpage.activity-stream.discoverystream.enabled";
 const REC_IMPRESSION_TRACKING_PREF = "feeds.section.topstories.rec.impressions";
 const OPTIONS_PREF = "feeds.section.topstories.options";
+const PREF_USER_TOPSTORIES = "feeds.section.topstories";
 const MAX_LIFETIME_CAP = 500; 
 const DISCOVERY_STREAM_PREF = "discoverystream.config";
 
@@ -778,15 +779,18 @@ this.TopStoriesFeed = class TopStoriesFeed {
     return false;
   }
 
-  lazyLoadTopStories(dsPref) {
-    let _dsPref = dsPref;
-    if (!_dsPref) {
-      _dsPref = this.store.getState().Prefs.values[DISCOVERY_STREAM_PREF];
+  lazyLoadTopStories(options = {}) {
+    let { dsPref, userPref } = options;
+    if (!dsPref) {
+      dsPref = this.store.getState().Prefs.values[DISCOVERY_STREAM_PREF];
+    }
+    if (!userPref) {
+      userPref = this.store.getState().Prefs.values[PREF_USER_TOPSTORIES];
     }
 
     try {
       this.discoveryStreamEnabled =
-        JSON.parse(_dsPref).enabled &&
+        JSON.parse(dsPref).enabled &&
         this.store.getState().Prefs.values[DISCOVERY_STREAM_PREF_ENABLED];
     } catch (e) {
       
@@ -794,7 +798,7 @@ this.TopStoriesFeed = class TopStoriesFeed {
     }
 
     
-    if (this.storiesLoaded) {
+    if (this.storiesLoaded || !userPref) {
       return;
     }
 
@@ -811,10 +815,18 @@ this.TopStoriesFeed = class TopStoriesFeed {
         break;
       case at.PREF_CHANGED:
         if (action.data.name === DISCOVERY_STREAM_PREF) {
-          this.lazyLoadTopStories(action.data.value);
+          this.lazyLoadTopStories({ dsPref: action.data.value });
         }
         if (action.data.name === DISCOVERY_STREAM_PREF_ENABLED) {
           this.lazyLoadTopStories();
+        }
+        if (action.data.name === PREF_USER_TOPSTORIES) {
+          if (action.data.value) {
+            
+            this.lazyLoadTopStories({ userPref: action.data.value });
+          } else {
+            this.uninit();
+          }
         }
         break;
       case at.UNINIT:
@@ -900,7 +912,15 @@ this.TopStoriesFeed = class TopStoriesFeed {
       }
       case at.PREF_CHANGED:
         if (action.data.name === DISCOVERY_STREAM_PREF) {
-          this.lazyLoadTopStories(action.data.value);
+          this.lazyLoadTopStories({ dsPref: action.data.value });
+        }
+        if (action.data.name === PREF_USER_TOPSTORIES) {
+          if (action.data.value) {
+            
+            this.lazyLoadTopStories({ userPref: action.data.value });
+          } else {
+            this.uninit();
+          }
         }
         
         if (action.data.name === "showSponsored" && !action.data.value) {
