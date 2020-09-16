@@ -778,8 +778,11 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
           
           if (NS_SUCCEEDED(loadGroupStatus) ||
               loadGroupStatus == NS_ERROR_PARSED_DATA_CACHED) {
+            
+            
             doc->SetReadyStateInternal(Document::READYSTATE_COMPLETE,
                                         false);
+            doc->StopDocumentLoad();
 
             nsCOMPtr<nsPIDOMWindowOuter> window = doc->GetWindow();
             if (window && !doc->SkipLoadEventAfterClose()) {
