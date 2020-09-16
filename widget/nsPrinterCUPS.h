@@ -54,7 +54,12 @@ class nsPrinterCUPS final : public nsPrinterBase {
   void GetPrinterName(nsAString& aName) const;
 
   
-  bool Supports(const char* option, const char* value) const;
+  bool Supports(const char* aOption, const char* aValue) const;
+
+  
+  
+  bool IsCUPSVersionAtLeast(uint64_t aCUPSMajor, uint64_t aCUPSMinor,
+                            uint64_t aCUPSPatch) const;
 
   const nsCUPSShim& mShim;
   nsString mDisplayName;
