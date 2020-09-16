@@ -373,11 +373,22 @@ class ResourceWatcher {
 
 
 
+
+
+
+
+
+
   async _onResourceUpdated({ targetFront, watcherFront }, updates) {
     let currentType = null;
     let resourceBuffer = [];
     for (const update of updates) {
-      const { resourceType, resourceId, resourceUpdates } = update;
+      const {
+        resourceType,
+        resourceId,
+        resourceUpdates,
+        nestedResourceUpdates,
+      } = update;
 
       const existingResource = this._cache.find(
         cachedResource =>
@@ -398,6 +409,18 @@ class ResourceWatcher {
 
       if (resourceUpdates) {
         Object.assign(existingResource, resourceUpdates);
+      }
+
+      if (nestedResourceUpdates) {
+        for (const { path, value } of nestedResourceUpdates) {
+          let target = existingResource;
+
+          for (let i = 0; i < path.length - 1; i++) {
+            target = target[path[i]];
+          }
+
+          target[path[path.length - 1]] = value;
+        }
       }
 
       if (!currentType) {
