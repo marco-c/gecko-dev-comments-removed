@@ -2112,9 +2112,9 @@ struct nsGridContainerFrame::Tracks {
     nscoord SizeContributionForPhase() const {
       switch (phase) {
         case TrackSizingPhase::IntrinsicMinimums:
-        case TrackSizingPhase::IntrinsicMaximums:
           return mMinSize;
         case TrackSizingPhase::ContentBasedMinimums:
+        case TrackSizingPhase::IntrinsicMaximums:
           return mMinContentContribution;
         case TrackSizingPhase::MaxContentMinimums:
         case TrackSizingPhase::MaxContentMaximums:
@@ -6168,12 +6168,12 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         }
         
         nscoord minSize = 0;
-        if (state & (TrackSize::eIntrinsicMinSizing |    
-                     TrackSize::eIntrinsicMaxSizing)) {  
+        if (state & TrackSize::eIntrinsicMinSizing) {  
           minSize = MinSize(gridItem, aState, rc, wm, mAxis, &cache);
         }
         nscoord minContent = 0;
-        if (state & contentBasedMinSelector) {  
+        if (state & (contentBasedMinSelector |           
+                     TrackSize::eIntrinsicMaxSizing)) {  
           minContent =
               MinContentContribution(gridItem, aState, rc, wm, mAxis, &cache);
         }
