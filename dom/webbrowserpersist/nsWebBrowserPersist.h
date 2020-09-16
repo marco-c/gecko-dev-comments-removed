@@ -18,6 +18,7 @@
 #include "nsIChannel.h"
 #include "nsIProgressEventSink.h"
 #include "nsIFile.h"
+#include "nsIThreadRetargetableStreamListener.h"
 #include "nsIWebProgressListener2.h"
 #include "nsIWebBrowserPersist.h"
 #include "nsIWebBrowserPersistDocument.h"
@@ -33,6 +34,7 @@ class nsIWebBrowserPersistDocument;
 class nsWebBrowserPersist final : public nsIInterfaceRequestor,
                                   public nsIWebBrowserPersist,
                                   public nsIStreamListener,
+                                  public nsIThreadRetargetableStreamListener,
                                   public nsIProgressEventSink,
                                   public nsSupportsWeakReference {
   friend class nsEncoderNodeFixup;
@@ -41,12 +43,13 @@ class nsWebBrowserPersist final : public nsIInterfaceRequestor,
  public:
   nsWebBrowserPersist();
 
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSICANCELABLE
   NS_DECL_NSIWEBBROWSERPERSIST
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
   NS_DECL_NSIPROGRESSEVENTSINK
 
   
@@ -146,8 +149,10 @@ class nsWebBrowserPersist final : public nsIInterfaceRequestor,
 
   nsCOMPtr<nsIWebProgressListener2> mProgressListener2;
   nsCOMPtr<nsIProgressEventSink> mEventSink;
+  mozilla::Mutex mOutputMapMutex;
   nsClassHashtable<nsISupportsHashKey, OutputData> mOutputMap;
   nsClassHashtable<nsISupportsHashKey, UploadData> mUploadList;
+  nsCOMPtr<nsISerialEventTarget> mBackgroundQueue;
   nsClassHashtable<nsCStringHashKey, URIData> mURIMap;
   nsCOMPtr<nsIWebBrowserPersistURIMap> mFlatURIMap;
   nsTArray<mozilla::UniquePtr<WalkData>> mWalkStack;
@@ -156,13 +161,17 @@ class nsWebBrowserPersist final : public nsIInterfaceRequestor,
   nsTArray<nsCString> mFilenameList;
   bool mFirstAndOnlyUse;
   bool mSavingDocument;
-  bool mCancel;
+  
+  
+  mozilla::Atomic<bool> mCancel;
   bool mCompleted;
   bool mStartSaving;
   bool mReplaceExisting;
   bool mSerializingOutput;
   bool mIsPrivate;
-  uint32_t mPersistFlags;
+  
+  
+  mozilla::Atomic<uint32_t> mPersistFlags;
   nsresult mPersistResult;
   int64_t mTotalCurrentProgress;
   int64_t mTotalMaxProgress;
