@@ -125,20 +125,18 @@ bool CPU::CanFlushICacheFromBackgroundThreads() {
         strcmp(uts.sysname, "Linux") == 0 &&
         sscanf(uts.release, "%d.%d", &major, &minor) == 2 &&
         major >= kRequiredMajor && (major != kRequiredMajor || minor >= kRequiredMinor);
+
+    
+    
+    if (kernelHasMembarrier &&
+        membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE, 0) != 0) {
+      kernelHasMembarrier = false;
+    }
+
     computed = true;
   }
 
-  if (!kernelHasMembarrier) {
-    return false;
-  }
-
-  
-  
-  if (membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE, 0) != 0) {
-    return false;
-  }
-
-  return true;
+  return kernelHasMembarrier;
 #else
   
   return true;
