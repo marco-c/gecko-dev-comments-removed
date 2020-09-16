@@ -2775,6 +2775,12 @@ public class GeckoSession implements Parcelable {
                 res = delegate.onBeforeUnloadPrompt(session, prompt);
                 break;
             }
+            case "repost": {
+                final PromptDelegate.RepostConfirmPrompt prompt =
+                    new PromptDelegate.RepostConfirmPrompt();
+                res = delegate.onRepostConfirmPrompt(session, prompt);
+                break;
+            }
             case "button": {
                 final PromptDelegate.ButtonPrompt prompt =
                     new PromptDelegate.ButtonPrompt(title, msg);
@@ -4091,6 +4097,31 @@ public class GeckoSession implements Parcelable {
 
 
 
+        class RepostConfirmPrompt extends BasePrompt {
+            protected RepostConfirmPrompt() {
+                super(null);
+            }
+
+            
+
+
+
+
+
+
+
+
+            @UiThread
+            public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
+                ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
+                return super.confirm();
+            }
+        }
+
+        
+
+
+
         public class AlertPrompt extends BasePrompt {
             
 
@@ -5016,6 +5047,27 @@ public class GeckoSession implements Parcelable {
         default @Nullable GeckoResult<PromptResponse> onBeforeUnloadPrompt(
                 @NonNull final GeckoSession session,
                 @NonNull final BeforeUnloadPrompt prompt
+        ) {
+            return null;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default @Nullable GeckoResult<PromptResponse> onRepostConfirmPrompt(
+                @NonNull final GeckoSession session,
+                @NonNull final RepostConfirmPrompt prompt
         ) {
             return null;
         }
