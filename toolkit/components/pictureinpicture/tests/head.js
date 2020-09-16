@@ -271,7 +271,7 @@ async function assertTogglePolicy(
 
     if (policy) {
       const { TOGGLE_POLICY_STRINGS } = ChromeUtils.import(
-        "resource://gre/modules/PictureInPictureTogglePolicy.jsm"
+        "resource://gre/modules/PictureInPictureControls.jsm"
       );
       let policyAttr = toggle.getAttribute("policy");
       Assert.equal(

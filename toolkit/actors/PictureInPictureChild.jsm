@@ -18,13 +18,18 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "KEYBOARD_CONTROLS",
+  "resource://gre/modules/PictureInPictureControls.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "TOGGLE_POLICIES",
-  "resource://gre/modules/PictureInPictureTogglePolicy.jsm"
+  "resource://gre/modules/PictureInPictureControls.jsm"
 );
 ChromeUtils.defineModuleGetter(
   this,
   "TOGGLE_POLICY_STRINGS",
-  "resource://gre/modules/PictureInPictureTogglePolicy.jsm"
+  "resource://gre/modules/PictureInPictureControls.jsm"
 );
 ChromeUtils.defineModuleGetter(
   this,
@@ -60,8 +65,8 @@ var gWeakIntersectingVideosForTesting = new WeakSet();
 
 
 
-XPCOMUtils.defineLazyGetter(this, "gToggleOverrides", () => {
-  return PictureInPictureToggleChild.getToggleOverrides();
+XPCOMUtils.defineLazyGetter(this, "gSiteOverrides", () => {
+  return PictureInPictureToggleChild.getSiteOverrides();
 });
 
 
@@ -228,11 +233,11 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
     switch (event.type) {
       case "change": {
         const { changedKeys } = event;
-        if (changedKeys.includes("PictureInPicture:ToggleOverrides")) {
+        if (changedKeys.includes("PictureInPicture:SiteOverrides")) {
           
           
           try {
-            gToggleOverrides = PictureInPictureToggleChild.getToggleOverrides();
+            gSiteOverrides = PictureInPictureToggleChild.getSiteOverrides();
           } catch (e) {
             
             if (!(e instanceof TypeError)) {
@@ -760,13 +765,13 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       state.togglePolicy = TOGGLE_POLICIES.DEFAULT;
       
       
-      let toggleOverrides = this.toggleTesting
-        ? PictureInPictureToggleChild.getToggleOverrides()
-        : gToggleOverrides;
+      let siteOverrides = this.toggleTesting
+        ? PictureInPictureToggleChild.getSiteOverrides()
+        : gSiteOverrides;
 
       
-      for (let [override, policy] of toggleOverrides) {
-        if (override.matches(this.document.documentURI)) {
+      for (let [override, { policy }] of siteOverrides) {
+        if (policy && override.matches(this.document.documentURI)) {
           state.togglePolicy = policy;
           break;
         }
@@ -978,10 +983,12 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
 
 
 
-  static getToggleOverrides() {
+
+
+  static getSiteOverrides() {
     let result = [];
     let patterns = Services.cpmm.sharedData.get(
-      "PictureInPicture:ToggleOverrides"
+      "PictureInPicture:SiteOverrides"
     );
     for (let pattern in patterns) {
       let matcher = new MatchPattern(pattern);
@@ -1363,7 +1370,32 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
+  isKeyEnabled(key) {
+    const video = this.getWeakVideo();
+    if (!video) {
+      return false;
+    }
+    const { documentURI } = video.ownerDocument;
+    if (!documentURI) {
+      return true;
+    }
+    for (let [override, { keyboardControls }] of gSiteOverrides) {
+      if (keyboardControls !== undefined && override.matches(documentURI)) {
+        if (keyboardControls === KEYBOARD_CONTROLS.NONE) {
+          return false;
+        }
+        return keyboardControls & key;
+      }
+    }
+    return true;
+  }
 
+  
+
+
+
+
+  
   keyDown({ altKey, shiftKey, metaKey, ctrlKey, keyCode }) {
     let video = this.getWeakVideo();
     if (!video) {
@@ -1423,6 +1455,9 @@ class PictureInPictureChild extends JSWindowActorChild {
     try {
       switch (keystroke) {
         case "space" :
+          if (!this.isKeyEnabled(KEYBOARD_CONTROLS.PLAY_PAUSE)) {
+            return;
+          }
           if (video.paused || video.ended) {
             video.play();
           } else {
@@ -1430,24 +1465,36 @@ class PictureInPictureChild extends JSWindowActorChild {
           }
           break;
         case "downArrow" :
+          if (!this.isKeyEnabled(KEYBOARD_CONTROLS.VOLUME)) {
+            return;
+          }
           oldval = video.volume;
           video.volume = oldval < 0.1 ? 0 : oldval - 0.1;
           video.muted = false;
           break;
         case "upArrow" :
+          if (!this.isKeyEnabled(KEYBOARD_CONTROLS.VOLUME)) {
+            return;
+          }
           oldval = video.volume;
           video.volume = oldval > 0.9 ? 1 : oldval + 0.1;
           video.muted = false;
           break;
         case "accel-downArrow" :
+          if (!this.isKeyEnabled(KEYBOARD_CONTROLS.MUTE_UNMUTE)) {
+            return;
+          }
           video.muted = true;
           break;
         case "accel-upArrow" :
+          if (!this.isKeyEnabled(KEYBOARD_CONTROLS.MUTE_UNMUTE)) {
+            return;
+          }
           video.muted = false;
           break;
         case "leftArrow": 
         case "accel-leftArrow" :
-          if (isVideoStreaming) {
+          if (isVideoStreaming || !this.isKeyEnabled(KEYBOARD_CONTROLS.SEEK)) {
             return;
           }
 
@@ -1461,7 +1508,7 @@ class PictureInPictureChild extends JSWindowActorChild {
           break;
         case "rightArrow": 
         case "accel-rightArrow" :
-          if (isVideoStreaming) {
+          if (isVideoStreaming || !this.isKeyEnabled(KEYBOARD_CONTROLS.SEEK)) {
             return;
           }
 
@@ -1475,11 +1522,17 @@ class PictureInPictureChild extends JSWindowActorChild {
           video.currentTime = newval <= maxtime ? newval : maxtime;
           break;
         case "home" :
+          if (!this.isKeyEnabled(KEYBOARD_CONTROLS.SEEK)) {
+            return;
+          }
           if (!isVideoStreaming) {
             video.currentTime = 0;
           }
           break;
         case "end" :
+          if (!this.isKeyEnabled(KEYBOARD_CONTROLS.SEEK)) {
+            return;
+          }
           if (!isVideoStreaming && video.currentTime != video.duration) {
             video.currentTime = video.duration;
           }

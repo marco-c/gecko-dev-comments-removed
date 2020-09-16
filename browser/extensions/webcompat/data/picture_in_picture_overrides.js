@@ -12,6 +12,7 @@ let AVAILABLE_PIP_OVERRIDES;
   
   
   const TOGGLE_POLICIES = browser.pictureInPictureChild.getPolicies();
+  const KEYBOARD_CONTROLS = browser.pictureInPictureChild.getKeyboardControls();
 
   AVAILABLE_PIP_OVERRIDES = {
     
@@ -21,27 +22,34 @@ let AVAILABLE_PIP_OVERRIDES;
     
     
     
+    
+    
+    
+    
+    
+    
 
     instagram: {
-      "https://www.instagram.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+      "https://www.instagram.com/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
     },
 
     laracasts: {
-      "https://*.laracasts.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+      "https://*.laracasts.com/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
     },
 
     netflix: {
-      "https://*.netflix.com/browse": TOGGLE_POLICIES.HIDDEN,
+      "https://*.netflix.com/*": { keyboardControls: ~KEYBOARD_CONTROLS.SEEK },
+      "https://*.netflix.com/browse": { policy: TOGGLE_POLICIES.HIDDEN },
     },
 
     twitch: {
-      "https://*.twitch.tv/*": TOGGLE_POLICIES.ONE_QUARTER,
-      "https://*.twitch.tech/*": TOGGLE_POLICIES.ONE_QUARTER,
-      "https://*.twitch.a2z.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+      "https://*.twitch.tv/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
+      "https://*.twitch.tech/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
+      "https://*.twitch.a2z.com/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
     },
 
     udemy: {
-      "https://*.udemy.com/*": TOGGLE_POLICIES.ONE_QUARTER,
+      "https://*.udemy.com/*": { policy: TOGGLE_POLICIES.ONE_QUARTER },
     },
   };
 }
