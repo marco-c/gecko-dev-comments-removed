@@ -1,0 +1,10 @@
+
+
+
+
+
+
+EXTRA_JS_MODULES.themes['default'] += [
+    'icon.svg',
+    'manifest.json',
+]

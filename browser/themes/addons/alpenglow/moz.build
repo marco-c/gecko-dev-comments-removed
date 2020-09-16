@@ -1,0 +1,11 @@
+
+
+
+
+
+
+FINAL_TARGET_FILES.modules['themes']['alpenglow'] += [
+    '*.svg',
+    'manifest.json',
+]
+
