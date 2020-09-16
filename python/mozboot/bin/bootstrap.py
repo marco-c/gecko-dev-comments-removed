@@ -227,7 +227,17 @@ def clone(vcs, no_interactive):
         print('Mercurial is not installed. Mercurial is required to clone '
               'Firefox%s.' % (
                   ', even when cloning with Git' if vcs == 'git' else ''))
-        print('Try installing hg with `pip3 install Mercurial`.')
+        try:
+            
+            
+            
+            
+            
+            import mercurial  
+            print('Hint: have you made sure that Mercurial is installed to a '
+                  'location in your PATH?')
+        except ImportError:
+            print('Try installing hg with `pip3 install Mercurial`.')
         return None
     if vcs == 'hg':
         binary = hg
