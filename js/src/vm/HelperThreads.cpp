@@ -188,10 +188,10 @@ static void CancelOffThreadWasmTier2GeneratorLocked(
 
   
   
-  for (auto& helper : HelperThreadState().threads(lock)) {
-    if (helper->wasmTier2GeneratorTask()) {
+  for (auto* helper : HelperThreadState().helperTasks(lock)) {
+    if (helper->is<wasm::Tier2GeneratorTask>()) {
       
-      helper->wasmTier2GeneratorTask()->cancel();
+      helper->as<wasm::Tier2GeneratorTask>()->cancel();
 
       
       
@@ -360,10 +360,14 @@ static void CancelOffThreadIonCompileLocked(const CompilationSelector& selector,
   bool cancelled;
   do {
     cancelled = false;
-    for (auto& helper : HelperThreadState().threads(lock)) {
-      if (helper->ionCompileTask() &&
-          IonCompileTaskMatches(selector, helper->ionCompileTask())) {
-        helper->ionCompileTask()->mirGen().cancel();
+    for (auto* helper : HelperThreadState().helperTasks(lock)) {
+      if (!helper->is<jit::IonCompileTask>()) {
+        continue;
+      }
+
+      jit::IonCompileTask* ionCompileTask = helper->as<jit::IonCompileTask>();
+      if (IonCompileTaskMatches(selector, ionCompileTask)) {
+        ionCompileTask->mirGen().cancel();
         cancelled = true;
       }
     }
@@ -424,9 +428,9 @@ bool js::HasOffThreadIonCompile(Realm* realm) {
     }
   }
 
-  for (auto& helper : HelperThreadState().threads(lock)) {
-    if (helper->ionCompileTask() &&
-        helper->ionCompileTask()->script()->realm() == realm) {
+  for (auto* helper : HelperThreadState().helperTasks(lock)) {
+    if (helper->is<jit::IonCompileTask>() &&
+        helper->as<jit::IonCompileTask>()->script()->realm() == realm) {
       return true;
     }
   }
@@ -824,9 +828,12 @@ void js::CancelOffThreadParses(JSRuntime* rt) {
     }
     if (!pending) {
       bool inProgress = false;
-      for (auto& thread : HelperThreadState().threads(lock)) {
-        ParseTask* task = thread->parseTask();
-        if (task && task->runtimeMatches(rt)) {
+      for (auto* helper : HelperThreadState().helperTasks(lock)) {
+        if (!helper->is<ParseTask>()) {
+          continue;
+        }
+
+        if (helper->as<ParseTask>()->runtimeMatches(rt)) {
           inProgress = true;
         }
       }
@@ -1183,6 +1190,10 @@ bool GlobalHelperThreadState::ensureThreadCount(size_t count) {
     return false;
   }
 
+  if (!helperTasks_.reserve(count)) {
+    return false;
+  }
+
   
   
   auto updateThreadCount =
@@ -1322,17 +1333,7 @@ void GlobalHelperThreadState::notifyOne(CondVar which,
 
 bool GlobalHelperThreadState::hasActiveThreads(
     const AutoLockHelperThreadState& lock) {
-  if (threads(lock).empty()) {
-    return false;
-  }
-
-  for (auto& thread : threads(lock)) {
-    if (!thread->idle()) {
-      return true;
-    }
-  }
-
-  return false;
+  return !helperTasks(lock).empty();
 }
 
 void GlobalHelperThreadState::waitForAllThreads() {
@@ -1458,7 +1459,8 @@ void GlobalHelperThreadState::addSizeOfIncludingThis(
       compressionWorklist_.sizeOfExcludingThis(mallocSizeOf) +
       compressionFinishedList_.sizeOfExcludingThis(mallocSizeOf) +
       gcParallelWorklist_.sizeOfExcludingThis(mallocSizeOf) +
-      helperContexts_.sizeOfExcludingThis(mallocSizeOf);
+      helperContexts_.sizeOfExcludingThis(mallocSizeOf) +
+      helperTasks_.sizeOfExcludingThis(mallocSizeOf);
 
   
   for (const auto& task : parseWorklist_) {
@@ -2154,10 +2156,6 @@ void HelperThread::handleWasmWorkload(AutoLockHelperThreadState& locked,
   HelperThreadState().runTaskLocked(task, locked);
 
   currentTask.reset();
-
-  
-  
-  HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
 
 void HelperThread::handleWasmTier2GeneratorWorkload(
@@ -2174,8 +2172,6 @@ void HelperThread::handleWasmTier2GeneratorWorkload(
   HelperThreadState().runTaskLocked(task, locked);
 
   currentTask.reset();
-
-  HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
 
 void HelperThread::handlePromiseHelperTaskWorkload(
@@ -2190,10 +2186,6 @@ void HelperThread::handlePromiseHelperTaskWorkload(
   HelperThreadState().runTaskLocked(task, locked);
 
   currentTask.reset();
-
-  
-  
-  HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
 
 void HelperThread::handleIonWorkload(AutoLockHelperThreadState& locked) {
@@ -2209,9 +2201,6 @@ void HelperThread::handleIonWorkload(AutoLockHelperThreadState& locked) {
   HelperThreadState().runTaskLocked(task, locked);
 
   currentTask.reset();
-
-  
-  HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
 
 void HelperThread::handleIonFreeWorkload(AutoLockHelperThreadState& locked) {
@@ -2271,9 +2260,6 @@ void HelperThread::handleParseWorkload(AutoLockHelperThreadState& locked) {
   HelperThreadState().runTaskLocked(task, locked);
 
   currentTask.reset();
-
-  
-  HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
 
 void HelperThread::handleCompressionWorkload(
@@ -2294,9 +2280,6 @@ void HelperThread::handleCompressionWorkload(
   HelperThreadState().runTaskLocked(task.release(), locked);
 
   currentTask.reset();
-
-  
-  HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
 
 bool js::EnqueueOffThreadCompression(JSContext* cx,
@@ -2340,9 +2323,12 @@ void js::CancelOffThreadCompressions(JSRuntime* runtime) {
   
   while (true) {
     bool inProgress = false;
-    for (auto& thread : HelperThreadState().threads(lock)) {
-      SourceCompressionTask* task = thread->compressionTask();
-      if (task && task->runtimeMatches(runtime)) {
+    for (auto* helper : HelperThreadState().helperTasks(lock)) {
+      if (!helper->is<SourceCompressionTask>()) {
+        continue;
+      }
+
+      if (helper->as<SourceCompressionTask>()->runtimeMatches(runtime)) {
         inProgress = true;
       }
     }
@@ -2455,9 +2441,9 @@ void GlobalHelperThreadState::trace(JSTracer* trc) {
     task->trace(trc);
   }
 
-  for (auto& helper : HelperThreadState().threads(lock)) {
-    if (auto task = helper->ionCompileTask()) {
-      task->trace(trc);
+  for (auto* helper : HelperThreadState().helperTasks(lock)) {
+    if (helper->is<jit::IonCompileTask>()) {
+      helper->as<jit::IonCompileTask>()->trace(trc);
     }
   }
 
@@ -2524,7 +2510,6 @@ HelperThread::AutoProfilerLabel::~AutoProfilerLabel() {
 void HelperThread::threadLoop() {
   MOZ_ASSERT(CanUseExtraThreads());
 
-  JS::AutoSuppressGCAnalysis nogc;
   AutoLockHelperThreadState lock;
 
   while (!terminate) {
@@ -2564,5 +2549,14 @@ const HelperThread::TaskSpec* HelperThread::findHighestPriorityTask(
 
 void GlobalHelperThreadState::runTaskLocked(HelperThreadTask* task,
                                             AutoLockHelperThreadState& locked) {
+  JS::AutoSuppressGCAnalysis nogc;
+
+  HelperThreadState().helperTasks(locked).infallibleEmplaceBack(task);
+
   task->runHelperThreadTask(locked);
+
+  
+  HelperThreadState().helperTasks(locked).eraseIfEqual(task);
+
+  HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
