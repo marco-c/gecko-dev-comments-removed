@@ -621,10 +621,6 @@ class MOZ_RAII WarpPoppedValueUseChecker {
       if (loc_.is(JSOp::EndIter) && i == 0) {
         continue;
       }
-      
-      if (loc_.is(JSOp::ToString)) {
-        continue;
-      }
       MOZ_ASSERT(popped_[i]->isImplicitlyUsed() ||
                  popped_[i]->defUseCount() > poppedUses_[i]);
     }
@@ -1513,6 +1509,7 @@ bool WarpBuilder::build_ToString(BytecodeLocation loc) {
   
   
   if (value->type() == MIRType::String) {
+    value->setImplicitlyUsedUnchecked();
     current->push(value);
     return true;
   }
