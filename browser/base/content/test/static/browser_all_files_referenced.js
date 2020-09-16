@@ -394,6 +394,7 @@ function parseManifest(manifestUri) {
 
 
 
+
 async function parseJsonManifest(uri) {
   uri = Services.io.newURI(convertToCodeURI(uri.spec));
 
