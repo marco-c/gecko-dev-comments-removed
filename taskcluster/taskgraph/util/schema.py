@@ -226,6 +226,9 @@ OptimizationSchema = voluptuous.Any(
     
     
     {'index-search': [text_type]},
+    
+    {'never': None},
+    
     {'push-interval-10': None},
     {'push-interval-20': None},
     
@@ -237,6 +240,8 @@ OptimizationSchema = voluptuous.Any(
     {'test-inclusive': list(schedules.ALL_COMPONENTS)},
     
     {'test-verify': list(schedules.ALL_COMPONENTS)},
+    
+    {'upload-symbols': None},
 )
 
 
