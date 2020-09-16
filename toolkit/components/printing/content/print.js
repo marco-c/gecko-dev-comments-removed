@@ -640,7 +640,7 @@ const PrintSettingsViewProxy = {
     printerInfo.settings.isInitializedFromPrinter = true;
 
     
-    printerInfo._resolved;
+    printerInfo._resolved = true;
     return printerInfo;
   },
 
