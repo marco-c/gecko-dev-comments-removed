@@ -66,6 +66,7 @@ class nsSharedPageData {
 
 
 class nsPageSequenceFrame final : public nsContainerFrame {
+  using LogicalSize = mozilla::LogicalSize;
  public:
   friend nsPageSequenceFrame* NS_NewPageSequenceFrame(
       mozilla::PresShell* aPresShell, ComputedStyle* aStyle);

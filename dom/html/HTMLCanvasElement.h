@@ -231,12 +231,9 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
 
   void InvalidateCanvas();
 
-  
-
-
-
-  int32_t CountContexts();
-  nsICanvasRenderingContextInternal* GetContextAtIndex(int32_t index);
+  nsICanvasRenderingContextInternal* GetCurrentContext() {
+    return mCurrentContext;
+  }
 
   
 
