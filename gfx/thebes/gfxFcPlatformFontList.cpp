@@ -1576,7 +1576,13 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
   using FaceInitArray = nsTArray<fontlist::Face::InitData>;
   nsClassHashtable<nsCStringHashKey, FaceInitArray> faces;
 
-  auto addPattern = [this, &families, &faces](
+  
+  
+  
+  int fcVersion = FcGetVersion();
+  bool fcCharsetParseBug = fcVersion >= 21094 && fcVersion <= 21101;
+
+  auto addPattern = [this, fcCharsetParseBug, &families, &faces](
                         FcPattern* aPattern, FcChar8*& aLastFamilyName,
                         nsCString& aFamilyName, bool aAppFont) -> void {
     
@@ -1617,6 +1623,15 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
     char* s = (char*)FcNameUnparse(aPattern);
     nsAutoCString descriptor(s);
     free(s);
+
+    if (fcCharsetParseBug) {
+      
+      int32_t index = descriptor.Find(":charset= ");
+      if (index != kNotFound) {
+        
+        descriptor.Insert('\\', index + 9);
+      }
+    }
 
     WeightRange weight(FontWeight::Normal());
     StretchRange stretch(FontStretch::Normal());
