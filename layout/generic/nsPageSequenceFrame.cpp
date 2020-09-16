@@ -221,11 +221,10 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   
   
   if (mPageData->mPrintSettings) {
-    nsIntMargin unwriteableTwips;
-    mPageData->mPrintSettings->GetUnwriteableMarginInTwips(unwriteableTwips);
+    nsIntMargin unwriteableTwips =
+        mPageData->mPrintSettings->GetUnwriteableMarginInTwips();
 
-    nsIntMargin edgeTwips;
-    mPageData->mPrintSettings->GetEdgeInTwips(edgeTwips);
+    nsIntMargin edgeTwips = mPageData->mPrintSettings->GetEdgeInTwips();
 
     
     int32_t inchInTwips = NS_INCHES_TO_INT_TWIPS(3.0);

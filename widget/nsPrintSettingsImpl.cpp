@@ -704,26 +704,12 @@ nsPrintSettings::SetUnwriteableMarginInTwips(nsIntMargin& aUnwriteableMargin) {
   return NS_OK;
 }
 
+nsIntMargin nsPrintSettings::GetMarginInTwips() { return mMargin; }
 
+nsIntMargin nsPrintSettings::GetEdgeInTwips() { return mEdge; }
 
-
-
-NS_IMETHODIMP
-nsPrintSettings::GetMarginInTwips(nsIntMargin& aMargin) {
-  aMargin = mMargin;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsPrintSettings::GetEdgeInTwips(nsIntMargin& aEdge) {
-  aEdge = mEdge;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsPrintSettings::GetUnwriteableMarginInTwips(nsIntMargin& aUnwriteableMargin) {
-  aUnwriteableMargin = mUnwriteableMargin;
-  return NS_OK;
+nsIntMargin nsPrintSettings::GetUnwriteableMarginInTwips() {
+  return mUnwriteableMargin;
 }
 
 
