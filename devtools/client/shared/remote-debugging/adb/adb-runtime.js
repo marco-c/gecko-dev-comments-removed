@@ -91,6 +91,7 @@ class AdbRuntime {
         
         return "Firefox Beta";
       case "org.mozilla.fenix":
+      case "org.mozilla.fenix.nightly":
         
         return "Firefox Nightly";
       default:
