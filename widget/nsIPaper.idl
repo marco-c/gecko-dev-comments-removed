@@ -32,4 +32,10 @@ interface nsIPaper : nsISupports
 
 
   [implicit_jscontext] readonly attribute Promise unwriteableMargin;
+
+  
+
+
+
+  readonly attribute short paperId;
 };

@@ -41,9 +41,6 @@ nsPrintSettingsServiceWin::SerializeToPrintData(nsIPrintSettings* aSettings,
   
   
   if (XRE_IsParentProcess()) {
-    psWin->GetPrintableWidthInInches(&data->printableWidthInInches());
-    psWin->GetPrintableHeightInInches(&data->printableHeightInInches());
-
     
     
     LPDEVMODEW devModeRaw;
@@ -90,9 +87,6 @@ nsPrintSettingsServiceWin::DeserializeToPrintSettings(
   if (XRE_IsContentProcess()) {
     psWin->SetDeviceName(data.deviceName());
     psWin->SetDriverName(data.driverName());
-
-    psWin->SetPrintableWidthInInches(data.printableWidthInInches());
-    psWin->SetPrintableHeightInInches(data.printableHeightInInches());
 
     if (data.devModeData().IsEmpty()) {
       psWin->SetDevMode(nullptr);

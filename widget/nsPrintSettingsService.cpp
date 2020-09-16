@@ -164,8 +164,6 @@ nsPrintSettingsService::SerializeToPrintData(nsIPrintSettings* aSettings,
   
   
   
-  data->printableWidthInInches() = 0;
-  data->printableHeightInInches() = 0;
   
   
   data->printAllPages() = true;
