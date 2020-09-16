@@ -265,6 +265,9 @@ class RenderThread final {
   void SimulateDeviceReset();
 
   
+  void NotifyWebRenderError(WebRenderError aError);
+
+  
   void HandleWebRenderError(WebRenderError aError);
   
   bool IsHandlingWebRenderError();

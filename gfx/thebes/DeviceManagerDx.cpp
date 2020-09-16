@@ -52,6 +52,10 @@ decltype(D3D11CreateDevice)* sD3D11CreateDeviceFn = nullptr;
 decltype(DCompositionCreateDevice2)* sDcompCreateDevice2Fn = nullptr;
 
 
+decltype(DCompositionCreateSurfaceHandle)* sDcompCreateSurfaceHandleFn =
+    nullptr;
+
+
 
 
 decltype(DirectDrawCreateEx)* sDirectDrawCreateExFn = nullptr;
@@ -121,6 +125,14 @@ bool DeviceManagerDx::LoadDcomp() {
 
   sDcompCreateDevice2Fn = (decltype(DCompositionCreateDevice2)*)GetProcAddress(
       module, "DCompositionCreateDevice2");
+  if (!sDcompCreateDevice2Fn) {
+    return false;
+  }
+
+  
+  sDcompCreateSurfaceHandleFn =
+      (decltype(DCompositionCreateSurfaceHandle)*)::GetProcAddress(
+          module, "DCompositionCreateSurfaceHandle");
   if (!sDcompCreateDevice2Fn) {
     return false;
   }
@@ -411,6 +423,22 @@ void DeviceManagerDx::CreateDirectCompositionDevice() {
   }
 
   mDirectCompositionDevice = compositionDevice;
+}
+
+
+HANDLE DeviceManagerDx::CreateDCompSurfaceHandle() {
+  if (!sDcompCreateSurfaceHandleFn) {
+    return 0;
+  }
+
+  HANDLE handle = 0;
+  HRESULT hr = sDcompCreateSurfaceHandleFn(COMPOSITIONOBJECT_ALL_ACCESS,
+                                           nullptr, &handle);
+  if (FAILED(hr)) {
+    return 0;
+  }
+
+  return handle;
 }
 
 void DeviceManagerDx::ImportDeviceInfo(const D3D11DeviceStatus& aDeviceStatus) {
