@@ -26,7 +26,7 @@ class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
         this.goBackFromErrorPage(this.browser.ownerGlobal);
         break;
       case "openInsecure":
-        this.openWebsiteInsecure(this.browser);
+        this.openWebsiteInsecure(this.browser, aMessage.data.inFrame);
         break;
     }
   }
@@ -50,8 +50,7 @@ class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
     }
   }
 
-  openWebsiteInsecure(aBrowser) {
-    
+  openWebsiteInsecure(aBrowser, aIsIFrame) {
     
     
     const currentURI = aBrowser.currentURI;
@@ -68,10 +67,17 @@ class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
       );
     }
 
-    let newURI = innerURI
-      .mutate()
-      .setScheme("http")
-      .finalize();
+    
+    
+    
+    
+    
+    let newURI = aIsIFrame
+      ? innerURI
+      : innerURI
+          .mutate()
+          .setScheme("http")
+          .finalize();
 
     let principal = Services.scriptSecurityManager.createContentPrincipal(
       newURI,

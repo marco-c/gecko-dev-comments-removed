@@ -47,7 +47,9 @@ function initPage() {
 
 
 function onOpenInsecureButtonClick() {
-  RPMSendAsyncMessage("openInsecure");
+  RPMSendAsyncMessage("openInsecure", {
+    inFrame: window.top != window,
+  });
 }
 
 function onReturnButtonClick() {
