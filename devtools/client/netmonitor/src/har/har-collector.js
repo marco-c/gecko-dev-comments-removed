@@ -211,7 +211,7 @@ HarCollector.prototype = {
   },
 
   onResourceUpdated: function(updates) {
-    for (const { resource } of updates) {
+    for (const { resource, update } of updates) {
       
       
       
@@ -222,7 +222,7 @@ HarCollector.prototype = {
       }
 
       trace.log(
-        "HarCollector.onNetworkEventUpdate; " + resource.updateType,
+        "HarCollector.onNetworkEventUpdate; " + update.updateType,
         resource
       );
 
@@ -231,7 +231,7 @@ HarCollector.prototype = {
       );
 
       let request;
-      switch (resource.updateType) {
+      switch (update.updateType) {
         case "requestHeaders":
           request = this.getData(
             resource.actor,

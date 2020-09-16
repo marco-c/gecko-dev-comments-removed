@@ -402,8 +402,8 @@ class FirefoxDataProvider {
 
 
 
-  async onNetworkResourceUpdated(resource) {
-    switch (resource.updateType) {
+  async onNetworkResourceUpdated(resource, update) {
+    switch (update.updateType) {
       case "securityInfo":
         this.pushRequestToQueue(resource.actor, {
           securityState: resource.securityState,
@@ -456,7 +456,7 @@ class FirefoxDataProvider {
     
     
     this.pushRequestToQueue(resource.actor, {
-      [`${resource.updateType}Available`]: true,
+      [`${update.updateType}Available`]: true,
     });
 
     await this.onPayloadDataReceived(resource);
