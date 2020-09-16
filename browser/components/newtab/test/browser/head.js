@@ -75,6 +75,17 @@ async function waitForPreloaded(browser) {
 
 
 
+
+
+async function waitForUrlLoad(url) {
+  let browser = gBrowser.selectedBrowser;
+  await BrowserTestUtils.loadURI(browser, url);
+  await BrowserTestUtils.browserLoaded(browser, false, url);
+}
+
+
+
+
 function refreshHighlightsFeed() {
   
   Services.prefs.setBoolPref(
