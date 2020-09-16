@@ -109,9 +109,3 @@ if CONFIG['MOZ_WEBRTC_SIGNALING']:
             'signaling/gtest',
         ]
 
-    
-    include('/tools/fuzzing/libfuzzer-config.mozbuild')
-    if CONFIG['FUZZING_INTERFACES']:
-        TEST_DIRS += [
-            'signaling/fuzztest'
-        ]
