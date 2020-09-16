@@ -323,8 +323,9 @@ TEST_F(APZEventRegionsTester, HandledByRootApzcFlag) {
   root = CreateLayerTree(layerTreeSyntax, layerVisibleRegions, nullptr, lm,
                          layers);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID);
-  ModifyFrameMetrics(
-      root, [](FrameMetrics& metrics) { metrics.SetIsRootContent(true); });
+  ModifyFrameMetrics(root, [](ScrollMetadata& sm, FrameMetrics& metrics) {
+    metrics.SetIsRootContent(true);
+  });
   
   EventRegions regions(nsIntRegion(IntRect(0, 0, 100, 100)));
   

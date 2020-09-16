@@ -455,6 +455,10 @@ TEST_F(APZCBasicTester, ResumeInterruptedTouchDrag_Bug1592435) {
   metadata.GetMetrics().SetLayoutScrollOffset(mainThreadOffset);
   metadata.GetMetrics().SetScrollGeneration(1);
   metadata.GetMetrics().SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
+  nsTArray<ScrollPositionUpdate> scrollUpdates;
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewScroll(
+      1, ScrollOrigin::Other, CSSPoint::ToAppUnits(mainThreadOffset)));
+  metadata.SetScrollUpdates(scrollUpdates);
   apzc->NotifyLayersUpdated(metadata, false, true);
 
   
@@ -478,6 +482,8 @@ TEST_F(APZCBasicTester, ResumeInterruptedTouchDrag_Bug1592435) {
   metadata.GetMetrics().SetVisualDestination(mainThreadOffset);
   metadata.GetMetrics().SetScrollGeneration(2);
   metadata.GetMetrics().SetVisualScrollUpdateType(FrameMetrics::eMainThread);
+  scrollUpdates.Clear();
+  metadata.SetScrollUpdates(scrollUpdates);
   apzc->NotifyLayersUpdated(metadata, false, true);
   for (int i = 0; i < 20; ++i) {
     touchPos.y -= 1;
@@ -511,8 +517,13 @@ TEST_F(APZCBasicTester, RelativeScrollOffset) {
   FrameMetrics& mainThreadMetrics = mainThreadMetadata.GetMetrics();
   mainThreadMetrics.SetLayoutScrollOffset(CSSPoint(200, 200));
   mainThreadMetrics.SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
-  mainThreadMetrics.SetScrollGeneration(
-      mainThreadMetrics.GetScrollGeneration() + 1);
+  uint32_t newGeneration = mainThreadMetrics.GetScrollGeneration() + 1;
+  mainThreadMetrics.SetScrollGeneration(newGeneration);
+  nsTArray<ScrollPositionUpdate> scrollUpdates;
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewScroll(
+      newGeneration, ScrollOrigin::Other,
+      CSSPoint::ToAppUnits(CSSPoint(200, 200))));
+  mainThreadMetadata.SetScrollUpdates(scrollUpdates);
   apzc->NotifyLayersUpdated(mainThreadMetadata, false,
                             true);
 

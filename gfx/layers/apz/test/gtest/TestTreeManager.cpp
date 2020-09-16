@@ -69,7 +69,9 @@ class APZCTreeManagerGenericTester : public APZCTreeManagerTester {
 
     
     ModifyFrameMetrics(layers[aRootContentLayerIndex],
-                       [](FrameMetrics& fm) { fm.SetIsRootContent(true); });
+                       [](ScrollMetadata& sm, FrameMetrics& fm) {
+                         fm.SetIsRootContent(true);
+                       });
 
     
     EventRegions regions;
@@ -240,10 +242,14 @@ TEST_F(APZCTreeManagerTester, Bug1551582) {
   UpdateHitTestingTree();
 
   
-  ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
+  ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {
     aMetrics.SetLayoutScrollOffset(CSSPoint(300, 300));
     aMetrics.SetScrollGeneration(1);
     aMetrics.SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
+    nsTArray<ScrollPositionUpdate> scrollUpdates;
+    scrollUpdates.AppendElement(ScrollPositionUpdate::NewScroll(
+        1, ScrollOrigin::Other, CSSPoint::ToAppUnits(CSSPoint(300, 300))));
+    aSm.SetScrollUpdates(scrollUpdates);
   });
   UpdateHitTestingTree();
 
@@ -255,7 +261,7 @@ TEST_F(APZCTreeManagerTester, Bug1551582) {
   
   
   
-  ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
+  ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {
     aMetrics.SetScrollableRect(CSSRect(0, 0, 400, 400));
   });
   UpdateHitTestingTree();
@@ -272,10 +278,14 @@ TEST_F(APZCTreeManagerTester, Bug1557424) {
   UpdateHitTestingTree();
 
   
-  ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
+  ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {
     aMetrics.SetLayoutScrollOffset(CSSPoint(300, 300));
     aMetrics.SetScrollGeneration(1);
     aMetrics.SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
+    nsTArray<ScrollPositionUpdate> scrollUpdates;
+    scrollUpdates.AppendElement(ScrollPositionUpdate::NewScroll(
+        1, ScrollOrigin::Other, CSSPoint::ToAppUnits(CSSPoint(300, 300))));
+    aSm.SetScrollUpdates(scrollUpdates);
   });
   UpdateHitTestingTree();
 
@@ -287,7 +297,7 @@ TEST_F(APZCTreeManagerTester, Bug1557424) {
   
   
   
-  ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
+  ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {
     aMetrics.SetCompositionBounds(ParentLayerRect(0, 0, 300, 300));
   });
   UpdateHitTestingTree();
