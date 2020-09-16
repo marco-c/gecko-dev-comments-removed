@@ -2921,7 +2921,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
                 aInclusiveDescendantOfLeftBlockElement),
             mInclusiveDescendantOfRightBlockElement(
                 aInclusiveDescendantOfRightBlockElement),
-            mCanJoinBlocks(false) {}
+            mCanJoinBlocks(false),
+            mFallbackToDeleteLeafContent(false) {}
 
       bool IsSet() const { return mLeftBlockElement && mRightBlockElement; }
       bool IsSameBlockElement() const {
@@ -2945,6 +2946,17 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
+      bool ShouldDeleteLeafContentInstead() const {
+        MOZ_ASSERT(CanJoinBlocks());
+        return mFallbackToDeleteLeafContent;
+      }
+
+      
+
+
+
+
+
 
 
 
@@ -2954,6 +2966,35 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       Run(HTMLEditor& aHTMLEditor);
 
      private:
+      
+
+
+
+
+
+
+      bool CanMergeLeftAndRightBlockElements() const {
+        if (!IsSet()) {
+          return false;
+        }
+        
+        if (mPointContainingTheOtherBlockElement.GetContainer() ==
+            mRightBlockElement) {
+          return mNewListElementTagNameOfRightListElement.isSome();
+        }
+        
+        if (mPointContainingTheOtherBlockElement.GetContainer() ==
+            mLeftBlockElement) {
+          return mNewListElementTagNameOfRightListElement.isSome() &&
+                 !mRightBlockElement->GetChildCount();
+        }
+        MOZ_ASSERT(!mPointContainingTheOtherBlockElement.IsSet());
+        
+        return mNewListElementTagNameOfRightListElement.isSome() ||
+               mLeftBlockElement->NodeInfo()->NameAtom() ==
+                   mRightBlockElement->NodeInfo()->NameAtom();
+      }
+
       OwningNonNull<nsIContent> mInclusiveDescendantOfLeftBlockElement;
       OwningNonNull<nsIContent> mInclusiveDescendantOfRightBlockElement;
       RefPtr<Element> mLeftBlockElement;
@@ -2962,6 +3003,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       EditorDOMPoint mPointContainingTheOtherBlockElement;
       RefPtr<dom::HTMLBRElement> mPrecedingInvisibleBRElement;
       bool mCanJoinBlocks;
+      bool mFallbackToDeleteLeafContent;
     };  
         
 
@@ -4345,6 +4387,19 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
         NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
         return result;
       }
+#ifdef DEBUG
+      if (joiner.ShouldDeleteLeafContentInstead()) {
+        NS_ASSERTION(
+            result.Ignored(),
+            "Assumed `AutoInclusiveAncestorBlockElementsJoiner::Run()` "
+            "retruning ignored, but returned not ignored");
+      } else {
+        NS_ASSERTION(
+            !result.Ignored(),
+            "Assumed `AutoInclusiveAncestorBlockElementsJoiner::Run()` "
+            "retruning handled, but returned ignored");
+      }
+#endif  
     }
 
     
@@ -4463,6 +4518,17 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
       return result;
     }
+#ifdef DEBUG
+    if (joiner.ShouldDeleteLeafContentInstead()) {
+      NS_ASSERTION(result.Ignored(),
+                   "Assumed `AutoInclusiveAncestorBlockElementsJoiner::Run()` "
+                   "retruning ignored, but returned not ignored");
+    } else {
+      NS_ASSERTION(!result.Ignored(),
+                   "Assumed `AutoInclusiveAncestorBlockElementsJoiner::Run()` "
+                   "retruning handled, but returned ignored");
+    }
+#endif  
   }
   
   
@@ -4915,6 +4981,17 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Run() failed");
       return result;
     }
+#ifdef DEBUG
+    if (joiner.ShouldDeleteLeafContentInstead()) {
+      NS_ASSERTION(result.Ignored(),
+                   "Assumed `AutoInclusiveAncestorBlockElementsJoiner::Run()` "
+                   "retruning ignored, but returned not ignored");
+    } else {
+      NS_ASSERTION(!result.Ignored(),
+                   "Assumed `AutoInclusiveAncestorBlockElementsJoiner::Run()` "
+                   "retruning handled, but returned ignored");
+    }
+#endif  
     break;
   }
 
@@ -5937,6 +6014,7 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   
   if (IsSameBlockElement()) {
     mCanJoinBlocks = true;  
+    mFallbackToDeleteLeafContent = true;
     return true;
   }
 
@@ -5986,15 +6064,71 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     mPrecedingInvisibleBRElement =
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
             aHTMLEditor, EditorDOMPoint::AtEndOf(mLeftBlockElement));
+    
+    
+    
+    
+    
+    
+    if (!mPrecedingInvisibleBRElement) {
+      if (CanMergeLeftAndRightBlockElements()) {
+        
+        mFallbackToDeleteLeafContent = false;
+      } else {
+        
+        Result<bool, nsresult> firstLineHasContent =
+            aHTMLEditor.CanMoveOrDeleteSomethingInHardLine(
+                mPointContainingTheOtherBlockElement.NextPoint());
+        mFallbackToDeleteLeafContent =
+            firstLineHasContent.isOk() && !firstLineHasContent.inspect();
+      }
+    } else {
+      
+      mFallbackToDeleteLeafContent = false;
+    }
   } else if (mPointContainingTheOtherBlockElement.GetContainer() ==
              mLeftBlockElement) {
     mPrecedingInvisibleBRElement =
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
             aHTMLEditor, mPointContainingTheOtherBlockElement);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mPrecedingInvisibleBRElement) {
+      if (CanMergeLeftAndRightBlockElements()) {
+        
+        Result<bool, nsresult> rightBlockHasContent =
+            aHTMLEditor.CanMoveChildren(*mRightBlockElement,
+                                        *mLeftBlockElement);
+        mFallbackToDeleteLeafContent =
+            rightBlockHasContent.isOk() && !rightBlockHasContent.inspect();
+      } else {
+        
+        Result<bool, nsresult> firstLineHasContent =
+            aHTMLEditor.CanMoveOrDeleteSomethingInHardLine(
+                EditorRawDOMPoint(mRightBlockElement, 0));
+        mFallbackToDeleteLeafContent =
+            firstLineHasContent.isOk() && !firstLineHasContent.inspect();
+      }
+    } else {
+      
+      mFallbackToDeleteLeafContent = false;
+    }
   } else {
     mPrecedingInvisibleBRElement =
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
             aHTMLEditor, EditorDOMPoint::AtEndOf(mLeftBlockElement));
+    
+    
+    
+    mFallbackToDeleteLeafContent = false;
   }
 
   mCanJoinBlocks = true;

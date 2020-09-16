@@ -160,6 +160,8 @@ EditActionResult WhiteSpaceVisibilityKeeper::
       aPrecedingInvisibleBRElement == invisibleBRElementAtEndOfLeftBlockElement,
       "The preceding invisible BR element computation was different");
   EditActionResult ret(NS_OK);
+  
+  
   if (NS_WARN_IF(aListElementTagName.isSome())) {
     
     
@@ -301,6 +303,8 @@ EditActionResult WhiteSpaceVisibilityKeeper::
       aPrecedingInvisibleBRElement == invisibleBRElementBeforeLeftBlockElement,
       "The preceding invisible BR element computation was different");
   EditActionResult ret(NS_OK);
+  
+  
   if (aListElementTagName.isSome()) {
     
     MOZ_ASSERT(originalLeftBlockElement == atLeftBlockChild.GetContainer(),
