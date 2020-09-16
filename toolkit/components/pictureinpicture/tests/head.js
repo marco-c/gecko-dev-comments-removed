@@ -763,3 +763,39 @@ async function promiseFullscreenExited(window, asyncFn) {
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+async function ensureMessageAndClosePiP(browser, videoID, pipWin, isIframe) {
+  try {
+    await assertShowingMessage(browser, videoID, true);
+  } finally {
+    let uaWidgetUpdate = null;
+    if (isIframe) {
+      uaWidgetUpdate = SpecialPowers.spawn(browser, [], async () => {
+        await ContentTaskUtils.waitForEvent(
+          content.windowRoot,
+          "UAWidgetSetupOrChange",
+          true 
+        );
+      });
+    } else {
+      uaWidgetUpdate = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "UAWidgetSetupOrChange",
+        true 
+      );
+    }
+    await BrowserTestUtils.closeWindow(pipWin);
+    await uaWidgetUpdate;
+  }
+}
