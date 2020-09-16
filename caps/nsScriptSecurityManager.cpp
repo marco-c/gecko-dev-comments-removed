@@ -877,22 +877,29 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
                            &targetURIIsUIResource);
   NS_ENSURE_SUCCESS(rv, rv);
   if (targetURIIsUIResource) {
+    
+    
+    
+    
+    
     if (aFlags & nsIScriptSecurityManager::ALLOW_CHROME) {
-      
-      
-      
-      
-      
-      
-      
-      
-      bool sourceIsUIResource;
+      bool sourceIsUIResource = false;
       rv = NS_URIChainHasFlags(aSourceBaseURI,
                                nsIProtocolHandler::URI_IS_UI_RESOURCE,
                                &sourceIsUIResource);
       NS_ENSURE_SUCCESS(rv, rv);
       if (sourceIsUIResource) {
-        return NS_OK;
+        
+        
+        if (StaticPrefs::
+                security_caps_allow_uri_is_ui_resource_in_checkloaduriflags()) {
+          return NS_OK;
+        }
+        
+        
+        if (targetScheme.EqualsLiteral("moz-icon")) {
+          return NS_OK;
+        }
       }
 
       if (targetScheme.EqualsLiteral("resource")) {
