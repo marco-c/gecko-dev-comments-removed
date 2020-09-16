@@ -2959,6 +2959,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       RefPtr<Element> mLeftBlockElement;
       RefPtr<Element> mRightBlockElement;
       Maybe<nsAtom*> mNewListElementTagNameOfRightListElement;
+      EditorDOMPoint mPointContainingTheOtherBlockElement;
       bool mCanJoinBlocks;
     };  
         
@@ -5972,6 +5973,13 @@ HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     }
   }
 
+  if (!EditorUtils::IsDescendantOf(*mLeftBlockElement, *mRightBlockElement,
+                                   &mPointContainingTheOtherBlockElement)) {
+    Unused << EditorUtils::IsDescendantOf(
+        *mRightBlockElement, *mLeftBlockElement,
+        &mPointContainingTheOtherBlockElement);
+  }
+
   mCanJoinBlocks = true;
   return true;
 }
@@ -5993,13 +6001,13 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   
   
   
-  EditorDOMPoint atRightBlockChild;
-  if (EditorUtils::IsDescendantOf(*mLeftBlockElement, *mRightBlockElement,
-                                  &atRightBlockChild)) {
+  if (mPointContainingTheOtherBlockElement.GetContainer() ==
+      mRightBlockElement) {
     EditActionResult result = WhiteSpaceVisibilityKeeper::
         MergeFirstLineOfRightBlockElementIntoDescendantLeftBlockElement(
             aHTMLEditor, MOZ_KnownLive(*mLeftBlockElement),
-            MOZ_KnownLive(*mRightBlockElement), atRightBlockChild,
+            MOZ_KnownLive(*mRightBlockElement),
+            mPointContainingTheOtherBlockElement,
             mNewListElementTagNameOfRightListElement);
     NS_WARNING_ASSERTION(result.Succeeded(),
                          "WhiteSpaceVisibilityKeeper::"
@@ -6008,21 +6016,19 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     return result;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(!atRightBlockChild.IsSet());
-
   
   
   
   
   
   
-  EditorDOMPoint atLeftBlockChild;
-  if (EditorUtils::IsDescendantOf(*mRightBlockElement, *mLeftBlockElement,
-                                  &atLeftBlockChild)) {
+  if (mPointContainingTheOtherBlockElement.GetContainer() ==
+      mLeftBlockElement) {
     EditActionResult result = WhiteSpaceVisibilityKeeper::
         MergeFirstLineOfRightBlockElementIntoAncestorLeftBlockElement(
             aHTMLEditor, MOZ_KnownLive(*mLeftBlockElement),
-            MOZ_KnownLive(*mRightBlockElement), atLeftBlockChild,
+            MOZ_KnownLive(*mRightBlockElement),
+            mPointContainingTheOtherBlockElement,
             MOZ_KnownLive(*mInclusiveDescendantOfLeftBlockElement),
             mNewListElementTagNameOfRightListElement);
     NS_WARNING_ASSERTION(result.Succeeded(),
@@ -6031,6 +6037,8 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
                          "kElement() failed");
     return result;
   }
+
+  MOZ_ASSERT(!mPointContainingTheOtherBlockElement.IsSet());
 
   
   
