@@ -7923,6 +7923,42 @@ AttachDecision CallIRGenerator::tryAttachObjectIs(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachObjectIsPrototypeOf(
+    HandleFunction callee) {
+  
+  if (!thisval_.isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (argc_ != 1) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentDynamicSlot(ArgumentKind::This, argcId);
+  ObjOperandId thisObjId = writer.guardToObject(thisValId);
+
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+
+  writer.loadInstanceOfObjectResult(argId, thisObjId);
+
+  
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("ObjectIsPrototypeOf");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   if (!callee->isNativeWithoutJitEntry() || callee->native() != fun_call) {
     return AttachDecision::NoAction;
@@ -8978,6 +9014,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachObjectCreate(callee);
     case InlinableNative::ObjectIs:
       return tryAttachObjectIs(callee);
+    case InlinableNative::ObjectIsPrototypeOf:
+      return tryAttachObjectIsPrototypeOf(callee);
     case InlinableNative::ObjectToString:
       return AttachDecision::NoAction;  
 
