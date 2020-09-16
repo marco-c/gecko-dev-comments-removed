@@ -2674,27 +2674,29 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  enum ComputeSizeFlags {
-    Default = 0,
+  enum class ComputeSizeFlag : uint8_t {
     
 
 
 
 
-    ShrinkWrap = 1 << 0,
+    ShrinkWrap,
+
     
 
 
 
 
-    UseAutoBSize = 1 << 1,
+    UseAutoBSize,
+
     
 
 
 
 
-    IClampMarginBoxMinSize = 1 << 2,  
-    BClampMarginBoxMinSize = 1 << 3,  
+    IClampMarginBoxMinSize,  
+    BClampMarginBoxMinSize,  
+
     
 
 
@@ -2702,9 +2704,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-    IApplyAutoMinSize = 1 << 4,  
-                                 
+    IApplyAutoMinSize,  
   };
+  using ComputeSizeFlags = mozilla::EnumSet<ComputeSizeFlag>;
 
   
 
@@ -4747,7 +4749,7 @@ class nsIFrame : public nsQueryFrame {
                             nscoord aContentEdgeToBoxSizing,
                             nscoord aBoxSizingToMarginEdge,
                             const SizeOrMaxSize& aSize,
-                            ComputeSizeFlags aFlags = Default) {
+                            ComputeSizeFlags aFlags = {}) {
     MOZ_ASSERT(aSize.IsExtremumLength() || aSize.IsLengthPercentage(),
                "This doesn't handle auto / none");
     if (aSize.IsLengthPercentage()) {
