@@ -540,6 +540,38 @@ function runInParent(aFunctionOrURL) {
 
 
 
+function addLoginsInParent(...aLogins) {
+  let script = runInParent(function addLoginsInParentInner() {
+    addMessageListener("addLogins", logins => {
+      
+      const { Services } = ChromeUtils.import(
+        "resource://gre/modules/Services.jsm"
+      );
+
+      let nsLoginInfo = Components.Constructor(
+        "@mozilla.org/login-manager/loginInfo;1",
+        Ci.nsILoginInfo,
+        "init"
+      );
+
+      for (let login of logins) {
+        let loginInfo = new nsLoginInfo(...login);
+        try {
+          Services.logins.addLogin(loginInfo);
+        } catch (e) {
+          assert.ok(false, "addLogin threw: " + e);
+        }
+      }
+    });
+  });
+  script.sendQuery("addLogins", aLogins);
+  return script;
+}
+
+
+
+
+
 
 var gTestDependsOnDeprecatedLogin = false;
 
