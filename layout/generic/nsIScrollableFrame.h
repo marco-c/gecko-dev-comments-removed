@@ -182,11 +182,6 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
   virtual nsPoint GetLogicalScrollPosition() const = 0;
-  
-
-
-
-  virtual nsPoint GetApzScrollPosition() const = 0;
 
   
 
@@ -423,21 +418,6 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
   virtual ScrollOrigin LastScrollOrigin() = 0;
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual ScrollOrigin LastSmoothScrollOrigin() = 0;
 
   
 
@@ -475,10 +455,6 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
   virtual void ResetScrollInfoIfNeeded(uint32_t aGeneration,
                                        bool aApzAnimationInProgress) = 0;
-  
-
-
-  virtual Maybe<nsPoint> GetRelativeOffset() const = 0;
   
 
 

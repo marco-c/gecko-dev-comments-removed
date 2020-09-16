@@ -9275,14 +9275,11 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
   if (scrollableFrame) {
     CSSPoint layoutScrollOffset =
         CSSPoint::FromAppUnits(scrollableFrame->GetScrollPosition());
-    CSSPoint apzScrollPosition =
-        CSSPoint::FromAppUnits(scrollableFrame->GetApzScrollPosition());
     CSSPoint visualScrollOffset =
         aIsRootContent && presShell->IsVisualViewportOffsetSet()
             ? CSSPoint::FromAppUnits(presShell->GetVisualViewportOffset())
             : layoutScrollOffset;
     metrics.SetVisualScrollOffset(visualScrollOffset);
-    metrics.SetBaseScrollOffset(apzScrollPosition);
     
     
     
@@ -9338,19 +9335,11 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
       }
     }
 
-    Maybe<nsPoint> relativeOffset = scrollableFrame->GetRelativeOffset();
-    if (relativeOffset.isSome()) {
-      metrics.SetScrollGeneration(scrollableFrame->CurrentScrollGeneration());
-      metrics.SetPureRelativeOffset(
-          Some(CSSPoint::FromAppUnits(*relativeOffset)));
-    }
+    metrics.SetScrollGeneration(scrollableFrame->CurrentScrollGeneration());
 
     CSSRect viewport = metrics.GetLayoutViewport();
     viewport.MoveTo(layoutScrollOffset);
     metrics.SetLayoutViewport(viewport);
-
-    nsPoint smoothScrollPosition = scrollableFrame->LastScrollDestination();
-    metrics.SetSmoothScrollOffset(CSSPoint::FromAppUnits(smoothScrollPosition));
 
     
     
@@ -9359,21 +9348,9 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
     
     ScrollOrigin lastOrigin = scrollableFrame->LastScrollOrigin();
     if (lastOrigin == ScrollOrigin::Restore) {
-      metrics.SetScrollGeneration(scrollableFrame->CurrentScrollGeneration());
       metrics.SetScrollOffsetUpdateType(FrameMetrics::eRestore);
     } else if (CanScrollOriginClobberApz(lastOrigin)) {
-      if (lastOrigin == ScrollOrigin::Relative) {
-        metrics.SetIsRelative(true);
-      }
-      metrics.SetScrollGeneration(scrollableFrame->CurrentScrollGeneration());
       metrics.SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
-    }
-
-    ScrollOrigin lastSmoothScrollOrigin =
-        scrollableFrame->LastSmoothScrollOrigin();
-    if (lastSmoothScrollOrigin != ScrollOrigin::None) {
-      metrics.SetSmoothScrollOffsetUpdated(
-          scrollableFrame->CurrentScrollGeneration());
     }
 
     nsSize lineScrollAmount = scrollableFrame->GetLineScrollAmount();
