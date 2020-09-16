@@ -313,7 +313,8 @@ class CreditCard {
 
 
 
-  static getLabelInfo({ number, name, month, year }) {
+
+  static getLabelInfo({ number, name, month, year, type }) {
     let formatSelector = ["number"];
     if (name) {
       formatSelector.push("name");
@@ -321,7 +322,7 @@ class CreditCard {
     if (month && year) {
       formatSelector.push("expiration");
     }
-    let stringId = "credit-card-label-" + formatSelector.join("-");
+    let stringId = `credit-card-label-${formatSelector.join("-")}-2`;
     return {
       id: stringId,
       args: {
@@ -329,6 +330,7 @@ class CreditCard {
         name,
         month: month?.toString(),
         year: year?.toString(),
+        type,
       },
     };
   }
