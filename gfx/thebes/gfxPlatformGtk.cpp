@@ -689,17 +689,8 @@ already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
   
   
   
-  
-  
-  
-  
   if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
-    bool useGlxVsync = false;
-    
-    if (!gfxVars::UseEGL()) {
-      useGlxVsync = gl::sGLXLibrary.SupportsVideoSync();
-    }
-    if (useGlxVsync) {
+    if (gl::sGLXLibrary.SupportsVideoSync()) {
       RefPtr<VsyncSource> vsyncSource = new GtkVsyncSource();
       VsyncSource::Display& display = vsyncSource->GetGlobalDisplay();
       if (!static_cast<GtkVsyncSource::GLXDisplay&>(display).Setup()) {
