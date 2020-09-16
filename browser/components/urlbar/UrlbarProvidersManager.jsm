@@ -194,7 +194,25 @@ class ProvidersManager {
     }
     
     
-    updateSourcesIfEmpty(queryContext);
+    
+    
+    
+    
+    let restrictToken = updateSourcesIfEmpty(queryContext);
+    if (restrictToken) {
+      queryContext.shouldFilterRestrictionTokens = true;
+      
+      
+      let restrictType = Object.entries(UrlbarTokenizer.RESTRICT).find(
+        e => e[1] == restrictToken.value
+      )?.[0];
+      if (
+        restrictType == "SEARCH" ||
+        UrlbarTokenizer.SEARCH_MODE_RESTRICT.has(restrictType)
+      ) {
+        queryContext.restrictSource = queryContext.sources[0];
+      }
+    }
     logger.debug(`Context sources ${queryContext.sources}`);
 
     let query = new Query(queryContext, controller, muxer, providers);
@@ -606,9 +624,11 @@ class Query {
 
 
 
+
+
 function updateSourcesIfEmpty(context) {
   if (context.sources && context.sources.length) {
-    return;
+    return false;
   }
   let acceptedSources = [];
   
@@ -681,4 +701,5 @@ function updateSourcesIfEmpty(context) {
     }
   }
   context.sources = acceptedSources;
+  return restrictToken;
 }
