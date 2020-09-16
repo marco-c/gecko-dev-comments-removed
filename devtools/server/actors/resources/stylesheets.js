@@ -139,6 +139,14 @@ class StyleSheetWatcher {
   
 
 
+  getOwnerNode(resourceId) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    return styleSheet.ownerNode;
+  }
+
+  
+
+
   async getText(resourceId) {
     const { styleSheet, modifiedText } = this._styleSheetMap.get(resourceId);
 

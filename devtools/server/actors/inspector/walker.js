@@ -14,6 +14,10 @@ const InspectorUtils = require("InspectorUtils");
 const {
   EXCLUDED_LISTENER,
 } = require("devtools/server/actors/inspector/constants");
+const {
+  TYPES,
+  getResourceWatcher,
+} = require("devtools/server/actors/resources/index");
 
 loader.lazyRequireGetter(
   this,
@@ -2708,8 +2712,18 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-  getStyleSheetOwnerNode: function(styleSheetActorID) {
-    return this.getNodeFromActor(styleSheetActorID, ["ownerNode"]);
+  getStyleSheetOwnerNode: function(resourceId) {
+    const watcher = getResourceWatcher(this.targetActor, TYPES.STYLESHEET);
+    if (watcher) {
+      const ownerNode = watcher.getOwnerNode(resourceId);
+      return this.attachElement(ownerNode);
+    }
+
+    
+    
+    
+    const actorBasedNode = this.getNodeFromActor(resourceId, ["ownerNode"]);
+    return actorBasedNode;
   },
 
   
