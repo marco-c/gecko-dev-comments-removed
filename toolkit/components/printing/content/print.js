@@ -14,6 +14,11 @@ ChromeUtils.defineModuleGetter(
   "DownloadPaths",
   "resource://gre/modules/DownloadPaths.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "DeferredTask",
+  "resource://gre/modules/DeferredTask.jsm"
+);
 
 const INPUT_DELAY_MS = 500;
 const MM_PER_POINT = 25.4 / 72;
@@ -168,7 +173,16 @@ var PrintEventHandler = {
     });
 
     await this.refreshSettings(selectedPrinter.value);
-    this.updatePrintPreview(sourceBrowsingContext);
+
+    
+    
+    this._updatePrintPreviewTask = new DeferredTask(async () => {
+      await this._updatePrintPreview(sourceBrowsingContext);
+      
+      
+      sourceBrowsingContext = undefined;
+    }, 0);
+    this.updatePrintPreview();
 
     document.dispatchEvent(
       new CustomEvent("available-destinations", {
@@ -403,21 +417,8 @@ var PrintEventHandler = {
 
 
 
-
-
-
-
-  async updatePrintPreview(browsingContext) {
-    if (this._previewUpdatingPromise) {
-      if (!this._queuedPreviewUpdatePromise) {
-        this._queuedPreviewUpdatePromise = this._previewUpdatingPromise.then(
-          () => this._updatePrintPreview(browsingContext)
-        );
-      }
-      
-    } else {
-      this._previewUpdatingPromise = this._updatePrintPreview(browsingContext);
-    }
+  async updatePrintPreview() {
+    this._updatePrintPreviewTask.arm();
   },
 
   
