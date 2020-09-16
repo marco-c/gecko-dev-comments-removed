@@ -226,7 +226,6 @@ ICScript* TrialInliner::createInlinedICScript(JSFunction* target,
   MOZ_ASSERT(target->hasJitScript());
 
   JSScript* targetScript = target->baseScript()->asJSScript();
-  JitScript* targetJitScript = targetScript->jitScript();
 
   
   
@@ -247,8 +246,8 @@ ICScript* TrialInliner::createInlinedICScript(JSFunction* target,
   const uint32_t InitialWarmUpCount = 0;
 
   uint32_t depth = icScript_->depth() + 1;
-  UniquePtr<ICScript> inlinedICScript(new (raw) ICScript(
-      targetJitScript, InitialWarmUpCount, allocSize, depth, root_));
+  UniquePtr<ICScript> inlinedICScript(
+      new (raw) ICScript(InitialWarmUpCount, allocSize, depth, root_));
 
   {
     

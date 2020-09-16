@@ -969,7 +969,6 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCallIC(
   if (!TrialInliner::canInline(targetFunction, script_)) {
     return false;
   }
-  MOZ_ASSERT(targetScript->jitScript() == icScript->jitScript());
 
   
   LifoAlloc* lifoAlloc = alloc_.lifoAlloc();

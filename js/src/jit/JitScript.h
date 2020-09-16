@@ -92,17 +92,14 @@ class InliningRoot;
 
 class alignas(uintptr_t) ICScript final : public TrailingArray {
  public:
-  ICScript(JitScript* jitScript, uint32_t warmUpCount, Offset endOffset,
-           uint32_t depth, InliningRoot* inliningRoot = nullptr)
-      : jitScript_(jitScript),
-        inliningRoot_(inliningRoot),
+  ICScript(uint32_t warmUpCount, Offset endOffset, uint32_t depth,
+           InliningRoot* inliningRoot = nullptr)
+      : inliningRoot_(inliningRoot),
         warmUpCount_(warmUpCount),
         endOffset_(endOffset),
         depth_(depth) {}
 
-  JitScript* jitScript() const { return jitScript_; }
-
-  bool isInlined() const;
+  bool isInlined() const { return depth_ > 0; }
 
   MOZ_MUST_USE bool initICEntries(JSContext* cx, JSScript* script);
 
@@ -160,11 +157,6 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   
   
   
-  JitScript* jitScript_;
-
-  
-  
-  
   InliningRoot* inliningRoot_ = nullptr;
 
   
@@ -185,6 +177,8 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   Offset endOffset() const { return endOffset_; }
 
   ICEntry* icEntries() { return offsetToPointer<ICEntry>(icEntriesOffset()); }
+
+  JitScript* outerJitScript();
 
   friend class JitScript;
 };
