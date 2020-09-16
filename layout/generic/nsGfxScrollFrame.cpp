@@ -2991,20 +2991,6 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
     mApzScrollPos = GetScrollPosition();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (mIsRoot && nsLayoutUtils::CanScrollOriginClobberApz(mLastScrollOrigin)) {
-    nsPoint relativeOffset =
-        presContext->PresShell()->GetVisualViewportOffset() - curPos;
-    presContext->PresShell()->SetVisualViewportOffset(pt + relativeOffset,
-                                                      curPos);
-  }
-
   ScrollVisual();
   mAnchor.UserScrolled();
 
@@ -3080,6 +3066,27 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
       }
     }
   }
+
+  
+  
+  
+  
+  
+  
+  
+  if (mIsRoot && nsLayoutUtils::CanScrollOriginClobberApz(mLastScrollOrigin)) {
+    AutoWeakFrame weakFrame(mOuter);
+    AutoScrollbarRepaintSuppression repaintSuppression(this, weakFrame, !schedulePaint);
+
+    nsPoint relativeOffset =
+        presContext->PresShell()->GetVisualViewportOffset() - curPos;
+    presContext->PresShell()->SetVisualViewportOffset(pt + relativeOffset,
+                                                      curPos);
+    if (!weakFrame.IsAlive()) {
+      return;
+    }
+  }
+
 
   if (schedulePaint) {
     mOuter->SchedulePaint();
