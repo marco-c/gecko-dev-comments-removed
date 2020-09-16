@@ -121,7 +121,9 @@ using namespace mozilla::widget;
 #include "mozilla/layers/IAPZCTreeManager.h"
 
 #ifdef MOZ_X11
+#  include "mozilla/gfx/gfxVars.h"
 #  include "GLContextGLX.h"  
+#  include "GLContextEGL.h"  
 #  include "GtkCompositorWidget.h"
 #  include "gfxXlibSurface.h"
 #  include "WindowSurfaceX11Image.h"
@@ -144,6 +146,7 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::widget;
 using namespace mozilla::layers;
+using mozilla::gl::GLContextEGL;
 using mozilla::gl::GLContextGLX;
 
 
@@ -4327,17 +4330,25 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       
       if (mIsX11Display && mIsAccelerated) {
-        auto display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
-        auto screen = gtk_widget_get_screen(mShell);
-        int screenNumber = GDK_SCREEN_XNUMBER(screen);
-        int visualId = 0;
         if (useWebRender) {
           
           
           needsAlphaVisual = true;
         }
-        if (GLContextGLX::FindVisual(display, screenNumber, useWebRender,
-                                     needsAlphaVisual, &visualId)) {
+        auto screen = gtk_widget_get_screen(mShell);
+        int visualId = 0;
+        bool haveVisual;
+
+        if (!gfx::gfxVars::UseEGL()) {
+          auto display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
+          int screenNumber = GDK_SCREEN_XNUMBER(screen);
+          haveVisual = GLContextGLX::FindVisual(
+              display, screenNumber, useWebRender, needsAlphaVisual, &visualId);
+        } else {
+          haveVisual = GLContextEGL::FindVisual(useWebRender, needsAlphaVisual,
+                                                &visualId);
+        }
+        if (haveVisual) {
           
           
           gtk_widget_set_visual(mShell,
