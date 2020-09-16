@@ -103,7 +103,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
 
   
   
-  bool HonorPrintBackgroundSettings() override { return false; }
+  bool HonorPrintBackgroundSettings() const override { return false; }
 
   bool HasTransformGetter() const override { return true; }
 

@@ -51,7 +51,7 @@ class nsPageFrame final : public nsContainerFrame {
 
   
   
-  bool HonorPrintBackgroundSettings() override { return false; }
+  bool HonorPrintBackgroundSettings() const override { return false; }
 
   void PaintHeaderFooter(gfxContext& aRenderingContext, nsPoint aPt,
                          bool aSubpixelAA);
