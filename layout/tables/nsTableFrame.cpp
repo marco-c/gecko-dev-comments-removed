@@ -4321,14 +4321,14 @@ bool BCMapCellIterator::SetNewRowGroup(bool aFindFirstDamagedRow) {
         if ((mAreaStart.y >= mRowGroupStart) &&
             (mAreaStart.y <= mRowGroupEnd)) {
           
-          if (aFindFirstDamagedRow) {
-            
-            int32_t numRows = mAreaStart.y - mRowGroupStart;
-            for (int32_t i = 0; i < numRows; i++) {
-              firstRow = firstRow->GetNextRow();
-              if (!firstRow) ABORT1(false);
-            }
+
+          
+          int32_t numRows = mAreaStart.y - mRowGroupStart;
+          for (int32_t i = 0; i < numRows; i++) {
+            firstRow = firstRow->GetNextRow();
+            if (!firstRow) ABORT1(false);
           }
+
         } else {
           continue;
         }

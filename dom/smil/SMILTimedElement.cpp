@@ -1620,11 +1620,9 @@ bool SMILTimedElement::GetNextInterval(const SMILInterval* aPrevInterval,
     
     
     if (prevIntervalWasZeroDur && tempEnd->Time() == beginAfter) {
-      if (prevIntervalWasZeroDur) {
-        beginAfter.SetMillis(tempBegin->Time().GetMillis() + 1);
-        prevIntervalWasZeroDur = false;
-        continue;
-      }
+      beginAfter.SetMillis(tempBegin->Time().GetMillis() + 1);
+      prevIntervalWasZeroDur = false;
+      continue;
     }
     prevIntervalWasZeroDur = tempBegin->Time() == tempEnd->Time();
 

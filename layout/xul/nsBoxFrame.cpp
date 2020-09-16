@@ -959,13 +959,11 @@ void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     const ActiveScrolledRoot* ownLayerASR = contASRTracker->GetContainerASR();
     DisplayListClipState::AutoSaveRestore ownLayerClipState(aBuilder);
 
-    if (forceLayer) {
-      
-      aLists.Content()->AppendNewToTopWithIndex<nsDisplayOwnLayer>(
-          aBuilder, this,  nsDisplayOwnLayer::OwnLayerForBoxFrame,
-          &masterList, ownLayerASR, nsDisplayOwnLayerFlags::None,
-          mozilla::layers::ScrollbarData{}, true, true);
-    }
+    
+    aLists.Content()->AppendNewToTopWithIndex<nsDisplayOwnLayer>(
+        aBuilder, this,  nsDisplayOwnLayer::OwnLayerForBoxFrame,
+        &masterList, ownLayerASR, nsDisplayOwnLayerFlags::None,
+        mozilla::layers::ScrollbarData{}, true, true);
   }
 }
 
