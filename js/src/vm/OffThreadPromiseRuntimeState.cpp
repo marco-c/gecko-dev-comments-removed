@@ -16,11 +16,8 @@
 #include "js/HeapAPI.h"      
 #include "js/Promise.h"  
 #include "js/Utility.h"  
-#include "threading/LockGuard.h"      
-#include "threading/Mutex.h"          
 #include "threading/ProtectedData.h"  
 #include "vm/JSContext.h"             
-#include "vm/MutexIDs.h"              
 #include "vm/PromiseObject.h"         
 #include "vm/Realm.h"                 
 #include "vm/Runtime.h"               
@@ -58,9 +55,9 @@ bool OffThreadPromiseTask::init(JSContext* cx) {
   OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
   MOZ_ASSERT(state.initialized());
 
-  LockGuard<Mutex> lock(state.mutex_);
+  AutoLockHelperThreadState lock;
 
-  if (!state.live_.putNew(this)) {
+  if (!state.live().putNew(this)) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -71,8 +68,8 @@ bool OffThreadPromiseTask::init(JSContext* cx) {
 
 void OffThreadPromiseTask::unregister(OffThreadPromiseRuntimeState& state) {
   MOZ_ASSERT(registered_);
-  LockGuard<Mutex> lock(state.mutex_);
-  state.live_.remove(this);
+  AutoLockHelperThreadState lock;
+  state.live().remove(this);
   registered_ = false;
 }
 
@@ -82,6 +79,9 @@ void OffThreadPromiseTask::run(JSContext* cx,
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
   MOZ_ASSERT(registered_);
 
+  
+  
+  
   
   
   
@@ -103,11 +103,17 @@ void OffThreadPromiseTask::run(JSContext* cx,
 }
 
 void OffThreadPromiseTask::dispatchResolveAndDestroy() {
+  AutoLockHelperThreadState lock;
+  dispatchResolveAndDestroy(lock);
+}
+
+void OffThreadPromiseTask::dispatchResolveAndDestroy(
+    const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(registered_);
 
   OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
   MOZ_ASSERT(state.initialized());
-  MOZ_ASSERT((LockGuard<Mutex>(state.mutex_), state.live_.has(this)));
+  MOZ_ASSERT(state.live().has(this));
 
   
   
@@ -121,24 +127,22 @@ void OffThreadPromiseTask::dispatchResolveAndDestroy() {
   
   
   
-  LockGuard<Mutex> lock(state.mutex_);
   state.numCanceled_++;
-  if (state.numCanceled_ == state.live_.count()) {
-    state.allCanceled_.notify_one();
+  if (state.numCanceled_ == state.live().count()) {
+    state.allCanceled().notify_one();
   }
 }
 
 OffThreadPromiseRuntimeState::OffThreadPromiseRuntimeState()
     : dispatchToEventLoopCallback_(nullptr),
       dispatchToEventLoopClosure_(nullptr),
-      mutex_(mutexid::OffThreadPromiseState),
       numCanceled_(0),
       internalDispatchQueueClosed_(false) {}
 
 OffThreadPromiseRuntimeState::~OffThreadPromiseRuntimeState() {
-  MOZ_ASSERT(live_.empty());
+  MOZ_ASSERT(live_.refNoCheck().empty());
   MOZ_ASSERT(numCanceled_ == 0);
-  MOZ_ASSERT(internalDispatchQueue_.empty());
+  MOZ_ASSERT(internalDispatchQueue_.refNoCheck().empty());
   MOZ_ASSERT(!initialized());
 }
 
@@ -158,8 +162,7 @@ bool OffThreadPromiseRuntimeState::internalDispatchToEventLoop(
   OffThreadPromiseRuntimeState& state =
       *reinterpret_cast<OffThreadPromiseRuntimeState*>(closure);
   MOZ_ASSERT(state.usingInternalDispatchQueue());
-
-  LockGuard<Mutex> lock(state.mutex_);
+  MOZ_ASSERT(HelperThreadState().isLockedByCurrentThread());
 
   if (state.internalDispatchQueueClosed_) {
     return false;
@@ -168,12 +171,12 @@ bool OffThreadPromiseRuntimeState::internalDispatchToEventLoop(
   
   
   AutoEnterOOMUnsafeRegion noOOM;
-  if (!state.internalDispatchQueue_.pushBack(d)) {
+  if (!state.internalDispatchQueue().pushBack(d)) {
     noOOM.crash("internalDispatchToEventLoop");
   }
 
   
-  state.internalDispatchQueueAppended_.notify_one();
+  state.internalDispatchQueueAppended().notify_one();
   return true;
 }
 
@@ -192,25 +195,25 @@ bool OffThreadPromiseRuntimeState::initialized() const {
 
 void OffThreadPromiseRuntimeState::internalDrain(JSContext* cx) {
   MOZ_ASSERT(usingInternalDispatchQueue());
-  MOZ_ASSERT(!internalDispatchQueueClosed_);
 
   for (;;) {
     JS::Dispatchable* d;
     {
-      LockGuard<Mutex> lock(mutex_);
+      AutoLockHelperThreadState lock;
 
-      MOZ_ASSERT_IF(!internalDispatchQueue_.empty(), !live_.empty());
-      if (live_.empty()) {
+      MOZ_ASSERT(!internalDispatchQueueClosed_);
+      MOZ_ASSERT_IF(!internalDispatchQueue().empty(), !live().empty());
+      if (live().empty()) {
         return;
       }
 
       
       
-      while (internalDispatchQueue_.empty()) {
-        internalDispatchQueueAppended_.wait(lock);
+      while (internalDispatchQueue().empty()) {
+        internalDispatchQueueAppended().wait(lock);
       }
 
-      d = internalDispatchQueue_.popCopyFront();
+      d = internalDispatchQueue().popCopyFront();
     }
 
     
@@ -220,11 +223,11 @@ void OffThreadPromiseRuntimeState::internalDrain(JSContext* cx) {
 
 bool OffThreadPromiseRuntimeState::internalHasPending() {
   MOZ_ASSERT(usingInternalDispatchQueue());
-  MOZ_ASSERT(!internalDispatchQueueClosed_);
 
-  LockGuard<Mutex> lock(mutex_);
-  MOZ_ASSERT_IF(!internalDispatchQueue_.empty(), !live_.empty());
-  return !live_.empty();
+  AutoLockHelperThreadState lock;
+  MOZ_ASSERT(!internalDispatchQueueClosed_);
+  MOZ_ASSERT_IF(!internalDispatchQueue().empty(), !live().empty());
+  return !live().empty();
 }
 
 void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
@@ -232,51 +235,50 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
     return;
   }
 
+  AutoLockHelperThreadState lock;
+
   
   
   
   if (usingInternalDispatchQueue()) {
     DispatchableFifo dispatchQueue;
     {
-      LockGuard<Mutex> lock(mutex_);
-      std::swap(dispatchQueue, internalDispatchQueue_);
-      MOZ_ASSERT(internalDispatchQueue_.empty());
+      std::swap(dispatchQueue, internalDispatchQueue());
+      MOZ_ASSERT(internalDispatchQueue().empty());
       internalDispatchQueueClosed_ = true;
     }
 
     
+    AutoUnlockHelperThreadState unlock(lock);
     for (JS::Dispatchable* d : dispatchQueue) {
       d->run(cx, JS::Dispatchable::ShuttingDown);
     }
   }
 
-  {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    LockGuard<Mutex> lock(mutex_);
-    while (live_.count() != numCanceled_) {
-      MOZ_ASSERT(numCanceled_ < live_.count());
-      allCanceled_.wait(lock);
-    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  while (live().count() != numCanceled_) {
+    MOZ_ASSERT(numCanceled_ < live().count());
+    allCanceled().wait(lock);
   }
 
   
   
-  for (OffThreadPromiseTaskSet::Range r = live_.all(); !r.empty();
+  for (OffThreadPromiseTaskSet::Range r = live().all(); !r.empty();
        r.popFront()) {
     OffThreadPromiseTask* task = r.front();
 
@@ -286,7 +288,7 @@ void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
     task->registered_ = false;
     js_delete(task);
   }
-  live_.clear();
+  live().clear();
   numCanceled_ = 0;
 
   

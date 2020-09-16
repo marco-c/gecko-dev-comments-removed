@@ -17,7 +17,6 @@
 #include "js/Promise.h"  
 #include "js/RootingAPI.h"                
 #include "threading/ConditionVariable.h"  
-#include "threading/Mutex.h"              
 #include "vm/PromiseObject.h"             
 
 struct JS_PUBLIC_API JSContext;
@@ -136,6 +135,7 @@ class OffThreadPromiseTask : public JS::Dispatchable {
   
   
   void dispatchResolveAndDestroy();
+  void dispatchResolveAndDestroy(const AutoLockHelperThreadState& lock);
 };
 
 using OffThreadPromiseTaskSet =
@@ -153,25 +153,32 @@ class OffThreadPromiseRuntimeState {
   void* dispatchToEventLoopClosure_;
 
   
-  Mutex mutex_;
+  
+  HelperThreadLockData<OffThreadPromiseTaskSet> live_;
 
   
   
-  OffThreadPromiseTaskSet live_;
+  
+  
+  
+  HelperThreadLockData<ConditionVariable> allCanceled_;
+  HelperThreadLockData<size_t> numCanceled_;
 
   
   
-  
-  
-  
-  ConditionVariable allCanceled_;
-  size_t numCanceled_;
+  HelperThreadLockData<DispatchableFifo> internalDispatchQueue_;
+  HelperThreadLockData<ConditionVariable> internalDispatchQueueAppended_;
+  HelperThreadLockData<bool> internalDispatchQueueClosed_;
 
-  
-  
-  DispatchableFifo internalDispatchQueue_;
-  ConditionVariable internalDispatchQueueAppended_;
-  bool internalDispatchQueueClosed_;
+  OffThreadPromiseTaskSet& live() { return live_.ref(); }
+  ConditionVariable& allCanceled() { return allCanceled_.ref(); }
+
+  DispatchableFifo& internalDispatchQueue() {
+    return internalDispatchQueue_.ref();
+  }
+  ConditionVariable& internalDispatchQueueAppended() {
+    return internalDispatchQueueAppended_.ref();
+  }
 
   static bool internalDispatchToEventLoop(void*, JS::Dispatchable*);
   bool usingInternalDispatchQueue() const;

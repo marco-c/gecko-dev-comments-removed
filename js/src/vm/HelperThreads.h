@@ -889,7 +889,7 @@ class SourceCompressionTask : public RunnableTask {
 
 
 
-struct PromiseHelperTask : OffThreadPromiseTask, public RunnableTask {
+struct PromiseHelperTask : OffThreadPromiseTask, public HelperThreadTask {
   PromiseHelperTask(JSContext* cx, Handle<PromiseObject*> promise)
       : OffThreadPromiseTask(cx, promise) {}
 
@@ -902,7 +902,8 @@ struct PromiseHelperTask : OffThreadPromiseTask, public RunnableTask {
   
   
   void executeAndResolveAndDestroy(JSContext* cx);
-  void runTask() override;
+
+  void runTaskLocked(AutoLockHelperThreadState& lock) override;
   ThreadType threadType() override { return THREAD_TYPE_PROMISE_TASK; }
 };
 
