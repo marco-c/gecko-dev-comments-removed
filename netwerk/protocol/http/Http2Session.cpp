@@ -3118,7 +3118,7 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
       
       RefPtr<nsHttpConnectionInfo> ci = ConnectionInfo();
       if (ci) {
-        gHttpHandler->ExcludeHttp2(ci);
+        gHttpHandler->BlacklistSpdy(ci);
       }
 
       
