@@ -111,6 +111,7 @@ class DecodedStream : public MediaSink {
   MediaInfo mInfo;
   
   bool mIsAudioDataAudible = false;
+  Maybe<AudibilityMonitor> mAudibilityMonitor;
   MediaEventProducer<bool> mAudibleEvent;
 
   MediaQueue<AudioData>& mAudioQueue;
