@@ -6454,6 +6454,7 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
   bool hadTiming = mTiming;
   bool toBeReset = MaybeInitTiming();
   if (mContentViewer) {
+    MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
     if (aCheckPermitUnload) {
       
       
