@@ -421,7 +421,10 @@ Inspector.prototype = {
   
 
 
-  _getDefaultNodeForSelection: async function() {
+
+
+
+  _getDefaultNodeForSelection: async function(rootNodeFront) {
     if (this._defaultNode) {
       return this._defaultNode;
     }
@@ -430,8 +433,6 @@ Inspector.prototype = {
     const pendingSelectionUnique = Symbol("pending-selection");
     this._pendingSelectionUnique = pendingSelectionUnique;
 
-    
-    const rootNode = await this.walker.getRootNode();
     if (this._pendingSelectionUnique !== pendingSelectionUnique) {
       
       return null;
@@ -444,7 +445,7 @@ Inspector.prototype = {
       
       () => (cssSelectors.length ? walker.findNodeFront(cssSelectors) : null),
       
-      () => walker.querySelector(rootNode, "body"),
+      () => walker.querySelector(rootNodeFront, "body"),
       
       () => walker.documentElement(),
     ];
@@ -1284,15 +1285,12 @@ Inspector.prototype = {
       if (
         resource.resourceType === this.toolbox.resourceWatcher.TYPES.ROOT_NODE
       ) {
+        const rootNodeFront = resource;
         const isTopLevelTarget = !!resource.targetFront.isTopLevel;
-        if (resource.isTopLevelDocument && isTopLevelTarget) {
-          
-          
-          
-          
-          this.onRootNodeAvailable();
+        if (rootNodeFront.isTopLevelDocument && isTopLevelTarget) {
+          this.onRootNodeAvailable(rootNodeFront);
         } else {
-          this.emit("frame-root-available", resource);
+          this.emit("frame-root-available", rootNodeFront);
         }
       }
     }
@@ -1301,7 +1299,7 @@ Inspector.prototype = {
   
 
 
-  onRootNodeAvailable: async function() {
+  onRootNodeAvailable: async function(rootNodeFront) {
     
     this._newRootStart = this.panelWin.performance.now();
 
@@ -1310,7 +1308,7 @@ Inspector.prototype = {
     this._destroyMarkup();
 
     try {
-      const defaultNode = await this._getDefaultNodeForSelection();
+      const defaultNode = await this._getDefaultNodeForSelection(rootNodeFront);
       if (!defaultNode) {
         return;
       }
