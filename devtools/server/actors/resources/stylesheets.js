@@ -107,6 +107,38 @@ class StyleSheetWatcher {
   
 
 
+
+
+
+
+
+
+
+  async addStyleSheet(document, text, fileName) {
+    const parent = document.documentElement;
+    const style = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "style"
+    );
+    style.setAttribute("type", "text/css");
+
+    if (text) {
+      style.appendChild(document.createTextNode(text));
+    }
+
+    
+    parent.appendChild(style);
+
+    if (!this._stylesheetCreationData) {
+      this._stylesheetCreationData = new WeakMap();
+    }
+    
+    this._stylesheetCreationData.set(style.sheet, { fileName });
+  }
+
+  
+
+
   async getText(resourceId) {
     const { styleSheet, modifiedText } = this._styleSheetMap.get(resourceId);
 
@@ -492,7 +524,14 @@ class StyleSheetWatcher {
       this._shouldListSheet(styleSheet) &&
       !this._haveAncestorWithSameURL(styleSheet)
     ) {
-      this._onAvailable([await this._toResource(styleSheet)]);
+      const creationData = this._stylesheetCreationData?.get(styleSheet);
+      this._onAvailable([
+        await this._toResource(styleSheet, {
+          isCreatedByDevTools: !!creationData,
+          fileName: creationData?.fileName,
+        }),
+      ]);
+      this._stylesheetCreationData?.delete(styleSheet);
     }
   }
 
@@ -507,13 +546,18 @@ class StyleSheetWatcher {
     return true;
   }
 
-  async _toResource(styleSheet) {
+  async _toResource(
+    styleSheet,
+    { isCreatedByDevTools = false, fileName = null } = {}
+  ) {
     const resourceId = `stylesheet:${this._resourceCount++}`;
     const resource = {
       resourceId,
       resourceType: STYLESHEET,
       disabled: styleSheet.disabled,
+      fileName,
       href: styleSheet.href,
+      isNew: isCreatedByDevTools,
       mediaRules: await this._getMediaRules(resourceId, styleSheet),
       nodeHref: this._getNodeHref(styleSheet),
       ruleCount: styleSheet.cssRules.length,

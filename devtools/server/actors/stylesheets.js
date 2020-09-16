@@ -878,7 +878,16 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  addStyleSheet: function(text, fileName = null) {
+  async addStyleSheet(text, fileName = null) {
+    const styleSheetsWatcher = this._getStyleSheetsWatcher();
+    if (styleSheetsWatcher) {
+      await styleSheetsWatcher.addStyleSheet(this.document, text, fileName);
+      return;
+    }
+
+    
+    
+    
     const parent = this.document.documentElement;
     const style = this.document.createElementNS(
       "http://www.w3.org/1999/xhtml",
@@ -902,6 +911,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     this._addingStyleSheetInfo.set(style.sheet, { isNew: true, fileName });
 
     const actor = this.parentActor.createStyleSheetActor(style.sheet);
+    
     return actor;
   },
 
