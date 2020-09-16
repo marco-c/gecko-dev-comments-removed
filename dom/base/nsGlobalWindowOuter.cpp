@@ -246,7 +246,6 @@
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
 #include "mozilla/dom/Worklet.h"
 #include "AccessCheck.h"
-#include "MobileViewportManager.h"
 
 #ifdef HAVE_SIDEBAR
 #  include "mozilla/dom/ExternalBinding.h"
@@ -3550,7 +3549,7 @@ nsresult nsGlobalWindowOuter::GetInnerSize(CSSIntSize& aSize) {
   NS_ENSURE_STATE(mDocShell);
 
   RefPtr<nsPresContext> presContext = mDocShell->GetPresContext();
-  RefPtr<PresShell> presShell = mDocShell->GetPresShell();
+  PresShell* presShell = mDocShell->GetPresShell();
 
   if (!presContext || !presShell) {
     aSize = CSSIntSize(0, 0);
@@ -3562,14 +3561,6 @@ nsresult nsGlobalWindowOuter::GetInnerSize(CSSIntSize& aSize) {
   RefPtr<nsViewManager> viewManager = presShell->GetViewManager();
   if (viewManager) {
     viewManager->FlushDelayedResize(false);
-  }
-
-  
-  
-  
-  if (RefPtr<MobileViewportManager> mvm =
-          presShell->GetMobileViewportManager()) {
-    mvm->EnsureInitialViewportSet();
   }
 
   
