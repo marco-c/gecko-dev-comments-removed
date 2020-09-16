@@ -345,7 +345,20 @@ class nsCOMPtr_base {
   void NS_FASTCALL assign_from_query_referent(const nsQueryReferent&,
                                               const nsIID&);
   void NS_FASTCALL assign_from_helper(const nsCOMPtr_helper&, const nsIID&);
-  void** NS_FASTCALL begin_assignment();
+
+
+
+
+
+#ifdef NSCAP_LOG_EXTERNAL_ASSIGNMENT
+  MOZ_NEVER_INLINE
+#else
+  MOZ_ALWAYS_INLINE
+#endif
+  void** NS_FASTCALL begin_assignment() {
+    assign_assuming_AddRef(nullptr);
+    return reinterpret_cast<void**>(&mRawPtr);
+  }
 
  protected:
   NS_MAY_ALIAS_PTR(nsISupports) MOZ_OWNING_REF mRawPtr;
