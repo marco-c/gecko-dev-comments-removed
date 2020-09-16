@@ -5,14 +5,3 @@
 
 
 #include "CacheCommon.h"
-
-namespace mozilla::dom::cache {
-
-void HandleError(const char* const aExpr, const char* const aSourceFile,
-                 const int32_t aSourceLine) {
-  mozilla::dom::quota::LogError(nsLiteralCString("Cache"),
-                                nsDependentCString(aExpr),
-                                nsDependentCString(aSourceFile), aSourceLine);
-}
-
-}  

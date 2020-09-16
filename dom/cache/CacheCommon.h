@@ -43,9 +43,7 @@
 
 namespace mozilla::dom::cache {
 
-
-MOZ_NEVER_INLINE void HandleError(const char* aExpr, const char* aSourceFile,
-                                  int32_t aSourceLine);
+QM_META_HANDLE_ERROR("Cache"_ns)
 
 }  
 

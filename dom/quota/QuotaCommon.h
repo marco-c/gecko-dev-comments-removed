@@ -791,7 +791,8 @@ void AssertCurrentThreadOwnsQuotaMutex();
 
 bool IsOnIOThread();
 
-void ReportInternalError(const char* aFile, uint32_t aLine, const char* aStr);
+MOZ_COLD void ReportInternalError(const char* aFile, uint32_t aLine,
+                                  const char* aStr);
 
 LogModule* GetQuotaManagerLogger();
 
@@ -860,6 +861,19 @@ Result<bool, nsresult> WarnIfFileIsUnknown(nsIFile& aFile,
                                            int32_t aSourceLine);
 #endif
 
+#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
+#  define QM_META_HANDLE_ERROR(module)                                     \
+    MOZ_COLD inline void HandleError(                                      \
+        const char* aExpr, const char* aSourceFile, int32_t aSourceLine) { \
+      mozilla::dom::quota::LogError(module, nsDependentCString(aExpr),     \
+                                    nsDependentCString(aSourceFile),       \
+                                    aSourceLine);                          \
+    }
+#else
+#  define QM_META_HANDLE_ERROR(module)            \
+    MOZ_ALWAYS_INLINE constexpr void HandleError( \
+        const char* aExpr, const char* aSourceFile, int32_t aSourceLine) {}
+#endif
 
 
 
@@ -870,8 +884,12 @@ Result<bool, nsresult> WarnIfFileIsUnknown(nsIFile& aFile,
 
 
 
-MOZ_NEVER_INLINE void HandleError(const char* aExpr, const char* aSourceFile,
-                                  int32_t aSourceLine);
+
+
+
+
+
+QM_META_HANDLE_ERROR("QuotaManager"_ns)
 
 }  
 }  
