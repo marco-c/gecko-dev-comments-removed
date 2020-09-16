@@ -169,24 +169,29 @@ EventLoop.prototype = {
 
 
   preNest() {
-    const windows = [];
+    const docShells = [];
     
     for (const window of this.getAllWindowDebuggees()) {
       const { windowUtils } = window;
       windowUtils.suppressEventHandling(true);
       windowUtils.suspendTimeouts();
-      windows.push(window);
+      docShells.push(window.docShell);
     }
-    return windows;
+    return docShells;
   },
 
   
 
 
-  postNest(pausedWindows) {
+  postNest(pausedDocShells) {
     
-    for (const window of pausedWindows) {
-      const { windowUtils } = window;
+    for (const docShell of pausedDocShells) {
+      
+      
+      if (docShell.isBeingDestroyed()) {
+        continue;
+      }
+      const { windowUtils } = docShell.domWindow;
       windowUtils.resumeTimeouts();
       windowUtils.suppressEventHandling(false);
     }
