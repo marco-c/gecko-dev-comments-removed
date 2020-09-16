@@ -550,6 +550,13 @@ class ShutdownEvent : public Runnable {
         CacheIOThread::WRITE);  
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
+    
+    
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Posting ShutdownEvent task failed");
+      return;
+    }
+
     TimeDuration waitTime = TimeDuration::FromSeconds(1);
     while (!mNotified) {
       mon.Wait(waitTime);
