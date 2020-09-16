@@ -149,11 +149,11 @@ class FirefoxConnector {
     this.responsiveFront = await this.currentTarget.getFront("responsive");
   }
 
-  async onResourceAvailable({ targetFront, resource }) {
+  async onResourceAvailable({ resource }) {
     const { TYPES } = this.toolbox.resourceWatcher;
 
     if (resource.resourceType === TYPES.DOCUMENT_EVENT) {
-      this.onDocEvent(targetFront, resource);
+      this.onDocEvent(resource);
       return;
     }
 
@@ -322,27 +322,26 @@ class FirefoxConnector {
 
 
 
-
-  onDocEvent(targetFront, event) {
-    if (!targetFront.isTopLevel) {
+  onDocEvent(resource) {
+    if (!resource.targetFront.isTopLevel) {
       
       return;
     }
 
-    if (event.name === "dom-loading") {
+    if (resource.name === "dom-loading") {
       
       return;
     }
 
     if (this.actions) {
-      this.actions.addTimingMarker(event);
+      this.actions.addTimingMarker(resource);
     }
 
-    if (event.name === "dom-complete") {
+    if (resource.name === "dom-complete") {
       this.navigate();
     }
 
-    this.emitForTests(TEST_EVENTS.TIMELINE_EVENT, event);
+    this.emitForTests(TEST_EVENTS.TIMELINE_EVENT, resource);
   }
 
   
