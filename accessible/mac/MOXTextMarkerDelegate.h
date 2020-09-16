@@ -75,6 +75,9 @@
 - (NSValue*)moxBoundsForTextMarkerRange:(id)textMarkerRange;
 
 
+- (id)moxUIElementForTextMarker:(id)textMarker;
+
+
 - (id)moxTextMarkerRangeForUIElement:(id)element;
 
 @end

@@ -45,6 +45,8 @@ class GeckoTextMarker final {
   
   GeckoTextMarkerRange RightWordRange();
 
+  AccessibleOrProxy Leaf();
+
   bool IsValid() const { return !mContainer.IsNull(); };
 
   bool operator<(const GeckoTextMarker& aPoint) const;
