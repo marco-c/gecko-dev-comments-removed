@@ -105,6 +105,22 @@ struct BaseMargin {
   }
 
   
+  void EnsureAtLeast(const BaseMargin& aMargin) {
+    top = std::max(top, aMargin.top);
+    right = std::max(right, aMargin.right);
+    bottom = std::max(bottom, aMargin.bottom);
+    left = std::max(left, aMargin.left);
+  }
+
+  
+  void EnsureAtMost(const BaseMargin& aMargin) {
+    top = std::min(top, aMargin.top);
+    right = std::min(right, aMargin.right);
+    bottom = std::min(bottom, aMargin.bottom);
+    left = std::min(left, aMargin.left);
+  }
+
+  
   
   bool operator==(const Sub& aMargin) const {
     return top == aMargin.top && right == aMargin.right &&
