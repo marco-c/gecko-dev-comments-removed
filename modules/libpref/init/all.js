@@ -2393,22 +2393,6 @@ pref("mousewheel.with_win.delta_multiplier_y", 100);
 pref("mousewheel.with_win.delta_multiplier_z", 100);
 
 
-
-
-
-
-
-
-
-pref("general.smoothScroll.scrollbars.durationMinMS", 150);
-pref("general.smoothScroll.scrollbars.durationMaxMS", 150);
-
-pref("general.smoothScroll.pixels", true);
-pref("general.smoothScroll.lines", true);
-pref("general.smoothScroll.scrollbars", true);
-pref("general.smoothScroll.other", true);
-
-
 pref("profile.manage_only_at_launch", false);
 
 
