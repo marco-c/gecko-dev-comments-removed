@@ -37,10 +37,12 @@ class TestEnvironment(unittest.TestCase):
         '''
         env = ConfigEnvironment('.', '.',
                                 defines={'foo': 'bar', 'baz': 'qux 42',
-                                         'abc': "d'e'f"},
+                                         'abc': "d'e'f", 'extra': 'foobar'},
+                                non_global_defines=['extra', 'ignore'],
                                 substs={'FOO': 'bar', 'FOOBAR': '', 'ABC': 'def',
                                         'bar': 'baz qux', 'zzz': '"abc def"',
                                         'qux': ''})
+        
         
         self.assertEqual(env.substs['ACDEFINES'],
                          """-Dabc='d'\\''e'\\''f' -Dbaz='qux 42' -Dfoo=bar""")
