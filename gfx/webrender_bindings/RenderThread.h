@@ -252,6 +252,7 @@ class RenderThread final {
   }
 
   
+  gl::GLContext* SharedGL(nsACString& aError);
   gl::GLContext* SharedGL();
   void ClearSharedGL();
   RefPtr<layers::SurfacePool> SharedSurfacePool();
