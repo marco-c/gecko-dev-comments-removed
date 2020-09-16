@@ -201,6 +201,9 @@ class Selection final : public nsSupportsWeakReference,
     Collapse(aPoint, result);
     return result.StealNSResult();
   }
+  void Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
+    CollapseInternal(InLimiter::eYes, aPoint, aRv);
+  }
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult Extend(nsINode* aContainer, int32_t aOffset);
@@ -438,14 +441,26 @@ class Selection final : public nsSupportsWeakReference,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Collapse(nsINode& aContainer,
                                             uint32_t aOffset,
                                             ErrorResult& aRv) {
-    Collapse(RawRangeBoundary(&aContainer, aOffset), aRv);
+    CollapseInternal(InLimiter::eYes, RawRangeBoundary(&aContainer, aOffset),
+                     aRv);
   }
 
+ private:
+  enum class InLimiter {
+    
+    
+    eYes,
+    
+    
+    eNo,
+  };
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv);
+  void CollapseInternal(InLimiter aInLimiter, const RawRangeBoundary& aPoint,
+                        ErrorResult& aRv);
 
+ public:
   
 
 
@@ -642,14 +657,6 @@ class Selection final : public nsSupportsWeakReference,
   nsresult GetCachedFrameOffset(nsIFrame* aFrame, int32_t inOffset,
                                 nsPoint& aPoint);
 
-  enum class InLimiter {
-    
-    
-    eYes,
-    
-    
-    eNo,
-  };
   MOZ_CAN_RUN_SCRIPT
   void SetStartAndEndInternal(InLimiter aInLimiter,
                               const RawRangeBoundary& aStartRef,
