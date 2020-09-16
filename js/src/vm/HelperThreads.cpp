@@ -1194,6 +1194,10 @@ bool GlobalHelperThreadState::ensureThreadCount(size_t count) {
     return false;
   }
 
+  for (size_t& i : runningTaskCount) {
+    i = 0;
+  }
+
   
   
   auto updateThreadCount =
@@ -1214,6 +1218,7 @@ bool GlobalHelperThreadState::ensureThreadCount(size_t count) {
 GlobalHelperThreadState::GlobalHelperThreadState()
     : cpuCount(0),
       threadCount(0),
+      totalCountRunningTasks(0),
       registerThread(nullptr),
       unregisterThread(nullptr),
       wasmTier2GeneratorsFinished_(0),
@@ -1367,9 +1372,8 @@ void GlobalHelperThreadState::waitForAllThreadsLocked(
 
 
 
-template <typename T>
 bool GlobalHelperThreadState::checkTaskThreadLimit(
-    size_t maxThreads, bool isMaster,
+    ThreadType threadType, size_t maxThreads, bool isMaster,
     const AutoLockHelperThreadState& lock) const {
   MOZ_ASSERT(maxThreads > 0);
 
@@ -1377,18 +1381,13 @@ bool GlobalHelperThreadState::checkTaskThreadLimit(
     return true;
   }
 
-  size_t count = 0;
-  size_t idle = 0;
-  for (auto& thread : threads(lock)) {
-    if (thread->hasTask<T>()) {
-      count++;
-    } else {
-      idle++;
-    }
-    if (count >= maxThreads) {
-      return false;
-    }
+  size_t count = runningTaskCount[threadType];
+  if (count >= maxThreads) {
+    return false;
   }
+
+  MOZ_ASSERT(threadCount >= totalCountRunningTasks);
+  size_t idle = threadCount - totalCountRunningTasks;
 
   
   
@@ -1506,13 +1505,9 @@ void GlobalHelperThreadState::addSizeOfIncludingThis(
 
   
   MOZ_ASSERT(htStats.idleThreadCount == 0);
-  for (auto& thread : threads(lock)) {
-    if (thread->idle()) {
-      htStats.idleThreadCount++;
-    } else {
-      htStats.activeThreadCount++;
-    }
-  }
+  MOZ_ASSERT(threadCount >= totalCountRunningTasks);
+  htStats.activeThreadCount = totalCountRunningTasks;
+  htStats.idleThreadCount = threadCount - totalCountRunningTasks;
 }
 
 size_t GlobalHelperThreadState::maxIonCompilationThreads() const {
@@ -1619,7 +1614,7 @@ bool GlobalHelperThreadState::canStartWasmCompile(
     }
   }
 
-  if (!threads || !checkTaskThreadLimit<wasm::CompileTask*>(threads, lock)) {
+  if (!threads || !checkTaskThreadLimit(THREAD_TYPE_WASM, threads, lock)) {
     return false;
   }
 
@@ -1629,9 +1624,9 @@ bool GlobalHelperThreadState::canStartWasmCompile(
 bool GlobalHelperThreadState::canStartWasmTier2Generator(
     const AutoLockHelperThreadState& lock) {
   return !wasmTier2GeneratorWorklist(lock).empty() &&
-         checkTaskThreadLimit<wasm::Tier2GeneratorTask*>(
-             maxWasmTier2GeneratorThreads(),
-             true, lock);
+         checkTaskThreadLimit(THREAD_TYPE_WASM_TIER2,
+                              maxWasmTier2GeneratorThreads(),
+                              true, lock);
 }
 
 bool GlobalHelperThreadState::canStartPromiseHelperTask(
@@ -1639,8 +1634,9 @@ bool GlobalHelperThreadState::canStartPromiseHelperTask(
   
   
   return !promiseHelperTasks(lock).empty() &&
-         checkTaskThreadLimit<PromiseHelperTask*>(maxPromiseHelperThreads(),
-                                                  true, lock);
+         checkTaskThreadLimit(THREAD_TYPE_PROMISE_TASK,
+                              maxPromiseHelperThreads(),
+                              true, lock);
 }
 
 static bool IonCompileTaskHasHigherPriority(jit::IonCompileTask* first,
@@ -1674,8 +1670,8 @@ static bool IonCompileTaskHasHigherPriority(jit::IonCompileTask* first,
 bool GlobalHelperThreadState::canStartIonCompile(
     const AutoLockHelperThreadState& lock) {
   return !ionWorklist(lock).empty() &&
-         checkTaskThreadLimit<jit::IonCompileTask*>(maxIonCompilationThreads(),
-                                                    lock);
+         checkTaskThreadLimit(THREAD_TYPE_ION, maxIonCompilationThreads(),
+                              lock);
 }
 
 bool GlobalHelperThreadState::canStartIonFreeTask(
@@ -1709,15 +1705,15 @@ bool GlobalHelperThreadState::canStartParseTask(
   
   
   return !parseWorklist(lock).empty() &&
-         checkTaskThreadLimit<ParseTask*>(maxParseThreads(), true,
-                                          lock);
+         checkTaskThreadLimit(THREAD_TYPE_PARSE, maxParseThreads(),
+                              true, lock);
 }
 
 bool GlobalHelperThreadState::canStartCompressionTask(
     const AutoLockHelperThreadState& lock) {
   return !compressionWorklist(lock).empty() &&
-         checkTaskThreadLimit<SourceCompressionTask*>(maxCompressionThreads(),
-                                                      lock);
+         checkTaskThreadLimit(THREAD_TYPE_COMPRESS, maxCompressionThreads(),
+                              lock);
 }
 
 void GlobalHelperThreadState::startHandlingCompressionTasks(
@@ -1760,8 +1756,8 @@ bool GlobalHelperThreadState::submitTask(
 bool GlobalHelperThreadState::canStartGCParallelTask(
     const AutoLockHelperThreadState& lock) {
   return !gcParallelWorklist(lock).isEmpty() &&
-         checkTaskThreadLimit<GCParallelTask*>(maxGCParallelThreads(lock),
-                                               lock);
+         checkTaskThreadLimit(THREAD_TYPE_GCPARALLEL,
+                              maxGCParallelThreads(lock), lock);
 }
 
 void HelperThread::handleGCParallelWorkload(AutoLockHelperThreadState& lock) {
@@ -2553,10 +2549,16 @@ void GlobalHelperThreadState::runTaskLocked(HelperThreadTask* task,
 
   HelperThreadState().helperTasks(locked).infallibleEmplaceBack(task);
 
+  ThreadType threadType = task->threadType();
+  runningTaskCount[threadType]++;
+  totalCountRunningTasks++;
+
   task->runHelperThreadTask(locked);
 
   
   HelperThreadState().helperTasks(locked).eraseIfEqual(task);
 
+  totalCountRunningTasks--;
+  runningTaskCount[threadType]--;
   HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
