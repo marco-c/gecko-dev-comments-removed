@@ -127,6 +127,11 @@ if __name__ == '__main__':
         
         env["MOZ_DISABLE_CONTENT_SANDBOX"] = "1"
         env["MOZ_DISABLE_RDD_SANDBOX"] = "1"
+        env["MOZ_DISABLE_SOCKET_PROCESS_SANDBOX"] = "1"
+        env["MOZ_DISABLE_GPU_SANDBOX"] = "1"
+        env["MOZ_DISABLE_GMP_SANDBOX"] = "1"
+        env["MOZ_DISABLE_NPAPI_SANDBOX"] = "1"
+        env["MOZ_DISABLE_VR_SANDBOX"] = "1"
 
         
         env["LLVM_PROFILE_FILE"] = "default_%p_random_%m.profraw"
