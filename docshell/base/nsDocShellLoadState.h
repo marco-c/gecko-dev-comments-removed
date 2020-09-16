@@ -26,6 +26,8 @@ class nsIChannel;
 class nsIReferrerInfo;
 class OriginAttibutes;
 namespace mozilla {
+template <typename, class>
+class UniquePtr;
 namespace dom {
 class DocShellLoadStateInit;
 }  
@@ -141,8 +143,13 @@ class nsDocShellLoadState final {
   const mozilla::dom::LoadingSessionHistoryInfo* GetLoadingSessionHistoryInfo()
       const;
 
+  
   void SetLoadingSessionHistoryInfo(
       const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo);
+
+  
+  void SetLoadingSessionHistoryInfo(
+      mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> aLoadingInfo);
 
   bool LoadIsFromSessionHistory() const;
 
