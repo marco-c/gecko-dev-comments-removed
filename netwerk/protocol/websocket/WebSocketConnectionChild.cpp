@@ -174,6 +174,12 @@ WebSocketConnectionChild::OnDataReceived(uint8_t* aData, uint32_t aCount) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+WebSocketConnectionChild::OnReadyToSendData() {
+  
+  return NS_OK;
+}
+
 void WebSocketConnectionChild::ActorDestroy(ActorDestroyReason aWhy) {
   LOG(("WebSocketConnectionChild::ActorDestroy %p\n", this));
   if (mConnection) {
