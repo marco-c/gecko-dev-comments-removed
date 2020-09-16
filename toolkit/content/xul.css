@@ -125,6 +125,13 @@ html|label.toolbarbutton-badge:empty {
 
 
 
+button {
+  -moz-default-appearance: button;
+  appearance: auto;
+}
+
+
+
 browser,
 editor,
 iframe {
