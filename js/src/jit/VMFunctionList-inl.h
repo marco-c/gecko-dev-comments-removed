@@ -8,7 +8,6 @@
 #define jit_VMFunctionList_inl_h
 
 #include "builtin/Eval.h"
-#include "builtin/ModuleObject.h"  
 #include "builtin/Promise.h"  
 #include "builtin/RegExp.h"
 #include "builtin/String.h"

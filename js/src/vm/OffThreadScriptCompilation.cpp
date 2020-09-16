@@ -17,8 +17,7 @@
 #include "jstypes.h"  
 
 #include "js/CompileOptions.h"  
-#include "js/SourceText.h"      
-#include "vm/HelperThreadState.h"  
+#include "vm/HelperThreads.h"  
 #include "vm/JSContext.h"  
 #include "vm/Runtime.h"    
 

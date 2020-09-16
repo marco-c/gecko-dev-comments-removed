@@ -22,7 +22,6 @@
 #include "js/GCAnnotations.h"
 #include "js/GCPolicyAPI.h"
 #include "js/GCTypeMacros.h"  
-#include "js/HashTable.h"
 #include "js/HeapAPI.h"
 #include "js/ProfilingStack.h"
 #include "js/Realm.h"

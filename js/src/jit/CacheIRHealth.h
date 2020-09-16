@@ -16,8 +16,6 @@
 namespace js {
 namespace jit {
 
-class ICEntry;
-
 
 
 

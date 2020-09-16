@@ -7,7 +7,9 @@
 #ifndef js_TracingAPI_h
 #define js_TracingAPI_h
 
+#include "js/AllocPolicy.h"
 #include "js/GCTypeMacros.h"
+#include "js/HashTable.h"
 #include "js/HeapAPI.h"
 #include "js/TraceKind.h"
 
@@ -443,6 +445,20 @@ JS_DECLARE_UNSAFE_TRACE_ROOT(js::SavedFrame*)
 #undef JS_DECLARE_UNSAFE_TRACE_ROOT
 
 extern JS_PUBLIC_API void TraceChildren(JSTracer* trc, GCCellPtr thing);
+
+using ZoneSet =
+    js::HashSet<Zone*, js::DefaultHasher<Zone*>, js::SystemAllocPolicy>;
+using CompartmentSet =
+    js::HashSet<JS::Compartment*, js::DefaultHasher<JS::Compartment*>,
+                js::SystemAllocPolicy>;
+
+
+
+
+
+
+extern JS_PUBLIC_API void TraceIncomingCCWs(
+    JSTracer* trc, const JS::CompartmentSet& compartments);
 
 }  
 

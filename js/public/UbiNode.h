@@ -20,7 +20,6 @@
 
 #include "jspubtd.h"
 
-#include "js/AllocPolicy.h"
 #include "js/GCAPI.h"
 #include "js/HashTable.h"
 #include "js/RootingAPI.h"
@@ -164,24 +163,22 @@
 
 
 
-namespace js {
-class BaseScript;
-}  
-
 namespace JS {
-
-using ZoneSet =
-    js::HashSet<Zone*, js::DefaultHasher<Zone*>, js::SystemAllocPolicy>;
-
-using CompartmentSet =
-    js::HashSet<Compartment*, js::DefaultHasher<Compartment*>,
-                js::SystemAllocPolicy>;
-
 namespace ubi {
 
 class Edge;
 class EdgeRange;
 class StackFrame;
+
+}  
+}  
+
+namespace js {
+class BaseScript;
+}  
+
+namespace JS {
+namespace ubi {
 
 using mozilla::Maybe;
 using mozilla::RangedPtr;

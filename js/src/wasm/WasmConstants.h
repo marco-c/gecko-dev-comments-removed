@@ -915,27 +915,6 @@ static const unsigned FailFP = 0xbad;
 
 static const unsigned MaxVarU32DecodedBytes = 5;
 
-
-
-enum class OptimizedBackend {
-  Ion,
-  Cranelift,
-};
-
-
-
-
-enum class CompileMode { Once, Tier1, Tier2 };
-
-
-
-enum class DebugEnabled { False, True };
-
-
-
-
-enum class MemoryUsage { None = false, Unshared = 1, Shared = 2 };
-
 }  
 }  
 

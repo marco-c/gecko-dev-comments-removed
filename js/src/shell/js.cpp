@@ -4761,7 +4761,7 @@ static bool SetJitCompilerOption(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-  WaitForAllHelperThreads();
+  HelperThreadState().waitForAllThreads();
 
   
   

@@ -26,7 +26,6 @@
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/GlobalObject.h"
-#include "vm/HelperThreadState.h"  
 #include "vm/JSContext.h"
 #include "vm/JSScript.h"
 #include "vm/ModuleBuilder.h"  

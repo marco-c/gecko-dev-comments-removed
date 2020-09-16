@@ -12,6 +12,7 @@
 
 #include "jsapi.h"  
 
+#include "vm/EnvironmentObject.h"  
 #include "vm/GlobalObject.h"       
 #include "vm/JSContext.h"          
 #include "vm/JSObject.h"           

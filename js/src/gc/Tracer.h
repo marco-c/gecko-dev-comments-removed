@@ -7,14 +7,9 @@
 #ifndef js_Tracer_h
 #define js_Tracer_h
 
-#include "gc/Barrier.h"
-#include "js/HashTable.h"
+#include "jsfriendapi.h"
 
-namespace JS {
-using CompartmentSet =
-    js::HashSet<Compartment*, js::DefaultHasher<Compartment*>,
-                js::SystemAllocPolicy>;
-}  
+#include "gc/Barrier.h"
 
 namespace js {
 
@@ -310,13 +305,6 @@ namespace gc {
 
 void TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape);
 void TraceCycleCollectorChildren(JS::CallbackTracer* trc, ObjectGroup* group);
-
-
-
-
-
-
-void TraceIncomingCCWs(JSTracer* trc, const JS::CompartmentSet& compartments);
 
 }  
 }  
