@@ -93,7 +93,7 @@ Maybe<InlinableCallData> FindInlinableCallData(ICStub* stub) {
 
   ObjOperandId calleeGuardOperand;
   CallFlags flags;
-  uint32_t targetOffset = 0;
+  JSFunction* target = nullptr;
 
   CacheIRReader reader(stubInfo);
   while (reader.more()) {
@@ -104,13 +104,25 @@ Maybe<InlinableCallData> FindInlinableCallData(ICStub* stub) {
     mozilla::DebugOnly<const uint8_t*> argStart = reader.currentPosition();
 
     switch (op) {
-      case CacheOp::GuardSpecificFunction:
+      case CacheOp::GuardSpecificFunction: {
         
         MOZ_ASSERT(data.isNothing());
         calleeGuardOperand = reader.objOperandId();
-        targetOffset = reader.stubOffset();
+        uint32_t targetOffset = reader.stubOffset();
+        mozilla::Unused << reader.stubOffset();  
+        uintptr_t rawTarget = stubInfo->getStubRawWord(stubData, targetOffset);
+        target = reinterpret_cast<JSFunction*>(rawTarget);
+        break;
+      }
+      case CacheOp::GuardFunctionScript: {
+        MOZ_ASSERT(data.isNothing());
+        calleeGuardOperand = reader.objOperandId();
+        uint32_t targetOffset = reader.stubOffset();
+        uintptr_t rawTarget = stubInfo->getStubRawWord(stubData, targetOffset);
+        target = reinterpret_cast<BaseScript*>(rawTarget)->function();
         mozilla::Unused << reader.stubOffset();  
         break;
+      }
       case CacheOp::CallScriptedFunction: {
         
         
@@ -157,8 +169,7 @@ Maybe<InlinableCallData> FindInlinableCallData(ICStub* stub) {
   if (data.isSome()) {
     data->calleeOperand = calleeGuardOperand;
     data->callFlags = flags;
-    uintptr_t rawTarget = stubInfo->getStubRawWord(stubData, targetOffset);
-    data->target = reinterpret_cast<JSFunction*>(rawTarget);
+    data->target = target;
   }
   return data;
 }

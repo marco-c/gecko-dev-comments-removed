@@ -3149,12 +3149,26 @@ WrappedFunction* WarpCacheIRTranspiler::maybeCallTarget(MDefinition* callee,
   
   
   
-  if (!callee->isGuardSpecificFunction()) {
-    return nullptr;
+  
+  
+  
+  
+  
+  
+  if (callee->isGuardSpecificFunction()) {
+    auto* guard = callee->toGuardSpecificFunction();
+    return maybeWrappedFunction(guard->expected(), kind, guard->nargs(),
+                                guard->flags());
   }
-  auto* guard = callee->toGuardSpecificFunction();
-  return maybeWrappedFunction(guard->expected(), kind, guard->nargs(),
-                              guard->flags());
+  if (callee->isGuardFunctionScript()) {
+    MOZ_ASSERT(kind == CallKind::Scripted);
+    auto* guard = callee->toGuardFunctionScript();
+    WrappedFunction* wrappedTarget = new (alloc()) WrappedFunction(
+         nullptr, guard->nargs(), guard->flags());
+    MOZ_ASSERT(wrappedTarget->hasJitEntry());
+    return wrappedTarget;
+  }
+  return nullptr;
 }
 
 
