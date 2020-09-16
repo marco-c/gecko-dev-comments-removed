@@ -286,9 +286,10 @@ ScalarResult GetVariantFromIVariant(nsIVariant* aInput, uint32_t aScalarKind,
 
 
 
-nsresult WriteVariantToJSONWriter(uint32_t aScalarType, nsIVariant* aInputValue,
-                                  const char* aPropertyName,
-                                  mozilla::JSONWriter& aWriter) {
+nsresult WriteVariantToJSONWriter(
+    uint32_t aScalarType, nsIVariant* aInputValue,
+    const mozilla::Span<const char>& aPropertyName,
+    mozilla::JSONWriter& aWriter) {
   MOZ_ASSERT(aInputValue);
 
   switch (aScalarType) {
@@ -303,7 +304,7 @@ nsresult WriteVariantToJSONWriter(uint32_t aScalarType, nsIVariant* aInputValue,
       nsCString val;
       nsresult rv = aInputValue->GetAsACString(val);
       NS_ENSURE_SUCCESS(rv, rv);
-      aWriter.StringProperty(aPropertyName, val.get());
+      aWriter.StringProperty(aPropertyName, val);
       break;
     }
     case nsITelemetry::SCALAR_TYPE_BOOLEAN: {
@@ -3804,13 +3805,14 @@ nsresult TelemetryScalar::SerializeScalars(mozilla::JSONWriter& aWriter) {
     ScalarTupleArray& processScalars = iter.Data();
     const char* processName = GetNameForProcessID(ProcessID(iter.Key()));
 
-    aWriter.StartObjectProperty(processName);
+    aWriter.StartObjectProperty(mozilla::MakeStringSpan(processName));
 
     for (const ScalarDataTuple& scalar : processScalars) {
       nsresult rv = WriteVariantToJSONWriter(
           mozilla::Get<2>(scalar) ,
           mozilla::Get<1>(scalar) ,
-          mozilla::Get<0>(scalar) , aWriter );
+          mozilla::MakeStringSpan(mozilla::Get<0>(scalar)) ,
+          aWriter );
       if (NS_FAILED(rv)) {
         
         
@@ -3854,10 +3856,11 @@ nsresult TelemetryScalar::SerializeKeyedScalars(mozilla::JSONWriter& aWriter) {
     KeyedScalarTupleArray& processScalars = iter.Data();
     const char* processName = GetNameForProcessID(ProcessID(iter.Key()));
 
-    aWriter.StartObjectProperty(processName);
+    aWriter.StartObjectProperty(mozilla::MakeStringSpan(processName));
 
     for (const KeyedScalarDataTuple& keyedScalarData : processScalars) {
-      aWriter.StartObjectProperty(mozilla::Get<0>(keyedScalarData));
+      aWriter.StartObjectProperty(
+          mozilla::MakeStringSpan(mozilla::Get<0>(keyedScalarData)));
 
       
       
@@ -3867,8 +3870,7 @@ nsresult TelemetryScalar::SerializeKeyedScalars(mozilla::JSONWriter& aWriter) {
         nsresult rv = WriteVariantToJSONWriter(
             mozilla::Get<2>(keyedScalarData) ,
             keyData.second ,
-            PromiseFlatCString(keyData.first).get() ,
-            aWriter );
+            PromiseFlatCString(keyData.first) , aWriter );
         if (NS_FAILED(rv)) {
           
           

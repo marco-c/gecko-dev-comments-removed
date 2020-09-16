@@ -100,15 +100,15 @@ void StreamSamplesAndMarkers(
     
     
     name += " (pre-xul)";
-    aWriter.StringProperty("name", name.c_str());
+    aWriter.StringProperty("name", name);
   }
 
   
   if (!aProcessName.empty()) {
-    aWriter.StringProperty("processName", aProcessName.c_str());
+    aWriter.StringProperty("processName", aProcessName);
   }
   if (!aETLDplus1.empty()) {
-    aWriter.StringProperty("eTLD+1", aETLDplus1.c_str());
+    aWriter.StringProperty("eTLD+1", aETLDplus1);
   }
 
   aWriter.IntProperty("tid", static_cast<int64_t>(aThreadId));
