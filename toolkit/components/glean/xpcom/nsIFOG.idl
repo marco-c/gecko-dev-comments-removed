@@ -15,6 +15,14 @@ interface nsIFOG : nsISupports
 
 
 
+  void initializeFOG();
+
+  
+
+
+
+
+
 
   void setLogPings(in boolean aEnableLogPings);
 

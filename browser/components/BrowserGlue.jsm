@@ -2591,6 +2591,17 @@ BrowserGlue.prototype = {
       },
 
       
+      
+      {
+        task: () => {
+          let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(
+            Ci.nsIFOG
+          );
+          FOG.initializeFOG();
+        },
+      },
+
+      
       {
         task: () => {
           
