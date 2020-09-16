@@ -33,6 +33,23 @@ const LOGIN_FIELD_UTILS = LoginTestUtils.loginField;
 const TESTS_DIR = "/tests/toolkit/components/passwordmgr/test/";
 
 
+let authPromptModalType = SpecialPowers.Services.prompt.MODAL_TYPE_WINDOW;
+if (SpecialPowers.Services.prefs.getBoolPref("prompts.tab_modal.enabled")) {
+  authPromptModalType = SpecialPowers.Services.prefs.getIntPref(
+    "prompts.modalType.httpAuth"
+  );
+}
+
+
+let authPromptIsCommonDialog =
+  authPromptModalType === SpecialPowers.Services.prompt.MODAL_TYPE_WINDOW ||
+  (authPromptModalType === SpecialPowers.Services.prompt.MODAL_TYPE_TAB &&
+    SpecialPowers.Services.prefs.getBoolPref(
+      "prompts.tabChromePromptSubDialog",
+      false
+    ));
+
+
 
 
 function $_(formNum, name) {
