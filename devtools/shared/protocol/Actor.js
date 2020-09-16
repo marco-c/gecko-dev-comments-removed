@@ -100,6 +100,12 @@ class Actor extends Pool {
       console.error(error.stack);
     }
 
+    
+    
+    if (this.isDestroyed()) {
+      return;
+    }
+
     this.conn.send({
       from: this.actorID,
       
@@ -168,6 +174,13 @@ var generateRequestHandlers = function(actorSpec, actorProto) {
         const sendReturn = retToSend => {
           if (spec.oneway) {
             
+            return;
+          }
+          if (this.isDestroyed()) {
+            console.error(
+              `Tried to send a '${spec.name}' method reply on an already destroyed actor` +
+                ` '${this.typeName}'`
+            );
             return;
           }
 
