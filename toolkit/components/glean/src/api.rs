@@ -47,15 +47,13 @@ fn global_state() -> &'static AppState {
 }
 
 
-fn with_glean_mut<F, R>(f: F) -> R
+
+fn with_glean_mut<F, R>(f: F) -> Option<R>
 where
     F: Fn(&mut Glean) -> R,
 {
-    let mut glean = global_glean()
-        .expect("Global Glean not initialized")
-        .lock()
-        .unwrap();
-    f(&mut glean)
+    let mut glean = global_glean()?.lock().unwrap();
+    Some(f(&mut glean))
 }
 
 
@@ -138,6 +136,7 @@ pub fn set_upload_enabled(enabled: bool) -> bool {
 
         enabled
     })
+    .expect("Setting upload enabled failed!")
 }
 
 fn register_uploader() {
@@ -187,13 +186,13 @@ fn register_uploader() {
 }
 
 pub fn set_debug_view_tag(value: &str) -> bool {
-    with_glean_mut(|glean| glean.set_debug_view_tag(value))
+    with_glean_mut(|glean| glean.set_debug_view_tag(value)).unwrap_or(false)
 }
 
 pub fn submit_ping(ping_name: &str) -> Result<bool> {
-    with_glean_mut(|glean| glean.submit_ping_by_name(ping_name, None))
+    with_glean_mut(|glean| glean.submit_ping_by_name(ping_name, None)).unwrap_or(Ok(false))
 }
 
 pub fn set_log_pings(value: bool) -> bool {
-    with_glean_mut(|glean| glean.set_log_pings(value))
+    with_glean_mut(|glean| glean.set_log_pings(value)).unwrap_or(false)
 }
