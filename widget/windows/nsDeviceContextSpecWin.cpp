@@ -324,12 +324,19 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecWin::MakePrintTarget() {
 float nsDeviceContextSpecWin::GetDPI() {
   
   
+  
+  
+  
+  
+  
+  
+  
 #ifdef MOZ_ENABLE_SKIA_PDF
   if (mPrintViaSkPDF) {
-    return 72.0f;
+    return 72.0f;  
   }
 #endif
-  return mOutputFormat == nsIPrintSettings::kOutputFormatPDF ? 72.0f : 144.0f;
+  return 144.0f;
 }
 
 float nsDeviceContextSpecWin::GetPrintingScale() {
