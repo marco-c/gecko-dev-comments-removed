@@ -137,8 +137,8 @@ bool RenderCompositorNative::MaybeGrabScreenshot(
   }
 
   if (mNativeLayerRootSnapshotter) {
-    mNativeLayerRootSnapshotter->MaybeGrabProfilerScreenshot(
-        &mProfilerScreenshotGrabber, aWindowSize);
+    mProfilerScreenshotGrabber.MaybeGrabScreenshot(*mNativeLayerRootSnapshotter,
+                                                   aWindowSize);
 
     
     
