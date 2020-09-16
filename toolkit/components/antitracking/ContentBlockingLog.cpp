@@ -158,6 +158,10 @@ Maybe<uint32_t> ContentBlockingLog::RecordLogParent(
                         aTrackingFullHashes);
       break;
 
+    case nsIWebProgressListener::STATE_UNBLOCKED_UNSAFE_CONTENT:
+      RecordLogInternal(aOrigin, aType, blockedValue);
+      break;
+
     default:
       
       break;
