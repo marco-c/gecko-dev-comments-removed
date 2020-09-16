@@ -1989,25 +1989,6 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
   
   
   
-  
-  
-  if (RefPtr<nsFrameLoaderOwner> flo = do_QueryObject(aElement)) {
-    
-    
-    
-    if (BrowsingContext* bc = flo->GetExtantBrowsingContext()) {
-      
-      
-      if (!bc->GetDocument()) {
-        return aElement;
-      }
-    }
-  }
-
-  
-  
-  
-  
   Document* subdoc = doc->GetSubDocumentFor(aElement);
   if (subdoc && IsWindowVisible(subdoc->GetWindow())) {
     const nsStyleUI* ui = frame->StyleUI();
