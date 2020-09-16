@@ -256,9 +256,8 @@ class QuotaManager final : public BackgroundThreadObject {
   
   void AbortOperationsForProcess(ContentParentId aContentParentId);
 
-  nsresult GetDirectoryForOrigin(PersistenceType aPersistenceType,
-                                 const nsACString& aASCIIOrigin,
-                                 nsIFile** aDirectory) const;
+  Result<nsCOMPtr<nsIFile>, nsresult> GetDirectoryForOrigin(
+      PersistenceType aPersistenceType, const nsACString& aASCIIOrigin) const;
 
   nsresult RestoreDirectoryMetadata2(nsIFile* aDirectory, bool aPersistent);
 
