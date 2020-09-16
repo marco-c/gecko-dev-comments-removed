@@ -34,67 +34,48 @@ nsresult CreateOrMigrateSchema(mozIStorageConnection& aConn);
 
 nsresult InitializeConnection(mozIStorageConnection& aConn);
 
-nsresult CreateCacheId(mozIStorageConnection& aConn, CacheId* aCacheIdOut);
+Result<CacheId, nsresult> CreateCacheId(mozIStorageConnection& aConn);
 
+Result<DeletionInfo, nsresult> DeleteCacheId(mozIStorageConnection& aConn,
+                                             CacheId aCacheId);
 
-nsresult DeleteCacheId(mozIStorageConnection& aConn, CacheId aCacheId,
-                       nsTArray<nsID>& aDeletedBodyIdListOut,
-                       int64_t* aDeletedPaddingSizeOut);
+Result<nsTArray<CacheId>, nsresult> FindOrphanedCacheIds(
+    mozIStorageConnection& aConn);
 
+Result<int64_t, nsresult> FindOverallPaddingSize(mozIStorageConnection& aConn);
 
-nsresult FindOrphanedCacheIds(mozIStorageConnection& aConn,
-                              nsTArray<CacheId>& aOrphanedListOut);
+Result<nsTArray<nsID>, nsresult> GetKnownBodyIds(mozIStorageConnection& aConn);
 
+Result<Maybe<SavedResponse>, nsresult> CacheMatch(
+    mozIStorageConnection& aConn, CacheId aCacheId,
+    const CacheRequest& aRequest, const CacheQueryParams& aParams);
 
-nsresult FindOverallPaddingSize(mozIStorageConnection& aConn,
-                                int64_t* aOverallPaddingSizeOut);
+Result<nsTArray<SavedResponse>, nsresult> CacheMatchAll(
+    mozIStorageConnection& aConn, CacheId aCacheId,
+    const Maybe<CacheRequest>& aMaybeRequest, const CacheQueryParams& aParams);
 
+Result<DeletionInfo, nsresult> CachePut(mozIStorageConnection& aConn,
+                                        CacheId aCacheId,
+                                        const CacheRequest& aRequest,
+                                        const nsID* aRequestBodyId,
+                                        const CacheResponse& aResponse,
+                                        const nsID* aResponseBodyId);
 
-nsresult GetKnownBodyIds(mozIStorageConnection& aConn,
-                         nsTArray<nsID>& aBodyIdListOut);
+Result<Maybe<DeletionInfo>, nsresult> CacheDelete(
+    mozIStorageConnection& aConn, CacheId aCacheId,
+    const CacheRequest& aRequest, const CacheQueryParams& aParams);
 
+Result<nsTArray<SavedRequest>, nsresult> CacheKeys(
+    mozIStorageConnection& aConn, CacheId aCacheId,
+    const Maybe<CacheRequest>& aMaybeRequest, const CacheQueryParams& aParams);
 
-nsresult CacheMatch(mozIStorageConnection& aConn, CacheId aCacheId,
-                    const CacheRequest& aRequest,
-                    const CacheQueryParams& aParams, bool* aFoundResponseOut,
-                    SavedResponse* aSavedResponseOut);
+Result<Maybe<SavedResponse>, nsresult> StorageMatch(
+    mozIStorageConnection& aConn, Namespace aNamespace,
+    const CacheRequest& aRequest, const CacheQueryParams& aParams);
 
-
-nsresult CacheMatchAll(mozIStorageConnection& aConn, CacheId aCacheId,
-                       const Maybe<CacheRequest>& aMaybeRequest,
-                       const CacheQueryParams& aParams,
-                       nsTArray<SavedResponse>& aSavedResponsesOut);
-
-
-nsresult CachePut(mozIStorageConnection& aConn, CacheId aCacheId,
-                  const CacheRequest& aRequest, const nsID* aRequestBodyId,
-                  const CacheResponse& aResponse, const nsID* aResponseBodyId,
-                  nsTArray<nsID>& aDeletedBodyIdListOut,
-                  int64_t* aDeletedPaddingSizeOut);
-
-
-nsresult CacheDelete(mozIStorageConnection& aConn, CacheId aCacheId,
-                     const CacheRequest& aRequest,
-                     const CacheQueryParams& aParams,
-                     nsTArray<nsID>& aDeletedBodyIdListOut,
-                     int64_t* aDeletedPaddingSizeOut, bool* aSuccessOut);
-
-
-nsresult CacheKeys(mozIStorageConnection& aConn, CacheId aCacheId,
-                   const Maybe<CacheRequest>& aMaybeRequest,
-                   const CacheQueryParams& aParams,
-                   nsTArray<SavedRequest>& aSavedRequestsOut);
-
-
-nsresult StorageMatch(mozIStorageConnection& aConn, Namespace aNamespace,
-                      const CacheRequest& aRequest,
-                      const CacheQueryParams& aParams, bool* aFoundResponseOut,
-                      SavedResponse* aSavedResponseOut);
-
-
-nsresult StorageGetCacheId(mozIStorageConnection& aConn, Namespace aNamespace,
-                           const nsAString& aKey, bool* aFoundCacheOut,
-                           CacheId* aCacheIdOut);
+Result<Maybe<CacheId>, nsresult> StorageGetCacheId(mozIStorageConnection& aConn,
+                                                   Namespace aNamespace,
+                                                   const nsAString& aKey);
 
 nsresult StoragePutCache(mozIStorageConnection& aConn, Namespace aNamespace,
                          const nsAString& aKey, CacheId aCacheId);
@@ -102,8 +83,8 @@ nsresult StoragePutCache(mozIStorageConnection& aConn, Namespace aNamespace,
 nsresult StorageForgetCache(mozIStorageConnection& aConn, Namespace aNamespace,
                             const nsAString& aKey);
 
-nsresult StorageGetKeys(mozIStorageConnection& aConn, Namespace aNamespace,
-                        nsTArray<nsString>& aKeysOut);
+Result<nsTArray<nsString>, nsresult> StorageGetKeys(
+    mozIStorageConnection& aConn, Namespace aNamespace);
 
 
 nsresult IncrementalVacuum(mozIStorageConnection& aConn);
