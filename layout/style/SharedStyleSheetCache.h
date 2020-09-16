@@ -98,7 +98,7 @@ class SharedStyleSheetCache final : public nsIMemoryReporter {
   
   void UnregisterLoader(css::Loader&);
 
-  static void ClearForTest();
+  static void Clear(nsIPrincipal* aForPrincipal = nullptr);
 
  private:
   static already_AddRefed<SharedStyleSheetCache> Create();
