@@ -24,7 +24,6 @@
 #include "gc/Tracer.h"       
 #include "js/HeapAPI.h"      
 #include "vm/Compartment.h"  
-#include "vm/EnvironmentObject.h"  
 #include "vm/JSAtom.h"             
 #include "vm/JSContext.h"          
 #include "vm/JSFunction.h"         
