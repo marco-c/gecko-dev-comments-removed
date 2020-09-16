@@ -1247,8 +1247,6 @@ class Document : public nsINode,
   
   ViewportMetaData GetViewportMetaData() const;
 
-  void UpdateForScrollAnchorAdjustment(nscoord aLength);
-
   
 
 
@@ -4914,9 +4912,6 @@ class Document : public nsINode,
   nsWeakPtr mAutoFocusElement;
 
   nsCString mScrollToRef;
-
-  nscoord mScrollAnchorAdjustmentLength;
-  int32_t mScrollAnchorAdjustmentCount;
 
   
   
