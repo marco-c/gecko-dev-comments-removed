@@ -12,6 +12,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
+  BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
@@ -440,6 +441,7 @@ class UrlbarInput {
         this.view.oneOffSearchButtons.handleSearchCommand(event, {
           engineName: selectedOneOff.engine?.name,
           source: selectedOneOff.source,
+          entry: "oneoff",
         });
         return;
       }
@@ -715,17 +717,20 @@ class UrlbarInput {
       }
       case UrlbarUtils.RESULT_TYPE.SEARCH: {
         if (result.payload.keywordOffer) {
-          this.controller.engagementEvent.record(event, {
-            searchString: this._lastSearchString,
-            selIndex,
-            selType: "keywordoffer",
-          });
-
           let searchModeParams = this._searchModeForResult(result);
           if (searchModeParams) {
             this.setSearchMode(searchModeParams);
             this.search("");
           } else {
+            
+            
+            
+            this.controller.engagementEvent.record(event, {
+              searchString: this._lastSearchString,
+              selIndex,
+              selType: "keywordoffer",
+            });
+
             
             
             
@@ -1171,13 +1176,16 @@ class UrlbarInput {
 
 
 
-  searchWithAlias(alias, value = "") {
+
+
+
+  searchWithAlias(alias, entry, value = "") {
     alias = alias.trim();
     if (UrlbarPrefs.get("update2")) {
       
       let engine = Services.search.getEngineByAlias(alias);
       if (engine) {
-        this.setSearchMode({ engineName: engine.name });
+        this.setSearchMode({ engineName: engine.name, entry });
         this.search(value);
       } else {
         this.search(`${alias} ${value}`);
@@ -1223,7 +1231,10 @@ class UrlbarInput {
 
 
 
-  setSearchMode({ engineName, source }) {
+
+
+
+  setSearchMode({ engineName, source, entry }) {
     if (!UrlbarPrefs.get("update2")) {
       
       engineName = null;
@@ -1291,6 +1302,13 @@ class UrlbarInput {
     }
 
     if (this.searchMode) {
+      if (!UrlbarUtils.SEARCH_MODE_ENTRY.has(entry)) {
+        
+        
+        this.searchMode.entry = "other";
+      } else {
+        this.searchMode.entry = entry;
+      }
       this.toggleAttribute("searchmode", true);
       
       if (this.getAttribute("pageproxystate") == "valid") {
@@ -1301,6 +1319,13 @@ class UrlbarInput {
         this.window.gBrowser.selectedBrowser,
         this.searchMode
       );
+
+      
+      try {
+        BrowserUsageTelemetry.recordSearchMode(this.searchMode);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
     } else {
       this.removeAttribute("searchmode");
       this._searchModesByBrowser.delete(this.window.gBrowser.selectedBrowser);
@@ -1319,6 +1344,7 @@ class UrlbarInput {
       this.setSearchMode({
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         engineName: Services.search.defaultEngine.name,
+        entry: "shortcut",
       });
       this.search("");
     } else {
@@ -1490,7 +1516,7 @@ class UrlbarInput {
 
 
   maybePromoteKeywordToSearchMode(result = this._resultForCurrentValue) {
-    let searchMode = this._searchModeForResult(result);
+    let searchMode = this._searchModeForResult(result, "typed");
     if (searchMode && this.value.trim() == result.payload.keyword.trim()) {
       this.setSearchMode(searchMode);
       this.value = "";
@@ -1888,7 +1914,7 @@ class UrlbarInput {
 
     this.window.BrowserSearch.recordSearchInTelemetry(
       engine,
-      "urlbar",
+      this.searchMode ? "urlbar-searchmode" : "urlbar",
       details
     );
   }
@@ -2208,7 +2234,10 @@ class UrlbarInput {
 
 
 
-  _searchModeForResult(result) {
+
+
+
+  _searchModeForResult(result, entry = null) {
     if (!UrlbarPrefs.get("update2")) {
       return null;
     }
@@ -2221,7 +2250,20 @@ class UrlbarInput {
       (!result.payload.originalEngine ||
         result.payload.engine == result.payload.originalEngine)
     ) {
-      return { engineName: result.payload.engine };
+      let searchModeEntry;
+      if (entry) {
+        searchModeEntry = entry;
+      } else {
+        searchModeEntry =
+          result.providerName == "UrlbarProviderTopSites"
+            ? "topsites_urlbar"
+            : "keywordoffer";
+      }
+
+      return {
+        engineName: result.payload.engine,
+        entry: searchModeEntry,
+      };
     }
 
     return null;
@@ -2247,7 +2289,14 @@ class UrlbarInput {
   _on_command(event) {
     
     
-    this.controller.engagementEvent.discard();
+    
+    
+    if (
+      !event.target.classList.contains("searchbar-engine-one-off-item") ||
+      this.searchMode?.entry != "oneoff"
+    ) {
+      this.controller.engagementEvent.discard();
+    }
   }
 
   _on_blur(event) {

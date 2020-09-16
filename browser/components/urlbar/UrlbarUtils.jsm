@@ -194,6 +194,19 @@ var UrlbarUtils = {
   ]),
 
   
+  
+  SEARCH_MODE_ENTRY: new Set([
+    "handoff",
+    "keywordoffer",
+    "oneoff",
+    "other",
+    "shortcut",
+    "topsites_newtab",
+    "topsites_urlbar",
+    "typed",
+  ]),
+
+  
 
 
 

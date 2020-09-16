@@ -29,6 +29,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   clearTimeout: "resource://gre/modules/Timer.jsm",
+  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
 
@@ -73,6 +74,7 @@ const KNOWN_SEARCH_SOURCES = [
   "searchbar",
   "system",
   "urlbar",
+  "urlbar-searchmode",
   "webextension",
 ];
 
@@ -632,6 +634,44 @@ let BrowserUsageTelemetry = {
     });
   },
 
+  
+
+
+
+
+
+
+
+
+  recordSearchMode(searchMode) {
+    let scalarKey;
+    if (searchMode.engineName) {
+      let engine = Services.search.getEngineByName(searchMode.engineName);
+      let resultDomain = engine.getResultDomain();
+      
+      
+      if (!engine.isAppProvided) {
+        scalarKey = "other";
+      } else if (resultDomain.includes("amazon.")) {
+        
+        scalarKey = "Amazon";
+      } else if (resultDomain.endsWith("wikipedia.org")) {
+        
+        scalarKey = "Wikipedia";
+      } else {
+        scalarKey = searchMode.engineName;
+      }
+    } else if (searchMode.source) {
+      scalarKey = UrlbarUtils.getResultSourceName(searchMode.source) || "other";
+    }
+
+    Services.telemetry.keyedScalarAdd(
+      "urlbar.searchmode." + searchMode.entry,
+      scalarKey,
+      1
+    );
+  },
+
   _handleSearchAction(engine, source, details) {
     switch (source) {
       case "urlbar":
@@ -640,6 +680,9 @@ let BrowserUsageTelemetry = {
       case "oneoff-searchbar":
       case "unknown": 
         this._handleSearchAndUrlbar(engine, source, details);
+        break;
+      case "urlbar-searchmode":
+        this._handleSearchAndUrlbar(engine, "urlbar_searchmode", details);
         break;
       case "abouthome":
         this._recordSearch(engine, details.url, "about_home", "enter");

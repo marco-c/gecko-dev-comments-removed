@@ -62,6 +62,15 @@ var UrlbarTestUtils = {
 
 
 
+  uninit() {
+    this._testScope = null;
+  },
+
+  
+
+
+
+
   async promiseSearchComplete(win) {
     return this.promisePopupOpen(win, () => {}).then(
       () => win.gURLBar.lastQueryContextPromise
@@ -524,6 +533,10 @@ var UrlbarTestUtils = {
       if (UrlbarUtils.WEB_ENGINE_NAMES.has(searchMode.engineName)) {
         searchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
       }
+    }
+
+    if (!searchMode.entry) {
+      searchMode.entry = "oneoff";
     }
 
     let oneOff = buttons.find(o =>
