@@ -24,15 +24,6 @@ add_task(async function test_proc_info() {
       let cpuUser = 0;
 
       
-      let tabsAboutHome = [];
-      for (let i = 0; i < 5; ++i) {
-        tabsAboutHome.push(BrowserTestUtils.addTab(gBrowser, "about:home"));
-      }
-      for (let tab of tabsAboutHome) {
-        await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-      }
-
-      
       for (let z = 0; z < SAMPLE_SIZE; z++) {
         let parentProc = await ChromeUtils.requestProcInfo();
         cpuUser += parentProc.cpuUser;
@@ -108,14 +99,15 @@ add_task(async function test_proc_info() {
 
         
         
-        var hasPrivilegedAbout = false;
-        var numberOfAboutTabs = 0;
+        
+        
+        var hasSocketProcess = false;
         for (i = 0; i < parentProc.children.length; i++) {
           let childProc = parentProc.children[i];
           if (childProc.type != "privilegedabout") {
             continue;
           }
-          hasPrivilegedAbout = true;
+          hasSocketProcess = true;
           Assert.ok(
             childProc.residentUniqueSize > 0,
             "Resident-unique-size was set"
@@ -125,41 +117,17 @@ add_task(async function test_proc_info() {
             `Resident-unique-size should be bounded by resident-set-size ${childProc.residentUniqueSize} <= ${childProc.residentSetSize}`
           );
 
-          for (var win of childProc.windows) {
-            if (win.documentURI.spec != "about:home") {
-              
-              continue;
-            }
-            numberOfAboutTabs++;
-            Assert.ok(
-              win.outerWindowId > 0,
-              `ContentParentID should be > 0 ${win.outerWindowId}`
-            );
-            Assert.equal(win.documentTitle, "New Tab");
-          }
-          Assert.ok(
-            numberOfAboutTabs >= tabsAboutHome.length,
-            "We have found at least as many about:home tabs as we opened"
-          );
-
           
           break;
         }
 
-        Assert.ok(
-          hasPrivilegedAbout,
-          "We have found the privileged about process"
-        );
+        Assert.ok(hasSocketProcess, "We have found the socket process");
       }
       
       if (!MAC) {
         Assert.greater(cpuThreads, 0, "Got some cpu time in the threads");
       }
       Assert.greater(cpuUser, 0, "Got some cpu time");
-
-      for (let tab of tabsAboutHome) {
-        BrowserTestUtils.removeTab(tab);
-      }
     }
   );
 });
