@@ -459,4 +459,12 @@ function checkUsagePrefs(hasEntry, lastUsed) {
   );
 }
 
+
+
+
+
+function getCCTypeName(creditCard) {
+  return creditCard["cc-number"][0] == "4" ? "Visa" : "MasterCard";
+}
+
 formAutoFillCommonSetup();
