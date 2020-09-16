@@ -188,139 +188,6 @@ struct SizeComputationInput {
                        mozilla::WritingMode aContainingBlockWritingMode,
                        nscoord aContainingBlockISize);
 
-  struct ReflowInputFlags {
-    ReflowInputFlags() { memset(this, 0, sizeof(*this)); }
-
-    
-    
-    bool mSpecialBSizeReflow : 1;
-
-    
-    bool mNextInFlowUntouched : 1;
-
-    
-    
-    
-    bool mIsTopOfPage : 1;
-
-    
-    
-    bool mAssumingHScrollbar : 1;
-
-    
-    
-    bool mAssumingVScrollbar : 1;
-
-    
-    bool mIsIResize : 1;
-
-    
-    
-    
-    bool mIsBResize : 1;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool mIsBResizeForPercentages : 1;
-
-    
-    
-    bool mTableIsSplittable : 1;
-
-    
-    bool mHeightDependsOnAncestorCell : 1;
-
-    
-    bool mIsColumnBalancing : 1;
-
-    
-    
-    
-    
-    bool mColumnSetWrapperHasNoBSizeLeft : 1;
-
-    
-    
-    bool mIsFlexContainerMeasuringBSize : 1;
-
-    
-    
-    
-    
-    
-    
-    
-    bool mTreatBSizeAsIndefinite : 1;
-
-    
-    bool mDummyParentReflowInput : 1;
-
-    
-    
-    
-    bool mMustReflowPlaceholders : 1;
-
-    
-    bool mStaticPosIsCBOrigin : 1;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool mIOffsetsNeedCSSAlign : 1;
-    bool mBOffsetsNeedCSSAlign : 1;
-
-    
-    
-    
-    
-    bool mInsideLineClamp : 1;
-
-    
-    
-    
-    
-    
-    
-    bool mApplyLineClamp : 1;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool mMovedBlockFragments : 1;
-
-    
-    
-    
-    
-    
-    bool mBSizeIsSetByAspectRatio : 1;
-  };
-
 #ifdef DEBUG
   
   
@@ -704,7 +571,139 @@ struct ReflowInput : public SizeComputationInput {
   
   nsIFrame** mDiscoveredClearance = nullptr;
 
-  ReflowInputFlags mFlags;
+  struct Flags {
+    Flags() { memset(this, 0, sizeof(*this)); }
+
+    
+    
+    bool mSpecialBSizeReflow : 1;
+
+    
+    bool mNextInFlowUntouched : 1;
+
+    
+    
+    
+    bool mIsTopOfPage : 1;
+
+    
+    
+    bool mAssumingHScrollbar : 1;
+
+    
+    
+    bool mAssumingVScrollbar : 1;
+
+    
+    bool mIsIResize : 1;
+
+    
+    
+    
+    bool mIsBResize : 1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool mIsBResizeForPercentages : 1;
+
+    
+    
+    bool mTableIsSplittable : 1;
+
+    
+    bool mHeightDependsOnAncestorCell : 1;
+
+    
+    bool mIsColumnBalancing : 1;
+
+    
+    
+    
+    
+    bool mColumnSetWrapperHasNoBSizeLeft : 1;
+
+    
+    
+    bool mIsFlexContainerMeasuringBSize : 1;
+
+    
+    
+    
+    
+    
+    
+    
+    bool mTreatBSizeAsIndefinite : 1;
+
+    
+    bool mDummyParentReflowInput : 1;
+
+    
+    
+    
+    bool mMustReflowPlaceholders : 1;
+
+    
+    bool mStaticPosIsCBOrigin : 1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool mIOffsetsNeedCSSAlign : 1;
+    bool mBOffsetsNeedCSSAlign : 1;
+
+    
+    
+    
+    
+    bool mInsideLineClamp : 1;
+
+    
+    
+    
+    
+    
+    
+    bool mApplyLineClamp : 1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool mMovedBlockFragments : 1;
+
+    
+    
+    
+    
+    
+    bool mBSizeIsSetByAspectRatio : 1;
+  };
+  Flags mFlags;
   mozilla::ComputeSizeFlags mComputeSizeFlags;
 
   

@@ -1396,8 +1396,7 @@ void nsTableRowGroupFrame::Reflow(nsPresContext* aPresContext,
       (aStatus.IsIncomplete() || splitDueToPageBreak ||
        aDesiredSize.Height() > aReflowInput.AvailableHeight())) {
     
-    auto& mutableRIFlags =
-        const_cast<ReflowInput::ReflowInputFlags&>(aReflowInput.mFlags);
+    auto& mutableRIFlags = const_cast<ReflowInput::Flags&>(aReflowInput.mFlags);
     const bool savedSpecialBSizeReflow = mutableRIFlags.mSpecialBSizeReflow;
     mutableRIFlags.mSpecialBSizeReflow = false;
 
