@@ -30,6 +30,10 @@
 
 
 
+
+
+
+
 use std::env;
 use std::process::{self, Command};
 use std::str;
@@ -55,6 +59,14 @@ fn main() {
 
     if semver_exempt || cfg!(feature = "span-locations") {
         println!("cargo:rustc-cfg=span_locations");
+    }
+
+    if version.minor < 39 {
+        println!("cargo:rustc-cfg=no_bind_by_move_pattern_guard");
+    }
+
+    if version.minor >= 45 {
+        println!("cargo:rustc-cfg=hygiene");
     }
 
     let target = env::var("TARGET").unwrap();

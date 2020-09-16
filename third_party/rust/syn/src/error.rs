@@ -1,4 +1,3 @@
-use std;
 use std::fmt::{self, Debug, Display};
 use std::iter::FromIterator;
 use std::slice;
@@ -82,7 +81,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 
 
-#[derive(Clone)]
 pub struct Error {
     messages: Vec<ErrorMessage>,
 }
@@ -104,36 +102,36 @@ where
     Error: Send + Sync;
 
 impl Error {
-    /// Usually the [`ParseStream::error`] method will be used instead, which
-    /// automatically uses the correct span from the current position of the
-    /// parse stream.
-    ///
-    /// Use `Error::new` when the error needs to be triggered on some span other
-    /// than where the parse stream is currently positioned.
-    ///
-    /// [`ParseStream::error`]: crate::parse::ParseBuffer::error
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use syn::{Error, Ident, LitStr, Result, Token};
-    /// use syn::parse::ParseStream;
-    ///
-    /// // Parses input that looks like `name = "string"` where the key must be
-    /// // the identifier `name` and the value may be any string literal.
-    /// // Returns the string literal.
-    /// fn parse_name(input: ParseStream) -> Result<LitStr> {
-    ///     let name_token: Ident = input.parse()?;
-    ///     if name_token != "name" {
-    ///         // Trigger an error not on the current position of the stream,
-    ///         // but on the position of the unexpected identifier.
-    ///         return Err(Error::new(name_token.span(), "expected `name`"));
-    ///     }
-    ///     input.parse::<Token![=]>()?;
-    ///     let s: LitStr = input.parse()?;
-    ///     Ok(s)
-    /// }
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn new<T: Display>(span: Span, message: T) -> Self {
         Error {
             messages: vec![ErrorMessage {
@@ -144,19 +142,19 @@ impl Error {
         }
     }
 
-    /// Creates an error with the specified message spanning the given syntax
-    /// tree node.
-    ///
-    /// Unlike the `Error::new` constructor, this constructor takes an argument
-    /// `tokens` which is a syntax tree node. This allows the resulting `Error`
-    /// to attempt to span all tokens inside of `tokens`. While you would
-    /// typically be able to use the `Spanned` trait with the above `Error::new`
-    /// constructor, implementation limitations today mean that
-    /// `Error::new_spanned` may provide a higher-quality error message on
-    /// stable Rust.
-    ///
-    /// When in doubt it's recommended to stick to `Error::new` (or
-    /// `ParseStream::error`)!
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "printing")]
     pub fn new_spanned<T: ToTokens, U: Display>(tokens: T, message: U) -> Self {
         let mut iter = tokens.into_token_stream().into_iter();
@@ -171,11 +169,11 @@ impl Error {
         }
     }
 
-    /// The source location of the error.
-    ///
-    /// Spans are not thread-safe so this function returns `Span::call_site()`
-    /// if called from a different thread than the one on which the `Error` was
-    /// originally created.
+    
+    
+    
+    
+    
     pub fn span(&self) -> Span {
         let start = match self.messages[0].start_span.get() {
             Some(span) => *span,
@@ -188,12 +186,12 @@ impl Error {
         start.join(end).unwrap_or(start)
     }
 
-    /// Render the error as an invocation of [`compile_error!`].
-    ///
-    /// The [`parse_macro_input!`] macro provides a convenient way to invoke
-    /// this method correctly in a procedural macro.
-    ///
-    /// [`compile_error!`]: https://doc.rust-lang.org/std/macro.compile_error.html
+    
+    
+    
+    
+    
+    
     pub fn to_compile_error(&self) -> TokenStream {
         self.messages
             .iter()
@@ -201,8 +199,8 @@ impl Error {
             .collect()
     }
 
-    /// Add another error message to self such that when `to_compile_error()` is
-    /// called, both errors will be emitted together.
+    
+    
     pub fn combine(&mut self, another: Error) {
         self.messages.extend(another.messages)
     }
@@ -217,7 +215,7 @@ impl ErrorMessage {
             .unwrap_or_else(Span::call_site);
         let end = self.end_span.get().cloned().unwrap_or_else(Span::call_site);
 
-        // compile_error!($message)
+        
         TokenStream::from_iter(vec![
             TokenTree::Ident(Ident::new("compile_error", start)),
             TokenTree::Punct({
@@ -250,6 +248,17 @@ pub fn new_at<T: Display>(scope: Span, cursor: Cursor, message: T) -> Error {
     }
 }
 
+#[cfg(all(feature = "parsing", any(feature = "full", feature = "derive")))]
+pub fn new2<T: Display>(start: Span, end: Span, message: T) -> Error {
+    Error {
+        messages: vec![ErrorMessage {
+            start_span: ThreadBound::new(start),
+            end_span: ThreadBound::new(end),
+            message: message.to_string(),
+        }],
+    }
+}
+
 impl Debug for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         if self.messages.len() == 1 {
@@ -275,6 +284,14 @@ impl Debug for ErrorMessage {
 impl Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str(&self.messages[0].message)
+    }
+}
+
+impl Clone for Error {
+    fn clone(&self) -> Self {
+        Error {
+            messages: self.messages.clone(),
+        }
     }
 }
 
@@ -353,5 +370,13 @@ impl<'a> Iterator for Iter<'a> {
         Some(Error {
             messages: vec![self.messages.next()?.clone()],
         })
+    }
+}
+
+impl Extend<Error> for Error {
+    fn extend<T: IntoIterator<Item = Error>>(&mut self, iter: T) {
+        for err in iter {
+            self.combine(err);
+        }
     }
 }

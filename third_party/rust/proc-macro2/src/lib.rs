@@ -78,15 +78,16 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.5")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.20")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
+#![allow(clippy::needless_doctest_main)]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
 
 use std::cmp::Ordering;
-use std::fmt;
+use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::marker;
@@ -96,9 +97,15 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
 
-#[macro_use]
-mod strnom;
-mod fallback;
+mod parse;
+
+#[cfg(wrap_proc_macro)]
+mod detection;
+
+
+
+#[doc(hidden)]
+pub mod fallback;
 
 #[cfg(not(wrap_proc_macro))]
 use crate::fallback as imp;
@@ -228,22 +235,22 @@ impl FromIterator<TokenStream> for TokenStream {
 
 
 
-impl fmt::Display for TokenStream {
+impl Display for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Display::fmt(&self.inner, f)
     }
 }
 
 
-impl fmt::Debug for TokenStream {
+impl Debug for TokenStream {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
-impl fmt::Debug for LexError {
+impl Debug for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
@@ -291,9 +298,9 @@ impl SourceFile {
 }
 
 #[cfg(procmacro2_semver_exempt)]
-impl fmt::Debug for SourceFile {
+impl Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
@@ -309,6 +316,22 @@ pub struct LineColumn {
     
     
     pub column: usize,
+}
+
+#[cfg(span_locations)]
+impl Ord for LineColumn {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.line
+            .cmp(&other.line)
+            .then(self.column.cmp(&other.column))
+    }
+}
+
+#[cfg(span_locations)]
+impl PartialOrd for LineColumn {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 
@@ -345,6 +368,16 @@ impl Span {
     
     
     
+    
+    
+    #[cfg(hygiene)]
+    pub fn mixed_site() -> Span {
+        Span::_new(imp::Span::mixed_site())
+    }
+
+    
+    
+    
     #[cfg(procmacro2_semver_exempt)]
     pub fn def_site() -> Span {
         Span::_new(imp::Span::def_site())
@@ -352,18 +385,12 @@ impl Span {
 
     
     
-    
-    
-    #[cfg(procmacro2_semver_exempt)]
     pub fn resolved_at(&self, other: Span) -> Span {
         Span::_new(self.inner.resolved_at(other.inner))
     }
 
     
     
-    
-    
-    #[cfg(procmacro2_semver_exempt)]
     pub fn located_at(&self, other: Span) -> Span {
         Span::_new(self.inner.located_at(other.inner))
     }
@@ -439,9 +466,9 @@ impl Span {
 }
 
 
-impl fmt::Debug for Span {
+impl Debug for Span {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
@@ -462,11 +489,11 @@ impl TokenTree {
     
     
     pub fn span(&self) -> Span {
-        match *self {
-            TokenTree::Group(ref t) => t.span(),
-            TokenTree::Ident(ref t) => t.span(),
-            TokenTree::Punct(ref t) => t.span(),
-            TokenTree::Literal(ref t) => t.span(),
+        match self {
+            TokenTree::Group(t) => t.span(),
+            TokenTree::Ident(t) => t.span(),
+            TokenTree::Punct(t) => t.span(),
+            TokenTree::Literal(t) => t.span(),
         }
     }
 
@@ -476,11 +503,11 @@ impl TokenTree {
     
     
     pub fn set_span(&mut self, span: Span) {
-        match *self {
-            TokenTree::Group(ref mut t) => t.set_span(span),
-            TokenTree::Ident(ref mut t) => t.set_span(span),
-            TokenTree::Punct(ref mut t) => t.set_span(span),
-            TokenTree::Literal(ref mut t) => t.set_span(span),
+        match self {
+            TokenTree::Group(t) => t.set_span(span),
+            TokenTree::Ident(t) => t.set_span(span),
+            TokenTree::Punct(t) => t.set_span(span),
+            TokenTree::Literal(t) => t.set_span(span),
         }
     }
 }
@@ -513,32 +540,32 @@ impl From<Literal> for TokenTree {
 
 
 
-impl fmt::Display for TokenTree {
+impl Display for TokenTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            TokenTree::Group(ref t) => t.fmt(f),
-            TokenTree::Ident(ref t) => t.fmt(f),
-            TokenTree::Punct(ref t) => t.fmt(f),
-            TokenTree::Literal(ref t) => t.fmt(f),
+        match self {
+            TokenTree::Group(t) => Display::fmt(t, f),
+            TokenTree::Ident(t) => Display::fmt(t, f),
+            TokenTree::Punct(t) => Display::fmt(t, f),
+            TokenTree::Literal(t) => Display::fmt(t, f),
         }
     }
 }
 
 
-impl fmt::Debug for TokenTree {
+impl Debug for TokenTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         
         
-        match *self {
-            TokenTree::Group(ref t) => t.fmt(f),
-            TokenTree::Ident(ref t) => {
+        match self {
+            TokenTree::Group(t) => Debug::fmt(t, f),
+            TokenTree::Ident(t) => {
                 let mut debug = f.debug_struct("Ident");
                 debug.field("sym", &format_args!("{}", t));
                 imp::debug_span_field_if_nontrivial(&mut debug, t.span().inner);
                 debug.finish()
             }
-            TokenTree::Punct(ref t) => t.fmt(f),
-            TokenTree::Literal(ref t) => t.fmt(f),
+            TokenTree::Punct(t) => Debug::fmt(t, f),
+            TokenTree::Literal(t) => Debug::fmt(t, f),
         }
     }
 }
@@ -651,15 +678,15 @@ impl Group {
 
 
 
-impl fmt::Display for Group {
+impl Display for Group {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.inner, formatter)
+        Display::fmt(&self.inner, formatter)
     }
 }
 
-impl fmt::Debug for Group {
+impl Debug for Group {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(&self.inner, formatter)
+        Debug::fmt(&self.inner, formatter)
     }
 }
 
@@ -730,13 +757,13 @@ impl Punct {
 
 
 
-impl fmt::Display for Punct {
+impl Display for Punct {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.op.fmt(f)
+        Display::fmt(&self.op, f)
     }
 }
 
-impl fmt::Debug for Punct {
+impl Debug for Punct {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = fmt.debug_struct("Punct");
         debug.field("op", &self.op);
@@ -920,15 +947,15 @@ impl Hash for Ident {
 
 
 
-impl fmt::Display for Ident {
+impl Display for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Display::fmt(&self.inner, f)
     }
 }
 
-impl fmt::Debug for Ident {
+impl Debug for Ident {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
@@ -1140,26 +1167,26 @@ impl Literal {
     }
 }
 
-impl fmt::Debug for Literal {
+impl Debug for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Debug::fmt(&self.inner, f)
     }
 }
 
-impl fmt::Display for Literal {
+impl Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.fmt(f)
+        Display::fmt(&self.inner, f)
     }
 }
 
 
 pub mod token_stream {
-    use std::fmt;
+    use crate::{imp, TokenTree};
+    use std::fmt::{self, Debug};
     use std::marker;
     use std::rc::Rc;
 
     pub use crate::TokenStream;
-    use crate::{imp, TokenTree};
 
     
     
@@ -1179,9 +1206,9 @@ pub mod token_stream {
         }
     }
 
-    impl fmt::Debug for IntoIter {
+    impl Debug for IntoIter {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            self.inner.fmt(f)
+            Debug::fmt(&self.inner, f)
         }
     }
 

@@ -242,35 +242,56 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/syn/1.0.5")]
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/syn/1.0.40")]
 #![deny(clippy::all, clippy::pedantic)]
 
 #![allow(
-    clippy::block_in_if_condition_stmt,
+    clippy::blocks_in_if_conditions,
     clippy::cognitive_complexity,
     clippy::doc_markdown,
     clippy::eval_order_dependence,
     clippy::inherent_to_string,
     clippy::large_enum_variant,
+    clippy::manual_non_exhaustive,
+    clippy::match_like_matches_macro,
+    clippy::match_on_vec_items,
+    clippy::needless_doctest_main,
     clippy::needless_pass_by_value,
     clippy::never_loop,
     clippy::suspicious_op_assign_impl,
     clippy::too_many_arguments,
-    clippy::trivially_copy_pass_by_ref
+    clippy::trivially_copy_pass_by_ref,
+    clippy::unnecessary_unwrap
 )]
 
 #![allow(
     clippy::cast_possible_truncation,
+    clippy::default_trait_access,
     clippy::empty_enum,
+    clippy::expl_impl_clone_on_copy,
     clippy::if_not_else,
     clippy::items_after_statements,
+    clippy::match_same_arms,
+    clippy::missing_errors_doc,
     clippy::module_name_repetitions,
+    clippy::must_use_candidate,
+    clippy::option_if_let_else,
     clippy::shadow_unrelated,
     clippy::similar_names,
     clippy::single_match_else,
+    clippy::too_many_lines,
     clippy::unseparated_literal_suffix,
     clippy::use_self,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    clippy::wildcard_imports
 )]
 
 #[cfg(all(
@@ -284,7 +305,6 @@ extern crate unicode_xid;
 #[cfg(feature = "printing")]
 extern crate quote;
 
-#[cfg(any(feature = "full", feature = "derive"))]
 #[macro_use]
 mod macros;
 
@@ -307,7 +327,6 @@ pub use crate::attr::{
     AttrStyle, Attribute, AttributeArgs, Meta, MetaList, MetaNameValue, NestedMeta,
 };
 
-#[cfg(any(feature = "full", feature = "derive"))]
 mod bigint;
 
 #[cfg(any(feature = "full", feature = "derive"))]
@@ -364,9 +383,7 @@ pub use crate::file::File;
 mod lifetime;
 pub use crate::lifetime::Lifetime;
 
-#[cfg(any(feature = "full", feature = "derive"))]
 mod lit;
-#[cfg(any(feature = "full", feature = "derive"))]
 pub use crate::lit::{
     Lit, LitBool, LitByte, LitByteStr, LitChar, LitFloat, LitInt, LitStr, StrStyle,
 };
@@ -440,6 +457,9 @@ pub mod parse_macro_input;
 
 #[cfg(all(feature = "parsing", feature = "printing"))]
 pub mod spanned;
+
+#[cfg(all(feature = "parsing", feature = "full"))]
+mod whitespace;
 
 mod gen {
     
@@ -744,6 +764,22 @@ mod gen {
     #[rustfmt::skip]
     pub mod fold;
 
+    #[cfg(feature = "clone-impls")]
+    #[rustfmt::skip]
+    mod clone;
+
+    #[cfg(feature = "extra-traits")]
+    #[rustfmt::skip]
+    mod eq;
+
+    #[cfg(feature = "extra-traits")]
+    #[rustfmt::skip]
+    mod hash;
+
+    #[cfg(feature = "extra-traits")]
+    #[rustfmt::skip]
+    mod debug;
+
     #[cfg(any(feature = "full", feature = "derive"))]
     #[path = "../gen_helper.rs"]
     mod helper;
@@ -757,6 +793,8 @@ pub mod export;
 mod custom_keyword;
 mod custom_punctuation;
 mod sealed;
+mod span;
+mod thread;
 
 #[cfg(feature = "parsing")]
 mod lookahead;
@@ -764,12 +802,14 @@ mod lookahead;
 #[cfg(feature = "parsing")]
 pub mod parse;
 
-mod span;
+#[cfg(feature = "full")]
+mod reserved;
+
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "parsing"))]
+mod verbatim;
 
 #[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
 mod print;
-
-mod thread;
 
 
 
@@ -876,14 +916,10 @@ pub fn parse2<T: parse::Parse>(tokens: proc_macro2::TokenStream) -> Result<T> {
 
 
 
-
-
 #[cfg(feature = "parsing")]
 pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T> {
     parse::Parser::parse_str(T::parse, s)
 }
-
-
 
 
 
@@ -931,13 +967,16 @@ pub fn parse_file(mut content: &str) -> Result<File> {
     }
 
     let mut shebang = None;
-    if content.starts_with("#!") && !content.starts_with("#![") {
-        if let Some(idx) = content.find('\n') {
-            shebang = Some(content[..idx].to_string());
-            content = &content[idx..];
-        } else {
-            shebang = Some(content.to_string());
-            content = "";
+    if content.starts_with("#!") {
+        let rest = whitespace::skip(&content[2..]);
+        if !rest.starts_with('[') {
+            if let Some(idx) = content.find('\n') {
+                shebang = Some(content[..idx].to_string());
+                content = &content[idx..];
+            } else {
+                shebang = Some(content.to_string());
+                content = "";
+            }
         }
     }
 

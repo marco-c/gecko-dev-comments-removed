@@ -134,7 +134,6 @@ impl TokenBuffer {
 
 
 
-#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Cursor<'a> {
     
     ptr: *const Entry,
@@ -207,7 +206,7 @@ impl<'a> Cursor<'a> {
     
     
     fn ignore_none(&mut self) {
-        if let Entry::Group(group, buf) = self.entry() {
+        while let Entry::Group(group, buf) = self.entry() {
             if group.delimiter() == Delimiter::None {
                 
                 
@@ -215,13 +214,14 @@ impl<'a> Cursor<'a> {
                 unsafe {
                     *self = Cursor::create(&buf.data[0], self.scope);
                 }
+            } else {
+                break;
             }
         }
     }
 
     
     
-    #[inline]
     pub fn eof(self) -> bool {
         
         self.ptr == self.scope
@@ -341,6 +341,44 @@ impl<'a> Cursor<'a> {
             Entry::Punct(o) => o.span(),
             Entry::End(..) => Span::call_site(),
         }
+    }
+
+    
+    
+    
+    
+    pub(crate) fn skip(self) -> Option<Cursor<'a>> {
+        match self.entry() {
+            Entry::End(..) => None,
+
+            
+            Entry::Punct(op) if op.as_char() == '\'' && op.spacing() == Spacing::Joint => {
+                let next = unsafe { self.bump() };
+                match next.entry() {
+                    Entry::Ident(_) => Some(unsafe { next.bump() }),
+                    _ => Some(next),
+                }
+            }
+            _ => Some(unsafe { self.bump() }),
+        }
+    }
+}
+
+impl<'a> Copy for Cursor<'a> {}
+
+impl<'a> Clone for Cursor<'a> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<'a> Eq for Cursor<'a> {}
+
+impl<'a> PartialEq for Cursor<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        let Cursor { ptr, scope, marker } = self;
+        let _ = marker;
+        *ptr == other.ptr && *scope == other.scope
     }
 }
 

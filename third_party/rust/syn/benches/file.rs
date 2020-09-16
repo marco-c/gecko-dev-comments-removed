@@ -1,9 +1,16 @@
 
 
 #![feature(rustc_private, test)]
+#![recursion_limit = "1024"]
 
 extern crate test;
 
+#[macro_use]
+#[path = "../tests/macros/mod.rs"]
+mod macros;
+
+#[path = "../tests/common/mod.rs"]
+mod common;
 #[path = "../tests/repo/mod.rs"]
 pub mod repo;
 

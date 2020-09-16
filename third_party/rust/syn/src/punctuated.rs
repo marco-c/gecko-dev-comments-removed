@@ -22,6 +22,8 @@
 
 #[cfg(feature = "extra-traits")]
 use std::fmt::{self, Debug};
+#[cfg(feature = "extra-traits")]
+use std::hash::{Hash, Hasher};
 #[cfg(any(feature = "full", feature = "derive"))]
 use std::iter;
 use std::iter::FromIterator;
@@ -41,8 +43,6 @@ use crate::token::Token;
 
 
 
-#[cfg_attr(feature = "extra-traits", derive(Eq, PartialEq, Hash))]
-#[cfg_attr(feature = "clone-impls", derive(Clone))]
 pub struct Punctuated<T, P> {
     inner: Vec<(T, P)>,
     last: Option<Box<T>>,
@@ -77,21 +77,18 @@ impl<T, P> Punctuated<T, P> {
     }
 
     
+    pub fn first_mut(&mut self) -> Option<&mut T> {
+        self.iter_mut().next()
+    }
+
+    
     pub fn last(&self) -> Option<&T> {
-        if self.last.is_some() {
-            self.last.as_ref().map(Box::as_ref)
-        } else {
-            self.inner.last().map(|pair| &pair.0)
-        }
+        self.iter().next_back()
     }
 
     
     pub fn last_mut(&mut self) -> Option<&mut T> {
-        if self.last.is_some() {
-            self.last.as_mut().map(Box::as_mut)
-        } else {
-            self.inner.last_mut().map(|pair| &mut pair.0)
-        }
+        self.iter_mut().next_back()
     }
 
     
@@ -231,6 +228,12 @@ impl<T, P> Punctuated<T, P> {
     }
 
     
+    pub fn clear(&mut self) {
+        self.inner.clear();
+        self.last = None;
+    }
+
+    
     
     
     
@@ -335,6 +338,53 @@ impl<T, P> Punctuated<T, P> {
         }
 
         Ok(punctuated)
+    }
+}
+
+#[cfg(feature = "clone-impls")]
+impl<T, P> Clone for Punctuated<T, P>
+where
+    T: Clone,
+    P: Clone,
+{
+    fn clone(&self) -> Self {
+        Punctuated {
+            inner: self.inner.clone(),
+            last: self.last.clone(),
+        }
+    }
+}
+
+#[cfg(feature = "extra-traits")]
+impl<T, P> Eq for Punctuated<T, P>
+where
+    T: Eq,
+    P: Eq,
+{
+}
+
+#[cfg(feature = "extra-traits")]
+impl<T, P> PartialEq for Punctuated<T, P>
+where
+    T: PartialEq,
+    P: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        let Punctuated { inner, last } = self;
+        *inner == other.inner && *last == other.last
+    }
+}
+
+#[cfg(feature = "extra-traits")]
+impl<T, P> Hash for Punctuated<T, P>
+where
+    T: Hash,
+    P: Hash,
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let Punctuated { inner, last } = self;
+        inner.hash(state);
+        last.hash(state);
     }
 }
 
@@ -536,7 +586,6 @@ impl<'a, T, P> ExactSizeIterator for PairsMut<'a, T, P> {
 
 
 
-#[derive(Clone)]
 pub struct IntoPairs<T, P> {
     inner: vec::IntoIter<(T, P)>,
     last: option::IntoIter<T>,
@@ -572,12 +621,24 @@ impl<T, P> ExactSizeIterator for IntoPairs<T, P> {
     }
 }
 
+impl<T, P> Clone for IntoPairs<T, P>
+where
+    T: Clone,
+    P: Clone,
+{
+    fn clone(&self) -> Self {
+        IntoPairs {
+            inner: self.inner.clone(),
+            last: self.last.clone(),
+        }
+    }
+}
 
 
 
 
 
-#[derive(Clone)]
+
 pub struct IntoIter<T> {
     inner: vec::IntoIter<T>,
 }
@@ -603,6 +664,17 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 impl<T> ExactSizeIterator for IntoIter<T> {
     fn len(&self) -> usize {
         self.inner.len()
+    }
+}
+
+impl<T> Clone for IntoIter<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        IntoIter {
+            inner: self.inner.clone(),
+        }
     }
 }
 
@@ -799,7 +871,6 @@ impl<'a, T: 'a, I: 'a> IterMutTrait<'a, T> for I where
 
 
 
-#[cfg_attr(feature = "clone-impls", derive(Clone))]
 pub enum Pair<T, P> {
     Punctuated(T, P),
     End(T),
@@ -852,6 +923,20 @@ impl<T, P> Pair<T, P> {
         match self {
             Pair::Punctuated(t, d) => (t, Some(d)),
             Pair::End(t) => (t, None),
+        }
+    }
+}
+
+#[cfg(feature = "clone-impls")]
+impl<T, P> Clone for Pair<T, P>
+where
+    T: Clone,
+    P: Clone,
+{
+    fn clone(&self) -> Self {
+        match self {
+            Pair::Punctuated(t, p) => Pair::Punctuated(t.clone(), p.clone()),
+            Pair::End(t) => Pair::End(t.clone()),
         }
     }
 }
