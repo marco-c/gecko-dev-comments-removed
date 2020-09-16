@@ -2,7 +2,6 @@
 
 
 
-
 #include "CompositorWidgetParent.h"
 
 #include "mozilla/Unused.h"
@@ -89,7 +88,7 @@ void CompositorWidgetParent::EndRemoteDrawingInRegion(
   MOZ_ASSERT(!mLockedBackBufferData);
 
   Unused << mRemoteBackbufferClient->PresentDrawTarget(
-      aInvalidRegion.GetBounds().ToUnknownRect());
+      aInvalidRegion.ToUnknownRegion());
 }
 
 bool CompositorWidgetParent::NeedsToDeferEndRemoteDrawing() { return false; }
