@@ -2,12 +2,11 @@
 
 
 
-
-this.event = {};
-
-("use strict");
+"use strict";
 
 
+
+const EXPORTED_SYMBOLS = ["event"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -15,12 +14,13 @@ const { element } = ChromeUtils.import(
   "chrome://marionette/content/element.js"
 );
 
+
+this.event = {};
+
 const dblclickTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
 
 const DBLCLICK_INTERVAL = 640;
-
-this.EXPORTED_SYMBOLS = ["event"];
 
 
 let seenEvent = false;

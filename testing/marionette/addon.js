@@ -4,6 +4,8 @@
 
 "use strict";
 
+const EXPORTED_SYMBOLS = ["Addon"];
+
 const { AddonManager } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
@@ -12,8 +14,6 @@ const { FileUtils } = ChromeUtils.import(
 );
 
 const { error } = ChromeUtils.import("chrome://marionette/content/error.js");
-
-this.EXPORTED_SYMBOLS = ["Addon"];
 
 
 const ERRORS = {

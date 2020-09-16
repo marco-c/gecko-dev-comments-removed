@@ -4,6 +4,8 @@
 
 "use strict";
 
+const EXPORTED_SYMBOLS = ["RawPacket", "Packet", "JSONPacket", "BulkPacket"];
+
 
 
 
@@ -42,8 +44,6 @@ const defer = function() {
   };
   return deferred;
 };
-
-this.EXPORTED_SYMBOLS = ["RawPacket", "Packet", "JSONPacket", "BulkPacket"];
 
 
 

@@ -12,7 +12,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["atom"];
+const EXPORTED_SYMBOLS = ["atom"];
 
 
 this.atom = {};

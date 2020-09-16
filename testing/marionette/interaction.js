@@ -2,8 +2,11 @@
 
 
 
+
+
 "use strict";
 
+const EXPORTED_SYMBOLS = ["interaction"];
 
 const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
@@ -27,8 +30,6 @@ const { TimedPromise } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["File"]);
-
-this.EXPORTED_SYMBOLS = ["interaction"];
 
 
 const DISABLED_ATTRIBUTE_SUPPORTED_XUL = new Set([

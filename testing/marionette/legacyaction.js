@@ -2,6 +2,8 @@
 
 
 
+const EXPORTED_SYMBOLS = ["legacyaction"];
+
 const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
 );
@@ -22,8 +24,6 @@ XPCOMUtils.defineLazyGetter(this, "logger", Log.get);
 
 const CONTEXT_MENU_DELAY_PREF = "ui.click_hold_context_menus.delay";
 const DEFAULT_CONTEXT_MENU_DELAY = 750; 
-
-this.EXPORTED_SYMBOLS = ["legacyaction"];
 
 
 

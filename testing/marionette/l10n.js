@@ -4,6 +4,8 @@
 
 "use strict";
 
+const EXPORTED_SYMBOLS = ["l10n"];
+
 
 
 
@@ -28,8 +30,6 @@ XPCOMUtils.defineLazyGetter(this, "domParser", () => {
 });
 
 const { error } = ChromeUtils.import("chrome://marionette/content/error.js");
-
-this.EXPORTED_SYMBOLS = ["l10n"];
 
 
 this.l10n = {};
