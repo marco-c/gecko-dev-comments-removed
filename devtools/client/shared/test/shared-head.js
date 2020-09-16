@@ -1185,14 +1185,30 @@ function getCurrentTestFilePath() {
 
 
 
-function waitForResourceOnce(resourceWatcher, resourceType) {
+
+
+
+
+function waitForNextResource(
+  resourceWatcher,
+  resourceType,
+  { ignoreExistingResources = false, predicate } = {}
+) {
+  
+  
+  predicate = predicate || (resource => !!resource);
+
   return new Promise(resolve => {
     const onAvailable = resources => {
-      resolve(resources[0]);
-      resourceWatcher.unwatchResources([resourceType], { onAvailable });
+      const matchingResource = resources.find(resource => predicate(resource));
+      if (matchingResource) {
+        resolve(matchingResource);
+        resourceWatcher.unwatchResources([resourceType], { onAvailable });
+      }
     };
+
     resourceWatcher.watchResources([resourceType], {
-      ignoreExistingResources: true,
+      ignoreExistingResources,
       onAvailable,
     });
   });
