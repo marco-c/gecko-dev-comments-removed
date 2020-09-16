@@ -89,22 +89,26 @@ this.topSites = class extends ExtensionAPI {
             links = links.slice(0, options.limit);
           }
 
-          return links.map(link => ({
-            type: link.searchTopSite ? "search" : "url",
-            url: link.url,
-            
-            
-            
-            title: link.label || link.title || link.hostname || "",
-            
-            
-            
-            
-            
-            favicon: options.includeFavicon
-              ? link.favicon || link.tippyTopIcon || null
-              : null,
-          }));
+          const makeDataURI = url => url && ExtensionUtils.makeDataURI(url);
+
+          return Promise.all(
+            links.map(async link => ({
+              type: link.searchTopSite ? "search" : "url",
+              url: link.url,
+              
+              
+              
+              title: link.label || link.title || link.hostname || "",
+              
+              
+              
+              
+              
+              favicon: options.includeFavicon
+                ? link.favicon || (await makeDataURI(link.tippyTopIcon)) || null
+                : null,
+            }))
+          );
         },
       },
     };
