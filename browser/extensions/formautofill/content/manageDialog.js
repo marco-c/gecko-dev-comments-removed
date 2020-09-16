@@ -344,7 +344,7 @@ class ManageAddresses extends ManageRecords {
 
 
   openEditDialog(address) {
-    this.prefWin.gSubDialog.open(EDIT_ADDRESS_URL, null, {
+    this.prefWin.gSubDialog.open(EDIT_ADDRESS_URL, undefined, {
       record: address,
       
       
@@ -408,9 +408,13 @@ class ManageCreditCards extends ManageRecords {
         creditCard,
         decryptedCCNumObj
       );
-      this.prefWin.gSubDialog.open(EDIT_CREDIT_CARD_URL, "resizable=no", {
-        record: decryptedCreditCard,
-      });
+      this.prefWin.gSubDialog.open(
+        EDIT_CREDIT_CARD_URL,
+        { features: "resizable=no" },
+        {
+          record: decryptedCreditCard,
+        }
+      );
     }
   }
 

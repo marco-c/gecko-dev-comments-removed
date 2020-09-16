@@ -295,23 +295,23 @@ var gSyncPane = {
     }
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/syncChooseWhatToSync.xhtml",
-      "" ,
-      params ,
-      event => {
-        
-        if (!isAlreadySyncing && event.detail.button == "accept") {
-          
-          
-          fxAccounts.telemetry
-            .recordConnection(["sync"], "ui")
-            .then(() => {
-              return Weave.Service.configure();
-            })
-            .catch(err => {
-              console.error("Failed to enable sync", err);
-            });
-        }
-      }
+      {
+        closingCallback: event => {
+          if (!isAlreadySyncing && event.detail.button == "accept") {
+            
+            
+            fxAccounts.telemetry
+              .recordConnection(["sync"], "ui")
+              .then(() => {
+                return Weave.Service.configure();
+              })
+              .catch(err => {
+                console.error("Failed to enable sync", err);
+              });
+          }
+        },
+      },
+      params 
     );
   },
 
@@ -568,9 +568,7 @@ var gSyncPane = {
   pairAnotherDevice() {
     gSubDialog.open(
       "chrome://browser/content/preferences/fxaPairDevice.xhtml",
-      "resizable=no" ,
-      null ,
-      null 
+      { features: "resizable=no" }
     );
   },
 

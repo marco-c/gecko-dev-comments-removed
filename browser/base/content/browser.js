@@ -8897,26 +8897,38 @@ class TabDialogBox {
 
 
 
-  open(aURL, aFeatures = null, aParams = null, aOpenOptions = {}) {
+
+
+
+
+
+  open(
+    aURL,
+    { features = null, allowDuplicateDialogs = true, sizeTo } = {},
+    ...aParams
+  ) {
     return new Promise(resolve => {
       if (!this._dialogManager.hasDialogs) {
         this._onFirstDialogOpen();
       }
 
+      let closingCallback = () => {
+        if (!this._dialogManager.hasDialogs) {
+          this._onLastDialogClose();
+        }
+      };
+
       
       this._dialogManager.open(
         aURL,
-        aFeatures,
-        aParams,
-        
-        () => {
-          if (!this._dialogManager.hasDialogs) {
-            this._onLastDialogClose();
-          }
+        {
+          features,
+          allowDuplicateDialogs,
+          sizeTo,
+          closingCallback,
+          closedCallback: resolve,
         },
-        
-        resolve,
-        aOpenOptions
+        ...aParams
       );
     });
   }
