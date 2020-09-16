@@ -363,7 +363,7 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(
         eTLD = prevDomain;
         break;
       }
-      if ((result == kWildcardRule || result != kExceptionRule) || !nextDot) {
+      if (result != kExceptionRule || !nextDot) {
         
         eTLD = currDomain;
         break;
