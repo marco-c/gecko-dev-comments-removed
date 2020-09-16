@@ -178,9 +178,7 @@ var PrintEventHandler = {
   },
 
   unload() {
-    this.previewBrowser.messageManager.sendAsyncMessage(
-      "Printing:Preview:Exit"
-    );
+    this.previewBrowser.frameLoader.exitPrintPreview();
   },
 
   _createPreviewBrowser(sourceBrowsingContext) {
@@ -251,7 +249,6 @@ var PrintEventHandler = {
 
   async print(systemDialogSettings) {
     let settings = systemDialogSettings || this.settings;
-    settings.printSilent = true;
 
     if (settings.printerName == PrintUtils.SAVE_TO_PDF_PRINTER) {
       try {
@@ -369,71 +366,26 @@ var PrintEventHandler = {
 
 
 
-  async _updatePrintPreview(browsingContext) {
+  async _updatePrintPreview(sourceBrowsingContext) {
     let { previewBrowser, settings } = this;
+
+    
+    settings.showPrintProgress = false;
+
     let stack = previewBrowser.parentElement;
     stack.setAttribute("rendering", true);
     document.body.setAttribute("rendering", true);
 
-    let networkDone = false;
-    let documentDone = false;
-
-    let totalPages = await new Promise(resolve => {
-      let numPages;
-
-      function onStateChange(msg) {
-        
-        if (msg.data.stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
-          networkDone =
-            networkDone ||
-            msg.data.stateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK;
-          documentDone =
-            documentDone ||
-            msg.data.stateFlags & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
-
-          if (networkDone && documentDone) {
-            cleanup();
-            resolve(numPages);
-          }
-        }
-      }
-
-      function onUpdatePageCount(msg) {
-        numPages = msg.data.totalPages;
-      }
-
-      function cleanup() {
-        previewBrowser.messageManager.removeMessageListener(
-          "Printing:Preview:UpdatePageCount",
-          onUpdatePageCount
-        );
-        previewBrowser.messageManager.removeMessageListener(
-          "Printing:Preview:StateChange",
-          onStateChange
-        );
-      }
-
-      previewBrowser.messageManager.addMessageListener(
-        "Printing:Preview:StateChange",
-        onStateChange
-      );
-      previewBrowser.messageManager.addMessageListener(
-        "Printing:Preview:UpdatePageCount",
-        onUpdatePageCount
-      );
-
-      previewBrowser.messageManager.sendAsyncMessage("Printing:Preview:Enter", {
-        changingBrowsers: false,
-        lastUsedPrinterName: settings.printerName,
-        simplifiedMode: false,
-        browsingContextId:
-          browsingContext?.id || previewBrowser.browsingContext.id,
-        outputFormat: settings.outputFormat,
-        startPageRange: settings.startPageRange,
-        endPageRange: settings.endPageRange,
-        printRange: settings.printRange,
-      });
-    });
+    let sourceWinId;
+    if (sourceBrowsingContext) {
+      sourceWinId = sourceBrowsingContext.currentWindowGlobal.outerWindowId;
+    }
+    
+    
+    let { totalPageCount } = await previewBrowser.frameLoader.printPreview(
+      settings,
+      sourceWinId
+    );
 
     if (this._queuedPreviewUpdatePromise) {
       
@@ -441,13 +393,15 @@ var PrintEventHandler = {
       this._queuedPreviewUpdatePromise = null;
     } else {
       
-      let numPages = totalPages;
+      let numPages = totalPageCount;
       
       if (settings.printRange == Ci.nsIPrintSettings.kRangeSpecifiedPageRange) {
         numPages = settings.endPageRange - settings.startPageRange + 1;
       }
       document.dispatchEvent(
-        new CustomEvent("page-count", { detail: { numPages, totalPages } })
+        new CustomEvent("page-count", {
+          detail: { numPages, totalPages: totalPageCount },
+        })
       );
 
       stack.removeAttribute("rendering");

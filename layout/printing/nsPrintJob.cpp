@@ -651,10 +651,28 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   
   if (!mIsCreatingPrintPreview || printingViaParent) {
-    bool printSilently = false;
-    printData->mPrintSettings->GetPrintSilent(&printSilently);
-    if (StaticPrefs::print_always_print_silent()) {
-      printSilently = true;
+    bool printSilentOnSettings = false;
+    printData->mPrintSettings->GetPrintSilent(&printSilentOnSettings);
+
+    bool printSilently =
+        printSilentOnSettings || StaticPrefs::print_always_print_silent();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool settingsAreComplete = false;
+    if (StaticPrefs::print_tab_modal_enabled() && !printSilentOnSettings) {
+      printData->mPrintSettings->GetIsInitializedFromPrinter(
+          &settingsAreComplete);
     }
 
     
@@ -662,7 +680,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     
     
     
-    if (!printSilently || printingViaParent) {
+    if (!settingsAreComplete && (!printSilently || printingViaParent)) {
       nsCOMPtr<nsIPrintingPromptService> printPromptService(
           do_GetService(kPrintingPromptService));
       if (printPromptService) {
@@ -752,7 +770,16 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         
         rv = NS_ERROR_NOT_IMPLEMENTED;
       }
-    } else {
+    } else if (printSilently && !printingViaParent) {
+      
+      
+      
+      
+      
+      
+      
+      
+
       
       rv = printData->mPrintSettings->SetupSilentPrinting();
     }
@@ -1077,6 +1104,11 @@ nsresult nsPrintJob::CleanupOnFailure(nsresult aResult, bool aIsPrinting) {
 
 
 void nsPrintJob::FirePrintingErrorEvent(nsresult aPrintError) {
+  if (mPrintPreviewCallback) {
+    mPrintPreviewCallback(PrintPreviewResultInfo(0, 0));  
+    mPrintPreviewCallback = nullptr;
+  }
+
   nsCOMPtr<nsIContentViewer> cv = do_QueryInterface(mDocViewerPrint);
   if (NS_WARN_IF(!cv)) {
     return;
@@ -2422,7 +2454,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   
   
 
-  if (!printData->mPrintSettings) {
+  if (!printData || !printData->mPrintSettings) {
     return NS_ERROR_FAILURE;
   }
 
