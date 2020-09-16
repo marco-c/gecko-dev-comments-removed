@@ -63,7 +63,7 @@ extern JS_PUBLIC_API bool CanCompileOffThread(
 extern JS_PUBLIC_API bool CompileOffThread(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf, OffThreadCompileCallback callback,
-    void* callbackData);
+    void* callbackData, OffThreadToken** tokenOut = nullptr);
 
 
 
@@ -72,7 +72,7 @@ extern JS_PUBLIC_API bool CompileOffThread(
 extern JS_PUBLIC_API bool CompileOffThread(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<mozilla::Utf8Unit>& srcBuf, OffThreadCompileCallback callback,
-    void* callbackData);
+    void* callbackData, OffThreadToken** tokenOut = nullptr);
 
 extern JS_PUBLIC_API JSScript* FinishOffThreadScript(JSContext* cx,
                                                      OffThreadToken* token);
@@ -86,7 +86,7 @@ extern JS_PUBLIC_API void CancelOffThreadScript(JSContext* cx,
 extern JS_PUBLIC_API bool CompileOffThreadModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf, OffThreadCompileCallback callback,
-    void* callbackData);
+    void* callbackData, OffThreadToken** tokenOut = nullptr);
 
 
 
@@ -95,7 +95,7 @@ extern JS_PUBLIC_API bool CompileOffThreadModule(
 extern JS_PUBLIC_API bool CompileOffThreadModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<mozilla::Utf8Unit>& srcBuf, OffThreadCompileCallback callback,
-    void* callbackData);
+    void* callbackData, OffThreadToken** tokenOut = nullptr);
 
 extern JS_PUBLIC_API JSObject* FinishOffThreadModule(JSContext* cx,
                                                      OffThreadToken* token);
@@ -109,12 +109,14 @@ extern JS_PUBLIC_API bool CanDecodeOffThread(
 extern JS_PUBLIC_API bool DecodeOffThreadScript(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     mozilla::Vector<uint8_t>& buffer , size_t cursor,
-    OffThreadCompileCallback callback, void* callbackData);
+    OffThreadCompileCallback callback, void* callbackData,
+    OffThreadToken** tokenOut = nullptr);
 
 extern JS_PUBLIC_API bool DecodeOffThreadScript(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     const mozilla::Range<uint8_t>& range ,
-    OffThreadCompileCallback callback, void* callbackData);
+    OffThreadCompileCallback callback, void* callbackData,
+    OffThreadToken** tokenOut = nullptr);
 
 extern JS_PUBLIC_API JSScript* FinishOffThreadScriptDecoder(
     JSContext* cx, OffThreadToken* token);
