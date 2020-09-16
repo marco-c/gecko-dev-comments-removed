@@ -1172,7 +1172,7 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
     
     
     this.querySelector("#system-print").hidden =
-      !settings.defaultSystemPrinter && AppConstants.platform !== "macosx";
+      AppConstants.platform === "win" && !settings.defaultSystemPrinter;
 
     this.querySelector("#copies").hidden = settings.willSaveToFile;
   }
