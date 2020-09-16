@@ -13,7 +13,12 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
-#define MOZ_UNIQUE_VAR(base) MOZ_CONCAT(base, __LINE__)
+
+
+
+#define MOZ_UNIQUE_VAR(base) MOZ_CONCAT(base, __COUNTER__)
+
+
 
 #define MOZ_REMOVE_PAREN(X) MOZ_REMOVE_PAREN_HELPER2(MOZ_REMOVE_PAREN_HELPER X)
 #define MOZ_REMOVE_PAREN_HELPER(...) MOZ_REMOVE_PAREN_HELPER __VA_ARGS__
@@ -381,7 +386,7 @@
 
 #define QM_VOID
 
-#define QM_PROPAGATE MOZ_UNIQUE_VAR(tryResult).propagateErr()
+#define QM_PROPAGATE tryTempResult.propagateErr()
 
 
 
@@ -405,39 +410,51 @@
 
 
 
-#define QM_TRY_PROPAGATE_ERR(ns, expr)                        \
-  auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr); \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {      \
-    ns::QM_HANDLE_ERROR(expr);                                \
-    return QM_PROPAGATE;                                      \
+#define QM_TRY_PROPAGATE_ERR(ns, tryResult, expr) \
+  auto tryResult = ::mozilla::ToResult(expr);     \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {          \
+    ns::QM_HANDLE_ERROR(expr);                    \
+    return tryResult.propagateErr();              \
   }
 
 
 
-#define QM_TRY_CUSTOM_RET_VAL(ns, expr, customRetVal)         \
-  auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr); \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {      \
-    ns::QM_HANDLE_ERROR(expr);                                \
-    return customRetVal;                                      \
+#define QM_TRY_CUSTOM_RET_VAL(ns, tryResult, expr, customRetVal) \
+  auto tryResult = ::mozilla::ToResult(expr);                    \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                         \
+    auto tryTempResult MOZ_MAYBE_UNUSED = std::move(tryResult);  \
+    ns::QM_HANDLE_ERROR(expr);                                   \
+    return customRetVal;                                         \
   }
 
 
 
-#define QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(ns, expr, customRetVal, cleanup) \
-  auto MOZ_UNIQUE_VAR(tryResult) = ::mozilla::ToResult(expr);               \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                    \
-    ns::QM_HANDLE_ERROR(expr);                                              \
-    cleanup();                                                              \
-    return customRetVal;                                                    \
+#define QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(ns, tryResult, expr, customRetVal, \
+                                           cleanup)                           \
+  auto tryResult = ::mozilla::ToResult(expr);                                 \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                      \
+    auto tryTempResult MOZ_MAYBE_UNUSED = std::move(tryResult);               \
+    ns::QM_HANDLE_ERROR(expr);                                                \
+    cleanup();                                                                \
+    return customRetVal;                                                      \
   }
+
+
+
+
 
 
 
 #define QM_TRY_META(...)                                                      \
-  MOZ_ARG_6(, ##__VA_ARGS__, QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__), \
+  MOZ_ARG_7(, ##__VA_ARGS__, QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__), \
             QM_TRY_CUSTOM_RET_VAL(__VA_ARGS__),                               \
             QM_TRY_PROPAGATE_ERR(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__),  \
-            QM_MISSING_ARGS(__VA_ARGS__))
+            QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__))
+
+
+
+#define QM_TRY_GLUE(...) \
+  QM_TRY_META(mozilla::dom::quota, MOZ_UNIQUE_VAR(tryResult), ##__VA_ARGS__)
 
 
 
@@ -447,7 +464,7 @@
 
 
 
-#define QM_TRY(...) QM_TRY_META(mozilla::dom::quota, ##__VA_ARGS__)
+#define QM_TRY(...) QM_TRY_GLUE(__VA_ARGS__)
 
 
 
@@ -464,55 +481,64 @@
 
 
 
-#define QM_TRY_VAR_PROPAGATE_ERR(ns, target, expr)       \
-  auto MOZ_UNIQUE_VAR(tryResult) = (expr);               \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) { \
-    ns::QM_HANDLE_ERROR(expr);                           \
-    return QM_PROPAGATE;                                 \
-  }                                                      \
-  MOZ_REMOVE_PAREN(target) = MOZ_UNIQUE_VAR(tryResult).unwrap();
+#define QM_TRY_VAR_PROPAGATE_ERR(ns, tryResult, target, expr) \
+  auto tryResult = (expr);                                    \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                      \
+    ns::QM_HANDLE_ERROR(expr);                                \
+    return tryResult.propagateErr();                          \
+  }                                                           \
+  MOZ_REMOVE_PAREN(target) = tryResult.unwrap();
 
 
 
-#define QM_TRY_VAR_CUSTOM_RET_VAL(ns, target, expr, customRetVal) \
-  auto MOZ_UNIQUE_VAR(tryResult) = (expr);                        \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {          \
-    ns::QM_HANDLE_ERROR(expr);                                    \
-    return customRetVal;                                          \
-  }                                                               \
-  MOZ_REMOVE_PAREN(target) = MOZ_UNIQUE_VAR(tryResult).unwrap();
+#define QM_TRY_VAR_CUSTOM_RET_VAL(ns, tryResult, target, expr, customRetVal) \
+  auto tryResult = (expr);                                                   \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                     \
+    auto tryTempResult MOZ_MAYBE_UNUSED = std::move(tryResult);              \
+    ns::QM_HANDLE_ERROR(expr);                                               \
+    return customRetVal;                                                     \
+  }                                                                          \
+  MOZ_REMOVE_PAREN(target) = tryResult.unwrap();
 
 
 
-#define QM_TRY_VAR_CUSTOM_RET_VAL_WITH_CLEANUP(ns, target, expr, customRetVal, \
-                                               cleanup)                        \
-  auto MOZ_UNIQUE_VAR(tryResult) = (expr);                                     \
-  if (MOZ_UNLIKELY(MOZ_UNIQUE_VAR(tryResult).isErr())) {                       \
-    ns::QM_HANDLE_ERROR(expr);                                                 \
-    cleanup();                                                                 \
-    return customRetVal;                                                       \
-  }                                                                            \
-  MOZ_REMOVE_PAREN(target) = MOZ_UNIQUE_VAR(tryResult).unwrap();
-
-
-
-#define QM_TRY_VAR_META(...)                                                \
-  MOZ_ARG_7(                                                                \
-      , ##__VA_ARGS__, QM_TRY_VAR_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__), \
-      QM_TRY_VAR_CUSTOM_RET_VAL(__VA_ARGS__),                               \
-      QM_TRY_VAR_PROPAGATE_ERR(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__),  \
-      QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__))
+#define QM_TRY_VAR_CUSTOM_RET_VAL_WITH_CLEANUP(ns, tryResult, target, expr, \
+                                               customRetVal, cleanup)       \
+  auto tryResult = (expr);                                                  \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                    \
+    auto tryTempResult MOZ_MAYBE_UNUSED = std::move(tryResult);             \
+    ns::QM_HANDLE_ERROR(expr);                                              \
+    cleanup();                                                              \
+    return customRetVal;                                                    \
+  }                                                                         \
+  MOZ_REMOVE_PAREN(target) = tryResult.unwrap();
 
 
 
 
+#define QM_TRY_VAR_META(...)                                            \
+  MOZ_ARG_8(, ##__VA_ARGS__,                                            \
+            QM_TRY_VAR_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__),        \
+            QM_TRY_VAR_CUSTOM_RET_VAL(__VA_ARGS__),                     \
+            QM_TRY_VAR_PROPAGATE_ERR(__VA_ARGS__),                      \
+            QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__), \
+            QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__))
+
+
+
+#define QM_TRY_VAR_GLUE(...) \
+  QM_TRY_VAR_META(mozilla::dom::quota, MOZ_UNIQUE_VAR(tryResult), ##__VA_ARGS__)
 
 
 
 
 
 
-#define QM_TRY_VAR(...) QM_TRY_VAR_META(mozilla::dom::quota, ##__VA_ARGS__)
+
+
+
+
+#define QM_TRY_VAR(...) QM_TRY_VAR_GLUE(__VA_ARGS__)
 
 
 
@@ -541,15 +567,20 @@
 
 
 
+
 #define QM_FAIL_META(...)                                               \
   MOZ_ARG_5(, ##__VA_ARGS__, QM_FAIL_RET_VAL_WITH_CLEANUP(__VA_ARGS__), \
             QM_FAIL_RET_VAL(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__))
 
 
 
+#define QM_FAIL_GLUE(...) QM_FAIL_META(mozilla::dom::quota, ##__VA_ARGS__)
 
 
-#define QM_FAIL(...) QM_FAIL_META(mozilla::dom::quota, ##__VA_ARGS__)
+
+
+
+#define QM_FAIL(...) QM_FAIL_GLUE(__VA_ARGS__)
 
 
 
