@@ -25,6 +25,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   fxAccounts: "resource://gre/modules/FxAccounts.jsm",
   Region: "resource://gre/modules/Region.jsm",
   TelemetrySession: "resource://gre/modules/TelemetrySession.jsm",
+  HomePage: "resource:///modules/HomePage.jsm",
+  AboutNewTab: "resource:///modules/AboutNewTab.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -338,6 +340,49 @@ function getSortedMessages(messages, options = {}) {
   return result;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+function parseAboutPageURL(url) {
+  let ret = {
+    isWebExt: false,
+    isCustomUrl: false,
+    urls: [],
+  };
+  if (url.startsWith("moz-extension://")) {
+    ret.isWebExt = true;
+    ret.urls.push({ url, host: "" });
+  } else {
+    
+    
+    
+    for (const _url of url.split("|")) {
+      if (!["about:home", "about:newtab", "about:blank"].includes(_url)) {
+        ret.isCustomUrl = true;
+      }
+      try {
+        const parsedURL = new URL(_url);
+        const host = parsedURL.hostname.replace(/^www\./i, "");
+        ret.urls.push({ url: _url, host });
+      } catch (e) {}
+    }
+    
+    if (!ret.urls.length) {
+      ret.urls.push({ url, host: "" });
+    }
+  }
+
+  return ret;
+}
+
 const TargetingGetters = {
   get locale() {
     return Services.locale.appLocaleAsBCP47;
@@ -566,6 +611,30 @@ const TargetingGetters = {
     return (
       TelemetrySession.getMetadata("targeting").profileSubsessionCounter - 1
     );
+  },
+  get homePageSettings() {
+    const url = HomePage.get();
+    const { isWebExt, isCustomUrl, urls } = parseAboutPageURL(url);
+
+    return {
+      isWebExt,
+      isCustomUrl,
+      urls,
+      isDefault: HomePage.isDefault,
+      isLocked: HomePage.locked,
+    };
+  },
+  get newtabSettings() {
+    const url = AboutNewTab.newTabURL;
+    const { isWebExt, isCustomUrl, urls } = parseAboutPageURL(url);
+
+    return {
+      isWebExt,
+      isCustomUrl,
+      isDefault: AboutNewTab.activityStreamEnabled,
+      url: urls[0].url,
+      host: urls[0].host,
+    };
   },
 };
 
