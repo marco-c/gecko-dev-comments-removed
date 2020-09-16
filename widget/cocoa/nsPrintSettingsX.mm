@@ -421,11 +421,22 @@ nsPrintSettingsX::SetScaling(double aScaling) {
 
   
   
-  if (XRE_IsParentProcess()) {
-    [mPrintInfo setScalingFactor:CGFloat(aScaling)];
-  } else {
-    nsPrintSettings::SetScaling(aScaling);
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  [mPrintInfo setScalingFactor:CGFloat(1.0)];
+  nsPrintSettings::SetScaling(aScaling);
 
   return NS_OK;
 
@@ -436,14 +447,7 @@ NS_IMETHODIMP
 nsPrintSettingsX::GetScaling(double* aScaling) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
-  
-  
-  if (XRE_IsParentProcess()) {
-    
-    *aScaling = round(double([mPrintInfo scalingFactor]) * 100.0) / 100.0;
-  } else {
-    nsPrintSettings::GetScaling(aScaling);
-  }
+  nsPrintSettings::GetScaling(aScaling);
 
   return NS_OK;
 
