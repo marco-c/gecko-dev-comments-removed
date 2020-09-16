@@ -490,6 +490,7 @@ void ScrollAnchorContainer::ApplyAdjustments() {
   if (mScrollFrame->mIsRoot) {
     pc->PresShell()->RootScrollFrameAdjusted(physicalAdjustment.y);
   }
+  pc->Document()->UpdateForScrollAnchorAdjustment(logicalAdjustment);
 
   
   

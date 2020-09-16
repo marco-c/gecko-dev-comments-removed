@@ -1247,6 +1247,8 @@ class Document : public nsINode,
   
   ViewportMetaData GetViewportMetaData() const;
 
+  void UpdateForScrollAnchorAdjustment(nscoord aLength);
+
   
 
 
@@ -1462,8 +1464,6 @@ class Document : public nsINode,
   PreloadService& Preloads() { return mPreloadService; }
 
   bool HasThirdPartyChannel();
-
-  bool ShouldIncludeInTelemetry(bool aAllowExtensionURIs);
 
  protected:
   friend class nsUnblockOnloadEvent;
@@ -4914,6 +4914,9 @@ class Document : public nsINode,
   nsWeakPtr mAutoFocusElement;
 
   nsCString mScrollToRef;
+
+  nscoord mScrollAnchorAdjustmentLength;
+  int32_t mScrollAnchorAdjustmentCount;
 
   
   
