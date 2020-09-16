@@ -234,7 +234,7 @@ void NotifyScreenConfigurationChange(
 
 
 
-MOZ_MUST_USE bool LockScreenOrientation(
+[[nodiscard]] bool LockScreenOrientation(
     const hal::ScreenOrientation& aOrientation);
 
 
