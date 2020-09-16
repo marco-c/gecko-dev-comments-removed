@@ -101,20 +101,6 @@ function executeSoon(func) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function PollPromise(func, { timeout = null, interval = 10 } = {}) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 

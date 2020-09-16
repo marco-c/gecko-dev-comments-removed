@@ -43,6 +43,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.getWithPrefix(contentId));
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
+const contentFrameMessageManager = this;
 const contentId = content.docShell.browsingContext.id;
 
 const curContainer = {
@@ -96,405 +97,6 @@ const eventObservers = new ContentEventObserverService(
 
 
 
-const loadListener = {
-  commandID: null,
-  seenBeforeUnload: false,
-  seenUnload: false,
-  timeout: null,
-  timerPageLoad: null,
-  timerPageUnload: null,
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  start(commandID, timeout, startTime, waitForUnloaded = true) {
-    this.commandID = commandID;
-    this.timeout = timeout;
-
-    this.seenBeforeUnload = false;
-    this.seenUnload = false;
-
-    this.timerPageLoad = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    this.timerPageUnload = null;
-
-    
-    
-    timeout = startTime + timeout - new Date().getTime();
-
-    if (timeout <= 0) {
-      this.notify(this.timerPageLoad);
-      return;
-    }
-
-    if (waitForUnloaded) {
-      addEventListener("beforeunload", this, true);
-      addEventListener("hashchange", this, true);
-      addEventListener("pagehide", this, true);
-      addEventListener("popstate", this, true);
-      addEventListener("unload", this, true);
-
-      Services.obs.addObserver(this, "outer-window-destroyed");
-    } else {
-      
-      
-      
-      
-      
-      let readyState = content.document.readyState;
-      let documentURI = content.document.documentURI;
-      logger.trace(truncate`Check readyState ${readyState} for ${documentURI}`);
-      
-      
-      if (this.handleReadyState(readyState, documentURI)) {
-        return;
-      }
-
-      addEventListener("DOMContentLoaded", loadListener, true);
-      addEventListener("pageshow", loadListener, true);
-    }
-
-    this.timerPageLoad.initWithCallback(
-      this,
-      timeout,
-      Ci.nsITimer.TYPE_ONE_SHOT
-    );
-  },
-
-  
-
-
-  stop() {
-    if (this.timerPageLoad) {
-      this.timerPageLoad.cancel();
-    }
-
-    if (this.timerPageUnload) {
-      this.timerPageUnload.cancel();
-    }
-
-    removeEventListener("beforeunload", this, true);
-    removeEventListener("hashchange", this, true);
-    removeEventListener("pagehide", this, true);
-    removeEventListener("popstate", this, true);
-    removeEventListener("DOMContentLoaded", this, true);
-    removeEventListener("pageshow", this, true);
-    removeEventListener("unload", this, true);
-
-    
-    
-    
-    try {
-      Services.obs.removeObserver(this, "outer-window-destroyed");
-    } catch (e) {}
-  },
-
-  
-
-
-  handleEvent(event) {
-    
-    
-    if (
-      event.target != curContainer.frame &&
-      event.target != curContainer.frame.document
-    ) {
-      return;
-    }
-
-    let location = event.target.documentURI || event.target.location.href;
-    logger.trace(truncate`Received DOM event ${event.type} for ${location}`);
-
-    switch (event.type) {
-      case "beforeunload":
-        this.seenBeforeUnload = true;
-        break;
-
-      case "unload":
-        this.seenUnload = true;
-        break;
-
-      case "pagehide":
-        this.seenUnload = true;
-
-        removeEventListener("hashchange", this, true);
-        removeEventListener("pagehide", this, true);
-        removeEventListener("popstate", this, true);
-
-        
-        addEventListener("DOMContentLoaded", this, true);
-        addEventListener("pageshow", this, true);
-        break;
-
-      case "hashchange":
-      case "popstate":
-        this.stop();
-        sendOk(this.commandID);
-        break;
-
-      case "DOMContentLoaded":
-      case "pageshow":
-        this.handleReadyState(
-          event.target.readyState,
-          event.target.documentURI
-        );
-        break;
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  handleReadyState(readyState, documentURI) {
-    let finished = false;
-
-    switch (readyState) {
-      case "interactive":
-        if (documentURI.startsWith("about:certerror")) {
-          this.stop();
-          sendError(new error.InsecureCertificateError(), this.commandID);
-          finished = true;
-        } else if (/about:.*(error)\?/.exec(documentURI)) {
-          this.stop();
-          sendError(
-            new error.UnknownError(`Reached error page: ${documentURI}`),
-            this.commandID
-          );
-          finished = true;
-
-          
-          
-          
-          
-          
-          
-        } else if (
-          (capabilities.get("pageLoadStrategy") === PageLoadStrategy.Eager &&
-            documentURI != "about:blank") ||
-          /about:blocked\?/.exec(documentURI)
-        ) {
-          this.stop();
-          sendOk(this.commandID);
-          finished = true;
-        }
-
-        break;
-
-      case "complete":
-        this.stop();
-        sendOk(this.commandID);
-        finished = true;
-
-        break;
-    }
-
-    return finished;
-  },
-
-  
-
-
-  notify(timer) {
-    switch (timer) {
-      case this.timerPageUnload:
-        
-        
-        
-        
-        
-        
-        
-        
-        if (this.seenBeforeUnload) {
-          this.seenBeforeUnload = null;
-          this.timerPageUnload.initWithCallback(
-            this,
-            5000,
-            Ci.nsITimer.TYPE_ONE_SHOT
-          );
-
-          
-          
-        } else if (!this.seenUnload) {
-          logger.debug(
-            "Canceled page load listener because no navigation " +
-              "has been detected"
-          );
-          this.stop();
-          sendOk(this.commandID);
-        }
-        break;
-
-      case this.timerPageLoad:
-        this.stop();
-        sendError(
-          new error.TimeoutError(
-            `Timeout loading page after ${this.timeout}ms`
-          ),
-          this.commandID
-        );
-        break;
-    }
-  },
-
-  observe(subject, topic) {
-    logger.trace(`Received observer notification ${topic}`);
-
-    const winId = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    const bc = BrowsingContext.get(curContainer.id);
-
-    switch (topic) {
-      
-      
-      case "outer-window-destroyed":
-        if (bc.window.windowUtils.deprecatedOuterWindowID == winId) {
-          this.stop();
-          sendOk(this.commandID);
-        }
-        break;
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  waitForLoadAfterFramescriptReload(commandID, timeout, startTime) {
-    this.start(commandID, timeout, startTime, false);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async navigate(
-    trigger,
-    commandID,
-    timeout,
-    loadEventExpected = true,
-    useUnloadTimer = false
-  ) {
-    
-    loadEventExpected =
-      loadEventExpected &&
-      capabilities.get("pageLoadStrategy") !== PageLoadStrategy.None;
-
-    if (loadEventExpected) {
-      let startTime = new Date().getTime();
-      this.start(commandID, timeout, startTime, true);
-    }
-
-    await trigger();
-
-    try {
-      if (!loadEventExpected) {
-        sendOk(commandID);
-        return;
-      }
-
-      
-      if (useUnloadTimer) {
-        this.timerPageUnload = Cc["@mozilla.org/timer;1"].createInstance(
-          Ci.nsITimer
-        );
-        this.timerPageUnload.initWithCallback(
-          this,
-          200,
-          Ci.nsITimer.TYPE_ONE_SHOT
-        );
-      }
-    } catch (e) {
-      if (loadEventExpected) {
-        this.stop();
-      }
-
-      sendError(e, commandID);
-    }
-  },
-};
-
-
-
-
-
-
-function registerSelf() {
-  logger.trace("Frame script loaded");
-
-  curContainer.frame = content;
-
-  sandboxes.clear();
-  legacyactions.mouseEventsOnly = false;
-  action.inputStateMap = new Map();
-  action.inputsToCancel = [];
-
-  let reply = sendSyncMessage("Marionette:Register", {
-    frameId: contentId,
-  });
-  if (reply.length == 0) {
-    logger.error("No reply from Marionette:Register");
-    return;
-  }
-
-  if (reply[0].frameId === contentId) {
-    logger.trace("Frame script registered");
-    startListeners();
-    sendAsyncMessage("Marionette:ListenersAttached", {
-      frameId: contentId,
-    });
-  }
-}
-
-
-
-
-
-
-
 function dispatch(fn) {
   if (typeof fn != "function") {
     throw new TypeError("Provided dispatch handler is not a function");
@@ -524,6 +126,7 @@ function dispatch(fn) {
   };
 }
 
+let clickElementFn = dispatch(clickElement);
 let getActiveElementFn = dispatch(getActiveElement);
 let getBrowsingContextIdFn = dispatch(getBrowsingContextId);
 let getCurrentUrlFn = dispatch(getCurrentUrl);
@@ -553,10 +156,11 @@ let sendKeysToElementFn = dispatch(sendKeysToElement);
 let reftestWaitFn = dispatch(reftestWait);
 
 function startListeners() {
+  eventDispatcher.enable();
+
   addMessageListener("Marionette:actionChain", actionChainFn);
-  addMessageListener("Marionette:cancelRequest", cancelRequest);
   addMessageListener("Marionette:clearElement", clearElementFn);
-  addMessageListener("Marionette:clickElement", clickElement);
+  addMessageListener("Marionette:clickElement", clickElementFn);
   addMessageListener("Marionette:Deregister", deregister);
   addMessageListener("Marionette:DOM:AddEventListener", domAddEventListener);
   addMessageListener(
@@ -581,15 +185,11 @@ function startListeners() {
   );
   addMessageListener("Marionette:getPageSource", getPageSourceFn);
   addMessageListener("Marionette:getScreenshotRect", getScreenshotRectFn);
-  addMessageListener("Marionette:goBack", goBack);
-  addMessageListener("Marionette:goForward", goForward);
   addMessageListener("Marionette:isElementDisplayed", isElementDisplayedFn);
   addMessageListener("Marionette:isElementEnabled", isElementEnabledFn);
   addMessageListener("Marionette:isElementSelected", isElementSelectedFn);
   addMessageListener("Marionette:multiAction", multiActionFn);
-  addMessageListener("Marionette:navigateTo", navigateTo);
   addMessageListener("Marionette:performActions", performActionsFn);
-  addMessageListener("Marionette:refresh", refresh);
   addMessageListener("Marionette:reftestWait", reftestWaitFn);
   addMessageListener("Marionette:releaseActions", releaseActionsFn);
   addMessageListener("Marionette:sendKeysToElement", sendKeysToElementFn);
@@ -598,14 +198,14 @@ function startListeners() {
   addMessageListener("Marionette:switchToFrame", switchToFrame);
   addMessageListener("Marionette:switchToParentFrame", switchToParentFrame);
   addMessageListener("Marionette:switchToShadowRoot", switchToShadowRootFn);
-  addMessageListener("Marionette:waitForPageLoaded", waitForPageLoaded);
 }
 
 function deregister() {
+  eventDispatcher.disable();
+
   removeMessageListener("Marionette:actionChain", actionChainFn);
-  removeMessageListener("Marionette:cancelRequest", cancelRequest);
   removeMessageListener("Marionette:clearElement", clearElementFn);
-  removeMessageListener("Marionette:clickElement", clickElement);
+  removeMessageListener("Marionette:clickElement", clickElementFn);
   removeMessageListener("Marionette:Deregister", deregister);
   removeMessageListener("Marionette:execute", executeFn);
   removeMessageListener("Marionette:executeInSandbox", executeInSandboxFn);
@@ -634,15 +234,11 @@ function deregister() {
   );
   removeMessageListener("Marionette:getPageSource", getPageSourceFn);
   removeMessageListener("Marionette:getScreenshotRect", getScreenshotRectFn);
-  removeMessageListener("Marionette:goBack", goBack);
-  removeMessageListener("Marionette:goForward", goForward);
   removeMessageListener("Marionette:isElementDisplayed", isElementDisplayedFn);
   removeMessageListener("Marionette:isElementEnabled", isElementEnabledFn);
   removeMessageListener("Marionette:isElementSelected", isElementSelectedFn);
   removeMessageListener("Marionette:multiAction", multiActionFn);
-  removeMessageListener("Marionette:navigateTo", navigateTo);
   removeMessageListener("Marionette:performActions", performActionsFn);
-  removeMessageListener("Marionette:refresh", refresh);
   removeMessageListener("Marionette:releaseActions", releaseActionsFn);
   removeMessageListener("Marionette:sendKeysToElement", sendKeysToElementFn);
   removeMessageListener("Marionette:Session:Delete", deleteSession);
@@ -650,7 +246,6 @@ function deregister() {
   removeMessageListener("Marionette:switchToFrame", switchToFrame);
   removeMessageListener("Marionette:switchToParentFrame", switchToParentFrame);
   removeMessageListener("Marionette:switchToShadowRoot", switchToShadowRootFn);
-  removeMessageListener("Marionette:waitForPageLoaded", waitForPageLoaded);
 }
 
 function deleteSession() {
@@ -1073,149 +668,6 @@ function multiAction(args, maxLen) {
 
 
 
-
-
-function cancelRequest() {
-  loadListener.stop();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForPageLoaded(msg) {
-  let { commandID, pageTimeout, startTime } = msg.json;
-  loadListener.waitForLoadAfterFramescriptReload(
-    commandID,
-    pageTimeout,
-    startTime
-  );
-}
-
-
-
-
-
-
-
-async function navigateTo(msg) {
-  let { commandID, pageTimeout, url, loadEventExpected } = msg.json;
-
-  try {
-    await loadListener.navigate(
-      () => {
-        curContainer.frame.location = url;
-      },
-      commandID,
-      pageTimeout,
-      loadEventExpected
-    );
-  } catch (e) {
-    sendError(e, commandID);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-async function goBack(msg) {
-  let { commandID, pageTimeout } = msg.json;
-
-  try {
-    await loadListener.navigate(
-      () => {
-        curContainer.frame.history.back();
-      },
-      commandID,
-      pageTimeout
-    );
-  } catch (e) {
-    sendError(e, commandID);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-async function goForward(msg) {
-  let { commandID, pageTimeout } = msg.json;
-
-  try {
-    await loadListener.navigate(
-      () => {
-        curContainer.frame.history.forward();
-      },
-      commandID,
-      pageTimeout
-    );
-  } catch (e) {
-    sendError(e, commandID);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-async function refresh(msg) {
-  let { commandID, pageTimeout } = msg.json;
-
-  try {
-    
-    curContainer.frame = content;
-    sendSyncMessage("Marionette:switchedToFrame", {
-      browsingContextId: curContainer.id,
-    });
-
-    await loadListener.navigate(
-      () => {
-        curContainer.frame.location.reload(true);
-      },
-      commandID,
-      pageTimeout
-    );
-  } catch (e) {
-    sendError(e, commandID);
-  }
-}
-
-
-
-
 function getPageSource() {
   return curContainer.frame.document.documentElement.outerHTML;
 }
@@ -1292,42 +744,12 @@ function getCurrentUrl() {
 
 
 
-
-
-
-
-
-
-async function clickElement(msg) {
-  let { commandID, webElRef, pageTimeout } = msg.json;
-
-  try {
-    let webEl = WebElement.fromJSON(webElRef);
-    let el = seenEls.get(webEl, curContainer.frame);
-
-    let loadEventExpected = true;
-    let target = getElementAttribute(el, "target");
-
-    if (target === "_blank") {
-      loadEventExpected = false;
-    }
-
-    await loadListener.navigate(
-      () => {
-        return interaction.clickElement(
-          el,
-          capabilities.get("moz:accessibilityChecks"),
-          capabilities.get("moz:webdriverClick")
-        );
-      },
-      commandID,
-      pageTimeout,
-      loadEventExpected,
-      true
-    );
-  } catch (e) {
-    sendError(e, commandID);
-  }
+function clickElement(el) {
+  return interaction.clickElement(
+    el,
+    capabilities.get("moz:accessibilityChecks"),
+    capabilities.get("moz:webdriverClick")
+  );
 }
 
 function getElementAttribute(el, name) {
@@ -1826,6 +1248,136 @@ function domAddEventListener(msg) {
 
 function domRemoveEventListener(msg) {
   eventObservers.remove(msg.json.type);
+}
+
+const eventDispatcher = {
+  enabled: false,
+
+  enable() {
+    if (this.enabled) {
+      return;
+    }
+
+    addEventListener("unload", this, false);
+
+    addEventListener("beforeunload", this, true);
+    addEventListener("pagehide", this, true);
+    addEventListener("popstate", this, true);
+
+    addEventListener("DOMContentLoaded", this, true);
+    addEventListener("hashchange", this, true);
+    addEventListener("pageshow", this, true);
+
+    Services.obs.addObserver(this, "webnavigation-destroy");
+
+    this.enabled = true;
+  },
+
+  disable() {
+    if (!this.enabled) {
+      return;
+    }
+
+    removeEventListener("unload", this, false);
+
+    removeEventListener("beforeunload", this, true);
+    removeEventListener("pagehide", this, true);
+    removeEventListener("popstate", this, true);
+
+    removeEventListener("DOMContentLoaded", this, true);
+    removeEventListener("hashchange", this, true);
+    removeEventListener("pageshow", this, true);
+
+    
+    
+    
+    try {
+      Services.obs.removeObserver(this, "webnavigation-destroy");
+    } catch (e) {}
+
+    this.enabled = false;
+  },
+
+  handleEvent(event) {
+    const { target, type } = event;
+
+    
+    
+    if (type === "unload" && target === contentFrameMessageManager) {
+      logger.trace(`Frame script unloaded`);
+      sendAsyncMessage("Marionette:Unloaded", {
+        browsingContext: content.docShell.browsingContext,
+      });
+      return;
+    }
+
+    
+    
+    if (![curContainer.frame, curContainer.frame.document].includes(target)) {
+      return;
+    }
+
+    if (type === "pagehide") {
+      
+      
+      addEventListener("DOMContentLoaded", this, true);
+      addEventListener("pageshow", this, true);
+    }
+
+    sendAsyncMessage("Marionette:NavigationEvent", {
+      browsingContext: content.docShell.browsingContext,
+      documentURI: target.documentURI,
+      readyState: target.readyState,
+      type,
+    });
+  },
+
+  observe(subject, topic) {
+    subject.QueryInterface(Ci.nsIDocShell);
+
+    const browsingContext = subject.browsingContext;
+    const isFrame = browsingContext !== subject.browsingContext.top;
+
+    
+    if (isFrame && browsingContext.id === curContainer.id) {
+      logger.trace(`Frame with id ${browsingContext.id} got removed`);
+      sendAsyncMessage("Marionette:FrameRemoved", {
+        browsingContextId: browsingContext.id,
+      });
+    }
+  },
+};
+
+
+
+
+
+
+function registerSelf() {
+  logger.trace("Frame script loaded");
+
+  curContainer.frame = content;
+
+  sandboxes.clear();
+  legacyactions.mouseEventsOnly = false;
+  action.inputStateMap = new Map();
+  action.inputsToCancel = [];
+
+  let reply = sendSyncMessage("Marionette:Register", {
+    frameId: contentId,
+  });
+
+  if (reply.length == 0) {
+    logger.error("No reply from Marionette:Register");
+    return;
+  }
+
+  if (reply[0].frameId === contentId) {
+    startListeners();
+    sendAsyncMessage("Marionette:ListenersAttached", {
+      frameId: contentId,
+    });
+  }
 }
 
 

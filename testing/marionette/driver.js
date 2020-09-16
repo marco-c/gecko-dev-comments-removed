@@ -110,6 +110,10 @@ this.GeckoDriver = function(server) {
   this.sessionID = null;
   this.wins = new browser.Windows();
   this.browsers = {};
+
+  
+  this._browserIds = new WeakMap();
+
   
   this.curBrowser = null;
   
@@ -118,9 +122,6 @@ this.GeckoDriver = function(server) {
   
   this.chromeBrowsingContext = null;
   this.contentBrowsingContext = null;
-
-  this.observing = null;
-  this._browserIds = new WeakMap();
 
   
   this.context = Context.Content;
@@ -269,6 +270,8 @@ GeckoDriver.prototype.init = function() {
   this.mm.addMessageListener("Marionette:ListenersAttached", this);
   this.mm.addMessageListener("Marionette:Register", this);
   this.mm.addMessageListener("Marionette:switchedToFrame", this);
+  this.mm.addMessageListener("Marionette:NavigationEvent", this);
+  this.mm.addMessageListener("Marionette:Unloaded", this, true);
 };
 
 GeckoDriver.prototype.uninit = function() {
@@ -276,6 +279,8 @@ GeckoDriver.prototype.uninit = function() {
   this.mm.removeMessageListener("Marionette:ListenersAttached", this);
   this.mm.removeMessageListener("Marionette:Register", this);
   this.mm.removeMessageListener("Marionette:switchedToFrame", this);
+  this.mm.removeMessageListener("Marionette:NavigationEvent", this);
+  this.mm.removeMessageListener("Marionette:Unloaded", this);
 };
 
 
@@ -1188,29 +1193,14 @@ GeckoDriver.prototype.navigateTo = async function(cmd) {
   const currentURL = await this._getCurrentURL();
   const loadEventExpected = navigate.isLoadEventExpected(currentURL, validURL);
 
-  const navigated = this.listener.navigateTo({
-    url: validURL.href,
-    loadEventExpected,
-    pageTimeout: this.timeouts.pageLoad,
-  });
-
-  
-  
-  
-  this.curBrowser.pendingCommands.push(() => {
-    let parameters = {
-      
-      commandID: this.listener.activeMessageId,
-      pageTimeout: this.timeouts.pageLoad,
-      startTime: new Date().getTime(),
-    };
-    this.curBrowser.messageManager.sendAsyncMessage(
-      "Marionette:waitForPageLoaded",
-      parameters
-    );
-  });
-
-  await navigated;
+  const browsingContext = this.getBrowsingContext({ context: Context.Content });
+  await navigate.waitForNavigationCompleted(
+    this,
+    () => {
+      navigate.navigateTo(browsingContext, validURL);
+    },
+    { loadEventExpected }
+  );
 
   this.curBrowser.contentBrowser.focus();
 };
@@ -1308,32 +1298,16 @@ GeckoDriver.prototype.goBack = async function() {
   assert.open(this.curBrowser);
   await this._handleUserPrompts();
 
+  const browsingContext = this.getBrowsingContext({ context: Context.Content });
+
   
-  if (!this.curBrowser.contentBrowser.webNavigation.canGoBack) {
+  if (!browsingContext.top.embedderElement?.canGoBack) {
     return;
   }
 
-  let lastURL = await this._getCurrentURL();
-  let goBack = this.listener.goBack({ pageTimeout: this.timeouts.pageLoad });
-
-  
-  
-  
-  this.curBrowser.pendingCommands.push(() => {
-    let parameters = {
-      
-      commandID: this.listener.activeMessageId,
-      lastSeenURL: lastURL.href,
-      pageTimeout: this.timeouts.pageLoad,
-      startTime: new Date().getTime(),
-    };
-    this.curBrowser.messageManager.sendAsyncMessage(
-      "Marionette:waitForPageLoaded",
-      parameters
-    );
+  await navigate.waitForNavigationCompleted(this, () => {
+    browsingContext.goBack();
   });
-
-  await goBack;
 };
 
 
@@ -1352,34 +1326,16 @@ GeckoDriver.prototype.goForward = async function() {
   assert.open(this.curBrowser);
   await this._handleUserPrompts();
 
+  const browsingContext = this.getBrowsingContext({ context: Context.Content });
+
   
-  if (!this.curBrowser.contentBrowser.webNavigation.canGoForward) {
+  if (!browsingContext.top.embedderElement?.canGoForward) {
     return;
   }
 
-  let lastURL = await this._getCurrentURL();
-  let goForward = this.listener.goForward({
-    pageTimeout: this.timeouts.pageLoad,
+  await navigate.waitForNavigationCompleted(this, () => {
+    browsingContext.goForward();
   });
-
-  
-  
-  
-  this.curBrowser.pendingCommands.push(() => {
-    let parameters = {
-      
-      commandID: this.listener.activeMessageId,
-      lastSeenURL: lastURL.href,
-      pageTimeout: this.timeouts.pageLoad,
-      startTime: new Date().getTime(),
-    };
-    this.curBrowser.messageManager.sendAsyncMessage(
-      "Marionette:waitForPageLoaded",
-      parameters
-    );
-  });
-
-  await goForward;
 };
 
 
@@ -1398,25 +1354,13 @@ GeckoDriver.prototype.refresh = async function() {
   assert.open(this.getCurrentWindow());
   await this._handleUserPrompts();
 
-  let refresh = this.listener.refresh({ pageTimeout: this.timeouts.pageLoad });
+  
+  await this.listener.switchToFrame();
 
-  
-  
-  
-  this.curBrowser.pendingCommands.push(() => {
-    let parameters = {
-      
-      commandID: this.listener.activeMessageId,
-      pageTimeout: this.timeouts.pageLoad,
-      startTime: new Date().getTime(),
-    };
-    this.curBrowser.messageManager.sendAsyncMessage(
-      "Marionette:waitForPageLoaded",
-      parameters
-    );
+  const browsingContext = this.getBrowsingContext({ context: Context.Content });
+  await navigate.waitForNavigationCompleted(this, () => {
+    navigate.refresh(browsingContext);
   });
-
-  await refresh;
 };
 
 
@@ -2197,28 +2141,19 @@ GeckoDriver.prototype.clickElement = async function(cmd) {
       break;
 
     case Context.Content:
-      let click = this.listener.clickElement({
-        webElRef: webEl.toJSON(),
-        pageTimeout: this.timeouts.pageLoad,
-      });
+      const target = await this.listener.getElementAttribute(webEl, "target");
 
-      
-      
-      
-      this.curBrowser.pendingCommands.push(() => {
-        let parameters = {
-          
-          commandID: this.listener.activeMessageId,
-          pageTimeout: this.timeouts.pageLoad,
-          startTime: new Date().getTime(),
-        };
-        this.curBrowser.messageManager.sendAsyncMessage(
-          "Marionette:waitForPageLoaded",
-          parameters
-        );
-      });
-
-      await click;
+      await navigate.waitForNavigationCompleted(
+        this,
+        async () => {
+          await this.listener.clickElement(webEl);
+        },
+        {
+          browsingContext: this.getBrowsingContext(),
+          requireBeforeUnload: false,
+          loadEventExpected: target !== "_blank",
+        }
+      );
       break;
 
     default:
@@ -2981,13 +2916,6 @@ GeckoDriver.prototype.deleteSession = function() {
   this.mainFrame = null;
   this.chromeBrowsingContext = null;
   this.contentBrowsingContext = null;
-
-  if (this.observing !== null) {
-    for (let topic in this.observing) {
-      Services.obs.removeObserver(this.observing[topic], topic);
-    }
-    this.observing = null;
-  }
 
   if (this.dialogObserver) {
     this.dialogObserver.cleanup();
