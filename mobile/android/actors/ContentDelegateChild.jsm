@@ -128,6 +128,10 @@ class ContentDelegateChild extends GeckoViewActorChild {
           
           this.notifyParentOfViewportFit();
         }
+        if (this.contentWindow !== this.contentWindow?.top) {
+          
+          return;
+        }
         this.contentWindow.requestIdleCallback(async () => {
           const manifest = await ManifestObtainer.contentObtainManifest(
             this.contentWindow
