@@ -152,12 +152,15 @@ const EXPIRATION_QUERIES = {
   
   
   
+  
+  
   QUERY_FIND_EXOTIC_VISITS_TO_EXPIRE: {
     sql: `INSERT INTO expiration_notify (v_id, url, guid, visit_date, reason)
           SELECT v.id, h.url, h.guid, v.visit_date, "exotic"
           FROM moz_historyvisits v
           JOIN moz_places h ON h.id = v.place_id
           WHERE visit_date < strftime('%s','now','localtime','start of day','-60 days','utc') * 1000000
+          AND visit_type NOT IN (5,6)
           AND ( LENGTH(h.url) > 255 OR v.visit_type = 7 )
           ORDER BY v.visit_date ASC
           LIMIT :limit_visits`,
