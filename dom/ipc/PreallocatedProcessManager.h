@@ -37,6 +37,8 @@ class PreallocatedProcessManager final {
  public:
   static PreallocatedProcessManagerImpl* GetPPMImpl();
 
+  static bool Enabled();
+
   
 
 
