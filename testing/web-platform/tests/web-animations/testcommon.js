@@ -27,6 +27,15 @@ if (!window.assert_times_equal) {
 
 
 
+if (!window.assert_time_greater_than_equal) {
+ window.assert_time_greater_than_equal = (actual, expected, description) => {
+    assert_greater_than_equal(actual, expected - 2 * TIME_PRECISION,
+                              description);
+  };
+}
+
+
+
 if (!window.assert_time_equals_literal) {
   window.assert_time_equals_literal = (actual, expected, description) => {
     if (Math.abs(expected) === Infinity) {
