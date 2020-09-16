@@ -58,6 +58,7 @@ EXPORTS.mozilla.dom.indexedDB += [
 UNIFIED_SOURCES += [
     'ActorsChild.cpp',
     'ActorsParentCommon.cpp',
+    'DBSchema.cpp',
     'FileInfo.cpp',
     'IDBCursor.cpp',
     'IDBCursorType.cpp',
@@ -85,7 +86,6 @@ UNIFIED_SOURCES += [
 
 SOURCES += [
     'ActorsParent.cpp', 
-    'DBSchema.cpp',
     'Key.cpp', 
 ]
 
