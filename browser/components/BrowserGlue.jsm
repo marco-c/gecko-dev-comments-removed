@@ -175,10 +175,15 @@ let JSWINDOWACTORS = {
   },
 
   AboutNewTab: {
+    parent: {
+      moduleURI: "resource:///actors/AboutNewTabParent.jsm",
+    },
     child: {
       moduleURI: "resource:///actors/AboutNewTabChild.jsm",
       events: {
         DOMContentLoaded: {},
+        pageshow: {},
+        visibilitychange: {},
       },
     },
     
@@ -3871,14 +3876,15 @@ BrowserGlue.prototype = {
   _maybeShowDefaultBrowserPrompt() {
     DefaultBrowserCheck.willCheckDefaultBrowser( true).then(
       async willPrompt => {
-        let win = BrowserWindowTracker.getTopWindow();
-        if (!willPrompt) {
+        let { DefaultBrowserNotification } = ChromeUtils.import(
+          "resource:///actors/AboutNewTabParent.jsm",
+          {}
+        );
+        if (willPrompt) {
           
           
-          await win.DefaultBrowserNotificationOnNewTabPage.init();
-          return;
+          DefaultBrowserNotification.notifyModalDisplayed();
         }
-        DefaultBrowserCheck.prompt(win);
       }
     );
   },

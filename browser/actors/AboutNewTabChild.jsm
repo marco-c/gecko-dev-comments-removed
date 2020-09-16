@@ -72,6 +72,15 @@ class AboutNewTabChild extends JSWindowActorChild {
       for (let script of scripts) {
         Services.scriptloader.loadSubScript(script, this.contentWindow);
       }
+    } else if (
+      (event.type == "pageshow" || event.type == "visibilitychange") &&
+      
+      
+      !this.contentWindow.location.pathname.includes("welcome")
+    ) {
+      if (this.document.visibilityState == "visible") {
+        this.sendAsyncMessage("DefaultBrowserNotification");
+      }
     }
   }
 }
