@@ -36,6 +36,8 @@ class FirefoxDataProvider {
     this.actions = actions || {};
     this.actionsEnabled = true;
     this.owner = owner;
+    
+    this.stackTraces = new Map();
 
     
     this.payloadQueue = new Map();
@@ -320,6 +322,10 @@ class FirefoxDataProvider {
     });
   }
 
+  onStackTraceAvailable(resource) {
+    this.stackTraces.set(resource.channelId, resource);
+  }
+
   
 
 
@@ -341,6 +347,14 @@ class FirefoxDataProvider {
       blockingExtension,
       channelId,
     } = resource;
+
+    
+    if (this.stackTraces.has(channelId)) {
+      const { stacktrace, lastFrame } = this.stackTraces.get(channelId);
+      cause.stacktraceAvailable = stacktrace;
+      cause.lastFrame = lastFrame;
+      this.stackTraces.delete(channelId);
+    }
 
     
     

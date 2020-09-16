@@ -64,6 +64,13 @@ module.exports = async function({
       channelId: actor.channelId,
       updates: [],
     };
+
+    
+    
+    
+    delete resource.cause.stacktraceAvailable;
+    delete resource.cause.lastFrame;
+
     _resources.set(actor.actor, resource);
     onAvailable([resource]);
   }
