@@ -279,13 +279,20 @@ nsTArray<PaperInfo> nsPrinterCUPS::PaperList() const {
 
 void nsPrinterCUPS::EnsurePrinterInfo(
     CUPSPrinterInfo& aInOutPrinterInfo) const {
-  if (aInOutPrinterInfo.mPrinterInfo) {
+  if (aInOutPrinterInfo.mWasInited) {
     return;
   }
 
+  aInOutPrinterInfo.mWasInited = true;
+
+  
+  
+  
   aInOutPrinterInfo.mPrinterInfo =
       mShim.cupsCopyDestInfo(CUPS_HTTP_DEFAULT, mPrinter);
-  MOZ_RELEASE_ASSERT(aInOutPrinterInfo.mPrinterInfo);
+
+  
+  
   FetchCUPSVersionForPrinter(mShim, mPrinter, aInOutPrinterInfo.mCUPSMajor,
                              aInOutPrinterInfo.mCUPSMinor,
                              aInOutPrinterInfo.mCUPSPatch);
