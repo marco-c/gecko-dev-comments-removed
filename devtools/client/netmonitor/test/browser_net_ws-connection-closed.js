@@ -23,9 +23,11 @@ add_task(async function() {
   store.dispatch(Actions.batchEnable(false));
 
   
+  const onNetworkEvents = waitForNetworkEvents(monitor, 1);
   await ContentTask.spawn(tab.linkedBrowser, {}, async () => {
     await content.wrappedJSObject.openConnection(1);
   });
+  await onNetworkEvents;
 
   const requests = document.querySelectorAll(".request-list-item");
 
