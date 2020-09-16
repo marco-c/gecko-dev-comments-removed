@@ -728,7 +728,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
   mozilla::scache::StartupCache::DeleteSingleton();
 
-  PROFILER_ADD_MARKER("Shutdown xpcom", OTHER);
+  PROFILER_MARKER_UNTYPED("Shutdown xpcom", OTHER);
 
   
   

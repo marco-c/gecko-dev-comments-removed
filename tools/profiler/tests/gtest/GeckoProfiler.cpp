@@ -523,7 +523,7 @@ TEST(GeckoProfiler, Pause)
 
   
   info1 = profiler_get_buffer_info();
-  PROFILER_ADD_MARKER("Not paused", OTHER);
+  PROFILER_MARKER_UNTYPED("Not paused", OTHER);
   info2 = profiler_get_buffer_info();
   ASSERT_TRUE(info1->mRangeEnd != info2->mRangeEnd);
 
@@ -540,7 +540,7 @@ TEST(GeckoProfiler, Pause)
 
   
   info1 = profiler_get_buffer_info();
-  PROFILER_ADD_MARKER("Paused", OTHER);
+  PROFILER_MARKER_UNTYPED("Paused", OTHER);
   info2 = profiler_get_buffer_info();
   ASSERT_TRUE(info1->mRangeEnd == info2->mRangeEnd);
   PROFILER_MARKER_UNTYPED("Paused v2", OTHER);
@@ -649,10 +649,10 @@ TEST(GeckoProfiler, Markers)
 
   { AUTO_PROFILER_TRACING_MARKER("C", "auto tracing", OTHER); }
 
-  PROFILER_ADD_MARKER("M1", OTHER);
+  PROFILER_MARKER_UNTYPED("M1", OTHER);
   PROFILER_ADD_MARKER_WITH_PAYLOAD("M2", OTHER, TracingMarkerPayload,
                                    ("C", TRACING_EVENT, ts0));
-  PROFILER_ADD_MARKER("M3", OTHER);
+  PROFILER_MARKER_UNTYPED("M3", OTHER);
   PROFILER_ADD_MARKER_WITH_PAYLOAD(
       "M4", OTHER, TracingMarkerPayload,
       ("C", TRACING_EVENT, ts0, mozilla::Nothing(), profiler_get_backtrace()));
@@ -2047,7 +2047,7 @@ TEST(GeckoProfiler, BaseProfilerHandOff)
   
   Maybe<baseprofiler::ProfilerBufferInfo> info0 =
       baseprofiler::profiler_get_buffer_info();
-  BASE_PROFILER_ADD_MARKER("Marker from base profiler", OTHER);
+  BASE_PROFILER_MARKER_UNTYPED("Marker from base profiler", OTHER);
   Maybe<baseprofiler::ProfilerBufferInfo> info1 =
       baseprofiler::profiler_get_buffer_info();
   ASSERT_GT(info1->mRangeEnd, info0->mRangeEnd);

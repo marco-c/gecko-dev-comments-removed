@@ -1931,7 +1931,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     
     
     
-    PROFILER_ADD_MARKER("nsRefreshDriver::Tick waiting for paint", LAYOUT);
+    PROFILER_MARKER_UNTYPED("nsRefreshDriver::Tick waiting for paint", LAYOUT);
     return;
   }
 

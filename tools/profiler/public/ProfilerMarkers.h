@@ -24,6 +24,11 @@
 
 
 
+
+
+
+
+
 #ifndef ProfilerMarkers_h
 #define ProfilerMarkers_h
 
@@ -73,13 +78,13 @@ mozilla::ProfileBufferBlockIndex profiler_add_marker(
 
 #  define PROFILER_MARKER_UNTYPED(markerName, options)                         \
     do {                                                                       \
-      AUTO_PROFILER_STATS(add_marker_v2);                                      \
+      AUTO_PROFILER_STATS(PROFILER_MARKER_UNTYPED);                            \
       ::profiler_add_marker<>(markerName, ::geckoprofiler::category::options); \
     } while (false)
 
 #  define PROFILER_MARKER(markerName, options, MarkerType, ...)           \
     do {                                                                  \
-      AUTO_PROFILER_STATS(add_marker_v2_with_##MarkerType);               \
+      AUTO_PROFILER_STATS(PROFILER_MARKER_with_##MarkerType);             \
       ::profiler_add_marker<::geckoprofiler::markers::MarkerType>(        \
           markerName, ::geckoprofiler::category::options, ##__VA_ARGS__); \
     } while (false)

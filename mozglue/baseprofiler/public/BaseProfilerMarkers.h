@@ -23,6 +23,11 @@
 
 
 
+
+
+
+
+
 #ifndef BaseProfilerMarkers_h
 #define BaseProfilerMarkers_h
 
@@ -85,14 +90,14 @@ inline void WritePropertyTime(JSONWriter& aWriter, const char* aName,
 
 #  define BASE_PROFILER_MARKER_UNTYPED(markerName, options)        \
     do {                                                           \
-      AUTO_PROFILER_STATS(base_add_marker_v2);                     \
+      AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_UNTYPED);           \
       ::mozilla::baseprofiler::AddMarker<>(                        \
           markerName, ::mozilla::baseprofiler::category::options); \
     } while (false)
 
 #  define BASE_PROFILER_MARKER(markerName, options, MarkerType, ...) \
     do {                                                             \
-      AUTO_PROFILER_STATS(base_add_marker_v2_with_##MarkerType);     \
+      AUTO_PROFILER_STATS(BASE_PROFILER_MARKER_with_##MarkerType);   \
       ::mozilla::baseprofiler::AddMarker<                            \
           ::mozilla::baseprofiler::markers::MarkerType>(             \
           markerName, ::mozilla::baseprofiler::category::options,    \
