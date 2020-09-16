@@ -81,7 +81,7 @@ add_task(async function navigateFrameNotExpandedInMarkupView() {
   
   
   
-  const { resource } = await navigateIframeTo(inspector, EXAMPLE_COM_URI);
+  const resource = await navigateIframeTo(inspector, EXAMPLE_COM_URI);
 
   is(
     resource.resourceType,
