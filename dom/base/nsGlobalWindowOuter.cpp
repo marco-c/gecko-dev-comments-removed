@@ -5279,6 +5279,37 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
 #endif
 }
 
+
+static bool BuildNestedClones(Document& aJustClonedDoc) {
+  bool hasPrintCallbacks = aJustClonedDoc.HasPrintCallbacks();
+  auto pendingFrameClones = aJustClonedDoc.TakePendingFrameStaticClones();
+  for (const auto& clone : pendingFrameClones) {
+    RefPtr<Element> element = do_QueryObject(clone.mElement);
+    RefPtr<nsFrameLoader> frameLoader =
+        nsFrameLoader::Create(element,  false);
+
+    if (NS_WARN_IF(!frameLoader)) {
+      continue;
+    }
+
+    clone.mElement->SetFrameLoader(frameLoader);
+
+    nsCOMPtr<nsIDocShell> docshell;
+    RefPtr<Document> doc;
+    nsresult rv = frameLoader->FinishStaticClone(clone.mStaticCloneOf,
+                                                 getter_AddRefs(docshell),
+                                                 getter_AddRefs(doc));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+
+    if (doc) {
+      hasPrintCallbacks |= BuildNestedClones(*doc);
+    }
+  }
+  return hasPrintCallbacks;
+}
+
 Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     nsIPrintSettings* aPrintSettings, nsIWebProgressListener* aListener,
     nsIDocShell* aDocShellToCloneInto, IsPreview aIsPreview,
@@ -5405,8 +5436,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
         return nullptr;
       }
 
-      hasPrintCallbacks |= clone->HasPrintCallbacks();
-
       
       
       aError = cv->SetDocument(clone);
@@ -5414,29 +5443,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
         return nullptr;
       }
 
-      auto pendingFrameClones = clone->TakePendingFrameStaticClones();
-      for (const auto& clone : pendingFrameClones) {
-        RefPtr<Element> element = do_QueryObject(clone.mElement);
-        RefPtr<nsFrameLoader> frameLoader =
-            nsFrameLoader::Create(element,  false);
-
-        if (NS_WARN_IF(!frameLoader)) {
-          continue;
-        }
-
-        clone.mElement->SetFrameLoader(frameLoader);
-
-        nsCOMPtr<nsIDocShell> docshell;
-        RefPtr<Document> doc;
-        nsresult rv = frameLoader->FinishStaticClone(clone.mStaticCloneOf,
-                                                     getter_AddRefs(docshell),
-                                                     getter_AddRefs(doc));
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          continue;
-        }
-
-        hasPrintCallbacks |= doc && doc->HasPrintCallbacks();
-      }
+      hasPrintCallbacks |= BuildNestedClones(*clone);
     }
   }
 
