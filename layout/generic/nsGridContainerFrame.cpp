@@ -7038,7 +7038,7 @@ nsGridContainerFrame::GetNearestFragmentainer(
     const GridReflowInput& aState) const {
   Maybe<nsGridContainerFrame::Fragmentainer> data;
   const ReflowInput* gridRI = aState.mReflowInput;
-  if (gridRI->AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
+  if (gridRI->AvailableBSize() == NS_UNCONSTRAINEDSIZE && !GetPrevInFlow()) {
     return data;
   }
   WritingMode wm = aState.mWM;
@@ -7057,9 +7057,15 @@ nsGridContainerFrame::GetNearestFragmentainer(
         frameType == LayoutFrameType::ColumnSet) {
       data.emplace();
       data->mIsTopOfPage = gridRI->mFlags.mIsTopOfPage;
-      data->mToFragmentainerEnd = aState.mFragBStart +
-                                  gridRI->AvailableBSize() -
-                                  aState.mBorderPadding.BStart(wm);
+      if (gridRI->AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
+        data->mToFragmentainerEnd = aState.mFragBStart +
+                                    gridRI->AvailableBSize() -
+                                    aState.mBorderPadding.BStart(wm);
+      } else {
+        
+        
+        data->mToFragmentainerEnd = NS_UNCONSTRAINEDSIZE;
+      }
       const auto numRows = aState.mRows.mSizes.Length();
       data->mCanBreakAtStart =
           numRows > 0 && aState.mRows.mSizes[0].mPosition > 0;
@@ -7102,8 +7108,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
     const GridArea& area = aGridItemInfo->mArea;
     MOZ_ASSERT(area.IsDefinite());
     cb = aState.ContainingBlockFor(area);
-    isConstrainedBSize = aFragmentainer && !wm.IsOrthogonalTo(childWM);
-    if (isConstrainedBSize) {
+    if (aFragmentainer && !wm.IsOrthogonalTo(childWM)) {
       
       
       
@@ -7112,9 +7117,12 @@ void nsGridContainerFrame::ReflowInFlowChild(
       nscoord gridAreaBOffset = cb.BStart(wm) - aState.mFragBStart;
       consumedGridAreaBSize = std::max(0, -gridAreaBOffset);
       cb.BStart(wm) = std::max(0, gridAreaBOffset);
-      toFragmentainerEnd = aFragmentainer->mToFragmentainerEnd -
-                           aState.mFragBStart - cb.BStart(wm);
-      toFragmentainerEnd = std::max(toFragmentainerEnd, 0);
+      if (aFragmentainer->mToFragmentainerEnd != NS_UNCONSTRAINEDSIZE) {
+        toFragmentainerEnd = aFragmentainer->mToFragmentainerEnd -
+                             aState.mFragBStart - cb.BStart(wm);
+        toFragmentainerEnd = std::max(toFragmentainerEnd, 0);
+        isConstrainedBSize = true;
+      }
     }
     cb += aContentArea.Origin(wm);
     aState.mRows.AlignBaselineSubtree(*aGridItemInfo);
@@ -7407,60 +7415,65 @@ nscoord nsGridContainerFrame::ReflowInFragmentainer(
   }
 
   
-  const bool isTopOfPage = aFragmentainer.mIsTopOfPage;
+  
+  
+  
   bool isForcedBreak = false;
   const bool avoidBreakInside = ShouldAvoidBreakInside(*aState.mReflowInput);
-  for (const GridItemInfo* info : sortedItems) {
-    uint32_t itemStartRow = info->mArea.mRows.mStart;
-    if (itemStartRow == endRow) {
-      break;
-    }
-    auto disp = info->mFrame->StyleDisplay();
-    if (disp->BreakBefore()) {
-      
-      
-      if ((itemStartRow == 0 && !isTopOfPage) || avoidBreakInside) {
-        aStatus.SetInlineLineBreakBeforeAndReset();
-        return aState.mFragBStart;
+  if (childAvailableSize != NS_UNCONSTRAINEDSIZE) {
+    const bool isTopOfPage = aFragmentainer.mIsTopOfPage;
+    for (const GridItemInfo* info : sortedItems) {
+      uint32_t itemStartRow = info->mArea.mRows.mStart;
+      if (itemStartRow == endRow) {
+        break;
       }
-      if ((itemStartRow > startRow ||
-           (itemStartRow == startRow && !isTopOfPage)) &&
-          itemStartRow < endRow) {
-        endRow = itemStartRow;
-        isForcedBreak = true;
+      const auto* disp = info->mFrame->StyleDisplay();
+      if (disp->BreakBefore()) {
         
-        aStatus.Reset();
-        break;  
-      }
-    }
-    uint32_t itemEndRow = info->mArea.mRows.mEnd;
-    if (disp->BreakAfter()) {
-      if (itemEndRow != numRows) {
-        if (itemEndRow > startRow && itemEndRow < endRow) {
-          endRow = itemEndRow;
+        
+        if ((itemStartRow == 0 && !isTopOfPage) || avoidBreakInside) {
+          aStatus.SetInlineLineBreakBeforeAndReset();
+          return aState.mFragBStart;
+        }
+        if ((itemStartRow > startRow ||
+             (itemStartRow == startRow && !isTopOfPage)) &&
+            itemStartRow < endRow) {
+          endRow = itemStartRow;
           isForcedBreak = true;
           
-          
+          aStatus.Reset();
+          break;  
         }
-      } else {
-        
-        
-        aStatus.SetInlineLineBreakAfter();  
+      }
+      uint32_t itemEndRow = info->mArea.mRows.mEnd;
+      if (disp->BreakAfter()) {
+        if (itemEndRow != numRows) {
+          if (itemEndRow > startRow && itemEndRow < endRow) {
+            endRow = itemEndRow;
+            isForcedBreak = true;
+            
+            
+          }
+        } else {
+          
+          
+          aStatus.SetInlineLineBreakAfter();  
+        }
       }
     }
-  }
 
-  
-  
-  if (startRow == endRow && startRow != numRows &&
-      (startRow != 0 || !aFragmentainer.mCanBreakAtStart)) {
-    ++endRow;
-  }
+    
+    
+    if (startRow == endRow && startRow != numRows &&
+        (startRow != 0 || !aFragmentainer.mCanBreakAtStart)) {
+      ++endRow;
+    }
 
-  
-  if (avoidBreakInside && endRow < numRows) {
-    aStatus.SetInlineLineBreakBeforeAndReset();
-    return aState.mFragBStart;
+    
+    if (avoidBreakInside && endRow < numRows) {
+      aStatus.SetInlineLineBreakBeforeAndReset();
+      return aState.mFragBStart;
+    }
   }
 
   
