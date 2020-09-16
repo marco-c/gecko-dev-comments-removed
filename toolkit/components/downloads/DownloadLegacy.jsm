@@ -122,11 +122,6 @@ DownloadLegacyTransfer.prototype = {
             
             if (this._cancelable && !this._componentFailed) {
               this._cancelable.cancel(Cr.NS_ERROR_ABORT);
-              if (this._cancelable instanceof Ci.nsIWebBrowserPersist) {
-                
-                download.saver.onTransferFinished(Cr.NS_ERROR_ABORT);
-                this._cancelable = null;
-              }
             }
           });
         })
