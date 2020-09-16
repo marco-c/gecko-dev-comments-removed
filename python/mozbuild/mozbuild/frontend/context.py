@@ -769,11 +769,6 @@ class SourcePath(Path):
 
         if value.startswith('/'):
             path = None
-            
-            
-            if context.config.external_source_dir:
-                path = mozpath.join(context.config.external_source_dir,
-                                    value[1:])
             if not path or not os.path.exists(path):
                 path = mozpath.join(context.config.topsrcdir,
                                     value[1:])
