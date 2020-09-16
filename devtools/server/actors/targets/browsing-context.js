@@ -357,7 +357,8 @@ const browsingContextTargetPrototype = {
 
 
   _emitResourcesForm(name, resources) {
-    if (this.isDestroyed()) {
+    if (resources.length === 0 || this.isDestroyed()) {
+      
       
       return;
     }
