@@ -306,6 +306,14 @@ bool TrialInliner::maybeInlineCall(const ICEntry& entry, BytecodeLocation loc) {
   }
 
   
+  uint32_t pcOffset = loc.bytecodeToOffset(script_);
+  if (!stub->next()->isFallback()) {
+    if (icScript_->hasInlinedChild(pcOffset)) {
+      return true;
+    }
+  }
+
+  
   Maybe<InlinableCallData> data = FindInlinableCallData(stub);
   if (data.isNothing()) {
     return true;
@@ -314,6 +322,8 @@ bool TrialInliner::maybeInlineCall(const ICEntry& entry, BytecodeLocation loc) {
   if (data->icScript) {
     return true;
   }
+
+  MOZ_ASSERT(!icScript_->hasInlinedChild(pcOffset));
 
   
   if (!shouldInline(data->target, stub, loc)) {
