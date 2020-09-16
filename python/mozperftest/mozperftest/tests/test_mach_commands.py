@@ -19,7 +19,7 @@ Registrar.commands_by_category = {"testing": set()}
 from mozperftest.environment import MachEnvironment  
 from mozperftest.mach_commands import Perftest, PerftestTests  
 from mozperftest import utils  
-from mozperftest.tests.support import EXAMPLE_TESTS_DIR  
+from mozperftest.tests.support import EXAMPLE_TEST, EXAMPLE_TESTS_DIR, ROOT  
 from mozperftest.utils import temporary_env, silence, ON_TRY  
 
 
@@ -141,6 +141,32 @@ def test_run_python_script_failed(*mocked):
     stdout, stderr = captured
     stdout.seek(0)
     assert stdout.read().endswith("[FAILED]\n")
+
+
+def fzf_selection(*args):
+    full_path = args[-1][-1]["path"]
+    path = full_path.replace(str(ROOT), "")
+    return ["[browsertime] " + path]
+
+
+def resolve_tests(*args, **kw):
+    return [{"path": str(EXAMPLE_TEST)}]
+
+
+@mock.patch("mozperftest.MachEnvironment", new=_TestMachEnvironment)
+@mock.patch("mozperftest.mach_commands.MachCommandBase.activate_virtualenv")
+@mock.patch("mozperftest.fzf.fzf.select", new=fzf_selection)
+@mock.patch("moztest.resolve.TestResolver.resolve_tests", new=resolve_tests)
+def test_fzf_flavor(*mocked):
+    
+    
+    old = utils.ON_TRY
+    utils.ON_TRY = False
+    try:
+        with _get_command() as test, silence():
+            test.run_perftest(flavor="desktop-browser")
+    finally:
+        utils.ON_TRY = old
 
 
 if __name__ == "__main__":
