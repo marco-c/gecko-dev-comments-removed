@@ -2717,7 +2717,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
   enum class AspectRatioUsage : uint8_t {
     None,
     ToComputeISize,
