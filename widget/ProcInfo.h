@@ -61,6 +61,38 @@ struct ThreadInfo {
   uint64_t cpuKernel = 0;
 };
 
+
+struct WindowInfo {
+  explicit WindowInfo()
+      : outerWindowId(0),
+        documentURI(nullptr),
+        documentTitle(u""_ns),
+        isProcessRoot(false),
+        isInProcess(false) {}
+  WindowInfo(uint64_t aOuterWindowId, nsIURI* aDocumentURI,
+             nsAString&& aDocumentTitle, bool aIsProcessRoot, bool aIsInProcess)
+      : outerWindowId(aOuterWindowId),
+        documentURI(aDocumentURI),
+        documentTitle(std::move(aDocumentTitle)),
+        isProcessRoot(aIsProcessRoot),
+        isInProcess(aIsInProcess) {}
+
+  
+  const uint64_t outerWindowId;
+
+  
+  const nsCOMPtr<nsIURI> documentURI;
+
+  
+  const nsString documentTitle;
+
+  
+  
+  const bool isProcessRoot;
+
+  const bool isInProcess;
+};
+
 struct ProcInfo {
   
   base::ProcessId pid = 0;
@@ -82,6 +114,8 @@ struct ProcInfo {
   uint64_t cpuKernel = 0;
   
   CopyableTArray<ThreadInfo> threads;
+  
+  CopyableTArray<WindowInfo> windows;
 };
 
 typedef MozPromise<mozilla::HashMap<base::ProcessId, ProcInfo>, nsresult, true>
@@ -99,7 +133,8 @@ typedef MozPromise<mozilla::HashMap<base::ProcessId, ProcInfo>, nsresult, true>
 
 struct ProcInfoRequest {
   ProcInfoRequest(base::ProcessId aPid, ProcType aProcessType,
-                  const nsACString& aOrigin, uint32_t aChildId = 0
+                  const nsACString& aOrigin, nsTArray<WindowInfo>&& aWindowInfo,
+                  uint32_t aChildId = 0
 #ifdef XP_MACOSX
                   ,
                   mach_port_t aChildTask = 0
@@ -108,6 +143,7 @@ struct ProcInfoRequest {
       : pid(aPid),
         processType(aProcessType),
         origin(aOrigin),
+        windowInfo(std::move(aWindowInfo)),
         childId(aChildId)
 #ifdef XP_MACOSX
         ,
@@ -118,6 +154,7 @@ struct ProcInfoRequest {
   const base::ProcessId pid;
   const ProcType processType;
   const nsCString origin;
+  const nsTArray<WindowInfo> windowInfo;
   
   const int32_t childId;
 #ifdef XP_MACOSX
