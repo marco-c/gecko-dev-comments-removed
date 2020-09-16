@@ -144,11 +144,11 @@ class SVGViewportElement : public SVGGraphicsElement {
  protected:
   
 
-  bool IsRoot() const {
+  bool IsRootSVGSVGElement() const {
     NS_ASSERTION((IsInUncomposedDoc() && !GetParent()) ==
                      (OwnerDoc()->GetRootElement() == this),
                  "Can't determine if we're root");
-    return IsInUncomposedDoc() && !GetParent();
+    return !GetParent() && IsInUncomposedDoc() && IsSVGElement(nsGkAtoms::svg);
   }
 
   
