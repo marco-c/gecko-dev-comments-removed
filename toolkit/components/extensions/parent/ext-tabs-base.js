@@ -122,15 +122,21 @@ class TabBase {
 
 
 
-  async capture(context, options = null) {
-    let { ZoomManager, devicePixelRatio } = this.nativeTab.ownerGlobal;
-    let scale = ZoomManager.getZoomForBrowser(this.browser) * devicePixelRatio;
+
+
+
+
+  async capture(context, options) {
+    let win = this.nativeTab.ownerGlobal;
+    let scale = options?.scale || win.devicePixelRatio;
+    let zoom = win.ZoomManager.getZoomForBrowser(this.browser);
+    let rect = options?.rect && win.DOMRect.fromRect(options.rect);
 
     let wgp = this.browsingContext.currentWindowGlobal;
-    let image = await wgp.drawSnapshot(null, scale, "white");
+    let image = await wgp.drawSnapshot(rect, scale * zoom, "white");
 
-    let win = Services.appShell.hiddenDOMWindow;
-    let canvas = win.document.createElement("canvas");
+    let doc = Services.appShell.hiddenDOMWindow.document;
+    let canvas = doc.createElement("canvas");
     canvas.width = image.width;
     canvas.height = image.height;
 
