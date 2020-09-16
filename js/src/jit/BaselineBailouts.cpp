@@ -405,7 +405,6 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   
   
   
-  
   void* calculatePrevFramePtr() {
     
     BufferPointer<JitFrameLayout> topFrame = topFrameAddress();
@@ -949,6 +948,12 @@ bool BaselineStackBuilder::prepareForNextFrame(
 }
 
 bool BaselineStackBuilder::finishOuterFrame(uint32_t frameSize) {
+  
+  
+  
+  
+  
+
   const BaselineInterpreter& baselineInterp =
       cx_->runtime()->jitRuntime()->baselineInterpreter();
 
@@ -1474,110 +1479,37 @@ bool BaselineStackBuilder::isPrologueBailout() {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool BaselineStackBuilder::buildOneFrame() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   if (!initFrame()) {
     return false;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   if (!buildBaselineFrame()) {
     return false;
