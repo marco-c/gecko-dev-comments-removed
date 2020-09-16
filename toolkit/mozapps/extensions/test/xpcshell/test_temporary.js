@@ -170,14 +170,6 @@ add_task(async function test_replace_temporary() {
         continue;
       }
 
-      
-      
-      
-      
-      if (!packed && !AppConstants.MOZ_ALLOW_LEGACY_EXTENSIONS) {
-        continue;
-      }
-
       let files = ExtensionTestCommon.generateFiles({
         manifest: {
           name: "Test",
