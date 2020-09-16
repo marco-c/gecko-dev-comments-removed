@@ -6016,7 +6016,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     ComputeSizeFlags aFlags) {
   MOZ_ASSERT(!GetIntrinsicRatio(),
              "Please override this method and call "
-             "nsIFrame::ComputeSizeWithIntrinsicDimensions instead.");
+             "nsContainerFrame::ComputeSizeWithIntrinsicDimensions instead.");
   LogicalSize result =
       ComputeAutoSize(aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
                       aBorder, aPadding, aFlags);
@@ -6068,6 +6068,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
                        ? eLogicalAxisInline
                        : eLogicalAxisBlock;
 
+    
     
     
     
