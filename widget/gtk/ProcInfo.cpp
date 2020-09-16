@@ -95,11 +95,6 @@ class StatReader {
         aInfo.cpuKernel = GetCPUTime(aToken, &rv);
         NS_ENSURE_SUCCESS(rv, rv);
         break;
-      case 22:
-        
-        aInfo.virtualMemorySize = Get64Value(aToken, &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-        break;
       case 23:
         
         

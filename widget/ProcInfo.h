@@ -73,8 +73,6 @@ struct ProcInfo {
   
   nsString filename;
   
-  uint64_t virtualMemorySize = 0;
-  
   int64_t residentSetSize = 0;
   
   int64_t residentUniqueSize = 0;
@@ -176,7 +174,6 @@ nsresult CopySysProcInfoToDOM(const ProcInfo& source, T* dest) {
   
   dest->mPid = source.pid;
   dest->mFilename.Assign(source.filename);
-  dest->mVirtualMemorySize = source.virtualMemorySize;
   dest->mResidentSetSize = source.residentSetSize;
   dest->mResidentUniqueSize = source.residentUniqueSize;
   dest->mCpuUser = source.cpuUser;

@@ -55,16 +55,6 @@ add_task(async function test_proc_info() {
           `Resident-unique-size should be bounded by resident-set-size ${parentProc.residentUniqueSize} <= ${parentProc.residentSetSize}`
         );
 
-        if (AppConstants.platform != "win") {
-          
-          
-          
-          Assert.ok(
-            parentProc.residentUniqueSize <= parentProc.virtualMemorySize,
-            `Resident-unique-size should be bounded by virtual ${parentProc.residentUniqueSize} <= ${parentProc.virtualMemorySize}`
-          );
-        }
-
         
         
         
@@ -126,16 +116,6 @@ add_task(async function test_proc_info() {
             childProc.residentUniqueSize <= childProc.residentSetSize,
             `Resident-unique-size should be bounded by resident-set-size ${childProc.residentUniqueSize} <= ${childProc.residentSetSize}`
           );
-
-          if (AppConstants.platform != "win") {
-            
-            
-            
-            Assert.ok(
-              childProc.residentUniqueSize <= childProc.virtualMemorySize,
-              `Resident-unique-size should be bounded by virtual memory size ${childProc.residentUniqueSize} <= ${childProc.virtualMemorySize}`
-            );
-          }
 
           
           break;
