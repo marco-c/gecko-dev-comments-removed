@@ -1,48 +1,250 @@
-mod range;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 use std::{fmt, io, ptr, mem, slice};
 use std::collections::Bound;
 use std::iter::FromIterator;
 use std::slice::IterMut;
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, RangeBounds};
 use std::marker::PhantomData;
+use std::alloc::*;
 use std::cmp::*;
 use std::hash::*;
 use std::borrow::*;
-use range::RangeArgument;
 use std::ptr::NonNull;
 
+use impl_details::*;
 
 
-mod heap;
-
-#[cfg(not(feature = "gecko-ffi"))]
-type SizeType = usize;
-#[cfg(feature = "gecko-ffi")]
-type SizeType = u32;
-
-#[cfg(feature = "gecko-ffi")]
-const AUTO_MASK: u32 = 1 << 31;
-#[cfg(feature = "gecko-ffi")]
-const CAP_MASK: u32 = !AUTO_MASK;
 
 #[cfg(not(feature = "gecko-ffi"))]
-const MAX_CAP: usize = !0;
-#[cfg(feature = "gecko-ffi")]
-const MAX_CAP: usize = i32::max_value() as usize;
+mod impl_details {
+    pub type SizeType = usize;
+    pub const MAX_CAP: usize = !0;
 
-#[cfg(not(feature = "gecko-ffi"))]
-#[inline(always)]
-fn assert_size(x: usize) -> SizeType { x }
-
-#[cfg(feature = "gecko-ffi")]
-#[inline]
-fn assert_size(x: usize) -> SizeType {
-    if x > MAX_CAP as usize {
-        panic!("nsTArray size may not exceed the capacity of a 32-bit sized int");
-    }
-    x as SizeType
+    #[inline(always)]
+    pub fn assert_size(x: usize) -> SizeType { x }
 }
+
+#[cfg(feature = "gecko-ffi")]
+mod impl_details {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    pub type SizeType = u32;
+
+    pub const MAX_CAP: usize = i32::max_value() as usize;
+
+    
+    
+    
+    
+    #[cfg(target_endian = "little")]
+    pub fn pack_capacity(cap: SizeType) -> SizeType {
+        cap as SizeType
+    }
+    #[cfg(target_endian = "little")]
+    pub fn unpack_capacity(cap: SizeType) -> usize {
+        (cap as usize) & !(1 << 31)
+    }
+    #[cfg(target_endian = "little")]
+    pub fn is_auto(cap: SizeType) -> bool {
+        (cap & (1 << 31)) != 0
+    }
+
+    
+    
+    
+    #[cfg(target_endian = "big")]
+    pub fn pack_capacity(cap: SizeType) -> SizeType {
+        (cap as SizeType) << 1
+    }
+    #[cfg(target_endian = "big")]
+    pub fn unpack_capacity(cap: SizeType) -> usize {
+        (cap >> 1) as usize
+    }
+    #[cfg(target_endian = "big")]
+    pub fn is_auto(cap: SizeType) -> bool {
+        (cap & 1) != 0
+    }
+
+    #[inline]
+    pub fn assert_size(x: usize) -> SizeType {
+        if x > MAX_CAP as usize {
+            panic!("nsTArray size may not exceed the capacity of a 32-bit sized int");
+        }
+        x as SizeType
+    }
+
+}
+
+
 
 
 #[repr(C)]
@@ -56,36 +258,8 @@ impl Header {
         self._len as usize
     }
 
-    #[cfg(feature = "gecko-ffi")]
-    fn cap(&self) -> usize {
-        (self._cap & CAP_MASK) as usize
-    }
-
-    #[cfg(not(feature = "gecko-ffi"))]
-    fn cap(&self) -> usize {
-        self._cap as usize
-    }
-
     fn set_len(&mut self, len: usize) {
         self._len = assert_size(len);
-    }
-
-    #[cfg(feature = "gecko-ffi")]
-    fn set_cap(&mut self, cap: usize) {
-        debug_assert!(cap & (CAP_MASK as usize) == cap);
-        
-        
-        self._cap = assert_size(cap) & CAP_MASK;
-    }
-
-    #[cfg(feature = "gecko-ffi")]
-    fn uses_stack_allocated_buffer(&self) -> bool {
-        self._cap & AUTO_MASK != 0
-    }
-
-    #[cfg(not(feature = "gecko-ffi"))]
-    fn set_cap(&mut self, cap: usize) {
-        self._cap = assert_size(cap);
     }
 
     fn data<T>(&self) -> *mut T {
@@ -106,6 +280,41 @@ impl Header {
 }
 
 
+#[cfg(feature = "gecko-ffi")]
+impl Header {
+    fn cap(&self) -> usize {
+        unpack_capacity(self._cap)
+    }
+
+    fn set_cap(&mut self, cap: usize) {
+        
+        debug_assert_eq!(unpack_capacity(pack_capacity(cap as SizeType)), cap);
+        
+        
+
+        
+        
+        self._cap = pack_capacity(assert_size(cap));
+    }
+
+    fn uses_stack_allocated_buffer(&self) -> bool {
+        is_auto(self._cap)
+    }
+}
+
+#[cfg(not(feature = "gecko-ffi"))]
+impl Header {
+    fn cap(&self) -> usize {
+        self._cap as usize
+    }
+
+    fn set_cap(&mut self, cap: usize) {
+        self._cap = assert_size(cap);
+    }
+}
+
+
+
 
 
 
@@ -122,8 +331,6 @@ extern {
 
 
 
-
-fn oom() -> ! { std::process::abort() }
 
 fn alloc_size<T>(cap: usize) -> usize {
     
@@ -156,15 +363,22 @@ fn alloc_align<T>() -> usize {
     max(mem::align_of::<T>(), mem::align_of::<Header>())
 }
 
+fn layout<T>(cap: usize) -> Layout {
+    unsafe {
+        Layout::from_size_align_unchecked(
+            alloc_size::<T>(cap),
+            alloc_align::<T>(),
+        )
+    }
+}
+
 fn header_with_capacity<T>(cap: usize) -> NonNull<Header> {
     debug_assert!(cap > 0);
     unsafe {
-        let header = heap::allocate(
-            alloc_size::<T>(cap),
-            alloc_align::<T>(),
-        ) as *mut Header;
+        let layout = layout::<T>(cap);
+        let header = alloc(layout) as *mut Header;
 
-        if header.is_null() { oom() }
+        if header.is_null() { handle_alloc_error(layout) }
 
         
         (*header).set_cap(if mem::size_of::<T>() == 0 { MAX_CAP } else { cap });
@@ -177,27 +391,7 @@ fn header_with_capacity<T>(cap: usize) -> NonNull<Header> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg_attr(feature = "gecko-ffi", repr(C))]
+#[repr(C)]
 pub struct ThinVec<T> {
     ptr: NonNull<Header>,
     boo: PhantomData<T>,
@@ -627,15 +821,15 @@ impl<T> ThinVec<T> {
     }
 
     pub fn drain<R>(&mut self, range: R) -> Drain<T>
-        where R: RangeArgument<usize>
+        where R: RangeBounds<usize>
     {
         let len = self.len();
-        let start = match range.start() {
+        let start = match range.start_bound() {
             Bound::Included(&n) => n,
             Bound::Excluded(&n) => n + 1,
             Bound::Unbounded => 0,
         };
-        let end = match range.end() {
+        let end = match range.end_bound() {
             Bound::Included(&n) => n + 1,
             Bound::Excluded(&n) => n,
             Bound::Unbounded => len,
@@ -666,9 +860,10 @@ impl<T> ThinVec<T> {
 
     unsafe fn deallocate(&mut self) {
         if self.has_allocation() {
-            heap::deallocate(self.ptr() as *mut u8,
-                alloc_size::<T>(self.capacity()),
-                alloc_align::<T>());
+            dealloc(
+                self.ptr() as *mut u8,
+                layout::<T>(self.capacity()),
+            )
         }
     }
 
@@ -678,15 +873,36 @@ impl<T> ThinVec<T> {
         debug_assert!(new_cap > 0);
         if self.has_allocation() {
             let old_cap = self.capacity();
-            let ptr = heap::reallocate(self.ptr() as *mut u8,
-                                       alloc_size::<T>(old_cap),
-                                       alloc_size::<T>(new_cap),
-                                       alloc_align::<T>()) as *mut Header;
-            if ptr.is_null() { oom() }
+            let ptr = realloc(
+                self.ptr() as *mut u8,
+                layout::<T>(old_cap),
+                alloc_size::<T>(new_cap),
+            ) as *mut Header;
+
+            if ptr.is_null() { handle_alloc_error(layout::<T>(new_cap)) }
             (*ptr).set_cap(new_cap);
             self.ptr = NonNull::new_unchecked(ptr);
         } else {
-            self.ptr = header_with_capacity::<T>(new_cap);
+            let mut new_header = header_with_capacity::<T>(new_cap);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let len = self.len();
+            if cfg!(feature = "gecko-ffi") && len > 0 {
+                new_header.as_mut().data::<T>().copy_from_nonoverlapping(self.data_raw(), len);
+                self.set_len(0);
+            }
+            
+            self.ptr = new_header;
         }
     }
 
@@ -1087,10 +1303,7 @@ mod tests {
         use std::mem::size_of;
         assert_eq!(size_of::<ThinVec<u8>>(), size_of::<&u8>());
 
-        
-        if cfg!(feature = "unstable") {
-            assert_eq!(size_of::<Option<ThinVec<u8>>>(), size_of::<&u8>());
-        }
+        assert_eq!(size_of::<Option<ThinVec<u8>>>(), size_of::<&u8>());
     }
 
     #[test]
@@ -1725,57 +1938,56 @@ mod std_tests {
         assert_eq!(v, &[(), ()]);
     }
 
+    #[test]
+    fn test_drain_inclusive_range() {
+        let mut v = thin_vec!['a', 'b', 'c', 'd', 'e'];
+        for _ in v.drain(1..=3) {
+        }
+        assert_eq!(v, &['a', 'e']);
 
+        let mut v: ThinVec<_> = (0..=5).map(|x| x.to_string()).collect();
+        for _ in v.drain(1..=5) {
+        }
+        assert_eq!(v, &["0".to_string()]);
 
+        let mut v: ThinVec<String> = (0..=5).map(|x| x.to_string()).collect();
+        for _ in v.drain(0..=5) {
+        }
+        assert_eq!(v, ThinVec::<String>::new());
 
+        let mut v: ThinVec<_> = (0..=5).map(|x| x.to_string()).collect();
+        for _ in v.drain(0..=3) {
+        }
+        assert_eq!(v, &["4".to_string(), "5".to_string()]);
 
+        let mut v: ThinVec<_> = (0..=1).map(|x| x.to_string()).collect();
+        for _ in v.drain(..=0) {
+        }
+        assert_eq!(v, &["1".to_string()]);
+    }
 
+    #[test]
+    #[cfg(not(feature = "gecko-ffi"))]
+    fn test_drain_max_vec_size() {
+        let mut v = ThinVec::<()>::with_capacity(usize::max_value());
+        unsafe { v.set_len(usize::max_value()); }
+        for _ in v.drain(usize::max_value() - 1..) {
+        }
+        assert_eq!(v.len(), usize::max_value() - 1);
 
+        let mut v = ThinVec::<()>::with_capacity(usize::max_value());
+        unsafe { v.set_len(usize::max_value()); }
+        for _ in v.drain(usize::max_value() - 1..=usize::max_value() - 1) {
+        }
+        assert_eq!(v.len(), usize::max_value() - 1);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    #[test]
+    #[should_panic]
+    fn test_drain_inclusive_out_of_bounds() {
+        let mut v = thin_vec![1, 2, 3, 4, 5];
+        v.drain(5..=5);
+    }
 
 
 
