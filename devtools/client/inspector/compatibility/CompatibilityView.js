@@ -256,13 +256,15 @@ class CompatibilityView {
     );
   }
 
-  _onResourceAvailable({ resource }) {
-    
-    
-    
-    
-    if (resource.source?.type !== "element") {
-      this._onChangeAdded(resource);
+  _onResourceAvailable(resources) {
+    for (const resource of resources) {
+      
+      
+      
+      
+      if (resource.source?.type !== "element") {
+        this._onChangeAdded(resource);
+      }
     }
   }
 
