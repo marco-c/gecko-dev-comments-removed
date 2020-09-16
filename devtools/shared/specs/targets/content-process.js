@@ -36,15 +36,6 @@ const contentProcessTargetSpec = generateActorSpec({
     workerListChanged: {
       type: "workerListChanged",
     },
-
-    
-    
-    
-    
-    
-    newSource: {
-      type: "newSource",
-    },
     tabDetached: {
       type: "tabDetached",
       from: Option(0, "string"),

@@ -143,15 +143,6 @@ const browsingContextTargetSpecPrototype = {
       type: "workerListChanged",
     },
 
-    
-    
-    
-    
-    
-    newSource: {
-      type: "newSource",
-    },
-
     "resource-available-form": {
       type: "resource-available-form",
       resources: Arg(0, "array:json"),
