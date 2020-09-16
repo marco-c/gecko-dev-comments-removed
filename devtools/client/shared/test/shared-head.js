@@ -288,7 +288,18 @@ registerCleanupFunction(() => {
   );
 });
 
+var {
+  BrowserConsoleManager,
+} = require("devtools/client/webconsole/browser-console-manager");
+
 registerCleanupFunction(async function cleanup() {
+  
+  const browserConsole = BrowserConsoleManager.getBrowserConsole();
+  if (browserConsole) {
+    browserConsole.targetList.destroy();
+    await safeCloseBrowserConsole({ clearOutput: true });
+  }
+
   
   
   while (gBrowser.tabs.length > 1) {
@@ -317,6 +328,50 @@ registerCleanupFunction(async function cleanup() {
   
   gDevTools.clearIsFissionContentToolboxEnabledReferenceForTest();
 });
+
+async function safeCloseBrowserConsole({ clearOutput = false } = {}) {
+  const hud = BrowserConsoleManager.getBrowserConsole();
+  if (!hud) {
+    return;
+  }
+
+  if (clearOutput) {
+    info("Clear the browser console output");
+    const { ui } = hud;
+    const promises = [ui.once("messages-cleared")];
+    
+    if (ui.outputNode.querySelector(".object-inspector")) {
+      promises.push(ui.once("fronts-released"));
+    }
+    ui.clearOutput(true);
+    await Promise.all(promises);
+    info("Browser console cleared");
+  }
+
+  info("Wait for all Browser Console targets to be attached");
+  
+  
+  await Promise.race([
+    waitForAllTargetsToBeAttached(hud.targetList),
+    wait(1000),
+  ]);
+  info("Close the Browser Console");
+  await BrowserConsoleManager.closeBrowserConsole();
+  info("Browser Console closed");
+}
+
+
+
+
+
+
+function waitForAllTargetsToBeAttached(targetList) {
+  return Promise.allSettled(
+    targetList
+      .getAllTargets(targetList.ALL_TYPES)
+      .map(target => target._onThreadInitialized)
+  );
+}
 
 
 

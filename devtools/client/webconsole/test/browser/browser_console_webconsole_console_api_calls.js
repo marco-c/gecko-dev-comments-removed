@@ -146,5 +146,5 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
   
   
   await waitForTick();
-  await BrowserConsoleManager.toggleBrowserConsole();
+  await safeCloseBrowserConsole();
 }

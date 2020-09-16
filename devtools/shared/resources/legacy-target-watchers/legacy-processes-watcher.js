@@ -18,6 +18,10 @@ class LegacyProcessesWatcher {
   }
 
   async _processListChanged() {
+    if (this.targetList.isDestroyed()) {
+      return;
+    }
+
     const processes = await this.rootFront.listProcesses();
     
     

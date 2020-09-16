@@ -163,6 +163,10 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   }
 
   async _onRegistrationListChanged() {
+    if (this.targetList.isDestroyed()) {
+      return;
+    }
+
     await this._updateRegistrations();
 
     

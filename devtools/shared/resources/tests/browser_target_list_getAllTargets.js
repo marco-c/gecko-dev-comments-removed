@@ -97,10 +97,7 @@ add_task(async function() {
   targetList.destroy();
 
   
-  await Promise.all(
-    targetList
-      .getAllTargets(ALL_TYPES)
-      .map(t => t.attachAndInitThread(targetList))
-  );
+  await waitForAllTargetsToBeAttached(targetList);
+
   await client.close();
 });

@@ -81,6 +81,10 @@ class LegacyWorkersWatcher {
     
     
     const front = targetFront.isParentProcess ? this.rootFront : targetFront;
+    if (!front || front.isDestroyed() || this.targetList.isDestroyed()) {
+      return;
+    }
+
     const { workers } = await front.listWorkers();
 
     
@@ -116,7 +120,8 @@ class LegacyWorkersWatcher {
   async _processNewWorkerTarget(workerTarget, existingTargets) {
     if (
       !this._recordWorkerTarget(workerTarget) ||
-      existingTargets.has(workerTarget)
+      existingTargets.has(workerTarget) ||
+      this.targetList.isDestroyed()
     ) {
       return;
     }

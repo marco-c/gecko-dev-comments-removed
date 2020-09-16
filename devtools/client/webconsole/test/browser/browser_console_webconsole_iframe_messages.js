@@ -32,7 +32,6 @@ add_task(async function() {
 
   
   await clearOutput(hud);
-  await BrowserConsoleManager.toggleBrowserConsole();
 });
 
 async function testMessages(hud) {

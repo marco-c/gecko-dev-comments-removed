@@ -179,7 +179,14 @@ class TargetList extends EventEmitter {
     targetFront.setTargetType(targetType);
 
     this._targets.add(targetFront);
-    await targetFront.attachAndInitThread(this);
+    try {
+      await targetFront.attachAndInitThread(this);
+    } catch (e) {
+      console.error("Error when attaching target:", e);
+      this._targets.delete(targetFront);
+      return;
+    }
+
     for (const targetFrontsSet of this._pendingWatchTargetInitialization.values()) {
       targetFrontsSet.delete(targetFront);
     }
@@ -405,7 +412,12 @@ class TargetList extends EventEmitter {
     const promises = targetFronts.map(async targetFront => {
       
       
-      await targetFront.attachAndInitThread(this);
+      try {
+        await targetFront.attachAndInitThread(this);
+      } catch (e) {
+        console.error("Error when attaching target:", e);
+        return;
+      }
 
       
       

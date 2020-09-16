@@ -635,8 +635,16 @@ function TargetMixin(parentClass) {
       
       this.emit("close");
 
+      
+      
       if (this._onThreadInitialized) {
-        await this._onThreadInitialized;
+        try {
+          await this._onThreadInitialized;
+        } catch (e) {
+          
+          
+          
+        }
       }
 
       for (let [, front] of this.fronts) {
