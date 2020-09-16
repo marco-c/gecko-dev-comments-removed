@@ -10411,7 +10411,9 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
 
 
-  if (equalUri && mOSHE &&
+  if (equalUri &&
+      (StaticPrefs::fission_sessionHistoryInParent() ? !!mActiveEntry
+                                                     : !!mOSHE) &&
       (mLoadType == LOAD_NORMAL || mLoadType == LOAD_LINK ||
        mLoadType == LOAD_STOP_CONTENT) &&
       !inputStream) {
