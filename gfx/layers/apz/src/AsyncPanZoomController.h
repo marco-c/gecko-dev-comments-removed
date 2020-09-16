@@ -1239,7 +1239,7 @@ class AsyncPanZoomController {
     ANIMATING_ZOOM,       
     OVERSCROLL_ANIMATION, 
 
-    SMOOTH_SCROLL,        
+    SMOOTHMSD_SCROLL,     
 
     WHEEL_SCROLL,    
     KEYBOARD_SCROLL, 
@@ -1370,7 +1370,7 @@ class AsyncPanZoomController {
   friend class AndroidFlingPhysics;
   friend class DesktopFlingPhysics;
   friend class OverscrollAnimation;
-  friend class SmoothScrollAnimation;
+  friend class SmoothMsdScrollAnimation;
   friend class GenericScrollAnimation;
   friend class WheelScrollAnimation;
   friend class KeyboardScrollAnimation;
@@ -1401,7 +1401,9 @@ class AsyncPanZoomController {
   
   void StartOverscrollAnimation(const ParentLayerPoint& aVelocity);
 
-  void SmoothScrollTo(const CSSPoint& aDestination);
+  
+  
+  void SmoothMsdScrollTo(const CSSPoint& aDestination);
 
   
   bool AllowScrollHandoffInCurrentBlock() const;
