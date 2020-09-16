@@ -651,15 +651,12 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   
   if (!mIsCreatingPrintPreview || printingViaParent) {
-    bool printSilentOnSettings = false;
-    printData->mPrintSettings->GetPrintSilent(&printSilentOnSettings);
+    bool printSilently = false;
+    printData->mPrintSettings->GetPrintSilent(&printSilently);
+    if (StaticPrefs::print_always_print_silent()) {
+      printSilently = true;
+    }
 
-    bool printSilently =
-        printSilentOnSettings || StaticPrefs::print_always_print_silent();
-
-    
-    
-    
     
     
     
@@ -670,7 +667,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     
     
     bool settingsAreComplete = false;
-    if (StaticPrefs::print_tab_modal_enabled() && !printSilentOnSettings) {
+    if (StaticPrefs::print_tab_modal_enabled()) {
       printData->mPrintSettings->GetIsInitializedFromPrinter(
           &settingsAreComplete);
     }
