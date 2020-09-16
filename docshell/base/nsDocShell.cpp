@@ -5452,14 +5452,18 @@ nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  if (StaticPrefs::fission_sessionHistoryInParent() ? !!mLoadingEntry
+                                                    : !!mLSHE) {
+    
+    SetDocCurrentStateObj(mLSHE,
+                          mLoadingEntry ? &mLoadingEntry->mInfo : nullptr);
+  }
+
   if (mLSHE) {
     
     if (mLSHE->HasDetachedEditor()) {
       ReattachEditorToWindow(mLSHE);
     }
-    
-    SetDocCurrentStateObj(mLSHE,
-                          mLoadingEntry ? &mLoadingEntry->mInfo : nullptr);
 
     SetHistoryEntryAndUpdateBC(Nothing(), Some<nsISHEntry*>(mLSHE));
   }
