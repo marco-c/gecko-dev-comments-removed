@@ -11,9 +11,9 @@ const { CFRPageActions } = ChromeUtils.import(
   "resource://activity-stream/lib/CFRPageActions.jsm"
 );
 
-/**
- * Load and modify a message for the test.
- */
+
+
+
 add_task(async function setup() {
   const initialMsgCount = ASRouter.state.messages.length;
   const heartbeatMsg = CFRMessageProvider.getMessages().find(
@@ -23,7 +23,7 @@ add_task(async function setup() {
     ...heartbeatMsg,
     groups: ["messaging-experiments"],
     targeting: "true",
-    // Ensure no overlap due to frequency capping with other tests
+    
     id: `HEARTBEAT_MESSAGE_${Date.now()}`,
   };
   const client = RemoteSettings("cfr");
@@ -31,17 +31,17 @@ add_task(async function setup() {
     clear: true,
   });
 
-  // Force the CFR provider cache to 0 by modifying updateCycleInMs
+  
   await SpecialPowers.pushPrefEnv({
     set: [
       [
         "browser.newtabpage.activity-stream.asrouter.providers.cfr",
-        `{"id":"cfr","enabled":true,"type":"remote-settings","bucket":"cfr","updateCycleInMs":0}`,
+        `{"id":"cfr","enabled":true,"type":"remote-settings","bucket":"cfr","categories":["cfrAddons","cfrFeatures"],"updateCycleInMs":0}`,
       ],
     ],
   });
 
-  // Reload the providers
+  
   await BrowserTestUtils.waitForCondition(async () => {
     await ASRouter._updateMessageProviders();
     await ASRouter.loadMessagesFromAllProviders();
@@ -59,7 +59,7 @@ add_task(async function setup() {
 
   registerCleanupFunction(async () => {
     await client.db.clear();
-    // Reload the providers
+    
     await BrowserTestUtils.waitForCondition(async () => {
       await ASRouter._updateMessageProviders();
       await ASRouter.loadMessagesFromAllProviders();
@@ -69,13 +69,13 @@ add_task(async function setup() {
   });
 });
 
-/**
- * Test group frequency capping.
- * Message has a lifetime frequency of 3 but it's group has a lifetime frequency
- * of 2. It should only show up twice.
- * We update the provider to remove any daily limitations so it should show up
- * on every new tab load.
- */
+
+
+
+
+
+
+
 add_task(async function test_heartbeat_tactic_2() {
   const TEST_URL = "http://example.com";
   const msg = ASRouter.state.messages.find(m =>
@@ -85,6 +85,7 @@ add_task(async function test_heartbeat_tactic_2() {
   const groupConfiguration = {
     id: "messaging-experiments",
     enabled: true,
+    userPreferences: [],
     frequency: { lifetime: 2 },
   };
   const client = RemoteSettings("message-groups");
@@ -92,7 +93,7 @@ add_task(async function test_heartbeat_tactic_2() {
     clear: true,
   });
 
-  // Force the WNPanel provider cache to 0 by modifying updateCycleInMs
+  
   await SpecialPowers.pushPrefEnv({
     set: [
       [
@@ -107,7 +108,7 @@ add_task(async function test_heartbeat_tactic_2() {
     return msgs.find(m => m.id === groupConfiguration.id);
   }, "Wait for RS message");
 
-  // Reload the providers
+  
   await ASRouter._updateMessageProviders();
   await ASRouter.loadAllMessageGroups();
 
@@ -173,10 +174,10 @@ add_task(async function test_heartbeat_tactic_2() {
 
   info("Cleanup");
   await client.db.clear();
-  // Reset group impressions
+  
   await ASRouter.setGroupState({ id: "messaging-experiments", value: true });
   await ASRouter.setGroupState({ id: "cfr", value: true });
-  // Reload the providers
+  
   await ASRouter._updateMessageProviders();
   await ASRouter.loadMessagesFromAllProviders();
   await SpecialPowers.popPrefEnv();

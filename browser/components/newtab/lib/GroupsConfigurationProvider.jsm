@@ -1,0 +1,15 @@
+
+
+
+"use strict";
+
+const MESSAGES = [];
+
+const GroupsConfigurationProvider = {
+  getMessages() {
+    return MESSAGES;
+  },
+};
+this.GroupsConfigurationProvider = GroupsConfigurationProvider;
+
+const EXPORTED_SYMBOLS = ["GroupsConfigurationProvider"];
