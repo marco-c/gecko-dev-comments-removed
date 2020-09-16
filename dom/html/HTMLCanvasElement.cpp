@@ -529,10 +529,15 @@ HTMLCanvasElement* HTMLCanvasElement::GetOriginalCanvas() {
 nsresult HTMLCanvasElement::CopyInnerTo(HTMLCanvasElement* aDest) {
   nsresult rv = nsGenericHTMLElement::CopyInnerTo(aDest);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (aDest->OwnerDoc()->IsStaticDocument()) {
+  Document* destDoc = aDest->OwnerDoc();
+  if (destDoc->IsStaticDocument()) {
     
     
     aDest->mOriginalCanvas = GetOriginalCanvas();
+
+    if (GetMozPrintCallback()) {
+      destDoc->SetHasPrintCallbacks();
+    }
 
     
     
