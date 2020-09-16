@@ -1780,7 +1780,7 @@
 
 
  \
-    MACRO(OptimizeSpreadCall, optimize_spread_call, NULL, 1, 1, 2, JOF_BYTE|JOF_IC) \
+    MACRO(OptimizeSpreadCall, optimize_spread_call, NULL, 1, 1, 2, JOF_BYTE) \
     
 
 

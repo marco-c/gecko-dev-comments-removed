@@ -603,12 +603,10 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::SetElem:
       case JSOp::StrictSetElem:
       case JSOp::ToPropertyKey:
-      case JSOp::OptimizeSpreadCall:
         MOZ_TRY(maybeInlineIC(opSnapshots, loc));
         break;
 
       case JSOp::InitElemArray:
-        
         
         break;
 
@@ -720,6 +718,7 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::FunWithProto:
       case JSOp::SpreadNew:
       case JSOp::SpreadSuperCall:
+      case JSOp::OptimizeSpreadCall:
       case JSOp::Debugger:
       case JSOp::TableSwitch:
       case JSOp::Exception:
@@ -794,7 +793,7 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   MOZ_ASSERT(loc.opHasIC());
 
   
-  if (info_->isAnalysis() || JitOptions.forceInlineCaches) {
+  if (info_->isAnalysis()) {
     return Ok();
   }
 

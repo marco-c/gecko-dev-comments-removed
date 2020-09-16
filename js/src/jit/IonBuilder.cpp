@@ -24,7 +24,7 @@
 #include "jit/MIRGraph.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/Object.h"                
-#include "js/ScalarType.h"  
+#include "js/ScalarType.h"            
 #include "util/CheckedArithmetic.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/BuiltinObjectKind.h"
@@ -5690,6 +5690,8 @@ bool IonBuilder::ensureArrayIteratorPrototypeNextNotModified() {
 AbortReasonOr<Ok> IonBuilder::jsop_optimize_spreadcall() {
   MDefinition* arr = current->peek(-1);
 
+  
+  
   bool result = false;
   do {
     
@@ -5737,13 +5739,11 @@ AbortReasonOr<Ok> IonBuilder::jsop_optimize_spreadcall() {
     auto* ins = MIsPackedArray::New(alloc(), arr);
     current->add(ins);
     current->push(ins);
-    return Ok();
+  } else {
+    arr->setImplicitlyUsedUnchecked();
+    pushConstant(BooleanValue(false));
   }
-
-  auto* ins = MOptimizeSpreadCallCache::New(alloc(), arr);
-  current->add(ins);
-  current->push(ins);
-  return resumeAfter(ins);
+  return Ok();
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_funapplyarray(uint32_t argc) {
