@@ -14,25 +14,9 @@ using mozilla::Ok;
 using mozilla::Result;
 using mozilla::UniquePtr;
 
-enum struct UnusedZeroEnum : int32_t { Ok = 0, NotOk = 1 };
-
-namespace mozilla::detail {
-template <>
-struct UnusedZero<UnusedZeroEnum> {
-  static const bool value = true;
-};
-}  
-
 struct Failed {
   int x;
 };
-
-
-
-static_assert(mozilla::detail::SelectResultImpl<uintptr_t, Failed&>::value ==
-              mozilla::detail::PackingStrategy::NullIsOk);
-static_assert(mozilla::detail::SelectResultImpl<Ok, UnusedZeroEnum>::value ==
-              mozilla::detail::PackingStrategy::NullIsOk);
 
 static_assert(sizeof(Result<Ok, Failed&>) == sizeof(uintptr_t),
               "Result with empty value type should be pointer-sized");
@@ -72,21 +56,9 @@ static GenericErrorResult<Failed&> Fail() {
   return Err<Failed&>(failed);
 }
 
-static GenericErrorResult<UnusedZeroEnum> FailUnusedZeroEnum() {
-  return Err(UnusedZeroEnum::NotOk);
-}
-
 static Result<Ok, Failed&> Task1(bool pass) {
   if (!pass) {
     return Fail();  
-  }
-  return Ok();
-}
-
-static Result<Ok, UnusedZeroEnum> Task1UnusedZeroEnumErr(bool pass) {
-  if (!pass) {
-    return FailUnusedZeroEnum();  
-                                  
   }
   return Ok();
 }
@@ -95,13 +67,6 @@ static Result<int, Failed&> Task2(bool pass, int value) {
   MOZ_TRY(
       Task1(pass));  
   return value;      
-}
-
-static Result<int, UnusedZeroEnum> Task2UnusedZeroEnumErr(bool pass,
-                                                          int value) {
-  MOZ_TRY(Task1UnusedZeroEnumErr(
-      pass));    
-  return value;  
 }
 
 static Result<int, Failed&> Task3(bool pass1, bool pass2, int value) {
@@ -117,27 +82,12 @@ static void BasicTests() {
   MOZ_RELEASE_ASSERT(!Task1(false).isOk());
   MOZ_RELEASE_ASSERT(Task1(false).isErr());
 
-  MOZ_RELEASE_ASSERT(Task1UnusedZeroEnumErr(true).isOk());
-  MOZ_RELEASE_ASSERT(!Task1UnusedZeroEnumErr(true).isErr());
-  MOZ_RELEASE_ASSERT(!Task1UnusedZeroEnumErr(false).isOk());
-  MOZ_RELEASE_ASSERT(Task1UnusedZeroEnumErr(false).isErr());
-  MOZ_RELEASE_ASSERT(UnusedZeroEnum::NotOk ==
-                     Task1UnusedZeroEnumErr(false).inspectErr());
-  MOZ_RELEASE_ASSERT(UnusedZeroEnum::NotOk ==
-                     Task1UnusedZeroEnumErr(false).unwrapErr());
-
   
   MOZ_RELEASE_ASSERT(Task2(true, 3).isOk());
   MOZ_RELEASE_ASSERT(Task2(true, 3).unwrap() == 3);
   MOZ_RELEASE_ASSERT(Task2(true, 3).unwrapOr(6) == 3);
   MOZ_RELEASE_ASSERT(Task2(false, 3).isErr());
   MOZ_RELEASE_ASSERT(Task2(false, 3).unwrapOr(6) == 6);
-
-  MOZ_RELEASE_ASSERT(Task2UnusedZeroEnumErr(true, 3).isOk());
-  MOZ_RELEASE_ASSERT(Task2UnusedZeroEnumErr(true, 3).unwrap() == 3);
-  MOZ_RELEASE_ASSERT(Task2UnusedZeroEnumErr(true, 3).unwrapOr(6) == 3);
-  MOZ_RELEASE_ASSERT(Task2UnusedZeroEnumErr(false, 3).isErr());
-  MOZ_RELEASE_ASSERT(Task2UnusedZeroEnumErr(false, 3).unwrapOr(6) == 6);
 
   
   MOZ_RELEASE_ASSERT(Task3(true, true, 3).isOk());

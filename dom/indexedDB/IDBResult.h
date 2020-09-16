@@ -28,9 +28,8 @@ struct OkType final {
   T mValue;
 };
 
-
 template <>
-struct OkType<void> {};
+struct OkType<void> final {};
 
 template <IDBSpecialValue Value>
 using SpecialConstant = std::integral_constant<IDBSpecialValue, Value>;
