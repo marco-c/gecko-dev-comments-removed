@@ -169,6 +169,12 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  
+  
+  ["update2.emptySearchBehavior", 2],
+
+  
+  
   ["update2.localOneOffs", false],
 
   
