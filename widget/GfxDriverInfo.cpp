@@ -456,20 +456,15 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       APPEND_RANGE(0x06c0, INT32_MAX);
       break;
     case DeviceFamily::IntelRolloutWebRender:
-      
-      APPEND_DEVICE(0x1602);
-      APPEND_DEVICE(0x1606);
-      APPEND_DEVICE(0x160a);
-      APPEND_DEVICE(0x160b);
-      APPEND_DEVICE(0x160d);
-      APPEND_DEVICE(0x160e);
-
 #ifdef EARLY_BETA_OR_EARLIER
       
-      APPEND_DEVICE(0x0162);
-      APPEND_DEVICE(0x0166);
-      APPEND_DEVICE(0x016a);
+      APPEND_DEVICE(0x0102);
+      APPEND_DEVICE(0x0106);
+      APPEND_DEVICE(0x010a);
+#endif
 
+      [[fallthrough]];
+    case DeviceFamily::IntelModernRolloutWebRender:
       
       APPEND_DEVICE(0x0112);
       APPEND_DEVICE(0x0116);
@@ -480,9 +475,12 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       APPEND_DEVICE(0x0152);
       APPEND_DEVICE(0x0156);
       APPEND_DEVICE(0x015a);
-#endif
-      [[fallthrough]];
-    case DeviceFamily::IntelModernRolloutWebRender:
+
+      
+      APPEND_DEVICE(0x0162);
+      APPEND_DEVICE(0x0166);
+      APPEND_DEVICE(0x016a);
+
       
       APPEND_DEVICE(0x0402);
       APPEND_DEVICE(0x0406);
@@ -552,6 +550,14 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       APPEND_DEVICE(0x3184);
       APPEND_DEVICE(0x3185);
 #endif
+      
+      APPEND_DEVICE(0x1602);
+      APPEND_DEVICE(0x1606);
+      APPEND_DEVICE(0x160a);
+      APPEND_DEVICE(0x160b);
+      APPEND_DEVICE(0x160d);
+      APPEND_DEVICE(0x160e);
+
       
       APPEND_DEVICE(0x1612);
       APPEND_DEVICE(0x1616);
