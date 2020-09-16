@@ -449,6 +449,28 @@ class ManageCreditCards extends ManageRecords {
       let record = option.record;
       if (record && record["cc-type"]) {
         option.setAttribute("cc-type", record["cc-type"]);
+        
+        
+        
+        
+        
+        
+        
+        let ccTypeName;
+        try {
+          ccTypeName = FormAutofillUtils.stringBundle.GetStringFromName(
+            `cardNetwork.${record["cc-type"]}`
+          );
+        } catch (e) {
+          ccTypeName = null; 
+        }
+        if (ccTypeName) {
+          await document.l10n.translateElements([option]);
+          option.setAttribute(
+            "aria-label",
+            `${ccTypeName} ${option.textContent}`
+          );
+        }
       } else {
         option.removeAttribute("cc-type");
       }
