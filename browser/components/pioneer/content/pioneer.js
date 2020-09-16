@@ -730,7 +730,9 @@ async function sendDeletionPing(studyAddonId) {
     },
     schemaName: "deletion-request",
     schemaVersion: 1,
-    schemaNamespace: "pioneer-debug",
+    
+    
+    schemaNamespace: studyAddonId,
   };
 
   const payload = {
@@ -779,7 +781,7 @@ async function sendEnrollmentPing(studyAddonId) {
     options.studyName = studyAddonId;
     
     
-    options.schemaNamespace = "pioneer-debug";
+    options.schemaNamespace = studyAddonId;
   }
 
   await TelemetryController.submitExternalPing("pioneer-study", {}, options);
