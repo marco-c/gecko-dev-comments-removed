@@ -1954,36 +1954,37 @@ JSScript* GlobalHelperThreadState::finishSingleParseTask(
     return nullptr;
   }
 
-  if (parseTask->compilationInfo_.get()) {
-    if (!parseTask->options.useOffThreadParseGlobal) {
-      if (!parseTask->instantiateStencils(cx)) {
-        return nullptr;
-      }
-
-      MOZ_RELEASE_ASSERT(parseTask->scripts.length() == 1);
-      return parseTask->scripts[0];
-    }
-  }
-
-  MOZ_RELEASE_ASSERT(parseTask->scripts.length() <= 1);
-
   JS::RootedScript script(cx);
-  if (parseTask->scripts.length() > 0) {
+
+  if (parseTask->compilationInfo_.get() &&
+      !parseTask->options.useOffThreadParseGlobal) {
+    if (!parseTask->instantiateStencils(cx)) {
+      return nullptr;
+    }
+
+    MOZ_RELEASE_ASSERT(parseTask->scripts.length() == 1);
+
     script = parseTask->scripts[0];
-  }
+  } else {
+    MOZ_RELEASE_ASSERT(parseTask->scripts.length() <= 1);
 
-  if (!script) {
+    if (parseTask->scripts.length() > 0) {
+      script = parseTask->scripts[0];
+    }
+
+    if (!script) {
+      
+      
+      MOZ_ASSERT(false, "Expected script");
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+
     
     
-    MOZ_ASSERT(false, "Expected script");
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  
-  
-  if (!parseTask->options.hideScriptFromDebugger) {
-    DebugAPI::onNewScript(cx, script);
+    if (!parseTask->options.hideScriptFromDebugger) {
+      DebugAPI::onNewScript(cx, script);
+    }
   }
 
   if (startEncoding == StartEncoding::Yes) {
