@@ -44,6 +44,8 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
 
   explicit ChildSHistory(BrowsingContext* aBrowsingContext);
 
+  void SetBrowsingContext(BrowsingContext* aBrowsingContext);
+
   
   
   
