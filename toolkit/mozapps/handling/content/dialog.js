@@ -78,6 +78,10 @@ window.addEventListener("DOMContentLoaded", () => dialog.initialize(), {
   once: true,
 });
 
+let loadPromise = new Promise(resolve => {
+  window.addEventListener("load", resolve, { once: true });
+});
+
 var dialog = {
   
 
@@ -186,10 +190,14 @@ var dialog = {
       elm.setAttribute("name", app.name);
       elm.obj = app;
 
+      
+      
       if (app instanceof Ci.nsILocalHandlerApp) {
         
         let uri = Services.io.newFileURI(app.executable);
-        elm.setAttribute("image", "moz-icon://" + uri.spec + "?size=32");
+        loadPromise.then(() => {
+          elm.setAttribute("image", "moz-icon://" + uri.spec + "?size=32");
+        });
       } else if (app instanceof Ci.nsIWebHandlerApp) {
         let uri = Services.io.newURI(app.uriTemplate);
         if (/^https?$/.test(uri.scheme)) {
@@ -199,7 +207,9 @@ var dialog = {
           
           
           
-          elm.setAttribute("image", uri.prePath + "/favicon.ico");
+          loadPromise.then(() => {
+            elm.setAttribute("image", uri.prePath + "/favicon.ico");
+          });
         }
         elm.setAttribute("description", uri.prePath);
 
