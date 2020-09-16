@@ -62,7 +62,7 @@ PerformanceTimingData* PerformanceTimingData::Create(
 
   nsAutoCString name;
   originalURI->GetSpec(name);
-  aEntryName = NS_ConvertUTF8toUTF16(name);
+  CopyUTF8toUTF16(name, aEntryName);
 
   
   
@@ -211,7 +211,7 @@ void PerformanceTimingData::SetPropertiesFromHttpChannel(
 
   nsAutoCString protocol;
   Unused << aHttpChannel->GetProtocolVersion(protocol);
-  mNextHopProtocol = NS_ConvertUTF8toUTF16(protocol);
+  CopyUTF8toUTF16(protocol, mNextHopProtocol);
 
   Unused << aHttpChannel->GetEncodedBodySize(&mEncodedBodySize);
   Unused << aHttpChannel->GetTransferSize(&mTransferSize);

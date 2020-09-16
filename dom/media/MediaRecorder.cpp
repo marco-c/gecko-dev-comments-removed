@@ -457,7 +457,7 @@ nsString SelectMimeType(bool aHasVideo, bool aHasAudio,
   if (constrainedType && constrainedType->ExtendedType().HaveCodecs()) {
     
     
-    result = NS_ConvertUTF8toUTF16(constrainedType->OriginalString());
+    CopyUTF8toUTF16(constrainedType->OriginalString(), result);
   } else {
     
     
