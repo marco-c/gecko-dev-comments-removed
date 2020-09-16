@@ -22,6 +22,7 @@
 #include "js/CompilationAndEvaluation.h"  
 #include "js/experimental/TypedData.h"    
 #include "js/friend/ErrorMessages.h"      
+#include "js/SourceText.h"                
 #include "vm/BytecodeUtil.h"              
 #include "vm/JSContext.h"                 
 #include "vm/JSObject.h"                  
