@@ -109,10 +109,10 @@
 #include "js/Exception.h"                  
 #include "js/experimental/CodeCoverage.h"  
 #include "js/experimental/JitInfo.h"  
-#include "js/experimental/SourceHook.h"    
-#include "js/experimental/TypedData.h"     
-#include "js/friend/DumpFunctions.h"       
-#include "js/friend/StackLimits.h"  
+#include "js/experimental/SourceHook.h"  
+#include "js/experimental/TypedData.h"   
+#include "js/friend/DumpFunctions.h"     
+#include "js/friend/StackLimits.h"       
 #include "js/friend/WindowProxy.h"  
 #include "js/GCAPI.h"               
 #include "js/GCVector.h"
@@ -121,6 +121,7 @@
 #include "js/MemoryFunctions.h"
 #include "js/Modules.h"  
 #include "js/Object.h"  
+#include "js/OffThreadScriptCompilation.h"  
 #include "js/Printf.h"
 #include "js/PropertySpec.h"
 #include "js/Realm.h"
@@ -10270,8 +10271,9 @@ static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
       .setAsyncStack(enableAsyncStacks)
       .setAsyncStackCaptureDebuggeeOnly(enableAsyncStackCaptureDebuggeeOnly)
       .setPrivateClassFields(enablePrivateClassFields)
-      .setPrivateClassMethods(enablePrivateClassMethods)
-      .setUseOffThreadParseGlobal(useOffThreadParseGlobal);
+      .setPrivateClassMethods(enablePrivateClassMethods);
+
+  JS::SetUseOffThreadParseGlobal(useOffThreadParseGlobal);
 
   if (op.getBoolOption("no-ion-for-main-context")) {
     JS::ContextOptionsRef(cx).setDisableIon();

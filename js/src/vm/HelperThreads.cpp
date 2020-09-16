@@ -17,8 +17,9 @@
 #include "frontend/BytecodeCompilation.h"
 #include "frontend/CompilationInfo.h"  
 #include "jit/IonCompileTask.h"
-#include "js/ContextOptions.h"      
-#include "js/friend/StackLimits.h"  
+#include "js/ContextOptions.h"              
+#include "js/friend/StackLimits.h"          
+#include "js/OffThreadScriptCompilation.h"  
 #include "js/SourceText.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
@@ -2072,7 +2073,9 @@ JSObject* GlobalHelperThreadState::finishModuleParseTask(
 
   MOZ_ASSERT(script->isModule());
 
-  if (!cx->options().useOffThreadParseGlobal()) {
+  
+  
+  if (!UseOffThreadParseGlobal()) {
     return script->module();
   }
 

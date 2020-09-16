@@ -134,6 +134,17 @@ extern JS_PUBLIC_API bool FinishMultiOffThreadScriptsDecoder(
 extern JS_PUBLIC_API void CancelMultiOffThreadScriptsDecoder(
     JSContext* cx, OffThreadToken* token);
 
+
+
+
+
+
+extern JS_PUBLIC_API void SetUseOffThreadParseGlobal(bool value);
+
+}  
+
+namespace js {
+extern bool UseOffThreadParseGlobal();
 }  
 
 #endif 
