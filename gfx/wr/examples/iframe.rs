@@ -12,7 +12,6 @@ mod boilerplate;
 
 use crate::boilerplate::{Example, HandyDandyRectBuilder};
 use webrender::api::*;
-use webrender::render_api::*;
 use webrender::api::units::*;
 
 

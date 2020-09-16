@@ -3,7 +3,7 @@
 
 
 use api::{BorderRadius, BorderSide, BorderStyle, ColorF, ColorU};
-use api::{NormalBorder as ApiNormalBorder, RepeatMode};
+use api::{NormalBorder as ApiNormalBorder, RepeatMode, EdgeAaSegmentMask};
 use api::units::*;
 use crate::clip::ClipChainId;
 use crate::ellipse::Ellipse;
@@ -15,7 +15,6 @@ use crate::prim_store::{BorderSegmentInfo, BrushSegment, NinePatchDescriptor};
 use crate::prim_store::borders::{NormalBorderPrim, NormalBorderData};
 use crate::util::{lerp, RectHelpers};
 use crate::internal_types::LayoutPrimitiveInfo;
-use crate::segment::EdgeAaSegmentMask;
 
 
 

@@ -2,7 +2,7 @@
 
 
 
-use crate::{Epoch, PipelineId};
+use crate::api::{Epoch, PipelineId};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::io::{self, Cursor, Error, ErrorKind, Read};

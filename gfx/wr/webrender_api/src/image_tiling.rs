@@ -2,9 +2,8 @@
 
 
 
-use crate::api::TileSize;
-use crate::api::units::*;
-use crate::segment::EdgeAaSegmentMask;
+use crate::{TileSize, EdgeAaSegmentMask};
+use crate::units::*;
 use euclid::{point2, size2};
 use std::i32;
 use std::ops::Range;

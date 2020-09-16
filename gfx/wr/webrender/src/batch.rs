@@ -2,7 +2,7 @@
 
 
 
-use api::{AlphaType, ClipMode, ExternalImageType, ImageRendering};
+use api::{AlphaType, ClipMode, ExternalImageType, ImageRendering, EdgeAaSegmentMask};
 use api::{FontInstanceFlags, YuvColorSpace, YuvFormat, ColorDepth, ColorRange, PremultipliedColorF};
 use api::units::*;
 use crate::clip::{ClipDataStore, ClipNodeFlags, ClipNodeRange, ClipItemKind, ClipStore};
@@ -34,7 +34,6 @@ use crate::visibility::{PrimitiveVisibilityIndex, PrimitiveVisibilityMask, Primi
 use smallvec::SmallVec;
 use std::{f32, i32, usize};
 use crate::util::{project_rect, TransformedRectKind};
-use crate::segment::EdgeAaSegmentMask;
 
 
 
