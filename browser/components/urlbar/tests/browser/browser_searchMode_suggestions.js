@@ -32,8 +32,12 @@ add_task(async function setup() {
   await Services.search.setDefault(defaultEngine);
   await Services.search.moveEngine(suggestionsEngine, 0);
 
-  await PlacesUtils.history.clear();
-  await PlacesUtils.bookmarks.eraseEverything();
+  async function cleanup() {
+    await PlacesUtils.history.clear();
+    await PlacesUtils.bookmarks.eraseEverything();
+  }
+  await cleanup();
+  registerCleanupFunction(cleanup);
 
   
   
@@ -89,6 +93,50 @@ add_task(async function emptySearch() {
     await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
     await UrlbarTestUtils.promisePopupClose(window);
   });
+});
+
+add_task(async function emptySearch_withHistory() {
+  
+  await PlacesTestUtils.addVisits([
+    `http://mochi.test/`,
+    
+    `http://mochi.test/redirect`,
+    {
+      uri: `http://mochi.test/target`,
+      transition: PlacesUtils.history.TRANSITIONS.REDIRECT_TEMPORARY,
+      referrer: `http://mochi.test/redirect`,
+    },
+  ]);
+  await BrowserTestUtils.withNewTab("about:robots", async function(browser) {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "",
+    });
+    await UrlbarTestUtils.enterSearchMode(window);
+    Assert.equal(gURLBar.value, "", "Urlbar value should be cleared.");
+    
+    
+    await checkResults([
+      ...expectedFormHistoryResults,
+      {
+        heuristic: false,
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        url: `http://mochi.test/target`,
+      },
+      {
+        heuristic: false,
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        url: `http://mochi.test/`,
+      },
+    ]);
+
+    await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+
+  await PlacesUtils.history.clear();
 });
 
 add_task(async function nonEmptySearch() {
@@ -194,6 +242,9 @@ add_task(async function nonEmptySearch_withHistory() {
   await PlacesTestUtils.addVisits([
     `http://mochi.test/${query}`,
     `http://mochi.test/${query}1`,
+    
+    
+    `http://example.com/mochi.test/${query}`,
   ]);
 
   await BrowserTestUtils.withNewTab("about:robots", async function(browser) {
