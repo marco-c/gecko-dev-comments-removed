@@ -105,32 +105,19 @@ async function testOneTool(toolbox, toolID) {
 async function testReload(shortcut, toolbox) {
   info(`Reload with ${shortcut}`);
 
-  const walker = (await toolbox.target.getFront("inspector")).walker;
-
-  const observer = {
-    _isDocumentUnloaded: false,
-    _isNewRooted: false,
-    onRootDestroyed(mutations) {
-      this._isDocumentUnloaded = true;
-    },
-    onNewRootNode() {
-      this._isNewRooted = true;
-    },
-    isReady() {
-      return this._isDocumentUnloaded && this._isNewRooted;
-    },
-  };
-
-  observer.onRootDestroyed = observer.onRootDestroyed.bind(observer);
-  observer.onNewRootNode = observer.onNewRootNode.bind(observer);
-  walker.on("root-destroyed", observer.onRootDestroyed);
-  walker.watchRootNode(observer.onNewRootNode);
-
   
+  const reloadedEvents = [];
   const jsdebugger = toolbox.getPanel("jsdebugger");
-  let onReloaded = Promise.resolve;
   if (jsdebugger) {
-    onReloaded = jsdebugger.once("reloaded");
+    reloadedEvents.push(jsdebugger.once("reloaded"));
+  }
+
+  const inspector = toolbox.getPanel("inspector");
+  if (inspector) {
+    reloadedEvents.push(
+      inspector.once("reloaded"),
+      inspector.once("inspector-updated")
+    );
   }
 
   const loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
@@ -141,9 +128,6 @@ async function testReload(shortcut, toolbox) {
 
   await loadPromise;
 
-  
-  await waitUntil(() => observer.isReady());
-  walker.off("root-destroyed", observer.onRootDestroyed);
-  walker.unwatchRootNode(observer.onNewRootNode);
-  await onReloaded;
+  info("Wait for reloaded events");
+  await Promise.all(reloadedEvents);
 }
