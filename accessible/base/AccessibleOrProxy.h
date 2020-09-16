@@ -70,7 +70,7 @@ class AccessibleOrProxy {
 
 
 
-  AccessibleOrProxy ChildAt(uint32_t aIdx) const {
+  AccessibleOrProxy ChildAt(uint32_t aIdx) {
     if (IsProxy()) {
       return AsProxy()->ChildAt(aIdx);
     }

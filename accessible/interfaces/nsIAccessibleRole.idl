@@ -1060,9 +1060,4 @@ interface nsIAccessibleRole : nsISupports
 
   const unsigned long ROLE_CODE = 182;
 
-  
-
-
-  const unsigned long ROLE_TIME_EDITOR = 183;
-
 };
