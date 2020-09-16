@@ -57,6 +57,12 @@ const watcherActors = new Map();
 const SHARED_DATA_KEY_NAME = "DevTools:watchedPerWatcher";
 
 
+const SUPPORTED_DATA = {
+  TARGETS: "targets",
+  RESOURCES: "resources",
+};
+
+
 
 
 
@@ -77,8 +83,6 @@ function getWatchedData(watcher, { createData = false } = {}) {
   let watchedData = watchedDataByWatcherActor.get(watcherActorID);
   if (!watchedData && createData) {
     watchedData = {
-      targets: [],
-      resources: [],
       
       
       
@@ -87,6 +91,10 @@ function getWatchedData(watcher, { createData = false } = {}) {
       
       connectionPrefix: watcher.conn.prefix,
     };
+    
+    for (const name of Object.values(SUPPORTED_DATA)) {
+      watchedData[name] = [];
+    }
     watchedDataByWatcherActor.set(watcherActorID, watchedData);
     watcherActors.set(watcherActorID, watcher);
   }
@@ -157,22 +165,88 @@ const WatcherRegistry = {
 
 
 
-  watchTargets(watcher, targetType) {
+
+
+  addWatcherDataEntry(watcher, type, entries) {
     const watchedData = getWatchedData(watcher, {
       createData: true,
     });
-    if (watchedData.targets.includes(targetType)) {
-      throw new Error(
-        `Already watching for '${targetType}' targets for Watcher Actor ${watcher.actorID}`
-      );
+
+    if (!(type in watchedData)) {
+      throw new Error(`Unsupported watcher data type: ${type}`);
+    }
+
+    for (const entry of entries) {
+      if (watchedData[type].includes(entry)) {
+        throw new Error(
+          `'${type}:${entry} already exists for Watcher Actor ${watcher.actorID}`
+        );
+      }
     }
 
     
     registerJSWindowActor();
 
-    watchedData.targets.push(targetType);
+    for (const entry of entries) {
+      watchedData[type].push(entry);
+    }
 
     persistMapToSharedData();
+  },
+
+  
+
+
+
+
+
+
+
+  removeWatcherDataEntry(watcher, type, entries) {
+    const watchedData = getWatchedData(watcher);
+    if (!watchedData) {
+      return false;
+    }
+
+    if (!(type in watchedData)) {
+      throw new Error(`Unsupported watcher data type: ${type}`);
+    }
+
+    let includesAtLeastOne = false;
+    for (const entry of entries) {
+      const idx = watchedData[type].indexOf(entry);
+      if (idx !== -1) {
+        watchedData[type].splice(idx, 1);
+        includesAtLeastOne = true;
+      }
+    }
+    if (!includesAtLeastOne) {
+      return false;
+    }
+
+    const isWatchingSomething = Object.values(SUPPORTED_DATA).some(
+      dataType => watchedData[dataType].length > 0
+    );
+    if (!isWatchingSomething) {
+      watchedDataByWatcherActor.delete(watcher.actorID);
+      watcherActors.delete(watcher.actorID);
+    }
+
+    persistMapToSharedData();
+
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+  watchTargets(watcher, targetType) {
+    this.addWatcherDataEntry(watcher, SUPPORTED_DATA.TARGETS, [targetType]);
   },
 
   
@@ -184,28 +258,9 @@ const WatcherRegistry = {
 
 
   unwatchTargets(watcher, targetType) {
-    const watchedData = getWatchedData(watcher);
-    if (!watchedData) {
-      return false;
-    }
-
-    const idx = watchedData.targets.indexOf(targetType);
-    if (idx === -1) {
-      return false;
-    }
-    watchedData.targets.splice(idx, 1);
-
-    if (
-      watchedData.targets.length === 0 &&
-      watchedData.resources.length === 0
-    ) {
-      watchedDataByWatcherActor.delete(watcher.actorID);
-      watcherActors.delete(watcher.actorID);
-    }
-
-    persistMapToSharedData();
-
-    return true;
+    return this.removeWatcherDataEntry(watcher, SUPPORTED_DATA.TARGETS, [
+      targetType,
+    ]);
   },
 
   
@@ -217,25 +272,7 @@ const WatcherRegistry = {
 
 
   watchResources(watcher, resourceTypes) {
-    const watchedData = getWatchedData(watcher, {
-      createData: true,
-    });
-
-    
-    registerJSWindowActor();
-
-    for (const resourceType of resourceTypes) {
-      if (watchedData.resources.includes(resourceType)) {
-        throw new Error(
-          `Already watching for '${resourceType}' resource for Watcher Actor ${watcher.actorID}`
-        );
-      }
-    }
-    for (const resourceType of resourceTypes) {
-      watchedData.resources.push(resourceType);
-    }
-
-    persistMapToSharedData();
+    this.addWatcherDataEntry(watcher, SUPPORTED_DATA.RESOURCES, resourceTypes);
   },
 
   
@@ -247,34 +284,11 @@ const WatcherRegistry = {
 
 
   unwatchResources(watcher, resourceTypes) {
-    const watchedData = getWatchedData(watcher);
-    if (!watchedData) {
-      return false;
-    }
-
-    let atLeastOneWasRegistered = false;
-    for (const resourceType of resourceTypes) {
-      const idx = watchedData.resources.indexOf(resourceType);
-      if (idx !== -1) {
-        watchedData.resources.splice(idx, 1);
-        atLeastOneWasRegistered = true;
-      }
-    }
-    if (!atLeastOneWasRegistered) {
-      return false;
-    }
-
-    if (
-      watchedData.targets.length === 0 &&
-      watchedData.resources.length === 0
-    ) {
-      watchedDataByWatcherActor.delete(watcher.actorID);
-      watcherActors.delete(watcher.actorID);
-    }
-
-    persistMapToSharedData();
-
-    return true;
+    return this.removeWatcherDataEntry(
+      watcher,
+      SUPPORTED_DATA.RESOURCES,
+      resourceTypes
+    );
   },
 
   
