@@ -251,7 +251,7 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
   
   
   
-  return IsIPAddrV4(&addr) && IsLoopBackAddress(&addr);
+  return addr.IsIPAddrV4() && addr.IsLoopbackAddr();
 }
 
 bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL) {
