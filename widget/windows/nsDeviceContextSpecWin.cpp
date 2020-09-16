@@ -59,14 +59,7 @@ static const wchar_t kDriverName[] = L"WINSPOOL";
 
 
 
-nsDeviceContextSpecWin::nsDeviceContextSpecWin()
-    : mDevMode(nullptr)
-#ifdef MOZ_ENABLE_SKIA_PDF
-      ,
-      mPrintViaSkPDF(false)
-#endif
-{
-}
+nsDeviceContextSpecWin::nsDeviceContextSpecWin() = default;
 
 
 
@@ -335,37 +328,22 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecWin::MakePrintTarget() {
 }
 
 float nsDeviceContextSpecWin::GetDPI() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-#ifdef MOZ_ENABLE_SKIA_PDF
-  if (mPrintViaSkPDF) {
-    return 72.0f;  
+  if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF || mPrintViaSkPDF) {
+    return nsIDeviceContextSpec::GetDPI();
   }
-#endif
+  
+  
   return 144.0f;
 }
 
 float nsDeviceContextSpecWin::GetPrintingScale() {
   MOZ_ASSERT(mPrintSettings);
-#ifdef MOZ_ENABLE_SKIA_PDF
-  if (mPrintViaSkPDF) {
-    return 72.0f / GetDPI();
-  }
-#endif
-  
-  
-  
-  if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF) {
-    return 72.0f / GetDPI();
+  if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF || mPrintViaSkPDF) {
+    return nsIDeviceContextSpec::GetPrintingScale();
   }
 
+  
+  
   
   int32_t resolution;
   mPrintSettings->GetResolution(&resolution);

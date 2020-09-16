@@ -67,7 +67,7 @@ class nsDeviceContextSpecWin : public nsIDeviceContextSpec {
 
   nsString mDriverName;
   nsString mDeviceName;
-  LPDEVMODEW mDevMode;
+  LPDEVMODEW mDevMode = nullptr;
 
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
   int16_t mOutputFormat = nsIPrintSettings::kOutputFormatNative;
@@ -76,13 +76,10 @@ class nsDeviceContextSpecWin : public nsIDeviceContextSpec {
   
   nsCOMPtr<nsIFile> mTempFile;
 
-#ifdef MOZ_ENABLE_SKIA_PDF
-
   
   
   
-  bool mPrintViaSkPDF;
-#endif
+  bool mPrintViaSkPDF = false;
 };
 
 
