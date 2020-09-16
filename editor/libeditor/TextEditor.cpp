@@ -1150,9 +1150,16 @@ bool TextEditor::FireClipboardEvent(EventMessage aEventMessage,
     return false;
   }
 
-  if (!nsCopySupport::FireClipboardEvent(
-          aEventMessage, aSelectionType, presShell,
-          MOZ_KnownLive(SelectionRefPtr()), aActionTaken)) {
+  RefPtr<Selection> sel = SelectionRefPtr();
+  if (IsHTMLEditor() && aEventMessage == eCopy && sel->IsCollapsed()) {
+    
+    
+    
+    sel = nsCopySupport::GetSelectionForCopy(GetDocument());
+  }
+
+  if (!nsCopySupport::FireClipboardEvent(aEventMessage, aSelectionType,
+                                         presShell, sel, aActionTaken)) {
     return false;
   }
 
