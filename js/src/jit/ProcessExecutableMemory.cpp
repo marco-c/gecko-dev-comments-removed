@@ -738,9 +738,11 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
                               ProtectionSetting protection,
                               MustFlushICache flushICache) {
   
-  if (flushICache == MustFlushICache::Yes) {
+  if (flushICache == MustFlushICache::LocalThreadOnly ||
+      flushICache == MustFlushICache::AllThreads) {
     MOZ_ASSERT(protection == ProtectionSetting::Executable);
-    jit::FlushICache(start, size);
+    bool codeIsThreadLocal = flushICache == MustFlushICache::LocalThreadOnly;
+    jit::FlushICache(start, size, codeIsThreadLocal);
   }
 
   

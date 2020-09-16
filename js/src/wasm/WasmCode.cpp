@@ -376,7 +376,7 @@ UniqueModuleSegment ModuleSegment::create(Tier tier, const Bytes& unlinkedBytes,
                                        linkData);
 }
 
-bool ModuleSegment::initialize(const CodeTier& codeTier,
+bool ModuleSegment::initialize(IsTier2 isTier2, const CodeTier& codeTier,
                                const LinkData& linkData,
                                const Metadata& metadata,
                                const MetadataTier& metadataTier) {
@@ -385,8 +385,14 @@ bool ModuleSegment::initialize(const CodeTier& codeTier,
   }
 
   
+  
+  FlushICacheSpec flushIcacheSpec = isTier2 == IsTier2::Tier2
+                                        ? FlushICacheSpec::AllThreads
+                                        : FlushICacheSpec::LocalThreadOnly;
+
+  
   if (!ExecutableAllocator::makeExecutableAndFlushICache(
-          base(), RoundupCodeLength(length()))) {
+          flushIcacheSpec, base(), RoundupCodeLength(length()))) {
     return false;
   }
 
@@ -661,6 +667,7 @@ static constexpr unsigned LAZY_STUB_LIFO_DEFAULT_CHUNK_SIZE = 8 * 1024;
 
 bool LazyStubTier::createMany(const Uint32Vector& funcExportIndices,
                               const CodeTier& codeTier,
+                              bool flushAllThreadsIcaches,
                               size_t* stubSegmentIndex) {
   MOZ_ASSERT(funcExportIndices.length());
 
@@ -739,7 +746,13 @@ bool LazyStubTier::createMany(const Uint32Vector& funcExportIndices,
     Assembler::Bind(codePtr, label);
   }
 
-  if (!ExecutableAllocator::makeExecutableAndFlushICache(codePtr, codeLength)) {
+  
+  
+  FlushICacheSpec flushIcacheSpec = flushAllThreadsIcaches
+                                        ? FlushICacheSpec::AllThreads
+                                        : FlushICacheSpec::LocalThreadOnly;
+  if (!ExecutableAllocator::makeExecutableAndFlushICache(flushIcacheSpec,
+                                                         codePtr, codeLength)) {
     return false;
   }
 
@@ -785,8 +798,13 @@ bool LazyStubTier::createOne(uint32_t funcExportIndex,
     return false;
   }
 
+  
+  
+  bool flushAllThreadIcaches = false;
+
   size_t stubSegmentIndex;
-  if (!createMany(funcExportIndexes, codeTier, &stubSegmentIndex)) {
+  if (!createMany(funcExportIndexes, codeTier, flushAllThreadIcaches,
+                  &stubSegmentIndex)) {
     return false;
   }
 
@@ -828,8 +846,13 @@ bool LazyStubTier::createTier2(const Uint32Vector& funcExportIndices,
     return true;
   }
 
+  
+  
+  bool flushAllThreadIcaches = true;
+
   size_t stubSegmentIndex;
-  if (!createMany(funcExportIndices, codeTier, &stubSegmentIndex)) {
+  if (!createMany(funcExportIndices, codeTier, flushAllThreadIcaches,
+                  &stubSegmentIndex)) {
     return false;
   }
 
@@ -1031,15 +1054,15 @@ bool Metadata::getFuncName(NameContext ctx, uint32_t funcIndex,
   return AppendFunctionIndexName(funcIndex, name);
 }
 
-bool CodeTier::initialize(const Code& code, const LinkData& linkData,
-                          const Metadata& metadata) {
+bool CodeTier::initialize(IsTier2 isTier2, const Code& code,
+                          const LinkData& linkData, const Metadata& metadata) {
   MOZ_ASSERT(!initialized());
   code_ = &code;
 
   MOZ_ASSERT(lazyStubs_.lock()->empty());
 
   
-  if (!segment_->initialize(*this, linkData, metadata, *metadata_)) {
+  if (!segment_->initialize(isTier2, *this, linkData, metadata, *metadata_)) {
     return false;
   }
 
@@ -1150,7 +1173,7 @@ Code::Code(UniqueCodeTier tier1, const Metadata& metadata,
 bool Code::initialize(const LinkData& linkData) {
   MOZ_ASSERT(!initialized());
 
-  if (!tier1_->initialize(*this, linkData, *metadata_)) {
+  if (!tier1_->initialize(IsTier2::NotTier2, *this, linkData, *metadata_)) {
     return false;
   }
 
@@ -1163,7 +1186,7 @@ bool Code::setTier2(UniqueCodeTier tier2, const LinkData& linkData) const {
   MOZ_RELEASE_ASSERT(tier2->tier() == Tier::Optimized &&
                      tier1_->tier() == Tier::Baseline);
 
-  if (!tier2->initialize(*this, linkData, *metadata_)) {
+  if (!tier2->initialize(IsTier2::Tier2, *this, linkData, *metadata_)) {
     return false;
   }
 

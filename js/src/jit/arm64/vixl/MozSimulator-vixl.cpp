@@ -208,6 +208,16 @@ void Simulator::Destroy(Simulator* sim) {
 void Simulator::ExecuteInstruction() {
   
   VIXL_ASSERT(IsWordAligned(pc_));
+  if (pendingCacheRequests) {
+      
+      
+      
+      
+      
+      
+      js::jit::AutoLockSimulatorCache alsc;
+      FlushICache();
+  }
   decoder_->Decode(pc_);
   increment_pc();
 }
@@ -889,6 +899,7 @@ Simulator::FlushICache()
     decoder_->FlushICache(flush.start, flush.length);
   }
   vec.clear();
+  pendingCacheRequests = false;
 }
 
 void CachingDecoder::Decode(const Instruction* instr) {
@@ -965,6 +976,13 @@ void SimulatorProcess::recordICacheFlush(void* start, size_t length) {
     if (!s.records.append(range)) {
       oomUnsafe.crash("Simulator recordFlushICache");
     }
+  }
+}
+
+void SimulatorProcess::membarrier() {
+  MOZ_ASSERT(singleton_->lock_.ownedByCurrentThread());
+  for (auto& s : singleton_->pendingFlushes_) {
+    s.thread->pendingCacheRequests = true;
   }
 }
 

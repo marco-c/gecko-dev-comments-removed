@@ -165,7 +165,11 @@ class CPU {
   
   
   
-  static void EnsureIAndDCacheCoherency(void *address, size_t length);
+  static void EnsureIAndDCacheCoherency(void *address, size_t length, bool codeIsThreadLocal);
+
+  
+  
+  static bool CanFlushICacheFromBackgroundThreads();
 
   
   

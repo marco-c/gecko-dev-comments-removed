@@ -449,6 +449,20 @@ void CompilerEnvironment::computeParameters() {
   state_ = Computed;
 }
 
+
+
+
+
+
+
+static bool IsICacheSafe() {
+#ifdef JS_CODEGEN_ARM64
+  return jit::CanFlushICacheFromBackgroundThreads();
+#else
+  return true;
+#endif
+}
+
 void CompilerEnvironment::computeParameters(Decoder& d) {
   MOZ_ASSERT(!isComputed());
 
@@ -484,7 +498,7 @@ void CompilerEnvironment::computeParameters(Decoder& d) {
   }
 
   if (baselineEnabled && hasSecondTier && CanUseExtraThreads() &&
-      (TieringBeneficial(codeSectionSize) || forceTiering)) {
+      (TieringBeneficial(codeSectionSize) || forceTiering) && IsICacheSafe()) {
     mode_ = CompileMode::Tier1;
     tier_ = Tier::Baseline;
   } else {

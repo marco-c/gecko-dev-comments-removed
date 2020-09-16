@@ -876,8 +876,8 @@ bool InitializeJittedAtomics() {
   masm.executableCopy(code);
 
   
-  if (!ExecutableAllocator::makeExecutableAndFlushICache(code,
-                                                         roundedCodeLength)) {
+  if (!ExecutableAllocator::makeExecutableAndFlushICache(
+          FlushICacheSpec::LocalThreadOnly, code, roundedCodeLength)) {
     DeallocateExecutableMemory(code, roundedCodeLength);
     return false;
   }
