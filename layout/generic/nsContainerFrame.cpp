@@ -976,7 +976,7 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
   nscoord availBased = aAvailableISize - aMargin.ISize(aWM) -
                        aBorder.ISize(aWM) - aPadding.ISize(aWM);
   
-  if ((aFlags & ComputeSizeFlags::eShrinkWrap) || IsFrameOfType(eReplaced)) {
+  if ((aFlags & ComputeSizeFlags::ShrinkWrap) || IsFrameOfType(eReplaced)) {
     
     
     
@@ -2538,7 +2538,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         }
       }
       if (stretchI != eNoStretch ||
-          (aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize)) {
+          (aFlags & ComputeSizeFlags::IClampMarginBoxMinSize)) {
         iSize =
             std::max(nscoord(0), cbSize - aPadding.ISize(aWM) -
                                      aBorder.ISize(aWM) - aMargin.ISize(aWM));
@@ -2546,7 +2546,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     } else {
       
       aFlags =
-          ComputeSizeFlags(aFlags & ~ComputeSizeFlags::eIClampMarginBoxMinSize);
+          ComputeSizeFlags(aFlags & ~ComputeSizeFlags::IClampMarginBoxMinSize);
     }
   }
 
@@ -2601,7 +2601,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         }
       }
       if (stretchB != eNoStretch ||
-          (aFlags & ComputeSizeFlags::eBClampMarginBoxMinSize)) {
+          (aFlags & ComputeSizeFlags::BClampMarginBoxMinSize)) {
         bSize =
             std::max(nscoord(0), cbSize - aPadding.BSize(aWM) -
                                      aBorder.BSize(aWM) - aMargin.BSize(aWM));
@@ -2609,7 +2609,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     } else {
       
       aFlags =
-          ComputeSizeFlags(aFlags & ~ComputeSizeFlags::eBClampMarginBoxMinSize);
+          ComputeSizeFlags(aFlags & ~ComputeSizeFlags::BClampMarginBoxMinSize);
     }
   }
 
@@ -2665,7 +2665,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
       
       
       
-      if ((aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize) &&
+      if ((aFlags & ComputeSizeFlags::IClampMarginBoxMinSize) &&
           stretchI != eStretch && tentISize > iSize) {
         stretchI = (stretchB == eStretch ? eStretch : eStretchPreservingRatio);
       }
@@ -2679,7 +2679,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
       }
 
       
-      if ((aFlags & ComputeSizeFlags::eBClampMarginBoxMinSize) &&
+      if ((aFlags & ComputeSizeFlags::BClampMarginBoxMinSize) &&
           stretchB != eStretch && tentBSize > bSize) {
         stretchB = (stretchI == eStretch ? eStretch : eStretchPreservingRatio);
       }
@@ -2736,7 +2736,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         if (logicalRatio) {
           iSize = logicalRatio.ApplyTo(bSize);
         } else if (hasIntrinsicISize) {
-          if (!((aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize) &&
+          if (!((aFlags & ComputeSizeFlags::IClampMarginBoxMinSize) &&
                 intrinsicISize > iSize)) {
             iSize = intrinsicISize;
           }  
@@ -2754,7 +2754,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         if (logicalRatio) {
           bSize = logicalRatio.Inverted().ApplyTo(iSize);
         } else if (hasIntrinsicBSize) {
-          if (!((aFlags & ComputeSizeFlags::eBClampMarginBoxMinSize) &&
+          if (!((aFlags & ComputeSizeFlags::BClampMarginBoxMinSize) &&
                 intrinsicBSize > bSize)) {
             bSize = intrinsicBSize;
           }  
