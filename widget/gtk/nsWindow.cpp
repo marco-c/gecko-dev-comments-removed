@@ -7872,12 +7872,6 @@ bool nsWindow::HideTitlebarByDefault() {
   }
 
   
-  if (gtk_check_version(3, 24, 0) == nullptr &&
-      strstr(currentDesktop, "KDE") != nullptr) {
-    return hideTitlebar;
-  }
-
-  
   hideTitlebar = false;
   return hideTitlebar;
 }
