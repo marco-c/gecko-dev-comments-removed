@@ -7,11 +7,15 @@
 #include "AppTrustDomain.h"
 
 #include "MainThreadUtils.h"
+#ifdef MOZ_NEW_CERT_STORAGE
+#  include "cert_storage/src/cert_storage.h"
+#endif
 #include "certdb.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Preferences.h"
 #include "nsComponentManagerUtils.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsIX509CertDB.h"
 #include "nsNSSCertificate.h"
 #include "nsNetUtil.h"
@@ -32,85 +36,101 @@ extern mozilla::LazyLogModule gPIPNSSLog;
 namespace mozilla {
 namespace psm {
 
-AppTrustDomain::AppTrustDomain(UniqueCERTCertList& certChain, void* pinArg)
-    : mCertChain(certChain), mPinArg(pinArg) {}
+AppTrustDomain::AppTrustDomain(nsTArray<Span<const uint8_t>>&& collectedCerts)
+    : mIntermediates(std::move(collectedCerts)),
+#ifdef MOZ_NEW_CERT_STORAGE
+      mCertBlocklist(do_GetService(NS_CERT_STORAGE_CID)) {
+}
+#else
+      mCertBlocklist(do_GetService(NS_CERTBLOCKLIST_CONTRACTID)) {
+}
+#endif
 
 nsresult AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot) {
-  SECItem trustedDER;
-
-  
-  
-
   switch (trustedRoot) {
     case nsIX509CertDB::AppXPCShellRoot:
-      trustedDER.data = const_cast<uint8_t*>(xpcshellRoot);
-      trustedDER.len = mozilla::ArrayLength(xpcshellRoot);
+      mTrustedRoot = {xpcshellRoot};
       break;
 
     case nsIX509CertDB::AddonsPublicRoot:
-      trustedDER.data = const_cast<uint8_t*>(addonsPublicRoot);
-      trustedDER.len = mozilla::ArrayLength(addonsPublicRoot);
+      mTrustedRoot = {addonsPublicRoot};
       break;
 
     case nsIX509CertDB::AddonsStageRoot:
-      trustedDER.data = const_cast<uint8_t*>(addonsStageRoot);
-      trustedDER.len = mozilla::ArrayLength(addonsStageRoot);
+      mTrustedRoot = {addonsStageRoot};
       break;
 
     default:
       return NS_ERROR_INVALID_ARG;
   }
 
-  mTrustedRoot.reset(CERT_NewTempCertificate(
-      CERT_GetDefaultCertDB(), &trustedDER, nullptr, false, true));
-  if (!mTrustedRoot) {
-    return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
-  }
-
-  
-  
   
   
   if (trustedRoot == nsIX509CertDB::AddonsPublicRoot) {
-    SECItem intermediateDER = {
-        siBuffer,
-        const_cast<uint8_t*>(addonsPublicIntermediate),
-        static_cast<unsigned int>(
-            mozilla::ArrayLength(addonsPublicIntermediate)),
-    };
-    mAddonsIntermediate.reset(CERT_NewTempCertificate(
-        CERT_GetDefaultCertDB(), &intermediateDER, nullptr, false, true));
-    if (!mAddonsIntermediate) {
-      return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
-    }
+    mAddonsIntermediate = {addonsPublicIntermediate};
   }
 
   return NS_OK;
 }
 
 Result AppTrustDomain::FindIssuer(Input encodedIssuerName,
-                                  IssuerChecker& checker, Time)
-
-{
-  MOZ_ASSERT(mTrustedRoot);
-  if (!mTrustedRoot) {
+                                  IssuerChecker& checker, Time) {
+  MOZ_ASSERT(!mTrustedRoot.IsEmpty());
+  if (mTrustedRoot.IsEmpty()) {
     return Result::FATAL_ERROR_INVALID_STATE;
+  }
+
+  nsTArray<Input> candidates;
+  Input rootInput;
+  Result rv = rootInput.Init(mTrustedRoot.Elements(), mTrustedRoot.Length());
+  
+  
+  if (rv != Success) {
+    return rv;
+  }
+  candidates.AppendElement(std::move(rootInput));
+  if (!mAddonsIntermediate.IsEmpty()) {
+    Input intermediateInput;
+    rv = intermediateInput.Init(mAddonsIntermediate.Elements(),
+                                mAddonsIntermediate.Length());
+    
+    if (rv != Success) {
+      return rv;
+    }
+    candidates.AppendElement(std::move(intermediateInput));
+  }
+  for (const auto& intermediate : mIntermediates) {
+    Input intermediateInput;
+    rv = intermediateInput.Init(intermediate.Elements(), intermediate.Length());
+    
+    if (rv != Success) {
+      continue;
+    }
+    candidates.AppendElement(std::move(intermediateInput));
+  }
+
+  for (const auto& candidate : candidates) {
+    bool keepGoing;
+    rv = checker.Check(candidate, nullptr ,
+                       keepGoing);
+    if (rv != Success) {
+      return rv;
+    }
+    if (!keepGoing) {
+      return Success;
+    }
   }
 
   
   
   
   
-  
-  
-  
-  
   SECItem encodedIssuerNameSECItem = UnsafeMapInputToSECItem(encodedIssuerName);
-  UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
+  UniqueCERTCertList nssCandidates(CERT_CreateSubjectCertList(
       nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameSECItem, 0, false));
-  if (candidates) {
-    for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
-         !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
+  if (nssCandidates) {
+    for (CERTCertListNode* n = CERT_LIST_HEAD(nssCandidates);
+         !CERT_LIST_END(n, nssCandidates); n = CERT_LIST_NEXT(n)) {
       Input certDER;
       Result rv = certDER.Init(n->cert->derCert.data, n->cert->derCert.len);
       if (rv != Success) {
@@ -137,47 +157,62 @@ Result AppTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
                                     Input candidateCertDER,
                                      TrustLevel& trustLevel) {
   MOZ_ASSERT(policy.IsAnyPolicy());
-  MOZ_ASSERT(mTrustedRoot);
+  MOZ_ASSERT(!mTrustedRoot.IsEmpty());
   if (!policy.IsAnyPolicy()) {
     return Result::FATAL_ERROR_INVALID_ARGS;
   }
-  if (!mTrustedRoot) {
+  if (mTrustedRoot.IsEmpty()) {
     return Result::FATAL_ERROR_INVALID_STATE;
   }
 
-  
+#ifdef MOZ_NEW_CERT_STORAGE
+  nsTArray<uint8_t> issuerBytes;
+  nsTArray<uint8_t> serialBytes;
+  nsTArray<uint8_t> subjectBytes;
+  nsTArray<uint8_t> pubKeyBytes;
 
-  
-  
-  
-  SECItem candidateCertDERSECItem = UnsafeMapInputToSECItem(candidateCertDER);
-  UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
-      CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false, true));
-  if (!candidateCert) {
-    return MapPRErrorCodeToResult(PR_GetError());
+  Result result =
+      BuildRevocationCheckArrays(candidateCertDER, endEntityOrCA, issuerBytes,
+                                 serialBytes, subjectBytes, pubKeyBytes);
+#else
+  nsAutoCString encIssuer;
+  nsAutoCString encSerial;
+  nsAutoCString encSubject;
+  nsAutoCString encPubKey;
+
+  Result result =
+      BuildRevocationCheckStrings(candidateCertDER, endEntityOrCA, encIssuer,
+                                  encSerial, encSubject, encPubKey);
+#endif
+  if (result != Success) {
+    return result;
   }
 
-  CERTCertTrust trust;
-  if (CERT_GetCertTrust(candidateCert.get(), &trust) == SECSuccess) {
-    uint32_t flags = SEC_GET_TRUST_FLAGS(&trust, trustObjectSigning);
+#ifdef MOZ_NEW_CERT_STORAGE
+  int16_t revocationState;
+  nsresult nsrv = mCertBlocklist->GetRevocationState(
+      issuerBytes, serialBytes, subjectBytes, pubKeyBytes, &revocationState);
+#else
+  bool isCertRevoked;
+  nsresult nsrv = mCertBlocklist->IsCertRevoked(
+      encIssuer, encSerial, encSubject, encPubKey, &isCertRevoked);
+#endif
+  if (NS_FAILED(nsrv)) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
 
-    
-    
-    
-    
-    
-    uint32_t relevantTrustBit = endEntityOrCA == EndEntityOrCA::MustBeCA
-                                    ? CERTDB_TRUSTED_CA
-                                    : CERTDB_TRUSTED;
-    if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD))) ==
-        CERTDB_TERMINAL_RECORD) {
-      trustLevel = TrustLevel::ActivelyDistrusted;
-      return Success;
-    }
+#ifdef MOZ_NEW_CERT_STORAGE
+  if (revocationState == nsICertStorage::STATE_ENFORCE) {
+#else
+  if (isCertRevoked) {
+#endif
+    return Result::ERROR_REVOKED_CERTIFICATE;
   }
 
   
-  if (CERT_CompareCerts(mTrustedRoot.get(), candidateCert.get())) {
+  Span<const uint8_t> candidateCertDERSpan = {candidateCertDER.UnsafeGetData(),
+                                              candidateCertDER.GetLength()};
+  if (mTrustedRoot == candidateCertDERSpan) {
     trustLevel = TrustLevel::TrustAnchor;
     return Success;
   }
@@ -204,11 +239,6 @@ Result AppTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&, Time, Time,
 Result AppTrustDomain::IsChainValid(const DERArray& certChain, Time time,
                                     const CertPolicyId& requiredPolicy) {
   MOZ_ASSERT(requiredPolicy.IsAnyPolicy());
-  SECStatus srv =
-      ConstructCERTCertListFromReversedDERArray(certChain, mCertChain);
-  if (srv != SECSuccess) {
-    return MapPRErrorCodeToResult(PR_GetError());
-  }
   return Success;
 }
 
@@ -230,7 +260,7 @@ Result AppTrustDomain::VerifyRSAPKCS1SignedDigest(
     const SignedDigest& signedDigest, Input subjectPublicKeyInfo) {
   
   return VerifyRSAPKCS1SignedDigestNSS(signedDigest, subjectPublicKeyInfo,
-                                       mPinArg);
+                                       nullptr);
 }
 
 Result AppTrustDomain::CheckECDSACurveIsAcceptable(
@@ -248,7 +278,7 @@ Result AppTrustDomain::CheckECDSACurveIsAcceptable(
 Result AppTrustDomain::VerifyECDSASignedDigest(const SignedDigest& signedDigest,
                                                Input subjectPublicKeyInfo) {
   return VerifyECDSASignedDigestNSS(signedDigest, subjectPublicKeyInfo,
-                                    mPinArg);
+                                    nullptr);
 }
 
 Result AppTrustDomain::CheckValidityIsAcceptable(
