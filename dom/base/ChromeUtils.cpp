@@ -816,108 +816,22 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
        ""_ns,
        nsTArray<WindowInfo>());
 
+  
   mozilla::ipc::GeckoChildProcessHost::GetAll(
-      [&requests,
-       &contentParents](mozilla::ipc::GeckoChildProcessHost* aGeckoProcess) {
+      [&requests](mozilla::ipc::GeckoChildProcessHost* aGeckoProcess) {
         auto handle = aGeckoProcess->GetChildProcessHandle();
         if (!handle) {
           
           
           return;
         }
-        nsAutoCString origin;
         base::ProcessId childPid = base::GetProcId(handle);
-        int32_t childId = 0;
         mozilla::ProcType type = mozilla::ProcType::Unknown;
-        nsTArray<WindowInfo> windows;
 
         switch (aGeckoProcess->GetProcessType()) {
           case GeckoProcessType::GeckoProcessType_Content: {
-            ContentParent* contentParent = nullptr;
             
-            
-            for (ContentParent* parent : contentParents) {
-              
-              if (parent->Process() == aGeckoProcess) {
-                contentParent = parent;
-                break;
-              }
-            }
-            if (!contentParent) {
-              
-              return;
-            }
-
-            
-            for (const auto& browserParentWrapper :
-                 contentParent->ManagedPBrowserParent()) {
-              for (const auto& windowGlobalParentWrapper :
-                   browserParentWrapper.GetKey()
-                       ->ManagedPWindowGlobalParent()) {
-                
-                
-                auto* windowGlobalParent = static_cast<WindowGlobalParent*>(
-                    windowGlobalParentWrapper.GetKey());
-
-                nsString documentTitle;
-                windowGlobalParent->GetDocumentTitle(documentTitle);
-                WindowInfo* window = windows.EmplaceBack(
-                    fallible,
-                     windowGlobalParent->OuterWindowId(),
-                     windowGlobalParent->GetDocumentURI(),
-                     std::move(documentTitle),
-                     windowGlobalParent->IsProcessRoot(),
-                     windowGlobalParent->IsInProcess());
-                if (!window) {
-                  
-                  
-                  return;
-                }
-              }
-            }
-
-            
-            
-            
-            nsAutoCString remoteType(contentParent->GetRemoteType());
-            if (StringBeginsWith(remoteType, FISSION_WEB_REMOTE_TYPE)) {
-              
-              
-              
-              
-              type = mozilla::ProcType::WebIsolated;
-            } else if (StringBeginsWith(remoteType,
-                                        WITH_COOP_COEP_REMOTE_TYPE_PREFIX)) {
-              type = mozilla::ProcType::WebCOOPCOEP;
-            } else if (StringBeginsWith(remoteType, DEFAULT_REMOTE_TYPE)) {
-              type = mozilla::ProcType::Web;
-            } else if (remoteType == FILE_REMOTE_TYPE) {
-              type = mozilla::ProcType::File;
-            } else if (remoteType == EXTENSION_REMOTE_TYPE) {
-              type = mozilla::ProcType::Extension;
-            } else if (remoteType == PRIVILEGEDABOUT_REMOTE_TYPE) {
-              type = mozilla::ProcType::PrivilegedAbout;
-            } else if (remoteType == PRIVILEGEDMOZILLA_REMOTE_TYPE) {
-              type = mozilla::ProcType::PrivilegedMozilla;
-            } else if (remoteType == LARGE_ALLOCATION_REMOTE_TYPE) {
-              type = mozilla::ProcType::WebLargeAllocation;
-            } else if (remoteType == PREALLOC_REMOTE_TYPE) {
-              type = mozilla::ProcType::Preallocated;
-            } else {
-              MOZ_CRASH_UNSAFE_PRINTF("Unknown remoteType '%s'",
-                                      remoteType.get());
-            }
-
-            
-            nsACString::const_iterator cursor;
-            nsACString::const_iterator end;
-            remoteType.BeginReading(cursor);
-            remoteType.EndReading(end);
-            if (FindCharInReadable('=', cursor, end)) {
-              origin = Substring(++cursor, end);
-            }
-            childId = contentParent->ChildID();
-            break;
+            return;
           }
           case GeckoProcessType::GeckoProcessType_Default:
             type = mozilla::ProcType::Browser;
@@ -952,19 +866,121 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
             
             break;
         }
-
         requests.EmplaceBack(
              childPid,
              type,
-             origin,
-             std::move(windows),
-             childId
+             ""_ns,
+             nsTArray<WindowInfo>(),  
+                                                         
+                                                         
+             0  
 #ifdef XP_MACOSX
             ,
              aGeckoProcess->GetChildTask()
 #endif  
         );
       });
+
+  
+  for (const auto* contentParent : contentParents) {
+    if (!contentParent || !contentParent->Process()) {
+      
+      continue;
+    }
+    auto handle = contentParent->Process()->GetChildProcessHandle();
+    if (!handle) {
+      
+      continue;
+    }
+    if (contentParent->Process()->GetProcessType() !=
+        GeckoProcessType::GeckoProcessType_Content) {
+      
+      
+      continue;
+    }
+
+    
+    
+    mozilla::ProcType type = mozilla::ProcType::Unknown;
+
+    
+    
+    
+    const nsAutoCString remoteType(contentParent->GetRemoteType());
+    if (StringBeginsWith(remoteType, FISSION_WEB_REMOTE_TYPE)) {
+      
+      
+      
+      type = mozilla::ProcType::WebIsolated;
+    } else if (StringBeginsWith(remoteType,
+                                WITH_COOP_COEP_REMOTE_TYPE_PREFIX)) {
+      type = mozilla::ProcType::WebCOOPCOEP;
+    } else if (remoteType == FILE_REMOTE_TYPE) {
+      type = mozilla::ProcType::File;
+    } else if (remoteType == EXTENSION_REMOTE_TYPE) {
+      type = mozilla::ProcType::Extension;
+    } else if (remoteType == PRIVILEGEDABOUT_REMOTE_TYPE) {
+      type = mozilla::ProcType::PrivilegedAbout;
+    } else if (remoteType == PRIVILEGEDMOZILLA_REMOTE_TYPE) {
+      type = mozilla::ProcType::PrivilegedMozilla;
+    } else if (remoteType == LARGE_ALLOCATION_REMOTE_TYPE) {
+      type = mozilla::ProcType::WebLargeAllocation;
+    } else if (remoteType == PREALLOC_REMOTE_TYPE) {
+      type = mozilla::ProcType::Preallocated;
+    } else if (StringBeginsWith(remoteType, DEFAULT_REMOTE_TYPE)) {
+      type = mozilla::ProcType::Web;
+    } else {
+      MOZ_CRASH_UNSAFE_PRINTF("Unknown remoteType '%s'", remoteType.get());
+    }
+
+    
+    nsAutoCString origin;
+    nsACString::const_iterator cursor;
+    nsACString::const_iterator end;
+    remoteType.BeginReading(cursor);
+    remoteType.EndReading(end);
+    if (FindCharInReadable('=', cursor, end)) {
+      origin = Substring(++cursor, end);
+    }
+
+    
+    nsTArray<WindowInfo> windows;
+    for (const auto& browserParentWrapper :
+         contentParent->ManagedPBrowserParent()) {
+      for (const auto& windowGlobalParentWrapper :
+           browserParentWrapper.GetKey()->ManagedPWindowGlobalParent()) {
+        
+        
+        auto* windowGlobalParent = static_cast<WindowGlobalParent*>(
+            windowGlobalParentWrapper.GetKey());
+
+        nsString documentTitle;
+        windowGlobalParent->GetDocumentTitle(documentTitle);
+        WindowInfo* window = windows.EmplaceBack(
+            fallible,
+             windowGlobalParent->OuterWindowId(),
+             windowGlobalParent->GetDocumentURI(),
+             std::move(documentTitle),
+             windowGlobalParent->IsProcessRoot(),
+             windowGlobalParent->IsInProcess());
+        if (!window) {
+          aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+          return nullptr;
+        }
+      }
+    }
+    requests.EmplaceBack(
+         base::GetProcId(handle),
+         type,
+         origin,
+         std::move(windows),
+         contentParent->ChildID()
+#ifdef XP_MACOSX
+            ,
+         contentParent->Process()->GetChildTask()
+#endif  
+    );
+  }
 
   
   RefPtr<nsISerialEventTarget> target =
