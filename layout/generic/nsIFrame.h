@@ -5207,6 +5207,8 @@ class nsIFrame : public nsQueryFrame {
     
     bool mSawBeforeType;
     
+    bool mSawInlineCharacter;
+    
     bool mLastCharWasPunctuation;
     
     bool mLastCharWasWhitespace;
@@ -5220,10 +5222,12 @@ class nsIFrame : public nsQueryFrame {
     PeekWordState()
         : mAtStart(true),
           mSawBeforeType(false),
+          mSawInlineCharacter(false),
           mLastCharWasPunctuation(false),
           mLastCharWasWhitespace(false),
           mSeenNonPunctuationSinceWhitespace(false) {}
     void SetSawBeforeType() { mSawBeforeType = true; }
+    void SetSawInlineCharacter() { mSawInlineCharacter = true; }
     void Update(bool aAfterPunctuation, bool aAfterWhitespace) {
       mLastCharWasPunctuation = aAfterPunctuation;
       mLastCharWasWhitespace = aAfterWhitespace;
