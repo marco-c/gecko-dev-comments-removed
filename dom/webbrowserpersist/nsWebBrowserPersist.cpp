@@ -290,6 +290,7 @@ nsWebBrowserPersist::nsWebBrowserPersist()
       mFirstAndOnlyUse(true),
       mSavingDocument(false),
       mCancel(false),
+      mEndCalled(false),
       mCompleted(false),
       mStartSaving(false),
       mReplaceExisting(true),
@@ -518,6 +519,10 @@ NS_IMETHODIMP nsWebBrowserPersist::SaveDocument(nsISupports* aDocument,
 }
 
 NS_IMETHODIMP nsWebBrowserPersist::Cancel(nsresult aReason) {
+  
+  if (mEndCalled) {
+    return NS_OK;
+  }
   mCancel = true;
   EndDownload(aReason);
   return NS_OK;
@@ -957,6 +962,8 @@ NS_IMETHODIMP
 nsWebBrowserPersist::OnDataAvailable(nsIRequest* request,
                                      nsIInputStream* aIStream, uint64_t aOffset,
                                      uint32_t aLength) {
+  
+
   bool cancel = mCancel;
   if (!cancel) {
     nsresult rv = NS_OK;
@@ -1069,15 +1076,13 @@ nsWebBrowserPersist::OnDataAvailable(nsIRequest* request,
             self->SendErrorStatusChange(readError, rv, req, file);
           });
       NS_DispatchToMainThread(errorOnMainThread);
-    }
-  }
 
-  
-  if (cancel) {
-    nsCOMPtr<nsIRunnable> endOnMainThread = NewRunnableMethod<nsresult>(
-        "nsWebBrowserPersist::EndDownload", this,
-        &nsWebBrowserPersist::EndDownload, NS_BINDING_ABORTED);
-    NS_DispatchToMainThread(endOnMainThread);
+      
+      nsCOMPtr<nsIRunnable> endOnMainThread = NewRunnableMethod<nsresult>(
+          "nsWebBrowserPersist::EndDownload", this,
+          &nsWebBrowserPersist::EndDownload, NS_BINDING_ABORTED);
+      NS_DispatchToMainThread(endOnMainThread);
+    }
   }
 
   return cancel ? NS_BINDING_ABORTED : NS_OK;
@@ -2294,13 +2299,34 @@ nsresult nsWebBrowserPersist::MakeOutputStreamFromURI(
   return NS_OK;
 }
 
-void nsWebBrowserPersist::FinishDownload() { EndDownload(NS_OK); }
+void nsWebBrowserPersist::FinishDownload() {
+  
+  
+  
+  
+  
+  if (mEndCalled) {
+    return;
+  }
+  EndDownload(NS_OK);
+}
 
 void nsWebBrowserPersist::EndDownload(nsresult aResult) {
+  MOZ_ASSERT(NS_IsMainThread(), "Should end download on the main thread.");
+
+  MOZ_DIAGNOSTIC_ASSERT(!mEndCalled, "Should only end the download once.");
+  
+  
+  if (mEndCalled && (NS_SUCCEEDED(aResult) || mPersistResult == aResult)) {
+    return;
+  }
+  mEndCalled = true;
+
   
   if (NS_SUCCEEDED(mPersistResult) && NS_FAILED(aResult)) {
     mPersistResult = aResult;
   }
+
   ClosePromise::All(GetCurrentSerialEventTarget(), mFileClosePromises)
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [self = RefPtr{this}, aResult]() {

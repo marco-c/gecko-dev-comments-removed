@@ -168,6 +168,7 @@ class nsWebBrowserPersist final : public nsIInterfaceRequestor,
   
   
   mozilla::Atomic<bool> mCancel;
+  bool mEndCalled;
   bool mCompleted;
   bool mStartSaving;
   bool mReplaceExisting;
