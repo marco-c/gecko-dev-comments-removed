@@ -293,6 +293,13 @@ add_task(async function test_popup_conditions() {
 
   
   await SpecialPowers.pushPrefEnv({
+    set: [["browser.link.open_newwindow", 1]],
+  });
+  await test_patterns({ nonPopup: "current" });
+  await SpecialPowers.popPrefEnv();
+
+  
+  await SpecialPowers.pushPrefEnv({
     set: [["browser.link.open_newwindow", 2]],
   });
   await test_patterns({ nonPopup: "window" });

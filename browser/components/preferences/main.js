@@ -134,6 +134,7 @@ Preferences.addAll([
 
 
 
+
   { id: "browser.link.open_newwindow", type: "int" },
   { id: "browser.tabs.loadInBackground", type: "bool", inverted: true },
   { id: "browser.tabs.warnOnClose", type: "bool" },
@@ -1214,6 +1215,7 @@ var gMainPane = {
   
 
   
+
 
 
 
