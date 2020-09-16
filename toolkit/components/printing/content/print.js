@@ -80,6 +80,8 @@ var PrintEventHandler = {
   ],
 
   async init() {
+    Services.telemetry.scalarAdd("printing.preview_opened_tm", 1);
+
     
     
     
@@ -141,9 +143,17 @@ var PrintEventHandler = {
         "@mozilla.org/embedcomp/printingprompt-service;1"
       ].getService(Ci.nsIPrintingPromptService);
       try {
+        Services.telemetry.scalarAdd(
+          "printing.dialog_opened_via_preview_tm",
+          1
+        );
         PRINTPROMPTSVC.showPrintDialog(window, settings);
       } catch (e) {
         if (e.result == Cr.NS_ERROR_ABORT) {
+          Services.telemetry.scalarAdd(
+            "printing.dialog_via_preview_cancelled_tm",
+            1
+          );
           return; 
         }
         throw e;
@@ -269,6 +279,7 @@ var PrintEventHandler = {
   },
 
   cancelPrint() {
+    Services.telemetry.scalarAdd("printing.preview_cancelled_tm", 1);
     window.close();
   },
 
