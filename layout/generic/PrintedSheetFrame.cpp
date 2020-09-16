@@ -178,6 +178,28 @@ void PrintedSheetFrame::Reflow(nsPresContext* aPresContext,
   
   
   
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!GetPrevContinuation()) {
+    NS_WARNING_ASSERTION(numPagesOnThisSheet > 0,
+                         "Shouldn't create a sheet with no displayable pages "
+                         "on it");
+  } else {
+    MOZ_ASSERT(numPagesOnThisSheet > 0,
+               "Shouldn't create a sheet with no displayable pages on it");
+  }
+
   MOZ_ASSERT(numPagesOnThisSheet <= kDesiredPagesPerSheet,
              "Shouldn't have more than desired number of displayable pages "
              "on this sheet");
