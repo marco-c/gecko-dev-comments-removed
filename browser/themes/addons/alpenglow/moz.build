@@ -4,7 +4,7 @@
 
 
 
-EXTRA_JS_MODULES.themes['alpenglow'] += [
+FINAL_TARGET_FILES.modules['themes']['alpenglow'] += [
     '*.svg',
     'manifest.json',
 ]
