@@ -6012,24 +6012,22 @@ static bool ShouldApplyAutomaticMinimumOnInlineAxis(
 nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
     nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorder, const LogicalSize& aPadding,
-    ComputeSizeFlags aFlags) {
+    const LogicalSize& aBorderPadding, ComputeSizeFlags aFlags) {
   MOZ_ASSERT(!GetIntrinsicRatio(),
              "Please override this method and call "
              "nsContainerFrame::ComputeSizeWithIntrinsicDimensions instead.");
   LogicalSize result =
       ComputeAutoSize(aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
-                      aBorder + aPadding, aFlags);
+                      aBorderPadding, aFlags);
   const nsStylePosition* stylePos = StylePosition();
   const nsStyleDisplay* disp = StyleDisplay();
   auto aspectRatioUsage = AspectRatioUsage::None;
 
-  LogicalSize boxSizingAdjust(aWM);
-  if (stylePos->mBoxSizing == StyleBoxSizing::Border) {
-    boxSizingAdjust = aBorder + aPadding;
-  }
-  nscoord boxSizingToMarginEdgeISize = aMargin.ISize(aWM) + aBorder.ISize(aWM) +
-                                       aPadding.ISize(aWM) -
+  const auto boxSizingAdjust = stylePos->mBoxSizing == StyleBoxSizing::Border
+                                   ? aBorderPadding
+                                   : LogicalSize(aWM);
+  nscoord boxSizingToMarginEdgeISize = aMargin.ISize(aWM) +
+                                       aBorderPadding.ISize(aWM) -
                                        boxSizingAdjust.ISize(aWM);
 
   const auto* inlineStyleCoord = &stylePos->ISize(aWM);
@@ -6130,8 +6128,8 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     }
     if (stretch || aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize)) {
       auto iSizeToFillCB =
-          std::max(nscoord(0), aCBSize.ISize(aWM) - aPadding.ISize(aWM) -
-                                   aBorder.ISize(aWM) - aMargin.ISize(aWM));
+          std::max(nscoord(0), aCBSize.ISize(aWM) - aBorderPadding.ISize(aWM) -
+                                   aMargin.ISize(aWM));
       if (stretch || result.ISize(aWM) > iSizeToFillCB) {
         result.ISize(aWM) = iSizeToFillCB;
       }
@@ -6172,8 +6170,8 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
       
       
       auto maxMinISize =
-          std::max(nscoord(0), aCBSize.ISize(aWM) - aPadding.ISize(aWM) -
-                                   aBorder.ISize(aWM) - aMargin.ISize(aWM));
+          std::max(nscoord(0), aCBSize.ISize(aWM) - aBorderPadding.ISize(aWM) -
+                                   aMargin.ISize(aWM));
       minISize = std::min(minISize, maxMinISize);
     }
   } else if (aspectRatioUsage == AspectRatioUsage::ToComputeISize &&
@@ -6232,8 +6230,8 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
         if (stretch ||
             aFlags.contains(ComputeSizeFlag::BClampMarginBoxMinSize)) {
           auto bSizeToFillCB =
-              std::max(nscoord(0), cbSize - aPadding.BSize(aWM) -
-                                       aBorder.BSize(aWM) - aMargin.BSize(aWM));
+              std::max(nscoord(0),
+                       cbSize - aBorderPadding.BSize(aWM) - aMargin.BSize(aWM));
           if (stretch || (result.BSize(aWM) != NS_UNCONSTRAINEDSIZE &&
                           result.BSize(aWM) > bSizeToFillCB)) {
             result.BSize(aWM) = bSizeToFillCB;
@@ -6278,8 +6276,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
                             presContext->DevPixelsToAppUnits(widget.height)));
 
     
-    size.ISize(aWM) -= aBorder.ISize(aWM) + aPadding.ISize(aWM);
-    size.BSize(aWM) -= aBorder.BSize(aWM) + aPadding.BSize(aWM);
+    size -= aBorderPadding;
 
     if (size.BSize(aWM) > result.BSize(aWM) || !canOverride) {
       result.BSize(aWM) = size.BSize(aWM);
@@ -10455,9 +10452,7 @@ void nsIFrame::BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
             ComputeSize(aRenderingContext, wm, logicalSize,
                         logicalSize.ISize(wm),
                         reflowInput.ComputedLogicalMargin().Size(wm),
-                        reflowInput.ComputedLogicalBorderPadding().Size(wm) -
-                            reflowInput.ComputedLogicalPadding().Size(wm),
-                        reflowInput.ComputedLogicalPadding().Size(wm), {})
+                        reflowInput.ComputedLogicalBorderPadding().Size(wm), {})
                 .mLogicalSize.Height(wm));
       }
     }

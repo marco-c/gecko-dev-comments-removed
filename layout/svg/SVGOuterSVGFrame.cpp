@@ -317,8 +317,8 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() {
 nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWritingMode,
     const LogicalSize& aCBSize, nscoord aAvailableISize,
-    const LogicalSize& aMargin, const LogicalSize& aBorder,
-    const LogicalSize& aPadding, ComputeSizeFlags aFlags) {
+    const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
+    ComputeSizeFlags aFlags) {
   if (IsRootOfImage() || IsRootOfReplacedElementSubDoc()) {
     
     
@@ -380,7 +380,7 @@ nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
 
   return {ComputeSizeWithIntrinsicDimensions(
               aRenderingContext, aWritingMode, intrinsicSize,
-              GetIntrinsicRatio(), cbSize, aMargin, aBorder, aPadding, aFlags),
+              GetIntrinsicRatio(), cbSize, aMargin, aBorderPadding, aFlags),
           AspectRatioUsage::None};
 }
 
