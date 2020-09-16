@@ -68,6 +68,12 @@ ParentProcessDocumentChannel::RedirectToRealChannel(
   }
   mStreamFilterEndpoints = std::move(aStreamFilterEndpoints);
 
+  if (mDocumentLoadListener->IsDocumentLoad() &&
+      StaticPrefs::fission_sessionHistoryInParent() && GetDocShell()) {
+    GetDocShell()->SetLoadingSessionHistoryInfo(
+        *mDocumentLoadListener->GetLoadingSessionHistoryInfo());
+  }
+
   RefPtr<RedirectToRealChannelPromise> p = mPromise.Ensure(__func__);
   
   

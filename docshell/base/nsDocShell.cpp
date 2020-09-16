@@ -13001,5 +13001,7 @@ bool nsDocShell::GetIsAttemptingToNavigate() {
 
 void nsDocShell::SetLoadingSessionHistoryInfo(
     const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo) {
+  
+  
   mLoadingEntry = MakeUnique<LoadingSessionHistoryInfo>(aLoadingInfo);
 }
