@@ -826,6 +826,16 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     guardSpecificFunction_(obj, expected, nargsAndFlags);
   }
 
+  void guardFunctionScript(ObjOperandId fun, BaseScript* expected) {
+    
+    
+    
+    
+    
+    uint32_t nargsAndFlags = encodeNargsAndFlags(expected->function());
+    guardFunctionScript_(fun, expected, nargsAndFlags);
+  }
+
   ValOperandId loadArgumentFixedSlot(
       ArgumentKind kind, uint32_t argc,
       CallFlags flags = CallFlags(CallFlags::Standard)) {
