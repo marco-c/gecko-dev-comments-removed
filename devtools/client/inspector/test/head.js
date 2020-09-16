@@ -126,10 +126,11 @@ function pickElement(inspector, selector, x, y) {
 
 
 async function hoverElement(inspector, selector, x, y) {
+  const { waitForHighlighterTypeShown } = getHighlighterTestHelpers(inspector);
   info("Waiting for element " + selector + " to be hovered");
   const onHovered = inspector.toolbox.nodePicker.once("picker-node-hovered");
-  const onHighlighterShown = inspector.highlighters.once(
-    "box-model-highlighter-shown"
+  const onHighlighterShown = waitForHighlighterTypeShown(
+    inspector.highlighters.TYPES.BOXMODEL
   );
 
   
@@ -726,6 +727,48 @@ const getHighlighterHelperFor = type =>
       },
     };
   };
+
+
+
+
+
+
+
+
+function getHighlighterTestHelpers(inspector) {
+  
+
+
+
+
+
+
+
+
+
+
+  function _waitForHighlighterTypeEvent(type, eventName) {
+    return new Promise(resolve => {
+      function _handler(data) {
+        if (type === data.type) {
+          inspector.highlighters.off(eventName, _handler);
+          resolve(data);
+        }
+      }
+
+      inspector.highlighters.on(eventName, _handler);
+    });
+  }
+
+  return {
+    waitForHighlighterTypeShown(type) {
+      return _waitForHighlighterTypeEvent(type, "highlighter-shown");
+    },
+    waitForHighlighterTypeHidden(type) {
+      return _waitForHighlighterTypeEvent(type, "highlighter-hidden");
+    },
+  };
+}
 
 
 
