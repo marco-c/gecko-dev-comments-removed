@@ -941,6 +941,14 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
   },
 
   update(resourceId, text, transition) {
+    const styleSheetsWatcher = this._getStyleSheetsWatcher();
+    if (styleSheetsWatcher) {
+      return styleSheetsWatcher.update(resourceId, text, transition);
+    }
+
+    
+    
+    
     const actor = this._getStyleSheetActor(resourceId);
     return actor.update(text, transition);
   },
