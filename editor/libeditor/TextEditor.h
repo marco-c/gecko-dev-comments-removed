@@ -89,6 +89,11 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   
 
 
+  bool AreClipboardCommandsUnconditionallyEnabled() const;
+
+  
+
+
 
 
   bool IsCutCommandEnabled() const;

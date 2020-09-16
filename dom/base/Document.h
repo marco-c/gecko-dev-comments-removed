@@ -2718,6 +2718,13 @@ class Document : public nsINode,
 
 
 
+  bool AreClipboardCommandsUnconditionallyEnabled() const;
+
+  
+
+
+
+
 
   void AddSuspendedChannelEventQueue(net::ChannelEventQueue* aQueue);
 
