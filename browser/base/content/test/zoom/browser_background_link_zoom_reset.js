@@ -1,7 +1,7 @@
 
 
 
-const TEST_PAGE = "/browser/browser/base/content/test/general/dummy_page.html";
+const TEST_PAGE = "/browser/browser/base/content/test/zoom/zoom_test.html";
 var gTestTab, gBgTab, gTestZoom;
 
 function testBackgroundLoad() {
