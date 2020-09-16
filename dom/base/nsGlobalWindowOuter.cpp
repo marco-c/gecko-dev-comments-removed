@@ -5312,9 +5312,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
 
   nsCOMPtr<nsIContentViewer> cv;
   RefPtr<BrowsingContext> bc;
-  bool hasPrintCallbacks = false;
-  if (docToPrint->IsStaticDocument() && aIsPreview == IsPreview::Yes) {
-    MOZ_DIAGNOSTIC_ASSERT(aBlockUntilDone == BlockUntilDone::No);
+  if (docToPrint->IsStaticDocument() && bool(aIsPreview)) {
     
     
     
@@ -5341,8 +5339,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
       bc = aDocShellToCloneInto->GetBrowsingContext();
     } else {
       AutoNoJSAPI nojsapi;
-      auto printKind = aIsPreview == IsPreview::Yes ? PrintKind::PrintPreview
-                                                    : PrintKind::Print;
+      auto printKind =
+          bool(aIsPreview) ? PrintKind::PrintPreview : PrintKind::Print;
       aError = OpenInternal(EmptyString(), EmptyString(), EmptyString(),
                             false,             
                             false,             
@@ -5405,8 +5403,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
         return nullptr;
       }
 
-      hasPrintCallbacks |= clone->HasPrintCallbacks();
-
       
       
       aError = cv->SetDocument(clone);
@@ -5434,8 +5430,6 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
         if (NS_WARN_IF(NS_FAILED(rv))) {
           continue;
         }
-
-        hasPrintCallbacks |= doc && doc->HasPrintCallbacks();
       }
     }
   }
@@ -5447,7 +5441,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     return nullptr;
   }
 
-  if (aIsPreview == IsPreview::Yes) {
+  if (bool(aIsPreview)) {
     aError = webBrowserPrint->PrintPreview(aPrintSettings, aListener,
                                            std::move(aPrintPreviewCallback));
     if (aError.Failed()) {
@@ -5458,13 +5452,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     webBrowserPrint->Print(aPrintSettings, aListener);
   }
 
-  
-  
-  
-  
-  
-  
-  if (aBlockUntilDone == BlockUntilDone::Yes && !hasPrintCallbacks) {
+  if (bool(aBlockUntilDone)) {
+    
     SpinEventLoopUntil([&] { return bc->IsDiscarded(); });
   }
 

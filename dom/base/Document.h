@@ -2637,13 +2637,6 @@ class Document : public nsINode,
            IsStaticDocument();
   }
 
-  void SetHasPrintCallbacks() {
-    MOZ_DIAGNOSTIC_ASSERT(IsStaticDocument());
-    mHasPrintCallbacks = true;
-  }
-
-  bool HasPrintCallbacks() const { return mHasPrintCallbacks; }
-
   
 
 
@@ -4393,10 +4386,6 @@ class Document : public nsINode,
 
   
   bool mCreatingStaticClone : 1;
-
-  
-  
-  bool mHasPrintCallbacks : 1;
 
   
   bool mInUnlinkOrDeletion : 1;
