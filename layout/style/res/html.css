@@ -662,21 +662,6 @@ object:-moz-broken > *|* {
   vertical-align: inherit;
 }
 
-img:-moz-suppressed,
-input:-moz-suppressed,
-object:-moz-suppressed,
-embed:-moz-suppressed {
-  
-
-
-
-
-
-
-  display: none !important;
-  visibility: hidden !important;
-}
-
 img[usemap], object[usemap] {
   color: blue;
 }

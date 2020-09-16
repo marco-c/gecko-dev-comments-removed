@@ -90,8 +90,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
     
     eFallbackCrashed = nsIObjectLoadingContent::PLUGIN_CRASHED,
     
-    eFallbackSuppressed = nsIObjectLoadingContent::PLUGIN_SUPPRESSED,
-    
     
     
     
