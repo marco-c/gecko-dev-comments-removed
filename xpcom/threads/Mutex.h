@@ -170,8 +170,8 @@ class MOZ_RAII BaseAutoLock {
 
 
 
-  static MOZ_MUST_USE bool TryMake(T aLock,
-                                   Maybe<BaseAutoLock<T>>& aOutAutoLock) {
+  [[nodiscard]] static bool TryMake(T aLock,
+                                    Maybe<BaseAutoLock<T>>& aOutAutoLock) {
     if (aLock.TryLock()) {
       aOutAutoLock.emplace(aLock,  true);
       return true;
