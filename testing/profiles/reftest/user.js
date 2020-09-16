@@ -81,9 +81,6 @@ user_pref("privacy.trackingprotection.pbmode.enabled", false);
 
 
 user_pref("security.fileuri.strict_origin_policy", false);
-
-
-user_pref("security.view-source.reachable-from-inner-protocol", true);
 user_pref("startup.homepage_override_url", "");
 user_pref("startup.homepage_welcome_url", "");
 user_pref("startup.homepage_welcome_url.additional", "");
