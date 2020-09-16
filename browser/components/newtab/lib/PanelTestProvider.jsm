@@ -257,7 +257,7 @@ const MESSAGES = () => [
   {
     id: "BOOKMARK_CFR",
     template: "cfr_doorhanger",
-    groups: ["cfr-fxa"],
+    groups: ["cfr"],
     content: {
       layout: "icon_and_message",
       category: "cfrFeatures",
@@ -307,6 +307,7 @@ const MESSAGES = () => [
   {
     id: "PDF_URL_FFX_SEND",
     template: "cfr_doorhanger",
+    groups: ["cfr"],
     content: {
       layout: "icon_and_message",
       category: "cfrFeatures",
@@ -361,6 +362,7 @@ const MESSAGES = () => [
   {
     id: "SEND_TAB_CFR",
     template: "cfr_doorhanger",
+    groups: ["cfr"],
     content: {
       layout: "icon_and_message",
       category: "cfrFeatures",
@@ -415,6 +417,7 @@ const MESSAGES = () => [
     
     
     priority: 1,
+    groups: ["cfr"],
     content: {
       layout: "icon_and_message",
       category: "cfrFeatures",
@@ -465,6 +468,7 @@ const MESSAGES = () => [
   {
     id: "PERSONALIZED_CFR_MESSAGE",
     template: "cfr_doorhanger",
+    groups: ["cfr"],
     content: {
       layout: "icon_and_message",
       category: "cfrFeatures",
