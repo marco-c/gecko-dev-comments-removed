@@ -611,7 +611,8 @@ impl SpatialTree {
         &self,
         spatial_node_index: SpatialNodeIndex,
     ) -> SpatialNodeIndex {
-        let mut scroll_root = ROOT_SPATIAL_NODE_INDEX;
+        let mut real_scroll_root = ROOT_SPATIAL_NODE_INDEX;
+        let mut outermost_scroll_root = ROOT_SPATIAL_NODE_INDEX;
         let mut node_index = spatial_node_index;
 
         while node_index != ROOT_SPATIAL_NODE_INDEX {
@@ -626,7 +627,8 @@ impl SpatialTree {
                         ReferenceFrameKind::Perspective { .. } => {
                             
                             
-                            scroll_root = ROOT_SPATIAL_NODE_INDEX;
+                            real_scroll_root = ROOT_SPATIAL_NODE_INDEX;
+                            outermost_scroll_root = ROOT_SPATIAL_NODE_INDEX;
                         }
                     }
                 }
@@ -638,6 +640,10 @@ impl SpatialTree {
                             break;
                         }
                         ScrollFrameKind::Explicit => {
+                            
+                            
+                            outermost_scroll_root = node_index;
+
                             
                             
                             
@@ -655,7 +661,7 @@ impl SpatialTree {
                                    info.viewport_rect.size.height > 128.0 {
                                     
                                     
-                                    scroll_root = node_index;
+                                    real_scroll_root = node_index;
                                 }
                             }
                         }
@@ -665,7 +671,16 @@ impl SpatialTree {
             node_index = node.parent.expect("unable to find parent node");
         }
 
-        scroll_root
+        
+        
+        
+        
+        
+        if real_scroll_root == ROOT_SPATIAL_NODE_INDEX {
+            outermost_scroll_root
+        } else {
+            real_scroll_root
+        }
     }
 
     fn print_node<T: PrintTreePrinter>(
