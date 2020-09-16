@@ -108,6 +108,42 @@ bool SetCloseOnExec(int fd) {
 
 bool ErrorIsBrokenPipe(int err) { return err == EPIPE || err == ECONNRESET; }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+static inline ssize_t corrected_sendmsg(int socket,
+                                        const struct msghdr* message,
+                                        int flags) {
+#if defined(ANDROID) && \
+    (defined(__aarch64__) || (defined(DEBUG) && defined(__x86_64__)))
+  static constexpr auto kBadValue = static_cast<ssize_t>(0xFFFFFFFF);
+  static_assert(kBadValue > 0);
+
+#  ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  errno = 0;
+#  endif
+  ssize_t bytes_written = sendmsg(socket, message, flags);
+  if (bytes_written == kBadValue) {
+    MOZ_DIAGNOSTIC_ASSERT(errno != 0);
+    bytes_written = -1;
+  }
+  MOZ_DIAGNOSTIC_ASSERT(bytes_written < kBadValue);
+  return bytes_written;
+#else
+  return sendmsg(socket, message, flags);
+#endif
+}
+
 }  
 
 
@@ -616,7 +652,8 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
     msgh.msg_iov = iov;
     msgh.msg_iovlen = iov_count;
 
-    ssize_t bytes_written = HANDLE_EINTR(sendmsg(pipe_, &msgh, MSG_DONTWAIT));
+    ssize_t bytes_written =
+        HANDLE_EINTR(corrected_sendmsg(pipe_, &msgh, MSG_DONTWAIT));
 
 #if !defined(OS_MACOSX)
     
