@@ -6002,18 +6002,31 @@ class MStringSplit : public MBinaryInstruction,
 
 
 class MBoxNonStrictThis : public MUnaryInstruction, public BoxPolicy<0>::Data {
-  explicit MBoxNonStrictThis(MDefinition* def)
-      : MUnaryInstruction(classOpcode, def) {
+  CompilerObject globalThis_;
+
+  MBoxNonStrictThis(MDefinition* def, JSObject* globalThis)
+      : MUnaryInstruction(classOpcode, def), globalThis_(globalThis) {
     setResultType(MIRType::Object);
+    setMovable();
   }
 
  public:
   INSTRUCTION_HEADER(BoxNonStrictThis)
   TRIVIAL_NEW_WRAPPERS
 
+  JSObject* globalThis() const { return globalThis_; }
+
   bool possiblyCalls() const override { return true; }
 
-  
+  AliasSet getAliasSet() const override {
+    
+    
+    return AliasSet::None();
+  }
+
+  bool appendRoots(MRootList& roots) const override {
+    return roots.append(globalThis_);
+  }
 };
 
 class MImplicitThis : public MUnaryInstruction,
