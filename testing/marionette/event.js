@@ -20,7 +20,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 this.event = {};
 
-const dblclickTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+XPCOMUtils.defineLazyGetter(this, "dblclickTimer", () => {
+  return Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+});
 
 
 const DBLCLICK_INTERVAL = 640;

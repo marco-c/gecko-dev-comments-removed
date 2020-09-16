@@ -27,15 +27,19 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
+XPCOMUtils.defineLazyGetter(this, "appinfo", () => {
+  
+  
+  const appinfo = { name: "<missing>", version: "<missing>" };
+  try {
+    appinfo.name = Services.appinfo.name.toLowerCase();
+  } catch (e) {}
+  try {
+    appinfo.version = Services.appinfo.version;
+  } catch (e) {}
 
-
-const appinfo = { name: "<missing>", version: "<missing>" };
-try {
-  appinfo.name = Services.appinfo.name.toLowerCase();
-} catch (e) {}
-try {
-  appinfo.version = Services.appinfo.version;
-} catch (e) {}
+  return appinfo;
+});
 
 
 class Timeouts {

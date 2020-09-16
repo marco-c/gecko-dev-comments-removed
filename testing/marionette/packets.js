@@ -14,6 +14,14 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   StreamUtils: "chrome://marionette/content/stream-utils.js",
 });
 
+XPCOMUtils.defineLazyGetter(this, "unicodeConverter", () => {
+  const unicodeConverter = Cc[
+    "@mozilla.org/intl/scriptableunicodeconverter"
+  ].createInstance(Ci.nsIScriptableUnicodeConverter);
+  unicodeConverter.charset = "UTF-8";
+
+  return unicodeConverter;
+});
 
 
 
@@ -34,10 +42,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
-const unicodeConverter = Cc[
-  "@mozilla.org/intl/scriptableunicodeconverter"
-].createInstance(Ci.nsIScriptableUnicodeConverter);
-unicodeConverter.charset = "UTF-8";
 
 const defer = function() {
   let deferred = {
