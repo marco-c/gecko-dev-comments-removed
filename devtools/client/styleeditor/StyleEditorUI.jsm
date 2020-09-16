@@ -1200,62 +1200,68 @@ StyleEditorUI.prototype = {
     }
   },
 
-  async _onResourceAvailable({ resource }) {
-    if (
-      resource.resourceType === this._toolbox.resourceWatcher.TYPES.STYLESHEET
-    ) {
-      const onStyleSheetHandled = this._handleStyleSheetResource(resource);
+  async _onResourceAvailable(resources) {
+    for (const resource of resources) {
+      if (
+        resource.resourceType === this._toolbox.resourceWatcher.TYPES.STYLESHEET
+      ) {
+        const onStyleSheetHandled = this._handleStyleSheetResource(resource);
 
-      if (this._loadingStyleSheets) {
-        
-        this._loadingStyleSheets.push(onStyleSheetHandled);
+        if (this._loadingStyleSheets) {
+          
+          this._loadingStyleSheets.push(onStyleSheetHandled);
+        }
+
+        await onStyleSheetHandled;
+        continue;
       }
 
-      await onStyleSheetHandled;
-      return;
-    }
+      if (!resource.targetFront.isTopLevel) {
+        continue;
+      }
 
-    if (!resource.targetFront.isTopLevel) {
-      return;
-    }
-
-    if (resource.name === "dom-loading") {
-      
-      
-      
-      
-      
-      
-      this._startLoadingStyleSheets();
-      this._clear();
-    } else if (resource.name === "dom-complete") {
-      await this._waitForLoadingStyleSheets();
+      if (resource.name === "dom-loading") {
+        
+        
+        
+        
+        
+        
+        this._startLoadingStyleSheets();
+        this._clear();
+      } else if (resource.name === "dom-complete") {
+        await this._waitForLoadingStyleSheets();
+      }
     }
   },
 
-  async _onResourceUpdated({ update }) {
-    if (
-      update.resourceType === this._toolbox.resourceWatcher.TYPES.STYLESHEET
-    ) {
-      const editor = this.editors.find(e => e.resourceId === update.resourceId);
+  async _onResourceUpdated(updates) {
+    for (const { update } of updates) {
+      if (
+        update.resourceType === this._toolbox.resourceWatcher.TYPES.STYLESHEET
+      ) {
+        const editor = this.editors.find(
+          e => e.resourceId === update.resourceId
+        );
 
-      switch (update.updateType) {
-        case "style-applied": {
-          editor.onStyleApplied();
-          break;
-        }
-        case "property-change": {
-          for (const [property, value] of Object.entries(
-            update.resourceUpdates
-          )) {
-            editor.onPropertyChange(property, value);
+        switch (update.updateType) {
+          case "style-applied": {
+            editor.onStyleApplied();
+            break;
           }
-          break;
-        }
-        case "media-rules-changed": {
-          const { mediaRules } = update.resourceUpdates;
-          editor.onMediaRulesChanged(mediaRules);
-          break;
+          case "property-change": {
+            for (const [property, value] of Object.entries(
+              update.resourceUpdates
+            )) {
+              editor.onPropertyChange(property, value);
+            }
+            break;
+          }
+          case "media-rules-changed": {
+            const { mediaRules } = update.resourceUpdates;
+            editor.onMediaRulesChanged(mediaRules);
+            break;
+          }
         }
       }
     }

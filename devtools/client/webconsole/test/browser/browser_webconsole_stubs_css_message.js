@@ -68,8 +68,10 @@ async function generateCssMessageStubs() {
   
   let handleCSSMessage = function() {};
 
-  const onCSSMessageAvailable = ({ resource }) => {
-    handleCSSMessage(resource);
+  const onCSSMessageAvailable = resources => {
+    for (const resource of resources) {
+      handleCSSMessage(resource);
+    }
   };
 
   await resourceWatcher.watchResources([resourceWatcher.TYPES.CSS_MESSAGE], {
