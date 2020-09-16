@@ -103,9 +103,10 @@ nsresult GetJSValFromKeyPathString(
       
       
       JS::Rooted<JS::PropertyDescriptor> desc(aCx);
-      bool ok = JS_GetOwnUCPropertyDescriptor(aCx, obj, keyPathChars,
-                                              keyPathLen, &desc);
-      IDB_ENSURE_TRUE(ok, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+      IDB_TRY(OkIf(JS_GetOwnUCPropertyDescriptor(aCx, obj, keyPathChars,
+                                                 keyPathLen, &desc)),
+              NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR,
+              IDB_REPORT_INTERNAL_ERR_LAMBDA);
 
       JS::Rooted<JS::Value> intermediate(aCx);
       bool hasProp = false;
@@ -249,7 +250,8 @@ nsresult GetJSValFromKeyPathString(
       IDB_REPORT_INTERNAL_ERR();
       return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
     }
-    IDB_ENSURE_TRUE(succeeded, NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+    IDB_TRY(OkIf(succeeded.ok()), NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR,
+            IDB_REPORT_INTERNAL_ERR_LAMBDA);
   }
 
   
