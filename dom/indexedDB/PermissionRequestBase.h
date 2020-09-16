@@ -41,8 +41,8 @@ class PermissionRequestBase : public nsIObserver,
   
   
   
-  static nsresult GetCurrentPermission(nsIPrincipal* aPrincipal,
-                                       PermissionValue* aCurrentValue);
+  static Result<PermissionValue, nsresult> GetCurrentPermission(
+      nsIPrincipal& aPrincipal);
 
   static PermissionValue PermissionValueForIntPermission(
       uint32_t aIntPermission);
