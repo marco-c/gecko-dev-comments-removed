@@ -2674,42 +2674,6 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  enum class ComputeSizeFlag : uint8_t {
-    
-
-
-
-
-    ShrinkWrap,
-
-    
-
-
-
-
-    UseAutoBSize,
-
-    
-
-
-
-
-    IClampMarginBoxMinSize,  
-    BClampMarginBoxMinSize,  
-
-    
-
-
-
-
-
-
-    IApplyAutoMinSize,  
-  };
-  using ComputeSizeFlags = mozilla::EnumSet<ComputeSizeFlag>;
-
-  
-
 
 
 
@@ -2767,7 +2731,7 @@ class nsIFrame : public nsQueryFrame {
       gfxContext* aRenderingContext, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
-      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags);
+      const mozilla::LogicalSize& aPadding, mozilla::ComputeSizeFlags aFlags);
 
  protected:
   
@@ -2789,14 +2753,14 @@ class nsIFrame : public nsQueryFrame {
       gfxContext* aRenderingContext, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
-      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags);
+      const mozilla::LogicalSize& aPadding, mozilla::ComputeSizeFlags aFlags);
 
   
 
 
 
   nscoord ShrinkWidthToFit(gfxContext* aRenderingContext, nscoord aISizeInCB,
-                           ComputeSizeFlags aFlags);
+                           mozilla::ComputeSizeFlags aFlags);
 
  public:
   
@@ -4734,14 +4698,15 @@ class nsIFrame : public nsQueryFrame {
                             nscoord aContainingBlockISize,
                             nscoord aContentEdgeToBoxSizing,
                             nscoord aBoxSizingToMarginEdge,
-                            StyleExtremumLength aSize, ComputeSizeFlags aFlags);
+                            StyleExtremumLength aSize,
+                            mozilla::ComputeSizeFlags aFlags);
 
   nscoord ComputeISizeValue(gfxContext* aRenderingContext,
                             nscoord aContainingBlockISize,
                             nscoord aContentEdgeToBoxSizing,
                             nscoord aBoxSizingToMarginEdge,
                             const LengthPercentage& aSize,
-                            ComputeSizeFlags aFlags);
+                            mozilla::ComputeSizeFlags aFlags);
 
   template <typename SizeOrMaxSize>
   nscoord ComputeISizeValue(gfxContext* aRenderingContext,
@@ -4749,7 +4714,7 @@ class nsIFrame : public nsQueryFrame {
                             nscoord aContentEdgeToBoxSizing,
                             nscoord aBoxSizingToMarginEdge,
                             const SizeOrMaxSize& aSize,
-                            ComputeSizeFlags aFlags = {}) {
+                            mozilla::ComputeSizeFlags aFlags = {}) {
     MOZ_ASSERT(aSize.IsExtremumLength() || aSize.IsLengthPercentage(),
                "This doesn't handle auto / none");
     if (aSize.IsLengthPercentage()) {

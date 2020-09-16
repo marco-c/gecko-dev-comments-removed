@@ -9,6 +9,7 @@
 #ifndef LayoutConstants_h___
 #define LayoutConstants_h___
 
+#include "mozilla/EnumSet.h"
 #include "nsSize.h"  
 
 
@@ -33,5 +34,47 @@
 
 #define REPLACED_ELEM_FALLBACK_PX_WIDTH 300
 #define REPLACED_ELEM_FALLBACK_PX_HEIGHT 150
+
+namespace mozilla {
+
+
+
+
+
+enum class ComputeSizeFlag : uint8_t {
+  
+
+
+
+
+  ShrinkWrap,
+
+  
+
+
+
+
+  UseAutoBSize,
+
+  
+
+
+
+
+  IClampMarginBoxMinSize,  
+  BClampMarginBoxMinSize,  
+
+  
+
+
+
+
+
+
+  IApplyAutoMinSize,  
+};
+using ComputeSizeFlags = mozilla::EnumSet<ComputeSizeFlag>;
+
+}  
 
 #endif  
