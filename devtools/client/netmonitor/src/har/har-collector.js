@@ -166,7 +166,7 @@ HarCollector.prototype = {
 
   
 
-  onResourceAvailable: function({ targetFront, resource }) {
+  onResourceAvailable: function({ resource }) {
     trace.log("HarCollector.onNetworkEvent; ", resource);
 
     const {
@@ -208,7 +208,7 @@ HarCollector.prototype = {
     this.items.push(file);
   },
 
-  onResourceUpdated: function({ targetFront, resource }) {
+  onResourceUpdated: function({ resource }) {
     
     
     
