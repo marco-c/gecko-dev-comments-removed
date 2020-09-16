@@ -4460,6 +4460,12 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   mMode = Mode::JoinCurrentBlock;
 
   
+  if (aCurrentBlockElement.IsAnyOfHTMLElements(nsGkAtoms::html, nsGkAtoms::head,
+                                               nsGkAtoms::body)) {
+    return false;
+  }
+
+  
   
   if (HTMLEditUtils::IsAnyTableElement(&aCurrentBlockElement)) {
     return false;
@@ -6002,6 +6008,16 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   if (NS_WARN_IF(!IsSet())) {
     mCanJoinBlocks = false;
     return Err(NS_ERROR_UNEXPECTED);
+  }
+
+  
+  
+  if (mLeftBlockElement->IsAnyOfHTMLElements(nsGkAtoms::html, nsGkAtoms::head,
+                                             nsGkAtoms::body) &&
+      mRightBlockElement->IsAnyOfHTMLElements(nsGkAtoms::html, nsGkAtoms::head,
+                                              nsGkAtoms::body)) {
+    mCanJoinBlocks = false;
+    return false;
   }
 
   if (HTMLEditUtils::IsAnyTableElement(mLeftBlockElement) ||
