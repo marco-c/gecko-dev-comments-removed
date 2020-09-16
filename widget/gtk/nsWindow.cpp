@@ -4305,20 +4305,12 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
             
             needsAlphaVisual =
                 Preferences::GetBool("mozilla.widget.use-argb-visuals");
-          } else if (!mIsX11Display) {
-            
+          } else if (!mIsX11Display || mCSDSupportLevel != CSD_SUPPORT_NONE) {
             needsAlphaVisual = true;
-          } else if (mCSDSupportLevel != CSD_SUPPORT_NONE) {
-            if (mIsAccelerated) {
-              needsAlphaVisual = true;
-            } else {
-              
-              
-              
-              
-              mTransparencyBitmapForTitlebar = TitlebarCanUseShapeMask();
-            }
           }
+        } else {
+          
+          mTransparencyBitmapForTitlebar = TitlebarCanUseShapeMask();
         }
       }
 
