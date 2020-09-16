@@ -192,16 +192,6 @@ class GeckoViewContent extends GeckoViewModule {
       case "MozDOMFullscreen:Exited":
         this.sendToAllChildren("GeckoView:DOMFullscreenExited");
         break;
-      case "DOMWindowClose":
-        
-        
-        
-        aEvent.preventDefault();
-
-        this.eventDispatcher.sendRequest({
-          type: "GeckoView:DOMWindowClose",
-        });
-        break;
       case "pagetitlechanged":
         this.eventDispatcher.sendRequest({
           type: "GeckoView:PageTitleChanged",
