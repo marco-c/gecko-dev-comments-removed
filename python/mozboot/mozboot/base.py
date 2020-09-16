@@ -14,6 +14,7 @@ import sys
 from distutils.version import LooseVersion
 from mozboot import rust
 from mozboot.util import MINIMUM_RUST_VERSION
+from mozbuild.virtualenv import VirtualenvHelper
 
 
 
@@ -345,11 +346,16 @@ class BaseBootstrapper(object):
 
         
         
-        
-        if not sys.executable:
-            raise ValueError("cannot determine path to Python executable")
+        if not self.state_dir:
+            raise ValueError(
+                'Need a state directory (e.g. ~/.mozbuild) to download '
+                'artifacts')
+        python_location = VirtualenvHelper(os.path.join(
+            self.state_dir, '_virtualenvs', 'mach')).python_path
+        if not os.path.exists(python_location):
+            raise ValueError('python not found at %s' % python_location)
 
-        cmd = [sys.executable, mach_binary, 'artifact', 'toolchain',
+        cmd = [python_location, mach_binary, 'artifact', 'toolchain',
                '--bootstrap', '--from-build', toolchain_job]
 
         if no_unpack:
