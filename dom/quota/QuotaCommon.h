@@ -843,8 +843,13 @@ Result<bool, nsresult> WarnIfFileIsUnknown(nsIFile& aFile,
                                            int32_t aSourceLine);
 #endif
 
-void HandleError(const nsLiteralCString& aExpr,
-                 const nsLiteralCString& aSourceFile, int32_t aSourceLine);
+
+
+
+
+MOZ_NEVER_INLINE void HandleError(const nsLiteralCString& aExpr,
+                                  const nsLiteralCString& aSourceFile,
+                                  int32_t aSourceLine);
 
 }  
 }  

@@ -281,8 +281,10 @@ LogModule* GetLocalStorageLogger();
 
 namespace localstorage {
 
-void HandleError(const nsLiteralCString& aExpr,
-                 const nsLiteralCString& aSourceFile, int32_t aSourceLine);
+
+MOZ_NEVER_INLINE void HandleError(const nsLiteralCString& aExpr,
+                                  const nsLiteralCString& aSourceFile,
+                                  int32_t aSourceLine);
 
 }  
 
