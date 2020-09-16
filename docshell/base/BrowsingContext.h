@@ -946,6 +946,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   
+  
+  
   Maybe<PrincipalWithLoadIdentifierTuple> mTriggeringPrincipal;
   Maybe<PrincipalWithLoadIdentifierTuple> mPrincipalToInherit;
 
