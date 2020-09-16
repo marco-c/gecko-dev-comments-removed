@@ -194,15 +194,7 @@ class ProvidersManager {
     }
     
     
-    
-    
-    
-    
-    if (updateSourcesIfEmpty(queryContext)) {
-      queryContext.shouldFilterRestrictionTokens = true;
-      queryContext.restrictSource =
-        queryContext.sources.length == 1 && queryContext.sources[0];
-    }
+    updateSourcesIfEmpty(queryContext);
     logger.debug(`Context sources ${queryContext.sources}`);
 
     let query = new Query(queryContext, controller, muxer, providers);
@@ -614,10 +606,9 @@ class Query {
 
 
 
-
 function updateSourcesIfEmpty(context) {
   if (context.sources && context.sources.length) {
-    return false;
+    return;
   }
   let acceptedSources = [];
   
@@ -690,5 +681,4 @@ function updateSourcesIfEmpty(context) {
     }
   }
   context.sources = acceptedSources;
-  return !!restrictToken;
 }
