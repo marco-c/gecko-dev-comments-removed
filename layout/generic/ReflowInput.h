@@ -559,8 +559,6 @@ struct ReflowInput : public SizeComputationInput {
 
   bool IsFloating() const;
 
-  mozilla::StyleDisplay GetDisplay() const;
-
   
   
   nsIPercentBSizeObserver* mPercentBSizeObserver = nullptr;
