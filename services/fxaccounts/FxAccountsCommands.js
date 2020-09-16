@@ -83,7 +83,8 @@ class FxAccountsCommands {
         payload
       );
       if (!info.enqueued || !info.notified) {
-        log.warn("Sending was only partially successful", info);
+        
+        log.error("Sending was only partially successful", info);
       } else {
         log.info("Successfully sent", info);
       }
