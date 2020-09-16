@@ -2494,17 +2494,18 @@ void ScrollFrameHelper::ScrollToWithOrigin(
   nsRect range =
       aRange && !willSnap ? *aRange : nsRect(aScrollPosition, nsSize(0, 0));
 
-  if (aMode != ScrollMode::SmoothMsd) {
-    
-    
-    mApzSmoothScrollDestination = Nothing();
-  }
-
   if (aMode == ScrollMode::Instant) {
     
     
     CompleteAsyncScroll(range, aOrigin);
+    mApzSmoothScrollDestination = Nothing();
     return;
+  }
+
+  if (aMode != ScrollMode::SmoothMsd) {
+    
+    
+    mApzSmoothScrollDestination = Nothing();
   }
 
   nsPresContext* presContext = mOuter->PresContext();
@@ -2952,6 +2953,26 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
       ClampAndAlignWithLayerPixels(aPt, GetLayoutScrollRange(), aRange,
                                    alignWithPos, appUnitsPerDevPixel, scale);
   if (pt == curPos) {
+    
+    
+    
+    
+    
+    if (mApzSmoothScrollDestination && aOrigin != ScrollOrigin::Clamp) {
+      mScrollGeneration = ++sScrollGenerationCounter;
+      if (aOrigin == ScrollOrigin::Relative) {
+        mScrollUpdates.AppendElement(ScrollPositionUpdate::NewRelativeScroll(
+            mScrollGeneration, mApzScrollPos, pt));
+        mApzScrollPos = pt;
+      } else if (aOrigin != ScrollOrigin::Apz) {
+        ScrollOrigin origin =
+            (mAllowScrollOriginDowngrade || !isScrollOriginDowngrade)
+                ? aOrigin
+                : mLastScrollOrigin;
+        mScrollUpdates.AppendElement(
+            ScrollPositionUpdate::NewScroll(mScrollGeneration, origin, pt));
+      }
+    }
     return;
   }
 
@@ -6266,7 +6287,8 @@ bool ScrollFrameHelper::ReflowFinished() {
     
     
     nsPoint currentScrollPos = GetScrollPosition();
-    ScrollToImpl(currentScrollPos, nsRect(currentScrollPos, nsSize(0, 0)));
+    ScrollToImpl(currentScrollPos, nsRect(currentScrollPos, nsSize(0, 0)),
+                 ScrollOrigin::Clamp);
     if (!IsScrollAnimating()) {
       
       
