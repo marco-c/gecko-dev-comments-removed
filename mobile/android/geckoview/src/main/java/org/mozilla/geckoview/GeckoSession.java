@@ -1494,6 +1494,9 @@ public class GeckoSession implements Parcelable {
 
         onWindowChanged(WINDOW_CLOSE,  true);
 
+        
+        onSurfaceDestroyed();
+
         mWindow.close();
         mWindow.disposeNative();
         mWindow = null;
