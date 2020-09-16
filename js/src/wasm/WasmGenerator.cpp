@@ -85,7 +85,6 @@ ModuleGenerator::ModuleGenerator(const CompileArgs& args,
       env_(env),
       linkData_(nullptr),
       metadataTier_(nullptr),
-      taskState_(mutexid::WasmCompileTaskState),
       lifo_(GENERATOR_LIFO_DEFAULT_CHUNK_SIZE),
       masmAlloc_(&lifo_),
       masm_(masmAlloc_,  false),
@@ -106,37 +105,33 @@ ModuleGenerator::~ModuleGenerator() {
 
   if (parallel_) {
     if (outstanding_) {
-      
-      {
-        AutoLockHelperThreadState lock;
-        CompileTaskPtrFifo& worklist =
-            HelperThreadState().wasmWorklist(lock, mode());
-        auto pred = [this](CompileTask* task) {
-          return &task->state == &taskState_;
-        };
-        size_t removed = worklist.eraseIf(pred);
-        MOZ_ASSERT(outstanding_ >= removed);
-        outstanding_ -= removed;
-      }
+      AutoLockHelperThreadState lock;
 
       
-      {
-        auto taskState = taskState_.lock();
-        while (true) {
-          MOZ_ASSERT(outstanding_ >= taskState->finished.length());
-          outstanding_ -= taskState->finished.length();
-          taskState->finished.clear();
+      CompileTaskPtrFifo& worklist =
+          HelperThreadState().wasmWorklist(lock, mode());
+      auto pred = [this](CompileTask* task) {
+        return &task->state == &taskState_;
+      };
+      size_t removed = worklist.eraseIf(pred);
+      MOZ_ASSERT(outstanding_ >= removed);
+      outstanding_ -= removed;
 
-          MOZ_ASSERT(outstanding_ >= taskState->numFailed);
-          outstanding_ -= taskState->numFailed;
-          taskState->numFailed = 0;
+      
+      while (true) {
+        MOZ_ASSERT(outstanding_ >= taskState_.finished().length());
+        outstanding_ -= taskState_.finished().length();
+        taskState_.finished().clear();
 
-          if (!outstanding_) {
-            break;
-          }
+        MOZ_ASSERT(outstanding_ >= taskState_.numFailed());
+        outstanding_ -= taskState_.numFailed();
+        taskState_.numFailed() = 0;
 
-          taskState.wait();
+        if (!outstanding_) {
+          break;
         }
+
+        taskState_.condVar().wait(lock); 
       }
     }
   } else {
@@ -145,7 +140,8 @@ ModuleGenerator::~ModuleGenerator() {
 
   
   if (error_ && !*error_) {
-    *error_ = std::move(taskState_.lock()->errorMessage);
+    AutoLockHelperThreadState lock;
+    *error_ = std::move(taskState_.errorMessage());
   }
 }
 
@@ -792,23 +788,29 @@ static bool ExecuteCompileTask(CompileTask* task, UniqueChars* error) {
   return true;
 }
 
-void wasm::ExecuteCompileTaskFromHelperThread(CompileTask* task) {
+void CompileTask::runTaskLocked(AutoLockHelperThreadState& lock) {
   TraceLoggerThread* logger = TraceLoggerForCurrentThread();
   AutoTraceLog logCompile(logger, TraceLogger_WasmCompilation);
 
   UniqueChars error;
-  bool ok = ExecuteCompileTask(task, &error);
+  bool ok;
 
-  auto taskState = task->state.lock();
+  {
+    AutoUnlockHelperThreadState unlock(lock);
+    ok = ExecuteCompileTask(this, &error);
+  }
 
-  if (!ok || !taskState->finished.append(task)) {
-    taskState->numFailed++;
-    if (!taskState->errorMessage) {
-      taskState->errorMessage = std::move(error);
+  
+  
+
+  if (!ok || !state.finished().append(this)) {
+    state.numFailed()++;
+    if (!state.errorMessage()) {
+      state.errorMessage() = std::move(error);
     }
   }
 
-  taskState.notify_one();
+  state.condVar().notify_one(); 
 }
 
 bool ModuleGenerator::locallyCompileCurrentTask() {
@@ -864,21 +866,21 @@ bool ModuleGenerator::finishOutstandingTask() {
 
   CompileTask* task = nullptr;
   {
-    auto taskState = taskState_.lock();
+    AutoLockHelperThreadState lock;
     while (true) {
       MOZ_ASSERT(outstanding_ > 0);
 
-      if (taskState->numFailed > 0) {
+      if (taskState_.numFailed() > 0) {
         return false;
       }
 
-      if (!taskState->finished.empty()) {
+      if (!taskState_.finished().empty()) {
         outstanding_--;
-        task = taskState->finished.popCopy();
+        task = taskState_.finished().popCopy();
         break;
       }
 
-      taskState.wait();
+      taskState_.condVar().wait(lock); 
     }
   }
 
@@ -1313,8 +1315,6 @@ bool ModuleGenerator::finishTier2(const Module& module) {
 
   return module.finishTier2(*linkData_, std::move(codeTier));
 }
-
-void CompileTask::runTask() { ExecuteCompileTaskFromHelperThread(this); }
 
 size_t CompiledCode::sizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
