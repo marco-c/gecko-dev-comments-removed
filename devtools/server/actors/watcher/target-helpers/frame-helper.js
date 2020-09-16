@@ -81,7 +81,9 @@ function destroyTargets(watcher) {
 
 
 
-async function watchResources({ watcher, resourceTypes }) {
+
+
+async function addWatcherDataEntry({ watcher, type, entries }) {
   const browsingContexts = getWatchingBrowsingContexts(watcher);
   const promises = [];
   for (const browsingContext of browsingContexts) {
@@ -92,10 +94,11 @@ async function watchResources({ watcher, resourceTypes }) {
 
     const promise = browsingContext.currentWindowGlobal
       .getActor("DevToolsFrame")
-      .watchFrameResources({
+      .addWatcherDataEntry({
         watcherActorID: watcher.actorID,
         browserId: watcher.browserId,
-        resourceTypes,
+        type,
+        entries,
       });
     promises.push(promise);
   }
@@ -108,7 +111,7 @@ async function watchResources({ watcher, resourceTypes }) {
 
 
 
-function unwatchResources({ watcher, resourceTypes }) {
+function removeWatcherDataEntry({ watcher, type, entries }) {
   const browsingContexts = getWatchingBrowsingContexts(watcher);
   for (const browsingContext of browsingContexts) {
     logWindowGlobal(
@@ -118,10 +121,11 @@ function unwatchResources({ watcher, resourceTypes }) {
 
     browsingContext.currentWindowGlobal
       .getActor("DevToolsFrame")
-      .unwatchFrameResources({
+      .removeWatcherDataEntry({
         watcherActorID: watcher.actorID,
         browserId: watcher.browserId,
-        resourceTypes,
+        type,
+        entries,
       });
   }
 }
@@ -129,8 +133,8 @@ function unwatchResources({ watcher, resourceTypes }) {
 module.exports = {
   createTargets,
   destroyTargets,
-  watchResources,
-  unwatchResources,
+  addWatcherDataEntry,
+  removeWatcherDataEntry,
 };
 
 

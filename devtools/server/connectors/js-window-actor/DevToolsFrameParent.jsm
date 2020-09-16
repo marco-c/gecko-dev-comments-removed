@@ -78,20 +78,24 @@ class DevToolsFrameParent extends JSWindowActorParent {
   
 
 
-
-  watchFrameResources({ watcherActorID, browserId, resourceTypes }) {
-    return this.sendQuery("DevToolsFrameParent:watchResources", {
+  addWatcherDataEntry({ watcherActorID, browserId, type, entries }) {
+    return this.sendQuery("DevToolsFrameParent:addWatcherDataEntry", {
       watcherActorID,
       browserId,
-      resourceTypes,
+      type,
+      entries,
     });
   }
 
-  unwatchFrameResources({ watcherActorID, browserId, resourceTypes }) {
-    this.sendAsyncMessage("DevToolsFrameParent:unwatchResources", {
+  
+
+
+  removeWatcherDataEntry({ watcherActorID, browserId, type, entries }) {
+    this.sendAsyncMessage("DevToolsFrameParent:removeWatcherDataEntry", {
       watcherActorID,
       browserId,
-      resourceTypes,
+      type,
+      entries,
     });
   }
 

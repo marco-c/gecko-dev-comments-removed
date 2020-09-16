@@ -148,15 +148,13 @@ class DevToolsFrameChild extends JSWindowActorChild {
     }
 
     
-    for (const [
-      watcherActorID,
-      { targets, connectionPrefix, browserId, resources },
-    ] of watchedDataByWatcherActor) {
+    for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
+      const { connectionPrefix, browserId } = watchedData;
       if (
-        targets.includes("frame") &&
+        watchedData.targets.includes("frame") &&
         shouldNotifyWindowGlobal(this.manager, browserId)
       ) {
-        this._createTargetActor(watcherActorID, connectionPrefix, resources);
+        this._createTargetActor(watcherActorID, connectionPrefix, watchedData);
       }
     }
   }
@@ -172,11 +170,9 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
 
 
-  _createTargetActor(
-    watcherActorID,
-    parentConnectionPrefix,
-    initialWatchedResources
-  ) {
+
+
+  _createTargetActor(watcherActorID, parentConnectionPrefix, initialData) {
     if (this._connections.get(watcherActorID)) {
       throw new Error(
         "DevToolsFrameChild _createTargetActor was called more than once" +
@@ -207,8 +203,8 @@ class DevToolsFrameChild extends JSWindowActorChild {
     });
 
     
-    if (initialWatchedResources.length > 0) {
-      targetActor.watchTargetResources(initialWatchedResources);
+    for (const type in initialData) {
+      targetActor.addWatcherDataEntry(type, initialData[type]);
     }
 
     
@@ -367,13 +363,23 @@ class DevToolsFrameChild extends JSWindowActorChild {
         const { watcherActorID } = message.data;
         return this._destroyTargetActor(watcherActorID);
       }
-      case "DevToolsFrameParent:watchResources": {
-        const { watcherActorID, browserId, resourceTypes } = message.data;
-        return this._watchResources(watcherActorID, browserId, resourceTypes);
+      case "DevToolsFrameParent:addWatcherDataEntry": {
+        const { watcherActorID, browserId, type, entries } = message.data;
+        return this._addWatcherDataEntry(
+          watcherActorID,
+          browserId,
+          type,
+          entries
+        );
       }
-      case "DevToolsFrameParent:unwatchResources": {
-        const { watcherActorID, browserId, resourceTypes } = message.data;
-        return this._unwatchResources(watcherActorID, browserId, resourceTypes);
+      case "DevToolsFrameParent:removeWatcherDataEntry": {
+        const { watcherActorID, browserId, type, entries } = message.data;
+        return this._removeWatcherDataEntry(
+          watcherActorID,
+          browserId,
+          type,
+          entries
+        );
       }
       case "DevToolsFrameParent:packet":
         return this.emit("packet-received", message);
@@ -407,7 +413,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
     return targetActor;
   }
 
-  _watchResources(watcherActorID, browserId, resourceTypes) {
+  _addWatcherDataEntry(watcherActorID, browserId, type, entries) {
     const targetActor = this._getTargetActorForWatcherActorID(
       watcherActorID,
       browserId
@@ -417,17 +423,17 @@ class DevToolsFrameChild extends JSWindowActorChild {
         `No target actor for this Watcher Actor ID:"${watcherActorID}" / BrowserId:${browserId}`
       );
     }
-    return targetActor.watchTargetResources(resourceTypes);
+    return targetActor.addWatcherDataEntry(type, entries);
   }
 
-  _unwatchResources(watcherActorID, browserId, resourceTypes) {
+  _removeWatcherDataEntry(watcherActorID, browserId, type, entries) {
     const targetActor = this._getTargetActorForWatcherActorID(
       watcherActorID,
       browserId
     );
     
     if (targetActor) {
-      return targetActor.unwatchTargetResources(resourceTypes);
+      return targetActor.removeWatcherDataEntry(type, entries);
     }
     return null;
   }
