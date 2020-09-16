@@ -176,14 +176,6 @@ browser.Context = class {
     
     this.tab = null;
 
-    
-    
-    
-    
-    
-    this.pendingCommands = [];
-    this._needsFlushPendingCommands = false;
-
     this.frameRegsPending = 0;
 
     this.getIdForBrowser = driver.getIdForBrowser.bind(driver);
@@ -509,44 +501,11 @@ browser.Context = class {
 
       if (target === this.contentBrowser) {
         this.updateIdForBrowser(this.contentBrowser, uid);
-        this._needsFlushPendingCommands = true;
       }
     }
 
     
     this.knownFrames.push(uid);
-  }
-
-  
-
-
-
-
-  flushPendingCommands() {
-    if (!this._needsFlushPendingCommands) {
-      return;
-    }
-
-    this.pendingCommands.forEach(cb => cb());
-    this._needsFlushPendingCommands = false;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  executeWhenReady(cb) {
-    if (this._needsFlushPendingCommands) {
-      this.pendingCommands.push(cb);
-    } else {
-      cb();
-    }
   }
 };
 
