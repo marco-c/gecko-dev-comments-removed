@@ -15,6 +15,7 @@
 #include "mozilla/dom/WindowBinding.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/ScrollOrigin.h"
+#include "mozilla/ScrollPositionUpdate.h"
 #include "mozilla/ScrollStyles.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/gfx/Point.h"
@@ -460,6 +461,11 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
   virtual nsPoint LastScrollDestination() = 0;
+  
+
+
+
+  virtual nsTArray<mozilla::ScrollPositionUpdate> GetScrollUpdates() const = 0;
   
 
 
