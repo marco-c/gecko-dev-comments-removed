@@ -7,6 +7,7 @@
 
 
 #include "xpcprivate.h"
+#include "js/Object.h"  
 #include "pratom.h"
 
 using namespace mozilla;
@@ -57,7 +58,7 @@ bool XPCWrappedNativeProto::Init(JSContext* cx, nsIXPCScriptable* scriptable) {
 
   bool success = !!mJSProtoObject;
   if (success) {
-    JS_SetPrivate(mJSProtoObject, this);
+    JS::SetPrivate(mJSProtoObject, this);
   }
 
   return success;
@@ -90,7 +91,7 @@ void XPCWrappedNativeProto::SystemIsBeingShutDown() {
 
   if (mJSProtoObject) {
     
-    JS_SetPrivate(mJSProtoObject, nullptr);
+    JS::SetPrivate(mJSProtoObject, nullptr);
     mJSProtoObject = nullptr;
   }
 }

@@ -78,7 +78,7 @@ WritableStream* WritableStream::create(
     return nullptr;
   }
 
-  JS_SetPrivate(stream, nsISupportsObject_alreadyAddreffed);
+  stream->setPrivate(nsISupportsObject_alreadyAddreffed);
 
   stream->initWritableState();
 

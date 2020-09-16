@@ -31,6 +31,7 @@
 #include "js/ErrorReport.h"             
 #include "js/Exception.h"               
 #include "js/experimental/TypedData.h"  
+#include "js/Object.h"                  
 #include "js/SavedFrameAPI.h"
 #include "js/UniquePtr.h"
 #include "js/Value.h"
@@ -767,7 +768,7 @@ const char* js::ValueToSourceForError(JSContext* cx, HandleValue val,
   if (val.isObject()) {
     RootedObject valObj(cx, val.toObjectOrNull());
     ESClass cls;
-    if (!GetBuiltinClass(cx, valObj, &cls)) {
+    if (!JS::GetBuiltinClass(cx, valObj, &cls)) {
       return "<<error determining class of value>>";
     }
     const char* s;

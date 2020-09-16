@@ -17,6 +17,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "jsfriendapi.h"
 #include "js/friend/WindowProxy.h"  
+#include "js/Object.h"              
 #include "mozilla/Likely.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/MaybeCrossOriginObject.h"
@@ -116,8 +117,8 @@ bool WrapperFactory::AllowWaiver(JS::Compartment* target,
 
 bool WrapperFactory::AllowWaiver(JSObject* wrapper) {
   MOZ_ASSERT(js::IsCrossCompartmentWrapper(wrapper));
-  return AllowWaiver(js::GetObjectCompartment(wrapper),
-                     js::GetObjectCompartment(js::UncheckedUnwrap(wrapper)));
+  return AllowWaiver(JS::GetCompartment(wrapper),
+                     JS::GetCompartment(js::UncheckedUnwrap(wrapper)));
 }
 
 inline bool ShouldWaiveXray(JSContext* cx, JSObject* originalObj) {
@@ -140,7 +141,7 @@ inline bool ShouldWaiveXray(JSContext* cx, JSObject* originalObj) {
   
   
   
-  JS::Compartment* oldCompartment = js::GetObjectCompartment(originalObj);
+  JS::Compartment* oldCompartment = JS::GetCompartment(originalObj);
   JS::Compartment* newCompartment = js::GetContextCompartment(cx);
   bool sameOrigin = false;
   if (OriginAttributes::IsRestrictOpenerAccessForFPI()) {
@@ -265,8 +266,7 @@ void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
       
       
       
-      if (js::GetObjectCompartment(scope) !=
-          js::GetObjectCompartment(wrapScope)) {
+      if (JS::GetCompartment(scope) != JS::GetCompartment(wrapScope)) {
         retObj.set(waive ? WaiveXray(cx, obj) : obj);
         return;
       }
@@ -320,9 +320,9 @@ void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
       
       
       
-      if (!AccessCheck::isChrome(js::GetObjectCompartment(wrapScope)) &&
-          CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(wrapScope),
-                                          js::GetObjectCompartment(obj))) {
+      if (!AccessCheck::isChrome(JS::GetCompartment(wrapScope)) &&
+          CompartmentOriginInfo::Subsumes(JS::GetCompartment(wrapScope),
+                                          JS::GetCompartment(obj))) {
         retObj.set(waive ? WaiveXray(cx, obj) : obj);
         return;
       }
@@ -666,7 +666,7 @@ bool WrapperFactory::WaiveXrayAndWrap(JSContext* cx,
   
   
   JS::Compartment* target = js::GetContextCompartment(cx);
-  JS::Compartment* origin = js::GetObjectCompartment(obj);
+  JS::Compartment* origin = JS::GetCompartment(obj);
   obj = AllowWaiver(target, origin) ? WaiveXray(cx, obj) : obj;
   if (!obj) {
     return false;
@@ -704,8 +704,8 @@ static bool FixWaiverAfterTransplant(JSContext* cx, HandleObject oldWaiver,
     
     
     
-    js::NukeCrossCompartmentWrapperIfExists(
-        cx, js::GetObjectCompartment(newobj), oldWaiver);
+    js::NukeCrossCompartmentWrapperIfExists(cx, JS::GetCompartment(newobj),
+                                            oldWaiver);
   } else {
     
     
@@ -831,13 +831,13 @@ nsIGlobalObject* NativeGlobal(JSObject* obj) {
 
   
   
-  MOZ_ASSERT((GetObjectClass(obj)->flags &
+  MOZ_ASSERT((JS::GetClass(obj)->flags &
               (JSCLASS_PRIVATE_IS_NSISUPPORTS | JSCLASS_HAS_PRIVATE)) ||
              dom::UnwrapDOMObjectToISupports(obj));
 
   nsISupports* native = dom::UnwrapDOMObjectToISupports(obj);
   if (!native) {
-    native = static_cast<nsISupports*>(js::GetObjectPrivate(obj));
+    native = static_cast<nsISupports*>(JS::GetPrivate(obj));
     MOZ_ASSERT(native);
 
     

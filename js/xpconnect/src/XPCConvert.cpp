@@ -27,6 +27,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
+#include "js/Object.h"  
 #include "js/String.h"  
 
 #include "mozilla/dom/BindingUtils.h"
@@ -52,7 +53,7 @@ using namespace JS;
 
 
 bool XPCConvert::GetISupportsFromJSObject(JSObject* obj, nsISupports** iface) {
-  const JSClass* jsclass = js::GetObjectClass(obj);
+  const JSClass* jsclass = JS::GetClass(obj);
   MOZ_ASSERT(jsclass, "obj has no class");
   if (jsclass && (jsclass->flags & JSCLASS_HAS_PRIVATE) &&
       (jsclass->flags & JSCLASS_PRIVATE_IS_NSISUPPORTS)) {

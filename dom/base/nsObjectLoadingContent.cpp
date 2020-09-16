@@ -68,6 +68,7 @@
 #include "nsPluginFrame.h"
 #include "nsWrapperCacheInlines.h"
 #include "nsDOMJSUtils.h"
+#include "js/Object.h"  
 
 #include "nsWidgetsCID.h"
 #include "nsContentCID.h"
@@ -3505,7 +3506,7 @@ void nsObjectLoadingContent::SetupProtoChain(JSContext* aCx,
     return;
   }
 
-  if (pi_proto && js::GetObjectClass(pi_proto) != js::ObjectClassPtr) {
+  if (pi_proto && JS::GetClass(pi_proto) != js::ObjectClassPtr) {
     
     
     if (pi_proto != my_proto && !::JS_SetPrototype(aCx, pi_proto, my_proto)) {

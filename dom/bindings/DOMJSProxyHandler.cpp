@@ -13,6 +13,7 @@
 #include "mozilla/dom/BindingUtils.h"
 
 #include "jsapi.h"
+#include "js/Object.h"  
 
 using namespace JS;
 
@@ -72,7 +73,7 @@ static inline void CheckExpandoObject(JSObject* proxy,
 #ifdef DEBUG
   JSObject* obj = &expando.toObject();
   MOZ_ASSERT(!js::gc::EdgeNeedsSweepUnbarriered(&obj));
-  MOZ_ASSERT(js::GetObjectCompartment(proxy) == js::GetObjectCompartment(obj));
+  MOZ_ASSERT(JS::GetCompartment(proxy) == JS::GetCompartment(obj));
 
   
   

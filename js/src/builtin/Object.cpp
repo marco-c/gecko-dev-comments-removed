@@ -5,6 +5,7 @@
 
 
 #include "builtin/Object.h"
+#include "js/Object.h"  
 
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/Range.h"
@@ -506,7 +507,7 @@ static bool GetBuiltinTagSlow(JSContext* cx, HandleObject obj,
 
   
   ESClass cls;
-  if (!GetBuiltinClass(cx, obj, &cls)) {
+  if (!JS::GetBuiltinClass(cx, obj, &cls)) {
     return false;
   }
 

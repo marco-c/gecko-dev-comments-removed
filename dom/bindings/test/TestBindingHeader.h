@@ -15,6 +15,7 @@
 #include "nsCOMPtr.h"
 #include "nsGenericHTMLElement.h"
 #include "nsWrapperCache.h"
+#include "js/Object.h"  
 
 
 
@@ -673,7 +674,7 @@ class TestInterface : public nsISupports, public nsWrapperCache {
     if (arg.IsNull()) {
     } else if (arg.IsObject()) {
       JS::Rooted<JSObject*> obj(cx, arg.GetAsObject());
-      JS_GetClass(obj);
+      JS::GetClass(obj);
       returnValue.SetAsObject() = obj;
     } else {
       int32_t i = arg.GetAsLong();

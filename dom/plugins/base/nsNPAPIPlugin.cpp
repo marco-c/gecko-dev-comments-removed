@@ -14,6 +14,7 @@
 
 #include "jsfriendapi.h"
 #include "js/friend/WindowProxy.h"  
+#include "js/Object.h"              
 
 #include "nsPluginHost.h"
 #include "nsNPAPIPlugin.h"
@@ -973,9 +974,8 @@ bool _evaluate(NPP npp, NPObject* npobj, NPString* script, NPVariant* result) {
   }
   
   
-  MOZ_RELEASE_ASSERT(
-      js::GetObjectCompartment(obj) == js::GetContextCompartment(cx),
-      "nsNPObjWrapper::GetNewOrUsed must wrap its return value");
+  MOZ_RELEASE_ASSERT(JS::GetCompartment(obj) == js::GetContextCompartment(cx),
+                     "nsNPObjWrapper::GetNewOrUsed must wrap its return value");
   obj = JS::CurrentGlobalOrNull(cx);
   MOZ_ASSERT(obj);
   nsresult rv = NS_OK;

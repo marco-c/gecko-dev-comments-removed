@@ -9,6 +9,7 @@
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "js/Object.h"  
 #include "js/PropertySpec.h"
 #include "js/Wrapper.h"
 #include "mozilla/Assertions.h"
@@ -501,22 +502,22 @@ struct DOMIfaceAndProtoJSClass {
 class ProtoAndIfaceCache;
 
 inline bool DOMGlobalHasProtoAndIFaceCache(JSObject* global) {
-  MOZ_ASSERT(js::GetObjectClass(global)->flags & JSCLASS_DOM_GLOBAL);
+  MOZ_ASSERT(JS::GetClass(global)->flags & JSCLASS_DOM_GLOBAL);
   
-  return !js::GetReservedSlot(global, DOM_PROTOTYPE_SLOT).isUndefined();
+  return !JS::GetReservedSlot(global, DOM_PROTOTYPE_SLOT).isUndefined();
 }
 
 inline bool HasProtoAndIfaceCache(JSObject* global) {
-  if (!(js::GetObjectClass(global)->flags & JSCLASS_DOM_GLOBAL)) {
+  if (!(JS::GetClass(global)->flags & JSCLASS_DOM_GLOBAL)) {
     return false;
   }
   return DOMGlobalHasProtoAndIFaceCache(global);
 }
 
 inline ProtoAndIfaceCache* GetProtoAndIfaceCache(JSObject* global) {
-  MOZ_ASSERT(js::GetObjectClass(global)->flags & JSCLASS_DOM_GLOBAL);
+  MOZ_ASSERT(JS::GetClass(global)->flags & JSCLASS_DOM_GLOBAL);
   return static_cast<ProtoAndIfaceCache*>(
-      js::GetReservedSlot(global, DOM_PROTOTYPE_SLOT).toPrivate());
+      JS::GetReservedSlot(global, DOM_PROTOTYPE_SLOT).toPrivate());
 }
 
 }  

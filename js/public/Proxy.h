@@ -14,6 +14,7 @@
 #include "js/Array.h"  
 #include "js/CallNonGenericMethod.h"
 #include "js/Class.h"
+#include "js/Object.h"         
 #include "js/shadow/Object.h"  
 
 namespace js {
@@ -381,7 +382,7 @@ class JS_FRIEND_API BaseProxyHandler {
 extern JS_FRIEND_DATA const JSClass ProxyClass;
 
 inline bool IsProxy(const JSObject* obj) {
-  return GetObjectClass(obj)->isProxy();
+  return JS::GetClass(obj)->isProxy();
 }
 
 namespace detail {
@@ -492,7 +493,7 @@ JS_FRIEND_API void SetValueInProxy(Value* slot, const Value& value);
 
 inline void SetProxyReservedSlotUnchecked(JSObject* obj, size_t n,
                                           const Value& extra) {
-  MOZ_ASSERT(n < JSCLASS_RESERVED_SLOTS(GetObjectClass(obj)));
+  MOZ_ASSERT(n < JSCLASS_RESERVED_SLOTS(JS::GetClass(obj)));
 
   Value* vp = &GetProxyDataLayout(obj)->reservedSlots->slots[n];
 
@@ -523,7 +524,7 @@ inline JSObject* GetProxyTargetObject(JSObject* obj) {
 }
 
 inline const Value& GetProxyReservedSlot(const JSObject* obj, size_t n) {
-  MOZ_ASSERT(n < JSCLASS_RESERVED_SLOTS(GetObjectClass(obj)));
+  MOZ_ASSERT(n < JSCLASS_RESERVED_SLOTS(JS::GetClass(obj)));
   return detail::GetProxyDataLayout(obj)->reservedSlots->slots[n];
 }
 

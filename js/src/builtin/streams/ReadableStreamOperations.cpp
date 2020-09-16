@@ -11,8 +11,6 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
-#include "jsapi.h"  
-
 #include "builtin/Array.h"                
 #include "builtin/Promise.h"              
 #include "builtin/streams/PipeToState.h"  
@@ -138,7 +136,7 @@ static MOZ_MUST_USE ReadableStream* CreateReadableStream(
     return nullptr;
   }
 
-  JS_SetPrivate(stream, nsISupportsObject_alreadyAddreffed);
+  stream->setPrivate(nsISupportsObject_alreadyAddreffed);
 
   
   stream->initStateBits(Readable);

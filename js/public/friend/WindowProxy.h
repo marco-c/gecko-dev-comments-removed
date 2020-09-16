@@ -31,10 +31,10 @@
 #ifndef js_friend_WindowProxy_h
 #define js_friend_WindowProxy_h
 
-#include "jsfriendapi.h"  
-#include "jstypes.h"      
+#include "jstypes.h"  
 
 #include "js/Class.h"       
+#include "js/Object.h"      
 #include "js/RootingAPI.h"  
 
 struct JSClass;
@@ -71,7 +71,7 @@ extern JS_FRIEND_API JSObject* ToWindowProxyIfWindowSlow(JSObject* obj);
 
 
 inline bool IsWindow(JSObject* obj) {
-  if (GetObjectClass(obj)->flags & JSCLASS_IS_GLOBAL) {
+  if (JS::GetClass(obj)->flags & JSCLASS_IS_GLOBAL) {
     return detail::IsWindowSlow(obj);
   }
   return false;
@@ -88,7 +88,7 @@ extern JS_FRIEND_API bool IsWindowProxy(JSObject* obj);
 
 
 MOZ_ALWAYS_INLINE JSObject* ToWindowProxyIfWindow(JSObject* obj) {
-  if (GetObjectClass(obj)->flags & JSCLASS_IS_GLOBAL) {
+  if (JS::GetClass(obj)->flags & JSCLASS_IS_GLOBAL) {
     return detail::ToWindowProxyIfWindowSlow(obj);
   }
   return obj;

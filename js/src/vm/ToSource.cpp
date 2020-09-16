@@ -20,6 +20,7 @@
 #include "gc/Allocator.h"           
 #include "js/Class.h"               
 #include "js/friend/StackLimits.h"  
+#include "js/Object.h"              
 #include "js/Symbol.h"              
 #include "js/TypeDecls.h"  
 #include "js/Utility.h"         
@@ -43,6 +44,8 @@
 using namespace js;
 
 using mozilla::IsNegativeZero;
+
+using JS::GetBuiltinClass;
 
 
 

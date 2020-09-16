@@ -49,6 +49,7 @@
 #include "js/Date.h"
 #include "js/experimental/TypedData.h"  
 #include "js/GCHashTable.h"
+#include "js/Object.h"             
 #include "js/RegExpFlags.h"        
 #include "js/ScalarType.h"         
 #include "js/SharedArrayBuffer.h"  
@@ -70,6 +71,7 @@
 using namespace js;
 
 using JS::CanonicalizeNaN;
+using JS::GetBuiltinClass;
 using JS::RegExpFlag;
 using JS::RegExpFlags;
 using JS::RootedValueVector;

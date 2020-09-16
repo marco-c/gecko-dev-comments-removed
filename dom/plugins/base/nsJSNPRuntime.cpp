@@ -24,6 +24,7 @@
 #include "nsPluginInstanceOwner.h"
 #include "nsWrapperCacheInlines.h"
 #include "js/GCHashTable.h"
+#include "js/Object.h"  
 #include "js/Symbol.h"
 #include "js/TracingAPI.h"
 #include "js/Wrapper.h"
@@ -1003,8 +1004,7 @@ NPObject* nsJSObjWrapper::GetNewOrUsed(NPP npp, JS::Handle<JSObject*> obj,
   }
 
   MOZ_ASSERT(JS_IsGlobalObject(objGlobal));
-  MOZ_RELEASE_ASSERT(js::GetObjectCompartment(obj) ==
-                     js::GetObjectCompartment(objGlobal));
+  MOZ_RELEASE_ASSERT(JS::GetCompartment(obj) == JS::GetCompartment(objGlobal));
 
   
   
@@ -1719,13 +1719,13 @@ static bool NPObjWrapper_toPrimitive(JSContext* cx, unsigned argc,
   }
 
   JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
-                            JSMSG_CANT_CONVERT_TO, JS_GetClass(obj)->name,
+                            JSMSG_CANT_CONVERT_TO, JS::GetClass(obj)->name,
                             "primitive type");
   return false;
 }
 
 bool nsNPObjWrapper::IsWrapper(JSObject* obj) {
-  return js::GetObjectClass(obj) == &sNPObjWrapperProxyClass;
+  return JS::GetClass(obj) == &sNPObjWrapperProxyClass;
 }
 
 
@@ -2003,7 +2003,7 @@ static bool CreateNPObjectMember(NPP npp, JSContext* cx,
 
   vp.setObject(*memobj);
 
-  ::JS_SetPrivate(memobj, (void*)memberPrivate);
+  JS::SetPrivate(memobj, (void*)memberPrivate);
 
   NPIdentifier identifier = JSIdToNPIdentifier(id);
 
@@ -2055,7 +2055,7 @@ static bool CreateNPObjectMember(NPP npp, JSContext* cx,
 static void NPObjectMember_Finalize(JSFreeOp* fop, JSObject* obj) {
   NPObjectMemberPrivate* memberPrivate;
 
-  memberPrivate = (NPObjectMemberPrivate*)::JS_GetPrivate(obj);
+  memberPrivate = (NPObjectMemberPrivate*)JS::GetPrivate(obj);
   if (!memberPrivate) return;
 
   delete memberPrivate;
@@ -2139,8 +2139,7 @@ static bool NPObjectMember_Call(JSContext* cx, unsigned argc, JS::Value* vp) {
 }
 
 static void NPObjectMember_Trace(JSTracer* trc, JSObject* obj) {
-  NPObjectMemberPrivate* memberPrivate =
-      (NPObjectMemberPrivate*)::JS_GetPrivate(obj);
+  auto* memberPrivate = (NPObjectMemberPrivate*)JS::GetPrivate(obj);
   if (!memberPrivate) return;
 
   

@@ -21,6 +21,7 @@
 #include "js/Array.h"  
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
+#include "js/Object.h"  
 #include "js/Printf.h"
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  
@@ -511,8 +512,7 @@ void mozJSComponentLoader::FindTargetObject(JSContext* aCx,
     aTargetObject.set(JS::GetScriptedCallerGlobal(aCx));
 
     
-    if (js::GetObjectCompartment(aTargetObject) !=
-        js::GetContextCompartment(aCx)) {
+    if (JS::GetCompartment(aTargetObject) != js::GetContextCompartment(aCx)) {
       aTargetObject.set(nullptr);
     }
   }

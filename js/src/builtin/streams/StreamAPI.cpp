@@ -26,6 +26,7 @@
 #include "gc/Zone.h"                           
 #include "js/experimental/TypedData.h"  
 #include "js/GCAPI.h"       
+#include "js/Object.h"      
 #include "js/RootingAPI.h"  
 #include "js/Stream.h"      
 #include "js/Value.h"       
@@ -398,7 +399,7 @@ JS_PUBLIC_API bool JS::ReadableStreamUpdateDataAvailableFromSource(
 
 JS_PUBLIC_API void JS::ReadableStreamReleaseCCObject(JSObject* streamObj) {
   MOZ_ASSERT(JS::IsReadableStream(streamObj));
-  JS_SetPrivate(streamObj, nullptr);
+  JS::SetPrivate(streamObj, nullptr);
 }
 
 JS_PUBLIC_API bool JS::ReadableStreamTee(JSContext* cx,

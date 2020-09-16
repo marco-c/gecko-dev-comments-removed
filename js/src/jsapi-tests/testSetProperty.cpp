@@ -5,13 +5,14 @@
 
 
 
+#include "js/Object.h"  
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testSetProperty_InheritedGlobalSetter) {
   
   
   
-  MOZ_RELEASE_ASSERT(!JS_GetClass(global)->getResolve());
+  MOZ_RELEASE_ASSERT(!JS::GetClass(global)->getResolve());
 
   CHECK(JS::InitRealmStandardClasses(cx));
 

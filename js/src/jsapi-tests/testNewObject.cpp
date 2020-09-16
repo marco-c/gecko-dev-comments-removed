@@ -6,6 +6,7 @@
 
 
 #include "js/Array.h"  
+#include "js/Object.h"  
 #include "jsapi-tests/tests.h"
 
 static bool constructHook(JSContext* cx, unsigned argc, JS::Value* vp) {
@@ -18,7 +19,7 @@ static bool constructHook(JSContext* cx, unsigned argc, JS::Value* vp) {
     JS_ReportErrorASCII(cx, "test failed, could not construct object");
     return false;
   }
-  if (strcmp(JS_GetClass(obj)->name, "Object") != 0) {
+  if (strcmp(JS::GetClass(obj)->name, "Object") != 0) {
     JS_ReportErrorASCII(cx, "test failed, wrong class for 'this'");
     return false;
   }
@@ -212,7 +213,7 @@ BEGIN_TEST(testNewObject_Subclassing) {
   CHECK_SAME(result, JS::TrueValue());
 
   EVAL("myObj", &result);
-  CHECK_EQUAL(JS_GetClass(&result.toObject()), &Base_class);
+  CHECK_EQUAL(JS::GetClass(&result.toObject()), &Base_class);
 
   return true;
 }

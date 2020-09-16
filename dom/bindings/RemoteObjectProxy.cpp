@@ -7,6 +7,7 @@
 #include "RemoteObjectProxy.h"
 #include "AccessCheck.h"
 #include "jsfriendapi.h"
+#include "js/Object.h"  
 #include "xpcprivate.h"
 
 namespace mozilla {
@@ -142,7 +143,7 @@ void RemoteObjectProxyBase::GetOrCreateProxyObject(
     
     
     
-    MOZ_RELEASE_ASSERT(js::GetObjectClass(aProxy) == aClasp);
+    MOZ_RELEASE_ASSERT(JS::GetClass(aProxy) == aClasp);
 
     return;
   }
@@ -168,7 +169,7 @@ void RemoteObjectProxyBase::GetOrCreateProxyObject(
   
   
   
-  MOZ_ASSERT_IF(aTransplantTo, js::GetObjectClass(aTransplantTo) != aClasp);
+  MOZ_ASSERT_IF(aTransplantTo, JS::GetClass(aTransplantTo) != aClasp);
 
   if (!map.add(result, aNative, aTransplantTo ? aTransplantTo : obj)) {
     return;

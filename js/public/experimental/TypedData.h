@@ -18,9 +18,9 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "jsfriendapi.h"  
-#include "jstypes.h"      
+#include "jstypes.h"  
 
+#include "js/Object.h"      
 #include "js/RootingAPI.h"  
 #include "js/ScalarType.h"  
 
@@ -212,12 +212,12 @@ const size_t TypedArrayLengthSlot = 1;
 #define JS_DEFINE_DATA_AND_LENGTH_ACCESSOR(Type, type)                      \
   inline void Get##Type##ArrayLengthAndData(                                \
       JSObject* obj, uint32_t* length, bool* isSharedMemory, type** data) { \
-    MOZ_ASSERT(GetObjectClass(obj) == detail::Type##ArrayClassPtr);         \
+    MOZ_ASSERT(JS::GetClass(obj) == detail::Type##ArrayClassPtr);           \
     const JS::Value& lenSlot =                                              \
-        GetReservedSlot(obj, detail::TypedArrayLengthSlot);                 \
+        JS::GetReservedSlot(obj, detail::TypedArrayLengthSlot);             \
     *length = mozilla::AssertedCast<uint32_t>(lenSlot.toInt32());           \
     *isSharedMemory = JS_GetTypedArraySharedness(obj);                      \
-    *data = static_cast<type*>(GetObjectPrivate(obj));                      \
+    *data = static_cast<type*>(JS::GetPrivate(obj));                        \
   }
 
 JS_DEFINE_DATA_AND_LENGTH_ACCESSOR(Int8, int8_t)

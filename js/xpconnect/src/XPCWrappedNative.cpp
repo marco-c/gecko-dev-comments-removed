@@ -12,6 +12,7 @@
 #include "js/Array.h"                   
 #include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
+#include "js/Object.h"  
 #include "js/Printf.h"
 #include "jsfriendapi.h"
 #include "AccessCheck.h"
@@ -226,7 +227,7 @@ nsresult XPCWrappedNative::WrapNewGlobal(JSContext* cx,
   wrapper->SetFlatJSObject(global);
 
   
-  JS_SetPrivate(global, wrapper);
+  JS::SetPrivate(global, wrapper);
 
   
   
@@ -649,7 +650,7 @@ bool XPCWrappedNative::Init(JSContext* cx, nsIXPCScriptable* aScriptable) {
 
   SetFlatJSObject(object);
 
-  JS_SetPrivate(mFlatJSObject, this);
+  JS::SetPrivate(mFlatJSObject, this);
 
   return FinishInit(cx);
 }
@@ -744,7 +745,7 @@ void XPCWrappedNative::FlatJSObjectFinalized() {
        to = to->GetNextTearOff()) {
     JSObject* jso = to->GetJSObjectPreserveColor();
     if (jso) {
-      JS_SetPrivate(jso, nullptr);
+      JS::SetPrivate(jso, nullptr);
       to->JSObjectFinalized();
     }
 
@@ -807,7 +808,7 @@ void XPCWrappedNative::SystemIsBeingShutDown() {
   
 
   
-  JS_SetPrivate(mFlatJSObject, nullptr);
+  JS::SetPrivate(mFlatJSObject, nullptr);
   UnsetFlatJSObject();
 
   XPCWrappedNativeProto* proto = GetProto();
@@ -822,7 +823,7 @@ void XPCWrappedNative::SystemIsBeingShutDown() {
   for (XPCWrappedNativeTearOff* to = &mFirstTearOff; to;
        to = to->GetNextTearOff()) {
     if (JSObject* jso = to->GetJSObjectPreserveColor()) {
-      JS_SetPrivate(jso, nullptr);
+      JS::SetPrivate(jso, nullptr);
       to->SetJSObject(nullptr);
     }
     
@@ -839,12 +840,12 @@ class MOZ_STACK_CLASS AutoClonePrivateGuard {
  public:
   AutoClonePrivateGuard(JSContext* cx, JSObject* aOld, JSObject* aNew)
       : mOldReflector(cx, aOld), mNewReflector(cx, aNew) {
-    MOZ_ASSERT(JS_GetPrivate(aOld) == JS_GetPrivate(aNew));
+    MOZ_ASSERT(JS::GetPrivate(aOld) == JS::GetPrivate(aNew));
   }
 
   ~AutoClonePrivateGuard() {
-    if (JS_GetPrivate(mOldReflector)) {
-      JS_SetPrivate(mNewReflector, nullptr);
+    if (JS::GetPrivate(mOldReflector)) {
+      JS::SetPrivate(mNewReflector, nullptr);
     }
   }
 
@@ -1033,10 +1034,10 @@ bool XPCWrappedNative::InitTearOffJSObject(JSContext* cx,
     return false;
   }
 
-  JS_SetPrivate(obj, to);
+  JS::SetPrivate(obj, to);
   to->SetJSObject(obj);
 
-  js::SetReservedSlot(obj, XPC_WN_TEAROFF_FLAT_OBJECT_SLOT,
+  JS::SetReservedSlot(obj, XPC_WN_TEAROFF_FLAT_OBJECT_SLOT,
                       JS::ObjectValue(*mFlatJSObject));
   return true;
 }
