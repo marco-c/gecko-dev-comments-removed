@@ -282,7 +282,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::ZoneOrGCTaskData<js::SparseBitmap> markedAtoms_;
 
   
-  
   js::ZoneOrGCTaskData<js::AtomSet> atomCache_;
 
   
@@ -290,21 +289,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   js::ZoneOrGCTaskData<js::FunctionToStringCache> functionToStringCache_;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  js::ZoneOrGCTaskData<unsigned> keepAtomsCount;
-
-  
-  
-  js::ZoneOrGCTaskData<bool> purgeAtomsDeferred;
 
   
   js::ZoneData<js::PropertyTree> propertyTree_;
@@ -448,7 +432,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void setPreservingCode(bool preserving) { gcPreserveCode_ = preserving; }
   bool isPreservingCode() const { return gcPreserveCode_; }
 
-  
   
   bool canCollect();
 
@@ -603,16 +586,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   bool addTypeDescrObject(JSContext* cx, HandleObject obj);
 
-  void keepAtoms() { keepAtomsCount++; }
-  void releaseAtoms();
-  bool hasKeptAtoms() const { return keepAtomsCount; }
-
   js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
 
   js::AtomSet& atomCache() { return atomCache_.ref(); }
 
-  void traceAtomCache(JSTracer* trc);
-  void purgeAtomCacheOrDefer();
   void purgeAtomCache();
 
   js::ExternalStringCache& externalStringCache() {

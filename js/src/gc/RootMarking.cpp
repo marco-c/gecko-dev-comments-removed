@@ -268,7 +268,6 @@ void js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc,
   if (atomsZone->isCollecting()) {
     traceRuntimeAtoms(trc, session.checkAtomsAccess());
   }
-  traceKeptAtoms(trc);
 
   {
     
@@ -333,17 +332,6 @@ void js::gc::GCRuntime::traceRuntimeAtoms(JSTracer* trc,
   TraceAtoms(trc, access);
   TraceWellKnownSymbols(trc);
   jit::JitRuntime::Trace(trc, access);
-}
-
-void js::gc::GCRuntime::traceKeptAtoms(JSTracer* trc) {
-  
-  
-  
-  for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-    if (zone->hasKeptAtoms()) {
-      zone->traceAtomCache(trc);
-    }
-  }
 }
 
 void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,

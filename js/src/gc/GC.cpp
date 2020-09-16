@@ -186,7 +186,6 @@
 
 
 
-
 #include "gc/GC-inl.h"
 
 #include "mozilla/ArrayUtils.h"
@@ -3789,7 +3788,7 @@ void GCRuntime::purgeRuntime() {
   }
 
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-    zone->purgeAtomCacheOrDefer();
+    zone->purgeAtomCache();
     zone->externalStringCache().purge();
     zone->functionToStringCache().purge();
   }
@@ -3965,7 +3964,6 @@ static bool ShouldCollectZone(Zone* zone, JS::GCReason reason) {
     return false;
   }
 
-  
   
   
   
