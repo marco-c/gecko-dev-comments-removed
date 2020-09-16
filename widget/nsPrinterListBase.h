@@ -34,6 +34,13 @@ class nsPrinterListBase : public nsIPrinterList {
     nsString mName;
     
     void* mCupsHandles[2]{nullptr, nullptr};
+
+    
+    
+    
+    uint64_t mServerMajor = 0;
+    uint64_t mServerMinor = 0;
+    uint64_t mServerPatch = 0;
   };
 
   
