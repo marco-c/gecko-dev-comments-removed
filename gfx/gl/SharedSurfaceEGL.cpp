@@ -207,6 +207,14 @@ void SharedSurface_SurfaceTexture::UnlockProdImpl() {
 }
 
 void SharedSurface_SurfaceTexture::ProducerReadReleaseImpl() {
+  
+  
+  
+  
+  
+  
+  
+  
   java::GeckoSurfaceTexture::LocalRef surfaceTexture =
       java::GeckoSurfaceTexture::Lookup(mSurface->GetHandle());
   if (!surfaceTexture) {
@@ -214,7 +222,11 @@ void SharedSurface_SurfaceTexture::ProducerReadReleaseImpl() {
     return;
   }
   surfaceTexture->UpdateTexImage();
-  surfaceTexture->ReleaseTexImage();
+  
+  
+  if (surfaceTexture->IsSingleBuffer()) {
+    surfaceTexture->ReleaseTexImage();
+  }
 }
 
 void SharedSurface_SurfaceTexture::Commit() {
