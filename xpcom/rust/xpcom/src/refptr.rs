@@ -10,8 +10,8 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
 use std::ops::Deref;
-use std::ptr;
 use std::sync::atomic::{self, AtomicUsize, Ordering};
+use std::ptr::{self, NonNull};
 use threadbound::ThreadBound;
 
 
@@ -28,13 +28,7 @@ pub unsafe trait RefCounted {
 
 
 pub struct RefPtr<T: RefCounted + 'static> {
-    
-    
-    
-    
-    
-    _ptr: &'static T,
-    
+    _ptr: NonNull<T>,
     
     _marker: PhantomData<T>,
 }
@@ -45,22 +39,20 @@ impl<T: RefCounted + 'static> RefPtr<T> {
     pub fn new(p: &T) -> RefPtr<T> {
         unsafe {
             p.addref();
-            RefPtr {
-                _ptr: mem::transmute(p),
-                _marker: PhantomData,
-            }
+        }
+        RefPtr {
+            _ptr: p.into(),
+            _marker: PhantomData,
         }
     }
 
     
     #[inline]
     pub unsafe fn from_raw(p: *const T) -> Option<RefPtr<T>> {
-        if p.is_null() {
-            return None;
-        }
-        (*p).addref();
+        let ptr = NonNull::new(p as *mut T)?;
+        ptr.as_ref().addref();
         Some(RefPtr {
-            _ptr: &*p,
+            _ptr: ptr,
             _marker: PhantomData,
         })
     }
@@ -68,11 +60,8 @@ impl<T: RefCounted + 'static> RefPtr<T> {
     
     #[inline]
     pub unsafe fn from_raw_dont_addref(p: *const T) -> Option<RefPtr<T>> {
-        if p.is_null() {
-            return None;
-        }
         Some(RefPtr {
-            _ptr: &*p,
+            _ptr: NonNull::new(p as *mut T)?,
             _marker: PhantomData,
         })
     }
@@ -89,7 +78,7 @@ impl<T: RefCounted + 'static> Deref for RefPtr<T> {
     type Target = T;
     #[inline]
     fn deref(&self) -> &T {
-        self._ptr
+        unsafe { self._ptr.as_ref() }
     }
 }
 
@@ -97,7 +86,7 @@ impl<T: RefCounted + 'static> Drop for RefPtr<T> {
     #[inline]
     fn drop(&mut self) {
         unsafe {
-            self._ptr.release();
+            self._ptr.as_ref().release();
         }
     }
 }
@@ -114,6 +103,12 @@ impl<T: RefCounted + 'static + fmt::Debug> fmt::Debug for RefPtr<T> {
         write!(f, "RefPtr<{:?}>", self.deref())
     }
 }
+
+
+
+
+unsafe impl<T: RefCounted + 'static + Send + Sync> Send for RefPtr<T> {}
+unsafe impl<T: RefCounted + 'static + Send + Sync> Sync for RefPtr<T> {}
 
 
 
