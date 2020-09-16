@@ -87,6 +87,77 @@ const SpecialMessageActions = {
 
 
 
+  configureHomepage({ homePage = null, newtab = null, layout = null }) {
+    
+    if (homePage === "default") {
+      Services.prefs.clearUserPref("browser.startup.homepage");
+    }
+    
+    if (newtab === "default") {
+      Services.prefs.clearUserPref("browser.newtabpage.enabled");
+    }
+    if (layout) {
+      
+      
+      let newtabConfigurations = [
+        [
+          
+          "browser.newtabpage.activity-stream.showSearch",
+          layout.search,
+        ],
+        [
+          
+          "browser.newtabpage.activity-stream.feeds.topsites",
+          layout.topsites,
+          
+          ["browser.newtabpage.activity-stream.topSitesRows"],
+        ],
+        [
+          
+          "browser.newtabpage.activity-stream.feeds.section.highlights",
+          layout.highlights,
+          
+          [
+            "browser.newtabpage.activity-stream.section.highlights.rows",
+            "browser.newtabpage.activity-stream.section.highlights.includeVisited",
+            "browser.newtabpage.activity-stream.section.highlights.includePocket",
+            "browser.newtabpage.activity-stream.section.highlights.includeDownloads",
+            "browser.newtabpage.activity-stream.section.highlights.includeBookmarks",
+          ],
+        ],
+        [
+          
+          "browser.newtabpage.activity-stream.feeds.snippets",
+          layout.snippets,
+        ],
+        [
+          
+          "browser.newtabpage.activity-stream.feeds.system.topstories",
+          layout.topstories,
+        ],
+      ].filter(
+        
+        ([, , sectionConfigs]) =>
+          !sectionConfigs ||
+          sectionConfigs.every(
+            prefName => !Services.prefs.prefHasUserValue(prefName)
+          )
+      );
+
+      for (let [prefName, prefValue] of newtabConfigurations) {
+        Services.prefs.setBoolPref(prefName, prefValue);
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
   async handleAction(action, browser) {
     const window = browser.ownerGlobal;
     switch (action.type) {
@@ -200,6 +271,9 @@ const SpecialMessageActions = {
       case "CANCEL":
         
         
+        break;
+      case "CONFIGURE_HOMEPAGE":
+        this.configureHomepage(action.data);
         break;
       default:
         throw new Error(
