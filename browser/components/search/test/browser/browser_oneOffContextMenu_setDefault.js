@@ -115,6 +115,14 @@ async function testUrlBarChangeEngine(win, testPrivate, isPrivateWindow) {
   );
 
   
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", false],
+      ["browser.urlbar.update2.oneOffsRefresh", false],
+    ],
+  });
+  
   await resetEngines();
 
   const urlbar = win.document.getElementById("urlbar");
@@ -166,12 +174,14 @@ async function testUrlBarChangeEngine(win, testPrivate, isPrivateWindow) {
   await EventUtils.synthesizeNativeMouseMove(urlbar);
 }
 
-add_task(async function test_urlBarChangeEngine_normal() {
+
+add_task(async function test_urlBarChangeEngine_normal_legacy() {
   await testUrlBarChangeEngine(window, false, false);
   await testUrlBarChangeEngine(window, true, false);
 });
 
-add_task(async function test_urlBarChangeEngine_private() {
+
+add_task(async function test_urlBarChangeEngine_private_legacy() {
   const win = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
   });

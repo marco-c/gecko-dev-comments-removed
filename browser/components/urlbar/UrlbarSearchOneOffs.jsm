@@ -11,6 +11,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
   SearchOneOffs: "resource:///modules/SearchOneOffs.jsm",
+  Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
@@ -163,22 +164,81 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
+
+
+
   handleSearchCommand(event, searchMode, forceNewTab = false) {
-    if (!this.view.oneOffsRefresh) {
-      let { where, params } = this._whereToOpen(event, forceNewTab);
-      this.input.handleCommand(event, where, params);
+    
+    
+    if (
+      this.selectedButton == this.view.oneOffSearchButtons.settingsButtonCompact
+    ) {
+      this.input.controller.engagementEvent.discard();
+      this.selectedButton.doCommand();
       return;
     }
 
-    this.input.setSearchMode(searchMode);
-    this.selectedButton = null;
     
-    this.input.startQuery({
+    let startQueryParams = {
       allowAutofill:
         !searchMode.engineName &&
         searchMode.source != UrlbarUtils.RESULT_SOURCE.SEARCH,
       event,
-    });
+    };
+
+    let userTypedSearchString =
+      this.input.value && this.input.getAttribute("pageproxystate") != "valid";
+    let engine = Services.search.getEngineByName(searchMode.engineName);
+
+    let { where, params } = this._whereToOpen(event, forceNewTab);
+
+    
+    
+    if (
+      !this.view.oneOffsRefresh ||
+      (userTypedSearchString &&
+        engine &&
+        (event.shiftKey || where != "current"))
+    ) {
+      this.input.handleNavigation({
+        event,
+        oneOffParams: {
+          openWhere: where,
+          openParams: params,
+          engine: this.selectedButton.engine,
+        },
+      });
+      this.selectedButton = null;
+      return;
+    }
+
+    this.selectedButton = null;
+    
+    switch (where) {
+      case "current": {
+        this.input.setSearchMode(searchMode);
+        this.input.startQuery(startQueryParams);
+        break;
+      }
+      case "tab": {
+        let newTab = this.input.window.gBrowser.addTrustedTab("about:newtab");
+        this.input.setSearchModeForBrowser(searchMode, newTab.linkedBrowser);
+        if (userTypedSearchString) {
+          
+          newTab.linkedBrowser.userTypedValue = this.input.value;
+        }
+        if (!params?.inBackground) {
+          this.input.window.gBrowser.selectedTab = newTab;
+          newTab.ownerGlobal.gURLBar.startQuery(startQueryParams);
+        }
+        break;
+      }
+      default: {
+        this.input.setSearchMode(searchMode);
+        this.input.startQuery(startQueryParams);
+        this.input.select();
+      }
+    }
   }
 
   
@@ -285,6 +345,7 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
       return;
     }
 
+    this.selectedButton = button;
     this.handleSearchCommand(event, {
       engineName: button.engine?.name,
       source: button.source,
@@ -298,11 +359,9 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
-
   _on_contextmenu(event) {
     
-    let target = event.originalTarget;
-    if (!target.engine) {
+    if (this.view.oneOffsRefresh) {
       event.preventDefault();
       return;
     }

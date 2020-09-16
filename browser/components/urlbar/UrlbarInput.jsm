@@ -405,39 +405,21 @@ class UrlbarInput {
 
 
 
-
-
-
-
-  handleCommand(event, openWhere, openParams = {}, triggeringPrincipal = null) {
+  handleCommand(event = null) {
     let isMouseEvent = event instanceof this.window.MouseEvent;
     if (isMouseEvent && event.button == 2) {
       
       return;
     }
 
-    let element = this.view.selectedElement;
-    let result = this.view.getResultFromElement(element);
-
     
     
     
     
     
-    let selectedOneOff;
     if (this.view.isOpen) {
-      selectedOneOff = this.view.oneOffSearchButtons.selectedButton;
-      if (selectedOneOff && isMouseEvent && event.target != selectedOneOff) {
-        selectedOneOff = null;
-      }
-      if (
-        selectedOneOff == this.view.oneOffSearchButtons.settingsButtonCompact
-      ) {
-        this.controller.engagementEvent.discard();
-        selectedOneOff.doCommand();
-        return;
-      }
-      if (selectedOneOff && this.view.oneOffsRefresh) {
+      let selectedOneOff = this.view.oneOffSearchButtons.selectedButton;
+      if (selectedOneOff && (!isMouseEvent || event.target == selectedOneOff)) {
         this.view.oneOffSearchButtons.handleSearchCommand(event, {
           engineName: selectedOneOff.engine?.name,
           source: selectedOneOff.source,
@@ -447,6 +429,30 @@ class UrlbarInput {
       }
     }
 
+    this.handleNavigation({ event });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  handleNavigation({ event, oneOffParams, triggeringPrincipal }) {
+    let element = this.view.selectedElement;
+    let result = this.view.getResultFromElement(element);
+    let openParams = oneOffParams?.openParams || {};
+
     
     
     let selectedPrivateResult =
@@ -455,7 +461,7 @@ class UrlbarInput {
       result.payload.inPrivateWindow;
     let selectedPrivateEngineResult =
       selectedPrivateResult && result.payload.isPrivateEngine;
-    if (element && (!selectedOneOff || selectedPrivateEngineResult)) {
+    if (element && (!oneOffParams?.engine || selectedPrivateEngineResult)) {
       this.pickElement(element, event);
       return;
     }
@@ -463,7 +469,7 @@ class UrlbarInput {
     let url;
     let selType = this.controller.engagementEvent.typeFromElement(element);
     let typedValue = this.value;
-    if (selectedOneOff) {
+    if (oneOffParams?.engine) {
       selType = "oneoff";
       typedValue = this._lastSearchString;
       
@@ -473,15 +479,15 @@ class UrlbarInput {
         (result && (result.payload.suggestion || result.payload.query)) ||
         this._lastSearchString;
       [url, openParams.postData] = UrlbarUtils.getSearchQueryUrl(
-        selectedOneOff.engine,
+        oneOffParams.engine,
         searchString
       );
-      this._recordSearch(selectedOneOff.engine, event, { url });
+      this._recordSearch(oneOffParams.engine, event, { url });
 
       UrlbarUtils.addToFormHistory(
         this,
         searchString,
-        selectedOneOff.engine.name
+        oneOffParams.engine.name
       ).catch(Cu.reportError);
     } else {
       
@@ -499,7 +505,7 @@ class UrlbarInput {
       result || this.view.selectedResult
     );
 
-    let where = openWhere || this._whereToOpen(event);
+    let where = oneOffParams?.openWhere || this._whereToOpen(event);
     if (selectedPrivateResult) {
       where = "window";
       openParams.private = true;
@@ -1361,6 +1367,23 @@ class UrlbarInput {
 
 
 
+
+
+
+  setSearchModeForBrowser(searchMode, browser) {
+    if (browser == this.window.gBrowser.selectedBrowser) {
+      this.setSearchMode(searchMode);
+      return;
+    }
+
+    this._searchModesByBrowser.set(browser, searchMode);
+  }
+
+  
+
+
+
+
   searchModeShortcut() {
     if (this.view.oneOffsRefresh) {
       
@@ -1958,7 +1981,12 @@ class UrlbarInput {
 
     this.window.BrowserSearch.recordSearchInTelemetry(
       engine,
-      this.searchMode ? "urlbar-searchmode" : "urlbar",
+      
+      
+      
+      
+      
+      this.searchMode && !isOneOff ? "urlbar-searchmode" : "urlbar",
       details
     );
   }
@@ -2845,7 +2873,7 @@ class UrlbarInput {
       
       
       this.controller.engagementEvent.start(event);
-      this.handleCommand(null, undefined, undefined, principal);
+      this.handleNavigation({ triggeringPrincipal: principal });
       
       
       
