@@ -75,7 +75,7 @@ class OriginAttributes : public dom::OriginAttributesDictionary {
     return !(*this == aOther);
   }
 
-  MOZ_MUST_USE bool EqualsIgnoringFPD(const OriginAttributes& aOther) const {
+  [[nodiscard]] bool EqualsIgnoringFPD(const OriginAttributes& aOther) const {
     return mInIsolatedMozBrowser == aOther.mInIsolatedMozBrowser &&
            mUserContextId == aOther.mUserContextId &&
            mPrivateBrowsingId == aOther.mPrivateBrowsingId &&
@@ -90,12 +90,12 @@ class OriginAttributes : public dom::OriginAttributesDictionary {
   
   void CreateAnonymizedSuffix(nsACString& aStr) const;
 
-  MOZ_MUST_USE bool PopulateFromSuffix(const nsACString& aStr);
+  [[nodiscard]] bool PopulateFromSuffix(const nsACString& aStr);
 
   
   
-  MOZ_MUST_USE bool PopulateFromOrigin(const nsACString& aOrigin,
-                                       nsACString& aOriginNoSuffix);
+  [[nodiscard]] bool PopulateFromOrigin(const nsACString& aOrigin,
+                                        nsACString& aOriginNoSuffix);
 
   
   
@@ -125,7 +125,7 @@ class OriginAttributes : public dom::OriginAttributesDictionary {
 
   
   
-  static inline MOZ_MUST_USE bool IsBlockPostMessageForFPI() {
+  [[nodiscard]] static inline bool IsBlockPostMessageForFPI() {
     return StaticPrefs::privacy_firstparty_isolate() &&
            StaticPrefs::privacy_firstparty_isolate_block_post_message();
   }
