@@ -43,7 +43,6 @@ loader.lazyRequireGetter(
     "getNodeDisplayName",
     "imageToImageData",
     "isNodeDead",
-    "scrollbarTreeWalkerFilter",
   ],
   "devtools/server/actors/inspector/utils",
   true
@@ -70,12 +69,6 @@ loader.lazyRequireGetter(
   this,
   "EventCollector",
   "devtools/server/actors/inspector/event-collector",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "DocumentWalker",
-  "devtools/server/actors/inspector/document-walker",
   true
 );
 loader.lazyRequireGetter(
@@ -356,27 +349,10 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
   get isScrollable() {
-    
-    if (
-      this.rawNode.clientHeight === this.rawNode.scrollHeight &&
-      this.rawNode.clientWidth === this.rawNode.scrollWidth
-    ) {
-      return false;
-    }
-
-    
-    try {
-      const walker = new DocumentWalker(
-        this.rawNode,
-        this.rawNode.ownerGlobal,
-        { filter: scrollbarTreeWalkerFilter }
-      );
-      return !!walker.firstChild();
-    } catch (e) {
-      
-      
-      return false;
-    }
+    return (
+      this.rawNode.nodeType === Node.ELEMENT_NODE &&
+      this.rawNode.hasVisibleScrollbars
+    );
   },
 
   
