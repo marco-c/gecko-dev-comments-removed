@@ -410,6 +410,16 @@
 
 - (id _Nullable)moxTextMarkerRangeForUIElement:(id _Nonnull)element;
 
+
+- (id _Nullable)moxLineTextMarkerRangeForTextMarker:(id _Nonnull)textMarker;
+
+
+- (id _Nullable)moxLeftLineTextMarkerRangeForTextMarker:(id _Nonnull)textMarker;
+
+
+- (id _Nullable)moxRightLineTextMarkerRangeForTextMarker:
+    (id _Nonnull)textMarker;
+
 #pragma mark - TextAttributeSetters
 
 
