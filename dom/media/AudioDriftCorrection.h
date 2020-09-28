@@ -152,7 +152,7 @@ class AudioDriftCorrection final {
  public:
   AudioDriftCorrection(int32_t aSourceRate, int32_t aTargetRate)
       : mDesiredBuffering(
-            std::max(1, Preferences::GetInt("media.clockdrift.buffering", 5)) *
+            std::max(5, Preferences::GetInt("media.clockdrift.buffering", 50)) *
             aSourceRate / 1000),
         mTargetRate(aTargetRate),
         mClockDrift(aSourceRate, aTargetRate, mDesiredBuffering),
