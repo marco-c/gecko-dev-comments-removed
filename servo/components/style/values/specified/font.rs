@@ -2303,7 +2303,7 @@ impl Parse for MozScriptMinSize {
 
 
 
-pub enum MozScriptLevel {
+pub enum MathDepth {
     
     Relative(i32),
     
@@ -2317,17 +2317,17 @@ pub enum MozScriptLevel {
     Auto,
 }
 
-impl Parse for MozScriptLevel {
+impl Parse for MathDepth {
     fn parse<'i, 't>(
         _: &ParserContext,
         input: &mut Parser<'i, 't>,
-    ) -> Result<MozScriptLevel, ParseError<'i>> {
+    ) -> Result<MathDepth, ParseError<'i>> {
         
         if let Ok(i) = input.try_parse(|i| i.expect_integer()) {
-            return Ok(MozScriptLevel::Relative(i));
+            return Ok(MathDepth::Relative(i));
         }
         input.expect_ident_matching("auto")?;
-        Ok(MozScriptLevel::Auto)
+        Ok(MathDepth::Auto)
     }
 }
 
