@@ -333,33 +333,13 @@ bool SandboxBroker::LaunchApp(const wchar_t* aPath, const wchar_t* aArguments,
   } else {
     
     
-    
-    
-
-    
-    
     nsModuleHandle moduleHandle(
         ::LoadLibraryExW(aPath, nullptr, LOAD_LIBRARY_AS_DATAFILE));
-
-    LauncherResult<HMODULE> procExeModule =
-        nt::GetProcessExeModule(targetInfo.hProcess);
-
-    HMODULE realBase = nullptr;
-    if (procExeModule.isOk()) {
-      realBase = procExeModule.unwrap();
-    } else {
-      RefPtr<DllServices> dllSvc(DllServices::Get());
-      dllSvc->HandleLauncherError(procExeModule.unwrapErr(),
-                                  XRE_GeckoProcessTypeToString(aProcessType));
-      LOG_E("nt::GetProcessExeModule failed with HRESULT 0x%08lX",
-            procExeModule.unwrapErr().mError.AsHResult());
-    }
-
-    if (moduleHandle && realBase) {
+    if (moduleHandle) {
       nt::PEHeaders exeImage(moduleHandle.get());
       if (!!exeImage) {
-        LauncherVoidResult importsRestored = RestoreImportDirectory(
-            aPath, exeImage, targetInfo.hProcess, realBase);
+        LauncherVoidResult importsRestored =
+            RestoreImportDirectory(aPath, exeImage, targetInfo.hProcess);
         if (importsRestored.isErr()) {
           RefPtr<DllServices> dllSvc(DllServices::Get());
           dllSvc->HandleLauncherError(

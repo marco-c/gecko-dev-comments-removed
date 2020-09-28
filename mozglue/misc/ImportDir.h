@@ -49,9 +49,10 @@ inline LauncherResult<nt::DataDirectoryEntry> GetImageDirectoryViaFileIo(
 
 
 
+
 inline LauncherVoidResult RestoreImportDirectory(
     const wchar_t* aFullImagePath, const nt::PEHeaders& aLocalExeImage,
-    HANDLE aTargetProcess, HMODULE aRemoteExeImage) {
+    HANDLE aTargetProcess, HMODULE aRemoteExeImage = nullptr) {
   uint32_t importDirEntryRva;
   PIMAGE_DATA_DIRECTORY importDirEntry =
       aLocalExeImage.GetImageDirectoryEntryPtr(IMAGE_DIRECTORY_ENTRY_IMPORT,
@@ -81,40 +82,23 @@ inline LauncherVoidResult RestoreImportDirectory(
 
   nt::DataDirectoryEntry toWrite = realImportDirectory.unwrap();
 
-  do {  
-    void* remoteAddress =
-        nt::PEHeaders::HModuleToBaseAddr<char*>(aRemoteExeImage) +
-        importDirEntryRva;
+  if (!aRemoteExeImage) {
+    LauncherResult<HMODULE> remoteImageBase =
+        nt::GetProcessExeModule(aTargetProcess);
+    if (remoteImageBase.isErr()) {
+      return remoteImageBase.propagateErr();
+    }
+    aRemoteExeImage = remoteImageBase.unwrap();
+  }
 
+  void* remoteAddress =
+      nt::PEHeaders::HModuleToBaseAddr<char*>(aRemoteExeImage) +
+      importDirEntryRva;
+
+  {  
     AutoVirtualProtect prot(remoteAddress, sizeof(IMAGE_DATA_DIRECTORY),
                             PAGE_READWRITE, aTargetProcess);
     if (!prot) {
-#if defined(NIGHTLY_BUILD)
-      if (prot.GetError() ==
-          WindowsError::FromWin32Error(ERROR_INVALID_ADDRESS)) {
-        
-        
-        
-        
-        
-        LauncherResult<HMODULE> remoteImageBase =
-            nt::GetProcessExeModule(aTargetProcess);
-        if (remoteImageBase.isErr()) {
-          return remoteImageBase.propagateErr();
-        }
-
-        if (remoteImageBase.unwrap() == aRemoteExeImage) {
-          
-          
-          
-          return LAUNCHER_ERROR_GENERIC();
-        }
-
-        
-        aRemoteExeImage = remoteImageBase.unwrap();
-        continue;
-      }
-#endif  
       return LAUNCHER_ERROR_FROM_MOZ_WINDOWS_ERROR(prot.GetError());
     }
 
@@ -124,9 +108,7 @@ inline LauncherVoidResult RestoreImportDirectory(
         bytesWritten != sizeof(IMAGE_DATA_DIRECTORY)) {
       return LAUNCHER_ERROR_FROM_LAST();
     }
-
-    break;
-  } while (1);
+  }
 
   return Ok();
 }
