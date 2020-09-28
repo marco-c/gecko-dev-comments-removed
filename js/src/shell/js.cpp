@@ -4709,11 +4709,13 @@ static bool SetJitCompilerOption(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-  if (opt == JSJITCOMPILER_WARP_ENABLE &&
-      bool(number) != jit::JitOptions.warpBuilder) {
-    JS_ReportErrorASCII(
-        cx, "Enabling or disabling Warp at runtime is not supported.");
-    return false;
+  if (opt == JSJITCOMPILER_WARP_ENABLE) {
+    if (bool(number) != jit::JitOptions.warpBuilder) {
+      JS_ReportErrorASCII(
+          cx, "Enabling or disabling Warp at runtime is not supported.");
+      return false;
+    }
+    return true;
   }
 
   
@@ -10290,6 +10292,20 @@ static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
 
   JS::SetUseOffThreadParseGlobal(useOffThreadParseGlobal);
 
+  
+  
+#ifdef NIGHTLY_BUILD
+  if (op.getBoolOption("no-warp")) {
+    MOZ_ASSERT(!jit::JitOptions.warpBuilder,
+               "WarpBuilder is disabled by default");
+  } else if (op.getBoolOption("warp")) {
+    jit::JitOptions.setWarpEnabled(true);
+  }
+#endif
+  if (op.getBoolOption("fast-warmup")) {
+    jit::JitOptions.setFastWarmUp();
+  }
+
   if (op.getBoolOption("no-ion-for-main-context")) {
     JS::ContextOptionsRef(cx).setDisableIon();
   }
@@ -10528,15 +10544,6 @@ static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
     jit::JitOptions.traceRegExpPeephole = true;
   }
 
-#ifdef NIGHTLY_BUILD
-  if (op.getBoolOption("no-warp")) {
-    MOZ_ASSERT(!jit::JitOptions.warpBuilder,
-               "WarpBuilder is disabled by default");
-  } else if (op.getBoolOption("warp")) {
-    jit::JitOptions.setWarpEnabled(true);
-  }
-#endif
-
   int32_t inliningEntryThreshold = op.getIntOption("inlining-entry-threshold");
   if (inliningEntryThreshold > 0) {
     jit::JitOptions.inliningEntryThreshold = inliningEntryThreshold;
@@ -10556,9 +10563,6 @@ static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
 
   if (op.getBoolOption("ion-eager")) {
     jit::JitOptions.setEagerIonCompilation();
-  }
-  if (op.getBoolOption("fast-warmup")) {
-    jit::JitOptions.setFastWarmUp();
   }
 
   offthreadCompilation = true;

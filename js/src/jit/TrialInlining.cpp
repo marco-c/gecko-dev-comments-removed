@@ -279,14 +279,11 @@ ICScript* TrialInliner::createInlinedICScript(JSFunction* target,
     return nullptr;
   }
 
-  
-  
-  
-  const uint32_t InitialWarmUpCount = 0;
+  uint32_t initialWarmUpCount = JitOptions.trialInliningInitialWarmUpCount;
 
   uint32_t depth = icScript_->depth() + 1;
   UniquePtr<ICScript> inlinedICScript(
-      new (raw) ICScript(InitialWarmUpCount, allocSize, depth, root_));
+      new (raw) ICScript(initialWarmUpCount, allocSize, depth, root_));
 
   {
     

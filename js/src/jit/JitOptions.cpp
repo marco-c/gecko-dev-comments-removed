@@ -173,6 +173,17 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   
+  
+  
+  
+  
+  
+  
+  SET_DEFAULT(trialInliningInitialWarmUpCount, 250);
+
+  
+  
+  
   SET_DEFAULT(normalIonWarmUpThreshold, 1000);
 
   
@@ -331,6 +342,7 @@ void DefaultJitOptions::setFastWarmUp() {
   baselineInterpreterWarmUpThreshold = 4;
   baselineJitWarmUpThreshold = 10;
   trialInliningWarmUpThreshold = 14;
+  trialInliningInitialWarmUpCount = 12;
   normalIonWarmUpThreshold = 30;
   fullIonWarmUpThreshold = 65;
 
@@ -344,6 +356,7 @@ void DefaultJitOptions::setWarpEnabled(bool enable) {
   typeInference = !enable;
   warpBuilder = enable;
   disableOptimizationLevels = enable;
+  normalIonWarmUpThreshold = enable ? 1500 : 1000;
 #endif
 }
 
