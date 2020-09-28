@@ -1195,29 +1195,99 @@ bool nsDocumentViewer::GetLoadCompleted() { return mLoaded; }
 bool nsDocumentViewer::GetIsStopped() { return mStopped; }
 
 NS_IMETHODIMP
-nsDocumentViewer::PermitUnload(uint32_t aPermitUnloadFlags,
+nsDocumentViewer::PermitUnload(PermitUnloadAction aAction,
                                bool* aPermitUnload) {
-  return PermitUnloadInternal(&aPermitUnloadFlags, aPermitUnload);
-}
-
-nsresult nsDocumentViewer::PermitUnloadInternal(uint32_t* aPermitUnloadFlags,
-                                                bool* aPermitUnload) {
-  AutoDontWarnAboutSyncXHR disableSyncXHRWarning;
+  if (StaticPrefs::dom_disable_beforeunload()) {
+    aAction = eDontPromptAndUnload;
+  }
 
   nsresult rv = NS_OK;
   *aPermitUnload = true;
 
-  if (!mDocument || mInPermitUnload || mInPermitUnloadPrompt) {
+  RefPtr<BrowsingContext> bc = mContainer->GetBrowsingContext();
+  if (!bc) {
     return NS_OK;
   }
 
   
-  nsPIDOMWindowOuter* window = mDocument->GetWindow();
+  
+  
+  
+  IgnoreOpensDuringUnload ignoreOpens(mDocument);
 
+  bool foundBlocker = false;
+  bc->PreOrderWalk([&](BrowsingContext* aBC) {
+    if (aBC->IsInProcess()) {
+      nsCOMPtr<nsIContentViewer> contentViewer;
+      aBC->GetDocShell()->GetContentViewer(getter_AddRefs(contentViewer));
+      if (contentViewer &&
+          contentViewer->DispatchBeforeUnload() == eRequestBlockNavigation) {
+        foundBlocker = true;
+      }
+    }
+  });
+
+  
+  
+  if (!mDocument) {
+    return NS_OK;
+  }
+
+  if (foundBlocker) {
+    if (aAction == eDontPromptAndUnload) {
+      
+
+      nsCOMPtr<nsIPromptCollection> prompt =
+          do_GetService("@mozilla.org/embedcomp/prompt-collection;1");
+
+      if (prompt) {
+        nsAutoSyncOperation sync(mDocument);
+        mInPermitUnloadPrompt = true;
+        mozilla::Telemetry::Accumulate(
+            mozilla::Telemetry::ONBEFOREUNLOAD_PROMPT_COUNT, 1);
+        rv = prompt->BeforeUnloadCheck(bc, aPermitUnload);
+        mInPermitUnloadPrompt = false;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        if (NS_FAILED(rv)) {
+          mozilla::Telemetry::Accumulate(
+              mozilla::Telemetry::ONBEFOREUNLOAD_PROMPT_ACTION, 2);
+          *aPermitUnload = false;
+          return NS_OK;
+        }
+
+        mozilla::Telemetry::Accumulate(
+            mozilla::Telemetry::ONBEFOREUNLOAD_PROMPT_ACTION,
+            (*aPermitUnload ? 1 : 0));
+      }
+    } else if (aAction == eDontPromptAndDontUnload) {
+      *aPermitUnload = false;
+    }
+  }
+
+  return NS_OK;
+}
+
+PermitUnloadResult nsDocumentViewer::DispatchBeforeUnload() {
+  AutoDontWarnAboutSyncXHR disableSyncXHRWarning;
+
+  if (!mDocument || mInPermitUnload || mInPermitUnloadPrompt) {
+    return eAllowNavigation;
+  }
+
+  
+  auto* window = nsGlobalWindowOuter::Cast(mDocument->GetWindow());
   if (!window) {
     
     NS_WARNING("window not set for document!");
-    return NS_OK;
+    return eAllowNavigation;
   }
 
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(), "This is unsafe");
@@ -1244,109 +1314,35 @@ nsresult nsDocumentViewer::PermitUnloadInternal(uint32_t* aPermitUnloadFlags,
   
   RefPtr<nsDocumentViewer> kungFuDeathGrip(this);
 
-  bool dialogsAreEnabled = false;
   {
     
     
     AutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
     
-    nsGlobalWindowOuter* globalWindow = nsGlobalWindowOuter::Cast(window);
-    dialogsAreEnabled = globalWindow->AreDialogsEnabled();
-    nsGlobalWindowOuter::TemporarilyDisableDialogs disableDialogs(globalWindow);
+    nsGlobalWindowOuter::TemporarilyDisableDialogs disableDialogs(window);
 
     Document::PageUnloadingEventTimeStamp timestamp(mDocument);
 
     mInPermitUnload = true;
-    EventDispatcher::DispatchDOMEvent(window, nullptr, event, mPresContext,
-                                      nullptr);
+    EventDispatcher::DispatchDOMEvent(ToSupports(window), nullptr, event,
+                                      mPresContext, nullptr);
     mInPermitUnload = false;
   }
 
-  nsCOMPtr<nsIDocShell> docShell(mContainer);
   nsAutoString text;
   event->GetReturnValue(text);
 
-  if (StaticPrefs::dom_disable_beforeunload()) {
-    *aPermitUnloadFlags = eDontPromptAndUnload;
-  }
-
   
   
-  if (*aPermitUnloadFlags != eDontPromptAndUnload && dialogsAreEnabled &&
-      mDocument && !(mDocument->GetSandboxFlags() & SANDBOXED_MODALS) &&
+  if (window->AreDialogsEnabled() && mDocument &&
+      !(mDocument->GetSandboxFlags() & SANDBOXED_MODALS) &&
       (!StaticPrefs::dom_require_user_interaction_for_beforeunload() ||
        mDocument->UserHasInteracted()) &&
       (event->WidgetEventPtr()->DefaultPrevented() || !text.IsEmpty())) {
-    
-    
-    if (*aPermitUnloadFlags == eDontPromptAndDontUnload) {
-      *aPermitUnload = false;
-      return NS_OK;
-    }
-
-    
-
-    nsCOMPtr<nsIPromptCollection> prompt =
-        do_GetService("@mozilla.org/embedcomp/prompt-collection;1");
-
-    if (prompt) {
-      nsAutoSyncOperation sync(mDocument);
-      mInPermitUnloadPrompt = true;
-      mozilla::Telemetry::Accumulate(
-          mozilla::Telemetry::ONBEFOREUNLOAD_PROMPT_COUNT, 1);
-      rv = prompt->BeforeUnloadCheck(docShell->GetBrowsingContext(),
-                                     aPermitUnload);
-      mInPermitUnloadPrompt = false;
-
-      
-      
-      
-      
-      
-      
-      
-      
-      if (NS_FAILED(rv)) {
-        mozilla::Telemetry::Accumulate(
-            mozilla::Telemetry::ONBEFOREUNLOAD_PROMPT_ACTION, 2);
-        *aPermitUnload = false;
-        return NS_OK;
-      }
-
-      mozilla::Telemetry::Accumulate(
-          mozilla::Telemetry::ONBEFOREUNLOAD_PROMPT_ACTION,
-          (*aPermitUnload ? 1 : 0));
-      
-      
-      if (*aPermitUnload) {
-        *aPermitUnloadFlags = eDontPromptAndUnload;
-      }
-    }
+    return eRequestBlockNavigation;
   }
-
-  if (docShell) {
-    int32_t childCount;
-    docShell->GetInProcessChildCount(&childCount);
-
-    for (int32_t i = 0; i < childCount && *aPermitUnload; ++i) {
-      nsCOMPtr<nsIDocShellTreeItem> item;
-      docShell->GetInProcessChildAt(i, getter_AddRefs(item));
-
-      nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(item));
-
-      if (docShell) {
-        nsCOMPtr<nsIContentViewer> cv;
-        docShell->GetContentViewer(getter_AddRefs(cv));
-
-        if (cv) {
-          cv->PermitUnloadInternal(aPermitUnloadFlags, aPermitUnload);
-        }
-      }
-    }
-  }
-
-  return NS_OK;
+  return eAllowNavigation;
 }
 
 NS_IMETHODIMP
