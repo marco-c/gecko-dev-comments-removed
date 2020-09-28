@@ -75,4 +75,13 @@ add_task(async function testCleanFlow() {
   simulateNetworkChange();
   await ensureNoTRRModeChange(2);
   await checkHeuristicsTelemetry("enable_doh", "netchange");
+
+  
+  
+  Preferences.set(prefs.CLEAR_ON_SHUTDOWN_PREF, false);
+  await restartDoHController();
+  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRModeChange(2);
+  await checkHeuristicsTelemetry("enable_doh", "startup");
+  Preferences.reset(prefs.CLEAR_ON_SHUTDOWN_PREF);
 });
