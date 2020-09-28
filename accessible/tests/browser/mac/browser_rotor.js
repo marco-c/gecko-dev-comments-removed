@@ -1054,6 +1054,66 @@ addAccessibleTask(
 
 addAccessibleTask(
   `
+  <ul id="unordered">
+    <li>hello</li>
+    <li>world</li>
+  </ul>
+
+  <ol id="ordered">
+    <li>item one</li>
+    <li>item two</li>
+  </ol>
+  `,
+  async (browser, accDoc) => {
+    const searchPred = {
+      AXSearchKey: "AXListSearchKey",
+      AXImmediateDescendants: 1,
+      AXResultsLimit: -1,
+      AXDirection: "AXDirectionNext",
+    };
+
+    const webArea = accDoc.nativeInterface.QueryInterface(
+      Ci.nsIAccessibleMacInterface
+    );
+    is(
+      webArea.getAttributeValue("AXRole"),
+      "AXWebArea",
+      "Got web area accessible"
+    );
+
+    const listCount = webArea.getParameterizedAttributeValue(
+      "AXUIElementCountForSearchPredicate",
+      NSDictionary(searchPred)
+    );
+
+    is(2, listCount, "Found 2 lists");
+
+    const lists = webArea.getParameterizedAttributeValue(
+      "AXUIElementsForSearchPredicate",
+      NSDictionary(searchPred)
+    );
+
+    const ordered = getNativeInterface(accDoc, "ordered");
+    const unordered = getNativeInterface(accDoc, "unordered");
+
+    is(
+      unordered.getAttributeValue("AXChildren")[0].getAttributeValue("AXTitle"),
+      lists[0].getAttributeValue("AXChildren")[0].getAttributeValue("AXTitle"),
+      "Found correct unordered list"
+    );
+    is(
+      ordered.getAttributeValue("AXChildren")[0].getAttributeValue("AXTitle"),
+      lists[1].getAttributeValue("AXChildren")[0].getAttributeValue("AXTitle"),
+      "Found correct ordered list"
+    );
+  }
+);
+
+
+
+
+addAccessibleTask(
+  `
   <img id="img1" alt="image one" src="http://example.com/a11y/accessible/tests/mochitest/moz.png"><br>
   <a href="http://example.com">
     <img id="img2" alt="image two" src="http://example.com/a11y/accessible/tests/mochitest/moz.png">
