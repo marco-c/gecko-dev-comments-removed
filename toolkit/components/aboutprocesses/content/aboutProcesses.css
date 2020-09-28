@@ -49,11 +49,23 @@ tr {
 
 td:nth-child(2) {
   width:  15%;
+  
+
+
+
+
+  text-align: right;
 }
 
 
 td:nth-child(3) {
-    width: 15%;
+  width: 15%;
+  
+
+
+
+
+  text-align: right;
 }
 
 #process-thead > tr {
