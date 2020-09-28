@@ -12,7 +12,6 @@ const {
 } = require("devtools/server/actors/highlighters/box-model");
 
 
-
 const MAX_HIGHLIGHTED_ELEMENTS = 100;
 
 
@@ -35,6 +34,9 @@ SelectorHighlighter.prototype = {
 
 
 
+
+
+
   show: async function(node, options = {}) {
     this.hide();
 
@@ -47,28 +49,34 @@ SelectorHighlighter.prototype = {
       nodes = [...node.ownerDocument.querySelectorAll(options.selector)];
     } catch (e) {
       
-      
     }
 
+    
     delete options.selector;
 
-    let i = 0;
-    const highlighters = [];
-    for (const matchingNode of nodes) {
-      if (i++ >= MAX_HIGHLIGHTED_ELEMENTS) {
-        break;
-      }
-
-      highlighters.push(this._accumulateHighlighter(matchingNode, options));
+    const promises = [];
+    for (let i = 0; i < Math.min(nodes.length, MAX_HIGHLIGHTED_ELEMENTS); i++) {
+      promises.push(this._showHighlighter(nodes[i], options));
     }
 
-    await Promise.all(highlighters);
+    await Promise.all(promises);
     return true;
   },
 
-  _accumulateHighlighter: async function(node, options) {
+  
+
+
+
+
+
+
+
+
+
+
+  _showHighlighter: async function(node, options) {
     const highlighter = new BoxModelHighlighter(this.highlighterEnv);
-    await highlighter.ready;
+    await highlighter.isReady;
 
     highlighter.show(node, options);
     this._highlighters.push(highlighter);
