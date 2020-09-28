@@ -43,14 +43,11 @@ body {
 document.addEventListener("MozReftestInvalidate", () => {
   target.style.animation = "anim 100s 1s step-start";
   target.addEventListener("animationstart", () => {
-    // animtionstart event is fired just before requestAnimationFrame callbacks,
-    // so we need to wait two rAF to make sure the initial animation value is
-    // composited on the compositor.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        document.documentElement.classList.remove("reftest-wait");
-      });
-    });
+    // Wait 100ms to make sure we can report the jank to the main-thread and
+    // in response to the report we can do a paint process on the main-thread.
+    setTimeout(() => {
+      document.documentElement.classList.remove("reftest-wait");
+    }, 100);
   });
 }, { once: true });
 </script>
