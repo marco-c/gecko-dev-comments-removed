@@ -359,6 +359,10 @@ var PrintEventHandler = {
     }
 
     
+    
+    
+    
+    
     let paperName = this.viewSettings.paperName;
     logger.debug("settings.paperName: ", paperName);
     logger.debug(
@@ -378,10 +382,10 @@ var PrintEventHandler = {
       
       paperName = Object.keys(PrintSettingsViewProxy.availablePaperSizes)[0];
       this._printerSettingsChangedFlags ^= this.settingFlags.paperName;
-    } else if (matchedPaper.name !== paperName) {
+    } else if (matchedPaper.id !== paperName) {
       
       flags |= this.settingFlags.paperName;
-      paperName = matchedPaper.name;
+      paperName = matchedPaper.id;
       logger.log(
         `Initial settings.paperName: "${this.viewSettings.paperName}" missing, using: ${paperName} instead`
       );
@@ -895,17 +899,18 @@ var PrintSettingsViewProxy = {
         ? MM_PER_POINT
         : INCHES_PER_POINT;
 
-    let papersByName = (printerInfo.availablePaperSizes = {});
+    let papersById = (printerInfo.availablePaperSizes = {});
     
-    this.availablePaperSizes = papersByName;
+    this.availablePaperSizes = papersById;
 
     for (let paper of printerInfo.paperList) {
       paper.QueryInterface(Ci.nsIPaper);
       
       
-      if (!papersByName[paper.name]) {
-        papersByName[paper.name] = {
+      if (!papersById[paper.id]) {
+        papersById[paper.id] = {
           paper,
+          id: paper.id,
           name: paper.name,
           
           
@@ -986,7 +991,7 @@ var PrintSettingsViewProxy = {
           .map(paper => {
             return {
               name: paper.name,
-              value: paper.name,
+              value: paper.id,
             };
           });
 
@@ -1047,16 +1052,18 @@ var PrintSettingsViewProxy = {
         break;
 
       case "paperName": {
-        let paperName = value;
-        let paperSize = this.availablePaperSizes[paperName];
+        let paperId = value;
+        let paperSize = this.availablePaperSizes[paperId];
         target.paperWidth = paperSize.width;
         target.paperHeight = paperSize.height;
-        target.paperData = paperSize.paperId;
+        if (+paperSize.id > 0) {
+          target.paperData = paperSize.id;
+        }
         target.unwriteableMarginTop = paperSize.unwriteableMarginTop;
         target.unwriteableMarginRight = paperSize.unwriteableMarginRight;
         target.unwriteableMarginBottom = paperSize.unwriteableMarginBottom;
         target.unwriteableMarginLeft = paperSize.unwriteableMarginLeft;
-        target.paperName = value;
+        target.paperName = paperSize.id;
         
         this.set(target, "margins", this.get(target, "margins"));
         break;
