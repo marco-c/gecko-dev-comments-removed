@@ -667,6 +667,12 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
 
       
       APPEND_RANGE(0x8a50, 0x8a5d);
+
+      
+      APPEND_RANGE(0x4c8a, 0x4c9a);
+
+      
+      APPEND_RANGE(0x9a40, 0x9af8);
       break;
     case DeviceFamily::AtiRolloutWebRender:
       APPEND_RANGE(0x6600, 0x66af);
