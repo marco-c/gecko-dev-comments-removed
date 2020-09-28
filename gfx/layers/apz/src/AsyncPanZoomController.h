@@ -335,6 +335,12 @@ class AsyncPanZoomController {
   
 
 
+  static gfx::IntSize GetDisplayportAlignmentMultiplier(
+      const ScreenSize& aBaseSize);
+
+  
+
+
 
 
 

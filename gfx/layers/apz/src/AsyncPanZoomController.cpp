@@ -3624,10 +3624,36 @@ void AsyncPanZoomController::ScaleWithFocus(float aScale,
 }
 
 
+gfx::IntSize AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
+    const ScreenSize& aBaseSize) {
+  MOZ_ASSERT(gfxVars::UseWebRender());
+
+  IntSize multiplier(1, 1);
+  float baseWidth = aBaseSize.width;
+  while (baseWidth > 500) {
+    baseWidth /= 2;
+    multiplier.width *= 2;
+    if (multiplier.width >= 8) {
+      break;
+    }
+  }
+  float baseHeight = aBaseSize.height;
+  while (baseHeight > 500) {
+    baseHeight /= 2;
+    multiplier.height *= 2;
+    if (multiplier.height >= 8) {
+      break;
+    }
+  }
+  return multiplier;
+}
+
+
 
 
 static CSSSize CalculateDisplayPortSize(const CSSSize& aCompositionSize,
-                                        const CSSPoint& aVelocity) {
+                                        const CSSPoint& aVelocity,
+                                        const CSSToScreenScale2D& aDpPerCSS) {
   bool xIsStationarySpeed =
       fabsf(aVelocity.x) < StaticPrefs::apz_min_skate_speed();
   bool yIsStationarySpeed =
@@ -3645,6 +3671,28 @@ static CSSSize CalculateDisplayPortSize(const CSSSize& aCompositionSize,
 
   if (IsHighMemSystem() && !yIsStationarySpeed) {
     yMultiplier += StaticPrefs::apz_y_skate_highmem_adjust();
+  }
+
+  if (gfxVars::UseWebRender()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    IntSize alignmentMultipler =
+        AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
+            aCompositionSize * aDpPerCSS);
+    if (xMultiplier > 1) {
+      xMultiplier = ((xMultiplier - 1) / alignmentMultipler.width) + 1;
+    }
+    if (yMultiplier > 1) {
+      yMultiplier = ((yMultiplier - 1) / alignmentMultipler.height) + 1;
+    }
   }
 
   return aCompositionSize * CSSSize(xMultiplier, yMultiplier);
@@ -3717,7 +3765,8 @@ const ScreenMargin AsyncPanZoomController::CalculatePendingDisplayPort(
 
   
   
-  CSSSize displayPortSize = CalculateDisplayPortSize(compositionSize, velocity);
+  CSSSize displayPortSize = CalculateDisplayPortSize(
+      compositionSize, velocity, aFrameMetrics.DisplayportPixelsPerCSSPixel());
 
   displayPortSize =
       ExpandDisplayPortToDangerZone(displayPortSize, aFrameMetrics);
