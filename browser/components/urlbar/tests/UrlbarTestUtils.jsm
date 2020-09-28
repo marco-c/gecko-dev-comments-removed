@@ -420,6 +420,11 @@ var UrlbarTestUtils = {
       return;
     }
 
+    
+    if (!expectedSearchMode.hasOwnProperty("isPreview")) {
+      expectedSearchMode.isPreview = false;
+    }
+
     this.Assert.deepEqual(
       window.gURLBar.searchMode,
       expectedSearchMode,
@@ -481,7 +486,13 @@ var UrlbarTestUtils = {
 
     
     
-    if (expectedSearchMode.engineName && this.isPopupOpen(window)) {
+    
+    
+    if (
+      expectedSearchMode.engineName &&
+      !expectedSearchMode.isPreview &&
+      this.isPopupOpen(window)
+    ) {
       let resultCount = this.getResultCount(window);
       for (let i = 0; i < resultCount; i++) {
         let result = await this.getDetailsOfResultAt(window, i);
