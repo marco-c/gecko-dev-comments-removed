@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   truncate: "chrome://marionette/content/format.js",
 });
 
-XPCOMUtils.defineLazyGetter(this, "logger", Log.get);
+XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
 
 const TIMEOUT_BEFOREUNLOAD_EVENT = 200;
