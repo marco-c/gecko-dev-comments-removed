@@ -2888,15 +2888,29 @@ var XPIProvider = {
     return changed;
   },
 
-  maybeInstallBuiltinAddon(aID, aVersion, aBase) {
-    if (!(enabledScopes & BuiltInLocation.scope)) {
-      return;
-    }
+  
 
-    let existing = BuiltInLocation.get(aID);
-    if (!existing || existing.version != aVersion) {
-      this.startupPromises.push(this.installBuiltinAddon(aBase));
+
+
+
+
+
+
+
+
+
+
+
+  async maybeInstallBuiltinAddon(aID, aVersion, aBase) {
+    let installed;
+    if (enabledScopes & BuiltInLocation.scope) {
+      let existing = BuiltInLocation.get(aID);
+      if (!existing || existing.version != aVersion) {
+        installed = this.installBuiltinAddon(aBase);
+        this.startupPromises.push(installed);
+      }
     }
+    return installed;
   },
 
   getDependentAddons(aAddon) {
