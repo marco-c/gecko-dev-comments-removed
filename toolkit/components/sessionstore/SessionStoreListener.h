@@ -65,11 +65,9 @@ class ContentSessionStore {
   
   bool AppendSessionStorageChange(StorageEvent* aEvent);
 
-  void SetSHistoryChanged() { mSHistoryChanged = mSHistoryInParent; }
+  void SetSHistoryChanged();
   
-  void SetSHistoryFromParentChanged() {
-    mSHistoryChangedFromParent = mSHistoryInParent;
-  }
+  void SetSHistoryFromParentChanged();
   bool GetAndClearSHistoryChanged() {
     bool ret = mSHistoryChanged;
     mSHistoryChanged = false;
@@ -110,8 +108,6 @@ class ContentSessionStore {
   nsTArray<nsCString> mOrigins;
   nsTArray<nsString> mKeys;
   nsTArray<nsString> mValues;
-  
-  bool mSHistoryInParent;
   
   
   
@@ -170,8 +166,6 @@ class TabListener : public nsIDOMEventListener,
   bool mTimeoutDisabled;
   int32_t mUpdateInterval;
   uint32_t mEpoch;
-  
-  bool mSHistoryInParent;
 };
 
 }  
