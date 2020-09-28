@@ -226,14 +226,14 @@ mtable[framespacing] > mtr > mtd {
 
 
 
-:-moz-math-increment-script-level { -moz-script-level: +1; }
+:-moz-math-increment-script-level { math-depth: +1; }
 
 
 
 
 
 mfrac > * {
-    -moz-script-level: auto;
+    math-depth: auto;
     math-style: compact;
 }
 
@@ -243,7 +243,7 @@ mfrac > * {
 
 
 mroot > :not(:first-child) {
-    -moz-script-level: +2;
+    math-depth: +2;
     math-style: compact;
 }
 
@@ -267,7 +267,7 @@ msub > :not(:first-child),
 msup > :not(:first-child),
 msubsup > :not(:first-child),
 mmultiscripts > :not(:first-child) {
-    -moz-script-level: +1;
+    math-depth: +1;
     math-style: compact;
 }
 
