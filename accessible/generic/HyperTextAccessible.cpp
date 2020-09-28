@@ -490,7 +490,6 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
         switch (aAmount) {
           case eSelectLine:
           case eSelectEndLine:
-          case eSelectParagraph:
             
             
             return nextOffset < CharacterCount()
@@ -552,9 +551,7 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
   uint32_t hyperTextOffset = DOMPointToOffset(
       pos.mResultContent, pos.mContentOffset, aDirection == eDirNext);
 
-  if ((fallBackToSelectEndLine || aAmount == eSelectParagraph) &&
-      IsLineEndCharAt(hyperTextOffset)) {
-    
+  if (fallBackToSelectEndLine && IsLineEndCharAt(hyperTextOffset)) {
     
     
     
@@ -568,8 +565,7 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
     if (hyperTextOffset == CharacterCount()) return 0;
 
     
-    if (IsHTMLListItem() &&
-        (aAmount == eSelectBeginLine || aAmount == eSelectParagraph) &&
+    if (IsHTMLListItem() && aAmount == eSelectBeginLine &&
         hyperTextOffset > 0) {
       Accessible* prevOffsetChild = GetChildAtOffset(hyperTextOffset - 1);
       if (prevOffsetChild == AsHTMLListItem()->Bullet()) return 0;
@@ -652,11 +648,6 @@ void HyperTextAccessible::TextBeforeOffset(int32_t aOffset,
                                            nsAString& aText) {
   *aStartOffset = *aEndOffset = 0;
   aText.Truncate();
-
-  if (aBoundaryType == nsIAccessibleText::BOUNDARY_PARAGRAPH) {
-    
-    return;
-  }
 
   index_t convertedOffset = ConvertMagicOffset(aOffset);
   if (!convertedOffset.IsValid() || convertedOffset > CharacterCount()) {
@@ -783,41 +774,6 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
       *aEndOffset = FindLineBoundary(adjustedOffset, eThisLineEnd);
       TextSubstring(*aStartOffset, *aEndOffset, aText);
       break;
-
-    case nsIAccessibleText::BOUNDARY_PARAGRAPH: {
-      if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
-        adjustedOffset = AdjustCaretOffset(adjustedOffset);
-      }
-
-      if (IsLineEndCharAt(adjustedOffset)) {
-        
-        
-        
-        
-        
-        
-        if (IsLineEndCharAt(adjustedOffset - 1)) {
-          
-          
-          
-          
-          *aStartOffset = adjustedOffset;
-          *aEndOffset = adjustedOffset + 1;
-          TextSubstring(*aStartOffset, *aEndOffset, aText);
-          break;
-        }
-
-        
-        
-        adjustedOffset--;
-      }
-
-      *aStartOffset =
-          FindOffset(adjustedOffset, eDirPrevious, eSelectParagraph);
-      *aEndOffset = FindOffset(adjustedOffset, eDirNext, eSelectParagraph);
-      TextSubstring(*aStartOffset, *aEndOffset, aText);
-      break;
-    }
   }
 }
 
@@ -828,11 +784,6 @@ void HyperTextAccessible::TextAfterOffset(int32_t aOffset,
                                           nsAString& aText) {
   *aStartOffset = *aEndOffset = 0;
   aText.Truncate();
-
-  if (aBoundaryType == nsIAccessibleText::BOUNDARY_PARAGRAPH) {
-    
-    return;
-  }
 
   index_t convertedOffset = ConvertMagicOffset(aOffset);
   if (!convertedOffset.IsValid() || convertedOffset > CharacterCount()) {
