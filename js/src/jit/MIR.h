@@ -12748,6 +12748,32 @@ class MLoadValueTag : public MUnaryInstruction, public BoxInputsPolicy::Data {
 
 
 
+class MLoadWrapperTarget : public MUnaryInstruction,
+                           public SingleObjectPolicy::Data {
+  explicit MLoadWrapperTarget(MDefinition* obj)
+      : MUnaryInstruction(classOpcode, obj) {
+    setResultType(MIRType::Object);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(LoadWrapperTarget)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, object))
+
+  AliasSet getAliasSet() const override {
+    
+    
+    return AliasSet::Load(AliasSet::Any);
+  }
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+};
+
+
+
 
 class MWasmNeg : public MUnaryInstruction, public NoTypePolicy::Data {
   MWasmNeg(MDefinition* op, MIRType type) : MUnaryInstruction(classOpcode, op) {
