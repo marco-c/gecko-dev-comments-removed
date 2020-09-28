@@ -51,15 +51,6 @@ class AsyncLogger {
     char mPayload[PAYLOAD_TOTAL_SIZE - MPSC_MSG_RESERVERD];
   };
 
-
-
-#if !defined(HAVE_64BIT_BUILD) && \
-    !(defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
-#  define PADDING 8
-#else
-#  define PADDING 0
-#endif
-
   
   struct TracePayload {
     
@@ -74,8 +65,11 @@ class AsyncLogger {
     
     
     char mName[PAYLOAD_TOTAL_SIZE - sizeof(TracingPhase) - sizeof(int) -
-               sizeof(uint32_t) - sizeof(TimeStamp) - MPSC_MSG_RESERVERD -
-               PADDING];
+               sizeof(uint32_t) - sizeof(TimeStamp) -
+               
+               
+               ((MPSC_MSG_RESERVERD + alignof(TimeStamp) - 1) &
+                ~(alignof(TimeStamp) - 1))];
     
     
     
@@ -83,16 +77,13 @@ class AsyncLogger {
     
     TracingPhase mPhase;
   };
-#undef PADDING
 
   
   
   
-#if !(defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID) && \
-      (defined(__arm__) || defined(__aarch64__)))
-  static_assert(sizeof(MPSCQueue<TracePayload>::Message) <= PAYLOAD_TOTAL_SIZE,
-                "MPSCQueue internal allocations too big.");
-#endif
+  static_assert(sizeof(MPSCQueue<TracePayload>::Message) == PAYLOAD_TOTAL_SIZE,
+                "MPSCQueue internal allocations has an unexpected size.");
+
   
   explicit AsyncLogger(const char* aLogModuleName,
                        AsyncLogger::AsyncLoggerOutputMode aMode =
