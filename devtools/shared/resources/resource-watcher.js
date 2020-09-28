@@ -4,8 +4,6 @@
 
 "use strict";
 
-const EventEmitter = require("devtools/shared/event-emitter");
-
 
 const { gDevTools } = require("devtools/client/framework/devtools");
 
@@ -33,9 +31,12 @@ class ResourceWatcher {
     this._onResourceAvailable = this._onResourceAvailable.bind(this);
     this._onResourceDestroyed = this._onResourceDestroyed.bind(this);
 
-    this._availableListeners = new EventEmitter();
-    this._updatedListeners = new EventEmitter();
-    this._destroyedListeners = new EventEmitter();
+    
+    
+    
+    
+    
+    this._watchers = [];
 
     
     this._cache = [];
@@ -70,6 +71,9 @@ class ResourceWatcher {
 
 
 
+
+
+
   async watchResources(resources, options) {
     const {
       onAvailable,
@@ -77,6 +81,12 @@ class ResourceWatcher {
       onDestroyed,
       ignoreExistingResources = false,
     } = options;
+
+    if (typeof onAvailable !== "function") {
+      throw new Error(
+        "ResourceWatcher.watchResources expects an onAvailable function as argument"
+      );
+    }
 
     
     
@@ -111,17 +121,19 @@ class ResourceWatcher {
     for (const resource of resources) {
       
       
-      if (this._availableListeners.count(resource) === 0) {
+      if (!this._hasListenerForResource(resource)) {
         await this._startListening(resource);
       }
-      this._availableListeners.on(resource, onAvailable);
-      if (onUpdated) {
-        this._updatedListeners.on(resource, onUpdated);
-      }
-      if (onDestroyed) {
-        this._destroyedListeners.on(resource, onDestroyed);
-      }
     }
+
+    
+    
+    this._watchers.push({
+      resources,
+      onAvailable,
+      onUpdated,
+      onDestroyed,
+    });
 
     if (!ignoreExistingResources) {
       await this._forwardCachedResources(resources, onAvailable);
@@ -132,24 +144,43 @@ class ResourceWatcher {
 
 
 
+
+
+
   unwatchResources(resources, options) {
-    const { onAvailable, onUpdated, onDestroyed } = options;
+    const { onAvailable } = options;
 
+    if (typeof onAvailable !== "function") {
+      throw new Error(
+        "ResourceWatcher.unwatchResources expects an onAvailable function as argument"
+      );
+    }
+
+    const watchedResources = [];
     for (const resource of resources) {
-      if (onUpdated) {
-        this._updatedListeners.off(resource, onUpdated);
+      if (this._hasListenerForResource(resource)) {
+        watchedResources.push(resource);
       }
-      if (onDestroyed) {
-        this._destroyedListeners.off(resource, onDestroyed);
+    }
+    
+    for (const watcherEntry of this._watchers) {
+      
+      
+      if (watcherEntry.onAvailable == onAvailable) {
+        
+        watcherEntry.resources = watcherEntry.resources.filter(resourceType => {
+          return !resources.includes(resourceType);
+        });
       }
+    }
+    this._watchers = this._watchers.filter(entry => {
+      
+      return entry.resources.length > 0;
+    });
 
-      const hadAtLeastOneListener =
-        this._availableListeners.count(resource) > 0;
-      this._availableListeners.off(resource, onAvailable);
-      if (
-        hadAtLeastOneListener &&
-        this._availableListeners.count(resource) === 0
-      ) {
+    
+    for (const resource of watchedResources) {
+      if (!this._hasListenerForResource(resource)) {
         this._stopListening(resource);
       }
     }
@@ -326,7 +357,7 @@ class ResourceWatcher {
       }
       
       else if (currentType != resourceType) {
-        this._availableListeners.emit(currentType, resourceBuffer);
+        this._notifyWatchers("available", currentType, resourceBuffer);
         currentType = resourceType;
         resourceBuffer = [];
       }
@@ -337,7 +368,7 @@ class ResourceWatcher {
 
     
     if (resourceBuffer.length > 0) {
-      this._availableListeners.emit(currentType, resourceBuffer);
+      this._notifyWatchers("available", currentType, resourceBuffer);
     }
   }
 
@@ -428,7 +459,7 @@ class ResourceWatcher {
       }
       
       if (currentType != resourceType) {
-        this._updatedListeners.emit(currentType, resourceBuffer);
+        this._notifyWatchers("updated", currentType, resourceBuffer);
         currentType = resourceType;
         resourceBuffer = [];
       }
@@ -440,7 +471,7 @@ class ResourceWatcher {
 
     
     if (resourceBuffer.length > 0) {
-      this._updatedListeners.emit(currentType, resourceBuffer);
+      this._notifyWatchers("updated", currentType, resourceBuffer);
     }
   }
 
@@ -484,7 +515,7 @@ class ResourceWatcher {
       }
       
       if (currentType != resourceType) {
-        this._destroyedListeners.emit(currentType, resourceBuffer);
+        this._notifyWatchers("destroyed", currentType, resourceBuffer);
         currentType = resourceType;
         resourceBuffer = [];
       }
@@ -493,7 +524,47 @@ class ResourceWatcher {
 
     
     if (resourceBuffer.length > 0) {
-      this._destroyedListeners.emit(currentType, resourceBuffer);
+      this._notifyWatchers("destroyed", currentType, resourceBuffer);
+    }
+  }
+
+  
+
+
+
+
+
+  _hasListenerForResource(resourceType) {
+    return this._watchers.some(({ resources }) => {
+      return resources.includes(resourceType);
+    });
+  }
+
+  _notifyWatchers(callbackType, resourceType, updates) {
+    for (const { resources, onAvailable, onUpdated, onDestroyed } of this
+      ._watchers) {
+      
+      if (!resources.includes(resourceType)) {
+        continue;
+      }
+      try {
+        if (callbackType == "available") {
+          onAvailable(updates);
+        } else if (callbackType == "updated" && onUpdated) {
+          onUpdated(updates);
+        } else if (callbackType == "destroyed" && onDestroyed) {
+          onDestroyed(updates);
+        }
+      } catch (e) {
+        console.error(
+          "Exception while calling a ResourceWatcher",
+          callbackType,
+          "callback, for resource type",
+          resourceType,
+          ":",
+          e
+        );
+      }
     }
   }
 
