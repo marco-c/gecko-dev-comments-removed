@@ -534,23 +534,27 @@ function messages(
         ),
       };
 
-    case constants.NETWORK_MESSAGE_UPDATE:
+    case constants.NETWORK_MESSAGES_UPDATE:
       const updatedState = {
         ...state,
         
-        messagesById: new Map(messagesById).set(
-          action.message.id,
-          action.message
-        ),
+        messagesById: new Map(messagesById),
         networkMessagesUpdateById: {
           ...networkMessagesUpdateById,
-          [action.message.id]: action.message,
         },
       };
+      let firstNetworkError = null;
+      for (const message of action.messages) {
+        updatedState.messagesById.set(message.id, message);
+        updatedState.networkMessagesUpdateById[message.id] = message;
+        if (!firstNetworkError && isMessageNetworkError(message)) {
+          firstNetworkError = message;
+        }
+      }
 
       
       
-      if (isMessageNetworkError(action.message)) {
+      if (firstNetworkError) {
         return setVisibleMessages({
           messagesState: updatedState,
           filtersState,
