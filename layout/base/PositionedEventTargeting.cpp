@@ -102,7 +102,6 @@ struct EventRadiusPrefs {
       mReposition = false;  
 
     } else if (aEventClassID == eMouseEventClass) {
-      
       mEnabled = StaticPrefs::ui_mouse_radius_enabled();
       mVisitedWeight = StaticPrefs::ui_mouse_radius_visitedWeight();
       mRadiusTopmm = StaticPrefs::ui_mouse_radius_topmm();
@@ -181,7 +180,7 @@ static bool IsDescendant(nsIFrame* aFrame, nsIContent* aAncestor,
 }
 
 static nsIContent* GetClickableAncestor(
-    nsIFrame* aFrame, nsAtom* stopAt = nullptr,
+    nsIFrame* aFrame, nsAtom* aStopAt = nullptr,
     nsAutoString* aLabelTargetId = nullptr) {
   
   
@@ -205,7 +204,7 @@ static nsIContent* GetClickableAncestor(
   
   for (nsIContent* content = aFrame->GetContent(); content;
        content = content->GetFlattenedTreeParent()) {
-    if (stopAt && content->IsHTMLElement(stopAt)) {
+    if (aStopAt && content->IsHTMLElement(aStopAt)) {
       break;
     }
     if (HasTouchListener(content) || HasMouseListener(content) ||
