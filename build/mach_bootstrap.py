@@ -427,7 +427,7 @@ def _finalize_telemetry_legacy(context, instance, handler, success, start_time,
 
     
     if handler.name in ('bootstrap', 'doctor', 'mach-commands', 'vcs-setup',
-                        'create-mach-environment',
+                        'create-mach-environment', 'install-moz-phab',
                         
                         
                         'environment'):
