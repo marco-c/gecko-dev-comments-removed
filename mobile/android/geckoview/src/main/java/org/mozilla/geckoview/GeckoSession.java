@@ -1434,6 +1434,8 @@ public class GeckoSession {
 
         mWindow.close();
         mWindow.disposeNative();
+        
+        mCompositorReady = false;
         mWindow = null;
 
         onWindowChanged(WINDOW_CLOSE,  false);
