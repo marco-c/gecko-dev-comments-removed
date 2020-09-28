@@ -3569,8 +3569,8 @@ static inline BigInt* ParseStringBigIntLiteral(JSContext* cx,
 }
 
 
-JS::Result<BigInt*, JS::OOM&> js::StringToBigInt(JSContext* cx,
-                                                 HandleString str) {
+JS::Result<BigInt*, JS::OOM> js::StringToBigInt(JSContext* cx,
+                                                HandleString str) {
   JSLinearString* linear = str->ensureLinear(cx);
   if (!linear) {
     return cx->alreadyReportedOOM();
