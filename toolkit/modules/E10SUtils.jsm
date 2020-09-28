@@ -142,15 +142,6 @@ function documentChannelPermittedForURI(aURI) {
   );
 }
 
-function canProcessSwitchWithDocumentChannel(
-  aURI,
-  aRemoteSubframes,
-  aDesiredRemoteType,
-  aBrowsingContext
-) {
-  return documentChannelPermittedForURI(aURI);
-}
-
 
 
 
@@ -933,15 +924,7 @@ var E10SUtils = {
     
     
     
-    if (
-      uriObject &&
-      canProcessSwitchWithDocumentChannel(
-        uriObject,
-        remoteSubframes,
-        requiredRemoteType,
-        browser.browsingContext
-      )
-    ) {
+    if (uriObject && documentChannelPermittedForURI(uriObject)) {
       mustChangeProcess = false;
       newFrameloader = false;
     }
@@ -966,13 +949,7 @@ var E10SUtils = {
       `shouldLoadURIInThisProcess: have ${remoteType} want ${wantRemoteType}`
     );
 
-    if (
-      canProcessSwitchWithDocumentChannel(
-        aURI,
-        aRemoteSubframes,
-        wantRemoteType
-      )
-    ) {
+    if (documentChannelPermittedForURI(aURI)) {
       
       return true;
     }
@@ -1007,12 +984,7 @@ var E10SUtils = {
     
     if (
       AppConstants.MOZ_WIDGET_TOOLKIT != "android" &&
-      canProcessSwitchWithDocumentChannel(
-        aURI,
-        useRemoteSubframes,
-        wantRemoteType,
-        aDocShell.browsingContext
-      )
+      documentChannelPermittedForURI(aURI)
     ) {
       return true;
     }
