@@ -155,7 +155,7 @@ pub struct SceneClipInstance {
     
     pub clip: ClipInstance,
     
-    pub key: ClipItemKeyKind,
+    pub key: ClipItemKey,
 }
 
 
@@ -704,7 +704,7 @@ pub struct ClipStore {
 
     
     #[ignore_malloc_size_of = "range missing"]
-    templates: FastHashMap<ClipId, ClipTemplate>,
+    pub templates: FastHashMap<ClipId, ClipTemplate>,
 
     
     
@@ -1378,7 +1378,7 @@ impl ClipItemKeyKind {
     }
 }
 
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipItemKey {
