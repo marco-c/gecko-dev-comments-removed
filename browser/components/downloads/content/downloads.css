@@ -43,54 +43,54 @@
   display: none;
 }
 
-.download-state:not(:-moz-any([state="6"], 
-                              [state="8"], 
-                              [state="9"]) )
+.download-state:not(:is([state="6"], 
+                        [state="8"], 
+                        [state="9"]) )
                                            .downloadBlockedBadge,
 
-.download-state:not(:-moz-any([state="-1"],
-                              [state="5"], 
-                              [state="0"], 
-                              [state="4"], 
-                              [state="7"]) )
+.download-state:not(:is([state="-1"],
+                        [state="5"], 
+                        [state="0"], 
+                        [state="4"], 
+                        [state="7"]) )
                                            .downloadProgress,
 
-.download-state:not(          [state="0"]  )
+.download-state:not(    [state="0"]  )
                                            .downloadPauseMenuItem,
 
-.download-state:not(          [state="4"]  )
+.download-state:not(    [state="4"]  )
                                            .downloadResumeMenuItem,
 
 
 
-.download-state:not(          [state="8"]  )
+.download-state:not(    [state="8"]  )
                                            .downloadUnblockMenuItem,
 .download-state[state="8"]:not(.temporary-block)
                                            .downloadUnblockMenuItem,
 
-.download-state:not(:-moz-any([state="1"], 
-                              [state="2"], 
-                              [state="3"], 
-                              [state="6"], 
-                              [state="8"], 
-                              [state="9"]) )
+.download-state:not(:is([state="1"], 
+                        [state="2"], 
+                        [state="3"], 
+                        [state="6"], 
+                        [state="8"], 
+                        [state="9"]) )
                                            .downloadRemoveFromHistoryMenuItem,
 
-.download-state:not(:-moz-any([state="-1"],
-                              [state="0"], 
-                              [state="1"], 
-                              [state="4"], 
-                              [state="5"]) )
+.download-state:not(:is([state="-1"],
+                        [state="0"], 
+                        [state="1"], 
+                        [state="4"], 
+                        [state="5"]) )
                                            .downloadShowMenuItem,
 .download-state[state="1"]:not([exists])
                                            .downloadShowMenuItem,
 
-.download-state:not(:-moz-any([state="-1"],
-                              [state="0"], 
-                              [state="1"], 
-                              [state="4"], 
-                              [state="5"], 
-                              [state="8"]) )
+.download-state:not(:is([state="-1"],
+                        [state="0"], 
+                        [state="1"], 
+                        [state="4"], 
+                        [state="5"], 
+                        [state="8"]) )
                                            .downloadCommandsSeparator,
 .download-state[state="1"]:not([exists])
                                            .downloadCommandsSeparator,
@@ -102,24 +102,23 @@
 .download-state:not([viewable-internally]) .downloadUseSystemDefaultMenuItem,
 .download-state                            .downloadUseSystemDefaultMenuItem:not([enabled]),
 .download-state                            .downloadAlwaysUseSystemDefaultMenuItem:not([enabled]),
-.download-state:not([viewable-internally]) .downloadAlwaysUseSystemDefaultMenuItem
-{
+.download-state:not([viewable-internally]) .downloadAlwaysUseSystemDefaultMenuItem {
   display: none;
 }
 
 
 
-.download-state:not(:-moz-any([state="-1"],
-                              [state="5"], 
-                              [state="0"], 
-                              [state="4"]) )
+.download-state:not(:is([state="-1"],
+                        [state="5"], 
+                        [state="0"], 
+                        [state="4"]) )
                                            .downloadCancel,
 
-.download-state:not(:-moz-any([state="2"], 
-                              [state="3"]) )
+.download-state:not(:is([state="2"], 
+                        [state="3"]) )
                                            .downloadRetry,
 
-.download-state:not(          [state="1"]  )
+.download-state:not(    [state="1"]  )
                                            .downloadShow
 {
   display: none;
@@ -157,7 +156,7 @@
 .subviewbutton.download:not(:hover) > .toolbarbutton-text > .status-full,
 
 
-.subviewbutton.download:hover:-moz-any(:not([canShow]),:not([exists])):not([canRetry]) > .toolbarbutton-text > .status-full,
+.subviewbutton.download:hover:is(:not([canShow]),:not([exists])):not([canRetry]) > .toolbarbutton-text > .status-full,
 
 
 .subviewbutton.download:hover[canRetry]:not(.downloadHoveringButton) > .toolbarbutton-text > .status-full,

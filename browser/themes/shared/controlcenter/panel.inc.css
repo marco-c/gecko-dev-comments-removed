@@ -5,7 +5,7 @@
 %endif
 
 
-:-moz-any([when-connection],[when-customroot],[when-mixedcontent],[when-ciphers]) {
+:is([when-connection],[when-customroot],[when-mixedcontent],[when-ciphers]) {
   display: none;
 }
 
@@ -77,7 +77,7 @@
 }
 
 
-#identity-popup-securityView-body:-moz-any([mixedcontent],[ciphers]) > description[when-connection=not-secure],
+#identity-popup-securityView-body:is([mixedcontent],[ciphers]) > description[when-connection=not-secure],
 
 #identity-popup-securityView-body[mixedcontent~=passive-loaded][mixedcontent~=active-blocked] > description[when-mixedcontent=passive-loaded] {
   display: none;
