@@ -376,17 +376,17 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
 }
 
 void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
-                                                    const nsID& aChangeID,
-                                                    uint32_t aLoadType) {
+                                                    const nsID& aChangeID) {
   for (size_t i = 0; i < mLoadingEntries.Length(); ++i) {
     if (mLoadingEntries[i].mLoadId == aLoadId) {
-      nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
+      nsISHistory* shistory = GetSessionHistory();
       if (!shistory) {
         SessionHistoryEntry::RemoveLoadId(aLoadId);
         mLoadingEntries.RemoveElementAt(i);
         return;
       }
 
+      RefPtr<SessionHistoryEntry> oldActiveEntry = mActiveEntry;
       RefPtr<SessionHistoryEntry> newActiveEntry = mLoadingEntries[i].mEntry;
 
       bool loadFromSessionHistory = !newActiveEntry->ForInitialLoad();
@@ -405,76 +405,50 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
             [](nsISHEntry* aEntry) { aEntry->SetName(EmptyString()); });
       }
 
-      bool addEntry = ShouldUpdateSessionHistory(aLoadType);
       if (IsTop()) {
         mActiveEntry = newActiveEntry;
         if (loadFromSessionHistory) {
           
           shistory->UpdateIndex();
         } else {
-          if (LOAD_TYPE_HAS_FLAGS(
-                  aLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY)) {
-            
-            int32_t index = shistory->GetIndexForReplace();
-
-            
-            
-            addEntry = index < 0;
-            if (!addEntry) {
-              shistory->ReplaceEntry(index, mActiveEntry);
-            }
-          }
-
-          if (addEntry) {
-            shistory->AddEntry(mActiveEntry,
-                                true);
-          }
+          shistory->AddEntry(mActiveEntry,
+                              true);
         }
       } else {
         
         
         
+        
         if (loadFromSessionHistory) {
-          if (mActiveEntry) {
+          if (oldActiveEntry) {
             
             
             
-            mActiveEntry->SyncTreesForSubframeNavigation(newActiveEntry, Top(),
-                                                         this);
+            oldActiveEntry->SyncTreesForSubframeNavigation(newActiveEntry,
+                                                           Top(), this);
           }
           mActiveEntry = newActiveEntry;
           
           
           shistory->UpdateIndex();
-        } else if (addEntry) {
-          if (mActiveEntry) {
-            if (LOAD_TYPE_HAS_FLAGS(
-                    aLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY)) {
-              
-              
-              mActiveEntry->ReplaceWith(*newActiveEntry);
-            } else {
-              
-              
-              
-              shistory->AddChildSHEntryHelper(mActiveEntry, newActiveEntry,
-                                              Top(), true);
-              mActiveEntry = newActiveEntry;
-            }
-          } else {
-            SessionHistoryEntry* parentEntry =
-                static_cast<CanonicalBrowsingContext*>(GetParent())
-                    ->mActiveEntry;
+        } else if (oldActiveEntry) {
+          
+          
+          shistory->AddChildSHEntryHelper(oldActiveEntry, newActiveEntry, Top(),
+                                          true);
+          mActiveEntry = newActiveEntry;
+        } else {
+          SessionHistoryEntry* parentEntry =
+              static_cast<CanonicalBrowsingContext*>(GetParent())->mActiveEntry;
+          
+          
+          if (parentEntry) {
+            mActiveEntry = newActiveEntry;
             
             
-            if (parentEntry) {
-              mActiveEntry = newActiveEntry;
-              
-              
-              
-              parentEntry->AddChild(mActiveEntry, Children().Length() - 1,
-                                    IsInProcess());
-            }
+            
+            parentEntry->AddChild(mActiveEntry, Children().Length() - 1,
+                                  IsInProcess());
           }
         }
       }

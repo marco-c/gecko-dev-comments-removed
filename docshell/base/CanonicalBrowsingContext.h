@@ -100,8 +100,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   UniquePtr<LoadingSessionHistoryInfo> CreateLoadingSessionHistoryEntryForLoad(
       nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
-  void SessionHistoryCommit(uint64_t aLoadId, const nsID& aChangeID,
-                            uint32_t aLoadType);
+  void SessionHistoryCommit(uint64_t aLoadId, const nsID& aChangeID);
 
   
   
