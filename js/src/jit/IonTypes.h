@@ -149,6 +149,10 @@ enum class BailoutKind : uint8_t {
   NonInt32ArrayLength,
 
   
+  
+  FunctionLength,
+
+  
 
   
   
@@ -297,6 +301,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::FirstExecution";
     case BailoutKind::NonInt32ArrayLength:
       return "BailoutKind::NonInt32ArrayLength";
+    case BailoutKind::FunctionLength:
+      return "BailoutKind::FunctionLength";
 
     
     case BailoutKind::OverflowInvalidate:

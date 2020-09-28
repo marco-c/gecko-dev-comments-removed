@@ -8214,6 +8214,28 @@ void CodeGenerator::visitSetArrayLength(LSetArrayLength* lir) {
   SetLengthFromIndex(masm, lir->index(), length);
 }
 
+void CodeGenerator::visitFunctionLength(LFunctionLength* lir) {
+  Register function = ToRegister(lir->function());
+  Register output = ToRegister(lir->output());
+
+  Label bail;
+
+  
+  masm.load16ZeroExtend(Address(function, JSFunction::offsetOfFlags()), output);
+
+  
+  
+  
+  masm.branchTest32(
+      Assembler::NonZero, output,
+      Imm32(FunctionFlags::SELFHOSTLAZY | FunctionFlags::RESOLVED_LENGTH),
+      &bail);
+
+  masm.loadFunctionLength(function, output, output, &bail);
+
+  bailoutFrom(&bail, lir->snapshot());
+}
+
 template <class OrderedHashTable>
 static void RangeFront(MacroAssembler&, Register, Register, Register);
 
