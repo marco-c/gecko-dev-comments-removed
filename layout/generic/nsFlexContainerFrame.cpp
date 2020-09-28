@@ -1566,12 +1566,20 @@ static nscoord PartiallyResolveAutoMinSize(
   nscoord transferredSizeSuggestion = nscoord_MAX;
   if (aFlexItem.HasIntrinsicRatio()) {
     
-    const bool useMinSizeIfCrossSizeIsIndefinite = true;
+    const bool useMinSizeIfCrossSizeIsIndefinite = false;
     nscoord crossSizeToUseWithRatio = CrossSizeToUseWithRatio(
         aFlexItem, aItemReflowInput, useMinSizeIfCrossSizeIsIndefinite,
         aAxisTracker);
-    transferredSizeSuggestion = MainSizeFromAspectRatio(
-        crossSizeToUseWithRatio, aFlexItem.IntrinsicRatio(), aAxisTracker);
+
+    if (crossSizeToUseWithRatio != NS_UNCONSTRAINEDSIZE) {
+      transferredSizeSuggestion = MainSizeFromAspectRatio(
+          crossSizeToUseWithRatio, aFlexItem.IntrinsicRatio(), aAxisTracker);
+    }
+
+    
+    
+    transferredSizeSuggestion = ClampMainSizeViaCrossAxisConstraints(
+        transferredSizeSuggestion, aFlexItem, aAxisTracker);
   }
 
   return transferredSizeSuggestion;
