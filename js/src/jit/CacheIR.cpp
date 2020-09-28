@@ -9230,6 +9230,11 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
     return AttachDecision::TemporarilyUnoptimizable;
   }
 
+  if (isConstructing && isSpecialized &&
+      calleeFunc->constructorNeedsUninitializedThis()) {
+    flags.setNeedsUninitializedThis();
+  }
+
   
   Int32OperandId argcId(writer.setInputOperandId(0));
 
@@ -9244,6 +9249,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
     if (templateObj) {
       
       
+      MOZ_ASSERT(!flags.needsUninitializedThis());
       if (JitOptions.warpBuilder) {
         
         

@@ -3080,6 +3080,28 @@ void BaselineCacheIRCompiler::loadStackObject(ArgumentKind kind,
   }
 }
 
+template <typename T>
+void BaselineCacheIRCompiler::storeThis(const T& newThis, Register argcReg,
+                                        CallFlags flags) {
+  switch (flags.getArgFormat()) {
+    case CallFlags::Standard: {
+      BaseValueIndex thisAddress(masm.getStackPointer(),
+                                 argcReg,               
+                                 1 * sizeof(Value) +    
+                                     STUB_FRAME_SIZE);  
+      masm.storeValue(newThis, thisAddress);
+    } break;
+    case CallFlags::Spread: {
+      Address thisAddress(masm.getStackPointer(),
+                          2 * sizeof(Value) +    
+                              STUB_FRAME_SIZE);  
+      masm.storeValue(newThis, thisAddress);
+    } break;
+    default:
+      MOZ_CRASH("Invalid arg format for scripted constructor");
+  }
+}
+
 
 
 
@@ -3094,6 +3116,11 @@ void BaselineCacheIRCompiler::loadStackObject(ArgumentKind kind,
 void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
                                          Register scratch, CallFlags flags) {
   MOZ_ASSERT(flags.isConstructing());
+
+  if (flags.needsUninitializedThis()) {
+    storeThis(MagicValue(JS_UNINITIALIZED_LEXICAL), argcReg, flags);
+    return;
+  }
 
   size_t depth = STUB_FRAME_SIZE;
 
@@ -3130,23 +3157,7 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   masm.pop(argcReg);
 
   
-  switch (flags.getArgFormat()) {
-    case CallFlags::Standard: {
-      BaseValueIndex thisAddress(masm.getStackPointer(),
-                                 argcReg,               
-                                 1 * sizeof(Value) +    
-                                     STUB_FRAME_SIZE);  
-      masm.storeValue(JSReturnOperand, thisAddress);
-    } break;
-    case CallFlags::Spread: {
-      Address thisAddress(masm.getStackPointer(),
-                          2 * sizeof(Value) +    
-                              STUB_FRAME_SIZE);  
-      masm.storeValue(JSReturnOperand, thisAddress);
-    } break;
-    default:
-      MOZ_CRASH("Invalid arg format for scripted constructor");
-  }
+  storeThis(JSReturnOperand, argcReg, flags);
 
   
   Address stubRegAddress(masm.getStackPointer(), STUB_FRAME_SAVED_STUB_OFFSET);

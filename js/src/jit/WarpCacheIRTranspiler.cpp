@@ -3281,12 +3281,13 @@ bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
     } else {
       MOZ_ASSERT(kind == CallKind::Scripted);
 
-      
-      
-      
-      
-
-      if (!thisArg->isCreateThisWithTemplate()) {
+      if (thisArg->isCreateThisWithTemplate()) {
+        
+      } else if (flags.needsUninitializedThis()) {
+        MConstant* uninit = constant(MagicValue(JS_UNINITIALIZED_LEXICAL));
+        thisArg->setImplicitlyUsedUnchecked();
+        callInfo_->setThis(uninit);
+      } else {
         
         MOZ_ASSERT_IF(!thisArg->isPhi(),
                       thisArg->type() == MIRType::MagicIsConstructing);
