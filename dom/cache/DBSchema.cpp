@@ -1243,8 +1243,7 @@ Result<nsTArray<EntryId>, nsresult> QueryCache(mozIStorageConnection& aConn,
     return Err(rv);
   }
 
-  nsAutoCString urlWithoutQueryHash;
-  CACHE_TRY_VAR(urlWithoutQueryHash,
+  CACHE_TRY_VAR(const auto urlWithoutQueryHash,
                 HashCString(*crypto, aRequest.urlWithoutQuery()));
 
   rv = state->BindUTF8StringAsBlobByName("url_no_query_hash"_ns,
@@ -1254,8 +1253,8 @@ Result<nsTArray<EntryId>, nsresult> QueryCache(mozIStorageConnection& aConn,
   }
 
   if (!aParams.ignoreSearch()) {
-    nsAutoCString urlQueryHash;
-    CACHE_TRY_VAR(urlQueryHash, HashCString(*crypto, aRequest.urlQuery()));
+    CACHE_TRY_VAR(const auto urlQueryHash,
+                  HashCString(*crypto, aRequest.urlQuery()));
 
     rv = state->BindUTF8StringAsBlobByName("url_query_hash"_ns, urlQueryHash);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1608,8 +1607,7 @@ Result<int32_t, nsresult> InsertSecurityInfo(mozIStorageConnection& aConn,
   
   
   
-  nsAutoCString hash;
-  CACHE_TRY_VAR(hash, HashCString(aCrypto, aData));
+  CACHE_TRY_VAR(const auto hash, HashCString(aCrypto, aData));
 
   
   
@@ -1921,8 +1919,7 @@ nsresult InsertEntry(mozIStorageConnection& aConn, CacheId aCacheId,
     return rv;
   }
 
-  nsAutoCString urlWithoutQueryHash;
-  CACHE_TRY_VAR(urlWithoutQueryHash,
+  CACHE_TRY_VAR(const auto urlWithoutQueryHash,
                 HashCString(*crypto, aRequest.urlWithoutQuery()));
 
   rv = state->BindUTF8StringAsBlobByName("request_url_no_query_hash"_ns,
@@ -1936,8 +1933,8 @@ nsresult InsertEntry(mozIStorageConnection& aConn, CacheId aCacheId,
     return rv;
   }
 
-  nsAutoCString urlQueryHash;
-  CACHE_TRY_VAR(urlQueryHash, HashCString(*crypto, aRequest.urlQuery()));
+  CACHE_TRY_VAR(const auto urlQueryHash,
+                HashCString(*crypto, aRequest.urlQuery()));
 
   rv = state->BindUTF8StringAsBlobByName("request_url_query_hash"_ns,
                                          urlQueryHash);
@@ -2676,7 +2673,8 @@ Result<nsAutoCString, nsresult> HashCString(nsICryptoHash& aCrypto,
     return Err(rv);
   }
 
-  return static_cast<nsAutoCString>(Substring(fullHash, 0, 8));
+  return Result<nsAutoCString, nsresult>{std::in_place,
+                                         Substring(fullHash, 0, 8)};
 }
 
 }  
