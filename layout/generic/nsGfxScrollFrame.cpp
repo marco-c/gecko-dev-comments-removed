@@ -1348,6 +1348,28 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
     }
   }
 
+  
+  
+  
+  if (mHelper.mIsRoot && !mHelper.UsesOverlayScrollbars() &&
+      (didHaveHScrollbar != state.mShowHScrollbar ||
+       didHaveVScrollbar != state.mShowVScrollbar ||
+       didOnlyHScrollbar != mHelper.mOnlyNeedHScrollbarToScrollVVInsideLV ||
+       didOnlyVScrollbar != mHelper.mOnlyNeedVScrollbarToScrollVVInsideLV)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    PresShell()->SetVisualViewportOffset(GetVisualViewportOffset(),
+                                         GetScrollPosition());
+  }
+
   aDesiredSize.SetOverflowAreasToDesiredBounds();
 
   mHelper.UpdateSticky();
