@@ -79,7 +79,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
 
 
-  mozilla::TimeStamp MostRecentRefresh() const;
+  mozilla::TimeStamp MostRecentRefresh(bool aEnsureTimerStarted = true) const;
 
   
 
