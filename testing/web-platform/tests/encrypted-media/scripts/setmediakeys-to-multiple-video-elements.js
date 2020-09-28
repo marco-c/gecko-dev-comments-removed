@@ -27,12 +27,12 @@ function runTest(config, qualifier) {
             return _video1.setMediaKeys(_mediaKeys);
         }).then(function(result) {
             assert_not_equals(_video1.mediaKeys, null);
-            assert_true(_video1.mediaKeys === _mediaKeys);
+            assert_equals(_video1.mediaKeys, _mediaKeys);
             
             return _video2.setMediaKeys(_mediaKeys);
         }).then(function(result) {
             
-            assert_true(_video2.mediaKeys === _mediaKeys);
+            assert_equals(_video2.mediaKeys, _mediaKeys);
             return Promise.resolve();
         }, function(error) {
             assert_equals(error.name, 'QuotaExceededError');
@@ -47,7 +47,7 @@ function runTest(config, qualifier) {
             return _video2.setMediaKeys(_mediaKeys);
         }).then(function(result) {
             assert_not_equals(_video2.mediaKeys, null);
-            assert_true(_video2.mediaKeys === _mediaKeys);
+            assert_equals(_video2.mediaKeys, _mediaKeys);
             test.done();
         }).catch(onFailure);
     }, testname);
