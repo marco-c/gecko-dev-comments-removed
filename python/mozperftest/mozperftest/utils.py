@@ -154,6 +154,14 @@ def install_package(virtualenv_manager, package, ignore_failure=False):
     return False
 
 
+
+
+
+
+
+_TRY_MAPPING = {Path("netwerk"): Path("xpcshell", "tests", "netwerk")}
+
+
 def build_test_list(tests):
     """Collects tests given a list of directories, files and URLs.
 
@@ -174,13 +182,24 @@ def build_test_list(tests):
             res.append(str(target))
             continue
 
-        test = Path(test)
+        p_test = Path(test)
+        if ON_TRY and not p_test.resolve().exists():
+            
+            for src_path, ci_path in _TRY_MAPPING.items():
+                src_path, ci_path = str(src_path), str(ci_path)
+                if test.startswith(src_path):
+                    p_test = Path(test.replace(src_path, ci_path))
+                    break
+
+        test = p_test.resolve()
 
         if test.is_file():
             res.append(str(test))
         elif test.is_dir():
             for file in test.rglob("perftest_*.js"):
                 res.append(str(file))
+        else:
+            raise FileNotFoundError(str(test))
     res.sort()
     return res, temp_dir
 
