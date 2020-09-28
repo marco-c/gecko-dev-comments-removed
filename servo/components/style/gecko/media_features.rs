@@ -559,19 +559,6 @@ fn eval_system_metric(
     query_value.map_or(supports_metric, |v| v == supports_metric)
 }
 
-fn eval_moz_touch_enabled(
-    device: &Device,
-    query_value: Option<bool>,
-    _: Option<RangeOrOperator>,
-) -> bool {
-    eval_system_metric(
-        device,
-        query_value,
-        atom!("-moz-touch-enabled"),
-         true,
-    )
-}
-
 fn eval_moz_os_version(
     device: &Device,
     query_value: Option<Atom>,
@@ -613,7 +600,7 @@ macro_rules! system_metric_feature {
 
 
 
-pub static MEDIA_FEATURES: [MediaFeatureDescription; 56] = [
+pub static MEDIA_FEATURES: [MediaFeatureDescription; 55] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -840,13 +827,4 @@ pub static MEDIA_FEATURES: [MediaFeatureDescription; 56] = [
     system_metric_feature!(atom!("-moz-gtk-csd-close-button")),
     system_metric_feature!(atom!("-moz-gtk-csd-reversed-placement")),
     system_metric_feature!(atom!("-moz-system-dark-theme")),
-    
-    
-    
-    feature!(
-        atom!("-moz-touch-enabled"),
-        AllowsRanges::No,
-        Evaluator::BoolInteger(eval_moz_touch_enabled),
-        ParsingRequirements::empty(),
-    ),
 ];

@@ -74,10 +74,6 @@ var suppressed_toggles = [
 ];
 
 var toggles_enabled_in_content = [];
-if (SpecialPowers.getBoolPref("layout.css.moz-touch-enabled.enabled")) {
-  suppressed_toggles.push("-moz-touch-enabled");
-  toggles_enabled_in_content.push("-moz-touch-enabled");
-}
 
 
 var windows_versions = ["windows-win7", "windows-win8", "windows-win10"];
