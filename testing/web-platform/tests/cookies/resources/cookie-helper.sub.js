@@ -1,8 +1,11 @@
 
 (_ => {
   var HOST = "{{host}}";
+  var INSECURE_PORT = ":{{ports[http][0]}}";
   var SECURE_PORT = ":{{ports[https][0]}}";
   var CROSS_ORIGIN_HOST = "{{hosts[alt][]}}";
+
+  window.INSECURE_ORIGIN = "http://" + HOST + INSECURE_PORT;
 
   
   window.SECURE_ORIGIN = "https://" + HOST + SECURE_PORT;
