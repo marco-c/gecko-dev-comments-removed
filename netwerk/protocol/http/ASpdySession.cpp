@@ -36,7 +36,7 @@ ASpdySession* ASpdySession::NewSpdySession(net::SpdyVersion version,
   
   
 
-  return new Http2Session(aTransport, version, attemptingEarlyData);
+  return Http2Session::CreateSession(aTransport, version, attemptingEarlyData);
 }
 
 SpdyInformation::SpdyInformation() {
