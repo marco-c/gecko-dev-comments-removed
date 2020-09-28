@@ -490,6 +490,7 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
         switch (aAmount) {
           case eSelectLine:
           case eSelectEndLine:
+          case eSelectParagraph:
             
             
             return nextOffset < CharacterCount()
@@ -565,7 +566,8 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
     if (hyperTextOffset == CharacterCount()) return 0;
 
     
-    if (IsHTMLListItem() && aAmount == eSelectBeginLine &&
+    if (IsHTMLListItem() &&
+        (aAmount == eSelectBeginLine || aAmount == eSelectParagraph) &&
         hyperTextOffset > 0) {
       Accessible* prevOffsetChild = GetChildAtOffset(hyperTextOffset - 1);
       if (prevOffsetChild == AsHTMLListItem()->Bullet()) return 0;
