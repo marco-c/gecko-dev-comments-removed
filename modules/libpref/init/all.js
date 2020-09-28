@@ -4445,6 +4445,8 @@ pref("dom.clients.openwindow_favors_same_process", true);
 #endif
 
 
+pref("toolkit.aboutProcesses.showAllSubframes", false);
+
 pref("toolkit.aboutProcesses.showThreads", false);
 
 
