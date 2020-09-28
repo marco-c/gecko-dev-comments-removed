@@ -28,6 +28,9 @@ static void MakeTopLevelInfo(const nsACString& aScheme, const nsACString& aHost,
     return;
   }
 
+  
+  
+
   nsAutoCString site;
   site.AssignLiteral("(");
   site.Append(aScheme);
