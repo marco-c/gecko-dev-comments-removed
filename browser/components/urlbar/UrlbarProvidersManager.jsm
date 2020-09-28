@@ -488,13 +488,10 @@ class Query {
 
     
     
-    
-    
     if (
       result.heuristic &&
-      this.context.searchMode &&
-      (!this.context.trimmedSearchString ||
-        (!this.context.searchMode.engineName && !result.autofill))
+      !this.context.trimmedSearchString &&
+      this.context.searchMode
     ) {
       return;
     }
