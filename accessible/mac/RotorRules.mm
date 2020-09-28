@@ -54,6 +54,40 @@ RotorImageRule::RotorImageRule() : PivotRoleRule(roles::GRAPHIC) {}
 RotorImageRule::RotorImageRule(AccessibleOrProxy& aDirectDescendantsFrom)
     : PivotRoleRule(roles::GRAPHIC, aDirectDescendantsFrom) {}
 
+RotorStaticTextRule::RotorStaticTextRule() : mDirectDescendantsFrom(nullptr) {}
+
+RotorStaticTextRule::RotorStaticTextRule(
+    AccessibleOrProxy& aDirectDescendantsFrom)
+    : mDirectDescendantsFrom(aDirectDescendantsFrom) {}
+
+uint16_t RotorStaticTextRule::Match(const AccessibleOrProxy& aAccOrProxy) {
+  uint16_t result = nsIAccessibleTraversalRule::FILTER_IGNORE;
+
+  if (nsAccUtils::MustPrune(aAccOrProxy)) {
+    result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+  }
+
+  if (!mDirectDescendantsFrom.IsNull() &&
+      (aAccOrProxy != mDirectDescendantsFrom)) {
+    
+    
+    
+    
+    
+    
+    
+    result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+  }
+
+  if (mozAccessible* nativeMatch = GetNativeFromGeckoAccessible(aAccOrProxy)) {
+    if ([[nativeMatch moxRole] isEqualToString:@"AXStaticText"]) {
+      result |= nsIAccessibleTraversalRule::FILTER_MATCH;
+    }
+  }
+
+  return result;
+}
+
 RotorControlRule::RotorControlRule(AccessibleOrProxy& aDirectDescendantsFrom)
     : mDirectDescendantsFrom(aDirectDescendantsFrom) {}
 
