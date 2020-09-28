@@ -283,7 +283,7 @@ var State = {
       type: cur.type,
       origin: cur.origin || "",
       threads: null,
-      displayRank: Control._getDisplayGroupRank(cur.type),
+      displayRank: Control._getDisplayGroupRank(cur),
       windows: this._getDOMWindows(cur),
       
       title: null,
@@ -1114,23 +1114,40 @@ var Control = {
   
   
   
-  _getDisplayGroupRank(type) {
+  _getDisplayGroupRank(data) {
+    const RANK_BROWSER = 0;
+    const RANK_WEB_CONTENT = 1;
+    const RANK_UTILITY = 2;
+    const RANK_PREALLOCATED = 3;
+    let type = data.type;
     switch (type) {
       
       case "browser":
-        return 0;
+        return RANK_BROWSER;
       
-      case "web":
       case "webIsolated":
       case "webLargeAllocation":
       case "withCoopCoep":
-        return 1;
+        return RANK_WEB_CONTENT;
       
       case "preallocated":
-        return 3;
+        return RANK_PREALLOCATED;
+      
+      
+      
+      case "web":
+        if (data.windows.length >= 1) {
+          return RANK_WEB_CONTENT;
+        }
+        
+        
+        
+        
+        
+        return RANK_PREALLOCATED;
       
       default:
-        return 2;
+        return RANK_UTILITY;
     }
   },
 };
