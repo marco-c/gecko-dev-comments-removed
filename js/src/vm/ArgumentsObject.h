@@ -357,6 +357,16 @@ class ArgumentsObject : public NativeObject {
 
 
 
+  bool argIsForwarded(unsigned i) const {
+    MOZ_ASSERT(i < data()->numArgs);
+    const Value& v = data()->args[i];
+    return IsMagicScopeSlotValue(v);
+  }
+
+  
+
+
+
 
 
 

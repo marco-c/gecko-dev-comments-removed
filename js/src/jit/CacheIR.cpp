@@ -387,7 +387,7 @@ AttachDecision GetPropIRGenerator::tryAttachStub() {
       TRY_ATTACH(tryAttachDenseElement(obj, objId, index, indexId));
       TRY_ATTACH(tryAttachDenseElementHole(obj, objId, index, indexId));
       TRY_ATTACH(tryAttachSparseElement(obj, objId, index, indexId));
-      TRY_ATTACH(tryAttachArgumentsObjectArg(obj, objId, indexId));
+      TRY_ATTACH(tryAttachArgumentsObjectArg(obj, objId, index, indexId));
       TRY_ATTACH(tryAttachGenericElement(obj, objId, index, indexId));
 
       trackAttached(IRGenerator::NotAttached);
@@ -2223,9 +2223,30 @@ AttachDecision GetPropIRGenerator::tryAttachMagicArgument(
 }
 
 AttachDecision GetPropIRGenerator::tryAttachArgumentsObjectArg(
-    HandleObject obj, ObjOperandId objId, Int32OperandId indexId) {
-  if (!obj->is<ArgumentsObject>() ||
-      obj->as<ArgumentsObject>().hasOverriddenElement()) {
+    HandleObject obj, ObjOperandId objId, uint32_t index,
+    Int32OperandId indexId) {
+  if (!obj->is<ArgumentsObject>()) {
+    return AttachDecision::NoAction;
+  }
+  auto* args = &obj->as<ArgumentsObject>();
+
+  
+  if (args->hasOverriddenElement()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (index >= args->initialLength()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (args->isAnyElementDeleted()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (args->argIsForwarded(index)) {
     return AttachDecision::NoAction;
   }
 
@@ -2233,10 +2254,10 @@ AttachDecision GetPropIRGenerator::tryAttachArgumentsObjectArg(
     return AttachDecision::NoAction;
   }
 
-  if (obj->is<MappedArgumentsObject>()) {
+  if (args->is<MappedArgumentsObject>()) {
     writer.guardClass(objId, GuardClassKind::MappedArguments);
   } else {
-    MOZ_ASSERT(obj->is<UnmappedArgumentsObject>());
+    MOZ_ASSERT(args->is<UnmappedArgumentsObject>());
     writer.guardClass(objId, GuardClassKind::UnmappedArguments);
   }
 
