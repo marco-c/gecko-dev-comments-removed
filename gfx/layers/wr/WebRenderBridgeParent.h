@@ -18,7 +18,6 @@
 #include "mozilla/layers/CompositorVsyncSchedulerOwner.h"
 #include "mozilla/layers/PWebRenderBridgeParent.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
-#include "mozilla/layers/WebRenderCompositionRecorder.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"

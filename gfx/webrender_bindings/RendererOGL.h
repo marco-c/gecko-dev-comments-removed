@@ -124,10 +124,15 @@ class RendererOGL {
   bool EnsureAsyncScreenshot();
 
  protected:
+  
+
+
+
+  bool DidPaintContent(const wr::WebRenderPipelineInfo* aFrameEpochs);
+
   RefPtr<RenderThread> mThread;
   UniquePtr<RenderCompositor> mCompositor;
-  UniquePtr<layers::WebRenderCompositionRecorder>
-      mCompositionRecorder;  
+  UniquePtr<layers::CompositionRecorder> mCompositionRecorder;  
   wr::Renderer* mRenderer;
   layers::CompositorBridgeParent* mBridge;
   wr::WindowId mWindowId;
@@ -136,6 +141,17 @@ class RendererOGL {
   bool mDisableNativeCompositor;
 
   RendererScreenshotGrabber mScreenshotGrabber;
+
+  
+  
+  
+  wr::PipelineId mRootPipelineId;
+
+  
+  
+  
+  
+  std::unordered_map<uint64_t, wr::Epoch> mContentPipelineEpochs;
 };
 
 }  
