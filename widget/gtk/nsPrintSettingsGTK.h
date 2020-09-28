@@ -93,8 +93,8 @@ class nsPrintSettingsGTK : public nsPrintSettings {
 
   
   
-  NS_IMETHOD GetPaperName(nsAString& aPaperName) override;
-  NS_IMETHOD SetPaperName(const nsAString& aPaperName) override;
+  NS_IMETHOD GetPaperId(nsAString& aPaperId) override;
+  NS_IMETHOD SetPaperId(const nsAString& aPaperId) override;
 
   NS_IMETHOD SetUnwriteableMarginInTwips(
       nsIntMargin& aUnwriteableMargin) override;

@@ -201,7 +201,7 @@ interface nsIPrintSettings : nsISupports
   attribute boolean showMarginGuides;    
 
   
-  attribute AString paperName;     
+  attribute AString paperId;       
   attribute double  paperWidth;    
   attribute double  paperHeight;   
   attribute short   paperSizeUnit; 
