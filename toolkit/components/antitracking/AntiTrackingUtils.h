@@ -123,13 +123,6 @@ class AntiTrackingUtils final {
 
   static nsCString GrantedReasonToString(
       ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason);
-
-  
-
-
-
-
-  static void UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel);
 };
 
 }  
