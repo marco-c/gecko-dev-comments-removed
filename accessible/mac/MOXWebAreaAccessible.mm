@@ -176,8 +176,8 @@ using namespace mozilla::a11y;
   
   
   MOXSearchInfo* search =
-      [[MOXSearchInfo alloc] initWithParameters:searchPredicate
-                                        andRoot:mGeckoAccessible];
+      [[MOXSearchInfo alloc] initWithParameters:searchPredicate andRoot:self];
+
   return [search performSearch];
 }
 
@@ -262,7 +262,8 @@ using namespace mozilla::a11y;
 
 @implementation MOXSearchInfo
 
-- (id)initWithParameters:(NSDictionary*)params andRoot:(AccessibleOrProxy)root {
+- (id)initWithParameters:(NSDictionary*)params
+                 andRoot:(MOXWebAreaAccessible*)root {
   if (id searchKeyParam = [params objectForKey:@"AXSearchKey"]) {
     mSearchKeys = [searchKeyParam isKindOfClass:[NSString class]]
                       ? @[ searchKeyParam ]
@@ -270,12 +271,10 @@ using namespace mozilla::a11y;
   }
 
   if (id startElemParam = [params objectForKey:@"AXStartElement"]) {
-    mStartElem = [startElemParam geckoAccessible];
+    mStartElem = startElemParam;
   } else {
     mStartElem = root;
   }
-  MOZ_ASSERT(!mStartElem.IsNull(),
-             "Performing search with null gecko accessible!");
 
   mWebArea = root;
 
@@ -290,12 +289,24 @@ using namespace mozilla::a11y;
   return [super init];
 }
 
+- (AccessibleOrProxy)startGeckoAccessible {
+  if ([mStartElem isKindOfClass:[mozAccessible class]]) {
+    return [static_cast<mozAccessible*>(mStartElem) geckoAccessible];
+  }
+
+  
+  
+  
+  return [mWebArea geckoAccessible];
+}
+
 - (NSMutableArray*)getMatchesForRule:(PivotRule&)rule {
   int resultLimit = mResultLimit;
   NSMutableArray* matches = [[NSMutableArray alloc] init];
-  Pivot p = Pivot(mWebArea);
-  AccessibleOrProxy match =
-      mSearchForward ? p.Next(mStartElem, rule) : p.Prev(mStartElem, rule);
+  Pivot p = Pivot([mWebArea geckoAccessible]);
+  AccessibleOrProxy geckoStartAcc = [self startGeckoAccessible];
+  AccessibleOrProxy match = mSearchForward ? p.Next(geckoStartAcc, rule)
+                                           : p.Prev(geckoStartAcc, rule);
   while (!match.IsNull() && resultLimit != 0) {
     
     
@@ -315,52 +326,81 @@ using namespace mozilla::a11y;
 }
 
 - (NSArray*)performSearch {
+  AccessibleOrProxy geckoStartAcc = [self startGeckoAccessible];
   NSMutableArray* matches = [[NSMutableArray alloc] init];
   for (id key in mSearchKeys) {
     if ([key isEqualToString:@"AXAnyTypeSearchKey"]) {
-      RotorAllRule rule =
-          mImmediateDescendantsOnly ? RotorAllRule(mStartElem) : RotorAllRule();
+      RotorAllRule rule = mImmediateDescendantsOnly
+                              ? RotorAllRule(geckoStartAcc)
+                              : RotorAllRule();
+
+      if (mSearchForward) {
+        if ([mStartElem isKindOfClass:[MOXWebAreaAccessible class]]) {
+          if (id rootGroup =
+                  [static_cast<MOXWebAreaAccessible*>(mStartElem) rootGroup]) {
+            
+            [matches addObject:rootGroup];
+            if (mResultLimit == 1) {
+              
+              continue;
+            }
+          }
+        } else if (mImmediateDescendantsOnly &&
+                   [mStartElem isKindOfClass:[MOXRootGroup class]]) {
+          
+          
+          continue;
+        }
+      } else if (!mSearchForward &&
+                 [mStartElem isKindOfClass:[MOXRootGroup class]]) {
+        
+        [matches addObject:[mStartElem moxParent]];
+        if (mResultLimit == 1) {
+          
+          continue;
+        }
+      }
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
 
     if ([key isEqualToString:@"AXHeadingSearchKey"]) {
       RotorHeadingRule rule = mImmediateDescendantsOnly
-                                  ? RotorHeadingRule(mStartElem)
+                                  ? RotorHeadingRule(geckoStartAcc)
                                   : RotorHeadingRule();
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
 
     if ([key isEqualToString:@"AXArticleSearchKey"]) {
       RotorArticleRule rule = mImmediateDescendantsOnly
-                                  ? RotorArticleRule(mStartElem)
+                                  ? RotorArticleRule(geckoStartAcc)
                                   : RotorArticleRule();
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
 
     if ([key isEqualToString:@"AXTableSearchKey"]) {
       RotorTableRule rule = mImmediateDescendantsOnly
-                                ? RotorTableRule(mStartElem)
+                                ? RotorTableRule(geckoStartAcc)
                                 : RotorTableRule();
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
 
     if ([key isEqualToString:@"AXLandmarkSearchKey"]) {
       RotorLandmarkRule rule = mImmediateDescendantsOnly
-                                   ? RotorLandmarkRule(mStartElem)
+                                   ? RotorLandmarkRule(geckoStartAcc)
                                    : RotorLandmarkRule();
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
 
     if ([key isEqualToString:@"AXButtonSearchKey"]) {
       RotorButtonRule rule = mImmediateDescendantsOnly
-                                 ? RotorButtonRule(mStartElem)
+                                 ? RotorButtonRule(geckoStartAcc)
                                  : RotorButtonRule();
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
 
     if ([key isEqualToString:@"AXControlSearchKey"]) {
       RotorControlRule rule = mImmediateDescendantsOnly
-                                  ? RotorControlRule(mStartElem)
+                                  ? RotorControlRule(geckoStartAcc)
                                   : RotorControlRule();
       [matches addObjectsFromArray:[self getMatchesForRule:rule]];
     }
