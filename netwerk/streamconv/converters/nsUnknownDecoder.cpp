@@ -14,7 +14,6 @@
 
 #include "nsIMIMEService.h"
 
-#include "nsIDivertableChannel.h"
 #include "nsIViewSourceChannel.h"
 #include "nsIHttpChannel.h"
 #include "nsIForcePendingChannel.h"
@@ -215,16 +214,6 @@ nsUnknownDecoder::OnDataAvailable(nsIRequest* request, nsIInputStream* aStream,
     }
 #endif
 
-    nsCOMPtr<nsIDivertableChannel> divertable = do_QueryInterface(request);
-    if (divertable) {
-      bool diverting;
-      divertable->GetDivertingToParent(&diverting);
-      if (diverting) {
-        
-        return rv;
-      }
-    }
-
     nsCOMPtr<nsIStreamListener> listener;
     {
       MutexAutoLock lock(mMutex);
@@ -258,11 +247,6 @@ nsUnknownDecoder::OnStartRequest(nsIRequest* request) {
     if (!mBuffer) {
       rv = NS_ERROR_OUT_OF_MEMORY;
     }
-  }
-
-  nsCOMPtr<nsIDivertableChannel> divertable = do_QueryInterface(request);
-  if (divertable) {
-    divertable->UnknownDecoderInvolvedKeepData();
   }
 
   
@@ -735,29 +719,12 @@ nsresult nsUnknownDecoder::FireListenerNotifications(nsIRequest* request,
       
       request->Cancel(rv);
       listener->OnStartRequest(request);
-
-      nsCOMPtr<nsIDivertableChannel> divertable = do_QueryInterface(request);
-      if (divertable) {
-        rv = divertable->UnknownDecoderInvolvedOnStartRequestCalled();
-      }
-
       return rv;
     }
   }
 
   
   rv = listener->OnStartRequest(request);
-
-  nsCOMPtr<nsIDivertableChannel> divertable = do_QueryInterface(request);
-  if (divertable) {
-    rv = divertable->UnknownDecoderInvolvedOnStartRequestCalled();
-    bool diverting;
-    divertable->GetDivertingToParent(&diverting);
-    if (diverting) {
-      
-      return rv;
-    }
-  }
 
   if (NS_SUCCEEDED(rv)) {
     

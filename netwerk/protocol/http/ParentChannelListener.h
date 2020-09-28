@@ -54,10 +54,6 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
       bool aUsePrivateBrowsing);
 
   
-  void DivertTo(nsIStreamListener* aListener);
-  [[nodiscard]] nsresult SuspendForDiversion();
-
-  
   void SetListenerAfterRedirect(nsIStreamListener* aListener);
 
   dom::CanonicalBrowsingContext* GetBrowsingContext() const {
@@ -68,15 +64,10 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
   virtual ~ParentChannelListener();
 
   
-  void ResumeForDiversion();
-
-  
   
   
   
   nsCOMPtr<nsIStreamListener> mNextListener;
-  
-  bool mSuspendedForDiversion;
 
   
   
