@@ -11,6 +11,13 @@ interface nsIPaper : nsISupports
   
 
 
+
+
+  readonly attribute AString id;
+
+  
+
+
   readonly attribute AString name;
 
   
@@ -32,10 +39,4 @@ interface nsIPaper : nsISupports
 
 
   [implicit_jscontext] readonly attribute Promise unwriteableMargin;
-
-  
-
-
-
-  readonly attribute short paperId;
 };

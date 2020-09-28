@@ -26,22 +26,21 @@ struct PaperInfo {
   using SizeDouble = mozilla::gfx::SizeDouble;
 
   PaperInfo() = default;
-  PaperInfo(const nsAString& aName, const SizeDouble& aSize,
-            const Maybe<MarginDouble>& aUnwriteableMargin, short aPaperId = 0)
-      : mName(aName),
+  PaperInfo(const nsAString& aId, const nsAString& aName,
+            const SizeDouble& aSize,
+            const Maybe<MarginDouble>& aUnwriteableMargin)
+      : mId(aId),
+        mName(aName),
         mSize(aSize),
-        mUnwriteableMargin(aUnwriteableMargin),
-        mPaperId(aPaperId) {}
+        mUnwriteableMargin(aUnwriteableMargin) {}
 
+  const nsString mId;
   const nsString mName;
 
   SizeDouble mSize;
 
   
   const Maybe<MarginDouble> mUnwriteableMargin{Nothing()};
-
-  
-  short mPaperId{0};
 };
 
 }  

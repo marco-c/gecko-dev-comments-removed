@@ -64,8 +64,11 @@ static bool WithDefaultDevMode(const nsString& aName,
 }
 
 PrintSettingsInitializer nsPrinterWin::DefaultSettings() const {
-  nsString paperName;
-  SizeDouble paperSize;
+  
+  
+  nsString paperName(u"Letter");
+  nsString paperIdString(u"1");  
+  SizeDouble paperSize{8.5 * 72.0, 11.0 * 72.0};
   gfx::MarginDouble margin;
   int resolution = 0;
   bool color = false;
@@ -73,11 +76,17 @@ PrintSettingsInitializer nsPrinterWin::DefaultSettings() const {
   nsTArray<uint8_t> devmodeWStorage;
   bool success = WithDefaultDevMode(
       mName, devmodeWStorage, [&](HANDLE, DEVMODEW* devmode) {
-        for (auto paperInfo : PaperList()) {
-          if (paperInfo.mPaperId == devmode->dmPaperSize) {
-            paperName.Assign(paperInfo.mName);
-            paperSize = paperInfo.mSize;
-            break;
+        
+        
+        if (devmode->dmFields & DM_PAPERSIZE) {
+          paperIdString.Truncate(0);
+          paperIdString.AppendInt(devmode->dmPaperSize);
+          for (auto paperInfo : PaperList()) {
+            if (paperIdString.Equals(paperInfo.mId)) {
+              paperName.Assign(paperInfo.mName);
+              paperSize = paperInfo.mSize;
+              break;
+            }
           }
         }
 
@@ -106,8 +115,8 @@ PrintSettingsInitializer nsPrinterWin::DefaultSettings() const {
   }
 
   return PrintSettingsInitializer{
-      mName, PaperInfo(paperName, paperSize, Some(margin)), color, resolution,
-      std::move(devmodeWStorage)};
+      mName, PaperInfo(paperIdString, paperName, paperSize, Some(margin)),
+      color, resolution, std::move(devmodeWStorage)};
 }
 
 template <class T>
@@ -244,23 +253,28 @@ nsTArray<mozilla::PaperInfo> nsPrinterWin::PaperList() const {
 
     
     
+    nsString paperIdString;
+    paperIdString.AppendInt(paperIds[i]);
+
+    
+    
     nsDependentSubstring name(paperNames[i].cbegin(), nameLength);
-    paperList.AppendElement(mozilla::PaperInfo(nsString(name), {width, height},
-                                               Nothing(), paperIds[i]));
+    paperList.AppendElement(mozilla::PaperInfo(paperIdString, nsString(name),
+                                               {width, height}, Nothing()));
   }
 
   return paperList;
 }
 
 mozilla::gfx::MarginDouble nsPrinterWin::GetMarginsForPaper(
-    short aPaperId) const {
+    nsString aPaperId) const {
   gfx::MarginDouble margin;
 
   nsTArray<uint8_t> storage;
   bool success =
       WithDefaultDevMode(mName, storage, [&](HANDLE, DEVMODEW* devmode) {
         devmode->dmFields = DM_PAPERSIZE;
-        devmode->dmPaperSize = aPaperId;
+        devmode->dmPaperSize = _wtoi((const wchar_t*)aPaperId.BeginReading());
         nsAutoHDC printerDc(
             ::CreateICW(nullptr, mName.get(), nullptr, devmode));
         MOZ_DIAGNOSTIC_ASSERT(printerDc, "CreateICW failed");
