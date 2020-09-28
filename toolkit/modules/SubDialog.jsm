@@ -604,6 +604,8 @@ SubDialog.prototype = {
         (this._window.isChromeWindow && aEvent.currentTarget == this._box) ||
         (!this._window.isChromeWindow && aEvent.currentTarget == this._window)
       ) {
+        
+        aEvent.preventDefault();
         this._frame.contentWindow.close();
         return;
       }
