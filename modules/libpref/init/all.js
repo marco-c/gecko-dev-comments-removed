@@ -345,12 +345,6 @@ pref("browser.chrome.image_icons.max_size", 1024);
 pref("browser.triple_click_selects_paragraph", true);
 
 
-pref("print.shrink-to-fit.scale-limit-percent", 20);
-
-
-pref("print.use_simplify_page", false);
-
-
 #ifdef EARLY_BETA_OR_EARLIER
   pref("pdfjs.renderInteractiveForms", true);
 #else
@@ -920,6 +914,12 @@ pref("browser.fixup.alternate.suffix", ".com");
 pref("browser.fixup.fallback-to-https", true);
 
 
+pref("print.shrink-to-fit.scale-limit-percent", 20);
+
+
+pref("print.use_simplify_page", false);
+
+
 
 
 
@@ -966,6 +966,13 @@ pref("print.print_edge_bottom", 0);
   pref("print.print_via_parent", true);
 #else
   pref("print.print_via_parent", false);
+#endif
+
+
+#if defined(ANDROID) || defined(XP_UNIX) && !defined(XP_MACOSX)
+  pref("print.print_reversed", false);
+  
+  pref("print.print_in_color", true);
 #endif
 
 
@@ -3358,12 +3365,6 @@ pref("font.size.monospace.x-math", 13);
   pref("helpers.global_mailcap_file", "/etc/mailcap");
   pref("helpers.private_mime_types_file", "~/.mime.types");
   pref("helpers.private_mailcap_file", "~/.mailcap");
-  pref("print.printer_list", ""); 
-  pref("print.print_reversed", false);
-  pref("print.print_in_color", true);
-
-  
-  
 
   
   
@@ -3399,9 +3400,6 @@ pref("font.size.monospace.x-math", 13);
   pref("helpers.global_mailcap_file", "/etc/mailcap");
   pref("helpers.private_mime_types_file", "~/.mime.types");
   pref("helpers.private_mailcap_file", "~/.mailcap");
-  pref("print.printer_list", ""); 
-  pref("print.print_reversed", false);
-  pref("print.print_in_color", true);
 
   
 
@@ -3555,9 +3553,6 @@ pref("font.size.monospace.x-math", 13);
   pref("font.name-list.sans-serif.zh-TW", "sans-serif");
   pref("font.name-list.monospace.zh-TW", "monospace");
   pref("font.name-list.cursive.zh-TW", "cursive");
-
-  
-  
 
   
   
