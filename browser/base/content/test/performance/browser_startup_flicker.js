@@ -10,7 +10,7 @@
 
 add_task(async function() {
   const isWebRenderEnabled = Services.prefs.getBoolPref("gfx.webrender.all");
-  const isFissionEnabled = SpecialPowers.useRemoteSubframes;
+  const isFissionEnabled = Services.prefs.getBoolPref("fission.autostart");
   if (isFissionEnabled && !isWebRenderEnabled) {
     
     

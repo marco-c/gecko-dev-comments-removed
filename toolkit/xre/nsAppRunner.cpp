@@ -460,86 +460,6 @@ bool gFxREmbedded = false;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static const char kPrefFissionExperimentEnrollmentStatus[] =
-    "fission.experiment.enrollmentStatus";
-
-
-
-
-
-
-static const char kPrefFissionExperimentStartupEnrollmentStatus[] =
-    "fission.experiment.startupEnrollmentStatus";
-
-
-
-
-
-static nsIXULRuntime::ExperimentStatus FissionExperimentStatus() {
-  static nsIXULRuntime::ExperimentStatus sExperimentStatus = ([]() {
-    uint32_t value =
-        Preferences::GetUint(kPrefFissionExperimentStartupEnrollmentStatus);
-    if (value >
-        uint32_t(nsIXULRuntime::ExperimentStatus::eExperimentStatusMax)) {
-      return nsIXULRuntime::ExperimentStatus::eUnknown;
-    }
-    return nsIXULRuntime::ExperimentStatus(value);
-  })();
-
-  return sExperimentStatus;
-}
-
-static void OnFissionEnrollmentStatusChanged(const char* aPref, void* aData) {
-  Preferences::SetUint(
-      kPrefFissionExperimentStartupEnrollmentStatus,
-      Preferences::GetUint(kPrefFissionExperimentEnrollmentStatus));
-}
-
-namespace mozilla {
-
-bool FissionAutostart() {
-  static bool sFissionAutostart = ([]() {
-    if (gSafeMode) {
-      return false;
-    }
-
-    if (EnvHasValue("MOZ_FORCE_ENABLE_FISSION")) {
-      return true;
-    }
-
-    switch (FissionExperimentStatus()) {
-      case nsIXULRuntime::ExperimentStatus::eEnrolledControl:
-        return false;
-      case nsIXULRuntime::ExperimentStatus::eEnrolledTreatment:
-        return true;
-      default:
-        return StaticPrefs::fission_autostart_AtStartup_DoNotUseDirectly();
-    }
-  })();
-
-  return sFissionAutostart;
-}
-
-}  
-
-
-
-
-
 class nsXULAppInfo : public nsIXULAppInfo,
                      public nsIObserver,
 #ifdef XP_WIN
@@ -853,18 +773,6 @@ nsXULAppInfo::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
   }
   return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
-nsXULAppInfo::GetFissionAutostart(bool* aResult) {
-  *aResult = FissionAutostart();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsXULAppInfo::GetFissionExperimentStatus(ExperimentStatus* aResult) {
-  *aResult = FissionExperimentStatus();
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -4770,9 +4678,6 @@ nsresult XREMain::XRE_mainRun() {
 #  endif  
 #endif
 
-    Preferences::RegisterCallback(&OnFissionEnrollmentStatusChanged,
-                                  kPrefFissionExperimentEnrollmentStatus);
-
 #if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK)
     
     
@@ -5294,6 +5199,12 @@ bool BrowserTabsRemoteAutostart() {
   gBrowserTabsRemoteStatus = status;
 
   return gBrowserTabsRemoteAutostart;
+}
+
+bool FissionAutostart() {
+  return !gSafeMode &&
+         (StaticPrefs::fission_autostart_AtStartup_DoNotUseDirectly() ||
+          EnvHasValue("MOZ_FORCE_ENABLE_FISSION"));
 }
 
 uint32_t GetMaxWebProcessCount() {

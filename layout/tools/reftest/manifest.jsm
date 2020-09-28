@@ -612,7 +612,7 @@ function BuildConditionSandbox(aURL) {
     sandbox.verify = prefs.getBoolPref("reftest.verify", false);
 
     
-    sandbox.fission = Services.appinfo.fissionAutostart;
+    sandbox.fission = prefs.getBoolPref("fission.autostart", false);
     sandbox.serviceWorkerE10s = prefs.getBoolPref("dom.serviceWorkers.parent_intercept", false);
 
     if (!g.dumpedConditionSandbox) {
