@@ -1,3 +1,4 @@
+from . import chrome_spki_certs
 from .base import Browser, ExecutorBrowser, require_arg
 from .base import get_timeout_multiplier   
 from ..webdriver_server import ChromeDriverServer
@@ -22,25 +23,6 @@ __wptrunner__ = {"product": "chrome",
                  "env_extras": "env_extras",
                  "env_options": "env_options",
                  "timeout_multiplier": "get_timeout_multiplier",}
-
-
-
-
-
-
-
-
-
-
-WPT_FINGERPRINT = 'VPzsk0tdACJMqhsnPpMDesIkQYZrI2RGR+UlPK4emE4='
-
-
-SXG_WPT_FINGERPRINT = '0Rt4mT6SJXojEMHTnKnlJ/hBKMBcI4kteBlhR1eTTdk='
-
-IGNORE_CERTIFICATE_ERRORS_SPKI_LIST = [
-    WPT_FINGERPRINT,
-    SXG_WPT_FINGERPRINT
-]
 
 def check_args(**kwargs):
     require_arg(kwargs, "webdriver_binary")
@@ -89,7 +71,7 @@ def executor_kwargs(test_type, server_config, cache_manager, run_info_data,
 
     chrome_options["args"].append("--ignore-certificate-errors")
     chrome_options["args"].append("--ignore-certificate-errors-spki-list=%s" %
-                                  ','.join(IGNORE_CERTIFICATE_ERRORS_SPKI_LIST))
+                                  ','.join(chrome_spki_certs.IGNORE_CERTIFICATE_ERRORS_SPKI_LIST))
 
     
     chrome_options["args"].append("--autoplay-policy=no-user-gesture-required")
