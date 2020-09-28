@@ -282,7 +282,7 @@ pub trait MachInstEmit: MachInst {
 
 pub trait MachInstEmitState<I: MachInst>: Default + Clone + Debug {
     
-    fn new(abi: &dyn ABIBody<I = I>) -> Self;
+    fn new(abi: &dyn ABICallee<I = I>) -> Self;
     
     
     fn pre_safepoint(&mut self, _stack_map: StackMap) {}

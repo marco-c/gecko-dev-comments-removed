@@ -1,6 +1,29 @@
 
 
-use crate::ir;
+use crate::ir::{self, Inst as IRInst};
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct InsnInput {
+    pub(crate) insn: IRInst,
+    pub(crate) input: usize,
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct InsnOutput {
+    pub(crate) insn: IRInst,
+    pub(crate) output: usize,
+}
+
+
+
 
 
 

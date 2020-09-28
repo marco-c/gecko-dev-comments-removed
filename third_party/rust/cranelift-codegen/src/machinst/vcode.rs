@@ -86,7 +86,7 @@ pub struct VCode<I: VCodeInst> {
     block_order: BlockLoweringOrder,
 
     
-    abi: Box<dyn ABIBody<I = I>>,
+    abi: Box<dyn ABICallee<I = I>>,
 
     
     
@@ -132,7 +132,7 @@ pub struct VCodeBuilder<I: VCodeInst> {
 
 impl<I: VCodeInst> VCodeBuilder<I> {
     
-    pub fn new(abi: Box<dyn ABIBody<I = I>>, block_order: BlockLoweringOrder) -> VCodeBuilder<I> {
+    pub fn new(abi: Box<dyn ABICallee<I = I>>, block_order: BlockLoweringOrder) -> VCodeBuilder<I> {
         let reftype_class = I::ref_type_regclass(abi.flags());
         let vcode = VCode::new(abi, block_order);
         let stack_map_info = StackmapRequestInfo {
@@ -151,7 +151,7 @@ impl<I: VCodeInst> VCodeBuilder<I> {
     }
 
     
-    pub fn abi(&mut self) -> &mut dyn ABIBody<I = I> {
+    pub fn abi(&mut self) -> &mut dyn ABICallee<I = I> {
         &mut *self.vcode.abi
     }
 
@@ -263,7 +263,7 @@ fn is_reftype(ty: Type) -> bool {
 
 impl<I: VCodeInst> VCode<I> {
     
-    fn new(abi: Box<dyn ABIBody<I = I>>, block_order: BlockLoweringOrder) -> VCode<I> {
+    fn new(abi: Box<dyn ABICallee<I = I>>, block_order: BlockLoweringOrder) -> VCode<I> {
         VCode {
             liveins: abi.liveins(),
             liveouts: abi.liveouts(),

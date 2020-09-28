@@ -18,6 +18,7 @@ use crate::isa;
 
 use crate::bitset::BitSet;
 use crate::entity;
+use ir::condcodes::{FloatCC, IntCC};
 
 
 
@@ -297,12 +298,60 @@ impl InstructionData {
 
     
     
+    pub fn cond_code(&self) -> Option<IntCC> {
+        match self {
+            &InstructionData::IntCond { cond, .. }
+            | &InstructionData::BranchIcmp { cond, .. }
+            | &InstructionData::IntCompare { cond, .. }
+            | &InstructionData::IntCondTrap { cond, .. }
+            | &InstructionData::BranchInt { cond, .. }
+            | &InstructionData::IntSelect { cond, .. }
+            | &InstructionData::IntCompareImm { cond, .. } => Some(cond),
+            _ => None,
+        }
+    }
+
+    
+    
+    pub fn fp_cond_code(&self) -> Option<FloatCC> {
+        match self {
+            &InstructionData::BranchFloat { cond, .. }
+            | &InstructionData::FloatCompare { cond, .. }
+            | &InstructionData::FloatCond { cond, .. }
+            | &InstructionData::FloatCondTrap { cond, .. } => Some(cond),
+            _ => None,
+        }
+    }
+
+    
+    
     pub fn trap_code_mut(&mut self) -> Option<&mut TrapCode> {
         match self {
             Self::CondTrap { code, .. }
             | Self::FloatCondTrap { code, .. }
             | Self::IntCondTrap { code, .. }
             | Self::Trap { code, .. } => Some(code),
+            _ => None,
+        }
+    }
+
+    
+    pub fn atomic_rmw_op(&self) -> Option<ir::AtomicRmwOp> {
+        match self {
+            &InstructionData::AtomicRmw { op, .. } => Some(op),
+            _ => None,
+        }
+    }
+
+    
+    pub fn load_store_offset(&self) -> Option<i32> {
+        match self {
+            &InstructionData::Load { offset, .. }
+            | &InstructionData::StackLoad { offset, .. }
+            | &InstructionData::LoadComplex { offset, .. }
+            | &InstructionData::Store { offset, .. }
+            | &InstructionData::StackStore { offset, .. }
+            | &InstructionData::StoreComplex { offset, .. } => Some(offset.into()),
             _ => None,
         }
     }

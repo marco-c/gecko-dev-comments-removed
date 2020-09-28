@@ -9,7 +9,7 @@ use regalloc::{Reg, Set, SpillSlot, Writable};
 
 
 
-pub trait ABIBody {
+pub trait ABICallee {
     
     type I: VCodeInst;
 
@@ -162,7 +162,7 @@ pub trait ABIBody {
 
 
 
-pub trait ABICall {
+pub trait ABICaller {
     
     type I: VCodeInst;
 

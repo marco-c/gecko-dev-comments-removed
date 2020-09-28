@@ -119,6 +119,7 @@ use crate::{ir, isa};
 use alloc::vec::Vec;
 use log::{debug, trace};
 use regalloc::{RealReg, Reg, RegClass, Set, SpillSlot, Writable};
+use std::convert::TryFrom;
 use std::marker::PhantomData;
 use std::mem;
 
@@ -144,6 +145,16 @@ pub enum ArgsOrRets {
 
 
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InstIsSafepoint {
+    
+    Yes,
+    
+    No,
+}
+
+
+
 #[derive(Clone, Copy, Debug)]
 pub enum StackAMode {
     
@@ -160,7 +171,7 @@ pub enum StackAMode {
 
 
 
-pub trait ABIMachineImpl {
+pub trait ABIMachineSpec {
     
     type I: VCodeInst;
 
@@ -213,7 +224,9 @@ pub trait ABIMachineImpl {
     
     
     
-    fn gen_add_imm(into_reg: Writable<Reg>, from_reg: Reg, imm: u64) -> SmallVec<[Self::I; 4]>;
+    
+    
+    fn gen_add_imm(into_reg: Writable<Reg>, from_reg: Reg, imm: u32) -> SmallVec<[Self::I; 4]>;
 
     
     
@@ -226,19 +239,28 @@ pub trait ABIMachineImpl {
 
     
     
-    fn get_fixed_tmp_reg() -> Reg;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_stacklimit_reg() -> Reg;
 
     
-    fn gen_load_base_offset(into_reg: Writable<Reg>, base: Reg, offset: i64, ty: Type) -> Self::I;
+    fn gen_load_base_offset(into_reg: Writable<Reg>, base: Reg, offset: i32, ty: Type) -> Self::I;
 
     
-    fn gen_store_base_offset(base: Reg, offset: i64, from_reg: Reg, ty: Type) -> Self::I;
+    fn gen_store_base_offset(base: Reg, offset: i32, from_reg: Reg, ty: Type) -> Self::I;
 
     
-    fn gen_sp_reg_adjust(amount: i64) -> SmallVec<[Self::I; 2]>;
+    fn gen_sp_reg_adjust(amount: i32) -> SmallVec<[Self::I; 2]>;
 
     
-    fn gen_nominal_sp_adj(amount: i64) -> Self::I;
+    fn gen_nominal_sp_adj(amount: i32) -> Self::I;
 
     
     
@@ -273,17 +295,19 @@ pub trait ABIMachineImpl {
     ) -> SmallVec<[Self::I; 16]>;
 
     
+    
     fn gen_call(
         dest: &CallDest,
         uses: Vec<Reg>,
         defs: Vec<Writable<Reg>>,
         loc: SourceLoc,
         opcode: ir::Opcode,
-    ) -> SmallVec<[( bool, Self::I); 2]>;
+        tmp: Writable<Reg>,
+    ) -> SmallVec<[(InstIsSafepoint, Self::I); 2]>;
 
     
     
-    fn get_spillslot_size(rc: RegClass, ty: Type) -> u32;
+    fn get_number_of_spillslots_for_value(rc: RegClass, ty: Type) -> u32;
 
     
     fn get_virtual_sp_offset_from_state(s: &<Self::I as MachInstEmit>::State) -> i64;
@@ -314,7 +338,7 @@ struct ABISig {
 }
 
 impl ABISig {
-    fn from_func_sig<M: ABIMachineImpl>(sig: &ir::Signature) -> CodegenResult<ABISig> {
+    fn from_func_sig<M: ABIMachineSpec>(sig: &ir::Signature) -> CodegenResult<ABISig> {
         
         
         let (rets, stack_ret_space, _) = M::compute_arg_locs(
@@ -353,7 +377,7 @@ impl ABISig {
 }
 
 
-pub struct ABIBodyImpl<M: ABIMachineImpl> {
+pub struct ABICalleeImpl<M: ABIMachineSpec> {
     
     sig: ABISig,
     
@@ -405,7 +429,7 @@ fn get_special_purpose_param_register(
     }
 }
 
-impl<M: ABIMachineImpl> ABIBodyImpl<M> {
+impl<M: ABIMachineSpec> ABICalleeImpl<M> {
     
     pub fn new(f: &ir::Function, flags: settings::Flags) -> CodegenResult<Self> {
         debug!("ABI: func signature {:?}", f.signature);
@@ -506,8 +530,7 @@ impl<M: ABIMachineImpl> ABIBodyImpl<M> {
         
         
         
-        let scratch = Writable::from_reg(M::get_fixed_tmp_reg());
-        let stack_size = u64::from(stack_size);
+        let scratch = Writable::from_reg(M::get_stacklimit_reg());
         insts.extend(M::gen_add_imm(scratch, stack_limit, stack_size).into_iter());
         insts.extend(M::gen_stack_lower_bound_trap(scratch.to_reg()));
     }
@@ -532,7 +555,7 @@ impl<M: ABIMachineImpl> ABIBodyImpl<M> {
 
 
 
-fn gen_stack_limit<M: ABIMachineImpl>(
+fn gen_stack_limit<M: ABIMachineSpec>(
     f: &ir::Function,
     abi: &ABISig,
     gv: ir::GlobalValue,
@@ -542,7 +565,7 @@ fn gen_stack_limit<M: ABIMachineImpl>(
     return (reg, insts);
 }
 
-fn generate_gv<M: ABIMachineImpl>(
+fn generate_gv<M: ABIMachineSpec>(
     f: &ir::Function,
     abi: &ABISig,
     gv: ir::GlobalValue,
@@ -563,7 +586,7 @@ fn generate_gv<M: ABIMachineImpl>(
             readonly: _,
         } => {
             let base = generate_gv::<M>(f, abi, base, insts);
-            let into_reg = Writable::from_reg(M::get_fixed_tmp_reg());
+            let into_reg = Writable::from_reg(M::get_stacklimit_reg());
             insts.push(M::gen_load_base_offset(into_reg, base, offset.into(), I64));
             return into_reg.to_reg();
         }
@@ -591,7 +614,7 @@ fn ty_from_ty_hint_or_reg_class(r: Reg, ty: Option<Type>) -> Type {
     }
 }
 
-impl<M: ABIMachineImpl> ABIBody for ABIBodyImpl<M> {
+impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
     type I = M::I;
 
     fn temp_needed(&self) -> bool {
@@ -676,6 +699,11 @@ impl<M: ABIMachineImpl> ABIBody for ABIBodyImpl<M> {
             }
             &ABIArg::Stack(off, mut ty, ext) => {
                 let from_bits = ty_bits(ty) as u8;
+                
+                
+                
+                let off = i32::try_from(off)
+                    .expect("Argument stack offset greater than 2GB; should hit impl limit first");
                 
                 match (ext, from_bits) {
                     (ArgumentExtension::Uext, n) | (ArgumentExtension::Sext, n) if n < 64 => {
@@ -864,7 +892,7 @@ impl<M: ABIMachineImpl> ABIBody for ABIBodyImpl<M> {
 
         if total_sp_adjust > 0 {
             
-            let adj = total_sp_adjust as i64;
+            let adj = total_sp_adjust as i32;
             insts.extend(M::gen_sp_reg_adjust(-adj));
         }
 
@@ -873,7 +901,7 @@ impl<M: ABIMachineImpl> ABIBody for ABIBodyImpl<M> {
         insts.extend(clobber_insts);
 
         if clobber_size > 0 {
-            insts.push(M::gen_nominal_sp_adj(clobber_size as i64));
+            insts.push(M::gen_nominal_sp_adj(clobber_size as i32));
         }
 
         self.total_frame_size = Some(total_stacksize);
@@ -911,7 +939,7 @@ impl<M: ABIMachineImpl> ABIBody for ABIBodyImpl<M> {
     }
 
     fn get_spillslot_size(&self, rc: RegClass, ty: Type) -> u32 {
-        M::get_spillslot_size(rc, ty)
+        M::get_number_of_spillslots_for_value(rc, ty)
     }
 
     fn gen_spill(&self, to_slot: SpillSlot, from_reg: RealReg, ty: Option<Type>) -> Self::I {
@@ -930,7 +958,7 @@ impl<M: ABIMachineImpl> ABIBody for ABIBodyImpl<M> {
     }
 }
 
-fn abisig_to_uses_and_defs<M: ABIMachineImpl>(sig: &ABISig) -> (Vec<Reg>, Vec<Writable<Reg>>) {
+fn abisig_to_uses_and_defs<M: ABIMachineSpec>(sig: &ABISig) -> (Vec<Reg>, Vec<Writable<Reg>>) {
     
     let mut uses = Vec::new();
     for arg in &sig.args {
@@ -953,7 +981,7 @@ fn abisig_to_uses_and_defs<M: ABIMachineImpl>(sig: &ABISig) -> (Vec<Reg>, Vec<Wr
 }
 
 
-pub struct ABICallImpl<M: ABIMachineImpl> {
+pub struct ABICallerImpl<M: ABIMachineSpec> {
     
     sig: ABISig,
     
@@ -979,17 +1007,17 @@ pub enum CallDest {
     Reg(Reg),
 }
 
-impl<M: ABIMachineImpl> ABICallImpl<M> {
+impl<M: ABIMachineSpec> ABICallerImpl<M> {
     
     pub fn from_func(
         sig: &ir::Signature,
         extname: &ir::ExternalName,
         dist: RelocDistance,
         loc: ir::SourceLoc,
-    ) -> CodegenResult<ABICallImpl<M>> {
+    ) -> CodegenResult<ABICallerImpl<M>> {
         let sig = ABISig::from_func_sig::<M>(sig)?;
         let (uses, defs) = abisig_to_uses_and_defs::<M>(&sig);
-        Ok(ABICallImpl {
+        Ok(ABICallerImpl {
             sig,
             uses,
             defs,
@@ -1007,10 +1035,10 @@ impl<M: ABIMachineImpl> ABICallImpl<M> {
         ptr: Reg,
         loc: ir::SourceLoc,
         opcode: ir::Opcode,
-    ) -> CodegenResult<ABICallImpl<M>> {
+    ) -> CodegenResult<ABICallerImpl<M>> {
         let sig = ABISig::from_func_sig::<M>(sig)?;
         let (uses, defs) = abisig_to_uses_and_defs::<M>(&sig);
-        Ok(ABICallImpl {
+        Ok(ABICallerImpl {
             sig,
             uses,
             defs,
@@ -1022,15 +1050,14 @@ impl<M: ABIMachineImpl> ABICallImpl<M> {
     }
 }
 
-fn adjust_stack_and_nominal_sp<M: ABIMachineImpl, C: LowerCtx<I = M::I>>(
+fn adjust_stack_and_nominal_sp<M: ABIMachineSpec, C: LowerCtx<I = M::I>>(
     ctx: &mut C,
-    off: u64,
+    off: i32,
     is_sub: bool,
 ) {
     if off == 0 {
         return;
     }
-    let off = off as i64;
     let amt = if is_sub { -off } else { off };
     for inst in M::gen_sp_reg_adjust(amt) {
         ctx.emit(inst);
@@ -1038,7 +1065,7 @@ fn adjust_stack_and_nominal_sp<M: ABIMachineImpl, C: LowerCtx<I = M::I>>(
     ctx.emit(M::gen_nominal_sp_adj(-amt));
 }
 
-impl<M: ABIMachineImpl> ABICall for ABICallImpl<M> {
+impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
     type I = M::I;
 
     fn num_args(&self) -> usize {
@@ -1051,12 +1078,12 @@ impl<M: ABIMachineImpl> ABICall for ABICallImpl<M> {
 
     fn emit_stack_pre_adjust<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C) {
         let off = self.sig.stack_arg_space + self.sig.stack_ret_space;
-        adjust_stack_and_nominal_sp::<M, C>(ctx, off as u64,  true)
+        adjust_stack_and_nominal_sp::<M, C>(ctx, off as i32,  true)
     }
 
     fn emit_stack_post_adjust<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C) {
         let off = self.sig.stack_arg_space + self.sig.stack_ret_space;
-        adjust_stack_and_nominal_sp::<M, C>(ctx, off as u64,  false)
+        adjust_stack_and_nominal_sp::<M, C>(ctx, off as i32,  false)
     }
 
     fn emit_copy_reg_to_arg<C: LowerCtx<I = Self::I>>(
@@ -1152,13 +1179,13 @@ impl<M: ABIMachineImpl> ABICall for ABICallImpl<M> {
             ));
             self.emit_copy_reg_to_arg(ctx, i, rd.to_reg());
         }
+        let tmp = ctx.alloc_tmp(RegClass::I64, I64);
         for (is_safepoint, inst) in
-            M::gen_call(&self.dest, uses, defs, self.loc, self.opcode).into_iter()
+            M::gen_call(&self.dest, uses, defs, self.loc, self.opcode, tmp).into_iter()
         {
-            if is_safepoint {
-                ctx.emit_safepoint(inst);
-            } else {
-                ctx.emit(inst);
+            match is_safepoint {
+                InstIsSafepoint::Yes => ctx.emit_safepoint(inst),
+                InstIsSafepoint::No => ctx.emit(inst),
             }
         }
     }

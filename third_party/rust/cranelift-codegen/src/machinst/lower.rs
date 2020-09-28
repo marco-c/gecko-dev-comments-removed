@@ -13,7 +13,7 @@ use crate::ir::{
     ValueDef,
 };
 use crate::machinst::{
-    ABIBody, BlockIndex, BlockLoweringOrder, LoweredBlock, MachLabel, VCode, VCodeBuilder,
+    ABICallee, BlockIndex, BlockLoweringOrder, LoweredBlock, MachLabel, VCode, VCodeBuilder,
     VCodeInst,
 };
 use crate::CodegenResult;
@@ -62,7 +62,7 @@ pub trait LowerCtx {
     
 
     
-    fn abi(&mut self) -> &dyn ABIBody<I = Self::I>;
+    fn abi(&mut self) -> &dyn ABICallee<I = Self::I>;
     
     
     
@@ -312,7 +312,7 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
     
     pub fn new(
         f: &'func Function,
-        abi: Box<dyn ABIBody<I = I>>,
+        abi: Box<dyn ABICallee<I = I>>,
         block_order: BlockLoweringOrder,
     ) -> CodegenResult<Lower<'func, I>> {
         let mut vcode = VCodeBuilder::new(abi, block_order);
@@ -844,7 +844,7 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
 impl<'func, I: VCodeInst> LowerCtx for Lower<'func, I> {
     type I = I;
 
-    fn abi(&mut self) -> &dyn ABIBody<I = I> {
+    fn abi(&mut self) -> &dyn ABICallee<I = I> {
         self.vcode.abi()
     }
 
