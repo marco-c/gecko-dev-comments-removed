@@ -333,12 +333,12 @@ impl TileCacheBuilder {
 
 
 fn add_clips(
-    _scroll_root: SpatialNodeIndex,
+    scroll_root: SpatialNodeIndex,
     clip_chain_id: ClipChainId,
     prim_clips: &mut Vec<ClipInstance>,
     clip_store: &ClipStore,
     interners: &Interners,
-    _spatial_tree: &SpatialTree,
+    spatial_tree: &SpatialTree,
 ) {
     let mut current_clip_chain_id = clip_chain_id;
 
@@ -348,15 +348,12 @@ fn add_clips(
 
         let clip_node_data = &interners.clip[clip_chain_node.handle];
         if let ClipNodeKind::Rectangle = clip_node_data.clip_node_kind {
-            
-            
-            
-            
-            
-            
-            
+            if spatial_tree.is_ancestor(
+                clip_chain_node.spatial_node_index,
+                scroll_root,
+            ) {
                 prim_clips.push(ClipInstance::new(clip_chain_node.handle, clip_chain_node.spatial_node_index));
-            
+            }
         }
 
         current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
