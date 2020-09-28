@@ -9,7 +9,6 @@
 
 #include "mozilla/DebugOnly.h"      
 #include "mozilla/HashFunctions.h"  
-#include "mozilla/MaybeOneOf.h"     
 #include "mozilla/Range.h"          
 #include "mozilla/Variant.h"        
 
@@ -218,7 +217,9 @@ class alignas(alignof(void*)) ParserAtomEntry {
   
   
   
-  mutable mozilla::MaybeOneOf<AtomIndex, WellKnownAtomId> atomIndex_;
+  using AtomIndexType =
+      mozilla::Variant<mozilla::Nothing, AtomIndex, WellKnownAtomId>;
+  mutable AtomIndexType atomIndex_ = AtomIndexType(mozilla::Nothing());
 
  public:
   static const uint32_t MAX_LENGTH = JSString::MAX_LENGTH;
@@ -299,11 +300,10 @@ class alignas(alignof(void*)) ParserAtomEntry {
   bool equalsSeq(HashNumber hash, InflatedChar16Sequence<CharT> seq) const;
 
   void setAtomIndex(AtomIndex index) const {
-    atomIndex_.construct<AtomIndex>(index);
+    atomIndex_ = mozilla::AsVariant(index);
   }
-
   void setWellKnownAtomId(WellKnownAtomId kind) const {
-    atomIndex_.construct<WellKnownAtomId>(kind);
+    atomIndex_ = mozilla::AsVariant(kind);
   }
 
   
