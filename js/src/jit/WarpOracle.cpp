@@ -855,31 +855,23 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   CacheIRReader reader(stubInfo);
   while (reader.more()) {
     CacheOp op = reader.readOp();
-    uint32_t argLength = CacheIROpArgLengths[size_t(op)];
-    reader.skip(argLength);
+    CacheIROpInfo opInfo = CacheIROpInfos[size_t(op)];
+    reader.skip(opInfo.argLength);
 
-    switch (op) {
-#define DEFINE_OP(op, ...) \
-  case CacheOp::op:        \
-    break;
-      CACHE_IR_TRANSPILER_OPS(DEFINE_OP)
-#undef DEFINE_OP
+    if (!opInfo.transpile) {
+      [[maybe_unused]] unsigned line, column;
+      LineNumberAndColumn(script_, loc, &line, &column);
 
-      default: {
-        [[maybe_unused]] unsigned line, column;
-        LineNumberAndColumn(script_, loc, &line, &column);
+      MOZ_ASSERT(
+          fallbackStub->trialInliningState() != TrialInliningState::Inlined,
+          "Trial-inlined stub not supported by transpiler");
 
-        MOZ_ASSERT(
-            fallbackStub->trialInliningState() != TrialInliningState::Inlined,
-            "Trial-inlined stub not supported by transpiler");
-
-        
-        JitSpew(JitSpew_WarpTranspiler,
-                "unsupported CacheIR opcode %s for JSOp::%s @ %s:%u:%u",
-                CacheIROpNames[size_t(op)], CodeName(loc.getOp()),
-                script_->filename(), line, column);
-        return Ok();
-      }
+      
+      JitSpew(JitSpew_WarpTranspiler,
+              "unsupported CacheIR opcode %s for JSOp::%s @ %s:%u:%u",
+              CacheIROpNames[size_t(op)], CodeName(loc.getOp()),
+              script_->filename(), line, column);
+      return Ok();
     }
 
     
