@@ -302,10 +302,24 @@ auto ToResultInvoke(const SmartPtr<const T>& aObj,
 
 
 
+
 #define MOZ_TO_RESULT_INVOKE(obj, methodname, ...)                       \
   ::mozilla::ToResultInvoke(                                             \
       (obj), &::mozilla::detail::DerefedType<decltype(obj)>::methodname, \
       ##__VA_ARGS__)
+
+
+
+
+
+
+
+
+#define MOZ_TO_RESULT_INVOKE_TYPED(resultType, obj, methodname, ...)   \
+  ::mozilla::ToResultInvoke<resultType>(                               \
+      ::std::mem_fn(                                                   \
+          &::mozilla::detail::DerefedType<decltype(obj)>::methodname), \
+      (obj), ##__VA_ARGS__)
 
 }  
 
