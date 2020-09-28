@@ -151,6 +151,21 @@ class TestStringVersion(unittest.TestCase):
         self.assertLessEqual(version, '11')
         self.assertLessEqual('10.10', version)
 
+        
+        self.assertNotEqual(version, mozinfo.StringVersion('Testing'))
+        self.assertNotEqual(mozinfo.StringVersion('Testing'), version)
+        self.assertEqual(mozinfo.StringVersion(''), '')
+        self.assertEqual('', mozinfo.StringVersion(''))
+
+        a = mozinfo.StringVersion('1.2.5a')
+        b = mozinfo.StringVersion('1.2.5b')
+        self.assertLess(a, b)
+        self.assertGreater(b, a)
+
+        
+        self.assertEqual(a, u'1.2.5a')
+        self.assertEqual(u'1.2.5a', a)
+
     def test_to_string(self):
         self.assertEqual('10.10', str(mozinfo.StringVersion('10.10')))
 
