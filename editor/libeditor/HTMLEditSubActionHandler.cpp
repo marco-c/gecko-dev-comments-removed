@@ -4956,6 +4956,23 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteNonCollapsedRanges(
     }
   }
 
+  if (aRangesToDelete.FirstRangeRef()->GetStartContainer() ==
+      aRangesToDelete.FirstRangeRef()->GetEndContainer()) {
+    if (!aRangesToDelete.FirstRangeRef()->Collapsed()) {
+      nsresult rv = ComputeRangesToDeleteRangesWithTransaction(
+          aHTMLEditor, aDirectionAndAmount, aStripWrappers, aRangesToDelete);
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "AutoDeleteRangesHandler::ComputeRangesToDeleteRangesWithTransaction("
+          ") failed");
+      return rv;
+    }
+    
+    
+    
+    return NS_OK;
+  }
+
   Element* startCiteNode = aHTMLEditor.GetMostAncestorMailCiteElement(
       *aRangesToDelete.FirstRangeRef()->GetStartContainer());
   Element* endCiteNode = aHTMLEditor.GetMostAncestorMailCiteElement(
