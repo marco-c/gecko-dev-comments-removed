@@ -1226,14 +1226,50 @@ class UrlbarInput {
 
 
 
-  search(value, { focus = true } = {}) {
+
+
+
+
+  search(value, { searchModeEntry, focus = true } = {}) {
     if (focus) {
       this.focus();
     }
 
+    let tokens = value.trim().split(UrlbarTokenizer.REGEXP_SPACES);
     
-    if (Object.values(UrlbarTokenizer.RESTRICT).includes(value)) {
-      this.inputField.value = value + " ";
+    let searchMode;
+    if (UrlbarPrefs.get("update2")) {
+      
+      searchMode = UrlbarUtils.searchModeForToken(tokens[0]);
+      if (!searchMode) {
+        
+        let engine = Services.search.getEngineByAlias(tokens[0]);
+        if (engine) {
+          searchMode = { engineName: engine.name };
+        }
+      }
+    }
+
+    if (searchMode) {
+      searchMode.entry = searchModeEntry;
+      this.setSearchMode(searchMode);
+      
+      
+      value = value.replace(tokens[0], "");
+      if (UrlbarTokenizer.REGEXP_SPACES.test(value[0])) {
+        
+        
+        value = value.slice(1);
+      }
+      this.inputField.value = value;
+      this._revertOnBlurValue = this.value;
+    } else if (Object.values(UrlbarTokenizer.RESTRICT).includes(tokens[0])) {
+      this.setSearchMode({});
+      
+      if (Object.values(UrlbarTokenizer.RESTRICT).includes(value)) {
+        value += " ";
+      }
+      this.inputField.value = value;
       this._revertOnBlurValue = this.value;
     } else {
       this.inputField.value = value;
@@ -1252,35 +1288,6 @@ class UrlbarInput {
     let event = this.document.createEvent("UIEvents");
     event.initUIEvent("input", true, false, this.window, 0);
     this.inputField.dispatchEvent(event);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  searchWithAlias(alias, entry, value = "") {
-    alias = alias.trim();
-    if (UrlbarPrefs.get("update2")) {
-      
-      let engine = Services.search.getEngineByAlias(alias);
-      if (engine) {
-        this.setSearchMode({ engineName: engine.name, entry });
-        this.search(value);
-      } else {
-        this.search(`${alias} ${value}`);
-      }
-    } else {
-      
-      this.search(`${alias} ${value}`);
-    }
   }
 
   
@@ -2455,33 +2462,16 @@ class UrlbarInput {
       return null;
     }
 
-    let searchMode = null;
-    switch (result.payload.keyword) {
-      case UrlbarTokenizer.RESTRICT.BOOKMARK:
-        searchMode = { source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS };
-        break;
-      case UrlbarTokenizer.RESTRICT.HISTORY:
-        searchMode = { source: UrlbarUtils.RESULT_SOURCE.HISTORY };
-        break;
-      case UrlbarTokenizer.RESTRICT.OPENPAGE:
-        searchMode = { source: UrlbarUtils.RESULT_SOURCE.TABS };
-        break;
-      case UrlbarTokenizer.RESTRICT.SEARCH:
-        searchMode = {
-          engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,
-        };
-        break;
-      default:
-        
-        
-        if (
-          result.payload.engine &&
-          (!result.payload.originalEngine ||
-            result.payload.engine == result.payload.originalEngine)
-        ) {
-          searchMode = { engineName: result.payload.engine };
-        }
-        break;
+    let searchMode = UrlbarUtils.searchModeForToken(result.payload.keyword);
+    
+    
+    if (
+      !searchMode &&
+      result.payload.engine &&
+      (!result.payload.originalEngine ||
+        result.payload.engine == result.payload.originalEngine)
+    ) {
+      searchMode = { engineName: result.payload.engine };
     }
 
     if (searchMode) {

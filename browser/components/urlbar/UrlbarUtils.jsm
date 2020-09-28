@@ -31,6 +31,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
+  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
+  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
 });
 
 var UrlbarUtils = {
@@ -197,11 +199,13 @@ var UrlbarUtils = {
   
   
   SEARCH_MODE_ENTRY: new Set([
+    "bookmarkmenu",
     "handoff",
     "keywordoffer",
     "oneoff",
     "other",
     "shortcut",
+    "tabmenu",
     "topsites_newtab",
     "topsites_urlbar",
     "typed",
@@ -532,6 +536,37 @@ var UrlbarUtils = {
         return 3;
     }
     return 1;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  searchModeForToken(token) {
+    if (!UrlbarPrefs.get("update2")) {
+      return null;
+    }
+
+    switch (token) {
+      case UrlbarTokenizer.RESTRICT.BOOKMARK:
+        return { source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS };
+      case UrlbarTokenizer.RESTRICT.HISTORY:
+        return { source: UrlbarUtils.RESULT_SOURCE.HISTORY };
+      case UrlbarTokenizer.RESTRICT.OPENPAGE:
+        return { source: UrlbarUtils.RESULT_SOURCE.TABS };
+      case UrlbarTokenizer.RESTRICT.SEARCH:
+        return {
+          engineName: UrlbarSearchUtils.getDefaultEngine(this.isPrivate).name,
+        };
+    }
+
+    return null;
   },
 
   
