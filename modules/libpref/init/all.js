@@ -4445,6 +4445,9 @@ pref("dom.clients.openwindow_favors_same_process", true);
 #endif
 
 
+pref("toolkit.aboutProcesses.showThreads", false);
+
+
 
 #ifdef RELEASE_OR_BETA
   pref("toolkit.crashreporter.include_context_heap", false);
