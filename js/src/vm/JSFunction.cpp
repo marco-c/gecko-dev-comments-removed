@@ -1283,8 +1283,9 @@ bool JSFunction::getUnresolvedLength(JSContext* cx, HandleFunction fun,
   
   
   if (fun->isBoundFunction()) {
-    MOZ_ASSERT(fun->getExtendedSlot(BOUND_FUN_LENGTH_SLOT).isNumber());
-    v.set(fun->getExtendedSlot(BOUND_FUN_LENGTH_SLOT));
+    constexpr auto lengthSlot = FunctionExtended::BOUND_FUNCTION_LENGTH_SLOT;
+    MOZ_ASSERT(fun->getExtendedSlot(lengthSlot).isNumber());
+    v.set(fun->getExtendedSlot(lengthSlot));
     return true;
   }
 
@@ -1496,7 +1497,8 @@ bool JSFunction::finishBoundFunctionInit(JSContext* cx, HandleFunction bound,
   }
 
   
-  bound->setExtendedSlot(BOUND_FUN_LENGTH_SLOT, NumberValue(length));
+  bound->setExtendedSlot(FunctionExtended::BOUND_FUNCTION_LENGTH_SLOT,
+                         NumberValue(length));
 
   MOZ_ASSERT(!bound->hasGuessedAtom());
 
