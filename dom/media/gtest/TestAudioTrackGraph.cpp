@@ -273,80 +273,58 @@ TEST(TestAudioTrackGraph, SourceTrack)
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
-  MediaTrackGraph* primary = MediaTrackGraph::GetInstance(
+  MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
-  RefPtr<SourceMediaTrack> sourceTrack =
-      primary->CreateSourceTrack(MediaSegment::AUDIO);
+  RefPtr<SourceMediaTrack> sourceTrack;
+  RefPtr<ProcessedMediaTrack> outputTrack;
+  RefPtr<MediaInputPort> port;
+  Unused << WaitFor(Invoke([&] {
+    sourceTrack = graph->CreateSourceTrack(MediaSegment::AUDIO);
+    outputTrack = graph->CreateForwardedInputTrack(MediaSegment::AUDIO);
+    port = outputTrack->AllocateInputPort(sourceTrack);
 
-  RefPtr<ProcessedMediaTrack> outputTrack =
-      primary->CreateForwardedInputTrack(MediaSegment::AUDIO);
+    outputTrack->AddAudioOutput(reinterpret_cast<void*>(1));
+
+    return graph->NotifyWhenDeviceStarted(sourceTrack);
+  }));
+
+  RefPtr<AudioInputProcessing> listener;
+  RefPtr<AudioInputProcessingPullListener> pullListener;
+  DispatchFunction([&] {
+    
+    listener = new AudioInputProcessing(2, sourceTrack, PRINCIPAL_HANDLE_NONE);
+    listener->SetPassThrough(true);
+
+    pullListener = new AudioInputProcessingPullListener(listener);
+
+    sourceTrack->AddListener(pullListener);
+
+    sourceTrack->GraphImpl()->AppendMessage(
+        MakeUnique<StartInputProcessing>(listener));
+    sourceTrack->SetPullingEnabled(true);
+    
+    sourceTrack->OpenAudioInput((void*)1, listener);
+  });
+
+  auto p = Invoke([&] { return graph->NotifyWhenDeviceStarted(sourceTrack); });
+  MockCubebStream* stream = WaitFor(cubeb->StreamInitEvent());
+  EXPECT_TRUE(stream->mHasInput);
+  stream->VerifyOutput();
+  Unused << WaitFor(p);
 
   
-
-  RefPtr<MediaInputPort> port = outputTrack->AllocateInputPort(sourceTrack);
-  outputTrack->AddAudioOutput(reinterpret_cast<void*>(1));
-
-  {
-    
-    bool done = false;
-    MediaEventListener onStreamInit = cubeb->StreamInitEvent().Connect(
-        AbstractThread::GetCurrent(), [&] { done = true; });
-    SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        [&] { return done; });
-    onStreamInit.Disconnect();
-  }
+  stream->GoFaster();
+  uint32_t totalFrames = 0;
+  WaitUntil(stream->FramesProcessedEvent(), [&](uint32_t aFrames) {
+    totalFrames += aFrames;
+    return totalFrames > static_cast<uint32_t>(graph->GraphRate());
+  });
+  stream->DontGoFaster();
 
   
-  RefPtr<AudioInputProcessing> listener =
-      new AudioInputProcessing(2, sourceTrack, PRINCIPAL_HANDLE_NONE);
-  listener->SetPassThrough(true);
-
-  RefPtr<AudioInputProcessingPullListener> pullListener =
-      new AudioInputProcessingPullListener(listener);
-
-  sourceTrack->AddListener(pullListener);
-
-  sourceTrack->GraphImpl()->AppendMessage(
-      MakeUnique<StartInputProcessing>(listener));
-  sourceTrack->SetPullingEnabled(true);
-  
-  sourceTrack->OpenAudioInput((void*)1, listener);
-
-  MockCubebStream* stream = nullptr;
-  {
-    
-    MediaEventListener onStreamInit = cubeb->StreamInitEvent().Connect(
-        AbstractThread::GetCurrent(),
-        [&](MockCubebStream* aStream) { stream = aStream; });
-    SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        [&] { return !!stream; });
-    onStreamInit.Disconnect();
-  }
-
-  {
-    
-    uint32_t totalFrames = 0;
-    MediaEventListener onFrames = stream->FramesProcessedEvent().Connect(
-        AbstractThread::GetCurrent(),
-        [&](uint32_t aFrames) { totalFrames += aFrames; });
-    stream->VerifyOutput();
-    stream->GoFaster();
-    SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>([&] {
-      return totalFrames > static_cast<uint32_t>(primary->GraphRate());
-    });
-    stream->DontGoFaster();
-    onFrames.Disconnect();
-  }
-
-  {
-    
-    bool done = false;
-    MediaEventListener onStreamDestroy = cubeb->StreamDestroyEvent().Connect(
-        AbstractThread::GetCurrent(), [&] { done = true; });
-
-    
+  DispatchFunction([&] {
     outputTrack->RemoveAudioOutput((void*)1);
     outputTrack->Destroy();
     port->Destroy();
@@ -358,11 +336,9 @@ TEST(TestAudioTrackGraph, SourceTrack)
         Some(reinterpret_cast<CubebUtils::AudioDeviceID>(1));
     sourceTrack->CloseAudioInput(id);
     sourceTrack->Destroy();
+  });
 
-    SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-        [&] { return done; });
-    onStreamDestroy.Disconnect();
-  }
+  WaitFor(cubeb->StreamDestroyEvent());
 }
 
 TEST(TestAudioTrackGraph, CrossGraphPort)
