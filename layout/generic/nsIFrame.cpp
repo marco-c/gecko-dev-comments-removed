@@ -6058,6 +6058,11 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   LogicalAxis flexMainAxis =
       eLogicalAxisInline;  
+
+  
+  
+  Maybe<StyleSize> imposedMainSizeStyleCoord;
+
   if (isFlexItem) {
     
     
@@ -6078,48 +6083,67 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     
     
     
-    bool isCrossSizeDefinite =
-        (flexMainAxis == eLogicalAxisInline)
-            ? !nsLayoutUtils::IsAutoBSize(*blockStyleCoord, aCBSize.BSize(aWM))
-            : !inlineStyleCoord->IsAuto() &&
-                  !inlineStyleCoord->IsExtremumLength();
-
-    
-    
-    
-    
-    
-    
-    if (nsFlexContainerFrame::IsUsedFlexBasisContent(*flexBasis,
-                                                     *mainAxisCoord) &&
-        MOZ_LIKELY(!IsTableWrapperFrame())) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (stylePos->mAspectRatio.HasFiniteRatio() && isCrossSizeDefinite) {
-        static const StyleSize autoStyleCoord(StyleSize::Auto());
-        mainAxisCoord = &autoStyleCoord;
+    bool didImposeMainSize;
+    nscoord imposedMainSize =
+        GetProperty(nsIFrame::FlexItemMainSizeOverride(), &didImposeMainSize);
+    if (didImposeMainSize) {
+      imposedMainSizeStyleCoord = Some(StyleSize::LengthPercentage(
+          LengthPercentage::FromAppUnits(imposedMainSize)));
+      if (flexMainAxis == eLogicalAxisInline) {
+        inlineStyleCoord = imposedMainSizeStyleCoord.ptr();
       } else {
-        static const StyleSize maxContStyleCoord(
-            StyleSize::ExtremumLength(StyleExtremumLength::MaxContent));
-        mainAxisCoord = &maxContStyleCoord;
+        blockStyleCoord = imposedMainSizeStyleCoord.ptr();
       }
+    } else {
       
       
-    } else if (!flexBasis->IsAuto()) {
+      
+      bool isCrossSizeDefinite =
+          (flexMainAxis == eLogicalAxisInline)
+              ? !nsLayoutUtils::IsAutoBSize(*blockStyleCoord,
+                                            aCBSize.BSize(aWM))
+              : !inlineStyleCoord->IsAuto() &&
+                    !inlineStyleCoord->IsExtremumLength();
+
       
       
-      mainAxisCoord = &flexBasis->AsSize();
-    }  
-       
+      
+      
+      
+      
+      
+      if (nsFlexContainerFrame::IsUsedFlexBasisContent(*flexBasis,
+                                                       *mainAxisCoord) &&
+          MOZ_LIKELY(!IsTableWrapperFrame())) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (stylePos->mAspectRatio.HasFiniteRatio() && isCrossSizeDefinite) {
+          static const StyleSize autoStyleCoord(StyleSize::Auto());
+          mainAxisCoord = &autoStyleCoord;
+        } else {
+          static const StyleSize maxContStyleCoord(
+              StyleSize::ExtremumLength(StyleExtremumLength::MaxContent));
+          mainAxisCoord = &maxContStyleCoord;
+        }
+        
+        
+      } else if (!flexBasis->IsAuto()) {
+        
+        
+        mainAxisCoord = &flexBasis->AsSize();
+      }  
+         
+    }
   }
 
   const bool isOrthogonal = aWM.IsOrthogonalTo(alignCB->GetWritingMode());
