@@ -240,8 +240,13 @@ struct AutoEnqueuePendingParseTasksAfterGC {
 };
 
 
+
 bool EnqueueOffThreadCompression(JSContext* cx,
                                  UniquePtr<SourceCompressionTask> task);
+
+
+
+void StartHandlingCompressionsOnGC(JSRuntime* rt);
 
 
 
@@ -249,6 +254,9 @@ void CancelOffThreadCompressions(JSRuntime* runtime);
 
 void AttachFinishedCompressions(JSRuntime* runtime,
                                 AutoLockHelperThreadState& lock);
+
+
+void SweepPendingCompressions(AutoLockHelperThreadState& lock);
 
 
 void RunPendingSourceCompressions(JSRuntime* runtime);
