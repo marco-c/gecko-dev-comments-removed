@@ -3788,36 +3788,6 @@ class MArgumentsObjectLength : public MUnaryInstruction,
 };
 
 
-class MGuardArgumentsObjectNotOverriddenIterator
-    : public MUnaryInstruction,
-      public SingleObjectPolicy::Data {
-  explicit MGuardArgumentsObjectNotOverriddenIterator(MDefinition* argsObj)
-      : MUnaryInstruction(classOpcode, argsObj) {
-    setResultType(MIRType::Object);
-    setResultTypeSet(argsObj->resultTypeSet());
-    setMovable();
-    setGuard();
-  }
-
- public:
-  INSTRUCTION_HEADER(GuardArgumentsObjectNotOverriddenIterator)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, getArgsObject))
-
-  bool congruentTo(const MDefinition* ins) const override {
-    return congruentIfOperandsEqual(ins);
-  }
-
-  AliasSet getAliasSet() const override {
-    
-    
-    
-    return AliasSet::Load(AliasSet::ObjectFields | AliasSet::FixedSlot |
-                          AliasSet::DynamicSlot);
-  }
-};
-
-
 
 
 
