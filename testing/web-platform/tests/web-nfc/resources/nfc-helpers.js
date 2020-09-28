@@ -149,10 +149,6 @@ function createUrlRecord(url, isAbsUrl) {
   return createRecord('url', url, test_record_id);
 }
 
-function createNDEFWriteOptions(ignoreRead) {
-  return {ignoreRead};
-}
-
 
 
 

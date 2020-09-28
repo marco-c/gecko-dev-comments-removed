@@ -94,10 +94,10 @@ function compareNDEFRecords(providedRecord, receivedRecord) {
 
 
 function assertNDEFWriteOptionsEqual(provided, received) {
-  if (provided.ignoreRead !== undefined)
-    assert_equals(provided.ignoreRead, !!received.ignoreRead);
+  if (provided.overwrite !== undefined)
+    assert_equals(provided.overwrite, !!received.overwrite);
   else
-    assert_equals(!!received.ignore_read, true);
+    assert_equals(!!received.overwrite, true);
 }
 
 
@@ -320,7 +320,8 @@ var WebNFCTest = (() => {
       
       if(this.operations_suspended_) return;
       
-      if (this.pending_write_options_ && this.pending_write_options_.ignoreRead)
+      
+      if (this.pending_write_options_ && this.pending_write_options_.overwrite)
         return;
       
       for (let watcher of this.watchers_) {
