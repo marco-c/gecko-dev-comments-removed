@@ -9,6 +9,7 @@
   function Actions(defaultTickDuration=16) {
     this.sourceTypes = new Map([["key", KeySource],
                                 ["pointer", PointerSource],
+                                ["wheel", WheelSource],
                                 ["none", GeneralSource]]);
     this.sources = new Map();
     this.sourceOrder = [];
@@ -154,6 +155,32 @@
       return this;
     },
 
+    
+
+
+
+
+
+
+    addWheel: function(name, set=true) {
+      this.createSource("wheel", name);
+      if (set) {
+        this.setWheel(name);
+      }
+      return this;
+    },
+
+    
+
+
+
+
+
+    setWheel: function(name) {
+      this.setSource("wheel", name);
+      return this;
+    },
+
     createSource: function(type, name, parameters={}) {
       if (!this.sources.has(type)) {
         throw new Error(`${type} is not a valid action type`);
@@ -192,6 +219,7 @@
     },
 
     
+
 
 
 
@@ -278,6 +306,27 @@
                           {origin="viewport", duration, sourceName=null}={}) {
       let source = this.getSource("pointer", sourceName);
       source.pointerMove(this, x, y, duration, origin);
+      return this;
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    scroll: function(x, y, deltaX, deltaY,
+                     {origin="viewport", duration, sourceName=null}={}) {
+      let source = this.getSource("wheel", sourceName);
+      source.scroll(this, x, y, deltaX, deltaY, duration, origin);
       return this;
     },
   };
@@ -403,6 +452,47 @@
         tick = actions.addTick().tickIdx;
       }
       this.actions.set(tick, {type: "pointerMove", x, y, origin});
+      if (duration) {
+        this.actions.get(tick).duration = duration;
+      }
+    },
+
+    addPause: function(actions, duration) {
+      let tick = actions.tickIdx;
+      if (this.actions.has(tick)) {
+        tick = actions.addTick().tickIdx;
+      }
+      this.actions.set(tick, {type: "pause", duration: duration});
+    },
+  };
+
+  function WheelSource() {
+    this.actions = new Map();
+  }
+
+  WheelSource.prototype = {
+    serialize: function(tickCount) {
+      if (!this.actions.size) {
+        return undefined;
+      }
+      let actions = [];
+      let data = {"type": "wheel", "actions": actions};
+      for (let i=0; i<tickCount; i++) {
+        if (this.actions.has(i)) {
+          actions.push(this.actions.get(i));
+        } else {
+          actions.push({"type": "pause"});
+        }
+      }
+      return data;
+    },
+
+    scroll: function(actions, x, y, deltaX, deltaY, duration, origin) {
+      let tick = actions.tickIdx;
+      if (this.actions.has(tick)) {
+        tick = actions.addTick().tickIdx;
+      }
+      this.actions.set(tick, {type: "scroll", x, y, deltaX, deltaY, origin});
       if (duration) {
         this.actions.get(tick).duration = duration;
       }
