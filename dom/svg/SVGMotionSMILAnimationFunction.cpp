@@ -211,16 +211,13 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromMpathElem(
 
   
   SVGPathElement* pathElem = aMpathElem->GetReferencedPath();
-  if (pathElem) {
-    const SVGPathData& path = pathElem->GetAnimPathSegList()->GetAnimValue();
-    
-    
-    if (path.Length()) {
-      bool ok =
-          path.GetDistancesFromOriginToEndsOfVisibleSegments(&mPathVertices);
-      if (ok && mPathVertices.Length()) {
-        mPath = pathElem->GetOrBuildPathForMeasuring();
-      }
+  
+  
+  if (pathElem && pathElem->HasValidDimensions()) {
+    bool ok =
+        pathElem->GetDistancesFromOriginToEndsOfVisibleSegments(&mPathVertices);
+    if (ok && mPathVertices.Length()) {
+      mPath = pathElem->GetOrBuildPathForMeasuring();
     }
   }
 }
