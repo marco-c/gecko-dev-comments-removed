@@ -3407,18 +3407,29 @@ EditorDOMRange WSRunScanner::GetRangeForDeletingBlockElementBoundaries(
 
   EditorDOMRange range;
   
-  TextFragmentData textFragmentDataAtEndOfLestBlockElement(
+  TextFragmentData textFragmentDataAtEndOfLeftBlockElement(
       aPointContainingTheOtherBlock.GetContainer() == &aLeftBlockElement
           ? aPointContainingTheOtherBlock
           : EditorDOMPoint::AtEndOf(const_cast<Element&>(aLeftBlockElement)),
       editingHost);
-  const EditorDOMRange& trailingWhiteSpaceRange =
-      textFragmentDataAtEndOfLestBlockElement
-          .InvisibleTrailingWhiteSpaceRangeRef();
-  if (trailingWhiteSpaceRange.StartRef().IsSet()) {
-    range.SetStart(trailingWhiteSpaceRange.StartRef());
+  if (textFragmentDataAtEndOfLeftBlockElement.StartsFromBRElement() &&
+      !aHTMLEditor.IsVisibleBRElement(
+          textFragmentDataAtEndOfLeftBlockElement.StartReasonBRElementPtr())) {
+    
+    
+    
+    
+    range.SetStart(EditorDOMPoint(
+        textFragmentDataAtEndOfLeftBlockElement.StartReasonBRElementPtr()));
   } else {
-    range.SetStart(textFragmentDataAtEndOfLestBlockElement.ScanStartRef());
+    const EditorDOMRange& trailingWhiteSpaceRange =
+        textFragmentDataAtEndOfLeftBlockElement
+            .InvisibleTrailingWhiteSpaceRangeRef();
+    if (trailingWhiteSpaceRange.StartRef().IsSet()) {
+      range.SetStart(trailingWhiteSpaceRange.StartRef());
+    } else {
+      range.SetStart(textFragmentDataAtEndOfLeftBlockElement.ScanStartRef());
+    }
   }
   
   TextFragmentData textFragmentDataAtStartOfRightBlockElement(
