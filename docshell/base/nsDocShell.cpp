@@ -693,13 +693,10 @@ nsDocShell::GetInterface(const nsIID& aIID, void** aSink) {
                ? NS_OK
                : NS_NOINTERFACE;
   } else if (aIID.Equals(NS_GET_IID(nsISHistory))) {
-    RefPtr<ChildSHistory> shistory = GetSessionHistory();
-    if (shistory) {
-      
-      nsCOMPtr<nsISHistory> legacy = shistory->LegacySHistory();
-      legacy.forget(aSink);
-      return NS_OK;
-    }
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(
+        false, "Do not try to get a nsISHistory interface from nsIDocShell");
     return NS_NOINTERFACE;
   } else if (aIID.Equals(NS_GET_IID(nsIWebBrowserFind))) {
     nsresult rv = EnsureFind();
