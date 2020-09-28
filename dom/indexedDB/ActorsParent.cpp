@@ -12786,7 +12786,10 @@ nsresult FileManager::Init(nsIFile* aDirectory,
   IDB_TRY(journalDirectory->Append(kJournalDirectoryName));
 
   
-  IDB_TRY(ExistsAsDirectory(*journalDirectory));
+  
+  IDB_TRY_VAR(const bool existsAsDirectory,
+              ExistsAsDirectory(*journalDirectory));
+  Unused << existsAsDirectory;
 
   {
     IDB_TRY_VAR(auto path,

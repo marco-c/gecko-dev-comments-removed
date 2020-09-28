@@ -412,21 +412,23 @@
 
 
 
-#define QM_TRY_PROPAGATE_ERR(ns, tryResult, expr) \
-  auto tryResult = ::mozilla::ToResult(expr);     \
-  if (MOZ_UNLIKELY(tryResult.isErr())) {          \
-    ns::QM_HANDLE_ERROR(expr);                    \
-    return tryResult.propagateErr();              \
+#define QM_TRY_PROPAGATE_ERR(ns, tryResult, expr)                        \
+  auto tryResult = ::mozilla::ToResult(expr);                            \
+  static_assert(std::is_empty_v<typename decltype(tryResult)::ok_type>); \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                 \
+    ns::QM_HANDLE_ERROR(expr);                                           \
+    return tryResult.propagateErr();                                     \
   }
 
 
 
-#define QM_TRY_CUSTOM_RET_VAL(ns, tryResult, expr, customRetVal) \
-  auto tryResult = ::mozilla::ToResult(expr);                    \
-  if (MOZ_UNLIKELY(tryResult.isErr())) {                         \
-    auto tryTempResult MOZ_MAYBE_UNUSED = std::move(tryResult);  \
-    ns::QM_HANDLE_ERROR(expr);                                   \
-    return customRetVal;                                         \
+#define QM_TRY_CUSTOM_RET_VAL(ns, tryResult, expr, customRetVal)         \
+  auto tryResult = ::mozilla::ToResult(expr);                            \
+  static_assert(std::is_empty_v<typename decltype(tryResult)::ok_type>); \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                 \
+    auto tryTempResult MOZ_MAYBE_UNUSED = std::move(tryResult);          \
+    ns::QM_HANDLE_ERROR(expr);                                           \
+    return customRetVal;                                                 \
   }
 
 
@@ -434,6 +436,7 @@
 #define QM_TRY_CUSTOM_RET_VAL_WITH_CLEANUP(ns, tryResult, expr, customRetVal, \
                                            cleanup)                           \
   auto tryResult = ::mozilla::ToResult(expr);                                 \
+  static_assert(std::is_empty_v<typename decltype(tryResult)::ok_type>);      \
   if (MOZ_UNLIKELY(tryResult.isErr())) {                                      \
     auto tryTempResult MOZ_MAYBE_UNUSED = std::move(tryResult);               \
     ns::QM_HANDLE_ERROR(expr);                                                \
