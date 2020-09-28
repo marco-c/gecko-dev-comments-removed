@@ -257,6 +257,8 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
   
   mDocShell->AddProgressListener(this, nsIWebProgress::NOTIFY_STATE_NETWORK);
 
+  mWindow->MaybeDispatchInitialFocusEvent();
+
   return rv;
 }
 

@@ -1860,6 +1860,15 @@ class nsIWidget : public nsISupports {
   
 
 
+
+
+
+
+  virtual void MaybeDispatchInitialFocusEvent() {}
+
+  
+
+
   virtual void SetInputContext(const InputContext& aContext,
                                const InputContextAction& aAction) = 0;
 
