@@ -409,10 +409,7 @@ class WebDriverTestharnessExecutor(TestharnessExecutor):
     def do_testharness(self, protocol, url, timeout):
         format_map = {"url": strip_server(url)}
 
-        
-        
         parent_window = protocol.testharness.close_old_windows()
-
         
         protocol.base.execute_script("window.open('about:blank', '%s', 'noopener')" % self.window_id)
         test_window = protocol.testharness.get_test_window(self.window_id,
@@ -449,11 +446,6 @@ class WebDriverTestharnessExecutor(TestharnessExecutor):
             done, rv = handler(result)
             if done:
                 break
-
-        
-        
-        protocol.testharness.close_old_windows()
-
         return rv
 
     def wait_for_load(self, protocol):
