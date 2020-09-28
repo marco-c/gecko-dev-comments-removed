@@ -1203,7 +1203,7 @@ Shape* NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj,
     AccessorShape& accShape = shape->asAccessorShape();
     accShape.rawGetter = getter;
     accShape.rawSetter = setter;
-    GetterSetterWriteBarrierPost(&accShape);
+    GetterSetterPostWriteBarrier(&accShape);
   } else {
     
     

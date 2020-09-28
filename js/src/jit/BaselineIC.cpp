@@ -637,7 +637,7 @@ void ICFallbackStub::maybeInvalidateWarp(JSContext* cx, JSScript* script) {
 
 void ICStub::updateCode(JitCode* code) {
   
-  JitCode::writeBarrierPre(jitCode());
+  JitCode::preWriteBarrier(jitCode());
   stubCode_ = code->raw();
 }
 

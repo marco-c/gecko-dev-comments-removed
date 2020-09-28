@@ -622,7 +622,7 @@ class ArenaCellSet {
 
 
 template <typename T>
-MOZ_ALWAYS_INLINE void WriteBarrierPostImpl(void* cellp, T* prev, T* next) {
+MOZ_ALWAYS_INLINE void PostWriteBarrierImpl(void* cellp, T* prev, T* next) {
   MOZ_ASSERT(cellp);
 
   
