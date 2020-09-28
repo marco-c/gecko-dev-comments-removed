@@ -19,6 +19,8 @@ import android.util.Log;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ImageResource;
+import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.gecko.mozglue.JNIObject;
 
 
 
@@ -33,10 +35,79 @@ public class MediaSession {
     private static final boolean DEBUG = false;
 
     private final GeckoSession mSession;
-    private boolean mIsActive;
+    private Controller mController;
+
+    private static final String ATTACHED_EVENT =
+        "GeckoView:MediaSession:Attached";
+    private boolean mControllerAttached;
 
     protected MediaSession(final GeckoSession session) {
         mSession = session;
+    }
+
+     final class Controller extends JNIObject {
+        private final long mId;
+
+         Controller(final long id) {
+            mId = id;
+        }
+
+        public long getId() {
+            return mId;
+        }
+
+        @Override 
+        public void disposeNative() {
+            
+            throw new UnsupportedOperationException();
+        }
+
+        @WrapForJNI(calledFrom = "ui")
+         void onAttached() {
+            MediaSession.this.onControllerAttached();
+        }
+
+        @WrapForJNI(calledFrom = "ui")
+         void onDetached() {
+            MediaSession.this.onControllerDetached();
+        }
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void pause();
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void stop();
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void play();
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void skipAd();
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void focus();
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void seekTo(double time, boolean fast);
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void seekForward(double offset);
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void seekBackward(double offset);
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void nextTrack();
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void previousTrack();
+
+        @WrapForJNI(dispatchTo = "gecko")
+        public native void muteAudio(boolean mute);
+    }
+
+     Controller getController() {
+        return mController;
     }
 
     
@@ -54,41 +125,75 @@ public class MediaSession {
 
 
     public boolean isActive() {
-        return mIsActive;
+        return mControllerAttached;
     }
 
-     void setActive(final boolean active) {
-        mIsActive = active;
+     void attachController(final long id) {
+        mController = new Controller(id);
+        mSession.attachMediaSessionController(mController);
+    }
+
+    void onControllerAttached() {
+        mControllerAttached = true;
+        
+        mSession.getEventDispatcher().dispatch(ATTACHED_EVENT, null);
+    }
+
+    void onControllerDetached() {
+        if (!mControllerAttached) {
+            return;
+        }
+        mControllerAttached = false;
+        
+        mSession.getEventDispatcher().dispatch(DEACTIVATED_EVENT, null);
+    }
+
+     void detachController() {
+        if (mControllerAttached) {
+            return;
+        }
+        mSession.detachMediaSessionController(mController);
+        mControllerAttached = false;
+        mController = null;
     }
 
     
 
 
     public void pause() {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "pause");
         }
-        mSession.getEventDispatcher().dispatch(PAUSE_EVENT, null);
+        mController.pause();
     }
 
     
 
 
     public void stop() {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "stop");
         }
-        mSession.getEventDispatcher().dispatch(STOP_EVENT, null);
+        mController.stop();
     }
 
     
 
 
     public void play() {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "play");
         }
-        mSession.getEventDispatcher().dispatch(PLAY_EVENT, null);
+        mController.play();
     }
 
     
@@ -100,37 +205,39 @@ public class MediaSession {
 
 
     public void seekTo(final double time, final boolean fast) {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "seekTo: time=" + time + ", fast=" + fast);
         }
-        final GeckoBundle bundle = new GeckoBundle(2);
-        bundle.putDouble("time", time);
-        bundle.putBoolean("fast", fast);
-        mSession.getEventDispatcher().dispatch(SEEK_TO_EVENT, bundle);
+        mController.seekTo(time, fast);
     }
 
     
 
 
     public void seekForward() {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "seekForward");
         }
-        final GeckoBundle bundle = new GeckoBundle(1);
-        bundle.putDouble("offset", 0.0);
-        mSession.getEventDispatcher().dispatch(SEEK_FORWARD_EVENT, bundle);
+        mController.seekForward(0.0);
     }
 
     
 
 
     public void seekBackward() {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "seekBackward");
         }
-        final GeckoBundle bundle = new GeckoBundle(1);
-        bundle.putDouble("offset", 0.0);
-        mSession.getEventDispatcher().dispatch(SEEK_BACKWARD_EVENT, bundle);
+        mController.seekBackward(0.0);
     }
 
     
@@ -138,10 +245,13 @@ public class MediaSession {
 
 
     public void nextTrack() {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "nextTrack");
         }
-        mSession.getEventDispatcher().dispatch(NEXT_TRACK_EVENT, null);
+        mController.nextTrack();
     }
 
     
@@ -149,20 +259,26 @@ public class MediaSession {
 
 
     public void previousTrack() {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "previousTrack");
         }
-        mSession.getEventDispatcher().dispatch(PREV_TRACK_EVENT, null);
+        mController.previousTrack();
     }
 
     
 
 
     public void skipAd() {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "skipAd");
         }
-        mSession.getEventDispatcher().dispatch(SKIP_AD_EVENT, null);
+        mController.skipAd();
     }
 
     
@@ -173,13 +289,17 @@ public class MediaSession {
 
 
     public void muteAudio(final boolean mute) {
+        if (!mControllerAttached) {
+            return;
+        }
         if (DEBUG) {
             Log.d(LOGTAG, "muteAudio=" + mute);
         }
-        final GeckoBundle bundle = new GeckoBundle(1);
-        bundle.putBoolean("mute", mute);
-        mSession.getEventDispatcher().dispatch(MUTE_AUDIO_EVENT, bundle);
+        mController.muteAudio(mute);
     }
+
+    
+    
 
     
 
@@ -291,6 +411,19 @@ public class MediaSession {
                 @NonNull MediaSession mediaSession,
                 boolean enabled,
                 @Nullable ElementMetadata meta) {}
+
+        
+
+
+
+
+
+
+
+        default void onPictureInPicture(
+                @NonNull GeckoSession session,
+                @NonNull MediaSession mediaSession,
+                boolean enabled) {}
     }
 
 
@@ -545,7 +678,7 @@ public class MediaSession {
                  Feature.SEEK_TO, Feature.SEEK_FORWARD, Feature.SEEK_BACKWARD,
                  Feature.SKIP_AD, Feature.NEXT_TRACK, Feature.PREVIOUS_TRACK,
                  
-             })
+                 Feature.FOCUS })
      @interface MSFeature {}
 
     
@@ -639,33 +772,14 @@ public class MediaSession {
         "GeckoView:MediaSession:Features";
     private static final String FULLSCREEN_EVENT =
         "GeckoView:MediaSession:Fullscreen";
+    private static final String PICTURE_IN_PICTURE_EVENT =
+        "GeckoView:MediaSession:PictureInPicture";
     private static final String PLAYBACK_NONE_EVENT =
         "GeckoView:MediaSession:Playback:None";
     private static final String PLAYBACK_PAUSED_EVENT =
         "GeckoView:MediaSession:Playback:Paused";
     private static final String PLAYBACK_PLAYING_EVENT =
         "GeckoView:MediaSession:Playback:Playing";
-
-    private static final String PLAY_EVENT =
-        "GeckoView:MediaSession:Play";
-    private static final String PAUSE_EVENT =
-        "GeckoView:MediaSession:Pause";
-    private static final String STOP_EVENT =
-        "GeckoView:MediaSession:Stop";
-    private static final String NEXT_TRACK_EVENT =
-        "GeckoView:MediaSession:NextTrack";
-    private static final String PREV_TRACK_EVENT =
-        "GeckoView:MediaSession:PrevTrack";
-    private static final String SEEK_FORWARD_EVENT =
-        "GeckoView:MediaSession:SeekForward";
-    private static final String SEEK_BACKWARD_EVENT =
-        "GeckoView:MediaSession:SeekBackward";
-    private static final String SKIP_AD_EVENT =
-        "GeckoView:MediaSession:SkipAd";
-    private static final String SEEK_TO_EVENT =
-        "GeckoView:MediaSession:SeekTo";
-    private static final String MUTE_AUDIO_EVENT =
-        "GeckoView:MediaSession:MuteAudio";
 
      static class Handler
             extends GeckoSessionHandler<MediaSession.Delegate> {
@@ -678,10 +792,12 @@ public class MediaSession {
                 "GeckoViewMediaControl",
                 session,
                 new String[]{
+                    ATTACHED_EVENT,
                     ACTIVATED_EVENT,
                     DEACTIVATED_EVENT,
                     METADATA_EVENT,
                     FULLSCREEN_EVENT,
+                    PICTURE_IN_PICTURE_EVENT,
                     POSITION_STATE_EVENT,
                     PLAYBACK_NONE_EVENT,
                     PLAYBACK_PAUSED_EVENT,
@@ -702,15 +818,17 @@ public class MediaSession {
                 Log.d(LOGTAG, "handleMessage " + event);
             }
 
-            if (ACTIVATED_EVENT.equals(event)) {
-                mMediaSession.setActive(true);
+            if (ATTACHED_EVENT.equals(event)) {
                 delegate.onActivated(mSession, mMediaSession);
+            } else if (ACTIVATED_EVENT.equals(event)) {
+                mMediaSession.attachController(message.getLong("id"));
+                
+                
             } else if (DEACTIVATED_EVENT.equals(event)) {
-                mMediaSession.setActive(false);
+                mMediaSession.detachController();
                 delegate.onDeactivated(mSession, mMediaSession);
             } else if (METADATA_EVENT.equals(event)) {
-                final Metadata meta =
-                        Metadata.fromBundle(message.getBundle("metadata"));
+                final Metadata meta = Metadata.fromBundle(message);
                 delegate.onMetadata(mSession, mMediaSession, meta);
             } else if (POSITION_STATE_EVENT.equals(event)) {
                 final PositionState state =
@@ -732,6 +850,9 @@ public class MediaSession {
                         ElementMetadata.fromBundle(
                                 message.getBundle("metadata"));
                 delegate.onFullscreen(mSession, mMediaSession, enabled, meta);
+            } else if (PICTURE_IN_PICTURE_EVENT.equals(event)) {
+                final boolean enabled = message.getBoolean("enabled");
+                delegate.onPictureInPicture(mSession, mMediaSession, enabled);
             }
         }
     }
