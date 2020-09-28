@@ -560,6 +560,7 @@ class nsFlexContainerFrame::FlexItem final {
   
   
   
+  LogicalMargin BorderPadding() const { return mBorderPadding; }
   nscoord BorderPaddingSizeInMainAxis() const {
     return mBorderPadding.StartEnd(MainAxis(), mCBWM);
   }
@@ -1474,6 +1475,30 @@ static nscoord MainSizeFromAspectRatio(nscoord aCrossSize,
 
 
 
+static nscoord ClampMainSizeViaCrossAxisConstraints(
+    nscoord aMainSize, const FlexItem& aFlexItem,
+    const FlexboxAxisTracker& aAxisTracker) {
+  MOZ_ASSERT(aFlexItem.HasIntrinsicRatio(),
+             "Caller should've checked the ratio is valid!");
+
+  const auto& aspectRatio = aFlexItem.IntrinsicRatio();
+  const nscoord mainMinSizeFromRatio = MainSizeFromAspectRatio(
+      aFlexItem.CrossMinSize(), aspectRatio, aAxisTracker);
+  nscoord clampedMainSize = std::max(aMainSize, mainMinSizeFromRatio);
+
+  if (aFlexItem.CrossMaxSize() != NS_UNCONSTRAINEDSIZE) {
+    const nscoord mainMaxSizeFromRatio = MainSizeFromAspectRatio(
+        aFlexItem.CrossMaxSize(), aspectRatio, aAxisTracker);
+    clampedMainSize = std::min(clampedMainSize, mainMaxSizeFromRatio);
+  }
+
+  return clampedMainSize;
+}
+
+
+
+
+
 
 
 
@@ -1487,30 +1512,53 @@ static nscoord PartiallyResolveAutoMinSize(
   MOZ_ASSERT(aFlexItem.NeedsMinSizeAutoResolution(),
              "only call for FlexItems that need min-size auto resolution");
 
+  const auto itemWM = aFlexItem.GetWritingMode();
+  const auto cbWM = aAxisTracker.GetWritingMode();
+  const auto cbSize =
+      aItemReflowInput.mContainingBlockSize.ConvertTo(cbWM, itemWM);
+  const auto& mainStyleSize =
+      aItemReflowInput.mStylePosition->Size(aAxisTracker.MainAxis(), cbWM);
+  const auto boxSizingAdjust =
+      aItemReflowInput.mStylePosition->mBoxSizing == StyleBoxSizing::Border
+          ? aFlexItem.BorderPadding().Size(cbWM)
+          : LogicalSize(cbWM);
+
+  
+  
   nscoord specifiedSizeSuggestion = nscoord_MAX;
 
+  if (aAxisTracker.IsRowOriented()) {
+    if (mainStyleSize.IsLengthPercentage()) {
+      
+      
+      
+      specifiedSizeSuggestion = aFlexItem.Frame()->ComputeISizeValue(
+          cbSize.ISize(cbWM), boxSizingAdjust.ISize(cbWM),
+          mainStyleSize.AsLengthPercentage());
+    }
+  } else {
+    if (!nsLayoutUtils::IsAutoBSize(mainStyleSize, cbSize.BSize(cbWM))) {
+      
+      
+      
+      specifiedSizeSuggestion = nsLayoutUtils::ComputeBSizeValue(
+          cbSize.BSize(cbWM), boxSizingAdjust.BSize(cbWM),
+          mainStyleSize.AsLengthPercentage());
+    }
+  }
+
   
   
-  if (aItemReflowInput.mStylePosition->mFlexBasis.IsAuto() &&
-      aFlexItem.FlexBaseSize() != NS_UNCONSTRAINEDSIZE) {
-    
-    
-    
-    
+  if (aFlexItem.MainMaxSize() != NS_UNCONSTRAINEDSIZE) {
     specifiedSizeSuggestion =
-        std::min(specifiedSizeSuggestion, aFlexItem.FlexBaseSize());
+        std::min(specifiedSizeSuggestion, aFlexItem.MainMaxSize());
   }
 
-  
-  nscoord maxSize = GET_MAIN_COMPONENT_LOGICAL(
-      aAxisTracker, aFlexItem.GetWritingMode(),
-      aItemReflowInput.ComputedMaxISize(), aItemReflowInput.ComputedMaxBSize());
-  if (maxSize != NS_UNCONSTRAINEDSIZE) {
-    specifiedSizeSuggestion = std::min(specifiedSizeSuggestion, maxSize);
+  if (specifiedSizeSuggestion != nscoord_MAX) {
+    
+    
+    return specifiedSizeSuggestion;
   }
-
-  
-  
 
   
   
@@ -1526,7 +1574,7 @@ static nscoord PartiallyResolveAutoMinSize(
         crossSizeToUseWithRatio, aFlexItem.IntrinsicRatio(), aAxisTracker);
   }
 
-  return std::min(specifiedSizeSuggestion, transferredSizeSuggestion);
+  return transferredSizeSuggestion;
 }
 
 
@@ -1620,10 +1668,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
     
     resolvedMinSize =
         PartiallyResolveAutoMinSize(aFlexItem, aItemReflowInput, aAxisTracker);
-    if (resolvedMinSize > 0 && !aFlexItem.IntrinsicRatio()) {
-      
-      
-      
+    if (resolvedMinSize > 0) {
       
       
       minSizeNeedsToMeasureContent = true;
@@ -1640,11 +1685,14 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
 
   
   if (minSizeNeedsToMeasureContent || flexBasisNeedsToMeasureContent) {
+    
+    
+    nscoord contentSizeSuggestion = nscoord_MAX;
+
     if (aFlexItem.IsInlineAxisMainAxis()) {
       if (minSizeNeedsToMeasureContent) {
-        nscoord frameMinISize =
+        contentSizeSuggestion =
             aFlexItem.Frame()->GetMinISize(aItemReflowInput.mRenderingContext);
-        resolvedMinSize = std::min(resolvedMinSize, frameMinISize);
       }
       NS_ASSERTION(!flexBasisNeedsToMeasureContent,
                    "flex-basis:auto should have been resolved in the "
@@ -1672,11 +1720,27 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
           MeasureFlexItemContentBSize(aFlexItem, forceBResizeForMeasuringReflow,
                                       aHasLineClampEllipsis, *flexContainerRI);
       if (minSizeNeedsToMeasureContent) {
-        resolvedMinSize = std::min(resolvedMinSize, contentBSize);
+        contentSizeSuggestion = contentBSize;
       }
       if (flexBasisNeedsToMeasureContent) {
         aFlexItem.SetFlexBaseSizeAndMainSize(contentBSize);
       }
+    }
+
+    if (minSizeNeedsToMeasureContent) {
+      
+      
+      if (aFlexItem.IntrinsicRatio()) {
+        contentSizeSuggestion = ClampMainSizeViaCrossAxisConstraints(
+            contentSizeSuggestion, aFlexItem, aAxisTracker);
+      }
+      
+      if (aFlexItem.MainMaxSize() != NS_UNCONSTRAINEDSIZE) {
+        contentSizeSuggestion =
+            std::min(contentSizeSuggestion, aFlexItem.MainMaxSize());
+      }
+
+      resolvedMinSize = std::min(resolvedMinSize, contentSizeSuggestion);
     }
   }
 
