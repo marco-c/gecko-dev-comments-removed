@@ -2060,7 +2060,20 @@ function setDefaultPref(prefName, prefValue, locked = false) {
         throw new Error(`Non-integer value for ${prefName}`);
       }
 
-      defaults.setIntPref(prefName, prefValue);
+      if (
+        defaults.getPrefType(prefName) == defaults.PREF_BOOL ||
+        prefName == "browser.bookmarks.restore_default_bookmarks" ||
+        prefName == "browser.places.importBookmarksHTML" ||
+        prefName == "extensions.getAddons.showPane"
+      ) {
+        
+        
+        
+        
+        defaults.setBoolPref(prefName, !!prefValue);
+      } else {
+        defaults.setIntPref(prefName, prefValue);
+      }
       break;
 
     case "string":
