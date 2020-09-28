@@ -10,6 +10,7 @@
 #include "mozilla/gfx/Point.h"        
 #include "mozilla/layers/APZUtils.h"  
 #include "mozilla/layers/AsyncDragMetrics.h"  
+#include "mozilla/ToString.h"                 
 #include "nsPrintfCString.h"                  
 #include "UnitTransforms.h"                   
 
@@ -432,7 +433,7 @@ void HitTestingTreeNode::Dump(const char* aPrefix) const {
       ("%sHitTestingTreeNode (%p) APZC (%p) g=(%s) %s%s%sr=(%s) t=(%s) "
        "c=(%s)%s%s\n",
        aPrefix, this, mApzc.get(),
-       mApzc ? Stringify(mApzc->GetGuid()).c_str()
+       mApzc ? ToString(mApzc->GetGuid()).c_str()
              : nsPrintfCString("l=0x%" PRIx64, uint64_t(mLayersId)).get(),
        (mOverride & EventRegionsOverride::ForceDispatchToContent) ? "fdtc "
                                                                   : "",

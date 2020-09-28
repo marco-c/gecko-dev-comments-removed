@@ -7,11 +7,10 @@
 #ifndef GFX_SCROLLABLELAYERGUID_H
 #define GFX_SCROLLABLELAYERGUID_H
 
+#include <iosfwd>                        
 #include <stdint.h>                      
-#include "mozilla/gfx/Logging.h"         
 #include "mozilla/layers/LayersTypes.h"  
 #include "nsHashKeys.h"                  
-#include "nsPrintfCString.h"             
 
 namespace mozilla {
 namespace layers {
@@ -49,6 +48,9 @@ struct ScrollableLayerGuid {
   bool operator!=(const ScrollableLayerGuid& other) const;
   bool operator<(const ScrollableLayerGuid& other) const;
 
+  friend std::ostream& operator<<(std::ostream& aOut,
+                                  const ScrollableLayerGuid& aGuid);
+
   
   
   
@@ -71,15 +73,6 @@ struct ScrollableLayerGuid {
                     const ScrollableLayerGuid& rhs) const;
   };
 };
-
-template <int LogLevel>
-gfx::Log<LogLevel>& operator<<(gfx::Log<LogLevel>& log,
-                               const ScrollableLayerGuid& aGuid) {
-  return log << nsPrintfCString("(0x%" PRIx64 ", %u, %" PRIu64 ")",
-                                uint64_t(aGuid.mLayersId), aGuid.mPresShellId,
-                                aGuid.mScrollId)
-                    .get();
-}
 
 }  
 }  
