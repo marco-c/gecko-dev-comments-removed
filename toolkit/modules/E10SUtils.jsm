@@ -463,7 +463,12 @@ var E10SUtils = {
           if (
             flags & Ci.nsIAboutModule.URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS &&
             (useSeparatePrivilegedAboutContentProcess ||
-              aURI.filePath == "logins")
+              aURI.filePath == "logins" ||
+              
+              
+              
+              
+              aURI.filePath == "welcome")
           ) {
             return PRIVILEGEDABOUT_REMOTE_TYPE;
           }
