@@ -43,7 +43,7 @@
           doSend("test1", () => {
             let win = Services.wm.getMostRecentWindow("navigator:browser");
             let sessionHistory = win.gBrowser.selectedBrowser.browsingContext.sessionHistory;
-            let entry = shistory.getEntryAtIndex(sessionHistory.index);
+            let entry = sessionHistory.getEntryAtIndex(sessionHistory.index);
             let frameEntry = entry.GetChildAt(0);
             return String(frameEntry.docshellID);
           })
