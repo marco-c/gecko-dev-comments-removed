@@ -698,6 +698,17 @@ void nsSHistory::HandleEntriesToSwapInDocShell(
   }
 }
 
+void nsSHistory::UpdateRootBrowsingContextState() {
+  if (mRootBC) {
+    bool sameDocument = IsEmptyOrHasEntriesForSingleTopLevelPage();
+    if (sameDocument != mRootBC->GetIsSingleToplevelInHistory()) {
+      
+      
+      Unused << mRootBC->SetIsSingleToplevelInHistory(sameDocument);
+    }
+  }
+}
+
 NS_IMETHODIMP
 nsSHistory::AddToRootSessionHistory(bool aCloneChildren, nsISHEntry* aOSHE,
                                     BrowsingContext* aRootBC,
@@ -788,10 +799,10 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist) {
       NOTIFY_LISTENERS(OnHistoryReplaceEntry, ());
       aSHEntry->SetPersist(aPersist);
       mEntries[mIndex] = aSHEntry;
+      UpdateRootBrowsingContextState();
       return NS_OK;
     }
   }
-
   SHistoryChangeNotifier change(this);
 
   nsCOMPtr<nsIURI> uri = aSHEntry->GetURI();
@@ -809,6 +820,8 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist) {
   if (gHistoryMaxSize >= 0 && Length() > gHistoryMaxSize) {
     PurgeHistory(Length() - gHistoryMaxSize);
   }
+
+  UpdateRootBrowsingContextState();
 
   return NS_OK;
 }
@@ -935,6 +948,8 @@ nsSHistory::PurgeHistory(int32_t aNumEntries) {
     mRootBC->GetDocShell()->HistoryPurged(aNumEntries);
   }
 
+  UpdateRootBrowsingContextState();
+
   return NS_OK;
 }
 
@@ -993,6 +1008,8 @@ nsSHistory::ReplaceEntry(int32_t aIndex, nsISHEntry* aReplaceEntry) {
 
   aReplaceEntry->SetPersist(true);
   mEntries[aIndex] = aReplaceEntry;
+
+  UpdateRootBrowsingContextState();
 
   return NS_OK;
 }
@@ -1514,6 +1531,7 @@ bool nsSHistory::RemoveDuplicate(int32_t aIndex, bool aKeepNext) {
     if (mRequestedIndex > aIndex || (mRequestedIndex == aIndex && !aKeepNext)) {
       mRequestedIndex = mRequestedIndex - 1;
     }
+
     return true;
   }
   return false;
@@ -1548,6 +1566,8 @@ void nsSHistory::RemoveEntries(nsTArray<nsID>& aIDs, int32_t aStartIndex,
     }
     --index;
   }
+
+  UpdateRootBrowsingContextState();
 }
 
 void nsSHistory::RemoveFrameEntries(nsISHEntry* aEntry) {

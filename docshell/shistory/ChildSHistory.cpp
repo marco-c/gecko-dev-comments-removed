@@ -33,7 +33,7 @@ void ChildSHistory::SetIsInProcess(bool aIsInProcess) {
     return;
   }
 
-  if (mHistory) {
+  if (mHistory || StaticPrefs::fission_sessionHistoryInParent()) {
     return;
   }
 
@@ -150,6 +150,11 @@ void ChildSHistory::Go(int32_t aOffset, bool aRequireUserInteraction,
     }
 
     
+    if (StaticPrefs::fission_sessionHistoryInParent()) {
+      break;
+    }
+
+    
     
     
     if (!aRequireUserInteraction || index.value() >= Count() - 1 ||
@@ -161,18 +166,7 @@ void ChildSHistory::Go(int32_t aOffset, bool aRequireUserInteraction,
     }
   }
 
-  if (StaticPrefs::fission_sessionHistoryInParent()) {
-    nsCOMPtr<nsISHistory> shistory = mHistory;
-    mBrowsingContext->HistoryGo(
-        index.value(), [shistory](int32_t&& aRequestedIndex) {
-          
-          if (shistory) {
-            shistory->InternalSetRequestedIndex(aRequestedIndex);
-          }
-        });
-  } else {
-    aRv = mHistory->GotoIndex(index.value());
-  }
+  GotoIndex(index.value(), aRv);
 }
 
 void ChildSHistory::AsyncGo(int32_t aOffset, bool aRequireUserInteraction) {
@@ -186,17 +180,46 @@ void ChildSHistory::AsyncGo(int32_t aOffset, bool aRequireUserInteraction) {
   NS_DispatchToCurrentThread(asyncNav.forget());
 }
 
+void ChildSHistory::GotoIndex(int32_t aIndex, ErrorResult& aRv) {
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    nsCOMPtr<nsISHistory> shistory = mHistory;
+    mBrowsingContext->HistoryGo(aIndex, [shistory](int32_t&& aRequestedIndex) {
+      
+      if (shistory) {
+        shistory->InternalSetRequestedIndex(aRequestedIndex);
+      }
+    });
+  } else {
+    aRv = mHistory->GotoIndex(aIndex);
+  }
+}
+
 void ChildSHistory::RemovePendingHistoryNavigations() {
   mPendingNavigations.clear();
 }
 
 void ChildSHistory::EvictLocalContentViewers() {
-  mHistory->EvictAllContentViewers();
+  if (!StaticPrefs::fission_sessionHistoryInParent()) {
+    mHistory->EvictAllContentViewers();
+  }
+}
+
+nsISHistory* ChildSHistory::GetLegacySHistory(ErrorResult& aError) {
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    aError.ThrowTypeError(
+        "legacySHistory is not available with session history in the parent.");
+    return nullptr;
+  }
+
+  MOZ_RELEASE_ASSERT(mHistory);
+  return mHistory;
 }
 
 nsISHistory* ChildSHistory::LegacySHistory() {
-  MOZ_RELEASE_ASSERT(mHistory);
-  return mHistory;
+  IgnoredErrorResult ignore;
+  nsISHistory* shistory = GetLegacySHistory(ignore);
+  MOZ_RELEASE_ASSERT(shistory);
+  return shistory;
 }
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ChildSHistory)

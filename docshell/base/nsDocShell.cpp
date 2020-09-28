@@ -2956,10 +2956,11 @@ nsDocShell* nsDocShell::GetInProcessChildAt(int32_t aIndex) {
   return static_cast<nsDocShell*>(child);
 }
 
-NS_IMETHODIMP
-nsDocShell::AddChildSHEntry(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
-                            int32_t aChildOffset, uint32_t aLoadType,
-                            bool aCloneChildren) {
+nsresult nsDocShell::AddChildSHEntry(nsISHEntry* aCloneRef,
+                                     nsISHEntry* aNewEntry,
+                                     int32_t aChildOffset, uint32_t aLoadType,
+                                     bool aCloneChildren) {
+  MOZ_ASSERT(!StaticPrefs::fission_sessionHistoryInParent());
   nsresult rv = NS_OK;
 
   if (mLSHE && aLoadType != LOAD_PUSHSTATE) {
@@ -2987,6 +2988,7 @@ nsDocShell::AddChildSHEntry(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
 nsresult nsDocShell::AddChildSHEntryToParent(nsISHEntry* aNewEntry,
                                              int32_t aChildOffset,
                                              bool aCloneChildren) {
+  MOZ_ASSERT(!StaticPrefs::fission_sessionHistoryInParent());
   
 
 
@@ -3002,10 +3004,16 @@ nsresult nsDocShell::AddChildSHEntryToParent(nsISHEntry* aNewEntry,
   }
 
   nsresult rv;
+  
+  
   nsCOMPtr<nsIDocShell> parent = do_QueryInterface(GetAsSupports(mParent), &rv);
+  NS_WARNING_ASSERTION(
+      parent || !UseRemoteSubframes(),
+      "Failed to add child session history entry! This will be resolved once "
+      "session history in the parent is enabled.");
   if (parent) {
-    rv = parent->AddChildSHEntry(mOSHE, aNewEntry, aChildOffset, mLoadType,
-                                 aCloneChildren);
+    rv = nsDocShell::Cast(parent)->AddChildSHEntry(
+        mOSHE, aNewEntry, aChildOffset, mLoadType, aCloneChildren);
   }
 
   if (rootSH) {
@@ -3148,6 +3156,7 @@ nsDocShell::GetDeviceSizeIsPageSize(bool* aValue) {
 }
 
 void nsDocShell::ClearFrameHistory(nsISHEntry* aEntry) {
+  MOZ_ASSERT(!StaticPrefs::fission_sessionHistoryInParent());
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   if (!rootSH || !aEntry) {
     return;
@@ -3259,7 +3268,10 @@ nsDocShell::GotoIndex(int32_t aIndex) {
 
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   NS_ENSURE_TRUE(rootSH, NS_ERROR_FAILURE);
-  return rootSH->LegacySHistory()->GotoIndex(aIndex);
+
+  ErrorResult rv;
+  rootSH->GotoIndex(aIndex, rv);
+  return rv.StealNSResult();
 }
 
 nsresult nsDocShell::LoadURI(const nsAString& aURI,
@@ -7242,7 +7254,9 @@ nsresult nsDocShell::RestoreFromHistory() {
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   if (rootSH) {
     mPreviousEntryIndex = rootSH->Index();
-    rootSH->LegacySHistory()->UpdateIndex();
+    if (!StaticPrefs::fission_sessionHistoryInParent()) {
+      rootSH->LegacySHistory()->UpdateIndex();
+    }
     mLoadedEntryIndex = rootSH->Index();
     MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
             ("Previous index: %d, Loaded index: %d", mPreviousEntryIndex,
@@ -7769,7 +7783,7 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
     
     
     ChildSHistory* shistory = GetSessionHistory();
-    if (shistory && !mLSHE) {
+    if (!StaticPrefs::fission_sessionHistoryInParent() && shistory && !mLSHE) {
       int32_t idx = shistory->LegacySHistory()->GetRequestedIndex();
       if (idx == -1) {
         idx = shistory->Index();
@@ -10571,20 +10585,22 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
     SetCacheKeyOnHistoryEntry(mLSHE ? mLSHE : mOSHE, cacheKey);
 
-    
-    ClearFrameHistory(mLSHE);
-    ClearFrameHistory(mOSHE);
-  }
-
-  
-  
-  
-  if (aLoadType == LOAD_REFRESH) {
-    ClearFrameHistory(mLSHE);
-    ClearFrameHistory(mOSHE);
+    if (!StaticPrefs::fission_sessionHistoryInParent()) {
+      
+      ClearFrameHistory(mLSHE);
+      ClearFrameHistory(mOSHE);
+    }
   }
 
   if (!StaticPrefs::fission_sessionHistoryInParent()) {
+    
+    
+    
+    if (aLoadType == LOAD_REFRESH) {
+      ClearFrameHistory(mLSHE);
+      ClearFrameHistory(mOSHE);
+    }
+
     if (updateSHistory) {
       
       if (!mLSHE && (mItemType == typeContent) && mURIResultedInDocument) {
@@ -10630,7 +10646,9 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
       ((mLoadType & (LOAD_CMD_HISTORY | LOAD_CMD_RELOAD)) ||
        mLoadType == LOAD_NORMAL_REPLACE)) {
     mPreviousEntryIndex = rootSH->Index();
-    rootSH->LegacySHistory()->UpdateIndex();
+    if (!StaticPrefs::fission_sessionHistoryInParent()) {
+      rootSH->LegacySHistory()->UpdateIndex();
+    }
     mLoadedEntryIndex = rootSH->Index();
     MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
             ("Previous index: %d, Loaded index: %d", mPreviousEntryIndex,
@@ -11158,6 +11176,7 @@ nsresult nsDocShell::AddToSessionHistory(
     nsISHEntry** aNewEntry) {
   MOZ_ASSERT(aURI, "uri is null");
   MOZ_ASSERT(!aChannel || !aTriggeringPrincipal, "Shouldn't have both set");
+  MOZ_DIAGNOSTIC_ASSERT(!StaticPrefs::fission_sessionHistoryInParent());
 
 #if defined(DEBUG)
   if (MOZ_LOG_TEST(gDocShellLog, LogLevel::Debug)) {
@@ -11835,7 +11854,7 @@ nsresult nsDocShell::ConfirmRepost(bool* aRepost) {
   }
 
   nsCOMPtr<nsIPromptCollection> prompter =
-    do_GetService("@mozilla.org/embedcomp/prompt-collection;1");
+      do_GetService("@mozilla.org/embedcomp/prompt-collection;1");
   if (!prompter) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -12675,7 +12694,8 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
 
         
         
-        if (aHistoryIndex >= 0 && self->GetSessionHistory()) {
+        if (aHistoryIndex >= 0 && self->GetSessionHistory() &&
+            !StaticPrefs::fission_sessionHistoryInParent()) {
           nsCOMPtr<nsISHistory> legacySHistory =
               self->GetSessionHistory()->LegacySHistory();
 

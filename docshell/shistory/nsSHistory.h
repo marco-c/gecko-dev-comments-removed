@@ -236,6 +236,10 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
                                             nsISHEntry* aOldEntry,
                                             nsISHEntry* aNewEntry);
 
+  
+  
+  void UpdateRootBrowsingContextState();
+
  protected:
   bool mHasOngoingUpdate;
   bool mIsRemote;

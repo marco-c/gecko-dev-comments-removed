@@ -449,7 +449,7 @@ function pageEventListener(event) {
 function finish() {
   
   var history = TestWindow.getBrowser().webNavigation.sessionHistory;
-  history.legacySHistory.PurgeHistory(history.count);
+  history.legacySHistory.purgeHistory(history.count);
 
   
   
