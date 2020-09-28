@@ -344,6 +344,9 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     
     
     bool ionCompiledOrInlined : 1;
+
+    
+    bool hadIonOSR : 1;
   };
   Flags flags_ = {};  
 
@@ -417,6 +420,9 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   void setIonCompiledOrInlined() { flags_.ionCompiledOrInlined = true; }
   void clearIonCompiledOrInlined() { flags_.ionCompiledOrInlined = false; }
   bool ionCompiledOrInlined() const { return flags_.ionCompiledOrInlined; }
+
+  void setHadIonOSR() { flags_.hadIonOSR = true; }
+  bool hadIonOSR() const { return flags_.hadIonOSR; }
 
   RecompileInfoVector* maybeInlinedCompilations(
       const js::AutoSweepJitScript& sweep) {
