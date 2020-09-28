@@ -129,12 +129,6 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
-  bool cloneSingletons() const { return cloneSingletons_; }
-  RealmCreationOptions& setCloneSingletons(bool flag) {
-    cloneSingletons_ = flag;
-    return *this;
-  }
-
   
   
   
@@ -272,7 +266,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool invisibleToDebugger_ = false;
   bool mergeable_ = false;
   bool preserveJitCode_ = false;
-  bool cloneSingletons_ = false;
   bool sharedMemoryAndAtomics_ = false;
   bool defineSharedArrayBufferConstructor_ = true;
   bool coopAndCoep_ = false;
@@ -338,12 +331,6 @@ class JS_PUBLIC_API RealmBehaviors {
     Mode mode_;
   };
 
-  bool getSingletonsAsTemplates() const { return singletonsAsTemplates_; }
-  RealmBehaviors& setSingletonsAsValues() {
-    singletonsAsTemplates_ = false;
-    return *this;
-  }
-
   
   
   
@@ -357,11 +344,6 @@ class JS_PUBLIC_API RealmBehaviors {
   bool discardSource_ = false;
   bool disableLazyParsing_ = false;
   bool clampAndJitterTime_ = true;
-
-  
-  
-  
-  bool singletonsAsTemplates_ = true;
   bool isNonLive_ = false;
 };
 

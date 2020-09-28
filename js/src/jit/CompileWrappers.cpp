@@ -207,24 +207,11 @@ bool CompileRealm::hasAllocationMetadataBuilder() {
   return realm()->hasAllocationMetadataBuilder();
 }
 
-
-
-
-
-
-
-
-void CompileRealm::setSingletonsAsValues() {
-  realm()->behaviors().setSingletonsAsValues();
-}
-
 JitCompileOptions::JitCompileOptions()
-    : cloneSingletons_(false),
-      profilerSlowAssertionsEnabled_(false),
+    : profilerSlowAssertionsEnabled_(false),
       offThreadCompilationAvailable_(false) {}
 
 JitCompileOptions::JitCompileOptions(JSContext* cx) {
-  cloneSingletons_ = cx->realm()->creationOptions().cloneSingletons();
   profilerSlowAssertionsEnabled_ =
       cx->runtime()->geckoProfiler().enabled() &&
       cx->runtime()->geckoProfiler().slowAssertionsEnabled();

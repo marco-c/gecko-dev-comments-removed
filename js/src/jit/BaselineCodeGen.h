@@ -18,7 +18,7 @@ namespace js {
 
 namespace jit {
 
-enum class ScriptGCThingType { Atom, RegExp, Function, Scope, BigInt };
+enum class ScriptGCThingType { Atom, RegExp, Object, Function, Scope, BigInt };
 
 
 
@@ -359,8 +359,6 @@ class BaselineCompilerHandler {
     static constexpr size_t NumSlotsLimit = 128;
     return script()->nslots() > NumSlotsLimit;
   }
-
-  JSObject* maybeNoCloneSingletonObject();
 };
 
 using BaselineCompilerCodeGen = BaselineCodeGen<BaselineCompilerHandler>;
@@ -482,8 +480,6 @@ class BaselineInterpreterHandler {
   
   
   bool mustIncludeSlotsInStackCheck() const { return true; }
-
-  JSObject* maybeNoCloneSingletonObject() { return nullptr; }
 };
 
 using BaselineInterpreterCodeGen = BaselineCodeGen<BaselineInterpreterHandler>;
