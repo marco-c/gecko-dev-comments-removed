@@ -13,6 +13,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
+const { ExperimentAPI } = ChromeUtils.import(
+  "resource://messaging-system/experiments/ExperimentAPI.jsm"
+);
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
@@ -23,7 +26,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "SEPARATE_ABOUT_WELCOME",
+  "isAboutWelcomePrefEnabled",
   "browser.aboutwelcome.enabled",
   false
 );
@@ -34,7 +37,9 @@ class AboutNewTabChild extends JSWindowActorChild {
       
       
       if (
-        SEPARATE_ABOUT_WELCOME &&
+        isAboutWelcomePrefEnabled &&
+        
+        ExperimentAPI.isFeatureEnabled("aboutwelcome", true) &&
         this.contentWindow.location.pathname.includes("welcome")
       ) {
         return;

@@ -74,7 +74,12 @@ class ExperimentStore extends SharedDataMap {
 
 
   getAll() {
-    return Object.values(this._data);
+    try {
+      return Object.values(this._data);
+    } catch (e) {
+      Cu.reportError(e);
+    }
+    return [];
   }
 
   
