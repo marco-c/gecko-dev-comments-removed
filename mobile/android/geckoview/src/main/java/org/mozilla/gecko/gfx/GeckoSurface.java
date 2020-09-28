@@ -64,12 +64,22 @@ public final class GeckoSurface extends Surface {
     @Override
     public void writeToParcel(final Parcel out, final int flags) {
         super.writeToParcel(out, flags);
+        if ((flags & Parcelable.PARCELABLE_WRITE_RETURN_VALUE) == 0) {
+            
+            
+            
+            
+            
+            
+            
+            super.release();
+        }
+        mOwned = false;
+
         out.writeInt(mHandle);
         out.writeByte((byte) (mIsSingleBuffer ? 1 : 0));
         out.writeByte((byte) (mIsAvailable ? 1 : 0));
         out.writeInt(mMyPid);
-
-        mOwned = false;
     }
 
     @Override
