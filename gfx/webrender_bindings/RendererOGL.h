@@ -82,6 +82,13 @@ class RendererOGL {
   void SetFrameStartTime(const TimeStamp& aTime);
 
   
+  void BeginRecording(const TimeStamp& aRecordingStart,
+                      wr::PipelineId aPipelineId);
+  void MaybeRecordFrame(const WebRenderPipelineInfo* aPipelineInfo);
+  void WriteCollectedFrames();
+  Maybe<layers::CollectedFrames> GetCollectedFrames();
+
+  
   ~RendererOGL();
 
   
@@ -119,6 +126,8 @@ class RendererOGL {
  protected:
   RefPtr<RenderThread> mThread;
   UniquePtr<RenderCompositor> mCompositor;
+  UniquePtr<layers::WebRenderCompositionRecorder>
+      mCompositionRecorder;  
   wr::Renderer* mRenderer;
   layers::CompositorBridgeParent* mBridge;
   wr::WindowId mWindowId;
