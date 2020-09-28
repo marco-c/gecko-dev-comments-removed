@@ -823,7 +823,9 @@ impl SpatialNode {
 
 #[derive(Copy, Clone, Debug)]
 pub enum ScrollFrameKind {
-    PipelineRoot,
+    PipelineRoot {
+        is_root_pipeline: bool,
+    },
     Explicit,
 }
 

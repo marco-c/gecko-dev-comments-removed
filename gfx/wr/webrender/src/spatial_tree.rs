@@ -675,9 +675,11 @@ impl SpatialTree {
                 SpatialNodeType::StickyFrame(..) => {}
                 SpatialNodeType::ScrollFrame(ref info) => {
                     match info.frame_kind {
-                        ScrollFrameKind::PipelineRoot => {
+                        ScrollFrameKind::PipelineRoot { is_root_pipeline } => {
                             
-                            break;
+                            if is_root_pipeline {
+                                break;
+                            }
                         }
                         ScrollFrameKind::Explicit => {
                             
