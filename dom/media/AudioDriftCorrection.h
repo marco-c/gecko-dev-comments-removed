@@ -89,15 +89,6 @@ class ClockDrift final {
     mCorrection = std::min(std::max(mCorrection, 0.9f), 1.1f);
 
     
-    
-    
-    if (mPreviousCorrection - mCorrection <= 0.01 &&
-        mPreviousCorrection - mCorrection > 0) {
-      mCorrection = mPreviousCorrection;
-    }
-    mPreviousCorrection = mCorrection;
-
-    
     mTargetClock = 0;
     mSourceClock = 0;
   }
@@ -126,7 +117,6 @@ class ClockDrift final {
 
  private:
   float mCorrection = 1.0;
-  float mPreviousCorrection = 1.0;
 
   int32_t mSourceClock = 0;
   int32_t mTargetClock = 0;
