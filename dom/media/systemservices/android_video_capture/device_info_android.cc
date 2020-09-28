@@ -200,6 +200,17 @@ void DeviceInfoAndroid::DeInitialize() {
 int32_t DeviceInfoAndroid::Refresh() {
   if (!g_camera_info || g_camera_info->size() == 0) {
     DeviceInfoAndroid::BuildDeviceList();
+#ifdef DEBUG
+    int frontFacingIndex = -1;
+    for (uint32_t i = 0; i < g_camera_info->size(); i++) {
+      if (g_camera_info->at(i).front_facing) {
+        frontFacingIndex = i;
+      }
+    }
+    
+    
+    MOZ_ASSERT(frontFacingIndex == 0 || frontFacingIndex == -1);
+#endif
   }
   return 0;
 }
