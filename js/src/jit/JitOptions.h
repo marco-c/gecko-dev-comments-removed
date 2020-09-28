@@ -57,9 +57,7 @@ struct DefaultJitOptions {
   bool baselineInterpreter;
   bool baselineJit;
   bool ion;
-#ifdef NIGHTLY_BUILD
   bool typeInference;
-#endif
   bool warpBuilder;
   bool jitForTrustedPrincipals;
   bool nativeRegExp;
@@ -151,14 +149,7 @@ inline bool IsBaselineInterpreterEnabled() {
 
 }  
 
-inline bool IsTypeInferenceEnabled() {
-#ifdef NIGHTLY_BUILD
-  return jit::JitOptions.typeInference;
-#else
-  
-  return true;
-#endif
-}
+inline bool IsTypeInferenceEnabled() { return jit::JitOptions.typeInference; }
 
 }  
 
