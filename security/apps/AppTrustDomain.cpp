@@ -227,8 +227,9 @@ Result AppTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
   return DigestBufNSS(item, digestAlg, digestBuf, digestBufLen);
 }
 
-Result AppTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&, Time, Time,
+Result AppTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&, Time,
                                        Duration,
+                                        const Input*,
                                         const Input*,
                                         const Input*) {
   
