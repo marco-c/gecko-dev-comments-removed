@@ -2219,58 +2219,30 @@ void MediaManager::DeviceListChanged() {
 
   
   
-  
-  
-  
-  
-
-  if (mDeviceChangeTimer) {
-    mDeviceChangeTimer->Cancel();
-  } else {
-    mDeviceChangeTimer = MakeRefPtr<MediaTimer>();
-  }
-  RefPtr<MediaManager> self = this;
+  PR_Sleep(PR_MillisecondsToInterval(200));
   auto devices = MakeRefPtr<MediaDeviceSetRefCnt>();
-  mDeviceChangeTimer->WaitFor(TimeDuration::FromMilliseconds(200), __func__)
+  EnumerateRawDevices(0, MediaSourceEnum::Camera, MediaSourceEnum::Microphone,
+                      MediaSinkEnum::Speaker, DeviceEnumerationType::Normal,
+                      DeviceEnumerationType::Normal, false, devices)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [self, this, devices] {
-            if (!MediaManager::GetIfExists()) {
-              return MgrPromise::CreateAndReject(
-                  MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError,
-                                            u"In shutdown"_ns),
-                  __func__);
-            }
-            return EnumerateRawDevices(
-                0, MediaSourceEnum::Camera, MediaSourceEnum::Microphone,
-                MediaSinkEnum::Speaker, DeviceEnumerationType::Normal,
-                DeviceEnumerationType::Normal, false, devices);
-          },
-          []() {
-            
-            return MgrPromise::CreateAndReject(
-                MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
-                __func__);
-          })
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self, this, devices](bool) {
+          [self = RefPtr<MediaManager>(this), this, devices](bool) {
             if (!MediaManager::GetIfExists()) {
               return;
             }
 
-            MediaManager::DeviceIdSet deviceIDs;
+            nsTArray<nsString> deviceIDs;
             for (auto& device : *devices) {
               nsString id;
               device->GetId(id);
-              MOZ_ALWAYS_TRUE(deviceIDs.put(std::move(id)));
+              if (!deviceIDs.Contains(id)) {
+                deviceIDs.AppendElement(id);
+              }
             }
             
             
-            
-            for (auto iter = mDeviceIDs.iter(); !iter.done(); iter.next()) {
-              const auto& id = iter.get();
-              if (deviceIDs.has(id)) {
+            for (auto& id : mDeviceIDs) {
+              if (deviceIDs.Contains(id)) {
                 
                 continue;
               }
@@ -3131,8 +3103,7 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateDevicesImpl(
           })
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [aWindowId, originKey, aVideoInputEnumType, aAudioInputEnumType,
-           aOutDevices](bool) {
+          [aWindowId, originKey, aOutDevices](bool) {
             
             MediaManager* mgr = MediaManager::GetIfExists();
             if (!mgr || !mgr->IsWindowStillActive(aWindowId)) {
@@ -3141,17 +3112,12 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateDevicesImpl(
                   __func__);
             }
 
+            mgr->mDeviceIDs.Clear();
             for (auto& device : *aOutDevices) {
-              if (device->mKind == MediaDeviceKind::Audiooutput ||
-                  (device->mKind == MediaDeviceKind::Audioinput &&
-                   aAudioInputEnumType != DeviceEnumerationType::Fake &&
-                   device->GetMediaSource() == MediaSourceEnum::Microphone) ||
-                  (device->mKind == MediaDeviceKind::Videoinput &&
-                   aVideoInputEnumType != DeviceEnumerationType::Fake &&
-                   device->GetMediaSource() == MediaSourceEnum::Camera)) {
-                nsString id;
-                device->GetId(id);
-                MOZ_ALWAYS_TRUE(mgr->mDeviceIDs.put(std::move(id)));
+              nsString id;
+              device->GetId(id);
+              if (!mgr->mDeviceIDs.Contains(id)) {
+                mgr->mDeviceIDs.AppendElement(id);
               }
             }
 
@@ -3652,12 +3618,6 @@ void MediaManager::Shutdown() {
 #endif
   }
 
-  if (mDeviceChangeTimer) {
-    mDeviceChangeTimer->Cancel();
-    
-    mDeviceChangeTimer = nullptr;
-  }
-
   {
     
 
@@ -3680,7 +3640,7 @@ void MediaManager::Shutdown() {
   mActiveCallbacks.Clear();
   mCallIds.Clear();
   mPendingGUMRequest.Clear();
-  mDeviceIDs.clear();
+  mDeviceIDs.Clear();
 #ifdef MOZ_WEBRTC
   StopWebRtcLog();
 #endif
