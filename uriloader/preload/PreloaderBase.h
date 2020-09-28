@@ -150,25 +150,7 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
   
   
   
-  class RedirectSink final : public nsIInterfaceRequestor,
-                             public nsIChannelEventSink,
-                             public nsIRedirectResultListener {
-    RedirectSink() = delete;
-    virtual ~RedirectSink() = default;
-
-   public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIINTERFACEREQUESTOR
-    NS_DECL_NSICHANNELEVENTSINK
-    NS_DECL_NSIREDIRECTRESULTLISTENER
-
-    RedirectSink(PreloaderBase* aPreloader, nsIInterfaceRequestor* aCallbacks);
-
-   private:
-    nsMainThreadPtrHandle<PreloaderBase> mPreloader;
-    nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
-    nsCOMPtr<nsIChannel> mRedirectChannel;
-  };
+  class RedirectSink;
 
   
   class UsageTimer final : public nsITimerCallback {
