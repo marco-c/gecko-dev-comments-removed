@@ -20,6 +20,7 @@ using mozilla::gfx::IntRect from "mozilla/gfx/Rect.h";
 using moveonly mozilla::gfx::PaintFragment from "mozilla/gfx/CrossProcessPaint.h";
 using nscolor from "nsColor.h";
 using refcounted class nsDocShellLoadState from "nsDocShellLoadState.h";
+using mozilla::dom::XPCOMPermitUnloadAction from "mozilla/dom/DocShellMessageUtils.h";
 using mozilla::dom::TabId from "mozilla/dom/ipc/IdType.h";
 using mozilla::layers::LayersId from "mozilla/layers/LayersTypes.h";
 using refcounted class nsITransportSecurityInfo from "nsITransportSecurityInfo.h";
@@ -145,6 +146,7 @@ parent:
                                         TimeStamp aLoadStart,
                                         TimeStamp aLoadEnd);
 
+
   
 
 
@@ -156,6 +158,15 @@ parent:
 
 
   async SubmitLoadInputEventResponsePreloadTelemetry(uint32_t aMillis);
+
+  
+  
+  
+  
+  
+  
+  async CheckPermitUnload(bool aHasInProcessBlocker, XPCOMPermitUnloadAction aAction)
+    returns (bool permitUnload);
 
   async Destroy();
 };

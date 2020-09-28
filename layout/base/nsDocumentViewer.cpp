@@ -1201,7 +1201,6 @@ nsDocumentViewer::PermitUnload(PermitUnloadAction aAction,
     aAction = eDontPromptAndUnload;
   }
 
-  nsresult rv = NS_OK;
   *aPermitUnload = true;
 
   RefPtr<BrowsingContext> bc = mContainer->GetBrowsingContext();
@@ -1216,6 +1215,7 @@ nsDocumentViewer::PermitUnload(PermitUnloadAction aAction,
   IgnoreOpensDuringUnload ignoreOpens(mDocument);
 
   bool foundBlocker = false;
+  bool foundOOPListener = false;
   bc->PreOrderWalk([&](BrowsingContext* aBC) {
     if (aBC->IsInProcess()) {
       nsCOMPtr<nsIContentViewer> contentViewer;
@@ -1224,54 +1224,60 @@ nsDocumentViewer::PermitUnload(PermitUnloadAction aAction,
           contentViewer->DispatchBeforeUnload() == eRequestBlockNavigation) {
         foundBlocker = true;
       }
+    } else {
+      WindowContext* wc = aBC->GetCurrentWindowContext();
+      if (wc && wc->HasBeforeUnload()) {
+        foundOOPListener = true;
+      }
     }
   });
 
-  
-  
-  if (!mDocument) {
-    return NS_OK;
-  }
-
-  if (foundBlocker) {
-    if (aAction == eDontPromptAndUnload) {
-      
-
-      nsCOMPtr<nsIPromptCollection> prompt =
-          do_GetService("@mozilla.org/embedcomp/prompt-collection;1");
-
-      if (prompt) {
-        nsAutoSyncOperation sync(mDocument);
-        mInPermitUnloadPrompt = true;
-        mozilla::Telemetry::Accumulate(
-            mozilla::Telemetry::ONBEFOREUNLOAD_PROMPT_COUNT, 1);
-        rv = prompt->BeforeUnloadCheck(bc, aPermitUnload);
-        mInPermitUnloadPrompt = false;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if (NS_FAILED(rv)) {
-          mozilla::Telemetry::Accumulate(
-              mozilla::Telemetry::ONBEFOREUNLOAD_PROMPT_ACTION, 2);
-          *aPermitUnload = false;
-          return NS_OK;
-        }
-
-        mozilla::Telemetry::Accumulate(
-            mozilla::Telemetry::ONBEFOREUNLOAD_PROMPT_ACTION,
-            (*aPermitUnload ? 1 : 0));
-      }
-    } else if (aAction == eDontPromptAndDontUnload) {
-      *aPermitUnload = false;
+  if (!foundOOPListener) {
+    if (!foundBlocker) {
+      return NS_OK;
+    }
+    if (aAction != ePrompt) {
+      *aPermitUnload = aAction == eDontPromptAndUnload;
+      return NS_OK;
     }
   }
 
+  
+  
+  RefPtr<WindowGlobalChild> wgc(mDocument ? mDocument->GetWindowGlobalChild()
+                                          : nullptr);
+  if (!wgc) {
+    return NS_OK;
+  }
+
+  nsAutoSyncOperation sync(mDocument);
+  AutoSuppressEventHandlingAndSuspend seh(bc->Group());
+
+  mInPermitUnloadPrompt = true;
+
+  bool done = false;
+  wgc->SendCheckPermitUnload(
+      foundBlocker, aAction,
+      [&](bool aPermit) {
+        done = true;
+        *aPermitUnload = aPermit;
+      },
+      [&](auto) {
+        
+        
+        
+        
+        
+        
+        
+        
+        done = true;
+        *aPermitUnload = false;
+      });
+
+  SpinEventLoopUntil([&]() { return done; });
+
+  mInPermitUnloadPrompt = false;
   return NS_OK;
 }
 
