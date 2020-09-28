@@ -46,6 +46,7 @@ struct CompilationGCOutput;
 class ScriptStencil;
 class RegExpStencil;
 class BigIntStencil;
+class StencilXDR;
 
 using BaseParserScopeData = AbstractBaseScopeData<const ParserAtom>;
 
@@ -84,6 +85,8 @@ FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
 
 
 class RegExpStencil {
+  friend class StencilXDR;
+
   UniqueTwoByteChars buf_;
   size_t length_ = 0;
   JS::RegExpFlags flags_;
@@ -114,6 +117,8 @@ class RegExpStencil {
 
 
 class BigIntStencil {
+  friend class StencilXDR;
+
   UniqueTwoByteChars buf_;
   size_t length_ = 0;
 
@@ -151,15 +156,17 @@ class BigIntStencil {
 };
 
 class ScopeStencil {
+  friend class StencilXDR;
+
   
   
   mozilla::Maybe<ScopeIndex> enclosing_;
 
   
-  ScopeKind kind_;
+  ScopeKind kind_{UINT8_MAX};
 
   
-  uint32_t firstFrameSlot_;
+  uint32_t firstFrameSlot_ = UINT32_MAX;
 
   
   
@@ -169,7 +176,7 @@ class ScopeStencil {
   mozilla::Maybe<FunctionIndex> functionIndex_;
 
   
-  bool isArrow_;
+  bool isArrow_ = false;
 
   
   
@@ -177,6 +184,9 @@ class ScopeStencil {
   js::UniquePtr<BaseParserScopeData> data_;
 
  public:
+  
+  ScopeStencil() = default;
+
   ScopeStencil(ScopeKind kind, mozilla::Maybe<ScopeIndex> enclosing,
                uint32_t firstFrameSlot,
                mozilla::Maybe<uint32_t> numEnvironmentSlots,
@@ -190,6 +200,8 @@ class ScopeStencil {
         functionIndex_(functionIndex),
         isArrow_(isArrow),
         data_(data) {}
+
+  js::UniquePtr<BaseParserScopeData>& data() { return data_; }
 
   static bool createForFunctionScope(JSContext* cx, CompilationStencil& stencil,
                                      ParserFunctionScopeData* dataArg,
@@ -335,6 +347,9 @@ class StencilModuleEntry {
       : lineno(lineno), column(column) {}
 
  public:
+  
+  StencilModuleEntry() = default;
+
   static StencilModuleEntry moduleRequest(const ParserAtom* specifier,
                                           uint32_t lineno, uint32_t column) {
     MOZ_ASSERT(specifier);
