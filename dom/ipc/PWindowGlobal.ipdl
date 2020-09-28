@@ -123,10 +123,6 @@ parent:
   async SetIsInitialDocument(bool aIsInitialDocument);
 
   
-  
-  async SetHasBeforeUnload(bool aHasBeforeUnload);
-
-  
   async Share(IPCWebShareData aData) returns (nsresult rv);
 
   
