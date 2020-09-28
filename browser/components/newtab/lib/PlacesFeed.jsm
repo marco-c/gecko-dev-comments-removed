@@ -279,9 +279,6 @@ class PlacesFeed {
     const params = {
       private: isPrivate,
       targetBrowser: action._target.browser,
-      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
-        {}
-      ),
     };
 
     
@@ -303,13 +300,29 @@ class PlacesFeed {
     const urlToOpen =
       action.data.type === "pocket" ? action.data.open_url : action.data.url;
 
+    try {
+      let uri = Services.io.newURI(urlToOpen);
+      if (!["http", "https"].includes(uri.scheme)) {
+        throw new Error(
+          `Can't open link using ${uri.scheme} protocol from the new tab page.`
+        );
+      }
+    } catch (e) {
+      Cu.reportError(e);
+      return;
+    }
+
     
     if (typedBonus) {
       PlacesUtils.history.markPageAsTyped(Services.io.newURI(urlToOpen));
     }
 
     const win = action._target.browser.ownerGlobal;
-    win.openLinkIn(urlToOpen, where || win.whereToOpenLink(event), params);
+    win.openTrustedLinkIn(
+      urlToOpen,
+      where || win.whereToOpenLink(event),
+      params
+    );
 
     
     
