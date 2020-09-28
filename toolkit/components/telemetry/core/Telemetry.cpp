@@ -1155,10 +1155,10 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
   {
     auto lock = sTelemetry.Lock();
     *lock = telemetry;
+    
+    NS_ADDREF(telemetry);
   }
 
-  
-  NS_ADDREF(telemetry);
   
   nsCOMPtr<nsITelemetry> ret = telemetry;
 
