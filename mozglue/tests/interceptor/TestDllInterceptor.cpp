@@ -731,6 +731,7 @@ struct TestCase {
     
     TestCase("NearJump", NoStubAddressCheck),
     TestCase("OpcodeFF", NoStubAddressCheck),
+    TestCase("IndirectCall", NoStubAddressCheck),
 #    elif defined(_M_IX86)
     
     TestCase("PushRet", NoStubAddressCheck),
