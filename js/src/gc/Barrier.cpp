@@ -103,15 +103,15 @@ AutoTouchingGrayThings::~AutoTouchingGrayThings() {
 
 #endif  
 
- void InternalBarrierMethods<Value>::readBarrier(const Value& v) {
+void gc::ValueReadBarrier(const Value& v) {
   ApplyGCThingTyped(v, [](auto t) { t->readBarrier(t); });
 }
 
- void InternalBarrierMethods<Value>::preBarrier(const Value& v) {
+void gc::ValuePreWriteBarrier(const Value& v) {
   ApplyGCThingTyped(v, [](auto t) { t->preWriteBarrier(t); });
 }
 
- void InternalBarrierMethods<jsid>::preBarrier(jsid id) {
+void gc::IdPreWriteBarrier(jsid id) {
   ApplyGCThingTyped(id, [](auto t) { t->preWriteBarrier(t); });
 }
 
