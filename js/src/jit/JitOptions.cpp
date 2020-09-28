@@ -131,9 +131,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(ion, true);
 
   
-  SET_DEFAULT(typeInference, true);
-
-  
   SET_DEFAULT(warpBuilder, false);
 
   
@@ -350,7 +347,6 @@ void DefaultJitOptions::setFastWarmUp() {
 
 void DefaultJitOptions::setWarpEnabled(bool enable) {
   
-  typeInference = !enable;
   warpBuilder = enable;
   disableOptimizationLevels = enable;
   normalIonWarmUpThreshold = enable ? 1500 : 1000;
