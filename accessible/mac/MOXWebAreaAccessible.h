@@ -48,11 +48,11 @@ using namespace mozilla::a11y;
 @interface MOXSearchInfo : NSObject {
   
   
-  AccessibleOrProxy mWebArea;
+  MOXWebAreaAccessible* mWebArea;
 
   
   
-  AccessibleOrProxy mStartElem;
+  MOXAccessibleBase* mStartElem;
 
   
   int mResultLimit;
@@ -68,7 +68,9 @@ using namespace mozilla::a11y;
 }
 
 - (id)initWithParameters:(NSDictionary*)params
-                 andRoot:(mozilla::a11y::AccessibleOrProxy)root;
+                 andRoot:(MOXWebAreaAccessible*)root;
+
+- (AccessibleOrProxy)startGeckoAccessible;
 
 - (NSMutableArray*)getMatchesForRule:(PivotRule&)rule;
 
