@@ -1516,14 +1516,26 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   nscoord transferredSizeSuggestion = nscoord_MAX;
-  if (aFlexItem.IntrinsicRatio()) {
+  const StyleAspectRatio& aspectRatio =
+      aFlexItem.Frame()->StylePosition()->mAspectRatio;
+  AspectRatio ratio;
+  if (!aspectRatio.auto_) {
+    
+    
+    
+    ratio = aspectRatio.ratio.AsRatio().ToLayoutRatio();
+  } else if (aFlexItem.HasIntrinsicRatio()) {
+    ratio = aFlexItem.IntrinsicRatio();
+  }
+
+  if (ratio) {
     
     const bool useMinSizeIfCrossSizeIsIndefinite = true;
     nscoord crossSizeToUseWithRatio = CrossSizeToUseWithRatio(
         aFlexItem, aItemReflowInput, useMinSizeIfCrossSizeIsIndefinite,
         aAxisTracker);
-    transferredSizeSuggestion = MainSizeFromAspectRatio(
-        crossSizeToUseWithRatio, aFlexItem.IntrinsicRatio(), aAxisTracker);
+    transferredSizeSuggestion =
+        MainSizeFromAspectRatio(crossSizeToUseWithRatio, ratio, aAxisTracker);
   }
 
   return std::min(specifiedSizeSuggestion, transferredSizeSuggestion);
