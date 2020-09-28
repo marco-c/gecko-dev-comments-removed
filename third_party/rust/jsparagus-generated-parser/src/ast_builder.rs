@@ -3881,7 +3881,7 @@ impl<'alloc> AstBuilder<'alloc> {
     
     pub fn method_definition(
         &mut self,
-        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        name: arena::Box<'alloc, ClassElementName<'alloc>>,
         param_open_token: arena::Box<'alloc, Token>,
         mut params: arena::Box<'alloc, FormalParameters<'alloc>>,
         param_close_token: arena::Box<'alloc, Token>,
@@ -3915,7 +3915,7 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn getter(
         &self,
         get_token: arena::Box<'alloc, Token>,
-        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        name: arena::Box<'alloc, ClassElementName<'alloc>>,
         body_open_token: arena::Box<'alloc, Token>,
         mut body: arena::Box<'alloc, FunctionBody<'alloc>>,
         body_close_token: arena::Box<'alloc, Token>,
@@ -3935,7 +3935,7 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn setter(
         &mut self,
         set_token: arena::Box<'alloc, Token>,
-        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        name: arena::Box<'alloc, ClassElementName<'alloc>>,
         param_open_token: arena::Box<'alloc, Token>,
         mut parameter: arena::Box<'alloc, Parameter<'alloc>>,
         param_close_token: arena::Box<'alloc, Token>,
@@ -3967,7 +3967,7 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn generator_method(
         &mut self,
         generator_token: arena::Box<'alloc, Token>,
-        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        name: arena::Box<'alloc, ClassElementName<'alloc>>,
         param_open_token: arena::Box<'alloc, Token>,
         mut params: arena::Box<'alloc, FormalParameters<'alloc>>,
         param_close_token: arena::Box<'alloc, Token>,
@@ -4033,7 +4033,7 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn async_generator_method(
         &mut self,
         async_token: arena::Box<'alloc, Token>,
-        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        name: arena::Box<'alloc, ClassElementName<'alloc>>,
         param_open_token: arena::Box<'alloc, Token>,
         mut params: arena::Box<'alloc, FormalParameters<'alloc>>,
         param_close_token: arena::Box<'alloc, Token>,
@@ -4248,7 +4248,7 @@ impl<'alloc> AstBuilder<'alloc> {
     pub fn async_method(
         &mut self,
         async_token: arena::Box<'alloc, Token>,
-        name: arena::Box<'alloc, PropertyName<'alloc>>,
+        name: arena::Box<'alloc, ClassElementName<'alloc>>,
         param_open_token: arena::Box<'alloc, Token>,
         mut params: arena::Box<'alloc, FormalParameters<'alloc>>,
         param_close_token: arena::Box<'alloc, Token>,
