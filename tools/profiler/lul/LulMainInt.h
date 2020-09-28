@@ -14,6 +14,8 @@
 #include <vector>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/HashFunctions.h"
+#include "mozilla/HashTable.h"
 
 
 
@@ -161,7 +163,45 @@ struct LExpr {
         MOZ_ASSERT(reg == 0 && offset >= 0);
         break;
       default:
-        MOZ_ASSERT(0, "LExpr::LExpr: invalid how");
+        MOZ_RELEASE_ASSERT(0, "LExpr::LExpr: invalid how");
+    }
+  }
+
+  
+  mozilla::HashNumber hash() const {
+    mozilla::HashNumber h = mHow;
+    switch (mHow) {
+      case UNKNOWN:
+        break;
+      case NODEREF:
+      case DEREF:
+        h = mozilla::AddToHash(h, mReg);
+        h = mozilla::AddToHash(h, mOffset);
+        break;
+      case PFXEXPR:
+        h = mozilla::AddToHash(h, mOffset);
+        break;
+      default:
+        MOZ_RELEASE_ASSERT(0, "LExpr::hash: invalid how");
+    }
+    return h;
+  }
+
+  
+  bool equals(const LExpr& other) const {
+    if (mHow != other.mHow) {
+      return false;
+    }
+    switch (mHow) {
+      case UNKNOWN:
+        return true;
+      case NODEREF:
+      case DEREF:
+        return mReg == other.mReg && mOffset == other.mOffset;
+      case PFXEXPR:
+        return mOffset == other.mOffset;
+      default:
+        MOZ_RELEASE_ASSERT(0, "LExpr::equals: invalid how");
     }
   }
 
@@ -252,16 +292,17 @@ static_assert(sizeof(LExpr) <= 8, "LExpr size changed unexpectedly");
 
 
 
+
+
+
 class RuleSet {
  public:
   RuleSet();
-  void Print(void (*aLog)(const char*)) const;
+  void Print(uintptr_t avma, uintptr_t len, void (*aLog)(const char*)) const;
 
   
   LExpr* ExprForRegno(DW_REG_NUMBER aRegno);
 
-  uintptr_t mAddr;
-  uintptr_t mLen;
   
   LExpr mCfaExpr;
   
@@ -288,6 +329,59 @@ class RuleSet {
 #else
 #  error "Unknown arch"
 #endif
+
+  
+  typedef RuleSet Lookup;
+
+  static mozilla::HashNumber hash(RuleSet rs) {
+    mozilla::HashNumber h = rs.mCfaExpr.hash();
+#if defined(GP_ARCH_amd64) || defined(GP_ARCH_x86)
+    h = mozilla::AddToHash(h, rs.mXipExpr.hash());
+    h = mozilla::AddToHash(h, rs.mXspExpr.hash());
+    h = mozilla::AddToHash(h, rs.mXbpExpr.hash());
+#elif defined(GP_ARCH_arm)
+    h = mozilla::AddToHash(h, rs.mR15expr.hash());
+    h = mozilla::AddToHash(h, rs.mR14expr.hash());
+    h = mozilla::AddToHash(h, rs.mR13expr.hash());
+    h = mozilla::AddToHash(h, rs.mR12expr.hash());
+    h = mozilla::AddToHash(h, rs.mR11expr.hash());
+    h = mozilla::AddToHash(h, rs.mR7expr.hash());
+#elif defined(GP_ARCH_arm64)
+    h = mozilla::AddToHash(h, rs.mX29expr.hash());
+    h = mozilla::AddToHash(h, rs.mX30expr.hash());
+    h = mozilla::AddToHash(h, rs.mSPexpr.hash());
+#elif defined(GP_ARCH_mips64)
+    h = mozilla::AddToHash(h, rs.mPCexpr.hash());
+    h = mozilla::AddToHash(h, rs.mFPexpr.hash());
+    h = mozilla::AddToHash(h, rs.mSPexpr.hash());
+#else
+#  error "Unknown arch"
+#endif
+    return h;
+  }
+
+  static bool match(const RuleSet& rs1, const RuleSet& rs2) {
+    return rs1.mCfaExpr.equals(rs2.mCfaExpr) &&
+#if defined(GP_ARCH_amd64) || defined(GP_ARCH_x86)
+           rs1.mXipExpr.equals(rs2.mXipExpr) &&
+           rs1.mXspExpr.equals(rs2.mXspExpr) &&
+           rs1.mXbpExpr.equals(rs2.mXbpExpr);
+#elif defined(GP_ARCH_arm)
+           rs1.mR15expr.equals(rs2.mR15expr) &&
+           rs1.mR14expr.equals(rs2.mR14expr) &&
+           rs1.mR13expr.equals(rs2.mR13expr) &&
+           rs1.mR12expr.equals(rs2.mR12expr) &&
+           rs1.mR11expr.equals(rs2.mR11expr) && rs1.mR7expr.equals(rs2.mR7expr);
+#elif defined(GP_ARCH_arm64)
+           rs1.mX29expr.equals(rs2.mX29expr) &&
+           rs1.mX30expr.equals(rs2.mX30expr) && rs1.mSPexpr.equals(rs2.mSPexpr);
+#elif defined(GP_ARCH_mips64)
+           rs1.mPCexpr.equals(rs2.mPCexpr) && rs1.mFPexpr.equals(rs2.mFPexpr) &&
+           rs1.mSPexpr.equals(rs2.mSPexpr);
+#else
+#  error "Unknown arch"
+#endif
+  }
 };
 
 
@@ -329,6 +423,88 @@ static inline bool registerIsTracked(DW_REG_NUMBER reg) {
 
 
 
+struct Extent {
+  
+  uint32_t mOffset;
+  uint16_t mLen;
+  uint16_t mDictIx;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  Extent(uint32_t offset, uint32_t len, uint32_t dictIx) {
+    MOZ_RELEASE_ASSERT(len < (1 << 16));
+    MOZ_RELEASE_ASSERT(dictIx < (1 << 16));
+    mOffset = offset;
+    mLen = len;
+    mDictIx = dictIx;
+  }
+  uint32_t offset() const { return mOffset; }
+  uint32_t len() const { return mLen; }
+  uint32_t dictIx() const { return mDictIx; }
+  void setLen(uint32_t len) {
+    MOZ_RELEASE_ASSERT(len < (1 << 16));
+    mLen = len;
+  }
+  void Print(void (*aLog)(const char*)) const {
+    char buf[64];
+    SprintfLiteral(buf, "Extent(offs=0x%x, len=%u, dictIx=%u)", this->offset(),
+                   this->len(), this->dictIx());
+    aLog(buf);
+  }
+};
+
+static_assert(sizeof(Extent) == 8);
+
+
+
+
+
 
 
 
@@ -354,8 +530,27 @@ class SecMap {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  explicit SecMap(void (*aLog)(const char*));
+  SecMap(uintptr_t mapStartAVMA, uint32_t mapLen, void (*aLog)(const char*));
   ~SecMap();
 
   
@@ -365,7 +560,7 @@ class SecMap {
 
   
   
-  void AddRuleSet(const RuleSet* rs);
+  void AddRuleSet(const RuleSet* rs, uintptr_t avma, uintptr_t len);
 
   
   
@@ -377,18 +572,19 @@ class SecMap {
   
   
   
-  void PrepareRuleSets(uintptr_t start, size_t len);
+  
+  void PrepareRuleSets();
 
   bool IsEmpty();
 
-  size_t Size() { return mRuleSets.size(); }
+  size_t Size() { return mExtents.size() + mDictionary.size(); }
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   
   
-  uintptr_t mSummaryMinAddr;
-  uintptr_t mSummaryMaxAddr;
+  uintptr_t mMapMinAVMA;
+  uintptr_t mMapMaxAVMA;
 
  private:
   
@@ -396,7 +592,21 @@ class SecMap {
   bool mUsable;
 
   
-  vector<RuleSet> mRuleSets;
+  
+  
+  
+  
+  mozilla::UniquePtr<
+      mozilla::HashMap<RuleSet, uint32_t, RuleSet, InfallibleAllocPolicy>>
+      mUniqifier;
+
+  
+  
+  vector<RuleSet> mDictionary;
+
+  
+  
+  vector<Extent> mExtents;
 
   
   

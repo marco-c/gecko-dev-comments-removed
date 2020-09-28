@@ -127,10 +127,11 @@ string LExpr::ShowRule(const char* aNewReg) const {
   return res;
 }
 
-void RuleSet::Print(void (*aLog)(const char*)) const {
+void RuleSet::Print(uintptr_t avma, uintptr_t len,
+                    void (*aLog)(const char*)) const {
   char buf[96];
-  SprintfLiteral(buf, "[%llx .. %llx]: let ", (unsigned long long int)mAddr,
-                 (unsigned long long int)(mAddr + mLen - 1));
+  SprintfLiteral(buf, "[%llx .. %llx]: let ", (unsigned long long int)avma,
+                 (unsigned long long int)(avma + len - 1));
   string res = string(buf);
   res += mCfaExpr.ShowRule("cfa");
   res += " in";
@@ -207,9 +208,6 @@ LExpr* RuleSet::ExprForRegno(DW_REG_NUMBER aRegno) {
 }
 
 RuleSet::RuleSet() {
-  mAddr = 0;
-  mLen = 0;
-  
   
 }
 
@@ -219,10 +217,30 @@ RuleSet::RuleSet() {
 
 
 
-SecMap::SecMap(void (*aLog)(const char*))
-    : mSummaryMinAddr(1), mSummaryMaxAddr(0), mUsable(true), mLog(aLog) {}
+SecMap::SecMap(uintptr_t mapStartAVMA, uint32_t mapLen,
+               void (*aLog)(const char*))
+    : mUsable(false),
+      mUniqifier(new mozilla::HashMap<RuleSet, uint32_t, RuleSet,
+                                      InfallibleAllocPolicy>),
+      mLog(aLog) {
+  if (mapLen == 0) {
+    
+    mMapMinAVMA = 1;
+    mMapMaxAVMA = 0;
+  } else {
+    mMapMinAVMA = mapStartAVMA;
+    mMapMaxAVMA = mapStartAVMA + (uintptr_t)mapLen - 1;
+  }
+}
 
-SecMap::~SecMap() { mRuleSets.clear(); }
+SecMap::~SecMap() {
+  mExtents.clear();
+  mDictionary.clear();
+  if (mUniqifier) {
+    mUniqifier->clear();
+    mUniqifier = nullptr;
+  }
+}
 
 
 RuleSet* SecMap::FindRuleSet(uintptr_t ia) {
@@ -235,7 +253,7 @@ RuleSet* SecMap::FindRuleSet(uintptr_t ia) {
   MOZ_ASSERT(mUsable);
 
   long int lo = 0;
-  long int hi = (long int)mRuleSets.size() - 1;
+  long int hi = (long int)mExtents.size() - 1;
   while (true) {
     
     if (lo > hi) {
@@ -243,9 +261,11 @@ RuleSet* SecMap::FindRuleSet(uintptr_t ia) {
       return nullptr;
     }
     long int mid = lo + ((hi - lo) / 2);
-    RuleSet* mid_ruleSet = &mRuleSets[mid];
-    uintptr_t mid_minAddr = mid_ruleSet->mAddr;
-    uintptr_t mid_maxAddr = mid_minAddr + mid_ruleSet->mLen - 1;
+    Extent* mid_extent = &mExtents[mid];
+    uintptr_t mid_offset = mid_extent->offset();
+    uintptr_t mid_len = mid_extent->len();
+    uintptr_t mid_minAddr = mMapMinAVMA + mid_offset;
+    uintptr_t mid_maxAddr = mid_minAddr + mid_len - 1;
     if (ia < mid_minAddr) {
       hi = mid - 1;
       continue;
@@ -255,16 +275,68 @@ RuleSet* SecMap::FindRuleSet(uintptr_t ia) {
       continue;
     }
     MOZ_ASSERT(mid_minAddr <= ia && ia <= mid_maxAddr);
-    return mid_ruleSet;
+    uint32_t mid_extent_dictIx = mid_extent->dictIx();
+    MOZ_RELEASE_ASSERT(mid_extent_dictIx < mExtents.size());
+    return &mDictionary[mid_extent_dictIx];
   }
   
 }
 
 
 
-void SecMap::AddRuleSet(const RuleSet* rs) {
+void SecMap::AddRuleSet(const RuleSet* rs, uintptr_t avma, uintptr_t len) {
   mUsable = false;
-  mRuleSets.push_back(*rs);
+
+  
+  if (len == 0) {
+    return;
+  }
+
+  
+  
+  
+  if (!(avma >= mMapMinAVMA && avma + len - 1 <= mMapMaxAVMA)) {
+    return;
+  }
+
+  
+  
+  MOZ_RELEASE_ASSERT(len <= (uintptr_t)0xFFFFFFFF);
+
+  
+  
+  
+  uint32_t dictIx = 0;
+  mozilla::HashMap<RuleSet, uint32_t, RuleSet, InfallibleAllocPolicy>::AddPtr
+      p = mUniqifier->lookupForAdd(*rs);
+  if (!p) {
+    dictIx = mUniqifier->count();
+    
+    
+    MOZ_RELEASE_ASSERT(dictIx < (1 << 16));
+    
+    
+    DebugOnly<bool> addedOK = mUniqifier->add(p, *rs, dictIx);
+    MOZ_ASSERT(addedOK);
+  } else {
+    dictIx = p->value();
+  }
+
+  uint32_t offset = (uint32_t)(avma - mMapMinAVMA);
+  while (len > 0) {
+    
+    
+    
+    
+    
+    
+    
+    
+    uint32_t this_step_len = (len > 4095) ? 4095 : len;
+    mExtents.emplace_back(offset, this_step_len, dictIx);
+    offset += this_step_len;
+    len -= this_step_len;
+  }
 }
 
 
@@ -275,36 +347,60 @@ uint32_t SecMap::AddPfxInstr(PfxInstr pfxi) {
   return mPfxInstrs.size() - 1;
 }
 
-static bool CmpRuleSetsByAddrLE(const RuleSet& rs1, const RuleSet& rs2) {
-  return rs1.mAddr < rs2.mAddr;
+static bool CmpExtentsByOffsetLE(const Extent& ext1, const Extent& ext2) {
+  return ext1.offset() < ext2.offset();
 }
 
 
 
-void SecMap::PrepareRuleSets(uintptr_t aStart, size_t aLen) {
-  if (mRuleSets.empty()) {
+
+
+void SecMap::PrepareRuleSets() {
+  
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(mUniqifier);
+  MOZ_RELEASE_ASSERT(mDictionary.empty());
+
+  if (mExtents.empty()) {
+    mUniqifier->clear();
+    mUniqifier = nullptr;
     return;
   }
 
-  MOZ_ASSERT(aLen > 0);
-  if (aLen == 0) {
+  if (mMapMinAVMA == 1 && mMapMaxAVMA == 0) {
     
-    mRuleSets.clear();
+    mExtents.clear();
+    mUniqifier->clear();
+    mUniqifier = nullptr;
     return;
   }
+  MOZ_RELEASE_ASSERT(mMapMinAVMA <= mMapMaxAVMA);
 
   
-  std::sort(mRuleSets.begin(), mRuleSets.end(), CmpRuleSetsByAddrLE);
+  
+  MOZ_RELEASE_ASSERT(!mExtents.empty() && !mUniqifier->empty());
 
+#ifdef DEBUG
   
-  
-  for (size_t i = 0; i < mRuleSets.size(); ++i) {
-    RuleSet* rs = &mRuleSets[i];
-    if (rs->mLen > 0 &&
-        (rs->mAddr < aStart || rs->mAddr + rs->mLen > aStart + aLen)) {
-      rs->mLen = 0;
-    }
+  for (size_t i = 0; i < mExtents.size(); ++i) {
+    Extent* ext = &mExtents[i];
+    uint32_t len = ext->len();
+    MOZ_ASSERT(len > 0);
+    MOZ_ASSERT(len <= 4095 );
+    uint32_t offset = ext->offset();
+    uintptr_t avma = mMapMinAVMA + (uintptr_t)offset;
+    
+    
+    
+    MOZ_ASSERT(avma + (uintptr_t)len - 1 <= mMapMaxAVMA);
   }
+#endif
+
+  
+  std::sort(mExtents.begin(), mExtents.end(), CmpExtentsByOffsetLE);
 
   
   
@@ -312,7 +408,7 @@ void SecMap::PrepareRuleSets(uintptr_t aStart, size_t aLen) {
   
   while (true) {
     size_t i;
-    size_t n = mRuleSets.size();
+    size_t n = mExtents.size();
     size_t nZeroLen = 0;
 
     if (n == 0) {
@@ -320,16 +416,18 @@ void SecMap::PrepareRuleSets(uintptr_t aStart, size_t aLen) {
     }
 
     for (i = 1; i < n; ++i) {
-      RuleSet* prev = &mRuleSets[i - 1];
-      RuleSet* here = &mRuleSets[i];
-      MOZ_ASSERT(prev->mAddr <= here->mAddr);
-      if (prev->mAddr + prev->mLen > here->mAddr) {
-        prev->mLen = here->mAddr - prev->mAddr;
+      Extent* prev = &mExtents[i - 1];
+      Extent* here = &mExtents[i];
+      MOZ_ASSERT(prev->offset() <= here->offset());
+      if (prev->offset() + prev->len() > here->offset()) {
+        prev->setLen(here->offset() - prev->offset());
       }
-      if (prev->mLen == 0) nZeroLen++;
+      if (prev->len() == 0) {
+        nZeroLen++;
+      }
     }
 
-    if (mRuleSets[n - 1].mLen == 0) {
+    if (mExtents[n - 1].len() == 0) {
       nZeroLen++;
     }
 
@@ -342,53 +440,67 @@ void SecMap::PrepareRuleSets(uintptr_t aStart, size_t aLen) {
     
     size_t j = 0;  
     for (i = 0; i < n; ++i) {
-      if (mRuleSets[i].mLen == 0) {
+      if (mExtents[i].len() == 0) {
         continue;
       }
-      if (j != i) mRuleSets[j] = mRuleSets[i];
+      if (j != i) {
+        mExtents[j] = mExtents[i];
+      }
       ++j;
     }
     MOZ_ASSERT(i == n);
     MOZ_ASSERT(nZeroLen <= n);
     MOZ_ASSERT(j == n - nZeroLen);
     while (nZeroLen > 0) {
-      mRuleSets.pop_back();
+      mExtents.pop_back();
       nZeroLen--;
     }
 
-    MOZ_ASSERT(mRuleSets.size() == j);
+    MOZ_ASSERT(mExtents.size() == j);
   }
 
-  size_t n = mRuleSets.size();
+  size_t nExtents = mExtents.size();
 
 #ifdef DEBUG
   
   
-  if (n > 0) {
-    MOZ_ASSERT(mRuleSets[0].mLen > 0);
-    for (size_t i = 1; i < n; ++i) {
-      RuleSet* prev = &mRuleSets[i - 1];
-      RuleSet* here = &mRuleSets[i];
-      MOZ_ASSERT(prev->mAddr < here->mAddr);
-      MOZ_ASSERT(here->mLen > 0);
-      MOZ_ASSERT(prev->mAddr + prev->mLen <= here->mAddr);
+  if (nExtents > 0) {
+    MOZ_ASSERT(mExtents[0].len() > 0);
+    for (size_t i = 1; i < nExtents; ++i) {
+      const Extent* prev = &mExtents[i - 1];
+      const Extent* here = &mExtents[i];
+      MOZ_ASSERT(prev->offset() < here->offset());
+      MOZ_ASSERT(here->len() > 0);
+      MOZ_ASSERT(prev->offset() + prev->len() <= here->offset());
     }
   }
 #endif
 
   
-  if (n == 0) {
-    
-    mSummaryMinAddr = 1;
-    mSummaryMaxAddr = 0;
-  } else {
-    mSummaryMinAddr = mRuleSets[0].mAddr;
-    mSummaryMaxAddr = mRuleSets[n - 1].mAddr + mRuleSets[n - 1].mLen - 1;
+  size_t nUniques = mUniqifier->count();
+
+  RuleSet dummy;
+  mozilla::PodZero(&dummy);
+
+  mDictionary.reserve(nUniques);
+  for (size_t i = 0; i < nUniques; i++) {
+    mDictionary.push_back(dummy);
   }
+
+  for (auto iter = mUniqifier->iter(); !iter.done(); iter.next()) {
+    MOZ_RELEASE_ASSERT(iter.get().value() < nUniques);
+    mDictionary[iter.get().value()] = iter.get().key();
+  }
+
+  mUniqifier = nullptr;
+
   char buf[150];
-  SprintfLiteral(buf, "PrepareRuleSets: %d entries, smin/smax 0x%llx, 0x%llx\n",
-                 (int)n, (unsigned long long int)mSummaryMinAddr,
-                 (unsigned long long int)mSummaryMaxAddr);
+  SprintfLiteral(
+      buf,
+      "PrepareRuleSets: %lu extents, %lu rulesets, "
+      "avma min/max 0x%llx, 0x%llx\n",
+      (unsigned long int)nExtents, (unsigned long int)mDictionary.size(),
+      (unsigned long long int)mMapMinAVMA, (unsigned long long int)mMapMaxAVMA);
   buf[sizeof(buf) - 1] = 0;
   mLog(buf);
 
@@ -397,23 +509,30 @@ void SecMap::PrepareRuleSets(uintptr_t aStart, size_t aLen) {
 
 #if 0
   mLog("\nRulesets after preening\n");
-  for (size_t i = 0; i < mRuleSets.size(); ++i) {
-    mRuleSets[i].Print(mLog);
+  for (size_t i = 0; i < nExtents; ++i) {
+    const Extent* extent = &mExtents[i];
+    uintptr_t avma = mMapMinAVMA + (uintptr_t)extent->offset();
+    mDictionary[extent->dictIx()].Print(avma, extent->len(), mLog);
     mLog("\n");
   }
   mLog("\n");
 #endif
 }
 
-bool SecMap::IsEmpty() { return mRuleSets.empty(); }
+bool SecMap::IsEmpty() { return mExtents.empty(); }
 
 size_t SecMap::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
 
   
   
-  n += aMallocSizeOf(mRuleSets.data());
   n += aMallocSizeOf(mPfxInstrs.data());
+
+  if (mUniqifier) {
+    n += mUniqifier->shallowSizeOfIncludingThis(aMallocSizeOf);
+  }
+  n += aMallocSizeOf(mDictionary.data());
+  n += aMallocSizeOf(mExtents.data());
 
   return n;
 }
@@ -567,14 +686,14 @@ class PriMap {
     
     
     
-    MOZ_ASSERT(aSecMap->mSummaryMinAddr <= aSecMap->mSummaryMaxAddr);
+    MOZ_ASSERT(aSecMap->mMapMinAVMA <= aSecMap->mMapMaxAVMA);
 
     size_t num_secMaps = mSecMaps.size();
     uintptr_t i;
     for (i = 0; i < num_secMaps; ++i) {
       mozilla::UniquePtr<SecMap>& sm_i = mSecMaps[i];
-      MOZ_ASSERT(sm_i->mSummaryMinAddr <= sm_i->mSummaryMaxAddr);
-      if (aSecMap->mSummaryMinAddr < sm_i->mSummaryMaxAddr) {
+      MOZ_ASSERT(sm_i->mMapMinAVMA <= sm_i->mMapMaxAVMA);
+      if (aSecMap->mMapMinAVMA < sm_i->mMapMaxAVMA) {
         
         break;
       }
@@ -608,8 +727,7 @@ class PriMap {
       
       for (i = (intptr_t)num_secMaps - 1; i >= 0; i--) {
         mozilla::UniquePtr<SecMap>& sm_i = mSecMaps[i];
-        if (sm_i->mSummaryMaxAddr < avma_min ||
-            avma_max < sm_i->mSummaryMinAddr) {
+        if (sm_i->mMapMaxAVMA < avma_min || avma_max < sm_i->mMapMinAVMA) {
           
           continue;
         }
@@ -653,8 +771,8 @@ class PriMap {
       }
       long int mid = lo + ((hi - lo) / 2);
       mozilla::UniquePtr<SecMap>& mid_secMap = mSecMaps[mid];
-      uintptr_t mid_minAddr = mid_secMap->mSummaryMinAddr;
-      uintptr_t mid_maxAddr = mid_secMap->mSummaryMaxAddr;
+      uintptr_t mid_minAddr = mid_secMap->mMapMinAVMA;
+      uintptr_t mid_maxAddr = mid_secMap->mMapMaxAVMA;
       if (ia < mid_minAddr) {
         hi = mid - 1;
         continue;
@@ -766,9 +884,19 @@ void LUL::NotifyAfterMap(uintptr_t aRXavma, size_t aSize, const char* aFileName,
   mLog(buf);
 
   
+  
+  
+  
+  if (((unsigned long long int)aSize) > 0xFFFFFFFFULL) {
+    aSize = (uintptr_t)0xFFFFFFFF;
+  }
+  MOZ_RELEASE_ASSERT(aSize <= 0xFFFFFFFF);
+
+  
   if (aSize > 0) {
     
-    mozilla::UniquePtr<SecMap> smap = mozilla::MakeUnique<SecMap>(mLog);
+    mozilla::UniquePtr<SecMap> smap =
+        mozilla::MakeUnique<SecMap>(aRXavma, (uint32_t)aSize, mLog);
 
     
     if (!aMappedImage) {
@@ -782,7 +910,7 @@ void LUL::NotifyAfterMap(uintptr_t aRXavma, size_t aSize, const char* aFileName,
 
     mLog("NotifyMap .. preparing entries\n");
 
-    smap->PrepareRuleSets(aRXavma, aSize);
+    smap->PrepareRuleSets();
 
     SprintfLiteral(buf, "NotifyMap got %lld entries\n",
                    (long long int)smap->Size());
@@ -1396,7 +1524,7 @@ void LUL::Unwind( uintptr_t* aFramePCs,
     
     if (ruleset) {
       if (DEBUG_MAIN) {
-        ruleset->Print(mLog);
+        ruleset->Print(ia.Value(), 1 , mLog);
         mLog("\n");
       }
       
