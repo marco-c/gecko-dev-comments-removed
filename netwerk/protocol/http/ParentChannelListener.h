@@ -57,6 +57,10 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
   void DivertTo(nsIStreamListener* aListener);
   [[nodiscard]] nsresult SuspendForDiversion();
 
+  void SetupInterception(const nsHttpResponseHead& aResponseHead);
+  void SetupInterceptionAfterRedirect(bool aShouldIntercept);
+  void ClearInterceptedChannel(nsIStreamListener* aListener);
+
   
   void SetListenerAfterRedirect(nsIStreamListener* aListener);
 
@@ -77,6 +81,21 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
   nsCOMPtr<nsIStreamListener> mNextListener;
   
   bool mSuspendedForDiversion;
+
+  
+  
+  bool mShouldIntercept;
+  
+  bool mShouldSuspendIntercept;
+  
+  
+  
+  bool mInterceptCanceled;
+
+  UniquePtr<nsHttpResponseHead> mSynthesizedResponseHead;
+
+  
+  nsCOMPtr<nsIInterceptedChannel> mInterceptedChannel;
 
   
   
