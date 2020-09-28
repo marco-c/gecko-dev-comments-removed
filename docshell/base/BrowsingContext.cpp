@@ -2745,6 +2745,14 @@ void BrowsingContext::SetChildSHistory(ChildSHistory* aChildSHistory) {
   mFields.SetWithoutSyncing<IDX_HasSessionHistory>(true);
 }
 
+bool BrowsingContext::ShouldUpdateSessionHistory(uint32_t aLoadType) {
+  
+  
+  return nsDocShell::ShouldUpdateGlobalHistory(aLoadType) &&
+         (!(aLoadType & nsIDocShell::LOAD_CMD_RELOAD) ||
+          (IsForceReloadType(aLoadType) && IsFrame()));
+}
+
 }  
 
 namespace ipc {

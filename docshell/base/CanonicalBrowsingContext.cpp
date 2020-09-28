@@ -376,7 +376,8 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
 }
 
 void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
-                                                    const nsID& aChangeID) {
+                                                    const nsID& aChangeID,
+                                                    uint32_t aLoadType) {
   for (size_t i = 0; i < mLoadingEntries.Length(); ++i) {
     if (mLoadingEntries[i].mLoadId == aLoadId) {
       nsISHistory* shistory = GetSessionHistory();
@@ -405,12 +406,13 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
             [](nsISHEntry* aEntry) { aEntry->SetName(EmptyString()); });
       }
 
+      bool addEntry = ShouldUpdateSessionHistory(aLoadType);
       if (IsTop()) {
         mActiveEntry = newActiveEntry;
         if (loadFromSessionHistory) {
           
           shistory->UpdateIndex();
-        } else {
+        } else if (addEntry) {
           shistory->AddEntry(mActiveEntry,
                               true);
         }
@@ -431,24 +433,28 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
           
           
           shistory->UpdateIndex();
-        } else if (oldActiveEntry) {
-          
-          
-          shistory->AddChildSHEntryHelper(oldActiveEntry, newActiveEntry, Top(),
-                                          true);
-          mActiveEntry = newActiveEntry;
-        } else {
-          SessionHistoryEntry* parentEntry =
-              static_cast<CanonicalBrowsingContext*>(GetParent())->mActiveEntry;
-          
-          
-          if (parentEntry) {
+        } else if (addEntry) {
+          if (oldActiveEntry) {
+            
+            
+            
+            shistory->AddChildSHEntryHelper(oldActiveEntry, newActiveEntry,
+                                            Top(), true);
             mActiveEntry = newActiveEntry;
+          } else {
+            SessionHistoryEntry* parentEntry =
+                static_cast<CanonicalBrowsingContext*>(GetParent())
+                    ->mActiveEntry;
             
             
-            
-            parentEntry->AddChild(mActiveEntry, Children().Length() - 1,
-                                  IsInProcess());
+            if (parentEntry) {
+              mActiveEntry = newActiveEntry;
+              
+              
+              
+              parentEntry->AddChild(mActiveEntry, Children().Length() - 1,
+                                    IsInProcess());
+            }
           }
         }
       }
