@@ -165,7 +165,15 @@ var PrintUtils = {
 
 
 
-  async _openTabModalPrint(aBrowsingContext, aExistingPreviewBrowser) {
+
+
+
+
+  async _openTabModalPrint(
+    aBrowsingContext,
+    aExistingPreviewBrowser,
+    aPrintInitiationTime
+  ) {
     let sourceBrowser = aBrowsingContext.top.embedderElement;
     let previewBrowser = this.getPreviewBrowser(sourceBrowser);
     if (previewBrowser) {
@@ -186,7 +194,7 @@ var PrintUtils = {
     });
     let dialogBox = gBrowser.getTabDialogBox(sourceBrowser);
     return dialogBox.open(
-      `chrome://global/content/print.html?browsingContextId=${aBrowsingContext.id}`,
+      `chrome://global/content/print.html?browsingContextId=${aBrowsingContext.id}&printInitiationTime=${aPrintInitiationTime}`,
       { features: "resizable=no", sizeTo: "available" },
       args
     );
@@ -206,6 +214,7 @@ var PrintUtils = {
 
 
   startPrintWindow(aBrowsingContext, aOpenWindowInfo) {
+    const printInitiationTime = Date.now();
     let browser = null;
     if (aOpenWindowInfo) {
       browser = document.createXULElement("browser");
@@ -236,7 +245,11 @@ var PrintUtils = {
       !PRINT_ALWAYS_SILENT &&
       (!aOpenWindowInfo || aOpenWindowInfo.isForPrintPreview)
     ) {
-      this._openTabModalPrint(aBrowsingContext, browser).catch(() => {});
+      this._openTabModalPrint(
+        aBrowsingContext,
+        browser,
+        printInitiationTime
+      ).catch(() => {});
       return browser;
     }
 
@@ -344,7 +357,11 @@ var PrintUtils = {
 
   printPreview(aListenerObj) {
     if (PRINT_TAB_MODAL) {
-      return this._openTabModalPrint(gBrowser.selectedBrowser.browsingContext);
+      return this._openTabModalPrint(
+        gBrowser.selectedBrowser.browsingContext,
+         undefined,
+        Date.now()
+      );
     }
 
     
