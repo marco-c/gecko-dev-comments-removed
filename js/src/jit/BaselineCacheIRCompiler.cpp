@@ -3183,8 +3183,7 @@ void BaselineCacheIRCompiler::storeThis(const T& newThis, Register argcReg,
 
 
 void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
-                                         Register scratch, CallFlags flags,
-                                         LiveGeneralRegisterSet liveNonGCRegs) {
+                                         Register scratch, CallFlags flags) {
   MOZ_ASSERT(flags.isConstructing());
 
   if (flags.needsUninitializedThis()) {
@@ -3195,6 +3194,9 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   size_t depth = STUB_FRAME_SIZE;
 
   
+  LiveGeneralRegisterSet liveNonGCRegs;
+  liveNonGCRegs.add(argcReg);
+  liveNonGCRegs.add(ICStubReg);
   masm.PushRegsInMask(liveNonGCRegs);
   depth += sizeof(uintptr_t) * liveNonGCRegs.set().size();
 
@@ -3294,10 +3296,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
   }
 
   if (isConstructing) {
-    LiveGeneralRegisterSet liveNonGCRegs;
-    liveNonGCRegs.add(argcReg);
-    liveNonGCRegs.add(ICStubReg);
-    createThis(argcReg, calleeReg, scratch, flags, liveNonGCRegs);
+    createThis(argcReg, calleeReg, scratch, flags);
   }
 
   pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
@@ -3383,16 +3382,16 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
     masm.switchToObjectRealm(calleeReg, scratch);
   }
 
+  Label baselineScriptDiscarded;
   if (isConstructing) {
-    LiveGeneralRegisterSet liveNonGCRegs;
-    liveNonGCRegs.add(argcReg);
-    liveNonGCRegs.add(ICStubReg);
-    liveNonGCRegs.add(codeReg);
-    createThis(argcReg, calleeReg, scratch, flags, liveNonGCRegs);
-  }
+    createThis(argcReg, calleeReg, scratch, flags);
 
-  pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
-                true);
+    
+    
+    
+    
+    masm.loadBaselineJitCodeRaw(calleeReg, codeReg, &baselineScriptDiscarded);
+  }
 
   
   Address icScriptAddr(stubAddress(icScriptOffset));
@@ -3400,6 +3399,17 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   masm.loadJSContext(scratch2);
   masm.storePtr(scratch,
                 Address(scratch2, JSContext::offsetOfInlinedICScript()));
+
+  if (isConstructing) {
+    Label skip;
+    masm.jump(&skip);
+    masm.bind(&baselineScriptDiscarded);
+    masm.loadJitCodeRaw(calleeReg, codeReg);
+    masm.bind(&skip);
+  }
+
+  pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
+                true);
 
   EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
 
