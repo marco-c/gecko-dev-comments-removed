@@ -127,6 +127,12 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
                                      WalkHistoryEntriesFunc aCallback,
                                      void* aData);
 
+  
+  
+  
+  static void WalkContiguousEntries(
+      nsISHEntry* aEntry, const std::function<void(nsISHEntry*)>& aCallback);
+
   nsTArray<nsCOMPtr<nsISHEntry>>& Entries() { return mEntries; }
 
   void RemoveEntries(nsTArray<nsID>& aIDs, int32_t aStartIndex,

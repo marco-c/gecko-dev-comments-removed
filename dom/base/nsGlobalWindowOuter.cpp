@@ -2110,6 +2110,8 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     }
   }
 
+  MaybeResetWindowName(aDocument);
+
   
 
 
@@ -2129,6 +2131,8 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   
   
   mDoc = aDocument;
+
+  nsDocShell::Cast(mDocShell)->MaybeRestoreWindowName();
 
   
   
@@ -7746,6 +7750,63 @@ AbstractThread* nsGlobalWindowOuter::AbstractMainThreadFor(
     return GetDocGroup()->AbstractMainThreadFor(aCategory);
   }
   return DispatcherTrait::AbstractMainThreadFor(aCategory);
+}
+
+void nsGlobalWindowOuter::MaybeResetWindowName(Document* aNewDocument) {
+  MOZ_ASSERT(aNewDocument);
+
+  if (!StaticPrefs::privacy_window_name_update_enabled()) {
+    return;
+  }
+
+  
+  
+  if (!GetBrowsingContext()->IsTopContent()) {
+    return;
+  }
+
+  
+  
+  
+
+  
+  if (!GetBrowsingContext()->GetHasLoadedNonInitialDocument()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mDoc && mDoc->NodePrincipal()->Equals(aNewDocument->NodePrincipal()) &&
+      (NS_IsAboutBlank(mDoc->GetDocumentURI()) ==
+       NS_IsAboutBlank(aNewDocument->GetDocumentURI()))) {
+    return;
+  }
+
+  
+  
+  
+
+  
+  
+  nsDocShell::Cast(mDocShell)->StoreWindowNameToSHEntries();
+
+  
+  
+
+  
+  
+  RefPtr<BrowsingContext> opener = GetOpenerBrowsingContext();
+  if (opener) {
+    return;
+  }
+
+  Unused << mBrowsingContext->SetName(EmptyString());
 }
 
 nsGlobalWindowOuter::TemporarilyDisableDialogs::TemporarilyDisableDialogs(

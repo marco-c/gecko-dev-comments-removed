@@ -350,6 +350,18 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
       newActiveEntry->SetForInitialLoad(false);
       SessionHistoryEntry::RemoveLoadId(aLoadId);
       mLoadingEntries.RemoveElementAt(i);
+
+      
+      
+      
+      nsAutoString nameOfNewEntry;
+      newActiveEntry->GetName(nameOfNewEntry);
+      if (!nameOfNewEntry.IsEmpty()) {
+        nsSHistory::WalkContiguousEntries(
+            newActiveEntry,
+            [](nsISHEntry* aEntry) { aEntry->SetName(EmptyString()); });
+      }
+
       if (IsTop()) {
         mActiveEntry = newActiveEntry;
         if (loadFromSessionHistory) {
