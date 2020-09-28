@@ -1949,7 +1949,8 @@ AttachDecision GetPropIRGenerator::tryAttachFunction(HandleObject obj,
     return AttachDecision::NoAction;
   }
 
-  if (!JSID_IS_ATOM(id, cx_->names().length)) {
+  bool isLength = JSID_IS_ATOM(id, cx_->names().length);
+  if (!isLength && !JSID_IS_ATOM(id, cx_->names().name)) {
     return AttachDecision::NoAction;
   }
 
@@ -1962,30 +1963,54 @@ AttachDecision GetPropIRGenerator::tryAttachFunction(HandleObject obj,
 
   JSFunction* fun = &obj->as<JSFunction>();
 
-  
-  if (fun->hasResolvedLength()) {
-    return AttachDecision::NoAction;
-  }
+  if (isLength) {
+    
+    if (fun->hasResolvedLength()) {
+      return AttachDecision::NoAction;
+    }
 
-  
-  if (!fun->hasBytecode()) {
-    return AttachDecision::NoAction;
-  }
+    
+    if (!fun->hasBytecode()) {
+      return AttachDecision::NoAction;
+    }
 
-  
-  if (fun->isBoundFunction()) {
-    constexpr auto lengthSlot = FunctionExtended::BOUND_FUNCTION_LENGTH_SLOT;
-    if (!fun->getExtendedSlot(lengthSlot).isInt32()) {
+    
+    if (fun->isBoundFunction()) {
+      constexpr auto lengthSlot = FunctionExtended::BOUND_FUNCTION_LENGTH_SLOT;
+      if (!fun->getExtendedSlot(lengthSlot).isInt32()) {
+        return AttachDecision::NoAction;
+      }
+    }
+  } else {
+    
+    if (fun->hasResolvedName()) {
+      return AttachDecision::NoAction;
+    }
+
+    
+    
+    if (fun->isBoundFunction() && !fun->hasBoundFunctionNamePrefix()) {
       return AttachDecision::NoAction;
     }
   }
 
   maybeEmitIdGuard(id);
   writer.guardClass(objId, GuardClassKind::JSFunction);
-  writer.loadFunctionLengthResult(objId);
-  writer.returnFromIC();
+  if (isLength) {
+    writer.loadFunctionLengthResult(objId);
 
-  trackAttached("FunctionLength");
+    
+    writer.returnFromIC();
+
+    trackAttached("FunctionLength");
+  } else {
+    writer.loadFunctionNameResult(objId);
+
+    
+    writer.returnFromIC();
+
+    trackAttached("FunctionName");
+  }
   return AttachDecision::Attach;
 }
 
