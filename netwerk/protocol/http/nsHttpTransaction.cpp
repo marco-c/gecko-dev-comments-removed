@@ -2180,9 +2180,9 @@ void nsHttpTransaction::ReleaseBlockingTransaction() {
 void nsHttpTransaction::DisableSpdy() {
   mCaps |= NS_HTTP_DISALLOW_SPDY;
   if (mConnInfo) {
-    
-    
-    mConnInfo->SetNoSpdy(true);
+    RefPtr<nsHttpConnectionInfo> connInfo = mConnInfo->Clone();
+    connInfo->SetNoSpdy(true);
+    mConnInfo.swap(connInfo);
   }
 }
 
