@@ -32,3 +32,8 @@
 .conditional-breakpoint-panel .CodeMirror {
   margin: 6px 10px;
 }
+
+.conditional-breakpoint-panel .CodeMirror pre.CodeMirror-placeholder {
+  
+  color: var(--theme-text-color-alt);
+}
