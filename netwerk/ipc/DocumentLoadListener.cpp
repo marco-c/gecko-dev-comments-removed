@@ -732,20 +732,6 @@ auto DocumentLoadListener::OpenInParent(nsDocShellLoadState* aLoadState,
 
   
   
-  
-  auto loadType = aLoadState->LoadType();
-  if (loadType == LOAD_HISTORY || loadType == LOAD_RELOAD_NORMAL ||
-      loadType == LOAD_RELOAD_CHARSET_CHANGE ||
-      loadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE ||
-      loadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE) {
-    LOG(
-        ("DocumentLoadListener::OpenInParent failed because of history "
-         "load"));
-    return nullptr;
-  }
-
-  
-  
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(*aLoadState);
   loadState->CalculateLoadURIFlags();
 
@@ -755,8 +741,19 @@ auto DocumentLoadListener::OpenInParent(nsDocShellLoadState* aLoadState,
           ? nsDOMNavigationTiming::DocShellState::eActive
           : nsDOMNavigationTiming::DocShellState::eInactive);
 
-  
+  const mozilla::dom::LoadingSessionHistoryInfo* loadingInfo =
+      loadState->GetLoadingSessionHistoryInfo();
+
   uint32_t cacheKey = 0;
+  auto loadType = aLoadState->LoadType();
+  if (loadType == LOAD_HISTORY || loadType == LOAD_RELOAD_NORMAL ||
+      loadType == LOAD_RELOAD_CHARSET_CHANGE ||
+      loadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE ||
+      loadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE) {
+    if (loadingInfo) {
+      cacheKey = loadingInfo->mInfo.GetCacheKey();
+    }
+  }
 
   
   
@@ -776,7 +773,8 @@ auto DocumentLoadListener::OpenInParent(nsDocShellLoadState* aLoadState,
       CreateDocumentLoadInfo(browsingContext, aLoadState);
 
   nsLoadFlags loadFlags = loadState->CalculateChannelLoadFlags(
-      browsingContext, Nothing(), Nothing());
+      browsingContext,
+      Some(loadingInfo && loadingInfo->mInfo.GetURIWasModified()), Nothing());
 
   nsresult rv;
   return Open(loadState, loadInfo, loadFlags, cacheKey, channelId,
