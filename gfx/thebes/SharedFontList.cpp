@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "SharedFontList-impl.h"
 #include "gfxPlatformFontList.h"
@@ -24,15 +24,15 @@ static double WSSDistance(const Face* aFace, const gfxFontStyle& aStyle) {
   double styleDist = StyleDistance(aFace->mStyle, aStyle.style);
   double weightDist = WeightDistance(aFace->mWeight, aStyle.weight);
 
-  // Sanity-check that the distances are within the expected range
-  // (update if implementation of the distance functions is changed).
+  
+  
   MOZ_ASSERT(stretchDist >= 0.0 && stretchDist <= 2000.0);
   MOZ_ASSERT(styleDist >= 0.0 && styleDist <= 500.0);
   MOZ_ASSERT(weightDist >= 0.0 && weightDist <= 1600.0);
 
-  // weight/style/stretch priority: stretch >> style >> weight
-  // so we multiply the stretch and style values to make them dominate
-  // the result
+  
+  
+  
   return stretchDist * kStretchFactor + styleDist * kStyleFactor +
          weightDist * kWeightFactor;
 }
@@ -42,22 +42,22 @@ void* Pointer::ToPtr(FontList* aFontList) const {
     return nullptr;
   }
   uint32_t block = Block();
-  // If the Pointer refers to a block we have not yet mapped in this process,
-  // we first need to retrieve new block handle(s) from the parent and update
-  // our mBlocks list.
+  
+  
+  
   if (block >= aFontList->mBlocks.Length()) {
     if (XRE_IsParentProcess()) {
-      // Shouldn't happen! A content process tried to pass a bad Pointer?
+      
       return nullptr;
     }
-    // UpdateShmBlocks can fail, if the parent has replaced the font list with
-    // a new generation. In that case we just return null, and whatever font
-    // the content process was trying to use will appear unusable for now. It's
-    // about to receive a notification of the new font list anyhow, at which
-    // point it will flush its caches and reflow everything, so the temporary
-    // failure of this font will be forgotten.
-    // We also return null if we're not on the main thread, as we cannot safely
-    // do the IPC messaging needed here.
+    
+    
+    
+    
+    
+    
+    
+    
     if (!NS_IsMainThread() || !aFontList->UpdateShmBlocks()) {
       return nullptr;
     }
@@ -67,8 +67,8 @@ void* Pointer::ToPtr(FontList* aFontList) const {
 }
 
 void String::Assign(const nsACString& aString, FontList* aList) {
-  // We only assign to previously-empty strings; they are never modified
-  // after initial assignment.
+  
+  
   MOZ_ASSERT(mPointer.IsNull());
   mLength = aString.Length();
   mPointer = aList->Alloc(mLength + 1);
@@ -137,19 +137,19 @@ void Face::SetCharacterMap(FontList* aList, gfxCharacterMap* aCharMap) {
 void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
   MOZ_ASSERT(XRE_IsParentProcess());
   if (mFaceCount > 0) {
-    // Already initialized!
+    
     return;
   }
 
   uint32_t count = aFaces.Length();
   bool isSimple = false;
-  // A family is "simple" (i.e. simplified style selection may be used instead
-  // of the full CSS font-matching algorithm) if there is at maximum one normal,
-  // bold, italic, and bold-italic face; in this case, they are stored at known
-  // positions in the mFaces array.
+  
+  
+  
+  
   const Face::InitData* slots[4] = {nullptr, nullptr, nullptr, nullptr};
   if (count >= 2 && count <= 4) {
-    // Check if this can be treated as a "simple" family
+    
     isSimple = true;
     for (const auto& f : aFaces) {
       if (!f.mWeight.IsSingle() || !f.mStretch.IsSingle() ||
@@ -161,7 +161,7 @@ void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
         isSimple = false;
         break;
       }
-      // Figure out which slot (0-3) this face belongs in
+      
       size_t slot = 0;
       static_assert((kBoldMask | kItalicMask) == 0b11, "bad bold/italic bits");
       if (f.mWeight.Min().IsBold()) {
@@ -171,20 +171,20 @@ void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
         slot |= kItalicMask;
       }
       if (slots[slot]) {
-        // More than one face mapped to the same slot - not a simple family!
+        
         isSimple = false;
         break;
       }
       slots[slot] = &f;
     }
     if (isSimple) {
-      // Ensure all 4 slots will exist, even if some are empty.
+      
       count = 4;
     }
   }
 
-  // Allocate space for the face records, and initialize them.
-  // coverity[suspicious_sizeof]
+  
+  
   Pointer p = aList->Alloc(count * sizeof(Pointer));
   auto facePtrs = static_cast<Pointer*>(p.ToPtr(aList));
   for (size_t i = 0; i < count; i++) {
@@ -235,53 +235,53 @@ void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
     return;
   }
 
-  // If the family has only one face, we simply return it; no further
-  // checking needed.
+  
+  
   if (NumFaces() == 1) {
     MOZ_ASSERT(!facePtrs[0].IsNull());
     aFaceList.AppendElement(static_cast<Face*>(facePtrs[0].ToPtr(aList)));
     return;
   }
 
-  // Most families are "simple", having just Regular/Bold/Italic/BoldItalic,
-  // or some subset of these. In this case, we have exactly 4 entries in
-  // mAvailableFonts, stored in the above order; note that some of the entries
-  // may be nullptr. We can then pick the required entry based on whether the
-  // request is for bold or non-bold, italic or non-italic, without running the
-  // more complex matching algorithm used for larger families with many weights
-  // and/or widths.
+  
+  
+  
+  
+  
+  
+  
 
   if (mIsSimple) {
-    // Family has no more than the "standard" 4 faces, at fixed indexes;
-    // calculate which one we want.
-    // Note that we cannot simply return it as not all 4 faces are necessarily
-    // present.
+    
+    
+    
+    
     bool wantBold = aStyle.weight >= FontWeight(600);
     bool wantItalic = !aStyle.style.IsNormal();
     uint8_t faceIndex =
         (wantItalic ? kItalicMask : 0) | (wantBold ? kBoldMask : 0);
 
-    // if the desired style is available, return it directly
+    
     Face* face = static_cast<Face*>(facePtrs[faceIndex].ToPtr(aList));
     if (face && face->HasValidDescriptor()) {
       aFaceList.AppendElement(face);
       return;
     }
 
-    // order to check fallback faces in a simple family, depending on requested
-    // style
+    
+    
     static const uint8_t simpleFallbacks[4][3] = {
         {kBoldFaceIndex, kItalicFaceIndex,
-         kBoldItalicFaceIndex},  // fallback sequence for Regular
-        {kRegularFaceIndex, kBoldItalicFaceIndex, kItalicFaceIndex},  // Bold
-        {kBoldItalicFaceIndex, kRegularFaceIndex, kBoldFaceIndex},    // Italic
-        {kItalicFaceIndex, kBoldFaceIndex, kRegularFaceIndex}  // BoldItalic
+         kBoldItalicFaceIndex},  
+        {kRegularFaceIndex, kBoldItalicFaceIndex, kItalicFaceIndex},  
+        {kBoldItalicFaceIndex, kRegularFaceIndex, kBoldFaceIndex},    
+        {kItalicFaceIndex, kBoldFaceIndex, kRegularFaceIndex}  
     };
     const uint8_t* order = simpleFallbacks[faceIndex];
 
     for (uint8_t trial = 0; trial < 3; ++trial) {
-      // check remaining faces in order of preference to find the first that
-      // actually exists
+      
+      
       face = static_cast<Face*>(facePtrs[order[trial]].ToPtr(aList));
       if (face && face->HasValidDescriptor()) {
         aFaceList.AppendElement(face);
@@ -289,30 +289,30 @@ void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
       }
     }
 
-    // We can only reach here if we failed to resolve the face pointer, which
-    // can happen if we're on a stylo thread and caught the font list being
-    // updated; in that case we just fail quietly and let font fallback do
-    // something for the time being.
+    
+    
+    
+    
     return;
   }
 
-  // Pick the font(s) that are closest to the desired weight, style, and
-  // stretch. Iterate over all fonts, measuring the weight/style distance.
-  // Because of unicode-range values, there may be more than one font for a
-  // given but the 99% use case is only a single font entry per
-  // weight/style/stretch distance value. To optimize this, only add entries
-  // to the matched font array when another entry already has the same
-  // weight/style/stretch distance and add the last matched font entry. For
-  // normal platform fonts with a single font entry for each
-  // weight/style/stretch combination, only the last matched font entry will
-  // be added.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   double minDistance = INFINITY;
   Face* matched = nullptr;
   for (uint32_t i = 0; i < NumFaces(); i++) {
     Face* face = static_cast<Face*>(facePtrs[i].ToPtr(aList));
     if (face) {
-      // weight/style/stretch priority: stretch >> style >> weight
+      
       double distance = WSSDistance(face, aStyle);
       if (distance < minDistance) {
         matched = face;
@@ -347,12 +347,12 @@ void Family::SearchAllFontsForChar(FontList* aList,
   const SharedBitSet* charmap =
       static_cast<const SharedBitSet*>(mCharacterMap.ToPtr(aList));
   if (!charmap) {
-    // If the face list is not yet initialized, or if character maps have
-    // not been loaded, go ahead and do this now (by sending a message to the
-    // parent process, if we're running in a child).
-    // After this, all faces should have their mCharacterMap set up, and the
-    // family's mCharacterMap should also be set; but in the code below we
-    // don't assume this all succeeded, so it still checks.
+    
+    
+    
+    
+    
+    
     if (!gfxPlatformFontList::PlatformFontList()->InitializeFamily(this,
                                                                    true)) {
       return;
@@ -364,7 +364,7 @@ void Family::SearchAllFontsForChar(FontList* aList,
   }
 
   uint32_t numFaces = NumFaces();
-  uint32_t charMapsLoaded = 0;  // number of faces whose charmap is loaded
+  uint32_t charMapsLoaded = 0;  
   Pointer* facePtrs = Faces(aList);
   if (!facePtrs) {
     return;
@@ -375,22 +375,22 @@ void Family::SearchAllFontsForChar(FontList* aList,
       continue;
     }
     MOZ_ASSERT(face->HasValidDescriptor());
-    // Get the face's character map, if available (may be null!)
+    
     charmap =
         static_cast<const SharedBitSet*>(face->mCharacterMap.ToPtr(aList));
     if (charmap) {
       ++charMapsLoaded;
     }
-    // Check style distance if the char is supported, or if charmap not known
-    // (so that we don't trigger cmap-loading for faces that would be a worse
-    // match than what we've already found).
+    
+    
+    
     if (!charmap || charmap->test(aMatchData->mCh)) {
       double distance = WSSDistance(face, aMatchData->mStyle);
       if (distance < aMatchData->mMatchDistance) {
-        // It's a better style match: get a fontEntry, and if we haven't
-        // already checked character coverage, do it now (note that
-        // HasCharacter() will trigger loading the fontEntry's cmap, if
-        // needed).
+        
+        
+        
+        
         RefPtr<gfxFontEntry> fe =
             gfxPlatformFontList::PlatformFontList()->GetOrCreateFontEntry(face,
                                                                           this);
@@ -427,10 +427,10 @@ void Family::SearchAllFontsForChar(FontList* aList,
 
 void Family::SetFacePtrs(FontList* aList, nsTArray<Pointer>& aFaces) {
   if (aFaces.Length() >= 2 && aFaces.Length() <= 4) {
-    // Check whether the faces meet the criteria for a "simple" family: no more
-    // than one each of Regular, Bold, Italic, BoldItalic styles. If so, store
-    // them at the appropriate slots in mFaces and set the mIsSimple flag to
-    // accelerate font-matching.
+    
+    
+    
+    
     bool isSimple = true;
     Pointer slots[4] = {Pointer::Null(), Pointer::Null(), Pointer::Null(),
                         Pointer::Null()};
@@ -474,14 +474,14 @@ void Family::SetFacePtrs(FontList* aList, nsTArray<Pointer>& aFaces) {
 }
 
 void Family::SetupFamilyCharMap(FontList* aList) {
-  // Set the character map of the family to the union of all the face cmaps,
-  // to allow font fallback searches to more rapidly reject the family.
+  
+  
   if (!mCharacterMap.IsNull()) {
     return;
   }
   if (!XRE_IsParentProcess()) {
-    // |this| could be a Family record in either the Families() or Aliases()
-    // arrays
+    
+    
     dom::ContentChild::GetSingleton()->SendSetupFamilyCharMap(
         aList->GetGeneration(), aList->ToSharedPointer(this));
     return;
@@ -497,12 +497,12 @@ void Family::SetupFamilyCharMap(FontList* aList) {
   for (size_t i = 0; i < NumFaces(); i++) {
     auto f = static_cast<Face*>(faces[i].ToPtr(aList));
     if (!f) {
-      continue;  // Skip missing face (in an incomplete "simple" family)
+      continue;  
     }
     auto faceMap = static_cast<SharedBitSet*>(f->mCharacterMap.ToPtr(aList));
     if (!faceMap) {
-      continue;  // If there's a face where setting up the cmap failed, we skip
-                 // it as unusable.
+      continue;  
+                 
     }
     if (!firstMap) {
       firstMap = faceMap;
@@ -515,21 +515,21 @@ void Family::SetupFamilyCharMap(FontList* aList) {
       familyMap.Union(*faceMap);
     }
   }
-  // If we created a merged cmap, we need to save that on the family; or if we
-  // found no usable cmaps at all, we need to store the empty familyMap so that
-  // we won't repeatedly attempt this for an unusable family.
+  
+  
+  
   if (merged || firstMapShmPointer.IsNull()) {
     mCharacterMap =
         gfxPlatformFontList::PlatformFontList()->GetShmemCharMap(&familyMap);
   } else {
-    // If all [usable] faces had the same cmap, we can just share it.
+    
     mCharacterMap = firstMapShmPointer;
   }
 }
 
 FontList::FontList(uint32_t aGeneration) {
   if (XRE_IsParentProcess()) {
-    // Create the initial shared block, and initialize Header
+    
     if (AppendShmBlock(SHM_BLOCK_SIZE)) {
       Header& header = GetHeader();
       header.mBlockHeader.mAllocated = sizeof(Header);
@@ -545,13 +545,13 @@ FontList::FontList(uint32_t aGeneration) {
       MOZ_CRASH("parent: failed to initialize FontList");
     }
   } else {
-    // Initialize using the list of shmem blocks passed by the parent via
-    // SetXPCOMProcessAttributes.
+    
+    
     auto& blocks = dom::ContentChild::GetSingleton()->SharedFontListBlocks();
     for (auto handle : blocks) {
       auto newShm = MakeUnique<base::SharedMemory>();
       if (!newShm->IsHandleValid(handle)) {
-        // Bail out and let UpdateShmBlocks try to do its thing below.
+        
         break;
       }
       if (!newShm->SetHandle(handle, true)) {
@@ -571,17 +571,17 @@ FontList::FontList(uint32_t aGeneration) {
       mBlocks.AppendElement(new ShmBlock(std::move(newShm)));
     }
     blocks.Clear();
-    // Update in case of any changes since the initial message was sent.
+    
     for (unsigned retryCount = 0; retryCount < 3; ++retryCount) {
       if (UpdateShmBlocks()) {
         return;
       }
-      // The only reason for UpdateShmBlocks to fail is if the parent recreated
-      // the list after we read its first block, but before we finished getting
-      // them all, and so the generation check failed on a subsequent request.
-      // Discarding whatever we've got and retrying should get us a new,
-      // consistent set of memory blocks in this case. If this doesn't work
-      // after a couple of retries, bail out.
+      
+      
+      
+      
+      
+      
       DetachShmBlocks();
     }
     NS_WARNING("child: failed to initialize shared FontList");
@@ -630,8 +630,8 @@ void FontList::DetachShmBlocks() {
 
 FontList::ShmBlock* FontList::GetBlockFromParent(uint32_t aIndex) {
   MOZ_ASSERT(!XRE_IsParentProcess());
-  // If we have no existing blocks, we don't want a generation check yet;
-  // the header in the first block will define the generation of this list
+  
+  
   uint32_t generation = aIndex == 0 ? 0 : GetGeneration();
   base::SharedMemoryHandle handle = base::SharedMemory::NULLHandle();
   if (!dom::ContentChild::GetSingleton()->SendGetFontListShmBlock(
@@ -678,10 +678,10 @@ void FontList::ShareBlocksToProcess(nsTArray<base::SharedMemoryHandle>* aBlocks,
     base::SharedMemoryHandle* handle =
         aBlocks->AppendElement(base::SharedMemory::NULLHandle());
     if (!shmem->ShareToProcess(aPid, handle)) {
-      // If something went wrong here, we just bail out; the child will need to
-      // request the blocks as needed, at some performance cost. (Although in
-      // practice this may mean resources are so constrained the child process
-      // isn't really going to work at all. But that's not our problem here.)
+      
+      
+      
+      
       aBlocks->Clear();
       return;
     }
@@ -689,11 +689,11 @@ void FontList::ShareBlocksToProcess(nsTArray<base::SharedMemoryHandle>* aBlocks,
 }
 
 Pointer FontList::Alloc(uint32_t aSize) {
-  // Only the parent process does allocation.
+  
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  // 4-byte alignment is good enough for anything we allocate in the font list,
-  // as our "Pointer" (block index/offset) is a 32-bit value even on x64.
+  
+  
   auto align = [](uint32_t aSize) -> size_t { return (aSize + 3u) & ~3u; };
 
   aSize = align(aSize);
@@ -702,8 +702,8 @@ Pointer FontList::Alloc(uint32_t aSize) {
   uint32_t curAlloc, size;
 
   if (aSize < SHM_BLOCK_SIZE - sizeof(BlockHeader)) {
-    // Try to allocate in the most recently added block first, as this is
-    // highly likely to succeed; if not, try earlier blocks (to fill gaps).
+    
+    
     const int32_t blockCount = mBlocks.Length();
     for (blockIndex = blockCount - 1; blockIndex >= 0; --blockIndex) {
       size = mBlocks[blockIndex]->BlockSize();
@@ -715,8 +715,8 @@ Pointer FontList::Alloc(uint32_t aSize) {
   }
 
   if (blockIndex < 0) {
-    // Couldn't find enough space (or the requested size is too large to use
-    // a part of a block): create a new block.
+    
+    
     if (!AppendShmBlock(aSize + sizeof(BlockHeader))) {
       return Pointer::Null();
     }
@@ -724,20 +724,41 @@ Pointer FontList::Alloc(uint32_t aSize) {
     curAlloc = mBlocks[blockIndex]->Allocated();
   }
 
-  // We've found a block; allocate space from it, and return
+  
   mBlocks[blockIndex]->Allocated() = curAlloc + aSize;
 
   return Pointer(blockIndex, curAlloc);
 }
 
-void FontList::SetFamilyNames(const nsTArray<Family::InitData>& aFamilies) {
-  // Only the parent process should ever assign the list of families.
+void FontList::SetFamilyNames(nsTArray<Family::InitData>& aFamilies) {
+  
   MOZ_ASSERT(XRE_IsParentProcess());
 
   Header& header = GetHeader();
   MOZ_ASSERT(!header.mFamilyCount);
 
+  gfxPlatformFontList::PlatformFontList()->ApplyWhitelist(aFamilies);
+  aFamilies.Sort();
+
   size_t count = aFamilies.Length();
+
+  
+  
+  
+  if (count > 1) {
+    const nsCString* prevKey = &aFamilies[0].mKey;
+    for (size_t i = 1; i < count; ++i) {
+      if (aFamilies[i].mKey.Equals(*prevKey)) {
+        
+        size_t discard =
+            aFamilies[i].mBundled && !aFamilies[i - 1].mBundled ? i - 1 : i;
+        aFamilies.RemoveElementAt(discard);
+        --count;
+        --i;
+      }
+    }
+  }
+
   header.mFamilies = Alloc(count * sizeof(Family));
   if (header.mFamilies.IsNull()) {
     return;
@@ -759,8 +780,8 @@ void FontList::SetAliases(
 
   Header& header = GetHeader();
 
-  // Build an array of Family::InitData records based on the entries in
-  // aAliasTable, then sort them and store into the fontlist.
+  
+  
   nsTArray<Family::InitData> aliasArray;
   aliasArray.SetCapacity(aAliasTable.Count());
   for (auto i = aAliasTable.Iter(); !i.Done(); i.Next()) {
@@ -772,7 +793,7 @@ void FontList::SetAliases(
 
   size_t count = aliasArray.Length();
   if (count < header.mAliasCount) {
-    // This shouldn't happen, but handle it safely by just bailing out.
+    
     NS_WARNING("cannot reduce number of aliases");
     return;
   }
@@ -801,8 +822,8 @@ void FontList::SetAliases(
     }
   }
 
-  // Set the pointer before the count, so that any other process trying to read
-  // will not risk out-of-bounds access to the array.
+  
+  
   header.mAliases = ptr;
   header.mAliasCount.store(count);
 }
@@ -813,7 +834,7 @@ void FontList::SetLocalNames(
   MOZ_ASSERT(XRE_IsParentProcess());
   Header& header = GetHeader();
   if (header.mLocalFaceCount > 0) {
-    return;  // already been done!
+    return;  
   }
   nsTArray<nsCString> faceArray;
   faceArray.SetCapacity(aLocalNameTable.Count());
@@ -831,13 +852,13 @@ void FontList::SetLocalNames(
     faces[i].mKey.Assign(faceArray[i], this);
     const auto* family = FindFamily(rec.mFamilyName);
     if (!family) {
-      // Skip this record if the family was excluded by the font whitelist pref.
+      
       continue;
     }
     faces[i].mFamilyIndex = family - families;
     if (rec.mFaceIndex == uint32_t(-1)) {
-      // The InitData record contains an mFaceDescriptor rather than an index,
-      // so now we need to look for the appropriate index in the family.
+      
+      
       faces[i].mFaceIndex = 0;
       const Pointer* faceList =
           static_cast<const Pointer*>(family->Faces(this));
@@ -891,19 +912,19 @@ Family* FontList::FindFamily(const nsCString& aName) {
   }
 
 #ifdef XP_WIN
-  // For Windows only, because of how DWrite munges font family names in some
-  // cases (see
-  // https://msdnshared.blob.core.windows.net/media/MSDNBlogsFS/prod.evol.blogs.msdn.com/CommunityServer.Components.PostAttachments/00/02/24/90/36/WPF%20Font%20Selection%20Model.pdf
-  // and discussion on the OpenType list), try stripping any known "regular"
-  // style name from the end of the requested family name.
-  // After the deferred font loader has finished, this is no longer needed as
-  // the "real" family names will have been found in AliasFamilies() above.
+  
+  
+  
+  
+  
+  
+  
   if (aName.Contains(' ')) {
     auto pfl = gfxPlatformFontList::PlatformFontList();
     if (header.mAliasCount) {
-      // Aliases have been fully loaded by the parent process, so just discard
-      // any stray mAliasTable and mLocalNameTable entries from earlier calls
-      // to this code, and return.
+      
+      
+      
       pfl->mAliasTable.Clear();
       pfl->mLocalNameTable.Clear();
       return nullptr;
@@ -913,27 +934,27 @@ Family* FontList::FindFamily(const nsCString& aName) {
                                                " roman"_ns,  " upright"_ns};
     for (const auto& styleName : kStyleSuffixes) {
       if (StringEndsWith(aName, styleName)) {
-        // See if we have a known family that matches the "base" family name
-        // with trailing style-name element stripped off.
+        
+        
         nsAutoCString strippedName(aName.BeginReading(),
                                    aName.Length() - styleName.Length());
         families = Families();
         if (families &&
             BinarySearchIf(families, 0, header.mFamilyCount,
                            FamilyNameComparator(this, strippedName), &match)) {
-          // If so, this may be a possible family to satisfy the search; check
-          // if the extended family name was actually found as an alternate
-          // (either it's already in mAliasTable, or it gets added there when
-          // we call ReadFaceNamesForFamily on this candidate).
+          
+          
+          
+          
           Family* candidateFamily = &families[match];
           if (pfl->mAliasTable.Lookup(aName)) {
             return candidateFamily;
           }
-          // Note that ReadFaceNamesForFamily may store entries in mAliasTable
-          // (and mLocalNameTable), but if this is happening in a content
-          // process (which is the common case) those entries will not be saved
-          // into the shared font list; they're just used here until the "real"
-          // alias list is ready, then discarded.
+          
+          
+          
+          
+          
           pfl->ReadFaceNamesForFamily(candidateFamily, false);
           if (pfl->mAliasTable.Lookup(aName)) {
             return candidateFamily;
@@ -1056,5 +1077,5 @@ size_t FontList::AllocatedShmemSize() const {
   return result;
 }
 
-}  // namespace fontlist
-}  // namespace mozilla
+}  
+}  
