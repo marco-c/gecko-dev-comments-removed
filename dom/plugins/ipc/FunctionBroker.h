@@ -153,16 +153,6 @@
 
 
 
-#if defined(XP_WIN) && defined(__clang__) && __has_declspec_attribute(guard)
-
-
-
-
-#  define BROKER_DISABLE_CFGUARD __declspec(guard(nocf))
-#else
-#  define BROKER_DISABLE_CFGUARD
-#endif
-
 namespace mozilla {
 namespace plugins {
 
@@ -1246,9 +1236,8 @@ class FunctionBroker<functionId, ResultType HOOK_CALL(ParamTypes...),
   };
 
   template <typename... VarParams>
-  BROKER_DISABLE_CFGUARD ResultType RunFunction(FunctionType* aFunction,
-                                                base::ProcessId aClientId,
-                                                VarParams&... aParams) const {
+  ResultType RunFunction(FunctionType* aFunction, base::ProcessId aClientId,
+                         VarParams&... aParams) const {
     return aFunction(aParams...);
   };
 
