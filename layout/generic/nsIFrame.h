@@ -4692,6 +4692,7 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+
   nscoord ComputeISizeValue(gfxContext* aRenderingContext,
                             nscoord aContainingBlockISize,
                             nscoord aContentEdgeToBoxSizing,
@@ -4699,12 +4700,13 @@ class nsIFrame : public nsQueryFrame {
                             StyleExtremumLength aSize,
                             mozilla::ComputeSizeFlags aFlags);
 
-  nscoord ComputeISizeValue(gfxContext* aRenderingContext,
-                            nscoord aContainingBlockISize,
+  
+
+
+
+  nscoord ComputeISizeValue(nscoord aContainingBlockISize,
                             nscoord aContentEdgeToBoxSizing,
-                            nscoord aBoxSizingToMarginEdge,
-                            const LengthPercentage& aSize,
-                            mozilla::ComputeSizeFlags aFlags);
+                            const LengthPercentage& aSize);
 
   template <typename SizeOrMaxSize>
   nscoord ComputeISizeValue(gfxContext* aRenderingContext,
@@ -4716,9 +4718,8 @@ class nsIFrame : public nsQueryFrame {
     MOZ_ASSERT(aSize.IsExtremumLength() || aSize.IsLengthPercentage(),
                "This doesn't handle auto / none");
     if (aSize.IsLengthPercentage()) {
-      return ComputeISizeValue(aRenderingContext, aContainingBlockISize,
-                               aContentEdgeToBoxSizing, aBoxSizingToMarginEdge,
-                               aSize.AsLengthPercentage(), aFlags);
+      return ComputeISizeValue(aContainingBlockISize, aContentEdgeToBoxSizing,
+                               aSize.AsLengthPercentage());
     }
     return ComputeISizeValue(aRenderingContext, aContainingBlockISize,
                              aContentEdgeToBoxSizing, aBoxSizingToMarginEdge,
