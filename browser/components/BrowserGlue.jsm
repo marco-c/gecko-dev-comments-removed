@@ -3244,7 +3244,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 97;
+    const UI_VERSION = 98;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -3870,6 +3870,10 @@ BrowserGlue.prototype = {
         
         
       }
+    }
+
+    if (currentUIVersion < 98) {
+      Services.prefs.clearUserPref("browser.search.cohort");
     }
 
     
