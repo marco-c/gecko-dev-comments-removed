@@ -41,20 +41,43 @@ add_task(async function testSheetCount() {
       "numCopies is ignored for Save to PDF printer"
     );
 
-    
-    
-    
-    
-    let { settings, viewSettings } = helper;
-    is(viewSettings.numCopies, 1, "numCopies is 1 in viewSettings");
-    settings.outputFormat = Ci.nsIPrintSettings.kOutputFormatNative;
-    settings.printerName = "My real printer";
-    is(viewSettings.numCopies, 4, "numCopies is 4 in viewSettings");
+    is(helper.viewSettings.numCopies, 1, "numCopies is 1 in viewSettings");
 
     
-    helper.get("print").update(viewSettings);
-    sheetCount.update(viewSettings);
-    numCopies.update(viewSettings);
+    
+    
+    let realPrinterName = "My real printer";
+    let pdfPrinterInfo =
+      helper.win.PrintSettingsViewProxy.availablePrinters[
+        PrintUtils.SAVE_TO_PDF_PRINTER
+      ];
+    let mockPrinterInfo = Object.assign({}, pdfPrinterInfo, {});
+    mockPrinterInfo.settings = pdfPrinterInfo.settings.clone();
+    mockPrinterInfo.settings.outputFormat =
+      Ci.nsIPrintSettings.kOutputFormatNative;
+    mockPrinterInfo.settings.printerName = realPrinterName;
+
+    helper.win.PrintSettingsViewProxy.availablePrinters[
+      realPrinterName
+    ] = mockPrinterInfo;
+    await helper.dispatchSettingsChange({
+      printerName: realPrinterName,
+    });
+    await helper.awaitAnimationFrame();
+
+    let { settings, viewSettings } = helper;
+
+    is(
+      settings.printerName,
+      realPrinterName,
+      "Sanity check the current settings have the new printerName"
+    );
+    is(
+      settings.outputFormat,
+      Ci.nsIPrintSettings.kOutputFormatNative,
+      "The new printer has the correct outputFormat"
+    );
+    is(viewSettings.numCopies, 4, "numCopies is 4 in viewSettings");
 
     
     ok(BrowserTestUtils.is_visible(numCopies), "numCopies element is visible");

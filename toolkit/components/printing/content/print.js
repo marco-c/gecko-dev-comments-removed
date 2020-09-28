@@ -106,8 +106,9 @@ window.addEventListener(
 var PrintEventHandler = {
   settings: null,
   defaultSettings: null,
-  _printerSettingsChangedFlags: 0,
+  allPaperSizes: {},
   _nonFlaggedChangedSettings: {},
+  _userChangedSettings: {},
   settingFlags: {
     margins: Ci.nsIPrintSettings.kInitSaveMargins,
     orientation: Ci.nsIPrintSettings.kInitSaveOrientation,
@@ -115,7 +116,6 @@ var PrintEventHandler = {
       Ci.nsIPrintSettings.kInitSavePaperSize |
       Ci.nsIPrintSettings.kInitSaveUnwriteableMargins,
     printInColor: Ci.nsIPrintSettings.kInitSaveInColor,
-    printerName: Ci.nsIPrintSettings.kInitSavePrinterName,
     scaling: Ci.nsIPrintSettings.kInitSaveScaling,
     shrinkToFit: Ci.nsIPrintSettings.kInitSaveShrinkToFit,
     printFootersHeaders:
@@ -135,11 +135,12 @@ var PrintEventHandler = {
 
   
   
-  _nonFlaggedUpdatePreviewSettings: [
+  _nonFlaggedUpdatePreviewSettings: new Set([
     "printAllOrCustomRange",
     "startPageRange",
     "endPageRange",
-  ],
+    "paperName",
+  ]),
 
   async init() {
     Services.telemetry.scalarAdd("printing.preview_opened_tm", 1);
@@ -191,7 +192,7 @@ var PrintEventHandler = {
 
     document.addEventListener("print", e => this.print());
     document.addEventListener("update-print-settings", e =>
-      this.updateSettings(e.detail)
+      this.onUserSettingsChange(e.detail)
     );
     document.addEventListener("cancel-print", () => this.cancelPrint());
     document.addEventListener("open-system-dialog", async () => {
@@ -251,7 +252,8 @@ var PrintEventHandler = {
       await this.print(settings);
     });
 
-    await this.refreshSettings(selectedPrinter.value);
+    let settingsToChange = await this.refreshSettings(selectedPrinter.value);
+    await this.updateSettings(settingsToChange, true);
 
     
     let initialPreviewDone = this._updatePrintPreview(sourceBrowsingContext);
@@ -325,81 +327,6 @@ var PrintEventHandler = {
     return printPreviewBrowser;
   },
 
-  async refreshSettings(printerName) {
-    let currentPrinter = await PrintSettingsViewProxy.resolvePropertiesForPrinter(
-      printerName
-    );
-    this.settings = currentPrinter.settings;
-    this.defaultSettings = currentPrinter.defaultSettings;
-
-    logger.debug("currentPrinter name: ", printerName);
-    logger.debug("settings:", serializeSettings(this.settings));
-
-    
-    
-    this.viewSettings = new Proxy(this.settings, PrintSettingsViewProxy);
-
-    
-    for (let key of Object.keys(this._nonFlaggedChangedSettings)) {
-      this.viewSettings[key] = this._nonFlaggedChangedSettings[key];
-    }
-
-    
-    this.viewSettings.printerName = printerName;
-
-    
-    
-    let flags = 0;
-    if (!this.viewSettings.supportsColor) {
-      flags |= this.settingFlags.printInColor;
-      this.viewSettings.printInColor = false;
-    } else if (!this.viewSettings.supportsMonochrome) {
-      flags |= this.settingFlags.printInColor;
-      this.viewSettings.printInColor = true;
-    }
-
-    
-    
-    
-    
-    
-    let paperName = this.viewSettings.paperName;
-    logger.debug("settings.paperName: ", paperName);
-    logger.debug(
-      "Available paper sizes: ",
-      PrintSettingsViewProxy.availablePaperSizes
-    );
-    let matchedPaper =
-      paperName &&
-      PrintSettingsViewProxy.getBestPaperMatch(
-        paperName,
-        this.viewSettings.paperWidth,
-        this.viewSettings.paperHeight,
-        this.viewSettings.paperSizeUnit
-      );
-    if (!matchedPaper) {
-      
-      
-      paperName = Object.keys(PrintSettingsViewProxy.availablePaperSizes)[0];
-      this._printerSettingsChangedFlags ^= this.settingFlags.paperName;
-    } else if (matchedPaper.id !== paperName) {
-      
-      flags |= this.settingFlags.paperName;
-      paperName = matchedPaper.id;
-      logger.log(
-        `Initial settings.paperName: "${this.viewSettings.paperName}" missing, using: ${paperName} instead`
-      );
-    }
-    
-    await PrintSettingsViewProxy.fetchPaperMargins(paperName);
-    this.viewSettings.paperName = paperName;
-    logger.debug("Resolved current paperName: ", paperName);
-
-    if (flags) {
-      this.saveSettingsToPrefs(flags);
-    }
-  },
-
   async print(systemDialogSettings) {
     
     for (let element of document.querySelector("#print").elements) {
@@ -442,67 +369,163 @@ var PrintEventHandler = {
     window.close();
   },
 
-  async updateSettings(changedSettings = {}) {
-    let didSettingsChange = false;
+  async refreshSettings(printerName) {
+    let currentPrinter = await PrintSettingsViewProxy.resolvePropertiesForPrinter(
+      printerName
+    );
+    this.settings = currentPrinter.settings;
+    this.defaultSettings = currentPrinter.defaultSettings;
+
+    logger.debug("currentPrinter name: ", printerName);
+    logger.debug("settings:", serializeSettings(this.settings));
+
+    
+    
+    this.viewSettings = new Proxy(this.settings, PrintSettingsViewProxy);
+
+    
+    let settingsToUpdate = Object.assign({}, this._userChangedSettings);
+
+    
+    
+    if (!this.viewSettings.supportsColor) {
+      settingsToUpdate.printInColor = false;
+    } else if (!this.viewSettings.supportsMonochrome) {
+      settingsToUpdate.printInColor = true;
+    }
+    if (
+      settingsToUpdate.printInColor != this._userChangedSettings.printInColor
+    ) {
+      delete this._userChangedSettings.printInColor;
+    }
+
+    
+    
+    
+    
+    
+    let paperName, paperWidth, paperHeight, paperSizeUnit;
+    if (settingsToUpdate.paperName) {
+      
+      
+      paperName = settingsToUpdate.paperName;
+      let cachedPaperSize = this.allPaperSizes[paperName];
+      paperWidth = cachedPaperSize.width;
+      paperHeight = cachedPaperSize.height;
+      paperSizeUnit = cachedPaperSize.paperSizeUnit;
+    } else {
+      paperName = this.viewSettings.paperName;
+      paperWidth = this.viewSettings.paperWidth;
+      paperHeight = this.viewSettings.paperHeight;
+      paperSizeUnit = this.viewSettings.paperSizeUnit;
+    }
+
+    logger.debug("Using paperName: ", paperName);
+    logger.debug(
+      "Available paper sizes: ",
+      PrintSettingsViewProxy.availablePaperSizes
+    );
+    let matchedPaper =
+      paperName &&
+      PrintSettingsViewProxy.getBestPaperMatch(
+        paperName,
+        paperWidth,
+        paperHeight,
+        paperSizeUnit
+      );
+    if (!matchedPaper) {
+      
+      matchedPaper = Object.values(
+        PrintSettingsViewProxy.availablePaperSizes
+      )[0];
+      delete this._userChangedSettings.paperName;
+    }
+    if (matchedPaper.id !== paperName) {
+      
+      logger.log(
+        `Requested paperName: "${paperName}" missing on this printer, using: ${matchedPaper.id} instead`
+      );
+      delete this._userChangedSettings.paperName;
+      settingsToUpdate.paperName = matchedPaper.id;
+    }
+    return settingsToUpdate;
+  },
+
+  async onUserSettingsChange(changedSettings = {}) {
+    for (let [setting, value] of Object.entries(changedSettings)) {
+      Services.telemetry.keyedScalarAdd(
+        "printing.settings_changed",
+        setting,
+        1
+      );
+      
+      
+      this._userChangedSettings[setting] = value;
+    }
+    if (changedSettings.printerName) {
+      logger.debug(
+        "onUserSettingsChange, changing to printerName:",
+        changedSettings.printerName
+      );
+      
+      
+      changedSettings = await this.refreshSettings(changedSettings.printerName);
+    }
+    let shouldPreviewUpdate = await this.updateSettings(
+      changedSettings,
+      !!changedSettings.printerName
+    );
+    if (shouldPreviewUpdate) {
+      this.updatePrintPreview();
+    }
+    document.dispatchEvent(
+      new CustomEvent("print-settings", {
+        detail: this.viewSettings,
+      })
+    );
+  },
+
+  async updateSettings(changedSettings = {}, printerChanged = false) {
     let updatePreviewWithoutFlag = false;
     let flags = 0;
+    logger.debug("updateSettings ", changedSettings, printerChanged);
 
-    if (changedSettings.paperName) {
+    if (printerChanged || changedSettings.paperName) {
       
       
-      await PrintSettingsViewProxy.fetchPaperMargins(changedSettings.paperName);
+      await PrintSettingsViewProxy.fetchPaperMargins(
+        changedSettings.paperName || this.viewSettings.paperName
+      );
     }
 
     for (let [setting, value] of Object.entries(changedSettings)) {
       if (this.viewSettings[setting] != value) {
         this.viewSettings[setting] = value;
 
-        if (setting in this.settingFlags) {
+        if (
+          setting in this.settingFlags &&
+          setting in this._userChangedSettings
+        ) {
           flags |= this.settingFlags[setting];
-        } else {
-          
-          
-          this._nonFlaggedChangedSettings[setting] = value;
         }
-        didSettingsChange = true;
-        updatePreviewWithoutFlag |= this._nonFlaggedUpdatePreviewSettings.includes(
+        updatePreviewWithoutFlag |= this._nonFlaggedUpdatePreviewSettings.has(
           setting
         );
-
-        Services.telemetry.keyedScalarAdd(
-          "printing.settings_changed",
-          setting,
-          1
-        );
       }
     }
 
-    let printerChanged = flags & this.settingFlags.printerName;
-    if (didSettingsChange) {
-      this._printerSettingsChangedFlags |= flags;
-
-      if (printerChanged) {
-        
-        
-        flags |= this._printerSettingsChangedFlags;
-      }
-
-      if (flags) {
-        this.saveSettingsToPrefs(flags);
-      }
-      if (printerChanged) {
-        await this.refreshSettings(this.settings.printerName);
-      }
-      if (flags || printerChanged || updatePreviewWithoutFlag) {
-        this.updatePrintPreview();
-      }
-
-      document.dispatchEvent(
-        new CustomEvent("print-settings", {
-          detail: this.viewSettings,
-        })
-      );
+    let shouldPreviewUpdate =
+      flags || printerChanged || updatePreviewWithoutFlag;
+    logger.debug(
+      "updateSettings, calculated flags:",
+      flags,
+      "shouldPreviewUpdate:",
+      shouldPreviewUpdate
+    );
+    if (flags) {
+      this.saveSettingsToPrefs(flags);
     }
+    return shouldPreviewUpdate;
   },
 
   saveSettingsToPrefs(flags) {
@@ -878,6 +901,10 @@ var PrintSettingsViewProxy = {
       
       printerInfo.defaultSettings = PSSVC.newPrintSettings;
       printerInfo.defaultSettings.printerName = printerName;
+      printerInfo.defaultSettings.toFileName = "";
+      printerInfo.defaultSettings.outputFormat =
+        Ci.nsIPrintSettings.kOutputFormatPDF;
+      printerInfo.defaultSettings.printToFile = true;
       printerInfo.paperList = this.fallbackPaperList;
     }
     printerInfo.settings = printerInfo.defaultSettings.clone();
@@ -892,10 +919,12 @@ var PrintSettingsViewProxy = {
     
     printerInfo.settings.isInitializedFromPrinter = true;
 
+    printerInfo.settings.toFileName = "";
+
     
+    let paperSizeUnit = printerInfo.settings.paperSizeUnit;
     let unitsPerPoint =
-      printerInfo.settings.paperSizeUnit ==
-      printerInfo.settings.kPaperSizeMillimeters
+      paperSizeUnit == printerInfo.settings.kPaperSizeMillimeters
         ? MM_PER_POINT
         : INCHES_PER_POINT;
 
@@ -918,9 +947,13 @@ var PrintSettingsViewProxy = {
           width: paper.width * unitsPerPoint,
           height: paper.height * unitsPerPoint,
           unitsPerPoint,
+          paperSizeUnit,
         };
       }
     }
+    
+    Object.assign(PrintEventHandler.allPaperSizes, papersById);
+
     
     printerInfo._resolved = true;
     return printerInfo;
@@ -1086,18 +1119,6 @@ var PrintSettingsViewProxy = {
           value == "all"
             ? Ci.nsIPrintSettings.kRangeAllPages
             : Ci.nsIPrintSettings.kRangeSpecifiedPageRange;
-        break;
-
-      case "printerName":
-        target.printerName = value;
-        target.toFileName = "";
-        if (value == PrintUtils.SAVE_TO_PDF_PRINTER) {
-          target.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
-          target.printToFile = true;
-        } else {
-          target.outputFormat = Ci.nsIPrintSettings.kOutputFormatNative;
-          target.printToFile = false;
-        }
         break;
 
       default:
