@@ -478,6 +478,25 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 .rule_cache_conditions
                 .borrow_mut()
                 .set_uncacheable();
+
+            
+            
+            
+            
+            
+            match declaration.id {
+                LonghandId::Display => {
+                    self.context
+                        .builder
+                        .add_flags(ComputedValueFlags::DISPLAY_DEPENDS_ON_INHERITED_STYLE);
+                },
+                LonghandId::Content => {
+                    self.context
+                        .builder
+                        .add_flags(ComputedValueFlags::CONTENT_DEPENDS_ON_INHERITED_STYLE);
+                },
+                _ => {},
+            }
         }
 
         Cow::Owned(declaration.value.substitute_variables(
