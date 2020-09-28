@@ -348,6 +348,7 @@ Prompter.prototype = {
 
 
 
+
   asyncConfirmEx(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.confirmEx(...promptArgs);
@@ -1400,7 +1401,8 @@ class ModalPrompter {
     button1,
     button2,
     checkLabel,
-    checkValue
+    checkValue,
+    extraArgs = {}
   ) {
     if (!title) {
       title = PromptUtils.getLocalizedString("Confirm");
@@ -1414,6 +1416,7 @@ class ModalPrompter {
       checked: this.async ? checkValue : checkValue.value,
       ok: false,
       buttonNumClicked: 1,
+      ...extraArgs,
     };
 
     let [

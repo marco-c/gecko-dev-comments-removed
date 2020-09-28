@@ -71,7 +71,7 @@ class PromptCollection {
     return buttonPressed === 0;
   }
 
-  beforeUnloadCheck(browsingContext) {
+  beforeUnloadCheckInternal(browsingContext, sync) {
     let title;
     let message;
     let leaveLabel;
@@ -94,9 +94,17 @@ class PromptCollection {
     }
 
     let contentViewer = browsingContext?.docShell?.contentViewer;
-    let modalType = contentViewer?.isTabModalPromptAllowed
-      ? Ci.nsIPromptService.MODAL_TYPE_CONTENT
-      : Ci.nsIPromptService.MODAL_TYPE_WINDOW;
+
+    
+    
+    let modalAllowed = contentViewer
+      ? contentViewer.isTabModalPromptAllowed
+      : browsingContext.ancestorsAreCurrent;
+
+    let modalType =
+      Ci.nsIPromptService[
+        modalAllowed ? "MODAL_TYPE_CONTENT" : "MODAL_TYPE_WINDOW"
+      ];
 
     let buttonFlags =
       Ci.nsIPromptService.BUTTON_POS_0_DEFAULT |
@@ -105,20 +113,55 @@ class PromptCollection {
       (Ci.nsIPromptService.BUTTON_TITLE_IS_STRING *
         Ci.nsIPromptService.BUTTON_POS_1);
 
-    let buttonPressed = Services.prompt.confirmExBC(
-      browsingContext,
-      modalType,
-      title,
-      message,
-      buttonFlags,
-      leaveLabel,
-      stayLabel,
-      null,
-      null,
-      {}
-    );
+    if (sync) {
+      let buttonNumClicked = Services.prompt.confirmExBC(
+        browsingContext,
+        modalType,
+        title,
+        message,
+        buttonFlags,
+        leaveLabel,
+        stayLabel,
+        null,
+        null,
+        {}
+      );
 
-    return buttonPressed === 0;
+      return buttonNumClicked === 0;
+    }
+
+    return Services.prompt
+      .asyncConfirmEx(
+        browsingContext,
+        modalType,
+        title,
+        message,
+        buttonFlags,
+        leaveLabel,
+        stayLabel,
+        null,
+        null,
+        false,
+        
+        
+        
+        
+        
+        
+        { inPermitUnload: true }
+      )
+      .then(
+        result =>
+          result.QueryInterface(Ci.nsIPropertyBag2).get("buttonNumClicked") == 0
+      );
+  }
+
+  beforeUnloadCheck(browsingContext) {
+    return this.beforeUnloadCheckInternal(browsingContext,  true);
+  }
+
+  asyncBeforeUnloadCheck(browsingContext) {
+    return this.beforeUnloadCheckInternal(browsingContext,  false);
   }
 }
 
@@ -144,9 +187,6 @@ for (const [bundleName, bundleUrl] of Object.entries(BUNDLES)) {
   );
 }
 
-PromptCollection.prototype.classID = Components.ID(
-  "{7913837c-9623-11ea-bb37-0242ac130002}"
-);
 PromptCollection.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsIPromptCollection",
 ]);
