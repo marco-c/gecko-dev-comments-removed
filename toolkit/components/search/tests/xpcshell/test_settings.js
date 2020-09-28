@@ -20,6 +20,10 @@ var settingsTemplate;
 
 
 add_task(async function setup() {
+  Services.prefs
+    .getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF + "param.")
+    .setCharPref("test", "expected");
+
   await SearchTestUtils.useTestEngines("data1");
   await AddonTestUtils.promiseStartupManager();
 });
@@ -89,6 +93,12 @@ async function checkLoadSettingProperties(
   isSubObjectOf(EXPECTED_ENGINE.engine, engineFromSS);
 
   Assert.equal(
+    engineFromSS.getSubmission("foo").uri.spec,
+    "http://www.google.com/search?q=foo",
+    "Should have the correct URL with no mozparams"
+  );
+
+  Assert.equal(
     ss._settings.getAttribute("useSavedOrder"),
     expectedUseDBValue,
     "Should have set the useSavedOrder metadata correctly."
@@ -152,14 +162,22 @@ add_task(async function test_settings_write() {
   info("Check search.json.mozlz4");
   let settingsData = await promiseSettingsData();
 
-  
-  
-  
   for (let engine of settingsTemplate.engines) {
+    
+    
+    
     if ("_shortName" in engine) {
       delete engine._shortName;
     }
+    
+    
+    if ("_urls" in engine) {
+      for (let urls of engine._urls) {
+        urls.params = urls.params.filter(p => !p.purpose && !p.mozparam);
+      }
+    }
   }
+
   
   
   settingsTemplate.version = SearchUtils.SETTINGS_VERSION;
@@ -275,16 +293,6 @@ var EXPECTED_ENGINE = {
               value: "{searchTerms}",
               purpose: undefined,
             },
-            {
-              name: "channel",
-              value: "fflb",
-              purpose: "keyword",
-            },
-            {
-              name: "channel",
-              value: "rcs",
-              purpose: "contextmenu",
-            },
           ],
         },
         {
@@ -297,16 +305,6 @@ var EXPECTED_ENGINE = {
               name: "q",
               value: "{searchTerms}",
               purpose: undefined,
-            },
-            {
-              name: "channel",
-              value: "fflb",
-              purpose: "keyword",
-            },
-            {
-              name: "channel",
-              value: "rcs",
-              purpose: "contextmenu",
             },
           ],
         },

@@ -399,49 +399,9 @@ class OpenSearchEngine extends SearchEngine {
           
           logConsole.error("_parseURL: Url element has an invalid param");
         }
-      } else if (
-        param.localName == "MozParam" &&
-        
-        this.isAppProvided
-      ) {
-        let condition = param.getAttribute("condition");
-
-        if (!condition) {
-          continue;
-        }
-
-        
-        
-        
-        
-        switch (condition) {
-          case "purpose":
-            url.addParam(
-              param.getAttribute("name"),
-              param.getAttribute("value"),
-              param.getAttribute("purpose")
-            );
-            break;
-          case "pref":
-            url._addMozParam({
-              pref: param.getAttribute("pref"),
-              name: param.getAttribute("name"),
-              condition: "pref",
-            });
-            break;
-          default:
-            
-            logConsole.error(
-              "Parsing engine:",
-              this._location,
-              "MozParam:",
-              param.getAttribute("name"),
-              "has an unknown condition:",
-              condition
-            );
-            break;
-        }
       }
+      
+      
     }
 
     this._urls.push(url);
