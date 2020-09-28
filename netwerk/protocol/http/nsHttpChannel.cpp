@@ -1885,31 +1885,6 @@ void nsHttpChannel::SetCachedContentType() {
   mCacheEntry->SetContentType(contentType);
 }
 
-void nsHttpChannel::UpdateAntiTrackingInfo() {
-  Unused << mLoadInfo->SetHasStoragePermission(
-      AntiTrackingUtils::HasStoragePermissionInParent(this));
-
-  AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(this);
-
-  if (mLoadInfo->GetExternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_DOCUMENT) {
-    nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-    Unused << mLoadInfo->GetCookieJarSettings(
-        getter_AddRefs(cookieJarSettings));
-
-    
-    
-    
-    mozilla::net::CookieJarSettings::Cast(cookieJarSettings)
-        ->UpdateIsOnContentBlockingAllowList(this);
-
-    
-    
-    mozilla::net::CookieJarSettings::Cast(cookieJarSettings)
-        ->SetPartitionKey(mURI);
-  }
-}
-
 nsresult nsHttpChannel::CallOnStartRequest() {
   LOG(("nsHttpChannel::CallOnStartRequest [this=%p]", this));
 
@@ -6767,7 +6742,7 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
     UpdatePrivateBrowsing();
   }
 
-  UpdateAntiTrackingInfo();
+  AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(this);
 
   if (WaitingForTailUnblock()) {
     
