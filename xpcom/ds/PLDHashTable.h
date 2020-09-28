@@ -323,6 +323,7 @@ class PLDHashTable {
     }
 
     char* Get() const { return mEntryStore; }
+    bool IsAllocated() const { return !!mEntryStore; }
 
     Slot SlotForIndex(uint32_t aIndex, uint32_t aEntrySize,
                       uint32_t aCapacity) const {
@@ -427,7 +428,7 @@ class PLDHashTable {
   
   
   uint32_t Capacity() const {
-    return mEntryStore.Get() ? CapacityFromHashShift() : 0;
+    return mEntryStore.IsAllocated() ? CapacityFromHashShift() : 0;
   }
 
   uint32_t EntrySize() const { return mEntrySize; }
