@@ -1491,6 +1491,10 @@ nsresult nsPrintJob::InitPrintDocConstruction(bool aHandleError) {
   
   RefPtr<nsPrintData> printData = mPrt;
 
+  if (NS_WARN_IF(!printData)) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   mDidLoadDataForPrinting = false;
 
