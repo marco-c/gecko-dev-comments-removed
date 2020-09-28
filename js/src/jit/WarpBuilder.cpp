@@ -3198,6 +3198,7 @@ bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,
   
   
   
+  
   callInfo.markAsInlined();
   if (!TranspileCacheIRToMIR(this, loc, inlineSnapshot->cacheIRSnapshot(),
                              callInfo)) {
@@ -3207,11 +3208,6 @@ bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,
   jsbytecode* pc = loc.toRawBytecode();
 
   callInfo.setImplicitlyUsedUnchecked();
-
-  
-  if (callInfo.constructing()) {
-    MOZ_CRASH("TODO: inline constructors");
-  }
 
   
   if (!callInfo.pushCallStack(&mirGen(), current)) {
@@ -3229,11 +3225,11 @@ bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,
   current->push(callInfo.callee());
 
   
+  CompileInfo* calleeCompileInfo = inlineSnapshot->info();
   MIRGraphReturns returns(alloc());
   AutoAccumulateReturns aar(graph(), returns);
   WarpBuilder inlineBuilder(this, inlineSnapshot->scriptSnapshot(),
-                            *inlineSnapshot->info(), &callInfo,
-                            outerResumePoint);
+                            *calleeCompileInfo, &callInfo, outerResumePoint);
   if (!inlineBuilder.buildInline()) {
     
     
@@ -3258,7 +3254,8 @@ bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,
   current->pop();
 
   
-  MDefinition* returnValue = patchInlinedReturns(callInfo, returns, current);
+  MDefinition* returnValue =
+      patchInlinedReturns(calleeCompileInfo, callInfo, returns, current);
   if (!returnValue) {
     return false;
   }
@@ -3272,11 +3269,13 @@ bool WarpBuilder::buildInlinedCall(BytecodeLocation loc,
   return true;
 }
 
-MDefinition* WarpBuilder::patchInlinedReturns(CallInfo& callInfo,
+MDefinition* WarpBuilder::patchInlinedReturns(CompileInfo* calleeCompileInfo,
+                                              CallInfo& callInfo,
                                               MIRGraphReturns& exits,
                                               MBasicBlock* returnBlock) {
   if (exits.length() == 1) {
-    return patchInlinedReturn(callInfo, exits[0], returnBlock);
+    return patchInlinedReturn(calleeCompileInfo, callInfo, exits[0],
+                              returnBlock);
   }
 
   
@@ -3286,7 +3285,8 @@ MDefinition* WarpBuilder::patchInlinedReturns(CallInfo& callInfo,
   }
 
   for (auto* exit : exits) {
-    MDefinition* rdef = patchInlinedReturn(callInfo, exit, returnBlock);
+    MDefinition* rdef =
+        patchInlinedReturn(calleeCompileInfo, callInfo, exit, returnBlock);
     if (!rdef) {
       return nullptr;
     }
@@ -3296,17 +3296,27 @@ MDefinition* WarpBuilder::patchInlinedReturns(CallInfo& callInfo,
   return phi;
 }
 
-MDefinition* WarpBuilder::patchInlinedReturn(CallInfo& callInfo,
+MDefinition* WarpBuilder::patchInlinedReturn(CompileInfo* calleeCompileInfo,
+                                             CallInfo& callInfo,
                                              MBasicBlock* exit,
                                              MBasicBlock* returnBlock) {
-  if (callInfo.constructing() || callInfo.isSetter()) {
-    MOZ_CRASH("TODO");
-  }
-
   
   
   MDefinition* rdef = exit->lastIns()->toReturn()->input();
   exit->discardLastIns();
+
+  
+  
+  
+  if (callInfo.constructing() &&
+      !calleeCompileInfo->isDerivedClassConstructor()) {
+    auto* filter = MReturnFromCtor::New(alloc(), rdef, callInfo.thisArg());
+    exit->add(filter);
+    rdef = filter;
+  }
+  if (callInfo.isSetter()) {
+    MOZ_CRASH("TODO");
+  }
 
   exit->end(MGoto::New(alloc(), returnBlock));
   if (!returnBlock->addPredecessorWithoutPhis(exit)) {

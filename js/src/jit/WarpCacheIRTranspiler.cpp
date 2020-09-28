@@ -186,6 +186,8 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
                                         uint16_t nargs, FunctionFlags flags);
   WrappedFunction* maybeCallTarget(MDefinition* callee, CallKind kind);
 
+  bool maybeCreateThis(MDefinition* callee, CallFlags flags, CallKind kind);
+
   MOZ_MUST_USE bool emitCallGetterResult(CallKind kind, ValOperandId receiverId,
                                          uint32_t getterOffset, bool sameRealm,
                                          uint32_t nargsAndFlagsOffset);
@@ -3250,6 +3252,47 @@ bool WarpCacheIRTranspiler::updateCallInfo(MDefinition* callee,
   return true;
 }
 
+
+
+bool WarpCacheIRTranspiler::maybeCreateThis(MDefinition* callee,
+                                            CallFlags flags, CallKind kind) {
+  MDefinition* thisArg = callInfo_->thisArg();
+
+  if (kind == CallKind::Native) {
+    
+    
+    
+    MOZ_ASSERT(thisArg->type() == MIRType::MagicIsConstructing ||
+               thisArg->isPhi());
+    return false;
+  }
+  MOZ_ASSERT(kind == CallKind::Scripted);
+
+  if (thisArg->isCreateThisWithTemplate()) {
+    
+    
+    return false;
+  }
+  if (flags.needsUninitializedThis()) {
+    MConstant* uninit = constant(MagicValue(JS_UNINITIALIZED_LEXICAL));
+    thisArg->setImplicitlyUsedUnchecked();
+    callInfo_->setThis(uninit);
+    return false;
+  }
+  
+  MOZ_ASSERT(thisArg->type() == MIRType::MagicIsConstructing ||
+             thisArg->isPhi());
+
+  MDefinition* newTarget = callInfo_->getNewTarget();
+  auto* createThis = MCreateThis::New(alloc(), callee, newTarget);
+  add(createThis);
+
+  thisArg->setImplicitlyUsedUnchecked();
+  callInfo_->setThis(createThis);
+
+  return true;
+}
+
 bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
                                              Int32OperandId argcId,
                                              CallFlags flags, CallKind kind) {
@@ -3269,39 +3312,9 @@ bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
   bool needsThisCheck = false;
   if (callInfo_->constructing()) {
     MOZ_ASSERT(flags.isConstructing());
-
-    MDefinition* thisArg = callInfo_->thisArg();
-
-    if (kind == CallKind::Native) {
-      
-      
-      
-      MOZ_ASSERT_IF(!thisArg->isPhi(),
-                    thisArg->type() == MIRType::MagicIsConstructing);
-    } else {
-      MOZ_ASSERT(kind == CallKind::Scripted);
-
-      if (thisArg->isCreateThisWithTemplate()) {
-        
-      } else if (flags.needsUninitializedThis()) {
-        MConstant* uninit = constant(MagicValue(JS_UNINITIALIZED_LEXICAL));
-        thisArg->setImplicitlyUsedUnchecked();
-        callInfo_->setThis(uninit);
-      } else {
-        
-        MOZ_ASSERT_IF(!thisArg->isPhi(),
-                      thisArg->type() == MIRType::MagicIsConstructing);
-
-        MDefinition* newTarget = callInfo_->getNewTarget();
-        auto* createThis = MCreateThis::New(alloc(), callee, newTarget);
-        add(createThis);
-
-        thisArg->setImplicitlyUsedUnchecked();
-        callInfo_->setThis(createThis);
-
-        wrappedTarget = nullptr;
-        needsThisCheck = true;
-      }
+    needsThisCheck = maybeCreateThis(callee, flags, kind);
+    if (needsThisCheck) {
+      wrappedTarget = nullptr;
     }
   }
 
@@ -3402,6 +3415,19 @@ bool WarpCacheIRTranspiler::emitCallInlinedFunction(ObjOperandId calleeId,
     if (!updateCallInfo(callee, flags)) {
       return false;
     }
+    if (callInfo_->constructing()) {
+      MOZ_ASSERT(flags.isConstructing());
+
+      
+      
+      
+      
+      MOZ_ALWAYS_FALSE(maybeCreateThis(callee, flags, CallKind::Scripted));
+      mozilla::DebugOnly<MDefinition*> thisArg = callInfo_->thisArg();
+      MOZ_ASSERT(thisArg->isCreateThisWithTemplate() ||
+                 thisArg->type() == MIRType::MagicUninitializedLexical);
+    }
+
     switch (callInfo_->argFormat()) {
       case CallInfo::ArgFormat::Standard:
         break;
