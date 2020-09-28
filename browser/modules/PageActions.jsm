@@ -542,10 +542,15 @@ var PageActions = {
 
 
 
+
+
+
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
-    title: !options._isSeparator,
+    title: false,
     anchorIDOverride: false,
     disabled: false,
     extensionID: false,
@@ -564,9 +569,11 @@ function Action(options) {
     onShowingInPanel: false,
     onSubviewPlaced: false,
     onSubviewShowing: false,
+    panelFluentID: false,
     pinnedToUrlbar: false,
     tooltip: false,
     urlbarIDOverride: false,
+    urlbarFluentID: false,
     wantsIframe: false,
     wantsSubview: false,
     disablePrivateBrowsing: false,
@@ -636,6 +643,28 @@ Action.prototype = {
 
   get id() {
     return this._id;
+  },
+
+  
+
+
+  get panelFluentID() {
+    return this._panelFluentID;
+  },
+
+  set panelFluentID(id) {
+    this._panelFluentID = id;
+  },
+
+  
+
+
+  get urlbarFluentID() {
+    return this._urlbarFluentID;
+  },
+
+  set urlbarFluentID(id) {
+    this._urlbarFluentID = id;
   },
 
   get disablePrivateBrowsing() {
@@ -733,6 +762,7 @@ Action.prototype = {
   },
 
   
+
 
 
   getTitle(browserWindow = null) {
@@ -1130,8 +1160,6 @@ var gBuiltInActions = [
     id: ACTION_ID_BOOKMARK,
     urlbarIDOverride: "star-button-box",
     _urlbarNodeInMarkup: true,
-    
-    title: "",
     pinnedToUrlbar: true,
     onShowingInPanel(buttonNode) {
       browserPageActions(buttonNode).bookmark.onShowingInPanel(buttonNode);
@@ -1144,8 +1172,6 @@ var gBuiltInActions = [
   
   {
     id: ACTION_ID_PIN_TAB,
-    
-    title: "",
     onBeforePlacedInWindow(browserWindow) {
       function handlePinEvent() {
         browserPageActions(browserWindow).pinTab.updateState();
@@ -1186,12 +1212,8 @@ var gBuiltInActions = [
   
   {
     id: "copyURL",
-    title: "copyURL-title",
-    onBeforePlacedInWindow(browserWindow) {
-      browserPageActions(browserWindow).copyURL.onBeforePlacedInWindow(
-        browserWindow
-      );
-    },
+    panelFluentID: "page-action-copy-url-panel",
+    urlbarFluentID: "page-action-copy-url-urlbar",
     onCommand(event, buttonNode) {
       browserPageActions(buttonNode).copyURL.onCommand(event, buttonNode);
     },
@@ -1200,12 +1222,8 @@ var gBuiltInActions = [
   
   {
     id: "emailLink",
-    title: "emailLink-title",
-    onBeforePlacedInWindow(browserWindow) {
-      browserPageActions(browserWindow).emailLink.onBeforePlacedInWindow(
-        browserWindow
-      );
-    },
+    panelFluentID: "page-action-email-link-panel",
+    urlbarFluentID: "page-action-email-link-urlbar",
     onCommand(event, buttonNode) {
       browserPageActions(buttonNode).emailLink.onCommand(event, buttonNode);
     },
@@ -1215,7 +1233,6 @@ var gBuiltInActions = [
   {
     id: "addSearchEngine",
     
-    title: "",
     isBadged: true,
     _transient: true,
     onShowingInPanel(buttonNode) {
@@ -1239,9 +1256,10 @@ var gBuiltInActions = [
 if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
   gBuiltInActions.push({
     id: "sendToDevice",
+    panelFluentID: "page-action-send-tabs-panel",
     
     
-    title: "sendToDevice",
+    urlbarFluentID: "page-action-send-tabs-urlbar",
     onBeforePlacedInWindow(browserWindow) {
       browserPageActions(browserWindow).sendToDevice.onBeforePlacedInWindow(
         browserWindow
@@ -1282,14 +1300,10 @@ if (SiteSpecificBrowserService.isEnabled) {
 if (AppConstants.platform == "macosx") {
   gBuiltInActions.push({
     id: "shareURL",
-    title: "shareURL-title",
+    panelFluentID: "page-action-share-url-panel",
+    urlbarFluentID: "page-action-share-url-urlbar",
     onShowingInPanel(buttonNode) {
       browserPageActions(buttonNode).shareURL.onShowingInPanel(buttonNode);
-    },
-    onBeforePlacedInWindow(browserWindow) {
-      browserPageActions(browserWindow).shareURL.onBeforePlacedInWindow(
-        browserWindow
-      );
     },
     wantsSubview: true,
     onSubviewShowing(panelViewNode) {
@@ -1305,12 +1319,8 @@ if (AppConstants.isPlatformAndVersionAtLeast("win", "6.4")) {
     
     {
       id: "shareURL",
-      title: "shareURL-title",
-      onBeforePlacedInWindow(buttonNode) {
-        browserPageActions(buttonNode).shareURL.onBeforePlacedInWindow(
-          buttonNode
-        );
-      },
+      panelFluentID: "page-action-share-url-panel",
+      urlbarFluentID: "page-action-share-url-urlbar",
       onCommand(event, buttonNode) {
         browserPageActions(buttonNode).shareURL.onCommand(event, buttonNode);
       },

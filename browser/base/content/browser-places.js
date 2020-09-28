@@ -1947,10 +1947,19 @@ var BookmarkingUI = {
         let label = l10n[0].attributes[0].value;
 
         
-        PageActions.actionForID(PageActions.ACTION_ID_BOOKMARK).setTitle(
-          label,
-          window
+        
+        let panelButton = BrowserPageActions.panelButtonNodeForActionID(
+          PageActions.ACTION_ID_BOOKMARK
         );
+        if (panelButton) {
+          panelButton.setAttribute("label", label);
+        }
+        let urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(
+          PageActions.ACTION_ID_BOOKMARK
+        );
+        if (urlbarButton) {
+          urlbarButton.setAttribute("tooltiptext", label);
+        }
       });
     }
   },

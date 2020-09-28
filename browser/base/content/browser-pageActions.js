@@ -582,7 +582,7 @@ var BrowserPageActions = {
   _updateMethods: {
     disabled: "_updateActionDisabled",
     iconURL: "_updateActionIconURL",
-    title: "_updateActionTitle",
+    title: "_updateActionLabeling",
     tooltip: "_updateActionTooltip",
     wantsSubview: "_updateActionWantsSubview",
   },
@@ -631,21 +631,21 @@ var BrowserPageActions = {
     }
   },
 
-  _updateActionTitle(
+  _updateActionLabeling(
     action,
     panelNode,
     urlbarNode,
     title = action.getTitle(window)
   ) {
-    if (!title) {
-      
-      
-      
-      
-      return;
-    }
+    let tabCount = gBrowser.selectedTabs.length;
     if (panelNode) {
-      panelNode.setAttribute("label", title);
+      if (action.panelFluentID) {
+        document.l10n.setAttributes(panelNode, action.panelFluentID, {
+          tabCount,
+        });
+      } else {
+        panelNode.setAttribute("label", title);
+      }
     }
     if (urlbarNode) {
       
@@ -658,8 +658,14 @@ var BrowserPageActions = {
       }
       
       let tooltip = action.getTooltip(window);
-      if (!tooltip && title) {
-        urlbarNode.setAttribute("tooltiptext", title);
+      if (!tooltip) {
+        if (action.urlbarFluentID) {
+          document.l10n.setAttributes(urlbarNode, action.urlbarFluentID, {
+            tabCount,
+          });
+        } else {
+          urlbarNode.setAttribute("tooltiptext", title);
+        }
       }
     }
   },
@@ -1015,29 +1021,6 @@ var BrowserPageActions = {
 
 
 
-
-
-
-  takeActionTitleFromPanel(action) {
-    let titleOrAttrNameOnPanel = action.getTitle();
-    let attrValueOnPanel = this.panelNode.getAttribute(titleOrAttrNameOnPanel);
-    if (attrValueOnPanel) {
-      this.panelNode.removeAttribute(titleOrAttrNameOnPanel);
-      action.setTitle(attrValueOnPanel);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
   takeNodeAttributeFromPanel(node, attrName) {
     let panelAttrName = node.getAttribute(attrName);
     if (!panelAttrName && attrName == "title") {
@@ -1086,7 +1069,9 @@ function showBrowserPageActionFeedback(action, event = null, messageId = null) {
 
 BrowserPageActions.bookmark = {
   onShowingInPanel(buttonNode) {
-    
+    if (buttonNode.label == "null") {
+      BookmarkingUI.updateBookmarkPageMenuItem();
+    }
   },
 
   onCommand(event, buttonNode) {
@@ -1100,24 +1085,23 @@ BrowserPageActions.pinTab = {
   updateState() {
     let action = PageActions.actionForID("pinTab");
     let { pinned } = gBrowser.selectedTab;
+    let fluentID;
     if (pinned) {
-      action.setTitle(
-        BrowserPageActions.panelNode.getAttribute("unpinTab-title")
-      );
+      fluentID = "page-action-unpin-tab";
     } else {
-      action.setTitle(
-        BrowserPageActions.panelNode.getAttribute("pinTab-title")
-      );
+      fluentID = "page-action-pin-tab";
     }
 
     let panelButton = BrowserPageActions.panelButtonNodeForActionID(action.id);
     if (panelButton) {
+      document.l10n.setAttributes(panelButton, fluentID + "-panel");
       panelButton.toggleAttribute("pinned", pinned);
     }
     let urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(
       action.id
     );
     if (urlbarButton) {
+      document.l10n.setAttributes(urlbarButton, fluentID + "-urlbar");
       urlbarButton.toggleAttribute("pinned", pinned);
     }
   },
@@ -1160,11 +1144,6 @@ BrowserPageActions.launchSSB = {
 
 
 BrowserPageActions.copyURL = {
-  onBeforePlacedInWindow(browserWindow) {
-    let action = PageActions.actionForID("copyURL");
-    BrowserPageActions.takeActionTitleFromPanel(action);
-  },
-
   onCommand(event, buttonNode) {
     PanelMultiView.hidePopup(BrowserPageActions.panelNode);
     Cc["@mozilla.org/widget/clipboardhelper;1"]
@@ -1179,11 +1158,6 @@ BrowserPageActions.copyURL = {
 
 
 BrowserPageActions.emailLink = {
-  onBeforePlacedInWindow(browserWindow) {
-    let action = PageActions.actionForID("emailLink");
-    BrowserPageActions.takeActionTitleFromPanel(action);
-  },
-
   onCommand(event, buttonNode) {
     PanelMultiView.hidePopup(BrowserPageActions.panelNode);
     MailIntegration.sendLinkForBrowser(gBrowser.selectedBrowser);
@@ -1203,12 +1177,22 @@ BrowserPageActions.sendToDevice = {
   
   _updateTitle() {
     let action = PageActions.actionForID("sendToDevice");
-    let string = gBrowserBundle.GetStringFromName(
-      "pageAction.sendTabsToDevice.label"
-    );
     let tabCount = gBrowser.selectedTabs.length;
-    let title = PluralForm.get(tabCount, string).replace("#1", tabCount);
-    action.setTitle(title, window);
+
+    let panelButton = BrowserPageActions.panelButtonNodeForActionID(action.id);
+    if (panelButton) {
+      document.l10n.setAttributes(panelButton, action.panelFluentID, {
+        tabCount,
+      });
+    }
+    let urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(
+      action.id
+    );
+    if (urlbarButton) {
+      document.l10n.setAttributes(urlbarButton, action.urlbarFluentID, {
+        tabCount,
+      });
+    }
   },
 
   onSubviewPlaced(panelViewNode) {
@@ -1219,7 +1203,7 @@ BrowserPageActions.sendToDevice = {
       "subviewbutton-iconic",
       "pageAction-sendToDevice-notReady"
     );
-    notReady.setAttribute("label", "sendToDevice-notReadyTitle");
+    document.l10n.setAttributes(notReady, "page-action-send-tab-not-ready");
     notReady.setAttribute("disabled", "true");
     bodyNode.appendChild(notReady);
     for (let node of bodyNode.children) {
@@ -1353,11 +1337,6 @@ BrowserPageActions.shareURL = {
     this._cached = false;
   },
 
-  onBeforePlacedInWindow(browserWindow) {
-    let action = PageActions.actionForID("shareURL");
-    BrowserPageActions.takeActionTitleFromPanel(action);
-  },
-
   onShowingSubview(panelViewNode) {
     let bodyNode = panelViewNode.querySelector(".panel-subview-body");
 
@@ -1398,10 +1377,7 @@ BrowserPageActions.shareURL = {
     });
 
     let item = document.createXULElement("toolbarbutton");
-    item.setAttribute(
-      "label",
-      BrowserPageActions.panelNode.getAttribute("shareMore-label")
-    );
+    document.l10n.setAttributes(item, "page-action-share-more-panel");
     item.classList.add(
       "subviewbutton",
       "subviewbutton-iconic",
