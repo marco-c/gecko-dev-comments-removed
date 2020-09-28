@@ -102,6 +102,13 @@ moz_project_name = "main"
 html_show_copyright = False
 
 
+
+
+
+
+autosectionlabel_maxdepth = 1
+
+
 def setup(app):
     app.add_config_value(
         "recommonmark_config",
