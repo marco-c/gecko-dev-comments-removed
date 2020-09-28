@@ -78,6 +78,11 @@ interface nsISHEntry : nsISupports
     
 
 
+    attribute AString name;
+
+    
+
+
 
 
 
