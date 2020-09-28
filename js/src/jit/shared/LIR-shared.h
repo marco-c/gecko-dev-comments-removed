@@ -931,6 +931,19 @@ class LLoadArgumentsObjectArg : public LInstructionHelper<BOX_PIECES, 2, 1> {
 };
 
 
+class LArgumentsObjectLength : public LInstructionHelper<1, 1, 0> {
+ public:
+  LIR_HEADER(ArgumentsObjectLength)
+
+  explicit LArgumentsObjectLength(const LAllocation& argsObj)
+      : LInstructionHelper(classOpcode) {
+    setOperand(0, argsObj);
+  }
+
+  const LAllocation* getArgsObject() { return getOperand(0); }
+};
+
+
 
 class LReturnFromCtor : public LInstructionHelper<1, BOX_PIECES + 1, 0> {
  public:
