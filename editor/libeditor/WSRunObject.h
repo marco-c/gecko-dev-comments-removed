@@ -406,6 +406,14 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+  static EditorDOMRange
+  GetRangeExtendToContainInvisibleWhiteSpacesAtRangeBoundaries(
+      const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange);
+
+  
+
+
+
 
 
   template <typename EditorDOMPointType>
