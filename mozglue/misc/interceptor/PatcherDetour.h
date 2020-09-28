@@ -936,7 +936,11 @@ class WindowsDllDetourPatcher final
         mLastError->mOrigBytes[i] = origBytes[i];
       }
 #  endif  
-#endif    
+#else
+      
+      Unused << this;
+      Unused << origBytes;
+#endif  
     });
 
     tramp.WritePointer(origBytes.AsEncodedPtr());
