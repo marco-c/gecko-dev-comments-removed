@@ -925,6 +925,15 @@ class SubDialogManager {
 
 
 
+  hideDialog(aBrowser) {
+    aBrowser.removeAttribute("tabDialogShowing");
+    this._dialogStack.hidden = true;
+  }
+
+  
+
+
+
 
 
   abortDialogs(filterFn = () => true) {
@@ -992,6 +1001,7 @@ class SubDialogManager {
       this._topDialog._prevActiveElement?.focus();
       this._topDialog._overlay.setAttribute("topmost", true);
       this._topDialog._addDialogEventListeners(false);
+      this._dialogStack.hidden = false;
     } else {
       
       this._topLevelPrevActiveElement.focus();

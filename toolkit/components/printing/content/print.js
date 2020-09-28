@@ -198,11 +198,22 @@ var PrintEventHandler = {
       
       
 
-      
-      for (let element of document.querySelector("#print").elements) {
-        element.disabled = true;
+      if (document.body.getAttribute("rendering")) {
+        
+        for (let element of document.querySelector("#print").elements) {
+          element.disabled = true;
+        }
+        await window._initialized;
       }
-      await window._initialized;
+
+      
+      
+      
+      let sourceBrowser = this.getSourceBrowsingContext().top.embedderElement;
+      let dialogBoxManager = gBrowser
+        .getTabDialogBox(sourceBrowser)
+        .getManager();
+      dialogBoxManager.hideDialog(sourceBrowser);
 
       
       
@@ -225,7 +236,7 @@ var PrintEventHandler = {
           "printing.dialog_opened_via_preview_tm",
           1
         );
-        PRINTPROMPTSVC.showPrintDialog(window, settings);
+        await this._showPrintDialog(PRINTPROMPTSVC, window, settings);
       } catch (e) {
         if (e.result == Cr.NS_ERROR_ABORT) {
           Services.telemetry.scalarAdd(
@@ -237,7 +248,7 @@ var PrintEventHandler = {
         }
         throw e;
       }
-      this.print(settings);
+      await this.print(settings);
     });
 
     await this.refreshSettings(selectedPrinter.value);
@@ -414,10 +425,7 @@ var PrintEventHandler = {
     try {
       this.settings.showPrintProgress = true;
       let bc = this.previewBrowser.browsingContext;
-      await bc.top.embedderElement.print(
-        bc.currentWindowGlobal.outerWindowId,
-        settings
-      );
+      await this._doPrint(bc, settings);
     } catch (e) {
       Cu.reportError(e);
     }
@@ -705,6 +713,26 @@ var PrintEventHandler = {
         };
       }
     }
+  },
+
+  
+
+
+
+  _doPrint(aBrowsingContext, aSettings) {
+    return aBrowsingContext.top.embedderElement.print(
+      aBrowsingContext.currentWindowGlobal.outerWindowId,
+      aSettings
+    );
+  },
+
+  
+
+
+
+
+  async _showPrintDialog(aPrintingPromptService, aWindow, aSettings) {
+    return aPrintingPromptService.showPrintDialog(aWindow, aSettings);
   },
 };
 
