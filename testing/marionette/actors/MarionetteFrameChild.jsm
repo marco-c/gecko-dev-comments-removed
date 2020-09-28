@@ -12,10 +12,13 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   atom: "chrome://marionette/content/atom.js",
+  ContentDOMReference: "resource://gre/modules/ContentDOMReference.jsm",
   element: "chrome://marionette/content/element.js",
   error: "chrome://marionette/content/error.js",
   evaluate: "chrome://marionette/content/evaluate.js",
   Log: "chrome://marionette/content/log.js",
+  pprint: "chrome://marionette/content/format.js",
+  WebElement: "chrome://marionette/content/element.js",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
@@ -23,16 +26,10 @@ XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 class MarionetteFrameChild extends JSWindowActorChild {
   constructor() {
     super();
-
-    this.seenEls = new element.Store();
   }
 
   get content() {
     return this.docShell.domWindow;
-  }
-
-  get id() {
-    return this.browsingContext.id;
   }
 
   get innerWindowId() {
@@ -41,7 +38,7 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
   actorCreated() {
     logger.trace(
-      `[${this.id}] Child actor created for window id ${this.innerWindowId}`
+      `[${this.browsingContext.id}] Child actor created for window id ${this.innerWindowId}`
     );
   }
 
@@ -109,7 +106,69 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
   
 
+
+
+
+
+
+
+
+
+  async getElementId(el) {
+    const id = ContentDOMReference.get(el);
+    const webEl = WebElement.from(el);
+    id.webElRef = webEl.toJSON();
+    
+    
+    id.webElRef = await this.sendQuery(
+      "MarionetteFrameChild:ElementIdCacheAdd",
+      id
+    );
+    return id;
+  }
+
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  resolveElement(id) {
+    let webEl;
+    if (id.webElRef) {
+      webEl = WebElement.fromJSON(id.webElRef);
+    }
+    const el = ContentDOMReference.resolve(id);
+    if (element.isStale(el, this.content)) {
+      throw new error.StaleElementReferenceError(
+        pprint`The element reference of ${el || webEl?.uuid} is stale; ` +
+          "either the element is no longer attached to the DOM, " +
+          "it is not in the current frame context, " +
+          "or the document has been refreshed"
+      );
+    }
+    return el;
+  }
+
+  
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -119,15 +178,22 @@ class MarionetteFrameChild extends JSWindowActorChild {
     opts.all = false;
 
     if (opts.startNode) {
-      opts.startNode = this.seenEls.get(opts.startNode);
+      opts.startNode = this.resolveElement(opts.startNode);
     }
 
     const container = { frame: this.content };
     const el = await element.find(container, strategy, selector, opts);
-    return this.seenEls.add(el);
+    return this.getElementId(el);
   }
 
   
+
+
+
+
+
+
+
 
 
 
@@ -137,12 +203,12 @@ class MarionetteFrameChild extends JSWindowActorChild {
     opts.all = true;
 
     if (opts.startNode) {
-      opts.startNode = this.seenEls.get(opts.startNode);
+      opts.startNode = this.resolveElement(opts.startNode);
     }
 
     const container = { frame: this.content };
-    const el = await element.find(container, strategy, selector, opts);
-    return this.seenEls.addAll(el);
+    const els = await element.find(container, strategy, selector, opts);
+    return Promise.all(els.map(el => this.getElementId(el)));
   }
 
   
@@ -157,7 +223,7 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
   async getElementAttribute(options = {}) {
     const { name, webEl } = options;
-    const el = this.seenEls.get(webEl);
+    const el = this.resolveElement(webEl);
 
     if (element.isBooleanAttribute(el, name)) {
       if (el.hasAttribute(name)) {
@@ -173,7 +239,7 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
   async getElementProperty(options = {}) {
     const { name, webEl } = options;
-    const el = this.seenEls.get(webEl);
+    const el = this.resolveElement(webEl);
 
     return typeof el[name] != "undefined" ? el[name] : null;
   }
@@ -183,7 +249,7 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
   async getElementTagName(options = {}) {
     const { webEl } = options;
-    const el = this.seenEls.get(webEl);
+    const el = this.resolveElement(webEl);
     return el.tagName.toLowerCase();
   }
 
@@ -192,7 +258,7 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
   async getElementText(options = {}) {
     const { webEl } = options;
-    const el = this.seenEls.get(webEl);
+    const el = this.resolveElement(webEl);
     return atom.getElementText(el, this.content);
   }
 
@@ -201,7 +267,7 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
   async getElementValueOfCssProperty(options = {}) {
     const { name, webEl } = options;
-    const el = this.seenEls.get(webEl);
+    const el = this.resolveElement(webEl);
 
     const style = this.content.getComputedStyle(el);
     return style.getPropertyValue(name);
@@ -232,9 +298,9 @@ class MarionetteFrameChild extends JSWindowActorChild {
         );
       }
       browsingContext = childContexts[id];
-      this.seenEls.add(browsingContext.embedderElement);
+      await this.getElementId(browsingContext.embedderElement);
     } else {
-      const frameElement = this.seenEls.get(id);
+      const frameElement = this.resolveElement(id);
       const context = childContexts.find(context => {
         return context.embedderElement === frameElement;
       });

@@ -201,6 +201,8 @@ evaluate.sandbox = function(
 
 
 
+
+
 evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
   switch (typeof obj) {
     case "boolean":
@@ -224,6 +226,12 @@ evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
           return seenEls.get(webEl, win);
         }
         return webEl;
+        
+      } else if (
+        seenEls instanceof element.ReferenceStore &&
+        WebElement.isReference(obj.webElRef)
+      ) {
+        return seenEls.add(obj);
       }
 
       
@@ -234,6 +242,10 @@ evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
       return rv;
   }
 };
+
+
+
+
 
 
 
@@ -291,6 +303,9 @@ evaluate.toJSON = function(obj, seenEls) {
 
     
   } else if (WebElement.isReference(obj)) {
+    if (seenEls instanceof element.ReferenceStore) {
+      return seenEls.get(WebElement.fromJSON(obj));
+    }
     return obj;
 
     
