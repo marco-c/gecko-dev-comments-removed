@@ -76,15 +76,7 @@ class GtkCompositorWidget : public CompositorWidget,
   nsWindow* mWidget;
 
  private:
-  
-  
-  
-  
-  
-  
-  
-  
-  Atomic<LayoutDeviceIntSize> mClientSize;
+  LayoutDeviceIntSize mClientSize;
 
   WindowSurfaceProvider mProvider;
 
