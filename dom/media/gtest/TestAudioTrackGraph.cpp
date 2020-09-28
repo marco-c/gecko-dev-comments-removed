@@ -351,15 +351,19 @@ TEST(TestAudioTrackGraph, SourceTrack)
   EXPECT_LE(nrDiscontinuities, 2U);
 }
 
-TEST(TestAudioTrackGraph, CrossGraphPort)
-{
+void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
+                        float aDriftFactor) {
+  std::cerr << "TestCrossGraphPort input: " << aInputRate
+            << ", output: " << aOutputRate << ", driftFactor: " << aDriftFactor
+            << std::endl;
+
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
   
-  MediaTrackGraph* primary = MediaTrackGraph::GetInstance(
-      MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
-      MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
+  MediaTrackGraph* primary =
+      MediaTrackGraph::GetInstance(MediaTrackGraph::AUDIO_THREAD_DRIVER,
+                                    nullptr, aInputRate, nullptr);
 
   RefPtr<SourceMediaTrack> sourceTrack;
   DispatchFunction(
@@ -368,8 +372,7 @@ TEST(TestAudioTrackGraph, CrossGraphPort)
 
   
   MediaTrackGraph* partner = MediaTrackGraph::GetInstance(
-      MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
-      MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE,
+      MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr, aOutputRate,
        reinterpret_cast<cubeb_devid>(1));
 
   RefPtr<CrossGraphReceiver> receiver;
@@ -415,13 +418,16 @@ TEST(TestAudioTrackGraph, CrossGraphPort)
     return inputStream && partnerStream;
   });
 
-  
-  uint32_t totalFrames = 0;
+  partnerStream->SetDriftFactor(aDriftFactor);
+
   inputStream->GoFaster();
   partnerStream->GoFaster();
+
+  
+  uint32_t totalFrames = 0;
   WaitUntil(partnerStream->FramesProcessedEvent(), [&](uint32_t aFrames) {
     totalFrames += aFrames;
-    return totalFrames > static_cast<uint32_t>(partner->GraphRate() / 2);
+    return totalFrames > static_cast<uint32_t>(partner->GraphRate() * 3);
   });
   inputStream->DontGoFaster();
   partnerStream->DontGoFaster();
@@ -442,5 +448,35 @@ TEST(TestAudioTrackGraph, CrossGraphPort)
     sourceTrack->Destroy();
   });
 
-  WaitFor(cubeb->StreamDestroyEvent());
+  uint32_t inputFrequency = inputStream->InputFrequency();
+  uint32_t partnerRate = partnerStream->InputSampleRate();
+
+  uint64_t preSilenceSamples;
+  uint32_t estimatedFreq;
+  uint32_t nrDiscontinuities;
+  Tie(preSilenceSamples, estimatedFreq, nrDiscontinuities) =
+      WaitFor(partnerStream->OutputVerificationEvent());
+
+  EXPECT_NEAR(estimatedFreq, inputFrequency, 10);
+  EXPECT_GE(preSilenceSamples, partnerRate / 100 );
+  EXPECT_LE(nrDiscontinuities, 2U);
+}
+
+TEST(TestAudioTrackGraph, CrossGraphPort)
+{
+  TestCrossGraphPort(44100, 44100, 1);
+  TestCrossGraphPort(44100, 44100, 1.08);
+  TestCrossGraphPort(44100, 44100, 0.92);
+
+  TestCrossGraphPort(48000, 44100, 1);
+  TestCrossGraphPort(48000, 44100, 1.08);
+  TestCrossGraphPort(48000, 44100, 0.92);
+
+  TestCrossGraphPort(44100, 48000, 1);
+  TestCrossGraphPort(44100, 48000, 1.08);
+  TestCrossGraphPort(44100, 48000, 0.92);
+
+  TestCrossGraphPort(52110, 17781, 1);
+  TestCrossGraphPort(52110, 17781, 1.08);
+  TestCrossGraphPort(52110, 17781, 0.92);
 }
