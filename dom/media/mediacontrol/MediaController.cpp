@@ -352,14 +352,7 @@ bool MediaController::ShouldActivateController() const {
 
 bool MediaController::ShouldDeactivateController() const {
   MOZ_ASSERT(!mShutdown);
-  
-  
-  
-  
-  
-  
-  return !IsAnyMediaBeingControlled() && mIsActive &&
-         !mActiveMediaSessionContextId;
+  return !IsAnyMediaBeingControlled() && mIsActive;
 }
 
 void MediaController::Activate() {
@@ -506,11 +499,6 @@ void MediaController::HandleMetadataChanged(
   
   
   DispatchAsyncEvent(u"metadatachange"_ns);
-  
-  
-  if (ShouldDeactivateController()) {
-    Deactivate();
-  }
 }
 
 void MediaController::DispatchAsyncEvent(const nsAString& aName) {

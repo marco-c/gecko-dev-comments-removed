@@ -12,30 +12,13 @@ add_task(async function setupTestingPref() {
 
 
 
-
-
-add_task(async function testControllerShouldStopAfterMediaReachesToTheEnd() {
+add_task(async function testControlShouldStopAfterMediaReachesToTheEnd() {
   info(`open media page and play media until the end`);
   const tab = await createTabAndLoad(PAGE_URL);
   await Promise.all([
     checkIfMediaControllerBecomeInactiveAfterMediaEnds(tab),
     playMediaUntilItReachesToTheEnd(tab),
   ]);
-
-  info(`remove tab`);
-  await BrowserTestUtils.removeTab(tab);
-});
-
-add_task(async function testControllerWontStopAfterMediaReachesToTheEnd() {
-  info(`open media page and create media session`);
-  const tab = await createTabAndLoad(PAGE_URL);
-  await createMediaSession(tab);
-
-  info(`play media until the end`);
-  await playMediaUntilItReachesToTheEnd(tab);
-
-  info(`controller is still active because of having active media session`);
-  await checkControllerIsActive(tab);
 
   info(`remove tab`);
   await BrowserTestUtils.removeTab(tab);
@@ -93,16 +76,4 @@ function playMediaUntilItReachesToTheEnd(tab) {
     video.play();
     await new Promise(r => (video.onended = r));
   });
-}
-
-function createMediaSession(tab) {
-  return SpecialPowers.spawn(tab.linkedBrowser, [], _ => {
-    
-    content.navigator.mediaSession;
-  });
-}
-
-function checkControllerIsActive(tab) {
-  const controller = tab.linkedBrowser.browsingContext.mediaController;
-  ok(controller.isActive, `controller is active`);
 }

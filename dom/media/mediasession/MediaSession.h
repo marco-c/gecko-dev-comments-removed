@@ -15,7 +15,6 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EnumeratedArray.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIDocumentActivity.h"
 #include "nsWrapperCache.h"
 
 class nsPIDOMWindowInner;
@@ -36,12 +35,11 @@ struct PositionState {
   double mLastReportedPlaybackPosition;
 };
 
-class MediaSession final : public nsIDocumentActivity, public nsWrapperCache {
+class MediaSession final : public nsISupports, public nsWrapperCache {
  public:
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MediaSession)
-  NS_DECL_NSIDOCUMENTACTIVITY
 
   explicit MediaSession(nsPIDOMWindowInner* aParent);
 
@@ -82,16 +80,14 @@ class MediaSession final : public nsIDocumentActivity, public nsWrapperCache {
  private:
   
   
-  
-  enum class SessionDocStatus : bool {
-    eInactive = false,
-    eActive = true,
+  enum class SessionStatus : bool {
+    eDestroyed = false,
+    eCreated = true,
   };
-  void SetMediaSessionDocStatus(SessionDocStatus aState);
 
   
   
-  void NotifyMediaSessionDocStatus(SessionDocStatus aState);
+  void NotifyMediaSessionStatus(SessionStatus aState);
   void NotifyMetadataUpdated();
   void NotifyEnableSupportedAction(MediaSessionAction aAction);
   void NotifyDisableSupportedAction(MediaSessionAction aAction);
@@ -118,8 +114,6 @@ class MediaSession final : public nsIDocumentActivity, public nsWrapperCache {
       MediaSessionPlaybackState::None;
 
   Maybe<PositionState> mPositionState;
-  RefPtr<Document> mDoc;
-  SessionDocStatus mSessionDocState = SessionDocStatus::eInactive;
 };
 
 }  
