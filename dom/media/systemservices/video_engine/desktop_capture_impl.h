@@ -202,17 +202,16 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   int32_t _id;                  
   std::string _deviceUniqueId;  
   CaptureDeviceType _deviceType;
-  rtc::CriticalSection _apiCs;
+
   VideoCaptureCapability
       _requestedCapability;  
                              
-
  private:
   int32_t Init();
   void UpdateFrameCount();
   uint32_t CalculateFrameRate(int64_t now_ns);
 
-  rtc::CriticalSection _callBackCs;
+  rtc::CriticalSection _apiCs;
 
   std::set<rtc::VideoSinkInterface<VideoFrame>*> _dataCallBacks;
 
