@@ -13,6 +13,15 @@ namespace js {
 namespace jit {
 
 
+
+enum class TrialInliningState : uint8_t {
+  Initial = 0,
+  Candidate,
+  Inlined,
+  Failure,
+};
+
+
 class ICState {
  public:
   
@@ -27,6 +36,9 @@ class ICState {
 
  private:
   uint32_t mode_ : 2;
+
+  
+  uint32_t trialInliningState_ : 2;
 
   
   
@@ -100,6 +112,7 @@ class ICState {
   }
   void reset() {
     setMode(Mode::Specialized);
+    trialInliningState_ = uint32_t(TrialInliningState::Initial);
     usedByTranspiler_ = false;
     numOptimizedStubs_ = 0;
     numFailures_ = 0;
@@ -132,6 +145,39 @@ class ICState {
   void clearUsedByTranspiler() { usedByTranspiler_ = false; }
   void setUsedByTranspiler() { usedByTranspiler_ = true; }
   bool usedByTranspiler() const { return usedByTranspiler_; }
+
+  TrialInliningState trialInliningState() const {
+    return TrialInliningState(trialInliningState_);
+  }
+  void setTrialInliningState(TrialInliningState state) {
+#ifdef DEBUG
+    
+    
+    
+    
+    
+    
+    if (state != TrialInliningState::Failure) {
+      switch (trialInliningState()) {
+        case TrialInliningState::Initial:
+          MOZ_ASSERT(state == TrialInliningState::Candidate);
+          break;
+        case TrialInliningState::Candidate:
+          MOZ_ASSERT(state == TrialInliningState::Candidate ||
+                     state == TrialInliningState::Inlined);
+          break;
+        case TrialInliningState::Inlined:
+        case TrialInliningState::Failure:
+          MOZ_CRASH("Inlined and Failure can only change to Failure");
+          break;
+      }
+    }
+#endif
+
+    trialInliningState_ = uint32_t(state);
+    MOZ_ASSERT(trialInliningState() == state,
+               "TrialInliningState must fit in bitfield");
+  }
 };
 
 }  
