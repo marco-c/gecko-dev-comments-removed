@@ -8,7 +8,6 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
-#include "nsAutoRef.h"
 #include "nsLocalFile.h"
 #include "nsMemoryReporterManager.h"
 #include "nsNetCID.h"
@@ -20,12 +19,6 @@
 #include <dirent.h>
 
 #define NANOPERSEC 1000000000.
-
-template <>
-class nsAutoRefTraits<DIR> : public nsPointerRefTraits<DIR> {
- public:
-  static void Release(DIR* dirHandle) { closedir(dirHandle); }
-};
 
 namespace mozilla {
 
@@ -253,7 +246,7 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
           
           nsCString taskPath;
           taskPath.AppendPrintf("/proc/%u/task", request.pid);
-          nsAutoRef<DIR> dirHandle(opendir(taskPath.get()));
+          DIR* dirHandle = opendir(taskPath.get());
           if (!dirHandle) {
             
             
@@ -261,6 +254,7 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
             
             continue;
           }
+          auto cleanup = mozilla::MakeScopeExit([&] { closedir(dirHandle); });
 
           
           dirent* entry;

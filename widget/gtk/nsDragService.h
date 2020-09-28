@@ -10,7 +10,6 @@
 #include "mozilla/RefPtr.h"
 #include "nsBaseDragService.h"
 #include "nsIObserver.h"
-#include "nsAutoRef.h"
 #include <gtk/gtk.h>
 
 class nsWindow;
@@ -21,29 +20,6 @@ namespace gfx {
 class SourceSurface;
 }
 }  
-
-#ifndef HAVE_NSGOBJECTREFTRAITS
-#  define HAVE_NSGOBJECTREFTRAITS
-template <class T>
-class nsGObjectRefTraits : public nsPointerRefTraits<T> {
- public:
-  static void Release(T* aPtr) { g_object_unref(aPtr); }
-  static void AddRef(T* aPtr) { g_object_ref(aPtr); }
-};
-#endif
-
-#ifndef HAVE_NSAUTOREFTRAITS_GTKWIDGET
-#  define HAVE_NSAUTOREFTRAITS_GTKWIDGET
-template <>
-class nsAutoRefTraits<GtkWidget> : public nsGObjectRefTraits<GtkWidget> {};
-#endif
-
-#ifndef HAVE_NSAUTOREFTRAITS_GDKDRAGCONTEXT
-#  define HAVE_NSAUTOREFTRAITS_GDKDRAGCONTEXT
-template <>
-class nsAutoRefTraits<GdkDragContext>
-    : public nsGObjectRefTraits<GdkDragContext> {};
-#endif
 
 
 
@@ -148,7 +124,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   RefPtr<nsWindow> mPendingWindow;
   mozilla::LayoutDeviceIntPoint mPendingWindowPoint;
-  nsCountedRef<GdkDragContext> mPendingDragContext;
+  RefPtr<GdkDragContext> mPendingDragContext;
 #ifdef MOZ_WAYLAND
   RefPtr<nsWaylandDragContext> mPendingWaylandDragContext;
 #endif
@@ -161,14 +137,14 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   mozilla::LayoutDeviceIntPoint mTargetWindowPoint;
   
   
-  nsCountedRef<GtkWidget> mTargetWidget;
-  nsCountedRef<GdkDragContext> mTargetDragContext;
+  RefPtr<GtkWidget> mTargetWidget;
+  RefPtr<GdkDragContext> mTargetDragContext;
 #ifdef MOZ_WAYLAND
   RefPtr<nsWaylandDragContext> mTargetWaylandDragContext;
 #endif
   
   
-  nsCountedRef<GdkDragContext> mTargetDragContextForRemote;
+  RefPtr<GdkDragContext> mTargetDragContextForRemote;
 #ifdef MOZ_WAYLAND
   RefPtr<nsWaylandDragContext> mTargetWaylandDragContextForRemote;
 #endif
