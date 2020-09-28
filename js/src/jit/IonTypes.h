@@ -195,6 +195,9 @@ enum class BailoutKind : uint8_t {
   MegamorphicAccess,
 
   
+  ArgumentsObjectAccess,
+
+  
   ArrayPopShift,
 
   
@@ -320,6 +323,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::NotArrayBufferMaybeSharedGuard";
     case BailoutKind::MegamorphicAccess:
       return "BailoutKind::MegamorphicAccess";
+    case BailoutKind::ArgumentsObjectAccess:
+      return "BailoutKind::ArgumentsObjectAccess";
     case BailoutKind::ArrayPopShift:
       return "BailoutKind::ArrayPopShift";
     case BailoutKind::ArraySlice:
