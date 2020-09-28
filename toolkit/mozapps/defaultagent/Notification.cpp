@@ -34,6 +34,8 @@
 
 #define MUTEX_TIMEOUT_MS (10 * 60 * 1000)
 
+bool FirefoxInstallIsEnglish();
+
 static bool SetInitialNotificationShown(bool wasShown) {
   return !RegistrySetValueBool(IsPrefixed::Unprefixed,
                                L"InitialNotificationShown", wasShown)
@@ -97,11 +99,28 @@ struct ToastStrings {
 };
 
 struct Strings {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   ToastStrings initialToast;
   ToastStrings followupToast;
+  ToastStrings localizedToast;
 
   
-  const ToastStrings* GetToastStrings(NotificationType whichToast) const {
+  const ToastStrings* GetToastStrings(NotificationType whichToast,
+                                      bool englishStrings) const {
+    if (!englishStrings) {
+      return &localizedToast;
+    }
     if (whichToast == NotificationType::Initial) {
       return &initialToast;
     }
@@ -125,9 +144,6 @@ static bool GetString(const wchar_t* iniPath, const char* section,
   }
   return true;
 }
-
-
-
 
 
 
@@ -165,6 +181,29 @@ static bool GetStrings(Strings& strings) {
                        &strings.followupToast.action2);
   int result = stringsReader.Read();
   if (result != OK) {
+    LOG_ERROR_MESSAGE(L"Unable to read English strings: %d", result);
+    return false;
+  }
+
+  const wchar_t* localizedIniFormat = L"%s\\defaultagent_localized.ini";
+  bufferSize = _scwprintf(localizedIniFormat, installPath.get());
+  ++bufferSize;  
+  mozilla::UniquePtr<wchar_t[]> localizedIniPath =
+      mozilla::MakeUnique<wchar_t[]>(bufferSize);
+  _snwprintf_s(localizedIniPath.get(), bufferSize, _TRUNCATE,
+               localizedIniFormat, installPath.get());
+
+  IniReader localizedReader(localizedIniPath.get());
+  localizedReader.AddKey("DefaultBrowserNotificationTitle",
+                         &strings.localizedToast.text1);
+  localizedReader.AddKey("DefaultBrowserNotificationText",
+                         &strings.localizedToast.text2);
+  localizedReader.AddKey("DefaultBrowserNotificationYesButtonText",
+                         &strings.localizedToast.action1);
+  localizedReader.AddKey("DefaultBrowserNotificationNoButtonText",
+                         &strings.localizedToast.action2);
+  result = localizedReader.Read();
+  if (result != OK) {
     LOG_ERROR_MESSAGE(L"Unable to read localized strings: %d", result);
     return false;
   }
@@ -176,6 +215,8 @@ static bool GetStrings(Strings& strings) {
                             &strings.initialToast.relImagePath);
   nonlocalizedReader.AddKey("FollowupToastRelativeImagePath",
                             &strings.followupToast.relImagePath);
+  nonlocalizedReader.AddKey("LocalizedToastRelativeImagePath",
+                            &strings.localizedToast.relImagePath);
   result = nonlocalizedReader.Read();
   if (result != OK) {
     LOG_ERROR_MESSAGE(L"Unable to read non-localized strings: %d", result);
@@ -211,11 +252,14 @@ static HANDLE gHandlerMutex = INVALID_HANDLE_VALUE;
 class ToastHandler : public WinToastLib::IWinToastHandler {
  private:
   NotificationType mWhichNotification;
+  bool mIsLocalizedNotification;
   HANDLE mEvent;
 
  public:
-  ToastHandler(NotificationType whichNotification, HANDLE event) {
+  ToastHandler(NotificationType whichNotification, bool isEnglishInstall,
+               HANDLE event) {
     mWhichNotification = whichNotification;
+    mIsLocalizedNotification = !isEnglishInstall;
     mEvent = event;
   }
 
@@ -273,8 +317,14 @@ class ToastHandler : public WinToastLib::IWinToastHandler {
     
     activitiesPerformed.action = NotificationAction::NoAction;
 
-    if (actionIndex == 0) {
-      if (mWhichNotification == NotificationType::Initial) {
+    
+    
+    
+    
+    if ((actionIndex == 0 && !mIsLocalizedNotification) ||
+        (actionIndex == 1 && mIsLocalizedNotification)) {
+      if (mWhichNotification == NotificationType::Initial &&
+          !mIsLocalizedNotification) {
         
         activitiesPerformed.action = NotificationAction::RemindMeLater;
         if (!SetFollowupNotificationRequestTime(GetCurrentTimestamp())) {
@@ -285,9 +335,12 @@ class ToastHandler : public WinToastLib::IWinToastHandler {
         
         
         
+        
         activitiesPerformed.action = NotificationAction::DismissedByButton;
       }
-    } else if (actionIndex == 1) {
+    } else if ((actionIndex == 1 && !mIsLocalizedNotification) ||
+               (actionIndex == 0 && mIsLocalizedNotification)) {
+      
       
       activitiesPerformed.action = NotificationAction::MakeFirefoxDefaultButton;
       LaunchModernSettingsDialogDefaultApps();
@@ -350,11 +403,14 @@ static NotificationActivities ShowNotification(
     return activitiesPerformed;
   }
 
+  bool isEnglishInstall = FirefoxInstallIsEnglish();
+
   Strings strings;
   if (!GetStrings(strings)) {
     return activitiesPerformed;
   }
-  const ToastStrings* toastStrings = strings.GetToastStrings(whichNotification);
+  const ToastStrings* toastStrings =
+      strings.GetToastStrings(whichNotification, isEnglishInstall);
 
   
   
@@ -422,7 +478,8 @@ static NotificationActivities ShowNotification(
   toastTemplate.addAction(toastStrings->action1.get());
   toastTemplate.addAction(toastStrings->action2.get());
   toastTemplate.setImagePath(absImagePath.get());
-  ToastHandler* handler = new ToastHandler(whichNotification, event.get());
+  ToastHandler* handler =
+      new ToastHandler(whichNotification, isEnglishInstall, event.get());
   INT64 id = WinToast::instance()->showToast(toastTemplate, handler, &error);
   if (id < 0) {
     LOG_ERROR_MESSAGE(WinToast::strerror(error).c_str());
@@ -472,16 +529,7 @@ static NotificationActivities ShowNotification(
 
 
 
-bool IsEnglish() {
-  mozilla::UniquePtr<wchar_t[]> windowsLocale =
-      mozilla::MakeUnique<wchar_t[]>(LOCALE_NAME_MAX_LENGTH);
-  int result =
-      GetUserDefaultLocaleName(windowsLocale.get(), LOCALE_NAME_MAX_LENGTH);
-  if (result == 0) {
-    LOG_ERROR_MESSAGE(L"Unable to get locale: %#X", GetLastError());
-    return false;
-  }
-
+bool FirefoxInstallIsEnglish() {
   mozilla::UniquePtr<wchar_t[]> installPath;
   bool success = GetInstallDirectory(installPath);
   if (!success) {
@@ -501,8 +549,7 @@ bool IsEnglish() {
     return false;
   }
 
-  return _wcsnicmp(windowsLocale.get(), L"en-", 3) == 0 &&
-         _wcsnicmp(firefoxLocale.get(), L"en-", 3) == 0;
+  return _wcsnicmp(firefoxLocale.get(), L"en-", 3) == 0;
 }
 
 
@@ -516,9 +563,7 @@ NotificationActivities MaybeShowNotification(
                                                 NotificationShown::NotShown,
                                                 NotificationAction::NoAction};
 
-  if (!mozilla::IsWin10OrLater() || !IsEnglish()) {
-    
-    
+  if (!mozilla::IsWin10OrLater()) {
     
     
     return activitiesPerformed;
