@@ -564,13 +564,26 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
   RefPtr<BrowsingContext> bc;
   loadInfo->GetBrowsingContext(getter_AddRefs(bc));
 
-  
-  if (!bc) {
-    return;
-  }
-
   nsCOMPtr<nsIURI> uri;
   Unused << aChannel->GetURI(getter_AddRefs(uri));
+
+  
+  
+  if (!bc) {
+    
+    auto* loadingPrincipal =
+        BasePrincipal::Cast(loadInfo->GetLoadingPrincipal());
+
+    if (uri && loadingPrincipal) {
+      bool isThirdParty = true;
+      nsresult rv = loadingPrincipal->IsThirdPartyURI(uri, &isThirdParty);
+
+      if (NS_SUCCEEDED(rv)) {
+        loadInfo->SetIsThirdPartyContextToTopWindow(isThirdParty);
+      }
+    }
+    return;
+  }
 
   RefPtr<WindowGlobalParent> topWindow =
       GetTopWindowExcludingExtensionAccessibleContentFrames(bc->Canonical(),
