@@ -37,6 +37,7 @@ using mozilla::DefaultXDisplay;
 #include "nsAttrName.h"
 #include "nsIFocusManager.h"
 #include "nsFocusManager.h"
+#include "nsIProtocolHandler.h"
 #include "nsIScrollableFrame.h"
 #include "nsIDocShell.h"
 #include "ImageContainer.h"
@@ -427,14 +428,33 @@ NS_IMETHODIMP nsPluginInstanceOwner::GetURL(
   
   
   
+  
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   if (!aDoCheckLoadURIChecks) {
     mozilla::OriginAttributes attrs =
         BasePrincipal::Cast(content->NodePrincipal())->OriginAttributesRef();
     triggeringPrincipal = BasePrincipal::CreateContentPrincipal(uri, attrs);
   } else {
-    triggeringPrincipal =
-        NullPrincipal::CreateWithInheritedAttributes(content->NodePrincipal());
+    bool useParentContentPrincipal = false;
+    nsCOMPtr<nsINetUtil> netUtil = do_GetNetUtil();
+    
+    
+    
+    
+    
+    
+    
+    
+    netUtil->ProtocolHasFlags(uri,
+                              nsIProtocolHandler::URI_LOADABLE_BY_ANYONE |
+                                  nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
+                              &useParentContentPrincipal);
+    if (useParentContentPrincipal) {
+      triggeringPrincipal = content->NodePrincipal();
+    } else {
+      triggeringPrincipal = NullPrincipal::CreateWithInheritedAttributes(
+          content->NodePrincipal());
+    }
   }
 
   nsCOMPtr<nsIContentSecurityPolicy> csp = content->GetCsp();
