@@ -61,13 +61,6 @@ class MediaSessionTest : BaseSessionTest() {
                         DOM_TEST_TITLE3,
                         DOM_TEST_ARTIST3,
                         DOM_TEST_ALBUM3))
-
-        val DEFAULT_META = arrayOf(
-                Metadata(
-                        DEFAULT_TEST_TITLE1,
-                        
-                        "",
-                        ""))
     }
 
     @Before
@@ -123,7 +116,8 @@ class MediaSessionTest : BaseSessionTest() {
         
         
         val completedStep4 = GeckoResult.allOf(
-                onPlayCalled[1])
+                onPlayCalled[1],
+                onMetadataCalled[1])
 
         
         
@@ -134,7 +128,7 @@ class MediaSessionTest : BaseSessionTest() {
         
         
         val completedStep6 = GeckoResult.allOf(
-                onMetadataCalled[1],
+                onMetadataCalled[2],
                 onPlayCalled[2])
 
         
@@ -143,16 +137,18 @@ class MediaSessionTest : BaseSessionTest() {
         
         val completedStep7 = GeckoResult.allOf(
                 onPauseCalled[2],
-                onMetadataCalled[2],
+                onMetadataCalled[3],
                 onPlayCalled[3])
 
         
         
         
         
-        val completedStep8 = GeckoResult.allOf(
-                onPauseCalled[3],
-                onMetadataCalled[3],
+        val completedStep8a = GeckoResult.allOf(
+                onPauseCalled[3])
+        
+        val completedStep8b = GeckoResult.allOf(
+                onMetadataCalled[4],
                 onPlayCalled[4])
 
         
@@ -174,6 +170,12 @@ class MediaSessionTest : BaseSessionTest() {
                     mediaSession: MediaSession) {
                 onActivatedCalled[0].complete(null)
                 mediaSession1 = mediaSession
+            }
+
+            @AssertCalled(false)
+            override fun onDeactivated(
+                    session: GeckoSession,
+                    mediaSession: MediaSession) {
             }
 
             @AssertCalled
@@ -282,27 +284,29 @@ class MediaSessionTest : BaseSessionTest() {
 
         sessionRule.waitForResult(completedStep4)
         sessionRule.waitForResult(completedStep5)
+        mediaSession1!!.pause()
         mediaSession1!!.nextTrack()
+        mediaSession1!!.play()
 
         sessionRule.waitForResult(completedStep6)
+        mediaSession1!!.pause()
         mediaSession1!!.nextTrack()
+        mediaSession1!!.play()
 
         sessionRule.waitForResult(completedStep7)
-        mediaSession1!!.previousTrack()
+        mediaSession1!!.pause()
 
-        sessionRule.waitForResult(completedStep8)
+        sessionRule.waitForResult(completedStep8a)
+        mediaSession1!!.previousTrack()
+        mediaSession1!!.play()
+
+        sessionRule.waitForResult(completedStep8b)
         sessionRule.waitForResult(completedStep9)
     }
 
     @Test
     fun defaultMetadataPlayback() {
         val onActivatedCalled = arrayOf(GeckoResult<Void>())
-        val onMetadataCalled = arrayOf(
-                GeckoResult<Void>(),
-                GeckoResult<Void>(),
-                GeckoResult<Void>(),
-                GeckoResult<Void>(),
-                GeckoResult<Void>())
         val onPlayCalled = arrayOf(GeckoResult<Void>(),
                 GeckoResult<Void>(),
                 GeckoResult<Void>(),
@@ -321,10 +325,8 @@ class MediaSessionTest : BaseSessionTest() {
         
         
         
-        
         val completedStep2 = GeckoResult.allOf(
                 onActivatedCalled[0],
-                onMetadataCalled[0],
                 onPlayCalled[0])
 
         
@@ -356,47 +358,6 @@ class MediaSessionTest : BaseSessionTest() {
                     mediaSession: MediaSession) {
                 onActivatedCalled[0].complete(null)
                 mediaSession1 = mediaSession
-            }
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            @AssertCalled(count = 1)
-            override fun onMetadata(
-                    session: GeckoSession,
-                    mediaSession: MediaSession,
-                    meta: MediaSession.Metadata) {
-                assertThat(
-                        "Title should match",
-                        meta.title,
-                        equalTo(DEFAULT_META[0].title))
-                assertThat(
-                        "Artist should match",
-                        meta.artist,
-                        equalTo(DEFAULT_META[0].artist))
-                assertThat(
-                        "Album should match",
-                        meta.album,
-                        equalTo(DEFAULT_META[0].album))
-
-                onMetadataCalled[sessionRule.currentCall.counter - 1]
-                        .complete(null)
             }
 
             @AssertCalled(count = 2)
@@ -699,7 +660,9 @@ class MediaSessionTest : BaseSessionTest() {
         mediaSession2!!.pause()
         sessionRule.waitForResult(completedStep6)
 
+        mediaSession1!!.pause()
         mediaSession1!!.nextTrack()
+        mediaSession1!!.play()
         sessionRule.waitForResult(completedStep7)
         sessionRule.waitForResult(completedStep8)
     }
