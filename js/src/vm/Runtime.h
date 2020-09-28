@@ -90,7 +90,7 @@ namespace js {
 extern MOZ_COLD void ReportOutOfMemory(JSContext* cx);
 
 
-extern MOZ_COLD mozilla::GenericErrorResult<OOM> ReportOutOfMemoryResult(
+extern MOZ_COLD mozilla::GenericErrorResult<OOM&> ReportOutOfMemoryResult(
     JSContext* cx);
 
 extern MOZ_COLD void ReportAllocationOverflow(JSContext* maybecx);

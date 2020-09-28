@@ -177,9 +177,6 @@ namespace JS {
 
 using mozilla::Ok;
 
-template <typename T>
-struct UnusedZero;
-
 
 
 
@@ -187,71 +184,10 @@ struct UnusedZero;
 struct Error {
   
   
-  enum class ErrorKind : uintptr_t { Unspecified = 2, OOM = 4 };
-
-  const ErrorKind kind = ErrorKind::Unspecified;
-
-  Error() = default;
-
- protected:
-  friend struct UnusedZero<Error>;
-
-  constexpr MOZ_IMPLICIT Error(ErrorKind kind) : kind(kind) {}
+  int dummy;
 };
 
-struct OOM : Error {
-  constexpr OOM() : Error(ErrorKind::OOM) {}
-
- protected:
-  friend struct UnusedZero<OOM>;
-
-  using Error::Error;
-};
-
-template <typename T>
-struct UnusedZero {
-  using StorageType = std::underlying_type_t<Error::ErrorKind>;
-
-  static constexpr bool value = true;
-  static constexpr StorageType nullValue = 0;
-  static constexpr StorageType GetDefaultValue() {
-    return T::ErrorKind::Unspecified;
-  }
-
-  static constexpr void AssertValid(StorageType aValue) {}
-  static constexpr T Inspect(const StorageType& aValue) {
-    return static_cast<Error::ErrorKind>(aValue);
-  }
-  static constexpr T Unwrap(StorageType aValue) {
-    return static_cast<Error::ErrorKind>(aValue);
-  }
-  static constexpr StorageType Store(T aValue) {
-    return static_cast<StorageType>(aValue.kind);
-  }
-};
-
-}  
-
-namespace mozilla::detail {
-
-template <>
-struct UnusedZero<JS::Error> : JS::UnusedZero<JS::Error> {};
-
-template <>
-struct UnusedZero<JS::OOM> : JS::UnusedZero<JS::OOM> {};
-
-template <>
-struct HasFreeLSB<JS::Error> {
-  static const bool value = true;
-};
-
-template <>
-struct HasFreeLSB<JS::OOM> {
-  static const bool value = true;
-};
-}  
-
-namespace JS {
+struct OOM : public Error {};
 
 
 
@@ -268,14 +204,14 @@ namespace JS {
 
 
 
-template <typename V = Ok, typename E = Error>
+template <typename V = Ok, typename E = Error&>
 using Result = mozilla::Result<V, E>;
 
 static_assert(sizeof(Result<>) == sizeof(uintptr_t),
               "Result<> should be pointer-sized");
 
-static_assert(sizeof(Result<int*, Error>) == sizeof(uintptr_t),
-              "Result<V*, Error> should be pointer-sized");
+static_assert(sizeof(Result<int*, Error&>) == sizeof(uintptr_t),
+              "Result<V*, Error&> should be pointer-sized");
 
 }  
 

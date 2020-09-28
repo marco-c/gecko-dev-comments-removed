@@ -24,7 +24,7 @@
 #include "vm/JSObject-inl.h"  
 #include "vm/NativeObject-inl.h"  
 
- inline JS::Result<js::PlainObject*, JS::OOM>
+ inline JS::Result<js::PlainObject*, JS::OOM&>
 js::PlainObject::createWithTemplate(JSContext* cx,
                                     JS::Handle<PlainObject*> templateObject) {
   JS::Rooted<ObjectGroup*> group(cx, templateObject->group());
