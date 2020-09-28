@@ -103,6 +103,7 @@ import android.view.inputmethod.EditorInfo;
     private String mIMETypeHint = ""; 
     private String mIMEModeHint = ""; 
     private String mIMEActionHint = ""; 
+    private String mIMEAutocapitalize = ""; 
     private int mIMEFlags; 
 
     private boolean mIgnoreSelectionChange; 
@@ -1471,14 +1472,18 @@ import android.view.inputmethod.EditorInfo;
     @Override 
     public void notifyIMEContext(final IBinder token, final int state, final String typeHint,
                                  final String modeHint, final String actionHint,
+                                 final String autocapitalize,
                                  final int flags) {
         
         if (DEBUG) {
-            Log.d(LOGTAG, "notifyIMEContext(" +
-                          getConstantName(SessionTextInput.EditableListener.class,
-                                          "IME_STATE_", state) +
-                          ", \"" + typeHint + "\", \"" + modeHint + "\", \"" + actionHint +
-                          "\", 0x" + Integer.toHexString(flags) + ")");
+            final StringBuilder sb = new StringBuilder("notifyIMEContext(");
+            sb.append(getConstantName(SessionTextInput.EditableListener.class, "IME_STATE_", state))
+                .append(", type=\""). append(typeHint)
+                .append("\", inputmode=\"").append(modeHint)
+                .append("\", autocapitalize=\"").append(autocapitalize)
+                .append("\", flags=0x").append(Integer.toHexString(flags))
+                .append(")");
+            Log.d(LOGTAG, sb.toString());
         }
 
         
@@ -1493,13 +1498,14 @@ import android.view.inputmethod.EditorInfo;
         mIcPostHandler.post(new Runnable() {
             @Override
             public void run() {
-                icNotifyIMEContext(state, typeHint, modeHint, actionHint, flags);
+                icNotifyIMEContext(state, typeHint, modeHint, actionHint, autocapitalize, flags);
             }
         });
     }
 
      void icNotifyIMEContext(final int originalState, final String typeHint,
                                           final String modeHint, final String actionHint,
+                                          final String autocapitalize,
                                           final int flags) {
         if (DEBUG) {
             assertOnIcThread();
@@ -1525,6 +1531,7 @@ import android.view.inputmethod.EditorInfo;
         mIMETypeHint = (typeHint == null) ? "" : typeHint;
         mIMEModeHint = (modeHint == null) ? "" : modeHint;
         mIMEActionHint = (actionHint == null) ? "" : actionHint;
+        mIMEAutocapitalize = (autocapitalize == null) ? "" : autocapitalize;
         mIMEFlags = flags;
 
         if (mListener != null) {
@@ -1596,6 +1603,7 @@ import android.view.inputmethod.EditorInfo;
         final String typeHint = mIMETypeHint;
         final String modeHint = mIMEModeHint;
         final String actionHint = mIMEActionHint;
+        final String autocapitalize = mIMEAutocapitalize;
         final int flags = mIMEFlags;
 
         
@@ -1651,11 +1659,20 @@ import android.view.inputmethod.EditorInfo;
                 
                 outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT |
                         InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
-                if (!typeHint.equalsIgnoreCase("text")) {
-                    
-                    outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
-                }
             }
+        }
+
+        if (autocapitalize.equals("characters")) {
+            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
+        } else if (autocapitalize.equals("none")) {
+            
+        } else if (autocapitalize.equals("sentences")) {
+            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+        } else if (autocapitalize.equals("words")) {
+            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_WORDS;
+        } else if (!typeHint.equalsIgnoreCase("text") && modeHint.length() == 0) {
+            
+            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
         }
 
         if (actionHint.equals("enter")) {
