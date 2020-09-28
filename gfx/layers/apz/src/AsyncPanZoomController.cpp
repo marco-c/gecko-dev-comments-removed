@@ -4514,9 +4514,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   
   
   
-  bool visualScrollOffsetUpdated =
-      isDefault ||
-      aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eNone;
+  bool ignoreVisualUpdate = false;
 
   
   
@@ -4679,7 +4677,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       
       
       
-      visualScrollOffsetUpdated = false;
+      ignoreVisualUpdate = true;
 
       
       
@@ -4729,7 +4727,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     if (nsLayoutUtils::CanScrollOriginClobberApz(scrollUpdate.GetOrigin()) &&
         aLayerMetrics.GetVisualScrollUpdateType() !=
             FrameMetrics::eMainThread) {
-      visualScrollOffsetUpdated = false;
+      ignoreVisualUpdate = true;
     }
 
     Maybe<CSSPoint> relativeDelta;
@@ -4774,7 +4772,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       
       
       
-      visualScrollOffsetUpdated = false;
+      ignoreVisualUpdate = true;
 
       relativeDelta =
           Some(Metrics().ApplyPureRelativeScrollUpdateFrom(scrollUpdate));
@@ -4830,6 +4828,18 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       sampledState.ClampVisualScrollOffset(Metrics());
     }
   }
+
+  
+  
+  
+  
+  
+  
+  
+  bool visualScrollOffsetUpdated =
+      !ignoreVisualUpdate &&
+      (isDefault ||
+       aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eNone);
 
   if (visualScrollOffsetUpdated) {
     APZC_LOG("%p updating visual scroll offset from %s to %s (updateType %d)\n",
