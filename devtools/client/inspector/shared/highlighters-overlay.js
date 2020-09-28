@@ -158,8 +158,6 @@ class HighlightersOverlay {
     
     this.hoveredHighlighterShown = null;
     
-    this.selectorHighlighterShown = null;
-    
     this.shapesHighlighterShown = null;
 
     this.onClick = this.onClick.bind(this);
@@ -215,6 +213,74 @@ class HighlightersOverlay {
 
 
 
+
+
+
+
+
+
+
+
+  async _beforeShowHighlighterTypeForNode(type, nodeFront, options) {
+    
+    const {
+      highlighter: activeHighlighter,
+      nodeFront: activeNodeFront,
+      options: activeOptions,
+      timer: activeTimer,
+    } = this.getDataForActiveHighlighter(type);
+
+    
+    if (!activeHighlighter) {
+      return false;
+    }
+
+    
+    let skipShow = false;
+
+    
+    
+    
+    
+    clearTimeout(activeTimer);
+
+    switch (type) {
+      
+      
+      case TYPES.SELECTOR:
+        if (
+          nodeFront === activeNodeFront &&
+          options?.selector !== activeOptions?.selector
+        ) {
+          await this.hideHighlighterType(TYPES.SELECTOR);
+        }
+        break;
+
+      
+      
+      
+      
+      default:
+        if (nodeFront !== activeNodeFront) {
+          await this.hideHighlighterType(type);
+        } else if (deepEqual(options, activeOptions)) {
+          skipShow = true;
+        }
+    }
+
+    return skipShow;
+  }
+
+  
+
+
+
+
+
+
+
+
+
   async _getHighlighterTypeForNode(type, nodeFront) {
     const { inspectorFront } = nodeFront;
     const highlighter = await inspectorFront.getOrCreateHighlighterByType(type);
@@ -237,6 +303,39 @@ class HighlightersOverlay {
 
     const { highlighter } = this._activeHighlighters.get(type);
     return highlighter;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getDataForActiveHighlighter(type) {
+    if (!this._activeHighlighters.has(type)) {
+      return {};
+    }
+
+    return this._activeHighlighters.get(type);
+  }
+
+  
+
+
+
+
+
+
+  getOptionsForActiveHighlighter(type) {
+    const { options } = this.getDataForActiveHighlighter(type);
+    return options;
   }
 
   
@@ -274,28 +373,14 @@ class HighlightersOverlay {
 
 
   async showHighlighterTypeForNode(type, nodeFront, options) {
-    if (this._activeHighlighters.has(type)) {
-      const {
-        nodeFront: activeNodeFront,
-        options: activeOptions,
-        timer: activeTimer,
-      } = this._activeHighlighters.get(type);
+    const skipShow = await this._beforeShowHighlighterTypeForNode(
+      type,
+      nodeFront,
+      options
+    );
 
-      
-      
-      
-      
-      if (nodeFront !== activeNodeFront) {
-        await this.hideHighlighterType(type);
-      } else if (deepEqual(options, activeOptions)) {
-        return;
-      }
-
-      
-      
-      
-      
-      clearTimeout(activeTimer);
+    if (skipShow) {
+      return;
     }
 
     const highlighter = await this._getHighlighterTypeForNode(type, nodeFront);
@@ -354,9 +439,8 @@ class HighlightersOverlay {
       return;
     }
 
-    const { highlighter, nodeFront, timer } = this._activeHighlighters.get(
-      type
-    );
+    const data = this.getDataForActiveHighlighter(type);
+    const { highlighter, nodeFront, timer } = data;
     
     clearTimeout(timer);
     this._activeHighlighters.delete(type);
@@ -367,7 +451,7 @@ class HighlightersOverlay {
     if (HIGHLIGHTER_EVENTS[type]?.hidden) {
       this.emit(HIGHLIGHTER_EVENTS[type].hidden, nodeFront);
     }
-    this.emit("highlighter-hidden", { type, highlighter, nodeFront });
+    this.emit("highlighter-hidden", { type, ...data });
   }
 
   async canGetParentGridNode() {
@@ -1634,7 +1718,6 @@ class HighlightersOverlay {
     this.flexboxHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
     this.hoveredHighlighterShown = null;
-    this.selectorHighlighterShown = null;
     this.shapesHighlighterShown = null;
   }
 
@@ -1732,7 +1815,6 @@ class HighlightersOverlay {
     this.flexboxHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
     this.hoveredHighlighterShown = null;
-    this.selectorHighlighterShown = null;
     this.shapesHighlighterShown = null;
 
     this.destroyed = true;

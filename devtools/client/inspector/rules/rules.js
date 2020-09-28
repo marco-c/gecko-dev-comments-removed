@@ -164,6 +164,11 @@ function CssRuleView(inspector, document, store) {
   this.refreshPanel = this.refreshPanel.bind(this);
 
   const doc = this.styleDocument;
+  
+  
+  
+  
+  this.styleDocument.addEventListener("click", this, { capture: true });
   this.element = doc.getElementById("ruleview-container-focusable");
   this.addRuleButton = doc.getElementById("ruleview-add-rule-button");
   this.searchField = doc.getElementById("ruleview-searchbox");
@@ -180,6 +185,16 @@ function CssRuleView(inspector, document, store) {
   this._initSimulationFeatures();
 
   this.searchClearButton.hidden = true;
+
+  this.onHighlighterShown = data =>
+    this.handleHighlighterEvent("highlighter-shown", data);
+  this.onHighlighterHidden = data =>
+    this.handleHighlighterEvent("highlighter-hidden", data);
+  this.inspector.highlighters.on("highlighter-shown", this.onHighlighterShown);
+  this.inspector.highlighters.on(
+    "highlighter-hidden",
+    this.onHighlighterHidden
+  );
 
   this.shortcuts = new KeyShortcuts({ window: this.styleWindow });
   this._onShortcut = this._onShortcut.bind(this);
@@ -311,24 +326,89 @@ CssRuleView.prototype = {
 
 
 
-  async getSelectorHighlighter() {
-    if (!this.inspector) {
-      return null;
-    }
 
-    if (this.selectorHighlighter) {
-      return this.selectorHighlighter;
-    }
 
-    try {
-      const front = this.inspector.inspectorFront;
-      const h = await front.getHighlighterByType("SelectorHighlighter");
-      this.selectorHighlighter = h;
-      return h;
-    } catch (e) {
+
+
+
+  async toggleSelectorHighlighter(selector) {
+    if (this.isSelectorHighlighted(selector)) {
+      await this.inspector.highlighters.hideHighlighterType(
+        this.inspector.highlighters.TYPES.SELECTOR
+      );
+    } else {
+      await this.inspector.highlighters.showHighlighterTypeForNode(
+        this.inspector.highlighters.TYPES.SELECTOR,
+        this.inspector.selection.nodeFront,
+        {
+          hideInfoBar: true,
+          hideGuides: true,
+          selector,
+        }
+      );
+    }
+  },
+
+  isPanelVisible: function() {
+    if (this.inspector.is3PaneModeEnabled) {
+      return true;
+    }
+    return (
+      this.inspector.toolbox &&
+      this.inspector.sidebar &&
+      this.inspector.toolbox.currentToolId === "inspector" &&
+      this.inspector.sidebar.getCurrentTabID() == "ruleview"
+    );
+  },
+
+  
+
+
+
+
+
+  isSelectorHighlighted(selector) {
+    const options = this.inspector.highlighters.getOptionsForActiveHighlighter(
+      this.inspector.highlighters.TYPES.SELECTOR
+    );
+
+    return options?.selector === selector;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "click":
+        this.handleClickEvent(event);
+        break;
+      default:
+    }
+  },
+
+  
+
+
+
+
+  handleClickEvent(event) {
+    const target = event.target;
+
+    
+    if (target.classList.contains("js-toggle-selector-highlighter")) {
+      this.toggleSelectorHighlighter(target.dataset.selector);
       
       
-      return null;
+      event.stopPropagation();
     }
   },
 
@@ -343,54 +423,25 @@ CssRuleView.prototype = {
 
 
 
-
-
-
-
-
-  async toggleSelectorHighlighter(selectorIcon, selector) {
-    if (this.lastSelectorIcon) {
-      this.lastSelectorIcon.classList.remove("highlighted");
+  handleHighlighterEvent(eventName, data) {
+    switch (data.type) {
+      
+      
+      case this.inspector.highlighters.TYPES.SELECTOR:
+        if (data?.options?.selector) {
+          const selector = data?.options?.selector;
+          const query = `.js-toggle-selector-highlighter[data-selector='${selector}']`;
+          for (const node of this.styleDocument.querySelectorAll(query)) {
+            if (eventName == "highlighter-hidden") {
+              node.classList.remove("highlighted");
+            }
+            if (eventName == "highlighter-shown") {
+              node.classList.add("highlighted");
+            }
+          }
+        }
+        break;
     }
-    selectorIcon.classList.remove("highlighted");
-
-    const highlighter = await this.getSelectorHighlighter();
-    if (!highlighter) {
-      return;
-    }
-
-    await highlighter.hide();
-
-    if (selector !== this.highlighters.selectorHighlighterShown) {
-      this.highlighters.selectorHighlighterShown = selector;
-      selectorIcon.classList.add("highlighted");
-      this.lastSelectorIcon = selectorIcon;
-
-      const node = this.inspector.selection.nodeFront;
-
-      await highlighter.show(node, {
-        hideInfoBar: true,
-        hideGuides: true,
-        selector,
-      });
-
-      this.emit("ruleview-selectorhighlighter-toggled", true);
-    } else {
-      this.highlighters.selectorHighlighterShown = null;
-      this.emit("ruleview-selectorhighlighter-toggled", false);
-    }
-  },
-
-  isPanelVisible: function() {
-    if (this.inspector.is3PaneModeEnabled) {
-      return true;
-    }
-    return (
-      this.inspector.toolbox &&
-      this.inspector.sidebar &&
-      this.inspector.toolbox.currentToolId === "inspector" &&
-      this.inspector.sidebar.getCurrentTabID() == "ruleview"
-    );
   },
 
   
@@ -756,6 +807,7 @@ CssRuleView.prototype = {
 
     
     this.shortcuts.destroy();
+    this.styleDocument.removeEventListener("click", this);
     this.element.removeEventListener("copy", this._onCopy);
     this.element.removeEventListener("contextmenu", this._onContextMenu);
     this.addRuleButton.removeEventListener("click", this._onAddRule);
@@ -770,6 +822,14 @@ CssRuleView.prototype = {
       this._onTogglePseudoClassPanel
     );
     this.classToggle.removeEventListener("click", this._onToggleClassPanel);
+    this.inspector.highlighters.off(
+      "highlighter-shown",
+      this.onHighlighterShown
+    );
+    this.inspector.highlighters.off(
+      "highlighter-hidden",
+      this.onHighlighterHidden
+    );
 
     this.searchField = null;
     this.searchClearButton = null;
@@ -1033,8 +1093,6 @@ CssRuleView.prototype = {
 
 
   clear: function(clearDom = true) {
-    this.lastSelectorIcon = null;
-
     if (clearDom) {
       this._clearRules();
     }
