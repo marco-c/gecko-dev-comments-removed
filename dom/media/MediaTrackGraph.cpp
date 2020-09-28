@@ -2406,7 +2406,7 @@ void MediaTrack::AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime,
   TrackTime time = aCurrentTime - mStartTime;
   
   
-  const TrackTime minChunkSize = 2400;
+  const TrackTime minChunkSize = mSampleRate * 50 / 1000;
   if (time < mForgottenTime + minChunkSize) {
     return;
   }
