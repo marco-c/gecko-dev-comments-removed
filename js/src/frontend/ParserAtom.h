@@ -1,24 +1,24 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef frontend_ParserAtom_h
 #define frontend_ParserAtom_h
 
-#include "mozilla/DebugOnly.h"      
-#include "mozilla/HashFunctions.h"  
-#include "mozilla/Range.h"          
-#include "mozilla/Variant.h"        
+#include "mozilla/DebugOnly.h"      // mozilla::DebugOnly
+#include "mozilla/HashFunctions.h"  // HashString
+#include "mozilla/Range.h"          // mozilla::Range
+#include "mozilla/Variant.h"        // mozilla::Variant
 
-#include "ds/LifoAlloc.h"         
-#include "frontend/TypedIndex.h"  
-#include "js/HashTable.h"         
-#include "js/UniquePtr.h"         
-#include "js/Vector.h"            
+#include "ds/LifoAlloc.h"         // LifoAlloc
+#include "frontend/TypedIndex.h"  // TypedIndex
+#include "js/HashTable.h"         // HashSet
+#include "js/UniquePtr.h"         // js::UniquePtr
+#include "js/Vector.h"            // Vector
 #include "vm/CommonPropertyNames.h"
-#include "vm/StringType.h"  
+#include "vm/StringType.h"  // CompareChars, StringEqualsAscii
 
 namespace js {
 namespace frontend {
@@ -34,15 +34,15 @@ class ParserAtomsTable;
 
 mozilla::GenericErrorResult<OOM> RaiseParserAtomsOOMError(JSContext* cx);
 
-
-
+// An index into CompilationInfo.atoms.
+// This is local to the current compilation.
 using AtomIndex = TypedIndex<JSAtom*>;
 
-
-
-
-
-
+// An index to map WellKnownParserAtoms to cx->names().
+// This is consistent across multiple compilation.
+//
+// GetWellKnownAtom in ParserAtom.cpp relies on the fact that
+// JSAtomState fields and this enum variants use the same order.
 enum class WellKnownAtomId : uint32_t {
 #define ENUM_ENTRY_(idpart, id, text) id,
   FOR_EACH_COMMON_PROPERTYNAME(ENUM_ENTRY_)
@@ -53,20 +53,20 @@ enum class WellKnownAtomId : uint32_t {
 #undef ENUM_ENTRY_
 };
 
-
+// These types correspond into indices in the StaticStrings arrays.
 enum class StaticParserString1 : uint8_t;
 enum class StaticParserString2 : uint16_t;
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * A ParserAtomEntry is an in-parser representation of an interned atomic
+ * string.  It mostly mirrors the information carried by a JSAtom*.
+ *
+ * The atom contents are stored in one of four locations:
+ *  1. Inline Latin1Char storage (immediately after the ParserAtomEntry memory).
+ *  2. Inline char16_t storage (immediately after the ParserAtomEntry memory).
+ *  3. An owned pointer to a heap-allocated Latin1Char buffer.
+ *  4. An owned pointer to a heap-allocated char16_t buffer.
+ */
 class alignas(alignof(void*)) ParserAtomEntry {
   friend class ParserAtomsTable;
   friend class WellKnownParserAtoms;
@@ -78,19 +78,19 @@ class alignas(alignof(void*)) ParserAtomEntry {
                : JSFatInlineString::MAX_LENGTH_TWO_BYTE;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * This single-word variant struct multiplexes between four representations.
+   *    1. An owned pointer to a heap-allocated Latin1Char buffer.
+   *    2. An owned pointer to a heap-allocated char16_t buffer.
+   *    3. A weak Latin1Char pointer to the inline buffer in an entry.
+   *    4. A weak char16_t pointer to the inline buffer in an entry.
+   *
+   * The lowest bit of the tagged pointer is used to distinguish between
+   * character widths.
+   *
+   * The second lowest bit of the tagged pointer is used to distinguish
+   * between heap-ptr contents and inline contents.
+   */
   struct ContentPtrVariant {
     uintptr_t taggedPtr;
 
@@ -104,12 +104,12 @@ class alignas(alignof(void*)) ParserAtomEntry {
 
     static const uintptr_t LOWBITS_MASK = CHARTYPE_MASK | LOCATION_MASK;
 
-    
-    
-    
-    
+    // A tagged ptr representation for no contents.  The taggedPtr
+    // field is set to when contents are moved out of a ParserAtomEntry,
+    // so that the original atom (moved from) does not try to destroy/free
+    // its contents.
     static const uintptr_t EMPTY_TAGGED_PTR =
-        CHARTYPE_LATIN1 | LOCATION_INLINE | (0x0 );
+        CHARTYPE_LATIN1 | LOCATION_INLINE | (0x0 /* nullptr */);
 
     template <typename CharT>
     static uintptr_t Tag(const CharT* ptr, bool isInline) {
@@ -121,10 +121,10 @@ class alignas(alignof(void*)) ParserAtomEntry {
              (isInline ? LOCATION_INLINE : LOCATION_HEAP);
     }
 
-    
+    // The variant owns data, so move semantics apply.
     ContentPtrVariant(const ContentPtrVariant& other) = delete;
 
-    
+    // Raw pointer constructor.
     template <typename CharT>
     ContentPtrVariant(const CharT* weakContents, bool isInline)
         : taggedPtr(Tag(weakContents, isInline)) {
@@ -134,14 +134,14 @@ class alignas(alignof(void*)) ParserAtomEntry {
                  0);
     }
 
-    
+    // Owned pointer construction.
     template <typename CharT>
     explicit ContentPtrVariant(
         mozilla::UniquePtr<CharT[], JS::FreePolicy> owned)
         : ContentPtrVariant(owned.release(), false) {}
 
-    
-    
+    // Move construction.
+    // Clear the other variant's contents to not free content after move.
     ContentPtrVariant(ContentPtrVariant&& other) : taggedPtr(other.taggedPtr) {
       other.taggedPtr = EMPTY_TAGGED_PTR;
     }
@@ -151,7 +151,7 @@ class alignas(alignof(void*)) ParserAtomEntry {
         return;
       }
 
-      
+      // Re-construct UniqueChars<CharT[]> and destroy them.
       if (hasCharType<Latin1Char>()) {
         UniqueLatin1Chars chars(getUnchecked<Latin1Char>());
       } else {
@@ -182,10 +182,10 @@ class alignas(alignof(void*)) ParserAtomEntry {
 
   static const uint16_t MAX_LATIN1_CHAR = 0xff;
 
-  
-  
-  
-  
+  // Helper routine to read some sequence of two-byte chars, and write them
+  // into a target buffer of a particular character width.
+  //
+  // The characters in the sequence must have been verified prior
   template <typename CharT, typename SeqCharT>
   static void drainChar16Seq(CharT* buf, InflatedChar16Sequence<SeqCharT> seq,
                              uint32_t length) {
@@ -205,22 +205,22 @@ class alignas(alignof(void*)) ParserAtomEntry {
   }
 
  private:
-  
+  // Owned characters, either 8-bit Latin1Char, or 16-bit char16_t
   ContentPtrVariant variant_;
 
-  
+  // The length of the buffer in chars_.
   uint32_t length_;
 
-  
+  // The JSAtom-compatible hash of the string.
   HashNumber hash_;
 
-  
-  
-  
-  
-  
-  
-  
+  // Used to dynamically optimize the mapping of ParserAtoms to JSAtom*s.
+  //
+  // If this ParserAtomEntry is a part of WellKnownParserAtoms, this should
+  // hold WellKnownAtomId that maps to an item in cx->names().
+  //
+  // Otherwise, this should hold AtomIndex into CompilationInfo.atoms,
+  // or empty if the JSAtom isn't yet allocated.
   using AtomIndexType =
       mozilla::Variant<mozilla::Nothing, AtomIndex, WellKnownAtomId,
                        StaticParserString1, StaticParserString2>;
@@ -236,7 +236,7 @@ class alignas(alignof(void*)) ParserAtomEntry {
 
   template <typename CharT>
   ParserAtomEntry(const CharT* chars, uint32_t length, HashNumber hash)
-      : variant_(chars,  true), length_(length), hash_(hash) {}
+      : variant_(chars, /* isInline = */ true), length_(length), hash_(hash) {}
 
   template <typename CharT>
   static CharT* inlineBufferPtr(ParserAtomEntry* entry) {
@@ -258,8 +258,8 @@ class alignas(alignof(void*)) ParserAtomEntry {
       HashNumber hash);
 
  public:
-  
-  
+  // ParserAtomEntries may own their content buffers in variant_, and thus
+  // cannot be copy-constructed - as a new chars would need to be allocated.
   ParserAtomEntry(const ParserAtomEntry&) = delete;
 
   ParserAtomEntry(ParserAtomEntry&& other) = delete;
@@ -317,12 +317,12 @@ class alignas(alignof(void*)) ParserAtomEntry {
     atomIndex_ = mozilla::AsVariant(s);
   }
 
-  
-  
+  // Convert this entry to a js-atom.  The first time this method is called
+  // the entry will cache the JSAtom pointer to return later.
   JS::Result<JSAtom*, OOM> toJSAtom(JSContext* cx,
                                     CompilationInfo& compilationInfo) const;
 
-  
+  // Convert this entry to a number.
   bool toNumber(JSContext* cx, double* result) const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
@@ -352,11 +352,11 @@ inline const ParserName* ParserAtomEntry::asName() const {
   return static_cast<const ParserName*>(this);
 }
 
-
-
-
-
-
+/**
+ * A lookup structure that allows for querying ParserAtoms in
+ * a hashtable using a flexible input type that supports string
+ * representations of various forms.
+ */
 class ParserAtomLookup {
  protected:
   HashNumber hash_;
@@ -379,20 +379,20 @@ struct ParserAtomLookupHasher {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * WellKnownParserAtoms reserves a set of common ParserAtoms on the JSRuntime
+ * in a read-only format to be used by parser. These reserved atoms can be
+ * translated to equivalent JSAtoms in constant time.
+ *
+ * The common-names set allows the parser to lookup up specific atoms in
+ * constant time.
+ *
+ * We also reserve tiny (length 1/2) parser-atoms for fast lookup similar to
+ * the js::StaticStrings mechanism. This speeds up parsing minified code.
+ */
 class WellKnownParserAtoms {
  public:
-  
+  /* Various built-in or commonly-used names. */
 #define PROPERTYNAME_FIELD_(idpart, id, text) const ParserName* id{};
   FOR_EACH_COMMON_PROPERTYNAME(PROPERTYNAME_FIELD_)
 #undef PROPERTYNAME_FIELD_
@@ -436,44 +436,37 @@ class WellKnownParserAtoms {
   const ParserAtom* lookupChar16Seq(
       const SpecificParserAtomLookup<CharT>& lookup) const;
 
-  
-  template <typename CharsT>
-  const ParserAtom* lookupTiny(CharsT chars, size_t length) const {
-    static_assert(std::is_same_v<CharsT, const Latin1Char*> ||
-                      std::is_same_v<CharsT, const char16_t*> ||
-                      std::is_same_v<CharsT, const char*> ||
-                      std::is_same_v<CharsT, char16_t*> ||
-                      std::is_same_v<CharsT, LittleEndianChars>,
-                  "This assert mostly explicitly documents the calling types, "
-                  "and forces that to be updated if new types show up.");
+  // Fast-path tiny strings since they are abundant in minified code.
+  template <typename CharT>
+  const ParserAtom* lookupTiny(const CharT* charPtr, uint32_t length) const {
     switch (length) {
       case 0:
         return empty;
 
       case 1: {
-        if (char16_t(chars[0]) < ASCII_STATIC_LIMIT) {
-          return getLength1String(chars[0]);
+        if (char16_t(charPtr[0]) < ASCII_STATIC_LIMIT) {
+          return getLength1String(charPtr[0]);
         }
         break;
       }
 
       case 2:
-        if (StaticStrings::fitsInSmallChar(chars[0]) &&
-            StaticStrings::fitsInSmallChar(chars[1])) {
-          return getLength2String(chars[0], chars[1]);
+        if (StaticStrings::fitsInSmallChar(charPtr[0]) &&
+            StaticStrings::fitsInSmallChar(charPtr[1])) {
+          return getLength2String(charPtr[0], charPtr[1]);
         }
         break;
     }
 
-    
+    // No match on tiny Atoms
     return nullptr;
   }
 };
 
-
-
-
-
+/**
+ * A ParserAtomsTable owns and manages the vector of ParserAtom entries
+ * associated with a given compile session.
+ */
 class ParserAtomsTable {
  private:
   using EntrySet = HashSet<UniquePtr<ParserAtomEntry>, ParserAtomLookupHasher,
@@ -485,7 +478,7 @@ class ParserAtomsTable {
   explicit ParserAtomsTable(JSRuntime* rt);
 
  private:
-  
+  // Custom AddPtr for the ParserAtomsTable.
   struct AddPtr {
     struct InnerAddPtr {
       EntrySet::AddPtr entrySetAddPtr;
@@ -517,13 +510,13 @@ class ParserAtomsTable {
     InnerAddPtr& inner() { return atomOrAdd.as<InnerAddPtr>(); }
   };
 
-  
-  
+  // Look up a sequence pointer for add.  Returns either the found
+  // parser-atom pointer, or and AddPtr to insert into the entry-set.
   template <typename CharT>
   AddPtr lookupForAdd(JSContext* cx, InflatedChar16Sequence<CharT> seq);
 
-  
-  
+  // Internal APIs for interning to the table after well-known atoms cases have
+  // been tested.
   JS::Result<const ParserAtom*, OOM> addEntry(JSContext* cx, AddPtr& addPtr,
                                               UniquePtr<ParserAtomEntry> entry);
   JS::Result<const ParserAtom*, OOM> internLatin1Seq(
@@ -535,8 +528,6 @@ class ParserAtomsTable {
       uint32_t length);
 
  public:
-  bool empty() const { return entrySet_.empty(); }
-
   JS::Result<const ParserAtom*, OOM> internAscii(JSContext* cx,
                                                  const char* asciiPtr,
                                                  uint32_t length);
@@ -551,11 +542,6 @@ class ParserAtomsTable {
                                                   const char16_t* char16Ptr,
                                                   uint32_t length);
 
-  
-  JS::Result<const ParserAtom*, OOM> internChar16LE(JSContext* cx,
-                                                    LittleEndianChars twoByteLE,
-                                                    uint32_t length);
-
   JS::Result<const ParserAtom*, OOM> internJSAtom(
       JSContext* cx, CompilationInfo& compilationInfo, JSAtom* atom);
 
@@ -565,7 +551,7 @@ class ParserAtomsTable {
 
 template <typename CharT>
 class SpecificParserAtomLookup : public ParserAtomLookup {
-  
+  // The sequence of characters to look up.
   InflatedChar16Sequence<CharT> seq_;
 
  public:
@@ -586,7 +572,7 @@ class SpecificParserAtomLookup : public ParserAtomLookup {
 template <typename CharT>
 inline bool ParserAtomEntry::equalsSeq(
     HashNumber hash, InflatedChar16Sequence<CharT> seq) const {
-  
+  // Compare hashes first.
   if (hash_ != hash) {
     return false;
   }
@@ -609,7 +595,7 @@ inline bool ParserAtomEntry::equalsSeq(
   return !seq.hasMore();
 }
 
-} 
-} 
+} /* namespace frontend */
+} /* namespace js */
 
-#endif  
+#endif  // frontend_ParserAtom_h

@@ -12,12 +12,11 @@
 #include "frontend/BytecodeSection.h"   
 #include "frontend/CompilationInfo.h"   
 #include "frontend/SharedContext.h"
-#include "gc/AllocKind.h"    
-#include "js/CallArgs.h"     
-#include "js/RootingAPI.h"   
-#include "js/Transcoding.h"  
-#include "js/Value.h"        
-#include "js/WasmModule.h"   
+#include "gc/AllocKind.h"   
+#include "js/CallArgs.h"    
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
+#include "js/WasmModule.h"  
 #include "vm/EnvironmentObject.h"
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/JSContext.h"              
@@ -30,7 +29,6 @@
 #include "vm/Scope.h"         
 #include "vm/StencilEnums.h"  
 #include "vm/StringType.h"    
-#include "vm/Xdr.h"           
 #include "wasm/AsmJS.h"       
 #include "wasm/WasmModule.h"  
 
@@ -599,63 +597,6 @@ bool CompilationInfo::instantiateStencils(JSContext* cx,
     LinkEnclosingLazyScript(*this, gcOutput);
   }
 
-  return true;
-}
-
-bool CompilationInfo::serializeStencils(JSContext* cx, JS::TranscodeBuffer& buf,
-                                        bool* succeededOut) {
-  if (succeededOut) {
-    *succeededOut = false;
-  }
-  XDRIncrementalStencilEncoder encoder(cx, *this);
-
-  XDRResult res = encoder.codeStencil(stencil);
-  if (res.isErr()) {
-    if (res.unwrapErr() & JS::TranscodeResult_Failure) {
-      buf.clear();
-      return true;
-    }
-    MOZ_ASSERT(res.unwrapErr() == JS::TranscodeResult_Throw);
-
-    return false;
-  }
-
-  
-  res = encoder.linearize(buf);
-  if (res.isErr()) {
-    buf.clear();
-    return false;
-  }
-
-  if (succeededOut) {
-    *succeededOut = true;
-  }
-  return true;
-}
-
-bool CompilationInfo::deserializeStencils(JSContext* cx,
-                                          const JS::TranscodeRange& range,
-                                          bool* succeededOut) {
-  if (succeededOut) {
-    *succeededOut = false;
-  }
-  MOZ_ASSERT(stencil.parserAtoms.empty());
-  XDRStencilDecoder decoder(cx, &input.options, range, *this,
-                            stencil.parserAtoms);
-
-  XDRResult res = decoder.codeStencil(stencil);
-  if (res.isErr()) {
-    if (res.unwrapErr() & JS::TranscodeResult_Failure) {
-      return true;
-    }
-    MOZ_ASSERT(res.unwrapErr() == JS::TranscodeResult_Throw);
-
-    return false;
-  }
-
-  if (succeededOut) {
-    *succeededOut = true;
-  }
   return true;
 }
 
