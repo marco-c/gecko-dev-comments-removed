@@ -218,16 +218,16 @@ class MarkerOptions;
 class MarkerCategory {
  public:
   
-  constexpr MarkerCategory(baseprofiler::ProfilingCategoryPair aCategoryPair,
-                           baseprofiler::ProfilingCategory aCategory)
-      : mCategoryPair(aCategoryPair), mCategory(aCategory) {}
+  constexpr explicit MarkerCategory(
+      baseprofiler::ProfilingCategoryPair aCategoryPair)
+      : mCategoryPair(aCategoryPair) {}
 
   constexpr baseprofiler::ProfilingCategoryPair CategoryPair() const {
     return mCategoryPair;
   }
 
-  constexpr baseprofiler::ProfilingCategory Category() const {
-    return mCategory;
+  baseprofiler::ProfilingCategory GetCategory() const {
+    return GetProfilingCategoryPairInfo(mCategoryPair).mCategory;
   }
 
   
@@ -245,8 +245,6 @@ class MarkerCategory {
 
   baseprofiler::ProfilingCategoryPair mCategoryPair =
       baseprofiler::ProfilingCategoryPair::OTHER;
-  baseprofiler::ProfilingCategory mCategory =
-      baseprofiler::ProfilingCategory::OTHER;
 };
 
 namespace baseprofiler::category {
@@ -257,8 +255,7 @@ namespace baseprofiler::category {
 
 #  define CATEGORY_ENUM_BEGIN_CATEGORY(name, labelAsString, color)
 #  define CATEGORY_ENUM_SUBCATEGORY(supercategory, name, labelAsString) \
-    static constexpr MarkerCategory name{ProfilingCategoryPair::name,   \
-                                         ProfilingCategory::supercategory};
+    static constexpr MarkerCategory name{ProfilingCategoryPair::name};
 #  define CATEGORY_ENUM_END_CATEGORY
 MOZ_PROFILING_CATEGORY_LIST(CATEGORY_ENUM_BEGIN_CATEGORY,
                             CATEGORY_ENUM_SUBCATEGORY,
