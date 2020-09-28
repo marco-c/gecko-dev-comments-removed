@@ -403,7 +403,8 @@ class nsDocShell final : public nsDocLoader,
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult InternalLoad(nsDocShellLoadState* aLoadState);
+  nsresult InternalLoad(nsDocShellLoadState* aLoadState,
+                        Maybe<uint32_t> aCacheKey = mozilla::Nothing());
 
   
   void MaybeClearStorageAccessFlag();
@@ -505,6 +506,10 @@ class nsDocShell final : public nsDocLoader,
 
   already_AddRefed<nsIInputStream> GetPostDataFromCurrentEntry() const;
   Maybe<uint32_t> GetCacheKeyFromCurrentEntry() const;
+
+  
+  
+  bool FillLoadStateFromCurrentEntry(nsDocShellLoadState& aLoadState);
 
   static bool ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel);
 
@@ -668,7 +673,9 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  nsresult DoURILoad(nsDocShellLoadState* aLoadState, nsIRequest** aRequest);
+  
+  nsresult DoURILoad(nsDocShellLoadState* aLoadState, Maybe<uint32_t> aCacheKey,
+                     nsIRequest** aRequest);
 
   static nsresult AddHeadersToChannel(nsIInputStream* aHeadersData,
                                       nsIChannel* aChannel);

@@ -4060,54 +4060,48 @@ nsDocShell::GetSessionHistoryXPCOM(nsISupports** aSessionHistory) {
 
 
 NS_IMETHODIMP
-nsDocShell::LoadPageAsViewSource(nsISupports* aPageDescriptor) {
-  nsCOMPtr<nsISHEntry> shEntryIn(do_QueryInterface(aPageDescriptor));
-
-  
-  if (!shEntryIn) {
+nsDocShell::LoadPageAsViewSource(nsIDocShell* aOtherDocShell,
+                                 const nsAString& aURI) {
+  if (!aOtherDocShell) {
     return NS_ERROR_INVALID_POINTER;
   }
-
-  
-  
-  nsCOMPtr<nsISHEntry> shEntry;
-  nsresult rv = shEntryIn->Clone(getter_AddRefs(shEntry));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  rv = shEntry->AbandonBFCacheEntry();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  nsCString spec, newSpec;
-
-  
-  nsCOMPtr<nsIURI> oldUri = shEntry->GetURI();
-
-  oldUri->GetSpec(spec);
-  newSpec.AppendLiteral("view-source:");
-  newSpec.Append(spec);
-
-  nsCOMPtr<nsIURI> newUri;
-  rv = NS_NewURI(getter_AddRefs(newUri), newSpec);
+  nsCOMPtr<nsIURI> newURI;
+  nsresult rv = NS_NewURI(getter_AddRefs(newURI), aURI);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  shEntry->SetURI(newUri);
-  shEntry->SetOriginalURI(nullptr);
-  shEntry->SetResultPrincipalURI(nullptr);
-  
-  
-  
-  
-  shEntry->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
 
-  rv = LoadHistoryEntry(shEntry, LOAD_HISTORY);
-  return rv;
+  RefPtr<nsDocShellLoadState> loadState;
+  uint32_t cacheKey;
+  auto* otherDocShell = nsDocShell::Cast(aOtherDocShell);
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    loadState = new nsDocShellLoadState(newURI);
+    if (!otherDocShell->FillLoadStateFromCurrentEntry(*loadState)) {
+      return NS_ERROR_INVALID_POINTER;
+    }
+    cacheKey = otherDocShell->GetCacheKeyFromCurrentEntry().valueOr(0);
+  } else {
+    nsCOMPtr<nsISHEntry> entry;
+    bool isOriginalSHE;
+    otherDocShell->GetCurrentSHEntry(getter_AddRefs(entry), &isOriginalSHE);
+    if (!entry) {
+      return NS_ERROR_INVALID_POINTER;
+    }
+    rv = entry->CreateLoadInfo(getter_AddRefs(loadState));
+    NS_ENSURE_SUCCESS(rv, rv);
+    entry->GetCacheKey(&cacheKey);
+    loadState->SetURI(newURI);
+    loadState->SetSHEntry(nullptr);
+  }
+
+  
+  
+  
+  loadState->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
+  loadState->SetOriginalURI(nullptr);
+  loadState->SetResultPrincipalURI(nullptr);
+
+  return InternalLoad(loadState, Some(cacheKey));
 }
 
 NS_IMETHODIMP
@@ -4175,6 +4169,19 @@ Maybe<uint32_t> nsDocShell::GetCacheKeyFromCurrentEntry() const {
   }
 
   return Nothing();
+}
+
+bool nsDocShell::FillLoadStateFromCurrentEntry(
+    nsDocShellLoadState& aLoadState) {
+  if (mLoadingEntry) {
+    mLoadingEntry->mInfo.FillLoadInfo(aLoadState);
+    return true;
+  }
+  if (mActiveEntry) {
+    mActiveEntry->FillLoadInfo(aLoadState);
+    return true;
+  }
+  return false;
 }
 
 
@@ -8729,7 +8736,8 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   return NS_OK;
 }
 
-nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState) {
+nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
+                                  Maybe<uint32_t> aCacheKey) {
   MOZ_ASSERT(aLoadState, "need a load state!");
   MOZ_ASSERT(aLoadState->TriggeringPrincipal(),
              "need a valid TriggeringPrincipal");
@@ -9091,7 +9099,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState) {
                    nsINetworkPredictor::PREDICT_LOAD, attrs, nullptr);
 
   nsCOMPtr<nsIRequest> req;
-  rv = DoURILoad(aLoadState, getter_AddRefs(req));
+  rv = DoURILoad(aLoadState, aCacheKey, getter_AddRefs(req));
 
   if (NS_FAILED(rv)) {
     nsCOMPtr<nsIChannel> chan(do_QueryInterface(req));
@@ -9226,6 +9234,16 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
       }
     }
   } else if (SchemeIsViewSource(aURI)) {
+    
+    nsCOMPtr<nsIIOService> io(do_GetIOService());
+    MOZ_ASSERT(io);
+    nsCOMPtr<nsIProtocolHandler> handler;
+    nsresult rv =
+        io->GetProtocolHandler("view-source", getter_AddRefs(handler));
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
     nsViewSourceHandler* vsh = nsViewSourceHandler::GetInstance();
     if (!vsh) {
       return NS_ERROR_FAILURE;
@@ -9589,6 +9607,7 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
 }
 
 nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
+                               Maybe<uint32_t> aCacheKey,
                                nsIRequest** aRequest) {
   
   if (mIsBeingDestroyed) {
@@ -9825,9 +9844,10 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   }
   loadInfo->SetTriggeringSandboxFlags(aLoadState->TriggeringSandboxFlags());
 
-  
   uint32_t cacheKey = 0;
-  if (StaticPrefs::fission_sessionHistoryInParent()) {
+  if (aCacheKey) {
+    cacheKey = *aCacheKey;
+  } else if (StaticPrefs::fission_sessionHistoryInParent()) {
     if (mLoadingEntry) {
       cacheKey = mLoadingEntry->mInfo.GetCacheKey();
     } else if (mActiveEntry) {  

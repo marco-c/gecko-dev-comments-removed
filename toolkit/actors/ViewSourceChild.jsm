@@ -52,20 +52,12 @@ class ViewSourceChild extends JSWindowActorChild {
 
 
   viewSource(URL, outerWindowID, lineNumber) {
-    let pageDescriptor, forcedCharSet;
+    let otherDocShell, forcedCharSet;
 
     if (outerWindowID) {
       let contentWindow = Services.wm.getOuterWindowWithId(outerWindowID);
       if (contentWindow) {
-        let otherDocShell = contentWindow.docShell;
-
-        try {
-          pageDescriptor = otherDocShell.QueryInterface(Ci.nsIWebPageDescriptor)
-            .currentDescriptor;
-        } catch (e) {
-          
-          
-        }
+        otherDocShell = contentWindow.docShell;
 
         let utils = contentWindow.windowUtils;
         let doc = contentWindow.document;
@@ -73,7 +65,7 @@ class ViewSourceChild extends JSWindowActorChild {
       }
     }
 
-    this.loadSource(URL, pageDescriptor, lineNumber, forcedCharSet);
+    this.loadSource(URL, otherDocShell, lineNumber, forcedCharSet);
   }
 
   
@@ -116,9 +108,7 @@ class ViewSourceChild extends JSWindowActorChild {
 
 
 
-
-
-  loadSource(URL, pageDescriptor, lineNumber, forcedCharSet) {
+  loadSource(URL, otherDocShell, lineNumber, forcedCharSet) {
     const viewSrcURL = "view-source:" + URL;
 
     if (forcedCharSet) {
@@ -131,31 +121,18 @@ class ViewSourceChild extends JSWindowActorChild {
 
     ViewSourcePageChild.setInitialLineNumber(lineNumber);
 
-    if (!pageDescriptor) {
+    if (!otherDocShell) {
       this.loadSourceFromURL(viewSrcURL);
       return;
     }
 
     try {
       let pageLoader = this.docShell.QueryInterface(Ci.nsIWebPageDescriptor);
-      pageLoader.loadPageAsViewSource(pageDescriptor);
+      pageLoader.loadPageAsViewSource(otherDocShell, viewSrcURL);
     } catch (e) {
       
       this.loadSourceFromURL(viewSrcURL);
-      return;
     }
-
-    let shEntrySource = pageDescriptor.QueryInterface(Ci.nsISHEntry);
-    let shistory = this.docShell.QueryInterface(Ci.nsIWebNavigation)
-      .sessionHistory.legacySHistory;
-    let shEntry = shistory.createEntry();
-    shEntry.URI = Services.io.newURI(viewSrcURL);
-    shEntry.title = viewSrcURL;
-    let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    shEntry.triggeringPrincipal = systemPrincipal;
-    shEntry.setLoadTypeAsHistory();
-    shEntry.cacheKey = shEntrySource.cacheKey;
-    shistory.addEntry(shEntry, true);
   }
 
   
