@@ -4177,7 +4177,18 @@ class HTMLEditor final : public TextEditor,
       const EditorDOMPoint& aDroppedAt, bool aDoDeleteSelection);
 
   bool HavePrivateHTMLFlavor(nsIClipboard* clipboard);
-  nsresult ParseCFHTML(nsCString& aCfhtml, char16_t** aStuffToPaste,
+
+  
+
+
+
+
+
+
+
+
+
+  nsresult ParseCFHTML(const nsCString& aCfhtml, char16_t** aStuffToPaste,
                        char16_t** aCfcontext);
 
   
