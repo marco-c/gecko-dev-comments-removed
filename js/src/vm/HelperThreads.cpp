@@ -17,8 +17,8 @@
 #include "frontend/BytecodeCompilation.h"
 #include "frontend/CompilationInfo.h"  
 #include "jit/IonCompileTask.h"
-#include "js/ContextOptions.h"              
-#include "js/friend/StackLimits.h"          
+#include "js/ContextOptions.h"      
+#include "js/friend/StackLimits.h"  
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/SourceText.h"
 #include "js/UniquePtr.h"
@@ -1895,6 +1895,13 @@ UniquePtr<ParseTask> GlobalHelperThreadState::finishParseTaskCommon(
       cx->releaseCheck(script);
     }
 
+    if (kind == ParseTaskKind::Module) {
+      if (parseTask->scripts.length() > 0) {
+        MOZ_ASSERT(parseTask->scripts[0]->isModule());
+        parseTask->scripts[0]->module()->fixEnvironmentsAfterRealmMerge();
+      }
+    }
+
     
     
     for (auto& sourceObject : parseTask->sourceObjects) {
@@ -2024,6 +2031,15 @@ JSScript* GlobalHelperThreadState::finishSingleParseTask(
       return nullptr;
     }
 
+    if (kind == ParseTaskKind::Module) {
+      
+      MOZ_ASSERT(script->isModule());
+      RootedModuleObject module(cx, script->module());
+      if (!ModuleObject::Freeze(cx, module)) {
+        return nullptr;
+      }
+    }
+
     
     
     if (!parseTask->options.hideScriptFromDebugger) {
@@ -2116,21 +2132,7 @@ JSObject* GlobalHelperThreadState::finishModuleParseTask(
     return nullptr;
   }
 
-  MOZ_ASSERT(script->isModule());
-
-  
-  
-  if (!UseOffThreadParseGlobal()) {
-    return script->module();
-  }
-
-  RootedModuleObject module(cx, script->module());
-  module->fixEnvironmentsAfterRealmMerge();
-  if (!ModuleObject::Freeze(cx, module)) {
-    return nullptr;
-  }
-
-  return module;
+  return script->module();
 }
 
 void GlobalHelperThreadState::cancelParseTask(JSRuntime* rt, ParseTaskKind kind,
