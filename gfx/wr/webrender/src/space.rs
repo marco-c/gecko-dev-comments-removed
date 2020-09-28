@@ -131,23 +131,6 @@ impl<F, T> SpaceMapper<F, T> where F: fmt::Debug {
         }
     }
 
-    
-    pub fn map_inner_bounds(&self, rect: &Rect<f32, F>) -> Option<Rect<f32, T>> {
-        match self.kind {
-            CoordinateSpaceMapping::Local => {
-                Some(rect.cast_unit())
-            }
-            CoordinateSpaceMapping::ScaleOffset(ref scale_offset) => {
-                Some(scale_offset.map_rect(rect))
-            }
-            CoordinateSpaceMapping::Transform(..) => {
-                
-                
-                return None;
-            }
-        }
-    }
-
     pub fn map_vector(&self, v: Vector2D<f32, F>) -> Vector2D<f32, T> {
         match self.kind {
             CoordinateSpaceMapping::Local => {
