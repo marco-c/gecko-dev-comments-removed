@@ -128,6 +128,10 @@ class WindowsDllDetourPatcher final
   using PrimitiveT = WindowsDllDetourPatcherPrimitive<MMPolicyT>;
   Maybe<DetourFlags> mFlags;
 
+#if defined(NIGHTLY_BUILD)
+  Maybe<DetourError> mLastError;
+#endif  
+
  public:
   template <typename... Args>
   explicit WindowsDllDetourPatcher(Args&&... aArgs)
@@ -139,6 +143,10 @@ class WindowsDllDetourPatcher final
   WindowsDllDetourPatcher(WindowsDllDetourPatcher&&) = delete;
   WindowsDllDetourPatcher& operator=(const WindowsDllDetourPatcher&) = delete;
   WindowsDllDetourPatcher& operator=(WindowsDllDetourPatcher&&) = delete;
+
+#if defined(NIGHTLY_BUILD)
+  const Maybe<DetourError>& GetLastError() const { return mLastError; }
+#endif  
 
   void Clear() {
     if (!this->mVMPolicy.ShouldUnhookUponDestruction()) {
@@ -898,7 +906,8 @@ class WindowsDllDetourPatcher final
       return;
     }
 
-    auto clearInstanceOnFailure = MakeScopeExit([aOutTramp, &tramp]() -> void {
+    auto clearInstanceOnFailure = MakeScopeExit([this, aOutTramp, &tramp,
+                                                 &origBytes]() -> void {
       
       
       if (*aOutTramp) {
@@ -909,6 +918,25 @@ class WindowsDllDetourPatcher final
       
       tramp.Rewind();
       tramp.WriteEncodedPointer(nullptr);
+
+#if defined(NIGHTLY_BUILD)
+      origBytes.Rewind();
+      mLastError = Some(DetourError());
+      size_t bytesToCapture = std::min(
+          ArrayLength(mLastError->mOrigBytes),
+          static_cast<size_t>(PrimitiveT::GetWorstCaseRequiredBytesToPatch()));
+#  if defined(_M_ARM64)
+      size_t numInstructionsToCapture = bytesToCapture / sizeof(uint32_t);
+      auto origBytesDst = reinterpret_cast<uint32_t*>(mLastError->mOrigBytes);
+      for (size_t i = 0; i < numInstructionsToCapture; ++i) {
+        origBytesDst[i] = origBytes.ReadNextInstruction();
+      }
+#  else
+      for (size_t i = 0; i < bytesToCapture; ++i) {
+        mLastError->mOrigBytes[i] = origBytes[i];
+      }
+#  endif  
+#endif    
     });
 
     tramp.WritePointer(origBytes.AsEncodedPtr());
