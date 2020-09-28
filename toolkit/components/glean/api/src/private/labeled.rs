@@ -13,7 +13,6 @@ use crate::ipc::need_ipc;
 
 
 mod private {
-    use std::sync::Arc;
     use super::{BooleanMetric, CommonMetricData, CounterMetric, StringMetric};
     use crate::ipc::need_ipc;
 
@@ -73,7 +72,7 @@ mod private {
 
         fn from_inner(metric: Self::Inner) -> Self {
             assert!(!need_ipc());
-            CounterMetric::Parent(Arc::new(crate::private::counter::CounterMetricImpl(metric)))
+            CounterMetric::Parent(crate::private::counter::CounterMetricImpl(metric))
         }
 
         fn new_inner(meta: CommonMetricData) -> Self::Inner {
