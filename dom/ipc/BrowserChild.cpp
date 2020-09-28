@@ -3450,7 +3450,7 @@ nsresult BrowserChild::CanCancelContentJS(
 
   
   
-  if (StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
     *aCanCancel = true;
     return NS_OK;
   }

@@ -3519,7 +3519,7 @@ bool BrowserParent::CanCancelContentJS(
     nsIURI* aNavigationURI) const {
   
   
-  if (!StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
+  if (!StaticPrefs::fission_sessionHistoryInParent()) {
     
     
     return true;
