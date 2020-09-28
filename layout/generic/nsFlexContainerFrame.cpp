@@ -4135,6 +4135,13 @@ nscoord nsFlexContainerFrame::ComputeCrossSize(
         "Unconstrained inline size; this should only result from huge sizes "
         "(not intrinsic sizing w/ orthogonal flows)");
     *aIsDefinite = true;
+    
+    
+    
+    
+    
+    
+    
     return aReflowInput.ComputedISize();
   }
 
