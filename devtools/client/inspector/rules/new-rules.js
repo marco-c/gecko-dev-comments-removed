@@ -244,11 +244,6 @@ class RulesView {
       this._contextMenu = null;
     }
 
-    if (this._selectHighlighter) {
-      this._selectorHighlighter.finalize();
-      this._selectorHighlighter = null;
-    }
-
     if (this.elementStyle) {
       this.elementStyle.destroy();
       this.elementStyle = null;
@@ -396,34 +391,6 @@ class RulesView {
   
 
 
-
-
-
-  async getSelectorHighlighter() {
-    if (!this.inspector) {
-      return null;
-    }
-
-    if (this._selectorHighlighter) {
-      return this._selectorHighlighter;
-    }
-
-    try {
-      const front = this.inspector.inspectorFront;
-      this._selectorHighlighter = await front.getHighlighterByType(
-        "SelectorHighlighter"
-      );
-      return this._selectorHighlighter;
-    } catch (e) {
-      
-      
-      return null;
-    }
-  }
-
-  
-
-
   isPanelVisible() {
     return (
       this.inspector &&
@@ -432,6 +399,20 @@ class RulesView {
       this.inspector.toolbox.currentToolId === "inspector" &&
       this.inspector.sidebar.getCurrentTabID() === "newruleview"
     );
+  }
+
+  
+
+
+
+
+
+  isSelectorHighlighted(selector) {
+    const options = this.inspector.highlighters.getOptionsForActiveHighlighter(
+      this.inspector.highlighters.TYPES.SELECTOR
+    );
+
+    return options?.selector === selector;
   }
 
   
@@ -581,30 +562,22 @@ class RulesView {
 
 
   async onToggleSelectorHighlighter(selector) {
-    const highlighter = await this.getSelectorHighlighter();
-    if (!highlighter) {
-      return;
-    }
-
-    await highlighter.hide();
-
-    if (selector !== this.highlighters.selectorHighlighterShown) {
-      this.store.dispatch(updateHighlightedSelector(selector));
-
-      await highlighter.show(this.selection.nodeFront, {
-        hideInfoBar: true,
-        hideGuides: true,
-        selector,
-      });
-
-      this.highlighters.selectorHighlighterShown = selector;
-      
-      this.emit("ruleview-selectorhighlighter-toggled", true);
-    } else {
-      this.highlighters.selectorHighlighterShown = null;
+    if (this.isSelectorHighlighted(selector)) {
+      await this.inspector.highlighters.hideHighlighterType(
+        this.inspector.highlighters.TYPES.SELECTOR
+      );
       this.store.dispatch(updateHighlightedSelector(""));
-      
-      this.emit("ruleview-selectorhighlighter-toggled", false);
+    } else {
+      await this.inspector.highlighters.showHighlighterTypeForNode(
+        this.inspector.highlighters.TYPES.SELECTOR,
+        this.inspector.selection.nodeFront,
+        {
+          hideInfoBar: true,
+          hideGuides: true,
+          selector,
+        }
+      );
+      this.store.dispatch(updateHighlightedSelector(selector));
     }
   }
 
@@ -772,15 +745,9 @@ class RulesView {
         }
 
         
-        if (this.highlighters.selectorHighlighterShown) {
-          const selector = await this.elementStyle
-            .getRule(ruleId)
-            .getUniqueSelector();
-          if (this.highlighters.selectorHighlighterShown === selector) {
-            this.onToggleSelectorHighlighter(
-              this.highlighters.selectorHighlighterShown
-            );
-          }
+        const rule = this.elementStyle.getRule(ruleId);
+        if (this.isSelectorHighlighted(rule.selectorText)) {
+          await this.onToggleSelectorHighlighter(rule.selectorText);
         }
 
         await this.elementStyle.modifySelector(ruleId, value);
