@@ -441,7 +441,9 @@ struct ElementInfo final {
 #ifdef DEBUG
   nsHTMLTag mTag;
 #endif
+  
   uint32_t mGroup;
+  
   uint32_t mCanContainGroups;
   bool mIsContainer;
   bool mCanContainSelf;
