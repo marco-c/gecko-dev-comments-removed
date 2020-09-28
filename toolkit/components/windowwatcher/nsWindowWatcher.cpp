@@ -677,6 +677,12 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   
+  
+  if (newBC && NS_WARN_IF(newBC->GetPendingInitialization())) {
+    return NS_ERROR_ABORT;
+  }
+
+  
 
   
   bool hasChromeParent = XRE_IsContentProcess() ? false : true;

@@ -445,7 +445,6 @@ BrowsingContext::BrowsingContext(WindowContext* aParentWindow,
       mIsDiscarded(false),
       mWindowless(false),
       mDanglingRemoteOuterProxies(false),
-      mPendingInitialization(false),
       mEmbeddedByThisProcess(false),
       mUseRemoteTabs(false),
       mUseRemoteSubframes(false) {
@@ -2618,6 +2617,13 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_BrowserId>, const uint32_t& aValue,
   
   
   return GetBrowserId() == 0 && IsTop() && Children().IsEmpty();
+}
+
+bool BrowsingContext::CanSet(FieldIndex<IDX_PendingInitialization>,
+                             bool aNewValue, ContentParent* aSource) {
+  
+  
+  return IsTop() && GetPendingInitialization() && !aNewValue;
 }
 
 void BrowsingContext::SessionHistoryChanged(int32_t aIndexDelta,
