@@ -4152,6 +4152,9 @@ class HTMLEditor final : public TextEditor,
   
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT nsresult InsertObject(const nsACString& aType,
                                            nsISupports* aObject, bool aIsSafe,
                                            Document* aSourceDoc,
@@ -4169,6 +4172,8 @@ class HTMLEditor final : public TextEditor,
       bool aHavePrivateHTMLFlavor, bool aDoDeleteSelection);
 
   
+
+
 
 
 
