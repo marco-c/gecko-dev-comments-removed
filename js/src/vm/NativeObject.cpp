@@ -1180,7 +1180,7 @@ bool NativeObject::CopyElementsForWrite(JSContext* cx, NativeObject* obj) {
   
   MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
 
-  JSObject::preWriteBarrier(obj->getElementsHeader()->ownerObject());
+  gc::PreWriteBarrier(obj->getElementsHeader()->ownerObject().get());
 
   HeapSlot* newHeaderSlots =
       AllocateObjectBuffer<HeapSlot>(cx, obj, newAllocated);

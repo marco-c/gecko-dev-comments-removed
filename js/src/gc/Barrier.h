@@ -294,6 +294,15 @@ namespace js {
 
 class NativeObject;
 
+namespace gc {
+
+void ValueReadBarrier(const Value& v);
+void ValuePreWriteBarrier(const Value& v);
+void IdPreWriteBarrier(jsid id);
+void CellPtrPreWriteBarrier(JS::GCCellPtr thing);
+
+}  
+
 #ifdef DEBUG
 
 
@@ -325,24 +334,18 @@ template <typename T>
 struct InternalBarrierMethods<T*> {
   static bool isMarkable(const T* v) { return v != nullptr; }
 
-  static void preBarrier(T* v) { T::preWriteBarrier(v); }
+  static void preBarrier(T* v) { gc::PreWriteBarrier(v); }
 
   static void postBarrier(T** vp, T* prev, T* next) {
-    T::postWriteBarrier(vp, prev, next);
+    gc::PostWriteBarrier(vp, prev, next);
   }
 
-  static void readBarrier(T* v) { T::readBarrier(v); }
+  static void readBarrier(T* v) { gc::ReadBarrier(v); }
 
 #ifdef DEBUG
   static void assertThingIsNotGray(T* v) { return T::assertThingIsNotGray(v); }
 #endif
 };
-
-namespace gc {
-void ValueReadBarrier(const Value& v);
-void ValuePreWriteBarrier(const Value& v);
-void IdPreWriteBarrier(jsid id);
-}  
 
 template <>
 struct InternalBarrierMethods<Value> {

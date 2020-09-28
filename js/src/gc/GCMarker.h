@@ -558,11 +558,4 @@ class MOZ_RAII AutoSetMarkColor {
 
 } 
 
-
-inline bool ThingIsPermanentAtomOrWellKnownSymbol(js::gc::Cell* thing) {
-  return false;
-}
-bool ThingIsPermanentAtomOrWellKnownSymbol(JSString*);
-bool ThingIsPermanentAtomOrWellKnownSymbol(JS::Symbol*);
-
 #endif 

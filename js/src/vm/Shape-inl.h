@@ -211,7 +211,7 @@ inline void Shape::setDictionaryNextPtr(DictionaryShapeLink next) {
 inline void Shape::dictNextPreWriteBarrier() {
   
   if (dictNext.isObject()) {
-    JSObject::preWriteBarrier(dictNext.toObject());
+    gc::PreWriteBarrier(dictNext.toObject());
   }
 }
 

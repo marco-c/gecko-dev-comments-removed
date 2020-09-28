@@ -3270,7 +3270,7 @@ void WasmGlobalObject::setVal(JSContext* cx, wasm::HandleVal hval) {
           
           
           ASSERT_ANYREF_IS_JSOBJECT;
-          JSObject::preWriteBarrier(prevPtr.asJSObject());
+          gc::PreWriteBarrier(prevPtr.asJSObject());
           cell->ref = val.ref();
           if (!cell->ref.isNull()) {
             JSObject::postWriteBarrier(cell->ref.asJSObjectAddress(),

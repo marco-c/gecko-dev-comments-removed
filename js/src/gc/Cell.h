@@ -203,8 +203,7 @@ struct Cell {
 
   
   
-  static MOZ_ALWAYS_INLINE void readBarrier(Cell* thing);
-  static MOZ_ALWAYS_INLINE void preWriteBarrier(Cell* thing);
+  MOZ_ALWAYS_INLINE bool isPermanentAndMayBeShared() const { return false; }
 
 #ifdef DEBUG
   static inline void assertThingIsNotGray(Cell* cell);
@@ -286,11 +285,6 @@ class TenuredCell : public Cell {
     return static_cast<const T*>(this);
   }
 
-  static MOZ_ALWAYS_INLINE void readBarrier(TenuredCell* thing);
-  static MOZ_ALWAYS_INLINE void preWriteBarrier(TenuredCell* thing);
-  static MOZ_ALWAYS_INLINE void postWriteBarrier(void* cellp,
-                                                 TenuredCell* prior,
-                                                 TenuredCell* next);
 
   
   void fixupAfterMovingGC() {}
@@ -402,20 +396,6 @@ inline JS::TraceKind Cell::getTraceKind() const {
   return JS::shadow::Zone::from(zone)->needsIncrementalBarrier();
 }
 
- MOZ_ALWAYS_INLINE void Cell::readBarrier(Cell* thing) {
-  MOZ_ASSERT(!CurrentThreadIsGCMarking());
-  if (thing->isTenured()) {
-    TenuredCell::readBarrier(&thing->asTenured());
-  }
-}
-
- MOZ_ALWAYS_INLINE void Cell::preWriteBarrier(Cell* thing) {
-  MOZ_ASSERT(!CurrentThreadIsGCMarking());
-  if (thing && thing->isTenured()) {
-    TenuredCell::preWriteBarrier(&thing->asTenured());
-  }
-}
-
 bool TenuredCell::isMarkedAny() const {
   MOZ_ASSERT(arena()->allocated());
   return chunk()->bitmap.isMarkedAny(this);
@@ -470,8 +450,19 @@ bool TenuredCell::isInsideZone(JS::Zone* zone) const {
   return zone == arena()->zone;
 }
 
- MOZ_ALWAYS_INLINE void TenuredCell::readBarrier(
-    TenuredCell* thing) {
+
+
+template <typename T>
+MOZ_ALWAYS_INLINE void ReadBarrier(T* thing) {
+  static_assert(std::is_base_of_v<Cell, T>);
+  static_assert(!std::is_same_v<Cell, T> && !std::is_same_v<TenuredCell, T>);
+
+  if (thing && !thing->isPermanentAndMayBeShared()) {
+    ReadBarrierImpl(thing);
+  }
+}
+
+MOZ_ALWAYS_INLINE void ReadBarrierImpl(TenuredCell* thing) {
   MOZ_ASSERT(!CurrentThreadIsIonCompiling());
   MOZ_ASSERT(!CurrentThreadIsGCMarking());
   MOZ_ASSERT(thing);
@@ -501,10 +492,16 @@ bool TenuredCell::isInsideZone(JS::Zone* zone) const {
   }
 }
 
-void AssertSafeToSkipBarrier(TenuredCell* thing);
+MOZ_ALWAYS_INLINE void ReadBarrierImpl(Cell* thing) {
+  MOZ_ASSERT(!CurrentThreadIsGCMarking());
+  if (thing->isTenured()) {
+    ReadBarrierImpl(&thing->asTenured());
+  }
+}
 
- MOZ_ALWAYS_INLINE void TenuredCell::preWriteBarrier(
-    TenuredCell* thing) {
+void AssertSafeToSkipPreWriteBarrier(TenuredCell* thing);
+
+MOZ_ALWAYS_INLINE void PreWriteBarrierImpl(TenuredCell* thing) {
   MOZ_ASSERT(!CurrentThreadIsIonCompiling());
   MOZ_ASSERT(!CurrentThreadIsGCMarking());
 
@@ -523,7 +520,7 @@ void AssertSafeToSkipBarrier(TenuredCell* thing);
   
   
   if (!CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread())) {
-    AssertSafeToSkipBarrier(thing);
+    AssertSafeToSkipPreWriteBarrier(thing);
     return;
   }
 #endif
@@ -541,14 +538,21 @@ void AssertSafeToSkipBarrier(TenuredCell* thing);
   }
 }
 
-static MOZ_ALWAYS_INLINE void AssertValidToSkipBarrier(TenuredCell* thing) {
-  MOZ_ASSERT(!IsInsideNursery(thing));
-  MOZ_ASSERT_IF(thing, !IsNurseryAllocable(thing->getAllocKind()));
+MOZ_ALWAYS_INLINE void PreWriteBarrierImpl(Cell* thing) {
+  MOZ_ASSERT(!CurrentThreadIsGCMarking());
+  if (thing && thing->isTenured()) {
+    PreWriteBarrierImpl(&thing->asTenured());
+  }
 }
 
- MOZ_ALWAYS_INLINE void TenuredCell::postWriteBarrier(
-    void* cellp, TenuredCell* prior, TenuredCell* next) {
-  AssertValidToSkipBarrier(next);
+template <typename T>
+MOZ_ALWAYS_INLINE void PreWriteBarrier(T* thing) {
+  static_assert(std::is_base_of_v<Cell, T>);
+  static_assert(!std::is_same_v<Cell, T> && !std::is_same_v<TenuredCell, T>);
+
+  if (thing && !thing->isPermanentAndMayBeShared()) {
+    PreWriteBarrierImpl(thing);
+  }
 }
 
 #ifdef DEBUG
@@ -742,7 +746,7 @@ class alignas(gc::CellAlignBytes) CellWithTenuredGCPointer : public BaseCell {
   void setHeaderPtr(PtrT* newValue) {
     
     MOZ_ASSERT(!IsInsideNursery(newValue));
-    PtrT::preWriteBarrier(headerPtr());
+    PreWriteBarrier(headerPtr());
     unbarrieredSetHeaderPtr(newValue);
   }
 

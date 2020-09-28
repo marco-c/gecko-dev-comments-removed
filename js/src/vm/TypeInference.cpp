@@ -4074,7 +4074,7 @@ bool TypeNewScript::maybeAnalyze(JSContext* cx, ObjectGroup* group,
 
   
   
-  Shape::readBarrier(prefixShape);
+  gc::ReadBarrier(prefixShape);
 
   initializedShape_ = prefixShape;
   initializedGroup_ = group;

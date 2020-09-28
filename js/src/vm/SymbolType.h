@@ -95,11 +95,8 @@ class Symbol
   }
   inline void finalize(JSFreeOp*) {}
 
-  static MOZ_ALWAYS_INLINE void preWriteBarrier(Symbol* thing) {
-    if (thing && !thing->isWellKnownSymbol()) {
-      thing->asTenured().preWriteBarrier(thing);
-    }
-  }
+  
+  bool isPermanentAndMayBeShared() const { return isWellKnownSymbol(); }
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return mallocSizeOf(this);
