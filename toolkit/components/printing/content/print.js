@@ -423,9 +423,7 @@ var PrintEventHandler = {
     Services.prefs.setStringPref("print_printer", settings.printerName);
 
     try {
-      
-      
-      settings.showPrintProgress = !Cu.isInAutomation;
+      this.settings.showPrintProgress = true;
       let bc = this.previewBrowser.browsingContext;
       await this._doPrint(bc, settings);
     } catch (e) {
