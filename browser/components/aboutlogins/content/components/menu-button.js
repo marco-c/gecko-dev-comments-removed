@@ -77,8 +77,11 @@ export default class MenuButton extends HTMLElement {
               detail: linkTrackingSource,
             })
           );
+
+          
+          
+          this._hideMenu();
         }
-        this._hideMenu();
         break;
       }
       case "keydown": {
