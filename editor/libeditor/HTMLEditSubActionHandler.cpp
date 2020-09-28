@@ -3028,6 +3028,11 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     DeleteNodesEntirelyInRangeButKeepTableStructure(
         HTMLEditor& aHTMLEditor, nsRange& aRange,
         AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed);
+    bool NeedsToJoinNodesAfterDeleteNodesEntirelyInRangeButKeepTableStructure(
+        const HTMLEditor& aHTMLEditor,
+        const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
+        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed)
+        const;
 
     
 
@@ -5258,7 +5263,9 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   iter.AppendAllNodesToArray(arrayOfTopChildren);
 
   
-  bool join = true;
+  bool needsToJoinLater =
+      NeedsToJoinNodesAfterDeleteNodesEntirelyInRangeButKeepTableStructure(
+          aHTMLEditor, arrayOfTopChildren, aSelectionWasCollapsed);
   for (auto& content : arrayOfTopChildren) {
     
     
@@ -5279,26 +5286,46 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
         NS_SUCCEEDED(rv),
         "AutoBlockElementsJoiner::DeleteContentButKeepTableStructure() failed, "
         "but ignored");
-    
-    
-    
-    
-    if (!join || aSelectionWasCollapsed ==
-                     AutoDeleteRangesHandler::SelectionWasCollapsed::No) {
-      continue;
-    }
+  }
+  return needsToJoinLater;
+}
+
+bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
+    NeedsToJoinNodesAfterDeleteNodesEntirelyInRangeButKeepTableStructure(
+        const HTMLEditor& aHTMLEditor,
+        const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
+        AutoDeleteRangesHandler::SelectionWasCollapsed aSelectionWasCollapsed)
+        const {
+  
+  
+  if (aSelectionWasCollapsed ==
+      AutoDeleteRangesHandler::SelectionWasCollapsed::No) {
+    return true;
+  }
+  
+  
+  if (aArrayOfContents.IsEmpty()) {
+    return true;
+  }
+  for (const OwningNonNull<nsIContent>& content : aArrayOfContents) {
     if (content->IsText()) {
-      join = !aHTMLEditor.IsInVisibleTextFrames(*content->AsText());
+      if (aHTMLEditor.IsInVisibleTextFrames(*content->AsText())) {
+        return false;
+      }
       continue;
     }
+    
+    
     if (!content->IsElement() ||
         aHTMLEditor.IsEmptyNode(*content->AsElement())) {
       continue;
     }
-    join = content->IsHTMLElement(nsGkAtoms::br) &&
-           !aHTMLEditor.IsVisibleBRElement(content);
+    if (!content->IsHTMLElement(nsGkAtoms::br) ||
+        aHTMLEditor.IsVisibleBRElement(content)) {
+      return false;
+    }
   }
-  return join;
+  return true;
 }
 
 nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
