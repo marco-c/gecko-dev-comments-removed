@@ -18,6 +18,7 @@
 
 #include "js/AllocPolicy.h"
 #include "js/HashTable.h"
+#include "js/HeapAPI.h"
 #include "js/Vector.h"
 
 
@@ -50,15 +51,18 @@ class DenseBitmap {
   uintptr_t word(size_t i) const { return data[i]; }
   uintptr_t& word(size_t i) { return data[i]; }
 
-  void copyBitsFrom(size_t wordStart, size_t numWords, uintptr_t* source) {
+  template <typename T>
+  typename std::enable_if_t<std::is_convertible_v<T, uintptr_t>, void>
+  copyBitsFrom(size_t wordStart, size_t numWords, T* source) {
     MOZ_ASSERT(wordStart + numWords <= data.length());
-    
-    
-    std::copy(source, source + numWords, &data[wordStart]);
+    for (size_t i = 0; i < numWords; i++) {
+      data[wordStart + i] = source[i];
+    }
   }
 
-  void bitwiseOrRangeInto(size_t wordStart, size_t numWords,
-                          uintptr_t* target) const {
+  template <typename T>
+  typename std::enable_if_t<std::is_convertible_v<T, uintptr_t>, void>
+  bitwiseOrRangeInto(size_t wordStart, size_t numWords, T* target) const {
     for (size_t i = 0; i < numWords; i++) {
       target[i] |= data[wordStart + i];
     }
@@ -149,8 +153,22 @@ class SparseBitmap {
 
   
   
-  void bitwiseOrRangeInto(size_t wordStart, size_t numWords,
-                          uintptr_t* target) const;
+  template <typename T>
+  typename std::enable_if_t<std::is_convertible_v<T, uintptr_t>, void>
+  bitwiseOrRangeInto(size_t wordStart, size_t numWords, T* target) const {
+    size_t blockWord = blockStartWord(wordStart);
+
+    
+    MOZ_ASSERT(numWords &&
+               (blockWord == blockStartWord(wordStart + numWords - 1)));
+
+    BitBlock* block = getBlock(blockWord / WordsInBlock);
+    if (block) {
+      for (size_t i = 0; i < numWords; i++) {
+        target[i] |= (*block)[wordStart - blockWord + i];
+      }
+    }
+  }
 };
 
 }  
