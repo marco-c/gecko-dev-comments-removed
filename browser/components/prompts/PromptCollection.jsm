@@ -71,7 +71,7 @@ class PromptCollection {
     return buttonPressed === 0;
   }
 
-  beforeUnloadCheckInternal(browsingContext, sync) {
+  asyncBeforeUnloadCheck(browsingContext) {
     let title;
     let message;
     let leaveLabel;
@@ -113,23 +113,6 @@ class PromptCollection {
       (Ci.nsIPromptService.BUTTON_TITLE_IS_STRING *
         Ci.nsIPromptService.BUTTON_POS_1);
 
-    if (sync) {
-      let buttonNumClicked = Services.prompt.confirmExBC(
-        browsingContext,
-        modalType,
-        title,
-        message,
-        buttonFlags,
-        leaveLabel,
-        stayLabel,
-        null,
-        null,
-        {}
-      );
-
-      return buttonNumClicked === 0;
-    }
-
     return Services.prompt
       .asyncConfirmEx(
         browsingContext,
@@ -145,23 +128,12 @@ class PromptCollection {
         
         
         
-        
-        
-        
         { inPermitUnload: true }
       )
       .then(
         result =>
           result.QueryInterface(Ci.nsIPropertyBag2).get("buttonNumClicked") == 0
       );
-  }
-
-  beforeUnloadCheck(browsingContext) {
-    return this.beforeUnloadCheckInternal(browsingContext,  true);
-  }
-
-  asyncBeforeUnloadCheck(browsingContext) {
-    return this.beforeUnloadCheckInternal(browsingContext,  false);
   }
 }
 
