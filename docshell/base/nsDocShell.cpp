@@ -8656,6 +8656,12 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   
   SetHistoryEntryAndUpdateBC(Some<nsISHEntry*>(aLoadState->SHEntry()),
                              Nothing());
+  UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> oldLoadingEntry;
+  mLoadingEntry.swap(oldLoadingEntry);
+  if (aLoadState->GetLoadingSessionHistoryInfo()) {
+    mLoadingEntry = MakeUnique<LoadingSessionHistoryInfo>(
+        *aLoadState->GetLoadingSessionHistoryInfo());
+  }
 
   
   RefPtr<Document> doc = GetDocument();
@@ -8787,6 +8793,26 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       SetCacheKeyOnHistoryEntry(mOSHE, cacheKey);
     }
   }
+  if (StaticPrefs::fission_sessionHistoryInParent() && mLoadingEntry) {
+    mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
+    nsID changeID = {};
+    if (XRE_IsParentProcess()) {
+      mBrowsingContext->Canonical()->SessionHistoryCommit(
+          mLoadingEntry->mLoadId, changeID);
+    } else {
+      RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
+      if (rootSH) {
+        
+        
+        rootSH->SetIndexAndLength(mLoadingEntry->mRequestedIndex,
+                                  mLoadingEntry->mSessionHistoryLength,
+                                  changeID);
+      }
+      ContentChild* cc = ContentChild::GetSingleton();
+      mozilla::Unused << cc->SendHistoryCommit(
+          mBrowsingContext, mLoadingEntry->mLoadId, changeID);
+    }
+  }
 
   
 
@@ -8801,6 +8827,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
 
   SetHistoryEntryAndUpdateBC(Some<nsISHEntry*>(oldLSHE), Nothing());
+  mLoadingEntry.swap(oldLoadingEntry);
 
   
 
