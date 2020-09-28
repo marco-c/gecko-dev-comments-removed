@@ -59,7 +59,7 @@
 #include "vm/BytecodeUtil.h"
 #include "vm/Compression.h"
 #include "vm/FunctionFlags.h"  
-#include "vm/HelperThreads.h"  
+#include "vm/HelperThreadState.h"  
 #include "vm/JSAtom.h"
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"

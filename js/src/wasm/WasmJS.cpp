@@ -42,6 +42,7 @@
 #include "vm/ErrorObject.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/GlobalObject.h"   
+#include "vm/HelperThreadState.h"  
 #include "vm/Interpreter.h"
 #include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  

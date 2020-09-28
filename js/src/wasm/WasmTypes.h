@@ -954,27 +954,6 @@ enum class Tier {
 
 
 
-enum class OptimizedBackend {
-  Ion,
-  Cranelift,
-};
-
-
-
-
-enum class CompileMode { Once, Tier1, Tier2 };
-
-
-
-enum class DebugEnabled { False, True };
-
-
-
-
-enum class MemoryUsage { None = false, Unshared = 1, Shared = 2 };
-
-
-
 class Tiers {
   Tier t_[2];
   uint32_t n_;
