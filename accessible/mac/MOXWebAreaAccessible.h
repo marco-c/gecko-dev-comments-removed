@@ -10,7 +10,11 @@
 
 using namespace mozilla::a11y;
 
-@interface MOXWebAreaAccessible : mozAccessible
+@class MOXRootGroup;
+
+@interface MOXWebAreaAccessible : mozAccessible {
+  MOXRootGroup* mRootGroup;
+}
 
 - (NSURL*)moxURL;
 
@@ -27,7 +31,17 @@ using namespace mozilla::a11y;
 - (NSNumber*)moxUIElementCountForSearchPredicate:(NSDictionary*)searchPredicate;
 
 
+- (NSArray*)moxUnignoredChildren;
+
+
 - (void)handleAccessibleEvent:(uint32_t)eventType;
+
+
+- (void)dealloc;
+
+- (NSArray*)rootGroupChildren;
+
+- (id)rootGroup;
 
 @end
 
