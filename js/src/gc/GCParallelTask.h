@@ -134,13 +134,10 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
     return state_ == State::Dispatched;
   }
 
-  ThreadType threadType() override {
-    return ThreadType::THREAD_TYPE_GCPARALLEL;
-  }
 
  protected:
   
-  virtual void run() = 0;
+  virtual void run(AutoLockHelperThreadState& lock) = 0;
 
   
   
@@ -184,8 +181,12 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
     state_ = State::Idle;
   }
 
-  void runTask();
-  friend class HelperThread;
+  void runTask(AutoLockHelperThreadState& lock);
+
+  
+  ThreadType threadType() override {
+    return ThreadType::THREAD_TYPE_GCPARALLEL;
+  }
   void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
 };
 
