@@ -23,11 +23,6 @@ ChromeUtils.defineModuleGetter(
   "OSKeyStore",
   "resource://gre/modules/OSKeyStore.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExperimentAPI",
-  "resource://messaging-system/experiments/ExperimentAPI.jsm"
-);
 
 
 
@@ -56,15 +51,6 @@ this.LoginHelper = {
     this.updateSignonPrefs();
     Services.telemetry.setEventRecordingEnabled("pwmgr", true);
     Services.telemetry.setEventRecordingEnabled("form_autocomplete", true);
-
-    
-    const slug = "password-autocomplete-wizardless";
-    const setImportRecording = exp =>
-      Services.telemetry.setEventRecordingEnabled("exp_import", exp?.active);
-    ExperimentAPI.ready().then(() =>
-      setImportRecording(ExperimentAPI.getExperiment({ slug }))
-    );
-    ExperimentAPI.on(`update:${slug}`, (ev, exp) => setImportRecording(exp));
   },
 
   updateSignonPrefs() {
@@ -110,10 +96,16 @@ this.LoginHelper = {
       "signon.showAutoCompleteFooter"
     );
 
+    
     this.showAutoCompleteImport = Services.prefs.getStringPref(
       "signon.showAutoCompleteImport",
       ""
     );
+    if (["control"].includes(this.showAutoCompleteImport)) {
+      Services.telemetry.setEventRecordingEnabled("exp_import", true);
+    } else {
+      Services.telemetry.setEventRecordingEnabled("exp_import", false);
+    }
 
     this.storeWhenAutocompleteOff = Services.prefs.getBoolPref(
       "signon.storeWhenAutocompleteOff"

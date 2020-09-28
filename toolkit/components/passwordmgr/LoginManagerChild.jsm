@@ -599,12 +599,11 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         }
 
         this._fieldsWithPasswordGenerationForcedOn.add(inputElement);
-        this.repopulateAutocompletePopup();
-        break;
-      }
-
-      case "PasswordManager:repopulateAutocompletePopup": {
-        this.repopulateAutocompletePopup();
+        
+        
+        gFormFillService.QueryInterface(Ci.nsIAutoCompleteInput);
+        gFormFillService.controller.resetInternalState();
+        gFormFillService.showPopup();
         break;
       }
 
@@ -619,13 +618,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     }
 
     return undefined;
-  }
-
-  repopulateAutocompletePopup() {
-    
-    gFormFillService.QueryInterface(Ci.nsIAutoCompleteInput);
-    gFormFillService.controller.resetInternalState();
-    gFormFillService.showPopup();
   }
 
   shouldIgnoreLoginManagerEvent(event) {
