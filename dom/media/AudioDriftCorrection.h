@@ -184,6 +184,7 @@ class AudioDriftCorrection final {
     
     AudioSegment output = mResampler.Resample(aOutputFrames);
     if (output.IsEmpty()) {
+      NS_WARNING("Got nothing from the resampler");
       output.AppendNullData(aOutputFrames);
     }
     return output;
