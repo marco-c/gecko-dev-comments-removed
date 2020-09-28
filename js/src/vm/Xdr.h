@@ -17,12 +17,18 @@
 #include "jsfriendapi.h"
 #include "NamespaceImports.h"
 
+#include "frontend/ParserAtom.h"
 #include "js/CompileOptions.h"
 #include "js/Transcoding.h"
 #include "js/TypeDecls.h"
 #include "vm/JSAtom.h"
 
 namespace js {
+
+namespace frontend {
+struct CompilationStencil;
+struct CompilationInfo;
+}  
 
 class LifoAlloc;
 
@@ -32,6 +38,10 @@ using XDRResult = mozilla::Result<mozilla::Ok, JS::TranscodeResult>;
 
 using XDRAtomTable = JS::GCVector<PreBarriered<JSAtom*>>;
 using XDRAtomMap = JS::GCHashMap<PreBarriered<JSAtom*>, uint32_t>;
+
+using XDRParserAtomTable =
+    Vector<const frontend::ParserAtom*, 0, SystemAllocPolicy>;
+using XDRParserAtomMap = HashMap<const frontend::ParserAtom*, uint32_t>;
 
 class XDRBufferBase {
  public:
@@ -227,6 +237,10 @@ class XDRState : public XDRCoderBase {
   virtual ~XDRState() = default;
 
   JSContext* cx() const { return mainBuf.cx(); }
+  virtual bool isForStencil() const { return false; }
+  virtual frontend::CompilationInfo& stencilCompilationInfo() {
+    MOZ_CRASH("does not have stencil compilationInfo.");
+  }
 
   virtual bool hasOptions() const { return false; }
   virtual const JS::ReadOnlyCompileOptions& options() {
@@ -239,10 +253,21 @@ class XDRState : public XDRCoderBase {
 
   virtual bool hasAtomMap() const { return false; }
   virtual XDRAtomMap& atomMap() { MOZ_CRASH("does not have atomMap"); }
+  virtual XDRParserAtomMap& parserAtomMap() {
+    
+    MOZ_CRASH("does not have parserAtomMap");
+  }
   virtual uint32_t& natoms() { MOZ_CRASH("does not have atomMap."); }
 
   virtual bool hasAtomTable() const { return false; }
   virtual XDRAtomTable& atomTable() { MOZ_CRASH("does not have atomTable"); }
+  virtual frontend::ParserAtomsTable& frontendAtoms() {
+    MOZ_CRASH("does not have frontendAtoms");
+  }
+  virtual XDRParserAtomTable& parserAtomTable() {
+    
+    MOZ_CRASH("does not have parserAtomTable");
+  }
   virtual void finishAtomTable() { MOZ_CRASH("does not have atomTable"); }
 
   virtual bool isMainBuf() { return true; }
@@ -450,6 +475,47 @@ class XDRDecoder : public XDRDecoderBase {
   bool hasFinishedAtomTable_ = false;
 };
 
+
+
+
+
+
+
+
+class XDRStencilDecoder : public XDRDecoderBase {
+ public:
+  XDRStencilDecoder(JSContext* cx, const JS::ReadOnlyCompileOptions* options,
+                    const JS::TranscodeRange& range,
+                    frontend::CompilationInfo& compilationInfo,
+                    frontend::ParserAtomsTable& parserAtoms)
+      : XDRDecoderBase(cx, range),
+        options_(options),
+        compilationInfo_(compilationInfo),
+        parserAtoms_(parserAtoms) {
+    MOZ_ASSERT(options_);
+  }
+
+  bool isForStencil() const override { return true; }
+  frontend::CompilationInfo& stencilCompilationInfo() override {
+    return compilationInfo_;
+  }
+
+  bool hasAtomTable() const override { return hasFinishedAtomTable_; }
+  frontend::ParserAtomsTable& frontendAtoms() override { return parserAtoms_; }
+  XDRParserAtomTable& parserAtomTable() override { return parserAtomTable_; }
+  void finishAtomTable() override { hasFinishedAtomTable_ = true; }
+
+  bool hasOptions() const override { return true; }
+  const JS::ReadOnlyCompileOptions& options() override { return *options_; }
+
+ private:
+  const JS::ReadOnlyCompileOptions* options_;
+  XDRParserAtomTable parserAtomTable_;
+  bool hasFinishedAtomTable_ = false;
+  frontend::CompilationInfo& compilationInfo_;
+  frontend::ParserAtomsTable& parserAtoms_;
+};
+
 class XDROffThreadDecoder : public XDRDecoder {
   const JS::ReadOnlyCompileOptions* options_;
   ScriptSourceObject** sourceObjectOut_;
@@ -594,6 +660,32 @@ class XDRIncrementalEncoder : public XDREncoder {
   XDRResult linearize(JS::TranscodeBuffer& buffer);
 
   void trace(JSTracer* trc);
+};
+
+class XDRIncrementalStencilEncoder : public XDRIncrementalEncoder {
+  
+  
+  
+  
+  frontend::CompilationInfo& compilationInfo_;
+
+  
+  XDRParserAtomMap parserAtomMap_;
+
+ public:
+  XDRIncrementalStencilEncoder(JSContext* cx,
+                               frontend::CompilationInfo& compilationInfo)
+      : XDRIncrementalEncoder(cx),
+        compilationInfo_(compilationInfo),
+        parserAtomMap_(cx) {}
+
+  virtual ~XDRIncrementalStencilEncoder() = default;
+
+  bool isForStencil() const override { return true; }
+  frontend::CompilationInfo& stencilCompilationInfo() override {
+    return compilationInfo_;
+  }
+  XDRParserAtomMap& parserAtomMap() override { return parserAtomMap_; }
 };
 
 template <XDRMode mode>
