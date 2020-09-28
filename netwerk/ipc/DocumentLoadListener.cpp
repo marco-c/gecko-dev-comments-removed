@@ -626,7 +626,8 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
   mOriginalUriString = aLoadState->GetOriginalURIString();
-  if (documentContext && StaticPrefs::fission_sessionHistoryInParent()) {
+  if (documentContext &&
+      StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
     
     
     mLoadingSessionHistoryInfo =

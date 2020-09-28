@@ -6348,7 +6348,7 @@ bool nsGlobalWindowOuter::IsOnlyTopLevelDocumentInSHistory() {
   
   
 
-  if (StaticPrefs::fission_sessionHistoryInParent()) {
+  if (StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
     return mBrowsingContext->GetIsSingleToplevelInHistory();
   }
 

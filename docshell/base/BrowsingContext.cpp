@@ -414,7 +414,7 @@ void BrowsingContext::CreateFromIPC(BrowsingContext::IPCInitializer&& aInit,
   context->mCreatedDynamically = aInit.mCreatedDynamically;
   if (context->GetHasSessionHistory()) {
     context->CreateChildSHistory();
-    if (StaticPrefs::fission_sessionHistoryInParent()) {
+    if (StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
       context->GetChildSessionHistory()->SetIndexAndLength(
           aInit.mSessionHistoryIndex, aInit.mSessionHistoryCount, nsID());
     }
@@ -2084,7 +2084,8 @@ BrowsingContext::IPCInitializer BrowsingContext::GetIPCInitializer() {
   init.mUseRemoteSubframes = mUseRemoteSubframes;
   init.mCreatedDynamically = mCreatedDynamically;
   init.mOriginAttributes = mOriginAttributes;
-  if (mChildSessionHistory && StaticPrefs::fission_sessionHistoryInParent()) {
+  if (mChildSessionHistory &&
+      StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
     init.mSessionHistoryIndex = mChildSessionHistory->Index();
     init.mSessionHistoryCount = mChildSessionHistory->Count();
   }
@@ -2582,7 +2583,7 @@ void BrowsingContext::InitSessionHistory() {
 }
 
 ChildSHistory* BrowsingContext::GetChildSessionHistory() {
-  if (!StaticPrefs::fission_sessionHistoryInParent()) {
+  if (!StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
     
     
     
@@ -2640,7 +2641,8 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_PendingInitialization>,
 
 void BrowsingContext::SessionHistoryChanged(int32_t aIndexDelta,
                                             int32_t aLengthDelta) {
-  if (XRE_IsParentProcess() || StaticPrefs::fission_sessionHistoryInParent()) {
+  if (XRE_IsParentProcess() ||
+      StaticPrefs::fission_sessionHistoryInParent_AtStartup()) {
     
     
     return;
