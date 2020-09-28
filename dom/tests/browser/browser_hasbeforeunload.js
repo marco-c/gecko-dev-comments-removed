@@ -395,7 +395,7 @@ async function prepareSubframes(browser, options) {
 
 
 function assertHasBeforeUnload(browser, expected) {
-  Assert.equal(browser.frameLoader.remoteTab.hasBeforeUnload, expected);
+  Assert.equal(browser.hasBeforeUnload, expected);
 }
 
 
