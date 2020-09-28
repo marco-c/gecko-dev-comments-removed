@@ -66,6 +66,14 @@ template <typename R, typename RArgMapper, typename Func, typename... Args>
 Result<R, nsresult> ToResultInvokeInternal(const Func& aFunc,
                                            const RArgMapper& aRArgMapper,
                                            Args&&... aArgs) {
+  
+  
+  
+  static_assert(
+      !std::is_pointer_v<R>,
+      "Raw pointer results are not supported, please specify a smart pointer "
+      "result type explicitly, so that getter_AddRefs is used");
+
   R res;
   nsresult rv = aFunc(std::forward<Args>(aArgs)..., aRArgMapper(res));
   if (NS_FAILED(rv)) {
