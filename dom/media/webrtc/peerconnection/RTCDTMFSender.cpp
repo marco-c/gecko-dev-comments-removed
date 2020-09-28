@@ -3,7 +3,7 @@
 
 
 #include "RTCDTMFSender.h"
-#include "media-conduit/MediaConduitInterface.h"
+#include "libwebrtcglue/MediaConduitInterface.h"
 #include "transport/logging.h"
 #include "TransceiverImpl.h"
 #include "nsITimer.h"
