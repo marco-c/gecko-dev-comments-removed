@@ -647,13 +647,17 @@ function TargetMixin(parentClass) {
         }
       }
 
-      for (let [, front] of this.fronts) {
-        
-        
-        if (front instanceof Promise) {
-          front = await front;
+      for (let [name, front] of this.fronts) {
+        try {
+          
+          
+          if (front instanceof Promise) {
+            front = await front;
+          }
+          front.destroy();
+        } catch (e) {
+          console.warn("Error while destroying front:", name, e);
         }
-        front.destroy();
       }
 
       this._teardownRemoteListeners();
