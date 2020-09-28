@@ -5,6 +5,8 @@
 
 #ifndef include_dom_media_ipc_RemoteDecoderManagerParent_h
 #define include_dom_media_ipc_RemoteDecoderManagerParent_h
+
+#include "GPUVideoImage.h"
 #include "mozilla/PRemoteDecoderManagerParent.h"
 #include "mozilla/layers/VideoBridgeChild.h"
 
@@ -12,11 +14,13 @@ namespace mozilla {
 
 class RemoteDecoderManagerThreadHolder;
 
-class RemoteDecoderManagerParent final : public PRemoteDecoderManagerParent {
+class RemoteDecoderManagerParent final
+    : public PRemoteDecoderManagerParent,
+      public layers::IGPUVideoSurfaceManager {
   friend class PRemoteDecoderManagerParent;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteDecoderManagerParent)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteDecoderManagerParent, override)
 
   static bool CreateForContent(
       Endpoint<PRemoteDecoderManagerParent>&& aEndpoint);
@@ -25,8 +29,19 @@ class RemoteDecoderManagerParent final : public PRemoteDecoderManagerParent {
       Endpoint<layers::PVideoBridgeChild>&& aEndpoint);
 
   
-  SurfaceDescriptorGPUVideo StoreImage(layers::Image* aImage,
-                                       layers::TextureClient* aTexture);
+  
+  
+  void StoreImage(const SurfaceDescriptorGPUVideo& aSD, layers::Image* aImage,
+                  layers::TextureClient* aTexture);
+
+  
+  already_AddRefed<gfx::SourceSurface> Readback(
+      const SurfaceDescriptorGPUVideo& aSD) override {
+    MOZ_ASSERT_UNREACHABLE("Not usable from the parent");
+    return nullptr;
+  }
+  void DeallocateSurfaceDescriptor(
+      const SurfaceDescriptorGPUVideo& aSD) override;
 
   static bool StartupThreads();
   static void ShutdownThreads();
