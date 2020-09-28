@@ -111,7 +111,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   mozilla::StyleGenericFontFamily mGenericID;
 
   
-  int8_t mScriptLevel;
+  int8_t mMathDepth;
   
   uint8_t mMathVariant;
   
