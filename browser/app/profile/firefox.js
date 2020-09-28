@@ -1946,12 +1946,6 @@ pref("extensions.screenshots.upload-disabled", false);
 
 
 
-
-
-pref("doh-rollout.profileCreationThreshold", "1572476400000");
-
-
-
 pref("doh-rollout.trr-selection.enabled", false);
 
 
