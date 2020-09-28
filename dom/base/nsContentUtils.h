@@ -2447,7 +2447,9 @@ class nsContentUtils {
 
 
 
-  static bool IsInPointerLockContext(nsPIDOMWindowOuter* aWin);
+
+
+  static bool IsInPointerLockContext(mozilla::dom::BrowsingContext* aContext);
 
   static void GetShiftText(nsAString& text);
   static void GetControlText(nsAString& text);
