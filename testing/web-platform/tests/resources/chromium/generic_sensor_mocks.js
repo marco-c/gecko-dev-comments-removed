@@ -386,10 +386,15 @@ var GenericSensorTest = (() => {
         throw new Error('Call reset() before initialize().');
 
       
-      for (const entry of ['accelerometer', 'gyroscope',
-          'magnetometer', 'ambient-light-sensor']) {
-        await test_driver.set_permission({ name: entry }, 'granted', false);
-      };
+      
+      
+      if (window.parent === window) {
+        for (const entry
+                 of ['accelerometer', 'gyroscope', 'magnetometer',
+                     'ambient-light-sensor']) {
+          await test_driver.set_permission({name: entry}, 'granted', false);
+        }
+      }
 
       testInternal.sensorProvider = new MockSensorProvider;
       testInternal.initialized = true;
