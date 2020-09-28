@@ -17,30 +17,18 @@ namespace mozilla {
 namespace layers {
 class BufferRecycleBin;
 class IGPUVideoSurfaceManager;
-}
+}  
 class RemoteImageHolder final {
   friend struct ipc::IPDLParamTraits<RemoteImageHolder>;
 
  public:
-  RemoteImageHolder() = default;  
-                                  
+  RemoteImageHolder();  
+                        
   RemoteImageHolder(layers::IGPUVideoSurfaceManager* aManager,
                     layers::VideoBridgeSource aSource,
                     const gfx::IntSize& aSize,
-                    const layers::SurfaceDescriptor& aSD)
-      : mSource(aSource),
-        mSize(aSize),
-        mSD(aSD),
-        mManager(aManager),
-        mEmpty(false) {}
-  RemoteImageHolder(RemoteImageHolder&& aOther)
-      : mSource(aOther.mSource),
-        mSize(aOther.mSize),
-        mSD(aOther.mSD),
-        mManager(aOther.mManager),
-        mEmpty(aOther.mEmpty) {
-    aOther.mEmpty = true;
-  }
+                    const layers::SurfaceDescriptor& aSD);
+  RemoteImageHolder(RemoteImageHolder&& aOther);
   
   RemoteImageHolder(const RemoteImageHolder& aOther) = delete;
   RemoteImageHolder& operator=(const RemoteImageHolder& aOther) = delete;
