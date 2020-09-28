@@ -125,6 +125,11 @@ pub unsafe extern "C" fn fog_init() -> nsresult {
     NS_OK
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn fog_shutdown() {
+    fog::shutdown();
+}
+
 
 fn get_data_path() -> Result<String, nsresult> {
     let dir_svc = match xpcom::services::get_DirectoryService() {
