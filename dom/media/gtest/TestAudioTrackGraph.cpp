@@ -316,13 +316,13 @@ TEST(TestAudioTrackGraph, SourceTrack)
   Unused << WaitFor(p);
 
   
-  stream->GoFaster();
+  cubeb->GoFaster();
   uint32_t totalFrames = 0;
   WaitUntil(stream->FramesProcessedEvent(), [&](uint32_t aFrames) {
     totalFrames += aFrames;
     return totalFrames > static_cast<uint32_t>(graph->GraphRate());
   });
-  stream->DontGoFaster();
+  cubeb->DontGoFaster();
 
   
   DispatchFunction([&] {
@@ -424,17 +424,14 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
 
   partnerStream->SetDriftFactor(aDriftFactor);
 
-  inputStream->GoFaster();
-  partnerStream->GoFaster();
-
+  cubeb->GoFaster();
   
   uint32_t totalFrames = 0;
   WaitUntil(partnerStream->FramesProcessedEvent(), [&](uint32_t aFrames) {
     totalFrames += aFrames;
     return totalFrames > static_cast<uint32_t>(partner->GraphRate() * 3);
   });
-  inputStream->DontGoFaster();
-  partnerStream->DontGoFaster();
+  cubeb->DontGoFaster();
 
   DispatchFunction([&] {
     
