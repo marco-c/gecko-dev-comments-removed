@@ -1321,23 +1321,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  
-  void UpdateAudioTrackSilenceRange(bool aAudible);
-
-  
-  
-  
-  void AccumulateAudioTrackSilence();
-
-  
-  bool IsAudioTrackCurrentlySilent() const;
-
-  
-  
-  void ReportAudioTrackSilenceProportionTelemetry();
-
-  
-  
   void DispatchEventsWhenPlayWasNotAllowed();
 
   
@@ -1491,17 +1474,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   bool mIsAudioTrackAudible = false;
-
-  
-  double mAudioTrackSilenceStartedTime = 0.0;
-
-  
-  
-  media::TimeIntervals mSilenceTimeRanges;
-
-  
-  
-  bool mHasAccumulatedSilenceRangeBeforeSeekEnd = false;
 
   enum MutedReasons {
     MUTED_BY_CONTENT = 0x01,
