@@ -1503,7 +1503,6 @@ bool JSFunction::finishBoundFunctionInit(JSContext* cx, HandleFunction bound,
   MOZ_ASSERT(!bound->hasGuessedAtom());
 
   
-  JSAtom* name = nullptr;
   if (targetObj->is<JSFunction>() &&
       !targetObj->as<JSFunction>().hasResolvedName()) {
     JSFunction* targetFn = &targetObj->as<JSFunction>();
@@ -1512,21 +1511,18 @@ bool JSFunction::finishBoundFunctionInit(JSContext* cx, HandleFunction bound,
     
     
     if (targetFn->isBoundFunction() && targetFn->hasBoundFunctionNamePrefix()) {
-      name = AppendBoundFunctionPrefix(cx, targetFn->explicitName());
+      JSAtom* name = AppendBoundFunctionPrefix(cx, targetFn->explicitName());
       if (!name) {
         return false;
       }
       bound->setPrefixedBoundFunctionName(name);
     } else {
-      name = targetFn->infallibleGetUnresolvedName(cx);
+      JSAtom* name = targetFn->infallibleGetUnresolvedName(cx);
       MOZ_ASSERT(name);
 
       bound->setAtom(name);
     }
-  }
-
-  
-  if (!name) {
+  } else {
     
     RootedValue targetName(cx);
     if (!GetProperty(cx, targetObj, targetObj, cx->names().name, &targetName)) {
@@ -1544,13 +1540,13 @@ bool JSFunction::finishBoundFunctionInit(JSContext* cx, HandleFunction bound,
     
     if (targetObj->is<JSFunction>() &&
         targetObj->as<JSFunction>().isBoundFunction()) {
-      name = AppendBoundFunctionPrefix(cx, targetName.toString());
+      JSAtom* name = AppendBoundFunctionPrefix(cx, targetName.toString());
       if (!name) {
         return false;
       }
       bound->setPrefixedBoundFunctionName(name);
     } else {
-      name = AtomizeString(cx, targetName.toString());
+      JSAtom* name = AtomizeString(cx, targetName.toString());
       if (!name) {
         return false;
       }
