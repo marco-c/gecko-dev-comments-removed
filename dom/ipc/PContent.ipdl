@@ -453,6 +453,12 @@ parent:
                                 WindowGlobalInit windowInit,
                                 uint32_t chromeFlags);
 
+    
+    
+    
+    async CloneDocumentTreeInto(MaybeDiscardedBrowsingContext aSourceBc,
+                                MaybeDiscardedBrowsingContext aTargetBc);
+
 child:
     async ConstructBrowser(ManagedEndpoint<PBrowserChild> browserEp,
                            ManagedEndpoint<PWindowGlobalChild> windowEp,

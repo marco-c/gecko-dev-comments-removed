@@ -149,6 +149,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
   nsresult FinishStaticClone(nsFrameLoader* aStaticCloneOf,
                              bool* aOutHasInProcessPrintCallbacks);
 
+  nsresult DoRemoteStaticClone(nsFrameLoader* aStaticCloneOf);
+
   
 
   nsDocShell* GetDocShell(mozilla::ErrorResult& aRv);
