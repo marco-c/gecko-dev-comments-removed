@@ -361,6 +361,12 @@ class WindowsDllInterceptor final
     
   }
 
+#if defined(NIGHTLY_BUILD)
+  const Maybe<DetourError>& GetLastError() const {
+    return mDetourPatcher.GetLastError();
+  }
+#endif  
+
   constexpr static uint32_t GetWorstCaseRequiredBytesToPatch() {
     return WindowsDllDetourPatcherPrimitive<
         typename VMPolicy::MMPolicyT>::GetWorstCaseRequiredBytesToPatch();
