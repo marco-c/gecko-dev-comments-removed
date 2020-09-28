@@ -371,7 +371,6 @@ class WebConsoleUI {
     if (!this.hud) {
       return;
     }
-    const messages = [];
     for (const resource of resources) {
       const { TYPES } = this.hud.resourceWatcher;
       
@@ -403,38 +402,18 @@ class WebConsoleUI {
         }
       }
 
-      messages.push(resource);
+      this.wrapper.dispatchMessageAdd(resource);
     }
-    this.wrapper.dispatchMessagesAdd(messages);
   }
 
   _onResourceUpdated(updates) {
-    const messages = [];
     for (const { resource } of updates) {
       if (
         resource.resourceType == this.hud.resourceWatcher.TYPES.NETWORK_EVENT
       ) {
-        
-        
-        
-        
-        
-        const NUMBER_OF_NETWORK_UPDATE = 8;
-
-        let expectedLength = NUMBER_OF_NETWORK_UPDATE;
-        if (resource.updates.includes("responseCache")) {
-          expectedLength++;
-        }
-        if (resource.updates.includes("requestPostData")) {
-          expectedLength++;
-        }
-
-        if (resource.updates.length === expectedLength) {
-          messages.push(resource);
-        }
+        this.wrapper.dispatchMessageUpdate(resource);
       }
     }
-    this.wrapper.dispatchMessagesUpdate(messages);
   }
 
   

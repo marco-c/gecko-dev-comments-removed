@@ -15,7 +15,7 @@ const {
 
 const {
   MESSAGE_OPEN,
-  NETWORK_MESSAGES_UPDATE,
+  NETWORK_MESSAGE_UPDATE,
 } = require("devtools/client/webconsole/constants");
 
 
@@ -63,16 +63,14 @@ function enableNetProvider(webConsoleUI) {
       
       
       
-      if (type == NETWORK_MESSAGES_UPDATE) {
-        const allMessages = getAllMessagesUiById(newState);
-        for (const { actor } of action.messages) {
-          const open = allMessages.includes(actor);
-          if (open) {
-            const message = getMessage(newState, actor);
-            message.updates.forEach(updateType => {
-              dataProvider.onNetworkResourceUpdated(message, { updateType });
-            });
-          }
+      if (type == NETWORK_MESSAGE_UPDATE) {
+        const { actor } = action.message;
+        const open = getAllMessagesUiById(newState).includes(actor);
+        if (open) {
+          const message = getMessage(newState, actor);
+          message.updates.forEach(updateType => {
+            dataProvider.onNetworkResourceUpdated(message, { updateType });
+          });
         }
       }
 
