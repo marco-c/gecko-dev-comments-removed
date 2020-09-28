@@ -34,13 +34,6 @@ class MOZ_MUST_USE_TYPE GenericErrorResult<nsresult> {
 };
 
 
-template <>
-class GenericErrorResult<nsresult&>;
-
-template <>
-class GenericErrorResult<const nsresult&>;
-
-
 inline Result<Ok, nsresult> ToResult(PRStatus aValue);
 
 }  
