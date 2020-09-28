@@ -100,6 +100,10 @@ class ContentDelegateTest : BaseSessionTest() {
             override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
                 assertThat("Uri should start with data:", response.uri, startsWith("blob:"))
                 assertThat("We should download the thing", String(response.body?.readBytes()!!), equalTo("Downloaded Data"))
+                
+                assertThat("Content type should match", response.headers.get("content-type"), equalTo("text/plain"))
+                assertThat("Content length should be non-zero", response.headers.get("content-length")!!.toLong(), greaterThan(0L))
+                assertThat("Filename should match", response.headers.get("content-disposition"), equalTo("attachment; filename=\"download.txt\""))
             }
         })
     }
