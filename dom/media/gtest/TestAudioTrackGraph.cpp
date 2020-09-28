@@ -185,9 +185,6 @@ TEST(TestAudioTrackGraph, SetOutputDeviceID)
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
-  EXPECT_EQ(cubeb->CurrentStream(), nullptr)
-      << "Cubeb stream has not been initialized yet";
-
   
   
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
@@ -197,22 +194,18 @@ TEST(TestAudioTrackGraph, SetOutputDeviceID)
 
   
   
-  RefPtr<SourceMediaTrack> dummySource =
-      graph->CreateSourceTrack(MediaSegment::AUDIO);
+  RefPtr<SourceMediaTrack> dummySource;
+  DispatchFunction(
+      [&] { dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO); });
 
-  GMPTestMonitor mon;
-  RefPtr<GenericPromise> p = graph->NotifyWhenDeviceStarted(dummySource);
-  p->Then(GetMainThreadSerialEventTarget(), __func__,
-          [&mon, cubeb, dummySource]() {
-            EXPECT_EQ(cubeb->CurrentStream()->GetOutputDeviceID(),
-                      reinterpret_cast<cubeb_devid>(2))
-                << "After init confirm the expected output device id";
-            
-            dummySource->Destroy();
-            mon.SetFinished();
-          });
+  MockCubebStream* stream = WaitFor(cubeb->StreamInitEvent());
 
-  mon.AwaitFinished();
+  EXPECT_EQ(stream->GetOutputDeviceID(), reinterpret_cast<cubeb_devid>(2))
+      << "After init confirm the expected output device id";
+
+  
+  DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
+  WaitFor(cubeb->StreamDestroyEvent());
 }
 
 TEST(TestAudioTrackGraph, NotifyDeviceStarted)
