@@ -3,8 +3,8 @@
 
 
 #include "RTCDTMFSender.h"
-#include "MediaConduitInterface.h"
-#include "logging.h"
+#include "media-conduit/MediaConduitInterface.h"
+#include "transport/logging.h"
 #include "TransceiverImpl.h"
 #include "nsITimer.h"
 #include "mozilla/dom/RTCDTMFSenderBinding.h"

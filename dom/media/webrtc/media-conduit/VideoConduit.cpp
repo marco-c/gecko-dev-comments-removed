@@ -2,7 +2,7 @@
 
 
 
-#include "CSFLog.h"
+#include "common/browser_logging/CSFLog.h"
 #include "nspr.h"
 #include "plstr.h"
 
@@ -10,7 +10,7 @@
 #include "RtpRtcpConfig.h"
 #include "VideoConduit.h"
 #include "VideoStreamFactory.h"
-#include "YuvStamper.h"
+#include "common/YuvStamper.h"
 #include "mozilla/TemplateLib.h"
 #include "mozilla/media/MediaUtils.h"
 #include "mozilla/StaticPrefs_media.h"

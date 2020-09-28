@@ -2,7 +2,7 @@
 
 
 
-#include "CSFLog.h"
+#include "common/browser_logging/CSFLog.h"
 #include "nspr.h"
 #include "mozilla/StaticPrefs_media.h"
 

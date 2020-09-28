@@ -28,8 +28,8 @@ class MediaStreamTrack;
 }  
 }  
 
-#include "nriceresolver.h"
-#include "nricemediastream.h"
+#include "transport/nriceresolver.h"
+#include "transport/nricemediastream.h"
 
 namespace mozilla {
 

@@ -2,7 +2,7 @@
 
 
 
-#include "CSFLog.h"
+#include "common/browser_logging/CSFLog.h"
 #include "nspr.h"
 
 #ifdef HAVE_NETINET_IN_H

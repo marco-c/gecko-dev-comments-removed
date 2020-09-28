@@ -2,15 +2,15 @@
 
 
 
-#include "CSFLog.h"
+#include "common/browser_logging/CSFLog.h"
 
 #include "PeerConnectionImpl.h"
 #include "PeerConnectionCtx.h"
-#include "runnable_utils.h"
+#include "transport/runnable_utils.h"
 #include "prcvar.h"
 
 #include "mozilla/Telemetry.h"
-#include "browser_logging/WebRtcLog.h"
+#include "common/browser_logging/WebRtcLog.h"
 
 #include "mozilla/dom/RTCPeerConnectionBinding.h"
 #include "mozilla/Preferences.h"
