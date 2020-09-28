@@ -319,6 +319,7 @@ void gfxWindowsPlatform::InitAcceleration() {
   DeviceManagerDx::Init();
 
   InitializeConfig();
+  InitGPUProcessSupport();
   
   
   
@@ -439,6 +440,7 @@ bool gfxWindowsPlatform::HandleDeviceReset() {
   
   InitializeAdvancedLayersConfig();
   if (mInitializedDevices) {
+    InitGPUProcessSupport();
     InitializeDevices();
   }
   UpdateANGLEConfig();
@@ -1428,7 +1430,7 @@ void gfxWindowsPlatform::InitializeDevices() {
     
     
     
-    if (InitGPUProcessSupport()) {
+    if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
       return;
     }
 
@@ -1585,11 +1587,11 @@ void gfxWindowsPlatform::InitializeD2D() {
   d2d1_1.SetSuccessful();
 }
 
-bool gfxWindowsPlatform::InitGPUProcessSupport() {
+void gfxWindowsPlatform::InitGPUProcessSupport() {
   FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
 
   if (!gpuProc.IsEnabled()) {
-    return false;
+    return;
   }
 
   nsCString message;
@@ -1597,14 +1599,14 @@ bool gfxWindowsPlatform::InitGPUProcessSupport() {
   if (!gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_GPU_PROCESS,
                                         &message, failureId)) {
     gpuProc.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
-    return false;
+    return;
   }
 
   if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
     
     
     if (StaticPrefs::layers_gpu_process_allow_software_AtStartup()) {
-      return gpuProc.IsEnabled();
+      return;
     }
     gpuProc.Disable(FeatureStatus::Unavailable,
                     "Not using GPU Process since D3D11 is unavailable",
@@ -1630,7 +1632,6 @@ bool gfxWindowsPlatform::InitGPUProcessSupport() {
   }
 
   
-  return gpuProc.IsEnabled();
 }
 
 bool gfxWindowsPlatform::DwmCompositionEnabled() {
