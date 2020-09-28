@@ -64,7 +64,7 @@ add_task(async function testRollback() {
   
   setPassingHeuristics();
   Preferences.reset(prefs.ENABLED_PREF);
-  await waitForStateTelemetry(["rollback"]);
+  await waitForStateTelemetry(["rollback", "shutdown"]);
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
@@ -87,7 +87,7 @@ add_task(async function testRollback() {
 
   
   Preferences.reset(prefs.ENABLED_PREF);
-  await waitForStateTelemetry(["rollback"]);
+  await waitForStateTelemetry(["rollback", "shutdown"]);
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
@@ -110,7 +110,7 @@ add_task(async function testRollback() {
 
   
   Preferences.reset(prefs.ENABLED_PREF);
-  await waitForStateTelemetry(["rollback"]);
+  await waitForStateTelemetry(["rollback", "shutdown"]);
   await ensureTRRMode(undefined);
   ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
