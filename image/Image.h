@@ -8,8 +8,9 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/Tuple.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Tuple.h"
 #include "gfx2DGlue.h"
 #include "imgIContainer.h"
 #include "ImageContainer.h"
@@ -448,7 +449,7 @@ class ImageResource : public Image {
     Maybe<SVGImageContext> mSVGContext;
     
     
-    WeakPtr<layers::ImageContainer> mContainer;
+    ThreadSafeWeakPtr<layers::ImageContainer> mContainer;
     
     
     ImgDrawResult mLastDrawResult;

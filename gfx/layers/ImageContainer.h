@@ -10,10 +10,11 @@
 #include <stdint.h>     
 #include <sys/types.h>  
 #include "gfxTypes.h"
-#include "ImageTypes.h"                  
-#include "mozilla/Assertions.h"          
-#include "mozilla/Mutex.h"               
-#include "mozilla/RecursiveMutex.h"      
+#include "ImageTypes.h"              
+#include "mozilla/Assertions.h"      
+#include "mozilla/Mutex.h"           
+#include "mozilla/RecursiveMutex.h"  
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/TimeStamp.h"           
 #include "mozilla/gfx/Point.h"           
 #include "mozilla/gfx/Types.h"           
@@ -274,12 +275,13 @@ class ImageContainerListener final {
 
 
 
-class ImageContainer final : public SupportsWeakPtr {
+class ImageContainer final : public SupportsThreadSafeWeakPtr<ImageContainer> {
   friend class ImageContainerChild;
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ImageContainer)
-
  public:
+  MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(ImageContainer)
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(ImageContainer)
+
   enum Mode { SYNCHRONOUS = 0x0, ASYNCHRONOUS = 0x01 };
 
   static const uint64_t sInvalidAsyncContainerId = 0;
@@ -292,6 +294,8 @@ class ImageContainer final : public SupportsWeakPtr {
 
 
   explicit ImageContainer(const CompositableHandle& aHandle);
+
+  ~ImageContainer();
 
   typedef ContainerFrameID FrameID;
   typedef ContainerProducerID ProducerID;
@@ -530,9 +534,6 @@ class ImageContainer final : public SupportsWeakPtr {
 
  private:
   typedef mozilla::RecursiveMutex RecursiveMutex;
-
-  
-  ~ImageContainer();
 
   void SetCurrentImageInternal(const nsTArray<NonOwningImage>& aImages);
 
