@@ -9106,14 +9106,11 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
 
 
 
-bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
-                                                   MutableHandleObject result,
-                                                   bool* skipAttach) {
-  MOZ_ASSERT(!*skipAttach);
-
+ScriptedThisResult CallIRGenerator::getThisForScripted(
+    HandleFunction calleeFunc, MutableHandleObject result) {
   
   if (calleeFunc->constructorNeedsUninitializedThis()) {
-    return true;
+    return ScriptedThisResult::UninitializedThis;
   }
 
   
@@ -9122,21 +9119,18 @@ bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
   RootedObject newTarget(cx_, &newTarget_.toObject());
   if (!newTarget->is<JSFunction>() ||
       !newTarget->as<JSFunction>().hasNonConfigurablePrototypeDataProperty()) {
-    trackAttached(IRGenerator::NotAttached);
-    *skipAttach = true;
-    return true;
+    return ScriptedThisResult::NoAction;
   }
+
   if (!GetPropertyPure(cx_, newTarget, NameToId(cx_->names().prototype),
                        protov.address())) {
     
-    trackAttached(IRGenerator::NotAttached);
-    *skipAttach = true;
-    return true;
+    MOZ_ASSERT(newTarget->as<JSFunction>().needsPrototypeProperty());
+    return ScriptedThisResult::TemporarilyUnoptimizable;
   }
 
   if (!protov.isObject()) {
-    *skipAttach = true;
-    return true;
+    return ScriptedThisResult::NoAction;
   }
 
   {
@@ -9145,27 +9139,28 @@ bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
     ObjectGroup* group = ObjectGroup::defaultNewGroup(cx_, &PlainObject::class_,
                                                       proto, newTarget);
     if (!group) {
-      return false;
+      cx_->clearPendingException();
+      return ScriptedThisResult::NoAction;
     }
 
     AutoSweepObjectGroup sweep(group);
     if (group->newScript(sweep) && !group->newScript(sweep)->analyzed()) {
       
-      trackAttached(IRGenerator::NotAttached);
-      *skipAttach = true;
-      return true;
+      
+      return ScriptedThisResult::TemporarilyUnoptimizable;
     }
   }
 
   PlainObject* thisObject =
       CreateThisForFunction(cx_, calleeFunc, newTarget, TenuredObject);
   if (!thisObject) {
-    return false;
+    cx_->clearPendingException();
+    return ScriptedThisResult::NoAction;
   }
 
   MOZ_ASSERT(thisObject->nonCCWRealm() == calleeFunc->realm());
   result.set(thisObject);
-  return true;
+  return ScriptedThisResult::TemplateObject;
 }
 
 AttachDecision CallIRGenerator::tryAttachCallScripted(
@@ -9214,19 +9209,18 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   }
 
   RootedObject templateObj(cx_);
-  bool skipAttach = false;
-  if (isConstructing && isSpecialized &&
-      !getTemplateObjectForScripted(calleeFunc, &templateObj, &skipAttach)) {
-    cx_->clearPendingException();
-    return AttachDecision::NoAction;
-  }
-  if (skipAttach) {
-    return AttachDecision::TemporarilyUnoptimizable;
-  }
-
-  if (isConstructing && isSpecialized &&
-      calleeFunc->constructorNeedsUninitializedThis()) {
-    flags.setNeedsUninitializedThis();
+  if (isConstructing && isSpecialized) {
+    switch (getThisForScripted(calleeFunc, &templateObj)) {
+      case ScriptedThisResult::TemplateObject:
+        break;
+      case ScriptedThisResult::UninitializedThis:
+        flags.setNeedsUninitializedThis();
+        break;
+      case ScriptedThisResult::TemporarilyUnoptimizable:
+        return AttachDecision::TemporarilyUnoptimizable;
+      case ScriptedThisResult::NoAction:
+        return AttachDecision::NoAction;
+    }
   }
 
   
@@ -9238,12 +9232,14 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
 
   if (isSpecialized) {
+    MOZ_ASSERT_IF(isConstructing,
+                  templateObj || flags.needsUninitializedThis());
+
     
     emitCalleeGuard(calleeObjId, calleeFunc);
     if (templateObj) {
       
       
-      MOZ_ASSERT(!flags.needsUninitializedThis());
       if (JitOptions.warpBuilder) {
         
         
