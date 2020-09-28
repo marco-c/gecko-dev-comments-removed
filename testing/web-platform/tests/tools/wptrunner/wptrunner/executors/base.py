@@ -37,6 +37,12 @@ def executor_kwargs(test_type, server_config, cache_manager, run_info_data,
         executor_kwargs["webdriver_binary"] = kwargs.get("webdriver_binary")
         executor_kwargs["webdriver_args"] = kwargs.get("webdriver_args")
 
+    
+    
+    
+    if kwargs["pause_after_test"] or kwargs["pause_on_unexpected"]:
+        executor_kwargs["cleanup_after_test"] = False
+
     return executor_kwargs
 
 
