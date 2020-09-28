@@ -7742,7 +7742,8 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel(bool aIsPopup) {
   }
 
   
-  if (gfxPlatformGtk::GetPlatform()->IsWaylandDisplay()) {
+  
+  if (!GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
     sCSDSupportLevel = CSD_SUPPORT_CLIENT;
     return sCSDSupportLevel;
   }
