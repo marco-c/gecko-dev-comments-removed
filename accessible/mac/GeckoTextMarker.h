@@ -40,10 +40,7 @@ class GeckoTextMarker final {
   bool Previous();
 
   
-  GeckoTextMarkerRange LeftWordRange();
-
-  
-  GeckoTextMarkerRange RightWordRange();
+  GeckoTextMarkerRange Range(EWhichRange aRangeType);
 
   AccessibleOrProxy Leaf();
 

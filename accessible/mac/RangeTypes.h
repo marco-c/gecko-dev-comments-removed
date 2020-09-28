@@ -1,0 +1,20 @@
+
+
+
+
+
+#ifndef mozilla_a11y_RangeTypes_h__
+#define mozilla_a11y_RangeTypes_h__
+
+namespace mozilla {
+namespace a11y {
+
+enum class EWhichRange {
+  eLeftWord,
+  eRightWord
+};
+
+}  
+}  
+
+#endif
