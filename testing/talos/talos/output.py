@@ -131,7 +131,10 @@ class Output(object):
                             subtest['unit'] = test.test_config['unit']
 
                 
-                if len(subtests) > 1:
+                if len(subtests) == 1:
+                    subtests[0]['shouldAlert'] = suite['shouldAlert']
+                
+                elif len(subtests) > 1:
                     suite['value'] = self.construct_results(
                         vals, testname=test.name())
                 if test.test_config.get('lower_is_better') is not None:
