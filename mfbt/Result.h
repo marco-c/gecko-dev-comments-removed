@@ -492,6 +492,15 @@ class MOZ_MUST_USE_TYPE Result final {
   
 
 
+  template <typename E2,
+            typename = std::enable_if_t<std::is_convertible_v<E2, E>>>
+  MOZ_IMPLICIT Result(Result<V, E2>&& aOther)
+      : mImpl(aOther.isOk() ? Impl{aOther.unwrap()}
+                            : Impl{aOther.unwrapErr()}) {}
+
+  
+
+
 
   template <typename E2>
   MOZ_IMPLICIT Result(GenericErrorResult<E2>&& aErrorResult)
