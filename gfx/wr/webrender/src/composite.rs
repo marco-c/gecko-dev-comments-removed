@@ -508,6 +508,7 @@ impl CompositeState {
         let mut visible_alpha_tile_count = 0;
         let mut opaque_tile_descriptors = Vec::new();
         let mut alpha_tile_descriptors = Vec::new();
+        let mut surface_device_rect = DeviceRect::zero();
 
         for tile in tile_cache.tiles.values() {
             if !tile.is_visible {
@@ -517,6 +518,10 @@ impl CompositeState {
 
             let device_rect = (tile.world_tile_rect * global_device_pixel_scale).round();
             let surface = tile.surface.as_ref().expect("no tile surface set!");
+
+            
+            
+            surface_device_rect = surface_device_rect.union(&device_rect);
 
             let descriptor = CompositeTileDescriptor {
                 surface_kind: surface.into(),
@@ -571,12 +576,20 @@ impl CompositeState {
         alpha_tile_descriptors.sort_by_key(|desc| desc.tile_id);
 
         
+        
+        
+        
+        let surface_clip_rect = device_clip_rect
+            .intersection(&surface_device_rect)
+            .unwrap_or(DeviceRect::zero());
+
+        
         if visible_opaque_tile_count > 0 {
             self.descriptor.surfaces.push(
                 CompositeSurfaceDescriptor {
                     surface_id: tile_cache.native_surface.as_ref().map(|s| s.opaque),
                     offset: tile_cache.device_position,
-                    clip_rect: device_clip_rect,
+                    clip_rect: surface_clip_rect,
                     transform: CompositorSurfaceTransform::translation(tile_cache.device_position.x,
                                                                               tile_cache.device_position.y,
                                                                               0.0),
@@ -745,7 +758,7 @@ impl CompositeState {
                 CompositeSurfaceDescriptor {
                     surface_id: tile_cache.native_surface.as_ref().map(|s| s.alpha),
                     offset: tile_cache.device_position,
-                    clip_rect: device_clip_rect,
+                    clip_rect: surface_clip_rect,
                     transform: CompositorSurfaceTransform::translation(tile_cache.device_position.x,
                                                                               tile_cache.device_position.y,
                                                                               0.0),
