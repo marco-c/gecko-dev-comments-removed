@@ -156,6 +156,9 @@ enum class BailoutKind : uint8_t {
   FunctionName,
 
   
+  InvalidCodePoint,
+
+  
 
   
   
@@ -311,6 +314,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::FunctionLength";
     case BailoutKind::FunctionName:
       return "BailoutKind::FunctionName";
+    case BailoutKind::InvalidCodePoint:
+      return "BailoutKind::InvalidCodePoint";
 
     
     case BailoutKind::OverflowInvalidate:
