@@ -1330,6 +1330,9 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
     if (!callVMNonOp<Fn, DoTrialInlining>()) {
       return false;
     }
+    
+    masm.loadPtr(frame.addressOfICScript(), scriptReg);
+    masm.load32(warmUpCounterAddr, countReg);
     masm.bind(&noTrialInlining);
   }
 
@@ -1351,12 +1354,21 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
   if (JitOptions.warpBuilder) {
     
-    masm.movePtr(ImmPtr(script->jitScript()), scriptReg);
+    Address depthAddr(scriptReg, ICScript::offsetOfDepth());
+    masm.branch32(Assembler::NotEqual, depthAddr, Imm32(0), &done);
+
+    
+    
+    constexpr int32_t offset = -int32_t(JitScript::offsetOfICScript()) +
+                               int32_t(JitScript::offsetOfIonScript());
+    masm.loadPtr(Address(scriptReg, offset), scriptReg);
+  } else {
+    
+    masm.loadPtr(Address(scriptReg, JitScript::offsetOfIonScript()), scriptReg);
   }
 
   
   
-  masm.loadPtr(Address(scriptReg, JitScript::offsetOfIonScript()), scriptReg);
   masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(IonCompilingScriptPtr),
                  &done);
   masm.branchPtr(Assembler::Equal, scriptReg, ImmPtr(IonDisabledScriptPtr),
