@@ -13,7 +13,7 @@ test(() => {
     assert_Memory(memory, { "size": 0 });
   }, "Zero minimum");
 
-  test(() => {
+test(() => {
     const argument = { minimum: 4 };
     const memory = new WebAssembly.Memory(argument);
     assert_Memory(memory, { "size": 4 });
