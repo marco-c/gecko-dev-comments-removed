@@ -107,6 +107,8 @@ class WindowGlobalChild final : public WindowGlobalActor,
   
   void OnNewDocument(Document* aNewDocument);
 
+  bool SameOriginWithTop();
+
   nsISupports* GetParentObject();
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
