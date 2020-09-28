@@ -530,7 +530,7 @@ function Search(
   
   
   this._searchTokens =
-    !queryContext || queryContext.shouldFilterRestrictionTokens
+    !queryContext || queryContext.restrictToken
       ? this.filterTokens(tokens)
       : tokens;
 

@@ -104,8 +104,6 @@ add_task(async function trailingSpace() {
     window,
     value: ALIAS + " ",
   });
-  
-  await UrlbarTestUtils.promiseSearchComplete(window);
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: aliasEngine.name,
     entry: "typed",
@@ -125,7 +123,7 @@ add_task(async function trailingSpace_typed() {
 
   
   
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window, 2);
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
   EventUtils.synthesizeKey(" ");
   await searchPromise;
 
@@ -146,8 +144,6 @@ add_task(async function trailingSpace_query() {
     value: ALIAS + " query",
   });
 
-  
-  await UrlbarTestUtils.promiseSearchComplete(window);
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: aliasEngine.name,
     entry: "typed",

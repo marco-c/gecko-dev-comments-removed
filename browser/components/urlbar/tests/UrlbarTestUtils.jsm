@@ -71,15 +71,18 @@ var UrlbarTestUtils = {
 
 
 
-
-  async promiseSearchComplete(win, count = 1) {
-    let promise = this.promisePopupOpen(win, () => {}).then(
-      () => win.gURLBar.lastQueryContextPromise
-    );
-    if (--count > 0) {
-      promise = promise.then(() => this.promiseSearchComplete(win, count));
+  async promiseSearchComplete(win) {
+    let waitForQuery = () => {
+      return this.promisePopupOpen(win, () => {}).then(
+        () => win.gURLBar.lastQueryContextPromise
+      );
+    };
+    let context = await waitForQuery();
+    if (win.gURLBar.searchMode) {
+      
+      context = await waitForQuery();
     }
-    return promise;
+    return context;
   },
 
   

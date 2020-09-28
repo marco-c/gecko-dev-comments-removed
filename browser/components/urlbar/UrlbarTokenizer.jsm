@@ -77,7 +77,14 @@ var UrlbarTokenizer = {
   },
 
   
-  SEARCH_MODE_RESTRICT: new Set(["HISTORY", "BOOKMARK", "OPENPAGE"]),
+  get SEARCH_MODE_RESTRICT() {
+    return new Set([
+      this.RESTRICT.HISTORY,
+      this.RESTRICT.BOOKMARK,
+      this.RESTRICT.OPENPAGE,
+      this.RESTRICT.SEARCH,
+    ]);
+  },
 
   
 
