@@ -8,6 +8,7 @@
 
 
 
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this
@@ -62,4 +63,15 @@ function NSDictionary(dict) {
     objectType: "NSDictionary",
     object: dict,
   };
+}
+
+function stringForRange(macDoc, range) {
+  if (!range) {
+    return "";
+  }
+
+  return macDoc.getParameterizedAttributeValue(
+    "AXStringForTextMarkerRange",
+    range
+  );
 }
