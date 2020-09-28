@@ -1032,23 +1032,25 @@ var E10SUtils = {
     }
 
     
-    let requestedIndex = sessionHistory.legacySHistory.requestedIndex;
-    if (requestedIndex >= 0) {
-      this.log().debug("Checking history case\n");
-      if (
-        sessionHistory.legacySHistory.getEntryAtIndex(requestedIndex)
-          .loadedInThisProcess
-      ) {
-        this.log().info("History entry loaded in this process");
-        return true;
-      }
+    if (!sessionHistoryInParent) {
+      let requestedIndex = sessionHistory.legacySHistory.requestedIndex;
+      if (requestedIndex >= 0) {
+        this.log().debug("Checking history case\n");
+        if (
+          sessionHistory.legacySHistory.getEntryAtIndex(requestedIndex)
+            .loadedInThisProcess
+        ) {
+          this.log().info("History entry loaded in this process");
+          return true;
+        }
 
-      
-      
-      this.log().debug(
-        `Checking remote type, got: ${remoteType} want: ${wantRemoteType}\n`
-      );
-      return remoteType == wantRemoteType;
+        
+        
+        this.log().debug(
+          `Checking remote type, got: ${remoteType} want: ${wantRemoteType}\n`
+        );
+        return remoteType == wantRemoteType;
+      }
     }
 
     
