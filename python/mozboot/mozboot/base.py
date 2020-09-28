@@ -858,13 +858,22 @@ class BaseBootstrapper(object):
 
             if jarsigner and java:
                 jdk_bin_dir = os.path.dirname(os.path.realpath(jarsigner))
-                if (os.path.realpath(java) !=
-                    os.path.realpath(which('java', path=jdk_bin_dir))):
+                jdk_bin_java = which('java', path=jdk_bin_dir)
+
+                
+                
+                
+                
+                
+                path_java_version = _resolve_java_version(java)[0]
+                jdk_bin_version = _resolve_java_version(jdk_bin_java)[0]
+                if path_java_version != jdk_bin_version:
                     
                     
-                    raise Exception('The "java" and "jarsigner" binaries on the PATH are '
-                                    'currently coming from two different JDKs. Please '
-                                    'resolve this, or explicitly set JAVA_HOME.')
+                    raise Exception('The "java" (JDK {}) and "jarsigner" (JDK {}) binaries on the '
+                                    'PATH are currently coming from two different JDKs. Please '
+                                    'resolve this, or explicitly set JAVA_HOME.'
+                                    .format(path_java_version, jdk_bin_version))
 
         if not jdk_bin_dir:
             raise Exception('You need to have Java Development Kit version 1.8 installed. '
@@ -872,33 +881,15 @@ class BaseBootstrapper(object):
 
         java = which('java', path=jdk_bin_dir)
         try:
-            output = subprocess.check_output([java,
-                                              '-XshowSettings:properties',
-                                              '-version'],
-                                             stderr=subprocess.STDOUT,
-                                             universal_newlines=True).rstrip()
+            version, output = _resolve_java_version(java)
 
-            
-            
-            
-            
-            
-            version = [line for line in output.splitlines()
-                       if 'java.specification.version' in line]
-
-            unknown_version_exception = Exception('You need to have Java Development Kit version '
-                                                  '1.8 installed (found {} but could not parse '
-                                                  'version "{}"). Check the JAVA_HOME environment '
-                                                  'variable. Please install JDK 1.8 from '
-                                                  'https://adoptopenjdk.net/?variant=openjdk8.'
-                                                  .format(java, output))
-
-            if not len(version) == 1:
-                raise unknown_version_exception
-
-            version = version[0].split(' = ')[-1]
-            if version not in ['1.8', '8']:
-                raise unknown_version_exception
+            if not version or version not in ['1.8', '8']:
+                raise Exception('You need to have Java Development Kit version '
+                                '1.8 installed (found {} but could not parse '
+                                'version "{}"). Check the JAVA_HOME environment '
+                                'variable. Please install JDK 1.8 from '
+                                'https://adoptopenjdk.net/?variant=openjdk8.'
+                                .format(java, output))
 
             mozconfig_builder.append('''
             # Use the same Java binary that was used in bootstrap in case the global
@@ -909,3 +900,25 @@ class BaseBootstrapper(object):
             raise Exception('Failed to get java version from {}: {}'.format(java, e.output))
 
         print('Your version of Java ({}) is at least 1.8 ({}).'.format(java, version))
+
+
+def _resolve_java_version(java_path):
+    output = subprocess.check_output([java_path,
+                                      '-XshowSettings:properties',
+                                      '-version'],
+                                     stderr=subprocess.STDOUT,
+                                     universal_newlines=True).rstrip()
+
+    
+    
+    
+    
+    
+    version = [line for line in output.splitlines()
+               if 'java.specification.version' in line]
+
+    if len(version) != 1:
+        return None, output
+
+    version = version[0].split(' = ')[-1]
+    return version, output
