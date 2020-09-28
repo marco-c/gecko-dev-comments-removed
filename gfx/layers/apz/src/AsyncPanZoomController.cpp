@@ -3913,13 +3913,14 @@ void AsyncPanZoomController::RequestContentRepaint(
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   ParentLayerPoint velocity = GetVelocityVector();
-  Metrics().SetDisplayPortMargins(
-      CalculatePendingDisplayPort(Metrics(), velocity));
+  ScreenMargin displayportMargins =
+      CalculatePendingDisplayPort(Metrics(), velocity);
   Metrics().SetPaintRequestTime(TimeStamp::Now());
-  RequestContentRepaint(Metrics(), velocity, aUpdateType);
+  RequestContentRepaint(Metrics(), velocity, displayportMargins, aUpdateType);
 }
 
-static CSSRect GetDisplayPortRect(const FrameMetrics& aFrameMetrics) {
+static CSSRect GetDisplayPortRect(const FrameMetrics& aFrameMetrics,
+                                  const ScreenMargin& aDisplayportMargins) {
   
   
   
@@ -3929,14 +3930,14 @@ static CSSRect GetDisplayPortRect(const FrameMetrics& aFrameMetrics) {
   
   CSSRect baseRect(aFrameMetrics.GetVisualScrollOffset(),
                    aFrameMetrics.CalculateBoundedCompositedSizeInCssPixels());
-  baseRect.Inflate(aFrameMetrics.GetDisplayPortMargins() /
+  baseRect.Inflate(aDisplayportMargins /
                    aFrameMetrics.DisplayportPixelsPerCSSPixel());
   return baseRect;
 }
 
 void AsyncPanZoomController::RequestContentRepaint(
     const FrameMetrics& aFrameMetrics, const ParentLayerPoint& aVelocity,
-    RepaintUpdateType aUpdateType) {
+    const ScreenMargin& aDisplayportMargins, RepaintUpdateType aUpdateType) {
   RefPtr<GeckoContentController> controller = GetGeckoContentController();
   if (!controller) {
     return;
@@ -3944,7 +3945,8 @@ void AsyncPanZoomController::RequestContentRepaint(
   MOZ_ASSERT(controller->IsRepaintThread());
 
   const bool isAnimationInProgress = !!mAnimation;
-  RepaintRequest request(aFrameMetrics, aUpdateType, isAnimationInProgress);
+  RepaintRequest request(aFrameMetrics, aDisplayportMargins, aUpdateType,
+                         isAnimationInProgress);
 
   
   
@@ -3975,7 +3977,7 @@ void AsyncPanZoomController::RequestContentRepaint(
       std::string str = info.str();
       mCheckerboardEvent->UpdateRendertraceProperty(
           CheckerboardEvent::RequestedDisplayPort,
-          GetDisplayPortRect(aFrameMetrics), str);
+          GetDisplayPortRect(aFrameMetrics, aDisplayportMargins), str);
     }
   }
 
@@ -4547,15 +4549,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       sampledState.UpdateZoomProperties(Metrics());
     }
 
-    if (Metrics().GetDisplayPortMargins() != ScreenMargin()) {
-      
-      
-      
-      
-      APZC_LOG("%p detected non-empty margins which probably need updating\n",
-               this);
-      needContentRepaint = true;
-    }
+    
+    needContentRepaint = true;
   } else {
     
     
@@ -5092,8 +5087,8 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
     
     
     ParentLayerPoint velocity(0, 0);
-    endZoomToMetrics.SetDisplayPortMargins(
-        CalculatePendingDisplayPort(endZoomToMetrics, velocity));
+    ScreenMargin displayportMargins =
+        CalculatePendingDisplayPort(endZoomToMetrics, velocity);
     endZoomToMetrics.SetPaintRequestTime(TimeStamp::Now());
 
     RefPtr<GeckoContentController> controller = GetGeckoContentController();
@@ -5101,7 +5096,7 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
       return;
     }
     if (controller->IsRepaintThread()) {
-      RequestContentRepaint(endZoomToMetrics, velocity,
+      RequestContentRepaint(endZoomToMetrics, velocity, displayportMargins,
                             RepaintUpdateType::eUserAction);
     } else {
       
@@ -5109,12 +5104,14 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
 
       
       auto func = static_cast<void (AsyncPanZoomController::*)(
-          const FrameMetrics&, const ParentLayerPoint&, RepaintUpdateType)>(
-          &AsyncPanZoomController::RequestContentRepaint);
+          const FrameMetrics&, const ParentLayerPoint&, const ScreenMargin&,
+          RepaintUpdateType)>(&AsyncPanZoomController::RequestContentRepaint);
       controller->DispatchToRepaintThread(
-          NewRunnableMethod<FrameMetrics, ParentLayerPoint, RepaintUpdateType>(
+          NewRunnableMethod<FrameMetrics, ParentLayerPoint, ScreenMargin,
+                            RepaintUpdateType>(
               "layers::AsyncPanZoomController::ZoomToRect", this, func,
-              endZoomToMetrics, velocity, RepaintUpdateType::eUserAction));
+              endZoomToMetrics, velocity, displayportMargins,
+              RepaintUpdateType::eUserAction));
     }
   }
 }
