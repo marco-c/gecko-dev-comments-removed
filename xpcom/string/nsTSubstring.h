@@ -174,16 +174,8 @@ class BulkWriteHandle final {
   mozilla::Result<mozilla::Ok, nsresult> RestartBulkWrite(
       size_type aCapacity, size_type aPrefixToPreserve, bool aAllowShrinking) {
     MOZ_ASSERT(mString);
-    auto r = mString->StartBulkWriteImpl(aCapacity, aPrefixToPreserve,
-                                         aAllowShrinking);
-    if (MOZ_UNLIKELY(r.isErr())) {
-      nsresult rv = r.unwrapErr();
-      
-      
-      
-      return mozilla::Err(rv);
-    }
-    mCapacity = r.unwrap();
+    MOZ_TRY_VAR(mCapacity, mString->StartBulkWriteImpl(
+                               aCapacity, aPrefixToPreserve, aAllowShrinking));
     return mozilla::Ok();
   }
 
