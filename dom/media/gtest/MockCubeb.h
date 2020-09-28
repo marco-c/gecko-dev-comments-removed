@@ -2,6 +2,8 @@
 #define MOCKCUBEB_H_
 
 #include "AudioDeviceInfo.h"
+#include "AudioGenerator.h"
+#include "AudioVerifier.h"
 #include "nsTArray.h"
 
 #include <thread>
@@ -145,12 +147,23 @@ class MockCubebStream {
         mDataCallback(aDataCallback),
         mStateCallback(aStateCallback),
         mUserPtr(aUserPtr),
-        mSampleRate(aInputStreamParams ? aInputStreamParams->rate
-                                       : aOutputStreamParams->rate),
         mInputDeviceID(aInputDevice),
-        mOutputDeviceID(aOutputDevice) {
+        mOutputDeviceID(aOutputDevice),
+        mAudioGenerator(NUM_OF_CHANNELS,
+                        aInputStreamParams ? aInputStreamParams->rate
+                                           : aOutputStreamParams->rate,
+                        100 ),
+        mAudioVerifier(aInputStreamParams ? aInputStreamParams->rate
+                                          : aOutputStreamParams->rate,
+                       100 ) {
     LOG("MockCubeb(%p) StreamInit: Input id = %p, Output id = %p", this,
         mInputDeviceID, mOutputDeviceID);
+    if (aInputStreamParams) {
+      mInputParams = *aInputStreamParams;
+    }
+    if (aOutputStreamParams) {
+      mOutputParams = *aOutputStreamParams;
+    }
   }
 
   ~MockCubebStream() { assert(!mFakeAudioThread); }
@@ -179,6 +192,7 @@ class MockCubebStream {
   cubeb_devid GetOutputDeviceID() { return mOutputDeviceID; }
 
   void ForceError() { mForceErrorState = true; }
+  void VerifyOutput() { mVerifyOutput = true; }
 
  private:
   
@@ -189,9 +203,17 @@ class MockCubebStream {
 
   void ThreadFunction() {
     while (!mStreamStop) {
+      if (mInputParams.rate) {
+        mAudioGenerator.GenerateInterleaved(mInputBuffer, NUM_OF_FRAMES);
+      }
       cubeb_stream* stream = reinterpret_cast<cubeb_stream*>(this);
-      long outframes = mDataCallback(stream, mUserPtr, nullptr, mOutputBuffer,
-                                     NUM_OF_FRAMES);
+      long outframes = mDataCallback(
+          stream, mUserPtr, mInputParams.rate ? mInputBuffer : nullptr,
+          mOutputParams.rate ? mOutputBuffer : nullptr, NUM_OF_FRAMES);
+
+      mAudioVerifier.AppendDataInterleaved(mOutputBuffer, outframes,
+                                           NUM_OF_CHANNELS);
+
       if (outframes < NUM_OF_FRAMES) {
         mStateCallback(stream, mUserPtr, CUBEB_STATE_DRAINED);
         break;
@@ -200,8 +222,21 @@ class MockCubebStream {
         mStateCallback(stream, mUserPtr, CUBEB_STATE_ERROR);
         break;
       }
+      uint32_t sampleRate(mInputParams.rate ? mInputParams.rate
+                                            : mOutputParams.rate);
       std::this_thread::sleep_for(
-          std::chrono::milliseconds(NUM_OF_FRAMES * 1000 / mSampleRate));
+          std::chrono::milliseconds(NUM_OF_FRAMES * 1000 / sampleRate));
+    }
+    if (mVerifyOutput) {
+      
+      
+      EXPECT_EQ(mAudioVerifier.EstimatedFreq(), mAudioGenerator.mFrequency);
+      EXPECT_GE(mAudioVerifier.PreSilenceSamples(),
+                static_cast<uint32_t>(NUM_OF_FRAMES));
+      
+      
+      EXPECT_GE(mAudioVerifier.CountDiscontinuities(), 0U);
+      EXPECT_LE(mAudioVerifier.CountDiscontinuities(), 2U);
     }
   }
 
@@ -214,7 +249,8 @@ class MockCubebStream {
   
   std::atomic_bool mStreamStop{true};
   
-  float mOutputBuffer[NUM_OF_CHANNELS * NUM_OF_FRAMES];
+  AudioDataValue mOutputBuffer[NUM_OF_CHANNELS * NUM_OF_FRAMES] = {};
+  AudioDataValue mInputBuffer[NUM_OF_CHANNELS * NUM_OF_FRAMES] = {};
   
   cubeb_data_callback mDataCallback = nullptr;
   
@@ -222,12 +258,17 @@ class MockCubebStream {
   
   void* mUserPtr = nullptr;
   
-  uint32_t mSampleRate = 0;
+  cubeb_stream_params mOutputParams = {};
+  cubeb_stream_params mInputParams = {};
   
   cubeb_devid mInputDeviceID;
   cubeb_devid mOutputDeviceID;
 
   std::atomic_bool mForceErrorState{false};
+
+  std::atomic_bool mVerifyOutput{false};
+  AudioGenerator<AudioDataValue> mAudioGenerator;
+  AudioVerifier<AudioDataValue> mAudioVerifier;
 };
 
 
