@@ -603,6 +603,12 @@ parent:
     async IntrinsicSizeOrRatioChanged(IntrinsicSize? aIntrinsicSize,
                                       AspectRatio? aIntrinsicRatio);
 
+    
+
+
+    async RequestPointerLock() returns (nsCString error);
+    async ReleasePointerLock();
+
 child:
     async NativeSynthesisResponse(uint64_t aObserverId, nsCString aResponse);
     async FlushTabState(uint32_t aFlushId, bool aIsFinal);
