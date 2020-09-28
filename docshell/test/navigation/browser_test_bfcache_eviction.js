@@ -50,7 +50,7 @@ add_task(async function() {
       testDone.promise = new Promise(resolve => {
         testDone.resolve = resolve;
       });
-      let legacySHistory = browser.browsingContext.sessionHistory;
+      let shistory = browser.browsingContext.sessionHistory;
       
       let historyListener = {
         OnContentViewerEvicted() {
@@ -58,7 +58,7 @@ add_task(async function() {
             true,
             "History listener got called after a content viewer was evicted"
           );
-          legacySHistory.removeSHistoryListener(historyListener);
+          shistory.removeSHistoryListener(historyListener);
           delete window._testListener;
           
           testDone.resolve();
@@ -68,7 +68,7 @@ add_task(async function() {
           "nsISupportsWeakReference",
         ]),
       };
-      legacySHistory.addSHistoryListener(historyListener);
+      shistory.addSHistoryListener(historyListener);
       
       window._testListener = historyListener;
     }
