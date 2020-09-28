@@ -23,6 +23,7 @@ class PhabricatorCommandProvider(MachCommandBase):
     )
     def install_moz_phab(self, force=False):
         import logging
+        import os
         import shutil
         import subprocess
         import sys
@@ -59,15 +60,15 @@ class PhabricatorCommandProvider(MachCommandBase):
             or sys.platform.startswith("freebsd")
         ):
             
-            command.append("--user")
+            platform_prefers_user_install = True
 
         elif sys.platform.startswith("darwin"):
             
-            pass
+            platform_prefers_user_install = False
 
         elif sys.platform.startswith("win32") or sys.platform.startswith("msys"):
             
-            pass
+            platform_prefers_user_install = False
 
         else:
             
@@ -75,9 +76,15 @@ class PhabricatorCommandProvider(MachCommandBase):
                 logging.WARNING,
                 "unsupported_platform",
                 {},
-                "Unsupported platform (%s), assuming per-user installation."
+                "Unsupported platform (%s), assuming per-user installation is "
+                "preferred."
                 % sys.platform,
             )
+            platform_prefers_user_install = True
+
+        if platform_prefers_user_install and not os.environ.get('VIRTUAL_ENV'):
+            
+            
             command.append("--user")
 
         self.log(logging.INFO, "run", {}, "Installing moz-phab")
