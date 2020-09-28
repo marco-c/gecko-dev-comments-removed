@@ -1229,8 +1229,8 @@ Search.prototype = {
   _maybeRestyleSearchMatch(match) {
     
     let parseResult = Services.search.parseSubmissionURL(match.value);
-    if (!parseResult) {
-      return;
+    if (!parseResult?.engine) {
+      return false;
     }
 
     
@@ -1240,7 +1240,7 @@ Search.prototype = {
       this._searchTokens.length &&
       this._searchTokens.every(token => !terms.includes(token.value))
     ) {
-      return;
+      return false;
     }
 
     
@@ -1269,7 +1269,7 @@ Search.prototype = {
           value === typedParams.get(key)
       )
     ) {
-      return;
+      return false;
     }
 
     
@@ -1283,6 +1283,7 @@ Search.prototype = {
     match.comment = parseResult.engine.name;
     match.icon = match.icon || match.iconUrl;
     match.style = "action searchengine favicon suggestion";
+    return true;
   },
 
   _addMatch(match) {
@@ -1305,8 +1306,17 @@ Search.prototype = {
     match.style = match.style || "favicon";
 
     
-    if (UrlbarPrefs.get("restyleSearches") && match.style == "favicon") {
-      this._maybeRestyleSearchMatch(match);
+    if (
+      match.style == "favicon" &&
+      (UrlbarPrefs.get("restyleSearches") ||
+        (this._searchModeEngine &&
+          UrlbarPrefs.get("update2.restyleBrowsingHistoryAsSearch")))
+    ) {
+      let restyled = this._maybeRestyleSearchMatch(match);
+      if (restyled && UrlbarPrefs.get("maxHistoricalSearchSuggestions") == 0) {
+        
+        return;
+      }
     }
 
     if (this._addingHeuristicResult) {
@@ -1652,13 +1662,50 @@ Search.prototype = {
       
       
       
-      conditions.push(`NOT EXISTS (
-        SELECT 1 FROM moz_historyvisits src
-        JOIN moz_historyvisits dest ON src.id = dest.from_visit
-        WHERE src.place_id = h.id AND dest.visit_type IN (5,6)
-        ORDER BY src.visit_date DESC
-        LIMIT 10
-      )`);
+
+      if (
+        UrlbarPrefs.get("restyleSearches") ||
+        (this._searchModeEngine &&
+          UrlbarPrefs.get("update2.restyleBrowsingHistoryAsSearch"))
+      ) {
+        
+        
+        
+        
+        
+        
+        conditions.push(`NOT EXISTS (
+          WITH visits(type) AS (
+            SELECT visit_type
+            FROM moz_historyvisits
+            WHERE place_id = h.id
+            ORDER BY visit_date DESC
+            LIMIT 10 /* limit to the last 10 visits */
+          )
+          SELECT 1 FROM visits
+          WHERE type IN (5,6)
+        )`);
+      } else {
+        
+        
+        conditions.push(`NOT EXISTS (
+          WITH visits(id) AS (
+            SELECT id
+            FROM moz_historyvisits
+            WHERE place_id = h.id
+            ORDER BY visit_date DESC
+            LIMIT 10 /* limit to the last 10 visits */
+            )
+           SELECT 1
+           FROM visits src
+           JOIN moz_historyvisits dest ON src.id = dest.from_visit
+           WHERE dest.visit_type IN (5,6)
+        )`);
+        
+        
+        
+        conditions.push("(h.foreign_count > 0 OR h.title NOTNULL)");
+      }
     }
 
     if (

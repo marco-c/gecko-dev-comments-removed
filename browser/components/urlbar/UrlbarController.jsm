@@ -636,6 +636,10 @@ class UrlbarController {
       if (!queryContext.formHistoryName) {
         return false;
       }
+      
+      let { url } = UrlbarUtils.getUrlFromResult(selectedResult);
+      PlacesUtils.history.remove(url).catch(Cu.reportError);
+      
       FormHistory.update(
         {
           op: "remove",

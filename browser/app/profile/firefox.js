@@ -350,11 +350,16 @@ pref("browser.urlbar.update2.localOneOffs", true);
 
 
 pref("browser.urlbar.update2.oneOffsRefresh", true);
+
+
+
+pref("browser.urlbar.update2.restyleBrowsingHistoryAsSearch", true);
 #else
 pref("browser.urlbar.update2", false);
 pref("browser.urlbar.update2.disableOneOffsHorizontalKeyNavigation", false);
 pref("browser.urlbar.update2.localOneOffs", false);
 pref("browser.urlbar.update2.oneOffsRefresh", false);
+pref("browser.urlbar.update2.restyleBrowsingHistoryAsSearch", false);
 #endif
 
 

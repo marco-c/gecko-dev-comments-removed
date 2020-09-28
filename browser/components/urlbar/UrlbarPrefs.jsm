@@ -183,6 +183,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  
+  ["update2.restyleBrowsingHistoryAsSearch", true],
+
+  
+  
   ["update2.tabToComplete", false],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
