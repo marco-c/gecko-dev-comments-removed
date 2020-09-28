@@ -348,7 +348,8 @@ TEST(TestAudioTrackGraph, SourceTrack)
       WaitFor(stream->OutputVerificationEvent());
 
   EXPECT_EQ(estimatedFreq, inputFrequency);
-  EXPECT_GE(preSilenceSamples, inputRate / 100 );
+  
+  
   
   
   EXPECT_GE(nrDiscontinuities, 0U);
