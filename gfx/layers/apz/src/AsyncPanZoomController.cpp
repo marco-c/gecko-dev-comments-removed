@@ -4494,9 +4494,13 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     
+    
     uint32_t oldScrollGeneration = Metrics().GetScrollGeneration();
     mScrollMetadata = aScrollMetadata;
-    Metrics().SetScrollGeneration(oldScrollGeneration);
+    if (!aScrollMetadata.GetScrollUpdates().IsEmpty()) {
+      Metrics().SetScrollGeneration(oldScrollGeneration);
+    }
+
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
     ShareCompositorFrameMetrics();
 
