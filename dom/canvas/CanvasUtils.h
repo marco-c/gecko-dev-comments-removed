@@ -12,7 +12,6 @@
 #include "jsapi.h"
 #include "js/Array.h"  
 #include "mozilla/FloatingPoint.h"
-#include "nsLayoutUtils.h"
 
 class nsIPrincipal;
 

@@ -8,7 +8,7 @@
 #define __mozilla_layers_TouchActionHelper_h__
 
 #include "mozilla/layers/LayersTypes.h"  
-#include "nsLayoutUtils.h"               
+#include "RelativeTo.h"                  
 
 class nsIFrame;
 class nsIWidget;
