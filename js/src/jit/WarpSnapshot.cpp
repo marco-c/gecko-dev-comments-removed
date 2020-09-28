@@ -204,17 +204,22 @@ static void TraceWarpGCPtr(JSTracer* trc, const WarpGCPtr<T>& thing,
 }
 
 void WarpSnapshot::trace(JSTracer* trc) {
-  for (auto* script : scriptSnapshots_) {
-    script->trace(trc);
-  }
-  TraceWarpGCPtr(trc, globalLexicalEnv_, "warp-lexical");
-  TraceWarpGCPtr(trc, globalLexicalEnvThis_, "warp-lexicalthis");
-
   
   
   for (size_t i = 0; i < nurseryObjects_.length(); i++) {
     TraceManuallyBarrieredEdge(trc, &nurseryObjects_[i], "warp-nursery-object");
   }
+
+  
+  if (trc->runtime()->heapState() == JS::HeapState::MinorCollecting) {
+    return;
+  }
+
+  for (auto* script : scriptSnapshots_) {
+    script->trace(trc);
+  }
+  TraceWarpGCPtr(trc, globalLexicalEnv_, "warp-lexical");
+  TraceWarpGCPtr(trc, globalLexicalEnvThis_, "warp-lexicalthis");
 }
 
 void WarpScriptSnapshot::trace(JSTracer* trc) {
