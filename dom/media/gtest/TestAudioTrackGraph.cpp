@@ -157,57 +157,27 @@ TEST(TestAudioTrackGraph, DifferentDeviceIDs)
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE,
        reinterpret_cast<cubeb_devid>(1));
 
-  EXPECT_NE(g1, g2) << "Different graphs have due to different device ids";
+  EXPECT_NE(g1, g2) << "Different graphs due to different device ids";
   EXPECT_EQ(g1, g1_2) << "Same graphs for same device ids";
   EXPECT_EQ(g2, g2_2) << "Same graphs for same device ids";
 
-  
-  
-  RefPtr<SourceMediaTrack> dummySource1 =
-      g1->CreateSourceTrack(MediaSegment::AUDIO);
-  RefPtr<SourceMediaTrack> dummySource2 =
-      g2->CreateSourceTrack(MediaSegment::AUDIO);
+  for (MediaTrackGraph* g : {g1, g2}) {
+    
+    
 
-  
-  
-  
-  
-  GMPTestMonitor testMonitor;
-  Atomic<int> counter{0};
+    using SourceTrackPromise = MozPromise<SourceMediaTrack*, nsresult, true>;
+    auto p = Invoke([g] {
+      return SourceTrackPromise::CreateAndResolve(
+          g->CreateSourceTrack(MediaSegment::AUDIO), __func__);
+    });
 
-  
-  class Message : public ControlMessage {
-   public:
-    explicit Message(MediaTrack* aTrack) : ControlMessage(aTrack) {}
-    void Run() override {
-      MOZ_ASSERT(mTrack->GraphImpl()->CurrentDriver()->AsAudioCallbackDriver());
-      if (++(*mCounter) == 2) {
-        mTestMonitor->SetFinished();
-      }
-    }
-    void RunDuringShutdown() override {
-      
-      
-      Run();
-    }
-    GMPTestMonitor* mTestMonitor = nullptr;
-    Atomic<int>* mCounter = nullptr;
-  };
+    WaitFor(cubeb->StreamInitEvent());
+    RefPtr<SourceMediaTrack> dummySource = WaitFor(p).unwrap();
 
-  UniquePtr<Message> message1 = MakeUnique<Message>(dummySource1);
-  message1->mTestMonitor = &testMonitor;
-  message1->mCounter = &counter;
-  dummySource1->GraphImpl()->AppendMessage(std::move(message1));
+    DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
 
-  UniquePtr<Message> message2 = MakeUnique<Message>(dummySource2);
-  message2->mTestMonitor = &testMonitor;
-  message2->mCounter = &counter;
-  dummySource2->GraphImpl()->AppendMessage(std::move(message2));
-
-  dummySource1->Destroy();
-  dummySource2->Destroy();
-
-  testMonitor.AwaitFinished();
+    WaitFor(cubeb->StreamDestroyEvent());
+  }
 }
 
 TEST(TestAudioTrackGraph, SetOutputDeviceID)
