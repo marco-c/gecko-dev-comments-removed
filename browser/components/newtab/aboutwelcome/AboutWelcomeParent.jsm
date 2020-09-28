@@ -169,7 +169,7 @@ class AboutWelcomeParent extends JSWindowActorParent {
 
 
 
-  onContentMessage(type, data, browser, window) {
+  async onContentMessage(type, data, browser, window) {
     log.debug(`Received content event: ${type}`);
     switch (type) {
       case "AWPage:SET_WELCOME_MESSAGE_SEEN":
@@ -198,6 +198,17 @@ class AboutWelcomeParent extends JSWindowActorParent {
         return AddonManager.getAddonByID(
           LIGHT_WEIGHT_THEMES[data]
         ).then(addon => addon.enable());
+      case "AWPage:GET_SELECTED_THEME":
+        let themes = await AddonManager.getAddonsByTypes(["theme"]);
+        let activeTheme = themes.find(addon => addon.isActive);
+
+        
+        
+        let themeShortName = Object.keys(LIGHT_WEIGHT_THEMES).find(
+          key => LIGHT_WEIGHT_THEMES[key] === activeTheme?.id
+        );
+        return themeShortName?.toLowerCase();
+
       case "AWPage:WAIT_FOR_MIGRATION_CLOSE":
         return new Promise(resolve =>
           Services.ww.registerNotification(function observer(subject, topic) {
