@@ -168,13 +168,6 @@ class nsPrintJob final : public nsIObserver,
                        nsresult& aStatus);
   nsresult DoPrint(const mozilla::UniquePtr<nsPrintObject>& aPO);
 
-  
-
-
-
-
-  void SuppressPrintPreviewUserEvents();
-
   nsresult ReflowDocList(const mozilla::UniquePtr<nsPrintObject>& aPO,
                          bool aSetPixelScale);
 

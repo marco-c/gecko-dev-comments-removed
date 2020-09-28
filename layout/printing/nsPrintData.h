@@ -21,10 +21,6 @@ class nsPrintObject;
 class nsIPrintProgressParams;
 class nsIWebProgressListener;
 
-namespace mozilla {
-class PrintPreviewUserEventSuppressor;
-}  
-
 
 
 
@@ -33,9 +29,6 @@ class PrintPreviewUserEventSuppressor;
 
 
 class nsPrintData {
-  typedef mozilla::PrintPreviewUserEventSuppressor
-      PrintPreviewUserEventSuppressor;
-
  public:
   typedef enum { eIsPrinting, eIsPrintPreview } ePrintDataType;
 
@@ -79,7 +72,6 @@ class nsPrintData {
   float mShrinkRatio;
 
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
-  RefPtr<PrintPreviewUserEventSuppressor> mPPEventSuppressor;
 
  private:
   nsPrintData() = delete;

@@ -12,7 +12,6 @@
 #include "nsPrintObject.h"
 #include "nsIWebProgressListener.h"
 #include "mozilla/Services.h"
-#include "PrintPreviewUserEventSuppressor.h"
 
 
 
@@ -38,11 +37,6 @@ nsPrintData::nsPrintData(ePrintDataType aType)
       mShrinkRatio(1.0) {}
 
 nsPrintData::~nsPrintData() {
-  if (mPPEventSuppressor) {
-    mPPEventSuppressor->StopSuppressing();
-    mPPEventSuppressor = nullptr;
-  }
-
   
   if (mOnStartSent && mType != eIsPrintPreview) {
     OnEndPrinting();
