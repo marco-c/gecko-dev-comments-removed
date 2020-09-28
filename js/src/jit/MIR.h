@@ -9653,6 +9653,28 @@ class MGuardIsNotArrayBufferMaybeShared : public MUnaryInstruction,
 };
 
 
+class MGuardIsTypedArray : public MUnaryInstruction,
+                           public SingleObjectPolicy::Data {
+  explicit MGuardIsTypedArray(MDefinition* obj)
+      : MUnaryInstruction(classOpcode, obj) {
+    setGuard();
+    setMovable();
+    setResultType(MIRType::Object);
+    setResultTypeSet(obj->resultTypeSet());
+  }
+
+ public:
+  INSTRUCTION_HEADER(GuardIsTypedArray)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, object))
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+};
+
+
 
 class MNurseryObject : public MNullaryInstruction {
   
