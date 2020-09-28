@@ -4,210 +4,349 @@
 
 
 #include "AudioDriftCorrection.h"
-#include "AudioGenerator.h"
-#include "AudioVerifier.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest-printers.h"
 #include "gtest/gtest.h"
 
-
-
-
-static float RunUntilCorrectionUpdate(ClockDrift& aC, uint32_t aSource,
-                                      uint32_t aTarget, uint32_t aBuffering,
-                                      uint32_t aSaturation,
-                                      uint32_t aSourceOffset = 0,
-                                      uint32_t aTargetOffset = 0) {
-  Maybe<float> correction;
-  for (uint32_t s = aSourceOffset, t = aTargetOffset;
-       s < aC.mSourceRate && t < aC.mTargetRate; s += aSource, t += aTarget) {
-    aC.UpdateClock(aSource, aTarget, aBuffering, aSaturation);
-    if (correction) {
-      EXPECT_FLOAT_EQ(aC.GetCorrection(), *correction)
-          << "s=" << s << "; t=" << t;
-    } else {
-      correction = Some(aC.GetCorrection());
-    }
-  }
-  return *correction;
-};
-
 TEST(TestClockDrift, Basic)
 {
-  
-  const uint32_t buffered = 5 * 480;
-
-  ClockDrift c(48000, 48000, buffered);
+  ClockDrift c(48000, 48000);
   EXPECT_EQ(c.GetCorrection(), 1.0);
 
-  EXPECT_FLOAT_EQ(RunUntilCorrectionUpdate(c, 480, 480, buffered, buffered),
-                  1.0);
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 480, 480 + 48, buffered, buffered), 1.0);
-  EXPECT_FLOAT_EQ(RunUntilCorrectionUpdate(c, 480, 480, buffered, buffered),
-                  1.06);
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 480 + 48, 480, buffered, buffered), 1.024);
+  
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480, 480, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
 
-  c.UpdateClock(0, 0, 5 * 480, 5 * 480);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 0.95505452);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480, 480 + 48, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480, 480, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.1);
+  }
+
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480 + 48, 480, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+
+  c.UpdateClock(0, 0, 5 * 480);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 0.90909094);
 }
 
 TEST(TestClockDrift, BasicResampler)
 {
-  
-  const uint32_t buffered = 5 * 240;
-
-  ClockDrift c(24000, 48000, buffered);
-
-  
-  EXPECT_FLOAT_EQ(RunUntilCorrectionUpdate(c, 240, 480, buffered, buffered),
-                  1.0);
+  ClockDrift c(24000, 48000);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(240, 480, 5 * 240);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
 
   
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 240, 480 + 48, buffered, buffered), 1.0);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(240, 480 + 48, 5 * 240);  
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
 
-  
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 240 + 24, 480, buffered, buffered), 1.06);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(240 + 24, 480, 5 * 240);  
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.1);
+  }
 
-  
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 240, 480 - 48, buffered, buffered),
-      0.96945453);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(240, 480 - 48, 5 * 240);  
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 0.90909094);
+  }
 
-  
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 240 + 12, 480 - 24, buffered, buffered),
-      0.92778182);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(240 + 12, 480 - 24, 5 * 240);  
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 0.90909094);
+  }
 
-  c.UpdateClock(0, 0, buffered, buffered);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 0.91396987);
+  c.UpdateClock(0, 0, 5 * 240);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 0.90909094);
 }
 
 TEST(TestClockDrift, BufferedInput)
 {
-  ClockDrift c(48000, 48000, 5 * 480);
+  ClockDrift c(48000, 48000);
   EXPECT_EQ(c.GetCorrection(), 1.0);
 
-  EXPECT_FLOAT_EQ(RunUntilCorrectionUpdate(c, 480, 480, 5 * 480, 8 * 480), 1.0);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480, 480, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+  c.UpdateClock(480, 480, 0);  
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0526316);
 
-  c.UpdateClock(480, 480, 0, 10 * 480);  
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0473685);
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 480, 480, 3 * 480, 7 * 480, 480, 480),
-      1.0473685);
+  for (int i = 0; i < 99; ++i) {
+    c.UpdateClock(480, 480, 2 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0526316);
+  }
+  c.UpdateClock(480, 480, 2 * 480);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0309278);
 
-  c.UpdateClock(480, 480, 3 * 480, 7 * 480);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0311923);
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 480, 480, 5 * 480, 5 * 480, 480, 480),
-      1.0311923);
+  for (int i = 0; i < 99; ++i) {
+    c.UpdateClock(480, 480, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0309278);
+  }
+  c.UpdateClock(480, 480, 5 * 480);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
 
-  c.UpdateClock(480, 480, 5 * 480, 5 * 480);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0124769);
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 480, 480, 7 * 480, 3 * 480, 480, 480),
-      1.0124769);
-
-  c.UpdateClock(480, 480, 7 * 480, 3 * 480);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 0.99322605);
+  for (int i = 0; i < 99; ++i) {
+    c.UpdateClock(480, 480, 7 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+  c.UpdateClock(480, 480, 7 * 480);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 0.980392);
 }
 
 TEST(TestClockDrift, BufferedInputWithResampling)
 {
-  ClockDrift c(24000, 48000, 5 * 240);
+  ClockDrift c(24000, 48000);
   EXPECT_EQ(c.GetCorrection(), 1.0);
 
-  EXPECT_FLOAT_EQ(RunUntilCorrectionUpdate(c, 240, 480, 5 * 240, 5 * 240), 1.0);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(240, 480, 5 * 240);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+  c.UpdateClock(240, 480, 0);  
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0526316);
 
-  c.UpdateClock(240, 480, 0, 10 * 240);  
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0473685);
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 240, 480, 3 * 240, 7 * 240, 240, 480),
-      1.0473685);
+  for (int i = 0; i < 99; ++i) {
+    c.UpdateClock(240, 480, 2 * 240);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0526316);
+  }
+  c.UpdateClock(240, 480, 2 * 240);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0309278);
 
-  c.UpdateClock(240, 480, 3 * 240, 7 * 240);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0311923);
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 240, 480, 5 * 240, 5 * 240, 240, 480),
-      1.0311923);
+  for (int i = 0; i < 99; ++i) {
+    c.UpdateClock(240, 480, 5 * 240);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0309278);
+  }
+  c.UpdateClock(240, 480, 5 * 240);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
 
-  c.UpdateClock(240, 480, 5 * 240, 5 * 240);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0124769);
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 240, 480, 7 * 240, 3 * 240, 240, 480),
-      1.0124769);
-
-  c.UpdateClock(240, 480, 7 * 240, 3 * 240);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 0.99322605);
+  for (int i = 0; i < 99; ++i) {
+    c.UpdateClock(240, 480, 7 * 240);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+  c.UpdateClock(240, 480, 7 * 240);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 0.980392);
 }
 
 TEST(TestClockDrift, Clamp)
 {
-  
-  const uint32_t buffered = 5 * 480;
+  ClockDrift c(48000, 48000);
 
-  ClockDrift c(48000, 48000, buffered);
-
-  
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 480, 480 + 3 * 48, buffered, buffered), 1.0);
-
-  
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 480, 480 - 3 * 48, buffered, buffered), 1.1);
-
-  c.UpdateClock(0, 0, buffered, buffered);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480, 480 + 2 * 48, 5 * 480);  
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480, 480 - 2 * 48, 5 * 480);  
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.1);
+  }
+  c.UpdateClock(0, 0, 5 * 480);
   EXPECT_FLOAT_EQ(c.GetCorrection(), 0.9);
 }
 
 TEST(TestClockDrift, SmallDiff)
 {
+  ClockDrift c(48000, 48000);
+
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480 + 4, 480, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480 + 5, 480, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480, 480, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 0.98969072);
+  }
   
-  const uint32_t buffered = 5 * 480;
-
-  ClockDrift c(48000, 48000, buffered);
-
-  EXPECT_FLOAT_EQ(RunUntilCorrectionUpdate(c, 480 + 4, 480, buffered, buffered),
-                  1.0);
-  EXPECT_FLOAT_EQ(RunUntilCorrectionUpdate(c, 480 + 5, 480, buffered, buffered),
-                  0.99504131);
-  EXPECT_FLOAT_EQ(RunUntilCorrectionUpdate(c, 480, 480, buffered, buffered),
-                  0.991831);
-  EXPECT_FLOAT_EQ(RunUntilCorrectionUpdate(c, 480, 480 + 4, buffered, buffered),
-                  0.99673241);
-  c.UpdateClock(0, 0, buffered, buffered);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.003693);
+  for (int i = 0; i < 100; ++i) {
+    c.UpdateClock(480, 480 + 4, 5 * 480);  
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  }
+  c.UpdateClock(0, 0, 5 * 480);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0083333);
 }
 
 TEST(TestClockDrift, SmallBufferedFrames)
 {
-  ClockDrift c(48000, 48000, 5 * 480);
+  ClockDrift c(48000, 48000);
 
   EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
-  for (uint32_t i = 0; i < 10; ++i) {
-    c.UpdateClock(480, 480, 5 * 480, 5 * 480);
+  c.UpdateClock(480, 480, 5 * 480);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
+  c.UpdateClock(480, 480, 0);
+  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0526316);
+
+  for (int i = 0; i < 50; ++i) {
+    c.UpdateClock(480, 480, 5 * 480);
+    EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0526316);
   }
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.0);
-  c.UpdateClock(480, 480, 0, 10 * 480);
-  EXPECT_FLOAT_EQ(c.GetCorrection(), 1.1);
-
-  EXPECT_FLOAT_EQ(
-      RunUntilCorrectionUpdate(c, 480, 480, 5 * 480, 5 * 480, 24000, 24000),
-      1.1);
-  c.UpdateClock(480, 480, 0, 10 * 480);
+  c.UpdateClock(480, 480, 0);
   EXPECT_FLOAT_EQ(c.GetCorrection(), 1.1);
 }
+
+template <typename T>
+class AudioToneGenerator {
+ public:
+  static_assert(std::is_same<T, int16_t>::value ||
+                std::is_same<T, float>::value);
+
+  explicit AudioToneGenerator(int32_t aRate) : mRate(aRate) {
+    MOZ_ASSERT(mRate > 0);
+  }
+
+  void Write(AudioChunk& aChunk) {
+    float time = mTime;
+    for (uint32_t i = 0; i < aChunk.ChannelCount(); ++i) {
+      mTime = time;  
+      T* buffer = aChunk.ChannelDataForWrite<T>(0);
+      Write(buffer, aChunk.GetDuration());
+    }
+  }
+
+  void Write(T* aBuffer, int32_t aFrames) {
+    for (int i = 0; i < aFrames; ++i) {
+      double value = Amplitude() * sin(2 * M_PI * mFrequency * mTime + mPhase);
+      aBuffer[i] = static_cast<T>(value);
+      mTime += mDeltaTime;
+    }
+  }
+
+  T MaxMagnitudeDifference() {
+    return static_cast<T>(Amplitude() *
+                          sin(2 * M_PI * mFrequency * mDeltaTime + mPhase));
+  }
+
+  const int32_t mRate;
+  const int32_t mFrequency = 100;
+  const float mPhase = 0.0;
+  const float mDeltaTime = 1.0f / mRate;
+
+  static T Amplitude() {
+    if (std::is_same<T, int16_t>::value) {
+      return 19384;  
+    }
+    return 0.5f;  
+  }
+
+ private:
+  float mTime = 0.0;
+};
+
+template <typename T>
+class AudioToneVerifier {
+ public:
+  explicit AudioToneVerifier(int32_t aRate)
+      : mRate(aRate), mExpectedTone(aRate) {
+    MOZ_ASSERT(mRate > 0);
+  }
+
+  
+  void AppendData(const AudioSegment& segment) {
+    for (AudioSegment::ConstChunkIterator iter(segment); !iter.IsEnded();
+         iter.Next()) {
+      const AudioChunk& c = *iter;
+      CheckBuffer(c.ChannelData<T>()[0], c.GetDuration());
+    }
+  }
+
+  int32_t EstimatedFreq() const {
+    if (mTotalFramesSoFar == PreSilenceSamples() || mZeroCrossCount <= 1) {
+      return 0.0f;
+    }
+    MOZ_ASSERT(mZeroCrossCount > 1);
+    return mRate / (mSumPeriodInSamples / (mZeroCrossCount - 1));
+  }
+
+  int64_t PreSilenceSamples() const {
+    
+    MOZ_ASSERT(mPreSilenceSamples >= 1);
+    return mPreSilenceSamples - 1;
+  }
+
+  int32_t CountDiscontinuities() const {
+    
+    
+    return mDiscontinuitiesCount / 2;
+  }
+
+ private:
+  void CheckBuffer(const T* aBuffer, int32_t aSamples) {
+    for (int i = 0; i < aSamples; ++i) {
+      ++mTotalFramesSoFar;
+      
+      if (!CountPreSilence(aBuffer[i])) {
+        CountZeroCrossing(aBuffer[i]);
+        CountDiscontinuities(aBuffer[i]);
+      }
+
+      mPrevious = aBuffer[i];
+    }
+  }
+
+  bool CountPreSilence(T aCurrentSample) {
+    if (IsZero(aCurrentSample) && mPreSilenceSamples == mTotalFramesSoFar - 1) {
+      ++mPreSilenceSamples;
+      return true;
+    }
+    return false;
+  }
+
+  
+  void CountZeroCrossing(T aCurrentSample) {
+    if (mPrevious > 0 && aCurrentSample <= 0) {
+      if (mZeroCrossCount++) {
+        MOZ_ASSERT(mZeroCrossCount > 1);
+        mSumPeriodInSamples += mTotalFramesSoFar - mLastZeroCrossPosition;
+      }
+      mLastZeroCrossPosition = mTotalFramesSoFar;
+    }
+  }
+
+  void CountDiscontinuities(T aCurrentSample) {
+    mDiscontinuitiesCount += fabs(fabs(aCurrentSample) - fabs(mPrevious)) >
+                             2 * mExpectedTone.MaxMagnitudeDifference();
+  }
+
+  bool IsZero(float a) { return fabs(a) < 1e-8; }
+  bool IsZero(short a) { return a == 0; }
+
+ private:
+  const int32_t mRate;
+  AudioToneGenerator<T> mExpectedTone;
+
+  int32_t mZeroCrossCount = 0;
+  int64_t mLastZeroCrossPosition = 0;
+  int64_t mSumPeriodInSamples = 0;
+
+  int64_t mTotalFramesSoFar = 0;
+  int64_t mPreSilenceSamples = 0;
+
+  int32_t mDiscontinuitiesCount = 0;
+  
+  T mPrevious = {};
+};
 
 
 void printAudioSegment(const AudioSegment& segment) {
   for (AudioSegment::ConstChunkIterator iter(segment); !iter.IsEnded();
        iter.Next()) {
     const AudioChunk& c = *iter;
-    for (uint32_t i = 0; i < c.GetDuration(); ++i) {
+    for (int i = 0; i < c.GetDuration(); ++i) {
       if (c.mBufferFormat == AUDIO_FORMAT_FLOAT32) {
         printf("%f\n", c.ChannelData<float>()[0][i]);
       } else {
@@ -218,42 +357,37 @@ void printAudioSegment(const AudioSegment& segment) {
 }
 
 template <class T>
-AudioChunk CreateAudioChunk(uint32_t aFrames, uint32_t aChannels,
+AudioChunk CreateAudioChunk(uint32_t aFrames, int aChannels,
                             AudioSampleFormat aSampleFormat);
 
 void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate) {
-  const uint32_t channels = 1;
-  const uint32_t sampleRateTransmitter = aSourceRate;
-  const uint32_t sampleRateReceiver = aTargetRate;
-  const uint32_t frequency = 100;
+  const int32_t sampleRateTransmitter = aSourceRate;
+  const int32_t sampleRateReceiver = aTargetRate;
   AudioDriftCorrection ad(sampleRateTransmitter, sampleRateReceiver);
 
-  AudioGenerator<AudioDataValue> tone(channels, sampleRateTransmitter,
-                                      frequency);
-  AudioVerifier<AudioDataValue> inToneVerifier(sampleRateTransmitter,
-                                               frequency);
-  AudioVerifier<AudioDataValue> outToneVerifier(sampleRateReceiver, frequency);
+  AudioToneGenerator<AudioDataValue> tone(sampleRateTransmitter);
+  AudioToneVerifier<AudioDataValue> inToneVerifier(sampleRateTransmitter);
+  AudioToneVerifier<AudioDataValue> outToneVerifier(sampleRateReceiver);
 
-  uint32_t sourceFrames;
-  const uint32_t targetFrames = sampleRateReceiver / 100;
+  int32_t sourceFrames;
+  const int32_t targetFrames = sampleRateReceiver / 100;
 
   
-  for (uint32_t j = 0; j < 3; ++j) {
+  for (int j = 0; j < 6; ++j) {
     
     if (j % 2 == 0) {
-      sourceFrames =
-          sampleRateTransmitter *  102 / 100 /  100;
+      sourceFrames = sampleRateTransmitter / 100 + 10;
     } else {
-      sourceFrames =
-          sampleRateTransmitter *  98 / 100 /  100;
+      sourceFrames = sampleRateTransmitter / 100 - 10;
     }
 
-    
-    
-    for (uint32_t n = 0; n < 1050; ++n) {
+    for (int n = 0; n < 250; ++n) {
       
+      AudioChunk chunk = CreateAudioChunk<AudioDataValue>(sourceFrames, 1,
+                                                          AUDIO_OUTPUT_FORMAT);
+      tone.Write(chunk);
       AudioSegment inSegment;
-      tone.Generate(inSegment, sourceFrames);
+      inSegment.AppendAndConsumeChunk(&chunk);
       inToneVerifier.AppendData(inSegment);
       
       
@@ -266,49 +400,38 @@ void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate) {
       outToneVerifier.AppendData(outSegment);
     }
   }
+  EXPECT_EQ(inToneVerifier.EstimatedFreq(), tone.mFrequency);
+  EXPECT_EQ(inToneVerifier.PreSilenceSamples(), 0);
+  EXPECT_EQ(inToneVerifier.CountDiscontinuities(), 0);
 
-  EXPECT_NEAR(ad.CurrentBuffering(),
-              ad.mDesiredBuffering - sampleRateTransmitter / 100, 512);
-
-  EXPECT_NEAR(inToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
-  EXPECT_EQ(inToneVerifier.PreSilenceSamples(), 0U);
-  EXPECT_EQ(inToneVerifier.CountDiscontinuities(), 0U);
-
-  EXPECT_NEAR(outToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
+  EXPECT_EQ(outToneVerifier.EstimatedFreq(), tone.mFrequency);
   
-  EXPECT_GE(outToneVerifier.PreSilenceSamples(), aTargetRate * 50 / 1000U);
-  EXPECT_EQ(outToneVerifier.CountDiscontinuities(), 0U);
+  
+  EXPECT_GT(outToneVerifier.PreSilenceSamples(), 2000);
+  EXPECT_EQ(outToneVerifier.CountDiscontinuities(), 0);
 }
 
 TEST(TestAudioDriftCorrection, Basic)
 {
-  printf("Testing AudioCorrection 48 -> 48\n");
   testAudioCorrection(48000, 48000);
-  printf("Testing AudioCorrection 48 -> 44.1\n");
   testAudioCorrection(48000, 44100);
-  printf("Testing AudioCorrection 44.1 -> 48\n");
   testAudioCorrection(44100, 48000);
-  printf("Testing AudioCorrection 23458 -> 25113\n");
-  testAudioCorrection(23458, 25113);
 }
 
-void testMonoToStereoInput(uint32_t aSourceRate, uint32_t aTargetRate) {
-  const uint32_t frequency = 100;
-  const uint32_t sampleRateTransmitter = aSourceRate;
-  const uint32_t sampleRateReceiver = aTargetRate;
+void testMonoToStereoInput(int aSourceRate, int aTargetRate) {
+  const int32_t sampleRateTransmitter = aSourceRate;
+  const int32_t sampleRateReceiver = aTargetRate;
   AudioDriftCorrection ad(sampleRateTransmitter, sampleRateReceiver);
 
-  AudioGenerator<AudioDataValue> monoTone(1, sampleRateTransmitter, frequency);
-  AudioGenerator<AudioDataValue> stereoTone(2, sampleRateTransmitter,
-                                            frequency);
-  AudioVerifier<AudioDataValue> inToneVerify(sampleRateTransmitter, frequency);
-  AudioVerifier<AudioDataValue> outToneVerify(sampleRateReceiver, frequency);
+  AudioToneGenerator<AudioDataValue> tone(sampleRateTransmitter);
+  AudioToneVerifier<AudioDataValue> inToneVerify(sampleRateTransmitter);
+  AudioToneVerifier<AudioDataValue> outToneVerify(sampleRateReceiver);
 
-  uint32_t sourceFrames;
-  const uint32_t targetFrames = sampleRateReceiver / 100;
+  int32_t sourceFrames;
+  const int32_t targetFrames = sampleRateReceiver / 100;
 
   
-  for (uint32_t j = 0; j < 6; ++j) {
+  for (int j = 0; j < 6; ++j) {
     
     if (j % 2 == 0) {
       sourceFrames = sampleRateTransmitter / 100 + 10;
@@ -316,13 +439,19 @@ void testMonoToStereoInput(uint32_t aSourceRate, uint32_t aTargetRate) {
       sourceFrames = sampleRateTransmitter / 100 - 10;
     }
 
-    for (uint32_t n = 0; n < 250; ++n) {
+    for (int n = 0; n < 250; ++n) {
       
+      AudioChunk chunk = CreateAudioChunk<AudioDataValue>(sourceFrames / 2, 1,
+                                                          AUDIO_OUTPUT_FORMAT);
+      tone.Write(chunk);
+
+      AudioChunk chunk2 = CreateAudioChunk<AudioDataValue>(sourceFrames / 2, 2,
+                                                           AUDIO_OUTPUT_FORMAT);
+      tone.Write(chunk2);
+
       AudioSegment inSegment;
-      monoTone.Generate(inSegment, sourceFrames / 2);
-      stereoTone.SetOffset(monoTone.Offset());
-      stereoTone.Generate(inSegment, sourceFrames / 2);
-      monoTone.SetOffset(stereoTone.Offset());
+      inSegment.AppendAndConsumeChunk(&chunk);
+      inSegment.AppendAndConsumeChunk(&chunk2);
       inToneVerify.AppendData(inSegment);
       
       
@@ -335,18 +464,18 @@ void testMonoToStereoInput(uint32_t aSourceRate, uint32_t aTargetRate) {
       outToneVerify.AppendData(outSegment);
     }
   }
-  EXPECT_EQ(inToneVerify.EstimatedFreq(), frequency);
-  EXPECT_EQ(inToneVerify.PreSilenceSamples(), 0U);
-  EXPECT_EQ(inToneVerify.CountDiscontinuities(), 0U);
+  EXPECT_EQ(inToneVerify.EstimatedFreq(), tone.mFrequency);
+  EXPECT_EQ(inToneVerify.PreSilenceSamples(), 0);
+  EXPECT_EQ(inToneVerify.CountDiscontinuities(), 0);
 
-  EXPECT_GT(outToneVerify.CountDiscontinuities(), 0U)
+  EXPECT_GT(outToneVerify.CountDiscontinuities(), 0)
       << "Expect discontinuities";
-  EXPECT_NE(outToneVerify.EstimatedFreq(), frequency)
+  EXPECT_NE(outToneVerify.EstimatedFreq(), tone.mFrequency)
       << "Estimation is not accurate due to discontinuities";
   
   
   
-  EXPECT_GT(outToneVerify.PreSilenceSamples(), 400U);
+  EXPECT_GT(outToneVerify.PreSilenceSamples(), 400);
 }
 
 TEST(TestAudioDriftCorrection, MonoToStereoInput)
@@ -358,12 +487,12 @@ TEST(TestAudioDriftCorrection, MonoToStereoInput)
 
 TEST(TestAudioDriftCorrection, NotEnoughFrames)
 {
-  const uint32_t sampleRateTransmitter = 48000;
-  const uint32_t sampleRateReceiver = 48000;
+  const int32_t sampleRateTransmitter = 48000;
+  const int32_t sampleRateReceiver = 48000;
   AudioDriftCorrection ad(sampleRateTransmitter, sampleRateReceiver);
-  const uint32_t targetFrames = sampleRateReceiver / 100;
+  const int32_t targetFrames = sampleRateReceiver / 100;
 
-  for (uint32_t i = 0; i < 7; ++i) {
+  for (int i = 0; i < 7; ++i) {
     
     
     AudioChunk chunk = CreateAudioChunk<float>(10, 1, AUDIO_FORMAT_FLOAT32);
@@ -384,12 +513,12 @@ TEST(TestAudioDriftCorrection, NotEnoughFrames)
 
 TEST(TestAudioDriftCorrection, CrashInAudioResampler)
 {
-  const uint32_t sampleRateTransmitter = 48000;
-  const uint32_t sampleRateReceiver = 48000;
+  const int32_t sampleRateTransmitter = 48000;
+  const int32_t sampleRateReceiver = 48000;
   AudioDriftCorrection ad(sampleRateTransmitter, sampleRateReceiver);
-  const uint32_t targetFrames = sampleRateReceiver / 100;
+  const int32_t targetFrames = sampleRateReceiver / 100;
 
-  for (uint32_t i = 0; i < 100; ++i) {
+  for (int i = 0; i < 100; ++i) {
     AudioChunk chunk = CreateAudioChunk<float>(sampleRateTransmitter / 1000, 1,
                                                AUDIO_FORMAT_FLOAT32);
     AudioSegment inSegment;

@@ -10,8 +10,6 @@
 
 namespace mozilla {
 
-extern LazyLogModule gMediaTrackGraphLog;
-
 
 
 
@@ -38,11 +36,15 @@ class ClockDrift final {
   
 
 
-  ClockDrift(uint32_t aSourceRate, uint32_t aTargetRate,
-             uint32_t aDesiredBuffering)
+  ClockDrift(int32_t aSourceRate, int32_t aTargetRate)
       : mSourceRate(aSourceRate),
         mTargetRate(aTargetRate),
-        mDesiredBuffering(aDesiredBuffering) {}
+        mDesiredBuffering(5 * mSourceRate / 100) {
+    if (Preferences::HasUserValue("media.clockdrift.buffering")) {
+      int msecs = Preferences::GetInt("media.clockdrift.buffering");
+      mDesiredBuffering = msecs * mSourceRate / 100;
+    }
+  }
 
   
 
@@ -60,73 +62,74 @@ class ClockDrift final {
 
 
 
-  void UpdateClock(uint32_t aSourceFrames, uint32_t aTargetFrames,
-                   uint32_t aBufferedFrames, uint32_t aRemainingFrames) {
-    if (mSourceClock >= mSourceRate / 10 || mTargetClock >= mTargetRate / 10) {
-      
-      if (aBufferedFrames < mDesiredBuffering * 4 / 10  ||
-          aRemainingFrames < mDesiredBuffering * 4 / 10 ) {
-        
-        
-        CalculateCorrection(0.9, aBufferedFrames, aRemainingFrames);
-      } else if ((mTargetClock * 1000 / mTargetRate) >= mAdjustmentIntervalMs ||
-                 (mSourceClock * 1000 / mSourceRate) >= mAdjustmentIntervalMs) {
-        
-        CalculateCorrection(0.6, aBufferedFrames, aRemainingFrames);
-      }
+  void UpdateClock(int aSourceClock, int aTargetClock, int aBufferedFrames) {
+    if (mIterations == mAdjustementWindow) {
+      CalculateCorrection(aBufferedFrames);
+    } else if (aBufferedFrames < 2 * mSourceRate / 100 ) {
+      BufferedFramesCorrection(aBufferedFrames);
     }
-    mTargetClock += aTargetFrames;
-    mSourceClock += aSourceFrames;
+    mTargetClock += aTargetClock;
+    mSourceClock += aSourceClock;
+    ++mIterations;
   }
 
  private:
-  
-
-
-
-
-
-  void CalculateCorrection(float aCalculationWeight, uint32_t aBufferedFrames,
-                           uint32_t aRemainingFrames) {
+  void CalculateCorrection(int aBufferedFrames) {
     
-    uint32_t bufferedFramesDiff = aBufferedFrames - mDesiredBuffering;
-    uint32_t resampledSourceClock =
-        std::max(1u, mSourceClock + bufferedFramesDiff);
+    int32_t bufferedFramesDiff = aBufferedFrames - mDesiredBuffering;
+    int32_t resampledSourceClock = mSourceClock + bufferedFramesDiff;
     if (mTargetRate != mSourceRate) {
-      resampledSourceClock *= static_cast<float>(mTargetRate) / mSourceRate;
+      resampledSourceClock =
+          resampledSourceClock *
+          (static_cast<float>(mTargetRate) / static_cast<float>(mSourceRate));
     }
-
-    MOZ_LOG(gMediaTrackGraphLog, LogLevel::Verbose,
-            ("ClockDrift %p Calculated correction %.3f (with weight: %.1f -> "
-             "%.3f) (buffer: %u, desired: %u, remaining: %u)",
-             this, static_cast<float>(mTargetClock) / resampledSourceClock,
-             aCalculationWeight,
-             (1 - aCalculationWeight) * mCorrection +
-                 aCalculationWeight * mTargetClock / resampledSourceClock,
-             aBufferedFrames, mDesiredBuffering, aRemainingFrames));
-
-    mCorrection = (1 - aCalculationWeight) * mCorrection +
-                  aCalculationWeight * mTargetClock / resampledSourceClock;
+    mCorrection = (float)mTargetClock / resampledSourceClock;
 
     
     mCorrection = std::min(std::max(mCorrection, 0.9f), 1.1f);
 
     
+    
+    
+    if (mPreviousCorrection - mCorrection <= 0.01 &&
+        mPreviousCorrection - mCorrection > 0) {
+      mCorrection = mPreviousCorrection;
+    }
+    mPreviousCorrection = mCorrection;
+
+    
+    mIterations = 0;
     mTargetClock = 0;
     mSourceClock = 0;
   }
 
- public:
-  const uint32_t mSourceRate;
-  const uint32_t mTargetRate;
-  const uint32_t mAdjustmentIntervalMs = 1000;
-  const uint32_t mDesiredBuffering;
+  void BufferedFramesCorrection(int aBufferedFrames) {
+    int32_t bufferedFramesDiff = aBufferedFrames - mDesiredBuffering;
+    int32_t resampledSourceClock = mSourceRate + bufferedFramesDiff;
+    if (mTargetRate != mSourceRate) {
+      resampledSourceClock = resampledSourceClock *
+                             (static_cast<float>(mTargetRate) / mSourceRate);
+    }
+    MOZ_ASSERT(mTargetRate > resampledSourceClock);
+    mPreviousCorrection = mCorrection;
+    mCorrection +=
+        static_cast<float>(mTargetRate) / resampledSourceClock - 1.0f;
+    
+    mCorrection = std::min(std::max(mCorrection, 0.9f), 1.1f);
+  }
 
  private:
-  float mCorrection = 1.0;
+  const int32_t mSourceRate;
+  const int32_t mTargetRate;
 
-  uint32_t mSourceClock = 0;
-  uint32_t mTargetClock = 0;
+  float mCorrection = 1.0;
+  float mPreviousCorrection = 1.0;
+  const int32_t mAdjustementWindow = 100;
+  int32_t mDesiredBuffering;  
+
+  int32_t mSourceClock = 0;
+  int32_t mTargetClock = 0;
+  int32_t mIterations = 0;
 };
 
 
@@ -150,13 +153,10 @@ class ClockDrift final {
 
 class AudioDriftCorrection final {
  public:
-  AudioDriftCorrection(uint32_t aSourceRate, uint32_t aTargetRate)
-      : mDesiredBuffering(
-            std::max(5, Preferences::GetInt("media.clockdrift.buffering", 50)) *
-            aSourceRate / 1000),
-        mTargetRate(aTargetRate),
-        mClockDrift(aSourceRate, aTargetRate, mDesiredBuffering),
-        mResampler(aSourceRate, aTargetRate, mDesiredBuffering) {}
+  AudioDriftCorrection(int32_t aSourceRate, int32_t aTargetRate)
+      : mClockDrift(aSourceRate, aTargetRate),
+        mResampler(aSourceRate, aTargetRate, aTargetRate / 20 ),
+        mTargetRate(aTargetRate) {}
 
   
 
@@ -168,7 +168,7 @@ class AudioDriftCorrection final {
 
 
   AudioSegment RequestFrames(const AudioSegment& aInput,
-                             uint32_t aOutputFrames) {
+                             int32_t aOutputFrames) {
     
     
     if (aInput.GetDuration()) {
@@ -176,29 +176,22 @@ class AudioDriftCorrection final {
       mResampler.AppendInput(aInput);
     }
     mClockDrift.UpdateClock(aInput.GetDuration(), aOutputFrames,
-                            mResampler.InputDuration(),
-                            mResampler.InputRemainingDuration());
+                            mResampler.InputDuration());
     TrackRate receivingRate = mTargetRate * mClockDrift.GetCorrection();
     
     mResampler.UpdateOutRate(receivingRate);
     
     AudioSegment output = mResampler.Resample(aOutputFrames);
     if (output.IsEmpty()) {
-      NS_WARNING("Got nothing from the resampler");
       output.AppendNullData(aOutputFrames);
     }
     return output;
   }
 
-  
-  uint32_t CurrentBuffering() const { return mResampler.InputDuration(); }
-
-  const uint32_t mDesiredBuffering;
-  const uint32_t mTargetRate;
-
  private:
   ClockDrift mClockDrift;
   AudioResampler mResampler;
+  const int32_t mTargetRate;
 };
 
 };     

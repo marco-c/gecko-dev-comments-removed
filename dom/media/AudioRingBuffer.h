@@ -22,7 +22,7 @@ namespace mozilla {
 
 class AudioRingBuffer final {
  public:
-  explicit AudioRingBuffer(uint32_t aSizeInBytes);
+  explicit AudioRingBuffer(int aSizeInBytes);
   ~AudioRingBuffer();
 
   
@@ -34,57 +34,55 @@ class AudioRingBuffer final {
   
 
 
-  uint32_t Write(const Span<const float>& aBuffer);
+  int Write(const Span<const float>& aBuffer);
 
   
 
 
-  uint32_t Write(const Span<const int16_t>& aBuffer);
-
-  
-
-
-
-  uint32_t Write(const AudioRingBuffer& aBuffer, uint32_t aSamples);
-
-  
-
-
-  uint32_t WriteSilence(uint32_t aSamples);
-
-  
-
-
-  uint32_t Read(const Span<float>& aBuffer);
-
-  
-
-
-  uint32_t Read(const Span<int16_t>& aBuffer);
+  int Write(const Span<const int16_t>& aBuffer);
 
   
 
 
 
-  uint32_t ReadNoCopy(
-      std::function<uint32_t(const Span<const float>&)>&& aCallable);
+  int Write(const AudioRingBuffer& aBuffer, int aSamples);
+
+  
+
+
+  int WriteSilence(int aSamples);
+
+  
+
+
+  int Read(const Span<float>& aBuffer);
+
+  
+
+
+  int Read(const Span<int16_t>& aBuffer);
 
   
 
 
 
-  uint32_t ReadNoCopy(
-      std::function<uint32_t(const Span<const int16_t>&)>&& aCallable);
+  int ReadNoCopy(std::function<int(const Span<const float>&)>&& aCallable);
 
   
 
 
-  uint32_t Discard(uint32_t aSamples);
+
+  int ReadNoCopy(std::function<int(const Span<const int16_t>&)>&& aCallable);
 
   
 
 
-  uint32_t Clear();
+  int Discard(int aSamples);
+
+  
+
+
+  int Clear();
 
   
 
@@ -99,12 +97,12 @@ class AudioRingBuffer final {
   
 
 
-  uint32_t AvailableWrite() const;
+  int AvailableWrite() const;
 
   
 
 
-  uint32_t AvailableRead() const;
+  int AvailableRead() const;
 
  private:
   class AudioRingBufferPrivate;

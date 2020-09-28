@@ -10,35 +10,26 @@
 namespace mozilla {
 
 
-template <typename Sample>
 class SineWaveGenerator {
-  static_assert(std::is_same<Sample, int16_t>::value ||
-                std::is_same<Sample, float>::value);
-
  public:
-  static const int bytesPerSample = sizeof(Sample);
+  static const int bytesPerSample = 2;
   static const int millisecondsPerSecond = PR_MSEC_PER_SEC;
 
-  
-  SineWaveGenerator(uint32_t aSampleRate, uint32_t aFrequency,
-                    uint32_t aChannels = 1)
-      : mTotalLength(aSampleRate * aChannels / aFrequency), mReadLength(0) {
-    MOZ_ASSERT(aChannels >= 1);
+  explicit SineWaveGenerator(uint32_t aSampleRate, uint32_t aFrequency)
+      : mTotalLength(aSampleRate / aFrequency), mReadLength(0) {
     
     
     
     
-    mAudioBuffer = MakeUnique<Sample[]>(mTotalLength);
-    for (uint32_t i = 0; i < aSampleRate / aFrequency; ++i) {
-      for (uint32_t j = 0; j < aChannels; ++j) {
-        mAudioBuffer[i * aChannels + j] =
-            Amplitude() * sin(2 * M_PI * i * aChannels / mTotalLength);
-      }
+    mAudioBuffer = MakeUnique<int16_t[]>(mTotalLength);
+    for (int i = 0; i < mTotalLength; i++) {
+      
+      mAudioBuffer[i] = (3276.8f * sin(2 * M_PI * i / mTotalLength));
     }
   }
 
   
-  void generate(Sample* aBuffer, TrackTicks aLengthInSamples) {
+  void generate(int16_t* aBuffer, TrackTicks aLengthInSamples) {
     TrackTicks remaining = aLengthInSamples;
 
     while (remaining) {
@@ -60,20 +51,8 @@ class SineWaveGenerator {
     }
   }
 
-  void SetOffset(TrackTicks aFrames) { mReadLength = aFrames % mTotalLength; }
-
-  TrackTicks Offset() const { return mReadLength; }
-
-  static float Amplitude() {
-    
-    if (std::is_same<Sample, int16_t>::value) {
-      return 3276.8;  
-    }
-    return 0.1f;  
-  }
-
  private:
-  UniquePtr<Sample[]> mAudioBuffer;
+  UniquePtr<int16_t[]> mAudioBuffer;
   TrackTicks mTotalLength;
   TrackTicks mReadLength;
 };

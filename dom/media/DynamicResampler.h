@@ -13,7 +13,7 @@
 
 namespace mozilla {
 
-const uint32_t STEREO = 2;
+const int STEREO = 2;
 
 
 
@@ -43,16 +43,15 @@ class DynamicResampler final {
 
 
 
-  DynamicResampler(uint32_t aInRate, uint32_t aOutRate,
-                   uint32_t aPreBufferFrames = 0);
+  DynamicResampler(int aInRate, int aOutRate, uint32_t aPreBufferFrames = 0);
   ~DynamicResampler();
 
   
 
 
   void SetSampleFormat(AudioSampleFormat aFormat);
-  uint32_t GetOutRate() const { return mOutRate; }
-  uint32_t GetChannels() const { return mChannels; }
+  int GetOutRate() const { return mOutRate; }
+  int GetChannels() const { return mChannels; }
 
   
 
@@ -69,11 +68,7 @@ class DynamicResampler final {
   
 
 
-  uint32_t InFramesBuffered(uint32_t aChannelIndex) const;
-  
-
-
-  uint32_t InFramesLeftToBuffer(uint32_t aChannelIndex) const;
+  uint32_t InFramesBuffered(int aChannelIndex) const;
 
   
 
@@ -81,10 +76,8 @@ class DynamicResampler final {
 
 
 
-  bool Resample(float* aOutBuffer, uint32_t* aOutFrames,
-                uint32_t aChannelIndex);
-  bool Resample(int16_t* aOutBuffer, uint32_t* aOutFrames,
-                uint32_t aChannelIndex);
+  bool Resample(float* aOutBuffer, uint32_t* aOutFrames, int aChannelIndex);
+  bool Resample(int16_t* aOutBuffer, uint32_t* aOutFrames, int aChannelIndex);
 
   
 
@@ -95,7 +88,7 @@ class DynamicResampler final {
 
 
 
-  void UpdateResampler(uint32_t aOutRate, uint32_t aChannels);
+  void UpdateResampler(int aOutRate, int aChannels);
 
   
 
@@ -110,26 +103,27 @@ class DynamicResampler final {
   void AppendInputInternal(const nsTArray<const T*>& aInBuffer,
                            uint32_t aInFrames) {
     MOZ_ASSERT(aInBuffer.Length() == (uint32_t)mChannels);
-    for (uint32_t i = 0; i < mChannels; ++i) {
+    for (int i = 0; i < mChannels; ++i) {
       PushInFrames(aInBuffer[i], aInFrames, i);
     }
   }
 
   void ResampleInternal(const float* aInBuffer, uint32_t* aInFrames,
                         float* aOutBuffer, uint32_t* aOutFrames,
-                        uint32_t aChannelIndex);
+                        int aChannelIndex);
   void ResampleInternal(const int16_t* aInBuffer, uint32_t* aInFrames,
                         int16_t* aOutBuffer, uint32_t* aOutFrames,
-                        uint32_t aChannelIndex);
+                        int aChannelIndex);
 
   template <typename T>
   bool ResampleInternal(T* aOutBuffer, uint32_t* aOutFrames,
-                        uint32_t aChannelIndex) {
+                        int aChannelIndex) {
     MOZ_ASSERT(mInRate);
     MOZ_ASSERT(mOutRate);
     MOZ_ASSERT(mChannels);
+    MOZ_ASSERT(aChannelIndex >= 0);
     MOZ_ASSERT(aChannelIndex <= mChannels);
-    MOZ_ASSERT(aChannelIndex <= mInternalInBuffer.Length());
+    MOZ_ASSERT((uint32_t)aChannelIndex <= mInternalInBuffer.Length());
     MOZ_ASSERT(aOutFrames);
     MOZ_ASSERT(*aOutFrames);
 
@@ -153,7 +147,7 @@ class DynamicResampler final {
 
     mInternalInBuffer[aChannelIndex].ReadNoCopy(
         [this, &aOutBuffer, &totalOutFramesNeeded,
-         aChannelIndex](const Span<const T>& aInBuffer) -> uint32_t {
+         aChannelIndex](const Span<const T>& aInBuffer) -> int {
           if (!totalOutFramesNeeded) {
             return 0;
           }
@@ -171,33 +165,32 @@ class DynamicResampler final {
     return true;
   }
 
-  bool EnoughInFrames(uint32_t aOutFrames, uint32_t aChannelIndex) const;
+  bool EnoughInFrames(uint32_t aOutFrames, int aChannelIndex) const;
 
   template <typename T>
   void PushInFrames(const T* aInBuffer, const uint32_t aInFrames,
-                    uint32_t aChannelIndex) {
+                    int aChannelIndex) {
     MOZ_ASSERT(aInBuffer);
     MOZ_ASSERT(aInFrames);
     MOZ_ASSERT(mChannels);
+    MOZ_ASSERT(aChannelIndex >= 0);
     MOZ_ASSERT(aChannelIndex <= mChannels);
-    MOZ_ASSERT(aChannelIndex <= mInternalInBuffer.Length());
+    MOZ_ASSERT((uint32_t)aChannelIndex <= mInternalInBuffer.Length());
     mInternalInBuffer[aChannelIndex].Write(Span(aInBuffer, aInFrames));
   }
 
   void WarmUpResampler(bool aSkipLatency);
 
- public:
-  const uint32_t mInRate;
-  const uint32_t mPreBufferFrames;
-
  private:
-  uint32_t mChannels = 0;
-  uint32_t mOutRate;
+  int mChannels = 0;
+  const int mInRate;
+  int mOutRate;
 
   AutoTArray<AudioRingBuffer, STEREO> mInternalInBuffer;
 
   SpeexResamplerState* mResampler = nullptr;
   AudioSampleFormat mSampleFormat = AUDIO_FORMAT_SILENCE;
+  const uint32_t mPreBufferFrames;
 
   class TailBuffer {
    public:
@@ -217,15 +210,15 @@ class DynamicResampler final {
         mSize = MAXSIZE;
       } else {
         PodCopy(Buffer<T>(), aInBuffer, aInFrames);
-        mSize = aInFrames;
+        mSize = static_cast<int>(aInFrames);
       }
     }
-    uint32_t Length() { return mSize; }
-    static const uint32_t MAXSIZE = 20;
+    int Length() { return mSize; }
+    static const int MAXSIZE = 20;
 
    private:
     float mBuffer[MAXSIZE] = {};
-    uint32_t mSize = 0;
+    int mSize = 0;
   };
   AutoTArray<TailBuffer, STEREO> mInputTail;
 };
@@ -273,7 +266,7 @@ class AudioChunkList {
 
 
 
-  AudioChunkList(uint32_t aTotalDuration, uint32_t aChannels);
+  AudioChunkList(int aTotalDuration, int aChannels);
   AudioChunkList(const AudioChunkList&) = delete;
   AudioChunkList(AudioChunkList&&) = delete;
   ~AudioChunkList() = default;
@@ -301,7 +294,7 @@ class AudioChunkList {
   
 
 
-  uint32_t ChunkCapacity() const {
+  int ChunkCapacity() const {
     MOZ_ASSERT(mSampleFormat == AUDIO_FORMAT_S16 ||
                mSampleFormat == AUDIO_FORMAT_FLOAT32);
     return mChunkCapacity;
@@ -309,30 +302,30 @@ class AudioChunkList {
   
 
 
-  uint32_t TotalCapacity() const {
+  int TotalCapacity() const {
     MOZ_ASSERT(mSampleFormat == AUDIO_FORMAT_S16 ||
                mSampleFormat == AUDIO_FORMAT_FLOAT32);
-    return CheckedInt<uint32_t>(mChunkCapacity * mChunks.Length()).value();
+    return CheckedInt<int>(mChunkCapacity * mChunks.Length()).value();
   }
 
   
 
 
 
-  void Update(uint32_t aChannels);
+  void Update(int aChannels);
 
  private:
   void IncrementIndex() {
     ++mIndex;
-    mIndex = CheckedInt<uint32_t>(mIndex % mChunks.Length()).value();
+    mIndex = CheckedInt<int>(mIndex % mChunks.Length()).value();
   }
-  void CreateChunks(uint32_t aNumOfChunks, uint32_t aChannels);
-  void UpdateToMonoOrStereo(uint32_t aChannels);
+  void CreateChunks(int aNumOfChunks, int aChannels);
+  void UpdateToMonoOrStereo(int aChannels);
 
  private:
   nsTArray<AudioChunk> mChunks;
-  uint32_t mIndex = 0;
-  uint32_t mChunkCapacity = 128;
+  int mIndex = 0;
+  int mChunkCapacity = 128;
   AudioSampleFormat mSampleFormat = AUDIO_FORMAT_SILENCE;
 };
 
@@ -356,8 +349,7 @@ class AudioChunkList {
 
 class AudioResampler final {
  public:
-  AudioResampler(uint32_t aInRate, uint32_t aOutRate,
-                 uint32_t aPreBufferFrames = 0);
+  AudioResampler(int aInRate, int aOutRate, uint32_t aPreBufferFrames = 0);
 
   
 
@@ -368,12 +360,7 @@ class AudioResampler final {
   
 
 
-  uint32_t InputDuration() const;
-  
-
-
-
-  uint32_t InputRemainingDuration() const;
+  int InputDuration() const;
 
   
 
@@ -385,15 +372,15 @@ class AudioResampler final {
   
 
 
-  void UpdateOutRate(uint32_t aOutRate) {
+  void UpdateOutRate(int aOutRate) {
     Update(aOutRate, mResampler.GetChannels());
   }
 
  private:
-  void UpdateChannels(uint32_t aChannels) {
+  void UpdateChannels(int aChannels) {
     Update(mResampler.GetOutRate(), aChannels);
   }
-  void Update(uint32_t aOutRate, uint32_t aChannels);
+  void Update(int aOutRate, int aChannels);
 
  private:
   DynamicResampler mResampler;
