@@ -77,15 +77,3 @@ const mockGetMonitorData = data => {
 registerCleanupFunction(function head_cleanup() {
   Services.logins.removeAllLogins();
 });
-
-
-const getVPNOverrides = (hasSubscription = false, location = "us") => {
-  return {
-    vpnOverrides: () => {
-      return {
-        hasSubscription,
-        location,
-      };
-    },
-  };
-};
