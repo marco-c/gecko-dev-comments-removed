@@ -43,6 +43,17 @@ pub fn launch(task: impl FnOnce() + Send + 'static) {
 }
 
 
+pub fn block_on_queue() {
+    let (tx, rx) = crossbeam_channel::bounded(0);
+    launch(move || {
+        tx.send(())
+            .expect("(worker) Can't send message on single-use channel")
+    });
+    rx.recv()
+        .expect("Failed to receive message on single-use channel");
+}
+
+
 
 
 

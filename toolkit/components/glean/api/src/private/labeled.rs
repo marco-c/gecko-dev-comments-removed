@@ -13,9 +13,9 @@ use crate::ipc::need_ipc;
 
 
 mod private {
-    use std::sync::Arc;
     use super::{BooleanMetric, CommonMetricData, CounterMetric, StringMetric};
     use crate::ipc::need_ipc;
+    use std::sync::Arc;
 
     
     
