@@ -37,12 +37,6 @@ math[display="inline" i] {
   display: inline;
   math-style: compact;
 }
-math[displaystyle="false" i] {
-  math-style: compact;
-}
-math[displaystyle="true" i] {
-  math-style: normal;
-}
 
 
 
@@ -230,16 +224,6 @@ mtable[framespacing] > mtr > mtd {
 
 
 
-mstyle[displaystyle="false" i] {
-  math-style: compact;
-}
-mstyle[displaystyle="true" i] {
-  math-style: normal;
-}
-
-
-
-
 
 
 :-moz-math-increment-script-level { -moz-script-level: +1; }
@@ -313,7 +297,6 @@ munderover > :not(:first-child) {
 
 
 mtable { math-style: compact; }
-mtable[displaystyle="true" i] { math-style: normal; }
 
 
 
