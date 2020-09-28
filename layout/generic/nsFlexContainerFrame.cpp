@@ -1577,6 +1577,8 @@ static bool ResolveAutoFlexBasisFromRatio(
   
   
   
+  
+  
   if (aFlexItem.IntrinsicRatio()) {
     
     const nscoord crossSize =
