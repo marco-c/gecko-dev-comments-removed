@@ -150,11 +150,23 @@ impl ClipInstance {
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
+#[derive(Copy, Clone)]
+pub struct SceneClipInstance {
+    
+    pub clip: ClipInstance,
+    
+    pub key: ClipItemKeyKind,
+}
+
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ClipTemplate {
     
     pub parent: ClipId,
     
-    pub instances: SmallVec<[ClipInstance; 2]>,
+    pub clips: SmallVec<[SceneClipInstance; 2]>,
 }
 
 
@@ -233,8 +245,8 @@ impl ClipChainBuilder {
         let template = &templates[&clip_id];
         let mut clip_chain_id = parent_clip_chain_id;
 
-        for clip in &template.instances {
-            let key = (clip.handle.uid(), clip.spatial_node_index);
+        for clip in &template.clips {
+            let key = (clip.clip.handle.uid(), clip.clip.spatial_node_index);
 
             
             if existing_clips.contains(&key) {
@@ -245,8 +257,8 @@ impl ClipChainBuilder {
             let new_clip_chain_id = ClipChainId(clip_chain_nodes.len() as u32);
             existing_clips.insert(key);
             clip_chain_nodes.push(ClipChainNode {
-                handle: clip.handle,
-                spatial_node_index: clip.spatial_node_index,
+                handle: clip.clip.handle,
+                spatial_node_index: clip.clip.spatial_node_index,
                 parent_clip_chain_id: clip_chain_id,
             });
             clip_chain_id = new_clip_chain_id;
@@ -941,11 +953,11 @@ impl ClipStore {
         &mut self,
         clip_id: ClipId,
         parent: ClipId,
-        instances: &[ClipInstance],
+        clips: &[SceneClipInstance],
     ) {
         self.templates.insert(clip_id, ClipTemplate {
             parent,
-            instances: instances.into(),
+            clips: clips.into(),
         });
     }
 
@@ -1294,7 +1306,7 @@ impl ClipRegion<Option<ComplexClipRegion>> {
 
 
 
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
+#[derive(Copy, Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum ClipItemKeyKind {
