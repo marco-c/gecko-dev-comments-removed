@@ -16,8 +16,7 @@ ShutdownPhase sCurrentShutdownPhase = ShutdownPhase::NotInShutdown;
 
 void InsertIntoShutdownList(ShutdownObserver* aObserver, ShutdownPhase aPhase) {
   
-  if (!(static_cast<size_t>(sCurrentShutdownPhase) <
-        static_cast<size_t>(aPhase))) {
+  if (PastShutdownPhase(aPhase)) {
     MOZ_ASSERT(false, "ClearOnShutdown for phase that already was cleared");
     aObserver->Shutdown();
     delete aObserver;
@@ -39,8 +38,11 @@ void KillClearOnShutdown(ShutdownPhase aPhase) {
 
   MOZ_ASSERT(NS_IsMainThread());
   
-  MOZ_ASSERT(static_cast<size_t>(sCurrentShutdownPhase) <
-             static_cast<size_t>(aPhase));
+  MOZ_ASSERT(!PastShutdownPhase(aPhase));
+
+  
+  
+  sCurrentShutdownPhase = aPhase;
 
   
   
