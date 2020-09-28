@@ -233,30 +233,27 @@ nsEditingSession::WindowIsEditable(mozIDOMWindowProxy* aWindow,
   return docShell->GetEditable(outIsEditable);
 }
 
+bool IsSupportedTextType(const nsAString& aMIMEType) {
+  
+  
+  
+  
+  
+  static constexpr nsLiteralString sSupportedTextTypes[] = {
+      u"text/plain"_ns,
+      u"text/css"_ns,
+      u"text/rdf"_ns,
+      u"text/xsl"_ns,
+      u"text/javascript"_ns,  
+      u"text/ecmascript"_ns,  
+      u"application/javascript"_ns,
+      u"application/ecmascript"_ns,
+      u"application/x-javascript"_ns,  
+      u"text/xul"_ns                   
+  };
 
-
-
-
-
-const char* const gSupportedTextTypes[] = {
-    "text/plain",
-    "text/css",
-    "text/rdf",
-    "text/xsl",
-    "text/javascript",  
-    "text/ecmascript",  
-    "application/javascript",
-    "application/ecmascript",
-    "application/x-javascript",  
-    "text/xul",                  
-    nullptr                      
-};
-
-bool IsSupportedTextType(const char* aMIMEType) {
-  NS_ENSURE_TRUE(aMIMEType, false);
-
-  for (size_t i = 0; gSupportedTextTypes[i]; ++i) {
-    if (!strcmp(gSupportedTextTypes[i], aMIMEType)) {
+  for (const nsLiteralString& supportedTextType : sSupportedTextTypes) {
+    if (aMIMEType.Equals(supportedTextType)) {
       return true;
     }
   }
@@ -271,25 +268,22 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   
   
   
-  nsAutoCString mimeCType;
+  nsAutoString mimeType;
 
   
   if (RefPtr<Document> doc = aWindow.GetDoc()) {
-    nsAutoString mimeType;
     doc->GetContentType(mimeType);
-    AppendUTF16toUTF8(mimeType, mimeCType);
 
-    if (IsSupportedTextType(mimeCType.get())) {
+    if (IsSupportedTextType(mimeType)) {
       mEditorType.AssignLiteral("text");
-      mimeCType = "text/plain";
-    } else if (!mimeCType.EqualsLiteral("text/html") &&
-               !mimeCType.EqualsLiteral("application/xhtml+xml")) {
+      mimeType.AssignLiteral("text/plain");
+    } else if (!doc->IsHTMLOrXHTML()) {
       
       mEditorStatus = eEditorErrorCantEditMimeType;
 
       
       mEditorType.AssignLiteral("html");
-      mimeCType.AssignLiteral("text/html");
+      mimeType.AssignLiteral("text/html");
     }
 
     
@@ -311,7 +305,7 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
     mEditorFlags =
         nsIEditor::eEditorPlaintextMask | nsIEditor::eEditorEnableWrapHackMask;
   } else if (mEditorType.EqualsLiteral("htmlmail")) {
-    if (mimeCType.EqualsLiteral("text/html")) {
+    if (mimeType.EqualsLiteral("text/html")) {
       needHTMLController = true;
       mEditorFlags = nsIEditor::eEditorMailMask;
     } else {
@@ -399,7 +393,7 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   }
 
   
-  rv = htmlEditor->SetContentsMIMEType(mimeCType.get());
+  rv = htmlEditor->SetContentsMIMEType(mimeType);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIContentViewer> contentViewer;

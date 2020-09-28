@@ -2495,7 +2495,7 @@ class EditorBase : public nsIEditor,
   enum Tristate { eTriUnset, eTriFalse, eTriTrue };
 
   
-  nsCString mContentMIMEType;
+  nsString mContentMIMEType;
 
   RefPtr<mozInlineSpellChecker> mInlineSpellChecker;
   
