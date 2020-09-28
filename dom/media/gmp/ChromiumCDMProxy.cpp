@@ -368,6 +368,11 @@ void ChromiumCDMProxy::RejectPromise(PromiseId aId, ErrorResult&& aException,
           this, aId, aException.ErrorCodeAsInt(), aReason.get());
   if (!mKeys.IsNull()) {
     mKeys->RejectPromise(aId, std::move(aException), aReason);
+    return;
+  } else {
+    
+    
+    aException.SuppressException();
   }
 }
 
