@@ -15,7 +15,6 @@ const CONTENT_PROCESS_URI_MANIFEST =
 
 
 add_task(async function() {
-  await pushPref("devtools.target-switching.enabled", true);
   await enableApplicationPanel();
 
   info("Open a page that runs in the parent process");
@@ -43,7 +42,6 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await pushPref("devtools.target-switching.enabled", true);
   await enableApplicationPanel();
 
   info("Open a page that runs in the parent process");

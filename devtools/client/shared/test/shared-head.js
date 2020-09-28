@@ -500,13 +500,10 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
   
   
   
-  if (
-    switchedToAnotherProcess &&
-    !Services.prefs.getBoolPref("devtools.target-switching.enabled", false)
-  ) {
+  if (switchedToAnotherProcess && !isTargetSwitchingEnabled()) {
     ok(
       false,
-      `navigateTo(${uri}) navigated to another process, but the target-switching preference is false`
+      `navigateTo(${uri}) navigated to another process, but the target switching is disabled`
     );
     return;
   }
@@ -570,10 +567,7 @@ function isFissionEnabled() {
 }
 
 function isTargetSwitchingEnabled() {
-  return (
-    isFissionEnabled() &&
-    Services.prefs.getBoolPref("devtools.target-switching.enabled", false)
-  );
+  return Services.prefs.getBoolPref("devtools.target-switching.enabled", false);
 }
 
 

@@ -2077,8 +2077,7 @@ pref("devtools.contenttoolbox.fission", true);
 
 
 
-
-pref("devtools.target-switching.enabled", false);
+pref("devtools.target-switching.enabled", true);
 
 
 pref("devtools.command-button-pick.enabled", true);

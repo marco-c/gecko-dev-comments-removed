@@ -8,8 +8,6 @@ const PARENT_PROCESS_URI = "about:robots";
 const CONTENT_PROCESS_URI = URL_ROOT + "page_basic.html";
 
 add_task(async function() {
-  await pushPref("devtools.target-switching.enabled", true);
-
   
   
   
