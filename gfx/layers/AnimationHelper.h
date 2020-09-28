@@ -141,7 +141,7 @@ class AnimationHelper {
 
 
 
-  static bool ShouldBeJank(const LayoutDeviceIntRect& aPrerenderedRect,
+  static bool ShouldBeJank(const LayoutDeviceRect& aPrerenderedRect,
                            SideBits aOverflowedSides,
                            const gfx::Matrix4x4& aTransform,
                            const ParentLayerRect& aClipRect);
