@@ -236,7 +236,7 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  uint32_t numItems = dataTransfer->MozItemCount();
+  const uint32_t numItems = dataTransfer->MozItemCount();
   if (NS_WARN_IF(!numItems)) {
     return NS_ERROR_FAILURE;  
   }
@@ -712,7 +712,7 @@ bool TextEditor::CanPasteTransferable(nsITransferable* aTransferable) {
   return NS_SUCCEEDED(rv) && data;
 }
 
-bool TextEditor::IsSafeToInsertData(Document* aSourceDoc) {
+bool TextEditor::IsSafeToInsertData(const Document* aSourceDoc) const {
   
   bool isSafe = false;
 

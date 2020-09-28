@@ -692,7 +692,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  bool IsSafeToInsertData(Document* aSourceDoc);
+  bool IsSafeToInsertData(const Document* aSourceDoc) const;
 
   
 
