@@ -7,12 +7,9 @@
 #ifndef mozilla_MediaUtils_h
 #define mozilla_MediaUtils_h
 
-#include <map>
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskQueue.h"
@@ -145,7 +142,7 @@ class Refcountable<UniquePtr<T>> : public UniquePtr<T> {
 
 
 
-nsCOMPtr<nsIAsyncShutdownClient> GetShutdownBarrier();
+RefPtr<nsIAsyncShutdownClient> GetShutdownBarrier();
 
 class ShutdownBlocker : public nsIAsyncShutdownBlocker {
  public:
@@ -296,89 +293,6 @@ AwaitAll(already_AddRefed<nsIEventTarget> aPool,
 }
 
 }  
-
-
-
-
-
-
-
-
-class AsyncBlockers {
- public:
-  AsyncBlockers()
-      : mLock("AsyncRegistrar"),
-        mPromise(new GenericPromise::Private(__func__)) {}
-  void Register(void* aBlocker) {
-    MutexAutoLock lock(mLock);
-    if (mResolved) {
-      
-      return;
-    }
-    mBlockers.insert({aBlocker, true});
-  }
-  void Deregister(void* aBlocker) {
-    MutexAutoLock lock(mLock);
-    if (mResolved) {
-      
-      return;
-    }
-    auto it = mBlockers.find(aBlocker);
-    MOZ_ASSERT(it != mBlockers.end());
-
-    mBlockers.erase(it);
-    MaybeResolve();
-  }
-  RefPtr<GenericPromise> WaitUntilClear(uint32_t aTimeOutInMs = 0) {
-    if (!aTimeOutInMs) {
-      
-      MutexAutoLock lock(mLock);
-      if (!mResolved) {
-        mPromise->Resolve(true, __func__);
-        mResolved = true;
-      }
-    } else {
-      GetCurrentEventTarget()->DelayedDispatch(
-          NS_NewRunnableFunction("AsyncBlockers::WaitUntilClear",
-                                 [promise = mPromise]() {
-                                   
-                                   
-                                   
-                                   
-                                   
-                                   
-                                   
-                                   promise->Resolve(true, __func__);
-                                 }),
-          aTimeOutInMs);
-    }
-    return mPromise;
-  }
-
-  virtual ~AsyncBlockers() {
-    if (!mResolved) {
-      mPromise->Resolve(true, __func__);
-    }
-  }
-
- private:
-  void MaybeResolve() {
-    mLock.AssertCurrentThreadOwns();
-    if (mResolved) {
-      return;
-    }
-    if (!mBlockers.empty()) {
-      return;
-    }
-    mPromise->Resolve(true, __func__);
-    mResolved = true;
-  }
-  Mutex mLock;  
-  std::map<void*, bool> mBlockers;
-  bool mResolved = false;
-  const RefPtr<GenericPromise::Private> mPromise;
-};
-
 }  
 
 #endif  

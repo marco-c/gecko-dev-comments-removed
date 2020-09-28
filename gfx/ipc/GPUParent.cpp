@@ -88,10 +88,7 @@ GPUParent::GPUParent() : mLaunchTime(TimeStamp::Now()) { sGPUParent = this; }
 GPUParent::~GPUParent() { sGPUParent = nullptr; }
 
 
-GPUParent* GPUParent::GetSingleton() {
-  MOZ_DIAGNOSTIC_ASSERT(sGPUParent);
-  return sGPUParent;
-}
+GPUParent* GPUParent::GetSingleton() { return sGPUParent; }
 
 bool GPUParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
                      MessageLoop* aIOLoop, UniquePtr<IPC::Channel> aChannel) {
@@ -534,80 +531,72 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
     ProcessChild::QuickExit();
   }
 
-#ifndef NS_FREE_PERMANENT_DATA
-#  ifdef XP_WIN
+#ifdef XP_WIN
   wmf::MFShutdown();
-#  endif
+#endif
+
+#ifndef NS_FREE_PERMANENT_DATA
   
   
   ProcessChild::QuickExit();
 #endif
 
-  
-  mShutdownBlockers.WaitUntilClear(10 * 1000 )
-      ->Then(GetCurrentSerialEventTarget(), __func__, [this]() {
-#ifdef XP_WIN
-        wmf::MFShutdown();
-#endif
-
 #ifdef MOZ_GECKO_PROFILER
-        if (mProfilerController) {
-          mProfilerController->Shutdown();
-          mProfilerController = nullptr;
-        }
+  if (mProfilerController) {
+    mProfilerController->Shutdown();
+    mProfilerController = nullptr;
+  }
 #endif
 
-        if (mVsyncBridge) {
-          mVsyncBridge->Shutdown();
-          mVsyncBridge = nullptr;
-        }
-        RemoteDecoderManagerParent::ShutdownVideoBridge();
-        CompositorThreadHolder::Shutdown();
-        
-        
-        
-        if (wr::RenderThread::Get()) {
-          wr::RenderThread::ShutDown();
-        }
+  if (mVsyncBridge) {
+    mVsyncBridge->Shutdown();
+    mVsyncBridge = nullptr;
+  }
+  RemoteDecoderManagerParent::ShutdownVideoBridge();
+  CompositorThreadHolder::Shutdown();
+  
+  
+  if (wr::RenderThread::Get()) {
+    wr::RenderThread::ShutDown();
+  }
 #ifdef XP_WIN
-        if (widget::WinCompositorWindowThread::Get()) {
-          widget::WinCompositorWindowThread::ShutDown();
-        }
+  if (widget::WinCompositorWindowThread::Get()) {
+    widget::WinCompositorWindowThread::ShutDown();
+  }
 #endif
 
-        image::ImageMemoryReporter::ShutdownForWebRender();
+  image::ImageMemoryReporter::ShutdownForWebRender();
 
-        
-        gl::GLContextProvider::Shutdown();
+  
+  gl::GLContextProvider::Shutdown();
 
 #if defined(XP_WIN)
-        
-        
-        
-        
-        
-        
-        gl::GLContextProviderEGL::Shutdown();
+  
+  
+  
+  
+  
+  
+  gl::GLContextProviderEGL::Shutdown();
 #endif
 
-        Factory::ShutDown();
+  Factory::ShutDown();
 
-    
-    
+  
+  
 #ifdef NS_FREE_PERMANENT_DATA
-        SkGraphics::PurgeFontCache();
-        cairo_debug_reset_static_data();
+  SkGraphics::PurgeFontCache();
+  cairo_debug_reset_static_data();
 #endif
 
 #if defined(XP_WIN)
-        DeviceManagerDx::Shutdown();
+  DeviceManagerDx::Shutdown();
 #endif
-        LayerTreeOwnerTracker::Shutdown();
-        gfxVars::Shutdown();
-        gfxConfig::Shutdown();
-        CrashReporterClient::DestroySingleton();
-        XRE_ShutdownChildProcess();
-      });
+  LayerTreeOwnerTracker::Shutdown();
+  gfxVars::Shutdown();
+  gfxConfig::Shutdown();
+  CrashReporterClient::DestroySingleton();
+  XRE_ShutdownChildProcess();
 }
 
 }  

@@ -878,6 +878,7 @@ class MochitestArguments(ArgumentContainer):
         
         if mozinfo.isWin:
             options.leakThresholds["tab"] = 1000
+            options.leakThresholds["rdd"] = 4000  
 
         
         
