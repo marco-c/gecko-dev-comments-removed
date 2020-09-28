@@ -193,6 +193,39 @@ add_task(async function test_fullscreen_api_cross_origin_tree() {
   );
 
   
+  for (const frame of frames.values()) {
+    frame.actor.sendQuery("ClearEvents");
+  }
+  await target.actor.sendQuery("RequestFullscreen");
+
+  
+  
+  let finished_exiting = target.actor.sendQuery("WaitForChange");
+  EventUtils.sendKey("ESCAPE");
+  await finished_exiting;
+  
+  await check_events(
+    new Map([
+      ["TOP", [true, true]],
+      ["A", [true, true]],
+      ["B", []],
+      ["C", [true, true]],
+      ["D", [true, true]],
+      ["E", []],
+    ])
+  );
+  await check_fullscreenElement(
+    new Map([
+      ["TOP", "null"],
+      ["A", "null"],
+      ["B", "null"],
+      ["C", "null"],
+      ["D", "null"],
+      ["E", "null"],
+    ])
+  );
+
+  
   ChromeUtils.unregisterWindowActor("FullscreenFrame");
   BrowserTestUtils.removeTab(tab);
 });
