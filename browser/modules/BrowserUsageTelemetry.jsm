@@ -644,6 +644,11 @@ let BrowserUsageTelemetry = {
 
 
   recordSearchMode(searchMode) {
+    
+    
+    if (searchMode.isPreview) {
+      return;
+    }
     let scalarKey;
     if (searchMode.engineName) {
       let engine = Services.search.getEngineByName(searchMode.engineName);

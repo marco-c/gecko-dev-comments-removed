@@ -481,7 +481,13 @@ var UrlbarTestUtils = {
 
     
     
-    if (expectedSearchMode.engineName && this.isPopupOpen(window)) {
+    
+    
+    if (
+      expectedSearchMode.engineName &&
+      !expectedSearchMode.isPreview &&
+      this.isPopupOpen(window)
+    ) {
       let resultCount = this.getResultCount(window);
       for (let i = 0; i < resultCount; i++) {
         let result = await this.getDetailsOfResultAt(window, i);

@@ -938,6 +938,15 @@ class UrlbarInput {
     
     this.setPageProxyState("invalid", true);
 
+    
+    
+    if (
+      this.searchMode?.isPreview &&
+      result?.payload.keywordOffer != UrlbarUtils.KEYWORD_OFFER.SHOW
+    ) {
+      this.setSearchMode({});
+    }
+
     if (!result) {
       
       
@@ -957,6 +966,20 @@ class UrlbarInput {
       } else if (result.autofill) {
         let { value, selectionStart, selectionEnd } = result.autofill;
         this._autofillValue(value, selectionStart, selectionEnd);
+      } else if (
+        result.payload.keywordOffer == UrlbarUtils.KEYWORD_OFFER.SHOW
+      ) {
+        
+        
+        let enteredSearchMode = this.maybePromoteKeywordToSearchMode({
+          result,
+          checkValue: false,
+          startQuery: false,
+        });
+        if (!enteredSearchMode) {
+          this._setValue(this._getValueFromResult(result), true);
+          this.setSearchMode({});
+        }
       } else {
         
         
@@ -1046,7 +1069,11 @@ class UrlbarInput {
       firstResult.heuristic &&
       firstResult.payload.keyword &&
       !firstResult.payload.keywordOffer &&
-      this.maybePromoteKeywordToSearchMode(firstResult, false)
+      this.maybePromoteKeywordToSearchMode({
+        result: firstResult,
+        entry: "typed",
+        checkValue: false,
+      })
     ) {
       return true;
     }
@@ -1145,6 +1172,18 @@ class UrlbarInput {
     };
 
     if (this.searchMode) {
+      
+      
+      
+      
+      if (this.searchMode.isPreview) {
+        delete this.searchMode.isPreview;
+        try {
+          BrowserUsageTelemetry.recordSearchMode(this.searchMode);
+        } catch (ex) {
+          Cu.reportError(ex);
+        }
+      }
       options.searchMode = this.searchMode;
       if (this.searchMode.source) {
         options.sources = [this.searchMode.source];
@@ -1345,6 +1384,10 @@ class UrlbarInput {
       } else {
         this.searchMode.entry = entry;
       }
+
+      
+      
+      this.searchMode.isPreview = true;
       this.toggleAttribute("searchmode", true);
       
       if (this._autofillPlaceholder && this.window.gBrowser.userTypedValue) {
@@ -1359,13 +1402,6 @@ class UrlbarInput {
         this.window.gBrowser.selectedBrowser,
         this.searchMode
       );
-
-      
-      try {
-        BrowserUsageTelemetry.recordSearchMode(this.searchMode);
-      } catch (ex) {
-        Cu.reportError(ex);
-      }
     } else {
       this.removeAttribute("searchmode");
       this._searchModesByBrowser.delete(this.window.gBrowser.selectedBrowser);
@@ -1579,22 +1615,33 @@ class UrlbarInput {
 
 
 
-  maybePromoteKeywordToSearchMode(
+
+
+
+
+  maybePromoteKeywordToSearchMode({
+    entry,
     result = this._resultForCurrentValue,
-    checkValue = true
-  ) {
-    if (checkValue && this.value.trim() != result.payload.keyword?.trim()) {
+    checkValue = true,
+    startQuery = true,
+  }) {
+    if (
+      !result ||
+      (checkValue && this.value.trim() != result.payload.keyword?.trim())
+    ) {
       return false;
     }
 
-    let searchMode = this._searchModeForResult(result, "typed");
+    let searchMode = this._searchModeForResult(result, entry);
     if (!searchMode) {
       return false;
     }
 
     this.setSearchMode(searchMode);
     this._setValue(result.payload.query?.trimStart() || "", false);
-    this.startQuery({ allowAutofill: false });
+    if (startQuery) {
+      this.startQuery({ allowAutofill: false });
+    }
     return true;
   }
 
@@ -2442,6 +2489,12 @@ class UrlbarInput {
       this.value = this._focusUntrimmedValue;
     }
     this._focusUntrimmedValue = null;
+
+    
+    
+    if (this.searchMode?.isPreview) {
+      this.setSearchMode({});
+    }
 
     this.formatValue();
     this._resetSearchState();

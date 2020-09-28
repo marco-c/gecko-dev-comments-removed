@@ -4136,8 +4136,10 @@ const BrowserSearch = {
       
       
       
+      
+      
       let placeholderUpdateListener = () => {
-        if (gURLBar.value) {
+        if (gURLBar.value && !gURLBar.searchMode) {
           
           
           
