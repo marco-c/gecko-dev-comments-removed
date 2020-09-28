@@ -55,7 +55,7 @@
 #include "mozilla/SegmentedVector.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include <bitset>  
+#include <bitset>                
 #include "js/friend/DOMProxy.h"  
 
 
@@ -2831,7 +2831,13 @@ class Document : public nsINode,
 
 
 
-  already_AddRefed<Document> CreateStaticClone(nsIDocShell* aCloneContainer);
+
+
+
+
+  already_AddRefed<Document> CreateStaticClone(
+      nsIDocShell* aCloneContainer, nsIContentViewer* aContentViewer,
+      bool* aOutHasInProcessPrintCallbacks);
 
   
 
@@ -3934,7 +3940,6 @@ class Document : public nsINode,
     RefPtr<nsFrameLoaderOwner> mElement;
     RefPtr<nsFrameLoader> mStaticCloneOf;
   };
-  nsTArray<PendingFrameStaticClone> TakePendingFrameStaticClones();
   void AddPendingFrameStaticClone(nsFrameLoaderOwner* aElement,
                                   nsFrameLoader* aStaticCloneOf);
 

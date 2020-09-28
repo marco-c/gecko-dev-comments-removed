@@ -146,12 +146,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   
-  
-  
-  
   nsresult FinishStaticClone(nsFrameLoader* aStaticCloneOf,
-                             nsIDocShell** aCloneDocShell,
-                             Document** aCloneDocument);
+                             bool* aOutHasInProcessPrintCallbacks);
 
   
 

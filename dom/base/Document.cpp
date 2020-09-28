@@ -12270,9 +12270,12 @@ static void CachePrintSelectionRanges(const Document& aSourceDoc,
 }
 
 already_AddRefed<Document> Document::CreateStaticClone(
-    nsIDocShell* aCloneContainer) {
+    nsIDocShell* aCloneContainer, nsIContentViewer* aViewer,
+    bool* aOutHasInProcessPrintCallbacks) {
   MOZ_ASSERT(!mCreatingStaticClone);
   MOZ_ASSERT(!GetProperty(nsGkAtoms::adoptedsheetclones));
+  MOZ_DIAGNOSTIC_ASSERT(aViewer);
+
   mCreatingStaticClone = true;
   SetProperty(nsGkAtoms::adoptedsheetclones, new AdoptedStyleSheetCloneCache(),
               nsINode::DeleteProperty<AdoptedStyleSheetCloneCache>);
@@ -12295,50 +12298,75 @@ already_AddRefed<Document> Document::CreateStaticClone(
   }
 
   nsCOMPtr<Document> clonedDoc = do_QueryInterface(clonedNode);
-  if (clonedDoc) {
-    size_t sheetsCount = SheetCount();
-    for (size_t i = 0; i < sheetsCount; ++i) {
-      RefPtr<StyleSheet> sheet = SheetAt(i);
-      if (sheet) {
-        if (sheet->IsApplicable()) {
-          RefPtr<StyleSheet> clonedSheet =
-              sheet->Clone(nullptr, nullptr, clonedDoc, nullptr);
-          NS_WARNING_ASSERTION(clonedSheet,
-                               "Cloning a stylesheet didn't work!");
-          if (clonedSheet) {
-            clonedDoc->AddStyleSheet(clonedSheet);
-          }
+  if (!clonedDoc) {
+    return nullptr;
+  }
+
+  size_t sheetsCount = SheetCount();
+  for (size_t i = 0; i < sheetsCount; ++i) {
+    RefPtr<StyleSheet> sheet = SheetAt(i);
+    if (sheet) {
+      if (sheet->IsApplicable()) {
+        RefPtr<StyleSheet> clonedSheet =
+            sheet->Clone(nullptr, nullptr, clonedDoc, nullptr);
+        NS_WARNING_ASSERTION(clonedSheet, "Cloning a stylesheet didn't work!");
+        if (clonedSheet) {
+          clonedDoc->AddStyleSheet(clonedSheet);
         }
       }
     }
-    clonedDoc->CloneAdoptedSheetsFrom(*this);
+  }
+  clonedDoc->CloneAdoptedSheetsFrom(*this);
 
-    for (int t = 0; t < AdditionalSheetTypeCount; ++t) {
-      auto& sheets = mAdditionalSheets[additionalSheetType(t)];
-      for (StyleSheet* sheet : sheets) {
-        if (sheet->IsApplicable()) {
-          RefPtr<StyleSheet> clonedSheet =
-              sheet->Clone(nullptr, nullptr, clonedDoc, nullptr);
-          NS_WARNING_ASSERTION(clonedSheet,
-                               "Cloning a stylesheet didn't work!");
-          if (clonedSheet) {
-            clonedDoc->AddAdditionalStyleSheet(additionalSheetType(t),
-                                               clonedSheet);
-          }
+  for (int t = 0; t < AdditionalSheetTypeCount; ++t) {
+    auto& sheets = mAdditionalSheets[additionalSheetType(t)];
+    for (StyleSheet* sheet : sheets) {
+      if (sheet->IsApplicable()) {
+        RefPtr<StyleSheet> clonedSheet =
+            sheet->Clone(nullptr, nullptr, clonedDoc, nullptr);
+        NS_WARNING_ASSERTION(clonedSheet, "Cloning a stylesheet didn't work!");
+        if (clonedSheet) {
+          clonedDoc->AddAdditionalStyleSheet(additionalSheetType(t),
+                                             clonedSheet);
         }
       }
     }
+  }
 
-    
-    
-    if (const FontFaceSet* set = GetFonts()) {
-      set->CopyNonRuleFacesTo(clonedDoc->Fonts());
+  
+  
+  if (const FontFaceSet* set = GetFonts()) {
+    set->CopyNonRuleFacesTo(clonedDoc->Fonts());
+  }
+
+  clonedDoc->mReferrerInfo =
+      static_cast<dom::ReferrerInfo*>(mReferrerInfo.get())->Clone();
+  clonedDoc->mPreloadReferrerInfo = clonedDoc->mReferrerInfo;
+  CachePrintSelectionRanges(*this, *clonedDoc);
+
+  
+  
+  
+  
+  aViewer->SetDocument(clonedDoc);
+
+  *aOutHasInProcessPrintCallbacks |= clonedDoc->HasPrintCallbacks();
+
+  auto pendingClones = std::move(clonedDoc->mPendingFrameStaticClones);
+  for (const auto& clone : pendingClones) {
+    RefPtr<Element> element = do_QueryObject(clone.mElement);
+    RefPtr<nsFrameLoader> frameLoader =
+        nsFrameLoader::Create(element,  false);
+
+    if (NS_WARN_IF(!frameLoader)) {
+      continue;
     }
 
-    clonedDoc->mReferrerInfo =
-        static_cast<dom::ReferrerInfo*>(mReferrerInfo.get())->Clone();
-    clonedDoc->mPreloadReferrerInfo = clonedDoc->mReferrerInfo;
-    CachePrintSelectionRanges(*this, *clonedDoc);
+    clone.mElement->SetFrameLoader(frameLoader);
+
+    nsresult rv = frameLoader->FinishStaticClone(
+        clone.mStaticCloneOf, aOutHasInProcessPrintCallbacks);
+    Unused << NS_WARN_IF(NS_FAILED(rv));
   }
 
   return clonedDoc.forget();
@@ -16774,13 +16802,6 @@ bool Document::HasRecentlyStartedForegroundLoads() {
     idleScheduler->SendPrioritizedOperationDone();
   }
   return false;
-}
-
-nsTArray<Document::PendingFrameStaticClone>
-Document::TakePendingFrameStaticClones() {
-  MOZ_ASSERT(mIsStaticDocument,
-             "Cannot have pending frame static clones in non-static documents");
-  return std::move(mPendingFrameStaticClones);
 }
 
 void Document::AddPendingFrameStaticClone(nsFrameLoaderOwner* aElement,
