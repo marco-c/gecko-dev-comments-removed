@@ -81,7 +81,7 @@ class nsPrintSettingsService : public nsIPrintSettingsService {
 
 
 
-  virtual nsresult _CreatePrintSettings(nsIPrintSettings** _retval);
+  virtual nsresult _CreatePrintSettings(nsIPrintSettings** _retval) = 0;
 
   
   nsCString mPrefName;
