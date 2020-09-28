@@ -116,7 +116,7 @@ use smallvec::SmallVec;
 
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Copy, Clone, Debug, MallocSizeOf)]
 #[cfg_attr(any(feature = "serde"), derive(Deserialize, Serialize))]
 pub enum ClipIntern {}
 
@@ -125,7 +125,7 @@ pub type ClipDataHandle = intern::Handle<ClipIntern>;
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone)]
 pub struct ClipInstance {
     
     pub handle: ClipDataHandle,
