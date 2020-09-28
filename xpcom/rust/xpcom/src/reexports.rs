@@ -15,3 +15,20 @@ pub use nsstring::{nsACString, nsAString, nsCString, nsString};
 pub use nserror::{nsresult, NS_ERROR_NO_INTERFACE, NS_OK};
 
 pub use std::ops::Deref;
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub unsafe fn transmute_from_vtable_ptr<'a, T, U>(this: &'a *const T, vtable_index: usize) -> &'a U {
+    &*((*this as *const *const ()).sub(vtable_index) as *const U)
+}
