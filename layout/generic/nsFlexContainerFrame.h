@@ -644,7 +644,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
   nscoord IntrinsicISize(gfxContext* aRenderingContext,
-                         nsLayoutUtils::IntrinsicISizeType aType);
+                         mozilla::IntrinsicISizeType aType);
 
   
 

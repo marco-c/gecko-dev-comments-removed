@@ -11,6 +11,7 @@
 
 #include "AutoReferenceChainGuard.h"
 #include "gfxPattern.h"
+#include "gfxUtils.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUtils.h"

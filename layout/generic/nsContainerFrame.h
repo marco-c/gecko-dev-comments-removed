@@ -10,9 +10,9 @@
 #define nsContainerFrame_h___
 
 #include "mozilla/Attributes.h"
+#include "LayoutConstants.h"
 #include "nsSplittableFrame.h"
 #include "nsFrameList.h"
-#include "nsLayoutUtils.h"
 #include "nsLineBox.h"
 
 class nsOverflowContinuationTracker;
@@ -213,7 +213,7 @@ class nsContainerFrame : public nsSplittableFrame {
   
   void DoInlineIntrinsicISize(gfxContext* aRenderingContext,
                               InlineIntrinsicISizeData* aData,
-                              nsLayoutUtils::IntrinsicISizeType aType);
+                              mozilla::IntrinsicISizeType aType);
 
   
 

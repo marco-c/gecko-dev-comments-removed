@@ -75,6 +75,12 @@ enum class ComputeSizeFlag : uint8_t {
 };
 using ComputeSizeFlags = mozilla::EnumSet<ComputeSizeFlag>;
 
+
+
+
+
+enum class IntrinsicISizeType { MinISize, PrefISize };
+
 }  
 
 #endif  

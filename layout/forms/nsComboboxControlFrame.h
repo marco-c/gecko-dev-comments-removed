@@ -238,7 +238,7 @@ class nsComboboxControlFrame final : public nsBlockFrame,
 
   
   nscoord GetIntrinsicISize(gfxContext* aRenderingContext,
-                            nsLayoutUtils::IntrinsicISizeType aType);
+                            mozilla::IntrinsicISizeType aType);
 
   class RedisplayTextEvent : public mozilla::Runnable {
    public:
