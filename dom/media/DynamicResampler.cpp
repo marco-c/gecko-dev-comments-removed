@@ -137,8 +137,9 @@ void DynamicResampler::UpdateResampler(int aOutRate, int aChannels) {
     mInternalInBuffer.Clear();
     for (int i = 0; i < mChannels; ++i) {
       
-      AudioRingBuffer* b =
-          mInternalInBuffer.AppendElement(sizeof(float) * mInRate / 10);
+      AudioRingBuffer* b = mInternalInBuffer.AppendElement(
+          sizeof(float) *
+          std::max(2 * mPreBufferFrames, static_cast<uint32_t>(mInRate) / 10));
       if (mSampleFormat != AUDIO_FORMAT_SILENCE) {
         
         b->SetSampleFormat(mSampleFormat);
