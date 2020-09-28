@@ -342,7 +342,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
       
       
       
-      if (StyleFont()->mMathDepth > 0 &&
+      if (StyleFont()->mScriptLevel > 0 &&
           !NS_MATHML_OPERATOR_HAS_EMBELLISH_ANCESTOR(mFlags)) {
         mEmbellishData.leadingSpace /= 2;
         mEmbellishData.trailingSpace /= 2;
