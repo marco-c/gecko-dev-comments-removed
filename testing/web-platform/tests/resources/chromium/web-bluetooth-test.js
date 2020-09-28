@@ -38,10 +38,17 @@ function canonicalizeAndConvertToMojoUUID(uuids) {
 
 
 
-function convertToMojoMap(record, keyFn) {
+function convertToMojoMap(record, keyFn, isNumberKey = false) {
   let map = new Map();
   for (const [key, value] of Object.entries(record)) {
     let buffer = ArrayBuffer.isView(value) ? value.buffer : value;
+    if (isNumberKey) {
+      let numberKey = parseInt(key);
+      if (Number.isNaN(numberKey))
+        throw `Map key ${key} is not a number`;
+      map.set(keyFn(numberKey), Array.from(new Uint8Array(buffer)));
+      continue;
+    }
     map.set(keyFn(key), Array.from(new Uint8Array(buffer)));
   }
   return map;
@@ -211,15 +218,17 @@ class FakeCentral {
     
     
     if ('manufacturerData' in scanResult.scanRecord) {
-      clonedScanResult.scanRecord.manufacturerData =
-          convertToMojoMap(scanResult.scanRecord.manufacturerData, Number);
+      clonedScanResult.scanRecord.manufacturerData = convertToMojoMap(
+          scanResult.scanRecord.manufacturerData, Number,
+          true );
     }
 
     
     
     if ('serviceData' in scanResult.scanRecord) {
       clonedScanResult.scanRecord.serviceData.serviceData = convertToMojoMap(
-          scanResult.scanRecord.serviceData, BluetoothUUID.getService);
+          scanResult.scanRecord.serviceData, BluetoothUUID.getService,
+          false );
     }
 
     await this.fake_central_ptr_.simulateAdvertisementReceived(
