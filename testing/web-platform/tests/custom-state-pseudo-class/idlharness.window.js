@@ -5,7 +5,7 @@
 
 idl_test(
   ['custom-state-pseudo-class'],
-  ['html'],
+  ['html', 'wai-aria'],
   idl_array => {
     idl_array.add_objects({
       
