@@ -516,7 +516,7 @@ var PKT_SAVED_OVERLAY = function(options) {
     }
   };
   this.renderItemRecs = function(data) {
-    if (data?.recommendations?.length) {
+    if (data && data.recommendations && data.recommendations.length) {
       
       data.recommendations = data.recommendations.map(rec => {
         
@@ -529,10 +529,6 @@ var PKT_SAVED_OVERLAY = function(options) {
         return rec;
       });
 
-      
-      
-      
-      const model = data.recommendations[0].experiment;
       $(".pkt_ext_item_recs").append(Handlebars.templates.item_recs(data));
 
       
@@ -543,12 +539,9 @@ var PKT_SAVED_OVERLAY = function(options) {
 
       $(".pkt_ext_item_recs_link").click(function(e) {
         e.preventDefault();
-        const url = $(this).attr("href");
-        const position = $(".pkt_ext_item_recs_link").index(this);
         thePKT_SAVED.sendMessage("openTabWithPocketUrl", {
-          url,
-          model,
-          position,
+          url: $(this).attr("href"),
+          activate: true,
         });
         myself.closePopup();
       });
