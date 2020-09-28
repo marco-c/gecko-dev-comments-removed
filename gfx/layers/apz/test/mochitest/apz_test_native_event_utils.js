@@ -339,17 +339,43 @@ function synthesizeNativeWheelAndWaitForWheelEvent(
   aDeltaY,
   aCallback
 ) {
-  var targetWindow = windowForTarget(aTarget);
-  targetWindow.addEventListener(
-    "wheel",
-    function(e) {
-      if (aCallback) {
-        setTimeout(aCallback, 0);
-      }
-    },
-    { once: true }
+  let p = promiseNativeWheelAndWaitForWheelEvent(
+    aTarget,
+    aX,
+    aY,
+    aDeltaX,
+    aDeltaY
   );
-  return synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY);
+  if (aCallback) {
+    p.then(aCallback);
+  }
+  return true;
+}
+
+
+
+function promiseNativeWheelAndWaitForWheelEvent(
+  aTarget,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY
+) {
+  return new Promise((resolve, reject) => {
+    var targetWindow = windowForTarget(aTarget);
+    targetWindow.addEventListener(
+      "wheel",
+      function(e) {
+        setTimeout(resolve, 0);
+      },
+      { once: true }
+    );
+    try {
+      synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY);
+    } catch (e) {
+      reject();
+    }
+  });
 }
 
 
@@ -365,15 +391,40 @@ function synthesizeNativeWheelAndWaitForScrollEvent(
   aDeltaY,
   aCallback
 ) {
-  var targetWindow = windowForTarget(aTarget);
-  targetWindow.addEventListener(
-    "scroll",
-    function() {
-      setTimeout(aCallback, 0);
-    },
-    { capture: true, once: true }
-  ); 
-  return synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY);
+  promiseNativeWheelAndWaitForScrollEvent(
+    aTarget,
+    aX,
+    aY,
+    aDeltaX,
+    aDeltaY
+  ).then(aCallback);
+  return true;
+}
+
+
+
+function promiseNativeWheelAndWaitForScrollEvent(
+  aTarget,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY
+) {
+  return new Promise((resolve, reject) => {
+    var targetWindow = windowForTarget(aTarget);
+    targetWindow.addEventListener(
+      "scroll",
+      function() {
+        setTimeout(resolve, 0);
+      },
+      { capture: true, once: true }
+    ); 
+    try {
+      synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY);
+    } catch (e) {
+      reject();
+    }
+  });
 }
 
 
@@ -397,15 +448,28 @@ function synthesizeNativeMouseMoveAndWaitForMoveEvent(
   aY,
   aCallback
 ) {
-  var targetWindow = windowForTarget(aTarget);
-  targetWindow.addEventListener(
-    "mousemove",
-    function(e) {
-      setTimeout(aCallback, 0);
-    },
-    { once: true }
-  );
-  return synthesizeNativeMouseMove(aTarget, aX, aY);
+  promiseNativeMouseMoveAndWaitForMoveEvent(aTarget, aX, aY).then(aCallback);
+  return true;
+}
+
+
+
+function promiseNativeMouseMoveAndWaitForMoveEvent(aTarget, aX, aY) {
+  return new Promise((resolve, reject) => {
+    var targetWindow = windowForTarget(aTarget);
+    targetWindow.addEventListener(
+      "mousemove",
+      function(e) {
+        setTimeout(resolve, 0);
+      },
+      { once: true }
+    );
+    try {
+      synthesizeNativeMouseMove(aTarget, aX, aY);
+    } catch (e) {
+      reject();
+    }
+  });
 }
 
 
@@ -655,34 +719,15 @@ function moveMouseAndScrollWheelOver(
   waitForScroll = true,
   scrollDelta = 10
 ) {
-  return synthesizeNativeMouseMoveAndWaitForMoveEvent(
+  promiseMoveMouseAndScrollWheelOver(
     target,
     dx,
     dy,
-    function() {
-      if (waitForScroll) {
-        synthesizeNativeWheelAndWaitForScrollEvent(
-          target,
-          dx,
-          dy,
-          0,
-          -scrollDelta,
-          testDriver
-        );
-      } else {
-        synthesizeNativeWheelAndWaitForWheelEvent(
-          target,
-          dx,
-          dy,
-          0,
-          -scrollDelta,
-          testDriver
-        );
-      }
-    }
-  );
+    waitForScroll,
+    scrollDelta
+  ).then(testDriver);
+  return true;
 }
-
 
 
 
@@ -693,16 +738,17 @@ function promiseMoveMouseAndScrollWheelOver(
   waitForScroll = true,
   scrollDelta = 10
 ) {
-  return new Promise(resolve => {
-    moveMouseAndScrollWheelOver(
-      target,
-      dx,
-      dy,
-      resolve,
-      waitForScroll,
-      scrollDelta
+  let p = promiseNativeMouseMoveAndWaitForMoveEvent(target, dx, dy);
+  if (waitForScroll) {
+    p = p.then(() =>
+      promiseNativeWheelAndWaitForScrollEvent(target, dx, dy, 0, -scrollDelta)
     );
-  });
+  } else {
+    p = p.then(() =>
+      promiseNativeWheelAndWaitForWheelEvent(target, dx, dy, 0, -scrollDelta)
+    );
+  }
+  return p;
 }
 
 
