@@ -139,7 +139,8 @@ nsresult GfxInfo::GetFeatureStatusImpl(
   
   
   if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS ||
-      aFeature == nsIGfxInfo::FEATURE_WEBGL_OPENGL) {
+      aFeature == nsIGfxInfo::FEATURE_WEBGL_OPENGL ||
+      aFeature == nsIGfxInfo::FEATURE_WEBGL_MSAA) {
     *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
     return NS_OK;
   }
