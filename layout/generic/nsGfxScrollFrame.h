@@ -641,6 +641,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   bool mHadNonInitialReflow : 1;
   
+  bool mFirstReflow : 1;
+  
   
   bool mHorizontalOverflow : 1;
   bool mVerticalOverflow : 1;

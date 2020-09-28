@@ -43,7 +43,8 @@ class ScrollPositionUpdate {
 
   
   
-  static ScrollPositionUpdate NewScrollframe(uint32_t aGeneration);
+  static ScrollPositionUpdate NewScrollframe(uint32_t aGeneration,
+                                             nsPoint aInitialPosition);
   
   
   static ScrollPositionUpdate NewScroll(uint32_t aGeneration,

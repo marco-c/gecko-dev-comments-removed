@@ -2185,6 +2185,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mSuppressScrollbarUpdate(false),
       mSkippedScrollbarLayout(false),
       mHadNonInitialReflow(false),
+      mFirstReflow(true),
       mHorizontalOverflow(false),
       mVerticalOverflow(false),
       mPostedReflowCallback(false),
@@ -2209,7 +2210,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mApzAnimationRequested(false),
       mVelocityQueue(aOuter->PresContext()) {
   mScrollUpdates.AppendElement(
-      ScrollPositionUpdate::NewScrollframe(mScrollGeneration));
+      ScrollPositionUpdate::NewScrollframe(mScrollGeneration, nsPoint()));
 
   if (LookAndFeel::GetInt(LookAndFeel::IntID::UseOverlayScrollbars) != 0) {
     mScrollbarActivity = new ScrollbarActivity(do_QueryFrame(aOuter));
@@ -6259,6 +6260,39 @@ bool ScrollFrameHelper::ReflowFinished() {
     
     
     doScroll = false;
+  }
+
+  if (mFirstReflow) {
+    nsPoint currentScrollPos = GetScrollPosition();
+    if (!mScrollUpdates.IsEmpty() &&
+        mScrollUpdates.LastElement().GetOrigin() == ScrollOrigin::None &&
+        currentScrollPos != nsPoint()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(mScrollUpdates.Length() == 1);
+      MOZ_ASSERT(mScrollUpdates.LastElement().GetGeneration() ==
+                 mScrollGeneration);
+      MOZ_ASSERT(mScrollUpdates.LastElement().GetDestination() == CSSPoint());
+      SCROLLRESTORE_LOG("%p: updating initial SPU to pos %s\n", this,
+                        Stringify(currentScrollPos).c_str());
+      mScrollUpdates.Clear();
+      
+      
+      mScrollGeneration = ++sScrollGenerationCounter;
+      mScrollUpdates.AppendElement(ScrollPositionUpdate::NewScrollframe(
+          mScrollGeneration, currentScrollPos));
+    }
+
+    mFirstReflow = false;
   }
 
   nsAutoScriptBlocker scriptBlocker;
