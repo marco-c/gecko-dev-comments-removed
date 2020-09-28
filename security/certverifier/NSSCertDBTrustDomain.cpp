@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "ExtendedValidation.h"
+#include "MultiLogCTVerifier.h"
 #include "NSSErrorsService.h"
 #include "OCSPVerificationTrustDomain.h"
 #include "PublicKeyPinningService.h"
@@ -54,6 +55,7 @@
 #include "TrustOverride-SymantecData.inc"
 
 using namespace mozilla;
+using namespace mozilla::ct;
 using namespace mozilla::pkix;
 
 extern LazyLogModule gCertVerifierLog;
@@ -605,11 +607,34 @@ static Result GetOCSPAuthorityInfoAccessLocation(const UniquePLArenaPool& arena,
   return Success;
 }
 
+Result GetEarliestSCTTimestamp(Input sctExtension,
+                               Maybe<uint64_t>& earliestTimestamp) {
+  earliestTimestamp.reset();
+
+  Input sctList;
+  Result rv =
+      ExtractSignedCertificateTimestampListFromExtension(sctExtension, sctList);
+  if (rv != Success) {
+    return rv;
+  }
+  std::vector<SignedCertificateTimestamp> decodedSCTs;
+  size_t decodingErrors;
+  DecodeSCTs(sctList, decodedSCTs, decodingErrors);
+  Unused << decodingErrors;
+  for (const auto& scts : decodedSCTs) {
+    if (!earliestTimestamp.isSome() || scts.timestamp < *earliestTimestamp) {
+      earliestTimestamp = Some(scts.timestamp);
+    }
+  }
+  return Success;
+}
+
 Result NSSCertDBTrustDomain::CheckRevocation(
     EndEntityOrCA endEntityOrCA, const CertID& certID, Time time,
-    Time certValidityPeriodBeginning, Duration validityDuration,
+    Duration validityDuration,
      const Input* stapledOCSPResponse,
-     const Input* aiaExtension) {
+     const Input* aiaExtension,
+     const Input* sctExtension) {
   
   
 
@@ -619,10 +644,20 @@ Result NSSCertDBTrustDomain::CheckRevocation(
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
           ("NSSCertDBTrustDomain: Top of CheckRevocation\n"));
 
+  Maybe<uint64_t> earliestSCTTimestamp = Nothing();
+  if (sctExtension) {
+    Result rv = GetEarliestSCTTimestamp(*sctExtension, earliestSCTTimestamp);
+    if (rv != Success) {
+      MOZ_LOG(
+          gCertVerifierLog, LogLevel::Debug,
+          ("decoding SCT extension failed - CRLite will be not be consulted"));
+    }
+  }
+
   Maybe<TimeDuration> crliteLookupDuration;
 #ifdef MOZ_NEW_CERT_STORAGE
   if (endEntityOrCA == EndEntityOrCA::MustBeEndEntity &&
-      mCRLiteMode != CRLiteMode::Disabled) {
+      mCRLiteMode != CRLiteMode::Disabled && earliestSCTTimestamp.isSome()) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
             ("NSSCertDBTrustDomain::CheckRevocation: checking CRLite"));
     nsTArray<uint8_t> issuerBytes;
@@ -673,7 +708,10 @@ Result NSSCertDBTrustDomain::CheckRevocation(
       
       
       
-      if (certValidityPeriodBeginning <= filterTimestampTime &&
+      
+      Time earliestCertificateTimestamp(
+          TimeFromEpochInSeconds(*earliestSCTTimestamp / 1000));
+      if (earliestCertificateTimestamp <= filterTimestampTime &&
           crliteRevocationState == nsICertStorage::STATE_ENFORCE) {
         if (mCRLiteTelemetryInfo) {
           mCRLiteTelemetryInfo->mLookupResult =
@@ -707,7 +745,7 @@ Result NSSCertDBTrustDomain::CheckRevocation(
           mCRLiteTelemetryInfo->mLookupResult =
               CRLiteLookupResult::FilterNotAvailable;
         }
-      } else if (certValidityPeriodBeginning > filterTimestampTime) {
+      } else if (earliestCertificateTimestamp > filterTimestampTime) {
         MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
                 ("NSSCertDBTrustDomain::CheckRevocation: cert too new"));
         if (mCRLiteTelemetryInfo) {
