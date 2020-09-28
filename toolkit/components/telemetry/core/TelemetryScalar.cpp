@@ -1932,8 +1932,7 @@ void internal_DynamicScalarToIPC(
 
 
 void internal_BroadcastDefinitions(
-    const StaticMutexAutoLock& lock,
-    const nsTArray<DynamicScalarInfo>& scalarInfos) {
+    const nsTArray<DynamicScalarDefinition>& scalarDefs) {
   nsTArray<mozilla::dom::ContentParent*> parents;
   mozilla::dom::ContentParent::GetAll(parents);
   if (!parents.Length()) {
@@ -1941,12 +1940,8 @@ void internal_BroadcastDefinitions(
   }
 
   
-  nsTArray<DynamicScalarDefinition> ipcDefinitions;
-  internal_DynamicScalarToIPC(lock, scalarInfos, ipcDefinitions);
-
-  
   for (auto parent : parents) {
-    mozilla::Unused << parent->SendAddDynamicScalars(ipcDefinitions);
+    mozilla::Unused << parent->SendAddDynamicScalars(scalarDefs);
   }
 }
 
@@ -3474,14 +3469,19 @@ nsresult TelemetryScalar::RegisterScalars(const nsACString& aCategoryName,
   }
 
   
+  nsTArray<DynamicScalarDefinition> ipcDefinitions;
   {
     StaticMutexAutoLock locker(gTelemetryScalarsMutex);
     ::internal_RegisterScalars(locker, newScalarInfos);
 
     
-    
-    ::internal_BroadcastDefinitions(locker, newScalarInfos);
+    ::internal_DynamicScalarToIPC(locker, newScalarInfos, ipcDefinitions);
   }
+
+  
+  
+  ::internal_BroadcastDefinitions(ipcDefinitions);
+
   return NS_OK;
 }
 
