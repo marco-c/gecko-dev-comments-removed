@@ -116,6 +116,7 @@ cubeb_ops const mock_ops = {
     NULL,
     NULL,
     
+
     cubeb_mock_register_device_collection_changed};
 
 
@@ -151,27 +152,10 @@ class MockCubebStream {
     }
   }
 
-  ~MockCubebStream() { assert(!mFakeAudioThread); }
+  ~MockCubebStream() = default;
 
-  int Start() {
-    assert(!mFakeAudioThread);
-    mStreamStop = false;
-    mFakeAudioThread.reset(new std::thread(ThreadFunction_s, this));
-    assert(mFakeAudioThread);
-    cubeb_stream* stream = reinterpret_cast<cubeb_stream*>(this);
-    mStateCallback(stream, mUserPtr, CUBEB_STATE_STARTED);
-    return CUBEB_OK;
-  }
-
-  int Stop() {
-    assert(mFakeAudioThread);
-    mStreamStop = true;
-    mFakeAudioThread->join();
-    mFakeAudioThread.reset();
-    cubeb_stream* stream = reinterpret_cast<cubeb_stream*>(this);
-    mStateCallback(stream, mUserPtr, CUBEB_STATE_STOPPED);
-    return CUBEB_OK;
-  }
+  int Start();
+  int Stop();
 
   cubeb_devid GetInputDeviceID() const { return mInputDeviceID; }
   cubeb_devid GetOutputDeviceID() const { return mOutputDeviceID; }
@@ -181,8 +165,6 @@ class MockCubebStream {
   uint32_t InputFrequency() const { return mAudioGenerator.mFrequency; }
 
   void SetDriftFactor(float aDriftFactor) { mDriftFactor = aDriftFactor; }
-  void GoFaster() { mFastMode = true; }
-  void DontGoFaster() { mFastMode = false; }
   void ForceError() { mForceErrorState = true; }
 
   MediaEventSource<uint32_t>& FramesProcessedEvent() {
@@ -196,57 +178,42 @@ class MockCubebStream {
 
   MediaEventSource<void>& ErrorForcedEvent() { return mErrorForcedEvent; }
 
- private:
-  
-  
-  static void ThreadFunction_s(MockCubebStream* that) {
-    that->ThreadFunction();
-  }
-
-  void ThreadFunction() {
-    while (!mStreamStop) {
-      
-      
-      const uint32_t audioIntervalMs = 10;
-      const long nrFrames =
-          (mHasOutput ? mOutputParams.rate : mInputParams.rate) *
-          audioIntervalMs / 1000;
-      if (mInputParams.rate) {
-        mAudioGenerator.GenerateInterleaved(mInputBuffer, nrFrames);
-      }
-      cubeb_stream* stream = reinterpret_cast<cubeb_stream*>(this);
-      long outframes =
-          mDataCallback(stream, mUserPtr, mHasInput ? mInputBuffer : nullptr,
-                        mHasOutput ? mOutputBuffer : nullptr, nrFrames);
-
-      mAudioVerifier.AppendDataInterleaved(mOutputBuffer, outframes,
-                                           NUM_OF_CHANNELS);
-
-      if (mAudioVerifier.PreSilenceEnded()) {
-        mFramesProcessedEvent.Notify(outframes);
-      }
-
-      if (outframes < nrFrames) {
-        mStateCallback(stream, mUserPtr, CUBEB_STATE_DRAINED);
-        break;
-      }
-      if (mForceErrorState) {
-        mForceErrorState = false;
-        mStateCallback(stream, mUserPtr, CUBEB_STATE_ERROR);
-        mErrorForcedEvent.Notify();
-        break;
-      }
-      uint32_t sampleRate(mInputParams.rate ? mInputParams.rate
-                                            : mOutputParams.rate);
-      std::this_thread::sleep_for(std::chrono::microseconds(
-          mFastMode ? 0
-                    : static_cast<int32_t>(static_cast<float>(nrFrames) *
-                                           PR_USEC_PER_SEC / mDriftFactor /
-                                           sampleRate)));
+  void Process10Ms() {
+    if (mStreamStop) {
+      return;
     }
-    mOutputVerificationEvent.Notify(MakeTuple(
-        mAudioVerifier.PreSilenceSamples(), mAudioVerifier.EstimatedFreq(),
-        mAudioVerifier.CountDiscontinuities()));
+
+    uint32_t rate = mHasOutput ? mOutputParams.rate : mInputParams.rate;
+    const long nrFrames =
+        static_cast<long>(static_cast<float>(rate * 10) * mDriftFactor) /
+        PR_MSEC_PER_SEC;
+    if (mInputParams.rate) {
+      mAudioGenerator.GenerateInterleaved(mInputBuffer, nrFrames);
+    }
+    cubeb_stream* stream = reinterpret_cast<cubeb_stream*>(this);
+    long outframes =
+        mDataCallback(stream, mUserPtr, mHasInput ? mInputBuffer : nullptr,
+                      mHasOutput ? mOutputBuffer : nullptr, nrFrames);
+
+    mAudioVerifier.AppendDataInterleaved(mOutputBuffer, outframes,
+                                         NUM_OF_CHANNELS);
+
+    if (mAudioVerifier.PreSilenceEnded()) {
+      mFramesProcessedEvent.Notify(outframes);
+    }
+
+    if (outframes < nrFrames) {
+      mStateCallback(stream, mUserPtr, CUBEB_STATE_DRAINED);
+      mStreamStop = true;
+      return;
+    }
+    if (mForceErrorState) {
+      mForceErrorState = false;
+      mStateCallback(stream, mUserPtr, CUBEB_STATE_ERROR);
+      mErrorForcedEvent.Notify();
+      mStreamStop = true;
+      return;
+    }
   }
 
  public:
@@ -256,8 +223,6 @@ class MockCubebStream {
   const bool mHasOutput;
 
  private:
-  
-  std::unique_ptr<std::thread> mFakeAudioThread;
   
   std::atomic_bool mStreamStop{true};
   
@@ -295,7 +260,7 @@ class MockCubebStream {
 class MockCubeb {
  public:
   MockCubeb() : ops(&mock_ops) {}
-  ~MockCubeb() = default;
+  ~MockCubeb() { MOZ_ASSERT(!mFakeAudioThread); };
   
   
   cubeb* AsCubebContext() { return reinterpret_cast<cubeb*>(this); }
@@ -466,12 +431,64 @@ class MockCubeb {
     delete mockStream;
   }
 
+  void GoFaster() { mFastMode = true; }
+  void DontGoFaster() { mFastMode = false; }
+
   MediaEventSource<MockCubebStream*>& StreamInitEvent() {
     return mStreamInitEvent;
   }
   MediaEventSource<void>& StreamDestroyEvent() { return mStreamDestroyEvent; }
 
+  
+  void StartStream(MockCubebStream* aStream) {
+    auto streams = mLiveStreams.Lock();
+    MOZ_ASSERT(!streams->Contains(aStream));
+    streams->AppendElement(aStream);
+    if (!mFakeAudioThread) {
+      mFakeAudioThread = WrapUnique(new std::thread(ThreadFunction_s, this));
+    }
+  }
+
+  void StopStream(MockCubebStream* aStream) {
+    UniquePtr<std::thread> audioThread;
+    {
+      auto streams = mLiveStreams.Lock();
+      MOZ_ASSERT(streams->Contains(aStream));
+      streams->RemoveElement(aStream);
+      MOZ_ASSERT(mFakeAudioThread);
+      if (streams->IsEmpty()) {
+        audioThread = std::move(mFakeAudioThread);
+      }
+    }
+    if (audioThread) {
+      audioThread->join();
+    }
+  }
+
+  
+  
+  static void ThreadFunction_s(MockCubeb* aContext) {
+    aContext->ThreadFunction();
+  }
+
+  void ThreadFunction() {
+    while (true) {
+      {
+        auto streams = mLiveStreams.Lock();
+        for (auto& stream : *streams) {
+          stream->Process10Ms();
+        }
+        if (streams->IsEmpty()) {
+          break;
+        }
+      }
+      std::this_thread::sleep_for(
+          std::chrono::microseconds(mFastMode ? 0 : 10 * PR_USEC_PER_MSEC));
+    }
+  }
+
  private:
+  
   
   
   
@@ -493,9 +510,39 @@ class MockCubeb {
   nsTArray<cubeb_device_info> mInputDevices;
   nsTArray<cubeb_device_info> mOutputDevices;
 
+  
+  DataMutex<nsTArray<MockCubebStream*>> mLiveStreams{"MockCubeb::mLiveStreams"};
+  
+  
+  
+  UniquePtr<std::thread> mFakeAudioThread;
+  
+  
+  
+  std::atomic<bool> mFastMode{false};
+
   MediaEventProducer<MockCubebStream*> mStreamInitEvent;
   MediaEventProducer<void> mStreamDestroyEvent;
 };
+
+int MockCubebStream::Start() {
+  mStreamStop = false;
+  reinterpret_cast<MockCubeb*>(context)->StartStream(this);
+  cubeb_stream* stream = reinterpret_cast<cubeb_stream*>(this);
+  mStateCallback(stream, mUserPtr, CUBEB_STATE_STARTED);
+  return CUBEB_OK;
+}
+
+int MockCubebStream::Stop() {
+  mStreamStop = true;
+  mOutputVerificationEvent.Notify(MakeTuple(
+      mAudioVerifier.PreSilenceSamples(), mAudioVerifier.EstimatedFreq(),
+      mAudioVerifier.CountDiscontinuities()));
+  reinterpret_cast<MockCubeb*>(context)->StopStream(this);
+  cubeb_stream* stream = reinterpret_cast<cubeb_stream*>(this);
+  mStateCallback(stream, mUserPtr, CUBEB_STATE_STOPPED);
+  return CUBEB_OK;
+}
 
 void cubeb_mock_destroy(cubeb* context) {
   delete reinterpret_cast<MockCubeb*>(context);
