@@ -128,7 +128,6 @@ static int bytes_for_internal_format(GLenum internal_format) {
       return 2;
     case GL_DEPTH_COMPONENT:
     case GL_DEPTH_COMPONENT16:
-      return 2;
     case GL_DEPTH_COMPONENT24:
     case GL_DEPTH_COMPONENT32:
       return 4;
@@ -224,6 +223,237 @@ TextureFilter gl_filter_to_texture_filter(int type) {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct DepthRun {
+  
+  
+  
+  
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  uint16_t depth;
+  uint16_t count;
+#else
+  uint16_t count;
+  uint16_t depth;
+#endif
+
+  DepthRun() = default;
+  DepthRun(uint16_t depth, uint16_t count) : depth(depth), count(count) {}
+
+  
+  bool is_flat() const { return !count; }
+
+  
+  template <int FUNC>
+  ALWAYS_INLINE bool compare(uint16_t src) const {
+    switch (FUNC) {
+      case GL_LEQUAL:
+        return src <= depth;
+      case GL_LESS:
+        return src < depth;
+      case GL_ALWAYS:
+        return true;
+      default:
+        assert(false);
+        return false;
+    }
+  }
+};
+
+
+
+
+
+
+struct DepthCursor {
+  
+  DepthRun* cur = nullptr;
+  
+  DepthRun* start = nullptr;
+  
+  DepthRun* end = nullptr;
+
+  DepthCursor() = default;
+
+  
+  
+  DepthCursor(DepthRun* runs, int num_runs, int span_offset, int span_count)
+      : cur(runs), start(&runs[span_offset]), end(start + span_count) {
+    
+    assert(!runs->is_flat());
+    DepthRun* end_runs = &runs[num_runs];
+    
+    if (end > end_runs) {
+      end = end_runs;
+    }
+    
+    
+    if (start >= end_runs) {
+      cur = end_runs;
+      start = end_runs;
+      return;
+    }
+    
+    
+    
+    
+    
+    for (;;) {
+      assert(cur < end);
+      DepthRun* next = cur + cur->count;
+      if (start < next) {
+        break;
+      }
+      cur = next;
+    }
+  }
+
+  
+  
+  bool valid() const {
+    return cur >= end || (cur <= start && start < cur + cur->count);
+  }
+
+  
+  
+  
+  
+  
+  
+  template <int FUNC>
+  int skip_failed(uint16_t val) {
+    assert(valid());
+    DepthRun* prev = start;
+    while (cur < end) {
+      if (cur->compare<FUNC>(val)) {
+        return start - prev;
+      }
+      cur += cur->count;
+      start = cur;
+    }
+    return -1;
+  }
+
+  
+  
+  ALWAYS_INLINE int skip_failed(uint16_t val, GLenum func) {
+    switch (func) {
+      case GL_LEQUAL:
+        return skip_failed<GL_LEQUAL>(val);
+      case GL_LESS:
+        return skip_failed<GL_LESS>(val);
+      default:
+        assert(false);
+        return -1;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  template <int FUNC, bool MASK>
+  int check_passed(uint16_t val) {
+    assert(valid());
+    DepthRun* prev = cur;
+    while (cur < end) {
+      if (!cur->compare<FUNC>(val)) {
+        break;
+      }
+      DepthRun* next = cur + cur->count;
+      if (next > end) {
+        if (MASK) {
+          
+          
+          
+          
+          *end = DepthRun(cur->depth, next - end);
+        }
+        
+        
+        next = end;
+      }
+      cur = next;
+    }
+    
+    
+    if (cur <= start) {
+      return 0;
+    }
+    
+    
+    
+    
+    int passed = cur - start;
+    if (MASK) {
+      
+      
+      if (prev < start) {
+        prev->count = start - prev;
+      }
+      
+      *start = DepthRun(val, passed);
+    }
+    start = cur;
+    return passed;
+  }
+
+  
+  
+  template <bool MASK>
+  ALWAYS_INLINE int check_passed(uint16_t val, GLenum func) {
+    switch (func) {
+      case GL_LEQUAL:
+        return check_passed<GL_LEQUAL, MASK>(val);
+      case GL_LESS:
+        return check_passed<GL_LESS, MASK>(val);
+      default:
+        assert(false);
+        return 0;
+    }
+  }
+
+  ALWAYS_INLINE int check_passed(uint16_t val, GLenum func, bool mask) {
+    return mask ? check_passed<true>(val, func)
+                : check_passed<false>(val, func);
+  }
+
+  
+  ALWAYS_INLINE void fill(uint16_t depth) {
+    check_passed<GL_ALWAYS, true>(depth);
+  }
+};
+
 struct Texture {
   GLenum internal_format = 0;
   int width = 0;
@@ -241,10 +471,16 @@ struct Texture {
   int32_t locked = 0;
 
   enum FLAGS {
+    
     SHOULD_FREE = 1 << 1,
+    
+    
+    
+    CLEARED = 1 << 2,
   };
   int flags = SHOULD_FREE;
   bool should_free() const { return bool(flags & SHOULD_FREE); }
+  bool cleared() const { return bool(flags & CLEARED); }
 
   void set_flag(int flag, bool val) {
     if (val) {
@@ -254,6 +490,7 @@ struct Texture {
     }
   }
   void set_should_free(bool val) { set_flag(SHOULD_FREE, val); }
+  void set_cleared(bool val) { set_flag(CLEARED, val); }
 
   
   
@@ -265,6 +502,9 @@ struct Texture {
   int delay_clear = 0;
   uint32_t clear_val = 0;
   uint32_t* cleared_rows = nullptr;
+
+  void init_depth_runs(uint16_t z);
+  void fill_depth_runs(uint16_t z);
 
   void enable_delayed_clear(uint32_t val) {
     delay_clear = height;
@@ -308,6 +548,9 @@ struct Texture {
 
   bool allocate(bool force = false, int min_width = 0, int min_height = 0) {
     assert(!locked);  
+    
+    
+    set_cleared(false);
     
     
     if ((!buf || force) && should_free()) {
@@ -2012,9 +2255,6 @@ static void prepare_texture(Texture& t, const IntRect* skip) {
       case GL_RG8:
         force_clear<uint16_t>(t, skip);
         break;
-      case GL_DEPTH_COMPONENT16:
-        force_clear<uint16_t>(t, skip);
-        break;
       default:
         assert(false);
         break;
@@ -2042,6 +2282,47 @@ static void request_clear(Texture& t, int layer, T value) {
   } else {
     
     t.enable_delayed_clear(value);
+  }
+}
+
+
+
+void Texture::init_depth_runs(uint16_t depth) {
+  if (!buf) return;
+  DepthRun* runs = (DepthRun*)buf;
+  for (int y = 0; y < height; y++) {
+    runs[0] = DepthRun(depth, width);
+    runs += stride() / sizeof(DepthRun);
+  }
+  set_cleared(true);
+}
+
+
+static ALWAYS_INLINE void fill_depth_run(DepthRun* dst, size_t n,
+                                         uint16_t depth) {
+  fill_n((uint32_t*)dst, n, uint32_t(depth));
+}
+
+
+void Texture::fill_depth_runs(uint16_t depth) {
+  if (!buf) return;
+  assert(cleared());
+  IntRect bb = ctx->apply_scissor(bounds());
+  DepthRun* runs = (DepthRun*)sample_ptr(0, bb.y0);
+  for (int rows = bb.height(); rows > 0; rows--) {
+    if (bb.width() >= width) {
+      
+      
+      runs[0] = DepthRun(depth, width);
+    } else if (runs->is_flat()) {
+      
+      fill_depth_run(&runs[bb.x0], bb.width(), depth);
+    } else {
+      
+      
+      DepthCursor(runs, width, bb.x0, bb.width()).fill(depth);
+    }
+    runs += stride() / sizeof(DepthRun);
   }
 }
 
@@ -2119,8 +2400,17 @@ void Clear(GLbitfield mask) {
   if ((mask & GL_DEPTH_BUFFER_BIT) && fb.depth_attachment) {
     Texture& t = ctx->textures[fb.depth_attachment];
     assert(t.internal_format == GL_DEPTH_COMPONENT16);
-    uint16_t depth = uint16_t(0xFFFF * ctx->cleardepth) - 0x8000;
-    request_clear<uint16_t>(t, 0, depth);
+    uint16_t depth = uint16_t(0xFFFF * ctx->cleardepth);
+    if (t.cleared() && clear_requires_scissor(t)) {
+      
+      
+      t.fill_depth_runs(depth);
+    } else {
+      
+      
+      
+      t.init_depth_runs(depth);
+    }
   }
 }
 
@@ -2134,7 +2424,7 @@ void InvalidateFramebuffer(GLenum target, GLsizei num_attachments,
     switch (attachments[i]) {
       case GL_DEPTH_ATTACHMENT: {
         Texture& t = ctx->textures[fb->depth_attachment];
-        t.disable_delayed_clear();
+        t.set_cleared(false);
         break;
       }
       case GL_COLOR_ATTACHMENT0: {
@@ -2317,84 +2607,50 @@ static inline PackedRG8 pack(WideRG8 p) {
 #endif
 }
 
-using ZMask4 = V4<int16_t>;
-using ZMask8 = V8<int16_t>;
+using ZMask = I32;
 
-static inline PackedRGBA8 unpack(ZMask4 mask, uint32_t*) {
-  return bit_cast<PackedRGBA8>(mask.xxyyzzww);
+static inline PackedRGBA8 convert_zmask(ZMask mask, uint32_t*) {
+  return bit_cast<PackedRGBA8>(mask);
 }
 
-static inline WideR8 unpack(ZMask4 mask, uint8_t*) {
-  return bit_cast<WideR8>(mask);
+static inline WideR8 convert_zmask(ZMask mask, uint8_t*) {
+  return CONVERT(mask, WideR8);
 }
 
 #if USE_SSE2
 #  define ZMASK_NONE_PASSED 0xFFFF
 #  define ZMASK_ALL_PASSED 0
-static inline uint32_t zmask_code(ZMask8 mask) {
+static inline uint32_t zmask_code(ZMask mask) {
   return _mm_movemask_epi8(mask);
 }
-static inline uint32_t zmask_code(ZMask4 mask) {
-  return zmask_code(mask.xyzwxyzw);
-}
 #else
-using ZMask4Code = V4<uint8_t>;
-using ZMask8Code = V8<uint8_t>;
 #  define ZMASK_NONE_PASSED 0xFFFFFFFFU
 #  define ZMASK_ALL_PASSED 0
-static inline uint32_t zmask_code(ZMask4 mask) {
-  return bit_cast<uint32_t>(CONVERT(mask, ZMask4Code));
-}
-static inline uint32_t zmask_code(ZMask8 mask) {
-  return zmask_code(
-      ZMask4((U16(lowHalf(mask)) >> 12) | (U16(highHalf(mask)) << 4)));
+static inline uint32_t zmask_code(ZMask mask) {
+  return bit_cast<uint32_t>(CONVERT(mask, U8));
 }
 #endif
 
-template <int FUNC, bool MASK>
-static ALWAYS_INLINE int check_depth8(uint16_t z, uint16_t* zbuf,
-                                      ZMask8& outmask) {
-  ZMask8 dest = unaligned_load<ZMask8>(zbuf);
-  ZMask8 src = int16_t(z);
-  
-  ZMask8 mask = FUNC == GL_LEQUAL ?
-                                  
-                    ZMask8(src > dest)
-                                  :
-                                  
-                    ZMask8(src >= dest);
-  switch (zmask_code(mask)) {
-    case ZMASK_NONE_PASSED:
-      return 0;
-    case ZMASK_ALL_PASSED:
-      if (MASK) {
-        unaligned_store(zbuf, src);
-      }
-      return -1;
-    default:
-      if (MASK) {
-        unaligned_store(zbuf, (mask & dest) | (~mask & src));
-      }
-      outmask = mask;
-      return 1;
-  }
-}
 
-template <bool FULL_SPANS, bool DISCARD>
-static ALWAYS_INLINE bool check_depth4(ZMask4 src, uint16_t* zbuf,
-                                       ZMask4& outmask, int span = 0) {
-  ZMask4 dest = unaligned_load<ZMask4>(zbuf);
+
+
+template <bool DISCARD, typename Z>
+static ALWAYS_INLINE bool check_depth(Z z, DepthRun* zbuf, ZMask& outmask,
+                                      int span = 4) {
   
-  ZMask4 mask = ctx->depthfunc == GL_LEQUAL
-                    ?
-                    
-                    ZMask4(src > dest)
-                    :
-                    
-                    ZMask4(src >= dest);
-  if (!FULL_SPANS) {
-    mask |= ZMask4(span) < ZMask4{1, 2, 3, 4};
-  }
+  
+  I32 src = I32(z);
+  I32 dest = unaligned_load<I32>(zbuf);
+  
+  ZMask mask = ctx->depthfunc == GL_LEQUAL
+                   ?
+                   
+                   ZMask(src > dest)
+                   :
+                   
+                   ZMask(src >= dest);
+  
+  mask |= ZMask(span) < ZMask{1, 2, 3, 4};
   if (zmask_code(mask) == ZMASK_NONE_PASSED) {
     return false;
   }
@@ -2405,40 +2661,18 @@ static ALWAYS_INLINE bool check_depth4(ZMask4 src, uint16_t* zbuf,
   return true;
 }
 
-template <bool FULL_SPANS, bool DISCARD>
-static ALWAYS_INLINE bool check_depth4(uint16_t z, uint16_t* zbuf,
-                                       ZMask4& outmask, int span = 0) {
-  return check_depth4<FULL_SPANS, DISCARD>(ZMask4(int16_t(z)), zbuf, outmask,
-                                           span);
+static ALWAYS_INLINE I32 packDepth() {
+  return cast(fragment_shader->gl_FragCoord.z * 0xFFFF);
 }
 
-template <typename T>
-static inline ZMask4 packZMask4(T a) {
-#if USE_SSE2
-  return lowHalf(bit_cast<ZMask8>(_mm_packs_epi32(a, a)));
-#elif USE_NEON
-  return vqmovn_s32(a);
-#else
-  return CONVERT(a, ZMask4);
-#endif
-}
-
-static ALWAYS_INLINE ZMask4 packDepth() {
-  return packZMask4(cast(fragment_shader->gl_FragCoord.z * 0xFFFF) - 0x8000);
-}
-
-static ALWAYS_INLINE void discard_depth(ZMask4 src, uint16_t* zbuf,
-                                        ZMask4 mask) {
+template <typename Z>
+static ALWAYS_INLINE void discard_depth(Z z, DepthRun* zbuf, I32 mask) {
   if (ctx->depthmask) {
-    ZMask4 dest = unaligned_load<ZMask4>(zbuf);
-    mask |= packZMask4(fragment_shader->isPixelDiscarded);
+    I32 src = I32(z);
+    I32 dest = unaligned_load<I32>(zbuf);
+    mask |= fragment_shader->isPixelDiscarded;
     unaligned_store(zbuf, (mask & dest) | (~mask & src));
   }
-}
-
-static ALWAYS_INLINE void discard_depth(uint16_t z, uint16_t* zbuf,
-                                        ZMask4 mask) {
-  discard_depth(ZMask4(int16_t(z)), zbuf, mask);
 }
 
 static inline WideRGBA8 pack_pixels_RGBA8(const vec4& v) {
@@ -2660,10 +2894,10 @@ static inline void commit_output(P* buf, int span) {
 }
 
 template <bool DISCARD, bool W, typename P, typename Z>
-static inline void commit_output(P* buf, Z z, uint16_t* zbuf) {
-  ZMask4 zmask;
-  if (check_depth4<true, DISCARD>(z, zbuf, zmask)) {
-    commit_output<DISCARD, W>(buf, unpack(zmask, buf));
+static inline void commit_output(P* buf, Z z, DepthRun* zbuf) {
+  ZMask zmask;
+  if (check_depth<DISCARD>(z, zbuf, zmask)) {
+    commit_output<DISCARD, W>(buf, convert_zmask(zmask, buf));
     if (DISCARD) {
       discard_depth(z, zbuf, zmask);
     }
@@ -2673,10 +2907,10 @@ static inline void commit_output(P* buf, Z z, uint16_t* zbuf) {
 }
 
 template <bool DISCARD, bool W, typename P, typename Z>
-static inline void commit_output(P* buf, Z z, uint16_t* zbuf, int span) {
-  ZMask4 zmask;
-  if (check_depth4<false, DISCARD>(z, zbuf, zmask, span)) {
-    commit_output<DISCARD, W>(buf, unpack(zmask, buf));
+static inline void commit_output(P* buf, Z z, DepthRun* zbuf, int span) {
+  ZMask zmask;
+  if (check_depth<DISCARD>(z, zbuf, zmask, span)) {
+    commit_output<DISCARD, W>(buf, convert_zmask(zmask, buf));
     if (DISCARD) {
       discard_depth(z, zbuf, zmask);
     }
@@ -2736,7 +2970,7 @@ UNUSED static inline void commit_solid_span(uint8_t* buf, PackedR8 r, int len) {
 #define DISPATCH_DRAW_SPAN(self, buf, len)                  \
   do {                                                      \
     int drawn = self->draw_span(buf, len);                  \
-    if (drawn) self->step_interp_inputs(drawn >> 2);        \
+    if (drawn) self->step_interp_inputs(drawn);             \
     for (buf += drawn; drawn < len; drawn += 4, buf += 4) { \
       run(self);                                            \
       commit_span(buf, pack_span(buf));                     \
@@ -2789,115 +3023,77 @@ struct ClipRect {
 
 
 
-
-
-template <int FUNC, bool MASK, typename P>
-static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
-                                   int span) {
-  int skip = 0;
-  
-  if (fragment_shader->has_draw_span(buf)) {
-    
-    
-    
-    
-    int len = 0;
-    do {
-      ZMask8 zmask;
-      
-      switch (check_depth8<FUNC, MASK>(z, depth, zmask)) {
-        case 0:  
-          if (len) {
-            
-            fragment_shader->draw_span(buf - len, len);
-            len = 0;
-          }
-          
-          skip += 2;
-          break;
-        case -1:  
-          if (skip) {
-            
-            fragment_shader->skip(skip);
-            skip = 0;
-          }
-          
-          len += 8;
-          break;
-        default:  
-          if (len) {
-            
-            fragment_shader->draw_span(buf - len, len);
-            len = 0;
-          } else if (skip) {
-            
-            fragment_shader->skip(skip);
-            skip = 0;
-          }
-          
-          commit_output<false, false>(buf, unpack(lowHalf(zmask), buf));
-          
-          commit_output<false, false>(buf + 4, unpack(highHalf(zmask), buf));
-          break;
-      }
-      
-      buf += 8;
-      depth += 8;
-      span -= 8;
-    } while (span >= 8);
-    
-    if (len) {
-      fragment_shader->draw_span(buf - len, len);
-    }
-  } else {
-    
-    
-    
-    do {
-      ZMask8 zmask;
-      
-      switch (check_depth8<FUNC, MASK>(z, depth, zmask)) {
-        case 0:  
-          
-          skip += 2;
-          break;
-        case -1:  
-          if (skip) {
-            
-            fragment_shader->skip(skip);
-            skip = 0;
-          }
-          
-          commit_output<false, false>(buf);
-          commit_output<false, false>(buf + 4);
-          break;
-        default:  
-          if (skip) {
-            
-            fragment_shader->skip(skip);
-            skip = 0;
-          }
-          
-          commit_output<false, false>(buf, unpack(lowHalf(zmask), buf));
-          
-          commit_output<false, false>(buf + 4, unpack(highHalf(zmask), buf));
-          break;
-      }
-      
-      buf += 8;
-      depth += 8;
-      span -= 8;
-    } while (span >= 8);
+static void flatten_depth_runs(DepthRun* runs, size_t width) {
+  if (runs->is_flat()) {
+    return;
   }
-  
-  if (skip) {
-    fragment_shader->skip(skip);
+  while (width > 0) {
+    size_t n = runs->count;
+    fill_depth_run(runs, n, runs->depth);
+    runs += n;
+    width -= n;
+  }
+}
+
+
+
+template <typename P>
+static ALWAYS_INLINE void draw_depth_span(uint16_t z, P* buf,
+                                          DepthCursor& cursor) {
+  for (;;) {
+    
+    
+    int span = cursor.check_passed(z, ctx->depthfunc, ctx->depthmask);
+    
+    
+    if (span <= 0) {
+      break;
+    }
+    if (span >= 4) {
+      
+      
+      if (fragment_shader->has_draw_span(buf)) {
+        int len = span & ~3;
+        fragment_shader->draw_span(buf, len);
+        buf += len;
+        span &= 3;
+      } else {
+        
+        while (span >= 4) {
+          commit_output<false, false>(buf);
+          buf += 4;
+          span -= 4;
+        }
+      }
+    }
+    
+    
+    
+    if (span > 0) {
+      commit_output<false, false>(buf, span_mask(buf, span));
+      buf += span;
+    }
+    
+    int skip = cursor.skip_failed(z, ctx->depthfunc);
+    
+    
+    if (skip <= 0) {
+      break;
+    }
+    
+    
+    
+    
+    
+    
+    fragment_shader->skip(skip - (span > 0 ? 4 - span : 0));
+    buf += skip;
   }
 }
 
 
 template <bool DISCARD, bool W, typename P, typename Z>
-static ALWAYS_INLINE void draw_span(P* buf, uint16_t* depth, int span, Z z) {
+static ALWAYS_INLINE void draw_span(P* buf, DepthRun* depth, int span, Z z) {
   if (depth) {
     
     
@@ -2919,6 +3115,49 @@ static ALWAYS_INLINE void draw_span(P* buf, uint16_t* depth, int span, Z z) {
     
     if (span > 0) {
       commit_output<DISCARD, W>(buf, span);
+    }
+  }
+}
+
+
+
+
+
+
+
+template <typename P>
+static inline void prepare_row(Texture& colortex, int y, int startx, int endx,
+                               bool use_discard, DepthRun* depth,
+                               uint16_t z = 0, DepthCursor* cursor = nullptr) {
+  assert(colortex.delay_clear > 0);
+  
+  uint32_t& mask = colortex.cleared_rows[y / 32];
+  if ((mask & (1 << (y & 31))) == 0) {
+    mask |= 1 << (y & 31);
+    colortex.delay_clear--;
+    if (blend_key || use_discard) {
+      
+      
+      force_clear_row<P>(colortex, y);
+    } else if (depth) {
+      if (depth->is_flat() || !cursor) {
+        
+        
+        force_clear_row<P>(colortex, y);
+      } else {
+        
+        
+        
+        int passed =
+            DepthCursor(*cursor).check_passed<false>(z, ctx->depthfunc);
+        if (startx > 0 || startx + passed < colortex.width) {
+          force_clear_row<P>(colortex, y, startx, startx + passed);
+        }
+      }
+    } else if (startx > 0 || endx < colortex.width) {
+      
+      
+      force_clear_row<P>(colortex, y, startx, endx);
     }
   }
 }
@@ -3040,7 +3279,7 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
   Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
   
   P* fbuf = (P*)colortex.sample_ptr(0, int(y), layer);
-  uint16_t* fdepth = (uint16_t*)depthtex.sample_ptr(0, int(y));
+  DepthRun* fdepth = (DepthRun*)depthtex.sample_ptr(0, int(y));
   
   float checkY = min(min(l1.y, r1.y), clipRect.y1);
   for (;;) {
@@ -3096,76 +3335,48 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
       
       P* buf = fbuf + startx;
       
-      uint16_t* depth = depthtex.buf != nullptr ? fdepth + startx : nullptr;
+      DepthRun* depth =
+          depthtex.buf != nullptr && depthtex.cleared() ? fdepth : nullptr;
+      DepthCursor cursor;
       bool use_discard = fragment_shader->use_discard();
-      if (depthtex.delay_clear) {
-        
-        
-        int yi = int(y);
-        uint32_t& mask = depthtex.cleared_rows[yi / 32];
-        if ((mask & (1 << (yi & 31))) == 0) {
+      if (use_discard) {
+        if (depth) {
           
           
-          
-          
-          switch (ctx->depthfunc) {
-            case GL_LESS:
-              if (int16_t(z) < int16_t(depthtex.clear_val))
-                break;
-              else
-                goto next_span;
-            case GL_LEQUAL:
-              if (int16_t(z) <= int16_t(depthtex.clear_val))
-                break;
-              else
-                goto next_span;
+          if (!depth->is_flat()) {
+            flatten_depth_runs(depth, depthtex.width);
           }
           
-          if (ctx->depthmask) {
-            
-            mask |= 1 << (yi & 31);
-            depthtex.delay_clear--;
-            if (use_discard) {
-              
-              
-              force_clear_row<uint16_t>(depthtex, yi);
-            } else {
-              
-              
-              if (startx > 0 || endx < depthtex.width) {
-                force_clear_row<uint16_t>(depthtex, yi, startx, endx);
-              }
-              
-              clear_buffer<uint16_t>(depthtex, z, 0,
-                                     IntRect{startx, yi, endx, yi + 1});
-              
-              
-              depth = nullptr;
-            }
-          } else {
-            
-            depth = nullptr;
+          depth += startx;
+        }
+      } else if (depth) {
+        if (!depth->is_flat()) {
+          
+          
+          
+          
+          cursor = DepthCursor(depth, depthtex.width, startx, span);
+          int skipped = cursor.skip_failed(z, ctx->depthfunc);
+          
+          
+          if (skipped < 0) {
+            goto next_span;
           }
+          buf += skipped;
+          startx += skipped;
+          span -= skipped;
+        } else {
+          
+          depth += startx;
         }
       }
+
       if (colortex.delay_clear) {
         
-        int yi = int(y);
-        uint32_t& mask = colortex.cleared_rows[yi / 32];
-        if ((mask & (1 << (yi & 31))) == 0) {
-          mask |= 1 << (yi & 31);
-          colortex.delay_clear--;
-          if (depth || blend_key || use_discard) {
-            
-            
-            force_clear_row<P>(colortex, yi);
-          } else if (startx > 0 || endx < colortex.width) {
-            
-            
-            force_clear_row<P>(colortex, yi, startx, endx);
-          }
-        }
+        prepare_row<P>(colortex, int(y), startx, endx, use_discard, depth, z,
+                       &cursor);
       }
+
       
       fragment_shader->gl_FragCoord.x = init_interp(startx + 0.5f, 1);
       fragment_shader->gl_FragCoord.y = y;
@@ -3176,33 +3387,19 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
             (right.interp - left.interp) * (1.0f / (right.x - left.x));
         
         Interpolants o = left.interp + step * (startx + 0.5f - left.x);
-        fragment_shader->init_span(&o, &step, 4.0f);
+        fragment_shader->init_span(&o, &step);
       }
       if (!use_discard) {
         
         if (depth) {
           
           
-          
-          if (span >= 8) {
-            
-            
-            if (ctx->depthfunc == GL_LEQUAL) {
-              if (ctx->depthmask)
-                draw_depth_span<GL_LEQUAL, true>(z, buf, depth, span);
-              else
-                draw_depth_span<GL_LEQUAL, false>(z, buf, depth, span);
-            } else {
-              if (ctx->depthmask)
-                draw_depth_span<GL_LESS, true>(z, buf, depth, span);
-              else
-                draw_depth_span<GL_LESS, false>(z, buf, depth, span);
-            }
-            
-            buf += span & ~7;
-            depth += span & ~7;
-            span &= 7;
+          if (!depth->is_flat()) {
+            draw_depth_span(z, buf, cursor);
+            goto next_span;
           }
+          
+          
         } else {
           
           if (span >= 4 && fragment_shader->has_draw_span(buf)) {
@@ -3227,7 +3424,7 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
     right.nextRow();
     
     fbuf += colortex.stride() / sizeof(P);
-    fdepth += depthtex.stride() / sizeof(uint16_t);
+    fdepth += depthtex.stride() / sizeof(DepthRun);
   }
 }
 
@@ -3334,7 +3531,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
   Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
   
   P* fbuf = (P*)colortex.sample_ptr(0, int(y), layer);
-  uint16_t* fdepth = (uint16_t*)depthtex.sample_ptr(0, int(y));
+  DepthRun* fdepth = (DepthRun*)depthtex.sample_ptr(0, int(y));
   
   float checkY = min(min(l1.y, r1.y), clipRect.y1);
   for (;;) {
@@ -3375,40 +3572,22 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
       
       P* buf = fbuf + startx;
       
-      uint16_t* depth = depthtex.buf != nullptr ? fdepth + startx : nullptr;
+      DepthRun* depth =
+          depthtex.buf != nullptr && depthtex.cleared() ? fdepth : nullptr;
       bool use_discard = fragment_shader->use_discard();
-      if (depthtex.delay_clear) {
+      if (depth) {
         
         
-        int yi = int(y);
-        uint32_t& mask = depthtex.cleared_rows[yi / 32];
-        if ((mask & (1 << (yi & 31))) == 0) {
-          mask |= 1 << (yi & 31);
-          depthtex.delay_clear--;
-          
-          
-          
-          
-          force_clear_row<uint16_t>(depthtex, yi);
+        
+        if (!depth->is_flat()) {
+          flatten_depth_runs(depth, depthtex.width);
         }
+        
+        depth += startx;
       }
       if (colortex.delay_clear) {
         
-        int yi = int(y);
-        uint32_t& mask = colortex.cleared_rows[yi / 32];
-        if ((mask & (1 << (yi & 31))) == 0) {
-          mask |= 1 << (yi & 31);
-          colortex.delay_clear--;
-          if (depth || blend_key || use_discard) {
-            
-            
-            force_clear_row<P>(colortex, yi);
-          } else if (startx > 0 || endx < colortex.width) {
-            
-            
-            force_clear_row<P>(colortex, yi, startx, endx);
-          }
-        }
+        prepare_row<P>(colortex, int(y), startx, endx, use_discard, depth);
       }
       
       fragment_shader->gl_FragCoord.x = init_interp(startx + 0.5f, 1);
@@ -3423,7 +3602,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
         
         fragment_shader->gl_FragCoord.z = init_interp(zw.x, stepZW.x);
         fragment_shader->gl_FragCoord.w = init_interp(zw.y, stepZW.y);
-        fragment_shader->stepZW = stepZW * 4.0f;
+        fragment_shader->stepZW = stepZW;
         
         
         
@@ -3432,7 +3611,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
             (right.interp - left.interp) * (1.0f / (right.x() - left.x()));
         
         Interpolants o = left.interp + step * (startx + 0.5f - left.x());
-        fragment_shader->init_span<true>(&o, &step, 4.0f);
+        fragment_shader->init_span<true>(&o, &step);
       }
       if (!use_discard) {
         
@@ -3448,7 +3627,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
     right.nextRow();
     
     fbuf += colortex.stride() / sizeof(P);
-    fdepth += depthtex.stride() / sizeof(uint16_t);
+    fdepth += depthtex.stride() / sizeof(DepthRun);
   }
 }
 
@@ -3667,8 +3846,7 @@ static void draw_quad(int nump, Texture& colortex, int layer,
   }
   
   
-  
-  uint16_t z = uint16_t(0xFFFF * screenZ) - 0x8000;
+  uint16_t z = uint16_t(0xFFFF * screenZ);
   fragment_shader->gl_FragCoord.z = screenZ;
   fragment_shader->gl_FragCoord.w = w;
 
