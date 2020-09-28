@@ -134,6 +134,14 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
   streams.reserve(streamCount);
 
   
+  int highestResolutionIndex = 0;
+  for (size_t i = 1; i < streamCount; ++i) {
+    if (mCodecConfig.mEncodings[i].constraints.scaleDownBy <
+        mCodecConfig.mEncodings[highestResolutionIndex]
+            .constraints.scaleDownBy) {
+      highestResolutionIndex = i;
+    }
+  }
 
   
   
@@ -149,7 +157,7 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
     
     
     int unusedCropWidth, unusedCropHeight, outWidth, outHeight;
-    if (idx == 0) {
+    if (idx == highestResolutionIndex) {
       
       
       
@@ -159,7 +167,8 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
     } else {
       float effectiveScaleDownBy =
           encoding.constraints.scaleDownBy /
-          mCodecConfig.mEncodings[0].constraints.scaleDownBy;
+          mCodecConfig.mEncodings[highestResolutionIndex]
+              .constraints.scaleDownBy;
       MOZ_ASSERT(effectiveScaleDownBy >= 1.0);
       mSimulcastAdapter->OnScaleResolutionBy(
           effectiveScaleDownBy > 1.0
