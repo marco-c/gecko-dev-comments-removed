@@ -152,8 +152,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
  protected:
   
   
-  [[nodiscard]] bool ConnectChannel(const uint32_t& channelId,
-                                    const bool& shouldIntercept);
+  [[nodiscard]] bool ConnectChannel(const uint32_t& channelId);
 
   [[nodiscard]] bool DoAsyncOpen(
       const URIParams& uri, const Maybe<URIParams>& originalUri,
@@ -169,13 +168,10 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
       const bool& chooseApplicationCache, const nsCString& appCacheClientID,
       const bool& allowSpdy, const bool& allowAltSvc,
       const bool& beConservative, const uint32_t& tlsFlags,
-      const Maybe<LoadInfoArgs>& aLoadInfoArgs,
-      const Maybe<nsHttpResponseHead>& aSynthesizedResponseHead,
-      const nsCString& aSecurityInfoSerialization, const uint32_t& aCacheKey,
+      const Maybe<LoadInfoArgs>& aLoadInfoArgs, const uint32_t& aCacheKey,
       const uint64_t& aRequestContextID,
       const Maybe<CorsPreflightArgs>& aCorsPreflightArgs,
       const uint32_t& aInitialRwin, const bool& aBlockAuthPrompt,
-      const bool& aSuspendAfterSynthesizeResponse,
       const bool& aAllowStaleCacheContent,
       const bool& aPreferCacheLoadOverBypass, const nsCString& aContentTypeHint,
       const uint32_t& aCorsMode, const uint32_t& aRedirectMode,
@@ -252,7 +248,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   [[nodiscard]] bool DoSendDeleteSelf();
   
   virtual mozilla::ipc::IPCResult RecvDeletingChannel() override;
-  virtual mozilla::ipc::IPCResult RecvFinishInterceptedRedirect() override;
 
  private:
   void UpdateAndSerializeSecurityInfo(nsACString& aSerializedSecurityInfoOut);
@@ -262,8 +257,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   void DivertOnStopRequest(const nsresult& statusCode);
   void DivertComplete();
   void MaybeFlushPendingDiversion();
-  void ResponseSynthesized();
-
   
   
   
@@ -360,11 +353,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   uint8_t mDivertedOnStartRequest : 1;
 
   uint8_t mSuspendedForDiversion : 1;
-
-  
-  uint8_t mSuspendAfterSynthesizeResponse : 1;
-  
-  uint8_t mWillSynthesizeResponse : 1;
 
   
   uint8_t mCacheNeedFlowControlInitialized : 1;

@@ -156,12 +156,6 @@ child:
 
 
 both:
-  
-  
-  
-  
-  async FinishInterceptedRedirect();
-
   async SetPriority(int16_t priority);
 };
 

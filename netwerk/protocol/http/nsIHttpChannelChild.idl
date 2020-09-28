@@ -17,12 +17,6 @@ interface nsIHttpChannelChild : nsISupports
   [must_use] void addCookiesToRequest();
 
   
-  
-  [must_use]
-  void forceIntercepted(in boolean postRedirectChannelShouldIntercept,
-                        in boolean postRedirectChannelShouldUpgrade);
-
-  
   [must_use] readonly attribute RequestHeaderTuples clientSetRequestHeaders;
 
   
