@@ -522,6 +522,12 @@ nsresult nsFileInputStream::SeekInternal(int32_t aWhence, int64_t aOffset,
         aWhence = NS_SEEK_SET;
         aOffset += mCachedPosition;
       }
+      
+      
+      
+      if (aWhence == NS_SEEK_SET && aOffset == 0) {
+        return NS_OK;
+      }
     } else {
       return NS_BASE_STREAM_CLOSED;
     }
