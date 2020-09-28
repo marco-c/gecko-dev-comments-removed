@@ -212,8 +212,6 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetHasIPHintAddress(bool aHasIPHint) { mHasIPHintAddress = aHasIPHint; }
   bool HasIPHintAddress() const { return mHasIPHintAddress; }
 
-  const nsCString& GetEchConfig() const { return mEchConfig; }
-
  private:
   
   
@@ -236,7 +234,6 @@ class nsHttpConnectionInfo final : public ARefBase {
             nsProxyInfo* proxyInfo, const OriginAttributes& originAttributes,
             bool EndToEndSSL, bool aIsHttp3);
   void SetOriginServer(const nsACString& host, int32_t port);
-  void SetEchConfig(const nsACString& aEchConfig) { mEchConfig = aEchConfig; }
 
   nsCString mOrigin;
   int32_t mOriginPort;
@@ -267,7 +264,6 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mIsHttp3;
 
   bool mHasIPHintAddress = false;
-  nsCString mEchConfig;
 
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo, override)
