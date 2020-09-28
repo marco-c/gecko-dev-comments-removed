@@ -3,7 +3,7 @@
 
 
 #include "mozilla/dom/MediaTransportParent.h"
-#include "peerconnection/MediaTransportHandler.h"
+#include "jsapi/MediaTransportHandler.h"
 
 #include "transport/sigslot.h"
 #include "common/browser_logging/CSFLog.h"

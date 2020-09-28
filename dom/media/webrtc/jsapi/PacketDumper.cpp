@@ -2,8 +2,8 @@
 
 
 
-#include "peerconnection/PacketDumper.h"
-#include "peerconnection/PeerConnectionImpl.h"
+#include "jsapi/PacketDumper.h"
+#include "jsapi/PeerConnectionImpl.h"
 #include "mozilla/media/MediaUtils.h"  
 #include "nsThreadUtils.h"             
 
