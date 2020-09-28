@@ -149,8 +149,6 @@ enum class ScrollFlags {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ScrollFlags)
 
-enum class ScrollableDirection { Horizontal, Vertical, Either };
-
 
 enum class RenderDocumentFlags {
   None = 0,

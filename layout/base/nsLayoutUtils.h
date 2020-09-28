@@ -141,6 +141,8 @@ enum class DrawStringFlags {
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DrawStringFlags)
 
+enum class ScrollableDirection { Horizontal, Vertical, Either };
+
 
 
 
@@ -673,9 +675,8 @@ class nsLayoutUtils {
 
 
 
-  enum Direction { eHorizontal, eVertical };
   static nsIScrollableFrame* GetNearestScrollableFrameForDirection(
-      nsIFrame* aFrame, Direction aDirection);
+      nsIFrame* aFrame, ScrollableDirection aDirection);
 
   enum {
     
