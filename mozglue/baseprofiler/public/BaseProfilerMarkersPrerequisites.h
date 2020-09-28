@@ -16,6 +16,7 @@
 #ifdef MOZ_GECKO_PROFILER
 
 #  include "BaseProfilingCategory.h"
+#  include "mozilla/Maybe.h"
 #  include "mozilla/ProfileChunkedBuffer.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/UniquePtr.h"
@@ -567,6 +568,10 @@ class MarkerInnerWindowId {
 
   
   constexpr explicit MarkerInnerWindowId(uint64_t i) : mInnerWindowId(i) {}
+
+  
+  constexpr explicit MarkerInnerWindowId(const Maybe<uint64_t>& i)
+      : mInnerWindowId(i.valueOr(scNoId)) {}
 
   
   constexpr static MarkerInnerWindowId NoId() { return MarkerInnerWindowId{}; }
