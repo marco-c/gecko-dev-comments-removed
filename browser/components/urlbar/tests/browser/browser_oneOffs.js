@@ -73,7 +73,9 @@ add_task(async function init() {
 
 
 
-add_task(async function noOneOffs() {
+
+
+add_task(async function noOneOffs_legacy() {
   
   let value = "@";
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -130,8 +132,7 @@ add_task(async function noOneOffs() {
 
 
 
-
-add_task(async function noOneOffsUpdate2() {
+add_task(async function noOneOffs() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -197,7 +198,7 @@ add_task(async function noOneOffsUpdate2() {
 });
 
 
-add_task(async function topSitesUpdate2() {
+add_task(async function topSites() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -622,7 +623,9 @@ add_task(async function hiddenWhenUsingSearchAlias() {
 });
 
 
-add_task(async function localOneOffsWithoutUpdate2() {
+
+
+add_task(async function localOneOffs_legacy() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.update2", false]],
   });
@@ -662,7 +665,7 @@ add_task(async function localOneOffsWithoutUpdate2() {
 });
 
 
-add_task(async function localOneOffsWithUpdate2() {
+add_task(async function localOneOffs() {
   
   
   oneOffSearchButtons._engines = null;
@@ -765,7 +768,16 @@ add_task(async function localOneOffReturn() {
       () => oneOffSearchButtons.selectedButtonIndex == index,
       "Waiting for local one-off to become selected"
     );
-    assertState(0, index, typedValue);
+
+    let expectedSelectedResultIndex = -1;
+    let count = UrlbarTestUtils.getResultCount(window);
+    if (count > 0) {
+      let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+      if (result.heuristic) {
+        expectedSelectedResultIndex = 0;
+      }
+    }
+    assertState(expectedSelectedResultIndex, index, typedValue);
 
     Assert.ok(button.source, "Sanity check: Button has a source");
     let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);

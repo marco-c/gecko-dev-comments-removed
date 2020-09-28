@@ -195,15 +195,14 @@ add_task(async function backspaceRemainOpen() {
 
     
     
-    
-    Assert.greater(
+    Assert.equal(
       UrlbarTestUtils.getResultCount(win),
       0,
-      "At least the heuristic result should be shown"
+      "No results should be present"
     );
     Assert.ok(
-      !win.gURLBar.panel.hasAttribute("noresults"),
-      "Panel has results, therefore should not have noresults attribute"
+      win.gURLBar.panel.hasAttribute("noresults"),
+      "Panel has no results, therefore should have noresults attribute"
     );
 
     

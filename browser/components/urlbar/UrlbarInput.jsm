@@ -454,6 +454,9 @@ class UrlbarInput {
 
 
 
+
+
+
   handleNavigation({ event, oneOffParams, triggeringPrincipal }) {
     let element = this.view.selectedElement;
     let result = this.view.getResultFromElement(element);
@@ -503,6 +506,17 @@ class UrlbarInput {
     }
 
     if (!url) {
+      return;
+    }
+
+    
+    
+    if (
+      this.searchMode &&
+      !this.searchMode.engineName &&
+      !result &&
+      !oneOffParams
+    ) {
       return;
     }
 
