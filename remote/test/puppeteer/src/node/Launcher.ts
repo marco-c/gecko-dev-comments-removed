@@ -561,7 +561,6 @@ class FirefoxLauncher implements ProductLauncher {
       'browser.warnOnQuit': false,
 
       
-      'datareporting.healthreport.about.reportUrl': `http://${server}/dummy/abouthealthreport/`,
       'datareporting.healthreport.documentServerURI': `http://${server}/dummy/healthreport/`,
       'datareporting.healthreport.logging.consoleEnabled': false,
       'datareporting.healthreport.service.enabled': false,
