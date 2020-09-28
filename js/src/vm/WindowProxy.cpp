@@ -12,10 +12,10 @@
 
 #include "jsapi.h"  
 
-#include "vm/GlobalObject.h"       
-#include "vm/JSContext.h"          
-#include "vm/JSObject.h"           
-#include "vm/Runtime.h"            
+#include "vm/GlobalObject.h"  
+#include "vm/JSContext.h"     
+#include "vm/JSObject.h"      
+#include "vm/Runtime.h"       
 
 #include "vm/JSContext-inl.h"  
 #include "vm/JSObject-inl.h"   

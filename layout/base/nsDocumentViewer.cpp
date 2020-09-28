@@ -423,7 +423,7 @@ class nsDocumentViewer final : public nsIContentViewer,
   
   
 
-  WeakPtr<nsDocShell> mContainer;  
+  WeakPtr<nsDocShell> mContainer;          
   RefPtr<nsDeviceContext> mDeviceContext;  
 
   

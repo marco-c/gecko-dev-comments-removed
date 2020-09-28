@@ -24,8 +24,8 @@
 #include "jit/MIRGraph.h"
 #include "jit/TIOracle.h"
 #include "js/experimental/JitInfo.h"  
-#include "js/ScalarType.h"     
-#include "vm/SharedStencil.h"  
+#include "js/ScalarType.h"            
+#include "vm/SharedStencil.h"         
 
 namespace js {
 

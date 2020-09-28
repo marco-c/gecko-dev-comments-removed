@@ -100,8 +100,8 @@ std::pair<int32_t, int32_t> GetMouseWheelAnimationDurations();
 
 
 
-ScrollAnimationBezierPhysicsSettings
-ComputeBezierAnimationSettingsForOrigin(ScrollOrigin aOrigin);
+ScrollAnimationBezierPhysicsSettings ComputeBezierAnimationSettingsForOrigin(
+    ScrollOrigin aOrigin);
 
 }  
 

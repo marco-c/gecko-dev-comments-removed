@@ -880,15 +880,11 @@ struct ScrollMetadata {
     return mIsRDMTouchSimulationActive;
   }
 
-  bool DidContentGetPainted() const {
-    return mDidContentGetPainted;
-  }
+  bool DidContentGetPainted() const { return mDidContentGetPainted; }
 
  private:
   
-  void SetDidContentGetPainted(bool aValue) {
-    mDidContentGetPainted = aValue;
-  }
+  void SetDidContentGetPainted(bool aValue) { mDidContentGetPainted = aValue; }
 
  public:
   

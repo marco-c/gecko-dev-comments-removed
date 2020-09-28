@@ -27,7 +27,7 @@
 #include "jit/SharedICRegisters.h"
 #include "js/friend/DOMProxy.h"     
 #include "js/friend/XrayJitInfo.h"  
-#include "js/ScalarType.h"  
+#include "js/ScalarType.h"          
 #include "proxy/Proxy.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/ArrayBufferViewObject.h"

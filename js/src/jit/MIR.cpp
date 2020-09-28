@@ -26,7 +26,7 @@
 #include "jit/RangeAnalysis.h"
 #include "js/Conversions.h"
 #include "js/experimental/JitInfo.h"  
-#include "js/ScalarType.h"  
+#include "js/ScalarType.h"            
 #include "util/Text.h"
 #include "util/Unicode.h"
 #include "vm/PlainObject.h"  

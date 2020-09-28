@@ -27,7 +27,7 @@
 #include "js/experimental/TypedData.h"  
 #include "threading/LockGuard.h"
 #include "vm/HelperThreadState.h"  
-#include "vm/PlainObject.h"  
+#include "vm/PlainObject.h"        
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmInstance.h"

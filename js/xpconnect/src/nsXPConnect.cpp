@@ -14,7 +14,7 @@
 #include "XPCWrapper.h"
 #include "jsfriendapi.h"
 #include "js/AllocationLogging.h"  
-#include "js/Object.h"  
+#include "js/Object.h"             
 #include "js/ProfilingStack.h"
 #include "GeckoProfiler.h"
 #include "nsJSEnvironment.h"
