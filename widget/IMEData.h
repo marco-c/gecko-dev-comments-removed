@@ -247,10 +247,18 @@ struct InputContext final {
     mHTMLInputType.Truncate();
     mHTMLInputInputmode.Truncate();
     mActionHint.Truncate();
+    mAutocapitalize.Truncate();
   }
 
   bool IsPasswordEditor() const {
     return mHTMLInputType.LowerCaseEqualsLiteral("password");
+  }
+
+  
+  bool IsAutocapitalizeSupported() const {
+    return !mHTMLInputType.EqualsLiteral("password") &&
+           !mHTMLInputType.EqualsLiteral("url") &&
+           !mHTMLInputType.EqualsLiteral("email");
   }
 
   IMEState mIMEState;
@@ -263,6 +271,9 @@ struct InputContext final {
 
   
   nsString mActionHint;
+
+  
+  nsString mAutocapitalize;
 
   
 
