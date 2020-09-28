@@ -402,9 +402,8 @@ impl FrameBuilder {
         
         
         let mut default_dirty_region = DirtyRegion::new();
-        default_dirty_region.push(
+        default_dirty_region.add_dirty_region(
             frame_context.global_screen_world_rect,
-            PrimitiveVisibilityMask::all(),
         );
         frame_state.push_dirty_region(default_dirty_region);
 

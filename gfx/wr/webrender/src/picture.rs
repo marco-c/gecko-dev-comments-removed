@@ -1791,31 +1791,37 @@ impl DirtyRegion {
     }
 
     
-    pub fn push(
-        &mut self,
-        rect: WorldRect,
-        visibility_mask: PrimitiveVisibilityMask,
-    ) {
-        
-        self.combined = self.combined.union(&rect);
-
-        
-        self.dirty_rects.push(DirtyRegionRect {
-            world_rect: rect,
-            visibility_mask,
-        });
-    }
-
     
-    pub fn include_rect(
+    pub fn add_dirty_region(
         &mut self,
-        region_index: usize,
-        rect: WorldRect,
-    ) {
-        self.combined = self.combined.union(&rect);
+        world_rect: WorldRect,
+    ) -> PrimitiveVisibilityMask {
+        
+        self.combined = self.combined.union(&world_rect);
 
-        let region = &mut self.dirty_rects[region_index];
-        region.world_rect = region.world_rect.union(&rect);
+        let dirty_region_index = self.dirty_rects.len();
+        let mut visibility_mask = PrimitiveVisibilityMask::empty();
+
+        if dirty_region_index < PrimitiveVisibilityMask::MAX_DIRTY_REGIONS {
+            visibility_mask.set_visible(dirty_region_index);
+
+            self.dirty_rects.push(DirtyRegionRect {
+                world_rect,
+                visibility_mask,
+            });
+        } else {
+            
+            
+            
+            
+            
+            visibility_mask.set_visible(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1);
+
+            let combined_region = self.dirty_rects.last_mut().unwrap();
+            combined_region.world_rect = combined_region.world_rect.union(&world_rect);
+        }
+
+        visibility_mask
     }
 
     
@@ -4714,8 +4720,12 @@ impl PicturePrimitive {
         }
 
         profile_scope!("take_context");
-        let task_id = frame_state.surfaces[parent_surface_index.0].render_tasks.unwrap().port;
-        frame_state.render_tasks[task_id].children.reserve(self.num_render_tasks);
+        
+        
+        if self.num_render_tasks > 0 {
+            let task_id = frame_state.surfaces[parent_surface_index.0].render_tasks.unwrap().port;
+            frame_state.render_tasks[task_id].children.reserve(self.num_render_tasks);
+        }
 
         
         
@@ -5310,7 +5320,14 @@ impl PicturePrimitive {
                             }
 
                             
+                            
+                            
+                            let tile_vis_mask = tile_cache.dirty_region.add_dirty_region(world_dirty_rect);
+
+                            
                             if let TileSurface::Texture { ref mut descriptor, ref mut visibility_mask } = tile.surface.as_mut().unwrap() {
+                                *visibility_mask = tile_vis_mask;
+
                                 match descriptor {
                                     SurfaceTextureDescriptor::TextureCache { ref mut handle } => {
                                         if !frame_state.resource_cache.texture_cache.is_allocated(handle) {
@@ -5367,30 +5384,6 @@ impl PicturePrimitive {
                                             *id = Some(tile_id);
                                         }
                                     }
-                                }
-
-                                *visibility_mask = PrimitiveVisibilityMask::empty();
-                                let dirty_region_index = tile_cache.dirty_region.dirty_rects.len();
-
-                                
-                                
-                                
-                                
-                                
-                                if dirty_region_index < PrimitiveVisibilityMask::MAX_DIRTY_REGIONS {
-                                    visibility_mask.set_visible(dirty_region_index);
-
-                                    tile_cache.dirty_region.push(
-                                        world_dirty_rect,
-                                        *visibility_mask,
-                                    );
-                                } else {
-                                    visibility_mask.set_visible(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1);
-
-                                    tile_cache.dirty_region.include_rect(
-                                        PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1,
-                                        world_dirty_rect,
-                                    );
                                 }
 
                                 let content_origin_f = tile.world_tile_rect.origin * device_pixel_scale;
@@ -5703,8 +5696,11 @@ impl PicturePrimitive {
             frame_state.pop_dirty_region();
         }
 
-        let task_id = frame_state.surfaces[parent_surface_index.0].render_tasks.unwrap().port;
-        self.num_render_tasks = frame_state.render_tasks[task_id].children.len();
+        
+        
+        if let Some(task_id) = frame_state.surfaces[parent_surface_index.0].render_tasks.map(|s| s.port) {
+            self.num_render_tasks = frame_state.render_tasks[task_id].children.len();
+        }
 
         self.prim_list = prim_list;
         self.state = Some(state);
