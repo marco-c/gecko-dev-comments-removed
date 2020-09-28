@@ -2555,13 +2555,14 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
-      HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-      nsIEditor::EStripWrappers aStripWrappers, Element& aOtherBlockElement,
-      const EditorDOMPoint& aCaretPoint, WSRunScanner& aWSRunScannerAtCaret,
-      AutoRangeArray& aRangesToDelete);
+  HandleDeleteAtOtherBlockBoundary(HTMLEditor& aHTMLEditor,
+                                   nsIEditor::EDirection aDirectionAndAmount,
+                                   nsIEditor::EStripWrappers aStripWrappers,
+                                   Element& aOtherBlockElement,
+                                   const EditorDOMPoint& aCaretPoint,
+                                   WSRunScanner& aWSRunScannerAtCaret,
+                                   AutoRangeArray& aRangesToDelete);
 
   
 
@@ -2651,10 +2652,12 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     AutoBlockElementsJoiner() = delete;
     explicit AutoBlockElementsJoiner(
         AutoDeleteRangesHandler& aDeleteRangesHandler)
-        : mDeleteRangesHandler(&aDeleteRangesHandler) {}
+        : mDeleteRangesHandler(&aDeleteRangesHandler),
+          mDeleteRangesHandlerConst(aDeleteRangesHandler) {}
     explicit AutoBlockElementsJoiner(
         const AutoDeleteRangesHandler& aDeleteRangesHandler)
-        : mDeleteRangesHandler(nullptr) {}
+        : mDeleteRangesHandler(nullptr),
+          mDeleteRangesHandlerConst(aDeleteRangesHandler) {}
 
     
 
@@ -2690,7 +2693,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
-    bool PrepareToDeleteCollapsedSelectionAtOtherBlockBoundary(
+    bool PrepareToDeleteAtOtherBlockBoundary(
         const HTMLEditor& aHTMLEditor,
         nsIEditor::EDirection aDirectionAndAmount, Element& aOtherBlockElement,
         const EditorDOMPoint& aCaretPoint,
@@ -2736,14 +2739,12 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
           return result;
         }
         case Mode::JoinOtherBlock: {
-          EditActionResult result =
-              HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
-                  aHTMLEditor, aDirectionAndAmount, aStripWrappers, aCaretPoint,
-                  aRangesToDelete);
-          NS_WARNING_ASSERTION(
-              result.Succeeded(),
-              "AutoBlockElementsJoiner::"
-              "HandleDeleteCollapsedSelectionAtOtherBlockBoundary() failed");
+          EditActionResult result = HandleDeleteAtOtherBlockBoundary(
+              aHTMLEditor, aDirectionAndAmount, aStripWrappers, aCaretPoint,
+              aRangesToDelete);
+          NS_WARNING_ASSERTION(result.Succeeded(),
+                               "AutoBlockElementsJoiner::"
+                               "HandleDeleteAtOtherBlockBoundary() failed");
           return result;
         }
         case Mode::DeleteBRElement: {
@@ -2767,6 +2768,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     }
 
     nsresult ComputeRangesToDelete(const HTMLEditor& aHTMLEditor,
+                                   nsIEditor::EDirection aDirectionAndAmount,
+                                   nsIEditor::EStripWrappers aStripWrappers,
                                    const EditorDOMPoint& aCaretPoint,
                                    AutoRangeArray& aRangesToDelete) const {
       switch (mMode) {
@@ -2779,9 +2782,23 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
               "ComputeRangesToDeleteAtCurrentBlockBoundary() failed");
           return rv;
         }
-        case Mode::JoinOtherBlock:
-        case Mode::DeleteBRElement:
-          return NS_ERROR_NOT_IMPLEMENTED;
+        case Mode::JoinOtherBlock: {
+          nsresult rv = ComputeRangesToDeleteAtOtherBlockBoundary(
+              aHTMLEditor, aDirectionAndAmount, aStripWrappers, aCaretPoint,
+              aRangesToDelete);
+          NS_WARNING_ASSERTION(
+              NS_SUCCEEDED(rv),
+              "AutoBlockElementsJoiner::"
+              "ComputeRangesToDeleteAtOtherBlockBoundary() failed");
+          return rv;
+        }
+        case Mode::DeleteBRElement: {
+          nsresult rv = ComputeRangesToDeleteBRElement(aRangesToDelete);
+          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                               "AutoBlockElementsJoiner::"
+                               "ComputeRangesToDeleteBRElement() failed");
+          return rv;
+        }
         case Mode::JoinBlocksInSameParent:
         case Mode::DeleteContentInRanges:
         case Mode::DeleteNonCollapsedRanges:
@@ -2868,10 +2885,22 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         const HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint,
         AutoRangeArray& aRangesToDelete) const;
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-    HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+    HandleDeleteAtOtherBlockBoundary(HTMLEditor& aHTMLEditor,
+                                     nsIEditor::EDirection aDirectionAndAmount,
+                                     nsIEditor::EStripWrappers aStripWrappers,
+                                     const EditorDOMPoint& aCaretPoint,
+                                     AutoRangeArray& aRangesToDelete);
+    
+    
+    
+    
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+    ComputeRangesToDeleteAtOtherBlockBoundary(
+        const HTMLEditor& aHTMLEditor,
+        nsIEditor::EDirection aDirectionAndAmount,
         nsIEditor::EStripWrappers aStripWrappers,
-        const EditorDOMPoint& aCaretPoint, AutoRangeArray& aRangesToDelete);
+        const EditorDOMPoint& aCaretPoint,
+        AutoRangeArray& aRangesToDelete) const;
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
     JoinBlockElementsInSameParent(HTMLEditor& aHTMLEditor,
                                   nsIEditor::EDirection aDirectionAndAmount,
@@ -2880,6 +2909,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult DeleteBRElement(
         HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
         const EditorDOMPoint& aCaretPoint);
+    nsresult ComputeRangesToDeleteBRElement(
+        AutoRangeArray& aRangesToDelete) const;
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult DeleteContentInRanges(
         HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
         nsIEditor::EStripWrappers aStripWrappers,
@@ -3059,6 +3090,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       DeleteNonCollapsedRanges,
     };
     AutoDeleteRangesHandler* mDeleteRangesHandler;
+    const AutoDeleteRangesHandler& mDeleteRangesHandlerConst;
     nsCOMPtr<nsIContent> mLeftContent;
     nsCOMPtr<nsIContent> mRightContent;
     nsCOMPtr<nsIContent> mLeafContentInOtherBlock;
@@ -3686,6 +3718,26 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
     return rv;
   }
 
+  if (aScanFromCaretPointResult.ReachedOtherBlockElement()) {
+    if (NS_WARN_IF(!aScanFromCaretPointResult.GetContent()->IsElement())) {
+      return NS_ERROR_FAILURE;
+    }
+    AutoBlockElementsJoiner joiner(*this);
+    if (!joiner.PrepareToDeleteAtOtherBlockBoundary(
+            aHTMLEditor, aDirectionAndAmount,
+            *aScanFromCaretPointResult.ElementPtr(),
+            aWSRunScannerAtCaret.ScanStartRef(), aWSRunScannerAtCaret)) {
+      return NS_SUCCESS_DOM_NO_OPERATION;
+    }
+    nsresult rv = joiner.ComputeRangesToDelete(
+        aHTMLEditor, aDirectionAndAmount, aStripWrappers,
+        aWSRunScannerAtCaret.ScanStartRef(), aRangesToDelete);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "AutoBlockElementsJoiner::ComputeRangesToDelete() "
+                         "failed (other block boundary)");
+    return rv;
+  }
+
   if (aScanFromCaretPointResult.ReachedCurrentBlockBoundary()) {
     if (NS_WARN_IF(!aScanFromCaretPointResult.GetContent()->IsElement())) {
       return NS_ERROR_FAILURE;
@@ -3698,7 +3750,8 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
       return NS_SUCCESS_DOM_NO_OPERATION;
     }
     nsresult rv = joiner.ComputeRangesToDelete(
-        aHTMLEditor, aWSRunScannerAtCaret.ScanStartRef(), aRangesToDelete);
+        aHTMLEditor, aDirectionAndAmount, aStripWrappers,
+        aWSRunScannerAtCaret.ScanStartRef(), aRangesToDelete);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "AutoBlockElementsJoiner::ComputeRangesToDelete() "
                          "failed (current block boundary)");
@@ -3797,7 +3850,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
       return EditActionResult(NS_ERROR_FAILURE);
     }
     AutoBlockElementsJoiner joiner(*this);
-    if (!joiner.PrepareToDeleteCollapsedSelectionAtOtherBlockBoundary(
+    if (!joiner.PrepareToDeleteAtOtherBlockBoundary(
             aHTMLEditor, aDirectionAndAmount,
             *aScanFromCaretPointResult.ElementPtr(),
             aWSRunScannerAtCaret.ScanStartRef(), aWSRunScannerAtCaret)) {
@@ -4294,7 +4347,7 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAtomicContent(
 }
 
 bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
-    PrepareToDeleteCollapsedSelectionAtOtherBlockBoundary(
+    PrepareToDeleteAtOtherBlockBoundary(
         const HTMLEditor& aHTMLEditor,
         nsIEditor::EDirection aDirectionAndAmount, Element& aOtherBlockElement,
         const EditorDOMPoint& aCaretPoint,
@@ -4343,6 +4396,16 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   return mLeftContent && mRightContent;
 }
 
+nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
+    ComputeRangesToDeleteBRElement(AutoRangeArray& aRangesToDelete) const {
+  MOZ_ASSERT(mBRElement);
+  
+  
+  nsresult rv = aRangesToDelete.SelectNode(*mBRElement);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::SelectNode() failed");
+  return rv;
+}
+
 EditActionResult
 HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::DeleteBRElement(
     HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
@@ -4389,11 +4452,100 @@ HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::DeleteBRElement(
   return EditActionHandled();
 }
 
-EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
-    HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
-        HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
+    ComputeRangesToDeleteAtOtherBlockBoundary(
+        const HTMLEditor& aHTMLEditor,
+        nsIEditor::EDirection aDirectionAndAmount,
         nsIEditor::EStripWrappers aStripWrappers,
-        const EditorDOMPoint& aCaretPoint, AutoRangeArray& aRangesToDelete) {
+        const EditorDOMPoint& aCaretPoint,
+        AutoRangeArray& aRangesToDelete) const {
+  MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
+  MOZ_ASSERT(aCaretPoint.IsSetAndValid());
+  MOZ_ASSERT(mLeftContent);
+  MOZ_ASSERT(mRightContent);
+
+  if (HTMLEditor::NodesInDifferentTableElements(*mLeftContent,
+                                                *mRightContent)) {
+    if (!mDeleteRangesHandler->CanFallbackToDeleteRangesWithTransaction(
+            aRangesToDelete)) {
+      nsresult rv = aRangesToDelete.Collapse(aCaretPoint);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "AutoRangeArray::Collapse() failed");
+      return rv;
+    }
+    
+    
+    
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  AutoInclusiveAncestorBlockElementsJoiner joiner(*mLeftContent,
+                                                  *mRightContent);
+  Result<bool, nsresult> canJoinThem = joiner.Prepare(aHTMLEditor);
+  if (canJoinThem.isErr()) {
+    NS_WARNING("AutoInclusiveAncestorBlockElementsJoiner::Prepare() failed");
+    return canJoinThem.unwrapErr();
+  }
+  if (canJoinThem.inspect() && joiner.CanJoinBlocks() &&
+      !joiner.ShouldDeleteLeafContentInstead()) {
+    nsresult rv =
+        joiner.ComputeRangesToDelete(aHTMLEditor, aCaretPoint, aRangesToDelete);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "AutoInclusiveAncestorBlockElementsJoiner::ComputeRangesToDelete() "
+        "failed");
+    return rv;
+  }
+
+  
+  
+  
+  if (mLeafContentInOtherBlock == aCaretPoint.GetContainer()) {
+    return NS_OK;
+  }
+
+  AutoHideSelectionChanges hideSelectionChanges(aHTMLEditor.SelectionRefPtr());
+
+  
+  
+  
+  
+  EditorRawDOMPoint newCaretPoint =
+      aDirectionAndAmount == nsIEditor::ePrevious
+          ? EditorRawDOMPoint::AtEndOf(*mLeafContentInOtherBlock)
+          : EditorRawDOMPoint(mLeafContentInOtherBlock, 0);
+  
+  nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPoint);
+  if (!aHTMLEditor.SelectionRefPtr()->RangeCount()) {
+    NS_WARNING("Failed to put caret to new position");
+    return NS_ERROR_FAILURE;
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "HTMLEditor::CollapseSelectionTo() failed, but ignored");
+  aRangesToDelete.Initialize(*aHTMLEditor.SelectionRefPtr());
+  AutoDeleteRangesHandler anotherHandler(mDeleteRangesHandlerConst);
+  rv = anotherHandler.ComputeRangesToDelete(aHTMLEditor, aDirectionAndAmount,
+                                            aStripWrappers, aRangesToDelete);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() failed");
+  
+  nsresult rvCollapsingSelectionTo =
+      aHTMLEditor.CollapseSelectionTo(aCaretPoint);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvCollapsingSelectionTo),
+      "HTMLEditor::CollapseSelectionTo() failed to restore caret position");
+  return NS_SUCCEEDED(rv) && NS_SUCCEEDED(rvCollapsingSelectionTo)
+             ? NS_OK
+             : NS_ERROR_FAILURE;
+}
+
+EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
+    HandleDeleteAtOtherBlockBoundary(HTMLEditor& aHTMLEditor,
+                                     nsIEditor::EDirection aDirectionAndAmount,
+                                     nsIEditor::EStripWrappers aStripWrappers,
+                                     const EditorDOMPoint& aCaretPoint,
+                                     AutoRangeArray& aRangesToDelete) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(aCaretPoint.IsSetAndValid());
   MOZ_ASSERT(mDeleteRangesHandler);
