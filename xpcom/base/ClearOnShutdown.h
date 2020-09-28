@@ -129,13 +129,6 @@ inline void RunOnShutdown(CallableT&& aCallable,
       new FunctionInvoker(std::forward<CallableT>(aCallable)), aPhase);
 }
 
-inline bool PastShutdownPhase(ShutdownPhase aPhase) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  return size_t(ClearOnShutdown_Internal::sCurrentShutdownPhase) >=
-         size_t(aPhase);
-}
-
 
 
 void KillClearOnShutdown(ShutdownPhase aPhase);

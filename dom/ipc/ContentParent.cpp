@@ -2565,14 +2565,6 @@ ContentParent::~ContentParent() {
 }
 
 bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
-  
-  
-  
-  
-  if (PastShutdownPhase(ShutdownPhase::Shutdown)) {
-    return false;
-  }
-
   XPCOMInitData xpcomInit;
 
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,

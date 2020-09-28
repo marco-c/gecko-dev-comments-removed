@@ -310,6 +310,9 @@ mozJSComponentLoader::~mozJSComponentLoader() {
 StaticRefPtr<mozJSComponentLoader> mozJSComponentLoader::sSelf;
 
 
+static bool sShutdownFinal = false;
+
+
 
 
 static JSObject* ResolveModuleObjectProperty(JSContext* aCx,
@@ -504,6 +507,8 @@ void mozJSComponentLoader::FindTargetObject(JSContext* aCx,
 void mozJSComponentLoader::InitStatics() {
   MOZ_ASSERT(!sSelf);
   sSelf = new mozJSComponentLoader();
+
+  RunOnShutdown([&] { sShutdownFinal = true; });
 }
 
 void mozJSComponentLoader::Unload() {
@@ -1192,7 +1197,7 @@ nsresult mozJSComponentLoader::Import(JSContext* aCx,
       !mInProgressImports.Get(info.Key(), &mod)) {
     
     
-    if (PastShutdownPhase(ShutdownPhase::ShutdownFinal)) {
+    if (sShutdownFinal) {
       return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
     }
 
