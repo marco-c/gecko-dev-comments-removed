@@ -2198,6 +2198,18 @@ var SessionStoreInternal = {
         this._closedWindows.splice(index, 0, winData);
         this._capClosedWindows();
         this._closedObjectsChanged = true;
+        
+        
+        if (
+          AppConstants.platform == "macosx" &&
+          this._closedWindows.length == 1
+        ) {
+          
+          let window = Services.appShell.hiddenDOMWindow;
+          let historyMenu = window.document.getElementById("history-menu");
+          let evt = new window.CustomEvent("popupshowing", { bubbles: true });
+          historyMenu.menupopup.dispatchEvent(evt);
+        }
       } else if (!shouldStore && alreadyStored) {
         this._removeClosedWindow(winIndex);
       }
