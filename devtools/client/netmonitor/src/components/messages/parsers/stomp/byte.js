@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+
+const BYTE = {
+  
+  LF: "\x0A",
+  
+  NULL: "\x00",
+};
+
+module.exports = { BYTE };
