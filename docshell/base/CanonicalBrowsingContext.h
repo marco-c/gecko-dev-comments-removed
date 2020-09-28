@@ -71,6 +71,13 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void ClearInFlightProcessId(uint64_t aProcessId);
   uint64_t GetInFlightProcessId() const { return mInFlightProcessId; }
 
+  
+  
+  
+  
+  uint64_t GetCrossGroupOpenerId() const { return mCrossGroupOpenerId; }
+  void SetCrossGroupOpenerId(uint64_t aOpenerId);
+
   void GetWindowGlobals(nsTArray<RefPtr<WindowGlobalParent>>& aWindows);
 
   
@@ -300,6 +307,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   uint64_t mInFlightProcessId = 0;
+
+  uint64_t mCrossGroupOpenerId = 0;
 
   
   RefPtr<PendingRemotenessChange> mPendingRemotenessChange;
