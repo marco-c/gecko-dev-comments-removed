@@ -51,6 +51,14 @@ class Perfherder(Layer):
                 "default": False,
                 "help": "If set, browsertime statistics will be reported.",
             },
+            "timestamp": {
+                "type": float,
+                "default": None,
+                "help": (
+                    "Timestamp to use for the perfherder data. Can be the "
+                    "current date or a past date if needed."
+                ),
+            },
         }
     )
 
@@ -145,6 +153,10 @@ class Perfherder(Layer):
         if prefix:
             
             all_perfherder_data["prefix"] = prefix
+
+        timestamp = self.get_arg("timestamp")
+        if timestamp is not None:
+            all_perfherder_data["pushTimestamp"] = timestamp
 
         
         with pathlib.Path(metadata._mach_cmd.topsrcdir, PERFHERDER_SCHEMA).open() as f:
