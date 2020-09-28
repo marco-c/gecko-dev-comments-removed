@@ -49,6 +49,16 @@ const SCOPE_MONITOR = [
   "https://identity.mozilla.com/apps/monitor",
 ];
 
+const SCOPE_VPN = "profile https://identity.mozilla.com/account/subscriptions";
+const VPN_ENDPOINT = `${Services.prefs.getStringPref(
+  "identity.fxaccounts.auth.uri"
+)}oauth/subscriptions/active`;
+
+
+const VPN_SUB_ID = Services.prefs.getStringPref(
+  "browser.contentblocking.report.vpn_sub_id"
+);
+
 
 const INVALID_OAUTH_TOKEN = "Invalid OAuth token";
 const USER_UNSUBSCRIBED_TO_MONITOR = "User is not subscribed to Monitor";
@@ -301,6 +311,57 @@ class AboutProtectionsParent extends JSWindowActorParent {
     );
   }
 
+  async VPNSubStatus() {
+    
+    if (gTestOverride && "vpnOverrides" in gTestOverride) {
+      return gTestOverride.vpnOverrides().hasSubscription;
+    }
+
+    const vpnToken = await fxAccounts.getOAuthToken({ scope: SCOPE_VPN });
+    let headers = new Headers();
+    headers.append("Authorization", `Bearer ${vpnToken}`);
+    const request = new Request(VPN_ENDPOINT, { headers });
+    const res = await fetch(request);
+    if (res.ok) {
+      const result = await res.json();
+      for (let sub of result) {
+        if (sub.subscriptionId == VPN_SUB_ID) {
+          return true;
+        }
+      }
+      return false;
+    }
+    
+    return false;
+  }
+
+  
+  
+  VPNShouldShow() {
+    let currentRegion = "";
+    if (gTestOverride && "vpnOverrides" in gTestOverride) {
+      currentRegion = gTestOverride.vpnOverrides().location;
+    } else {
+      
+      
+      currentRegion = Region.current ? Region.current.toLowerCase() : "";
+    }
+
+    
+    const homeRegion = Region.home.toLowerCase() || "";
+    const regionsWithVPN = Services.prefs.getStringPref(
+      "browser.contentblocking.report.vpn_regions"
+    );
+    const language = Services.locale.appLocaleAsBCP47;
+
+    return (
+      currentRegion != "cn" &&
+      homeRegion != "cn" &&
+      regionsWithVPN.includes(currentRegion) &&
+      language.includes("en-")
+    );
+  }
+
   async receiveMessage(aMessage) {
     let win = this.browsingContext.top.embedderElement.ownerGlobal;
     switch (aMessage.name) {
@@ -386,6 +447,12 @@ class AboutProtectionsParent extends JSWindowActorParent {
 
       case "FetchEntryPoint":
         return entrypoint;
+
+      case "FetchVPNSubStatus":
+        return this.VPNSubStatus();
+
+      case "FetchShowVPNCard":
+        return this.VPNShouldShow();
     }
 
     return undefined;
