@@ -2887,14 +2887,21 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
   
   
   if (isPaginated) {
+    bool reorder = false;
     if (thead && !GetPrevInFlow()) {
+      reorder = thead->GetNextInFlow();
       nscoord desiredHeight;
       nsresult rv = SetupHeaderFooterChild(aReflowInput, thead, &desiredHeight);
       if (NS_FAILED(rv)) return;
     }
     if (tfoot) {
+      reorder = reorder || tfoot->GetNextInFlow();
       nsresult rv = SetupHeaderFooterChild(aReflowInput, tfoot, &footerHeight);
       if (NS_FAILED(rv)) return;
+    }
+    if (reorder) {
+      
+      OrderRowGroups(rowGroups, &thead, &tfoot);
     }
   }
   
@@ -2964,8 +2971,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
       aReflowInput.ReduceAvailableBSizeBy(wm, cellSpacingB);
       
       
-      bool reorder = false;
-      if (kidFrame->GetNextInFlow()) reorder = true;
+      const bool reorder = kidFrame->GetNextInFlow();
 
       LogicalPoint kidPosition(wm, aReflowInput.iCoord, aReflowInput.bCoord);
       aStatus.Reset();
