@@ -462,6 +462,9 @@ impl TextureUpdateList {
         self.debug_assert_coalesced(id);
 
         
+        self.updates.remove(&id);
+
+        
         if let Some(cur) = self.allocations.iter_mut().find(|x| x.id == id) {
             match cur.kind {
                 TextureCacheAllocationKind::Alloc(ref mut i) => *i = info,
