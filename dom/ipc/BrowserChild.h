@@ -576,7 +576,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   ScreenIntSize GetInnerSize();
   CSSSize GetUnscaledInnerSize() { return mUnscaledInnerSize; }
 
-  Maybe<LayoutDeviceIntRect> GetVisibleRect() const;
+  Maybe<nsRect> GetVisibleRect() const;
 
   
   void DoFakeShow(const ParentShowInfo&);

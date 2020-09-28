@@ -4030,13 +4030,10 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
 
   
   if (BrowserChild* browserChild = BrowserChild::GetFrom(presShell)) {
-    Maybe<LayoutDeviceIntRect> unscaledVisibleRect =
-        browserChild->GetVisibleRect();
+    Maybe<nsRect> unscaledVisibleRect = browserChild->GetVisibleRect();
+
     if (unscaledVisibleRect) {
-      CSSRect visibleRect =
-          *unscaledVisibleRect / presContext->CSSToDevPixelScale();
-      rootInkOverflow.IntersectRect(rootInkOverflow,
-                                    CSSPixel::ToAppUnits(visibleRect));
+      rootInkOverflow.IntersectRect(rootInkOverflow, *unscaledVisibleRect);
     }
   }
 
