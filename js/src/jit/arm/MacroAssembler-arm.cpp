@@ -5820,6 +5820,17 @@ void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
   trunc(src, dest, fail);
 }
 
+void MacroAssembler::nearbyIntDouble(RoundingMode mode, FloatRegister src,
+                                     FloatRegister dest) {
+  MOZ_CRASH("not supported on this platform");
+}
+
+void MacroAssembler::nearbyIntFloat32(RoundingMode mode, FloatRegister src,
+                                      FloatRegister dest) {
+  MOZ_CRASH("not supported on this platform");
+}
+
+
 
 void MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input,
                                             Register output, MIRType fromType,
