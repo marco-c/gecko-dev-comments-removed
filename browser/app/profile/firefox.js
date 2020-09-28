@@ -1960,9 +1960,6 @@ pref("doh-rollout.provider-steering.enabled", false);
 pref("doh-rollout.provider-steering.provider-list", "[{ \"name\": \"comcast\", \"canonicalName\": \"doh-discovery.xfinity.com\", \"uri\": \"https://doh.xfinity.com/dns-query\" }]");
 
 
-pref("doh-rollout.clearModeOnShutdown", true);
-
-
 pref("browser.chrome.errorReporter.infoURL",
      "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/nightly-error-collection");
 
