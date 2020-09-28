@@ -542,7 +542,7 @@ static uint32_t GetStretchHint(nsOperatorFlags aFlags,
     
     
     
-    if (aStyleFont->mMathStyle == NS_STYLE_MATH_STYLE_NORMAL &&
+    if (aStyleFont->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK &&
         NS_MATHML_OPERATOR_IS_LARGEOP(aFlags)) {
       stretchHint = NS_STRETCH_LARGEOP;  
       if (NS_MATHML_OPERATOR_IS_INTEGRAL(aFlags)) {
@@ -938,7 +938,8 @@ nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
 
 
 
-  if (!aPlaceOrigin && StyleFont()->mMathStyle == NS_STYLE_MATH_STYLE_NORMAL &&
+  if (!aPlaceOrigin &&
+      StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK &&
       NS_MATHML_OPERATOR_IS_LARGEOP(mFlags) && UseMathMLChar()) {
     nsBoundingMetrics newMetrics;
     rv = mMathMLChar.Stretch(

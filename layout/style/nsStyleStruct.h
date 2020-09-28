@@ -115,7 +115,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   
   uint8_t mMathVariant;
   
-  uint8_t mMathStyle;
+  uint8_t mMathDisplay;
 
   
   uint8_t mMinFontSizeRatio;  
