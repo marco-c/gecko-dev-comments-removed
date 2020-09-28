@@ -2821,13 +2821,15 @@ UpdateService.prototype = {
       return;
     }
 
-    if (this._downloader && this._downloader.patchIsStaged) {
-      let readState = readStatusFile(getUpdatesDir());
-      if (
-        readState == STATE_PENDING ||
-        readState == STATE_PENDING_SERVICE ||
-        readState == STATE_PENDING_ELEVATE
-      ) {
+    let readState = readStatusFile(getUpdatesDir());
+    let updatePending =
+      readState == STATE_PENDING ||
+      readState == STATE_PENDING_SERVICE ||
+      readState == STATE_PENDING_ELEVATE;
+    let updateApplied =
+      readState == STATE_APPLIED || readState == STATE_APPLIED_SERVICE;
+    if (updatePending || updateApplied) {
+      if (updatePending) {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_DOWNLOADED);
       } else {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_STAGED);
@@ -3220,23 +3222,66 @@ UpdateService.prototype = {
   
 
 
+
+
+
+
+  _downloadListeners: new Set(),
+
+  
+
+
   addDownloadListener: function AUS_addDownloadListener(listener) {
-    if (!this._downloader) {
-      LOG("UpdateService:addDownloadListener - no downloader!");
+    let oldSize = this._downloadListeners.size;
+    this._downloadListeners.add(listener);
+
+    if (this._downloadListeners.size == oldSize) {
+      LOG(
+        "UpdateService:addDownloadListener - Warning: Didn't add duplicate " +
+          "listener"
+      );
       return;
     }
-    this._downloader.addDownloadListener(listener);
+
+    if (this._downloader) {
+      this._downloader.onDownloadListenerAdded();
+    }
   },
 
   
 
 
   removeDownloadListener: function AUS_removeDownloadListener(listener) {
-    if (!this._downloader) {
-      LOG("UpdateService:removeDownloadListener - no downloader!");
+    let elementRemoved = this._downloadListeners.delete(listener);
+
+    if (!elementRemoved) {
+      LOG(
+        "UpdateService:removeDownloadListener - Warning: Didn't remove " +
+          "non-existent listener"
+      );
       return;
     }
-    this._downloader.removeDownloadListener(listener);
+
+    if (this._downloader) {
+      this._downloader.onDownloadListenerRemoved();
+    }
+  },
+
+  
+
+
+  get hasDownloadListeners() {
+    return !!this._downloadListeners.length;
+  },
+
+  
+
+
+
+  forEachDownloadListener: function AUS_forEachDownloadListener(fn) {
+    
+    let listeners = new Set(this._downloadListeners);
+    listeners.forEach(fn);
   },
 
   
@@ -3308,6 +3353,7 @@ UpdateService.prototype = {
         this._downloader.cancel();
       }
     }
+    this._downloader = null;
   },
 
   
@@ -4313,23 +4359,6 @@ Downloader.prototype = {
   
 
 
-  get patchIsStaged() {
-    var readState = readStatusFile(getUpdatesDir());
-    
-    
-    
-    return (
-      readState == STATE_PENDING ||
-      readState == STATE_PENDING_SERVICE ||
-      readState == STATE_PENDING_ELEVATE ||
-      readState == STATE_APPLIED ||
-      readState == STATE_APPLIED_SERVICE
-    );
-  },
-
-  
-
-
 
   _verifyDownload: function Downloader__verifyDownload() {
     LOG("Downloader:_verifyDownload called");
@@ -4806,23 +4835,7 @@ Downloader.prototype = {
   
 
 
-
-  _listeners: [],
-
-  
-
-
-
-
-
-  addDownloadListener: function Downloader_addDownloadListener(listener) {
-    for (var i = 0; i < this._listeners.length; ++i) {
-      if (this._listeners[i] == listener) {
-        return;
-      }
-    }
-    this._listeners.push(listener);
-
+  onDownloadListenerAdded: function Downloader_onDownloadListenerAdded() {
     
     this._maybeStartActiveNotifications();
   },
@@ -4830,27 +4843,15 @@ Downloader.prototype = {
   
 
 
-
-
-  removeDownloadListener: function Downloader_removeDownloadListener(listener) {
-    for (let i = 0; i < this._listeners.length; ++i) {
-      if (this._listeners[i] == listener) {
-        this._listeners.splice(i, 1);
-
-        
-        if (!this._listeners.length) {
-          this._maybeStopActiveNotifications();
-        }
-        return;
-      }
+  onDownloadListenerRemoved: function Downloader_onDownloadListenerRemoved() {
+    
+    if (!this.hasDownloadListeners) {
+      this._maybeStopActiveNotifications();
     }
   },
 
-  
-
-
   get hasDownloadListeners() {
-    return !!this._listeners.length;
+    return this.updateService.hasDownloadListeners;
   },
 
   
@@ -4953,12 +4954,9 @@ Downloader.prototype = {
       }
     }
 
-    
-    let listeners = this._listeners.concat();
-    let listenerCount = listeners.length;
-    for (let i = 0; i < listenerCount; ++i) {
-      listeners[i].onStartRequest(request);
-    }
+    this.updateService.forEachDownloadListener(listener => {
+      listener.onStartRequest(request);
+    });
   },
 
   
@@ -5006,15 +5004,11 @@ Downloader.prototype = {
       return;
     }
 
-    
-    var listeners = this._listeners.concat();
-    var listenerCount = listeners.length;
-    for (var i = 0; i < listenerCount; ++i) {
-      var listener = listeners[i];
+    this.updateService.forEachDownloadListener(listener => {
       if (listener instanceof Ci.nsIProgressEventSink) {
         listener.onProgress(request, progress, maxProgress);
       }
-    }
+    });
     this.updateService._consecutiveSocketErrors = 0;
   },
 
@@ -5032,15 +5026,11 @@ Downloader.prototype = {
       "Downloader:onStatus - status: " + status + ", statusText: " + statusText
     );
 
-    
-    var listeners = this._listeners.concat();
-    var listenerCount = listeners.length;
-    for (var i = 0; i < listenerCount; ++i) {
-      var listener = listeners[i];
+    this.updateService.forEachDownloadListener(listener => {
       if (listener instanceof Ci.nsIProgressEventSink) {
         listener.onStatus(request, status, statusText);
       }
-    }
+    });
   },
 
   
@@ -5292,12 +5282,9 @@ Downloader.prototype = {
     
     
     if (!shouldRetrySoon && !shouldRegisterOnlineObserver) {
-      
-      var listeners = this._listeners.concat();
-      var listenerCount = listeners.length;
-      for (var i = 0; i < listenerCount; ++i) {
-        listeners[i].onStopRequest(request, status);
-      }
+      this.updateService.forEachDownloadListener(listener => {
+        listener.onStopRequest(request, status);
+      });
     }
 
     this._request = null;
@@ -5393,9 +5380,21 @@ Downloader.prototype = {
 
         
         this._update = null;
+
+        
+        
+        
+        this.updateService._downloader = null;
       }
       
       return;
+    }
+
+    
+    
+    
+    if (state != STATE_DOWNLOADING) {
+      this.updateService._downloader = null;
     }
 
     if (
