@@ -127,12 +127,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsThread::SizeOfEventQueues\n"
 
          
-         "race:UpdateArenaPointersTyped<js::ObjectGroup>\n"
-         "race:UpdateArenaPointersTyped<js::Shape>\n"
-         "race:UpdateArenaPointersTyped<JSObject>\n"
-         "race:JSObject::fixupAfterMovingGC\n"
-
-         
          "race:setFlagBit\n"
          "race:isFatInline\n"
          "race:AtomizeAndCopyCharsFromLookup\n"

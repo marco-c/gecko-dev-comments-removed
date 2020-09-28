@@ -7,6 +7,8 @@
 #ifndef gc_Cell_h
 #define gc_Cell_h
 
+#include "mozilla/Atomics.h"
+
 #include <type_traits>
 
 #include "gc/GCEnum.h"
@@ -115,7 +117,13 @@ class CellColor {
 struct Cell {
  protected:
   
-  uintptr_t header_;
+  
+  
+  
+  
+  
+  
+  mozilla::Atomic<uintptr_t, mozilla::MemoryOrdering::Relaxed> header_;
 
  public:
   static_assert(gc::CellFlagBitsReservedForGC >= 3,
@@ -681,7 +689,7 @@ class alignas(gc::CellAlignBytes) TenuredCellWithNonGCPointer
     
     
     MOZ_ASSERT(flags() == 0);
-    return reinterpret_cast<PtrT*>(header_);
+    return reinterpret_cast<PtrT*>(uintptr_t(header_));
   }
 
   void setHeaderPtr(PtrT* newValue) {
@@ -747,7 +755,7 @@ class alignas(gc::CellAlignBytes) CellWithTenuredGCPointer : public BaseCell {
     
     staticAsserts();
     MOZ_ASSERT(this->flags() == 0);
-    return reinterpret_cast<PtrT*>(this->header_);
+    return reinterpret_cast<PtrT*>(uintptr_t(this->header_));
   }
 
   void unbarrieredSetHeaderPtr(PtrT* newValue) {
