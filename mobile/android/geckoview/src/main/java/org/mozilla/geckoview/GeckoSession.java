@@ -49,7 +49,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -73,7 +72,7 @@ import android.view.inputmethod.ExtractedTextRequest;
 import android.view.View;
 import android.view.ViewStructure;
 
-public class GeckoSession implements Parcelable {
+public class GeckoSession {
     private static final String LOGTAG = "GeckoSession";
     private static final boolean DEBUG = false;
 
@@ -1316,70 +1315,6 @@ public class GeckoSession implements Parcelable {
         transferFrom(session.mWindow, session.mSettings, session.mId);
         session.mWindow = null;
     }
-
-    
-
-
-
-    @Deprecated 
-    @Override 
-    @AnyThread
-    public int describeContents() {
-        return 0;
-    }
-
-    
-
-
-
-    @Deprecated 
-    @Override 
-    @AnyThread
-    public void writeToParcel(final Parcel out, final int flags) {
-        out.writeStrongInterface(mWindow);
-        out.writeParcelable(mSettings, flags);
-        out.writeString(mId);
-    }
-
-    
-    
-
-
-
-    @Deprecated 
-    @AnyThread
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public void readFromParcel(final @NonNull Parcel source) {
-        final IBinder binder = source.readStrongBinder();
-        final IInterface ifce = (binder != null) ?
-                binder.queryLocalInterface(Window.class.getName()) : null;
-        final Window window = (ifce instanceof Window) ? (Window) ifce : null;
-        final GeckoSessionSettings settings =
-                source.readParcelable(getClass().getClassLoader());
-        final String id = source.readString();
-        transferFrom(window, settings, id);
-    }
-
-    
-
-
-
-    @Deprecated 
-    public static final Creator<GeckoSession> CREATOR = new Creator<GeckoSession>() {
-        @Override
-        @AnyThread
-        public GeckoSession createFromParcel(final Parcel in) {
-            final GeckoSession session = new GeckoSession();
-            session.readFromParcel(in);
-            return session;
-        }
-
-        @Override
-        @AnyThread
-        public GeckoSession[] newArray(final int size) {
-            return new GeckoSession[size];
-        }
-    };
 
      boolean equalsId(final GeckoSession other) {
         if (other == null) {
