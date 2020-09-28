@@ -1330,6 +1330,7 @@ nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
       mTopLevelOuterContentWindow(false),
       mStorageAccessPermissionGranted(false),
       mDelayedPrintUntilAfterLoad(false),
+      mDelayedCloseForPrinting(false),
       mShouldDelayPrintUntilAfterLoad(false),
 #ifdef DEBUG
       mSerial(0),
@@ -2138,6 +2139,7 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   
   
   mShouldDelayPrintUntilAfterLoad = true;
+  mDelayedCloseForPrinting = false;
   mDelayedPrintUntilAfterLoad = false;
 
   
@@ -6251,22 +6253,18 @@ bool nsGlobalWindowOuter::CanClose() {
     return true;
   }
 
-  
-  
-  
-  
-
   nsCOMPtr<nsIContentViewer> cv;
   mDocShell->GetContentViewer(getter_AddRefs(cv));
   if (cv) {
     bool canClose;
     nsresult rv = cv->PermitUnload(&canClose);
     if (NS_SUCCEEDED(rv) && !canClose) return false;
+  }
 
-    rv = cv->RequestWindowClose(
-        mShouldDelayPrintUntilAfterLoad && mDelayedPrintUntilAfterLoad,
-        &canClose);
-    if (NS_SUCCEEDED(rv) && !canClose) return false;
+  
+  if (mShouldDelayPrintUntilAfterLoad && mDelayedPrintUntilAfterLoad) {
+    mDelayedCloseForPrinting = true;
+    return false;
   }
 
   return true;

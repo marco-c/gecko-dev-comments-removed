@@ -1180,9 +1180,15 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
     if (outerWin->DelayedPrintUntilAfterLoad()) {
       
       
+      
       if (RefPtr<nsPIDOMWindowInner> inner = window->GetCurrentInnerWindow()) {
         nsGlobalWindowInner::Cast(inner)->Print(IgnoreErrors());
       }
+      if (outerWin->DelayedCloseForPrinting()) {
+        outerWin->Close();
+      }
+    } else {
+      MOZ_ASSERT(!outerWin->DelayedCloseForPrinting());
     }
   }
 #endif
@@ -2220,20 +2226,6 @@ nsDocumentViewer::GetSticky(bool* aSticky) {
 NS_IMETHODIMP
 nsDocumentViewer::SetSticky(bool aSticky) {
   mIsSticky = aSticky;
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocumentViewer::RequestWindowClose(bool aIsPrintPending, bool* aCanClose) {
-  *aCanClose = true;
-
-#ifdef NS_PRINTING
-  if (aIsPrintPending || (mPrintJob && mPrintJob->GetIsPrinting())) {
-    *aCanClose = false;
-    mDeferredWindowClose = true;
-  }
-#endif
 
   return NS_OK;
 }
@@ -3693,8 +3685,9 @@ void nsDocumentViewer::OnDonePrinting() {
     
     
     
-    if (mDeferredWindowClose || !printJob->CreatedForPrintPreview()) {
-      mDeferredWindowClose = false;
+    
+    
+    if (!printJob->CreatedForPrintPreview()) {
       if (mContainer) {
         if (nsCOMPtr<nsPIDOMWindowOuter> win = mContainer->GetWindow()) {
           win->Close();
