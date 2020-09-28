@@ -2831,8 +2831,7 @@ class Document : public nsINode,
 
 
 
-  virtual already_AddRefed<Document> CreateStaticClone(
-      nsIDocShell* aCloneContainer);
+  already_AddRefed<Document> CreateStaticClone(nsIDocShell* aCloneContainer);
 
   
 
