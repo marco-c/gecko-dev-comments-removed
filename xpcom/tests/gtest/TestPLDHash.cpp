@@ -30,7 +30,7 @@ extern unsigned int _gdb_sleep_duration;
 
 
 
-static void TestCrashyOperation(void (*aCrashyOperation)()) {
+static void TestCrashyOperation(const char* label, void (*aCrashyOperation)()) {
 #if defined(XP_UNIX) && defined(DEBUG) && !defined(MOZ_ASAN)
   
   
@@ -52,10 +52,11 @@ static void TestCrashyOperation(void (*aCrashyOperation)()) {
 
     
     fprintf(stderr,
-            "TestCrashyOperation: The following crash is expected. Do not "
-            "panic.\n");
+            "TestCrashyOperation %s: The following crash is expected. Do not "
+            "panic.\n",
+            label);
     aCrashyOperation();
-    fprintf(stderr, "TestCrashyOperation: didn't crash?!\n");
+    fprintf(stderr, "TestCrashyOperation %s: didn't crash?!\n", label);
     ASSERT_TRUE(false);  
   }
 
@@ -70,7 +71,8 @@ static void TestCrashyOperation(void (*aCrashyOperation)()) {
     
     int signum = WEXITSTATUS(status);
     if (signum != SIGSEGV && signum != SIGBUS) {
-      fprintf(stderr, "TestCrashyOperation 'exited' failure: %d\n", signum);
+      fprintf(stderr, "TestCrashyOperation %s: 'exited' failure: %d\n", label,
+              signum);
       ASSERT_TRUE(false);
     }
   } else if (WIFSIGNALED(status)) {
@@ -78,7 +80,8 @@ static void TestCrashyOperation(void (*aCrashyOperation)()) {
     
     int signum = WTERMSIG(status);
     if (signum != SIGSEGV && signum != SIGBUS) {
-      fprintf(stderr, "TestCrashyOperation 'signaled' failure: %d\n", signum);
+      fprintf(stderr, "TestCrashyOperation %s: 'signaled' failure: %d\n", label,
+              signum);
       ASSERT_TRUE(false);
     }
   }
@@ -117,17 +120,18 @@ TEST(PLDHashTableTest, InitCapacityOk)
   PLDHashTable t2(PLDHashTable::StubOps(), (uint32_t)1 << 7, (uint32_t)1 << 23);
 
   
-  TestCrashyOperation(InitCapacityOk_InitialLengthTooBig);
+  TestCrashyOperation("length too big", InitCapacityOk_InitialLengthTooBig);
 
   
   
-  TestCrashyOperation(InitCapacityOk_InitialEntryStoreTooBig);
+  TestCrashyOperation("entry store too big",
+                      InitCapacityOk_InitialEntryStoreTooBig);
 
   
   PLDHashTable t3(PLDHashTable::StubOps(), 255);
 
   
-  TestCrashyOperation(InitCapacityOk_EntrySizeTooBig);
+  TestCrashyOperation("entry size too big", InitCapacityOk_EntrySizeTooBig);
 
   
   
