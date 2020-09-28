@@ -1949,6 +1949,10 @@ AttachDecision GetPropIRGenerator::tryAttachFunction(HandleObject obj,
     return AttachDecision::NoAction;
   }
 
+  if (!JSID_IS_ATOM(id, cx_->names().length)) {
+    return AttachDecision::NoAction;
+  }
+
   JSObject* holder = nullptr;
   PropertyResult prop;
   
@@ -1958,27 +1962,23 @@ AttachDecision GetPropIRGenerator::tryAttachFunction(HandleObject obj,
 
   JSFunction* fun = &obj->as<JSFunction>();
 
-  if (JSID_IS_ATOM(id, cx_->names().length)) {
-    
-    if (fun->hasResolvedLength()) {
-      return AttachDecision::NoAction;
-    }
-
-    
-    if (!fun->hasBytecode()) {
-      return AttachDecision::NoAction;
-    }
-
-    maybeEmitIdGuard(id);
-    writer.guardClass(objId, GuardClassKind::JSFunction);
-    writer.loadFunctionLengthResult(objId);
-    writer.returnFromIC();
-
-    trackAttached("FunctionLength");
-    return AttachDecision::Attach;
+  
+  if (fun->hasResolvedLength()) {
+    return AttachDecision::NoAction;
   }
 
-  return AttachDecision::NoAction;
+  
+  if (!fun->hasBytecode()) {
+    return AttachDecision::NoAction;
+  }
+
+  maybeEmitIdGuard(id);
+  writer.guardClass(objId, GuardClassKind::JSFunction);
+  writer.loadFunctionLengthResult(objId);
+  writer.returnFromIC();
+
+  trackAttached("FunctionLength");
+  return AttachDecision::Attach;
 }
 
 AttachDecision GetPropIRGenerator::tryAttachModuleNamespace(HandleObject obj,
