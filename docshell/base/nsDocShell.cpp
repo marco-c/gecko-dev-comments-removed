@@ -7274,10 +7274,8 @@ nsresult nsDocShell::RestoreFromHistory() {
   nsCOMPtr<nsIContentViewer> newCv(viewer);
   float overrideDPPX = 0.0f;
 
-  bool styleDisabled = false;
-  if (oldCv && newCv) {
+  if (oldCv) {
     oldCv->GetOverrideDPPX(&overrideDPPX);
-    oldCv->GetAuthorStyleDisabled(&styleDisabled);
   }
 
   
@@ -7502,10 +7500,14 @@ nsresult nsDocShell::RestoreFromHistory() {
     FavorPerformanceHint(true);
   }
 
-  if (oldCv && newCv) {
+  if (oldCv) {
     newCv->SetOverrideDPPX(overrideDPPX);
-    newCv->SetAuthorStyleDisabled(styleDisabled);
   }
+
+  
+  
+  bool styleDisabled = GetBrowsingContext()->Top()->AuthorStyleDisabledDefault();
+  newCv->SetAuthorStyleDisabled(styleDisabled);
 
   if (document) {
     RefPtr<nsDocShell> parent = GetInProcessParentDocshell();
@@ -8072,7 +8074,6 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
   const Encoding* hintCharset = nullptr;
   int32_t hintCharsetSource = kCharsetUninitialized;
   float overrideDPPX = 1.0;
-  bool styleDisabled = false;
   
   nsCOMPtr<nsIContentViewer> newCv;
 
@@ -8105,8 +8106,6 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
         NS_ENSURE_SUCCESS(oldCv->GetHintCharacterSetSource(&hintCharsetSource),
                           NS_ERROR_FAILURE);
         NS_ENSURE_SUCCESS(oldCv->GetOverrideDPPX(&overrideDPPX),
-                          NS_ERROR_FAILURE);
-        NS_ENSURE_SUCCESS(oldCv->GetAuthorStyleDisabled(&styleDisabled),
                           NS_ERROR_FAILURE);
       }
     }
@@ -8165,9 +8164,12 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
     NS_ENSURE_SUCCESS(newCv->SetHintCharacterSetSource(hintCharsetSource),
                       NS_ERROR_FAILURE);
     NS_ENSURE_SUCCESS(newCv->SetOverrideDPPX(overrideDPPX), NS_ERROR_FAILURE);
-    NS_ENSURE_SUCCESS(newCv->SetAuthorStyleDisabled(styleDisabled),
-                      NS_ERROR_FAILURE);
   }
+
+  
+  
+  bool styleDisabled = GetBrowsingContext()->Top()->AuthorStyleDisabledDefault();
+  mContentViewer->SetAuthorStyleDisabled(styleDisabled);
 
   
   

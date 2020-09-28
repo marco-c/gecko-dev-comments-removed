@@ -38,11 +38,17 @@ class PageStyleChild extends JSWindowActorChild {
     switch (msg.name) {
       
       case "PageStyle:Switch":
+        if (this.browsingContext.top == this.browsingContext) {
+          this.browsingContext.authorStyleDisabledDefault = false;
+        }
         this.docShell.contentViewer.authorStyleDisabled = false;
         this._switchStylesheet(msg.data.title);
         break;
       
       case "PageStyle:Disable":
+        if (this.browsingContext.top == this.browsingContext) {
+          this.browsingContext.authorStyleDisabledDefault = true;
+        }
         this.docShell.contentViewer.authorStyleDisabled = true;
         break;
     }
