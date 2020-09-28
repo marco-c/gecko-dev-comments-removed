@@ -1343,7 +1343,7 @@ impl LonghandId {
             LonghandId::MozMinFontSizeRatio |
 
             
-            LonghandId::MathDepth |
+            LonghandId::MozScriptLevel |
             % endif
 
             
