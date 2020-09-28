@@ -32,8 +32,8 @@ window.onmessage = e => {
 ["iframe", "frame", "object", "embed"].forEach((tagName, i) => {
   tests[tagName] = async_test(t => {
     const elm = document.createElement(tagName);
-    if (setAllowPaymentRequest) {
-      elm.setAttribute("allowpaymentrequest", "");
+    if (setAllowPayment) {
+      elm.setAttribute("allow", "payment");
     }
     const path = location.pathname.substring(
       0,
