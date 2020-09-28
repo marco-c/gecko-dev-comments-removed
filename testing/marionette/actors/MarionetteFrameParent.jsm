@@ -68,6 +68,12 @@ class MarionetteFrameParent extends JSWindowActorParent {
   
   
 
+  clearElement(webEl) {
+    return this.sendQuery("MarionetteFrameParent:clearElement", {
+      webEl,
+    });
+  }
+
   findElement(strategy, selector, opts) {
     return this.sendQuery("MarionetteFrameParent:findElement", {
       strategy,
