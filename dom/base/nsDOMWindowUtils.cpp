@@ -2617,14 +2617,16 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     
     
     
-    
-    
-    
-    
-    if (frame->PresShell() == presShell &&
-        nsLayoutUtils::IsInPositionFixedSubtree(frame)) {
-      return true;
+    for (; frame; frame = nsLayoutUtils::GetCrossDocParentFrame(frame)) {
+      if (frame->PresShell() == presShell) {
+        
+        
+        
+        return nsLayoutUtils::IsInPositionFixedSubtree(frame);
+      }
+      frame = frame->PresShell()->GetRootFrame();
     }
+
     return false;
   }();
 
