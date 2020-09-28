@@ -1516,26 +1516,14 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   nscoord transferredSizeSuggestion = nscoord_MAX;
-  const StyleAspectRatio& aspectRatio =
-      aFlexItem.Frame()->StylePosition()->mAspectRatio;
-  AspectRatio ratio;
-  if (!aspectRatio.auto_) {
-    
-    
-    
-    ratio = aspectRatio.ratio.AsRatio().ToLayoutRatio();
-  } else if (aFlexItem.HasIntrinsicRatio()) {
-    ratio = aFlexItem.IntrinsicRatio();
-  }
-
-  if (ratio) {
+  if (aFlexItem.HasIntrinsicRatio()) {
     
     const bool useMinSizeIfCrossSizeIsIndefinite = true;
     nscoord crossSizeToUseWithRatio = CrossSizeToUseWithRatio(
         aFlexItem, aItemReflowInput, useMinSizeIfCrossSizeIsIndefinite,
         aAxisTracker);
-    transferredSizeSuggestion =
-        MainSizeFromAspectRatio(crossSizeToUseWithRatio, ratio, aAxisTracker);
+    transferredSizeSuggestion = MainSizeFromAspectRatio(
+        crossSizeToUseWithRatio, aFlexItem.IntrinsicRatio(), aAxisTracker);
   }
 
   return std::min(specifiedSizeSuggestion, transferredSizeSuggestion);
@@ -2146,6 +2134,16 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
     } else if (mAlignSelf._0 == StyleAlignFlags::LAST_BASELINE) {
       mAlignSelf = {StyleAlignFlags::FLEX_END};
     }
+  }
+
+  
+  
+  
+  
+  const StyleAspectRatio& ratio =
+      aFlexItemReflowInput.mStylePosition->mAspectRatio;
+  if (!mFrame->IsFrameOfType(nsIFrame::eReplaced) && ratio.HasFiniteRatio()) {
+    mIntrinsicRatio = ratio.ratio.AsRatio().ToLayoutRatio();
   }
 }
 
