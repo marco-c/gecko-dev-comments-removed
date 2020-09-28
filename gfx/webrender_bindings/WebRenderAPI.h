@@ -279,8 +279,8 @@ class WebRenderAPI final {
 
   void ToggleCaptureSequence();
 
-  void SetCompositionRecorder(
-      UniquePtr<layers::WebRenderCompositionRecorder> aRecorder);
+  void BeginRecording(const TimeStamp& aRecordingStart,
+                      wr::PipelineId aRootPipelineId);
 
   typedef MozPromise<bool, nsresult, true> WriteCollectedFramesPromise;
   typedef MozPromise<layers::CollectedFrames, nsresult, true>
