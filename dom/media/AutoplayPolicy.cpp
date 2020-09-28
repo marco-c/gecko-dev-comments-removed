@@ -353,13 +353,6 @@ uint32_t AutoplayPolicy::GetSiteAutoplayPermission(nsIPrincipal* aPrincipal) {
 
 
 bool AutoplayPolicyTelemetryUtils::WouldBeAllowedToPlayIfAutoplayDisabled(
-    const HTMLMediaElement& aElement) {
-  return IsMediaElementInaudible(aElement) ||
-         IsWindowAllowedToPlay(aElement.OwnerDoc()->GetInnerWindow());
-}
-
-
-bool AutoplayPolicyTelemetryUtils::WouldBeAllowedToPlayIfAutoplayDisabled(
     const AudioContext& aContext) {
   return IsAudioContextAllowedToPlay(aContext);
 }
