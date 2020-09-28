@@ -54,6 +54,10 @@ enum class WellKnownAtomId : uint32_t {
 };
 
 
+enum class StaticParserString1 : uint8_t;
+enum class StaticParserString2 : uint16_t;
+
+
 
 
 
@@ -218,7 +222,8 @@ class alignas(alignof(void*)) ParserAtomEntry {
   
   
   using AtomIndexType =
-      mozilla::Variant<mozilla::Nothing, AtomIndex, WellKnownAtomId>;
+      mozilla::Variant<mozilla::Nothing, AtomIndex, WellKnownAtomId,
+                       StaticParserString1, StaticParserString2>;
   mutable AtomIndexType atomIndex_ = AtomIndexType(mozilla::Nothing());
 
  public:
@@ -305,6 +310,12 @@ class alignas(alignof(void*)) ParserAtomEntry {
   void setWellKnownAtomId(WellKnownAtomId kind) const {
     atomIndex_ = mozilla::AsVariant(kind);
   }
+  void setStaticParserString1(StaticParserString1 s) const {
+    atomIndex_ = mozilla::AsVariant(s);
+  }
+  void setStaticParserString2(StaticParserString2 s) const {
+    atomIndex_ = mozilla::AsVariant(s);
+  }
 
   
   
@@ -372,6 +383,12 @@ struct ParserAtomLookupHasher {
 
 
 
+
+
+
+
+
+
 class WellKnownParserAtoms {
  public:
   
@@ -388,8 +405,26 @@ class WellKnownParserAtoms {
                            js::SystemAllocPolicy>;
   EntrySet entrySet_;
 
+  static const size_t ASCII_STATIC_LIMIT = 128U;
+  static const size_t NUM_SMALL_CHARS = StaticStrings::NUM_SMALL_CHARS;
+  UniquePtr<ParserAtomEntry> length1StaticTable_[ASCII_STATIC_LIMIT] = {};
+  UniquePtr<ParserAtomEntry>
+      length2StaticTable_[NUM_SMALL_CHARS * NUM_SMALL_CHARS] = {};
+
   bool initSingle(JSContext* cx, const ParserName** name, const char* str,
                   WellKnownAtomId kind);
+
+  bool initStaticStrings(JSContext* cx);
+
+  const ParserAtom* getLength1String(char16_t ch) const {
+    MOZ_ASSERT(ch < ASCII_STATIC_LIMIT);
+    size_t index = static_cast<size_t>(ch);
+    return length1StaticTable_[index]->asAtom();
+  }
+  const ParserAtom* getLength2String(char16_t ch0, char16_t ch1) const {
+    size_t index = StaticStrings::getLength2Index(ch0, ch1);
+    return length2StaticTable_[index]->asAtom();
+  }
 
  public:
   WellKnownParserAtoms() = default;
@@ -399,6 +434,32 @@ class WellKnownParserAtoms {
   template <typename CharT>
   const ParserAtom* lookupChar16Seq(
       const SpecificParserAtomLookup<CharT>& lookup) const;
+
+  
+  template <typename CharT>
+  const ParserAtom* lookupTiny(const CharT* charPtr, uint32_t length) const {
+    switch (length) {
+      case 0:
+        return empty;
+
+      case 1: {
+        if (char16_t(charPtr[0]) < ASCII_STATIC_LIMIT) {
+          return getLength1String(charPtr[0]);
+        }
+        break;
+      }
+
+      case 2:
+        if (StaticStrings::fitsInSmallChar(charPtr[0]) &&
+            StaticStrings::fitsInSmallChar(charPtr[1])) {
+          return getLength2String(charPtr[0], charPtr[1]);
+        }
+        break;
+    }
+
+    
+    return nullptr;
+  }
 };
 
 
