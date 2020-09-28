@@ -66,7 +66,6 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
                                              nsILoadInfo* loadInfo,
                                              const nsACString& mimeType,
                                              int16_t* decision) {
-  nsContentPolicyType contentType = loadInfo->InternalContentPolicyType();
   nsCOMPtr<nsISupports> requestingContext = loadInfo->GetLoadingContext();
   
   MOZ_ASSERT(decision, "Null out pointer");
@@ -91,9 +90,6 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
   if (!doc) {
     doc = do_QueryInterface(requestingContext);
   }
-
-  nsContentPolicyType externalType =
-      nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
 
   
 
@@ -124,16 +120,6 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
                                      decision);
 
     if (NS_SUCCEEDED(rv) && NS_CP_REJECTED(*decision)) {
-      
-      
-      if (externalType == nsIContentPolicy::TYPE_IMAGE ||
-          externalType == nsIContentPolicy::TYPE_IMAGESET) {
-        nsCOMPtr<nsIImageLoadingContent> img =
-            do_QueryInterface(requestingContext);
-        if (img) {
-          img->SetBlockedRequest(*decision);
-        }
-      }
       
       return NS_OK;
     }

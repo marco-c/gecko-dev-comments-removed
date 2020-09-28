@@ -96,7 +96,6 @@ nsImageLoadingContent::nsImageLoadingContent()
       mObserverList(nullptr),
       mOutstandingDecodePromises(0),
       mRequestGeneration(0),
-      mImageBlockingStatus(nsIContentPolicy::ACCEPT),
       mLoadingEnabled(true),
       mIsImageStateForced(false),
       mLoading(false),
@@ -547,10 +546,6 @@ void nsImageLoadingContent::MaybeForceSyncDecoding(
   }
 }
 
-int16_t nsImageLoadingContent::GetImageBlockingStatus() {
-  return ImageBlockingStatus();
-}
-
 static void ReplayImageStatus(imgIRequest* aRequest,
                               imgINotificationObserver* aObserver) {
   if (!aRequest) {
@@ -910,8 +905,7 @@ nsImageLoadingContent::GetRequestType(imgIRequest* aRequest,
   return result.StealNSResult();
 }
 
-already_AddRefed<nsIURI> nsImageLoadingContent::GetCurrentURI(
-    ErrorResult& aError) {
+already_AddRefed<nsIURI> nsImageLoadingContent::GetCurrentURI() {
   nsCOMPtr<nsIURI> uri;
   if (mCurrentRequest) {
     mCurrentRequest->GetURI(getter_AddRefs(uri));
@@ -925,10 +919,8 @@ already_AddRefed<nsIURI> nsImageLoadingContent::GetCurrentURI(
 NS_IMETHODIMP
 nsImageLoadingContent::GetCurrentURI(nsIURI** aURI) {
   NS_ENSURE_ARG_POINTER(aURI);
-
-  ErrorResult result;
-  *aURI = GetCurrentURI(result).take();
-  return result.StealNSResult();
+  *aURI = GetCurrentURI().take();
+  return NS_OK;
 }
 
 already_AddRefed<nsIURI> nsImageLoadingContent::GetCurrentRequestFinalURI() {
@@ -936,7 +928,6 @@ already_AddRefed<nsIURI> nsImageLoadingContent::GetCurrentRequestFinalURI() {
   if (mCurrentRequest) {
     mCurrentRequest->GetFinalURI(getter_AddRefs(uri));
   }
-
   return uri.forget();
 }
 
@@ -1108,10 +1099,7 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   
   if (aDocument->IsLoadedAsData() && !aDocument->IsStaticDocument()) {
     
-    
     ClearPendingRequest(NS_BINDING_ABORTED, Some(OnNonvisible::DiscardImages));
-
-    SetBlockedRequest(nsIContentPolicy::REJECT_REQUEST);
 
     FireEvent(u"error"_ns);
     FireEvent(u"loadend"_ns);
@@ -1122,7 +1110,7 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   
   
   
-  if (!aForce && NS_CP_ACCEPTED(mImageBlockingStatus)) {
+  if (!aForce && mCurrentRequest) {
     nsCOMPtr<nsIURI> currentURI;
     GetCurrentURI(getter_AddRefs(currentURI));
     bool equal;
@@ -1211,9 +1199,6 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
     
     if (!mCurrentRequest) {
       mCurrentURI = aNewURI;
-      if (mImageBlockingStatus == nsIContentPolicy::ACCEPT) {
-        mImageBlockingStatus = nsIContentPolicy::REJECT_REQUEST;
-      }
     }
 
     FireEvent(u"error"_ns);
@@ -1332,9 +1317,7 @@ void nsImageLoadingContent::UpdateImageState(bool aNotify) {
 
   
   
-  if (mImageBlockingStatus != nsIContentPolicy::ACCEPT) {
-    mBroken = true;
-  } else if (!mCurrentRequest) {
+  if (!mCurrentRequest) {
     if (!mLazyLoading) {
       
       
@@ -1452,34 +1435,8 @@ RefPtr<imgRequestProxy>& nsImageLoadingContent::PrepareNextRequest(
                                    : PrepareCurrentRequest(aImageLoadType);
 }
 
-void nsImageLoadingContent::SetBlockedRequest(int16_t aContentDecision) {
-  
-  
-  if (!mIsStartingImageLoad) {
-    return;
-  }
-
-  
-  MOZ_ASSERT(!NS_CP_ACCEPTED(aContentDecision), "Blocked but not?");
-
-  
-  MOZ_ASSERT(!mPendingRequest, "mPendingRequest should be null.");
-
-  if (HaveSize(mCurrentRequest)) {
-    
-    
-    mPendingRequestFlags = 0;
-  } else {
-    mImageBlockingStatus = aContentDecision;
-  }
-}
-
 RefPtr<imgRequestProxy>& nsImageLoadingContent::PrepareCurrentRequest(
     ImageLoadType aImageLoadType) {
-  
-  
-  mImageBlockingStatus = nsIContentPolicy::ACCEPT;
-
   
   ClearCurrentRequest(NS_BINDING_ABORTED, Some(OnNonvisible::DiscardImages));
 

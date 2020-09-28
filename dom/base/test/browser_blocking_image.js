@@ -31,8 +31,6 @@ add_task(async function load_image_from_https_test() {
     } catch (e) {
       Assert.ok(false);
     }
-
-    Assert.equal(img.imageBlockingStatus, Ci.nsIContentPolicy.ACCEPT);
   });
 
   gBrowser.removeTab(tab);
@@ -65,12 +63,6 @@ add_task(async function load_image_from_http_test() {
     } catch (e) {
       Assert.ok(false);
     }
-
-    Assert.equal(
-      img.imageBlockingStatus,
-      Ci.nsIContentPolicy.REJECT_SERVER,
-      "images from http should be blocked"
-    );
   });
 
   gBrowser.removeTab(tab);
@@ -112,18 +104,10 @@ add_task(async function load_https_and_http_test() {
     } catch (e) {
       Assert.ok(false);
     }
-
-    Assert.equal(
-      img.imageBlockingStatus,
-      Ci.nsIContentPolicy.REJECT_SERVER,
-      "image.src changed to http should be blocked"
-    );
   });
 
   gBrowser.removeTab(tab);
 });
-
-
 
 
 
@@ -193,7 +177,6 @@ add_task(async function block_pending_request_test() {
       req,
       "CURRENT_REQUEST shouldn't be replaced."
     );
-    Assert.equal(img.imageBlockingStatus, Ci.nsIContentPolicy.ACCEPT);
   });
 
   gBrowser.removeTab(tab);
