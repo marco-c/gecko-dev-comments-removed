@@ -3183,7 +3183,8 @@ void BaselineCacheIRCompiler::storeThis(const T& newThis, Register argcReg,
 
 
 void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
-                                         Register scratch, CallFlags flags) {
+                                         Register scratch, CallFlags flags,
+                                         LiveGeneralRegisterSet liveNonGCRegs) {
   MOZ_ASSERT(flags.isConstructing());
 
   if (flags.needsUninitializedThis()) {
@@ -3194,8 +3195,8 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   size_t depth = STUB_FRAME_SIZE;
 
   
-  masm.push(argcReg);
-  depth += sizeof(size_t);
+  masm.PushRegsInMask(liveNonGCRegs);
+  depth += sizeof(uintptr_t) * liveNonGCRegs.set().size();
 
   
 
@@ -3223,15 +3224,14 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
 #endif
 
   
-  masm.pop(argcReg);
+  masm.PopRegsInMask(liveNonGCRegs);
 
   
+  MOZ_ASSERT(!liveNonGCRegs.aliases(JSReturnOperand));
   storeThis(JSReturnOperand, argcReg, flags);
 
   
-  Address stubRegAddress(masm.getStackPointer(), STUB_FRAME_SAVED_STUB_OFFSET);
-  masm.loadPtr(stubRegAddress, ICStubReg);
-
+  
   
   depth = STUB_FRAME_SIZE;
   loadStackObject(ArgumentKind::Callee, flags, depth, argcReg, calleeReg);
@@ -3294,7 +3294,10 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
   }
 
   if (isConstructing) {
-    createThis(argcReg, calleeReg, scratch, flags);
+    LiveGeneralRegisterSet liveNonGCRegs;
+    liveNonGCRegs.add(argcReg);
+    liveNonGCRegs.add(ICStubReg);
+    createThis(argcReg, calleeReg, scratch, flags, liveNonGCRegs);
   }
 
   pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
@@ -3349,8 +3352,8 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
   AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
-  AutoScratchRegisterMaybeOutputType codeReg(allocator, masm, output);
-  AutoScratchRegister scratch2(allocator, masm);
+  AutoScratchRegisterMaybeOutputType scratch2(allocator, masm, output);
+  AutoScratchRegister codeReg(allocator, masm);
 
   Register calleeReg = allocator.useRegister(masm, calleeId);
   Register argcReg = allocator.useRegister(masm, argcId);
@@ -3381,7 +3384,11 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   }
 
   if (isConstructing) {
-    createThis(argcReg, calleeReg, scratch, flags);
+    LiveGeneralRegisterSet liveNonGCRegs;
+    liveNonGCRegs.add(argcReg);
+    liveNonGCRegs.add(ICStubReg);
+    liveNonGCRegs.add(codeReg);
+    createThis(argcReg, calleeReg, scratch, flags, liveNonGCRegs);
   }
 
   pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
@@ -3429,7 +3436,7 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   stubFrame.leave(masm, true);
 
   if (!isSameRealm) {
-    masm.switchToBaselineFrameRealm(scratch2);
+    masm.switchToBaselineFrameRealm(codeReg);
   }
 
   return true;
