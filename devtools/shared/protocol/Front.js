@@ -62,6 +62,27 @@ class Front extends Pool {
   }
 
   destroy() {
+    super.destroy();
+    this.clearEvents();
+    
+    
+    if (this.actorID) {
+      this.purgeRequestsForDestroy();
+    }
+    this.targetFront = null;
+    this.parentFront = null;
+    this._frontCreationListeners = null;
+    this._frontDestructionListeners = null;
+    this._beforeListeners = null;
+  }
+
+  
+  
+  
+  
+  
+  
+  purgeRequestsForDestroy() {
     
     
     while (this._requests && this._requests.length > 0) {
@@ -76,14 +97,7 @@ class Front extends Pool {
         stack.formattedStack;
       deferred.reject(new Error(msg));
     }
-    super.destroy();
-    this.clearEvents();
     this.actorID = null;
-    this.targetFront = null;
-    this.parentFront = null;
-    this._frontCreationListeners = null;
-    this._frontDestructionListeners = null;
-    this._beforeListeners = null;
   }
 
   isDestroyed() {

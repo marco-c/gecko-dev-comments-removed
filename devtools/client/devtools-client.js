@@ -680,6 +680,19 @@ DevToolsClient.prototype = {
       activeRequestsToReject = activeRequestsToReject.concat(request);
     });
     activeRequestsToReject.forEach(request => reject("active", request));
+
+    
+    const fronts = this.getAllFronts();
+
+    for (const front of fronts) {
+      if (!front.isDestroyed() && front.actorID.startsWith(prefix)) {
+        
+        
+        
+        
+        front.purgeRequestsForDestroy();
+      }
+    }
   },
 
   
@@ -708,23 +721,7 @@ DevToolsClient.prototype = {
     });
 
     
-    
-    const fronts = new Set();
-    const poolsToVisit = [...this._pools];
-
-    
-    
-    while (poolsToVisit.length) {
-      const pool = poolsToVisit.shift();
-      
-      
-      if (pool instanceof Front) {
-        fronts.add(pool);
-      }
-      for (const child of pool.poolChildren()) {
-        poolsToVisit.push(child);
-      }
-    }
+    const fronts = this.getAllFronts();
 
     
     for (const front of fronts) {
@@ -748,6 +745,27 @@ DevToolsClient.prototype = {
         
         return this.waitForRequestsToSettle();
       });
+  },
+
+  getAllFronts() {
+    
+    const fronts = new Set();
+    const poolsToVisit = [...this._pools];
+
+    
+    
+    while (poolsToVisit.length) {
+      const pool = poolsToVisit.shift();
+      
+      
+      if (pool instanceof Front) {
+        fronts.add(pool);
+      }
+      for (const child of pool.poolChildren()) {
+        poolsToVisit.push(child);
+      }
+    }
+    return fronts;
   },
 
   
