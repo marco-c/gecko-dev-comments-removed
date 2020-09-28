@@ -1659,12 +1659,6 @@ public class WebExtension {
         public final boolean enabled;
 
         
-
-
-
-        public final boolean temporary;
-
-        
         protected MetaData() {
             icon = null;
             permissions = null;
@@ -1682,7 +1676,6 @@ public class WebExtension {
             signedState = SignedStateFlags.UNKNOWN;
             disabledFlags = 0;
             enabled = true;
-            temporary = false;
             baseUrl = null;
             allowedInPrivateBrowsing = false;
         }
@@ -1702,7 +1695,6 @@ public class WebExtension {
             isRecommended = bundle.getBoolean("isRecommended");
             blocklistState = bundle.getInt("blocklistState", BlocklistStateFlags.NOT_BLOCKED);
             enabled = bundle.getBoolean("enabled", false);
-            temporary = bundle.getBoolean("temporary", false);
             baseUrl = bundle.getString("baseURL");
             allowedInPrivateBrowsing = bundle.getBoolean("privateBrowsingAllowed", false);
 
