@@ -605,6 +605,7 @@ this.VideoControlsImplWidget = class {
       updatePictureInPictureToggleDisplay() {
         if (this.isAudioOnly) {
           this.pictureInPictureToggleButton.setAttribute("hidden", true);
+          this.pictureInPictureToggleExperiment.setAttribute("hidden", true);
           return;
         }
 
@@ -3155,6 +3156,7 @@ this.NoControlsDesktopImplWidget = class {
         
         
         this.pictureInPictureToggleButton.setAttribute("hidden", true);
+        this.pictureInPictureToggleExperiment.setAttribute("hidden", true);
 
         if (this.video.readyState >= this.video.HAVE_METADATA) {
           
