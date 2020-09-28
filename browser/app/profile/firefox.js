@@ -2258,11 +2258,7 @@ pref("devtools.netmonitor.features.webSockets", true);
 pref("devtools.netmonitor.audits.slow", 500);
 
 
-#if defined(NIGHTLY_BUILD)
-  pref("devtools.netmonitor.features.serverSentEvents", true);
-#else
-  pref("devtools.netmonitor.features.serverSentEvents", false);
-#endif
+pref("devtools.netmonitor.features.serverSentEvents", true);
 
 
 pref("devtools.storage.enabled", true);
