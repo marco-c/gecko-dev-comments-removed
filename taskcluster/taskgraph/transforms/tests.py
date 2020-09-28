@@ -1533,11 +1533,6 @@ def set_test_manifests(config, tasks):
 
         
         
-        if not task['test-manifests']['active'] and not task['test-manifests']['skipped']:
-            continue
-
-        
-        
         
         
         if config.params['test_manifest_loader'] != 'default':
@@ -1615,7 +1610,10 @@ def split_chunks(config, tasks):
 
             
             
-            chunked_manifests[0].extend(manifests['skipped'])
+            
+            
+            if config.params["backstop"] and manifests["active"]:
+                chunked_manifests[0].extend(manifests['skipped'])
 
         for i in range(task['chunks']):
             this_chunk = i + 1
@@ -1625,12 +1623,7 @@ def split_chunks(config, tasks):
             chunked['this-chunk'] = this_chunk
 
             if chunked_manifests is not None:
-                manifests = sorted(chunked_manifests[i])
-                if not manifests:
-                    raise Exception(
-                        'Chunking algorithm yielded no manifests for chunk {} of {} on {}'.format(
-                            this_chunk, task['test-name'], task['test-platform']))
-                chunked['test-manifests'] = manifests
+                chunked['test-manifests'] = sorted(chunked_manifests[i])
 
             group, symbol = split_symbol(chunked['treeherder-symbol'])
             if task['chunks'] > 1 or not symbol:
@@ -1849,9 +1842,11 @@ def make_job_description(config, tasks):
             'build_type': attr_build_type,
             'test_platform': task['test-platform'],
             'test_chunk': str(task['this-chunk']),
-            'test_manifests': task.get('test-manifests'),
             attr_try_name: try_name,
         })
+
+        if 'test-manifests' in task:
+            attributes['test_manifests'] = task['test-manifests']
 
         jobdesc = {}
         name = '{}-{}'.format(task['test-platform'], task['test-name'])
