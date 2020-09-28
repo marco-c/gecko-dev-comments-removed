@@ -7,97 +7,67 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "WebRTC")
 
-with Files("signaling/**"):
-    BUG_COMPONENT = ("Core", "WebRTC: Signaling")
-
-include('/build/gyp.mozbuild')
 include('/build/gn.mozbuild')
 
 webrtc_non_unified_sources = [
-    'trunk/webrtc/common_audio/vad/vad_core.c',                                  
-    'trunk/webrtc/common_audio/vad/webrtc_vad.c',                                
-    'trunk/webrtc/modules/audio_coding/acm2/codec_manager.cc',                   
-    'trunk/webrtc/modules/audio_coding/codecs/g722/g722_decode.c',               
-    'trunk/webrtc/modules/audio_coding/codecs/g722/g722_encode.c',               
-    'trunk/webrtc/modules/audio_coding/codecs/isac/fix/source/decode_plc.c',   
-    'trunk/webrtc/modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.c',   
-    'trunk/webrtc/modules/audio_coding/codecs/isac/fix/source/pitch_filter.c',   
-    'trunk/webrtc/modules/audio_coding/codecs/isac/fix/source/pitch_filter_c.c', 
-    'trunk/webrtc/modules/audio_coding/neteq/audio_vector.cc',                   
-    'trunk/webrtc/modules/audio_device/android/audio_manager.cc',                
-    'trunk/webrtc/modules/audio_device/android/audio_record_jni.cc',             
-    'trunk/webrtc/modules/audio_device/android/audio_track_jni.cc',              
-    'trunk/webrtc/modules/audio_device/android/opensles_player.cc',              
-    'trunk/webrtc/modules/audio_device/linux/audio_device_pulse_linux.cc',       
-    'trunk/webrtc/modules/audio_device/linux/audio_mixer_manager_pulse_linux.cc',
-    'trunk/webrtc/modules/audio_device/win/audio_device_core_win.cc',            
-    'trunk/webrtc/modules/audio_processing/aec/echo_cancellation.cc',            
-    'trunk/webrtc/modules/audio_processing/aecm/aecm_core.cc',                   
-    'trunk/webrtc/modules/audio_processing/aecm/aecm_core_c.cc',                 
-    'trunk/webrtc/modules/audio_processing/aecm/aecm_core_mips.cc',              
-    'trunk/webrtc/modules/audio_processing/aecm/aecm_core_neon.cc',              
-    'trunk/webrtc/modules/audio_processing/aecm/echo_control_mobile.cc',         
-    'trunk/webrtc/modules/audio_processing/agc/legacy/analog_agc.c',             
-    'trunk/webrtc/modules/audio_processing/beamformer/covariance_matrix_generator.cc', 
-    'trunk/webrtc/modules/audio_processing/beamformer/covariance_matrix_generator.cc',  
-    'trunk/webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.cc',  
-    'trunk/webrtc/modules/audio_processing/echo_cancellation_impl.cc',           
-    'trunk/webrtc/modules/audio_processing/echo_control_mobile_impl.cc',         
-    'trunk/webrtc/modules/audio_processing/echo_detector/normalized_covariance_estimator.cc', 
-    'trunk/webrtc/modules/audio_processing/gain_control_impl.cc',                
-    'trunk/webrtc/modules/audio_processing/noise_suppression_impl.cc',           
-    'trunk/webrtc/modules/audio_processing/rms_level.cc',                        
-    'trunk/webrtc/modules/congestion_controller/trendline_estimator.cc',         
-    'trunk/webrtc/modules/desktop_capture/win/screen_capturer_win_gdi.cc',       
-    'trunk/webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.cc', 
-    'trunk/webrtc/modules/rtp_rtcp/source/flexfec_receiver.cc',                  
-    'trunk/webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.cc',                 
-    'trunk/webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.cc',                 
-    'trunk/webrtc/modules/rtp_rtcp/source/ulpfec_generator.cc',                  
-    'trunk/webrtc/modules/video_capture/windows/device_info_ds.cc',              
-    'trunk/webrtc/modules/video_capture/windows/help_functions_ds.cc',           
-    'trunk/webrtc/modules/video_capture/windows/sink_filter_ds.cc',              
-    'trunk/webrtc/video/overuse_frame_detector.cc',                              
+    '../../../../third_party/libwebrtc/webrtc/common_audio/vad/vad_core.c',                                  
+    '../../../../third_party/libwebrtc/webrtc/common_audio/vad/webrtc_vad.c',                                
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_coding/acm2/codec_manager.cc',                   
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_coding/codecs/g722/g722_decode.c',               
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_coding/codecs/g722/g722_encode.c',               
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_coding/codecs/isac/fix/source/decode_plc.c',   
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.c',   
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_coding/codecs/isac/fix/source/pitch_filter.c',   
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_coding/codecs/isac/fix/source/pitch_filter_c.c', 
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_coding/neteq/audio_vector.cc',                   
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_device/android/audio_manager.cc',                
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_device/android/audio_record_jni.cc',             
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_device/android/audio_track_jni.cc',              
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_device/android/opensles_player.cc',              
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_device/linux/audio_device_pulse_linux.cc',       
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_device/linux/audio_mixer_manager_pulse_linux.cc',
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_device/win/audio_device_core_win.cc',            
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/aec/echo_cancellation.cc',            
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/aecm/aecm_core.cc',                   
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/aecm/aecm_core_c.cc',                 
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/aecm/aecm_core_mips.cc',              
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/aecm/aecm_core_neon.cc',              
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/aecm/echo_control_mobile.cc',         
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/agc/legacy/analog_agc.c',             
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/beamformer/covariance_matrix_generator.cc', 
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/beamformer/covariance_matrix_generator.cc',  
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.cc',  
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/echo_cancellation_impl.cc',           
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/echo_control_mobile_impl.cc',         
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/echo_detector/normalized_covariance_estimator.cc', 
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/gain_control_impl.cc',                
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/noise_suppression_impl.cc',           
+    '../../../../third_party/libwebrtc/webrtc/modules/audio_processing/rms_level.cc',                        
+    '../../../../third_party/libwebrtc/webrtc/modules/congestion_controller/trendline_estimator.cc',         
+    '../../../../third_party/libwebrtc/webrtc/modules/desktop_capture/win/screen_capturer_win_gdi.cc',       
+    '../../../../third_party/libwebrtc/webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.cc', 
+    '../../../../third_party/libwebrtc/webrtc/modules/rtp_rtcp/source/flexfec_receiver.cc',                  
+    '../../../../third_party/libwebrtc/webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.cc',                 
+    '../../../../third_party/libwebrtc/webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.cc',                 
+    '../../../../third_party/libwebrtc/webrtc/modules/rtp_rtcp/source/ulpfec_generator.cc',                  
+    '../../../../third_party/libwebrtc/webrtc/modules/video_capture/windows/device_info_ds.cc',              
+    '../../../../third_party/libwebrtc/webrtc/modules/video_capture/windows/help_functions_ds.cc',           
+    '../../../../third_party/libwebrtc/webrtc/modules/video_capture/windows/sink_filter_ds.cc',              
+    '../../../../third_party/libwebrtc/webrtc/video/overuse_frame_detector.cc',                              
 ]
 
-
-
-gyp_vars_copy = gyp_vars.copy()
-if CONFIG['MOZ_VALGRIND']:
-    gyp_vars_copy.update(build_for_tool="memcheck")
-elif CONFIG['MOZ_ASAN']:
-    gyp_vars_copy.update(build_for_tool="asan")
-elif CONFIG['MOZ_TSAN']:
-    gyp_vars_copy.update(build_for_tool="tsan")
-
-GN_DIRS += ['trunk/webrtc']
+GN_DIRS += ['../../../../third_party/libwebrtc/webrtc']
 
 gn_vars_copy = gn_vars.copy()
 
-GN_DIRS['trunk/webrtc'].variables = gn_vars_copy
-GN_DIRS['trunk/webrtc'].mozilla_flags = [
+GN_DIRS['../../../../third_party/libwebrtc/webrtc'].variables = gn_vars_copy
+GN_DIRS['../../../../third_party/libwebrtc/webrtc'].mozilla_flags = [
     '-fobjc-arc',
     '-mfpu=neon',
     '-msse2',
 ]
-GN_DIRS['trunk/webrtc'].gn_target = '//:webrtc'
+GN_DIRS['../../../../third_party/libwebrtc/webrtc'].gn_target = '//:webrtc'
 
-GN_DIRS['trunk/webrtc'].sandbox_vars['COMPILE_FLAGS'] = {'WARNINGS_AS_ERRORS': []}
-GN_DIRS['trunk/webrtc'].sandbox_vars['FINAL_LIBRARY'] = 'webrtc'
-GN_DIRS['trunk/webrtc'].non_unified_sources += webrtc_non_unified_sources
-
-if CONFIG['MOZ_WEBRTC_SIGNALING']:
-    GYP_DIRS += ['trunk/third_party/gflags']
-    GYP_DIRS['trunk/third_party/gflags'].input = 'trunk/third_party/gflags/gflags.gyp'
-    GYP_DIRS['trunk/third_party/gflags'].variables = gyp_vars_copy
-    GYP_DIRS['trunk/third_party/gflags'].sandbox_vars['COMPILE_FLAGS'] = {'WARNINGS_AS_ERRORS': []}
-
-    
-    if CONFIG['CC_TYPE'] == 'clang-cl':
-        CXXFLAGS += ['-Wno-invalid-source-encoding']
-
-    if CONFIG['ENABLE_TESTS']:
-        TEST_DIRS += [
-            'signaling/gtest',
-        ]
-
+GN_DIRS['../../../../third_party/libwebrtc/webrtc'].sandbox_vars['COMPILE_FLAGS'] = {'WARNINGS_AS_ERRORS': []}
+GN_DIRS['../../../../third_party/libwebrtc/webrtc'].sandbox_vars['FINAL_LIBRARY'] = 'webrtc'
+GN_DIRS['../../../../third_party/libwebrtc/webrtc'].non_unified_sources += webrtc_non_unified_sources

@@ -3,7 +3,7 @@
 
 
 
-include('/media/webrtc/webrtc.mozbuild')
+include('/dom/media/webrtc/third_party_build/webrtc.mozbuild')
 
 with Files('*'):
     BUG_COMPONENT = ('Core', 'Audio/Video')
@@ -372,8 +372,8 @@ LOCAL_INCLUDES += [
 if CONFIG['MOZ_WEBRTC']:
     LOCAL_INCLUDES += [
         '/dom/media/webrtc/common',
-        '/media/webrtc/trunk',
-        '/media/webrtc/trunk/webrtc',
+        '/third_party/libwebrtc',
+        '/third_party/libwebrtc/webrtc',
     ]
 
 DEFINES['MOZILLA_INTERNAL_API'] = True
