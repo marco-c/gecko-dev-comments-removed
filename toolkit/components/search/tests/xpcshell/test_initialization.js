@@ -6,6 +6,10 @@ let getStub;
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
   getStub = await SearchTestUtils.useTestEngines("simple-engines");
+
+  
+  consoleAllowList.push("Received empty search configuration");
+  consoleAllowList.push("_init: failure initializing search:");
 });
 
 add_task(async function test_init_success() {

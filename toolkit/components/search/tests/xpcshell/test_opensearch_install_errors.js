@@ -9,6 +9,9 @@ add_task(async function setup() {
   useHttpServer();
   await AddonTestUtils.promiseStartupManager();
   await Services.search.init();
+
+  
+  consoleAllowList.push("_onLoad: Failed to init engine!");
 });
 
 add_task(async function test_invalid_path_fails() {
