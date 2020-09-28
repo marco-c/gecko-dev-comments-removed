@@ -62,6 +62,12 @@
 
 
 
+
+
+
+
+
+
 #ifndef mozilla_WeakPtr_h
 #define mozilla_WeakPtr_h
 
@@ -78,6 +84,8 @@
 #if defined(MOZILLA_INTERNAL_API)
 
 #  include "nsISupportsImpl.h"
+
+#  include "nsProxyRelease.h"
 #endif
 
 #if defined(MOZILLA_INTERNAL_API) && \
@@ -145,7 +153,19 @@
 
 namespace mozilla {
 
-template <typename T>
+namespace detail {
+
+enum class WeakPtrDestructorBehavior {
+  Normal,
+#ifdef MOZILLA_INTERNAL_API
+  ProxyToMainThread,
+#endif
+};
+
+}  
+
+template <typename T, detail::WeakPtrDestructorBehavior =
+                          detail::WeakPtrDestructorBehavior::Normal>
 class WeakPtr;
 class SupportsWeakPtr;
 
@@ -211,13 +231,13 @@ class SupportsWeakPtr {
     return mSelfReferencingWeakReference.get();
   }
 
-  template <typename U>
+  template <typename U, detail::WeakPtrDestructorBehavior>
   friend class WeakPtr;
 
   mutable RefPtr<WeakReference> mSelfReferencingWeakReference;
 };
 
-template <typename T>
+template <typename T, detail::WeakPtrDestructorBehavior Destruct>
 class WeakPtr {
   using WeakReference = detail::WeakReference;
 
@@ -264,7 +284,15 @@ class WeakPtr {
     return *this;
   }
 
-  MOZ_IMPLICIT WeakPtr(T* aOther) { *this = aOther; }
+  MOZ_IMPLICIT WeakPtr(T* aOther) {
+    *this = aOther;
+#ifdef MOZILLA_INTERNAL_API
+    if (Destruct == detail::WeakPtrDestructorBehavior::ProxyToMainThread) {
+      MOZ_ASSERT(NS_IsMainThread(),
+                 "MainThreadWeakPtr makes no sense on non-main threads");
+    }
+#endif
+  }
 
   
   WeakPtr() : mRef(new WeakReference(nullptr)) {}
@@ -275,7 +303,15 @@ class WeakPtr {
   T& operator*() const { return *get(); }
   T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN { return get(); }
 
-  ~WeakPtr() { MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED(mRef); }
+#ifdef MOZILLA_INTERNAL_API
+  ~WeakPtr() {
+    if (Destruct == detail::WeakPtrDestructorBehavior::ProxyToMainThread) {
+      NS_ReleaseOnMainThread("WeakPtr::mRef", mRef.forget());
+    } else {
+      MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED(mRef);
+    }
+  }
+#endif
 
  private:
   friend class SupportsWeakPtr;
@@ -284,6 +320,14 @@ class WeakPtr {
 
   RefPtr<WeakReference> mRef;
 };
+
+#ifdef MOZILLA_INTERNAL_API
+
+template <typename T>
+using MainThreadWeakPtr =
+    WeakPtr<T, detail::WeakPtrDestructorBehavior::ProxyToMainThread>;
+
+#endif
 
 #define NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR tmp->DetachWeakPtr();
 
