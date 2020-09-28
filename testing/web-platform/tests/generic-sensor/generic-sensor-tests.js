@@ -371,47 +371,40 @@ function runGenericSensorTests(sensorName,
 
   sensor_test(async (t, sensorProvider) => {
     assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    const fastSensor = new sensorType({frequency: 60});
+
+    const fastSensor = new sensorType({ frequency: 60 });
+    t.add_cleanup(() => { fastSensor.stop(); });
+    let eventWatcher = new EventWatcher(t, fastSensor, "activate");
     fastSensor.start();
+
+    
+    
+    await eventWatcher.wait_for("activate");
 
     const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
     await mockSensor.setSensorReading(readings);
 
-    return new Promise((resolve, reject) => {
-      let fastSensorNotifiedCounter = 0;
-      let slowSensorNotifiedCounter = 0;
+    
+    
+    const fastSensorFrequency = mockSensor.getSamplingFrequency();
+    const slowSensorFrequency = fastSensorFrequency * 0.25;
 
-      fastSensor.onreading = () => {
-        if (fastSensorNotifiedCounter === 0) {
-          
-          
-          
-          
-          const slowFrequency = mockSensor.getSamplingFrequency() * 0.25;
-          const slowSensor = new sensorType({frequency: slowFrequency});
-          slowSensor.onreading = () => {
-            
-            if (slowSensorNotifiedCounter === 2) {
-              fastSensor.stop();
-              slowSensor.stop();
+    const slowSensor = new sensorType({ frequency: slowSensorFrequency });
+    t.add_cleanup(() => { slowSensor.stop(); });
+    eventWatcher = new EventWatcher(t, slowSensor, "activate");
+    slowSensor.start();
 
-              try {
-                assert_greater_than(fastSensorNotifiedCounter, 3,
-                    "Fast sensor overtakes the slow one");
-                resolve();
-              } catch (e) {
-                reject(e);
-              }
-            }
-            slowSensorNotifiedCounter++;
-          }
-          slowSensor.onerror = reject;
-          slowSensor.start();
-        }
-        fastSensorNotifiedCounter++;
-      }
-      fastSensor.onerror = reject;
-    });
+    
+    
+    await eventWatcher.wait_for("activate");
+    assert_equals(mockSensor.getSamplingFrequency(), fastSensorFrequency);
+
+    
+    
+    fastSensor.stop();
+    return t.step_wait(() => {
+      return mockSensor.getSamplingFrequency() === slowSensorFrequency;
+    }, "Sampling frequency has dropped to slowSensor's requested frequency");
   }, `${sensorName}: frequency hint works.`);
 
 
