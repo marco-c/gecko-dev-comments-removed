@@ -6117,11 +6117,10 @@ void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
     SetPreferredStyleSheetSet(aData);
   }
 
-  if (aHeaderField == nsGkAtoms::refresh) {
+  if (aHeaderField == nsGkAtoms::refresh && !IsStaticDocument()) {
     
     
-    nsCOMPtr<nsIRefreshURI> refresher(mDocumentContainer);
-    if (refresher) {
+    if (nsCOMPtr<nsIRefreshURI> refresher = mDocumentContainer.get()) {
       
       
       

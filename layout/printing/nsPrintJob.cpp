@@ -538,12 +538,10 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     
     mPrtPreview = nullptr;
 
-    
     SetIsPrintPreview(true);
   } else {
     mProgressDialogIsShown = false;
 
-    
     SetIsPrinting(true);
   }
 
@@ -2317,11 +2315,6 @@ void nsPrintJob::SetIsPrinting(bool aIsPrinting) {
   mIsDoingPrinting = aIsPrinting;
   if (aIsPrinting) {
     mHasEverPrinted = true;
-  }
-  
-  
-  if (!mCreatedForPrintPreview && mDocViewerPrint) {
-    mDocViewerPrint->SetIsPrinting(aIsPrinting);
   }
   if (mPrt && aIsPrinting) {
     mPrt->mPreparingForPrint = true;

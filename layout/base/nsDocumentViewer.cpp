@@ -401,13 +401,6 @@ class nsDocumentViewer final : public nsIContentViewer,
 
   void InvalidatePotentialSubDocDisplayItem();
 
-#ifdef NS_PRINTING
-  
-  
-  void SetIsPrintingInDocShellTree(nsIDocShellTreeItem* aParentNode,
-                                   bool aIsPrintingOrPP, bool aStartAtTop);
-#endif  
-
   
   
   
@@ -431,7 +424,6 @@ class nsDocumentViewer final : public nsIContentViewer,
   
 
   WeakPtr<nsDocShell> mContainer;  
-  nsWeakPtr mTopContainerWhilePrinting;
   RefPtr<nsDeviceContext> mDeviceContext;  
 
   
@@ -3588,49 +3580,6 @@ nsDocumentViewer::GetPrintPreviewNumPages(int32_t* aPrintPreviewNumPages) {
 
 
 
-void nsDocumentViewer::SetIsPrintingInDocShellTree(
-    nsIDocShellTreeItem* aParentNode, bool aIsPrintingOrPP, bool aStartAtTop) {
-  nsCOMPtr<nsIDocShellTreeItem> parentItem(aParentNode);
-
-  
-  if (aStartAtTop) {
-    if (aIsPrintingOrPP) {
-      while (parentItem) {
-        nsCOMPtr<nsIDocShellTreeItem> parent;
-        parentItem->GetInProcessSameTypeParent(getter_AddRefs(parent));
-        if (!parent) {
-          break;
-        }
-        parentItem = parent;
-      }
-      mTopContainerWhilePrinting = do_GetWeakReference(parentItem);
-    } else {
-      parentItem = do_QueryReferent(mTopContainerWhilePrinting);
-    }
-  }
-
-  
-  nsCOMPtr<nsIDocShell> viewerContainer = do_QueryInterface(parentItem);
-  if (viewerContainer) {
-    viewerContainer->SetIsPrinting(aIsPrintingOrPP);
-  }
-
-  if (!aParentNode) {
-    return;
-  }
-
-  
-  int32_t n;
-  aParentNode->GetInProcessChildCount(&n);
-  for (int32_t i = 0; i < n; i++) {
-    nsCOMPtr<nsIDocShellTreeItem> child;
-    aParentNode->GetInProcessChildAt(i, getter_AddRefs(child));
-    NS_ASSERTION(child, "child isn't nsIDocShell");
-    if (child) {
-      SetIsPrintingInDocShellTree(child, aIsPrintingOrPP, false);
-    }
-  }
-}
 #endif  
 
 bool nsDocumentViewer::ShouldAttachToTopLevel() {
@@ -3679,21 +3628,6 @@ bool nsDocumentViewer::GetIsPrinting() const {
 
 
 
-void nsDocumentViewer::SetIsPrinting(bool aIsPrinting) {
-#ifdef NS_PRINTING
-  
-  
-  nsCOMPtr<nsIDocShell> docShell(mContainer);
-  if (docShell || !aIsPrinting) {
-    SetIsPrintingInDocShellTree(docShell, aIsPrinting, true);
-  } else {
-    NS_WARNING("Did you close a window before printing?");
-  }
-#endif
-}
-
-
-
 
 
 bool nsDocumentViewer::GetIsPrintPreview() const {
@@ -3707,15 +3641,6 @@ bool nsDocumentViewer::GetIsPrintPreview() const {
 
 
 void nsDocumentViewer::SetIsPrintPreview(bool aIsPrintPreview) {
-#ifdef NS_PRINTING
-  
-  
-  nsCOMPtr<nsIDocShell> docShell(mContainer);
-  if (docShell || !aIsPrintPreview) {
-    SetIsPrintingInDocShellTree(docShell, aIsPrintPreview, true);
-  }
-#endif
-
   
   nsAutoScriptBlocker scriptBlocker;
 
