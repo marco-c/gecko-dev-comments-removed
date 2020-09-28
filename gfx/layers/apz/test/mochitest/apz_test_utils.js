@@ -1134,3 +1134,26 @@ function visualViewportAsZoomedRect() {
     z: vv.scale,
   };
 }
+
+
+
+
+
+
+function assertNotCheckerboarded(utils, scrollerId, msgPrefix) {
+  utils.advanceTimeAndRefresh(0);
+  var data = utils.getCompositorAPZTestData();
+  
+  var found = false;
+  for (apzcData of data.additionalData) {
+    if (apzcData.key == scrollerId) {
+      var checkerboarding = apzcData.value
+        .split(",")
+        .includes("checkerboarding");
+      ok(!checkerboarding, `${msgPrefix}: scroller is not checkerboarding`);
+      found = true;
+    }
+  }
+  ok(found, `${msgPrefix}: Found the scroller in the APZ data`);
+  utils.restoreNormalRefresh();
+}
