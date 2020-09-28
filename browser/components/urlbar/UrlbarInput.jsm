@@ -947,7 +947,8 @@ class UrlbarInput {
     
     if (
       this.searchMode?.isPreview &&
-      result?.payload.keywordOffer != UrlbarUtils.KEYWORD_OFFER.SHOW
+      result?.payload.keywordOffer != UrlbarUtils.KEYWORD_OFFER.SHOW &&
+      !this.view.oneOffSearchButtons.selectedButton
     ) {
       this.setSearchMode({});
     }

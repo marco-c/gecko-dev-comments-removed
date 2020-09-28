@@ -126,6 +126,49 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
 
+
+
+  set selectedButton(button) {
+    super.selectedButton = button;
+
+    
+    
+    if (this.input.searchMode && !this.input.searchMode.isPreview) {
+      return;
+    }
+
+    let expectedSearchMode;
+    if (
+      button &&
+      button != this.view.oneOffSearchButtons.settingsButtonCompact
+    ) {
+      expectedSearchMode = {
+        engineName: button.engine?.name,
+        source: button.source,
+        entry: "oneoff",
+      };
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (expectedSearchMode || this.input.searchMode) {
+      this.input.setSearchMode(expectedSearchMode || {});
+    }
+  }
+
+  get selectedButton() {
+    return super.selectedButton;
+  }
+
+  
+
+
+
   get selectedViewIndex() {
     return this.view.selectedElementIndex;
   }
@@ -218,11 +261,10 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
         break;
       }
       case "tab": {
-        if (params?.inBackground) {
-          
-          
-          searchMode.isPreview = false;
-        }
+        
+        
+        
+        searchMode.isPreview = false;
 
         let newTab = this.input.window.gBrowser.addTrustedTab("about:newtab");
         this.input.setSearchModeForBrowser(searchMode, newTab.linkedBrowser);
