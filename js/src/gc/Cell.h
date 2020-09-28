@@ -51,6 +51,8 @@ struct Chunk;
 class StoreBuffer;
 class TenuredCell;
 
+extern void UnmarkGrayGCThingRecursively(TenuredCell* cell);
+
 
 
 
@@ -487,8 +489,7 @@ MOZ_ALWAYS_INLINE void ReadBarrierImpl(TenuredCell* thing) {
   if (thing->isMarkedGray()) {
     
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
-    JS::UnmarkGrayGCThingRecursively(
-        JS::GCCellPtr(thing, thing->getTraceKind()));
+    UnmarkGrayGCThingRecursively(thing);
   }
 }
 
