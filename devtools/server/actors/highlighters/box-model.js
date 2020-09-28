@@ -107,12 +107,6 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     );
     this.isReady = this.markup.initialize();
 
-    
-
-
-
-    this.regionFill = {};
-
     this.onPageHide = this.onPageHide.bind(this);
     this.onWillNavigate = this.onWillNavigate.bind(this);
 
@@ -526,12 +520,6 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
       const boxType = BOX_MODEL_REGIONS[i];
       const nextBoxType = BOX_MODEL_REGIONS[i + 1];
       const box = this.getElement(boxType);
-
-      if (this.regionFill[boxType]) {
-        box.setAttribute("style", "fill:" + this.regionFill[boxType]);
-      } else {
-        box.setAttribute("style", "");
-      }
 
       
       
