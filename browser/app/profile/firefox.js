@@ -2451,13 +2451,6 @@ pref("devtools.debugger.features.async-live-stacks", false);
 pref("devtools.popup.disable_autohide", false);
 
 
-pref("devtools.whatsnew.enabled", true);
-
-
-
-pref("devtools.whatsnew.feature-enabled", true);
-
-
 
 pref("devtools.overflow.debugging.enabled", false);
 

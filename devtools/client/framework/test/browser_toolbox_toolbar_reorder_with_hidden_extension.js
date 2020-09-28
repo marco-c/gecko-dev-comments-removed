@@ -140,9 +140,6 @@ const TEST_DATA = [
 
 add_task(async function() {
   
-  
-  await pushPref("devtools.whatsnew.enabled", false);
-  
   await pushPref("devtools.application.enabled", true);
 
   registerCleanupFunction(() => {
