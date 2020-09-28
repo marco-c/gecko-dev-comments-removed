@@ -1359,6 +1359,7 @@ void TRR::SaveAdditionalRecords(
     RefPtr<AddrInfo> ai(new AddrInfo(iter.Key(), TRRTYPE_A,
                                      std::move(iter.Data()->mAddresses),
                                      iter.Data()->mTtl));
+    mHostResolver->MaybeRenewHostRecord(hostRecord);
 
     
     
