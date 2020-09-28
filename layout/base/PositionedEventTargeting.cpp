@@ -446,18 +446,6 @@ nsIFrame* FindFrameTargetedByInputEvent(
     PET_LOG("Retargeting disabled\n");
     return target;
   }
-  nsIContent* clickableAncestor = nullptr;
-  if (target) {
-    clickableAncestor = GetClickableAncestor(target, nsGkAtoms::body);
-    if (clickableAncestor) {
-      PET_LOG("Target %p is clickable\n", target);
-      
-      
-      
-      
-      clickableAncestor = target->GetContent();
-    }
-  }
 
   
   
@@ -485,6 +473,19 @@ nsIFrame* FindFrameTargetedByInputEvent(
                                                 candidates, options);
   if (NS_FAILED(rv)) {
     return target;
+  }
+
+  nsIContent* clickableAncestor = nullptr;
+  if (target) {
+    clickableAncestor = GetClickableAncestor(target, nsGkAtoms::body);
+    if (clickableAncestor) {
+      PET_LOG("Target %p is clickable\n", target);
+      
+      
+      
+      
+      clickableAncestor = target->GetContent();
+    }
   }
 
   nsIFrame* closestClickable =
