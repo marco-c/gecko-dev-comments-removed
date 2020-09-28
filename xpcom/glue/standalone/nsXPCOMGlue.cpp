@@ -33,6 +33,7 @@ typedef void (*NSFuncPtr)();
 #  include <windows.h>
 #  include <mbstring.h>
 #  include "mozilla/WindowsVersion.h"
+#  include "mozilla/PreXULSkeletonUI.h"
 
 typedef HINSTANCE LibHandleType;
 
@@ -310,6 +311,18 @@ static nsresult XPCOMGlueLoad(const char* aXPCOMFile,
       XPCOMGlueUnload();
       return NS_ERROR_FAILURE;
     }
+
+#  ifdef XP_WIN
+    
+    
+    
+    
+    
+    
+    
+    
+    PollPreXULSkeletonUIEvents();
+#  endif
   }
 #endif
   return NS_OK;
