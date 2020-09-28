@@ -1464,36 +1464,38 @@ class WindowsDllDetourPatcher final
           return;
         }
       } else if (*origBytes == 0xff) {
-        if ((origBytes[1] & (kMaskMod | kMaskReg)) == 0xf0) {
+        uint8_t mod = origBytes[1] & kMaskMod;
+        uint8_t reg = (origBytes[1] & kMaskReg) >> kRegFieldShift;
+        uint8_t rm = origBytes[1] & kMaskRm;
+        if (mod == kModReg && (reg == 0 || reg == 1 || reg == 2 || reg == 6)) {
           
           COPY_CODES(2);
-        } else if (origBytes[1] == 0x25) {
+        } else if (reg == 4) {
           
-          foundJmp = true;
-
-          origBytes += 2;
-
-          uintptr_t jmpDest = origBytes.ChasePointerFromDisp();
-
-          if (!GenerateJump(tramp, jmpDest, JumpType::Jmp)) {
-            return;
-          }
-        } else if ((origBytes[1] & (kMaskMod | kMaskReg)) ==
-                   BuildModRmByte(kModReg, 2, 0)) {
-          
-          COPY_CODES(2);
-        } else if (((origBytes[1] & kMaskReg) >> kRegFieldShift) == 4) {
-          
-          int len = CountModRmSib(origBytes + 1);
-          if (len < 0) {
+          if (mod == kModNoRegDisp && rm == kRmNoRegDispDisp32) {
             
-            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
-            return;
+            foundJmp = true;
+
+            origBytes += 2;
+
+            uintptr_t jmpDest = origBytes.ChasePointerFromDisp();
+
+            if (!GenerateJump(tramp, jmpDest, JumpType::Jmp)) {
+              return;
+            }
+          } else {
+            
+            int len = CountModRmSib(origBytes + 1);
+            if (len < 0) {
+              
+              MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+              return;
+            }
+
+            COPY_CODES(len + 1);
+
+            foundJmp = true;
           }
-
-          COPY_CODES(len + 1);
-
-          foundJmp = true;
         } else {
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
