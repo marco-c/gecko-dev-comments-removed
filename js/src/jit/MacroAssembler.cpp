@@ -4232,6 +4232,20 @@ void MacroAssembler::loadArgumentsObjectElement(Register obj, Register index,
   loadValue(argValue, output);
 }
 
+void MacroAssembler::loadArgumentsObjectLength(Register obj, Register output,
+                                               Label* fail) {
+  
+  unboxInt32(Address(obj, ArgumentsObject::getInitialLengthSlotOffset()),
+             output);
+
+  
+  branchTest32(Assembler::NonZero, output,
+               Imm32(ArgumentsObject::LENGTH_OVERRIDDEN_BIT), fail);
+
+  
+  rshift32(Imm32(ArgumentsObject::PACKED_BITS_COUNT), output);
+}
+
 static constexpr bool ValidateShiftRange(Scalar::Type from, Scalar::Type to) {
   for (Scalar::Type type = from; type < to; type = Scalar::Type(type + 1)) {
     if (TypedArrayShift(type) != TypedArrayShift(from)) {

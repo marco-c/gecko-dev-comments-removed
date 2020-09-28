@@ -3139,18 +3139,8 @@ bool CacheIRCompiler::emitLoadArgumentsObjectLengthResult(ObjOperandId objId) {
     return false;
   }
 
-  
-  masm.unboxInt32(Address(obj, ArgumentsObject::getInitialLengthSlotOffset()),
-                  scratch);
+  masm.loadArgumentsObjectLength(obj, scratch, failure->label());
 
-  
-  masm.branchTest32(Assembler::NonZero, scratch,
-                    Imm32(ArgumentsObject::LENGTH_OVERRIDDEN_BIT),
-                    failure->label());
-
-  
-  
-  masm.rshiftPtr(Imm32(ArgumentsObject::PACKED_BITS_COUNT), scratch);
   EmitStoreResult(masm, scratch, JSVAL_TYPE_INT32, output);
   return true;
 }
