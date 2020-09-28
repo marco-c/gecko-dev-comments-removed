@@ -2119,6 +2119,7 @@ class nsLayoutUtils {
 
 
   static nsIFrame* GetDisplayRootFrame(nsIFrame* aFrame);
+  static const nsIFrame* GetDisplayRootFrame(const nsIFrame* aFrame);
 
   
 
@@ -2763,7 +2764,7 @@ class nsLayoutUtils {
 
 
 
-  static bool AsyncPanZoomEnabled(nsIFrame* aFrame);
+  static bool AsyncPanZoomEnabled(const nsIFrame* aFrame);
 
   
 
