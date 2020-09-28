@@ -176,7 +176,8 @@ void L10nMutations::StartRefreshObserver() {
   
   
   if (mRefreshDriver) {
-    mRefreshDriver->AddRefreshObserver(this, FlushType::Style);
+    mRefreshDriver->AddRefreshObserver(this, FlushType::Style,
+                                       "L10n mutations");
     mRefreshObserver = true;
   } else {
     NS_WARNING("[l10n][mutations] Failed to start a refresh observer.");

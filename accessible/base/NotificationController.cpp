@@ -433,7 +433,8 @@ void NotificationController::ScheduleProcessing() {
   
   
   if (mObservingState == eNotObservingRefresh) {
-    if (mPresShell->AddRefreshObserver(this, FlushType::Display))
+    if (mPresShell->AddRefreshObserver(this, FlushType::Display,
+                                       "Accessibility notifications"))
       mObservingState = eRefreshObserving;
   }
 }

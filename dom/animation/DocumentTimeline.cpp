@@ -207,7 +207,8 @@ void DocumentTimeline::ObserveRefreshDriver(nsRefreshDriver* aDriver) {
   
   
   mIsObservingRefreshDriver = true;
-  aDriver->AddRefreshObserver(this, FlushType::Style);
+  aDriver->AddRefreshObserver(this, FlushType::Style,
+                              "DocumentTimeline animations");
   aDriver->AddTimerAdjustmentObserver(this);
 }
 

@@ -240,7 +240,8 @@ void SMILAnimationController::StartSampling(nsRefreshDriver* aRefreshDriver) {
     
     
     mCurrentSampleTime = mozilla::TimeStamp::Now();
-    aRefreshDriver->AddRefreshObserver(this, FlushType::Style);
+    aRefreshDriver->AddRefreshObserver(this, FlushType::Style,
+                                       "SMIL animations");
     mRegisteredWithRefreshDriver = true;
   }
 }
