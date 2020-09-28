@@ -707,14 +707,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
   bool GetBackgroundImageDraw() const { return mDrawImageBackground; }
-  void SetBackgroundImageDraw(bool aCanDraw) {
-    mDrawImageBackground = aCanDraw;
-  }
-
   bool GetBackgroundColorDraw() const { return mDrawColorBackground; }
-  void SetBackgroundColorDraw(bool aCanDraw) {
-    mDrawColorBackground = aCanDraw;
-  }
 
   
 
