@@ -205,7 +205,10 @@ WakeLock::HandleEvent(Event* aEvent) {
     NS_ENSURE_STATE(doc);
 
     bool oldHidden = mHidden;
-    mHidden = doc->Hidden();
+    
+    
+    
+    mHidden = doc->Hidden() && !doc->HasPictureInPictureChildElement();
 
     if (mLocked && oldHidden != mHidden) {
       hal::ModifyWakeLock(
