@@ -711,20 +711,26 @@ static PartialPrerenderData GetPartialPrerenderData(
 
   ScrollableLayerGuid::ViewID scrollId = ScrollableLayerGuid::NULL_SCROLL_ID;
 
-  const nsIFrame* clipFrame = nullptr;
-  const nsIScrollableFrame* scrollFrame =
-      nsLayoutUtils::GetNearestScrollableFrame(
-          aFrame->GetParent(), nsLayoutUtils::SCROLLABLE_SAME_DOC |
-                                   nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
-  
+  const nsIFrame* clipFrame =
+      nsLayoutUtils::GetNearestOverflowClipFrame(aFrame->GetParent());
+  const nsIScrollableFrame* scrollFrame = do_QueryFrame(clipFrame);
+
+  if (!clipFrame) {
+    
+    
+    scrollFrame = aFrame->PresShell()->GetRootScrollFrameAsScrollable();
+    if (scrollFrame) {
+      clipFrame = do_QueryFrame(scrollFrame);
+    } else {
+      
+      clipFrame = aFrame->PresShell()->GetRootFrame();
+    }
+  }
+
   
   if (scrollFrame &&
-      scrollFrame->GetScrollStyles().IsHiddenInBothDirections()) {
-    clipFrame = do_QueryFrame(scrollFrame);
-    
-    
-  } else if (nsLayoutUtils::AsyncPanZoomEnabled(
-                 const_cast<nsIFrame*>(aFrame))) {
+      !scrollFrame->GetScrollStyles().IsHiddenInBothDirections() &&
+      nsLayoutUtils::AsyncPanZoomEnabled(aFrame)) {
     const bool isInPositionFixed =
         nsLayoutUtils::IsInPositionFixedSubtree(aFrame);
     const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
@@ -733,31 +739,15 @@ static PartialPrerenderData GetPartialPrerenderData(
     if (!isInPositionFixed && asr &&
         aFrame->PresContext() == asrScrollableFrame->PresContext()) {
       scrollId = asr->GetViewId();
-      clipFrame = asrScrollableFrame;
+      MOZ_ASSERT(clipFrame == asrScrollableFrame);
     } else {
       
       
       
       scrollId =
           nsLayoutUtils::ScrollIdForRootScrollFrame(aFrame->PresContext());
-      clipFrame = aFrame->PresShell()->GetRootScrollFrame();
+      MOZ_ASSERT(clipFrame == aFrame->PresShell()->GetRootScrollFrame());
     }
-  }
-
-  if (!clipFrame) {
-    if (!scrollFrame) {
-      
-      
-      scrollFrame = aFrame->PresShell()->GetRootScrollFrameAsScrollable();
-    }
-    if (scrollFrame) {
-      clipFrame = do_QueryFrame(scrollFrame);
-    } else {
-      
-      clipFrame = aFrame->PresShell()->GetRootFrame();
-    }
-  } else {
-    scrollFrame = do_QueryFrame(clipFrame);
   }
 
   int32_t devPixelsToAppUnits = aFrame->PresContext()->AppUnitsPerDevPixel();

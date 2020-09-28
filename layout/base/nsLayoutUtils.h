@@ -3137,6 +3137,12 @@ class nsLayoutUtils {
   static nsSize ExpandHeightForDynamicToolbar(nsPresContext* aPresContext,
                                               const nsSize& aSize);
 
+  
+
+
+
+  static nsIFrame* GetNearestOverflowClipFrame(nsIFrame* aFrame);
+
  private:
   
 
