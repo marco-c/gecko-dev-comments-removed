@@ -385,6 +385,10 @@
 
 
 
+
+
+
+
 #define QM_VOID
 
 #define QM_PROPAGATE tryTempResult.propagateErr()
@@ -549,6 +553,81 @@
 #  define QM_DEBUG_TRY_VAR(...) QM_TRY_VAR(__VA_ARGS__)
 #else
 #  define QM_DEBUG_TRY_VAR(...)
+#endif
+
+
+
+
+
+
+#define QM_TRY_RETURN_PROPAGATE_ERR(ns, tryResult, expr) \
+  auto tryResult = (expr);                               \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                 \
+    ns::QM_HANDLE_ERROR(expr);                           \
+    return tryResult.propagateErr();                     \
+  }                                                      \
+  return tryResult.unwrap();
+
+
+
+#define QM_TRY_RETURN_CUSTOM_RET_VAL(ns, tryResult, expr, customRetVal) \
+  auto tryResult = (expr);                                              \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                \
+    auto tryTempResult MOZ_MAYBE_UNUSED = std::move(tryResult);         \
+    ns::QM_HANDLE_ERROR(expr);                                          \
+    return customRetVal;                                                \
+  }                                                                     \
+  return tryResult.unwrap();
+
+
+
+#define QM_TRY_RETURN_CUSTOM_RET_VAL_WITH_CLEANUP(ns, tryResult, expr,   \
+                                                  customRetVal, cleanup) \
+  auto tryResult = (expr);                                               \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                 \
+    auto tryTempResult MOZ_MAYBE_UNUSED = std::move(tryResult);          \
+    ns::QM_HANDLE_ERROR(expr);                                           \
+    cleanup(tryTempResult);                                              \
+    return customRetVal;                                                 \
+  }                                                                      \
+  return tryResult.unwrap();
+
+
+
+
+#define QM_TRY_RETURN_META(...)                                           \
+  {                                                                       \
+    MOZ_ARG_7(, ##__VA_ARGS__,                                            \
+              QM_TRY_RETURN_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__),     \
+              QM_TRY_RETURN_CUSTOM_RET_VAL(__VA_ARGS__),                  \
+              QM_TRY_RETURN_PROPAGATE_ERR(__VA_ARGS__),                   \
+              QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__), \
+              QM_MISSING_ARGS(__VA_ARGS__))                               \
+  }
+
+
+
+#define QM_TRY_RETURN_GLUE(...)                                      \
+  QM_TRY_RETURN_META(mozilla::dom::quota, MOZ_UNIQUE_VAR(tryResult), \
+                     ##__VA_ARGS__)
+
+
+
+
+
+
+
+
+#define QM_TRY_RETURN(...) QM_TRY_RETURN_GLUE(__VA_ARGS__)
+
+
+
+
+
+#ifdef DEBUG
+#  define QM_DEBUG_TRY_RETURN(...) QM_TRY_RETURN(__VA_ARGS__)
+#else
+#  define QM_DEBUG_TRY_RETURN(...)
 #endif
 
 
