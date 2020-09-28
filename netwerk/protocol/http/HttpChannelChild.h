@@ -52,8 +52,6 @@ namespace mozilla {
 namespace net {
 
 class HttpBackgroundChannelChild;
-class InterceptedChannelContent;
-class InterceptStreamListener;
 class SyntheticDiversionListener;
 
 class HttpChannelChild final : public PHttpChannelChild,
@@ -145,7 +143,6 @@ class HttpChannelChild final : public PHttpChannelChild,
       const ResourceTimingStructArgs& aTiming) override;
   mozilla::ipc::IPCResult RecvRedirect3Complete() override;
   mozilla::ipc::IPCResult RecvDeleteSelf() override;
-  mozilla::ipc::IPCResult RecvFinishInterceptedRedirect() override;
 
   mozilla::ipc::IPCResult RecvReportSecurityMessage(
       const nsString& messageTag, const nsString& messageCategory) override;
@@ -201,27 +198,6 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   nsresult AsyncCallImpl(void (HttpChannelChild::*funcPtr)(),
                          nsRunnableMethod<HttpChannelChild>** retval);
-
-  class OverrideRunnable : public Runnable {
-   public:
-    OverrideRunnable(HttpChannelChild* aChannel, HttpChannelChild* aNewChannel,
-                     InterceptStreamListener* aListener, nsIInputStream* aInput,
-                     nsIInterceptedBodyCallback* aCallback,
-                     UniquePtr<nsHttpResponseHead>&& aHead,
-                     nsICacheInfoChannel* aCacheInfo);
-
-    NS_IMETHOD Run() override;
-    void OverrideWithSynthesizedResponse();
-
-   private:
-    RefPtr<HttpChannelChild> mChannel;
-    RefPtr<HttpChannelChild> mNewChannel;
-    RefPtr<InterceptStreamListener> mListener;
-    nsCOMPtr<nsIInputStream> mInput;
-    nsCOMPtr<nsIInterceptedBodyCallback> mCallback;
-    UniquePtr<nsHttpResponseHead> mHead;
-    nsCOMPtr<nsICacheInfoChannel> mSynthesizedCacheInfo;
-  };
 
   
   
@@ -290,25 +266,6 @@ class HttpChannelChild final : public PHttpChannelChild,
                        nsISupports* aContext);
   void ContinueOnStopRequest();
 
-  bool ShouldInterceptURI(nsIURI* aURI, bool& aShouldUpgrade);
-
-  
-  
-  void ResetInterception();
-
-  
-  
-  void OverrideWithSynthesizedResponse(
-      UniquePtr<nsHttpResponseHead>& aResponseHead,
-      nsIInputStream* aSynthesizedInput,
-      nsIInterceptedBodyCallback* aSynthesizedCallback,
-      InterceptStreamListener* aStreamListener,
-      nsICacheInfoChannel* aCacheInfoChannel);
-
-  void ForceIntercepted(nsIInputStream* aSynthesizedInput,
-                        nsIInterceptedBodyCallback* aSynthesizedCallback,
-                        nsICacheInfoChannel* aCacheInfo);
-
   
   
   void TrySendDeletingChannel();
@@ -317,15 +274,10 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   void CancelOnMainThread(nsresult aRv);
 
-  void MaybeCallSynthesizedCallback();
-
  private:
   
   
   nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
-  RefPtr<InterceptStreamListener> mInterceptListener;
-  
-  nsCOMPtr<nsIStreamListener> mInterceptedRedirectListener;
 
   
   void ReleaseMainThreadOnlyReferences();
@@ -335,10 +287,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   nsCString mProtocolVersion;
 
   RequestHeaderTuples mClientSetRequestHeaders;
-  RefPtr<nsInputStreamPump> mSynthesizedResponsePump;
-  nsCOMPtr<nsIInputStream> mSynthesizedInput;
-  nsCOMPtr<nsIInterceptedBodyCallback> mSynthesizedCallback;
-  nsCOMPtr<nsICacheInfoChannel> mSynthesizedCacheInfo;
   RefPtr<ChannelEventQueue> mEventQ;
 
   nsCOMPtr<nsIInputStreamReceiver> mOriginalInputStreamReceiver;
@@ -358,11 +306,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   void CleanupBackgroundChannel();
 
   
-  RefPtr<HttpChannelChild> mInterceptingChannel;
-  
-  RefPtr<OverrideRunnable> mOverrideRunnable;
-
-  
   nsCOMPtr<nsIEventTarget> mODATarget;
   
   Mutex mEventTargetMutex;
@@ -374,7 +317,6 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   TimeStamp mLastStatusReported;
 
-  int64_t mSynthesizedStreamLength;
   uint64_t mCacheEntryId;
 
   
@@ -449,34 +391,6 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   
   
-  uint8_t mSynthesizedResponse : 1;
-
-  
-  
-  uint8_t mShouldInterceptSubsequentRedirect : 1;
-  
-  
-  
-  uint8_t mRedirectingForSubsequentSynthesizedResponse : 1;
-
-  
-  
-  uint8_t mPostRedirectChannelShouldIntercept : 1;
-  
-  
-  
-  uint8_t mPostRedirectChannelShouldUpgrade : 1;
-
-  
-  
-  uint8_t mShouldParentIntercept : 1;
-
-  
-  
-  uint8_t mSuspendParentAfterSynthesizeResponse : 1;
-
-  
-  
   uint8_t mIsLastPartOfMultiPart : 1;
 
   
@@ -490,7 +404,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   uint8_t mSuspendedByWaitingForPermissionCookie : 1;
 
-  void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);
 
   
@@ -526,7 +439,7 @@ class HttpChannelChild final : public PHttpChannelChild,
                       const nsACString& securityInfoSerialization,
                       const uint64_t& channelId,
                       const ResourceTimingStructArgs& timing);
-  bool Redirect3Complete(OverrideRunnable* aRunnable);
+  void Redirect3Complete();
   void DeleteSelf();
   void DoNotifyListener();
   void ContinueDoNotifyListener();
@@ -541,14 +454,6 @@ class HttpChannelChild final : public PHttpChannelChild,
                                        nsIChannel** outChannel);
 
   
-  void BeginNonIPCRedirect(nsIURI* responseURI,
-                           const nsHttpResponseHead* responseHead,
-                           bool responseRedirected);
-
-  
-  void OverrideSecurityInfoForNonIPCRedirect(nsISupports* securityInfo);
-
-  
   void CollectOMTTelemetry();
 
   friend class HttpAsyncAborter<HttpChannelChild>;
@@ -559,28 +464,6 @@ class HttpChannelChild final : public PHttpChannelChild,
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpChannelChild, HTTP_CHANNEL_CHILD_IID)
-
-
-
-
-
-class InterceptStreamListener : public nsIStreamListener,
-                                public nsIProgressEventSink {
-  RefPtr<HttpChannelChild> mOwner;
-  nsCOMPtr<nsISupports> mContext;
-  virtual ~InterceptStreamListener() = default;
-
- public:
-  InterceptStreamListener(HttpChannelChild* aOwner, nsISupports* aContext)
-      : mOwner(aOwner), mContext(aContext) {}
-
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIREQUESTOBSERVER
-  NS_DECL_NSISTREAMLISTENER
-  NS_DECL_NSIPROGRESSEVENTSINK
-
-  void Cleanup();
-};
 
 
 
