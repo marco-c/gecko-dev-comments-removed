@@ -2576,11 +2576,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   ComputeTargetRanges(nsIEditor::EDirection aDirectionAndAmount,
-                      nsIEditor::EStripWrappers aStripWrappers,
                       AutoRangeArray& aRangesToDelete);
 
   
