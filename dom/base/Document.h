@@ -2159,10 +2159,6 @@ class Document : public nsINode,
   bool IsTopLevelContentDocument() const { return mIsTopLevelContentDocument; }
   void SetIsTopLevelContentDocument(bool aIsTopLevelContentDocument) {
     mIsTopLevelContentDocument = aIsTopLevelContentDocument;
-    
-    
-    
-    SetAllowPaymentRequest(aIsTopLevelContentDocument);
   }
 
   bool IsContentDocument() const { return mIsContentDocument; }
@@ -3873,12 +3869,6 @@ class Document : public nsINode,
     --mIgnoreOpensDuringUnloadCounter;
   }
 
-  bool AllowPaymentRequest() const { return mAllowPaymentRequest; }
-
-  void SetAllowPaymentRequest(bool aAllowPaymentRequest) {
-    mAllowPaymentRequest = aAllowPaymentRequest;
-  }
-
   mozilla::dom::FeaturePolicy* FeaturePolicy() const;
 
   bool ModuleScriptsEnabled();
@@ -4501,9 +4491,6 @@ class Document : public nsINode,
 
   
   bool mDidCallBeginLoad : 1;
-
-  
-  bool mAllowPaymentRequest : 1;
 
   
   bool mEncodingMenuDisabled : 1;
