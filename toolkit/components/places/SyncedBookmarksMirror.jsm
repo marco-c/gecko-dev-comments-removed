@@ -81,7 +81,7 @@ const DB_TITLE_LENGTH_MAX = 4096;
 
 
 
-const MIRROR_SCHEMA_VERSION = 7;
+const MIRROR_SCHEMA_VERSION = 8;
 
 const DEFAULT_MAX_FRECENCIES_TO_RECALCULATE = 400;
 
@@ -1513,6 +1513,15 @@ async function migrateMirrorSchema(db, currentSchemaVersion) {
   if (currentSchemaVersion < 7) {
     await db.execute(`CREATE INDEX IF NOT EXISTS mirror.structurePositions ON
                       structure(parentGuid, position)`);
+  }
+  if (currentSchemaVersion < 8) {
+    
+    
+    
+    await db.execute(`UPDATE moz_bookmarks AS b
+                      SET syncStatus = ${PlacesUtils.bookmarks.SYNC_STATUS.NORMAL}
+                      WHERE EXISTS (SELECT 1 FROM mirror.items
+                                    WHERE guid = b.guid)`);
   }
 }
 
