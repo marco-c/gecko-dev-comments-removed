@@ -5,25 +5,28 @@
 
 
 #include "AudioDestinationNode.h"
-#include "AudioContext.h"
+
 #include "AlignmentUtils.h"
+#include "AudibilityMonitor.h"
+#include "AudioChannelService.h"
 #include "AudioContext.h"
+#include "AudioContext.h"
+#include "AudioNodeEngine.h"
+#include "AudioNodeTrack.h"
 #include "CubebUtils.h"
+#include "MediaTrackGraph.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/AudioDestinationNodeBinding.h"
 #include "mozilla/dom/BaseAudioContextBinding.h"
 #include "mozilla/dom/OfflineAudioCompletionEvent.h"
-#include "mozilla/dom/power/PowerManagerService.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/WakeLock.h"
-#include "AudioChannelService.h"
-#include "AudioNodeEngine.h"
-#include "AudioNodeTrack.h"
-#include "MediaTrackGraph.h"
+#include "mozilla/dom/power/PowerManagerService.h"
 #include "nsContentUtils.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/dom/Promise.h"
 
 extern mozilla::LazyLogModule gAudioChannelLog;
 
@@ -187,10 +190,13 @@ class DestinationNodeEngine final : public AudioNodeEngine {
  public:
   explicit DestinationNodeEngine(AudioDestinationNode* aNode)
       : AudioNodeEngine(aNode),
+        mSampleRate(CubebUtils::PreferredSampleRate()),
         mVolume(1.0f),
-        mLastInputAudible(false),
+        mAudibilityMonitor(
+            mSampleRate,
+            StaticPrefs::dom_media_silence_duration_for_audibility()),
         mSuspended(false),
-        mSampleRate(CubebUtils::PreferredSampleRate()) {
+        mLastInputAudible(false) {
     MOZ_ASSERT(aNode);
   }
 
@@ -204,32 +210,10 @@ class DestinationNodeEngine final : public AudioNodeEngine {
       return;
     }
 
-    bool isInputAudible =
-        !aInput.IsNull() && !aInput.IsMuted() && aInput.IsAudible();
+    mAudibilityMonitor.Process(aInput);
+    bool isInputAudible = mAudibilityMonitor.RecentlyAudible();
 
-    auto shouldNotifyChanged = [&]() {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (isInputAudible && !mLastInputAudible) {
-        return true;
-      }
-      
-      if (!isInputAudible && mLastInputAudible &&
-          aFrom - mLastInputAudibleTime >= mSampleRate) {
-        return true;
-      }
-      return false;
-    };
-    if (shouldNotifyChanged()) {
+    if (isInputAudible != mLastInputAudible) {
       mLastInputAudible = isInputAudible;
       RefPtr<AudioNodeTrack> track = aTrack;
       auto r = [track, isInputAudible]() -> void {
@@ -244,10 +228,6 @@ class DestinationNodeEngine final : public AudioNodeEngine {
 
       aTrack->Graph()->DispatchToMainThreadStableState(NS_NewRunnableFunction(
           "dom::WebAudioAudibleStateChangedRunnable", r));
-    }
-
-    if (isInputAudible) {
-      mLastInputAudibleTime = aFrom;
     }
   }
 
@@ -285,11 +265,11 @@ class DestinationNodeEngine final : public AudioNodeEngine {
   }
 
  private:
-  float mVolume;
-  bool mLastInputAudible;
-  GraphTime mLastInputAudibleTime = 0;
-  bool mSuspended;
   int mSampleRate;
+  float mVolume;
+  AudibilityMonitor mAudibilityMonitor;
+  bool mSuspended;
+  bool mLastInputAudible;
 };
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(AudioDestinationNode, AudioNode,
