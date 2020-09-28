@@ -126,10 +126,11 @@ class TabBase {
 
 
 
-  async capture(context, options) {
-    let win = this.nativeTab.ownerGlobal;
+
+
+  async capture(context, zoom, options) {
+    let win = this.browser.ownerGlobal;
     let scale = options?.scale || win.devicePixelRatio;
-    let zoom = win.ZoomManager.getZoomForBrowser(this.browser);
     let rect = options?.rect && win.DOMRect.fromRect(options.rect);
 
     let wgp = this.browsingContext.currentWindowGlobal;

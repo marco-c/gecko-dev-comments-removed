@@ -206,9 +206,6 @@
 - (NSArray* _Nullable)moxColumnHeaderUIElements;
 
 
-- (NSString* _Nullable)moxIdentifier;
-
-
 
 
 - (id _Nullable)moxMathRootRadicand;

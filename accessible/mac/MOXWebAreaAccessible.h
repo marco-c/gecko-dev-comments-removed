@@ -10,11 +10,7 @@
 
 using namespace mozilla::a11y;
 
-@class MOXRootGroup;
-
-@interface MOXWebAreaAccessible : mozAccessible {
-  MOXRootGroup* mRootGroup;
-}
+@interface MOXWebAreaAccessible : mozAccessible
 
 - (NSURL*)moxURL;
 
@@ -31,28 +27,18 @@ using namespace mozilla::a11y;
 - (NSNumber*)moxUIElementCountForSearchPredicate:(NSDictionary*)searchPredicate;
 
 
-- (NSArray*)moxUnignoredChildren;
-
-
 - (void)handleAccessibleEvent:(uint32_t)eventType;
-
-
-- (void)dealloc;
-
-- (NSArray*)rootGroupChildren;
-
-- (id)rootGroup;
 
 @end
 
 @interface MOXSearchInfo : NSObject {
   
   
-  MOXWebAreaAccessible* mWebArea;
+  AccessibleOrProxy mWebArea;
 
   
   
-  MOXAccessibleBase* mStartElem;
+  AccessibleOrProxy mStartElem;
 
   
   int mResultLimit;
@@ -68,9 +54,7 @@ using namespace mozilla::a11y;
 }
 
 - (id)initWithParameters:(NSDictionary*)params
-                 andRoot:(MOXWebAreaAccessible*)root;
-
-- (AccessibleOrProxy)startGeckoAccessible;
+                 andRoot:(mozilla::a11y::AccessibleOrProxy)root;
 
 - (NSMutableArray*)getMatchesForRule:(PivotRule&)rule;
 

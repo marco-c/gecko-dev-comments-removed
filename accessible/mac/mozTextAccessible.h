@@ -98,13 +98,4 @@
 
 - (NSString*)moxLabel;
 
-
-- (NSString*)moxStringForRange:(NSValue*)range;
-
-
-- (NSAttributedString*)moxAttributedStringForRange:(NSValue*)range;
-
-
-- (NSValue*)moxBoundsForRange:(NSValue*)range;
-
 @end
