@@ -162,8 +162,6 @@ BrowserParent* BrowserParent::sTopLevelWebFocus = nullptr;
 
 BrowserParent* BrowserParent::sLastMouseRemoteTarget = nullptr;
 
-BrowserParent* BrowserParent::sPointerLockedRemoteTarget = nullptr;
-
 
 
 #define NOTIFY_FLAG_SHIFT 16
@@ -245,11 +243,6 @@ BrowserParent* BrowserParent::GetFocused() { return sFocus; }
 
 BrowserParent* BrowserParent::GetLastMouseRemoteTarget() {
   return sLastMouseRemoteTarget;
-}
-
-
-BrowserParent* BrowserParent::GetPointerLockedRemoteTarget() {
-  return sPointerLockedRemoteTarget;
 }
 
 
@@ -599,7 +592,6 @@ void BrowserParent::RemoveWindowListeners() {
 void BrowserParent::DestroyInternal() {
   UnsetTopLevelWebFocus(this);
   UnsetLastMouseRemoteTarget(this);
-  UnsetPointerLockedRemoteTarget(this);
 
   RemoveWindowListeners();
 
@@ -681,7 +673,6 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   
   BrowserParent::UnsetTopLevelWebFocus(this);
   BrowserParent::UnsetLastMouseRemoteTarget(this);
-  BrowserParent::UnsetPointerLockedRemoteTarget(this);
 
   if (why == AbnormalShutdown) {
     
@@ -3064,14 +3055,6 @@ void BrowserParent::UnsetLastMouseRemoteTarget(BrowserParent* aBrowserParent) {
   }
 }
 
-
-void BrowserParent::UnsetPointerLockedRemoteTarget(
-    BrowserParent* aBrowserParent) {
-  if (sPointerLockedRemoteTarget == aBrowserParent) {
-    sPointerLockedRemoteTarget = nullptr;
-  }
-}
-
 mozilla::ipc::IPCResult BrowserParent::RecvRequestIMEToCommitComposition(
     const bool& aCancel, bool* aIsCommitted, nsString* aCommittedString) {
   nsCOMPtr<nsIWidget> widget = GetTextInputHandlingWidget();
@@ -4139,31 +4122,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingWebVR(
   aResolve(true);
 #endif
 
-  return IPC_OK();
-}
-
-bool BrowserParent::SetPointerLock() {
-  if (sPointerLockedRemoteTarget) {
-    return sPointerLockedRemoteTarget == this;
-  }
-
-  sPointerLockedRemoteTarget = this;
-  return true;
-}
-
-mozilla::ipc::IPCResult BrowserParent::RecvRequestPointerLock(
-    RequestPointerLockResolver&& aResolve) {
-  nsCString error;
-  if (!SetPointerLock()) {
-    error = "PointerLockDeniedInUse";
-  }
-  aResolve(error);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult BrowserParent::RecvReleasePointerLock() {
-  MOZ_ASSERT_IF(sPointerLockedRemoteTarget, sPointerLockedRemoteTarget == this);
-  UnsetPointerLockedRemoteTarget(this);
   return IPC_OK();
 }
 
