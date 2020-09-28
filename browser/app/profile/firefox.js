@@ -2012,6 +2012,15 @@ pref("browser.engagement.recent_visited_origins.expiry", 86400);
 pref("browser.aboutConfig.showWarning", true);
 
 pref("browser.toolbars.keyboard_navigation", true);
+pref("browser.toolbars.bookmarks.persist_open", false);
+
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.toolbars.bookmarks.2h2020", true);
+#else
+pref("browser.toolbars.bookmarks.2h2020", false);
+#endif
 
 
 
