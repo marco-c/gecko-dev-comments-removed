@@ -27,9 +27,9 @@ using namespace mozilla::a11y;
 
 
 static const wchar_t* ConsumerStringMap[CONSUMERS_ENUM_LEN + 1] = {
-    L"NVDA",    L"JAWS",         L"OLDJAWS",  L"WE",       L"DOLPHIN",
-    L"SEROTEK", L"COBRA",        L"ZOOMTEXT", L"KAZAGURU", L"YOUDAO",
-    L"UNKNOWN", L"UIAUTOMATION", L"\0"};
+    L"NVDA",    L"JAWS",         L"OLDJAWS",       L"WE",       L"DOLPHIN",
+    L"SEROTEK", L"COBRA",        L"ZOOMTEXT",      L"KAZAGURU", L"YOUDAO",
+    L"UNKNOWN", L"UIAUTOMATION", L"VISPEROSHARED", L"\0"};
 
 bool Compatibility::IsModuleVersionLessThan(HMODULE aModuleHandle,
                                             unsigned long long aVersion) {
@@ -164,6 +164,10 @@ void Compatibility::InitConsumers() {
   if (::GetModuleHandleW(L"uiautomation") ||
       ::GetModuleHandleW(L"uiautomationcore"))
     sConsumers |= UIAUTOMATION;
+
+  if (::GetModuleHandleW(L"AccEventCache")) {
+    sConsumers |= VISPEROSHARED;
+  }
 
   
   if (sConsumers != Compatibility::UNKNOWN)

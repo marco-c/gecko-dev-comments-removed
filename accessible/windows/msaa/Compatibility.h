@@ -44,6 +44,13 @@ class Compatibility {
 
 
 
+
+  static bool IsVisperoShared() { return !!(sConsumers & VISPEROSHARED); }
+
+  
+
+
+
   static uint16_t GetActCtxResourceId();
 
   
@@ -99,9 +106,10 @@ class Compatibility {
     KAZAGURU = 1 << 8,
     YOUDAO = 1 << 9,
     UNKNOWN = 1 << 10,
-    UIAUTOMATION = 1 << 11
+    UIAUTOMATION = 1 << 11,
+    VISPEROSHARED = 1 << 12
   };
-#define CONSUMERS_ENUM_LEN 12
+#define CONSUMERS_ENUM_LEN 13
 
  private:
   static uint32_t sConsumers;
