@@ -3280,41 +3280,15 @@ bool CacheIRCompiler::emitLoadArgumentsObjectArgResult(ObjOperandId objId,
   AutoOutputRegister output(*this);
   Register obj = allocator.useRegister(masm, objId);
   Register index = allocator.useRegister(masm, indexId);
-  AutoScratchRegister scratch1(allocator, masm);
-  AutoScratchRegisterMaybeOutput scratch2(allocator, masm, output);
+  AutoScratchRegister scratch(allocator, masm);
 
   FailurePath* failure;
   if (!addFailurePath(&failure)) {
     return false;
   }
 
-  
-  masm.unboxInt32(Address(obj, ArgumentsObject::getInitialLengthSlotOffset()),
-                  scratch1);
-
-  
-  masm.branchTest32(Assembler::NonZero, scratch1,
-                    Imm32(ArgumentsObject::LENGTH_OVERRIDDEN_BIT |
-                          ArgumentsObject::ELEMENT_OVERRIDDEN_BIT),
-                    failure->label());
-
-  
-  masm.rshift32(Imm32(ArgumentsObject::PACKED_BITS_COUNT), scratch1);
-  masm.spectreBoundsCheck32(index, scratch1, scratch2, failure->label());
-
-  
-  masm.loadPrivate(Address(obj, ArgumentsObject::getDataSlotOffset()),
-                   scratch1);
-
-  
-  masm.branchPtr(Assembler::NotEqual,
-                 Address(scratch1, offsetof(ArgumentsData, rareData)),
-                 ImmWord(0), failure->label());
-
-  
-  BaseValueIndex argValue(scratch1, index, ArgumentsData::offsetOfArgs());
-  masm.branchTestMagic(Assembler::Equal, argValue, failure->label());
-  masm.loadValue(argValue, output.valueReg());
+  masm.loadArgumentsObjectElement(obj, index, output.valueReg(), scratch,
+                                  failure->label());
   return true;
 }
 

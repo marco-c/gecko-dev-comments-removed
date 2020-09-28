@@ -32,6 +32,7 @@
 #include "js/Conversions.h"
 #include "js/Printf.h"
 #include "js/ScalarType.h"  
+#include "vm/ArgumentsObject.h"
 #include "vm/ArrayBufferViewObject.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/TraceLogging.h"
@@ -4200,6 +4201,35 @@ void MacroAssembler::packedArrayShift(Register array, ValueOperand output,
   store32(temp2, initLengthAddr);
 
   bind(&done);
+}
+
+void MacroAssembler::loadArgumentsObjectElement(Register obj, Register index,
+                                                ValueOperand output,
+                                                Register temp, Label* fail) {
+  Register temp2 = output.scratchReg();
+
+  
+  unboxInt32(Address(obj, ArgumentsObject::getInitialLengthSlotOffset()), temp);
+
+  
+  branchTest32(Assembler::NonZero, temp,
+               Imm32(ArgumentsObject::ELEMENT_OVERRIDDEN_BIT), fail);
+
+  
+  rshift32(Imm32(ArgumentsObject::PACKED_BITS_COUNT), temp);
+  spectreBoundsCheck32(index, temp, temp2, fail);
+
+  
+  loadPrivate(Address(obj, ArgumentsObject::getDataSlotOffset()), temp);
+
+  
+  branchPtr(Assembler::NotEqual,
+            Address(temp, offsetof(ArgumentsData, rareData)), ImmWord(0), fail);
+
+  
+  BaseValueIndex argValue(temp, index, ArgumentsData::offsetOfArgs());
+  branchTestMagic(Assembler::Equal, argValue, fail);
+  loadValue(argValue, output);
 }
 
 static constexpr bool ValidateShiftRange(Scalar::Type from, Scalar::Type to) {
