@@ -463,12 +463,35 @@ add_task(async function topSitesDisabled() {
   });
   await checkDoesNotOpenOnFocus();
   await SpecialPowers.popPrefEnv();
+});
 
+add_task(async function topSitesPrivateWindow() {
   
   let privateWin = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
   });
-  await checkDoesNotOpenOnFocus(privateWin);
+  await addTestVisits();
+  let sites = AboutNewTab.getTopSites();
+  Assert.equal(
+    sites.length,
+    7,
+    "The test suite browser should have 7 Top Sites."
+  );
+  let urlbar = privateWin.gURLBar;
+  await UrlbarTestUtils.promisePopupOpen(privateWin, () => {
+    if (urlbar.getAttribute("pageproxystate") == "invalid") {
+      urlbar.handleRevert();
+    }
+    EventUtils.synthesizeMouseAtCenter(urlbar.inputField, {}, privateWin);
+  });
+  Assert.ok(urlbar.view.isOpen, "UrlbarView should be open.");
+  await UrlbarTestUtils.promiseSearchComplete(privateWin);
+
+  Assert.equal(
+    UrlbarTestUtils.getResultCount(privateWin),
+    7,
+    "The number of results should be the same as the number of Top Sites (7)."
+  );
 
   
   
@@ -476,12 +499,15 @@ add_task(async function topSitesDisabled() {
     window: privateWin,
     value: "example",
   });
-  privateWin.gURLBar.select();
+  urlbar.select();
   EventUtils.synthesizeKey("KEY_Backspace", {}, privateWin);
-  
-  
-  await new Promise(resolve => setTimeout(resolve, 500));
-  Assert.ok(!privateWin.gURLBar.view.isOpen, "check urlbar panel is not open");
+  Assert.ok(urlbar.view.isOpen, "UrlbarView should be open.");
+  await UrlbarTestUtils.promiseSearchComplete(privateWin);
+  Assert.equal(
+    UrlbarTestUtils.getResultCount(privateWin),
+    7,
+    "The number of results should be the same as the number of Top Sites (7)."
+  );
 
   await BrowserTestUtils.closeWindow(privateWin);
 
