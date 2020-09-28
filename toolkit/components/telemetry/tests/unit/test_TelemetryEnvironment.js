@@ -2137,38 +2137,6 @@ add_task(async function test_defaultSearchEngine() {
   data = TelemetryEnvironment.currentEnvironment;
   checkEnvironmentData(data);
   Assert.equal(data.settings.defaultSearchEngine, EXPECTED_SEARCH_ENGINE);
-
-  
-  Assert.equal(data.settings.searchCohort, undefined);
-
-  
-  deferred = PromiseUtils.defer();
-  TelemetryEnvironment.registerChangeListener(
-    "testSearchEngine_pref",
-    deferred.resolve
-  );
-  Services.prefs.setCharPref("browser.search.cohort", "testcohort");
-  Services.obs.notifyObservers(null, "browser-search-service", "init-complete");
-  await deferred.promise;
-  TelemetryEnvironment.unregisterChangeListener("testSearchEngine_pref");
-  data = TelemetryEnvironment.currentEnvironment;
-  Assert.equal(data.settings.searchCohort, "testcohort");
-  Assert.equal(data.experiments.searchCohort.branch, "testcohort");
-
-  
-  deferred = PromiseUtils.defer();
-  TelemetryEnvironment.registerChangeListener(
-    "testSearchEngine_pref",
-    deferred.resolve
-  );
-  Services.prefs.setCharPref("browser.search.cohort", "testcohort2");
-  Services.obs.notifyObservers(null, "browser-search-service", "init-complete");
-  await deferred.promise;
-  TelemetryEnvironment.unregisterChangeListener("testSearchEngine_pref");
-  data = TelemetryEnvironment.currentEnvironment;
-  
-  Assert.equal(data.settings.searchCohort, "testcohort2");
-  Assert.equal(data.experiments.searchCohort.branch, "testcohort2");
 });
 
 add_task(async function test_defaultPrivateSearchEngine() {
