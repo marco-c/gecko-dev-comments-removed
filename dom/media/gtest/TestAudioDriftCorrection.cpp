@@ -217,9 +217,11 @@ void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate) {
   for (int j = 0; j < 3; ++j) {
     
     if (j % 2 == 0) {
-      sourceFrames = sampleRateTransmitter / 100 + 10;
+      sourceFrames =
+          sampleRateTransmitter *  102 / 100 /  100;
     } else {
-      sourceFrames = sampleRateTransmitter / 100 - 10;
+      sourceFrames =
+          sampleRateTransmitter *  98 / 100 /  100;
     }
 
     
@@ -251,16 +253,20 @@ void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate) {
 
   EXPECT_EQ(outToneVerifier.EstimatedFreq(), tone.mFrequency);
   
-  
-  EXPECT_GT(outToneVerifier.PreSilenceSamples(), 2000U);
+  EXPECT_GE(outToneVerifier.PreSilenceSamples(), aTargetRate * 50 / 1000U);
   EXPECT_EQ(outToneVerifier.CountDiscontinuities(), 0U);
 }
 
 TEST(TestAudioDriftCorrection, Basic)
 {
+  printf("Testing AudioCorrection 48 -> 48\n");
   testAudioCorrection(48000, 48000);
+  printf("Testing AudioCorrection 48 -> 44.1\n");
   testAudioCorrection(48000, 44100);
+  printf("Testing AudioCorrection 44.1 -> 48\n");
   testAudioCorrection(44100, 48000);
+  printf("Testing AudioCorrection 23458 -> 25113\n");
+  testAudioCorrection(23458, 25113);
 }
 
 void testMonoToStereoInput(int aSourceRate, int aTargetRate) {
