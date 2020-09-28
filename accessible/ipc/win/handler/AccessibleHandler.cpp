@@ -221,15 +221,22 @@ AccessibleHandler::MaybeUpdateCachedData() {
   }
 
   
-  CleanupDynamicIA2Data(mCachedData.mDynamicData,
-                        mCachedDynamicDataMarshaledByCom);
-  HRESULT hr =
-      mCachedData.mGeckoBackChannel->Refresh(&mCachedData.mDynamicData);
+  
+  
+  
+  
+  
+  DynamicIA2Data newData;
+  HRESULT hr = mCachedData.mGeckoBackChannel->Refresh(&newData);
   if (SUCCEEDED(hr)) {
+    
+    CleanupDynamicIA2Data(mCachedData.mDynamicData,
+                          mCachedDynamicDataMarshaledByCom);
+    mCachedData.mDynamicData = newData;
+    mCachedDynamicDataMarshaledByCom = true;
     
     
     mCacheGen = gen;
-    mCachedDynamicDataMarshaledByCom = true;
   }
   return hr;
 }
