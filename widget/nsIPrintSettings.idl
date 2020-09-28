@@ -132,12 +132,12 @@ interface nsIPrintSettings : nsISupports
   
 
 
-  nsIPrintSettings clone();
+    nsIPrintSettings clone();
 
   
 
 
-  void assign(in nsIPrintSettings aPS);
+    void assign(in nsIPrintSettings aPS);
 
   
 
@@ -177,8 +177,8 @@ interface nsIPrintSettings : nsISupports
   attribute double  unwriteableMarginRight;
 
   attribute double  scaling;      
-  [infallible] attribute boolean printBGColors; 
-  [infallible] attribute boolean printBGImages; 
+  attribute boolean printBGColors; 
+  attribute boolean printBGImages; 
 
   attribute short   printRange;
 

@@ -1651,10 +1651,6 @@ void nsPresContext::SetPrintSettings(nsIPrintSettings* aPrintSettings) {
     return;
   }
 
-  
-  mDrawColorBackground = mPrintSettings->GetPrintBGColors();
-  mDrawImageBackground = mPrintSettings->GetPrintBGImages();
-
   nsIntMargin unwriteableTwips = mPrintSettings->GetUnwriteableMarginInTwips();
   NS_ASSERTION(unwriteableTwips.top >= 0 && unwriteableTwips.right >= 0 &&
                    unwriteableTwips.bottom >= 0 && unwriteableTwips.left >= 0,
