@@ -781,29 +781,21 @@
       super();
       MozXULElement.insertFTLIfNeeded("toolkit/main-window/autocomplete.ftl");
 
-      ChromeUtils.defineModuleGetter(
-        this,
-        "MigrationUtils",
-        "resource:///modules/MigrationUtils.jsm"
-      );
-
       this.addEventListener("click", event => {
-        const browserId = this.getAttribute("ac-value");
         if (event.button != 0) {
           return;
         }
 
         
-        this.MigrationUtils.showMigrationWizard(window, [
-          this.MigrationUtils.MIGRATION_ENTRYPOINT_PASSWORDS,
-          browserId,
-        ]);
-        Services.telemetry.recordEvent(
-          "exp_import",
-          "event",
-          "click",
-          browserId
-        );
+        gBrowser.selectedBrowser.browsingContext.currentWindowGlobal
+          .getActor("LoginManager")
+          .receiveMessage({
+            name: "PasswordManager:HandleImportable",
+            data: {
+              browserId: this.getAttribute("ac-value"),
+              type: "click",
+            },
+          });
       });
     }
 
