@@ -1787,91 +1787,88 @@ PeerConnectionWrapper.prototype = {
 
 
 
-  async waitForRtpFlow(track) {
-    info("waitForRtpFlow(" + track.id + ")");
-    let hasFlow = (stats, retries) => {
-      const dict = JSON.stringify([...stats.entries()]);
-      info(
-        `Checking for stats in  ${dict} for ${track.kind} track ${track.id}` +
-          `retry number ${retries}`
-      );
-      const rtp = [...stats.values()].find(({ type }) =>
-        ["inbound-rtp", "outbound-rtp"].includes(type)
-      );
-      if (!rtp) {
-        return false;
-      }
-      info("Should have RTP stats for track " + track.id);
-      info("RTP stats: " + JSON.stringify(rtp));
-      let nrPackets =
-        rtp[rtp.type == "outbound-rtp" ? "packetsSent" : "packetsReceived"];
-      info(
-        "Track " +
-          track.id +
-          " has " +
-          nrPackets +
-          " " +
-          rtp.type +
-          " RTP packets."
-      );
-      return nrPackets > 0;
-    };
+  async _waitForRtpFlow(target, rtpType) {
+    const { track } = target;
+    info(`_waitForRtpFlow(${track.id}, ${rtpType})`);
+    const packets = `packets${rtpType == "outbound-rtp" ? "Sent" : "Received"}`;
 
-    
-    const retryInterval = 500;
-    
-    const timeout = 30000;
-    let retry = 0;
-    
-    for (let remaining = timeout; remaining >= 0; remaining -= retryInterval) {
-      let stats = await this._pc.getStats(track);
-      if (hasFlow(stats, retry++)) {
-        ok(true, "RTP flowing for " + track.kind + " track " + track.id);
-        return stats;
+    const retryInterval = 500; 
+    const timeout = 30000; 
+    const retries = timeout / retryInterval;
+
+    for (let i = 0; i < retries; i++) {
+      info(`Checking ${rtpType} for ${track.kind} track ${track.id} try ${i}`);
+      for (const rtp of (await target.getStats()).values()) {
+        if (rtp.type != rtpType) {
+          continue;
+        }
+        if (rtp.kind != track.kind) {
+          continue;
+        }
+
+        const numPackets = rtp[packets];
+        info(`Track ${track.id} has ${numPackets} ${packets}.`);
+        if (!numPackets) {
+          continue;
+        }
+
+        ok(true, `RTP flowing for ${track.kind} track ${track.id}`);
+        return;
       }
       await wait(retryInterval);
     }
     throw new Error(
-      "Timeout checking for stats for track " +
-        track.id +
-        " after at least" +
-        timeout +
-        "ms"
+      `Checking stats for track ${track.id} timed out after ${timeout} ms`
     );
   },
 
-  getExpectedActiveReceiveTracks() {
+  
+
+
+
+
+
+
+
+  async waitForInboundRtpFlow(receiver) {
+    return this._waitForRtpFlow(receiver, "inbound-rtp");
+  },
+
+  
+
+
+
+
+
+
+
+  async waitForOutboundRtpFlow(sender) {
+    return this._waitForRtpFlow(sender, "outbound-rtp");
+  },
+
+  getExpectedActiveReceivers() {
     return this._pc
       .getTransceivers()
-      .filter(t => {
-        return (
+      .filter(
+        t =>
           !t.stopped &&
           t.currentDirection &&
           t.currentDirection != "inactive" &&
           t.currentDirection != "sendonly"
-        );
-      })
-      .map(t => {
+      )
+      .filter(({ receiver }) => receiver.track)
+      .map(({ mid, currentDirection, receiver }) => {
         info(
-          "Found transceiver that should be receiving RTP: mid=" +
-            t.mid +
-            " currentDirection=" +
-            t.currentDirection +
-            " kind=" +
-            t.receiver.track.kind +
-            " track-id=" +
-            t.receiver.track.id
+          `Found transceiver that should be receiving RTP: mid=${mid}` +
+            ` currentDirection=${currentDirection}` +
+            ` kind=${receiver.track.kind} track-id=${receiver.track.id}`
         );
-        return t.receiver.track;
-      })
-      .filter(t => t);
+        return receiver;
+      });
   },
 
-  getExpectedSendTracks() {
-    return this._pc
-      .getSenders()
-      .map(s => s.track)
-      .filter(t => t);
+  getExpectedSenders() {
+    return this._pc.getSenders().filter(({ track }) => track);
   },
 
   
@@ -1882,24 +1879,21 @@ PeerConnectionWrapper.prototype = {
 
 
   waitForMediaFlow() {
-    return Promise.all(
-      [].concat(
-        this.localMediaElements.map(element =>
-          this.waitForMediaElementFlow(element)
-        ),
-        this.remoteMediaElements
-          .filter(elem =>
-            this.getExpectedActiveReceiveTracks().some(track =>
-              elem.srcObject.getTracks().some(t => t == track)
-            )
+    const receivers = this.getExpectedActiveReceivers();
+    return Promise.all([
+      ...this.localMediaElements.map(el => this.waitForMediaElementFlow(el)),
+      ...this.remoteMediaElements
+        .filter(({ srcObject }) =>
+          receivers.some(({ track }) =>
+            srcObject.getTracks().some(t => t == track)
           )
-          .map(elem => this.waitForMediaElementFlow(elem)),
-        this.getExpectedActiveReceiveTracks().map(track =>
-          this.waitForRtpFlow(track)
-        ),
-        this.getExpectedSendTracks().map(track => this.waitForRtpFlow(track))
-      )
-    );
+        )
+        .map(el => this.waitForMediaElementFlow(el)),
+      ...receivers.map(receiver => this.waitForInboundRtpFlow(receiver)),
+      ...this.getExpectedSenders().map(sender =>
+        this.waitForOutboundRtpFlow(sender)
+      ),
+    ]);
   },
 
   async waitForSyncedRtcp() {
