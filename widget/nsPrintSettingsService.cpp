@@ -867,20 +867,7 @@ nsPrintSettingsService::GetDefaultPrintSettingsForPrinting(
 
   nsAutoString printerName;
   settings->GetPrinterName(printerName);
-
-  bool shouldGetLastUsedPrinterName = printerName.IsEmpty();
-#ifdef MOZ_X11
-  
-  
-  
-  
-  
-  
-  if (!XRE_IsParentProcess()) {
-    shouldGetLastUsedPrinterName = false;
-  }
-#endif
-  if (shouldGetLastUsedPrinterName) {
+  if (printerName.IsEmpty()) {
     GetLastUsedPrinterName(printerName);
     settings->SetPrinterName(printerName);
   }
@@ -945,7 +932,6 @@ nsPrintSettingsService::InitPrintSettingsFromPrinter(
   return rv;
 }
 
-#ifndef MOZ_X11
 
 
 
@@ -978,7 +964,6 @@ static nsresult GetAdjustedPrinterName(nsIPrintSettings* aPS, bool aUsePNP,
   }
   return NS_OK;
 }
-#endif
 
 NS_IMETHODIMP
 nsPrintSettingsService::InitPrintSettingsFromPrefs(nsIPrintSettings* aPS,
@@ -999,9 +984,6 @@ nsPrintSettingsService::InitPrintSettingsFromPrefs(nsIPrintSettings* aPS,
 
   
   
-#ifndef MOZ_X11
-  
-  
   rv = GetAdjustedPrinterName(aPS, aUsePNP, prtName);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1013,7 +995,6 @@ nsPrintSettingsService::InitPrintSettingsFromPrefs(nsIPrintSettings* aPS,
   
   rv = ReadPrefs(aPS, prtName, aFlags);
   if (NS_SUCCEEDED(rv)) aPS->SetIsInitializedFromPrefs(true);
-#endif
 
   return NS_OK;
 }
@@ -1037,12 +1018,8 @@ nsresult nsPrintSettingsService::SavePrintSettingsToPrefs(
   nsAutoString prtName;
 
   
-  
-#ifndef MOZ_X11
-  
   nsresult rv = GetAdjustedPrinterName(aPS, aUsePrinterNamePrefix, prtName);
   NS_ENSURE_SUCCESS(rv, rv);
-#endif
 
   
   return WritePrefs(aPS, prtName, aFlags);

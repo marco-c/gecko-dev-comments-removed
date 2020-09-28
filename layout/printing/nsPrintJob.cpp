@@ -306,13 +306,6 @@ static nsresult EnsureSettingsHasPrinterNameSet(
   
   return NS_OK;
 #else
-#  if defined(MOZ_X11)
-  
-  
-  if (!XRE_IsParentProcess()) {
-    return NS_OK;
-  }
-#  endif
   NS_ENSURE_ARG_POINTER(aPrintSettings);
 
   
