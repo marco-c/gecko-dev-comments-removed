@@ -1,32 +1,19 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Tests tabs.captureTab and tabs.captureVisibleTab</title>
-  <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
-  <script type="text/javascript" src="/tests/SimpleTest/ExtensionTestUtils.js"></script>
-  <script type="text/javascript" src="head.js"></script>
-  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
-</head>
-<body>
-<script type="text/javascript">
+
+
 "use strict";
 
 async function runTest({ html, fullZoom, coords, rect, scale }) {
   let url = `data:text/html,${encodeURIComponent(html)}#scroll`;
-  let testWindow = window.open(url);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url, true);
 
-  async function background({ coords, rect, scale, method, fullZoom }) {
+  tab.linkedBrowser.fullZoom = fullZoom ?? 1;
+
+  async function background({ coords, rect, scale, method }) {
     try {
       let [tab] = await browser.tabs.query({
         currentWindow: true,
         active: true,
       });
-
-      // TODO: Bug 1665429 - on mobile we ignore zoom for now
-      if (browser.tabs.setZoom) {
-        await browser.tabs.setZoom(tab.id, fullZoom ?? 1);
-      }
 
       let id = method === "captureVisibleTab" ? tab.windowId : tab.id;
 
@@ -68,7 +55,7 @@ async function runTest({ html, fullZoom, coords, rect, scale }) {
       for (let format of Object.keys(images)) {
         let img = images[format];
 
-        // WGP.drawSnapshot() deals in int coordinates, and rounds down.
+        
         browser.test.assertTrue(
           Math.abs(width - img.width) <= 1,
           `${format} ok image width: ${img.width}, expected: ${width}`
@@ -98,7 +85,7 @@ async function runTest({ html, fullZoom, coords, rect, scale }) {
               `${format} image color is correct at (${x}, ${y})`
             );
           } else {
-            // Allow for some deviation in JPEG version due to lossy compression.
+            
             const SLOP = 3;
 
             browser.test.log(
@@ -136,7 +123,7 @@ async function runTest({ html, fullZoom, coords, rect, scale }) {
   }
 
   for (let method of ["captureTab", "captureVisibleTab"]) {
-    let options = { coords, rect, scale, method, fullZoom };
+    let options = { coords, rect, scale, method };
     info(`Testing configuration: ${JSON.stringify(options)}`);
 
     let extension = ExtensionTestUtils.loadExtension({
@@ -152,7 +139,7 @@ async function runTest({ html, fullZoom, coords, rect, scale }) {
     await extension.unload();
   }
 
-  testWindow.close();
+  BrowserTestUtils.removeTab(tab);
 }
 
 async function testEdgeToEdge({ color, fullZoom }) {
@@ -161,10 +148,7 @@ async function testEdgeToEdge({ color, fullZoom }) {
   let html = `
     <!DOCTYPE html>
     <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>
+    <head><meta charset="UTF-8"></head>
     <body style="background-color: rgb(${color})">
       <!-- Fill most of the image with a neutral color to test edge-to-edge scaling. -->
       <div style="position: absolute;
@@ -177,8 +161,8 @@ async function testEdgeToEdge({ color, fullZoom }) {
     </html>
   `;
 
-  // Check the colors of the first and last pixels of the image, to make
-  // sure we capture the entire frame, and scale it correctly.
+  
+  
   let coords = [
     { x: 0, y: 0, color },
     { x: -1, y: -1, color },
@@ -198,13 +182,12 @@ add_task(async function testCaptureEdgeToEdge() {
 
 const tallDoc = `<!DOCTYPE html>
   <meta charset=utf-8>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <div style="background: yellow; width: 50%; height: 500px;"></div>
   <div id=scroll style="background: red; width: 25%; height: 5000px;"></div>
   Opened with the #scroll fragment, scrolls the div ^ into view.
 `;
 
-// Test currently visible viewport is captured if scrolling is involved.
+
 add_task(async function testScrolledViewport() {
   await runTest({
     html: tallDoc,
@@ -216,7 +199,7 @@ add_task(async function testScrolledViewport() {
   });
 });
 
-// Test rect and scale options.
+
 add_task(async function testRectAndScale() {
   await runTest({
     html: tallDoc,
@@ -231,13 +214,12 @@ add_task(async function testRectAndScale() {
   });
 });
 
-// Test OOP iframes are captured, for Fission compatibility.
+
 add_task(async function testOOPiframe() {
   await runTest({
     html: `<!DOCTYPE html>
       <meta charset=utf-8>
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <iframe src="http://example.net/tests/toolkit/components/extensions/test/mochitest/file_green.html"></iframe>
+      <iframe src="http://example.com/browser/browser/components/extensions/test/browser/file_green.html"></iframe>
     `,
     coords: [
       { x: 50, y: 50, color: [0, 255, 0] },
@@ -288,6 +270,3 @@ add_task(async function testCaptureVisibleTabPermissions() {
   await extension.awaitFinish("captureVisibleTabPermissions");
   await extension.unload();
 });
-</script>
-</body>
-</html>
