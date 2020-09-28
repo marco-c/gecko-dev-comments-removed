@@ -39,6 +39,12 @@ XPCOMUtils.defineLazyServiceGetter(
 
 ChromeUtils.defineModuleGetter(
   this,
+  "Config",
+  "resource:///modules/DoHConfig.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
   "Preferences",
   "resource://gre/modules/Preferences.jsm"
 );
@@ -46,9 +52,6 @@ ChromeUtils.defineModuleGetter(
 const GLOBAL_CANARY = "use-application-dns.net.";
 
 const NXDOMAIN_ERR = "NS_ERROR_UNKNOWN_HOST";
-
-const kProviderSteeringEnabledPref = "doh-rollout.provider-steering.enabled";
-const kProviderSteeringListPref = "doh-rollout.provider-steering.provider-list";
 
 const Heuristics = {
   
@@ -352,7 +355,7 @@ async function platform() {
 
 
 async function providerSteering() {
-  if (!Preferences.get(kProviderSteeringEnabledPref, false)) {
+  if (!Config.providerSteering.enabled) {
     return null;
   }
   const TEST_DOMAIN = "doh.test.";
@@ -360,7 +363,7 @@ async function providerSteering() {
   
   
   
-  let steeredProviders = Preferences.get(kProviderSteeringListPref, "[]");
+  let steeredProviders = Config.providerSteering.providerList;
   try {
     steeredProviders = JSON.parse(steeredProviders);
   } catch (e) {
