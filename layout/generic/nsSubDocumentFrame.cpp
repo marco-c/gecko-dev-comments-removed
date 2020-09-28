@@ -581,8 +581,12 @@ nscoord nsSubDocumentFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
 
-  if (nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame()) {
-    result = subDocRoot->GetMinISize(aRenderingContext);
+  if (mSubdocumentIntrinsicSize) {
+    
+    
+    
+    
+    result = 0;
   } else {
     result = GetIntrinsicISize();
   }
@@ -595,12 +599,13 @@ nscoord nsSubDocumentFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
 
-  nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
-  if (subDocRoot) {
-    result = subDocRoot->GetPrefISize(aRenderingContext);
-  } else {
-    result = GetIntrinsicISize();
-  }
+  
+  
+  
+  
+  
+  
+  result = GetIntrinsicISize();
 
   return result;
 }
@@ -612,8 +617,9 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
     return IntrinsicSize(0, 0);
   }
 
-  if (nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame()) {
-    return subDocRoot->GetIntrinsicSize();
+  if (mSubdocumentIntrinsicSize) {
+    
+    return *mSubdocumentIntrinsicSize;
   }
 
   if (!IsInline()) {
@@ -641,10 +647,9 @@ AspectRatio nsSubDocumentFrame::GetIntrinsicRatio() {
   
   
   
-  if (nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame()) {
-    if (AspectRatio subDocRatio = subDocRoot->GetIntrinsicRatio()) {
-      return subDocRatio;
-    }
+  if (mSubdocumentIntrinsicRatio && *mSubdocumentIntrinsicRatio) {
+    
+    return *mSubdocumentIntrinsicRatio;
   }
 
   if (aspectRatio.HasRatio()) {
@@ -1160,40 +1165,30 @@ nsPoint nsSubDocumentFrame::GetExtraOffset() const {
   return mInnerView->GetPosition();
 }
 
-nsIFrame* nsSubDocumentFrame::ObtainIntrinsicSizeFrame() {
-  if (StyleDisplay()->IsContainSize()) {
+void nsSubDocumentFrame::SubdocumentIntrinsicSizeOrRatioChanged(
+    const Maybe<IntrinsicSize>& aIntrinsicSize,
+    const Maybe<AspectRatio>& aIntrinsicRatio) {
+  if (mSubdocumentIntrinsicSize == aIntrinsicSize &&
+      mSubdocumentIntrinsicRatio == aIntrinsicRatio) {
+    return;
+  }
+  mSubdocumentIntrinsicSize = aIntrinsicSize;
+  mSubdocumentIntrinsicRatio = aIntrinsicRatio;
+
+  if (MOZ_UNLIKELY(HasAllStateBits(NS_FRAME_IS_DIRTY))) {
     
-    
-    return nullptr;
+    return;
   }
 
-  nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(GetContent());
-  if (olc) {
-    
+  const nsStylePosition* pos = StylePosition();
+  bool dependsOnIntrinsics =
+      !pos->mWidth.ConvertsToLength() || !pos->mHeight.ConvertsToLength();
 
-    
-    nsIFrame* subDocRoot = nullptr;
-
-    if (nsIDocShell* docShell = GetDocShell()) {
-      if (mozilla::PresShell* presShell = docShell->GetPresShell()) {
-        nsIScrollableFrame* scrollable =
-            presShell->GetRootScrollFrameAsScrollable();
-        if (scrollable) {
-          nsIFrame* scrolled = scrollable->GetScrolledFrame();
-          if (scrolled) {
-            subDocRoot = scrolled->PrincipalChildList().FirstChild();
-          }
-        }
-      }
-    }
-
-    if (subDocRoot && subDocRoot->GetContent() &&
-        subDocRoot->GetContent()->NodeInfo()->Equals(nsGkAtoms::svg,
-                                                     kNameSpaceID_SVG)) {
-      return subDocRoot;  
-    }
+  if (dependsOnIntrinsics || pos->mObjectFit != StyleObjectFit::Fill) {
+    auto dirtyHint = dependsOnIntrinsics ? IntrinsicDirty::StyleChange
+                                         : IntrinsicDirty::Resize;
+    PresShell()->FrameNeedsReflow(this, dirtyHint, NS_FRAME_IS_DIRTY);
   }
-  return nullptr;
 }
 
 

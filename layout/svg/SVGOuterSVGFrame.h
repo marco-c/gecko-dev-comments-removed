@@ -16,7 +16,9 @@
 class gfxContext;
 
 namespace mozilla {
+class AutoSVGViewHandler;
 class SVGForeignObjectFrame;
+class SVGFragmentIdentifier;
 class PresShell;
 }  
 
@@ -36,6 +38,8 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
 
   friend nsContainerFrame* ::NS_NewSVGOuterSVGFrame(
       mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
+  friend class AutoSVGViewHandler;
+  friend class SVGFragmentIdentifier;
 
  protected:
   explicit SVGOuterSVGFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
@@ -92,6 +96,11 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
     return MakeFrameName(u"SVGOuterSVG"_ns, aResult);
   }
 #endif
+
+  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
+
+  void DestroyFrom(nsIFrame* aDestructRoot,
+                   PostDestroyData& aPostDestroyData) override;
 
   virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                     int32_t aModType) override;
@@ -177,13 +186,11 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
   
 
 
-
-  bool IsRootOfReplacedElementSubDoc(nsIFrame** aEmbeddingFrame = nullptr);
-
-  
-
-
   bool IsRootOfImage();
+
+  void MaybeSendIntrinsicSizeAndRatioToEmbedder();
+  void MaybeSendIntrinsicSizeAndRatioToEmbedder(Maybe<IntrinsicSize>,
+                                                Maybe<AspectRatio>);
 
   
   
@@ -199,11 +206,8 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
 
   bool mViewportInitialized;
   bool mIsRootContent;
-
- private:
-  template <typename... Args>
-  bool IsContainingWindowElementOfType(nsIFrame** aContainingWindowFrame,
-                                       Args... aArgs) const;
+  bool mIsInObjectOrEmbed;
+  bool mIsInIframe;
 };
 
 
