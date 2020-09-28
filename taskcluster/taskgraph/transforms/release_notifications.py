@@ -50,9 +50,11 @@ def add_notifications(config, jobs):
 
             
             
-            job.setdefault('routes', []).extend(
-                ['notify.email.{}.on-completed'.format(email) for email in emails]
-            )
+            status_types = notifications.get('status-types', ['on-completed'])
+            for s in status_types:
+                job.setdefault('routes', []).extend(
+                    ['notify.email.{}.{}}'.format(email, s) for email in emails]
+                )
 
             
             job.setdefault('extra', {}).update(
