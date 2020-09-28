@@ -41,10 +41,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
 
  protected:
   
-  bool mDefaultFontCached = false;
-  bool mButtonFontCached = false;
-  bool mFieldFontCached = false;
-  bool mMenuFontCached = false;
   nsString mDefaultFontName;
   nsString mButtonFontName;
   nsString mFieldFontName;
