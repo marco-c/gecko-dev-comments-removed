@@ -12,6 +12,12 @@ const Services = require("Services");
 
 loader.lazyRequireGetter(
   this,
+  "getTargetBrowsers",
+  "devtools/client/inspector/shared/compatibility-user-settings",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "updateSourceLink",
   "devtools/client/inspector/rules/actions/rules",
   true
@@ -56,6 +62,7 @@ class Rule {
   constructor(elementStyle, options) {
     this.elementStyle = elementStyle;
     this.domRule = options.rule;
+    this.compatibilityIssues = null;
     this.matchedSelectors = options.matchedSelectors || [];
     this.pseudoElement = options.pseudoElement || "";
     this.isSystem = options.isSystem;
@@ -102,6 +109,7 @@ class Rule {
     }
 
     this.domRule.off("location-changed", this.onLocationChanged);
+    this.compatibilityIssues = null;
   }
 
   get declarations() {
@@ -233,6 +241,37 @@ class Rule {
 
   get ruleColumn() {
     return this.domRule ? this.domRule.column : null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getCompatibilityIssues() {
+    if (!this.compatibilityIssues) {
+      const targetBrowsers = getTargetBrowsers();
+      const compatibility = await this.inspector.inspectorFront.getCompatibilityFront();
+      this.compatibilityIssues = await compatibility.getCSSDeclarationBlockIssues(
+        this.domRule.declarations,
+        targetBrowsers
+      );
+    }
+
+    return this.compatibilityIssues;
   }
 
   

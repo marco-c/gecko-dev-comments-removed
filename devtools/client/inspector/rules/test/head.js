@@ -683,15 +683,26 @@ async function openEyedropper(view, swatch) {
 
 
 
-function getPropertiesForRuleIndex(view, ruleIndex) {
+
+
+function getPropertiesForRuleIndex(
+  view,
+  ruleIndex,
+  addCompatibilityData = false
+) {
   const declaration = new Map();
   const ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
 
   for (const currProp of ruleEditor.rule.textProps) {
     const icon = currProp.editor.unusedState;
     const unused = currProp.editor.element.classList.contains("unused");
-    const compatibilityData = currProp.isCompatible();
-    const compatibilityIcon = currProp.editor.compatibilityState;
+
+    let compatibilityData;
+    let compatibilityIcon;
+    if (addCompatibilityData) {
+      compatibilityData = currProp.isCompatible();
+      compatibilityIcon = currProp.editor.compatibilityState;
+    }
 
     declaration.set(`${currProp.name}:${currProp.value}`, {
       propertyName: currProp.name,
@@ -700,9 +711,13 @@ function getPropertiesForRuleIndex(view, ruleIndex) {
       data: currProp.isUsed(),
       warning: unused,
       used: !unused,
-      isCompatible: compatibilityData.then(data => data.isCompatible),
-      compatibilityData,
-      compatibilityIcon,
+      ...(addCompatibilityData
+        ? {
+            isCompatible: compatibilityData.then(data => data.isCompatible),
+            compatibilityData,
+            compatibilityIcon,
+          }
+        : {}),
     });
   }
 
@@ -822,11 +837,15 @@ async function checkDeclarationCompatibility(
   declaration,
   expected
 ) {
-  const declarations = getPropertiesForRuleIndex(view, ruleIndex);
+  const declarations = getPropertiesForRuleIndex(view, ruleIndex, true);
   const [[name, value]] = Object.entries(declaration);
   const dec = `${name}:${value}`;
   const { isCompatible, compatibilityData } = declarations.get(dec);
   const compatibilityStatus = await isCompatible;
+  
+  
+  
+  const messageId = (await compatibilityData).msgId;
 
   is(
     !expected,
@@ -834,10 +853,9 @@ async function checkDeclarationCompatibility(
     `"${dec}" has the correct compatibility status in the payload`
   );
 
-  if (expected) {
-    const messageId = (await compatibilityData).msgId;
-    is(messageId, expected, `"${dec}" has expected message ID`);
+  is(messageId, expected, `"${dec}" has expected message ID`);
 
+  if (expected) {
     await checkInteractiveTooltip(
       view,
       "compatibility-tooltip",
@@ -909,7 +927,11 @@ function checkDeclarationIsActive(view, ruleIndex, declaration) {
 
 async function checkInteractiveTooltip(view, type, ruleIndex, declaration) {
   
-  const declarations = getPropertiesForRuleIndex(view, ruleIndex);
+  const declarations = getPropertiesForRuleIndex(
+    view,
+    ruleIndex,
+    type === "compatibility-tooltip"
+  );
   const [[name, value]] = Object.entries(declaration);
   const dec = `${name}:${value}`;
 

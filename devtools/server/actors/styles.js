@@ -1673,16 +1673,6 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
       
       
-      
-      
-      
-      const compatibility = this.pageStyle.inspector.getCompatibility();
-      form.compatibilityIssues = compatibility.getCSSDeclarationBlockIssues(
-        declarations
-      );
-
-      
-      
       this._declarations = declarations;
     }
 
