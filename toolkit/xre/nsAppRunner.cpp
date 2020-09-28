@@ -3727,14 +3727,16 @@ static void PR_CALLBACK ReadAheadDlls_ThreadStart(void* arg) {
 
 #if defined(MOZ_WAYLAND)
 bool IsWaylandDisabled() {
+  const char* backendPref = PR_GetEnv("GDK_BACKEND");
+  if (backendPref && strcmp(backendPref, "wayland") == 0) {
+    return false;
+  }
   
   
   bool disableWayland = (gtk_check_version(3, 22, 0) != nullptr);
   if (!disableWayland) {
     
-    
-    disableWayland = (PR_GetEnv("GDK_BACKEND") == nullptr) &&
-                     (PR_GetEnv("MOZ_ENABLE_WAYLAND") == nullptr);
+    disableWayland = (PR_GetEnv("MOZ_ENABLE_WAYLAND") == nullptr);
   }
   return disableWayland;
 }
