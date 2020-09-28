@@ -445,9 +445,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
   uint32_t FindWordBoundary(uint32_t aOffset, nsDirection aDirection,
-                            EWordMovementType aWordMovementType) {
-    return FindOffset(aOffset, aDirection, eSelectWord, aWordMovementType);
-  }
+                            EWordMovementType aWordMovementType);
 
   
 

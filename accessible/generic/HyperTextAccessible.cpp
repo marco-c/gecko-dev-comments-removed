@@ -38,6 +38,7 @@
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
@@ -499,6 +500,101 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
   }
 
   return hyperTextOffset;
+}
+
+uint32_t HyperTextAccessible::FindWordBoundary(
+    uint32_t aOffset, nsDirection aDirection,
+    EWordMovementType aWordMovementType) {
+  uint32_t orig =
+      FindOffset(aOffset, aDirection, eSelectWord, aWordMovementType);
+  if (aWordMovementType != eStartWord) {
+    return orig;
+  }
+  if (aDirection == eDirPrevious) {
+    
+    
+    
+    
+    
+    
+    if (!StaticPrefs::layout_word_select_stop_at_punctuation()) {
+      return orig;
+    }
+    
+    
+    
+    Accessible* child = GetChildAtOffset(orig);
+    if (child && child->IsHyperText()) {
+      
+      
+      
+      
+      
+      
+      
+      return orig;
+    }
+    uint32_t next = FindOffset(orig, eDirNext, eSelectWord, eStartWord);
+    if (next < aOffset) {
+      
+      return next;
+    }
+    
+    
+    
+    if (orig == 0) {
+      return orig;
+    }
+    
+    
+    
+    
+    for (uint32_t o = orig - 1; o < orig; --o) {
+      next = FindOffset(o, eDirNext, eSelectWord, eStartWord);
+      if (next == orig) {
+        
+        
+        break;
+      }
+      if (next < orig) {
+        
+        return next;
+      }
+    }
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aOffset == 0) {
+      return orig;
+    }
+    uint32_t prev = FindOffset(orig, eDirPrevious, eSelectWord, eStartWord);
+    if (prev <= aOffset) {
+      
+      return orig;
+    }
+    
+    
+    
+    
+    for (uint32_t o = aOffset - 1; o < aOffset; --o) {
+      uint32_t next = FindOffset(o, eDirNext, eSelectWord, eStartWord);
+      if (next > aOffset && next < orig) {
+        return next;
+      }
+      if (next <= aOffset) {
+        break;
+      }
+    }
+  }
+  return orig;
 }
 
 uint32_t HyperTextAccessible::FindLineBoundary(
