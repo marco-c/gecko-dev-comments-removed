@@ -16,7 +16,6 @@
 #include "mozilla/mozalloc.h"  
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "nsAutoRef.h"          
 #include "nsCOMPtr.h"           
 #include "nsDebug.h"            
 #include "nsISupportsImpl.h"    

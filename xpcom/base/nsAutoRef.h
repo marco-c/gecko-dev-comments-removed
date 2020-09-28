@@ -107,7 +107,6 @@ class nsReturningRef;
 
 
 
-
 template <class T>
 class nsAutoRef : public nsAutoRefBase<T> {
  protected:
@@ -130,8 +129,6 @@ class nsAutoRef : public nsAutoRefBase<T> {
   explicit nsAutoRef(const nsReturningRef<T>& aReturning)
       : BaseClass(aReturning) {}
 
-  
-  
   
   
   
@@ -194,79 +191,6 @@ class nsAutoRef : public nsAutoRefBase<T> {
  private:
   
   explicit nsAutoRef(ThisClass& aRefToSteal);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <class T>
-class nsCountedRef : public nsAutoRef<T> {
- protected:
-  typedef nsCountedRef<T> ThisClass;
-  typedef nsAutoRef<T> BaseClass;
-  typedef nsSimpleRef<T> SimpleRef;
-  typedef typename BaseClass::RawRef RawRef;
-
- public:
-  nsCountedRef() = default;
-
-  
-  
-  nsCountedRef(const ThisClass& aRefToCopy) {
-    SimpleRef::operator=(aRefToCopy);
-    SafeAddRef();
-  }
-  ThisClass& operator=(const ThisClass& aRefToCopy) {
-    if (this == &aRefToCopy) {
-      return *this;
-    }
-
-    this->SafeRelease();
-    SimpleRef::operator=(aRefToCopy);
-    SafeAddRef();
-    return *this;
-  }
-
-  
-  
-  
-  explicit nsCountedRef(RawRef aRefToCopy) : BaseClass(aRefToCopy) {
-    SafeAddRef();
-  }
-  ThisClass& operator=(RawRef aRefToCopy) {
-    this->own(aRefToCopy);
-    SafeAddRef();
-    return *this;
-  }
-
-  
-  
-  explicit nsCountedRef(const nsReturningRef<T>& aReturning)
-      : BaseClass(aReturning) {}
-  ThisClass& operator=(const nsReturningRef<T>& aReturning) {
-    BaseClass::operator=(aReturning);
-    return *this;
-  }
-
- protected:
-  
-  void SafeAddRef() {
-    if (this->HaveResource()) {
-      this->AddRef(this->get());
-    }
-  }
 };
 
 
@@ -384,12 +308,6 @@ class nsReturningRef {
 
 
 
-
-
-
-
-
-
 template <class T>
 class nsAutoRefTraits;
 
@@ -427,9 +345,6 @@ class nsPointerRefTraits {
   
   static RawRef Void() { return nullptr; }
 };
-
-
-
 
 
 
