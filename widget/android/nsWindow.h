@@ -38,7 +38,6 @@ class AndroidView;
 class GeckoEditableSupport;
 class GeckoViewSupport;
 class LayerViewSupport;
-class MediaSessionSupport;
 class NPZCSupport;
 }  
 
@@ -95,9 +94,6 @@ class nsWindow final : public nsBaseWidget {
   
   mozilla::jni::NativeWeakPtr<mozilla::a11y::SessionAccessibility>
       mSessionAccessibility;
-
-  mozilla::jni::NativeWeakPtr<mozilla::widget::MediaSessionSupport>
-      mMediaSessionSupport;
 
   
   
