@@ -8885,6 +8885,9 @@ bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
 
   bool isInnerSingleton = flags.contains(ObjLiteralFlag::IsInnerSingleton);
 
+  
+  MOZ_ASSERT_IF(singleton, compilationInfo.input.options.isRunOnce);
+
   JSOp op = singleton
                 ? JSOp::Object
                 : isInnerSingleton ? JSOp::NewObjectWithGroup : JSOp::NewObject;
