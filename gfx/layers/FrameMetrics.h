@@ -793,6 +793,7 @@ struct ScrollMetadata {
         mForceDisableApz(false),
         mResolutionUpdated(false),
         mIsRDMTouchSimulationActive(false),
+        mDidContentGetPainted(true),
         mOverscrollBehavior() {}
 
   bool operator==(const ScrollMetadata& aOther) const {
@@ -809,6 +810,7 @@ struct ScrollMetadata {
            mForceDisableApz == aOther.mForceDisableApz &&
            mResolutionUpdated == aOther.mResolutionUpdated &&
            mIsRDMTouchSimulationActive == aOther.mIsRDMTouchSimulationActive &&
+           mDidContentGetPainted == aOther.mDidContentGetPainted &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
            mScrollUpdates == aOther.mScrollUpdates;
@@ -896,6 +898,17 @@ struct ScrollMetadata {
     return mIsRDMTouchSimulationActive;
   }
 
+  bool DidContentGetPainted() const {
+    return mDidContentGetPainted;
+  }
+
+ private:
+  
+  void SetDidContentGetPainted(bool aValue) {
+    mDidContentGetPainted = aValue;
+  }
+
+ public:
   
   
   Maybe<ScrollDirection> GetDisregardedDirection() const {
@@ -924,6 +937,7 @@ struct ScrollMetadata {
   void UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {
     mMetrics.UpdatePendingScrollInfo(aInfo);
 
+    mDidContentGetPainted = false;
     mScrollUpdates.Clear();
     mScrollUpdates.AppendElement(aInfo);
   }
@@ -992,6 +1006,14 @@ struct ScrollMetadata {
   
   
   bool mIsRDMTouchSimulationActive : 1;
+
+  
+  
+  
+  
+  
+  
+  bool mDidContentGetPainted : 1;
 
   
   
