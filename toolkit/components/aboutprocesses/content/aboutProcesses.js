@@ -484,14 +484,25 @@ var View = {
           break;
         default:
           
-          if (data.windows) {
-            for (let win of data.windows) {
-              if (win.tab) {
-                image = win.tab.tab.getAttribute("image");
-              }
-              if (image) {
-                break;
-              }
+          
+          
+          for (let win of data.windows || []) {
+            if (!win.tab) {
+              continue;
+            }
+            let favicon = win.tab.tab.getAttribute("image");
+            if (!favicon) {
+              
+            } else if (!image) {
+              
+              
+              image = favicon;
+            } else if (image == favicon) {
+              
+            } else {
+              
+              image = null;
+              break;
             }
           }
           if (!image) {
