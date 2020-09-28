@@ -69,6 +69,10 @@ class DynamicResampler final {
 
 
   uint32_t InFramesBuffered(int aChannelIndex) const;
+  
+
+
+  uint32_t InFramesLeftToBuffer(int aChannelIndex) const;
 
   
 
@@ -363,6 +367,11 @@ class AudioResampler final {
 
 
   int InputDuration() const;
+  
+
+
+
+  int InputRemainingDuration() const;
 
   
 
