@@ -232,7 +232,7 @@ class LoginManagerParent extends JSWindowActorParent {
     );
   }
 
-  receiveMessage(msg) {
+  async receiveMessage(msg) {
     let data = msg.data;
     if (data.origin || data.formOrigin) {
       throw new Error(
@@ -313,13 +313,44 @@ class LoginManagerParent extends JSWindowActorParent {
         break;
       }
 
-      case "PasswordManager:OpenMigrationWizard": {
+      case "PasswordManager:HandleImportable": {
+        const { browserId, type } = data;
+
         
-        let window = this.getRootBrowser().ownerGlobal;
-        MigrationUtils.showMigrationWizard(window, [
-          MigrationUtils.MIGRATION_ENTRYPOINT_PASSWORDS,
-          data,
-        ]);
+        const migrator = await MigrationUtils.getMigrator(browserId);
+        const profiles = await migrator.getSourceProfiles();
+        
+        if (profiles.length == 1) {
+          const loginAdded = new Promise(resolve => {
+            const obs = (subject, topic, data) => {
+              if (data == "addLogin") {
+                Services.obs.removeObserver(obs, "passwordmgr-storage-changed");
+                resolve();
+              }
+            };
+            Services.obs.addObserver(obs, "passwordmgr-storage-changed");
+          });
+
+          await migrator.migrate(
+            MigrationUtils.resourceTypes.PASSWORDS,
+            null,
+            profiles[0]
+          );
+          await loginAdded;
+
+          
+          this.sendAsyncMessage("PasswordManager:repopulateAutocompletePopup");
+        } else {
+          
+          MigrationUtils.showMigrationWizard(
+            this.getRootBrowser().ownerGlobal,
+            [MigrationUtils.MIGRATION_ENTRYPOINT_PASSWORDS, browserId]
+          );
+        }
+
+        Services.telemetry.recordEvent("exp_import", "event", type, browserId, {
+          profilesCount: profiles.length + "",
+        });
         break;
       }
 
