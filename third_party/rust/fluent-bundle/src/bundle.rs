@@ -8,114 +8,20 @@ use std::borrow::Borrow;
 use std::borrow::Cow;
 use std::collections::hash_map::{Entry as HashEntry, HashMap};
 use std::default::Default;
+use std::fmt;
 
 use fluent_syntax::ast;
 use unic_langid::LanguageIdentifier;
 
+use crate::args::FluentArgs;
 use crate::entry::Entry;
 use crate::entry::GetEntry;
 use crate::errors::FluentError;
 use crate::memoizer::MemoizerKind;
-use crate::resolve::{ResolveValue, Scope};
+use crate::resolver::{ResolveValue, Scope, WriteValue};
 use crate::resource::FluentResource;
 use crate::types::FluentValue;
-
-
-
-#[derive(Debug, PartialEq)]
-pub struct FluentMessage<'m> {
-    pub value: Option<&'m ast::Pattern<'m>>,
-    pub attributes: HashMap<&'m str, &'m ast::Pattern<'m>>,
-}
-
-
-
-
-pub type FluentArgs<'args> = HashMap<&'args str, FluentValue<'args>>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+use crate::message::{FluentMessage, FluentAttribute};
 
 
 
@@ -159,7 +65,7 @@ impl<R, M: MemoizerKind> FluentBundleBase<R, M> {
             .map(|s| s.clone().into())
             .collect::<Vec<_>>();
         let lang = locales.get(0).cloned().unwrap_or_default();
-        FluentBundleBase {
+        Self {
             locales,
             resources: vec![],
             entries: HashMap::new(),
@@ -226,18 +132,14 @@ impl<R, M: MemoizerKind> FluentBundleBase<R, M> {
 
         for (entry_pos, entry) in res.ast().body.iter().enumerate() {
             let id = match entry {
-                ast::ResourceEntry::Entry(ast::Entry::Message(ast::Message { ref id, .. }))
-                | ast::ResourceEntry::Entry(ast::Entry::Term(ast::Term { ref id, .. })) => id.name,
+                ast::Entry::Message(ast::Message { ref id, .. })
+                | ast::Entry::Term(ast::Term { ref id, .. }) => id.name,
                 _ => continue,
             };
 
             let (entry, kind) = match entry {
-                ast::ResourceEntry::Entry(ast::Entry::Message(..)) => {
-                    (Entry::Message([res_pos, entry_pos]), "message")
-                }
-                ast::ResourceEntry::Entry(ast::Entry::Term(..)) => {
-                    (Entry::Term([res_pos, entry_pos]), "term")
-                }
+                ast::Entry::Message(..) => (Entry::Message([res_pos, entry_pos]), "message"),
+                ast::Entry::Term(..) => (Entry::Term([res_pos, entry_pos]), "term"),
                 _ => continue,
             };
 
@@ -330,18 +232,14 @@ impl<R, M: MemoizerKind> FluentBundleBase<R, M> {
 
         for (entry_pos, entry) in res.ast().body.iter().enumerate() {
             let id = match entry {
-                ast::ResourceEntry::Entry(ast::Entry::Message(ast::Message { ref id, .. }))
-                | ast::ResourceEntry::Entry(ast::Entry::Term(ast::Term { ref id, .. })) => id.name,
+                ast::Entry::Message(ast::Message { ref id, .. })
+                | ast::Entry::Term(ast::Term { ref id, .. }) => id.name,
                 _ => continue,
             };
 
             let entry = match entry {
-                ast::ResourceEntry::Entry(ast::Entry::Message(..)) => {
-                    Entry::Message([res_pos, entry_pos])
-                }
-                ast::ResourceEntry::Entry(ast::Entry::Term(..)) => {
-                    Entry::Term([res_pos, entry_pos])
-                }
+                ast::Entry::Message(..) => Entry::Message([res_pos, entry_pos]),
+                ast::Entry::Term(..) => Entry::Term([res_pos, entry_pos]),
                 _ => continue,
             };
 
@@ -419,41 +317,131 @@ impl<R, M: MemoizerKind> FluentBundleBase<R, M> {
         self.get_entry_message(id).is_some()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn get_message(&self, id: &str) -> Option<FluentMessage>
     where
         R: Borrow<FluentResource>,
     {
         let message = self.get_entry_message(id)?;
         let value = message.value.as_ref();
-        let mut attributes = if message.attributes.is_empty() {
-            HashMap::new()
-        } else {
-            HashMap::with_capacity(message.attributes.len())
-        };
+        let mut attributes = Vec::with_capacity(message.attributes.len());
 
-        for attr in message.attributes.iter() {
-            attributes.insert(attr.id.name, &attr.value);
+        for attr in &message.attributes {
+            attributes.push(FluentAttribute {
+                id: &attr.id.name,
+                value: &attr.value
+            });
         }
         Some(FluentMessage { value, attributes })
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn write_pattern<'bundle, W>(
+        &'bundle self,
+        w: &mut W,
+        pattern: &'bundle ast::Pattern<&str>,
+        args: Option<&'bundle FluentArgs>,
+        errors: &mut Vec<FluentError>,
+    ) -> fmt::Result
+    where
+        R: Borrow<FluentResource>,
+        W: fmt::Write,
+    {
+        let mut scope = Scope::new(self, args, Some(errors));
+        pattern.write(w, &mut scope)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn format_pattern<'bundle>(
         &'bundle self,
-        pattern: &'bundle ast::Pattern,
+        pattern: &'bundle ast::Pattern<&str>,
         args: Option<&'bundle FluentArgs>,
         errors: &mut Vec<FluentError>,
     ) -> Cow<'bundle, str>
     where
         R: Borrow<FluentResource>,
     {
-        let mut scope = Scope::new(self, args);
-        let result = pattern.resolve(&mut scope).as_string(&scope);
-
-        for err in scope.errors {
-            errors.push(err.into());
-        }
-
-        result
+        let mut scope = Scope::new(self, args, Some(errors));
+        let value = pattern.resolve(&mut scope);
+        value.as_string(&scope)
     }
 
     

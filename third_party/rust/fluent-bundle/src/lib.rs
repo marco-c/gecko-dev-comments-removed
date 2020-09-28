@@ -85,19 +85,118 @@ extern crate rental;
 use intl_memoizer::{IntlLangMemoizer, Memoizable};
 use unic_langid::LanguageIdentifier;
 
-mod bundle;
+mod args;
+pub mod bundle;
 pub mod concurrent;
 mod entry;
 mod errors;
 pub mod memoizer;
-pub mod resolve;
+mod message;
+pub mod resolver;
 mod resource;
 pub mod types;
 
-pub use bundle::{FluentArgs, FluentMessage};
+pub use args::FluentArgs;
 pub use errors::FluentError;
+pub use message::{FluentAttribute, FluentMessage};
 pub use resource::FluentResource;
 pub use types::FluentValue;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 pub type FluentBundle<R> = bundle::FluentBundleBase<R, IntlLangMemoizer>;
 
@@ -106,7 +205,7 @@ impl memoizer::MemoizerKind for IntlLangMemoizer {
     where
         Self: Sized,
     {
-        IntlLangMemoizer::new(lang)
+        Self::new(lang)
     }
 
     fn with_try_get_threadsafe<I, R, U>(&self, args: I::Args, cb: U) -> Result<R, I::Error>

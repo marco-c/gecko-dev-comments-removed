@@ -100,7 +100,7 @@ macro_rules! fluent_args {
         {
             let mut args: $crate::FluentArgs = $crate::FluentArgs::new();
             $(
-                args.insert($key, $value.into());
+                args.add($key, $value.into());
             )*
             args
         }
