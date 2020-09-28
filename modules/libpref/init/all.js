@@ -2238,9 +2238,6 @@ pref("security.notification_enable_delay", 500);
 #endif
 
 
-pref("security.sri.enable", true);
-
-
 pref("security.ssl.enable_ocsp_must_staple", true);
 
 

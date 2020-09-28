@@ -94,11 +94,6 @@ nsresult SRICheck::IntegrityMetadata(const nsAString& aMetadataList,
   NS_ENSURE_ARG_POINTER(aReporter);
   MOZ_ASSERT(outMetadata->IsEmpty());  
 
-  if (!Preferences::GetBool("security.sri.enable", false)) {
-    SRILOG(("SRICheck::IntegrityMetadata, sri is disabled (pref)"));
-    return NS_ERROR_SRI_DISABLED;
-  }
-
   
   NS_ConvertUTF16toUTF8 metadataList(aMetadataList);
   if (metadataList.Length() > SRICheck::MAX_METADATA_LENGTH) {
@@ -183,10 +178,6 @@ SRICheckDataVerifier::SRICheckDataVerifier(const SRIMetadata& aMetadata,
       mInvalidMetadata(false),
       mComplete(false) {
   MOZ_ASSERT(!aMetadata.IsEmpty());  
-
-  
-  
-  MOZ_ASSERT(Preferences::GetBool("security.sri.enable", false));
   MOZ_ASSERT(aReporter);
 
   if (!aMetadata.IsValid()) {
