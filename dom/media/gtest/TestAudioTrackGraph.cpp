@@ -217,27 +217,25 @@ TEST(TestAudioTrackGraph, NotifyDeviceStarted)
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
-  
-  
-  RefPtr<SourceMediaTrack> dummySource =
-      graph->CreateSourceTrack(MediaSegment::AUDIO);
-
-  RefPtr<GenericPromise> p = graph->NotifyWhenDeviceStarted(dummySource);
-
-  GMPTestMonitor mon;
-  p->Then(GetMainThreadSerialEventTarget(), __func__, [&mon, dummySource]() {
-    {
-      MediaTrackGraphImpl* graph = dummySource->GraphImpl();
-      MonitorAutoLock lock(graph->GetMonitor());
-      EXPECT_TRUE(graph->CurrentDriver()->AsAudioCallbackDriver());
-      EXPECT_TRUE(graph->CurrentDriver()->ThreadRunning());
-    }
+  RefPtr<SourceMediaTrack> dummySource;
+  Unused << WaitFor(Invoke([&] {
     
-    dummySource->Destroy();
-    mon.SetFinished();
-  });
+    
+    dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO);
 
-  mon.AwaitFinished();
+    return graph->NotifyWhenDeviceStarted(dummySource);
+  }));
+
+  {
+    MediaTrackGraphImpl* graph = dummySource->GraphImpl();
+    MonitorAutoLock lock(graph->GetMonitor());
+    EXPECT_TRUE(graph->CurrentDriver()->AsAudioCallbackDriver());
+    EXPECT_TRUE(graph->CurrentDriver()->ThreadRunning());
+  }
+
+  
+  DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
+  WaitFor(cubeb->StreamDestroyEvent());
 }
 
 TEST(TestAudioTrackGraph, ErrorStateCrash)
