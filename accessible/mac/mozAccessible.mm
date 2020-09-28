@@ -9,7 +9,6 @@
 
 #import "MacUtils.h"
 #import "mozView.h"
-#import "MOXSearchInfo.h"
 
 #include "Accessible-inl.h"
 #include "nsAccUtils.h"
@@ -744,27 +743,6 @@ struct RoleDescrComparator {
 
 - (NSNumber*)moxRequired {
   return @([self stateWithMask:states::REQUIRED] != 0);
-}
-
-- (NSArray*)moxUIElementsForSearchPredicate:(NSDictionary*)searchPredicate {
-  
-  
-  
-  
-  MOXWebAreaAccessible* webArea = static_cast<MOXWebAreaAccessible*>(
-      GetNativeFromGeckoAccessible([self geckoDocument]));
-  MOXSearchInfo* search =
-      [[MOXSearchInfo alloc] initWithParameters:searchPredicate
-                                        andRoot:webArea];
-
-  return [search performSearch];
-}
-
-- (NSNumber*)moxUIElementCountForSearchPredicate:
-    (NSDictionary*)searchPredicate {
-  return [NSNumber
-      numberWithDouble:[[self moxUIElementsForSearchPredicate:searchPredicate]
-                           count]];
 }
 
 - (void)moxSetFocused:(NSNumber*)focused {

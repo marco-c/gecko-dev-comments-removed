@@ -185,12 +185,6 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 - (NSNumber*)moxRequired;
 
 
-- (NSArray*)moxUIElementsForSearchPredicate:(NSDictionary*)searchPredicate;
-
-
-- (NSNumber*)moxUIElementCountForSearchPredicate:(NSDictionary*)searchPredicate;
-
-
 - (void)moxSetFocused:(NSNumber*)focused;
 
 

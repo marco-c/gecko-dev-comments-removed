@@ -6,6 +6,7 @@
 
 
 #import "mozAccessible.h"
+#include "Pivot.h"
 
 using namespace mozilla::a11y;
 
@@ -24,7 +25,10 @@ using namespace mozilla::a11y;
 - (NSNumber*)moxLoadingProgress;
 
 
-- (NSArray*)moxLinkUIElements;
+- (NSArray*)moxUIElementsForSearchPredicate:(NSDictionary*)searchPredicate;
+
+
+- (NSNumber*)moxUIElementCountForSearchPredicate:(NSDictionary*)searchPredicate;
 
 
 - (NSArray*)moxUnignoredChildren;
@@ -41,44 +45,37 @@ using namespace mozilla::a11y;
 
 @end
 
-@interface MOXRootGroup : MOXAccessibleBase {
-  MOXWebAreaAccessible* mParent;
+@interface MOXSearchInfo : NSObject {
+  
+  
+  MOXWebAreaAccessible* mWebArea;
+
+  
+  
+  MOXAccessibleBase* mStartElem;
+
+  
+  int mResultLimit;
+
+  
+  NSMutableArray* mSearchKeys;
+
+  
+  BOOL mSearchForward;
+
+  
+  BOOL mImmediateDescendantsOnly;
 }
 
+- (id)initWithParameters:(NSDictionary*)params
+                 andRoot:(MOXWebAreaAccessible*)root;
 
-- (id)initWithParent:(MOXWebAreaAccessible*)parent;
+- (AccessibleOrProxy)startGeckoAccessible;
 
+- (NSMutableArray*)getMatchesForRule:(PivotRule&)rule;
 
-- (NSString*)moxRole;
+- (NSArray*)performSearch;
 
-
-- (NSString*)moxRoleDescription;
-
-
-- (id<mozAccessible>)moxParent;
-
-
-- (NSArray*)moxChildren;
-
-
-- (NSString*)moxIdentifier;
-
-
-- (id)moxHitTest:(NSPoint)point;
-
-
-- (NSValue*)moxPosition;
-
-
-- (NSValue*)moxSize;
-
-
-- (BOOL)disableChild:(id)child;
-
-
-- (void)expire;
-
-
-- (BOOL)isExpired;
+- (void)dealloc;
 
 @end
