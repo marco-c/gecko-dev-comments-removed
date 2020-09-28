@@ -56,12 +56,19 @@ NS_IMETHODIMP nsPrinterListBase::GetPrinters(JSContext* aCx,
                                               &nsPrinterListBase::Printers);
 }
 
-NS_IMETHODIMP nsPrinterListBase::GetNamedPrinter(const nsAString& aPrinterName,
-                                                 JSContext* aCx,
-                                                 Promise** aResult) {
-  return PrintBackgroundTaskPromise(*this, aCx, aResult, "NamedPrinter"_ns,
-                                    &nsPrinterListBase::NamedPrinter,
+NS_IMETHODIMP nsPrinterListBase::GetPrinterByName(const nsAString& aPrinterName,
+                                                  JSContext* aCx,
+                                                  Promise** aResult) {
+  return PrintBackgroundTaskPromise(*this, aCx, aResult, "PrinterByName"_ns,
+                                    &nsPrinterListBase::PrinterByName,
                                     nsString{aPrinterName});
+}
+
+NS_IMETHODIMP nsPrinterListBase::GetPrinterBySystemName(
+    const nsAString& aPrinterName, JSContext* aCx, Promise** aResult) {
+  return PrintBackgroundTaskPromise(
+      *this, aCx, aResult, "PrinterBySystemName"_ns,
+      &nsPrinterListBase::PrinterBySystemName, nsString{aPrinterName});
 }
 
 NS_IMETHODIMP nsPrinterListBase::GetNamedOrDefaultPrinter(
@@ -73,14 +80,14 @@ NS_IMETHODIMP nsPrinterListBase::GetNamedOrDefaultPrinter(
 
 Maybe<PrinterInfo> nsPrinterListBase::NamedOrDefaultPrinter(
     nsString aName) const {
-  if (Maybe<PrinterInfo> value = NamedPrinter(std::move(aName))) {
+  if (Maybe<PrinterInfo> value = PrinterByName(std::move(aName))) {
     return value;
   }
 
   
   
   if (NS_SUCCEEDED(SystemDefaultPrinterName(aName))) {
-    return NamedPrinter(std::move(aName));
+    return PrinterByName(std::move(aName));
   }
 
   return Nothing();

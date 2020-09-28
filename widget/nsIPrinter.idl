@@ -19,6 +19,14 @@ interface nsIPrinter : nsISupports
 
 
 
+
+  readonly attribute AString systemName;
+
+  
+
+
+
+
   [implicit_jscontext]
   Promise createDefaultSettings();
 

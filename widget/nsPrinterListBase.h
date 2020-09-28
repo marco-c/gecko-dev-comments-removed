@@ -23,8 +23,10 @@ class nsPrinterListBase : public nsIPrinterList {
     return SystemDefaultPrinterName(aName);
   }
   NS_IMETHOD GetPrinters(JSContext*, Promise**) final;
-  NS_IMETHOD GetNamedPrinter(const nsAString& aPrinterName, JSContext* aCx,
-                             Promise** aResult) final;
+  NS_IMETHOD GetPrinterByName(const nsAString& aPrinterName, JSContext* aCx,
+                              Promise** aResult) final;
+  NS_IMETHOD GetPrinterBySystemName(const nsAString& aPrinterName,
+                                    JSContext* aCx, Promise** aResult) final;
   NS_IMETHOD GetNamedOrDefaultPrinter(const nsAString& aPrinterName,
                                       JSContext* aCx, Promise** aResult) final;
   NS_IMETHOD GetFallbackPaperList(JSContext*, Promise**) final;
@@ -57,7 +59,13 @@ class nsPrinterListBase : public nsIPrinterList {
   
   
   
-  virtual Maybe<PrinterInfo> NamedPrinter(nsString aName) const = 0;
+  virtual Maybe<PrinterInfo> PrinterByName(nsString aName) const = 0;
+
+  
+  
+  
+  
+  virtual Maybe<PrinterInfo> PrinterBySystemName(nsString aName) const = 0;
 
   
   
