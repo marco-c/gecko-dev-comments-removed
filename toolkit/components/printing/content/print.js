@@ -194,9 +194,15 @@ var PrintEventHandler = {
       this.updateSettings(e.detail)
     );
     document.addEventListener("cancel-print", () => this.cancelPrint());
-    document.addEventListener("open-system-dialog", () => {
+    document.addEventListener("open-system-dialog", async () => {
       
       
+
+      
+      for (let element of document.querySelector("#print").elements) {
+        element.disabled = true;
+      }
+      await window._initialized;
 
       
       
@@ -399,6 +405,8 @@ var PrintEventHandler = {
         return;
       }
     }
+
+    await window._initialized;
 
     
     Services.prefs.setStringPref("print_printer", settings.printerName);
