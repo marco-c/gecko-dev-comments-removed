@@ -1000,6 +1000,13 @@ static bool CompileLazyFunctionToStencilImpl(JSContext* cx,
     return false;
   }
 
+  
+  
+  bool hadLazyScriptData = lazy->hasPrivateScriptData();
+  bool isRelazifiableAfterDelazify = lazy->isRelazifiableAfterDelazify();
+  compilationInfo.stencil.scriptData[CompilationInfo::TopLevelIndex]
+      .allowRelazify = isRelazifiableAfterDelazify && !hadLazyScriptData;
+
   assertException.reset();
   return true;
 }

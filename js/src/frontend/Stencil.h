@@ -496,11 +496,18 @@ class ScriptStencil {
   bool isSingletonFunction : 1;
 
   
+  
+  
+  
+  bool allowRelazify : 1;
+
+  
 
   ScriptStencil()
       : isStandaloneFunction(false),
         wasFunctionEmitted(false),
-        isSingletonFunction(false) {}
+        isSingletonFunction(false),
+        allowRelazify(false) {}
 
   bool isFunction() const {
     bool result = functionFlags.toRaw() != 0x0000;

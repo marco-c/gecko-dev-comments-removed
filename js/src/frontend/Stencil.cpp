@@ -388,6 +388,9 @@ static bool InstantiateScriptStencils(JSContext* cx,
     if (scriptStencil.immutableScriptData) {
       
       
+      
+      
+      
       if (!scriptStencil.wasFunctionEmitted) {
         continue;
       }
@@ -397,6 +400,13 @@ static bool InstantiateScriptStencils(JSContext* cx,
                                                 scriptStencil, fun));
       if (!script) {
         return false;
+      }
+
+      
+      
+      if (scriptStencil.allowRelazify) {
+        MOZ_ASSERT(script->isRelazifiable());
+        script->setAllowRelazify();
       }
     } else if (scriptStencil.functionFlags.isAsmJSNative()) {
       MOZ_ASSERT(fun->isAsmJSNative());
@@ -442,6 +452,11 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInfo& compilationInfo,
       JSScript::fromStencil(cx, compilationInfo, gcOutput, script, fun);
   if (!gcOutput.script) {
     return false;
+  }
+
+  if (script.allowRelazify) {
+    MOZ_ASSERT(gcOutput.script->isRelazifiable());
+    gcOutput.script->setAllowRelazify();
   }
 
   

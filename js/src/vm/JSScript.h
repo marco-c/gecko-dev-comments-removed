@@ -1946,6 +1946,24 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   static constexpr size_t offsetOfWarmUpData() {
     return offsetof(BaseScript, warmUpData_);
   }
+
+ protected:
+  bool isRelazifiableImpl() const {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return !hasInnerFunctions() && !hasDirectEval() && !isGenerator() &&
+           !isAsync() && !hasCallSiteObj();
+  }
+
+ public:
+  bool isRelazifiableAfterDelazify() const { return isRelazifiableImpl(); }
 };
 
 
@@ -2247,19 +2265,7 @@ class JSScript : public js::BaseScript {
 
   void updateJitCodeRaw(JSRuntime* rt);
 
-  bool isRelazifiable() const {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return !hasInnerFunctions() && !hasDirectEval() && !isGenerator() &&
-           !isAsync() && !hasCallSiteObj();
-  }
+  bool isRelazifiable() const { return isRelazifiableImpl(); }
 
   js::ModuleObject* module() const {
     if (bodyScope()->is<js::ModuleScope>()) {
