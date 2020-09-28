@@ -4057,6 +4057,8 @@ pub struct SurfaceInfo {
     
     pub rect: PictureRect,
     
+    pub opaque_rect: PictureRect,
+    
     
     pub map_local_to_surface: SpaceMapper<LayoutPixel, PicturePixel>,
     
@@ -4101,6 +4103,7 @@ impl SurfaceInfo {
 
         SurfaceInfo {
             rect: PictureRect::zero(),
+            opaque_rect: PictureRect::zero(),
             map_local_to_surface,
             render_tasks: None,
             raster_spatial_node_index,
@@ -4297,6 +4300,10 @@ pub struct PrimitiveCluster {
     
     bounding_rect: LayoutRect,
     
+    
+    
+    pub opaque_rect: LayoutRect,
+    
     pub prim_range: Range<usize>,
     
     pub flags: ClusterFlags,
@@ -4311,6 +4318,7 @@ impl PrimitiveCluster {
     ) -> Self {
         PrimitiveCluster {
             bounding_rect: LayoutRect::zero(),
+            opaque_rect: LayoutRect::zero(),
             spatial_node_index,
             flags,
             prim_range: first_instance_index..first_instance_index
@@ -4542,6 +4550,9 @@ pub struct PicturePrimitive {
     pub options: PictureOptions,
 
     
+    pub is_opaque: bool,
+
+    
     
     num_render_tasks: usize,
 }
@@ -4653,6 +4664,7 @@ impl PicturePrimitive {
             prev_precise_local_rect: LayoutRect::zero(),
             options,
             segments_are_valid: false,
+            is_opaque: false,
             num_render_tasks: 0,
         }
     }
@@ -5996,6 +6008,8 @@ impl PicturePrimitive {
         
         state.pop_picture();
 
+        let surface = state.current_surface_mut();
+
         for cluster in &mut self.prim_list.clusters {
             cluster.flags.remove(ClusterFlags::IS_VISIBLE);
 
@@ -6076,7 +6090,6 @@ impl PicturePrimitive {
 
             
             
-            let surface = state.current_surface_mut();
             surface.map_local_to_surface.set_target_spatial_node(
                 cluster.spatial_node_index,
                 frame_context.spatial_tree,
