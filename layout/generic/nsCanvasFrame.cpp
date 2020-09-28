@@ -515,23 +515,15 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     bool needBlendContainer = false;
     nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
 
-    const bool suppressBackgroundImage = [&] {
-      
-      if (!ComputeShouldPaintBackground().mImage) {
-        return true;
-      }
-      
-      
-      
-      
-      
-      if (!PresContext()->PrefSheetPrefs().mUseDocumentColors &&
-          StaticPrefs::
-              browser_display_suppress_canvas_background_image_on_forced_colors()) {
-        return true;
-      }
-      return false;
-    }();
+    
+    
+    
+    
+    
+    const bool suppressBackgroundImage =
+        !PresContext()->PrefSheetPrefs().mUseDocumentColors &&
+        StaticPrefs::
+            browser_display_suppress_canvas_background_image_on_forced_colors();
 
     
     const nsStyleImageLayers& layers = bg->StyleBackground()->mImage;
