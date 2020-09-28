@@ -85,17 +85,17 @@ class DebianBootstrapper(
     def install_system_packages(self):
         self.apt_install(*self.packages)
 
-    def install_browser_packages(self):
+    def install_browser_packages(self, mozconfig_builder):
         self.ensure_browser_packages()
 
-    def install_browser_artifact_mode_packages(self):
+    def install_browser_artifact_mode_packages(self, mozconfig_builder):
         self.ensure_browser_packages(artifact_mode=True)
 
-    def install_mobile_android_packages(self):
-        self.ensure_mobile_android_packages()
+    def install_mobile_android_packages(self, mozconfig_builder):
+        self.ensure_mobile_android_packages(mozconfig_builder)
 
-    def install_mobile_android_artifact_mode_packages(self):
-        self.ensure_mobile_android_packages(artifact_mode=True)
+    def install_mobile_android_artifact_mode_packages(self, mozconfig_builder):
+        self.ensure_mobile_android_packages(mozconfig_builder, artifact_mode=True)
 
     def ensure_browser_packages(self, artifact_mode=False):
         
@@ -104,14 +104,14 @@ class DebianBootstrapper(
         if not modern:
             self.apt_install('nasm')
 
-    def ensure_mobile_android_packages(self, artifact_mode=False):
+    def ensure_mobile_android_packages(self, mozconfig_builder, artifact_mode=False):
         
         
         
         self.apt_install(*self.MOBILE_ANDROID_COMMON_PACKAGES)
 
         
-        self.ensure_java()
+        self.ensure_java(mozconfig_builder)
         from mozboot import android
         android.ensure_android('linux', artifact_mode=artifact_mode,
                                no_interactive=self.no_interactive)
