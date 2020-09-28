@@ -178,10 +178,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:gXPCOMThreadsShutDown\n"
 
          
-         "race:PACLoadComplete::Run\n"
-         "race:nsPACMan::ProcessPending\n"
-
-         
          "race:nsJARChannel::Suspend\n"
          "race:nsJARChannel::Resume\n"
 
