@@ -930,6 +930,10 @@ class UrlbarInput {
 
 
 
+
+
+
+
   setValueFromResult(result = null, event = null) {
     let canonizedUrl;
 
@@ -977,7 +981,7 @@ class UrlbarInput {
         this._setValue(this._getValueFromResult(result), allowTrim);
       }
     }
-    this._resultForCurrentValue = result;
+    this.setResultForCurrentValue(result);
 
     
     
@@ -993,6 +997,21 @@ class UrlbarInput {
     }
 
     return !!canonizedUrl;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  setResultForCurrentValue(result) {
+    this._resultForCurrentValue = result;
   }
 
   
@@ -1063,13 +1082,6 @@ class UrlbarInput {
       !this.value.endsWith(" ")
     ) {
       this._setValue(this.window.gBrowser.userTypedValue, false);
-    }
-
-    
-    if (firstResult.type == UrlbarUtils.RESULT_TYPE.TIP) {
-      this._resultForCurrentValue = null;
-    } else if (firstResult.heuristic) {
-      this._resultForCurrentValue = firstResult;
     }
 
     return false;
@@ -2291,6 +2303,7 @@ class UrlbarInput {
 
       this.select();
       this.window.goDoCommand("cmd_paste");
+      this.setResultForCurrentValue(null);
       this.handleCommand();
 
       this._suppressStartQuery = false;
@@ -2658,7 +2671,6 @@ class UrlbarInput {
 
     let canShowTopSites =
       !this.isPrivate && UrlbarPrefs.get("suggest.topsites");
-
     if (!this.view.isOpen) {
       this.view.clear();
     } else if (!value && !canShowTopSites) {
