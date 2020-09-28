@@ -380,14 +380,13 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
                                                     uint32_t aLoadType) {
   for (size_t i = 0; i < mLoadingEntries.Length(); ++i) {
     if (mLoadingEntries[i].mLoadId == aLoadId) {
-      nsISHistory* shistory = GetSessionHistory();
+      nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
       if (!shistory) {
         SessionHistoryEntry::RemoveLoadId(aLoadId);
         mLoadingEntries.RemoveElementAt(i);
         return;
       }
 
-      RefPtr<SessionHistoryEntry> oldActiveEntry = mActiveEntry;
       RefPtr<SessionHistoryEntry> newActiveEntry = mLoadingEntries[i].mEntry;
 
       bool loadFromSessionHistory = !newActiveEntry->ForInitialLoad();
@@ -412,35 +411,56 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
         if (loadFromSessionHistory) {
           
           shistory->UpdateIndex();
-        } else if (addEntry) {
-          shistory->AddEntry(mActiveEntry,
-                              true);
+        } else {
+          if (LOAD_TYPE_HAS_FLAGS(
+                  aLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY)) {
+            
+            int32_t index = shistory->GetIndexForReplace();
+
+            
+            
+            addEntry = index < 0;
+            if (!addEntry) {
+              shistory->ReplaceEntry(index, mActiveEntry);
+            }
+          }
+
+          if (addEntry) {
+            shistory->AddEntry(mActiveEntry,
+                                true);
+          }
         }
       } else {
         
         
         
-        
         if (loadFromSessionHistory) {
-          if (oldActiveEntry) {
+          if (mActiveEntry) {
             
             
             
-            oldActiveEntry->SyncTreesForSubframeNavigation(newActiveEntry,
-                                                           Top(), this);
+            mActiveEntry->SyncTreesForSubframeNavigation(newActiveEntry, Top(),
+                                                         this);
           }
           mActiveEntry = newActiveEntry;
           
           
           shistory->UpdateIndex();
         } else if (addEntry) {
-          if (oldActiveEntry) {
-            
-            
-            
-            shistory->AddChildSHEntryHelper(oldActiveEntry, newActiveEntry,
-                                            Top(), true);
-            mActiveEntry = newActiveEntry;
+          if (mActiveEntry) {
+            if (LOAD_TYPE_HAS_FLAGS(
+                    aLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY)) {
+              
+              
+              mActiveEntry->ReplaceWith(*newActiveEntry);
+            } else {
+              
+              
+              
+              shistory->AddChildSHEntryHelper(mActiveEntry, newActiveEntry,
+                                              Top(), true);
+              mActiveEntry = newActiveEntry;
+            }
           } else {
             SessionHistoryEntry* parentEntry =
                 static_cast<CanonicalBrowsingContext*>(GetParent())

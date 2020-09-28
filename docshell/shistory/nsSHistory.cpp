@@ -737,10 +737,7 @@ nsSHistory::AddToRootSessionHistory(bool aCloneChildren, nsISHEntry* aOSHE,
     
     
     
-    int32_t index = mRequestedIndex;
-    if (index == -1) {
-      index = mIndex;
-    }
+    int32_t index = GetIndexForReplace();
 
     
     if (index >= 0) {
