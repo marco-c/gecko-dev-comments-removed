@@ -112,7 +112,7 @@ var PrintEventHandler = {
   settingFlags: {
     margins: Ci.nsIPrintSettings.kInitSaveMargins,
     orientation: Ci.nsIPrintSettings.kInitSaveOrientation,
-    paperName:
+    paperId:
       Ci.nsIPrintSettings.kInitSavePaperSize |
       Ci.nsIPrintSettings.kInitSaveUnwriteableMargins,
     printInColor: Ci.nsIPrintSettings.kInitSaveInColor,
@@ -139,7 +139,6 @@ var PrintEventHandler = {
     "printAllOrCustomRange",
     "startPageRange",
     "endPageRange",
-    "paperName",
   ]),
 
   async init() {
@@ -400,35 +399,31 @@ var PrintEventHandler = {
     }
 
     
-    
-    
-    
-    
-    let paperName, paperWidth, paperHeight, paperSizeUnit;
-    if (settingsToUpdate.paperName) {
+    let paperId, paperWidth, paperHeight, paperSizeUnit;
+    if (settingsToUpdate.paperId) {
       
       
-      paperName = settingsToUpdate.paperName;
-      let cachedPaperSize = this.allPaperSizes[paperName];
+      paperId = settingsToUpdate.paperId;
+      let cachedPaperSize = this.allPaperSizes[paperId];
       paperWidth = cachedPaperSize.width;
       paperHeight = cachedPaperSize.height;
       paperSizeUnit = cachedPaperSize.paperSizeUnit;
     } else {
-      paperName = this.viewSettings.paperName;
+      paperId = this.viewSettings.paperId;
       paperWidth = this.viewSettings.paperWidth;
       paperHeight = this.viewSettings.paperHeight;
       paperSizeUnit = this.viewSettings.paperSizeUnit;
     }
 
-    logger.debug("Using paperName: ", paperName);
+    logger.debug("Using paperId: ", paperId);
     logger.debug(
       "Available paper sizes: ",
       PrintSettingsViewProxy.availablePaperSizes
     );
     let matchedPaper =
-      paperName &&
+      paperId &&
       PrintSettingsViewProxy.getBestPaperMatch(
-        paperName,
+        paperId,
         paperWidth,
         paperHeight,
         paperSizeUnit
@@ -438,15 +433,15 @@ var PrintEventHandler = {
       matchedPaper = Object.values(
         PrintSettingsViewProxy.availablePaperSizes
       )[0];
-      delete this._userChangedSettings.paperName;
+      delete this._userChangedSettings.paperId;
     }
-    if (matchedPaper.id !== paperName) {
+    if (matchedPaper.id !== paperId) {
       
       logger.log(
-        `Requested paperName: "${paperName}" missing on this printer, using: ${matchedPaper.id} instead`
+        `Requested paperId: "${paperId}" missing on this printer, using: ${matchedPaper.id} instead`
       );
-      delete this._userChangedSettings.paperName;
-      settingsToUpdate.paperName = matchedPaper.id;
+      delete this._userChangedSettings.paperId;
+      settingsToUpdate.paperId = matchedPaper.id;
     }
     return settingsToUpdate;
   },
@@ -490,11 +485,11 @@ var PrintEventHandler = {
     let flags = 0;
     logger.debug("updateSettings ", changedSettings, printerChanged);
 
-    if (printerChanged || changedSettings.paperName) {
+    if (printerChanged || changedSettings.paperId) {
       
       
       await PrintSettingsViewProxy.fetchPaperMargins(
-        changedSettings.paperName || this.viewSettings.paperName
+        changedSettings.paperId || this.viewSettings.paperId
       );
     }
 
@@ -806,8 +801,8 @@ var PrintSettingsViewProxy = {
     "Microsoft XPS Document Writer",
   ]),
 
-  getBestPaperMatch(paperName, paperWidth, paperHeight, paperSizeUnit) {
-    let matchedPaper = paperName && this.availablePaperSizes[paperName];
+  getBestPaperMatch(paperId, paperWidth, paperHeight, paperSizeUnit) {
+    let matchedPaper = paperId && this.availablePaperSizes[paperId];
     if (matchedPaper) {
       return matchedPaper;
     }
@@ -847,11 +842,11 @@ var PrintSettingsViewProxy = {
     return null;
   },
 
-  async fetchPaperMargins(paperName) {
+  async fetchPaperMargins(paperId) {
     
-    let paperInfo = this.availablePaperSizes[paperName];
+    let paperInfo = this.availablePaperSizes[paperId];
     if (!paperInfo) {
-      throw new Error("Can't fetchPaperMargins: " + paperName);
+      throw new Error("Can't fetchPaperMargins: " + paperId);
     }
     if (paperInfo._resolved) {
       
@@ -962,8 +957,8 @@ var PrintSettingsViewProxy = {
   get(target, name) {
     switch (name) {
       case "currentPaper": {
-        let paperName = this.get(target, "paperName");
-        return paperName && this.availablePaperSizes[paperName];
+        let paperId = this.get(target, "paperId");
+        return paperId && this.availablePaperSizes[paperId];
       }
 
       case "marginPresets":
@@ -1084,7 +1079,7 @@ var PrintSettingsViewProxy = {
         }
         break;
 
-      case "paperName": {
+      case "paperId": {
         let paperId = value;
         let paperSize = this.availablePaperSizes[paperId];
         target.paperWidth = paperSize.width;
@@ -1093,7 +1088,7 @@ var PrintSettingsViewProxy = {
         target.unwriteableMarginRight = paperSize.unwriteableMarginRight;
         target.unwriteableMarginBottom = paperSize.unwriteableMarginBottom;
         target.unwriteableMarginLeft = paperSize.unwriteableMarginLeft;
-        target.paperName = paperSize.id;
+        target.paperId = paperSize.id;
         
         this.set(target, "margins", this.get(target, "margins"));
         break;
@@ -1282,14 +1277,14 @@ class MarginsPicker extends PrintSettingSelect {
   update(settings) {
     
     if (
-      settings.paperName !== this._paperName ||
+      settings.paperId !== this._paperId ||
       settings.printerName !== this._printerName
     ) {
       let enabledMargins = settings.marginOptions;
       for (let option of this.options) {
         option.hidden = !enabledMargins[option.value];
       }
-      this._paperName = settings.paperName;
+      this._paperId = settings.paperId;
       this._printerName = settings.printerName;
     }
     super.update(settings);
@@ -1310,7 +1305,7 @@ class PaperSizePicker extends PrintSettingSelect {
       this._printerName = settings.printerName;
       this.setOptions(settings.paperSizes);
     }
-    this.value = settings.paperName;
+    this.value = settings.paperId;
   }
 }
 customElements.define("paper-size-select", PaperSizePicker, {
