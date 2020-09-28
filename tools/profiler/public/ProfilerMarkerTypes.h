@@ -52,38 +52,6 @@ struct Budget {
   static void StreamJSONMarkerData(mozilla::JSONWriter& aWriter) {}
 };
 
-struct DOMEvent {
-  static constexpr mozilla::Span<const char> MarkerTypeName() {
-    
-    
-    
-    
-    return mozilla::MakeStringSpan("tracing");
-  }
-  static void StreamJSONMarkerData(
-      mozilla::JSONWriter& aWriter,
-      const mozilla::ProfilerString16View& aEventType,
-      const mozilla::TimeStamp& aEventTimeStamp,
-      const mozilla::ProfilerString8View& aTracingCategory) {
-    aWriter.StringProperty(
-        "eventType",
-        NS_ConvertUTF16toUTF8(aEventType.Data(), aEventType.Length()));
-    
-    
-    
-    mozilla::baseprofiler::WritePropertyTime(aWriter, "timeStamp",
-                                             aEventTimeStamp);
-    
-    
-    if (aTracingCategory.Length() != 0) {
-      
-      
-      
-      aWriter.StringProperty("category", aTracingCategory);
-    }
-  }
-};
-
 struct Pref {
   static constexpr mozilla::Span<const char> MarkerTypeName() {
     return mozilla::MakeStringSpan("PreferenceRead");

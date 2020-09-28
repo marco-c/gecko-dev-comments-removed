@@ -70,10 +70,6 @@
 using namespace mozilla::tasktracer;
 #endif
 
-#ifdef MOZ_GECKO_PROFILER
-#  include "ProfilerMarkerPayload.h"
-#endif
-
 namespace mozilla {
 
 using namespace dom;
@@ -1035,23 +1031,53 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
 
           nsCOMPtr<nsIDocShell> docShell;
           docShell = nsContentUtils::GetDocShellForEventTarget(aEvent->mTarget);
-          Maybe<uint64_t> innerWindowID;
+          MarkerInnerWindowId innerWindowId;
           if (nsCOMPtr<nsPIDOMWindowInner> inner =
                   do_QueryInterface(aEvent->mTarget->GetOwnerGlobal())) {
-            innerWindowID = Some(inner->WindowID());
+            innerWindowId = MarkerInnerWindowId{inner->WindowID()};
           }
-          PROFILER_ADD_MARKER_WITH_PAYLOAD(
-              "DOMEvent", DOM, DOMEventMarkerPayload,
-              (typeStr, aEvent->mTimeStamp, "DOMEvent", TRACING_INTERVAL_START,
-               innerWindowID));
+
+          struct DOMEventMarker {
+            static constexpr Span<const char> MarkerTypeName() {
+              
+              
+              
+              
+              return MakeStringSpan("tracing");
+            }
+            static void StreamJSONMarkerData(
+                JSONWriter& aWriter, const ProfilerString16View& aEventType,
+                const TimeStamp& aEventTimeStamp) {
+              aWriter.StringProperty(
+                  "eventType", NS_ConvertUTF16toUTF8(aEventType.Data(),
+                                                     aEventType.Length()));
+              
+              
+              
+              baseprofiler::WritePropertyTime(aWriter, "timeStamp",
+                                              aEventTimeStamp);
+              
+              
+              
+              aWriter.StringProperty("category", "DOMEvent");
+            }
+          };
+
+          profiler_add_marker<DOMEventMarker>(
+              "DOMEvent",
+              geckoprofiler::category::DOM.WithOptions(
+                  MarkerTiming::IntervalStart(),
+                  MarkerInnerWindowId(innerWindowId)),
+              typeStr, aEvent->mTimeStamp);
 
           EventTargetChainItem::HandleEventTargetChain(chain, postVisitor,
                                                        aCallback, cd);
 
-          PROFILER_ADD_MARKER_WITH_PAYLOAD(
-              "DOMEvent", DOM, DOMEventMarkerPayload,
-              (typeStr, aEvent->mTimeStamp, "DOMEvent", TRACING_INTERVAL_END,
-               innerWindowID));
+          profiler_add_marker<DOMEventMarker>(
+              "DOMEvent",
+              geckoprofiler::category::DOM.WithOptions(
+                  MarkerTiming::IntervalEnd(), std::move(innerWindowId)),
+              typeStr, aEvent->mTimeStamp);
         } else
 #endif
         {
