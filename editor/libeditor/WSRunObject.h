@@ -961,12 +961,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
       }
       
       
-      
-      if (trailingWhiteSpaceRange != InvisibleLeadingWhiteSpaceRangeRef()) {
-        return EditorDOMRange();
-      }
-      
-      
       if (aPointToSplit.IsBefore(trailingWhiteSpaceRange.StartRef())) {
         return EditorDOMRange();
       }
@@ -1007,12 +1001,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
           InvisibleLeadingWhiteSpaceRangeRef();
       if (!leadingWhiteSpaceRange.IsPositioned()) {
         return leadingWhiteSpaceRange;
-      }
-      
-      
-      
-      if (leadingWhiteSpaceRange != InvisibleTrailingWhiteSpaceRangeRef()) {
-        return EditorDOMRange();
       }
       
       
