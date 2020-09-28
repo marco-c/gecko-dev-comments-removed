@@ -218,6 +218,12 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
         break;
       }
       case "tab": {
+        if (params?.inBackground) {
+          
+          
+          searchMode.isPreview = false;
+        }
+
         let newTab = this.input.window.gBrowser.addTrustedTab("about:newtab");
         this.input.setSearchModeForBrowser(searchMode, newTab.linkedBrowser);
         if (userTypedSearchString) {
