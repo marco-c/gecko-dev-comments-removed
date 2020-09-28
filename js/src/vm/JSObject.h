@@ -251,21 +251,6 @@ class JSObject
 
   
 
-
-
-  static bool constructorDisplayAtom(JSContext* cx, js::HandleObject obj,
-                                     js::MutableHandleAtom name);
-
-  
-
-
-
-
-
-  JSAtom* maybeConstructorDisplayAtom() const;
-
-  
-
   void traceChildren(JSTracer* trc);
 
   void fixupAfterMovingGC();

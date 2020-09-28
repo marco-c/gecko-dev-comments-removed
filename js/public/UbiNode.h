@@ -659,17 +659,6 @@ class JS_PUBLIC_API Base {
   virtual const char* jsObjectClassName() const { return nullptr; }
 
   
-  
-  
-  
-  
-  virtual MOZ_MUST_USE bool jsObjectConstructorName(
-      JSContext* cx, UniqueTwoByteChars& outName) const {
-    outName.reset(nullptr);
-    return true;
-  }
-
-  
 
   
   
@@ -816,10 +805,6 @@ class Node {
   const char* jsObjectClassName() const { return base()->jsObjectClassName(); }
   const char16_t* descriptiveTypeName() const {
     return base()->descriptiveTypeName();
-  }
-  MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx,
-                                            UniqueTwoByteChars& outName) const {
-    return base()->jsObjectConstructorName(cx, outName);
   }
 
   const char* scriptFilename() const { return base()->scriptFilename(); }
@@ -1145,8 +1130,6 @@ class JS_PUBLIC_API Concrete<JSObject> : public TracerConcrete<JSObject> {
   JS::Realm* realm() const override;
 
   const char* jsObjectClassName() const override;
-  MOZ_MUST_USE bool jsObjectConstructorName(
-      JSContext* cx, UniqueTwoByteChars& outName) const override;
   Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
 
   bool hasAllocationStack() const override;
