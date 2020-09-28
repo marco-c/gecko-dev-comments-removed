@@ -266,6 +266,24 @@ add_task(async function testAboutProcesses() {
   info("Setting up about:processes");
 
   
+  
+  const extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      applications: { gecko: { id: "test-aboutprocesses@mochi.test" } },
+    },
+    background() {
+      
+      
+      document.body.appendChild(document.createElement("iframe"));
+
+      this.browser.test.sendMessage("bg-page-loaded");
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitMessage("bg-page-loaded");
+
+  
   for (let showAllFrames of [false, true]) {
     Services.prefs.setBoolPref(
       "toolkit.aboutProcesses.showAllSubframes",
@@ -504,4 +522,6 @@ add_task(async function testAboutProcesses() {
   }
 
   Services.prefs.clearUserPref("toolkit.aboutProcesses.showThreads");
+
+  await extension.unload();
 });
