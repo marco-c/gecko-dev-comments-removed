@@ -10,6 +10,7 @@
 #include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Types.h"
+#include "mozilla/layers/ScreenshotGrabber.h"
 
 #include "GLTypes.h"
 #include "nsISupportsImpl.h"
@@ -30,7 +31,6 @@ namespace layers {
 class NativeLayer;
 class NativeLayerCA;
 class NativeLayerRootSnapshotter;
-class ScreenshotGrabber;
 class SurfacePoolHandle;
 
 
@@ -76,7 +76,7 @@ class NativeLayerRoot {
 
 
 
-class NativeLayerRootSnapshotter {
+class NativeLayerRootSnapshotter : public profiler_screenshots::Window {
  public:
   virtual ~NativeLayerRootSnapshotter() = default;
 
@@ -92,12 +92,6 @@ class NativeLayerRootSnapshotter {
   virtual bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
                               gfx::SurfaceFormat aReadbackFormat,
                               const Range<uint8_t>& aReadbackBuffer) = 0;
-
-  
-  
-  virtual void MaybeGrabProfilerScreenshot(
-      ScreenshotGrabber* aScreenshotGrabber,
-      const gfx::IntSize& aWindowSize) = 0;
 };
 
 
