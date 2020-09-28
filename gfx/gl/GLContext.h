@@ -2329,6 +2329,13 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   }
 
   void fDeleteTextures(GLsizei n, const GLuint* names) {
+#ifdef XP_MACOSX
+    
+    
+    
+    
+    fFlush();
+#endif
     raw_fDeleteTextures(n, names);
     TRACKING_CONTEXT(DeletedTextures(this, n, names));
   }
