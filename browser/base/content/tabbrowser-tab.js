@@ -86,7 +86,7 @@
           "src=image,triggeringprincipal=iconloadingprincipal,requestcontextid,fadein,pinned,selected=visuallyselected,busy,crashed,sharing",
         ".tab-sharing-icon-overlay": "sharing,selected=visuallyselected,pinned",
         ".tab-icon-overlay":
-          "crashed,busy,soundplaying,soundplaying-scheduledremoval,pinned,muted,blocked,selected=visuallyselected,activemedia-blocked",
+          "pictureinpicture,crashed,busy,soundplaying,soundplaying-scheduledremoval,pinned,muted,blocked,selected=visuallyselected,activemedia-blocked",
         ".tab-label-container":
           "pinned,selected=visuallyselected,labeldirection",
         ".tab-label":
@@ -409,6 +409,16 @@
         if (this.multiselected) {
           gBrowser.toggleMuteAudioOnMultiSelectedTabs(this);
         } else {
+          if (
+            event.target.classList.contains("tab-icon-sound") &&
+            this.pictureinpicture
+          ) {
+            
+            
+            
+            
+            return;
+          }
           this.toggleMuteAudio();
         }
         return;
