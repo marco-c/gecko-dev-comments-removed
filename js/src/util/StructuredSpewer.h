@@ -146,6 +146,10 @@ class StructuredSpewer {
   static void spew(JSContext* cx, SpewChannel channel, const char* fmt, ...)
       MOZ_FORMAT_PRINTF(3, 4);
 
+  
+  bool enabled(JSContext* cx, const JSScript* script,
+               SpewChannel channel) const;
+
  private:
   
   
@@ -199,10 +203,6 @@ class StructuredSpewer {
   bool enabled(SpewChannel channel) {
     return (spewingEnabled_ && filter().enabled(channel));
   }
-
-  
-  bool enabled(JSContext* cx, const JSScript* script,
-               SpewChannel channel) const;
 
   
   void startObject(JSContext* cx, const JSScript* script, SpewChannel channel);
