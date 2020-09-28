@@ -13,6 +13,7 @@
 #include "HitTestingTreeNode.h"  
 #include "gfxPoint.h"            
 #include "mozilla/Assertions.h"  
+#include "mozilla/DataMutex.h"   
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Logging.h"              
 #include "mozilla/gfx/Matrix.h"               
@@ -580,6 +581,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   ParentLayerToScreenMatrix4x4 GetApzcToGeckoTransform(
       const AsyncPanZoomController* aApzc) const;
   ScreenPoint GetCurrentMousePosition() const;
+  void SetCurrentMousePosition(const ScreenPoint& aNewPos);
 
   
 
@@ -990,7 +992,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   TouchCounter mTouchCounter;
   
 
-  ScreenPoint mCurrentMousePosition;
+  mutable DataMutex<ScreenPoint> mCurrentMousePosition;
   
 
 
