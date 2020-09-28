@@ -957,6 +957,8 @@ pub struct Capabilities {
     
     pub supports_texture_usage: bool,
     
+    pub supports_render_target_partial_update: bool,
+    
     pub renderer_name: String,
 }
 
@@ -1562,6 +1564,11 @@ impl Device {
         
         let supports_nonzero_pbo_offsets = !is_macos;
 
+        
+        
+        
+        let supports_render_target_partial_update = !renderer_name.starts_with("Mali-G");
+
         Device {
             gl,
             base_gl: None,
@@ -1581,6 +1588,7 @@ impl Device {
                 supports_texture_swizzle,
                 supports_nonzero_pbo_offsets,
                 supports_texture_usage,
+                supports_render_target_partial_update,
                 renderer_name,
             },
 
