@@ -1867,3 +1867,13 @@ ROLE(TIME_EDITOR,
      java::SessionAccessibility::CLASSNAME_VIEW,
      eNameFromSubtreeIfReqRule)
 
+ROLE(LISTITEM_MARKER,
+     "list item marker",
+     ATK_ROLE_UNKNOWN,
+     @"AXListMarker",
+     NSAccessibilityUnknownSubrole,
+     ROLE_SYSTEM_STATICTEXT,
+     ROLE_SYSTEM_STATICTEXT,
+     java::SessionAccessibility::CLASSNAME_VIEW,
+     eNoNameRule)
+
