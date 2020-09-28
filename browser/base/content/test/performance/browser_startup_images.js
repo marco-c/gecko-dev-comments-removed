@@ -58,11 +58,6 @@ const knownUnshownImages = [
   },
 
   {
-    file: "chrome://global/skin/icons/resizer.svg",
-    platforms: ["win"],
-  },
-
-  {
     file: "chrome://browser/skin/window-controls/maximize.svg",
     platforms: ["win"],
     
