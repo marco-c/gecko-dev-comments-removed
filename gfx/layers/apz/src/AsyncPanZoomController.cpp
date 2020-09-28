@@ -60,6 +60,7 @@
 #include "mozilla/dom/CheckerboardReportService.h"  
 
 #include "mozilla/dom/Touch.h"              
+#include "mozilla/gfx/gfxVars.h"            
 #include "mozilla/gfx/BasePoint.h"          
 #include "mozilla/gfx/BaseRect.h"           
 #include "mozilla/gfx/Point.h"              
@@ -3626,9 +3627,9 @@ void AsyncPanZoomController::ScaleWithFocus(float aScale,
 
 gfx::IntSize AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
     const ScreenSize& aBaseSize) {
-  MOZ_ASSERT(gfxVars::UseWebRender());
+  MOZ_ASSERT(gfx::gfxVars::UseWebRender());
 
-  IntSize multiplier(1, 1);
+  gfx::IntSize multiplier(1, 1);
   float baseWidth = aBaseSize.width;
   while (baseWidth > 500) {
     baseWidth /= 2;
@@ -3673,7 +3674,7 @@ static CSSSize CalculateDisplayPortSize(const CSSSize& aCompositionSize,
     yMultiplier += StaticPrefs::apz_y_skate_highmem_adjust();
   }
 
-  if (gfxVars::UseWebRender()) {
+  if (gfx::gfxVars::UseWebRender()) {
     
     
     
@@ -3684,7 +3685,7 @@ static CSSSize CalculateDisplayPortSize(const CSSSize& aCompositionSize,
     
     
     
-    IntSize alignmentMultipler =
+    gfx::IntSize alignmentMultipler =
         AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
             aCompositionSize * aDpPerCSS);
     if (xMultiplier > 1) {
