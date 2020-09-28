@@ -1496,10 +1496,18 @@ var AddonTestUtils = {
 
 
 
-  promiseAddonEvent(event) {
+
+
+
+
+
+  promiseAddonEvent(event, checkFn) {
     return new Promise(resolve => {
       let listener = {
         [event](...args) {
+          if (typeof checkFn == "function" && !checkFn(...args)) {
+            return;
+          }
           AddonManager.removeAddonListener(listener);
           resolve(args);
         },
