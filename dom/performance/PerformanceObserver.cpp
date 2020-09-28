@@ -132,8 +132,11 @@ void PerformanceObserver::QueueEntry(PerformanceEntry* aEntry) {
 
 
 
-static const char16_t* const sValidTypeNames[5] = {
-    u"mark", u"measure", u"navigation", u"paint", u"resource",
+static const char16_t* const sValidTypeNames[4] = {
+    u"mark",
+    u"measure",
+    u"navigation",
+    u"resource",
 };
 
 void PerformanceObserver::ReportUnsupportedTypesErrorToConsole(

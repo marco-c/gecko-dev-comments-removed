@@ -858,8 +858,6 @@ var interfaceNamesInGlobalScope = [
   
   { name: "PerformanceObserverEntryList", insecureContext: true },
   
-  { name: "PerformancePaintTiming", insecureContext: true },
-  
   { name: "PerformanceResourceTiming", insecureContext: true },
   
   { name: "PerformanceServerTiming", insecureContext: false },

@@ -411,10 +411,14 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
         
         conversion = (
             ("fnbpaint", "firstPaint"),
-            ("fcp", ["paintTiming", "first-contentful-paint"]),
+            ("fcp", "timeToContentfulPaint"),
             ("dcf", "timeToDomContentFlushed"),
             ("loadtime", "loadEventEnd"),
         )
+
+        chrome_raptor_conversion = {
+            "timeToContentfulPaint": ["paintTiming", "first-contentful-paint"]
+        }
 
         def _get_raptor_val(mdict, mname, retval=False):
             
@@ -521,12 +525,11 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                         continue
 
                     
-                    
-                    if bt == "fcp" and not _get_raptor_val(
+                    if raptor in chrome_raptor_conversion and _get_raptor_val(
                         raw_result["browserScripts"][0]["timings"],
-                        raptor,
+                        chrome_raptor_conversion[raptor],
                     ):
-                        continue
+                        raptor = chrome_raptor_conversion[raptor]
 
                     
                     for cycle in raw_result["browserScripts"]:
