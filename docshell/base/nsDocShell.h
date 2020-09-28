@@ -523,6 +523,9 @@ class nsDocShell final : public nsDocLoader,
     return mBrowsingContext->GetChildSessionHistory();
   }
 
+  
+  bool IsLoadingFromSessionHistory();
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;
@@ -1032,7 +1035,9 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  void MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState);
+  
+  bool MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState,
+                                  bool aContinueHandlingSubframeHistory);
 
   
   
@@ -1086,6 +1091,9 @@ class nsDocShell final : public nsDocLoader,
                                                   bool aIsManual);
 
   void SetCacheKeyOnHistoryEntry(nsISHEntry* aSHEntry, uint32_t aCacheKey);
+
+  nsresult LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating,
+                   bool aContinueHandlingSubframeHistory);
 
  private:  
   nsID mHistoryID;
@@ -1150,6 +1158,8 @@ class nsDocShell final : public nsDocLoader,
 
   
   mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mActiveEntry;
+  bool mActiveEntryIsLoadingFromSessionHistory = false;
+  
   mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> mLoadingEntry;
 
   
@@ -1286,8 +1296,6 @@ class nsDocShell final : public nsDocLoader,
   
   bool mSavingOldViewer : 1;
 
-  
-  bool mDynamicallyCreated : 1;
   bool mAffectPrivateSessionLifetime : 1;
   bool mInvisible : 1;
   bool mHasLoadedNonBlankURI : 1;

@@ -154,7 +154,8 @@ class WindowProxyHolder;
   FIELD(IsSingleToplevelInHistory, bool)                                     \
   FIELD(UseErrorPages, bool)                                                 \
   FIELD(PlatformOverride, nsString)                                          \
-  FIELD(HasLoadedNonInitialDocument, bool)
+  FIELD(HasLoadedNonInitialDocument, bool)                                   \
+  FIELD(CreatedDynamically, bool)
 
 
 

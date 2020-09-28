@@ -245,6 +245,8 @@ class SessionHistoryEntry : public nsISHEntry {
 
   const nsID& DocshellID() const;
 
+  void SetIsDynamicallyAdded(bool aDynamic);
+
   
   
   static SessionHistoryEntry* GetByLoadId(uint64_t aLoadId);

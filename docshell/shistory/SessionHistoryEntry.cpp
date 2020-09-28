@@ -913,6 +913,11 @@ SessionHistoryEntry::IsDynamicallyAdded() {
   return SharedInfo()->mDynamicallyCreated;
 }
 
+void SessionHistoryEntry::SetIsDynamicallyAdded(bool aDynamic) {
+  MOZ_ASSERT_IF(SharedInfo()->mDynamicallyCreated, aDynamic);
+  SharedInfo()->mDynamicallyCreated = aDynamic;
+}
+
 NS_IMETHODIMP
 SessionHistoryEntry::HasDynamicallyAddedChild(bool* aHasDynamicallyAddedChild) {
   for (const auto& child : mChildren) {
@@ -1113,7 +1118,38 @@ SessionHistoryEntry::GetChildAt(int32_t aIndex, nsISHEntry** aChild) {
 NS_IMETHODIMP_(void)
 SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
     int32_t aChildOffset, nsISHEntry** aChild) {
-  MOZ_CRASH("Need to implement this");
+  *aChild = nullptr;
+
+  bool dynamicallyAddedChild = false;
+  HasDynamicallyAddedChild(&dynamicallyAddedChild);
+  if (dynamicallyAddedChild) {
+    return;
+  }
+
+  
+  
+  if (IsForceReloadType(mInfo->mLoadType) || mInfo->mLoadType == LOAD_REFRESH) {
+    return;
+  }
+
+  
+
+
+
+
+
+
+  if (SharedInfo()->mExpired && (mInfo->mLoadType == LOAD_RELOAD_NORMAL)) {
+    
+    *aChild = nullptr;
+    return;
+  }
+  
+  GetChildAt(aChildOffset, aChild);
+  if (*aChild) {
+    
+    (*aChild)->SetLoadType(mInfo->mLoadType);
+  }
 }
 
 NS_IMETHODIMP
