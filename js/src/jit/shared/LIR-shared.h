@@ -944,6 +944,23 @@ class LArgumentsObjectLength : public LInstructionHelper<1, 1, 0> {
 };
 
 
+class LGuardArgumentsObjectNotOverriddenIterator
+    : public LInstructionHelper<0, 1, 1> {
+ public:
+  LIR_HEADER(GuardArgumentsObjectNotOverriddenIterator)
+
+  explicit LGuardArgumentsObjectNotOverriddenIterator(
+      const LAllocation& argsObj, const LDefinition& temp)
+      : LInstructionHelper(classOpcode) {
+    setOperand(0, argsObj);
+    setTemp(0, temp);
+  }
+
+  const LAllocation* getArgsObject() { return getOperand(0); }
+  const LDefinition* temp() { return this->getTemp(0); }
+};
+
+
 
 class LReturnFromCtor : public LInstructionHelper<1, BOX_PIECES + 1, 0> {
  public:
