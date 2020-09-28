@@ -1002,7 +1002,7 @@ class InternalRefTestImplementation(RefTestImplementation):
             self.executor.protocol.marionette.set_context(self.executor.protocol.marionette.CONTEXT_CHROME)
         self.executor.protocol.marionette._send_message("reftest:setup", data)
 
-    def reset(self, screenshot=None):
+    def reset(self, **kwargs):
         
         
         pass
