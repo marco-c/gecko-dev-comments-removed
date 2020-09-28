@@ -3,8 +3,15 @@
 
 "use strict";
 
+const Services = require("Services");
 const { tabDescriptorSpec } = require("devtools/shared/specs/descriptors/tab");
 
+loader.lazyRequireGetter(
+  this,
+  "gDevTools",
+  "devtools/client/framework/devtools",
+  true
+);
 loader.lazyRequireGetter(
   this,
   "BrowsingContextTargetFront",
@@ -13,14 +20,22 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "LocalTabTargetFront",
-  "devtools/client/fronts/targets/local-tab",
+  "TargetFactory",
+  "devtools/client/framework/target",
   true
 );
 const {
   FrontClassWithSpec,
   registerFront,
 } = require("devtools/shared/protocol");
+
+
+
+
+
+
+
+
 
 class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
   constructor(client, targetFront, parentFront) {
@@ -33,6 +48,7 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
     this._localTab = null;
 
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
+    this._handleTabEvent = this._handleTabEvent.bind(this);
   }
 
   form(json) {
@@ -41,8 +57,37 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
     this.traits = json.traits || {};
   }
 
+  destroy() {
+    if (this.isLocalTab) {
+      this._teardownLocalTabListeners();
+    }
+    super.destroy();
+  }
+
   setLocalTab(localTab) {
     this._localTab = localTab;
+    this._setupLocalTabListeners();
+  }
+
+  get isLocalTab() {
+    return !!this._localTab;
+  }
+
+  get localTab() {
+    return this._localTab;
+  }
+
+  _setupLocalTabListeners() {
+    this.localTab.addEventListener("TabClose", this._handleTabEvent);
+    this.localTab.addEventListener("TabRemotenessChange", this._handleTabEvent);
+  }
+
+  _teardownLocalTabListeners() {
+    this.localTab.removeEventListener("TabClose", this._handleTabEvent);
+    this.localTab.removeEventListener(
+      "TabRemotenessChange",
+      this._handleTabEvent
+    );
   }
 
   get isZombieTab() {
@@ -72,14 +117,12 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
   }
 
   _createTabTarget(form) {
-    let front;
-    if (this._localTab) {
-      
-      
-      front = new LocalTabTargetFront(this._client, null, this, this._localTab);
-    } else {
-      front = new BrowsingContextTargetFront(this._client, null, this);
+    const front = new BrowsingContextTargetFront(this._client, null, this);
+
+    if (this.isLocalTab) {
+      front.shouldCloseClient = true;
     }
+
     
     
     front.actorID = form.actor;
@@ -170,6 +213,76 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
       }
     }
     return null;
+  }
+
+  
+
+
+  async _handleTabEvent(event) {
+    switch (event.type) {
+      case "TabClose":
+        
+        
+        
+        
+        const toolbox = gDevTools.getToolbox(this._targetFront);
+        
+        
+        
+        
+        if (toolbox) {
+          
+          await toolbox.destroy();
+        }
+        break;
+      case "TabRemotenessChange":
+        this._onRemotenessChange();
+        break;
+    }
+  }
+
+  
+
+
+
+
+  async _onRemotenessChange() {
+    
+    
+    
+    if (this.localTab.isResponsiveDesignMode) {
+      return;
+    }
+
+    
+    if (this._targetFront.isDevToolsExtensionContext) {
+      return;
+    }
+
+    const toolbox = gDevTools.getToolbox(this._targetFront);
+
+    const targetSwitchingEnabled = Services.prefs.getBoolPref(
+      "devtools.target-switching.enabled",
+      false
+    );
+
+    
+    
+    
+    if (targetSwitchingEnabled) {
+      this.emit("remoteness-change", this._targetFront);
+      return;
+    }
+
+    
+    
+    
+    await toolbox.destroy();
+
+    
+    const newTarget = await TargetFactory.forTab(this.localTab, null);
+
+    gDevTools.showToolbox(newTarget);
   }
 }
 

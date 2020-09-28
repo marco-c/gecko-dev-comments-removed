@@ -50,7 +50,7 @@ function TargetMixin(parentClass) {
       
       
       
-      this.shouldCloseClient = this.isLocalTab;
+      this.shouldCloseClient = false;
 
       this._client = client;
 
@@ -77,6 +77,11 @@ function TargetMixin(parentClass) {
 
 
     get descriptorFront() {
+      if (this.isDestroyed()) {
+        
+        return null;
+      }
+
       if (this.parentFront.typeName.endsWith("Descriptor")) {
         return this.parentFront;
       }
@@ -291,18 +296,12 @@ function TargetMixin(parentClass) {
       return this.client.traits[traitName];
     }
 
-    
-
-
-
-
-
     get isLocalTab() {
-      return false;
+      return !!this.descriptorFront?.isLocalTab;
     }
 
     get localTab() {
-      return null;
+      return this.descriptorFront?.localTab || null;
     }
 
     

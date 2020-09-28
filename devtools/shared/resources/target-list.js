@@ -77,8 +77,11 @@ class TargetList extends EventEmitter {
     this.onLocalTabRemotenessChange = this.onLocalTabRemotenessChange.bind(
       this
     );
-    if (targetFront.isLocalTab) {
-      targetFront.on("remoteness-change", this.onLocalTabRemotenessChange);
+    if (this.descriptorFront?.isLocalTab) {
+      this.descriptorFront.on(
+        "remoteness-change",
+        this.onLocalTabRemotenessChange
+      );
     }
 
     
@@ -530,6 +533,7 @@ class TargetList extends EventEmitter {
   async onLocalTabRemotenessChange(targetFront) {
     
     const client = targetFront.client;
+    const localTab = targetFront.localTab;
 
     
     
@@ -544,7 +548,7 @@ class TargetList extends EventEmitter {
     await targetFront.once("target-destroyed");
 
     
-    const newTarget = await TargetFactory.forTab(targetFront.localTab, client);
+    const newTarget = await TargetFactory.forTab(localTab, client);
 
     this.switchToTarget(newTarget);
   }
@@ -558,9 +562,6 @@ class TargetList extends EventEmitter {
 
   async switchToTarget(newTarget) {
     newTarget.setIsTopLevel(true);
-    if (newTarget.isLocalTab) {
-      newTarget.on("remoteness-change", this.onLocalTabRemotenessChange);
-    }
 
     
     await this._onTargetAvailable(newTarget, true);
