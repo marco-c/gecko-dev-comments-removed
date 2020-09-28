@@ -565,9 +565,9 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         mPendingParentProcessVsync = true;
       }
 
-      if (NS_IsMainThread()) {
-        
-        InputTaskManager::Get()->SetInputHandlingStartTime(TimeStamp());
+      if (XRE_IsContentProcess()) {
+        NotifyParentProcessVsync();
+        return true;
       }
 
       nsCOMPtr<nsIRunnable> vsyncEvent = new ParentProcessVsyncNotifier(this);
@@ -579,6 +579,9 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       
       MOZ_ASSERT(NS_IsMainThread());
+
+      
+      InputTaskManager::Get()->SetInputHandlingStartTime(TimeStamp());
 
       VsyncEvent aVsync;
       {
