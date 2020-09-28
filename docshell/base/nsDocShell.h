@@ -1095,6 +1095,11 @@ class nsDocShell final : public nsDocLoader,
   nsresult LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating,
                    bool aContinueHandlingSubframeHistory);
 
+  
+  
+  
+  void MoveLoadingToActiveEntry(bool aCommit);
+
  private:  
   nsID mHistoryID;
   nsString mTitle;

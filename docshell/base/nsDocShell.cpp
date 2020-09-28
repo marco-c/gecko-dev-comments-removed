@@ -3996,6 +3996,13 @@ nsresult nsDocShell::LoadErrorPage(nsIURI* aErrorURI, nsIURI* aFailedURI,
     
     mLSHE->AbandonBFCacheEntry();
   }
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    
+    
+    
+    
+    MoveLoadingToActiveEntry(true);
+  }
 
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aErrorURI);
   loadState->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
@@ -5705,38 +5712,7 @@ nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
 
   if (StaticPrefs::fission_sessionHistoryInParent()) {
     MOZ_LOG(gSHLog, LogLevel::Debug, ("document %p Embed", this));
-    mActiveEntry = nullptr;
-    mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> loadingEntry;
-    mActiveEntryIsLoadingFromSessionHistory =
-        mLoadingEntry && mLoadingEntry->mLoadIsFromSessionHistory;
-    if (mLoadingEntry) {
-      mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
-      mLoadingEntry.swap(loadingEntry);
-    }
-    if (mActiveEntry) {
-      MOZ_ASSERT(loadingEntry);
-      nsID changeID = {};
-      if (XRE_IsParentProcess()) {
-        mBrowsingContext->Canonical()->SessionHistoryCommit(
-            loadingEntry->mLoadId, changeID, mLoadType);
-      } else {
-        RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
-        if (rootSH) {
-          if (!loadingEntry->mLoadIsFromSessionHistory) {
-            changeID = rootSH->AddPendingHistoryChange();
-          } else {
-            
-            
-            rootSH->SetIndexAndLength(loadingEntry->mRequestedIndex,
-                                      loadingEntry->mSessionHistoryLength,
-                                      changeID);
-          }
-        }
-        ContentChild* cc = ContentChild::GetSingleton();
-        mozilla::Unused << cc->SendHistoryCommit(
-            mBrowsingContext, loadingEntry->mLoadId, changeID, mLoadType);
-      }
-    }
+    MoveLoadingToActiveEntry(mLoadType != LOAD_ERROR_PAGE);
   }
 
   bool updateHistory = true;
@@ -8896,6 +8872,10 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     }
   }
   if (StaticPrefs::fission_sessionHistoryInParent() && mLoadingEntry) {
+    MOZ_LOG(
+        gSHLog, LogLevel::Debug,
+        ("Moving the loading entry to the active entry on nsDocShell %p to %s",
+         this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
     mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
     nsID changeID = {};
     if (XRE_IsParentProcess()) {
@@ -9961,8 +9941,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   
   if (aLoadState->GetLoadingSessionHistoryInfo()) {
-    mLoadingEntry = MakeUnique<LoadingSessionHistoryInfo>(
-        *aLoadState->GetLoadingSessionHistoryInfo());
+    SetLoadingSessionHistoryInfo(*aLoadState->GetLoadingSessionHistoryInfo());
   }
 
   
@@ -11537,6 +11516,9 @@ void nsDocShell::UpdateActiveEntry(
   MOZ_ASSERT_IF(aPreviousScrollPos.isSome(), !aReplace);
 
   if (!aReplace || !mActiveEntry) {
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            ("Creating an active entry on nsDocShell %p to %s", this,
+             aURI->GetSpecOrDefault().get()));
     if (mActiveEntry) {
       
       mActiveEntry =
@@ -13217,5 +13199,52 @@ void nsDocShell::SetLoadingSessionHistoryInfo(
     const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo) {
   
   
+  MOZ_LOG(gSHLog, LogLevel::Debug,
+          ("Setting the loading entry on nsDocShell %p to %s", this,
+           aLoadingInfo.mInfo.GetURI()->GetSpecOrDefault().get()));
   mLoadingEntry = MakeUnique<LoadingSessionHistoryInfo>(aLoadingInfo);
+}
+
+void nsDocShell::MoveLoadingToActiveEntry(bool aCommit) {
+  MOZ_ASSERT(StaticPrefs::fission_sessionHistoryInParent());
+
+  MOZ_LOG(gSHLog, LogLevel::Debug,
+          ("nsDocShell %p MoveLoadingToActiveEntry", this));
+
+  mActiveEntry = nullptr;
+  mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> loadingEntry;
+  mActiveEntryIsLoadingFromSessionHistory = !!mLoadingEntry;
+  if (mLoadingEntry) {
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            ("Moving the loading entry to the active entry on nsDocShell %p "
+             "to %s",
+             this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
+    mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
+    mLoadingEntry.swap(loadingEntry);
+  }
+
+  if (mActiveEntry && aCommit) {
+    MOZ_ASSERT(loadingEntry);
+    nsID changeID = {};
+    if (XRE_IsParentProcess()) {
+      mBrowsingContext->Canonical()->SessionHistoryCommit(loadingEntry->mLoadId,
+                                                          changeID, mLoadType);
+    } else {
+      RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
+      if (rootSH) {
+        if (!loadingEntry->mLoadIsFromSessionHistory) {
+          changeID = rootSH->AddPendingHistoryChange();
+        } else {
+          
+          
+          rootSH->SetIndexAndLength(loadingEntry->mRequestedIndex,
+                                    loadingEntry->mSessionHistoryLength,
+                                    changeID);
+        }
+      }
+      ContentChild* cc = ContentChild::GetSingleton();
+      mozilla::Unused << cc->SendHistoryCommit(
+          mBrowsingContext, loadingEntry->mLoadId, changeID, mLoadType);
+    }
+  }
 }
