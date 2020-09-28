@@ -1239,18 +1239,21 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
       } while (*next);
 
       
-      const ParserAtom* combination =
-          info.compilationInfo.stencil.parserAtoms
-              .concatAtoms(info.cx,
-                           mozilla::Range(accum.begin(), accum.length()))
-              .unwrapOr(nullptr);
-      if (!combination) {
-        return false;
-      }
+      if (accum.length() > 1) {
+        
+        const ParserAtom* combination =
+            info.compilationInfo.stencil.parserAtoms
+                .concatAtoms(info.cx,
+                             mozilla::Range(accum.begin(), accum.length()))
+                .unwrapOr(nullptr);
+        if (!combination) {
+          return false;
+        }
 
-      
-      MOZ_ASSERT((*current)->isKind(ParseNodeKind::StringExpr));
-      (*current)->as<NameNode>().setAtom(combination);
+        
+        MOZ_ASSERT((*current)->isKind(ParseNodeKind::StringExpr));
+        (*current)->as<NameNode>().setAtom(combination);
+      }
 
       
       if (!*next) {
