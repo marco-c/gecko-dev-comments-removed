@@ -1828,13 +1828,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   TimeDurationAccumulator mCurrentLoadPlayTime;
 
   
-  bool mHasPlayEverBeenBlocked = false;
-
-  
-  
-  void ReportPlayedTimeAfterBlockedTelemetry();
-
-  
   bool mInitialized = false;
 
   
