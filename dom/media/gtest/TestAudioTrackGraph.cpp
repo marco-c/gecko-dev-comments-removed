@@ -247,25 +247,25 @@ TEST(TestAudioTrackGraph, ErrorStateCrash)
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
+  RefPtr<SourceMediaTrack> dummySource;
+  auto started = Invoke([&] {
+    
+    
+    dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO);
+    return graph->NotifyWhenDeviceStarted(dummySource);
+  });
+
+  MockCubebStream* stream = WaitFor(cubeb->StreamInitEvent());
+  Result<bool, nsresult> rv = WaitFor(started);
+  EXPECT_TRUE(rv.unwrapOr(false));
+
   
+  DispatchFunction([&] { stream->ForceError(); });
+  WaitFor(stream->ErrorForcedEvent());
+
   
-  RefPtr<SourceMediaTrack> dummySource =
-      graph->CreateSourceTrack(MediaSegment::AUDIO);
-
-  RefPtr<GenericPromise> p = graph->NotifyWhenDeviceStarted(dummySource);
-
-  GMPTestMonitor mon;
-
-  p->Then(GetMainThreadSerialEventTarget(), __func__,
-          [&mon, dummySource, cubeb]() {
-            cubeb->CurrentStream()->ForceError();
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            
-            dummySource->Destroy();
-            mon.SetFinished();
-          });
-
-  mon.AwaitFinished();
+  DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
+  WaitFor(cubeb->StreamDestroyEvent());
 }
 
 TEST(TestAudioTrackGraph, SourceTrack)
