@@ -848,8 +848,8 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
       }
     }
 
-    
     if (pindex != (mFindBackward ? patLen : 0) && c != patc && !inWhitespace) {
+      
       if (c == '\n' && t2b && IS_CJ_CHAR(prevCharInMatch)) {
         int32_t nindex = findex + incr;
         if (mFindBackward ? (nindex >= 0) : (nindex < fragLen)) {
@@ -857,6 +857,11 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
             continue;
           }
         }
+      }
+
+      
+      if (IsDefaultIgnorable(c)) {
+        continue;
       }
     }
 
