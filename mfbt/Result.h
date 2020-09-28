@@ -79,29 +79,6 @@ class ResultImplementation<V, E, PackingStrategy::Variant> {
 
 
 
-template <typename V, typename E>
-class ResultImplementation<V, E&, PackingStrategy::Variant> {
-  mozilla::Variant<V, E*> mStorage;
-
- public:
-  explicit ResultImplementation(V&& aValue)
-      : mStorage(std::forward<V>(aValue)) {}
-  explicit ResultImplementation(const V& aValue) : mStorage(aValue) {}
-  explicit ResultImplementation(E& aErrorValue) : mStorage(&aErrorValue) {}
-
-  bool isOk() const { return mStorage.template is<V>(); }
-
-  const V& inspect() const { return mStorage.template as<V>(); }
-  V unwrap() { return std::move(mStorage.template as<V>()); }
-
-  E& unwrapErr() { return *mStorage.template as<E*>(); }
-  const E& inspectErr() const { return *mStorage.template as<E*>(); }
-};
-
-
-
-
-
 
 template <typename V>
 struct EmptyWrapper : V {
@@ -148,11 +125,8 @@ class ResultImplementationNullIsOkBase {
     }
   }
   explicit ResultImplementationNullIsOkBase(E aErrorValue)
-      : mValue(
-            std::piecewise_construct, std::tuple<>(),
-            std::tuple(UnusedZero<E>::Store(
-                static_cast<std::conditional_t<std::is_reference_v<E>, E, E&&>>(
-                    aErrorValue)))) {
+      : mValue(std::piecewise_construct, std::tuple<>(),
+               std::tuple(UnusedZero<E>::Store(std::move(aErrorValue)))) {
     MOZ_ASSERT(mValue.second() != kNullValue);
   }
 
@@ -324,38 +298,6 @@ struct UnusedZero {
 };
 
 
-template <typename T>
-struct UnusedZero<T&> {
-  using StorageType = T*;
-
-  static constexpr bool value = true;
-
-  
-  
-  
-  static inline StorageType GetDefaultValue() {
-    return reinterpret_cast<StorageType>(~ptrdiff_t(0));
-  }
-
-  static constexpr StorageType nullValue = nullptr;
-
-  static constexpr const T& Inspect(StorageType aValue) {
-    AssertValid(aValue);
-    return *aValue;
-  }
-  static constexpr T& Unwrap(StorageType aValue) {
-    AssertValid(aValue);
-    return *aValue;
-  }
-  static constexpr StorageType Store(T& aValue) { return &aValue; }
-
- private:
-  static constexpr void AssertValid(StorageType aValue) {
-    MOZ_ASSERT(aValue != GetDefaultValue());
-  }
-};
-
-
 
 
 template <typename T>
@@ -375,13 +317,6 @@ struct HasFreeLSB<void*> {
 template <typename T>
 struct HasFreeLSB<T*> {
   static const bool value = (alignof(T) & 1) == 0;
-};
-
-
-
-template <typename T>
-struct HasFreeLSB<T&> {
-  static const bool value = HasFreeLSB<T*>::value;
 };
 
 
@@ -450,11 +385,20 @@ auto ToResult(Result<V, E>&& aValue)
 
 
 
+
+
+
+
+
+
+
 template <typename V, typename E>
 class MOZ_MUST_USE_TYPE Result final {
   
   static_assert(!std::is_const_v<V>);
   static_assert(!std::is_const_v<E>);
+  static_assert(!std::is_reference_v<V>);
+  static_assert(!std::is_reference_v<E>);
 
   using Impl = typename detail::SelectResultImpl<V, E>::Type;
 
@@ -473,10 +417,7 @@ class MOZ_MUST_USE_TYPE Result final {
   MOZ_IMPLICIT Result(const V& aValue) : mImpl(aValue) { MOZ_ASSERT(isOk()); }
 
   
-  explicit Result(
-      std::conditional_t<std::is_reference_v<E>, E, E&&> aErrorValue)
-      : mImpl(static_cast<std::conditional_t<std::is_reference_v<E>, E, E&&>>(
-            aErrorValue)) {
+  explicit Result(E aErrorValue) : mImpl(std::move(aErrorValue)) {
     MOZ_ASSERT(isErr());
   }
 
@@ -486,8 +427,7 @@ class MOZ_MUST_USE_TYPE Result final {
 
   template <typename E2>
   MOZ_IMPLICIT Result(GenericErrorResult<E2>&& aErrorResult)
-      : mImpl(static_cast<std::conditional_t<std::is_reference_v<E>, E2, E2&&>>(
-            aErrorResult.mErrorValue)) {
+      : mImpl(std::move(aErrorResult.mErrorValue)) {
     static_assert(std::is_convertible_v<E2, E>, "E2 must be convertible to E");
     MOZ_ASSERT(isErr());
   }
@@ -741,17 +681,6 @@ class MOZ_MUST_USE_TYPE GenericErrorResult {
 
   explicit GenericErrorResult(E&& aErrorValue)
       : mErrorValue(std::move(aErrorValue)) {}
-};
-
-template <typename E>
-class MOZ_MUST_USE_TYPE GenericErrorResult<E&> {
-  E& mErrorValue;
-
-  template <typename V, typename E2>
-  friend class Result;
-
- public:
-  explicit GenericErrorResult(E& aErrorValue) : mErrorValue(aErrorValue) {}
 };
 
 template <typename E>
