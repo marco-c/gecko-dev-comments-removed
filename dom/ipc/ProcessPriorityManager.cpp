@@ -130,8 +130,8 @@ class ProcessPriorityManagerImpl final : public nsIObserver,
 
 
 
-  void FireTestOnlyObserverNotification(
-      const char* aTopic, const nsACString& aData = EmptyCString());
+  void FireTestOnlyObserverNotification(const char* aTopic,
+                                        const nsACString& aData = ""_ns);
 
   
 
@@ -262,8 +262,8 @@ class ParticularProcessPriorityManager final : public WakeLockObserver,
   }
 
  private:
-  void FireTestOnlyObserverNotification(
-      const char* aTopic, const nsACString& aData = EmptyCString());
+  void FireTestOnlyObserverNotification(const char* aTopic,
+                                        const nsACString& aData = ""_ns);
 
   void FireTestOnlyObserverNotification(const char* aTopic,
                                         const char* aData = nullptr);

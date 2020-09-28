@@ -2048,7 +2048,7 @@ static void SetUserTimeAndStartupIDForActivatedWindow(GtkWidget* aWindow) {
   
   
   GTKToolkit->SetFocusTimestamp(0);
-  GTKToolkit->SetDesktopStartupID(EmptyCString());
+  GTKToolkit->SetDesktopStartupID(""_ns);
 }
 
 

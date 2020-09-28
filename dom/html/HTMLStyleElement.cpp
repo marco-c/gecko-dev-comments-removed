@@ -184,10 +184,10 @@ Maybe<LinkStyle::SheetInfo> HTMLStyleElement::GetStyleSheetInfo() {
       CORS_NONE,
       title,
       media,
-       EmptyString(),
+       u""_ns,
       
 
-       EmptyString(),
+       u""_ns,
       HasAlternateRel::No,
       IsInline::Yes,
       IsExplicitlyEnabled::No,

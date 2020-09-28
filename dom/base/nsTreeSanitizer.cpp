@@ -1218,8 +1218,7 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
   
   
   if (aElement->IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio)) {
-    aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::controls, EmptyString(),
-                      false);
+    aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::controls, u""_ns, false);
   }
 }
 

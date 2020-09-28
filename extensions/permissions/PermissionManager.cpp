@@ -288,7 +288,7 @@ nsCString GetNextSubDomainForHost(const nsACString& aHost) {
   
   
   if (NS_FAILED(rv)) {
-    return EmptyCString();
+    return ""_ns;
   }
 
   return subDomain;
@@ -1745,8 +1745,8 @@ nsresult PermissionManager::AddInternal(
       if (aDBOperation == eWriteToDB)
         
         
-        UpdateDB(op, id, EmptyCString(), EmptyCString(), 0,
-                 nsIPermissionManager::EXPIRE_NEVER, 0, 0);
+        UpdateDB(op, id, ""_ns, ""_ns, 0, nsIPermissionManager::EXPIRE_NEVER, 0,
+                 0);
 
       if (aNotifyOperation == eNotify) {
         NotifyObserversWithPermission(
@@ -1806,7 +1806,7 @@ nsresult PermissionManager::AddInternal(
         if (!newIsPersistentExpire && oldIsPersistentExpire) {
           
           
-          UpdateDB(eOperationRemoving, id, EmptyCString(), EmptyCString(), 0,
+          UpdateDB(eOperationRemoving, id, ""_ns, ""_ns, 0,
                    nsIPermissionManager::EXPIRE_NEVER, 0, 0);
         } else if (newIsPersistentExpire && !oldIsPersistentExpire) {
           
@@ -1818,8 +1818,8 @@ nsresult PermissionManager::AddInternal(
           
           
           
-          UpdateDB(op, id, EmptyCString(), EmptyCString(), aPermission,
-                   aExpireType, aExpireTime, aModificationTime);
+          UpdateDB(op, id, ""_ns, ""_ns, aPermission, aExpireType, aExpireTime,
+                   aModificationTime);
         }
       }
 
@@ -2309,7 +2309,7 @@ PermissionManager::GetAllForPrincipal(
   aResult.Clear();
   EnsureReadCompleted();
 
-  MOZ_ASSERT(PermissionAvailable(aPrincipal, EmptyCString()));
+  MOZ_ASSERT(PermissionAvailable(aPrincipal, ""_ns));
 
   nsresult rv;
   RefPtr<PermissionKey> key =
@@ -3121,7 +3121,7 @@ PermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
   while (prin) {
     
     std::pair<nsCString, nsCString>* pair =
-        pairs.AppendElement(std::make_pair(EmptyCString(), EmptyCString()));
+        pairs.AppendElement(std::make_pair(""_ns, ""_ns));
     
     
     GetKeyForPrincipal(prin, false, pair->first);

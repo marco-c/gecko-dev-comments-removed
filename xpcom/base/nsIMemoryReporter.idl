@@ -611,7 +611,7 @@ nsresult RegisterNonJSSizeOfTab(NonJSSizeOfTabFn aSizeOfTabFn);
 
 
 #define MOZ_COLLECT_REPORT(path, kind, units, amount, description)            \
-  (void)aHandleReport->Callback(EmptyCString(), nsLiteralCString(path),     \
+  (void)aHandleReport->Callback(""_ns, nsLiteralCString(path),     \
                                 kind, units, amount,                          \
                                 nsLiteralCString(description), aData)
 

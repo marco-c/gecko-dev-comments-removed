@@ -717,7 +717,7 @@ uint32_t nsXMLContentSerializer::ScanNamespaceDeclarations(
           skipAttr = index;
         } else {
           
-          PushNameSpaceDecl(EmptyString(), uriStr, aOriginalElement);
+          PushNameSpaceDecl(u""_ns, uriStr, aOriginalElement);
         }
       } else {
         PushNameSpaceDecl(nsDependentAtomString(attrName), uriStr,
@@ -770,8 +770,7 @@ bool nsXMLContentSerializer::SerializeAttributes(
     if (aTagPrefix.IsEmpty()) {
       
       NS_ENSURE_TRUE(
-          SerializeAttr(EmptyString(), xmlnsStr, aTagNamespaceURI, aStr, true),
-          false);
+          SerializeAttr(u""_ns, xmlnsStr, aTagNamespaceURI, aStr, true), false);
     } else {
       
       NS_ENSURE_TRUE(

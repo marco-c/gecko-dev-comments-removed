@@ -8307,7 +8307,7 @@ class InternalLoadEvent : public Runnable {
     
     
     
-    mLoadState->SetTarget(EmptyString());
+    mLoadState->SetTarget(u""_ns);
     mLoadState->SetFileName(VoidString());
   }
 
@@ -8425,7 +8425,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
 
     int16_t shouldLoad = nsIContentPolicy::ACCEPT;
     rv = NS_CheckContentLoadPolicy(aLoadState->URI(), secCheckLoadInfo,
-                                   EmptyCString(),  
+                                   ""_ns,  
                                    &shouldLoad);
 
     if (NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad)) {
@@ -8525,7 +8525,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
 
       rv = win->Open(NS_ConvertUTF8toUTF16(spec),
                      aLoadState->Target(),  
-                     EmptyString(),         
+                     u""_ns,                
                      loadState,
                      true,  
                      getter_AddRefs(newBC));
@@ -8535,7 +8535,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
 
     rv = win->OpenNoNavigate(NS_ConvertUTF8toUTF16(spec),
                              aLoadState->Target(),  
-                             EmptyString(),         
+                             u""_ns,                
                              getter_AddRefs(newBC));
 
     
@@ -8570,7 +8570,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
   
   
   
-  aLoadState->SetTarget(EmptyString());
+  aLoadState->SetTarget(u""_ns);
   
   aLoadState->SetFileName(VoidString());
   return targetContext->InternalLoad(aLoadState);
@@ -9713,8 +9713,7 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
       }
 
       
-      postChannel->SetUploadStream(aLoadState->PostDataStream(), EmptyCString(),
-                                   -1);
+      postChannel->SetUploadStream(aLoadState->PostDataStream(), ""_ns, -1);
     }
 
     
@@ -10519,7 +10518,7 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
     }
   } else {
     
-    presShell->GoToAnchor(EmptyString(), false);
+    presShell->GoToAnchor(u""_ns, false);
 
     
     
@@ -11081,7 +11080,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
             ("document %p UpdateActiveEntry non-replace", this));
     UpdateActiveEntry(
         true,  Nothing(), aNewURI, aNewURI,
-        aDocument->NodePrincipal(), aDocument->GetCsp(), EmptyString(),
+        aDocument->NodePrincipal(), aDocument->GetCsp(), u""_ns,
          Nothing(), aData, uriWasModified);
   } else {
     
@@ -11438,7 +11437,7 @@ nsresult nsDocShell::AddToSessionHistory(
 
   
   entry->Create(aURI,                 
-                EmptyString(),        
+                u""_ns,               
                 inputStream,          
                 cacheKey,             
                 mContentTypeHint,     
@@ -12622,7 +12621,7 @@ nsresult nsDocShell::OnLeaveLink() {
   nsresult rv = NS_ERROR_FAILURE;
 
   if (browserChrome) {
-    rv = browserChrome->SetLinkStatus(EmptyString());
+    rv = browserChrome->SetLinkStatus(u""_ns);
   }
   return rv;
 }

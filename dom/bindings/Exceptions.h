@@ -26,8 +26,7 @@ class Exception;
 
 
 
-bool Throw(JSContext* cx, nsresult rv,
-           const nsACString& message = EmptyCString());
+bool Throw(JSContext* cx, nsresult rv, const nsACString& message = ""_ns);
 
 
 void ThrowAndReport(nsPIDOMWindowInner* aWindow, nsresult aRv);
@@ -41,8 +40,8 @@ void ThrowExceptionObject(JSContext* aCx, Exception* aException);
 
 
 
-already_AddRefed<Exception> CreateException(
-    nsresult aRv, const nsACString& aMessage = EmptyCString());
+already_AddRefed<Exception> CreateException(nsresult aRv,
+                                            const nsACString& aMessage = ""_ns);
 
 
 

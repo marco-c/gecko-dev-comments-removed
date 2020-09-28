@@ -567,7 +567,7 @@ bool OculusSession::LoadOvrLib() {
   libName.AppendPrintf("LibOVRRT%d_%d.dll", BUILD_BITS, OVR_PRODUCT_VERSION);
 
   
-  libSearchPaths.InsertElementsAt(0, 1, EmptyString());
+  libSearchPaths.InsertElementsAt(0, 1, u""_ns);
 
   
   if (_wgetenv(L"OVR_LIB_PATH")) {

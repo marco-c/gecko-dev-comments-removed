@@ -667,7 +667,7 @@ nsresult SetDefaultPragmas(mozIStorageConnection& aConnection) {
   if (kSQLiteGrowthIncrement) {
     
     
-    rv = aConnection.SetGrowthIncrement(kSQLiteGrowthIncrement, EmptyCString());
+    rv = aConnection.SetGrowthIncrement(kSQLiteGrowthIncrement, ""_ns);
     if (rv != NS_ERROR_FILE_TOO_BIG && NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -5750,8 +5750,8 @@ SerializeStructuredCloneFiles(PBackgroundParent* aBackgroundActor,
             
             actor->SetActorAlive();
 
-            if (!aDatabase->SendPBackgroundMutableFileConstructor(
-                    actor, EmptyString(), EmptyString())) {
+            if (!aDatabase->SendPBackgroundMutableFileConstructor(actor, u""_ns,
+                                                                  u""_ns)) {
               
               IDB_REPORT_INTERNAL_ERR();
               return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
@@ -13371,7 +13371,7 @@ nsresult QuotaClient::GetUsageForOriginInternal(
       if (obsoleteFilenames.Contains(subdirNameBase)) {
         rv = RemoveDatabaseFilesAndDirectory(*directory, subdirNameBase,
                                              nullptr, aPersistenceType, aGroup,
-                                             aOrigin, EmptyString());
+                                             aOrigin, u""_ns);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           
           

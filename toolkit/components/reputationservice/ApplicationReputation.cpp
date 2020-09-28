@@ -1433,7 +1433,7 @@ nsresult PendingLookup::DoLookupInternal() {
     nsAutoCString errorName;
     mozilla::GetErrorName(rv, errorName);
     LOG(("No suggested filename [rv = %s, this = %p]", errorName.get(), this));
-    mFileName = EmptyCString();
+    mFileName.Truncate();
   }
 
   

@@ -990,7 +990,7 @@ nsresult VerifyAppManifest(SECOidTag aDigestToUse, nsCOMPtr<nsIZipReader> aZip,
 
   
   nsCOMPtr<nsIUTF8StringEnumerator> entries;
-  rv = aZip->FindEntries(EmptyCString(), getter_AddRefs(entries));
+  rv = aZip->FindEntries(""_ns, getter_AddRefs(entries));
   if (NS_FAILED(rv)) {
     return rv;
   }

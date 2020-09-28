@@ -137,9 +137,9 @@ void GetACookieNoHttp(nsICookieService* aCookieService, const char* aSpec,
 
   nsCOMPtr<mozilla::dom::Document> document;
   nsresult rv = NS_NewDOMDocument(getter_AddRefs(document),
-                                  EmptyString(),  
-                                  EmptyString(),  
-                                  nullptr,        
+                                  u""_ns,   
+                                  u""_ns,   
+                                  nullptr,  
                                   uri, uri, principal,
                                   false,    
                                   nullptr,  

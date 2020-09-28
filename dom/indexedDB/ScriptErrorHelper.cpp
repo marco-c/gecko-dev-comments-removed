@@ -108,13 +108,13 @@ class ScriptErrorRunnable final : public mozilla::Runnable {
     if (aInnerWindowID) {
       MOZ_ALWAYS_SUCCEEDS(scriptError->InitWithWindowID(
           aMessage, aFilename,
-           EmptyString(), aLineNumber, aColumnNumber,
-          aSeverityFlag, category, aInnerWindowID));
+           u""_ns, aLineNumber, aColumnNumber, aSeverityFlag,
+          category, aInnerWindowID));
     } else {
       MOZ_ALWAYS_SUCCEEDS(scriptError->Init(
           aMessage, aFilename,
-           EmptyString(), aLineNumber, aColumnNumber,
-          aSeverityFlag, category.get(),
+           u""_ns, aLineNumber, aColumnNumber, aSeverityFlag,
+          category.get(),
            false,
            aIsChrome));
     }

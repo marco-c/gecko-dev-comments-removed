@@ -829,7 +829,7 @@ nsresult InsertPlaintextCommand::DoCommand(Command aCommand,
   
   
   DebugOnly<nsresult> rvIgnored =
-      aTextEditor.InsertTextAsAction(EmptyString(), aPrincipal);
+      aTextEditor.InsertTextAsAction(u""_ns, aPrincipal);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "EditorBase::InsertTextAsAction() failed, but ignored");
   return NS_OK;

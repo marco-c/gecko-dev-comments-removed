@@ -37,12 +37,12 @@ UrlClassifierFeaturePhishingProtection::UrlClassifierFeaturePhishingProtection(
     : UrlClassifierFeatureBase(
           nsDependentCString(aFeature.mName),
           nsDependentCString(aFeature.mBlocklistPrefTables),
-          EmptyCString(),    
-          EmptyCString(),    
-          EmptyCString(),    
-          EmptyCString(),    
-          EmptyCString(),    
-          EmptyCString()) {  
+          ""_ns,    
+          ""_ns,    
+          ""_ns,    
+          ""_ns,    
+          ""_ns,    
+          ""_ns) {  
 }
 
 

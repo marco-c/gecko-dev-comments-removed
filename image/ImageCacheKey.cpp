@@ -121,7 +121,7 @@ void* ImageCacheKey::GetSpecialCaseDocumentToken(Document* aDocument) {
 
 nsCString ImageCacheKey::GetIsolationKey(Document* aDocument, nsIURI* aURI) {
   if (!aDocument || !aDocument->GetInnerWindow()) {
-    return EmptyCString();
+    return ""_ns;
   }
 
   
@@ -141,7 +141,7 @@ nsCString ImageCacheKey::GetIsolationKey(Document* aDocument, nsIURI* aURI) {
                                                   nullptr, nullptr)) {
     return StorageDisabledByAntiTracking(aDocument, aURI)
                ? aDocument->GetBaseDomain()
-               : EmptyCString();
+               : ""_ns;
   }
 
   
@@ -160,10 +160,10 @@ nsCString ImageCacheKey::GetIsolationKey(Document* aDocument, nsIURI* aURI) {
           ->GetBaseDomain();  
     }
     return topInner->GetExtantDoc() ? topInner->GetExtantDoc()->GetBaseDomain()
-                                    : EmptyCString();
+                                    : ""_ns;
   }
 
-  return EmptyCString();
+  return ""_ns;
 }
 
 }  

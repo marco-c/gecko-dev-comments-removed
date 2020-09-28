@@ -24,7 +24,7 @@ class StorageObserver;
 
 class StorageObserverSink {
  public:
-  virtual ~StorageObserverSink() {}
+  virtual ~StorageObserverSink() = default;
 
  private:
   friend class StorageObserver;
@@ -47,13 +47,13 @@ class StorageObserver : public nsIObserver, public nsSupportsWeakReference {
   void AddSink(StorageObserverSink* aObs);
   void RemoveSink(StorageObserverSink* aObs);
   void Notify(const char* aTopic,
-              const nsAString& aOriginAttributesPattern = EmptyString(),
-              const nsACString& aOriginScope = EmptyCString());
+              const nsAString& aOriginAttributesPattern = u""_ns,
+              const nsACString& aOriginScope = ""_ns);
 
   void NoteBackgroundThread(nsIEventTarget* aBackgroundThread);
 
  private:
-  virtual ~StorageObserver() {}
+  virtual ~StorageObserver() = default;
 
   nsresult GetOriginScope(const char16_t* aData, nsACString& aOriginScope);
 

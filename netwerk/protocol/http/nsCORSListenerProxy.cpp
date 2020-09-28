@@ -1563,19 +1563,19 @@ void nsCORSListenerProxy::LogBlockedCORSRequest(uint64_t aInnerWindowID,
   
   if (aInnerWindowID > 0) {
     rv = scriptError->InitWithSanitizedSource(aMessage,
-                                              EmptyString(),  
-                                              EmptyString(),  
-                                              0,              
-                                              0,              
+                                              u""_ns,  
+                                              u""_ns,  
+                                              0,       
+                                              0,       
                                               nsIScriptError::errorFlag,
                                               aCategory, aInnerWindowID);
   } else {
     nsCString category = PromiseFlatCString(aCategory);
     rv = scriptError->Init(aMessage,
-                           EmptyString(),  
-                           EmptyString(),  
-                           0,              
-                           0,              
+                           u""_ns,  
+                           u""_ns,  
+                           0,       
+                           0,       
                            nsIScriptError::errorFlag, category.get(),
                            aPrivateBrowsing,
                            aFromChromeContext);  

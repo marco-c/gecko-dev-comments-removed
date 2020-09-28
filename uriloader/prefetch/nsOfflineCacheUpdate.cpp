@@ -918,8 +918,8 @@ nsresult nsOfflineManifestItem::HandleManifestLine(
         
         
         
-        AddNamespace(nsIApplicationCacheNamespace::NAMESPACE_BYPASS,
-                     EmptyCString(), EmptyCString());
+        AddNamespace(nsIApplicationCacheNamespace::NAMESPACE_BYPASS, ""_ns,
+                     ""_ns);
         break;
       }
 
@@ -936,8 +936,7 @@ nsresult nsOfflineManifestItem::HandleManifestLine(
       nsCString spec;
       if (NS_FAILED(bypassURI->GetAsciiSpec(spec))) break;
 
-      AddNamespace(nsIApplicationCacheNamespace::NAMESPACE_BYPASS, spec,
-                   EmptyCString());
+      AddNamespace(nsIApplicationCacheNamespace::NAMESPACE_BYPASS, spec, ""_ns);
       break;
     }
   }

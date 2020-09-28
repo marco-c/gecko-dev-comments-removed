@@ -174,7 +174,7 @@ already_AddRefed<Exception> CreateException(nsresult aRv,
 
   
   RefPtr<Exception> exception =
-      new Exception(aMessage, aRv, EmptyCString(), nullptr, nullptr);
+      new Exception(aMessage, aRv, ""_ns, nullptr, nullptr);
   return exception.forget();
 }
 

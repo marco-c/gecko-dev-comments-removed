@@ -481,7 +481,7 @@ ContentPrincipal::GetSiteOrigin(nsACString& aSiteOrigin) {
   
   nsCOMPtr<nsIURI> siteUri;
   NS_MutateURI mutator(mURI);
-  mutator.SetUserPass(EmptyCString()).SetPort(-1);
+  mutator.SetUserPass(""_ns).SetPort(-1);
   if (gotBaseDomain) {
     mutator.SetHost(baseDomain);
   }

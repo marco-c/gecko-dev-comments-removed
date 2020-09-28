@@ -1980,8 +1980,7 @@ WSRunScanner::TextFragmentData::GetReplaceRangeDataAtEndOfDeletionRange(
     }
     
     MOZ_ASSERT(invisibleTrailingWhiteSpaceRangeAtEnd.StartRef() == endToDelete);
-    return ReplaceRangeData(invisibleTrailingWhiteSpaceRangeAtEnd,
-                            EmptyString());
+    return ReplaceRangeData(invisibleTrailingWhiteSpaceRangeAtEnd, u""_ns);
   }
 
   if (IsPreformatted()) {
@@ -2060,8 +2059,7 @@ WSRunScanner::TextFragmentData::GetReplaceRangeDataAtStartOfDeletionRange(
     }
 
     
-    return ReplaceRangeData(invisibleLeadingWhiteSpaceRangeAtStart,
-                            EmptyString());
+    return ReplaceRangeData(invisibleLeadingWhiteSpaceRangeAtStart, u""_ns);
   }
 
   if (IsPreformatted()) {

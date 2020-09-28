@@ -304,7 +304,7 @@ void mozHunspell::DictionariesChanged(bool aNotifyChildProcesses) {
   
   
   if (!mDictionary.IsEmpty()) {
-    SetDictionary(EmptyString());
+    SetDictionary(u""_ns);
   }
 }
 

@@ -597,7 +597,7 @@ nsresult InitializeConnection(mozIStorageConnection& aConn) {
   }
 
   
-  rv = aConn.SetGrowthIncrement(kGrowthSize, EmptyCString());
+  rv = aConn.SetGrowthIncrement(kGrowthSize, ""_ns);
   if (rv == NS_ERROR_FILE_TOO_BIG) {
     NS_WARNING("Not enough disk space to set sqlite growth increment.");
     rv = NS_OK;

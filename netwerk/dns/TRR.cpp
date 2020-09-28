@@ -450,14 +450,13 @@ nsresult TRR::SetupTRRServiceChannelInternal(nsIHttpChannel* aChannel,
   
   
   if (!StaticPrefs::network_trr_send_accept_language_headers()) {
-    rv = httpChannel->SetRequestHeader("Accept-Language"_ns, EmptyCString(),
-                                       false);
+    rv = httpChannel->SetRequestHeader("Accept-Language"_ns, ""_ns, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
   if (!StaticPrefs::network_trr_send_user_agent_headers()) {
-    rv = httpChannel->SetRequestHeader("User-Agent"_ns, EmptyCString(), false);
+    rv = httpChannel->SetRequestHeader("User-Agent"_ns, ""_ns, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -608,8 +607,8 @@ nsresult TRR::ReceivePush(nsIHttpChannel* pushed, nsHostRecord* pushedRec) {
   RefPtr<nsHostRecord> hostRecord;
   nsresult rv;
   rv = mHostResolver->GetHostRecord(
-      mHost, EmptyCString(), type, pushedRec->flags, pushedRec->af,
-      pushedRec->pb, pushedRec->originSuffix, getter_AddRefs(hostRecord));
+      mHost, ""_ns, type, pushedRec->flags, pushedRec->af, pushedRec->pb,
+      pushedRec->originSuffix, getter_AddRefs(hostRecord));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1616,7 +1615,7 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
     LOG(("TRR::On200Response CNAME %s => %s (%u)\n", mHost.get(), mCname.get(),
          mCnameLoop));
     cname = mCname;
-    mCname = EmptyCString();
+    mCname.Truncate();
 
     LOG(("TRR: check for CNAME record for %s within previous response\n",
          cname.get()));

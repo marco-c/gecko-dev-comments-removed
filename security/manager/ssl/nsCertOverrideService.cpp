@@ -486,7 +486,7 @@ nsCertOverrideService::RememberTemporaryValidityOverrideUsingFingerprint(
                  nullptr,  
                  true,     
                  aCertFingerprint, (nsCertOverride::OverrideBits)aOverrideBits,
-                 EmptyCString(),  
+                 ""_ns,  
                  lock);
 
   return NS_OK;

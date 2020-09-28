@@ -904,7 +904,7 @@ NS_IMETHODIMP _OldStorage::AsyncEvictStorage(
     NS_ENSURE_SUCCESS(rv, rv);
   } else if (mAppCache) {
     nsCOMPtr<nsICacheSession> session;
-    rv = GetCacheSession(EmptyCString(), mWriteToDisk, mLoadInfo, mAppCache,
+    rv = GetCacheSession(""_ns, mWriteToDisk, mLoadInfo, mAppCache,
                          getter_AddRefs(session));
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -921,7 +921,7 @@ NS_IMETHODIMP _OldStorage::AsyncEvictStorage(
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    rv = GetCacheSession(EmptyCString(), mWriteToDisk, mLoadInfo, mAppCache,
+    rv = GetCacheSession(""_ns, mWriteToDisk, mLoadInfo, mAppCache,
                          getter_AddRefs(session));
     NS_ENSURE_SUCCESS(rv, rv);
 

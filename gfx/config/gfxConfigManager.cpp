@@ -303,8 +303,7 @@ void gfxConfigManager::ConfigureWebRender() {
       
       
       mFeatureHwCompositing->Disable(FeatureStatus::Blocked,
-                                     "Acceleration blocked by platform",
-                                     EmptyCString());
+                                     "Acceleration blocked by platform", ""_ns);
     }
 
     if (!mFeatureHwCompositing->IsEnabled() &&
@@ -313,7 +312,7 @@ void gfxConfigManager::ConfigureWebRender() {
       
       mFeatureGPUProcess->Disable(FeatureStatus::Unavailable,
                                   "Hardware compositing is unavailable.",
-                                  EmptyCString());
+                                  ""_ns);
     }
   }
 

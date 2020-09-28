@@ -127,7 +127,7 @@ bool ImageAccessible::DoAction(uint8_t aIndex) const {
   if (!piWindow) return false;
 
   RefPtr<mozilla::dom::BrowsingContext> tmp;
-  return NS_SUCCEEDED(piWindow->Open(spec, EmptyString(), EmptyString(),
+  return NS_SUCCEEDED(piWindow->Open(spec, u""_ns, u""_ns,
                                       nullptr,
                                       false,
                                      getter_AddRefs(tmp)));

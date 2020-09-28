@@ -44,7 +44,7 @@ TEST(FeaturePolicyParser, Basic)
   nsTArray<Feature> parsedFeatures;
 
   
-  CheckParser(EmptyString(), true, 0, parsedFeatures);
+  CheckParser(u""_ns, true, 0, parsedFeatures);
 
   
   CheckParser(u"   "_ns, true, 0, parsedFeatures);

@@ -1786,7 +1786,7 @@ nsresult CookiePersistentStorage::InitDBConnInternal() {
   mCloseListener = new CloseCookieDBListener(this);
 
   
-  mDBConn->SetGrowthIncrement(512 * 1024, EmptyCString());
+  mDBConn->SetGrowthIncrement(512 * 1024, ""_ns);
 
   
   mDBConn->ExecuteSimpleSQL("PRAGMA synchronous = OFF"_ns);

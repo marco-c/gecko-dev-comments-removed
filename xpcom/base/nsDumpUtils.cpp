@@ -434,7 +434,7 @@ nsresult nsDumpUtils::OpenTempFile(const nsACString& aFilename, nsIFile** aFile,
   
   
   
-  if (aFoldername != EmptyCString()) {
+  if (!aFoldername.IsEmpty()) {
     rv = (*aFile)->AppendNative(aFoldername);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;

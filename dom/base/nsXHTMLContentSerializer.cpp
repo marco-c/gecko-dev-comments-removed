@@ -200,8 +200,7 @@ bool nsXHTMLContentSerializer::SerializeAttributes(
     if (aTagPrefix.IsEmpty()) {
       
       NS_ENSURE_TRUE(
-          SerializeAttr(EmptyString(), xmlnsStr, aTagNamespaceURI, aStr, true),
-          false);
+          SerializeAttr(u""_ns, xmlnsStr, aTagNamespaceURI, aStr, true), false);
     } else {
       
       NS_ENSURE_TRUE(
@@ -686,9 +685,8 @@ bool nsXHTMLContentSerializer::SerializeLIValueAttribute(nsIContent* aElement,
   if (offset == 0 && found) {
     
     
-    NS_ENSURE_TRUE(
-        SerializeAttr(EmptyString(), u"value"_ns, valueStr, aStr, false),
-        false);
+    NS_ENSURE_TRUE(SerializeAttr(u""_ns, u"value"_ns, valueStr, aStr, false),
+                   false);
   } else if (offset == 1 && !found) {
     
 
@@ -702,9 +700,8 @@ bool nsXHTMLContentSerializer::SerializeLIValueAttribute(nsIContent* aElement,
 
     
     valueStr.AppendInt(startVal + offset);
-    NS_ENSURE_TRUE(
-        SerializeAttr(EmptyString(), u"value"_ns, valueStr, aStr, false),
-        false);
+    NS_ENSURE_TRUE(SerializeAttr(u""_ns, u"value"_ns, valueStr, aStr, false),
+                   false);
   }
 
   return true;

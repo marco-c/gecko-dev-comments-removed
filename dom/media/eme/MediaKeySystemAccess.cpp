@@ -175,7 +175,7 @@ EMECodecString ToEMEAPICodecString(const nsString& aCodec) {
   if (IsVP9CodecString(aCodec)) {
     return EME_CODEC_VP9;
   }
-  return EmptyCString();
+  return ""_ns;
 }
 
 

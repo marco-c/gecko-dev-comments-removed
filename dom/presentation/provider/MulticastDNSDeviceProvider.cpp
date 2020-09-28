@@ -466,11 +466,11 @@ bool MulticastDNSDeviceProvider::FindDeviceById(const nsACString& aId,
   MOZ_ASSERT(NS_IsMainThread());
 
   RefPtr<Device> device = new Device(aId,
-                                      EmptyCString(),
-                                      EmptyCString(),
-                                      EmptyCString(),
+                                      ""_ns,
+                                      ""_ns,
+                                      ""_ns,
                                       0,
-                                      EmptyCString(),
+                                      ""_ns,
                                       DeviceState::eUnknown,
                                       nullptr);
   size_t index = mDevices.IndexOf(device, 0, DeviceIdComparator());
@@ -487,11 +487,11 @@ bool MulticastDNSDeviceProvider::FindDeviceByAddress(const nsACString& aAddress,
                                                      uint32_t& aIndex) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  RefPtr<Device> device = new Device( EmptyCString(),
-                                      EmptyCString(),
-                                      EmptyCString(), aAddress,
+  RefPtr<Device> device = new Device( ""_ns,
+                                      ""_ns,
+                                      ""_ns, aAddress,
                                       0,
-                                      EmptyCString(),
+                                      ""_ns,
                                       DeviceState::eUnknown,
                                       nullptr);
   size_t index = mDevices.IndexOf(device, 0, DeviceAddressComparator());
@@ -919,12 +919,11 @@ MulticastDNSDeviceProvider::GetOrCreateDevice(nsITCPDeviceInfo* aDeviceInfo) {
     uint16_t port;
     Unused << aDeviceInfo->GetPort(&port);
 
-    device =
-        new Device(id,
-                    id,
-                    EmptyCString(), address, port,
-                    EmptyCString(), DeviceState::eActive,
-                    nullptr);
+    device = new Device(id,
+                         id,
+                         ""_ns, address, port,
+                         ""_ns, DeviceState::eActive,
+                         nullptr);
   }
 
   return device.forget();

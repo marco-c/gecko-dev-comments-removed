@@ -72,7 +72,7 @@ class gfxConfig {
                          const char* aDisableMessage);
   static void DisableByDefault(Feature aFeature, FeatureStatus aDisableStatus,
                                const char* aDisableMessage,
-                               const nsACString& aFailureId = EmptyCString());
+                               const nsACString& aFailureId = ""_ns);
   static void EnableByDefault(Feature aFeature);
 
   
@@ -85,7 +85,7 @@ class gfxConfig {
   
   static void Disable(Feature aFeature, FeatureStatus aStatus,
                       const char* aMessage,
-                      const nsACString& aFailureId = EmptyCString());
+                      const nsACString& aFailureId = ""_ns);
 
   
   
@@ -98,13 +98,13 @@ class gfxConfig {
   
   static void SetFailed(Feature aFeature, FeatureStatus aStatus,
                         const char* aMessage,
-                        const nsACString& aFailureId = EmptyCString());
+                        const nsACString& aFailureId = ""_ns);
 
   
   
   static void ForceDisable(Feature aFeature, FeatureStatus aStatus,
                            const char* aMessage,
-                           const nsACString& aFailureId = EmptyCString()) {
+                           const nsACString& aFailureId = ""_ns) {
     SetFailed(aFeature, aStatus, aMessage, aFailureId);
   }
 
@@ -112,7 +112,7 @@ class gfxConfig {
   static bool MaybeSetFailed(Feature aFeature, bool aEnable,
                              FeatureStatus aDisableStatus,
                              const char* aDisableMessage,
-                             const nsACString& aFailureId = EmptyCString()) {
+                             const nsACString& aFailureId = ""_ns) {
     if (!aEnable) {
       SetFailed(aFeature, aDisableStatus, aDisableMessage, aFailureId);
       return false;
@@ -123,7 +123,7 @@ class gfxConfig {
   
   static bool MaybeSetFailed(Feature aFeature, FeatureStatus aStatus,
                              const char* aDisableMessage,
-                             const nsACString& aFailureId = EmptyCString()) {
+                             const nsACString& aFailureId = ""_ns) {
     return MaybeSetFailed(aFeature,
                           (aStatus != FeatureStatus::Available &&
                            aStatus != FeatureStatus::ForceEnabled),
@@ -149,7 +149,7 @@ class gfxConfig {
   static void UserEnable(Feature aFeature, const char* aMessage);
   static void UserForceEnable(Feature aFeature, const char* aMessage);
   static void UserDisable(Feature aFeature, const char* aMessage,
-                          const nsACString& aFailureId = EmptyCString());
+                          const nsACString& aFailureId = ""_ns);
 
   
   static bool UseFallback(Fallback aFallback);

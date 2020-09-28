@@ -962,7 +962,7 @@ nsGIOProtocolHandler::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   RefPtr<nsGIOInputStream> tmpStream = stream;
   rv = NS_NewInputStreamChannelInternal(aResult, aURI, tmpStream.forget(),
                                         nsLiteralCString(UNKNOWN_CONTENT_TYPE),
-                                        EmptyCString(),  
+                                        ""_ns,  
                                         aLoadInfo);
   if (NS_SUCCEEDED(rv)) {
     stream->SetChannel(*aResult);

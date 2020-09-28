@@ -2010,7 +2010,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
     }
 
     
-    const nsAString& emptyStr = EmptyString();
+    const auto& emptyStr = u""_ns;
     nsIGlobalObject* global = DOMEventTargetHelper::GetParentObject();
 
     nsCOMPtr<nsIPrincipal> requestingPrincipal;

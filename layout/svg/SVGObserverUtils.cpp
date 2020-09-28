@@ -77,7 +77,7 @@ class URLAndReferrerInfoHashKey : public PLDHashEntryHdr {
   static PLDHashNumber HashKey(const URLAndReferrerInfo* aKey) {
     if (!aKey) {
       
-      return HashString(EmptyCString());
+      return HashString(""_ns);
     }
     nsAutoCString urlSpec, referrerSpec;
     

@@ -77,7 +77,7 @@ static void LogMixedContentMessage(
     MixedContentTypes aClassification, nsIURI* aContentLocation,
     uint64_t aInnerWindowID, nsMixedContentBlockerMessageType aMessageType,
     nsIURI* aRequestingLocation,
-    const nsACString& aOverruleMessageLookUpKeyWithThis = EmptyCString()) {
+    const nsACString& aOverruleMessageLookUpKeyWithThis = ""_ns) {
   nsAutoCString messageCategory;
   uint32_t severityFlag;
   nsAutoCString messageLookupKey;
@@ -184,7 +184,7 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(
 
   int16_t decision = REJECT_REQUEST;
   rv = ShouldLoad(newUri, loadInfo,
-                  EmptyCString(),  
+                  ""_ns,  
                   &decision);
   if (NS_FAILED(rv)) {
     autoCallback.DontCallback();
@@ -755,10 +755,10 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     CopyUTF8toUTF16(spec, *params.AppendElement());
 
     CSP_LogLocalizedStr("blockAllMixedContent", params,
-                        EmptyString(),  
-                        EmptyString(),  
-                        0,              
-                        0,              
+                        u""_ns,  
+                        u""_ns,  
+                        0,       
+                        0,       
                         nsIScriptError::errorFlag, "blockAllMixedContent"_ns,
                         requestingWindow->Id(),
                         !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId);

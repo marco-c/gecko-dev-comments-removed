@@ -1221,9 +1221,8 @@ void SessionStoreUtils::RestoreSessionStorage(
     
     
     
-    storageManager->CreateStorage(nullptr, principal, storagePrincipal,
-                                  EmptyString(), false,
-                                  getter_AddRefs(storage));
+    storageManager->CreateStorage(nullptr, principal, storagePrincipal, u""_ns,
+                                  false, getter_AddRefs(storage));
     if (!storage) {
       continue;
     }

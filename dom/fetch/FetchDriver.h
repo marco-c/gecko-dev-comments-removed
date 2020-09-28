@@ -188,8 +188,7 @@ class FetchDriver final : public nsIStreamListener,
 
   void UpdateReferrerInfoFromNewChannel(nsIChannel* aChannel);
 
-  nsresult HttpFetch(
-      const nsACString& aPreferredAlternativeDataType = EmptyCString());
+  nsresult HttpFetch(const nsACString& aPreferredAlternativeDataType = ""_ns);
   
   already_AddRefed<InternalResponse> BeginAndGetFilteredResponse(
       InternalResponse* aResponse, bool aFoundOpaqueRedirect);

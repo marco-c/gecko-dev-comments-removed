@@ -448,7 +448,7 @@ void IMEHandler::OnDestroyWindow(nsWindow* aWindow) {
   if (!sIsInTSFMode) {
     
     
-    SetInputScopeForIMM32(aWindow, EmptyString(), EmptyString(), false);
+    SetInputScopeForIMM32(aWindow, u""_ns, u""_ns, false);
   }
 #endif  
   AssociateIMEContext(aWindow, true);

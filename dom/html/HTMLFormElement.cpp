@@ -1721,10 +1721,10 @@ nsresult HTMLFormElement::GetActionURL(nsIURI** aActionURL,
 
     CSP_LogLocalizedStr(
         "upgradeInsecureRequest", params,
-        EmptyString(),  
-        EmptyString(),  
-        0,              
-        0,              
+        u""_ns,  
+        u""_ns,  
+        0,       
+        0,       
         nsIScriptError::warningFlag, "upgradeInsecureRequest"_ns,
         document->InnerWindowID(),
         !!document->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId);
@@ -2113,7 +2113,7 @@ HTMLFormElement::WalkRadioGroup(const nsAString& aName,
         nsCOMPtr<Element> controlElement = do_QueryInterface(control);
         if (controlElement &&
             controlElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
-                                        EmptyString(), eCaseMatters) &&
+                                        u""_ns, eCaseMatters) &&
             !aVisitor->Visit(control)) {
           break;
         }

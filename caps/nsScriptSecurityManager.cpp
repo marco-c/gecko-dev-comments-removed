@@ -483,7 +483,7 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     csp->LogViolationDetails(nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL,
                              nullptr,  
                              cspEventListener, fileName, scriptSample, lineNum,
-                             columnNum, EmptyString(), EmptyString());
+                             columnNum, u""_ns, u""_ns);
   }
 
   return evalOK;
@@ -1033,12 +1033,11 @@ nsresult nsScriptSecurityManager::ReportError(const char* aMessageTag,
   
   if (aInnerWindowID != 0) {
     rv = error->InitWithWindowID(
-        message, EmptyString(), EmptyString(), 0, 0, nsIScriptError::errorFlag,
-        "SOP"_ns, aInnerWindowID, true );
+        message, u""_ns, u""_ns, 0, 0, nsIScriptError::errorFlag, "SOP"_ns,
+        aInnerWindowID, true );
   } else {
-    rv = error->Init(message, EmptyString(), EmptyString(), 0, 0,
-                     nsIScriptError::errorFlag, "SOP", aFromPrivateWindow,
-                     true );
+    rv = error->Init(message, u""_ns, u""_ns, 0, 0, nsIScriptError::errorFlag,
+                     "SOP", aFromPrivateWindow, true );
   }
   NS_ENSURE_SUCCESS(rv, rv);
   console->LogMessage(error);

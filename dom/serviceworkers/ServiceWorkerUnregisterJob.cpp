@@ -34,7 +34,7 @@ class ServiceWorkerUnregisterJob::PushUnsubscribeCallback final
   }
 
  private:
-  ~PushUnsubscribeCallback() {}
+  ~PushUnsubscribeCallback() = default;
 
   RefPtr<ServiceWorkerUnregisterJob> mJob;
 };
@@ -45,7 +45,7 @@ NS_IMPL_ISUPPORTS(ServiceWorkerUnregisterJob::PushUnsubscribeCallback,
 ServiceWorkerUnregisterJob::ServiceWorkerUnregisterJob(nsIPrincipal* aPrincipal,
                                                        const nsACString& aScope,
                                                        bool aSendToParent)
-    : ServiceWorkerJob(Type::Unregister, aPrincipal, aScope, EmptyCString()),
+    : ServiceWorkerJob(Type::Unregister, aPrincipal, aScope, ""_ns),
       mResult(false),
       mSendToParent(aSendToParent) {}
 
@@ -54,7 +54,7 @@ bool ServiceWorkerUnregisterJob::GetResult() const {
   return mResult;
 }
 
-ServiceWorkerUnregisterJob::~ServiceWorkerUnregisterJob() {}
+ServiceWorkerUnregisterJob::~ServiceWorkerUnregisterJob() = default;
 
 void ServiceWorkerUnregisterJob::AsyncExecute() {
   MOZ_ASSERT(NS_IsMainThread());

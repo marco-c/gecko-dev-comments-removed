@@ -817,8 +817,8 @@ nsresult EventListenerManager::SetEventHandler(nsAtom* aName,
       bool allowsInlineScript = true;
       rv = csp->GetAllowsInline(
           nsIContentPolicy::TYPE_SCRIPT,
-          EmptyString(),  
-          true,  
+          u""_ns,  
+          true,    
           aElement,
           nullptr,  
           aBody, lineNum, columnNum, &allowsInlineScript);
@@ -1218,8 +1218,8 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
             
             
             nsCOMPtr<EventTarget> et = aEvent->mOriginalTarget;
-            RefPtr<Event> event = EventDispatcher::CreateEvent(
-                et, aPresContext, aEvent, EmptyString());
+            RefPtr<Event> event =
+                EventDispatcher::CreateEvent(et, aPresContext, aEvent, u""_ns);
             event.forget(aDOMEvent);
           }
           if (*aDOMEvent) {

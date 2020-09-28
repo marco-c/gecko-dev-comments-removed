@@ -730,7 +730,7 @@ class NotifyCompletion : public Runnable {
 
 
 
-bool CanAddURI(nsIURI* aURI, const nsCString& aGUID = EmptyCString(),
+bool CanAddURI(nsIURI* aURI, const nsCString& aGUID = ""_ns,
                mozIVisitInfoCallback* aCallback = nullptr) {
   MOZ_ASSERT(NS_IsMainThread());
   nsNavHistory* navHistory = nsNavHistory::GetHistoryService();

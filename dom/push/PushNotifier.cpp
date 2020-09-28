@@ -434,7 +434,7 @@ nsresult PushErrorDispatcher::NotifyWorkers() {
     return nsContentUtils::ReportToConsoleNonLocalized(
         mMessage, mFlags, "Push"_ns, nullptr, 
         nullptr,                              
-        EmptyString(),                        
+        u""_ns,                               
         0,                                    
         0,                                    
         nsContentUtils::eOMIT_LOCATION);
@@ -445,7 +445,7 @@ nsresult PushErrorDispatcher::NotifyWorkers() {
   if (swm) {
     swm->ReportToAllClients(mScope, mMessage,
                             NS_ConvertUTF8toUTF16(mScope), 
-                            EmptyString(),                 
+                            u""_ns,                        
                             0,                             
                             0,                             
                             mFlags);
@@ -473,7 +473,7 @@ nsresult PushErrorDispatcher::HandleNoChildProcesses() {
   return nsContentUtils::ReportToConsoleNonLocalized(
       mMessage, mFlags, "Push"_ns, nullptr, 
       scopeURI,                             
-      EmptyString(),                        
+      u""_ns,                               
       0,                                    
       0,                                    
       nsContentUtils::eOMIT_LOCATION);

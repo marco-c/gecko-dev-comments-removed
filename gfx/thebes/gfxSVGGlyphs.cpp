@@ -371,9 +371,9 @@ nsresult gfxSVGGlyphsDocument::ParseDocument(const uint8_t* aBuffer,
 
   RefPtr<Document> document;
   rv = NS_NewDOMDocument(getter_AddRefs(document),
-                         EmptyString(),  
-                         EmptyString(),  
-                         nullptr,        
+                         u""_ns,   
+                         u""_ns,   
+                         nullptr,  
                          uri, uri, principal,
                          false,    
                          nullptr,  

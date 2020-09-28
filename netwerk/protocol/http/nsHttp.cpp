@@ -1040,7 +1040,7 @@ nsCString SelectAlpnFromAlpnList(const nsACString& aAlpnList, bool aNoHttp2,
   }
 
   
-  return EmptyCString();
+  return {};
 }
 
 }  

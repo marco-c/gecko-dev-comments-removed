@@ -1211,8 +1211,8 @@ nsXMLContentSink::HandleProcessingInstruction(const char16_t* aTarget,
 
   
   
-  rv = MaybeProcessXSLTLink(node, href, isAlternate, title, type, media,
-                            EmptyString());
+  rv =
+      MaybeProcessXSLTLink(node, href, isAlternate, title, type, media, u""_ns);
   return NS_SUCCEEDED(rv) ? DidProcessATokenImpl() : rv;
 }
 

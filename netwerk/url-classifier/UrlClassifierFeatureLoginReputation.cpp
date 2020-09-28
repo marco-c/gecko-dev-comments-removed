@@ -23,13 +23,13 @@ StaticRefPtr<UrlClassifierFeatureLoginReputation> gFeatureLoginReputation;
 
 UrlClassifierFeatureLoginReputation::UrlClassifierFeatureLoginReputation()
     : UrlClassifierFeatureBase(nsLiteralCString(LOGIN_REPUTATION_FEATURE_NAME),
-                               EmptyCString(),  
+                               ""_ns,  
                                nsLiteralCString(PREF_PASSWORD_ALLOW_TABLE),
-                               EmptyCString(),  
-                               EmptyCString(),  
-                               EmptyCString(),  
-                               EmptyCString(),  
-                               EmptyCString())  
+                               ""_ns,  
+                               ""_ns,  
+                               ""_ns,  
+                               ""_ns,  
+                               ""_ns)  
 {}
 
  const char* UrlClassifierFeatureLoginReputation::Name() {

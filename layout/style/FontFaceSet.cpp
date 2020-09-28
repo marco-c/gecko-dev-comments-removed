@@ -1315,7 +1315,7 @@ bool FontFaceSet::IsFontLoadAllowed(const gfxFontFaceSrc& aSrc) {
 
   int16_t shouldLoad = nsIContentPolicy::ACCEPT;
   nsresult rv = NS_CheckContentLoadPolicy(aSrc.mURI->get(), secCheckLoadInfo,
-                                          EmptyCString(),  
+                                          ""_ns,  
                                           &shouldLoad,
                                           nsContentUtils::GetContentPolicy());
 

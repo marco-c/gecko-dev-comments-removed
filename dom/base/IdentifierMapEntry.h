@@ -206,7 +206,7 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
         
         
         : mAtom(aOther.mAtom),
-          mString(aOther.mString ? *aOther.mString : EmptyString()) {}
+          mString(aOther.mString ? *aOther.mString : u""_ns) {}
 
     RefPtr<nsAtom> mAtom;
     nsString mString;

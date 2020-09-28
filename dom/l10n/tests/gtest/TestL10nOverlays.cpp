@@ -21,9 +21,9 @@ static already_AddRefed<Document> SetUpDocument() {
       NullPrincipal::CreateWithoutOriginAttributes();
   nsCOMPtr<Document> document;
   nsresult rv = NS_NewDOMDocument(getter_AddRefs(document),
-                                  EmptyString(),  
-                                  EmptyString(),  
-                                  nullptr,        
+                                  u""_ns,   
+                                  u""_ns,   
+                                  nullptr,  
                                   uri, uri, principal,
                                   false,    
                                   nullptr,  

@@ -219,9 +219,9 @@ bool nsCSPContext::permitsInternal(
             aOriginalURIIfRedirect, 
 
             violatedDirective, p,   
-            EmptyString(),          
+            u""_ns,                 
             spec,                   
-            EmptyString(),          
+            u""_ns,                 
             lineNumber,             
             columnNumber);          
       }
@@ -449,7 +449,7 @@ nsCSPContext::GetAllowsEval(bool* outShouldReportViolation,
 
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     if (!mPolicies[i]->allows(nsIContentPolicy::TYPE_SCRIPT, CSP_UNSAFE_EVAL,
-                              EmptyString(), false)) {
+                              u""_ns, false)) {
       
       
       *outShouldReportViolation = true;
@@ -538,12 +538,12 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
   }
 
   EnsureIPCPoliciesRead();
-  nsAutoString content(EmptyString());
+  nsAutoString content(u""_ns);
 
   
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     bool allowed =
-        mPolicies[i]->allows(aContentType, CSP_UNSAFE_INLINE, EmptyString(),
+        mPolicies[i]->allows(aContentType, CSP_UNSAFE_INLINE, u""_ns,
                              aParserCreated) ||
         mPolicies[i]->allows(aContentType, CSP_NONCE, aNonce, aParserCreated);
 
@@ -661,9 +661,9 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
           nullptr,                                    
           u"navigate-to"_ns,                          
           i,                                          
-          EmptyString(),                              
+          u""_ns,                                     
           NS_ConvertUTF8toUTF16(spec),                
-          EmptyString(),                              
+          u""_ns,                                     
           lineNumber,                                 
           columnNumber);                              
       NS_ENSURE_SUCCESS(rv, rv);
@@ -715,11 +715,11 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
       mPolicies[p]->getDirectiveStringAndReportSampleForContentType(           \
           nsIContentPolicy::TYPE_##contentPolicyType, violatedDirective,       \
           &reportSample);                                                      \
-      AsyncReportViolation(                                                    \
-          aTriggeringElement, aCSPEventListener, nullptr,                      \
-          blockedContentSource, nullptr, violatedDirective, p,                 \
-          NS_LITERAL_STRING_FROM_CSTRING(observerTopic), aSourceFile,          \
-          reportSample ? aScriptSample : EmptyString(), aLineNum, aColumnNum); \
+      AsyncReportViolation(aTriggeringElement, aCSPEventListener, nullptr,     \
+                           blockedContentSource, nullptr, violatedDirective,   \
+                           p, NS_LITERAL_STRING_FROM_CSTRING(observerTopic),   \
+                           aSourceFile, reportSample ? aScriptSample : u""_ns, \
+                           aLineNum, aColumnNum);                              \
     }                                                                          \
     PR_END_MACRO;                                                              \
     break
@@ -1570,8 +1570,8 @@ nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
       currentURI->GetSpec(spec);
       
       rv = NS_MutateURI(currentURI)
-               .SetRef(EmptyCString())
-               .SetUserPass(EmptyCString())
+               .SetRef(""_ns)
+               .SetUserPass(""_ns)
                .Finalize(uriClone);
 
       
@@ -1607,11 +1607,11 @@ nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
                         nullptr,  
                         nullptr,  
                         ancestorsArray[a],
-                        nullptr,        
-                        EmptyString(),  
-                        false,          
-                        true,           
-                        true,           
+                        nullptr,  
+                        u""_ns,   
+                        false,    
+                        true,     
+                        true,     
                         okToSendAncestor,
                         false);  
     if (!permits) {
@@ -1644,9 +1644,9 @@ nsCSPContext::Permits(Element* aTriggeringElement,
 
   *outPermits =
       permitsInternal(aDir, aTriggeringElement, aCSPEventListener, aURI,
-                      nullptr,        
-                      EmptyString(),  
-                      false,          
+                      nullptr,  
+                      u""_ns,   
+                      false,    
                       aSpecific,
                       true,    
                       true,    
@@ -1716,8 +1716,8 @@ nsCSPContext::GetCSPSandboxFlags(uint32_t* aOutSandboxFlags) {
            NS_ConvertUTF16toUTF8(policy).get()));
 
       AutoTArray<nsString, 1> params = {policy};
-      logToConsole("ignoringReportOnlyDirective", params, EmptyString(),
-                   EmptyString(), 0, 0, nsIScriptError::warningFlag);
+      logToConsole("ignoringReportOnlyDirective", params, u""_ns, u""_ns, 0, 0,
+                   nsIScriptError::warningFlag);
     }
   }
 

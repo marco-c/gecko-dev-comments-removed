@@ -182,8 +182,8 @@ void nsCSPParser::logWarningErrorToConsole(uint32_t aSeverityFlag,
   
   
   mCSPContext->logToConsole(aProperty, aParams,
-                            EmptyString(),   
-                            EmptyString(),   
+                            u""_ns,          
+                            u""_ns,          
                             0,               
                             0,               
                             aSeverityFlag);  

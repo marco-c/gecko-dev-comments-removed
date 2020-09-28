@@ -193,7 +193,7 @@ void TypeInState::ClearProp(nsAtom* aProp, nsAtom* aAttr) {
   }
 
   
-  PropItem* item = new PropItem(aProp, aAttr, EmptyString());
+  PropItem* item = new PropItem(aProp, aAttr, u""_ns);
 
   
   RemovePropFromSetList(aProp, aAttr);

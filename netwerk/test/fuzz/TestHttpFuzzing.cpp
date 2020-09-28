@@ -120,11 +120,11 @@ static int FuzzingRunNetworkHttp(const uint8_t* data, size_t size) {
 
       nsCOMPtr<nsIProxyInfo> proxyInfo;
       rv = pps->NewProxyInfo(proxyType, proxyHost, 443,
-                             EmptyCString(),  
-                             EmptyCString(),  
-                             0,               
-                             UINT32_MAX,      
-                             nullptr,         
+                             ""_ns,       
+                             ""_ns,       
+                             0,           
+                             UINT32_MAX,  
+                             nullptr,     
                              getter_AddRefs(proxyInfo));
 
       if (NS_FAILED(rv)) {

@@ -358,11 +358,11 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
       preloadCsp->ShouldLoad(
           policyType,  
           cspEventListener,
-          aNewURI,         
-          EmptyCString(),  
-          aOriginalURI,    
-          true,            
-          cspNonce,        
+          aNewURI,       
+          ""_ns,         
+          aOriginalURI,  
+          true,          
+          cspNonce,      
           parserCreatedScript, &decision);
 
       
@@ -380,11 +380,11 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
     
     csp->ShouldLoad(policyType,  
                     cspEventListener,
-                    aNewURI,         
-                    EmptyCString(),  
-                    aOriginalURI,    
-                    true,            
-                    cspNonce,        
+                    aNewURI,       
+                    ""_ns,         
+                    aOriginalURI,  
+                    true,          
+                    cspNonce,      
                     parserCreatedScript, &decision);
     if (NS_CP_REJECTED(decision)) {
       aCancelCode = Some(NS_ERROR_DOM_BAD_URI);
