@@ -9118,13 +9118,6 @@ bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
 
   
   
-  bool isSuper = op_ == JSOp::SuperCall || op_ == JSOp::SpreadSuperCall;
-  if (isSuper) {
-    return true;
-  }
-
-  
-  
   RootedValue protov(cx_);
   RootedObject newTarget(cx_, &newTarget_.toObject());
   if (!newTarget->is<JSFunction>() ||
