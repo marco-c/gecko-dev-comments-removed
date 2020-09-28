@@ -620,8 +620,6 @@ Capture.prototype = {
       return;
     }
 
-    aBrowser.docShellIsActive = true;
-
     
     
     await new Promise(resolve => {
@@ -648,9 +646,7 @@ Capture.prototype = {
         },
         true
       );
-      aBrowser.docShellIsActive = false;
     } catch (ex) {
-      aBrowser.docShellIsActive = false;
       this._done(
         aBrowser,
         null,
