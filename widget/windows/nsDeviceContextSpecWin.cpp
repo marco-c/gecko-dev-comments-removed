@@ -528,12 +528,28 @@ nsTArray<nsPrinterListBase::PrinterInfo> nsPrinterListWin::Printers() const {
       reinterpret_cast<const _PRINTER_INFO_4W*>(buffer.Elements());
   nsTArray<PrinterInfo> list;
   for (unsigned i = 0; i < count; i++) {
-    HANDLE handle;
-    if (::OpenPrinterW(printers[i].pPrinterName, &handle, nullptr)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    bool isAvailable = false;
+    if (printers[i].Attributes & PRINTER_ATTRIBUTE_NETWORK) {
+      isAvailable = true;
+    } else if (printers[i].Attributes & PRINTER_ATTRIBUTE_LOCAL) {
+      HANDLE handle;
+      if (::OpenPrinterW(printers[i].pPrinterName, &handle, nullptr)) {
+        ::ClosePrinter(handle);
+        isAvailable = true;
+      }
+    }
+    if (isAvailable) {
       list.AppendElement(PrinterInfo{nsString(printers[i].pPrinterName)});
       PR_PL(("Printer Name: %s\n",
              NS_ConvertUTF16toUTF8(printers[i].pPrinterName).get()));
-      ::ClosePrinter(handle);
     }
   }
 
