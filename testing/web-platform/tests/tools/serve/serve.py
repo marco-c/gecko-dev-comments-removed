@@ -418,6 +418,19 @@ class ServerProc(object):
 
     def create_daemon(self, init_func, host, port, paths, routes, bind_address,
                       config, **kwargs):
+        if sys.platform == "darwin":
+            
+            
+            import resource  
+            maxfilesperproc = int(subprocess.check_output(
+                ["sysctl", "-n", "kern.maxfilesperproc"]
+            ).strip())
+            soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+            
+            
+            new_soft = min(2048, maxfilesperproc, hard)
+            if soft < new_soft:
+                resource.setrlimit(resource.RLIMIT_NOFILE, (new_soft, hard))
         try:
             self.daemon = init_func(host, port, paths, routes, bind_address, config, **kwargs)
         except socket.error:
