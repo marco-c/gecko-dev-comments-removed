@@ -96,14 +96,14 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   friend class Observer;
 
  private:
-  RefPtr<Observer> mObserver;
+  const RefPtr<Observer> mObserver;
   mozilla::ipc::TaskFactory<RDDProcessManager> mTaskFactory;
-  uint32_t mNumProcessAttempts;
+  uint32_t mNumProcessAttempts = 0;
 
   
-  RDDProcessHost* mProcess;
-  uint64_t mProcessToken;
-  RDDChild* mRDDChild;
+  RDDProcessHost* mProcess = nullptr;
+  uint64_t mProcessToken = 0;
+  RDDChild* mRDDChild = nullptr;
   
   
   
