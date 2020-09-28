@@ -81,7 +81,7 @@ class ClockDrift final {
           resampledSourceClock *
           (static_cast<float>(mTargetRate) / static_cast<float>(mSourceRate));
     }
-    mCorrection = (float)mTargetClock / resampledSourceClock;
+    mCorrection = static_cast<float>(mTargetClock) / resampledSourceClock;
 
     
     mCorrection = std::min(std::max(mCorrection, 0.9f), 1.1f);
