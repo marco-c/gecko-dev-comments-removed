@@ -131,7 +131,9 @@ static nsTArray<T> GetDeviceCapabilityArray(const LPWSTR aPrinterName,
     return caps;
   }
 
-  caps.SetLength(count);
+  
+  
+  caps.SetLength(count * 2);
   count =
       ::DeviceCapabilitiesW(aPrinterName, nullptr, aCapabilityID,
                             reinterpret_cast<LPWSTR>(caps.Elements()), nullptr);
@@ -140,11 +142,8 @@ static nsTArray<T> GetDeviceCapabilityArray(const LPWSTR aPrinterName,
     return caps;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(
-      count <= caps.Length(),
-      "DeviceCapabilitiesW returned more than buffer could hold.");
-
-  caps.SetLength(count);
+  
+  caps.TruncateLength(count);
   return caps;
 }
 

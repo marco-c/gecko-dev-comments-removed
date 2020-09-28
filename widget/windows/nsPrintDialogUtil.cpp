@@ -89,6 +89,9 @@ static nsReturnRef<nsHGLOBAL> CreateGlobalDevModeAndInit(
   }
 
   
+  
+  
+  needed *= 2;
   nsAutoDevMode newDevMode(
       (LPDEVMODEW)::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY, needed));
   if (!newDevMode) {

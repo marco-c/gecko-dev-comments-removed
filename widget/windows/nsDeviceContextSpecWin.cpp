@@ -419,6 +419,10 @@ nsresult nsDeviceContextSpecWin::GetDataFromPrinter(const nsAString& aName,
       return NS_ERROR_FAILURE;
     }
 
+    
+    
+    
+    needed *= 2;
     pDevMode =
         (LPDEVMODEW)::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY, needed);
     if (!pDevMode) return NS_ERROR_FAILURE;
