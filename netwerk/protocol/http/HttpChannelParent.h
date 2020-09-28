@@ -8,6 +8,7 @@
 #ifndef mozilla_net_HttpChannelParent_h
 #define mozilla_net_HttpChannelParent_h
 
+#include "ADivertableParentChannel.h"
 #include "nsHttp.h"
 #include "mozilla/net/PHttpChannelParent.h"
 #include "mozilla/net/NeckoCommon.h"
@@ -52,6 +53,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
                                 public PHttpChannelParent,
                                 public nsIParentRedirectingChannel,
                                 public nsIProgressEventSink,
+                                public ADivertableParentChannel,
                                 public nsIAuthPromptProvider,
                                 public nsIDeprecationWarner,
                                 public HttpChannelSecurityWarningReporter,
@@ -82,6 +84,22 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
                     nsILoadContext* aLoadContext, PBOverrideStatus aStatus);
 
   [[nodiscard]] bool Init(const HttpChannelCreationArgs& aOpenArgs);
+
+  
+  void DivertTo(nsIStreamListener* aListener) override;
+  [[nodiscard]] nsresult SuspendForDiversion() override;
+  [[nodiscard]] nsresult SuspendMessageDiversion() override;
+  [[nodiscard]] nsresult ResumeMessageDiversion() override;
+  [[nodiscard]] nsresult CancelDiversion() override;
+
+  
+  
+  
+  void StartDiversion();
+
+  
+  
+  void NotifyDiversionFailed(nsresult aErrorCode);
 
   
   void SetApplyConversion(bool aApplyConversion) {
@@ -193,6 +211,12 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   virtual mozilla::ipc::IPCResult RecvDocumentChannelCleanup(
       const bool& clearCacheEntry) override;
   virtual mozilla::ipc::IPCResult RecvMarkOfflineCacheEntryAsForeign() override;
+  virtual mozilla::ipc::IPCResult RecvDivertOnDataAvailable(
+      const nsCString& data, const uint64_t& offset,
+      const uint32_t& count) override;
+  virtual mozilla::ipc::IPCResult RecvDivertOnStopRequest(
+      const nsresult& statusCode) override;
+  virtual mozilla::ipc::IPCResult RecvDivertComplete() override;
   virtual mozilla::ipc::IPCResult RecvRemoveCorsPreflightCacheEntry(
       const URIParams& uri,
       const mozilla::ipc::PrincipalInfo& requestingPrincipal) override;
@@ -201,6 +225,12 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   virtual mozilla::ipc::IPCResult RecvOpenAltDataCacheInputStream(
       const nsCString& aType) override;
   virtual void ActorDestroy(ActorDestroyReason why) override;
+
+  
+  [[nodiscard]] nsresult ResumeForDiversion();
+
+  
+  void FailDiversion(nsresult aErrorCode);
 
   friend class ParentChannelListener;
   RefPtr<mozilla::dom::BrowserParent> mBrowserParent;
@@ -222,6 +252,11 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
  private:
   void UpdateAndSerializeSecurityInfo(nsACString& aSerializedSecurityInfoOut);
 
+  void DivertOnDataAvailable(const nsCString& data, const uint64_t& offset,
+                             const uint32_t& count);
+  void DivertOnStopRequest(const nsresult& statusCode);
+  void DivertComplete();
+  void MaybeFlushPendingDiversion();
   
   
   
@@ -248,6 +283,9 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   int32_t mSendWindowSize;
 
   friend class HttpBackgroundChannelParent;
+  friend class DivertDataAvailableEvent;
+  friend class DivertStopRequestEvent;
+  friend class DivertCompleteEvent;
 
   RefPtr<HttpBaseChannel> mChannel;
   nsCOMPtr<nsICacheEntry> mCacheEntry;
@@ -261,6 +299,9 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   RefPtr<nsHttpHandler> mHttpHandler;
 
   RefPtr<ParentChannelListener> mParentListener;
+  
+  
+  nsCOMPtr<nsIStreamListener> mDivertListener;
 
   RefPtr<ChannelEventQueue> mEventQ;
 
@@ -299,6 +340,19 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   uint8_t mSentRedirect1BeginFailed : 1;
   uint8_t mReceivedRedirect2Verify : 1;
   uint8_t mHasSuspendedByBackPressure : 1;
+
+  
+  
+  uint8_t mPendingDiversion : 1;
+  
+  
+  
+  uint8_t mDivertingFromChild : 1;
+
+  
+  uint8_t mDivertedOnStartRequest : 1;
+
+  uint8_t mSuspendedForDiversion : 1;
 
   
   uint8_t mCacheNeedFlowControlInitialized : 1;

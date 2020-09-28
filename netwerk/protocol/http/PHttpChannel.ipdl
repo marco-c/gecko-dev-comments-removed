@@ -67,6 +67,17 @@ parent:
   async MarkOfflineCacheEntryAsForeign();
 
   
+  async DivertOnDataAvailable(nsCString data,
+                              uint64_t  offset,
+                              uint32_t  count);
+
+  
+  async DivertOnStopRequest(nsresult statusCode);
+
+  
+  async DivertComplete();
+
+  
   
   async RemoveCorsPreflightCacheEntry(URIParams uri,
                                       PrincipalInfo requestingPrincipal);
@@ -135,6 +146,9 @@ child:
                             bool warning,
                             nsString url,
                             nsString contentType);
+
+  
+  async CancelDiversion();
 
   async OriginalCacheInputStreamAvailable(IPCStream? stream);
 

@@ -8,6 +8,7 @@
 #ifndef mozilla_net_FTPChannelParent_h
 #define mozilla_net_FTPChannelParent_h
 
+#include "ADivertableParentChannel.h"
 #include "mozilla/net/PFTPChannelParent.h"
 #include "mozilla/net/NeckoParent.h"
 #include "nsIParentChannel.h"
@@ -29,6 +30,7 @@ class ChannelEventQueue;
 class FTPChannelParent final : public PFTPChannelParent,
                                public nsIParentChannel,
                                public nsIInterfaceRequestor,
+                               public ADivertableParentChannel,
                                public nsIChannelEventSink,
                                public nsIFTPChannelParentInternal {
  public:
@@ -45,10 +47,32 @@ class FTPChannelParent final : public PFTPChannelParent,
 
   bool Init(const FTPChannelCreationArgs& aOpenArgs);
 
+  
+  void DivertTo(nsIStreamListener* aListener) override;
+  nsresult SuspendForDiversion() override;
+  nsresult SuspendMessageDiversion() override;
+  nsresult ResumeMessageDiversion() override;
+  nsresult CancelDiversion() override;
+
+  
+  
+  
+  void StartDiversion();
+
+  
+  
+  void NotifyDiversionFailed(nsresult aErrorCode);
+
   NS_IMETHOD SetErrorMsg(const char* aMsg, bool aUseUTF8) override;
 
  protected:
   virtual ~FTPChannelParent();
+
+  
+  nsresult ResumeForDiversion();
+
+  
+  void FailDiversion(nsresult aErrorCode);
 
   bool DoAsyncOpen(const URIParams& aURI, const uint64_t& aStartPos,
                    const nsCString& aEntityID,
@@ -60,9 +84,26 @@ class FTPChannelParent final : public PFTPChannelParent,
   
   bool ConnectChannel(const uint64_t& channelId);
 
+  void DivertOnDataAvailable(const nsCString& data, const uint64_t& offset,
+                             const uint32_t& count);
+  void DivertOnStopRequest(const nsresult& statusCode);
+  void DivertComplete();
+
+  friend class FTPDivertDataAvailableEvent;
+  friend class FTPDivertStopRequestEvent;
+  friend class FTPDivertCompleteEvent;
+
   virtual mozilla::ipc::IPCResult RecvCancel(const nsresult& status) override;
   virtual mozilla::ipc::IPCResult RecvSuspend() override;
   virtual mozilla::ipc::IPCResult RecvResume() override;
+  virtual mozilla::ipc::IPCResult RecvDivertOnDataAvailable(
+      const nsCString& data, const uint64_t& offset,
+      const uint32_t& count) override;
+  virtual mozilla::ipc::IPCResult RecvDivertOnStopRequest(
+      const nsresult& statusCode) override;
+  virtual mozilla::ipc::IPCResult RecvDivertComplete() override;
+
+  nsresult ResumeChannelInternalIfPossible();
 
   virtual void ActorDestroy(ActorDestroyReason why) override;
 
@@ -76,8 +117,20 @@ class FTPChannelParent final : public PFTPChannelParent,
   PBOverrideStatus mPBOverride;
 
   
+  
+  nsCOMPtr<nsIStreamListener> mDivertToListener;
+  
   nsresult mStatus;
+  
+  
+  
+  bool mDivertingFromChild;
+  
+  bool mDivertedOnStartRequest;
 
+  
+  
+  bool mSuspendedForDiversion;
   RefPtr<mozilla::dom::BrowserParent> mBrowserParent;
 
   RefPtr<ChannelEventQueue> mEventQ;
