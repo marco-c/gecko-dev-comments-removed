@@ -52,7 +52,6 @@ const FORBIDDEN_IDS = new Set(["toolbox", ""]);
 const MAX_ORDINAL = 99;
 
 const CONTENT_FISSION_ENABLED_PREF = "devtools.contenttoolbox.fission";
-const FISSION_AUTOSTART_PREF = "fission.autostart";
 
 
 
@@ -853,10 +852,7 @@ DevTools.prototype = {
       
       
       
-      const isFissionEnabled = Services.prefs.getBoolPref(
-        FISSION_AUTOSTART_PREF,
-        false
-      );
+      const isFissionEnabled = Services.appinfo.fissionAutostart;
       this._cachedFissionContentToolboxEnabled =
         isFissionEnabled && isContentFissionEnabled;
     }

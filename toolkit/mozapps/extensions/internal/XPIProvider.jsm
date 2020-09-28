@@ -2735,10 +2735,8 @@ var XPIProvider = {
 
 
   addAddonsToCrashReporter() {
-    if (
-      !(Services.appinfo instanceof Ci.nsICrashReporter) ||
-      Services.appinfo.inSafeMode
-    ) {
+    void (Services.appinfo instanceof Ci.nsICrashReporter);
+    if (!Services.appinfo.annotateCrashReport || Services.appinfo.inSafeMode) {
       return;
     }
 
