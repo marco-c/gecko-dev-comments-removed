@@ -127,8 +127,13 @@ bool SVGCircleElement::GetGeometryBounds(
 
 already_AddRefed<Path> SVGCircleElement::BuildPath(PathBuilder* aBuilder) {
   float x, y, r;
-  SVGGeometryProperty::ResolveAllAllowFallback<SVGT::Cx, SVGT::Cy, SVGT::R>(
-      this, &x, &y, &r);
+  if (!SVGGeometryProperty::ResolveAllAllowFallback<SVGT::Cx, SVGT::Cy,
+                                                    SVGT::R>(this, &x, &y,
+                                                             &r)) {
+    
+    
+    GetAnimatedLengthValues(&x, &y, &r, nullptr);
+  }
 
   if (r <= 0.0f) {
     return nullptr;

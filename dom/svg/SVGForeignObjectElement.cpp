@@ -81,9 +81,7 @@ gfxMatrix SVGForeignObjectElement::PrependLocalTransformsTo(
   
   float x, y;
 
-  if (GetPrimaryFrame()) {
-    SVGGeometryProperty::ResolveAll<SVGT::X, SVGT::Y>(this, &x, &y);
-  } else {
+  if (!SVGGeometryProperty::ResolveAll<SVGT::X, SVGT::Y>(this, &x, &y)) {
     
     
     const_cast<SVGForeignObjectElement*>(this)->GetAnimatedLengthValues(
