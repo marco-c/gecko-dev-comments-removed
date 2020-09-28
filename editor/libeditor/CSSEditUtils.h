@@ -60,14 +60,15 @@ class CSSEditUtils final {
     eCSSEditableProperty_width
   };
 
+  
   struct CSSEquivTable {
     nsCSSEditableProperty cssProperty;
+    bool gettable;
+    bool caseSensitiveValue;
     nsProcessValueFunc processValueFunctor;
     const char* defaultValue;
     const char* prependValue;
     const char* appendValue;
-    bool gettable;
-    bool caseSensitiveValue;
   };
 
   
