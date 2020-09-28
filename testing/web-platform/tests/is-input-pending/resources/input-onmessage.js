@@ -7,7 +7,7 @@ onmessage = async e => {
 
   
   
-  const DISPATCH_WAIT_TIME_MS = 200;
+  const DISPATCH_WAIT_TIME_MS = 500;
 
   
   const end = performance.now() + DISPATCH_WAIT_TIME_MS;
