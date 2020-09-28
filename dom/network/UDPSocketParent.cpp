@@ -16,7 +16,7 @@
 #include "mozilla/net/PNeckoParent.h"
 #include "nsIPermissionManager.h"
 #include "mozilla/ipc/PBackgroundParent.h"
-#include "mtransport/runnable_utils.h"
+#include "transport/runnable_utils.h"
 
 namespace mozilla {
 
