@@ -168,10 +168,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "deadlock:third_party/rust/rkv/src/env.rs\n"
 
          
-         "race:majorGCCount\n"
-         "race:incMajorGcNumber\n"
-
-         
          "race:nsSocketTransport::Close\n"
          "race:nsSocketTransport::OnSocketDetached\n"
 
