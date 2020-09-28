@@ -38,24 +38,15 @@ class EncodedFrame final {
   
   uint64_t mTime;
   
-  
+  uint64_t mDurationBase;
   
   uint64_t mDuration;
   
   FrameType mFrameType;
 
+  
   uint64_t GetEndTime() const {
-    
-    
-    MOZ_ASSERT(mFrameType == OPUS_AUDIO_FRAME || mFrameType == VP8_I_FRAME ||
-               mFrameType == VP8_P_FRAME);
-    if (mFrameType == OPUS_AUDIO_FRAME) {
-      
-      
-      return mTime + FramesToUsecs(mDuration, 48000).value();
-    } else {
-      return mTime + mDuration;
-    }
+    return mTime + FramesToUsecs(mDuration, mDurationBase).value();
   }
 
  private:

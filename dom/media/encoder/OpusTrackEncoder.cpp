@@ -372,6 +372,7 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
       
       audiodata->mDuration = frameCopied * (kOpusSamplingRate / mSamplingRate);
     }
+    audiodata->mDurationBase = kOpusSamplingRate;
 
     
     
