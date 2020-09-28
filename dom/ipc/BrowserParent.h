@@ -118,6 +118,8 @@ class BrowserParent final : public PBrowserParent,
 
   static BrowserParent* GetLastMouseRemoteTarget();
 
+  static BrowserParent* GetPointerLockedRemoteTarget();
+
   static BrowserParent* GetFrom(nsFrameLoader* aFrameLoader);
 
   static BrowserParent* GetFrom(PBrowserParent* aBrowserParent);
@@ -774,6 +776,11 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvMaybeFireEmbedderLoadEvents(
       EmbedderElementEventType aFireEventAtEmbeddingElement);
 
+  bool SetPointerLock();
+  mozilla::ipc::IPCResult RecvRequestPointerLock(
+      RequestPointerLockResolver&& aResolve);
+  mozilla::ipc::IPCResult RecvReleasePointerLock();
+
  private:
   void SuppressDisplayport(bool aEnabled);
 
@@ -844,6 +851,13 @@ class BrowserParent final : public PBrowserParent,
   
   
   static void UnsetLastMouseRemoteTarget(BrowserParent* aBrowserParent);
+
+  
+  static BrowserParent* sPointerLockedRemoteTarget;
+
+  
+  
+  static void UnsetPointerLockedRemoteTarget(BrowserParent* aBrowserParent);
 
   struct APZData {
     bool operator==(const APZData& aOther) {

@@ -1372,6 +1372,11 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
         return;
       }
 
+      if (BrowserParent* pointerLockedRemote =
+              BrowserParent::GetPointerLockedRemoteTarget()) {
+        remote = pointerLockedRemote;
+      }
+
       
       
       
