@@ -654,6 +654,7 @@ class TabBase {
       isInReaderMode: this.isInReaderMode,
       sharingState: this.sharingState,
       successorTabId: this.successorTabId,
+      cookieStoreId: this.cookieStoreId,
     };
 
     
@@ -666,10 +667,6 @@ class TabBase {
     let opener = this.openerTabId;
     if (opener) {
       result.openerTabId = opener;
-    }
-
-    if (this.extension.hasPermission("cookies")) {
-      result.cookieStoreId = this.cookieStoreId;
     }
 
     if (this.hasTabPermission) {

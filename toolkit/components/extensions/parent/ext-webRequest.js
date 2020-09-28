@@ -23,7 +23,7 @@ function registerEvent(
   remoteTab = null
 ) {
   let listener = async data => {
-    let event = data.serialize(eventName, extension);
+    let event = data.serialize(eventName);
     if (data.registerTraceableChannel) {
       
       
