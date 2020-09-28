@@ -37,9 +37,7 @@ class SurfaceHelper : public Runnable {
   
   
   NS_IMETHOD Run() override {
-    
-    nsCountedRef<nsMainThreadSourceSurfaceRef> surface;
-    surface.own(mImage->GetAsSourceSurface().take());
+    RefPtr<gfx::SourceSurface> surface = mImage->GetAsSourceSurface();
 
     if (surface->GetFormat() == gfx::SurfaceFormat::B8G8R8A8) {
       mDataSourceSurface = surface->GetDataSurface();
@@ -47,6 +45,9 @@ class SurfaceHelper : public Runnable {
       mDataSourceSurface = gfxUtils::CopySurfaceToDataSourceSurfaceWithFormat(
           surface, gfx::SurfaceFormat::B8G8R8A8);
     }
+
+    
+    NS_ReleaseOnMainThread("SurfaceHelper::surface", surface.forget());
     return NS_OK;
   }
 

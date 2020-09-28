@@ -20,7 +20,6 @@
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/mozalloc.h"  
-#include "nsAutoRef.h"         
 #include "nsCOMPtr.h"          
 #include "nsDebug.h"           
 #include "nsISupportsImpl.h"   
@@ -34,98 +33,6 @@
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/UniquePtr.h"
 #include "MediaInfo.h"
-
-#ifndef XPCOM_GLUE_AVOID_NSPR
-
-
-
-
-
-
-
-
-
-
-class nsMainThreadSourceSurfaceRef;
-
-template <>
-class nsAutoRefTraits<nsMainThreadSourceSurfaceRef> {
- public:
-  typedef mozilla::gfx::SourceSurface* RawRef;
-
-  
-
-
-  class SurfaceReleaser : public mozilla::Runnable {
-   public:
-    explicit SurfaceReleaser(RawRef aRef)
-        : mozilla::Runnable(
-              "nsAutoRefTraits<nsMainThreadSourceSurfaceRef>::SurfaceReleaser"),
-          mRef(aRef) {}
-    NS_IMETHOD Run() override {
-      mRef->Release();
-      return NS_OK;
-    }
-    RawRef mRef;
-  };
-
-  static RawRef Void() { return nullptr; }
-  static void Release(RawRef aRawRef) {
-    if (NS_IsMainThread()) {
-      aRawRef->Release();
-      return;
-    }
-    nsCOMPtr<nsIRunnable> runnable = new SurfaceReleaser(aRawRef);
-    NS_DispatchToMainThread(runnable);
-  }
-  static void AddRef(RawRef aRawRef) { aRawRef->AddRef(); }
-};
-
-class nsOwningThreadSourceSurfaceRef;
-
-template <>
-class nsAutoRefTraits<nsOwningThreadSourceSurfaceRef> {
- public:
-  typedef mozilla::gfx::SourceSurface* RawRef;
-
-  
-
-
-  class SurfaceReleaser : public mozilla::Runnable {
-   public:
-    explicit SurfaceReleaser(RawRef aRef)
-        : mozilla::Runnable(
-              "nsAutoRefTraits<nsOwningThreadSourceSurfaceRef>::"
-              "SurfaceReleaser"),
-          mRef(aRef) {}
-    NS_IMETHOD Run() override {
-      mRef->Release();
-      return NS_OK;
-    }
-    RawRef mRef;
-  };
-
-  static RawRef Void() { return nullptr; }
-  void Release(RawRef aRawRef) {
-    MOZ_ASSERT(mOwningEventTarget);
-    if (mOwningEventTarget->IsOnCurrentThread()) {
-      aRawRef->Release();
-      return;
-    }
-    nsCOMPtr<nsIRunnable> runnable = new SurfaceReleaser(aRawRef);
-    mOwningEventTarget->Dispatch(runnable, nsIThread::DISPATCH_NORMAL);
-  }
-  void AddRef(RawRef aRawRef) {
-    MOZ_ASSERT(!mOwningEventTarget);
-    mOwningEventTarget = mozilla::GetCurrentSerialEventTarget();
-    aRawRef->AddRef();
-  }
-
- private:
-  nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
-};
-
-#endif
 
 #ifdef XP_WIN
 struct ID3D10Texture2D;
@@ -801,7 +708,7 @@ class PlanarYCbCrImage : public Image {
 
   enum { MAX_DIMENSION = 16384 };
 
-  virtual ~PlanarYCbCrImage() = default;
+  virtual ~PlanarYCbCrImage();
 
   
 
@@ -867,7 +774,7 @@ class PlanarYCbCrImage : public Image {
   gfx::IntPoint mOrigin;
   gfx::IntSize mSize;
   gfxImageFormat mOffscreenFormat;
-  nsCountedRef<nsMainThreadSourceSurfaceRef> mSourceSurface;
+  RefPtr<gfx::SourceSurface> mSourceSurface;
   uint32_t mBufferSize;
 };
 
@@ -921,13 +828,13 @@ class NVImage final : public Image {
   
 
 
-  mozilla::UniquePtr<uint8_t> AllocateBuffer(uint32_t aSize);
+  mozilla::UniquePtr<uint8_t[]> AllocateBuffer(uint32_t aSize);
 
-  mozilla::UniquePtr<uint8_t> mBuffer;
+  mozilla::UniquePtr<uint8_t[]> mBuffer;
   uint32_t mBufferSize;
   gfx::IntSize mSize;
   Data mData;
-  nsCountedRef<nsMainThreadSourceSurfaceRef> mSourceSurface;
+  RefPtr<gfx::SourceSurface> mSourceSurface;
 };
 
 
@@ -956,7 +863,7 @@ class SourceSurfaceImage final : public Image {
 
  private:
   gfx::IntSize mSize;
-  nsCountedRef<nsOwningThreadSourceSurfaceRef> mSourceSurface;
+  RefPtr<gfx::SourceSurface> mSourceSurface;
   nsDataHashtable<nsUint32HashKey, RefPtr<TextureClient>> mTextureClients;
   TextureFlags mTextureFlags;
 };
