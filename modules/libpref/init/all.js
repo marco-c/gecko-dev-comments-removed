@@ -1077,9 +1077,9 @@ pref("javascript.options.baselinejit",      true);
 
 pref("javascript.options.baselinejit.threshold", 100);
 pref("javascript.options.ion",              true);
-pref("javascript.options.warp",             false);
+pref("javascript.options.warp",             true);
 
-pref("javascript.options.ion.threshold",    1000);
+pref("javascript.options.ion.threshold",    1500);
 pref("javascript.options.ion.full.threshold", 100000);
 
 pref("javascript.options.ion.frequent_bailout_threshold", 10);
