@@ -80,4 +80,7 @@
 
 - (id)moxTextMarkerRangeForUIElement:(id)element;
 
+
+- (void)moxSetSelectedTextMarkerRange:(id)textMarkerRange;
+
 @end
