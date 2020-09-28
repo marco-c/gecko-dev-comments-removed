@@ -69,6 +69,10 @@ const DISABLED_PREF = "doh-rollout.disable-heuristics";
 
 const SKIP_HEURISTICS_PREF = "doh-rollout.skipHeuristicsCheck";
 
+
+
+const CLEAR_ON_SHUTDOWN_PREF = "doh-rollout.clearModeOnShutdown";
+
 const BREADCRUMB_PREF = "doh-rollout.self-enabled";
 
 
@@ -140,7 +144,7 @@ const DoHController = {
     }
 
     this._asyncShutdownBlocker = async () => {
-      await this.disableHeuristics();
+      await this.disableHeuristics("shutdown");
     };
 
     AsyncShutdown.profileBeforeChange.addBlocker(
@@ -158,7 +162,7 @@ const DoHController = {
     Preferences.ignore(NETWORK_TRR_MODE_PREF, this);
     Preferences.ignore(NETWORK_TRR_URI_PREF, this);
     AsyncShutdown.profileBeforeChange.removeBlocker(this._asyncShutdownBlocker);
-    await this.disableHeuristics();
+    await this.disableHeuristics("shutdown");
   },
 
   
@@ -415,9 +419,13 @@ const DoHController = {
       case "UIDisabled":
         Preferences.reset(BREADCRUMB_PREF);
       
-      case "shutdown":
       case "rollback":
         Preferences.reset(ROLLOUT_MODE_PREF);
+        break;
+      case "shutdown":
+        if (Preferences.get(CLEAR_ON_SHUTDOWN_PREF, true)) {
+          Preferences.reset(ROLLOUT_MODE_PREF);
+        }
         break;
     }
 
@@ -429,20 +437,20 @@ const DoHController = {
     );
   },
 
-  async disableHeuristics() {
+  async disableHeuristics(state) {
+    await this.setState(state);
+
     if (!this._heuristicsAreEnabled) {
       return;
     }
 
-    await this.setState("shutdown");
     Services.obs.removeObserver(this, kLinkStatusChangedTopic);
     Services.obs.removeObserver(this, kConnectivityTopic);
     this._heuristicsAreEnabled = false;
   },
 
   async rollback() {
-    await this.setState("rollback");
-    await this.disableHeuristics();
+    await this.disableHeuristics("rollback");
   },
 
   async runTRRSelection() {
@@ -541,9 +549,8 @@ const DoHController = {
     switch (pref) {
       case NETWORK_TRR_URI_PREF:
       case NETWORK_TRR_MODE_PREF:
-        await this.setState("manuallyDisabled");
         Preferences.set(DISABLED_PREF, true);
-        await this.disableHeuristics();
+        await this.disableHeuristics("manuallyDisabled");
         break;
     }
   },
