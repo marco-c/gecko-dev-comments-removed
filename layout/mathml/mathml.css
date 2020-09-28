@@ -26,22 +26,22 @@ math {
   letter-spacing: normal;
   text-rendering: optimizeLegibility;
   -moz-float-edge: margin-box;
-  -moz-math-display: inline;
+  math-style: compact;
 }
 math[display="block" i] {
   display: block;
   text-align: -moz-center;
-  -moz-math-display: block;
+  math-style: normal;
 }
 math[display="inline" i] {
   display: inline;
-  -moz-math-display: inline;
+  math-style: compact;
 }
 math[displaystyle="false" i] {
-  -moz-math-display: inline;
+  math-style: compact;
 }
 math[displaystyle="true" i] {
-  -moz-math-display: block;
+  math-style: normal;
 }
 
 
@@ -231,10 +231,10 @@ mtable[framespacing] > mtr > mtd {
 
 
 mstyle[displaystyle="false" i] {
-  -moz-math-display: inline;
+  math-style: compact;
 }
 mstyle[displaystyle="true" i] {
-  -moz-math-display: block;
+  math-style: normal;
 }
 
 
@@ -250,7 +250,7 @@ mstyle[displaystyle="true" i] {
 
 mfrac > * {
     -moz-script-level: auto;
-    -moz-math-display: inline;
+    math-style: compact;
 }
 
 
@@ -260,7 +260,7 @@ mfrac > * {
 
 mroot > :not(:first-child) {
     -moz-script-level: +2;
-    -moz-math-display: inline;
+    math-style: compact;
 }
 
 
@@ -284,7 +284,7 @@ msup > :not(:first-child),
 msubsup > :not(:first-child),
 mmultiscripts > :not(:first-child) {
     -moz-script-level: +1;
-    -moz-math-display: inline;
+    math-style: compact;
 }
 
 
@@ -304,7 +304,7 @@ mmultiscripts > :not(:first-child) {
 munder > :not(:first-child),
 mover > :not(:first-child),
 munderover > :not(:first-child) {
-    -moz-math-display: inline;
+    math-style: compact;
 }
 
 
@@ -312,8 +312,8 @@ munderover > :not(:first-child) {
 
 
 
-mtable { -moz-math-display: inline; }
-mtable[displaystyle="true" i] { -moz-math-display: block; }
+mtable { math-style: compact; }
+mtable[displaystyle="true" i] { math-style: normal; }
 
 
 
