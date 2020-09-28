@@ -539,8 +539,12 @@ async function exchangeOffer(caller, callee) {
 }
 
 async function exchangeAnswer(caller, callee) {
-  await callee.setLocalDescription(await callee.createAnswer());
-  await caller.setRemoteDescription(callee.localDescription);
+  
+  
+  
+  const answer = await callee.createAnswer();
+  await caller.setRemoteDescription(answer);
+  await callee.setLocalDescription(answer);
 }
 async function exchangeOfferAnswer(caller, callee) {
   await exchangeOffer(caller, callee);
