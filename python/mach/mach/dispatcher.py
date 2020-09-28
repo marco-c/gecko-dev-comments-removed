@@ -137,12 +137,6 @@ class CommandAction(argparse.Action):
             
             command = self._suggest_command(command)
 
-        
-        
-        if getattr(self._context, 'get_command', False) is True:
-            setattr(namespace, 'command', command)
-            return
-
         handler = self._mach_registrar.command_handlers.get(command)
 
         prog = command
