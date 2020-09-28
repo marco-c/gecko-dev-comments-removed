@@ -67,7 +67,7 @@ class SearchSettings {
   
 
 
-  _searchService;
+  _searchService = null;
 
   addObservers() {
     Services.obs.addObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED);
@@ -136,6 +136,15 @@ class SearchSettings {
       this._batchTask.disarm();
     } else {
       let task = async () => {
+        if (
+          !this._searchService.isInitialized ||
+          this._searchService._reloadingEngines
+        ) {
+          
+          
+          this._batchTask.arm();
+          return;
+        }
         logConsole.debug("batchTask: Invalidating engine settings");
         await this._write();
       };
