@@ -437,6 +437,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     mozilla::TimeStamp mRegisterTime;
     mozilla::Maybe<uint64_t> mInnerWindowId;
     mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> mCause;
+    mozilla::FlushType mFlushType;
 
     bool operator==(nsARefreshObserver* aObserver) const {
       return mObserver == aObserver;
@@ -462,6 +463,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void StopTimer();
 
   bool HasObservers() const;
+  void AppendObserverDescriptionsToString(nsACString& aStr) const;
   
   uint32_t ObserverCount() const;
   bool HasImageRequests() const;
