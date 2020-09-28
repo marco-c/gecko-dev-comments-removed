@@ -557,11 +557,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   void SetCachedContentType();
 
-  
-  
-  
-  void UpdateAntiTrackingInfo();
-
  private:
   
   
