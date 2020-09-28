@@ -579,8 +579,13 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   
   
-  int highest_stream_width = static_cast<int>(streams.back().width);
-  int highest_stream_height = static_cast<int>(streams.back().height);
+  auto highest_stream = std::max_element(
+      streams.begin(), streams.end(),
+      [](const webrtc::VideoStream& a, const webrtc::VideoStream& b) {
+        return std::tie(a.width, a.height) < std::tie(b.width, b.height);
+      });
+  int highest_stream_width = static_cast<int>(highest_stream->width);
+  int highest_stream_height = static_cast<int>(highest_stream->height);
   
   RTC_CHECK_GE(last_frame_info_->width, highest_stream_width);
   RTC_CHECK_GE(last_frame_info_->height, highest_stream_height);
