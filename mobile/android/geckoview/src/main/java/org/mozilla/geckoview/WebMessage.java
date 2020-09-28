@@ -10,12 +10,12 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
-import androidx.collection.ArrayMap;
 
 import java.nio.ByteBuffer;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.TreeMap;
 
 
 
@@ -59,7 +59,7 @@ public abstract class WebMessage {
     @AnyThread
     public static abstract class Builder {
          String mUri;
-         Map<String, String> mHeaders = new ArrayMap<>();
+         Map<String, String> mHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
          ByteBuffer mBody;
 
         
@@ -90,12 +90,22 @@ public abstract class WebMessage {
 
 
 
+
+
+
+
+
         public @NonNull Builder header(final @NonNull String key, final @NonNull String value) {
             mHeaders.put(key, value);
             return this;
         }
 
         
+
+
+
+
+
 
 
 
