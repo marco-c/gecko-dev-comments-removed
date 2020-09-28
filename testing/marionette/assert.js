@@ -159,27 +159,13 @@ assert.content = function(context, msg = "") {
 
 
 
-
-
-
-
-
-
-
-assert.open = function(context, msg = "") {
-  
-  
-  
-  if (context instanceof browser.Context) {
-    assert.open(context.window);
-  }
-
+assert.open = function(browsingContext, msg = "") {
   msg = msg || "Browsing context has been discarded";
   return assert.that(
-    ctx => ctx && !ctx.closed,
+    browsingContext => !!browsingContext?.currentWindowGlobal,
     msg,
     error.NoSuchWindowError
-  )(context);
+  )(browsingContext);
 };
 
 
