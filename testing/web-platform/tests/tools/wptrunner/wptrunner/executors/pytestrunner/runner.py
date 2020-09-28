@@ -51,7 +51,7 @@ def run(path, server_config, session_config, timeout=0):
 
     with TemporaryDirectory() as cache:
         try:
-            pytest.main(["-W error",  
+            pytest.main(["--strict",  
                          "-vv",  
                          "--capture", "no",  
                          "--basetemp", cache,  

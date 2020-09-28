@@ -113,7 +113,7 @@ function inContext(f) {
 
 function testInIFrame(url, f, testName, testProps) {
     if (url) {
-        var t = async_test(testName, testProps);
+        var t = async_test(testName);
         t.step(function() {
             var context = newContext();
             var iframe = newIFrame(context, url);
@@ -130,7 +130,7 @@ function testInIFrame(url, f, testName, testProps) {
         test(inContext(function(context) {
             newRenderedHTMLDocument(context);
             f(context);
-        }), testName, testProps);
+        }), testName);
     }
 }
 

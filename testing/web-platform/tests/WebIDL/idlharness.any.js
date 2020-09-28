@@ -1,0 +1,16 @@
+
+
+
+"use strict";
+
+idl_test(
+  ['WebIDL'],
+  [],
+  idl_array => {
+    idl_array.add_objects({
+      DOMException: ['new DOMException()',
+                     'new DOMException("my message")',
+                     'new DOMException("my message", "myName")']
+    });
+  }
+);
