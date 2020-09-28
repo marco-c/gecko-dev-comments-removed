@@ -29,8 +29,11 @@ macro_rules! fatalln {
 
 #[no_mangle]
 pub unsafe extern "C" fn new_remote_agent_handler(result: *mut *const nsICommandLineHandler) {
-    let handler: RefPtr<RemoteAgentHandler> = RemoteAgentHandler::new().unwrap();
-    RefPtr::new(handler.coerce::<nsICommandLineHandler>()).forget(&mut *result);
+    if let Ok(handler) = RemoteAgentHandler::new() {
+        RefPtr::new(handler.coerce::<nsICommandLineHandler>()).forget(&mut *result);
+    } else {
+        *result = std::ptr::null();
+    }
 }
 
 #[derive(xpcom)]
@@ -80,22 +83,22 @@ impl RemoteAgentHandler {
             (Some(_), Some(_)) => return Err(FlagConflict),
             (None, None) => return Ok(()),
 
-            // --remote-debugger [<host>][:<port>]
+            
             (Some(Some(spec)), _) => spec,
             (Some(None), _) => format!("{}:{}", DEFAULT_HOST, DEFAULT_PORT),
 
-            // --remote-debugging-port <port>
+            
             (None, Some(Some(port))) => format!("{}:{}", DEFAULT_HOST, port),
             (None, Some(None)) => return Err(MissingPort),
         };
 
         *self.address.borrow_mut() = addr.to_string();
 
-        // When remote-startup-requested fires, it takes care of
-        // asking the remote agent to listen for incoming connections.
-        // Because the remote agent starts asynchronously, we wait
-        // until we receive remote-listening before we declare to the
-        // world that we are ready to accept connections.
+        
+        
+        
+        
+        
         self.add_observer("remote-listening")?;
         self.add_observer("remote-startup-requested")?;
 
@@ -150,7 +153,7 @@ impl RemoteAgentHandler {
     }
 }
 
-// Rust wrapper for nsICommandLine.
+
 struct CommandLine<'a> {
     inner: &'a nsICommandLine,
 }
