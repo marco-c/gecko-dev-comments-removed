@@ -1418,21 +1418,9 @@ static bool IsCrossSizeDefinite(const ReflowInput& aItemReflowInput,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-static nscoord CrossSizeToUseWithRatio(const FlexItem& aFlexItem,
-                                       const ReflowInput& aItemReflowInput,
-                                       bool aMinSizeFallback,
-                                       const FlexboxAxisTracker& aAxisTracker) {
+static nscoord SpecifiedCrossSizeIfDefinite(
+    const FlexItem& aFlexItem, const ReflowInput& aItemReflowInput,
+    const FlexboxAxisTracker& aAxisTracker) {
   if (aFlexItem.IsStretched()) {
     
     return aFlexItem.CrossSize();
@@ -1440,17 +1428,7 @@ static nscoord CrossSizeToUseWithRatio(const FlexItem& aFlexItem,
 
   if (IsCrossSizeDefinite(aItemReflowInput, aAxisTracker)) {
     
-    return GET_CROSS_COMPONENT_LOGICAL(aAxisTracker, aFlexItem.GetWritingMode(),
-                                       aItemReflowInput.ComputedISize(),
-                                       aItemReflowInput.ComputedBSize());
-  }
-
-  if (aMinSizeFallback) {
-    
-    
-    return GET_CROSS_COMPONENT_LOGICAL(aAxisTracker, aFlexItem.GetWritingMode(),
-                                       aItemReflowInput.ComputedMinISize(),
-                                       aItemReflowInput.ComputedMinBSize());
+    return aFlexItem.CrossSize();
   }
 
   
@@ -1566,14 +1544,12 @@ static nscoord PartiallyResolveAutoMinSize(
   nscoord transferredSizeSuggestion = nscoord_MAX;
   if (aFlexItem.HasIntrinsicRatio()) {
     
-    const bool useMinSizeIfCrossSizeIsIndefinite = false;
-    nscoord crossSizeToUseWithRatio = CrossSizeToUseWithRatio(
-        aFlexItem, aItemReflowInput, useMinSizeIfCrossSizeIsIndefinite,
-        aAxisTracker);
+    const nscoord crossSize =
+        SpecifiedCrossSizeIfDefinite(aFlexItem, aItemReflowInput, aAxisTracker);
 
-    if (crossSizeToUseWithRatio != NS_UNCONSTRAINEDSIZE) {
+    if (crossSize != NS_UNCONSTRAINEDSIZE) {
       transferredSizeSuggestion = MainSizeFromAspectRatio(
-          crossSizeToUseWithRatio, aFlexItem.IntrinsicRatio(), aAxisTracker);
+          crossSize, aFlexItem.IntrinsicRatio(), aAxisTracker);
     }
 
     
@@ -1603,14 +1579,12 @@ static bool ResolveAutoFlexBasisFromRatio(
   
   if (aFlexItem.IntrinsicRatio()) {
     
-    const bool useMinSizeIfCrossSizeIsIndefinite = false;
-    nscoord crossSizeToUseWithRatio = CrossSizeToUseWithRatio(
-        aFlexItem, aItemReflowInput, useMinSizeIfCrossSizeIsIndefinite,
-        aAxisTracker);
-    if (crossSizeToUseWithRatio != NS_UNCONSTRAINEDSIZE) {
+    const nscoord crossSize =
+        SpecifiedCrossSizeIfDefinite(aFlexItem, aItemReflowInput, aAxisTracker);
+    if (crossSize != NS_UNCONSTRAINEDSIZE) {
       
       nscoord mainSizeFromRatio = MainSizeFromAspectRatio(
-          crossSizeToUseWithRatio, aFlexItem.IntrinsicRatio(), aAxisTracker);
+          crossSize, aFlexItem.IntrinsicRatio(), aAxisTracker);
       aFlexItem.SetFlexBaseSizeAndMainSize(mainSizeFromRatio);
       return true;
     }
