@@ -35,6 +35,7 @@
 #include "nsDOMMutationObserver.h"  
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
+#include "nsIScrollableFrame.h"
 #include "nsPresContextInlines.h"
 #include "nsRefreshDriver.h"
 
