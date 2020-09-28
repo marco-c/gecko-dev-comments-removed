@@ -3896,7 +3896,7 @@ class Document : public nsINode,
   void ReportShadowDOMUsage();
 
   
-  void SetDocTreeHadAudibleMedia();
+  void SetDocTreeHadMedia();
 
   dom::XPathEvaluator* XPathEvaluator();
 
