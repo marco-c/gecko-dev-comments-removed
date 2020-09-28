@@ -103,20 +103,103 @@ AutoTouchingGrayThings::~AutoTouchingGrayThings() {
 
 #endif  
 
+
+
+
+
+
+
+
+
+
+static MOZ_ALWAYS_INLINE bool ValueIsPermanent(const Value& value) {
+  gc::Cell* cell = value.toGCThing();
+
+  if (value.isString()) {
+    return cell->as<JSString>()->isPermanentAndMayBeShared();
+  }
+
+  if (value.isSymbol()) {
+    return cell->as<JS::Symbol>()->isPermanentAndMayBeShared();
+  }
+
+#ifdef DEBUG
+  
+  bool isPermanent = MapGCThingTyped(value, [](auto t) {
+    return t->isPermanentAndMayBeShared();
+  }).value();
+  MOZ_ASSERT(!isPermanent);
+#endif
+
+  return false;
+}
+
 void gc::ValueReadBarrier(const Value& v) {
-  ApplyGCThingTyped(v, [](auto t) { gc::ReadBarrier(t); });
+  MOZ_ASSERT(v.isGCThing());
+
+  if (!ValueIsPermanent(v)) {
+    ReadBarrierImpl(v.toGCThing());
+  }
 }
 
 void gc::ValuePreWriteBarrier(const Value& v) {
-  ApplyGCThingTyped(v, [](auto t) { gc::PreWriteBarrier(t); });
+  MOZ_ASSERT(v.isGCThing());
+
+  if (!ValueIsPermanent(v)) {
+    PreWriteBarrierImpl(v.toGCThing());
+  }
+}
+
+static MOZ_ALWAYS_INLINE bool IdIsPermanent(jsid id) {
+  gc::Cell* cell = id.toGCThing();
+
+  if (id.isString()) {
+    return cell->as<JSString>()->isPermanentAndMayBeShared();
+  }
+
+  if (id.isSymbol()) {
+    return cell->as<JS::Symbol>()->isPermanentAndMayBeShared();
+  }
+
+#ifdef DEBUG
+  bool isPermanent = MapGCThingTyped(id, [](auto t) {
+    return t->isPermanentAndMayBeShared();
+  }).value();
+  MOZ_ASSERT(!isPermanent);
+#endif
+
+  return false;
 }
 
 void gc::IdPreWriteBarrier(jsid id) {
-  ApplyGCThingTyped(id, [](auto t) { gc::PreWriteBarrier(t); });
+  MOZ_ASSERT(id.isGCThing());
+
+  if (!IdIsPermanent(id)) {
+    PreWriteBarrierImpl(&id.toGCThing()->asTenured());
+  }
+}
+
+static MOZ_ALWAYS_INLINE bool CellPtrIsPermanent(JS::GCCellPtr thing) {
+  if (thing.mayBeOwnedByOtherRuntime()) {
+    return true;
+  }
+
+#ifdef DEBUG
+  bool isPermanent = MapGCThingTyped(thing, [](auto t) {
+    return t->isPermanentAndMayBeShared();
+  });
+  MOZ_ASSERT(!isPermanent);
+#endif
+
+  return false;
 }
 
 void gc::CellPtrPreWriteBarrier(JS::GCCellPtr thing) {
-  ApplyGCThingTyped(thing, [](auto t) { gc::PreWriteBarrier(t); });
+  MOZ_ASSERT(thing);
+
+  if (!CellPtrIsPermanent(thing)) {
+    PreWriteBarrierImpl(thing.asCell());
+  }
 }
 
 template <typename T>
