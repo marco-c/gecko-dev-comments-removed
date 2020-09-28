@@ -353,18 +353,8 @@ add_task(async function nonHeuristicAliases() {
   
   for (let { tokenAliases } of tokenEngines) {
     let alias = tokenAliases[0];
-    let engineName = (await UrlbarSearchUtils.engineForAlias(alias)).name;
     EventUtils.synthesizeKey("KEY_ArrowDown");
-    let expectedSearchMode = {
-      engineName,
-      entry: "keywordoffer",
-      isPreview: true,
-    };
-    if (UrlbarUtils.WEB_ENGINE_NAMES.has(engineName)) {
-      expectedSearchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
-    }
-    await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
-    Assert.ok(!gURLBar.value, "The Urlbar should be empty.");
+    assertHighlighted(true, alias);
   }
 
   await UrlbarTestUtils.promisePopupClose(window, () =>

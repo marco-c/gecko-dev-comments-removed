@@ -377,9 +377,7 @@ class UrlbarController {
         break;
       case KeyEvent.DOM_VK_RIGHT:
       case KeyEvent.DOM_VK_END:
-        this.input.maybePromoteKeywordToSearchMode({
-          entry: "typed",
-        });
+        this.input.maybePromoteKeywordToSearchMode();
       
       case KeyEvent.DOM_VK_LEFT:
       case KeyEvent.DOM_VK_HOME:

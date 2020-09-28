@@ -7,20 +7,7 @@
 "use strict";
 
 add_task(async function test() {
-  for (let i = 0; i < 5; i++) {
-    await PlacesTestUtils.addVisits("http://example.com/");
-  }
-  
-  
-  
-  await updateTopSites(sites => {
-    return (
-      sites &&
-      sites[sites.length - 1] &&
-      sites[sites.length - 1].url == "http://example.com/"
-    );
-  });
-
+  await PlacesTestUtils.addVisits("http://example.com/");
   registerCleanupFunction(async function() {
     await PlacesUtils.history.clear();
   });
