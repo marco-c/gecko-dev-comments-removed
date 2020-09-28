@@ -39,7 +39,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::storage;
 use crate::util::Recycler;
 use crate::internal_types::LayoutPrimitiveInfo;
-use crate::visibility::{PrimitiveVisibility, PrimitiveVisibilityIndex};
+use crate::visibility::{PrimitiveVisibility, PrimitiveVisibilityMask};
 
 pub mod backdrop;
 pub mod borders;
@@ -1025,11 +1025,13 @@ pub struct PrimitiveInstance {
     pub prepared_frame_id: FrameId,
 
     
-    
-    pub visibility_info: PrimitiveVisibilityIndex,
+    pub clip_set: ClipSet,
 
     
-    pub clip_set: ClipSet,
+    
+    
+    
+    pub vis: PrimitiveVisibility,
 }
 
 impl PrimitiveInstance {
@@ -1044,7 +1046,7 @@ impl PrimitiveInstance {
             prepared_frame_id: FrameId::INVALID,
             #[cfg(debug_assertions)]
             id: PrimitiveDebugId(NEXT_PRIM_ID.fetch_add(1, Ordering::Relaxed)),
-            visibility_info: PrimitiveVisibilityIndex::INVALID,
+            vis: PrimitiveVisibility::new(),
             clip_set: ClipSet {
                 local_clip_rect,
                 clip_chain_id,
@@ -1054,7 +1056,19 @@ impl PrimitiveInstance {
 
     
     pub fn reset(&mut self) {
-        self.visibility_info = PrimitiveVisibilityIndex::INVALID;
+        self.clear_visibility();
+    }
+
+    pub fn is_visible(&self) -> bool {
+        !self.vis.visibility_mask.is_empty()
+    }
+
+    pub fn clear_visibility(&mut self) {
+        self.set_visibility(PrimitiveVisibilityMask::empty());
+    }
+
+    pub fn set_visibility(&mut self, mask: PrimitiveVisibilityMask) {
+        self.vis.visibility_mask = mask;
     }
 
     #[cfg(debug_assertions)]
@@ -1165,9 +1179,6 @@ pub struct PrimitiveScratchBuffer {
     pub gradient_tiles: GradientTileStorage,
 
     
-    pub prim_info: Vec<PrimitiveVisibility>,
-
-    
     
     pub recorded_dirty_regions: Vec<RecordedDirtyRegion>,
 
@@ -1186,7 +1197,6 @@ impl Default for PrimitiveScratchBuffer {
             gradient_tiles: GradientTileStorage::new(0),
             recorded_dirty_regions: Vec::new(),
             debug_items: Vec::new(),
-            prim_info: Vec::new(),
         }
     }
 }
@@ -1194,7 +1204,6 @@ impl Default for PrimitiveScratchBuffer {
 impl PrimitiveScratchBuffer {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         recycler.recycle_vec(&mut self.clip_mask_instances);
-        recycler.recycle_vec(&mut self.prim_info);
         self.glyph_keys.recycle(recycler);
         self.border_cache_handles.recycle(recycler);
         self.segments.recycle(recycler);
@@ -1217,8 +1226,6 @@ impl PrimitiveScratchBuffer {
         
         
         self.gradient_tiles.clear();
-
-        self.prim_info.clear();
 
         self.debug_items.clear();
 
