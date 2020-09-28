@@ -5,6 +5,8 @@
 from marionette_driver import Wait
 from marionette_harness import MarionetteTestCase
 
+import os
+
 
 class ServiceWorkerAtStartupTestCase(MarionetteTestCase):
     def setUp(self):
@@ -27,6 +29,14 @@ class ServiceWorkerAtStartupTestCase(MarionetteTestCase):
         
         
         
+        Wait(self.marionette, timeout=10).until(
+            lambda _: self.profile_serviceworker_txt_exists,
+            message="Wait service workers to be stored in the profile"
+        )
+
+        
+        
+        
         
         
         self.marionette.quit(clean=False, in_app=True)
@@ -37,6 +47,10 @@ class ServiceWorkerAtStartupTestCase(MarionetteTestCase):
             message="Wait the service worker to be registered after restart"
         )
         self.assertTrue(self.is_service_worker_registered)
+
+    @property
+    def profile_serviceworker_txt_exists(self):
+        return "serviceworker.txt" in os.listdir(self.marionette.profile_path)
 
     @property
     def is_service_worker_registered(self):
