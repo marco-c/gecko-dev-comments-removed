@@ -6078,15 +6078,40 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     
     
     
+    bool isCrossSizeDefinite =
+        (flexMainAxis == eLogicalAxisInline)
+            ? !nsLayoutUtils::IsAutoBSize(*blockStyleCoord, aCBSize.BSize(aWM))
+            : !inlineStyleCoord->IsAuto() &&
+                  !inlineStyleCoord->IsExtremumLength();
+
+    
+    
+    
     
     
     
     if (nsFlexContainerFrame::IsUsedFlexBasisContent(*flexBasis,
                                                      *mainAxisCoord) &&
         MOZ_LIKELY(!IsTableWrapperFrame())) {
-      static const StyleSize maxContStyleCoord(
-          StyleSize::ExtremumLength(StyleExtremumLength::MaxContent));
-      mainAxisCoord = &maxContStyleCoord;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (stylePos->mAspectRatio.HasFiniteRatio() && isCrossSizeDefinite) {
+        static const StyleSize autoStyleCoord(StyleSize::Auto());
+        mainAxisCoord = &autoStyleCoord;
+      } else {
+        static const StyleSize maxContStyleCoord(
+            StyleSize::ExtremumLength(StyleExtremumLength::MaxContent));
+        mainAxisCoord = &maxContStyleCoord;
+      }
       
       
     } else if (!flexBasis->IsAuto()) {
