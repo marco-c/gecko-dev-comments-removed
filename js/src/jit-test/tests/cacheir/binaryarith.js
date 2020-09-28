@@ -151,6 +151,14 @@ var funBitOr3 = (a, b) => { return a | b; }
 warmup(funBitOr3, [[1, true, 1], [8, true, 9], [false, 1233, 1233], [5, false, 5]]);
 
 
+var funBitOr4 = (a, b) => { return a | b; }
+warmup(funBitOr4, [[1, null, 1], [8, null, 8], [null, 1233, 1233], [5, null, 5]]);
+
+
+var funBitOr5 = (a, b) => { return a | b; }
+warmup(funBitOr5, [[1, void 0, 1], [8, void 0, 8], [void 0, 1233, 1233], [5, void 0, 5]]);
+
+
 var funBitXOr1 = (a, b) => { return a ^ b; }
 warmup(funBitXOr1, [[1, 1, 0], [5, 1, 4], [63, 31, 32], [4294967295, 2147483647, -2147483648 ] ]);
 
@@ -171,6 +179,14 @@ warmup(funBitXOr4, [[54772703898, 2890608493, 1828589047],
                     [4294967295, -1, 0]]);
 
 
+var funBitXOr5 = (a, b) => { return a ^ b; }
+warmup(funBitXOr5, [[1, null, 1], [5, null, 5], [5, null, 5], [null, 1, 1]]);
+
+
+var funBitXOr6 = (a, b) => { return a ^ b; }
+warmup(funBitXOr6, [[1, void 0, 1], [5, void 0, 5], [5, void 0, 5], [void 0, 1, 1]]);
+
+
 var funBitAnd1 = (a, b) => { return a & b; }
 warmup(funBitAnd1, [[1,1,1], [5,1,1], [63,31,31], [4294967295,2147483647,2147483647],
                     [-2,10,10], [-15,-2,-16], [4,128,0]]);
@@ -183,6 +199,14 @@ warmup(funBitAnd2, [[1.2 ,1, 1], [5, 1.4, 1], [63,31.99,31],
 
 var funBitAnd1 = (a, b) => { return a & b; }
 warmup(funBitAnd1, [[1,true,1], [5,false,0], [true, 6, 0], [false, 12, 0]]);
+
+
+var funBitAnd4 = (a, b) => { return a & b; }
+warmup(funBitAnd4, [[1, null, 0], [5, null, 0], [null, 6, 0], [null, 12, 0]]);
+
+
+var funBitAnd5 = (a, b) => { return a & b; }
+warmup(funBitAnd5, [[1, void 0, 0], [5, void 0, 0], [void 0, 6, 0], [void 0, 12, 0]]);
 
 
 var funLsh1 = (a, b) => { return a << b; }
@@ -199,6 +223,14 @@ var funLsh3 = (a, b) => { return a << b; }
 warmup(funLsh3, [[54772703898, 1, -2123741900],[2147483658, 0, -2147483638]]);
 
 
+var funLsh4 = (a, b) => { return a << b; }
+warmup(funLsh4, [[5, null, 5], [null, 1, 0], [63, null, 63], [null, 12, 0]]);
+
+
+var funLsh5 = (a, b) => { return a << b; }
+warmup(funLsh5, [[5, void 0, 5], [void 0, 1, 0], [63, void 0, 63], [void 0, 12, 0]]);
+
+
 var funRsh1 = (a, b) => { return a >> b; }
 warmup(funRsh1, [[1,1,0], [5,1,2], [63,31,0], [4294967295,2147483647,-1], [-2,10,-1],
                  [-15,-2,-1], [4,128,4], [1,10,0], [1024,2,256]]);
@@ -210,6 +242,14 @@ warmup(funRsh2, [[true,1,0], [1,true,0], [false, 3, 0], [3, false, 3]]);
 
 var funRsh3 = (a, b) => { return a >> b; }
 warmup(funRsh3, [[54772703898, 11, -518492 ], [2147483658, 0, -2147483638]]);
+
+
+var funRsh4 = (a, b) => { return a >> b; }
+warmup(funRsh4, [[null, 1, 0], [1, null, 1], [null, 3, 0], [3, null, 3]]);
+
+
+var funRsh5 = (a, b) => { return a >> b; }
+warmup(funRsh5, [[void 0, 1, 0], [1, void 0, 1], [void 0, 3, 0], [3, void 0, 3]]);
 
 
 var funURsh1 = (a, b) => { return a >>> b; }
@@ -229,6 +269,14 @@ warmup(funURsh3, [[4294967295, 0, 4294967295]]);
 var funURsh4 = (a, b) => { return a >>> b; }
 warmup(funURsh4, [[54772703898, 11, 1578660], [2147483658, 11, 1048576],
                   [4294967295, 0, 4294967295]]);
+
+
+var funURsh5 = (a, b) => { return a >>> b; }
+warmup(funURsh5, [[null, 1, 0], [5, null, 5], [63, null, 63], [null, 20, 0]]);
+
+
+var funURsh6 = (a, b) => { return a >>> b; }
+warmup(funURsh6, [[void 0, 1, 0], [5, void 0, 5], [63, void 0, 63], [void 0, 20, 0]]);
 
 
 

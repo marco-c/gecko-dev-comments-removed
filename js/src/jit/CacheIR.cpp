@@ -10834,8 +10834,8 @@ AttachDecision BinaryArithIRGenerator::tryAttachBitwise() {
   }
 
   
-  if (!(lhs_.isNumber() || lhs_.isBoolean()) ||
-      !(rhs_.isNumber() || rhs_.isBoolean())) {
+  if (!(lhs_.isNumber() || lhs_.isBoolean() || lhs_.isNullOrUndefined()) ||
+      !(rhs_.isNumber() || rhs_.isBoolean() || rhs_.isNullOrUndefined())) {
     return AttachDecision::NoAction;
   }
 
@@ -10852,6 +10852,10 @@ AttachDecision BinaryArithIRGenerator::tryAttachBitwise() {
     }
     if (val.isBoolean()) {
       return writer.guardBooleanToInt32(id);
+    }
+    if (val.isNullOrUndefined()) {
+      writer.guardIsNullOrUndefined(id);
+      return writer.loadInt32Constant(0);
     }
     MOZ_ASSERT(val.isDouble());
     NumberOperandId numId = writer.guardIsNumber(id);
