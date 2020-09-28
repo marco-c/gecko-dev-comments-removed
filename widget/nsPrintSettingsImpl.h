@@ -28,7 +28,10 @@ namespace mozilla {
 struct PrintSettingsInitializer {
   nsString mPrinter;
   PaperInfo mPaperInfo;
-  bool mPrintInColor = false;
+  
+  
+  
+  bool mPrintInColor = true;
   int mResolution = 0;
 #ifdef XP_WIN
   CopyableTArray<uint8_t> mDevmodeWStorage;

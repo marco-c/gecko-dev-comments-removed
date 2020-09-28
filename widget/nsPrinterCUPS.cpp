@@ -101,7 +101,6 @@ PrintSettingsInitializer nsPrinterCUPS::DefaultSettings() const {
                                     CUPS_MEDIA_FLAGS_DEFAULT, &media);
 
   if (!hasDefaultMedia) {
-    Nothing();
     return PrintSettingsInitializer{
         std::move(printerName),
         PaperInfo(),
@@ -184,10 +183,11 @@ bool nsPrinterCUPS::SupportsColor() const {
   
   
   if (!IsCUPSVersionAtLeast(2, 2, 0)) {
-    return true;
+    return true;  
   }
-  return Supports(CUPS_PRINT_COLOR_MODE, CUPS_PRINT_COLOR_MODE_COLOR) ||
-         Supports(CUPS_PRINT_COLOR_MODE, CUPS_PRINT_COLOR_MODE_AUTO);
+  return Supports(CUPS_PRINT_COLOR_MODE, CUPS_PRINT_COLOR_MODE_AUTO) ||
+         Supports(CUPS_PRINT_COLOR_MODE, CUPS_PRINT_COLOR_MODE_COLOR) ||
+         !Supports(CUPS_PRINT_COLOR_MODE, CUPS_PRINT_COLOR_MODE_MONOCHROME);
 }
 
 bool nsPrinterCUPS::SupportsCollation() const {
