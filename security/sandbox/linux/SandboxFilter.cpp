@@ -1094,11 +1094,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 #  endif
       case __NR_fchownat:
         return Error(EPERM);
-
-        
-        
-      case __NR_utime:
-        return Error(EPERM);
 #endif
 
       CASES_FOR_select:
