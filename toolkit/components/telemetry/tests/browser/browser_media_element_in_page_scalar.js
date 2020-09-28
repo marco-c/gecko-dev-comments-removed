@@ -14,6 +14,9 @@ const MEDIA_SCALAR_NAME = "media.element_in_page_count";
 
 
 add_task(async function start_tests() {
+  
+  TelemetryTestUtils.getProcessScalars("parent", false, true );
+
   await testMediaInPageScalar({
     description: "load a page with one media element",
     url: "file_media.html",
