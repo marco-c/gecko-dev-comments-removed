@@ -112,7 +112,8 @@ PrintSettingsInitializer nsPrinterWin::DefaultSettings() const {
 
 template <class T>
 static nsTArray<T> GetDeviceCapabilityArray(const LPWSTR aPrinterName,
-                                            WORD aCapabilityID) {
+                                            WORD aCapabilityID,
+                                            size_t aCount = 0) {
   nsTArray<T> caps;
 
   
@@ -125,10 +126,20 @@ static nsTArray<T> GetDeviceCapabilityArray(const LPWSTR aPrinterName,
   
   
   
-  int count = ::DeviceCapabilitiesW(aPrinterName, nullptr, aCapabilityID,
-                                    nullptr, nullptr);
-  if (count <= 0) {
-    return caps;
+  int count;
+  if (aCount) {
+    count = aCount;
+  } else {
+    
+    
+    
+    
+    
+    count = ::DeviceCapabilitiesW(aPrinterName, nullptr, aCapabilityID, nullptr,
+                                  nullptr);
+    if (count <= 0) {
+      return caps;
+    }
   }
 
   
@@ -199,15 +210,16 @@ bool nsPrinterWin::SupportsCollation() const {
 
 nsTArray<mozilla::PaperInfo> nsPrinterWin::PaperList() const {
   
-  auto paperNames =
-      GetDeviceCapabilityArray<Array<wchar_t, 64>>(mName.get(), DC_PAPERNAMES);
-
-  
   auto paperIds = GetDeviceCapabilityArray<WORD>(mName.get(), DC_PAPERS);
 
   
+  auto paperNames = GetDeviceCapabilityArray<Array<wchar_t, 64>>(
+      mName.get(), DC_PAPERNAMES, paperIds.Length());
+
   
-  auto paperSizes = GetDeviceCapabilityArray<POINT>(mName.get(), DC_PAPERSIZE);
+  
+  auto paperSizes = GetDeviceCapabilityArray<POINT>(mName.get(), DC_PAPERSIZE,
+                                                    paperIds.Length());
 
   
   if (!paperNames.Length() || paperNames.Length() != paperIds.Length() ||
