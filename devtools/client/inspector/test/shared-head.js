@@ -531,34 +531,6 @@ function getRuleViewSelector(view, selectorText) {
 
 
 
-
-
-
-
-var getRuleViewSelectorHighlighterIcon = async function(
-  view,
-  selectorText,
-  index = 0
-) {
-  const rule = getRuleViewRule(view, selectorText, index);
-
-  const editor = rule._ruleEditor;
-  if (!editor.uniqueSelector) {
-    await once(editor, "selector-icon-created");
-  }
-
-  return rule.querySelector(".ruleview-selectorhighlighter");
-};
-
-
-
-
-
-
-
-
-
-
 function getRuleViewLinkByIndex(view, index) {
   const links = view.styleDocument.querySelectorAll(".ruleview-rule-source");
   return links[index];

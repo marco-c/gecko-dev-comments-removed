@@ -6,9 +6,6 @@
 
 
 
-
-
-
 const TEST_URI = `
 <div style="cursor:pointer">
   A
@@ -21,49 +18,28 @@ const TEST_URI = `
 add_task(async function() {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
-
-  
-  const HighlighterFront = {
-    isShown: false,
-    nodeFront: null,
-    options: null,
-    show: function(nodeFront, options) {
-      this.nodeFront = nodeFront;
-      this.options = options;
-      this.isShown = true;
-    },
-    hide: function() {
-      this.nodeFront = null;
-      this.options = null;
-      this.isShown = false;
-    },
-  };
-  
-  view.selectorHighlighter = HighlighterFront;
+  let data;
 
   info("Checking that the right NodeFront reference and options are passed");
   await selectNode("a", inspector);
 
-  let icon = await getRuleViewSelectorHighlighterIcon(view, "element");
-  await clickSelectorIcon(icon, view);
+  data = await clickSelectorIcon(view, "element");
   is(
-    HighlighterFront.options.selector,
+    data.options.selector,
     "body > div:nth-child(1) > div:nth-child(1) > a:nth-child(1)",
     "The right selector option is passed to the highlighter (1)"
   );
 
-  icon = await getRuleViewSelectorHighlighterIcon(view, "element", 1);
-  await clickSelectorIcon(icon, view);
+  data = await clickSelectorIcon(view, "element", 1);
   is(
-    HighlighterFront.options.selector,
+    data.options.selector,
     "body > div:nth-child(1) > div:nth-child(1)",
     "The right selector option is passed to the highlighter (1)"
   );
 
-  icon = await getRuleViewSelectorHighlighterIcon(view, "element", 2);
-  await clickSelectorIcon(icon, view);
+  data = await clickSelectorIcon(view, "element", 2);
   is(
-    HighlighterFront.options.selector,
+    data.options.selector,
     "body > div:nth-child(1)",
     "The right selector option is passed to the highlighter (1)"
   );

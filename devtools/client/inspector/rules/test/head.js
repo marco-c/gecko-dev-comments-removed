@@ -582,12 +582,60 @@ function waitForStyleModification(inspector) {
 
 
 
-async function clickSelectorIcon(icon, view) {
-  const onToggled = view.once("ruleview-selectorhighlighter-toggled");
-  EventUtils.synthesizeMouseAtCenter(icon, {}, view.styleWindow);
-  await onToggled;
-}
 
+
+
+
+
+
+
+
+async function clickSelectorIcon(view, selectorText, index = 0) {
+  const { inspector } = view;
+  const rule = getRuleViewRule(view, selectorText, index);
+
+  
+  
+  info(`Waiting for icon to be available for selector: ${selectorText}`);
+  const icon = await waitFor(() => {
+    return rule.querySelector(".js-toggle-selector-highlighter");
+  });
+
+  
+  
+  
+  
+  
+  const selector = icon.dataset.selector;
+
+  const {
+    waitForHighlighterTypeShown,
+    waitForHighlighterTypeHidden,
+  } = getHighlighterTestHelpers(inspector);
+
+  
+  
+  const options = inspector.highlighters.getOptionsForActiveHighlighter(
+    inspector.highlighters.TYPES.SELECTOR
+  );
+
+  
+  
+  const waitForEvent =
+    options?.selector === selector
+      ? waitForHighlighterTypeHidden(inspector.highlighters.TYPES.SELECTOR)
+      : waitForHighlighterTypeShown(inspector.highlighters.TYPES.SELECTOR);
+
+  
+  const waitedForShown = options?.selector !== selector;
+
+  info(`Click the icon for selector: ${selectorText}`);
+  EventUtils.synthesizeMouseAtCenter(icon, {}, view.styleWindow);
+
+  
+  const data = await waitForEvent;
+  return { ...data, isShown: waitedForShown };
+}
 
 
 
