@@ -3235,6 +3235,11 @@ void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
   }
 
   
+  if (RefPtr<Document> doc = GetDocument()) {
+    doc->FlushPendingNotifications(FlushType::Layout);
+  }
+
+  
   bool visual = aDirection.LowerCaseEqualsLiteral("left") ||
                 aDirection.LowerCaseEqualsLiteral("right") ||
                 aGranularity.LowerCaseEqualsLiteral("line");
@@ -3282,8 +3287,7 @@ void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
 
   
   
-  nsIFrame* frame = GetPrimaryFrameForFocusNode(visual);
-  if (frame) {
+  if (nsIFrame* frame = GetPrimaryFrameForFocusNode(visual)) {
     nsBidiDirection paraDir = nsBidiPresUtils::ParagraphDirection(frame);
 
     if (paraDir == NSBIDI_RTL && visual) {
