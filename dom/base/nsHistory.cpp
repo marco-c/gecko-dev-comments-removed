@@ -132,7 +132,7 @@ void nsHistory::GetState(JSContext* aCx, JS::MutableHandle<JS::Value> aResult,
   aResult.setNull();
 }
 
-void nsHistory::Go(int32_t aDelta, ErrorResult& aRv) {
+void nsHistory::Go(int32_t aDelta, CallerType aCallerType, ErrorResult& aRv) {
   nsCOMPtr<nsPIDOMWindowInner> win(do_QueryReferent(mInnerWindow));
   if (!win || !win->HasActiveDocument()) {
     return aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
@@ -154,15 +154,17 @@ void nsHistory::Go(int32_t aDelta, ErrorResult& aRv) {
 
   
   
+  
   if (StaticPrefs::dom_window_history_async()) {
-    session_history->AsyncGo(aDelta,  false);
+    session_history->AsyncGo(aDelta,  false,
+                             aCallerType, aRv);
   } else {
     session_history->Go(aDelta,  false,
                         IgnoreErrors());
   }
 }
 
-void nsHistory::Back(ErrorResult& aRv) {
+void nsHistory::Back(CallerType aCallerType, ErrorResult& aRv) {
   nsCOMPtr<nsPIDOMWindowInner> win(do_QueryReferent(mInnerWindow));
   if (!win || !win->HasActiveDocument()) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
@@ -178,13 +180,14 @@ void nsHistory::Back(ErrorResult& aRv) {
   }
 
   if (StaticPrefs::dom_window_history_async()) {
-    sHistory->AsyncGo(-1,  false);
+    sHistory->AsyncGo(-1,  false, aCallerType,
+                      aRv);
   } else {
     sHistory->Go(-1,  false, IgnoreErrors());
   }
 }
 
-void nsHistory::Forward(ErrorResult& aRv) {
+void nsHistory::Forward(CallerType aCallerType, ErrorResult& aRv) {
   nsCOMPtr<nsPIDOMWindowInner> win(do_QueryReferent(mInnerWindow));
   if (!win || !win->HasActiveDocument()) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
@@ -200,7 +203,8 @@ void nsHistory::Forward(ErrorResult& aRv) {
   }
 
   if (StaticPrefs::dom_window_history_async()) {
-    sHistory->AsyncGo(1,  false);
+    sHistory->AsyncGo(1,  false, aCallerType,
+                      aRv);
   } else {
     sHistory->Go(1,  false, IgnoreErrors());
   }
@@ -208,19 +212,20 @@ void nsHistory::Forward(ErrorResult& aRv) {
 
 void nsHistory::PushState(JSContext* aCx, JS::Handle<JS::Value> aData,
                           const nsAString& aTitle, const nsAString& aUrl,
-                          ErrorResult& aRv) {
-  PushOrReplaceState(aCx, aData, aTitle, aUrl, aRv, false);
+                          CallerType aCallerType, ErrorResult& aRv) {
+  PushOrReplaceState(aCx, aData, aTitle, aUrl, aCallerType, aRv, false);
 }
 
 void nsHistory::ReplaceState(JSContext* aCx, JS::Handle<JS::Value> aData,
                              const nsAString& aTitle, const nsAString& aUrl,
-                             ErrorResult& aRv) {
-  PushOrReplaceState(aCx, aData, aTitle, aUrl, aRv, true);
+                             CallerType aCallerType, ErrorResult& aRv) {
+  PushOrReplaceState(aCx, aData, aTitle, aUrl, aCallerType, aRv, true);
 }
 
 void nsHistory::PushOrReplaceState(JSContext* aCx, JS::Handle<JS::Value> aData,
                                    const nsAString& aTitle,
-                                   const nsAString& aUrl, ErrorResult& aRv,
+                                   const nsAString& aUrl,
+                                   CallerType aCallerType, ErrorResult& aRv,
                                    bool aReplace) {
   nsCOMPtr<nsPIDOMWindowInner> win(do_QueryReferent(mInnerWindow));
   if (!win) {
@@ -233,6 +238,15 @@ void nsHistory::PushOrReplaceState(JSContext* aCx, JS::Handle<JS::Value> aData,
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
 
     return;
+  }
+
+  BrowsingContext* bc = win->GetBrowsingContext();
+  if (bc) {
+    nsresult rv = bc->CheckLocationChangeRateLimit(aCallerType);
+    if (NS_FAILED(rv)) {
+      aRv.Throw(rv);
+      return;
+    }
   }
 
   

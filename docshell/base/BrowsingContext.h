@@ -690,6 +690,16 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool ShouldUpdateSessionHistory(uint32_t aLoadType);
 
+  
+  
+  
+  
+  
+  
+  nsresult CheckLocationChangeRateLimit(CallerType aCallerType);
+
+  void ResetLocationChangeRateLimit();
+
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(WindowContext* aParentWindow, BrowsingContextGroup* aGroup,
@@ -989,6 +999,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   RefPtr<SessionStorageManager> mSessionStorageManager;
   RefPtr<ChildSHistory> mChildSessionHistory;
+
+  
+  
+  uint32_t mLocationChangeRateLimitCount;
+  mozilla::TimeStamp mLocationChangeRateLimitSpanStart;
 };
 
 
