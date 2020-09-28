@@ -440,9 +440,7 @@ pref("browser.search.widget.inNavBar", false);
 
 
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.search.separatePrivateDefault.ui.enabled", true);
-#endif
+pref("browser.search.separatePrivateDefault.ui.enabled", false);
 
 pref("browser.search.separatePrivateDefault.ui.banner.max", 0);
 
