@@ -51,7 +51,9 @@ class nsPrinterCUPS final : public nsPrinterBase {
     uint64_t mCUPSPatch = 0;
 
     
-    bool mWasInited = false;
+    bool mTriedInitWithDefault = false;
+    
+    bool mTriedInitWithConnection = false;
     CUPSPrinterInfo() = default;
     CUPSPrinterInfo(const CUPSPrinterInfo&) = delete;
     CUPSPrinterInfo(CUPSPrinterInfo&&) = delete;
@@ -78,7 +80,15 @@ class nsPrinterCUPS final : public nsPrinterBase {
   bool IsCUPSVersionAtLeast(uint64_t aCUPSMajor, uint64_t aCUPSMinor,
                             uint64_t aCUPSPatch) const;
 
-  void EnsurePrinterInfo(CUPSPrinterInfo& aInOutPrinterInfo) const;
+  
+
+
+
+
+
+  void TryEnsurePrinterInfo(
+      CUPSPrinterInfo& aInOutPrinterInfo,
+      http_t* const aConnection = CUPS_HTTP_DEFAULT) const;
 
   const nsCUPSShim& mShim;
   nsString mDisplayName;
