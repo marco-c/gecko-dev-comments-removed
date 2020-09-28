@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include "X11UndefineNone.h"
+#include "mozilla/EnumeratedArray.h"
 
 namespace mozilla {
 
@@ -36,6 +37,25 @@ enum class FlushType : uint8_t {
   Display,             
   Count
 };
+
+
+
+const EnumeratedArray<FlushType, FlushType::Count, const char*>
+    kFlushTypeNames = {
+  "",
+  "Event",
+  "Content",
+  "ContentAndNotify",
+  "Style",
+  
+  
+  "Style",
+  "Style",
+  "InterruptibleLayout",
+  "Layout",
+  "Display"
+};
+
 
 struct ChangesToFlush {
   ChangesToFlush(FlushType aFlushType, bool aFlushAnimations)
