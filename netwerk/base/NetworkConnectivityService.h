@@ -9,7 +9,6 @@
 #include "nsIObserver.h"
 #include "nsIDNSListener.h"
 #include "nsIStreamListener.h"
-#include "mozilla/net/DNS.h"
 
 namespace mozilla {
 namespace net {
@@ -26,43 +25,33 @@ class NetworkConnectivityService : public nsINetworkConnectivityService,
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIREQUESTOBSERVER
 
-  already_AddRefed<AddrInfo> MapNAT64IPs(AddrInfo* aNewRRSet);
-
   static already_AddRefed<NetworkConnectivityService> GetSingleton();
 
  private:
-  NetworkConnectivityService();
+  NetworkConnectivityService() = default;
   virtual ~NetworkConnectivityService() = default;
 
   nsresult Init();
   
   void PerformChecks();
 
-  void SaveNAT64Prefixes(nsIDNSRecord* aRecord);
-
   
   
   
   ConnectivityState mDNSv4 = nsINetworkConnectivityService::UNKNOWN;
   ConnectivityState mDNSv6 = nsINetworkConnectivityService::UNKNOWN;
-  ConnectivityState mNAT64 = nsINetworkConnectivityService::UNKNOWN;
 
   ConnectivityState mIPv4 = nsINetworkConnectivityService::UNKNOWN;
   ConnectivityState mIPv6 = nsINetworkConnectivityService::UNKNOWN;
 
-  nsTArray<NetAddr> mNAT64Prefixes;
-
   nsCOMPtr<nsICancelable> mDNSv4Request;
   nsCOMPtr<nsICancelable> mDNSv6Request;
-  nsCOMPtr<nsICancelable> mNAT64Request;
 
   nsCOMPtr<nsIChannel> mIPv4Channel;
   nsCOMPtr<nsIChannel> mIPv6Channel;
 
   bool mCheckedNetworkId = false;
   bool mHasNetworkId = false;
-
-  Mutex mLock;
 };
 
 }  
