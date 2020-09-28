@@ -229,10 +229,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "deadlock:ScriptPreloader::OffThreadDecodeCallback\n"
 
          
-         "race:nsContentSecurityUtils::IsEvalAllowed\n"
-         "race:nsContentSecurityUtils::ValidateScriptFilename\n"
-
-         
          "race:CacheFileMetadata::SetHash\n"
          "race:CacheFileMetadata::OnDataWritten\n"
 
