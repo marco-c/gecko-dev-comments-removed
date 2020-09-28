@@ -10,6 +10,8 @@
 
 namespace mozilla {
 
+extern LazyLogModule gMediaTrackGraphLog;
+
 
 
 
@@ -60,30 +62,51 @@ class ClockDrift final {
 
   void UpdateClock(int aSourceFrames, int aTargetFrames, int aBufferedFrames,
                    int aRemainingFrames) {
-    if ((mTargetClock * 1000 / mTargetRate) >= mAdjustmentIntervalMs ||
-        (mSourceClock * 1000 / mSourceRate) >= mAdjustmentIntervalMs) {
+    if (mSourceClock >= mSourceRate / 10 || mTargetClock >= mTargetRate / 10) {
       
-      CalculateCorrection(aBufferedFrames);
-    } else if (aBufferedFrames < 2 * mSourceRate / 100  ||
-               aRemainingFrames < 2 * mSourceRate / 100 ) {
-      BufferedFramesCorrection(aBufferedFrames);
+      if (aBufferedFrames < mDesiredBuffering * 4 / 10  ||
+          aRemainingFrames < mDesiredBuffering * 4 / 10 ) {
+        
+        
+        CalculateCorrection(0.9, aBufferedFrames, aRemainingFrames);
+      } else if ((mTargetClock * 1000 / mTargetRate) >= mAdjustmentIntervalMs ||
+                 (mSourceClock * 1000 / mSourceRate) >= mAdjustmentIntervalMs) {
+        
+        CalculateCorrection(0.6, aBufferedFrames, aRemainingFrames);
+      }
     }
     mTargetClock += aTargetFrames;
     mSourceClock += aSourceFrames;
   }
 
  private:
-  void CalculateCorrection(int aBufferedFrames) {
+  
+
+
+
+
+
+  void CalculateCorrection(float aCalculationWeight, int aBufferedFrames,
+                           int aRemainingFrames) {
     
     int32_t bufferedFramesDiff = aBufferedFrames - mDesiredBuffering;
     int32_t resampledSourceClock =
         std::max(1, mSourceClock + bufferedFramesDiff);
     if (mTargetRate != mSourceRate) {
-      resampledSourceClock =
-          resampledSourceClock *
-          (static_cast<float>(mTargetRate) / static_cast<float>(mSourceRate));
+      resampledSourceClock *= static_cast<float>(mTargetRate) / mSourceRate;
     }
-    mCorrection = static_cast<float>(mTargetClock) / resampledSourceClock;
+
+    MOZ_LOG(gMediaTrackGraphLog, LogLevel::Verbose,
+            ("ClockDrift %p Calculated correction %.3f (with weight: %.1f -> "
+             "%.3f) (buffer: %d, desired: %d, remaining: %d)",
+             this, static_cast<float>(mTargetClock) / resampledSourceClock,
+             aCalculationWeight,
+             (1 - aCalculationWeight) * mCorrection +
+                 aCalculationWeight * mTargetClock / resampledSourceClock,
+             aBufferedFrames, mDesiredBuffering, aRemainingFrames));
+
+    mCorrection = (1 - aCalculationWeight) * mCorrection +
+                  aCalculationWeight * mTargetClock / resampledSourceClock;
 
     
     mCorrection = std::min(std::max(mCorrection, 0.9f), 1.1f);
@@ -91,21 +114,6 @@ class ClockDrift final {
     
     mTargetClock = 0;
     mSourceClock = 0;
-  }
-
-  void BufferedFramesCorrection(int aBufferedFrames) {
-    int32_t bufferedFramesDiff = aBufferedFrames - mDesiredBuffering;
-    int32_t resampledSourceClock =
-        std::max(1, mSourceRate + bufferedFramesDiff);
-    if (mTargetRate != mSourceRate) {
-      resampledSourceClock = resampledSourceClock *
-                             (static_cast<float>(mTargetRate) / mSourceRate);
-    }
-    MOZ_ASSERT(mTargetRate > resampledSourceClock);
-    mCorrection +=
-        static_cast<float>(mTargetRate) / resampledSourceClock - 1.0f;
-    
-    mCorrection = std::min(std::max(mCorrection, 0.9f), 1.1f);
   }
 
  public:
