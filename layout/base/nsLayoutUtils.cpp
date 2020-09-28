@@ -9290,18 +9290,6 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
     viewport.MoveTo(layoutScrollOffset);
     metrics.SetLayoutViewport(viewport);
 
-    
-    
-    
-    
-    
-    ScrollOrigin lastOrigin = scrollableFrame->LastScrollOrigin();
-    if (lastOrigin == ScrollOrigin::Restore) {
-      metrics.SetScrollOffsetUpdateType(FrameMetrics::eRestore);
-    } else if (CanScrollOriginClobberApz(lastOrigin)) {
-      metrics.SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
-    }
-
     nsSize lineScrollAmount = scrollableFrame->GetLineScrollAmount();
     LayoutDeviceIntSize lineScrollAmountInDevPixels =
         LayoutDeviceIntSize::FromAppUnitsRounded(

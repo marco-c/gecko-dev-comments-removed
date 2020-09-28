@@ -68,9 +68,6 @@ struct FrameMetrics {
     ScrollOffsetUpdateType, uint8_t, (
       eNone,          
       eMainThread,    
-      ePending,       
-                      
-                      
       eRestore        
                       
                       
@@ -97,7 +94,6 @@ struct FrameMetrics {
         mLayoutViewport(0, 0, 0, 0),
         mExtraResolution(),
         mPaintRequestTime(),
-        mScrollUpdateType(eNone),
         mVisualDestination(0, 0),
         mVisualScrollUpdateType(eNone),
         mIsRootContent(false),
@@ -124,7 +120,6 @@ struct FrameMetrics {
            mLayoutViewport.IsEqualEdges(aOther.mLayoutViewport) &&
            mExtraResolution == aOther.mExtraResolution &&
            mPaintRequestTime == aOther.mPaintRequestTime &&
-           mScrollUpdateType == aOther.mScrollUpdateType &&
            mVisualDestination == aOther.mVisualDestination &&
            mVisualScrollUpdateType == aOther.mVisualScrollUpdateType &&
            mIsRootContent == aOther.mIsRootContent &&
@@ -270,7 +265,6 @@ struct FrameMetrics {
   void UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {
     SetLayoutScrollOffset(aInfo.GetDestination());
     mScrollGeneration = aInfo.GetGeneration();
-    mScrollUpdateType = ePending;
   }
 
  public:
@@ -345,14 +339,6 @@ struct FrameMetrics {
 
   void SetScrollGeneration(uint32_t aScrollGeneration) {
     mScrollGeneration = aScrollGeneration;
-  }
-
-  void SetScrollOffsetUpdateType(ScrollOffsetUpdateType aScrollUpdateType) {
-    mScrollUpdateType = aScrollUpdateType;
-  }
-
-  ScrollOffsetUpdateType GetScrollUpdateType() const {
-    return mScrollUpdateType;
   }
 
   uint32_t GetScrollGeneration() const { return mScrollGeneration; }
@@ -595,10 +581,6 @@ struct FrameMetrics {
 
   
   TimeStamp mPaintRequestTime;
-
-  
-  
-  ScrollOffsetUpdateType mScrollUpdateType;
 
   
   
@@ -996,7 +978,6 @@ struct ScrollMetadata {
   
   bool mForceDisableApz : 1;
 
-  
   
   
   bool mResolutionUpdated : 1;
