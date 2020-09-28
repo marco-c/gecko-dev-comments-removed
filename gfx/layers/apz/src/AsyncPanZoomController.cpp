@@ -4514,18 +4514,9 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   
   
   
-  
-  
-  
-  
-  
   bool visualScrollOffsetUpdated =
       isDefault ||
       aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eNone;
-  if (aLayerMetrics.GetScrollUpdateType() == FrameMetrics::eMainThread &&
-      aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eMainThread) {
-    visualScrollOffsetUpdated = false;
-  }
 
   
   
@@ -4726,6 +4717,20 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
     MOZ_ASSERT(scrollUpdate.GetMode() == ScrollMode::Instant ||
                scrollUpdate.GetMode() == ScrollMode::Normal);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (nsLayoutUtils::CanScrollOriginClobberApz(scrollUpdate.GetOrigin()) &&
+        aLayerMetrics.GetVisualScrollUpdateType() !=
+            FrameMetrics::eMainThread) {
+      visualScrollOffsetUpdated = false;
+    }
 
     Maybe<CSSPoint> relativeDelta;
 
