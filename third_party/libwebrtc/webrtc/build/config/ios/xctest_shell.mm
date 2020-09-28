@@ -1,0 +1,19 @@
+
+
+
+
+#import <UIKit/UIKit.h>
+#import <XCTest/XCTest.h>
+
+
+
+
+
+
+
+
+@interface XCTestShellEmptyClass : NSObject
+@end
+
+@implementation XCTestShellEmptyClass
+@end
