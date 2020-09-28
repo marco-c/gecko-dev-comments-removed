@@ -237,3 +237,22 @@ async function waitForEvents(events, message, ordered = false) {
 function waitForOrderedEvents(events, message) {
   return waitForEvents(events, message, true);
 }
+
+
+
+
+
+
+
+
+
+
+
+function selectAllTextAndFocus(id) {
+  const elem = getNode(id);
+  if (elem.editor) {
+    elem.selectionStart = elem.selectionEnd = elem.value.length;
+  }
+
+  elem.focus();
+}
