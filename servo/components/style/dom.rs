@@ -591,7 +591,28 @@ pub trait TElement:
             
             
             
-            return data.has_styles() && !data.hint.has_animation_hint_or_recascade();
+            if !data.has_styles() {
+                return false;
+            }
+
+            if !data.hint.has_animation_hint_or_recascade() {
+                return true;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if data.styles.is_display_none() && data.hint.match_self() {
+                return true;
+            }
+
+            return false;
         }
 
         if self.has_snapshot() && !self.handled_snapshot() {
