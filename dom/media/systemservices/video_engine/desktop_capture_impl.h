@@ -219,6 +219,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
       [kFrameRateCountHistorySize];  
   VideoRotation _rotateFrame;  
                                
+  std::atomic<uint32_t> _maxFPSNeeded;
 
   
   int64_t last_capture_time_;
