@@ -42,7 +42,7 @@ interface nsIPrintSettings : nsISupports
   const unsigned long kInitSaveResolution     = 0x00000400;
   const unsigned long kInitSaveDuplex         = 0x00000800;
   
-  const unsigned long kInitSavePaperData      = 0x00002000;
+  
   const unsigned long kInitSaveUnwriteableMargins = 0x00004000;
   const unsigned long kInitSaveEdges          = 0x00008000;
 
@@ -202,7 +202,6 @@ interface nsIPrintSettings : nsISupports
 
   
   attribute AString paperName;     
-  attribute short   paperData;     
   attribute double  paperWidth;    
   attribute double  paperHeight;   
   attribute short   paperSizeUnit; 
