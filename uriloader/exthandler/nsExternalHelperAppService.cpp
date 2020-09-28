@@ -1710,6 +1710,13 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
+  if (mSourceUrl->SchemeIs("data")) {
+    
+    
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    loadInfo->SetForceAllowDataURI(true);
+  }
+
   
   
 

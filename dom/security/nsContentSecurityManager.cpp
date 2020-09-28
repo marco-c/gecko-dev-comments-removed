@@ -38,6 +38,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryComms.h"
 #include "xpcpublic.h"
+#include "nsMimeTypes.h"
 
 #include "jsapi.h"
 #include "js/RegExp.h"
@@ -97,8 +98,9 @@ bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
     return true;
   }
   
-  if (nsContentUtils::IsPlainTextType(contentType) ||
-      contentType.EqualsLiteral("application/pdf")) {
+  if (contentType.EqualsLiteral(APPLICATION_JSON) ||
+      contentType.EqualsLiteral(TEXT_JSON) ||
+      contentType.EqualsLiteral(APPLICATION_PDF)) {
     return true;
   }
   
