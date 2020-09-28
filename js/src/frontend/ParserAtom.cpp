@@ -151,6 +151,14 @@ JS::Result<JSAtom*, OOM&> ParserAtomEntry::toJSAtom(
   if (atomIndex_.is<WellKnownAtomId>()) {
     return GetWellKnownAtom(cx, atomIndex_.as<WellKnownAtomId>());
   }
+  if (atomIndex_.is<StaticParserString1>()) {
+    char16_t ch = static_cast<char16_t>(atomIndex_.as<StaticParserString1>());
+    return cx->staticStrings().getUnit(ch);
+  }
+  if (atomIndex_.is<StaticParserString2>()) {
+    size_t index = static_cast<size_t>(atomIndex_.as<StaticParserString2>());
+    return cx->staticStrings().getLength2FromIndex(index);
+  }
 
   JSAtom* atom;
   if (hasLatin1Chars()) {
@@ -190,6 +198,27 @@ ParserAtomsTable::ParserAtomsTable(JSRuntime* rt)
 template <typename CharT>
 ParserAtomsTable::AddPtr ParserAtomsTable::lookupForAdd(
     JSContext* cx, InflatedChar16Sequence<CharT> seq) {
+#ifdef DEBUG
+  {
+    
+    constexpr int SAMPLE_LEN = 3;
+    char16_t buf[SAMPLE_LEN];
+    uint32_t len = 0;
+
+    InflatedChar16Sequence<CharT> seqCopy = seq;
+
+    for (int i = 0; i < SAMPLE_LEN; ++i) {
+      if (!seqCopy.hasMore()) {
+        break;
+      }
+      buf[len++] = seqCopy.next();
+    }
+
+    MOZ_ASSERT(wellKnownTable_.lookupTiny(buf, len) == nullptr,
+               "Should have already checked for common tiny atoms");
+  }
+#endif
+
   
   SpecificParserAtomLookup<CharT> lookup(seq);
   const ParserAtom* wk = wellKnownTable_.lookupChar16Seq(lookup);
@@ -274,6 +303,11 @@ JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::internAscii(
 JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::internLatin1(
     JSContext* cx, const Latin1Char* latin1Ptr, uint32_t length) {
   
+  if (const ParserAtom* tiny = wellKnownTable_.lookupTiny(latin1Ptr, length)) {
+    return tiny;
+  }
+
+  
   InflatedChar16Sequence<Latin1Char> seq(latin1Ptr, length);
   AddPtr addPtr = lookupForAdd(cx, seq);
   if (addPtr) {
@@ -285,6 +319,14 @@ JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::internLatin1(
 
 JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::internUtf8(
     JSContext* cx, const mozilla::Utf8Unit* utf8Ptr, uint32_t nbyte) {
+  
+  
+  
+  if (const ParserAtom* tiny = wellKnownTable_.lookupTiny(
+          reinterpret_cast<const Latin1Char*>(utf8Ptr), nbyte)) {
+    return tiny;
+  }
+
   
   
   
@@ -324,6 +366,11 @@ JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::internUtf8(
 
 JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::internChar16(
     JSContext* cx, const char16_t* char16Ptr, uint32_t length) {
+  
+  if (const ParserAtom* tiny = wellKnownTable_.lookupTiny(char16Ptr, length)) {
+    return tiny;
+  }
+
   InflatedChar16Sequence<char16_t> seq(char16Ptr, length);
 
   
@@ -378,7 +425,7 @@ JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::internJSAtom(
     if (id->atomIndex_.is<AtomIndex>()) {
       MOZ_ASSERT(compilationInfo.input.atoms[id->atomIndex_.as<AtomIndex>()] ==
                  atom);
-    } else {
+    } else if (id->atomIndex_.is<WellKnownAtomId>()) {
       MOZ_ASSERT(GetWellKnownAtom(cx, id->atomIndex_.as<WellKnownAtomId>()) ==
                  atom);
     }
@@ -436,6 +483,7 @@ JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::concatAtoms(
     InflatedChar16Sequence<Latin1Char> seq(copy.get(), catLen);
 
     
+    
     AddPtr addPtr = lookupForAdd(cx, seq);
     if (addPtr) {
       return addPtr.get()->asAtom();
@@ -458,6 +506,7 @@ JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::concatAtoms(
 
     InflatedChar16Sequence<char16_t> seq(buf, catLen);
 
+    
     
     AddPtr addPtr = lookupForAdd(cx, seq);
     if (addPtr) {
@@ -484,6 +533,7 @@ JS::Result<const ParserAtom*, OOM&> ParserAtomsTable::concatAtoms(
 
   InflatedChar16Sequence<char16_t> seq(copy.get(), catLen);
 
+  
   
   AddPtr addPtr = lookupForAdd(cx, seq);
   if (addPtr) {
@@ -515,6 +565,14 @@ bool WellKnownParserAtoms::initSingle(JSContext* cx, const ParserName** name,
 
   MOZ_ASSERT(FindSmallestEncoding(UTF8Chars(str, len)) ==
              JS::SmallestEncoding::ASCII);
+
+  
+  
+  if (const ParserAtom* tiny = lookupTiny(str, len)) {
+    MOZ_ASSERT(len == 1 || len == 2);
+    *name = tiny->asName();
+    return true;
+  }
 
   InflatedChar16Sequence<Latin1Char> seq(
       reinterpret_cast<const Latin1Char*>(str), len);
@@ -558,7 +616,65 @@ bool WellKnownParserAtoms::initSingle(JSContext* cx, const ParserName** name,
   return true;
 }
 
+bool WellKnownParserAtoms::initStaticStrings(JSContext* cx) {
+  
+  static_assert(WellKnownParserAtoms::ASCII_STATIC_LIMIT <=
+                StaticStrings::UNIT_STATIC_LIMIT);
+  constexpr size_t NUM_LENGTH1 = WellKnownParserAtoms::ASCII_STATIC_LIMIT;
+  for (size_t i = 0; i < NUM_LENGTH1; ++i) {
+    JS::AutoCheckCannotGC nogc;
+    JSAtom* atom = cx->staticStrings().getUnit(char16_t(i));
+
+    constexpr size_t len = 1;
+    MOZ_ASSERT(atom->length() == len);
+
+    InflatedChar16Sequence<Latin1Char> seq(atom->latin1Chars(nogc), len);
+    SpecificParserAtomLookup<Latin1Char> lookup(seq);
+    HashNumber hash = lookup.hash();
+
+    auto maybeEntry =
+        ParserAtomEntry::allocateInline<Latin1Char>(cx, seq, len, hash);
+    if (maybeEntry.isErr()) {
+      return false;
+    }
+
+    length1StaticTable_[i] = maybeEntry.unwrap().release()->asAtom();
+    length1StaticTable_[i]->setStaticParserString1(StaticParserString1(i));
+  }
+
+  
+  constexpr size_t NUM_LENGTH2 = NUM_SMALL_CHARS * NUM_SMALL_CHARS;
+  for (size_t i = 0; i < NUM_LENGTH2; ++i) {
+    JS::AutoCheckCannotGC nogc;
+    JSAtom* atom = cx->staticStrings().getLength2FromIndex(i);
+
+    constexpr size_t len = 2;
+    MOZ_ASSERT(atom->length() == len);
+
+    InflatedChar16Sequence<Latin1Char> seq(atom->latin1Chars(nogc), len);
+    SpecificParserAtomLookup<Latin1Char> lookup(seq);
+    HashNumber hash = lookup.hash();
+
+    auto maybeEntry =
+        ParserAtomEntry::allocateInline<Latin1Char>(cx, seq, len, hash);
+    if (maybeEntry.isErr()) {
+      return false;
+    }
+
+    length2StaticTable_[i] = maybeEntry.unwrap().release()->asAtom();
+    length2StaticTable_[i]->setStaticParserString2(StaticParserString2(i));
+  }
+
+  return true;
+}
+
 bool WellKnownParserAtoms::init(JSContext* cx) {
+  
+  
+  if (!initStaticStrings(cx)) {
+    return false;
+  }
+
 #define COMMON_NAME_INIT_(idpart, id, text)                \
   if (!initSingle(cx, &(id), text, WellKnownAtomId::id)) { \
     return false;                                          \
