@@ -865,7 +865,12 @@ class EditorBase : public nsIEditor,
 
 
 
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MaybeDispatchBeforeInputEvent();
+
+
+
+
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MaybeDispatchBeforeInputEvent(
+        nsIEditor::EDirection aDeleteDirectionAndAmount = nsIEditor::eNone);
 
     
 
@@ -1878,6 +1883,16 @@ class EditorBase : public nsIEditor,
 
 
   void UndefineCaretBidiLevel() const;
+
+  
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT bool
+  FlushPendingNotificationsIfToHandleDeletionWithFrameSelection(
+      nsIEditor::EDirection aDirectionAndAmount) const;
 
   
 
