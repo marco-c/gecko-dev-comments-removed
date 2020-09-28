@@ -405,18 +405,6 @@ union FTPChannelCreationArgs
   FTPChannelConnectArgs;   
 };
 
-struct HttpChannelDiverterArgs
-{
-  PHttpChannel mChannel;
-  bool mApplyConversion;
-};
-
-union ChannelDiverterArgs
-{
-  HttpChannelDiverterArgs;
-  PFTPChannel;
-};
-
 struct CookieStruct
 {
   nsCString name;

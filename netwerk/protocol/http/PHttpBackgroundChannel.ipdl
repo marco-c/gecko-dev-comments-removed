@@ -58,13 +58,6 @@ child:
   async OnAfterLastPart(nsresult aStatus);
 
   
-  async FlushedForDiversion();
-
-  
-  
-  async DivertMessages();
-
-  
   async NotifyClassificationFlags(uint32_t aClassificationFlags, bool aIsThirdParty);
 
   

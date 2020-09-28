@@ -30,17 +30,6 @@ parent:
   async Suspend();
   async Resume();
 
-  
-  async DivertOnDataAvailable(nsCString data,
-                              uint64_t  offset,
-                              uint32_t  count);
-
-  
-  async DivertOnStopRequest(nsresult statusCode);
-
-  
-  async DivertComplete();
-
 child:
   async OnStartRequest(nsresult aChannelStatus,
                        int64_t aContentLength,
@@ -56,13 +45,6 @@ child:
                       nsCString aErrorMsg,
                       bool aUseUTF8);
   async FailedAsyncOpen(nsresult statusCode);
-
-  
-  async FlushedForDiversion();
-
-  
-  
-  async DivertMessages();
 
   async DeleteSelf();
 };
