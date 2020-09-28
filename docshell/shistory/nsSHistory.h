@@ -174,6 +174,13 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
     mRootBC = aRootBC;
   }
 
+  int32_t GetIndexForReplace() {
+    
+    
+    
+    return mRequestedIndex == -1 ? mIndex : mRequestedIndex;
+  }
+
  protected:
   virtual ~nsSHistory();
 
