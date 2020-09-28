@@ -55,10 +55,6 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
 
     
     
-    Finishing,
-
-    
-    
     Finished
   };
 
@@ -139,15 +135,6 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
   
   virtual void run(AutoLockHelperThreadState& lock) = 0;
 
-  
-  
-  void setFinishing(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(isIdle(lock) || isRunning(lock));
-    if (isRunning(lock)) {
-      state_ = State::Finishing;
-    }
-  }
-
  private:
   void assertIdle() const {
     
@@ -156,9 +143,6 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
   }
   bool isRunning(const AutoLockHelperThreadState& lock) const {
     return state_ == State::Running;
-  }
-  bool isFinishing(const AutoLockHelperThreadState& lock) const {
-    return state_ == State::Finishing;
   }
   bool isFinished(const AutoLockHelperThreadState& lock) const {
     return state_ == State::Finished;
@@ -173,7 +157,7 @@ class GCParallelTask : public mozilla::LinkedListElement<GCParallelTask>,
     state_ = State::Running;
   }
   void setFinished(const AutoLockHelperThreadState& lock) {
-    MOZ_ASSERT(isRunning(lock) || isFinishing(lock));
+    MOZ_ASSERT(isRunning(lock));
     state_ = State::Finished;
   }
   void setIdle(const AutoLockHelperThreadState& lock) {

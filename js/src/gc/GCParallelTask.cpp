@@ -85,7 +85,7 @@ void js::GCParallelTask::joinWithLockHeld(AutoLockHelperThreadState& lock) {
 
 void js::GCParallelTask::joinRunningOrFinishedTask(
     AutoLockHelperThreadState& lock) {
-  MOZ_ASSERT(isRunning(lock) || isFinishing(lock) || isFinished(lock));
+  MOZ_ASSERT(isRunning(lock) || isFinished(lock));
 
   
   while (!isFinished(lock)) {

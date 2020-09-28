@@ -3306,21 +3306,20 @@ void js::gc::BackgroundDecommitTask::run(AutoLockHelperThreadState& lock) {
 
     ChunkPool emptyChunksToFree;
     {
-      AutoLockGC lock(gc);
+      AutoLockGC gcLock(gc);
 
       
       
-      gc->availableChunks(lock).sort();
+      gc->availableChunks(gcLock).sort();
 
-      gc->decommitFreeArenas(cancel_, lock);
+      gc->decommitFreeArenas(cancel_, gcLock);
 
-      emptyChunksToFree = gc->expireEmptyChunkPool(lock);
+      emptyChunksToFree = gc->expireEmptyChunkPool(gcLock);
     }
 
     FreeChunkPool(emptyChunksToFree);
   }
 
-  setFinishing(lock);
   gc->maybeRequestGCAfterBackgroundTask(lock);
 }
 
@@ -3474,10 +3473,6 @@ void BackgroundSweepTask::run(AutoLockHelperThreadState& lock) {
                            TraceLogger_GCSweeping);
 
   gc->sweepFromBackgroundThread(lock);
-
-  
-  
-  setFinishing(lock);
 }
 
 void GCRuntime::sweepFromBackgroundThread(AutoLockHelperThreadState& lock) {
@@ -3542,10 +3537,6 @@ void BackgroundFreeTask::run(AutoLockHelperThreadState& lock) {
   AutoTraceLog logFreeing(TraceLoggerForCurrentThread(), TraceLogger_GCFree);
 
   gc->freeFromBackgroundThread(lock);
-
-  
-  
-  setFinishing(lock);
 }
 
 void GCRuntime::freeFromBackgroundThread(AutoLockHelperThreadState& lock) {
