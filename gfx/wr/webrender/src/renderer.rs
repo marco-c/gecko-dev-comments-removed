@@ -4512,6 +4512,8 @@ impl Renderer {
             render_tasks,
             stats,
         );
+
+        self.device.invalidate_depth_target();
     }
 
     
@@ -5408,6 +5410,10 @@ impl Renderer {
                 render_tasks,
                 stats,
             );
+        }
+
+        if clear_depth.is_some() {
+            self.device.invalidate_depth_target();
         }
     }
 

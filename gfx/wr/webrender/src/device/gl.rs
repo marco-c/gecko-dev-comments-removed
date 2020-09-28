@@ -2396,9 +2396,6 @@ impl Device {
 
     
     
-    
-    
-    
     pub fn invalidate_render_target(&mut self, texture: &Texture) {
         let (fbos, attachments) = if texture.supports_depth() {
             (&texture.fbos_with_depth,
@@ -2416,6 +2413,16 @@ impl Device {
             self.gl.invalidate_framebuffer(gl::FRAMEBUFFER, attachments);
         }
         self.bind_external_draw_target(original_bound_fbo);
+    }
+
+    
+    
+    
+    
+    
+    pub fn invalidate_depth_target(&mut self) {
+        assert!(self.depth_available);
+        self.gl.invalidate_framebuffer(gl::DRAW_FRAMEBUFFER, &[gl::DEPTH_ATTACHMENT]);
     }
 
     
