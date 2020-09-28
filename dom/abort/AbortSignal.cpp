@@ -27,11 +27,7 @@ void AbortSignalImpl::Abort() {
   mAborted = true;
 
   
-  
-  RefPtr<AbortSignalImpl> pinThis = this;
-
-  
-  for (AbortFollower* follower : mFollowers.ForwardRange()) {
+  for (RefPtr<AbortFollower> follower : mFollowers.ForwardRange()) {
     follower->Abort();
   }
 }
