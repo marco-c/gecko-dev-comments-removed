@@ -251,6 +251,14 @@ JSObject* AudioContext::WrapObject(JSContext* aCx,
   }
 }
 
+static bool CheckFullyActive(nsPIDOMWindowInner* aWindow, ErrorResult& aRv) {
+  if (!aWindow->IsFullyActive()) {
+    aRv.ThrowInvalidStateError("The document is not fully active.");
+    return false;
+  }
+  return true;
+}
+
 
 already_AddRefed<AudioContext> AudioContext::Constructor(
     const GlobalObject& aGlobal, const AudioContextOptions& aOptions,
@@ -261,6 +269,14 @@ already_AddRefed<AudioContext> AudioContext::Constructor(
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
+  
+
+
+
+  if (!CheckFullyActive(window, aRv)) {
+    return nullptr;
+  }
+
   if (aOptions.mSampleRate.WasPassed() &&
       (aOptions.mSampleRate.Value() < WebAudioUtils::MinSampleRate ||
        aOptions.mSampleRate.Value() > WebAudioUtils::MaxSampleRate)) {
@@ -302,6 +318,13 @@ already_AddRefed<AudioContext> AudioContext::Constructor(
       do_QueryInterface(aGlobal.GetAsSupports());
   if (!window) {
     aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+  
+
+
+
+  if (!CheckFullyActive(window, aRv)) {
     return nullptr;
   }
 
