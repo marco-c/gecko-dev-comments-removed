@@ -1944,6 +1944,12 @@ class SpecialPowersChild extends JSWindowActorChild {
     return debugsvc.assertionCount;
   }
 
+  
+
+
+
+
+
   _getPrincipalFromArg(arg) {
     let principal;
     let secMan = Services.scriptSecurityManager;
@@ -1991,6 +1997,13 @@ class SpecialPowersChild extends JSWindowActorChild {
 
     await this.sendQuery("SPPermissionManager", msg);
   }
+
+  
+
+
+
+
+
 
   async removePermission(type, arg) {
     let principal = this._getPrincipalFromArg(arg);
