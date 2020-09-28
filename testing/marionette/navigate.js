@@ -192,6 +192,7 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
 
   
   if (!loadEventExpected || pageLoadStrategy === PageLoadStrategy.None) {
+    await callback();
     return Promise.resolve();
   }
 
