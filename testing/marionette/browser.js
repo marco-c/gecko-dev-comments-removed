@@ -315,13 +315,15 @@ browser.Context = class {
         
         
         
-        let win = this.window.OpenBrowserWindow({ private: isPrivate });
+        const win = this.window.OpenBrowserWindow({ private: isPrivate });
 
-        let activated = waitForEvent(win, "activate");
-        let focused = waitForEvent(win, "focus", { capture: true });
-        let startup = waitForObserverTopic(
+        const activated = waitForEvent(win, "activate");
+        const focused = waitForEvent(win, "focus", { capture: true });
+        const startup = waitForObserverTopic(
           "browser-delayed-startup-finished",
-          subject => subject == win
+          {
+            checkFn: subject => subject == win,
+          }
         );
 
         win.focus();
