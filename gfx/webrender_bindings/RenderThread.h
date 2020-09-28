@@ -177,6 +177,9 @@ class RenderThread final {
   void WakeUp(wr::WindowId aWindowId);
 
   
+  void SetClearColor(wr::WindowId aWindowId, wr::ColorF aColor);
+
+  
   void PipelineSizeChanged(wr::WindowId aWindowId, uint64_t aPipelineId,
                            float aWidth, float aHeight);
 
