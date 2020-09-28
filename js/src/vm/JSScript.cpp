@@ -1011,19 +1011,6 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
 
     MOZ_ASSERT_IF(isFunctionScript, script->function() == funOrMod);
 
-    if (!isFunctionScript && script->treatAsRunOnce() && script->hasRunOnce()) {
-      
-      
-      
-      
-      
-      Realm* realm = cx->realm();
-      if (!realm->creationOptions().cloneSingletons() ||
-          !realm->behaviors().getSingletonsAsTemplates()) {
-        return xdr->fail(JS::TranscodeResult_Failure_RunOnceNotSupported);
-      }
-    }
-
     if (!sourceObjectArg) {
       xdrFlags |= OwnSource;
     }

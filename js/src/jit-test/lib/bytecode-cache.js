@@ -11,11 +11,13 @@ function evalWithCache(code, ctx) {
 
   
   if (!("global" in ctx))
-      ctx.global = newGlobal({cloneSingletons: !incremental,
-                              newCompartment: ctx.newCompartment});
+      ctx.global = newGlobal({newCompartment: ctx.newCompartment});
 
+  
+  
+  
   if (!("isRunOnce" in ctx))
-    ctx.isRunOnce = true;
+    ctx.isRunOnce = incremental;
 
   var ctx_save;
   if (incremental)
