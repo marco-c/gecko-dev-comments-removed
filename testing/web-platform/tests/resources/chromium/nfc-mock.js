@@ -118,33 +118,6 @@ function assertNDEFReaderOptionsEqual(provided, received) {
   }
 }
 
-
-function matchesWatchOptions(message, options) {
-  
-  
-  
-  if (message.records.length == 0)
-    return true;
-
-  for (let record of message.records) {
-    if (options.id != null && options.id !== record.id) {
-      continue;
-    }
-    if (options.recordType != null &&
-        options.recordType !== record.recordType) {
-      continue;
-    }
-    if (options.mediaType != null && options.mediaType !== record.mediaType) {
-      continue;
-    }
-
-    
-    return true;
-  }
-
-  return false;
-}
-
 function createNDEFError(type) {
   return {
     error: type != null ?
@@ -220,23 +193,21 @@ var WebNFCTest = (() => {
       this.client_ = client;
     }
 
-    async watch(options, id) {
+    async watch(id) {
       assert_true(id > 0);
       let error = this.getHWError();
       if (error) {
         return error;
       }
 
-      this.watchers_.push({id: id, options: options});
+      this.watchers_.push({id: id});
       
       
       if (!this.operations_suspended_) {
         
         for (let message of this.reading_messages_) {
-          if (matchesWatchOptions(message, options)) {
-            this.client_.onWatch(
-                [id], fake_tag_serial_number, toMojoNDEFMessage(message));
-          }
+          this.client_.onWatch(
+              [id], fake_tag_serial_number, toMojoNDEFMessage(message));
         }
       }
 
@@ -325,11 +296,9 @@ var WebNFCTest = (() => {
         return;
       
       for (let watcher of this.watchers_) {
-        if (matchesWatchOptions(message, watcher.options)) {
-          this.client_.onWatch(
-              [watcher.id], fake_tag_serial_number,
-              toMojoNDEFMessage(message));
-        }
+        this.client_.onWatch(
+            [watcher.id], fake_tag_serial_number,
+            toMojoNDEFMessage(message));
       }
     }
 
@@ -345,11 +314,9 @@ var WebNFCTest = (() => {
       
       for (let watcher of this.watchers_) {
         for (let message of this.reading_messages_) {
-          if (matchesWatchOptions(message, watcher.options)) {
-            this.client_.onWatch(
-                [watcher.id], fake_tag_serial_number,
-                toMojoNDEFMessage(message));
-          }
+          this.client_.onWatch(
+              [watcher.id], fake_tag_serial_number,
+              toMojoNDEFMessage(message));
         }
       }
       
