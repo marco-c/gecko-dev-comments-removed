@@ -111,58 +111,93 @@ impl TileCacheBuilder {
         let requires_own_slice = is_scrollbar_container || is_clear_prim;
 
         
-        let mut want_new_tile_cache = self.need_new_tile_cache || requires_own_slice;
+        let scroll_root = self.find_scroll_root(spatial_node_index, spatial_tree);
 
         
-        let scroll_root = self.find_scroll_root(spatial_node_index, spatial_tree);
+        let mut want_new_tile_cache =
+            self.need_new_tile_cache ||
+            requires_own_slice ||
+            self.pending_tile_caches.is_empty();
+
         let current_scroll_root = self.pending_tile_caches
             .last()
-            .map(|p| p.params.spatial_node_index)
-            .unwrap_or(ROOT_SPATIAL_NODE_INDEX);
+            .map(|p| p.params.spatial_node_index);
 
-        want_new_tile_cache |= match (current_scroll_root, scroll_root) {
-            (ROOT_SPATIAL_NODE_INDEX, ROOT_SPATIAL_NODE_INDEX) => {
-                
-                false
-            }
-            (ROOT_SPATIAL_NODE_INDEX, _) => {
-                
-                true
-            }
-            (_, ROOT_SPATIAL_NODE_INDEX) => {
-                
-                
-                if quality_settings.force_subpixel_aa_where_possible {
+        if let Some(current_scroll_root) = current_scroll_root {
+            want_new_tile_cache |= match (current_scroll_root, scroll_root) {
+                (ROOT_SPATIAL_NODE_INDEX, ROOT_SPATIAL_NODE_INDEX) => {
+                    
                     false
-                } else {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let mut create_slice = true;
-                    let mut current_clip_chain_id = prim_instance.clip_set.clip_chain_id;
-
-                    while current_clip_chain_id != ClipChainId::NONE {
-                        let clip_chain_node = &clip_store.clip_chain_nodes[current_clip_chain_id.0 as usize];
-                        let spatial_root = self.find_scroll_root(clip_chain_node.spatial_node_index, spatial_tree);
-                        if spatial_root != ROOT_SPATIAL_NODE_INDEX {
-                            create_slice = false;
-                            break;
-                        }
-                        current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
-                    }
-
-                    create_slice
                 }
-            }
-            (curr_scroll_root, scroll_root) => {
+                (ROOT_SPATIAL_NODE_INDEX, _) => {
+                    
+                    true
+                }
+                (_, ROOT_SPATIAL_NODE_INDEX) => {
+                    
+                    
+                    if quality_settings.force_subpixel_aa_where_possible {
+                        false
+                    } else {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        let mut create_slice = true;
+                        let mut current_clip_chain_id = prim_instance.clip_set.clip_chain_id;
+
+                        while current_clip_chain_id != ClipChainId::NONE {
+                            let clip_chain_node = &clip_store.clip_chain_nodes[current_clip_chain_id.0 as usize];
+                            let spatial_root = self.find_scroll_root(clip_chain_node.spatial_node_index, spatial_tree);
+                            if spatial_root != ROOT_SPATIAL_NODE_INDEX {
+                                create_slice = false;
+                                break;
+                            }
+                            current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
+                        }
+
+                        create_slice
+                    }
+                }
+                (curr_scroll_root, scroll_root) => {
+                    
+                    curr_scroll_root != scroll_root
+                }
+            };
+
+            
+            
+            if self.last_checked_clip_chain != prim_instance.clip_set.clip_chain_id {
+                let prim_clips_buffer = &mut self.prim_clips_buffer;
+                prim_clips_buffer.clear();
+                add_clips(
+                    current_scroll_root,
+                    prim_instance.clip_set.clip_chain_id,
+                    prim_clips_buffer,
+                    clip_store,
+                    interners,
+                    spatial_tree,
+                );
+
+                let current_shared_clips = &self.pending_tile_caches
+                    .last()
+                    .unwrap()
+                    .params
+                    .shared_clips;
+
                 
-                curr_scroll_root != scroll_root
+                
+                
+                
+                
+                want_new_tile_cache |= current_shared_clips != prim_clips_buffer;
+
+                self.last_checked_clip_chain = prim_instance.clip_set.clip_chain_id;
             }
-        };
+        }
 
         if want_new_tile_cache {
             
@@ -241,39 +276,16 @@ impl TileCacheBuilder {
             }
         }
 
-        let pending_tile_cache = self.pending_tile_caches.last_mut().unwrap();
-
-        
-        
-        if self.last_checked_clip_chain != prim_instance.clip_set.clip_chain_id {
-            let prim_clips_buffer = &mut self.prim_clips_buffer;
-            prim_clips_buffer.clear();
-            add_clips(
-                pending_tile_cache.params.spatial_node_index,
-                prim_instance.clip_set.clip_chain_id,
-                prim_clips_buffer,
-                clip_store,
-                interners,
-                spatial_tree,
+        self.pending_tile_caches
+            .last_mut()
+            .unwrap()
+            .prim_list
+            .add_prim(
+                prim_instance,
+                prim_rect,
+                spatial_node_index,
+                prim_flags,
             );
-
-            pending_tile_cache.params.shared_clips.retain(|h1: &ClipInstance| {
-                let uid = h1.handle.uid();
-                prim_clips_buffer.iter().any(|h2| {
-                    uid == h2.handle.uid() &&
-                    h1.spatial_node_index == h2.spatial_node_index
-                })
-            });
-
-            self.last_checked_clip_chain = prim_instance.clip_set.clip_chain_id;
-        }
-
-        pending_tile_cache.prim_list.add_prim(
-            prim_instance,
-            prim_rect,
-            spatial_node_index,
-            prim_flags,
-        );
     }
 
     
