@@ -18,9 +18,17 @@ const TEST_QUERY = "test";
 const SUGGEST_PREF = "browser.search.suggest.enabled";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
   SearchTelemetry: "resource:///modules/SearchTelemetry.jsm",
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.jsm",
 });
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "TouchBarHelper",
+  "@mozilla.org/widget/touchbarhelper;1",
+  "nsITouchBarHelper"
+);
 
 
 
@@ -397,4 +405,25 @@ add_task(async function test_handoff_pbm() {
   await UrlbarTestUtils.exitSearchMode(win);
   await UrlbarTestUtils.promisePopupClose(win);
   await BrowserTestUtils.closeWindow(win);
+});
+
+
+add_task(async function test_touchbar() {
+  if (AppConstants.platform != "macosx") {
+    return;
+  }
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: TEST_QUERY,
+  });
+  
+  
+  TouchBarHelper.insertRestrictionInUrlbar(UrlbarTokenizer.RESTRICT.HISTORY);
+  await UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    entry: "touchbar",
+  });
+  assertSearchModeScalar("touchbar", "history");
+  await UrlbarTestUtils.exitSearchMode(window);
 });
