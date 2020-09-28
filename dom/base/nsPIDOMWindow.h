@@ -142,6 +142,11 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   inline bool HasActiveDocument();
 
   
+  
+  
+  bool IsFullyActive() const;
+
+  
   inline bool IsTopInnerWindow() const;
 
   
