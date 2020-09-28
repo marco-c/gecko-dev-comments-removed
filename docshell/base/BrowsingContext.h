@@ -150,7 +150,8 @@ class WindowProxyHolder;
    * the value from the top BC! */                                           \
   FIELD(HasSessionHistory, bool)                                             \
   FIELD(UseErrorPages, bool)                                                 \
-  FIELD(PlatformOverride, nsString)
+  FIELD(PlatformOverride, nsString)                                          \
+  FIELD(HasLoadedNonInitialDocument, bool)
 
 
 
