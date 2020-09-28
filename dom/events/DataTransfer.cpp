@@ -1540,12 +1540,5 @@ void DataTransfer::SetMode(DataTransfer::Mode aMode) {
   }
 }
 
-
-bool DataTransfer::MozAtAPIsEnabled(JSContext* aCx, JSObject* aObj ) {
-  
-  return nsContentUtils::IsSystemCaller(aCx) ||
-         StaticPrefs::dom_datatransfer_mozAtAPIs_DoNotUseDirectly();
-}
-
 }  
 }  

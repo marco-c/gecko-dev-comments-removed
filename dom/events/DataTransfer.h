@@ -395,12 +395,6 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
                                              bool aPlainTextOnly,
                                              nsTArray<nsCString>* aResult);
 
-  
-  
-  
-  
-  static bool MozAtAPIsEnabled(JSContext* cx, JSObject* obj);
-
  protected:
   
   
