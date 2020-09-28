@@ -680,7 +680,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "MediaList", insecureContext: true },
   
-  { name: "MediaMetadata", insecureContext: true, nightly: true },
+  { name: "MediaMetadata", insecureContext: true },
   
   { name: "MediaQueryList", insecureContext: true },
   
@@ -690,7 +690,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "MediaRecorderErrorEvent", insecureContext: true },
   
-  { name: "MediaSession", insecureContext: true, nightly: true },
+  { name: "MediaSession", insecureContext: true },
   
   { name: "MediaSource", insecureContext: true },
   
