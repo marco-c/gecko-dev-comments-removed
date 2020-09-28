@@ -552,7 +552,9 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
   uint32_t hyperTextOffset = DOMPointToOffset(
       pos.mResultContent, pos.mContentOffset, aDirection == eDirNext);
 
-  if (fallBackToSelectEndLine && IsLineEndCharAt(hyperTextOffset)) {
+  if ((fallBackToSelectEndLine || aAmount == eSelectParagraph) &&
+      IsLineEndCharAt(hyperTextOffset)) {
+    
     
     
     
@@ -785,6 +787,30 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
     case nsIAccessibleText::BOUNDARY_PARAGRAPH: {
       if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
         adjustedOffset = AdjustCaretOffset(adjustedOffset);
+      }
+
+      if (IsLineEndCharAt(adjustedOffset)) {
+        
+        
+        
+        
+        
+        
+        if (adjustedOffset == 0 || IsLineEndCharAt(adjustedOffset - 1)) {
+          
+          
+          
+          
+          
+          *aStartOffset = adjustedOffset;
+          *aEndOffset = adjustedOffset + 1;
+          TextSubstring(*aStartOffset, *aEndOffset, aText);
+          break;
+        }
+
+        
+        
+        adjustedOffset--;
       }
 
       *aStartOffset =
