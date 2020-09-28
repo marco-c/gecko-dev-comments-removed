@@ -7,6 +7,7 @@
 #define widget_gtk_GtkCompositorWidget_h
 
 #include "GLDefs.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "WindowSurfaceProvider.h"
 
@@ -76,7 +77,13 @@ class GtkCompositorWidget : public CompositorWidget,
   nsWindow* mWidget;
 
  private:
-  LayoutDeviceIntSize mClientSize;
+  
+  
+  
+  
+  
+  
+  DataMutex<LayoutDeviceIntSize> mClientSize;
 
   WindowSurfaceProvider mProvider;
 
