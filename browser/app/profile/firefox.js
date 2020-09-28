@@ -34,6 +34,8 @@ pref("extensions.checkCompatibility.temporaryThemeOverride_minAppVersion", "29.0
 pref("extensions.webextPermissionPrompts", true);
 pref("extensions.webextOptionalPermissionPrompts", true);
 
+pref("extensions.postDownloadThirdPartyPrompt", true);
+
 
 pref("extensions.getAddons.cache.enabled", true);
 pref("extensions.getAddons.get.url", "https://services.addons.mozilla.org/api/v3/addons/search/?guid=%IDS%&lang=%LOCALE%");
