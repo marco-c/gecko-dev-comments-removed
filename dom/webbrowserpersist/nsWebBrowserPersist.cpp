@@ -2314,6 +2314,12 @@ void nsWebBrowserPersist::FinishDownload() {
 void nsWebBrowserPersist::EndDownload(nsresult aResult) {
   MOZ_ASSERT(NS_IsMainThread(), "Should end download on the main thread.");
 
+  if (mCancel && mEndCalled) {
+    
+    
+    return;
+  }
+
   MOZ_DIAGNOSTIC_ASSERT(!mEndCalled, "Should only end the download once.");
   
   
