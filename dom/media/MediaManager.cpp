@@ -2219,6 +2219,10 @@ void MediaManager::DeviceListChanged() {
 
   
   
+  
+  
+  
+  
 
   if (mDeviceChangeTimer) {
     mDeviceChangeTimer->Cancel();
@@ -2255,18 +2259,18 @@ void MediaManager::DeviceListChanged() {
               return;
             }
 
-            nsTArray<nsString> deviceIDs;
+            MediaManager::DeviceIdSet deviceIDs;
             for (auto& device : *devices) {
               nsString id;
               device->GetId(id);
-              if (!deviceIDs.Contains(id)) {
-                deviceIDs.AppendElement(id);
-              }
+              MOZ_ALWAYS_TRUE(deviceIDs.put(std::move(id)));
             }
             
             
-            for (auto& id : mDeviceIDs) {
-              if (deviceIDs.Contains(id)) {
+            
+            for (auto iter = mDeviceIDs.iter(); !iter.done(); iter.next()) {
+              const auto& id = iter.get();
+              if (deviceIDs.has(id)) {
                 
                 continue;
               }
@@ -3127,7 +3131,8 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateDevicesImpl(
           })
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [aWindowId, originKey, aOutDevices](bool) {
+          [aWindowId, originKey, aVideoInputEnumType, aAudioInputEnumType,
+           aOutDevices](bool) {
             
             MediaManager* mgr = MediaManager::GetIfExists();
             if (!mgr || !mgr->IsWindowStillActive(aWindowId)) {
@@ -3136,12 +3141,17 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateDevicesImpl(
                   __func__);
             }
 
-            mgr->mDeviceIDs.Clear();
             for (auto& device : *aOutDevices) {
-              nsString id;
-              device->GetId(id);
-              if (!mgr->mDeviceIDs.Contains(id)) {
-                mgr->mDeviceIDs.AppendElement(id);
+              if (device->mKind == MediaDeviceKind::Audiooutput ||
+                  (device->mKind == MediaDeviceKind::Audioinput &&
+                   aAudioInputEnumType != DeviceEnumerationType::Fake &&
+                   device->GetMediaSource() == MediaSourceEnum::Microphone) ||
+                  (device->mKind == MediaDeviceKind::Videoinput &&
+                   aVideoInputEnumType != DeviceEnumerationType::Fake &&
+                   device->GetMediaSource() == MediaSourceEnum::Camera)) {
+                nsString id;
+                device->GetId(id);
+                MOZ_ALWAYS_TRUE(mgr->mDeviceIDs.put(std::move(id)));
               }
             }
 
@@ -3670,7 +3680,7 @@ void MediaManager::Shutdown() {
   mActiveCallbacks.Clear();
   mCallIds.Clear();
   mPendingGUMRequest.Clear();
-  mDeviceIDs.Clear();
+  mDeviceIDs.clear();
 #ifdef MOZ_WEBRTC
   StopWebRtcLog();
 #endif
