@@ -37,5 +37,9 @@ pub fn setup_glean(tempdir: Option<tempfile::TempDir>) -> tempfile::TempDir {
     let glean = glean_core::Glean::new(cfg).unwrap();
     glean_core::setup_glean(glean).expect("can't set up global Glean object");
 
+    
+    
+    let _ = fog::flush_init();
+
     dir
 }
