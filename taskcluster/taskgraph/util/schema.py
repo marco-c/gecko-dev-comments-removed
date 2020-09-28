@@ -13,8 +13,6 @@ from six import text_type, iteritems
 
 import taskgraph
 
-from mozbuild import schedules
-
 from .keyed_by import evaluate_keyed_by
 
 
@@ -214,35 +212,6 @@ class Schema(voluptuous.Schema):
     def __getitem__(self, item):
         return self.schema[item]
 
-
-OptimizationSchema = voluptuous.Any(
-    
-    None,
-    
-    {'always': None},
-    
-    {'build': list(schedules.ALL_COMPONENTS)},
-    {'build-fuzzing': None},
-    
-    
-    {'index-search': [text_type]},
-    
-    {'never': None},
-    
-    {'skip-unless-expanded': None},
-    {'skip-unless-backstop': None},
-    
-    {'skip-unless-changed': [text_type]},
-    
-    {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
-    
-    {'test': list(schedules.ALL_COMPONENTS)},
-    {'test-inclusive': list(schedules.ALL_COMPONENTS)},
-    
-    {'test-verify': list(schedules.ALL_COMPONENTS)},
-    
-    {'upload-symbols': None},
-)
 
 
 taskref_or_string = voluptuous.Any(
