@@ -400,27 +400,6 @@ void TimeoutManager::UpdateBudget(const TimeStamp& aNow,
   mLastBudgetUpdate = aNow;
 }
 
-size_t TimeoutManager::GetNumPendingInputs() {
-  ContentChild* contentChild = ContentChild::GetSingleton();
-  mozilla::ipc::MessageChannel* channel =
-      contentChild ? contentChild->GetIPCChannel() : nullptr;
-
-  if (channel) {
-    size_t count = 0;
-    channel->PeekMessages([&count](const IPC::Message& aMsg) -> bool {
-      if (nsContentUtils::IsMessageCriticalInputEvent(aMsg)) {
-        
-        
-        if (++count > 80) {
-          return false;
-        }
-      }
-      return true;
-    });
-    return count;
-  }
-  return 0;
-}
 
 
 
@@ -911,8 +890,6 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
         mLastFiringIndex = timeout->mFiringIndex;
 #endif
         
-        Telemetry::Accumulate(Telemetry::PENDING_CRITICAL_INPUT_WHEN_TIMEOUT,
-                              GetNumPendingInputs());
         bool timeout_was_cleared = window->RunTimeoutHandler(timeout, scx);
 #if MOZ_GECKO_PROFILER
         if (profiler_can_accept_markers()) {
