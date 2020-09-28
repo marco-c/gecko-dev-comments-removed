@@ -4406,11 +4406,7 @@ pref("prompts.authentication_dialog_abuse_limit", 2);
 
 
 
-#ifdef NIGHTLY_BUILD
-  pref("prompts.modalType.httpAuth", 2);
-#else
-  pref("prompts.modalType.httpAuth", 3);
-#endif
+pref("prompts.modalType.httpAuth", 2);
 
 
 pref("dom.payments.loglevel", "Warn");
