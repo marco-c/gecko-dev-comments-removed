@@ -310,6 +310,15 @@ class PlacesFeed {
 
     const win = action._target.browser.ownerGlobal;
     win.openLinkIn(urlToOpen, where || win.whereToOpenLink(event), params);
+
+    
+    
+    if (action.data.original_url) {
+      PlacesUtils.history.insert({
+        url: action.data.original_url,
+        visits: [{ transition: PlacesUtils.history.TRANSITION_TYPED }],
+      });
+    }
   }
 
   async saveToPocket(site, browser) {

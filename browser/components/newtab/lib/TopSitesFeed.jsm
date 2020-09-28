@@ -513,22 +513,50 @@ this.TopSitesFeed = class TopSitesFeed {
       if (this.shouldFilterSearchTile(link.hostname)) {
         continue;
       }
+      let isBlocked = NewTabUtils.blockedLinks.isBlocked({
+        url: link.url,
+      });
       
-      if (NewTabUtils.blockedLinks.isBlocked({ url: link.url })) {
-        continue;
-      }
-      
+      let url_end;
+      let url_start;
       if (this._useRemoteSetting) {
+        [url_start, url_end] = link.url.split("%YYYYMMDDHH%");
+      }
+      if (typeof url_end === "string") {
         link = {
           ...link,
           
           
           original_url: link.url,
-          url: link.url.replace("%YYYYMMDDHH%", yyyymmddhh),
+          url: url_start + yyyymmddhh + url_end,
         };
         if (link.url_urlbar) {
           link.url_urlbar = link.url_urlbar.replace("%YYYYMMDDHH%", yyyymmddhh);
         }
+        
+        
+        
+        let frecentIndex = frecent.findIndex(
+          frecentLink =>
+            
+            frecentLink.url === link.original_url ||
+            
+            (frecentLink.url.startsWith(url_start) &&
+              frecentLink.url.endsWith(url_end) &&
+              frecentLink.url.length === link.url.length)
+        );
+        if (frecentIndex > -1) {
+          if (isBlocked) {
+            frecent.splice(frecentIndex, 1);
+          } else {
+            frecent[frecentIndex].original_url = frecent[frecentIndex].url;
+            frecent[frecentIndex].url = link.url;
+          }
+        }
+      }
+      
+      if (isBlocked) {
+        continue;
       }
       
       
