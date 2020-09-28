@@ -936,6 +936,11 @@ function promiseTopic(aTopic) {
 }
 
 
+function promiseTransformEnd() {
+  return promiseTopic("APZ:TransformEnd");
+}
+
+
 
 
 async function pinchZoomInWithTouch(focusX, focusY) {
