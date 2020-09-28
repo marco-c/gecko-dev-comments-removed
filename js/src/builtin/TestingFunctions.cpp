@@ -43,6 +43,8 @@
 #ifdef DEBUG
 #  include "frontend/TokenStream.h"
 #endif
+#include "frontend/BytecodeCompilation.h"
+#include "frontend/CompilationInfo.h"
 #include "gc/Allocator.h"
 #include "gc/Zone.h"
 #include "jit/BaselineJIT.h"
@@ -100,6 +102,7 @@
 #include "vm/PromiseObject.h"  
 #include "vm/ProxyObject.h"
 #include "vm/SavedStacks.h"
+#include "vm/ScopeKind.h"
 #include "vm/Stack.h"
 #include "vm/StringType.h"
 #include "vm/TraceLogging.h"
@@ -4872,6 +4875,124 @@ static bool SetLazyParsingDisabled(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool CompileStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!args.requireAtLeast(cx, "compileStencilXDR", 1)) {
+    return false;
+  }
+
+  RootedString src(cx, ToString<CanGC>(cx, args[0]));
+  if (!src) {
+    return false;
+  }
+
+  
+  const char* filename = "compileStencilXDR-DATA.js";
+  uint32_t lineno = 1;
+
+  
+  AutoStableStringChars linearChars(cx);
+  if (!linearChars.initTwoByte(cx, src)) {
+    return false;
+  }
+  JS::SourceText<char16_t> srcBuf;
+  if (!srcBuf.init(cx, linearChars.twoByteChars(), src->length(),
+                   JS::SourceOwnership::Borrowed)) {
+    return false;
+  }
+
+  
+  CompileOptions options(cx);
+  options.setFileAndLine(filename, lineno);
+
+  
+  options.setForceFullParse();
+
+  Rooted<frontend::CompilationInfo> compilationInfo(
+      cx, frontend::CompilationInfo(cx, options));
+  if (!compilationInfo.get().input.initForGlobal(cx)) {
+    return false;
+  }
+  if (!frontend::CompileGlobalScriptToStencil(cx, compilationInfo.get(), srcBuf,
+                                              ScopeKind::Global)) {
+    return false;
+  }
+
+  
+  JS::TranscodeBuffer xdrBytes;
+  if (!compilationInfo.get().serializeStencils(cx, xdrBytes)) {
+    return false;
+  }
+
+  
+  RootedObject arrayBuf(cx, JS::NewArrayBuffer(cx, xdrBytes.length()));
+  if (!arrayBuf) {
+    return false;
+  }
+
+  {
+    JS::AutoAssertNoGC nogc;
+    bool isSharedMemory = false;
+    uint8_t* data = JS::GetArrayBufferData(arrayBuf, &isSharedMemory, nogc);
+    std::copy(xdrBytes.begin(), xdrBytes.end(), data);
+  }
+
+  args.rval().setObject(*arrayBuf);
+  return true;
+}
+
+static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!args.requireAtLeast(cx, "evalStencilXDR", 1)) {
+    return false;
+  }
+
+  
+  if (!args[0].isObject() || !args[0].toObject().is<ArrayBufferObject>()) {
+    JS_ReportErrorASCII(cx, "evalStencilXDR: ArrayBuffer expected");
+    return false;
+  }
+  RootedArrayBufferObject src(cx, &args[0].toObject().as<ArrayBufferObject>());
+
+  const char* filename = "compileStencilXDR-DATA.js";
+  uint32_t lineno = 1;
+
+  
+  CompileOptions options(cx);
+  options.setFileAndLine(filename, lineno);
+  options.setForceFullParse();
+
+  Rooted<frontend::CompilationInfo> compilationInfo(
+      cx, frontend::CompilationInfo(cx, options));
+  if (!compilationInfo.get().input.initForGlobal(cx)) {
+    return false;
+  }
+
+  
+  JS::TranscodeRange xdrRange(src->dataPointer(), src->byteLength());
+  if (!compilationInfo.get().deserializeStencils(cx, xdrRange)) {
+    return false;
+  }
+
+  
+  frontend::CompilationGCOutput output(cx);
+  if (!compilationInfo.get().instantiateStencils(cx, output)) {
+    return false;
+  }
+
+  
+  RootedScript script(cx, output.script);
+  RootedValue retVal(cx, UndefinedValue());
+  if (!JS_ExecuteScript(cx, script, &retVal)) {
+    return false;
+  }
+
+  args.rval().set(retVal);
+  return true;
+}
+
 static bool SetDiscardSource(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -7187,6 +7308,16 @@ JS_FN_HELP("setDefaultLocale", SetDefaultLocale, 1, 0,
 "  Set the runtime default locale to the given value.\n"
 "  An empty string or undefined resets the runtime locale to its default value.\n"
 "  NOTE: The input string is not fully validated, it must be a valid BCP-47 language tag."),
+
+    JS_FN_HELP("compileStencilXDR", CompileStencilXDR, 1, 0,
+"compileStencilXDR(string)",
+"  Parses the given string argument as js script, produces the stencil"
+"  for it, XDR-encodes the stencil, and returns an ArrayBuf of the contents."),
+
+    JS_FN_HELP("evalStencilXDR", EvalStencilXDR, 1, 0,
+"evalStencilXDR(arrayBuf)",
+"  Reads the given buffer as an XDR-encoded stencil, and evaluates the"
+"  top-level script it defines."),
 
     JS_FS_HELP_END
 };
