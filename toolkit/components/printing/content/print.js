@@ -525,6 +525,20 @@ var PrintEventHandler = {
     if (sourceBrowsingContext) {
       sourceWinId = sourceBrowsingContext.currentWindowGlobal.outerWindowId;
     }
+
+    const isFirstCall = !this.printInitiationTime;
+    if (isFirstCall) {
+      let params = new URLSearchParams(location.search);
+      this.printInitiationTime = parseInt(
+        params.get("printInitiationTime"),
+        10
+      );
+      const elapsed = Date.now() - this.printInitiationTime;
+      Services.telemetry
+        .getHistogramById("PRINT_INIT_TO_PLATFORM_SENT_SETTINGS_MS")
+        .add(elapsed);
+    }
+
     
     
     let {
@@ -550,6 +564,13 @@ var PrintEventHandler = {
     );
 
     this._hideRenderingIndicator();
+
+    if (isFirstCall) {
+      const elapsed = Date.now() - this.printInitiationTime;
+      Services.telemetry
+        .getHistogramById("PRINT_INIT_TO_PREVIEW_DOC_SHOWN_MS")
+        .add(elapsed);
+    }
   },
 
   _showRenderingIndicator() {
