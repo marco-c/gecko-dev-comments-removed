@@ -1,7 +1,7 @@
 
 
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 import os
 import mozlog
 import copy
@@ -124,6 +124,7 @@ class PerftestArgumentParser(ArgumentParser):
             self.add_argument(name, **options)
 
         mozlog.commandline.add_logging_group(self)
+        self.set_by_user = []
 
     def parse_helper(self, args):
         for arg in args:
@@ -132,6 +133,31 @@ class PerftestArgumentParser(ArgumentParser):
             layer_exists = arg_part[1] and layer_name in Options.args
             if layer_exists:
                 args.append(layer_name)
+
+    def get_user_args(self, args):
+        
+        res = {}
+        for key, value in args.items():
+            if key not in self.set_by_user:
+                continue
+            res[key] = value
+        return res
+
+    def _parse_known_args(self, arg_strings, namespace):
+        
+        
+
+        
+        
+        user_namespace, extras = super()._parse_known_args(arg_strings, Namespace())
+
+        self.set_by_user = list([name for name, value in user_namespace._get_kwargs()])
+
+        
+        for key, value in user_namespace._get_kwargs():
+            setattr(namespace, key, value)
+
+        return namespace, extras
 
     def parse_args(self, args=None, namespace=None):
         self.parse_helper(args)

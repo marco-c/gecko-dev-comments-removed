@@ -74,14 +74,7 @@ class XPCShell(Layer):
         self.mach_cmd.activate_virtualenv()
 
     def run(self, metadata):
-        tests = self.get_arg("tests", [])
-        if len(tests) != 1:
-            
-            raise NotImplementedError(str(tests))
-
-        test = Path(tests[0])
-        if not test.exists():
-            raise FileNotFoundError(str(test))
+        test = Path(metadata.script["filename"])
 
         
         manifest = Path(test.parent, "xpcshell.ini")
