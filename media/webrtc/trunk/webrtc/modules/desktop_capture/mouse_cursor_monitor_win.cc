@@ -102,7 +102,8 @@ void MouseCursorMonitorWin::Init(Callback* callback, Mode mode) {
 }
 
 void MouseCursorMonitorWin::Capture() {
-  assert(IsGUIThread(false));
+
+
   assert(callback_);
 
   CURSORINFO cursor_info;
