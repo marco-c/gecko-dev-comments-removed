@@ -789,6 +789,14 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
         adjustedOffset = AdjustCaretOffset(adjustedOffset);
       }
 
+      if (IsEmptyLastLineOffset(adjustedOffset)) {
+        
+        
+        
+        *aStartOffset = *aEndOffset = adjustedOffset;
+        break;
+      }
+
       if (IsLineEndCharAt(adjustedOffset)) {
         
         
