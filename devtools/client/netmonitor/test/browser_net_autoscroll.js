@@ -38,7 +38,9 @@ add_task(async function() {
   ok(!scrolledToBottom(requestsContainer), "Not scrolled to bottom.");
   
   const { scrollTop } = requestsContainer;
-  await waitForNetworkEvents(monitor, 8);
+  
+  
+  await waitForNetworkEvents(monitor, 8, { expectedEventTimings: 0 });
   await waitSomeTime();
   is(requestsContainer.scrollTop, scrollTop, "Did not scroll.");
 

@@ -20,9 +20,6 @@ function test() {
       info("Starting test... ");
 
       const { document, store, windowRequire, connector } = monitor.panelWin;
-      const Actions = windowRequire(
-        "devtools/client/netmonitor/src/actions/index"
-      );
       const { EVENTS, TEST_EVENTS } = windowRequire(
         "devtools/client/netmonitor/src/constants"
       );
@@ -31,8 +28,6 @@ function test() {
         getSelectedRequest,
         getSortedRequests,
       } = windowRequire("devtools/client/netmonitor/src/selectors/index");
-
-      store.dispatch(Actions.batchEnable(false));
 
       const promiseList = [];
       promiseList.push(waitForNetworkEvents(monitor, 1));
@@ -88,77 +83,85 @@ function test() {
           "The attached startedMs should not be zero."
         );
 
-        is(
-          requestItem.requestHeaders,
-          undefined,
-          "The requestHeaders should not yet be set."
-        );
-        is(
-          requestItem.requestCookies,
-          undefined,
-          "The requestCookies should not yet be set."
-        );
-        is(
-          requestItem.requestPostData,
-          undefined,
-          "The requestPostData should not yet be set."
-        );
+        
 
-        is(
-          requestItem.responseHeaders,
-          undefined,
-          "The responseHeaders should not yet be set."
-        );
-        is(
-          requestItem.responseCookies,
-          undefined,
-          "The responseCookies should not yet be set."
-        );
 
-        is(
-          requestItem.httpVersion,
-          undefined,
-          "The httpVersion should not yet be set."
-        );
-        is(requestItem.status, undefined, "The status should not yet be set.");
-        is(
-          requestItem.statusText,
-          undefined,
-          "The statusText should not yet be set."
-        );
 
-        is(
-          requestItem.headersSize,
-          undefined,
-          "The headersSize should not yet be set."
-        );
-        is(
-          requestItem.transferredSize,
-          undefined,
-          "The transferredSize should not yet be set."
-        );
-        is(
-          requestItem.contentSize,
-          undefined,
-          "The contentSize should not yet be set."
-        );
 
-        is(
-          requestItem.responseContent,
-          undefined,
-          "The responseContent should not yet be set."
-        );
 
-        is(
-          requestItem.totalTime,
-          undefined,
-          "The totalTime should not yet be set."
-        );
-        is(
-          requestItem.eventTimings,
-          undefined,
-          "The eventTimings should not yet be set."
-        );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         verifyRequestItemTarget(
           document,

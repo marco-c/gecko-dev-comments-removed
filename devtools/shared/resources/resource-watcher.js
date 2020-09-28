@@ -6,6 +6,7 @@
 
 
 const { gDevTools } = require("devtools/client/framework/devtools");
+const { throttle } = require("devtools/shared/throttle");
 
 class ResourceWatcher {
   
@@ -41,6 +42,9 @@ class ResourceWatcher {
     
     this._cache = [];
     this._listenerCount = new Map();
+
+    this._notifyWatchers = this._notifyWatchers.bind(this);
+    this._throttledNotifyWatchers = throttle(this._notifyWatchers, 100);
   }
 
   
@@ -128,11 +132,20 @@ class ResourceWatcher {
 
     
     
+    
+    
+    
+    
+    this._notifyWatchers();
+
+    
+    
     this._watchers.push({
       resources,
       onAvailable,
       onUpdated,
       onDestroyed,
+      pendingEvents: [],
     });
 
     if (!ignoreExistingResources) {
@@ -325,8 +338,6 @@ class ResourceWatcher {
 
 
   async _onResourceAvailable({ targetFront, watcherFront }, resources) {
-    let currentType = null;
-    let resourceBuffer = [];
     for (let resource of resources) {
       const { resourceType } = resource;
 
@@ -352,24 +363,11 @@ class ResourceWatcher {
         });
       }
 
-      if (!currentType) {
-        currentType = resourceType;
-      }
-      
-      else if (currentType != resourceType) {
-        this._notifyWatchers("available", currentType, resourceBuffer);
-        currentType = resourceType;
-        resourceBuffer = [];
-      }
-      resourceBuffer.push(resource);
+      this._queueResourceEvent("available", resourceType, resource);
 
       this._cache.push(resource);
     }
-
-    
-    if (resourceBuffer.length > 0) {
-      this._notifyWatchers("available", currentType, resourceBuffer);
-    }
+    this._throttledNotifyWatchers();
   }
 
   
@@ -411,8 +409,6 @@ class ResourceWatcher {
 
 
   async _onResourceUpdated({ targetFront, watcherFront }, updates) {
-    let currentType = null;
-    let resourceBuffer = [];
     for (const update of updates) {
       const {
         resourceType,
@@ -453,26 +449,12 @@ class ResourceWatcher {
           target[path[path.length - 1]] = value;
         }
       }
-
-      if (!currentType) {
-        currentType = resourceType;
-      }
-      
-      if (currentType != resourceType) {
-        this._notifyWatchers("updated", currentType, resourceBuffer);
-        currentType = resourceType;
-        resourceBuffer = [];
-      }
-      resourceBuffer.push({
+      this._queueResourceEvent("updated", resourceType, {
         resource: existingResource,
         update,
       });
     }
-
-    
-    if (resourceBuffer.length > 0) {
-      this._notifyWatchers("updated", currentType, resourceBuffer);
-    }
+    this._throttledNotifyWatchers();
   }
 
   
@@ -480,8 +462,6 @@ class ResourceWatcher {
 
 
   async _onResourceDestroyed({ targetFront, watcherFront }, resources) {
-    let currentType = null;
-    let resourceBuffer = [];
     for (const resource of resources) {
       const { resourceType, resourceId } = resource;
 
@@ -510,22 +490,9 @@ class ResourceWatcher {
         );
       }
 
-      if (!currentType) {
-        currentType = resourceType;
-      }
-      
-      if (currentType != resourceType) {
-        this._notifyWatchers("destroyed", currentType, resourceBuffer);
-        currentType = resourceType;
-        resourceBuffer = [];
-      }
-      resourceBuffer.push(resource);
+      this._queueResourceEvent("destroyed", resourceType, resource);
     }
-
-    
-    if (resourceBuffer.length > 0) {
-      this._notifyWatchers("destroyed", currentType, resourceBuffer);
-    }
+    this._throttledNotifyWatchers();
   }
 
   
@@ -540,30 +507,64 @@ class ResourceWatcher {
     });
   }
 
-  _notifyWatchers(callbackType, resourceType, updates) {
-    for (const { resources, onAvailable, onUpdated, onDestroyed } of this
-      ._watchers) {
+  _queueResourceEvent(callbackType, resourceType, update) {
+    for (const { resources, pendingEvents } of this._watchers) {
       
       if (!resources.includes(resourceType)) {
         continue;
       }
-      try {
-        if (callbackType == "available") {
-          onAvailable(updates);
-        } else if (callbackType == "updated" && onUpdated) {
-          onUpdated(updates);
-        } else if (callbackType == "destroyed" && onDestroyed) {
-          onDestroyed(updates);
+      
+      if (pendingEvents.length > 0) {
+        const lastEvent = pendingEvents[pendingEvents.length - 1];
+        if (lastEvent.callbackType == callbackType) {
+          lastEvent.updates.push(update);
+          continue;
         }
-      } catch (e) {
-        console.error(
-          "Exception while calling a ResourceWatcher",
-          callbackType,
-          "callback, for resource type",
-          resourceType,
-          ":",
-          e
-        );
+      }
+      
+      
+      pendingEvents.push({
+        callbackType,
+        updates: [update],
+      });
+    }
+  }
+
+  
+
+
+
+
+  _notifyWatchers() {
+    for (const watcherEntry of this._watchers) {
+      const {
+        onAvailable,
+        onUpdated,
+        onDestroyed,
+        pendingEvents,
+      } = watcherEntry;
+      
+      
+      watcherEntry.pendingEvents = [];
+
+      for (const { callbackType, updates } of pendingEvents) {
+        try {
+          if (callbackType == "available") {
+            onAvailable(updates);
+          } else if (callbackType == "updated" && onUpdated) {
+            onUpdated(updates);
+          } else if (callbackType == "destroyed" && onDestroyed) {
+            onDestroyed(updates);
+          }
+        } catch (e) {
+          console.error(
+            "Exception while calling a ResourceWatcher",
+            callbackType,
+            "callback",
+            ":",
+            e
+          );
+        }
       }
     }
   }
