@@ -448,8 +448,17 @@ function pageEventListener(event) {
 
 function finish() {
   
-  var history = TestWindow.getBrowser().webNavigation.sessionHistory;
-  history.legacySHistory.purgeHistory(history.count);
+  let history;
+  if (SpecialPowers.getBoolPref("fission.sessionHistoryInParent")) {
+    history = TestWindow.getBrowser().browsingContext?.sessionHistory;
+  } else {
+    history = TestWindow.getBrowser().webNavigation.sessionHistory
+      .legacySHistory;
+  }
+
+  if (history) {
+    history.purgeHistory(history.count);
+  }
 
   
   
