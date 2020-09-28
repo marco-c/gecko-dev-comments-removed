@@ -58,15 +58,16 @@ class ClockDrift final {
 
 
 
-  void UpdateClock(int aSourceClock, int aTargetClock, int aBufferedFrames) {
-    if (mIterations == mAdjustementWindow) {
+  void UpdateClock(int aSourceFrames, int aTargetFrames, int aBufferedFrames) {
+    if ((mTargetClock * 1000 / mTargetRate) >= mAdjustmentIntervalMs ||
+        (mSourceClock * 1000 / mSourceRate) >= mAdjustmentIntervalMs) {
+      
       CalculateCorrection(aBufferedFrames);
     } else if (aBufferedFrames < 2 * mSourceRate / 100 ) {
       BufferedFramesCorrection(aBufferedFrames);
     }
-    mTargetClock += aTargetClock;
-    mSourceClock += aSourceClock;
-    ++mIterations;
+    mTargetClock += aTargetFrames;
+    mSourceClock += aSourceFrames;
   }
 
  private:
@@ -94,7 +95,6 @@ class ClockDrift final {
     mPreviousCorrection = mCorrection;
 
     
-    mIterations = 0;
     mTargetClock = 0;
     mSourceClock = 0;
   }
@@ -117,16 +117,15 @@ class ClockDrift final {
  public:
   const int32_t mSourceRate;
   const int32_t mTargetRate;
+  const int32_t mAdjustmentIntervalMs = 1000;
   const int32_t mDesiredBuffering;
 
  private:
   float mCorrection = 1.0;
   float mPreviousCorrection = 1.0;
-  const int32_t mAdjustementWindow = 100;
 
   int32_t mSourceClock = 0;
   int32_t mTargetClock = 0;
-  int32_t mIterations = 0;
 };
 
 
