@@ -76,15 +76,6 @@ class nsHTTPSOnlyUtils {
 
 
 
-  static bool TestIfPrincipalIsExempt(nsIPrincipal* aPrincipal);
-
-  
-
-
-
-
-
-
   static void TestSitePermissionAndPotentiallyAddExemption(
       nsIChannel* aChannel);
 
