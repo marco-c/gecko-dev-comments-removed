@@ -56,24 +56,6 @@ const SEARCH_DEFAULT_UPDATE_INTERVAL = 7;
 const RECONFIG_IDLE_TIME_SEC = 5 * 60;
 
 
-
-
-
-
-
-
-
-
-function getLocalizedPref(prefName, defaultValue) {
-  try {
-    return Services.prefs.getComplexValue(prefName, Ci.nsIPrefLocalizedString)
-      .data;
-  } catch (ex) {}
-
-  return defaultValue;
-}
-
-
 function ParseSubmissionResult(
   engine,
   terms,
@@ -2244,35 +2226,6 @@ SearchService.prototype = {
 
     
     let sendSubmissionURL = engine.isAppProvided;
-
-    
-    if (!sendSubmissionURL) {
-      let extras = Services.prefs.getChildList(
-        SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
-      );
-
-      for (let prefName of extras) {
-        try {
-          if (engineData.name == Services.prefs.getCharPref(prefName)) {
-            sendSubmissionURL = true;
-            break;
-          }
-        } catch (e) {}
-      }
-
-      let i = 0;
-      while (!sendSubmissionURL) {
-        let prefName = `${SearchUtils.BROWSER_SEARCH_PREF}order.${++i}`;
-        let engineName = getLocalizedPref(prefName);
-        if (!engineName) {
-          break;
-        }
-        if (engineData.name == engineName) {
-          sendSubmissionURL = true;
-          break;
-        }
-      }
-    }
 
     if (!sendSubmissionURL) {
       
