@@ -1,0 +1,25 @@
+
+
+
+
+
+
+#ifndef PreXULSkeletonUI_h_
+#define PreXULSkeletonUI_h_
+
+#include <windows.h>
+#include "mozilla/Types.h"
+
+namespace mozilla {
+
+MFBT_API void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance);
+MFBT_API HWND ConsumePreXULSkeletonUIHandle();
+MFBT_API void PersistPreXULSkeletonUIValues(int screenX, int screenY, int width,
+                                            int height,
+                                            double cssToDevPixelScaling);
+MFBT_API bool GetPreXULSkeletonUIEnabled();
+MFBT_API void SetPreXULSkeletonUIEnabled(bool value);
+
+}  
+
+#endif
