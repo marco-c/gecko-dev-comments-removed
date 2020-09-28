@@ -144,6 +144,9 @@ class TestHTTPAnswerRunnable final : public mozilla::Runnable,
 
  private:
   RefPtr<nsIURI> mURI;
+  
+  
+  
   RefPtr<mozilla::net::DocumentLoadListener> mDocumentLoadListener;
   RefPtr<nsITimer> mTimer;
 };
