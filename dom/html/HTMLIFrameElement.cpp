@@ -171,7 +171,8 @@ nsresult HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     if (aName == nsGkAtoms::allow || aName == nsGkAtoms::src ||
         aName == nsGkAtoms::srcdoc || aName == nsGkAtoms::sandbox) {
       RefreshFeaturePolicy(true );
-    } else if (aName == nsGkAtoms::allowfullscreen) {
+    } else if (aName == nsGkAtoms::allowfullscreen ||
+               aName == nsGkAtoms::allowpaymentrequest) {
       RefreshFeaturePolicy(false );
     }
   }
@@ -293,6 +294,10 @@ void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
       mFeaturePolicy->SetDeclaredPolicy(OwnerDoc(), allow, NodePrincipal(),
                                         origin);
     }
+  }
+
+  if (AllowPaymentRequest()) {
+    mFeaturePolicy->MaybeSetAllowedPolicy(u"payment"_ns);
   }
 
   if (AllowFullscreen()) {
