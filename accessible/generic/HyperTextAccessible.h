@@ -139,20 +139,6 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
 
-
-
-
-
-  bool OffsetsToDOMRange(int32_t aStartOffset, int32_t aEndOffset,
-                         nsRange* aRange) const;
-
-  
-
-
-
-
-
-
   DOMPoint OffsetToDOMPoint(int32_t aOffset) const;
 
   
@@ -515,23 +501,6 @@ class HyperTextAccessible : public AccessibleWrap {
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SetSelectionRange(int32_t aStartPos,
                                                          int32_t aEndPos);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  DOMPoint ClosestNotGeneratedDOMPoint(const DOMPoint& aDOMPoint,
-                                       nsIContent* aElementContent) const;
 
   
   nsresult GetDOMPointByFrameOffset(nsIFrame* aFrame, int32_t aOffset,

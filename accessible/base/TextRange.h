@@ -14,6 +14,7 @@
 #include "nsTArray.h"
 
 class nsIVariant;
+class nsRange;
 
 namespace mozilla {
 namespace a11y {
@@ -192,13 +193,27 @@ class TextRange final {
 
   void AddToSelection() const;
   void RemoveFromSelection() const;
-  void Select() const;
+  MOZ_CAN_RUN_SCRIPT bool SetSelectionAt(int32_t aSelectionNum) const;
 
   
 
 
-  enum EHowToAlign { eAlignToTop, eAlignToBottom };
-  void ScrollIntoView(EHowToAlign aHow) const;
+  void ScrollIntoView(uint32_t aScrollType) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  bool AssignDOMRange(nsRange* aRange, bool* aReversed = nullptr) const;
 
   
 

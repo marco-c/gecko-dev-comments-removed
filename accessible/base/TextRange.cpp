@@ -7,6 +7,7 @@
 #include "TextRange-inl.h"
 
 #include "Accessible-inl.h"
+#include "HyperTextAccessible-inl.h"
 #include "mozilla/dom/Selection.h"
 #include "nsAccUtils.h"
 
@@ -250,9 +251,147 @@ void TextRange::AddToSelection() const {}
 
 void TextRange::RemoveFromSelection() const {}
 
-void TextRange::Select() const {}
+bool TextRange::SetSelectionAt(int32_t aSelectionNum) const {
+  RefPtr<dom::Selection> domSel = mRoot->DOMSelection();
+  if (!domSel) {
+    return false;
+  }
 
-void TextRange::ScrollIntoView(EHowToAlign aHow) const {}
+  RefPtr<nsRange> range = nsRange::Create(mRoot->GetContent());
+  uint32_t rangeCount = domSel->RangeCount();
+  if (aSelectionNum == static_cast<int32_t>(rangeCount)) {
+    range = nsRange::Create(mRoot->GetContent());
+  } else {
+    range = domSel->GetRangeAt(aSelectionNum);
+  }
+
+  if (!range) {
+    return false;
+  }
+
+  bool reversed;
+  AssignDOMRange(range, &reversed);
+
+  
+  
+  if (aSelectionNum != static_cast<int32_t>(rangeCount)) {
+    domSel->RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
+                                                           IgnoreErrors());
+  }
+
+  IgnoredErrorResult err;
+  domSel->AddRangeAndSelectFramesAndNotifyListeners(*range, err);
+  if (!err.Failed()) {
+    
+    
+    domSel->SetDirection(reversed ? eDirPrevious : eDirNext);
+    return true;
+  }
+
+  return false;
+}
+
+void TextRange::ScrollIntoView(uint32_t aScrollType) const {
+  RefPtr<nsRange> range = nsRange::Create(mRoot->GetContent());
+  if (AssignDOMRange(range)) {
+    nsCoreUtils::ScrollSubstringTo(mStartContainer->GetFrame(), range,
+                                   aScrollType);
+  }
+}
+
+
+
+
+
+
+
+static DOMPoint ClosestNotGeneratedDOMPoint(const DOMPoint& aDOMPoint,
+                                            nsIContent* aElementContent) {
+  MOZ_ASSERT(aDOMPoint.node, "The node must not be null");
+
+  
+  if (aElementContent &&
+      aElementContent->IsGeneratedContentContainerForBefore()) {
+    MOZ_ASSERT(aElementContent->GetParent(),
+               "::before must have parent element");
+    
+    
+    return DOMPoint(aElementContent->GetParent(), 0);
+  }
+
+  
+  if (aElementContent &&
+      aElementContent->IsGeneratedContentContainerForAfter()) {
+    MOZ_ASSERT(aElementContent->GetParent(),
+               "::after must have parent element");
+    
+    
+    return DOMPoint(aElementContent->GetParent(),
+                    aElementContent->GetParent()->GetChildCount());
+  }
+
+  return aDOMPoint;
+}
+
+
+
+
+
+
+
+
+
+static nsIContent* GetElementAsContentOf(nsINode* aNode) {
+  if (auto* element = dom::Element::FromNode(aNode)) {
+    return element;
+  }
+  return aNode->GetParentElement();
+}
+
+bool TextRange::AssignDOMRange(nsRange* aRange, bool* aReversed) const {
+  bool reversed = EndPoint() < StartPoint();
+  if (aReversed) {
+    *aReversed = reversed;
+  }
+
+  DOMPoint startPoint = reversed
+                            ? mEndContainer->OffsetToDOMPoint(mEndOffset)
+                            : mStartContainer->OffsetToDOMPoint(mStartOffset);
+  if (!startPoint.node) {
+    return false;
+  }
+
+  
+  
+  
+  
+
+  nsIContent* container = GetElementAsContentOf(startPoint.node);
+  DOMPoint startPointForDOMRange =
+      ClosestNotGeneratedDOMPoint(startPoint, container);
+  aRange->SetStart(startPointForDOMRange.node, startPointForDOMRange.idx);
+
+  
+  if (mEndContainer == mStartContainer && mEndOffset == mStartOffset) {
+    aRange->Collapse(true);
+    return true;
+  }
+
+  DOMPoint endPoint = reversed ? mStartContainer->OffsetToDOMPoint(mStartOffset)
+                               : mEndContainer->OffsetToDOMPoint(mEndOffset);
+  if (!endPoint.node) {
+    return false;
+  }
+
+  if (startPoint.node != endPoint.node) {
+    container = GetElementAsContentOf(endPoint.node);
+  }
+
+  DOMPoint endPointForDOMRange =
+      ClosestNotGeneratedDOMPoint(endPoint, container);
+  aRange->SetEnd(endPointForDOMRange.node, endPointForDOMRange.idx);
+  return true;
+}
 
 void TextRange::TextRangesFromSelection(dom::Selection* aSelection,
                                         nsTArray<TextRange>* aRanges) {

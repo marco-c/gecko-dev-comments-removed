@@ -322,56 +322,6 @@ uint32_t HyperTextAccessible::TransformOffset(Accessible* aDescendant,
   return CharacterCount();
 }
 
-
-
-
-
-
-
-
-
-static nsIContent* GetElementAsContentOf(nsINode* aNode) {
-  if (auto* element = dom::Element::FromNode(aNode)) {
-    return element;
-  }
-  return aNode->GetParentElement();
-}
-
-bool HyperTextAccessible::OffsetsToDOMRange(int32_t aStartOffset,
-                                            int32_t aEndOffset,
-                                            nsRange* aRange) const {
-  DOMPoint startPoint = OffsetToDOMPoint(aStartOffset);
-  if (!startPoint.node) return false;
-
-  
-  
-  
-  
-
-  nsIContent* container = GetElementAsContentOf(startPoint.node);
-  DOMPoint startPointForDOMRange =
-      ClosestNotGeneratedDOMPoint(startPoint, container);
-  aRange->SetStart(startPointForDOMRange.node, startPointForDOMRange.idx);
-
-  
-  if (aStartOffset == aEndOffset) {
-    aRange->Collapse(true);
-    return true;
-  }
-
-  DOMPoint endPoint = OffsetToDOMPoint(aEndOffset);
-  if (!endPoint.node) return false;
-
-  if (startPoint.node != endPoint.node) {
-    container = GetElementAsContentOf(endPoint.node);
-  }
-
-  DOMPoint endPointForDOMRange =
-      ClosestNotGeneratedDOMPoint(endPoint, container);
-  aRange->SetEnd(endPointForDOMRange.node, endPointForDOMRange.idx);
-  return true;
-}
-
 DOMPoint HyperTextAccessible::OffsetToDOMPoint(int32_t aOffset) const {
   
   
@@ -416,34 +366,6 @@ DOMPoint HyperTextAccessible::OffsetToDOMPoint(int32_t aOffset) const {
   return parentNode ? DOMPoint(parentNode,
                                parentNode->ComputeIndexOf(node) + innerOffset)
                     : DOMPoint();
-}
-
-DOMPoint HyperTextAccessible::ClosestNotGeneratedDOMPoint(
-    const DOMPoint& aDOMPoint, nsIContent* aElementContent) const {
-  MOZ_ASSERT(aDOMPoint.node, "The node must not be null");
-
-  
-  if (aElementContent &&
-      aElementContent->IsGeneratedContentContainerForBefore()) {
-    MOZ_ASSERT(aElementContent->GetParent(),
-               "::before must have parent element");
-    
-    
-    return DOMPoint(aElementContent->GetParent(), 0);
-  }
-
-  
-  if (aElementContent &&
-      aElementContent->IsGeneratedContentContainerForAfter()) {
-    MOZ_ASSERT(aElementContent->GetParent(),
-               "::after must have parent element");
-    
-    
-    return DOMPoint(aElementContent->GetParent(),
-                    aElementContent->GetParent()->GetChildCount());
-  }
-
-  return aDOMPoint;
 }
 
 uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
@@ -1634,41 +1556,8 @@ bool HyperTextAccessible::SetSelectionBoundsAt(int32_t aSelectionNum,
     return false;
   }
 
-  RefPtr<dom::Selection> domSel = DOMSelection();
-  if (!domSel) return false;
-
-  RefPtr<nsRange> range;
-  uint32_t rangeCount = domSel->RangeCount();
-  if (aSelectionNum == static_cast<int32_t>(rangeCount)) {
-    range = nsRange::Create(mContent);
-  } else {
-    range = domSel->GetRangeAt(aSelectionNum);
-  }
-
-  if (!range) return false;
-
-  if (!OffsetsToDOMRange(std::min(startOffset, endOffset),
-                         std::max(startOffset, endOffset), range))
-    return false;
-
-  
-  
-  if (aSelectionNum != static_cast<int32_t>(rangeCount)) {
-    domSel->RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
-                                                           IgnoreErrors());
-  }
-
-  IgnoredErrorResult err;
-  domSel->AddRangeAndSelectFramesAndNotifyListeners(*range, err);
-
-  if (!err.Failed()) {
-    
-    
-    domSel->SetDirection(startOffset < endOffset ? eDirNext : eDirPrevious);
-    return true;
-  }
-
-  return false;
+  TextRange range(this, this, startOffset, this, endOffset);
+  return range.SetSelectionAt(aSelectionNum);
 }
 
 bool HyperTextAccessible::RemoveFromSelection(int32_t aSelectionNum) {
@@ -1688,9 +1577,8 @@ bool HyperTextAccessible::RemoveFromSelection(int32_t aSelectionNum) {
 void HyperTextAccessible::ScrollSubstringTo(int32_t aStartOffset,
                                             int32_t aEndOffset,
                                             uint32_t aScrollType) {
-  RefPtr<nsRange> range = nsRange::Create(mContent);
-  if (OffsetsToDOMRange(aStartOffset, aEndOffset, range))
-    nsCoreUtils::ScrollSubstringTo(GetFrame(), range, aScrollType);
+  TextRange range(this, this, aStartOffset, this, aEndOffset);
+  range.ScrollIntoView(aScrollType);
 }
 
 void HyperTextAccessible::ScrollSubstringToPoint(int32_t aStartOffset,
@@ -1703,8 +1591,11 @@ void HyperTextAccessible::ScrollSubstringToPoint(int32_t aStartOffset,
   nsIntPoint coords =
       nsAccUtils::ConvertToScreenCoords(aX, aY, aCoordinateType, this);
 
-  RefPtr<nsRange> range = nsRange::Create(mContent);
-  if (!OffsetsToDOMRange(aStartOffset, aEndOffset, range)) return;
+  RefPtr<nsRange> domRange = nsRange::Create(mContent);
+  TextRange range(this, this, aStartOffset, this, aEndOffset);
+  if (!range.AssignDOMRange(domRange)) {
+    return;
+  }
 
   nsPresContext* presContext = frame->PresContext();
   nsPoint coordsInAppUnits =
@@ -1732,7 +1623,7 @@ void HyperTextAccessible::ScrollSubstringToPoint(int32_t aStartOffset,
         int16_t vPercent = offsetPointY * 100 / size.height;
 
         nsresult rv = nsCoreUtils::ScrollSubstringTo(
-            frame, range, ScrollAxis(vPercent, WhenToScroll::Always),
+            frame, domRange, ScrollAxis(vPercent, WhenToScroll::Always),
             ScrollAxis(hPercent, WhenToScroll::Always));
         if (NS_FAILED(rv)) return;
 
