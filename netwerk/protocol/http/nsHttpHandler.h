@@ -471,8 +471,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
     return mMaxHttpResponseHeaderSize;
   }
 
-  const nsCString& Http3QlogDir();
-
   float FocusedWindowTransactionRatio() const {
     return mFocusedWindowTransactionRatio;
   }
@@ -755,7 +753,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   Atomic<uint32_t, Relaxed>
       mHttp3MaxBlockedStreams;  
                                 
-  nsCString mHttp3QlogDir;
 
   
   uint32_t mMaxHttpResponseHeaderSize;
