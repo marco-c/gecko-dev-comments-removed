@@ -149,7 +149,7 @@ interface nsISSLSocketControl : nsISupports {
 
 
 
-    attribute ACString esniTxt;
+    attribute ACString echConfig;
 
     
 
