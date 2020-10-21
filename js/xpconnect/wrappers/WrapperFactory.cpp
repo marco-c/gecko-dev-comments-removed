@@ -246,87 +246,35 @@ void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
   XPCCallContext ccx(cx, obj);
   RootedObject wrapScope(cx, scope);
 
-  {
-    if (ccx.GetScriptable() && ccx.GetScriptable()->WantPreCreate()) {
-      
-      
+  if (ccx.GetScriptable() && ccx.GetScriptable()->WantPreCreate()) {
+    
+    
 
-      
-      
-      
-      
-      nsresult rv = wn->GetScriptable()->PreCreate(wn->Native(), cx, scope,
-                                                   wrapScope.address());
-      if (NS_FAILED(rv)) {
-        retObj.set(waive ? WaiveXray(cx, obj) : obj);
-        return;
-      }
-
-      
-      
-      
-      
-      if (JS::GetCompartment(scope) != JS::GetCompartment(wrapScope)) {
-        retObj.set(waive ? WaiveXray(cx, obj) : obj);
-        return;
-      }
-
-      RootedObject currentScope(cx, JS::GetNonCCWObjectGlobal(obj));
-      if (MOZ_UNLIKELY(wrapScope != currentScope)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        RootedObject probe(cx);
-        rv = wn->GetScriptable()->PreCreate(wn->Native(), cx, currentScope,
-                                            probe.address());
-
-        
-        if (probe != currentScope) {
-          MOZ_ASSERT(probe == wrapScope);
-          retObj.set(waive ? WaiveXray(cx, obj) : obj);
-          return;
-        }
-
-        
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!AccessCheck::isChrome(JS::GetCompartment(wrapScope)) &&
-          CompartmentOriginInfo::Subsumes(JS::GetCompartment(wrapScope),
-                                          JS::GetCompartment(obj))) {
-        retObj.set(waive ? WaiveXray(cx, obj) : obj);
-        return;
-      }
+    
+    
+    
+    
+    nsresult rv = wn->GetScriptable()->PreCreate(wn->Native(), cx, scope,
+                                                 wrapScope.address());
+    if (NS_FAILED(rv)) {
+      retObj.set(waive ? WaiveXray(cx, obj) : obj);
+      return;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(JS::GetCompartment(scope) !=
+                       JS::GetCompartment(wrapScope));
+    retObj.set(waive ? WaiveXray(cx, obj) : obj);
+    return;
   }
 
   
