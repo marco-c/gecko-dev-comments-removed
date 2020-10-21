@@ -17,12 +17,29 @@ function asyncElementRendered() {
 
 
 function importDependencies(templateFrame, destinationEl) {
-  let templates = templateFrame.contentDocument.querySelectorAll("template");
-  isnot(templates, null, "Check some templates found");
-  for (let template of templates) {
+  let promises = [];
+  for (let template of templateFrame.contentDocument.querySelectorAll(
+    "template"
+  )) {
     let imported = document.importNode(template, true);
     destinationEl.appendChild(imported);
+    
+    for (let element of imported.content.querySelectorAll(
+      "link[rel='stylesheet']"
+    )) {
+      let clone = element.cloneNode(true);
+      promises.push(
+        new Promise(resolve => {
+          clone.onload = function() {
+            resolve();
+            clone.remove();
+          };
+        })
+      );
+      destinationEl.appendChild(clone);
+    }
   }
+  return Promise.all(promises);
 }
 
 Object.defineProperty(document, "l10n", {
