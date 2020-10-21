@@ -224,6 +224,13 @@ nsBufferedStream::Seek(int32_t whence, int64_t offset) {
                 .mNewOffset = mBufferStartOffset);
 
   mFillPoint = mCursor = 0;
+
+  
+  
+  
+  if (whence == nsISeekableStream::NS_SEEK_SET && offset == 0) {
+    return NS_OK;
+  }
   return Fill();
 }
 
