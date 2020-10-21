@@ -26,6 +26,7 @@ class RemoteDecoderManagerChild final
 
   
   static nsISerialEventTarget* GetManagerThread();
+  static void LaunchRDDProcessIfNeeded();
 
   
   
@@ -88,6 +89,8 @@ class RemoteDecoderManagerChild final
       Endpoint<PRemoteDecoderManagerChild>&& aEndpoint);
   static void OpenForGPUProcess(
       Endpoint<PRemoteDecoderManagerChild>&& aEndpoint);
+
+  static StaticMutex sLaunchMonitor;
 
   RefPtr<RemoteDecoderManagerChild> mIPDLSelfRef;
 

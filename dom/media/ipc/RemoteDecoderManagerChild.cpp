@@ -15,11 +15,14 @@
 #include "mozilla/layers/SynchronousTask.h"
 #include "nsIObserver.h"
 #include <mozilla/DataMutex.h>
+#include "mozilla/SyncRunnable.h"
 
 namespace mozilla {
 
 using namespace layers;
 using namespace gfx;
+
+StaticMutex RemoteDecoderManagerChild::sLaunchMonitor;
 
 
 
@@ -162,6 +165,43 @@ RemoteDecoderManagerChild* RemoteDecoderManagerChild::GetGPUProcessSingleton() {
 nsISerialEventTarget* RemoteDecoderManagerChild::GetManagerThread() {
   auto remoteDecoderManagerThread = sRemoteDecoderManagerChildThread.Lock();
   return *remoteDecoderManagerThread;
+}
+
+
+void RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded() {
+  if (!XRE_IsContentProcess()) {
+    return;
+  }
+
+  StaticMutexAutoLock mon(sLaunchMonitor);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool needsLaunch = true;
+  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+  if (managerThread) {
+    RefPtr<Runnable> task = NS_NewRunnableFunction(
+        "RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded-CheckSend", [&]() {
+          auto* rps = GetRDDProcessSingleton();
+          needsLaunch = rps ? !rps->CanSend() : true;
+        });
+    SyncRunnable::DispatchToThread(managerThread, task);
+  }
+
+  if (needsLaunch) {
+    dom::ContentChild::GetSingleton()->LaunchRDDProcess();
+  }
 }
 
 PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(

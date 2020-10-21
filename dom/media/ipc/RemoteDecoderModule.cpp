@@ -29,8 +29,6 @@ using dom::ContentChild;
 using namespace ipc;
 using namespace layers;
 
-StaticMutex RemoteDecoderModule::sLaunchMonitor;
-
 RemoteDecoderModule::RemoteDecoderModule()
     : mManagerThread(RemoteDecoderManagerChild::GetManagerThread()) {
   MOZ_DIAGNOSTIC_ASSERT(mManagerThread);
@@ -38,6 +36,8 @@ RemoteDecoderModule::RemoteDecoderModule()
 
 
 void RemoteDecoderModule::Init() {
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (!BrowserTabsRemoteAutostart()) {
     return;
   }
@@ -77,44 +77,9 @@ bool RemoteDecoderModule::SupportsMimeType(
   return supports;
 }
 
-void RemoteDecoderModule::LaunchRDDProcessIfNeeded() const {
-  if (!XRE_IsContentProcess()) {
-    return;
-  }
-
-  StaticMutexAutoLock mon(sLaunchMonitor);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool needsLaunch = true;
-  RefPtr<Runnable> task = NS_NewRunnableFunction(
-      "RemoteDecoderModule::LaunchRDDProcessIfNeeded-CheckSend", [&]() {
-        if (RemoteDecoderManagerChild::GetRDDProcessSingleton()) {
-          needsLaunch =
-              !RemoteDecoderManagerChild::GetRDDProcessSingleton()->CanSend();
-        }
-      });
-  SyncRunnable::DispatchToThread(mManagerThread, task);
-
-  if (needsLaunch) {
-    ContentChild::GetSingleton()->LaunchRDDProcess();
-  }
-}
-
 already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
     const CreateDecoderParams& aParams) {
-  LaunchRDDProcessIfNeeded();
+  RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded();
 
   
   
@@ -160,7 +125,7 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
 
 already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
-  LaunchRDDProcessIfNeeded();
+  RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded();
 
   RefPtr<RemoteVideoDecoderChild> child = new RemoteVideoDecoderChild();
   MediaResult result(NS_OK);
