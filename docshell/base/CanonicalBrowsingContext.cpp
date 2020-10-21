@@ -564,48 +564,36 @@ void CanonicalBrowsingContext::NotifyOnHistoryReload(
   
 }
 
-void CanonicalBrowsingContext::SetActiveSessionHistoryEntryForTop(
+void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
     const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
-    uint32_t aLoadType, const nsID& aChangeID) {
+    uint32_t aLoadType, int32_t aChildOffset, const nsID& aChangeID) {
   RefPtr<SessionHistoryEntry> oldActiveEntry = mActiveEntry;
   if (aPreviousScrollPos.isSome() && oldActiveEntry) {
     oldActiveEntry->SetScrollPosition(aPreviousScrollPos.ref().x,
                                       aPreviousScrollPos.ref().y);
   }
-  RefPtr<SessionHistoryEntry> newEntry = new SessionHistoryEntry(aInfo);
-  newEntry->SetDocshellID(GetHistoryID());
-  mActiveEntry = newEntry;
-  Maybe<int32_t> previousEntryIndex, loadedEntryIndex;
-  nsISHistory* shistory = GetSessionHistory();
-  if (shistory) {
-    shistory->AddToRootSessionHistory(
-        true, oldActiveEntry, this, newEntry, aLoadType,
-        nsDocShell::ShouldAddToSessionHistory(aInfo->GetURI(), nullptr),
-        &previousEntryIndex, &loadedEntryIndex);
-    
-    HistoryCommitIndexAndLength(aChangeID);
-  }
-}
+  mActiveEntry = new SessionHistoryEntry(aInfo);
+  mActiveEntry->SetDocshellID(GetHistoryID());
 
-void CanonicalBrowsingContext::SetActiveSessionHistoryEntryForFrame(
-    const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
-    int32_t aChildOffset, const nsID& aChangeID) {
-  RefPtr<SessionHistoryEntry> oldActiveEntry = mActiveEntry;
-  if (aPreviousScrollPos.isSome() && oldActiveEntry) {
-    oldActiveEntry->SetScrollPosition(aPreviousScrollPos.ref().x,
-                                      aPreviousScrollPos.ref().y);
-  }
-  RefPtr<SessionHistoryEntry> newEntry = new SessionHistoryEntry(aInfo);
-  newEntry->SetDocshellID(GetHistoryID());
-  mActiveEntry = newEntry;
   nsISHistory* shistory = GetSessionHistory();
-  if (oldActiveEntry) {
+  if (IsTop()) {
     if (shistory) {
-      shistory->AddChildSHEntryHelper(oldActiveEntry, newEntry, Top(), true);
+      Maybe<int32_t> previousEntryIndex, loadedEntryIndex;
+      shistory->AddToRootSessionHistory(
+          true, oldActiveEntry, this, mActiveEntry, aLoadType,
+          nsDocShell::ShouldAddToSessionHistory(aInfo->GetURI(), nullptr),
+          &previousEntryIndex, &loadedEntryIndex);
     }
-  } else if (GetParent() && GetParent()->mActiveEntry) {
-    GetParent()->mActiveEntry->AddChild(newEntry, aChildOffset,
-                                        UseRemoteSubframes());
+  } else {
+    if (oldActiveEntry) {
+      if (shistory) {
+        shistory->AddChildSHEntryHelper(oldActiveEntry, mActiveEntry, Top(),
+                                        true);
+      }
+    } else if (GetParent() && GetParent()->mActiveEntry) {
+      GetParent()->mActiveEntry->AddChild(mActiveEntry, aChildOffset,
+                                          UseRemoteSubframes());
+    }
   }
   
   HistoryCommitIndexAndLength(aChangeID);

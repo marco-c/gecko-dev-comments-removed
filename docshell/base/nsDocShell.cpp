@@ -11537,16 +11537,11 @@ void nsDocShell::UpdateActiveEntry(
   if (replace) {
     mBrowsingContext->ReplaceActiveSessionHistoryEntry(mActiveEntry.get());
   } else {
-    if (mBrowsingContext->IsTop()) {
-      mBrowsingContext->SetActiveSessionHistoryEntryForTop(
-          aPreviousScrollPos, mActiveEntry.get(), mLoadType);
-      
-    } else {
-      
-      
-      mBrowsingContext->SetActiveSessionHistoryEntryForFrame(
-          aPreviousScrollPos, mActiveEntry.get(), mChildOffset);
-    }
+    
+    
+    mBrowsingContext->SetActiveSessionHistoryEntry(
+        aPreviousScrollPos, mActiveEntry.get(), mLoadType, mChildOffset);
+    
   }
 }
 

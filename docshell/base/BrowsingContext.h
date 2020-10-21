@@ -668,17 +668,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
-  
-  void SetActiveSessionHistoryEntryForTop(
-      const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
-      uint32_t aLoadType);
-
-  
-  
-  
-  void SetActiveSessionHistoryEntryForFrame(
-      const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
-      int32_t aChildOffset);
+  void SetActiveSessionHistoryEntry(const Maybe<nsPoint>& aPreviousScrollPos,
+                                    SessionHistoryInfo* aInfo,
+                                    uint32_t aLoadType, int32_t aChildOffset);
 
   
   
