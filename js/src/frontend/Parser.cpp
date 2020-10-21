@@ -1166,6 +1166,8 @@ Maybe<ParserFunctionScopeData*> NewFunctionScopeData(JSContext* cx,
   ParserBindingNameVector vars(cx);
 
   bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver();
+  bool argumentBindingsClosedOver =
+      allBindingsClosedOver || pc->isGeneratorOrAsync();
   bool hasDuplicateParams = pc->functionBox()->hasDuplicateParameters;
 
   
@@ -1181,7 +1183,7 @@ Maybe<ParserFunctionScopeData*> NewFunctionScopeData(JSContext* cx,
       
       
       bool closedOver =
-          allBindingsClosedOver || (p && p->value()->closedOver());
+          argumentBindingsClosedOver || (p && p->value()->closedOver());
 
       
       
