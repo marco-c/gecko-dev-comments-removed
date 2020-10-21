@@ -1023,7 +1023,7 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
                            Label* failure);
 
  public:
-  void handleFailureWithHandlerTail(void* handler, Label* profilerExitTail);
+  void handleFailureWithHandlerTail(Label* profilerExitTail);
 
   
   void profilerEnterFrame(Register framePtr, Register scratch);
