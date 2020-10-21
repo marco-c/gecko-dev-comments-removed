@@ -328,6 +328,13 @@
 
     if ( populate_map_and_metrics )
     {
+      
+      if ( imgHeight > 0x7FFF || imgWidth > 0x7FFF )
+      {
+        error = FT_THROW( Array_Too_Large );
+        goto DestroyExit;
+      }
+
       metrics->width  = (FT_UShort)imgWidth;
       metrics->height = (FT_UShort)imgHeight;
 
@@ -336,13 +343,6 @@
       map->pixel_mode = FT_PIXEL_MODE_BGRA;
       map->pitch      = (int)( map->width * 4 );
       map->num_grays  = 256;
-
-      
-      if ( map->rows > 0x7FFF || map->width > 0x7FFF )
-      {
-        error = FT_THROW( Array_Too_Large );
-        goto DestroyExit;
-      }
     }
 
     
