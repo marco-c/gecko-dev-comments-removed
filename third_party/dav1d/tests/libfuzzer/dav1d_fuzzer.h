@@ -31,6 +31,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+int LLVMFuzzerInitialize(int *argc, char ***argv);
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 
 #endif 
