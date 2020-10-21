@@ -209,6 +209,7 @@ var UrlbarUtils = {
     "shortcut",
     "tabmenu",
     "tabtosearch",
+    "tabtosearch_onboard",
     "topsites_newtab",
     "topsites_urlbar",
     "touchbar",
