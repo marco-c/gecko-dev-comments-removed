@@ -101,8 +101,30 @@ var PrintUtils = {
 
 
   showPageSetup() {
+    let printSettings = this.getPrintSettings();
+    
+    
+    
+    
+    let lastUsedPrinterName = this._getLastUsedPrinterName();
+    if (!lastUsedPrinterName) {
+      if (printSettings.printerName) {
+        let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
+          Ci.nsIPrintSettingsService
+        );
+        PSSVC.savePrintSettingsToPrefs(
+          printSettings,
+          false,
+          Ci.nsIPrintSettings.kInitSavePrinterName
+        );
+        PSSVC.savePrintSettingsToPrefs(
+          printSettings,
+          true,
+          Ci.nsIPrintSettings.kInitSaveAll
+        );
+      }
+    }
     try {
-      var printSettings = this.getPrintSettings();
       var PRINTPROMPTSVC = Cc[
         "@mozilla.org/embedcomp/printingprompt-service;1"
       ].getService(Ci.nsIPrintingPromptService);
@@ -590,6 +612,15 @@ var PrintUtils = {
   ) {
     if (!aPrintSettings.printerName) {
       aPrintSettings.printerName = aPSSVC.lastUsedPrinterName;
+      if (!aPrintSettings.printerName) {
+        
+        
+        
+        let printerList = Cc["@mozilla.org/gfx/printerlist;1"].getService(
+          Ci.nsIPrinterList
+        );
+        aPrintSettings.printerName = printerList.systemDefaultPrinterName;
+      }
     }
 
     
@@ -699,6 +730,32 @@ var PrintUtils = {
     this._currentPPBrowser = ppBrowser;
     let mm = ppBrowser.messageManager;
     let lastUsedPrinterName = this._getLastUsedPrinterName();
+    if (!lastUsedPrinterName) {
+      
+      
+      
+      
+      
+      
+      
+      let settings = this.getPrintSettings();
+      if (settings.printerName) {
+        let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
+          Ci.nsIPrintSettingsService
+        );
+        PSSVC.savePrintSettingsToPrefs(
+          settings,
+          false,
+          Ci.nsIPrintSettings.kInitSavePrinterName
+        );
+        PSSVC.savePrintSettingsToPrefs(
+          settings,
+          true,
+          Ci.nsIPrintSettings.kInitSaveAll
+        );
+        lastUsedPrinterName = settings.printerName;
+      }
+    }
 
     let sendEnterPreviewMessage = function(browser, simplified) {
       mm.sendAsyncMessage("Printing:Preview:Enter", {
