@@ -51,6 +51,7 @@
 #include "js/experimental/JitInfo.h"  
 #include "js/RegExpFlags.h"  
 #include "js/ScalarType.h"   
+#include "proxy/DOMProxy.h"
 #include "util/CheckedArithmetic.h"
 #include "util/Unicode.h"
 #include "vm/ArrayBufferViewObject.h"

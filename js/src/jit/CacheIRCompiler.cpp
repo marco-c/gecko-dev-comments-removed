@@ -28,6 +28,7 @@
 #include "js/friend/DOMProxy.h"     
 #include "js/friend/XrayJitInfo.h"  
 #include "js/ScalarType.h"          
+#include "proxy/DOMProxy.h"
 #include "proxy/Proxy.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/ArrayBufferObject.h"
