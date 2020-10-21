@@ -107,6 +107,33 @@ reftest.Runner = class {
     if (isPrint) {
       this.loadPdfJs();
     }
+
+    ChromeUtils.registerWindowActor("MarionetteReftestFrame", {
+      kind: "JSWindowActor",
+      parent: {
+        moduleURI:
+          "chrome://marionette/content/actors/MarionetteReftestFrameParent.jsm",
+      },
+      child: {
+        moduleURI:
+          "chrome://marionette/content/actors/MarionetteReftestFrameChild.jsm",
+        events: {
+          load: { mozSystemGroup: true, capture: true },
+        },
+      },
+      allFrames: true,
+    });
+  }
+
+  
+
+
+  teardown() {
+    
+    this.abort();
+
+    
+    ChromeUtils.unregisterWindowActor("MarionetteReftestFrame");
   }
 
   async ensureWindow(timeout, width, height) {
@@ -638,7 +665,15 @@ max-width: ${width}px; max-height: ${height}px`;
     this.ensureFocus(win);
 
     
-    await this.driver.listener.reftestWait(url, this.useRemoteTabs);
+    let isReftestReady = false;
+    while (!isReftestReady) {
+      
+      
+      const actor = browsingContext.currentWindowGlobal.getActor(
+        "MarionetteReftestFrame"
+      );
+      isReftestReady = await actor.reftestWait(url, this.useRemoteTabs);
+    }
   }
 
   async screenshot(win, url, timeout) {
