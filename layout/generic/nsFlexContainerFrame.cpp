@@ -460,6 +460,11 @@ class nsFlexContainerFrame::FlexItem final {
 
   
   
+  bool IsCrossSizeDefinite(const ReflowInput& aItemReflowInput,
+                           const FlexboxAxisTracker& aAxisTracker) const;
+
+  
+  
   
   bool IsStretched() const { return mIsStretched; }
 
@@ -1400,46 +1405,6 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
 
 
 
-
-static bool IsCrossSizeDefinite(const ReflowInput& aItemReflowInput,
-                                const FlexboxAxisTracker& aAxisTracker) {
-  const nsStylePosition* pos = aItemReflowInput.mStylePosition;
-  const WritingMode containerWM = aAxisTracker.GetWritingMode();
-
-  if (aAxisTracker.IsColumnOriented()) {
-    
-    return !pos->ISize(containerWM).IsAuto();
-  }
-  
-  
-  
-  nscoord cbBSize = aItemReflowInput.mCBReflowInput->ComputedBSize();
-  return !nsLayoutUtils::IsAutoBSize(pos->BSize(containerWM), cbBSize);
-}
-
-
-
-
-static nscoord SpecifiedCrossSizeIfDefinite(
-    const FlexItem& aFlexItem, const ReflowInput& aItemReflowInput,
-    const FlexboxAxisTracker& aAxisTracker) {
-  if (aFlexItem.IsStretched()) {
-    
-    return aFlexItem.CrossSize();
-  }
-
-  if (IsCrossSizeDefinite(aItemReflowInput, aAxisTracker)) {
-    
-    return aFlexItem.CrossSize();
-  }
-
-  
-  return NS_UNCONSTRAINEDSIZE;
-}
-
-
-
-
 static nscoord MainSizeFromAspectRatio(nscoord aCrossSize,
                                        const AspectRatio& aIntrinsicRatio,
                                        const FlexboxAxisTracker& aAxisTracker) {
@@ -1545,15 +1510,11 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   nscoord transferredSizeSuggestion = nscoord_MAX;
-  if (aFlexItem.HasIntrinsicRatio()) {
+  if (aFlexItem.HasIntrinsicRatio() &&
+      aFlexItem.IsCrossSizeDefinite(aItemReflowInput, aAxisTracker)) {
     
-    const nscoord crossSize =
-        SpecifiedCrossSizeIfDefinite(aFlexItem, aItemReflowInput, aAxisTracker);
-
-    if (crossSize != NS_UNCONSTRAINEDSIZE) {
-      transferredSizeSuggestion = MainSizeFromAspectRatio(
-          crossSize, aFlexItem.IntrinsicRatio(), aAxisTracker);
-    }
+    transferredSizeSuggestion = MainSizeFromAspectRatio(
+        aFlexItem.CrossSize(), aFlexItem.IntrinsicRatio(), aAxisTracker);
 
     
     
@@ -1583,17 +1544,13 @@ static bool ResolveAutoFlexBasisFromRatio(
   
   
   
-  if (aFlexItem.IntrinsicRatio()) {
+  if (aFlexItem.HasIntrinsicRatio() &&
+      aFlexItem.IsCrossSizeDefinite(aItemReflowInput, aAxisTracker)) {
     
-    const nscoord crossSize =
-        SpecifiedCrossSizeIfDefinite(aFlexItem, aItemReflowInput, aAxisTracker);
-    if (crossSize != NS_UNCONSTRAINEDSIZE) {
-      
-      nscoord mainSizeFromRatio = MainSizeFromAspectRatio(
-          crossSize, aFlexItem.IntrinsicRatio(), aAxisTracker);
-      aFlexItem.SetFlexBaseSizeAndMainSize(mainSizeFromRatio);
-      return true;
-    }
+    nscoord mainSizeFromRatio = MainSizeFromAspectRatio(
+        aFlexItem.CrossSize(), aFlexItem.IntrinsicRatio(), aAxisTracker);
+    aFlexItem.SetFlexBaseSizeAndMainSize(mainSizeFromRatio);
+    return true;
   }
   return false;
 }
@@ -2274,6 +2231,30 @@ bool FlexItem::IsCrossSizeAuto() const {
   
   return IsInlineAxisCrossAxis() ? stylePos->ISize(mWM).IsAuto()
                                  : stylePos->BSize(mWM).IsAuto();
+}
+
+bool FlexItem::IsCrossSizeDefinite(
+    const ReflowInput& aItemReflowInput,
+    const FlexboxAxisTracker& aAxisTracker) const {
+  if (IsStretched()) {
+    
+    return true;
+  }
+
+  const nsStylePosition* pos = aItemReflowInput.mStylePosition;
+  const WritingMode containerWM = aAxisTracker.GetWritingMode();
+
+  
+  
+  if (aAxisTracker.IsColumnOriented()) {
+    
+    return !pos->ISize(containerWM).IsAuto();
+  }
+  
+  
+  
+  nscoord cbBSize = aItemReflowInput.mCBReflowInput->ComputedBSize();
+  return !nsLayoutUtils::IsAutoBSize(pos->BSize(containerWM), cbBSize);
 }
 
 uint32_t FlexItem::NumAutoMarginsInAxis(LogicalAxis aAxis) const {
