@@ -13,7 +13,7 @@ const {
 
 
 function recordTelemetryEvent(method, details) {
-  return (dispatch, getState) => {
+  return ({ dispatch, getState }) => {
     dispatch({ type: TELEMETRY_RECORD, method, details });
   };
 }

@@ -36,7 +36,7 @@ function receiveProperties(grip, response, error) {
 
 
 function fetchProperties(grip) {
-  return async dispatch => {
+  return async ({ dispatch }) => {
     try {
       
       const response = await DomProvider.getPrototypeAndProperties(grip);

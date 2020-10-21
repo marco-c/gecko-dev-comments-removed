@@ -20,7 +20,7 @@ const animationFrame = () =>
 
 module.exports = {
   takeScreenshot() {
-    return async function(dispatch) {
+    return async function({ dispatch }) {
       await dispatch({ type: TAKE_SCREENSHOT_START });
 
       

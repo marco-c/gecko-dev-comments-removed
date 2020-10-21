@@ -16,7 +16,7 @@ function unregisterTarget(targetFront) {
 
 
 function selectTarget(targetActorID) {
-  return function(dispatch) {
+  return function({ dispatch, getState }) {
     dispatch({ type: "SELECT_TARGET", targetActorID });
   };
 }

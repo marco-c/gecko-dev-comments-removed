@@ -12,7 +12,7 @@ const { refresh } = require("devtools/client/memory/actions/refresh");
 
 
 exports.setLabelDisplayAndRefresh = function(heapWorker, display) {
-  return async function(dispatch, getState) {
+  return async function({ dispatch, getState }) {
     
     dispatch(setLabelDisplay(display));
     await dispatch(refresh(heapWorker));

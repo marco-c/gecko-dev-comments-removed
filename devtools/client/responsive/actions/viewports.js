@@ -36,7 +36,7 @@ module.exports = {
 
 
   changeDevice(id, device, deviceType) {
-    return async function(dispatch) {
+    return async function({ dispatch }) {
       dispatch({
         type: CHANGE_DEVICE,
         id,
@@ -79,7 +79,7 @@ module.exports = {
 
 
   removeDeviceAssociation(id) {
-    return async function(dispatch) {
+    return async function({ dispatch }) {
       post(window, "remove-device-association");
 
       dispatch({
