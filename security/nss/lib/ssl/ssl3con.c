@@ -6645,7 +6645,11 @@ ssl_CheckServerSessionIdCorrectness(sslSocket *ss, SECItem *sidBytes)
 
     
     if (!IS_DTLS(ss) && (sentRealSid || sentFakeSid)) {
-        return sidMatch;
+        if (sidMatch) {
+            ss->ssl3.hs.allowCcs = PR_TRUE;
+            return PR_TRUE;
+        }
+        return PR_FALSE;
     }
 
     
@@ -8692,6 +8696,7 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
                 errCode = PORT_GetError();
                 goto alert_loser;
             }
+            ss->ssl3.hs.allowCcs = PR_TRUE;
         }
 
         
@@ -13061,8 +13066,15 @@ ssl3_HandleRecord(sslSocket *ss, SSL3Ciphertext *cText)
             ss->ssl3.hs.ws != idle_handshake &&
             cText->buf->len == 1 &&
             cText->buf->buf[0] == change_cipher_spec_choice) {
+            if (ss->ssl3.hs.allowCcs) {
+                
+                ss->ssl3.hs.allowCcs = PR_FALSE;
+                return SECSuccess;
+            }
+
             
-            return SECSuccess;
+            alert = unexpected_message;
+            PORT_SetError(SSL_ERROR_RX_MALFORMED_CHANGE_CIPHER);
         }
 
         if ((IS_DTLS(ss) && !dtls13_AeadLimitReached(spec)) ||
