@@ -1201,6 +1201,11 @@ bool nsDocumentViewer::GetIsStopped() { return mStopped; }
 NS_IMETHODIMP
 nsDocumentViewer::PermitUnload(PermitUnloadAction aAction,
                                bool* aPermitUnload) {
+  
+  
+  
+  RefPtr<nsDocumentViewer> kungFuDeathGrip(this);
+
   if (StaticPrefs::dom_disable_beforeunload()) {
     aAction = eDontPromptAndUnload;
   }
