@@ -1576,13 +1576,10 @@ void Http3Session::Authenticated(int32_t aError) {
            static_cast<uint32_t>(mError), this));
     }
     mHttp3Connection->PeerAuthenticated(aError);
+  }
 
-    
-    
-    
-    NS_DispatchToCurrentThread(NewRunnableMethod(
-        "net::HttpConnectionUDP::OnQuicTimeoutExpired", mSegmentReaderWriter,
-        &HttpConnectionUDP::OnQuicTimeoutExpired));
+  if (mConnection) {
+    Unused << mConnection->ResumeSend();
   }
 }
 
