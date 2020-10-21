@@ -221,6 +221,7 @@
 
 
 .toolbarbutton-1:not(:hover):-moz-window-inactive,
+.bookmark-item:not(:hover):-moz-window-inactive,
 :root:not([customizing]) .toolbarbutton-1:-moz-window-inactive[disabled="true"] {
   opacity: 0.5;
 }
