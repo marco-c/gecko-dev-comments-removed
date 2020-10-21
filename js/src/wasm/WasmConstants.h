@@ -390,6 +390,10 @@ enum class Op {
   RefFunc = 0xd2,
 
   
+  RefAsNonNull = 0xd3,
+  BrOnNull = 0xd4,
+
+  
   RefEq = 0xd5,
 
   FirstPrefix = 0xfb,

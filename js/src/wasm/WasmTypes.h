@@ -400,6 +400,15 @@ static inline bool IsReferenceType(PackedTypeCode ptc) {
 
 
 
+static inline PackedTypeCode RepackTypeCodeAsNonNullable(PackedTypeCode ptc) {
+  MOZ_ASSERT(IsReferenceType(ptc));
+  constexpr uint32_t NonNullableMask = ~(1 << PackedTypeNullableShift);
+  return PackedTypeCode(uint32_t(ptc) & NonNullableMask);
+}
+
+
+
+
 enum class TableRepr { Ref, Func };
 
 
