@@ -1312,15 +1312,12 @@ MarkupView.prototype = {
 
 
 
-
-
-
   navigate: function(container) {
     if (!container) {
-      return false;
+      return;
     }
 
-    return this._markContainerAsSelected(container, "treepanel");
+    this._markContainerAsSelected(container, "treepanel");
   },
 
   

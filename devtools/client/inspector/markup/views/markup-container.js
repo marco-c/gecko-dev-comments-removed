@@ -547,17 +547,10 @@ MarkupContainer.prototype = {
 
     
     this.hovered = false;
-    
-    const didNavigate = this.markup.navigate(this);
+    this.markup.navigate(this);
     
     this.canFocus = true;
-    
-    
-    
-    if (didNavigate) {
-      this.focus();
-    }
-
+    this.focus();
     event.stopPropagation();
 
     
