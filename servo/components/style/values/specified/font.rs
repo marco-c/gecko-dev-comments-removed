@@ -2296,38 +2296,36 @@ impl Parse for MozScriptMinSize {
     }
 }
 
+
+
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-
-
-
-
-
 pub enum MathDepth {
     
-    Relative(i32),
-    
-    
-    
-    
+    AutoAdd,
+
     
     #[css(function)]
-    MozAbsolute(i32),
+    Add(Integer),
+
     
-    Auto,
+    Absolute(Integer),
 }
 
 impl Parse for MathDepth {
     fn parse<'i, 't>(
-        _: &ParserContext,
+        context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<MathDepth, ParseError<'i>> {
-        
-        if let Ok(i) = input.try_parse(|i| i.expect_integer()) {
-            return Ok(MathDepth::Relative(i));
+        if input.try_parse(|i| i.expect_ident_matching("auto-add")).is_ok() {
+            return Ok(MathDepth::AutoAdd);
         }
-        input.expect_ident_matching("auto")?;
-        Ok(MathDepth::Auto)
+        if let Ok(math_depth_value) = input.try_parse(|input| Integer::parse(context, input)) {
+            return Ok(MathDepth::Absolute(math_depth_value));
+        }
+        input.expect_function_matching("add")?;
+        let math_depth_delta_value = input.parse_nested_block(|input| Integer::parse(context, input))?;
+        Ok(MathDepth::Add(math_depth_delta_value))
     }
 }
 

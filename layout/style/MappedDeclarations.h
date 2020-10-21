@@ -97,6 +97,11 @@ class MappedDeclarations final {
   }
 
   
+  void SetMathDepthValue(int32_t aValue, bool aIsRelative) {
+    Servo_DeclarationBlock_SetMathDepthValue(mDecl, aValue, aIsRelative);
+  }
+
+  
   void SetCounterResetListItem(int32_t aValue) {
     Servo_DeclarationBlock_SetCounterResetListItem(mDecl, aValue);
   }

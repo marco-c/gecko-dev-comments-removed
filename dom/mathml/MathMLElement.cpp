@@ -448,18 +448,9 @@ void MathMLElement::MapMathMLAttributesInto(
       nsresult errorCode;
       int32_t intValue = str.ToInteger(&errorCode);
       if (NS_SUCCEEDED(errorCode)) {
-        
-        
-        
-        
-        
-        
         char16_t ch = str.CharAt(0);
-        if (ch == '+' || ch == '-') {
-          aDecls.SetIntValue(eCSSProperty_math_depth, intValue);
-        } else {
-          aDecls.SetNumberValue(eCSSProperty_math_depth, intValue);
-        }
+        bool isRelativeScriptLevel = (ch == '+' || ch == '-');
+        aDecls.SetMathDepthValue(intValue, isRelativeScriptLevel);
       } else {
         ReportParseErrorNoTag(str, nsGkAtoms::scriptlevel_, aDecls.Document());
       }
