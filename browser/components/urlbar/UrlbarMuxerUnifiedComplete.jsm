@@ -291,6 +291,35 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       return false;
     }
 
+    if (result.providerName == "TabToSearch") {
+      
+      if (
+        state.context.heuristicResult.type != UrlbarUtils.RESULT_TYPE.URL ||
+        !state.context.heuristicResult.autofill
+      ) {
+        return false;
+      }
+
+      let autofillHostname = new URL(state.context.heuristicResult.payload.url)
+        .hostname;
+      let [autofillDomain] = UrlbarUtils.stripPrefixAndTrim(autofillHostname, {
+        stripWww: true,
+      });
+      
+      
+      
+      let [engineDomain] = UrlbarUtils.stripPrefixAndTrim(result.payload.url, {
+        stripHttp: true,
+        stripHttps: true,
+        stripWww: true,
+      });
+      
+      
+      if (autofillDomain != engineDomain) {
+        return false;
+      }
+    }
+
     
     if (
       result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&

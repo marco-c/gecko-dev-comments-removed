@@ -2458,7 +2458,7 @@ class UrlbarInput {
     }
 
     
-    if (!result.payload.keyword) {
+    if (!result.payload.keyword && !result.payload.engine) {
       return null;
     }
 

@@ -1078,11 +1078,7 @@ class UrlbarView {
     }
 
     let title = item._elements.get("title");
-    this._addTextContentWithHighlights(
-      title,
-      result.title,
-      result.titleHighlights
-    );
+    this._setResultTitle(result, title);
 
     if (result.payload.tail && result.payload.tailOffsetIndex > 0) {
       this._fillTailSuggestionPrefix(item, result);
@@ -1154,7 +1150,23 @@ class UrlbarView {
               );
             };
           }
-        } else {
+        } else if (result.providerName == "TabToSearch") {
+          actionSetter = () => {
+            this.document.l10n.setAttributes(
+              action,
+              UrlbarUtils.WEB_ENGINE_NAMES.has(result.payload.engine)
+                ? "urlbar-result-action-tabtosearch-web"
+                : "urlbar-result-action-tabtosearch-other-engine",
+              { engine: result.payload.engine }
+            );
+          };
+        } else if (!this._shouldLocalizeSearchResultTitle(result)) {
+          
+          
+          
+          
+          
+          
           actionSetter = () => {
             this.document.l10n.setAttributes(
               action,
@@ -1213,9 +1225,11 @@ class UrlbarView {
       actionSetter();
       item._originalActionSetter = actionSetter;
     } else {
-      action.removeAttribute("data-l10n-id");
-      action.textContent = "";
-      item._originalActionSetter = undefined;
+      item._originalActionSetter = () => {
+        action.removeAttribute("data-l10n-id");
+        action.textContent = "";
+      };
+      item._originalActionSetter();
     }
 
     if (!title.hasAttribute("isurl")) {
@@ -1225,6 +1239,28 @@ class UrlbarView {
     }
 
     item._elements.get("titleSeparator").hidden = !actionSetter && !setURL;
+  }
+
+  
+
+
+
+
+
+
+
+  _shouldLocalizeSearchResultTitle(result) {
+    if (
+      result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+      !result.payload.keywordOffer
+    ) {
+      return false;
+    }
+
+    return (
+      UrlbarPrefs.get("update2") ||
+      result.payload.keywordOffer == UrlbarUtils.KEYWORD_OFFER.HIDE
+    );
   }
 
   _iconForSearchResult(result, iconUrlOverride = null) {
@@ -1579,6 +1615,35 @@ class UrlbarView {
     } else {
       this.input.inputField.removeAttribute("aria-activedescendant");
     }
+  }
+
+  
+
+
+
+
+
+
+  _setResultTitle(result, titleNode) {
+    if (this._shouldLocalizeSearchResultTitle(result)) {
+      
+      
+      
+      
+      this.document.l10n.setAttributes(
+        titleNode,
+        "urlbar-result-action-search-w-engine",
+        { engine: result.payload.engine }
+      );
+      return;
+    }
+
+    titleNode.removeAttribute("data-l10n-id");
+    this._addTextContentWithHighlights(
+      titleNode,
+      result.title,
+      result.titleHighlights
+    );
   }
 
   

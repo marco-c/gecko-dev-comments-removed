@@ -8,6 +8,7 @@
 "use strict";
 
 const TEST_ENGINE_NAME = "Test";
+const TEST_ENGINE_DOMAIN = "example.com";
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
@@ -20,7 +21,7 @@ add_task(async function setup() {
     TEST_ENGINE_NAME,
     {
       alias: "@test",
-      template: "http://example.com/?search={searchTerms}",
+      template: `http://${TEST_ENGINE_DOMAIN}/?search={searchTerms}`,
     }
   );
 

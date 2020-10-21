@@ -575,6 +575,8 @@ function makePrioritySearchResult(
 
 
 
+
+
 function makeSearchResult(
   queryContext,
   {
@@ -584,6 +586,7 @@ function makeSearchResult(
     tailOffsetIndex,
     engineName,
     alias,
+    uri,
     query,
     engineIconUri,
     keywordOffer,
@@ -605,31 +608,39 @@ function makeSearchResult(
     }
   }
 
+  let payload = {
+    engine: [engineName, UrlbarUtils.HIGHLIGHT.TYPED],
+    suggestion: [suggestion, UrlbarUtils.HIGHLIGHT.SUGGESTED],
+    tailPrefix,
+    tail: [tail, UrlbarUtils.HIGHLIGHT.SUGGESTED],
+    tailOffsetIndex,
+    keyword: [
+      alias,
+      keywordOffer == UrlbarUtils.KEYWORD_OFFER.SHOW
+        ? UrlbarUtils.HIGHLIGHT.TYPED
+        : UrlbarUtils.HIGHLIGHT.NONE,
+    ],
+    
+    query: [
+      typeof query != "undefined" ? query : queryContext.trimmedSearchString,
+      UrlbarUtils.HIGHLIGHT.TYPED,
+    ],
+    icon: engineIconUri,
+    keywordOffer,
+    inPrivateWindow,
+    isPrivateEngine,
+  };
+
+  
+  
+  if (uri) {
+    payload.url = uri;
+  }
+
   let result = new UrlbarResult(
     type,
     source,
-    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-      engine: [engineName, UrlbarUtils.HIGHLIGHT.TYPED],
-      suggestion: [suggestion, UrlbarUtils.HIGHLIGHT.SUGGESTED],
-      tailPrefix,
-      tail: [tail, UrlbarUtils.HIGHLIGHT.SUGGESTED],
-      tailOffsetIndex,
-      keyword: [
-        alias,
-        keywordOffer == UrlbarUtils.KEYWORD_OFFER.SHOW
-          ? UrlbarUtils.HIGHLIGHT.TYPED
-          : UrlbarUtils.HIGHLIGHT.NONE,
-      ],
-      
-      query: [
-        typeof query != "undefined" ? query : queryContext.trimmedSearchString,
-        UrlbarUtils.HIGHLIGHT.TYPED,
-      ],
-      icon: engineIconUri,
-      keywordOffer,
-      inPrivateWindow,
-      isPrivateEngine,
-    })
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, payload)
   );
 
   if (typeof suggestion == "string") {
