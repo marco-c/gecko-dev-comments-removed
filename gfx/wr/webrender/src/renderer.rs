@@ -2971,9 +2971,11 @@ impl Renderer {
                             
                             
                             
+                            
+                            
+                            
                             if self.active_documents[pos].1.frame.must_be_drawn() {
-                                let device_size = self.device_size;
-                                self.render_impl(device_size).ok();
+                                self.render_impl(None).ok();
                             }
 
                             self.active_documents[pos].1 = doc;
@@ -3045,8 +3047,10 @@ impl Renderer {
                             });
 
                         if must_be_drawn {
-                            let device_size = self.device_size;
-                            self.render_impl(device_size).ok();
+                            
+                            
+                            
+                            self.render_impl(None).ok();
                         }
                     }
 
@@ -6240,6 +6244,10 @@ impl Renderer {
                                 &mut results.stats,
                             );
                         }
+                    } else {
+                        
+                        
+                        self.force_redraw();
                     }
                 }
                 RenderPassKind::OffScreen {
