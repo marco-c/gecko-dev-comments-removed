@@ -396,25 +396,13 @@
 
 #define QM_PROPAGATE Err(tryTempError)
 
-#ifdef DEBUG
-#  define QM_ASSERT_UNREACHABLE                       \
-    []() -> ::mozilla::GenericErrorResult<nsresult> { \
-      MOZ_CRASH("Should never be reached.");          \
-    }()
+#define QM_ASSERT_UNREACHABLE \
+  [&tryTempError] {           \
+    MOZ_ASSERT(false);        \
+    return Err(tryTempError); \
+  }()
 
-#  define QM_ASSERT_UNREACHABLE_VOID \
-    [] { MOZ_CRASH("Should never be reached."); }()
-#endif
-
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-#  define QM_DIAGNOSTIC_ASSERT_UNREACHABLE            \
-    []() -> ::mozilla::GenericErrorResult<nsresult> { \
-      MOZ_CRASH("Should never be reached.");          \
-    }()
-
-#  define QM_DIAGNOSTIC_ASSERT_UNREACHABLE_VOID \
-    [] { MOZ_CRASH("Should never be reached."); }()
-#endif
+#define QM_ASSERT_UNREACHABLE_VOID [] { MOZ_ASSERT(false); }()
 
 
 
