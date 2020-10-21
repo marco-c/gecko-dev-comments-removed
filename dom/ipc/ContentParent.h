@@ -853,6 +853,20 @@ class ContentParent final
   
 
 
+
+
+
+
+
+
+
+
+  void MaybeBeginShutDown(uint32_t aExpectedBrowserCount = 0,
+                          bool aSendShutDown = true);
+
+  
+
+
   enum ShutDownMethod {
     
     SEND_SHUTDOWN_MESSAGE,
