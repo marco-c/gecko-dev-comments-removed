@@ -1,0 +1,14 @@
+
+
+
+
+#include "gtest/gtest.h"
+
+extern "C" void Rust_Future(bool* aItWorked);
+
+TEST(RustMozTask, Future)
+{
+  bool itWorked = false;
+  Rust_Future(&itWorked);
+  EXPECT_TRUE(itWorked);
+}

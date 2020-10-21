@@ -9,12 +9,16 @@
 
 #[macro_use]
 extern crate cstr;
+extern crate futures_task;
 extern crate libc;
 extern crate nserror;
 extern crate nsstring;
+extern crate thiserror;
 extern crate xpcom;
 
 mod event_loop;
+mod executor;
+pub use executor::spawn_current_thread;
 
 
 
@@ -88,6 +92,40 @@ pub fn create_background_task_queue(
     name: &'static CStr,
 ) -> Result<RefPtr<nsISerialEventTarget>, nsresult> {
     getter_addrefs(|p| unsafe { NS_CreateBackgroundTaskQueue(name.as_ptr(), p) })
+}
+
+
+
+
+
+
+
+
+#[inline]
+pub unsafe fn dispatch(runnable: &nsIRunnable, target: &nsIEventTarget) -> Result<(), nsresult> {
+    dispatch_with_options(runnable, target, DispatchOptions::default())
+}
+
+
+
+
+
+
+
+
+
+
+
+pub unsafe fn dispatch_with_options(
+    runnable: &nsIRunnable,
+    target: &nsIEventTarget,
+    options: DispatchOptions,
+) -> Result<(), nsresult> {
+    
+    
+    target
+        .DispatchFromScript(runnable, options.flags())
+        .to_result()
 }
 
 
@@ -201,8 +239,6 @@ impl TaskRunnable {
         Self::dispatch_with_options(this, target, DispatchOptions::default())
     }
 
-    
-    
     
     
     
