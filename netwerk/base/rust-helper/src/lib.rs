@@ -6,7 +6,14 @@ extern crate nserror;
 use self::nserror::*;
 
 extern crate nsstring;
-use self::nsstring::nsACString;
+use self::nsstring::{nsACString, nsCString};
+
+extern crate thin_vec;
+use self::thin_vec::ThinVec;
+
+use std::fs::File;
+use std::io::{self, BufRead};
+use std::net::Ipv4Addr;
 
 
 static HTTP_LWS: &'static [u8] = &[' ' as u8, '\t' as u8];
@@ -308,4 +315,57 @@ pub extern "C" fn rust_net_is_valid_scheme<'a>(scheme: &'a nsACString) -> bool {
 
 fn is_valid_scheme_char(a_char: u8) -> bool {
     a_char.is_ascii_alphanumeric() || a_char == b'+' || a_char == b'.' || a_char == b'-'
+}
+
+type ParsingCallback = fn(&ThinVec<nsCString>) -> bool;
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn rust_parse_etc_hosts<'a>(path: &'a nsACString, callback: ParsingCallback) {
+    let file = File::open(&path.to_string());
+    if file.is_err() {
+        return;
+    }
+    let mut lines = io::BufReader::new(file.unwrap()).lines();
+
+    let mut array = ThinVec::new();
+    loop {
+        let line = match lines.next() {
+            None => {
+                break;
+            }
+            Some(Err(_)) => {
+                break;
+            }
+            Some(Ok(line)) => line,
+        };
+
+        let mut iter = line.split('#').next().unwrap().split_whitespace();
+        iter.next(); 
+
+        array.extend(
+            iter.filter(|host| {
+                
+                let invalid = [
+                    '\0', '\t', '\n', '\r', ' ', '#', '%', '/', ':', '?', '@', '[', '\\', ']',
+                ];
+                host.parse::<Ipv4Addr>().is_err() && !host.contains(&invalid[..])
+            })
+            .map(move |host| nsCString::from(host)),
+        );
+
+        
+        
+        
+        if array.len() > 100 {
+            let keep_going = callback(&array);
+            array.clear();
+            if !keep_going {
+                break;
+            }
+        }
+    }
+
+    if !array.is_empty() {
+        callback(&array);
+    }
 }

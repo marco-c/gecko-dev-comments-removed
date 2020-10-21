@@ -33,6 +33,8 @@ class TRRServiceBase {
   void OnTRRModeChange();
   void OnTRRURIChange();
 
+  virtual void ReadEtcHostsFile() {}
+
   nsCString mPrivateURI;
   
   bool mURIPrefHasUserValue = false;
