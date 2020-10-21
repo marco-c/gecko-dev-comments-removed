@@ -525,6 +525,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
                                           bool aVertical,
                                           AnonymousContentKey& aKey);
 
+  void AppendScrollUpdate(const ScrollPositionUpdate& aUpdate);
+
   
   nsCOMPtr<Element> mHScrollbarContent;
   nsCOMPtr<Element> mVScrollbarContent;
