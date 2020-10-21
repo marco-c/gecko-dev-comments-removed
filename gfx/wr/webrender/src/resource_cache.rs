@@ -10,7 +10,7 @@ use api::{ImageData, ImageDescriptor, ImageKey, ImageRendering, TileSize};
 use api::{BlobImageKey, VoidPtrToSizeFn};
 use api::{SharedFontInstanceMap, BaseFontInstance};
 use api::units::*;
-use crate::{render_api::{ClearCache, AddFont, ResourceUpdate, MemoryReport}, util::WeakTable};
+use crate::render_api::{ClearCache, AddFont, ResourceUpdate, MemoryReport}; 
 use crate::image_tiling::{compute_tile_size, compute_tile_range};
 #[cfg(feature = "capture")]
 use crate::capture::ExternalCaptureImage;
@@ -399,10 +399,6 @@ struct Resources {
     font_templates: FastHashMap<FontKey, FontTemplate>,
     font_instances: SharedFontInstanceMap,
     image_templates: ImageTemplates,
-    
-    
-    
-    weak_fonts: WeakTable
 }
 
 impl BlobImageResources for Resources {
@@ -478,7 +474,6 @@ impl ResourceCache {
                 font_instances,
                 font_templates: FastHashMap::default(),
                 image_templates: ImageTemplates::default(),
-                weak_fonts: WeakTable::new(),
             },
             cached_glyph_dimensions: FastHashMap::default(),
             texture_cache,
@@ -671,9 +666,6 @@ impl ResourceCache {
     pub fn add_font_template(&mut self, font_key: FontKey, template: FontTemplate) {
         
         
-        if let FontTemplate::Raw(ref font, _) = template {
-            self.resources.weak_fonts.insert(Arc::downgrade(font));
-        }
         self.glyph_rasterizer.add_font(font_key, template.clone());
         self.resources.font_templates.insert(font_key, template);
     }
@@ -1442,19 +1434,11 @@ impl ResourceCache {
     pub fn report_memory(&self, op: VoidPtrToSizeFn) -> MemoryReport {
         let mut report = MemoryReport::default();
 
-        let mut seen_fonts = std::collections::HashSet::new();
         
         
         for (_, font) in self.resources.font_templates.iter() {
             if let FontTemplate::Raw(ref raw, _) = font {
                 report.fonts += unsafe { op(raw.as_ptr() as *const c_void) };
-                seen_fonts.insert(raw.as_ptr());
-            }
-        }
-
-        for font in self.resources.weak_fonts.iter() {
-            if !seen_fonts.contains(&font.as_ptr()) { 
-                report.weak_fonts += unsafe { op(font.as_ptr() as *const c_void) };
             }
         }
 
