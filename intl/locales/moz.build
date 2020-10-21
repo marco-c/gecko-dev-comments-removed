@@ -1,8 +1,16 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
+
+
+
+
+if CONFIG['MOZ_BUILD_APP'] == 'mobile/android':
+    hyphenation_ext = ".dic"
+else:
+    hyphenation_ext = ".hyf"
 
 locales = [
     'af',
@@ -13,7 +21,7 @@ locales = [
     'de-1901',
     'de-1996',
     'de-CH',
-    # 'en-US',  # en-US is renamed -- see below.
+    
     'eo',
     'es',
     'et',
@@ -42,7 +50,7 @@ locales = [
     'tr',
     'uk',
 ]
-filename = '{locale}/hyphenation/hyph_{locale}.hyf'
+filename = '{locale}/hyphenation/hyph_{locale}' + hyphenation_ext
 FINAL_TARGET_FILES.hyphenation += [filename.format(locale=locale) for locale in locales]
-# en-US is a special case: the dic file is named like en_US.
-FINAL_TARGET_FILES.hyphenation += ['en-US/hyphenation/hyph_en_US.hyf']
+
+FINAL_TARGET_FILES.hyphenation += ['en-US/hyphenation/hyph_en_US' + hyphenation_ext]
