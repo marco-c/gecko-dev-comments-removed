@@ -4939,7 +4939,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
         url(cx),
         displayURLString(cx),
         source(cx, AsVariant(static_cast<ScriptSourceObject*>(nullptr))),
-        innermostForRealm(cx, cx->zone()),
         scriptVector(cx, BaseScriptVector(cx)),
         wasmInstanceVector(cx, WasmInstanceObjectVector(cx)) {}
 
@@ -5141,10 +5140,38 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     
     
     if (innermost) {
+      using RealmToScriptMap =
+          GCHashMap<Realm*, BaseScript*, DefaultHasher<Realm*>>;
+
+      Rooted<RealmToScriptMap> innermostForRealm(cx);
+
+      
+      for (BaseScript* script : scriptVector) {
+        Realm* realm = script->realm();
+        RealmToScriptMap::AddPtr p = innermostForRealm.lookupForAdd(realm);
+        if (p) {
+          
+          BaseScript* incumbent = p->value();
+          if (script->asJSScript()->innermostScope()->chainLength() >
+              incumbent->asJSScript()->innermostScope()->chainLength()) {
+            p->value() = script;
+          }
+        } else {
+          
+          
+          if (!innermostForRealm.add(p, realm, script)) {
+            return false;
+          }
+        }
+      }
+
+      
+      scriptVector.clear();
+
+      
       for (RealmToScriptMap::Range r = innermostForRealm.all(); !r.empty();
            r.popFront()) {
         if (!scriptVector.append(r.front().value())) {
-          ReportOutOfMemory(cx);
           return false;
         }
       }
@@ -5199,16 +5226,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
   
   bool innermost = false;
-
-  using RealmToScriptMap =
-      GCHashMap<Realm*, JSScript*, DefaultHasher<Realm*>, ZoneAllocPolicy>;
-
-  
-
-
-
-
-  Rooted<RealmToScriptMap> innermostForRealm;
 
   
 
@@ -5313,7 +5330,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
 
 
-
   void consider(JSScript* script, const JS::AutoRequireNoGC& nogc) {
     if (oom || script->selfHosted()) {
       return;
@@ -5332,39 +5348,13 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       }
     }
 
-    if (innermost) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      RealmToScriptMap::AddPtr p = innermostForRealm.lookupForAdd(realm);
-      if (p) {
-        
-        JSScript* incumbent = p->value();
-        if (script->innermostScope()->chainLength() >
-            incumbent->innermostScope()->chainLength()) {
-          p->value() = script;
-        }
-      } else {
-        
-        
-        if (!innermostForRealm.add(p, realm, script)) {
-          oom = true;
-          return;
-        }
-      }
-    } else {
-      
-      if (!scriptVector.append(script)) {
-        oom = true;
-        return;
-      }
+    
+    
+    MOZ_ASSERT_IF(innermost, hasLine);
+
+    if (!scriptVector.append(script)) {
+      oom = true;
+      return;
     }
   }
 
