@@ -419,10 +419,6 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
   }
 
   if (CSP_IsKeyword(mCurToken, CSP_STRICT_DYNAMIC)) {
-    
-    if (!StaticPrefs::security_csp_enableStrictDynamic()) {
-      return nullptr;
-    }
     if (!CSP_IsDirective(mCurDir[0],
                          nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE)) {
       
