@@ -211,6 +211,12 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
+  nsresult SetFocusedWindowWithCallerType(mozIDOMWindowProxy* aWindowToFocus,
+                                          mozilla::dom::CallerType aCallerType);
+
+  
+
+
 
   void ActivateRemoteFrameIfNeeded(mozilla::dom::Element&);
 
