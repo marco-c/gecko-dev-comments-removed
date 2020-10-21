@@ -167,7 +167,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
 
   
 
-  if (mSpeculativeLoadStage) {
+  if (mSpeculativeLoadStage && mode != IN_TEMPLATE) {
     switch (aNamespace) {
       case kNameSpaceID_XHTML:
         if (nsGkAtoms::img == aName) {
