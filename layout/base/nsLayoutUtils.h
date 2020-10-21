@@ -144,6 +144,15 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DrawStringFlags)
 
 enum class ScrollableDirection { Horizontal, Vertical, Either };
 
+namespace mozilla {
+
+class RectCallback {
+ public:
+  virtual void AddRect(const nsRect& aRect) = 0;
+};
+
+}  
+
 
 
 
@@ -1312,12 +1321,7 @@ class nsLayoutUtils {
 
   static nsIFrame* GetFirstNonAnonymousFrame(nsIFrame* aFrame);
 
-  class RectCallback {
-   public:
-    virtual void AddRect(const nsRect& aRect) = 0;
-  };
-
-  struct RectAccumulator : public RectCallback {
+  struct RectAccumulator : public mozilla::RectCallback {
     nsRect mResultRect;
     nsRect mFirstRect;
     bool mSeenFirstRect;
@@ -1327,7 +1331,7 @@ class nsLayoutUtils {
     virtual void AddRect(const nsRect& aRect) override;
   };
 
-  struct RectListBuilder : public RectCallback {
+  struct RectListBuilder : public mozilla::RectCallback {
     DOMRectList* mRectList;
 
     explicit RectListBuilder(DOMRectList* aList);
@@ -1361,10 +1365,12 @@ class nsLayoutUtils {
 
 
   static void GetAllInFlowRects(nsIFrame* aFrame, const nsIFrame* aRelativeTo,
-                                RectCallback* aCallback, uint32_t aFlags = 0);
+                                mozilla::RectCallback* aCallback,
+                                uint32_t aFlags = 0);
 
   static void GetAllInFlowRectsAndTexts(
-      nsIFrame* aFrame, const nsIFrame* aRelativeTo, RectCallback* aCallback,
+      nsIFrame* aFrame, const nsIFrame* aRelativeTo,
+      mozilla::RectCallback* aCallback,
       mozilla::dom::Sequence<nsString>* aTextList, uint32_t aFlags = 0);
 
   

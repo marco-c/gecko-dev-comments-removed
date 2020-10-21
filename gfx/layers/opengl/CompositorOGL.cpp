@@ -22,6 +22,7 @@
 #include "mozilla/Preferences.h"    
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/gfx/BasePoint.h"  
 #include "mozilla/gfx/Matrix.h"     
 #include "mozilla/gfx/Triangle.h"   

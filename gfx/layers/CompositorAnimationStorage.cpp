@@ -18,6 +18,7 @@
 #include "mozilla/webrender/WebRenderTypes.h"  
 #include "nsDeviceContext.h"                   
 #include "nsDisplayList.h"                     
+#include "nsLayoutUtils.h"
 #include "TreeTraversal.h"  
 
 namespace mozilla {
