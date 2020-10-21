@@ -30,9 +30,9 @@
 #include "vm/GeneratorAndAsyncKind.h"     
 #include "vm/JSScript.h"                  
 #include "vm/Scope.h"  
-#include "vm/ScopeKind.h"  
+#include "vm/ScopeKind.h"      
 #include "vm/SharedStencil.h"  
-#include "vm/StencilEnums.h"  
+#include "vm/StencilEnums.h"   
 
 namespace js {
 
@@ -453,7 +453,7 @@ class ScriptStencil {
   ScriptThingsVector gcThings;
 
   
-  RefPtr<js::SharedImmutableScriptData> sharedData = {};
+  js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
 
   
   SourceExtent extent = {};

@@ -29,7 +29,6 @@
 #include "vm/ErrorReporting.h"
 #include "vm/MallocProvider.h"
 #include "vm/Runtime.h"
-#include "vm/SharedStencil.h"  
 
 struct JS_PUBLIC_API JSContext;
 
@@ -383,8 +382,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::SymbolRegistry& symbolRegistry() { return runtime_->symbolRegistry(); }
 
   
-  js::SharedImmutableScriptDataTable& scriptDataTable(
-      js::AutoLockScriptData& lock) {
+  js::RuntimeScriptDataTable& scriptDataTable(js::AutoLockScriptData& lock) {
     return runtime_->scriptDataTable(lock);
   }
 

@@ -7,22 +7,16 @@
 #ifndef vm_SharedStencil_h
 #define vm_SharedStencil_h
 
-#include "mozilla/HashFunctions.h"    
-#include "mozilla/HashTable.h"        
-#include "mozilla/MemoryReporting.h"  
-#include "mozilla/RefPtr.h"           
-#include "mozilla/Span.h"             
+#include "mozilla/Span.h"  
 
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "frontend/SourceNotes.h"  
 #include "frontend/TypedIndex.h"   
-
-#include "js/AllocPolicy.h"      
-#include "js/TypeDecls.h"        
-#include "js/UniquePtr.h"        
-#include "util/TrailingArray.h"  
+#include "js/TypeDecls.h"          
+#include "js/UniquePtr.h"          
+#include "util/TrailingArray.h"    
 #include "vm/StencilEnums.h"  
 
 
@@ -30,10 +24,6 @@
 
 
 namespace js {
-
-namespace frontend {
-class StencilXDR;
-}  
 
 
 class GCThingIndexType;
@@ -474,91 +464,6 @@ class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
   ImmutableScriptData(const ImmutableScriptData&) = delete;
   ImmutableScriptData& operator=(const ImmutableScriptData&) = delete;
 };
-
-
-
-
-
-
-
-
-
-
-class SharedImmutableScriptData {
-  
-  
-  
-  mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> refCount_ = {};
-
-  js::UniquePtr<ImmutableScriptData> isd_ = nullptr;
-
-  
-
-  friend class ::JSScript;
-  friend class js::frontend::StencilXDR;
-
- public:
-  SharedImmutableScriptData() = default;
-
-  
-  
-  struct Hasher;
-
-  uint32_t refCount() const { return refCount_; }
-  void AddRef() { refCount_++; }
-  void Release() {
-    MOZ_ASSERT(refCount_ != 0);
-    uint32_t remain = --refCount_;
-    if (remain == 0) {
-      isd_ = nullptr;
-      js_free(this);
-    }
-  }
-
-  static constexpr size_t offsetOfISD() {
-    return offsetof(SharedImmutableScriptData, isd_);
-  }
-
- private:
-  static SharedImmutableScriptData* create(JSContext* cx);
-
- public:
-  static SharedImmutableScriptData* createWith(
-      JSContext* cx, js::UniquePtr<ImmutableScriptData>&& isd);
-
-  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-    return mallocSizeOf(this) + mallocSizeOf(isd_.get());
-  }
-
-  
-  SharedImmutableScriptData(const SharedImmutableScriptData&) = delete;
-  SharedImmutableScriptData& operator=(const SharedImmutableScriptData&) =
-      delete;
-
-  static bool shareScriptData(JSContext* cx,
-                              RefPtr<SharedImmutableScriptData>& sisd);
-
-  size_t immutableDataLength() const { return isd_->immutableData().Length(); }
-};
-
-
-
-struct SharedImmutableScriptData::Hasher {
-  using Lookup = RefPtr<SharedImmutableScriptData>;
-
-  static mozilla::HashNumber hash(const Lookup& l) {
-    mozilla::Span<const uint8_t> immutableData = l->isd_->immutableData();
-    return mozilla::HashBytes(immutableData.data(), immutableData.size());
-  }
-
-  static bool match(SharedImmutableScriptData* entry, const Lookup& lookup) {
-    return (entry->isd_->immutableData() == lookup->isd_->immutableData());
-  }
-};
-
-using SharedImmutableScriptDataTable =
-    mozilla::HashSet<SharedImmutableScriptData*,
-                     SharedImmutableScriptData::Hasher, SystemAllocPolicy>;
 
 }  
 
