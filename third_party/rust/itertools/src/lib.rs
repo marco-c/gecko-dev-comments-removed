@@ -47,8 +47,6 @@
 
 #![doc(html_root_url="https://docs.rs/itertools/0.8/")]
 
-extern crate either;
-
 #[cfg(not(feature = "use_std"))]
 extern crate core as std;
 
@@ -56,7 +54,7 @@ pub use either::Either;
 
 #[cfg(feature = "use_std")]
 use std::collections::HashMap;
-use std::iter::{IntoIterator};
+use std::iter::{IntoIterator, once};
 use std::cmp::Ordering;
 use std::fmt;
 #[cfg(feature = "use_std")]
@@ -77,8 +75,9 @@ pub use std::iter as __std_iter;
 
 
 pub mod structs {
-    pub use adaptors::{
+    pub use crate::adaptors::{
         Dedup,
+        DedupBy,
         Interleave,
         InterleaveShortest,
         Product,
@@ -96,68 +95,82 @@ pub mod structs {
         Update,
     };
     #[allow(deprecated)]
-    pub use adaptors::Step;
+    pub use crate::adaptors::Step;
     #[cfg(feature = "use_std")]
-    pub use adaptors::MultiProduct;
+    pub use crate::adaptors::MultiProduct;
     #[cfg(feature = "use_std")]
-    pub use combinations::Combinations;
-    pub use cons_tuples_impl::ConsTuples;
-    pub use format::{Format, FormatWith};
+    pub use crate::combinations::Combinations;
     #[cfg(feature = "use_std")]
-    pub use groupbylazy::{IntoChunks, Chunk, Chunks, GroupBy, Group, Groups};
-    pub use intersperse::Intersperse;
+    pub use crate::combinations_with_replacement::CombinationsWithReplacement;
+    pub use crate::cons_tuples_impl::ConsTuples;
+    pub use crate::exactly_one_err::ExactlyOneError;
+    pub use crate::format::{Format, FormatWith};
     #[cfg(feature = "use_std")]
-    pub use kmerge_impl::{KMerge, KMergeBy};
-    pub use merge_join::MergeJoinBy;
+    pub use crate::groupbylazy::{IntoChunks, Chunk, Chunks, GroupBy, Group, Groups};
+    pub use crate::intersperse::Intersperse;
     #[cfg(feature = "use_std")]
-    pub use multipeek_impl::MultiPeek;
-    pub use pad_tail::PadUsing;
-    pub use peeking_take_while::PeekingTakeWhile;
-    pub use process_results_impl::ProcessResults;
+    pub use crate::kmerge_impl::{KMerge, KMergeBy};
+    pub use crate::merge_join::MergeJoinBy;
     #[cfg(feature = "use_std")]
-    pub use put_back_n_impl::PutBackN;
+    pub use crate::multipeek_impl::MultiPeek;
+    pub use crate::pad_tail::PadUsing;
+    pub use crate::peeking_take_while::PeekingTakeWhile;
     #[cfg(feature = "use_std")]
-    pub use rciter_impl::RcIter;
-    pub use repeatn::RepeatN;
+    pub use crate::permutations::Permutations;
+    pub use crate::process_results_impl::ProcessResults;
+    #[cfg(feature = "use_std")]
+    pub use crate::put_back_n_impl::PutBackN;
+    #[cfg(feature = "use_std")]
+    pub use crate::rciter_impl::RcIter;
+    pub use crate::repeatn::RepeatN;
     #[allow(deprecated)]
-    pub use sources::{RepeatCall, Unfold, Iterate};
+    pub use crate::sources::{RepeatCall, Unfold, Iterate};
     #[cfg(feature = "use_std")]
-    pub use tee::Tee;
-    pub use tuple_impl::{TupleBuffer, TupleWindows, Tuples};
+    pub use crate::tee::Tee;
+    pub use crate::tuple_impl::{TupleBuffer, TupleWindows, Tuples};
     #[cfg(feature = "use_std")]
-    pub use unique_impl::{Unique, UniqueBy};
-    pub use with_position::WithPosition;
-    pub use zip_eq_impl::ZipEq;
-    pub use zip_longest::ZipLongest;
-    pub use ziptuple::Zip;
+    pub use crate::unique_impl::{Unique, UniqueBy};
+    pub use crate::with_position::WithPosition;
+    pub use crate::zip_eq_impl::ZipEq;
+    pub use crate::zip_longest::ZipLongest;
+    pub use crate::ziptuple::Zip;
 }
+
+
+pub mod traits {
+    pub use crate::tuple_impl::HomogeneousTuple;
+}
+
 #[allow(deprecated)]
-pub use structs::*;
-pub use concat_impl::concat;
-pub use cons_tuples_impl::cons_tuples;
-pub use diff::diff_with;
-pub use diff::Diff;
+pub use crate::structs::*;
+pub use crate::concat_impl::concat;
+pub use crate::cons_tuples_impl::cons_tuples;
+pub use crate::diff::diff_with;
+pub use crate::diff::Diff;
 #[cfg(feature = "use_std")]
-pub use kmerge_impl::{kmerge_by};
-pub use minmax::MinMaxResult;
-pub use peeking_take_while::PeekingNext;
-pub use process_results_impl::process_results;
-pub use repeatn::repeat_n;
+pub use crate::kmerge_impl::{kmerge_by};
+pub use crate::minmax::MinMaxResult;
+pub use crate::peeking_take_while::PeekingNext;
+pub use crate::process_results_impl::process_results;
+pub use crate::repeatn::repeat_n;
 #[allow(deprecated)]
-pub use sources::{repeat_call, unfold, iterate};
-pub use with_position::Position;
-pub use ziptuple::multizip;
+pub use crate::sources::{repeat_call, unfold, iterate};
+pub use crate::with_position::Position;
+pub use crate::ziptuple::multizip;
 mod adaptors;
 mod either_or_both;
-pub use either_or_both::EitherOrBoth;
+pub use crate::either_or_both::EitherOrBoth;
 #[doc(hidden)]
 pub mod free;
 #[doc(inline)]
-pub use free::*;
+pub use crate::free::*;
 mod concat_impl;
 mod cons_tuples_impl;
 #[cfg(feature = "use_std")]
 mod combinations;
+#[cfg(feature = "use_std")]
+mod combinations_with_replacement;
+mod exactly_one_err;
 mod diff;
 mod format;
 #[cfg(feature = "use_std")]
@@ -167,12 +180,16 @@ mod groupbylazy;
 mod intersperse;
 #[cfg(feature = "use_std")]
 mod kmerge_impl;
+#[cfg(feature = "use_std")]
+mod lazy_buffer;
 mod merge_join;
 mod minmax;
 #[cfg(feature = "use_std")]
 mod multipeek_impl;
 mod pad_tail;
 mod peeking_take_while;
+#[cfg(feature = "use_std")]
+mod permutations;
 mod process_results_impl;
 #[cfg(feature = "use_std")]
 mod put_back_n_impl;
@@ -208,13 +225,6 @@ mod ziptuple;
 
 
 
-
-
-
-
-
-
-
 macro_rules! iproduct {
     (@flatten $I:expr,) => (
         $I
@@ -234,13 +244,6 @@ macro_rules! iproduct {
 }
 
 #[macro_export]
-
-
-
-
-
-
-
 
 
 
@@ -497,6 +500,7 @@ pub trait Itertools : Iterator {
     
     
     
+    
     #[cfg(feature = "use_std")]
     fn group_by<K, F>(self, key: F) -> GroupBy<K, Self, F>
         where Self: Sized,
@@ -574,7 +578,7 @@ pub trait Itertools : Iterator {
     
     fn tuple_windows<T>(self) -> TupleWindows<Self, T>
         where Self: Sized + Iterator<Item = T::Item>,
-              T: tuple_impl::TupleCollect,
+              T: traits::HomogeneousTuple,
               T::Item: Clone
     {
         tuple_impl::tuple_windows(self)
@@ -613,7 +617,7 @@ pub trait Itertools : Iterator {
     
     fn tuples<T>(self) -> Tuples<Self, T>
         where Self: Sized + Iterator<Item = T::Item>,
-              T: tuple_impl::TupleCollect
+              T: traits::HomogeneousTuple
     {
         tuple_impl::tuples(self)
     }
@@ -968,6 +972,28 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    fn dedup_by<Cmp>(self, cmp: Cmp) -> DedupBy<Self, Cmp>
+        where Self: Sized,
+              Cmp: FnMut(&Self::Item, &Self::Item)->bool,
+    {
+        adaptors::dedup_by(self, cmp)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "use_std")]
     fn unique(self) -> Unique<Self>
         where Self: Sized,
@@ -1121,12 +1147,97 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "use_std")]
-    fn combinations(self, n: usize) -> Combinations<Self>
+    fn combinations(self, k: usize) -> Combinations<Self>
         where Self: Sized,
               Self::Item: Clone
     {
-        combinations::combinations(self, n)
+        combinations::combinations(self, k)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn combinations_with_replacement(self, k: usize) -> CombinationsWithReplacement<Self>
+    where
+        Self: Sized,
+        Self::Item: Clone,
+    {
+        combinations_with_replacement::combinations_with_replacement(self, k)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn permutations(self, k: usize) -> Permutations<Self>
+        where Self: Sized,
+              Self::Item: Clone
+    {
+        permutations::permutations(self, k)
     }
 
     
@@ -1231,7 +1342,7 @@ pub trait Itertools : Iterator {
     
     fn next_tuple<T>(&mut self) -> Option<T>
         where Self: Sized + Iterator<Item = T::Item>,
-              T: tuple_impl::TupleCollect
+              T: traits::HomogeneousTuple
     {
         T::collect_from_iter_no_buf(self)
     }
@@ -1256,7 +1367,7 @@ pub trait Itertools : Iterator {
     
     fn collect_tuple<T>(mut self) -> Option<T>
         where Self: Sized + Iterator<Item = T::Item>,
-              T: tuple_impl::TupleCollect
+              T: traits::HomogeneousTuple
     {
         match self.next_tuple() {
             elt @ Some(_) => match self.next() {
@@ -1308,9 +1419,13 @@ pub trait Itertools : Iterator {
     
     
     fn all_equal(&mut self) -> bool
-        where Self::Item: PartialEq,
+        where Self: Sized,
+              Self::Item: PartialEq,
     {
-        self.dedup().nth(1).is_none()
+        match self.next() {
+            None => true,
+            Some(a) => self.all(|x| a == x),
+        }
     }
 
     
@@ -1431,6 +1546,35 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn try_collect<T, U, E>(self) -> Result<U, E>
+    where
+        Self: Sized + Iterator<Item = Result<T, E>>,
+        Result<U, E>: FromIterator<Result<T, E>>,
+    {
+        self.collect()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn set_from<'a, A: 'a, J>(&mut self, from: J) -> usize
         where Self: Iterator<Item = &'a mut A>,
@@ -1532,7 +1676,7 @@ pub trait Itertools : Iterator {
     
     fn format_with<F>(self, sep: &str, format: F) -> FormatWith<Self, F>
         where Self: Sized,
-              F: FnMut(Self::Item, &mut FnMut(&fmt::Display) -> fmt::Result) -> fmt::Result,
+              F: FnMut(Self::Item, &mut dyn FnMut(&dyn fmt::Display) -> fmt::Result) -> fmt::Result,
     {
         format::new_format(self, sep, format)
     }
@@ -1691,7 +1835,6 @@ pub trait Itertools : Iterator {
     
     
     
-    
     fn tree_fold1<F>(mut self, mut f: F) -> Option<Self::Item>
         where F: FnMut(Self::Item, Self::Item) -> Self::Item,
               Self: Sized,
@@ -1721,7 +1864,7 @@ pub trait Itertools : Iterator {
                 II: Iterator<Item = T>,
                 FF: FnMut(T, T) -> T
         {
-            let mut x = try!(inner0(it, f));
+            let mut x = inner0(it, f)?;
             for height in 0..stop {
                 
                 
@@ -1804,6 +1947,64 @@ pub trait Itertools : Iterator {
         }
         FoldWhile::Continue(acc)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn sum1<S>(mut self) -> Option<S>
+        where Self: Sized,
+              S: std::iter::Sum<Self::Item>,
+    {
+        self.next()
+            .map(|first| once(first).chain(self).sum())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn product1<P>(mut self) -> Option<P>
+        where Self: Sized,
+              P: std::iter::Product<Self::Item>,
+    {
+        self.next()
+            .map(|first| once(first).chain(self).product())
+    }
+
 
     
     
@@ -1922,21 +2123,19 @@ pub trait Itertools : Iterator {
     
     
     
-    fn partition_map<A, B, F, L, R>(self, predicate: F) -> (A, B)
+    fn partition_map<A, B, F, L, R>(self, mut predicate: F) -> (A, B)
         where Self: Sized,
-              F: Fn(Self::Item) -> Either<L, R>,
+              F: FnMut(Self::Item) -> Either<L, R>,
               A: Default + Extend<L>,
               B: Default + Extend<R>,
     {
         let mut left = A::default();
         let mut right = B::default();
 
-        for val in self {
-            match predicate(val) {
-                Either::Left(v) => left.extend(Some(v)),
-                Either::Right(v) => right.extend(Some(v)),
-            }
-        }
+        self.for_each(|val| match predicate(val) {
+            Either::Left(v) => left.extend(Some(v)),
+            Either::Right(v) => right.extend(Some(v)),
+        });
 
         (left, right)
     }
@@ -2037,6 +2236,352 @@ pub trait Itertools : Iterator {
             |_| (),
             |x, y, _, _| Ordering::Less == compare(x, y)
         )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn position_max(self) -> Option<usize>
+        where Self: Sized, Self::Item: Ord
+    {
+        self.enumerate()
+            .max_by(|x, y| Ord::cmp(&x.1, &y.1))
+            .map(|x| x.0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn position_max_by_key<K, F>(self, mut key: F) -> Option<usize>
+        where Self: Sized, K: Ord, F: FnMut(&Self::Item) -> K
+    {
+        self.enumerate()
+            .max_by(|x, y| Ord::cmp(&key(&x.1), &key(&y.1)))
+            .map(|x| x.0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn position_max_by<F>(self, mut compare: F) -> Option<usize>
+        where Self: Sized, F: FnMut(&Self::Item, &Self::Item) -> Ordering
+    {
+        self.enumerate()
+            .max_by(|x, y| compare(&x.1, &y.1))
+            .map(|x| x.0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn position_min(self) -> Option<usize>
+        where Self: Sized, Self::Item: Ord
+    {
+        self.enumerate()
+            .min_by(|x, y| Ord::cmp(&x.1, &y.1))
+            .map(|x| x.0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn position_min_by_key<K, F>(self, mut key: F) -> Option<usize>
+        where Self: Sized, K: Ord, F: FnMut(&Self::Item) -> K
+    {
+        self.enumerate()
+            .min_by(|x, y| Ord::cmp(&key(&x.1), &key(&y.1)))
+            .map(|x| x.0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn position_min_by<F>(self, mut compare: F) -> Option<usize>
+        where Self: Sized, F: FnMut(&Self::Item, &Self::Item) -> Ordering
+    {
+        self.enumerate()
+            .min_by(|x, y| compare(&x.1, &y.1))
+            .map(|x| x.0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn position_minmax(self) -> MinMaxResult<usize>
+        where Self: Sized, Self::Item: PartialOrd
+    {
+        use crate::MinMaxResult::{NoElements, OneElement, MinMax};
+        match minmax::minmax_impl(self.enumerate(), |_| (), |x, y, _, _| x.1 < y.1) {
+            NoElements => NoElements,
+            OneElement(x) => OneElement(x.0),
+            MinMax(x, y) => MinMax(x.0, y.0),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn position_minmax_by_key<K, F>(self, mut key: F) -> MinMaxResult<usize>
+        where Self: Sized, K: PartialOrd, F: FnMut(&Self::Item) -> K
+    {
+        use crate::MinMaxResult::{NoElements, OneElement, MinMax};
+        match self.enumerate().minmax_by_key(|e| key(&e.1)) {
+            NoElements => NoElements,
+            OneElement(x) => OneElement(x.0),
+            MinMax(x, y) => MinMax(x.0, y.0),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn position_minmax_by<F>(self, mut compare: F) -> MinMaxResult<usize>
+        where Self: Sized, F: FnMut(&Self::Item, &Self::Item) -> Ordering
+    {
+        use crate::MinMaxResult::{NoElements, OneElement, MinMax};
+        match self.enumerate().minmax_by(|x, y| compare(&x.1, &y.1)) {
+            NoElements => NoElements,
+            OneElement(x) => OneElement(x.0),
+            MinMax(x, y) => MinMax(x.0, y.0),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn exactly_one(mut self) -> Result<Self::Item, ExactlyOneError<Self>>
+    where
+        Self: Sized,
+    {
+        match self.next() {
+            Some(first) => {
+                match self.next() {
+                    Some(second) => {
+                        Err(ExactlyOneError::new((Some(first), Some(second)), self))
+                    }
+                    None => {
+                        Ok(first)
+                    }
+                }
+            }
+            None => Err(ExactlyOneError::new((None, None), self)),
+        }
     }
 }
 

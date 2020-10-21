@@ -18,7 +18,7 @@ use super::{
     SectionReader, SectionWithLimitedItems, Type,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionBody<'a> {
     offset: usize,
     data: &'a [u8],

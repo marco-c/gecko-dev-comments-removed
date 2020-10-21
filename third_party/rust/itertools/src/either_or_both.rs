@@ -1,7 +1,9 @@
-use EitherOrBoth::*;
+use crate::EitherOrBoth::*;
+
+use either::Either;
 
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum EitherOrBoth<A, B> {
     
     Both(A, B),
@@ -23,10 +25,34 @@ impl<A, B> EitherOrBoth<A, B> {
     }
 
     
+    
+    pub fn is_left(&self) -> bool {
+        match *self {
+            Left(_) => true,
+            _ => false,
+        }
+    }
+
+    
+    
+    pub fn is_right(&self) -> bool {
+        match *self {
+            Right(_) => true,
+            _ => false,
+        }
+    }
+
+    
+    
+    pub fn is_both(&self) -> bool {
+        self.as_ref().both().is_some()
+    }
+
+    
     pub fn left(self) -> Option<A> {
         match self {
             Left(left) | Both(left, _) => Some(left),
-            _ => None
+            _ => None,
         }
     }
 
@@ -34,7 +60,15 @@ impl<A, B> EitherOrBoth<A, B> {
     pub fn right(self) -> Option<B> {
         match self {
             Right(right) | Both(_, right) => Some(right),
-            _ => None
+            _ => None,
+        }
+    }
+
+    
+    pub fn both(self) -> Option<(A, B)> {
+        match self {
+            Both(a, b) => Some((a, b)),
+            _ => None,
         }
     }
 
@@ -53,6 +87,104 @@ impl<A, B> EitherOrBoth<A, B> {
             Left(ref mut left) => Left(left),
             Right(ref mut right) => Right(right),
             Both(ref mut left, ref mut right) => Both(left, right),
+        }
+    }
+
+    
+    pub fn flip(self) -> EitherOrBoth<B, A> {
+        match self {
+            Left(a) => Right(a),
+            Right(b) => Left(b),
+            Both(a, b) => Both(b, a),
+        }
+    }
+
+    
+    
+    pub fn map_left<F, M>(self, f: F) -> EitherOrBoth<M, B>
+    where
+        F: FnOnce(A) -> M,
+    {
+        match self {
+            Both(a, b) => Both(f(a), b),
+            Left(a) => Left(f(a)),
+            Right(b) => Right(b),
+        }
+    }
+
+    
+    
+    pub fn map_right<F, M>(self, f: F) -> EitherOrBoth<A, M>
+    where
+        F: FnOnce(B) -> M,
+    {
+        match self {
+            Left(a) => Left(a),
+            Right(b) => Right(f(b)),
+            Both(a, b) => Both(a, f(b)),
+        }
+    }
+
+    
+    
+    
+    pub fn map_any<F, L, G, R>(self, f: F, g: G) -> EitherOrBoth<L, R>
+    where
+        F: FnOnce(A) -> L,
+        G: FnOnce(B) -> R,
+    {
+        match self {
+            Left(a) => Left(f(a)),
+            Right(b) => Right(g(b)),
+            Both(a, b) => Both(f(a), g(b)),
+        }
+    }
+
+    
+    
+    pub fn left_and_then<F, L>(self, f: F) -> EitherOrBoth<L, B>
+    where
+        F: FnOnce(A) -> EitherOrBoth<L, B>,
+    {
+        match self {
+            Left(a) | Both(a, _) => f(a),
+            Right(b) => Right(b),
+        }
+    }
+
+    
+    
+    pub fn right_and_then<F, R>(self, f: F) -> EitherOrBoth<A, R>
+    where
+        F: FnOnce(B) -> EitherOrBoth<A, R>,
+    {
+        match self {
+            Left(a) => Left(a),
+            Right(b) | Both(_, b) => f(b),
+        }
+    }
+}
+
+impl<T> EitherOrBoth<T, T> {
+    
+    pub fn reduce<F>(self, f: F) -> T
+    where
+        F: FnOnce(T, T) -> T,
+    {
+        match self {
+            Left(a) => a,
+            Right(b) => b,
+            Both(a, b) => f(a, b),
+        }
+    }
+}
+
+impl<A, B> Into<Option<Either<A, B>>> for EitherOrBoth<A, B> {
+    fn into(self) -> Option<Either<A, B>> {
+        match self {
+            EitherOrBoth::Left(l) => Some(Either::Left(l)),
+            EitherOrBoth::Right(r) => Some(Either::Right(r)),
+            _ => None,
         }
     }
 }

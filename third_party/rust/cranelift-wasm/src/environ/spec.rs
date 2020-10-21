@@ -6,7 +6,7 @@
 
 
 
-use crate::state::{FuncTranslationState, ModuleTranslationState};
+use crate::state::FuncTranslationState;
 use crate::translation_utils::{
     DataIndex, ElemIndex, FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, SignatureIndex,
     Table, TableIndex,
@@ -23,8 +23,8 @@ use serde::{Deserialize, Serialize};
 use std::boxed::Box;
 use std::string::ToString;
 use thiserror::Error;
-use wasmparser::BinaryReaderError;
-use wasmparser::Operator;
+use wasmparser::ValidatorResources;
+use wasmparser::{BinaryReaderError, FuncValidator, FunctionBody, Operator, WasmFeatures};
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -798,9 +798,8 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     
     fn define_function_body(
         &mut self,
-        module_translation_state: &ModuleTranslationState,
-        body_bytes: &'data [u8],
-        body_offset: usize,
+        validator: FuncValidator<ValidatorResources>,
+        body: FunctionBody<'data>,
     ) -> WasmResult<()>;
 
     
@@ -840,5 +839,10 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     
     fn custom_section(&mut self, _name: &'data str, _data: &'data [u8]) -> WasmResult<()> {
         Ok(())
+    }
+
+    
+    fn wasm_features(&self) -> WasmFeatures {
+        WasmFeatures::default()
     }
 }
