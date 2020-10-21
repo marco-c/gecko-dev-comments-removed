@@ -387,6 +387,7 @@ static inline bool UnpackTypeCodeNullable(PackedTypeCode ptc) {
 
 
 
+
 static inline TypeCode UnpackTypeCodeTypeAbstracted(PackedTypeCode ptc) {
   TypeCode c = UnpackTypeCodeType(ptc);
   return c < LowestPrimitiveTypeCode ? AbstractReferenceTypeCode : c;
