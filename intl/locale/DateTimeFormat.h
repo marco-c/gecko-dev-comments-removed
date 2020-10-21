@@ -37,6 +37,10 @@ enum nsTimeFormatSelector : long {
 
 class DateTimeFormat {
  public:
+  enum class Field { Month, Weekday };
+
+  enum class Style { Wide, Abbreviated };
+
   
   
   static nsresult FormatPRTime(const nsDateFormatSelector aDateFormatSelector,
@@ -49,6 +53,12 @@ class DateTimeFormat {
       const nsDateFormatSelector aDateFormatSelector,
       const nsTimeFormatSelector aTimeFormatSelector,
       const PRExplodedTime* aExplodedTime, nsAString& aStringOut);
+
+  
+  
+  static nsresult GetCalendarSymbol(const Field aField, const Style aStyle,
+                                    const PRExplodedTime* aExplodedTime,
+                                    nsAString& aStringOut);
 
   static void Shutdown();
 
@@ -70,6 +80,9 @@ class DateTimeFormat {
       const nsDateFormatSelector aDateFormatSelector,
       const nsTimeFormatSelector aTimeFormatSelector, const UDate aUDateTime,
       const PRTimeParameters* aTimeParameters, nsAString& aStringOut);
+
+  static void BuildTimeZoneString(const PRTimeParameters& aTimeParameters,
+                                  nsAString& aStringOut);
 
   static nsCString* mLocale;
   static nsDataHashtable<nsCStringHashKey, UDateFormat*>* mFormatCache;
