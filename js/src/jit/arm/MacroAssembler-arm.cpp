@@ -5681,16 +5681,16 @@ extern MOZ_EXPORT int64_t __aeabi_uidivmod(int, int);
 
 inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
                                     Register rhs, Register lhsOutput,
-                                    bool isSigned,
+                                    bool isUnsigned,
                                     const LiveRegisterSet& volatileLiveRegs) {
   
   MOZ_ASSERT(lhsOutput != rhs);
 
   if (HasIDIV()) {
     if (isRemainder) {
-      masm.remainder32(rhs, lhsOutput, isSigned);
+      masm.remainder32(rhs, lhsOutput, isUnsigned);
     } else {
-      masm.quotient32(rhs, lhsOutput, isSigned);
+      masm.quotient32(rhs, lhsOutput, isUnsigned);
     }
   } else {
     
@@ -5705,7 +5705,7 @@ inline void EmitRemainderOrQuotient(bool isRemainder, MacroAssembler& masm,
     }
     masm.passABIArg(lhsOutput);
     masm.passABIArg(rhs);
-    if (isSigned) {
+    if (isUnsigned) {
       masm.callWithABI<Fn, __aeabi_uidivmod>(
           MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckOther);
     } else {
