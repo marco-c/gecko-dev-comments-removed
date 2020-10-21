@@ -411,6 +411,7 @@ GetStructuredCloneReadInfoFromExternalBlob(uint64_t aIntData,
   
   
   
+  
   nsCOMPtr<nsIInputStream> fileInputStream;
   IDB_TRY(
       NS_NewLocalFileInputStream(getter_AddRefs(fileInputStream), nativeFile));

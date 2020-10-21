@@ -389,6 +389,9 @@
 
 
 
+
+
+
 #define QM_VOID
 
 #define QM_PROPAGATE Err(tryTempError)
@@ -487,29 +490,31 @@
 
 
 
-#define QM_TRY_VAR_PROPAGATE_ERR(ns, tryResult, accessFunction, target, expr) \
-  auto tryResult = (expr);                                                    \
-  if (MOZ_UNLIKELY(tryResult.isErr())) {                                      \
-    ns::QM_HANDLE_ERROR(expr);                                                \
-    return tryResult.propagateErr();                                          \
-  }                                                                           \
+
+#define QM_TRY_ASSIGN_PROPAGATE_ERR(ns, tryResult, accessFunction, target, \
+                                    expr)                                  \
+  auto tryResult = (expr);                                                 \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                   \
+    ns::QM_HANDLE_ERROR(expr);                                             \
+    return tryResult.propagateErr();                                       \
+  }                                                                        \
   MOZ_REMOVE_PAREN(target) = tryResult.accessFunction();
 
 
 
-#define QM_TRY_VAR_CUSTOM_RET_VAL(ns, tryResult, accessFunction, target, expr, \
-                                  customRetVal)                                \
-  auto tryResult = (expr);                                                     \
-  if (MOZ_UNLIKELY(tryResult.isErr())) {                                       \
-    auto tryTempError MOZ_MAYBE_UNUSED = tryResult.unwrapErr();                \
-    ns::QM_HANDLE_ERROR(expr);                                                 \
-    return customRetVal;                                                       \
-  }                                                                            \
+#define QM_TRY_ASSIGN_CUSTOM_RET_VAL(ns, tryResult, accessFunction, target, \
+                                     expr, customRetVal)                    \
+  auto tryResult = (expr);                                                  \
+  if (MOZ_UNLIKELY(tryResult.isErr())) {                                    \
+    auto tryTempError MOZ_MAYBE_UNUSED = tryResult.unwrapErr();             \
+    ns::QM_HANDLE_ERROR(expr);                                              \
+    return customRetVal;                                                    \
+  }                                                                         \
   MOZ_REMOVE_PAREN(target) = tryResult.accessFunction();
 
 
 
-#define QM_TRY_VAR_CUSTOM_RET_VAL_WITH_CLEANUP(                         \
+#define QM_TRY_ASSIGN_CUSTOM_RET_VAL_WITH_CLEANUP(                      \
     ns, tryResult, accessFunction, target, expr, customRetVal, cleanup) \
   auto tryResult = (expr);                                              \
   if (MOZ_UNLIKELY(tryResult.isErr())) {                                \
@@ -523,19 +528,19 @@
 
 
 
-#define QM_TRY_VAR_META(...)                                                \
-  MOZ_ARG_9(                                                                \
-      , ##__VA_ARGS__, QM_TRY_VAR_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__), \
-      QM_TRY_VAR_CUSTOM_RET_VAL(__VA_ARGS__),                               \
-      QM_TRY_VAR_PROPAGATE_ERR(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__),  \
-      QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__),           \
+#define QM_TRY_ASSIGN_META(...)                                                \
+  MOZ_ARG_9(                                                                   \
+      , ##__VA_ARGS__, QM_TRY_ASSIGN_CUSTOM_RET_VAL_WITH_CLEANUP(__VA_ARGS__), \
+      QM_TRY_ASSIGN_CUSTOM_RET_VAL(__VA_ARGS__),                               \
+      QM_TRY_ASSIGN_PROPAGATE_ERR(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__),  \
+      QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__),              \
       QM_MISSING_ARGS(__VA_ARGS__), QM_MISSING_ARGS(__VA_ARGS__))
 
 
 
-#define QM_TRY_VAR_GLUE(accessFunction, ...)                      \
-  QM_TRY_VAR_META(mozilla::dom::quota, MOZ_UNIQUE_VAR(tryResult), \
-                  accessFunction, ##__VA_ARGS__)
+#define QM_TRY_ASSIGN_GLUE(accessFunction, ...)                      \
+  QM_TRY_ASSIGN_META(mozilla::dom::quota, MOZ_UNIQUE_VAR(tryResult), \
+                     accessFunction, ##__VA_ARGS__)
 
 
 
@@ -546,7 +551,7 @@
 
 
 
-#define QM_TRY_UNWRAP(...) QM_TRY_VAR_GLUE(unwrap, __VA_ARGS__)
+#define QM_TRY_UNWRAP(...) QM_TRY_ASSIGN_GLUE(unwrap, __VA_ARGS__)
 
 
 
@@ -561,7 +566,7 @@
 
 
 
-#define QM_TRY_INSPECT(...) QM_TRY_VAR_GLUE(inspect, __VA_ARGS__)
+#define QM_TRY_INSPECT(...) QM_TRY_ASSIGN_GLUE(inspect, __VA_ARGS__)
 
 
 
