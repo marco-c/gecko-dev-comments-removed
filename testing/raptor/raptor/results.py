@@ -536,7 +536,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                     
                     if (
                         self.app
-                        and "chrome" in self.app.lower()
+                        and ("chrome" in self.app.lower() or "chromium" in self.app.lower())
                         and bt in ("fnbpaint", "dcf")
                     ):
                         continue
