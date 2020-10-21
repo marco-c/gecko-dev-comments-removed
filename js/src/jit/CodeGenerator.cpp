@@ -6978,6 +6978,9 @@ void CodeGenerator::emitAssertGCThingResult(Register input,
     masm.bind(&ok);
   }
 
+#  ifndef JS_SIMULATOR
+  
+  
   
   
   
@@ -7012,6 +7015,7 @@ void CodeGenerator::emitAssertGCThingResult(Register input,
     masm.callWithABI(callee);
     restoreVolatile();
   }
+#  endif
 
   masm.bind(&done);
   masm.pop(temp);
