@@ -41,6 +41,12 @@ export class CertificateTabsSection extends HTMLElement {
     tab.classList.add("tab");
     if (this.isAboutCertificate) {
       tab.setAttribute("data-l10n-id", tabName);
+    } else {
+      
+      
+      
+      
+      tab.classList.add("dir-auto");
     }
     this.tabsElement.appendChild(tab);
 
