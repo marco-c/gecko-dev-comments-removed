@@ -59,8 +59,6 @@ const REASON = {
   UPDATE: "update",
 };
 
-const SAFE_HOSTS_PREFIXES_REGEX = /^(about:|https?:|file:|moz-extension:)/;
-
 
 
 const ITEM_NAME_MAX_LENGTH = 32;
@@ -166,9 +164,6 @@ class StorageUI {
       event.preventDefault();
       this.searchBox.focus();
     });
-
-    this.onEdit = this.onEdit.bind(this);
-    this.onCleared = this.onCleared.bind(this);
 
     this.handleKeypress = this.handleKeypress.bind(this);
     this._panelDoc.addEventListener("keypress", this.handleKeypress);
@@ -279,6 +274,34 @@ class StorageUI {
       this._onTargetAvailable,
       this._onTargetDestroyed
     );
+
+    this.storageTypes = {};
+
+    this._onResourceListAvailable = this._onResourceListAvailable.bind(this);
+    this._onResourceUpdated = this._onResourceUpdated.bind(this);
+    this._onResourceListUpdated = this._onResourceListUpdated.bind(this);
+    this._onResourceDestroyed = this._onResourceDestroyed.bind(this);
+    this._onResourceListDestroyed = this._onResourceListDestroyed.bind(this);
+
+    const { resourceWatcher } = this._toolbox;
+
+    await this._toolbox.resourceWatcher.watchResources(
+      [
+        
+        
+        resourceWatcher.TYPES.COOKIE,
+        resourceWatcher.TYPES.CACHE_STORAGE,
+        resourceWatcher.TYPES.EXTENSION_STORAGE,
+        resourceWatcher.TYPES.INDEXED_DB,
+        resourceWatcher.TYPES.LOCAL_STORAGE,
+        resourceWatcher.TYPES.SESSION_STORAGE,
+      ],
+      {
+        onAvailable: this._onResourceListAvailable,
+        onUpdated: this._onResourceListUpdated,
+        onDestroyed: this._onResourceListDestroyed,
+      }
+    );
   }
 
   async _onTargetAvailable({ targetFront }) {
@@ -289,31 +312,39 @@ class StorageUI {
     }
 
     this.front = await targetFront.getFront("storage");
-    this.front.on("stores-update", this.onEdit);
-    this.front.on("stores-cleared", this.onCleared);
-    try {
-      const storageTypes = await this.front.listStores();
-      
-      
-      
-      
-      
-      
-      
-      if (!targetFront.chrome && storageTypes.indexedDB) {
-        const hosts = storageTypes.indexedDB.hosts;
-        const newHosts = {};
+  }
 
-        for (const [host, dbs] of Object.entries(hosts)) {
-          if (SAFE_HOSTS_PREFIXES_REGEX.test(host)) {
-            newHosts[host] = dbs;
-          }
-        }
+  async _onResourceListAvailable(resources) {
+    const {
+      COOKIE,
+      LOCAL_STORAGE,
+      SESSION_STORAGE,
+      EXTENSION_STORAGE,
+      CACHE_STORAGE,
+      INDEXED_DB,
+    } = this._toolbox.resourceWatcher.TYPES;
 
-        storageTypes.indexedDB.hosts = newHosts;
+    const storages = {};
+
+    for (const resource of resources) {
+      const { resourceType } = resource;
+      if (resourceType == COOKIE) {
+        storages.cookies = resource;
+      } else if (resourceType == LOCAL_STORAGE) {
+        storages.localStorage = resource;
+      } else if (resourceType == SESSION_STORAGE) {
+        storages.sessionStorage = resource;
+      } else if (resourceType == EXTENSION_STORAGE) {
+        storages.extensionStorage = resource;
+      } else if (resourceType == CACHE_STORAGE) {
+        storages.Cache = resource;
+      } else if (resourceType == INDEXED_DB) {
+        storages.indexedDB = resource;
       }
+    }
 
-      await this.populateStorageTree(storageTypes);
+    try {
+      await this.populateStorageTree(storages);
     } catch (e) {
       if (!this._toolbox || this._toolbox._destroyer) {
         
@@ -336,9 +367,6 @@ class StorageUI {
     this.table.clear();
     this.hideSidebar();
     this.tree.clear();
-
-    this.front.off("stores-update", this.onEdit);
-    this.front.off("stores-cleared", this.onCleared);
   }
 
   set animationsEnabled(value) {
@@ -482,35 +510,40 @@ class StorageUI {
     await this.updateObjectSidebar();
   }
 
+  async _onResourceListDestroyed(clearedList) {
+    for (const cleared of clearedList) {
+      await this._onResourceDestroyed(cleared);
+    }
+  }
+
   
 
 
 
 
 
-  onCleared(response) {
-    function* enumPaths() {
-      for (const type in response) {
-        if (Array.isArray(response[type])) {
-          
-          for (const host of response[type]) {
-            yield [type, host];
-          }
-        } else {
-          
-          for (const host in response[type]) {
-            const paths = response[type][host];
 
-            if (!paths.length) {
-              yield [type, host];
-            } else {
-              for (let path of paths) {
-                try {
-                  path = JSON.parse(path);
-                  yield [type, host, ...path];
-                } catch (ex) {
-                  
-                }
+  _onResourceDestroyed({ resourceKey, clearedHostsOrPaths }) {
+    function* enumPaths() {
+      if (Array.isArray(clearedHostsOrPaths)) {
+        
+        for (const host of clearedHostsOrPaths) {
+          yield [host];
+        }
+      } else {
+        
+        for (const host in clearedHostsOrPaths) {
+          const paths = clearedHostsOrPaths[host];
+
+          if (!paths.length) {
+            yield [host];
+          } else {
+            for (let path of paths) {
+              try {
+                path = JSON.parse(path);
+                yield [host, ...path];
+              } catch (ex) {
+                
               }
             }
           }
@@ -520,7 +553,7 @@ class StorageUI {
 
     for (const path of enumPaths()) {
       
-      if (this.tree.isSelected(path)) {
+      if (this.tree.isSelected([resourceKey, ...path])) {
         this.table.clear();
         this.hideSidebar();
 
@@ -531,6 +564,12 @@ class StorageUI {
         this.emit("store-objects-cleared");
         break;
       }
+    }
+  }
+
+  async _onResourceListUpdated(updates) {
+    for (const update of updates) {
+      await this._onResourceUpdated(update.update);
     }
   }
 
@@ -557,7 +596,7 @@ class StorageUI {
 
 
 
-  async onEdit({ changed, added, deleted }) {
+  async _onResourceUpdated({ changed, added, deleted }) {
     if (added) {
       await this.handleAddedItems(added);
     }
@@ -780,7 +819,6 @@ class StorageUI {
         }
 
         await this._readSupportsTraits(type);
-
         await this.resetColumns(type, host, subType);
       }
 
@@ -865,8 +903,6 @@ class StorageUI {
 
 
   async populateStorageTree(storageTypes) {
-    this.storageTypes = {};
-
     
     
     
@@ -892,6 +928,7 @@ class StorageUI {
       } catch (e) {
         console.error("Unable to localize tree label type:" + type);
       }
+
       this.tree.add([{ id: type, label: typeLabel, type: "store" }]);
       if (!storageTypes[type].hosts) {
         continue;
