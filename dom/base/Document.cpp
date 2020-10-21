@@ -6222,6 +6222,12 @@ already_AddRefed<PresShell> Document::CreatePresShell(
   
   MarkUserFontSetDirty();
 
+  
+  
+  if (BrowsingContext* bc = GetBrowsingContext()) {
+    presShell->SetAuthorStyleDisabled(bc->Top()->AuthorStyleDisabledDefault());
+  }
+
   return presShell.forget();
 }
 

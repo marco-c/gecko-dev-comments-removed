@@ -2502,6 +2502,19 @@ void BrowsingContext::DidSet(FieldIndex<IDX_AncestorLoading>) {
   }
 }
 
+void BrowsingContext::DidSet(FieldIndex<IDX_AuthorStyleDisabledDefault>) {
+  MOZ_ASSERT(IsTop(),
+             "Should only set AuthorStyleDisabledDefault in the top "
+             "browsing context");
+
+  
+  
+  
+  
+  
+  
+}
+
 void BrowsingContext::DidSet(FieldIndex<IDX_TextZoom>, float aOldValue) {
   if (GetTextZoom() == aOldValue) {
     return;
