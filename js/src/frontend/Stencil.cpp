@@ -428,29 +428,29 @@ static bool InstantiateScriptStencils(JSContext* cx,
 
 static bool InstantiateTopLevel(JSContext* cx, CompilationInfo& compilationInfo,
                                 CompilationGCOutput& gcOutput) {
-  ScriptStencil& scriptStencil =
+  ScriptStencil& script =
       compilationInfo.stencil.scriptData[CompilationInfo::TopLevelIndex];
   RootedFunction fun(cx);
-  if (scriptStencil.isFunction()) {
+  if (script.isFunction()) {
     fun = gcOutput.functions[CompilationInfo::TopLevelIndex];
   }
 
   
-  if (scriptStencil.functionFlags.isAsmJSNative()) {
+  if (script.functionFlags.isAsmJSNative()) {
     return true;
   }
 
-  MOZ_ASSERT(scriptStencil.sharedData);
+  MOZ_ASSERT(script.sharedData);
 
   if (compilationInfo.input.lazy) {
     gcOutput.script = JSScript::CastFromLazy(compilationInfo.input.lazy);
 
     if (!JSScript::fullyInitFromStencil(cx, compilationInfo, gcOutput,
-                                        gcOutput.script, scriptStencil, fun)) {
+                                        gcOutput.script, script, fun)) {
       return false;
     }
 
-    if (scriptStencil.allowRelazify) {
+    if (script.allowRelazify) {
       MOZ_ASSERT(gcOutput.script->isRelazifiable());
       gcOutput.script->setAllowRelazify();
     }
@@ -459,18 +459,18 @@ static bool InstantiateTopLevel(JSContext* cx, CompilationInfo& compilationInfo,
   }
 
   gcOutput.script =
-      JSScript::fromStencil(cx, compilationInfo, gcOutput, scriptStencil, fun);
+      JSScript::fromStencil(cx, compilationInfo, gcOutput, script, fun);
   if (!gcOutput.script) {
     return false;
   }
 
-  if (scriptStencil.allowRelazify) {
+  if (script.allowRelazify) {
     MOZ_ASSERT(gcOutput.script->isRelazifiable());
     gcOutput.script->setAllowRelazify();
   }
 
   
-  if (scriptStencil.isModule()) {
+  if (script.isModule()) {
     gcOutput.module->initScriptSlots(gcOutput.script);
     gcOutput.module->initStatusSlot();
 
@@ -551,54 +551,6 @@ static void LinkEnclosingLazyScript(CompilationInfo& compilationInfo,
   }
 }
 
-#ifdef DEBUG
-
-
-static void AssertDelazificationFieldsMatch(CompilationInfo& compilationInfo,
-                                            CompilationGCOutput& gcOutput) {
-  for (auto item : compilationInfo.functionScriptStencils(gcOutput)) {
-    auto& scriptStencil = item.script;
-    auto& fun = item.function;
-
-    BaseScript* script = fun->baseScript();
-
-    
-    uint32_t acceptableDifferenceForScript =
-        uint32_t(ImmutableScriptFlagsEnum::TreatAsRunOnce);
-    MOZ_ASSERT(
-        (uint32_t(script->immutableFlags()) | acceptableDifferenceForScript) ==
-        (uint32_t(scriptStencil.immutableFlags) |
-         acceptableDifferenceForScript));
-
-    MOZ_ASSERT(script->extent().sourceStart ==
-               scriptStencil.extent.sourceStart);
-    MOZ_ASSERT(script->extent().sourceEnd == scriptStencil.extent.sourceEnd);
-    MOZ_ASSERT(script->extent().toStringStart ==
-               scriptStencil.extent.toStringStart);
-    MOZ_ASSERT(script->extent().toStringEnd ==
-               scriptStencil.extent.toStringEnd);
-    MOZ_ASSERT(script->extent().lineno == scriptStencil.extent.lineno);
-    MOZ_ASSERT(script->extent().column == scriptStencil.extent.column);
-
-    
-    constexpr uint16_t HAS_INFERRED_NAME =
-        uint16_t(FunctionFlags::Flags::HAS_INFERRED_NAME);
-    constexpr uint16_t HAS_GUESSED_ATOM =
-        uint16_t(FunctionFlags::Flags::HAS_GUESSED_ATOM);
-    constexpr uint16_t acceptableDifferenceForFunction =
-        HAS_INFERRED_NAME | HAS_GUESSED_ATOM;
-    MOZ_ASSERT((fun->flags().toRaw() | acceptableDifferenceForFunction) ==
-               (scriptStencil.functionFlags.toRaw() |
-                acceptableDifferenceForFunction));
-
-    
-    
-    MOZ_ASSERT_IF(scriptStencil.sharedData,
-                  fun->nargs() == scriptStencil.nargs);
-  }
-}
-#endif  
-
 
 
 
@@ -634,10 +586,6 @@ bool CompilationInfo::instantiateStencils(JSContext* cx,
 
   if (input.lazy) {
     FunctionsFromExistingLazy(*this, gcOutput);
-
-#ifdef DEBUG
-    AssertDelazificationFieldsMatch(*this, gcOutput);
-#endif
   } else {
     if (!InstantiateScriptSourceObject(cx, *this, gcOutput)) {
       return false;
