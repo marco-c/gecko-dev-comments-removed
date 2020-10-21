@@ -245,8 +245,8 @@ class AddrHostRecord final : public nsHostRecord {
   mozilla::UniquePtr<mozilla::net::NetAddr> addr;
 
   
-  bool Blacklisted(const mozilla::net::NetAddr* query);
-  void ResetBlacklist();
+  bool Blocklisted(const mozilla::net::NetAddr* query);
+  void ResetBlocklist();
   void ReportUnusable(const mozilla::net::NetAddr* aAddress);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const override;
@@ -311,12 +311,12 @@ class AddrHostRecord final : public nsHostRecord {
 
   
   
-  uint32_t mBlacklistedCount;
+  uint32_t mUnusableCount = 0;
 
   
   
   
-  nsTArray<nsCString> mBlacklistedItems;
+  nsTArray<nsCString> mUnusableItems;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(AddrHostRecord, ADDRHOSTRECORD_IID)

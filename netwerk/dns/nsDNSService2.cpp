@@ -184,13 +184,13 @@ nsDNSRecord::GetNextAddr(uint16_t port, NetAddr* addr) {
       } else {
         mIter++;
       }
-    } while (iter() && mHostRecord->Blacklisted(iter()));
+    } while (iter() && mHostRecord->Blocklisted(iter()));
 
     if (!iter() && startedFresh) {
       
       
       
-      mHostRecord->ResetBlacklist();
+      mHostRecord->ResetBlocklist();
       mIter = mAddrInfo->Addresses().begin();
     }
 
@@ -240,7 +240,7 @@ nsDNSRecord::GetAddresses(nsTArray<NetAddr>& aAddressArray) {
   mHostRecord->addr_info_lock.Lock();
   if (mHostRecord->addr_info) {
     for (const auto& address : mHostRecord->addr_info->Addresses()) {
-      if (mHostRecord->Blacklisted(&address)) {
+      if (mHostRecord->Blocklisted(&address)) {
         continue;
       }
       NetAddr* addr = aAddressArray.AppendElement(address);
