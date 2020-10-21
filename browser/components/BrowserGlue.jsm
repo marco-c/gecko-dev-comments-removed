@@ -3268,7 +3268,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 99;
+    const UI_VERSION = 100;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -3902,6 +3902,30 @@ BrowserGlue.prototype = {
 
     if (currentUIVersion < 99) {
       Services.prefs.clearUserPref("security.tls.version.enable-deprecated");
+    }
+
+    
+    
+    if (currentUIVersion < 100) {
+      let bookmarksToolbarWasVisible =
+        Services.xulStore.getValue(
+          BROWSER_DOCURL,
+          "PersonalToolbar",
+          "collapsed"
+        ) == "false";
+      if (bookmarksToolbarWasVisible) {
+        
+        
+        Services.prefs.setCharPref(
+          "browser.toolbars.bookmarks.visibility",
+          "always"
+        );
+      }
+      Services.xulStore.removeValue(
+        BROWSER_DOCURL,
+        "PersonalToolbar",
+        "collapsed"
+      );
     }
 
     

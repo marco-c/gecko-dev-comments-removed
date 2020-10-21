@@ -29,6 +29,13 @@ add_task(async function() {
   
   
   
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.toolbars.bookmarks.visibility", "never"]],
+  });
+
+  
+  
+  
   Assert.equal(
     EXPECTED_REFLOWS.length,
     0,

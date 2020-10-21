@@ -25,6 +25,13 @@ add_task(async function() {
   await ensureNoPreloadedBrowser();
   await disableFxaBadge();
 
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.toolbars.bookmarks.visibility", "never"]],
+  });
+
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   await TestUtils.waitForCondition(() => tab._fullyOpen);
 

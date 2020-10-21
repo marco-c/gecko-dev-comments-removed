@@ -34,6 +34,13 @@ add_task(async function() {
 
   await ensureNoPreloadedBrowser();
 
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.toolbars.bookmarks.visibility", "never"]],
+  });
+
   const TAB_COUNT_FOR_OVERFLOW = computeMaxTabCount();
 
   await createTabs(TAB_COUNT_FOR_OVERFLOW);
