@@ -183,6 +183,9 @@ interface nsIPrintSettings : nsISupports
   
   [infallible] attribute boolean honorPageRuleMargins;
 
+  
+  [infallible] attribute boolean showMarginGuides;
+
   attribute short   printRange;
 
   attribute AString title;
@@ -201,7 +204,6 @@ interface nsIPrintSettings : nsISupports
   attribute boolean printSilent;         
   attribute boolean shrinkToFit;         
   attribute boolean showPrintProgress;   
-  attribute boolean showMarginGuides;    
 
   
   attribute AString paperId;       

@@ -491,9 +491,9 @@ static void PaintMarginGuides(nsIFrame* aFrame, DrawTarget* aDrawTarget,
                         0.0f);
   DrawOptions options;
 
-  
-  
-  const nsMargin& margin = aFrame->PresContext()->GetDefaultPageMargin();
+  MOZ_RELEASE_ASSERT(aFrame->IsPageFrame());
+  const nsMargin& margin =
+      static_cast<nsPageFrame*>(aFrame)->GetUsedPageContentMargin();
   int32_t appUnitsPerDevPx = aFrame->PresContext()->AppUnitsPerDevPixel();
 
   
@@ -625,14 +625,11 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     set.Content()->AppendNewToTop<nsDisplayHeaderFooter>(aBuilder, this);
 
     
-    if (pc->Type() == nsPresContext::eContext_PrintPreview) {
-      bool showGuides;
-      if (NS_SUCCEEDED(mPD->mPrintSettings->GetShowMarginGuides(&showGuides)) &&
-          showGuides) {
-        set.Content()->AppendNewToTop<nsDisplayGeneric>(
-            aBuilder, this, PaintMarginGuides, "MarginGuides",
-            DisplayItemType::TYPE_MARGIN_GUIDES);
-      }
+    if (pc->Type() == nsPresContext::eContext_PrintPreview &&
+        mPD->mPrintSettings->GetShowMarginGuides()) {
+      set.Content()->AppendNewToTop<nsDisplayGeneric>(
+          aBuilder, this, PaintMarginGuides, "MarginGuides",
+          DisplayItemType::TYPE_MARGIN_GUIDES);
     }
   }
 
