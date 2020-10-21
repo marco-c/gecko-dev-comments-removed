@@ -718,6 +718,9 @@ class gfxShapedText {
       FLAG_IS_SIMPLE_GLYPH = 0x80000000U,
 
       
+      COMMON_FLAGS_MASK = 0x70000000U,
+
+      
       
       
       FLAGS_CAN_BREAK_BEFORE = 0x60000000U,
@@ -730,45 +733,47 @@ class gfxShapedText {
       FLAG_CHAR_IS_SPACE = 0x10000000U,
 
       
+      
       ADVANCE_MASK = 0x0FFF0000U,
       ADVANCE_SHIFT = 16,
-
+      
       GLYPH_MASK = 0x0000FFFFU,
 
       
       
       
+      
+      GLYPH_COUNT_MASK = 0x0000FFFFU,
 
       
       
       
       
       
-      FLAG_NOT_MISSING = 0x01,
-      FLAG_NOT_CLUSTER_START = 0x02,
-      FLAG_NOT_LIGATURE_GROUP_START = 0x04,
+      FLAG_NOT_MISSING = 0x010000,
+      FLAG_NOT_CLUSTER_START = 0x020000,
+      FLAG_NOT_LIGATURE_GROUP_START = 0x040000,
+      
 
-      FLAG_CHAR_IS_TAB = 0x08,
-      FLAG_CHAR_IS_NEWLINE = 0x10,
       
       
       
       
-      FLAG_CHAR_NO_EMPHASIS_MARK = 0x20,
+      CHAR_TYPE_FLAGS_MASK = 0xF00000,
+      FLAG_CHAR_IS_TAB = 0x100000,
+      FLAG_CHAR_IS_NEWLINE = 0x200000,
       
       
       
-      FLAG_CHAR_IS_FORMATTING_CONTROL = 0x40,
+      
+      FLAG_CHAR_NO_EMPHASIS_MARK = 0x400000,
+      
+      
+      
+      FLAG_CHAR_IS_FORMATTING_CONTROL = 0x800000,
 
-      CHAR_TYPE_FLAGS_MASK = 0x78,
-
-      GLYPH_COUNT_MASK = 0x00FFFF00U,
-      GLYPH_COUNT_SHIFT = 8
+      
     };
-
-    
-    
-    void ClearGlyphInfo() { mValue &= ~FLAGS_CAN_BREAK_BEFORE; }
 
     
     
@@ -786,25 +791,27 @@ class gfxShapedText {
       return (aAdvance & (ADVANCE_MASK >> ADVANCE_SHIFT)) == aAdvance;
     }
 
-    bool IsSimpleGlyph() const { return (mValue & FLAG_IS_SIMPLE_GLYPH) != 0; }
+    bool IsSimpleGlyph() const { return mValue & FLAG_IS_SIMPLE_GLYPH; }
     uint32_t GetSimpleAdvance() const {
+      MOZ_ASSERT(IsSimpleGlyph());
       return (mValue & ADVANCE_MASK) >> ADVANCE_SHIFT;
     }
-    uint32_t GetSimpleGlyph() const { return mValue & GLYPH_MASK; }
+    uint32_t GetSimpleGlyph() const {
+      MOZ_ASSERT(IsSimpleGlyph());
+      return mValue & GLYPH_MASK;
+    }
 
     bool IsMissing() const {
-      return (mValue & (FLAG_NOT_MISSING | FLAG_IS_SIMPLE_GLYPH)) == 0;
+      return !(mValue & (FLAG_NOT_MISSING | FLAG_IS_SIMPLE_GLYPH));
     }
     bool IsClusterStart() const {
-      return (mValue & FLAG_IS_SIMPLE_GLYPH) ||
-             !(mValue & FLAG_NOT_CLUSTER_START);
+      return IsSimpleGlyph() || !(mValue & FLAG_NOT_CLUSTER_START);
     }
     bool IsLigatureGroupStart() const {
-      return (mValue & FLAG_IS_SIMPLE_GLYPH) ||
-             !(mValue & FLAG_NOT_LIGATURE_GROUP_START);
+      return IsSimpleGlyph() || !(mValue & FLAG_NOT_LIGATURE_GROUP_START);
     }
     bool IsLigatureContinuation() const {
-      return (mValue & FLAG_IS_SIMPLE_GLYPH) == 0 &&
+      return !IsSimpleGlyph() &&
              (mValue & (FLAG_NOT_LIGATURE_GROUP_START | FLAG_NOT_MISSING)) ==
                  (FLAG_NOT_LIGATURE_GROUP_START | FLAG_NOT_MISSING);
     }
@@ -812,21 +819,20 @@ class gfxShapedText {
     
     
     
-    bool CharIsSpace() const { return (mValue & FLAG_CHAR_IS_SPACE) != 0; }
+    bool CharIsSpace() const { return mValue & FLAG_CHAR_IS_SPACE; }
 
     bool CharIsTab() const {
-      return !IsSimpleGlyph() && (mValue & FLAG_CHAR_IS_TAB) != 0;
+      return !IsSimpleGlyph() && (mValue & FLAG_CHAR_IS_TAB);
     }
     bool CharIsNewline() const {
-      return !IsSimpleGlyph() && (mValue & FLAG_CHAR_IS_NEWLINE) != 0;
+      return !IsSimpleGlyph() && (mValue & FLAG_CHAR_IS_NEWLINE);
     }
     bool CharMayHaveEmphasisMark() const {
       return !CharIsSpace() &&
              (IsSimpleGlyph() || !(mValue & FLAG_CHAR_NO_EMPHASIS_MARK));
     }
     bool CharIsFormattingControl() const {
-      return !IsSimpleGlyph() &&
-             (mValue & FLAG_CHAR_IS_FORMATTING_CONTROL) != 0;
+      return !IsSimpleGlyph() && (mValue & FLAG_CHAR_IS_FORMATTING_CONTROL);
     }
 
     uint32_t CharTypeFlags() const {
@@ -834,8 +840,7 @@ class gfxShapedText {
     }
 
     void SetClusterStart(bool aIsClusterStart) {
-      NS_ASSERTION(!IsSimpleGlyph(),
-                   "can't call SetClusterStart on simple glyphs");
+      MOZ_ASSERT(!IsSimpleGlyph());
       if (aIsClusterStart) {
         mValue &= ~FLAG_NOT_CLUSTER_START;
       } else {
@@ -848,7 +853,7 @@ class gfxShapedText {
     }
     
     uint32_t SetCanBreakBefore(uint8_t aCanBreakBefore) {
-      NS_ASSERTION(aCanBreakBefore <= 2, "Bogus break-before value!");
+      MOZ_ASSERT(aCanBreakBefore <= 2, "Bogus break-before value!");
       uint32_t breakMask = (uint32_t(aCanBreakBefore) << FLAGS_CAN_BREAK_SHIFT);
       uint32_t toggle = breakMask ^ (mValue & FLAGS_CAN_BREAK_BEFORE);
       mValue ^= toggle;
@@ -859,8 +864,8 @@ class gfxShapedText {
     
     static CompressedGlyph MakeSimpleGlyph(uint32_t aAdvanceAppUnits,
                                            uint32_t aGlyph) {
-      NS_ASSERTION(IsSimpleAdvance(aAdvanceAppUnits), "Advance overflow");
-      NS_ASSERTION(IsSimpleGlyphID(aGlyph), "Glyph overflow");
+      MOZ_ASSERT(IsSimpleAdvance(aAdvanceAppUnits));
+      MOZ_ASSERT(IsSimpleGlyphID(aGlyph));
       CompressedGlyph g;
       g.mValue =
           FLAG_IS_SIMPLE_GLYPH | (aAdvanceAppUnits << ADVANCE_SHIFT) | aGlyph;
@@ -871,31 +876,30 @@ class gfxShapedText {
     
     CompressedGlyph& SetSimpleGlyph(uint32_t aAdvanceAppUnits,
                                     uint32_t aGlyph) {
-      NS_ASSERTION(!CharTypeFlags(), "Char type flags lost");
-      mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_CHAR_IS_SPACE)) |
+      MOZ_ASSERT(!CharTypeFlags(), "Char type flags lost");
+      mValue = (mValue & COMMON_FLAGS_MASK) |
                MakeSimpleGlyph(aAdvanceAppUnits, aGlyph).mValue;
       return *this;
     }
 
     
     
-    static CompressedGlyph MakeComplex(bool aClusterStart, bool aLigatureStart,
-                                       uint32_t aGlyphCount) {
+    static CompressedGlyph MakeComplex(bool aClusterStart,
+                                       bool aLigatureStart) {
       CompressedGlyph g;
       g.mValue = FLAG_NOT_MISSING |
                  (aClusterStart ? 0 : FLAG_NOT_CLUSTER_START) |
-                 (aLigatureStart ? 0 : FLAG_NOT_LIGATURE_GROUP_START) |
-                 (aGlyphCount << GLYPH_COUNT_SHIFT);
+                 (aLigatureStart ? 0 : FLAG_NOT_LIGATURE_GROUP_START);
       return g;
     }
 
     
     
-    CompressedGlyph& SetComplex(bool aClusterStart, bool aLigatureStart,
-                                uint32_t aGlyphCount) {
-      mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_CHAR_IS_SPACE)) |
-               CharTypeFlags() |
-               MakeComplex(aClusterStart, aLigatureStart, aGlyphCount).mValue;
+    
+    
+    CompressedGlyph& SetComplex(bool aClusterStart, bool aLigatureStart) {
+      mValue = (mValue & COMMON_FLAGS_MASK) | CharTypeFlags() |
+               MakeComplex(aClusterStart, aLigatureStart).mValue;
       return *this;
     }
 
@@ -903,38 +907,44 @@ class gfxShapedText {
 
 
 
-    CompressedGlyph& SetMissing(uint32_t aGlyphCount) {
-      mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_NOT_CLUSTER_START |
-                          FLAG_CHAR_IS_SPACE)) |
-               CharTypeFlags() | (aGlyphCount << GLYPH_COUNT_SHIFT);
+
+
+
+
+
+
+    CompressedGlyph& SetMissing() {
+      MOZ_ASSERT(!IsSimpleGlyph());
+      mValue &= ~(FLAG_NOT_MISSING | FLAG_NOT_LIGATURE_GROUP_START);
       return *this;
     }
+
     uint32_t GetGlyphCount() const {
-      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
-      return (mValue & GLYPH_COUNT_MASK) >> GLYPH_COUNT_SHIFT;
+      MOZ_ASSERT(!IsSimpleGlyph());
+      return mValue & GLYPH_COUNT_MASK;
     }
     void SetGlyphCount(uint32_t aGlyphCount) {
-      MOZ_ASSERT(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      MOZ_ASSERT(!IsSimpleGlyph());
       MOZ_ASSERT(GetGlyphCount() == 0, "Glyph count already set");
       MOZ_ASSERT(aGlyphCount <= 0xffff, "Glyph count out of range");
-      mValue |= FLAG_NOT_MISSING | (aGlyphCount << GLYPH_COUNT_SHIFT);
+      mValue |= FLAG_NOT_MISSING | aGlyphCount;
     }
 
     void SetIsSpace() { mValue |= FLAG_CHAR_IS_SPACE; }
     void SetIsTab() {
-      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      MOZ_ASSERT(!IsSimpleGlyph());
       mValue |= FLAG_CHAR_IS_TAB;
     }
     void SetIsNewline() {
-      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      MOZ_ASSERT(!IsSimpleGlyph());
       mValue |= FLAG_CHAR_IS_NEWLINE;
     }
     void SetNoEmphasisMark() {
-      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      MOZ_ASSERT(!IsSimpleGlyph());
       mValue |= FLAG_CHAR_NO_EMPHASIS_MARK;
     }
     void SetIsFormattingControl() {
-      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      MOZ_ASSERT(!IsSimpleGlyph());
       mValue |= FLAG_CHAR_IS_FORMATTING_CONTROL;
     }
 
@@ -1068,7 +1078,7 @@ class gfxShapedText {
       DetailedGlyph details = {aGlyph.GetSimpleGlyph(),
                                (int32_t)aGlyph.GetSimpleAdvance(),
                                mozilla::gfx::Point()};
-      aGlyph.SetComplex(true, true, 0);
+      aGlyph.SetComplex(true, true);
       SetDetailedGlyphs(aIndex, 1, &details);
     }
   }

@@ -1468,16 +1468,15 @@ void gfxTextRun::CopyGlyphDataFrom(gfxTextRun* aSource, Range aRange,
     if (!g.IsSimpleGlyph()) {
       uint32_t count = g.GetGlyphCount();
       if (count > 0) {
-        DetailedGlyph* dst = AllocateDetailedGlyphs(i + aDest, count);
-        if (dst) {
-          DetailedGlyph* src = aSource->GetDetailedGlyphs(i + aRange.start);
-          if (src) {
-            ::memcpy(dst, src, count * sizeof(DetailedGlyph));
-          } else {
-            g.SetMissing(0);
-          }
+        
+        
+        DetailedGlyph* src = aSource->GetDetailedGlyphs(i + aRange.start);
+        MOZ_ASSERT(src, "missing DetailedGlyphs?");
+        if (src) {
+          DetailedGlyph* dst = AllocateDetailedGlyphs(i + aDest, count);
+          ::memcpy(dst, src, count * sizeof(DetailedGlyph));
         } else {
-          g.SetMissing(0);
+          g.SetMissing();
         }
       }
     }
