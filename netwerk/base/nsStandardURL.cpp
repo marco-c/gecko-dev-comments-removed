@@ -28,6 +28,7 @@
 #include "mozilla/net/MozURL_ffi.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
+#include "nsIClassInfoImpl.h"
 
 
 
@@ -1257,6 +1258,15 @@ SHIFT_FROM_LAST(ShiftFromRef, mRef)
 
 
 
+NS_IMPL_CLASSINFO(nsStandardURL, nullptr, nsIClassInfo::THREADSAFE,
+                  NS_STANDARDURL_CID)
+
+NS_IMPL_CI_INTERFACE_GETTER0(nsStandardURL)
+
+
+
+
+
 NS_IMPL_ADDREF(nsStandardURL)
 NS_IMPL_RELEASE(nsStandardURL)
 
@@ -1267,7 +1277,7 @@ NS_INTERFACE_MAP_BEGIN(nsStandardURL)
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIFileURL, mSupportsFileURL)
   NS_INTERFACE_MAP_ENTRY(nsIStandardURL)
   NS_INTERFACE_MAP_ENTRY(nsISerializable)
-  NS_INTERFACE_MAP_ENTRY(nsIClassInfo)
+  NS_IMPL_QUERY_CLASSINFO(nsStandardURL)
   NS_INTERFACE_MAP_ENTRY(nsISensitiveInfoHiddenURI)
   
   if (aIID.Equals(kThisImplCID)) {
@@ -3660,52 +3670,6 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
       false);
 
   return true;
-}
-
-
-
-
-
-NS_IMETHODIMP
-nsStandardURL::GetInterfaces(nsTArray<nsIID>& array) {
-  array.Clear();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsStandardURL::GetScriptableHelper(nsIXPCScriptable** _retval) {
-  *_retval = nullptr;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsStandardURL::GetContractID(nsACString& aContractID) {
-  aContractID.SetIsVoid(true);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsStandardURL::GetClassDescription(nsACString& aClassDescription) {
-  aClassDescription.SetIsVoid(true);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsStandardURL::GetClassID(nsCID** aClassID) {
-  *aClassID = (nsCID*)moz_xmalloc(sizeof(nsCID));
-  return GetClassIDNoAlloc(*aClassID);
-}
-
-NS_IMETHODIMP
-nsStandardURL::GetFlags(uint32_t* aFlags) {
-  *aFlags = nsIClassInfo::MAIN_THREAD_ONLY;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsStandardURL::GetClassIDNoAlloc(nsCID* aClassIDNoAlloc) {
-  *aClassIDNoAlloc = kStandardURLCID;
-  return NS_OK;
 }
 
 
