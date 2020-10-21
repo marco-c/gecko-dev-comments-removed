@@ -300,6 +300,9 @@ void ICScript::removeInlinedChild(uint32_t pcOffset) {
   inlinedChildren_->eraseIf([pcOffset](const CallSite& callsite) -> bool {
     return callsite.pcOffset_ == pcOffset;
   });
+
+  
+  inliningRoot()->removeInlinedScript(icScript);
 }
 
 bool ICScript::hasInlinedChild(uint32_t pcOffset) {
