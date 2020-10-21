@@ -379,13 +379,12 @@ static void AccumulateRoundedRectDifference(
   }
   
   if (rect1.X() != rect2.X()) {
-    r.Or(r, nsRect(minLeft, lowestAdjustedTop, maxAdjustedLeft - minLeft,
-                   highestAdjustedBottom - lowestAdjustedTop));
+    r.Or(r, nsRect(minLeft, highestTop, maxAdjustedLeft - minLeft,
+                   lowestBottom - highestTop));
   }
   if (rect1.XMost() != rect2.XMost()) {
-    r.Or(r, nsRect(minAdjustedRight, lowestAdjustedTop,
-                   maxRight - minAdjustedRight,
-                   highestAdjustedBottom - lowestAdjustedTop));
+    r.Or(r, nsRect(minAdjustedRight, highestTop, maxRight - minAdjustedRight,
+                   lowestBottom - highestTop));
   }
 
   r.And(r, aBounds.Union(aOtherBounds));
