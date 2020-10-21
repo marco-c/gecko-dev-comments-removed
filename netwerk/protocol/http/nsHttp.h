@@ -13,6 +13,7 @@
 #include "nsError.h"
 #include "nsTArray.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Tuple.h"
 #include "mozilla/UniquePtr.h"
 
 class nsICacheEntry;
@@ -376,8 +377,10 @@ nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode);
 
 
 
-nsCString SelectAlpnFromAlpnList(const nsACString& aAlpnList, bool aNoHttp2,
-                                 bool aNoHttp3);
+
+
+Tuple<nsCString, bool> SelectAlpnFromAlpnList(const nsACString& aAlpnList,
+                                              bool aNoHttp2, bool aNoHttp3);
 
 }  
 }  
