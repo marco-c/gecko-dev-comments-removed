@@ -92,6 +92,14 @@ class _ToolbarPanelHub {
 
   toggleWhatsNewPref(event) {
     Preferences.set(WHATSNEW_ENABLED_PREF, event.target.checked);
+    this.sendUserEventTelemetry(
+      event.target.ownerGlobal,
+      "WNP_PREF_TOGGLE",
+      
+      
+      { id: "n/a" },
+      { value: { prefValue: event.target.checked } }
+    );
   }
 
   maybeInsertFTL(win) {
