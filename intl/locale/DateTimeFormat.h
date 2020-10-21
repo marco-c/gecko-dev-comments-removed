@@ -18,11 +18,9 @@ namespace mozilla {
 
 enum nsDateFormatSelector : long {
   
-  kDateFormatNone = 0,   
-  kDateFormatLong,       
-  kDateFormatShort,      
-  kDateFormatYearMonth,  
-  kDateFormatYearMonthLong,  
+  kDateFormatNone = 0,  
+  kDateFormatLong,      
+  kDateFormatShort,     
 };
 
 enum nsTimeFormatSelector : long {
