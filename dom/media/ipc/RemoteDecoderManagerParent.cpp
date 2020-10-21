@@ -196,7 +196,9 @@ PRemoteDecoderParent* RemoteDecoderManagerParent::AllocPRemoteDecoderParent(
         this, decoderInfo.videoInfo(), decoderInfo.framerate(), aOptions,
         aIdentifier, sRemoteDecoderManagerParentThread, decodeTaskQueue,
         aSuccess, aErrorDescription);
-  } else if (aRemoteDecoderInfo.type() == RemoteDecoderInfoIPDL::TAudioInfo) {
+  }
+
+  if (aRemoteDecoderInfo.type() == RemoteDecoderInfoIPDL::TAudioInfo) {
     return new RemoteAudioDecoderParent(
         this, aRemoteDecoderInfo.get_AudioInfo(), aOptions,
         sRemoteDecoderManagerParentThread, decodeTaskQueue, aSuccess,
@@ -224,6 +226,40 @@ void RemoteDecoderManagerParent::Open(
 }
 
 void RemoteDecoderManagerParent::ActorDealloc() { Release(); }
+
+mozilla::ipc::IPCResult RemoteDecoderManagerParent::RecvSupports(
+    const RemoteDecoderInfoIPDL& aInfo,
+    const Maybe<layers::TextureFactoryIdentifier>& aIdentifier, bool* aSuccess,
+    DecoderDoctorDiagnostics* aDiagnostics) {
+  auto& factory = EnsurePDMFactory();
+  MediaResult error(NS_OK);
+
+  
+  
+  *aSuccess = false;
+  if (aInfo.type() == RemoteDecoderInfoIPDL::TAudioInfo) {
+    SupportDecoderParams params(aInfo.get_AudioInfo(), &error);
+    *aSuccess = factory.Supports(params, aDiagnostics);
+  } else if (aInfo.type() == RemoteDecoderInfoIPDL::TVideoDecoderInfoIPDL) {
+    RefPtr<KnowsCompositorVideo> knowsCompositor;
+    if (aIdentifier) {
+      
+      
+      
+      
+      knowsCompositor =
+          KnowsCompositorVideo::TryCreateForIdentifier(*aIdentifier);
+    }
+
+    const VideoDecoderInfoIPDL& info = aInfo.get_VideoDecoderInfoIPDL();
+    SupportDecoderParams params(info.videoInfo(), knowsCompositor,
+                                media::VideoFrameRate(info.framerate()),
+                                &error);
+    *aSuccess = factory.Supports(params, aDiagnostics);
+  }
+
+  return IPC_OK();
+}
 
 mozilla::ipc::IPCResult RemoteDecoderManagerParent::RecvReadback(
     const SurfaceDescriptorGPUVideo& aSD, SurfaceDescriptor* aResult) {

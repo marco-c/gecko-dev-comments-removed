@@ -30,6 +30,9 @@ class RemoteDecoderManagerChild final
   static RemoteDecoderManagerChild* GetSingleton(RemoteDecodeIn aLocation);
 
   
+  static bool Supports(RemoteDecodeIn aLocation,
+                       const SupportDecoderParams& aParams,
+                       DecoderDoctorDiagnostics* aDiagnostics);
   static already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
       const CreateDecoderParams& aParams);
   static already_AddRefed<MediaDataDecoder> CreateVideoDecoder(

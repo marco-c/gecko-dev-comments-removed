@@ -33,41 +33,33 @@ using namespace layers;
 using namespace ipc;
 using namespace gfx;
 
-class KnowsCompositorVideo : public layers::KnowsCompositor {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(KnowsCompositorVideo, override)
+layers::TextureForwarder* KnowsCompositorVideo::GetTextureForwarder() {
+  auto* vbc = VideoBridgeChild::GetSingleton();
+  return (vbc && vbc->CanSend()) ? vbc : nullptr;
+}
+layers::LayersIPCActor* KnowsCompositorVideo::GetLayersIPCActor() {
+  return GetTextureForwarder();
+}
 
-  layers::TextureForwarder* GetTextureForwarder() override {
-    auto* vbc = VideoBridgeChild::GetSingleton();
-    return (vbc && vbc->CanSend()) ? vbc : nullptr;
-  }
-  layers::LayersIPCActor* GetLayersIPCActor() override {
-    return GetTextureForwarder();
-  }
-
-  static already_AddRefed<KnowsCompositorVideo> TryCreateForIdentifier(
-      const layers::TextureFactoryIdentifier& aIdentifier) {
-    VideoBridgeChild* child = VideoBridgeChild::GetSingleton();
-    if (!child) {
-      return nullptr;
-    }
-
-    
-    
-    TextureFactoryIdentifier ident = aIdentifier;
-    if (XRE_IsRDDProcess()) {
-      ident.mSyncHandle = 0;
-    }
-
-    RefPtr<KnowsCompositorVideo> knowsCompositor = new KnowsCompositorVideo();
-    knowsCompositor->IdentifyTextureHost(ident);
-    return knowsCompositor.forget();
+ already_AddRefed<KnowsCompositorVideo>
+KnowsCompositorVideo::TryCreateForIdentifier(
+    const layers::TextureFactoryIdentifier& aIdentifier) {
+  VideoBridgeChild* child = VideoBridgeChild::GetSingleton();
+  if (!child) {
+    return nullptr;
   }
 
- private:
-  KnowsCompositorVideo() = default;
-  virtual ~KnowsCompositorVideo() = default;
-};
+  
+  
+  TextureFactoryIdentifier ident = aIdentifier;
+  if (XRE_IsRDDProcess()) {
+    ident.mSyncHandle = 0;
+  }
+
+  RefPtr<KnowsCompositorVideo> knowsCompositor = new KnowsCompositorVideo();
+  knowsCompositor->IdentifyTextureHost(ident);
+  return knowsCompositor.forget();
+}
 
 RemoteVideoDecoderChild::RemoteVideoDecoderChild(RemoteDecodeIn aLocation)
     : RemoteDecoderChild(aLocation == RemoteDecodeIn::GpuProcess),
