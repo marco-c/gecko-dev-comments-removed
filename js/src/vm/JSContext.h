@@ -596,11 +596,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 #endif
 
   
-  
-  
-  js::ContextData<unsigned> enableAccessValidation;
-
-  
 
 
 

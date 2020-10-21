@@ -864,20 +864,6 @@ class MOZ_STACK_CLASS JS_FRIEND_API AutoAssertNoContentJS {
 
 
 
-
-
-extern JS_FRIEND_API void EnableAccessValidation(JSContext* cx, bool enabled);
-
-
-
-
-
-extern JS_FRIEND_API void SetRealmValidAccessPtr(JSContext* cx,
-                                                 JS::HandleObject global,
-                                                 bool* accessp);
-
-
-
 extern JS_FRIEND_API bool SystemZoneAvailable(JSContext* cx);
 
 
