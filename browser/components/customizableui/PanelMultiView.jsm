@@ -1147,7 +1147,7 @@ var PanelMultiView = class extends AssociatedToNode {
     }
   }
 
-  _calculateMaxHeight() {
+  _calculateMaxHeight(aEvent) {
     
     
     
@@ -1169,7 +1169,7 @@ var PanelMultiView = class extends AssociatedToNode {
     
     
     let maxHeight;
-    if (this._panel.alignmentPosition.startsWith("before_")) {
+    if (aEvent.alignmentPosition.startsWith("before_")) {
       maxHeight = anchor.screenY - cssAvailTop;
     } else {
       let anchorScreenBottom = anchor.screenY + anchorRect.height;
@@ -1229,7 +1229,7 @@ var PanelMultiView = class extends AssociatedToNode {
       }
       case "popuppositioned": {
         if (this._panel.state == "showing") {
-          let maxHeight = this._calculateMaxHeight();
+          let maxHeight = this._calculateMaxHeight(aEvent);
           this._viewStack.style.maxHeight = maxHeight + "px";
           this._offscreenViewStack.style.maxHeight = maxHeight + "px";
         }
