@@ -1150,16 +1150,6 @@ function getDefaultExtension(aFilename, aURI, aContentType) {
   } 
 
   
-  
-  if (aContentType?.startsWith("image/")) {
-    let mimeInfo = getMIMEInfoForType(aContentType, "");
-    let exts = Array.from(mimeInfo.getFileExtensions());
-    if (exts.length) {
-      return exts[0];
-    }
-  }
-
-  
   var url = Cc["@mozilla.org/network/standard-url-mutator;1"]
     .createInstance(Ci.nsIURIMutator)
     .setSpec("http://example.com") 

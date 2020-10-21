@@ -203,7 +203,6 @@ static bool GetFilenameAndExtensionFromChannel(nsIChannel* aChannel,
   bool handleExternally = false;
   uint32_t disp;
   nsresult rv = aChannel->GetContentDisposition(&disp);
-  bool gotFileNameFromURI = false;
   if (NS_SUCCEEDED(rv)) {
     aChannel->GetContentDispositionFilename(aFileName);
     if (disp == nsIChannel::DISPOSITION_ATTACHMENT) handleExternally = true;
@@ -230,7 +229,6 @@ static bool GetFilenameAndExtensionFromChannel(nsIChannel* aChannel,
     nsAutoCString leafName;
     url->GetFileName(leafName);
     if (!leafName.IsEmpty()) {
-      gotFileNameFromURI = true;
       rv = UnescapeFragment(leafName, url, aFileName);
       if (NS_FAILED(rv)) {
         CopyUTF8toUTF16(leafName, aFileName);  
@@ -240,12 +238,12 @@ static bool GetFilenameAndExtensionFromChannel(nsIChannel* aChannel,
 
   
   
-  if (aExtension.IsEmpty() && !aFileName.IsEmpty()) {
-    
-    
-    aFileName.Trim(".", false);
+  if (aExtension.IsEmpty()) {
+    if (!aFileName.IsEmpty()) {
+      
+      
+      aFileName.Trim(".", false);
 
-    if (!gotFileNameFromURI || aAllowURLExtension) {
       
       nsAutoString fileNameStr(aFileName);
       int32_t idx = fileNameStr.RFindChar(char16_t('.'));
@@ -1294,31 +1292,11 @@ nsExternalAppHandler::nsExternalAppHandler(
   mTempFileExtension.CompressWhitespace();
 
   
-  
-  
-  
-  
-  bool knownExtension = false;
-  
-  
-  bool haveBogusExtension =
-      mMimeInfo && !originalFileExt.IsEmpty() &&
-      NS_SUCCEEDED(mMimeInfo->ExtensionExists(
-          Substring(NS_ConvertUTF16toUTF8(originalFileExt), 1),
-          &knownExtension)) &&
-      !knownExtension;
-  if (!mTempFileExtension.IsEmpty() &&
-      (originalFileExt.Length() == 0 || originalFileExt.EqualsLiteral(".") ||
-       originalFileExt.FindCharInSet(
-           KNOWN_PATH_SEPARATORS FILE_ILLEGAL_CHARACTERS) != kNotFound ||
-       haveBogusExtension)) {
-    int32_t pos = mSuggestedFileName.RFindChar('.');
-    if (pos != kNotFound) {
-      mSuggestedFileName =
-          Substring(mSuggestedFileName, 0, pos) + mTempFileExtension;
-    } else {
-      mSuggestedFileName.Append(mTempFileExtension);
-    }
+  if (originalFileExt.FindCharInSet(
+          KNOWN_PATH_SEPARATORS FILE_ILLEGAL_CHARACTERS) != kNotFound) {
+    
+    
+    mSuggestedFileName.Append(mTempFileExtension);
     originalFileExt = mTempFileExtension;
   }
 
