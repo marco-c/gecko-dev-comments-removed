@@ -38,7 +38,10 @@ Http3Stream::Http3Stream(nsAHttpTransaction* httpTransaction,
   LOG3(("Http3Stream::Http3Stream [this=%p]", this));
 }
 
-void Http3Stream::Close(nsresult aResult) { mTransaction->Close(aResult); }
+void Http3Stream::Close(nsresult aResult) {
+  mRecvState = RECV_DONE;
+  mTransaction->Close(aResult);
+}
 
 bool Http3Stream::GetHeadersString(const char* buf, uint32_t avail,
                                    uint32_t* countUsed) {
@@ -301,7 +304,6 @@ nsresult Http3Stream::OnWriteSegment(char* buf, uint32_t count,
       }
     } break;
     case RECEIVED_FIN:
-    case RECEIVED_RESET:
       rv = NS_BASE_STREAM_CLOSED;
       mRecvState = RECV_DONE;
       break;
@@ -376,9 +378,32 @@ nsresult Http3Stream::WriteSegments(nsAHttpSegmentWriter* writer,
                                     uint32_t count, uint32_t* countWritten) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("Http3Stream::WriteSegments [this=%p]", this));
-  nsresult rv = mTransaction->WriteSegments(this, count, countWritten);
-  LOG(("Http3Stream::WriteSegments rv=0x%" PRIx32 " [this=%p]",
-       static_cast<uint32_t>(rv), this));
+  nsresult rv = NS_OK;
+  uint32_t countWrittenSingle = 0;
+  do {
+    rv = mTransaction->WriteSegments(this, count, &countWrittenSingle);
+    *countWritten += countWrittenSingle;
+    LOG(("Http3Stream::WriteSegments rv=0x%" PRIx32
+         " countWrittenSingle=%" PRIu32 " [this=%p]",
+         static_cast<uint32_t>(rv), countWrittenSingle, this));
+    if (mTransaction->IsDone()) {
+      
+      
+      
+      
+      mRecvState = RECV_DONE;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+  } while (NS_SUCCEEDED(rv) &&
+           ((countWrittenSingle > 0) || (mRecvState == RECEIVED_FIN)) &&
+           !Done());
   return rv;
 }
 
@@ -411,6 +436,7 @@ nsresult Http3Stream::Finish0RTT(bool aRestart) {
     mTotalRead = 0;
     mFin = false;
     mSendingBlockedByFlowControlCount = 0;
+    mFlatResponseHeaders.TruncateLength(0);
   }
 
   return rv;
