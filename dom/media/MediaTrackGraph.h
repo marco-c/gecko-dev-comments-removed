@@ -721,6 +721,8 @@ class SourceMediaTrack : public MediaTrack {
     bool mEnded;
     
     bool mPullingEnabled;
+    
+    bool mInForcedShutdown;
   };
 
   bool NeedsMixing();
@@ -738,6 +740,18 @@ class SourceMediaTrack : public MediaTrack {
 
 
   void NotifyDirectConsumers(MediaSegment* aSegment);
+
+  void NotifyForcedShutdown() override {
+    MutexAutoLock lock(mMutex);
+    if (!mUpdateTrack) {
+      return;
+    }
+    mUpdateTrack->mInForcedShutdown = true;
+    if (!mUpdateTrack->mData) {
+      return;
+    }
+    mUpdateTrack->mData->Clear();
+  }
 
   virtual void AdvanceTimeVaryingValuesToCurrentTime(
       GraphTime aCurrentTime, GraphTime aBlockedTime) override;
