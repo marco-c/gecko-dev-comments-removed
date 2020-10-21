@@ -77,18 +77,8 @@ RasterImage::RasterImage(nsIURI* aURI )
 #ifdef DEBUG
       mFramesNotified(0),
 #endif
-      mSourceBuffer(MakeNotNull<SourceBuffer*>()),
-      mHasSize(false),
-      mTransient(false),
-      mSyncLoad(false),
-      mDiscardable(false),
-      mSomeSourceData(false),
-      mAllSourceData(false),
-      mHasBeenDecoded(false),
-      mPendingAnimation(false),
-      mAnimationFinished(false),
-      mWantFullDecode(false),
-      mHandledOrientation(StaticPrefs::image_honor_orientation_metadata()) {
+      mSourceBuffer(MakeNotNull<SourceBuffer*>()) {
+  SetHandledOrientation(StaticPrefs::image_honor_orientation_metadata());
 }
 
 
@@ -122,10 +112,10 @@ nsresult RasterImage::Init(const char* aMimeType, uint32_t aFlags) {
                 !(aFlags & INIT_FLAG_DISCARDABLE));
 
   
-  mDiscardable = !!(aFlags & INIT_FLAG_DISCARDABLE);
-  mWantFullDecode = !!(aFlags & INIT_FLAG_DECODE_IMMEDIATELY);
-  mTransient = !!(aFlags & INIT_FLAG_TRANSIENT);
-  mSyncLoad = !!(aFlags & INIT_FLAG_SYNC_LOAD);
+  SetDiscardable(!!(aFlags & INIT_FLAG_DISCARDABLE));
+  SetWantFullDecode(!!(aFlags & INIT_FLAG_DECODE_IMMEDIATELY));
+  SetTransient(!!(aFlags & INIT_FLAG_TRANSIENT));
+  SetSyncLoad(!!(aFlags & INIT_FLAG_SYNC_LOAD));
 
   
   
@@ -136,7 +126,7 @@ nsresult RasterImage::Init(const char* aMimeType, uint32_t aFlags) {
   }
 
   
-  if (!mDiscardable) {
+  if (!GetDiscardable()) {
     mLockCount++;
     SurfaceCache::LockImage(ImageKey(this));
   }
@@ -181,7 +171,7 @@ RasterImage::RequestRefresh(const TimeStamp& aTime) {
   }
 
   if (res.mAnimationFinished) {
-    mAnimationFinished = true;
+    SetAnimationFinished(true);
     EvaluateAnimation();
   }
 }
@@ -235,7 +225,7 @@ nsresult RasterImage::GetNativeSizes(nsTArray<IntSize>& aNativeSizes) const {
 
 
 size_t RasterImage::GetNativeSizesLength() const {
-  if (mError || !mHasSize) {
+  if (mError || !GetHasSize()) {
     return 0;
   }
 
@@ -271,7 +261,7 @@ NS_IMETHODIMP_(Orientation)
 RasterImage::GetOrientation() { return mOrientation; }
 
 NS_IMETHODIMP_(bool)
-RasterImage::HandledOrientation() { return mHandledOrientation; }
+RasterImage::HandledOrientation() { return GetHandledOrientation(); }
 
 
 NS_IMETHODIMP
@@ -344,7 +334,7 @@ LookupResult RasterImage::LookupFrame(const UnorientedIntSize& aSize,
   LookupResult result =
       LookupFrameInternal(requestedSize, aFlags, aPlaybackType, aMarkUsed);
 
-  if (!result && !mHasSize) {
+  if (!result && !GetHasSize()) {
     
     return LookupResult(MatchType::NOT_FOUND);
   }
@@ -392,7 +382,7 @@ LookupResult RasterImage::LookupFrame(const UnorientedIntSize& aSize,
   
   
   
-  if (mAllSourceData && syncDecode) {
+  if (GetAllSourceData() && syncDecode) {
     result.Surface()->WaitUntilFinished();
   }
 
@@ -525,7 +515,7 @@ RasterImage::GetAnimated(bool* aAnimated) {
   
   
   
-  if (!mHasBeenDecoded) {
+  if (!GetHasBeenDecoded()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -626,7 +616,7 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
 
 Tuple<ImgDrawResult, IntSize> RasterImage::GetImageContainerSize(
     LayerManager* aManager, const IntSize& aRequestedSize, uint32_t aFlags) {
-  if (!mHasSize) {
+  if (!GetHasSize()) {
     return MakeTuple(ImgDrawResult::NOT_READY, IntSize(0, 0));
   }
 
@@ -681,7 +671,7 @@ RasterImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
   
   
   int32_t maxTextureSize = aManager->GetMaxTextureSize();
-  if (!mHasSize || aRequestedSize.IsEmpty() ||
+  if (!GetHasSize() || aRequestedSize.IsEmpty() ||
       min(mSize.width, aRequestedSize.width) > maxTextureSize ||
       min(mSize.height, aRequestedSize.height) > maxTextureSize) {
     return false;
@@ -735,7 +725,7 @@ bool RasterImage::SetMetadata(const ImageMetadata& aMetadata,
     Orientation orientation = aMetadata.GetOrientation();
 
     
-    if (mHasSize &&
+    if (GetHasSize() &&
         (metadataSize != ToUnoriented(mSize) || orientation != mOrientation)) {
       NS_WARNING(
           "Image changed size or orientation on redecode! "
@@ -752,10 +742,10 @@ bool RasterImage::SetMetadata(const ImageMetadata& aMetadata,
       mNativeSizes.AppendElement(
           ToOriented(UnorientedIntSize::FromUnknownSize(nativeSize)));
     }
-    mHasSize = true;
+    SetHasSize(true);
   }
 
-  if (mHasSize && aMetadata.HasAnimation() && !mAnimationState) {
+  if (GetHasSize() && aMetadata.HasAnimation() && !mAnimationState) {
     
     mAnimationState.emplace(mAnimationMode);
     mFrameAnimator =
@@ -823,16 +813,16 @@ nsresult RasterImage::StartAnimation() {
 
   
   
-  mPendingAnimation =
-      !mAnimationState || mAnimationState->KnownFrameCount() < 1;
-  if (mPendingAnimation) {
+  SetPendingAnimation(!mAnimationState ||
+                      mAnimationState->KnownFrameCount() < 1);
+  if (GetPendingAnimation()) {
     return NS_OK;
   }
 
   
   if (mAnimationState->GetCurrentAnimationFrameIndex() == 0 &&
       mAnimationState->FirstFrameTimeout() == FrameTimeout::Forever()) {
-    mAnimationFinished = true;
+    SetAnimationFinished(true);
     return NS_ERROR_ABORT;
   }
 
@@ -865,14 +855,14 @@ RasterImage::ResetAnimation() {
     return NS_ERROR_FAILURE;
   }
 
-  mPendingAnimation = false;
+  SetPendingAnimation(false);
 
   if (mAnimationMode == kDontAnimMode || !mAnimationState ||
       mAnimationState->GetCurrentAnimationFrameIndex() == 0) {
     return NS_OK;
   }
 
-  mAnimationFinished = false;
+  SetAnimationFinished(false);
 
   if (mAnimating) {
     StopAnimation();
@@ -925,7 +915,7 @@ nsresult RasterImage::OnImageDataComplete(nsIRequest*, nsISupports*,
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  mAllSourceData = true;
+  SetAllSourceData(true);
 
   
   mSourceBuffer->Complete(aStatus);
@@ -935,9 +925,9 @@ nsresult RasterImage::OnImageDataComplete(nsIRequest*, nsISupports*,
   
   
   bool canSyncDecodeMetadata =
-      mSyncLoad || mTransient || DecodePool::NumberOfCores() < 2;
+      GetSyncLoad() || GetTransient() || DecodePool::NumberOfCores() < 2;
 
-  if (canSyncDecodeMetadata && !mHasSize) {
+  if (canSyncDecodeMetadata && !GetHasSize()) {
     
     
     
@@ -958,7 +948,7 @@ nsresult RasterImage::OnImageDataComplete(nsIRequest*, nsISupports*,
 
   Progress loadProgress = LoadCompleteProgress(aLastPart, mError, finalStatus);
 
-  if (!mHasSize && !mError) {
+  if (!GetHasSize() && !mError) {
     
     MOZ_ASSERT(!canSyncDecodeMetadata,
                "Firing load async after metadata sync decode?");
@@ -972,9 +962,10 @@ nsresult RasterImage::OnImageDataComplete(nsIRequest*, nsISupports*,
 }
 
 void RasterImage::NotifyForLoadEvent(Progress aProgress) {
-  MOZ_ASSERT(mHasSize || mError, "Need to know size before firing load event");
+  MOZ_ASSERT(GetHasSize() || mError,
+             "Need to know size before firing load event");
   MOZ_ASSERT(
-      !mHasSize || (mProgressTracker->GetProgress() & FLAG_SIZE_AVAILABLE),
+      !GetHasSize() || (mProgressTracker->GetProgress() & FLAG_SIZE_AVAILABLE),
       "Should have notified that the size is available if we have it");
 
   
@@ -990,9 +981,9 @@ nsresult RasterImage::OnImageDataAvailable(nsIRequest*, nsISupports*,
                                            nsIInputStream* aInputStream,
                                            uint64_t, uint32_t aCount) {
   nsresult rv = mSourceBuffer->AppendFromInputStream(aInputStream, aCount);
-  if (NS_SUCCEEDED(rv) && !mSomeSourceData) {
-    mSomeSourceData = true;
-    if (!mSyncLoad) {
+  if (NS_SUCCEEDED(rv) && !GetSomeSourceData()) {
+    SetSomeSourceData(true);
+    if (!GetSyncLoad()) {
       
       rv = DecodeMetadata(DECODE_FLAGS_DEFAULT);
     }
@@ -1058,7 +1049,7 @@ void RasterImage::Discard() {
 }
 
 bool RasterImage::CanDiscard() {
-  return mAllSourceData &&
+  return GetAllSourceData() &&
          
          (!mAnimationState ||
           StaticPrefs::image_mem_animated_discardable_AtStartup());
@@ -1070,8 +1061,8 @@ RasterImage::StartDecoding(uint32_t aFlags, uint32_t aWhichFrame) {
     return NS_ERROR_FAILURE;
   }
 
-  if (!mHasSize) {
-    mWantFullDecode = true;
+  if (!GetHasSize()) {
+    SetWantFullDecode(true);
     return NS_OK;
   }
 
@@ -1086,8 +1077,8 @@ bool RasterImage::StartDecodingWithResult(uint32_t aFlags,
     return false;
   }
 
-  if (!mHasSize) {
-    mWantFullDecode = true;
+  if (!GetHasSize()) {
+    SetWantFullDecode(true);
     return false;
   }
 
@@ -1150,8 +1141,8 @@ LookupResult RasterImage::RequestDecodeForSizeInternal(
     return result;
   }
 
-  if (!mHasSize) {
-    mWantFullDecode = true;
+  if (!GetHasSize()) {
+    SetWantFullDecode(true);
     return LookupResult(MatchType::NOT_FOUND);
   }
 
@@ -1159,7 +1150,7 @@ LookupResult RasterImage::RequestDecodeForSizeInternal(
   
   
   bool shouldSyncDecodeIfFast =
-      !mHasBeenDecoded && (aFlags & FLAG_SYNC_DECODE_IF_FAST);
+      !GetHasBeenDecoded() && (aFlags & FLAG_SYNC_DECODE_IF_FAST);
 
   uint32_t flags =
       shouldSyncDecodeIfFast ? aFlags : aFlags & ~FLAG_SYNC_DECODE_IF_FAST;
@@ -1202,8 +1193,8 @@ void RasterImage::Decode(const UnorientedIntSize& aSize, uint32_t aFlags,
   }
 
   
-  if (!mHasSize) {
-    mWantFullDecode = true;
+  if (!GetHasSize()) {
+    SetWantFullDecode(true);
     return;
   }
 
@@ -1221,10 +1212,10 @@ void RasterImage::Decode(const UnorientedIntSize& aSize, uint32_t aFlags,
   if (aFlags & FLAG_ASYNC_NOTIFY) {
     decoderFlags |= DecoderFlags::ASYNC_NOTIFY;
   }
-  if (mTransient) {
+  if (GetTransient()) {
     decoderFlags |= DecoderFlags::IMAGE_IS_TRANSIENT;
   }
-  if (mHasBeenDecoded) {
+  if (GetHasBeenDecoded()) {
     decoderFlags |= DecoderFlags::IS_REDECODE;
   }
   if ((aFlags & FLAG_SYNC_DECODE) || !(aFlags & FLAG_HIGH_QUALITY_SCALING)) {
@@ -1290,7 +1281,7 @@ void RasterImage::Decode(const UnorientedIntSize& aSize, uint32_t aFlags,
   mDecodeCount++;
 
   
-  aOutRanSync = LaunchDecodingTask(task, this, aFlags, mAllSourceData);
+  aOutRanSync = LaunchDecodingTask(task, this, aFlags, GetAllSourceData());
 }
 
 NS_IMETHODIMP
@@ -1299,7 +1290,7 @@ RasterImage::DecodeMetadata(uint32_t aFlags) {
     return NS_ERROR_FAILURE;
   }
 
-  MOZ_ASSERT(!mHasSize, "Should not do unnecessary metadata decodes");
+  MOZ_ASSERT(!GetHasSize(), "Should not do unnecessary metadata decodes");
 
   
   RefPtr<IDecodingTask> task = DecoderFactory::CreateMetadataDecoder(
@@ -1311,13 +1302,13 @@ RasterImage::DecodeMetadata(uint32_t aFlags) {
   }
 
   
-  LaunchDecodingTask(task, this, aFlags, mAllSourceData);
+  LaunchDecodingTask(task, this, aFlags, GetAllSourceData());
   return NS_OK;
 }
 
 void RasterImage::RecoverFromInvalidFrames(const UnorientedIntSize& aSize,
                                            uint32_t aFlags) {
-  if (!mHasSize) {
+  if (!GetHasSize()) {
     return;
   }
 
@@ -1359,7 +1350,7 @@ bool RasterImage::CanDownscaleDuringDecode(const UnorientedIntSize& aSize,
   
   
   
-  if (!mHasSize || mTransient || !HaveSkia() ||
+  if (!GetHasSize() || GetTransient() || !HaveSkia() ||
       !StaticPrefs::image_downscale_during_decode_enabled() ||
       !(aFlags & imgIContainer::FLAG_HIGH_QUALITY_SCALING)) {
     return false;
@@ -1562,8 +1553,8 @@ RasterImage::UnlockImage() {
 
 NS_IMETHODIMP
 RasterImage::RequestDiscard() {
-  if (mDiscardable &&     
-      mLockCount == 0 &&  
+  if (GetDiscardable() &&  
+      mLockCount == 0 &&   
       CanDiscard()) {
     Discard();
   }
@@ -1630,7 +1621,7 @@ RasterImage::HandleErrorWorker::Run() {
 
 bool RasterImage::ShouldAnimate() {
   return ImageResource::ShouldAnimate() && mAnimationState &&
-         mAnimationState->KnownFrameCount() >= 1 && !mAnimationFinished;
+         mAnimationState->KnownFrameCount() >= 1 && !GetAnimationFinished();
 }
 
 #ifdef DEBUG
@@ -1665,7 +1656,7 @@ void RasterImage::NotifyProgress(
     }
 
     
-    if (mAnimationState && aFrameCount == Some(1u) && mPendingAnimation &&
+    if (mAnimationState && aFrameCount == Some(1u) && GetPendingAnimation() &&
         ShouldAnimate()) {
       StartAnimation();
     }
@@ -1716,12 +1707,12 @@ void RasterImage::NotifyDecodeComplete(
     return;
   }
 
-  MOZ_ASSERT(mError || mHasSize || !aMetadata.HasSize(),
+  MOZ_ASSERT(mError || GetHasSize() || !aMetadata.HasSize(),
              "SetMetadata should've gotten a size");
 
   if (!aStatus.mWasMetadataDecode && aStatus.mFinished) {
     
-    mHasBeenDecoded = true;
+    SetHasBeenDecoded(true);
   }
 
   
@@ -1736,12 +1727,12 @@ void RasterImage::NotifyDecodeComplete(
     }
 
     
-    if (mAnimationState && aFrameCount == Some(1u) && mPendingAnimation &&
+    if (mAnimationState && aFrameCount == Some(1u) && GetPendingAnimation() &&
         ShouldAnimate()) {
       StartAnimation();
     }
 
-    if (mAnimationState && mHasBeenDecoded) {
+    if (mAnimationState && GetHasBeenDecoded()) {
       
       
       
@@ -1778,7 +1769,7 @@ void RasterImage::NotifyDecodeComplete(
   if (aStatus.mHadError &&
       (!mAnimationState || mAnimationState->KnownFrameCount() == 0)) {
     DoError();
-  } else if (aStatus.mWasMetadataDecode && !mHasSize) {
+  } else if (aStatus.mWasMetadataDecode && !GetHasSize()) {
     DoError();
   }
 
@@ -1791,8 +1782,8 @@ void RasterImage::NotifyDecodeComplete(
     }
 
     
-    if (mWantFullDecode) {
-      mWantFullDecode = false;
+    if (GetWantFullDecode()) {
+      SetWantFullDecode(false);
       RequestDecodeForSize(mSize.ToUnknownSize(),
                            DECODE_FLAGS_DEFAULT | FLAG_HIGH_QUALITY_SCALING,
                            FRAME_CURRENT);

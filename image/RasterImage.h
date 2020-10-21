@@ -28,6 +28,7 @@
 #include "ImageMetadata.h"
 #include "ISurfaceProvider.h"
 #include "Orientation.h"
+#include "mozilla/AtomicBitfields.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -397,7 +398,7 @@ class RasterImage final : public ImageResource,
 
 
   Orientation UsedOrientation() const {
-    return mHandledOrientation ? mOrientation : Orientation();
+    return GetHandledOrientation() ? mOrientation : Orientation();
   }
 
   
@@ -462,35 +463,40 @@ class RasterImage final : public ImageResource,
   NotNull<RefPtr<SourceBuffer>> mSourceBuffer;
 
   
-  bool mHasSize : 1;         
-  bool mTransient : 1;       
-  bool mSyncLoad : 1;        
-  bool mDiscardable : 1;     
-  bool mSomeSourceData : 1;  
-  bool mAllSourceData : 1;   
-  bool mHasBeenDecoded : 1;  
+  MOZ_ATOMIC_BITFIELDS(
+      mAtomicBitfields, 16,
+      ((bool, HasSize, 1),         
+       (bool, Transient, 1),       
+       (bool, SyncLoad, 1),        
+       (bool, Discardable, 1),     
+       (bool, SomeSourceData, 1),  
+       (bool, AllSourceData, 1),   
+       (bool, HasBeenDecoded, 1),  
 
-  
-  
-  
-  bool mPendingAnimation : 1;
+       
+       
+       
+       
+       (bool, PendingAnimation, 1),
 
-  
-  
-  bool mAnimationFinished : 1;
+       
+       
+       (bool, AnimationFinished, 1),
 
-  
-  
-  bool mWantFullDecode : 1;
+       
+       
+       (bool, WantFullDecode, 1),
 
-  
-  
-  
-  
-  
-  
-  
-  bool mHandledOrientation : 1;
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       (bool, HandledOrientation, 1)))
 
   TimeStamp mDrawStartTime;
 
