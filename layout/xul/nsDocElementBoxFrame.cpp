@@ -20,8 +20,6 @@
 #include "nsNodeInfoManager.h"
 #include "nsContentCreatorFunctions.h"
 
-
-
 using namespace mozilla;
 using namespace mozilla::dom;
 
