@@ -23,6 +23,7 @@ class nsISHistory;
 class nsSHistory;
 class nsBrowserStatusFilter;
 class nsSecureBrowserUI;
+class CallerWillNotifyHistoryIndexAndLengthChanges;
 
 namespace mozilla {
 namespace net {
@@ -235,6 +236,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
       Maybe<LoadingSessionHistoryInfo>& aLoadingInfo, int32_t* aRequestedIndex,
       int32_t* aLength);
 
+  void HistoryCommitIndexAndLength();
+
  protected:
   
   void CanonicalDiscard();
@@ -294,7 +297,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   bool SupportsLoadingInParent(nsDocShellLoadState* aLoadState,
                                uint64_t* aOuterWindowId);
 
-  void HistoryCommitIndexAndLength(const nsID& aChangeID);
+  void HistoryCommitIndexAndLength(
+      const nsID& aChangeID,
+      const CallerWillNotifyHistoryIndexAndLengthChanges& aProofOfCaller);
 
   
   

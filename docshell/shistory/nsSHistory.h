@@ -269,6 +269,31 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   static int32_t sHistoryMaxTotalViewers;
 };
 
+
+
+
+
+
+class MOZ_STACK_CLASS CallerWillNotifyHistoryIndexAndLengthChanges {
+ public:
+  explicit CallerWillNotifyHistoryIndexAndLengthChanges(
+      nsISHistory* aSHistory) {
+    nsSHistory* shistory = static_cast<nsSHistory*>(aSHistory);
+    if (shistory && !shistory->HasOngoingUpdate()) {
+      shistory->SetHasOngoingUpdate(true);
+      mSHistory = shistory;
+    }
+  }
+
+  ~CallerWillNotifyHistoryIndexAndLengthChanges() {
+    if (mSHistory) {
+      mSHistory->SetHasOngoingUpdate(false);
+    }
+  }
+
+  RefPtr<nsSHistory> mSHistory;
+};
+
 inline nsISupports* ToSupports(nsSHistory* aObj) {
   return static_cast<nsISHistory*>(aObj);
 }
