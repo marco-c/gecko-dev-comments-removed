@@ -299,7 +299,7 @@ pub const TILE_SIZE_SCROLLBAR_VERTICAL: DeviceIntSize = DeviceIntSize {
     _unit: marker::PhantomData,
 };
 
-const TILE_SIZE_FOR_TESTS: [DeviceIntSize; 6] = [
+pub const TILE_SIZE_FOR_TESTS: [DeviceIntSize; 6] = [
     DeviceIntSize {
         width: 128,
         height: 128,
@@ -319,19 +319,6 @@ const TILE_SIZE_FOR_TESTS: [DeviceIntSize; 6] = [
     TILE_SIZE_SCROLLBAR_VERTICAL,
     TILE_SIZE_SCROLLBAR_HORIZONTAL,
 ];
-
-
-pub fn tile_cache_sizes(testing: bool) -> &'static [DeviceIntSize] {
-    if testing {
-        &TILE_SIZE_FOR_TESTS
-    } else {
-        &[
-            TILE_SIZE_DEFAULT,
-            TILE_SIZE_SCROLLBAR_HORIZONTAL,
-            TILE_SIZE_SCROLLBAR_VERTICAL,
-        ]
-    }
-}
 
 
 
@@ -1397,7 +1384,7 @@ impl Tile {
         
         if supports_dirty_rects {
             
-            if ctx.current_tile_size == TILE_SIZE_DEFAULT {
+            if ctx.current_tile_size == state.resource_cache.texture_cache.default_picture_tile_size() {
                 let max_split_level = 3;
 
                 
@@ -2608,7 +2595,7 @@ impl TileCacheInstance {
                             TILE_SIZE_SCROLLBAR_HORIZONTAL
                         }
                     } else {
-                        TILE_SIZE_DEFAULT
+                        frame_state.resource_cache.texture_cache.default_picture_tile_size()
                     }
                 }
             };
