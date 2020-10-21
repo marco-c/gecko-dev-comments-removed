@@ -28,6 +28,9 @@
 
 #include "js/Conversions.h"      
 #include "vm/ArgumentsObject.h"  
+#include "vm/TraceLogging.h"     
+                                 
+                                 
 
 #include "wasm/WasmBuiltins.h"  
 
@@ -71,6 +74,8 @@ namespace jit {
   _(js::powi)                                               \
   _(js::RegExpInstanceOptimizableRaw)                       \
   _(js::RegExpPrototypeOptimizableRaw)                      \
+  _(js::TraceLogStartEventPrivate)                          \
+  _(js::TraceLogStopEventPrivate)
 
 
 
@@ -78,7 +83,9 @@ namespace jit {
 
 
 
-#define ABIFUNCTION_AND_TYPE_LIST(_) \
+#define ABIFUNCTION_AND_TYPE_LIST(_)                       \
+  _(js::TraceLogStartEvent,                                \
+    void (*)(TraceLoggerThread*, const TraceLoggerEvent&)) \
   _(JS::ToInt32, int32_t (*)(double))
 
 
