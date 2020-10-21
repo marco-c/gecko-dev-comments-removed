@@ -1,6 +1,6 @@
 
 
-for (var i = 0; i < 200000; i++) {
+for (var i = 0; i < 10_000; i++) {
     assertEq(Number.isNaN(NaN), true);
     assertEq(Number.isNaN(-NaN), true);
     assertEq(Number.isNaN(+Infinity), false);
