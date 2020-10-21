@@ -101,6 +101,9 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 
 - (void)invalidateState;
 
+
+- (mozAccessible*)topWebArea;
+
 #pragma mark - mozAccessible protocol / widget
 
 
