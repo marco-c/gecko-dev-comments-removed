@@ -68,8 +68,6 @@ class RemoteDecoderManagerChild final
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   
-  static void InitForRDDProcess(
-      Endpoint<PRemoteDecoderManagerChild>&& aVideoManager);
   static void InitForGPUProcess(
       Endpoint<PRemoteDecoderManagerChild>&& aVideoManager);
   static void Shutdown();
