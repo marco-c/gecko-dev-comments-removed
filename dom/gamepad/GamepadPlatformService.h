@@ -93,9 +93,6 @@ class GamepadPlatformService final {
   template <class T>
   void NotifyGamepadChange(uint32_t aIndex, const T& aInfo);
 
-  
-  
-  void FlushPendingEvents();
   void Cleanup();
 
   
@@ -110,10 +107,6 @@ class GamepadPlatformService final {
   
   Mutex mMutex;
 
-  
-  
-  
-  nsTArray<GamepadChangeEvent> mPendingEvents;
   std::map<uint32_t, GamepadAdded> mGamepadAdded;
 };
 
