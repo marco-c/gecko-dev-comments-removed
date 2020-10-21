@@ -38,6 +38,17 @@ class AbstractGeneratorObject : public NativeObject {
     RESERVED_SLOTS
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr uint32_t FixedSlotLimit = 256;
+
  public:
   static JSObject* create(JSContext* cx, AbstractFramePtr frame);
 
