@@ -61,9 +61,17 @@ void cranelift_compiler_destroy(CraneliftCompiler* compiler);
 
 
 
+
+
+
+
 bool cranelift_compile_function(CraneliftCompiler* compiler,
                                 const CraneliftFuncCompileInput* data,
-                                CraneliftCompiledFunc* result);
+                                CraneliftCompiledFunc* result, char** error);
+
+
+void cranelift_compiler_free_error(char* error);
+
 }  
 
 #endif  
