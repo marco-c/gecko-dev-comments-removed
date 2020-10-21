@@ -31,6 +31,19 @@ use crate::{Error, Res};
 
 const MAX_AUTH_TAG: usize = 32;
 
+
+
+
+pub(crate) const UPDATE_WRITE_KEYS_AT: PacketNumber = 100;
+
+
+
+
+
+
+#[cfg(test)]
+thread_local!(pub(crate) static OVERWRITE_INVOCATIONS: RefCell<Option<PacketNumber>> = RefCell::default());
+
 #[derive(Debug)]
 pub struct Crypto {
     pub(crate) tls: Agent,
@@ -247,7 +260,7 @@ impl Crypto {
 
     pub fn create_resumption_token(
         &mut self,
-        new_token: Option<Vec<u8>>,
+        new_token: Option<&[u8]>,
         tps: &TransportParameters,
         rtt: u64,
     ) -> Option<ResumptionToken> {
@@ -259,7 +272,7 @@ impl Crypto {
                 enc.encode_vvec_with(|enc_inner| {
                     tps.encode(enc_inner);
                 });
-                enc.encode_vvec(new_token.as_ref().map_or(&[], |t| &t[..]));
+                enc.encode_vvec(new_token.unwrap_or(&[]));
                 enc.encode(t.as_ref());
                 qinfo!("resumption token {}", hex_snip_middle(&enc[..]));
                 Some(ResumptionToken::new(enc.into(), t.expiration_time()))
@@ -308,6 +321,9 @@ pub struct CryptoDxState {
     used_pn: Range<PacketNumber>,
     
     min_pn: PacketNumber,
+    
+    
+    invocations: PacketNumber,
 }
 
 impl CryptoDxState {
@@ -332,6 +348,7 @@ impl CryptoDxState {
             hpkey: HpKey::extract(TLS_VERSION_1_3, cipher, secret, "quic hp").unwrap(),
             used_pn: 0..0,
             min_pn: 0,
+            invocations: Self::limit(direction, cipher),
         }
     }
 
@@ -375,8 +392,58 @@ impl CryptoDxState {
         Self::new(direction, TLS_EPOCH_INITIAL, &secret, cipher)
     }
 
+    
+    fn limit(direction: CryptoDxDirection, cipher: Cipher) -> PacketNumber {
+        match direction {
+            
+            
+            CryptoDxDirection::Read => match cipher {
+                TLS_AES_128_GCM_SHA256 => 1 << 52,
+                TLS_AES_256_GCM_SHA384 => PacketNumber::MAX,
+                TLS_CHACHA20_POLY1305_SHA256 => 1 << 36,
+                _ => unreachable!(),
+            },
+            
+            CryptoDxDirection::Write => match cipher {
+                TLS_AES_128_GCM_SHA256 | TLS_AES_256_GCM_SHA384 => 1 << 28,
+                TLS_CHACHA20_POLY1305_SHA256 => PacketNumber::MAX,
+                _ => unreachable!(),
+            },
+        }
+    }
+
+    fn invoked(&mut self) -> Res<()> {
+        #[cfg(test)]
+        OVERWRITE_INVOCATIONS.with(|v| {
+            if let Some(i) = v.borrow_mut().take() {
+                neqo_common::qwarn!("Setting {:?} invocations to {}", self.direction, i);
+                self.invocations = i;
+            }
+        });
+        self.invocations = self
+            .invocations
+            .checked_sub(1)
+            .ok_or(Error::KeysExhausted)?;
+        Ok(())
+    }
+
+    
+    pub fn should_update(&self) -> bool {
+        
+        debug_assert_eq!(self.direction, CryptoDxDirection::Write);
+        self.invocations <= UPDATE_WRITE_KEYS_AT
+    }
+
     pub fn next(&self, next_secret: &SymKey, cipher: Cipher) -> Self {
         let pn = self.next_pn();
+        
+        
+        
+        let invocations = if self.direction == CryptoDxDirection::Read {
+            self.invocations
+        } else {
+            Self::limit(CryptoDxDirection::Write, cipher)
+        };
         Self {
             direction: self.direction,
             epoch: self.epoch + 1,
@@ -384,6 +451,7 @@ impl CryptoDxState {
             hpkey: self.hpkey.clone(),
             used_pn: pn..pn,
             min_pn: pn,
+            invocations,
         }
     }
 
@@ -477,6 +545,9 @@ impl CryptoDxState {
             hex(hdr),
             hex(body)
         );
+        
+        assert!(body.len() <= 2048);
+        self.invoked()?;
 
         let size = body.len() + MAX_AUTH_TAG;
         let mut out = vec![0; size];
@@ -502,6 +573,7 @@ impl CryptoDxState {
             hex(hdr),
             hex(body)
         );
+        self.invoked()?;
         let mut out = vec![0; body.len()];
         let res = self.aead.decrypt(pn, hdr, body, &mut out)?;
         self.used(pn)?;
@@ -584,10 +656,14 @@ impl CryptoDxAppData {
         }
         let next_secret = Self::update_secret(self.cipher, &self.next_secret)?;
         Ok(Self {
-            dx: self.dx.next(&next_secret, self.cipher),
+            dx: self.dx.next(&self.next_secret, self.cipher),
             cipher: self.cipher,
             next_secret,
         })
+    }
+
+    pub fn epoch(&self) -> usize {
+        self.dx.epoch
     }
 }
 
@@ -832,15 +908,30 @@ impl CryptoStates {
         
         
         debug_assert!(self.read_update_time.is_none());
-        let write = &self.app_write.as_ref().unwrap().dx;
-        let read = &self.app_read.as_ref().unwrap().dx;
-        if write.epoch == read.epoch {
-            qdebug!([self], "Updating write keys to epoch={}", write.epoch + 1);
-            self.app_write = Some(self.app_write.as_ref().unwrap().next()?);
+        let write = &self.app_write.as_ref().unwrap();
+        let read = &self.app_read.as_ref().unwrap();
+        if write.epoch() == read.epoch() {
+            qdebug!([self], "Update write keys to epoch={}", write.epoch() + 1);
+            self.app_write = Some(write.next()?);
             Ok(true)
         } else {
             Ok(false)
         }
+    }
+
+    
+    
+    
+    pub fn auto_update(&mut self) -> Res<()> {
+        if let Some(app_write) = self.app_write.as_ref() {
+            if app_write.dx.should_update() {
+                qinfo!([self], "Initiating automatic key update");
+                if !self.maybe_update_write()? {
+                    return Err(Error::KeysExhausted);
+                }
+            }
+        }
+        Ok(())
     }
 
     fn has_0rtt_read(&self) -> bool {
@@ -854,6 +945,7 @@ impl CryptoStates {
     
     
     pub fn key_update_received(&mut self, expiration: Instant) -> Res<()> {
+        qtrace!([self], "Key update received");
         
         
         
@@ -977,6 +1069,7 @@ impl CryptoStates {
                 .unwrap(),
                 used_pn: 0..645_971_972,
                 min_pn: 0,
+                invocations: 10,
             },
             cipher: TLS_CHACHA20_POLY1305_SHA256,
             next_secret: secret.clone(),

@@ -7,7 +7,7 @@
 use super::super::{Connection, FixedConnectionIdManager, Output, State, LOCAL_IDLE_TIMEOUT};
 use super::{
     assert_error, connect_force_idle, connect_with_rtt, default_client, default_server, get_tokens,
-    handshake, maybe_authenticate, send_something, split_datagram, AT_LEAST_PTO,
+    handshake, maybe_authenticate, send_something, split_datagram, AT_LEAST_PTO, DEFAULT_RTT,
     DEFAULT_STREAM_DATA,
 };
 use crate::connection::AddressValidation;
@@ -15,9 +15,9 @@ use crate::events::ConnectionEvent;
 use crate::frame::StreamType;
 use crate::path::PATH_MTU_V6;
 use crate::server::ValidateAddress;
-use crate::{ConnectionError, Error, QuicVersion};
+use crate::{CongestionControlAlgorithm, ConnectionError, Error, QuicVersion};
 
-use neqo_common::{qdebug, Datagram};
+use neqo_common::{event::Provider, qdebug, Datagram};
 use neqo_crypto::{constants::TLS_CHACHA20_POLY1305_SHA256, AuthenticationStatus};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -118,6 +118,7 @@ fn no_alpn() {
         Rc::new(RefCell::new(FixedConnectionIdManager::new(9))),
         loopback(),
         loopback(),
+        &CongestionControlAlgorithm::NewReno,
         QuicVersion::default(),
     )
     .unwrap();
@@ -188,6 +189,7 @@ fn crypto_frame_split() {
         test_fixture::LONG_CERT_KEYS,
         test_fixture::DEFAULT_ALPN,
         Rc::new(RefCell::new(FixedConnectionIdManager::new(6))),
+        &CongestionControlAlgorithm::NewReno,
         QuicVersion::default(),
     )
     .expect("create a server");
@@ -245,6 +247,7 @@ fn chacha20poly1305() {
         Rc::new(RefCell::new(FixedConnectionIdManager::new(0))),
         loopback(),
         loopback(),
+        &CongestionControlAlgorithm::NewReno,
         QuicVersion::default(),
     )
     .expect("create a default client");
@@ -477,9 +480,10 @@ fn reorder_handshake() {
     assert!(s_hs.is_some());
 
     
+    
     now += RTT / 2;
-    let res = client.process(s_hs, now);
-    assert_ne!(res.callback(), Duration::new(0, 0));
+    let dgram = client.process(s_hs, now).dgram();
+    assertions::assert_initial(&dgram.as_ref().unwrap(), false);
     assert_eq!(client.stats().saved_datagrams, 1);
     assert_eq!(client.stats().packets_rx, 1);
 
@@ -569,21 +573,23 @@ fn reorder_1rtt() {
     assert_eq!(client.loss_recovery.rtt(), RTT);
 
     
-    let packets = server
+    let streams = server
         .events()
         .filter_map(|e| {
             if let ConnectionEvent::RecvStreamReadable { stream_id } = e {
-                let mut buf = vec![0; DEFAULT_STREAM_DATA.len() + 1];
-                let (recvd, fin) = server.stream_recv(stream_id, &mut buf).unwrap();
-                assert_eq!(recvd, DEFAULT_STREAM_DATA.len());
-                assert!(fin);
-                Some(())
+                Some(stream_id)
             } else {
                 None
             }
         })
-        .count();
-    assert_eq!(packets, PACKETS);
+        .collect::<Vec<_>>();
+    assert_eq!(streams.len(), PACKETS);
+    for stream_id in streams {
+        let mut buf = vec![0; DEFAULT_STREAM_DATA.len() + 1];
+        let (recvd, fin) = server.stream_recv(stream_id, &mut buf).unwrap();
+        assert_eq!(recvd, DEFAULT_STREAM_DATA.len());
+        assert!(fin);
+    }
 }
 
 #[test]
@@ -627,4 +633,75 @@ fn verify_pkt_honors_mtu() {
     let pkt0 = client.process(None, now);
     assert!(matches!(pkt0, Output::Datagram(_)));
     assert_eq!(pkt0.as_dgram_ref().unwrap().len(), PATH_MTU_V6);
+}
+
+#[test]
+fn extra_initial_hs() {
+    let mut client = default_client();
+    let mut server = default_server();
+    let mut now = now();
+
+    let c_init = client.process(None, now).dgram();
+    assert!(c_init.is_some());
+    now += DEFAULT_RTT / 2;
+    let s_init = server.process(c_init, now).dgram();
+    assert!(s_init.is_some());
+    now += DEFAULT_RTT / 2;
+
+    
+    let (_, undecryptable) = split_datagram(&s_init.unwrap());
+    assert!(undecryptable.is_some());
+
+    
+    
+    
+    for _ in 0..=super::super::EXTRA_INITIALS {
+        let c_init = client.process(undecryptable.clone(), now).dgram();
+        assertions::assert_initial(&c_init.as_ref().unwrap(), false);
+        now += DEFAULT_RTT / 10;
+    }
+
+    
+    let nothing = client.process(undecryptable, now).dgram();
+    assert!(nothing.is_none());
+
+    
+    now += AT_LEAST_PTO;
+    let c_init = client.process(None, now).dgram();
+    assertions::assert_initial(c_init.as_ref().unwrap(), false);
+    now += DEFAULT_RTT / 2;
+    let s_init = server.process(c_init, now).dgram();
+    now += DEFAULT_RTT / 2;
+    client.process_input(s_init.unwrap(), now);
+    maybe_authenticate(&mut client);
+    let c_fin = client.process_output(now).dgram();
+    assert_eq!(*client.state(), State::Connected);
+    now += DEFAULT_RTT / 2;
+    server.process_input(c_fin.unwrap(), now);
+    assert_eq!(*server.state(), State::Confirmed);
+}
+
+#[test]
+fn extra_initial_invalid_cid() {
+    let mut client = default_client();
+    let mut server = default_server();
+    let mut now = now();
+
+    let c_init = client.process(None, now).dgram();
+    assert!(c_init.is_some());
+    now += DEFAULT_RTT / 2;
+    let s_init = server.process(c_init, now).dgram();
+    assert!(s_init.is_some());
+    now += DEFAULT_RTT / 2;
+
+    
+    
+    let (_, hs) = split_datagram(&s_init.unwrap());
+    let hs = hs.unwrap();
+    let mut copy = hs.to_vec();
+    assert_ne!(copy[5], 0); 
+    copy[6] ^= 0xc4;
+    let dgram_copy = Datagram::new(hs.destination(), hs.source(), copy);
+    let nothing = client.process(Some(dgram_copy), now).dgram();
+    assert!(nothing.is_none());
 }

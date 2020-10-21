@@ -229,6 +229,13 @@ impl Encoder {
     
     
     #[must_use]
+    pub fn capacity(&self) -> usize {
+        self.buf.capacity()
+    }
+
+    
+    
+    #[must_use]
     pub fn as_decoder(&self) -> Decoder {
         Decoder::new(&self)
     }
@@ -360,6 +367,12 @@ impl Encoder {
 impl Debug for Encoder {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.write_str(&hex_with_len(self))
+    }
+}
+
+impl AsRef<[u8]> for Encoder {
+    fn as_ref(&self) -> &[u8] {
+        self.buf.as_ref()
     }
 }
 

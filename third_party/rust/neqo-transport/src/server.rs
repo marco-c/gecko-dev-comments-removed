@@ -7,13 +7,14 @@
 
 
 use neqo_common::{
-    self as common, hex, qdebug, qerror, qinfo, qlog::NeqoQlog, qtrace, qwarn, timer::Timer,
-    Datagram, Decoder, Role,
+    self as common, event::Provider, hex, qdebug, qerror, qinfo, qlog::NeqoQlog, qtrace, qwarn,
+    timer::Timer, Datagram, Decoder, Role,
 };
-use neqo_crypto::{AntiReplay, ZeroRttCheckResult, ZeroRttChecker};
+use neqo_crypto::{AntiReplay, Cipher, ZeroRttCheckResult, ZeroRttChecker};
 
 pub use crate::addr_valid::ValidateAddress;
 use crate::addr_valid::{AddressValidation, AddressValidationResult};
+use crate::cc::CongestionControlAlgorithm;
 use crate::cid::{ConnectionId, ConnectionIdDecoder, ConnectionIdManager, ConnectionIdRef};
 use crate::connection::{Connection, Output, State};
 use crate::packet::{PacketBuilder, PacketType, PublicPacket};
@@ -122,6 +123,8 @@ pub struct Server {
     
     protocols: Vec<String>,
     
+    ciphers: Vec<Cipher>,
+    
     anti_replay: AntiReplay,
     
     zero_rtt_checker: ServerZeroRttChecker,
@@ -168,6 +171,7 @@ impl Server {
         Ok(Self {
             certs: certs.iter().map(|x| String::from(x.as_ref())).collect(),
             protocols: protocols.iter().map(|x| String::from(x.as_ref())).collect(),
+            ciphers: Vec::new(),
             anti_replay,
             zero_rtt_checker: ServerZeroRttChecker::new(zero_rtt_checker),
             cid_manager,
@@ -189,6 +193,12 @@ impl Server {
     
     pub fn set_validation(&mut self, v: ValidateAddress) {
         self.address_validation.borrow_mut().set_validation(v);
+    }
+
+    
+    
+    pub fn set_ciphers(&mut self, ciphers: impl AsRef<[Cipher]>) {
+        self.ciphers = Vec::from(ciphers.as_ref());
     }
 
     fn remove_timer(&mut self, c: &StateRef) {
@@ -397,6 +407,7 @@ impl Server {
             &self.certs,
             &self.protocols,
             Rc::clone(&cid_mgr) as _,
+            &CongestionControlAlgorithm::NewReno,
             initial.quic_version,
         );
 

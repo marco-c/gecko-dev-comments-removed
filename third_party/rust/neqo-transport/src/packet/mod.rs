@@ -146,17 +146,26 @@ pub struct PacketBuilder {
     pn: PacketNumber,
     header: Range<usize>,
     offsets: PacketBuilderOffsets,
+    limit: usize,
 }
 
 impl PacketBuilder {
+    fn infer_limit(encoder: &Encoder) -> usize {
+        if encoder.capacity() > 64 {
+            encoder.capacity()
+        } else {
+            2048
+        }
+    }
+
     
     #[allow(clippy::unknown_clippy_lints)] 
     #[allow(clippy::reversed_empty_ranges)]
-    pub fn short(mut encoder: Encoder, key_phase: bool, dcid: &ConnectionId) -> Self {
+    pub fn short(mut encoder: Encoder, key_phase: bool, dcid: impl AsRef<[u8]>) -> Self {
         let header_start = encoder.len();
-        
         encoder.encode_byte(PACKET_BIT_SHORT | PACKET_BIT_FIXED_QUIC | (u8::from(key_phase) << 2));
-        encoder.encode(&dcid);
+        encoder.encode(dcid.as_ref());
+        let limit = Self::infer_limit(&encoder);
         Self {
             encoder,
             pn: u64::max_value(),
@@ -166,6 +175,7 @@ impl PacketBuilder {
                 pn: 0..0,
                 len: 0,
             },
+            limit,
         }
     }
 
@@ -178,14 +188,15 @@ impl PacketBuilder {
         mut encoder: Encoder,
         pt: PacketType,
         quic_version: QuicVersion,
-        dcid: &ConnectionId,
-        scid: &ConnectionId,
+        dcid: impl AsRef<[u8]>,
+        scid: impl AsRef<[u8]>,
     ) -> Self {
         let header_start = encoder.len();
         encoder.encode_byte(PACKET_BIT_LONG | PACKET_BIT_FIXED_QUIC | pt.code() << 4);
         encoder.encode_uint(4, quic_version.as_u32());
-        encoder.encode_vec(1, dcid);
-        encoder.encode_vec(1, scid);
+        encoder.encode_vec(1, dcid.as_ref());
+        encoder.encode_vec(1, scid.as_ref());
+        let limit = Self::infer_limit(&encoder);
         Self {
             encoder,
             pn: u64::max_value(),
@@ -195,11 +206,25 @@ impl PacketBuilder {
                 pn: 0..0,
                 len: 0,
             },
+            limit,
         }
     }
 
     fn is_long(&self) -> bool {
         self[self.header.start] & 0x80 == PACKET_BIT_LONG
+    }
+
+    
+    
+    
+    pub fn set_limit(&mut self, limit: usize) {
+        self.limit = limit;
+    }
+
+    
+    #[must_use]
+    pub fn remaining(&self) -> usize {
+        self.limit - self.encoder.len()
     }
 
     
@@ -572,7 +597,7 @@ impl<'a> PublicPacket<'a> {
         self.quic_version
     }
 
-    pub fn packet_len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.data.len()
     }
 

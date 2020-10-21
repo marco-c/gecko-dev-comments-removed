@@ -5,7 +5,7 @@
 
 
 use super::super::State;
-use super::{connect, default_client, default_server, maybe_authenticate};
+use super::{connect, default_client, default_server, maybe_authenticate, send_something};
 use crate::events::ConnectionEvent;
 use crate::frame::{Frame, StreamType};
 use crate::recv_stream::RECV_BUFFER_SIZE;
@@ -14,7 +14,7 @@ use crate::tparams::{self, TransportParameter};
 use crate::tracking::MAX_UNACKED_PKTS;
 use crate::Error;
 
-use neqo_common::qdebug;
+use neqo_common::{event::Provider, qdebug};
 use std::convert::TryFrom;
 use test_fixture::now;
 
@@ -130,18 +130,21 @@ fn transfer() {
         ConnectionEvent::NewStream { stream_id, .. } => Some(stream_id),
         _ => None,
     });
-    let stream_id = stream_ids.next().expect("should have a new stream event");
-    let (received1, fin1) = server.stream_recv(stream_id.as_u64(), &mut buf).unwrap();
+    let first_stream = stream_ids.next().expect("should have a new stream event");
+    let second_stream = stream_ids
+        .next()
+        .expect("should have a second new stream event");
+    assert!(stream_ids.next().is_none());
+    let (received1, fin1) = server.stream_recv(first_stream.as_u64(), &mut buf).unwrap();
     assert_eq!(received1, 4000);
     assert_eq!(fin1, false);
-    let (received2, fin2) = server.stream_recv(stream_id.as_u64(), &mut buf).unwrap();
+    let (received2, fin2) = server.stream_recv(first_stream.as_u64(), &mut buf).unwrap();
     assert_eq!(received2, 140);
     assert_eq!(fin2, false);
 
-    let stream_id = stream_ids
-        .next()
-        .expect("should have a second new stream event");
-    let (received3, fin3) = server.stream_recv(stream_id.as_u64(), &mut buf).unwrap();
+    let (received3, fin3) = server
+        .stream_recv(second_stream.as_u64(), &mut buf)
+        .unwrap();
     assert_eq!(received3, 60);
     assert_eq!(fin3, true);
 }
@@ -444,4 +447,115 @@ fn stream_data_blocked_generates_max_stream_data() {
         |(f, _)| matches!(f, Frame::MaxStreamData { maximum_stream_data, .. }
 				   if *maximum_stream_data == RECV_BUFFER_SIZE as u64)
     ));
+}
+
+
+#[test]
+fn max_streams_after_bidi_closed() {
+    const REQUEST: &[u8] = b"ping";
+    const RESPONSE: &[u8] = b"pong";
+    let mut client = default_client();
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+
+    let stream_id = client.stream_create(StreamType::BiDi).unwrap();
+    while client.stream_create(StreamType::BiDi).is_ok() {
+        
+    }
+    
+    let _ = client.stream_send(stream_id, REQUEST).unwrap();
+    client.stream_close_send(stream_id).unwrap();
+    let dgram = client.process(None, now()).dgram();
+
+    
+    server.process_input(dgram.unwrap(), now());
+    server.stream_send(stream_id, RESPONSE).unwrap();
+    let dgram = server.process_output(now()).dgram();
+
+    
+    client.process_input(dgram.unwrap(), now());
+    let e = client.stream_create(StreamType::BiDi).unwrap_err();
+    assert!(matches!(e, Error::StreamLimitError));
+
+    
+    server.stream_close_send(stream_id).unwrap();
+    let dgram = server.process_output(now()).dgram();
+    client.process_input(dgram.unwrap(), now());
+    assert!(client.stream_create(StreamType::BiDi).is_err());
+
+    
+    
+    
+    let mut buf = [0; REQUEST.len()];
+    let (count, fin) = server.stream_recv(stream_id, &mut buf).unwrap();
+    assert_eq!(&buf[..count], REQUEST);
+    assert!(fin);
+
+    
+    
+    let dgram = send_something(&mut server, now());
+    client.process_input(dgram, now());
+
+    
+    let dgram = send_something(&mut client, now());
+    let dgram = server.process(Some(dgram), now()).dgram();
+    client.process_input(dgram.unwrap(), now());
+    assert!(client.stream_create(StreamType::BiDi).is_ok());
+    assert!(client.stream_create(StreamType::BiDi).is_err());
+}
+
+#[test]
+fn no_dupdata_readable_events() {
+    let mut client = default_client();
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+
+    
+    let stream_id = client.stream_create(StreamType::BiDi).unwrap();
+    client.stream_send(stream_id, &[0x00]).unwrap();
+    let out = client.process(None, now());
+    let _ = server.process(out.dgram(), now());
+
+    
+    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable {..});
+    assert!(server.events().any(stream_readable));
+
+    
+    
+    client.stream_send(stream_id, &[0x00]).unwrap();
+    let out_second_data_frame = client.process(None, now());
+    let _ = server.process(out_second_data_frame.dgram(), now());
+    assert!(!server.events().any(stream_readable));
+
+    
+    
+    client.stream_send(stream_id, &[0x00]).unwrap();
+    client.stream_close_send(stream_id).unwrap();
+    let out_third_data_frame = client.process(None, now());
+    let _ = server.process(out_third_data_frame.dgram(), now());
+    assert!(!server.events().any(stream_readable));
+}
+
+#[test]
+fn no_dupdata_readable_events_empty_last_frame() {
+    let mut client = default_client();
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+
+    
+    let stream_id = client.stream_create(StreamType::BiDi).unwrap();
+    client.stream_send(stream_id, &[0x00]).unwrap();
+    let out = client.process(None, now());
+    let _ = server.process(out.dgram(), now());
+
+    
+    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable {..});
+    assert!(server.events().any(stream_readable));
+
+    
+    
+    client.stream_close_send(stream_id).unwrap();
+    let out_second_data_frame = client.process(None, now());
+    let _ = server.process(out_second_data_frame.dgram(), now());
+    assert!(!server.events().any(stream_readable));
 }

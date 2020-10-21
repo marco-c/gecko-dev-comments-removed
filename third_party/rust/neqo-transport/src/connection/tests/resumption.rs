@@ -97,7 +97,7 @@ fn can_resume(token: impl AsRef<[u8]>, initial_has_token: bool) {
 }
 
 #[test]
-fn two_tickets() {
+fn two_tickets_on_timer() {
     let mut client = default_client();
     let mut server = default_server();
     connect(&mut client, &mut server);
@@ -136,7 +136,7 @@ fn two_tickets() {
 }
 
 #[test]
-fn two_tickets_and_tokens() {
+fn two_tickets_with_new_token() {
     let mut client = default_client();
     let mut server = default_server();
     let validation = AddressValidation::new(now(), ValidateAddress::Always).unwrap();
@@ -158,4 +158,25 @@ fn two_tickets_and_tokens() {
 
     can_resume(&token1, true);
     can_resume(&token2, true);
+}
+
+
+
+#[test]
+fn take_token() {
+    let mut client = default_client();
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+
+    server.send_ticket(now(), &[]).unwrap();
+    let dgram = server.process(None, now()).dgram();
+    client.process_input(dgram.unwrap(), now());
+
+    
+    let tokens = get_tokens(&mut client);
+    assert_eq!(tokens.len(), 0);
+
+    
+    let token = client.take_resumption_token(now()).unwrap();
+    can_resume(&token, false);
 }
