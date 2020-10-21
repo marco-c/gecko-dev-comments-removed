@@ -22,6 +22,7 @@ namespace jit {
 
 class CodeGenerator;
 class MRootList;
+class WarpSnapshot;
 
 
 class IonCompileTask final : public HelperThreadTask,
