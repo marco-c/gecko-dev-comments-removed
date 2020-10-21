@@ -1545,21 +1545,7 @@ var Policies = {
                 if (!Number.isInteger(param[preference].Value)) {
                   throw new Error(`Non-integer value for ${preference}`);
                 }
-
-                
-                
-                
-                
-                
-                
-                if (
-                  prefBranch.getPrefType(preference) == prefBranch.PREF_INT ||
-                  ![0, 1].includes(param[preference].Value)
-                ) {
-                  prefBranch.setIntPref(preference, param[preference].Value);
-                } else {
-                  prefBranch.setBoolPref(preference, !!param[preference].Value);
-                }
+                prefBranch.setIntPref(preference, param[preference].Value);
                 break;
 
               case "string":
@@ -2074,19 +2060,19 @@ function setDefaultPref(prefName, prefValue, locked = false) {
         throw new Error(`Non-integer value for ${prefName}`);
       }
 
-      
-      
-      
-      
-      
-      
       if (
-        defaults.getPrefType(prefName) == defaults.PREF_INT ||
-        ![0, 1].includes(prefValue)
+        defaults.getPrefType(prefName) == defaults.PREF_BOOL ||
+        prefName == "browser.bookmarks.restore_default_bookmarks" ||
+        prefName == "browser.places.importBookmarksHTML" ||
+        prefName == "extensions.getAddons.showPane"
       ) {
-        defaults.setIntPref(prefName, prefValue);
-      } else {
+        
+        
+        
+        
         defaults.setBoolPref(prefName, !!prefValue);
+      } else {
+        defaults.setIntPref(prefName, prefValue);
       }
       break;
 
