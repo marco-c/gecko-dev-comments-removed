@@ -144,7 +144,10 @@ class Front extends Pool {
     }
 
     
-    this._frontCreationListeners.emit(front.typeName, front);
+    
+    if (this._frontCreationListeners) {
+      this._frontCreationListeners.emit(front.typeName, front);
+    }
   }
 
   async unmanage(front) {
