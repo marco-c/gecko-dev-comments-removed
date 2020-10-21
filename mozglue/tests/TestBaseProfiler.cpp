@@ -3596,6 +3596,9 @@ void TestProfiler() {
       SleepMilli(1000);
     }
 
+    printf("baseprofiler_pause()...\n");
+    baseprofiler::profiler_pause();
+
     Maybe<baseprofiler::ProfilerBufferInfo> info =
         baseprofiler::profiler_get_buffer_info();
     MOZ_RELEASE_ASSERT(info.isSome());
@@ -3628,6 +3631,37 @@ void TestProfiler() {
     printf("  - Threads:   %7.1f .. %7.1f  .. %7.1f  [%u]\n",
            info->mThreadsNs.min, info->mThreadsNs.sum / info->mThreadsNs.n,
            info->mThreadsNs.max, info->mThreadsNs.n);
+
+    printf("baseprofiler_get_profile()...\n");
+    UniquePtr<char[]> profile = baseprofiler::profiler_get_profile();
+
+    
+    std::string_view profileSV = profile.get();
+
+    constexpr const auto svnpos = std::string_view::npos;
+    
+    
+    MOZ_RELEASE_ASSERT(profileSV.find("\"markerSchema\": [") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"Text\",") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"FileIO\",") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"tracing\",") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"UserTimingMark\",") !=
+                       svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"UserTimingMeasure\",") !=
+                       svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"BHR-detected hang\",") !=
+                       svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"Log\",") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"MediaSample\",") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"name\": \"MainThreadLongTask\",") !=
+                       svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"display\": [") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"marker-chart\"") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"marker-table\"") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"searchable\": true") != svnpos);
+    MOZ_RELEASE_ASSERT(profileSV.find("\"format\": \"string\"") != svnpos);
+    
+    
 
     printf("baseprofiler_save_profile_to_file()...\n");
     baseprofiler::profiler_save_profile_to_file("TestProfiler_profile.json");

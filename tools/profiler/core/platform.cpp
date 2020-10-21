@@ -89,6 +89,7 @@
 #include <errno.h>
 #include <fstream>
 #include <ostream>
+#include <set>
 #include <sstream>
 #include <type_traits>
 
@@ -2435,6 +2436,27 @@ static void StreamCategories(SpliceableJSONWriter& aWriter) {
 #undef CATEGORY_JSON_END_CATEGORY
 }
 
+static void StreamMarkerSchema(SpliceableJSONWriter& aWriter) {
+  
+  Span<const base_profiler_markers_detail::Streaming::MarkerTypeFunctions>
+      markerTypeFunctionsArray =
+          base_profiler_markers_detail::Streaming::MarkerTypeFunctionsArray();
+  
+  std::set<std::string> names;
+  
+  
+  for (const auto& markerTypeFunctions : markerTypeFunctionsArray) {
+    auto name = markerTypeFunctions.mMarkerTypeNameFunction();
+    
+    
+    const bool didInsert =
+        names.insert(std::string(name.data(), name.size())).second;
+    if (didInsert) {
+      markerTypeFunctions.mMarkerSchemaFunction().Stream(aWriter, name);
+    }
+  }
+}
+
 
 
 
@@ -2538,6 +2560,10 @@ static void StreamMetaJSCustomObject(
 
   aWriter.StartArrayProperty("categories");
   StreamCategories(aWriter);
+  aWriter.EndArray();
+
+  aWriter.StartArrayProperty("markerSchema");
+  StreamMarkerSchema(aWriter);
   aWriter.EndArray();
 
   ActivePS::WriteActiveConfiguration(aLock, aWriter,
