@@ -5776,7 +5776,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
         !(styleMinBSize.IsAuto() || (styleMinBSize.ConvertsToLength() &&
                                      styleMinBSize.ToLength() == 0)) ||
         !styleMaxBSize.IsNone()) {
-      if (AspectRatio ratio = aFrame->GetIntrinsicRatio()) {
+      if (AspectRatio ratio = aFrame->GetAspectRatio()) {
         
         if (!horizontalAxis) {
           ratio = ratio.Inverted();

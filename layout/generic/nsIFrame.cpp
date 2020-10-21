@@ -5962,6 +5962,11 @@ IntrinsicSize nsIFrame::GetIntrinsicSize() {
   return IntrinsicSize();  
 }
 
+AspectRatio nsIFrame::GetAspectRatio() const {
+  
+  return GetIntrinsicRatio();
+}
+
 
 AspectRatio nsIFrame::GetIntrinsicRatio() const { return AspectRatio(); }
 

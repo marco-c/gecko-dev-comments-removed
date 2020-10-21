@@ -2668,6 +2668,15 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  mozilla::AspectRatio GetAspectRatio() const;
+
+  
+
+
+
+
+
+
 
 
   virtual mozilla::AspectRatio GetIntrinsicRatio() const;
