@@ -335,6 +335,20 @@ pub enum ArgumentPurpose {
     
     
     StackLimit,
+
+    
+    
+    
+    
+    
+    CalleeTLS,
+
+    
+    
+    
+    
+    
+    CallerTLS,
 }
 
 impl fmt::Display for ArgumentPurpose {
@@ -349,6 +363,8 @@ impl fmt::Display for ArgumentPurpose {
             Self::VMContext => "vmctx",
             Self::SignatureId => "sigid",
             Self::StackLimit => "stack_limit",
+            Self::CalleeTLS => "callee_tls",
+            Self::CallerTLS => "caller_tls",
         })
     }
 }
@@ -470,6 +486,7 @@ mod tests {
             CallConv::WindowsFastcall,
             CallConv::BaldrdashSystemV,
             CallConv::BaldrdashWindows,
+            CallConv::Baldrdash2020,
         ] {
             assert_eq!(Ok(cc), cc.to_string().parse())
         }
