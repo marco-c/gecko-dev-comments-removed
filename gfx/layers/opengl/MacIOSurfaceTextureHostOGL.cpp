@@ -229,11 +229,13 @@ void MacIOSurfaceTextureHostOGL::PushDisplayItems(
     case gfx::SurfaceFormat::B8G8R8X8: {
       MOZ_ASSERT(aImageKeys.length() == 1);
       MOZ_ASSERT(mSurface->GetPlaneCount() == 0);
+      
+      
       aBuilder.PushImage(aBounds, aClip, true, aFilter, aImageKeys[0],
                          !(mFlags & TextureFlags::NON_PREMULTIPLIED),
                          wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
                          preferCompositorSurface,
-                          true);
+                          false);
       break;
     }
     case gfx::SurfaceFormat::YUV422: {
