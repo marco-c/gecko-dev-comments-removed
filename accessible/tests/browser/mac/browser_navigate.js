@@ -273,7 +273,6 @@ addAccessibleTask(
 
 
 
-
 addAccessibleTask(
   `
   <img id="img1" alt="image one" src="http://example.com/a11y/accessible/tests/mochitest/moz.png"><br>
