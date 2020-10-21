@@ -189,13 +189,42 @@ already_AddRefed<MediaTransportHandler> MediaTransportHandler::Create(
   return result.forget();
 }
 
-class STSShutdownHandler {
+class STSShutdownHandler : public nsIObserver, public nsSupportsWeakReference {
  public:
-  ~STSShutdownHandler() {
+  NS_DECL_ISUPPORTS
+
+  void Shutdown() {
+    CSFLogDebug(LOGTAG, "%s", __func__);
     MOZ_ASSERT(NS_IsMainThread());
     for (const auto& handler : mHandlers) {
       handler->Shutdown();
     }
+    mHandlers.clear();
+  }
+
+  
+  static constexpr char kProfileChangeNetTeardown[] =
+      "profile-change-net-teardown";
+
+  STSShutdownHandler() {
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIObserverService> observerService =
+        services::GetObserverService();
+    MOZ_RELEASE_ASSERT(observerService);
+    
+    observerService->AddObserver(this, kProfileChangeNetTeardown, true);
+  }
+
+  NS_IMETHOD Observe(nsISupports* subject, const char* topic,
+                     const char16_t* data) override {
+    MOZ_ASSERT(!strncmp(kProfileChangeNetTeardown, topic,
+                        sizeof(kProfileChangeNetTeardown)));
+    Shutdown();
+    return NS_OK;
   }
 
   void Register(MediaTransportHandlerSTS* aHandler) {
@@ -209,13 +238,23 @@ class STSShutdownHandler {
   }
 
  private:
+  virtual ~STSShutdownHandler() {
+    nsCOMPtr<nsIObserverService> observerService =
+        services::GetObserverService();
+    MOZ_RELEASE_ASSERT(observerService);
+    observerService->RemoveObserver(this, kProfileChangeNetTeardown);
+    Shutdown();
+  }
+
   
   std::set<MediaTransportHandlerSTS*> mHandlers;
 };
 
+NS_IMPL_ISUPPORTS(STSShutdownHandler, nsIObserver);
+
 static STSShutdownHandler* GetShutdownHandler() {
   MOZ_ASSERT(NS_IsMainThread());
-  static UniquePtr<STSShutdownHandler> sHandler(new STSShutdownHandler);
+  static RefPtr<STSShutdownHandler> sHandler(new STSShutdownHandler);
   static bool initted = false;
   if (!initted) {
     initted = true;
@@ -545,8 +584,13 @@ nsresult MediaTransportHandlerSTS::CreateIceCtx(
 void MediaTransportHandlerSTS::Shutdown() {
   CSFLogDebug(LOGTAG, "%s", __func__);
   if (!mStsThread->IsOnCurrentThread()) {
-    mStsThread->Dispatch(NewNonOwningRunnableMethod(
+    nsresult rv = mStsThread->Dispatch(NewNonOwningRunnableMethod(
         __func__, this, &MediaTransportHandlerSTS::Shutdown_s));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      CSFLogError(LOGTAG,
+                  "Unable to dispatch to STS: why has the XPCOM shutdown "
+                  "handler been invoked late?");
+    }
     return;
   }
 
@@ -568,7 +612,7 @@ void MediaTransportHandlerSTS::Shutdown_s() {
     
     
     
-    mStsThread->Dispatch(
+    nsresult rv = mStsThread->Dispatch(
         NS_NewRunnableFunction(__func__, [iceCtx = RefPtr<NrIceCtx>(mIceCtx)] {
           NrIceStats stats = iceCtx->Destroy();
           CSFLogDebug(LOGTAG,
@@ -577,6 +621,14 @@ void MediaTransportHandlerSTS::Shutdown_s() {
                       stats.stun_retransmits, stats.turn_401s, stats.turn_403s,
                       stats.turn_438s);
         }));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      NrIceStats stats = mIceCtx->Destroy();
+      CSFLogDebug(LOGTAG,
+                  "Ice Telemetry: stun (retransmits: %d)"
+                  "   turn (401s: %d   403s: %d   438s: %d)",
+                  stats.stun_retransmits, stats.turn_401s, stats.turn_403s,
+                  stats.turn_438s);
+    }
   }
   mIceCtx = nullptr;
 }
@@ -603,8 +655,13 @@ void MediaTransportHandlerSTS::Destroy() {
   
   
   
-  mStsThread->Dispatch(NewNonOwningRunnableMethod(
+  nsresult rv = mStsThread->Dispatch(NewNonOwningRunnableMethod(
       __func__, this, &MediaTransportHandlerSTS::Destroy_s));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    CSFLogError(LOGTAG,
+                "Unable to dispatch to STS: why has the XPCOM shutdown handler "
+                "not been invoked?");
+  }
 }
 
 void MediaTransportHandlerSTS::Destroy_s() {
