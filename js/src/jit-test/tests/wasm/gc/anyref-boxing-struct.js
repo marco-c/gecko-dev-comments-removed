@@ -10,18 +10,6 @@
 
 
 
-let VALUES = [null,
-              undefined,
-              true,
-              false,
-              {x:1337},
-              ["abracadabra"],
-              1337,
-              13.37,
-              "hi",
-              37n,
-              Symbol("status"),
-              () => 1337];
 
 
 
@@ -39,8 +27,7 @@ let VALUES = [null,
 
 
 
-
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let ins = wasmEvalText(
         `(module
@@ -53,7 +40,7 @@ for (let v of VALUES)
 
 
 
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let ins = wasmEvalText(
         `(module
@@ -69,7 +56,7 @@ for (let v of VALUES)
 
 
 
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let ins = wasmEvalText(
         `(module
@@ -86,7 +73,7 @@ for (let v of VALUES)
 
 
 assertEq(typeof TypedObject.WasmAnyRef, "function");
-for (let v of VALUES) {
+for (let v of WasmExternrefValues) {
     assertEq(TypedObject.WasmAnyRef(v), v);
 }
 

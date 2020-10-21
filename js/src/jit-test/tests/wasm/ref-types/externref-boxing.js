@@ -9,18 +9,6 @@
 
 
 
-let VALUES = [null,
-              undefined,
-              true,
-              false,
-              {x:1337},
-              ["abracadabra"],
-              1337,
-              13.37,
-              37n,
-              "hi",
-              Symbol("status"),
-              () => 1337];
 
 
 
@@ -36,8 +24,7 @@ let VALUES = [null,
 
 
 
-
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let g = new WebAssembly.Global({value: "externref"}, v);
     assertEq(g.value, v);
@@ -45,7 +32,7 @@ for (let v of VALUES)
 
 
 
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let g = new WebAssembly.Global({value: "externref", mutable: true});
     g.value = v;
@@ -54,7 +41,7 @@ for (let v of VALUES)
 
 
 
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let g = new WebAssembly.Global({value: "externref"}, v);
     let ins = wasmEvalText(
@@ -68,7 +55,7 @@ for (let v of VALUES)
 
 
 
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let g = new WebAssembly.Global({value: "externref", mutable: true});
     let ins = wasmEvalText(
@@ -97,7 +84,7 @@ for (let v of VALUES)
 
 
 
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let t = new WebAssembly.Table({element: "externref", initial: 10});
     t.set(3, v);
@@ -106,7 +93,7 @@ for (let v of VALUES)
 
 
 
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let t = new WebAssembly.Table({element: "externref", initial: 10});
     let ins = wasmEvalText(
@@ -121,7 +108,7 @@ for (let v of VALUES)
 
 
 
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let t = new WebAssembly.Table({element: "externref", initial: 10});
     let ins = wasmEvalText(
@@ -137,7 +124,7 @@ for (let v of VALUES)
 
 
 
-for (let v of VALUES)
+for (let v of WasmExternrefValues)
 {
     let returner = function () { return v; };
     let receiver = function (w) { assertEq(w, v); };
