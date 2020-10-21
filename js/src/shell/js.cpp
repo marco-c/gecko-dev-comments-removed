@@ -4187,10 +4187,16 @@ JSObject* GetElementCallback(JSContext* cx, JS::HandleValue value) {
 
   RootedValue elementValue(cx);
   if (!JS_GetProperty(cx, infoObject, "element", &elementValue)) {
-    return nullptr;
+    
+    
+    
+    MOZ_CRASH("error getting source element");
   }
 
-  return elementValue.toObjectOrNull();
+  if (elementValue.isObject()) {
+    return &elementValue.toObject();
+  }
+  return nullptr;
 }
 
 static void WorkerMain(WorkerInput* input) {
