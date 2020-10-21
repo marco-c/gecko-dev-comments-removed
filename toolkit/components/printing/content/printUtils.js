@@ -169,10 +169,14 @@ var PrintUtils = {
 
 
 
+
+
+
   async _openTabModalPrint(
     aBrowsingContext,
     aExistingPreviewBrowser,
-    aPrintInitiationTime
+    aPrintInitiationTime,
+    aPrintSelectionOnly
   ) {
     let sourceBrowser = aBrowsingContext.top.embedderElement;
     let previewBrowser = this.getPreviewBrowser(sourceBrowser);
@@ -191,6 +195,7 @@ var PrintUtils = {
     
     let args = PromptUtils.objectToPropBag({
       previewBrowser: aExistingPreviewBrowser,
+      printSelectionOnly: !!aPrintSelectionOnly,
     });
     let dialogBox = gBrowser.getTabDialogBox(sourceBrowser);
     return dialogBox.open(
@@ -213,7 +218,7 @@ var PrintUtils = {
 
 
 
-  startPrintWindow(aBrowsingContext, aOpenWindowInfo) {
+  startPrintWindow(aBrowsingContext, aOpenWindowInfo, aPrintSelectionOnly) {
     const printInitiationTime = Date.now();
     let browser = null;
     if (aOpenWindowInfo) {
@@ -248,7 +253,8 @@ var PrintUtils = {
       this._openTabModalPrint(
         aBrowsingContext,
         browser,
-        printInitiationTime
+        printInitiationTime,
+        aPrintSelectionOnly
       ).catch(() => {});
       return browser;
     }
@@ -259,7 +265,9 @@ var PrintUtils = {
       return browser;
     }
 
-    this.printWindow(aBrowsingContext, null);
+    let settings = this.getPrintSettings();
+    settings.printSelectionOnly = aPrintSelectionOnly;
+    this.printWindow(aBrowsingContext, settings);
     return null;
   },
 

@@ -155,7 +155,9 @@ var PrintEventHandler = {
     
     
     
-    let existingBrowser = window.arguments[0].getProperty("previewBrowser");
+    let args = window.arguments[0];
+    this.printSelectionOnly = args.getProperty("printSelectionOnly");
+    let existingBrowser = args.getProperty("previewBrowser");
     if (existingBrowser) {
       sourceBrowsingContext = existingBrowser.browsingContext;
       this.previewBrowser.swapDocShells(existingBrowser);
@@ -374,6 +376,8 @@ var PrintEventHandler = {
     );
     this.settings = currentPrinter.settings;
     this.defaultSettings = currentPrinter.defaultSettings;
+
+    this.settings.printSelectionOnly = this.printSelectionOnly;
 
     logger.debug("currentPrinter name: ", printerName);
     logger.debug("settings:", serializeSettings(this.settings));
