@@ -534,10 +534,11 @@
 
             
             if (arrow !== null && !/[\u000A\u000D\u2028\u2029]/.test(func_code)) {
-                var trimmed = (arrow[1] || arrow[2]).trim();
+                var trimmed = (arrow[1] !== undefined ? arrow[1] : arrow[2]).trim();
                 
-                if (/^[^;]*;$/.test(trimmed)) trimmed = trimmed.substring(0, trimmed.length - 1);
-                return trimmed;
+                trimmed = trimmed.replace(/^([^;]*)(;\s*)+$/, "$1");
+                
+                if (trimmed) return trimmed;
             }
         }
 
