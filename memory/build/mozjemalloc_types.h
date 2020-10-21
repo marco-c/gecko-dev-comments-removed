@@ -75,11 +75,12 @@ typedef struct arena_params_s {
 
 typedef struct {
   
-  bool opt_junk;     
-  bool opt_zero;     
-  size_t narenas;    
-  size_t quantum;    
-  size_t small_max;  
+  bool opt_junk;       
+  bool opt_zero;       
+  size_t narenas;      
+  size_t quantum;      
+  size_t quantum_max;  
+  
   size_t large_max;  
   size_t chunksize;  
   size_t page_size;  
