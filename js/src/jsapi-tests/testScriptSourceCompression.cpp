@@ -17,20 +17,24 @@
 #include "jsapi.h"  
 #include "jstypes.h"  
 
+#include "gc/GC.h"                        
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"            
 #include "js/Conversions.h"               
 #include "js/MemoryFunctions.h"           
-#include "js/RootingAPI.h"                
-#include "js/SourceText.h"                
+#include "js/OffThreadScriptCompilation.h"  
+#include "js/RootingAPI.h"  
+#include "js/SourceText.h"  
 #include "js/String.h"  
 #include "js/UniquePtr.h"  
 #include "js/Utility.h"    
 #include "js/Value.h"      
 #include "jsapi-tests/tests.h"
-#include "vm/Compression.h"  
-#include "vm/JSFunction.h"   
+#include "vm/Compression.h"        
+#include "vm/HelperThreadState.h"  
+#include "vm/JSFunction.h"         
 #include "vm/JSScript.h"  
+#include "vm/Monitor.h"   
 
 using mozilla::ArrayLength;
 using mozilla::Utf8Unit;
@@ -469,3 +473,46 @@ bool run() {
   return true;
 }
 END_TEST(testScriptSourceCompression_spansMultipleMiddleChunks)
+
+BEGIN_TEST(testScriptSourceCompression_offThread) {
+  constexpr size_t len = MinimumCompressibleLength + 55;
+  auto chars = MakeSourceAllWhitespace<char16_t>(cx, len);
+  CHECK(chars);
+
+  JS::SourceText<char16_t> source;
+  CHECK(source.init(cx, std::move(chars), len));
+
+  js::Monitor monitor(js::mutexid::ShellOffThreadState);
+  JS::CompileOptions options(cx);
+  JS::OffThreadToken* token;
+
+  
+  options.forceAsync = true;
+
+  CHECK(JS::CompileOffThread(cx, options, source, callback, &monitor, &token));
+
+  {
+    
+    js::gc::FinishGC(cx);
+
+    js::AutoLockMonitor lock(monitor);
+    lock.wait();
+  }
+
+  JS::Rooted<JSScript*> script(cx, JS::FinishOffThreadScript(cx, token));
+  CHECK(script);
+
+  js::RunPendingSourceCompressions(cx->runtime());
+  CHECK(script->scriptSource()->hasCompressedSource());
+
+  return true;
+}
+
+static void callback(JS::OffThreadToken* token, void* context) {
+  js::Monitor& monitor = *static_cast<js::Monitor*>(context);
+
+  js::AutoLockMonitor lock(monitor);
+  lock.notify();
+}
+
+END_TEST(testScriptSourceCompression_offThread)
