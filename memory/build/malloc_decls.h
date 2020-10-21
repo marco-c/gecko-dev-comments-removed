@@ -61,8 +61,12 @@ NOTHROW_MALLOC_DECL(valloc, void*, size_t)
 NOTHROW_MALLOC_DECL(malloc_usable_size, size_t, usable_ptr_t)
 MALLOC_DECL(malloc_good_size, size_t, size_t)
 #  endif
+
 #  if MALLOC_FUNCS & MALLOC_FUNCS_JEMALLOC
-MALLOC_DECL(jemalloc_stats, void, jemalloc_stats_t*)
+
+
+MALLOC_DECL(jemalloc_stats_internal, void, jemalloc_stats_t*,
+            jemalloc_bin_stats_t*)
 
 
 

@@ -1361,8 +1361,9 @@ static size_t replace_malloc_usable_size(usable_ptr_t aPtr) {
   return gMut->PageUsableSize(lock, index);
 }
 
-void replace_jemalloc_stats(jemalloc_stats_t* aStats) {
-  sMallocTable.jemalloc_stats(aStats);
+void replace_jemalloc_stats(jemalloc_stats_t* aStats,
+                            jemalloc_bin_stats_t* aBinStats) {
+  sMallocTable.jemalloc_stats_internal(aStats, aBinStats);
 
   
   size_t mapped = kAllPagesSize;
@@ -1528,7 +1529,7 @@ class PHCBridge : public ReplaceMallocBridge {
 void replace_init(malloc_table_t* aMallocTable, ReplaceMallocBridge** aBridge) {
   
   jemalloc_stats_t stats;
-  aMallocTable->jemalloc_stats(&stats);
+  aMallocTable->jemalloc_stats_internal(&stats, nullptr);
   if (stats.page_size != kPageSize) {
     return;
   }
@@ -1549,7 +1550,7 @@ void replace_init(malloc_table_t* aMallocTable, ReplaceMallocBridge** aBridge) {
   aMallocTable->malloc_usable_size = replace_malloc_usable_size;
   
 
-  aMallocTable->jemalloc_stats = replace_jemalloc_stats;
+  aMallocTable->jemalloc_stats_internal = replace_jemalloc_stats;
   
   
   
