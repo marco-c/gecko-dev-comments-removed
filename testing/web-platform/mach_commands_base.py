@@ -2,13 +2,13 @@
 
 
 
-import os
 import sys
 
 
 def create_parser_wpt():
     from wptrunner import wptcommandline
-    result = wptcommandline.create_parser(["firefox", "firefox_android", "chrome", "edge", "servo"])
+    result = wptcommandline.create_parser(
+        ["firefox", "firefox_android", "chrome", "edge", "servo"])
     result.add_argument("--no-install", action="store_true", default=False,
                         help="Do not install test runner application")
     return result
