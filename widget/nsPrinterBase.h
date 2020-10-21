@@ -42,6 +42,9 @@ class nsPrinterBase : public nsIPrinter {
   NS_DECL_CYCLE_COLLECTION_CLASS(nsPrinterBase)
 
   
+  nsPrinterBase() = delete;
+
+  
   nsPrinterBase(const nsPrinterBase&) = delete;
   nsPrinterBase(nsPrinterBase&&) = delete;
 
@@ -84,7 +87,7 @@ class nsPrinterBase : public nsIPrinter {
   Maybe<PrintSettingsInitializer> mPrintSettingsInitializer;
 
  protected:
-  nsPrinterBase();
+  nsPrinterBase(const mozilla::CommonPaperInfoArray* aPaperInfoArray);
   virtual ~nsPrinterBase();
 
   
@@ -96,11 +99,17 @@ class nsPrinterBase : public nsIPrinter {
   virtual bool SupportsCollation() const = 0;
   virtual nsTArray<mozilla::PaperInfo> PaperList() const = 0;
   virtual MarginDouble GetMarginsForPaper(nsString aPaperId) const = 0;
+  
+  
+  const mozilla::PaperInfo* FindCommonPaperSize(
+      const mozilla::gfx::SizeDouble& aSize) const;
 
  private:
   mozilla::EnumeratedArray<AsyncAttribute, AsyncAttribute::Last,
                            RefPtr<Promise>>
       mAsyncAttributePromises;
+  
+  const RefPtr<const mozilla::CommonPaperInfoArray> mCommonPaperInfo;
 };
 
 #endif
