@@ -19,73 +19,52 @@
 
 namespace mozilla::dom::indexedDB {
 
+using quota::AssertIsOnIOThread;
+
 
 
 static_assert(JS_STRUCTURED_CLONE_VERSION == 8,
               "Need to update the major schema version.");
-
-using quota::AssertIsOnIOThread;
 
 nsresult CreateFileTables(mozIStorageConnection& aConnection) {
   AssertIsOnIOThread();
 
   AUTO_PROFILER_LABEL("CreateFileTables", DOM);
 
-  
-  nsresult rv = aConnection.ExecuteSimpleSQL(
+  constexpr nsLiteralCString commands[] = {
+      
       "CREATE TABLE file ("
       "id INTEGER PRIMARY KEY, "
       "refcount INTEGER NOT NULL"
-      ");"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  rv = aConnection.ExecuteSimpleSQL(
+      ");"_ns,
       "CREATE TRIGGER object_data_insert_trigger "
       "AFTER INSERT ON object_data "
       "FOR EACH ROW "
       "WHEN NEW.file_ids IS NOT NULL "
       "BEGIN "
       "SELECT update_refcount(NULL, NEW.file_ids); "
-      "END;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  rv = aConnection.ExecuteSimpleSQL(
+      "END;"_ns,
       "CREATE TRIGGER object_data_update_trigger "
       "AFTER UPDATE OF file_ids ON object_data "
       "FOR EACH ROW "
       "WHEN OLD.file_ids IS NOT NULL OR NEW.file_ids IS NOT NULL "
       "BEGIN "
       "SELECT update_refcount(OLD.file_ids, NEW.file_ids); "
-      "END;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  rv = aConnection.ExecuteSimpleSQL(
+      "END;"_ns,
       "CREATE TRIGGER object_data_delete_trigger "
       "AFTER DELETE ON object_data "
       "FOR EACH ROW WHEN OLD.file_ids IS NOT NULL "
       "BEGIN "
       "SELECT update_refcount(OLD.file_ids, NULL); "
-      "END;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  rv = aConnection.ExecuteSimpleSQL(
+      "END;"_ns,
       "CREATE TRIGGER file_update_trigger "
       "AFTER UPDATE ON file "
       "FOR EACH ROW WHEN NEW.refcount = 0 "
       "BEGIN "
       "DELETE FROM file WHERE id = OLD.id; "
-      "END;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+      "END;"_ns};
+
+  IDB_TRY(ExecuteSimpleSQLSequence(aConnection, commands));
 
   return NS_OK;
 }
@@ -95,15 +74,16 @@ nsresult CreateTables(mozIStorageConnection& aConnection) {
 
   AUTO_PROFILER_LABEL("CreateTables", DOM);
 
-  
+  constexpr nsLiteralCString commands[] = {
+      
 
-  
-  
-  
-  
-  
-  
-  nsresult rv = aConnection.ExecuteSimpleSQL(
+      
+      
+      
+      
+      
+      
+      
       "CREATE TABLE database"
       "( name TEXT PRIMARY KEY"
       ", origin TEXT NOT NULL"
@@ -111,25 +91,15 @@ nsresult CreateTables(mozIStorageConnection& aConnection) {
       ", last_vacuum_time INTEGER NOT NULL DEFAULT 0"
       ", last_analyze_time INTEGER NOT NULL DEFAULT 0"
       ", last_vacuum_size INTEGER NOT NULL DEFAULT 0"
-      ") WITHOUT ROWID;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  rv = aConnection.ExecuteSimpleSQL(
+      ") WITHOUT ROWID;"_ns,
+      
       "CREATE TABLE object_store"
       "( id INTEGER PRIMARY KEY"
       ", auto_increment INTEGER NOT NULL DEFAULT 0"
       ", name TEXT NOT NULL"
       ", key_path TEXT"
-      ");"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  rv = aConnection.ExecuteSimpleSQL(
+      ");"_ns,
+      
       "CREATE TABLE object_store_index"
       "( id INTEGER PRIMARY KEY"
       ", object_store_id INTEGER NOT NULL"
@@ -141,13 +111,8 @@ nsresult CreateTables(mozIStorageConnection& aConnection) {
       ", is_auto_locale BOOLEAN NOT NULL"
       ", FOREIGN KEY (object_store_id) "
       "REFERENCES object_store(id) "
-      ");"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  rv = aConnection.ExecuteSimpleSQL(
+      ");"_ns,
+      
       "CREATE TABLE object_data"
       "( object_store_id INTEGER NOT NULL"
       ", key BLOB NOT NULL"
@@ -157,13 +122,8 @@ nsresult CreateTables(mozIStorageConnection& aConnection) {
       ", PRIMARY KEY (object_store_id, key)"
       ", FOREIGN KEY (object_store_id) "
       "REFERENCES object_store(id) "
-      ") WITHOUT ROWID;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  rv = aConnection.ExecuteSimpleSQL(
+      ") WITHOUT ROWID;"_ns,
+      
       "CREATE TABLE index_data"
       "( index_id INTEGER NOT NULL"
       ", value BLOB NOT NULL"
@@ -175,21 +135,11 @@ nsresult CreateTables(mozIStorageConnection& aConnection) {
       "REFERENCES object_store_index(id) "
       ", FOREIGN KEY (object_store_id, object_data_key) "
       "REFERENCES object_data(object_store_id, key) "
-      ") WITHOUT ROWID;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  rv = aConnection.ExecuteSimpleSQL(
+      ") WITHOUT ROWID;"_ns,
       "CREATE INDEX index_data_value_locale_index "
       "ON index_data (index_id, value_locale, object_data_key, value) "
-      "WHERE value_locale IS NOT NULL;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  rv = aConnection.ExecuteSimpleSQL(
+      "WHERE value_locale IS NOT NULL;"_ns,
+      
       "CREATE TABLE unique_index_data"
       "( index_id INTEGER NOT NULL"
       ", value BLOB NOT NULL"
@@ -201,28 +151,16 @@ nsresult CreateTables(mozIStorageConnection& aConnection) {
       "REFERENCES object_store_index(id) "
       ", FOREIGN KEY (object_store_id, object_data_key) "
       "REFERENCES object_data(object_store_id, key) "
-      ") WITHOUT ROWID;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  rv = aConnection.ExecuteSimpleSQL(
+      ") WITHOUT ROWID;"_ns,
       "CREATE INDEX unique_index_data_value_locale_index "
       "ON unique_index_data (index_id, value_locale, object_data_key, value) "
-      "WHERE value_locale IS NOT NULL;"_ns);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+      "WHERE value_locale IS NOT NULL;"_ns};
 
-  rv = CreateFileTables(aConnection);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY(ExecuteSimpleSQLSequence(aConnection, commands));
 
-  rv = aConnection.SetSchemaVersion(kSQLiteSchemaVersion);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY(CreateFileTables(aConnection));
+
+  IDB_TRY(aConnection.SetSchemaVersion(kSQLiteSchemaVersion));
 
   return NS_OK;
 }
