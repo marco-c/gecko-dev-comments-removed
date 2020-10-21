@@ -2966,7 +2966,7 @@ impl ComputedValues {
 
     
     pub fn visited_style(&self) -> Option<<&ComputedValues> {
-        self.visited_style.as_ref().map(|s| &**s)
+        self.visited_style.as_deref()
     }
 
     
