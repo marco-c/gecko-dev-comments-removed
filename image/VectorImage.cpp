@@ -355,7 +355,7 @@ VectorImage::VectorImage(nsIURI* aURI )
       mHasPendingInvalidation(false) {}
 
 VectorImage::~VectorImage() {
-  ReportUseCounters();
+  ReportDocumentUseCounters();
   CancelAllListeners();
   SurfaceCache::RemoveImage(ImageKey(this));
 }
@@ -1412,7 +1412,7 @@ void VectorImage::OnSVGDocumentLoaded() {
   
   
   
-  mSVGDocumentWrapper->GetDocument()->ReportUseCounters();
+  mSVGDocumentWrapper->GetDocument()->ReportDocumentUseCounters();
 
   mIsFullyLoaded = true;
   mHaveAnimations = mSVGDocumentWrapper->IsAnimated();
@@ -1452,7 +1452,7 @@ void VectorImage::OnSVGDocumentError() {
 
   
   
-  ReportUseCounters();
+  ReportDocumentUseCounters();
 
   if (mProgressTracker) {
     
@@ -1582,13 +1582,13 @@ nsresult VectorImage::GetHotspotY(int32_t* aY) {
   return Image::GetHotspotY(aY);
 }
 
-void VectorImage::ReportUseCounters() {
+void VectorImage::ReportDocumentUseCounters() {
   if (!mSVGDocumentWrapper) {
     return;
   }
 
   if (Document* doc = mSVGDocumentWrapper->GetDocument()) {
-    doc->ReportUseCounters();
+    doc->ReportDocumentUseCounters();
   }
 }
 

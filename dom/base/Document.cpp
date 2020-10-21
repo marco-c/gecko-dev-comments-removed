@@ -1321,7 +1321,7 @@ Document::Document(const char* aContentType)
       mValidMaxScale(false),
       mWidthStrEmpty(false),
       mParserAborted(false),
-      mReportedUseCounters(false),
+      mReportedDocumentUseCounters(false),
       mHasReportedShadowDOMUsage(false),
       mHasDelayedRefreshEvent(false),
       mLoadEventFiring(false),
@@ -7005,18 +7005,16 @@ void Document::SetScriptGlobalObject(
       mMaybeServiceWorkerControlled = false;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ReportUseCounters();
+    if (GetWindowContext()) {
+      
+      
+      
+      
+      
+      
+      
+      SendPageUseCounters();
+    }
   }
 
   
@@ -10662,6 +10660,8 @@ void Document::Destroy() {
   
   
   if (mIsGoingAway) return;
+
+  ReportDocumentUseCounters();
 
   mIsGoingAway = true;
 
@@ -15132,12 +15132,12 @@ void Document::InitUseCounters() {
 
 
 
-void Document::ReportUseCounters() {
-  if (!mShouldReportUseCounters || mReportedUseCounters) {
+void Document::ReportDocumentUseCounters() {
+  if (!mShouldReportUseCounters || mReportedDocumentUseCounters) {
     return;
   }
 
-  mReportedUseCounters = true;
+  mReportedDocumentUseCounters = true;
 
   
   
@@ -15147,17 +15147,10 @@ void Document::ReportUseCounters() {
 
   
   
-  
   EnumerateExternalResources([](Document& aDoc) {
-    aDoc.ReportUseCounters();
+    aDoc.ReportDocumentUseCounters();
     return CallState::Continue;
   });
-
-  
-  
-  
-  
-  
 
   
   SetCssUseCounterBits();
@@ -15178,32 +15171,47 @@ void Document::ReportUseCounters() {
             (" > %s\n", Telemetry::GetHistogramName(id)));
     Telemetry::Accumulate(id, 1);
   }
+}
 
-  
-  
-  
-  
-  
-  
-  
-  if (mShouldSendPageUseCounters) {
-    RefPtr<WindowGlobalChild> wgc = GetWindowGlobalChild();
-    if (!wgc) {
-      MOZ_ASSERT_UNREACHABLE(
-          "ReportUseCounters should be called while we still have access "
-          "to our WindowContext");
-      MOZ_LOG(gUseCountersLog, LogLevel::Debug,
-              (" > too late to send page use counters"));
-      return;
-    }
-
-    MOZ_LOG(gUseCountersLog, LogLevel::Debug,
-            (" > sending page use counters: from WindowContext %" PRIu64,
-             wgc->InnerWindowId()));
-
-    UseCounters counters = mUseCounters | mChildDocumentUseCounters;
-    wgc->SendAccumulatePageUseCounters(counters);
+void Document::SendPageUseCounters() {
+  if (!mShouldReportUseCounters || !mShouldSendPageUseCounters) {
+    return;
   }
+
+  
+  
+  EnumerateExternalResources([](Document& aDoc) {
+    aDoc.SendPageUseCounters();
+    return CallState::Continue;
+  });
+
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<WindowGlobalChild> wgc = GetWindowGlobalChild();
+  if (!wgc) {
+    MOZ_ASSERT_UNREACHABLE(
+        "SendPageUseCounters should be called while we still have access "
+        "to our WindowContext");
+    MOZ_LOG(gUseCountersLog, LogLevel::Debug,
+            (" > too late to send page use counters"));
+    return;
+  }
+
+  MOZ_LOG(gUseCountersLog, LogLevel::Debug,
+          ("Sending page use counters: from WindowContext %" PRIu64 " [%s]",
+           wgc->WindowContext()->Id(),
+           nsContentUtils::TruncatedURLForDisplay(GetDocumentURI()).get()));
+
+  
+  SetCssUseCounterBits();
+
+  UseCounters counters = mUseCounters | mChildDocumentUseCounters;
+  wgc->SendAccumulatePageUseCounters(counters);
 }
 
 WindowContext* Document::GetWindowContextForPageUseCounters() const {

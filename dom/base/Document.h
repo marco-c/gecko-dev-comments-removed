@@ -3567,7 +3567,13 @@ class Document : public nsINode,
 
   
   
-  void ReportUseCounters();
+  void ReportDocumentUseCounters();
+
+  
+  
+  
+  
+  void SendPageUseCounters();
 
   void SetUseCounter(UseCounter aUseCounter) {
     mUseCounters[aUseCounter] = true;
@@ -4581,7 +4587,7 @@ class Document : public nsINode,
   
   
   
-  bool mReportedUseCounters : 1;
+  bool mReportedDocumentUseCounters : 1;
 
   bool mHasReportedShadowDOMUsage : 1;
 

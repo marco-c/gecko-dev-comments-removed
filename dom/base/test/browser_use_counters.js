@@ -133,6 +133,15 @@ add_task(async function() {
 
     
     
+    {
+      type: "direct",
+      filename: "file_use_counter_bfcache.html",
+      waitForExplicitFinish: true,
+      counters: [{ name: "SVGSVGELEMENT_GETELEMENTBYID" }],
+    },
+
+    
+    
     
     
     
@@ -181,6 +190,17 @@ add_task(async function() {
 
     BrowserTestUtils.loadURI(gBrowser.selectedBrowser, url);
     await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+
+    if (test.waitForExplicitFinish) {
+      if (test.type != "direct") {
+        throw new Error(
+          `cannot use waitForExplicitFinish with test type ${test.type}`
+        );
+      }
+
+      
+      await BrowserTestUtils.waitForLocationChange(gBrowser, url + "#finished");
+    }
 
     if (targetElement) {
       

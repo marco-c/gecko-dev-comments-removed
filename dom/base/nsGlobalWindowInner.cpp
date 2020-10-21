@@ -1058,14 +1058,13 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   }
   StartDying();
 
-  if (mDoc) {
+  if (mDoc && mDoc->GetWindowContext()) {
     
     
     
     
     
-    
-    mDoc->ReportUseCounters();
+    mDoc->SendPageUseCounters();
   }
 
   

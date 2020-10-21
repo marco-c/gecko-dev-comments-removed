@@ -393,9 +393,7 @@ nsXMLContentSink::OnTransformDone(nsresult aResult, Document* aResultDocument) {
   
   
   
-  
-  
-  originalDocument->ReportUseCounters();
+  originalDocument->ReportDocumentUseCounters();
 
   return NS_OK;
 }
