@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 function ObjectFront(grip, overrides) {
   return {
     grip,

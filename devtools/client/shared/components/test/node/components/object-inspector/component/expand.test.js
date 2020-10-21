@@ -1,22 +1,28 @@
 
 
 
-const { mountObjectInspector } = require("devtools/client/shared/components/reps/object-inspector/tests/test-utils");
+const {
+  mountObjectInspector,
+} = require("devtools/client/shared/components/test/node/components/object-inspector/test-utils");
 
-const repsPath = "../../../reps";
-const { MODE } = require(`${repsPath}/constants`);
-const ObjectFront = require("devtools/client/shared/components/reps/object-inspector/tests/__mocks__/object-front");
-const gripRepStubs = require(`${repsPath}/stubs/grip`);
-const gripPropertiesStubs = require("devtools/client/shared/components/reps/object-inspector/stubs/grip");
+const { MODE } = require(`devtools/client/shared/components/reps/index`);
+const ObjectFront = require("devtools/client/shared/components/test/node/__mocks__/object-front");
+const gripRepStubs = require(`devtools/client/shared/components/test/node/stubs/reps/grip`);
+const gripPropertiesStubs = require("devtools/client/shared/components/test/node/stubs/object-inspector/grip");
 const {
   formatObjectInspector,
   storeHasExactExpandedPaths,
   storeHasExpandedPath,
   storeHasLoadedProperty,
   waitForDispatch,
-} = require("devtools/client/shared/components/reps/object-inspector/tests/test-utils");
-const { createNode, NODE_TYPES } = require("devtools/client/shared/components/reps/object-inspector/utils/node");
-const { getExpandedPaths } = require("devtools/client/shared/components/reps/object-inspector/reducer");
+} = require("devtools/client/shared/components/test/node/components/object-inspector/test-utils");
+const {
+  createNode,
+  NODE_TYPES,
+} = require("devtools/client/shared/components/reps/object-inspector/utils/node");
+const {
+  getExpandedPaths,
+} = require("devtools/client/shared/components/reps/object-inspector/reducer");
 
 const protoStub = {
   prototype: {
@@ -48,7 +54,9 @@ function generateDefaults(overrides) {
     ...overrides,
   };
 }
-const { LongStringFront } = require("devtools/client/shared/components/reps/object-inspector/tests/__mocks__/string-front");
+const {
+  LongStringFront,
+} = require("devtools/client/shared/components/test/node/__mocks__/string-front");
 
 function getClient(overrides = {}) {
   return {

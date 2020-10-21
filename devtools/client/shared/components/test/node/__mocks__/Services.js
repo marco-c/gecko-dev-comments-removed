@@ -1,0 +1,14 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  appinfo: "",
+  prefs: {
+    getBoolPref(name, defaultVal) {
+      return defaultVal;
+    },
+  },
+};

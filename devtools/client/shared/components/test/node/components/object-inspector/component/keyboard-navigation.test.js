@@ -2,13 +2,17 @@
 
 
 
-const { mountObjectInspector } = require("devtools/client/shared/components/reps/object-inspector/tests/test-utils");
-const repsPath = "../../../reps";
-const { MODE } = require(`${repsPath}/constants`);
+const {
+  mountObjectInspector,
+} = require("devtools/client/shared/components/test/node/components/object-inspector/test-utils");
+const { MODE } = require("devtools/client/shared/components/reps/index");
 
-const { formatObjectInspector, waitForDispatch } = require("devtools/client/shared/components/reps/object-inspector/tests/test-utils");
-const ObjectFront = require("devtools/client/shared/components/reps/object-inspector/tests/__mocks__/object-front");
-const gripRepStubs = require(`${repsPath}/stubs/grip`);
+const {
+  formatObjectInspector,
+  waitForDispatch,
+} = require("devtools/client/shared/components/test/node/components/object-inspector/test-utils");
+const ObjectFront = require("devtools/client/shared/components/test/node/__mocks__/object-front");
+const gripRepStubs = require(`devtools/client/shared/components/test/node/stubs/reps/grip`);
 
 function generateDefaults(overrides) {
   return {

@@ -9,6 +9,7 @@
 module.exports = {
   verbose: true,
   moduleNameMapper: {
+    "^Services": `${__dirname}/__mock__/Services`,
     
     "^devtools\\/(.*)": `${__dirname}/../../../../../$1`,
   },

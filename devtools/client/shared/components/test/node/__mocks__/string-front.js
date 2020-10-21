@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 function LongStringFront(grip, overrides) {
   return {
     grip,
