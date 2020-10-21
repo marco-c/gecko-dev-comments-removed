@@ -133,9 +133,7 @@ nsresult BodyGetCacheDir(nsIFile* aBaseDir, const nsID& aId,
   
   
   
-  nsAutoString subDirName;
-  subDirName.AppendInt(aId.m3[7]);
-  rv = (*aCacheDirOut)->Append(subDirName);
+  rv = (*aCacheDirOut)->Append(IntToString(aId.m3[7]));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
