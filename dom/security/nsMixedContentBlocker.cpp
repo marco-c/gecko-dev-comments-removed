@@ -229,7 +229,8 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
 
 bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
     const nsACString& aAsciiHost) {
-  if (mozilla::net::IsLoopbackHostname(aAsciiHost)) {
+  if (aAsciiHost.EqualsLiteral("::1") ||
+      aAsciiHost.EqualsLiteral("localhost")) {
     return true;
   }
 
@@ -249,7 +250,8 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
   
   
   
-  return addr.IsLoopBackAddressWithoutIPv6Mapping();
+  
+  return addr.IsIPAddrV4() && addr.IsLoopbackAddr();
 }
 
 bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL) {
