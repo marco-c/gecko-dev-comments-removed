@@ -1709,6 +1709,13 @@ static MIRType GuessPhiType(MPhi* phi, bool* hasInputsWithEmptyTypes) {
     
     
     if (ShouldSpecializeOsrPhis() && in->isOsrValue()) {
+      
+      
+      
+      convertibleToFloat32 = false;
+      if (type == MIRType::Float32) {
+        type = MIRType::Double;
+      }
       continue;
     }
 
