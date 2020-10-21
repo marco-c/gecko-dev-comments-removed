@@ -67,14 +67,14 @@ StatusBarEntry::StatusBarEntry(Element* aMenu) : mMenu(aMenu), mInitted(false) {
   mIconData = { sizeof(NOTIFYICONDATA),
                 0,
                 2,
-                NIF_ICON | NIF_MESSAGE | NIF_TIP,
+                NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_SHOWTIP,
                 WM_USER,
                 0,
                 L"",  
                 0,
                 0,
                 L"",
-                {NOTIFYICON_VERSION},
+                {NOTIFYICON_VERSION_4},
                 L"",
                 0};
   MOZ_ASSERT(mMenu);
@@ -187,7 +187,8 @@ nsresult StatusBarEntry::OnComplete() {
 }
 
 LRESULT StatusBarEntry::OnMessage(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
-  if (msg == WM_USER && (lp == WM_LBUTTONUP || lp == WM_RBUTTONUP)) {
+  if (msg == WM_USER &&
+      (LOWORD(lp) == WM_LBUTTONUP || LOWORD(lp) == WM_RBUTTONUP)) {
     nsMenuFrame* menu = do_QueryFrame(mMenu->GetPrimaryFrame());
     if (!menu) {
       return TRUE;
@@ -216,10 +217,8 @@ LRESULT StatusBarEntry::OnMessage(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
     
     ::SetForegroundWindow(win);
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    POINT pt;
-    ::GetCursorPos(&pt);
-    pm->ShowPopup(popupFrame->GetContent(), nullptr, EmptyString(), pt.x, pt.y,
-                  false, false, true, nullptr);
+    pm->ShowPopupAtScreen(popupFrame->GetContent(), GET_X_LPARAM(wp),
+                          GET_Y_LPARAM(wp), false, nullptr);
   }
 
   return DefWindowProc(hWnd, msg, wp, lp);
