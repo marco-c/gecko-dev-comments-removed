@@ -3624,7 +3624,12 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   nsIScrollableFrame* sf = do_QueryFrame(mOuter);
   MOZ_ASSERT(sf);
 
-  nsDisplayWrapList* topLayerWrapList = MaybeCreateTopLayerItems(aBuilder);
+  
+  
+  
+  bool topLayerIsOpaque = false;
+  nsDisplayWrapList* topLayerWrapList =
+      MaybeCreateTopLayerItems(aBuilder, &topLayerIsOpaque);
 
   if (ignoringThisScrollFrame) {
     
@@ -3642,7 +3647,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       AppendScrollPartsTo(aBuilder, aLists, createLayersForScrollbars, false);
     }
 
-    {
+    if (!topLayerIsOpaque) {
       nsDisplayListBuilder::AutoBuildingDisplayList building(
           aBuilder, mOuter, visibleRect, dirtyRect);
 
@@ -3843,7 +3848,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       }
     }
 
-    {
+    if (!topLayerIsOpaque) {
       
       
       
@@ -4064,11 +4069,12 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 }
 
 nsDisplayWrapList* ScrollFrameHelper::MaybeCreateTopLayerItems(
-    nsDisplayListBuilder* aBuilder) {
+    nsDisplayListBuilder* aBuilder, bool* aIsOpaque) {
   if (mIsRoot) {
     if (ViewportFrame* viewportFrame = do_QueryFrame(mOuter->GetParent())) {
       nsDisplayList topLayerList;
-      viewportFrame->BuildDisplayListForTopLayer(aBuilder, &topLayerList);
+      viewportFrame->BuildDisplayListForTopLayer(aBuilder, &topLayerList,
+                                                 aIsOpaque);
       if (!topLayerList.IsEmpty()) {
         nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
             aBuilder, viewportFrame);
