@@ -4,6 +4,8 @@
 
 
 
+#include "NamespaceImports.h"
+
 #include "js/Proxy.h"
 #include "proxy/DeadObjectProxy.h"
 #include "vm/ProxyObject.h"
