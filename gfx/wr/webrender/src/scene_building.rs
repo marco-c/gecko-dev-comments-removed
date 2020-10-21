@@ -1515,11 +1515,6 @@ impl<'a> SceneBuilder<'a> {
     ) -> StackingContextInfo {
         profile_scope!("push_stacking_context");
 
-        let clip_chain_id = match clip_id {
-            Some(clip_id) => self.clip_store.get_or_build_clip_chain_id(clip_id),
-            None => ClipChainId::NONE,
-        };
-
         
         
         
@@ -1590,7 +1585,6 @@ impl<'a> SceneBuilder<'a> {
         
         
         let mut blit_reason = BlitReason::empty();
-        let mut current_clip_chain_id = clip_chain_id;
 
         if flags.contains(StackingContextFlags::IS_BLEND_CONTAINER) {
             blit_reason |= BlitReason::ISOLATE;
@@ -1598,19 +1592,10 @@ impl<'a> SceneBuilder<'a> {
 
         
         
-        while current_clip_chain_id != ClipChainId::NONE {
-            let clip_chain_node = &self
-                .clip_store
-                .clip_chain_nodes[current_clip_chain_id.0 as usize];
-
-            let clip_node_data = &self.interners.clip[clip_chain_node.handle];
-
-            if let ClipNodeKind::Complex = clip_node_data.clip_node_kind {
-                blit_reason = BlitReason::CLIP;
-                break;
+        if let Some(clip_id) = clip_id {
+            if self.clip_store.has_complex_clips(clip_id) {
+                blit_reason |= BlitReason::CLIP;
             }
-
-            current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
         }
 
         let is_redundant = FlattenedStackingContext::is_redundant(
@@ -1634,6 +1619,12 @@ impl<'a> SceneBuilder<'a> {
             sc_info.pop_containing_block = true;
             self.containing_block_stack.push(spatial_node_index);
         }
+
+        
+        let clip_chain_id = match clip_id {
+            Some(clip_id) => self.clip_store.get_or_build_clip_chain_id(clip_id),
+            None => ClipChainId::NONE,
+        };
 
         
         if let Some(clip_id) = clip_id {

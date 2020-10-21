@@ -281,6 +281,36 @@ impl ClipChainBuilder {
     
     
     
+    
+    fn has_complex_clips(
+        &self,
+        clip_id: ClipId,
+        templates: &FastHashMap<ClipId, ClipTemplate>,
+    ) -> bool {
+        let template = &templates[&clip_id];
+
+        
+        for clip in &template.clips {
+            if let ClipNodeKind::Complex = clip.key.kind.node_kind() {
+                return true;
+            }
+        }
+
+        
+        if clip_id == template.parent {
+            return false;
+        }
+
+        
+        self.has_complex_clips(
+            template.parent,
+            templates,
+        )
+    }
+
+    
+    
+    
     fn get_or_build_clip_chain_id(
         &mut self,
         clip_id: ClipId,
@@ -983,6 +1013,23 @@ impl ClipStore {
             .get_or_build_clip_chain_id(
                 clip_id,
                 &mut self.clip_chain_nodes,
+                &self.templates,
+            )
+    }
+
+    
+    
+    
+    
+    pub fn has_complex_clips(
+        &self,
+        clip_id: ClipId,
+    ) -> bool {
+        self.chain_builder_stack
+            .last()
+            .unwrap()
+            .has_complex_clips(
+                clip_id,
                 &self.templates,
             )
     }
