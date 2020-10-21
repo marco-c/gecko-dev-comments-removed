@@ -15,17 +15,11 @@ const {
   Bookmark,
   BookmarkFolder,
   BookmarksEngine,
-  BufferedBookmarksEngine,
   Livemark,
 } = ChromeUtils.import("resource://services-sync/engines/bookmarks.js");
 const { Service } = ChromeUtils.import("resource://services-sync/service.js");
 
 var recordedEvents = [];
-
-
-
-
-const LegacyEngine = BookmarksEngine;
 
 function checkRecordedEvents(object, expected, message) {
   
@@ -59,11 +53,11 @@ async function fetchAllRecordIds() {
 }
 
 async function cleanupEngine(engine) {
-  await engine._tracker.stop();
-  await engine._store.wipe();
   await engine.resetClient();
+  await engine._store.wipe();
   Svc.Prefs.resetBranch("");
   Service.recordManager.clearCache();
+  
 }
 
 async function cleanup(engine, server) {
@@ -83,7 +77,7 @@ add_task(async function setup() {
 add_task(async function test_buffer_timeout() {
   await Service.recordManager.clearCache();
   await PlacesSyncUtils.bookmarks.reset();
-  let engine = new BufferedBookmarksEngine(Service);
+  let engine = new BookmarksEngine(Service);
   engine._newWatchdog = function() {
     
     
@@ -297,51 +291,40 @@ add_bookmark_test(async function test_delete_invalid_roots_from_server(engine) {
       "Should store Places root, reading list items, and new bookmark on server"
     );
 
-    if (engine instanceof BufferedBookmarksEngine) {
-      let ping = await sync_engine_and_validate_telem(engine, true);
-      if (engine instanceof BufferedBookmarksEngine) {
-        
-        
-        
-        
-        let engineData = ping.engines.find(e => e.name == "bookmarks");
-        ok(
-          engineData.validation,
-          "Buffered engine should always run validation"
-        );
-        equal(
-          engineData.validation.checked,
-          6,
-          "Buffered engine should validate all items"
-        );
-        deepEqual(
-          engineData.validation.problems,
-          [
-            {
-              name: "parentChildDisagreements",
-              count: 1,
-            },
-          ],
-          "Buffered engine should report parent-child disagreement"
-        );
-        deepEqual(
-          engineData.steps.map(step => step.name),
-          [
-            "fetchLocalTree",
-            "fetchRemoteTree",
-            "merge",
-            "apply",
-            "notifyObservers",
-            "fetchLocalChangeRecords",
-          ],
-          "Buffered engine should report all merge steps"
-        );
-      }
-    } else {
-      
-      
-      await sync_engine_and_validate_telem(engine, false);
-    }
+    let ping = await sync_engine_and_validate_telem(engine, true);
+    
+    
+    
+    
+    let engineData = ping.engines.find(e => e.name == "bookmarks");
+    ok(engineData.validation, "Bookmarks engine should always run validation");
+    equal(
+      engineData.validation.checked,
+      6,
+      "Bookmarks engine should validate all items"
+    );
+    deepEqual(
+      engineData.validation.problems,
+      [
+        {
+          name: "parentChildDisagreements",
+          count: 1,
+        },
+      ],
+      "Bookmarks engine should report parent-child disagreement"
+    );
+    deepEqual(
+      engineData.steps.map(step => step.name),
+      [
+        "fetchLocalTree",
+        "fetchRemoteTree",
+        "merge",
+        "apply",
+        "notifyObservers",
+        "fetchLocalChangeRecords",
+      ],
+      "Bookmarks engine should report all merge steps"
+    );
 
     await Assert.rejects(
       PlacesUtils.promiseItemId("readinglist"),
@@ -725,9 +708,7 @@ add_task(async function test_mismatched_types() {
     newR.parentid = PlacesUtils.bookmarks.toolbarGuid;
 
     await store.applyIncoming(oldR);
-    if (isBufferedBookmarksEngine(engine)) {
-      await engine._apply();
-    }
+    await engine._apply();
     _("Applied old. It's a folder.");
     let oldID = await PlacesUtils.promiseItemId(oldR.id);
     _("Old ID: " + oldID);
@@ -735,9 +716,7 @@ add_task(async function test_mismatched_types() {
     Assert.equal(oldInfo.type, PlacesUtils.bookmarks.TYPE_FOLDER);
 
     await store.applyIncoming(newR);
-    if (isBufferedBookmarksEngine(engine)) {
-      await engine._apply();
-    }
+    await engine._apply();
     await Assert.rejects(
       PlacesUtils.promiseItemId(newR.id),
       /no item found for the given GUID/,
@@ -745,135 +724,8 @@ add_task(async function test_mismatched_types() {
     );
   } finally {
     await cleanup(engine, server);
+    await engine.finalize();
   }
-});
-
-add_task(async function test_bookmark_guidMap_fail() {
-  _("Ensure that failures building the GUID map cause early death.");
-
-  let engine = new LegacyEngine(Service); 
-  await engine.initialize();
-  let store = engine._store;
-
-  let server = await serverForFoo(engine);
-  let coll = server.user("foo").collection("bookmarks");
-  await SyncTestingInfrastructure(server);
-
-  
-  let item = await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    type: PlacesUtils.bookmarks.TYPE_FOLDER,
-    title: "Folder 1",
-  });
-  let itemRecord = await store.createRecord(item.guid);
-  let itemPayload = itemRecord.cleartext;
-  coll.insert(item.guid, encryptPayload(itemPayload));
-
-  await engine.setLastSync(1); 
-
-  
-
-  let pbt = PlacesUtils.promiseBookmarksTree;
-  PlacesUtils.promiseBookmarksTree = function() {
-    return Promise.reject("Nooo");
-  };
-
-  
-  await engine._syncStartup();
-  _("No error.");
-
-  _("We get an error if building _guidMap fails in use.");
-  let err;
-  try {
-    _(await engine.getGuidMap());
-  } catch (ex) {
-    err = ex;
-  }
-  Assert.equal(err.code, SyncEngine.prototype.eEngineAbortApplyIncoming);
-  Assert.equal(err.cause, "Nooo");
-
-  _("We get an error and abort during processIncoming.");
-  err = undefined;
-  try {
-    await engine._processIncoming();
-  } catch (ex) {
-    err = ex;
-  }
-  Assert.equal(err, "Nooo");
-
-  _(
-    "Sync the engine and validate that we didn't put the error code in the wrong place"
-  );
-  let ping;
-  try {
-    
-    engine._processIncoming = async function() {};
-    await sync_engine_and_validate_telem(engine, true, p => {
-      ping = p;
-    });
-  } catch (e) {}
-
-  deepEqual(ping.engines.find(e => e.name == "bookmarks").failureReason, {
-    name: "unexpectederror",
-    error: "Nooo",
-  });
-
-  PlacesUtils.promiseBookmarksTree = pbt;
-  await cleanup(engine, server);
-  await engine.finalize();
-});
-
-add_task(async function test_bookmark_tag_but_no_uri() {
-  _(
-    "Ensure that a bookmark record with tags, but no URI, doesn't throw an exception."
-  );
-
-  
-  
-  let engine = new LegacyEngine(Service);
-  await engine.initialize();
-  let store = engine._store;
-
-  
-  
-
-  await PlacesSyncUtils.bookmarks.insert({
-    kind: PlacesSyncUtils.bookmarks.KINDS.BOOKMARK,
-    recordId: Utils.makeGUID(),
-    parentRecordId: "toolbar",
-    url: "http://example.com",
-    tags: ["foo"],
-  });
-  await PlacesSyncUtils.bookmarks.insert({
-    kind: PlacesSyncUtils.bookmarks.KINDS.BOOKMARK,
-    recordId: Utils.makeGUID(),
-    parentRecordId: "toolbar",
-    url: "http://example.org",
-    tags: null,
-  });
-  await PlacesSyncUtils.bookmarks.insert({
-    kind: PlacesSyncUtils.bookmarks.KINDS.BOOKMARK,
-    recordId: Utils.makeGUID(),
-    url: "about:fake",
-    parentRecordId: "toolbar",
-    tags: null,
-  });
-
-  let record = new FakeRecord(BookmarkFolder, {
-    parentid: "toolbar",
-    id: Utils.makeGUID(),
-    description: "",
-    tags: ["foo"],
-    title: "Taggy tag",
-    type: "folder",
-  });
-
-  await store.create(record);
-  record.tags = ["bar"];
-  await store.update(record);
-
-  await cleanupEngine(engine);
-  await engine.finalize();
 });
 
 add_bookmark_test(async function test_misreconciled_root(engine) {
@@ -1146,7 +998,7 @@ add_bookmark_test(async function test_sync_dateAdded(engine) {
 add_task(async function test_buffer_hasDupe() {
   await Service.recordManager.clearCache();
   await PlacesSyncUtils.bookmarks.reset();
-  let engine = new BufferedBookmarksEngine(Service);
+  let engine = new BookmarksEngine(Service);
   await engine.initialize();
   let server = await serverForFoo(engine);
   await SyncTestingInfrastructure(server);
@@ -1191,7 +1043,7 @@ add_task(async function test_buffer_hasDupe() {
     Assert.ok(!record.deleted);
     Assert.ok(
       record.hasDupe,
-      "Buffered bookmark engine should set hasDupe for weakly uploaded records."
+      "Bookmarks bookmark engine should set hasDupe for weakly uploaded records."
     );
 
     await sync_engine_and_validate_telem(engine, false);
@@ -1273,7 +1125,7 @@ add_bookmark_test(async function test_sync_imap_URLs(engine) {
 
 add_task(async function test_resume_buffer() {
   await Service.recordManager.clearCache();
-  let engine = new BufferedBookmarksEngine(Service);
+  let engine = new BookmarksEngine(Service);
   await engine.initialize();
   await engine._store.wipe();
   await engine.resetClient();

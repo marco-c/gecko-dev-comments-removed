@@ -598,26 +598,10 @@ add_task(async function test_bookmark_change_during_sync() {
     
     
     let engineData = pings.map(p => {
-      let name = bufferedBookmarksEnabled()
-        ? "bookmarks-buffered"
-        : "bookmarks";
-      return p.syncs[0].engines.find(e => e.name == name);
+      return p.syncs[0].engines.find(e => e.name == "bookmarks-buffered");
     });
-    if (bufferedBookmarksEnabled()) {
-      ok(
-        engineData[0].validation,
-        "Buffered engine should validate after first sync"
-      );
-    } else {
-      ok(
-        !engineData[0].validation,
-        "Legacy engine should not validate after first sync"
-      );
-    }
-    ok(
-      engineData[1].validation,
-      "Buffered and legacy engines should validate after second sync"
-    );
+    ok(engineData[0].validation, "Engine should validate after first sync");
+    ok(engineData[1].validation, "Engine should validate after second sync");
   } finally {
     Object.defineProperty(
       schedulerProto,

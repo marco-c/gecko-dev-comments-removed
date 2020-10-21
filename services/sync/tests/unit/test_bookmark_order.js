@@ -174,8 +174,6 @@ async function resolveConflict(
 }
 
 async function get_engine() {
-  
-  await Service.engineManager.switchAlternatives();
   return Service.engineManager.get("bookmarks");
 }
 

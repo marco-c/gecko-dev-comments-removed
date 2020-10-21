@@ -10,7 +10,6 @@ var EXPORTED_SYMBOLS = [
   "BookmarkQuery",
   "Livemark",
   "BookmarkSeparator",
-  "BufferedBookmarksEngine",
 ];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -83,23 +82,14 @@ XPCOMUtils.defineLazyGetter(this, "IGNORED_SOURCES", () => [
 
 
 
-const BUFFERED_BOOKMARK_VALIDATOR_VERSION = 2;
+const BOOKMARK_VALIDATOR_VERSION = 2;
 
 
 
-const BUFFERED_BOOKMARK_APPLY_TIMEOUT_MS = 5 * 60 * 60 * 1000; 
+const BOOKMARK_APPLY_TIMEOUT_MS = 5 * 60 * 60 * 1000; 
 
 
 const FRECENCY_UNKNOWN = -1;
-
-function isSyncedRootNode(node) {
-  return (
-    node.root == "bookmarksMenuFolder" ||
-    node.root == "unfiledBookmarksFolder" ||
-    node.root == "toolbarFolder" ||
-    node.root == "mobileFolder"
-  );
-}
 
 
 function getTypeObject(type) {
@@ -317,58 +307,30 @@ Utils.deferGetSet(BookmarkSeparator, "cleartext", "pos");
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function BaseBookmarksEngine(service) {
+function BookmarksEngine(service) {
   SyncEngine.call(this, "Bookmarks", service);
 }
-BaseBookmarksEngine.prototype = {
+BookmarksEngine.prototype = {
   __proto__: SyncEngine.prototype,
   _recordObj: PlacesItem,
   _trackerObj: BookmarksTracker,
+  _storeObj: BookmarksStore,
   version: 2,
-  _defaultSort: "index",
+  
+  
+  overrideTelemetryName: "bookmarks-buffered",
+
+  
+  
+  _defaultSort: "oldest",
 
   syncPriority: 4,
   allowSkippedRecord: false,
 
-  
-  
-  _ensureCurrentSyncID(newSyncID) {
-    return PlacesSyncUtils.bookmarks.ensureCurrentSyncId(newSyncID);
+  async _ensureCurrentSyncID(newSyncID) {
+    await PlacesSyncUtils.bookmarks.ensureCurrentSyncId(newSyncID);
+    let buf = await this._store.ensureOpenMirror();
+    await buf.ensureCurrentSyncId(newSyncID);
   },
 
   async ensureCurrentSyncID(newSyncID) {
@@ -399,6 +361,10 @@ BaseBookmarksEngine.prototype = {
     return assignedSyncID;
   },
 
+  async getSyncID() {
+    return PlacesSyncUtils.bookmarks.getSyncId();
+  },
+
   async resetSyncID() {
     await this._deleteServerCollection();
     return this.resetLocalSyncID();
@@ -407,7 +373,22 @@ BaseBookmarksEngine.prototype = {
   async resetLocalSyncID() {
     let newSyncID = await PlacesSyncUtils.bookmarks.resetSyncId();
     this._log.debug("Assigned new sync ID ${newSyncID}", { newSyncID });
+    let buf = await this._store.ensureOpenMirror();
+    await buf.ensureCurrentSyncId(newSyncID);
     return newSyncID;
+  },
+
+  async getLastSync() {
+    let mirror = await this._store.ensureOpenMirror();
+    return mirror.getCollectionHighWaterMark();
+  },
+
+  async setLastSync(lastSync) {
+    let mirror = await this._store.ensureOpenMirror();
+    await mirror.setCollectionLastModified(lastSync);
+    
+    
+    await PlacesSyncUtils.bookmarks.setLastSync(lastSync);
   },
 
   async _syncStartup() {
@@ -486,22 +467,6 @@ BaseBookmarksEngine.prototype = {
     await PlacesSyncUtils.bookmarks.ensureMobileQuery();
   },
 
-  async _createRecord(id) {
-    if (this._modified.isTombstone(id)) {
-      
-      
-      return this._createTombstone(id);
-    }
-    let record = await SyncEngine.prototype._createRecord.call(this, id);
-    if (record.deleted) {
-      
-      
-      
-      this._modified.setTombstone(record.id);
-    }
-    return record;
-  },
-
   async pullAllChanges() {
     return this.pullNewChanges();
   },
@@ -522,6 +487,8 @@ BaseBookmarksEngine.prototype = {
   async _resetClient() {
     await super._resetClient();
     await PlacesSyncUtils.bookmarks.reset();
+    let buf = await this._store.ensureOpenMirror();
+    await buf.reset();
   },
 
   
@@ -532,351 +499,15 @@ BaseBookmarksEngine.prototype = {
       FORBIDDEN_INCOMING_PARENT_IDS.includes(incomingItem.parentid)
     );
   },
-};
-
-
-
-
-
-
-function BookmarksEngine(service) {
-  BaseBookmarksEngine.apply(this, arguments);
-}
-
-BookmarksEngine.prototype = {
-  __proto__: BaseBookmarksEngine.prototype,
-  _storeObj: BookmarksStore,
-
-  async getSyncID() {
-    return PlacesSyncUtils.bookmarks.getSyncId();
-  },
-
-  async getLastSync() {
-    let lastSync = await PlacesSyncUtils.bookmarks.getLastSync();
-    return lastSync;
-  },
-
-  async setLastSync(lastSync) {
-    await PlacesSyncUtils.bookmarks.setLastSync(lastSync);
-  },
 
   emptyChangeset() {
     return new BookmarksChangeset();
   },
 
-  async _buildGUIDMap() {
-    let guidMap = {};
-    let tree = await PlacesUtils.promiseBookmarksTree("");
-
-    function* walkBookmarksRoots(tree) {
-      for (let child of tree.children) {
-        if (isSyncedRootNode(child)) {
-          yield* Utils.walkTree(child, tree);
-        }
-      }
-    }
-
-    await Async.yieldingForEach(walkBookmarksRoots(tree), ([node, parent]) => {
-      let { guid, type: placeType } = node;
-      guid = PlacesSyncUtils.bookmarks.guidToRecordId(guid);
-      let key;
-      switch (placeType) {
-        case PlacesUtils.TYPE_X_MOZ_PLACE:
-          
-          key = "b" + node.uri + ":" + (node.title || "");
-          break;
-        case PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER:
-          
-          key = "f" + (node.title || "");
-          break;
-        case PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR:
-          
-          key = "s" + node.index;
-          break;
-        default:
-          this._log.error("Unknown place type: '" + placeType + "'");
-          return;
-      }
-
-      let parentName = parent.title || "";
-      if (guidMap[parentName] == null) {
-        guidMap[parentName] = {};
-      }
-
-      
-      let entry = {
-        guid,
-        hasDupe: guidMap[parentName][key] != null,
-      };
-
-      
-      guidMap[parentName][key] = entry;
-      this._log.trace("Mapped: " + [parentName, key, entry, entry.hasDupe]);
-    });
-
-    return guidMap;
-  },
-
-  
-  async _mapDupe(item) {
-    
-    let key;
-    switch (item.type) {
-      case "query":
-      
-      case "bookmark":
-        key = "b" + item.bmkUri + ":" + (item.title || "");
-        break;
-      case "folder":
-      case "livemark":
-        key = "f" + (item.title || "");
-        break;
-      case "separator":
-        key = "s" + item.pos;
-        break;
-      default:
-        return undefined;
-    }
-
-    
-    
-    let guidMap = await this.getGuidMap();
-
-    
-    let parentName = item.parentName || "";
-    this._log.trace("Finding mapping: " + parentName + ", " + key);
-    let parent = guidMap[parentName];
-
-    if (!parent) {
-      this._log.trace("No parent => no dupe.");
-      return undefined;
-    }
-
-    let dupe = parent[key];
-
-    if (dupe) {
-      this._log.trace("Mapped dupe", dupe);
-      return dupe;
-    }
-
-    this._log.trace("No dupe found for key " + key + ".");
-    return undefined;
-  },
-
-  async _syncStartup() {
-    await super._syncStartup();
-    this._store._childrenToOrder = {};
-    this._store.clearPendingDeletions();
-  },
-
-  async getGuidMap() {
-    if (this._guidMap) {
-      return this._guidMap;
-    }
-    try {
-      return (this._guidMap = await this._buildGUIDMap());
-    } catch (ex) {
-      if (Async.isShutdownException(ex)) {
-        throw ex;
-      }
-      this._log.warn(
-        "Error while building GUID map, skipping all other incoming items",
-        ex
-      );
-      
-      throw { code: SyncEngine.prototype.eEngineAbortApplyIncoming, cause: ex };
-    }
-  },
-
-  async _deletePending() {
-    
-    let newlyModified = await this._store.deletePending();
-    if (newlyModified) {
-      this._log.debug("Deleted pending items", newlyModified);
-      this._modified.insert(newlyModified);
-    }
-  },
-
-  async _shouldReviveRemotelyDeletedRecord(item) {
-    let modifiedTimestamp = this._modified.getModifiedTimestamp(item.id);
-    if (!modifiedTimestamp) {
-      
-      
-      this._log.error(
-        "_shouldReviveRemotelyDeletedRecord called on unmodified item: " +
-          item.id
-      );
-      return false;
-    }
-
-    
-    
-    
-    
-    let newChanges = await PlacesSyncUtils.bookmarks.touch(item.id);
-    if (newChanges) {
-      this._modified.insert(newChanges);
-      return true;
-    }
-    return false;
-  },
-
-  async _processIncoming(newitems) {
-    try {
-      await SyncEngine.prototype._processIncoming.call(this, newitems);
-    } finally {
-      await this._postProcessIncoming();
-    }
-  },
-
-  
-  
-  async _postProcessIncoming() {
-    await this._deletePending();
-    await this._orderChildren();
-    let changes = this._modified.changes;
-    await PlacesSyncUtils.bookmarks.markChangesAsSyncing(changes);
-  },
-
-  async _orderChildren() {
-    await this._store._orderChildren();
-    this._store._childrenToOrder = {};
-  },
-
-  async _syncCleanup() {
-    await SyncEngine.prototype._syncCleanup.call(this);
-    delete this._guidMap;
-  },
-
-  async _createRecord(id) {
-    let record = await super._createRecord(id);
-    if (record.deleted) {
-      return record;
-    }
-    
-    let entry = await this._mapDupe(record);
-    if (entry != null && entry.hasDupe) {
-      record.hasDupe = true;
-    }
-    return record;
-  },
-
-  async _findDupe(item) {
-    this._log.trace(
-      "Finding dupe for " + item.id + " (already duped: " + item.hasDupe + ")."
-    );
-
-    
-    if (item.hasDupe) {
-      this._log.trace(item.id + " already a dupe: not finding one.");
-      return null;
-    }
-    let mapped = await this._mapDupe(item);
-    this._log.debug(item.id + " mapped to", mapped);
-    return mapped ? mapped.guid : null;
-  },
-
-  
-  
-  async _switchItemToDupe(localDupeGUID, incomingItem) {
-    let newChanges = await PlacesSyncUtils.bookmarks.dedupe(
-      localDupeGUID,
-      incomingItem.id,
-      incomingItem.parentid
-    );
-    this._modified.insert(newChanges);
-  },
-
-  beforeRecordDiscard(localRecord, remoteRecord, remoteIsNewer) {
-    if (localRecord.type != "folder" || remoteRecord.type != "folder") {
-      return;
-    }
-    
-    
-    
-    
-    let newRecord = remoteIsNewer ? remoteRecord : localRecord;
-    let newChildren = new Set(newRecord.children);
-
-    let oldChildren = (remoteIsNewer ? localRecord : remoteRecord).children;
-    let missingChildren = oldChildren
-      ? oldChildren.filter(child => !newChildren.has(child))
-      : [];
-
-    
-    
-    let order = newRecord.children
-      ? [...newRecord.children, ...missingChildren]
-      : missingChildren;
-    this._log.debug("Recording children of " + localRecord.id, order);
-    this._store._childrenToOrder[localRecord.id] = order;
-  },
-
-  getValidator() {
-    return new BookmarkValidator();
-  },
-};
-
-
-
-
-
-
-
-function BufferedBookmarksEngine() {
-  BaseBookmarksEngine.apply(this, arguments);
-}
-
-BufferedBookmarksEngine.prototype = {
-  __proto__: BaseBookmarksEngine.prototype,
-  _storeObj: BufferedBookmarksStore,
-  
-  
-  
-  overrideTelemetryName: "bookmarks-buffered",
-
-  
-  
-  _defaultSort: "oldest",
-
-  async _ensureCurrentSyncID(newSyncID) {
-    await super._ensureCurrentSyncID(newSyncID);
-    let buf = await this._store.ensureOpenMirror();
-    await buf.ensureCurrentSyncId(newSyncID);
-  },
-
-  async getSyncID() {
-    return PlacesSyncUtils.bookmarks.getSyncId();
-  },
-
-  async resetLocalSyncID() {
-    let newSyncID = await super.resetLocalSyncID();
-    let buf = await this._store.ensureOpenMirror();
-    await buf.ensureCurrentSyncId(newSyncID);
-    return newSyncID;
-  },
-
-  async getLastSync() {
-    let mirror = await this._store.ensureOpenMirror();
-    return mirror.getCollectionHighWaterMark();
-  },
-
-  async setLastSync(lastSync) {
-    let mirror = await this._store.ensureOpenMirror();
-    await mirror.setCollectionLastModified(lastSync);
-    
-    
-    await PlacesSyncUtils.bookmarks.setLastSync(lastSync);
-  },
-
-  emptyChangeset() {
-    return new BufferedBookmarksChangeset();
-  },
-
   async _apply() {
     let buf = await this._store.ensureOpenMirror();
     let watchdog = this._newWatchdog();
-    watchdog.start(BUFFERED_BOOKMARK_APPLY_TIMEOUT_MS);
+    watchdog.start(BOOKMARK_APPLY_TIMEOUT_MS);
 
     try {
       let recordsToUpload = await buf.apply({
@@ -1002,12 +633,6 @@ BufferedBookmarksEngine.prototype = {
     await buf.store(records, { needsMerge: false });
   },
 
-  async _resetClient() {
-    await super._resetClient();
-    let buf = await this._store.ensureOpenMirror();
-    await buf.reset();
-  },
-
   async finalize() {
     await super.finalize();
     await this._store.finalize();
@@ -1019,12 +644,18 @@ BufferedBookmarksEngine.prototype = {
 
 
 
-function BaseBookmarksStore(name, engine) {
+
+function BookmarksStore(name, engine) {
   Store.call(this, name, engine);
 }
 
-BaseBookmarksStore.prototype = {
+BookmarksStore.prototype = {
   __proto__: Store.prototype,
+
+  _openMirrorPromise: null,
+
+  
+  _batchChunkSize: 500,
 
   
   async createRecord(id, collection) {
@@ -1089,213 +720,6 @@ BaseBookmarksStore.prototype = {
     await PlacesBackups.create(null, true);
     await PlacesSyncUtils.bookmarks.wipe();
   },
-};
-
-
-
-
-
-
-function BookmarksStore() {
-  BaseBookmarksStore.apply(this, arguments);
-  this._itemsToDelete = new Set();
-}
-BookmarksStore.prototype = {
-  __proto__: BaseBookmarksStore.prototype,
-
-  async itemExists(id) {
-    return (await this.idForGUID(id)) > 0;
-  },
-
-  async applyIncoming(record) {
-    this._log.debug("Applying record " + record.id);
-    let isSpecial = PlacesSyncUtils.bookmarks.ROOTS.includes(record.id);
-
-    if (record.deleted) {
-      if (isSpecial) {
-        this._log.warn("Ignoring deletion for special record " + record.id);
-        return;
-      }
-
-      
-      await Store.prototype.applyIncoming.call(this, record);
-      return;
-    }
-
-    
-    if (isSpecial && record.children) {
-      this._log.debug("Processing special node: " + record.id);
-      
-      this._childrenToOrder[record.id] = record.children;
-      return;
-    }
-
-    
-    if (record.type == "query" && !record.bmkUri) {
-      this._log.warn("Skipping malformed query bookmark: " + record.id);
-      return;
-    }
-
-    
-    let parentGUID = record.parentid;
-    if (!parentGUID) {
-      throw new Error(
-        `Record ${record.id} has invalid parentid: ${parentGUID}`
-      );
-    }
-    this._log.debug("Remote parent is " + parentGUID);
-
-    if (record.type == "livemark") {
-      
-      
-      
-      let livemarkInfo = record.toSyncBookmark();
-      let newChanges = await PlacesSyncUtils.bookmarks.removeLivemark(
-        livemarkInfo
-      );
-      if (newChanges) {
-        this.engine._modified.insert(newChanges);
-        return;
-      }
-    }
-
-    
-    await Store.prototype.applyIncoming.call(this, record);
-
-    if (record.type == "folder" && record.children) {
-      this._childrenToOrder[record.id] = record.children;
-    }
-  },
-
-  async create(record) {
-    let info = record.toSyncBookmark();
-    
-    
-    
-    let item = await PlacesSyncUtils.bookmarks.insert(info);
-    if (item) {
-      this._log.trace(
-        `Created ${item.kind} ${item.recordId} under ${item.parentRecordId}`,
-        item
-      );
-      if (item.dateAdded != record.dateAdded) {
-        this.engine.addForWeakUpload(item.recordId);
-      }
-    }
-  },
-
-  async remove(record) {
-    this._log.trace(`Buffering removal of item "${record.id}".`);
-    this._itemsToDelete.add(record.id);
-  },
-
-  async update(record) {
-    let info = record.toSyncBookmark();
-    let item = await PlacesSyncUtils.bookmarks.update(info);
-    if (item) {
-      this._log.trace(
-        `Updated ${item.kind} ${item.recordId} under ${item.parentRecordId}`,
-        item
-      );
-      if (item.dateAdded != record.dateAdded) {
-        this.engine.addForWeakUpload(item.recordId);
-      }
-    }
-  },
-
-  async _orderChildren() {
-    for (let id in this._childrenToOrder) {
-      let children = this._childrenToOrder[id];
-      try {
-        await PlacesSyncUtils.bookmarks.order(id, children);
-      } catch (ex) {
-        this._log.debug(`Could not order children for ${id}`, ex);
-      }
-    }
-  },
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  async deletePending() {
-    let guidsToUpdate = await PlacesSyncUtils.bookmarks.remove([
-      ...this._itemsToDelete,
-    ]);
-    this.clearPendingDeletions();
-    return guidsToUpdate;
-  },
-
-  clearPendingDeletions() {
-    this._itemsToDelete.clear();
-  },
-
-  async idForGUID(guid) {
-    
-    guid = PlacesSyncUtils.bookmarks.recordIdToGuid(guid.toString());
-
-    try {
-      return await PlacesUtils.promiseItemId(guid);
-    } catch (ex) {
-      return -1;
-    }
-  },
-
-  async wipe() {
-    this.clearPendingDeletions();
-    await super.wipe();
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-function BufferedBookmarksStore() {
-  BaseBookmarksStore.apply(this, arguments);
-}
-
-BufferedBookmarksStore.prototype = {
-  __proto__: BaseBookmarksStore.prototype,
-  _openMirrorPromise: null,
-
-  
-  _batchChunkSize: 500,
 
   ensureOpenMirror() {
     if (!this._openMirrorPromise) {
@@ -1337,7 +761,7 @@ BufferedBookmarksStore.prototype = {
         Observers.notify(
           "weave:engine:validate:finish",
           {
-            version: BUFFERED_BOOKMARK_VALIDATOR_VERSION,
+            version: BOOKMARK_VALIDATOR_VERSION,
             took,
             checked,
             problems,
@@ -1557,7 +981,7 @@ BookmarksTracker.prototype = {
 
 
 
-class BufferedBookmarksChangeset extends Changeset {
+class BookmarksChangeset extends Changeset {
   
   
   getModifiedTimestamp(id) {
@@ -1585,40 +1009,5 @@ class BufferedBookmarksChangeset extends Changeset {
       }
     }
     return [...results];
-  }
-}
-
-class BookmarksChangeset extends BufferedBookmarksChangeset {
-  getModifiedTimestamp(id) {
-    let change = this.changes[id];
-    if (change) {
-      
-      
-      return change.synced ? Number.NaN : change.modified;
-    }
-    return Number.NaN;
-  }
-
-  has(id) {
-    let change = this.changes[id];
-    if (change) {
-      return !change.synced;
-    }
-    return false;
-  }
-
-  setTombstone(id) {
-    let change = this.changes[id];
-    if (change) {
-      change.tombstone = true;
-    }
-  }
-
-  isTombstone(id) {
-    let change = this.changes[id];
-    if (change) {
-      return change.tombstone;
-    }
-    return false;
   }
 }
