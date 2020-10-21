@@ -120,9 +120,17 @@ hb_codepoint_t gfxHarfBuzzShaper::GetNominalGlyph(
   }
 
   if (!gid) {
-    
-    if (unicode == 0xA0) {
-      gid = mFont->GetSpaceGlyph();
+    switch (unicode) {
+      case 0xA0:
+        
+        gid = mFont->GetSpaceGlyph();
+        break;
+      case 0x2010:
+      case 0x2011:
+        
+        
+        gid = GetNominalGlyph('-');
+        break;
     }
   }
 

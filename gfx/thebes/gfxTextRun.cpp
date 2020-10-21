@@ -3038,6 +3038,10 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
 
   
   
+  uint32_t fallbackChar = (aCh == 0x2010 || aCh == 0x2011) ? '-' : 0;
+
+  
+  
   bool loading = false;
 
   
@@ -3078,7 +3082,8 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
       !nextIsVarSelector && presentation == eFontPresentation::Any) {
     gfxFont* firstFont = GetFontAt(0, aCh, &loading);
     if (firstFont) {
-      if (firstFont->HasCharacter(aCh)) {
+      if (firstFont->HasCharacter(aCh) ||
+          (fallbackChar && firstFont->HasCharacter(fallbackChar))) {
         *aMatchType = {FontMatchType::Kind::kFontGroup, mFonts[0].Generic()};
         return firstFont;
       }
@@ -3178,7 +3183,8 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
     gfxFont* font = ff.Font();
     if (font) {
       
-      if (font->HasCharacter(aCh)) {
+      if (font->HasCharacter(aCh) ||
+          (fallbackChar && font->HasCharacter(fallbackChar))) {
         if (CheckCandidate(font,
                            {FontMatchType::Kind::kFontGroup, ff.Generic()})) {
           return font;
@@ -3210,7 +3216,8 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
         }
 
         gfxFontEntry* pfe = ufe->GetPlatformFontEntry();
-        if (pfe && pfe->HasCharacter(aCh)) {
+        if (pfe && (pfe->HasCharacter(aCh) ||
+                    (fallbackChar && pfe->HasCharacter(fallbackChar)))) {
           font = GetFontAt(i, aCh, &loading);
           if (font) {
             if (CheckCandidate(font, {FontMatchType::Kind::kFontGroup,
@@ -3219,7 +3226,8 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
             }
           }
         }
-      } else if (fe && fe->HasCharacter(aCh)) {
+      } else if (fe && (fe->HasCharacter(aCh) ||
+                        (fallbackChar && fe->HasCharacter(fallbackChar)))) {
         
         
         font = GetFontAt(i, aCh, &loading);
@@ -3274,7 +3282,8 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
 
   if (fontListLength == 0) {
     gfxFont* defaultFont = GetDefaultFont();
-    if (defaultFont->HasCharacter(aCh)) {
+    if (defaultFont->HasCharacter(aCh) ||
+        (fallbackChar && defaultFont->HasCharacter(fallbackChar))) {
       if (CheckCandidate(defaultFont, FontMatchType::Kind::kFontGroup)) {
         return defaultFont;
       }
@@ -3316,7 +3325,9 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
   
   
   
-  if (aPrevMatchedFont && aPrevMatchedFont->HasCharacter(aCh)) {
+  if (aPrevMatchedFont &&
+      (aPrevMatchedFont->HasCharacter(aCh) ||
+       (fallbackChar && aPrevMatchedFont->HasCharacter(fallbackChar)))) {
     if (CheckCandidate(aPrevMatchedFont,
                        FontMatchType::Kind::kSystemFallback)) {
       return aPrevMatchedFont;
