@@ -167,10 +167,6 @@
 
 
 
-
-
-
-
 #include "mozilla/Array.h"
 #include "mozilla/Maybe.h"
 
@@ -243,7 +239,7 @@ class AutoAwaitIsKeyword;
 template <class ParseHandler, typename Unit>
 class AutoInParametersOfAsyncFunction;
 
-class MOZ_STACK_CLASS ParserSharedBase : public JS::CustomAutoRooter {
+class MOZ_STACK_CLASS ParserSharedBase {
  public:
   enum class Kind { Parser };
 
@@ -325,8 +321,6 @@ class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
   ~ParserBase();
 
   bool checkOptions();
-
-  void trace(JSTracer* trc) final {}
 
   const char* getFilename() const { return anyChars.getFilename(); }
   TokenPos pos() const { return anyChars.currentToken().pos; }
