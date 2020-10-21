@@ -43,10 +43,14 @@ async function testMainProcessTarget(name, description) {
     deviceName: RUNTIME_DEVICE_NAME,
     name: RUNTIME_APP_NAME,
   });
+
+  
+  
+  
   usbRuntime.getMainProcess = () => {
     return {
       getTarget: () => {
-        return { actorID: 0 };
+        ok(false, "about:debugging should not create the main process target");
       },
     };
   };
