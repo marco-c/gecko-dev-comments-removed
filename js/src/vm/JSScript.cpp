@@ -3166,9 +3166,7 @@ XDRResult ScriptSource::XDR(XDRState<mode>* xdr,
     }
     MOZ_TRY(xdr->codeCharsZ(chars));
     if (mode == XDR_DECODE) {
-      
-      
-      if (!xdr->hasOptions()) {
+      if (!ss->filename()) {
         if (!ss->setFilename(cx, std::move(chars.ref<UniqueChars>()))) {
           return xdr->fail(JS::TranscodeResult_Throw);
         }
