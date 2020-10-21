@@ -5,7 +5,9 @@
 
 
 import type { SourceContent } from "../types";
-import { DevToolsUtils } from "devtools-modules";
+
+
+const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 
