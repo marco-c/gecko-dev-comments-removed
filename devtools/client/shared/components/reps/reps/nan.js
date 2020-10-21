@@ -5,44 +5,47 @@
 "use strict";
 
 
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+define(function(require, exports, module) {
+  
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
-const {
-  getGripType,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
+    getGripType,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+
+  
 
 
 
-
-
-NaNRep.PropTypes = {
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function NaNRep(props) {
-  const shouldRenderTooltip = props.shouldRenderTooltip;
-
-  const config = getElementConfig(shouldRenderTooltip);
-
-  return span(config, "NaN");
-}
-
-function getElementConfig(shouldRenderTooltip) {
-  return {
-    className: "objectBox objectBox-nan",
-    title: shouldRenderTooltip ? "NaN" : null,
+  NaNRep.PropTypes = {
+    shouldRenderTooltip: PropTypes.bool,
   };
-}
 
-function supportsObject(object, noGrip = false) {
-  return getGripType(object, noGrip) == "NaN";
-}
+  function NaNRep(props) {
+    const shouldRenderTooltip = props.shouldRenderTooltip;
 
+    const config = getElementConfig(shouldRenderTooltip);
 
-module.exports = {
-  rep: wrapRender(NaNRep),
-  supportsObject,
-};
+    return span(config, "NaN");
+  }
+
+  function getElementConfig(shouldRenderTooltip) {
+    return {
+      className: "objectBox objectBox-nan",
+      title: shouldRenderTooltip ? "NaN" : null,
+    };
+  }
+
+  function supportsObject(object, noGrip = false) {
+    return getGripType(object, noGrip) == "NaN";
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(NaNRep),
+    supportsObject,
+  };
+});

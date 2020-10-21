@@ -5,201 +5,204 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-
-const {
-  wrapRender,
-  ellipsisElement,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-
-const DEFAULT_TITLE = "Object";
-
-
-
-
-
-
-ObjectRep.propTypes = {
-  object: PropTypes.object.isRequired,
+define(function(require, exports, module) {
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  title: PropTypes.string,
-  shouldRenderTooltip: PropTypes.bool,
-};
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-function ObjectRep(props) {
-  const object = props.object;
-  const { shouldRenderTooltip = true } = props;
+  const {
+    wrapRender,
+    ellipsisElement,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
 
-  if (props.mode === MODE.TINY) {
-    const tinyModeItems = [];
-    if (getTitle(props) !== DEFAULT_TITLE) {
-      tinyModeItems.push(getTitleElement(props));
-    } else {
-      tinyModeItems.push(
-        span(
-          {
-            className: "objectLeftBrace",
-          },
-          "{"
-        ),
-        Object.keys(object).length > 0 ? ellipsisElement : null,
-        span(
-          {
-            className: "objectRightBrace",
-          },
-          "}"
-        )
+  const DEFAULT_TITLE = "Object";
+
+  
+
+
+
+
+  ObjectRep.propTypes = {
+    object: PropTypes.object.isRequired,
+    
+    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    title: PropTypes.string,
+    shouldRenderTooltip: PropTypes.bool,
+  };
+
+  function ObjectRep(props) {
+    const object = props.object;
+    const { shouldRenderTooltip = true } = props;
+
+    if (props.mode === MODE.TINY) {
+      const tinyModeItems = [];
+      if (getTitle(props) !== DEFAULT_TITLE) {
+        tinyModeItems.push(getTitleElement(props));
+      } else {
+        tinyModeItems.push(
+          span(
+            {
+              className: "objectLeftBrace",
+            },
+            "{"
+          ),
+          Object.keys(object).length > 0 ? ellipsisElement : null,
+          span(
+            {
+              className: "objectRightBrace",
+            },
+            "}"
+          )
+        );
+      }
+
+      return span(
+        {
+          className: "objectBox objectBox-object",
+          title: shouldRenderTooltip ? getTitle(props) : null,
+        },
+        ...tinyModeItems
       );
     }
+
+    const propsArray = safePropIterator(props, object);
 
     return span(
       {
         className: "objectBox objectBox-object",
         title: shouldRenderTooltip ? getTitle(props) : null,
       },
-      ...tinyModeItems
+      getTitleElement(props),
+      span(
+        {
+          className: "objectLeftBrace",
+        },
+        " { "
+      ),
+      ...propsArray,
+      span(
+        {
+          className: "objectRightBrace",
+        },
+        " }"
+      )
     );
   }
 
-  const propsArray = safePropIterator(props, object);
-
-  return span(
-    {
-      className: "objectBox objectBox-object",
-      title: shouldRenderTooltip ? getTitle(props) : null,
-    },
-    getTitleElement(props),
-    span(
-      {
-        className: "objectLeftBrace",
-      },
-      " { "
-    ),
-    ...propsArray,
-    span(
-      {
-        className: "objectRightBrace",
-      },
-      " }"
-    )
-  );
-}
-
-function getTitleElement(props) {
-  return span({ className: "objectTitle" }, getTitle(props));
-}
-
-function getTitle(props) {
-  return props.title || DEFAULT_TITLE;
-}
-
-function safePropIterator(props, object, max) {
-  max = typeof max === "undefined" ? 3 : max;
-  try {
-    return propIterator(props, object, max);
-  } catch (err) {
-    console.error(err);
-  }
-  return [];
-}
-
-function propIterator(props, object, max) {
-  
-  if (Object.prototype.toString.call(object) === "[object Generator]") {
-    object = Object.getPrototypeOf(object);
+  function getTitleElement(props) {
+    return span({ className: "objectTitle" }, getTitle(props));
   }
 
-  const elements = [];
-  const unimportantProperties = [];
-  let propertiesNumber = 0;
-  const propertiesNames = Object.keys(object);
+  function getTitle(props) {
+    return props.title || DEFAULT_TITLE;
+  }
 
-  const pushPropRep = (name, value) => {
-    elements.push(
-      PropRep({
-        ...props,
-        key: name,
-        mode: MODE.TINY,
-        name,
-        object: value,
-        equal: ": ",
-      })
-    );
-    propertiesNumber++;
+  function safePropIterator(props, object, max) {
+    max = typeof max === "undefined" ? 3 : max;
+    try {
+      return propIterator(props, object, max);
+    } catch (err) {
+      console.error(err);
+    }
+    return [];
+  }
+
+  function propIterator(props, object, max) {
+    
+    if (Object.prototype.toString.call(object) === "[object Generator]") {
+      object = Object.getPrototypeOf(object);
+    }
+
+    const elements = [];
+    const unimportantProperties = [];
+    let propertiesNumber = 0;
+    const propertiesNames = Object.keys(object);
+
+    const pushPropRep = (name, value) => {
+      elements.push(
+        PropRep({
+          ...props,
+          key: name,
+          mode: MODE.TINY,
+          name,
+          object: value,
+          equal: ": ",
+        })
+      );
+      propertiesNumber++;
+
+      if (propertiesNumber < propertiesNames.length) {
+        elements.push(", ");
+      }
+    };
+
+    try {
+      for (const name of propertiesNames) {
+        if (propertiesNumber >= max) {
+          break;
+        }
+
+        let value;
+        try {
+          value = object[name];
+        } catch (exc) {
+          continue;
+        }
+
+        
+        
+        if (isInterestingProp(value)) {
+          pushPropRep(name, value);
+        } else {
+          
+          
+          unimportantProperties.push(name);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
+    if (propertiesNumber < max) {
+      for (const name of unimportantProperties) {
+        if (propertiesNumber >= max) {
+          break;
+        }
+
+        let value;
+        try {
+          value = object[name];
+        } catch (exc) {
+          continue;
+        }
+
+        pushPropRep(name, value);
+      }
+    }
 
     if (propertiesNumber < propertiesNames.length) {
-      elements.push(", ");
+      elements.push(ellipsisElement);
     }
+
+    return elements;
+  }
+
+  function isInterestingProp(value) {
+    const type = typeof value;
+    return type == "boolean" || type == "number" || (type == "string" && value);
+  }
+
+  function supportsObject(object, noGrip = false) {
+    return noGrip;
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(ObjectRep),
+    supportsObject,
   };
-
-  try {
-    for (const name of propertiesNames) {
-      if (propertiesNumber >= max) {
-        break;
-      }
-
-      let value;
-      try {
-        value = object[name];
-      } catch (exc) {
-        continue;
-      }
-
-      
-      
-      if (isInterestingProp(value)) {
-        pushPropRep(name, value);
-      } else {
-        
-        
-        unimportantProperties.push(name);
-      }
-    }
-  } catch (err) {
-    console.error(err);
-  }
-
-  if (propertiesNumber < max) {
-    for (const name of unimportantProperties) {
-      if (propertiesNumber >= max) {
-        break;
-      }
-
-      let value;
-      try {
-        value = object[name];
-      } catch (exc) {
-        continue;
-      }
-
-      pushPropRep(name, value);
-    }
-  }
-
-  if (propertiesNumber < propertiesNames.length) {
-    elements.push(ellipsisElement);
-  }
-
-  return elements;
-}
-
-function isInterestingProp(value) {
-  const type = typeof value;
-  return type == "boolean" || type == "number" || (type == "string" && value);
-}
-
-function supportsObject(object, noGrip = false) {
-  return noGrip;
-}
-
-
-module.exports = {
-  rep: wrapRender(ObjectRep),
-  supportsObject,
-};
+});

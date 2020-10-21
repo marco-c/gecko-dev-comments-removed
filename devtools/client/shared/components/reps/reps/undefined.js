@@ -5,52 +5,55 @@
 "use strict";
 
 
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+define(function(require, exports, module) {
+  
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
-const {
-  getGripType,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
+    getGripType,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+
+  
 
 
 
-
-
-Undefined.propTypes = {
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function Undefined(props) {
-  const shouldRenderTooltip = props.shouldRenderTooltip;
-
-  const config = getElementConfig(shouldRenderTooltip);
-
-  return span(config, "undefined");
-}
-
-function getElementConfig(shouldRenderTooltip) {
-  return {
-    className: "objectBox objectBox-undefined",
-    title: shouldRenderTooltip ? "undefined" : null,
+  Undefined.propTypes = {
+    shouldRenderTooltip: PropTypes.bool,
   };
-}
 
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true) {
-    return object === undefined;
+  function Undefined(props) {
+    const shouldRenderTooltip = props.shouldRenderTooltip;
+
+    const config = getElementConfig(shouldRenderTooltip);
+
+    return span(config, "undefined");
   }
 
-  return (
-    (object && object.type && object.type == "undefined") ||
-    getGripType(object, noGrip) == "undefined"
-  );
-}
+  function getElementConfig(shouldRenderTooltip) {
+    return {
+      className: "objectBox objectBox-undefined",
+      title: shouldRenderTooltip ? "undefined" : null,
+    };
+  }
 
+  function supportsObject(object, noGrip = false) {
+    if (noGrip === true) {
+      return object === undefined;
+    }
 
+    return (
+      (object && object.type && object.type == "undefined") ||
+      getGripType(object, noGrip) == "undefined"
+    );
+  }
 
-module.exports = {
-  rep: wrapRender(Undefined),
-  supportsObject,
-};
+  
+
+  module.exports = {
+    rep: wrapRender(Undefined),
+    supportsObject,
+  };
+});

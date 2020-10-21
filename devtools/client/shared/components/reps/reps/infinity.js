@@ -5,45 +5,48 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+define(function(require, exports, module) {
+  
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-const {
-  getGripType,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
+    getGripType,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+
+  
 
 
 
-
-
-InfinityRep.propTypes = {
-  object: PropTypes.object.isRequired,
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function InfinityRep(props) {
-  const { object, shouldRenderTooltip } = props;
-
-  const config = getElementConfig(shouldRenderTooltip, object);
-
-  return span(config, object.type);
-}
-
-function getElementConfig(shouldRenderTooltip, object) {
-  return {
-    className: "objectBox objectBox-number",
-    title: shouldRenderTooltip ? object.type : null,
+  InfinityRep.propTypes = {
+    object: PropTypes.object.isRequired,
+    shouldRenderTooltip: PropTypes.bool,
   };
-}
 
-function supportsObject(object, noGrip = false) {
-  const type = getGripType(object, noGrip);
-  return type == "Infinity" || type == "-Infinity";
-}
+  function InfinityRep(props) {
+    const { object, shouldRenderTooltip } = props;
 
+    const config = getElementConfig(shouldRenderTooltip, object);
 
-module.exports = {
-  rep: wrapRender(InfinityRep),
-  supportsObject,
-};
+    return span(config, object.type);
+  }
+
+  function getElementConfig(shouldRenderTooltip, object) {
+    return {
+      className: "objectBox objectBox-number",
+      title: shouldRenderTooltip ? object.type : null,
+    };
+  }
+
+  function supportsObject(object, noGrip = false) {
+    const type = getGripType(object, noGrip);
+    return type == "Infinity" || type == "-Infinity";
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(InfinityRep),
+    supportsObject,
+  };
+});

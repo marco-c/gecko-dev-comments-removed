@@ -5,38 +5,42 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-
-const {
-  maybeEscapePropertyName,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-
-
-
-
-
-
-PropRep.propTypes = {
+define(function(require, exports, module) {
   
-  name: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+
+  const {
+    maybeEscapePropertyName,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
+
   
-  equal: PropTypes.string,
+
+
+
+
+  PropRep.propTypes = {
+    
+    name: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
+    
+    equal: PropTypes.string,
+    
+    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    onDOMNodeMouseOver: PropTypes.func,
+    onDOMNodeMouseOut: PropTypes.func,
+    onInspectIconClick: PropTypes.func,
+    
+    
+    
+    suppressQuotes: PropTypes.bool,
+    shouldRenderTooltip: PropTypes.bool,
+  };
+
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-  
-  
-  
-  suppressQuotes: PropTypes.bool,
-  shouldRenderTooltip: PropTypes.bool,
-};
 
 
 
@@ -44,50 +48,49 @@ PropRep.propTypes = {
 
 
 
+  function PropRep(props) {
+    const Grip = require("devtools/client/shared/components/reps/reps/grip");
+    const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
+    const shouldRenderTooltip = props.shouldRenderTooltip;
 
+    let { name, mode, equal, suppressQuotes } = props;
 
-function PropRep(props) {
-  const Grip = require("devtools/client/shared/components/reps/reps/grip");
-  const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
-  const shouldRenderTooltip = props.shouldRenderTooltip;
-
-  let { name, mode, equal, suppressQuotes } = props;
-
-  let key;
-  
-  
-  if (typeof name === "string") {
-    if (!suppressQuotes) {
-      name = maybeEscapePropertyName(name);
-    }
-    key = span(
-      {
+    let key;
+    
+    
+    if (typeof name === "string") {
+      if (!suppressQuotes) {
+        name = maybeEscapePropertyName(name);
+      }
+      key = span(
+        {
+          className: "nodeName",
+          title: shouldRenderTooltip ? name : null,
+        },
+        name
+      );
+    } else {
+      key = Rep({
+        ...props,
         className: "nodeName",
-        title: shouldRenderTooltip ? name : null,
-      },
-      name
-    );
-  } else {
-    key = Rep({
-      ...props,
-      className: "nodeName",
-      object: name,
-      mode: mode || MODE.TINY,
-      defaultRep: Grip,
-    });
+        object: name,
+        mode: mode || MODE.TINY,
+        defaultRep: Grip,
+      });
+    }
+
+    return [
+      key,
+      span(
+        {
+          className: "objectEqual",
+        },
+        equal
+      ),
+      Rep({ ...props }),
+    ];
   }
 
-  return [
-    key,
-    span(
-      {
-        className: "objectEqual",
-      },
-      equal
-    ),
-    Rep({ ...props }),
-  ];
-}
-
-
-module.exports = wrapRender(PropRep);
+  
+  module.exports = wrapRender(PropRep);
+});

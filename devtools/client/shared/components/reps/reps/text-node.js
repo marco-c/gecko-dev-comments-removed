@@ -5,123 +5,126 @@
 "use strict";
 
 
-const {
-  button,
-  span,
-} = require("devtools/client/shared/vendor/react-dom-factories");
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-
-
-const {
-  isGrip,
-  cropString,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-
-
-
-
-
-TextNode.propTypes = {
-  object: PropTypes.object.isRequired,
+define(function(require, exports, module) {
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function TextNode(props) {
-  const { object: grip, mode = MODE.SHORT } = props;
-
-  const isInTree = grip.preview && grip.preview.isConnected === true;
-  const config = getElementConfig({ ...props, isInTree });
-  const inspectIcon = getInspectIcon({ ...props, isInTree });
-
-  if (mode === MODE.TINY) {
-    return span(config, getTitle(grip), inspectIcon);
-  }
-
-  return span(
-    config,
-    getTitle(grip),
-    span({ className: "nodeValue" }, " ", `"${getTextContent(grip)}"`),
-    inspectIcon ? inspectIcon : null
-  );
-}
-
-function getElementConfig(opts) {
   const {
-    object,
-    isInTree,
-    onDOMNodeMouseOver,
-    onDOMNodeMouseOut,
-    shouldRenderTooltip,
-  } = opts;
+    button,
+    span,
+  } = require("devtools/client/shared/vendor/react-dom-factories");
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
-  const config = {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-textNode",
-    title: shouldRenderTooltip ? `#text "${getTextContent(object)}"` : null,
+  
+  const {
+    isGrip,
+    cropString,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
+
+  
+
+
+
+  TextNode.propTypes = {
+    object: PropTypes.object.isRequired,
+    
+    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    onDOMNodeMouseOver: PropTypes.func,
+    onDOMNodeMouseOut: PropTypes.func,
+    onInspectIconClick: PropTypes.func,
+    shouldRenderTooltip: PropTypes.bool,
   };
 
-  if (isInTree) {
-    if (onDOMNodeMouseOver) {
-      Object.assign(config, {
-        onMouseOver: _ => onDOMNodeMouseOver(object),
-      });
+  function TextNode(props) {
+    const { object: grip, mode = MODE.SHORT } = props;
+
+    const isInTree = grip.preview && grip.preview.isConnected === true;
+    const config = getElementConfig({ ...props, isInTree });
+    const inspectIcon = getInspectIcon({ ...props, isInTree });
+
+    if (mode === MODE.TINY) {
+      return span(config, getTitle(grip), inspectIcon);
     }
 
-    if (onDOMNodeMouseOut) {
-      Object.assign(config, {
-        onMouseOut: _ => onDOMNodeMouseOut(object),
-      });
+    return span(
+      config,
+      getTitle(grip),
+      span({ className: "nodeValue" }, " ", `"${getTextContent(grip)}"`),
+      inspectIcon ? inspectIcon : null
+    );
+  }
+
+  function getElementConfig(opts) {
+    const {
+      object,
+      isInTree,
+      onDOMNodeMouseOver,
+      onDOMNodeMouseOut,
+      shouldRenderTooltip,
+    } = opts;
+
+    const config = {
+      "data-link-actor-id": object.actor,
+      className: "objectBox objectBox-textNode",
+      title: shouldRenderTooltip ? `#text "${getTextContent(object)}"` : null,
+    };
+
+    if (isInTree) {
+      if (onDOMNodeMouseOver) {
+        Object.assign(config, {
+          onMouseOver: _ => onDOMNodeMouseOver(object),
+        });
+      }
+
+      if (onDOMNodeMouseOut) {
+        Object.assign(config, {
+          onMouseOut: _ => onDOMNodeMouseOut(object),
+        });
+      }
     }
+
+    return config;
   }
 
-  return config;
-}
-
-function getTextContent(grip) {
-  return cropString(grip.preview.textContent);
-}
-
-function getInspectIcon(opts) {
-  const { object, isInTree, onInspectIconClick } = opts;
-
-  if (!isInTree || !onInspectIconClick) {
-    return null;
+  function getTextContent(grip) {
+    return cropString(grip.preview.textContent);
   }
 
-  return button({
-    className: "open-inspector",
-    draggable: false,
-    
-    title: "Click to select the node in the inspector",
-    onClick: e => onInspectIconClick(object, e),
-  });
-}
+  function getInspectIcon(opts) {
+    const { object, isInTree, onInspectIconClick } = opts;
 
-function getTitle(grip) {
-  const title = "#text";
-  return span({}, title);
-}
+    if (!isInTree || !onInspectIconClick) {
+      return null;
+    }
 
-
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true || !isGrip(grip)) {
-    return false;
+    return button({
+      className: "open-inspector",
+      draggable: false,
+      
+      title: "Click to select the node in the inspector",
+      onClick: e => onInspectIconClick(object, e),
+    });
   }
 
-  return grip.preview && grip.class == "Text";
-}
+  function getTitle(grip) {
+    const title = "#text";
+    return span({}, title);
+  }
 
+  
+  function supportsObject(grip, noGrip = false) {
+    if (noGrip === true || !isGrip(grip)) {
+      return false;
+    }
 
-module.exports = {
-  rep: wrapRender(TextNode),
-  supportsObject,
-};
+    return grip.preview && grip.class == "Text";
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(TextNode),
+    supportsObject,
+  };
+});

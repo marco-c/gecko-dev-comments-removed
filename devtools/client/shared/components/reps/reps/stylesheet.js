@@ -5,72 +5,75 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-
-
-const {
-  getGripType,
-  isGrip,
-  getURLDisplayString,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-
-
-
-
-
-StyleSheet.propTypes = {
-  object: PropTypes.object.isRequired,
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function StyleSheet(props) {
-  const grip = props.object;
-  const shouldRenderTooltip = props.shouldRenderTooltip;
-  const location = getLocation(grip);
-  const config = getElementConfig({ grip, shouldRenderTooltip, location });
-
-  return span(
-    config,
-    getTitle(grip),
-    span({ className: "objectPropValue" }, location)
-  );
-}
-
-function getElementConfig(opts) {
-  const { grip, shouldRenderTooltip, location } = opts;
-
-  return {
-    "data-link-actor-id": grip.actor,
-    className: "objectBox objectBox-object",
-    title: shouldRenderTooltip ? `StyleSheet ${location}` : null,
-  };
-}
-
-function getTitle(grip) {
-  const title = "StyleSheet ";
-  return span({ className: "objectBoxTitle" }, title);
-}
-
-function getLocation(grip) {
+define(function(require, exports, module) {
   
-  const url = grip.preview ? grip.preview.url : "";
-  return url ? getURLDisplayString(url) : "";
-}
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+
+  
+  const {
+    getGripType,
+    isGrip,
+    getURLDisplayString,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+
+  
 
 
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true || !isGrip(object)) {
-    return false;
+
+  StyleSheet.propTypes = {
+    object: PropTypes.object.isRequired,
+    shouldRenderTooltip: PropTypes.bool,
+  };
+
+  function StyleSheet(props) {
+    const grip = props.object;
+    const shouldRenderTooltip = props.shouldRenderTooltip;
+    const location = getLocation(grip);
+    const config = getElementConfig({ grip, shouldRenderTooltip, location });
+
+    return span(
+      config,
+      getTitle(grip),
+      span({ className: "objectPropValue" }, location)
+    );
   }
 
-  return getGripType(object, noGrip) == "CSSStyleSheet";
-}
+  function getElementConfig(opts) {
+    const { grip, shouldRenderTooltip, location } = opts;
 
+    return {
+      "data-link-actor-id": grip.actor,
+      className: "objectBox objectBox-object",
+      title: shouldRenderTooltip ? `StyleSheet ${location}` : null,
+    };
+  }
 
+  function getTitle(grip) {
+    const title = "StyleSheet ";
+    return span({ className: "objectBoxTitle" }, title);
+  }
 
-module.exports = {
-  rep: wrapRender(StyleSheet),
-  supportsObject,
-};
+  function getLocation(grip) {
+    
+    const url = grip.preview ? grip.preview.url : "";
+    return url ? getURLDisplayString(url) : "";
+  }
+
+  
+  function supportsObject(object, noGrip = false) {
+    if (noGrip === true || !isGrip(object)) {
+      return false;
+    }
+
+    return getGripType(object, noGrip) == "CSSStyleSheet";
+  }
+
+  
+
+  module.exports = {
+    rep: wrapRender(StyleSheet),
+    supportsObject,
+  };
+});

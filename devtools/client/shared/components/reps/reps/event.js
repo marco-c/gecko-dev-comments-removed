@@ -5,114 +5,117 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-
-
-const {
-  isGrip,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-const { rep } = require("devtools/client/shared/components/reps/reps/grip");
-
-
-
-
-Event.propTypes = {
-  object: PropTypes.object.isRequired,
+define(function(require, exports, module) {
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-};
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
-function Event(props) {
-  const gripProps = {
-    ...props,
-    title: getTitle(props),
-    object: {
-      ...props.object,
-      preview: {
-        ...props.object.preview,
-        ownProperties: {},
-      },
-    },
+  
+  const {
+    isGrip,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
+  const { rep } = require("devtools/client/shared/components/reps/reps/grip");
+
+  
+
+
+  Event.propTypes = {
+    object: PropTypes.object.isRequired,
+    
+    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    onDOMNodeMouseOver: PropTypes.func,
+    onDOMNodeMouseOut: PropTypes.func,
+    onInspectIconClick: PropTypes.func,
   };
 
-  if (gripProps.object.preview.target) {
-    Object.assign(gripProps.object.preview.ownProperties, {
-      target: gripProps.object.preview.target,
-    });
-  }
-  Object.assign(
-    gripProps.object.preview.ownProperties,
-    gripProps.object.preview.properties
-  );
+  function Event(props) {
+    const gripProps = {
+      ...props,
+      title: getTitle(props),
+      object: {
+        ...props.object,
+        preview: {
+          ...props.object.preview,
+          ownProperties: {},
+        },
+      },
+    };
 
-  delete gripProps.object.preview.properties;
-  gripProps.object.ownPropertyLength = Object.keys(
-    gripProps.object.preview.ownProperties
-  ).length;
+    if (gripProps.object.preview.target) {
+      Object.assign(gripProps.object.preview.ownProperties, {
+        target: gripProps.object.preview.target,
+      });
+    }
+    Object.assign(
+      gripProps.object.preview.ownProperties,
+      gripProps.object.preview.properties
+    );
 
-  switch (gripProps.object.class) {
-    case "MouseEvent":
-      gripProps.isInterestingProp = (type, value, name) => {
-        return ["target", "clientX", "clientY", "layerX", "layerY"].includes(
-          name
-        );
-      };
-      break;
-    case "KeyboardEvent":
-      gripProps.isInterestingProp = (type, value, name) => {
-        return ["target", "key", "charCode", "keyCode"].includes(name);
-      };
-      break;
-    case "MessageEvent":
-      gripProps.isInterestingProp = (type, value, name) => {
-        return ["target", "isTrusted", "data"].includes(name);
-      };
-      break;
-    default:
-      gripProps.isInterestingProp = (type, value, name) => {
-        
-        return Object.keys(gripProps.object.preview.ownProperties).includes(
-          name
-        );
-      };
-  }
+    delete gripProps.object.preview.properties;
+    gripProps.object.ownPropertyLength = Object.keys(
+      gripProps.object.preview.ownProperties
+    ).length;
 
-  return rep(gripProps);
-}
+    switch (gripProps.object.class) {
+      case "MouseEvent":
+        gripProps.isInterestingProp = (type, value, name) => {
+          return ["target", "clientX", "clientY", "layerX", "layerY"].includes(
+            name
+          );
+        };
+        break;
+      case "KeyboardEvent":
+        gripProps.isInterestingProp = (type, value, name) => {
+          return ["target", "key", "charCode", "keyCode"].includes(name);
+        };
+        break;
+      case "MessageEvent":
+        gripProps.isInterestingProp = (type, value, name) => {
+          return ["target", "isTrusted", "data"].includes(name);
+        };
+        break;
+      default:
+        gripProps.isInterestingProp = (type, value, name) => {
+          
+          return Object.keys(gripProps.object.preview.ownProperties).includes(
+            name
+          );
+        };
+    }
 
-function getTitle(props) {
-  const preview = props.object.preview;
-  let title = preview.type;
-
-  if (
-    preview.eventKind == "key" &&
-    preview.modifiers &&
-    preview.modifiers.length
-  ) {
-    title = `${title} ${preview.modifiers.join("-")}`;
-  }
-  return title;
-}
-
-
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true || !isGrip(grip)) {
-    return false;
+    return rep(gripProps);
   }
 
-  return grip.preview && grip.preview.kind == "DOMEvent";
-}
+  function getTitle(props) {
+    const preview = props.object.preview;
+    let title = preview.type;
 
+    if (
+      preview.eventKind == "key" &&
+      preview.modifiers &&
+      preview.modifiers.length
+    ) {
+      title = `${title} ${preview.modifiers.join("-")}`;
+    }
+    return title;
+  }
 
-module.exports = {
-  rep: wrapRender(Event),
-  supportsObject,
-};
+  
+  function supportsObject(grip, noGrip = false) {
+    if (noGrip === true || !isGrip(grip)) {
+      return false;
+    }
+
+    return grip.preview && grip.preview.kind == "DOMEvent";
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(Event),
+    supportsObject,
+  };
+});

@@ -5,64 +5,67 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+define(function(require, exports, module) {
+  
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+
+  
+  const {
+    getGripType,
+    isGrip,
+    wrapRender,
+    ELLIPSIS,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+
+  
 
 
-const {
-  getGripType,
-  isGrip,
-  wrapRender,
-  ELLIPSIS,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
 
-
-
-
-
-RegExp.propTypes = {
-  object: PropTypes.object.isRequired,
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function RegExp(props) {
-  const { object } = props;
-  const config = getElementConfig(props);
-
-  return span(config, getSource(object));
-}
-
-function getElementConfig(opts) {
-  const { object, shouldRenderTooltip } = opts;
-  const text = getSource(object);
-
-  return {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-regexp regexpSource",
-    title: shouldRenderTooltip ? text : null,
+  RegExp.propTypes = {
+    object: PropTypes.object.isRequired,
+    shouldRenderTooltip: PropTypes.bool,
   };
-}
 
-function getSource(grip) {
-  const { displayString } = grip;
-  if (displayString?.type === "longString") {
-    return `${displayString.initial}${ELLIPSIS}`;
+  function RegExp(props) {
+    const { object } = props;
+    const config = getElementConfig(props);
+
+    return span(config, getSource(object));
   }
 
-  return displayString;
-}
+  function getElementConfig(opts) {
+    const { object, shouldRenderTooltip } = opts;
+    const text = getSource(object);
 
-
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true || !isGrip(object)) {
-    return false;
+    return {
+      "data-link-actor-id": object.actor,
+      className: "objectBox objectBox-regexp regexpSource",
+      title: shouldRenderTooltip ? text : null,
+    };
   }
 
-  return getGripType(object, noGrip) == "RegExp";
-}
+  function getSource(grip) {
+    const { displayString } = grip;
+    if (displayString?.type === "longString") {
+      return `${displayString.initial}${ELLIPSIS}`;
+    }
 
+    return displayString;
+  }
 
-module.exports = {
-  rep: wrapRender(RegExp),
-  supportsObject,
-};
+  
+  function supportsObject(object, noGrip = false) {
+    if (noGrip === true || !isGrip(object)) {
+      return false;
+    }
+
+    return getGripType(object, noGrip) == "RegExp";
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(RegExp),
+    supportsObject,
+  };
+});

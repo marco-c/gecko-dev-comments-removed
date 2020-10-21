@@ -5,71 +5,74 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+define(function(require, exports, module) {
+  
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+
+  
+  const {
+    isGrip,
+    getURLDisplayString,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+
+  
 
 
-const {
-  isGrip,
-  getURLDisplayString,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
 
-
-
-
-
-ObjectWithURL.propTypes = {
-  object: PropTypes.object.isRequired,
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function ObjectWithURL(props) {
-  const grip = props.object;
-  const config = getElementConfig(props);
-
-  return span(
-    config,
-    getTitle(grip),
-    span({ className: "objectPropValue" }, getDescription(grip))
-  );
-}
-
-function getElementConfig(opts) {
-  const grip = opts.object;
-  const shouldRenderTooltip = opts.shouldRenderTooltip;
-  const tooltip = `${getType(grip)} ${getDescription(grip)}`;
-
-  return {
-    "data-link-actor-id": grip.actor,
-    className: `objectBox objectBox-${getType(grip)}`,
-    title: shouldRenderTooltip ? tooltip : null,
+  ObjectWithURL.propTypes = {
+    object: PropTypes.object.isRequired,
+    shouldRenderTooltip: PropTypes.bool,
   };
-}
 
-function getTitle(grip) {
-  return span({ className: "objectTitle" }, `${getType(grip)} `);
-}
+  function ObjectWithURL(props) {
+    const grip = props.object;
+    const config = getElementConfig(props);
 
-function getType(grip) {
-  return grip.class;
-}
-
-function getDescription(grip) {
-  return getURLDisplayString(grip.preview.url);
-}
-
-
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true || !isGrip(grip)) {
-    return false;
+    return span(
+      config,
+      getTitle(grip),
+      span({ className: "objectPropValue" }, getDescription(grip))
+    );
   }
 
-  return grip.preview && grip.preview.kind == "ObjectWithURL";
-}
+  function getElementConfig(opts) {
+    const grip = opts.object;
+    const shouldRenderTooltip = opts.shouldRenderTooltip;
+    const tooltip = `${getType(grip)} ${getDescription(grip)}`;
 
+    return {
+      "data-link-actor-id": grip.actor,
+      className: `objectBox objectBox-${getType(grip)}`,
+      title: shouldRenderTooltip ? tooltip : null,
+    };
+  }
 
-module.exports = {
-  rep: wrapRender(ObjectWithURL),
-  supportsObject,
-};
+  function getTitle(grip) {
+    return span({ className: "objectTitle" }, `${getType(grip)} `);
+  }
+
+  function getType(grip) {
+    return grip.class;
+  }
+
+  function getDescription(grip) {
+    return getURLDisplayString(grip.preview.url);
+  }
+
+  
+  function supportsObject(grip, noGrip = false) {
+    if (noGrip === true || !isGrip(grip)) {
+      return false;
+    }
+
+    return grip.preview && grip.preview.kind == "ObjectWithURL";
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(ObjectWithURL),
+    supportsObject,
+  };
+});

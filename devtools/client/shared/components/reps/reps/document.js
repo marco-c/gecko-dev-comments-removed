@@ -5,78 +5,81 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+define(function(require, exports, module) {
+  
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+
+  
+  const {
+    getGripType,
+    isGrip,
+    getURLDisplayString,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+
+  
 
 
-const {
-  getGripType,
-  isGrip,
-  getURLDisplayString,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
 
-
-
-
-
-Document.propTypes = {
-  object: PropTypes.object.isRequired,
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function Document(props) {
-  const grip = props.object;
-  const shouldRenderTooltip = props.shouldRenderTooltip;
-  const location = getLocation(grip);
-  const config = getElementConfig({ grip, location, shouldRenderTooltip });
-  return span(
-    config,
-    getTitle(grip),
-    location ? span({ className: "location" }, ` ${location}`) : null
-  );
-}
-
-function getElementConfig(opts) {
-  const { grip, location, shouldRenderTooltip } = opts;
-  const config = {
-    "data-link-actor-id": grip.actor,
-    className: "objectBox objectBox-document",
+  Document.propTypes = {
+    object: PropTypes.object.isRequired,
+    shouldRenderTooltip: PropTypes.bool,
   };
 
-  if (!shouldRenderTooltip || !location) {
+  function Document(props) {
+    const grip = props.object;
+    const shouldRenderTooltip = props.shouldRenderTooltip;
+    const location = getLocation(grip);
+    const config = getElementConfig({ grip, location, shouldRenderTooltip });
+    return span(
+      config,
+      getTitle(grip),
+      location ? span({ className: "location" }, ` ${location}`) : null
+    );
+  }
+
+  function getElementConfig(opts) {
+    const { grip, location, shouldRenderTooltip } = opts;
+    const config = {
+      "data-link-actor-id": grip.actor,
+      className: "objectBox objectBox-document",
+    };
+
+    if (!shouldRenderTooltip || !location) {
+      return config;
+    }
+    config.title = `${grip.class} ${location}`;
     return config;
   }
-  config.title = `${grip.class} ${location}`;
-  return config;
-}
 
-function getLocation(grip) {
-  const location = grip.preview.location;
-  return location ? getURLDisplayString(location) : null;
-}
-
-function getTitle(grip) {
-  return span(
-    {
-      className: "objectTitle",
-    },
-    grip.class
-  );
-}
-
-
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true || !isGrip(object)) {
-    return false;
+  function getLocation(grip) {
+    const location = grip.preview.location;
+    return location ? getURLDisplayString(location) : null;
   }
 
-  const type = getGripType(object, noGrip);
-  return object.preview && type === "HTMLDocument";
-}
+  function getTitle(grip) {
+    return span(
+      {
+        className: "objectTitle",
+      },
+      grip.class
+    );
+  }
 
+  
+  function supportsObject(object, noGrip = false) {
+    if (noGrip === true || !isGrip(object)) {
+      return false;
+    }
 
-module.exports = {
-  rep: wrapRender(Document),
-  supportsObject,
-};
+    const type = getGripType(object, noGrip);
+    return object.preview && type === "HTMLDocument";
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(Document),
+    supportsObject,
+  };
+});

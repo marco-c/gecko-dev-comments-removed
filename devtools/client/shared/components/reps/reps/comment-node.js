@@ -5,72 +5,79 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-const {
-  isGrip,
-  cropString,
-  cropMultipleLines,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-const nodeConstants = require("devtools/client/shared/components/reps/shared/dom-node-constants");
-
-
-
-
-
-CommentNode.propTypes = {
-  object: PropTypes.object.isRequired,
+define(function(require, exports, module) {
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function CommentNode(props) {
-  const { object, mode = MODE.SHORT, shouldRenderTooltip } = props;
-
-  let { textContent } = object.preview;
-  if (mode === MODE.TINY) {
-    textContent = cropMultipleLines(textContent, 30);
-  } else if (mode === MODE.SHORT) {
-    textContent = cropString(textContent, 50);
-  }
-
-  const config = getElementConfig({ object, textContent, shouldRenderTooltip });
-
-  return span(config, `<!-- ${textContent} -->`);
-}
-
-function getElementConfig(opts) {
-  const { object, shouldRenderTooltip } = opts;
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+  const {
+    isGrip,
+    cropString,
+    cropMultipleLines,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
+  const nodeConstants = require("devtools/client/shared/components/reps/shared/dom-node-constants");
 
   
-  const uncroppedText = shouldRenderTooltip
-    ? cropString(object.preview.textContent)
-    : null;
 
-  return {
-    className: "objectBox theme-comment",
-    "data-link-actor-id": object.actor,
-    title: shouldRenderTooltip ? `<!-- ${uncroppedText} -->` : null,
+
+
+  CommentNode.propTypes = {
+    object: PropTypes.object.isRequired,
+    
+    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    shouldRenderTooltip: PropTypes.bool,
   };
-}
 
+  function CommentNode(props) {
+    const { object, mode = MODE.SHORT, shouldRenderTooltip } = props;
 
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true || !isGrip(object)) {
-    return false;
+    let { textContent } = object.preview;
+    if (mode === MODE.TINY) {
+      textContent = cropMultipleLines(textContent, 30);
+    } else if (mode === MODE.SHORT) {
+      textContent = cropString(textContent, 50);
+    }
+
+    const config = getElementConfig({
+      object,
+      textContent,
+      shouldRenderTooltip,
+    });
+
+    return span(config, `<!-- ${textContent} -->`);
   }
-  return (
-    object.preview && object.preview.nodeType === nodeConstants.COMMENT_NODE
-  );
-}
 
+  function getElementConfig(opts) {
+    const { object, shouldRenderTooltip } = opts;
 
-module.exports = {
-  rep: wrapRender(CommentNode),
-  supportsObject,
-};
+    
+    const uncroppedText = shouldRenderTooltip
+      ? cropString(object.preview.textContent)
+      : null;
+
+    return {
+      className: "objectBox theme-comment",
+      "data-link-actor-id": object.actor,
+      title: shouldRenderTooltip ? `<!-- ${uncroppedText} -->` : null,
+    };
+  }
+
+  
+  function supportsObject(object, noGrip = false) {
+    if (noGrip === true || !isGrip(object)) {
+      return false;
+    }
+    return (
+      object.preview && object.preview.nodeType === nodeConstants.COMMENT_NODE
+    );
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(CommentNode),
+    supportsObject,
+  };
+});

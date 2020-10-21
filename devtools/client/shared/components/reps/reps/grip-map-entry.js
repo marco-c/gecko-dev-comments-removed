@@ -5,88 +5,91 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-
-const {
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-
-
-
-
-
-
-
-
-
-
-
-
-
-GripMapEntry.propTypes = {
-  object: PropTypes.object,
+define(function(require, exports, module) {
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-};
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+  
+  const {
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
+  
 
-function GripMapEntry(props) {
-  const { object } = props;
 
-  let { key, value } = object.preview;
-  if (key && key.getGrip) {
-    key = key.getGrip();
-  }
-  if (value && value.getGrip) {
-    value = value.getGrip();
-  }
 
-  return span(
-    {
-      className: "objectBox objectBox-map-entry",
-    },
-    PropRep({
-      ...props,
-      name: key,
-      object: value,
-      equal: " \u2192 ",
-      title: null,
-      suppressQuotes: false,
-    })
-  );
-}
 
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true) {
-    return false;
-  }
-  return (
-    grip &&
-    (grip.type === "mapEntry" || grip.type === "storageEntry") &&
-    grip.preview
-  );
-}
 
-function createGripMapEntry(key, value) {
-  return {
-    type: "mapEntry",
-    preview: {
-      key,
-      value,
-    },
+
+
+
+
+
+
+
+  GripMapEntry.propTypes = {
+    object: PropTypes.object,
+    
+    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    onDOMNodeMouseOver: PropTypes.func,
+    onDOMNodeMouseOut: PropTypes.func,
+    onInspectIconClick: PropTypes.func,
   };
-}
 
+  function GripMapEntry(props) {
+    const { object } = props;
 
-module.exports = {
-  rep: wrapRender(GripMapEntry),
-  createGripMapEntry,
-  supportsObject,
-};
+    let { key, value } = object.preview;
+    if (key && key.getGrip) {
+      key = key.getGrip();
+    }
+    if (value && value.getGrip) {
+      value = value.getGrip();
+    }
+
+    return span(
+      {
+        className: "objectBox objectBox-map-entry",
+      },
+      PropRep({
+        ...props,
+        name: key,
+        object: value,
+        equal: " \u2192 ",
+        title: null,
+        suppressQuotes: false,
+      })
+    );
+  }
+
+  function supportsObject(grip, noGrip = false) {
+    if (noGrip === true) {
+      return false;
+    }
+    return (
+      grip &&
+      (grip.type === "mapEntry" || grip.type === "storageEntry") &&
+      grip.preview
+    );
+  }
+
+  function createGripMapEntry(key, value) {
+    return {
+      type: "mapEntry",
+      preview: {
+        key,
+        value,
+      },
+    };
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(GripMapEntry),
+    createGripMapEntry,
+    supportsObject,
+  };
+});

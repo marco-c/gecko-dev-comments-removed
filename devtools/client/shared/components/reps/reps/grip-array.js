@@ -5,69 +5,94 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-
-const {
-  lengthBubble,
-} = require("devtools/client/shared/components/reps/shared/grip-length-bubble");
-const {
-  interleave,
-  getGripType,
-  isGrip,
-  wrapRender,
-  ellipsisElement,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-
-const {
-  ModePropType,
-} = require("devtools/client/shared/components/reps/reps/array");
-const DEFAULT_TITLE = "Array";
-
-
-
-
-
-
-GripArray.propTypes = {
-  object: PropTypes.object.isRequired,
+define(function(require, exports, module) {
   
-  mode: ModePropType,
-  provider: PropTypes.object,
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-  shouldRenderTooltip: PropTypes.bool,
-};
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-function GripArray(props) {
-  const { object, mode = MODE.SHORT, shouldRenderTooltip } = props;
+  const {
+    lengthBubble,
+  } = require("devtools/client/shared/components/reps/shared/grip-length-bubble");
+  const {
+    interleave,
+    getGripType,
+    isGrip,
+    wrapRender,
+    ellipsisElement,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
 
-  let brackets;
-  const needSpace = function(space) {
-    return space ? { left: "[ ", right: " ]" } : { left: "[", right: "]" };
-  };
+  const {
+    ModePropType,
+  } = require("devtools/client/shared/components/reps/reps/array");
+  const DEFAULT_TITLE = "Array";
 
-  const config = {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-array",
-    title: shouldRenderTooltip ? "Array" : null,
-  };
+  
 
-  const title = getTitle(props, object);
 
-  if (mode === MODE.TINY) {
-    const isEmpty = getLength(object) === 0;
 
+
+  GripArray.propTypes = {
+    object: PropTypes.object.isRequired,
     
-    if (!isEmpty && object.class !== "Array") {
-      return span(config, title);
+    mode: ModePropType,
+    provider: PropTypes.object,
+    onDOMNodeMouseOver: PropTypes.func,
+    onDOMNodeMouseOut: PropTypes.func,
+    onInspectIconClick: PropTypes.func,
+    shouldRenderTooltip: PropTypes.bool,
+  };
+
+  function GripArray(props) {
+    const { object, mode = MODE.SHORT, shouldRenderTooltip } = props;
+
+    let brackets;
+    const needSpace = function(space) {
+      return space ? { left: "[ ", right: " ]" } : { left: "[", right: "]" };
+    };
+
+    const config = {
+      "data-link-actor-id": object.actor,
+      className: "objectBox objectBox-array",
+      title: shouldRenderTooltip ? "Array" : null,
+    };
+
+    const title = getTitle(props, object);
+
+    if (mode === MODE.TINY) {
+      const isEmpty = getLength(object) === 0;
+
+      
+      if (!isEmpty && object.class !== "Array") {
+        return span(config, title);
+      }
+
+      brackets = needSpace(false);
+      return span(
+        config,
+        title,
+        span(
+          {
+            className: "arrayLeftBracket",
+          },
+          brackets.left
+        ),
+        isEmpty ? null : ellipsisElement,
+        span(
+          {
+            className: "arrayRightBracket",
+          },
+          brackets.right
+        )
+      );
     }
 
-    brackets = needSpace(false);
+    const max = maxLengthMap.get(mode);
+    const items = arrayIterator(props, object, max);
+    brackets = needSpace(items.length > 0);
+
     return span(
       config,
       title,
@@ -77,185 +102,163 @@ function GripArray(props) {
         },
         brackets.left
       ),
-      isEmpty ? null : ellipsisElement,
+      ...interleave(items, ", "),
       span(
         {
           className: "arrayRightBracket",
         },
         brackets.right
-      )
+      ),
+      span({
+        className: "arrayProperties",
+        role: "group",
+      })
     );
   }
 
-  const max = maxLengthMap.get(mode);
-  const items = arrayIterator(props, object, max);
-  brackets = needSpace(items.length > 0);
+  function getLength(grip) {
+    if (!grip.preview) {
+      return 0;
+    }
 
-  return span(
-    config,
-    title,
-    span(
-      {
-        className: "arrayLeftBracket",
-      },
-      brackets.left
-    ),
-    ...interleave(items, ", "),
-    span(
-      {
-        className: "arrayRightBracket",
-      },
-      brackets.right
-    ),
-    span({
-      className: "arrayProperties",
-      role: "group",
-    })
-  );
-}
-
-function getLength(grip) {
-  if (!grip.preview) {
-    return 0;
+    return grip.preview.length || grip.preview.childNodesLength || 0;
   }
 
-  return grip.preview.length || grip.preview.childNodesLength || 0;
-}
+  function getTitle(props, object) {
+    const objectLength = getLength(object);
+    const isEmpty = objectLength === 0;
 
-function getTitle(props, object) {
-  const objectLength = getLength(object);
-  const isEmpty = objectLength === 0;
+    let title = props.title || object.class || DEFAULT_TITLE;
 
-  let title = props.title || object.class || DEFAULT_TITLE;
+    const length = lengthBubble({
+      object,
+      mode: props.mode,
+      maxLengthMap,
+      getLength,
+    });
 
-  const length = lengthBubble({
-    object,
-    mode: props.mode,
-    maxLengthMap,
-    getLength,
-  });
+    if (props.mode === MODE.TINY) {
+      if (isEmpty) {
+        if (object.class === DEFAULT_TITLE) {
+          return null;
+        }
 
-  if (props.mode === MODE.TINY) {
-    if (isEmpty) {
-      if (object.class === DEFAULT_TITLE) {
-        return null;
+        return span({ className: "objectTitle" }, `${title} `);
       }
 
-      return span({ className: "objectTitle" }, `${title} `);
+      let trailingSpace;
+      if (object.class === DEFAULT_TITLE) {
+        title = null;
+        trailingSpace = " ";
+      }
+
+      return span({ className: "objectTitle" }, title, length, trailingSpace);
     }
 
-    let trailingSpace;
-    if (object.class === DEFAULT_TITLE) {
-      title = null;
-      trailingSpace = " ";
+    return span({ className: "objectTitle" }, title, length, " ");
+  }
+
+  function getPreviewItems(grip) {
+    if (!grip.preview) {
+      return null;
     }
 
-    return span({ className: "objectTitle" }, title, length, trailingSpace);
+    return grip.preview.items || grip.preview.childNodes || [];
   }
 
-  return span({ className: "objectTitle" }, title, length, " ");
-}
+  function arrayIterator(props, grip, max) {
+    const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
 
-function getPreviewItems(grip) {
-  if (!grip.preview) {
-    return null;
-  }
+    let items = [];
+    const gripLength = getLength(grip);
 
-  return grip.preview.items || grip.preview.childNodes || [];
-}
-
-function arrayIterator(props, grip, max) {
-  const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
-
-  let items = [];
-  const gripLength = getLength(grip);
-
-  if (!gripLength) {
-    return items;
-  }
-
-  const previewItems = getPreviewItems(grip);
-  const provider = props.provider;
-
-  let emptySlots = 0;
-  let foldedEmptySlots = 0;
-  items = previewItems.reduce((res, itemGrip) => {
-    if (res.length >= max) {
-      return res;
+    if (!gripLength) {
+      return items;
     }
 
-    let object;
-    try {
-      if (!provider && itemGrip === null) {
-        emptySlots++;
+    const previewItems = getPreviewItems(grip);
+    const provider = props.provider;
+
+    let emptySlots = 0;
+    let foldedEmptySlots = 0;
+    items = previewItems.reduce((res, itemGrip) => {
+      if (res.length >= max) {
         return res;
       }
 
-      object = provider ? provider.getValue(itemGrip) : itemGrip;
-    } catch (exc) {
-      object = exc;
-    }
+      let object;
+      try {
+        if (!provider && itemGrip === null) {
+          emptySlots++;
+          return res;
+        }
 
-    if (emptySlots > 0) {
-      res.push(getEmptySlotsElement(emptySlots));
+        object = provider ? provider.getValue(itemGrip) : itemGrip;
+      } catch (exc) {
+        object = exc;
+      }
+
+      if (emptySlots > 0) {
+        res.push(getEmptySlotsElement(emptySlots));
+        foldedEmptySlots = foldedEmptySlots + emptySlots - 1;
+        emptySlots = 0;
+      }
+
+      if (res.length < max) {
+        res.push(
+          Rep({
+            ...props,
+            object,
+            mode: MODE.TINY,
+            
+            title: undefined,
+          })
+        );
+      }
+
+      return res;
+    }, []);
+
+    
+    if (items.length < max && emptySlots > 0) {
+      items.push(getEmptySlotsElement(emptySlots));
       foldedEmptySlots = foldedEmptySlots + emptySlots - 1;
-      emptySlots = 0;
     }
 
-    if (res.length < max) {
-      res.push(
-        Rep({
-          ...props,
-          object,
-          mode: MODE.TINY,
-          
-          title: undefined,
-        })
-      );
+    const itemsShown = items.length + foldedEmptySlots;
+    if (gripLength > itemsShown) {
+      items.push(ellipsisElement);
     }
 
-    return res;
-  }, []);
+    return items;
+  }
+
+  function getEmptySlotsElement(number) {
+    
+    return `<${number} empty slot${number > 1 ? "s" : ""}>`;
+  }
+
+  function supportsObject(grip, noGrip = false) {
+    if (noGrip === true || !isGrip(grip)) {
+      return false;
+    }
+
+    return (
+      grip.preview &&
+      (grip.preview.kind == "ArrayLike" ||
+        getGripType(grip, noGrip) === "DocumentFragment")
+    );
+  }
+
+  const maxLengthMap = new Map();
+  maxLengthMap.set(MODE.SHORT, 3);
+  maxLengthMap.set(MODE.LONG, 10);
 
   
-  if (items.length < max && emptySlots > 0) {
-    items.push(getEmptySlotsElement(emptySlots));
-    foldedEmptySlots = foldedEmptySlots + emptySlots - 1;
-  }
-
-  const itemsShown = items.length + foldedEmptySlots;
-  if (gripLength > itemsShown) {
-    items.push(ellipsisElement);
-  }
-
-  return items;
-}
-
-function getEmptySlotsElement(number) {
-  
-  return `<${number} empty slot${number > 1 ? "s" : ""}>`;
-}
-
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true || !isGrip(grip)) {
-    return false;
-  }
-
-  return (
-    grip.preview &&
-    (grip.preview.kind == "ArrayLike" ||
-      getGripType(grip, noGrip) === "DocumentFragment")
-  );
-}
-
-const maxLengthMap = new Map();
-maxLengthMap.set(MODE.SHORT, 3);
-maxLengthMap.set(MODE.LONG, 10);
-
-
-module.exports = {
-  rep: wrapRender(GripArray),
-  supportsObject,
-  maxLengthMap,
-  getLength,
-};
+  module.exports = {
+    rep: wrapRender(GripArray),
+    supportsObject,
+    maxLengthMap,
+    getLength,
+  };
+});

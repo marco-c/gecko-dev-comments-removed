@@ -5,183 +5,10 @@
 "use strict";
 
 
-const validProtocols = /(http|https|ftp|data|resource|chrome):/i;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const urlRegex = /(^|[\s(,;'"`“])((?:https?:\/(\/)?|www\d{0,3}[.][a-z0-9.\-]{2,249}|[a-z0-9.\-]{2,250}[.][a-z]{2,4}\/)[-\w.!~*'();,/?:@&=+$#%]*)/im;
-
-
-
-
-
-const uneatLastUrlCharsRegex = /(?:[),;.!?`'"]|[.!?]\)|\)[.!?])$/;
-
-const ELLIPSIS = "\u2026";
-const dom = require("devtools/client/shared/vendor/react-dom-factories");
-const { span } = dom;
-
-
-
-
-function isGrip(object) {
-  return object && object.actor;
-}
-
-function escapeNewLines(value) {
-  return value.replace(/\r/gm, "\\r").replace(/\n/gm, "\\n");
-}
-
-
-
-
-
-
-const escapeMap = {
+define(function(require, exports, module) {
   
-  9: "\\t",
-  
-  0xa: "\\n",
-  
-  0xd: "\\r",
-  
-  0x22: '\\"',
-  
-  0x5c: "\\\\",
-};
+  const validProtocols = /(http|https|ftp|data|resource|chrome):/i;
 
-
-
-
-
-const escapeRegexp = new RegExp(
-  "[" +
-    
-    '"\\\\' +
-    
-    "\x00-\x1f" +
-    
-    "\x7f-\x9f" +
-    
-    "\ufeff" +
-    
-    "\ufff0-\ufffc\ufffe\uffff" +
-    
-    "\ud800-\udfff" +
-    
-    "\u2061-\u2064" +
-    
-    "\u2028-\u2029" +
-    
-    "\ue000-\uf8ff" +
-    "]",
-  "g"
-);
-
-
-
-
-
-
-
-
-
-
-
-
-
-function escapeString(str, escapeWhitespace) {
-  return `"${str.replace(escapeRegexp, (match, offset) => {
-    const c = match.charCodeAt(0);
-    if (c in escapeMap) {
-      if (!escapeWhitespace && (c === 9 || c === 0xa || c === 0xd)) {
-        return match[0];
-      }
-      return escapeMap[c];
-    }
-    if (c >= 0xd800 && c <= 0xdfff) {
-      
-      
-      
-      if (c >= 0xdc00 && offset > 0) {
-        --offset;
-      }
-      const codePoint = str.codePointAt(offset);
-      if (codePoint >= 0xd800 && codePoint <= 0xdfff) {
-        
-        return `\\u${codePoint.toString(16)}`;
-      } else if (codePoint >= 0xf0000 && codePoint <= 0x10fffd) {
-        
-        
-        
-        if (c <= 0xdbff) {
-          return `\\u{${codePoint.toString(16)}}`;
-        }
-        return "";
-      }
-      
-      return match;
-    }
-    return `\\u${`0000${c.toString(16)}`.substr(-4)}`;
-  })}"`;
-}
-
-
-
-
-
-
-
-
-
-
-function maybeEscapePropertyName(name) {
   
   
   
@@ -189,250 +16,410 @@ function maybeEscapePropertyName(name) {
   
   
   
-  if (!/^\w+$/.test(name)) {
-    name = escapeString(name);
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const urlRegex = /(^|[\s(,;'"`“])((?:https?:\/(\/)?|www\d{0,3}[.][a-z0-9.\-]{2,249}|[a-z0-9.\-]{2,250}[.][a-z]{2,4}\/)[-\w.!~*'();,/?:@&=+$#%]*)/im;
+
+  
+  
+  
+  
+  const uneatLastUrlCharsRegex = /(?:[),;.!?`'"]|[.!?]\)|\)[.!?])$/;
+
+  const ELLIPSIS = "\u2026";
+  const dom = require("devtools/client/shared/vendor/react-dom-factories");
+  const { span } = dom;
+
+  
+
+
+  function isGrip(object) {
+    return object && object.actor;
   }
-  return name;
-}
 
-function cropMultipleLines(text, limit) {
-  return escapeNewLines(cropString(text, limit));
-}
+  function escapeNewLines(value) {
+    return value.replace(/\r/gm, "\\r").replace(/\n/gm, "\\n");
+  }
 
-function rawCropString(text, limit, alternativeText = ELLIPSIS) {
   
-  if (!limit || limit <= 0) {
+  
+  
+  
+  
+  const escapeMap = {
+    
+    9: "\\t",
+    
+    0xa: "\\n",
+    
+    0xd: "\\r",
+    
+    0x22: '\\"',
+    
+    0x5c: "\\\\",
+  };
+
+  
+  
+  
+  
+  const escapeRegexp = new RegExp(
+    "[" +
+      
+      '"\\\\' +
+      
+      "\x00-\x1f" +
+      
+      "\x7f-\x9f" +
+      
+      "\ufeff" +
+      
+      "\ufff0-\ufffc\ufffe\uffff" +
+      
+      "\ud800-\udfff" +
+      
+      "\u2061-\u2064" +
+      
+      "\u2028-\u2029" +
+      
+      "\ue000-\uf8ff" +
+      "]",
+    "g"
+  );
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  function escapeString(str, escapeWhitespace) {
+    return `"${str.replace(escapeRegexp, (match, offset) => {
+      const c = match.charCodeAt(0);
+      if (c in escapeMap) {
+        if (!escapeWhitespace && (c === 9 || c === 0xa || c === 0xd)) {
+          return match[0];
+        }
+        return escapeMap[c];
+      }
+      if (c >= 0xd800 && c <= 0xdfff) {
+        
+        
+        
+        if (c >= 0xdc00 && offset > 0) {
+          --offset;
+        }
+        const codePoint = str.codePointAt(offset);
+        if (codePoint >= 0xd800 && codePoint <= 0xdfff) {
+          
+          return `\\u${codePoint.toString(16)}`;
+        } else if (codePoint >= 0xf0000 && codePoint <= 0x10fffd) {
+          
+          
+          
+          if (c <= 0xdbff) {
+            return `\\u{${codePoint.toString(16)}}`;
+          }
+          return "";
+        }
+        
+        return match;
+      }
+      return `\\u${`0000${c.toString(16)}`.substr(-4)}`;
+    })}"`;
+  }
+
+  
+
+
+
+
+
+
+
+
+  function maybeEscapePropertyName(name) {
+    
+    
+    
+    
+    
+    
+    
+    if (!/^\w+$/.test(name)) {
+      name = escapeString(name);
+    }
+    return name;
+  }
+
+  function cropMultipleLines(text, limit) {
+    return escapeNewLines(cropString(text, limit));
+  }
+
+  function rawCropString(text, limit, alternativeText = ELLIPSIS) {
+    
+    if (!limit || limit <= 0) {
+      return text;
+    }
+
+    
+    
+    if (limit <= alternativeText.length) {
+      limit = alternativeText.length + 1;
+    }
+
+    const halfLimit = (limit - alternativeText.length) / 2;
+
+    if (text.length > limit) {
+      return (
+        text.substr(0, Math.ceil(halfLimit)) +
+        alternativeText +
+        text.substr(text.length - Math.floor(halfLimit))
+      );
+    }
+
     return text;
   }
 
-  
-  
-  if (limit <= alternativeText.length) {
-    limit = alternativeText.length + 1;
+  function cropString(text, limit, alternativeText) {
+    return rawCropString(sanitizeString(`${text}`), limit, alternativeText);
   }
 
-  const halfLimit = (limit - alternativeText.length) / 2;
-
-  if (text.length > limit) {
-    return (
-      text.substr(0, Math.ceil(halfLimit)) +
-      alternativeText +
-      text.substr(text.length - Math.floor(halfLimit))
-    );
+  function sanitizeString(text) {
+    
+    
+    
+    
+    const re = new RegExp("[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]", "g");
+    return text.replace(re, "\ufffd");
   }
 
-  return text;
-}
-
-function cropString(text, limit, alternativeText) {
-  return rawCropString(sanitizeString(`${text}`), limit, alternativeText);
-}
-
-function sanitizeString(text) {
-  
-  
-  
-  
-  const re = new RegExp("[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]", "g");
-  return text.replace(re, "\ufffd");
-}
-
-function parseURLParams(url) {
-  url = new URL(url);
-  return parseURLEncodedText(url.searchParams);
-}
-
-function parseURLEncodedText(text) {
-  const params = [];
-
-  
-  if (text == "") {
-    return params;
+  function parseURLParams(url) {
+    url = new URL(url);
+    return parseURLEncodedText(url.searchParams);
   }
 
-  const searchParams = new URLSearchParams(text);
-  const entries = [...searchParams.entries()];
-  return entries.map(entry => {
-    return {
-      name: entry[0],
-      value: entry[1],
-    };
-  });
-}
+  function parseURLEncodedText(text) {
+    const params = [];
 
-function getFileName(url) {
-  const split = splitURLBase(url);
-  return split.name;
-}
+    
+    if (text == "") {
+      return params;
+    }
 
-function splitURLBase(url) {
-  if (!isDataURL(url)) {
-    return splitURLTrue(url);
+    const searchParams = new URLSearchParams(text);
+    const entries = [...searchParams.entries()];
+    return entries.map(entry => {
+      return {
+        name: entry[0],
+        value: entry[1],
+      };
+    });
   }
-  return {};
-}
 
-function getURLDisplayString(url) {
-  return cropString(url);
-}
+  function getFileName(url) {
+    const split = splitURLBase(url);
+    return split.name;
+  }
 
-function isDataURL(url) {
-  return url && url.substr(0, 5) == "data:";
-}
+  function splitURLBase(url) {
+    if (!isDataURL(url)) {
+      return splitURLTrue(url);
+    }
+    return {};
+  }
 
-function splitURLTrue(url) {
-  const reSplitFile = /(.*?):\/{2,3}([^\/]*)(.*?)([^\/]*?)($|\?.*)/;
-  const m = reSplitFile.exec(url);
+  function getURLDisplayString(url) {
+    return cropString(url);
+  }
 
-  if (!m) {
-    return {
-      name: url,
-      path: url,
-    };
-  } else if (m[4] == "" && m[5] == "") {
+  function isDataURL(url) {
+    return url && url.substr(0, 5) == "data:";
+  }
+
+  function splitURLTrue(url) {
+    const reSplitFile = /(.*?):\/{2,3}([^\/]*)(.*?)([^\/]*?)($|\?.*)/;
+    const m = reSplitFile.exec(url);
+
+    if (!m) {
+      return {
+        name: url,
+        path: url,
+      };
+    } else if (m[4] == "" && m[5] == "") {
+      return {
+        protocol: m[1],
+        domain: m[2],
+        path: m[3],
+        name: m[3] != "/" ? m[3] : m[2],
+      };
+    }
+
     return {
       protocol: m[1],
       domain: m[2],
-      path: m[3],
-      name: m[3] != "/" ? m[3] : m[2],
+      path: m[2] + m[3],
+      name: m[4] + m[5],
     };
   }
 
-  return {
-    protocol: m[1],
-    domain: m[2],
-    path: m[2] + m[3],
-    name: m[4] + m[5],
-  };
-}
+  
+
+
+
+  function wrapRender(renderMethod) {
+    const wrappedFunction = function(props) {
+      try {
+        return renderMethod.call(this, props);
+      } catch (e) {
+        console.error(e);
+        return span(
+          {
+            className: "objectBox objectBox-failure",
+            title:
+              "This object could not be rendered, " +
+              "please file a bug on bugzilla.mozilla.org",
+          },
+          
+          "Invalid object"
+        );
+      }
+    };
+    wrappedFunction.propTypes = renderMethod.propTypes;
+    return wrappedFunction;
+  }
+
+  
 
 
 
 
 
-function wrapRender(renderMethod) {
-  const wrappedFunction = function(props) {
-    try {
-      return renderMethod.call(this, props);
-    } catch (e) {
-      console.error(e);
-      return span(
-        {
-          className: "objectBox objectBox-failure",
-          title:
-            "This object could not be rendered, " +
-            "please file a bug on bugzilla.mozilla.org",
-        },
-        
-        "Invalid object"
-      );
+
+  function getGripPreviewItems(grip) {
+    if (!grip) {
+      return [];
     }
-  };
-  wrappedFunction.propTypes = renderMethod.propTypes;
-  return wrappedFunction;
-}
 
+    
+    if (grip.promiseState && grip.promiseState.value) {
+      return [grip.promiseState.value];
+    }
 
+    
+    if (grip.preview && grip.preview.items) {
+      return grip.preview.items;
+    }
 
+    
+    if (grip.preview && grip.preview.childNodes) {
+      return grip.preview.childNodes;
+    }
 
+    
+    if (grip.preview && grip.preview.entries) {
+      return grip.preview.entries.reduce((res, entry) => res.concat(entry), []);
+    }
 
+    
+    if (grip.preview && grip.preview.target) {
+      const keys = Object.keys(grip.preview.properties);
+      const values = Object.values(grip.preview.properties);
+      return [grip.preview.target, ...keys, ...values];
+    }
 
+    
+    if (grip.displayString) {
+      return [grip.displayString];
+    }
 
+    
+    if (grip.preview && grip.preview.ownProperties) {
+      let propertiesValues = Object.values(grip.preview.ownProperties).map(
+        property => property.value || property
+      );
 
-function getGripPreviewItems(grip) {
-  if (!grip) {
+      const propertyKeys = Object.keys(grip.preview.ownProperties);
+      propertiesValues = propertiesValues.concat(propertyKeys);
+
+      
+      if (grip.preview.safeGetterValues) {
+        propertiesValues = propertiesValues.concat(
+          Object.values(grip.preview.safeGetterValues).map(
+            property => property.getterValue || property
+          )
+        );
+      }
+
+      return propertiesValues;
+    }
+
     return [];
   }
 
   
-  if (grip.promiseState && grip.promiseState.value) {
-    return [grip.promiseState.value];
-  }
 
-  
-  if (grip.preview && grip.preview.items) {
-    return grip.preview.items;
-  }
 
-  
-  if (grip.preview && grip.preview.childNodes) {
-    return grip.preview.childNodes;
-  }
 
-  
-  if (grip.preview && grip.preview.entries) {
-    return grip.preview.entries.reduce((res, entry) => res.concat(entry), []);
-  }
 
-  
-  if (grip.preview && grip.preview.target) {
-    const keys = Object.keys(grip.preview.properties);
-    const values = Object.values(grip.preview.properties);
-    return [grip.preview.target, ...keys, ...values];
-  }
 
-  
-  if (grip.displayString) {
-    return [grip.displayString];
-  }
 
-  
-  if (grip.preview && grip.preview.ownProperties) {
-    let propertiesValues = Object.values(grip.preview.ownProperties).map(
-      property => property.value || property
-    );
-
-    const propertyKeys = Object.keys(grip.preview.ownProperties);
-    propertiesValues = propertiesValues.concat(propertyKeys);
-
-    
-    if (grip.preview.safeGetterValues) {
-      propertiesValues = propertiesValues.concat(
-        Object.values(grip.preview.safeGetterValues).map(
-          property => property.getterValue || property
-        )
-      );
+  function getGripType(object, noGrip) {
+    if (noGrip || Object(object) !== object) {
+      return typeof object;
     }
-
-    return propertiesValues;
+    if (object.type === "object") {
+      return object.class;
+    }
+    return object.type;
   }
 
-  return [];
-}
-
-
-
-
-
-
-
-
-function getGripType(object, noGrip) {
-  if (noGrip || Object(object) !== object) {
-    return typeof object;
-  }
-  if (object.type === "object") {
-    return object.class;
-  }
-  return object.type;
-}
-
-
-
-
-
-
-
-
-
-function containsURL(grip) {
   
-  if (typeof grip !== "string" || grip.length < 5) {
-    return false;
-  }
-
-  return validProtocols.test(grip);
-}
 
 
 
@@ -440,19 +427,16 @@ function containsURL(grip) {
 
 
 
-
-
-function isURL(token) {
-  try {
-    if (!validProtocols.test(token)) {
+  function containsURL(grip) {
+    
+    if (typeof grip !== "string" || grip.length < 5) {
       return false;
     }
-    new URL(token);
-    return true;
-  } catch (e) {
-    return false;
+
+    return validProtocols.test(grip);
   }
-}
+
+  
 
 
 
@@ -460,45 +444,64 @@ function isURL(token) {
 
 
 
-
-function interleave(items, char) {
-  return items.reduce((res, item, index) => {
-    if (index !== items.length - 1) {
-      return res.concat(item, char);
+  function isURL(token) {
+    try {
+      if (!validProtocols.test(token)) {
+        return false;
+      }
+      new URL(token);
+      return true;
+    } catch (e) {
+      return false;
     }
-    return res.concat(item);
-  }, []);
-}
+  }
 
-const ellipsisElement = span(
-  {
-    key: "more",
-    className: "more-ellipsis",
-    title: `more${ELLIPSIS}`,
-  },
-  ELLIPSIS
-);
+  
 
-module.exports = {
-  interleave,
-  isGrip,
-  isURL,
-  cropString,
-  containsURL,
-  rawCropString,
-  sanitizeString,
-  escapeString,
-  wrapRender,
-  cropMultipleLines,
-  parseURLParams,
-  parseURLEncodedText,
-  getFileName,
-  getURLDisplayString,
-  maybeEscapePropertyName,
-  getGripPreviewItems,
-  getGripType,
-  ellipsisElement,
-  ELLIPSIS,
-  uneatLastUrlCharsRegex,
-  urlRegex,
-};
+
+
+
+
+
+  function interleave(items, char) {
+    return items.reduce((res, item, index) => {
+      if (index !== items.length - 1) {
+        return res.concat(item, char);
+      }
+      return res.concat(item);
+    }, []);
+  }
+
+  const ellipsisElement = span(
+    {
+      key: "more",
+      className: "more-ellipsis",
+      title: `more${ELLIPSIS}`,
+    },
+    ELLIPSIS
+  );
+
+  module.exports = {
+    interleave,
+    isGrip,
+    isURL,
+    cropString,
+    containsURL,
+    rawCropString,
+    sanitizeString,
+    escapeString,
+    wrapRender,
+    cropMultipleLines,
+    parseURLParams,
+    parseURLEncodedText,
+    getFileName,
+    getURLDisplayString,
+    maybeEscapePropertyName,
+    getGripPreviewItems,
+    getGripType,
+    ellipsisElement,
+    ELLIPSIS,
+    uneatLastUrlCharsRegex,
+    urlRegex,
+  };
+});

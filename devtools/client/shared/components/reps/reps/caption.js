@@ -4,28 +4,31 @@
 
 "use strict";
 
+define(function(require, exports, module) {
+  
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+  const {
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
 
-const {
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-
-
-
-
-
+  
 
 
 
-Caption.propTypes = {
-  object: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
-};
 
-function Caption(props) {
-  return span({ className: "caption" }, props.object);
-}
+  
 
+  Caption.propTypes = {
+    object: PropTypes.oneOfType([PropTypes.number, PropTypes.string])
+      .isRequired,
+  };
 
-module.exports = wrapRender(Caption);
+  function Caption(props) {
+    return span({ className: "caption" }, props.object);
+  }
+
+  
+  module.exports = wrapRender(Caption);
+});

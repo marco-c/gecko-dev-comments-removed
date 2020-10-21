@@ -5,37 +5,41 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-
-
-const {
-  isGrip,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-const {
-  cleanFunctionName,
-} = require("devtools/client/shared/components/reps/reps/function");
-const {
-  isLongString,
-} = require("devtools/client/shared/components/reps/reps/string");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-
-const IGNORED_SOURCE_URLS = ["debugger eval code"];
-
-
-
-
-ErrorRep.propTypes = {
-  object: PropTypes.object.isRequired,
+define(function(require, exports, module) {
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+
   
-  renderStacktrace: PropTypes.func,
-  shouldRenderTooltip: PropTypes.bool,
-};
+  const {
+    isGrip,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
+    cleanFunctionName,
+  } = require("devtools/client/shared/components/reps/reps/function");
+  const {
+    isLongString,
+  } = require("devtools/client/shared/components/reps/reps/string");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
+
+  const IGNORED_SOURCE_URLS = ["debugger eval code"];
+
+  
+
+
+  ErrorRep.propTypes = {
+    object: PropTypes.object.isRequired,
+    
+    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    
+    renderStacktrace: PropTypes.func,
+    shouldRenderTooltip: PropTypes.bool,
+  };
+
+  
 
 
 
@@ -50,249 +54,252 @@ ErrorRep.propTypes = {
 
 
 
+  function ErrorRep(props) {
+    const { object, mode, shouldRenderTooltip, depth } = props;
+    const preview = object.preview;
+    const customFormat = props.customFormat && mode !== MODE.TINY && !depth;
 
-
-function ErrorRep(props) {
-  const { object, mode, shouldRenderTooltip, depth } = props;
-  const preview = object.preview;
-  const customFormat = props.customFormat && mode !== MODE.TINY && !depth;
-
-  let name;
-  if (
-    preview &&
-    preview.name &&
-    typeof preview.name === "string" &&
-    preview.kind
-  ) {
-    switch (preview.kind) {
-      case "Error":
-        name = preview.name;
-        break;
-      case "DOMException":
-        name = preview.kind;
-        break;
-      default:
-        throw new Error("Unknown preview kind for the Error rep.");
-    }
-  } else {
-    name = "Error";
-  }
-
-  const errorTitle = mode === MODE.TINY ? name : `${name}: `;
-  const content = [];
-
-  if (customFormat) {
-    content.push(errorTitle);
-  } else {
-    content.push(span({ className: "objectTitle", key: "title" }, errorTitle));
-  }
-
-  if (mode !== MODE.TINY) {
-    const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
-    content.push(
-      Rep({
-        ...props,
-        key: "message",
-        object: preview.message,
-        mode: props.mode || MODE.TINY,
-        useQuotes: false,
-      })
-    );
-  }
-  const renderStack = preview.stack && customFormat;
-  if (renderStack) {
-    const stacktrace = props.renderStacktrace
-      ? props.renderStacktrace(parseStackString(preview.stack))
-      : getStacktraceElements(props, preview);
-    content.push(stacktrace);
-  }
-
-  return span(
-    {
-      "data-link-actor-id": object.actor,
-      className: `objectBox-stackTrace ${
-        customFormat ? "reps-custom-format" : ""
-      }`,
-      title: shouldRenderTooltip ? `${name}: "${preview.message}"` : null,
-    },
-    ...content
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getStacktraceElements(props, preview) {
-  const stack = [];
-  if (!preview.stack) {
-    return stack;
-  }
-
-  parseStackString(preview.stack).forEach((frame, index, frames) => {
-    let onLocationClick;
-    const {
-      filename,
-      lineNumber,
-      columnNumber,
-      functionName,
-      location,
-    } = frame;
-
+    let name;
     if (
-      props.onViewSourceInDebugger &&
-      !IGNORED_SOURCE_URLS.includes(filename)
+      preview &&
+      preview.name &&
+      typeof preview.name === "string" &&
+      preview.kind
     ) {
-      onLocationClick = e => {
-        
-        e.stopPropagation();
-        props.onViewSourceInDebugger({
-          url: filename,
-          line: lineNumber,
-          column: columnNumber,
-        });
-      };
+      switch (preview.kind) {
+        case "Error":
+          name = preview.name;
+          break;
+        case "DOMException":
+          name = preview.kind;
+          break;
+        default:
+          throw new Error("Unknown preview kind for the Error rep.");
+      }
+    } else {
+      name = "Error";
     }
 
-    stack.push(
-      "\t",
-      span(
-        {
-          key: `fn${index}`,
-          className: "objectBox-stackTrace-fn",
-        },
-        cleanFunctionName(functionName)
-      ),
-      " ",
-      span(
-        {
-          key: `location${index}`,
-          className: "objectBox-stackTrace-location",
-          onClick: onLocationClick,
-          title: onLocationClick
-            ? `View source in debugger → ${location}`
-            : undefined,
-        },
-        location
-      ),
-      "\n"
+    const errorTitle = mode === MODE.TINY ? name : `${name}: `;
+    const content = [];
+
+    if (customFormat) {
+      content.push(errorTitle);
+    } else {
+      content.push(
+        span({ className: "objectTitle", key: "title" }, errorTitle)
+      );
+    }
+
+    if (mode !== MODE.TINY) {
+      const {
+        Rep,
+      } = require("devtools/client/shared/components/reps/reps/rep");
+      content.push(
+        Rep({
+          ...props,
+          key: "message",
+          object: preview.message,
+          mode: props.mode || MODE.TINY,
+          useQuotes: false,
+        })
+      );
+    }
+    const renderStack = preview.stack && customFormat;
+    if (renderStack) {
+      const stacktrace = props.renderStacktrace
+        ? props.renderStacktrace(parseStackString(preview.stack))
+        : getStacktraceElements(props, preview);
+      content.push(stacktrace);
+    }
+
+    return span(
+      {
+        "data-link-actor-id": object.actor,
+        className: `objectBox-stackTrace ${
+          customFormat ? "reps-custom-format" : ""
+        }`,
+        title: shouldRenderTooltip ? `${name}: "${preview.message}"` : null,
+      },
+      ...content
     );
-  });
-
-  return span(
-    {
-      key: "stack",
-      className: "objectBox-stackTrace-grid",
-    },
-    stack
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function parseStackString(stack) {
-  if (!stack) {
-    return [];
   }
 
-  const isStacktraceALongString = isLongString(stack);
-  const stackString = isStacktraceALongString ? stack.initial : stack;
+  
 
-  if (typeof stackString !== "string") {
-    return [];
-  }
 
-  const res = [];
-  stackString.split("\n").forEach((frame, index, frames) => {
-    if (!frame) {
-      
-      return;
+
+
+
+
+
+
+
+
+
+
+
+
+
+  function getStacktraceElements(props, preview) {
+    const stack = [];
+    if (!preview.stack) {
+      return stack;
     }
 
-    
-    
-    
-    
-    if (isStacktraceALongString && index === frames.length - 1) {
-      return;
-    }
-
-    let functionName;
-    let location;
-
-    
-    const atCharIndex = frame.indexOf("@");
-    if (atCharIndex > -1) {
-      functionName = frame.slice(0, atCharIndex);
-      location = frame.slice(atCharIndex + 1);
-    }
-
-    if (location && location.includes(" -> ")) {
-      
-      
-      
-      location = location.split(" -> ").pop();
-    }
-
-    if (!functionName) {
-      functionName = "<anonymous>";
-    }
-
-    
-    
-    
-    const locationParts = location
-      ? location.match(/^(.*):(\d+):(\d+)$/)
-      : null;
-
-    if (location && locationParts) {
-      const [, filename, line, column] = locationParts;
-      res.push({
+    parseStackString(preview.stack).forEach((frame, index, frames) => {
+      let onLocationClick;
+      const {
         filename,
+        lineNumber,
+        columnNumber,
         functionName,
         location,
-        columnNumber: Number(column),
-        lineNumber: Number(line),
-      });
-    }
-  });
+      } = frame;
 
-  return res;
-}
+      if (
+        props.onViewSourceInDebugger &&
+        !IGNORED_SOURCE_URLS.includes(filename)
+      ) {
+        onLocationClick = e => {
+          
+          e.stopPropagation();
+          props.onViewSourceInDebugger({
+            url: filename,
+            line: lineNumber,
+            column: columnNumber,
+          });
+        };
+      }
 
+      stack.push(
+        "\t",
+        span(
+          {
+            key: `fn${index}`,
+            className: "objectBox-stackTrace-fn",
+          },
+          cleanFunctionName(functionName)
+        ),
+        " ",
+        span(
+          {
+            key: `location${index}`,
+            className: "objectBox-stackTrace-location",
+            onClick: onLocationClick,
+            title: onLocationClick
+              ? `View source in debugger → ${location}`
+              : undefined,
+          },
+          location
+        ),
+        "\n"
+      );
+    });
 
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true || !isGrip(object)) {
-    return false;
+    return span(
+      {
+        key: "stack",
+        className: "objectBox-stackTrace-grid",
+      },
+      stack
+    );
   }
 
-  return object.isError || object.class === "DOMException";
-}
+  
 
 
-module.exports = {
-  rep: wrapRender(ErrorRep),
-  supportsObject,
-};
+
+
+
+
+
+
+
+
+
+  function parseStackString(stack) {
+    if (!stack) {
+      return [];
+    }
+
+    const isStacktraceALongString = isLongString(stack);
+    const stackString = isStacktraceALongString ? stack.initial : stack;
+
+    if (typeof stackString !== "string") {
+      return [];
+    }
+
+    const res = [];
+    stackString.split("\n").forEach((frame, index, frames) => {
+      if (!frame) {
+        
+        return;
+      }
+
+      
+      
+      
+      
+      if (isStacktraceALongString && index === frames.length - 1) {
+        return;
+      }
+
+      let functionName;
+      let location;
+
+      
+      const atCharIndex = frame.indexOf("@");
+      if (atCharIndex > -1) {
+        functionName = frame.slice(0, atCharIndex);
+        location = frame.slice(atCharIndex + 1);
+      }
+
+      if (location && location.includes(" -> ")) {
+        
+        
+        
+        location = location.split(" -> ").pop();
+      }
+
+      if (!functionName) {
+        functionName = "<anonymous>";
+      }
+
+      
+      
+      
+      const locationParts = location
+        ? location.match(/^(.*):(\d+):(\d+)$/)
+        : null;
+
+      if (location && locationParts) {
+        const [, filename, line, column] = locationParts;
+        res.push({
+          filename,
+          functionName,
+          location,
+          columnNumber: Number(column),
+          lineNumber: Number(line),
+        });
+      }
+    });
+
+    return res;
+  }
+
+  
+  function supportsObject(object, noGrip = false) {
+    if (noGrip === true || !isGrip(object)) {
+      return false;
+    }
+
+    return object.isError || object.class === "DOMException";
+  }
+
+  
+  module.exports = {
+    rep: wrapRender(ErrorRep),
+    supportsObject,
+  };
+});

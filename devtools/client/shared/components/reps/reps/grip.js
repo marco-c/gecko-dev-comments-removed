@@ -5,281 +5,290 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-
-
-const {
-  interleave,
-  isGrip,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-
-
-
-
-
-
-
-GripRep.propTypes = {
-  object: PropTypes.object.isRequired,
+define(function(require, exports, module) {
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  isInterestingProp: PropTypes.func,
-  title: PropTypes.string,
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-  noGrip: PropTypes.bool,
-  shouldRenderTooltip: PropTypes.bool,
-};
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-const DEFAULT_TITLE = "Object";
+  
+  const {
+    interleave,
+    isGrip,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
 
-function GripRep(props) {
-  const { mode = MODE.SHORT, object, shouldRenderTooltip } = props;
+  
 
-  const config = {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-object",
+
+
+
+
+  GripRep.propTypes = {
+    object: PropTypes.object.isRequired,
+    
+    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    isInterestingProp: PropTypes.func,
+    title: PropTypes.string,
+    onDOMNodeMouseOver: PropTypes.func,
+    onDOMNodeMouseOut: PropTypes.func,
+    onInspectIconClick: PropTypes.func,
+    noGrip: PropTypes.bool,
+    shouldRenderTooltip: PropTypes.bool,
   };
 
-  if (mode === MODE.TINY) {
+  const DEFAULT_TITLE = "Object";
+
+  function GripRep(props) {
+    const { mode = MODE.SHORT, object, shouldRenderTooltip } = props;
+
+    const config = {
+      "data-link-actor-id": object.actor,
+      className: "objectBox objectBox-object",
+    };
+
+    if (mode === MODE.TINY) {
+      const propertiesLength = getPropertiesLength(object);
+
+      const tinyModeItems = [];
+      if (getTitle(props, object) !== DEFAULT_TITLE) {
+        tinyModeItems.push(getTitleElement(props, object));
+      } else {
+        tinyModeItems.push(
+          span(
+            {
+              className: "objectLeftBrace",
+            },
+            "{"
+          ),
+          propertiesLength > 0
+            ? span(
+                {
+                  key: "more",
+                  className: "more-ellipsis",
+                },
+                "…"
+              )
+            : null,
+          span(
+            {
+              className: "objectRightBrace",
+            },
+            "}"
+          )
+        );
+      }
+
+      config.title = shouldRenderTooltip ? getTitle(props, object) : null;
+
+      return span(config, ...tinyModeItems);
+    }
+
+    const propsArray = safePropIterator(props, object, maxLengthMap.get(mode));
+
+    config.title = shouldRenderTooltip ? getTitle(props, object) : null;
+
+    return span(
+      config,
+      getTitleElement(props, object),
+      span(
+        {
+          className: "objectLeftBrace",
+        },
+        " { "
+      ),
+      ...interleave(propsArray, ", "),
+      span(
+        {
+          className: "objectRightBrace",
+        },
+        " }"
+      )
+    );
+  }
+
+  function getTitleElement(props, object) {
+    return span(
+      {
+        className: "objectTitle",
+      },
+      getTitle(props, object)
+    );
+  }
+
+  function getTitle(props, object) {
+    return props.title || object.class || DEFAULT_TITLE;
+  }
+
+  function getPropertiesLength(object) {
+    let propertiesLength =
+      object.preview && object.preview.ownPropertiesLength
+        ? object.preview.ownPropertiesLength
+        : object.ownPropertyLength;
+
+    if (object.preview && object.preview.safeGetterValues) {
+      propertiesLength += Object.keys(object.preview.safeGetterValues).length;
+    }
+
+    if (object.preview && object.preview.ownSymbols) {
+      propertiesLength += object.preview.ownSymbolsLength;
+    }
+
+    return propertiesLength;
+  }
+
+  function safePropIterator(props, object, max) {
+    max = typeof max === "undefined" ? maxLengthMap.get(MODE.SHORT) : max;
+    try {
+      return propIterator(props, object, max);
+    } catch (err) {
+      console.error(err);
+    }
+    return [];
+  }
+
+  function propIterator(props, object, max) {
+    if (
+      object.preview &&
+      Object.keys(object.preview).includes("wrappedValue")
+    ) {
+      const {
+        Rep,
+      } = require("devtools/client/shared/components/reps/reps/rep");
+
+      return [
+        Rep({
+          object: object.preview.wrappedValue,
+          mode: props.mode || MODE.TINY,
+          defaultRep: Grip,
+        }),
+      ];
+    }
+
+    
+    const isInterestingProp =
+      props.isInterestingProp ||
+      ((type, value) => {
+        return (
+          type == "boolean" ||
+          type == "number" ||
+          (type == "string" && value.length != 0)
+        );
+      });
+
+    let properties = object.preview ? object.preview.ownProperties || {} : {};
+
     const propertiesLength = getPropertiesLength(object);
 
-    const tinyModeItems = [];
-    if (getTitle(props, object) !== DEFAULT_TITLE) {
-      tinyModeItems.push(getTitleElement(props, object));
-    } else {
-      tinyModeItems.push(
+    if (object.preview && object.preview.safeGetterValues) {
+      properties = { ...properties, ...object.preview.safeGetterValues };
+    }
+
+    let indexes = getPropIndexes(properties, max, isInterestingProp);
+    if (indexes.length < max && indexes.length < propertiesLength) {
+      
+      
+      indexes = indexes.concat(
+        getPropIndexes(properties, max - indexes.length, (t, value, name) => {
+          return !isInterestingProp(t, value, name);
+        })
+      );
+    }
+
+    
+    
+    
+    
+    const suppressQuotes = object.class === "Proxy";
+    const propsArray = getProps(props, properties, indexes, suppressQuotes);
+
+    
+    if (object.preview && object.preview.ownSymbols) {
+      const { ownSymbols } = object.preview;
+      const length = max - indexes.length;
+
+      const symbolsProps = ownSymbols.slice(0, length).map(symbolItem => {
+        const symbolValue = symbolItem.descriptor.value;
+        const symbolGrip =
+          symbolValue && symbolValue.getGrip
+            ? symbolValue.getGrip()
+            : symbolValue;
+
+        return PropRep({
+          ...props,
+          mode: MODE.TINY,
+          name: symbolItem,
+          object: symbolGrip,
+          equal: ": ",
+          defaultRep: Grip,
+          title: null,
+          suppressQuotes,
+        });
+      });
+
+      propsArray.push(...symbolsProps);
+    }
+
+    if (
+      Object.keys(properties).length > max ||
+      propertiesLength > max ||
+      
+      
+      propertiesLength > propsArray.length
+    ) {
+      
+      propsArray.push(
         span(
           {
-            className: "objectLeftBrace",
+            key: "more",
+            className: "more-ellipsis",
           },
-          "{"
-        ),
-        propertiesLength > 0
-          ? span(
-              {
-                key: "more",
-                className: "more-ellipsis",
-              },
-              "…"
-            )
-          : null,
-        span(
-          {
-            className: "objectRightBrace",
-          },
-          "}"
+          "…"
         )
       );
     }
 
-    config.title = shouldRenderTooltip ? getTitle(props, object) : null;
-
-    return span(config, ...tinyModeItems);
-  }
-
-  const propsArray = safePropIterator(props, object, maxLengthMap.get(mode));
-
-  config.title = shouldRenderTooltip ? getTitle(props, object) : null;
-
-  return span(
-    config,
-    getTitleElement(props, object),
-    span(
-      {
-        className: "objectLeftBrace",
-      },
-      " { "
-    ),
-    ...interleave(propsArray, ", "),
-    span(
-      {
-        className: "objectRightBrace",
-      },
-      " }"
-    )
-  );
-}
-
-function getTitleElement(props, object) {
-  return span(
-    {
-      className: "objectTitle",
-    },
-    getTitle(props, object)
-  );
-}
-
-function getTitle(props, object) {
-  return props.title || object.class || DEFAULT_TITLE;
-}
-
-function getPropertiesLength(object) {
-  let propertiesLength =
-    object.preview && object.preview.ownPropertiesLength
-      ? object.preview.ownPropertiesLength
-      : object.ownPropertyLength;
-
-  if (object.preview && object.preview.safeGetterValues) {
-    propertiesLength += Object.keys(object.preview.safeGetterValues).length;
-  }
-
-  if (object.preview && object.preview.ownSymbols) {
-    propertiesLength += object.preview.ownSymbolsLength;
-  }
-
-  return propertiesLength;
-}
-
-function safePropIterator(props, object, max) {
-  max = typeof max === "undefined" ? maxLengthMap.get(MODE.SHORT) : max;
-  try {
-    return propIterator(props, object, max);
-  } catch (err) {
-    console.error(err);
-  }
-  return [];
-}
-
-function propIterator(props, object, max) {
-  if (object.preview && Object.keys(object.preview).includes("wrappedValue")) {
-    const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
-
-    return [
-      Rep({
-        object: object.preview.wrappedValue,
-        mode: props.mode || MODE.TINY,
-        defaultRep: Grip,
-      }),
-    ];
+    return propsArray;
   }
 
   
-  const isInterestingProp =
-    props.isInterestingProp ||
-    ((type, value) => {
-      return (
-        type == "boolean" ||
-        type == "number" ||
-        (type == "string" && value.length != 0)
-      );
+
+
+
+
+
+
+
+
+
+  function getProps(componentProps, properties, indexes, suppressQuotes) {
+    
+    indexes.sort(function(a, b) {
+      return a - b;
     });
 
-  let properties = object.preview ? object.preview.ownProperties || {} : {};
-
-  const propertiesLength = getPropertiesLength(object);
-
-  if (object.preview && object.preview.safeGetterValues) {
-    properties = { ...properties, ...object.preview.safeGetterValues };
-  }
-
-  let indexes = getPropIndexes(properties, max, isInterestingProp);
-  if (indexes.length < max && indexes.length < propertiesLength) {
-    
-    
-    indexes = indexes.concat(
-      getPropIndexes(properties, max - indexes.length, (t, value, name) => {
-        return !isInterestingProp(t, value, name);
-      })
-    );
-  }
-
-  
-  
-  
-  
-  const suppressQuotes = object.class === "Proxy";
-  const propsArray = getProps(props, properties, indexes, suppressQuotes);
-
-  
-  if (object.preview && object.preview.ownSymbols) {
-    const { ownSymbols } = object.preview;
-    const length = max - indexes.length;
-
-    const symbolsProps = ownSymbols.slice(0, length).map(symbolItem => {
-      const symbolValue = symbolItem.descriptor.value;
-      const symbolGrip =
-        symbolValue && symbolValue.getGrip
-          ? symbolValue.getGrip()
-          : symbolValue;
+    const propertiesKeys = Object.keys(properties);
+    return indexes.map(i => {
+      const name = propertiesKeys[i];
+      const value = getPropValue(properties[name]);
 
       return PropRep({
-        ...props,
+        ...componentProps,
         mode: MODE.TINY,
-        name: symbolItem,
-        object: symbolGrip,
+        name,
+        object: value,
         equal: ": ",
         defaultRep: Grip,
         title: null,
         suppressQuotes,
       });
     });
-
-    propsArray.push(...symbolsProps);
   }
 
-  if (
-    Object.keys(properties).length > max ||
-    propertiesLength > max ||
-    
-    
-    propertiesLength > propsArray.length
-  ) {
-    
-    propsArray.push(
-      span(
-        {
-          key: "more",
-          className: "more-ellipsis",
-        },
-        "…"
-      )
-    );
-  }
-
-  return propsArray;
-}
-
-
-
-
-
-
-
-
-
-
-
-function getProps(componentProps, properties, indexes, suppressQuotes) {
   
-  indexes.sort(function(a, b) {
-    return a - b;
-  });
-
-  const propertiesKeys = Object.keys(properties);
-  return indexes.map(i => {
-    const name = propertiesKeys[i];
-    const value = getPropValue(properties[name]);
-
-    return PropRep({
-      ...componentProps,
-      mode: MODE.TINY,
-      name,
-      object: value,
-      equal: ": ",
-      defaultRep: Grip,
-      title: null,
-      suppressQuotes,
-    });
-  });
-}
 
 
 
@@ -287,79 +296,78 @@ function getProps(componentProps, properties, indexes, suppressQuotes) {
 
 
 
+  function getPropIndexes(properties, max, filter) {
+    const indexes = [];
 
+    try {
+      let i = 0;
+      for (const name in properties) {
+        if (indexes.length >= max) {
+          return indexes;
+        }
 
-function getPropIndexes(properties, max, filter) {
-  const indexes = [];
+        
+        
+        const value = getPropValue(properties[name]);
+        let type = value.class || typeof value;
+        type = type.toLowerCase();
 
-  try {
-    let i = 0;
-    for (const name in properties) {
-      if (indexes.length >= max) {
-        return indexes;
+        if (filter(type, value, name)) {
+          indexes.push(i);
+        }
+        i++;
       }
+    } catch (err) {
+      console.error(err);
+    }
+    return indexes;
+  }
 
-      
-      
-      const value = getPropValue(properties[name]);
-      let type = value.class || typeof value;
-      type = type.toLowerCase();
+  
 
-      if (filter(type, value, name)) {
-        indexes.push(i);
+
+
+
+
+  function getPropValue(property) {
+    let value = property;
+    if (typeof property === "object") {
+      const keys = Object.keys(property);
+      if (keys.includes("value")) {
+        value = property.value;
+      } else if (keys.includes("getterValue")) {
+        value = property.getterValue;
       }
-      i++;
     }
-  } catch (err) {
-    console.error(err);
+    return value;
   }
-  return indexes;
-}
 
-
-
-
-
-
-
-function getPropValue(property) {
-  let value = property;
-  if (typeof property === "object") {
-    const keys = Object.keys(property);
-    if (keys.includes("value")) {
-      value = property.value;
-    } else if (keys.includes("getterValue")) {
-      value = property.getterValue;
+  
+  function supportsObject(object, noGrip = false) {
+    if (noGrip === true || !isGrip(object)) {
+      return false;
     }
-  }
-  return value;
-}
 
+    if (object.class === "DeadObject") {
+      return true;
+    }
 
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true || !isGrip(object)) {
-    return false;
-  }
-
-  if (object.class === "DeadObject") {
-    return true;
+    return object.preview
+      ? typeof object.preview.ownProperties !== "undefined"
+      : typeof object.ownPropertyLength !== "undefined";
   }
 
-  return object.preview
-    ? typeof object.preview.ownProperties !== "undefined"
-    : typeof object.ownPropertyLength !== "undefined";
-}
+  const maxLengthMap = new Map();
+  maxLengthMap.set(MODE.SHORT, 3);
+  maxLengthMap.set(MODE.LONG, 10);
 
-const maxLengthMap = new Map();
-maxLengthMap.set(MODE.SHORT, 3);
-maxLengthMap.set(MODE.LONG, 10);
+  
+  const Grip = {
+    rep: wrapRender(GripRep),
+    supportsObject,
+    maxLengthMap,
+  };
 
-
-const Grip = {
-  rep: wrapRender(GripRep),
-  supportsObject,
-  maxLengthMap,
-};
-
-
-module.exports = Grip;
+  
+  module.exports = Grip;
+});

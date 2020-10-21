@@ -5,49 +5,73 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-
-
-const {
-  getGripType,
-  isGrip,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-
-const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-
-
-
-
-
-PromiseRep.propTypes = {
-  object: PropTypes.object.isRequired,
+define(function(require, exports, module) {
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-  shouldRenderTooltip: PropTypes.bool,
-};
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-function PromiseRep(props) {
-  const object = props.object;
-  const shouldRenderTooltip = props.shouldRenderTooltip;
-  const { promiseState } = object;
+  
+  const {
+    getGripType,
+    isGrip,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
 
-  const config = {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-object",
-    title: shouldRenderTooltip ? "Promise" : null,
+  const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
+
+  
+
+
+
+  PromiseRep.propTypes = {
+    object: PropTypes.object.isRequired,
+    
+    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    onDOMNodeMouseOver: PropTypes.func,
+    onDOMNodeMouseOut: PropTypes.func,
+    onInspectIconClick: PropTypes.func,
+    shouldRenderTooltip: PropTypes.bool,
   };
 
-  if (props.mode === MODE.TINY) {
-    const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
+  function PromiseRep(props) {
+    const object = props.object;
+    const shouldRenderTooltip = props.shouldRenderTooltip;
+    const { promiseState } = object;
 
+    const config = {
+      "data-link-actor-id": object.actor,
+      className: "objectBox objectBox-object",
+      title: shouldRenderTooltip ? "Promise" : null,
+    };
+
+    if (props.mode === MODE.TINY) {
+      const {
+        Rep,
+      } = require("devtools/client/shared/components/reps/reps/rep");
+
+      return span(
+        config,
+        getTitle(object),
+        span(
+          {
+            className: "objectLeftBrace",
+          },
+          " { "
+        ),
+        Rep({ object: promiseState.state }),
+        span(
+          {
+            className: "objectRightBrace",
+          },
+          " }"
+        )
+      );
+    }
+
+    const propsArray = getProps(props, promiseState);
     return span(
       config,
       getTitle(object),
@@ -57,7 +81,7 @@ function PromiseRep(props) {
         },
         " { "
       ),
-      Rep({ object: promiseState.state }),
+      ...propsArray,
       span(
         {
           className: "objectRightBrace",
@@ -67,73 +91,54 @@ function PromiseRep(props) {
     );
   }
 
-  const propsArray = getProps(props, promiseState);
-  return span(
-    config,
-    getTitle(object),
-    span(
+  function getTitle(object) {
+    return span(
       {
-        className: "objectLeftBrace",
+        className: "objectTitle",
       },
-      " { "
-    ),
-    ...propsArray,
-    span(
-      {
-        className: "objectRightBrace",
-      },
-      " }"
-    )
-  );
-}
-
-function getTitle(object) {
-  return span(
-    {
-      className: "objectTitle",
-    },
-    object.class
-  );
-}
-
-function getProps(props, promiseState) {
-  const keys = ["state"];
-  if (Object.keys(promiseState).includes("value")) {
-    keys.push("value");
+      object.class
+    );
   }
 
-  return keys.reduce((res, key, i) => {
-    const object = promiseState[key];
-    res = res.concat(
-      PropRep({
-        ...props,
-        mode: MODE.TINY,
-        name: `<${key}>`,
-        object: object.getGrip ? object.getGrip() : object,
-        equal: ": ",
-        suppressQuotes: true,
-      })
-    );
-
-    
-    if (i !== keys.length - 1) {
-      res.push(", ");
+  function getProps(props, promiseState) {
+    const keys = ["state"];
+    if (Object.keys(promiseState).includes("value")) {
+      keys.push("value");
     }
 
-    return res;
-  }, []);
-}
+    return keys.reduce((res, key, i) => {
+      const object = promiseState[key];
+      res = res.concat(
+        PropRep({
+          ...props,
+          mode: MODE.TINY,
+          name: `<${key}>`,
+          object: object.getGrip ? object.getGrip() : object,
+          equal: ": ",
+          suppressQuotes: true,
+        })
+      );
 
+      
+      if (i !== keys.length - 1) {
+        res.push(", ");
+      }
 
-function supportsObject(object, noGrip = false) {
-  if (noGrip === true || !isGrip(object)) {
-    return false;
+      return res;
+    }, []);
   }
-  return getGripType(object, noGrip) == "Promise";
-}
 
+  
+  function supportsObject(object, noGrip = false) {
+    if (noGrip === true || !isGrip(object)) {
+      return false;
+    }
+    return getGripType(object, noGrip) == "Promise";
+  }
 
-module.exports = {
-  rep: wrapRender(PromiseRep),
-  supportsObject,
-};
+  
+  module.exports = {
+    rep: wrapRender(PromiseRep),
+    supportsObject,
+  };
+});

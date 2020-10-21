@@ -5,227 +5,239 @@
 "use strict";
 
 
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-
-const {
-  lengthBubble,
-} = require("devtools/client/shared/components/reps/shared/grip-length-bubble");
-const {
-  interleave,
-  isGrip,
-  wrapRender,
-  ellipsisElement,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
-const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
-const {
-  MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
-const {
-  ModePropType,
-} = require("devtools/client/shared/components/reps/reps/array");
-
-
-
-
-
-
-GripMap.propTypes = {
-  object: PropTypes.object,
+define(function(require, exports, module) {
   
-  mode: ModePropType,
-  isInterestingEntry: PropTypes.func,
-  onDOMNodeMouseOver: PropTypes.func,
-  onDOMNodeMouseOut: PropTypes.func,
-  onInspectIconClick: PropTypes.func,
-  title: PropTypes.string,
-  shouldRenderTooltip: PropTypes.bool,
-};
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
-function GripMap(props) {
-  const { mode, object, shouldRenderTooltip } = props;
+  const {
+    lengthBubble,
+  } = require("devtools/client/shared/components/reps/shared/grip-length-bubble");
+  const {
+    interleave,
+    isGrip,
+    wrapRender,
+    ellipsisElement,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const PropRep = require("devtools/client/shared/components/reps/reps/prop-rep");
+  const {
+    MODE,
+  } = require("devtools/client/shared/components/reps/reps/constants");
+  const {
+    ModePropType,
+  } = require("devtools/client/shared/components/reps/reps/array");
 
-  const config = {
-    "data-link-actor-id": object.actor,
-    className: "objectBox objectBox-object",
-    title: shouldRenderTooltip ? getTooltip(object, props) : null,
+  
+
+
+
+
+  GripMap.propTypes = {
+    object: PropTypes.object,
+    
+    mode: ModePropType,
+    isInterestingEntry: PropTypes.func,
+    onDOMNodeMouseOver: PropTypes.func,
+    onDOMNodeMouseOut: PropTypes.func,
+    onInspectIconClick: PropTypes.func,
+    title: PropTypes.string,
+    shouldRenderTooltip: PropTypes.bool,
   };
 
-  const title = getTitle(props, object);
-  const isEmpty = getLength(object) === 0;
+  function GripMap(props) {
+    const { mode, object, shouldRenderTooltip } = props;
 
-  if (isEmpty || mode === MODE.TINY) {
-    return span(config, title);
-  }
+    const config = {
+      "data-link-actor-id": object.actor,
+      className: "objectBox objectBox-object",
+      title: shouldRenderTooltip ? getTooltip(object, props) : null,
+    };
 
-  const propsArray = safeEntriesIterator(props, object, maxLengthMap.get(mode));
+    const title = getTitle(props, object);
+    const isEmpty = getLength(object) === 0;
 
-  return span(
-    config,
-    title,
-    span(
-      {
-        className: "objectLeftBrace",
-      },
-      " { "
-    ),
-    ...interleave(propsArray, ", "),
-    span(
-      {
-        className: "objectRightBrace",
-      },
-      " }"
-    )
-  );
-}
+    if (isEmpty || mode === MODE.TINY) {
+      return span(config, title);
+    }
 
-function getTitle(props, object) {
-  const title = props.title || (object && object.class ? object.class : "Map");
-  return span(
-    {
-      className: "objectTitle",
-    },
-    title,
-    lengthBubble({
+    const propsArray = safeEntriesIterator(
+      props,
       object,
-      mode: props.mode,
-      maxLengthMap,
-      getLength,
-      showZeroLength: true,
-    })
-  );
-}
+      maxLengthMap.get(mode)
+    );
 
-function getTooltip(object, props) {
-  const tooltip =
-    props.title || (object && object.class ? object.class : "Map");
-  return `${tooltip}(${getLength(object)})`;
-}
-
-function safeEntriesIterator(props, object, max) {
-  max = typeof max === "undefined" ? 3 : max;
-  try {
-    return entriesIterator(props, object, max);
-  } catch (err) {
-    console.error(err);
+    return span(
+      config,
+      title,
+      span(
+        {
+          className: "objectLeftBrace",
+        },
+        " { "
+      ),
+      ...interleave(propsArray, ", "),
+      span(
+        {
+          className: "objectRightBrace",
+        },
+        " }"
+      )
+    );
   }
-  return [];
-}
 
-function entriesIterator(props, object, max) {
-  
-  const isInterestingEntry =
-    props.isInterestingEntry ||
-    ((type, value) => {
-      return (
-        type == "boolean" ||
-        type == "number" ||
-        (type == "string" && value.length != 0)
-      );
-    });
-
-  const mapEntries =
-    object.preview && object.preview.entries ? object.preview.entries : [];
-
-  let indexes = getEntriesIndexes(mapEntries, max, isInterestingEntry);
-  if (indexes.length < max && indexes.length < mapEntries.length) {
-    
-    indexes = indexes.concat(
-      getEntriesIndexes(mapEntries, max - indexes.length, (t, value, name) => {
-        return !isInterestingEntry(t, value, name);
+  function getTitle(props, object) {
+    const title =
+      props.title || (object && object.class ? object.class : "Map");
+    return span(
+      {
+        className: "objectTitle",
+      },
+      title,
+      lengthBubble({
+        object,
+        mode: props.mode,
+        maxLengthMap,
+        getLength,
+        showZeroLength: true,
       })
     );
   }
 
-  const entries = getEntries(props, mapEntries, indexes);
-  if (entries.length < getLength(object)) {
-    
-    entries.push(ellipsisElement);
+  function getTooltip(object, props) {
+    const tooltip =
+      props.title || (object && object.class ? object.class : "Map");
+    return `${tooltip}(${getLength(object)})`;
   }
 
-  return entries;
-}
+  function safeEntriesIterator(props, object, max) {
+    max = typeof max === "undefined" ? 3 : max;
+    try {
+      return entriesIterator(props, object, max);
+    } catch (err) {
+      console.error(err);
+    }
+    return [];
+  }
 
+  function entriesIterator(props, object, max) {
+    
+    const isInterestingEntry =
+      props.isInterestingEntry ||
+      ((type, value) => {
+        return (
+          type == "boolean" ||
+          type == "number" ||
+          (type == "string" && value.length != 0)
+        );
+      });
 
+    const mapEntries =
+      object.preview && object.preview.entries ? object.preview.entries : [];
 
-
-
-
-
-
-
-function getEntries(props, entries, indexes) {
-  const { onDOMNodeMouseOver, onDOMNodeMouseOut, onInspectIconClick } = props;
-
-  
-  indexes.sort(function(a, b) {
-    return a - b;
-  });
-
-  return indexes.map((index, i) => {
-    const [key, entryValue] = entries[index];
-    const value =
-      entryValue.value !== undefined ? entryValue.value : entryValue;
-
-    return PropRep({
-      name: key && key.getGrip ? key.getGrip() : key,
-      equal: " \u2192 ",
-      object: value && value.getGrip ? value.getGrip() : value,
-      mode: MODE.TINY,
-      onDOMNodeMouseOver,
-      onDOMNodeMouseOut,
-      onInspectIconClick,
-    });
-  });
-}
-
-
-
-
-
-
-
-
-
-function getEntriesIndexes(entries, max, filter) {
-  return entries.reduce((indexes, [key, entry], i) => {
-    if (indexes.length < max) {
-      const value = entry && entry.value !== undefined ? entry.value : entry;
+    let indexes = getEntriesIndexes(mapEntries, max, isInterestingEntry);
+    if (indexes.length < max && indexes.length < mapEntries.length) {
       
-      
-      const type = (value && value.class
-        ? value.class
-        : typeof value
-      ).toLowerCase();
-
-      if (filter(type, value, key)) {
-        indexes.push(i);
-      }
+      indexes = indexes.concat(
+        getEntriesIndexes(
+          mapEntries,
+          max - indexes.length,
+          (t, value, name) => {
+            return !isInterestingEntry(t, value, name);
+          }
+        )
+      );
     }
 
-    return indexes;
-  }, []);
-}
+    const entries = getEntries(props, mapEntries, indexes);
+    if (entries.length < getLength(object)) {
+      
+      entries.push(ellipsisElement);
+    }
 
-function getLength(grip) {
-  return grip.preview.size || 0;
-}
-
-function supportsObject(grip, noGrip = false) {
-  if (noGrip === true || !isGrip(grip)) {
-    return false;
+    return entries;
   }
-  return grip.preview && grip.preview.kind == "MapLike";
-}
 
-const maxLengthMap = new Map();
-maxLengthMap.set(MODE.SHORT, 3);
-maxLengthMap.set(MODE.LONG, 10);
+  
 
 
-module.exports = {
-  rep: wrapRender(GripMap),
-  supportsObject,
-  maxLengthMap,
-  getLength,
-};
+
+
+
+
+
+  function getEntries(props, entries, indexes) {
+    const { onDOMNodeMouseOver, onDOMNodeMouseOut, onInspectIconClick } = props;
+
+    
+    indexes.sort(function(a, b) {
+      return a - b;
+    });
+
+    return indexes.map((index, i) => {
+      const [key, entryValue] = entries[index];
+      const value =
+        entryValue.value !== undefined ? entryValue.value : entryValue;
+
+      return PropRep({
+        name: key && key.getGrip ? key.getGrip() : key,
+        equal: " \u2192 ",
+        object: value && value.getGrip ? value.getGrip() : value,
+        mode: MODE.TINY,
+        onDOMNodeMouseOver,
+        onDOMNodeMouseOut,
+        onInspectIconClick,
+      });
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  function getEntriesIndexes(entries, max, filter) {
+    return entries.reduce((indexes, [key, entry], i) => {
+      if (indexes.length < max) {
+        const value = entry && entry.value !== undefined ? entry.value : entry;
+        
+        
+        const type = (value && value.class
+          ? value.class
+          : typeof value
+        ).toLowerCase();
+
+        if (filter(type, value, key)) {
+          indexes.push(i);
+        }
+      }
+
+      return indexes;
+    }, []);
+  }
+
+  function getLength(grip) {
+    return grip.preview.size || 0;
+  }
+
+  function supportsObject(grip, noGrip = false) {
+    if (noGrip === true || !isGrip(grip)) {
+      return false;
+    }
+    return grip.preview && grip.preview.kind == "MapLike";
+  }
+
+  const maxLengthMap = new Map();
+  maxLengthMap.set(MODE.SHORT, 3);
+  maxLengthMap.set(MODE.LONG, 10);
+
+  
+  module.exports = {
+    rep: wrapRender(GripMap),
+    supportsObject,
+    maxLengthMap,
+    getLength,
+  };
+});

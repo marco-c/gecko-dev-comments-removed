@@ -5,50 +5,53 @@
 "use strict";
 
 
-const { span } = require("devtools/client/shared/vendor/react-dom-factories");
-const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+define(function(require, exports, module) {
+  
+  const { span } = require("devtools/client/shared/vendor/react-dom-factories");
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
-const {
-  getGripType,
-  wrapRender,
-} = require("devtools/client/shared/components/reps/reps/rep-utils");
+  const {
+    getGripType,
+    wrapRender,
+  } = require("devtools/client/shared/components/reps/reps/rep-utils");
+
+  
 
 
 
-
-
-BigInt.propTypes = {
-  object: PropTypes.oneOfType([
-    PropTypes.object,
-    PropTypes.number,
-    PropTypes.bool,
-  ]).isRequired,
-  shouldRenderTooltip: PropTypes.bool,
-};
-
-function BigInt(props) {
-  const { object, shouldRenderTooltip } = props;
-  const text = object.text;
-  const config = getElementConfig({ text, shouldRenderTooltip });
-
-  return span(config, `${text}n`);
-}
-
-function getElementConfig(opts) {
-  const { text, shouldRenderTooltip } = opts;
-
-  return {
-    className: "objectBox objectBox-number",
-    title: shouldRenderTooltip ? `${text}n` : null,
+  BigInt.propTypes = {
+    object: PropTypes.oneOfType([
+      PropTypes.object,
+      PropTypes.number,
+      PropTypes.bool,
+    ]).isRequired,
+    shouldRenderTooltip: PropTypes.bool,
   };
-}
-function supportsObject(object, noGrip = false) {
-  return getGripType(object, noGrip) === "BigInt";
-}
 
+  function BigInt(props) {
+    const { object, shouldRenderTooltip } = props;
+    const text = object.text;
+    const config = getElementConfig({ text, shouldRenderTooltip });
 
+    return span(config, `${text}n`);
+  }
 
-module.exports = {
-  rep: wrapRender(BigInt),
-  supportsObject,
-};
+  function getElementConfig(opts) {
+    const { text, shouldRenderTooltip } = opts;
+
+    return {
+      className: "objectBox objectBox-number",
+      title: shouldRenderTooltip ? `${text}n` : null,
+    };
+  }
+  function supportsObject(object, noGrip = false) {
+    return getGripType(object, noGrip) === "BigInt";
+  }
+
+  
+
+  module.exports = {
+    rep: wrapRender(BigInt),
+    supportsObject,
+  };
+});
