@@ -217,6 +217,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:needsIncrementalBarrier\n"
 
          
+         "race:Sampler::sSigHandlerCoordinator\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
