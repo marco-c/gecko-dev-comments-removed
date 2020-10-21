@@ -685,7 +685,11 @@ class WebConsoleUI {
   }
 
   
-  async getFrameActor() {
+
+
+
+
+  getFrameActor() {
     const state = this.hud.getDebuggerFrames();
     if (!state) {
       return null;
