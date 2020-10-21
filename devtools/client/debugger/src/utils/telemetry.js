@@ -44,7 +44,9 @@
 
 
 
-import { Telemetry } from "devtools-modules";
+
+const Telemetry = require("devtools/client/shared/telemetry");
+
 import { isFirefoxPanel } from "devtools-environment";
 
 const telemetry = new Telemetry();

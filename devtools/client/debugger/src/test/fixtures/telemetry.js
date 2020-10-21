@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+class Telemetry {
+  recordEvent() {}
+  start() {}
+  finish() {}
+}
+module.exports = Telemetry;
