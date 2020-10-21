@@ -90,6 +90,7 @@ this.ui = (function() {
       lastWidth: null,
     },
     document: null,
+    window: null,
     display(installHandlerOnDocument) {
       return new Promise((resolve, reject) => {
         if (!this.element) {
@@ -102,6 +103,7 @@ this.ui = (function() {
           this.updateElementSize();
           this.element.addEventListener("load", watchFunction(() => {
             this.document = this.element.contentDocument;
+            this.window = this.element.contentWindow;
             assertIsBlankDocument(this.document);
             
             this.document.documentElement.innerHTML = `
@@ -218,7 +220,7 @@ this.ui = (function() {
     remove() {
       this.stopSizeWatch();
       util.removeNode(this.element);
-      this.element = this.document = null;
+      this.element = this.document = this.window = null;
     },
   };
 
@@ -227,6 +229,7 @@ this.ui = (function() {
   const iframePreSelection = exports.iframePreSelection = {
     element: null,
     document: null,
+    window: null,
     display(installHandlerOnDocument, standardOverlayCallbacks) {
       return new Promise((resolve, reject) => {
         if (!this.element) {
@@ -239,6 +242,7 @@ this.ui = (function() {
           this.element.setAttribute("role", "dialog");
           this.element.addEventListener("load", watchFunction(() => {
             this.document = this.element.contentDocument;
+            this.window = this.element.contentWindow;
             assertIsBlankDocument(this.document);
             
             this.document.documentElement.innerHTML = `
@@ -332,8 +336,7 @@ this.ui = (function() {
     remove() {
       this.hide();
       util.removeNode(this.element);
-      this.element = null;
-      this.document = null;
+      this.element = this.document = this.window = null;
     },
   };
 
@@ -348,6 +351,7 @@ this.ui = (function() {
   const iframePreview = exports.iframePreview = {
     element: null,
     document: null,
+    window: null,
     display(installHandlerOnDocument, standardOverlayCallbacks) {
       return new Promise((resolve, reject) => {
         if (!this.element) {
@@ -362,6 +366,7 @@ this.ui = (function() {
           this.element.onload = watchFunction(() => {
             msgsPromise.then(([cancelTitle, copyTitle, downloadTitle]) => {
               this.document = this.element.contentDocument;
+              this.window = this.element.contentWindow;
               
               this.document.documentElement.innerHTML = `
                 <head>
@@ -472,6 +477,10 @@ this.ui = (function() {
       iframeSelection.remove();
       iframePreSelection.remove();
       iframePreview.remove();
+    },
+
+    getContentWindow() {
+      return this.currentIframe.element.contentWindow;
     },
 
     document() {
@@ -789,7 +798,7 @@ this.ui = (function() {
     display(dataUrl) {
       const img = makeEl("IMG");
       const imgBlob = blobConverters.dataUrlToBlob(dataUrl);
-      img.src = URL.createObjectURL(imgBlob);
+      img.src = iframe.getContentWindow().URL.createObjectURL(imgBlob);
       iframe.document().querySelector(".preview-image-wrapper").appendChild(img);
     },
   };
