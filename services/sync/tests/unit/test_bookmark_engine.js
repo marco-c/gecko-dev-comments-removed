@@ -29,8 +29,8 @@ const LegacyEngine = BookmarksEngine;
 
 function checkRecordedEvents(object, expected, message) {
   
-  let repairEvents = recordedEvents.filter(event => event.object == object);
-  deepEqual(repairEvents, expected, message);
+  let checkEvents = recordedEvents.filter(event => event.object == object);
+  deepEqual(checkEvents, expected, message);
   
   recordedEvents = [];
 }

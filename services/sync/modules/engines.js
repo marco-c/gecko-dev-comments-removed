@@ -823,9 +823,6 @@ function SyncEngine(name, service) {
   
   
   
-  
-  
-  
   this._needWeakUpload = new Map();
 
   this.asyncObserver = Async.asyncObserver(this, this._log);

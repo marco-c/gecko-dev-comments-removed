@@ -1029,8 +1029,6 @@ class BookmarkValidator {
   }
 
   async _getServerState(engine) {
-    
-    
     let collection = engine.itemSource();
     let collectionKey = engine.service.collectionKeys.keyForCollection(
       engine.name

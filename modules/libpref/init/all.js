@@ -4561,12 +4561,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
     pref("services.sync.engine.passwords.validation.enabled", true);
   #endif
 
-  #if defined(NIGHTLY_BUILD)
-    
-    
-    pref("services.sync.engine.bookmarks.repair.enabled", true);
-  #endif
-
   
   
   pref("services.sync.engine.bookmarks.validation.interval", 86400); 

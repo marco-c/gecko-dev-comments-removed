@@ -50,18 +50,6 @@ const { PREF_ACCOUNT_ROOT } = ChromeUtils.import(
   "resource://gre/modules/FxAccountsCommon.js"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "getRepairRequestor",
-  "resource://services-sync/collection_repair.js"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "getRepairResponder",
-  "resource://services-sync/collection_repair.js"
-);
-
 const CLIENTS_TTL = 1814400; 
 const CLIENTS_TTL_REFRESH = 604800; 
 const STALE_CLIENT_REMOTE_AGE = 604800; 
@@ -770,16 +758,6 @@ ClientEngine.prototype = {
       importance: 1,
       desc: "Instruct a client to display a URI",
     },
-    repairRequest: {
-      args: 1,
-      importance: 2,
-      desc: "Instruct a client to initiate a repair",
-    },
-    repairResponse: {
-      args: 1,
-      importance: 2,
-      desc: "Instruct a client a repair request is complete",
-    },
   },
 
   
@@ -887,55 +865,6 @@ ClientEngine.prototype = {
             let [uri, clientId, title] = args;
             URIsToDisplay.push({ uri, clientId, title });
             break;
-          case "repairResponse": {
-            
-            
-            let response = args[0];
-            let requestor = getRepairRequestor(response.collection);
-            if (!requestor) {
-              this._log.warn("repairResponse for unknown collection", response);
-              break;
-            }
-            if (!(await requestor.continueRepairs(response))) {
-              this._log.warn(
-                "repairResponse couldn't continue the repair",
-                response
-              );
-            }
-            break;
-          }
-          case "repairRequest": {
-            
-            let request = args[0];
-            let responder = getRepairResponder(request.collection);
-            if (!responder) {
-              this._log.warn("repairRequest for unknown collection", request);
-              break;
-            }
-            try {
-              if (await responder.repair(request, rawCommand)) {
-                
-                
-                
-                
-                
-                shouldRemoveCommand = false;
-              }
-            } catch (ex) {
-              if (Async.isShutdownException(ex)) {
-                
-                
-                throw ex;
-              }
-              
-              
-              
-              
-              
-              this._log.error("Failed to handle a repair request", ex);
-            }
-            break;
-          }
           default:
             this._log.warn("Received an unknown command: " + command);
             break;
