@@ -251,6 +251,8 @@ class XDRState : public XDRCoderBase {
     return false;
   }
 
+  virtual bool isMultiDecode() const { return false; }
+
   virtual bool hasOptions() const { return false; }
   virtual const JS::ReadOnlyCompileOptions& options() {
     MOZ_CRASH("does not have options");
@@ -559,8 +561,14 @@ class XDRStencilDecoder : public XDRDecoderBase {
 
 class XDROffThreadDecoder : public XDRDecoder {
   ScriptSourceObject** sourceObjectOut_;
+  bool isMultiDecode_;
 
  public:
+  enum class Type {
+    Single,
+    Multi,
+  };
+
   
   
   
@@ -570,12 +578,16 @@ class XDROffThreadDecoder : public XDRDecoder {
   
   
   XDROffThreadDecoder(JSContext* cx, const JS::ReadOnlyCompileOptions* options,
-                      ScriptSourceObject** sourceObjectOut,
+                      Type type, ScriptSourceObject** sourceObjectOut,
                       const JS::TranscodeRange& range)
-      : XDRDecoder(cx, options, range), sourceObjectOut_(sourceObjectOut) {
+      : XDRDecoder(cx, options, range),
+        sourceObjectOut_(sourceObjectOut),
+        isMultiDecode_(type == Type::Multi) {
     MOZ_ASSERT(sourceObjectOut);
     MOZ_ASSERT(*sourceObjectOut == nullptr);
   }
+
+  bool isMultiDecode() const override { return isMultiDecode_; }
 
   bool hasScriptSourceObjectOut() const override { return true; }
   ScriptSourceObject** scriptSourceObjectOut() override {
