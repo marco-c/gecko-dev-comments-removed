@@ -2,15 +2,16 @@
 
 
 
+"use strict";
 
 
-import React from "react";
-import { mount } from "enzyme";
-import Components from "../../index";
-import dom from "react-dom-factories";
+
+const React = require("react");
+const { mount } = require("enzyme");
+const dom = require("react-dom-factories");
 
 const { Component, createFactory } = React;
-const Tree = createFactory(Components.Tree);
+const Tree = createFactory(require("devtools/client/shared/components/Tree"));
 
 function mountTree(overrides = {}) {
   return mount(
