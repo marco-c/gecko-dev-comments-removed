@@ -2,39 +2,52 @@ const directory = "/html/cross-origin-opener-policy/reporting";
 const executor_path = directory + "/resources/executor.html?pipe=";
 const coep_header = '|header(Cross-Origin-Embedder-Policy,require-corp)';
 
+const same_origin = get_host_info().HTTPS_ORIGIN;
+const cross_origin = get_host_info().HTTPS_REMOTE_ORIGIN;
+
 const origin = [
-  ["cross-origin", get_host_info().HTTPS_REMOTE_ORIGIN ] ,
-  ["same-site"   , get_host_info().HTTPS_ORIGIN        ] ,
+  ["same-origin" , same_origin ],
+  ["cross-origin", cross_origin],
 ];
+let escapeComma = url => url.replace(/,/g, '\\,');
 
 let testAccessProperty = (property, op, message) => {
   origin.forEach(([origin_name, origin]) => {
     promise_test(async t => {
-      const report_token = token();
+      const this_window_token = token();
+
+      
+      const opener_token = token();
+      const opener_url = get_host_info().HTTP_ORIGIN + executor_path +
+        `&uuid=${opener_token}`;
+
+      
       const openee_token = token();
-      const opener_token = token(); 
-
-      const reportTo = reportToHeaders(report_token);
-      const openee_url = origin + executor_path + reportTo.header +
-        reportTo.coopReportOnlySameOriginHeader + coep_header +
+      const openee_report_token = token();
+      const openee_report_to = reportToHeaders(openee_report_token);
+      const openee_url = origin + executor_path + openee_report_to.header +
+        openee_report_to.coopReportOnlySameOriginHeader + coep_header +
         `&uuid=${openee_token}`;
-      const openee = window.open(openee_url);
-      t.add_cleanup(() => send(openee_token, "window.close()"))
+
+      t.add_cleanup(() => {
+        send(opener_token, "window.close()")
+        send(openee_token, "window.close()")
+      });
 
       
-      send(openee_token, `send("${opener_token}", "Ready");`);
-      assert_equals(await receive(opener_token), "Ready");
-      
-      
-      send(openee_token, `send("${opener_token}", "Ready");`);
-      assert_equals(await receive(opener_token), "Ready");
+      window.open(opener_url);
+      send(opener_token, `
+        window.openee = window.open('${escapeComma(openee_url)}');
+      `);
+      send(openee_token, `send("${this_window_token}", "Ready");`);
+      assert_equals(await receive(this_window_token), "Ready");
 
       
-      try {op(openee)} catch(e) {}
+      send(opener_token, `(${op})(openee);`);
 
       
-      let report = await receiveReport(report_token,
-        "access-to-coop-page-from-opener");
+      let report = await receiveReport(openee_report_token,
+                                       "access-to-coop-page-from-opener");
       assert_equals(report.body.property, property);
 
     }, `${origin_name} > ${op}`);
