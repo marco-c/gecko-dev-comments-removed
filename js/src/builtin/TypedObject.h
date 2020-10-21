@@ -110,14 +110,15 @@ enum Kind {
 }  
 
 
-
-
-
-
-
 class TypedProto : public NativeObject {
  public:
   static const JSClass class_;
+
+ protected:
+  friend class ArrayMetaTypeDescr;
+  friend class StructMetaTypeDescr;
+
+  static TypedProto* create(JSContext* cx);
 };
 
 class TypeDescr : public NativeObject {
@@ -198,7 +199,6 @@ class ScalarTypeDescr : public SimpleTypeDescr {
   static const char* typeName(Type type);
 
   static const JSClass class_;
-  static const JSFunctionSpec typeObjectMethods[];
 
   Type type() const {
     
@@ -293,7 +293,6 @@ class ReferenceTypeDescr : public SimpleTypeDescr {
   static const JSClass class_;
   static uint32_t size(Type t);
   static uint32_t alignment(Type t);
-  static const JSFunctionSpec typeObjectMethods[];
 
   ReferenceType type() const {
     return (ReferenceType)getReservedSlot(JS_DESCR_SLOT_TYPE).toInt32();
@@ -333,16 +332,6 @@ class ArrayMetaTypeDescr : public NativeObject {
                                 int32_t length);
 
  public:
-  
-  
-  static const JSPropertySpec typeObjectProperties[];
-  static const JSFunctionSpec typeObjectMethods[];
-
-  
-  
-  static const JSPropertySpec typedObjectProperties[];
-  static const JSFunctionSpec typedObjectMethods[];
-
   
   
   static MOZ_MUST_USE bool construct(JSContext* cx, unsigned argc, Value* vp);
@@ -399,16 +388,6 @@ class StructMetaTypeDescr : public NativeObject {
   static StructTypeDescr* createFromArrays(
       JSContext* cx, HandleObject structTypePrototype, HandleIdVector ids,
       HandleValueVector fieldTypeObjs, Vector<StructFieldProps>& fieldProps);
-
-  
-  
-  static const JSPropertySpec typeObjectProperties[];
-  static const JSFunctionSpec typeObjectMethods[];
-
-  
-  
-  static const JSPropertySpec typedObjectProperties[];
-  static const JSFunctionSpec typedObjectMethods[];
 
   
   

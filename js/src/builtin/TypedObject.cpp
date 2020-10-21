@@ -176,8 +176,6 @@ const JSClass js::ScalarTypeDescr::class_ = {
     JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS) | JSCLASS_BACKGROUND_FINALIZE,
     &ScalarTypeDescrClassOps};
 
-const JSFunctionSpec js::ScalarTypeDescr::typeObjectMethods[] = {JS_FS_END};
-
 uint32_t ScalarTypeDescr::size(Type t) {
   return AssertedCast<uint32_t>(Scalar::byteSize(t));
 }
@@ -352,8 +350,6 @@ const JSClass js::ReferenceTypeDescr::class_ = {
     JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS) | JSCLASS_BACKGROUND_FINALIZE,
     &ReferenceTypeDescrClassOps};
 
-const JSFunctionSpec js::ReferenceTypeDescr::typeObjectMethods[] = {JS_FS_END};
-
 static const uint32_t ReferenceSizes[] = {
 #define REFERENCE_SIZE(_kind, _type, _name) sizeof(_type),
     JS_FOR_EACH_REFERENCE_TYPE_REPR(REFERENCE_SIZE) 0
@@ -426,50 +422,6 @@ bool js::ReferenceTypeDescr::call(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static TypedProto* CreatePrototypeObjectForComplexTypeInstance(
-    JSContext* cx, HandleObject ctorPrototype) {
-  RootedObject ctorPrototypePrototype(cx, GetPrototype(cx, ctorPrototype));
-  if (!ctorPrototypePrototype) {
-    return nullptr;
-  }
-
-  return NewSingletonObjectWithGivenProto<TypedProto>(cx,
-                                                      ctorPrototypePrototype);
-}
-
 static const JSClassOps ArrayTypeDescrClassOps = {
     nullptr,                 
     nullptr,                 
@@ -488,16 +440,6 @@ const JSClass ArrayTypeDescr::class_ = {
     "ArrayType",
     JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS) | JSCLASS_BACKGROUND_FINALIZE,
     &ArrayTypeDescrClassOps};
-
-const JSPropertySpec ArrayMetaTypeDescr::typeObjectProperties[] = {JS_PS_END};
-
-const JSFunctionSpec ArrayMetaTypeDescr::typeObjectMethods[] = {JS_FS_END};
-
-const JSPropertySpec ArrayMetaTypeDescr::typedObjectProperties[] = {JS_PS_END};
-
-const JSFunctionSpec ArrayMetaTypeDescr::typedObjectMethods[] = {
-    {JSFunctionSpec::Name("forEach"), {nullptr, nullptr}, 1, 0, "ArrayForEach"},
-    JS_FS_END};
 
 static bool CreateTraceList(JSContext* cx, HandleTypeDescr descr);
 
@@ -535,21 +477,9 @@ ArrayTypeDescr* ArrayMetaTypeDescr::create(JSContext* cx,
     return nullptr;
   }
 
-  
-  
-  Rooted<TypedProto*> prototypeObj(cx);
-  if (elementType->getReservedSlot(JS_DESCR_SLOT_ARRAYPROTO).isObject()) {
-    prototypeObj = &elementType->getReservedSlot(JS_DESCR_SLOT_ARRAYPROTO)
-                        .toObject()
-                        .as<TypedProto>();
-  } else {
-    prototypeObj =
-        CreatePrototypeObjectForComplexTypeInstance(cx, arrayTypePrototype);
-    if (!prototypeObj) {
-      return nullptr;
-    }
-    elementType->setReservedSlot(JS_DESCR_SLOT_ARRAYPROTO,
-                                 ObjectValue(*prototypeObj));
+  Rooted<TypedProto*> prototypeObj(cx, TypedProto::create(cx));
+  if (!prototypeObj) {
+    return nullptr;
   }
 
   obj->initReservedSlot(JS_DESCR_SLOT_TYPROTO, ObjectValue(*prototypeObj));
@@ -668,14 +598,6 @@ const JSClass StructTypeDescr::class_ = {
     "StructType",
     JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS) | JSCLASS_BACKGROUND_FINALIZE,
     &StructTypeDescrClassOps};
-
-const JSPropertySpec StructMetaTypeDescr::typeObjectProperties[] = {JS_PS_END};
-
-const JSFunctionSpec StructMetaTypeDescr::typeObjectMethods[] = {JS_FS_END};
-
-const JSPropertySpec StructMetaTypeDescr::typedObjectProperties[] = {JS_PS_END};
-
-const JSFunctionSpec StructMetaTypeDescr::typedObjectMethods[] = {JS_FS_END};
 
 CheckedInt32 StructMetaTypeDescr::Layout::addField(int32_t fieldAlignment,
                                                    int32_t fieldSize) {
@@ -971,9 +893,7 @@ StructTypeDescr* StructMetaTypeDescr::createFromArrays(
     return nullptr;
   }
 
-  Rooted<TypedProto*> prototypeObj(cx);
-  prototypeObj =
-      CreatePrototypeObjectForComplexTypeInstance(cx, structTypePrototype);
+  Rooted<TypedProto*> prototypeObj(cx, TypedProto::create(cx));
   if (!prototypeObj) {
     return nullptr;
   }
@@ -1149,10 +1069,6 @@ static bool DefineSimpleTypeDescr(JSContext* cx, Handle<GlobalObject*> global,
                           Int32Value(AssertedCast<int32_t>(T::size(type))));
   descr->initReservedSlot(JS_DESCR_SLOT_TYPE, Int32Value(int32_t(type)));
 
-  if (!JS_DefineFunctions(cx, descr, T::typeObjectMethods)) {
-    return false;
-  }
-
   
   
   Rooted<TypedProto*> proto(cx);
@@ -1190,50 +1106,17 @@ static JSObject* DefineMetaTypeDescr(JSContext* cx, const char* name,
     return nullptr;
   }
 
-  RootedObject funcProto(
-      cx, GlobalObject::getOrCreateFunctionPrototype(cx, global));
-  if (!funcProto) {
-    return nullptr;
-  }
-
-  
-
-  RootedObject proto(
-      cx, NewSingletonObjectWithGivenProto<PlainObject>(cx, funcProto));
+  RootedObject proto(cx,
+                     GlobalObject::getOrCreateFunctionPrototype(cx, global));
   if (!proto) {
     return nullptr;
   }
-
-  
-
-  RootedObject objProto(cx,
-                        GlobalObject::getOrCreateObjectPrototype(cx, global));
-  if (!objProto) {
-    return nullptr;
-  }
-  RootedObject protoProto(cx);
-  protoProto = NewSingletonObjectWithGivenProto<PlainObject>(cx, objProto);
-  if (!protoProto) {
-    return nullptr;
-  }
-
-  RootedValue protoProtoValue(cx, ObjectValue(*protoProto));
-  if (!DefineDataProperty(cx, proto, cx->names().prototype, protoProtoValue,
-                          JSPROP_READONLY | JSPROP_PERMANENT)) {
-    return nullptr;
-  }
-
-  
 
   const int constructorLength = 2;
   RootedFunction ctor(cx);
   ctor = GlobalObject::createConstructor(cx, T::construct, className,
                                          constructorLength);
-  if (!ctor || !LinkConstructorAndPrototype(cx, ctor, proto) ||
-      !DefinePropertiesAndFunctions(cx, proto, T::typeObjectProperties,
-                                    T::typeObjectMethods) ||
-      !DefinePropertiesAndFunctions(cx, protoProto, T::typedObjectProperties,
-                                    T::typedObjectMethods)) {
+  if (!ctor || !LinkConstructorAndPrototype(cx, ctor, proto)) {
     return nullptr;
   }
 
@@ -1362,6 +1245,17 @@ const ClassSpec TypedObjectModuleObject::classSpec_ = {
     nullptr,
     nullptr,
     TypedObjectModuleObjectClassFinish};
+
+TypedProto* TypedProto::create(JSContext* cx) {
+  Handle<GlobalObject*> global = cx->global();
+  RootedObject objProto(cx,
+                        GlobalObject::getOrCreateObjectPrototype(cx, global));
+  if (!objProto) {
+    return nullptr;
+  }
+
+  return NewSingletonObjectWithGivenProto<TypedProto>(cx, objProto);
+}
 
 
 
