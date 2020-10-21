@@ -655,10 +655,11 @@ this.TopSitesFeed = class TopSitesFeed {
     
     let withPinned = insertPinned(checkedAdult, pinned);
     
-    dedupedSponsored.forEach((link, index) => {
+    dedupedSponsored.forEach(link => {
       if (!link) {
         return;
       }
+      let index = link.sponsored_position - 1;
       if (index > withPinned.length) {
         withPinned[index] = link;
       } else {
