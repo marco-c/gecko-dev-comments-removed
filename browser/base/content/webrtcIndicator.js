@@ -465,12 +465,12 @@ const WebRTCIndicator = {
   },
 
   onPopupShowing(event) {
-    let menupopup = event.target;
-    let type = menupopup.getAttribute("type");
-
-    if (!["Camera", "Microphone", "Screen"].includes(type)) {
+    if (!this.eventIsForDeviceMenuPopup(event)) {
       return;
     }
+
+    let menupopup = event.target;
+    let type = menupopup.getAttribute("type");
 
     
     
@@ -543,6 +543,10 @@ const WebRTCIndicator = {
   },
 
   onPopupHiding(event) {
+    if (!this.eventIsForDeviceMenuPopup(event)) {
+      return;
+    }
+
     let menu = event.target;
     while (menu.firstChild) {
       menu.firstChild.remove();
@@ -551,6 +555,22 @@ const WebRTCIndicator = {
 
   onCommand(event) {
     webrtcUI.showSharingDoorhanger(event.target.stream);
+  },
+
+  
+
+
+
+
+
+
+
+
+  eventIsForDeviceMenuPopup(event) {
+    let menupopup = event.target;
+    let type = menupopup.getAttribute("type");
+
+    return ["Camera", "Microphone", "Screen"].includes(type);
   },
 
   
