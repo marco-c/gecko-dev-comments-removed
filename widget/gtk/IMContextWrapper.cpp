@@ -408,8 +408,7 @@ nsDependentCSubstring IMContextWrapper::GetIMName() const {
   
   
   const char* xmodifiersChar = PR_GetEnv("XMODIFIERS");
-  if (!xmodifiersChar ||
-      (!im.EqualsLiteral("xim") && !im.EqualsLiteral("wayland"))) {
+  if (!xmodifiersChar || !im.EqualsLiteral("xim")) {
     return im;
   }
 
@@ -504,6 +503,10 @@ void IMContextWrapper::Init() {
     mIMContextID = IMContextID::eIIIMF;
     mIsIMInAsyncKeyHandlingMode = false;
     mIsKeySnooped = false;
+  } else if (im.EqualsLiteral("wayland")) {
+    mIMContextID = IMContextID::eWayland;
+    mIsIMInAsyncKeyHandlingMode = false;
+    mIsKeySnooped = true;
   } else {
     mIMContextID = IMContextID::eUnknown;
     mIsIMInAsyncKeyHandlingMode = false;
@@ -2016,7 +2019,8 @@ bool IMContextWrapper::MaybeDispatchKeyEventAsProcessedByIME(
   } else {
     MOZ_ASSERT(mIsKeySnooped);
     
-    MOZ_ASSERT(mIMContextID == IMContextID::eUim);
+    MOZ_ASSERT(mIMContextID == IMContextID::eUim ||
+               mIMContextID == IMContextID::eWayland);
     
     
     
