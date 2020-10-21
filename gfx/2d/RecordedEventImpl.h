@@ -2798,9 +2798,11 @@ inline bool RecordedDrawDependentSurface::PlayEvent(
     return false;
   }
 
+  
+  
   RefPtr<SourceSurface> surface = aTranslator->LookupExternalSurface(mId);
   if (!surface) {
-    return false;
+    return true;
   }
 
   dt->DrawSurface(surface, mDest, Rect(Point(), Size(surface->GetSize())),

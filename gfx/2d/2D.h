@@ -1141,6 +1141,13 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
       const DrawSurfaceOptions& aSurfOptions = DrawSurfaceOptions(),
       const DrawOptions& aOptions = DrawOptions()) = 0;
 
+  
+
+
+
+
+
+
   virtual void DrawDependentSurface(
       uint64_t aId, const Rect& aDest,
       const DrawSurfaceOptions& aSurfOptions = DrawSurfaceOptions(),
