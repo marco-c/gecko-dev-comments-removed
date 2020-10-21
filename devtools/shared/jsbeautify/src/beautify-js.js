@@ -972,7 +972,6 @@ function Beautifier(js_source_text, options) {
 
             
             
-            
             var sharp = '#';
             if (parser_pos < input_length && in_array(input.charAt(parser_pos), digits)) {
                 do {
