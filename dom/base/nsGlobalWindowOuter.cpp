@@ -6386,44 +6386,12 @@ void nsGlobalWindowOuter::ReallyCloseWindow() {
   mHavePendingClose = true;
 
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin = GetTreeOwnerWindow();
-
-  
-
-  if (treeOwnerAsWin) {
-    
-    
-
-    if (mDocShell) {
-      nsCOMPtr<nsIBrowserDOMWindow> bwin;
-      nsCOMPtr<nsIDocShellTreeItem> rootItem;
-      mDocShell->GetInProcessRootTreeItem(getter_AddRefs(rootItem));
-      nsCOMPtr<nsPIDOMWindowOuter> rootWin =
-          rootItem ? rootItem->GetWindow() : nullptr;
-      nsCOMPtr<nsIDOMChromeWindow> chromeWin(do_QueryInterface(rootWin));
-      if (chromeWin) chromeWin->GetBrowserDOMWindow(getter_AddRefs(bwin));
-
-      if (rootWin) {
-        
-
-
-
-
-
-
-
-
-
-        
-        bool isTab;
-        if (rootWin == this || !bwin ||
-            (NS_SUCCEEDED(bwin->IsTabContentWindow(this, &isTab)) && isTab)) {
-          treeOwnerAsWin->Destroy();
-        }
-      }
-    }
-
-    CleanUp();
+  if (!treeOwnerAsWin) {
+    return;
   }
+
+  treeOwnerAsWin->Destroy();
+  CleanUp();
 }
 
 void nsGlobalWindowOuter::EnterModalState() {

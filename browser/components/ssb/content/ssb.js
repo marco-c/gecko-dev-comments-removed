@@ -245,11 +245,6 @@ class BrowserDOMWindow {
     );
   }
 
-  isTabContentWindow(window) {
-    
-    return gSSBBrowser.contentWindow == window;
-  }
-
   canClose() {
     
     for (let i = 0; i < docShell.childCount; i++) {

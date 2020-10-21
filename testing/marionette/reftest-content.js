@@ -62,12 +62,6 @@ BrowserDOMWindow.prototype = {
   get tabCount() {
     return 1;
   },
-
-  isTabContentWindow(win) {
-    
-    
-    return false;
-  },
 };
 
 window.browserDOMWindow = new BrowserDOMWindow();
