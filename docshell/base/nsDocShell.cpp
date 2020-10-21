@@ -11149,13 +11149,19 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     }
   } else if (mozilla::SessionHistoryInParent()) {
     MOZ_LOG(gSHLog, LogLevel::Debug,
-            ("nsDocShell %p UpdateActiveEntry (replacing)", this));
+            ("nsDocShell %p UpdateActiveEntry (replacing) mActiveEntry %p",
+             this, mActiveEntry.get()));
     
     
     
+    
+    nsString title;
+    if (mActiveEntry) {
+      title = mActiveEntry->GetTitle();
+    }
     UpdateActiveEntry(
         true,  Nothing(), aNewURI, aNewURI,
-        aDocument->NodePrincipal(), aDocument->GetCsp(), u""_ns,
+        aDocument->NodePrincipal(), aDocument->GetCsp(), title,
          Nothing(), aData, uriWasModified);
   } else {
     
