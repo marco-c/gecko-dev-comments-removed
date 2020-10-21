@@ -8,6 +8,9 @@ const kIMig = Ci.nsIBrowserProfileMigrator;
 const kIPStartup = Ci.nsIProfileStartup;
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 const { MigrationUtils } = ChromeUtils.import(
   "resource:///modules/MigrationUtils.jsm"
 );
@@ -37,6 +40,7 @@ var MigrationWizard = {
   _wiz: null,
   _migrator: null,
   _autoMigrate: null,
+  _receivedPermissions: new Set(),
 
   init() {
     let os = Services.obs;
@@ -137,6 +141,11 @@ var MigrationWizard = {
       .getElementById("importItems")
       .addEventListener("pageadvanced", function() {
         MigrationWizard.onImportItemsPageAdvanced();
+      });
+    document
+      .getElementById("importPermissions")
+      .addEventListener("pageadvanced", function(e) {
+        MigrationWizard.onImportPermissionsPageAdvanced(e);
       });
     document
       .getElementById("importSource")
@@ -286,12 +295,12 @@ var MigrationWizard = {
     
     var sourceProfiles = this.spinResolve(this._migrator.getSourceProfiles());
     if (this._skipImportSourcePage) {
-      this._wiz.currentPage.next = "migrating";
+      this._updateNextPageForPermissions();
     } else if (sourceProfiles && sourceProfiles.length > 1) {
       this._wiz.currentPage.next = "selectProfile";
     } else {
       if (this._autoMigrate) {
-        this._wiz.currentPage.next = "migrating";
+        this._updateNextPageForPermissions();
       } else {
         this._wiz.currentPage.next = "importItems";
       }
@@ -351,7 +360,7 @@ var MigrationWizard = {
 
     
     if (this._autoMigrate) {
-      this._wiz.currentPage.next = "migrating";
+      this._updateNextPageForPermissions();
     }
   },
 
@@ -398,6 +407,8 @@ var MigrationWizard = {
         this._itemsFlags |= parseInt(checkbox.id);
       }
     }
+
+    this._updateNextPageForPermissions();
   },
 
   onImportItemCommand() {
@@ -413,6 +424,56 @@ var MigrationWizard = {
     }
 
     this._wiz.canAdvance = oneChecked;
+
+    this._updateNextPageForPermissions();
+  },
+
+  _updateNextPageForPermissions() {
+    
+    this._wiz.currentPage.next = "migrating";
+    
+    if (this._receivedPermissions.has(this._source)) {
+      return;
+    }
+
+    
+    
+    
+    if (
+      this._source == "safari" &&
+      AppConstants.isPlatformAndVersionAtLeast("macosx", "18") &&
+      this._itemsFlags & MigrationUtils.resourceTypes.BOOKMARKS
+    ) {
+      let migrator = this._migrator.wrappedJSObject;
+      let havePermissions = this.spinResolve(migrator.hasPermissions());
+
+      if (!havePermissions) {
+        this._wiz.currentPage.next = "importPermissions";
+      }
+    }
+  },
+
+  
+  async onImportPermissionsPageAdvanced(event) {
+    
+    if (this._receivedPermissions.has(this._source)) {
+      return;
+    }
+    
+    
+    
+    event.preventDefault();
+
+    let migrator = this._migrator.wrappedJSObject;
+    await migrator.getPermissions(window);
+    if (await migrator.hasPermissions()) {
+      this._receivedPermissions.add(this._source);
+      
+      this._wiz.advance();
+    }
+    
+    
+    
   },
 
   

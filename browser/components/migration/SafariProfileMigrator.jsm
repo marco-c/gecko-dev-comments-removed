@@ -449,6 +449,56 @@ SafariProfileMigrator.prototype.getLastUsedDate = function SM_getLastUsedDate() 
   });
 };
 
+SafariProfileMigrator.prototype.hasPermissions = async function SM_hasPermissions() {
+  if (this._hasPermissions) {
+    return true;
+  }
+  
+  let target = FileUtils.getDir(
+    "ULibDir",
+    ["Safari", "Bookmarks.plist"],
+    false
+  );
+  try {
+    
+    
+    await IOUtils.read(target.path, { maxBytes: 1 });
+    this._hasPermissions = true;
+    return true;
+  } catch (ex) {
+    return false;
+  }
+};
+
+SafariProfileMigrator.prototype.getPermissions = async function SM_getPermissions(
+  win
+) {
+  
+  
+  while (!(await this.hasPermissions())) {
+    let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+    
+    fp.init(win, "", Ci.nsIFilePicker.modeOpen);
+    
+    
+    
+    
+    
+    fp.appendFilter("plist", "*.plist");
+    fp.filterIndex = 1;
+    fp.displayDirectory = FileUtils.getDir("ULibDir", ["Safari"], false);
+    
+    
+    
+    
+    let result = await new Promise(resolve => fp.open(resolve));
+    
+    if (result == Ci.nsIFilePicker.returnCancel) {
+      return false;
+    }
+  }
+};
+
 Object.defineProperty(
   SafariProfileMigrator.prototype,
   "mainPreferencesPropertyList",
