@@ -376,10 +376,6 @@ class StructTypeDescr;
 
 
 class StructMetaTypeDescr : public NativeObject {
- private:
-  static JSObject* create(JSContext* cx, HandleObject structTypeGlobal,
-                          HandleObject fields);
-
  public:
   
   
