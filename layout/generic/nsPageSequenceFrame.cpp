@@ -353,15 +353,6 @@ nsresult nsPageSequenceFrame::GetFrameName(nsAString& aResult) const {
 #endif
 
 
-
-
-void nsPageSequenceFrame::GetPrintRange(int32_t* aFromPage,
-                                        int32_t* aToPage) const {
-  *aFromPage = mPageData->mFromPageNum;
-  *aToPage = mPageData->mToPageNum;
-}
-
-
 void nsPageSequenceFrame::SetPageNumberFormat(const char* aPropName,
                                               const char* aDefPropVal,
                                               bool aPageNumOnly) {
@@ -404,7 +395,7 @@ nsresult nsPageSequenceFrame::StartPrint(nsPresContext* aPresContext,
   }
 
   
-  mPageNum = 1;
+  mCurrentSheetIdx = 0;
   return NS_OK;
 }
 
@@ -463,43 +454,10 @@ static void GetPrintCanvasElementsInFrame(
 
 
 
-void nsPageSequenceFrame::DetermineWhetherToPrintPage() {
-  
-  mPrintThisPage = true;
-
-  
-  
-  if (mPageData->mDoingPageRange) {
-    if (mPageNum < mPageData->mFromPageNum) {
-      mPrintThisPage = false;
-    } else if (mPageNum > mPageData->mToPageNum) {
-      mPageNum++;
-      mPrintThisPage = false;
-      return;
-    } else {
-      const auto& ranges = mPageData->mPageRanges;
-      int32_t length = ranges.Length();
-
-      
-      if (length && (length % 2 == 0)) {
-        mPrintThisPage = false;
-
-        int32_t i;
-        for (i = 0; i < length; i += 2) {
-          if (ranges[i] <= mPageNum && mPageNum <= ranges[i + 1]) {
-            mPrintThisPage = true;
-            break;
-          }
-        }
-      }
-    }
-  }
-}
-
 nsIFrame* nsPageSequenceFrame::GetCurrentPageFrame() {
-  int32_t i = 1;
+  uint32_t i = 0;
   for (nsIFrame* child : mFrames) {
-    if (i == mPageNum) {
+    if (i == mCurrentSheetIdx) {
       return child;
     }
     ++i;
@@ -515,11 +473,12 @@ nsresult nsPageSequenceFrame::PrePrintNextPage(nsITimerCallback* aCallback,
     return NS_ERROR_FAILURE;
   }
 
-  DetermineWhetherToPrintPage();
-  
-  
-  
-  if (!mPrintThisPage || !PresContext()->IsRootPaginatedDocument()) {
+  if (!PresContext()->IsRootPaginatedDocument()) {
+    
+    
+    
+    
+    
     *aDone = true;
     return NS_OK;
   }
@@ -619,43 +578,39 @@ nsresult nsPageSequenceFrame::PrintNextPage() {
 
   nsresult rv = NS_OK;
 
-  DetermineWhetherToPrintPage();
+  nsDeviceContext* dc = PresContext()->DeviceContext();
 
-  if (mPrintThisPage) {
-    nsDeviceContext* dc = PresContext()->DeviceContext();
-
-    if (PresContext()->IsRootPaginatedDocument()) {
-      if (!mCalledBeginPage) {
-        
-        
-        
-        PR_PL(("\n"));
-        PR_PL(("***************** BeginPage *****************\n"));
-        rv = dc->BeginPage();
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+  if (PresContext()->IsRootPaginatedDocument()) {
+    if (!mCalledBeginPage) {
+      
+      
+      
+      PR_PL(("\n"));
+      PR_PL(("***************** BeginPage *****************\n"));
+      rv = dc->BeginPage();
+      NS_ENSURE_SUCCESS(rv, rv);
     }
-
-    PR_PL(
-        ("SeqFr::PrintNextPage -> %p PageNo: %d", currentPageFrame, mPageNum));
-
-    
-    RefPtr<gfxContext> gCtx = dc->CreateRenderingContext();
-    NS_ENSURE_TRUE(gCtx, NS_ERROR_OUT_OF_MEMORY);
-
-    nsRect drawingRect(nsPoint(0, 0), currentPageFrame->GetSize());
-    nsRegion drawingRegion(drawingRect);
-    nsLayoutUtils::PaintFrame(gCtx, currentPageFrame, drawingRegion,
-                              NS_RGBA(0, 0, 0, 0),
-                              nsDisplayListBuilderMode::Painting,
-                              nsLayoutUtils::PaintFrameFlags::SyncDecodeImages);
   }
+
+  PR_PL(("SeqFr::PrintNextPage -> %p SheetIdx: %d", currentPageFrame,
+         mCurrentSheetIdx));
+
+  
+  RefPtr<gfxContext> gCtx = dc->CreateRenderingContext();
+  NS_ENSURE_TRUE(gCtx, NS_ERROR_OUT_OF_MEMORY);
+
+  nsRect drawingRect(nsPoint(0, 0), currentPageFrame->GetSize());
+  nsRegion drawingRegion(drawingRect);
+  nsLayoutUtils::PaintFrame(gCtx, currentPageFrame, drawingRegion,
+                            NS_RGBA(0, 0, 0, 0),
+                            nsDisplayListBuilderMode::Painting,
+                            nsLayoutUtils::PaintFrameFlags::SyncDecodeImages);
   return rv;
 }
 
 nsresult nsPageSequenceFrame::DoPageEnd() {
   nsresult rv = NS_OK;
-  if (PresContext()->IsRootPaginatedDocument() && mPrintThisPage) {
+  if (PresContext()->IsRootPaginatedDocument()) {
     PR_PL(("***************** End Page (DoPageEnd) *****************\n"));
     rv = PresContext()->DeviceContext()->EndPage();
     NS_ENSURE_SUCCESS(rv, rv);
@@ -664,7 +619,7 @@ nsresult nsPageSequenceFrame::DoPageEnd() {
   ResetPrintCanvasList();
   mCalledBeginPage = false;
 
-  mPageNum++;
+  mCurrentSheetIdx++;
 
   return rv;
 }

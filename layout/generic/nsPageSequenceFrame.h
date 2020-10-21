@@ -107,10 +107,11 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   nsresult PrePrintNextPage(nsITimerCallback* aCallback, bool* aDone);
   nsresult PrintNextPage();
   void ResetPrintCanvasList();
-  int32_t GetCurrentPageNum() const { return mPageNum; }
+
+  uint32_t GetCurrentSheetIdx() const { return mCurrentSheetIdx; }
+
   int32_t GetRawNumPages() const { return mPageData->mRawNumPages; }
-  bool IsDoingPrintRange() const { return mPageData->mDoingPageRange; }
-  void GetPrintRange(int32_t* aFromPage, int32_t* aToPage) const;
+
   nsresult DoPageEnd();
 
   
@@ -148,7 +149,6 @@ class nsPageSequenceFrame final : public nsContainerFrame {
                                  nscoord aChildPaddingBoxWidth,
                                  const nsMargin& aChildPhysicalMargin);
 
-  void DetermineWhetherToPrintPage();
   nsIFrame* GetCurrentPageFrame();
 
   nsSize mSize;
@@ -171,12 +171,11 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   mozilla::UniquePtr<nsSharedPageData> mPageData;
 
   
-  int32_t mPageNum;
+  
+  
+  uint32_t mCurrentSheetIdx = 0;
 
   nsTArray<RefPtr<mozilla::dom::HTMLCanvasElement> > mCurrentCanvasList;
-
-  
-  bool mPrintThisPage;
 
   bool mCalledBeginPage;
 

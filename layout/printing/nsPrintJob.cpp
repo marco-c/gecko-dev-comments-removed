@@ -2214,6 +2214,13 @@ bool nsPrintJob::PrintPage(nsPrintObject* aPO, bool& aInRange) {
 
   
   
+  
+  
+  
+  aInRange = true;
+
+  
+  
   if (!mPrt || !aPO || !mPageSeqFrame.IsAlive()) {
     FirePrintingErrorEvent(NS_ERROR_FAILURE);
     return true;  
@@ -2235,41 +2242,17 @@ bool nsPrintJob::PrintPage(nsPrintObject* aPO, bool& aInRange) {
     return true;
   }
 
-  int32_t pageNum, numPages, endPage;
   nsPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
-  pageNum = pageSeqFrame->GetCurrentPageNum();
-  numPages = pageSeqFrame->GetRawNumPages();
+  const uint32_t sheetIdx = pageSeqFrame->GetCurrentSheetIdx();
+  const uint32_t numSheets = pageSeqFrame->PrincipalChildList().GetLength();
 
-  bool donePrinting;
-  bool isDoingPrintRange = pageSeqFrame->IsDoingPrintRange();
-  if (isDoingPrintRange) {
-    int32_t fromPage;
-    int32_t toPage;
-    pageSeqFrame->GetPrintRange(&fromPage, &toPage);
+  PR_PL(("****** Printing sheet index %d of %d sheets(s)\n", sheetIdx,
+         numSheets));
 
-    if (fromPage > numPages) {
-      return true;
-    }
-    if (toPage > numPages) {
-      toPage = numPages;
-    }
-
-    PR_PL(("****** Printing Page %d printing from %d to page %d\n", pageNum,
-           fromPage, toPage));
-
-    donePrinting = pageNum >= toPage;
-    aInRange = pageNum >= fromPage && pageNum <= toPage;
-    endPage = (toPage - fromPage) + 1;
-  } else {
-    PR_PL(("****** Printing Page %d of %d page(s)\n", pageNum, numPages));
-
-    donePrinting = pageNum >= numPages;
-    endPage = numPages;
-    aInRange = true;
-  }
-
-  printData->DoOnProgressChange(++printData->mNumPagesPrinted, endPage, false,
-                                0);
+  MOZ_ASSERT(numSheets > 0, "print operations must have at least 1 sheet");
+  MOZ_ASSERT(sheetIdx < numSheets,
+             "sheetIdx shouldn't be allowed to go out of bounds");
+  printData->DoOnProgressChange(sheetIdx, numSheets, false, 0);
   if (NS_WARN_IF(mPrt != printData)) {
     
     
@@ -2298,7 +2281,9 @@ bool nsPrintJob::PrintPage(nsPrintObject* aPO, bool& aInRange) {
 
   pageSeqFrame->DoPageEnd();
 
-  return donePrinting;
+  
+  
+  return (sheetIdx == numSheets - 1);
 }
 
 void nsPrintJob::PageDone(nsresult aResult) {

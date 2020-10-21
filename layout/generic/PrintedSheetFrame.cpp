@@ -50,14 +50,6 @@ void PrintedSheetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 static bool TagIfSkippedByCustomRange(nsPageFrame* aPageFrame, int32_t aPageNum,
                                       nsSharedPageData* aPD) {
-  
-  
-  
-  if (!StaticPrefs::print_tab_modal_enabled() ||
-      !aPageFrame->PresContext()->IsScreen()) {
-    return false;
-  }
-
   if (!aPD->mDoingPageRange) {
     MOZ_ASSERT(!aPageFrame->HasAnyStateBits(NS_PAGE_SKIPPED_BY_CUSTOM_RANGE),
                "page frames shouldn't be tagged as skipped if we're not "

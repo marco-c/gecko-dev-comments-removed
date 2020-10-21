@@ -68,7 +68,6 @@ class nsPrintData {
   bool mPreparingForPrint;  
   bool mShrinkToFit;
   int32_t mNumPrintablePages;
-  int32_t mNumPagesPrinted;
   float mShrinkRatio;
 
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
