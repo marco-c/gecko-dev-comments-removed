@@ -14,6 +14,7 @@
 
 #include "jstypes.h"
 
+#include "gc/Barrier.h"  
 #include "jit/IonOptimizationLevels.h"  
 #include "jit/IonTypes.h"               
 #include "jit/JitCode.h"                

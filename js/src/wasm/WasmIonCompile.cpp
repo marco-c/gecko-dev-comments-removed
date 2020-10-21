@@ -23,6 +23,7 @@
 #include <algorithm>
 
 #include "jit/CodeGenerator.h"
+#include "jit/IonOptimizationLevels.h"
 #include "js/ScalarType.h"  
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmBuiltins.h"

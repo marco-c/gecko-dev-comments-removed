@@ -24,6 +24,7 @@
 #include "jit/KnownClass.h"
 #include "jit/MIRGraph.h"
 #include "jit/RangeAnalysis.h"
+#include "jit/VMFunctions.h"
 #include "js/Conversions.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/ScalarType.h"            
