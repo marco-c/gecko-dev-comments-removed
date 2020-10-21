@@ -40,6 +40,7 @@
 #include "proxy/Proxy.h"  
 
 #include "vm/ArgumentsObject.h"  
+#include "vm/NativeObject.h"     
 #include "vm/RegExpShared.h"     
 #include "vm/TraceLogging.h"     
                                  
@@ -118,6 +119,8 @@ namespace jit {
   _(js::jit::SetNativeDataPropertyPure<false>)              \
   _(js::jit::SetNativeDataPropertyPure<true>)               \
   _(js::MapIteratorObject::next)                            \
+  _(js::NativeObject::addDenseElementPure)                  \
+  _(js::NativeObject::growSlotsPure)                        \
   _(js::NumberMod)                                          \
   _(js::NumberToStringHelperPure)                           \
   _(js::powi)                                               \
