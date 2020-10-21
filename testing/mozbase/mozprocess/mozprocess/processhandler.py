@@ -266,7 +266,19 @@ class ProcessHandlerMixin(object):
         if isWin:
             
             def _execute_child(self, *args_tuple):
-                if six.PY3:
+                
+                if sys.hexversion >= 0x03090000:  
+                    (args, executable, preexec_fn, close_fds,
+                     pass_fds, cwd, env,
+                     startupinfo, creationflags, shell,
+                     p2cread, p2cwrite,
+                     c2pread, c2pwrite,
+                     errread, errwrite,
+                     restore_signals,
+                     gid, gids, uid,
+                     umask,
+                     start_new_session) = args_tuple
+                elif six.PY3:
                     (args, executable, preexec_fn, close_fds,
                      pass_fds, cwd, env,
                      startupinfo, creationflags, shell,
