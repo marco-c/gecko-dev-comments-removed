@@ -213,6 +213,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:mp_exptmod.max_window_bits\n"
 
          
+         "race:setNeedsIncrementalBarrier\n"
+         "race:needsIncrementalBarrier\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
