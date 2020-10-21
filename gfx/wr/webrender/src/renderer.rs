@@ -5242,8 +5242,8 @@ impl Renderer {
                 
                 
                 for tile in composite_state.opaque_tiles.iter().chain(composite_state.alpha_tiles.iter()) {
-                    let dirty_rect = tile.dirty_rect.translate(tile.rect.origin.to_vector());
-                    combined_dirty_rect = combined_dirty_rect.union(&dirty_rect);
+                    let tile_dirty_rect = tile.dirty_rect.translate(tile.rect.origin.to_vector());
+                    combined_dirty_rect = combined_dirty_rect.union(&tile_dirty_rect);
                 }
 
                 let combined_dirty_rect = combined_dirty_rect.round();
@@ -5262,13 +5262,21 @@ impl Renderer {
                 
                 
                 
+                
+                
+                let total_dirty_rect = if draw_previous_partial_present_regions {
+                    combined_dirty_rect.union(&prev_frames_damage_rect.unwrap())
+                } else {
+                    combined_dirty_rect
+                };
+
                 partial_present_mode = Some(PartialPresentMode::Single {
-                    dirty_rect: if draw_previous_partial_present_regions {
-                        combined_dirty_rect.union(&prev_frames_damage_rect.unwrap())
-                    } else {
-                        combined_dirty_rect
-                    },
+                    dirty_rect: total_dirty_rect,
                 });
+
+                if let Some(partial_present) = self.compositor_config.partial_present() {
+                    partial_present.set_buffer_damage_region(&[total_dirty_rect.to_i32()]);
+                }
             } else {
                 
                 
