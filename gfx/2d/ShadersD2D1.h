@@ -175,7 +175,7 @@ sample r2.xyzw, v2.xyxx, t0.xyzw, s0
 mul r1.xyzw, r1.xyzw, r2.xyzw
 mul r1.xyzw, r0.zzzz, r1.xyzw
 mul o0.xyzw, r0.yyyy, r1.xyzw
-ret 
+ret
 
 #endif
 
@@ -568,7 +568,7 @@ mul r1.xyz, r1.wwww, r1.xyzx
 sample r2.xyzw, v2.xyxx, t0.xyzw, s0
 mul r1.xyzw, r1.xyzw, r2.xyzw
 mul o0.xyzw, r0.xxxx, r1.xyzw
-ret 
+ret
 
 #endif
 
@@ -944,7 +944,7 @@ sample r0.xyzw, r0.xyxx, t1.xyzw, s1
 mul r0.xyz, r0.wwww, r0.xyzx
 sample r1.xyzw, v2.xyxx, t0.xyzw, s0
 mul o0.xyzw, r0.xyzw, r1.xyzw
-ret 
+ret
 
 #endif
 
