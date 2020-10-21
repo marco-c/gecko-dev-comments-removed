@@ -399,6 +399,12 @@ TEST(CSPParser, SimplePolicies)
 {
   static const PolicyTest policies[] = {
       
+    { "frame-src intent:",
+      "frame-src intent:" },
+    { "frame-src intent://host.name",
+      "frame-src intent://host.name" },
+    { "frame-src intent://my.host.link/",
+      "frame-src intent://my.host.link/" },
     { "default-src *",
       "default-src *" },
     { "default-src https:",
