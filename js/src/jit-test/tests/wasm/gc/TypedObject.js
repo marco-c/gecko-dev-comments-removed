@@ -13,9 +13,6 @@
     assertEq(p._0, 1.5);
     assertEq(p._1, 33);
     assertEq(p._2, undefined);
-
-    p._1 = 44;
-    assertEq(p._1, 44);
 }
 
 
@@ -35,9 +32,6 @@
 
 
 
-
-
-
 {
     let ins = wasmEvalText(`(module
                              (type $q (struct (field (mut f64))))
@@ -51,18 +45,14 @@
                              (func (export "mkr") (result externref)
                               (struct.new $r (ref.null extern))))`).exports;
 
-    assertEq(typeof ins.mkp().constructor, "function");
     assertErrorMessage(() => new (ins.mkp().constructor)({_0:null}),
                        TypeError,
                        /not constructible/);
 
-    assertEq(typeof ins.mkr().constructor, "function");
-    let r = new (ins.mkr().constructor)({_0:null});
-    assertEq(typeof r, "object");
+    assertErrorMessage(() => new (ins.mkr().constructor)({_0:null}),
+                       TypeError,
+                       /not constructible/);
 }
-
-
-
 
 
 
@@ -79,6 +69,7 @@
     let q = ins.mkq();
     assertEq(typeof q, "object");
     assertEq(q._0, 1.5);
+
     let p = ins.mkp();
     assertEq(typeof p, "object");
     assertEq(p._0, null);
@@ -87,8 +78,9 @@
                        Error,
                        /setting immutable field/);
 
-    p._1 = q;
-    assertEq(p._1, q);
+    assertErrorMessage(() => { p._1 = q },
+                       Error,
+                       /setting immutable field/);
 }
 
 
@@ -105,7 +97,6 @@
     assertEq(p._0_high, 0x12345678)
     assertEq(p._0_low, 0x87654321|0);
 
-    assertEq(typeof p.constructor, "function");
     assertErrorMessage(() => new (p.constructor)({_0_high:0, _0_low:0}),
                        TypeError,
                        /not constructible/);
