@@ -1064,6 +1064,5 @@ static struct cubeb_ops const winmm_ops = {
    NULL,
    NULL,
    NULL,
-   NULL,
    NULL
 };

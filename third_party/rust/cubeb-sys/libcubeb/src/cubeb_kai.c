@@ -366,6 +366,5 @@ static struct cubeb_ops const kai_ops = {
    NULL,
    NULL,
    NULL,
-   NULL,
    NULL
 };
