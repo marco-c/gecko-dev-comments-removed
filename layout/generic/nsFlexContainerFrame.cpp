@@ -41,6 +41,8 @@ using CachedBAxisMeasurement = nsFlexContainerFrame::CachedBAxisMeasurement;
 static mozilla::LazyLogModule gFlexContainerLog("FlexContainer");
 #define FLEX_LOG(...) \
   MOZ_LOG(gFlexContainerLog, LogLevel::Debug, (__VA_ARGS__));
+#define FLEX_LOGV(...) \
+  MOZ_LOG(gFlexContainerLog, LogLevel::Verbose, (__VA_ARGS__));
 
 
 
@@ -1535,6 +1537,7 @@ static nscoord PartiallyResolveAutoMinSize(
   if (specifiedSizeSuggestion != nscoord_MAX) {
     
     
+    FLEX_LOGV(" Specified size suggestion: %d", specifiedSizeSuggestion);
     return specifiedSizeSuggestion;
   }
 
@@ -1558,6 +1561,7 @@ static nscoord PartiallyResolveAutoMinSize(
         transferredSizeSuggestion, aFlexItem, aAxisTracker);
   }
 
+  FLEX_LOGV(" Transferred size suggestion: %d", transferredSizeSuggestion);
   return transferredSizeSuggestion;
 }
 
@@ -1613,6 +1617,9 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
     
     return;
   }
+
+  FLEX_LOGV("Resolving auto main size or main min size for flex item %p",
+            aFlexItem.Frame());
 
   
   
@@ -1724,6 +1731,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
             std::min(contentSizeSuggestion, aFlexItem.MainMaxSize());
       }
 
+      FLEX_LOGV(" Content size suggestion: %d", contentSizeSuggestion);
       resolvedMinSize = std::min(resolvedMinSize, contentSizeSuggestion);
     }
   }
