@@ -7,6 +7,7 @@
 #include "DOMIntersectionObserver.h"
 #include "nsCSSPropertyID.h"
 #include "nsIFrame.h"
+#include "nsContainerFrame.h"
 #include "nsContentUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsRefreshDriver.h"
@@ -344,9 +345,14 @@ static Maybe<nsRect> ComputeTheIntersection(
     
     
     
-    if (containerFrame->IsScrollFrame()) {
-      nsIScrollableFrame* scrollFrame = do_QueryFrame(containerFrame);
-      
+    if (nsIScrollableFrame* scrollFrame = do_QueryFrame(containerFrame)) {
+      if (containerFrame->GetParent() == aRoot && !aRoot->GetParent()) {
+        
+        
+        
+        
+        break;
+      }
       nsRect subFrameRect = scrollFrame->GetScrollPortRect();
 
       
@@ -499,10 +505,9 @@ void DOMIntersectionObserver::Update(Document* aDocument,
   if (mRoot && mRoot->IsElement()) {
     if ((rootFrame = mRoot->AsElement()->GetPrimaryFrame())) {
       nsRect rootRectRelativeToRootFrame;
-      if (rootFrame->IsScrollFrame()) {
+      if (nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame)) {
         
         
-        nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame);
         rootRectRelativeToRootFrame = scrollFrame->GetScrollPortRect();
       } else {
         
@@ -532,9 +537,11 @@ void DOMIntersectionObserver::Update(Document* aDocument,
       
       
       if (PresShell* presShell = rootDocument->GetPresShell()) {
-        rootFrame = presShell->GetRootScrollFrame();
-        if (rootFrame) {
-          nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame);
+        rootFrame = presShell->GetRootFrame();
+        
+        
+        if (nsIScrollableFrame* scrollFrame =
+                presShell->GetRootScrollFrameAsScrollable()) {
           rootRect = scrollFrame->GetScrollPortRect();
         }
       }
@@ -563,33 +570,53 @@ void DOMIntersectionObserver::Update(Document* aDocument,
   
   for (Element* target : mObservationTargets) {
     nsIFrame* targetFrame = target->GetPrimaryFrame();
-    
-    
-    
-    if (mRoot && mRoot->OwnerDoc() != target->OwnerDoc()) {
-      continue;
-    }
-
-    nsRect rootBounds;
-    if (rootFrame && targetFrame) {
-      
-      rootBounds = rootRect;
-    }
-
     BrowsingContextOrigin origin = SimilarOrigin(*target, root);
-    if (origin == BrowsingContextOrigin::Similar) {
-      rootBounds.Inflate(rootMargin);
-    }
 
     Maybe<nsRect> intersectionRect;
     nsRect targetRect;
-    if (targetFrame && rootFrame) {
+    nsRect rootBounds;
+
+    const bool canComputeIntersection = [&] {
+      if (!targetFrame || !rootFrame) {
+        return false;
+      }
+
       
       
       
-      if (mRoot && !nsLayoutUtils::IsProperAncestorFrameCrossDoc(rootFrame,
-                                                                 targetFrame)) {
-        continue;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!nsLayoutUtils::IsAncestorFrameCrossDoc(rootFrame, targetFrame)) {
+        return false;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (mRoot && mRoot->OwnerDoc() != target->OwnerDoc()) {
+        return false;
+      }
+
+      return true;
+    }();
+
+    if (canComputeIntersection) {
+      rootBounds = rootRect;
+      if (origin == BrowsingContextOrigin::Similar) {
+        rootBounds.Inflate(rootMargin);
       }
 
       
