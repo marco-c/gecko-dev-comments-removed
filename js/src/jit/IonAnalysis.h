@@ -9,7 +9,10 @@
 
 
 
+#include "mozilla/Attributes.h"
+
 #include "jit/JitAllocPolicy.h"
+#include "vm/TypeInference.h"
 
 namespace js {
 

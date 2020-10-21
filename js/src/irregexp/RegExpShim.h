@@ -29,10 +29,12 @@
 #include "jit/Label.h"
 #include "jit/shared/Assembler-shared.h"
 #include "js/friend/StackLimits.h"  
+#include "js/RegExpFlags.h"
 #include "js/Value.h"
 #include "threading/ExclusiveData.h"
 #include "vm/MutexIDs.h"
 #include "vm/NativeObject.h"
+#include "vm/RegExpShared.h"
 
 
 namespace v8 {
