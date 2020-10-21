@@ -553,44 +553,6 @@ const JSFunctionSpec ArrayMetaTypeDescr::typedObjectMethods[] = {
     {JSFunctionSpec::Name("forEach"), {nullptr, nullptr}, 1, 0, "ArrayForEach"},
     JS_FS_END};
 
-bool js::CreateUserSizeAndAlignmentProperties(JSContext* cx,
-                                              HandleTypeDescr descr) {
-  
-  if (descr->transparent()) {
-    
-    RootedValue typeByteLength(
-        cx, Int32Value(AssertedCast<int32_t>(descr->size())));
-    if (!DefineDataProperty(cx, descr, cx->names().byteLength, typeByteLength,
-                            JSPROP_READONLY | JSPROP_PERMANENT)) {
-      return false;
-    }
-
-    
-    RootedValue typeByteAlignment(cx, Int32Value(descr->alignment()));
-    if (!DefineDataProperty(cx, descr, cx->names().byteAlignment,
-                            typeByteAlignment,
-                            JSPROP_READONLY | JSPROP_PERMANENT)) {
-      return false;
-    }
-  } else {
-    
-    if (!DefineDataProperty(cx, descr, cx->names().byteLength,
-                            UndefinedHandleValue,
-                            JSPROP_READONLY | JSPROP_PERMANENT)) {
-      return false;
-    }
-
-    
-    if (!DefineDataProperty(cx, descr, cx->names().byteAlignment,
-                            UndefinedHandleValue,
-                            JSPROP_READONLY | JSPROP_PERMANENT)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 static bool CreateTraceList(JSContext* cx, HandleTypeDescr descr);
 
 ArrayTypeDescr* ArrayMetaTypeDescr::create(JSContext* cx,
@@ -611,8 +573,6 @@ ArrayTypeDescr* ArrayMetaTypeDescr::create(JSContext* cx,
   obj->initReservedSlot(JS_DESCR_SLOT_ALIGNMENT,
                         Int32Value(elementType->alignment()));
   obj->initReservedSlot(JS_DESCR_SLOT_SIZE, Int32Value(size));
-  obj->initReservedSlot(JS_DESCR_SLOT_OPAQUE,
-                        BooleanValue(elementType->opaque()));
   obj->initReservedSlot(JS_DESCR_SLOT_ARRAY_ELEM_TYPE,
                         ObjectValue(*elementType));
   obj->initReservedSlot(JS_DESCR_SLOT_ARRAY_LENGTH, Int32Value(length));
@@ -628,10 +588,6 @@ ArrayTypeDescr* ArrayMetaTypeDescr::create(JSContext* cx,
   RootedValue lengthValue(cx, NumberValue(length));
   if (!DefineDataProperty(cx, obj, cx->names().length, lengthValue,
                           JSPROP_READONLY | JSPROP_PERMANENT)) {
-    return nullptr;
-  }
-
-  if (!CreateUserSizeAndAlignmentProperties(cx, obj)) {
     return nullptr;
   }
 
@@ -835,7 +791,6 @@ JSObject* StructMetaTypeDescr::create(JSContext* cx, HandleObject metaTypeDescr,
   
   
   RootedValueVector fieldTypeObjs(cx);  
-  bool opaque = false;                  
 
   Vector<StructFieldProps> fieldProps(cx);
 
@@ -876,11 +831,6 @@ JSObject* StructMetaTypeDescr::create(JSContext* cx, HandleObject metaTypeDescr,
     if (!fieldProps.append(props)) {
       return nullptr;
     }
-
-    
-    if (fieldType->opaque()) {
-      opaque = true;
-    }
   }
 
   RootedObject structTypePrototype(cx, GetPrototype(cx, metaTypeDescr));
@@ -888,16 +838,16 @@ JSObject* StructMetaTypeDescr::create(JSContext* cx, HandleObject metaTypeDescr,
     return nullptr;
   }
 
-  return createFromArrays(cx, structTypePrototype, opaque,
+  return createFromArrays(cx, structTypePrototype,
                            true, ids, fieldTypeObjs,
                           fieldProps);
 }
 
 
 StructTypeDescr* StructMetaTypeDescr::createFromArrays(
-    JSContext* cx, HandleObject structTypePrototype, bool opaque,
-    bool allowConstruct, HandleIdVector ids,
-    JS::HandleValueVector fieldTypeObjs, Vector<StructFieldProps>& fieldProps) {
+    JSContext* cx, HandleObject structTypePrototype, bool allowConstruct,
+    HandleIdVector ids, JS::HandleValueVector fieldTypeObjs,
+    Vector<StructFieldProps>& fieldProps) {
   StringBuffer stringBuffer(cx);       
   RootedValueVector fieldNames(cx);    
   RootedValueVector fieldOffsets(cx);  
@@ -1017,7 +967,6 @@ StructTypeDescr* StructMetaTypeDescr::createFromArrays(
   descr->initReservedSlot(JS_DESCR_SLOT_ALIGNMENT,
                           Int32Value(AssertedCast<int32_t>(alignment)));
   descr->initReservedSlot(JS_DESCR_SLOT_SIZE, Int32Value(totalSize.value()));
-  descr->initReservedSlot(JS_DESCR_SLOT_OPAQUE, BooleanValue(opaque));
   descr->initReservedSlot(
       JS_DESCR_SLOT_FLAGS,
       Int32Value(allowConstruct ? JS_DESCR_FLAG_ALLOW_CONSTRUCT : 0));
@@ -1088,10 +1037,6 @@ StructTypeDescr* StructMetaTypeDescr::createFromArrays(
   if (!DefineDataProperty(cx, descr, cx->names().fieldTypes,
                           userFieldTypesValue,
                           JSPROP_READONLY | JSPROP_PERMANENT)) {
-    return nullptr;
-  }
-
-  if (!CreateUserSizeAndAlignmentProperties(cx, descr)) {
     return nullptr;
   }
 
@@ -1271,13 +1216,8 @@ static bool DefineSimpleTypeDescr(JSContext* cx, Handle<GlobalObject*> global,
                           Int32Value(T::alignment(type)));
   descr->initReservedSlot(JS_DESCR_SLOT_SIZE,
                           Int32Value(AssertedCast<int32_t>(T::size(type))));
-  descr->initReservedSlot(JS_DESCR_SLOT_OPAQUE, BooleanValue(T::Opaque));
   descr->initReservedSlot(JS_DESCR_SLOT_TYPE, Int32Value(int32_t(type)));
   descr->initReservedSlot(JS_DESCR_SLOT_FLAGS, Int32Value(0));
-
-  if (!CreateUserSizeAndAlignmentProperties(cx, descr)) {
-    return false;
-  }
 
   if (!JS_DefineFunctions(cx, descr, T::typeObjectMethods)) {
     return false;
@@ -1529,16 +1469,6 @@ uint8_t* TypedObject::typedMemBase() const {
 
 
 
-
-OutlineTypedObject* OutlineTypedObject::createUnattached(JSContext* cx,
-                                                         HandleTypeDescr descr,
-                                                         gc::InitialHeap heap) {
-  const JSClass* clasp = descr->opaque()
-                             ? &OutlineOpaqueTypedObject::class_
-                             : &OutlineTransparentTypedObject::class_;
-  return createUnattachedWithClass(cx, clasp, descr, heap);
-}
-
 void OutlineTypedObject::setOwnerAndData(JSObject* owner, uint8_t* data) {
   
   
@@ -1566,17 +1496,14 @@ void OutlineTypedObject::setOwnerAndData(JSObject* owner, uint8_t* data) {
 }
 
 
-OutlineTypedObject* OutlineTypedObject::createUnattachedWithClass(
-    JSContext* cx, const JSClass* clasp, HandleTypeDescr descr,
-    gc::InitialHeap heap) {
-  MOZ_ASSERT(clasp == &OutlineTransparentTypedObject::class_ ||
-             clasp == &OutlineOpaqueTypedObject::class_);
-
+OutlineTypedObject* OutlineTypedObject::createUnattached(JSContext* cx,
+                                                         HandleTypeDescr descr,
+                                                         gc::InitialHeap heap) {
   AutoSetNewObjectMetadata metadata(cx);
 
-  RootedObjectGroup group(
-      cx, ObjectGroup::defaultNewGroup(
-              cx, clasp, TaggedProto(&descr->typedProto()), descr));
+  RootedObjectGroup group(cx, ObjectGroup::defaultNewGroup(
+                                  cx, &OutlineTypedObject::class_,
+                                  TaggedProto(&descr->typedProto()), descr));
   if (!group) {
     return nullptr;
   }
@@ -1651,11 +1578,8 @@ OutlineTypedObject* OutlineTypedObject::createDerived(
   MOZ_ASSERT(offset <= typedObj->size());
   MOZ_ASSERT(offset + type->size() <= typedObj->size());
 
-  const JSClass* clasp = typedObj->opaque()
-                             ? &OutlineOpaqueTypedObject::class_
-                             : &OutlineTransparentTypedObject::class_;
   Rooted<OutlineTypedObject*> obj(cx);
-  obj = createUnattachedWithClass(cx, clasp, type);
+  obj = createUnattached(cx, type);
   if (!obj) {
     return nullptr;
   }
@@ -1670,7 +1594,7 @@ OutlineTypedObject* OutlineTypedObject::createOpaque(JSContext* cx,
                                                      HandleTypedObject target,
                                                      uint32_t offset) {
   Rooted<OutlineTypedObject*> obj(cx);
-  obj = createUnattachedWithClass(cx, &OutlineOpaqueTypedObject::class_, descr);
+  obj = createUnattached(cx, descr);
   if (!obj) {
     return nullptr;
   }
@@ -1734,10 +1658,6 @@ void OutlineTypedObject::obj_trace(JSTracer* trc, JSObject* object) {
       nursery.maybeSetForwardingPointer(trc, oldData, newData,
                                          false);
     }
-  }
-
-  if (!descr.opaque()) {
-    return;
   }
 
   if (descr.hasTraceList()) {
@@ -2154,13 +2074,9 @@ InlineTypedObject* InlineTypedObject::create(JSContext* cx,
                                              gc::InitialHeap heap) {
   gc::AllocKind allocKind = allocKindForTypeDescriptor(descr);
 
-  const JSClass* clasp = descr->opaque()
-                             ? &InlineOpaqueTypedObject::class_
-                             : &InlineTransparentTypedObject::class_;
-
-  RootedObjectGroup group(
-      cx, ObjectGroup::defaultNewGroup(
-              cx, clasp, TaggedProto(&descr->typedProto()), descr));
+  RootedObjectGroup group(cx, ObjectGroup::defaultNewGroup(
+                                  cx, &InlineTypedObject::class_,
+                                  TaggedProto(&descr->typedProto()), descr));
   if (!group) {
     return nullptr;
   }
@@ -2192,13 +2108,6 @@ void InlineTypedObject::obj_trace(JSTracer* trc, JSObject* object) {
   InlineTypedObject& typedObj = object->as<InlineTypedObject>();
 
   TraceEdge(trc, typedObj.shapePtr(), "InlineTypedObject_shape");
-
-  
-  
-  
-  if (typedObj.is<InlineTransparentTypedObject>()) {
-    return;
-  }
 
   TypeDescr& descr = typedObj.typeDescr();
   if (descr.hasTraceList()) {
@@ -2273,14 +2182,9 @@ const ObjectOps TypedObject::objectOps_ = {
       &Name##ClassOps, JS_NULL_CLASS_SPEC,                                   \
       &Name##ClassExt, &TypedObject::objectOps_}
 
-DEFINE_TYPEDOBJ_CLASS(OutlineTransparentTypedObject,
-                      OutlineTypedObject::obj_trace, nullptr);
-DEFINE_TYPEDOBJ_CLASS(OutlineOpaqueTypedObject, OutlineTypedObject::obj_trace,
+DEFINE_TYPEDOBJ_CLASS(OutlineTypedObject, OutlineTypedObject::obj_trace,
                       nullptr);
-DEFINE_TYPEDOBJ_CLASS(InlineTransparentTypedObject,
-                      InlineTypedObject::obj_trace,
-                      InlineTypedObject::obj_moved);
-DEFINE_TYPEDOBJ_CLASS(InlineOpaqueTypedObject, InlineTypedObject::obj_trace,
+DEFINE_TYPEDOBJ_CLASS(InlineTypedObject, InlineTypedObject::obj_trace,
                       InlineTypedObject::obj_moved);
 
 
@@ -2702,10 +2606,6 @@ JS_FOR_EACH_REFERENCE_TYPE_REPR(JS_LOAD_REFERENCE_CLASS_IMPL)
 template <typename V>
 static void VisitReferences(TypeDescr& descr, uint8_t* base, V& visitor,
                             size_t offset) {
-  if (descr.transparent()) {
-    return;
-  }
-
   switch (descr.kind()) {
     case type::Scalar:
       return;
@@ -2788,9 +2688,7 @@ void TypeDescr::initInstance(const JSRuntime* rt, uint8_t* mem) {
 
   
   memset(mem, 0, size());
-  if (opaque()) {
-    VisitReferences(*this, mem, visitor, 0);
-  }
+  VisitReferences(*this, mem, visitor, 0);
 }
 
 
@@ -2905,7 +2803,7 @@ static bool CreateTraceList(JSContext* cx, HandleTypeDescr descr) {
   
   
   
-  if (!InlineTypedObject::canAccommodateType(descr) || descr->transparent()) {
+  if (!InlineTypedObject::canAccommodateType(descr)) {
     return true;
   }
 

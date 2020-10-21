@@ -1336,10 +1336,8 @@ bool Module::makeStructTypeDescrs(
     
 
     Rooted<StructTypeDescr*> structTypeDescr(
-        cx, StructMetaTypeDescr::createFromArrays(cx, prototype,
-                                                   true,
-                                                  allowConstruct, ids,
-                                                  fieldTypeObjs, fieldProps));
+        cx, StructMetaTypeDescr::createFromArrays(
+                cx, prototype, allowConstruct, ids, fieldTypeObjs, fieldProps));
 
     if (!structTypeDescr || !structTypeDescrs.append(structTypeDescr)) {
       return false;
