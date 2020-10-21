@@ -137,7 +137,7 @@ class Key {
     return res;
   }
 
-  IDBResult<void, IDBSpecialValue::Invalid> SetFromString(
+  IDBResult<Ok, IDBSpecialValue::Invalid> SetFromString(
       const nsAString& aString);
 
   void SetFromInteger(int64_t aInt) {
@@ -149,7 +149,7 @@ class Key {
   
   
   
-  IDBResult<void, IDBSpecialValue::Invalid> SetFromJSVal(
+  IDBResult<Ok, IDBSpecialValue::Invalid> SetFromJSVal(
       JSContext* aCx, JS::Handle<JS::Value> aVal);
 
   nsresult ToJSVal(JSContext* aCx, JS::MutableHandle<JS::Value> aVal) const;
@@ -157,7 +157,7 @@ class Key {
   nsresult ToJSVal(JSContext* aCx, JS::Heap<JS::Value>& aVal) const;
 
   
-  IDBResult<void, IDBSpecialValue::Invalid> AppendItem(
+  IDBResult<Ok, IDBSpecialValue::Invalid> AppendItem(
       JSContext* aCx, bool aFirstOfArray, JS::Handle<JS::Value> aVal);
 
   IDBResult<Key, IDBSpecialValue::Invalid> ToLocaleAwareKey(
@@ -214,28 +214,28 @@ class Key {
   }
 
   
-  IDBResult<void, IDBSpecialValue::Invalid> EncodeJSVal(
+  IDBResult<Ok, IDBSpecialValue::Invalid> EncodeJSVal(
       JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset);
 
-  IDBResult<void, IDBSpecialValue::Invalid> EncodeString(
-      const nsAString& aString, uint8_t aTypeOffset);
+  IDBResult<Ok, IDBSpecialValue::Invalid> EncodeString(const nsAString& aString,
+                                                       uint8_t aTypeOffset);
 
   template <typename T>
-  IDBResult<void, IDBSpecialValue::Invalid> EncodeString(Span<const T> aInput,
-                                                         uint8_t aTypeOffset);
+  IDBResult<Ok, IDBSpecialValue::Invalid> EncodeString(Span<const T> aInput,
+                                                       uint8_t aTypeOffset);
 
   template <typename T>
-  IDBResult<void, IDBSpecialValue::Invalid> EncodeAsString(Span<const T> aInput,
-                                                           uint8_t aType);
+  IDBResult<Ok, IDBSpecialValue::Invalid> EncodeAsString(Span<const T> aInput,
+                                                         uint8_t aType);
 
-  IDBResult<void, IDBSpecialValue::Invalid> EncodeLocaleString(
+  IDBResult<Ok, IDBSpecialValue::Invalid> EncodeLocaleString(
       const nsAString& aString, uint8_t aTypeOffset, const nsCString& aLocale);
 
   void EncodeNumber(double aFloat, uint8_t aType);
 
-  IDBResult<void, IDBSpecialValue::Invalid> EncodeBinary(JSObject* aObject,
-                                                         bool aIsViewObject,
-                                                         uint8_t aTypeOffset);
+  IDBResult<Ok, IDBSpecialValue::Invalid> EncodeBinary(JSObject* aObject,
+                                                       bool aIsViewObject,
+                                                       uint8_t aTypeOffset);
 
   
   
@@ -277,7 +277,7 @@ class Key {
                             const AcquireBuffer& acquireBuffer,
                             const AcquireEmpty& acquireEmpty);
 
-  IDBResult<void, IDBSpecialValue::Invalid> EncodeJSValInternal(
+  IDBResult<Ok, IDBSpecialValue::Invalid> EncodeJSValInternal(
       JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset,
       uint16_t aRecursionDepth);
 
