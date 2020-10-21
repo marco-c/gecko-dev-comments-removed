@@ -3734,6 +3734,23 @@ bool WarpCacheIRTranspiler::emitCallScriptedGetterResult(
 bool WarpCacheIRTranspiler::emitCallInlinedGetterResult(
     ValOperandId receiverId, uint32_t getterOffset, uint32_t icScriptOffset,
     bool sameRealm, uint32_t nargsAndFlagsOffset) {
+  if (callInfo_) {
+    MOZ_ASSERT(callInfo_->isInlined());
+    
+    
+    
+    MDefinition* receiver = getOperand(receiverId);
+    MDefinition* getter = objectStubField(getterOffset);
+    callInfo_->initForGetterCall(getter, receiver);
+
+    
+    if (!current->ensureHasSlots(2)) {
+      return false;
+    }
+
+    return true;
+  }
+
   return emitCallGetterResult(CallKind::Scripted, receiverId, getterOffset,
                               sameRealm, nargsAndFlagsOffset);
 }
