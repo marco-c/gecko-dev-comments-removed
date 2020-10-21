@@ -450,12 +450,9 @@ GetStructuredCloneReadInfoFromSource(T* aSource, uint32_t aDataIndex,
                   MOZ_TO_RESULT_INVOKE(aSource, GetIsNull, aFileIdsIndex));
 
   IDB_TRY_INSPECT(const nsString& fileIds, ([aSource, aFileIdsIndex, isNull] {
-                    
-                    
-                    
                     return isNull ? Result<nsString, nsresult>{VoidString()}
-                                  : ToResultInvoke<nsString>(
-                                        std::mem_fn(&T::GetString), aSource,
+                                  : MOZ_TO_RESULT_INVOKE_TYPED(
+                                        nsString, aSource, GetString,
                                         aFileIdsIndex);
                   }()));
 
