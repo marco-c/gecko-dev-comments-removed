@@ -580,6 +580,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   
   nsresult NameLookup(nsHostRecord*);
   bool GetHostToLookup(AddrHostRecord** result);
+  void MaybeRenewHostRecordLocked(nsHostRecord* aRec);
 
   
   

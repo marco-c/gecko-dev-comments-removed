@@ -1321,6 +1321,12 @@ nsresult nsHostResolver::TrrLookup_unlocked(nsHostRecord* rec, TRR* pushedTRR) {
 }
 
 void nsHostResolver::MaybeRenewHostRecord(nsHostRecord* aRec) {
+  MutexAutoLock lock(mLock);
+  MaybeRenewHostRecordLocked(aRec);
+}
+
+void nsHostResolver::MaybeRenewHostRecordLocked(nsHostRecord* aRec) {
+  mLock.AssertCurrentThreadOwns();
   if (aRec->isInList()) {
     
     MOZ_ASSERT(mEvictionQSize);
@@ -1368,7 +1374,7 @@ nsresult nsHostResolver::TrrLookup(nsHostRecord* aRec, TRR* pushedTRR) {
     return NS_ERROR_UNKNOWN_HOST;
   }
 
-  MaybeRenewHostRecord(rec);
+  MaybeRenewHostRecordLocked(rec);
 
   bool madeQuery = false;
 
@@ -1487,7 +1493,7 @@ nsresult nsHostResolver::NativeLookup(nsHostRecord* aRec) {
   addrRec->mNativeStart = TimeStamp::Now();
 
   
-  MaybeRenewHostRecord(rec);
+  MaybeRenewHostRecordLocked(rec);
 
   switch (AddrHostRecord::GetPriority(rec->flags)) {
     case AddrHostRecord::DNS_PRIORITY_HIGH:
