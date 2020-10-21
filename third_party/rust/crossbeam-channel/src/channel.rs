@@ -7,13 +7,11 @@ use std::panic::{RefUnwindSafe, UnwindSafe};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::context::Context;
-use crate::counter;
-use crate::err::{
-    RecvError, RecvTimeoutError, SendError, SendTimeoutError, TryRecvError, TrySendError,
-};
-use crate::flavors;
-use crate::select::{Operation, SelectHandle, Token};
+use context::Context;
+use counter;
+use err::{RecvError, RecvTimeoutError, SendError, SendTimeoutError, TryRecvError, TrySendError};
+use flavors;
+use select::{Operation, SelectHandle, Token};
 
 
 
@@ -170,11 +168,19 @@ pub fn bounded<T>(cap: usize) -> (Sender<T>, Receiver<T>) {
 
 
 
+
+
+
+
 pub fn after(duration: Duration) -> Receiver<Instant> {
     Receiver {
         flavor: ReceiverFlavor::After(Arc::new(flavors::after::Channel::new(duration))),
     }
 }
+
+
+
+
 
 
 
@@ -576,7 +582,7 @@ impl<T> Clone for Sender<T> {
 }
 
 impl<T> fmt::Debug for Sender<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad("Sender { .. }")
     }
 }
@@ -935,7 +941,7 @@ impl<T> Receiver<T> {
     
     
     
-    pub fn iter(&self) -> Iter<'_, T> {
+    pub fn iter(&self) -> Iter<T> {
         Iter { receiver: self }
     }
 
@@ -971,7 +977,7 @@ impl<T> Receiver<T> {
     
     
     
-    pub fn try_iter(&self) -> TryIter<'_, T> {
+    pub fn try_iter(&self) -> TryIter<T> {
         TryIter { receiver: self }
     }
 
@@ -1034,7 +1040,7 @@ impl<T> Clone for Receiver<T> {
 }
 
 impl<T> fmt::Debug for Receiver<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad("Receiver { .. }")
     }
 }
@@ -1086,13 +1092,13 @@ impl<T> IntoIterator for Receiver<T> {
 
 
 
-pub struct Iter<'a, T> {
+pub struct Iter<'a, T: 'a> {
     receiver: &'a Receiver<T>,
 }
 
-impl<T> FusedIterator for Iter<'_, T> {}
+impl<'a, T> FusedIterator for Iter<'a, T> {}
 
-impl<T> Iterator for Iter<'_, T> {
+impl<'a, T> Iterator for Iter<'a, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -1100,8 +1106,8 @@ impl<T> Iterator for Iter<'_, T> {
     }
 }
 
-impl<T> fmt::Debug for Iter<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<'a, T> fmt::Debug for Iter<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad("Iter { .. }")
     }
 }
@@ -1138,11 +1144,11 @@ impl<T> fmt::Debug for Iter<'_, T> {
 
 
 
-pub struct TryIter<'a, T> {
+pub struct TryIter<'a, T: 'a> {
     receiver: &'a Receiver<T>,
 }
 
-impl<T> Iterator for TryIter<'_, T> {
+impl<'a, T> Iterator for TryIter<'a, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -1150,8 +1156,8 @@ impl<T> Iterator for TryIter<'_, T> {
     }
 }
 
-impl<T> fmt::Debug for TryIter<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<'a, T> fmt::Debug for TryIter<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad("TryIter { .. }")
     }
 }
@@ -1200,7 +1206,7 @@ impl<T> Iterator for IntoIter<T> {
 }
 
 impl<T> fmt::Debug for IntoIter<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad("IntoIter { .. }")
     }
 }

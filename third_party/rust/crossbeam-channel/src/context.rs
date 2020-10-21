@@ -8,7 +8,7 @@ use std::time::Instant;
 
 use crossbeam_utils::Backoff;
 
-use crate::select::Selected;
+use select::Selected;
 
 
 #[derive(Debug, Clone)]

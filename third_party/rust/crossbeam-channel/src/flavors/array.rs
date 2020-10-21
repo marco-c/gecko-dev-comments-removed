@@ -15,17 +15,19 @@
 
 use std::cell::UnsafeCell;
 use std::marker::PhantomData;
-use std::mem::{self, MaybeUninit};
+use std::mem;
 use std::ptr;
 use std::sync::atomic::{self, AtomicUsize, Ordering};
 use std::time::Instant;
 
 use crossbeam_utils::{Backoff, CachePadded};
 
-use crate::context::Context;
-use crate::err::{RecvTimeoutError, SendTimeoutError, TryRecvError, TrySendError};
-use crate::select::{Operation, SelectHandle, Selected, Token};
-use crate::waker::SyncWaker;
+use maybe_uninit::MaybeUninit;
+
+use context::Context;
+use err::{RecvTimeoutError, SendTimeoutError, TryRecvError, TrySendError};
+use select::{Operation, SelectHandle, Selected, Token};
+use waker::SyncWaker;
 
 
 struct Slot<T> {
@@ -113,21 +115,21 @@ impl<T> Channel<T> {
         let tail = 0;
 
         
-        
         let buffer = {
-            let mut v: Vec<Slot<T>> = (0..cap)
-                .map(|i| {
-                    
-                    Slot {
-                        stamp: AtomicUsize::new(i),
-                        msg: UnsafeCell::new(MaybeUninit::uninit()),
-                    }
-                })
-                .collect();
+            let mut v = Vec::<Slot<T>>::with_capacity(cap);
             let ptr = v.as_mut_ptr();
             mem::forget(v);
             ptr
         };
+
+        
+        for i in 0..cap {
+            unsafe {
+                
+                let slot = buffer.add(i);
+                ptr::write(&mut (*slot).stamp, AtomicUsize::new(i));
+            }
+        }
 
         Channel {
             buffer,
@@ -143,12 +145,12 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn receiver(&self) -> Receiver<'_, T> {
+    pub fn receiver(&self) -> Receiver<T> {
         Receiver(self)
     }
 
     
-    pub fn sender(&self) -> Sender<'_, T> {
+    pub fn sender(&self) -> Sender<T> {
         Sender(self)
     }
 
@@ -559,12 +561,12 @@ impl<T> Drop for Channel<T> {
 }
 
 
-pub struct Receiver<'a, T>(&'a Channel<T>);
+pub struct Receiver<'a, T: 'a>(&'a Channel<T>);
 
 
-pub struct Sender<'a, T>(&'a Channel<T>);
+pub struct Sender<'a, T: 'a>(&'a Channel<T>);
 
-impl<T> SelectHandle for Receiver<'_, T> {
+impl<'a, T> SelectHandle for Receiver<'a, T> {
     fn try_select(&self, token: &mut Token) -> bool {
         self.0.start_recv(token)
     }
@@ -600,7 +602,7 @@ impl<T> SelectHandle for Receiver<'_, T> {
     }
 }
 
-impl<T> SelectHandle for Sender<'_, T> {
+impl<'a, T> SelectHandle for Sender<'a, T> {
     fn try_select(&self, token: &mut Token) -> bool {
         self.0.start_send(token)
     }

@@ -7,13 +7,13 @@ use std::time::{Duration, Instant};
 
 use crossbeam_utils::Backoff;
 
-use crate::channel::{self, Receiver, Sender};
-use crate::context::Context;
-use crate::err::{ReadyTimeoutError, TryReadyError};
-use crate::err::{RecvError, SendError};
-use crate::err::{SelectTimeoutError, TrySelectError};
-use crate::flavors;
-use crate::utils;
+use channel::{self, Receiver, Sender};
+use context::Context;
+use err::{ReadyTimeoutError, TryReadyError};
+use err::{RecvError, SendError};
+use err::{SelectTimeoutError, TrySelectError};
+use flavors;
+use utils;
 
 
 
@@ -119,7 +119,7 @@ pub trait SelectHandle {
     fn unwatch(&self, oper: Operation);
 }
 
-impl<T: SelectHandle> SelectHandle for &T {
+impl<'a, T: SelectHandle> SelectHandle for &'a T {
     fn try_select(&self, token: &mut Token) -> bool {
         (**self).try_select(token)
     }
@@ -585,8 +585,8 @@ pub struct Select<'a> {
     next_index: usize,
 }
 
-unsafe impl Send for Select<'_> {}
-unsafe impl Sync for Select<'_> {}
+unsafe impl<'a> Send for Select<'a> {}
+unsafe impl<'a> Sync for Select<'a> {}
 
 impl<'a> Select<'a> {
     
@@ -622,6 +622,7 @@ impl<'a> Select<'a> {
     
     
     
+    
     pub fn send<T>(&mut self, s: &'a Sender<T>) -> usize {
         let i = self.next_index;
         let ptr = s as *const Sender<_> as *const u8;
@@ -630,6 +631,7 @@ impl<'a> Select<'a> {
         i
     }
 
+    
     
     
     
@@ -688,6 +690,7 @@ impl<'a> Select<'a> {
     
     
     
+    
     pub fn remove(&mut self, index: usize) {
         assert!(
             index < self.next_index,
@@ -707,6 +710,7 @@ impl<'a> Select<'a> {
         self.handles.swap_remove(i);
     }
 
+    
     
     
     
@@ -890,6 +894,7 @@ impl<'a> Select<'a> {
     
     
     
+    
     pub fn try_ready(&mut self) -> Result<usize, TryReadyError> {
         match run_ready(&mut self.handles, Timeout::Now) {
             None => Err(TryReadyError),
@@ -1012,8 +1017,8 @@ impl<'a> Default for Select<'a> {
     }
 }
 
-impl fmt::Debug for Select<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<'a> fmt::Debug for Select<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad("Select { .. }")
     }
 }
@@ -1044,7 +1049,7 @@ pub struct SelectedOperation<'a> {
     _marker: PhantomData<&'a ()>,
 }
 
-impl SelectedOperation<'_> {
+impl<'a> SelectedOperation<'a> {
     
     
     
@@ -1148,13 +1153,13 @@ impl SelectedOperation<'_> {
     }
 }
 
-impl fmt::Debug for SelectedOperation<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<'a> fmt::Debug for SelectedOperation<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.pad("SelectedOperation { .. }")
     }
 }
 
-impl Drop for SelectedOperation<'_> {
+impl<'a> Drop for SelectedOperation<'a> {
     fn drop(&mut self) {
         panic!("dropped `SelectedOperation` without completing the operation");
     }

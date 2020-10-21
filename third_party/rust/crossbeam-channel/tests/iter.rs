@@ -1,5 +1,8 @@
 
 
+extern crate crossbeam_channel;
+extern crate crossbeam_utils;
+
 use crossbeam_channel::unbounded;
 use crossbeam_utils::thread::scope;
 
