@@ -73,6 +73,8 @@ class MIRGenerator;
 class MIRGraph;
 class WarpSnapshot;
 
+enum class CacheKind : uint8_t;
+
 
 class MOZ_STACK_CLASS WarpCompilation {
   
