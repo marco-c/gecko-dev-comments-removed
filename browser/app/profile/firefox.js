@@ -1764,7 +1764,8 @@ pref("privacy.userContext.extension", "");
 
 pref("privacy.userContext.newTabContainerOnLeftClick.enabled", false);
 
-#ifdef NIGHTLY_BUILD
+#if defined(NIGHTLY_BUILD) || defined(XP_WIN) || defined(XP_MACOSX)
+
 
 
 pref("privacy.webrtc.allowSilencingNotifications", true);
