@@ -599,6 +599,23 @@ void BasicTableLayoutStrategy::DistributePctISizeToColumns(float aSpanPrefPct,
   }
 }
 
+#ifdef DEBUG
+
+
+
+static bool IsCloseToXULBox(nsTableFrame* aTableFrame) {
+  
+  nsIFrame* f = aTableFrame->GetParent()->GetParent();
+  for (size_t i = 0; f && i < 2; ++i) {
+    if (f->IsXULBoxFrame()) {
+      return true;
+    }
+    f = f->GetParent();
+  }
+  return false;
+}
+#endif
+
 void BasicTableLayoutStrategy::DistributeISizeToColumns(
     nscoord aISize, int32_t aFirstCol, int32_t aColCount,
     BtlsISizeType aISizeType, bool aSpanHasSpecifiedISize) {
@@ -755,7 +772,8 @@ void BasicTableLayoutStrategy::DistributeISizeToColumns(
       
       return;
     }
-    NS_ASSERTION(!(aISizeType == BTLS_FINAL_ISIZE && aISize < guess_min),
+    NS_ASSERTION(!(aISizeType == BTLS_FINAL_ISIZE && aISize < guess_min) ||
+                     IsCloseToXULBox(mTableFrame),
                  "Table inline-size is less than the "
                  "sum of its columns' min inline-sizes");
     if (aISize < guess_min_pct) {
@@ -980,9 +998,13 @@ void BasicTableLayoutStrategy::DistributeISizeToColumns(
       } break;
     }
   }
-  NS_ASSERTION(
-      (space == 0 || space == nscoord_MAX) &&
-          ((l2t == FLEX_PCT_LARGE) ? (-0.001f < basis.f && basis.f < 0.001f)
-                                   : (basis.c == 0 || basis.c == nscoord_MAX)),
-      "didn't subtract all that we added");
+#ifdef DEBUG
+  if (!IsCloseToXULBox(mTableFrame)) {
+    NS_ASSERTION((space == 0 || space == nscoord_MAX) &&
+                     ((l2t == FLEX_PCT_LARGE)
+                          ? (-0.001f < basis.f && basis.f < 0.001f)
+                          : (basis.c == 0 || basis.c == nscoord_MAX)),
+                 "didn't subtract all that we added");
+  }
+#endif
 }
