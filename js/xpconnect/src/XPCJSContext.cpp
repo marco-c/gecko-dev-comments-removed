@@ -572,6 +572,9 @@ AutoScriptActivity::~AutoScriptActivity() {
   MOZ_ALWAYS_TRUE(mActive == XPCJSContext::RecordScriptActivity(mOldValue));
 }
 
+static const double sChromeSlowScriptTelemetryCutoff(10.0);
+static bool sTelemetryEventEnabled(false);
+
 
 bool XPCJSContext::InterruptCallback(JSContext* cx) {
   XPCJSContext* self = XPCJSContext::Get();
@@ -602,6 +605,7 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     self->mSlowScriptSecondHalf = false;
     self->mSlowScriptActualWait = mozilla::TimeDuration();
     self->mTimeoutAccumulated = false;
+    self->mExecutedChromeScript = false;
     return true;
   }
 
@@ -626,6 +630,7 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   if (chrome) {
     prefName = PREF_MAX_SCRIPT_RUN_TIME_CHROME;
     limit = StaticPrefs::dom_max_chrome_script_run_time();
+    self->mExecutedChromeScript = true;
   } else if (auto policy = principal->ContentScriptAddonPolicy()) {
     policy->GetId(addonId);
     prefName = PREF_MAX_SCRIPT_RUN_TIME_EXT_CONTENT;
@@ -636,6 +641,14 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     runningContentJS = true;
   }
 
+  
+  
+  
+  if (limit == 0 && chrome &&
+      duration.ToSeconds() > sChromeSlowScriptTelemetryCutoff / 2.0) {
+    self->mSlowScriptSecondHalf = true;
+    return true;
+  }
   
   if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
     return true;
@@ -677,6 +690,12 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
         return true;
       }
     }
+  }
+
+  
+  
+  if (chrome && limit == 2 && xpc::IsInAutomation()) {
+    return true;
   }
 
   
@@ -1117,6 +1136,7 @@ XPCJSContext::XPCJSContext()
       mWatchdogManager(GetWatchdogManager()),
       mSlowScriptSecondHalf(false),
       mTimeoutAccumulated(false),
+      mExecutedChromeScript(false),
       mHasScriptActivity(false),
       mPendingResult(NS_OK),
       mActive(CONTEXT_INACTIVE),
@@ -1402,10 +1422,41 @@ void XPCJSContext::BeforeProcessTask(bool aMightBlock) {
   mSlowScriptSecondHalf = false;
   mSlowScriptActualWait = mozilla::TimeDuration();
   mTimeoutAccumulated = false;
+  mExecutedChromeScript = false;
   CycleCollectedJSContext::BeforeProcessTask(aMightBlock);
 }
 
 void XPCJSContext::AfterProcessTask(uint32_t aNewRecursionDepth) {
+  
+  if (mSlowScriptSecondHalf && XRE_IsE10sParentProcess()) {
+    double hangDuration = (mozilla::TimeStamp::NowLoRes() -
+                           mSlowScriptCheckpoint + mSlowScriptActualWait)
+                              .ToSeconds();
+    
+    double limit = sChromeSlowScriptTelemetryCutoff;
+    if (xpc::IsInAutomation()) {
+      double prefLimit = StaticPrefs::dom_max_chrome_script_run_time();
+      if (prefLimit > 0) {
+        limit = std::min(prefLimit, sChromeSlowScriptTelemetryCutoff);
+      }
+    }
+    if (hangDuration > limit) {
+      if (!sTelemetryEventEnabled) {
+        sTelemetryEventEnabled = true;
+        Telemetry::SetEventRecordingEnabled("slow_script_warning"_ns, true);
+      }
+
+      auto uriType = mExecutedChromeScript ? "browser"_ns : "content"_ns;
+      auto extra = Some<nsTArray<Telemetry::EventExtraEntry>>(
+          {Telemetry::EventExtraEntry{"hang_duration"_ns,
+                                      nsPrintfCString("%.2f", hangDuration)},
+           Telemetry::EventExtraEntry{"uri_type"_ns, uriType}});
+      Telemetry::RecordEvent(
+          Telemetry::EventID::Slow_script_warning_Shown_Browser, Nothing(),
+          extra);
+    }
+  }
+
   
   mSlowScriptCheckpoint = mozilla::TimeStamp();
   mSlowScriptSecondHalf = false;
