@@ -2,7 +2,7 @@ import base64
 import imghdr
 import struct
 
-from six import ensure_binary, text_type, PY3
+from six import ensure_binary, text_type
 
 from webdriver import Element, NoSuchAlertException, WebDriverException
 
@@ -83,15 +83,8 @@ def assert_response_headers(headers):
     """
     assert 'cache-control' in headers
     assert 'no-cache' == headers['cache-control']
-    
-    
-    
-    if PY3:
-        assert 'Content-Type' in headers
-        assert 'application/json; charset=utf-8' == headers['Content-Type']
-    else:
-        assert 'content-type' in headers
-        assert 'application/json; charset=utf-8' == headers['content-type']
+    assert 'content-type' in headers
+    assert 'application/json; charset=utf-8' == headers['content-type']
 
 
 def assert_dialog_handled(session, expected_text, expected_retval):
