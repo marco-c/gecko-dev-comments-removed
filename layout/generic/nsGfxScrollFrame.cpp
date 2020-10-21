@@ -6683,8 +6683,6 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
 
       vRect.Deflate(margin);
     }
-    AdjustScrollbarRectForResizer(mOuter, presContext, vRect, hasResizer,
-                                  ScrollDirection::eVertical);
   }
 
   bool hasVisualOnlyScrollbarsOnBothDirections =
@@ -6722,8 +6720,6 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
 
       hRect.Deflate(margin);
     }
-    AdjustScrollbarRectForResizer(mOuter, presContext, hRect, hasResizer,
-                                  ScrollDirection::eHorizontal);
   }
 
   
@@ -6795,6 +6791,18 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
       
       nsBoxFrame::LayoutChildAt(aState, mResizerBox, nsRect());
     }
+  }
+
+  
+  
+  
+  if (mVScrollbarBox) {
+    AdjustScrollbarRectForResizer(mOuter, presContext, vRect, hasResizer,
+                                  ScrollDirection::eVertical);
+  }
+  if (mHScrollbarBox) {
+    AdjustScrollbarRectForResizer(mOuter, presContext, hRect, hasResizer,
+                                  ScrollDirection::eHorizontal);
   }
 
   
