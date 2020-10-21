@@ -4940,6 +4940,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
         displayURLString(cx),
         source(cx, AsVariant(static_cast<ScriptSourceObject*>(nullptr))),
         scriptVector(cx, BaseScriptVector(cx)),
+        partialMatchVector(cx, BaseScriptVector(cx)),
         wasmInstanceVector(cx, WasmInstanceObjectVector(cx)) {}
 
   
@@ -5058,13 +5059,14 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
         return false;
       }
       double doubleLine = lineProperty.toNumber();
-      if (doubleLine <= 0 || (unsigned int)doubleLine != doubleLine) {
+      uint32_t uintLine = (uint32_t)doubleLine;
+      if (doubleLine <= 0 || uintLine != doubleLine) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                   JSMSG_DEBUG_BAD_LINE);
         return false;
       }
       hasLine = true;
-      line = doubleLine;
+      line = uintLine;
     } else {
       JS_ReportErrorNumberASCII(
           cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
@@ -5110,14 +5112,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       return false;
     }
 
-    bool delazified = false;
-    if (needsDelazifyBeforeQuery()) {
-      if (!delazifyScripts()) {
-        return false;
-      }
-      delazified = true;
-    }
-
     Realm* singletonRealm = nullptr;
     if (realms.count() == 1) {
       singletonRealm = realms.all().front();
@@ -5125,14 +5119,77 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
     
     MOZ_ASSERT(scriptVector.empty());
+    MOZ_ASSERT(partialMatchVector.empty());
     oom = false;
     IterateScripts(cx, singletonRealm, this, considerScript);
-    if (!delazified) {
-      IterateLazyScripts(cx, singletonRealm, this, considerLazyScript);
-    }
+    IterateLazyScripts(cx, singletonRealm, this, considerLazyScript);
     if (oom) {
       ReportOutOfMemory(cx);
       return false;
+    }
+
+    
+    
+    
+    
+    MOZ_ASSERT(hasLine || partialMatchVector.empty());
+    Rooted<BaseScript*> script(cx);
+    RootedFunction fun(cx);
+    while (!partialMatchVector.empty()) {
+      script = partialMatchVector.popCopy();
+
+      MOZ_ASSERT(script->isFunction());
+      MOZ_ASSERT(script->isReadyForDelazification());
+
+      fun = script->function();
+
+      
+      JSScript* compiledScript = GetOrCreateFunctionScript(cx, fun);
+      if (!compiledScript) {
+        return false;
+      }
+
+      
+      MOZ_ASSERT(line >= compiledScript->lineno());
+      if (compiledScript->lineno() + GetScriptLineExtent(compiledScript) <
+          line) {
+        continue;
+      }
+
+      
+      if (!scriptVector.append(compiledScript)) {
+        return false;
+      }
+
+      
+      
+      if (!script->hasInnerFunctions()) {
+        continue;
+      }
+
+      
+      
+      
+      for (const JS::GCCellPtr& thing : script->gcthings()) {
+        if (!thing.is<JSObject>() || !thing.as<JSObject>().is<JSFunction>()) {
+          continue;
+        }
+        if (!thing.as<JSObject>().as<JSFunction>().hasBaseScript()) {
+          continue;
+        }
+        BaseScript* inner = thing.as<JSObject>().as<JSFunction>().baseScript();
+
+        
+        if (line < inner->lineno()) {
+          continue;
+        }
+
+        
+        
+        if (!partialMatchVector.append(inner)) {
+          return false;
+        }
+      }
     }
 
     
@@ -5222,7 +5279,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
   bool hasLine = false;
 
   
-  unsigned int line = 0;
+  uint32_t line = 0;
 
   
   bool innermost = false;
@@ -5233,6 +5290,16 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
 
   Rooted<BaseScriptVector> scriptVector;
+
+  
+
+
+
+
+
+
+
+  Rooted<BaseScriptVector> partialMatchVector;
 
   
 
@@ -5256,18 +5323,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     return true;
   }
 
-  bool delazifyScripts() {
-    
-    
-    for (auto r = realms.all(); !r.empty(); r.popFront()) {
-      Realm* realm = r.front();
-      if (!realm->ensureDelazifyScriptsForDebugger(cx)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   static void considerScript(JSRuntime* rt, void* data, BaseScript* script,
                              const JS::AutoRequireNoGC& nogc) {
     ScriptQuery* self = static_cast<ScriptQuery*>(data);
@@ -5278,15 +5333,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
                                  const JS::AutoRequireNoGC& nogc) {
     ScriptQuery* self = static_cast<ScriptQuery*>(data);
     self->considerLazy(script, nogc);
-  }
-
-  bool needsDelazifyBeforeQuery() const {
-    
-    
-    
-    
-    
-    return innermost || hasLine;
   }
 
   template <typename T>
@@ -5359,8 +5405,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
   }
 
   void considerLazy(BaseScript* lazyScript, const JS::AutoRequireNoGC& nogc) {
-    MOZ_ASSERT(!needsDelazifyBeforeQuery());
-
     if (oom) {
       return;
     }
@@ -5378,8 +5422,24 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       return;
     }
 
-    
-    if (!scriptVector.append(lazyScript)) {
+    bool partial = false;
+
+    if (hasLine) {
+      
+      
+      
+      
+      if (!lazyScript->isReadyForDelazification()) {
+        return;
+      }
+      if (line < lazyScript->lineno()) {
+        return;
+      }
+      partial = true;
+    }
+
+    Rooted<BaseScriptVector>& vec = partial ? partialMatchVector : scriptVector;
+    if (!vec.append(lazyScript)) {
       oom = true;
     }
   }
