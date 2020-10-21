@@ -175,12 +175,6 @@ class WindowSurfaceWayland : public WindowSurface {
   
   
   
-  void DelayedCommitHandler();
-
-  
-  
-  
-  
   void CommitWaylandBuffer();
 
   RefPtr<nsWaylandDisplay> GetWaylandDisplay() { return mWaylandDisplay; };
@@ -248,9 +242,6 @@ class WindowSurfaceWayland : public WindowSurface {
   
   wl_callback* mFrameCallback;
   wl_surface* mLastCommittedSurface;
-
-  
-  WindowSurfaceWayland** mDelayedCommitHandle;
 
   
   
