@@ -463,7 +463,7 @@ class FunctionCompiler {
 
     
     
-#ifdef JS_CODEGEN_X86
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_ARM)
     if (type == MIRType::Int64) {
       auto* ins =
           MWasmBuiltinDivI64::New(alloc(), lhs, rhs, tlsPointer_, unsignd,
@@ -497,7 +497,7 @@ class FunctionCompiler {
 
     
     
-#ifdef JS_CODEGEN_X86
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_ARM)
     if (type == MIRType::Int64) {
       auto* ins =
           MWasmBuiltinModI64::New(alloc(), lhs, rhs, tlsPointer_, unsignd,
