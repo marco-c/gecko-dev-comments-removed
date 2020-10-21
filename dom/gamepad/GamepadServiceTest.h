@@ -70,7 +70,7 @@ class GamepadServiceTest final : public DOMEventTargetHelper {
   
   
   
-  RefPtr<GamepadTestChannelChild> mChild;
+  GamepadTestChannelChild* MOZ_NON_OWNING_REF mChild;
 
   explicit GamepadServiceTest(nsPIDOMWindowInner* aWindow);
   ~GamepadServiceTest();
