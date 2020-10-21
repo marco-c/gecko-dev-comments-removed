@@ -4,7 +4,6 @@
 
 
 
-import os
 import re
 import rust
 import sys
@@ -27,33 +26,14 @@ def get_parser_options(moz_app_version):
     }
 
 
-def input_files_from_index(metrics_index_path, which_array):
-    """
-    Get the paths to all input files to look at.
-
-    This select the input files to use by loading the index
-    and selecting the appropriate array.
-    It then normalizes relatives paths into absolute paths
-    based on the `TOPSRCDIR` environment variable.
-    """
+def main(output_fd, _metrics_index, *args):
 
     
-    sys.path.append(str(Path(metrics_index_path).parent))
-    from metrics_index import METRICS, PINGS
-    if which_array == 'METRICS':
-        input_files = METRICS
-    elif which_array == 'PINGS':
-        input_files = PINGS
-    else:
-        print("Build system's asking for unknown array {}".format(which_array))
-        sys.exit(1)
+    
+    yaml_array = args[:-1]
+    moz_app_version = args[-1]
 
-    topsrcdir = Path(os.environ.get("TOPSRCDIR", "."))
-    return [topsrcdir / Path(x) for x in input_files]
-
-
-def main(output_fd, metrics_index_path, which_array, moz_app_version):
-    input_files = input_files_from_index(metrics_index_path, which_array)
+    input_files = [Path(x) for x in yaml_array]
 
     
     

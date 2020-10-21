@@ -6,12 +6,12 @@
 
 
 
-METRICS = [
+metrics_yamls = [
     'toolkit/components/glean/metrics.yaml',
 ]
 
 
 
-PINGS = [
+pings_yamls = [
     'toolkit/components/glean/pings.yaml',
 ]
