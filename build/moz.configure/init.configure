@@ -296,16 +296,13 @@ def virtualenv_python3(env_python, virtualenv_name, build_env, mozconfig, help):
 
     
     
-    try:
-        import mozfile
-    except ImportError:
+    if 'MOZBUILD_VIRTUALENV' in os.environ:
+        python = sys.executable
+    else:
         sys.path.insert(
             0, os.path.join(topsrcdir, 'testing', 'mozbase', 'mozfile'))
         sys.path.insert(
             0, os.path.join(topsrcdir, 'third_party', 'python', 'backports'))
-    else:
-        if 'MOZBUILD_VIRTUALENV' in os.environ or not python:
-            python = sys.executable
 
     
     
