@@ -941,12 +941,33 @@ template
     XDRResult
     js::XDRSourceExtent(XDRState<XDR_DECODE>* xdr, SourceExtent* extent);
 
+
+
+
+
+bool js::CheckCompileOptionsMatch(const ReadOnlyCompileOptions& options,
+                                  ImmutableScriptFlags flags,
+                                  bool isMultiDecode) {
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
+
+  bool selfHosted = !!(flags & uint32_t(ImmutableFlags::SelfHosted));
+  bool forceStrict = !!(flags & uint32_t(ImmutableFlags::ForceStrict));
+  bool hasNonSyntacticScope =
+      !!(flags & uint32_t(ImmutableFlags::HasNonSyntacticScope));
+  bool noScriptRval = !!(flags & uint32_t(ImmutableFlags::NoScriptRval));
+  bool treatAsRunOnce = !!(flags & uint32_t(ImmutableFlags::TreatAsRunOnce));
+
+  return options.selfHostingMode == selfHosted &&
+         options.noScriptRval == noScriptRval &&
+         options.isRunOnce == treatAsRunOnce &&
+         (isMultiDecode || (options.forceStrictMode() == forceStrict &&
+                            options.nonSyntacticScope == hasNonSyntacticScope));
+}
+
 template <XDRMode mode>
 XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
                         HandleScriptSourceObject sourceObjectArg,
                         HandleObject funOrMod, MutableHandleScript scriptp) {
-  using ImmutableFlags = JSScript::ImmutableFlags;
-
   
 
   enum XDRScriptFlags {
@@ -1003,22 +1024,24 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
   Maybe<CompileOptions> options;
 
   if (mode == XDR_DECODE) {
+    MOZ_ASSERT(xdr->hasOptions());
+
     
     
     
     
-    bool noScriptRval =
-        !!(immutableFlags & uint32_t(ImmutableFlags::NoScriptRval));
-    bool selfHosted = !!(immutableFlags & uint32_t(ImmutableFlags::SelfHosted));
-    if (xdr->hasOptions() && (xdrFlags & OwnSource)) {
+    
+    
+    
+    
+    
+    if (xdrFlags & OwnSource) {
       options.emplace(xdr->cx(), xdr->options());
-      if (options->noScriptRval != noScriptRval ||
-          options->selfHostingMode != selfHosted) {
+      if (!js::CheckCompileOptionsMatch(*options,
+                                        ImmutableScriptFlags(immutableFlags),
+                                        xdr->isMultiDecode())) {
         return xdr->fail(JS::TranscodeResult_Failure_WrongCompileOption);
       }
-    } else {
-      options.emplace(xdr->cx());
-      (*options).setNoScriptRval(noScriptRval).setSelfHostingMode(selfHosted);
     }
   }
 

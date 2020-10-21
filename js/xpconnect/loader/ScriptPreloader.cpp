@@ -854,6 +854,7 @@ void ScriptPreloader::NoteScript(const nsCString& url,
 
 void ScriptPreloader::FillCompileOptionsForCachedScript(
     JS::CompileOptions& options) {
+  
   options.setNoScriptRval(true);
   MOZ_ASSERT(!options.selfHostingMode);
   MOZ_ASSERT(!options.isRunOnce);
