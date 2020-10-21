@@ -1473,6 +1473,7 @@ nsresult nsHostResolver::NativeLookup(nsHostRecord* aRec) {
   if (StaticPrefs::network_dns_disabled()) {
     return NS_ERROR_UNKNOWN_HOST;
   }
+  LOG(("NativeLookup host:%s af:%" PRId16, aRec->host.get(), aRec->af));
 
   
   MOZ_ASSERT(aRec->IsAddrRecord());
@@ -2023,7 +2024,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
       if (!addrRec->mTRRSuccess) {
         
         newRRSet = nullptr;
-        status = NS_ERROR_UNKNOWN_HOST;
 
         
         
@@ -2041,7 +2041,8 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
 
       if (!addrRec->mTRRSuccess &&
           addrRec->mEffectiveTRRMode == nsIRequest::TRR_FIRST_MODE &&
-          addrRec->mFirstTRRresult != NS_ERROR_DEFINITIVE_UNKNOWN_HOST) {
+          addrRec->mFirstTRRresult != NS_ERROR_DEFINITIVE_UNKNOWN_HOST &&
+          status != NS_ERROR_DEFINITIVE_UNKNOWN_HOST) {
         MOZ_ASSERT(!addrRec->mResolving);
         NativeLookup(addrRec);
         MOZ_ASSERT(addrRec->mResolving);
@@ -2051,6 +2052,11 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
       if (addrRec->mTRRSuccess && mNCS &&
           (mNCS->GetNAT64() == nsINetworkConnectivityService::OK) && newRRSet) {
         newRRSet = mNCS->MapNAT64IPs(newRRSet);
+      }
+
+      if (NS_FAILED(status)) {
+        
+        status = NS_ERROR_UNKNOWN_HOST;
       }
 
       

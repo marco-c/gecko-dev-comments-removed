@@ -120,6 +120,7 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
     TRR_DECODE_FAILED = 25,        
     TRR_EXCLUDED = 26,             
     TRR_SERVER_RESPONSE_ERR = 27,  
+    TRR_RCODE_FAIL = 28,           
   };
 
   
