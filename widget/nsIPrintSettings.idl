@@ -70,7 +70,6 @@ interface nsIPrintSettings : nsISupports
   
   const long kRangeAllPages           = 0;
   const long kRangeSpecifiedPageRange = 1;
-  const long kRangeSelection          = 2;
 
   
   const long kJustLeft   = 0;
@@ -185,6 +184,9 @@ interface nsIPrintSettings : nsISupports
 
   
   [infallible] attribute boolean showMarginGuides;
+
+  
+  [infallible] attribute boolean printSelectionOnly;
 
   attribute short   printRange;
 

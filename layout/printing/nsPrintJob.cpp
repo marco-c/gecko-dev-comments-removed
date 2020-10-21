@@ -144,8 +144,6 @@ static uint32_t gDumpLOFileNameCnt = 0;
 #define PRT_YESNO(_p) ((_p) ? "YES" : "NO")
 static const char* gFrameTypesStr[] = {"eDoc", "eFrame", "eIFrame",
                                        "eFrameSet"};
-static const char* gPrintRangeStr[] = {
-    "kRangeAllPages", "kRangeSpecifiedPageRange", "kRangeSelection"};
 
 
 
@@ -1598,16 +1596,10 @@ void nsPrintJob::UpdateZoomRatio(nsPrintObject* aPO, bool aSetPixelScale) {
   
   
   if (aSetPixelScale && aPO->mFrameType != eIFrame) {
-    int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
-    mPrt->mPrintSettings->GetPrintRange(&printRangeType);
-
-    float ratio;
-    if (printRangeType != nsIPrintSettings::kRangeSelection) {
-      ratio = mPrt->mShrinkRatio - 0.005f;  
-    } else {
-      ratio = aPO->mShrinkRatio - 0.005f;  
-    }
-    aPO->mZoomRatio = ratio;
+    
+    aPO->mZoomRatio = mPrt->mPrintSettings->GetPrintSelectionOnly()
+                          ? aPO->mShrinkRatio - 0.005f
+                          : mPrt->mShrinkRatio - 0.005f;
   } else if (!mPrt->mShrinkToFit) {
     double scaling;
     mPrt->mPrintSettings->GetScaling(&scaling);
@@ -1800,9 +1792,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
 
   
   
-  int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
-  printData->mPrintSettings->GetPrintRange(&printRangeType);
-  if (printRangeType == nsIPrintSettings::kRangeSelection) {
+  if (printData->mPrintSettings->GetPrintSelectionOnly()) {
     
     
     
@@ -2452,23 +2442,16 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
     return NS_ERROR_FAILURE;
   }
 
-  int16_t printRangeType = nsIPrintSettings::kRangeAllPages;
-  printData->mPrintSettings->GetPrintRange(&printRangeType);
-
   PR_PL(("\n"));
   PR_PL(("********* nsPrintJob::EnablePOsForPrinting *********\n"));
-  PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
-  PR_PL(("----\n"));
 
-  if (printRangeType == nsIPrintSettings::kRangeAllPages ||
-      printRangeType == nsIPrintSettings::kRangeSpecifiedPageRange) {
+  if (!printData->mPrintSettings->GetPrintSelectionOnly()) {
     printData->mPrintObject->EnablePrinting(true);
     return NS_OK;
   }
 
   
   
-  MOZ_ASSERT(printRangeType == nsIPrintSettings::kRangeSelection);
   NS_ENSURE_STATE(!mDisallowSelectionPrint && printData->mSelectionRoot);
 
   
