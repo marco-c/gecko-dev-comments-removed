@@ -36,8 +36,10 @@ class OpusTrackEncoder : public AudioTrackEncoder {
 
   nsresult GetEncodedTrack(nsTArray<RefPtr<EncodedFrame>>& aData) override;
 
-  int GetLookahead() const { return mLookahead; }
-  media::TimeUnit GetCodecDelay() const { return mCodecDelay; }
+  
+
+
+  int GetLookahead() const;
 
  protected:
   
@@ -87,13 +89,14 @@ class OpusTrackEncoder : public AudioTrackEncoder {
 
 
 
+
   int mLookahead;
 
   
 
 
 
-  media::TimeUnit mCodecDelay;
+  int mLookaheadWritten;
 
   
 

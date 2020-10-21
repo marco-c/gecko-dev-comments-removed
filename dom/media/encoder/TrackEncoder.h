@@ -146,12 +146,6 @@ class TrackEncoder {
   
 
 
-
-  bool mEosSetInEncoder;
-
-  
-
-
   bool mInitialized;
 
   
