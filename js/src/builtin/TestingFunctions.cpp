@@ -4979,9 +4979,15 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
 
   
   JS::TranscodeRange xdrRange(src->dataPointer(), src->byteLength());
-  if (!compilationInfos.get().deserializeStencils(cx, xdrRange)) {
+  bool succeeded = false;
+  if (!compilationInfos.get().deserializeStencils(cx, xdrRange, &succeeded)) {
     return false;
   }
+  if (!succeeded) {
+    JS_ReportErrorASCII(cx, "Decoding failure");
+    return false;
+  }
+
 
   
   frontend::CompilationGCOutput output(cx);
