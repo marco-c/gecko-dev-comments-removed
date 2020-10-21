@@ -7,17 +7,24 @@
 #ifndef vm_SharedStencil_h
 #define vm_SharedStencil_h
 
-#include "mozilla/Span.h"  
+#include "mozilla/HashFunctions.h"    
+#include "mozilla/HashTable.h"        
+#include "mozilla/MemoryReporting.h"  
+#include "mozilla/RefPtr.h"           
+#include "mozilla/Span.h"             
 
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "frontend/SourceNotes.h"  
 #include "frontend/TypedIndex.h"   
-#include "js/TypeDecls.h"          
-#include "js/UniquePtr.h"          
-#include "util/TrailingArray.h"    
+
+#include "js/AllocPolicy.h"      
+#include "js/TypeDecls.h"        
+#include "js/UniquePtr.h"        
+#include "util/TrailingArray.h"  
 #include "vm/StencilEnums.h"  
+#include "vm/Xdr.h"  
 
 
 
@@ -464,6 +471,91 @@ class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
   ImmutableScriptData(const ImmutableScriptData&) = delete;
   ImmutableScriptData& operator=(const ImmutableScriptData&) = delete;
 };
+
+
+
+
+
+
+
+
+
+
+class RuntimeScriptData {
+  
+  
+  
+  mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> refCount_ = {};
+
+  js::UniquePtr<ImmutableScriptData> isd_ = nullptr;
+
+  
+
+  friend class ::JSScript;
+
+ public:
+  RuntimeScriptData() = default;
+
+  
+  struct Hasher;
+
+  uint32_t refCount() const { return refCount_; }
+  void AddRef() { refCount_++; }
+  void Release() {
+    MOZ_ASSERT(refCount_ != 0);
+    uint32_t remain = --refCount_;
+    if (remain == 0) {
+      isd_ = nullptr;
+      js_free(this);
+    }
+  }
+
+  static constexpr size_t offsetOfISD() {
+    return offsetof(RuntimeScriptData, isd_);
+  }
+
+ private:
+  static RuntimeScriptData* create(JSContext* cx);
+
+ public:
+  static RuntimeScriptData* createWith(
+      JSContext* cx, js::UniquePtr<ImmutableScriptData>&& isd);
+
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+    return mallocSizeOf(this) + mallocSizeOf(isd_.get());
+  }
+
+  
+  RuntimeScriptData(const RuntimeScriptData&) = delete;
+  RuntimeScriptData& operator=(const RuntimeScriptData&) = delete;
+
+  template <XDRMode mode>
+  static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
+                                    RefPtr<RuntimeScriptData>& rsd);
+
+  static bool shareScriptData(JSContext* cx, RefPtr<RuntimeScriptData>& rsd);
+
+  size_t immutableDataLength() const { return isd_->immutableData().Length(); }
+};
+
+
+
+struct RuntimeScriptData::Hasher {
+  using Lookup = RefPtr<RuntimeScriptData>;
+
+  static mozilla::HashNumber hash(const Lookup& l) {
+    mozilla::Span<const uint8_t> immutableData = l->isd_->immutableData();
+    return mozilla::HashBytes(immutableData.data(), immutableData.size());
+  }
+
+  static bool match(RuntimeScriptData* entry, const Lookup& lookup) {
+    return (entry->isd_->immutableData() == lookup->isd_->immutableData());
+  }
+};
+
+using RuntimeScriptDataTable =
+    mozilla::HashSet<RuntimeScriptData*, RuntimeScriptData::Hasher,
+                     SystemAllocPolicy>;
 
 }  
 
