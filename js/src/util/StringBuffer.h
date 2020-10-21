@@ -19,7 +19,7 @@ namespace js {
 namespace frontend {
 
 class ParserAtom;
-struct CompilationInfo;
+class ParserAtomsTable;
 
 }  
 
@@ -320,7 +320,7 @@ class StringBuffer {
   
   JSAtom* finishAtom();
   const frontend::ParserAtom* finishParserAtom(
-      frontend::CompilationInfo& compilationInfo);
+      frontend::ParserAtomsTable& parserAtoms);
 
   
 
