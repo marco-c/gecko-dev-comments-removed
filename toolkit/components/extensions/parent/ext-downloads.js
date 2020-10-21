@@ -701,7 +701,19 @@ this.downloads = class extends ExtensionAPI {
 
               if (options.headers) {
                 for (let { name, value } of options.headers) {
-                  channel.setRequestHeader(name, value, false);
+                  if (name.toLowerCase() == "referer") {
+                    
+                    
+                    
+                    
+                    channel.setNewReferrerInfo(
+                      value,
+                      Ci.nsIReferrerInfo.UNSAFE_URL,
+                      true
+                    );
+                  } else {
+                    channel.setRequestHeader(name, value, false);
+                  }
                 }
               }
 
