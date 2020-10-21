@@ -67,6 +67,9 @@ bool RenderAndroidHardwareBufferTextureHost::EnsureLockable(
         egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
     if (sync) {
       
+      Unused << rawFD.release();
+
+      
       egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
       egl->fDestroySync(sync);
     } else {
