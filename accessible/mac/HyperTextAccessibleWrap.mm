@@ -573,7 +573,19 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(
       }
     }
 
-    innerOffset -= text->GetChildOffset(childIdx);
+    int32_t childOffset = text->GetChildOffset(childIdx);
+
+    if (child->IsHyperText() && aDirection == eDirPrevious && childIdx > 0 &&
+        innerOffset - childOffset == 0) {
+      
+      
+      
+      childIdx--;
+      innerOffset -= text->GetChildOffset(childIdx);
+      child = text->GetChildAt(childIdx);
+    } else {
+      innerOffset -= childOffset;
+    }
 
     text = child->AsHyperText();
   } while (text);
