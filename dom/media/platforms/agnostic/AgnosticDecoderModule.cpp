@@ -113,10 +113,7 @@ bool AgnosticDecoderModule::Supports(
       
       (AOMDecoder::IsAV1(mimeType) && IsAvailable(DecoderType::AV1)) ||
 #endif
-      
-      
-      (VPXDecoder::IsVPX(mimeType) && IsAvailable(DecoderType::VPX) &&
-       (!trackInfo.GetAsVideoInfo()->HasAlpha() || !XRE_IsRDDProcess())) ||
+      (VPXDecoder::IsVPX(mimeType) && IsAvailable(DecoderType::VPX)) ||
       (TheoraDecoder::IsTheora(mimeType) && IsAvailable(DecoderType::Theora)) ||
       (VorbisDataDecoder::IsVorbis(mimeType) &&
        IsAvailable(DecoderType::Vorbis)) ||
