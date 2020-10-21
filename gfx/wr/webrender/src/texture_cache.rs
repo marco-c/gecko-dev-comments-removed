@@ -27,6 +27,18 @@ use std::mem;
 use std::rc::Rc;
 
 
+
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum TargetShader {
+    Default,
+    Text,
+}
+
+
 pub const TEXTURE_REGION_DIMENSIONS: i32 = 512;
 
 const PICTURE_TEXTURE_SLICE_COUNT: usize = 8;
@@ -107,6 +119,8 @@ struct CacheEntry {
     eviction_notice: Option<EvictionNotice>,
     
     uv_rect_kind: UvRectKind,
+
+    shader: TargetShader,
 }
 
 impl CacheEntry {
@@ -132,6 +146,7 @@ impl CacheEntry {
             uv_rect_handle: GpuCacheHandle::new(),
             eviction_notice: None,
             uv_rect_kind: params.uv_rect_kind,
+            shader: TargetShader::Default,
         }
     }
 
@@ -227,6 +242,7 @@ struct SharedTextures {
     array_alpha8_linear: TextureArray,
     array_alpha16_linear: TextureArray,
     array_color8_linear: TextureArray,
+    array_color8_glyphs: TextureArray,
 }
 
 impl SharedTextures {
@@ -255,6 +271,12 @@ impl SharedTextures {
                 16,
             ),
             
+            array_color8_glyphs: TextureArray::new(
+                color_formats.clone(),
+                TextureFilter::Linear,
+                16,
+            ),
+            
             
             
             array_color8_nearest: TextureArray::new(
@@ -271,11 +293,12 @@ impl SharedTextures {
         self.array_alpha16_linear.clear(updates);
         self.array_color8_linear.clear(updates);
         self.array_color8_nearest.clear(updates);
+        self.array_color8_glyphs.clear(updates);
     }
 
     
     fn select(
-        &mut self, external_format: ImageFormat, filter: TextureFilter
+        &mut self, external_format: ImageFormat, filter: TextureFilter, shader: TargetShader,
     ) -> &mut TextureArray {
         match external_format {
             ImageFormat::R8 => {
@@ -288,9 +311,10 @@ impl SharedTextures {
             }
             ImageFormat::RGBA8 |
             ImageFormat::BGRA8 => {
-                match filter {
-                    TextureFilter::Linear => &mut self.array_color8_linear,
-                    TextureFilter::Nearest => &mut self.array_color8_nearest,
+                match (filter, shader) {
+                    (TextureFilter::Linear, TargetShader::Text) => &mut self.array_color8_glyphs,
+                    (TextureFilter::Linear, _) => &mut self.array_color8_linear,
+                    (TextureFilter::Nearest, _) => &mut self.array_color8_nearest,
                     _ => panic!("Unexpexcted filter {:?}", filter),
                 }
             }
@@ -396,6 +420,7 @@ struct CacheAllocParams {
     filter: TextureFilter,
     user_data: [f32; 3],
     uv_rect_kind: UvRectKind,
+    shader: TargetShader,
 }
 
 
@@ -627,6 +652,7 @@ impl TextureCache {
         self.shared_textures.array_alpha16_linear.release_empty_textures(&mut self.pending_updates);
         self.shared_textures.array_color8_linear.release_empty_textures(&mut self.pending_updates);
         self.shared_textures.array_color8_nearest.release_empty_textures(&mut self.pending_updates);
+        self.shared_textures.array_color8_glyphs.release_empty_textures(&mut self.pending_updates);
 
         self.shared_textures.array_alpha8_linear.update_profile(
             profiler::TEXTURE_CACHE_A8_REGIONS,
@@ -646,6 +672,11 @@ impl TextureCache {
         self.shared_textures.array_color8_nearest.update_profile(
             profiler::TEXTURE_CACHE_RGBA8_NEAREST_REGIONS,
             profiler::TEXTURE_CACHE_RGBA8_NEAREST_MEM,
+            profile,
+        );
+        self.shared_textures.array_color8_glyphs.update_profile(
+            profiler::TEXTURE_CACHE_RGBA8_GLYPHS_REGIONS,
+            profiler::TEXTURE_CACHE_RGBA8_GLYPHS_MEM,
             profile,
         );
         self.picture_textures.update_profile(profile);
@@ -720,9 +751,9 @@ impl TextureCache {
         eviction_notice: Option<&EvictionNotice>,
         uv_rect_kind: UvRectKind,
         eviction: Eviction,
+        shader: TargetShader,
     ) {
         debug_assert!(self.now.is_valid());
-
         
         
         
@@ -741,7 +772,7 @@ impl TextureCache {
         };
 
         if realloc {
-            let params = CacheAllocParams { descriptor, filter, user_data, uv_rect_kind };
+            let params = CacheAllocParams { descriptor, filter, user_data, uv_rect_kind, shader };
             self.allocate(&params, handle);
 
             
@@ -988,7 +1019,7 @@ impl TextureCache {
             }
             EntryDetails::Cache { origin, layer_index, .. } => {
                 
-                let texture_array = self.shared_textures.select(entry.input_format, entry.filter);
+                let texture_array = self.shared_textures.select(entry.input_format, entry.filter, entry.shader);
                 let unit = texture_array.units
                     .iter_mut()
                     .find(|unit| unit.texture_id == entry.texture_id)
@@ -1023,6 +1054,7 @@ impl TextureCache {
         let texture_array = self.shared_textures.select(
             params.descriptor.format,
             params.filter,
+            params.shader,
         );
         let swizzle = if texture_array.formats.external == params.descriptor.format {
             Swizzle::default()
@@ -1085,7 +1117,7 @@ impl TextureCache {
 
         
         
-        texture_array.alloc(params, unit_index, self.now, swizzle)
+        texture_array.alloc(params, unit_index, self.now, swizzle, params.shader)
     }
 
     
@@ -1487,6 +1519,7 @@ impl TextureArray {
         unit_index: usize,
         now: FrameStamp,
         swizzle: Swizzle,
+        shader: TargetShader,
     ) -> CacheEntry {
         
         
@@ -1545,6 +1578,7 @@ impl TextureArray {
             texture_id: unit.texture_id,
             eviction_notice: None,
             uv_rect_kind: params.uv_rect_kind,
+            shader
         }
     }
 }
@@ -1617,6 +1651,7 @@ impl WholeTextureArray {
             texture_id,
             eviction_notice: None,
             uv_rect_kind: UvRectKind::Rect,
+            shader: TargetShader::Default,
         }
     }
 
