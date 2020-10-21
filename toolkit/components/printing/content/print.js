@@ -419,7 +419,21 @@ var PrintEventHandler = {
     }
 
     
-    let paperId = settingsToUpdate.paperId || this.viewSettings.paperId;
+    let paperId, paperWidth, paperHeight, paperSizeUnit;
+    if (settingsToUpdate.paperId) {
+      
+      
+      paperId = settingsToUpdate.paperId;
+      let cachedPaperSize = this.allPaperSizes[paperId];
+      paperWidth = cachedPaperSize.width;
+      paperHeight = cachedPaperSize.height;
+      paperSizeUnit = cachedPaperSize.paperSizeUnit;
+    } else {
+      paperId = this.viewSettings.paperId;
+      paperWidth = this.viewSettings.paperWidth;
+      paperHeight = this.viewSettings.paperHeight;
+      paperSizeUnit = this.viewSettings.paperSizeUnit;
+    }
 
     logger.debug("Using paperId: ", paperId);
     logger.debug(
@@ -427,30 +441,13 @@ var PrintEventHandler = {
       PrintSettingsViewProxy.availablePaperSizes
     );
     let matchedPaper =
-      paperId && PrintSettingsViewProxy.availablePaperSizes[paperId];
-    if (!matchedPaper) {
-      let paperWidth, paperHeight, paperSizeUnit;
-      if (settingsToUpdate.paperId) {
-        
-        
-        paperId = settingsToUpdate.paperId;
-        let cachedPaperWrapper = this.allPaperSizes[paperId];
-        
-        paperWidth = cachedPaperWrapper.paper.width * MM_PER_POINT;
-        paperHeight = cachedPaperWrapper.paper.height * MM_PER_POINT;
-        paperSizeUnit = PrintEventHandler.settings.kPaperSizeMillimeters;
-      } else {
-        paperId = this.viewSettings.paperId;
-        paperWidth = this.viewSettings.paperWidth;
-        paperHeight = this.viewSettings.paperHeight;
-        paperSizeUnit = this.viewSettings.sizeUnit;
-      }
-      matchedPaper = PrintSettingsViewProxy.getBestPaperMatch(
+      paperId &&
+      PrintSettingsViewProxy.getBestPaperMatch(
+        paperId,
         paperWidth,
         paperHeight,
         paperSizeUnit
       );
-    }
     if (!matchedPaper) {
       
       matchedPaper = Object.values(
@@ -464,17 +461,14 @@ var PrintEventHandler = {
         `Requested paperId: "${paperId}" missing on this printer, using: ${matchedPaper.id} instead`
       );
       delete this._userChangedSettings.paperId;
+      settingsToUpdate.paperId = matchedPaper.id;
     }
-    
-    settingsToUpdate.paperId = matchedPaper.id;
 
     
-    let paperHeightInInches = matchedPaper.paper.width * INCHES_PER_POINT;
-    let paperWidthInInches = matchedPaper.paper.width * INCHES_PER_POINT;
     if (
       parseFloat(this.viewSettings.customMargins.marginTop) +
         parseFloat(this.viewSettings.customMargins.marginBottom) >
-        paperHeightInInches ||
+        paperHeight ||
       this.viewSettings.customMargins.marginTop < 0 ||
       this.viewSettings.customMargins.marginBottom < 0
     ) {
@@ -486,7 +480,7 @@ var PrintEventHandler = {
     if (
       parseFloat(this.viewSettings.customMargins.marginRight) +
         parseFloat(this.viewSettings.customMargins.marginLeft) >
-        paperWidthInInches ||
+        paperWidth ||
       this.viewSettings.customMargins.marginLeft < 0 ||
       this.viewSettings.customMargins.marginRight < 0
     ) {
@@ -552,11 +546,7 @@ var PrintEventHandler = {
     }
 
     for (let [setting, value] of Object.entries(changedSettings)) {
-      
-      if (
-        this.viewSettings[setting] != value ||
-        (printerChanged && setting == "paperId")
-      ) {
+      if (this.viewSettings[setting] != value) {
         this.viewSettings[setting] = value;
 
         if (
@@ -878,7 +868,11 @@ var PrintSettingsViewProxy = {
     "Microsoft XPS Document Writer",
   ]),
 
-  getBestPaperMatch(paperWidth, paperHeight, paperSizeUnit) {
+  getBestPaperMatch(paperId, paperWidth, paperHeight, paperSizeUnit) {
+    let matchedPaper = paperId && this.availablePaperSizes[paperId];
+    if (matchedPaper) {
+      return matchedPaper;
+    }
     let paperSizes = Object.values(this.availablePaperSizes);
     if (!(paperWidth && paperHeight)) {
       return null;
@@ -896,16 +890,16 @@ var PrintSettingsViewProxy = {
     
     const equal = (a, b) => Math.abs(a - b) < 1;
     const findMatch = (widthPts, heightPts) =>
-      paperSizes.find(paperWrapper => {
+      paperSizes.find(paperInfo => {
         
         let result =
-          equal(widthPts, paperWrapper.paper.width) &&
-          equal(heightPts, paperWrapper.paper.height);
+          equal(widthPts, paperInfo.paper.width) &&
+          equal(heightPts, paperInfo.paper.height);
         return result;
       });
     
     
-    let matchedPaper =
+    matchedPaper =
       findMatch(paperWidth / unitsPerPoint, paperHeight / unitsPerPoint) ||
       findMatch(paperWidth / altUnitsPerPoint, paperHeight / altUnitsPerPoint);
 
@@ -917,24 +911,24 @@ var PrintSettingsViewProxy = {
 
   async fetchPaperMargins(paperId) {
     
-    let paperWrapper = this.availablePaperSizes[paperId];
-    if (!paperWrapper) {
+    let paperInfo = this.availablePaperSizes[paperId];
+    if (!paperInfo) {
       throw new Error("Can't fetchPaperMargins: " + paperId);
     }
-    if (paperWrapper._resolved) {
+    if (paperInfo._resolved) {
       
       return;
     }
-    let margins = await paperWrapper.paper.unwriteableMargin;
+    let margins = await paperInfo.paper.unwriteableMargin;
     margins.QueryInterface(Ci.nsIPaperMargin);
 
     
-    paperWrapper.unwriteableMarginTop = margins.top * INCHES_PER_POINT;
-    paperWrapper.unwriteableMarginRight = margins.right * INCHES_PER_POINT;
-    paperWrapper.unwriteableMarginBottom = margins.bottom * INCHES_PER_POINT;
-    paperWrapper.unwriteableMarginLeft = margins.left * INCHES_PER_POINT;
+    paperInfo.unwriteableMarginTop = margins.top * INCHES_PER_POINT;
+    paperInfo.unwriteableMarginRight = margins.right * INCHES_PER_POINT;
+    paperInfo.unwriteableMarginBottom = margins.bottom * INCHES_PER_POINT;
+    paperInfo.unwriteableMarginLeft = margins.left * INCHES_PER_POINT;
     
-    paperWrapper._resolved = true;
+    paperInfo._resolved = true;
   },
 
   async resolvePropertiesForPrinter(printerName) {
@@ -995,12 +989,12 @@ var PrintSettingsViewProxy = {
       );
       printerInfo.paperList = this.fallbackPaperList;
     }
-    
-    let sizeUnit =
-      printerInfo.settings.paperSizeUnit ==
-      printerInfo.settings.kPaperSizeMillimeters
-        ? printerInfo.settings.kPaperSizeMillimeters
-        : printerInfo.settings.kPaperSizeInches;
+    let paperSizeUnit = printerInfo.settings.paperSizeUnit;
+    let unitsPerPoint =
+      paperSizeUnit == printerInfo.settings.kPaperSizeMillimeters
+        ? MM_PER_POINT
+        : INCHES_PER_POINT;
+
     let papersById = (printerInfo.availablePaperSizes = {});
     
     this.availablePaperSizes = papersById;
@@ -1015,7 +1009,12 @@ var PrintSettingsViewProxy = {
           id: paper.id,
           name: paper.name,
           
-          sizeUnit,
+          
+          
+          width: paper.width * unitsPerPoint,
+          height: paper.height * unitsPerPoint,
+          unitsPerPoint,
+          paperSizeUnit,
         };
       }
     }
@@ -1035,12 +1034,12 @@ var PrintSettingsViewProxy = {
       }
 
       case "marginPresets":
-        let paperWrapper = this.get(target, "currentPaper");
+        let paperSize = this.get(target, "currentPaper");
         return {
-          none: PrintEventHandler.getMarginPresets("none", paperWrapper),
-          minimum: PrintEventHandler.getMarginPresets("minimum", paperWrapper),
-          default: PrintEventHandler.getMarginPresets("default", paperWrapper),
-          custom: PrintEventHandler.getMarginPresets("custom", paperWrapper),
+          none: PrintEventHandler.getMarginPresets("none", paperSize),
+          minimum: PrintEventHandler.getMarginPresets("minimum", paperSize),
+          default: PrintEventHandler.getMarginPresets("default", paperSize),
+          custom: PrintEventHandler.getMarginPresets("custom", paperSize),
         };
 
       case "marginOptions": {
@@ -1157,10 +1156,10 @@ var PrintSettingsViewProxy = {
           logger.warn("Unexpected margin preset name: ", value);
           value = "default";
         }
-        let paperWrapper = this.get(target, "currentPaper");
+        let paperSize = this.get(target, "currentPaper");
         let marginPresets = PrintEventHandler.getMarginPresets(
           value,
-          paperWrapper
+          paperSize
         );
         for (let [settingName, presetValue] of Object.entries(marginPresets)) {
           target[settingName] = presetValue;
@@ -1169,25 +1168,14 @@ var PrintSettingsViewProxy = {
 
       case "paperId": {
         let paperId = value;
-        let paperWrapper = this.availablePaperSizes[paperId];
-        
-        
-        let unitsPerPoint =
-          paperWrapper.sizeUnit == target.kPaperSizeMillimeters
-            ? MM_PER_POINT
-            : INCHES_PER_POINT;
-        
-        
-        target.paperSizeUnit = paperWrapper.sizeUnit;
-        target.paperWidth = paperWrapper.paper.width * unitsPerPoint;
-        target.paperHeight = paperWrapper.paper.height * unitsPerPoint;
-        
-        
-        target.unwriteableMarginTop = paperWrapper.unwriteableMarginTop;
-        target.unwriteableMarginRight = paperWrapper.unwriteableMarginRight;
-        target.unwriteableMarginBottom = paperWrapper.unwriteableMarginBottom;
-        target.unwriteableMarginLeft = paperWrapper.unwriteableMarginLeft;
-        target.paperId = paperWrapper.paper.id;
+        let paperSize = this.availablePaperSizes[paperId];
+        target.paperWidth = paperSize.width;
+        target.paperHeight = paperSize.height;
+        target.unwriteableMarginTop = paperSize.unwriteableMarginTop;
+        target.unwriteableMarginRight = paperSize.unwriteableMarginRight;
+        target.unwriteableMarginBottom = paperSize.unwriteableMarginBottom;
+        target.unwriteableMarginLeft = paperSize.unwriteableMarginLeft;
+        target.paperId = paperSize.id;
         
         this.set(target, "margins", this.get(target, "margins"));
         break;
