@@ -2,18 +2,34 @@
 
 
 
+use std::sync::Arc;
+
 use super::CommonMetricData;
 
+use crate::dispatcher;
+use crate::ipc::need_ipc;
 
 
 
+
+#[derive(Debug)]
+pub enum BooleanMetric {
+    Parent(Arc<BooleanMetricImpl>),
+    Child(BooleanMetricIpc),
+}
 #[derive(Clone, Debug)]
-pub struct BooleanMetric(pub(crate) glean_core::metrics::BooleanMetric);
+pub struct BooleanMetricImpl(pub(crate) glean_core::metrics::BooleanMetric);
+#[derive(Debug)]
+pub struct BooleanMetricIpc();
 
 impl BooleanMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        Self(glean_core::metrics::BooleanMetric::new(meta))
+        if need_ipc() {
+            BooleanMetric::Child(BooleanMetricIpc {})
+        } else {
+            BooleanMetric::Parent(Arc::new(BooleanMetricImpl::new(meta)))
+        }
     }
 
     
@@ -22,7 +38,19 @@ impl BooleanMetric {
     
     
     pub fn set(&self, value: bool) {
-        crate::with_glean(move |glean| self.0.set(glean, value))
+        match self {
+            BooleanMetric::Parent(p) => {
+                let metric = Arc::clone(&p);
+                dispatcher::launch(move || metric.set(value));
+            }
+            BooleanMetric::Child(_) => {
+                log::error!(
+                    "Unable to set boolean metric {:?} in non-parent process. Ignoring.",
+                    self
+                );
+                
+            }
+        }
     }
 
     
@@ -37,6 +65,29 @@ impl BooleanMetric {
     
     
     
+    pub fn test_get_value(&self, storage_name: &str) -> Option<bool> {
+        match self {
+            BooleanMetric::Parent(p) => {
+                dispatcher::block_on_queue();
+                p.test_get_value(storage_name)
+            }
+            BooleanMetric::Child(_) => panic!(
+                "Cannot get test value for {:?} in non-parent process!",
+                self
+            ),
+        }
+    }
+}
+
+impl BooleanMetricImpl {
+    pub fn new(meta: CommonMetricData) -> Self {
+        Self(glean_core::metrics::BooleanMetric::new(meta))
+    }
+
+    pub fn set(&self, value: bool) {
+        crate::with_glean(move |glean| self.0.set(glean, value))
+    }
+
     pub fn test_get_value(&self, storage_name: &str) -> Option<bool> {
         crate::with_glean(move |glean| self.0.test_get_value(glean, storage_name))
     }
