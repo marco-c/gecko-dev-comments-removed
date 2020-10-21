@@ -371,8 +371,10 @@ static already_AddRefed<BrowsingContextGroup> InitialBrowsingContextGroup(
   
   
   nsresult rv = NS_OK;
-  int64_t signedGroupId{attrString.ToInteger(&rv, 10)};
+  int64_t signedGroupId = attrString.ToInteger64(&rv, 10);
   if (NS_FAILED(rv) || signedGroupId <= 0) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        false, "we intended to have a particular id, but failed to parse it!");
     return nullptr;
   }
 
