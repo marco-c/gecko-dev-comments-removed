@@ -357,10 +357,7 @@ class UrlbarInput {
     
     
     if (dueToTabSwitch) {
-      let searchMode = this._searchModesByBrowser.get(
-        this.window.gBrowser.selectedBrowser
-      );
-      this.setSearchMode(searchMode || {});
+      this.restoreSearchModeState();
     } else if (valid) {
       this.setSearchMode({});
     }
@@ -1459,6 +1456,16 @@ class UrlbarInput {
   
 
 
+  restoreSearchModeState() {
+    let state = this._searchModesByBrowser.get(
+      this.window.gBrowser.selectedBrowser
+    );
+    this.setSearchMode(state || {});
+  }
+
+  
+
+
 
 
   searchModeShortcut() {
@@ -1496,13 +1503,15 @@ class UrlbarInput {
       return;
     }
 
-    
-    this.view.oneOffSearchButtons.selectedButton = null;
-
     this._searchModesByBrowser.set(
       this.window.gBrowser.selectedBrowser,
       this.searchMode
     );
+
+    
+    
+    
+    this.view.oneOffSearchButtons.selectedButton = null;
 
     try {
       BrowserUsageTelemetry.recordSearchMode(this.searchMode);
