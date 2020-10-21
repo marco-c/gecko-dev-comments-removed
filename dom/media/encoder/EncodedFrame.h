@@ -7,6 +7,7 @@
 #define EncodedFrame_h_
 
 #include "nsISupportsImpl.h"
+#include "mozilla/media/MediaUtils.h"
 #include "VideoUtils.h"
 
 namespace mozilla {
@@ -15,34 +16,33 @@ namespace mozilla {
 class EncodedFrame final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(EncodedFrame)
  public:
-  EncodedFrame() : mTime(0), mDuration(0), mFrameType(UNKNOWN) {}
   enum FrameType {
     VP8_I_FRAME,       
     VP8_P_FRAME,       
     OPUS_AUDIO_FRAME,  
     UNKNOWN            
   };
-  void SwapInFrameData(nsTArray<uint8_t>& aData) {
-    mFrameData.SwapElements(aData);
+  using ConstFrameData = const media::Refcountable<nsTArray<uint8_t>>;
+  using FrameData = media::Refcountable<nsTArray<uint8_t>>;
+  EncodedFrame(uint64_t aTime, uint64_t aDuration, uint64_t aDurationBase,
+               FrameType aFrameType, RefPtr<ConstFrameData> aData)
+      : mTime(aTime),
+        mDuration(aDuration),
+        mDurationBase(aDurationBase),
+        mFrameType(aFrameType),
+        mFrameData(std::move(aData)) {
+    MOZ_ASSERT(mFrameData);
   }
-  nsresult SwapOutFrameData(nsTArray<uint8_t>& aData) {
-    if (mFrameType != UNKNOWN) {
-      
-      mFrameData.SwapElements(aData);
-      mFrameType = UNKNOWN;
-      return NS_OK;
-    }
-    return NS_ERROR_FAILURE;
-  }
-  const nsTArray<uint8_t>& GetFrameData() const { return mFrameData; }
   
-  uint64_t mTime;
+  const uint64_t mTime;
   
-  uint64_t mDurationBase;
+  const uint64_t mDuration;
   
-  uint64_t mDuration;
+  const uint64_t mDurationBase;
   
-  FrameType mFrameType;
+  const FrameType mFrameType;
+  
+  const RefPtr<ConstFrameData> mFrameData;
 
   
   uint64_t GetEndTime() const {
@@ -52,9 +52,6 @@ class EncodedFrame final {
  private:
   
   ~EncodedFrame() = default;
-
-  
-  nsTArray<uint8_t> mFrameData;
 };
 
 }  

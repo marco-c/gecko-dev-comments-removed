@@ -336,9 +336,8 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
     
     MOZ_ASSERT(frameCopied <= 3844, "frameCopied exceeded expected range");
 
-    RefPtr<EncodedFrame> audiodata = new EncodedFrame();
-    audiodata->mFrameType = EncodedFrame::OPUS_AUDIO_FRAME;
     int framesInPCM = frameCopied;
+    uint64_t duration;
     if (mResampler) {
       AutoTArray<AudioDataValue, 9600> resamplingDest;
       
@@ -379,12 +378,11 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
               mResampledLeftover.Length());
       
       framesInPCM = framesLeft + outframesToCopy;
-      audiodata->mDuration = framesInPCM;
+      duration = framesInPCM;
     } else {
       
-      audiodata->mDuration = frameCopied * (kOpusSamplingRate / mSamplingRate);
+      duration = frameCopied * (kOpusSamplingRate / mSamplingRate);
     }
-    audiodata->mDurationBase = kOpusSamplingRate;
 
     
     
@@ -406,21 +404,21 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
       PodZero(pcm.Elements() + framesInPCM * mChannels,
               (GetPacketDuration() - framesInPCM) * mChannels);
     }
-    nsTArray<uint8_t> frameData;
+    auto frameData = MakeRefPtr<EncodedFrame::FrameData>();
     
-    frameData.SetLength(MAX_DATA_BYTES);
+    frameData->SetLength(MAX_DATA_BYTES);
     
     result = 0;
 #ifdef MOZ_SAMPLE_TYPE_S16
     const opus_int16* pcmBuf = static_cast<opus_int16*>(pcm.Elements());
     result = opus_encode(mEncoder, pcmBuf, GetPacketDuration(),
-                         frameData.Elements(), MAX_DATA_BYTES);
+                         frameData->Elements(), MAX_DATA_BYTES);
 #else
     const float* pcmBuf = static_cast<float*>(pcm.Elements());
     result = opus_encode_float(mEncoder, pcmBuf, GetPacketDuration(),
-                               frameData.Elements(), MAX_DATA_BYTES);
+                               frameData->Elements(), MAX_DATA_BYTES);
 #endif
-    frameData.SetLength(result >= 0 ? result : 0);
+    frameData->SetLength(result >= 0 ? result : 0);
 
     if (result < 0) {
       LOG("[Opus] Fail to encode data! Result: %s.", opus_strerror(result));
@@ -433,13 +431,14 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
       mResampledLeftover.SetLength(0);
     }
 
-    audiodata->SwapInFrameData(frameData);
     
-    audiodata->mTime = mOutputTimeStamp + mCodecDelayUs;
+    aData.AppendElement(MakeRefPtr<EncodedFrame>(
+        mOutputTimeStamp + mCodecDelayUs, duration, kOpusSamplingRate,
+        EncodedFrame::OPUS_AUDIO_FRAME, std::move(frameData)));
+
     mOutputTimeStamp +=
         FramesToUsecs(GetPacketDuration(), kOpusSamplingRate).value();
     LOG("[Opus] mOutputTimeStamp %lld.", mOutputTimeStamp);
-    aData.AppendElement(audiodata);
   }
 
   return result >= 0 ? NS_OK : NS_ERROR_FAILURE;

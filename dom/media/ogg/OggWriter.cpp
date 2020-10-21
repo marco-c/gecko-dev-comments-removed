@@ -58,7 +58,7 @@ nsresult OggWriter::WriteEncodedTrack(
 
     
     nsresult rv = WriteEncodedData(
-        aData[i]->GetFrameData(), aData[i]->mDuration,
+        *aData[i]->mFrameData, aData[i]->mDuration,
         i < len - 1 ? (aFlags & ~ContainerWriter::END_OF_STREAM) : aFlags);
     if (NS_FAILED(rv)) {
       LOG("%p Failed to WriteEncodedTrack!", this);
