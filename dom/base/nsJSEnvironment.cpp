@@ -45,6 +45,7 @@
 #include "js/SliceBudget.h"
 #include "js/Wrapper.h"
 #include "nsIArray.h"
+#include "CCGCScheduler.h"
 #include "WrapperFactory.h"
 #include "nsGlobalWindow.h"
 #include "mozilla/AutoRestore.h"
@@ -89,52 +90,6 @@ using namespace mozilla::dom;
 #  undef CompareString
 #endif
 
-
-
-static const TimeDuration kCCDelay = TimeDuration::FromSeconds(6);
-
-static const TimeDuration kCCSkippableDelay =
-    TimeDuration::FromMilliseconds(250);
-
-
-
-
-static const TimeDuration kTimeBetweenForgetSkippableCycles =
-    TimeDuration::FromSeconds(2);
-
-
-
-
-static const TimeDuration kForgetSkippableSliceDuration =
-    TimeDuration::FromMilliseconds(2);
-
-
-static const TimeDuration kICCIntersliceDelay =
-    TimeDuration::FromMilliseconds(64);
-
-
-static const TimeDuration kICCSliceBudget = TimeDuration::FromMilliseconds(3);
-
-static const TimeDuration kIdleICCSliceBudget =
-    TimeDuration::FromMilliseconds(2);
-
-
-static const TimeDuration kMaxICCDuration = TimeDuration::FromSeconds(2);
-
-
-
-static const TimeDuration kCCForced =
-    TimeDuration::FromSeconds(2 * 60);  
-static const uint32_t kCCForcedPurpleLimit = 10;
-
-
-static const TimeDuration kMaxCCLockedoutTime = TimeDuration::FromSeconds(30);
-
-
-static const uint32_t kCCPurpleLimit = 200;
-
-
-
 enum class CCRunnerState { Inactive, EarlyTimer, LateTimer, FinalTimer };
 
 static nsITimer* sGCTimer;
@@ -152,8 +107,6 @@ static TimeStamp sCurrentGCStartTime;
 
 static CCRunnerState sCCRunnerState = CCRunnerState::Inactive;
 static TimeDuration sCCDelay = kCCDelay;
-static bool sCCLockedOut;
-static TimeStamp sCCLockedOutTime;
 
 static JS::GCSliceCallback sPrevGCSliceCallback;
 
@@ -169,8 +122,6 @@ static bool sNeedsFullCC = false;
 static bool sNeedsFullGC = false;
 static bool sNeedsGCAfterCC = false;
 static bool sIncrementalCC = false;
-static TimeDuration sActiveIntersliceGCBudget =
-    TimeDuration::FromMilliseconds(5);
 
 static TimeStamp sFirstCollectionTime;
 
@@ -185,6 +136,8 @@ static bool sShuttingDown;
 static bool sIsCompactingOnUserInactive = false;
 
 static TimeDuration sGCUnnotifiedTotalTime;
+
+static CCGCScheduler sScheduler;
 
 struct CycleCollectorStats {
   constexpr CycleCollectorStats() = default;
@@ -1160,7 +1113,7 @@ void nsJSContext::GarbageCollectNow(JS::GCReason aReason,
     return;
   }
 
-  if (sCCLockedOut && aIncremental == IncrementalGC) {
+  if (sScheduler.InIncrementalGC() && aIncremental == IncrementalGC) {
     
     JS::PrepareForIncrementalGC(cx);
     JS::IncrementalGCSlice(cx, aReason, aSliceMillis);
@@ -1188,7 +1141,7 @@ void nsJSContext::GarbageCollectNow(JS::GCReason aReason,
 static void FinishAnyIncrementalGC() {
   AUTO_PROFILER_LABEL("FinishAnyIncrementalGC", GCCC);
 
-  if (sCCLockedOut) {
+  if (sScheduler.InIncrementalGC()) {
     AutoJSAPI jsapi;
     jsapi.Init();
 
@@ -1358,7 +1311,7 @@ void CycleCollectorStats::PrepareForCycleCollectionSlice(TimeStamp aDeadline) {
   mIdleDeadline = aDeadline;
 
   
-  if (sCCLockedOut) {
+  if (sScheduler.InIncrementalGC()) {
     mAnyLockedOut = true;
     FinishAnyIncrementalGC();
     TimeDuration gcTime = TimeUntilNow(mBeginSliceTime);
@@ -1626,13 +1579,13 @@ static bool ICCRunnerFired(TimeStamp aDeadline) {
   
   
 
-  if (sCCLockedOut) {
+  if (sScheduler.InIncrementalGC()) {
     TimeStamp now = TimeStamp::Now();
-    if (!sCCLockedOutTime) {
-      sCCLockedOutTime = now;
+    if (!sScheduler.mCCLockedOutTime) {
+      sScheduler.mCCLockedOutTime = now;
       return false;
     }
-    if (now - sCCLockedOutTime < kMaxCCLockedoutTime) {
+    if (now - sScheduler.mCCLockedOutTime < kMaxCCLockedoutTime) {
       return false;
     }
   }
@@ -1716,20 +1669,8 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
 
 
 bool InterSliceGCRunnerFired(TimeStamp aDeadline, void* aData) {
-  MOZ_ASSERT(sActiveIntersliceGCBudget);
-  
-  
-  
-  TimeDuration budget = aDeadline.IsNull() ? sActiveIntersliceGCBudget * 2
-                                           : aDeadline - TimeStamp::Now();
-  if (sCCLockedOut && sCCLockedOutTime) {
-    TimeDuration lockedTime = TimeStamp::Now() - sCCLockedOutTime;
-    TimeDuration maxSliceGCBudget = sActiveIntersliceGCBudget * 10;
-    double percentOfLockedTime =
-        std::min(lockedTime / kMaxCCLockedoutTime, 1.0);
-    budget = std::max(budget, maxSliceGCBudget.MultDouble(percentOfLockedTime));
-  }
-
+  MOZ_ASSERT(sScheduler.mActiveIntersliceGCBudget);
+  TimeDuration budget = sScheduler.ComputeInterSliceGCBudget(aDeadline);
   TimeStamp startTimeStamp = TimeStamp::Now();
   TimeDuration duration = sGCUnnotifiedTotalTime;
   uintptr_t reason = reinterpret_cast<uintptr_t>(aData);
@@ -1786,7 +1727,7 @@ void GCTimerFired(nsITimer* aTimer, void* aClosure) {
       },
       "GCTimerFired::InterSliceGCRunnerFired",
       StaticPrefs::javascript_options_gc_delay_interslice(),
-      sActiveIntersliceGCBudget.ToMilliseconds(), true,
+      sScheduler.mActiveIntersliceGCBudget.ToMilliseconds(), true,
       [] { return sShuttingDown; });
 }
 
@@ -1831,9 +1772,9 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
     return false;
   }
 
-  if (sCCLockedOut) {
+  if (sScheduler.InIncrementalGC()) {
     TimeStamp now = TimeStamp::Now();
-    if (!sCCLockedOutTime) {
+    if (!sScheduler.mCCLockedOutTime) {
       
       
       
@@ -1841,11 +1782,11 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
       sCCRunnerState = CCRunnerState::EarlyTimer;
       sCCRunnerEarlyFireCount = 0;
       sCCDelay = kCCDelay / int64_t(3);
-      sCCLockedOutTime = now;
+      sScheduler.mCCLockedOutTime = now;
       return false;
     }
 
-    if (now - sCCLockedOutTime < kMaxCCLockedoutTime) {
+    if (now - sScheduler.mCCLockedOutTime < kMaxCCLockedoutTime) {
       return false;
     }
   }
@@ -1980,8 +1921,9 @@ void nsJSContext::RunNextCollectorTimer(JS::GCReason aReason,
   } else {
     
     
-    MOZ_ASSERT(!sCCLockedOut,
-               "Don't check the CC timers if the CC is locked out.");
+    MOZ_ASSERT(
+        !sScheduler.InIncrementalGC(),
+        "Don't check the CC timers if the CC is locked out during an iGC.");
 
     if (sCCRunner) {
       MOZ_ASSERT(!sICCRunner,
@@ -2186,7 +2128,7 @@ void nsJSContext::KillShrinkingGCTimer() {
 
 
 void nsJSContext::KillCCRunner() {
-  sCCLockedOutTime = TimeStamp();
+  sScheduler.mCCLockedOutTime = TimeStamp();
   sCCRunnerState = CCRunnerState::Inactive;
   if (sCCRunner) {
     sCCRunner->Cancel();
@@ -2196,7 +2138,7 @@ void nsJSContext::KillCCRunner() {
 
 
 void nsJSContext::KillICCRunner() {
-  sCCLockedOutTime = TimeStamp();
+  sScheduler.mCCLockedOutTime = TimeStamp();
 
   if (sICCRunner) {
     sICCRunner->Cancel();
@@ -2211,7 +2153,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
   switch (aProgress) {
     case JS::GC_CYCLE_BEGIN: {
       
-      sCCLockedOut = true;
+      sScheduler.NoteGCBegin();
       sCurrentGCStartTime = TimeStamp::Now();
       break;
     }
@@ -2234,7 +2176,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
         }
       }
 
-      sCCLockedOut = false;
+      sScheduler.NoteGCEnd();
       sIsCompactingOnUserInactive = false;
 
       
@@ -2291,7 +2233,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
             },
             "DOMGCSliceCallback::InterSliceGCRunnerFired",
             StaticPrefs::javascript_options_gc_delay_interslice(),
-            sActiveIntersliceGCBudget.ToMilliseconds(), true,
+            sScheduler.mActiveIntersliceGCBudget.ToMilliseconds(), true,
             [] { return sShuttingDown; });
       }
 
@@ -2337,8 +2279,6 @@ void nsJSContext::LikelyShortLivingObjectCreated() {
 void mozilla::dom::StartupJSEnvironment() {
   
   sGCTimer = sShrinkingGCTimer = sFullGCTimer = nullptr;
-  sCCLockedOut = false;
-  sCCLockedOutTime = TimeStamp();
   sLastCCEndTime = TimeStamp();
   sLastForgetSkippableCycleEndTime = TimeStamp();
   sHasRunGC = false;
@@ -2351,6 +2291,7 @@ void mozilla::dom::StartupJSEnvironment() {
   sIsInitialized = false;
   sDidShutdown = false;
   sShuttingDown = false;
+  new (&sScheduler) CCGCScheduler();  
   sCCStats.Init();
 }
 
@@ -2436,7 +2377,8 @@ static void SetMemoryGCSliceTimePrefChangedCallback(const char* aPrefName,
   int32_t pref = Preferences::GetInt(aPrefName, -1);
   
   if (pref > 0 && pref < 100000) {
-    sActiveIntersliceGCBudget = TimeDuration::FromMilliseconds(pref);
+    sScheduler.SetActiveIntersliceGCBudget(
+        TimeDuration::FromMilliseconds(pref));
     SetGCParameter(JSGC_SLICE_TIME_BUDGET_MS, pref);
   } else {
     ResetGCParameter(JSGC_SLICE_TIME_BUDGET_MS);
