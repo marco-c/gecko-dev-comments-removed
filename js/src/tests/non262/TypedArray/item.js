@@ -1,3 +1,5 @@
+
+
 for (var constructor of anyTypedArrayConstructors) {
     assertEq(constructor.prototype.item.length, 1);
 
