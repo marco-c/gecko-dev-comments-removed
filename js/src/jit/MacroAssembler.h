@@ -230,6 +230,12 @@ enum class CheckUnsafeCallWithABI {
   DontCheckOther,
 };
 
+
+
+
+template <typename Sig>
+static inline DynFn DynamicFunction(Sig fun);
+
 enum class CharEncoding { Latin1, TwoByte };
 
 
@@ -621,6 +627,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void callWithABI(
       void* fun, MoveOp::Type result = MoveOp::GENERAL,
+      CheckUnsafeCallWithABI check = CheckUnsafeCallWithABI::Check);
+  inline void callWithABI(
+      DynFn fun, MoveOp::Type result = MoveOp::GENERAL,
       CheckUnsafeCallWithABI check = CheckUnsafeCallWithABI::Check);
   template <typename Sig, Sig fun>
   inline void callWithABI(
