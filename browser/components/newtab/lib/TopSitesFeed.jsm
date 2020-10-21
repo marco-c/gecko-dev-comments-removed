@@ -86,6 +86,7 @@ const PINNED_FAVICON_PROPS_TO_MIGRATE = [
 ];
 const SECTION_ID = "topsites";
 const ROWS_PREF = "topSitesRows";
+const SHOW_SPONSORED_PREF = "showSponsoredTopSites";
 
 
 const FILTER_DEFAULT_SEARCH_PREF = "improvesearch.noDefaultSearchTile";
@@ -257,11 +258,15 @@ this.TopSitesFeed = class TopSitesFeed {
       }
       if (siteData.search_shortcut) {
         link = await this.topSiteToSearchTopSite(link);
+      } else {
+        if (siteData.sponsored_position) {
+          link.sponsored_position = siteData.sponsored_position;
+        }
+        if (siteData.send_attribution_request) {
+          ATTRIBUTION_REQUEST_SITES.push(siteData.url);
+        }
       }
       DEFAULT_TOP_SITES.push(link);
-      if (siteData.send_attribution_request) {
-        ATTRIBUTION_REQUEST_SITES.push(siteData.url);
-      }
     }
 
     this.refresh({ broadcast: true, isStartup });
@@ -470,12 +475,10 @@ this.TopSitesFeed = class TopSitesFeed {
 
   
   async getLinksWithDefaults(isStartup = false) {
-    const numItems =
-      this.store.getState().Prefs.values[ROWS_PREF] *
-      TOP_SITES_MAX_SITES_PER_ROW;
+    const prefValues = this.store.getState().Prefs.values;
+    const numItems = prefValues[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW;
     const searchShortcutsExperiment =
-      !this._useRemoteSetting &&
-      this.store.getState().Prefs.values[SEARCH_SHORTCUTS_EXPERIMENT];
+      !this._useRemoteSetting && prefValues[SEARCH_SHORTCUTS_EXPERIMENT];
     
     
     await Services.search.init();
@@ -508,6 +511,7 @@ this.TopSitesFeed = class TopSitesFeed {
       pad(date.getDate());
     let yyyymmddhh = yyyymmdd + pad(date.getHours());
     let notBlockedDefaultSites = [];
+    let sponsored = [];
     for (let link of DEFAULT_TOP_SITES) {
       if (this.shouldFilterSearchTile(link.hostname)) {
         continue;
@@ -566,11 +570,18 @@ this.TopSitesFeed = class TopSitesFeed {
       ) {
         continue;
       }
-      notBlockedDefaultSites.push(
-        searchShortcutsExperiment
-          ? await this.topSiteToSearchTopSite(link)
-          : link
-      );
+      if (link.sponsored_position) {
+        if (!prefValues[SHOW_SPONSORED_PREF]) {
+          continue;
+        }
+        sponsored[link.sponsored_position - 1] = link;
+      } else {
+        notBlockedDefaultSites.push(
+          searchShortcutsExperiment
+            ? await this.topSiteToSearchTopSite(link)
+            : link
+        );
+      }
     }
 
     
@@ -628,20 +639,34 @@ this.TopSitesFeed = class TopSitesFeed {
     );
 
     
-    const [, dedupedFrecent, dedupedDefaults] = this.dedupe.group(
-      pinned,
-      frecent,
-      notBlockedDefaultSites
-    );
+    const [
+      ,
+      dedupedSponsored,
+      dedupedFrecent,
+      dedupedDefaults,
+    ] = this.dedupe.group(pinned, sponsored, frecent, notBlockedDefaultSites);
     const dedupedUnpinned = [...dedupedFrecent, ...dedupedDefaults];
 
     
-    const checkedAdult = this.store.getState().Prefs.values.filterAdult
+    const checkedAdult = prefValues.filterAdult
       ? filterAdult(dedupedUnpinned)
       : dedupedUnpinned;
 
     
-    const withPinned = insertPinned(checkedAdult, pinned).slice(0, numItems);
+    let withPinned = insertPinned(checkedAdult, pinned);
+    
+    dedupedSponsored.forEach((link, index) => {
+      if (!link) {
+        return;
+      }
+      if (index > withPinned.length) {
+        withPinned[index] = link;
+      } else {
+        withPinned.splice(index, 0, link);
+      }
+    });
+    
+    withPinned = withPinned.slice(0, numItems);
 
     let searchTileOverrideURLs = new Map();
     if (!this._useRemoteSetting) {
@@ -1121,6 +1146,7 @@ this.TopSitesFeed = class TopSitesFeed {
           case ROWS_PREF:
           case FILTER_DEFAULT_SEARCH_PREF:
           case SEARCH_SHORTCUTS_SEARCH_ENGINES_PREF:
+          case SHOW_SPONSORED_PREF:
             this.refresh({ broadcast: true });
             break;
           case SEARCH_SHORTCUTS_EXPERIMENT:
