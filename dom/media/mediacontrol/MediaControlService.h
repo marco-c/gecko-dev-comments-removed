@@ -68,6 +68,12 @@ class MediaControlService final : public nsIObserver {
   MediaController* GetMainController() const;
 
   
+  
+  MediaEventSource<uint64_t>& MediaControllerAmountChangedEvent() {
+    return mMediaControllerAmountChangedEvent;
+  }
+
+  
 
 
 

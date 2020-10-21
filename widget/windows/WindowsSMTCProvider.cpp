@@ -148,18 +148,20 @@ bool WindowsSMTCProvider::Open() {
     return false;
   }
 
+  if (!EnableControl(true)) {
+    LOG("Failed to enable SMTC control");
+    return false;
+  }
+
   if (!UpdateButtons()) {
     LOG("Failed to initialize the buttons");
+    Unused << EnableControl(false);
     return false;
   }
 
   if (!RegisterEvents()) {
     LOG("Failed to register SMTC key-event listener");
-    return false;
-  }
-
-  if (!EnableControl(true)) {
-    LOG("Failed to enable SMTC control");
+    Unused << EnableControl(false);
     return false;
   }
 
@@ -170,19 +172,26 @@ bool WindowsSMTCProvider::Open() {
 
 void WindowsSMTCProvider::Close() {
   MediaControlKeySource::Close();
-  
-  if (mInitialized) {
+  if (mInitialized) {  
     SetPlaybackState(mozilla::dom::MediaSessionPlaybackState::None);
-    UnregisterEvents();
-    ClearMetadata();
-    
-    
-    
-    
-    
     EnableControl(false);
     mInitialized = false;
   }
+
+  UnregisterEvents();
+
+  
+  mImageFetchRequest.DisconnectIfExists();
+
+  CancelPendingStoreAsyncOperation();
+
+  
+  mThumbnailUrl.Truncate();
+  mProcessingUrl.Truncate();
+
+  mNextImageIndex = 0;
+
+  mSupportedKeys = 0;
 }
 
 void WindowsSMTCProvider::SetPlaybackState(
@@ -225,19 +234,6 @@ void WindowsSMTCProvider::SetMediaMetadata(
   SetMusicMetadata(aMetadata.mArtist.get(), aMetadata.mTitle.get(),
                    aMetadata.mAlbum.get());
   LoadThumbnail(aMetadata.mArtwork);
-}
-
-void WindowsSMTCProvider::ClearMetadata() {
-  MOZ_ASSERT(mDisplay);
-  if (FAILED(mDisplay->ClearAll())) {
-    LOG("Failed to clear SMTC display");
-  }
-  mImageFetchRequest.DisconnectIfExists();
-  CancelPendingStoreAsyncOperation();
-  mThumbnailUrl.Truncate();
-  mProcessingUrl.Truncate();
-  mNextImageIndex = 0;
-  mSupportedKeys = 0;
 }
 
 void WindowsSMTCProvider::SetSupportedMediaKeys(
