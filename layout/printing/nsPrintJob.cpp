@@ -619,17 +619,21 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  bool printSilently = false;
+  printData->mPrintSettings->GetPrintSilent(&printSilently);
+  if (StaticPrefs::print_always_print_silent()) {
+    printSilently = true;
+  }
+
+  if (mIsDoingPrinting && printSilently) {
+    Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_SILENT_PRINT, 1);
+  }
+
   
   
   
   
   if (!mIsCreatingPrintPreview || printingViaParent) {
-    bool printSilently = false;
-    printData->mPrintSettings->GetPrintSilent(&printSilently);
-    if (StaticPrefs::print_always_print_silent()) {
-      printSilently = true;
-    }
-
     
     
     
@@ -660,9 +664,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
           domWin = aDoc->GetOriginalDocument()->GetWindow();
           NS_ENSURE_TRUE(domWin, NS_ERROR_FAILURE);
 
-          if (printSilently) {
-            Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_SILENT_PRINT, 1);
-          } else {
+          if (!printSilently) {
             if (mCreatedForPrintPreview) {
               Telemetry::ScalarAdd(
                   Telemetry::ScalarID::PRINTING_DIALOG_OPENED_VIA_PREVIEW, 1);
