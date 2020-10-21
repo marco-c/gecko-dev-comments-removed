@@ -527,9 +527,8 @@ function BuildConditionSandbox(aURL) {
     
     sandbox.transparentScrollbars = xr.widgetToolkit == "gtk";
 
+    var sysInfo = Cc["@mozilla.org/system-info;1"].getService(Ci.nsIPropertyBag2);
     if (sandbox.Android) {
-        var sysInfo = Cc["@mozilla.org/system-info;1"].getService(Ci.nsIPropertyBag2);
-
         
         
         sandbox.AndroidVersion = sysInfo.getPropertyAsInt32("version");
@@ -537,6 +536,8 @@ function BuildConditionSandbox(aURL) {
         sandbox.emulator = readGfxInfo(gfxInfo, "adapterDeviceID").includes("Android Emulator");
         sandbox.device = !sandbox.emulator;
     }
+
+    sandbox.MinGW = sandbox.winWidget && sysInfo.getPropertyAsBool("isMinGW");
 
 #if MOZ_ASAN
     sandbox.AddressSanitizer = true;
