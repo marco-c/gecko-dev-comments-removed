@@ -78,6 +78,10 @@ var Policy = {
   getEcosystemClientId() {
     return ClientID.getEcosystemClientID();
   },
+  
+  resetEcosystemClientId() {
+    return ClientID.resetEcosystemClientID();
+  },
 };
 
 var EcosystemTelemetry = {
@@ -233,9 +237,14 @@ var EcosystemTelemetry = {
         
         
         return this._submitPing(this.Reason.LOGOUT)
-          .then(() => {
+          .then(async () => {
             
             this.prepareEcosystemAnonId();
+            
+            
+            
+            
+            await Policy.resetEcosystemClientId();
           })
           .catch(e => {
             log.error("ONLOGOUT promise chain failed", e);

@@ -143,6 +143,21 @@ var ClientID = Object.freeze({
 
 
 
+
+
+  resetEcosystemClientID() {
+    return ClientIDImpl.resetEcosystemClientID();
+  },
+
+  
+
+
+
+
+
+
+
+
   removeClientIDs() {
     return ClientIDImpl.removeClientIDs();
   },
@@ -363,6 +378,14 @@ var ClientIDImpl = {
     this._saveClientIdsTask = this._saveClientIDs();
     await this._saveClientIdsTask;
     return this._clientID;
+  },
+
+  async resetEcosystemClientID() {
+    this._log.trace("resetEcosystemClientID");
+    this.updateEcosystemClientID(CommonUtils.generateUUID());
+    this._saveClientIdsTask = this._saveClientIDs();
+    await this._saveClientIdsTask;
+    return this._ecosystemClientID;
   },
 
   async _doRemoveClientIDs() {
