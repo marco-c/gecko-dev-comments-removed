@@ -91,16 +91,22 @@ struct ScopeContext {
   static Scope* determineEffectiveScope(Scope* scope, JSObject* environment);
 };
 
-
-struct CompilationInput {
-  const JS::ReadOnlyCompileOptions& options;
-
+struct CompilationAtomCache {
   
   
   
   
   
   JS::GCVector<JSAtom*, 0, js::SystemAllocPolicy> atoms;
+
+  void trace(JSTracer* trc);
+} JS_HAZ_GC_POINTER;
+
+
+struct CompilationInput {
+  const JS::ReadOnlyCompileOptions& options;
+
+  CompilationAtomCache atomCache;
 
   BaseScript* lazy = nullptr;
 
@@ -387,9 +393,6 @@ struct CompilationInfo {
   MOZ_MUST_USE bool serializeStencils(JSContext* cx, JS::TranscodeBuffer& buf,
                                       bool* succeededOut = nullptr);
 
-  JSAtom* liftParserAtomToJSAtom(JSContext* cx, const ParserAtom* parserAtom) {
-    return parserAtom->toJSAtom(cx, *this).unwrapOr(nullptr);
-  }
   const ParserAtom* lowerJSAtomToParserAtom(JSContext* cx, JSAtom* atom) {
     auto result = stencil.parserAtoms.internJSAtom(cx, *this, atom);
     return result.unwrapOr(nullptr);
