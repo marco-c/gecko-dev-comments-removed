@@ -13,7 +13,7 @@
 
 #include "debugger/DebugAPI.h"  
 #include "gc/GC.h"              
-#include "jit/JitFrames.h"  
+#include "jit/CalleeToken.h"  
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 #include "vm/JSContext.h"   

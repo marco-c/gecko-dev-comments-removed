@@ -13,11 +13,11 @@
 #include "mozilla/Likely.h"      
 #include "mozilla/Maybe.h"       
 
-#include "jit/JSJitFrameIter.h"  
-#include "vm/FrameIter.h"        
-#include "vm/JitActivation.h"    
-#include "vm/JSContext.h"        
-#include "vm/Stack.h"            
+#include "jit/CalleeToken.h"   
+#include "vm/FrameIter.h"      
+#include "vm/JitActivation.h"  
+#include "vm/JSContext.h"      
+#include "vm/Stack.h"          
 
 namespace js {
 
