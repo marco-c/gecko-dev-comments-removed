@@ -48,73 +48,86 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 
 var EXPORTED_SYMBOLS = ["WebsiteFilter"];
 
-function WebsiteFilter(blocklist, exceptionlist) {
-  let blockArray = [],
-    exceptionArray = [];
+let WebsiteFilter = {
+  init(blocklist, exceptionlist) {
+    let blockArray = [],
+      exceptionArray = [];
 
-  for (let i = 0; i < blocklist.length && i < LIST_LENGTH_LIMIT; i++) {
-    try {
-      let pattern = new MatchPattern(blocklist[i]);
-      blockArray.push(pattern);
-      log.debug(`Pattern added to WebsiteFilter. Block: ${blocklist[i]}`);
-    } catch (e) {
-      log.error(`Invalid pattern on WebsiteFilter. Block: ${blocklist[i]}`);
-    }
-  }
-
-  this._blockPatterns = new MatchPatternSet(blockArray);
-
-  for (let i = 0; i < exceptionlist.length && i < LIST_LENGTH_LIMIT; i++) {
-    try {
-      let pattern = new MatchPattern(exceptionlist[i]);
-      exceptionArray.push(pattern);
-      log.debug(
-        `Pattern added to WebsiteFilter. Exception: ${exceptionlist[i]}`
-      );
-    } catch (e) {
-      log.error(
-        `Invalid pattern on WebsiteFilter. Exception: ${exceptionlist[i]}`
-      );
-    }
-  }
-
-  if (exceptionArray.length) {
-    this._exceptionsPatterns = new MatchPatternSet(exceptionArray);
-  }
-
-  Services.obs.addObserver(this, "http-on-modify-request", true);
-}
-
-WebsiteFilter.prototype = {
-  QueryInterface: ChromeUtils.generateQI([
-    "nsIObserver",
-    "nsISupportsWeakReference",
-  ]),
-
-  observe(subject, topic, data) {
-    let channel,
-      isDocument = false;
-    try {
-      channel = subject.QueryInterface(Ci.nsIHttpChannel);
-      isDocument = channel.isDocument;
-    } catch (e) {
-      return;
-    }
-
-    
-    if (!isDocument) {
-      return;
-    }
-
-    if (this._blockPatterns.matches(channel.URI)) {
-      if (
-        !this._exceptionsPatterns ||
-        !this._exceptionsPatterns.matches(channel.URI)
-      ) {
-        
-        
-        channel.cancel(Cr.NS_ERROR_BLOCKED_BY_POLICY);
+    for (let i = 0; i < blocklist.length && i < LIST_LENGTH_LIMIT; i++) {
+      try {
+        let pattern = new MatchPattern(blocklist[i].toLowerCase());
+        blockArray.push(pattern);
+        log.debug(`Pattern added to WebsiteFilter. Block: ${blocklist[i]}`);
+      } catch (e) {
+        log.error(`Invalid pattern on WebsiteFilter. Block: ${blocklist[i]}`);
       }
     }
+
+    this._blockPatterns = new MatchPatternSet(blockArray);
+
+    for (let i = 0; i < exceptionlist.length && i < LIST_LENGTH_LIMIT; i++) {
+      try {
+        let pattern = new MatchPattern(exceptionlist[i].toLowerCase());
+        exceptionArray.push(pattern);
+        log.debug(
+          `Pattern added to WebsiteFilter. Exception: ${exceptionlist[i]}`
+        );
+      } catch (e) {
+        log.error(
+          `Invalid pattern on WebsiteFilter. Exception: ${exceptionlist[i]}`
+        );
+      }
+    }
+
+    if (exceptionArray.length) {
+      this._exceptionsPatterns = new MatchPatternSet(exceptionArray);
+    }
+
+    let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+
+    if (!registrar.isContractIDRegistered(this.contractID)) {
+      registrar.registerFactory(
+        this.classID,
+        this.classDescription,
+        this.contractID,
+        this
+      );
+
+      Services.catMan.addCategoryEntry(
+        "content-policy",
+        this.contractID,
+        this.contractID,
+        false,
+        true
+      );
+    }
+  },
+
+  shouldLoad(contentLocation, loadInfo, mimeTypeGuess) {
+    let contentType = loadInfo.externalContentPolicyType;
+    if (
+      contentType == Ci.nsIContentPolicy.TYPE_DOCUMENT ||
+      contentType == Ci.nsIContentPolicy.TYPE_SUBDOCUMENT
+    ) {
+      if (this._blockPatterns.matches(contentLocation.spec.toLowerCase())) {
+        if (
+          !this._exceptionsPatterns ||
+          !this._exceptionsPatterns.matches(contentLocation.spec.toLowerCase())
+        ) {
+          return Ci.nsIContentPolicy.REJECT_POLICY;
+        }
+      }
+    }
+    return Ci.nsIContentPolicy.ACCEPT;
+  },
+  shouldProcess(contentLocation, loadInfo, mimeTypeGuess) {
+    return Ci.nsIContentPolicy.ACCEPT;
+  },
+  classDescription: "Policy Engine File Content Policy",
+  contractID: "@mozilla-org/policy-engine-file-content-policy-service;1",
+  classID: Components.ID("{c0bbb557-813e-4e25-809d-b46a531a258f}"),
+  QueryInterface: ChromeUtils.generateQI(["nsIContentPolicy"]),
+  createInstance(outer, iid) {
+    return this.QueryInterface(iid);
   },
 };
