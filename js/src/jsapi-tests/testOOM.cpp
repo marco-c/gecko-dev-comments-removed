@@ -101,10 +101,14 @@ BEGIN_TEST(testHelperThreadOOM) {
 }
 
 bool init() override {
-  js::DestroyHelperThreadsState();
+  JSAPITest::uninit();              
+  js::DestroyHelperThreadsState();  
   return true;
 }
-void uninit() override { js::CreateHelperThreadsState(); }
+void uninit() override {
+  
+  js::CreateHelperThreadsState();
+}
 
 END_TEST(testHelperThreadOOM)
 
