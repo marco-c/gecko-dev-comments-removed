@@ -644,7 +644,30 @@ class SessionStateAggregator extends GeckoViewChildModule {
   }
 }
 
+
+class DummySessionStateAggregator extends GeckoViewChildModule {
+  constructor(aModuleName, aMessageManager) {
+    super(aModuleName, aMessageManager);
+    this.messageManager.addMessageListener("GeckoView:FlushSessionState", this);
+  }
+
+  receiveMessage(aMsg) {
+    debug`receiveMessage: ${aMsg.name}`;
+
+    switch (aMsg.name) {
+      case "GeckoView:FlushSessionState":
+        
+        break;
+    }
+  }
+}
+
 const { debug, warn } = SessionStateAggregator.initLogging(
   "SessionStateAggregator"
 );
-const module = SessionStateAggregator.create(this);
+
+const module = Services.appinfo.sessionHistoryInParent
+  ? 
+    
+    DummySessionStateAggregator.create(this)
+  : SessionStateAggregator.create(this);
