@@ -107,7 +107,10 @@ class OpusTrackEncoder : public AudioTrackEncoder {
 
   nsTArray<AudioDataValue> mResampledLeftover;
 
-  media::TimeUnit mOutputTimeStamp;
+  
+
+
+  uint64_t mNumOutputFrames;
 };
 
 }  
