@@ -10,6 +10,7 @@
 #include "mozilla/gfx/Types.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/layers/KnowsCompositor.h"
 #include "TextureClient.h"
 #include "nsITimer.h"
 #include <stack>
@@ -44,12 +45,11 @@ class TextureClientPool final : public TextureClientAllocator {
   virtual ~TextureClientPool();
 
  public:
-  TextureClientPool(LayersBackend aBackend, bool aSupportsTextureDirectMapping,
-                    int32_t aMaxTextureSize, gfx::SurfaceFormat aFormat,
-                    gfx::IntSize aSize, TextureFlags aFlags,
-                    uint32_t aShrinkTimeoutMsec, uint32_t aClearTimeoutMsec,
-                    uint32_t aInitialPoolSize, uint32_t aPoolUnusedSize,
-                    TextureForwarder* aAllocator);
+  TextureClientPool(KnowsCompositor* aKnowsCompositor,
+                    gfx::SurfaceFormat aFormat, gfx::IntSize aSize,
+                    TextureFlags aFlags, uint32_t aShrinkTimeoutMsec,
+                    uint32_t aClearTimeoutMsec, uint32_t aInitialPoolSize,
+                    uint32_t aPoolUnusedSize, TextureForwarder* aAllocator);
 
   
 
@@ -98,8 +98,12 @@ class TextureClientPool final : public TextureClientAllocator {
 
   void Clear();
 
-  LayersBackend GetBackend() const { return mBackend; }
-  int32_t GetMaxTextureSize() const { return mMaxTextureSize; }
+  LayersBackend GetBackend() const {
+    return mKnowsCompositor->GetCompositorBackendType();
+  }
+  int32_t GetMaxTextureSize() const {
+    return mKnowsCompositor->GetMaxTextureSize();
+  }
   gfx::SurfaceFormat GetFormat() { return mFormat; }
   TextureFlags GetFlags() const { return mFlags; }
 
@@ -119,10 +123,7 @@ class TextureClientPool final : public TextureClientAllocator {
   void ResetTimers();
 
   
-  LayersBackend mBackend;
-
-  
-  int32_t mMaxTextureSize;
+  RefPtr<KnowsCompositor> mKnowsCompositor;
 
   
   gfx::SurfaceFormat mFormat;
@@ -166,8 +167,6 @@ class TextureClientPool final : public TextureClientAllocator {
   
   
   bool mDestroyed;
-
-  bool mSupportsTextureDirectMapping;
 };
 
 }  
