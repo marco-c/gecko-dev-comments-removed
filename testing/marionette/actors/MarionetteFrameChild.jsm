@@ -126,6 +126,9 @@ class MarionetteFrameChild extends JSWindowActorChild {
         case "MarionetteFrameParent:getPageSource":
           result = await this.getPageSource();
           break;
+        case "MarionetteFrameParent:getScreenshotRect":
+          result = await this.getScreenshotRect(data);
+          break;
         case "MarionetteFrameParent:isElementDisplayed":
           result = await this.isElementDisplayed(data);
           break;
@@ -335,6 +338,54 @@ class MarionetteFrameChild extends JSWindowActorChild {
 
   async getPageSource() {
     return this.document.documentElement.outerHTML;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getScreenshotRect(options = {}) {
+    const { elem, full = true, scroll = true } = options;
+    const win = elem ? this.contentWindow : this.browsingContext.top.window;
+
+    let rect;
+
+    if (elem) {
+      if (scroll) {
+        element.scrollIntoView(elem);
+      }
+      rect = this.getElementRect({ elem });
+    } else if (full) {
+      const docEl = win.document.documentElement;
+      rect = new DOMRect(0, 0, docEl.scrollWidth, docEl.scrollHeight);
+    } else {
+      
+      rect = new DOMRect(
+        win.pageXOffset,
+        win.pageYOffset,
+        win.innerWidth,
+        win.innerHeight
+      );
+    }
+
+    return rect;
   }
 
   
