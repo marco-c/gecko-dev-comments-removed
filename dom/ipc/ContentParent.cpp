@@ -1982,6 +1982,12 @@ bool ContentParent::TryToRecycle() {
 
   
   
+  if (mozilla::FissionAutostart()) {
+    return false;
+  }
+
+  
+  
 
   
   
