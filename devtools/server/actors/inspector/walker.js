@@ -330,7 +330,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         
         supportsNodePicker: true,
         
-        supportsOverflowDebugging: true,
+        supportsOverflowDebugging2: true,
       },
     };
   },
@@ -2875,6 +2875,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
+
   getOverflowCausingElements: function(node) {
     if (
       isNodeDead(node) ||
@@ -2891,12 +2892,10 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         overflowCausingChild = overflowCausingChild.parentElement;
       }
 
-      this.attachElement(overflowCausingChild);
-
       return overflowCausingChild;
     });
 
-    return new NodeListActor(this, overflowCausingElements);
+    return this.attachElements(overflowCausingElements);
   },
 
   
