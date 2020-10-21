@@ -4,10 +4,10 @@
 
 
 
-#ifndef wasm_TypedObject_inl_h
-#define wasm_TypedObject_inl_h
+#ifndef builtin_TypedObject_inl_h
+#define builtin_TypedObject_inl_h
 
-#include "wasm/TypedObject.h"
+#include "builtin/TypedObject.h"
 
 #include "gc/ObjectKind-inl.h"
 

@@ -186,6 +186,10 @@ MOZ_MUST_USE bool CheckRefType(JSContext* cx, RefType targetType, HandleValue v,
 
 
 
+extern const JSClass WebAssemblyClass;
+
+
+
 
 
 class WasmModuleObject : public NativeObject {
@@ -451,28 +455,6 @@ class WasmTableObject : public NativeObject {
                                  mozilla::Maybe<uint32_t> maximumLength,
                                  wasm::RefType tableType, HandleObject proto);
   wasm::Table& table() const;
-};
-
-
-
-class WasmNamespaceObject : public NativeObject {
- public:
-  enum Slot {
-    ArrayTypePrototype,
-    StructTypePrototype,
-    Int32Desc,
-    Int64Desc,
-    Float32Desc,
-    Float64Desc,
-    ObjectDesc,
-    WasmAnyRefDesc,
-    SlotCount
-  };
-
-  static const JSClass class_;
-
- private:
-  static const ClassSpec classSpec_;
 };
 
 }  

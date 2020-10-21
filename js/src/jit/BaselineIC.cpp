@@ -1612,16 +1612,24 @@ bool DoTypeUpdateFallback(JSContext* cx, BaselineFrame* frame,
     MOZ_ALWAYS_TRUE(structDescr->fieldIndex(id, &fieldIndex));
 
     TypeDescr* fieldDescr = &structDescr->fieldDescr(fieldIndex);
-    DebugOnly<ReferenceType> type = fieldDescr->as<ReferenceTypeDescr>().type();
-    MOZ_ASSERT(type == ReferenceType::TYPE_OBJECT ||
-               type == ReferenceType::TYPE_WASM_ANYREF);
+    ReferenceType type = fieldDescr->as<ReferenceTypeDescr>().type();
+    if (type == ReferenceType::TYPE_ANY) {
+      
+      
+      if (value.isUndefined()) {
+        addType = false;
+      }
+    } else {
+      MOZ_ASSERT(type == ReferenceType::TYPE_OBJECT ||
+                 type == ReferenceType::TYPE_WASM_ANYREF);
 
-    
-    
-    
-    
-    if (value.isNull()) {
-      addType = false;
+      
+      
+      
+      
+      if (value.isNull()) {
+        addType = false;
+      }
     }
   }
 

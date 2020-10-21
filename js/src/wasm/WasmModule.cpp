@@ -21,13 +21,13 @@
 #include <chrono>
 #include <thread>
 
+#include "builtin/TypedObject.h"
 #include "jit/JitOptions.h"
 #include "js/BuildId.h"                 
 #include "js/experimental/TypedData.h"  
 #include "threading/LockGuard.h"
 #include "vm/HelperThreadState.h"  
 #include "vm/PlainObject.h"        
-#include "wasm/TypedObject.h"
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmInstance.h"
@@ -1244,23 +1244,29 @@ bool Module::makeStructTypeDescrs(
   MOZ_CRASH("Should not have seen any struct types");
 #else
 
+#  ifndef JS_HAS_TYPED_OBJECTS
+#    error "GC types require TypedObject"
+#  endif
+
   
   
-  RootedObject namespaceObject(
-      cx, GlobalObject::getOrCreateWebAssemblyNamespace(cx, cx->global()));
-  if (!namespaceObject) {
+  RootedObject typedObjectModule(
+      cx, GlobalObject::getOrCreateTypedObjectModule(cx, cx->global()));
+  if (!typedObjectModule) {
     return false;
   }
 
-  RootedNativeObject toModule(cx, &namespaceObject->as<NativeObject>());
+  RootedNativeObject toModule(cx, &typedObjectModule->as<NativeObject>());
   RootedObject prototype(
-      cx, &toModule->getReservedSlot(WasmNamespaceObject::StructTypePrototype)
-               .toObject());
+      cx,
+      &toModule->getReservedSlot(TypedObjectModuleObject::StructTypePrototype)
+           .toObject());
 
   for (const StructType& structType : structTypes()) {
     RootedIdVector ids(cx);
     RootedValueVector fieldTypeObjs(cx);
     Vector<StructFieldProps> fieldProps(cx);
+    bool allowConstruct = true;
 
     uint32_t k = 0;
     for (StructField sf : structType.fields_) {
@@ -1273,6 +1279,7 @@ bool Module::makeStructTypeDescrs(
         
         
         sf.isMutable = false;
+        allowConstruct = false;
 
         if (!MakeStructField(cx, ValType::I64, sf.isMutable, "_%d_low", k, &ids,
                              &fieldTypeObjs, &fieldProps)) {
@@ -1286,6 +1293,7 @@ bool Module::makeStructTypeDescrs(
         
         
         sf.isMutable = false;
+        allowConstruct = false;
 
         if (!MakeStructField(cx, ValType::V128, sf.isMutable, "_%d_x", k, &ids,
                              &fieldTypeObjs, &fieldProps)) {
@@ -1313,6 +1321,7 @@ bool Module::makeStructTypeDescrs(
         if (v.isTypeIndex()) {
           
           sf.isMutable = false;
+          allowConstruct = false;
         }
 
         if (!MakeStructField(cx, v, sf.isMutable, "_%d", k++, &ids,
@@ -1327,7 +1336,9 @@ bool Module::makeStructTypeDescrs(
     
 
     Rooted<StructTypeDescr*> structTypeDescr(
-        cx, StructMetaTypeDescr::createFromArrays(cx, prototype, ids,
+        cx, StructMetaTypeDescr::createFromArrays(cx, prototype,
+                                                   true,
+                                                  allowConstruct, ids,
                                                   fieldTypeObjs, fieldProps));
 
     if (!structTypeDescr || !structTypeDescrs.append(structTypeDescr)) {

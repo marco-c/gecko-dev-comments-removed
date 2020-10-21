@@ -11,7 +11,7 @@
 
 #include <tuple>  
 
-#include "builtin/TypedArrayConstants.h"
+#include "builtin/TypedObjectConstants.h"
 #include "gc/Memory.h"
 #include "gc/ZoneAllocator.h"
 #include "js/ArrayBuffer.h"

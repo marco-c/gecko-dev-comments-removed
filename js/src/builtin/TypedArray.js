@@ -2,8 +2,6 @@
 
 
 
-#include "TypedArrayConstants.h"
-
 function ViewedArrayBufferIfReified(tarray) {
     assert(IsTypedArray(tarray), "non-typed array asked for its buffer");
 
