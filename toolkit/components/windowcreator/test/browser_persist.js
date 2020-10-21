@@ -13,6 +13,7 @@ const chromeBase =
 
 const REFTESTS = [
   "file_persist_srcset.html",
+  "file_persist_picture_source.html",
   
 ];
 

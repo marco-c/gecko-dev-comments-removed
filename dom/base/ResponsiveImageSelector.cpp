@@ -107,18 +107,9 @@ ResponsiveImageSelector::ResponsiveImageSelector(dom::Document* aDocument)
 
 ResponsiveImageSelector::~ResponsiveImageSelector() = default;
 
-
-bool ResponsiveImageSelector::SetCandidatesFromSourceSet(
-    const nsAString& aSrcSet, nsIPrincipal* aTriggeringPrincipal) {
-  ClearSelectedCandidate();
-
-  if (!mOwnerNode || !mOwnerNode->GetBaseURI()) {
-    MOZ_ASSERT(false, "Should not be parsing SourceSet without a document");
-    return false;
-  }
-
-  mCandidates.Clear();
-
+void ResponsiveImageSelector::ParseSourceSet(
+    const nsAString& aSrcSet,
+    FunctionRef<void(ResponsiveImageCandidate&&)> aCallback) {
   nsAString::const_iterator iter, end;
   aSrcSet.BeginReading(iter);
   aSrcSet.EndReading(end);
@@ -160,14 +151,33 @@ bool ResponsiveImageSelector::SetCandidatesFromSourceSet(
     ResponsiveImageCandidate candidate;
     if (candidate.ConsumeDescriptors(iter, end)) {
       candidate.SetURLSpec(urlStr);
-      candidate.SetTriggeringPrincipal(
-          nsContentUtils::GetAttrTriggeringPrincipal(Content(), urlStr,
-                                                     aTriggeringPrincipal));
-      AppendCandidateIfUnique(candidate);
+      aCallback(std::move(candidate));
     }
   }
+}
 
-  bool parsedCandidates = mCandidates.Length() > 0;
+
+bool ResponsiveImageSelector::SetCandidatesFromSourceSet(
+    const nsAString& aSrcSet, nsIPrincipal* aTriggeringPrincipal) {
+  ClearSelectedCandidate();
+
+  if (!mOwnerNode || !mOwnerNode->GetBaseURI()) {
+    MOZ_ASSERT(false, "Should not be parsing SourceSet without a document");
+    return false;
+  }
+
+  mCandidates.Clear();
+
+  auto eachCandidate = [&](ResponsiveImageCandidate&& aCandidate) {
+    aCandidate.SetTriggeringPrincipal(
+        nsContentUtils::GetAttrTriggeringPrincipal(
+            Content(), aCandidate.URLString(), aTriggeringPrincipal));
+    AppendCandidateIfUnique(std::move(aCandidate));
+  };
+
+  ParseSourceSet(aSrcSet, eachCandidate);
+
+  bool parsedCandidates = !mCandidates.IsEmpty();
 
   
   MaybeAppendDefaultCandidate();
@@ -224,7 +234,7 @@ bool ResponsiveImageSelector::SetSizesFromDescriptor(const nsAString& aSizes) {
 }
 
 void ResponsiveImageSelector::AppendCandidateIfUnique(
-    const ResponsiveImageCandidate& aCandidate) {
+    ResponsiveImageCandidate&& aCandidate) {
   int numCandidates = mCandidates.Length();
 
   
@@ -240,7 +250,7 @@ void ResponsiveImageSelector::AppendCandidateIfUnique(
     }
   }
 
-  mCandidates.AppendElement(aCandidate);
+  mCandidates.AppendElement(std::move(aCandidate));
 }
 
 void ResponsiveImageSelector::MaybeAppendDefaultCandidate() {
@@ -270,7 +280,7 @@ void ResponsiveImageSelector::MaybeAppendDefaultCandidate() {
   defaultCandidate.SetTriggeringPrincipal(mDefaultSourceTriggeringPrincipal);
   
   
-  mCandidates.AppendElement(defaultCandidate);
+  mCandidates.AppendElement(std::move(defaultCandidate));
 }
 
 already_AddRefed<nsIURI> ResponsiveImageSelector::GetSelectedImageURL() {
@@ -414,14 +424,6 @@ bool ResponsiveImageSelector::ComputeFinalWidthForCurrentViewport(
 ResponsiveImageCandidate::ResponsiveImageCandidate() {
   mType = CandidateType::Invalid;
   mValue.mDensity = 1.0;
-}
-
-ResponsiveImageCandidate::ResponsiveImageCandidate(
-    const nsAString& aURLString, double aDensity,
-    nsIPrincipal* aTriggeringPrincipal)
-    : mURLString(aURLString), mTriggeringPrincipal(aTriggeringPrincipal) {
-  mType = CandidateType::Density;
-  mValue.mDensity = aDensity;
 }
 
 void ResponsiveImageCandidate::SetURLSpec(const nsAString& aURLString) {
