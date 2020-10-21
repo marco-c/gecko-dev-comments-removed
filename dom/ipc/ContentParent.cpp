@@ -1786,6 +1786,9 @@ void ContentParent::MarkAsDead() {
 
 #ifdef MOZ_WIDGET_ANDROID
   if (mLifecycleState == LifecycleState::ALIVE) {
+    
+    
+    
     nsCOMPtr<nsIEventTarget> launcherThread(GetIPCLauncher());
     MOZ_ASSERT(launcherThread);
 
@@ -2139,8 +2142,19 @@ void ContentParent::NotifyTabDestroying() {
   
   ++mNumDestroyingTabs;
 
+  
+
+
+
+
+
+
+
+
+#if !defined(MOZ_WIDGET_ANDROID)
   MaybeBeginShutDown( mNumDestroyingTabs,
                       false);
+#endif  
 }
 
 void ContentParent::AddKeepAlive() {
