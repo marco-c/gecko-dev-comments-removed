@@ -2419,14 +2419,14 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
     if (stub->stubInfo() != stubInfo) {
       continue;
     }
-    bool updated = false;
-    if (!writer.stubDataEqualsMaybeUpdate(stub->stubDataStart(), &updated)) {
+    if (!writer.stubDataEquals(stub->stubDataStart())) {
       continue;
     }
-    if (updated || (typeCheckInfo && typeCheckInfo->needsTypeBarrier())) {
+    if (typeCheckInfo && typeCheckInfo->needsTypeBarrier()) {
       
       
       
+      MOZ_ASSERT(IsTypeInferenceEnabled());
       *attached = true;
     }
     return;
