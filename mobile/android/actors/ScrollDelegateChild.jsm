@@ -1,0 +1,46 @@
+
+
+
+
+const { GeckoViewActorChild } = ChromeUtils.import(
+  "resource://gre/modules/GeckoViewActorChild.jsm"
+);
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+const EXPORTED_SYMBOLS = ["ScrollDelegateChild"];
+
+class ScrollDelegateChild extends GeckoViewActorChild {
+  
+  handleEvent(aEvent) {
+    if (!this.isContentWindow) {
+      
+      return;
+    }
+
+    if (aEvent.originalTarget.ownerGlobal != this.contentWindow) {
+      return;
+    }
+
+    debug`handleEvent: ${aEvent.type}`;
+
+    switch (aEvent.type) {
+      case "mozvisualscroll":
+        const x = {};
+        const y = {};
+        this.contentWindow.windowUtils.getVisualViewportOffset(x, y);
+        this.eventDispatcher.sendRequest({
+          type: "GeckoView:ScrollChanged",
+          scrollX: x.value,
+          scrollY: y.value,
+        });
+        break;
+    }
+  }
+}
+
+const { debug, warn } = ScrollDelegateChild.initLogging("ScrollDelegate");
