@@ -707,12 +707,26 @@ impl SwCompositeThread {
     
     
     
-    fn wait_for_composites(&self) {
+    
+    
+    
+    
+    
+    
+    
+    
+    fn wait_for_composites(&self, sync: bool) {
         
         
         
         
         if self.job_count.fetch_sub(1, Ordering::SeqCst) <= 1 {
+            return;
+        }
+        if sync {
+            
+            
+            let _ = self.jobs_completed.recv();
             return;
         }
         
@@ -730,6 +744,13 @@ impl SwCompositeThread {
             }
         }
     }
+
+    
+    
+    
+    fn is_busy_compositing(&self) -> bool {
+        self.job_count.load(Ordering::SeqCst) > 0
+    }
 }
 
 
@@ -740,6 +761,15 @@ pub struct SwCompositor {
     compositor: Option<WrCompositor>,
     surfaces: HashMap<NativeSurfaceId, SwSurface>,
     frame_surfaces: Vec<(
+        NativeSurfaceId,
+        CompositorSurfaceTransform,
+        DeviceIntRect,
+        ImageRendering,
+    )>,
+    
+    
+    
+    late_surfaces: Vec<(
         NativeSurfaceId,
         CompositorSurfaceTransform,
         DeviceIntRect,
@@ -777,6 +807,7 @@ impl SwCompositor {
             compositor,
             surfaces: HashMap::new(),
             frame_surfaces: Vec::new(),
+            late_surfaces: Vec::new(),
             cur_tile: NativeTileId {
                 surface_id: NativeSurfaceId(0),
                 x: 0,
@@ -959,7 +990,7 @@ impl SwCompositor {
 
     
     fn unlock_composite_surfaces(&mut self) {
-        for &(ref id, _, _, _) in &self.frame_surfaces {
+        for &(ref id, _, _, _) in self.frame_surfaces.iter().chain(self.late_surfaces.iter()) {
             if let Some(surface) = self.surfaces.get_mut(id) {
                 if let Some(external_image) = surface.external_image {
                     if surface.composite_surface.is_some() {
@@ -1367,6 +1398,7 @@ impl Compositor for SwCompositor {
             compositor.begin_frame();
         }
         self.frame_surfaces.clear();
+        self.late_surfaces.clear();
 
         self.reset_overlaps();
         if self.composite_thread.is_some() {
@@ -1390,6 +1422,15 @@ impl Compositor for SwCompositor {
             self.try_lock_composite_surface(&id);
 
             
+            
+            
+            
+            if self.composite_thread.as_ref().unwrap().is_busy_compositing() {
+                self.late_surfaces.push((id, transform, clip_rect, filter));
+                return;
+            }
+
+            
             if let Some(surface) = self.surfaces.get(&id) {
                 for tile in &surface.tiles {
                     self.init_overlaps(surface, tile, &transform, &clip_rect);
@@ -1400,6 +1441,9 @@ impl Compositor for SwCompositor {
         self.frame_surfaces.push((id, transform, clip_rect, filter));
     }
 
+    
+    
+    
     
     
     fn start_compositing(&mut self) {
@@ -1462,7 +1506,25 @@ impl Compositor for SwCompositor {
             draw_tile.disable();
         } else if let Some(ref composite_thread) = self.composite_thread {
             
-            composite_thread.wait_for_composites();
+            composite_thread.wait_for_composites(false);
+
+            if !self.late_surfaces.is_empty() {
+                
+                
+                
+                
+                
+                composite_thread.start_compositing();
+                for &(ref id, ref transform, ref clip_rect, filter) in &self.late_surfaces {
+                    if let Some(surface) = self.surfaces.get(id) {
+                        for tile in &surface.tiles {
+                            self.queue_composite(surface, transform, clip_rect, filter, tile);
+                        }
+                    }
+                }
+                composite_thread.wait_for_composites(true);
+            }
+
             self.locked_framebuffer = None;
 
             self.unlock_composite_surfaces();
