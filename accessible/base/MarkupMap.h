@@ -90,33 +90,45 @@ MARKUPMAP(
       nsIContent* prevSibling = aElement->GetPreviousSibling();
       if (prevSibling) {
         nsIFrame* prevSiblingFrame = prevSibling->GetPrimaryFrame();
-        if (prevSiblingFrame && prevSiblingFrame->IsInlineFrame()) {
+        if (prevSiblingFrame && prevSiblingFrame->IsInlineOutside()) {
           return new HyperTextAccessibleWrap(aElement, aContext->Document());
         }
       }
       
       nsIContent* firstChild = aElement->GetFirstChild();
       if (firstChild) {
-        
-        if (firstChild->IsText()) {
-          return new HyperTextAccessibleWrap(aElement, aContext->Document());
+        nsIFrame* firstChildFrame = firstChild->GetPrimaryFrame();
+        if (!firstChildFrame) {
+          
+          
+          firstChild = firstChild->GetNextSibling();
+          if (!firstChild) {
+            
+            
+            return nullptr;
+          }
+          firstChildFrame = firstChild->GetPrimaryFrame();
         }
         
-        nsIFrame* firstChildFrame = firstChild->GetPrimaryFrame();
-        if (firstChildFrame && (firstChildFrame->IsInlineFrame() ||
-                                firstChildFrame->IsBrFrame())) {
+        if (firstChildFrame && firstChildFrame->IsInlineOutside()) {
           return new HyperTextAccessibleWrap(aElement, aContext->Document());
         }
         nsIContent* lastChild = aElement->GetLastChild();
-        if (lastChild && lastChild != firstChild) {
-          
-          if (lastChild->IsText()) {
-            return new HyperTextAccessibleWrap(aElement, aContext->Document());
+        MOZ_ASSERT(lastChild);
+        if (lastChild != firstChild) {
+          nsIFrame* lastChildFrame = lastChild->GetPrimaryFrame();
+          if (!lastChildFrame) {
+            
+            
+            lastChild = lastChild->GetPreviousSibling();
+            MOZ_ASSERT(lastChild);
+            if (lastChild == firstChild) {
+              return nullptr;
+            }
+            lastChildFrame = lastChild->GetPrimaryFrame();
           }
           
-          nsIFrame* lastChildFrame = lastChild->GetPrimaryFrame();
-          if (lastChildFrame && (lastChildFrame->IsInlineFrame() ||
-                                 lastChildFrame->IsBrFrame())) {
+          if (lastChildFrame && lastChildFrame->IsInlineOutside()) {
             return new HyperTextAccessibleWrap(aElement, aContext->Document());
           }
         }
