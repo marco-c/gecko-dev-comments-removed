@@ -3455,19 +3455,10 @@ void MediaManager::OnNavigation(uint64_t aWindowID) {
   
   auto* window = nsGlobalWindowInner::GetInnerWindowWithId(aWindowID);
   if (window) {
-    
-    
-    
-    if (!window->IsCurrentInnerWindow()) {
-      return;
+    if (RefPtr<GetUserMediaWindowListener> listener =
+            GetWindowListener(aWindowID)) {
+      listener->RemoveAll();
     }
-    IterateWindowListeners(
-        window, [self = RefPtr<MediaManager>(this),
-                 windowID = DebugOnly<decltype(aWindowID)>(aWindowID)](
-                    const RefPtr<GetUserMediaWindowListener>& aListener) {
-          aListener->RemoveAll();
-          MOZ_ASSERT(!self->GetWindowListener(windowID));
-        });
   } else {
     RemoveWindowID(aWindowID);
   }
@@ -4061,16 +4052,11 @@ MediaManager::SanitizeDeviceIds(int64_t aSinceWhen) {
 
 void MediaManager::StopScreensharing(uint64_t aWindowID) {
   
-  
 
-  auto* window = nsGlobalWindowInner::GetInnerWindowWithId(aWindowID);
-  if (!window || !window->IsCurrentInnerWindow()) {
-    return;
+  if (RefPtr<GetUserMediaWindowListener> listener =
+          GetWindowListener(aWindowID)) {
+    listener->StopSharing();
   }
-  IterateWindowListeners(
-      window, [](const RefPtr<GetUserMediaWindowListener>& aListener) {
-        aListener->StopSharing();
-      });
 }
 
 template <typename FunctionType>
