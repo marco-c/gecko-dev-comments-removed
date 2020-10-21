@@ -29,6 +29,8 @@ class RemoteDecoderManagerChild final
   
   static RemoteDecoderManagerChild* GetSingleton(RemoteDecodeIn aLocation);
 
+  static void Init();
+
   
   static bool Supports(RemoteDecodeIn aLocation,
                        const SupportDecoderParams& aParams,
@@ -103,10 +105,8 @@ class RemoteDecoderManagerChild final
       Endpoint<PRemoteDecoderManagerChild>&& aEndpoint);
   static void OpenForGPUProcess(
       Endpoint<PRemoteDecoderManagerChild>&& aEndpoint);
-  static void InitializeThread();
 
   RefPtr<RemoteDecoderManagerChild> mIPDLSelfRef;
-
   
   const RemoteDecodeIn mLocation;
 };
