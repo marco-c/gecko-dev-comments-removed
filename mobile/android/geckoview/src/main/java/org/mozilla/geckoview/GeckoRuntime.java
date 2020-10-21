@@ -11,7 +11,9 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -166,6 +168,7 @@ public final class GeckoRuntime implements Parcelable {
     private Delegate mDelegate;
     private ServiceWorkerDelegate mServiceWorkerDelegate;
     private WebNotificationDelegate mNotificationDelegate;
+    private ActivityDelegate mActivityDelegate;
     private StorageController mStorageController;
     private final WebExtensionController mWebExtensionController;
     private WebPushController mPushController;
@@ -187,7 +190,7 @@ public final class GeckoRuntime implements Parcelable {
 
     @WrapForJNI
     @UiThread
-    private @Nullable static GeckoRuntime getInstance() {
+     @Nullable static GeckoRuntime getInstance() {
         return sRuntime;
     }
 
@@ -645,6 +648,86 @@ public final class GeckoRuntime implements Parcelable {
                 mNotificationDelegate.onCloseNotification(notification);
             }
         });
+    }
+
+    
+
+
+
+
+
+
+    public interface ActivityDelegate {
+        
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        @Nullable GeckoResult<Intent> onStartActivityForResult(@NonNull PendingIntent intent);
+    }
+
+    
+
+
+
+
+
+
+    @UiThread
+    public void setActivityDelegate(
+            final @Nullable ActivityDelegate delegate) {
+        ThreadUtils.assertOnUiThread();
+        mActivityDelegate = delegate;
+    }
+
+    
+
+
+
+
+    @UiThread
+    public @Nullable ActivityDelegate getActivityDelegate() {
+        ThreadUtils.assertOnUiThread();
+        return mActivityDelegate;
+    }
+
+    @AnyThread
+     GeckoResult<Intent> startActivityForResult(final @NonNull PendingIntent intent) {
+        if (!ThreadUtils.isOnUiThread()) {
+            
+            final GeckoResult<Intent> result = new GeckoResult<>();
+
+            ThreadUtils.runOnUiThread(() -> {
+                final GeckoResult<Intent> delegateResult = startActivityForResult(intent);
+                if (delegateResult != null) {
+                    delegateResult.accept(val -> result.complete(val), e -> result.completeExceptionally(e));
+                } else {
+                    result.completeExceptionally(new IllegalStateException("No result"));
+                }
+            });
+
+            return result;
+        }
+
+        if (mActivityDelegate == null) {
+            return GeckoResult.fromException(new IllegalStateException("No delegate attached"));
+        }
+
+        @SuppressLint("WrongThread")
+        GeckoResult<Intent> result = mActivityDelegate.onStartActivityForResult(intent);
+        if (result == null) {
+            result = GeckoResult.fromException(new IllegalStateException("No result"));
+        }
+
+        return result;
     }
 
     @AnyThread
