@@ -12,6 +12,7 @@
 #include "nsRect.h"
 
 #include <cstdint>
+#include <iosfwd>
 
 class nsIContent;
 class nsIFrame;
@@ -63,11 +64,45 @@ struct DisplayPortPropertyData {
   bool mPainted;
 };
 
+struct DisplayPortMargins {
+  
+  ScreenMargin mMargins;
+
+  
+  
+  
+
+  
+  CSSPoint mVisualOffset;
+
+  
+  
+  CSSPoint mLayoutOffset;
+
+  
+  
+  CSSToScreenScale2D mScale;
+
+  static DisplayPortMargins WithAdjustment(const ScreenMargin& aMargins,
+                                           const CSSPoint& aVisualOffset,
+                                           const CSSPoint& aLayoutOffset,
+                                           const CSSToScreenScale2D& aScale);
+
+  static DisplayPortMargins WithNoAdjustment(const ScreenMargin& aMargins);
+
+  static DisplayPortMargins Empty() { return WithNoAdjustment(ScreenMargin()); }
+
+  ScreenMargin GetRelativeToLayoutViewport() const;
+
+  friend std::ostream& operator<<(std::ostream& aOs,
+                                  const DisplayPortMargins& aMargins);
+};
+
 struct DisplayPortMarginsPropertyData {
-  DisplayPortMarginsPropertyData(const ScreenMargin& aMargins,
+  DisplayPortMarginsPropertyData(const DisplayPortMargins& aMargins,
                                  uint32_t aPriority, bool aPainted)
       : mMargins(aMargins), mPriority(aPriority), mPainted(aPainted) {}
-  ScreenMargin mMargins;
+  DisplayPortMargins mMargins;
   uint32_t mPriority;
   bool mPainted;
 };
@@ -159,8 +194,9 @@ class DisplayPortUtils {
 
 
   static bool SetDisplayPortMargins(
-      nsIContent* aContent, PresShell* aPresShell, const ScreenMargin& aMargins,
-      uint32_t aPriority = 0, RepaintMode aRepaintMode = RepaintMode::Repaint);
+      nsIContent* aContent, PresShell* aPresShell,
+      const DisplayPortMargins& aMargins, uint32_t aPriority = 0,
+      RepaintMode aRepaintMode = RepaintMode::Repaint);
 
   
 

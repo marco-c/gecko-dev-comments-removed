@@ -175,12 +175,6 @@ class APZCCallbackHelper {
   
 
 
-  static ScreenMargin AdjustDisplayPortForScrollDelta(ScreenMargin aMargins,
-                                                      ScreenPoint aScrollDelta);
-
-  
-
-
 
 
 

@@ -48,16 +48,6 @@ using dom::BrowserParent;
 uint64_t APZCCallbackHelper::sLastTargetAPZCNotificationInputBlock =
     uint64_t(-1);
 
-ScreenMargin APZCCallbackHelper::AdjustDisplayPortForScrollDelta(
-    ScreenMargin aMargins, ScreenPoint aScrollDelta) {
-  ScreenMargin margins = aMargins;
-  margins.left -= aScrollDelta.x;
-  margins.right += aScrollDelta.x;
-  margins.top -= aScrollDelta.y;
-  margins.bottom += aScrollDelta.y;
-  return margins;
-}
-
 static ScreenMargin RecenterDisplayPort(const ScreenMargin& aDisplayPort) {
   ScreenMargin margins = aDisplayPort;
   margins.right = margins.left = margins.LeftRight() / 2;
@@ -157,8 +147,8 @@ static CSSPoint ScrollFrameTo(nsIScrollableFrame* aFrame,
 
 
 
-static ScreenMargin ScrollFrame(nsIContent* aContent,
-                                const RepaintRequest& aRequest) {
+static DisplayPortMargins ScrollFrame(nsIContent* aContent,
+                                      const RepaintRequest& aRequest) {
   
   nsIScrollableFrame* sf =
       nsLayoutUtils::FindScrollableFrameFor(aRequest.GetScrollId());
@@ -182,7 +172,8 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
     }
   }
   bool scrollUpdated = false;
-  ScreenMargin displayPortMargins = aRequest.GetDisplayPortMargins();
+  auto displayPortMargins =
+      DisplayPortMargins::WithNoAdjustment(aRequest.GetDisplayPortMargins());
   CSSPoint apzScrollOffset = aRequest.GetVisualScrollOffset();
   CSSPoint actualScrollOffset = ScrollFrameTo(sf, aRequest, scrollUpdated);
   CSSPoint scrollDelta = apzScrollOffset - actualScrollOffset;
@@ -201,9 +192,9 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
     } else {
       
       
-      displayPortMargins = APZCCallbackHelper::AdjustDisplayPortForScrollDelta(
-          aRequest.GetDisplayPortMargins(),
-          scrollDelta * aRequest.DisplayportPixelsPerCSSPixel());
+      displayPortMargins = DisplayPortMargins::WithAdjustment(
+          aRequest.GetDisplayPortMargins(), apzScrollOffset, actualScrollOffset,
+          aRequest.DisplayportPixelsPerCSSPixel());
     }
   } else if (aRequest.IsRootContent() &&
              apzScrollOffset != aRequest.GetLayoutScrollOffset()) {
@@ -214,9 +205,9 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
     
     
     
-    displayPortMargins = APZCCallbackHelper::AdjustDisplayPortForScrollDelta(
-        aRequest.GetDisplayPortMargins(),
-        scrollDelta * aRequest.DisplayportPixelsPerCSSPixel());
+    displayPortMargins = DisplayPortMargins::WithAdjustment(
+        aRequest.GetDisplayPortMargins(), apzScrollOffset, actualScrollOffset,
+        aRequest.DisplayportPixelsPerCSSPixel());
   } else {
     
     
@@ -224,7 +215,8 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
     
     
     
-    displayPortMargins = RecenterDisplayPort(aRequest.GetDisplayPortMargins());
+    displayPortMargins = DisplayPortMargins::WithNoAdjustment(
+        RecenterDisplayPort(aRequest.GetDisplayPortMargins()));
   }
 
   
@@ -250,7 +242,7 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
 }
 
 static void SetDisplayPortMargins(PresShell* aPresShell, nsIContent* aContent,
-                                  ScreenMargin aDisplayPortMargins,
+                                  const DisplayPortMargins& aDisplayPortMargins,
                                   CSSSize aDisplayPortBase) {
   if (!aContent) {
     return;
@@ -352,7 +344,7 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
 
   
   
-  ScreenMargin displayPortMargins = ScrollFrame(content, aRequest);
+  DisplayPortMargins displayPortMargins = ScrollFrame(content, aRequest);
 
   SetDisplayPortMargins(presShell, content, displayPortMargins,
                         aRequest.CalculateCompositedSizeInCssPixels());
@@ -370,7 +362,7 @@ void APZCCallbackHelper::UpdateSubFrame(const RepaintRequest& aRequest) {
 
   
   
-  ScreenMargin displayPortMargins = ScrollFrame(content, aRequest);
+  DisplayPortMargins displayPortMargins = ScrollFrame(content, aRequest);
   if (RefPtr<PresShell> presShell = GetPresShell(content)) {
     SetDisplayPortMargins(presShell, content, displayPortMargins,
                           aRequest.CalculateCompositedSizeInCssPixels());
@@ -435,8 +427,8 @@ void APZCCallbackHelper::InitializeRootDisplayport(PresShell* aPresShell) {
     DisplayPortUtils::SetDisplayPortBaseIfNotSet(content, baseRect);
     
     
-    DisplayPortUtils::SetDisplayPortMargins(content, aPresShell, ScreenMargin(),
-                                            0);
+    DisplayPortUtils::SetDisplayPortMargins(content, aPresShell,
+                                            DisplayPortMargins::Empty(), 0);
     DisplayPortUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
         content->GetPrimaryFrame());
   }

@@ -2246,8 +2246,9 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
     
     
     
-    DisplayPortUtils::SetDisplayPortMargins(
-        mOuter->GetContent(), mOuter->PresShell(), ScreenMargin(), 0);
+    DisplayPortUtils::SetDisplayPortMargins(mOuter->GetContent(),
+                                            mOuter->PresShell(),
+                                            DisplayPortMargins::Empty(), 0);
     DisplayPortUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
         mOuter);
   }
@@ -3936,7 +3937,8 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         
         
         DisplayPortUtils::SetDisplayPortMargins(
-            mOuter->GetContent(), mOuter->PresShell(), ScreenMargin(), 0,
+            mOuter->GetContent(), mOuter->PresShell(),
+            DisplayPortMargins::Empty(), 0,
             DisplayPortUtils::RepaintMode::DoNotRepaint);
         
         
