@@ -29,6 +29,7 @@ class MediaControlKeyManager final : public MediaControlKeySource,
 
   
   bool Open() override;
+  void Close() override;
   bool IsOpened() const override;
 
   void SetPlaybackState(MediaSessionPlaybackState aState) override;
@@ -36,10 +37,6 @@ class MediaControlKeyManager final : public MediaControlKeySource,
 
   
   void OnActionPerformed(const MediaControlAction& aAction) override;
-
-  
-  
-  void ControllerAmountChanged(uint64_t aControllerAmount);
 
   void SetMediaMetadata(const MediaMetadataBase& aMetadata) override;
   void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) override;
@@ -65,10 +62,9 @@ class MediaControlKeyManager final : public MediaControlKeySource,
   RefPtr<Observer> mObserver;
   void OnPreferenceChange();
 
-  void StartMonitoringControlKeys();
+  bool StartMonitoringControlKeys();
   void StopMonitoringControlKeys();
   RefPtr<MediaControlKeySource> mEventSource;
-  MediaEventListener mControllerAmountChangedListener;
   MediaMetadataBase mMetadata;
   nsTArray<MediaControlKey> mSupportedKeys;
 };
