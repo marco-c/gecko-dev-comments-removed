@@ -395,6 +395,11 @@ class EventListenerManager final : public EventListenerManagerBase {
   
 
 
+  bool HasNonSystemGroupListenersFor(nsAtom* aEventNameWithOn) const;
+
+  
+
+
   bool HasListeners() const;
 
   
@@ -529,6 +534,9 @@ class EventListenerManager final : public EventListenerManagerBase {
   bool IsDeviceType(EventMessage aEventMessage);
   void EnableDevice(EventMessage aEventMessage);
   void DisableDevice(EventMessage aEventMessage);
+
+  bool HasListenersForInternal(nsAtom* aEventNameWithOn,
+                               bool aIgnoreSystemGroup) const;
 
  public:
   
