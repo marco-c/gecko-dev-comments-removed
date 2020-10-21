@@ -1,4 +1,5 @@
 
+
 load(libdir + "asserts.js");
 
 var g23 = newGlobal({newCompartment: true});
