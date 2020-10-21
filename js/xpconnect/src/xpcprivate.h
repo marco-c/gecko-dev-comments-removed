@@ -2089,15 +2089,6 @@ using AutoMarkingWrappedNativeProtoPtr =
     TypedAutoMarkingPtr<XPCWrappedNativeProto>;
 
 
-namespace xpc {
-
-char* CloneAllAccess();
-
-
-char* CheckAccessList(const char16_t* wideName, const char* const list[]);
-} 
-
-
 
 
 
