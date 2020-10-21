@@ -18,19 +18,23 @@ namespace mozilla {
 
 class PresShell;
 
+namespace dom {
+class Element;
+};
+
 class PointerCaptureInfo final {
  public:
-  nsCOMPtr<nsIContent> mPendingContent;
-  nsCOMPtr<nsIContent> mOverrideContent;
+  RefPtr<dom::Element> mPendingElement;
+  RefPtr<dom::Element> mOverrideElement;
 
-  explicit PointerCaptureInfo(nsIContent* aPendingContent)
-      : mPendingContent(aPendingContent) {
+  explicit PointerCaptureInfo(dom::Element* aPendingElement)
+      : mPendingElement(aPendingElement) {
     MOZ_COUNT_CTOR(PointerCaptureInfo);
   }
 
   MOZ_COUNTED_DTOR(PointerCaptureInfo)
 
-  bool Empty() { return !(mPendingContent || mOverrideContent); }
+  bool Empty() { return !(mPendingElement || mOverrideElement); }
 };
 
 class PointerEventHandler final {
@@ -48,7 +52,8 @@ class PointerEventHandler final {
   static void UpdateActivePointerState(WidgetMouseEvent* aEvent);
 
   
-  static void SetPointerCaptureById(uint32_t aPointerId, nsIContent* aContent);
+  static void SetPointerCaptureById(uint32_t aPointerId,
+                                    dom::Element* aElement);
   static void ReleasePointerCaptureById(uint32_t aPointerId);
   static void ReleaseAllPointerCapture();
 
@@ -87,9 +92,9 @@ class PointerEventHandler final {
 
 
 
-  static nsIContent* GetPointerCapturingContent(WidgetGUIEvent* aEvent);
+  static dom::Element* GetPointerCapturingElement(WidgetGUIEvent* aEvent);
 
-  static nsIContent* GetPointerCapturingContent(uint32_t aPointerId);
+  static dom::Element* GetPointerCapturingElement(uint32_t aPointerId);
 
   
   
@@ -168,7 +173,7 @@ class PointerEventHandler final {
   MOZ_CAN_RUN_SCRIPT
   static void DispatchGotOrLostPointerCaptureEvent(
       bool aIsGotCapture, const WidgetPointerEvent* aPointerEvent,
-      nsIContent* aCaptureTarget);
+      dom::Element* aCaptureTarget);
 
   
   
