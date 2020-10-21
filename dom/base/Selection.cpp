@@ -631,6 +631,12 @@ static int32_t CompareToRangeStart(const nsINode& aCompareNode,
   nsINode* start = aRange.GetStartContainer();
   
   
+  
+  
+  
+  
+  
+  
   if (aCompareNode.GetComposedDoc() != start->GetComposedDoc() ||
       !start->GetComposedDoc() ||
       aCompareNode.SubtreeRoot() != start->SubtreeRoot()) {
