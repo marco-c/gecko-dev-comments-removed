@@ -943,7 +943,7 @@ void nsSubDocumentFrame::ResetFrameLoader() {
 
 
 
-nsIDocShell* nsSubDocumentFrame::GetDocShell() {
+nsIDocShell* nsSubDocumentFrame::GetDocShell() const {
   
   if (NS_WARN_IF(!FrameLoader())) {
     return nullptr;
