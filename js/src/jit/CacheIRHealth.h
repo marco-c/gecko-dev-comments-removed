@@ -36,6 +36,19 @@ class ICEntry;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 class CacheIRHealth {
   enum Happiness : uint8_t { Sad, MediumSad, MediumHappy, Happy };
 
