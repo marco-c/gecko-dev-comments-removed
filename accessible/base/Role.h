@@ -1071,13 +1071,7 @@ enum Role {
 
   TIME_EDITOR = 183,
 
-  
-
-
-
-  LISTITEM_MARKER = 184,
-
-  LAST_ROLE = LISTITEM_MARKER
+  LAST_ROLE = TIME_EDITOR
 };
 
 }  
