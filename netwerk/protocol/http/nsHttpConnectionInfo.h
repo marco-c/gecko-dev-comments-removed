@@ -212,6 +212,9 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetHasIPHintAddress(bool aHasIPHint) { mHasIPHintAddress = aHasIPHint; }
   bool HasIPHintAddress() const { return mHasIPHintAddress; }
 
+  void SetEchConfig(const nsACString& aEchConfig) { mEchConfig = aEchConfig; }
+  const nsCString& GetEchConfig() const { return mEchConfig; }
+
  private:
   
   
@@ -264,6 +267,7 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mIsHttp3;
 
   bool mHasIPHintAddress = false;
+  nsCString mEchConfig;
 
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo, override)

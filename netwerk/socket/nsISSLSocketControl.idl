@@ -154,6 +154,12 @@ interface nsISSLSocketControl : nsISupports {
     
 
 
+
+    attribute ACString echConfig;
+
+    
+
+
     readonly attribute ACString peerId;
 };
 
