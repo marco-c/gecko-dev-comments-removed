@@ -150,6 +150,14 @@ async function testUseInConsole(
   );
   const container = inspector.markup.getContainer(nodeFront);
 
+  
+  
+  
+  
+  setInputValue(hud, "");
+  
+  await wait(100);
+
   const onConsoleReady = inspector.once("console-var-ready");
   const menu = inspector.markup.contextMenu._openMenu({
     target: container.tagLine,
