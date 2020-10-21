@@ -40,7 +40,6 @@ try {
     const { require } = loader;
 
     const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-    const { dumpn } = DevToolsUtils;
     const { DevToolsServer } = require("devtools/server/devtools-server");
 
     DevToolsServer.init();
@@ -89,40 +88,6 @@ try {
     });
 
     addMessageListener("debug:connect", onConnect);
-
-    
-    
-    const onSetupInChild = DevToolsUtils.makeInfallible(msg => {
-      const { module, setupChild, args } = msg.data;
-      let m;
-
-      try {
-        m = require(module);
-
-        if (!(setupChild in m)) {
-          dumpn(`ERROR: module '${module}' does not export '${setupChild}'`);
-          return false;
-        }
-
-        m[setupChild].apply(m, args);
-      } catch (e) {
-        const errorMessage =
-          "Exception during actor module setup running in the child process: ";
-        DevToolsUtils.reportException(errorMessage + e);
-        dumpn(
-          `ERROR: ${errorMessage}\n\t module: '${module}'\n\t ` +
-            `setupChild: '${setupChild}'\n${DevToolsUtils.safeErrorString(e)}`
-        );
-        return false;
-      }
-      if (msg.data.id) {
-        
-        sendAsyncMessage("debug:setup-in-child-response", { id: msg.data.id });
-      }
-      return true;
-    });
-
-    addMessageListener("debug:setup-in-child", onSetupInChild);
 
     const onDisconnect = DevToolsUtils.makeInfallible(function(msg) {
       const prefix = msg.data.prefix;
