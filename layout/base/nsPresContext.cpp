@@ -1347,11 +1347,9 @@ nsITheme* nsPresContext::EnsureTheme() {
 }
 
 void nsPresContext::ThemeChanged() {
-  if (XRE_IsParentProcess()) {
-    
-    
-    PROFILER_MARKER_TEXT("ThemeChanged", LAYOUT, MarkerStack::Capture(), ""_ns);
-  }
+  
+  
+  PROFILER_MARKER_TEXT("ThemeChanged", LAYOUT, MarkerStack::Capture(), ""_ns);
 
   if (!mPendingThemeChanged) {
     sLookAndFeelChanged = true;
