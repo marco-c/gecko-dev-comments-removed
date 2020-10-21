@@ -75,6 +75,15 @@ bool nsIFrame::IsAbsolutelyPositioned(
   return disp->IsAbsolutelyPositioned(this);
 }
 
+inline bool nsIFrame::IsTrueOverflowContainer() const {
+  return HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER) &&
+         !(HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) && IsAbsolutelyPositioned());
+  
+  
+  
+  
+}
+
 bool nsIFrame::IsBlockOutside() const {
   return StyleDisplay()->IsBlockOutside(this);
 }
