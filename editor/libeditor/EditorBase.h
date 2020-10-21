@@ -1149,7 +1149,6 @@ class EditorBase : public nsIEditor,
         
         
         case EditAction::eSetWrapWidth:
-        case EditAction::eRewrap:
         
         
         
