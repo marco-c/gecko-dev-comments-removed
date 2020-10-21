@@ -17,15 +17,17 @@
 
 
 
+let nextId = 0;
+const rpcDeferreds = {};
 this.rpc = function(method, ...params) {
   const id = nextId++;
 
   postMessage(
     JSON.stringify({
       type: "rpc",
-      method: method,
-      params: params,
-      id: id,
+      method,
+      params,
+      id,
     })
   );
 
@@ -36,30 +38,35 @@ this.rpc = function(method, ...params) {
 
 loadSubScript("resource://devtools/shared/worker/loader.js");
 
-var defer = worker.require("devtools/shared/defer");
+const defer = worker.require("devtools/shared/defer");
 const { WorkerTargetActor } = worker.require(
   "devtools/server/actors/targets/worker"
 );
-var { DevToolsServer } = worker.require("devtools/server/devtools-server");
+const { DevToolsServer } = worker.require("devtools/server/devtools-server");
 
 DevToolsServer.init();
 DevToolsServer.createRootActor = function() {
   throw new Error("Should never get here!");
 };
 
-var connections = Object.create(null);
-var nextId = 0;
-var rpcDeferreds = [];
+
+
+
+const connections = new Map();
 
 this.addEventListener("message", function(event) {
   const packet = JSON.parse(event.data);
   switch (packet.type) {
     case "connect":
+      const { forwardingPrefix } = packet;
+
       
-      const connection = DevToolsServer.connectToParent(packet.id, this);
+      const connection = DevToolsServer.connectToParent(forwardingPrefix, this);
 
       
       const workerTargetActor = new WorkerTargetActor(connection, global);
+      
+      workerTargetActor.manage(workerTargetActor);
 
       workerTargetActor.on(
         "worker-thread-attached",
@@ -71,15 +78,14 @@ this.addEventListener("message", function(event) {
 
       
       
-      connections[packet.id] = {
+      connections.set(forwardingPrefix, {
         connection,
-        rpcs: [],
-      };
+      });
 
       postMessage(
         JSON.stringify({
           type: "connected",
-          id: packet.id,
+          forwardingPrefix,
           workerTargetForm: workerTargetActor.form(),
         })
       );
@@ -87,7 +93,9 @@ this.addEventListener("message", function(event) {
       break;
 
     case "disconnect":
-      connections[packet.id].connection.close();
+      
+      connections.get(packet.forwardingPrefix).connection.close();
+      connections.delete(packet.forwardingPrefix);
       break;
 
     case "rpc":

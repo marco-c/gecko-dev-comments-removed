@@ -17,7 +17,12 @@ loader.lazyRequireGetter(
 
 
 
-function connectToWorker(connection, dbg, id, options) {
+
+
+
+
+
+function connectToWorker(connection, dbg, forwardingPrefix, options) {
   return new Promise((resolve, reject) => {
     if (dbg.isClosed) {
       reject("closed");
@@ -93,7 +98,7 @@ function connectToWorker(connection, dbg, id, options) {
     dbg.postMessage(
       JSON.stringify({
         type: "connect",
-        id,
+        forwardingPrefix,
         options,
       })
     );
@@ -110,7 +115,10 @@ function connectToWorker(connection, dbg, id, options) {
 
       onMessage: message => {
         message = JSON.parse(message);
-        if (message.type !== "connected" || message.id !== id) {
+        if (
+          message.type !== "connected" ||
+          message.forwardingPrefix !== forwardingPrefix
+        ) {
           return;
         }
 
@@ -119,7 +127,10 @@ function connectToWorker(connection, dbg, id, options) {
         dbg.removeListener(listener);
 
         
-        const transport = new MainThreadWorkerDebuggerTransport(dbg, id);
+        const transport = new MainThreadWorkerDebuggerTransport(
+          dbg,
+          forwardingPrefix
+        );
         transport.ready();
         transport.hooks = {
           onClosed: () => {
@@ -135,7 +146,7 @@ function connectToWorker(connection, dbg, id, options) {
                 dbg.postMessage(
                   JSON.stringify({
                     type: "disconnect",
-                    id,
+                    forwardingPrefix,
                   })
                 );
               } catch (e) {
@@ -147,7 +158,7 @@ function connectToWorker(connection, dbg, id, options) {
               }
             }
 
-            connection.cancelForwarding(id);
+            connection.cancelForwarding(forwardingPrefix);
           },
 
           onPacket: packet => {
@@ -161,7 +172,7 @@ function connectToWorker(connection, dbg, id, options) {
         
         
         
-        connection.setForwarding(id, transport);
+        connection.setForwarding(forwardingPrefix, transport);
 
         resolve({
           workerTargetForm: message.workerTargetForm,
