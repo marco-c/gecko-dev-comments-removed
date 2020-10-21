@@ -650,10 +650,11 @@ void Layer::ApplyPendingUpdatesForThisTransaction() {
   for (size_t i = 0; i < mScrollMetadata.Length(); i++) {
     FrameMetrics& fm = mScrollMetadata[i].GetMetrics();
     ScrollableLayerGuid::ViewID scrollId = fm.GetScrollId();
-    Maybe<ScrollPositionUpdate> update =
+    Maybe<nsTArray<ScrollPositionUpdate>> update =
         Manager()->GetPendingScrollInfoUpdate(scrollId);
     if (update) {
-      mScrollMetadata[i].UpdatePendingScrollInfo(update.value());
+      nsTArray<ScrollPositionUpdate> infos = update.extract();
+      mScrollMetadata[i].UpdatePendingScrollInfo(std::move(infos));
       Mutated();
     }
   }
@@ -2269,7 +2270,7 @@ bool LayerManager::IsLogEnabled() {
   return MOZ_LOG_TEST(GetLog(), LogLevel::Debug);
 }
 
-bool LayerManager::SetPendingScrollUpdateForNextTransaction(
+bool LayerManager::AddPendingScrollUpdateForNextTransaction(
     ScrollableLayerGuid::ViewID aScrollId,
     const ScrollPositionUpdate& aUpdateInfo) {
   Layer* withPendingTransform = DepthFirstSearch<ForwardIterator>(
@@ -2278,19 +2279,22 @@ bool LayerManager::SetPendingScrollUpdateForNextTransaction(
     return false;
   }
 
-  
-  
-  if (mPendingScrollUpdates.Lookup(aScrollId)) {
-    return false;
-  }
-  mPendingScrollUpdates.Put(aScrollId, aUpdateInfo);
+  mPendingScrollUpdates.GetOrInsert(aScrollId).AppendElement(aUpdateInfo);
   return true;
 }
 
-Maybe<ScrollPositionUpdate> LayerManager::GetPendingScrollInfoUpdate(
+Maybe<nsTArray<ScrollPositionUpdate>> LayerManager::GetPendingScrollInfoUpdate(
     ScrollableLayerGuid::ViewID aScrollId) {
   auto p = mPendingScrollUpdates.Lookup(aScrollId);
-  return p ? Some(p.Data()) : Nothing();
+  if (!p) {
+    return Nothing();
+  }
+  
+  
+  
+  nsTArray<ScrollPositionUpdate> copy;
+  copy.AppendElements(p.Data());
+  return Some(std::move(copy));
 }
 
 std::unordered_set<ScrollableLayerGuid::ViewID>
