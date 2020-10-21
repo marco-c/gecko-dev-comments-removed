@@ -20,6 +20,9 @@
 
 
 #include "jit/ABIFunctions.h"
+#include "jit/Bailouts.h"  
+                           
+
 #include "js/Conversions.h"  
 #include "vm/ArgumentsObject.h"  
 
@@ -53,6 +56,9 @@ namespace jit {
   _(js::irregexp::CaseInsensitiveCompareNonUnicode)         \
   _(js::irregexp::CaseInsensitiveCompareUnicode)            \
   _(js::irregexp::GrowBacktrackStack)                       \
+  _(js::jit::Bailout)                                       \
+  _(js::jit::FinishBailoutToBaseline)                       \
+  _(js::jit::InvalidationBailout)                           \
   _(js::NumberMod)                                          \
   _(js::powi)                                               \
   _(js::RegExpInstanceOptimizableRaw)                       \
