@@ -17,7 +17,7 @@
 
 #include "mozilla/Logging.h"
 
-static mozilla::LazyLogModule gPrintingLog("printing");
+extern mozilla::LazyLogModule gPrintingLog;
 
 #define PR_PL(_p1) MOZ_LOG(gPrintingLog, mozilla::LogLevel::Debug, _p1);
 
