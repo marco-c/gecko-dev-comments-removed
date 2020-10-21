@@ -181,27 +181,28 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  AddRangesForSelectableNodes(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AddRangesForSelectableNodes(
       nsRange* aRange, int32_t* aOutIndex,
       DispatchSelectstartEvent aDispatchSelectstartEvent);
 
  public:
   nsresult RemoveCollapsedRanges();
   nsresult Clear(nsPresContext* aPresContext);
-  nsresult CollapseInLimiter(nsINode* aContainer, int32_t aOffset) {
+  MOZ_CAN_RUN_SCRIPT nsresult CollapseInLimiter(nsINode* aContainer,
+                                                int32_t aOffset) {
     if (!aContainer) {
       return NS_ERROR_INVALID_ARG;
     }
     return CollapseInLimiter(RawRangeBoundary(aContainer, aOffset));
   }
-  nsresult CollapseInLimiter(const RawRangeBoundary& aPoint) {
+  MOZ_CAN_RUN_SCRIPT nsresult
+  CollapseInLimiter(const RawRangeBoundary& aPoint) {
     ErrorResult result;
     CollapseInLimiter(aPoint, result);
     return result.StealNSResult();
   }
-  void CollapseInLimiter(const RawRangeBoundary& aPoint, ErrorResult& aRv) {
+  MOZ_CAN_RUN_SCRIPT void CollapseInLimiter(const RawRangeBoundary& aPoint,
+                                            ErrorResult& aRv) {
     CollapseInternal(InLimiter::eYes, aPoint, aRv);
   }
 
@@ -299,10 +300,10 @@ class Selection final : public nsSupportsWeakReference,
   
   
   
-  void CollapseJS(nsINode* aContainer, uint32_t aOffset,
-                  mozilla::ErrorResult& aRv);
-  void CollapseToStartJS(mozilla::ErrorResult& aRv);
-  void CollapseToEndJS(mozilla::ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void CollapseJS(nsINode* aContainer, uint32_t aOffset,
+                                     mozilla::ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void CollapseToStartJS(mozilla::ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void CollapseToEndJS(mozilla::ErrorResult& aRv);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void ExtendJS(nsINode& aContainer, uint32_t aOffset,
@@ -314,8 +315,7 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-
-  void DeleteFromDocument(mozilla::ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void DeleteFromDocument(mozilla::ErrorResult& aRv);
 
   uint32_t RangeCount() const { return mStyledRanges.Length(); }
 
@@ -376,11 +376,10 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Modify(const nsAString& aAlter,
-                                          const nsAString& aDirection,
-                                          const nsAString& aGranularity,
-                                          mozilla::ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void Modify(const nsAString& aAlter,
+                                 const nsAString& aDirection,
+                                 const nsAString& aGranularity,
+                                 mozilla::ErrorResult& aRv);
 
   MOZ_CAN_RUN_SCRIPT
   void SetBaseAndExtentJS(nsINode& aAnchorNode, uint32_t aAnchorOffset,
@@ -436,11 +435,9 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void CollapseInLimiter(nsINode& aContainer,
-                                                     uint32_t aOffset,
-                                                     ErrorResult& aRv) {
+  MOZ_CAN_RUN_SCRIPT void CollapseInLimiter(nsINode& aContainer,
+                                            uint32_t aOffset,
+                                            ErrorResult& aRv) {
     CollapseInternal(InLimiter::eYes, RawRangeBoundary(&aContainer, aOffset),
                      aRv);
   }
@@ -454,9 +451,7 @@ class Selection final : public nsSupportsWeakReference,
     
     eNo,
   };
-  
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  MOZ_CAN_RUN_SCRIPT
   void CollapseInternal(InLimiter aInLimiter, const RawRangeBoundary& aPoint,
                         ErrorResult& aRv);
 
@@ -466,14 +461,14 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  void CollapseToStart(mozilla::ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void CollapseToStart(mozilla::ErrorResult& aRv);
 
   
 
 
 
 
-  void CollapseToEnd(mozilla::ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void CollapseToEnd(mozilla::ErrorResult& aRv);
 
   
 

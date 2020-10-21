@@ -3214,7 +3214,8 @@ void Selection::DeleteFromDocument(ErrorResult& aRv) {
   
   
   if (AnchorOffset() > 0) {
-    CollapseInLimiter(GetAnchorNode(), AnchorOffset());
+    RefPtr<nsINode> anchor = GetAnchorNode();
+    CollapseInLimiter(anchor, AnchorOffset());
   }
 #ifdef DEBUG
   else {
@@ -3289,7 +3290,7 @@ void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
   
   nsresult rv = NS_OK;
   if (!extend) {
-    nsINode* focusNode = GetFocusNode();
+    RefPtr<nsINode> focusNode = GetFocusNode();
     
     if (!focusNode) {
       aRv.Throw(NS_ERROR_UNEXPECTED);
