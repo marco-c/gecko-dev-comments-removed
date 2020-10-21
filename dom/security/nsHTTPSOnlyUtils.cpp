@@ -424,7 +424,8 @@ TestHTTPAnswerRunnable::OnStartRequest(nsIRequest* aRequest) {
   
   
   
-  nsCOMPtr<nsIChannel> httpsOnlyChannel = mDocumentLoadListener->GetChannel();
+  nsCOMPtr<nsIChannel> docChannel = mDocumentLoadListener->GetChannel();
+  nsCOMPtr<nsIHttpChannel> httpsOnlyChannel = do_QueryInterface(docChannel);
   if (httpsOnlyChannel) {
     nsCOMPtr<nsILoadInfo> loadInfo = httpsOnlyChannel->LoadInfo();
     uint32_t topLevelLoadInProgress =
