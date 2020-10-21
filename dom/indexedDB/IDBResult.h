@@ -23,29 +23,13 @@ enum class IDBSpecialValue {
 };
 
 namespace detail {
-template <typename T>
-struct OkType final {
-  T mValue;
-};
-
-
-template <>
-struct OkType<void> {};
 
 template <IDBSpecialValue Value>
 using SpecialConstant = std::integral_constant<IDBSpecialValue, Value>;
 using FailureType = SpecialConstant<IDBSpecialValue::Failure>;
 using InvalidType = SpecialConstant<IDBSpecialValue::Invalid>;
 struct ExceptionType final {};
-struct VoidType final {};
 }  
-
-template <typename T>
-constexpr inline detail::OkType<std::remove_reference_t<T>> Ok(T&& aValue) {
-  return {std::forward<T>(aValue)};
-}
-
-constexpr inline detail::OkType<void> Ok() { return {}; }
 
 
 
@@ -55,9 +39,6 @@ constexpr const detail::FailureType Failure;
 constexpr const detail::InvalidType Invalid;
 constexpr const detail::ExceptionType Exception;
 }  
-
-template <typename T, IDBSpecialValue... S>
-class MOZ_MUST_USE_TYPE IDBResult;
 
 namespace detail {
 template <IDBSpecialValue... Elements>
@@ -79,51 +60,33 @@ struct IsSortedSet<First> : std::true_type {};
 template <>
 struct IsSortedSet<> : std::true_type {};
 
-
-
-template <typename T, IDBSpecialValue... S>
-class IDBResultBase {
+template <IDBSpecialValue... S>
+class IDBError {
   
   
   static_assert(IsSortedSet<S...>::value,
                 "special value list must be sorted and unique");
 
-  template <typename R, IDBSpecialValue... U>
-  friend class IDBResultBase;
-
- protected:
-  using ValueType = OkType<T>;
+  template <IDBSpecialValue... U>
+  friend class IDBError;
 
  public:
-  
-  
-  MOZ_IMPLICIT IDBResultBase(const ValueType& aValue) : mVariant(aValue) {}
-  MOZ_IMPLICIT IDBResultBase(ValueType&& aValue)
-      : mVariant(std::move(aValue)) {}
-
-  MOZ_IMPLICIT IDBResultBase(ExceptionType, ErrorResult&& aErrorResult)
+  IDBError(ExceptionType, ErrorResult&& aErrorResult)
       : mVariant(std::move(aErrorResult)) {}
 
   template <IDBSpecialValue Special>
-  MOZ_IMPLICIT IDBResultBase(SpecialConstant<Special>)
+  MOZ_IMPLICIT IDBError(SpecialConstant<Special>)
       : mVariant(SpecialConstant<Special>{}) {}
 
-  IDBResultBase(IDBResultBase&&) = default;
-  IDBResultBase& operator=(IDBResultBase&&) = default;
+  IDBError(IDBError&&) = default;
+  IDBError& operator=(IDBError&&) = default;
 
   
   
   template <IDBSpecialValue... U>
-  MOZ_IMPLICIT IDBResultBase(IDBResultBase<T, U...>&& aOther)
+  MOZ_IMPLICIT IDBError(IDBError<U...>&& aOther)
       : mVariant(aOther.mVariant.match(
             [](auto& aVariant) { return VariantType{std::move(aVariant)}; })) {}
-
-  
-  
-  
-  bool Is(OkType<void> (*)()) const {
-    return mVariant.template is<ValueType>();
-  }
 
   bool Is(ExceptionType) const { return mVariant.template is<ErrorResult>(); }
 
@@ -137,18 +100,12 @@ class IDBResultBase {
   template <typename... SpecialValueMappers>
   ErrorResult ExtractErrorResult(SpecialValueMappers... aSpecialValueMappers) {
     return mVariant.match(
-        [](const ValueType&) -> ErrorResult {
-          MOZ_CRASH("non-value expected");
-        },
         [](ErrorResult& aException) { return std::move(aException); },
         aSpecialValueMappers...);
   }
 
-  template <typename NewValueType>
-  auto PropagateNotOk();
-
  protected:
-  using VariantType = Variant<ValueType, ErrorResult, SpecialConstant<S>...>;
+  using VariantType = Variant<ErrorResult, SpecialConstant<S>...>;
 
   VariantType mVariant;
 };
@@ -158,69 +115,21 @@ class IDBResultBase {
 
 
 template <typename T, IDBSpecialValue... S>
-class MOZ_MUST_USE_TYPE IDBResult : public detail::IDBResultBase<T, S...> {
- public:
-  using IDBResult::IDBResultBase::IDBResultBase;
-
-  
-  
-  T Unwrap() {
-    return std::move(
-        this->mVariant.template as<typename IDBResult::ValueType>().mValue);
-  }
-
-  
-  
-  const T& Inspect() const {
-    return this->mVariant.template as<typename IDBResult::ValueType>().mValue;
-  }
-};
-
-template <IDBSpecialValue... S>
-class MOZ_MUST_USE_TYPE IDBResult<void, S...>
-    : public detail::IDBResultBase<void, S...> {
- public:
-  using IDBResult::IDBResultBase::IDBResultBase;
-};
+using IDBResult = Result<T, detail::IDBError<S...>>;
 
 template <nsresult E>
 ErrorResult InvalidMapsTo(const indexedDB::detail::InvalidType&) {
   return ErrorResult{E};
 }
 
-namespace detail {
-template <typename T, IDBSpecialValue... S>
-template <typename NewValueType>
-auto IDBResultBase<T, S...>::PropagateNotOk() {
-  using ResultType = IDBResult<NewValueType, S...>;
-  MOZ_ASSERT(!Is(Ok));
-
-  return mVariant.match(
-#if defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 8)
-      [](const ValueType&) -> ResultType { MOZ_CRASH("non-value expected"); },
-      [](ErrorResult& aException) -> ResultType {
-        return {SpecialValues::Exception, std::move(aException)};
-      },
-      [](SpecialConstant<S> aSpecialValue) -> ResultType {
-        return aSpecialValue;
-      }...
-#else
-      
-      
-      [](auto& aParam) -> ResultType {
-        if constexpr (std::is_same_v<ValueType&, decltype(aParam)>) {
-          MOZ_CRASH("non-value expected");
-        } else if constexpr (std::is_same_v<ErrorResult&, decltype(aParam)>) {
-          return {SpecialValues::Exception, std::move(aParam)};
-        } else {
-          return aParam;
-        }
-      }
-#endif
-  );
+inline detail::IDBError<> IDBException(nsresult aRv) {
+  return {SpecialValues::Exception, ErrorResult{aRv}};
 }
 
-}  
+template <IDBSpecialValue Special>
+detail::IDBError<Special> IDBError(detail::SpecialConstant<Special> aResult) {
+  return {aResult};
+}
 
 }  
 }  
