@@ -306,6 +306,9 @@ class MediaPipelineTransmit : public MediaPipeline {
   nsresult SetTrack(RefPtr<dom::MediaStreamTrack> aDomTrack);
 
   
+  RefPtr<dom::MediaStreamTrack> GetTrack() const;
+
+  
   void SetSendTrack(RefPtr<ProcessedMediaTrack> aSendTrack);
 
   
