@@ -38,6 +38,7 @@
 #include "vm/SelfHosting.h"
 #include "vm/ThrowMsgKind.h"  
 #include "wasm/TypedObject.h"
+#include "wasm/WasmInstance.h"
 
 #include "jit/MacroAssembler-inl.h"
 #include "vm/EnvironmentObject-inl.h"
@@ -8957,6 +8958,129 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachWasmCall(HandleFunction calleeFunc) {
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(calleeFunc->isWasmWithJitEntry());
+
+  if (!JitOptions.warpBuilder || !JitOptions.enableWasmIonFastCalls) {
+    return AttachDecision::NoAction;
+  }
+  if (!isFirstStub_) {
+    return AttachDecision::NoAction;
+  }
+  if (JSOp(*pc_) != JSOp::Call && JSOp(*pc_) != JSOp::CallIgnoresRv) {
+    return AttachDecision::NoAction;
+  }
+  if (cx_->realm() != calleeFunc->realm()) {
+    return AttachDecision::NoAction;
+  }
+
+  wasm::Instance& inst = wasm::ExportedFunctionToInstance(calleeFunc);
+  uint32_t funcIndex = inst.code().getFuncIndex(calleeFunc);
+
+  auto bestTier = inst.code().bestTier();
+  const wasm::FuncExport& funcExport =
+      inst.metadata(bestTier).lookupFuncExport(funcIndex);
+  const wasm::FuncType& sig = funcExport.funcType();
+
+  MOZ_ASSERT(!IsInsideNursery(inst.object()));
+
+  MOZ_ASSERT(!sig.temporarilyUnsupportedReftypeForInlineEntry(),
+             "Function should not have a Wasm JitEntry");
+
+  
+  
+  if (sig.args().length() > wasm::MaxArgsForJitInlineCall) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  if (sig.results().length() > wasm::MaxResultsForJitInlineCall) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  
+  
+  
+  
+#ifdef JS_64BIT
+  constexpr bool optimizeWithI64 = true;
+#else
+  constexpr bool optimizeWithI64 = false;
+#endif
+  ABIArgGenerator abi;
+  for (const auto& valType : sig.args()) {
+    MIRType mirType = ToMIRType(valType);
+    ABIArg abiArg = abi.next(mirType);
+    if (mirType != MIRType::Int64) {
+      continue;
+    }
+    if (!optimizeWithI64 || abiArg.kind() == ABIArg::Stack) {
+      return AttachDecision::NoAction;
+    }
+  }
+
+  
+  
+  
+  
+  for (size_t i = 0; i < sig.args().length(); i++) {
+    Value argVal = i < argc_ ? args_[i] : UndefinedValue();
+    switch (sig.args()[i].kind()) {
+      case wasm::ValType::I32:
+      case wasm::ValType::F32:
+      case wasm::ValType::F64:
+        if (!argVal.isNumber() && !argVal.isBoolean() &&
+            !argVal.isUndefined()) {
+          return AttachDecision::NoAction;
+        }
+        break;
+      case wasm::ValType::I64:
+        if (!argVal.isBigInt() && !argVal.isString()) {
+          return AttachDecision::NoAction;
+        }
+        break;
+      case wasm::ValType::V128:
+        MOZ_CRASH("Function should not have a Wasm JitEntry");
+      case wasm::ValType::Ref:
+        
+        break;
+    }
+  }
+
+  CallFlags flags( false,  false,
+                   true);
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  ValOperandId calleeValId =
+      writer.loadArgumentDynamicSlot(ArgumentKind::Callee, argcId, flags);
+  ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
+
+  
+  emitCalleeGuard(calleeObjId, calleeFunc);
+
+  writer.callWasmFunction(calleeObjId, argcId, flags, &funcExport,
+                          inst.object());
+  writer.typeMonitorResult();
+
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
+  trackAttached("WasmCall");
+
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachInlinableNative(
     HandleFunction callee) {
   MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
@@ -9409,6 +9533,10 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   
   if (op_ == JSOp::FunApply) {
     return AttachDecision::NoAction;
+  }
+
+  if (calleeFunc->isWasmWithJitEntry()) {
+    TRY_ATTACH(tryAttachWasmCall(calleeFunc));
   }
 
   bool isSpecialized = mode_ == ICState::Mode::Specialized;

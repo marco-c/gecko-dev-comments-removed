@@ -22,7 +22,10 @@ WarpBuilderShared::WarpBuilderShared(WarpSnapshot& snapshot,
       current(current_) {}
 
 bool WarpBuilderShared::resumeAfter(MInstruction* ins, BytecodeLocation loc) {
-  MOZ_ASSERT(ins->isEffectful());
+  
+  
+  
+  MOZ_ASSERT(ins->isEffectful() || ins->isInt64ToBigInt());
 
   MResumePoint* resumePoint = MResumePoint::New(
       alloc(), ins->block(), loc.toRawBytecode(), MResumePoint::ResumeAfter);

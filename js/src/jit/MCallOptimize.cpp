@@ -3959,10 +3959,9 @@ IonBuilder::InliningResult IonBuilder::inlineWasmCall(CallInfo& callInfo,
 
   
   
-  static constexpr size_t MaxNumInlinedArgs = 8;
-  static_assert(MaxNumInlinedArgs <= MaxNumLInstructionOperands,
+  static_assert(wasm::MaxArgsForJitInlineCall <= MaxNumLInstructionOperands,
                 "inlined arguments can all be LIR operands");
-  if (sig.args().length() > MaxNumInlinedArgs) {
+  if (sig.args().length() > wasm::MaxArgsForJitInlineCall) {
     return InliningStatus_NotInlined;
   }
 
