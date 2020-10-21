@@ -12,7 +12,16 @@ const Services = require("Services");
 
 
 
-function shouldNotifyWindowGlobal(browsingContext, watchedBrowserId) {
+
+
+
+
+
+function shouldNotifyWindowGlobal(
+  browsingContext,
+  watchedBrowserId,
+  options = {}
+) {
   const windowGlobal = browsingContext.currentWindowGlobal;
   
   
@@ -40,6 +49,10 @@ function shouldNotifyWindowGlobal(browsingContext, watchedBrowserId) {
 
   if (watchedBrowserId && browsingContext.browserId != watchedBrowserId) {
     return false;
+  }
+
+  if (options.acceptNonRemoteFrame) {
+    return true;
   }
 
   

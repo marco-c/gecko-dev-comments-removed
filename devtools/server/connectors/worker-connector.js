@@ -22,6 +22,8 @@ loader.lazyRequireGetter(
 
 
 
+
+
 function connectToWorker(connection, dbg, forwardingPrefix, options) {
   return new Promise((resolve, reject) => {
     if (dbg.isClosed) {
@@ -100,6 +102,11 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
         type: "connect",
         forwardingPrefix,
         options,
+        workerDebuggerData: {
+          id: dbg.id,
+          type: dbg.type,
+          url: dbg.url,
+        },
       })
     );
 
