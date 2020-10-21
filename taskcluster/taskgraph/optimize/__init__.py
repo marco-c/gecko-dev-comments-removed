@@ -569,7 +569,8 @@ class project(object):
                 
                 Any(
                     'skip-unless-schedules',
-                    'bugbug-reduced-fallback',
+                    'bugbug-reduced-manifests-fallback',
+                    'platform-disperse',
                     split_args=split_bugbug_arg,
                 ),
             ),
