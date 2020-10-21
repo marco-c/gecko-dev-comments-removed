@@ -384,6 +384,8 @@ static bool SetTypeAndNameForExposedFunctions(JSContext* cx,
 static bool InstantiateScriptStencils(JSContext* cx,
                                       CompilationInfo& compilationInfo,
                                       CompilationGCOutput& gcOutput) {
+  MOZ_ASSERT(compilationInfo.input.lazy == nullptr);
+
   for (auto item : compilationInfo.functionScriptStencils(gcOutput)) {
     auto& scriptStencil = item.script;
     auto& fun = item.function;
@@ -412,10 +414,8 @@ static bool InstantiateScriptStencils(JSContext* cx,
       }
     } else if (scriptStencil.functionFlags.isAsmJSNative()) {
       MOZ_ASSERT(fun->isAsmJSNative());
-    } else if (fun->isIncomplete()) {
-      
-      MOZ_ASSERT(compilationInfo.input.lazy == nullptr);
-
+    } else {
+      MOZ_ASSERT(fun->isIncomplete());
       if (!CreateLazyScript(cx, compilationInfo, gcOutput, scriptStencil,
                             fun)) {
         return false;
@@ -597,6 +597,10 @@ static void AssertDelazificationFieldsMatch(CompilationInfo& compilationInfo,
                 acceptableDifferenceForFunction));
 
     
+    MOZ_ASSERT_IF(item.functionIndex == 0, scriptStencil.sharedData);
+    MOZ_ASSERT_IF(item.functionIndex > 0, !scriptStencil.sharedData);
+
+    
     
     MOZ_ASSERT_IF(scriptStencil.sharedData,
                   fun->nargs() == scriptStencil.nargs);
@@ -665,8 +669,10 @@ bool CompilationInfo::instantiateStencils(JSContext* cx,
     return false;
   }
 
-  if (!InstantiateScriptStencils(cx, *this, gcOutput)) {
-    return false;
+  if (!input.lazy) {
+    if (!InstantiateScriptStencils(cx, *this, gcOutput)) {
+      return false;
+    }
   }
 
   if (!InstantiateTopLevel(cx, *this, gcOutput)) {
