@@ -215,9 +215,6 @@ Preferences.addAll([
     id: "media.videocontrols.picture-in-picture.video-toggle.enabled",
     type: "bool",
   },
-
-  
-  { id: "media.hardwaremediakeys.enabled", type: "bool" },
 ]);
 
 if (AppConstants.HAVE_SHELL_SERVICE) {
@@ -530,27 +527,6 @@ var gMainPane = {
       "command",
       gMainPane.showContainerSettings
     );
-
-    
-    
-    
-    if (
-      AppConstants.isPlatformAndVersionAtLeast("win", "6.3") ||
-      AppConstants.platform == "macosx" ||
-      AppConstants.MOZ_WIDGET_GTK
-    ) {
-      document.getElementById("mediaControlBox").hidden = false;
-      let mediaControlLearnMoreUrl =
-        Services.urlFormatter.formatURLPref("app.support.baseURL") +
-        "media-keyboard-control";
-      let link = document.getElementById("mediaControlLearnMore");
-      link.setAttribute("href", mediaControlLearnMoreUrl);
-      setEventListener(
-        "mediaControlToggleEnabled",
-        "command",
-        gMainPane.updateMediaControlTelemetry
-      );
-    }
 
     
     this._rebuildFonts();
@@ -1547,14 +1523,6 @@ var gMainPane = {
 
   showContainerSettings() {
     gotoPref("containers");
-  },
-
-  updateMediaControlTelemetry() {
-    const telemetry = Services.telemetry.getHistogramById(
-      "MEDIA_CONTROL_SETTING_CHANGE"
-    );
-    const checkbox = document.getElementById("mediaControlToggleEnabled");
-    telemetry.add(checkbox.checked ? "EnableFromUI" : "DisableFromUI");
   },
 
   

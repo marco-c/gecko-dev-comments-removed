@@ -10,7 +10,6 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Telemetry.h"
 #include "nsDataHashtable.h"
 #include "nsGlobalWindowOuter.h"
 
@@ -329,9 +328,6 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey) {
   }
   LOG("Handle '%s' event, receiver num=%zu", ToMediaControlKeyStr(aKey),
       mReceivers.Length());
-  AccumulateCategorical(
-      mozilla::Telemetry::LABELS_MEDIA_CONTROL_HANDLE_PLAY_PAUSE_STOP_ACTIONS::
-          DefaultHandler);
   
   
   switch (aKey) {

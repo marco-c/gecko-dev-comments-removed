@@ -81,13 +81,6 @@ class MediaControlService final : public nsIObserver {
   
   nsString GetFallbackTitle() const;
 
-  
-  
-  void NotifyMediaControlHasEverBeenUsed() { mHasEverUsedMediaControl = true; }
-  void NotifyMediaControlHasEverBeenEnabled() {
-    mHasEverEnabledMediaControl = true;
-  }
-
  private:
   MediaControlService();
   ~MediaControlService();
@@ -173,11 +166,6 @@ class MediaControlService final : public nsIObserver {
   MediaEventProducer<uint64_t> mMediaControllerAmountChangedEvent;
   UniquePtr<ControllerManager> mControllerManager;
   nsString mFallbackTitle;
-
-  
-  void UpdateTelemetryUsageProbe();
-  bool mHasEverUsedMediaControl = false;
-  bool mHasEverEnabledMediaControl = false;
 };
 
 }  
