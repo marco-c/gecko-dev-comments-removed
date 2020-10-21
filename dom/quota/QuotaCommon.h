@@ -791,6 +791,16 @@ auto CollectEach(const Step& aStep, const Body& aBody)
   return mozilla::Ok{};
 }
 
+template <typename Range, typename Body>
+auto CollectEachInRange(const Range& aRange, const Body& aBody)
+    -> Result<mozilla::Ok, nsresult> {
+  for (const auto& element : aRange) {
+    MOZ_TRY(aBody(element));
+  }
+
+  return mozilla::Ok{};
+}
+
 
 
 
