@@ -12,7 +12,7 @@
 #include "nsHTTPSOnlyUtils.h"
 #include "nsIConsoleService.h"
 #include "nsIHttpChannel.h"
-#include "nsIHttpChannel.h"
+#include "nsIHttpChannelInternal.h"
 #include "nsIHttpsOnlyModePermission.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
@@ -423,12 +423,19 @@ TestHTTPAnswerRunnable::OnStartRequest(nsIRequest* aRequest) {
   
   
   
+  
   nsCOMPtr<nsIChannel> httpsOnlyChannel = mDocumentLoadListener->GetChannel();
   if (httpsOnlyChannel) {
     nsCOMPtr<nsILoadInfo> loadInfo = httpsOnlyChannel->LoadInfo();
-    uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-    if (!(httpsOnlyStatus &
-          nsILoadInfo::HTTPS_ONLY_TOP_LEVEL_LOAD_IN_PROGRESS)) {
+    uint32_t topLevelLoadInProgress =
+        loadInfo->GetHttpsOnlyStatus() &
+        nsILoadInfo::HTTPS_ONLY_TOP_LEVEL_LOAD_IN_PROGRESS;
+
+    nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal =
+        do_QueryInterface(httpsOnlyChannel);
+    bool isAuthChannel = false;
+    Unused << httpChannelInternal->GetIsAuthChannel(&isAuthChannel);
+    if (!topLevelLoadInProgress && !isAuthChannel) {
       
       
       

@@ -356,6 +356,7 @@ nsHttpChannel::nsHttpChannel()
       mCacheOpenWithPriority(false),
       mCacheQueueSizeWhenOpen(0),
       mCachedContentIsValid(false),
+      mIsAuthChannel(false),
       mAuthRetryPending(false),
       mCachedContentIsPartial(false),
       mCacheOnlyMetadata(false),
@@ -2874,6 +2875,7 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
       if (rv == NS_ERROR_IN_PROGRESS) {
         
         
+        mIsAuthChannel = true;
         mAuthRetryPending = true;
         if (httpStatus == 407 ||
             (mTransaction && mTransaction->ProxyConnectFailed()))
@@ -2903,6 +2905,7 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
         }
         rv = ProcessNormal();
       } else {
+        mIsAuthChannel = true;
         mAuthRetryPending = true;  
       }
       break;
@@ -6221,6 +6224,7 @@ NS_IMETHODIMP nsHttpChannel::OnAuthAvailable() {
   
   
   
+  mIsAuthChannel = true;
   mAuthRetryPending = true;
   mProxyAuthPending = false;
   LOG(("Resuming the transaction, we got credentials from user"));
@@ -7245,6 +7249,12 @@ nsHttpChannel::SetupFallbackChannel(const char* aFallbackKey) {
   mFallbackChannel = true;
   mFallbackKey = aFallbackKey;
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsHttpChannel::GetIsAuthChannel(bool* aIsAuthChannel) {
+  *aIsAuthChannel = mIsAuthChannel;
   return NS_OK;
 }
 
