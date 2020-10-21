@@ -46,6 +46,17 @@ AbstractScopePtr ScopeStencil::enclosing(
   return AbstractScopePtr(compilationInfo.input.enclosingScope);
 }
 
+Scope* ScopeStencil::enclosingExistingScope(
+    const CompilationInput& input, const CompilationGCOutput& gcOutput) const {
+  if (enclosing_) {
+    Scope* result = gcOutput.scopes[*enclosing_];
+    MOZ_ASSERT(result, "Scope must already exist to use this method");
+    return result;
+  }
+
+  return input.enclosingScope;
+}
+
 Scope* ScopeStencil::createScope(JSContext* cx,
                                  CompilationInfo& compilationInfo,
                                  CompilationGCOutput& gcOutput) const {
@@ -298,6 +309,8 @@ static bool InstantiateFunctions(JSContext* cx,
 
 static bool InstantiateScopes(JSContext* cx, CompilationInfo& compilationInfo,
                               CompilationGCOutput& gcOutput) {
+  
+  
   
   
   

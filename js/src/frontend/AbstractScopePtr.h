@@ -90,10 +90,6 @@ class AbstractScopePtr {
 
   
   
-  Scope* existingScope(frontend::CompilationGCOutput& gcOutput) const;
-
-  
-  
   template <typename T>
   bool is() const {
     static_assert(std::is_base_of_v<Scope, T>,
