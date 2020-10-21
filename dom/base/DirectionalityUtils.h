@@ -11,6 +11,7 @@
 #include "nsStringFwd.h"
 
 class nsIContent;
+class nsINode;
 class nsAttrValue;
 class nsTextNode;
 
@@ -70,7 +71,18 @@ void WalkDescendantsResetAutoDirection(mozilla::dom::Element* aElement);
 
 
 
-void SlotStateChanged(mozilla::dom::HTMLSlotElement* aSlot);
+
+
+
+void SlotStateChanged(dom::HTMLSlotElement* aSlot,
+                      bool aAllAssignedNodesChanged = true);
+
+
+
+
+
+void SlotAssignedNodeChanged(dom::HTMLSlotElement* aSlot,
+                             nsIContent& aAssignedNode);
 
 
 
