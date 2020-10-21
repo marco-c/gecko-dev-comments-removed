@@ -416,6 +416,9 @@ bool EmitterScope::deadZoneFrameSlotRange(BytecodeEmitter* bce,
   
   
   
+  
+  
+  
   if (slotStart != slotEnd) {
     if (!bce->emit1(JSOp::Uninitialized)) {
       return false;
@@ -1043,6 +1046,12 @@ bool EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal) {
     case ScopeKind::Catch:
     case ScopeKind::FunctionLexical:
     case ScopeKind::ClassBody:
+      if (bce->sc->isFunctionBox() &&
+          bce->sc->asFunctionBox()->needsClearSlotsOnExit()) {
+        if (!deadZoneFrameSlots(bce)) {
+          return false;
+        }
+      }
       if (!bce->emit1(hasEnvironment() ? JSOp::PopLexicalEnv
                                        : JSOp::DebugLeaveLexicalEnv)) {
         return false;
