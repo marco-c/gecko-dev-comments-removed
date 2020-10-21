@@ -4,6 +4,7 @@
 
 
 #include "mozilla/dom/PGamepadEventChannelChild.h"
+#include "nsRefPtrHashtable.h"
 
 #ifndef mozilla_dom_GamepadEventChannelChild_h_
 #  define mozilla_dom_GamepadEventChannelChild_h_

@@ -7,22 +7,32 @@
 #ifndef mozilla_dom_SessionStorageManager_h
 #define mozilla_dom_SessionStorageManager_h
 
+#include "StorageObserver.h"
+
+#include "mozilla/dom/FlippedOnce.h"
 #include "nsIDOMStorageManager.h"
 #include "nsClassHashtable.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
-#include "StorageObserver.h"
 
 namespace mozilla {
 class OriginAttributesPattern;
 
 namespace dom {
 
+bool RecvShutdownBackgroundSessionStorageManagers();
+bool RecvRemoveBackgroundSessionStorageManager(uint64_t aTopContextId);
+
 class BrowsingContext;
 class ContentParent;
-class KeyValuePair;
+class SSSetItemInfo;
+class SSWriteInfo;
 class SessionStorageCache;
+class SessionStorageCacheChild;
+class SessionStorageManagerChild;
+class SessionStorageManagerParent;
 class SessionStorageObserver;
+struct OriginRecord;
 
 
 
@@ -41,9 +51,36 @@ class SessionStorageObserver;
 
 
 
+class SessionStorageManagerBase {
+ public:
+  SessionStorageManagerBase() = default;
 
+ protected:
+  ~SessionStorageManagerBase() = default;
 
-class SessionStorageManager final : public nsIDOMSessionStorageManager,
+  struct OriginRecord {
+    OriginRecord() = default;
+    OriginRecord(OriginRecord&&) = default;
+    OriginRecord& operator=(OriginRecord&&) = default;
+    ~OriginRecord();
+
+    RefPtr<SessionStorageCache> mCache;
+
+    
+    FlippedOnce<false> mLoaded;
+  };
+
+  OriginRecord* GetOriginRecord(const nsACString& aOriginAttrs,
+                                const nsACString& aOriginKey,
+                                bool aMakeIfNeeded,
+                                SessionStorageCache* aCloneFrom);
+
+  using OriginKeyHashTable = nsClassHashtable<nsCStringHashKey, OriginRecord>;
+  nsClassHashtable<nsCStringHashKey, OriginKeyHashTable> mOATable;
+};
+
+class SessionStorageManager final : public SessionStorageManagerBase,
+                                    public nsIDOMSessionStorageManager,
                                     public StorageObserverSink {
  public:
   explicit SessionStorageManager(RefPtr<BrowsingContext> aBrowsingContext);
@@ -54,18 +91,19 @@ class SessionStorageManager final : public nsIDOMSessionStorageManager,
 
   NS_DECL_CYCLE_COLLECTION_CLASS(SessionStorageManager)
 
-  RefPtr<BrowsingContext> GetBrowsingContext() const;
+  bool CanLoadData();
 
-  void SendSessionStorageDataToParentProcess(nsIPrincipal& aPrincipal,
-                                             SessionStorageCache& aSSCache);
-  void SendSessionStorageDataToContentProcess(ContentParent* aActor,
-                                              nsIPrincipal* aPrincipal);
+  void SetActor(SessionStorageManagerChild* aActor);
 
-  void LoadSessionStorageData(ContentParent* aSource,
-                              const nsACString& aOriginAttrs,
-                              const nsACString& aOriginKey,
-                              const nsTArray<KeyValuePair>& aDefaultData,
-                              const nsTArray<KeyValuePair>& aSessionData);
+  bool ActorExists() const;
+
+  void ClearActor();
+
+  nsresult EnsureManager();
+
+  nsresult LoadData(nsIPrincipal& aPrincipal, SessionStorageCache& aCache);
+
+  void CheckpointData(nsIPrincipal& aPrincipal, SessionStorageCache& aCache);
 
  private:
   ~SessionStorageManager();
@@ -74,15 +112,6 @@ class SessionStorageManager final : public nsIDOMSessionStorageManager,
   nsresult Observe(const char* aTopic,
                    const nsAString& aOriginAttributesPattern,
                    const nsACString& aOriginScope) override;
-
-  enum ClearStorageType {
-    eAll,
-    eSessionOnly,
-  };
-
-  void ClearStorages(ClearStorageType aType,
-                     const OriginAttributesPattern& aPattern,
-                     const nsACString& aOriginScope);
 
   nsresult GetSessionStorageCacheHelper(nsIPrincipal* aPrincipal,
                                         bool aMakeIfNeeded,
@@ -95,32 +124,58 @@ class SessionStorageManager final : public nsIDOMSessionStorageManager,
                                         SessionStorageCache* aCloneFrom,
                                         RefPtr<SessionStorageCache>* aRetVal);
 
-  struct OriginRecord {
-    OriginRecord() = default;
-    OriginRecord(OriginRecord&&) = default;
-    OriginRecord& operator=(OriginRecord&&) = default;
-    ~OriginRecord();
-
-    RefPtr<SessionStorageCache> mCache;
-    nsTHashtable<nsUint64HashKey> mKnownTo;
+  enum ClearStorageType {
+    eAll,
+    eSessionOnly,
   };
+  void ClearStorages(ClearStorageType aType,
+                     const OriginAttributesPattern& aPattern,
+                     const nsACString& aOriginScope);
 
-  OriginRecord* GetOriginRecord(const nsACString& aOriginAttrs,
-                                const nsACString& aOriginKey,
-                                bool aMakeIfNeeded,
-                                SessionStorageCache* aCloneFrom);
+  SessionStorageCacheChild* EnsureCache(const nsCString& aOriginAttrs,
+                                        const nsCString& aOriginKey,
+                                        SessionStorageCache& aCache);
 
-  template <typename Actor>
-  void SendSessionStorageCache(Actor* aActor, const nsACString& aOriginAttrs,
-                               const nsACString& aOriginKey,
-                               SessionStorageCache* aCache);
-
-  using OriginKeyHashTable = nsClassHashtable<nsCStringHashKey, OriginRecord>;
-  nsClassHashtable<nsCStringHashKey, OriginKeyHashTable> mOATable;
+  void CheckpointDataInternal(const nsCString& aOriginAttrs,
+                              const nsCString& aOriginKey,
+                              SessionStorageCache& aCache);
 
   RefPtr<SessionStorageObserver> mObserver;
 
   RefPtr<BrowsingContext> mBrowsingContext;
+
+  SessionStorageManagerChild* mActor;
+};
+
+
+
+
+
+
+class BackgroundSessionStorageManager final : public SessionStorageManagerBase {
+ public:
+  
+  static BackgroundSessionStorageManager* GetOrCreate(uint64_t aTopContextId);
+
+  NS_INLINE_DECL_REFCOUNTING(BackgroundSessionStorageManager);
+
+  
+  static void RemoveManager(uint64_t aTopContextId);
+
+  void CopyDataToContentProcess(const nsACString& aOriginAttrs,
+                                const nsACString& aOriginKey,
+                                nsTArray<SSSetItemInfo>& aDefaultData,
+                                nsTArray<SSSetItemInfo>& aSessionData);
+
+  void UpdateData(const nsACString& aOriginAttrs, const nsACString& aOriginKey,
+                  const nsTArray<SSWriteInfo>& aDefaultWriteInfos,
+                  const nsTArray<SSWriteInfo>& aSessionWriteInfos);
+
+ private:
+  
+  explicit BackgroundSessionStorageManager();
+
+  ~BackgroundSessionStorageManager();
 };
 
 }  
