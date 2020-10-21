@@ -48,25 +48,25 @@ class StackType {
 
   explicit StackType(const ValType& t) : tc_(t.packed()) {
     MOZ_ASSERT(IsValid(tc_));
-    MOZ_ASSERT(!isTVar());
+    MOZ_ASSERT(!isBottom());
   }
 
-  static StackType tvar() { return StackType(PackTypeCode(TypeCode::Limit)); }
+  static StackType bottom() { return StackType(PackTypeCode(TypeCode::Limit)); }
 
-  bool isTVar() const {
+  bool isBottom() const {
     MOZ_ASSERT(IsValid(tc_));
     return UnpackTypeCodeType(tc_) == TypeCode::Limit;
   }
 
   ValType valType() const {
     MOZ_ASSERT(IsValid(tc_));
-    MOZ_ASSERT(!isTVar());
+    MOZ_ASSERT(!isBottom());
     return ValType(tc_);
   }
 
   bool isValidForUntypedSelect() const {
     MOZ_ASSERT(IsValid(tc_));
-    if (isTVar()) {
+    if (isBottom()) {
       return true;
     }
     switch (valType().kind()) {
@@ -230,7 +230,7 @@ class TypeAndValueT {
   mozilla::CompactPair<StackType, Value> tv_;
 
  public:
-  TypeAndValueT() : tv_(StackType::tvar(), Value()) {}
+  TypeAndValueT() : tv_(StackType::bottom(), Value()) {}
   explicit TypeAndValueT(StackType type) : tv_(type, Value()) {}
   explicit TypeAndValueT(ValType type) : tv_(StackType(type), Value()) {}
   TypeAndValueT(StackType type, Value value) : tv_(type, value) {}
@@ -299,6 +299,7 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   MOZ_MUST_USE bool popWithType(ResultType expected, ValueVector* values);
   MOZ_MUST_USE bool popWithRefType(Value* value);
   MOZ_MUST_USE bool popThenPushType(ResultType expected, ValueVector* values);
+  MOZ_MUST_USE bool topWithType(ResultType expected, ValueVector* values);
 
   MOZ_MUST_USE bool pushControl(LabelKind kind, BlockType type);
   MOZ_MUST_USE bool checkStackAtEndOfBlock(ResultType* type,
@@ -635,7 +636,7 @@ inline bool OpIter<Policy>::popStackType(StackType* type, Value* value) {
     
     
     if (block.polymorphicBase()) {
-      *type = StackType::tvar();
+      *type = StackType::bottom();
       *value = Value();
 
       
@@ -662,7 +663,7 @@ inline bool OpIter<Policy>::popWithType(ValType expectedType, Value* value) {
     return false;
   }
 
-  return stackType.isTVar() ||
+  return stackType.isBottom() ||
          checkIsSubtypeOf(stackType.valType(), expectedType);
 }
 
@@ -694,7 +695,7 @@ inline bool OpIter<Policy>::popWithRefType(Value* value) {
     return false;
   }
 
-  if (stackType.isTVar() || stackType.valType().isReference()) {
+  if (stackType.isBottom() || stackType.valType().isReference()) {
     return true;
   }
 
@@ -764,8 +765,69 @@ inline bool OpIter<Policy>::popThenPushType(ResultType expected,
     } else {
       TypeAndValue& observed = valueStack_[currentValueStackLength - 1];
 
-      if (observed.type().isTVar()) {
+      if (observed.type().isBottom()) {
         observed.typeRef() = StackType(expectedType);
+        collectValue(Value());
+      } else {
+        if (!checkIsSubtypeOf(observed.type().valType(), expectedType)) {
+          return false;
+        }
+
+        collectValue(observed.value());
+      }
+    }
+  }
+  return true;
+}
+
+template <typename Policy>
+inline bool OpIter<Policy>::topWithType(ResultType expected,
+                                        ValueVector* values) {
+  if (expected.empty()) {
+    return true;
+  }
+
+  Control& block = controlStack_.back();
+
+  size_t expectedLength = expected.length();
+  if (values && !values->resize(expectedLength)) {
+    return false;
+  }
+
+  for (size_t i = 0; i != expectedLength; i++) {
+    
+    
+    
+    
+    size_t reverseIndex = expectedLength - i - 1;
+    ValType expectedType = expected[reverseIndex];
+    auto collectValue = [&](const Value& v) {
+      if (values) {
+        (*values)[reverseIndex] = v;
+      }
+    };
+
+    size_t currentValueStackLength = valueStack_.length() - i;
+
+    MOZ_ASSERT(currentValueStackLength >= block.valueStackBase());
+    if (currentValueStackLength == block.valueStackBase()) {
+      if (!block.polymorphicBase()) {
+        return failEmptyStack();
+      }
+
+      
+      
+      
+      if (!valueStack_.insert(valueStack_.begin() + currentValueStackLength,
+                              TypeAndValue())) {
+        return false;
+      }
+
+      collectValue(Value());
+    } else {
+      TypeAndValue& observed = valueStack_[currentValueStackLength - 1];
+
+      if (observed.type().isBottom()) {
         collectValue(Value());
       } else {
         if (!checkIsSubtypeOf(observed.type().valType(), expectedType)) {
@@ -1061,7 +1123,7 @@ inline bool OpIter<Policy>::checkBranchValue(uint32_t relativeDepth,
   }
 
   *type = block->branchTargetType();
-  return popThenPushType(*type, values);
+  return topWithType(*type, values);
 }
 
 template <typename Policy>
@@ -1124,7 +1186,7 @@ inline bool OpIter<Policy>::checkBrTableEntry(uint32_t* relativeDepth,
     branchValues = nullptr;
   }
 
-  return popThenPushType(*type, branchValues);
+  return topWithType(*type, branchValues);
 }
 
 template <typename Policy>
@@ -1478,9 +1540,9 @@ inline bool OpIter<Policy>::readSelect(bool typed, StackType* type,
     return fail("invalid types for old-style 'select'");
   }
 
-  if (falseType.isTVar()) {
+  if (falseType.isBottom()) {
     *type = trueType;
-  } else if (trueType.isTVar() || falseType == trueType) {
+  } else if (trueType.isBottom() || falseType == trueType) {
     *type = falseType;
   } else {
     return fail("select operand types must match");
