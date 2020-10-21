@@ -1238,10 +1238,6 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  DisplayMode mDisplayMode;
-
-  
-  
   uint32_t mJSRunToCompletionDepth;
 
   
