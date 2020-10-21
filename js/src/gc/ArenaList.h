@@ -284,7 +284,7 @@ class ArenaLists {
 
   
   
-  ZoneData<Arena*> savedEmptyArenas;
+  ZoneOrGCTaskData<Arena*> savedEmptyArenas;
 
  public:
   explicit ArenaLists(JS::Zone* zone);
@@ -332,7 +332,7 @@ class ArenaLists {
   void queueForegroundObjectsForSweep(JSFreeOp* fop);
   void queueForegroundThingsForSweep();
 
-  void releaseForegroundSweptEmptyArenas();
+  Arena* takeSweptEmptyArenas();
 
   bool foregroundFinalize(JSFreeOp* fop, AllocKind thingKind,
                           js::SliceBudget& sliceBudget,

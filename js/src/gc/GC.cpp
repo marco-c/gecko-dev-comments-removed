@@ -2889,10 +2889,10 @@ void ArenaLists::backgroundFinalize(JSFreeOp* fop, Arena* listHead,
   lists->concurrentUse(thingKind) = ConcurrentUse::None;
 }
 
-void ArenaLists::releaseForegroundSweptEmptyArenas() {
-  AutoLockGC lock(runtime());
-  ReleaseArenaList(runtime(), savedEmptyArenas, lock);
+Arena* ArenaLists::takeSweptEmptyArenas() {
+  Arena* arenas = savedEmptyArenas;
   savedEmptyArenas = nullptr;
+  return arenas;
 }
 
 void ArenaLists::queueForegroundThingsForSweep() {
@@ -3394,7 +3394,7 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
     Zone* zone = zones.removeFront();
     MOZ_ASSERT(zone->isGCFinished());
 
-    Arena* emptyArenas = nullptr;
+    Arena* emptyArenas = zone->arenas.takeSweptEmptyArenas();
 
     AutoSetThreadIsSweeping threadIsSweeping(zone);
 
@@ -3410,6 +3410,9 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
       }
     }
 
+    
+    
+    
     
     
     
@@ -5735,18 +5738,6 @@ IncrementalProgress GCRuntime::sweepTypeInformation(JSFreeOp* fop,
   return Finished;
 }
 
-IncrementalProgress GCRuntime::releaseSweptEmptyArenas(JSFreeOp* fop,
-                                                       SliceBudget& budget) {
-  
-  
-  
-
-  for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
-    zone->arenas.releaseForegroundSweptEmptyArenas();
-  }
-  return Finished;
-}
-
 void GCRuntime::startSweepingAtomsTable() {
   auto& maybeAtoms = maybeAtomsToSweep.ref();
   MOZ_ASSERT(maybeAtoms.isNothing());
@@ -6210,7 +6201,6 @@ bool GCRuntime::initSweepActions() {
                                         Call(&GCRuntime::finalizeAllocKind)),
                        MaybeYield(ZealMode::YieldBeforeSweepingShapeTrees),
                        Call(&GCRuntime::sweepShapeTree))),
-          Call(&GCRuntime::releaseSweptEmptyArenas),
           Call(&GCRuntime::endSweepingSweepGroup)));
 
   return sweepActions != nullptr;
