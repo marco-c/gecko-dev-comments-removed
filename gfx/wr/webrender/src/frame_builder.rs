@@ -60,8 +60,6 @@ pub struct FrameBuilderConfig {
     pub dual_source_blending_is_enabled: bool,
     pub chase_primitive: ChasePrimitive,
     
-    pub global_enable_picture_caching: bool,
-    
     pub testing: bool,
     pub gpu_supports_fast_clears: bool,
     pub gpu_supports_advanced_blend: bool,
@@ -332,7 +330,6 @@ impl FrameBuilder {
             gpu_cache,
             &scene.clip_store,
             data_stores,
-            composite_state,
         );
 
         {
@@ -517,24 +514,8 @@ impl FrameBuilder {
         let output_size = scene.output_rect.size.to_i32();
         let screen_world_rect = (scene.output_rect.to_f32() / global_device_pixel_scale).round_out();
 
-        
-        
-        
-        
-        
-        let picture_caching_is_enabled =
-            scene.config.global_enable_picture_caching &&
-            !debug_flags.contains(DebugFlags::DISABLE_PICTURE_CACHING) &&
-            !scene.tile_cache_config.picture_cache_spatial_nodes.iter().any(|spatial_node_index| {
-                let spatial_node = &scene
-                    .spatial_tree
-                    .spatial_nodes[spatial_node_index.0 as usize];
-                spatial_node.is_ancestor_or_self_zooming
-            });
-
         let mut composite_state = CompositeState::new(
             scene.config.compositor_kind,
-            picture_caching_is_enabled,
             global_device_pixel_scale,
             scene.config.max_depth_ids,
             dirty_rects_are_valid,
@@ -1051,12 +1032,6 @@ impl Frame {
 
     
     pub fn is_nop(&self) -> bool {
-        
-        
-        if !self.composite_state.picture_caching_is_enabled {
-            return false;
-        }
-
         
         
         

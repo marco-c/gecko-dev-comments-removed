@@ -3368,19 +3368,16 @@ impl TileCacheInstance {
 
                 let mut promote_to_surface = false;
                 let mut promote_with_flip_y = false;
-                
-                if composite_state.picture_caching_is_enabled {
-                    match self.can_promote_to_surface(image_key.common.flags,
-                                                      prim_clip_chain,
-                                                      prim_spatial_node_index,
-                                                      on_picture_surface,
-                                                      frame_context) {
-                        SurfacePromotionResult::Failed => {
-                        }
-                        SurfacePromotionResult::Success{flip_y} => {
-                            promote_to_surface = true;
-                            promote_with_flip_y = flip_y;
-                        }
+                match self.can_promote_to_surface(image_key.common.flags,
+                                                  prim_clip_chain,
+                                                  prim_spatial_node_index,
+                                                  on_picture_surface,
+                                                  frame_context) {
+                    SurfacePromotionResult::Failed => {
+                    }
+                    SurfacePromotionResult::Success{flip_y} => {
+                        promote_to_surface = true;
+                        promote_with_flip_y = flip_y;
                     }
                 }
 
@@ -3430,26 +3427,18 @@ impl TileCacheInstance {
             }
             PrimitiveInstanceKind::YuvImage { data_handle, ref mut is_compositor_surface, .. } => {
                 let prim_data = &data_stores.yuv_image[data_handle];
-                
-                
-                
-                let mut promote_to_surface = false;
+                let mut promote_to_surface = match self.can_promote_to_surface(
+                                            prim_data.common.flags,
+                                            prim_clip_chain,
+                                            prim_spatial_node_index,
+                                            on_picture_surface,
+                                            frame_context) {
+                    SurfacePromotionResult::Failed => false,
+                    SurfacePromotionResult::Success{flip_y} => !flip_y,
+                };
 
                 
-                if composite_state.picture_caching_is_enabled {
-                    promote_to_surface = match self.can_promote_to_surface(
-                                                prim_data.common.flags,
-                                                prim_clip_chain,
-                                                prim_spatial_node_index,
-                                                on_picture_surface,
-                                                frame_context) {
-                        SurfacePromotionResult::Failed => false,
-                        SurfacePromotionResult::Success{flip_y} => !flip_y,
-                    };
-
-                    
-                    
-                }
+                
 
                 
                 
@@ -3893,7 +3882,6 @@ pub struct PictureUpdateState<'a> {
     surfaces: &'a mut Vec<SurfaceInfo>,
     surface_stack: Vec<SurfaceIndex>,
     picture_stack: Vec<PictureInfo>,
-    composite_state: &'a CompositeState,
 }
 
 impl<'a> PictureUpdateState<'a> {
@@ -3906,7 +3894,6 @@ impl<'a> PictureUpdateState<'a> {
         gpu_cache: &mut GpuCache,
         clip_store: &ClipStore,
         data_stores: &mut DataStores,
-        composite_state: &CompositeState,
     ) {
         profile_scope!("UpdatePictures");
         profile_marker!("UpdatePictures");
@@ -3915,7 +3902,6 @@ impl<'a> PictureUpdateState<'a> {
             surfaces,
             surface_stack: buffers.surface_stack.take().cleared(),
             picture_stack: buffers.picture_stack.take().cleared(),
-            composite_state,
         };
 
         state.surface_stack.push(SurfaceIndex(0));
@@ -5866,18 +5852,8 @@ impl PicturePrimitive {
         });
 
         
-        let actual_composite_mode = match self.requested_composite_mode {
-            Some(PictureCompositeMode::TileCache { slice_id }) => {
-                
-                
-                if state.composite_state.picture_caching_is_enabled {
-                    Some(PictureCompositeMode::TileCache { slice_id })
-                } else {
-                    None
-                }
-            },
-            ref mode => mode.clone(),
-        };
+        
+        let actual_composite_mode = self.requested_composite_mode.clone();
 
         if let Some(composite_mode) = actual_composite_mode {
             

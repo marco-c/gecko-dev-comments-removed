@@ -2664,7 +2664,6 @@ impl Renderer {
             dual_source_blending_is_enabled: true,
             dual_source_blending_is_supported: use_dual_source_blending,
             chase_primitive: options.chase_primitive,
-            global_enable_picture_caching: options.enable_picture_caching,
             testing: options.testing,
             gpu_supports_fast_clears: options.gpu_supports_fast_clears,
             gpu_supports_advanced_blend: ext_blend_equation_advanced,
@@ -6176,7 +6175,6 @@ impl Renderer {
         
         
         if let CompositorKind::Native { .. } = self.current_compositor_kind {
-            assert!(frame.composite_state.picture_caching_is_enabled);
             let compositor = self.compositor_config.compositor().unwrap();
             
             if !frame.has_been_rendered {
@@ -6221,7 +6219,7 @@ impl Renderer {
             );
 
             match pass.kind {
-                RenderPassKind::MainFramebuffer { ref main_target, .. } => {
+                RenderPassKind::MainFramebuffer { .. } => {
                     profile_scope!("main target");
 
                     if let Some(device_size) = device_size {
@@ -6260,59 +6258,27 @@ impl Renderer {
 
                         
                         
-                        
-                        if frame.composite_state.picture_caching_is_enabled {
-                            
-                            
-                            match self.current_compositor_kind {
-                                CompositorKind::Native { .. } => {
-                                    
-                                    
-                                    
-                                    self.update_external_native_surfaces(
-                                        &frame.composite_state.external_surfaces,
-                                        results,
-                                    );
-                                }
-                                CompositorKind::Draw { max_partial_present_rects, draw_previous_partial_present_regions, .. } => {
-                                    self.composite_simple(
-                                        &frame.composite_state,
-                                        clear_framebuffer,
-                                        draw_target,
-                                        &projection,
-                                        results,
-                                        max_partial_present_rects,
-                                        draw_previous_partial_present_regions,
-                                    );
-                                }
+                        match self.current_compositor_kind {
+                            CompositorKind::Native { .. } => {
+                                
+                                
+                                
+                                self.update_external_native_surfaces(
+                                    &frame.composite_state.external_surfaces,
+                                    results,
+                                );
                             }
-                        } else {
-                            if clear_framebuffer {
-                                let clear_color = self.clear_color.map(|color| color.to_array());
-                                self.device.bind_draw_target(draw_target);
-                                self.device.enable_depth_write();
-                                self.device.clear_target(clear_color,
-                                                         Some(1.0),
-                                                         None);
+                            CompositorKind::Draw { max_partial_present_rects, draw_previous_partial_present_regions, .. } => {
+                                self.composite_simple(
+                                    &frame.composite_state,
+                                    clear_framebuffer,
+                                    draw_target,
+                                    &projection,
+                                    results,
+                                    max_partial_present_rects,
+                                    draw_previous_partial_present_regions,
+                                );
                             }
-
-                            
-                            
-                            
-                            
-                            
-                            results.dirty_rects.push(frame.device_rect);
-
-                            self.draw_color_target(
-                                draw_target,
-                                main_target,
-                                frame.content_origin,
-                                None,
-                                None,
-                                &frame.render_tasks,
-                                &projection,
-                                &mut results.stats,
-                            );
                         }
                     } else {
                         
@@ -7252,7 +7218,6 @@ pub struct RendererOptions {
     pub chase_primitive: ChasePrimitive,
     pub support_low_priority_transactions: bool,
     pub namespace_alloc_by_client: bool,
-    pub enable_picture_caching: bool,
     pub testing: bool,
     
     
@@ -7338,7 +7303,6 @@ impl Default for RendererOptions {
             chase_primitive: ChasePrimitive::Nothing,
             support_low_priority_transactions: false,
             namespace_alloc_by_client: false,
-            enable_picture_caching: false,
             testing: false,
             gpu_supports_fast_clears: false,
             allow_dual_source_blending: true,
