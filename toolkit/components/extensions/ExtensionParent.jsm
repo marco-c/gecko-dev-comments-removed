@@ -306,7 +306,7 @@ const ProxyMessenger = {
   getTopBrowsingContextId(tabId) {
     
     let tab = apiManager.global.tabTracker.getTab(tabId, null);
-    if ((tab.browser || tab).getAttribute("pending") === "true") {
+    if (!tab || (tab.browser || tab).getAttribute("pending") === "true") {
       
       throw new ExtensionError(ERROR_NO_RECEIVERS);
     }
