@@ -65,7 +65,20 @@ module.exports = async function({
   
   
   
-  let { sources } = await threadFront.sources();
+  
+  
+  
+  
+  
+  let sources;
+  try {
+    ({ sources } = await threadFront.sources());
+  } catch (e) {
+    if (threadFront.isDestroyed()) {
+      return;
+    }
+    throw e;
+  }
 
   
   
