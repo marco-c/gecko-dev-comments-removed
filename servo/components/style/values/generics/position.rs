@@ -5,7 +5,6 @@
 
 
 
-use crate::One;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -175,7 +174,7 @@ pub struct Ratio<N>(pub N, pub N);
 
 impl<N> ToCss for Ratio<N>
 where
-    N: ToCss + One + std::cmp::PartialEq,
+    N: ToCss
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -183,10 +182,18 @@ where
     {
         self.0.to_css(dest)?;
         
-        if !self.1.is_one() {
-            dest.write_str(" / ")?;
-            self.1.to_css(dest)?;
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        dest.write_str(" / ")?;
+        self.1.to_css(dest)?;
         Ok(())
     }
 }
