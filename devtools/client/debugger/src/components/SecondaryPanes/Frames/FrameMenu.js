@@ -3,7 +3,7 @@
 
 
 
-import { showMenu } from "devtools-contextmenu";
+import { showMenu } from "../../../context-menu/menu";
 import { copyToTheClipboard } from "../../../utils/clipboard";
 import type { ContextMenuItem, Frame, ThreadContext } from "../../../types";
 import { kebabCase } from "lodash";
