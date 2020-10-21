@@ -13,7 +13,7 @@ using namespace mozilla::a11y;
 @interface MOXSearchInfo : NSObject {
   
   
-  MOXWebAreaAccessible* mWebArea;
+  MOXAccessibleBase* mRoot;
 
   
   
@@ -32,8 +32,7 @@ using namespace mozilla::a11y;
   BOOL mImmediateDescendantsOnly;
 }
 
-- (id)initWithParameters:(NSDictionary*)params
-                 andRoot:(MOXWebAreaAccessible*)root;
+- (id)initWithParameters:(NSDictionary*)params andRoot:(MOXAccessibleBase*)root;
 
 - (NSArray*)performSearch;
 

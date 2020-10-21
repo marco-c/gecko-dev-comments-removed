@@ -751,11 +751,8 @@ struct RoleDescrComparator {
   
   
   
-  MOXWebAreaAccessible* webArea = static_cast<MOXWebAreaAccessible*>(
-      GetNativeFromGeckoAccessible([self geckoDocument]));
   MOXSearchInfo* search =
-      [[MOXSearchInfo alloc] initWithParameters:searchPredicate
-                                        andRoot:webArea];
+      [[MOXSearchInfo alloc] initWithParameters:searchPredicate andRoot:self];
 
   return [search performSearch];
 }
