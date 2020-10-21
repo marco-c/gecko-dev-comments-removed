@@ -1477,15 +1477,26 @@ var SessionStoreInternal = {
         } else if (
           data.reason != RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE
         ) {
-          
-          
-          
-          
-          
-          
-          
-          
           let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+
+          
+          
+          
+          
+          
+          
+          if (tabData.searchMode) {
+            break;
+          }
+
+          
+          
+          
+          
+          
+          
+          
+          
           if (
             tabData.userTypedValue &&
             !tabData.userTypedClear &&
@@ -1504,7 +1515,22 @@ var SessionStoreInternal = {
           });
         }
         break;
-      case "SessionStore:restoreTabContentComplete":
+      case "SessionStore:restoreTabContentComplete": {
+        
+        
+        let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+        if (tabData.searchMode) {
+          win.gURLBar.setSearchMode(tabData.searchMode, browser);
+          browser.userTypedValue = tabData.userTypedValue;
+          if (tab.selected) {
+            win.gURLBar.setURI();
+          }
+          TabStateCache.update(browser, {
+            searchMode: null,
+            userTypedValue: null,
+          });
+        }
+
         
         
         if (gDebuggingEnabled) {
@@ -1521,6 +1547,7 @@ var SessionStoreInternal = {
           "sessionstore-one-or-no-tab-restored"
         );
         break;
+      }
       case "SessionStore:crashedTabRevived":
         
         
@@ -4789,6 +4816,7 @@ var SessionStoreInternal = {
       
       image: tabData.image || "",
       iconLoadingPrincipal: tabData.iconLoadingPrincipal || null,
+      searchMode: tabData.searchMode || null,
       userTypedValue: tabData.userTypedValue || "",
       userTypedClear: tabData.userTypedClear || 0,
     });

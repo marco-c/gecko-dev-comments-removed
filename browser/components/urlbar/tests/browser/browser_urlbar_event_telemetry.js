@@ -1331,6 +1331,8 @@ const tests = [
       entry: "topsites_urlbar",
     });
 
+    await UrlbarTestUtils.exitSearchMode(win);
+
     
     
     await UrlbarTestUtils.promisePopupClose(win, () => {
