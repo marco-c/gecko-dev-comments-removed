@@ -17,7 +17,7 @@ fn main() -> std::io::Result<()> {
     if args.len() == 3 {
         let in_file = File::open(&args[1])?;
         let mut out_file = File::create(&args[2])?;
-        mapped_hyph::builder::write_hyf_file(&mut out_file, mapped_hyph::builder::read_dic_file(&in_file))?;
+        mapped_hyph::builder::compile(&in_file, &mut out_file, true)?;
     } else {
         println!("usage: hyf_compile <pattern-file> <output-file>");
     }

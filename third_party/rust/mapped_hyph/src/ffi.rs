@@ -10,6 +10,8 @@
 use std::slice;
 use std::str;
 use std::ffi::CStr;
+use std::fs::File;
+use std::io::Read;
 use std::os::raw::c_char;
 use std::str::Utf8Error;
 
@@ -20,6 +22,9 @@ use super::Hyphenator;
 
 
 pub struct HyphDic;
+
+
+pub struct CompiledData;
 
 
 
@@ -162,4 +167,84 @@ pub unsafe extern "C" fn mapped_hyph_is_valid_hyphenator(dic_buf: *const u8, dic
     }
     let dic = Hyphenator::new(slice::from_raw_parts(dic_buf, dic_len as usize));
     dic.is_valid_hyphenator()
+}
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn mapped_hyph_free_compiled_data(data: *mut CompiledData) {
+    Box::from_raw(data);
+}
+
+
+fn compile_and_wrap<T: Read>(input: T, compress: bool) -> *const CompiledData {
+    let mut compiled: Vec<u8> = vec![];
+    if super::builder::compile(input, &mut compiled, compress).is_err() {
+        return std::ptr::null();
+    }
+    compiled.shrink_to_fit();
+
+    
+    Box::into_raw(Box::new(compiled)) as *const CompiledData
+}
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn mapped_hyph_compile_buffer(pattern_buf: *const u8, pattern_len: u32, compress: bool) -> *const CompiledData {
+    compile_and_wrap(slice::from_raw_parts(pattern_buf, pattern_len as usize), compress)
+}
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn mapped_hyph_compile_file(path: *const c_char, compress: bool) -> *const CompiledData {
+    
+    let path_str = match CStr::from_ptr(path).to_str() {
+        Ok(str) => str,
+        Err(_) => return std::ptr::null(),
+    };
+    let in_file = match File::open(path_str) {
+        Ok(file) => file,
+        Err(_) => return std::ptr::null(),
+    };
+    compile_and_wrap(&in_file, compress)
+}
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn mapped_hyph_compiled_data_size(data: *const CompiledData) -> u32 {
+    (&*(data as *const Vec<u8>)).len() as u32
+}
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn mapped_hyph_compiled_data_ptr(data: *const CompiledData) -> *const u8 {
+    (&*(data as *const Vec<u8>)).as_ptr()
 }

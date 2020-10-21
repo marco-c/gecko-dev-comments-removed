@@ -10,7 +10,7 @@
 
 
 
-use std::io::{Read,BufRead,BufReader,Write};
+use std::io::{Read,BufRead,BufReader,Write,Error,ErrorKind};
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::hash::{Hash,Hasher};
@@ -66,7 +66,7 @@ impl State {
 
 
 
-pub struct LevelBuilder {
+struct LevelBuilder {
     states: Vec<State>,
     str_to_state: HashMap<Vec<u8>,i32>,
     encoding: Option<String>,
@@ -349,7 +349,7 @@ impl LevelBuilder {
 
 
 
-pub fn read_dic_file<T: Read>(dic_file: T) -> Vec<LevelBuilder> {
+fn read_dic_file<T: Read>(dic_file: T, compress: bool) -> Vec<LevelBuilder> {
     let reader = BufReader::new(dic_file);
 
     let mut builders = Vec::<LevelBuilder>::new();
@@ -439,9 +439,11 @@ pub fn read_dic_file<T: Read>(dic_file: T) -> Vec<LevelBuilder> {
         }
     }
 
-    
-    for builder in &mut builders {
-        builder.merge_duplicate_states();
+    if compress {
+        
+        for builder in &mut builders {
+            builder.merge_duplicate_states();
+        }
     }
 
     builders
@@ -449,7 +451,10 @@ pub fn read_dic_file<T: Read>(dic_file: T) -> Vec<LevelBuilder> {
 
 
 
-pub fn write_hyf_file<T: Write>(hyf_file: &mut T, levels: Vec<LevelBuilder>) -> std::io::Result<()> {
+fn write_hyf_file<T: Write>(hyf_file: &mut T, levels: Vec<LevelBuilder>) -> std::io::Result<()> {
+    if levels.is_empty() {
+        return Err(Error::from(ErrorKind::InvalidData));
+    }
     let mut flattened = vec![];
     for level in levels {
         flattened.push(level.flatten());
@@ -470,4 +475,11 @@ pub fn write_hyf_file<T: Write>(hyf_file: &mut T, levels: Vec<LevelBuilder>) -> 
         hyf_file.write_all(&flat)?;
     }
     Ok(())
+}
+
+
+
+
+pub fn compile<T1: Read, T2: Write>(dic_file: T1, hyf_file: &mut T2, compress: bool) -> std::io::Result<()> {
+    write_hyf_file(hyf_file, read_dic_file(dic_file, compress))
 }
