@@ -175,12 +175,8 @@ WebSocketConnectionChild::OnDataReceived(uint8_t* aData, uint32_t aCount) {
 }
 
 NS_IMETHODIMP
-WebSocketConnectionChild::OnDataSent() {
-  LOG(("WebSocketConnectionChild::OnDataSent %p\n", this));
-
-  if (CanSend()) {
-    Unused << SendOnDataSent();
-  }
+WebSocketConnectionChild::OnReadyToSendData() {
+  
   return NS_OK;
 }
 
