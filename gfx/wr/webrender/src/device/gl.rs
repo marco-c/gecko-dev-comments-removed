@@ -1496,7 +1496,8 @@ impl Device {
         
         
         
-        let supports_copy_image_sub_data = if renderer_name.starts_with("Mali") {
+        
+        let supports_copy_image_sub_data = if renderer_name.starts_with("Mali-T") {
             false
         } else {
             supports_extension(&extensions, "GL_EXT_copy_image") ||
