@@ -90,11 +90,10 @@ public class GeckoWebExecutor {
      static final int FETCH_FLAGS_ALLOW_SOME_ERRORS = 1 << 2;
 
     
-    
 
 
     @WrapForJNI
-     static final int FETCH_FLAGS_PRIVATE = 1 << 3;
+    public static final int FETCH_FLAGS_PRIVATE = 1 << 3;
 
     
 
