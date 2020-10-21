@@ -42,7 +42,17 @@ class nsSharedPageData {
 
   
   int32_t mFromPageNum = 0;
+
+  
   int32_t mToPageNum = 0;
+
+  
+  
+  
+  
+  
+  
+  
   nsTArray<int32_t> mPageRanges;
 
   
