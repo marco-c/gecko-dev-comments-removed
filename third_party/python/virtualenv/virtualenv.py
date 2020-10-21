@@ -2,8 +2,17 @@
 
 
 
+
+assert __name__ == '__main__'
 import os
 import sys
+
+
+
+
+
+
+sys.path = [p for p in sys.path if os.path.basename(p) not in ('site-packages', 'dist-packages')]
 try:
     import importlib.util
     spec = importlib.util.spec_from_file_location('main', os.path.join(os.path.dirname(__file__), '__main__.py'))
