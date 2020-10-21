@@ -4880,8 +4880,7 @@ class MOZ_STACK_CLASS Debugger::QueryBase {
       : cx(cx),
         debugger(dbg),
         iterMarker(&cx->runtime()->gc),
-        realms(cx->zone()),
-        oom(false) {}
+        realms(cx->zone()) {}
 
   
   JSContext* cx;
@@ -4898,7 +4897,7 @@ class MOZ_STACK_CLASS Debugger::QueryBase {
   RealmSet realms;
 
   
-  bool oom;
+  bool oom = false;
 
   bool addRealm(Realm* realm) { return realms.put(realm); }
 
@@ -4939,11 +4938,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       : QueryBase(cx, dbg),
         url(cx),
         displayURLString(cx),
-        hasSource(false),
         source(cx, AsVariant(static_cast<ScriptSourceObject*>(nullptr))),
-        hasLine(false),
-        line(0),
-        innermost(false),
         innermostForRealm(cx, cx->zone()),
         scriptVector(cx, BaseScriptVector(cx)),
         wasmInstanceVector(cx, WasmInstanceObjectVector(cx)) {}
@@ -5193,17 +5188,17 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
 
 
 
-  bool hasSource;
+  bool hasSource = false;
   Rooted<DebuggerSourceReferent> source;
 
   
-  bool hasLine;
+  bool hasLine = false;
 
   
-  unsigned int line;
+  unsigned int line = 0;
 
   
-  bool innermost;
+  bool innermost = false;
 
   using RealmToScriptMap =
       GCHashMap<Realm*, JSScript*, DefaultHasher<Realm*>, ZoneAllocPolicy>;
