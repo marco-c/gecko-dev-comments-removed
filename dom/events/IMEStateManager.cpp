@@ -1176,26 +1176,20 @@ static void GetActionHint(nsIContent& aContent, nsAString& aActionHint) {
   bool willSubmit = false;
   bool isLastElement = false;
   nsCOMPtr<nsIFormControl> control(do_QueryInterface(inputContent));
-  Element* formElement = nullptr;
   if (control) {
-    formElement = control->GetFormElement();
+    HTMLFormElement* formElement = control->GetFormElement();
     
     if (formElement) {
-      HTMLFormElement* htmlForm = nullptr;
-      if (formElement->IsHTMLElement(nsGkAtoms::form)) {
-        htmlForm = HTMLFormElement::FromNodeOrNull(formElement);
-        if (htmlForm->IsLastActiveElement(control)) {
-          isLastElement = true;
-        }
+      if (formElement->IsLastActiveElement(control)) {
+        isLastElement = true;
       }
 
-      nsCOMPtr<nsIForm> form = do_QueryInterface(formElement);
-      if (form && form->GetDefaultSubmitElement()) {
+      if (formElement->GetDefaultSubmitElement()) {
         willSubmit = true;
         
-      } else if (htmlForm) {
+      } else {
         
-        if (!htmlForm->ImplicitSubmissionIsDisabled() ||
+        if (!formElement->ImplicitSubmissionIsDisabled() ||
             
             isLastElement) {
           willSubmit = true;
