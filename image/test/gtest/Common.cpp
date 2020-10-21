@@ -444,6 +444,16 @@ ImageTestCase StackCheckAVIFTestCase() {
       .WithSurfaceFlags(SurfaceFlags::TO_SRGB_COLORSPACE);
 }
 
+
+
+
+
+ImageTestCase MultiLayerAVIFTestCase() {
+  return ImageTestCase("multilayer.avif", "image/avif", IntSize(1280, 720),
+                       TEST_CASE_IGNORE_OUTPUT)
+      .WithSurfaceFlags(SurfaceFlags::TO_SRGB_COLORSPACE);
+}
+
 ImageTestCase LargeWebPTestCase() {
   return ImageTestCase("large.webp", "image/webp", IntSize(1200, 660),
                        TEST_CASE_IGNORE_OUTPUT);

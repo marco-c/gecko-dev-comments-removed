@@ -704,6 +704,10 @@ TEST_F(ImageDecoders, AVIFSingleChunk) {
   CheckDecoderSingleChunk(GreenAVIFTestCase());
 }
 
+TEST_F(ImageDecoders, AVIFMultiLayerSingleChunk) {
+  CheckDecoderSingleChunk(MultiLayerAVIFTestCase());
+}
+
 
 
 

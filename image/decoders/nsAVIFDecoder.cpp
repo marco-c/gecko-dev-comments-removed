@@ -106,6 +106,7 @@ bool nsAVIFDecoder::DecodeWithDav1d(const Mp4parseByteData& aPrimaryItem,
 
   Dav1dSettings settings;
   dav1d_default_settings(&settings);
+  settings.all_layers = 0;
   
 
   Dav1dContext* ctx = nullptr;
