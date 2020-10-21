@@ -74,6 +74,9 @@
 - (id)moxParagraphTextMarkerRangeForTextMarker:(id)textMarker;
 
 
+- (id)moxStyleTextMarkerRangeForTextMarker:(id)textMarker;
+
+
 - (id)moxNextTextMarkerForTextMarker:(id)textMarker;
 
 
