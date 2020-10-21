@@ -172,7 +172,8 @@ already_AddRefed<DrawTarget> PrintTarget::CreateWrapAndRecordDrawTarget(
 
   if (aRecorder) {
     
-    dt = gfx::Factory::CreateWrapAndRecordDrawTarget(aRecorder, aDrawTarget);
+    dt = gfx::Factory::CreateRecordingDrawTarget(aRecorder, aDrawTarget,
+                                                 aDrawTarget->GetRect());
   }
 
   if (!dt || !dt->IsValid()) {
