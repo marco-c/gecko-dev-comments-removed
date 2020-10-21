@@ -382,14 +382,6 @@ void EventListenerManager::AddEventListenerInternal(
         doc->SetUseCounter(eUseCounter_custom_onfinish);
       }
     }
-  } else if (aTypeAtom == nsGkAtoms::ontext) {
-    
-    
-    if (!aFlags.mInSystemGroup) {
-      if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
-        window->SetHasTextEventListenerInDefaultGroup();
-      }
-    }
   }
 
   if (IsApzAwareListener(listener)) {

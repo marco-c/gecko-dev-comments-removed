@@ -225,15 +225,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   }
 
   
-
-
-
-
-  void SetHasTextEventListenerInDefaultGroup() {
-    mMayHaveTextEventListenerInDefaultGroup = true;
-  }
-
-  
   
   
   
@@ -597,9 +588,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   bool mMayHaveSelectionChangeEventListener;
   bool mMayHaveMouseEnterLeaveEventListener;
   bool mMayHavePointerEnterLeaveEventListener;
-  
-  
-  bool mMayHaveTextEventListenerInDefaultGroup;
 
   
   nsCOMPtr<nsPIDOMWindowOuter> mOuterWindow;
