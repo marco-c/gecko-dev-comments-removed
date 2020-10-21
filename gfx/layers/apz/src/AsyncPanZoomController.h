@@ -24,6 +24,7 @@
 #include "InputData.h"
 #include "Axis.h"  
 #include "ExpectedGeckoMetrics.h"
+#include "FlingAccelerator.h"
 #include "InputQueue.h"
 #include "APZUtils.h"
 #include "Layers.h"  
@@ -1388,10 +1389,8 @@ class AsyncPanZoomController {
   friend class GenericOverscrollEffect;
   friend class WidgetOverscrollEffect;
 
-  
-  ParentLayerPoint mLastFlingVelocity;
-  
-  SampleTime mLastFlingTime;
+  FlingAccelerator mFlingAccelerator;
+
   
   bool mPinchPaintTimerSet;
 
