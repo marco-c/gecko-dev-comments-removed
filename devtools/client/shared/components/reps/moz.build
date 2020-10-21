@@ -4,6 +4,12 @@
 
 
 
+DIRS += [
+    'object-inspector',
+    'reps',
+    'shared',
+]
+
 DevToolsModules(
     'index.js',
 )

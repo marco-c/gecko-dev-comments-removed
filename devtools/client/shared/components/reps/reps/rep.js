@@ -2,8 +2,6 @@
 
 
 
-require("./reps.css");
-
 
 const Undefined = require("./undefined");
 const Null = require("./null");
