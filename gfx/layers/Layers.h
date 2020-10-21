@@ -381,6 +381,12 @@ class LayerManager : public FrameRecorder {
 
   virtual void ScheduleComposite() {}
 
+  
+
+
+
+  virtual void ForceComposite() {}
+
   virtual void SetNeedsComposite(bool aNeedsComposite) {}
   virtual bool NeedsComposite() const { return false; }
 

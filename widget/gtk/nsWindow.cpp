@@ -3067,6 +3067,12 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
     
     
     
+
+    
+    
+    
+    
+    GetLayerManager()->ForceComposite();
     return FALSE;
   }
 
