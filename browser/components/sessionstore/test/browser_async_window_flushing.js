@@ -121,9 +121,16 @@ add_task(async function test_remove_uninteresting_window() {
     
     docShell.setCurrentURI(Services.io.newURI("about:blank"));
 
-    let { sessionHistory } = docShell.QueryInterface(Ci.nsIWebNavigation);
-    sessionHistory.legacySHistory.purgeHistory(sessionHistory.count);
+    if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
+      let { sessionHistory } = docShell.QueryInterface(Ci.nsIWebNavigation);
+      sessionHistory.legacySHistory.purgeHistory(sessionHistory.count);
+    }
   });
+
+  if (SpecialPowers.Services.appinfo.sessionHistoryInParent) {
+    let { sessionHistory } = browser.browsingContext;
+    sessionHistory.purgeHistory(sessionHistory.count);
+  }
 
   
   
