@@ -1367,8 +1367,7 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    PresShell()->SetVisualViewportOffset(GetVisualViewportOffset(),
-                                         GetScrollPosition());
+    mHelper.mReclampVVOffsetInReflowFinished = true;
   }
 
   aDesiredSize.SetOverflowAreasToDesiredBounds();
@@ -2233,6 +2232,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mProcessingScrollEvent(false),
       mApzAnimationInProgress(false),
       mApzAnimationRequested(false),
+      mReclampVVOffsetInReflowFinished(false),
       mVelocityQueue(aOuter->PresContext()) {
   mScrollUpdates.AppendElement(
       ScrollPositionUpdate::NewScrollframe(mScrollGeneration, nsPoint()));
@@ -6357,6 +6357,15 @@ bool ScrollFrameHelper::ReflowFinished() {
   }
 
   nsAutoScriptBlocker scriptBlocker;
+
+  if (mReclampVVOffsetInReflowFinished) {
+    MOZ_ASSERT(mIsRoot);
+    mReclampVVOffsetInReflowFinished = false;
+    AutoWeakFrame weakFrame(mOuter);
+    mOuter->PresShell()->SetVisualViewportOffset(GetVisualViewportOffset(),
+                                                 GetScrollPosition());
+    NS_ENSURE_TRUE(weakFrame.IsAlive(), false);
+  }
 
   if (doScroll) {
     ScrollToRestoredPosition();

@@ -718,6 +718,9 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   bool mApzAnimationRequested : 1;
 
+  
+  bool mReclampVVOffsetInReflowFinished : 1;
+
   mozilla::layout::ScrollVelocityQueue mVelocityQueue;
 
  protected:
