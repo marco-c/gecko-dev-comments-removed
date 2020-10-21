@@ -241,6 +241,9 @@ enum class BailoutKind : uint8_t {
   PackedArrayGuard,
 
   
+  HasGetterSetterGuard,
+
+  
   UninitializedLexical,
 
   
@@ -366,6 +369,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::FunctionScriptGuard";
     case BailoutKind::PackedArrayGuard:
       return "BailoutKind::PackedArrayGuard";
+    case BailoutKind::HasGetterSetterGuard:
+      return "BailoutKind::HasGetterSetterGuard";
     case BailoutKind::UninitializedLexical:
       return "BailoutKind::UninitializedLexical";
     case BailoutKind::IonExceptionDebugMode:
