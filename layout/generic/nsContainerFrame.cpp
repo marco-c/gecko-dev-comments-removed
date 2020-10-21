@@ -1378,10 +1378,7 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
                                                                        this);
         } else if (!nif->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
           
-          nsresult rv = nif->GetParent()->StealFrame(nif);
-          if (NS_FAILED(rv)) {
-            return;
-          }
+          nif->GetParent()->StealFrame(nif);
         }
 
         tracker.Insert(nif, frameStatus);
@@ -1442,7 +1439,7 @@ bool nsContainerFrame::MaybeStealOverflowContainerFrame(nsIFrame* aChild) {
   return removed;
 }
 
-nsresult nsContainerFrame::StealFrame(nsIFrame* aChild) {
+void nsContainerFrame::StealFrame(nsIFrame* aChild) {
 #ifdef DEBUG
   if (!mFrames.ContainsFrame(aChild)) {
     nsFrameList* list = GetOverflowFrames();
@@ -1458,27 +1455,28 @@ nsresult nsContainerFrame::StealFrame(nsIFrame* aChild) {
   }
 #endif
 
-  bool removed = MaybeStealOverflowContainerFrame(aChild);
-  if (!removed) {
-    
-    
-    
-    removed = mFrames.StartRemoveFrame(aChild);
-    if (!removed) {
-      
-      
-      nsFrameList* frameList = GetOverflowFrames();
-      if (frameList) {
-        removed = frameList->ContinueRemoveFrame(aChild);
-        if (frameList->IsEmpty()) {
-          DestroyOverflowList();
-        }
-      }
-    }
+  if (MaybeStealOverflowContainerFrame(aChild)) {
+    return;
   }
 
-  MOZ_ASSERT(removed, "StealFrame: can't find aChild");
-  return removed ? NS_OK : NS_ERROR_UNEXPECTED;
+  
+  
+  
+  if (mFrames.StartRemoveFrame(aChild)) {
+    return;
+  }
+
+  
+  
+  nsFrameList* frameList = GetOverflowFrames();
+  if (frameList && frameList->ContinueRemoveFrame(aChild)) {
+    if (frameList->IsEmpty()) {
+      DestroyOverflowList();
+    }
+    return;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("StealFrame: can't find aChild");
 }
 
 nsFrameList nsContainerFrame::StealFramesAfter(nsIFrame* aChild) {
@@ -1572,8 +1570,7 @@ void nsContainerFrame::DeleteNextInFlowChild(nsIFrame* aNextInFlow,
   }
 
   
-  DebugOnly<nsresult> rv = StealFrame(aNextInFlow);
-  NS_ASSERTION(NS_SUCCEEDED(rv), "StealFrame failure");
+  StealFrame(aNextInFlow);
 
 #ifdef DEBUG
   if (aDeletingEmptyFrames) {
@@ -3004,8 +3001,7 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
       NS_ASSERTION(!(mOverflowContList &&
                      mOverflowContList->ContainsFrame(aOverflowCont)),
                    "overflow containers out of order");
-      rv = aOverflowCont->GetParent()->StealFrame(aOverflowCont);
-      NS_ENSURE_SUCCESS(rv, rv);
+      aOverflowCont->GetParent()->StealFrame(aOverflowCont);
     } else {
       aOverflowCont->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
     }
@@ -3074,8 +3070,7 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
               (!reparented && f->GetParent() == mParent) ||
               (reparented && f->GetParent() != mParent))) {
       if (!f->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
-        rv = f->GetParent()->StealFrame(f);
-        NS_ENSURE_SUCCESS(rv, rv);
+        f->GetParent()->StealFrame(f);
       }
       Insert(f, aReflowStatus);
     }

@@ -392,7 +392,11 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  virtual nsresult StealFrame(nsIFrame* aChild);
+
+
+
+
+  virtual void StealFrame(nsIFrame* aChild);
 
   
 

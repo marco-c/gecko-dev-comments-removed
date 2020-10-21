@@ -69,7 +69,7 @@ class nsInlineFrame : public nsContainerFrame {
 
   virtual void DestroyFrom(nsIFrame* aDestructRoot,
                            PostDestroyData& aPostDestroyData) override;
-  virtual nsresult StealFrame(nsIFrame* aChild) override;
+  void StealFrame(nsIFrame* aChild) override;
 
   
   virtual void AddInlineMinISize(gfxContext* aRenderingContext,
