@@ -13,7 +13,6 @@
 #include "mozilla/Likely.h"      
 #include "mozilla/Maybe.h"       
 
-#include "jit/BaselineFrame.h"   
 #include "jit/JSJitFrameIter.h"  
 #include "vm/FrameIter.h"        
 #include "vm/JitActivation.h"    
