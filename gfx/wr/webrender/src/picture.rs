@@ -132,7 +132,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::hash_map::Entry;
 use std::ops::Range;
 use crate::texture_cache::TextureCacheHandle;
-use crate::util::{MaxRect, VecHelper, MatrixHelpers, Recycler, raster_rect_to_device_pixels, ScaleOffset};
+use crate::util::{MaxRect, VecHelper, MatrixHelpers, Recycler, raster_rect_to_device_pixels};
 use crate::filterdata::{FilterDataHandle};
 use crate::visibility::{PrimitiveVisibilityMask, PrimitiveVisibilityFlags, FrameVisibilityContext, FrameVisibilityState};
 #[cfg(any(feature = "capture", feature = "replay"))]
@@ -539,10 +539,6 @@ struct TilePostUpdateContext<'a> {
 
     
     z_id_alpha: ZBufferId,
-
-    
-    
-    root_scale_changed: bool,
 }
 
 
@@ -825,8 +821,6 @@ pub enum InvalidationReason {
     CompositorKindChanged,
     
     ValidRectChanged,
-    
-    ScaleChanged,
 }
 
 
@@ -1014,9 +1008,6 @@ impl Tile {
                 Some(dirty_rect),
                 invalidation_reason.expect("bug: no invalidation_reason"),
             );
-        }
-        if ctx.root_scale_changed {
-            self.invalidate(None, InvalidationReason::ScaleChanged);
         }
         
         
@@ -2291,7 +2282,7 @@ pub struct TileCacheInstance {
     
     shared_clip_chain: ClipChainId,
     
-    root_transform: ScaleOffset,
+    root_transform: TransformKey,
     
     
     
@@ -2368,7 +2359,7 @@ impl TileCacheInstance {
             background_color: params.background_color,
             backdrop: BackdropInfo::empty(),
             subpixel_mode: SubpixelMode::Allow,
-            root_transform: ScaleOffset::identity(),
+            root_transform: TransformKey::Local,
             shared_clips: params.shared_clips,
             shared_clip_chain: params.shared_clip_chain,
             current_tile_size: DeviceIntSize::zero(),
@@ -3793,21 +3784,10 @@ impl TileCacheInstance {
             .get_relative_transform(
                 self.spatial_node_index,
                 ROOT_SPATIAL_NODE_INDEX,
-            );
-        let root_transform = match root_transform {
-            CoordinateSpaceMapping::Local => ScaleOffset::identity(),
-            CoordinateSpaceMapping::ScaleOffset(scale_offset) => scale_offset,
-            CoordinateSpaceMapping::Transform(..) => panic!("bug: picture caches don't support complex transforms"),
-        };
-        const EPSILON: f32 = 0.001;
-        let root_translation_changed =
-            !root_transform.offset.x.approx_eq_eps(&self.root_transform.offset.x, &EPSILON) ||
-            !root_transform.offset.y.approx_eq_eps(&self.root_transform.offset.y, &EPSILON);
-        let root_scale_changed =
-            !root_transform.scale.x.approx_eq_eps(&self.root_transform.scale.x, &EPSILON) ||
-            !root_transform.scale.y.approx_eq_eps(&self.root_transform.scale.y, &EPSILON);
-
-        if root_translation_changed || root_scale_changed {
+            )
+            .into();
+        let root_transform_changed = root_transform != self.root_transform;
+        if root_transform_changed {
             self.root_transform = root_transform;
             frame_state.composite_state.dirty_rects_are_valid = false;
         }
@@ -3834,7 +3814,6 @@ impl TileCacheInstance {
             external_surfaces: &self.external_surfaces,
             z_id_opaque: self.z_id_opaque,
             z_id_alpha,
-            root_scale_changed,
         };
 
         let mut state = TilePostUpdateState {
