@@ -236,9 +236,10 @@ class UrlbarInput {
       this.window.addEventListener("draggableregionleftmousedown", this);
     }
     this.textbox.addEventListener("mousedown", this);
-    this._inputContainer.addEventListener("click", this);
 
-    this._searchModeIndicatorClose.addEventListener("click", this);
+    
+    
+    this._inputContainer.addEventListener("click", this);
 
     
     
