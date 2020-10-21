@@ -153,8 +153,8 @@ class ResponsiveImageCandidate {
   
   bool HasSameParameter(const ResponsiveImageCandidate& aOther) const;
 
-  const nsAString& URLString() const;
-  nsIPrincipal* TriggeringPrincipal() const;
+  const nsAString& URLString() const { return mURLString; }
+  nsIPrincipal* TriggeringPrincipal() const { return mTriggeringPrincipal; }
 
   
   double Density(ResponsiveImageSelector* aSelector) const;
@@ -162,24 +162,30 @@ class ResponsiveImageCandidate {
   
   double Density(double aMatchingWidth) const;
 
-  
-  bool IsComputedFromWidth() const;
+  bool IsValid() const { return mType != CandidateType::Invalid; }
 
-  enum eCandidateType {
-    eCandidateType_Invalid,
-    eCandidateType_Density,
+  
+  bool IsComputedFromWidth() const {
+    return mType == CandidateType::ComputedFromWidth;
+  }
+
+  bool IsDefault() const { return mType == CandidateType::Default; }
+
+  enum class CandidateType : uint8_t {
+    Invalid,
+    Density,
     
     
-    eCandidateType_Default,
-    eCandidateType_ComputedFromWidth
+    Default,
+    ComputedFromWidth
   };
 
-  eCandidateType Type() const { return mType; }
+  CandidateType Type() const { return mType; }
 
  private:
   nsString mURLString;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  eCandidateType mType;
+  CandidateType mType;
   union {
     double mDensity;
     int32_t mWidth;
