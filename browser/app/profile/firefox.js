@@ -1812,8 +1812,6 @@ pref("browser.tabs.crashReporting.requestEmail", false);
 pref("browser.tabs.crashReporting.emailMe", false);
 pref("browser.tabs.crashReporting.email", "");
 
-pref("browser.navigation.requireUserInteraction", false);
-
 
 
 pref("extensions.experiments.enabled", false);
