@@ -677,21 +677,26 @@ static java::sdk::CryptoInfo::LocalRef GetCryptoInfoFromSample(
       cryptoObj.mPlainSizes.Length(), cryptoObj.mEncryptedSizes.Length());
 
   uint32_t totalSubSamplesSize = 0;
+  for (auto& size : cryptoObj.mPlainSizes) {
+    totalSubSamplesSize += size;
+  }
   for (auto& size : cryptoObj.mEncryptedSizes) {
     totalSubSamplesSize += size;
   }
 
   
-  nsTArray<uint32_t> plainSizes;
-  for (auto& size : cryptoObj.mPlainSizes) {
-    totalSubSamplesSize += size;
-    plainSizes.AppendElement(size);
-  }
-
+  nsTArray<uint32_t> plainSizes = cryptoObj.mPlainSizes.Clone();
   uint32_t codecSpecificDataSize = aSample->Size() - totalSubSamplesSize;
   
   
-  plainSizes[0] += codecSpecificDataSize;
+  if (!plainSizes.IsEmpty()) {
+    
+    
+    
+    CheckedUint32 newLeadingPlainSize{plainSizes[0]};
+    newLeadingPlainSize += codecSpecificDataSize;
+    plainSizes[0] = newLeadingPlainSize.value();
+  }
 
   static const int kExpectedIVLength = 16;
   auto tempIV(cryptoObj.mIV);
@@ -703,11 +708,12 @@ static java::sdk::CryptoInfo::LocalRef GetCryptoInfoFromSample(
   }
 
   auto numBytesOfPlainData = mozilla::jni::IntArray::New(
-      reinterpret_cast<int32_t*>(&plainSizes[0]), plainSizes.Length());
+      reinterpret_cast<const int32_t*>(&plainSizes[0]), plainSizes.Length());
 
   auto numBytesOfEncryptedData = mozilla::jni::IntArray::New(
       reinterpret_cast<const int32_t*>(&cryptoObj.mEncryptedSizes[0]),
       cryptoObj.mEncryptedSizes.Length());
+
   auto iv = mozilla::jni::ByteArray::New(reinterpret_cast<int8_t*>(&tempIV[0]),
                                          tempIV.Length());
   auto keyId = mozilla::jni::ByteArray::New(

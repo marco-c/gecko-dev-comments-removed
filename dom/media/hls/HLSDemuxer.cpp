@@ -446,11 +446,10 @@ CryptoSample HLSTrackDemuxer::ExtractCryptoSample(
       msg = "Error when extracting clear data.";
       break;
     }
+    auto&& clearArr = clearData->GetElements();
     
-    
-    for (const auto& b : clearData->GetElements()) {
-      crypto.mPlainSizes.AppendElement(b);
-    }
+    crypto.mPlainSizes.AppendElements(reinterpret_cast<uint32_t*>(&clearArr[0]),
+                                      clearArr.Length());
 
     mozilla::jni::IntArray::LocalRef encryptedData;
     if (NS_FAILED(aCryptoInfo->NumBytesOfEncryptedData(&encryptedData))) {

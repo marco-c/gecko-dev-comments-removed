@@ -550,7 +550,16 @@ class CryptoTrack {
 
 class CryptoSample : public CryptoTrack {
  public:
-  CopyableTArray<uint16_t> mPlainSizes;
+  
+  
+  
+  
+  
+  
+  
+  CopyableTArray<uint32_t> mPlainSizes;
+  
+  
   CopyableTArray<uint32_t> mEncryptedSizes;
   CopyableTArray<uint8_t> mIV;
   CopyableTArray<CopyableTArray<uint8_t>> mInitDatas;
