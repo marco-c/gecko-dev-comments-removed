@@ -7,6 +7,7 @@
 #ifndef jit_ABIFunctionList_inl_h
 #define jit_ABIFunctionList_inl_h
 
+#include "jslibmath.h"  
 #include "irregexp/RegExpAPI.h"
 
 
@@ -40,6 +41,7 @@ namespace jit {
   _(js::irregexp::CaseInsensitiveCompareNonUnicode)         \
   _(js::irregexp::CaseInsensitiveCompareUnicode)            \
   _(js::irregexp::GrowBacktrackStack)                       \
+  _(js::NumberMod)                                          \
 
 
 
