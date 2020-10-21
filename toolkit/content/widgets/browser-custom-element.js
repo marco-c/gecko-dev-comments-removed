@@ -1930,6 +1930,17 @@
 
     
     
+    
+    
+    
+    
+    afterChangeRemoteness(browser, redirectLoadSwitchId) {
+      
+      return false;
+    }
+
+    
+    
     beforeChangeRemoteness() {
       
       
@@ -1954,16 +1965,7 @@
 
       
       
-      
-      
-      if (!Services.appinfo.sessionHistoryInParent) {
-        let tabbrowser = this.getTabBrowser();
-        if (tabbrowser) {
-          tabbrowser.finishBrowserRemotenessChange(this, redirectLoadSwitchId);
-          return true;
-        }
-      }
-      return false;
+      return this.afterChangeRemoteness(redirectLoadSwitchId);
     }
   }
 
