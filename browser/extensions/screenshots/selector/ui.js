@@ -365,6 +365,7 @@ this.ui = (function() {
           this.element.setAttribute("role", "dialog");
           this.element.onload = watchFunction(() => {
             msgsPromise.then(([cancelTitle, copyTitle, downloadTitle]) => {
+              assertIsBlankDocument(this.element.contentDocument);
               this.document = this.element.contentDocument;
               this.window = this.element.contentWindow;
               
