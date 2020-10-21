@@ -494,6 +494,22 @@ class MOZ_RAII AutoDisableJSInterruptCallback {
   bool mOld;
 };
 
+
+
+
+
+
+class MOZ_RAII AutoAllowLegacyScriptExecution {
+ public:
+  AutoAllowLegacyScriptExecution();
+  ~AutoAllowLegacyScriptExecution();
+
+  static bool IsAllowed();
+
+ private:
+  static int sAutoAllowLegacyScriptExecution;
+};
+
 }  
 
 #endif  

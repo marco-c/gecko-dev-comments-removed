@@ -32,6 +32,25 @@ namespace dom {
 
 static MOZ_THREAD_LOCAL(ScriptSettingsStackEntry*) sScriptSettingsTLS;
 
+
+
+
+#ifdef DEBUG
+static void AssertIfNotSafeToRunScript() {
+  
+  if (nsContentUtils::IsSafeToRunScript()) {
+    return;
+  }
+
+  
+  if (AutoAllowLegacyScriptExecution::IsAllowed()) {
+    return;
+  }
+
+  MOZ_ASSERT(false, "is it safe to run script?");
+}
+#endif
+
 class ScriptSettingsStack {
  public:
   static ScriptSettingsStackEntry* Top() { return sScriptSettingsTLS.get(); }
@@ -598,6 +617,9 @@ AutoEntryScript::AutoEntryScript(nsIGlobalObject* aGlobalObject,
   MOZ_ASSERT(aGlobalObject);
 
   if (aIsMainThread) {
+#ifdef DEBUG
+    AssertIfNotSafeToRunScript();
+#endif
     if (gRunToCompletionListeners > 0) {
       mDocShellEntryMonitor.emplace(cx(), aReason);
     }
@@ -749,6 +771,37 @@ void AutoSlowOperation::CheckForInterrupt() {
     MOZ_ALWAYS_TRUE(jsapi.Init(xpc::PrivilegedJunkScope()));
     JS_CheckForInterrupt(jsapi.cx());
   }
+}
+
+AutoAllowLegacyScriptExecution::AutoAllowLegacyScriptExecution() {
+#ifdef DEBUG
+  
+  
+  if (!NS_IsMainThread()) {
+    return;
+  }
+  sAutoAllowLegacyScriptExecution++;
+#endif
+}
+
+AutoAllowLegacyScriptExecution::~AutoAllowLegacyScriptExecution() {
+#ifdef DEBUG
+  
+  
+  if (!NS_IsMainThread()) {
+    return;
+  }
+  sAutoAllowLegacyScriptExecution--;
+  MOZ_ASSERT(sAutoAllowLegacyScriptExecution >= 0,
+             "how can the stack guard produce a value less than 0?");
+#endif
+}
+
+int AutoAllowLegacyScriptExecution::sAutoAllowLegacyScriptExecution = 0;
+
+
+bool AutoAllowLegacyScriptExecution::IsAllowed() {
+  return sAutoAllowLegacyScriptExecution > 0;
 }
 
 }  

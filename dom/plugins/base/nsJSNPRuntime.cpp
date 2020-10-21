@@ -692,6 +692,8 @@ static bool doInvoke(NPObject* npobj, NPIdentifier method,
     return false;
   }
 
+  AutoAllowLegacyScriptExecution exemption;
+
   
   
   dom::AutoEntryScript aes(globalObject, "NPAPI doInvoke");

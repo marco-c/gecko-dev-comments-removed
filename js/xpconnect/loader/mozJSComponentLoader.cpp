@@ -823,6 +823,7 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   aTableScript.set(script);
 
   {  
+    AutoAllowLegacyScriptExecution exemption;
 
     
     
