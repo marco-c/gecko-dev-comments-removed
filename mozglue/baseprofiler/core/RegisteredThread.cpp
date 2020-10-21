@@ -34,7 +34,6 @@ size_t RegisteredThread::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   
   
   
-  
 
   return n;
 }

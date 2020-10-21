@@ -53,14 +53,6 @@
 #  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, \
                                                 categoryPair, ctx, flags)
 
-#  define BASE_PROFILER_ADD_MARKER_WITH_PAYLOAD( \
-      markerName, categoryPair, PayloadType, parenthesizedPayloadArgs)
-
-#  define BASE_PROFILER_TRACING_MARKER(categoryString, markerName, \
-                                       categoryPair, kind)
-#  define AUTO_BASE_PROFILER_TRACING_MARKER(categoryString, markerName, \
-                                            categoryPair)
-
 #  define AUTO_PROFILER_STATS(name)
 
 
@@ -122,7 +114,6 @@ class Vector;
 namespace baseprofiler {
 
 class ProfilerBacktrace;
-class ProfilerMarkerPayload;
 class SpliceableJSONWriter;
 
 
@@ -452,7 +443,6 @@ MFBT_API void profiler_thread_wake();
 inline bool profiler_is_active() {
   return baseprofiler::detail::RacyFeatures::IsActive();
 }
-
 
 
 
@@ -813,24 +803,6 @@ namespace baseprofiler {
         ctx, label, dynamicString,                                        \
         ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, flags)
 
-
-
-
-
-#  define BASE_PROFILER_ADD_MARKER_WITH_PAYLOAD(                        \
-      markerName, categoryPair, PayloadType, parenthesizedPayloadArgs)  \
-    do {                                                                \
-      AUTO_PROFILER_STATS(base_add_marker_with_##PayloadType);          \
-      ::mozilla::baseprofiler::profiler_add_marker(                     \
-          markerName,                                                   \
-          ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, \
-          PayloadType parenthesizedPayloadArgs);                        \
-    } while (false)
-
-MFBT_API void profiler_add_marker(const char* aMarkerName,
-                                  ProfilingCategoryPair aCategoryPair,
-                                  const ProfilerMarkerPayload& aPayload);
-
 MFBT_API void profiler_add_js_marker(const char* aMarkerName,
                                      const char* aMarkerText);
 
@@ -838,50 +810,6 @@ MFBT_API void profiler_add_js_marker(const char* aMarkerName,
 
 
 bool profiler_is_locked_on_current_thread();
-
-
-MFBT_API void profiler_add_marker_for_thread(
-    int aThreadId, ProfilingCategoryPair aCategoryPair, const char* aMarkerName,
-    const ProfilerMarkerPayload& aPayload);
-
-
-
-
-MFBT_API void profiler_add_marker_for_mainthread(
-    ProfilingCategoryPair aCategoryPair, const char* aMarkerName,
-    const ProfilerMarkerPayload& aPayload);
-
-enum TracingKind {
-  TRACING_EVENT,
-  TRACING_INTERVAL_START,
-  TRACING_INTERVAL_END,
-};
-
-
-
-#  define BASE_PROFILER_TRACING_MARKER(categoryString, markerName, \
-                                       categoryPair, kind)         \
-    ::mozilla::baseprofiler::profiler_tracing_marker(              \
-        categoryString, markerName,                                \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, kind)
-
-MFBT_API void profiler_tracing_marker(
-    const char* aCategoryString, const char* aMarkerName,
-    ProfilingCategoryPair aCategoryPair, TracingKind aKind,
-    const Maybe<uint64_t>& aInnerWindowID = Nothing());
-MFBT_API void profiler_tracing_marker(
-    const char* aCategoryString, const char* aMarkerName,
-    ProfilingCategoryPair aCategoryPair, TracingKind aKind,
-    UniqueProfilerBacktrace aCause,
-    const Maybe<uint64_t>& aInnerWindowID = Nothing());
-
-
-#  define AUTO_BASE_PROFILER_TRACING_MARKER(categoryString, markerName, \
-                                            categoryPair)               \
-    ::mozilla::baseprofiler::AutoProfilerTracing BASE_PROFILER_RAII(    \
-        categoryString, markerName,                                     \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,   \
-        Nothing())
 
 
 
@@ -1013,44 +941,6 @@ class MOZ_RAII AutoProfilerLabel {
  public:
   
   static MOZ_THREAD_LOCAL(ProfilingStack*) sProfilingStack;
-};
-
-class MOZ_RAII AutoProfilerTracing {
- public:
-  AutoProfilerTracing(const char* aCategoryString, const char* aMarkerName,
-                      ProfilingCategoryPair aCategoryPair,
-                      const Maybe<uint64_t>& aInnerWindowID)
-      : mCategoryString(aCategoryString),
-        mMarkerName(aMarkerName),
-        mCategoryPair(aCategoryPair),
-        mInnerWindowID(aInnerWindowID) {
-    profiler_tracing_marker(mCategoryString, mMarkerName, aCategoryPair,
-                            TRACING_INTERVAL_START, mInnerWindowID);
-  }
-
-  AutoProfilerTracing(const char* aCategoryString, const char* aMarkerName,
-                      ProfilingCategoryPair aCategoryPair,
-                      UniqueProfilerBacktrace aBacktrace,
-                      const Maybe<uint64_t>& aInnerWindowID)
-      : mCategoryString(aCategoryString),
-        mMarkerName(aMarkerName),
-        mCategoryPair(aCategoryPair),
-        mInnerWindowID(aInnerWindowID) {
-    profiler_tracing_marker(mCategoryString, mMarkerName, aCategoryPair,
-                            TRACING_INTERVAL_START, std::move(aBacktrace),
-                            mInnerWindowID);
-  }
-
-  ~AutoProfilerTracing() {
-    profiler_tracing_marker(mCategoryString, mMarkerName, mCategoryPair,
-                            TRACING_INTERVAL_END, mInnerWindowID);
-  }
-
- protected:
-  const char* mCategoryString;
-  const char* mMarkerName;
-  const ProfilingCategoryPair mCategoryPair;
-  const Maybe<uint64_t> mInnerWindowID;
 };
 
 
