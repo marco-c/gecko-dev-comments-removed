@@ -696,7 +696,7 @@ already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
   if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
     bool useGlxVsync = false;
     
-    if (!gfxVars::UseEGL() || gfxVars::AllowGLXOnEGL()) {
+    if (!gfxVars::UseEGL()) {
       useGlxVsync = gl::sGLXLibrary.SupportsVideoSync();
     }
     if (useGlxVsync) {

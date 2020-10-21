@@ -17,7 +17,6 @@
 #include "prenv.h"
 #include "nsPrintfCString.h"
 #include "nsWhitespaceTokenizer.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/Telemetry.h"
 
 #include "GfxInfoX11.h"
@@ -250,10 +249,6 @@ void GfxInfo::GetData() {
   
   
   if (mIsMesa) {
-    
-    
-    gfx::gfxVars::SetAllowGLXOnEGL(true);
-
     mIsAccelerated = !mesaAccelerated.Equals("FALSE");
     
     
