@@ -620,9 +620,7 @@ add_task(async function localOneOffs_legacy() {
     set: [["browser.urlbar.update2", false]],
   });
 
-  
-  
-  oneOffSearchButtons._engines = null;
+  oneOffSearchButtons.invalidateCache();
   let rebuildPromise = BrowserTestUtils.waitForEvent(
     oneOffSearchButtons,
     "rebuild"
@@ -656,9 +654,7 @@ add_task(async function localOneOffs_legacy() {
 
 
 add_task(async function localOneOffs() {
-  
-  
-  oneOffSearchButtons._engines = null;
+  oneOffSearchButtons.invalidateCache();
   await doLocalOneOffsShownTest();
 });
 
@@ -676,9 +672,7 @@ add_task(async function localOneOffClick() {
   
   let typedValue = "foo.bar";
 
-  
-  
-  oneOffSearchButtons._engines = null;
+  oneOffSearchButtons.invalidateCache();
   let rebuildPromise = BrowserTestUtils.waitForEvent(
     oneOffSearchButtons,
     "rebuild"
@@ -726,9 +720,7 @@ add_task(async function localOneOffReturn() {
   
   let typedValue = "foo.bar";
 
-  
-  
-  oneOffSearchButtons._engines = null;
+  oneOffSearchButtons.invalidateCache();
   let rebuildPromise = BrowserTestUtils.waitForEvent(
     oneOffSearchButtons,
     "rebuild"
@@ -799,9 +791,7 @@ add_task(async function localOneOffEmptySearchString() {
     ],
   });
 
-  
-  
-  oneOffSearchButtons._engines = null;
+  oneOffSearchButtons.invalidateCache();
   let rebuildPromise = BrowserTestUtils.waitForEvent(
     oneOffSearchButtons,
     "rebuild"
@@ -860,6 +850,93 @@ add_task(async function localOneOffEmptySearchString() {
   await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
 
   await hidePopup();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function avoidWillHideRace() {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.update2", true],
+      ["browser.urlbar.update2.oneOffsRefresh", true],
+      ["browser.urlbar.maxHistoricalSearchSuggestions", 0],
+    ],
+  });
+
+  oneOffSearchButtons.invalidateCache();
+
+  
+  
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+  EventUtils.synthesizeKey("k", { accelKey: true });
+  await searchPromise;
+  Assert.ok(
+    UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
+    "One-offs should be visible"
+  );
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  info("Hide all engines but the test engine.");
+  let oldDefaultEngine = await Services.search.getDefault();
+  await Services.search.setDefault(engine);
+  let engines = (await Services.search.getVisibleEngines()).filter(
+    e => e.name != engine.name
+  );
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.hiddenOneOffs", engines.map(e => e.name).join(",")]],
+  });
+  Assert.ok(
+    !oneOffSearchButtons._engineInfo,
+    "_engineInfo should be nulled out."
+  );
+
+  
+  
+  
+  EventUtils.synthesizeKey("k", { accelKey: true });
+  
+  
+  
+  await BrowserTestUtils.waitForCondition(
+    () => !!oneOffSearchButtons._engineInfo,
+    "_engineInfo is set."
+  );
+  Assert.ok(!UrlbarTestUtils.isPopupOpen(window), "The UrlbarView is closed.");
+  Assert.equal(
+    oneOffSearchButtons._engineInfo.willHide,
+    true,
+    "_engineInfo should be repopulated and willHide should be true."
+  );
+  Assert.equal(
+    oneOffSearchButtons._engineInfo.domWasUpdated,
+    undefined,
+    "domWasUpdated should not be populated since we haven't yet tried to rebuild the one-offs."
+  );
+
+  
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  Assert.equal(
+    oneOffSearchButtons._engineInfo.domWasUpdated,
+    true,
+    "domWasUpdated should be true"
+  );
+  Assert.ok(
+    !UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
+    "One-offs should be hidden since there is only one engine."
+  );
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  await SpecialPowers.popPrefEnv();
+  await Services.search.setDefault(oldDefaultEngine);
   await SpecialPowers.popPrefEnv();
 });
 

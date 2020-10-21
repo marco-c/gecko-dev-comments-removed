@@ -111,7 +111,8 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
   get hasView() {
     
     
-    return this.style.display != "none";
+    
+    return this.style.display != "none" && !this.container.hidden;
   }
 
   
@@ -312,7 +313,7 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
         changedPref
       )
     ) {
-      this._engines = null;
+      this.invalidateCache();
     }
     this._setupOneOffsHorizontalKeyNavigation();
   }

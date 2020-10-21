@@ -389,6 +389,7 @@ class UrlbarView {
 
     this.removeAccessibleFocus();
     this.input.inputField.setAttribute("aria-expanded", "false");
+    this._openPanelInstance = null;
 
     this.input.removeAttribute("open");
     this.input.endLayoutExtend();
@@ -490,6 +491,7 @@ class UrlbarView {
   onQueryStarted(queryContext) {
     this._queryWasCancelled = false;
     this._queryUpdatedResults = false;
+    this._openPanelInstance = null;
     this._startRemoveStaleRowsTimer();
   }
 
@@ -521,8 +523,13 @@ class UrlbarView {
 
     
     
-    this.oneOffSearchButtons.enable(true);
-    this._openPanel();
+    let openPanelInstance = (this._openPanelInstance = {});
+    this.oneOffSearchButtons.willHide().then(willHide => {
+      if (!willHide && openPanelInstance == this._openPanelInstance) {
+        this.oneOffSearchButtons.enable(true);
+        this._openPanel();
+      }
+    });
   }
 
   onQueryResults(queryContext) {

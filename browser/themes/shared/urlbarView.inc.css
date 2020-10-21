@@ -53,14 +53,19 @@
 
   
   border-inline: 1px solid transparent;
+}
 
-  
 
+
+#urlbar[open] > .urlbarView {
   margin-block-start: -@urlbarBreakoutExtend@;
 }
 
 .urlbarView-body-inner {
   width: 100%;
+}
+
+#urlbar[open] > .urlbarView > .urlbarView-body-outer > .urlbarView-body-inner {
   border-top: 1px solid var(--urlbar-separator-color);
 }
 

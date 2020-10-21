@@ -92,7 +92,7 @@ class SearchOneOffs {
 
     this._contextEngine = null;
 
-    this._engines = null;
+    this._engineInfo = null;
 
     
 
@@ -183,6 +183,31 @@ class SearchOneOffs {
     } else {
       throw new Error("Unrecognized search-one-offs event: " + event.type);
     }
+  }
+
+  
+
+
+
+  async willHide() {
+    if (this._engineInfo?.willHide !== undefined) {
+      return this._engineInfo.willHide;
+    }
+    let engineInfo = await this.getEngineInfo();
+    let oneOffCount = engineInfo.engines.length;
+    this._engineInfo.willHide =
+      !oneOffCount ||
+      (oneOffCount == 1 &&
+        engineInfo.engines[0].name == engineInfo.default.name);
+    return this._engineInfo.willHide;
+  }
+
+  
+
+
+
+  invalidateCache() {
+    this._engineInfo = null;
   }
 
   
@@ -353,24 +378,29 @@ class SearchOneOffs {
     return this._bundle;
   }
 
-  async getEngines() {
-    if (this._engines) {
-      return this._engines;
+  async getEngineInfo() {
+    if (this._engineInfo) {
+      return this._engineInfo;
     }
+
+    this._engineInfo = {};
+    if (PrivateBrowsingUtils.isWindowPrivate(this.window)) {
+      this._engineInfo.default = await Services.search.getDefaultPrivate();
+    } else {
+      this._engineInfo.default = await Services.search.getDefault();
+    }
+
     let currentEngineNameToIgnore;
     if (!this.getAttribute("includecurrentengine")) {
-      if (PrivateBrowsingUtils.isWindowPrivate(this.window)) {
-        currentEngineNameToIgnore = (await Services.search.getDefaultPrivate())
-          .name;
-      } else {
-        currentEngineNameToIgnore = (await Services.search.getDefault()).name;
-      }
+      currentEngineNameToIgnore = this._engineInfo.default.name;
     }
 
     let pref = Services.prefs.getStringPref("browser.search.hiddenOneOffs");
     let hiddenList = pref ? pref.split(",") : [];
 
-    this._engines = (await Services.search.getVisibleEngines()).filter(e => {
+    this._engineInfo.engines = (
+      await Services.search.getVisibleEngines()
+    ).filter(e => {
       let name = e.name;
       return (
         (!currentEngineNameToIgnore || name != currentEngineNameToIgnore) &&
@@ -378,12 +408,12 @@ class SearchOneOffs {
       );
     });
 
-    return this._engines;
+    return this._engineInfo;
   }
 
   observe(aEngine, aTopic, aData) {
     
-    this._engines = null;
+    this.invalidateCache();
   }
 
   
@@ -417,7 +447,7 @@ class SearchOneOffs {
     }
 
     
-    if (!this.popup && this._engines) {
+    if (!this.popup && this._engineInfo?.domWasUpdated) {
       return;
     }
 
@@ -426,7 +456,10 @@ class SearchOneOffs {
       let textboxWidth = await this.window.promiseDocumentFlushed(() => {
         return this._textbox.clientWidth;
       });
-      if (this._engines && this._textboxWidth == textboxWidth) {
+      if (
+        this._engineInfo?.domWasUpdated &&
+        this._textboxWidth == textboxWidth
+      ) {
         return;
       }
       this._textboxWidth = textboxWidth;
@@ -443,14 +476,14 @@ class SearchOneOffs {
     headerText.id = this.telemetryOrigin + "-one-offs-header-label";
     this.buttons.setAttribute("aria-labelledby", headerText.id);
 
-    let engines = await this.getEngines();
-    let defaultEngine = PrivateBrowsingUtils.isWindowPrivate(this.window)
-      ? await Services.search.getDefaultPrivate()
-      : await Services.search.getDefault();
-    let oneOffCount = engines.length;
-    let hideOneOffs =
-      !oneOffCount ||
-      (oneOffCount == 1 && engines[0].name == defaultEngine.name);
+    let hideOneOffs = await this.willHide();
+
+    
+    
+    
+    
+    
+    this._engineInfo.domWasUpdated = true;
 
     if (this.compact) {
       this.container.hidden = hideOneOffs;
@@ -467,6 +500,7 @@ class SearchOneOffs {
       this.spacerCompact.setAttribute("flex", "1");
     }
 
+    let engines = (await this.getEngineInfo()).engines;
     if (this.popup) {
       let buttonsWidth = this.popup.clientWidth;
 
@@ -498,7 +532,7 @@ class SearchOneOffs {
       
       
       
-      let rowCount = Math.ceil(oneOffCount / enginesPerRow);
+      let rowCount = Math.ceil(engines.length / enginesPerRow);
       let height = rowCount * this.buttonHeight;
       this.buttons.style.setProperty("height", `${height}px`);
     }
