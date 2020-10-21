@@ -488,7 +488,6 @@ struct TilePreUpdateContext {
     
     
     fract_offset: PictureVector2D,
-    device_fract_offset: DeviceVector2D,
 
     
     background_color: Option<ColorF>,
@@ -796,8 +795,8 @@ pub enum PrimitiveCompareResultDetail {
 pub enum InvalidationReason {
     
     FractionalOffset {
-        old: DeviceVector2D,
-        new: DeviceVector2D,
+        old: PictureVector2D,
+        new: PictureVector2D,
     },
     
     BackgroundColor {
@@ -837,7 +836,7 @@ pub enum InvalidationReason {
 pub struct TileSerializer {
     pub rect: PictureRect,
     pub current_descriptor: TileDescriptor,
-    pub device_fract_offset: DeviceVector2D,
+    pub fract_offset: PictureVector2D,
     pub id: TileId,
     pub root: TileNode,
     pub background_color: Option<ColorF>,
@@ -871,6 +870,8 @@ pub struct Tile {
     
     pub device_dirty_rect: DeviceRect,
     
+    pub device_valid_rect: DeviceRect,
+    
     
     pub current_descriptor: TileDescriptor,
     
@@ -887,7 +888,7 @@ pub struct Tile {
     
     
     
-    device_fract_offset: DeviceVector2D,
+    fract_offset: PictureVector2D,
     
     
     pub id: TileId,
@@ -925,6 +926,7 @@ impl Tile {
             local_tile_rect: PictureRect::zero(),
             local_tile_box: PictureBox2D::zero(),
             world_tile_rect: WorldRect::zero(),
+            device_valid_rect: DeviceRect::zero(),
             local_dirty_rect: PictureRect::zero(),
             device_dirty_rect: DeviceRect::zero(),
             surface: None,
@@ -932,7 +934,7 @@ impl Tile {
             prev_descriptor: TileDescriptor::new(),
             is_valid: false,
             is_visible: false,
-            device_fract_offset: DeviceVector2D::zero(),
+            fract_offset: PictureVector2D::zero(),
             id,
             is_opaque: false,
             root: TileNode::new_leaf(Vec::new()),
@@ -950,7 +952,7 @@ impl Tile {
     fn print(&self, pt: &mut dyn PrintTreePrinter) {
         pt.new_level(format!("Tile {:?}", self.id));
         pt.add_item(format!("local_tile_rect: {:?}", self.local_tile_rect));
-        pt.add_item(format!("device_fract_offset: {:?}", self.device_fract_offset));
+        pt.add_item(format!("fract_offset: {:?}", self.fract_offset));
         pt.add_item(format!("background_color: {:?}", self.background_color));
         pt.add_item(format!("invalidation_reason: {:?}", self.invalidation_reason));
         self.current_descriptor.print(pt);
@@ -1019,7 +1021,7 @@ impl Tile {
         }
         
         
-        if self.current_descriptor.device_valid_rect != self.prev_descriptor.device_valid_rect {
+        if self.current_descriptor.local_valid_rect != self.prev_descriptor.local_valid_rect {
             self.invalidate(None, InvalidationReason::ValidRectChanged);
             state.composite_state.dirty_rects_are_valid = false;
         }
@@ -1089,14 +1091,13 @@ impl Tile {
 
         
         
-        
-        
-        let fract_delta = self.device_fract_offset - ctx.device_fract_offset;
-        let fract_changed = fract_delta.x.abs() > 0.01 || fract_delta.y.abs() > 0.01;
+        let fract_changed = (self.fract_offset.x - ctx.fract_offset.x).abs() > 0.01 ||
+                            (self.fract_offset.y - ctx.fract_offset.y).abs() > 0.01;
         if fract_changed {
             self.invalidate(None, InvalidationReason::FractionalOffset {
-                                    old: self.device_fract_offset,
-                                    new: ctx.device_fract_offset });
+                                    old: self.fract_offset,
+                                    new: ctx.fract_offset });
+            self.fract_offset = ctx.fract_offset;
         }
 
         if ctx.background_color != self.background_color {
@@ -1299,7 +1300,7 @@ impl Tile {
         
         
         let device_rect = (self.world_tile_rect * ctx.global_device_pixel_scale).round();
-        self.current_descriptor.device_valid_rect = (world_valid_rect * ctx.global_device_pixel_scale)
+        self.device_valid_rect = (world_valid_rect * ctx.global_device_pixel_scale)
             .round_out()
             .intersection(&device_rect)
             .unwrap_or_else(DeviceRect::zero);
@@ -1627,9 +1628,6 @@ pub struct TileDescriptor {
     local_valid_rect: PictureRect,
 
     
-    pub device_valid_rect: DeviceRect,
-
-    
     
     color_bindings: Vec<ColorBinding>,
 }
@@ -1643,7 +1641,6 @@ impl TileDescriptor {
             images: Vec::new(),
             transforms: Vec::new(),
             local_valid_rect: PictureRect::zero(),
-            device_valid_rect: DeviceRect::zero(),
             color_bindings: Vec::new(),
         }
     }
@@ -2339,8 +2336,6 @@ pub struct TileCacheInstance {
     
     fract_offset: PictureVector2D,
     
-    device_fract_offset: DeviceVector2D,
-    
     
     
     
@@ -2415,7 +2410,6 @@ impl TileCacheInstance {
             current_tile_size: DeviceIntSize::zero(),
             frames_until_size_eval: 0,
             fract_offset: PictureVector2D::zero(),
-            device_fract_offset: DeviceVector2D::zero(),
             
             virtual_offset: DeviceIntPoint::new(
                 params.virtual_surface_size / 2,
@@ -2665,7 +2659,6 @@ impl TileCacheInstance {
         let device_origin = world_origin * frame_context.global_device_pixel_scale;
         let desired_device_origin = device_origin.round();
         self.device_position = desired_device_origin;
-        self.device_fract_offset = desired_device_origin - device_origin;
 
         
         let ref_world_rect = WorldRect::new(
@@ -2674,12 +2667,16 @@ impl TileCacheInstance {
         );
 
         
-        
-        self.fract_offset = pic_to_world_mapper
+        let ref_point = pic_to_world_mapper
             .unmap(&ref_world_rect)
             .expect("bug: unable to unmap ref world rect")
-            .origin
-            .to_vector();
+            .origin;
+
+        
+        self.fract_offset = PictureVector2D::new(
+            ref_point.x.fract(),
+            ref_point.y.fract(),
+        );
 
         
         
@@ -2855,7 +2852,6 @@ impl TileCacheInstance {
         let ctx = TilePreUpdateContext {
             pic_to_world_mapper,
             fract_offset: self.fract_offset,
-            device_fract_offset: self.device_fract_offset,
             background_color: self.background_color,
             global_screen_world_rect: frame_context.global_screen_world_rect,
             tile_size: self.tile_size,
@@ -5213,9 +5209,7 @@ impl PicturePrimitive {
 
                             if tile.is_visible {
                                 
-                                let device_draw_rect = device_clip_rect.intersection(
-                                    &tile.current_descriptor.device_valid_rect,
-                                );
+                                let device_draw_rect = device_clip_rect.intersection(&tile.device_valid_rect);
 
                                 
                                 
@@ -5425,8 +5419,7 @@ impl PicturePrimitive {
                                     .round()
                                     .to_i32();
 
-                                let valid_rect = tile.current_descriptor
-                                    .device_valid_rect
+                                let valid_rect = tile.device_valid_rect
                                     .translate(-device_rect.origin.to_vector())
                                     .round()
                                     .to_i32();
@@ -5465,12 +5458,6 @@ impl PicturePrimitive {
 
                                     first = false;
                                 }
-                            }
-
-                            
-                            
-                            if tile.device_dirty_rect.contains_rect(&tile.current_descriptor.device_valid_rect) {
-                                tile.device_fract_offset = tile_cache.device_fract_offset;
                             }
 
                             
@@ -5598,7 +5585,7 @@ impl PicturePrimitive {
                             tile_cache_tiny.tiles.insert(*key, TileSerializer {
                                 rect: tile.local_tile_rect,
                                 current_descriptor: tile.current_descriptor.clone(),
-                                device_fract_offset: tile.device_fract_offset,
+                                fract_offset: tile.fract_offset,
                                 id: tile.id,
                                 root: tile.root.clone(),
                                 background_color: tile.background_color,
