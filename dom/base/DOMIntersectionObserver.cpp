@@ -272,7 +272,7 @@ static Maybe<nsRect> EdgeInclusiveIntersection(const nsRect& aRect,
   return Some(nsRect(left, top, right - left, bottom - top));
 }
 
-enum class BrowsingContextOrigin { Similar, Different, Unknown };
+enum class BrowsingContextOrigin { Similar, Different };
 
 
 
@@ -280,7 +280,7 @@ enum class BrowsingContextOrigin { Similar, Different, Unknown };
 static BrowsingContextOrigin SimilarOrigin(const Element& aTarget,
                                            const nsINode* aRoot) {
   if (!aRoot) {
-    return BrowsingContextOrigin::Unknown;
+    return BrowsingContextOrigin::Different;
   }
   nsIPrincipal* principal1 = aTarget.NodePrincipal();
   nsIPrincipal* principal2 = aRoot->NodePrincipal();
@@ -301,19 +301,10 @@ static BrowsingContextOrigin SimilarOrigin(const Element& aTarget,
 }
 
 
-static Document* GetTopLevelDocument(const Document& aDocument) {
-  BrowsingContext* browsingContext = aDocument.GetBrowsingContext();
-  if (!browsingContext) {
-    return nullptr;
-  }
 
-  nsPIDOMWindowOuter* topWindow = browsingContext->Top()->GetDOMWindow();
-  if (!topWindow) {
-    
-    return nullptr;
-  }
-
-  return topWindow->GetExtantDoc();
+static Document* GetTopLevelContentDocumentInThisProcess(Document& aDocument) {
+  auto* wc = aDocument.GetTopLevelWindowContext();
+  return wc ? wc->GetExtantDoc() : nullptr;
 }
 
 
@@ -434,9 +425,25 @@ struct OopIframeMetrics {
   nsRect mRemoteDocumentVisibleRect;
 };
 
-static Maybe<OopIframeMetrics> GetOopIframeMetrics(Document& aDocument) {
+static Maybe<OopIframeMetrics> GetOopIframeMetrics(Document& aDocument,
+                                                   Document* aRootDocument) {
   Document* rootDoc = nsContentUtils::GetRootDocument(&aDocument);
-  MOZ_ASSERT(rootDoc && !rootDoc->IsTopLevelContentDocument());
+  MOZ_ASSERT(rootDoc);
+
+  if (rootDoc->IsTopLevelContentDocument()) {
+    return Nothing();
+  }
+
+  if (aRootDocument &&
+      rootDoc == nsContentUtils::GetRootDocument(aRootDocument)) {
+    
+    
+    
+    
+    
+    
+    return Nothing();
+  }
 
   PresShell* rootPresShell = rootDoc->GetPresShell();
   if (!rootPresShell || rootPresShell->IsDestroying()) {
@@ -509,21 +516,36 @@ void DOMIntersectionObserver::Update(Document* aDocument,
   } else {
     MOZ_ASSERT(!mRoot || mRoot->IsDocument());
     Document* rootDocument =
-        mRoot ? mRoot->AsDocument() : GetTopLevelDocument(*aDocument);
+        mRoot ? mRoot->AsDocument()
+              : GetTopLevelContentDocumentInThisProcess(*aDocument);
+    root = rootDocument;
+
     if (rootDocument) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       if (PresShell* presShell = rootDocument->GetPresShell()) {
         rootFrame = presShell->GetRootScrollFrame();
         if (rootFrame) {
-          root = rootFrame->GetContent()->AsElement();
           nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame);
           rootRect = scrollFrame->GetScrollPortRect();
         }
       }
-    } else if (Maybe<OopIframeMetrics> metrics =
-                   GetOopIframeMetrics(*aDocument)) {
-      
+    }
+
+    if (Maybe<OopIframeMetrics> metrics =
+            GetOopIframeMetrics(*aDocument, rootDocument)) {
       rootFrame = metrics->mInProcessRootFrame;
-      rootRect = metrics->mInProcessRootRect;
+      if (!rootDocument) {
+        rootRect = metrics->mInProcessRootRect;
+      }
       remoteDocumentVisibleRect = Some(metrics->mRemoteDocumentVisibleRect);
     }
   }
@@ -555,8 +577,6 @@ void DOMIntersectionObserver::Update(Document* aDocument,
     }
 
     BrowsingContextOrigin origin = SimilarOrigin(*target, root);
-    MOZ_ASSERT_IF(remoteDocumentVisibleRect,
-                  origin != BrowsingContextOrigin::Similar);
     if (origin == BrowsingContextOrigin::Similar) {
       rootBounds.Inflate(rootMargin);
     }

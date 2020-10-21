@@ -105,6 +105,7 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   nsGlobalWindowInner* GetInnerWindow() const;
   Document* GetDocument() const;
+  Document* GetExtantDoc() const;
 
   
   

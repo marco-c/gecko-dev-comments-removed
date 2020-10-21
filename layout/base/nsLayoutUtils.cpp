@@ -3197,10 +3197,7 @@ nsRect nsLayoutUtils::TransformFrameRectToAncestor(
     Maybe<Matrix4x4Flagged>* aMatrixCache ,
     bool aStopAtStackingContextAndDisplayPortAndOOFFrame ,
     nsIFrame** aOutAncestor ) {
-  
-  
-  MOZ_ASSERT(aAncestor.mFrame->PresContext() != aFrame->PresContext() ||
-                 IsAncestorFrameCrossDoc(aAncestor.mFrame, aFrame),
+  MOZ_ASSERT(IsAncestorFrameCrossDoc(aAncestor.mFrame, aFrame),
              "Fix the caller");
 
   SVGTextFrame* text = GetContainingSVGTextFrame(aFrame);
