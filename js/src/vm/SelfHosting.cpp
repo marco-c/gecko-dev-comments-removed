@@ -86,6 +86,7 @@
 #include "vm/StringType.h"
 #include "vm/ToSource.h"  
 #include "vm/TypedArrayObject.h"
+#include "vm/Uint8Clamped.h"
 #include "vm/WrapperObject.h"
 
 #include "gc/GC-inl.h"

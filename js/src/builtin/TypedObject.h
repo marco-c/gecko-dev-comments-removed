@@ -17,6 +17,7 @@
 #include "js/ScalarType.h"            
 #include "vm/ArrayBufferObject.h"
 #include "vm/JSObject.h"
+#include "vm/Uint8Clamped.h"
 
 
 
