@@ -109,7 +109,7 @@ interface nsIEditor  : nsISupports
                                    in boolean aSuppressTransaction);
 
   
-  attribute unsigned long flags;
+  [setter_can_run_script] attribute unsigned long flags;
 
   
 
