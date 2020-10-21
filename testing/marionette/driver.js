@@ -1748,6 +1748,12 @@ GeckoDriver.prototype.switchToParentFrame = async function() {
 
   if (MarionettePrefs.useActors) {
     this.contentBrowsingContext = browsingContext;
+
+    
+    
+    
+    await this.listener.setBrowsingContextId(browsingContext.id);
+
     return;
   }
 
@@ -1794,6 +1800,12 @@ GeckoDriver.prototype.switchToFrame = async function(cmd) {
     );
 
     this.contentBrowsingContext = browsingContext;
+
+    
+    
+    
+    await this.listener.setBrowsingContextId(browsingContext.id);
+
     return;
   }
 
