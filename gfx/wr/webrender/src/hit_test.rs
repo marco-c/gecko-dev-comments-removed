@@ -164,6 +164,11 @@ pub struct HitTestingScene {
     
     #[ignore_malloc_size_of = "ClipId"]
     clip_id_stack: Vec<ClipId>,
+
+    
+    
+    #[ignore_malloc_size_of = "simple"]
+    cached_clip_id: Option<(ClipId, ops::Range<ClipNodeIndex>)>,
 }
 
 impl HitTestingScene {
@@ -174,6 +179,7 @@ impl HitTestingScene {
             clip_nodes: Vec::with_capacity(stats.clip_nodes_count),
             items: Vec::with_capacity(stats.items_count),
             clip_id_stack: Vec::with_capacity(8),
+            cached_clip_id: None,
         }
     }
 
@@ -194,34 +200,47 @@ impl HitTestingScene {
         clip_id: ClipId,
         clip_store: &ClipStore,
     ) {
-        let start = ClipNodeIndex(self.clip_nodes.len() as u32);
+        let clip_range = match self.cached_clip_id {
+            Some((cached_clip_id, ref range)) if cached_clip_id == clip_id => {
+                range.clone()
+            }
+            Some(_) | None => {
+                let start = ClipNodeIndex(self.clip_nodes.len() as u32);
 
-        
-        for clip_id in &self.clip_id_stack {
-            add_clips(
-                *clip_id,
-                clip_store,
-                &mut self.clip_nodes,
-            );
-        }
+                
+                for clip_id in &self.clip_id_stack {
+                    add_clips(
+                        *clip_id,
+                        clip_store,
+                        &mut self.clip_nodes,
+                    );
+                }
 
-        
-        add_clips(
-            clip_id,
-            clip_store,
-            &mut self.clip_nodes,
-        );
+                
+                add_clips(
+                    clip_id,
+                    clip_store,
+                    &mut self.clip_nodes,
+                );
 
-        let end = ClipNodeIndex(self.clip_nodes.len() as u32);
+                let end = ClipNodeIndex(self.clip_nodes.len() as u32);
+
+                let range = ops::Range {
+                    start,
+                    end,
+                };
+
+                self.cached_clip_id = Some((clip_id, range.clone()));
+
+                range
+            }
+        };
 
         let item = HitTestingItem::new(
             tag,
             info,
             spatial_node_index,
-            ops::Range {
-                start,
-                end,
-            },
+            clip_range,
         );
 
         self.items.push(item);
@@ -232,6 +251,9 @@ impl HitTestingScene {
         &mut self,
         clip_id: ClipId,
     ) {
+        
+        self.cached_clip_id = None;
+
         self.clip_id_stack.push(clip_id);
     }
 
@@ -239,6 +261,9 @@ impl HitTestingScene {
     pub fn pop_clip(
         &mut self,
     ) {
+        
+        self.cached_clip_id = None;
+
         self.clip_id_stack.pop().unwrap();
     }
 }
