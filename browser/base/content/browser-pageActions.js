@@ -14,7 +14,6 @@ ChromeUtils.defineModuleGetter(
 );
 
 var BrowserPageActions = {
-  _panelNode: null,
   
 
 
@@ -27,12 +26,8 @@ var BrowserPageActions = {
 
 
   get panelNode() {
-    
-    if (!this._panelNode) {
-      this.initializePanel();
-    }
     delete this.panelNode;
-    return (this.panelNode = this._panelNode);
+    return (this.panelNode = document.getElementById("pageActionPanel"));
   },
 
   
@@ -69,12 +64,16 @@ var BrowserPageActions = {
 
 
   init() {
-    this.placeAllActionsInUrlbar();
+    this.placeAllActions();
     this._onPanelShowing = this._onPanelShowing.bind(this);
+    this.panelNode.addEventListener("popupshowing", this._onPanelShowing);
+    this.panelNode.addEventListener("popuphiding", () => {
+      this.mainButtonNode.removeAttribute("open");
+    });
   },
 
   _onPanelShowing() {
-    this.initializePanel();
+    this.placeLazyActionsInPanel();
     for (let action of PageActions.actionsInPanel(window)) {
       let buttonNode = this.panelButtonNodeForActionID(action.id);
       action.onShowingInPanel(buttonNode);
@@ -96,32 +95,15 @@ var BrowserPageActions = {
   
 
 
-  placeAllActionsInUrlbar() {
+  placeAllActions() {
+    let panelActions = PageActions.actionsInPanel(window);
+    for (let action of panelActions) {
+      this.placeActionInPanel(action);
+    }
     let urlbarActions = PageActions.actionsInUrlbar(window);
     for (let action of urlbarActions) {
       this.placeActionInUrlbar(action);
     }
-  },
-
-  
-
-
-  initializePanel() {
-    
-    if (!this._panelNode) {
-      let template = document.getElementById("pageActionPanelTemplate");
-      template.replaceWith(template.content);
-      this._panelNode = document.getElementById("pageActionPanel");
-      this._panelNode.addEventListener("popupshowing", this._onPanelShowing);
-      this._panelNode.addEventListener("popuphiding", () => {
-        this.mainButtonNode.removeAttribute("open");
-      });
-    }
-
-    for (let action of PageActions.actionsInPanel(window)) {
-      this.placeActionInPanel(action);
-    }
-    this.placeLazyActionsInPanel();
   },
 
   
@@ -142,7 +124,7 @@ var BrowserPageActions = {
 
 
   placeActionInPanel(action) {
-    if (this._panelNode && this.panelNode.state != "closed") {
+    if (this.panelNode.state != "closed") {
       this._placeActionInPanelNow(action);
     } else {
       
