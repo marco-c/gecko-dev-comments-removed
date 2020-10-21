@@ -4,10 +4,6 @@
 
 
 
-DIRS += [
-    'redux',
-]
-
 DevToolsModules(
     'dom-node-constants.js',
     'grip-length-bubble.js',
