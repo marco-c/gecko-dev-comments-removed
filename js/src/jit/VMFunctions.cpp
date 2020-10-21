@@ -1437,33 +1437,13 @@ JSObject* CreateGenerator(JSContext* cx, BaselineFrame* frame) {
 
 bool NormalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame,
                    uint32_t frameSize, jsbytecode* pc) {
-  MOZ_ASSERT(JSOp(*pc) == JSOp::Yield || JSOp(*pc) == JSOp::Await);
-
-  uint32_t numValueSlots = frame->numValueSlots(frameSize);
-
-  MOZ_ASSERT(numValueSlots > frame->script()->nfixed());
-  uint32_t stackDepth = numValueSlots - frame->script()->nfixed();
+  MOZ_ASSERT(JSOp(*pc) == JSOp::InitialYield || JSOp(*pc) == JSOp::Yield ||
+             JSOp(*pc) == JSOp::Await);
 
   
-  MOZ_ASSERT(stackDepth >= 1);
-
-  
-  
-  
-  RootedValueVector stackStorage(cx);
-  if (!stackStorage.reserve(stackDepth - 1)) {
-    return false;
-  }
-
-  size_t firstSlot = numValueSlots - stackDepth;
-  for (size_t i = 0; i < stackDepth - 1; i++) {
-    stackStorage.infallibleAppend(*frame->valueSlot(firstSlot + i));
-  }
-
-  MOZ_ASSERT(stackStorage.length() == stackDepth - 1);
-
-  return AbstractGeneratorObject::normalSuspend(
-      cx, obj, frame, pc, stackStorage.begin(), stackDepth - 1);
+  uint32_t numSlots = frame->numValueSlots(frameSize) - 1;
+  MOZ_ASSERT(numSlots >= frame->script()->nfixed());
+  return AbstractGeneratorObject::suspend(cx, obj, frame, pc, numSlots);
 }
 
 bool FinalSuspend(JSContext* cx, HandleObject obj, jsbytecode* pc) {
