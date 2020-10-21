@@ -114,7 +114,9 @@ async function testClearData(clearSiteData, clearCache) {
 
   let dialogClosed = BrowserTestUtils.waitForEvent(dialogWin, "unload");
 
-  let clearButton = dialogWin.document.getElementById("clearButton");
+  let clearButton = dialogWin.document
+    .querySelector("dialog")
+    .getButton("accept");
   if (!clearSiteData && !clearCache) {
     
     
@@ -124,7 +126,9 @@ async function testClearData(clearSiteData, clearCache) {
       () => clearButton.disabled,
       "Clear button should be disabled"
     );
-    let cancelButton = dialogWin.document.getElementById("cancelButton");
+    let cancelButton = dialogWin.document
+      .querySelector("dialog")
+      .getButton("cancel");
     
     cancelButton.click();
   } else {
