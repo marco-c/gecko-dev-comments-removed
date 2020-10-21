@@ -2390,6 +2390,16 @@ nsNativeThemeCocoa::ScrollbarParams nsNativeThemeCocoa::ComputeScrollbarParams(n
       params.faceColor = colors.thumb.CalcColor(*style);
     }
   }
+
+  
+  
+  
+  if (!params.custom) {
+    params.custom = true;
+    params.trackColor = NS_RGBA(250, 250, 250, 255);
+    params.faceColor = NS_RGBA(194, 194, 194, 255);
+  }
+
   return params;
 }
 
