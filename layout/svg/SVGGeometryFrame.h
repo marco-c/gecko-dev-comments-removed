@@ -137,6 +137,12 @@ class SVGGeometryFrame : public nsIFrame, public ISVGDisplayableFrame {
 
   void PaintMarkers(gfxContext& aContext, const gfxMatrix& aTransform,
                     imgDrawingParams& aImgParams);
+
+  
+
+
+
+  float GetStrokeWidthForMarkers();
 };
 
 
