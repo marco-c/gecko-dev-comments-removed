@@ -28,6 +28,7 @@
 
 #include "js/Conversions.h"  
 #include "vm/ArgumentsObject.h"  
+#include "vm/RegExpShared.h"     
 #include "vm/TraceLogging.h"     
                                  
                                  
@@ -57,6 +58,7 @@ namespace jit {
   _(js::ecmaAtan2)                                          \
   _(js::ecmaHypot)                                          \
   _(js::ecmaPow)                                            \
+  _(js::ExecuteRegExpAtomRaw)                               \
   _(js::hypot3)                                             \
   _(js::hypot4)                                             \
   _(js::irregexp::CaseInsensitiveCompareNonUnicode)         \
