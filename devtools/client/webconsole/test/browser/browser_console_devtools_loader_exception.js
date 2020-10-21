@@ -57,16 +57,26 @@ add_task(async function() {
   ok(url.includes("toolbox.js"), "we have the expected view source URL");
   ok(!url.includes("->"), "no -> in the URL given to view-source");
 
+  const isFissionEnabledForBrowserConsole = Services.prefs.getBoolPref(
+    "devtools.browsertoolbox.fission",
+    false
+  );
+
   const { targetList } = bcHud;
-  const onViewSourceTargetAvailable = new Promise(resolve => {
-    const onAvailable = ({ targetFront }) => {
-      if (targetFront.url.includes("view-source:")) {
-        targetList.unwatchTargets([targetList.TYPES.FRAME], onAvailable);
-        resolve();
-      }
-    };
-    targetList.watchTargets([targetList.TYPES.FRAME], onAvailable);
-  });
+  
+  
+  
+  const onViewSourceTargetAvailable = !isFissionEnabledForBrowserConsole
+    ? Promise.resolve()
+    : new Promise(resolve => {
+        const onAvailable = ({ targetFront }) => {
+          if (targetFront.url.includes("view-source:")) {
+            targetList.unwatchTargets([targetList.TYPES.FRAME], onAvailable);
+            resolve();
+          }
+        };
+        targetList.watchTargets([targetList.TYPES.FRAME], onAvailable);
+      });
 
   const onTabOpen = BrowserTestUtils.waitForNewTab(
     gBrowser,
