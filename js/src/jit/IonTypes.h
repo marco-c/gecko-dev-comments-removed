@@ -231,6 +231,9 @@ enum class BailoutKind : uint8_t {
   FunctionFlagsGuard,
 
   
+  FunctionIsNonBuiltinCtorGuard,
+
+  
   FunctionKindGuard,
 
   
@@ -368,6 +371,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "TagNotEqualGuard";
     case BailoutKind::FunctionFlagsGuard:
       return "FunctionFlagsGuard";
+    case BailoutKind::FunctionIsNonBuiltinCtorGuard:
+      return "FunctionIsNonBuiltinCtorGuard";
     case BailoutKind::FunctionKindGuard:
       return "FunctionKindGuard";
     case BailoutKind::FunctionScriptGuard:

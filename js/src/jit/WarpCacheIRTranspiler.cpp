@@ -868,15 +868,7 @@ bool WarpCacheIRTranspiler::emitGuardFunctionIsNonBuiltinCtor(
     ObjOperandId funId) {
   MDefinition* fun = getOperand(funId);
 
-  
-  
-  
-  uint16_t expectedFlags =
-      FunctionFlags::BASESCRIPT | FunctionFlags::CONSTRUCTOR;
-  uint16_t unexpectedFlags = FunctionFlags::SELF_HOSTED;
-
-  auto* ins =
-      MGuardFunctionFlags::New(alloc(), fun, expectedFlags, unexpectedFlags);
+  auto* ins = MGuardFunctionIsNonBuiltinCtor::New(alloc(), fun);
   add(ins);
 
   setOperand(funId, ins);
