@@ -380,14 +380,11 @@ nsresult nsThreadManager::Init() {
       new IdleTaskManager(idlePeriod.forget()));
 
   
-  UniquePtr<PrioritizedEventQueue> queue = MakeUnique<PrioritizedEventQueue>();
+  
+  UniquePtr<EventQueue> queue = MakeUnique<EventQueue>(true);
 
-  PrioritizedEventQueue* prioritized = queue.get();
-
-  RefPtr<ThreadEventQueue<PrioritizedEventQueue>> synchronizedQueue =
-      new ThreadEventQueue<PrioritizedEventQueue>(std::move(queue), true);
-
-  prioritized->SetMutexRef(synchronizedQueue->MutexRef());
+  RefPtr<ThreadEventQueue<EventQueue>> synchronizedQueue =
+      new ThreadEventQueue<EventQueue>(std::move(queue), true);
 
   mMainThread =
       new nsThread(WrapNotNull(synchronizedQueue), nsThread::MAIN_THREAD, 0);

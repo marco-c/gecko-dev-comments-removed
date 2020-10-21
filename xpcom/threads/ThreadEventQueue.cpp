@@ -52,7 +52,8 @@ ThreadEventQueue<InnerQueueT>::ThreadEventQueue(UniquePtr<InnerQueueT> aQueue,
                                                 bool aIsMainThread)
     : mBaseQueue(std::move(aQueue)),
       mLock("ThreadEventQueue"),
-      mEventsAvailable(mLock, "EventsAvail") {
+      mEventsAvailable(mLock, "EventsAvail"),
+      mIsMainThread(aIsMainThread) {
   if (aIsMainThread) {
     TaskController::Get()->SetConditionVariable(&mEventsAvailable);
   }
@@ -84,7 +85,7 @@ bool ThreadEventQueue<InnerQueueT>::PutEventInternal(
     
     
     
-    if (InnerQueueT::SupportsPrioritization) {
+    if (mIsMainThread) {
       auto* e = event.get();  
       if (nsCOMPtr<nsIRunnablePriority> runnablePrio = do_QueryInterface(e)) {
         uint32_t prio = nsIRunnablePriority::PRIORITY_NORMAL;
