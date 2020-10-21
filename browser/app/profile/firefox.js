@@ -1778,6 +1778,10 @@ pref("privacy.webrtc.legacyGlobalIndicator", true);
 
 
 
+pref("privacy.webrtc.globalMuteToggles", false);
+
+
+
 pref("privacy.webrtc.sharedTabWarning", false);
 
 

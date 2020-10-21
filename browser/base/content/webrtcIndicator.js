@@ -83,12 +83,39 @@ const WebRTCIndicator = {
     this.statusBar = null;
     this.statusBarMenus = new Set();
 
-    if (
-      Services.prefs.getBoolPref("privacy.webrtc.hideGlobalIndicator", false)
-    ) {
-      let baseWin = window.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
-      baseWin.visibility = false;
+    this.showGlobalMuteToggles = Services.prefs.getBoolPref(
+      "privacy.webrtc.globalMuteToggles",
+      false
+    );
+
+    this.hideGlobalIndicator = Services.prefs.getBoolPref(
+      "privacy.webrtc.hideGlobalIndicator",
+      false
+    );
+
+    if (this.hideGlobalIndicator) {
+      this.setVisibility(false);
     }
+  },
+
+  
+
+
+
+
+
+
+  setVisibility(isVisible) {
+    let baseWin = window.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
+    baseWin.visibility = isVisible;
+    
+    
+    
+    
+    document.documentElement.setAttribute("visible", isVisible);
+    
+    
+    document.documentElement.setAttribute("inwindowmenu", isVisible);
   },
 
   
@@ -131,8 +158,16 @@ const WebRTCIndicator = {
       }
     }
 
-    this.updateWindowAttr("sharingvideo", showCameraIndicator);
-    this.updateWindowAttr("sharingaudio", showMicrophoneIndicator);
+    if (!this.showGlobalMuteToggles && !webrtcUI.showScreenSharingIndicator) {
+      this.setVisibility(false);
+    } else if (!this.hideGlobalIndicator) {
+      this.setVisibility(true);
+    }
+
+    if (this.showGlobalMuteToggles) {
+      this.updateWindowAttr("sharingvideo", showCameraIndicator);
+      this.updateWindowAttr("sharingaudio", showMicrophoneIndicator);
+    }
 
     let sharingScreen = showScreenSharingIndicator.startsWith("Screen");
     this.updateWindowAttr("sharingscreen", sharingScreen);
@@ -435,6 +470,14 @@ const WebRTCIndicator = {
 
     if (!["Camera", "Microphone", "Screen"].includes(type)) {
       return;
+    }
+
+    
+    
+    
+    if (document.documentElement.getAttribute("visible") != "true") {
+      let baseWin = window.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
+      baseWin.visibility = false;
     }
 
     let activeStreams;
