@@ -81,7 +81,6 @@ add_task(async function() {
   
   
   
-  
 
   runMetricsTest({
     filterString: "devtools/client/netmonitor",

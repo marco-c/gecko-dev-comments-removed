@@ -9,11 +9,15 @@
 
 
 
-function thunk({ dispatch, getState }) {
-  return next => action => {
-    return typeof action === "function"
-      ? action({ dispatch, getState })
-      : next(action);
+
+function thunk(options = {}) {
+  return function({ dispatch, getState }) {
+    return next => action => {
+      return typeof action === "function"
+        ? action({ dispatch, getState, ...options })
+        : next(action);
+    };
   };
 }
+
 exports.thunk = thunk;

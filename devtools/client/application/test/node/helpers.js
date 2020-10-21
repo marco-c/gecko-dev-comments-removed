@@ -10,7 +10,7 @@ const configureStore = require("redux-mock-store").default;
 
 
 function setupStore(preloadedState = {}) {
-  const middleware = [thunk];
+  const middleware = [thunk()];
   const mockStore = configureStore(middleware);
   return mockStore(preloadedState);
 }
