@@ -14,7 +14,6 @@
 
 #include "jsfriendapi.h"
 
-#include "builtin/TypedObject.h"
 #include "jit/BaselineInspector.h"
 #include "jit/CompileInfo.h"
 #include "jit/InlineScriptTree.h"
@@ -28,6 +27,7 @@
 #include "js/experimental/JitInfo.h"  
 #include "js/ScalarType.h"            
 #include "vm/SharedStencil.h"         
+#include "wasm/TypedObject.h"
 
 namespace js {
 

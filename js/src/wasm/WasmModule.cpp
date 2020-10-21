@@ -21,13 +21,13 @@
 #include <chrono>
 #include <thread>
 
-#include "builtin/TypedObject.h"
 #include "jit/JitOptions.h"
 #include "js/BuildId.h"                 
 #include "js/experimental/TypedData.h"  
 #include "threading/LockGuard.h"
 #include "vm/HelperThreadState.h"  
 #include "vm/PlainObject.h"        
+#include "wasm/TypedObject.h"
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmInstance.h"

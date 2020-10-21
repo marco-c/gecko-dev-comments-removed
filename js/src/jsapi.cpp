@@ -39,9 +39,6 @@
 #include "builtin/Promise.h"
 #include "builtin/Stream.h"
 #include "builtin/Symbol.h"
-#ifdef JS_HAS_TYPED_OBJECTS
-#  include "builtin/TypedObject.h"
-#endif
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/CompilationInfo.h"  

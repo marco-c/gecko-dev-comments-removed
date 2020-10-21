@@ -4,7 +4,7 @@
 
 
 
-#include "builtin/TypedObject-inl.h"
+#include "wasm/TypedObject-inl.h"
 
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"

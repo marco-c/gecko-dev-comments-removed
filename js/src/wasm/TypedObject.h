@@ -4,8 +4,8 @@
 
 
 
-#ifndef builtin_TypedObject_h
-#define builtin_TypedObject_h
+#ifndef wasm_TypedObject_h
+#define wasm_TypedObject_h
 
 #include "mozilla/CheckedInt.h"
 
@@ -17,83 +17,6 @@
 #include "vm/ArrayBufferObject.h"
 #include "vm/JSObject.h"
 #include "vm/Uint8Clamped.h"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 namespace js {
 
