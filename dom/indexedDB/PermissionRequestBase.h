@@ -48,7 +48,7 @@ class PermissionRequestBase : public nsIObserver,
       uint32_t aIntPermission);
 
   
-  nsresult PromptIfNeeded(PermissionValue* aCurrentValue);
+  Result<PermissionValue, nsresult> PromptIfNeeded();
 
  protected:
   PermissionRequestBase(Element* aOwnerElement, nsIPrincipal* aPrincipal);
