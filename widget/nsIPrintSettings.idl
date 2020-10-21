@@ -63,9 +63,6 @@ interface nsIPrintSettings : nsISupports
   const unsigned long kInitSaveAll            = 0xFFFFFFFF;
 
   
-  const long kEnableSelectionRB = 0x00000001;
-
-  
   const long kRangeAllPages           = 0;
   const long kRangeSpecifiedPageRange = 1;
 
@@ -99,26 +96,6 @@ interface nsIPrintSettings : nsISupports
   const short kSimplex          = 0;
   const short kDuplexHorizontal = 1;
   const short kDuplexVertical   = 2;
-
-  
-
-
-  void SetPrintOptions(in int32_t aType, in boolean aTurnOnOff);
-
-  
-
-
-  boolean GetPrintOptions(in int32_t aType);
-
-  
-
-
-  int32_t GetPrintOptionsBits();
-
-  
-
-
-  void SetPrintOptionsBits(in int32_t bits);
 
   
 
@@ -182,6 +159,10 @@ interface nsIPrintSettings : nsISupports
 
   
   [infallible] attribute boolean showMarginGuides;
+
+  
+
+  [infallible] attribute boolean isPrintSelectionRBEnabled;
 
   
   [infallible] attribute boolean printSelectionOnly;

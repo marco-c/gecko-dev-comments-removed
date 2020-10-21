@@ -215,9 +215,7 @@ static nsresult ShowNativePrintDialog(HWND aHWnd,
       PD_ALLPAGES | PD_RETURNIC | PD_USEDEVMODECOPIESANDCOLLATE | PD_COLLATE;
 
   
-  bool isOn;
-  aPrintSettings->GetPrintOptions(nsIPrintSettings::kEnableSelectionRB, &isOn);
-  if (!isOn) {
+  if (!aPrintSettings->GetIsPrintSelectionRBEnabled()) {
     prntdlg.Flags |= PD_NOSELECTION;
   }
 

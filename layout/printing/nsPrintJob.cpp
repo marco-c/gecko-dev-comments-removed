@@ -605,8 +605,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   }
 
   
-  printData->mPrintSettings->SetPrintOptions(
-      nsIPrintSettings::kEnableSelectionRB,
+  printData->mPrintSettings->SetIsPrintSelectionRBEnabled(
       !mDisallowSelectionPrint && printData->mSelectionRoot);
 
   bool printingViaParent =

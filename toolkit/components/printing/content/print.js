@@ -624,10 +624,8 @@ var PrintEventHandler = {
       numPages = settings.endPageRange - settings.startPageRange + 1;
     }
     
-    settings.SetPrintOptions(
-      Ci.nsIPrintSettings.kEnableSelectionRB,
-      hasSelection
-    );
+    settings.isPrintSelectionRBEnabled = hasSelection;
+
     document.dispatchEvent(
       new CustomEvent("page-count", {
         detail: { numPages, totalPages: totalPageCount },
