@@ -472,6 +472,9 @@ struct ResponsiveImageDescriptors {
   
   
   
+  
+  
+  
   Maybe<int32_t> mFutureCompatHeight;
   
   
@@ -674,6 +677,26 @@ double ResponsiveImageCandidate::Density(
   MOZ_ASSERT(mType == CandidateType::Default || mType == CandidateType::Density,
              "unhandled candidate type");
   return Density(-1);
+}
+
+void ResponsiveImageCandidate::AppendDescriptors(
+    nsAString& aDescriptors) const {
+  MOZ_ASSERT(IsValid());
+  switch (mType) {
+    case CandidateType::Default:
+    case CandidateType::Invalid:
+      return;
+    case CandidateType::ComputedFromWidth:
+      aDescriptors.Append(' ');
+      aDescriptors.AppendInt(mValue.mWidth);
+      aDescriptors.Append('w');
+      return;
+    case CandidateType::Density:
+      aDescriptors.Append(' ');
+      aDescriptors.AppendFloat(mValue.mDensity);
+      aDescriptors.Append('x');
+      return;
+  }
 }
 
 double ResponsiveImageCandidate::Density(double aMatchingWidth) const {
