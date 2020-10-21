@@ -7483,64 +7483,59 @@ nsresult DatabaseConnection::ReclaimFreePagesWhileIdle(
     
     
     
-    nsresult rv = CheckpointInternal(CheckpointMode::Restart);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    IDB_TRY(CheckpointInternal(CheckpointMode::Restart));
   }
 
   
-  nsresult rv = beginImmediateStmt.Borrow()->Execute();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  IDB_TRY(beginImmediateStmt.Borrow()->Execute());
 
   mInWriteTransaction = true;
 
   bool freedSomePages = false;
 
-  while (aFreelistCount) {
-    if (NS_HasPendingEvents(currentThread)) {
-      
-      
-      
-      rv = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-      break;
-    }
+  IDB_TRY(
+      CollectWhile(
+          [&aFreelistCount]() -> mozilla::Result<bool, nsresult> {
+            return aFreelistCount != 0;
+          },
+          [&aFreelistStatement, &aFreelistCount, currentThread,
+           &incrementalVacuumStmt, &freedSomePages,
+           this]() -> mozilla::Result<mozilla::Ok, nsresult> {
+            
+            
+            
+            
+            IDB_TRY(OkIf(!NS_HasPendingEvents(currentThread)),
+                    Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR));
 
-    rv = incrementalVacuumStmt.Borrow()->Execute();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      break;
-    }
+            IDB_TRY(incrementalVacuumStmt.Borrow()->Execute());
 
-    freedSomePages = true;
+            freedSomePages = true;
 
-    rv = GetFreelistCount(aFreelistStatement, &aFreelistCount);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      break;
-    }
-  }
+            IDB_TRY(GetFreelistCount(aFreelistStatement, &aFreelistCount));
 
-  if (NS_SUCCEEDED(rv) && freedSomePages) {
-    
-    rv = commitStmt.Borrow()->Execute();
-    if (NS_SUCCEEDED(rv)) {
-      mInWriteTransaction = false;
-    } else {
-      NS_WARNING("Failed to commit!");
-    }
-  }
+            return mozilla::Ok{};
+          })
+          .andThen([&commitStmt, &freedSomePages, this](
+                       mozilla::Ok) -> mozilla::Result<mozilla::Ok, nsresult> {
+            if (freedSomePages) {
+              
+              IDB_TRY(commitStmt.Borrow()->Execute(), QM_PROPAGATE,
+                      [](const auto&) { NS_WARNING("Failed to commit!"); });
 
-  if (NS_FAILED(rv)) {
-    MOZ_ASSERT(mInWriteTransaction);
+              mInWriteTransaction = false;
+            }
 
-    
-    Unused << aRollbackStatement.Borrow()->Execute();
+            return mozilla::Ok{};
+          }),
+      QM_PROPAGATE, ([&aRollbackStatement, this](const auto&) {
+        MOZ_ASSERT(mInWriteTransaction);
 
-    mInWriteTransaction = false;
+        
+        Unused << aRollbackStatement.Borrow()->Execute();
 
-    return rv;
-  }
+        mInWriteTransaction = false;
+      }));
 
   *aFreedSomePages = freedSomePages;
   return NS_OK;
