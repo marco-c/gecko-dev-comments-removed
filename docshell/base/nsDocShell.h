@@ -1104,7 +1104,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  void MoveLoadingToActiveEntry(bool aCommit);
+  void MoveLoadingToActiveEntry();
 
  private:  
   nsString mTitle;
