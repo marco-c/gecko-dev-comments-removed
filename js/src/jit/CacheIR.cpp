@@ -3736,6 +3736,27 @@ static bool CanAttachNativeSetSlot(JSContext* cx, JSOp op, HandleObject obj,
   return true;
 }
 
+
+
+static bool IsGlobalLexicalSetGName(JSOp op, NativeObject* obj,
+                                    HandleShape shape) {
+  
+  if (op != JSOp::SetGName && op != JSOp::StrictSetGName) {
+    return false;
+  }
+
+  if (!obj->is<LexicalEnvironmentObject>() ||
+      !obj->as<LexicalEnvironmentObject>().isGlobal()) {
+    return false;
+  }
+
+  
+  MOZ_ASSERT(!obj->getSlot(shape->slot()).isMagic());
+  MOZ_ASSERT(shape->writable());
+  MOZ_ASSERT(!shape->configurable());
+  return true;
+}
+
 AttachDecision SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj,
                                                           ObjOperandId objId,
                                                           HandleId id,
@@ -3767,7 +3788,9 @@ AttachDecision SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj,
   if (typeCheckInfo_.needsTypeBarrier()) {
     writer.guardGroupForTypeBarrier(objId, nobj->group());
   }
-  TestMatchingNativeReceiver(writer, nobj, objId);
+  if (!IsGlobalLexicalSetGName(JSOp(*pc_), nobj, propShape)) {
+    TestMatchingNativeReceiver(writer, nobj, objId);
+  }
 
   if (IsPreliminaryObject(obj)) {
     preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
