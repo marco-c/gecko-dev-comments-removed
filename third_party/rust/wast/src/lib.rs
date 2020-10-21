@@ -141,6 +141,11 @@ impl Error {
     }
 
     
+    pub fn span(&self) -> Span {
+        self.inner.span
+    }
+
+    
     
     
     
@@ -170,6 +175,14 @@ impl Error {
         match &self.inner.kind {
             ErrorKind::Lex(e) => Some(e),
             _ => None,
+        }
+    }
+
+    
+    pub fn message(&self) -> String {
+        match &self.inner.kind {
+            ErrorKind::Lex(e) => e.to_string(),
+            ErrorKind::Custom(e) => e.clone(),
         }
     }
 }
