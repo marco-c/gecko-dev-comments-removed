@@ -468,10 +468,6 @@ bool gFxREmbedded = false;
 
 
 
-static const char kPrefFissionAutostart[] = "fission.autostart";
-
-
-
 
 
 
@@ -493,26 +489,18 @@ static const char kPrefFissionExperimentStartupEnrollmentStatus[] =
 
 
 
+static nsIXULRuntime::ExperimentStatus FissionExperimentStatus() {
+  static nsIXULRuntime::ExperimentStatus sExperimentStatus = ([]() {
+    uint32_t value =
+        Preferences::GetUint(kPrefFissionExperimentStartupEnrollmentStatus);
+    if (value >
+        uint32_t(nsIXULRuntime::ExperimentStatus::eExperimentStatusMax)) {
+      return nsIXULRuntime::ExperimentStatus::eUnknown;
+    }
+    return nsIXULRuntime::ExperimentStatus(value);
+  })();
 
-static const char kPrefFissionAutostartSession[] = "fission.autostart.session";
-
-static nsIXULRuntime::ExperimentStatus gFissionExperimentStatus =
-    nsIXULRuntime::eExperimentStatusUnenrolled;
-static bool gFissionAutostart = false;
-static bool gFissionAutostartInitialized = false;
-
-static bool FissionExperimentEnrolled() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  return gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusControl ||
-         gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusTreatment;
-}
-
-static void FissionExperimentDisqualify() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  
-  
-  Preferences::SetUint(kPrefFissionExperimentEnrollmentStatus,
-                       nsIXULRuntime::eExperimentStatusDisqualified);
+  return sExperimentStatus;
 }
 
 static void OnFissionEnrollmentStatusChanged(const char* aPref, void* aData) {
@@ -521,91 +509,29 @@ static void OnFissionEnrollmentStatusChanged(const char* aPref, void* aData) {
       Preferences::GetUint(kPrefFissionExperimentEnrollmentStatus));
 }
 
-static void OnFissionAutostartChanged(const char* aPref, void* aData) {
-  MOZ_ASSERT(FissionExperimentEnrolled());
-  if (Preferences::HasUserValue(kPrefFissionAutostart)) {
-    FissionExperimentDisqualify();
-  }
-}
-
-static void EnsureFissionAutostartInitialized() {
-  if (gFissionAutostartInitialized) {
-    return;
-  }
-  gFissionAutostartInitialized = true;
-
-  if (!XRE_IsParentProcess()) {
-    
-    gFissionAutostart = Preferences::GetBool(kPrefFissionAutostartSession,
-                                             false, PrefValueKind::Default);
-    return;
-  }
-
-  
-  
-  
-  
-  uint32_t experimentRaw =
-      Preferences::GetUint(kPrefFissionExperimentStartupEnrollmentStatus,
-                           nsIXULRuntime::eExperimentStatusUnenrolled);
-  gFissionExperimentStatus =
-      experimentRaw < nsIXULRuntime::eExperimentStatusCount
-          ? nsIXULRuntime::ExperimentStatus(experimentRaw)
-          : nsIXULRuntime::eExperimentStatusDisqualified;
-
-  
-  
-  if (Preferences::HasUserValue(kPrefFissionAutostart) &&
-      FissionExperimentEnrolled()) {
-    FissionExperimentDisqualify();
-    gFissionExperimentStatus = nsIXULRuntime::eExperimentStatusDisqualified;
-  }
-
-  
-  
-  if (FissionExperimentEnrolled()) {
-    bool isTreatment =
-        gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusTreatment;
-    Preferences::SetBool(kPrefFissionAutostart, isTreatment,
-                         PrefValueKind::Default);
-  }
-
-  if (gSafeMode) {
-    gFissionAutostart = false;
-  } else if (EnvHasValue("MOZ_FORCE_ENABLE_FISSION")) {
-    gFissionAutostart = true;
-  } else {
-    
-    
-    gFissionAutostart = Preferences::GetBool(kPrefFissionAutostart, false);
-  }
-
-  
-  
-  
-  
-  
-  Preferences::Unlock(kPrefFissionAutostartSession);
-  Preferences::ClearUser(kPrefFissionAutostartSession);
-  Preferences::SetBool(kPrefFissionAutostartSession, gFissionAutostart,
-                       PrefValueKind::Default);
-  Preferences::Lock(kPrefFissionAutostartSession);
-
-  
-  
-  Preferences::RegisterCallback(&OnFissionEnrollmentStatusChanged,
-                                kPrefFissionExperimentEnrollmentStatus);
-  if (FissionExperimentEnrolled()) {
-    Preferences::RegisterCallback(&OnFissionAutostartChanged,
-                                  kPrefFissionAutostart);
-  }
-}
-
 namespace mozilla {
 
 bool FissionAutostart() {
-  EnsureFissionAutostartInitialized();
-  return gFissionAutostart;
+  static bool sFissionAutostart = ([]() {
+    if (gSafeMode) {
+      return false;
+    }
+
+    if (EnvHasValue("MOZ_FORCE_ENABLE_FISSION")) {
+      return true;
+    }
+
+    switch (FissionExperimentStatus()) {
+      case nsIXULRuntime::ExperimentStatus::eEnrolledControl:
+        return false;
+      case nsIXULRuntime::ExperimentStatus::eEnrolledTreatment:
+        return true;
+      default:
+        return StaticPrefs::fission_autostart_AtStartup_DoNotUseDirectly();
+    }
+  })();
+
+  return sFissionAutostart;
 }
 
 bool SessionHistoryInParent() {
@@ -943,12 +869,7 @@ nsXULAppInfo::GetFissionAutostart(bool* aResult) {
 
 NS_IMETHODIMP
 nsXULAppInfo::GetFissionExperimentStatus(ExperimentStatus* aResult) {
-  if (!XRE_IsParentProcess()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  EnsureFissionAutostartInitialized();
-  *aResult = gFissionExperimentStatus;
+  *aResult = FissionExperimentStatus();
   return NS_OK;
 }
 
@@ -4810,6 +4731,9 @@ nsresult XREMain::XRE_mainRun() {
         kPrefSecurityContentSignatureRootHash);
 #  endif  
 #endif
+
+    Preferences::RegisterCallback(&OnFissionEnrollmentStatusChanged,
+                                  kPrefFissionExperimentEnrollmentStatus);
 
 #if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK)
     
