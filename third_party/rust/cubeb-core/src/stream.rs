@@ -7,6 +7,7 @@ use {ChannelLayout, DeviceRef, Result, SampleFormat};
 use ffi;
 use std::os::raw::c_void;
 use std::ptr;
+use std::ffi::CStr;
 
 
 #[derive(PartialEq, Eq, Clone, Debug, Copy)]
@@ -157,6 +158,11 @@ impl StreamRef {
     
     pub fn set_volume(&self, volume: f32) -> Result<()> {
         unsafe { call!(ffi::cubeb_stream_set_volume(self.as_ptr(), volume)) }
+    }
+
+    
+    pub fn set_name(&self, name: &CStr) -> Result<()> {
+        unsafe { call!(ffi::cubeb_stream_set_name(self.as_ptr(), name.as_ptr())) }
     }
 
     

@@ -505,6 +505,12 @@ CUBEB_EXPORT void cubeb_destroy(cubeb * context);
 
 
 
+
+
+
+
+
+
 CUBEB_EXPORT int cubeb_stream_init(cubeb * context,
                                    cubeb_stream ** stream,
                                    char const * stream_name,
@@ -577,6 +583,14 @@ CUBEB_EXPORT int cubeb_stream_get_input_latency(cubeb_stream * stream, uint32_t 
 
 
 CUBEB_EXPORT int cubeb_stream_set_volume(cubeb_stream * stream, float volume);
+
+
+
+
+
+
+
+CUBEB_EXPORT int cubeb_stream_set_name(cubeb_stream * stream, char const * stream_name);
 
 
 
