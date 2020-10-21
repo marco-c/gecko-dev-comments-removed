@@ -220,6 +220,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:Sampler::sSigHandlerCoordinator\n"
 
          
+         "race:WebRtcAec_CreateAec\n"
+         "race:EchoSubtraction\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
