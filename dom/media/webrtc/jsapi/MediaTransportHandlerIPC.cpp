@@ -152,11 +152,15 @@ nsresult MediaTransportHandlerIPC::CreateIceCtx(
 }
 
 void MediaTransportHandlerIPC::Destroy() {
-  if (mChild) {
-    MediaTransportChild::Send__delete__(mChild);
-    mChild = nullptr;
-  }
-  delete this;
+  mInitPromise->Then(
+      mCallbackThread, __func__,
+      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool ) {
+        if (mChild) {
+          MediaTransportChild::Send__delete__(mChild);
+          mChild = nullptr;
+        }
+      },
+      [](const nsCString& aError) {});
 }
 
 
