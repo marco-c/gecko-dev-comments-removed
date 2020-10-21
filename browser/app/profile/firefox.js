@@ -2039,7 +2039,7 @@ pref("browser.toolbars.keyboard_navigation", true);
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
 pref("browser.toolbars.bookmarks.2h2020", true);
 #else
 pref("browser.toolbars.bookmarks.2h2020", false);
