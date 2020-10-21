@@ -230,6 +230,14 @@ class nsFocusManager final : public nsIFocusManager,
 
   void WindowLowered(mozIDOMWindowProxy* aWindow);
 
+  
+
+
+
+
+
+  void WindowShown(mozIDOMWindowProxy* aWindow, bool aNeedsFocus);
+
   static uint32_t FocusOptionsToFocusManagerFlags(
       const mozilla::dom::FocusOptions& aOptions);
 
