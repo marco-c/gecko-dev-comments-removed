@@ -77,12 +77,14 @@ static NS_DEFINE_CID(kFrameTraversalCID, NS_FRAMETRAVERSAL_CID);
 #include "mozilla/dom/SelectionBinding.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/layers/ScrollInputMethods.h"
 
 #include "nsFocusManager.h"
 #include "nsPIDOMWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
+using mozilla::layers::ScrollInputMethod;
 
 
 
@@ -1921,6 +1923,10 @@ nsresult nsFrameSelection::PageMove(bool aForward, bool aExtend,
 
   
   if (scrollableFrame) {
+    mozilla::Telemetry::Accumulate(
+        mozilla::Telemetry::SCROLL_INPUT_METHODS,
+        (uint32_t)ScrollInputMethod::MainThreadScrollPage);
+
     
     
     
