@@ -23,6 +23,12 @@ loader.lazyRequireGetter(
   "devtools/server/actors/network-monitor/utils/channel-map",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "getErrorCodeString",
+  "devtools/server/actors/network-monitor/utils/error-codes",
+  true
+);
 
 loader.lazyRequireGetter(
   this,
@@ -395,10 +401,23 @@ NetworkObserver.prototype = {
       
       
       
-      this._createNetworkEvent(subject, {
-        blockedReason: reason,
-        blockingExtension: id,
-      });
+      
+      
+      const { status } = channel;
+      if (status == 0) {
+        
+        this._createNetworkEvent(subject, {});
+      } else {
+        if (reason == 0) {
+          
+          
+          reason = getErrorCodeString(status);
+        }
+        this._createNetworkEvent(subject, {
+          blockedReason: reason,
+          blockingExtension: id,
+        });
+      }
     }
   },
 
