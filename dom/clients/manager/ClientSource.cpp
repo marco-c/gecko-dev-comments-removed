@@ -138,14 +138,23 @@ nsIGlobalObject* ClientSource::GetGlobal() const {
   return nullptr;
 }
 
-void ClientSource::MaybeCreateInitialDocument() {
-  nsIDocShell* docshell = GetDocShell();
-  if (docshell) {
-    
-    Unused << docshell->GetDocument();
 
-    MOZ_DIAGNOSTIC_ASSERT(GetInnerWindow());
+
+Result<bool, ErrorResult> ClientSource::MaybeCreateInitialDocument() {
+  
+  nsIDocShell* docshell = GetDocShell();
+  if (!docshell) {
+    return false;
   }
+
+  
+  if (!docshell->GetDocument()) {
+    ErrorResult rv;
+    rv.ThrowInvalidStateError("No document available.");
+    return Err(std::move(rv));
+  }
+
+  return true;
 }
 
 ClientSource::ClientSource(ClientManager* aManager,
@@ -674,7 +683,9 @@ Result<ClientState, ErrorResult> ClientSource::SnapshotState() {
   NS_ASSERT_OWNINGTHREAD(ClientSource);
 
   if (mClientInfo.Type() == ClientType::Window) {
-    MaybeCreateInitialDocument();
+    
+    MOZ_TRY(MaybeCreateInitialDocument());
+    
     return SnapshotWindowState();
   }
 
