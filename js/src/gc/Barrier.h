@@ -863,11 +863,6 @@ namespace js {
 
 
 
-template <typename T>
-using WeakRef = WeakHeapPtr<T>;
-
-
-
 
 class HeapSlot : public WriteBarriered<Value> {
  public:
