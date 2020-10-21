@@ -146,6 +146,14 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
+  void SetNextTextureId(int64_t aNextTextureId) {
+    mNextTextureId = aNextTextureId;
+  }
+
+  
+
+
+
 
 
 
@@ -162,7 +170,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
-  TextureData* LookupTextureData(gfx::ReferencePtr aDrawTarget);
+  TextureData* LookupTextureData(int64_t aTextureId);
 
   
 
@@ -171,16 +179,14 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
-  UniquePtr<SurfaceDescriptor> WaitForSurfaceDescriptor(
-      gfx::ReferencePtr aDrawTarget);
+  UniquePtr<SurfaceDescriptor> WaitForSurfaceDescriptor(int64_t aTextureId);
 
   
 
 
 
 
-
-  void RemoveDrawTarget(gfx::ReferencePtr aDrawTarget) final;
+  void RemoveTexture(int64_t aTextureId);
 
   
 
@@ -263,8 +269,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
                                  const gfx::IntSize& aSize,
                                  gfx::SurfaceFormat aFormat);
 
-  void AddSurfaceDescriptor(gfx::ReferencePtr aRefPtr,
-                            TextureData* atextureData);
+  void AddSurfaceDescriptor(int64_t aTextureId, TextureData* atextureData);
 
   bool HandleExtensionEvent(int32_t aType);
 
@@ -285,12 +290,14 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   
   
   gfx::BackendType mBackendType = gfx::BackendType::NONE;
-  typedef std::unordered_map<void*, UniquePtr<TextureData>> TextureMap;
+  typedef std::unordered_map<int64_t, UniquePtr<TextureData>> TextureMap;
   TextureMap mTextureDatas;
+  int64_t mNextTextureId = -1;
   nsRefPtrHashtable<nsPtrHashKey<void>, gfx::DataSourceSurface> mDataSurfaces;
   gfx::ReferencePtr mMappedSurface;
   UniquePtr<gfx::DataSourceSurface::ScopedMap> mPreparedMap;
-  typedef std::unordered_map<void*, UniquePtr<SurfaceDescriptor>> DescriptorMap;
+  typedef std::unordered_map<int64_t, UniquePtr<SurfaceDescriptor>>
+      DescriptorMap;
   DescriptorMap mSurfaceDescriptors;
   Monitor mSurfaceDescriptorsMonitor{
       "CanvasTranslator::mSurfaceDescriptorsMonitor"};
