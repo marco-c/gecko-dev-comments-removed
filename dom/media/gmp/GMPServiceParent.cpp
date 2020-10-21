@@ -1584,13 +1584,28 @@ already_AddRefed<GMPParent> GeckoMediaPluginServiceParent::GetById(
 
 GMPServiceParent::GMPServiceParent(GeckoMediaPluginServiceParent* aService)
     : mService(aService) {
+  MOZ_ASSERT(NS_IsMainThread(), "Should be constructed on the main thread");
   MOZ_ASSERT(mService);
   mService->ServiceUserCreated(this);
 }
 
 GMPServiceParent::~GMPServiceParent() {
+  MOZ_ASSERT(NS_IsMainThread(), "Should be destroyted on the main thread");
   MOZ_ASSERT(mService);
   mService->ServiceUserDestroyed(this);
+}
+
+void GMPServiceParent::Destroy() {
+  
+  if (NS_IsMainThread()) {
+    delete this;
+    return;
+  }
+  nsresult rv = SchedulerGroup::Dispatch(
+      TaskCategory::Other,
+      NewNonOwningRunnableMethod("GMPServiceParent::Destroy", this,
+                                 &GMPServiceParent::Destroy));
+  MOZ_ALWAYS_SUCCEEDS(rv);
 }
 
 mozilla::ipc::IPCResult GMPServiceParent::RecvLaunchGMP(
@@ -1682,17 +1697,9 @@ mozilla::ipc::IPCResult GMPServiceParent::RecvGetGMPNodeId(
   return IPC_OK();
 }
 
-void GMPServiceParent::ActorDealloc() {
-  
-  mService->mMainThread->Dispatch(
-      NS_NewRunnableFunction("gmp::GMPServiceParent::ActorDealloc",
-                             [this]() { delete this; }),
-      NS_DISPATCH_NORMAL);
-}
-
 class OpenPGMPServiceParent : public mozilla::Runnable {
  public:
-  OpenPGMPServiceParent(GMPServiceParent* aGMPServiceParent,
+  OpenPGMPServiceParent(RefPtr<GMPServiceParent>&& aGMPServiceParent,
                         ipc::Endpoint<PGMPServiceParent>&& aEndpoint,
                         bool* aResult)
       : Runnable("gmp::OpenPGMPServiceParent"),
@@ -1706,7 +1713,7 @@ class OpenPGMPServiceParent : public mozilla::Runnable {
   }
 
  private:
-  GMPServiceParent* mGMPServiceParent;
+  RefPtr<GMPServiceParent> mGMPServiceParent;
   ipc::Endpoint<PGMPServiceParent> mEndpoint;
   bool* mResult;
 };
@@ -1725,12 +1732,12 @@ bool GMPServiceParent::Create(Endpoint<PGMPServiceParent>&& aGMPService) {
   nsresult rv = gmp->GetThread(getter_AddRefs(gmpThread));
   NS_ENSURE_SUCCESS(rv, false);
 
-  UniquePtr<GMPServiceParent> serviceParent(new GMPServiceParent(gmp));
+  RefPtr<GMPServiceParent> serviceParent(new GMPServiceParent(gmp));
   bool ok;
-  rv =
-      gmpThread->Dispatch(new OpenPGMPServiceParent(
-                              serviceParent.get(), std::move(aGMPService), &ok),
-                          NS_DISPATCH_SYNC);
+  rv = gmpThread->Dispatch(
+      new OpenPGMPServiceParent(std::move(serviceParent),
+                                std::move(aGMPService), &ok),
+      NS_DISPATCH_SYNC);
 
   if (NS_WARN_IF(NS_FAILED(rv) || !ok)) {
     return false;
@@ -1738,7 +1745,6 @@ bool GMPServiceParent::Create(Endpoint<PGMPServiceParent>&& aGMPService) {
 
   
   
-  Unused << serviceParent.release();
 
   return true;
 }

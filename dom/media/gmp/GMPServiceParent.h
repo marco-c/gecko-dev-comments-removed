@@ -212,13 +212,22 @@ bool MatchOrigin(nsIFile* aPath, const nsACString& aSite,
 class GMPServiceParent final : public PGMPServiceParent {
  public:
   explicit GMPServiceParent(GeckoMediaPluginServiceParent* aService);
-  virtual ~GMPServiceParent();
+
+  
+  
+  
+  
+  
+
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(GMPServiceParent,
+                                                     Destroy(), final);
 
   ipc::IPCResult RecvGetGMPNodeId(const nsString& aOrigin,
                                   const nsString& aTopLevelOrigin,
                                   const nsString& aGMPName,
                                   nsCString* aID) override;
-  void ActorDealloc() override;
 
   static bool Create(Endpoint<PGMPServiceParent>&& aGMPService);
 
@@ -239,6 +248,10 @@ class GMPServiceParent final : public PGMPServiceParent {
       nsCString* aOutErrorDescription) override;
 
  private:
+  ~GMPServiceParent();
+
+  void Destroy();
+
   RefPtr<GeckoMediaPluginServiceParent> mService;
 };
 
