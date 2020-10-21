@@ -21,9 +21,7 @@ add_task(async function() {
     "The currently selected node is on the screen."
   );
 
-  
-  
-  await startPicker(toolbox, true);
+  await startPicker(toolbox);
   await hoverElement(inspector, "#zoom-here");
   ok(
     !isSelectedMarkupNodeInView(),

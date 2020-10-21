@@ -1706,7 +1706,7 @@ class HighlightersOverlay {
 
     
     for (const { highlighter, timer } of this._activeHighlighters.values()) {
-      highlighter.finalize();
+      await highlighter.hide();
       clearTimeout(timer);
     }
 
