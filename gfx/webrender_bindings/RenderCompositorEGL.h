@@ -59,8 +59,6 @@ class RenderCompositorEGL : public RenderCompositor {
   LayoutDeviceIntSize mEGLSurfaceSize;
 #endif
 
-  EGLint mBufferAge;
-
   
   
   
