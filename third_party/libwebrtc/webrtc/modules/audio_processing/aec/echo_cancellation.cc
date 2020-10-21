@@ -99,7 +99,7 @@ static const int kMaxBufSizeStart = 62;
 static const int sampMsNb = 8;           
 static const int initCheck = 42;
 
-int Aec::instance_count = 0;
+std::atomic<int> Aec::instance_count = 0;
 
 
 
