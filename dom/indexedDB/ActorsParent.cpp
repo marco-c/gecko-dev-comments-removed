@@ -13154,16 +13154,10 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
     const nsACString& aOrigin, const AtomicBool& aCanceled) {
   AssertIsOnIOThread();
 
-  UsageInfo res;
-
-  nsresult rv =
-      GetUsageForOriginInternal(aPersistenceType, aGroup, aOrigin, aCanceled,
-                                 true, &res);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
-  }
-
-  return res;
+  IDB_TRY_RETURN(MOZ_TO_RESULT_INVOKE(this, GetUsageForOriginInternal,
+                                      aPersistenceType, aGroup, aOrigin,
+                                      aCanceled,
+                                       true));
 }
 
 nsresult QuotaClient::InitOriginWithoutTracking(
@@ -13180,16 +13174,10 @@ Result<UsageInfo, nsresult> QuotaClient::GetUsageForOrigin(
     const nsACString& aOrigin, const AtomicBool& aCanceled) {
   AssertIsOnIOThread();
 
-  UsageInfo res;
-
-  nsresult rv =
-      GetUsageForOriginInternal(aPersistenceType, aGroup, aOrigin, aCanceled,
-                                 false, &res);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return Err(rv);
-  }
-
-  return res;
+  IDB_TRY_RETURN(MOZ_TO_RESULT_INVOKE(this, GetUsageForOriginInternal,
+                                      aPersistenceType, aGroup, aOrigin,
+                                      aCanceled,
+                                       false));
 }
 
 nsresult QuotaClient::GetUsageForOriginInternal(
