@@ -83,27 +83,6 @@ impl<'a> ParserContext<'a> {
     }
 
     
-    #[inline]
-    pub fn new_for_cssom(
-        url_data: &'a UrlExtraData,
-        rule_type: Option<CssRuleType>,
-        parsing_mode: ParsingMode,
-        quirks_mode: QuirksMode,
-        error_reporter: Option<&'a dyn ParseErrorReporter>,
-        use_counters: Option<&'a UseCounters>,
-    ) -> Self {
-        Self::new(
-            Origin::Author,
-            url_data,
-            rule_type,
-            parsing_mode,
-            quirks_mode,
-            error_reporter,
-            use_counters,
-        )
-    }
-
-    
     
     #[inline]
     pub fn new_with_rule_type(

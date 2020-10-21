@@ -26,11 +26,12 @@ bool CSS::Supports(const GlobalObject&, const nsACString& aProperty,
 
 
 bool CSS::Supports(const GlobalObject&, const nsACString& aCondition) {
-  return Servo_CSSSupports(&aCondition);
+  return Servo_CSSSupports(&aCondition,  false,  false,
+                            false);
 }
 
 
-void CSS::Escape(const GlobalObject& aGlobal, const nsAString& aIdent,
+void CSS::Escape(const GlobalObject&, const nsAString& aIdent,
                  nsAString& aReturn) {
   nsStyleUtil::AppendEscapedCSSIdent(aIdent, aReturn);
 }
