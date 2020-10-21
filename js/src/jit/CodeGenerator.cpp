@@ -15324,6 +15324,7 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
             argMir = ToMIRType(sig.args()[i]);
             break;
           case wasm::RefType::Func:
+          case wasm::RefType::Eq:
           case wasm::RefType::TypeIndex:
             MOZ_CRASH("unexpected argument type when calling from ion to wasm");
         }
@@ -15389,8 +15390,9 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
         MOZ_CRASH("unexpected return type when calling from ion to wasm");
       case wasm::ValType::Ref:
         switch (results[0].refTypeKind()) {
-          case wasm::RefType::Extern:
           case wasm::RefType::Func:
+          case wasm::RefType::Extern:
+          case wasm::RefType::Eq:
             
             
             

@@ -1176,6 +1176,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
             break;
           }
           case RefType::Func:
+          case RefType::Eq:
           case RefType::TypeIndex: {
             
             MOZ_CRASH("unexpected argument type when calling from the jit");
@@ -1346,6 +1347,8 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
       case ValType::Ref: {
         switch (results[0].refTypeKind()) {
           case RefType::Func:
+          case RefType::Eq:
+            
             
           case RefType::Extern:
             
@@ -1642,6 +1645,8 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
       case wasm::ValType::Ref:
         switch (results[0].refTypeKind()) {
           case wasm::RefType::Func:
+          case wasm::RefType::Eq:
+            
             
           case wasm::RefType::Extern:
             
@@ -2163,6 +2168,7 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
             GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
             break;
           case RefType::Extern:
+          case RefType::Eq:
             masm.loadPtr(argv, ReturnReg);
             GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; returns ",
                       funcImportIndex);
@@ -2402,6 +2408,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
             GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
             break;
           case RefType::Func:
+          case RefType::Eq:
           case RefType::TypeIndex:
             MOZ_CRASH("typed reference returned by import (jit exit) NYI");
         }
@@ -2507,6 +2514,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
                                 throwLabel);
               break;
             case RefType::Func:
+            case RefType::Eq:
             case RefType::TypeIndex:
               MOZ_CRASH("Unsupported convert type");
           }

@@ -212,7 +212,7 @@ struct ModuleEnvironment {
       
       if (gcTypesEnabled()) {
         
-        if (isStructType(one) && two.isExtern()) {
+        if (isStructType(one) && two.isEq()) {
           return true;
         }
         
@@ -716,6 +716,14 @@ class Decoder {
         return true;
       }
 #endif
+#ifdef ENABLE_WASM_GC
+      case uint8_t(TypeCode::EqRef):
+        if (!features.gcTypes) {
+          return fail("gc types not enabled");
+        }
+        *type = RefType::fromTypeCode(TypeCode(code), true);
+        return true;
+#endif
       default:
         return fail("bad type");
     }
@@ -749,6 +757,14 @@ class Decoder {
         case uint8_t(TypeCode::ExternRef):
           *type = RefType::fromTypeCode(TypeCode(code), nullable);
           return true;
+#ifdef ENABLE_WASM_GC
+        case uint8_t(TypeCode::EqRef):
+          if (!features.gcTypes) {
+            return fail("gc types not enabled");
+          }
+          *type = RefType::fromTypeCode(TypeCode(code), nullable);
+          return true;
+#endif
         default:
           return fail("invalid heap type");
       }

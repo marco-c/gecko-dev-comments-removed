@@ -66,6 +66,9 @@ enum class TypeCode {
   ExternRef = 0x6f,  
 
   
+  EqRef = 0x6d,  
+
+  
   NullableRef = 0x6c,  
 
   

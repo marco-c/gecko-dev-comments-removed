@@ -635,6 +635,7 @@ static int32_t CoerceInPlace_JitEntry(int funcExportIndex, TlsData* tlsData,
             }
             break;
           case RefType::Func:
+          case RefType::Eq:
           case RefType::TypeIndex:
             
             MOZ_CRASH("unexpected input argument in CoerceInPlace_JitEntry");
