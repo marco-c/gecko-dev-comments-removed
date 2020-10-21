@@ -4706,7 +4706,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   bool scrollOffsetUpdated = false;
   for (const auto& scrollUpdate : aScrollMetadata.GetScrollUpdates()) {
     APZC_LOG("%p processing scroll update %s\n", this,
-             Stringify(scrollUpdate).c_str());
+             ToString(scrollUpdate).c_str());
     if (scrollUpdate.GetGeneration() <= Metrics().GetScrollGeneration()) {
       
       
