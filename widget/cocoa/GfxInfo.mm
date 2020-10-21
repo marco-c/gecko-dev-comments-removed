@@ -122,7 +122,10 @@ void GfxInfo::GetDeviceInfo() {
   }
   IOObjectRelease(io_iter);
 
+#if defined(__x86_64__)
+  
   MOZ_DIAGNOSTIC_ASSERT(mNumGPUsDetected > 0, "Failed to detect any GPUs");
+#endif
 }
 
 nsresult GfxInfo::Init() {
