@@ -76,6 +76,9 @@ function run_test() {
 
   prefs.setBoolPref("network.http.http3.enabled", true);
   prefs.setCharPref("network.dns.localDomains", "foo.example.com");
+  
+  
+  prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
 
   
   
@@ -252,6 +255,7 @@ function test_download() {
 function testsDone() {
   prefs.clearUserPref("network.http.http3.enabled");
   prefs.clearUserPref("network.dns.localDomains");
+  prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
   dump("testDone\n");
   do_test_pending();
   do_test_finished();
