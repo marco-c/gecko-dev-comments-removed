@@ -472,12 +472,6 @@ interface nsIContentPolicy : nsISupports
 
 
 
-  const short REJECT_POLICY = -5;
-
-  
-
-
-
   const short ACCEPT = 1;
 
   
