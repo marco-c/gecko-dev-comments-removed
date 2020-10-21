@@ -116,6 +116,10 @@ class CCGCScheduler {
 
   void UnblockCC() { mCCBlockStart = TimeStamp(); }
 
+  void NoteForgetSkippableComplete(TimeStamp now) {
+    mLastForgetSkippableEndTime = aNow;
+  }
+
   
 
   TimeDuration ComputeInterSliceGCBudget(TimeStamp aDeadline) const {
@@ -185,6 +189,41 @@ class CCGCScheduler {
   }
 
   
+  
+  js::SliceBudget ComputeForgetSkippableBudget(TimeStamp aStartTimeStamp,
+                                               TimeStamp aDeadline) {
+    if (mForgetSkippableFrequencyStartTime.IsNull()) {
+      mForgetSkippableFrequencyStartTime = aStartTimeStamp;
+    } else if (aStartTimeStamp - mForgetSkippableFrequencyStartTime >
+               kOneMinute) {
+      TimeStamp startPlusMinute =
+          mForgetSkippableFrequencyStartTime + kOneMinute;
+
+      
+      
+      
+      
+      TimeStamp endPoint =
+          std::max(startPlusMinute, mLastForgetSkippableEndTime);
+
+      
+      double duration =
+          (endPoint - mForgetSkippableFrequencyStartTime).ToSeconds() / 60;
+      uint32_t frequencyPerMinute =
+          uint32_t(mForgetSkippableCounter / duration);
+      Telemetry::Accumulate(Telemetry::FORGET_SKIPPABLE_FREQUENCY,
+                            frequencyPerMinute);
+      mForgetSkippableCounter = 0;
+      mForgetSkippableFrequencyStartTime = aStartTimeStamp;
+    }
+    ++mForgetSkippableCounter;
+
+    TimeDuration budgetTime = aDeadline ? (aDeadline - aStartTimeStamp)
+                                        : kForgetSkippableSliceDuration;
+    return BudgetFromDuration(budgetTime);
+  }
+
+  
 
   
   
@@ -193,6 +232,9 @@ class CCGCScheduler {
   
   
   TimeStamp mCCBlockStart;
+  TimeStamp mLastForgetSkippableEndTime;
+  uint32_t mForgetSkippableCounter = 0;
+  TimeStamp mForgetSkippableFrequencyStartTime;
 
   
 
