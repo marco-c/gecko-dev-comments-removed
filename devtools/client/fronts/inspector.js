@@ -35,6 +35,9 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
 
     
     this.formAttributeName = "inspectorActor";
+
+    
+    this._pendingGetHighlighterMap = new Map();
   }
 
   
@@ -124,12 +127,38 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     return this._highlighters.get(type);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   async getOrCreateHighlighterByType(type) {
     let front = this._highlighters.get(type);
-    if (!front) {
-      front = await this.getHighlighterByType(type);
-      this._highlighters.set(type, front);
+    let pendingGetHighlighter = this._pendingGetHighlighterMap.get(type);
+
+    if (!front && !pendingGetHighlighter) {
+      pendingGetHighlighter = (async () => {
+        const highlighter = await this.getHighlighterByType(type);
+        this._highlighters.set(type, highlighter);
+        return highlighter;
+      })();
+
+      this._pendingGetHighlighterMap.set(type, pendingGetHighlighter);
     }
+
+    if (pendingGetHighlighter) {
+      front = await pendingGetHighlighter;
+      this._pendingGetHighlighterMap.delete(type);
+    }
+
     return front;
   }
 
