@@ -73,4 +73,9 @@ pub use crate::translation_utils::{
 pub use cranelift_frontend::FunctionBuilder;
 
 
+
+
+pub use wasmparser;
+
+
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
