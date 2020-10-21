@@ -14,6 +14,9 @@ const OPTIONAL_KEYS = [
   "passwordSelector",
   "pathRegex",
   "usernameSelector",
+  "schema",
+  "id",
+  "last_modified",
 ];
 const SUPPORTED_KEYS = REQUIRED_KEYS.concat(OPTIONAL_KEYS);
 
@@ -23,7 +26,7 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["URL", "fetch"]);
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -34,6 +37,10 @@ ChromeUtils.defineModuleGetter(
 XPCOMUtils.defineLazyGetter(this, "log", () =>
   LoginHelper.createLogger("LoginRecipes")
 );
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  RemoteSettings: "resource://services-settings/remote-settings.js",
+});
 
 
 
@@ -78,6 +85,12 @@ LoginRecipesParent.prototype = {
 
 
 
+  _rsClient: null,
+
+  
+
+
+
 
   load(aRecipes) {
     let recipeErrors = 0;
@@ -92,11 +105,9 @@ LoginRecipesParent.prototype = {
         log.error("Error loading recipe", rawRecipe, ex);
       }
     }
-
     if (recipeErrors) {
       return Promise.reject(`There were ${recipeErrors} recipe error(s)`);
     }
-
     return Promise.resolve();
   },
 
@@ -106,37 +117,34 @@ LoginRecipesParent.prototype = {
   reset() {
     log.debug("Resetting recipes with defaults:", this._defaults);
     this._recipesByHost = new Map();
-
     if (this._defaults) {
-      let channel = NetUtil.newChannel({
-        uri: NetUtil.newURI(this._defaults, "UTF-8"),
-        loadUsingSystemPrincipal: true,
-      });
-      channel.contentType = "application/json";
+      let initPromise;
+      
 
-      try {
-        this.initializationPromise = new Promise(function(resolve) {
-          NetUtil.asyncFetch(channel, function(stream, result) {
-            if (!Components.isSuccessCode(result)) {
-              throw new Error("Error fetching recipe file:" + result);
-            }
-            let count = stream.available();
-            let data = NetUtil.readInputStreamToString(stream, count, {
-              charset: "UTF-8",
-            });
-            resolve(JSON.parse(data));
-          });
-        })
-          .then(recipes => {
-            Services.ppmm.broadcastAsyncMessage("clearRecipeCache");
-            return this.load(recipes);
-          })
-          .then(resolve => {
-            return this;
-          });
-      } catch (e) {
-        throw new Error("Error reading recipe file:" + e);
+
+
+
+
+      if (LoginHelper.remoteRecipesEnabled) {
+        if (!this._rsClient) {
+          this._rsClient = RemoteSettings(LoginHelper.remoteRecipesCollection);
+          
+          this._rsClient.on("sync", event => this.onRemoteSettingsSync(event));
+        }
+        initPromise = this._rsClient.get();
+      } else if (this._defaults.startsWith("resource://")) {
+        initPromise = fetch(this._defaults)
+          .then(resp => resp.json())
+          .then(({ data }) => data);
+      } else {
+        log.error("Invalid recipe path found, setting empty recipes list!");
+        initPromise = new Promise(() => []);
       }
+      this.initializationPromise = initPromise.then(async siteRecipes => {
+        Services.ppmm.broadcastAsyncMessage("clearRecipeCache");
+        await this.load({ siteRecipes });
+        return this;
+      });
     } else {
       this.initializationPromise = Promise.resolve(this);
     }
@@ -212,6 +220,27 @@ LoginRecipesParent.prototype = {
     }
 
     return hostRecipes;
+  },
+
+  
+
+
+
+
+
+
+
+
+  onRemoteSettingsSync(aEvent) {
+    this._recipesByHost = new Map();
+    let {
+      data: { current },
+    } = aEvent;
+    let recipes = {
+      siteRecipes: current,
+    };
+    Services.ppmm.broadcastAsyncMessage("clearRecipeCache");
+    this.load(recipes);
   },
 };
 
