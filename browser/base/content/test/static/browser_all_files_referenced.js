@@ -177,8 +177,6 @@ var whitelist = [
     platforms: ["linux", "macosx"],
   },
   
-  { file: "chrome://global/skin/icons/error-16.png" },
-  
   { file: "chrome://marionette/content/test.xhtml" },
   { file: "chrome://marionette/content/test_dialog.properties" },
   { file: "chrome://marionette/content/test_dialog.xhtml" },
