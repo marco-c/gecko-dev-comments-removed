@@ -1355,10 +1355,10 @@ function handleFallbackToCompleteUpdate(update, postStaging) {
       "handleFallbackToCompleteUpdate - install of partial patch " +
         "failed, downloading complete patch"
     );
-    var status = Cc["@mozilla.org/updates/update-service;1"]
+    var success = Cc["@mozilla.org/updates/update-service;1"]
       .getService(Ci.nsIApplicationUpdateService)
       .downloadUpdate(update, !postStaging);
-    if (status == STATE_NONE) {
+    if (!success) {
       cleanupReadyUpdate();
     }
   } else {
@@ -2462,8 +2462,8 @@ UpdateService.prototype = {
           "state"
       );
       
-      status = this.downloadUpdate(update, true);
-      if (status == STATE_NONE) {
+      let success = this.downloadUpdate(update, true);
+      if (!success) {
         cleanupDownloadingUpdate();
       }
       return;
@@ -2693,12 +2693,12 @@ UpdateService.prototype = {
       );
       
       writeStatusFile(getUpdatesDir(), STATE_DOWNLOADING);
-      var status = this.downloadUpdate(
+      let success = this.downloadUpdate(
         this._downloader._update,
         this._downloader.background
       );
-      LOG("UpdateService:_attemptResume - downloadUpdate status: " + status);
-      if (status == STATE_NONE) {
+      LOG("UpdateService:_attemptResume - downloadUpdate success: " + success);
+      if (!success) {
         cleanupDownloadingUpdate();
       }
       return;
@@ -3137,8 +3137,8 @@ UpdateService.prototype = {
     }
 
     LOG("UpdateService:_selectAndInstallUpdate - download the update");
-    let status = this.downloadUpdate(update, true);
-    if (status == STATE_NONE) {
+    let success = this.downloadUpdate(update, true);
+    if (!success) {
       cleanupDownloadingUpdate();
     }
     AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DOWNLOAD_UPDATE);
@@ -3351,7 +3351,7 @@ UpdateService.prototype = {
           update.buildID
       );
       cleanupDownloadingUpdate();
-      return STATE_NONE;
+      return false;
     }
 
     
@@ -3362,7 +3362,7 @@ UpdateService.prototype = {
             "than one update at a time"
         );
         this._downloader.background = background;
-        return readStatusFile(getUpdatesDir());
+        return true;
       }
       this._downloader.cancel();
     }
@@ -4731,7 +4731,7 @@ Downloader.prototype = {
     if (!this._patch) {
       LOG("Downloader:downloadUpdate - no patch to download");
       AUSTLMY.pingDownloadCode(undefined, AUSTLMY.DWNLD_ERR_NO_UPDATE_PATCH);
-      return readStatusFile(updateDir);
+      return false;
     }
     
     
@@ -4923,7 +4923,7 @@ Downloader.prototype = {
 
     this._notifyDownloadStatusObservers();
 
-    return STATE_DOWNLOADING;
+    return true;
   },
 
   
@@ -5395,8 +5395,8 @@ Downloader.prototype = {
           "Downloader:onStopRequest - BITS download failed. Falling back " +
             "to nsIIncrementalDownload"
         );
-        let updateStatus = this.downloadUpdate(this._update);
-        if (updateStatus == STATE_NONE) {
+        let success = this.downloadUpdate(this._update);
+        if (!success) {
           cleanupDownloadingUpdate();
         } else {
           allFailed = false;
@@ -5414,9 +5414,9 @@ Downloader.prototype = {
             "downloading complete update patch"
         );
         this._update.isCompleteUpdate = true;
-        let updateStatus = this.downloadUpdate(this._update);
+        let success = this.downloadUpdate(this._update);
 
-        if (updateStatus == STATE_NONE) {
+        if (!success) {
           cleanupDownloadingUpdate();
         } else {
           allFailed = false;
