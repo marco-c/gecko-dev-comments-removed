@@ -29,6 +29,7 @@
 #else
 #  error "Unknown architecture!"
 #endif
+#include "jit/ABIFunctions.h"
 #include "jit/AtomicOp.h"
 #include "jit/AutoJitContextAlloc.h"
 #include "jit/IonTypes.h"
@@ -591,6 +592,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
+  
 
   
   
@@ -618,6 +621,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void callWithABI(
       void* fun, MoveOp::Type result = MoveOp::GENERAL,
+      CheckUnsafeCallWithABI check = CheckUnsafeCallWithABI::Check);
+  template <typename Sig, Sig fun>
+  inline void callWithABI(
+      MoveOp::Type result = MoveOp::GENERAL,
       CheckUnsafeCallWithABI check = CheckUnsafeCallWithABI::Check);
   inline void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
   inline void callWithABI(const Address& fun,
