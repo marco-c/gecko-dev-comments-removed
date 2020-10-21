@@ -181,6 +181,8 @@ void PrintToConsole(const char* aFmt, ...) {
   va_end(args);
 }
 
+const int scProfilerMainThreadId = profiler_current_thread_id();
+
 constexpr static bool ValidateFeatures() {
   int expectedFeatureNumber = 0;
 
@@ -349,8 +351,7 @@ typedef const PSAutoLock& PSLockRef;
 class CorePS {
  private:
   CorePS()
-      : mMainThreadId(profiler_current_thread_id()),
-        mProcessStartTime(TimeStamp::ProcessCreation()),
+      : mProcessStartTime(TimeStamp::ProcessCreation()),
         
         
         
@@ -382,11 +383,6 @@ class CorePS {
   
   static bool Exists() { return !!sInstance; }
 
-  static bool IsMainThread() {
-    MOZ_ASSERT(sInstance);
-    return profiler_current_thread_id() == sInstance->mMainThreadId;
-  }
-
   static void AddSizeOf(PSLockRef, MallocSizeOf aMallocSizeOf,
                         size_t& aProfSize, size_t& aLulSize) {
     MOZ_ASSERT(sInstance);
@@ -415,9 +411,6 @@ class CorePS {
     }
 #endif
   }
-
-  
-  PS_GET_LOCKLESS(int, MainThreadId)
 
   
   PS_GET_LOCKLESS(const TimeStamp&, ProcessStartTime)
@@ -526,9 +519,6 @@ class CorePS {
  private:
   
   static CorePS* sInstance;
-
-  
-  const int mMainThreadId;
 
   
   const TimeStamp mProcessStartTime;
@@ -1869,7 +1859,7 @@ static void StreamMetaJSCustomObject(PSLockRef aLock,
   StreamMarkerSchema(aWriter);
   aWriter.EndArray();
 
-  if (!CorePS::IsMainThread()) {
+  if (!profiler_is_main_thread()) {
     
     
     
@@ -2526,7 +2516,7 @@ static ProfilingStack* locked_register_thread(PSLockRef aLock,
   }
 
   RefPtr<ThreadInfo> info = new ThreadInfo(aName, profiler_current_thread_id(),
-                                           CorePS::IsMainThread());
+                                           profiler_is_main_thread());
   UniquePtr<RegisteredThread> registeredThread =
       MakeUnique<RegisteredThread>(info, aStackTop);
 
@@ -2749,7 +2739,7 @@ void profiler_shutdown() {
 
   VTUNE_SHUTDOWN();
 
-  MOZ_RELEASE_ASSERT(CorePS::IsMainThread());
+  MOZ_RELEASE_ASSERT(profiler_is_main_thread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   
@@ -3382,7 +3372,7 @@ ProfilingStack* profiler_register_thread(const char* aName,
     text += aName;
     text += "\"";
     maybelocked_profiler_add_marker_for_thread(
-        CorePS::MainThreadId(), ProfilingCategoryPair::OTHER_Profiling,
+        profiler_main_thread_id(), ProfilingCategoryPair::OTHER_Profiling,
         "profiler_register_thread again",
         TextMarkerPayload(text, TimeStamp::NowUnfuzzed()), &lock);
 
@@ -3427,9 +3417,10 @@ void profiler_unregister_thread() {
     
     
     
-    if (int tid = profiler_current_thread_id(); tid != CorePS::MainThreadId()) {
+    if (int tid = profiler_current_thread_id();
+        tid != profiler_main_thread_id()) {
       maybelocked_profiler_add_marker_for_thread(
-          CorePS::MainThreadId(), ProfilingCategoryPair::OTHER_Profiling,
+          profiler_main_thread_id(), ProfilingCategoryPair::OTHER_Profiling,
           "profiler_unregister_thread again",
           TextMarkerPayload(std::to_string(profiler_current_thread_id()),
                             TimeStamp::NowUnfuzzed()),
@@ -3543,7 +3534,7 @@ bool detail::IsThreadBeingProfiled() {
 }
 
 bool profiler_thread_is_sleeping() {
-  MOZ_RELEASE_ASSERT(CorePS::IsMainThread());
+  MOZ_RELEASE_ASSERT(profiler_is_main_thread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   RacyRegisteredThread* racyRegisteredThread =
@@ -3741,7 +3732,7 @@ void profiler_add_marker_for_thread(int aThreadId,
 void profiler_add_marker_for_mainthread(ProfilingCategoryPair aCategoryPair,
                                         const char* aMarkerName,
                                         const ProfilerMarkerPayload& aPayload) {
-  profiler_add_marker_for_thread(CorePS::MainThreadId(), aCategoryPair,
+  profiler_add_marker_for_thread(profiler_main_thread_id(), aCategoryPair,
                                  aMarkerName, aPayload);
 }
 

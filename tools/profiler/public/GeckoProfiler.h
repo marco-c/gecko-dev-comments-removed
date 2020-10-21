@@ -640,6 +640,14 @@ int profiler_current_process_id();
 
 int profiler_current_thread_id();
 
+extern const int scProfilerMainThreadId;
+
+inline int profiler_main_thread_id() { return scProfilerMainThreadId; }
+
+inline bool profiler_is_main_thread() {
+  return profiler_current_thread_id() == profiler_main_thread_id();
+}
+
 
 
 class ProfilerStackCollector {

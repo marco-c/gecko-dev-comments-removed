@@ -185,6 +185,8 @@ using mozilla::profiler::detail::RacyFeatures;
 
 LazyLogModule gProfilerLog("prof");
 
+const int scProfilerMainThreadId = profiler_current_thread_id();
+
 #if defined(GP_OS_android)
 class GeckoJavaSampler
     : public java::GeckoJavaSampler::Natives<GeckoJavaSampler> {
@@ -468,8 +470,7 @@ using JsFrameBuffer = JS::ProfilingFrameIterator::Frame[MAX_JS_FRAMES];
 class CorePS {
  private:
   CorePS()
-      : mMainThreadId(profiler_current_thread_id()),
-        mProcessStartTime(TimeStamp::ProcessCreation()),
+      : mProcessStartTime(TimeStamp::ProcessCreation()),
         
         
         
@@ -531,9 +532,6 @@ class CorePS {
     }
 #endif
   }
-
-  
-  PS_GET_LOCKLESS(int, MainThreadId)
 
   
   PS_GET_LOCKLESS(TimeStamp, ProcessStartTime)
@@ -645,9 +643,6 @@ class CorePS {
  private:
   
   static CorePS* sInstance;
-
-  
-  const int mMainThreadId;
 
   
   const TimeStamp mProcessStartTime;
@@ -5110,7 +5105,7 @@ ProfilingStack* profiler_register_thread(const char* aName,
     text.AppendASCII(aName);
     text.AppendLiteral("\"");
     maybelocked_profiler_add_marker_for_thread(
-        CorePS::MainThreadId(), JS::ProfilingCategoryPair::OTHER_Profiling,
+        profiler_main_thread_id(), JS::ProfilingCategoryPair::OTHER_Profiling,
         "profiler_register_thread again",
         TextMarkerPayload(text, TimeStamp::NowUnfuzzed()), &lock);
 
@@ -5188,11 +5183,12 @@ void profiler_unregister_thread() {
     
     
     
-    if (int tid = profiler_current_thread_id(); tid != CorePS::MainThreadId()) {
+    if (int tid = profiler_current_thread_id();
+        tid != profiler_main_thread_id()) {
       nsCString threadIdString;
       threadIdString.AppendInt(tid);
       maybelocked_profiler_add_marker_for_thread(
-          CorePS::MainThreadId(), JS::ProfilingCategoryPair::OTHER_Profiling,
+          profiler_main_thread_id(), JS::ProfilingCategoryPair::OTHER_Profiling,
           "profiler_unregister_thread again",
           TextMarkerPayload(threadIdString, TimeStamp::NowUnfuzzed()), &lock);
     }
@@ -5570,7 +5566,7 @@ void profiler_add_marker_for_thread(int aThreadId,
 void profiler_add_marker_for_mainthread(JS::ProfilingCategoryPair aCategoryPair,
                                         const char* aMarkerName,
                                         const ProfilerMarkerPayload& aPayload) {
-  profiler_add_marker_for_thread(CorePS::MainThreadId(), aCategoryPair,
+  profiler_add_marker_for_thread(profiler_main_thread_id(), aCategoryPair,
                                  aMarkerName, aPayload);
 }
 
