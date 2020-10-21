@@ -28,13 +28,8 @@ using MDefinitionStackVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 MOZ_MUST_USE bool TranspileCacheIRToMIR(WarpBuilder* builder,
                                         BytecodeLocation loc,
                                         const WarpCacheIR* cacheIRSnapshot,
-                                        const MDefinitionStackVector& inputs);
-
-
-MOZ_MUST_USE bool TranspileCacheIRToMIR(WarpBuilder* builder,
-                                        BytecodeLocation loc,
-                                        const WarpCacheIR* cacheIRSnapshot,
-                                        CallInfo& callInfo);
+                                        const MDefinitionStackVector& inputs,
+                                        CallInfo* maybeCallInfo = nullptr);
 
 }  
 }  
