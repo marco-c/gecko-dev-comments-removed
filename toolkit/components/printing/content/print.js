@@ -160,7 +160,10 @@ var PrintEventHandler = {
     
     
     let sourceBrowsingContext = this.getSourceBrowsingContext();
-    this.previewBrowser = this._createPreviewBrowser(sourceBrowsingContext);
+    this.previewBrowser = PrintUtils.createPreviewBrowser(
+      sourceBrowsingContext,
+      ourBrowser
+    );
 
     
     
@@ -305,36 +308,6 @@ var PrintEventHandler = {
 
   unload() {
     this.previewBrowser.frameLoader.exitPrintPreview();
-  },
-
-  _createPreviewBrowser(sourceBrowsingContext) {
-    
-    let printPreviewBrowser = gBrowser.createBrowser({
-      remoteType: sourceBrowsingContext.currentRemoteType,
-      userContextId: sourceBrowsingContext.originAttributes.userContextId,
-      initialBrowsingContextGroupId: sourceBrowsingContext.group.id,
-      skipLoad: true,
-    });
-    printPreviewBrowser.classList.add("printPreviewBrowser");
-    printPreviewBrowser.setAttribute("flex", "1");
-    printPreviewBrowser.setAttribute("printpreview", "true");
-    
-    
-    
-    printPreviewBrowser.setAttribute("oncontextmenu", "return false;");
-    document.l10n.setAttributes(printPreviewBrowser, "printui-preview-label");
-
-    
-    let doc = ourBrowser.ownerDocument;
-    let previewStack = doc.importNode(
-      doc.getElementById("printPreviewStackTemplate").content,
-      true
-    ).firstElementChild;
-
-    previewStack.append(printPreviewBrowser);
-    ourBrowser.parentElement.prepend(previewStack);
-
-    return printPreviewBrowser;
   },
 
   async print(systemDialogSettings) {
