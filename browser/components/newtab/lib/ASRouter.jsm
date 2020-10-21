@@ -357,38 +357,40 @@ const MessageLoaderUtils = {
       let experimentData;
       try {
         experimentData = ExperimentAPI.getExperiment({ featureId });
+        
+        if (!experimentData) {
+          continue;
+        }
       } catch (e) {
         MessageLoaderUtils.reportError(e);
         continue;
       }
 
-      if (experimentData?.branch?.feature) {
-        experiments.push(experimentData.branch.feature.value);
+      
+      
+      
+      if (ExperimentAPI.isFeatureEnabled(featureId, false)) {
+        experiments.push(ExperimentAPI.getFeatureValue(featureId));
+      }
 
-        if (!REACH_EVENT_GROUPS.includes(featureId)) {
-          continue;
-        }
-        
-        
-        
-        
-        const branches =
-          (await ExperimentAPI.getAllBranches(experimentData.slug)) || [];
-        for (const branch of branches) {
-          let branchValue = branch.feature.value;
-          if (
-            branch.slug !== experimentData.branch.slug &&
-            branchValue.trigger
-          ) {
-            experiments.push({
-              
-              
-              forReachEvent: { sent: false, group: featureId },
-              experimentSlug: experimentData.slug,
-              branchSlug: branch.slug,
-              ...branchValue,
-            });
-          }
+      if (!REACH_EVENT_GROUPS.includes(featureId)) {
+        continue;
+      }
+      
+      
+      
+      
+      const branches =
+        (await ExperimentAPI.getAllBranches(experimentData.slug)) || [];
+      for (const branch of branches) {
+        let branchValue = branch.feature.value;
+        if (branch.slug !== experimentData.branch.slug && branchValue.trigger) {
+          experiments.push({
+            forReachEvent: { sent: false, group: featureId },
+            experimentSlug: experimentData.slug,
+            branchSlug: branch.slug,
+            ...branchValue,
+          });
         }
       }
     }
