@@ -192,6 +192,11 @@ bool RemoteDecoderManagerChild::Supports(
     RefPtr<Runnable> task =
         NS_NewRunnableFunction("RemoteDecoderManager::Supports", [&]() {
           auto* rdm = GetSingleton(aLocation);
+          if (!rdm) {
+            
+            
+            return;
+          }
           const auto& trackInfo = aParams.mConfig;
           if (trackInfo.GetAsVideoInfo()) {
             VideoDecoderInfoIPDL info(*trackInfo.GetAsVideoInfo(),
@@ -392,6 +397,7 @@ void RemoteDecoderManagerChild::OpenForRDDProcess(
 
 void RemoteDecoderManagerChild::OpenForGPUProcess(
     Endpoint<PRemoteDecoderManagerChild>&& aEndpoint) {
+  MOZ_ASSERT(GetManagerThread() && GetManagerThread()->IsOnCurrentThread());
   
   
   sRemoteDecoderManagerChildForGPUProcess = nullptr;
