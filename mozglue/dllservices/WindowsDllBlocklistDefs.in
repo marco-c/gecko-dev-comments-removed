@@ -253,7 +253,8 @@ BROWSER_PROCESS += [
     A11yBlocklistEntry("dtvhooks64.dll", (18, 1, 10, 0xffff)),
 
     
-    DllBlocklistEntry("Database.dll", (27, 3, 0, 59)),
+    
+    DllBlocklistEntry("Database.dll", ALL_VERSIONS),
 
     
     
