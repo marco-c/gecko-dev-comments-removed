@@ -11,6 +11,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  RemoteSettings: "resource://services-settings/remote-settings.js",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
@@ -22,98 +23,7 @@ const SEARCH_AD_CLICKS_SCALAR = "browser.search.ad_clicks";
 const SEARCH_DATA_TRANSFERRED_SCALAR = "browser.search.data_transferred";
 const SEARCH_TELEMETRY_PRIVATE_BROWSING_KEY_SUFFIX = "pb";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const SEARCH_PROVIDER_INFO = {
-  google: {
-    searchPageRegexp: /^https:\/\/www\.google\.(?:.+)\/search/,
-    queryParamName: "q",
-    codeParamName: "client",
-    codePrefixes: ["firefox"],
-    followOnParamNames: ["oq", "ved", "ei"],
-    extraAdServersRegexps: [
-      /^https:\/\/www\.google(?:adservices)?\.com\/(?:pagead\/)?aclk/,
-    ],
-  },
-  duckduckgo: {
-    searchPageRegexp: /^https:\/\/duckduckgo\.com\//,
-    queryParamName: "q",
-    codeParamName: "t",
-    codePrefixes: ["ff", "newext"],
-    extraAdServersRegexps: [
-      /^https:\/\/duckduckgo.com\/y\.js?.*ad_provider\=/,
-      /^https:\/\/www\.amazon\.(?:[a-z.]{2,24}).*(?:tag=duckduckgo-)/,
-    ],
-  },
-  yahoo: {
-    searchPageRegexp: /^https:\/\/(?:.*)search\.yahoo\.com\/search/,
-    queryParamName: "p",
-  },
-  baidu: {
-    searchPageRegexp: /^https:\/\/www\.baidu\.com\/(?:s|baidu)/,
-    queryParamName: "wd",
-    codeParamName: "tn",
-    codePrefixes: ["34046034_", "monline_"],
-    followOnParamNames: ["oq"],
-  },
-  bing: {
-    searchPageRegexp: /^https:\/\/www\.bing\.com\/search/,
-    queryParamName: "q",
-    codeParamName: "pc",
-    codePrefixes: ["MOZ", "MZ"],
-    followOnCookies: [
-      {
-        extraCodeParamName: "form",
-        extraCodePrefixes: ["QBRE"],
-        host: "www.bing.com",
-        name: "SRCHS",
-        codeParamName: "PC",
-        codePrefixes: ["MOZ", "MZ"],
-      },
-    ],
-    extraAdServersRegexps: [
-      /^https:\/\/www\.bing\.com\/acli?c?k/,
-      /^https:\/\/www\.bing\.com\/fd\/ls\/GLinkPingPost\.aspx.*acli?c?k/,
-    ],
-  },
-};
+const TELEMETRY_SETTINGS_KEY = "search-telemetry";
 
 XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
   return console.createInstance({
@@ -129,23 +39,37 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
 
 
 class TelemetryHandler {
+  
+  _initialized = false;
+
+  
+  _contentHandler;
+
+  
+  _originalProviderInfo = null;
+
+  
+  _searchProviderInfo = null;
+
+  
+  _telemetrySettings;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  _browserInfoByURL = new Map();
+
   constructor() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this._browserInfoByURL = new Map();
-    this._initialized = false;
-    this.__searchProviderInfo = null;
     this._contentHandler = new ContentHandler({
       browserInfoByURL: this._browserInfoByURL,
       findBrowserItemForURL: (...args) => this._findBrowserItemForURL(...args),
@@ -159,12 +83,25 @@ class TelemetryHandler {
 
 
 
-  init() {
+  async init() {
     if (this._initialized) {
       return;
     }
 
-    this._contentHandler.init();
+    this._telemetrySettings = RemoteSettings(TELEMETRY_SETTINGS_KEY);
+    let rawProviderInfo = [];
+    try {
+      rawProviderInfo = await this._telemetrySettings.get();
+    } catch (ex) {
+      logConsole.error("Could not get settings:", ex);
+    }
+
+    
+    this._contentHandler.init(rawProviderInfo);
+    this._originalProviderInfo = rawProviderInfo;
+
+    
+    this._setSearchProviderInfo(rawProviderInfo);
 
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
       this._registerWindow(win);
@@ -212,18 +149,33 @@ class TelemetryHandler {
 
 
 
-  overrideSearchTelemetryForTests(infoByProvider) {
-    if (infoByProvider) {
-      for (let info of Object.values(infoByProvider)) {
-        info.regexp = new RegExp(info.regexp);
+  overrideSearchTelemetryForTests(providerInfo) {
+    let info = providerInfo ? providerInfo : this._originalProviderInfo;
+    this._contentHandler.overrideSearchTelemetryForTests(info);
+    this._setSearchProviderInfo(info);
+  }
+
+  
+
+
+
+
+
+
+
+  _setSearchProviderInfo(providerInfo) {
+    this._searchProviderInfo = providerInfo.map(provider => {
+      let newProvider = {
+        ...provider,
+        searchPageRegexp: new RegExp(provider.searchPageRegexp),
+      };
+      if (provider.extraAdServersRegexps) {
+        newProvider.extraAdServersRegexps = provider.extraAdServersRegexps.map(
+          r => new RegExp(r)
+        );
       }
-      this.__searchProviderInfo = infoByProvider;
-    } else {
-      this.__searchProviderInfo = SEARCH_PROVIDER_INFO;
-    }
-    this._contentHandler.overrideSearchTelemetryForTests(
-      this.__searchProviderInfo
-    );
+      return newProvider;
+    });
   }
 
   reportPageWithAds(info) {
@@ -441,7 +393,7 @@ class TelemetryHandler {
 
   _getProviderInfoForURL(url, useOnlyExtraAdServers = false) {
     if (useOnlyExtraAdServers) {
-      return Object.entries(this._searchProviderInfo).find(([_, info]) => {
+      return this._searchProviderInfo.find(info => {
         if (info.extraAdServersRegexps) {
           for (let regexp of info.extraAdServersRegexps) {
             if (regexp.test(url)) {
@@ -453,7 +405,7 @@ class TelemetryHandler {
       });
     }
 
-    return Object.entries(this._searchProviderInfo).find(([_, info]) =>
+    return this._searchProviderInfo.find(info =>
       info.searchPageRegexp.test(url)
     );
   }
@@ -467,11 +419,10 @@ class TelemetryHandler {
 
 
   _checkURLForSerpMatch(url) {
-    let info = this._getProviderInfoForURL(url);
-    if (!info) {
+    let searchProviderInfo = this._getProviderInfoForURL(url);
+    if (!searchProviderInfo) {
       return null;
     }
-    let [provider, searchProviderInfo] = info;
     let queries = new URLSearchParams(url.split("#")[0].split("?")[1]);
     if (!queries.get(searchProviderInfo.queryParamName)) {
       return null;
@@ -533,7 +484,7 @@ class TelemetryHandler {
         }
       }
     }
-    return { provider, type, code };
+    return { provider: searchProviderInfo.telemetryId, type, code };
   }
 
   
@@ -553,17 +504,6 @@ class TelemetryHandler {
     );
     histogram.add(payload);
     logConsole.debug("Counting", payload, "for", url);
-  }
-
-  
-
-
-
-  get _searchProviderInfo() {
-    if (!this.__searchProviderInfo) {
-      this.__searchProviderInfo = SEARCH_PROVIDER_INFO;
-    }
-    return this.__searchProviderInfo;
   }
 }
 
@@ -594,11 +534,11 @@ class ContentHandler {
 
 
 
-  init() {
-    Services.ppmm.sharedData.set(
-      "SearchTelemetry:ProviderInfo",
-      SEARCH_PROVIDER_INFO
-    );
+
+
+
+  init(providerInfo) {
+    Services.ppmm.sharedData.set("SearchTelemetry:ProviderInfo", providerInfo);
 
     Cc["@mozilla.org/network/http-activity-distributor;1"]
       .getService(Ci.nsIHttpActivityDistributor)
@@ -771,11 +711,15 @@ class ContentHandler {
       }
 
       try {
-        Services.telemetry.keyedScalarAdd(SEARCH_AD_CLICKS_SCALAR, info[0], 1);
+        Services.telemetry.keyedScalarAdd(
+          SEARCH_AD_CLICKS_SCALAR,
+          info.telemetryId,
+          1
+        );
         channel._adClickRecorded = true;
         logConsole.debug(
           "Counting ad click in page for",
-          info[0],
+          info.telemetryId,
           originURL,
           URL
         );
