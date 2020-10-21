@@ -2346,9 +2346,11 @@ UpdateService.prototype = {
         "UpdateService:_postUpdateProcessing - unable to apply " +
           "updates... returning early"
       );
-      
-      
-      cleanupUpdate();
+      if (!this.isOtherInstanceHandlingUpdates) {
+        
+        
+        cleanupUpdate();
+      }
       return;
     }
 
