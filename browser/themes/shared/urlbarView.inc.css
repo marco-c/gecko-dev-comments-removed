@@ -9,6 +9,7 @@
 %define urlbarViewIconMarginEnd (@identityBoxPaddingInline@ + @identityBoxMarginInlineEnd@)
 %define urlbarViewMarginInline 7px
 %define urlbarViewItemInlinePadding 6px
+%define urlbarViewFaviconWidth 16px
 
 %include ../shared/urlbar/dynamicResults.inc.css
 
@@ -124,7 +125,7 @@
   
 
   flex-shrink: 0;
-  max-width: calc(70% - 2 * (16px + (6px + 2px)));
+  max-width: calc(70% - 2 * (@urlbarViewFaviconWidth@ + (6px + 2px)));
 }
 
 
@@ -142,17 +143,25 @@
   }
   
   .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-url:-moz-locale-dir(ltr) {
-    padding-left: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ +  16px);
+    padding-left: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ + @urlbarViewFaviconWidth@);
   }
   .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-url:-moz-locale-dir(rtl) {
-    padding-right: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ +  16px);
+    padding-right: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ + @urlbarViewFaviconWidth@);
   }
   
 
   .urlbarView[actionoverride] .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator,
   .urlbarView-results[wrap] > .urlbarView-row[has-url]:not([type$=tab]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator,
-  .urlbarView-results[wrap] > .urlbarView-row:is([type=remotetab], [sponsored]):is(:hover, [selected]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator {
+  .urlbarView-results[wrap] > .urlbarView-row:is([type=remotetab], [sponsored]):is(:hover, [selected]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator,
+  .urlbarView-results[wrap] > .urlbarView-row[type=tabtosearch] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator {
     display: none;
+  }
+  .urlbarView-results[wrap] > .urlbarView-row[type=tabtosearch] > .urlbarView-row-inner > .urlbarView-no-wrap {
+    flex-wrap: wrap;
+  }
+  .urlbarView-results[wrap] > .urlbarView-row[type=tabtosearch] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-action {
+    flex-basis: 100%;
+    margin-inline-start: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ + @urlbarViewFaviconWidth@);
   }
 }
 
@@ -190,8 +199,8 @@
 
 
 .urlbarView-favicon {
-  min-width: 16px;
-  height: 16px;
+  min-width: @urlbarViewFaviconWidth@;
+  height: @urlbarViewFaviconWidth@;
   margin-inline-end: calc(@urlbarViewIconMarginEnd@);
   background-repeat: no-repeat;
   background-size: contain;
@@ -465,7 +474,7 @@
     }
   }
 
-  .urlbarView-results:not([wrap]) > .urlbarView-row > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title:not(:empty) ~ .urlbarView-action[slide-in] {
+  .urlbarView-results > .urlbarView-row > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title:not(:empty) ~ .urlbarView-action[slide-in] {
     animation-name: urlbarView-action-slide-in;
     animation-duration: 250ms;
     animation-timing-function: var(--animation-easing-function);
