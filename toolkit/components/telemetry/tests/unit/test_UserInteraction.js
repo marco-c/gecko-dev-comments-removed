@@ -26,23 +26,23 @@ function run_test() {
   Assert.ok(UserInteraction.running(TEST_USER_INTERACTION_ID, obj2));
 
   
-  Assert.ok(!UserInteraction.start(TEST_USER_INTERACTION_ID, TEST_VALUE_1));
+  Assert.ok(UserInteraction.start(TEST_USER_INTERACTION_ID, TEST_VALUE_1));
   Assert.ok(
-    !UserInteraction.start(TEST_USER_INTERACTION_ID, TEST_VALUE_1, obj1)
+    UserInteraction.start(TEST_USER_INTERACTION_ID, TEST_VALUE_1, obj1)
   );
   Assert.ok(
-    !UserInteraction.start(TEST_USER_INTERACTION_ID, TEST_VALUE_1, obj2)
+    UserInteraction.start(TEST_USER_INTERACTION_ID, TEST_VALUE_1, obj2)
   );
 
-  Assert.ok(!UserInteraction.running(TEST_USER_INTERACTION_ID));
-  Assert.ok(!UserInteraction.running(TEST_USER_INTERACTION_ID, obj1));
-  Assert.ok(!UserInteraction.running(TEST_USER_INTERACTION_ID, obj2));
+  Assert.ok(UserInteraction.running(TEST_USER_INTERACTION_ID));
+  Assert.ok(UserInteraction.running(TEST_USER_INTERACTION_ID, obj1));
+  Assert.ok(UserInteraction.running(TEST_USER_INTERACTION_ID, obj2));
 
   
   
-  Assert.ok(!UserInteraction.finish(TEST_USER_INTERACTION_ID));
-  Assert.ok(!UserInteraction.finish(TEST_USER_INTERACTION_ID, obj1));
-  Assert.ok(!UserInteraction.finish(TEST_USER_INTERACTION_ID, obj2));
+  Assert.ok(UserInteraction.finish(TEST_USER_INTERACTION_ID));
+  Assert.ok(UserInteraction.finish(TEST_USER_INTERACTION_ID, obj1));
+  Assert.ok(UserInteraction.finish(TEST_USER_INTERACTION_ID, obj2));
 
   
   Assert.ok(!UserInteraction.start("non-existent.interaction", TEST_VALUE_1));

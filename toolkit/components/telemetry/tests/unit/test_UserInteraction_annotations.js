@@ -9,6 +9,7 @@ const { TestUtils } = ChromeUtils.import(
 
 const HANG_TIME = 500; 
 const TEST_USER_INTERACTION_ID = "testing.interaction";
+const TEST_CLOBBERED_USER_INTERACTION_ID = `${TEST_USER_INTERACTION_ID} (clobbered)`;
 const TEST_VALUE_1 = "some value";
 const TEST_VALUE_2 = "some other value";
 const TEST_ADDITIONAL_TEXT_1 = "some additional text";
@@ -112,6 +113,29 @@ function markerCount(profile, value, additionalText) {
 function hasHangAnnotation(report, value) {
   return report.annotations.some(annotation => {
     return annotation[0] == TEST_USER_INTERACTION_ID && annotation[1] == value;
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function hasClobberedHangAnnotation(report, value) {
+  return report.annotations.some(annotation => {
+    return (
+      annotation[0] == TEST_CLOBBERED_USER_INTERACTION_ID &&
+      annotation[1] == value
+    );
   });
 }
 
@@ -404,5 +428,36 @@ add_task(async function test_cancelling_annotations_and_markers() {
   Assert.ok(
     !hasHangAnnotation(report, TEST_VALUE_2),
     "Should not have the second BHR annotation set."
+  );
+});
+
+
+
+
+
+add_task(async function test_clobbered_annotations() {
+  if (!Services.telemetry.canRecordExtended) {
+    Assert.ok("Hang reporting not enabled.");
+    return;
+  }
+
+  UserInteraction.start(TEST_USER_INTERACTION_ID, TEST_VALUE_1);
+  
+  UserInteraction.start(TEST_USER_INTERACTION_ID, TEST_VALUE_2);
+
+  let report = await hangAndWaitForReport();
+  Assert.ok(
+    UserInteraction.finish(TEST_USER_INTERACTION_ID),
+    "Should have been able to finish the UserInteraction."
+  );
+
+  Assert.ok(
+    !hasHangAnnotation(report, TEST_VALUE_1),
+    "Should not have the original BHR annotation set."
+  );
+
+  Assert.ok(
+    hasClobberedHangAnnotation(report, TEST_VALUE_2),
+    "Should have the clobber BHR annotation set."
   );
 });
