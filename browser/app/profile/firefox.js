@@ -354,12 +354,16 @@ pref("browser.urlbar.update2.oneOffsRefresh", true);
 
 
 pref("browser.urlbar.update2.restyleBrowsingHistoryAsSearch", true);
+
+
+pref("browser.urlbar.update2.tabToComplete", true);
 #else
 pref("browser.urlbar.update2", false);
 pref("browser.urlbar.update2.disableOneOffsHorizontalKeyNavigation", false);
 pref("browser.urlbar.update2.localOneOffs", false);
 pref("browser.urlbar.update2.oneOffsRefresh", false);
 pref("browser.urlbar.update2.restyleBrowsingHistoryAsSearch", false);
+pref("browser.urlbar.update2.tabToComplete", false);
 #endif
 
 
@@ -367,9 +371,6 @@ pref("browser.urlbar.update2.restyleBrowsingHistoryAsSearch", false);
 
 
 pref("browser.urlbar.update2.emptySearchBehavior", 2);
-
-
-pref("browser.urlbar.update2.tabToComplete", false);
 
 pref("browser.urlbar.eventTelemetry.enabled", false);
 
