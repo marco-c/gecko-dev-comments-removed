@@ -78,7 +78,7 @@ use crate::internal_types::{CacheTextureId, DebugOutput, FastHashMap, FastHashSe
 use crate::internal_types::{TextureCacheAllocationKind, TextureCacheUpdate, TextureUpdateList, TextureUpdateSource};
 use crate::internal_types::{RenderTargetInfo, SavedTargetIndex, Swizzle};
 use malloc_size_of::MallocSizeOfOps;
-use crate::picture::{self, RecordedDirtyRegion, ResolvedSurfaceTexture};
+use crate::picture::{self, ResolvedSurfaceTexture};
 use crate::prim_store::DeferredResolve;
 use crate::profiler::{self, GpuProfileTag, TransactionProfile};
 use crate::profiler::{Profiler, add_event_marker, add_text_marker, thread_is_being_profiled};
@@ -97,6 +97,7 @@ use crate::render_target::{AlphaRenderTarget, ColorRenderTarget, PictureCacheTar
 use crate::render_target::{RenderTarget, TextureCacheRenderTarget, RenderTargetList};
 use crate::render_target::{RenderTargetKind, BlitJob, BlitJobSource};
 use crate::render_task_graph::RenderPassKind;
+use crate::tile_cache::PictureCacheDebugInfo;
 use crate::util::drain_filter;
 
 use std;
@@ -3706,9 +3707,6 @@ impl Renderer {
             if device_size.is_some() {
                 self.draw_frame_debug_items(&frame.debug_items);
             }
-            let dirty_regions =
-                mem::replace(&mut frame.recorded_dirty_regions, Vec::new());
-            results.recorded_dirty_regions.extend(dirty_regions);
 
             
             
@@ -6157,6 +6155,10 @@ impl Renderer {
 
                     if let Some(device_size) = device_size {
                         results.stats.color_target_count += 1;
+                        results.picture_cache_debug = mem::replace(
+                            &mut frame.composite_state.picture_cache_debug,
+                            PictureCacheDebugInfo::new(),
+                        );
 
                         let offset = frame.content_origin.to_f32();
                         let size = frame.device_rect.size.to_f32();
@@ -7317,17 +7319,16 @@ pub struct RenderResults {
     
     
     
-    pub recorded_dirty_regions: Vec<RecordedDirtyRegion>,
-
-    
-    
-    
     
     
     
     
     
     pub dirty_rects: Vec<DeviceIntRect>,
+
+    
+    
+    pub picture_cache_debug: PictureCacheDebugInfo,
 }
 
 #[cfg(any(feature = "capture", feature = "replay"))]

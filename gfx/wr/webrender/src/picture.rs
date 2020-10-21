@@ -134,6 +134,7 @@ use std::ops::Range;
 use crate::texture_cache::TextureCacheHandle;
 use crate::util::{MaxRect, VecHelper, MatrixHelpers, Recycler, raster_rect_to_device_pixels, ScaleOffset};
 use crate::filterdata::{FilterDataHandle};
+use crate::tile_cache::{SliceDebugInfo, TileDebugInfo, DirtyTileDebugInfo};
 use crate::visibility::{PrimitiveVisibilityMask, PrimitiveVisibilityFlags, FrameVisibilityContext};
 use crate::visibility::{VisibilityState, FrameVisibilityState};
 #[cfg(any(feature = "capture", feature = "replay"))]
@@ -1859,36 +1860,6 @@ impl DirtyRegion {
             combined,
             spatial_node_index: self.spatial_node_index,
         }
-    }
-
-    
-    pub fn record(&self) -> RecordedDirtyRegion {
-        let mut rects: Vec<PictureRect> =
-            self.dirty_rects.iter().map(|r| r.rect_in_pic_space).collect();
-        rects.sort_unstable_by_key(|r| (r.origin.y as usize, r.origin.x as usize));
-        RecordedDirtyRegion { rects }
-    }
-}
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct RecordedDirtyRegion {
-    pub rects: Vec<PictureRect>,
-}
-
-impl ::std::fmt::Display for RecordedDirtyRegion {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        for r in self.rects.iter() {
-            let (x, y, w, h) = (r.origin.x, r.origin.y, r.size.width, r.size.height);
-            write!(f, "[({},{}):{}x{}]", x, y, w, h)?;
-        }
-        Ok(())
-    }
-}
-
-impl ::std::fmt::Debug for RecordedDirtyRegion {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        ::std::fmt::Display::fmt(self, f)
     }
 }
 
@@ -3879,12 +3850,6 @@ impl TileCacheInstance {
         for tile in self.tiles.values_mut() {
             tile.post_update(&ctx, &mut state, frame_context);
         }
-
-        
-        
-        if frame_context.config.testing {
-            frame_state.scratch.primitive.recorded_dirty_regions.push(self.dirty_region.record());
-        }
     }
 }
 
@@ -5199,6 +5164,7 @@ impl PicturePrimitive {
                     PictureCompositeMode::TileCache { slice_id } => {
                         let tile_cache = tile_caches.get_mut(&slice_id).unwrap();
                         let mut first = true;
+                        let mut debug_info = SliceDebugInfo::new();
 
                         
                         
@@ -5235,6 +5201,14 @@ impl PicturePrimitive {
                                             }
 
                                             tile.is_visible = false;
+
+                                            if frame_context.fb_config.testing {
+                                                debug_info.tiles.insert(
+                                                    tile.tile_offset,
+                                                    TileDebugInfo::Occluded,
+                                                );
+                                            }
+
                                             continue;
                                         }
                                     }
@@ -5259,6 +5233,13 @@ impl PicturePrimitive {
 
                             
                             if !tile.is_visible {
+                                if frame_context.fb_config.testing {
+                                    debug_info.tiles.insert(
+                                        tile.tile_offset,
+                                        TileDebugInfo::Culled,
+                                    );
+                                }
+
                                 continue;
                             }
 
@@ -5333,6 +5314,13 @@ impl PicturePrimitive {
                                 .unwrap_or_else(DeviceRect::zero);
 
                             if tile.is_valid {
+                                if frame_context.fb_config.testing {
+                                    debug_info.tiles.insert(
+                                        tile.tile_offset,
+                                        TileDebugInfo::Valid,
+                                    );
+                                }
+
                                 continue;
                             }
 
@@ -5462,6 +5450,16 @@ impl PicturePrimitive {
                                 }
                             }
 
+                            if frame_context.fb_config.testing {
+                                debug_info.tiles.insert(
+                                    tile.tile_offset,
+                                    TileDebugInfo::Dirty(DirtyTileDebugInfo {
+                                        local_valid_rect: tile.current_descriptor.local_valid_rect,
+                                        local_dirty_rect: tile.local_dirty_rect,
+                                    }),
+                                );
+                            }
+
                             
                             tile.local_dirty_rect = PictureRect::zero();
                             tile.is_valid = true;
@@ -5470,6 +5468,18 @@ impl PicturePrimitive {
                         
                         if frame_context.debug_flags.contains(DebugFlags::INVALIDATION_DBG) {
                             tile_cache.print();
+                        }
+
+                        
+                        
+                        if frame_context.fb_config.testing {
+                            frame_state.composite_state
+                                .picture_cache_debug
+                                .slices
+                                .insert(
+                                    tile_cache.slice,
+                                    debug_info,
+                                );
                         }
 
                         None
