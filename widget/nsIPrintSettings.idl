@@ -29,7 +29,7 @@ interface nsIPrintSettings : nsISupports
   
 
 
-  const unsigned long kInitSaveOddEvenPages   = 0x00000001;
+  
   const unsigned long kInitSaveHeaderLeft     = 0x00000002;
   const unsigned long kInitSaveHeaderCenter   = 0x00000004;
   const unsigned long kInitSaveHeaderRight    = 0x00000008;
@@ -63,9 +63,7 @@ interface nsIPrintSettings : nsISupports
   const unsigned long kInitSaveAll            = 0xFFFFFFFF;
 
   
-  const long kPrintOddPages     = 0x00000001;
-  const long kPrintEvenPages    = 0x00000002;
-  const long kEnableSelectionRB = 0x00000004;
+  const long kEnableSelectionRB = 0x00000001;
 
   
   const long kRangeAllPages           = 0;

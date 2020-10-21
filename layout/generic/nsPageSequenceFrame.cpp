@@ -466,11 +466,6 @@ static void GetPrintCanvasElementsInFrame(
 void nsPageSequenceFrame::DetermineWhetherToPrintPage() {
   
   mPrintThisPage = true;
-  bool printEvenPages, printOddPages;
-  mPageData->mPrintSettings->GetPrintOptions(nsIPrintSettings::kPrintEvenPages,
-                                             &printEvenPages);
-  mPageData->mPrintSettings->GetPrintOptions(nsIPrintSettings::kPrintOddPages,
-                                             &printOddPages);
 
   
   
@@ -497,17 +492,6 @@ void nsPageSequenceFrame::DetermineWhetherToPrintPage() {
           }
         }
       }
-    }
-  }
-
-  
-  if (mPageNum & 0x1) {
-    if (!printOddPages) {
-      mPrintThisPage = false;  
-    }
-  } else {
-    if (!printEvenPages) {
-      mPrintThisPage = false;  
     }
   }
 }
