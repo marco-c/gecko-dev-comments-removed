@@ -25,6 +25,8 @@ class JS_PUBLIC_API JSScript;
 
 namespace JS {
 
+class ReadOnlyCompileOptions;
+
 using TranscodeBuffer = mozilla::Vector<uint8_t>;
 using TranscodeRange = mozilla::Range<uint8_t>;
 
@@ -76,9 +78,32 @@ DecodeScript(JSContext* cx, const TranscodeRange& range,
 
 
 
-extern JS_PUBLIC_API TranscodeResult DecodeScriptAndStartIncrementalEncoding(
-    JSContext* cx, TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
+extern JS_PUBLIC_API TranscodeResult DecodeScriptMaybeStencil(
+    JSContext* cx, TranscodeBuffer& buffer,
+    const ReadOnlyCompileOptions& options, MutableHandle<JSScript*> scriptp,
     size_t cursorIndex = 0);
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API TranscodeResult DecodeScriptAndStartIncrementalEncoding(
+    JSContext* cx, TranscodeBuffer& buffer,
+    const ReadOnlyCompileOptions& options, MutableHandle<JSScript*> scriptp,
+    size_t cursorIndex = 0);
+
+
+
+
+
 
 
 

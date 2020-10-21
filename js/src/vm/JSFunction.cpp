@@ -1597,7 +1597,13 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
       return false;
     }
 
-    
+    if (!js::UseOffThreadParseGlobal()) {
+      if (ss->hasEncoder()) {
+        if (!ss->xdrEncodeFunctionStencil(cx, compilationInfo.get().stencil)) {
+          return false;
+        }
+      }
+    }
 
     if (!frontend::InstantiateStencilsForDelazify(cx, compilationInfo.get())) {
       
@@ -1608,12 +1614,14 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
     }
   }
 
-  
-  if (ss->hasEncoder()) {
-    RootedScriptSourceObject sourceObject(cx,
-                                          fun->nonLazyScript()->sourceObject());
-    if (!ss->xdrEncodeFunction(cx, fun, sourceObject)) {
-      return false;
+  if (js::UseOffThreadParseGlobal()) {
+    
+    if (ss->hasEncoder()) {
+      RootedScriptSourceObject sourceObject(
+          cx, fun->nonLazyScript()->sourceObject());
+      if (!ss->xdrEncodeFunction(cx, fun, sourceObject)) {
+        return false;
+      }
     }
   }
 

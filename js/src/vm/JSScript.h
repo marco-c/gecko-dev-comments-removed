@@ -77,6 +77,7 @@ class DebugScript;
 
 namespace frontend {
 struct CompilationInfo;
+struct CompilationStencil;
 struct CompilationGCOutput;
 class ScriptStencil;
 }  
@@ -544,7 +545,7 @@ class ScriptSource {
   
   
   
-  UniquePtr<XDRIncrementalEncoder> xdrEncoder_ = nullptr;
+  UniquePtr<XDRIncrementalEncoderBase> xdrEncoder_ = nullptr;
 
   
   
@@ -1021,14 +1022,47 @@ class ScriptSource {
   
   
   
+  bool xdrEncodeInitialStencil(
+      JSContext* cx, frontend::CompilationInfo& compilationInfo,
+      UniquePtr<XDRIncrementalEncoderBase>& xdrEncoder);
+
+  
+  
+  
+  
+  
+  bool xdrEncodeStencils(JSContext* cx,
+                         frontend::CompilationInfoVector& compilationInfos,
+                         UniquePtr<XDRIncrementalEncoderBase>& xdrEncoder);
+
+  void setIncrementalEncoder(XDRIncrementalEncoderBase* xdrEncoder);
+
+  
+  
+  
+  
+  
   
   bool xdrEncodeFunction(JSContext* cx, HandleFunction fun,
                          HandleScriptSourceObject sourceObject);
 
   
   
+  bool xdrEncodeFunctionStencil(JSContext* cx,
+                                frontend::CompilationStencil& stencil);
+
+ private:
   
-  bool xdrFinalizeEncoder(JS::TranscodeBuffer& buffer);
+  
+  bool xdrEncodeFunctionStencilWith(
+      JSContext* cx, frontend::CompilationStencil& stencil,
+      UniquePtr<XDRIncrementalEncoderBase>& xdrEncoder);
+
+ public:
+  
+  
+  
+  bool xdrFinalizeEncoder(JSContext* cx, JS::TranscodeBuffer& buffer);
 
  private:
   template <typename Unit,

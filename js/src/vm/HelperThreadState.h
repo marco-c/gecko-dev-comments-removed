@@ -45,6 +45,7 @@ class IonFreeTask;
 
 namespace frontend {
 struct CompilationInfo;
+struct CompilationInfoVector;
 }  
 
 namespace wasm {
@@ -523,6 +524,9 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
 
   
   UniquePtr<frontend::CompilationInfo> compilationInfo_;
+
+  
+  UniquePtr<frontend::CompilationInfoVector> compilationInfos_;
 
   
   

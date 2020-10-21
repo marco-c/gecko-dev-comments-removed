@@ -18,7 +18,7 @@
 #include "jstypes.h"  
 
 #include "frontend/CompilationInfo.h"  
-#include "frontend/ParseContext.h"     
+#include "frontend/ParseContext.h"  
 #include "frontend/SharedContext.h"  
 #include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"      
@@ -68,6 +68,10 @@ extern UniquePtr<CompilationInfo> CompileGlobalScriptToStencil(
     JS::SourceText<mozilla::Utf8Unit>& srcBuf, ScopeKind scopeKind);
 
 extern bool InstantiateStencils(JSContext* cx, CompilationInfo& compilationInfo,
+                                CompilationGCOutput& gcOutput);
+
+extern bool InstantiateStencils(JSContext* cx,
+                                CompilationInfoVector& compilationInfos,
                                 CompilationGCOutput& gcOutput);
 
 extern JSScript* CompileGlobalScript(JSContext* cx,

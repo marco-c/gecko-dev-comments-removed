@@ -272,8 +272,8 @@ nsresult nsJSUtils::ExecutionContext::Decode(
   }
 
   MOZ_ASSERT(!mWantsReturnValue);
-  JS::TranscodeResult tr =
-      JS::DecodeScript(mCx, aBytecodeBuf, &mScript, aBytecodeIndex);
+  JS::TranscodeResult tr = JS::DecodeScriptMaybeStencil(
+      mCx, aBytecodeBuf, aCompileOptions, &mScript, aBytecodeIndex);
   
   
   

@@ -117,6 +117,11 @@ extern JS_PUBLIC_API void CancelOffThreadModule(JSContext* cx,
 extern JS_PUBLIC_API bool CanDecodeOffThread(
     JSContext* cx, const ReadOnlyCompileOptions& options, size_t length);
 
+
+
+
+
+
 extern JS_PUBLIC_API bool DecodeOffThreadScript(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     mozilla::Vector<uint8_t>& buffer , size_t cursor,
@@ -134,6 +139,7 @@ extern JS_PUBLIC_API JSScript* FinishOffThreadScriptDecoder(
 
 extern JS_PUBLIC_API void CancelOffThreadScriptDecoder(JSContext* cx,
                                                        OffThreadToken* token);
+
 
 extern JS_PUBLIC_API bool DecodeMultiOffThreadScripts(
     JSContext* cx, const ReadOnlyCompileOptions& options,
@@ -157,6 +163,11 @@ extern JS_PUBLIC_API void SetUseOffThreadParseGlobal(bool value);
 }  
 
 namespace js {
+
+
+
+
+
 extern bool UseOffThreadParseGlobal();
 }  
 

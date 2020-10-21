@@ -181,7 +181,7 @@ JS_PUBLIC_API bool JS::GetScriptTranscodingBuildId(
   
   
 
-  if (!buildId->reserve(buildId->length() + 4)) {
+  if (!buildId->reserve(buildId->length() + 5)) {
     return false;
   }
 
@@ -195,6 +195,10 @@ JS_PUBLIC_API bool JS::GetScriptTranscodingBuildId(
   
   
   buildId->infallibleAppend(IsTypeInferenceEnabled() ? '1' : '0');
+
+  
+  
+  buildId->infallibleAppend(js::UseOffThreadParseGlobal() ? '1' : '0');
 
   return true;
 }
