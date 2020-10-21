@@ -327,18 +327,6 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
         checkDone({ finished: true });
       };
 
-      
-      
-      
-      if (!requireBeforeUnload) {
-        unloadTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-        unloadTimer.initWithCallback(
-          onTimer,
-          TIMEOUT_BEFOREUNLOAD_EVENT,
-          Ci.nsITimer.TYPE_ONE_SHOT
-        );
-      }
-
       chromeWindow.addEventListener("TabClose", onUnload);
       chromeWindow.addEventListener("unload", onUnload);
       driver.dialogObserver.add(onDialogOpened);
@@ -347,6 +335,18 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
 
       try {
         await callback();
+
+        
+        
+        
+        if (!requireBeforeUnload) {
+          unloadTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+          unloadTimer.initWithCallback(
+            onTimer,
+            TIMEOUT_BEFOREUNLOAD_EVENT,
+            Ci.nsITimer.TYPE_ONE_SHOT
+          );
+        }
       } catch (e) {
         checkDone({ finished: true, error: e });
       }
