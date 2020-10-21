@@ -6,7 +6,11 @@
 package org.mozilla.geckoview.test
 
 import android.os.Parcel
+import android.os.SystemClock
+import android.view.KeyEvent
+
 import androidx.test.platform.app.InstrumentationRegistry
+
 import org.mozilla.geckoview.GeckoRuntimeSettings
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
@@ -169,6 +173,19 @@ open class BaseSessionTest(noErrorCollector: Boolean = false) {
             sessionRule.waitForJS(this, js)
 
     fun GeckoSession.waitForRoundTrip() = sessionRule.waitForRoundTrip(this)
+
+    fun GeckoSession.pressKey(keyCode: Int) {
+        
+        val promise = this.evaluatePromiseJS(
+                """new Promise(r => window.addEventListener(
+                    'keyup', r, { once: true }))""")
+        val time = SystemClock.uptimeMillis()
+        val keyEvent = KeyEvent(time, time, KeyEvent.ACTION_DOWN, keyCode, 0)
+        this.textInput.onKeyDown(keyCode, keyEvent)
+        this.textInput.onKeyUp(
+                keyCode, KeyEvent.changeAction(keyEvent, KeyEvent.ACTION_UP))
+        promise.value
+    }
 
     @Suppress("UNCHECKED_CAST")
     fun Any?.asJsonArray(): JSONArray = this as JSONArray
