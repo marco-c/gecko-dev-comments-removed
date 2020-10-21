@@ -1170,7 +1170,10 @@ void nsChildView::Invalidate(const LayoutDeviceIntRect& aRect) {
 
 bool nsChildView::WidgetTypeSupportsAcceleration() {
   
-  
+  return true;
+}
+
+bool nsChildView::ShouldUseOffMainThreadCompositing() {
   
   
   if (HasRemoteContent()) {
@@ -1178,12 +1181,16 @@ bool nsChildView::WidgetTypeSupportsAcceleration() {
   }
 
   
-  return mView && [[mView window] isOpaque] && ![[mView window] isKindOfClass:[PopupWindow class]];
-}
-
-bool nsChildView::ShouldUseOffMainThreadCompositing() {
   
-  if (!WidgetTypeSupportsAcceleration()) return false;
+  
+  
+  
+  
+  
+  if ([mView window] && [[mView window] isKindOfClass:[PopupWindow class]]) {
+    
+    return false;
+  }
 
   return nsBaseWidget::ShouldUseOffMainThreadCompositing();
 }
