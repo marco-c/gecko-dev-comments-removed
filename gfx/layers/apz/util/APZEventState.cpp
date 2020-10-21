@@ -321,13 +321,14 @@ void APZEventState::ProcessTouchEvent(
 
   bool isTouchPrevented = aContentResponse == nsEventStatus_eConsumeNoDefault;
   bool sentContentResponse = false;
-  APZES_LOG("Handling event type %d\n", aEvent.mMessage);
+  APZES_LOG("Handling event type %d isPrevented=%d\n", aEvent.mMessage,
+            isTouchPrevented);
   switch (aEvent.mMessage) {
     case eTouchStart: {
       mTouchEndCancelled = false;
       mTouchRollup = do_GetWeakReference(widget::nsAutoRollup::GetLastRollup());
 
-      sentContentResponse = SendPendingTouchPreventedResponse(false);
+      SendPendingTouchPreventedResponse(false);
       
       
 
