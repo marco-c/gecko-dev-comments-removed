@@ -357,10 +357,7 @@ class UrlbarInput {
     
     
     if (dueToTabSwitch) {
-      let searchMode = this._searchModesByBrowser.get(
-        this.window.gBrowser.selectedBrowser
-      );
-      this.setSearchMode(searchMode || {});
+      this.restoreSearchModeState();
     } else if (valid) {
       this.setSearchMode({});
     }
@@ -1454,6 +1451,16 @@ class UrlbarInput {
     }
 
     this._searchModesByBrowser.set(browser, searchMode);
+  }
+
+  
+
+
+  restoreSearchModeState() {
+    let state = this._searchModesByBrowser.get(
+      this.window.gBrowser.selectedBrowser
+    );
+    this.setSearchMode(state || {});
   }
 
   
