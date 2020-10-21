@@ -4839,9 +4839,9 @@ class Document : public nsINode,
   nsTObserverArray<nsIDocumentObserver*> mObservers;
 
   
-  std::bitset<eUseCounter_Count> mUseCounters;
+  UseCounters mUseCounters;
   
-  std::bitset<eUseCounter_Count> mChildDocumentUseCounters;
+  UseCounters mChildDocumentUseCounters;
 
   
   UniquePtr<StyleUseCounters> mStyleUseCounters;
