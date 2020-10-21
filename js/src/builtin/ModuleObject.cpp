@@ -1361,7 +1361,7 @@ static ArrayObject* ModuleBuilderInitArray(
 
 bool frontend::StencilModuleMetadata::initModule(
     JSContext* cx, frontend::CompilationInfo& compilationInfo,
-    JS::Handle<ModuleObject*> module) {
+    JS::Handle<ModuleObject*> module) const {
   RootedArrayObject requestedModulesObject(
       cx, ModuleBuilderInitArray(cx, compilationInfo,
                                  ModuleArrayType::RequestedModuleObject,
@@ -1403,7 +1403,12 @@ bool frontend::StencilModuleMetadata::initModule(
   }
 
   
-  module->initFunctionDeclarations(std::move(functionDecls));
+  FunctionDeclarationVector functionDeclsCopy;
+  if (!functionDeclsCopy.appendAll(functionDecls)) {
+    js::ReportOutOfMemory(cx);
+    return false;
+  }
+  module->initFunctionDeclarations(std::move(functionDeclsCopy));
 
   module->initImportExportData(
       requestedModulesObject, importEntriesObject, localExportEntriesObject,
