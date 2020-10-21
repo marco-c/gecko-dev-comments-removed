@@ -10,6 +10,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIContentPolicy.h"
+#include "nsISupports.h"
 
 class nsIURI;
 class nsINode;
@@ -32,9 +33,10 @@ class IconLoader : public imgINotificationObserver {
 
 
 
-  class Helper {
+  class Helper : public nsISupports {
    public:
-    NS_INLINE_DECL_REFCOUNTING(mozilla::widget::IconLoader::Helper)
+    
+    
     virtual nsresult OnComplete(imgIContainer* aContainer,
                                 const nsIntRect& aRect) = 0;
 
@@ -46,8 +48,9 @@ class IconLoader : public imgINotificationObserver {
              const nsIntRect& aImageRegionRect);
 
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_IMGINOTIFICATIONOBSERVER
+  NS_DECL_CYCLE_COLLECTION_CLASS(IconLoader)
 
   
   
