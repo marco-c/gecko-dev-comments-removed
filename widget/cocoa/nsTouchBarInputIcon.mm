@@ -18,6 +18,8 @@
 #include "nsObjCExceptions.h"
 
 using namespace mozilla;
+using mozilla::widget::IconLoader;
+using mozilla::widget::IconLoaderHelperCocoa;
 
 static const uint32_t kIconSize = 16;
 static const CGFloat kHiDPIScalingFactor = 2.0f;
@@ -50,8 +52,10 @@ nsTouchBarInputIcon::~nsTouchBarInputIcon() {
 void nsTouchBarInputIcon::Destroy() {
   ReleaseJSObjects();
   if (mIconLoader) {
-    mIconLoader->Destroy();
     mIconLoader = nullptr;
+  }
+  if (mIconLoaderHelper) {
+    mIconLoaderHelper = nullptr;
   }
 
   mButton = nil;
@@ -76,8 +80,8 @@ nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
   if (!mIconLoader) {
     
     
-    mIconLoader = new nsIconLoaderService(mDocument, &mImageRegionRect, this, kIconSize, kIconSize,
-                                          kHiDPIScalingFactor);
+    mIconLoaderHelper = new IconLoaderHelperCocoa(this, kIconSize, kIconSize, kHiDPIScalingFactor);
+    mIconLoader = new IconLoader(mIconLoaderHelper, mDocument, mImageRegionRect);
     if (!mIconLoader) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
@@ -85,9 +89,9 @@ nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
 
   if (!mSetIcon) {
     
-    [mButton setImage:mIconLoader->GetNativeIconImage()];
-    [mShareScrubber setButtonImage:mIconLoader->GetNativeIconImage()];
-    [mPopoverItem setCollapsedRepresentationImage:mIconLoader->GetNativeIconImage()];
+    [mButton setImage:mIconLoaderHelper->GetNativeIconImage()];
+    [mShareScrubber setButtonImage:mIconLoaderHelper->GetNativeIconImage()];
+    [mPopoverItem setCollapsedRepresentationImage:mIconLoaderHelper->GetNativeIconImage()];
   }
 
   nsresult rv = mIconLoader->LoadIcon(aIconURI, true );
@@ -118,11 +122,16 @@ void nsTouchBarInputIcon::ReleaseJSObjects() {
 
 
 
-nsresult nsTouchBarInputIcon::OnComplete(NSImage* aImage) {
-  [mButton setImage:aImage];
-  [mShareScrubber setButtonImage:aImage];
-  [mPopoverItem setCollapsedRepresentationImage:aImage];
+nsresult nsTouchBarInputIcon::OnComplete() {
+  if (!mIconLoaderHelper) {
+    return NS_ERROR_FAILURE;
+  }
 
-  [aImage release];
+  NSImage* image = mIconLoaderHelper->GetNativeIconImage();
+  [mButton setImage:image];
+  [mShareScrubber setButtonImage:image];
+  [mPopoverItem setCollapsedRepresentationImage:image];
+
+  mIconLoaderHelper->Destroy();
   return NS_OK;
 }
