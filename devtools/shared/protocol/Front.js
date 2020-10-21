@@ -287,6 +287,12 @@ class Front extends Pool {
 
 
   onPacket(packet) {
+    if (this.isDestroyed()) {
+      
+      
+      return;
+    }
+
     
     const type = packet.type || undefined;
     if (this._clientSpec.events && this._clientSpec.events.has(type)) {
