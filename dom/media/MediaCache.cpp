@@ -447,7 +447,7 @@ class MediaCache {
   nsTArray<MediaCacheStream*> mStreams;
   
   nsTArray<Block> mIndex;
-  
+
   RefPtr<MediaBlockCacheBase> mBlockCache;
   
   BlockList mFreeBlocks;
