@@ -2192,7 +2192,7 @@ bool nsPrintJob::PrePrintPage() {
   
   bool done = false;
   nsPageSequenceFrame* pageSeqFrame = do_QueryFrame(mPageSeqFrame.GetFrame());
-  nsresult rv = pageSeqFrame->PrePrintNextPage(mPagePrintTimer, &done);
+  nsresult rv = pageSeqFrame->PrePrintNextSheet(mPagePrintTimer, &done);
   if (NS_FAILED(rv)) {
     
     
@@ -2270,7 +2270,7 @@ bool nsPrintJob::PrintPage(nsPrintObject* aPO, bool& aInRange) {
   
   
   
-  nsresult rv = pageSeqFrame->PrintNextPage();
+  nsresult rv = pageSeqFrame->PrintNextSheet();
   if (NS_FAILED(rv)) {
     if (rv != NS_ERROR_ABORT) {
       FirePrintingErrorEvent(rv);

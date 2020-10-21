@@ -435,26 +435,7 @@ static void GetPrintCanvasElementsInFrame(
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-nsIFrame* nsPageSequenceFrame::GetCurrentPageFrame() {
+nsIFrame* nsPageSequenceFrame::GetCurrentSheetFrame() {
   uint32_t i = 0;
   for (nsIFrame* child : mFrames) {
     if (i == mCurrentSheetIdx) {
@@ -465,10 +446,10 @@ nsIFrame* nsPageSequenceFrame::GetCurrentPageFrame() {
   return nullptr;
 }
 
-nsresult nsPageSequenceFrame::PrePrintNextPage(nsITimerCallback* aCallback,
-                                               bool* aDone) {
-  nsIFrame* currentPage = GetCurrentPageFrame();
-  if (!currentPage) {
+nsresult nsPageSequenceFrame::PrePrintNextSheet(nsITimerCallback* aCallback,
+                                                bool* aDone) {
+  nsIFrame* currentSheet = GetCurrentSheetFrame();
+  if (!currentSheet) {
     *aDone = true;
     return NS_ERROR_FAILURE;
   }
@@ -487,7 +468,7 @@ nsresult nsPageSequenceFrame::PrePrintNextPage(nsITimerCallback* aCallback,
   
   if (!mCurrentCanvasListSetup) {
     mCurrentCanvasListSetup = true;
-    GetPrintCanvasElementsInFrame(currentPage, &mCurrentCanvasList);
+    GetPrintCanvasElementsInFrame(currentSheet, &mCurrentCanvasList);
 
     if (!mCurrentCanvasList.IsEmpty()) {
       nsresult rv = NS_OK;
@@ -563,7 +544,7 @@ void nsPageSequenceFrame::ResetPrintCanvasList() {
   mCurrentCanvasListSetup = false;
 }
 
-nsresult nsPageSequenceFrame::PrintNextPage() {
+nsresult nsPageSequenceFrame::PrintNextSheet() {
   
   
   
@@ -571,8 +552,8 @@ nsresult nsPageSequenceFrame::PrintNextPage() {
   
   
 
-  nsIFrame* currentPageFrame = GetCurrentPageFrame();
-  if (!currentPageFrame) {
+  nsIFrame* currentSheetFrame = GetCurrentSheetFrame();
+  if (!currentSheetFrame) {
     return NS_ERROR_FAILURE;
   }
 
@@ -592,16 +573,16 @@ nsresult nsPageSequenceFrame::PrintNextPage() {
     }
   }
 
-  PR_PL(("SeqFr::PrintNextPage -> %p SheetIdx: %d", currentPageFrame,
+  PR_PL(("SeqFr::PrintNextSheet -> %p SheetIdx: %d", currentSheetFrame,
          mCurrentSheetIdx));
 
   
   RefPtr<gfxContext> gCtx = dc->CreateRenderingContext();
   NS_ENSURE_TRUE(gCtx, NS_ERROR_OUT_OF_MEMORY);
 
-  nsRect drawingRect(nsPoint(0, 0), currentPageFrame->GetSize());
+  nsRect drawingRect(nsPoint(0, 0), currentSheetFrame->GetSize());
   nsRegion drawingRegion(drawingRect);
-  nsLayoutUtils::PaintFrame(gCtx, currentPageFrame, drawingRegion,
+  nsLayoutUtils::PaintFrame(gCtx, currentSheetFrame, drawingRegion,
                             NS_RGBA(0, 0, 0, 0),
                             nsDisplayListBuilderMode::Painting,
                             nsLayoutUtils::PaintFrameFlags::SyncDecodeImages);
