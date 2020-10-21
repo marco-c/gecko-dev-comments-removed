@@ -847,7 +847,9 @@ class SearchEngine {
 
 
 
-  _initEngineURLFromMetaData(type, params) {
+
+
+  _getEngineURLFromMetaData(type, params) {
     let url = new EngineURL(type, params.method || "GET", params.template);
 
     
@@ -884,7 +886,7 @@ class SearchEngine {
       }
     }
 
-    this._urls.push(url);
+    return url;
   }
 
   
@@ -1001,7 +1003,7 @@ class SearchEngine {
       configuration.params?.searchUrlPostParams ||
       searchProvider.search_url_post_params ||
       "";
-    this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SEARCH, {
+    let url = this._getEngineURLFromMetaData(SearchUtils.URL_TYPE.SEARCH, {
       method: (postParams && "POST") || "GET",
       
       
@@ -1014,12 +1016,14 @@ class SearchEngine {
       mozParams: configuration.extraParams || searchProvider.params || [],
     });
 
+    this._urls.push(url);
+
     if (searchProvider.suggest_url) {
       let suggestPostParams =
         configuration.params?.suggestUrlPostParams ||
         searchProvider.suggest_url_post_params ||
         "";
-      this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SUGGEST_JSON, {
+      url = this._getEngineURLFromMetaData(SearchUtils.URL_TYPE.SUGGEST_JSON, {
         method: (suggestPostParams && "POST") || "GET",
         
         template: searchProvider.suggest_url,
@@ -1029,10 +1033,33 @@ class SearchEngine {
           "",
         postParams: suggestPostParams,
       });
+
+      this._urls.push(url);
     }
 
     this._queryCharset = searchProvider.encoding || "UTF-8";
     this.__searchForm = searchProvider.search_form;
+  }
+
+  checkSearchUrlMatchesManifest(searchProvider) {
+    let existingUrl = this._getURLOfType(SearchUtils.URL_TYPE.SEARCH);
+
+    let newUrl = this._getEngineURLFromMetaData(SearchUtils.URL_TYPE.SEARCH, {
+      method: (searchProvider.search_url_post_params && "POST") || "GET",
+      
+      
+      template: decodeURI(searchProvider.search_url),
+      getParams: searchProvider.search_url_get_params || "",
+      postParams: searchProvider.search_url_post_params || "",
+    });
+
+    let existingSubmission = existingUrl.getSubmission("", this);
+    let newSubmission = newUrl.getSubmission("", this);
+
+    return (
+      existingSubmission.uri.equals(newSubmission.uri) &&
+      existingSubmission.postData == newSubmission.postData
+    );
   }
 
   
