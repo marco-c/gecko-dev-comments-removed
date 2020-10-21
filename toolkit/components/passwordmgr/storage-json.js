@@ -35,11 +35,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIUUIDGenerator"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  FXA_PWDMGR_HOST: "resource://gre/modules/FxAccountsCommon.js",
-  FXA_PWDMGR_REALM: "resource://gre/modules/FxAccountsCommon.js",
-});
-
 class LoginManagerStorage_json {
   constructor() {
     this.__crypto = null; 
@@ -292,7 +287,6 @@ class LoginManagerStorage_json {
 
     LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
     this._recordEntryPresent();
-    this._updateLoginsBackup();
   }
 
   modifyLogin(oldLogin, newLoginData) {
@@ -663,7 +657,6 @@ class LoginManagerStorage_json {
     this._store.saveSoon();
 
     LoginHelper.notifyStorageChanged("removeAllLogins", null);
-    this._updateLoginsBackup();
   }
 
   findLogins(origin, formActionOrigin, httpRealm) {
@@ -848,47 +841,6 @@ class LoginManagerStorage_json {
       "signon.usage.hasEntry",
       !!this._store.data.logins.length
     );
-  }
-
-  
-  
-  
-  
-  
-  async _updateLoginsBackup() {
-    
-    if (!this._store._options.backupTo) {
-      return;
-    }
-
-    const logins = this._store.data.logins;
-    
-    
-    if (logins.length > 1) {
-      return;
-    }
-
-    
-    
-    if (
-      logins.length &&
-      logins[0].hostname == FXA_PWDMGR_HOST &&
-      logins[0].httpRealm == FXA_PWDMGR_REALM
-    ) {
-      try {
-        await OS.File.copy(this._store.path, this._store._options.backupTo);
-      } catch (ex) {
-        Cu.reportError(ex);
-      }
-    } else if (!logins.length) {
-      
-      await OS.File.remove(this._store._options.backupTo, {
-        ignoreAbsent: true,
-      });
-    }
-
-    
-    Services.obs.notifyObservers(null, "logins-backup-updated");
   }
 }
 

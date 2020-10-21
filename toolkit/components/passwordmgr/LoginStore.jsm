@@ -43,12 +43,20 @@ const EXPORTED_SYMBOLS = ["LoginStore"];
 
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(
   this,
   "JSONFile",
   "resource://gre/modules/JSONFile.jsm"
 );
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  FXA_PWDMGR_HOST: "resource://gre/modules/FxAccountsCommon.js",
+  FXA_PWDMGR_REALM: "resource://gre/modules/FxAccountsCommon.js",
+});
 
 
 
@@ -87,6 +95,54 @@ function LoginStore(aPath, aBackupPath = "") {
 
 LoginStore.prototype = Object.create(JSONFile.prototype);
 LoginStore.prototype.constructor = LoginStore;
+
+LoginStore.prototype._save = async function() {
+  await JSONFile.prototype._save.call(this);
+
+  if (this._options.backupTo) {
+    await this._backupHandler();
+  }
+};
+
+
+
+
+
+
+
+LoginStore.prototype._backupHandler = async function() {
+  const logins = this._data.logins;
+  
+  
+  if (logins.length > 1) {
+    return;
+  }
+
+  
+  
+  if (
+    logins.length &&
+    logins[0].hostname == FXA_PWDMGR_HOST &&
+    logins[0].httpRealm == FXA_PWDMGR_REALM
+  ) {
+    try {
+      await OS.File.copy(this.path, this._options.backupTo);
+
+      
+      Services.obs.notifyObservers(null, "logins-backup-updated");
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
+  } else if (!logins.length) {
+    
+    await OS.File.remove(this._options.backupTo, {
+      ignoreAbsent: true,
+    });
+
+    
+    Services.obs.notifyObservers(null, "logins-backup-updated");
+  }
+};
 
 
 
