@@ -2470,6 +2470,10 @@
         );
       }
 
+      if (!UserInteraction.running("browser.tabs.opening", window)) {
+        UserInteraction.start("browser.tabs.opening", "initting", window);
+      }
+
       
       
       document
@@ -2567,6 +2571,7 @@
       this.tabContainer._unlockTabSizing();
 
       if (!animate) {
+        UserInteraction.update("browser.tabs.opening", "not-animated", window);
         t.setAttribute("fadein", "true");
 
         
@@ -2578,6 +2583,8 @@
           0,
           this.tabContainer
         );
+      } else {
+        UserInteraction.update("browser.tabs.opening", "animated", window);
       }
 
       let usingPreloadedContent = false;
@@ -3289,6 +3296,10 @@
         prewarmed,
       } = {}
     ) {
+      if (UserInteraction.running("browser.tabs.opening", window)) {
+        UserInteraction.finish("browser.tabs.opening", window);
+      }
+
       
       
       if (
