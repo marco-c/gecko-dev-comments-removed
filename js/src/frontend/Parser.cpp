@@ -384,7 +384,8 @@ typename ParseHandler::ListNodeType GeneralParser<ParseHandler, Unit>::parse() {
     
     
     if (!pc_->useAsmOrInsideUseAsm()) {
-      if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
+      if (!FoldConstants(cx_, this->getCompilationInfo().stencil.parserAtoms,
+                         &node, &handler_)) {
         return null();
       }
     }
@@ -1587,7 +1588,8 @@ LexicalScopeNode* Parser<FullParseHandler, Unit>::evalBody(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo().stencil.parserAtoms,
+                       &node, &handler_)) {
       return null();
     }
   }
@@ -1647,7 +1649,8 @@ ListNode* Parser<FullParseHandler, Unit>::globalBody(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo().stencil.parserAtoms,
+                       &node, &handler_)) {
       return null();
     }
   }
@@ -1758,7 +1761,8 @@ ModuleNode* Parser<FullParseHandler, Unit>::moduleBody(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo().stencil.parserAtoms,
+                       &node, &handler_)) {
       return null();
     }
   }
@@ -2149,7 +2153,8 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo().stencil.parserAtoms,
+                       &node, &handler_)) {
       return null();
     }
   }
@@ -3243,7 +3248,8 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
   
   
   if (!pc_->useAsmOrInsideUseAsm()) {
-    if (!FoldConstants(cx_, this->getCompilationInfo(), &node, &handler_)) {
+    if (!FoldConstants(cx_, this->getCompilationInfo().stencil.parserAtoms,
+                       &node, &handler_)) {
       return null();
     }
   }
@@ -10601,8 +10607,9 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::propertyName(
   *propAtomOut = nullptr;
   switch (ltok) {
     case TokenKind::Number: {
-      const ParserAtom* numAtom = NumberToParserAtom(
-          cx_, this->compilationInfo_, anyChars.currentToken().number());
+      const ParserAtom* numAtom =
+          NumberToParserAtom(cx_, this->compilationInfo_.stencil.parserAtoms,
+                             anyChars.currentToken().number());
       if (!numAtom) {
         return null();
       }
