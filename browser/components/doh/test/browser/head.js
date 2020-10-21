@@ -91,14 +91,7 @@ async function setup() {
   Preferences.set(prefs.PROVIDER_STEERING_PREF, true);
 
   
-  
-  
-  
-  is(
-    Preferences.get(prefs.CLEAR_ON_SHUTDOWN_PREF),
-    true,
-    "Clear mode on shutdown is enabled."
-  );
+  Preferences.set(prefs.CLEAR_ON_SHUTDOWN_PREF, true);
 
   
 
