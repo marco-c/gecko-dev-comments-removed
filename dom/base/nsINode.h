@@ -1430,12 +1430,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT mozilla::dom::Element* GetAnonymousRootElementOfTextEditor(
+  nsIContent* GetTextEditorRootContent(
       mozilla::TextEditor** aTextEditor = nullptr);
 
   
@@ -1446,8 +1441,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsIContent* GetSelectionRootContent(
-      mozilla::PresShell* aPresShell);
+  nsIContent* GetSelectionRootContent(mozilla::PresShell* aPresShell);
 
   nsINodeList* ChildNodes();
 

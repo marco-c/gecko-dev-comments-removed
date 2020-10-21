@@ -384,11 +384,7 @@ nsresult EditorBase::PostCreate() {
     
     
     
-    RefPtr<EditorEventListener> eventListener = mEventListener;
-    eventListener->SpellCheckIfNeeded();
-    if (NS_WARN_IF(Destroyed())) {
-      return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
-    }
+    mEventListener->SpellCheckIfNeeded();
 
     IMEState newState;
     nsresult rv = GetPreferredIMEState(&newState);
@@ -4348,12 +4344,12 @@ void EditorBase::ReinitializeSelection(Element& aElement) {
   
   SyncRealTimeSpell();
 
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  if (NS_WARN_IF(!presContext)) {
+  nsPresContext* context = GetPresContext();
+  if (NS_WARN_IF(!context)) {
     return;
   }
   nsCOMPtr<nsIContent> focusedContent = GetFocusedContentForIME();
-  IMEStateManager::OnFocusInEditor(presContext, focusedContent, *this);
+  IMEStateManager::OnFocusInEditor(context, focusedContent, *this);
 }
 
 Element* EditorBase::GetEditorRoot() const { return GetRoot(); }

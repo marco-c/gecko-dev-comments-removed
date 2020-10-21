@@ -51,7 +51,7 @@ class EditorEventListener : public nsIDOMEventListener {
   
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD HandleEvent(dom::Event* aEvent) override;
 
-  MOZ_CAN_RUN_SCRIPT void SpellCheckIfNeeded();
+  void SpellCheckIfNeeded();
 
  protected:
   virtual ~EditorEventListener();
@@ -89,8 +89,7 @@ class EditorEventListener : public nsIDOMEventListener {
   nsPresContext* GetPresContext() const;
   nsIContent* GetFocusedRootContent();
   
-  MOZ_CAN_RUN_SCRIPT bool NotifyIMEOfMouseButtonEvent(
-      WidgetMouseEvent* aMouseEvent);
+  bool NotifyIMEOfMouseButtonEvent(WidgetMouseEvent* aMouseEvent);
   bool EditorHasFocus();
   bool IsFileControlTextBox();
   bool ShouldHandleNativeKeyBindings(WidgetKeyboardEvent* aKeyboardEvent);

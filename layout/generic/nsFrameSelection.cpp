@@ -530,18 +530,17 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
   
 
   NS_ENSURE_STATE(mPresShell);
-  RefPtr<PresShell> presShell = mPresShell;
-  nsIContent* anchorRoot = anchorContent->GetSelectionRootContent(presShell);
+  nsIContent* anchorRoot = anchorContent->GetSelectionRootContent(mPresShell);
   NS_ENSURE_TRUE(anchorRoot, NS_ERROR_UNEXPECTED);
 
   
   
   
 
-  nsCOMPtr<nsIContent> content = aFrame->GetContent();
+  nsIContent* content = aFrame->GetContent();
 
   if (content) {
-    nsIContent* contentRoot = content->GetSelectionRootContent(presShell);
+    nsIContent* contentRoot = content->GetSelectionRootContent(mPresShell);
     NS_ENSURE_TRUE(contentRoot, NS_ERROR_UNEXPECTED);
 
     if (anchorRoot == contentRoot) {
@@ -555,18 +554,18 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
       
       
       
-      nsIFrame* rootFrame = presShell->GetRootFrame();
+      nsIFrame* rootFrame = mPresShell->GetRootFrame();
       nsPoint ptInRoot = aPoint + aFrame->GetOffsetTo(rootFrame);
       nsIFrame* cursorFrame =
           nsLayoutUtils::GetFrameForPoint(RelativeTo{rootFrame}, ptInRoot);
 
       
       
-      if (cursorFrame && cursorFrame->PresShell() == presShell) {
-        nsCOMPtr<nsIContent> cursorContent = cursorFrame->GetContent();
+      if (cursorFrame && cursorFrame->PresShell() == mPresShell) {
+        nsIContent* cursorContent = cursorFrame->GetContent();
         NS_ENSURE_TRUE(cursorContent, NS_ERROR_FAILURE);
         nsIContent* cursorContentRoot =
-            cursorContent->GetSelectionRootContent(presShell);
+            cursorContent->GetSelectionRootContent(mPresShell);
         NS_ENSURE_TRUE(cursorContentRoot, NS_ERROR_UNEXPECTED);
         if (cursorContentRoot == anchorRoot) {
           *aRetFrame = cursorFrame;

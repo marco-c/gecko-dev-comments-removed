@@ -348,7 +348,7 @@ interface nsIHTMLEditor : nsISupports
 
 
 
-  [setter_can_run_script] attribute boolean isCSSEnabled;
+  attribute boolean isCSSEnabled;
 
   
 

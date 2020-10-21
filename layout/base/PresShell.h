@@ -2602,10 +2602,11 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT nsresult
-    DispatchEvent(EventStateManager* aEventStateManager, WidgetEvent* aEvent,
-                  bool aTouchIsNew, nsEventStatus* aEventStatus,
-                  nsIContent* aOverrideClickTarget);
+    MOZ_CAN_RUN_SCRIPT
+    nsresult DispatchEvent(EventStateManager* aEventStateManager,
+                           WidgetEvent* aEvent, bool aTouchIsNew,
+                           nsEventStatus* aEventStatus,
+                           nsIContent* aOverrideClickTarget);
 
     
 
@@ -2615,9 +2616,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT nsresult
-    DispatchEventToDOM(WidgetEvent* aEvent, nsEventStatus* aEventStatus,
-                       nsPresShellEventCB* aEventCB);
+    nsresult DispatchEventToDOM(WidgetEvent* aEvent,
+                                nsEventStatus* aEventStatus,
+                                nsPresShellEventCB* aEventCB);
 
     
 
@@ -2631,9 +2632,10 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    MOZ_CAN_RUN_SCRIPT void DispatchTouchEventToDOM(
-        WidgetEvent* aEvent, nsEventStatus* aEventStatus,
-        nsPresShellEventCB* aEventCB, bool aTouchIsNew);
+    void DispatchTouchEventToDOM(WidgetEvent* aEvent,
+                                 nsEventStatus* aEventStatus,
+                                 nsPresShellEventCB* aEventCB,
+                                 bool aTouchIsNew);
 
     
 

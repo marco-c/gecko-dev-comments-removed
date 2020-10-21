@@ -651,8 +651,8 @@ bool IMEStateManager::OnMouseButtonEventInEditor(
     return false;
   }
 
-  RefPtr<IMEContentObserver> observer = sActiveIMEContentObserver;
-  bool consumed = observer->OnMouseButtonEvent(aPresContext, aMouseEvent);
+  bool consumed =
+      sActiveIMEContentObserver->OnMouseButtonEvent(aPresContext, aMouseEvent);
 
   if (MOZ_LOG_TEST(sISMLog, LogLevel::Info)) {
     nsAutoString eventType;
@@ -880,17 +880,12 @@ void IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
   
   
   
-
-  
-  
-  
   if (sActiveIMEContentObserver && IsIMEObserverNeeded(aNewIMEState)) {
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  UpdateIMEState(), try to reinitialize the "
              "active IMEContentObserver"));
     RefPtr<IMEContentObserver> contentObserver = sActiveIMEContentObserver;
-    RefPtr<nsPresContext> presContext = sPresContext;
-    if (!contentObserver->MaybeReinitialize(widget, presContext, aContent,
+    if (!contentObserver->MaybeReinitialize(widget, sPresContext, aContent,
                                             aEditorBase)) {
       MOZ_LOG(sISMLog, LogLevel::Error,
               ("  UpdateIMEState(), failed to reinitialize the "
@@ -1854,9 +1849,7 @@ void IMEStateManager::CreateIMEContentObserver(EditorBase* aEditorBase) {
   
   RefPtr<IMEContentObserver> activeIMEContentObserver(
       sActiveIMEContentObserver);
-  RefPtr<nsPresContext> presContext = sPresContext;
-  RefPtr<nsIContent> content = sContent;
-  activeIMEContentObserver->Init(widget, presContext, content, aEditorBase);
+  activeIMEContentObserver->Init(widget, sPresContext, sContent, aEditorBase);
 }
 
 
