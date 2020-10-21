@@ -82,6 +82,11 @@ class MediaControlService final : public nsIObserver {
   MediaMetadataBase GetMainControllerMediaMetadata() const;
   MediaSessionPlaybackState GetMainControllerPlaybackState() const;
 
+  
+  
+  
+  nsString GetFallbackTitle() const;
+
  private:
   MediaControlService();
   ~MediaControlService();
@@ -166,6 +171,7 @@ class MediaControlService final : public nsIObserver {
   RefPtr<MediaControlKeyListener> mMediaKeysHandler;
   MediaEventProducer<uint64_t> mMediaControllerAmountChangedEvent;
   UniquePtr<ControllerManager> mControllerManager;
+  nsString mFallbackTitle;
 };
 
 }  
