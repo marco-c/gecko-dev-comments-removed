@@ -1705,7 +1705,14 @@ class UrlbarInput {
     }
 
     this.searchMode = searchMode;
-    this._setValue(result.payload.query?.trimStart() || "", false);
+
+    
+    
+    let value = result.payload.query?.trimStart() || "";
+    this._setValue(value, false);
+    this.window.gBrowser.userTypedValue = value;
+    this.valueIsTyped = true;
+
     if (startQuery) {
       this.startQuery({ allowAutofill: false });
     }

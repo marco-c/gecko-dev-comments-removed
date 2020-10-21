@@ -17,6 +17,7 @@ add_task(async function setup() {
   });
 });
 
+
 add_task(async function switchTabs() {
   
   let tabs = [];
@@ -57,6 +58,11 @@ add_task(async function switchTabs() {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
+  Assert.equal(
+    gURLBar.value,
+    "test",
+    "Value should remain the search string after switching back"
+  );
 
   
   await BrowserTestUtils.switchTab(gBrowser, tabs[2]);
@@ -81,6 +87,11 @@ add_task(async function switchTabs() {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
+  Assert.equal(
+    gURLBar.value,
+    "test",
+    "Value should remain the search string after switching back"
+  );
 
   
   await BrowserTestUtils.switchTab(gBrowser, tabs[1]);
@@ -94,6 +105,11 @@ add_task(async function switchTabs() {
     source: UrlbarUtils.RESULT_SOURCE.TABS,
     entry: "oneoff",
   });
+  Assert.equal(
+    gURLBar.value,
+    "test tab 2",
+    "Value should remain the search string after switching back"
+  );
 
   
   await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
@@ -106,6 +122,11 @@ add_task(async function switchTabs() {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
+  Assert.equal(
+    gURLBar.value,
+    "test",
+    "Value should remain the search string after switching back"
+  );
 
   
   
@@ -113,6 +134,11 @@ add_task(async function switchTabs() {
   await BrowserTestUtils.switchTab(gBrowser, tabs[2]);
   await searchPromise;
   await UrlbarTestUtils.assertSearchMode(window, null);
+  Assert.equal(
+    gURLBar.value,
+    "test tab 2",
+    "Value should remain the search string after switching back"
+  );
 
   
   searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
@@ -122,6 +148,11 @@ add_task(async function switchTabs() {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
+  Assert.equal(
+    gURLBar.value,
+    "test",
+    "Value should remain the search string after switching back"
+  );
 
   
   await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
@@ -132,6 +163,11 @@ add_task(async function switchTabs() {
   await BrowserTestUtils.switchTab(gBrowser, tabs[2]);
   await searchPromise;
   await UrlbarTestUtils.assertSearchMode(window, null);
+  Assert.equal(
+    gURLBar.value,
+    "test tab 2",
+    "Value should remain the search string after switching back"
+  );
 
   
   
@@ -139,9 +175,69 @@ add_task(async function switchTabs() {
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
   await UrlbarTestUtils.assertSearchMode(window, null);
+  Assert.equal(
+    gURLBar.value,
+    "test",
+    "Value should remain the search string after switching back"
+  );
 
   await UrlbarTestUtils.promisePopupClose(window);
   for (let tab of tabs) {
     BrowserTestUtils.removeTab(tab);
   }
 });
+
+
+
+
+add_task(async function userTypedValue_empty() {
+  await doUserTypedValueTest("");
+});
+
+
+
+
+add_task(async function userTypedValue_nonEmpty() {
+  await doUserTypedValueTest("foo bar");
+});
+
+
+
+
+
+
+
+
+
+async function doUserTypedValueTest(searchString) {
+  let value = `${UrlbarTokenizer.RESTRICT.BOOKMARK} ${searchString}`;
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value,
+    fireInputEvent: true,
+  });
+  await UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    entry: "typed",
+  });
+  Assert.equal(
+    gURLBar.value,
+    searchString,
+    "Sanity check: Value is the search string"
+  );
+
+  let tab = await BrowserTestUtils.openNewForegroundTab({ gBrowser });
+  BrowserTestUtils.removeTab(tab);
+
+  await UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    entry: "typed",
+  });
+  Assert.equal(
+    gURLBar.value,
+    searchString,
+    "Value should remain the search string after switching back"
+  );
+
+  gURLBar.handleRevert();
+}
