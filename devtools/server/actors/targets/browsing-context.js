@@ -308,13 +308,13 @@ const browsingContextTargetPrototype = {
 
   addWatcherDataEntry(type, entries) {
     if (type == "resources") {
-      this.watchTargetResources(entries);
+      this._watchTargetResources(entries);
     }
   },
 
   removeWatcherDataEntry(type, entries) {
     if (type == "resources") {
-      this.unwatchTargetResources(entries);
+      this._unwatchTargetResources(entries);
     }
   },
 
@@ -326,11 +326,11 @@ const browsingContextTargetPrototype = {
 
 
 
-  watchTargetResources(resourceTypes) {
+  _watchTargetResources(resourceTypes) {
     return Resources.watchResources(this, resourceTypes);
   },
 
-  unwatchTargetResources(resourceTypes) {
+  _unwatchTargetResources(resourceTypes) {
     return Resources.unwatchResources(this, resourceTypes);
   },
 

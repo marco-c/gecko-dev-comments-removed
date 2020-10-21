@@ -68,45 +68,6 @@ const SUPPORTED_DATA = {
 
 
 
-
-
-
-
-
-
-
-function getWatchedData(watcher, { createData = false } = {}) {
-  
-  
-  
-  const watcherActorID = watcher.actorID;
-  let watchedData = watchedDataByWatcherActor.get(watcherActorID);
-  if (!watchedData && createData) {
-    watchedData = {
-      
-      
-      
-      
-      browserId: watcher.browserId,
-      
-      connectionPrefix: watcher.conn.prefix,
-    };
-    
-    for (const name of Object.values(SUPPORTED_DATA)) {
-      watchedData[name] = [];
-    }
-    watchedDataByWatcherActor.set(watcherActorID, watchedData);
-    watcherActors.set(watcherActorID, watcher);
-  }
-  return watchedData;
-}
-
-
-
-
-
-
-
 function persistMapToSharedData() {
   Services.ppmm.sharedData.set(SHARED_DATA_KEY_NAME, watchedDataByWatcherActor);
   
@@ -127,7 +88,7 @@ const WatcherRegistry = {
 
 
   isWatchingTargets(watcher, targetType) {
-    const watchedData = getWatchedData(watcher);
+    const watchedData = this.getWatchedData(watcher);
     return watchedData && watchedData.targets.includes(targetType);
   },
 
@@ -137,12 +98,37 @@ const WatcherRegistry = {
 
 
 
-  getWatchedResources(watcher) {
-    const watchedData = getWatchedData(watcher);
-    if (watchedData) {
-      return watchedData.resources;
+
+
+
+
+
+
+
+  getWatchedData(watcher, { createData = false } = {}) {
+    
+    
+    
+    const watcherActorID = watcher.actorID;
+    let watchedData = watchedDataByWatcherActor.get(watcherActorID);
+    if (!watchedData && createData) {
+      watchedData = {
+        
+        
+        
+        
+        browserId: watcher.browserId,
+        
+        connectionPrefix: watcher.conn.prefix,
+      };
+      
+      for (const name of Object.values(SUPPORTED_DATA)) {
+        watchedData[name] = [];
+      }
+      watchedDataByWatcherActor.set(watcherActorID, watchedData);
+      watcherActors.set(watcherActorID, watcher);
     }
-    return [];
+    return watchedData;
   },
 
   
@@ -168,7 +154,7 @@ const WatcherRegistry = {
 
 
   addWatcherDataEntry(watcher, type, entries) {
-    const watchedData = getWatchedData(watcher, {
+    const watchedData = this.getWatchedData(watcher, {
       createData: true,
     });
 
@@ -203,7 +189,7 @@ const WatcherRegistry = {
 
 
   removeWatcherDataEntry(watcher, type, entries) {
-    const watchedData = getWatchedData(watcher);
+    const watchedData = this.getWatchedData(watcher);
     if (!watchedData) {
       return false;
     }

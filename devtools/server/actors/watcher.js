@@ -77,8 +77,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  get watchedResources() {
-    return WatcherRegistry.getWatchedResources(this);
+  get watchedData() {
+    return WatcherRegistry.getWatchedData(this);
   },
 
   form() {
@@ -140,10 +140,9 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   async watchTargets(targetType) {
     WatcherRegistry.watchTargets(this, targetType);
 
-    const watchedResources = WatcherRegistry.getWatchedResources(this);
     const targetHelperModule = TARGET_HELPERS[targetType];
     
-    await targetHelperModule.createTargets(this, watchedResources);
+    await targetHelperModule.createTargets(this);
   },
 
   
@@ -311,7 +310,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       ? TargetActorRegistry.getTargetActor(this.browserId)
       : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
-      await targetActor.watchTargetResources(frameResourceTypes);
+      await targetActor.addWatcherDataEntry("resources", frameResourceTypes);
     }
   },
 
@@ -378,7 +377,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       ? TargetActorRegistry.getTargetActor(this.browserId)
       : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
-      targetActor.unwatchTargetResources(frameResourceTypes);
+      targetActor.removeWatcherDataEntry("resources", frameResourceTypes);
     }
 
     

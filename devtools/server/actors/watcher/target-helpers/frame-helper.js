@@ -19,9 +19,7 @@ const Targets = require("devtools/server/actors/targets/index");
 
 
 
-
-
-async function createTargets(watcher, watchedResources) {
+async function createTargets(watcher) {
   
   
   
@@ -43,7 +41,7 @@ async function createTargets(watcher, watchedResources) {
         watcherActorID: watcher.actorID,
         connectionPrefix: watcher.conn.prefix,
         browserId: watcher.browserId,
-        watchedResources: watcher.watchedResources,
+        watchedData: watcher.watchedData,
       });
     promises.push(promise);
   }
