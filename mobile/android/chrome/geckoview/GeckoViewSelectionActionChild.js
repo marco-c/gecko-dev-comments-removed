@@ -125,17 +125,40 @@ class GeckoViewSelectionActionChild extends GeckoViewChildModule {
 
     let currentWindow = aEvent.target.defaultView;
     while (currentWindow.realFrameElement) {
-      const currentRect = currentWindow.realFrameElement.getBoundingClientRect();
-      currentWindow = currentWindow.realFrameElement.ownerGlobal;
+      const frameElement = currentWindow.realFrameElement;
+      currentWindow = frameElement.ownerGlobal;
 
-      offset.left += currentRect.left;
-      offset.top += currentRect.top;
+      
+      
+      
+      const currentRect = frameElement.getBoundingClientRect();
+      const style = currentWindow.getComputedStyle(frameElement);
+      const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+      const borderTop = parseFloat(style.borderTopWidth) || 0;
+      const paddingLeft = parseFloat(style.paddingLeft) || 0;
+      const paddingTop = parseFloat(style.paddingTop) || 0;
+
+      offset.left += currentRect.left + borderLeft + paddingLeft;
+      offset.top += currentRect.top + borderTop + paddingTop;
 
       const targetDocShell = currentWindow.docShell;
       if (targetDocShell.isMozBrowser) {
         break;
       }
     }
+
+    
+    
+    
+    
+    var offsetX = {};
+    var offsetY = {};
+    currentWindow.windowUtils.getVisualViewportOffsetRelativeToLayoutViewport(
+      offsetX,
+      offsetY
+    );
+    offset.left -= offsetX.value;
+    offset.top -= offsetY.value;
 
     return offset;
   }

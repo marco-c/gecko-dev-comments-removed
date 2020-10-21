@@ -1438,12 +1438,6 @@ void AccessibleCaretManager::DispatchCaretStateChangedEvent(
     init.mSelectionVisible = true;
   }
 
-  
-  
-  
-  
-  rect -= mPresShell->GetVisualViewportOffsetRelativeToLayoutViewport();
-
   domRect->SetLayoutRect(rect);
 
   
