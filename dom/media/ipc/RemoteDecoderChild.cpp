@@ -10,9 +10,9 @@
 namespace mozilla {
 
 RemoteDecoderChild::RemoteDecoderChild(bool aRecreatedOnCrash)
-    : mThread(RemoteDecoderManagerChild::GetManagerThread()),
-      mRecreatedOnCrash(aRecreatedOnCrash),
-      mRawFramePool(1, ShmemPool::PoolType::DynamicPool) {}
+    : ShmemRecycleAllocator(this),
+      mThread(RemoteDecoderManagerChild::GetManagerThread()),
+      mRecreatedOnCrash(aRecreatedOnCrash) {}
 
 void RemoteDecoderChild::HandleRejectionError(
     const ipc::ResponseRejectReason& aReason,
@@ -44,7 +44,7 @@ void RemoteDecoderChild::HandleRejectionError(
 
 void RemoteDecoderChild::ActorDestroy(ActorDestroyReason aWhy) {
   mDecodedData.Clear();
-  mRawFramePool.Cleanup(this);
+  CleanupShmemRecycleAllocator();
   RecordShutdownTelemetry(aWhy == AbnormalShutdown);
 }
 
@@ -101,22 +101,17 @@ RefPtr<MediaDataDecoder::DecodePromise> RemoteDecoderChild::Decode(
   AssertOnManagerThread();
 
   nsTArray<MediaRawDataIPDL> samples;
-  nsTArray<Shmem> mems;
   for (auto&& sample : aSamples) {
     
     
     
-    ShmemBuffer buffer = mRawFramePool.Get(this, sample->Size(),
-                                           ShmemPool::AllocationPolicy::Unsafe);
+    ShmemBuffer buffer = AllocateBuffer(sample->Size());
     if (!buffer.Valid()) {
       return MediaDataDecoder::DecodePromise::CreateAndReject(
           NS_ERROR_DOM_MEDIA_DECODE_ERR, __func__);
     }
 
     memcpy(buffer.Get().get<uint8_t>(), sample->Data(), sample->Size());
-    
-    
-    mems.AppendElement(buffer.Get());
     MediaRawDataIPDL rawSample(
         MediaDataIPDL(sample->mOffset, sample->mTime, sample->mTimecode,
                       sample->mDuration, sample->mKeyframe),
@@ -128,20 +123,15 @@ RefPtr<MediaDataDecoder::DecodePromise> RemoteDecoderChild::Decode(
   RefPtr<RemoteDecoderChild> self = this;
   SendDecode(std::move(samples))
       ->Then(mThread, __func__,
-             [self, this, mems = std::move(mems)](
-                 PRemoteDecoderChild::DecodePromise::ResolveOrRejectValue&&
-                     aValue) {
+             [self,
+              this](PRemoteDecoderChild::DecodePromise::ResolveOrRejectValue&&
+                        aValue) {
                
                
-               if (self->CanSend()) {
-                 for (auto&& mem : mems) {
-                   mRawFramePool.Put(ShmemBuffer(std::move(mem)));
-                 }
-               } else {
-                 for (auto mem : mems) {
-                   self->DeallocShmem(mem);
-                 }
-               }
+               
+               
+               
+               ReleaseAllBuffers();
 
                if (aValue.IsReject()) {
                  HandleRejectionError(
