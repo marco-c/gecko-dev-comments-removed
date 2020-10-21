@@ -54,6 +54,10 @@ using namespace soundtouch;
 
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 
+#if defined(SOUNDTOUCH_USE_NEON) && defined(SOUNDTOUCH_ALLOW_NONEXACT_SIMD_OPTIMIZATION)
+    
+    #define ST_SIMD_AVOID_UNALIGNED
+#endif
 
 
 
@@ -315,7 +319,8 @@ int TDStretch::seekBestOverlapPositionFull(const SAMPLETYPE *refPos)
     {
         double corr;
         
-#ifdef _OPENMP
+#if defined(_OPENMP) || defined(ST_SIMD_AVOID_UNALIGNED)
+        
         
         
         corr = calcCrossCorr(refPos + channels * i, pMidBuffer, norm);
@@ -832,21 +837,19 @@ void TDStretch::overlapStereo(short *poutput, const short *input) const
 
 
 
-void TDStretch::overlapMulti(SAMPLETYPE *poutput, const SAMPLETYPE *input) const
+void TDStretch::overlapMulti(short *poutput, const short *input) const
 {
-    SAMPLETYPE m1=(SAMPLETYPE)0;
-    SAMPLETYPE m2;
-    int i=0;
+    short m1;
+    int i = 0;
 
-    for (m2 = (SAMPLETYPE)overlapLength; m2; m2 --)
+    for (m1 = 0; m1 < overlapLength; m1 ++)
     {
+        short m2 = (short)(overlapLength - m1);
         for (int c = 0; c < channels; c ++)
         {
             poutput[i] = (input[i] * m1 + pMidBuffer[i] * m2)  / overlapLength;
             i++;
         }
-
-        m1++;
     }
 }
 
@@ -891,20 +894,20 @@ double TDStretch::calcCrossCorr(const short *mixingPos, const short *compare, do
     unsigned long lnorm;
     int i;
 
+    #ifdef ST_SIMD_AVOID_UNALIGNED
+        
+        if (((ulongptr)mixingPos) & 15) return -1e50;
+    #endif
+
     corr = lnorm = 0;
     
-    
-    
-    for (i = 0; i < channels * overlapLength; i += 4) 
+    for (i = 0; i < channels * overlapLength; i += 2)
     {
         corr += (mixingPos[i] * compare[i] + 
-                 mixingPos[i + 1] * compare[i + 1]) >> overlapDividerBitsNorm;  
-        corr += (mixingPos[i + 2] * compare[i + 2] + 
-                mixingPos[i + 3] * compare[i + 3]) >> overlapDividerBitsNorm;
+                 mixingPos[i + 1] * compare[i + 1]) >> overlapDividerBitsNorm;
         lnorm += (mixingPos[i] * mixingPos[i] + 
-                mixingPos[i + 1] * mixingPos[i + 1]) >> overlapDividerBitsNorm; 
-        lnorm += (mixingPos[i + 2] * mixingPos[i + 2] + 
-                mixingPos[i + 3] * mixingPos[i + 3]) >> overlapDividerBitsNorm;
+                  mixingPos[i + 1] * mixingPos[i + 1]) >> overlapDividerBitsNorm;
+        
     }
 
     if (lnorm > maxnorm)
@@ -926,7 +929,41 @@ double TDStretch::calcCrossCorr(const short *mixingPos, const short *compare, do
 
 double TDStretch::calcCrossCorrAccumulate(const short *mixingPos, const short *compare, double &norm)
 {
-  return calcCrossCorr(mixingPos, compare, norm);
+    long corr;
+    long lnorm;
+    int i;
+
+    
+    lnorm = 0;
+    for (i = 1; i <= channels; i ++)
+    {
+        lnorm -= (mixingPos[-i] * mixingPos[-i]) >> overlapDividerBitsNorm;
+    }
+
+    corr = 0;
+    
+    for (i = 0; i < channels * overlapLength; i += 2) 
+    {
+        corr += (mixingPos[i] * compare[i] + 
+                 mixingPos[i + 1] * compare[i + 1]) >> overlapDividerBitsNorm;
+    }
+
+    
+    for (int j = 0; j < channels; j ++)
+    {
+        i --;
+        lnorm += (mixingPos[i] * mixingPos[i]) >> overlapDividerBitsNorm;
+    }
+
+    norm += (double)lnorm;
+    if (norm > maxnorm)
+    {
+        maxnorm = (unsigned long)norm;
+    }
+
+    
+    
+    return (double)corr / sqrt((norm < 1e-9) ? 1.0 : norm);
 }
 
 #endif 
@@ -1009,27 +1046,21 @@ void TDStretch::calculateOverlapLength(int overlapInMsec)
 
 double TDStretch::calcCrossCorr(const float *mixingPos, const float *compare, double &anorm)
 {
-    double corr;
-    double norm;
+    float corr;
+    float norm;
     int i;
+
+    #ifdef ST_SIMD_AVOID_UNALIGNED
+        
+        if (((ulongptr)mixingPos) & 15) return -1e50;
+    #endif
 
     corr = norm = 0;
     
-    
-    for (i = 0; i < channels * overlapLength; i += 4) 
+    for (i = 0; i < channels * overlapLength; i ++)
     {
-        corr += mixingPos[i] * compare[i] +
-                mixingPos[i + 1] * compare[i + 1];
-
-        norm += mixingPos[i] * mixingPos[i] + 
-                mixingPos[i + 1] * mixingPos[i + 1];
-
-        
-        corr += mixingPos[i + 2] * compare[i + 2] +
-                mixingPos[i + 3] * compare[i + 3];
-
-        norm += mixingPos[i + 2] * mixingPos[i + 2] +
-                mixingPos[i + 3] * mixingPos[i + 3];
+        corr += mixingPos[i] * compare[i];
+        norm += mixingPos[i] * mixingPos[i];
     }
 
     anorm = norm;
@@ -1040,7 +1071,7 @@ double TDStretch::calcCrossCorr(const float *mixingPos, const float *compare, do
 
 double TDStretch::calcCrossCorrAccumulate(const float *mixingPos, const float *compare, double &norm)
 {
-    double corr;
+    float corr;
     int i;
 
     corr = 0;
@@ -1052,13 +1083,9 @@ double TDStretch::calcCrossCorrAccumulate(const float *mixingPos, const float *c
     }
 
     
-    
-    for (i = 0; i < channels * overlapLength; i += 4) 
+    for (i = 0; i < channels * overlapLength; i ++)
     {
-        corr += mixingPos[i] * compare[i] +
-                mixingPos[i + 1] * compare[i + 1] +
-                mixingPos[i + 2] * compare[i + 2] +
-                mixingPos[i + 3] * compare[i + 3];
+        corr += mixingPos[i] * compare[i];
     }
 
     

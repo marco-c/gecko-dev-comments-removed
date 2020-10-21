@@ -170,6 +170,9 @@ public:
     
     
     uint adjustAmountOfSamples(uint numSamples);
+
+    
+    void addSilent(uint nSamples);
 };
 
 }

@@ -265,3 +265,11 @@ uint FIFOSampleBuffer::adjustAmountOfSamples(uint numSamples)
     }
     return samplesInBuffer;
 }
+
+
+
+void FIFOSampleBuffer::addSilent(uint nSamples)
+{
+    memset(ptrEnd(nSamples), 0, sizeof(SAMPLETYPE) * nSamples * channels);
+    samplesInBuffer += nSamples;
+}

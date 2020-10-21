@@ -61,6 +61,7 @@ RateTransposer::RateTransposer() : FIFOProcessor(&outputBuffer)
     
     pAAFilter = new AAFilter(64);
     pTransposer = TransposerBase::newInstance();
+    clear();
 }
 
 
@@ -192,6 +193,10 @@ void RateTransposer::clear()
     outputBuffer.clear();
     midBuffer.clear();
     inputBuffer.clear();
+
+    
+    int prefill = getLatency();
+    inputBuffer.addSilent(prefill);
 }
 
 
@@ -209,7 +214,8 @@ int RateTransposer::isEmpty() const
 
 int RateTransposer::getLatency() const
 {
-    return (bUseAAFilter) ? pAAFilter->getLength() : 0;
+    return pTransposer->getLatency() +
+        ((bUseAAFilter) ? (pAAFilter->getLength() / 2) : 0);
 }
 
 

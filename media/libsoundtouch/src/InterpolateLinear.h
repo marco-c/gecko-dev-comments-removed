@@ -60,6 +60,11 @@ public:
     
     
     virtual void setRate(double newRate);
+
+    int getLatency() const
+    {
+        return 0;
+    }
 };
 
 
@@ -81,6 +86,11 @@ protected:
 
 public:
     InterpolateLinearFloat();
+
+    int getLatency() const
+    {
+        return 0;
+    }
 };
 
 }
