@@ -738,7 +738,7 @@ int32_t HyperTextAccessible::FindParagraphStartOffset(uint32_t aOffset) {
   }
 
   
-  class Pivot p(this);
+  Pivot p = Pivot(this);
   ParagraphBoundaryRule boundaryRule = ParagraphBoundaryRule();
   AccessibleOrProxy wrappedChild = AccessibleOrProxy(child);
   AccessibleOrProxy match = p.Prev(wrappedChild, boundaryRule, true);
@@ -788,7 +788,7 @@ int32_t HyperTextAccessible::FindParagraphEndOffset(uint32_t aOffset) {
   }
 
   
-  class Pivot p(this);
+  Pivot p = Pivot(this);
   AccessibleOrProxy wrappedChild = AccessibleOrProxy(child);
   
   
