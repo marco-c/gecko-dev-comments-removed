@@ -65,8 +65,6 @@ class nsNestedAboutURI final : public nsSimpleNestedURI {
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
   
-  
-  
   virtual nsSimpleURI* StartClone(RefHandlingEnum aRefHandlingMode,
                                   const nsACString& newRef) override;
   NS_IMETHOD Mutate(nsIURIMutator** _retval) override;
@@ -75,10 +73,6 @@ class nsNestedAboutURI final : public nsSimpleNestedURI {
   
   NS_IMETHOD Read(nsIObjectInputStream* aStream) override;
   NS_IMETHOD Write(nsIObjectOutputStream* aStream) override;
-
-  
-  
-  NS_IMETHOD GetClassIDNoAlloc(nsCID* aClassIDNoAlloc) override;
 
   nsIURI* GetBaseURI() const { return mBaseURI; }
 
