@@ -739,6 +739,16 @@ class ContentParent final
       sJSPluginContentParents;
   static UniquePtr<LinkedList<ContentParent>> sContentParents;
 
+  
+
+
+
+
+
+
+
+  static StaticRefPtr<ContentParent> sRecycledE10SProcess;
+
   void AddShutdownBlockers();
   void RemoveShutdownBlockers();
 

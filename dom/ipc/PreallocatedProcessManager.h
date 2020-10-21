@@ -53,18 +53,12 @@ class PreallocatedProcessManager final {
 
 
 
-
-
-
   static already_AddRefed<ContentParent> Take(const nsACString& aRemoteType);
 
   
 
 
 
-
-
-  static bool Provide(ContentParent* aParent);
   static void Erase(ContentParent* aParent);
 
  private:
