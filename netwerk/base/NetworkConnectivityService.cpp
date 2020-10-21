@@ -335,8 +335,10 @@ static inline already_AddRefed<nsIChannel> SetupIPCheckChannel(bool ipv4) {
       nsIRequest::LOAD_BYPASS_CACHE |    
           nsIRequest::INHIBIT_CACHING |  
           nsIRequest::LOAD_ANONYMOUS);   
+  NS_ENSURE_SUCCESS(rv, nullptr);
 
-  channel->SetTRRMode(nsIRequest::TRR_DISABLED_MODE);
+  rv = channel->SetTRRMode(nsIRequest::TRR_DISABLED_MODE);
+  NS_ENSURE_SUCCESS(rv, nullptr);
 
   {
     
@@ -348,8 +350,6 @@ static inline already_AddRefed<nsIChannel> SetupIPCheckChannel(bool ipv4) {
     
     loadInfo->SetAllowDeprecatedSystemRequests(true);
   }
-
-  NS_ENSURE_SUCCESS(rv, nullptr);
 
   nsCOMPtr<nsIHttpChannelInternal> internalChan = do_QueryInterface(channel);
   NS_ENSURE_TRUE(internalChan, nullptr);
