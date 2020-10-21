@@ -250,7 +250,7 @@ class VirtualenvManager(VirtualenvHelper):
         if os.path.exists(self.virtualenv_root):
             shutil.rmtree(self.virtualenv_root)
 
-        args = [python, self.virtualenv_script_path,
+        args = [python, '-S', self.virtualenv_script_path,
                 
                 
                 
