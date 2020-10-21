@@ -77,34 +77,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
-  UniquePtr<SurfaceDescriptor> LookupSurfaceDescriptorForClientDrawTarget(
-      const uintptr_t aDrawTarget);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  bool Init(const TextureType& aTextureType,
-            const ipc::SharedMemoryBasic::Handle& aReadHandle,
-            const CrossProcessSemaphoreHandle& aReaderSem,
-            const CrossProcessSemaphoreHandle& aWriterSem,
-            UniquePtr<CanvasEventRingBuffer::ReaderServices> aReaderServices);
-
-  
-
-
-
-
-
-
   bool TranslateRecording();
 
   
