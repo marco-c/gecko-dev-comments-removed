@@ -165,11 +165,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  ["update2", false],
+  ["update2", true],
 
   
   
-  ["update2.disableOneOffsHorizontalKeyNavigation", false],
+  ["update2.disableOneOffsHorizontalKeyNavigation", true],
 
   
   
@@ -179,11 +179,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  ["update2.localOneOffs", false],
+  ["update2.localOneOffs", true],
 
   
   
-  ["update2.oneOffsRefresh", false],
+  ["update2.oneOffsRefresh", true],
 
   
   
@@ -192,7 +192,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  ["update2.tabToComplete", false],
+  ["update2.tabToComplete", true],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
   ["keyword.enabled", true],
