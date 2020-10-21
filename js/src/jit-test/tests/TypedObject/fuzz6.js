@@ -1,3 +1,0 @@
-
-
-new TypedObject.StructType(RegExp);
