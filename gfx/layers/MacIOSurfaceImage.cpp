@@ -36,11 +36,6 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
                                 const PlanarYCbCrData& aData) {
   MOZ_ASSERT(!mSurface);
 
-  
-  if (XRE_IsRDDProcess()) {
-    return false;
-  }
-
   if (aData.mYSkip != 0 || aData.mCbSkip != 0 || aData.mCrSkip != 0 ||
       !(aData.mYUVColorSpace == YUVColorSpace::BT601 ||
         aData.mYUVColorSpace == YUVColorSpace::BT709) ||
