@@ -597,8 +597,31 @@ static void FissionExperimentDisqualify() {
 static void OnFissionEnrollmentStatusChanged(const char* aPref, void* aData) {
   Preferences::SetUint(
       kPrefFissionExperimentStartupEnrollmentStatus,
-      Preferences::GetUint(kPrefFissionExperimentEnrollmentStatus));
+      Preferences::GetUint(kPrefFissionExperimentEnrollmentStatus,
+                           nsIXULRuntime::eExperimentStatusUnenrolled));
 }
+
+namespace {
+
+
+
+class FissionEnrollmentStatusShutdownObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
+    MOZ_ASSERT(!strcmp("profile-before-change", aTopic));
+    OnFissionEnrollmentStatusChanged(kPrefFissionExperimentEnrollmentStatus,
+                                     nullptr);
+    return NS_OK;
+  }
+
+ private:
+  ~FissionEnrollmentStatusShutdownObserver() = default;
+};
+NS_IMPL_ISUPPORTS(FissionEnrollmentStatusShutdownObserver, nsIObserver)
+}  
 
 static void OnFissionAutostartChanged(const char* aPref, void* aData) {
   MOZ_ASSERT(FissionExperimentEnrolled());
@@ -631,6 +654,18 @@ static void EnsureFissionAutostartInitialized() {
       experimentRaw < nsIXULRuntime::eExperimentStatusCount
           ? nsIXULRuntime::ExperimentStatus(experimentRaw)
           : nsIXULRuntime::eExperimentStatusDisqualified;
+
+  
+  
+  Preferences::RegisterCallback(&OnFissionEnrollmentStatusChanged,
+                                kPrefFissionExperimentEnrollmentStatus);
+  if (nsCOMPtr<nsIObserverService> observerService =
+          mozilla::services::GetObserverService()) {
+    nsCOMPtr<nsIObserver> shutdownObserver =
+        new FissionEnrollmentStatusShutdownObserver();
+    observerService->AddObserver(shutdownObserver, "profile-before-change",
+                                 false);
+  }
 
   
   
@@ -695,8 +730,6 @@ static void EnsureFissionAutostartInitialized() {
 
   
   
-  Preferences::RegisterCallback(&OnFissionEnrollmentStatusChanged,
-                                kPrefFissionExperimentEnrollmentStatus);
   if (FissionExperimentEnrolled()) {
     Preferences::RegisterCallback(&OnFissionAutostartChanged,
                                   kPrefFissionAutostart);

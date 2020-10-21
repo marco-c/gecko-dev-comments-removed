@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 from marionette_harness import MarionetteTestCase
+from contextlib import contextmanager
 
 
 class ExperimentStatus:
@@ -154,6 +155,16 @@ class TestFissionAutostart(MarionetteTestCase):
                     .getService(Ci.nsIEnvironment);
         ''')
 
+    @contextmanager
+    def full_restart(self):
+        profile = self.marionette.instance.profile
+        try:
+            self.marionette.quit(in_app=True, clean=False)
+            yield profile
+        finally:
+            self.marionette.start_session()
+            self.setUpSession()
+
     def setUp(self):
         super(TestFissionAutostart, self).setUp()
 
@@ -277,3 +288,59 @@ class TestFissionAutostart(MarionetteTestCase):
                                   experiment=ExperimentStatus.DISQUALIFIED,
                                   decision='disabledByE10sEnv',
                                   dynamic=True)
+
+    def test_fission_startup(self):
+        if self.check_pref_locked():
+            
+            return
+
+        
+        
+        with self.full_restart() as profile:
+            profile.set_preferences({
+                Prefs.STARTUP_ENROLLMENT_STATUS: ExperimentStatus.ENROLLED_TREATMENT,
+            }, filename='prefs.js')
+
+        self.assertEqual(self.marionette.get_pref(Prefs.ENROLLMENT_STATUS),
+                         ExperimentStatus.UNENROLLED,
+                         'Dynamic pref should be unenrolled')
+        self.assertEqual(self.marionette.get_pref(Prefs.STARTUP_ENROLLMENT_STATUS),
+                         ExperimentStatus.ENROLLED_TREATMENT,
+                         'Startup pref should be in treatment')
+        self.check_fission_status(enabled=True,
+                                  experiment=ExperimentStatus.ENROLLED_TREATMENT,
+                                  decision='experimentTreatment')
+
+        
+        
+        self.marionette.restart(in_app=True, clean=False)
+
+        self.assertEqual(self.marionette.get_pref(Prefs.ENROLLMENT_STATUS),
+                         ExperimentStatus.UNENROLLED,
+                         'Should unenroll dynamic pref after shutdown')
+        self.assertEqual(self.marionette.get_pref(Prefs.STARTUP_ENROLLMENT_STATUS),
+                         ExperimentStatus.UNENROLLED,
+                         'Should unenroll startup pref after shutdown')
+        self.check_fission_status(enabled=False,
+                                  experiment=ExperimentStatus.UNENROLLED,
+                                  decision='disabledByDefault')
+
+        
+        
+        
+        with self.full_restart() as profile:
+            profile.set_preferences({
+                Prefs.FISSION_AUTOSTART: True,
+                Prefs.STARTUP_ENROLLMENT_STATUS: ExperimentStatus.ENROLLED_TREATMENT,
+            }, filename='prefs.js')
+
+        self.assertEqual(self.marionette.get_pref(Prefs.ENROLLMENT_STATUS),
+                         ExperimentStatus.DISQUALIFIED,
+                         'Should disqualify dynamic pref on startup')
+        self.assertEqual(self.marionette.get_pref(Prefs.STARTUP_ENROLLMENT_STATUS),
+                         ExperimentStatus.DISQUALIFIED,
+                         'Should disqualify startup pref on startup')
+
+        self.check_fission_status(enabled=True,
+                                  experiment=ExperimentStatus.DISQUALIFIED,
+                                  decision='enabledByUserPref')
