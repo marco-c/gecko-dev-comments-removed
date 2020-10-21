@@ -2340,7 +2340,7 @@ PresShell::PageMove(bool aForward, bool aExtend) {
         GetScrollableFrameToScroll(ScrollableDirection::Vertical));
     
   }
-  if (!frame) {
+  if (!frame || frame->PresContext() != mPresContext) {
     frame = mSelection->GetFrameToPageSelect();
     if (!frame) {
       return NS_OK;
