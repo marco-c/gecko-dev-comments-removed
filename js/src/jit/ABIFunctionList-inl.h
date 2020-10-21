@@ -10,14 +10,9 @@
 #include "jslibmath.h"  
 #include "jsmath.h"     
                         
-#include "jsnum.h"      
-                        
-
-#include "builtin/Array.h"      
-#include "builtin/MapObject.h"  
-                                
-#include "builtin/RegExp.h"     
-                                
+#include "builtin/Array.h"   
+#include "builtin/RegExp.h"  
+                             
 
 #include "irregexp/RegExpAPI.h"
 
@@ -28,20 +23,10 @@
 #include "jit/Bailouts.h"  
                            
 
-#include "jit/JitFrames.h"    
 #include "jit/VMFunctions.h"  
 
-#include "js/CallArgs.h"     
-#include "js/Conversions.h"  
-#include "js/experimental/JitInfo.h"
-                             
-#include "js/Utility.h"      
-
+#include "js/Conversions.h"      
 #include "vm/ArgumentsObject.h"  
-#include "vm/RegExpShared.h"     
-#include "vm/TraceLogging.h"     
-                                 
-                                 
 
 #include "wasm/WasmBuiltins.h"  
 
@@ -61,45 +46,29 @@ namespace jit {
 #  define ABIFUNCTION_WASM_CODEGEN_DEBUG_LIST(_)
 #endif
 
-#define ABIFUNCTION_LIST(_)                                 \
-  ABIFUNCTION_WASM_CODEGEN_DEBUG_LIST(_)                    \
-  _(js::ArgumentsObject::finishForIonPure)                  \
-  _(js::ArrayShiftMoveElements)                             \
-  _(js::ecmaAtan2)                                          \
-  _(js::ecmaHypot)                                          \
-  _(js::ecmaPow)                                            \
-  _(js::ExecuteRegExpAtomRaw)                               \
-  _(js_free)                                                \
-  _(js::hypot3)                                             \
-  _(js::hypot4)                                             \
-  _(js::Int32ToStringHelperPure)                            \
-  _(js::irregexp::CaseInsensitiveCompareNonUnicode)         \
-  _(js::irregexp::CaseInsensitiveCompareUnicode)            \
-  _(js::irregexp::GrowBacktrackStack)                       \
-  _(js::jit::AssertValidBigIntPtr)                          \
-  _(js::jit::AssertValidObjectOrNullPtr)                    \
-  _(js::jit::AssertValidObjectPtr)                          \
-  _(js::jit::AssertValidStringPtr)                          \
-  _(js::jit::AssertValidSymbolPtr)                          \
-  _(js::jit::AssertValidValue)                              \
-  _(js::jit::AssumeUnreachable)                             \
-  _(js::jit::Bailout)                                       \
-  _(js::jit::FinishBailoutToBaseline)                       \
-  _(js::jit::HandleException)                               \
-  _(js::jit::InitBaselineFrameForOsr)                       \
-  _(js::jit::InvalidationBailout)                           \
-  _(js::jit::Printf0)                                       \
-  _(js::jit::Printf1)                                       \
-  _(js::MapIteratorObject::next)                            \
-  _(js::NumberMod)                                          \
-  _(js::NumberToStringHelperPure)                           \
-  _(js::powi)                                               \
-  _(js::RegExpInstanceOptimizableRaw)                       \
-  _(js::RegExpPrototypeOptimizableRaw)                      \
-  _(js::SetIteratorObject::next)                            \
-  _(js::StringToNumberPure)                                 \
-  _(js::TraceLogStartEventPrivate)                          \
-  _(js::TraceLogStopEventPrivate)
+#define ABIFUNCTION_LIST(_)                         \
+  ABIFUNCTION_WASM_CODEGEN_DEBUG_LIST(_)            \
+  _(js::ArgumentsObject::finishForIonPure)          \
+  _(js::ArrayShiftMoveElements)                     \
+  _(js::ecmaAtan2)                                  \
+  _(js::ecmaHypot)                                  \
+  _(js::ecmaPow)                                    \
+  _(js::hypot3)                                     \
+  _(js::hypot4)                                     \
+  _(js::irregexp::CaseInsensitiveCompareNonUnicode) \
+  _(js::irregexp::CaseInsensitiveCompareUnicode)    \
+  _(js::irregexp::GrowBacktrackStack)               \
+  _(js::jit::AssumeUnreachable)                     \
+  _(js::jit::Bailout)                               \
+  _(js::jit::FinishBailoutToBaseline)               \
+  _(js::jit::InitBaselineFrameForOsr)               \
+  _(js::jit::InvalidationBailout)                   \
+  _(js::jit::Printf0)                               \
+  _(js::jit::Printf1)                               \
+  _(js::NumberMod)                                  \
+  _(js::powi)                                       \
+  _(js::RegExpInstanceOptimizableRaw)               \
+  _(js::RegExpPrototypeOptimizableRaw)
 
 
 
@@ -107,27 +76,7 @@ namespace jit {
 
 
 
-#define ABIFUNCTION_AND_TYPE_LIST(_)                       \
-  _(js::TraceLogStartEvent,                                \
-    void (*)(TraceLoggerThread*, const TraceLoggerEvent&)) \
-  _(JS::ToInt32, int32_t (*)(double))
-
-
-
-#define ABIFUNCTIONSIG_LIST(_)                       \
-  _(AtomicsCompareExchangeFn)                        \
-  _(AtomicsReadWriteModifyFn)                        \
-  _(float (*)(float))                                \
-  _(JSJitGetterOp)                                   \
-  _(JSJitMethodOp)                                   \
-  _(JSJitSetterOp)                                   \
-  _(JSNative)                                        \
-  _(js::UnaryMathFunctionType)                       \
-  _(void (*)(JSRuntime * rt, JSObject * *objp))      \
-  _(void (*)(JSRuntime * rt, JSString * *stringp))   \
-  _(void (*)(JSRuntime * rt, ObjectGroup * *groupp)) \
-  _(void (*)(JSRuntime * rt, Shape * *shapep))       \
-  _(void (*)(JSRuntime * rt, Value * vp))
+#define ABIFUNCTION_AND_TYPE_LIST(_) _(JS::ToInt32, int32_t (*)(double))
 
 
 
@@ -152,15 +101,6 @@ ABIFUNCTION_LIST(DEF_TEMPLATE)
     static constexpr bool registered = true;  \
   };
 ABIFUNCTION_AND_TYPE_LIST(DEF_TEMPLATE)
-#undef DEF_TEMPLATE
-
-
-#define DEF_TEMPLATE(...)                        \
-  template <>                                    \
-  struct ABIFunctionSignatureData<__VA_ARGS__> { \
-    static constexpr bool registered = true;     \
-  };
-ABIFUNCTIONSIG_LIST(DEF_TEMPLATE)
 #undef DEF_TEMPLATE
 
 #if MOZ_IS_GCC
