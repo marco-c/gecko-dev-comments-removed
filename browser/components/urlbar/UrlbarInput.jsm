@@ -2649,12 +2649,6 @@ class UrlbarInput {
     }
     this._focusUntrimmedValue = null;
 
-    
-    
-    if (this.searchMode?.isPreview) {
-      this.searchMode = null;
-    }
-
     this.formatValue();
     this._resetSearchState();
 

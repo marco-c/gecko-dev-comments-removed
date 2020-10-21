@@ -130,6 +130,10 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
 
 
   set selectedButton(button) {
+    if (this.selectedButton == button) {
+      return;
+    }
+
     super.selectedButton = button;
 
     let expectedSearchMode;
