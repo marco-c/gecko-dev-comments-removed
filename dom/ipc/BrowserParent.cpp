@@ -2688,7 +2688,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnLocationChange(
   
   
   if (!(aFlags & nsIWebProgressListener::LOCATION_CHANGE_SAME_DOCUMENT)) {
-    GetBrowsingContext()->UpdateSecurityStateForLocationOrMixedContentChange();
+    GetBrowsingContext()->UpdateSecurityState();
   }
   return IPC_OK();
 }
