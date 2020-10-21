@@ -58,7 +58,7 @@ assertErrorMessage(() => wasmCompile(
 
 assertEq(typeof wasmCompile(
     `(module
-      (func (export "f") (param externref) (unreachable)))`),
+      (func (export "f") (param eqref) (unreachable)))`),
          "object");
 
 
@@ -72,7 +72,7 @@ assertErrorMessage(() => wasmCompile(
 
 assertEq(typeof wasmCompile(
     `(module
-      (func (export "f") (result externref) (ref.null extern)))`),
+      (func (export "f") (result eqref) (ref.null eq)))`),
          "object");
 
 
@@ -86,7 +86,7 @@ assertErrorMessage(() => wasmCompile(
 
 assertEq(typeof wasmCompile(
     `(module
-      (import "m" "f" (func (param externref))))`),
+      (import "m" "f" (func (param eqref))))`),
          "object");
 
 
@@ -100,7 +100,7 @@ assertErrorMessage(() => wasmCompile(
 
 assertEq(typeof wasmCompile(
     `(module
-      (import "m" "f" (func (param i32) (result externref))))`),
+      (import "m" "f" (func (param i32) (result eqref))))`),
          "object");
 
 
@@ -121,12 +121,12 @@ assertErrorMessage(() => wasmCompile(
 
 assertEq(typeof wasmCompile(
     `(module
-      (import "m" "g" (global (mut externref))))`),
+      (import "m" "g" (global (mut eqref))))`),
          "object");
 
 assertEq(typeof wasmCompile(
     `(module
-      (import "m" "g" (global externref)))`),
+      (import "m" "g" (global eqref)))`),
          "object");
 
 
@@ -147,12 +147,12 @@ assertErrorMessage(() => wasmCompile(
 
 assertEq(typeof wasmCompile(
     `(module
-      (global $boxg (export "box") (mut externref) (ref.null extern)))`),
+      (global $boxg (export "box") (mut eqref) (ref.null eq)))`),
          "object");
 
 assertEq(typeof wasmCompile(
     `(module
-      (global $boxg (export "box") externref (ref.null extern)))`),
+      (global $boxg (export "box") eqref (ref.null eq)))`),
          "object");
 
 
@@ -179,14 +179,14 @@ assertEq(typeof wasmCompile(
     `(module
       (table (export "tbl") 1 funcref)
       (elem (i32.const 0) $f1)
-      (func $f1 (param externref) (unreachable)))`),
+      (func $f1 (param eqref) (unreachable)))`),
          "object");
 
 assertEq(typeof wasmCompile(
     `(module
       (table (export "tbl") 1 funcref)
       (elem (i32.const 0) $f1)
-      (func $f1 (result externref) (ref.null extern)))`),
+      (func $f1 (result eqref) (ref.null eq)))`),
          "object");
 
 
@@ -213,14 +213,14 @@ assertEq(typeof wasmCompile(
     `(module
       (import "m" "tbl" (table 1 funcref))
       (elem (i32.const 0) $f1)
-      (func $f1 (param externref) (unreachable)))`),
+      (func $f1 (param eqref) (unreachable)))`),
          "object");
 
 assertEq(typeof wasmCompile(
     `(module
       (import "m" "tbl" (table 1 funcref))
       (elem (i32.const 0) $f1)
-      (func $f1 (result externref) (ref.null extern)))`),
+      (func $f1 (result eqref) (ref.null eq)))`),
          "object");
 
 
@@ -247,17 +247,17 @@ assertErrorMessage(() => wasmCompile(
 
 assertEq(typeof wasmCompile(
     `(module
-      (type $fn (func (param externref)))
+      (type $fn (func (param eqref)))
       (table (export "tbl") 1 funcref)
       (func (param i32)
-       (call_indirect (type $fn) (ref.null extern) (local.get 0))))`),
+       (call_indirect (type $fn) (ref.null eq) (local.get 0))))`),
          "object");
 
 assertEq(typeof wasmCompile(
     `(module
-      (type $fn (func (result externref)))
+      (type $fn (func (result eqref)))
       (table (export "tbl") 1 funcref)
-      (func (param i32) (result externref)
+      (func (param i32) (result eqref)
        (call_indirect (type $fn) (local.get 0))))`),
          "object");
 
@@ -285,17 +285,17 @@ assertErrorMessage(() => wasmCompile(
 
 assertEq(typeof wasmCompile(
     `(module
-      (type $fn (func (param externref)))
+      (type $fn (func (param eqref)))
       (import "m" "tbl" (table 1 funcref))
       (func (param i32)
-       (call_indirect (type $fn) (ref.null extern) (local.get 0))))`),
+       (call_indirect (type $fn) (ref.null eq) (local.get 0))))`),
          "object");
 
 assertEq(typeof wasmCompile(
     `(module
-      (type $fn (func (result externref)))
+      (type $fn (func (result eqref)))
       (import "m" "tbl" (table 1 funcref))
-      (func (param i32) (result externref)
+      (func (param i32) (result eqref)
        (call_indirect (type $fn) (local.get 0))))`),
          "object");
 
