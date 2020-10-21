@@ -374,6 +374,20 @@ function dataCountSection(count) {
     return { name: dataCountId, body };
 }
 
+function globalSection(globalArray) {
+    var body = [];
+    body.push(...varU32(globalArray.length));
+    for (let globalObj of globalArray) {
+        
+        body.push(...varU32(globalObj.valType));
+        
+        body.push(globalObj.flags & 255);
+        
+        body.push(...globalObj.initExpr);
+    }
+    return { name: globalId, body };
+}
+
 function elemSection(elemArrays) {
     var body = [];
     body.push(...varU32(elemArrays.length));
