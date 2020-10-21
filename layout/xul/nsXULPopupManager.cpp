@@ -438,7 +438,7 @@ void nsXULPopupManager::AdjustPopupsOnWindowChange(
   }
 
   for (int32_t l = list.Length() - 1; l >= 0; l--) {
-    list[l]->SetPopupPosition(nullptr, true, false, true);
+    list[l]->SetPopupPosition(nullptr, true, false);
   }
 }
 
@@ -484,7 +484,7 @@ void nsXULPopupManager::PopupMoved(nsIFrame* aFrame, nsIntPoint aPnt) {
   
   if (menuPopupFrame->IsAnchored() &&
       menuPopupFrame->PopupLevel() == ePopupLevelParent) {
-    menuPopupFrame->SetPopupPosition(nullptr, true, false, true);
+    menuPopupFrame->SetPopupPosition(nullptr, true, false);
   } else {
     CSSPoint cssPos = LayoutDeviceIntPoint::FromUnknownPoint(aPnt) /
                       menuPopupFrame->PresContext()->CSSToDevPixelScale();
@@ -2598,17 +2598,13 @@ nsXULPopupHidingEvent::Run() {
   return NS_OK;
 }
 
-bool nsXULPopupPositionedEvent::DispatchIfNeeded(nsIContent* aPopup,
-                                                 bool aIsContextMenu,
-                                                 bool aSelectFirstItem) {
+bool nsXULPopupPositionedEvent::DispatchIfNeeded(nsIContent* aPopup) {
   
   if (aPopup->IsElement() &&
       aPopup->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
                                        nsGkAtoms::arrow, eCaseMatters)) {
-    nsCOMPtr<nsIRunnable> event =
-        new nsXULPopupPositionedEvent(aPopup, aIsContextMenu, aSelectFirstItem);
+    nsCOMPtr<nsIRunnable> event = new nsXULPopupPositionedEvent(aPopup);
     aPopup->OwnerDoc()->Dispatch(TaskCategory::Other, event.forget());
-
     return true;
   }
 
@@ -2618,35 +2614,39 @@ bool nsXULPopupPositionedEvent::DispatchIfNeeded(nsIContent* aPopup,
 NS_IMETHODIMP
 nsXULPopupPositionedEvent::Run() {
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm) {
-    nsMenuPopupFrame* popupFrame = do_QueryFrame(mPopup->GetPrimaryFrame());
-    if (popupFrame) {
-      
-      
-      
-      
-      
-      nsPopupState state = popupFrame->PopupState();
-      if (state != ePopupPositioning && state != ePopupShown) {
-        return NS_OK;
-      }
-      nsEventStatus status = nsEventStatus_eIgnore;
-      WidgetMouseEvent event(true, eXULPopupPositioned, nullptr,
-                             WidgetMouseEvent::eReal);
-      EventDispatcher::Dispatch(mPopup, popupFrame->PresContext(), &event,
-                                nullptr, &status);
+  if (!pm) {
+    return NS_OK;
+  }
+  nsMenuPopupFrame* popupFrame = do_QueryFrame(mPopup->GetPrimaryFrame());
+  if (!popupFrame) {
+    return NS_OK;
+  }
 
-      
-      
-      
-      
-      
-      nsMenuPopupFrame* popupFrame = do_QueryFrame(mPopup->GetPrimaryFrame());
-      if (popupFrame && popupFrame->PopupState() == ePopupPositioning) {
-        pm->ShowPopupCallback(mPopup, popupFrame, mIsContextMenu,
-                              mSelectFirstItem);
-      }
-    }
+  popupFrame->WillDispatchPopupPositioned();
+
+  
+  
+  
+  
+  
+  nsPopupState state = popupFrame->PopupState();
+  if (state != ePopupPositioning && state != ePopupShown) {
+    return NS_OK;
+  }
+  nsEventStatus status = nsEventStatus_eIgnore;
+  WidgetMouseEvent event(true, eXULPopupPositioned, nullptr,
+                         WidgetMouseEvent::eReal);
+  EventDispatcher::Dispatch(mPopup, popupFrame->PresContext(), &event, nullptr,
+                            &status);
+
+  
+  
+  
+  
+  
+  popupFrame = do_QueryFrame(mPopup->GetPrimaryFrame());
+  if (popupFrame && popupFrame->PopupState() == ePopupPositioning) {
+    pm->ShowPopupCallback(mPopup, popupFrame, false, false);
   }
 
   return NS_OK;

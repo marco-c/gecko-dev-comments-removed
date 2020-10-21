@@ -29,7 +29,7 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
       "on_popuppositioned@chrome://global/content/elements/panel.js",
     ],
 
-    maxCount: 22, 
+    maxCount: 23, 
   },
 
   {

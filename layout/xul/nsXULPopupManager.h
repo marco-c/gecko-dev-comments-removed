@@ -258,12 +258,8 @@ class nsXULPopupHidingEvent : public mozilla::Runnable {
 
 class nsXULPopupPositionedEvent : public mozilla::Runnable {
  public:
-  explicit nsXULPopupPositionedEvent(nsIContent* aPopup, bool aIsContextMenu,
-                                     bool aSelectFirstItem)
-      : mozilla::Runnable("nsXULPopupPositionedEvent"),
-        mPopup(aPopup),
-        mIsContextMenu(aIsContextMenu),
-        mSelectFirstItem(aSelectFirstItem) {
+  explicit nsXULPopupPositionedEvent(nsIContent* aPopup)
+      : mozilla::Runnable("nsXULPopupPositionedEvent"), mPopup(aPopup) {
     NS_ASSERTION(aPopup,
                  "null popup supplied to nsXULPopupShowingEvent constructor");
   }
@@ -272,13 +268,10 @@ class nsXULPopupPositionedEvent : public mozilla::Runnable {
 
   
   
-  static bool DispatchIfNeeded(nsIContent* aPopup, bool aIsContextMenu,
-                               bool aSelectFirstItem);
+  static bool DispatchIfNeeded(nsIContent* aPopup);
 
  private:
   nsCOMPtr<nsIContent> mPopup;
-  bool mIsContextMenu;
-  bool mSelectFirstItem;
 };
 
 
