@@ -2730,32 +2730,6 @@ GeckoDriver.prototype.clearElement = async function(cmd) {
 
 
 
-GeckoDriver.prototype.switchToShadowRoot = async function(cmd) {
-  assert.content(this.context);
-  assert.open(this.getBrowsingContext());
-
-  let id = cmd.parameters.id;
-  let webEl = null;
-  if (id != null) {
-    assert.string(id);
-    webEl = WebElement.fromUUID(id, this.context);
-  }
-  await this.listener.switchToShadowRoot(webEl);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3988,7 +3962,6 @@ GeckoDriver.prototype.commands = {
   "WebDriver:SetWindowRect": GeckoDriver.prototype.setWindowRect,
   "WebDriver:SwitchToFrame": GeckoDriver.prototype.switchToFrame,
   "WebDriver:SwitchToParentFrame": GeckoDriver.prototype.switchToParentFrame,
-  "WebDriver:SwitchToShadowRoot": GeckoDriver.prototype.switchToShadowRoot,
   "WebDriver:SwitchToWindow": GeckoDriver.prototype.switchToWindow,
   "WebDriver:TakeScreenshot": GeckoDriver.prototype.takeScreenshot,
 };

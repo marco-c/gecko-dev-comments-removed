@@ -420,7 +420,6 @@ element.ReferenceStore = class {
 
 
 
-
 element.find = function(container, strategy, selector, opts = {}) {
   let all = !!opts.all;
   let timeout = opts.timeout || 0;
@@ -472,7 +471,7 @@ function find_(
   searchFn,
   { startNode = null, all = false } = {}
 ) {
-  let rootNode = container.shadowRoot || container.frame.document;
+  let rootNode = container.frame.document;
 
   if (!startNode) {
     startNode = rootNode;
