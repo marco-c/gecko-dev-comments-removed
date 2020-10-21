@@ -476,6 +476,9 @@ nsPresContext* IMEContentObserver::GetPresContext() const {
 void IMEContentObserver::Destroy() {
   
 
+  
+  
+  
   NotifyIMEOfBlur();
   UnregisterObservers();
   Clear();

@@ -82,6 +82,15 @@ class IMEStateManager {
 
 
 
+
+  static bool CanSendNotificationToTheMainProcess() {
+    return !sCleaningUpForStoppingIMEStateManagement;
+  }
+
+  
+
+
+
   static void OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
                                           BrowserParent* aFocus);
 
@@ -368,6 +377,10 @@ class IMEStateManager {
 
   static bool sIsGettingNewIMEState;
   static bool sCheckForIMEUnawareWebApps;
+
+  
+  
+  static bool sCleaningUpForStoppingIMEStateManagement;
 
   class MOZ_STACK_CLASS GettingNewIMEStateBlocker final {
    public:
