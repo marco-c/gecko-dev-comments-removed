@@ -472,18 +472,6 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
 
-  int32_t FindParagraphStartOffset(uint32_t aOffset);
-
-  
-
-
-
-  int32_t FindParagraphEndOffset(uint32_t aOffset);
-
-  
-
-
-
   uint32_t FindOffset(uint32_t aOffset, nsDirection aDirection,
                       nsSelectionAmount aAmount,
                       EWordMovementType aWordMovementType = eDefaultBehavior);
