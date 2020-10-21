@@ -289,7 +289,12 @@ struct ActiveScrolledRoot {
 
 
 
-  mozilla::layers::ScrollableLayerGuid::ViewID GetViewId() const;
+  mozilla::layers::ScrollableLayerGuid::ViewID GetViewId() const {
+    if (!mViewId.isSome()) {
+      mViewId = Some(ComputeViewId());
+    }
+    return *mViewId;
+  }
 
   RefPtr<const ActiveScrolledRoot> mParent;
   nsIScrollableFrame* mScrollableFrame;
@@ -313,6 +318,8 @@ struct ActiveScrolledRoot {
   static uint32_t Depth(const ActiveScrolledRoot* aActiveScrolledRoot) {
     return aActiveScrolledRoot ? aActiveScrolledRoot->mDepth : 0;
   }
+
+  mozilla::layers::ScrollableLayerGuid::ViewID ComputeViewId() const;
 
   
   

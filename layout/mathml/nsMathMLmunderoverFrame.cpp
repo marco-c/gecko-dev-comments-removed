@@ -5,6 +5,7 @@
 
 
 #include "nsMathMLmunderoverFrame.h"
+#include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsMathMLmmultiscriptsFrame.h"
 #include "mozilla/dom/MathMLElement.h"

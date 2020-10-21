@@ -15,6 +15,7 @@
 #include "mozilla/ReflowOutput.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/StaticPrefs_nglayout.h"
+#include "mozilla/SurfaceFromElementResult.h"
 #include "mozilla/SVGImageContext.h"
 #include "mozilla/ToString.h"
 #include "mozilla/TypedEnumBits.h"
@@ -2229,87 +2230,21 @@ class nsLayoutUtils {
     SFE_USE_ELEMENT_SIZE_IF_VECTOR = 1 << 5
   };
 
-  struct DirectDrawInfo {
-    
-    nsCOMPtr<imgIContainer> mImgContainer;
-    
-    uint32_t mWhichFrame;
-    
-    uint32_t mDrawingFlags;
-  };
-
-  struct SurfaceFromElementResult {
-    friend class mozilla::dom::CanvasRenderingContext2D;
-    friend class nsLayoutUtils;
-
-    
-
-
-
-
-
-
-
-    
-    RefPtr<mozilla::layers::Image> mLayersImage;
-
-   protected:
-    
-
-    RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
-
-   public:
-    
-    DirectDrawInfo mDrawInfo;
-
-    
-    mozilla::gfx::IntSize mSize;
-    
-    mozilla::gfx::IntSize mIntrinsicSize;
-    
-
-    nsCOMPtr<nsIPrincipal> mPrincipal;
-    
-    nsCOMPtr<imgIRequest> mImageRequest;
-    
-
-    bool mHadCrossOriginRedirects;
-    
-
-    bool mIsWriteOnly;
-    
-
-    bool mIsStillLoading;
-    
-    bool mHasSize;
-    
-    bool mCORSUsed;
-
-    gfxAlphaType mAlphaType;
-
-    
-
-    SurfaceFromElementResult();
-
-    
-    const RefPtr<mozilla::gfx::SourceSurface>& GetSourceSurface();
-  };
-
   
-  static SurfaceFromElementResult SurfaceFromOffscreenCanvas(
+  static mozilla::SurfaceFromElementResult SurfaceFromOffscreenCanvas(
       mozilla::dom::OffscreenCanvas* aOffscreenCanvas, uint32_t aSurfaceFlags,
       RefPtr<DrawTarget>& aTarget);
-  static SurfaceFromElementResult SurfaceFromOffscreenCanvas(
+  static mozilla::SurfaceFromElementResult SurfaceFromOffscreenCanvas(
       mozilla::dom::OffscreenCanvas* aOffscreenCanvas,
       uint32_t aSurfaceFlags = 0) {
     RefPtr<DrawTarget> target = nullptr;
     return SurfaceFromOffscreenCanvas(aOffscreenCanvas, aSurfaceFlags, target);
   }
 
-  static SurfaceFromElementResult SurfaceFromElement(
+  static mozilla::SurfaceFromElementResult SurfaceFromElement(
       mozilla::dom::Element* aElement, uint32_t aSurfaceFlags,
       RefPtr<DrawTarget>& aTarget);
-  static SurfaceFromElementResult SurfaceFromElement(
+  static mozilla::SurfaceFromElementResult SurfaceFromElement(
       mozilla::dom::Element* aElement, uint32_t aSurfaceFlags = 0) {
     RefPtr<DrawTarget> target = nullptr;
     return SurfaceFromElement(aElement, aSurfaceFlags, target);
@@ -2317,19 +2252,19 @@ class nsLayoutUtils {
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  static SurfaceFromElementResult SurfaceFromElement(
+  static mozilla::SurfaceFromElementResult SurfaceFromElement(
       nsIImageLoadingContent* aElement, uint32_t aSurfaceFlags,
       RefPtr<DrawTarget>& aTarget);
   
   
   
-  static SurfaceFromElementResult SurfaceFromElement(
+  static mozilla::SurfaceFromElementResult SurfaceFromElement(
       mozilla::dom::HTMLImageElement* aElement, uint32_t aSurfaceFlags,
       RefPtr<DrawTarget>& aTarget);
-  static SurfaceFromElementResult SurfaceFromElement(
+  static mozilla::SurfaceFromElementResult SurfaceFromElement(
       mozilla::dom::HTMLCanvasElement* aElement, uint32_t aSurfaceFlags,
       RefPtr<DrawTarget>& aTarget);
-  static SurfaceFromElementResult SurfaceFromElement(
+  static mozilla::SurfaceFromElementResult SurfaceFromElement(
       mozilla::dom::HTMLVideoElement* aElement, uint32_t aSurfaceFlags,
       RefPtr<DrawTarget>& aTarget);
 
