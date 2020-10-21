@@ -28,6 +28,7 @@
 #include "jit/Bailouts.h"  
                            
 
+#include "jit/Ion.h"          
 #include "jit/JitFrames.h"    
 #include "jit/VMFunctions.h"  
 
@@ -114,6 +115,7 @@ namespace jit {
   _(js::jit::HasNativeElementPure)                          \
   _(js::jit::InitBaselineFrameForOsr)                       \
   _(js::jit::InvalidationBailout)                           \
+  _(js::jit::LazyLinkTopActivation)                         \
   _(js::jit::Printf0)                                       \
   _(js::jit::Printf1)                                       \
   _(js::jit::SetNativeDataPropertyPure<false>)              \
