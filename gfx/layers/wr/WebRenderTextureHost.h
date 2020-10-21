@@ -43,6 +43,8 @@ class WebRenderTextureHost : public TextureHost {
 
   virtual void NotifyNotUsed() override;
 
+  virtual bool IsValid() override;
+
   
   
   

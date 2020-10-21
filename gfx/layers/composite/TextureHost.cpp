@@ -511,6 +511,10 @@ void TextureHost::EnsureRenderTexture(
         Some(AsyncImagePipelineManager::GetNextExternalImageId());
   } else {
     
+    if (aExternalImageId == mExternalImageId) {
+      
+      return;
+    }
     MOZ_ASSERT(mExternalImageId.isNothing());
     mExternalImageId = aExternalImageId;
   }

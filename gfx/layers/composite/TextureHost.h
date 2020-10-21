@@ -487,6 +487,8 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
   virtual void UnbindTextureSource();
 
+  virtual bool IsValid() { return true; }
+
   
 
 
