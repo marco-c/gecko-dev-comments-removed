@@ -11465,7 +11465,9 @@ bool CodeGenerator::generate() {
 
 static bool AddInlinedCompilations(HandleScript script,
                                    IonCompilationId compilationId,
-                                   const WarpSnapshot* snapshot) {
+                                   const WarpSnapshot* snapshot,
+                                   bool* isValid) {
+  MOZ_ASSERT(!*isValid);
   RecompileInfo recompileInfo(script, compilationId);
 
   for (const auto* scriptSnapshot : snapshot->scripts()) {
@@ -11473,6 +11475,18 @@ static bool AddInlinedCompilations(HandleScript script,
     if (inlinedScript == script) {
       continue;
     }
+
+    
+    
+    
+    
+    
+    
+    if (inlinedScript->isDebuggee()) {
+      *isValid = false;
+      return true;
+    }
+
     AutoSweepJitScript sweep(inlinedScript);
     if (!inlinedScript->jitScript()->addInlinedCompilation(sweep,
                                                            recompileInfo)) {
@@ -11480,6 +11494,7 @@ static bool AddInlinedCompilations(HandleScript script,
     }
   }
 
+  *isValid = true;
   return true;
 }
 
@@ -11526,19 +11541,20 @@ bool CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints,
   
   
   bool isValid = false;
-  if (!FinishCompilation(cx, script, constraints, compilationId, &isValid)) {
-    return false;
-  }
-  if (!isValid) {
-    return true;
-  }
 
   if (JitOptions.warpBuilder) {
     
     
-    if (!AddInlinedCompilations(script, compilationId, snapshot)) {
+    if (!AddInlinedCompilations(script, compilationId, snapshot, &isValid)) {
       return false;
     }
+  } else {
+    if (!FinishCompilation(cx, script, constraints, compilationId, &isValid)) {
+      return false;
+    }
+  }
+  if (!isValid) {
+    return true;
   }
 
   
