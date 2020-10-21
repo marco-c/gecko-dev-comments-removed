@@ -131,6 +131,12 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
   set selectedButton(button) {
     super.selectedButton = button;
 
+    
+    
+    if (this.input.searchMode && !this.input.searchMode.isPreview) {
+      return;
+    }
+
     let expectedSearchMode;
     if (
       button &&
@@ -141,11 +147,17 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
         source: button.source,
         entry: "oneoff",
       };
-      this.input.setSearchMode(expectedSearchMode);
-    } else if (this.input.searchMode) {
-      
-      
-      this.input.restoreSearchModeState();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (expectedSearchMode || this.input.searchMode) {
+      this.input.setSearchMode(expectedSearchMode || {});
     }
   }
 
