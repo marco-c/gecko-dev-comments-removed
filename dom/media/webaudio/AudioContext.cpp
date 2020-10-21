@@ -176,7 +176,6 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
   const bool allowedToStart = AutoplayPolicy::IsAllowedToPlay(*this);
   mDestination = new AudioDestinationNode(this, aIsOffline, allowedToStart,
                                           aNumberOfChannels, aLength);
-  mDestination->Init();
   
   
   
