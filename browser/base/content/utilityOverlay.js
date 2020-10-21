@@ -328,6 +328,7 @@ function openWebLinkIn(url, where, params) {
 
 
 
+
 function openUILinkIn(
   url,
   where,
@@ -346,7 +347,7 @@ function openUILinkIn(
     );
   }
 
-  params.fromChrome = true;
+  params.fromChrome = params.fromChrome ?? true;
 
   openLinkIn(url, where, params);
 }

@@ -279,6 +279,7 @@ class PlacesFeed {
     const params = {
       private: isPrivate,
       targetBrowser: action._target.browser,
+      fromChrome: false, 
     };
 
     

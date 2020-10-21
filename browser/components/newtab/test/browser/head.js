@@ -28,13 +28,7 @@ function pushPrefs(...prefs) {
 }
 
 
-async function setDefaultTopSites() {
-  
-  await pushPrefs([
-    "browser.newtabpage.activity-stream.default.sites",
-    "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/",
-  ]);
-  
+async function toggleTopsitesPref() {
   await pushPrefs([
     "browser.newtabpage.activity-stream.feeds.system.topsites",
     false,
@@ -43,10 +37,35 @@ async function setDefaultTopSites() {
     "browser.newtabpage.activity-stream.feeds.system.topsites",
     true,
   ]);
+}
+
+
+async function setDefaultTopSites() {
+  
+  await pushPrefs([
+    "browser.newtabpage.activity-stream.default.sites",
+    "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/",
+  ]);
+  await toggleTopsitesPref();
   await pushPrefs([
     "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
     true,
   ]);
+}
+
+
+async function setTestTopSites() {
+  await pushPrefs([
+    "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
+    false,
+  ]);
+  
+  
+  await pushPrefs([
+    "browser.newtabpage.activity-stream.default.sites",
+    "https://example.com/",
+  ]);
+  await toggleTopsitesPref();
 }
 
 
