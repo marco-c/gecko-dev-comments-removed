@@ -374,14 +374,7 @@ class ConduitsParent extends JSWindowActorParent {
   
 
 
-  willDestroy() {
-    Hub.actorClosed(this);
-  }
-
-  
-
-
   didDestroy() {
-    this.willDestroy();
+    Hub.actorClosed(this);
   }
 }

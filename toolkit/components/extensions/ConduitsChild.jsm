@@ -121,7 +121,12 @@ class PointConduit extends BaseConduit {
       this.actor = null;
       actor.conduits.delete(this.id);
       if (!silent) {
-        actor.sendAsyncMessage("ConduitClosed", { sender: this.id });
+        
+        
+        
+        try {
+          actor.sendAsyncMessage("ConduitClosed", { sender: this.id });
+        } catch (ex) {}
       }
     }
   }
@@ -172,18 +177,10 @@ class ConduitsChild extends JSWindowActorChild {
   
 
 
-
-  willDestroy() {
+  didDestroy() {
     for (let conduit of this.conduits.values()) {
       conduit.close(true);
     }
     this.conduits.clear();
-  }
-
-  
-
-
-  didDestroy() {
-    this.willDestroy();
   }
 }
