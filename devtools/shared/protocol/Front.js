@@ -87,6 +87,9 @@ class Front extends Pool {
     
     while (this._requests && this._requests.length > 0) {
       const { deferred, to, type, stack } = this._requests.shift();
+      
+      
+      
       const msg =
         "Connection closed, pending request to " +
         to +

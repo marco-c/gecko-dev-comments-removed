@@ -716,10 +716,14 @@ function TargetMixin(parentClass) {
 
 
     logDetachError(e, targetType) {
-      const noSuchActorError = e?.message.includes("noSuchActor");
+      const ignoredError =
+        e?.message.includes("noSuchActor") ||
+        e?.message.includes("Connection closed");
 
       
-      if (noSuchActorError) {
+      
+      
+      if (ignoredError) {
         return;
       }
 
