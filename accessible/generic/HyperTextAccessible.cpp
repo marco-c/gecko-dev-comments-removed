@@ -8,6 +8,7 @@
 
 #include "Accessible-inl.h"
 #include "nsAccessibilityService.h"
+#include "nsAccessiblePivot.h"
 #include "nsIAccessibleTypes.h"
 #include "DocAccessible.h"
 #include "HTMLListAccessible.h"
@@ -49,6 +50,73 @@
 
 using namespace mozilla;
 using namespace mozilla::a11y;
+
+
+
+
+
+class ParagraphBoundaryRule : public PivotRule {
+ public:
+  explicit ParagraphBoundaryRule(AccessibleOrProxy& aSkipSubtreeFor)
+      : mSkipSubtreeFor(aSkipSubtreeFor) {}
+
+  ParagraphBoundaryRule() : mSkipSubtreeFor(nullptr) {}
+
+  virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override {
+    MOZ_ASSERT(aAccOrProxy.IsAccessible());
+    uint16_t result = nsIAccessibleTraversalRule::FILTER_IGNORE;
+
+    
+    
+    
+    if (aAccOrProxy == mSkipSubtreeFor) {
+      result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+    }
+
+    
+    
+    if (aAccOrProxy.Role() == roles::WHITESPACE) {
+      result |= nsIAccessibleTraversalRule::FILTER_MATCH;
+      return result;
+    }
+
+    
+    
+    nsIFrame* frame = aAccOrProxy.AsAccessible()->GetFrame();
+    if (frame && frame->IsBlockFrame()) {
+      result |= nsIAccessibleTraversalRule::FILTER_MATCH;
+    }
+
+    return result;
+  }
+
+ private:
+  AccessibleOrProxy mSkipSubtreeFor;
+};
+
+
+
+
+
+
+
+class SkipParagraphBoundaryRule : public PivotRule {
+ public:
+  explicit SkipParagraphBoundaryRule(AccessibleOrProxy& aBoundary)
+      : mBoundary(aBoundary) {}
+
+  virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override {
+    MOZ_ASSERT(aAccOrProxy.IsAccessible());
+    
+    if (aAccOrProxy == mBoundary) {
+      return nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+    }
+    return nsIAccessibleTraversalRule::FILTER_MATCH;
+  }
+
+ private:
+  AccessibleOrProxy& mBoundary;
+};
 
 
 
@@ -413,7 +481,6 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
         switch (aAmount) {
           case eSelectLine:
           case eSelectEndLine:
-          case eSelectParagraph:
             
             
             return nextOffset < CharacterCount()
@@ -475,9 +542,7 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
   uint32_t hyperTextOffset = DOMPointToOffset(
       pos.mResultContent, pos.mContentOffset, aDirection == eDirNext);
 
-  if ((fallBackToSelectEndLine || aAmount == eSelectParagraph) &&
-      IsLineEndCharAt(hyperTextOffset)) {
-    
+  if (fallBackToSelectEndLine && IsLineEndCharAt(hyperTextOffset)) {
     
     
     
@@ -491,8 +556,7 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
     if (hyperTextOffset == CharacterCount()) return 0;
 
     
-    if (IsHTMLListItem() &&
-        (aAmount == eSelectBeginLine || aAmount == eSelectParagraph) &&
+    if (IsHTMLListItem() && aAmount == eSelectBeginLine &&
         hyperTextOffset > 0) {
       Accessible* prevOffsetChild = GetChildAtOffset(hyperTextOffset - 1);
       if (prevOffsetChild == AsHTMLListItem()->Bullet()) return 0;
@@ -663,6 +727,85 @@ uint32_t HyperTextAccessible::FindLineBoundary(
   return 0;
 }
 
+int32_t HyperTextAccessible::FindParagraphStartOffset(uint32_t aOffset) {
+  
+  
+  
+  
+  Accessible* child = GetChildAtOffset(aOffset);
+  if (!child) {
+    return -1;  
+  }
+
+  
+  Pivot p = Pivot(this);
+  ParagraphBoundaryRule boundaryRule = ParagraphBoundaryRule();
+  AccessibleOrProxy wrappedChild = AccessibleOrProxy(child);
+  AccessibleOrProxy match = p.Prev(wrappedChild, boundaryRule, true);
+  if (match.IsNull() || match.AsAccessible() == this) {
+    
+    
+    return 0;
+  }
+
+  if (match == wrappedChild) {
+    
+    if (match.Role() == roles::WHITESPACE) {
+      
+      
+      match = p.Prev(match, boundaryRule);
+      if (match.IsNull() || match.AsAccessible() == this) {
+        
+        return 0;
+      }
+    } else {
+      
+      
+      return TransformOffset(match.AsAccessible(), 0, false);
+    }
+  }
+
+  
+  
+  
+  
+  SkipParagraphBoundaryRule goForwardOneRule = SkipParagraphBoundaryRule(match);
+  match = p.Next(match, goForwardOneRule);
+  
+  
+  MOZ_ASSERT(!match.IsNull());
+  return TransformOffset(match.AsAccessible(), 0, false);
+}
+
+int32_t HyperTextAccessible::FindParagraphEndOffset(uint32_t aOffset) {
+  
+  
+  
+  
+  Accessible* child = GetChildAtOffset(aOffset);
+  if (!child) {
+    return -1;  
+  }
+
+  
+  Pivot p = Pivot(this);
+  AccessibleOrProxy wrappedChild = AccessibleOrProxy(child);
+  
+  
+  ParagraphBoundaryRule boundaryRule = ParagraphBoundaryRule(wrappedChild);
+  
+  
+  AccessibleOrProxy match = p.Next(wrappedChild, boundaryRule, true);
+  if (!match.IsNull()) {
+    
+    Accessible* matchAcc = match.AsAccessible();
+    return TransformOffset(matchAcc, nsAccUtils::TextLength(matchAcc), true);
+  }
+
+  
+  return CharacterCount();
+}
+
 void HyperTextAccessible::TextBeforeOffset(int32_t aOffset,
                                            AccessibleTextBoundary aBoundaryType,
                                            int32_t* aStartOffset,
@@ -815,33 +958,8 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
         break;
       }
 
-      if (IsLineEndCharAt(adjustedOffset)) {
-        
-        
-        
-        
-        
-        
-        if (adjustedOffset == 0 || IsLineEndCharAt(adjustedOffset - 1)) {
-          
-          
-          
-          
-          
-          *aStartOffset = adjustedOffset;
-          *aEndOffset = adjustedOffset + 1;
-          TextSubstring(*aStartOffset, *aEndOffset, aText);
-          break;
-        }
-
-        
-        
-        adjustedOffset--;
-      }
-
-      *aStartOffset =
-          FindOffset(adjustedOffset, eDirPrevious, eSelectParagraph);
-      *aEndOffset = FindOffset(adjustedOffset, eDirNext, eSelectParagraph);
+      *aStartOffset = FindParagraphStartOffset(adjustedOffset);
+      *aEndOffset = FindParagraphEndOffset(adjustedOffset);
       TextSubstring(*aStartOffset, *aEndOffset, aText);
       break;
     }
