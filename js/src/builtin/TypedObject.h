@@ -663,12 +663,6 @@ class OutlineTypedObject : public TypedObject {
   static OutlineTypedObject* createZeroed(JSContext* cx, HandleTypeDescr descr,
                                           gc::InitialHeap heap);
 
-  
-  
-  
-  static OutlineTypedObject* createDerived(JSContext* cx, HandleTypeDescr type,
-                                           Handle<TypedObject*> typedContents,
-                                           uint32_t offset);
  private:
   
   void attach(ArrayBufferObject& buffer, uint32_t offset);
@@ -719,14 +713,6 @@ class InlineTypedObject : public TypedObject {
   static InlineTypedObject* create(JSContext* cx, HandleTypeDescr descr,
                                    gc::InitialHeap heap = gc::DefaultHeap);
 };
-
-
-
-
-
-
-MOZ_MUST_USE bool NewDerivedTypedObject(JSContext* cx, unsigned argc,
-                                        Value* vp);
 
 
 
