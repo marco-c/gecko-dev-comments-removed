@@ -390,7 +390,7 @@ NetworkObserver.prototype = {
     if (httpActivity.owner) {
       
       
-      httpActivity.owner.addSeverTimings(serverTimings);
+      httpActivity.owner.addServerTimings(serverTimings);
     } else {
       
       
