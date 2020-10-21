@@ -529,6 +529,15 @@ impl Color {
         parse_hash_color(&serialization)
             .map_err(|()| location.new_custom_error(StyleParseErrorKind::UnspecifiedError))
     }
+
+    
+    
+    pub fn is_transparent(&self) -> bool {
+        match *self {
+            Color::Numeric { ref parsed, .. } => parsed.alpha == 0,
+            _ => false,
+        }
+    }
 }
 
 #[cfg(feature = "gecko")]

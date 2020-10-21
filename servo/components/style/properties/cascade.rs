@@ -385,8 +385,6 @@ fn tweak_when_ignoring_colors(
     declaration: &mut Cow<PropertyDeclaration>,
     declarations_to_apply_unless_overriden: &mut DeclarationsToApplyUnlessOverriden,
 ) {
-    use crate::values::specified::Color;
-
     if !longhand_id.ignored_when_document_colors_disabled() {
         return;
     }
@@ -403,45 +401,13 @@ fn tweak_when_ignoring_colors(
         return;
     }
 
-    fn alpha_channel(color: &Color) -> u8 {
-        match *color {
-            
-            
-            
-            #[cfg(feature = "gecko")]
-            Color::InheritFromBodyQuirk | Color::System(..) => 255,
-            
-            
-            
-            
-            
-            
-            
-            
-            Color::CurrentColor => 255,
-            
-            
-            
-            Color::Complex { .. } => 255,
-            Color::Numeric { ref parsed, .. } => parsed.alpha,
-        }
-    }
-
     
     match **declaration {
+        
+        
         PropertyDeclaration::BackgroundColor(ref color) => {
-            
-            
-            
-            
-            
-            
-            
-            
-            let alpha = alpha_channel(color);
-            if alpha != 0 {
-                let mut color = builder.device.default_background_color();
-                color.alpha = alpha;
+            if !color.is_transparent() {
+                let color = builder.device.default_background_color();
                 declarations_to_apply_unless_overriden.push(
                     PropertyDeclaration::BackgroundColor(color.into())
                 )
@@ -449,7 +415,7 @@ fn tweak_when_ignoring_colors(
         }
         PropertyDeclaration::Color(ref color) => {
             
-            if alpha_channel(&color.0) == 0 {
+            if color.0.is_transparent() {
                 return;
             }
             
