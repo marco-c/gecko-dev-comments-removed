@@ -260,7 +260,6 @@ var State = {
         result.push(win);
       }
     }
-
     return result;
   },
 
@@ -271,6 +270,7 @@ var State = {
 
 
   _getProcessDelta(cur, prev) {
+    let windows = this._getDOMWindows(cur);
     let result = {
       pid: cur.pid,
       childID: cur.childID,
@@ -286,8 +286,8 @@ var State = {
       type: cur.type,
       origin: cur.origin || "",
       threads: null,
-      displayRank: Control._getDisplayGroupRank(cur),
-      windows: this._getDOMWindows(cur),
+      displayRank: Control._getDisplayGroupRank(cur, windows),
+      windows,
       
       title: null,
     };
@@ -1167,11 +1167,13 @@ var Control = {
   
   
   
-  _getDisplayGroupRank(data) {
+  
+  _getDisplayGroupRank(data, windows) {
     const RANK_BROWSER = 0;
-    const RANK_WEB_CONTENT = 1;
-    const RANK_UTILITY = 2;
-    const RANK_PREALLOCATED = 3;
+    const RANK_WEB_TABS = 1;
+    const RANK_WEB_FRAMES = 2;
+    const RANK_UTILITY = 3;
+    const RANK_PREALLOCATED = 4;
     let type = data.type;
     switch (type) {
       
@@ -1180,8 +1182,12 @@ var Control = {
       
       case "webIsolated":
       case "webLargeAllocation":
-      case "withCoopCoep":
-        return RANK_WEB_CONTENT;
+      case "withCoopCoep": {
+        if (windows.some(w => w.tab)) {
+          return RANK_WEB_TABS;
+        }
+        return RANK_WEB_FRAMES;
+      }
       
       case "preallocated":
         return RANK_PREALLOCATED;
@@ -1189,8 +1195,11 @@ var Control = {
       
       
       case "web":
-        if (data.windows.length >= 1) {
-          return RANK_WEB_CONTENT;
+        if (windows.some(w => w.tab)) {
+          return RANK_WEB_TABS;
+        }
+        if (windows.length >= 1) {
+          return RANK_WEB_FRAMES;
         }
         
         
