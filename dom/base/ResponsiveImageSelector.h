@@ -9,6 +9,7 @@
 
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/FunctionRef.h"
 #include "nsISupports.h"
 #include "nsIContent.h"
 #include "nsString.h"
@@ -31,6 +32,10 @@ class ResponsiveImageSelector {
 
   explicit ResponsiveImageSelector(nsIContent* aContent);
   explicit ResponsiveImageSelector(dom::Document* aDocument);
+
+  
+  static void ParseSourceSet(const nsAString& aSrcSet,
+                             FunctionRef<void(ResponsiveImageCandidate&&)>);
 
   
   
@@ -82,17 +87,13 @@ class ResponsiveImageSelector {
   
   bool SelectImage(bool aReselect = false);
 
-  Span<const ResponsiveImageCandidate> AllCandidates() const {
-    return mCandidates;
-  }
-
  protected:
   virtual ~ResponsiveImageSelector();
 
  private:
   
   
-  void AppendCandidateIfUnique(const ResponsiveImageCandidate& aCandidate);
+  void AppendCandidateIfUnique(ResponsiveImageCandidate&& aCandidate);
 
   
   
@@ -131,8 +132,8 @@ class ResponsiveImageSelector {
 class ResponsiveImageCandidate {
  public:
   ResponsiveImageCandidate();
-  ResponsiveImageCandidate(const nsAString& aURLString, double aDensity,
-                           nsIPrincipal* aTriggeringPrincipal = nullptr);
+  ResponsiveImageCandidate(const ResponsiveImageCandidate&) = delete;
+  ResponsiveImageCandidate(ResponsiveImageCandidate&&) = default;
 
   void SetURLSpec(const nsAString& aURLString);
   void SetTriggeringPrincipal(nsIPrincipal* aPrincipal);
