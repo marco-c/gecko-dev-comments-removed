@@ -1809,6 +1809,7 @@ BrowserGlue.prototype = {
           
           delete snapshotData.crashes;
           delete snapshotData.modifiedPreferences;
+          delete snapshotData.printingPreferences;
           channel.send(snapshotData, target);
         });
       }
