@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -17,6 +17,7 @@
 #include "prenv.h"
 #include "nsPrintfCString.h"
 #include "nsWhitespaceTokenizer.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/Telemetry.h"
 
 #include "GfxInfoX11.h"
@@ -37,7 +38,7 @@ namespace mozilla::widget {
 NS_IMPL_ISUPPORTS_INHERITED(GfxInfo, GfxInfoBase, nsIGfxInfoDebug)
 #endif
 
-// these global variables will be set when firing the glxtest process
+
 int glxtest_pipe = -1;
 pid_t glxtest_pid = 0;
 
@@ -73,30 +74,30 @@ void GfxInfo::AddCrashReportAnnotations() {
 void GfxInfo::GetData() {
   GfxInfoBase::GetData();
 
-  // to understand this function, see bug 639842. We retrieve the OpenGL driver
-  // information in a separate process to protect against bad drivers.
+  
+  
 
-  // if glxtest_pipe == -1, that means that we already read the information
+  
   if (glxtest_pipe == -1) return;
 
   enum { buf_size = 1024 };
   char buf[buf_size];
   ssize_t bytesread = read(glxtest_pipe, &buf,
-                           buf_size - 1);  // -1 because we'll append a zero
+                           buf_size - 1);  
   close(glxtest_pipe);
   glxtest_pipe = -1;
 
-  // bytesread < 0 would mean that the above read() call failed.
-  // This should never happen. If it did, the outcome would be to blocklist
-  // anyway.
+  
+  
+  
   if (bytesread < 0) bytesread = 0;
 
-  // let buf be a zero-terminated string
+  
   buf[bytesread] = 0;
 
-  // Wait for the glxtest process to finish. This serves 2 purposes:
-  // * avoid having a zombie glxtest process laying around
-  // * get the glxtest process status info.
+  
+  
+  
   int glxtest_status = 0;
   bool wait_for_glxtest_process = true;
   bool waiting_for_glxtest_process_failed = false;
@@ -108,11 +109,11 @@ void GfxInfo::GetData() {
       if (waitpid_errno == EINTR) {
         wait_for_glxtest_process = true;
       } else {
-        // Bug 718629
-        // ECHILD happens when the glxtest process got reaped got reaped after a
-        // PR_CreateProcess as per bug 227246. This shouldn't matter, as we
-        // still seem to get the data from the pipe, and if we didn't, the
-        // outcome would be to blocklist anyway.
+        
+        
+        
+        
+        
         waiting_for_glxtest_process_failed = (waitpid_errno != ECHILD);
       }
     }
@@ -132,11 +133,11 @@ void GfxInfo::GetData() {
   nsCString glVersion;
   nsCString textureFromPixmap;
 
-  // Available if GLX_MESA_query_renderer is supported.
+  
   nsCString mesaVendor;
   nsCString mesaDevice;
   nsCString mesaAccelerated;
-  // Available if using a DRI-based libGL stack.
+  
   nsCString driDriver;
   nsCString screenInfo;
   nsCString adapterRam;
@@ -176,8 +177,8 @@ void GfxInfo::GetData() {
 
   if (!strcmp(textureFromPixmap.get(), "TRUE")) mHasTextureFromPixmap = true;
 
-  // only useful for Linux kernel version check for FGLRX driver.
-  // assumes X client == X server, which is sad.
+  
+  
   struct utsname unameobj;
   if (uname(&unameobj) >= 0) {
     mOS.Assign(unameobj.sysname);
@@ -218,19 +219,19 @@ void GfxInfo::GetData() {
     return;
   }
 
-  // Scan the GL_VERSION string for the GL and driver versions.
+  
   nsCWhitespaceTokenizer tokenizer(glVersion);
   while (tokenizer.hasMoreTokens()) {
     nsCString token(tokenizer.nextToken());
     unsigned int major = 0, minor = 0, revision = 0, patch = 0;
     if (sscanf(token.get(), "%u.%u.%u.%u", &major, &minor, &revision, &patch) >=
         2) {
-      // A survey of GL_VENDOR strings indicates that the first version is
-      // always the GL version, the second is usually the driver version.
+      
+      
       if (mGLMajorVersion == 0) {
         mGLMajorVersion = major;
         mGLMinorVersion = minor;
-      } else if (mDriverVersion.IsEmpty()) {  // Not already spoofed.
+      } else if (mDriverVersion.IsEmpty()) {  
         mDriverVersion =
             nsPrintfCString("%u.%u.%u.%u", major, minor, revision, patch);
       }
@@ -242,17 +243,21 @@ void GfxInfo::GetData() {
     return;
   }
 
-  // Mesa always exposes itself in the GL_VERSION string, but not always the
-  // GL_VENDOR string.
+  
+  
   mIsMesa = glVersion.Find("Mesa") != -1;
 
-  // We need to use custom driver vendor IDs for mesa so we can treat them
-  // differently than the proprietary drivers.
+  
+  
   if (mIsMesa) {
+    
+    
+    gfx::gfxVars::SetAllowGLXOnEGL(true);
+
     mIsAccelerated = !mesaAccelerated.Equals("FALSE");
-    // Process software rasterizers before the DRI driver string; we may be
-    // forcing software rasterization on a DRI-accelerated X server by using
-    // LIBGL_ALWAYS_SOFTWARE or a similar restriction.
+    
+    
+    
     if (strcasestr(glRenderer.get(), "llvmpipe")) {
       CopyUTF16toUTF8(
           GfxDriverInfo::GetDriverVendor(DriverVendor::MesaLLVMPipe),
@@ -265,15 +270,15 @@ void GfxInfo::GetData() {
       mIsAccelerated = false;
     } else if (strcasestr(glRenderer.get(), "software rasterizer") ||
                !mIsAccelerated) {
-      // Fallback to reporting swrast if GLX_MESA_query_renderer tells us
-      // we're using an unaccelerated context.
+      
+      
       CopyUTF16toUTF8(GfxDriverInfo::GetDriverVendor(DriverVendor::MesaSWRast),
                       mDriverVendor);
       mIsAccelerated = false;
     } else if (!driDriver.IsEmpty()) {
       mDriverVendor = nsPrintfCString("mesa/%s", driDriver.get());
     } else {
-      // Some other mesa configuration where we couldn't get enough info.
+      
       NS_WARNING("Failed to detect Mesa driver being used!");
       CopyUTF16toUTF8(GfxDriverInfo::GetDriverVendor(DriverVendor::MesaUnknown),
                       mDriverVendor);
@@ -296,12 +301,12 @@ void GfxInfo::GetData() {
     CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(DeviceVendor::NVIDIA),
                     mVendorId);
     mDriverVendor.AssignLiteral("nvidia/unknown");
-    // TODO: Use NV-CONTROL X11 extension to query Device ID and VRAM.
+    
   } else if (glVendor.EqualsLiteral("ATI Technologies Inc.")) {
     CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(DeviceVendor::ATI),
                     mVendorId);
     mDriverVendor.AssignLiteral("ati/unknown");
-    // TODO: Look into ways to find the device ID on FGLRX.
+    
   } else {
     NS_WARNING("Failed to detect GL vendor!");
   }
@@ -328,7 +333,7 @@ void GfxInfo::GetData() {
     mAdapterRAM = (uint32_t)atoi(adapterRam.get());
   }
 
-  // Fallback to GL_VENDOR and GL_RENDERER.
+  
   if (mVendorId.IsEmpty()) {
     mVendorId.Assign(glVendor.get());
   }
@@ -345,21 +350,21 @@ void GfxInfo::GetData() {
   }
 #endif
 
-  // Make a best effort guess at whether or not we are using the XWayland compat
-  // layer. For all intents and purposes, we should otherwise believe we are
-  // using X11.
+  
+  
+  
   const char* windowEnv = getenv("XDG_SESSION_TYPE");
   mIsXWayland = windowEnv && strcmp(windowEnv, "wayland") == 0;
 
-  // Make a best effort guess at the desktop environment in use. Sadly there
-  // does not appear to be a standard way to do this, so we check a few
-  // different environment variables and search for relevant keywords.
-  //
-  // Note that some users manually change these values. Some applications check
-  // the environment variable like we are here, and either not work or restrict
-  // functionality. There may be some heroics we could go through to determine
-  // the truth, but for the moment, this is the best we can do. This is
-  // something to keep in mind when updating the blocklist.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const char* desktopEnv = getenv("XDG_CURRENT_DESKTOP");
   if (!desktopEnv) {
     desktopEnv = getenv("DESKTOP_SESSION");
@@ -372,8 +377,8 @@ void GfxInfo::GetData() {
     }
 
     if (currentDesktop.find("budgie") != std::string::npos) {
-      // We need to check for Budgie first, because it might incorporate GNOME
-      // into the environment variable value.
+      
+      
       CopyUTF16toUTF8(
           GfxDriverInfo::GetDesktopEnvironment(DesktopEnvironment::Budgie),
           mDesktopEnvironment);
@@ -466,8 +471,8 @@ void GfxInfo::GetData() {
 
 const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
   if (!sDriverInfo->Length()) {
-    // Mesa 10.0 provides the GLX_MESA_query_renderer extension, which allows us
-    // to query device IDs backing a GL context for blocklisting.
+    
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
@@ -475,7 +480,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
         V(10, 0, 0, 0), "FEATURE_FAILURE_OLD_MESA", "Mesa 10.0");
 
-    // NVIDIA baseline (ported from old blocklist)
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::NonMesaAll,
@@ -483,24 +488,24 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
         V(257, 21, 0, 0), "FEATURE_FAILURE_OLD_NVIDIA", "NVIDIA 257.21");
 
-    // fglrx baseline (chosen arbitrarily as 2013-07-22 release).
+    
     APPEND_TO_DRIVER_BLOCKLIST(
         OperatingSystem::Linux, DeviceFamily::AtiAll,
         GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
         DRIVER_LESS_THAN, V(13, 15, 100, 1), "FEATURE_FAILURE_OLD_FGLRX",
         "fglrx 13.15.100.1");
 
-    ////////////////////////////////////
-    // FEATURE_WEBRENDER
+    
+    
 
-    // Intel Mesa baseline, chosen arbitrarily.
+    
     APPEND_TO_DRIVER_BLOCKLIST(
         OperatingSystem::Linux, DeviceFamily::IntelAll,
         nsIGfxInfo::FEATURE_WEBRENDER,
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
         V(18, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_OLD_MESA", "Mesa 18.0.0.0");
 
-    // Nvidia Mesa baseline, see bug 1563859.
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
@@ -508,7 +513,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
         V(18, 2, 0, 0), "FEATURE_FAILURE_WEBRENDER_OLD_MESA", "Mesa 18.2.0.0");
 
-    // Disable on all Nvidia devices not using Mesa for now.
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::NonMesaAll,
@@ -516,7 +521,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
         V(0, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_NO_LINUX_NVIDIA", "");
 
-    // ATI Mesa baseline, chosen arbitrarily.
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
@@ -524,7 +529,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
         V(18, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_OLD_MESA", "Mesa 18.0.0.0");
 
-    // Disable on all ATI devices not using Mesa for now.
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::NonMesaAll,
@@ -532,11 +537,11 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
         V(0, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_NO_LINUX_ATI", "");
 
-    ////////////////////////////////////
-    // FEATURE_WEBRENDER - ALLOWLIST
+    
+    
 
 #ifdef EARLY_BETA_OR_EARLIER
-    // Intel Mesa baseline, chosen arbitrarily.
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::SmallAndMedium,
         BatteryStatus::All, DesktopEnvironment::GNOME, WindowProtocol::X11All,
@@ -545,7 +550,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         DRIVER_GREATER_THAN_OR_EQUAL, V(18, 0, 0, 0),
         "FEATURE_ROLLOUT_EARLY_BETA_INTEL_GNOME_XALL_MESA", "Mesa 18.0.0.0");
 
-    // ATI Mesa baseline, chosen arbitrarily.
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::GNOME, WindowProtocol::X11All,
@@ -556,7 +561,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 #endif
 
 #ifdef NIGHTLY_BUILD
-    // Intel Mesa baseline, chosen arbitrarily.
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::SmallAndMedium,
         BatteryStatus::All, DesktopEnvironment::All, WindowProtocol::All,
@@ -565,7 +570,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         DRIVER_GREATER_THAN_OR_EQUAL, V(18, 0, 0, 0),
         "FEATURE_ROLLOUT_NIGHTLY_INTEL_MESA", "Mesa 18.0.0.0");
 
-    // Nvidia Mesa baseline, see bug 1563859.
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
@@ -573,7 +578,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_ALLOW_QUALIFIED, DRIVER_GREATER_THAN_OR_EQUAL,
         V(18, 2, 0, 0), "FEATURE_ROLLOUT_NIGHTLY_NVIDIA_MESA", "Mesa 18.2.0.0");
 
-    // ATI Mesa baseline, chosen arbitrarily.
+    
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         DesktopEnvironment::All, WindowProtocol::All, DriverVendor::MesaAll,
@@ -582,7 +587,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         V(18, 0, 0, 0), "FEATURE_ROLLOUT_NIGHTLY_ATI_MESA", "Mesa 18.0.0.0");
 #endif
 
-    ////////////////////////////////////
+    
 
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
@@ -630,7 +635,7 @@ bool GfxInfo::DoesDriverVendorMatch(const nsAString& aBlocklistVendor,
 nsresult GfxInfo::GetFeatureStatusImpl(
     int32_t aFeature, int32_t* aStatus, nsAString& aSuggestedDriverVersion,
     const nsTArray<GfxDriverInfo>& aDriverInfo, nsACString& aFailureId,
-    OperatingSystem* aOS /* = nullptr */)
+    OperatingSystem* aOS )
 
 {
   NS_ENSURE_ARG_POINTER(aStatus);
@@ -646,23 +651,23 @@ nsresult GfxInfo::GetFeatureStatusImpl(
   GetData();
 
   if (mGLMajorVersion == 0) {
-    // If we failed to get a GL version, glxtest failed.
+    
     *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
     aFailureId = "FEATURE_FAILURE_GLXTEST_FAILED";
     return NS_OK;
   }
 
   if (mGLMajorVersion == 1) {
-    // We're on OpenGL 1. In most cases that indicates really old hardware.
-    // We better block them, rather than rely on them to fail gracefully,
-    // because they don't! see bug 696636
+    
+    
+    
     *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
     aFailureId = "FEATURE_FAILURE_OPENGL_1";
     return NS_OK;
   }
 
-  // Blocklist software GL implementations from using layers acceleration.
-  // On the test infrastructure, we'll force-enable layers acceleration.
+  
+  
   if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS && !mIsAccelerated &&
       !PR_GetEnv("MOZ_LAYERS_ALLOW_SOFTWARE_GL")) {
     *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
@@ -865,8 +870,8 @@ GfxInfo::GetIsGPU2Active(bool* aIsGPU2Active) { return NS_ERROR_FAILURE; }
 
 #ifdef DEBUG
 
-// Implement nsIGfxInfoDebug
-// We don't support spoofing anything on Linux
+
+
 
 NS_IMETHODIMP GfxInfo::SpoofVendorID(const nsAString& aVendorID) {
   GetData();
@@ -888,14 +893,14 @@ NS_IMETHODIMP GfxInfo::SpoofDriverVersion(const nsAString& aDriverVersion) {
 }
 
 NS_IMETHODIMP GfxInfo::SpoofOSVersion(uint32_t aVersion) {
-  // We don't support OS versioning on Linux. There's just "Linux".
+  
   return NS_OK;
 }
 
 NS_IMETHODIMP GfxInfo::FireTestProcess() {
-  // If the pid is zero, then we have never run the test process to query for
-  // driver information. This would normally be run on startup, but we need to
-  // manually invoke it for XPC shell tests.
+  
+  
+  
   if (glxtest_pid == 0) {
     fire_glxtest_process();
   }
@@ -904,4 +909,4 @@ NS_IMETHODIMP GfxInfo::FireTestProcess() {
 
 #endif
 
-}  // namespace mozilla::widget
+}  

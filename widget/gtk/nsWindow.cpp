@@ -4357,7 +4357,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         
         
         
-        if ((true )) {
+        if (!gfx::gfxVars::UseEGL() || gfx::gfxVars::AllowGLXOnEGL()) {
           auto display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
           int screenNumber = GDK_SCREEN_XNUMBER(screen);
           haveVisual = GLContextGLX::FindVisual(
