@@ -5,7 +5,6 @@
 
 
 #include "jit/Bailouts.h"
-#include "jit/JitRealm.h"
 #include "jit/JitRuntime.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
